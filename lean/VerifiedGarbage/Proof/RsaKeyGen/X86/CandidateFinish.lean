@@ -72,8 +72,8 @@ theorem used_ok {s : State} {base : Addr} {size status : Nat} {count usedPtr : B
       t.mem = s.mem.writeW (usedPtr.setWidth 64) (BitVec.ofNat 64 count.toNat) ∧
       Outside (usedPtr.setWidth 64) 0 8 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
   unfold used
-  refine WP.seq (wp_movS (readSrc_sc S (d := 44) (by omega)) fun a A _ =>
-    wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 152) (by omega)) fun b B _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc S (d := 44) (by omega_using [header])) fun a A _ =>
+    wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 152) (by omega_using [header])) fun b B _ => WP.block_nil ?_)
   have Kb : Keeps [.eax, .edx] s b := (A.keeps.mono (by decide)).widen B.keeps
   have Mb : b.mem = s.mem := B.mem.trans A.mem
   have ptrB : b.gpr .edx = usedPtr := by rw [B.other .edx (by decide), A.gpr, pointer]
@@ -93,7 +93,7 @@ theorem none_ok {s : State} {base : Addr} {size : Nat} {usedPtr : BitVec 32}
       t.gpr .eax = 0#32 ∧ t.mem = s.mem.writeW (usedPtr.setWidth 64) 0#64 ∧
       Outside (usedPtr.setWidth 64) 0 8 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
   unfold VG.Impl.RsaKeyGen.X86.CandidateFinish.none
-  refine WP.seq (wp_movS (readSrc_sc S (d := 44) (by omega)) fun a A _ => wp_movS rfl fun b B _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc S (d := 44) (by omega_using [header])) fun a A _ => wp_movS rfl fun b B _ => WP.block_nil ?_)
   have Kb : Keeps [.eax, .edx] s b := (A.keeps.mono (by decide)).widen B.keeps
   have Mb : b.mem = s.mem := B.mem.trans A.mem
   have ptrB : b.gpr .edx = usedPtr := by rw [B.other .edx (by decide), A.gpr, pointer]

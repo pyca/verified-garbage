@@ -58,10 +58,10 @@ theorem Arg.mov_ok (d : Reg) (a : Arg) (ha : a.ok = true) (s : State) (hx : XOk 
   cases a with
   | slot f =>
     simp only [Arg.ok, Bool.and_eq_true, decide_eq_true_eq] at ha
-    refine wp_ldrx ⟨ha.1, by omega⟩ rfl (hx f ha.2) fun s1 o1 e1 => wp_nil ⟨e1, o1⟩
+    refine wp_ldrx ⟨ha.1, by omega_using [ha]⟩ rfl (hx f ha.2) fun s1 o1 e1 => wp_nil ⟨e1, o1⟩
   | slotOff f o =>
     simp only [Arg.ok, Bool.and_eq_true, decide_eq_true_eq] at ha
-    refine wp_ldrx ⟨ha.1.1, by omega⟩ rfl (hx f ha.1.2) fun s1 o1 e1 => ?_
+    refine wp_ldrx ⟨ha.1.1, by omega_using [ha]⟩ rfl (hx f ha.1.2) fun s1 o1 e1 => ?_
     refine wp_addImm ha.2 fun s2 o2 e2 => wp_nil ⟨by rw [e2, e1]; rfl, ?_⟩
     exact (o1.trans o2).mono (fun r hr => by simpa using hr)
   | off o =>
@@ -73,7 +73,7 @@ theorem Arg.mov_ok (d : Reg) (a : Arg) (ha : a.ok = true) (s : State) (hx : XOk 
     rw [e1]
     apply BitVec.eq_of_toNat_eq
     simp only [Arg.val, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [ha]
   | ret =>
     exact wp_addImm (by decide) fun s1 o1 e1 => wp_nil ⟨by rw [e1, BitVec.add_zero]; rfl, o1⟩
 
@@ -126,7 +126,7 @@ section
 variable {L : Lay} {g : Reg → BitVec 64} {v : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
 theorem Ctx.xOk (hc : Ctx L g v m₀ t) (hL : L.Ok) : XOk t := fun f hf => by
-  rw [hc.x28]; exact hc.inX hL hf (by omega)
+  rw [hc.x28]; exact hc.inX hL hf (by omega_using [])
 
 theorem Ctx.off (hc : Ctx L g v m₀ t) (o : Nat) : (Arg.off o).val t = L.X + BitVec.ofNat 64 o := by
   simp only [Arg.val, hc.x28]
@@ -137,7 +137,7 @@ theorem Ctx.slotJ (hc : Ctx L g v m₀ t) {j : Nat} (hj : j < 8) :
   have := hc.slot j hj
   simp only [Arg.val, hc.x28]
   rw [add_add] at this
-  rw [← this, show 904 + (16 + 8 * j) = 920 + 8 * j by omega]
+  rw [← this, show 904 + (16 + 8 * j) = 920 + 8 * j by omega_using []]
 
 end
 

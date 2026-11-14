@@ -62,9 +62,9 @@ theorem copyField_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       OpKeep M base o s t ∧ Inv M base size m Sl (o :: V) (Function.update E o (E a)) t := by
   have hap : o ≤ a ∨ a + 8 * M.n ≤ o := by
     by_cases he : o = a
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_using [he])
     · have h := hL.apart o a ho (hI.sl a ha) he
-      omega
+      omega_using [h]
   refine WP.mono (copy_ok M.n hI.scr (hL.le o ho) (hL.le a (hI.sl a ha))
     (hAl.sl o ho) (hAl.sl a (hI.sl a ha)) hap) fun t ⟨hv,hk,hO⟩ => ?_
   have hkeep : OpKeep M base o s t :=

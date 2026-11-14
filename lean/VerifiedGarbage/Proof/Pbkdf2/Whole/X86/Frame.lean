@@ -46,9 +46,9 @@ theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (post := Spec.Pbkdf2.pbkdf2Post I.S X86.abi.ptrBits) (wa := true) (stack := 76)
     (bytes := pbkFrame I) h
     (by
-      refine ⟨?_, by simp only [pbkFrame]; omega, by simp only [pbkFrame]; omega⟩
+      refine ⟨?_, by simp only [pbkFrame]; omega_using [hs], by simp only [pbkFrame]; omega_using []⟩
       change 8 + 4 * 7 + I.pbkdf2Scratch * 8 ≤ pbkFrame I
-      simp only [pbkFrame]; omega)
+      simp only [pbkFrame]; omega_using [])
     hsp hd (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat
 
 /-- Memory holding the arguments `0x1000, 0, 0x1400, 0, 1, 0x1800, 0` of
@@ -101,7 +101,7 @@ theorem sha256_stack (v : Backend) : stackUse v.F.pbkdf2 ≤ 76 := by
     Impl.Pbkdf2.Stream.X86.Hash.callInit, Backend.F, Proof.Sha256.X86.Variants.pbkdf2Fns,
     Proof.Sha256.X86.Variants.fns, Proof.Sha256.X86.Variants.hmacHash, Proof.Pbkdf2.Md.X86.sha256M,
     stackUse, frameBytes, List.length_cons, List.length_nil, Nat.max_le] at *
-  omega
+  omega_arith
 
 /-- PBKDF2-HMAC-SHA224 made with the backend `v` uses at most 76 bytes of
 stack. -/
@@ -116,7 +116,7 @@ theorem sha224_stack (v : Backend) : stackUse v.F224.pbkdf2 ≤ 76 := by
     Proof.Sha256.X86.Variants.fns224, Proof.Sha256.X86.Variants.hmacHash224,
     Proof.Pbkdf2.Md.X86.sha224M, stackUse, frameBytes, List.length_cons, List.length_nil,
     Nat.max_le] at *
-  omega
+  omega_arith
 
 theorem md5_pbkFrameSat :
     ∃ s, (Spec.Hmac.md5I.pbkdf2Contract X86.abi (76 + pbkFrame Spec.Hmac.md5I)).pre s := by

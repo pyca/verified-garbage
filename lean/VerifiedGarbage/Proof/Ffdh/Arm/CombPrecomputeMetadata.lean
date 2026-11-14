@@ -23,7 +23,7 @@ theorem combBitCountStep_ok (s : State) {h : Nat} (positive : 0<h) (bound : h≤
     WP isa (.block bitCountStep) s fun t =>
       (t.gpr .r1 = s.gpr .r1+1 ∧ t.gpr .r3 = combLowMask (h-1) ∧
       t.z = decide (h=1) ∧ t.mem=s.mem) ∧ Rest [.r1,.r3] s t := by
-  have cases : h=1 ∨ h=2 ∨ h=3 ∨ h=4 ∨ h=5 ∨ h=6 ∨ h=7 ∨ h=8 := by omega
+  have cases : h=1 ∨ h=2 ∨ h=3 ∨ h=4 ∨ h=5 ∨ h=6 ∨ h=7 ∨ h=8 := by omega_using [positive, bound]
   rcases cases with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
     (refine withRest_all (c := .block bitCountStep) [.r1,.r3] ?_ (by rfl) rfl
      unfold bitCountStep
@@ -40,7 +40,7 @@ theorem combBitLoop_ok (s : State) {h : Nat} (positive : 0<h) (bound : h≤8)
   refine WP.loop (M := isa) I ?_ h s ?_
   · intro k u hu
     obtain ⟨posK,leH,maskU,countU,memU,restU⟩ := hu
-    refine WP.mono (combBitCountStep_ok u posK (by omega) maskU) ?_
+    refine WP.mono (combBitCountStep_ok u posK (by omega_using [bound, leH]) maskU) ?_
     rintro v ⟨⟨countV,maskV,zeroV,memV⟩,restV⟩
     have reg : v.gpr .r1=s.gpr .r1+BitVec.ofNat 32 (h-k+1) := by
       rw [countV,countU,BitVec.add_assoc]
@@ -51,15 +51,15 @@ theorem combBitLoop_ok (s : State) {h : Nat} (positive : 0<h) (bound : h≤8)
       refine ⟨?_,?_,?_,memV.trans memU,restU.trans restV⟩
       · change some (!v.z)=some false
         simp only [zeroV,last,decide_true,Bool.not_true]
-      · rw [reg,show h-k+1=h by omega]
+      · rw [reg,show h-k+1=h by omega_using [positive, last]]
       · rw [maskV,last]
         rfl
     · right
-      refine ⟨?_,k-1,by omega,by omega,by omega,maskV,?_,memV.trans memU,restU.trans restV⟩
+      refine ⟨?_,k-1,by omega_using [posK],by omega_using [posK, last],by omega_using [leH],maskV,?_,memV.trans memU,restU.trans restV⟩
       · change some (!v.z)=some true
         simp only [zeroV,show (k=1)=False by simp only [last],decide_false,Bool.not_false]
-      · rw [reg,show h-k+1=h-(k-1) by omega]
-  · refine ⟨positive,by omega,mask,?_,rfl,Rest.refl _ _⟩
+      · rw [reg,show h-k+1=h-(k-1) by omega_using [posK, leH]]
+  · refine ⟨positive,by omega_using [],mask,?_,rfl,Rest.refl _ _⟩
     rw [Nat.sub_self]
     exact (BitVec.add_zero _).symm
 
@@ -70,7 +70,7 @@ theorem combBitCount_ok (s : State) {base : BitVec 32} {len h : Nat}
       t.mem=s.mem ∧ Rest [.r1,.r3] s t := by
   rw [bitCount,WP.seq_iff]
   refine wp_loadStack (a := off (State.addr s.sp) 68) (by decide)
-    (addr_add (by have := locals.space.nowrap; omega)) (locals.read (by decide)) fun u load => ?_
+    (addr_add (by have := locals.space.nowrap; omega_using [this])) (locals.read (by decide)) fun u load => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun v mov => WP.block_nil ?_
   have maskV : v.gpr .r3=combLowMask h := by rw [mov.other .r3 (by decide),load.gpr,mask]
   have rest : Rest [.r1,.r3] s v := (load.rest (by simp)).trans (mov.rest (by simp))

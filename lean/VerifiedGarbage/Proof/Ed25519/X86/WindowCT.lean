@@ -214,7 +214,7 @@ theorem doubleWindow_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : 
 theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 128)
     (hx : WinAt s₀ Aa R i x) : WP isa doubleWindow x (WinAt s₀ Aa R i) := by
   obtain ⟨w, e, a, ha⟩ := hx
-  exact WP.mono (doubleWindow_ok w.ctx (esi_lt (by omega) e) ha) fun b ⟨kb, eb, rb, hb⟩ =>
+  exact WP.mono (doubleWindow_ok w.ctx (esi_lt (by omega_using [hi]) e) ha) fun b ⟨kb, eb, rb, hb⟩ =>
     ⟨w.of_ikeep kb (hb 16 (by decide)), eb.trans e, _, rb⟩
 
 /-- After a digit's code, its value in `eax`, the workspace pointer in `edi`, and the window's
@@ -240,27 +240,27 @@ theorem digitAdd_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
 theorem digitK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
     {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128) :
     RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) (digitNibble 12 0) (fun _ _ => True) :=
-  digitNibble_ct (a := 2) h (by decide) (by omega) (fun _ hx => ⟨hx.1.saved, hx.2.1⟩)
+  digitNibble_ct (a := 2) h (by decide) (by omega_using [hn]) (fun _ hx => ⟨hx.1.saved, hx.2.1⟩)
     (fun _ hy => ⟨hy.1.saved, hy.2.1⟩)
     (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
     (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
     (fun _ hx => WP.mono (nibbleByte_ok (a := 2) hx.1.pre.scratch hx.1.saved (by decide) hx.1.pre.challenge
-      (by omega) (by decide) hx.2.1) fun _ h => h.2.2)
+      (by omega_using [hn]) (by decide) hx.2.1) fun _ h => h.2.2)
     (fun _ hy => WP.mono (nibbleByte_ok (a := 2) hy.1.pre.scratch hy.1.saved (by decide) hy.1.pre.challenge
-      (by omega) (by decide) hy.2.1) fun _ h => h.2.2)
+      (by omega_using [hn]) (by decide) hy.2.1) fun _ h => h.2.2)
 
 theorem digitS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
     {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 64) {P₁ P₂ : State → Prop}
     (h₁ : ∀ x, P₁ x → WinAt s₀ Aa R n x) (h₂ : ∀ y, P₂ y → WinAt t₀ Aa R n y) :
     RelCT isa (fun x y => P₁ x ∧ P₂ y) (digitNibble 8 32) (fun _ _ => True) :=
-  digitNibble_ct (a := 1) h (by decide) (by omega) (fun _ hx => ⟨(h₁ _ hx).1.saved, (h₁ _ hx).2.1⟩)
+  digitNibble_ct (a := 1) h (by decide) (by omega_using [hn]) (fun _ hx => ⟨(h₁ _ hx).1.saved, (h₁ _ hx).2.1⟩)
     (fun _ hy => ⟨(h₂ _ hy).1.saved, (h₂ _ hy).2.1⟩)
     (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
     (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
     (fun _ hx => WP.mono (nibbleByte_ok (a := 1) (h₁ _ hx).1.pre.scratch (h₁ _ hx).1.saved (by decide)
-      (h₁ _ hx).1.pre.scalar (by omega) (by decide) (h₁ _ hx).2.1) fun _ h => h.2.2)
+      (h₁ _ hx).1.pre.scalar (by omega_using [hn]) (by decide) (h₁ _ hx).2.1) fun _ h => h.2.2)
     (fun _ hy => WP.mono (nibbleByte_ok (a := 1) (h₂ _ hy).1.pre.scratch (h₂ _ hy).1.saved (by decide)
-      (h₂ _ hy).1.pre.scalar (by omega) (by decide) (h₂ _ hy).2.1) fun _ h => h.2.2)
+      (h₂ _ hy).1.pre.scalar (by omega_using [hn]) (by decide) (h₂ _ hy).2.1) fun _ h => h.2.2)
 
 theorem digitK_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
     (hx : WinAt s₀ Aa R n x) : WP isa (digitNibble 12 0) x (DigitAt s₀ Aa R n (kNib s₀ n)) :=
@@ -357,7 +357,7 @@ theorem loopN_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint 
     refine ⟨xz.trans yz.symm, fun _ => trivial, fun he => ?_⟩
     have he' := xz.symm.trans he
     have : j ≠ 0 := by simpa using he'
-    exact ⟨j, by omega, ⟨hx, hy⟩, by omega, by omega⟩
+    exact ⟨j, by omega_using [], ⟨hx, hy⟩, by omega_using [this], by omega_using [hj]⟩
   · exact VG.RelCT.of_false fun _ _ hh => hj (by omega)
 
 theorem nibbles_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {c : Nat}
@@ -386,7 +386,7 @@ theorem skipBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
     {R : Spec.Ed25519.Point} {m : Nat} :
     RelCT isa (fun x y => SkipAt s₀ Aa R m x ∧ SkipAt t₀ Aa R m y) skipBody (fun _ _ => True) := by
   have pre (u x : State) (hu : VerifyPre u) (hx : SkipAt u Aa R m x) :=
-    skipPrefix_ok hu hx.1.saved (c := 32 + m) (by omega) hx.2.2.2.1
+    skipPrefix_ok hu hx.1.saved (c := 32 + m) (by omega_using []) hx.2.2.2.1
   have load : RelCT isa (fun x y => SkipAt s₀ Aa R m x ∧ SkipAt t₀ Aa R m y) (.block skipLoad)
       (fun _ _ => True) := by
     show RelCT isa _ (.block ([.mov .edx (.reg .esi), .alu .sub .edx (.imm 1),
@@ -402,7 +402,7 @@ theorem skipBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
   have lw (u x : State) (hx : SkipAt u Aa R m x) : WP isa (.block skipLoad) x fun t =>
       t.zf = some (decide ((kByte u (32 + m - 1)).toNat = 0)) ∧
         t.gpr .edx = BitVec.ofNat 32 (32 + m - 1) :=
-    WP.mono (skipLoad_ok hx.1 (by omega) (by have := hx.2.2.1; omega) hx.2.2.2.1) fun _ ⟨_, _, dt, zt, _⟩ => ⟨zt, dt⟩
+    WP.mono (skipLoad_ok hx.1 (by omega_using []) (by have := hx.2.2.1; omega_using [this]) hx.2.2.2.1) fun _ ⟨_, _, dt, zt, _⟩ => ⟨zt, dt⟩
   rw [skipBody]
   refine VG.RelCT.seq ((load.wp fun x y hh => ⟨lw s₀ x hh.1, lw t₀ y hh.2⟩).mono (fun _ _ h => h)
     (fun _ _ h => h.2)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
@@ -435,7 +435,7 @@ theorem skipZero_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
     obtain ⟨_, _, ly⟩ := yf (es.trans hs)
     exact ⟨skipEnd s₀ (m + 1), c1, c2, lx, ee ▸ ly⟩
   · have hs : skipOn s₀ (m + 1) = true := Option.some.inj (xz.symm.trans he)
-    exact ⟨m, by omega, xt hs, yt (es.trans hs)⟩
+    exact ⟨m, by omega_using [], xt hs, yt (es.trans hs)⟩
 
 /-! ## The whole multiplication -/
 
@@ -467,7 +467,7 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
   by_cases hc : 32 ≤ c ∧ c ≤ 64
   · exact (seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide))
       (fun _ hx => nibbles_at hx) (fun _ hy => nibbles_at hy)
-      (loopN_ct h (c := 2 * c) (by omega) (by omega))).mono (fun _ _ hh => hh.2.2) (fun _ _ h => h)
+      (loopN_ct h (c := 2 * c) (by omega_using [hc]) (by omega_using [hc]))).mono (fun _ _ hh => hh.2.2) (fun _ _ h => h)
   · exact VG.RelCT.of_false fun _ _ hh => hc ⟨hh.1, hh.2.1⟩
 
 end VG.Proof.Ed25519.X86

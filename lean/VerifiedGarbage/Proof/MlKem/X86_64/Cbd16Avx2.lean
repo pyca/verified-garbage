@@ -49,7 +49,7 @@ theorem frontT_ok {t : State} (hc : Consts t) {m : Mem} {a : Addr} (hx : t.xmm .
   · constructor <;> intro k hk <;> (have hk2 : k / 2 < 8 := by bdd_omega) <;>
       (have h42 : 4 + k / 2 < 8 := by bdd_omega) <;>
       obtain ⟨a8, a9, a10, a11, a12⟩ := word_m hk2 <;> obtain ⟨b8, b9, b10, b11, b12⟩ := word_m h42 <;>
-      simp (disch := first | decide | omega) only [hx, word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
+      simp (disch := first | decide | omega_using [hk]) only [hx, word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
         word_psubw, word_psrlw, hc.m8, hc.m9, hc.m10, hc.m11, hc.m12, a8, a9, a10, a11, a12, b8, b9,
         b10, b11, b12, show (1 : BitVec 8).toNat = 1 from rfl, show (2 : BitVec 8).toNat = 2 from rfl,
         show (4 : BitVec 8).toNat = 4 from rfl, show (8 : BitVec 8).toNat = 8 from rfl, word_lo _ _ hk2,
@@ -230,7 +230,7 @@ theorem val_eqY {i L g t j : Nat} (hi : i < 4) (hL : L < 2) (hg : g < 2) (ht : t
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, bytesAt_getD _ _ (by bdd_omega),
       show 32 * i + 16 * L + (8 * g + 4 * t + j / 2) = (64 * i + 32 * L + 16 * g + 8 * t + j) / 2 by bdd_omega]
     exact bytes_frame hf (by simpa using hp.2.2.1) (by decide) _ (by bdd_omega)
-  rw [val, samplePolyCBD2_val _ (by rw [n_eq]; omega), nibble, q_eq, ← hb,
+  rw [val, samplePolyCBD2_val _ (by rw [n_eq]; omega_using [hi, hL, hg, ht, hj]), nibble, q_eq, ← hb,
     show (64 * i + 32 * L + 16 * g + 8 * t + j) % 2 = j % 2 by bdd_omega]
 
 /-- After `i` groups of 32 bytes. -/
@@ -268,7 +268,7 @@ theorem step {i : Nat} (hi : i < 4) {s : State} (hI : Inv s₀ i s) :
   have o14 := (o1.trans o3).trans o4
   have g4 : s4.gpr = s.gpr := o14.gpr
   have hw : ∀ t < 4, InRegions s4.wr (s4.gpr .rsi + BitVec.ofNat 64 (32 * t)) 32 := fun t ht => by
-    rw [o14.wr, hwr, g4, hI.rsi, show 32 * t = 2 * (16 * t) by omega, wAddr_add]
+    rw [o14.wr, hwr, g4, hI.rsi, show 32 * t = 2 * (16 * t) by omega_using [], wAddr_add]
     exact ⟨_, List.mem_singleton_self _, Offset.contains_base (fP s₀) (by bdd_omega) (by bdd_omega)⟩
   rw [WP.block_append_iff]
   refine WP.mono (stores_ok hw) fun s5 ⟨g5, rd5, wr5, l5, m5⟩ => ?_
@@ -358,17 +358,17 @@ theorem main : WP isa cbd2_16Avx2 s₀ fun s => Frame [sR (fP s₀)] s₀.mem s.
         fun l hl => (consts_iff _).2 (by
           have := (consts_iff _).1 (c1 l hl); simp only [State.proj_xmm, State.lane] at this ⊢
           rw [o.xmm, hy]; exact this),
-        by rw [o.mem, m1]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩)
+        by rw [o.mem, m1]; exact Frame.refl _ _, fun k hk => absurd hk (by omega_using [])⟩)
       fun i hi u hI => step hp hi hI) fun u hI => ?_))
   vrunm
-  exact ⟨hI.frame, fun k hk => hI.coeff k (by omega)⟩
+  exact ⟨hI.frame, fun k hk => hI.coeff k (by omega_using [hk])⟩
 
 theorem correct : ∃ t s', Exec isa cbd2_16Avx2 s₀ t s' ∧ abiPreserved s₀ s' ∧ cbd2_16K.post s₀ s' := by
   obtain ⟨t, s', he, ⟨hf, hd⟩, hk⟩ := WP.keep [.rax, .rdi, .rsi, .rcx] (main hp) (by decide)
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hf
     (by simpa using hp.2.2.2.2)), polyIsW_of_toNat fun k hk => ?_⟩
   rw [Cbd16.coeffAtW_eq]
-  exact hd k (by rw [n_eq] at hk; omega)
+  exact hd k (by rw [n_eq] at hk; omega_using [hk])
 
 end
 

@@ -27,7 +27,7 @@ theorem validateEqual_ok {s : State} {base : Addr} {size len n : Nat} {a b : Poi
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) len)) ∧
       Keeps powerClob s t ∧
       Outs base [(0, contextBytes n), (Layout.field .mask, 4)] s.mem t.mem := by
-  have hn48 : n ≤ 48 := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
   have hsize : 8256 ≤ size := hz
   have b5 := slot_bound (n := n) (i := 5) (by decide)
@@ -37,11 +37,11 @@ theorem validateEqual_ok {s : State} {base : Addr} {size len n : Nat} {a b : Poi
   dsimp only
   rw [← hn]
   refine wp_seq_assoc (WP.seq (WP.mono (rawInputs_ok hs hz hn48 (by decide) (by decide) (by decide)
-    h4 (by omega) h4 (by omega) hw4 hw4 Ra Rb) fun u ⟨Au, Bu, Ou, Ku⟩ => ?_))
+    h4 (by omega_using [hn]) h4 (by omega_using [hn]) hw4 hw4 Ra Rb) fun u ⟨Au, Bu, Ou, Ku⟩ => ?_))
   have Fu : flagW base (Layout.field .mask) u = flagW base (Layout.field .mask) s :=
-    pointerValue_keep Ku (by decide) Ou (by omega) (.input .mask)
-  refine WP.mono (accumulateEqual_ok (hs.of_keeps Ku (by decide)) (by omega) (by omega) (by omega)
-    (by change 8248 ≤ size; omega)) fun t ⟨Vt, Kt, Ot⟩ => ?_
+    pointerValue_keep Ku (by decide) Ou (by omega_using [cb]) (.input .mask)
+  refine WP.mono (accumulateEqual_ok (hs.of_keeps Ku (by decide)) (by omega_using [hn, h4]) (by omega_using [cb, hsize, b5]) (by omega_using [cb, hsize, b8])
+    (by change 8248 ≤ size; omega_using [hsize])) fun t ⟨Vt, Kt, Ot⟩ => ?_
   exact ⟨by rw [Vt, Fu, Au, Bu], (Ku.mono (by decide)).widen Kt,
     (Outs.of_outside Ou (by simp)).trans (Outs.of_outside Ot (by simp))⟩
 

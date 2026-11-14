@@ -27,12 +27,12 @@ theorem contains_chunk {P : Region} {b : Addr} {c j : Nat} (h : P.Contains b (16
   rw [show b + BitVec.ofNat 64 (16 * j) - P.base = (b - P.base) + BitVec.ofNat 64 (16 * j) by
     rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 _),
       ← BitVec.add_assoc], BitVec.toNat_add, BitVec.toNat_ofNat]
-  have : 16 * j < 2 ^ 64 := by omega
+  have : 16 * j < 2 ^ 64 := by omega_using [hj, hc]
   rw [Nat.mod_eq_of_lt this]
   have : (b - P.base).toNat + 16 * j < 2 ^ 64 ∨ 2 ^ 64 ≤ (b - P.base).toNat + 16 * j := Nat.lt_or_ge _ _
   rcases this with h1 | h1
-  · rw [Nat.mod_eq_of_lt h1]; omega
-  · omega
+  · rw [Nat.mod_eq_of_lt h1]; omega_using [h, hj]
+  · omega_using [h, hj]
 
 theorem Ctx.of {rs : List Rg} {s₀ : State} (P : Nat → Region) (hlen : rs.length ≤ 16)
     (hsmall : ∀ k < rs.length, (rs.getD k default).off + 16 * chunks rs k < 2 ^ 32)
@@ -40,7 +40,7 @@ theorem Ctx.of {rs : List Rg} {s₀ : State} (P : Nat → Region) (hlen : rs.len
     (hrd : ∀ k < rs.length, ∀ a, (P k).Contains a 16 → InRegions (s₀.rd ++ s₀.wr) a 16)
     (hwr : ∀ k < rs.length, (rs.getD k default).wr = true → ∀ a, (P k).Contains a 16 → InRegions s₀.wr a 16)
     (hdisj : ∀ k k', k < rs.length → k' < rs.length → k ≠ k' → (P k).Disjoint (P k')) : Ctx rs s₀ := by
-  have hc : ∀ k < rs.length, 16 * chunks rs k < 2 ^ 64 := fun k hk => by have := hsmall k hk; omega
+  have hc : ∀ k < rs.length, 16 * chunks rs k < 2 ^ 64 := fun k hk => by have := hsmall k hk; omega_using [this]
   refine ⟨hlen, hsmall, fun k hk j hj => hrd k hk _ (contains_chunk (hcont k hk) hj (hc k hk)),
     fun k hk hw j hj => hwr k hk hw _ (contains_chunk (hcont k hk) hj (hc k hk)),
     fun k j k' j' hk hj hk' hj' hne => ?_⟩
@@ -49,7 +49,7 @@ theorem Ctx.of {rs : List Rg} {s₀ : State} (P : Nat → Region) (hlen : rs.len
     have hj' : j ≠ j' := fun e => hne ⟨rfl, e⟩
     have hs := hsmall k hk
     unfold caddr
-    exact Offset.sep _ (by omega) (by omega) (by omega)
+    exact Offset.sep _ (by omega_using [hne]) (by omega_using [hj, hs]) (by omega_arith)
   · exact (hdisj k k' hk hk' hkk).sep (contains_chunk (hcont k hk) hj (hc k hk))
       (contains_chunk (hcont k' hk') hj' (hc k' hk'))
 

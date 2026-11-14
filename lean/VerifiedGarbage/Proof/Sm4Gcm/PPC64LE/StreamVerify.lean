@@ -52,7 +52,7 @@ include h
 theorem verLay : Lay (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) := by
   obtain ⟨-, -, dcs, dcw, -, dsw, -, fc, fs, -, fw, -⟩ := h
   have fw' : (s₀.gpr .r9).toNat + 2560 ≤ 2 ^ 64 := fw
-  exact Lay.of fc fs (by omega) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
+  exact Lay.of fc fs (by omega_using [fw']) dcs (dcw.sub_right (Region.sub_prefix (by decide)))
     (dsw.sub_right (Region.sub_prefix (by decide)))
 
 theorem verX : XOk (s₀.gpr .r3) (s₀.gpr .r4) (s₀.gpr .r9) (s₀.gpr .r10) := by
@@ -124,7 +124,7 @@ theorem ver_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : verPre s₀)
   have hTr : Covers [⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩] (s₀.rd ++ s₀.wr) :=
     covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have dT : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨s₀.gpr .r7, (s₀.gpr .r8).toNat⟩ : Region).Disjoint
-      ⟨s₀.gpr .r9 + BitVec.ofNat 64 d, k⟩ := fun hd => dtw.sub_right (VG.Offset.sub_base _ (by simp only [scrBytes]; omega))
+      ⟨s₀.gpr .r9 + BitVec.ofNat 64 d, k⟩ := fun hd => dtw.sub_right (VG.Offset.sub_base _ (by simp only [scrBytes]; omega_using [hd]))
   refine WP.seq (WP.mono (ver1_wp (ver_W h)) fun s₁ h1 => ?_)
   have he₁ := ver_env h h1
   have L := L₀.v h1.r29 h1.r30 h1.r31
@@ -211,7 +211,7 @@ theorem ver_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : verPre s₀)
             · exact X₀.wx.sub_left (Lay.wSub (by decide))) (by decide), hb₄, k₃.mem,
           ← h1.r20, bytesAt_frame h1.en.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]
-            exact dT (d := 128) (k := 120) (by decide)) (by omega), h1.r20]
+            exact dT (d := 128) (k := 120) (by decide)) (by omega_using []), h1.r20]
       have hX : (bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 0) (s₀.gpr .r8).toNat ++
             zeros (16 - (s₀.gpr .r8).toNat) = bytesAt s₅.mem (s₁.gpr .r31 + BitVec.ofNat 64 256) 16) ↔
           (fullTag (ctxCiph s₀.mem (s₀.gpr .r3)) (ctxH s₀.mem (s₀.gpr .r3)) iv a ct).take

@@ -2,6 +2,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The specification's field `Fin p` as `ZMod p`
@@ -74,14 +75,14 @@ theorem toF_pow (x : Fin m) (e : Nat) : toF (pow x e) = toF x ^ e := by
     by_cases h0 : e = 0
     · subst h0; simp only [↓reduceIte]; rw [toF_one, _root_.pow_zero]
     · simp only [h0, ↓reduceIte]
-      have hlt : e / 2 < e := Nat.div_lt_self (by omega) (by decide)
+      have hlt : e / 2 < e := Nat.div_lt_self (by omega_using [h0]) (by decide)
       have hsplit : toF x ^ e = (toF x * toF x) ^ (e / 2) * toF x ^ (e % 2) := by
-        rw [← sq, ← pow_mul, ← pow_add]; congr 1; omega
+        rw [← sq, ← pow_mul, ← pow_add]; congr 1; omega_using []
       by_cases h2 : e % 2 = 0
       · simp only [h2, ↓reduceIte]
         rw [ih _ hlt, toF_mul, hsplit, h2, _root_.pow_zero, mul_one]
       · simp only [h2, ↓reduceIte]
-        rw [toF_mul, ih _ hlt, toF_mul, hsplit, show e % 2 = 1 by omega, pow_one, mul_comm]
+        rw [toF_mul, ih _ hlt, toF_mul, hsplit, show e % 2 = 1 by omega_using [h2], pow_one, mul_comm]
 
 /-- Powers in `Fin m` (Lean's core's, which the proofs of the code compute
 with) as powers in `ZMod m`. -/
@@ -98,9 +99,9 @@ variable {p : Nat} [Fact p.Prime]
 /-- `x ^ (p - 2)` is the inverse in `ZMod p`, for a prime `p > 2` (`0⁻¹ = 0`). -/
 theorem pow_sub_two_eq_inv (hp : 2 < p) (z : ZMod p) : z ^ (p - 2) = z⁻¹ := by
   by_cases hz : z = 0
-  · rw [hz, inv_zero, zero_pow (by omega)]
+  · rw [hz, inv_zero, zero_pow (by omega_using [hp])]
   · refine eq_inv_of_mul_eq_one_left ?_
-    rw [← pow_succ, show p - 2 + 1 = p - 1 by omega, ZMod.pow_card_sub_one_eq_one hz]
+    rw [← pow_succ, show p - 2 + 1 = p - 1 by omega_using [hp], ZMod.pow_card_sub_one_eq_one hz]
 
 variable {C : Curve} [Fact C.p.Prime]
 

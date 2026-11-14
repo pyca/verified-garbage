@@ -55,7 +55,7 @@ theorem start_load (p : SearchPublic) (T : List Nat) (q : Pt) (s : State) (h : S
     refine ⟨inArgs o, List.mem_append_left _ (by rw [hi.rd]; simp [inReads]), ?_⟩
     have e : stackArgAddr o 7 = stackArgAddr o 0 + BitVec.ofNat 64 28 := by
       simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
-      exact VG.Arm.addr_add (by omega)
+      exact VG.Arm.addr_add (by omega_using [top])
     rw [e]; exact Offset.contains_base _ (by decide) (by decide)
   have v68 : (pushed pushRegs o).mem.readW (stackArgAddr o 7) 32 = p.stp := by
     rw [hi.arg_frame (push_frame hi) (by decide), ← hi.2]; rfl
@@ -150,7 +150,7 @@ theorem code_ct (c : Cand) :
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2
   have rs : 184 ≤ s.sp.toNat := hs.1
   have rt : 184 ≤ t.sp.toNat := ht.1
-  rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega)] at ea eb
+  rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)] at ea eb
   cases ea
   cases eb
   have hpt := pub_same hp

@@ -36,7 +36,7 @@ theorem bcast_ok (r : XReg) (s : State) :
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil fun l hl => ?_⟩
   simp only [VOp.exec, zlane_zbin, zlane_vshufi32x4 _ _ _ _ _ _ hl, ite_true]
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
   all_goals simp only [VG.Proof.Gcm.X86_64.StitchZ.shuf44_0, VG.Proof.Gcm.X86_64.StitchZ.shuf44_1,
     VG.Proof.Gcm.X86_64.StitchZ.shuf44_2, VG.Proof.Gcm.X86_64.StitchZ.shuf44_3]
   all_goals simp [State.lane, State.zlane, State.setV]

@@ -16,7 +16,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 /-- The common path needs a normalized factor only when the output mask accepts it. -/
 theorem cvWordFast_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {j : Nat}
-    (hj : j = aP ∨ j = aQ) (hW : 4 ≤ wk I.k) (hZ : slot (wk I.k) 17 ≤ I.Z)
+    (hj : j = aP ∨ j = aQ) (hW : 6 ≤ wk I.k) (hZ : slot (wk I.k) 17 ≤ I.Z)
     (hf : mword s.mem I.B = mask true →
       wv s.mem I.B (slot (wk I.k) j) (wk I.k) % 2 = 1 ∧
       2 ^ (64 * (wk I.k / 2) - 1) ≤ wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1 ∧

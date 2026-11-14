@@ -213,7 +213,7 @@ theorem finalizeTag_ok {s₀ : State} (hp : APre true s₀) {s : State} (h : Inv
   have hw : Covers [sub s₀ 448 128, tR s₀] s₁.wr := Covers.of_sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 448, rfl, by show 448 + 128 ≤ 1280; omega⟩
+    · exact ⟨ctxR s₀, by rw [wr₁]; exact hp.ctx_wr, 448, rfl, by show 448 + 128 ≤ 1280; omega_using []⟩
     · exact ⟨tR s₀, by rw [wr₁]; exact hp.t_wr, 0, by simp, by simp⟩
   refine finalize_call h0 h1 h2 (hp.c_t.sub_left (sub_ctx s₀ (by lit_omega))) (Covers.right hw) hw
     fun s₂ k₂ tag₂ => ?_
@@ -259,7 +259,7 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hwr : u.w
       (∀ r, r ≠ .x9 → r ≠ .x10 → u'.gpr r = u.gpr r) ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       Frame [oR false s₀] u.mem u'.mem ∧ Proof.Zeroize.Prefix u'.mem (op false s₀) (j + 1) := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-  have hc : (oR false s₀).Contains (off (op false s₀) j) 1 := Offset.contains_base _ (by omega) (by omega)
+  have hc : (oR false s₀).Contains (off (op false s₀) j) 1 := Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj, hL])
   refine VG.Proof.ChaCha20.AArch64.Xor.wp_strb (by decide) (by rw [h9]; exact BitVec.add_zero _)
     ⟨oR false s₀, by rw [hwr]; exact hp.o_wr, hc⟩ fun u₁ m₁ =>
     wp_addImm (by decide) fun u₂ v₂ => VG.Proof.ChaCha20.AArch64.Xor.wp_subImm (by decide) fun u₃ v₃ =>
@@ -270,7 +270,7 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hwr : u.w
   · rw [v₃.other r b, v₂.other r a, m₁.gpr]
   · rw [v₃.mem, v₂.mem, m₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc
   · rw [v₃.mem, v₂.mem, m₁.mem, h11, show BitVec.setWidth 8 (0 : BitVec 64) = 0 by decide]
-    exact Proof.Zeroize.prefix_writeW hz (by omega)
+    exact Proof.Zeroize.prefix_writeW hz (by omega_using [hj, hL])
 
 /-- `zeroLoad`: `data`, `len` and zero, from after the context. -/
 theorem zeroLoad_ok {s₀ : State} (hp : APre false s₀) {s : State} (hx21 : s.gpr .x21 = cx s₀)
@@ -282,7 +282,7 @@ theorem zeroLoad_ok {s₀ : State} (hp : APre false s₀) {s : State} (hx21 : s.
   have hin : ∀ {u : State} (d : Nat), u.rd = s₀.rd → u.wr = s₀.wr → 1280 ≤ d → d + 8 ≤ 1296 →
       InRegions (u.rd ++ u.wr) (off (cx s₀) d) 8 := fun d hr hw h1 h2 =>
     ⟨slotR s₀, List.mem_append_right _ (by rw [hw, hp.wr]; simp),
-      Offset.contains (cx s₀) h1 (by omega) (by decide)⟩
+      Offset.contains (cx s₀) h1 (by omega_using [h2]) (by decide)⟩
   unfold zeroLoad
   refine wp_ldr (a := off (cx s₀) 1280) (by decide) (by rw [hx21]) (hin 1280 hrd hwr (Nat.le_refl _) (by decide))
     fun u₁ v₁ => wp_ldr (a := off (cx s₀) 1288) (by decide) (by rw [v₁.other _ (by decide), hx21])
@@ -319,27 +319,27 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (hx21 : s.
       u.gpr .x9 = off (op false s₀) j ∧ u.gpr .x10 = BitVec.ofNat 64 (L s₀ - j) ∧
       (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
       Frame [oR false s₀] s.mem u.mem ∧ Proof.Zeroize.Prefix u.mem (op false s₀) j) ?_ (L s₀) u₃
-      ⟨0, by omega, by omega, x11₃, by rw [x9₃]; exact (BitVec.add_zero _).symm,
+      ⟨0, by omega_using [hz], by omega_using [], x11₃, by rw [x9₃]; exact (BitVec.add_zero _).symm,
         by rw [x10₃, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq], o₃, rd₃, wr₃,
         by rw [m₃]; exact Frame.refl _ _, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     intro rem u ⟨j, hj, hr, e11, e9, e10, ho, erd, ewr, hf, hpz⟩
     refine WP.mono (zeroStep_ok hp (by rw [ewr, hwr]) hj e11 e9 hpz)
       fun u' ⟨x9', x10', o', rd', wr', f', p'⟩ => ?_
     have hsub : BitVec.ofNat 64 (L s₀ - j) - 1 = BitVec.ofNat 64 (L s₀ - (j + 1)) := by
-      rw [ofNat64_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [ofNat64_sub_one (by omega_using [hj]) (by omega_using [hL]), Nat.sub_sub]
     rw [e10, hsub] at x10'
     have o'' : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → u'.gpr r = s.gpr r := fun r a b c => by
       rw [o' r a b, ho r a b c]
     have f'' : Frame [oR false s₀] s.mem u'.mem := hf.trans f'
     by_cases he : j + 1 = L s₀
     · left
-      refine ⟨by rw [VG.Proof.ChaCha20.AArch64.Xor.eval_nonzero_ofNat _ _ (by omega) x10', he, Nat.sub_self]; rfl,
+      refine ⟨by rw [VG.Proof.ChaCha20.AArch64.Xor.eval_nonzero_ofNat _ _ (by omega_using [hL]) x10', he, Nat.sub_self]; rfl,
         ?_, o'', by rw [rd', erd], by rw [wr', ewr], f''⟩
       rw [he] at p'
       exact Proof.Zeroize.prefix_spec p'
     · right
-      refine ⟨by rw [VG.Proof.ChaCha20.AArch64.Xor.eval_nonzero_ofNat _ _ (by omega) x10']; simp; omega,
-        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, by rw [o' _ (by decide) (by decide), e11], x9', x10',
+      refine ⟨by rw [VG.Proof.ChaCha20.AArch64.Xor.eval_nonzero_ofNat _ _ (by omega_using [hL]) x10']; simp; omega_using [hj, he],
+        L s₀ - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, by rw [o' _ (by decide) (by decide), e11], x9', x10',
         o'', by rw [rd', erd], by rw [wr', ewr], f'', p'⟩
 
 /-- The destination, `len` and our caller's `x28`, saved after the context,
@@ -350,9 +350,9 @@ theorem MainO.slot {s₀ s : State} (hp : APre false s₀) (h : MainO s₀ s) {d
   refine h.inv.frame.readW (r := sub s₀ d 8) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint (cx s₀) (.inr (by omega)) (by have := hs.wrap_s; omega)
-      (by have := hs.wrap_s; omega)
-  · exact hs.s_q.sub_left (Offset.sub (cx s₀) h1 (by omega))
+  · exact Offset.disjoint (cx s₀) (.inr (by omega_using [h1])) (by have := hs.wrap_s; omega_using [h2])
+      (by have := hs.wrap_s; omega_using [])
+  · exact hs.s_q.sub_left (Offset.sub (cx s₀) h1 (by omega_using [h2]))
 
 /-- The tag computed and the one received, after the code up to the tag. -/
 theorem MainO.tags {s₀ s u : State} (hp : APre false s₀) (h : MainO s₀ s) (hm : u.mem = s.mem) :
@@ -572,7 +572,7 @@ theorem openMainWith_ok {crypt : Prog isa} {s₀ : State} (hp : APre false s₀)
     rw [stateAt_frame k₅.frame (by rdisj_all), stateAt_frame k₄.frame (by rdisj_all),
       stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
   refine WP.seq (WP.mono (hc s₅ i₅ st₅) fun s₆ ⟨v₆, i₆, k₆, pt₆⟩ => ?_)
-  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (by omega)) (by lit_decide))
+  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (by omega_using [])) (by lit_decide))
     fun s₇ ⟨⟨k₇, tag₇⟩, v₇⟩ => ?_
   have R₃ := r₃ _ _ (r₂ (otk s₀) [] h₁.poly)
   have T₇ := tag₇ _ _ (Repr.frame k₆.frame (by rdisj_all) (r₅ _ _ (Repr.frame k₄.frame (by rdisj_all) R₃)))

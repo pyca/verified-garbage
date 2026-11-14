@@ -47,14 +47,14 @@ theorem dom_frame (h : In Ex base bytes len args s) {rd wr : List Region}
   rcases hr with rfl | ⟨p, hp, rfl⟩
   · exact hb40
   · have := fit p hp
-    exact G.apart.sub_right (Offset.sub_base _ (by omega))
+    exact G.apart.sub_right (Offset.sub_base _ (by omega_using [this]))
 
 /-- The domain's bytes after a stage. -/
 theorem dom_keep (h : In Ex base bytes len args s) {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
     {sp : BitVec 32} (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)) {m m' : Mem}
     (F : Frame (frameR base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' (byteAddr (args 2)) dlen = Spec.Rsa.bytesAt m (byteAddr (args 2)) dlen :=
-  frame_bytes F (dom_frame h G hb40) (by have := G.fit; omega)
+  frame_bytes F (dom_frame h G hb40) (by have := G.fit; omega_using [this])
 
 /-- A component after a stage. -/
 theorem comp_keep (h : In Ex base bytes len args s) {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
@@ -63,7 +63,7 @@ theorem comp_keep (h : In Ex base bytes len args s) {rd wr : List Region} (G : D
     comp m' args len k = comp m args len k := by
   have := G.fit
   unfold comp
-  rw [frame_bytes F (fun r hr => (dom_frame h G hb40 r hr).sub_left (Offset.sub_base _ hk)) (by omega)]
+  rw [frame_bytes F (fun r hr => (dom_frame h G hb40 r hr).sub_left (Offset.sub_base _ hk)) (by omega_using [hk, this])]
 
 /-- `domain_len − 2 p_len`: ZF set exactly when the domain has no q. -/
 theorem qTest_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32 len)
@@ -82,16 +82,16 @@ theorem qTest_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 3
     rw [z, U₂.gpr, U₁.gpr, h12, h3]
     congr 1
     rcases hd with rfl | rfl
-    · rw [decide_eq_true rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega),
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), show 2 * len - len - len = 0 by omega]
+    · rw [decide_eq_true rfl, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hu]) (by omega_using []),
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hu]) (by omega_using []), show 2 * len - len - len = 0 by omega_using []]
       rfl
-    · rw [decide_eq_false (by omega), BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega),
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega), show 3 * len - len - len = len by omega]
+    · rw [decide_eq_false (by omega_using [hl]), BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hu]) (by omega_using []),
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hu]) (by omega_using []), show 3 * len - len - len = len by omega_using []]
       apply beq_eq_false_iff_ne.mpr
       intro e
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      exact absurd this (by show len ≠ 0; omega)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hu])] at this
+      exact absurd this (by show len ≠ 0; omega_using [hl])
   · rw [U.mem, U₂.mem, U₁.mem]
   · exact ((U₁.keeps.trans U₂.keeps).trans U.keeps)
 
@@ -106,9 +106,9 @@ theorem oddMask_ok (h : In Ex base bytes len args s) {c : Bool} (hc : s.gpr .ecx
   have bw := bc_eq_cwc len .wide
   unfold Impl.Ffdh.X86.CheckDomain.oddMask
   refine ptrTo_ok (r := .eax) (t := .edx) (x := .slot .wide 11) (by decide) (by decide) h.edi h.width h.upper'
-    (by rw [cb1] at f; omega) fun v Kv mv pv => ?_
+    (by rw [cb1] at f; omega_using [f, bl]) fun v Kv mv pv => ?_
   have hv := h.regs Kv mv
-  have ld := VG.Proof.Mont.X86.Rt.readSrc_ptr hv.ws pv (d := 0) (by rw [cb1] at f; omega)
+  have ld := VG.Proof.Mont.X86.Rt.readSrc_ptr hv.ws pv (d := 0) (by rw [cb1] at f; omega_using [f, g])
   rw [Nat.add_zero, mv] at ld
   refine wp_movS ld fun v₁ U₁ _ => wp_logicS (.inl rfl) rfl fun v₂ U₂ => wp_movS rfl fun v₃ U₃ _ => ?_
   refine wp_subS rfl fun v₄ U₄ _ => wp_logicS (.inl rfl) rfl fun u U => WP.block_nil ⟨?_, ?_, ?_⟩
@@ -122,7 +122,7 @@ theorem oddMask_ok (h : In Ex base bytes len args s) {c : Bool} (hc : s.gpr .ecx
       show _ = ((s.mem.readW (off base (lo len (.slot .wide 11))) 32).toNat + _) % 2
       have p32 : (2 : Nat) ^ 32 = 4294967296 := rfl
       rw [p32]
-      omega
+      omega_using []
     have e4 : v₄.gpr .edx = cmask (decide (sv s.mem base len .wide 11 % 2 = 1)) := by
       rw [U₄.gpr, U₃.gpr, U₃.other _ (by decide), U₂.gpr]
       simp only [↓reduceIte]

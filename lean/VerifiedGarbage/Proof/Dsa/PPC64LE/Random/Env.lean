@@ -90,10 +90,10 @@ theorem outside_of_disj {E : SE} (hE : E.Ok) {r : Region} (hd : r.Disjoint E.NR)
   by_contra hc
   apply hd x hx
   simp only [Region.Contains, SE.N, off]
-  rw [VG.Offset.toNat_sub_add x E.F (by simp only [oNonce]; omega)]
+  rw [VG.Offset.toNat_sub_add x E.F (by simp only [oNonce]; omega_using [])]
   simp only [ofs, oNonce, frameBytes] at hc hf ⊢
   rw [show 2 ^ 64 - 120 + (x - E.F).toNat = (x - E.F).toNat - 120 + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [])]
   omega
 
 /-- The octets of a region apart from the nonce are kept by a change in it. -/
@@ -103,7 +103,7 @@ theorem bytes_kept {E : SE} (hE : E.Ok) {A : Addr} {k : Nat} (hd : (⟨A, k⟩ :
   simp only [Spec.Rsa.bytesAt, List.map_inj_left, List.mem_range]
   intro i hi
   refine ho _ (outside_of_disj hE hd ?_ hon)
-  exact VG.Offset.contains_base A (by omega) (by omega)
+  exact VG.Offset.contains_base A (by omega_using [hi]) (by omega_using [hnw, hi])
 
 /-- `SEnv` after code that keeps its registers and changes memory in the nonce only. -/
 theorem SEnv.step {E : SE} {R : List Byte} {s t : State} {rs : List Reg} (hE : E.Ok) (h : SEnv E R s)

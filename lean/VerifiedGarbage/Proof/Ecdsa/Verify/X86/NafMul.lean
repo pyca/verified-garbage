@@ -34,7 +34,7 @@ theorem windowMulQ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.
       Rep c.C (tmv c.C c.n base u (c.sl RX)) (tmv c.C c.n base u (c.sl RY))
         (tmv c.C c.n base u (c.sl RZ)) (mul (sv c base s V) P) := by
   have hp := hc.p_ge
-  have hmont : ∀ x,c.mont x<c.C.p := fun _ => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x,c.mont x<c.C.p := fun _ => Nat.mod_lt _ (by omega_using [hpx])
   let K := Cfg.nafQ c
   have hL := nafQLay (c:=c) h4
   have hW := nafQWk hc h4

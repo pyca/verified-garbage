@@ -45,7 +45,7 @@ theorem regsVal_append (s : State) (rs qs : List Reg) :
   | cons r rs ih =>
     rw [List.cons_append, regsVal, ih, regsVal, List.length_cons, pow64_succ, Nat.mul_add,
       Nat.mul_assoc]
-    omega
+    omega_using []
 
 theorem regsVal_congr {s s' : State} {rs : List Reg} (h : ∀ r ∈ rs, s'.gpr r = s.gpr r) :
     regsVal s' rs = regsVal s rs := by
@@ -64,7 +64,7 @@ structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
 
 theorem Scr.contains {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (h : d + n ≤ size) (hn : 0 < n) : (⟨base, size⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by have := hs.nowrap; omega)
+  Offset.contains_base base h (by have := hs.nowrap; omega_using [h, hn, this])
 
 theorem Scr.ld {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 8 ≤ size) : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 d) 8 := by
@@ -78,7 +78,7 @@ theorem Scr.st {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d 
 
 theorem Scr.enc8 {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 8 ≤ size) (ha : d % 8 = 0) : d % 8 = 0 ∧ d < 32768 :=
-  ⟨ha, by have := hs.enc; omega⟩
+  ⟨ha, by have := hs.enc; omega_using [hd, this]⟩
 
 /-- A load of the word at offset `d`. -/
 theorem exec_ld {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
@@ -136,7 +136,7 @@ theorem Ptr.of_keeps {rs : List Reg} {s s' : State} {r : Reg} {base : Addr} {siz
 theorem exec_ldR {s : State} {r : Reg} {base : Addr} {size : Nat} (hp : Ptr s r base size) {d : Nat}
     (hd : d + 8 ≤ size) (ha : d % 8 = 0) (t : Reg) :
     exec (.ldr .x t r d) s = some (s.write .x t (word s.mem base d)) := by
-  rw [exec_ldr_x ⟨ha, by have := hp.enc; omega⟩ (by rw [hp.reg]; exact hp.ld d hd), hp.reg]
+  rw [exec_ldr_x ⟨ha, by have := hp.enc; omega_using [hd, this]⟩ (by rw [hp.reg]; exact hp.ld d hd), hp.reg]
 
 /-- `t = [r + d]`. -/
 theorem ldR_ok {s : State} {r : Reg} {base : Addr} {size : Nat} (hp : Ptr s r base size) {d : Nat}
@@ -168,7 +168,7 @@ theorem stR_ok {s : State} {r : Reg} {base : Addr} {size : Nat} (hp : PtrW s r b
     WP isa (.block [.str .x t r d]) s fun s' =>
       s' = { s with mem := s.mem.writeW (off base d) (s.gpr t) } := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, exec_str_x ⟨ha, by have := hp.enc; omega⟩ (by rw [hp.reg]; exact hp.st d hd),
+  simp only [runBlock_cons, exec_str_x ⟨ha, by have := hp.enc; omega_using [hd, this]⟩ (by rw [hp.reg]; exact hp.st d hd),
     hp.reg, runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
 
 /-- What an operation keeps: the registers but `rs`, and the regions; memory

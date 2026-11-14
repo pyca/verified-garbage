@@ -36,7 +36,7 @@ open VG.Proof.Cmac (store4)
 theorem lensBlock_mod (L c : Nat) : lensBlock (L % 2 ^ 64) c = lensBlock L c := by
   simp only [lensBlock]
   rw [← Proof.Gcm.be64_mod (8 * (L % 2 ^ 64)), ← Proof.Gcm.be64_mod (8 * L)]
-  congr 2; omega
+  congr 2; omega_using []
 
 theorem toNat_of_eq {x : BitVec 64} {L : Nat} (h : x = BitVec.ofNat 64 L) : x.toNat = L % 2 ^ 64 := by
   rw [h, BitVec.toNat_ofNat]
@@ -58,7 +58,7 @@ theorem tagOut_ok {s : State} (he : Env c st w sp k7 k8 s) {ta : Nat} (hta : ta 
   have eW : ∀ d, d < 768 → State.addr (w + BitVec.ofNat 32 d) = State.addr w + BitVec.ofNat 64 d :=
     fun d hd => L.wA hd
   have eT : ∀ d, d < 16 → State.addr (T + BitVec.ofNat 32 d) = State.addr T + BitVec.ofNat 64 d :=
-    fun d hd => addr_add (by omega)
+    fun d hd => addr_add (by omega_using [hTf, hd])
   have r₀ := he.perm.wR (show 0 + 4 ≤ 768 by decide)
   have r₁ := he.perm.wR (show 4 + 4 ≤ 768 by decide)
   have r₂ := he.perm.wR (show 8 + 4 ≤ 768 by decide)
@@ -139,7 +139,7 @@ theorem fin_argsTag {s₀ : State} (h : finPre n wi s₀) {o : Nat} (ho : o = 0 
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact (dsA.sub_left (Region.sub_prefix (by decide))).symm
   · exact (dWA.sub_left (Lay.wSub (by decide))).symm
-  · exact (dWA.sub_left (Lay.wSub (by omega))).symm
+  · exact (dWA.sub_left (Lay.wSub (by omega_using [ho]))).symm
   · exact (dWA.sub_left (Lay.wSub (by decide))).symm
   · exact (below_args s₀ spf).symm
 
@@ -173,7 +173,7 @@ theorem fin_out {s₀ s : State} {m₀ : Mem} {rs : List Region} (hf₀ : Frame 
   have dS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ rs, (⟨State.addr (s₀.gpr .r1) + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun hd r hr => (hds r hr).sub_left (Lay.stSub hd)
   rw [hf.out (hab.congr (blockAt_frame hf₀ (dS (by decide)))
-      (bytesAt_frame hf₀ (dS (by omega)) (by omega))),
+      (bytesAt_frame hf₀ (dS (by omega_using [])) (by omega_using []))),
     ciph_keep hf₀ hdc,
     blockAt_frame hf₀ (by simpa using dS (d := 0) (k := 16) (by decide)), hj,
     toNat_of_eq hl, lensBlock_mod, Proof.Gcm.fullTag_eq]

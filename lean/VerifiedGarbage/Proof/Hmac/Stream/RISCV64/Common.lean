@@ -53,7 +53,7 @@ theorem lay : Lay H := by
   have hF := hH.hF
   have hS : H.S = H.N + H.B := rfl
   refine ⟨hN, hB, ⟨hD0, hD⟩, hF, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [Hash.iso, Hash.ibytes, Hash.fso, Hash.fbytes, hS] <;> omega
+    simp only [Hash.iso, Hash.ibytes, Hash.fso, Hash.fbytes, hS] <;> omega_arith
 
 end HashOK
 
@@ -77,26 +77,26 @@ theorem cmp_eq {b : Nat} (hb : b = 6 ∨ b = 7) (x : BitVec 64) :
       x.toNat % 2 ^ (b + 1) + (2 ^ b - 1) := by
     rw [BitVec.toNat_add, ha, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 ^ b - 1)
       (by rcases hb with rfl | rfl <;> decide)]
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using []
   have hv : ((x >>> (b + 1)) + ((x &&& BitVec.ofNat 64 (2 ^ (b + 1) - 1)) + BitVec.ofNat 64 (2 ^ b - 1)) >>>
       (b + 1)).toNat = x.toNat / 2 ^ (b + 1) + (x.toNat % 2 ^ (b + 1) + (2 ^ b - 1)) / 2 ^ (b + 1) := by
     rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ushiftRight, hb', Nat.shiftRight_eq_div_pow,
       Nat.shiftRight_eq_div_pow]
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using []
   by_cases h : x.toNat ≤ 2 ^ b
   · rw [decide_eq_true h]
     simp only [beq_iff_eq]
     apply BitVec.eq_of_toNat_eq
     rw [hv]
     simp
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using [h]
   · rw [decide_eq_false h]
     simp only [beq_eq_false_iff_ne, ne_eq]
     intro e
     have := congrArg BitVec.toNat e
     rw [hv] at this
     simp at this
-    rcases hb with rfl | rfl <;> omega
+    rcases hb with rfl | rfl <;> omega_using [h, this]
 
 theorem ofInt_pow_sub {b : Nat} (hb : b = 6 ∨ b = 7) :
     BitVec.ofInt 64 ((2 : Int) ^ (b + 1) - 1) = BitVec.ofNat 64 (2 ^ (b + 1) - 1) ∧
@@ -144,16 +144,16 @@ theorem stores_ok (n : Nat) {fr : Addr} (hal : fr.toNat % 8 = 0) (hn : 8 * n ≤
   | zero => exact k s rfl rfl rfl rfl (Frame.refl _ _)
   | succ n ih =>
     rw [stores, List.range_succ, List.map_append, List.append_assoc]
-    refine ih (by omega) (fun j hj => hin j (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ f₁ => ?_
+    refine ih (by omega_using [hn]) (fun j hj => hin j (by omega_using [hj])) fun s₁ g₁ rd₁ wr₁ sp₁ f₁ => ?_
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append]
-    refine Steps.wp_sd (a := fr + BitVec.ofNat 64 (8 * n)) (by omega) (by rw [g₁, h8])
-      (Spill.al8 hal (by omega)) (by rw [wr₁]; exact hin n (by omega)) fun s₂ m₂ => ?_
+    refine Steps.wp_sd (a := fr + BitVec.ofNat 64 (8 * n)) (by omega_using [hn]) (by rw [g₁, h8])
+      (Spill.al8 hal (by omega_using [])) (by rw [wr₁]; exact hin n (by omega_using [])) fun s₂ m₂ => ?_
     refine k s₂ (by rw [m₂.gpr, g₁]) (by rw [m₂.rd, rd₁]) (by rw [m₂.wr, wr₁]) (by rw [m₂.sp, sp₁]) ?_
     rw [m₂.mem]
     refine Frame.writeW ((f₁.sub fun r hr => ?_)) (List.mem_singleton_self _) _
-      (Offset.contains_base fr (by omega) (by omega))
+      (Offset.contains_base fr (by omega_using []) (by omega_using [hn]))
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
 
 theorem wipe_eq (H : Hash) : H.wipe = .li .t1 0 :: stores (H.iso / 8) := rfl
 
@@ -180,18 +180,18 @@ theorem savedAt_off {so : Nat} (hso : so % 8 = 0 ∧ so + 48 ≤ 2048) :
     ∀ p ∈ Hash.savedAt so, p.2 % 8 = 0 ∧ p.2 < 2048 := by
   intro p hp
   simp only [Hash.savedAt, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using [hso]
 
 theorem savedAt_fits {so : Nat} (hso : so % 8 = 0 ∧ so + 48 ≤ 2048) : Spill.Fits (Hash.savedAt so) := by
   refine ⟨savedAt_off hso, ?_⟩
   simp only [Hash.savedAt, List.map_cons, List.map_nil, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     or_false, not_or, List.nodup_nil, and_true, not_false_eq_true]
-  omega
+  omega_using []
 
 theorem savedAt_in {so : Nat} : ∀ p ∈ Hash.savedAt so, so ≤ p.2 ∧ p.2 + 8 ≤ so + 48 := by
   intro p hp
   simp only [Hash.savedAt, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
 
 /-- The callee-saved registers that only the functions we call write (they
 restore them). -/

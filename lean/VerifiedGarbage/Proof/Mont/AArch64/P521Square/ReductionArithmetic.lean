@@ -39,7 +39,7 @@ theorem addWords_value (xs ys : List Word) (c : Bool) (hl : xs.length = ys.lengt
       simp only [addWords, value, List.length_cons, Nat.mul_add, Nat.mul_one,
         Nat.pow_add] at *
       rw [Nat.mul_right_comm (2 ^ (64 * xs.length)) (2^64)]
-      omega
+      omega_using [h, hxy]
 
 def shifted9 : List Word → List Word
   | [] => []
@@ -51,7 +51,7 @@ theorem extr9 (x y : Word) :
   rw [extract_toNat]
   have hx := x.isLt
   have hy := y.isLt
-  omega
+  omega_using []
 
 theorem shifted9_value (xs : List Word) :
     value xs = 512 * value (shifted9 xs) + (xs.headD 0).toNat % 512 := by
@@ -60,9 +60,9 @@ theorem shifted9_value (xs : List Word) :
   | case2 x =>
     simp only [shifted9, value, List.headD_cons, Nat.mul_zero, Nat.add_zero,
       BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   | case3 x y ys ih =>
     simp only [shifted9, value, List.headD_cons, extr9] at *
-    omega
+    omega_using [ih]
 
 end VG.Proof.Mont.AArch64.P521Square

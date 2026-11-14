@@ -20,16 +20,16 @@ private theorem suffix_trans {r middle rest : Rand}
   obtain ⟨b, boundB, last⟩ := second
   refine ⟨a + b, ?_, ?_⟩
   · rw [mid, List.length_drop] at boundB
-    omega
+    omega_using [boundA, boundB]
   · rw [last, mid, List.drop_drop]
 
 private theorem width_pos {w : Nat} (shape : primeShape w = true) : 0 < witnessOctets w := by
   have large : 2 < w := by
     simp only [primeShape, Bool.and_eq_true, decide_eq_true_eq] at shape
     exact shape.1.1
-  have nonzero : w - 1 ≠ 0 := by omega
+  have nonzero : w - 1 ≠ 0 := by omega_using [large]
   simp only [witnessOctets, bitLength, nonzero, ite_false]
-  omega
+  omega_using []
 
 private theorem checks_suffix {p q : Nat} {r rest : Rand} {pass : Bool}
     (shapeP : primeShape p = true) (shapeQ : primeShape q = true)
@@ -72,7 +72,7 @@ theorem candidate_suffix {bits generator : Nat} {r rest : Rand} {p : Option Nat}
       have after := checks_suffix shapes.1.1.1.2 shapes.1.1.2 witnesses
       simp only [pure, Option.some.injEq, Prod.mk.injEq] at run
       exact run.2 ▸ suffix_trans ⟨(bits + 7) / 8, enough, rfl⟩ after
-  · rw [draw_of_short (by omega : r.length < (bits + 7) / 8)] at run
+  · rw [draw_of_short (by omega_using [enough] : r.length < (bits + 7) / 8)] at run
     cases run
 
 end VG.Proof.Ffdh.SievedGeneration

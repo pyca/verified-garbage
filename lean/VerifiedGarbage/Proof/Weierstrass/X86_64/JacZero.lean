@@ -26,14 +26,14 @@ theorem zeroTest_ok {s : State} {base : Addr} {size n a : Nat}
   refine WP.mono (show WP isa (.block [.mov .rdx (.mem (sc a))]) s (fun t =>
       t.gpr .rdx = word s.mem base a ∧ Keeps [.rdx] s t) by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := a) (by omega),
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := a) (by omega_using [hn, ha]),
       Option.map_some, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ (a := a) (n-1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine WP.mono (ors_ok hs₁ (a := a) (n-1) (by omega_using [hn, ha])) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [e₁, k₁.2.1] at e₂
   have hz : s₂.gpr .rdx = 0 ↔ wordsVal s.mem base a n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -41,9 +41,9 @@ theorem zeroTest_ok {s : State} {base : Addr} {size n a : Nat}
     · intro ⟨h₀,h⟩ j hj
       cases j with
       | zero => simpa using h₀
-      | succ j => exact h j (by omega)
+      | succ j => exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j+1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j+1) (by omega_using [hj])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     Option.bind_some, BitVec.and_self, RegUpd.zf_arithFlags, Option.some.injEq, exists_eq_left']

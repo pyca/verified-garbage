@@ -33,8 +33,8 @@ theorem getLsbD_rotateLeft28 (x : BitVec 28) (r : Nat) {i : Nat} (hi : i < 28) :
   rw [BitVec.getLsbD_rotateLeft, rotIdx]
   have := Nat.mod_lt r (show 0 < 28 by decide)
   split
-  · congr 1; omega
-  · rw [decide_eq_true hi, Bool.true_and]; congr 1; omega
+  · congr 1; omega_arith
+  · rw [decide_eq_true hi, Bool.true_and]; congr 1; omega_arith
 
 theorem rotIdx_lt (r i : Nat) : rotIdx r i < 28 := Nat.mod_lt _ (by decide)
 
@@ -68,28 +68,28 @@ theorem ksFold (c₀ d₀ : BitVec 28) {n : Nat} (hn : n ≤ 16) :
   induction n with
   | zero => exact ⟨fun _ _ => rfl, fun _ _ => rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | succ n ih =>
-    obtain ⟨hc, hd, hk⟩ := ih (by omega)
+    obtain ⟨hc, hd, hk⟩ := ih (by omega_using [hn])
     rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
     refine ⟨fun i hi => ?_, fun i hi => ?_, fun j hj q hq => ?_⟩
     · rw [ksStep, getLsbD_rotateLeft28 _ _ hi, hc _ (rotIdx_lt _ _), cIdx]
     · rw [ksStep, getLsbD_rotateLeft28 _ _ hi, hd _ (rotIdx_lt _ _), cIdx]
     · simp only [ksStep]
-      rw [vgetD _ (by omega)]
+      rw [vgetD _ (by omega_using [hn, hj])]
       by_cases hjn : j = n
       · subst hjn
-        rw [Vector.getElem_set!_self (by omega), getLsbD_permute _ _ (by decide) hq, BitVec.getLsbD_append,
+        rw [Vector.getElem_set!_self (by omega_using [hn]), getLsbD_permute _ _ (by decide) hq, BitVec.getLsbD_append,
           keyBit]
         have hu := pc2_u q hq
-        rw [show 48 - 1 - q = 47 - q by omega]
+        rw [show 48 - 1 - q = 47 - q by omega_using []]
         split
         · rename_i hu'
           rw [getLsbD_rotateLeft28 _ _ hu', hd _ (rotIdx_lt _ _)]
           rfl
         · rename_i hu'
-          rw [getLsbD_rotateLeft28 _ _ (by omega), hc _ (rotIdx_lt _ _)]
+          rw [getLsbD_rotateLeft28 _ _ (by omega_using [hu]), hc _ (rotIdx_lt _ _)]
           rfl
-      · rw [Vector.getElem_set!_ne (by omega) (Ne.symm hjn), ← vgetD _ (by omega)]
-        exact hk j (by omega) q hq
+      · rw [Vector.getElem_set!_ne (by omega_using [hn, hj]) (Ne.symm hjn), ← vgetD _ (by omega_using [hn, hj])]
+        exact hk j (by omega_using [hj, hjn]) q hq
 
 /-- `keyBit` from the key: the indices compose to `rkSrc`. -/
 theorem keyBit_eq : ∀ j < 16, ∀ q < 48,
@@ -110,14 +110,14 @@ theorem getLsbD_expandDesKey (key : BitVec 64) {j q : Nat} (hj : j < 16) (hq : q
   · rename_i hu'
     have hc := cIdx_lt (j + 1) hu'
     rw [BitVec.getLsbD_setWidth, decide_eq_true hc, Bool.true_and,
-      getLsbD_permute _ _ (by decide) (by omega)]
+      getLsbD_permute _ _ (by decide) (by omega_using [hc])]
     dsimp only
     rw [ite_eq_left hu']
     rfl
   · rename_i hu'
-    have hc := cIdx_lt (j + 1) (show 56 - pc2.getD (47 - q) 1 - 28 < 28 by omega)
+    have hc := cIdx_lt (j + 1) (show 56 - pc2.getD (47 - q) 1 - 28 < 28 by omega_using [hu])
     rw [BitVec.getLsbD_setWidth, decide_eq_true hc, Bool.true_and, BitVec.getLsbD_ushiftRight,
-      getLsbD_permute _ _ (by decide) (by omega)]
+      getLsbD_permute _ _ (by decide) (by omega_using [hc])]
     dsimp only
     rw [ite_eq_right hu']
     rfl

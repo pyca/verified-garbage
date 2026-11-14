@@ -21,16 +21,16 @@ theorem domainPointers_store (s : State) {p : Inputs} {slots : List Nat}
       t.mem = (s.mem.writeW (off (State.addr s.sp) 56) p.g).writeW (off (State.addr s.sp) 60) p.q ∧ Rest [.r3] s t := by
   have addr (d : Nat) (hd : d ≤ 68) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have w56 := h.locals.space.write (off := 56) (by decide)
   have w60 := h.locals.space.write (off := 60) (by decide)
   have q : p.g + BitVec.ofNat 32 p.k = p.q := by
     change (p.domain + BitVec.ofNat 32 p.k) + BitVec.ofNat 32 p.k = p.domain + BitVec.ofNat 32 (2 * p.k)
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show p.k + p.k = 2 * p.k by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show p.k + p.k = 2 * p.k by omega_using []]
   refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.domainPointers VG.Impl.Ffdh.Arm.Domain.st
   ffrun [source, count, stackBase, addr 56 (by decide), addr 60 (by decide), w56, w60, off, Inputs.g, Inputs.q,
-    BitVec.add_assoc, ← BitVec.ofNat_add, show p.k + p.k = 2 * p.k by omega]
+    BitVec.add_assoc, ← BitVec.ofNat_add, show p.k + p.k = 2 * p.k by omega_using []]
 
 theorem domainPointers_ok (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (stable : stableSlots slots = true)

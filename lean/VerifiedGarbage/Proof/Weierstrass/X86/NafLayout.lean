@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The eight-entry odd-multiple table and cached double and its disjoint scratch slots. -/
 
@@ -37,7 +38,7 @@ theorem nafTbl_mem (K : WinCfg) {a c : Nat} (ha : 1 ≤ a) (h9 : a ≤ 9) (hc : 
     K.tbl+96*(a-1)+32*c ∈ nafTblSlots K := by
   apply List.mem_map.mpr
   refine ⟨3*(a-1)+c,List.mem_range.mpr (by omega),?_⟩
-  omega
+  omega_using []
 
 /-- Every coordinate of a table point belongs to the complete environment. -/
 theorem nafTblPt_mem (K : WinCfg) (hn : K.M.n=4) {a : Nat} (ha : 1 ≤ a) (h9 : a ≤ 9) :
@@ -57,7 +58,7 @@ theorem NafLay.table_le {K : WinCfg} {size : Nat} (hL : NafLay K size) :
   have h := hL.lay.le (K.tbl+32*26) (List.mem_append_right _
     (List.mem_map.mpr ⟨26,by decide,rfl⟩))
   rw [hL.n] at h
-  omega
+  omega_using [h]
 
 /-- The previous eight-entry layout is a sub-layout of this allocation. -/
 theorem NafLay.old_slots {K : WinCfg} {size : Nat} (hL : NafLay K size) :
@@ -69,7 +70,7 @@ theorem NafLay.old_slots {K : WinCfg} {size : Nat} (hL : NafLay K size) :
   · apply Or.inr
     obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
     apply List.mem_map.mpr
-    refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega),?_⟩
+    refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega_using [this]),?_⟩
     simp only [hL.n]
 
 /-- Existing coordinate and scratch-separation lemmas remain available for
@@ -83,8 +84,8 @@ theorem NafLay.toWinLay {K : WinCfg} {size : Nat} (hL : NafLay K size)
             apart := fun x y hx hy hxy => hL.lay.apart x y (hL.old_slots x hx) (hL.old_slots y hy) hxy }
   · intro x hx
     have := hL.tbl x hx
-    rw [hL.n]; omega
-  · have := hL.bits; rw [hJ]; omega
+    rw [hL.n]; omega_using [this]
+  · have := hL.bits; rw [hJ]; omega_using [this]
   · intro w hw
     simp only [winW,List.mem_append,List.mem_map,List.mem_singleton] at hw
     rcases hw with ⟨x,hx,rfl⟩ | rfl
@@ -95,14 +96,14 @@ theorem NafLay.toWinLay {K : WinCfg} {size : Nat} (hL : NafLay K size)
         · apply Or.inr
           obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
           apply List.mem_map.mpr
-          refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega),?_⟩
+          refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega_using [this]),?_⟩
           simp only [hL.n]
       have := hL.bits_w x hnew
       dsimp only
-      rw [hL.n,hJ]; omega
+      rw [hL.n,hJ]; omega_using [this]
     · have := hL.bits_tmp
       dsimp only
-      rw [hL.n,hJ]; omega
+      rw [hL.n,hJ]; omega_using [this]
 
 /-- Reversing the two work points also separates all doubling operands. -/
 theorem NafLay.rcbApart_DR {K : WinCfg} {size : Nat} (hL : NafLay K size) :
@@ -128,7 +129,7 @@ theorem NafLay.rcbApart_twice {K : WinCfg} {size : Nat} (hL : NafLay K size) (hJ
   · exact h.apart x he hw
   · have sep := hL.tbl x (List.mem_append_right _ (List.mem_append_right _ hw))
     simp only [Naf.twice,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at he
-    omega
+    omega_using [sep, he]
 
 /-- The initial double goes into the ninth point, outside the eight-entry odd table. -/
 theorem NafLay.rcbApart_init {K : WinCfg} {size : Nat} (hL : NafLay K size) (hJ : K.J=65) :
@@ -143,13 +144,13 @@ theorem NafLay.rcbApart_init {K : WinCfg} {size : Nat} (hL : NafLay K size) (hJ 
     intro x hx he
     have sep := hL.tbl x hx
     simp only [Naf.twice,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at he
-    omega
+    omega_using [sep, he]
   refine ⟨?_,?_⟩
   · rw [ets,List.nodup_append]
     refine ⟨hn.1,?_,fun x hx y hy he => ht x (hts x hx) (he ▸ hy)⟩
     simp only [Naf.twice,WinCfg.tblPt,hL.n,List.nodup_cons,List.mem_cons,List.not_mem_nil,
       or_false,not_or,List.nodup_nil,not_false_eq_true,and_true]
-    and_intros <;> omega
+    and_intros <;> omega_using []
   · intro x hx hw
     have hr : x∈winRo K := by
       simp only [rcbR,winRo,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢

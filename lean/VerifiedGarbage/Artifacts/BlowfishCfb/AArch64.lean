@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalLit
 
-/-! # Blowfish-CFB64 artifacts on baseline AArch64 -/
+/-! # Blowfish-CFB64 on AArch64 -/
 
 @[expose] public section
 

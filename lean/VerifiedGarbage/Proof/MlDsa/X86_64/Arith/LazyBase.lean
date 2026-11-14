@@ -74,7 +74,7 @@ def DLanes (x : BitVec 128) (f : Nat → Word) : Prop := ∀ i < 4, (dword x i).
 theorem dlanes_load {m : Mem} {p : Addr} {F : Poly} (h : PolyIs m p F) {j : Nat} (hj : j + 4 ≤ 256) :
     DLanes (m.readW (coeffAddr p j) 128) (fun e => F[j + e]!) := fun e he => by
   rw [dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq]
-  exact polyIs_toNat h (by rw [n_eq]; omega)
+  exact polyIs_toNat h (by rw [n_eq]; omega_using [hj, he])
 
 def YLanes (x : BitVec 256) (a : Nat → Word) : Prop := ∀ e < 8, (x.extractLsb' (32 * e) 32).toNat = (a e).val
 
@@ -85,8 +85,8 @@ theorem ylanes_ymm {s : State} {r : XReg} {a : Nat → Word} (h0 : DLanes (s.lan
   have h1' : DLanes (s.ymmHi r) (fun e => a (e + 4)) := h1
   rw [State.ymm, extract_ymm _ _ he]
   split
-  · exact h0' e (by omega)
-  · rw [h1' (e - 4) (by omega)]; dsimp only; rw [show e - 4 + 4 = e by omega]
+  · exact h0' e (by omega_arith)
+  · rw [h1' (e - 4) (by omega_using [he])]; dsimp only; rw [show e - 4 + 4 = e by omega_arith]
 
 /-- Two vectors of eight coefficients stored into a polynomial. -/
 theorem polyIs_write2Y {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j j' : Nat}
@@ -98,13 +98,13 @@ theorem polyIs_write2Y {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j 
   rw [n_eq] at hi
   rw [coeffAt_write256 _ _ hj' _ hi, coeffAt_write256 _ _ hj _ hi, hR i hi]
   by_cases h1 : j' ≤ i ∧ i < j' + 8
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hsep, h1])),
       ite_eq_left_of_eq_true _ _ (eq_true h1)]
-    exact hy _ (by omega)
+    exact hy _ (by omega_using [h1])
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
     by_cases h2 : j ≤ i ∧ i < j + 8
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2)]
-      exact hx _ (by omega)
+      exact hx _ (by omega_using [h2])
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
         ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact polyIs_toNat hP (by rw [n_eq]; exact hi)
@@ -113,7 +113,7 @@ theorem dlanes_loadY {m : Mem} {p : Addr} {F : Poly} (h : PolyIs m p F) {j : Nat
     {l : Nat} (hl : l < 2) :
     DLanes (m.readW (coeffAddr p j + BitVec.ofNat 64 (16 * l)) 128) (fun e => F[j + 4 * l + e]!) := by
   rw [lane_load]
-  exact dlanes_load h (by omega)
+  exact dlanes_load h (by omega_using [hj, hl])
 
 def VBflyOkW (c : BitVec 32) (bf : List Instr) (op : Word → Word → Zq → Word × Word) : Prop :=
   ∀ s : State, VConstsW c s → ∀ x y : Nat → Word, ∀ ζ : Nat → Zq, DLanes (s.xmm .xmm0) x → DLanes (s.xmm .xmm1) y →

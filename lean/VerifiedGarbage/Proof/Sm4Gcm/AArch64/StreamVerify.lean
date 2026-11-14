@@ -41,7 +41,7 @@ open VG.Proof.Gcm (Absorbed lensBlock padded)
 
 theorem tagLenOk_le {t : Nat} (h : Spec.Gcm.tagLenOk t = true) : t ≤ 16 := by
   simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
-  omega
+  omega_using [h]
 
 /-- The entry of `verify`: `tag_len` in `x28` and `tag` in `x12`. -/
 theorem verEntry_ok {s : State} {Ctx St W : Addr} (hCtx : s.gpr .x0 = Ctx) (hSt : s.gpr .x1 = St)
@@ -187,8 +187,8 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
           · exact ww _ _ (by decide) (by decide)
           · exact ww _ _ (by decide) (by decide)
           · simpa using (L.stk_w (a := 0) (n := 16) (by decide)).symm
-      rw [bytesAt_frame f₅ dW (by omega), in₄, m₃]
-      refine bytesAt_frame fsv (fun r hr => ?_) (by omega)
+      rw [bytesAt_frame f₅ dW (by omega_using [htl]), in₄, m₃]
+      refine bytesAt_frame fsv (fun r hr => ?_) (by omega_using [htl])
       simp only [List.mem_singleton] at hr; subst hr
       exact dtw.sub_right (Lay.wSub (by decide))
     have hb : (bytesAt s₅.mem (s.gpr .x6 + BitVec.ofNat 64 112) tl = bytesAt s₅.mem (s.gpr .x6) tl) ↔

@@ -15,12 +15,12 @@ open VG.Proof.Mont.X86.Dynamic
 
 theorem size_eq (n : Nat) : size n = 448 * n + 288 := by
   unfold size slot stride
-  omega
+  omega_using []
 
 theorem shared_scratch {len : Nat} (lo : 64 ≤ len) :
     size (Spec.Rsa.modulusWords len) ≤ 8 * Spec.Rsa.scratchWords len := by
   rw [size_eq]
   unfold Spec.Rsa.modulusWords Spec.Rsa.scratchWords
-  omega
+  omega_using [lo]
 
 end VG.Proof.Bignum.X86.Crt

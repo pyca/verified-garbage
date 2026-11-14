@@ -19,7 +19,7 @@ theorem trialAny_dsa {w c bits : Nat} (hc : 8161 < c)
   rw [VG.Proof.RsaKeyGen.trialAny_eq hc]
   have hp : Spec.RsaKeyGen.trialPrimes (64 * w) = Spec.RsaKeyGen.trialPrimes bits := by
     simp only [Spec.RsaKeyGen.trialPrimes]
-    have he : 1024 < 64 * w ↔ 1024 < bits := by omega
+    have he : 1024 < 64 * w ↔ 1024 < bits := by omega_using [hpolicy]
     simp only [he]
   simp only [Spec.RsaKeyGen.obviouslyComposite, hp]
 

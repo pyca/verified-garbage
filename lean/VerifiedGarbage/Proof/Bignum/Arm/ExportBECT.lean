@@ -43,7 +43,7 @@ theorem exportBE_ct {base dst : BitVec 32} {len w o k : Nat} (ho : o < 8) (hk : 
     · exact h.1.1.index.trans h.2.1.index.symm
   have wp (s : State) (h : P s) : WP isa (.block exportBEArgs) s Q := by
     have fits := h.1.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
     have header := nativeHeader_of_layout s.mem base h.1.workspace.nowrap (Nat.le_refl _) h.1.layout
     rw [h.1.width] at header
     exact WP.mono (exportBEArgs_ok s h.1.workspace size header ho hk h.1.ptr h.1.index h.2.2)

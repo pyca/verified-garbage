@@ -43,15 +43,15 @@ theorem pSeedHash_copyReady {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.Stream
   have hjp : j ≤ p.plan.count := by rw [hcountEq]; exact hj
   have hj' : j < 4096 := by omega_using [p.plan.count_le, hjp]
   obtain ⟨V, R⟩ := hs.rep
-  have hs := pSeedHash_ok hG hmatch hsize (show p.plan.len < 4096 by omega) hj'
+  have hs := pSeedHash_ok hG hmatch hsize (show p.plan.len < 4096 by omega_using [hlen]) hj'
     (show p.plan.offset + j < 2 ^ 32 by omega_using [p.plan.carry, hjp])
     hs.layout R hs.hashArgs q.seed_slot q.wrapped_slot q.offset_slot
     hs.seedRead hs.wrappedWrite (by
       intro i hi l hl he
       have a : Region.Contains ⟨p.plan.seedPtr, p.plan.len⟩ (VG.Proof.Bignum.off p.plan.seedPtr i) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hi]) (by omega_using [hlen, hi])
       have b : Region.Contains ⟨p.plan.wrapped, p.plan.len⟩ (VG.Proof.Bignum.off p.plan.wrapped l) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hl]) (by omega_using [hlen, hl])
       change VG.Proof.Bignum.off p.plan.seedPtr i = VG.Proof.Bignum.off p.plan.wrapped l at he
       exact p.plan.seed_wrap _ (he ▸ a) b) p.plan.wrapped_sep
   rw [hlenEq] at hs
@@ -74,7 +74,7 @@ theorem pHashOne_ct {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.str
     (k len count j : Nat) (hlen : len = 20 ∨ len = 32) (hc : count ≤ 11) (hj : j ≤ count) :
     RelCT isa (Two (ContributionBefore H k len count))
       (Impl.Dsa.AArch64.Generation.pHashOne G len count j) (fun _ _ => True) := by
-  refine RelCT.seq (two_post (pSeedHash_ct hG H k len count j hlen hj (by omega))
+  refine RelCT.seq (two_post (pSeedHash_ct hG H k len count j hlen hj (by omega_using [hc, hj]))
     (fun _ _ h => pSeedHash_copyReady hG hmatch hsize hj h))
     (RelCT.seq (hashCopyArgs_ct len count j hlen hc) ?_)
   exact two_taint [.x12, .x2, .x9] (by

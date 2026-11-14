@@ -29,8 +29,8 @@ theorem reduceLoop_step (M : Mont) {p : ReducePublic} {j : Nat} {s : State}
   cases bs with
   | nil => simp only [List.length_nil] at hlen; omega
   | cons b bs =>
-    refine WP.mono (reduceByte_ok M h p.lower (by have := p.fits; have := p.upper; omega)
-      p.greater255 p.odd (by have := p.lengthBound; omega))
+    refine WP.mono (reduceByte_ok M h p.lower (by have := p.fits; have := p.upper; omega_arith)
+      p.greater255 p.odd (by have := p.lengthBound; omega_using [hlen, this]))
       fun t ⟨ht, hz, _, _⟩ => ?_
     have hpos : p.bytes.ptr + BitVec.ofNat 64 j + 1 = p.bytes.ptr + BitVec.ofNat 64 (j + 1) := by
       rw [BitVec.add_assoc, ofNat_add_one]
@@ -42,12 +42,12 @@ theorem reduceLoop_step (M : Mont) {p : ReducePublic} {j : Nat} {s : State}
       by_cases he : bs.length = 0
       · simp only [he, decide_true, Bool.not_true, Bool.false_eq_true, decide_eq_true_eq, false_iff]
         simp only [List.length_cons] at hlen
-        omega
+        omega_using [hlen, he]
       · simp only [he, decide_false, Bool.not_false, decide_eq_true_eq, true_iff]
         simp only [List.length_cons] at hlen
-        omega
+        omega_using [hlen, he]
     · simp only [List.length_cons] at hlen
-      omega
+      omega_using [hlen]
 
 theorem reduceLoop_ct (M : Mont) :
     RelCT isa (Two fun p s => 0 < p.bytes.len ∧ ReduceLoopPre p 0 s)
@@ -55,7 +55,7 @@ theorem reduceLoop_ct (M : Mont) :
   have hct := two_map (Φ := fun (p : ReducePublic × Nat) s => p.2 < p.1.bytes.len ∧ ReduceLoopPre p.1 p.2 s)
     (fun p : ReducePublic × Nat => p.1.remaining p.2)
     (fun p s ⟨hj, bs, acc, hlen, h⟩ =>
-      ⟨bs, acc, hlen, by omega, h⟩) (reduceByte_ct M)
+      ⟨bs, acc, hlen, by omega_using [hj, hlen], h⟩) (reduceByte_ct M)
   refine (two_loop (Φ := ReduceLoopPre) (Ψ := fun _ _ => True) (fun p => p.bytes.len) hct ?_).mono
     (fun _ _ h => h) (fun _ _ _ => trivial)
   intro p j s hj hs

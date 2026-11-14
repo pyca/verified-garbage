@@ -2,7 +2,29 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalChecked
+
+/-! ### `MlDsa.AArch64.Optimized.InverseTraversalChecked`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+
+theorem local_checked :
+    Schedule.check key mask ((List.range 8).map localSlice) = some standardLocal := by
+  decide +kernel
+
+theorem strided_checked :
+    Schedule.check key mask ((List.range 8).map stridedSlice) = some standardStrided := by
+  decide +kernel
+
+end VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+
+end
+
+end
+
 
 /-! ## From `InverseTraversalSpec.lean` -/
 

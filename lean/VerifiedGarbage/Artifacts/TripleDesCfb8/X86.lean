@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 
-/-! # Triple DES-CFB8 artifacts on baseline x86 (32-bit) -/
+/-! # Triple DES-CFB8 on x86 -/
 
 @[expose] public section
 

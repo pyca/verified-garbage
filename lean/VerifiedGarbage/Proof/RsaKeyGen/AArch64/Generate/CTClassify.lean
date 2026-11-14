@@ -51,7 +51,7 @@ def Hdr7 (p : GenPublic) (s : State) : Prop :=
 
 theorem nextPrime_ct {α : Type} {Φ : α → State → Prop} (f : α → GenPublic) (hΦ : ∀ a s, Φ a s → Hdr7 (f a) s)
     {phase : Nat} (hph : phase < 2) : RelCT isa (Two Φ) (.block (nextPrime phase)) fun _ _ => True := by
-  obtain rfl | rfl : phase = 0 ∨ phase = 1 := by omega
+  obtain rfl | rfl : phase = 0 ∨ phase = 1 := by omega_using [hph]
   all_goals
   unfold nextPrime
   exact ldf_then (by decide) (fun a => (f a).F) (fun a => (f a).stp) [.x19] (frame_pins f fun a s h => (hΦ a s h).1)
@@ -59,7 +59,7 @@ theorem nextPrime_ct {α : Type} {Φ : α → State → Prop} (f : α → GenPub
 
 theorem finishWith_ct {α : Type} {Φ : α → State → Prop} (f : α → GenPublic) (hΦ : ∀ a s, Φ a s → Hdr7 (f a) s)
     {status : Nat} (hs : status < 4) : RelCT isa (Two Φ) (.block (finishWith status)) fun _ _ => True := by
-  obtain rfl | rfl | rfl | rfl : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 := by omega_using [hs]
   all_goals
   unfold finishWith
   exact ldf_then (by decide) (fun a => (f a).F) (fun a => (f a).stp) [.x19] (frame_pins f fun a s h => (hΦ a s h).1)
@@ -99,12 +99,12 @@ theorem fail_ct {α : Type} {Φ : α → State → Prop} (f : α → GenPublic) 
   obtain ⟨o, u, st, g⟩ := hΦ a s h
   obtain ⟨hL1, hL2, -⟩ := g.len_valid
   have h9 : BitVec.ofNat 64 (f a).L <<< 3 + BitVec.ofNat 64 (f a).L = BitVec.ofNat 64 (9 * (f a).L) := by
-    rw [SearchInit.shl_ofNat _ _ (by omega), SearchInit.add_ofNat]; congr 1; omega
+    rw [SearchInit.shl_ofNat _ _ (by omega_using [hL2]), SearchInit.add_ofNat]; congr 1; omega_using []
   refine WP.mono (setAll_ok g) fun t ⟨hm, k⟩ => ?_
   obtain ⟨g', w12, w13, -⟩ := store_region g hm k (by decide)
   rw [h9] at w13
-  exact ⟨o, u, st, g', w12, w13, by rw [g.key_region]; exact fun _ h => h, by show 1 ≤ 9 * (f a).L; omega,
-    by show 9 * (f a).L < 2 ^ 63; omega⟩
+  exact ⟨o, u, st, g', w12, w13, by rw [g.key_region]; exact fun _ h => h, by show 1 ≤ 9 * (f a).L; omega_using [hL1],
+    by show 9 * (f a).L < 2 ^ 63; omega_using [hL2]⟩
 
 /-! ## After the search -/
 
@@ -185,8 +185,8 @@ theorem dec_hdr (q : GenPoint) (s : State) (h : LeftCT q s ∧ isa.eval (.zero .
       (s.mem.writeW (q.inputs.stp + BitVec.ofNat 64 40) v).readW (q.inputs.F + BitVec.ofNat 64 (8 * 7)) 64 =
         q.inputs.stp :=
     ((Frame.writeW (Frame.refl _ _) (List.mem_singleton_self (⟨q.inputs.stp, 56⟩ : Region)) v
-      (Offset.contains_base _ (by decide) (by omega))).readW (r := q.inputs.frame)
-      (Offset.contains_base _ (by decide) (by omega)) (fun r hr => by
+      (Offset.contains_base _ (by decide) (by omega_using []))).readW (r := q.inputs.frame)
+      (Offset.contains_base _ (by decide) (by omega_using [])) (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr; exact g.input.frame_state) (by decide)).trans
       (g.headers (7, q.inputs.stp) (by simp [GenPublic.headers]))
   have hl7 := g.frame_ld (8 * 7) (by decide)
@@ -199,7 +199,7 @@ theorem exhausted_ct : RelCT isa (Two MidCT) exhaustedGen (fun _ _ => True) := b
     [.x19] (frame_pins (fun q => q.inputs) fun _ _ h => h.any.x19) (fun _ _ h => h.any.stp) (by taint_decide)
     (by taint_decide)) fun q u ⟨o, st, ha, hm⟩ => WP.mono (left_ok hm.frame) fun v ⟨⟨hb, hx8, hx10, hmem⟩, k⟩ =>
       ⟨o, _, _, hm.frame.keep k hmem, hx8, by rw [hx10, ha.1], ha.1.symm, by
-        rw [eval_zero, hb, ← ha.1]; by_cases h2 : 2 ≤ st.left <;> simp [h2]; omega⟩) ?_
+        rw [eval_zero, hb, ← ha.1]; by_cases h2 : 2 ≤ st.left <;> simp [h2]; omega_using [h2]⟩) ?_
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.eval.trans h₂.eval.symm) ?_ ?_
   · exact fail_ct (fun q => q.inputs) (fun _ _ h => h.1.any) (by decide)
   · refine RelCT.block_append (RelCT.seq (two_piece (Ψ := fun q t => Hdr7 q.inputs t) [.x19, .x8] ?_
@@ -235,7 +235,7 @@ theorem after_key_ct : RelCT isa (Two AfterKCT) afterKey (fun _ _ => True) := by
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm) ?_ ?_
   · exact finishWith_ct (fun q => q.inputs) (fun _ _ h => h.1.1.stp) (by decide)
   · refine RelCT.seq (two_post (Ψ := Key2CT) (two_taint [] (no_pins _) (by taint_decide))
-      fun q v ⟨⟨⟨o, u, st, g⟩, hx9, h3, _⟩, _⟩ => WP.mono (sub_guard (k := 2) (by decide) hx9 (by omega))
+      fun q v ⟨⟨⟨o, u, st, g⟩, hx9, h3, _⟩, _⟩ => WP.mono (sub_guard (k := 2) (by decide) hx9 (by omega_using [h3]))
         fun w ⟨⟨he, hmem⟩, k⟩ => ⟨⟨o, u, st, g.keep k hmem⟩, he⟩) ?_
     refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) ?_ ?_
     · exact nextPrime_ct (fun q => q.inputs) (fun _ _ h => h.1.1.stp) (by decide)
@@ -271,7 +271,7 @@ theorem accepted_ct [Key.KeyProof] :
         cases ho : (rOf q.inputs o q.used ⟨left, .q pB, remaining⟩).outcome with
         | entropy k a => rw [← ha.status, rOf_status, ho] at h1; cases h1
         | exhausted => rw [← ha.status, rOf_status, ho] at h1; cases h1
-        | accepted c => exact ⟨o, _, _, c, pB, ha, hm, ho, by rw [ha.cand]; omega, rfl⟩
+        | accepted c => exact ⟨o, _, _, c, pB, ha, hm, ho, by rw [ha.cand]; omega_using [h0], rfl⟩
     refine RelCT.seq (two_post (Ψ := AfterKCT) ((key_run_ct).mono (fun _ _ ⟨q, h₁, h₂, hsp⟩ =>
       ⟨q, hk q _ h₁, hk q _ h₂, hsp⟩) fun _ _ h => h) fun q u h => ?_) after_key_ct
     have hkc := hk q u h
@@ -296,8 +296,8 @@ theorem accepted_of {q : GenPoint} {u : State}
   have h3 : q.status ≠ 3 := ev_false he hf3
   have hu64 : q.cand < 2 ^ 64 := by
     obtain ⟨o, st, ha, hm'⟩ := hm
-    have := hm'.frame.used_le; have := hm'.frame.input.cfacts.rand64; rw [← ha.cand]; omega
-  refine ⟨hm, by omega, fun hc => ?_⟩
+    have := hm'.frame.used_le; have := hm'.frame.input.cfacts.rand64; rw [← ha.cand]; omega_arith
+  refine ⟨hm, by omega_using [h0, hs, h3], fun hc => ?_⟩
   rw [eval_zero, hx10, ofNat_beq_zero hu64, hc] at hf4
   cases hf4
 
@@ -312,7 +312,7 @@ theorem classify_ct [Key.KeyProof] : RelCT isa (Two AfterCT) (classify keyCall) 
     · have hs := MidCT.status hm
       have h0 : q.status ≠ 0 := by
         intro h0'; rw [eval_zero, hx9, h0'] at hf; cases hf
-      refine WP.mono (sub_guard (k := 3) (by decide) hx9 (by omega)) fun v ⟨⟨he3, hmem⟩, k⟩ =>
+      refine WP.mono (sub_guard (k := 3) (by decide) hx9 (by omega_using [hs])) fun v ⟨⟨he3, hmem⟩, k⟩ =>
         ⟨let ⟨o, st, ha, hm'⟩ := hm; ⟨o, st, ha, hm'.keep k hmem⟩, by rw [k.gpr _ (by decide)]; exact hx10, h0, he3⟩
     refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm) ?_ ?_
     · exact (exhausted_ct.mono (fun _ _ ⟨q, h₁, h₂, hsp⟩ => ⟨q, h₁.1.1, h₂.1.1, hsp⟩) fun _ _ h => h)

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.P256.EcdhDouble
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Impl.AArch64Weave
-import VerifiedGarbage.Impl.P256.VerifyRegisters
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 
 @[expose] public section
 

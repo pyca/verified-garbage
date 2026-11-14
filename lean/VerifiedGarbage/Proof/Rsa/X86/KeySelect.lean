@@ -27,23 +27,23 @@ theorem sel_ok {s : State} {B : Addr} {Z w N o a b sl : Nat} (h : Ws s B Z w N)
   have sep (j : Nat) : o = j ∨ arr w o + 4 * w ≤ arr w j ∨ arr w j + 4 * w ≤ arr w o := by
     by_cases eq : o = j
     · exact .inl eq
-    · have := arr_disj (w := w) eq; unfold S at this; exact .inr (by omega)
+    · have := arr_disj (w := w) eq; unfold S at this; exact .inr (by omega_using [this])
   unfold sel
   change WP isa (.seq _ (VG.Impl.Mont.X86.Dynamic.selectsW w (arr w a) (arr w b) (arr w o))) s _
   refine WP.seq (wp_movS rfl fun u U _ => ?_)
   have hu := h.workspace.of_keeps U.keeps (by decide)
-  refine wp_subS (readSrc_sc hu (by omega)) fun v V _ => WP.block_nil ?_
+  refine wp_subS (readSrc_sc hu (by omega_using [hs, head])) fun v V _ => WP.block_nil ?_
   have mem : v.mem = s.mem := V.mem.trans U.mem
   have mask : v.gpr .ecx = if decide (slot s.mem B sl ≠ 0) then BitVec.allOnes 32 else 0 := by
     rw [V.gpr, U.gpr, U.mem]
     have word : s.mem.readW (off B sl) 32 = BitVec.ofNat 32 (slot s.mem B sl) := by
       simp [slot, w32]
     rw [word]
-    have cases : slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 := by omega
+    have cases : slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 := by omega_using [bit]
     rcases cases with e | e <;> rw [e] <;> rfl
   have hv := hu.of_keeps V.keeps (by decide)
   simp only [S] at fo fa fb
-  refine WP.mono (selectsW_ok hv _ mask h.wpos (by omega) (by omega) (by omega) ?_ ?_) ?_
+  refine WP.mono (selectsW_ok hv _ mask h.wpos (by omega_using [fa]) (by omega_using [fb]) (by omega_using [fo]) ?_ ?_) ?_
   · rcases sep a with e | e; exact .inl (congrArg (arr w) e); exact .inr e
   · rcases sep b with e | e; exact .inl (congrArg (arr w) e); exact .inr e
   rintro t ⟨frame, value, rest⟩
@@ -51,7 +51,7 @@ theorem sel_ok {s : State} {B : Addr} {Z w N o a b sl : Nat} (h : Ws s B Z w N)
     ((U.keeps.trans V.keeps).mono (by decide)).trans (rest.mono (by decide))
   refine ⟨h.rest r, ?_, ?_, r⟩
   · rw [mem] at frame
-    exact Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega) (by simp)
+    exact Keep.of_arr (d := 0) (by simpa using frame) (by unfold S; omega_using []) (by simp)
   · change val32 t.mem B (arr w o) w = _
     rw [value, mem]
     by_cases e : slot s.mem B sl = 0 <;> simp [e, num]

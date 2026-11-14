@@ -30,13 +30,13 @@ abbrev tailR (s₀ : State) (t : Nat) : Region :=
   ⟨dp s₀ + BitVec.ofNat 64 (256 * t), L s₀ - 256 * t⟩
 
 theorem tail_sub {s₀ : State} {t : Nat} (ht : 256 * t ≤ L s₀) :
-    Region.Sub (tailR s₀ t) (dR s₀) := Offset.sub_base _ (by omega)
+    Region.Sub (tailR s₀ t) (dR s₀) := Offset.sub_base _ (by omega_using [ht])
 
 theorem not_tail {s₀ : State} {t k : Nat} (hk : k < 256 * t) (ht : 256 * t ≤ L s₀) :
     ¬ (tailR s₀ t).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
   have hL := Xor.L_lt s₀
   simp only [Region.Contains]
-  rw [Offset.sub_toNat' _ (by omega) (by omega)]
-  split <;> omega
+  rw [Offset.sub_toNat' _ (by omega_using [ht, hL]) (by omega_using [hk, ht, hL])]
+  split <;> omega_arith
 
 end VG.Proof.ChaCha20.AArch64.Neon4

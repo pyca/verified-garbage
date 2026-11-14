@@ -71,7 +71,7 @@ def OK (vs : List HVar) : Prop := Coh vs ∧ ∀ w ∈ vs, WOk w
 
 theorem sha512_len (iv : Spec.Sha512.HashValue) (n : Nat) (hn : n ≤ 64) (x : List Byte) :
     ((Spec.Sha512.finalHash iv x).take n).length = n := by
-  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; omega
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; omega_using [hn]
 
 /-- Every hash function with HMAC on ARMv7 meets `WOk`. -/
 theorem vars_coh : Coh vars := by
@@ -196,7 +196,7 @@ theorem same_hash {w w' : HVar}
     have h₁ := index_lt w; have h₂ := index_lt w'
     have hl : Spec.Mgf1.hashes.length < 2 ^ 32 := by decide
     have := congrArg BitVec.toNat h
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h₂, hl]), Nat.mod_eq_of_lt (by omega_using [h₁, hl])] at this
     exact this
   have hG : w'.G = w.G := by
     have h₁ := w.idx; have h₂ := w'.idx

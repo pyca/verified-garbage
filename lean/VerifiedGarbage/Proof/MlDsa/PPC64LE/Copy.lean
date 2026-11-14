@@ -49,7 +49,7 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (h : xs.le
   · simp [bytesAt]
   · intro i h₁ h₂
     simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₂, ite_true]
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₂]), h₂, ite_true]
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₂, Option.getD_some]
 
 /-- `d ← b + o`, for a base register other than `d`. -/
@@ -97,7 +97,7 @@ theorem copyW_ok {sb db : Reg} {so dO n : Nat} {s : State} (hsb : sb ∈ preserv
   refine WP.seq (WP.mono (copy_glue s3 d9 hso hdo hn s) fun s₃ e₃ => ?_)
   subst e₃
   refine WP.mono (Gather.PPC64LE.copyWords_wp _ (S := s.gpr sb + BitVec.ofNat 64 so)
-    (D := s.gpr db + BitVec.ofNat 64 dO) (k := n) ⟨?_, ?_, gpr_write_self _ _ _, hn1, by omega, cr, cw, hd⟩)
+    (D := s.gpr db + BitVec.ofNat 64 dO) (k := n) ⟨?_, ?_, gpr_write_self _ _ _, hn1, by omega_using [hn], cr, cw, hd⟩)
     fun s' ⟨hm, _, _, _, kp⟩ => ?_
   · rw [gpr_write_of_ne _ _ (by decide), gpr_write_of_ne _ _ (by decide), gpr_write_self]
   · rw [gpr_write_of_ne _ _ (by decide), gpr_write_self, gpr_write_of_ne _ _ d3]
@@ -111,7 +111,7 @@ theorem copyW_ok {sb db : Reg} {so dO n : Nat} {s : State} (hsb : sb ∈ preserv
     exact writeBytes_frame _ _ _ (by rw [hl]; exact Region.contains_self _ _)
   · rw [hm]
     have := bytesAt_writeBytes_self s.mem (s.gpr db + BitVec.ofNat 64 dO)
-      (Spec.Aes.bytesAt s.mem (s.gpr sb + BitVec.ofNat 64 so) (8 * n)) (by rw [hl]; omega)
+      (Spec.Aes.bytesAt s.mem (s.gpr sb + BitVec.ofNat 64 so) (8 * n)) (by rw [hl]; omega_using [hn])
     rw [hl] at this
     exact this
 

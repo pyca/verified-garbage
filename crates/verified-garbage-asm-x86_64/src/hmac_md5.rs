@@ -7,57 +7,67 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
 /// * `outer` must be valid for reads and writes of 80 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 1056 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SIP5QQ=="
 jae 20f
-.base64 "SI2kJHj+//9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_md5_init}
+.base64 "SI1kJJhJieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0TYnHSInVSYnNSInf"
+call {vg_md5_init_core}
 .base64 "TInn"
-call {vg_md5_init}
-.base64 "uDY2NjaJQxCJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0xBvgAAAABNhe0="
+call {vg_md5_init_core}
+.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MQ8w9/QyDzD39DMPMPf0NAQb4AAAAATInpSMHpBEiFyQ=="
 je 22f
 24:
-.base64 "Qg+2RDUAg/A2QohEMxBJg8YBTTnu"
+.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTEEmDxhBIg+kB"
 jne 24b
 jmp 23f
 22:
 23:
-.base64 "i0MQNWpqampBiUQkEItDFDVqampqQYlEJBSLQxg1ampqakGJRCQYi0McNWpqampBiUQkHItDIDVqampqQYlEJCCLQyQ1ampqakGJRCQki0MoNWpqampBiUQkKItDLDVqampqQYlEJCyLQzA1ampqakGJRCQwi0M0NWpqampBiUQkNItDODVqampqQYlEJDiLQzw1ampqakGJRCQ8i0NANWpqampBiUQkQItDRDVqampqQYlEJESLQ0g1ampqakGJRCRIi0NMNWpqampBiUQkTEiJ3kiDxhBIid+6AQAAAEyJ+Q=="
+.base64 "TTnu"
+je 25f
+27:
+.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMQSYPGAU057g=="
+jne 27b
+jmp 26f
+25:
+26:
+.base64 "SLhqampqampqamZID27IZg9syfMPb1MQZg/v0fNBD39UJBDzD29TIGYP79HzQQ9/VCQg8w9vUzBmD+/R80EPf1QkMPMPb1NAZg/v0fNBD39UJEBIid5Ig8YQSInfugEAAABMifk="
 call {vg_md5_compress}
 .base64 "SIn7SYnPTInjTInmSIPGEEiJ37oBAAAATIn5"
 call {vg_md5_compress}
-.base64 "SIn7SYnPSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJIgBAAA="
+.base64 "SIn7SYnPSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39YSI1kJGhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQkiPMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjWQkeDHAMckx0jH2Mf9FMcBFMclFMdJFMds="
 21:
 .base64 "ww=="
 20:
-.base64 "SI2kJPj7//9JieBJg8AISYmYgAEAAEmJqIgBAABNiaCQAQAATYmomAEAAE2JsKABAABNibioAQAATYnHSInTSInNSYn8SYn1SIP9QQ=="
-jae 25f
+.base64 "SI2kJPj8//9JieBJg8AISYmYgAAAAEmJqIgAAABNiaCQAAAATYmomAAAAE2JsKAAAABNibioAAAATYnHSInTSInNSYn8SYn1SIP9QQ=="
+jae 28f
 .base64 "SInaSInp"
-jmp 26f
-25:
-.base64 "TIn/SIHHsAIAAA=="
-call {vg_md5_init}
-.base64 "TIn/SIHHsAIAAL4AAAAASInaSInpTYn4"
+jmp 29f
+28:
+.base64 "TIn/SIHHsAEAAA=="
+call {vg_md5_init_core}
+.base64 "TIn/SIHHsAEAAL4AAAAASInaSInpTYn4"
 call {vg_md5_update_scratch}
-.base64 "TIn/SIHHsAIAAEiJ7kyJ+kiBwiADAABMifk="
+.base64 "TIn/SIHHsAEAAEiJ7kyJ+kiBwiACAABMifk="
 call {vg_md5_finalize_scratch}
-.base64 "TIn6SIHCIAMAALkQAAAA"
-26:
+.base64 "TIn6SIHCIAIAALkQAAAA"
+29:
 .base64 "TInnTInuTYn4"
 call {vg_hmac_md5_init_scratch}
-.base64 "SYufgAEAAEmLr4gBAABNi6eQAQAATYuvmAEAAE2Lt6ABAABNi7+oAQAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAATImcJAgDAABMiZwkEAMAAEyJnCQYAwAATImcJCADAABMiZwkKAMAAEyJnCQwAwAATImcJDgDAABMiZwkQAMAAEyJnCRIAwAATImcJFADAABMiZwkWAMAAEyJnCRgAwAATImcJGgDAABMiZwkcAMAAEyJnCR4AwAATImcJIADAABMiZwkiAMAAEyJnCSQAwAATImcJJgDAABMiZwkoAMAAEyJnCSoAwAATImcJLADAABMiZwkuAMAAEyJnCTAAwAATImcJMgDAABMiZwk0AMAAEyJnCTYAwAATImcJOADAABMiZwk6AMAAEyJnCTwAwAATImcJPgDAABMiZwkAAQAAEiNpCQIBAAA"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAAQbsAAAAATIlcJAhMiVwkEEyJXCQYTIlcJCBMiVwkKEyJXCQwTIlcJDhMiVwkQEyJXCRITIlcJFBMiVwkWEyJXCRgTIlcJGhMiVwkcEyJXCR4TImcJIAAAABMiZwkiAAAAEyJnCSQAAAATImcJJgAAABMiZwkoAAAAEyJnCSoAAAATImcJLAAAABMiZwkuAAAAEyJnCTAAAAATImcJMgAAABMiZwk0AAAAEyJnCTYAAAATImcJOAAAABMiZwk6AAAAEyJnCTwAAAATImcJPgAAABMiZwkAAEAAEyJnCQIAQAATImcJBABAABMiZwkGAEAAEyJnCQgAQAATImcJCgBAABMiZwkMAEAAEyJnCQ4AQAATImcJEABAABMiZwkSAEAAEyJnCRQAQAATImcJFgBAABMiZwkYAEAAEyJnCRoAQAATImcJHABAABMiZwkeAEAAEyJnCSAAQAATImcJIgBAABMiZwkkAEAAEyJnCSYAQAATImcJKABAABMiZwkqAEAAEyJnCSwAQAATImcJLgBAABMiZwkwAEAAEyJnCTIAQAATImcJNABAABMiZwk2AEAAEyJnCTgAQAATImcJOgBAABMiZwk8AEAAEyJnCT4AQAATImcJAACAABMiZwkCAIAAEyJnCQQAgAATImcJBgCAABMiZwkIAIAAEyJnCQoAgAATImcJDACAABMiZwkOAIAAEyJnCRAAgAATImcJEgCAABMiZwkUAIAAEyJnCRYAgAATImcJGACAABMiZwkaAIAAEyJnCRwAgAATImcJHgCAABMiZwkgAIAAEyJnCSIAgAATImcJJACAABMiZwkmAIAAEyJnCSgAgAATImcJKgCAABMiZwksAIAAEyJnCS4AgAATImcJMACAABMiZwkyAIAAEyJnCTQAgAATImcJNgCAABMiZwk4AIAAEyJnCToAgAATImcJPACAABMiZwk+AIAAEyJnCQAAwAASI2kJAgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk4Pz///MPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJCADAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHb"
 jmp 21b
 .p2align 6"#,
-        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_init_core = sym super::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
@@ -69,6 +79,8 @@ jmp 21b
 ///
 /// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `inner` must be valid for reads and writes of 80 bytes.
@@ -76,15 +88,15 @@ jmp 21b
 /// * `out` must be valid for reads and writes of 16 bytes.
 /// * The contents of `inner` on return are unspecified.
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJHj+//9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0SYnNTYnHSInWTIn6SIHCoAAAAEyJ+Q=="
+        r#".base64 "SI2kJHj///9JieBJg8AISYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0SYnNTYnHSInWTIn6SIPCYEyJ+Q=="
 call {vg_md5_finalize_scratch}
-.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYuHoAAAAIlDEEGLh6QAAACJQxRBi4eoAAAAiUMYQYuHrAAAAIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
+.base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtHYIlDEEGLR2SJQxRBi0doiUMYQYtHbIlDHEiJ3UiDxRC4gAAAAIlFELgAAAAAiUUUiUUYiUUciUUgiUUkiUUoiUUsiUUwiUU0QbxQAAAATIngSAHASAHASAHASIlDSEiJ7kiJ37oBAAAATIn5"
 call {vg_md5_compress}
-.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19wSYtveE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAABIjaQkiAEAAMM="
+.base64 "SIn7SYnPTIntiwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkiAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRo////8w9/hCSIAAAA8w9/RCR4SI2kJJgAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,

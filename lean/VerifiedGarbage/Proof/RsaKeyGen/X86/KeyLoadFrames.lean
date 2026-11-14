@@ -19,17 +19,17 @@ theorem loadPrime_preserves_num {m m' : Mem} {B : Addr} {n k out j : Nat}
     (width : k ≤ n) (positive : 1 ≤ j) (different : j ≠ out) (fit : arr n j + S n ≤ 2 ^ 64)
     (O : Outs B (loadPrimeRanges n k out) m m') : num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply O.val32 _ (by unfold S at fit; omega)
+  apply O.val32 _ (by unfold S at fit; omega_using [fit])
   intro r hr
   simp only [loadPrimeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · have last := arr_end (w := n) (show 0 < j by omega)
+  · have last := arr_end (w := n) (show 0 < j by omega_using [positive])
     unfold S at last
-    exact Or.inr (by omega)
+    exact Or.inr (by omega_using [width, last])
   · have D := arr_disj (w := n) different
     simp only at D ⊢
     unfold S at D ⊢
-    omega
+    omega_using [D]
 
 theorem loadPrime_stage_frame {m m' : Mem} {B : Addr} {n k out : Nat} (width : k ≤ n)
     (O : Outs B (loadPrimeRanges n k out) m m') : Outs B (stageRanges n [out]) m m' := by
@@ -37,18 +37,18 @@ theorem loadPrime_stage_frame {m m' : Mem} {B : Addr} {n k out : Nat} (width : k
   intro r hr
   simp only [loadPrimeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact stage_cover_temp (by simp only [arr, Nat.zero_mul, Nat.add_zero]; exact Nat.le_refl _) (by unfold arr S; omega)
+  · exact stage_cover_temp (by simp only [arr, Nat.zero_mul, Nat.add_zero]; exact Nat.le_refl _) (by unfold arr S; omega_using [width])
   · exact stage_cover_array (by simp) (Nat.le_refl _)
 
 theorem loadExponent_scratch_frame {s : VG.X86.State} {B : Addr} {Z n : Nat} {m m' : Mem}
     (h : Ws s B Z n 32) (O : Outs B (loadExponentRanges n) m m') : Frame [⟨B, Z⟩] m m' := by
   have head := h.hdr_le
-  apply outs_scratch_frame (by have := h.workspace.nowrap; omega) O
+  apply outs_scratch_frame (by have := h.workspace.nowrap; omega_using [this]) O
   intro r hr
   simp only [loadExponentRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · unfold kEv hdr at *
-    omega
+    omega_using [head]
   · exact h.arr_fit (by decide)
 
 theorem Input.afterExponent {E : Environment} {s t : VG.X86.State} {regs : List VG.X86.Reg}

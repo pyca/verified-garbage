@@ -100,31 +100,31 @@ theorem xorData_ok (d : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : reg
     simp only [List.length_cons] at hinS hinD hwS hwD hsd
     have wS : ((s.gpr .esi).setWidth 64).toNat = (s.gpr .esi).toNat := by
       simp only [BitVec.toNat_setWidth]
-      exact Nat.mod_eq_of_lt (by have := (s.gpr .esi).isLt; omega)
+      exact Nat.mod_eq_of_lt (by have := (s.gpr .esi).isLt; omega_using [])
     have wD : ((s.gpr d).setWidth 64).toNat = (s.gpr d).toNat := by
       simp only [BitVec.toNat_setWidth]
-      exact Nat.mod_eq_of_lt (by have := (s.gpr d).isLt; omega)
+      exact Nat.mod_eq_of_lt (by have := (s.gpr d).isLt; omega_using [])
     rw [xorData, WP.block_append_iff]
-    have hinS0 := hinS 0 (by omega)
-    have hinD0 := hinD 0 (by omega)
+    have hinS0 := hinS 0 (by omega_using [])
+    have hinD0 := hinD 0 (by omega_using [])
     rw [Nat.add_zero] at hinS0 hinD0
     refine WP.mono (xor1_ok b d (16 * j) s hb7 (by
-      rw [ea_mk]; simp only [at_]; rw [addr_eq (by omega)]; exact hinS0) (by
-      rw [ea_mk]; simp only [at_]; rw [addr_eq (by omega)]; exact hinD0)) fun s₁ ⟨m₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+      rw [ea_mk]; simp only [at_]; rw [addr_eq (by omega_using [hwS])]; exact hinS0) (by
+      rw [ea_mk]; simp only [at_]; rw [addr_eq (by omega_using [hwD])]; exact hinD0)) fun s₁ ⟨m₁, g₁, rd₁, wr₁, x₁⟩ => ?_
     have hbS : (s₁.gpr .esi).setWidth 64 = (s.gpr .esi).setWidth 64 := by rw [g₁]
     have hbD : (s₁.gpr d).setWidth 64 = (s.gpr d).setWidth 64 := by rw [g₁]
     -- The block written is apart from the blocks of the source still to be read.
     have sepW : ∀ k, k < bs.length → Mem.Sep ((s.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * (j + 1 + k))) 16
         ((s.gpr d).setWidth 64 + BitVec.ofNat 64 (16 * j)) 16 := fun k hk => by
       rcases hsd with he | hdis
-      · rw [he]; exact Offset.sep _ (by omega) (by omega) (by omega)
+      · rw [he]; exact Offset.sep _ (by omega_using []) (by omega_using [hwS, hk]) (by omega_using [hwS])
       · have e : (s.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * (j + 1 + k)) =
             ((s.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * j)) + BitVec.ofNat 64 (16 * (1 + k)) := by
-          rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+          rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
         rw [e]
-        refine hdis.sep (Offset.contains_base _ (by omega) (by omega)) ?_
+        refine hdis.sep (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hwS, hk])) ?_
         have := Offset.contains_base ((s.gpr d).setWidth 64 + BitVec.ofNat 64 (16 * j)) (d := 0) (n := 16)
-          (k := 16 * (bs.length + 1)) (by omega) (by omega)
+          (k := 16 * (bs.length + 1)) (by omega_using []) (by omega_using [])
         simpa using this
     have hsd' : s₁.gpr .esi = s₁.gpr d ∨ Region.Disjoint
         ⟨(s₁.gpr .esi).setWidth 64 + BitVec.ofNat 64 (16 * (j + 1)), 16 * bs.length⟩
@@ -134,28 +134,28 @@ theorem xorData_ok (d : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : reg
       · exact .inl he
       · have sub : ∀ (X : Addr), Region.Sub ⟨X + BitVec.ofNat 64 (16 * (j + 1)), 16 * bs.length⟩
             ⟨X + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩ := fun X => by
-          rw [show 16 * (j + 1) = 16 * j + 16 by omega, BitVec.ofNat_add, ← BitVec.add_assoc]
-          exact Offset.sub_base _ (by omega)
+          rw [show 16 * (j + 1) = 16 * j + 16 by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc]
+          exact Offset.sub_base _ (by omega_using [])
         exact .inr ((hdis.sub_left (sub _)).sub_right (sub _))
     refine WP.mono (ih (j + 1) s₁ (List.nodup_cons.mp hnd).2 h7'
         (fun k hk => by
-          rw [rd₁, wr₁, hbS, show j + 1 + k = j + (k + 1) by omega]; exact hinS (k + 1) (by omega))
-        (fun k hk => by rw [wr₁, hbD, show j + 1 + k = j + (k + 1) by omega]; exact hinD (k + 1) (by omega))
-        (by rw [g₁]; omega) (by rw [g₁]; omega) hsd') fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+          rw [rd₁, wr₁, hbS, show j + 1 + k = j + (k + 1) by omega_using []]; exact hinS (k + 1) (by omega_using [hk]))
+        (fun k hk => by rw [wr₁, hbD, show j + 1 + k = j + (k + 1) by omega_using []]; exact hinD (k + 1) (by omega_using [hk]))
+        (by rw [g₁]; omega_using [hwS]) (by rw [g₁]; omega_using [hwD]) hsd') fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
     rw [hbS, hbD] at hb
     rw [hbD] at hf
     rw [ea_mk, ea_mk] at m₁
     simp only [at_] at m₁
-    rw [addr_eq (x := s.gpr d) (by omega), addr_eq (x := s.gpr .esi) (by omega)] at m₁
+    rw [addr_eq (x := s.gpr d) (by omega_using [hwD]), addr_eq (x := s.gpr .esi) (by omega_using [hwS])] at m₁
     -- Block `j` is not in the rest's frame.
     have hdj : ∀ r ∈ [(⟨((s.gpr d).setWidth 64) + BitVec.ofNat 64 (16 * (j + 1)), 16 * bs.length⟩ : Region)],
         Region.Disjoint ⟨((s.gpr d).setWidth 64) + BitVec.ofNat 64 (16 * j), 16⟩ r := by
       simp only [List.mem_singleton, forall_eq]
       intro a h₁ h₂
       simp only [Region.Contains] at h₁ h₂
-      rw [Offset.toNat_sub_add _ _ (by omega)] at h₁ h₂
+      rw [Offset.toNat_sub_add _ _ (by omega_using [hwS])] at h₁ h₂
       have := (a - (s.gpr d).setWidth 64).isLt
-      omega
+      omega_using [hwS, h₁, h₂]
     refine ⟨fun k hk => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr hr' => ?_⟩
     · cases k with
       | zero =>
@@ -164,18 +164,18 @@ theorem xorData_ok (d : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : reg
       | succ k =>
         simp only [List.getElem_cons_succ]
         have hk' : k < bs.length := by simpa using hk
-        rw [show j + (k + 1) = j + 1 + k by omega, hb k hk', m₁, blockAt_writeW_sep _ _ (sepW k hk'),
+        rw [show j + (k + 1) = j + 1 + k by omega_using [], hb k hk', m₁, blockAt_writeW_sep _ _ (sepW k hk'),
           x₁ _ (fun h => hbs (h ▸ List.getElem_mem hk')) (fun h => h7' (h ▸ List.getElem_mem hk'))]
     · rw [m₁] at hf
       refine (Frame.writeW (Frame.refl [⟨((s.gpr d).setWidth 64) + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩]
-        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega)).trans
+        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega_using [])).trans
         (hf.sub fun r hr => ⟨_, List.mem_cons_self, fun a ha => ?_⟩)
       simp only [List.mem_singleton] at hr
       subst hr
       simp only [Region.Contains] at ha ⊢
-      rw [Offset.toNat_sub_add _ _ (by omega)] at ha ⊢
+      rw [Offset.toNat_sub_add _ _ (by omega_using [hwS])] at ha ⊢
       have := (a - (s.gpr d).setWidth 64).isLt
-      omega
+      omega_using [ha]
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr hr'.2, x₁ r hr'.1 hr]
 

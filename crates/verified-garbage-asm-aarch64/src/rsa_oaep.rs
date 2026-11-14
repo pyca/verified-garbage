@@ -3,9 +3,9 @@
 //! `assembly/rsa_oaep.s`.
 #![allow(dead_code)]
 
-/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+/// `vg_rsa_oaep_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_oaep_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+/// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
 /// # Safety
 ///
@@ -21,8 +21,9 @@
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -30,14 +31,16 @@
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the 3536 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3536 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9006d22,0xf9005123,0xf9005524,0xf9005925
 .inst 0xf9005d26,0xf9000127,0xf940b7ea,0xf900652a,0xf940bbea,0xf900692a,0xf940c7ea,0xf900312a
@@ -45,9 +48,11 @@ pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize
 .inst 0xf9409fea,0xf900112a,0xf940a3ea,0xf900152a,0xf940a7ea,0xf900192a,0xf940abea,0xf9001d2a
 .inst 0xf940afea,0xf900212a,0xf940b3ea,0xf900252a,0xf94033ea,0xd284000f,0x8b0f014a,0xf94063eb
 .inst 0xd110016b,0xf900292a,0xf9002d2b,0xf94033e0,0x91000000,0xf94057e1,0xf94053e2,0xf94057e3
-.inst 0xf9405be4,0xf9405fe5,0xf940bfe6,0xf94057e7
-bl {vg_rsa_private_checked}
-.inst 0xf940cff0,0x910003e9,0xf9008130,0xf94083f0,0xf9401210,0xd1004211
+.inst 0xf9405be4,0xf9405fe5,0xf940bfe6,0xf94057e7,0x910003e9,0xf940d7ea,0xf900312a,0xf940dbea
+.inst 0xf900352a
+bl {vg_rsa_private_checked_precomputed}
+.inst 0x910003e9,0xf940c7ea,0xf900312a,0xf940cff0,0x910003e9,0xf9008130,0xf94083f0,0xf9401a10
+.inst 0xd1004211
 cbz x17, 20f
 .inst 0xd1005211
 cbz x17, 22f
@@ -64,7 +69,7 @@ cbnz x11, 210f
 .inst 0x91300000,0xf9406be1,0xf94033e2,0x91350042,0xf94033e3,0x91370063,0xf94083f0,0xf9400a10
 .inst 0xd63f0200,0xf94033ea,0x9100054a,0xd280080b,0xf94033ec,0x9101058c,0xf94057ed,0xd10105ad
 .inst 0x910003e9,0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a
-.inst 0xf940114a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
+.inst 0xf940194a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 212:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
 .inst 0xf94037e2,0xf9403be3,0xf94033e4,0x91370084,0xf94083f0,0xf9400610,0xd63f0200,0xf94033e2
@@ -80,7 +85,7 @@ cbnz x14, 213b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 212b
 .inst 0xf94033ea,0x9101054a,0xf94057eb,0xd101056b,0xf94033ec,0x9100058c,0xd280080d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 214:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -150,7 +155,7 @@ cbnz x11, 224f
 .inst 0x91300000,0xf9406be1,0xf94033e2,0x91350042,0xf94033e3,0x91370063,0xf94083f0,0xf9400a10
 .inst 0xd63f0200,0xf94033ea,0x9100054a,0xd280060b,0xf94033ec,0x9100c58c,0xf94057ed,0xd100c5ad
 .inst 0x910003e9,0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a
-.inst 0xf940114a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
+.inst 0xf940194a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 226:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
 .inst 0xf94037e2,0xf9403be3,0xf94033e4,0x91370084,0xf94083f0,0xf9400610,0xd63f0200,0xf94033e2
@@ -166,7 +171,7 @@ cbnz x14, 227b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 226b
 .inst 0xf94033ea,0x9100c54a,0xf94057eb,0xd100c56b,0xf94033ec,0x9100058c,0xd280060d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 228:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -237,7 +242,7 @@ cbnz x11, 238f
 .inst 0x91300000,0xf9406be1,0xf94033e2,0x91350042,0xf94033e3,0x91370063,0xf94083f0,0xf9400a10
 .inst 0xd63f0200,0xf94033ea,0x9100054a,0xd280040b,0xf94033ec,0x9100858c,0xf94057ed,0xd10085ad
 .inst 0x910003e9,0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a
-.inst 0xf940114a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
+.inst 0xf940194a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 240:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
 .inst 0xf94037e2,0xf9403be3,0xf94033e4,0x91370084,0xf94083f0,0xf9400610,0xd63f0200,0xf94033e2
@@ -253,7 +258,7 @@ cbnz x14, 241b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 240b
 .inst 0xf94033ea,0x9100854a,0xf94057eb,0xd100856b,0xf94033ec,0x9100058c,0xd280040d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 242:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -324,7 +329,7 @@ cbnz x11, 252f
 .inst 0x91300000,0xf9406be1,0xf94033e2,0x91350042,0xf94033e3,0x91370063,0xf94083f0,0xf9400a10
 .inst 0xd63f0200,0xf94033ea,0x9100054a,0xd280038b,0xf94033ec,0x9100758c,0xf94057ed,0xd10075ad
 .inst 0x910003e9,0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a
-.inst 0xf940114a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
+.inst 0xf940194a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 254:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
 .inst 0xf94037e2,0xf9403be3,0xf94033e4,0x91370084,0xf94083f0,0xf9400610,0xd63f0200,0xf94033e2
@@ -340,7 +345,7 @@ cbnz x14, 255b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 254b
 .inst 0xf94033ea,0x9100754a,0xf94057eb,0xd100756b,0xf94033ec,0x9100058c,0xd280038d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 256:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -411,7 +416,7 @@ cbnz x11, 266f
 .inst 0x91300000,0xf9406be1,0xf94033e2,0x91350042,0xf94033e3,0x91370063,0xf94083f0,0xf9400a10
 .inst 0xd63f0200,0xf94033ea,0x9100054a,0xd280028b,0xf94033ec,0x9100558c,0xf94057ed,0xd10055ad
 .inst 0x910003e9,0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a
-.inst 0xf940114a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
+.inst 0xf940194a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 268:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
 .inst 0xf94037e2,0xf9403be3,0xf94033e4,0x91370084,0xf94083f0,0xf9400610,0xd63f0200,0xf94033e2
@@ -427,7 +432,7 @@ cbnz x14, 269b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 268b
 .inst 0xf94033ea,0x9100554a,0xf94057eb,0xd100556b,0xf94033ec,0x9100058c,0xd280028d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 270:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -498,7 +503,7 @@ cbnz x11, 280f
 .inst 0x91300000,0xf9406be1,0xf94033e2,0x91350042,0xf94033e3,0x91370063,0xf94083f0,0xf9400a10
 .inst 0xd63f0200,0xf94033ea,0x9100054a,0xd280020b,0xf94033ec,0x9100458c,0xf94057ed,0xd10045ad
 .inst 0x910003e9,0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a
-.inst 0xf940114a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
+.inst 0xf940194a,0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 282:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
 .inst 0xf94037e2,0xf9403be3,0xf94033e4,0x91370084,0xf94083f0,0xf9400610,0xd63f0200,0xf94033e2
@@ -514,7 +519,7 @@ cbnz x14, 283b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 282b
 .inst 0xf94033ea,0x9100454a,0xf94057eb,0xd100456b,0xf94033ec,0x9100058c,0xd280020d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940d3ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 284:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -578,13 +583,13 @@ cbnz x12, 293b
 21:
 .inst 0x910443ff,0xf84107fe,0xd65f03c0
 .p2align 6",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+/// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// # Safety
 ///
@@ -596,8 +601,8 @@ cbnz x12, 293b
 /// * `seed` must be valid for reads of `seed_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -610,15 +615,15 @@ cbnz x12, 293b
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r".inst 0xf81f0ffe,0xd10443ff,0x910003e9,0xf9004d20,0xf9005122,0xf9005523,0xf9005924,0xf9005d25
 .inst 0xf9006526,0xf9006927,0xf94093ea,0xf9006d2a,0xf94097ea,0xf900712a,0xf9409bea,0xf900752a
 .inst 0xf940a3ea,0xf900312a,0xf940a7ea,0xf900612a,0xf940b3f0,0x910003e9,0xf9008130,0xf94083f0
-.inst 0xf9401210,0xd1004211
+.inst 0xf9401a10,0xd1004211
 cbz x17, 20f
 .inst 0xd1005211
 cbz x17, 22f
@@ -658,7 +663,7 @@ b 218f
 cbnz x13, 219b
 218:
 .inst 0xf94033ea,0x9101054a,0xf94057eb,0xd101056b,0xf94033ec,0x9100058c,0xd280080d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 220:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -675,7 +680,7 @@ cbnz x14, 221b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 220b
 .inst 0xf94033ea,0x9100054a,0xd280080b,0xf94033ec,0x9101058c,0xf94057ed,0xd10105ad,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 222:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -743,7 +748,7 @@ b 234f
 cbnz x13, 235b
 234:
 .inst 0xf94033ea,0x9100c54a,0xf94057eb,0xd100c56b,0xf94033ec,0x9100058c,0xd280060d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 236:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -760,7 +765,7 @@ cbnz x14, 237b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 236b
 .inst 0xf94033ea,0x9100054a,0xd280060b,0xf94033ec,0x9100c58c,0xf94057ed,0xd100c5ad,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 238:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -829,7 +834,7 @@ b 250f
 cbnz x13, 251b
 250:
 .inst 0xf94033ea,0x9100854a,0xf94057eb,0xd100856b,0xf94033ec,0x9100058c,0xd280040d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 252:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -846,7 +851,7 @@ cbnz x14, 253b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 252b
 .inst 0xf94033ea,0x9100054a,0xd280040b,0xf94033ec,0x9100858c,0xf94057ed,0xd10085ad,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 254:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -915,7 +920,7 @@ b 266f
 cbnz x13, 267b
 266:
 .inst 0xf94033ea,0x9100754a,0xf94057eb,0xd100756b,0xf94033ec,0x9100058c,0xd280038d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 268:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -932,7 +937,7 @@ cbnz x14, 269b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 268b
 .inst 0xf94033ea,0x9100054a,0xd280038b,0xf94033ec,0x9100758c,0xf94057ed,0xd10075ad,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 270:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -1001,7 +1006,7 @@ b 282f
 cbnz x13, 283b
 282:
 .inst 0xf94033ea,0x9100554a,0xf94057eb,0xd100556b,0xf94033ec,0x9100058c,0xd280028d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 284:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -1018,7 +1023,7 @@ cbnz x14, 285b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 284b
 .inst 0xf94033ea,0x9100054a,0xd280028b,0xf94033ec,0x9100558c,0xf94057ed,0xd10055ad,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 286:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -1087,7 +1092,7 @@ b 298f
 cbnz x13, 299b
 298:
 .inst 0xf94033ea,0x9100454a,0xf94057eb,0xd100456b,0xf94033ec,0x9100058c,0xd280020d,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 2100:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001
@@ -1104,7 +1109,7 @@ cbnz x14, 2101b
 .inst 0xf94043eb,0xeb0b014c,0xda0c018c
 cbnz x12, 2100b
 .inst 0xf94033ea,0x9100054a,0xd280020b,0xf94033ec,0x9100458c,0xf94057ed,0xd10045ad,0x910003e9
-.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940114a
+.inst 0xf9003d2a,0xf900412b,0xf900352c,0xf900392d,0xf940b7ea,0x910003e9,0xf900812a,0xf940194a
 .inst 0x910003e9,0xf900852a,0xd280000a,0xf900452a,0xf900492a
 2102:
 .inst 0xf94033e0,0x91300000,0xf94083f0,0xf9400210,0xd63f0200,0xf94033e0,0x91300000,0xd2800001

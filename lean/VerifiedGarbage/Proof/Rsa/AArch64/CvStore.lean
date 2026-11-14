@@ -30,7 +30,7 @@ theorem frm_scr {m m' : Mem} {B out : Addr} {Z len : Nat} (hsep : ∀ i < len, Z
     rw [← he] at this
     have := hx' _ List.mem_cons_self
     have : ofs B x < 2 ^ 64 := (x - B).isLt
-    omega
+    omega_arith
 
 /-- `storeA`, which keeps the working space and the header. -/
 theorem storeA_ws {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLen len : Nat} {out : Addr}
@@ -61,7 +61,7 @@ theorem cvExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool}
   have hs := h.scr
   have hn := hs.nowrap
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
   refine WP.keep [.x0, .x3, .x4] ?_ (by decide) (by decide) (by decide +kernel)
   brun [retMask, h.x0, hdr_enc (show Public.sMask < 32 by decide), hl Public.sMask (by decide), hm, mask_and_one]
 
@@ -104,11 +104,11 @@ theorem cvStores_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k pl ql
   have sl : ∀ j < 16, slot w j + 8 * (w + 2) ≤ Z := fun j hj => h.sl hj
   -- Header words and arrays below `Z` are kept by each store.
   have fw : ∀ {m m' : Mem}, Frm B [(Z, 2 ^ 64)] m m' → ∀ i < 32, word m' B (8 * i) = word m B (8 * i) :=
-    fun hf i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+    fun hf i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
   have fv : ∀ {m m' : Mem}, Frm B [(Z, 2 ^ 64)] m m' → ∀ j < 16, ∀ n ≤ w + 2,
       wv m' B (slot w j) n = wv m B (slot w j) n := fun hf j hj n hn' =>
-    hf.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; have := sl j hj; exact Or.inl (by omega))
-      (by have := sl j hj; omega)
+    hf.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; have := sl j hj; exact Or.inl (by omega_using [hn', this]))
+      (by have := sl j hj; omega_using [hn, hn', this])
   refine wp_seqs_append (by simp [storeA]) (by simp [storeA]) (WP.mono (storeA_ws h (by decide) (by decide)
     (by decide) ha.qi ha.pl hm hpl1 hpl2 oQi.wr oQi.sep) fun s₁ ⟨b₁, x₁, h₁, f₁, k₁⟩ => ?_)
   have hm₁ : word s₁.mem B (8 * Public.sMask) = mask c := by rw [fw f₁ _ (by decide)]; exact hm
@@ -130,12 +130,12 @@ theorem cvStores_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {k pl ql
     exact List.map_congr_left fun i hi => by
       have hi' := List.mem_range.mp hi
       rw [x₃ _ (fun j hj => a2 i hi' j hj), x₂ _ (fun j hj => a1 i hi' j hj)]
-  · rw [fv f₁ _ (by decide) _ (by omega)] at b₂
+  · rw [fv f₁ _ (by decide) _ (by omega_using [hpl2])] at b₂
     rw [← b₂]
     exact List.map_congr_left fun i hi => by
       have hi' := List.mem_range.mp hi
       rw [x₃ _ (fun j hj => a3 i hi' j hj)]
-  · rw [fv f₂ _ (by decide) _ (by omega), fv f₁ _ (by decide) _ (by omega)] at b₃
+  · rw [fv f₂ _ (by decide) _ (by omega_using [hql2]), fv f₁ _ (by decide) _ (by omega_using [hql2])] at b₃
     exact b₃
 
 end VG.Proof.Rsa.AArch64

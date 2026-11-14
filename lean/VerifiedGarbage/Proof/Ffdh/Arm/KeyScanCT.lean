@@ -94,8 +94,8 @@ theorem keyScanTail {base src : BitVec 32} {len : Nat} {bs : List Byte} {s t : S
     KeyScanState base (src + 1) len (bs.drop 1) t := by
   have frame : Frame [] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
   have source := (h.source.after_frame frame rest (by simp)).slice
-    (d := 1) (k := bs.length - 1) (by omega) (by omega)
-  rw [List.take_of_length_le (by simp only [List.length_drop]; omega)] at source
+    (d := 1) (k := bs.length - 1) (by omega_using [positive]) (by omega_using [positive])
+  rw [List.take_of_length_le (by simp only [List.length_drop]; omega_using [])] at source
   refine ⟨?_, ptr, ?_⟩
   · exact source
   · simpa only [List.length_drop] using count
@@ -111,10 +111,10 @@ theorem keyScan_ct {base src : BitVec 32} {len : Nat} {bs : List Byte}
       (eval .ne s = some true → ∃ m < n, I m s t) := by
     intro s t tr1 tr2 u v h e1 e2
     obtain ⟨ptr, octets, size, pos, fit, hs, ht, sp⟩ := h
-    have leak := (keyScanStep_ct (by omega) (by omega)) s t tr1 tr2 u v ⟨hs, ht, sp⟩ e1 e2
-    obtain ⟨_, u', run1, post1, rest1⟩ := scanStep_ok s hs.source (by omega) (by omega) hs.ptr hs.count
+    have leak := (keyScanStep_ct (by omega_using [size, pos]) (by omega_using [size, fit])) s t tr1 tr2 u v ⟨hs, ht, sp⟩ e1 e2
+    obtain ⟨_, u', run1, post1, rest1⟩ := scanStep_ok s hs.source (by omega_using [size, pos]) (by omega_using [size, fit]) hs.ptr hs.count
     obtain ⟨_, rfl⟩ := Exec.det e1 run1
-    obtain ⟨_, v', run2, post2, rest2⟩ := scanStep_ok t ht.source (by omega) (by omega) ht.ptr ht.count
+    obtain ⟨_, v', run2, post2, rest2⟩ := scanStep_ok t ht.source (by omega_using [size, pos]) (by omega_using [size, fit]) ht.ptr ht.count
     obtain ⟨_, rfl⟩ := Exec.det e2 run2
     obtain ⟨_, mem1, result1⟩ := post1
     obtain ⟨_, mem2, result2⟩ := post2
@@ -125,7 +125,7 @@ theorem keyScan_ct {base src : BitVec 32} {len : Nat} {bs : List Byte}
       have eval1 : eval .ne u = some true := by simp only [eval, zero1, Bool.not_false]
       have eval2 : eval .ne v = some true := by simp only [eval, zero2, Bool.not_false]
       refine ⟨leak.1, eval1.trans eval2.symm, fun _ => trivial, fun _ => ?_⟩
-      refine ⟨n - 1, by omega, ptr + 1, octets.drop 1, ?_, by omega, by omega,
+      refine ⟨n - 1, by omega_using [pos], ptr + 1, octets.drop 1, ?_, by omega, by omega_using [fit],
         keyScanTail hs go.2 mem1 rest1 ptr1 count1, keyScanTail ht go.2 mem2 rest2 ptr2 count2, ?_⟩
       · simp only [List.length_drop, size]
       · exact rest1.sp.trans (sp.trans rest2.sp.symm)

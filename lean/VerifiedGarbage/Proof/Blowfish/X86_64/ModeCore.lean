@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
 public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
-public import VerifiedGarbage.Proof.Modes.X86_64.KeepGpr
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 public import VerifiedGarbage.Impl.Blowfish.X86_64.Modes
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import VerifiedGarbage.Proof.Blowfish.X86_64.Block
@@ -13,7 +19,107 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+
+/-! ### `Modes.X86_64.KeepGpr`, which only this module used -/
+
+section
+
+/-!
+# Code that keeps a general-purpose register
+
+`keepsGpr_of_gprSafe`: code whose every instruction writes no
+general-purpose register (an SSE instruction, a 128-bit load, a store) or
+one other than `r` keeps `r`, whatever it does to the rest. A core whose
+block code needs every `xmm` register, `ivX` among them, keeps the IV's
+address in such a register around it (`Proof/Blowfish/X86_64/ModeCore.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Modes.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd
+
+/-- Whether `i` writes no general-purpose register but, at most, one other
+than `r`. -/
+def gprSafeI (r : Reg) : Instr → Bool
+  | .xop _ | .movdquLoad .. | .movdquStore .. | .store .. | .store32 .. => true
+  | .mov d _ | .mov32 d _ | .alu _ d _ | .movImm64 d _ | .bswap32 d | .movqR d _ => d != r
+  | _ => false
+
+theorem xop_exec_gpr (op : XOp) (s : State) : (op.exec s).gpr = s.gpr := by
+  cases op <;> rfl
+
+theorem execAlu_gpr {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu op d src s = some t)
+    {r : Reg} (hr : r ≠ d) : t.gpr r = s.gpr r := by
+  simp only [execAlu, Option.bind_eq_some_iff] at h
+  obtain ⟨b, -, h⟩ := h
+  cases op <;> simp only [Option.some.injEq, Option.map_eq_some_iff] at h
+  all_goals first
+    | (subst h; simp only [gpr_setReg_of_ne _ _ hr, gpr_arithFlags])
+    | (obtain ⟨c, -, rfl⟩ := h; simp only [gpr_setReg_of_ne _ _ hr, gpr_arithFlags])
+
+theorem exec_gprSafe {r : Reg} {i : Instr} (hi : gprSafeI r i = true) {s t : State} (h : exec i s = some t) :
+    t.gpr r = s.gpr r := by
+  cases i <;> simp only [gprSafeI, bne_iff_ne, ne_eq, Bool.false_eq_true] at hi
+  all_goals simp only [reduceExec, Option.map_eq_some_iff, Option.some.injEq] at h
+  all_goals first
+    | (subst h; first | rfl | exact congrFun (xop_exec_gpr _ _) _ |
+        simp only [State.setReg32, gpr_setReg_of_ne _ _ (Ne.symm hi)])
+    | (obtain ⟨v, -, rfl⟩ := h; first | rfl | simp only [State.setReg32, gpr_setReg_of_ne _ _ (Ne.symm hi)])
+    | exact execAlu_gpr h (Ne.symm hi)
+    | (simp only [State.store64, State.store32, State.store128] at h
+       split at h
+       · cases h; rfl
+       · cases h)
+
+/-- Whether every instruction of `c` keeps `r`, with no calls or frames. -/
+def gprSafe (r : Reg) : Prog isa → Bool
+  | .block is => is.all (gprSafeI r)
+  | .seq a b => gprSafe r a && gprSafe r b
+  | .ite _ a b => gprSafe r a && gprSafe r b
+  | .loop b _ => gprSafe r b
+  | _ => false
+
+theorem execBlock_gprSafe {r : Reg} : ∀ {is : List Instr}, is.all (gprSafeI r) = true → ∀ {s s' : State}
+    {t : List Leak}, execBlock isa is s = some (s', t) → s'.gpr r = s.gpr r
+  | [], _, _, _, _, h => by simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h; rw [h.1]
+  | i :: is, hs, s, s', t, h => by
+    simp only [List.all_cons, Bool.and_eq_true] at hs
+    simp only [execBlock] at h
+    split at h
+    · cases h
+    · rename_i s₁ he
+      simp only [Option.map_eq_some_iff, Prod.exists] at h
+      obtain ⟨s₂, t₂, h, he'⟩ := h
+      simp only [Prod.mk.injEq] at he'
+      rw [← he'.1]
+      exact (execBlock_gprSafe hs.2 h).trans (exec_gprSafe hs.1 he)
+
+theorem keepsGpr_of_gprSafe {r : Reg} {c : Prog isa} (hc : gprSafe r c = true) :
+    ∀ s t s', Exec isa c s t s' → s'.gpr r = s.gpr r := by
+  intro s t s' h
+  revert hc
+  induction h with
+  | icall | icallNext => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
+  | block e => exact fun hc => execBlock_gprSafe hc e
+  | seq _ _ ih₁ ih₂ =>
+    intro hc
+    simp only [gprSafe, Bool.and_eq_true] at hc
+    exact (ih₂ hc.2).trans (ih₁ hc.1)
+  | iteT _ _ ih => intro hc; simp only [gprSafe, Bool.and_eq_true] at hc; exact ih hc.1
+  | iteF _ _ ih => intro hc; simp only [gprSafe, Bool.and_eq_true] at hc; exact ih hc.2
+  | loopExit _ _ ih => exact ih
+  | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₂ hc).trans (ih₁ hc)
+  | call => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
+  | frame => intro hc; simp only [gprSafe, Bool.false_eq_true] at hc
+
+end VG.Proof.Modes.X86_64
+
+end
+
+end
+
 
 /-!
 # Blowfish's core for the modes on x86-64
@@ -114,7 +220,7 @@ theorem restoreIv_run (s : State) :
 /-- The scratch buffer's bytes `t` to `t + n`, within the writable regions. -/
 theorem inScr {s : State} {B : Addr} (hw : (⟨B, 8 * 11⟩ : Region) ∈ s.wr)
     {t n : Nat} (ht : t + n ≤ 8 * 11) : InRegions s.wr (B + BitVec.ofNat 64 t) n :=
-  ⟨_, hw, Offset.contains_base B ht (by omega)⟩
+  ⟨_, hw, Offset.contains_base B ht (by omega_using [ht])⟩
 
 theorem inScr' {s : State} {B : Addr} (hw : (⟨B, 8 * 11⟩ : Region) ∈ s.wr)
     {t n : Nat} (ht : t + n ≤ 8 * 11) : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 t) n := by
@@ -149,7 +255,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   have rsi₅ : t₅.gpr .rsi = B := by
     rw [g₅ _ (by decide), o₄ _ (by decide), o₃ _ (by decide), r₂, o₁ _ (by decide), sb₁]
   obtain ⟨t₆, f₆, l₆a, l₆b, k₆, g₆, u₆⟩ := loadBlock_run t₅ B rsi₅ fun o ho => by
-    rw [rd₅, wr₅]; exact inScr' (s := s) hw (by omega)
+    rw [rd₅, wr₅]; exact inScr' (s := s) hw (by omega_using [ho])
   have mem₆ : t₆.mem = s.mem := by rw [u₆, mem₅]
   have rd₆ : t₆.rd = s.rd := by rw [u₆, rd₅]
   have wr₆ : t₆.wr = s.wr := by rw [u₆, wr₅]
@@ -167,11 +273,11 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   refine WP.of_runBlock ⟨t₆, cat_run (cat_run (cat_run f₁ (cat_run f₂ (cat_run f₃ f₄))) f₅) f₆, ?_⟩
   -- The rounds.
   have inSch : ∀ off n, off + n ≤ 4168 → InRegions (t₆.rd ++ t₆.wr) (p + BitVec.ofNat 64 off) n :=
-    fun off n h => ⟨_, List.mem_append_left _ (by rw [rd₆]; exact hS.rd), Offset.contains_base p h (by omega)⟩
+    fun off n h => ⟨_, List.mem_append_left _ (by rw [rd₆]; exact hS.rd), Offset.contains_base p h (by omega_using [h])⟩
   have CE : CipherEnv .rdi p t₆ := by
-    refine ⟨⟨rdi₆, by decide, by decide, by decide, fun off h => inSch off 16 (by omega),
+    refine ⟨⟨rdi₆, by decide, by decide, by decide, fun off h => inSch off 16 (by omega_using [h]),
       by rw [k₆ _ (by decide) (by decide), x₅a], by rw [k₆ _ (by decide) (by decide), x₅b],
-      by rw [k₆ _ (by decide) (by decide), x₅c]⟩, by decide, by decide, fun i hi => inSch _ 4 (by omega)⟩
+      by rw [k₆ _ (by decide) (by decide), x₅c]⟩, by decide, by decide, fun i hi => inSch _ 4 (by omega_using [hi])⟩
   apply WP.seq
   refine WP.mono (cipher_run CE up) fun t₇ ⟨c₁, c₂, O⟩ => ?_
   have mem₇ : t₇.mem = s.mem := by rw [O.upd, mem₆]
@@ -183,7 +289,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
     refine ⟨by rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), rsi₆],
       by rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), rcx₆],
       by rw [wr₇, show B = B + BitVec.ofNat 64 0 by simp]; exact inScr hw (by decide),
-      by rw [wr₇]; exact inScr hw (by simp only [wsSlot]; omega),
+      by rw [wr₇]; exact inScr hw (by simp only [wsSlot]; omega_using []),
       sep_of_disjoint (buf_ws B), sep_of_disjoint (buf_ws B).symm⟩
   obtain ⟨t₈, f₈, b₈, fr₈, g₈, e₈⟩ := storeBlock_run SE
   obtain ⟨t₉, f₉, r₉, o₉, n₉, d₉, w₉⟩ := movR_ok t₈ sb .rdx
@@ -194,7 +300,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
   have mem₁₀ : t₁₀.mem = t₈.mem := by rw [n₁₀, n₉]
   have fr : Frame [⟨B, 8⟩, ⟨wsAddr B, 16⟩] s.mem t₁₀.mem := by rw [mem₁₀, ← mem₇]; exact fr₈
   have sub : Region.Sub ⟨B, 8⟩ ⟨B, 8 * 11⟩ ∧ Region.Sub ⟨wsAddr B, 16⟩ ⟨B, 8 * 11⟩ :=
-    ⟨Region.sub_prefix (by decide), Offset.sub_base B (by simp only [wsSlot]; omega)⟩
+    ⟨Region.sub_prefix (by decide), Offset.sub_base B (by simp only [wsSlot]; omega_using [])⟩
   have kp : ∀ g, g ≠ .r14 → g ≠ .rdx → g ≠ .rsi → g ≠ .rcx → g ≠ .rax → g ≠ .r8 →
       g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → t₁₀.gpr g = s.gpr g := fun g h1 h3 h5 h6 h7 h8 h9 h10 h11 => by
     rw [g₁₀, o₉ _ h9, g₈ _ h11, g₇ _ h7 h8 h9 h10 h11, g₆' _ h3 h5 h6 h11, g₁ _ h1]
@@ -220,8 +326,8 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {k : Schedule} (hB : s.gpr s
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by simp only [wsSlot]; omega)⟩
-  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega
+      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by simp only [wsSlot]; omega_using [])⟩
+  · have hj0 : j = 0 := by simp only [dirCore] at hj; omega_using [hj]
     subst hj0
     have ea : blkAddr (dirCore up) B 0 = B := by simp [dirCore]
     have hK₆ : scheduleAt t₆.mem p = k := by rw [mem₆]; exact hK
@@ -256,8 +362,8 @@ theorem movq_lo {v : BitVec 128} (h : v.extractLsb' 64 64 = 0) : (0 : BitVec 64)
   by_cases h64 : i < 64
   · simp [h64, hi]
   · simp only [h64, decide_false, Bool.false_and, ite_false]
-    simp only [Bool.true_and, show i - 64 < 64 by omega, decide_true]
-    congr 1; omega
+    simp only [Bool.true_and, show i - 64 < 64 by omega_using [hi], decide_true]
+    congr 1; omega_using [h64]
 
 theorem gprSafe_setup : gprSafe .r14 (.block setup) = true := by decide
 

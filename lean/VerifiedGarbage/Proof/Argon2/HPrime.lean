@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Argon2
 import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Argon2 H′: lengths and the streaming BLAKE2b specification
@@ -23,7 +24,7 @@ theorem wordList_length (xs : List (BitVec 64)) :
   | cons x xs ih =>
     simp only [List.flatMap_cons, List.length_append, Spec.Blake2.wordBytes,
       List.length_map, List.length_range, List.length_cons] at *
-    omega
+    omega_using [ih]
 
 theorem H_length (n : Nat) (input : List Byte) (hn : n ≤ 64) : (H n input).length = n := by
   simp only [H, Spec.Blake2.blake2b, Spec.Blake2.blake2, List.length_take,
@@ -38,24 +39,24 @@ theorem longHash_length (lastLen r : Nat) (v : List Byte)
   | succ r ih =>
     cases r with
     | zero => simp only [longHash, List.length_append, List.length_take,
-        hv, H_length _ _ hn]; omega
+        hv, H_length _ _ hn]; omega_using []
     | succ r =>
       simp only [longHash, List.length_append, List.length_take, hv]
       rw [ih (H 64 v) (H_length 64 v (by decide))]
-      omega
+      omega_using []
 
 theorem longHash_bounds (n : Nat) (hn : 64 < n) :
     let r := (n + 31) / 32 - 2
     1 ≤ r ∧ 33 ≤ n - 32 * r ∧ n - 32 * r ≤ 64 ∧ 32 * r + (n - 32 * r) = n := by
   dsimp only
-  omega
+  omega_using [hn]
 
 theorem hPrime_length (n : Nat) (input : List Byte) : (hPrime n input).length = n := by
   unfold hPrime
   split
   · exact H_length _ _ (by assumption)
   · rename_i hn
-    have hb := longHash_bounds n (by omega)
+    have hb := longHash_bounds n (by omega_using [hn])
     rw [longHash_length _ _ _ hb.2.2.1 (H_length 64 _ (by decide))]
     exact hb.2.2.2
 
@@ -75,7 +76,7 @@ theorem chainPrefixes_length (r : Nat) (v : List Byte) :
   | zero => rfl
   | succ r ih =>
     simp only [chainPrefixes, List.length_append, List.length_take, H_length 64 _ (by decide), ih]
-    omega
+    omega_using []
 
 theorem longHash_chain (lastLen r : Nat) (v : List Byte) :
     longHash lastLen (r + 1) v =

@@ -39,8 +39,8 @@ theorem vfront_S0 {v : VD} {s : State} (h : VK0 v s) :
   obtain ⟨hp, rfl⟩ := h
   have hL := vkContract_lay hp
   obtain ⟨hrd, hwr, dKS, -, nw, -, hkl, -⟩ := hp
-  exact (pfront_S0_of hL hwr nw (fun hr hw => psrc_of hrd dKS (by omega) hr hw)
-    (by simp only [playOf]; omega)).mono fun _ h => ⟨h, by simp only [KY, vkvdOf, pvdN, playOf]; omega⟩
+  exact (pfront_S0_of hL hwr nw (fun hr hw => psrc_of hrd dKS (by omega_using [hkl]) hr hw)
+    (by simp only [playOf]; omega_using [])).mono fun _ h => ⟨h, by simp only [KY, vkvdOf, pvdN, playOf]; omega_using []⟩
 
 theorem validate_rel : RelCT isa (Two VK0) Prevalidated.validate fun _ _ => True := by
   unfold Prevalidated.validate
@@ -53,7 +53,7 @@ theorem vkvdOf_eq {s t : State} (hs : vkContract.pre s) (hp : vkContract.pub s t
   have hk := hs.2.2.2.2.2.2.1
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at hl
   have e := map_toNat_inj hl
-  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega)] at e
+  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vkvdOf, pvdN, playOf, ← h3, ← h5, ← h6, ← h7, ← h8, e]
 
 theorem validate_ct : ConstantTime isa vkContract.pre vkContract.pub Prevalidated.validate :=

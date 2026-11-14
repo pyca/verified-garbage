@@ -35,7 +35,7 @@ open VG.Spec.RsaKeyGen (primeEntropy)
 theorem imm64 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn]
 
 /-- The frame's words on entry, in the order the entry stores them. -/
 def entryValues (s : State) : List (Nat × BitVec 64) :=
@@ -164,8 +164,8 @@ theorem search_start {p : SearchPublic} {s t : State} (h : SearchInput p s)
   have hx1 : s.gpr .x1 = BitVec.ofNat 64 p.len := by
     rw [← h.2]; exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
   have hcap : (s.gpr .x1 <<< 15) + s.gpr .x1 = BitVec.ofNat 64 (primeEntropy p.len) := by
-    rw [hx1, SearchInit.shl_ofNat _ _ (by omega), SearchInit.add_ofNat]
-    unfold primeEntropy; congr 1; omega
+    rw [hx1, SearchInit.shl_ofNat _ _ (by omega_using [hL]), SearchInit.add_ofNat]
+    unfold primeEntropy; congr 1; omega_using []
   refine ⟨h, Nat.zero_le _, Nat.le_refl _, k.rd, k.wr.trans (alloc_wr h), ?_, hx, ?_, k.vcs, ?_, ?_, ?_,
     ?_, ?_⟩
   · show t.sp - 16 = p.F - 16

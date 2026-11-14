@@ -1,16 +1,64 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
-
-import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.ExponentMask
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
+
+/-! ### `Dsa.X86.CorePowerFrame`, which only this module used -/
+
+section
+
+/-! # Short scalar exponents in a full-width arithmetic context -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86.Dynamic
+
+theorem val32_prefix_of_lt {mem : Mem} {base : Addr} {d k n : Nat} (hk : k ≤ n)
+    (hlt : val32 mem base d n < 2 ^ (32 * k)) : val32 mem base d k = val32 mem base d n := by
+  have H := val32_append mem base d k (n - k)
+  rw [Nat.add_sub_of_le hk] at H
+  have Hm := congrArg (fun v => v % 2 ^ (32 * k)) H
+  rw [Nat.mod_eq_of_lt hlt, Nat.add_mod, Nat.mul_mod_right, Nat.add_zero,
+    Nat.mod_mod, Nat.mod_eq_of_lt (val32_lt mem base d k)] at Hm
+  exact Hm.symm
+
+theorem decoded_exponent_fits (mem : Mem) (p : Addr) (len : Nat) :
+    Spec.Dsa.decodeBE (Spec.Rsa.bytesAt mem p len) < 2 ^ (32 * ((len + 3) / 4)) := by
+  have H := VG.Proof.Dsa.decodeBE_lt (Spec.Rsa.bytesAt mem p len)
+  simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at H
+  have E : 256 ^ len = 2 ^ (8 * len) := by rw [Nat.pow_mul]
+  rw [E] at H
+  exact Nat.lt_of_lt_of_le H (Nat.pow_le_pow_right (by decide) (by omega_using []))
+
+end VG.Proof.Dsa.X86
+
+end
+
+end
+
 
 /-! # Complete modular exponentiation call, including byte I/O -/
 
@@ -34,15 +82,15 @@ theorem coreLoadPower_ok {s : State} {base : Addr} {size len expLen n m : Nat} {
       val32 t.mem base (slot n 8) ((expLen+3)/4)=
         Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) expLen) ∧
       Outside base 0 (contextBytes n) s.mem t.mem ∧ Keeps loadClob s t := by
-  have hn48 : n ≤ 48 := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn48
-  have hl : len ≤ 8 * n := by omega
+  have hl : len ≤ 8 * n := by omega_using [hn]
   have nw := hs.nowrap
   have bound (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ contextBytes n := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
-  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega
+    omega_using [H]
+  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega_using [contextRoom, this]
   unfold Core.loadPower
   refine WP.seq (WP.mono (coreLoad_ok hs hz (bounds 0 (by decide)) h4 hl hw4
     Rq.toReadableComponent (Rq.slot (by decide))) fun u ⟨Mu, Ku, Ou⟩ => ?_)
@@ -57,18 +105,18 @@ theorem coreLoadPower_ok {s : State} {base : Addr} {size len expLen n m : Nat} {
   have Ksv := Ku.trans Kv
   have Osv := Ou'.trans Ov'
   refine WP.mono (coreLoad_ok (hs.of_keeps Ksv (by decide)) hz (bounds 8 (by decide))
-    (by omega) (by omega) hwe Rbv.toReadableComponent (Rbv.slot (by decide))) fun w ⟨Bw, Kw, Ow⟩ => ?_
+    (by omega_using [he4]) (by omega_using [hn, he]) hwe Rbv.toReadableComponent (Rbv.slot (by decide))) fun w ⟨Bw, Kw, Ow⟩ => ?_
   have Ksw := Ksv.trans Kw
   have Opre := Osv.trans (slotOutside_whole Ow (by decide))
   have Mw : wordsVal w.mem base (slot n 0) n = m := by
-    rw [slotOutside_val Ow (by decide) (by have := bounds 0 (by decide); omega),
-      slotOutside_val Ov (by decide) (by have := bounds 0 (by decide); omega), Mu, hm]
+    rw [slotOutside_val Ow (by decide) (by have := bounds 0 (by decide); omega_using [nw, this]),
+      slotOutside_val Ov (by decide) (by have := bounds 0 (by decide); omega_using [nw, this]), Mu, hm]
   have Aw : wordsVal w.mem base (slot n 5) n =
       Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s a).setWidth 64) len) := by
-    rw [slotOutside_val Ow (by decide) (by have := bounds 5 (by decide); omega), Av,
+    rw [slotOutside_val Ow (by decide) (by have := bounds 5 (by decide); omega_using [nw, this]), Av,
       Ra.bytes Ku (by decide) Ou' hn48]
   rw [Rb.bytes Ksv (by decide) Osv hn48] at Bw
-  have ek : (expLen + 3) / 4 ≤ 2 * n := by omega
+  have ek : (expLen + 3) / 4 ≤ 2 * n := by omega_using [hn, he]
   have Ew : val32 w.mem base (slot n 8) ((expLen + 3) / 4) =
       Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) expLen) := by
     rw [wordsVal_eq_val32] at Bw

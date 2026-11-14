@@ -40,7 +40,7 @@ theorem reduce57_ok {s : State} {base : Addr} (hs : Scr s base)
       Outside base TMP 56 s.mem t.mem := by
   rw [reduce57]
   apply WP.seq
-  refine WP.mono (init57_ok s ⟨_, hR, Offset.contains_base _ (by omega) (by omega)⟩)
+  refine WP.mono (init57_ok s ⟨_, hR, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩)
     fun s₁ ⟨v₁, b₁, k₁⟩ => ?_
   have hs₁ : Scr s₁ base := hs.of_keeps k₁ (by decide)
   have rsi₁ : s₁.gpr .rsi = s.gpr .rsi := k₁.1 _ (by decide)
@@ -51,13 +51,13 @@ theorem reduce57_ok {s : State} {base : Addr} (hs : Scr s base)
     have := decodeLE_lt' (bytesAt s.mem (s.gpr .rsi + BitVec.ofNat 64 56) 1)
     rw [bytesAt_length] at this
     have : 256 < L := by decide +kernel
-    omega
+    omega_arith
   refine WP.mono (scalarLoop_ok hs₁ (by rw [k₁.2.1]; exact hK) (len := 57) (n₀ := 7)
     (by decide) (by decide) ⟨by decide, b₁, v₁', fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
     (fun k hk => by
       rw [rsi₁, k₁.2.2.1, k₁.2.2.2]
-      exact ⟨_, hR, Offset.contains_base _ (d := 8 * k) (n := 8) (k := 57) (by omega) (by omega)⟩)
-    (fun i hi => Or.inr (by rw [rsi₁]; have := hfar i hi; simp only [TMP]; omega)))
+      exact ⟨_, hR, Offset.contains_base _ (d := 8 * k) (n := 8) (k := 57) (by omega_using [hk]) (by omega_using [hk])⟩)
+    (fun i hi => Or.inr (by rw [rsi₁]; have := hfar i hi; simp only [TMP]; omega_using [this])))
     fun t ⟨vt, gt, rdt, wrt, ot⟩ => ?_
   refine ⟨by rw [vt, rsi₁, k₁.2.1], fun r hr => ?_, by rw [rdt, k₁.2.2.1], by rw [wrt, k₁.2.2.2],
     by rw [← k₁.2.1]; exact ot⟩
@@ -84,9 +84,9 @@ theorem product_ok {s : State} {base : Addr} (hs : Scr s base) :
     w (fun i => word s2.mem base (SK + 8 * i)) Impl.X448.X86_64.mulCol
     (fun s' g _ wr out i hi => by
       have hsS : Scr s' base := ⟨(g _ rdi_colX).trans hs2.rdi, wr ▸ hs2.wr, hs2.nowrap⟩
-      have := stable_sc hsS rdi_colX (d := SK + 8 * i) (by simp only [SK]; omega)
-      rwa [out.word (by simp only [Impl.X448.X86_64.ACC, SK]; omega)
-        (by simp only [SK]; omega)] at this)
+      have := stable_sc hsS rdi_colX (d := SK + 8 * i) (by simp only [SK]; omega_using [hi])
+      rwa [out.word (by simp only [Impl.X448.X86_64.ACC, SK]; omega_using [hi])
+        (by simp only [SK]; omega_using [hi])] at this)
     w_colX mulCol_hc mulCol_hw z2 (7 + 7) (Nat.le_refl _)) fun t ⟨gt, rdt, wrt, ot, et, _⟩ => ?_
   have hx : val7 (fun i => (word s2.mem base (SK + 8 * i)).toNat) = mv s.mem base SK 7 := by
     rw [m2, mv7]
@@ -102,13 +102,13 @@ theorem product_ok {s : State} {base : Addr} (hs : Scr s base) :
     · exfalso
       have := Nat.mul_le_mul_left (2 ^ (64 * (7 + 7))) h
       generalize 2 ^ (64 * (7 + 7)) = Q at *
-      omega
+      omega_using [et, hl, this]
   have e2 : mv t.mem base Impl.X448.X86_64.ACC (7 + 7) =
       mv s.mem base SK 7 * mv s.mem base SS 7 := by
     rw [h0] at et
     generalize 2 ^ (64 * (7 + 7)) = Q at et
     generalize mv t.mem base Impl.X448.X86_64.ACC (7 + 7) = A at et ⊢
-    omega
+    omega_using [et]
   refine ⟨e2, fun r hr => ?_, rdt.trans (k2.2.2.1.trans k1.2.2.1),
     wrt.trans (k2.2.2.2.trans k1.2.2.2), by rw [← m2]; exact ot⟩
   simp only [List.mem_append, not_or] at hr
@@ -184,10 +184,10 @@ theorem addSR_ok {s : State} {base : Addr} (hs : Scr s base)
   change rv s (Reg.r8 :: [.r9, .r10, .r11, .r12, .r13, .r14]) + _ < _ at hlt
   generalize (2 : Nat) ^ 448 = M at et h2
   rcases Nat.lt_or_ge c.toNat 1 with h | h
-  · have : c.toNat = 0 := by omega
+  · have : c.toNat = 0 := by omega_using [h]
     rw [this, Nat.mul_zero, Nat.add_zero] at et; exact et
   · have : M ≤ M * c.toNat := Nat.le_mul_of_pos_right _ h
-    omega
+    omega_using [hlt, et, h2, this]
 
 /-- The loop over the product's words: `rsi = rdi + ACC`, a zero remainder and
 `rbx = 112`. -/

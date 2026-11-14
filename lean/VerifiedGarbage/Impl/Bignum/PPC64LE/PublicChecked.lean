@@ -20,7 +20,7 @@ code is the same for every input of the same lengths. `e` is read into
 set, a Montgomery multiplication by `x R mod n`, but the last, whose
 multiplication is by `x` itself (or 1), which also converts out of
 Montgomery form: for `e = 65537`, sixteen squares and one multiplication.
-The Montgomery multiplications are `MontMul.lean`'s `tail`, inline, in its
+The Montgomery multiplications are calls of `MontMul.lean`'s `kernel`, in its
 working space (`n` in array 0, `R² mod n` in array 1, its accumulator and
 temporary in arrays 2 and 3, the input and then the result in array 4, `a`
 in array 5, `x R mod n` in array 6, 1 in array 7). The result is written with a mask of whether `e` and the input are valid.
@@ -133,10 +133,12 @@ def minv : List Instr :=
 def checkX : Prog isa :=
   .seq (.block (base .r8 4 ++ base .r9 3)) (.seq subMod (.block [.logic .and .r26 .r26 .r20]))
 
-/-- `[o] := [a] [b] R⁻¹ mod n`: `tail`, with the bases. -/
+/-- `[o] := [a] [b] R⁻¹ mod n`: a call of `MontMul.kernel`, with the bases,
+the return address kept in `r14` and `-n⁻¹ mod 2³²` passed in `r3`. -/
 def montOp (o a b : Nat) : Prog isa :=
-  .seq (.block (base .r5 o ++ base .r6 a ++ base .r7 b ++ base .r8 2 ++ base .r9 3 ++ [.addi .r4 .r11 0]))
-    tail
+  .seq (.block ([.mflr .r14, .addi .r3 .r12 0] ++ base .r5 o ++ base .r6 a ++ base .r7 b ++ base .r8 2 ++
+      base .r9 3 ++ [.addi .r4 .r11 0]))
+    (.seq (.call kernelName kernel) (.block [.mtlr .r14]))
 
 /-- 1 in array 7. -/
 def one : Prog isa :=

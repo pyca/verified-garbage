@@ -52,7 +52,7 @@ theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat} :
       have countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
         have := h.1.1.1.1.maxLength
         dsimp only [Spec.Rsa.modulusWords]
-        omega
+        omega_using [this]
       exact prepare_ct countFits _ _ _ _ _ _
         ⟨h.1.1.1.1,h.1.2.1.1.1,h.1.2.2⟩ eS eT
     · intro s t trS trT u v h eS eT
@@ -64,11 +64,11 @@ theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat} :
         have := h.1.1.1.1.space
         simp only [Spec.Rsa.publicScratchWords] at this
         simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes]
-        omega
+        omega_using [this]
       have countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
         have := h.1.1.1.1.maxLength
         dsimp only [Spec.Rsa.modulusWords]
-        omega
+        omega_using [this]
       exact normalizedPrepare_ct (inlineMontgomery base len (Spec.Rsa.modulusWords k))
         (inlineMontgomery_ct fit) countFits _ _ _ _ _ _
         ⟨⟨h.1.1.1.1,trivial,h.1.1.1.2.resolve_left notBoundary⟩,

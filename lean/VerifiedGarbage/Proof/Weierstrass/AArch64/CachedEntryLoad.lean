@@ -21,7 +21,7 @@ theorem tmv_keep {M : Mod} {base : Addr} {size : Nat} {C : Curve} {Sl : Nat → 
     (hW : ∀ w∈W,Sl w) {x : Nat} (hx : Sl x) (hne : x∉W) :
     tmv C M.n base t x=tmv C M.n base s x := by
   unfold tmv
-  rw [hk.unch.wordsVal (fun q hq => ?_) (by have := hL.le x hx; omega)]
+  rw [hk.unch.wordsVal (fun q hq => ?_) (by have := hL.le x hx; omega_using [hn, this])]
   simp only [List.mem_append,List.mem_map,List.mem_singleton] at hq
   rcases hq with ⟨w,hw,rfl⟩ | rfl
   · exact hL.apart x w hx (hW w hw) (fun he => hne (he ▸ hw))
@@ -66,10 +66,10 @@ theorem entryLoad_ok {base : Addr} {size a : Nat} {C : Curve} {Sl : Nat → Prop
     rw [not_or]
     have ht : K.tbl=2848 := rfl
     rw [ht] at hx
-    omega
+    omega_using [hx]
   have bidx : b.gpr .x2=BitVec.ofNat 64 a := bidx0.trans h2
   refine WP.mono (jacPublicFields_ok hL hAl (by rfl) (by rfl) (by rfl) ib bidx ha (by decide)
-    de (fun x hx => List.mem_append_right _ (st x hx)) (Or.inl (by change 704+96≤2848+96*(a-1); omega)))
+    de (fun x hx => List.mem_append_right _ (st x hx)) (Or.inl (by change 704+96≤2848+96*(a-1); omega_using [])))
     fun t ⟨kt,it,vt⟩ => ?_
   have vals : (tmv C K.M.n base t K.E.x,tmv C K.M.n base t K.E.y,tmv C K.M.n base t K.E.z)=
       (E (Jacobian.tablePt K a).x,E (Jacobian.tablePt K a).y,E (Jacobian.tablePt K a).z) := by
@@ -120,10 +120,10 @@ theorem entryLoadFields_ok {base : Addr} {size a : Nat} {C : Curve} {Sl : Nat �
     rw [not_or]
     have ht : K.tbl=2848 := rfl
     rw [ht] at hx
-    omega
+    omega_using [hx]
   have bidx : b.gpr .x2=BitVec.ofNat 64 a := bidx0.trans h2
   refine WP.mono (jacPublicFields_ok hL hAl (by rfl) (by rfl) (by rfl) ib bidx ha (by decide)
-    de (fun x hx => List.mem_append_right _ (st x hx)) (Or.inl (by change 704+96≤2848+96*(a-1); omega)))
+    de (fun x hx => List.mem_append_right _ (st x hx)) (Or.inl (by change 704+96≤2848+96*(a-1); omega_using [])))
     fun t ⟨kt,it,vt⟩ => ?_
   have vals : (tmv C K.M.n base t K.E.x,tmv C K.M.n base t K.E.y,tmv C K.M.n base t K.E.z)=
       (E (Jacobian.tablePt K a).x,E (Jacobian.tablePt K a).y,E (Jacobian.tablePt K a).z) := by

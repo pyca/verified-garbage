@@ -64,9 +64,9 @@ theorem key_rejected_scalar {p : KeyPublic} {original s : State} {used keys scal
     apply BitVec.eq_of_toNat_eq
     rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1#64 from by decide,
       BitVec.toNat_sub_of_le (by
-        simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega)]; omega)]
+        simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega_using [])]; omega_using [hs, this])]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   have e1' : BitVec.ofNat 64 scalars - 1 = BitVec.ofNat 64 (scalars - 1) := by
     rw [← e1]; rfl
   have h4 : BitVec.setWidth 64 (4 : BitVec 32) = 4 := by decide
@@ -84,7 +84,7 @@ theorem key_rejected_scalar {p : KeyPublic} {original s : State} {used keys scal
       simp only [controllerValue, scalarValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
         ite_true, ite_false] <;>
       first | rfl | exact h.header (by simp [KeyPublic.headers])
-  refine ⟨h.update h.used_le h.keys_le (by have := h.scalars_le; omega) _ (scalarValues_bound scalars)
+  refine ⟨h.update h.used_le h.keys_le (by have := h.scalars_le; omega_using [this]) _ (scalarValues_bound scalars)
     (by simp only [scalarValues, List.mem_cons, List.not_mem_nil, or_false]
         rintro _ (rfl | rfl) <;> dsimp only <;> decide) hm k.2.1 k.2.2
     (fun r hr => k.gpr (by
@@ -113,9 +113,9 @@ theorem key_rejected_public {p : KeyPublic} {original s : State} {used keys scal
     apply BitVec.eq_of_toNat_eq
     rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1#64 from by decide,
       BitVec.toNat_sub_of_le (by
-        simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega)]; omega)]
+        simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega_using [])]; omega_using [hk, this])]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   have e0' : BitVec.ofNat 64 keys - 1 = BitVec.ofNat 64 (keys - 1) := by
     rw [← e0]; rfl
   have h4 : BitVec.setWidth 64 (4 : BitVec 32) = 4 := by decide
@@ -134,7 +134,7 @@ theorem key_rejected_public {p : KeyPublic} {original s : State} {used keys scal
       simp only [controllerValue, publicValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
         ite_true, ite_false] <;>
       first | rfl | exact h.header (by simp [KeyPublic.headers])
-  refine ⟨h.update h.used_le (by have := h.keys_le; omega) (by decide) _ (publicValues_bound keys)
+  refine ⟨h.update h.used_le (by have := h.keys_le; omega_using [this]) (by decide) _ (publicValues_bound keys)
     (by simp only [publicValues, List.mem_cons, List.not_mem_nil, or_false]
         rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm k.2.1 k.2.2
     (fun r hr => k.gpr (by

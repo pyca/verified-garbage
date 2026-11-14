@@ -30,7 +30,7 @@ theorem outerOutPass_source {m : Mem} {p src : Addr} {z : Nat → Int} {u : Nat}
     {k : Nat} (hk : k<n) :
     coeffAt (outerOutPassMem m p src z u) src k=coeffAt m src k := by
   have hf : Frame [outputRegion p] m (outerOutPassMem m p src z u) :=
-    outerOutPass_frame (fun v hv i => outer_contains p (by omega) i)
+    outerOutPass_frame (fun v hv i => outer_contains p (by omega_using [hu, hv]) i)
   exact coeffAt_frame hf (by intro r hr; have he := List.mem_singleton.mp hr; subst r; exact hd) hk
 
 /-- The next source bank equals the corresponding in-place input bank. -/
@@ -44,9 +44,9 @@ theorem outerOutPass_bank {m : Mem} {p src : Addr} {z : Nat → Int} {u : Nat}
   intro e he
   rw [readBank_coeff _ src (4*u) 32 ⟨i,hi⟩ he,
     readBank_coeff _ src (4*u) 32 ⟨i,hi⟩ he]
-  have hk : 4*u+32*i+e<n := by change 4*u+32*i+e<256; omega
-  rw [outerOutPass_source (by omega) hd hk,
-    outerPass_untouched m src z (by omega) hk (by omega)]
+  have hk : 4*u+32*i+e<n := by change 4*u+32*i+e<256; omega_using [hu, hi, he]
+  rw [outerOutPass_source (by omega_using [hu]) hd hk,
+    outerPass_untouched m src z (by omega_using [hu]) hk (by omega_using [hu, he])]
 
 /-- Every completed slice agrees word-for-word with the in-place reference. -/
 theorem outerOutPass_processed {m : Mem} {p src : Addr} {z : Nat → Int}
@@ -58,19 +58,19 @@ theorem outerOutPass_processed {m : Mem} {p src : Addr} {z : Nat → Int}
   | zero => omega
   | succ u ih =>
     have hp (a : Addr) : a+BitVec.ofNat 64 (16*u)=coeffAddr a (4*u) := by
-      simp only [coeffAddr,show 4*(4*u)=16*u by omega]
+      simp only [coeffAddr,show 4*(4*u)=16*u by omega_using []]
     simp only [outerOutPassMem,outerPassMem,outerOutMemStep,outerMemStep,hp]
-    rw [outerOutPass_bank (by omega) hd]
+    rw [outerOutPass_bank (by omega_using [hu]) hd]
     by_cases he : k%32/4=u
-    · have ki : k/32<8 := by change k<256 at hk; omega
-      have ke : k=4*u+32*(k/32)+k%4 := by omega
-      rw [ke,writeBank_coeff_at (start := 4*u) (step := 32) (e := k%4) _ _ p (by decide) (by omega) ⟨k/32,ki⟩ (by omega),
-        writeBank_coeff_at (start := 4*u) (step := 32) (e := k%4) _ _ src (by decide) (by omega) ⟨k/32,ki⟩ (by omega)]
+    · have ki : k/32<8 := by change k<256 at hk; omega_using [hk]
+      have ke : k=4*u+32*(k/32)+k%4 := by omega_using [he]
+      rw [ke,writeBank_coeff_at (start := 4*u) (step := 32) (e := k%4) _ _ p (by decide) (by omega_using [hu]) ⟨k/32,ki⟩ (by omega_using []),
+        writeBank_coeff_at (start := 4*u) (step := 32) (e := k%4) _ _ src (by decide) (by omega_using [hu]) ⟨k/32,ki⟩ (by omega_using [])]
     · have hout : ∀ i : Fin 8, ¬(4*u+32*i.val≤k ∧ k<4*u+32*i.val+4) := by
-        intro i; omega
-      rw [writeBank_coeff_outside (step := 32) _ _ p (by omega) hk hout,
-        writeBank_coeff_outside (step := 32) _ _ src (by omega) hk hout]
-      exact ih (by omega) (by omega)
+        intro i; omega_using [hu, he]
+      rw [writeBank_coeff_outside (step := 32) _ _ p (by omega_using [hu]) hk hout,
+        writeBank_coeff_outside (step := 32) _ _ src (by omega_using [hu]) hk hout]
+      exact ih (by omega_using [hu]) (by omega_using [hprocessed, he])
 
 end VG.Proof.MlDsa.AArch64.Optimized
 
@@ -90,7 +90,7 @@ theorem outerOutPass_field {m : Mem} {p src : Addr} {w : Poly}
       (Traversal.run Traversal.outerSchedule w) (-(15*8380417)) (15*8380417) := by
   apply (outerPass_all h).congr
   intro k hk
-  exact outerOutPass_processed hd (by decide) hk (by omega)
+  exact outerOutPass_processed hd (by decide) hk (by omega_using [])
 
 /-- A disjoint-source optimized transform implements the standard NTT. -/
 theorem outMemory_field_disjoint {m : Mem} {p src : Addr} {w : Poly}

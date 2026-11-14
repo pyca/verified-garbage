@@ -97,7 +97,7 @@ def GeneratorSearchPlan.chunk (p : GeneratorSearchPlan) (used : Nat)
   { p.core with
     hp := off p.tapePtr used
     hb := (p.tape.drop used).take p.core.len
-    hLength := by simp only [List.length_take, List.length_drop]; omega
+    hLength := by simp only [List.length_take, List.length_drop]; omega_using [room]
     hSeparate := by
       intro r hr
       exact fun a ha hb => p.tapeSeparate r hr a (Offset.sub_base p.tapePtr room a ha) hb }
@@ -116,9 +116,9 @@ theorem GeneratorSearchPlan.remaining_step (p : GeneratorSearchPlan) {used : Nat
     (room : used + p.core.len ≤ p.tape.length) :
     p.remaining used = if (p.chunk used room).accepts then some (p.chunk used room).value
       else p.remaining (used + p.core.len) := by
-  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega
+  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   rw [remaining, VG.Proof.Dsa.Generation.generator_chunks_step hw (by
-    simp only [List.length_drop]; omega)]
+    simp only [List.length_drop]; omega_using [room])]
   simp only [GeneratorPlan.accepts, GeneratorPlan.value, chunk, p.exponentValue,
     remaining, List.drop_drop]
 
@@ -157,7 +157,7 @@ theorem GeneratorSearchMemory.frame {p : GeneratorSearchPlan} {W W' : Nat → Bi
     (hw : ∀ k ∈ generatorSlots, W' k = W k)
     (hf : Frame p.core.changed s.mem t.mem) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) :
     GeneratorSearchMemory p W' t := by
-  have hn : p.core.len < 2 ^ 64 := by rcases p.core.width with hh | hh | hh <;> omega
+  have hn : p.core.len < 2 ^ 64 := by rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   have fp : ∀ r ∈ p.core.changed, (⟨off p.core.B Impl.Dsa.Generation.Layout.p, p.core.pb.length⟩ : Region).Disjoint r := by
     rw [p.core.pLength]; exact p.core.pSeparate
   have fe : ∀ r ∈ p.core.changed, (⟨off p.core.B exponent, p.core.eb.length⟩ : Region).Disjoint r := by

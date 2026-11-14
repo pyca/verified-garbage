@@ -91,9 +91,9 @@ theorem sha256_repr (m m' : Mem) (p q : Addr) (msg : List Byte)
     apply Vector.ext
     intro j hj
     simp only [Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc h (by omega)
+    exact Hmac.Generic.Common.readW_reloc h (by omega_using [hj])
   · rw [← hr.2]
-    exact Hmac.Generic.Common.bytesAt_reloc h (o := 32) (k := msg.length % 64) (by omega)
+    exact Hmac.Generic.Common.bytesAt_reloc h (o := 32) (k := msg.length % 64) (by omega_using [])
 
 variable (v : Compress)
 
@@ -148,7 +148,7 @@ def ok : HashOK (hash v) where
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha256.md, Spec.Sha256.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 32) h (by omega_using [hj])
   lenOk _ _ := trivial
   stream := streamOK v
   iv := Spec.Sha256.H0
@@ -223,7 +223,7 @@ def stream : List StreamFn := [
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
-  { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
+  MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.sha256_local
     (by
       unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
@@ -236,6 +236,6 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features (stream v) with sha256 := some v }
+    v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha256

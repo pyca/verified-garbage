@@ -181,7 +181,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     rw [← ea, ← eb]
     have := BitVec.isLt (a.eval s₀ k + b.eval s₀ k)
     rw [BitVec.toNat_add] at this
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this⟩
+    exact ⟨Nat.mod_eq_of_lt (by omega_using [hs, ba, bb]), capW_ge (by rw [Nat.mod_eq_of_lt (by omega_using [hs, ba, bb])]; omega_using [ba, bb]) this⟩
   | and a b iha ihb =>
     intro k hk ho
     simp only [Q.ok, Bool.and_eq_true] at ho
@@ -207,7 +207,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [Q.eval, Q.nat, Q.bnd, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq] at this ⊢
     rw [← ea]
     have hm := Nat.mul_le_mul_right (2 ^ n) ba
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this⟩
+    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega_using [hm]) this⟩
   | shr a n ih =>
     intro k hk ho
     obtain ⟨ea, ba⟩ := ih hk ho
@@ -219,12 +219,12 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [Q.eval, Q.nat, Q.bnd, Q.ok] at ho ⊢
     split
     · rename_i h; rw [ite_eq_left h] at ho; exact iha hk ho
-    · rename_i h; rw [ite_eq_right h] at ho; exact ihb (by omega) ho
+    · rename_i h; rw [ite_eq_right h] at ho; exact ihb (by omega_using [hk]) ho
   | unph a b iha ihb =>
     intro k hk ho
     simp only [Q.eval, Q.nat, Q.bnd, Q.ok] at ho ⊢
     split
-    · rename_i h; rw [ite_eq_left h] at ho; exact iha (by omega) ho
+    · rename_i h; rw [ite_eq_left h] at ho; exact iha (by omega_using [hk, h]) ho
     · rename_i h; rw [ite_eq_right h] at ho; exact ihb hk ho
   | shuf a b sel iha ihb =>
     intro k _ ho
@@ -242,9 +242,9 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     have hm := madN_le (h := h) ba bb
     simp only [Q.eval, Q.nat, Q.bnd, mad52_nat]
     rw [← ec, ← ea, ← eb]
-    have hlt : (c.eval s₀ k).toNat + madN h (a.eval s₀ k).toNat (b.eval s₀ k).toNat < 2 ^ 64 := by omega
+    have hlt : (c.eval s₀ k).toNat + madN h (a.eval s₀ k).toNat (b.eval s₀ k).toNat < 2 ^ 64 := by omega_using [hs, bc, hm]
     rw [Nat.mod_eq_of_lt hlt]
-    exact ⟨rfl, capW_ge (by omega) hlt⟩
+    exact ⟨rfl, capW_ge (by omega_using [bc, hm]) hlt⟩
 
 theorem natw_ok (s₀ : State) : ∀ (t : Q) (k : Nat), (t.eval s₀ k).toNat = t.natw (envOf s₀) k := by
   intro t

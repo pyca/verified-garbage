@@ -63,8 +63,8 @@ theorem exec_storesIn {lo hi : Nat} {i : Instr} {s s' : State} (hs : storesIn lo
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     refine ⟨rfl, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_⟩
-    rw [VG.Arm.addr_add (by omega)]
-    exact VG.Offset.contains _ h1 (by omega) (by have := (s.gpr sb).isLt; omega)
+    rw [VG.Arm.addr_add (by omega_using [hfit, h2])]
+    exact VG.Offset.contains _ h1 (by omega_using [h2]) (by have := (s.gpr sb).isLt; omega_using [hfit, h2, h1])
   | _ =>
     first
     | (simp [storesIn] at hs; done)

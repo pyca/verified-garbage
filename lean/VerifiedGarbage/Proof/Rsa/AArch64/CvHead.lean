@@ -62,8 +62,8 @@ theorem argSlot_frm {m m' : Mem} {B : Addr} {rs : List (Nat × Nat)} (hf : Frm B
   unfold argSlot at hi
   exact hf.word_eq (fun r hr' => by
     rcases hr r hr' with h | rfl
-    · omega
-    · simp only [Public.sMask, sFn]; omega) (by omega)
+    · omega_using [hi, h]
+    · simp only [Public.sMask, sFn]; omega_using [hi]) (by omega_using [hi])
 
 /-- `head`: `w`, the arrays' bases, the stride, and the mask all ones. -/
 theorem cvHead_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hk1 : 64 ≤ k)
@@ -73,36 +73,36 @@ theorem cvHead_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gp
       Frm B [(8 * sW, 8), (8 * sArr 0, 64), (8 * sStride, 8), (8 * Public.sMask, 8)] s.mem t.mem ∧
       Keep [.x3, .x4, .x7, .x12] s t := by
   have hn := hs.nowrap
-  have hZ16 : slot (wk k) 16 ≤ Z := by simp only [slot, hdrBytes, wk]; omega
+  have hZ16 : slot (wk k) 16 ≤ Z := by simp only [slot, hdrBytes, wk]; omega_using [hk1, hZ]
   have h8 := hdr_lt_slot (wk k) 8 (show 31 < 32 by decide)
   have eW : sW = 6 := rfl
   have eA : sArr 0 = 8 := rfl
   have eS : sStride = 28 := rfl
   have eM : Public.sMask = 22 := rfl
-  have hl8 : slot (wk k) 8 ≤ slot (wk k) 16 := by unfold slot; omega
+  have hl8 : slot (wk k) 8 ≤ slot (wk k) 16 := by unfold slot; omega_using []
   unfold VG.Impl.Rsa.AArch64.Keys.head
   rw [WP.block_append_iff]
-  refine WP.mono (head_ok hs h0 (by simp only [slot, hdrBytes]; omega) (by omega) hK) fun t₁ ⟨h12, hW₁, hb₁, hf₁, k₁⟩ => ?_
+  refine WP.mono (head_ok hs h0 (by simp only [slot, hdrBytes]; omega_using [hk1, hZ]) (by omega_using [hk2]) hK) fun t₁ ⟨h12, hW₁, hb₁, hf₁, k₁⟩ => ?_
   have hs₁ := hs.congr k₁.wr
   have h0₁ : t₁.gpr .x0 = B := (k₁.gpr .x0 (by decide)).trans h0
   refine WP.mono (WP.keep [.x3, .x4, .x7] (Q := fun t => t.gpr .x7 = 0 ∧ t.mem = (t₁.mem.writeW (off B (8 * sStride))
       (BitVec.ofNat 64 (8 * (wk k + 2)))).writeW (off B (8 * Public.sMask)) (mask true)) (by
     brun [h0₁, h12, hdr_enc (show sStride < 32 by decide), hdr_enc (show Public.sMask < 32 by decide),
-      hs₁.st (d := 8 * sStride) (by omega), hs₁.st (d := 8 * Public.sMask) (by omega),
-      ofNat_add_ofNat, shl_ofNat (show ((k + 7) / 8 + 2) * 2 ^ 3 < 2 ^ 64 by omega)]
-    rw [show ((k + 7) / 8 + 2) * 2 ^ 3 = 8 * (wk k + 2) by simp only [wk]; omega]
+      hs₁.st (d := 8 * sStride) (by omega_using [hk1, hZ, eS]), hs₁.st (d := 8 * Public.sMask) (by omega_using [hk1, hZ, eM]),
+      ofNat_add_ofNat, shl_ofNat (show ((k + 7) / 8 + 2) * 2 ^ 3 < 2 ^ 64 by omega_using [hk2])]
+    rw [show ((k + 7) / 8 + 2) * 2 ^ 3 = 8 * (wk k + 2) by simp only [wk]; omega_using []]
     rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨_, hm⟩, k₂⟩ => ?_
-  have o1 := writeW_outside t₁.mem B (BitVec.ofNat 64 (8 * (wk k + 2))) (d := 8 * sStride) (by omega)
+  have o1 := writeW_outside t₁.mem B (BitVec.ofNat 64 (8 * (wk k + 2))) (d := 8 * sStride) (by omega_using [eS])
   have o2 := writeW_outside (t₁.mem.writeW (off B (8 * sStride)) (BitVec.ofNat 64 (8 * (wk k + 2)))) B (mask true)
-    (d := 8 * Public.sMask) (by omega)
+    (d := 8 * Public.sMask) (by omega_using [eM])
   have hw : ∀ i < 32, i ≠ sStride → i ≠ Public.sMask → word t.mem B (8 * i) = word t₁.mem B (8 * i) :=
-    fun i hi h1 h2 => by rw [hm, o2.word (by omega) (by omega), o1.word (by omega) (by omega)]
-  refine ⟨⟨hs₁.congr k₂.wr, (k₂.gpr .x0 (by decide)).trans h0₁, ?_, ?_, fun j hj => ?_, hZ16, show 2 ≤ (k + 7) / 8 by omega,
-    show (k + 7) / 8 < 2 ^ 24 by omega⟩, by rw [hm, word_writeW_self], ?_, (k₁.trans k₂).mono (by decide)⟩
+    fun i hi h1 h2 => by rw [hm, o2.word (by omega_using [h2]) (by omega_using [hi]), o1.word (by omega_using [h1]) (by omega_using [hi])]
+  refine ⟨⟨hs₁.congr k₂.wr, (k₂.gpr .x0 (by decide)).trans h0₁, ?_, ?_, fun j hj => ?_, hZ16, show 2 ≤ (k + 7) / 8 by omega_using [hk1],
+    show (k + 7) / 8 < 2 ^ 24 by omega_using [hk2]⟩, by rw [hm, word_writeW_self], ?_, (k₁.trans k₂).mono (by decide)⟩
   · rw [hw sW (by decide) (by decide) (by decide)]; exact hW₁
-  · rw [hm, o2.word (by omega) (by omega), word_writeW_self]
-  · rw [hw (sArr j) (by unfold sArr; omega) (by unfold sArr sStride sFn; omega)
-      (by unfold sArr Public.sMask sFn; omega)]
+  · rw [hm, o2.word (by omega_using [eS, eM]) (by omega_using [eS]), word_writeW_self]
+  · rw [hw (sArr j) (by unfold sArr; omega_using [hj]) (by unfold sArr sStride sFn; omega_using [hj])
+      (by unfold sArr Public.sMask sFn; omega_using [hj])]
     exact hb₁ j hj
   · intro x hx
     have a := hx (8 * sW, 8) (by simp)

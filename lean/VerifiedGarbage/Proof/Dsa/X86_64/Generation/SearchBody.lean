@@ -179,9 +179,9 @@ theorem searchBody_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan}
         Frame (searchWrites p.attempt p.C) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   let offset := 1 + counter * (p.attempt.construct.hash.count + 1)
   have carry : offset + p.attempt.construct.hash.count < 2 ^ 32 := by
-    have hcmax : counter < 12288 := by rcases p.attempt.construct.width with hh | hh | hh <;> omega
+    have hcmax : counter < 12288 := by rcases p.attempt.construct.width with hh | hh | hh <;> omega_using [hc, hh]
     have hmul := Nat.mul_le_mul_left counter (show p.attempt.construct.hash.count + 1 ≤ 12 by
-      have := p.attempt.construct.hash.count_le; omega)
+      have := p.attempt.construct.hash.count_le; omega_using [this])
     dsimp only [offset]
     omega_using [p.attempt.construct.hash.count_le, hcmax, hmul]
   let call := h.attemptPlan offset carry

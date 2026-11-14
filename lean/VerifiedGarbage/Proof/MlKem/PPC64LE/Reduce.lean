@@ -42,7 +42,7 @@ theorem bar_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (bar x).toNat = barr
   obtain ⟨b1, b2⟩ := barrett32_bounds hx
   have hT : ((x >>> 11 * C) >>> 18).toNat = barrett32Quot x.toNat := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
-      Nat.shiftRight_eq_div_pow, show C.toNat = 161270 from rfl, Nat.mod_eq_of_lt (by omega)]
+      Nat.shiftRight_eq_div_pow, show C.toNat = 161270 from rfl, Nat.mod_eq_of_lt (by omega_using [hx])]
     rfl
   unfold bar barrett32
   generalize (x >>> 11 * C) >>> 18 = T at hT
@@ -55,7 +55,7 @@ theorem red_toNat {x : BitVec 64} (hx : x.toNat < 2 ^ 25) : (red x).toNat = x.to
   rw [fixq_subq (by rw [bar_toNat hx]; exact h1), bar_toNat hx, ← reduce32 hx, condSub_eq h1]
 
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [this])]
 
 /-- A product of reduced values, reduced. -/
 theorem red_mul {a b : Zq} :
@@ -64,8 +64,8 @@ theorem red_mul {a b : Zq} :
   have hb := val_lt b
   have hp : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val).toNat = a.val * b.val := by
     rw [BitVec.toNat_mul, toNat_val64, toNat_val64]
-    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega)
-  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega), hp, val_mul]
+    exact Nat.mod_eq_of_lt (by have := mul_lt_q2 ha hb; omega_using [this])
+  rw [red_toNat (by rw [hp]; have := mul_lt_q2 ha hb; omega_using [this]), hp, val_mul]
 
 /-! ## Tables -/
 
@@ -93,22 +93,22 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 2 ^ 15) {b : Reg
   have e : (s.write .r12 (BitVec.ofNat 64 (T.getD k 0))).gpr b + BitVec.ofNat 64 (4 * k) =
       B + BitVec.ofNat 64 (4 * k) := by
     simp only [State.write, hb, ite_false, h.gpr b hb, hB]
-  refine WP.cons (exec_li (hT k hk)) (WP.cons (exec_store_w hb0 (show 4 * k < 2 ^ 15 by omega)
+  refine WP.cons (exec_li (hT k hk)) (WP.cons (exec_store_w hb0 (show 4 * k < 2 ^ 15 by omega_using [hk])
     (by rw [e]; simp only [State.write]; rw [h.wr]; exact hwr k hk)) (wp_nil ?_))
   rw [e]
   have hv : ((s.write .r12 (BitVec.ofNat 64 (T.getD k 0))).gpr .r12).setWidth 32 =
       BitVec.ofNat 32 (T.getD k 0) :=
     setWidth32_ofNat (by simp only [State.write, ite_true, BitVec.toNat_ofNat]
-                         exact Nat.mod_eq_of_lt (by have := hT k hk; omega)) (by have := hT k hk; omega)
+                         exact Nat.mod_eq_of_lt (by have := hT k hk; omega_using [this])) (by have := hT k hk; omega_using [this])
   refine ⟨fun r hr => ?_, h.rd, h.wr, h.sp, h.lr, ?_, fun j hj => ?_⟩
   · simp only [State.write, hr, ite_false]; exact h.gpr r hr
-  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · simp only [State.write] at hv ⊢
     rw [hv]
     by_cases ej : j = k
     · subst ej; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [ej]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.tab j (by omega_using [hj, ej])
 
 /-! ## Saved registers -/
 
@@ -124,7 +124,7 @@ def Saved (m : Mem) (A : Addr) (g : Reg → BitVec 64) : Prop :=
 
 /-- Two doublewords at `A` and `A + 8` are separate. -/
 theorem sep8 (A : Addr) : Mem.Sep A (64 / 8) (A + BitVec.ofNat 64 8) (64 / 8) := by
-  have := Offset.sep A (d := 0) (n := 8) (e := 8) (k := 8) (by omega) (by omega) (by omega)
+  have := Offset.sep A (d := 0) (n := 8) (e := 8) (k := 8) (by omega_using []) (by omega_using []) (by omega_using [])
   rwa [BitVec.add_zero] at this
 
 theorem saved_write (m : Mem) (A : Addr) (g : Reg → BitVec 64) :
@@ -141,8 +141,8 @@ theorem save_ok {s : State} {b : Reg} (hb : b ≠ .r0) {off : Nat} (ho : off + 8
       s'.mem = (s.mem.writeW A (s.gpr .r14)).writeW (A + BitVec.ofNat 64 8) (s.gpr .r15) := by
   have e8 : s.gpr b + BitVec.ofNat 64 (off + 8) = A + BitVec.ofNat 64 8 := by
     rw [← hA, BitVec.add_assoc, ← BitVec.ofNat_add]
-  refine WP.cons (exec_store_d hb ⟨by omega, ho4⟩ (by rw [hA]; exact hw0)) ?_
-  refine WP.cons (exec_store_d hb ⟨ho, by omega⟩ (by show InRegions s.wr _ 8; rw [e8]; exact hw8)) (wp_nil ?_)
+  refine WP.cons (exec_store_d hb ⟨by omega_using [ho], ho4⟩ (by rw [hA]; exact hw0)) ?_
+  refine WP.cons (exec_store_d hb ⟨ho, by omega_using [ho4]⟩ (by show InRegions s.wr _ 8; rw [e8]; exact hw8)) (wp_nil ?_)
   show s.gpr = s.gpr ∧ s.lr = s.lr ∧ s.sp = s.sp ∧ s.rd = s.rd ∧ s.wr = s.wr ∧
     (s.mem.writeW (s.gpr b + BitVec.ofNat 64 off) (s.gpr .r14)).writeW (s.gpr b + BitVec.ofNat 64 (off + 8))
       (s.gpr .r15) = _
@@ -158,10 +158,10 @@ theorem restore_ok {s : State} {b : Reg} (hb : b ≠ .r0) (hb14 : b ≠ .r14) {o
       s'.lr = s.lr ∧ s'.sp = s.sp ∧ s'.mem = s.mem := by
   have e8 : s.gpr b + BitVec.ofNat 64 (off + 8) = A + BitVec.ofNat 64 8 := by
     rw [← hA, BitVec.add_assoc, ← BitVec.ofNat_add]
-  refine WP.cons (exec_load_d hb ⟨by omega, ho4⟩ (by rw [hA]; exact hr0)) ?_
+  refine WP.cons (exec_load_d hb ⟨by omega_using [ho], ho4⟩ (by rw [hA]; exact hr0)) ?_
   have g : (s.write .r14 (s.mem.readW (s.gpr b + BitVec.ofNat 64 off) 64)).gpr b = s.gpr b := by
     simp only [State.write, hb14, ite_false]
-  refine WP.cons (exec_load_d hb ⟨ho, by omega⟩ (by rw [g, e8]; exact hr8)) (wp_nil ?_)
+  refine WP.cons (exec_load_d hb ⟨ho, by omega_using [ho4]⟩ (by rw [g, e8]; exact hr8)) (wp_nil ?_)
   rw [g, e8, hA]
   refine ⟨by simp [State.write], by simp [State.write], fun r hr => ?_, rfl, rfl, rfl⟩
   have : r ≠ .r14 ∧ r ≠ .r15 := by revert r hr; decide

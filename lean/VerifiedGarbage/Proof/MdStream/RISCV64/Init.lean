@@ -43,7 +43,7 @@ theorem readW_writeW_word (m : Mem) (p : Addr) (v : BitVec 32) {j k : Nat} (hj :
     (hk : k < 512) (h : j ≠ k) :
     (m.writeW (p + BitVec.ofNat 64 (4 * k)) v).readW (p + BitVec.ofNat 64 (4 * j)) 32 =
     m.readW (p + BitVec.ofNat 64 (4 * j)) 32 :=
-  Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep p (by omega_using [h]) (by omega_using [hj]) (by omega_using [hk])) (by decide)
 
 theorem init_step {n : Nat} (iv : List (BitVec 32)) (hn : 4 * iv.length ≤ n) (hl : iv.length ≤ 16)
     {s₀ : State} (hp : (initK n iv).pre s₀) {k : Nat} (hk : k < iv.length) {s : State}
@@ -52,15 +52,15 @@ theorem init_step {n : Nat} (iv : List (BitVec 32)) (hn : 4 * iv.length ≤ n) (
   rw [WP.block_append_iff]
   refine WP.mono (li32_ok _) fun s₁ e₁ => ?_
   subst e₁
-  refine WP.mono (storeLE32_ok (by decide) (by decide) (by omega) ?_) fun s₂ e₂ => ?_
+  refine WP.mono (storeLE32_ok (by decide) (by decide) (by omega_using [hl, hk]) ?_) fun s₂ e₂ => ?_
   · rw [RegUpd.wr_write, RegUpd.gpr_write_of_ne _ _ (by decide), h.wr, h.a0, hp.2]
-    exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hn, hk]) (by omega_using [hl, hk])⟩
   subst e₂
   refine ⟨?_, h.rd, h.wr, fun j hj => ?_⟩
   · simp only [RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0]
   · simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0, lo32_sext]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [readW_writeW_word _ _ _ (by omega) (by omega) (by omega)]
+    · rw [readW_writeW_word _ _ _ (by omega_arith) (by omega_using [hl, hk]) (by omega_using [hj])]
       exact h.words j hj
     · exact Mem.readW_writeW_self32 _ _ _
 
@@ -68,7 +68,7 @@ theorem init_correct {n : Nat} (iv : List (BitVec 32)) (hn : 4 * iv.length ≤ n
     {s₀ : State} (hp : (initK n iv).pre s₀) :
     WP isa (initWords iv) s₀ fun s' => (initK n iv).post s₀ s' :=
   WP.mono (wp_range_flatMap (M := isa) (InitI iv s₀) (fun k s hk h => init_step iv hn hl hp hk h)
-    iv.length (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, fun _ h => absurd h (by omega)⟩) fun _ h => h.words
+    iv.length (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, fun _ h => absurd h (by omega_using [])⟩) fun _ h => h.words
 
 /-- No instruction of `init` writes a register other than `t0` and `t1`. -/
 def initDst : Option Reg → Bool

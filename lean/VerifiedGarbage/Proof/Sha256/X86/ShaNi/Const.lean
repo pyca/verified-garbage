@@ -26,7 +26,7 @@ theorem shift_last_value (a : BitVec 32) :
   by_cases h : i < 96
   · simp (disch := omega) only [↓ite_eq_left, ite_self, decide_eq_true, Bool.not_true, Bool.and_false, Bool.false_and]
   · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, decide_eq_false, Bool.not_false, Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
 
 theorem or_last_value (a b c d : BitVec 32) :
     XBinOp.eval .por (ofDwords a b c 0) (ofDwords 0 0 0 d) = ofDwords a b c d := by
@@ -38,6 +38,6 @@ theorem or_last_value (a b c d : BitVec 32) :
   · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Bool.or_false]
   by_cases h2 : i < 96
   · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Bool.or_false]
-  · simp (disch := omega) only [↓ite_eq_right, Bool.false_or]
+  · simp (disch := omega_arith) only [↓ite_eq_right, Bool.false_or]
 
 end VG.Proof.Sha256.X86.ShaNi

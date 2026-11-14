@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Bounds for Argon2's rounded memory matrix -/
 
@@ -35,24 +36,24 @@ theorem blocks_le_memory (p : Params) : p.blocks ≤ p.memory :=
 
 theorem segmentLen_ge_two (p : Params) (hl : 0 < p.lanes)
     (hm : 8 * p.lanes ≤ p.memory) : 2 ≤ p.segmentLen := by
-  rw [segmentLen_eq p hl, Nat.le_div_iff_mul_le (by omega : 0 < 4 * p.lanes)]
-  omega
+  rw [segmentLen_eq p hl, Nat.le_div_iff_mul_le (by omega_using [hl] : 0 < 4 * p.lanes)]
+  omega_using [hm]
 
 theorem column_lt (p : Params) (hl : 0 < p.lanes) {slice index : Nat}
     (hs : slice < 4) (hi : index < p.segmentLen) :
     slice * p.segmentLen + index < p.laneLen := by
-  have h := Nat.mul_le_mul_right p.segmentLen (show slice + 1 ≤ 4 by omega)
+  have h := Nat.mul_le_mul_right p.segmentLen (show slice + 1 ≤ 4 by omega_using [hs])
   rw [Nat.add_mul, Nat.one_mul] at h
   rw [laneLen_segments p hl]
-  omega
+  omega_using [hi, h]
 
 theorem cell_lt (p : Params) (hl : 0 < p.lanes) {lane column : Nat}
     (hlane : lane < p.lanes) (hc : column < p.laneLen) :
     lane * p.laneLen + column < p.blocks := by
-  have h := Nat.mul_le_mul_right p.laneLen (show lane + 1 ≤ p.lanes by omega)
+  have h := Nat.mul_le_mul_right p.laneLen (show lane + 1 ≤ p.lanes by omega_using [hlane])
   rw [Nat.add_mul, Nat.one_mul] at h
   rw [blocks_lanes p hl]
-  omega
+  omega_using [hc, h]
 
 theorem reference_bounds (p : Params) (hl : 0 < p.lanes)
     (hm : 8 * p.lanes ≤ p.memory) (pass lane slice index : Nat) (random : Word)
@@ -66,6 +67,6 @@ theorem reference_bounds (p : Params) (hl : 0 < p.lanes)
   · split
     · exact hlane
     · exact Nat.mod_lt _ hl
-  · exact Nat.mod_lt _ (by omega)
+  · exact Nat.mod_lt _ (by omega_using [hseg, hlen])
 
 end VG.Proof.Argon2

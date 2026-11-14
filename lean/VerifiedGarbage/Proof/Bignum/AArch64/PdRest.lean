@@ -75,7 +75,7 @@ structure PdPre (s : State) (B : Addr) (Z k : Nat) (op ep ip : Addr) (L : Nat) (
 /-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
 theorem exists_mont {R N : Nat} (hR : Nat.Coprime R N) (hN1 : 1 < N) (X : Nat) :
     ∃ x, X % N = x * R % N := by
-  obtain ⟨x, -, hx⟩ := ModArith.exists_mul_mod_eq hR (by omega) X
+  obtain ⟨x, -, hx⟩ := ModArith.exists_mul_mod_eq hR (by omega_using [hN1]) X
   exact ⟨x, hx.symm⟩
 
 /-- The input into its array. -/

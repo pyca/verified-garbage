@@ -28,8 +28,8 @@ open VG.Impl.AesXts.AArch64Unit (tO zO)
 
 theorem wrap_off (p : Addr) {d n k : Nat} (h : p.toNat + k ≤ 2 ^ 64) (hd : d + n ≤ k) (hn : 0 < n := by decide) :
     (p + BitVec.ofNat 64 d).toNat + n ≤ 2 ^ 64 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [h, hd, hn]), Nat.mod_eq_of_lt (by omega_using [h, hd, hn])]
+  omega_using [h, hd]
 
 section
 variable {s₀ s : State} (hp : UPre s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
@@ -55,7 +55,7 @@ theorem xpre_tweak (x0 : s.gpr .x0 = K s₀) (x1 : s.gpr .x1 = BitVec.ofNat 64 (
   ds := hp.t_wk
   wrapT := wrap_off _ hp.scr_wrap (by decide)
   wrapD := wrap_off _ hp.scr_wrap (by decide)
-  wrapS := by have := hp.scr_wrap; omega
+  wrapS := by have := hp.scr_wrap; omega_using [this]
   reads := by
     rw [hrd, hwr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -85,7 +85,7 @@ theorem xpre_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) (x0 : s.gpr .x0 = W s�
   x4 := x4
   x5 := x5
   rounds := hp.rounds
-  n := by have := hp.len_hi; simp only [Spec.Xts.maxBlocks] at this; omega
+  n := by have := hp.len_hi; simp only [Spec.Xts.maxBlocks] at this; omega_using [hN, this]
   wt := hp.sch_scr.sub_right (sub_trans t_sub s_sub)
   wd := hp.sch_data.sub_right (Region.sub_prefix hN)
   ws := hp.sch_scr.sub_right wk_sub
@@ -93,8 +93,8 @@ theorem xpre_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) (x0 : s.gpr .x0 = W s�
   ts := hp.t_wk
   ds := (hp.data_scr.sub_left (Region.sub_prefix hN)).sub_right wk_sub
   wrapT := wrap_off _ hp.scr_wrap (by decide)
-  wrapD := by have := hp.data_wrap; omega
-  wrapS := by have := hp.scr_wrap; omega
+  wrapD := by have := hp.data_wrap; omega_using [hN, this]
+  wrapS := by have := hp.scr_wrap; omega_using [this]
   reads := by
     rw [hrd, hwr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -144,7 +144,7 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) (x0 : s.gpr .x0 = W s₀)
     ds := (hp.data_scr.sub_left lS).sub_right wk_sub
     wrapT := wrap_off _ hp.scr_wrap ol
     wrapD := hp.l_wrap
-    wrapS := by have := hp.scr_wrap; omega
+    wrapS := by have := hp.scr_wrap; omega_using [this]
     reads := by
       rw [hrd, hwr, hp.rd, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -153,7 +153,7 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) (x0 : s.gpr .x0 = W s₀)
       · exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
       · exact ⟨scrR s₀, by simp, o, rfl, by simpa using ol⟩
       · exact ⟨dataR s₀, by simp, 16 * (M s₀ - 1), rfl, by
-          have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega⟩
+          have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega_using [this]⟩
       · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
     writes := by
       rw [hwr, hp.wr]
@@ -162,7 +162,7 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) (x0 : s.gpr .x0 = W s₀)
       rcases hr with rfl | rfl | rfl
       · exact ⟨scrR s₀, by simp, o, rfl, by simpa using ol⟩
       · exact ⟨dataR s₀, by simp, 16 * (M s₀ - 1), rfl, by
-          have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega⟩
+          have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega_using [this]⟩
       · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩ }
 
 end

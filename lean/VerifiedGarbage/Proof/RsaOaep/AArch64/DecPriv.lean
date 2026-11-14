@@ -115,7 +115,8 @@ theorem privR_ok (hL : L.Ok) (hP : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) {V : Nat
   have h176 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 176) 8 := Ly.ld (d := 176) (by decide)
   have h184 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 184) 8 := Ly.ld (d := 184) (by decide)
   have h376 : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 376) 8 :=
-    ⟨L.ARGS, by rw [hc.rd]; simp, Offset.contains _ (by decide) (by decide) (by have := hL.nQ; omega_arith)⟩
+    ⟨L.ARGS, by rw [hc.rd]; simp, Offset.contains _ (by decide) (by have := hL.al136; omega_arith)
+      (by have := hL.al152; omega_arith)⟩
   have hs : t.mem.read (L.Q + BitVec.ofNat 64 96) 8 = L.scr := Ly.slot
   have rk := R.rd8 (d := 168) (k := 21) rfl (by decide) hS.k
   have rn := R.rd8 (d := 160) (k := 20) rfl (by decide) hS.n

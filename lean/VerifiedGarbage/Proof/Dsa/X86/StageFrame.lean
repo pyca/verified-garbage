@@ -45,7 +45,7 @@ theorem StageFrame.of_stackFrame {base : Addr} {s t : State} {output len n : Nat
   · exact ⟨(0, contextBytes 48), by simp, Nat.le_refl _, by
       have H := VG.Proof.Dsa.X86.Layout.context_bound hn
       simp only [contextBytes, slot, stride] at H ⊢
-      omega⟩
+      omega_using [hn]⟩
   · exact ⟨(output, len), by simp, Nat.le_refl _, Nat.le_refl _⟩
 
 theorem StageFrame.scr {base : Addr} {s t : State} {output len size : Nat}
@@ -66,20 +66,20 @@ theorem StageFrame.run {base : Addr} {s t : State} {output len : Nat}
     · have H := hx (r, usedBytes - r) (by simp [runRanges])
       have E : r + (usedBytes - r) = usedBytes := by decide
       simp only [E] at H
-      omega
+      omega_using [lo, hi, H]
     · exact hx _ (by simp [runRanges])
 
 theorem StageFrame.local_bytes {base : Addr} {s t : State} {output len d count : Nat}
     (F : StageFrame base s t output len) (hd : contextBytes 48 ≤ d) (hb : d + count ≤ usedBytes)
     (ho : output + len ≤ 2 ^ 64) (hsep : d + count ≤ output ∨ output + len ≤ d) :
     Spec.Rsa.bytesAt t.mem (off base d) count = Spec.Rsa.bytesAt s.mem (off base d) count := by
-  apply stackOuts_bytes F.mem (by change d + count ≤ 15712 at hb; omega)
+  apply stackOuts_bytes F.mem (by change d + count ≤ 15712 at hb; omega_using [hb])
   · intro x hx
     left
-    have H := Offset.lt_iff x base (show d + count ≤ 2 ^ 64 by change d + count ≤ 15712 at hb; omega)
+    have H := Offset.lt_iff x base (show d + count ≤ 2 ^ 64 by change d + count ≤ 15712 at hb; omega_using [hb])
     change (x - off base d).toNat + 1 ≤ count at hx
     change (x - off base d).toNat < count ↔ d ≤ ofs base x ∧ ofs base x < d + count at H
-    omega
+    omega_using [hb, hx, H]
   · intro pair hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl
@@ -88,8 +88,8 @@ theorem StageFrame.local_bytes {base : Addr} {s t : State} {output len d count :
   · intro pair hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl
-    · simpa only [off, BitVec.add_zero] using Offset.disjoint_base base hd (by change d + count ≤ 15712 at hb; omega)
-    · exact Offset.disjoint base hsep (by change d + count ≤ 15712 at hb; omega) ho
+    · simpa only [off, BitVec.add_zero] using Offset.disjoint_base base hd (by change d + count ≤ 15712 at hb; omega_using [hb])
+    · exact Offset.disjoint base hsep (by change d + count ≤ 15712 at hb; omega_using [hb]) ho
 
 structure StageResult (base : Addr) (s t : State) (output len value : Nat) : Prop extends StageFrame base s t output len where
   bytes : Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len value

@@ -21,20 +21,20 @@ theorem candidate_shape {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
   · rw [show (2 : Nat) = 2 ^ 1 from rfl, Nat.or_mod_two_pow]
     rcases Nat.mod_two_eq_zero_or_one (x % 2 ^ bits ||| 2 ^ (bits - 1)) with h | h <;> simp [h]
   · exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.mod_lt _ (Nat.two_pow_pos _))
-      (Nat.pow_lt_pow_right (by decide) (by omega))) (Nat.one_lt_two_pow (by omega))
+      (Nat.pow_lt_pow_right (by decide) (by omega_using [hb]))) (Nat.one_lt_two_pow (by omega_using [hb]))
 
 /-- An odd number cannot equal the even lower endpoint of its bit interval. -/
 theorem odd_above_power {p bits : Nat} (hb : 2 ≤ bits) (ho : p % 2 = 1) (hl : 2 ^ (bits - 1) ≤ p) :
     2 ^ (bits - 1) ≤ p - 1 := by
   have he : 2 ^ (bits - 1) = 2 ^ (bits - 2) * 2 := by
-    rw [show bits - 1 = bits - 2 + 1 by omega, Nat.pow_succ]
-  omega
+    rw [show bits - 1 = bits - 2 + 1 by omega_using [hb], Nat.pow_succ]
+  omega_using [ho, hl, he]
 
 theorem candidate_bitLength {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
     Spec.RsaKeyGen.bitLength (candidateOf bits x) = bits ∧
       Spec.RsaKeyGen.bitLength (candidateOf bits x - 1) = bits := by
   obtain ⟨ho, hl, hu⟩ := candidate_shape hb x
-  have he : bits - 1 + 1 = bits := by omega
+  have he : bits - 1 + 1 = bits := by omega_using [hb]
   exact ⟨by simpa only [he] using bitLength_of hl (by simpa only [he] using hu),
     by simpa only [he] using bitLength_of (odd_above_power hb ho hl) (by simpa only [he] using Nat.lt_of_le_of_lt (Nat.sub_le _ _) hu)⟩
 
@@ -44,27 +44,27 @@ theorem half_shape {bits p : Nat} (hb : 2 ≤ bits) (ho : p % 2 = 1)
     2 ^ (bits - 2) ≤ (p - 1) / 2 ∧ (p - 1) / 2 < 2 ^ (bits - 1) := by
   have hp := odd_above_power hb ho hl
   have he1 : 2 ^ (bits - 1) = 2 ^ (bits - 2) * 2 := by
-    rw [show bits - 1 = bits - 2 + 1 by omega, Nat.pow_succ]
+    rw [show bits - 1 = bits - 2 + 1 by omega_using [hb], Nat.pow_succ]
   have he2 : 2 ^ bits = 2 ^ (bits - 1) * 2 := by
-    exact (congrArg (fun n => 2 ^ n) (show bits = bits - 1 + 1 by omega)).trans (Nat.pow_succ _ _)
-  omega
+    exact (congrArg (fun n => 2 ^ n) (show bits = bits - 1 + 1 by omega_using [hb])).trans (Nat.pow_succ _ _)
+  omega_using [ho, hl, hu, he1, he2]
 
 theorem half_bitLength {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
     Spec.RsaKeyGen.bitLength ((candidateOf bits x - 1) / 2) = bits - 1 := by
   obtain ⟨ho, hl, hu⟩ := candidate_shape hb x
   obtain ⟨hql, hqu⟩ := half_shape hb ho hl hu
-  have he : bits - 2 + 1 = bits - 1 := by omega
+  have he : bits - 2 + 1 = bits - 1 := by omega_using [hb]
   simpa only [he] using bitLength_of hql (by simpa only [he] using hqu)
 
 /-- Subtracting one preserves an odd q's significant width. -/
 theorem half_pred_bitLength {bits : Nat} (hb : 3 ≤ bits) (x : Nat)
     (ho : ((candidateOf bits x - 1) / 2) % 2 = 1) :
     Spec.RsaKeyGen.bitLength ((candidateOf bits x - 1) / 2 - 1) = bits - 1 := by
-  obtain ⟨hpo, hl, hu⟩ := candidate_shape (by omega : 2 ≤ bits) x
-  obtain ⟨hql, hqu⟩ := half_shape (by omega) hpo hl hu
-  have he : bits - 1 - 1 = bits - 2 := by omega
-  have hlow := odd_above_power (by omega : 2 ≤ bits - 1) ho (by simpa only [he] using hql)
-  have he' : bits - 2 + 1 = bits - 1 := by omega
+  obtain ⟨hpo, hl, hu⟩ := candidate_shape (by omega_using [hb] : 2 ≤ bits) x
+  obtain ⟨hql, hqu⟩ := half_shape (by omega_using [hb]) hpo hl hu
+  have he : bits - 1 - 1 = bits - 2 := by omega_using []
+  have hlow := odd_above_power (by omega_using [hb] : 2 ≤ bits - 1) ho (by simpa only [he] using hql)
+  have he' : bits - 2 + 1 = bits - 1 := by omega_using [hb]
   exact (bitLength_of (by simpa only [he] using hlow)
     (by rw [he']; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hqu)).trans he'
 
@@ -81,6 +81,6 @@ theorem candidate_widths {bits : Nat} (hlo : 512 ≤ bits) (hhi : bits ≤ 8192)
     (bits + 7) / 8 ≤ (bits - 1 + 7) / 8 + 1 ∧
     8 ≤ (bits + 63) / 64 ∧ (bits + 63) / 64 ≤ 128 ∧
     8 ≤ (bits - 1 + 63) / 64 ∧ (bits - 1 + 63) / 64 ≤ (bits + 63) / 64 := by
-  omega
+  omega_using [hlo, hhi]
 
 end VG.Proof.Ffdh.ParameterCandidate

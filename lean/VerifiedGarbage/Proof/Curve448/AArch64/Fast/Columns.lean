@@ -72,7 +72,7 @@ include h0 h1 h2
 theorem mulCol_ok (e : Env) {d : Nat} (hd : d < 4) :
     sem v e (column d) L = reduced (rows f g 8) d ∧
     sem v e (column d) H = reduced (rows f g 8) (d + 4) := by
-  obtain rfl | rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 := by omega_using [hd]
   all_goals
     simp only [accs_ne, List.length_cons, List.length_nil, Nat.reduceLeDiff, Nat.reduceLT, ↓reduceIte,
       column, terms, Nat.reduceAdd, pairs_0, pairs_1, pairs_2, pairs_3, pairs_4, pairs_5, pairs_6, pairs_7, start, addTo, shared,
@@ -82,7 +82,7 @@ theorem mulCol_ok (e : Env) {d : Nat} (hd : d < 4) :
     simp only [reduced, rows_eq, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, Nat.reduceLeDiff,
       and_true, and_false, and_self, ite_true, ite_false, Nat.add_zero,
       Nat.zero_add]
-    constructor <;> (push_cast; simp only [Int.add_mul, Int.mul_add, Int.mul_comm]; omega)
+    constructor <;> (push_cast; simp only [Int.add_mul, Int.mul_add, Int.mul_comm]; omega_using [])
 
 end Mul
 
@@ -107,7 +107,7 @@ include h0 h1 h2
 theorem sqrCol_ok (e : Env) {d : Nat} (hd : d < 4) :
     sem v e (column d) L = reduced (rows f f 8) d ∧
     sem v e (column d) H = reduced (rows f f 8) (d + 4) := by
-  obtain rfl | rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 := by omega_using [hd]
   all_goals
     simp only [sqrAccs_ne, Nat.reduceLeDiff, Nat.reduceLT, ↓reduceIte, column, terms, Nat.reduceAdd,
       sqPairs_0, sqPairs_1, sqPairs_2, sqPairs_3, sqPairs_4, sqPairs_5, sqPairs_6, sqPairs_7, start, addTo,
@@ -118,7 +118,7 @@ theorem sqrCol_ok (e : Env) {d : Nat} (hd : d < 4) :
       and_true, and_false, and_self, ite_true, ite_false, Nat.add_zero,
       Nat.zero_add]
     constructor <;> (push_cast; simp only [Int.add_mul, Int.mul_add, Int.mul_assoc, Int.mul_comm,
-      Int.mul_left_comm, Int.one_mul]; omega)
+      Int.mul_left_comm, Int.one_mul]; omega_using [])
 
 end Sqr
 

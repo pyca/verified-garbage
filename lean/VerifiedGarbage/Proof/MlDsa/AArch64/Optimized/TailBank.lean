@@ -25,7 +25,7 @@ theorem packedResult_field (a b : BitVec 128) (w : Poly) {len start : Nat}
     ofInt (vword (packedResult len second a b (fun e => (zetaNat (root e) : Int))) e).toInt=
       (Traversal.run (Traversal.packedSchedule start len root) w)[start+(if second then 4 else 0)+e]! := by
   have hi : (if second then 4 else 0)+e<8 := by
-    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega
+    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega_using [he]
   have hd := packed_indices hl hi
   rw [packedResult_int a b hl second _ he hb hs hv,Nat.add_assoc,
     Traversal.packedSchedule_get w hl hstart hi]
@@ -53,23 +53,23 @@ theorem pairWord_bound (v : Vector (BitVec 128) 8) {g : Nat} (hg : g<4) {bound :
       (pairWord v[2*g] v[2*g+1] i).toInt≤bound := by
   unfold pairWord
   split
-  · exact hv ⟨2*g,by omega⟩ i ‹_›
-  · exact hv ⟨2*g+1,by omega⟩ (i-4) (by omega)
+  · exact hv ⟨2*g,by omega_using [hg]⟩ i ‹_›
+  · exact hv ⟨2*g+1,by omega_using [hg]⟩ (i-4) (by omega_using [hi])
 
 theorem pairWord_field (v : Vector (BitVec 128) 8) (w : Poly) {g u : Nat} (hg : g<4)
     (hf : InnerBankField u v w) {i : Nat} (hi : i<8) :
     ofInt (pairWord v[2*g] v[2*g+1] i).toInt = w[32*u+8*g+i]! := by
   unfold pairWord
   split
-  · have h := hf ⟨2*g,by omega⟩ i ‹_›
-    simpa only [Traversal.innerLoc,show 4*(2*g)=8*g by omega] using h
-  · have h := hf ⟨2*g+1,by omega⟩ (i-4) (by omega)
-    simpa only [Traversal.innerLoc,show 32*u+4*(2*g+1)+(i-4)=32*u+8*g+i by omega] using h
+  · have h := hf ⟨2*g,by omega_using [hg]⟩ i ‹_›
+    simpa only [Traversal.innerLoc,show 4*(2*g)=8*g by omega_using []] using h
+  · have h := hf ⟨2*g+1,by omega_using [hg]⟩ (i-4) (by omega_using [hi])
+    simpa only [Traversal.innerLoc,show 32*u+4*(2*g+1)+(i-4)=32*u+8*g+i by omega_arith] using h
 
 theorem packedValues_bound (v : Vector (BitVec 128) 8) {g len : Nat} (hg : g<4)
     (hl : len=1 ∨ len=2) (z : Nat → Int) {bound : Int} (hb : 0≤bound)
     (hs : bound+16760834<2147483648) (hv : BankBound v bound) :
-    BankBound (packedValues v ⟨2*g,by omega⟩ ⟨2*g+1,by omega⟩ len z) (bound+16760834) := by
+    BankBound (packedValues v ⟨2*g,by omega_using [hg]⟩ ⟨2*g+1,by omega_using [hg]⟩ len z) (bound+16760834) := by
   intro i e he
   simp only [packedValues,Vector.getElem_set]
   by_cases hj : 2*g+1=i.val
@@ -81,33 +81,33 @@ theorem packedValues_bound (v : Vector (BitVec 128) 8) {g len : Nat} (hg : g<4)
       exact packedResult_bound _ _ hl false z he hb hs (fun i hi => pairWord_bound v hg hv hi)
     · rw [ite_eq_right hi]
       have h := hv i e he
-      omega
+      omega_using [h]
 
 theorem packedValues_field (v : Vector (BitVec 128) 8) (w : Poly) {g len u : Nat}
     (hg : g<4) (hl : len=1 ∨ len=2) (hu : u<8) (root : Nat → Nat) {bound : Int}
     (hb : 0≤bound) (hs : bound+16760834<2147483648) (hv : BankBound v bound)
     (hf : InnerBankField u v w) :
-    InnerBankField u (packedValues v ⟨2*g,by omega⟩ ⟨2*g+1,by omega⟩ len
+    InnerBankField u (packedValues v ⟨2*g,by omega_using [hg]⟩ ⟨2*g+1,by omega_using [hg]⟩ len
       (fun e => (zetaNat (root e) : Int)))
       (Traversal.run (Traversal.packedSchedule (32*u+8*g) len root) w) := by
   intro i e he
   simp only [packedValues,Vector.getElem_set]
   by_cases hj : 2*g+1=i.val
   · rw [ite_eq_left hj]
-    have h := packedResult_field v[2*g] v[2*g+1] w hl (show 32*u+8*g+8≤256 by omega)
+    have h := packedResult_field v[2*g] v[2*g+1] w hl (show 32*u+8*g+8≤256 by omega_using [hg, hu])
       true root he hb hs (fun i hi => pairWord_bound v hg hv hi)
       (fun i hi => pairWord_field v w hg hf hi)
-    simpa only [ite_true,Traversal.innerLoc,← hj,show 32*u+4*(2*g+1)+e=32*u+8*g+4+e by omega] using h
+    simpa only [ite_true,Traversal.innerLoc,← hj,show 32*u+4*(2*g+1)+e=32*u+8*g+4+e by omega_using []] using h
   · rw [ite_eq_right hj]
     by_cases hi : 2*g=i.val
     · rw [ite_eq_left hi]
-      have h := packedResult_field v[2*g] v[2*g+1] w hl (show 32*u+8*g+8≤256 by omega)
+      have h := packedResult_field v[2*g] v[2*g+1] w hl (show 32*u+8*g+8≤256 by omega_using [hg, hu])
         false root he hb hs (fun i hi => pairWord_bound v hg hv hi)
         (fun i hi => pairWord_field v w hg hf hi)
       simpa only [Bool.false_eq_true,ite_false,Nat.add_zero,Traversal.innerLoc,← hi,
-        show 4*(2*g)=8*g by omega] using h
-    · rw [ite_eq_right hi,Traversal.packedSchedule_outside w hl (by omega)
-        (by unfold Traversal.innerLoc; omega) (by unfold Traversal.innerLoc; omega),hf i e he]
+        show 4*(2*g)=8*g by omega_using []] using h
+    · rw [ite_eq_right hi,Traversal.packedSchedule_outside w hl (by omega_using [hg, hu])
+        (by unfold Traversal.innerLoc; omega_using [hu, he]) (by unfold Traversal.innerLoc; omega_using [he, hj, hi]),hf i e he]
 
 end VG.Proof.MlDsa.AArch64.Optimized
 

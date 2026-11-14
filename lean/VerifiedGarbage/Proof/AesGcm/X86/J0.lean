@@ -47,7 +47,7 @@ theorem inc32_words (a b c d : BitVec 32) : inc32 (a ++ b ++ c ++ d) = a ++ b ++
   have h₁ : (a ++ b ++ c ++ d).extractLsb' 32 96 = a ++ b ++ c := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-    simp only [show ¬ (32 + i < 32) by omega, ite_false, show 32 + i - 32 = i by omega]
+    simp only [show ¬ (32 + i < 32) by omega_using [], ite_false, show 32 + i - 32 = i by omega_using []]
   have h₂ : (a ++ b ++ c ++ d).extractLsb' 0 32 = d := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]; simp [hi]
@@ -293,7 +293,7 @@ theorem j0z_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0In Ctx 
   have sl : ∀ {o}, 96 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ bO ∨ bO + 4 ≤ o) →
       slotv (Z.writeW (w64 W + BitVec.ofNat 64 bO) (BitVec.ofNat 32 0)) W o = slotv s.mem W o := fun h₁ h₂ h₃ => by
     rw [slotv_eq, slot_frame fb fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w h₃ (by omega) (by decide)]
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w h₃ (by omega_using [h₂]) (by decide)]
     exact slot_frame fz fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (L.st_w (by decide) (.inr ⟨h₁, h₂⟩)).symm
   have dZ : ∀ r ∈ j0Frame St W SP K, (⟨w64 D, n⟩ : Region).Disjoint r := fun r hr => by
@@ -303,7 +303,7 @@ theorem j0z_ok {D : BitVec 32} {n : Nat} {m₀ : Mem} {s : State} (h : J0In Ctx 
     · exact h.data.w.sub_right (Lay.wSub (by decide))
     · exact h.data.w.sub_right (Lay.wSub (by decide))
     · exact h.data.stk.symm
-  have hD := bytesAt_frame hf dZ (by have := h.data.fit; omega)
+  have hD := bytesAt_frame hf dZ (by have := h.data.fit; omega_using [this])
   have he' : Env Ctx St W SP (setMem ((s.setReg .eax (BitVec.ofNat 32 0)))
       (Z.writeW (w64 W + BitVec.ofNat 64 bO) (BitVec.ofNat 32 0))) :=
     he.keep (by regs []) (by regs []) (by regs []) rfl rfl (by
@@ -343,18 +343,18 @@ theorem J0H.wslot {n : Nat} {x : List Byte} {m₀ : Mem} {s s' : State} (h : J0H
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hf : Frame (j0Frame St W SP K) s.mem s'.mem := fb.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨wsR W, by simp, Offset.sub _ (by omega) (by omega)⟩
+    exact ⟨wsR W, by simp, Offset.sub _ (by omega_using [ho₁]) (by omega_using [ho₂])⟩
   have dS : ∀ {a k : Nat}, a + k ≤ 80 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 o, 4⟩ : Region)],
       (⟨w64 St + BitVec.ofNat 64 a, k⟩ : Region).Disjoint r := fun hak r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hak (.inr ⟨by omega, ho₂⟩)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hak (.inr ⟨by omega_using [ho₁], ho₂⟩)
   have sK : ∀ {q}, 128 ≤ q → q + 4 ≤ 240 → slotv s'.mem W q = slotv s.mem W q := fun h₁ h₂ =>
     slot_frame fb fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega) ho₂
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega_using [ho₁, h₂])) (by omega_using [h₂]) ho₂
   have hk : Hk s'.mem Ctx = Hk s.mem Ctx := blockAt_frame fb fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by omega_using [ho₂])
   refine ⟨h.env.keep hbp hsi hsp hrd hwr (sK (by decide) (by decide)),
     ⟨by rw [sK (by decide) (by decide)]; exact h.sl.1, by rw [sK (by decide) (by decide)]; exact h.sl.2⟩,
-    h.abs.congr (blockAt_frame fb (dS (by decide))) (bytesAt_frame fb (dS (by omega)) (by omega)),
+    h.abs.congr (blockAt_frame fb (dS (by decide))) (bytesAt_frame fb (dS (by omega_using [])) (by omega_using [])),
     by rw [hk, h.hk], h.frame.trans hf⟩
 
 theorem j0b_pc {n : Nat} (hnlt : n < 2 ^ 32) {x : Mem → List Byte} :

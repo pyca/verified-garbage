@@ -47,18 +47,18 @@ theorem copyWord_ok {s : State} {E : Addr} (he : s.sp = E)
       t.mem = s.mem.writeW (E + BitVec.ofNat 64 (64 + 8 * k))
         (s.mem.readW (E + BitVec.ofNat 64 (224 + 8 * k)) 64) := by
   have source : InRegions (s.rd ++ s.wr) (E + BitVec.ofNat 64 (224 + 8 * k)) 8 :=
-    ⟨⟨E, 256⟩, List.mem_append_right _ hr, Offset.contains_base E (by omega) (by omega)⟩
+    ⟨⟨E, 256⟩, List.mem_append_right _ hr, Offset.contains_base E (by omega_using [hk]) (by omega_using [hk])⟩
   have dest : InRegions s.wr (E + BitVec.ofNat 64 (64 + 8 * k)) 8 :=
-    ⟨⟨E, 256⟩, hr, Offset.contains_base E (by omega) (by omega)⟩
+    ⟨⟨E, 256⟩, hr, Offset.contains_base E (by omega_using [hk]) (by omega_using [hk])⟩
   have hl : exec (.ldrSp .x0 (224 + 8 * k)) s =
       some (s.write .x .x0 (s.mem.readW (E + BitVec.ofNat 64 (224 + 8 * k)) 64)) := by
-    simp only [exec, show (224 + 8 * k) % 8 = 0 ∧ 224 + 8 * k < 32768 from by omega,
+    simp only [exec, show (224 + 8 * k) % 8 = 0 ∧ 224 + 8 * k < 32768 from by omega_using [hk],
       and_self, ite_true, State.load, he, source, Option.map_some, Mem.readW, BitVec.setWidth_eq]
   have ha {t : State} : exec (.addSp .x15 64) t = some (t.write .x .x15 (t.sp + BitVec.ofNat 64 64)) := by
     simp only [exec, show 64 < 4096 from by decide, ite_true]
   apply WP.of_runBlock
   simp only [copyWord, runBlock_cons, runStep_some, hl, ha, RegUpd.sp_write]
-  rw [exec_str_x ⟨by omega, by omega⟩ (by
+  rw [exec_str_x ⟨by omega_using [], by omega_using [hk]⟩ (by
     simpa only [RegUpd.wr_write, RegUpd.gpr_write_self, BitVec.setWidth_eq, he, Offset.add_add] using dest)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
   refine ⟨⟨rfl, rfl, rfl, rfl, ?_⟩, ?_⟩
@@ -79,27 +79,27 @@ theorem copyPrefix_ok {s : State} {E : Addr} (he : s.sp = E)
   | 0, _ => WP.block_nil ⟨⟨rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyPrefix_ok he hw n (by omega)) fun u hu => ?_
-    refine WP.mono (copyWord_ok (hu.step.sp.trans he) (hu.step.wr ▸ hw) (by omega : n < 4))
+    refine WP.mono (copyPrefix_ok he hw n (by omega_using [hn])) fun u hu => ?_
+    refine WP.mono (copyWord_ok (hu.step.sp.trans he) (hu.step.wr ▸ hw) (by omega_using [hn] : n < 4))
       fun t ⟨kt, mt⟩ => ?_
     have same : u.mem.readW (E + BitVec.ofNat 64 (224 + 8 * n)) 64 =
         s.mem.readW (E + BitVec.ofNat 64 (224 + 8 * n)) 64 := by
       apply hu.frame.readW (Region.contains_self _ _) _ (by decide)
       simp only [List.mem_singleton]
       rintro r rfl
-      exact Offset.disjoint _ (by omega) (by omega) (by decide)
+      exact Offset.disjoint _ (by omega_using []) (by omega_using [hn]) (by decide)
     rw [same] at mt
     refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
     · rw [mt]
       exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (by omega) (by omega) (by decide))
+        (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by decide))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self64 _ _ _
       · rw [Mem.readW_writeW_sep (a := E + BitVec.ofNat 64 (64 + 8 * j))
           (b := E + BitVec.ofNat 64 (64 + 8 * n)) ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])
 
 theorem prefix_ok {s : State} {E : Addr} (he : s.sp = E)
     (hw : (⟨E, 256⟩ : Region) ∈ s.wr) :

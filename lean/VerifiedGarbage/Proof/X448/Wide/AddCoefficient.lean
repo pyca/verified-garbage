@@ -42,8 +42,8 @@ theorem addCoeff_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
   rw [show addCoeff i = [ld .x6 (ACC + 16 * i), ld .x9 (ACC + 16 * i + 8)] ++
     [.adds .x .x4 .x4 .x6, .adcs .x .x5 .x5 .x9] from rfl, WP.block_append_iff]
   have load := loadTerm_ok hs (a := ACC + 16 * i) (b := ACC + 16 * i + 8)
-    (i := 0) (j := 0) (by simp only [ACC]; omega) (by simp only [ACC]; omega)
-    (by simp only [ACC]; omega) (by simp only [ACC]; omega) (by decide) (by decide)
+    (i := 0) (j := 0) (by simp only [ACC]; omega_using [hi]) (by simp only [ACC]; omega_using [hi])
+    (by simp only [ACC]; omega_using []) (by simp only [ACC]; omega_using []) (by decide) (by decide)
   simp only [Nat.mul_zero, Nat.add_zero] at load
   refine WP.mono load fun u ⟨u6, u9, um, uk⟩ => ?_
   have uv : pair (u.gpr .x4) (u.gpr .x5) = pair (s.gpr .x4) (s.gpr .x5) := by
@@ -68,7 +68,7 @@ theorem addCoeffs_ok {s : State} {base : Addr} (hs : Scr s base) (xs : List Nat)
     have hi := hx i List.mem_cons_self
     have hc : pair (s.gpr .x4) (s.gpr .x5) + coeff s.mem base ACC i < 2 ^ 128 := by
       simp only [List.map_cons, List.sum_cons] at h
-      omega
+      omega_using [h]
     refine WP.mono (addCoeff_ok hs hi hc) fun u ⟨uv, um, uk⟩ => ?_
     refine WP.mono (ih (hs.of_keeps uk (by decide))
       (fun j hj => hx j (List.mem_cons_of_mem _ hj)) (by

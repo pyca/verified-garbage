@@ -5,19 +5,19 @@
 // gives.
 
 vg_hmac_sha256_finalize_scratch_shani:
-	mov QWORD PTR [r8+608], rbx
-	mov QWORD PTR [r8+616], rbp
-	mov QWORD PTR [r8+624], r12
-	mov QWORD PTR [r8+632], r13
-	mov QWORD PTR [r8+640], r14
-	mov QWORD PTR [r8+648], r15
+	mov QWORD PTR [r8+48], rbx
+	mov QWORD PTR [r8+56], rbp
+	mov QWORD PTR [r8+64], r12
+	mov QWORD PTR [r8+72], r13
+	mov QWORD PTR [r8+80], r14
+	mov QWORD PTR [r8+88], r15
 	mov rbx, rdi
 	mov r12, rsi
 	mov r13, rcx
 	mov r15, r8
 	mov rsi, rdx
 	mov rdx, r15
-	add rdx, 656
+	add rdx, 96
 	mov rcx, r15
 	call {vg_sha256_finalize_scratch_shani}
 	mov eax, DWORD PTR [r12]
@@ -36,21 +36,21 @@ vg_hmac_sha256_finalize_scratch_shani:
 	mov DWORD PTR [rbx+24], eax
 	mov eax, DWORD PTR [r12+28]
 	mov DWORD PTR [rbx+28], eax
-	mov eax, DWORD PTR [r15+656]
+	mov eax, DWORD PTR [r15+96]
 	mov DWORD PTR [rbx+32], eax
-	mov eax, DWORD PTR [r15+660]
+	mov eax, DWORD PTR [r15+100]
 	mov DWORD PTR [rbx+36], eax
-	mov eax, DWORD PTR [r15+664]
+	mov eax, DWORD PTR [r15+104]
 	mov DWORD PTR [rbx+40], eax
-	mov eax, DWORD PTR [r15+668]
+	mov eax, DWORD PTR [r15+108]
 	mov DWORD PTR [rbx+44], eax
-	mov eax, DWORD PTR [r15+672]
+	mov eax, DWORD PTR [r15+112]
 	mov DWORD PTR [rbx+48], eax
-	mov eax, DWORD PTR [r15+676]
+	mov eax, DWORD PTR [r15+116]
 	mov DWORD PTR [rbx+52], eax
-	mov eax, DWORD PTR [r15+680]
+	mov eax, DWORD PTR [r15+120]
 	mov DWORD PTR [rbx+56], eax
-	mov eax, DWORD PTR [r15+684]
+	mov eax, DWORD PTR [r15+124]
 	mov DWORD PTR [rbx+60], eax
 	mov rbp, rbx
 	add rbp, 32
@@ -101,11 +101,11 @@ vg_hmac_sha256_finalize_scratch_shani:
 	mov eax, DWORD PTR [rbx+28]
 	bswap eax
 	mov DWORD PTR [rbp+28], eax
-	mov rbx, QWORD PTR [r15+608]
-	mov rbp, QWORD PTR [r15+616]
-	mov r12, QWORD PTR [r15+624]
-	mov r13, QWORD PTR [r15+632]
-	mov r14, QWORD PTR [r15+640]
-	mov r15, QWORD PTR [r15+648]
+	mov rbx, QWORD PTR [r15+48]
+	mov rbp, QWORD PTR [r15+56]
+	mov r12, QWORD PTR [r15+64]
+	mov r13, QWORD PTR [r15+72]
+	mov r14, QWORD PTR [r15+80]
+	mov r15, QWORD PTR [r15+88]
 	ret
 	.p2align 6

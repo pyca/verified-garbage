@@ -104,7 +104,7 @@ theorem refillBase_toNat {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
   have hl : 768 ≤ s.sp.toNat := h.stackLower
   simp only [refillBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := s.sp.isLt
-  omega
+  omega_using [hl]
 
 theorem low_sub {d n : Nat} (s : State) (h : d + n ≤ refillStack) :
     Region.Sub ⟨off (low s) d, n⟩ (below s.sp refillStack) :=
@@ -114,9 +114,9 @@ theorem refillBase_below (s : State) {n : Nat} (hn : n ≤ 288) :
     below (refillBase s) n = ⟨off (low s) (288 - n), n⟩ := by
   simp only [below, refillBase, low, off]
   congr 1
-  rw [BitVec.sub_sub, ← BitVec.ofNat_add, Offset.sub_ofNat_eq s.sp (by omega : 480 + n ≤ 768)]
+  rw [BitVec.sub_sub, ← BitVec.ofNat_add, Offset.sub_ofNat_eq s.sp (by omega_using [hn] : 480 + n ≤ 768)]
   congr 2
-  omega
+  omega_using []
 
 theorem ctlRegion_eq (s : State) : ctlRegion (refillBase s) = ⟨off (low s) 736, 32⟩ := by
   simp only [ctlRegion, refillBase_low, off_off]
@@ -148,7 +148,7 @@ theorem RefillABI.scratchSize {pBytes : Nat} {s : State} (h : RefillABI pBytes s
   have hl := VG.Proof.Dsa.Generation.generation_layout_fits h.lengths
   have hs := h.scratchLength
   rw [h.width] at hs
-  omega
+  omega_using [hl, hs]
 
 theorem RefillABI.arena_sub {pBytes : Nat} {s : State} (h : RefillABI pBytes s) :
     Region.Sub ⟨s.gpr .x5, VG.Impl.Dsa.Generation.Layout.usedBytes pBytes⟩ (inScr s) := by
@@ -165,14 +165,14 @@ def refillGeometry {pBytes : Nat} {s : State} (h : RefillABI pBytes s) : Generat
   pLen := pBytes
   qLen := Spec.Dsa.generationQLen pBytes
   lengths := h.lengths
-  arenaBound := by have hb := h.scrBound; have hn := h.scratchSize; omega
+  arenaBound := by have hb := h.scrBound; have hn := h.scratchSize; omega_using [hb, hn]
   frameBound := by
     rw [refillBase_toNat h]; have hb := s.sp.isLt
-    unfold VG.Impl.RsaOaep.AArch64.frameBytes; omega
-  stackSize := by rw [refillBase_toNat h]; have hl : 768 ≤ s.sp.toNat := h.stackLower; omega
+    unfold VG.Impl.RsaOaep.AArch64.frameBytes; omega_using []
+  stackSize := by rw [refillBase_toNat h]; have hl : 768 ≤ s.sp.toNat := h.stackLower; omega_using [hl]
   frameArena := by rw [refillBase_low]; exact h.stack_arena (by decide)
   stackArena := by rw [refillBase_below s (by decide)]; exact h.stack_arena (by decide)
-  callSize := by rw [refillBase_toNat h]; have hl : 768 ≤ s.sp.toNat := h.stackLower; omega
+  callSize := by rw [refillBase_toNat h]; have hl : 768 ≤ s.sp.toNat := h.stackLower; omega_using [hl]
   callArena := by rw [refillBase_below s (by decide)]; exact h.stack_arena (by decide)
 
 /-- The random tape. -/

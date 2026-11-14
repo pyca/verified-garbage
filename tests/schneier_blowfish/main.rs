@@ -14,9 +14,8 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
-
-use verified_garbage::cipher::blowfish::{BlowfishEcbDecryptor, BlowfishEcbEncryptor};
+use verified_garbage::cipher::blowfish::BlowfishEcb;
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
 use verified_garbage_test_vectors::unhex_spaced;
 
 /// The vectors' file (`crate::vectors`).
@@ -25,18 +24,16 @@ fn text() -> String {
 }
 
 fn encrypt(key: &[u8], input: &[u8]) -> Vec<u8> {
-    let mut cipher = BlowfishEcbEncryptor::new(key).unwrap();
-    let mut output = vec![0; input.len()];
-    assert_eq!(cipher.update(input, &mut output), Ok(input.len()));
-    cipher.finalize().unwrap();
+    let cipher = BlowfishEcb::new(key).unwrap();
+    let mut output = input.to_vec();
+    cipher.encrypt(&mut output).unwrap();
     output
 }
 
 fn decrypt(key: &[u8], input: &[u8]) -> Vec<u8> {
-    let mut cipher = BlowfishEcbDecryptor::new(key).unwrap();
-    let mut output = vec![0; input.len()];
-    assert_eq!(cipher.update(input, &mut output), Ok(input.len()));
-    cipher.finalize().unwrap();
+    let cipher = BlowfishEcb::new(key).unwrap();
+    let mut output = input.to_vec();
+    cipher.decrypt(&mut output).unwrap();
     output
 }
 
@@ -80,14 +77,7 @@ fn set_key_records() {
         let (cipher, key) = (unhex_spaced(cipher), unhex_spaced(key));
         assert_eq!(key.len(), length);
         if length < 4 {
-            assert!(matches!(
-                BlowfishEcbEncryptor::new(&key),
-                Err(InvalidKeyLength)
-            ));
-            assert!(matches!(
-                BlowfishEcbDecryptor::new(&key),
-                Err(InvalidKeyLength)
-            ));
+            assert!(matches!(BlowfishEcb::new(&key), Err(InvalidKeyLength)));
         } else {
             assert_eq!(encrypt(&key, &clear), cipher);
             assert_eq!(decrypt(&key, &cipher), clear);
@@ -114,72 +104,48 @@ fn many_blocks() {
     }
 }
 
-/// Updates of every split of the input write the same blocks, and keep a
-/// partial block for the next. Each split consumes the whole input, which
-/// leaves nothing pending, so one encryptor and one decryptor (one key
-/// expansion each, the costliest step) serve every split in turn.
+/// One expanded key supports both directions and repeated calls on unaligned
+/// slices, without touching the surrounding bytes.
 #[test]
-fn streaming_splits() {
-    let key = unhex_spaced("0123456789ABCDEFF0E1D2C3B4A59687");
-    let data: Vec<u8> = crate::bytes::pattern(8 * 20, 13, 5);
+fn in_place() {
+    let key = [7; 16];
+    let cipher = BlowfishEcb::new(&key).unwrap();
+    let data = crate::bytes::pattern(8 * 20, 13, 5);
     let whole = encrypt(&key, &data);
-    let mut cipher = BlowfishEcbEncryptor::new(&key).unwrap();
-    let mut decipher = BlowfishEcbDecryptor::new(&key).unwrap();
-    for first in 0..=data.len() {
-        for second in [0, 1, 7, 8, 9, 23] {
-            let second = (first + second).min(data.len());
-            let mut output = vec![0; data.len() + 7];
-            let mut written = 0;
-            for range in [0..first, first..second, second..data.len()] {
-                let expected = cipher.output_len(range.len());
-                let n = cipher.update(&data[range], &mut output[written..]).unwrap();
-                assert_eq!(n, expected);
-                written += n;
-            }
-            assert_eq!(written, data.len());
-            assert_eq!(output[..written], whole[..]);
-            // Nothing pending, as for a new encryptor.
-            assert_eq!(cipher.output_len(7), 0);
-            let mut clear = vec![0; data.len() + 7];
-            let mut read = 0;
-            for range in [0..first, first..second, second..data.len()] {
-                let expected = decipher.output_len(range.len());
-                let n = decipher.update(&whole[range], &mut clear[read..]).unwrap();
-                assert_eq!(n, expected);
-                read += n;
-            }
-            assert_eq!(clear[..read], data[..]);
-            assert_eq!(decipher.output_len(7), 0);
+    for offset in 0..8 {
+        for split in (0..=data.len()).step_by(8) {
+            let mut buffer = vec![0xa5; offset + data.len() + 8];
+            buffer[offset..offset + data.len()].copy_from_slice(&data);
+            let (first, second) = buffer[offset..offset + data.len()].split_at_mut(split);
+            cipher.encrypt(first).unwrap();
+            cipher.encrypt(second).unwrap();
+            assert_eq!(&buffer[offset..offset + data.len()], whole);
+            cipher
+                .decrypt(&mut buffer[offset..offset + data.len()])
+                .unwrap();
+            assert_eq!(&buffer[offset..offset + data.len()], data);
+            assert_eq!(&buffer[..offset], vec![0xa5; offset]);
+            assert_eq!(&buffer[offset + data.len()..], [0xa5; 8]);
         }
     }
-    cipher.finalize().unwrap();
-    decipher.finalize().unwrap();
 }
 
 #[test]
 fn errors() {
     for length in [0, 3, 57, 100] {
         assert!(matches!(
-            BlowfishEcbEncryptor::new(&vec![1; length]),
-            Err(InvalidKeyLength)
-        ));
-        assert!(matches!(
-            BlowfishEcbDecryptor::new(&vec![1; length]),
+            BlowfishEcb::new(&vec![1; length]),
             Err(InvalidKeyLength)
         ));
     }
-    let key = [7; 16];
-    let mut cipher = BlowfishEcbEncryptor::new(&key).unwrap();
-    let mut output = [0; 15];
-    assert_eq!(cipher.update(&[1; 3], &mut []), Ok(0));
-    assert_eq!(cipher.output_len(usize::MAX), usize::MAX);
-    assert_eq!(cipher.update(&[2; 13], &mut output), Err(OutputTooSmall));
-    assert_eq!(output, [0; 15]);
-    assert_eq!(cipher.update(&[2; 13], &mut [0; 16]), Ok(16));
-    assert_eq!(cipher.update(&[3; 2], &mut []), Ok(0));
-    assert_eq!(cipher.finalize(), Err(IncompleteBlock));
-    let mut decipher = BlowfishEcbDecryptor::new(&key).unwrap();
-    assert_eq!(decipher.update(&[1; 9], &mut [0; 7]), Err(OutputTooSmall));
-    assert_eq!(decipher.update(&[1; 9], &mut [0; 8]), Ok(8));
-    assert_eq!(decipher.finalize(), Err(IncompleteBlock));
+    let cipher = BlowfishEcb::new(&[7; 16]).unwrap();
+    for length in (1..24).filter(|n| n % 8 != 0) {
+        let mut buffer = vec![0xa5; length];
+        assert_eq!(cipher.encrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(buffer, vec![0xa5; length]);
+        assert_eq!(cipher.decrypt(&mut buffer), Err(IncompleteBlock));
+        assert_eq!(buffer, vec![0xa5; length]);
+    }
+    assert_eq!(cipher.encrypt(&mut []), Ok(()));
+    assert_eq!(cipher.decrypt(&mut []), Ok(()));
 }

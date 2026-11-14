@@ -39,7 +39,7 @@ theorem zmask_snoc (bs : List Byte) (b : Byte) :
     rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide ((0 : Byte).toNat < 1)))) = BitVec.allOnes 64 by decide,
       BitVec.or_allOnes]
     simp only [zmask, this, Bool.false_eq_true, ↓reduceIte]
-  · have hb' : ¬ b.toNat < 1 := fun h => hb (BitVec.eq_of_toNat_eq (by simp; omega))
+  · have hb' : ¬ b.toNat < 1 := fun h => hb (BitVec.eq_of_toNat_eq (by simp; omega_using [h]))
     rw [decide_eq_false hb', show (0#64 - BitVec.setWidth 64 (BitVec.ofBool false)) = 0#64 by decide,
       BitVec.or_zero]
     have : (b != 0) = true := by simpa using hb
@@ -69,10 +69,10 @@ theorem psLoop_ok {s t₀ : State} (hp : EPre s) (hsp : t₀.gpr .rsp = fb s) (h
   have hk2 := hp.k2
   have hml := hp.hml
   have hs : Scr t₀ (fb s) frameBytes := Scr.of_mem (by rw [hwr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_using [hF])
   have hcx' : t₀.gpr .rcx = BitVec.ofNat 64 (stackArg s 3).toNat := by rw [hcx]; simp
-  refine wp_upto (a := 0) (N := (stackArg s 3).toNat) (by omega) (PsInv s t₀) ?_ (fun _ h => h)
-    ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega), h10, by rw [hdx]; rfl⟩
+  refine wp_upto (a := 0) (N := (stackArg s 3).toNat) (by omega_using [hP, hml]) (PsInv s t₀) ?_ (fun _ h => h)
+    ⟨Keep.refl _ _, Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), h10, by rw [hdx]; rfl⟩
   intro j _ hj u hI
   have hsp' : u.gpr .rsp = fb s := (hI.keep.gpr (by decide)).trans hsp
   have hsi' : u.gpr .rsi = stackArg s 2 := (hI.keep.gpr (by decide)).trans hsi
@@ -80,17 +80,17 @@ theorem psLoop_ok {s t₀ : State} (hp : EPre s) (hsp : t₀.gpr .rsp = fb s) (h
   have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 2) (0 + j)) 1 := by
     rw [hI.keep.2.1, hrd]
     exact hp.hrd.left _ _ ⟨⟨stackArg s 2, (stackArg s 3).toNat⟩, by simp,
-      by rw [Nat.zero_add]; exact Offset.contains_base _ (by omega) (by have := hp.wP; omega)⟩
+      by rw [Nat.zero_add]; exact Offset.contains_base _ (by omega_using [hj]) (by have := hp.wP; omega_using [hj])⟩
   have hst : InRegions u.wr (off (fb s) (oEM + 2 + j)) 1 :=
-    (hs.congr (hI.keep.2.2)).st8 (by unfold frameBytes oEM; omega)
+    (hs.congr (hI.keep.2.2)).st8 (by unfold frameBytes oEM; omega_using [hP, hk2, hj])
   have hb : u.mem (off (stackArg s 2) (0 + j)) = s.mem (stackArg s 2 + BitVec.ofNat 64 j) := by
     rw [Nat.zero_add]
     have hd : (stkR s).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat⟩ := hp.dKp
     rw [hI.out _ (.inr ?_)]
-    · exact byte_outside ho hd (by have := hp.wP; omega) hj
+    · exact byte_outside ho hd (by have := hp.wP; omega_using []) hj
     · have := outside_frame s (x := off (stackArg s 2) j) fun hc =>
-        hd _ hc (Offset.contains_base _ (by omega) (by have := hp.wP; omega))
-      unfold frameBytes at this; unfold oEM; omega
+        hd _ hc (Offset.contains_base _ (by omega_using [hj]) (by have := hp.wP; omega_using [hj]))
+      unfold frameBytes at this; unfold oEM; omega_using [hP, hk2, hj, this]
   refine WP.mono (WP.keep [.rax, .r11, .r10, .rdx] (Q := fun u' =>
       u'.mem = u.mem.writeW (off (fb s) (oEM + 2 + j)) (s.mem (stackArg s 2 + BitVec.ofNat 64 j)) ∧
       u'.gpr .r10 = BitVec.ofNat 64 (j + 1) ∧ u'.zf = some (decide (j + 1 = (stackArg s 3).toNat)) ∧
@@ -98,14 +98,14 @@ theorem psLoop_ok {s t₀ : State} (hp : EPre s) (hsp : t₀.gpr .rsp = fb s) (h
         (BitVec.ofBool (decide ((s.mem (stackArg s 2 + BitVec.ofNat 64 j)).toNat < 1))))) (by
     xrun [psLoop, ea_bx (j := j) (p := stackArg s 2), ea_bx (j := j) (p := fb s), hsi', hsp',
       hin, hst, hb, hI.r10, hcx'', ofNat_add_one, trunc_zext, zext_toNat, one64_toNat,
-      ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega) (show (stackArg s 3).toNat < 2 ^ 64 by omega)]
+      ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega_using [hj]) (show (stackArg s 3).toNat < 2 ^ 64 by omega_using [])]
     done) rfl) fun u' ⟨⟨hm, h10', hz, hdx'⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), ?_, ?_, h10', ?_⟩
   · rw [hm]
-    exact Outside.wb (Outside.mono hI.out (by omega) (by omega)) _ (by omega) (by omega) (by unfold oEM; omega)
+    exact Outside.wb (Outside.mono hI.out (by omega_using []) (by omega_using [])) _ (by omega_using []) (by omega_using []) (by unfold oEM; omega_using [hP, hk2, hj])
   · intro i hi
     rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [byte_wb _ _ _ (by omega) (by unfold oEM; omega) (by unfold oEM; omega)]; exact hI.ps i hi
+    · rw [byte_wb _ _ _ (by omega_using [hi]) (by unfold oEM; omega_arith) (by unfold oEM; omega_using [hP, hk2, hj])]; exact hI.ps i hi
     · exact byte_wb_self _ _ _ _
   · rw [hdx', hI.rdx, bytesAt_succ, zmask_snoc]
 

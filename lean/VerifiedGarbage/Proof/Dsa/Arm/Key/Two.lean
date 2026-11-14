@@ -101,10 +101,10 @@ theorem two_loop {α : Type} {Φ : α → Nat → State → Prop} {Ψ : α → S
       rintro s₁ s₂ ⟨⟨a, j⟩, ⟨hj, hn, e₁, f₁, g₁⟩, ⟨-, -, e₂, f₂, g₂⟩⟩
       refine ⟨by rw [e₁, e₂], fun h => ?_, fun h => ?_⟩
       · have : ¬ j + 1 < N a := by rw [e₁] at h; simpa using h
-        have hjN : j + 1 = N a := by simp only at hj this; omega
+        have hjN : j + 1 = N a := by simp only at hj this; omega_using [hj, this]
         exact ⟨a, g₁ hjN, g₂ hjN⟩
       · have hlt : j + 1 < N a := by rw [e₁] at h; simpa using h
-        exact ⟨N a - (j + 1), by simp only at hn; omega, a, j + 1, rfl, hlt, f₁ hlt, f₂ hlt⟩)
+        exact ⟨N a - (j + 1), by simp only at hn; omega_using [hn, hlt], a, j + 1, rfl, hlt, f₁ hlt, f₂ hlt⟩)
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨a, ⟨h0, h₁⟩, ⟨-, h₂⟩⟩ := hp
   exact key (N a - 0) _ _ _ _ _ _ ⟨a, 0, rfl, h0, h₁, h₂⟩ e₁ e₂

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Scalar multiplication by signed windows, on any target
@@ -30,7 +31,7 @@ theorem geom_succ_left (m : Nat) : geom (m + 1) = 1 + 16 * geom m := by
   | succ m ih =>
     show geom (m + 1) + 16 ^ (m + 1) = 1 + 16 * (geom m + 16 ^ m)
     rw [ih, Nat.pow_succ]
-    omega
+    omega_using []
 
 theorem geom_add (j m : Nat) : geom (j + m) = geom j + 16 ^ j * geom m := by
   induction m with
@@ -38,18 +39,18 @@ theorem geom_add (j m : Nat) : geom (j + m) = geom j + 16 ^ j * geom m := by
   | succ m ih =>
     show geom (j + m) + 16 ^ (j + m) = geom j + 16 ^ j * (geom m + 16 ^ m)
     rw [ih, Nat.mul_add, Nat.pow_add]
-    omega
+    omega_using []
 
 theorem geom_mul (j : Nat) : 15 * geom j + 1 = 16 ^ j := by
   induction j with
   | zero => rfl
   | succ j ih =>
     show 15 * (geom j + 16 ^ j) + 1 = 16 ^ (j + 1)
-    rw [Nat.pow_succ]; omega
+    rw [Nat.pow_succ]; omega_using [ih]
 
 /-- `8 Σ_{i<j} 16^i < 16^j`. -/
 theorem eight_geom_lt (j : Nat) : 8 * geom j < 16 ^ j := by
-  have := geom_mul j; omega
+  have := geom_mul j; omega_using [this]
 
 /-- The window method's multiple after the digits `J - 1` down to `j`. -/
 def winE (k J j : Nat) : Nat := k / 16 ^ j - 8 * geom (J - j)
@@ -65,7 +66,7 @@ theorem geom_le_div {k J j : Nat} (hk : 8 * geom J ≤ k) (hj : j ≤ J) :
   rw [Nat.le_div_iff_mul_le hpos]
   have := eight_geom_lt j
   rw [Nat.mul_comm]
-  omega
+  omega_using [hk, e]
 
 theorem winE_top {k J : Nat} (hk : k < 16 ^ J) : winE k J J = 0 := by
   simp [winE, Nat.div_eq_of_lt hk]
@@ -81,12 +82,12 @@ theorem winE_step {k J j : Nat} (hk : 8 * geom J ≤ k) (hj : j < J) :
   have hd : k / 16 ^ j = 16 * (k / 16 ^ (j + 1)) + nib k j := by
     rw [nib, Nat.pow_succ, ← Nat.div_div_eq_div_mul]
     have := Nat.div_add_mod (k / 16 ^ j) 16
-    omega
+    omega_using []
   have hg : geom (J - j) = 1 + 16 * geom (J - (j + 1)) := by
-    rw [show J - j = J - (j + 1) + 1 by omega, geom_succ_left]
+    rw [show J - j = J - (j + 1) + 1 by omega_using [hj], geom_succ_left]
   simp only [winE]
   rw [hg] at h₁ ⊢
-  omega
+  omega_using [h₁, h₂, hd]
 
 /-- `[a]P + [a]P = [2a]P`. -/
 theorem Law.double (hC : Law C) {P : Point C} (hP : onCurve C P = true) (a : Nat) :
@@ -106,10 +107,10 @@ theorem win_add (hC : Law C) {P : Point C} (hP : onCurve C P = true) {k J j : Na
   split
   · rw [hC.add_mul_mul hP]
     congr 1
-    omega
-  · rw [hC.add_mul_neg hP (by omega)]
+    omega_arith
+  · rw [hC.add_mul_neg hP (by omega_using [hs])]
     congr 1
-    omega
+    omega_arith
 
 theorem onCurve_winPt (hC : Law C) {P : Point C} (hP : onCurve C P = true) (k j : Nat) :
     onCurve C (winPt C P k j) = true := by
@@ -123,11 +124,11 @@ theorem onCurve_winPt (hC : Law C) {P : Point C} (hP : onCurve C P = true) (k j 
 theorem recode_lt {k n : Nat} (hk : k < 2 ^ (64 * n)) :
     k + 8 * geom (16 * n + 1) < 16 ^ (16 * n + 1) := by
   have h16 : (16 : Nat) ^ (16 * n) = 2 ^ (64 * n) := by
-    rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]; congr 1; omega
+    rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]; congr 1; omega_using []
   have := eight_geom_lt (16 * n)
   rw [h16] at this
   show k + 8 * (geom (16 * n) + 16 ^ (16 * n)) < 16 ^ (16 * n + 1)
   rw [Nat.pow_succ, h16]
-  omega
+  omega_using [hk, this]
 
 end VG.Proof.Weierstrass

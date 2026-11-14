@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-CCM: comparing padded tags a doubleword at a time
@@ -28,8 +29,8 @@ open VG.Proof.Cmac (le8)
 theorem le8_inj {a b : BitVec 64} (h : le8 a = le8 b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have e := congrArg (fun l => (l.getD (i / 8) 0).getLsbD (i % 8)) h
-  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega), BitVec.getLsbD_extractLsb',
-    show i % 8 < 8 by omega, decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega] at e
+  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega_using [hi]), BitVec.getLsbD_extractLsb',
+    show i % 8 < 8 by omega_using [], decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega_using []] at e
   exact e
 
 /-- Two blocks are equal iff their doublewords are. -/
@@ -73,13 +74,13 @@ theorem neg_or_msb (d : BitVec 64) :
     apply BitVec.eq_of_toNat_eq
     have hd : d.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by rw [e]; rfl))
     have hn : (0 - d).toNat = 2 ^ 64 - d.toNat := by
-      rw [BitVec.toNat_sub, show (0 : BitVec 64).toNat = 0 from rfl]; have := d.isLt; omega
+      rw [BitVec.toNat_sub, show (0 : BitVec 64).toNat = 0 from rfl]; have := d.isLt; omega_using [hd]
     have hl : (d ||| (0 - d)).toNat < 2 ^ 64 := (d ||| (0 - d)).isLt
     have h₁ : d.toNat ≤ (d ||| (0 - d)).toNat := by rw [BitVec.toNat_or]; exact Nat.left_le_or
     have h₂ : (0 - d).toNat ≤ (d ||| (0 - d)).toNat := by rw [BitVec.toNat_or]; exact Nat.right_le_or
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     show _ = 1
     have := d.isLt
-    omega
+    omega_using [hn, h₁, h₂]
 
 end VG.Proof.AesCcm

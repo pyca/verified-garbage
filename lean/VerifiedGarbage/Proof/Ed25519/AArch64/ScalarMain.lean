@@ -50,7 +50,7 @@ theorem scalarReduce_correct {s : State} (hs : scalarReduceLocal.pre s) :
     intro k hk
     refine ⟨⟨s.gpr .x1, 64⟩, ?_, ?_⟩
     · rw [k₂.rd, rd₁, hr]; simp
-    · rw [x1₂]; exact Offset.contains_base _ (by omega) (by omega)
+    · rw [x1₂]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   apply WP.seq
   refine WP.mono (scalarLoop_ok s₂ b₂ v₂ read₂ z₂) fun s₃ ⟨v₃, k₃⟩ => ?_
   have x2₃ : s₃.gpr .x2 = s.gpr .x2 := (k₃.gpr _ (by decide)).trans x2₂

@@ -49,7 +49,7 @@ theorem writes_frame (m : Mem) (B : Addr) :
   | (j, v) :: l, h => by
     have hj : j < 8 := h (j, v) (List.mem_cons_self ..)
     exact ((Frame.refl [⟨B, 128⟩] m).writeW (List.mem_singleton_self _) v
-      (Offset.contains_base B (by omega) (by omega))).trans
+      (Offset.contains_base B (by omega_using [hj]) (by omega_using [hj]))).trans
       (writes_frame _ B l fun p hp => h p (List.mem_cons_of_mem _ hp))
 
 /-- What the function is given. -/
@@ -70,7 +70,7 @@ theorem abi_of {s : State} (h : (Spec.Ffdh.parameterInitContract abi).pre s) : A
 
 theorem ABI.read {s : State} (A : ABI s) {i : Nat} (hi : i < 3) :
     readSrc s (.mem (PublicFn.argument i)) = some (arg s i) :=
-  (VG.Proof.Dsa.X86.stackArgument_of (count := 3) (by have := A.stackBound; omega) hi
+  (VG.Proof.Dsa.X86.stackArgument_of (count := 3) (by have := A.stackBound; omega_using [this]) hi
     (by rw [A.rd]; exact List.mem_append_left _ (List.mem_singleton_self _)) A.outArgs.symm).readSrc
 
 /-- The arguments read the same after stores into the state. -/
@@ -88,12 +88,12 @@ theorem ABI.read_after {s u : State} (A : ABI s) {i : Nat} (hi : i < 3) (sp : u.
     · cases R
   have c : (⟨argAddr s 0, 12⟩ : Region).Contains (s.ea (PublicFn.argument i)) (32 / 8) := by
     have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-      addr_eq (by have := A.stackBound; omega)
+      addr_eq (by have := A.stackBound; omega_using [this])
     have ea : s.ea (PublicFn.argument i) = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := by
       change addr (s.gpr .esp) (4 + 4 * i) = _
-      exact addr_eq (by have := A.stackBound; omega)
+      exact addr_eq (by have := A.stackBound; omega_using [hi, this])
     rw [ea, a0]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
   change u.load32 (u.ea _) = _
   change s.load32 (s.ea _) = _ at R
   rw [e]
@@ -149,8 +149,8 @@ theorem Cur.store {is : List Instr} {Q : State → Prop} {s u : State} {l : List
     (hc : u.gpr .ecx = arg s 0) {r : Reg} {j : Nat} (hj : j < 8)
     (k : ∀ t, Cur s t (l ++ [(j, u.gpr r)]) → (∀ q, t.gpr q = u.gpr q) → WP isa (.block is) t Q) :
     WP isa (.block (.store (at_ .ecx (4 * j)) r :: is)) u Q := by
-  refine store_ok hc (by have := A.outBound; omega) hj ?_ fun t K rd wr m => k t ⟨?_, ?_, ?_, ?_, ?_⟩ ?_
-  · exact ⟨_, by rw [C.wr, A.wr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  refine store_ok hc (by have := A.outBound; omega_using [this]) hj ?_ fun t K rd wr m => k t ⟨?_, ?_, ?_, ?_, ?_⟩ ?_
+  · exact ⟨_, by rw [C.wr, A.wr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   · rw [K.1 _ (by simp), C.esp]
   · rw [rd, C.rd]
   · rw [wr, C.wr]
@@ -202,7 +202,7 @@ theorem width_ok {is : List Instr} {Q : State → Prop} {s u : State} {l : List 
     have b := (arg s 1).isLt
     have h7 : (7 : BitVec 32).toNat = 7 := rfl
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, h7]
-    omega
+    omega_using [hb]
   · rw [a3.other _ (by decide), a2.other _ (by decide), a1.other _ (by decide)]
 
 theorem mul_val (a b : Nat) (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -222,7 +222,7 @@ theorem setup_ok {s u : State} (A : ABI s) (C : Cur s u []) (hb : (arg s 1).toNa
   refine wp_mul fun u2 a2 => ?_
   have C2 := C1.step a2.keeps (by simp) a2.mem
   have sq : (arg s 1).toNat * (arg s 1).toNat < 2 ^ 32 := by
-    have := Nat.mul_le_mul hb hb; omega
+    have := Nat.mul_le_mul hb hb; omega_using [this]
   have e2 : u2.gpr .eax = BitVec.ofNat 32 ((arg s 1).toNat * (arg s 1).toNat) := by
     rw [a2.eax, a1.gpr]
   refine wp_movS rfl fun u3 a3 _ => ?_
@@ -262,7 +262,7 @@ theorem setup_ok {s u : State} (A : ABI s) (C : Cur s u []) (hb : (arg s 1).toNa
   refine C19.store (j := 7) A (by rw [g19, g18, hc17]) (by decide) fun t20 C20 g20 => ?_
   refine wp_movS rfl fun t a _ => WP.block_nil ⟨a.gpr, ?_⟩
   have C21 := C20.step a.keeps (by simp) a.mem
-  have L : ((arg s 1).toNat + 7) / 8 < 2 ^ 32 := by omega
+  have L : ((arg s 1).toNat + 7) / 8 < 2 ^ 32 := by omega_using []
   have v0 : u5.gpr .eax = BitVec.ofNat 32 ((arg s 1).toNat * (arg s 1).toNat * 64) := by
     rw [a5.other _ (by decide), a4.eax, p4]
   have v1 : u5.gpr .edx = BitVec.ofNat 32 ((arg s 1).toNat * (arg s 1).toNat * 64 / 2 ^ 32) := by
@@ -299,7 +299,7 @@ theorem code_ok {s : State} (A : ABI s) :
   · have nv : ¬Valid (arg s 1).toNat (arg s 2).toNat := fun h => by
       simp only [decide_eq_true_eq] at hb; omega
     exact WP.mono (clear_ok A Cu) fun t ⟨ha, Ct⟩ => ⟨by rw [ha, ite_eq_right nv], by rw [ite_eq_right nv]; exact Ct⟩
-  have lo : 512 ≤ (arg s 1).toNat := by simp only [decide_eq_false_iff_not] at hb; omega
+  have lo : 512 ≤ (arg s 1).toNat := by simp only [decide_eq_false_iff_not] at hb; omega_using [hb]
   have h2 : WP isa (.block [.alu .cmp .edx (.imm 8193)]) u
       fun u => u.cf = some (decide ((arg s 1).toNat < 8193)) ∧ Cur s u [] :=
     wp_cmpi fun u2 f2 c2 _ => WP.block_nil ⟨by rw [c2, du]; rfl, Cu.step (f2.keeps []) (by simp) f2.mem⟩
@@ -309,7 +309,7 @@ theorem code_ok {s : State} (A : ABI s) :
   · have nv : ¬Valid (arg s 1).toNat (arg s 2).toNat := fun h => by
       simp only [Bool.not_eq_true', decide_eq_false_iff_not] at hb; omega
     exact WP.mono (clear_ok A Cu) fun t ⟨ha, Ct⟩ => ⟨by rw [ha, ite_eq_right nv], by rw [ite_eq_right nv]; exact Ct⟩
-  have hi : (arg s 1).toNat ≤ 8192 := by simp only [Bool.not_eq_false', decide_eq_true_eq] at hb; omega
+  have hi : (arg s 1).toNat ≤ 8192 := by simp only [Bool.not_eq_false', decide_eq_true_eq] at hb; omega_using [hb]
   have h3 : WP isa (.block [.mov .eax (.mem (PublicFn.argument 2)), .alu .cmp .eax (.imm 2)]) u
       fun u => u.zf = some (decide ((arg s 2).toNat = 2)) ∧ u.gpr .eax = arg s 2 ∧ Cur s u [] := by
     refine wp_movS (A.read_after (by decide) Cu.esp Cu.rd Cu.wr (Cu.frame (by simp))) fun u1 a1 _ => ?_
@@ -342,14 +342,14 @@ theorem halves {x : Nat} (hx : x < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (BitVec.ofNat 32 x).isLt, Nat.shiftLeft_eq,
     BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show x / 2 ^ 32 < 2 ^ 32 by omega), Nat.mod_eq_of_lt hx]
-  omega
+    Nat.mod_eq_of_lt (show x / 2 ^ 32 < 2 ^ 32 by omega_using [hx]), Nat.mod_eq_of_lt hx]
+  omega_using []
 
 theorem zero_half {x : Nat} (hx : x < 2 ^ 32) : 0#32 ++ BitVec.ofNat 32 x = BitVec.ofNat 64 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_ofNat, show (0#32 : BitVec 32).toNat = 0 from rfl,
     Nat.zero_shiftLeft, Nat.zero_or]
-  omega
+  omega_using [hx]
 
 /-- The four 64-bit words from their eight 32-bit halves. -/
 theorem words_halves (M : Mem) (B : Addr) :
@@ -362,7 +362,7 @@ theorem words_halves (M : Mem) (B : Addr) :
       M.readW (B + BitVec.ofNat 64 (8 * i)) 64 =
         M.readW (B + BitVec.ofNat 64 (4 * j)) 32 ++ M.readW (B + BitVec.ofNat 64 (4 * k)) 32 := by
     rw [readW64_split, Offset.add_add, ← hj, ← hk]
-    congr 4 <;> omega
+    congr 4 <;> omega_using []
   change [M.readW (B + BitVec.ofNat 64 (8 * 0)) 64, M.readW (B + BitVec.ofNat 64 (8 * 1)) 64,
     M.readW (B + BitVec.ofNat 64 (8 * 2)) 64, M.readW (B + BitVec.ofNat 64 (8 * 3)) 64] = _
   rw [W 0 1 0 rfl rfl, W 1 3 2 rfl rfl, W 2 5 4 rfl rfl, W 3 7 6 rfl rfl]
@@ -378,8 +378,8 @@ theorem initial_words (m : Mem) (B : Addr) {b : Nat} (hb : b ≤ 8192) :
       [b * b * 64, (b + 7) / 8, 32769 * ((b + 7) / 8), 512 * ((b + 7) / 8)].map (BitVec.ofNat 64) := by
   rw [words_halves]
   simp (disch := decide) only [initial, writes, read_write_eq, read_write_ne]
-  have sq : b * b * 64 < 2 ^ 64 := by have := Nat.mul_le_mul hb hb; omega
-  rw [halves sq, zero_half (by omega), zero_half (by omega), zero_half (by omega)]
+  have sq : b * b * 64 < 2 ^ 64 := by have := Nat.mul_le_mul hb hb; omega_using [this]
+  rw [halves sq, zero_half (by omega_using [hb]), zero_half (by omega_using [hb]), zero_half (by omega_using [hb])]
   rfl
 
 theorem final_frame {s t : State} {v : Prop} [Decidable v]
@@ -388,7 +388,7 @@ theorem final_frame {s t : State} {v : Prop} [Decidable v]
   refine C.frame ?_
   split
   · intro p hp; simp only [initial, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
   · intro p hp; simp only [cleared, List.mem_map, List.mem_range] at hp
     obtain ⟨j, hj, rfl⟩ := hp; exact hj
 
@@ -426,14 +426,14 @@ theorem args_out {s : State} (A : ABI s) : ArgsOut 3 s := by
   obtain rfl := List.mem_singleton.mp hr
   intro a ha hb
   let j := (a - (s.gpr .esp).setWidth 64).toNat
-  have hj : j < 16 := by change j + 1 ≤ 16 at ha; omega
+  have hj : j < 16 := by change j + 1 ≤ 16 at ha; omega_using [ha]
   have he : (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 j = a := by
     change (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (a - (s.gpr .esp).setWidth 64).toNat = a
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := A.stackBound; omega)
+  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := A.stackBound; omega_using [this])
   by_cases h : j < 4
-  · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega) (by omega)) hb
-  · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega) (by omega) (by decide))
+  · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
+  · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega_using [h]) (by omega_using [hj]) (by decide))
 
 theorem constantTime : ConstantTime isa (Spec.Ffdh.parameterInitContract abi).pre
     (Spec.Ffdh.parameterInitContract abi).pub code := by
@@ -443,7 +443,7 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.parameterInitContract abi).pr
   obtain ⟨SP, a0, a1, a2⟩ := H
   refine agree_argTaint (k := 3) (fun _ h => nomatch h) SP (args_out (abi_of hs)) (args_out (abi_of ht)) ?_
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
   · exact a0
   · exact a1
   · exact a2

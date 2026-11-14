@@ -461,6 +461,10 @@ pub mod rc2;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
+pub mod rc2_cbc;
+
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+#[rustfmt::skip]
 pub mod rc4;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]

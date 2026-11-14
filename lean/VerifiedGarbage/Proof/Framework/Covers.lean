@@ -81,7 +81,7 @@ theorem of_sub {rs rs' : List Region}
         rw [Offset.sub_add_eq, BitVec.sub_add_cancel],
       BitVec.toNat_add, BitVec.toNat_ofNat]
     exact Nat.le_trans (Nat.mod_le _ _) (Nat.add_le_add_left (Nat.mod_le _ _) _)
-  omega
+  omega_using [hc, hl, this]
 
 /-- The region of an access the regions `rs` permit. -/
 theorem one {rs : List Region} {a : Addr} {n : Nat} (h : InRegions rs a n) : Covers [⟨a, n⟩] rs := by
@@ -93,7 +93,7 @@ theorem one {rs : List Region} {a : Addr} {n : Nat} (h : InRegions rs a n) : Cov
   simp only [Region.Contains] at hc hc' ⊢
   rw [show a' - r.base = (a' - a) + (a - r.base) by rw [Offset.sub_add_sub_cancel], BitVec.toNat_add]
   have := Nat.mod_le ((a' - a).toNat + (a - r.base).toNat) (2 ^ 64)
-  omega
+  omega_using [hc, hc']
 
 /-- A frame's push inserts its region into the writable regions of both
 states. -/

@@ -31,7 +31,7 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
     have hx := hL.tbl K.R.x (by simp [winOther])
     have hz := hL.tbl K.R.z (by simp [winOther])
     rw [hL.rxz] at hz
-    omega
+    omega_using [hz]
   have slots : ∀ x∈rcbW K.S K.D++rcbR K.S K.R (Naf.twice K),x∈nafSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx|hx
@@ -61,8 +61,8 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
   apply RelCT.seq (relCT_keepGpr cp hc.keepCopy)
   apply RelCT.block_append
   apply RelCT.seq (nafTableStore_relCT (base:=base) (j:=m) (E:=copyPointEnv e K.R K.D)
-    hL.lay hL.n hL.rxy hL.rxz hm8 ht (by have := hL.table_le; omega)
-    (nafTblPt_mem K (by omega) (by omega)) (fun _ hx => List.mem_append_left _ hx) sep hc.store)
+    hL.lay hL.n hL.rxy hL.rxz hm8 ht (by have := hL.table_le; omega_using [this])
+    (nafTblPt_mem K (by omega_using []) (by omega_using [hm8])) (fun _ hx => List.mem_append_left _ hx) sep hc.store)
   have adv := keepsField_relCT (M:=K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈nafSlots K))
     (V:=jacCoords (K.tblPt (m+1))++(jacCoords K.R++(jacCoords K.D++nafTableLive K m)))

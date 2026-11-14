@@ -87,7 +87,7 @@ def Coh (vs : List MdHash) : Prop :=
 /-- The streaming code's parameters and the digest length of `w` are those
 `shapeOf` gives its index, and its index is one of `idxs`. -/
 def Shape (w : MdHash) : Prop :=
-  idx w ∈ Impl.RsaPss.X86_64.idxs ∧ w.H.P = (shapeOf (idx w)).1 ∧ w.H.D = (shapeOf (idx w)).2
+  idx w ∈ Impl.RsaPss.X86_64.idxs ∧ w.U.P = (shapeOf (idx w)).1 ∧ w.U.D = (shapeOf (idx w)).2
 
 /-- The parameters' equality, field by field. -/
 instance : DecidableEq Impl.MdStream.X86_64.Params := fun a b =>
@@ -106,7 +106,7 @@ theorem mem_names {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) :
 /-- An indirect call of `fnsOf vs`'s functions reaches `w`'s. -/
 theorem htf_of {vs : List MdHash} (hc : Coh vs) {sy : String → Addr}
     (hd : (names vs).Pairwise fun f g => f ≠ g → sy f ≠ sy g) {w : MdHash} (hw : w ∈ vs) :
-    HTF w.H (digName w) (fnsOf vs) sy := by
+    HTF w.U (digName w) (fnsOf vs) sy := by
   have hn := mem_names hw
   refine ⟨find_name (List.mem_map_of_mem (f := fun w => (w.H.initN, w.H.initC)) hw) ?_ ?_,
     find_name (List.mem_map_of_mem (f := fun w => (w.H.compN, w.H.compC)) hw) ?_ ?_,

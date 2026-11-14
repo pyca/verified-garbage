@@ -25,15 +25,15 @@ theorem counter_store_low (m : Mem) (base : BitVec 32) (value : BitVec 64) {j : 
     (positive : 0 < j) (bound : j < 16) :
     lowWord (m.writeW (State.addr base) value) base j = lowWord m base j := by
   unfold lowWord
-  exact Mem.readW_writeW_sep (fun x hx hy => VG.Offset.sep_base (State.addr base) (by omega : 8 ≤ 8 * j)
-    (by omega : 8 * j + 4 ≤ 2 ^ 64) x hy hx) (by decide)
+  exact Mem.readW_writeW_sep (fun x hx hy => VG.Offset.sep_base (State.addr base) (by omega_using [positive] : 8 ≤ 8 * j)
+    (by omega_using [bound] : 8 * j + 4 ≤ 2 ^ 64) x hy hx) (by decide)
 
 theorem counter_store_word (m : Mem) (base : BitVec 32) (value : BitVec 64) {j : Nat}
     (positive : 0 < j) (bound : j < 16) :
     (m.writeW (State.addr base) value).readW (off (State.addr base) (8 * j)) 64 =
       m.readW (off (State.addr base) (8 * j)) 64 := by
-  exact Mem.readW_writeW_sep (fun x hx hy => VG.Offset.sep_base (State.addr base) (by omega : 8 ≤ 8 * j)
-    (by omega : 8 * j + 8 ≤ 2 ^ 64) x hy hx) (by decide)
+  exact Mem.readW_writeW_sep (fun x hx hy => VG.Offset.sep_base (State.addr base) (by omega_using [positive] : 8 ≤ 8 * j)
+    (by omega_using [bound] : 8 * j + 8 ≤ 2 ^ 64) x hy hx) (by decide)
 
 theorem counter_store_frame (m : Mem) (base : BitVec 32) (value : BitVec 64) :
     Frame [⟨State.addr base, 128⟩] m (m.writeW (State.addr base) value) := by

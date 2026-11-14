@@ -43,7 +43,7 @@ theorem prepareConstants_ok (M : Mont) {s₃ : State} {B : Addr} {Z w N : Nat} {
     Nat.le_trans hR1readZ (Nat.le_trans (Nat.le_add_left Z B.toNat) hnw)
   unfold prepareConstants copyR1 negateR1
   -- `R mod c`.
-  refine WP.seq (WP.mono (M.mm_ok hg hZ (by omega) hw' (o := aY) (a := aR2) (b := aOne) (by decide) (by decide)
+  refine WP.seq (WP.mono (M.mm_ok hg hZ (by omega_using [hw]) hw' (o := aY) (a := aR2) (b := aOne) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hinv
     (by rw [hone, hn]; exact hN1)) fun s₄ ⟨hg₄, hlt₄, hy₄, ha₄, k₄⟩ => ?_)
   rw [hn, hr2, hone] at hy₄
@@ -52,24 +52,24 @@ theorem prepareConstants_ok (M : Mont) {s₃ : State} {B : Addr} {Z w N : Nat} {
     rw [← Nat.mod_eq_of_lt hlt₄]
     refine VG.Proof.Bignum.mont_cancel hR ?_
     rw [hy₄, Nat.mul_one, Nat.mod_mod]
-  have hn₄ : wv s₄.mem B (slot w aN) w = N := by rw [ha₄.wv_of_not_mem (by decide) (by decide) (by omega)]; exact hn
+  have hn₄ : wv s₄.mem B (slot w aN) w = N := by rw [ha₄.wv_of_not_mem (by decide) (by decide) (by omega_using [hZ, hnw])]; exact hn
   -- `[aR1] := R mod c`.
-  refine WP.seq (WP.mono (copyToExt_ok hg₄ hZ (by omega) hw' (a := aY) (d := aR1) (by decide) (by decide)
+  refine WP.seq (WP.mono (copyToExt_ok hg₄ hZ (by omega_using [hw]) hw' (a := aY) (d := aR1) (by decide) (by decide)
     hR1Z) fun s₅ ⟨hv₅, ho₅, k₅⟩ => ?_)
   rw [hY] at hv₅
   have hg₅ : Good s₅ B Z w mi := ⟨hg₄.scr.congr k₅.2.2, (k₅.gpr (by decide)).trans hg₄.rdi,
-    Hdr.outside hg₄.hdr ho₅ (by unfold slot; omega)⟩
+    Hdr.outside hg₄.hdr ho₅ (by unfold slot; omega_using [])⟩
   have hout5 : ∀ {j : Nat}, j < 8 → wv s₅.mem B (slot w j) w = wv s₄.mem B (slot w j) w := fun {j} hj =>
-    ho₅.wv (Or.inl (by have := slot_le (w := w) hj; have : slot w 8 ≤ slot w aR1 := (by unfold slot aR1; omega); omega))
-      (by have := slot_le (w := w) hj; omega)
+    ho₅.wv (Or.inl (by have := slot_le (w := w) hj; have : slot w 8 ≤ slot w aR1 := (by unfold slot aR1; omega_using []); omega_arith))
+      (by have := slot_le (w := w) hj; omega_using [hZ, hnw, this])
   -- `[aRm1] := c − R mod c`.
-  refine WP.mono (msRm1_ok hg₅ hZ hXZ (by omega) hw' (by rw [hv₅, hout5 (by decide), hn₄]; exact Nat.mod_lt _ (by omega)))
+  refine WP.mono (msRm1_ok hg₅ hZ hXZ (by omega_using [hw]) hw' (by rw [hv₅, hout5 (by decide), hn₄]; exact Nat.mod_lt _ (by omega_using [hodd])))
     fun s₆ ⟨hv₆, ho₆, k₆⟩ => ?_
   rw [hv₅, hout5 (by decide), hn₄] at hv₆
   have hg₆ : Good s₆ B Z w mi := ⟨hg₅.scr.congr k₆.2.2, (k₆.gpr (by decide)).trans hg₅.rdi,
-    Hdr.outside hg₅.hdr ho₆ (by unfold slot; omega)⟩
+    Hdr.outside hg₅.hdr ho₆ (by unfold slot; omega_using [])⟩
   refine ⟨hg₆, ?_, hv₆, ?_, ((k₄.trans k₅).trans k₆).mono (by decide)⟩
-  · rw [ho₆.wv (Or.inl (by unfold slot aRm1 aR1; omega)) hR1read]
+  · rw [ho₆.wv (Or.inl (by unfold slot aRm1 aR1; omega_using [])) hR1read]
     exact hv₅
   · have f₄ : Frm B (constantRanges w) s₃.mem s₄.mem := Frm.of_arrays ha₄ (by simp [constantRanges])
     have f₅ : Frm B (constantRanges w) s₄.mem s₅.mem := Frm.of_outside ho₅ (by simp [constantRanges])

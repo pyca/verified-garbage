@@ -31,10 +31,10 @@ def yValueRegs : List Reg :=
     [.s7, .t2] ++ [.s8] ++ storeRegs
 
 theorem yv_b1 (L : Lay) : 256 ≤ slot L.wp 1 ∧ slot L.wp 1 + 23 * (8 * (L.wp + 2)) ≤ L.qOff := by
-  simp only [Lay.qOff, Lay.slot_eq]; omega
+  simp only [Lay.qOff, Lay.slot_eq]; omega_using []
 
 theorem yv_b7 (L : Lay) : 256 ≤ slot L.wp 7 ∧ slot L.wp 7 + 8 * L.wp ≤ L.qOff ∧ slot L.wp 8 ≤ L.qOff := by
-  simp only [Lay.qOff, Lay.slot_eq]; omega
+  simp only [Lay.qOff, Lay.slot_eq]; omega_using []
 
 /-- `yValue`: `y = g^x mod p` to the buffer's first `p_len` octets, and
 `a4 :=` the mask of `y ≠ 0` and `y ≠ 1`. Memory changes only in the P
@@ -71,13 +71,13 @@ theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs
       (hr.keepM k12 hm2) (hin.keep k12) (by
         show ((word s₂.mem L.S (slot L.wp 0)).toNat * (s₂.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm2, k12.gpr (by decide)]; exact hi)
-      ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega)) b7 (hx.keep k12.2.1 k12.2.2)
+      ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 (hx.keep k12.2.1 k12.2.2)
       ((k2.gpr (by decide)).trans a9) (by rw [hm2]; exact hp0) hp hpo (by rw [hm2]; exact hrr))
     fun s₃ ⟨⟨v4, in3, _, o3⟩, k3⟩ => ?_)
   rw [hm2] at v4 o3
   have k13 := k12.trans k3
   have y4 : arrP s₃.mem L 4 = gOf s.mem L key ^ kOf s.mem L x % p := v4
-  have hyp : gOf s.mem L key ^ kOf s.mem L x % p < p := Nat.mod_lt _ (by omega)
+  have hyp : gOf s.mem L key ^ kOf s.mem L x % p < p := Nat.mod_lt _ (by omega_using [hp])
   generalize gOf s.mem L key ^ kOf s.mem L x % p = y at y4 hyp ⊢
   -- 0 into array 7, `a4 :=` all ones.
   refine WP.seq (WP.mono (zeroArr_ok in3.env (j := 7) (by decide)) fun s₄ ⟨⟨z7, o4⟩, k4⟩ => ?_)
@@ -86,18 +86,18 @@ theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs
     (by brun [exec_li (show imm12 (-1) by decide)]; rfl) (by decide) (by rfl)) fun s₅ ⟨⟨a4, m5⟩, k5⟩ => ?_)
   have en5 := en4.keep k5
   have y5 : arrP s₅.mem L 4 = y := by
-    rw [arrP, m5, o4.wordsVal (by omega) (by omega_arith)]; exact y4
+    rw [arrP, m5, o4.wordsVal (by omega_using [e4, e7]) (by omega_arith)]; exact y4
   -- `a4 &=` the masks of `y ≠ 0` and `y ≠ 1`.
   refine WP.seq (WP.mono (nonZero_ok en5 (a := 4) (c := 0) (by decide) (by rw [m5]; exact z7) a4)
     fun s₆ ⟨⟨b4, m6⟩, k6⟩ => ?_)
   rw [show wordsVal s₅.mem L.S (slot L.wp 4) L.wp = y from y5] at b4
   have en6 := en5.keep k6
-  refine WP.seq (WP.mono (Pub.oneP_ok en6.hs (by omega) (by omega) (yv_b7 L).2.2 en6.a7 en6.s5 en6.t0)
+  refine WP.seq (WP.mono (Pub.oneP_ok en6.hs (by omega_using [hw]) (by omega_using [hw]) (yv_b7 L).2.2 en6.a7 en6.s5 en6.t0)
     fun s₇ ⟨⟨v7, o7'⟩, k7⟩ => ?_)
   have o7 : Outside L.S (slot L.wp 7) (8 * L.wp) s₆.mem s₇.mem := o7'
   have en7 := en6.keep k7
   have y7 : arrP s₇.mem L 4 = y := by
-    rw [arrP, o7.wordsVal (by omega) (by omega_arith), m6]; exact y5
+    rw [arrP, o7.wordsVal (by omega_using [e4, e7]) (by omega_arith), m6]; exact y5
   refine WP.seq (WP.mono (nonZero_ok en7 (a := 4) (c := 1) (by decide) v7
     ((k7.gpr (by decide)).trans b4)) fun s₈ ⟨⟨c4, m8⟩, k8⟩ => ?_)
   rw [show wordsVal s₇.mem L.S (slot L.wp 4) L.wp = y from y7, Bool.true_and] at c4
@@ -117,18 +117,18 @@ theorem yValue_ok {s : State} {L : Lay} {key x : Addr} {p : Nat} (hL : L.Ok) (hs
   have hm9 : s₉.mem = s₇.mem := by rw [m9, mu, m8]
   have k19 := (k18.trans ku).trans k9
   refine WP.mono (storeBE_ok (j := 4) (O := L.Buf) (k := L.pl) (en8.keep (ku.trans k9)) (by decide)
-    (by have := ScrL.bufSt (hs.congr k19.2.2) hL (o := 0) (k := L.pl) (by omega)
+    (by have := ScrL.bufSt (hs.congr k19.2.2) hL (o := 0) (k := L.pl) (by omega_using [])
         simpa only [off, BitVec.add_zero] using this)
-    (by have := buf_nowrap hL (o := 0) (k := L.pl) (by omega) (by omega); simpa only [off, BitVec.add_zero] using this)
-    ((k9.gpr (by decide)).trans f7) f8 (by omega) (by omega) (bufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
+    (by have := buf_nowrap hL (o := 0) (k := L.pl) (by omega_using []) (by omega_using [hpl]); simpa only [off, BitVec.add_zero] using this)
+    ((k9.gpr (by decide)).trans f7) f8 (by omega_using [hpl]) (by omega_using [hw8]) (bufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   rw [hm9] at vt ot
   have hplt : p < 2 ^ (8 * L.pl) := by
-    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 64 * L.wp by omega]; exact wordsVal_lt _ _ _ _
+    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 64 * L.wp by omega_using []]; exact wordsVal_lt _ _ _ _
   have kall := k19.trans kt
   refine ⟨⟨?_, (kt.gpr (by decide)).trans ((k9.gpr (by decide)).trans ((ku.gpr (by decide)).trans c4)),
     ⟨en8.keep ((ku.trans k9).trans kt), (kall.gpr (by decide)).trans hin.s6⟩,
     ((Body.ofP hL o3 (yv_b1 L).1 (yv_b1 L).2).trans (Body.ofP hL o47 (yv_b7 L).1 (yv_b7 L).2.1)).trans
-      (Body.ofBuf hL ot (by omega)),
+      (Body.ofBuf hL ot (by omega_using [])),
     ((PBody.of o3 (yv_b1 L).1 (yv_b1 L).2).keepQ hL |>.trans ((PBody.of o47 (yv_b7 L).1 (yv_b7 L).2.1).keepQ hL)).trans
       (bufKeepQ ot hpb)⟩, by simp only [List.append_assoc] at kall; exact kall⟩
   rw [vt, read_low _ _ (w := L.wp) (by rw [hw8]) (by

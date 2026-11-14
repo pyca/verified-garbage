@@ -2,8 +2,6 @@
 //! generation and the exchange.
 
 use super::arithmetic::scalar;
-#[cfg(test)]
-use crate::arch::dispatch::ffdh::vg_ffdh_generate_key_cached_auto;
 use crate::arch::dispatch::ffdh::vg_ffdh_key_generation_init_auto;
 use crate::arch::dispatch::ffdh::{
     vg_ffdh_check_domain_auto, vg_ffdh_check_private_auto, vg_ffdh_check_public_auto,
@@ -208,43 +206,6 @@ impl Domain {
         (status, used[0] as usize, state[3] as usize)
     }
 
-    /// One attempt at a key pair from `p_len` random bytes `rand`: 1 and the
-    /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
-    /// scalar out of range, 3 for a degenerate public value (the cached
-    /// entry point of `vg_ffdh_generate_key`).
-    #[cfg(test)]
-    pub(super) fn generate_key(
-        &self,
-        dit: crate::dit::Dit<'_>,
-        rand: &[u8],
-        x: &mut [u8],
-        y: &mut [u8],
-    ) -> u32 {
-        assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
-        let mut ws = scratch(self.p_len);
-        // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
-        // `ws` and the dispatcher as in `check_public`; all are distinct
-        // objects.
-        unsafe {
-            vg_ffdh_generate_key_cached_auto(
-                dit,
-                x.as_mut_ptr(),
-                x.len(),
-                y.as_mut_ptr(),
-                y.len(),
-                self.bytes.as_ptr(),
-                self.bytes.len(),
-                self.p_len,
-                rand.as_ptr(),
-                rand.len(),
-                ws.as_mut_ptr(),
-                ws.len(),
-                self.precomputed.words().as_ptr(),
-                self.precomputed.words().len(),
-            )
-        }
-    }
-
     /// The shared value of the scalar `x` (1 to `p_len` bytes) and the
     /// checked peer value `y` (without leading zeros) into `out` (`p_len`
     /// bytes), or `false` and zeros for a degenerate one
@@ -309,7 +270,9 @@ mod cache_tests {
         draw[63] = 3;
         for _ in 0..2 {
             let (mut x, mut y) = (alloc::vec![0; 64], alloc::vec![0; 64]);
-            assert_eq!(cloned.generate_key(dit, &draw, &mut x, &mut y), 1);
+            let mut state = cloned.key_state(dit);
+            let (status, used, _) = cloned.key_search(dit, &mut state, &draw, &mut x, &mut y);
+            assert_eq!((status, used), (1, 64));
             assert_eq!(x, draw);
             assert_eq!(super::super::arithmetic::canonical(&y), &[8]);
             assert_eq!(cloned.precomputed.words(), expected);

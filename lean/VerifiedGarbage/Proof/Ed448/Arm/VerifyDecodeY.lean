@@ -42,24 +42,24 @@ theorem loadLimbs_ok {s : State} {base q : Addr} (hs : Scr s base) {p : Reg} (hp
   refine wp_range_flatMap (M := isa) (N := 28) inv (fun n t hn ⟨tf, tm, tk⟩ => ?_) 28 (by decide) s
     ⟨fun _ h => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
   have byte : ∀ j < 56, t.mem (q + BitVec.ofNat 64 j) = s.mem (q + BitVec.ofNat 64 j) :=
-    fun j hj => tm _ (Or.inr (by have := hd j hj; omega))
+    fun j hj => tm _ (Or.inr (by have := hd j hj; omega_using [ho, this]))
   have eq : decoded t.mem q n = decoded s.mem q n := by
-    simp only [decoded, byteN]; rw [byte _ (by omega), byte _ (by omega)]
+    simp only [decoded, byteN]; rw [byte _ (by omega_using [hn]), byte _ (by omega_using [hn])]
   have hpk : p ∉ [Reg.r3, .r4] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hp3, hp4⟩
   have tp : s.gpr p = t.gpr p := (tk.1 p hpk).symm
   refine VG.Proof.X25519.Arm.WP.append (byteLimb_ok (src := 0) (q := q)
-    (by rw [← tp, hq, BitVec.add_zero]) (by decide) (by rw [← tp]; omega) hp3 hn
+    (by rw [← tp, hq, BitVec.add_zero]) (by decide) (by rw [← tp]; omega_using [hfit]) hp3 hn
     (by rw [tk.2.1, tk.2.2]; exact hr)) fun u ⟨u3, um, uk⟩ => ?_
-  refine store_ok ((hs.of_keeps tk (by decide)).of_keeps uk (by decide)) (by omega) fun v hv =>
+  refine store_ok ((hs.of_keeps tk (by decide)).of_keeps uk (by decide)) (by omega_using [ho, hn]) fun v hv =>
     WP.block_nil ⟨fun i hi => ?_, tm.trans ?_, tk.trans (uk.trans (rest_keeps (hv.rest _)))⟩
   · change (word v.mem base (o + 4 * i)).toNat = _
-    rw [hv.mem, um, word_write t.mem base (by omega) (by omega)]
+    rw [hv.mem, um, word_write t.mem base (by omega_using [ho, hn]) (by omega_using [ho, hn, hi])]
     by_cases h : i = n
     · rw [ite_eq_left h, h, u3, eq, BitVec.toNat_ofNat,
         Nat.mod_eq_of_lt (Nat.lt_trans (decoded_lt s.mem q n) (by decide))]
-    · rw [ite_eq_right h]; exact tf i (by omega)
-  · rw [hv.mem, um]; exact (writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
+  · rw [hv.mem, um]; exact (writeW_outside _ _ _ (by omega_using [ho, hn])).mono (by omega_using []) (by omega_using [hn])
 
 /-- The last byte: `SIGN = b / 128` and `r3 = b mod 128`. -/
 theorem signByte_ok {s : State} {base q : Addr} (hs : Scr s base) {p : Reg}
@@ -70,7 +70,7 @@ theorem signByte_ok {s : State} {base q : Addr} (hs : Scr s base) {p : Reg}
       (t.gpr .r3).toNat = (s.mem (q + BitVec.ofNat 64 56)).toNat % 128 ∧
       t.mem = s.mem.writeW (off base SIGN) (BitVec.ofNat 32 ((s.mem (q + BitVec.ofNat 64 56)).toNat / 128)) ∧
       Keeps [.r3, .r2] s t := by
-  refine wp_ldrb (a := q + BitVec.ofNat 64 56) (by decide) (by rw [addr_add (by omega), hq]) hr fun u hu => ?_
+  refine wp_ldrb (a := q + BitVec.ofNat 64 56) (by decide) (by rw [addr_add (by omega_using [hfit]), hq]) hr fun u hu => ?_
   refine wp_mov (op2_lsr (by decide)) fun v hv => ?_
   refine store_ok ((hs.of_upd hu (by decide) (by decide)).of_upd hv (by decide) (by decide))
     (by decide) fun w hw => ?_
@@ -79,13 +79,13 @@ theorem signByte_ok {s : State} {base q : Addr} (hs : Scr s base) {p : Reg}
     rw [hw.gpr, hv.other _ (by decide), hu.gpr, BitVec.toNat_and, BitVec.toNat_setWidth,
       show (0x7f#32).toNat = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     have := (s.mem (q + BitVec.ofNat 64 56)).isLt
-    omega
+    omega_using []
   · rw [hx.mem, hw.mem, hv.mem, hu.mem, hv.gpr, hu.gpr]
     congr 1
     apply BitVec.eq_of_toNat_eq
     have := (s.mem (q + BitVec.ofNat 64 56)).isLt
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
   · exact rest_keeps ((hu.rest (by decide)).trans ((hv.rest (by decide)).trans
       ((hw.rest _).trans (hx.rest (by decide)))))
 
@@ -111,11 +111,11 @@ theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEn
   unfold decodeY
   simp only [List.append_assoc]
   have hp4 : p ≠ .r4 := by rcases hp with rfl | rfl <;> decide
-  refine VG.Proof.X25519.Arm.WP.append (loadLimbs_ok hs hp3 hp4 hq hfit (fun j hj => hr j (by omega))
-    (fun j hj => hd j (by omega)) (o := slot yo.val) ⟨by omega, by omega⟩) fun s1 ⟨f1, m1, k1⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (loadLimbs_ok hs hp3 hp4 hq hfit (fun j hj => hr j (by omega_using [hj]))
+    (fun j hj => hd j (by omega_using [hj])) (o := slot yo.val) ⟨by omega_using [sy], by omega_using [sy]⟩) fun s1 ⟨f1, m1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   have b56 : s1.mem (q + BitVec.ofNat 64 56) = s.mem (q + BitVec.ofNat 64 56) :=
-    m1 _ (Or.inr (by have := hd 56 (by decide); omega))
+    m1 _ (Or.inr (by have := hd 56 (by decide); omega_using [sy, this]))
   refine VG.Proof.X25519.Arm.WP.append (signByte_ok hs1 (p := p) (q := q) (by rw [k1.1 p hpk]; exact hq)
     (by rw [k1.1 p hpk]; exact hfit) (by rw [k1.2.1, k1.2.2]; exact hr 56 (by decide)))
     fun s2 ⟨r2, m2, k2⟩ => ?_
@@ -125,23 +125,23 @@ theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEn
     rw [f1 i hi]; exact decoded_lt _ _ _
   have o2 : Outside base SIGN 4 s1.mem s2.mem := by rw [m2]; exact writeW_outside _ _ _ (by decide)
   have l2 : ∀ i < 28, limbs s2.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
-    rw [o2.limbs (Or.inr (by simp only [SIGN]; omega)) (by omega) hi, f1 i hi]
+    rw [o2.limbs (Or.inr (by simp only [SIGN]; omega_using [sy])) (by omega_using [sy]) hi, f1 i hi]
   refine VG.Proof.X25519.Arm.WP.append (orBad_ok (s := s2)
     (P := (s.mem (q + BitVec.ofNat 64 56)).toNat % 128 = 0)
-    (by rw [r2]; omega) (by rw [← r2]; exact ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩))
+    (by rw [r2]; omega_using []) (by rw [← r2]; exact ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩))
     fun s3 ⟨b3, m3, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by decide)
-  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs3 (o := X2) (a := slot yo.val) (by decide) (by omega)
-    (Or.inr (by omega))) fun s4 ⟨f4, m4, k4⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs3 (o := X2) (a := slot yo.val) (by decide) (by omega_using [sy])
+    (Or.inr (by omega_using [s1y]))) fun s4 ⟨f4, m4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by decide)
   have bd4 : Bounded s4.mem base X2 := fun i hi => by
     rw [f4 i hi, m3, l2 i hi]; exact decoded_lt _ _ _
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs4 bd4) fun s5 ⟨b5, v5, m5, k5⟩ => ?_
   have hs5 := hs4.of_keeps k5 (by decide)
   have l5 : ∀ i < 28, limbs s5.mem base (slot yo.val) i = decoded s.mem q i := fun i hi => by
-    rw [m5.limbs s1y (by omega) hi, m4.limbs (by omega) (by omega) hi, m3, l2 i hi]
+    rw [m5.limbs s1y (by omega_using [sy, hA]) hi, m4.limbs (by omega_using [s1y]) (by omega_using [sy]) hi, m3, l2 i hi]
   have by5 : Bounded s5.mem base (slot yo.val) := fun i hi => by rw [l5 i hi]; exact decoded_lt _ _ _
-  refine WP.mono (diffSlot_ok hs5 (by omega) b5 by5) fun t ⟨tb, tm, tk⟩ => ?_
+  refine WP.mono (diffSlot_ok hs5 (by omega_using [sy]) b5 by5) fun t ⟨tb, tm, tk⟩ => ?_
   have fe5 : fe s5.mem base X2 = valN (decoded s.mem q) 28 % Spec.X448.P := by
     rw [v5]; exact congrArg (· % Spec.X448.P) ((valN_congr f4).trans (by rw [m3]; exact valN_congr l2))
   have fy5 : fe s5.mem base (slot yo.val) = valN (decoded s.mem q) 28 := valN_congr l5
@@ -151,15 +151,15 @@ theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEn
     have si := slot_range i
     have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
     have syi := slot_sep hiy
-    rw [tm, m5.limbs s1i (by omega) hj, m4.limbs (by omega) (by omega) hj, m3,
-      o2.limbs (Or.inr (by simp only [SIGN]; omega)) (by omega) hj, m1.limbs (by omega) (by omega) hj]
+    rw [tm, m5.limbs s1i (by omega_using [hA, si]) hj, m4.limbs (by omega_using [s1i]) (by omega_using [si]) hj, m3,
+      o2.limbs (Or.inr (by simp only [SIGN]; omega_using [si])) (by omega_using [si]) hj, m1.limbs (by omega_using [syi]) (by omega_using [si]) hj]
   have r10 : s5.gpr .r10 = s3.gpr .r10 := by rw [k5.1 _ (by decide), k4.1 _ (by decide)]
   have r10' : s2.gpr .r10 = s.gpr .r10 := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
   refine ⟨⟨?_, ?_⟩, fun i j hj => ?_, ?_, ?_, ?_, fun i h1 hy => ?_⟩
   · refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
   · rw [tm]
-    exact ((((outV m1 (by omega) (by omega)).trans (outV o2 (by decide) (by decide))).trans
+    exact ((((outV m1 (by omega_using [sy]) (by omega_using [sy])).trans (outV o2 (by decide) (by decide))).trans
       (by rw [m3]; exact Outside2.refl _ _ _ _ _ _)).trans (outV m4 (by decide) (by decide))).trans
       (fmV m5 (by decide) (by decide))
   · by_cases h1 : i = 1
@@ -167,8 +167,8 @@ theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEn
     · by_cases hy : i = yo
       · subst i; rw [tm]; exact by5 j hj
       · rw [other i h1 hy j hj]; exact hb i j hj
-  · rw [tm, m5.word (Or.inl (by simp only [SIGN]; omega)) (by decide),
-      m4.word (Or.inl (by simp only [SIGN]; omega)) (by decide), m3, m2]
+  · rw [tm, m5.word (Or.inl (by simp only [SIGN]; omega_using [hX2v])) (by decide),
+      m4.word (Or.inl (by simp only [SIGN]; omega_using [hX2v])) (by decide), m3, m2]
     exact Mem.readW_writeW_self32 _ _ _
   · rw [r10] at tb
     have h := b3.trans tb

@@ -70,7 +70,7 @@ theorem mla4_ok (s : State) {w hd : Reg} (hw : w ∉ [Reg.x8, .x9, .x10]) (hd' :
       dsimp only [Size.bits]
       generalize (s.gpr w).toNat * (s.gpr .x2).toNat = P at this hP ⊢
       generalize (s.gpr .x10).toNat = h at hx10 ⊢
-      split <;> omega
+      split <;> omega_arith
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2, ↓reduceIte]
 
@@ -246,7 +246,7 @@ theorem add2_ok (s : State) (h12 : s.gpr .x12 = 0)
     generalize (s.gpr .x3).toNat = a at *
     generalize (s.gpr .x8).toNat = b at *
     generalize (s.gpr .x9).toNat = c at *
-    split <;> omega
+    split <;> omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2, ↓reduceIte]
 
@@ -649,7 +649,7 @@ theorem maskOf_ok (s : State) {d r : Reg} (h12 : s.gpr .x12 = 0) (hd : Reg.x12 �
   have hv : ((0 : BitVec 64) - s.gpr r >>> 63).toNat = sgnW (s.gpr r) := by
     rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have := (s.gpr r).isLt
-    unfold sgnW; split <;> simp <;> omega
+    unfold sgnW; split <;> simp <;> omega_arith
   refine ⟨hv, ?_, ⟨fun r' hr => ?_, rfl, rfl, rfl, rfl⟩, rfl⟩
   · unfold sgnW at hv; split at hv
     · exact Or.inr (BitVec.eq_of_toNat_eq (by rw [hv, BitVec.toNat_allOnes]))

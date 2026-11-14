@@ -55,15 +55,15 @@ theorem init_step (iv : HashValue) {s₀ : State} (hp : (Proof.Sha256.initFromRI
   rw [WP.block_append_iff]
   refine WP.mono (li32_ok _) fun s₁ e₁ => ?_
   subst e₁
-  refine WP.mono (storeLE32_ok (by decide) (by decide) (by omega) ?_) fun s₂ e₂ => ?_
+  refine WP.mono (storeLE32_ok (by decide) (by decide) (by omega_using [hk]) ?_) fun s₂ e₂ => ?_
   · rw [RegUpd.wr_write, RegUpd.gpr_write_of_ne _ _ (by decide), h.wr, h.a0, hp.2]
-    exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   subst e₂
   refine ⟨?_, h.rd, h.wr, fun j hj => ?_⟩
   · simp only [RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0]
   · simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h.a0, lo32_sext]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [readW_writeW_word _ _ _ (by omega) hk (by omega)]
+    · rw [readW_writeW_word _ _ _ (by omega_arith) hk (by omega_using [hj])]
       exact h.words j hj
     · exact Mem.readW_writeW_self32 _ _ _
 
@@ -75,7 +75,7 @@ def initDst : Option Reg → Bool
 theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha256.initFromRISCV64 iv).pre s₀) :
     WP isa (initWith iv) s₀ fun s' => (Proof.Sha256.initFromRISCV64 iv).post s₀ s' := by
   refine WP.mono (wp_range_flatMap (M := isa) (InitI iv s₀) (fun k s hk h => init_step iv hp hk h) 8
-    (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, fun _ h => absurd h (by omega)⟩) fun s' h => ?_
+    (Nat.le_refl _) s₀ ⟨rfl, rfl, rfl, fun _ h => absurd h (by omega_using [])⟩) fun s' h => ?_
   refine Proof.Sha256.Stream.reprFrom_nil (stateAt_eq fun k hk => ?_)
   rw [h.words k hk, getElem!_pos iv k hk]
 

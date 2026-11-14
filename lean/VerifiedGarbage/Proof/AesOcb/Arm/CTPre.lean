@@ -96,9 +96,9 @@ theorem chunkB0_ok {p : Prm} (L : Lay p) {t₀ t : State} {j : Nat} (H : HInv p 
     WP isa (.block [.mov .r12 (.shifted .r7 .lsr 4), .cmp .r12 (imm 0)]) t fun t' =>
       HInv p t₀ t' j ∧ t'.z = decide (p.al / 16 - j < 16) := by
   have al32 := L.al_lt
-  have m32 : p.al / 16 - j < 2 ^ 32 := by omega
+  have m32 : p.al / 16 - j < 2 ^ 32 := by omega_using [al32]
   have z₁ : (BitVec.ofNat 32 (p.al / 16 - j) >>> 4 == 0) = decide (p.al / 16 - j < 16) := by
-    rw [ofNat_lsr32 m32, z_cmp0 (by omega)]; congr 1; apply propext; omega
+    rw [ofNat_lsr32 m32, z_cmp0 (by omega_using [al32])]; congr 1; apply propext; omega_using []
   refine WP.of_runBlock ⟨_, by orun [H.r7], ?_, ?_⟩
   · exact ⟨H.env.of_others (rs := [.r12]) (by others_tac) (by rfl) (by rfl) (by rfl), H.frame, H.rd, H.wr, H.le,
       H.sum, H.oh, by simp [gpr_setReg, H.r4], by simp [gpr_setReg, H.r6], by simp [gpr_setReg, H.r7], H.l0⟩
@@ -117,10 +117,10 @@ theorem chunkSel_ok {p : Prm} {t₀ t : State} {j : Nat} (H : HInv p t₀ t j)
   refine WP.ite (decide (p.al / 16 - j < 16)) (eval_eq' hz) (fun hb => ?_) (fun hb => ?_)
   · have hlt : p.al / 16 - j < 16 := of_decide_eq_true hb
     refine WP.of_runBlock ⟨_, by orun [H.r7], Hk (by rfl) (by rfl) (by rfl) (by rfl) (by others_tac), ?_⟩
-    simp [gpr_setReg, H.r7, show min 16 (p.al / 16 - j) = p.al / 16 - j by omega]
+    simp [gpr_setReg, H.r7, show min 16 (p.al / 16 - j) = p.al / 16 - j by omega_using [hlt]]
   · have hlt : ¬ p.al / 16 - j < 16 := by simpa using hb
     refine WP.of_runBlock ⟨_, by orun [], Hk (by rfl) (by rfl) (by rfl) (by rfl) (by others_tac), ?_⟩
-    simp [gpr_setReg, show min 16 (p.al / 16 - j) = 16 by omega]
+    simp [gpr_setReg, show min 16 (p.al / 16 - j) = 16 by omega_using [hlt]]
 
 /-- After a chunk's call: the count back in `r5`, the buffer in `r8`. -/
 theorem chunkB4_ok {p : Prm} (L : Lay p) {t₀ t₂ t₃ : State} {j c : Nat} (F : FillInv p t₀ j c t₂ c)
@@ -140,7 +140,7 @@ theorem chunkB4_ok {p : Prm} (L : Lay p) {t₀ t₂ t₃ : State} {j c : Nat} (F
     rw [fr.readW (r := ⟨State.addr p.W + BitVec.ofNat 64 212, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact L.w_w (.inl (by decide)) (by decide) (by simp only [bufO]; omega)
+      · exact L.w_w (.inl (by decide)) (by decide) (by simp only [bufO]; omega_using [hc])
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.bw' (by decide)).symm) (by decide)]
     exact F.cnt
@@ -178,9 +178,9 @@ theorem chunkSum_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofReg
 /-- A chunk, in two runs at the same block of the associated data. -/
 theorem chunk_rel {p : Prm} (L : Lay p) {a b τ₁ τ₂ : State} {j : Nat} (H₁ : HInv p a τ₁ j) (H₂ : HInv p b τ₂ j)
     (hj : j < p.al / 16) : RelCT isa (Eq2 τ₁ τ₂) hashChunk TT := by
-  have hc0 : 0 < min 16 (p.al / 16 - j) := by omega
+  have hc0 : 0 < min 16 (p.al / 16 - j) := by omega_using [hj]
   have hc : min 16 (p.al / 16 - j) ≤ 16 := Nat.min_le_left _ _
-  have hjc : j + min 16 (p.al / 16 - j) ≤ p.al / 16 := by omega
+  have hjc : j + min 16 (p.al / 16 - j) ≤ p.al / 16 := by omega_using [hj]
   unfold hashChunk
   refine rel_seq (rel_env H₁.env H₂.env [.r7] (by simp [H₁.r7, H₂.r7]) chunkB0_check) (chunkB0_ok L H₁)
     (chunkB0_ok L H₂) fun u₁ u₂ ⟨U₁, z₁⟩ ⟨U₂, z₂⟩ => ?_
@@ -260,13 +260,13 @@ theorem hash_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁
   · refine rel_ite (eval_eq' z₁) (eval_eq' z₂) (fun _ => rel_skip) fun hb => ?_
     have hm : p.al / 16 ≠ 0 := by simpa using hb
     refine rel_loop (fun k σ₁ σ₂ => ∃ j, k = p.al / 16 - j ∧ j < p.al / 16 ∧ HInv p τ₁ σ₁ j ∧ HInv p τ₂ σ₂ j)
-      (fun k σ₁ σ₂ ⟨j, hk, hj, H₁, H₂⟩ => ?_) (p.al / 16 - 0) ⟨0, rfl, by omega, U₁, U₂⟩
+      (fun k σ₁ σ₂ ⟨j, hk, hj, H₁, H₂⟩ => ?_) (p.al / 16 - 0) ⟨0, rfl, by omega_using [hm], U₁, U₂⟩
     refine rel_wpQ (chunk_rel L H₁ H₂ hj) (hashChunk_ok L H₁ hj) (hashChunk_ok L H₂ hj)
       fun x y ⟨X, zx⟩ ⟨Y, zy⟩ => ⟨by rw [eval_ne' zx, eval_ne' zy], fun hc => ?_⟩
     rw [eval_ne' zx] at hc
     have hlt : j + min 16 (p.al / 16 - j) < p.al / 16 := by
-      simp only [Option.some.injEq, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at hc; omega
-    exact ⟨p.al / 16 - (j + min 16 (p.al / 16 - j)), by omega, _, rfl, hlt, X, Y⟩
+      simp only [Option.some.injEq, Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at hc; omega_using [hc]
+    exact ⟨p.al / 16 - (j + min 16 (p.al / 16 - j)), by omega_using [hk, hj], _, rfl, hlt, X, Y⟩
   · have Av₁ : Args p v₁.mem := A₁.mut L (hashR_mut L V₁.frame)
     have Av₂ : Args p v₂.mem := A₂.mut L (hashR_mut L V₂.frame)
     refine rel_seq (rel_envArg L V₁.env V₂.env Av₁ Av₂ [] (by simp) hashMid_check) (hashMid_ok L V₁ Av₁)

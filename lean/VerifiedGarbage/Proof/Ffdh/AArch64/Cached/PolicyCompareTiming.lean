@@ -55,8 +55,8 @@ theorem policyCompare_ct : RelCT isa (Two PolicyCompareReady) Policy.compare (fu
    · exact hs.2.2.trans ht.2.2.symm) (by taint_decide))
  intro q s h
  brun [h.base,h.pointer,hdr_enc (show sDom<32 by decide),hdr_enc (show sDL<32 by decide),
-  h.scratch.ld (d:=8*sDom) (by have :=q.room;unfold sDom;omega),
-  h.scratch.ld (d:=8*sDL) (by have :=q.room;unfold sDL;omega),h.domain,h.length]
+  h.scratch.ld (d:=8*sDom) (by have :=q.room;unfold sDom;omega_using [this]),
+  h.scratch.ld (d:=8*sDL) (by have :=q.room;unfold sDL;omega_using [this]),h.domain,h.length]
 
 theorem policyCompare_agree {q : ComparePublic} {s : State} (h : PolicyCompareReady q s) :
  WP isa Policy.compare s fun t =>

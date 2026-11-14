@@ -28,6 +28,8 @@ open VG.Proof.Bignum.RISCV64 (Scr add_ofNat_zero At pins_at_list)
 open VG.Proof.Bignum.RISCV64.Pre (Pins)
 open VG.Proof.Bignum (slot)
 
+variable {pc : Bool}
+
 theorem wp_nil {s : State} {Q : State → Prop} (h : Q s) : WP isa (.block []) s Q := ⟨[], s, .block rfl, h⟩
 
 theorem wp_seqL_nil {l : List (Prog isa)} {s : State} {Q : State → Prop}
@@ -41,8 +43,8 @@ theorem wp_seqL_nil {l : List (Prog isa)} {s : State} {Q : State → Prop}
     exact ⟨_, _, e₁, hq⟩
 
 /-- What two initial states with the same public data share. -/
-theorem data_vals {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s₀' : State} (h : C0 d s₀)
-    (h' : C0 d s₀') :
+theorem data_vals {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s₀' : State} (h : C0 pc d s₀)
+    (h' : C0 pc d s₀') :
     cS s₀ = cS s₀' ∧ ck s₀ = ck s₀' ∧ cpL s₀ = cpL s₀' ∧ cqL s₀ = cqL s₀' ∧ s₀.gpr .a0 = s₀'.gpr .a0 ∧
       s₀.gpr .a2 = s₀'.gpr .a2 ∧ s₀.gpr .a4 = s₀'.gpr .a4 ∧ s₀.gpr .a6 = s₀'.gpr .a6 ∧
       stackArg s₀ 0 = stackArg s₀' 0 ∧ stackArg s₀ 2 = stackArg s₀' 2 ∧ stackArg s₀ 4 = stackArg s₀' 4 ∧
@@ -141,8 +143,8 @@ abbrev valsX (s₀ : State) : List (BitVec 64) :=
   [Mont.off (cS s₀) (slot (cwX s₀) 0), Mont.off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)),
     BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (cwX s₀), cS s₀]
 
-theorem valsX_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s₀' : State} (h : C0 d s₀)
-    (h' : C0 d s₀') : valsX s₀ = valsX s₀' := by
+theorem valsX_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s₀' : State} (h : C0 pc d s₀)
+    (h' : C0 pc d s₀') : valsX s₀ = valsX s₀' := by
   obtain ⟨eS, ek, -⟩ := data_vals h h'
   simp only [valsX, cwX, eS, ek]
 
@@ -159,10 +161,10 @@ theorem xi_ld {s₀ s t : State} {oA oL : Nat} {A : Addr} {L : Nat} (hP : PF s�
     k.gpr (r := .ra) (by decide), k.gpr (r := .s5) (by decide), k.gpr (r := .s11) (by decide),
     k.gpr (r := .t0) (by decide), k.gpr (r := .s6) (by decide), X.a7, X.ra, X.s5, X.s11, X.t0, X.s6]
 
-theorem pins1 : Pins (At C0 crtF 1) rsX :=
+theorem pins1 : Pins (At (C0 pc) (crtF pc) 1) rsX :=
   pins_at_list valsX
-    (fun _ s₀ h => WP.of_flat (c := .block (Crt.save ++ Crt.args ++ setupX)) rfl
-      (WP.mono (front_ok s₀ h.1) fun s F => by
+    (fun _ s₀ h => WP.of_flat (c := .block (Crt.save ++ argsG pc ++ setupX)) (by cases pc <;> rfl)
+      (WP.mono (front_okG (pc := pc) s₀ (preG_core h.1)) fun s ⟨F, _⟩ => by
         simp only [rsX, valsX, List.map_cons, List.map_nil, F.a7, F.ra, F.s5, F.s11, F.t0, F.s6]))
     fun _ _ _ h h' => valsX_eq h h'
 
@@ -170,40 +172,40 @@ theorem pins1 : Pins (At C0 crtF 1) rsX :=
 abbrev LD (oA oL : Nat) : Prog isa := .block [.load .d .s7 .s6 oA, .load .d .s8 .s6 oL]
 
 /-- The front, then `X`'s array 0 := all ones, then `c`. -/
-abbrev N0 (c : Prog isa) : Prog isa :=
-  .seq (.block (Crt.save ++ Crt.args ++ setupX)) (.seq (.block [.addi .t3 .a7 0]) (.seq onesWords c))
+abbrev N0 (pc : Bool) (c : Prog isa) : Prog isa :=
+  .seq (.block (Crt.save ++ argsG pc ++ setupX)) (.seq (.block [.addi .t3 .a7 0]) (.seq onesWords c))
 
 /-- A buffer into array `j`, then `c`. -/
 abbrev LJ (j oA oL : Nat) (c : Prog isa) : Prog isa := .seq (.seq (LD oA oL) (loadArr j)) c
 
 theorem xi_start {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : State} {c : Prog isa}
-    {Q : State → Prop} (h : C0 d s₀) (hc : ∀ s t, PF s₀ → Front s₀ s → XI s₀ s t → WP isa c t Q) :
-    WP isa (N0 c) s₀ Q :=
-  WP.seq (WP.mono (front_ok s₀ h.1) fun s F => xi_ones (pre_facts h.1) (xi_front F) fun t X =>
-    hc s t (pre_facts h.1) F X)
+    {Q : State → Prop} (h : C0 pc d s₀) (hc : ∀ s t, PF s₀ → Front s₀ s → XI s₀ s t → WP isa c t Q) :
+    WP isa (N0 pc c) s₀ Q :=
+  WP.seq (WP.mono (front_okG (pc := pc) s₀ (preG_core h.1)) fun s F => xi_ones h.pf (xi_front F.1) fun t X =>
+    hc s t h.pf F.1 X)
 
-theorem ldv_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s₀' : State} (h : C0 d s₀)
-    (h' : C0 d s₀') {A A' : Addr} {L L' : Nat} (hA : A = A') (hL : L = L') :
+theorem ldv_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s₀' : State} (h : C0 pc d s₀)
+    (h' : C0 pc d s₀') {A A' : Addr} {L L' : Nat} (hA : A = A') (hL : L = L') :
     valsX s₀ ++ [Mont.off A 0, BitVec.ofNat 64 L] = valsX s₀' ++ [Mont.off A' 0, BitVec.ofNat 64 L'] := by
   rw [valsX_eq h h', hA, hL]
 
-theorem pins5 : Pins (At C0 crtF 5) (rsX ++ ([.s7, .s8] : List Reg)) :=
+theorem pins5 : Pins (At (C0 pc) (crtF pc) 5) (rsX ++ ([.s7, .s8] : List Reg)) :=
   pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a2) 0, BitVec.ofNat 64 (ck s₀)])
-    (fun _ s₀ h => WP.of_flat (c := N0 (LD oN oNLen)) rfl (xi_start h fun _ _ hP F X =>
+    (fun _ s₀ h => WP.of_flat (c := N0 pc (LD oN oNLen)) (by cases pc <;> rfl) (xi_start h fun _ _ hP F X =>
       xi_ld hP X (by decide) (by decide) F.hN F.hNL))
     fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.1 E.2.1
 
-theorem pins13 : Pins (At C0 crtF 13) (rsX ++ ([.s7, .s8] : List Reg)) :=
+theorem pins13 : Pins (At (C0 pc) (crtF pc) 13) (rsX ++ ([.s7, .s8] : List Reg)) :=
   pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a6) 0, BitVec.ofNat 64 (cpL s₀)])
-    (fun _ s₀ h => WP.of_flat (c := N0 (LJ 1 oN oNLen (LD oP oPLen))) rfl (xi_start h fun _ _ hP F X =>
+    (fun _ s₀ h => WP.of_flat (c := N0 pc (LJ 1 oN oNLen (LD oP oPLen))) (by cases pc <;> rfl) (xi_start h fun _ _ hP F X =>
       xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
       xi_ld hP X (by decide) (by decide) F.hP F.hPL))
     fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.2.2.1 E.2.2.1
 
-theorem pins21 : Pins (At C0 crtF 21) (rsX ++ ([.s7, .s8] : List Reg)) :=
+theorem pins21 : Pins (At (C0 pc) (crtF pc) 21) (rsX ++ ([.s7, .s8] : List Reg)) :=
   pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (stackArg s₀ 0) 0, BitVec.ofNat 64 (cqL s₀)])
-    (fun _ s₀ h => WP.of_flat (c := N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LD oQ oQLen)))) rfl
+    (fun _ s₀ h => WP.of_flat (c := N0 pc (LJ 1 oN oNLen (LJ 4 oP oPLen (LD oQ oQLen)))) (by cases pc <;> rfl)
       (xi_start h fun _ _ hP F X =>
       xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
@@ -212,9 +214,9 @@ theorem pins21 : Pins (At C0 crtF 21) (rsX ++ ([.s7, .s8] : List Reg)) :=
       xi_ld hP X (by decide) (by decide) F.hQ F.hQL))
     fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.2.2.2.1 E.2.2.2.1
 
-theorem pins29 : Pins (At C0 crtF 29) (rsX ++ ([.s7, .s8] : List Reg)) :=
+theorem pins29 : Pins (At (C0 pc) (crtF pc) 29) (rsX ++ ([.s7, .s8] : List Reg)) :=
   pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a4) 0, BitVec.ofNat 64 (ck s₀)])
-    (fun _ s₀ h => WP.of_flat (c := N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LD oIn oNLen))))) rfl
+    (fun _ s₀ h => WP.of_flat (c := N0 pc (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LD oIn oNLen))))) (by cases pc <;> rfl)
       (xi_start h fun _ _ hP F X =>
       xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
@@ -225,10 +227,10 @@ theorem pins29 : Pins (At C0 crtF 29) (rsX ++ ([.s7, .s8] : List Reg)) :=
       xi_ld hP X (by decide) (by decide) F.hIn F.hNL))
     fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.2.1 E.2.1
 
-theorem pins37 : Pins (At C0 crtF 37) (rsX ++ ([.s7, .s8] : List Reg)) :=
+theorem pins37 : Pins (At (C0 pc) (crtF pc) 37) (rsX ++ ([.s7, .s8] : List Reg)) :=
   pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (stackArg s₀ 6) 0, BitVec.ofNat 64 (cpL s₀)])
     (fun _ s₀ h => WP.of_flat
-      (c := N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LJ 6 oIn oNLen (LD oQInv oPLen)))))) rfl
+      (c := N0 pc (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LJ 6 oIn oNLen (LD oQInv oPLen)))))) (by cases pc <;> rfl)
       (xi_start h fun _ _ hP F X =>
       xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
         (Nat.le_refl _) hP.rN hP.sN fun _ X =>
@@ -242,12 +244,12 @@ theorem pins37 : Pins (At C0 crtF 37) (rsX ++ ([.s7, .s8] : List Reg)) :=
     fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.2.2.2.2.2.2.1 E.2.2.1
 
 /-- `loadX`, from the front, then `c`. -/
-abbrev NX (c : Prog isa) : Prog isa :=
-  N0 (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LJ 6 oIn oNLen (LJ 7 oQInv oPLen c)))))
+abbrev NX (pc : Bool) (c : Prog isa) : Prog isa :=
+  N0 pc (LJ 1 oN oNLen (LJ 4 oP oPLen (LJ 5 oQ oQLen (LJ 6 oIn oNLen (LJ 7 oQInv oPLen c)))))
 
 theorem xi_loadX {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : State} {c : Prog isa}
-    {Q : State → Prop} (h : C0 d s₀) (hc : ∀ s t, PF s₀ → Front s₀ s → XI s₀ s t → WP isa c t Q) :
-    WP isa (NX c) s₀ Q :=
+    {Q : State → Prop} (h : C0 pc d s₀) (hc : ∀ s t, PF s₀ → Front s₀ s → XI s₀ s t → WP isa c t Q) :
+    WP isa (NX pc c) s₀ Q :=
   xi_start h fun s _ hP F X =>
     xi_load (j := 1) hP X (by decide) (by decide) (by decide) F.hN F.hNL (by have := hP.k64; omega_arith)
       (Nat.le_refl _) hP.rN hP.sN fun _ X =>
@@ -260,9 +262,9 @@ theorem xi_loadX {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ :
     xi_load (j := 7) hP X (by decide) (by decide) (by decide) F.hQI F.hPL hP.p1 (Nat.le_of_lt hP.pk)
       hP.rQI hP.sQI fun t X => hc s t hP F X
 
-theorem pins45 : Pins (At C0 crtF 45) (rsX ++ ([.s7, .s8] : List Reg)) :=
+theorem pins45 : Pins (At (C0 pc) (crtF pc) 45) (rsX ++ ([.s7, .s8] : List Reg)) :=
   pins_at_list (fun s₀ => valsX s₀ ++ [Mont.off (s₀.gpr .a2) 0, BitVec.ofNat 64 (ck s₀)])
-    (fun _ s₀ h => WP.of_flat (c := NX (LD oN oNLen)) rfl (xi_loadX h fun _ _ hP F X =>
+    (fun _ s₀ h => WP.of_flat (c := NX pc (LD oN oNLen)) (by cases pc <;> rfl) (xi_loadX h fun _ _ hP F X =>
       xi_ld hP X (by decide) (by decide) F.hN F.hNL))
     fun _ _ _ h h' => let E := data_vals h h'; ldv_eq h h' E.2.2.2.2.2.1 E.2.1
 
@@ -270,9 +272,9 @@ theorem pins45 : Pins (At C0 crtF 45) (rsX ++ ([.s7, .s8] : List Reg)) :=
 abbrev nb0 (s₀ : State) : BitVec 64 :=
   BitVec.ofNat 64 ((Spec.Rsa.bytesAt s₀.mem (s₀.gpr .a2) (ck s₀)).getD 0 0).toNat
 
-theorem pins46 : Pins (At C0 crtF 46) (rsX ++ ([.s8, .t4] : List Reg)) := by
+theorem pins46 : Pins (At (C0 pc) (crtF pc) 46) (rsX ++ ([.s8, .t4] : List Reg)) := by
   refine pins_at_list (fun s₀ => valsX s₀ ++ [BitVec.ofNat 64 (ck s₀), nb0 s₀])
-    (fun _ s₀ h => WP.of_flat (c := NX (.seq (LD oN oNLen) (.block Precompute.check1))) rfl
+    (fun _ s₀ h => WP.of_flat (c := NX pc (.seq (LD oN oNLen) (.block Precompute.check1))) (by cases pc <;> rfl)
       (xi_loadX h fun s t hP F X => ?_)) fun _ _ _ h h' => ?_
   · have k64 := hP.k64; have room := hP.room
     have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith

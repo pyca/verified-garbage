@@ -228,7 +228,7 @@ theorem generalStep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {
       (tmv C K.M.n base s₃ K.A.z) (mul (combEW K.w k K.J (j - 1)) (G C)) := fun h0 => by
     have hw : combWin K.w k (j - 1) = 2 ^ (K.w - 1) := by
       have e : K.H = 2 ^ (K.w - 1) := rfl
-      unfold magH at ha; rw [e] at ha; split at ha <;> omega
+      unfold magH at ha; rw [e] at ha; split at ha <;> omega_arith
     rw [← hadd, hw]
     simp only [Nat.le_refl, ↓reduceIte, Nat.sub_self]
     rw [show combPtW C K.w (j - 1) 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul], add_infinity]
@@ -412,13 +412,13 @@ theorem combLayG {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) :
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, EM, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
     map_sl_nodup hn (l := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (by decide), ⟨by rw [hJ]; omega, by rw [hJ]; omega⟩, ?_, ?_, ?_⟩
+      (by decide), ⟨by rw [hJ]; omega_using [hJb], by rw [hJ]; omega_using [h7, hJb]⟩, ?_, ?_, ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
       T4, T5, DX, DY, DZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, EM, ZERO])
       (l₂ := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (by decide)
-  · rw [hJ]; show bitsAt c.n 0 + 4 * c.combJ d.w ≤ 8192; rw [bitsAt_eq]; omega
-  · show bitsAt c.n 0 + 3 < 4096; rw [bitsAt_eq]; omega
+  · rw [hJ]; show bitsAt c.n 0 + 4 * c.combJ d.w ≤ 8192; rw [bitsAt_eq]; omega_using [h7, hJb]
+  · show bitsAt c.n 0 + 3 < 4096; rw [bitsAt_eq]; omega_using [h7]
   · intro w hw
     rw [show combW (c.combCfgG d).toComb = combW (c.combCfg d).toComb from rfl, combW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -480,12 +480,12 @@ theorem gMulG_ok' (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
   have h0 := hc.n0
   have h7 := hc.n10
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   have hn := hs.nowrap
   unfold Cfg.gMulG
   -- `b R mod p` in `EM`.
   refine WP.seq (WP.mono_syms (setConst_ok hs (n := c.n) (o := c.sl EM) (x := c.mont c.C.b)
-    (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont c.C.b; omega))
+    (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont c.C.b; omega_arith))
     fun s₁ ⟨e₁, k₁, O₁⟩ sy₁ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have hmp₁ : wordsVal s₁.mem base (c.sl MP) c.n = c.C.p :=
@@ -512,7 +512,7 @@ theorem gMulG_ok' (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
       rcases hx with rfl | rfl | rfl
       · exact lt_of_eq_of_lt hap₁ (hmont _)
       · exact lt_of_eq_of_lt e₁ (hmont _)
-      · exact lt_of_eq_of_lt hz₁ (by omega)
+      · exact lt_of_eq_of_lt hz₁ (by omega_using [hp3])
   have haS : tmv c.C (c.combCfgG d).M.n base s₁ (c.combCfgG d).S.a = Fin.ofNat c.C.p c.C.a := by
     show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl AP) c.n) = _
     rw [hap₁]; exact toM_cmont hc _
@@ -533,7 +533,7 @@ theorem gMulG_ok' (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
         i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by decide
     exact ⟨w, List.mem_append_left _ (List.map_subset _ sub hw), Nat.le_refl _, Nat.le_refl _⟩
   · rw [List.mem_singleton.mp hw]
-    exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by dsimp only; omega, by dsimp only; omega⟩
+    exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by dsimp only; omega_using [], by dsimp only; omega_using [hz]⟩
 
 /-- `R = [k]G` by `gMulG d`, after the setup and the tables. -/
 theorem gMulG_ok (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk c d)

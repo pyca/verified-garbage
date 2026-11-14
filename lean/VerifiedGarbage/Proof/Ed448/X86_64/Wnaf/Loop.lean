@@ -34,7 +34,7 @@ def Digits (base : Addr) (o k : Nat) (s : State) : Prop :=
 theorem Digits.keep {base : Addr} {o k : Nat} {s u : State} (h : Digits base o k s)
     (ho : 2048 ≤ o) (hb : o + 461 ≤ 8192) (g : Keep base s u) : Digits base o k u := by
   intro i hi
-  rw [g.mem _ (Or.inr (by rw [ofs_off' base (by omega)]; omega))]
+  rw [g.mem _ (Or.inr (by rw [ofs_off' base (by omega_using [hb, hi])]; omega_using [ho]))]
   exact h i hi
 
 structure Inv (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ : State) (n : Nat) (s : State) : Prop where
@@ -100,7 +100,7 @@ theorem pointStep_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.
     (((kc.gpr _ (by decide)).trans (kb.gpr _ (by decide))).trans ar) (cK n hn) dc)
     fun d ⟨kd, dd, pd⟩ => ?_)
   have kbd := (kb.trans kc).trans kd
-  refine WP.mono (testCounter_ok d n (by omega) ((kbd.gpr _ (by decide)).trans ar))
+  refine WP.mono (testCounter_ok d n (by omega_using [hn]) ((kbd.gpr _ (by decide)).trans ar))
     fun u ⟨zu, gu, mu, ru, wu⟩ => ?_
   have kau : Keep base a u := ⟨fun r hr => (gu r).trans (kbd.gpr r hr),
     ru.trans kbd.rd, wu.trans kbd.wr, by rw [mu]; exact kbd.mem⟩
@@ -131,12 +131,12 @@ theorem loop_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops} 
   intro n hn hb s h
   refine WP.loop (M := isa) (fun n u => 1 ≤ n ∧ n ≤ 461 ∧ Inv base S K A s₀ n u) ?_ n s ⟨hn, hb, h⟩
   rintro m u ⟨hm, hb, hi⟩
-  obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (pointStep_ok hf hP hi (by omega)) fun v ⟨hv, hz⟩ => ?_
+  obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega_using [hm]⟩
+  refine WP.mono (pointStep_ok hf hP hi (by omega_using [hb])) fun v ⟨hv, hz⟩ => ?_
   have he : isa.eval .ne v = some (!decide (j = 0)) := by simp only [eval, hz, Option.map_some]
   by_cases hj : j = 0
   · subst j; exact .inl ⟨he, hv⟩
-  · refine .inr ⟨?_, j, by omega, by omega, by omega, hv⟩
+  · refine .inr ⟨?_, j, by omega_using [], by omega_using [hj], by omega_using [hb], hv⟩
     rw [he, decide_eq_false hj]; rfl
 
 end VG.Proof.Ed448.X86_64.Wnaf

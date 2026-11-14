@@ -8,6 +8,7 @@ import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Linarith.Frontend
 import VerifiedGarbage.Proof.Divstep.Tc32Shr
 import Mathlib.Algebra.Order.Ring.Abs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Batches of 30 divsteps with the coefficients reduced by `2^30`
 
@@ -74,7 +75,7 @@ theorem cneg_cong {M : Nat} {c x : Int} {T X : Nat} (hX : (X : Int) % M = x % M)
     ((c.natAbs * T : Nat) : Int) % M = (c * x) % M := by
   by_cases h : c < 0
   · obtain ⟨b, hb⟩ := hneg h
-    have e : (T : Int) = -X + M * b := by omega
+    have e : (T : Int) = -X + M * b := by omega_using [hb]
     push_cast
     rw [abs_of_neg h, e]
     have : -c * (-(X : Int) + M * b) = c * X + M * (-c * b) := by ring
@@ -124,10 +125,10 @@ theorem cnegP {p H : Nat} {c : Int} {T X : Nat} (hX : X < p) (hT : T < 2 * H)
       rcases Nat.eq_zero_or_pos b with hb0 | hb0
       · exact hb0
       · have : 2 * H ≤ 2 * H * b := Nat.le_mul_of_pos_right _ hb0
-        omega
+        omega_using [hX, hT, hb, this]
     subst b0
-    have e : (T : Int) = p - X := by omega
-    refine ⟨by omega, ?_⟩
+    have e : (T : Int) = p - X := by omega_using [hb]
+    refine ⟨by omega_using [hb], ?_⟩
     push_cast
     rw [abs_of_neg h, e]
     have : -c * ((p : Int) - X) = c * X + p * (-c) := by ring
@@ -151,56 +152,56 @@ theorem de_word {p H iv : Nat} {u v : Int} {D E T₁ T₂ A e q A' c R D' : Nat}
     (hR : R = (A' + 2 * H * (if H ≤ A' then 2 ^ 32 - 1 else 0)) / 2 ^ 30 % (2 * H))
     (hD' : D' = (if R < p then R else R - p) % (2 * H)) :
     D' < p ∧ (2 ^ 30 * D' : Int) ≡ u * D + v * E [ZMOD p] := by
-  have hp0 : 0 < p := by omega
-  have pH : p ≤ 2 * H := by omega
+  have hp0 : 0 < p := by omega_using [hp]
+  have pH : p ≤ 2 * H := by omega_using [hpH]
   obtain ⟨t1, c1⟩ := cnegP hD hT₁ n₁ p₁
   obtain ⟨t2, c2⟩ := cnegP hE hT₂ n₂ p₂
   have hu : u.natAbs + v.natAbs ≤ 2 ^ 30 := by
-    have := Int.natCast_natAbs u; have := Int.natCast_natAbs v; omega
+    have := Int.natCast_natAbs u; have := Int.natCast_natAbs v; omega_arith
   have sum_le : u.natAbs * T₁ + v.natAbs * T₂ ≤ 2 ^ 30 * p := by
     have := Nat.mul_le_mul_left u.natAbs t1
     have := Nat.mul_le_mul_left v.natAbs t2
     have := Nat.mul_le_mul_right p hu
     rw [Nat.add_mul] at this
-    omega
+    omega_arith
   have e0 : e = 0 := by
     rcases Nat.eq_zero_or_pos e with h | h
     · exact h
     · have : 2 * H ≤ 2 * H * e := Nat.le_mul_of_pos_right _ h
-      omega
+      omega_using [hpH, hT₁, hT₂, p₁, p₂, hA, hA', hred, hA'', pH, t1, t2, hu, sum_le, h, this]
   subst e0
   have hq30 : q < 2 ^ 30 := by rw [hq]; exact Nat.mod_lt _ (by decide)
   have dvd0 : (A + q * p) % 2 ^ 30 = 0 := by rw [hq]; exact red30_dvd hiv
   clear hq
-  have qp : q * p ≤ (2 ^ 30 - 1) * p := Nat.mul_le_mul_right _ (by omega)
+  have qp : q * p ≤ (2 ^ 30 - 1) * p := Nat.mul_le_mul_right _ (by omega_using [hq30])
   have c0 : c = 0 := by
     rcases Nat.eq_zero_or_pos c with h | h
     · exact h
     · have : 2 * H ≤ 2 * H * c := Nat.le_mul_of_pos_right _ h
-      omega
+      omega_using [hp, hpH, hiv, hD, hE, hT₁, hT₂, hA', hred, hA'', hp0, pH, t1, t2, sum_le, hA, hq30, dvd0, qp, h, this]
   subst c0
-  have eA' : A' = A + q * p := by omega
-  have eA : A = u.natAbs * T₁ + v.natAbs * T₂ := by omega
+  have eA' : A' = A + q * p := by omega_using [hp, hpH, hiv, hD, hE, hA', hA'', hp0, pH, t1, t2, sum_le, hA, hq30, dvd0, qp, hred]
+  have eA : A = u.natAbs * T₁ + v.natAbs * T₂ := by omega_using [hA]
   have small : A' < H := by
     rw [eA', eA]
     generalize u.natAbs * T₁ + v.natAbs * T₂ = S at sum_le
     generalize q * p = Q at qp
-    omega
+    omega_using [hpH, hT₁, sum_le, qp]
   have hR' : R = A' / 2 ^ 30 := by
-    rw [hR]; simp only [show ¬ H ≤ A' by omega, ↓reduceIte, Nat.mul_zero, Nat.add_zero]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [hR]; simp only [show ¬ H ≤ A' by omega_using [small], ↓reduceIte, Nat.mul_zero, Nat.add_zero]
+    exact Nat.mod_eq_of_lt (by omega_using [hA''])
   have dvd : A' % 2 ^ 30 = 0 := by rw [eA']; exact dvd0
-  have eR : 2 ^ 30 * R = A' := by rw [hR']; omega
-  have R2 : R < 2 * p := by omega
+  have eR : 2 ^ 30 * R = A' := by rw [hR']; omega_using [dvd]
+  have R2 : R < 2 * p := by omega_using [hp, hpH, hiv, hD, hE, hT₁, hT₂, p₁, p₂, hA', hA'', hR, hp0, pH, t1, t2, hu, sum_le, hA, hq30, dvd0, qp, hred, eA', eA, small, hR', dvd, eR]
   have hD'' : D' = if R < p then R else R - p := by
-    rw [hD']; exact Nat.mod_eq_of_lt (by split <;> omega)
-  refine ⟨by rw [hD'']; split <;> omega, ?_⟩
+    rw [hD']; exact Nat.mod_eq_of_lt (by split <;> omega_arith)
+  refine ⟨by rw [hD'']; split <;> omega_arith, ?_⟩
   have step1 : (2 ^ 30 * D' : Int) ≡ 2 ^ 30 * R [ZMOD p] := by
     rw [hD'']
     split
     · rfl
     · rename_i h
-      have : ((R - p : Nat) : Int) = R - p := by omega
+      have : ((R - p : Nat) : Int) = R - p := by omega_using [hp, hpH, hiv, hD, hE, hR, hp0, pH, t1, t2, sum_le, dvd0, qp, hred, hR', eR, R2, h]
       rw [this]
       exact Int.modEq_iff_dvd.mpr ⟨2 ^ 30, by ring⟩
   refine step1.trans ?_
@@ -209,14 +210,14 @@ theorem de_word {p H iv : Nat} {u v : Int} {D E T₁ T₂ A e q A' c R D' : Nat}
   have e2 : ((A : Int) + q * p) ≡ A [ZMOD p] := Int.modEq_iff_dvd.mpr ⟨-q, by ring⟩
   refine e2.trans ?_
   have : (A : Int) = ((u.natAbs * T₁ : Nat) : Int) + ((v.natAbs * T₂ : Nat) : Int) := by
-    rw [← Nat.cast_add]; exact_mod_cast (by omega : A = u.natAbs * T₁ + v.natAbs * T₂)
+    rw [← Nat.cast_add]; exact_mod_cast (by omega_using [hT₁, hT₂, p₁, p₂, hA', t1, t2, hu, sum_le, hA, dvd0, hred, eA, this] : A = u.natAbs * T₁ + v.natAbs * T₂)
   rw [this]
   exact c1.add c2
 
 /-- A small integer's word, as a signed number. -/
 theorem small_toInt {c : Int} (h : |c| ≤ 2 ^ 30) : (BitVec.ofInt 32 c).toInt = c := by
   rw [abs_le] at h
-  exact BitVec.toInt_ofInt_eq_self (by decide) (by omega) (by omega)
+  exact BitVec.toInt_ofInt_eq_self (by decide) (by omega_using [h]) (by omega_using [h])
 
 /-- A coefficient's word: its sign is its top bit, and its magnitude is its value's. -/
 theorem small_sign {c : Int} (h : |c| ≤ 2 ^ 30) : (2 ^ 31 ≤ (BitVec.ofInt 32 c).toNat ↔ c < 0) := by
@@ -224,7 +225,7 @@ theorem small_sign {c : Int} (h : |c| ≤ 2 ^ 30) : (2 ^ 31 ≤ (BitVec.ofInt 32
   rw [BitVec.toInt_eq_toNat_cond] at e
   have := (BitVec.ofInt 32 c).isLt
   rw [abs_le] at h
-  split at e <;> omega
+  split at e <;> omega_using [h, e]
 
 theorem small_abs {c : Int} (h : |c| ≤ 2 ^ 30) : (BitVec.ofInt 32 c).toInt.natAbs = c.natAbs := by
   rw [small_toInt h]
@@ -243,26 +244,26 @@ theorem abs_words {P F T : Nat} {f : Int} (hP : 0 < P) (hF : F < 2 ^ 32 * P)
   by_cases hneg : f < 0
   · have eF : (F : Int) = f + ((2 ^ 32 * P : Nat) : Int) := by
       have := Int.emod_emod_of_dvd f (dvd_refl ((2 ^ 32 * P : Nat) : Int))
-      have e1 : (F : Int) % ((2 ^ 32 * P : Nat) : Int) = F := Int.emod_eq_of_lt (by omega) (by exact_mod_cast hF)
+      have e1 : (F : Int) % ((2 ^ 32 * P : Nat) : Int) = F := Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast hF)
       have e2 : f % ((2 ^ 32 * P : Nat) : Int) = f + ((2 ^ 32 * P : Nat) : Int) := by
-        rw [Int.emod_eq_add_self_emod, Int.emod_eq_of_lt (by omega) (by omega)]
+        rw [Int.emod_eq_add_self_emod, Int.emod_eq_of_lt (by omega_using [hf]) (by omega_using [hneg])]
       rw [← e1, hFf, e2]
-    refine ⟨⟨fun _ => hneg, fun _ => by omega⟩, fun h => absurd hneg h, fun _ b hb hT => ?_⟩
+    refine ⟨⟨fun _ => hneg, fun _ => by omega_using [hf, eF]⟩, fun h => absurd hneg h, fun _ b hb hT => ?_⟩
     have hb1 : b = 1 := by
       rcases Nat.lt_or_ge b 2 with h | h
-      · rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl
-        · omega
+      · rcases (by omega_using [h] : b = 0 ∨ b = 1) with rfl | rfl
+        · omega_arith
         · rfl
       · have : 2 ^ 32 * P * 2 ≤ 2 ^ 32 * P * b := Nat.mul_le_mul_left _ h
-        omega
+        omega_using [hF, hb, hT, this]
     subst hb1
-    have : (T : Int) = -f := by omega
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    have : (T : Int) = -f := by omega_using [eF, hb]
+    rw [Nat.mod_eq_of_lt (by omega_using [hf, eF, hb])]; omega_using [eF, hb]
   · have eF : (F : Int) = f := by
-      have e1 : (F : Int) % ((2 ^ 32 * P : Nat) : Int) = F := Int.emod_eq_of_lt (by omega) (by exact_mod_cast hF)
-      rw [← e1, hFf, Int.emod_eq_of_lt (by omega) (by omega)]
-    refine ⟨⟨fun h => by omega, fun h => absurd h hneg⟩, fun _ => ?_, fun h => absurd h hneg⟩
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+      have e1 : (F : Int) % ((2 ^ 32 * P : Nat) : Int) = F := Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast hF)
+      rw [← e1, hFf, Int.emod_eq_of_lt (by omega_using [hneg]) (by omega_using [hf])]
+    refine ⟨⟨fun h => by omega_using [hf, eF, h], fun h => absurd h hneg⟩, fun _ => ?_, fun h => absurd h hneg⟩
+    rw [Nat.mod_eq_of_lt (by omega_using [hf, eF])]; omega_using [eF]
 
 /-- `±d mod p` from its two selections. -/
 theorem sel_mod {p P M D T X : Nat} {sg : Prop} [Decidable sg] (hD : D < p) (hpP : p ≤ P)
@@ -278,15 +279,15 @@ theorem sel_mod {p P M D T X : Nat} {sg : Prop} [Decidable sg] (hD : D < p) (hpP
     · subst h0
       simp only [Nat.sub_zero, Nat.lt_irrefl, ↓reduceIte, Nat.sub_self, Nat.zero_mod] at hX
       subst hX
-      exact ⟨by omega, by simp [Int.ModEq]⟩
-    · have : p - D < p := by omega
+      exact ⟨by omega_using [hD], by simp [Int.ModEq]⟩
+    · have : p - D < p := by omega_using [hD, h0]
       simp only [this, ↓reduceIte] at hX
-      rw [Nat.mod_eq_of_lt (by omega)] at hX
+      rw [Nat.mod_eq_of_lt (by omega_using [hD, hpP, h0])] at hX
       subst hX
-      refine ⟨by omega, Int.modEq_iff_dvd.mpr ⟨-1, ?_⟩⟩
-      push_cast [Nat.cast_sub (by omega : D ≤ p)]; ring
+      refine ⟨by omega_using [hD, h0], Int.modEq_iff_dvd.mpr ⟨-1, ?_⟩⟩
+      push_cast [Nat.cast_sub (by omega_using [hD] : D ≤ p)]; ring
   · simp only [h, ↓reduceIte, hD] at hX ⊢
-    rw [Nat.mod_eq_of_lt (by omega)] at hX
+    rw [Nat.mod_eq_of_lt (by omega_using [hD, hpP])] at hX
     subst hX; exact ⟨hD, rfl⟩
 
 
@@ -298,15 +299,15 @@ from `(0, 1)`, so a run's coefficients are a function of `p` and `x` alone. -/
 
 theorem red30_spec {p : Nat} (hp : p % 2 = 1) (t : Int) :
     red30 p t < p ∧ (2 ^ 30 * red30 p t : Int) ≡ t [ZMOD p] := by
-  have hp0 : (0 : Int) < p := Int.natCast_pos.mpr (by omega)
+  have hp0 : (0 : Int) < p := Int.natCast_pos.mpr (by omega_using [hp])
   have nn := Int.emod_nonneg (t * (((p + 1) / 2 : Nat) : Int) ^ 30) hp0.ne'
   have lt := Int.emod_lt_of_pos (t * (((p + 1) / 2 : Nat) : Int) ^ 30) hp0
   have e : ((red30 p t : Nat) : Int) = t * (((p + 1) / 2 : Nat) : Int) ^ 30 % p := by
     unfold red30; exact Int.toNat_of_nonneg nn
-  refine ⟨by omega, ?_⟩
+  refine ⟨by omega_using [lt, e], ?_⟩
   rw [e]
   have h2 : (2 : Int) * (((p + 1) / 2 : Nat) : Int) = p + 1 := by
-    have : 2 * ((p + 1) / 2) = p + 1 := by omega
+    have : 2 * ((p + 1) / 2) = p + 1 := by omega_using [hp]
     exact_mod_cast this
   have one : ((p : Int) + 1) ^ 30 ≡ 1 [ZMOD p] := by
     have : (p : Int) + 1 ≡ 1 [ZMOD p] := by simp [Int.ModEq]
@@ -319,12 +320,12 @@ theorem red30_spec {p : Nat} (hp : p % 2 = 1) (t : Int) :
 
 theorem red30_unique {p D : Nat} {t : Int} (hp : p % 2 = 1) (hD : D < p)
     (h : (2 ^ 30 * D : Int) ≡ t [ZMOD p]) : D = red30 p t := by
-  have hp0 : (0 : Int) < p := Int.natCast_pos.mpr (by omega)
+  have hp0 : (0 : Int) < p := Int.natCast_pos.mpr (by omega_using [hp])
   obtain ⟨r1, r2⟩ := red30_spec hp t
   have c := cancel_pow2 (N := 30) (by exact_mod_cast hp) hp0 (h.trans r2.symm)
   have := Int.emod_emod_of_dvd (D : Int) (dvd_refl (p : Int))
-  rw [Int.ModEq, Int.emod_eq_of_lt (by omega) (by exact_mod_cast hD),
-    Int.emod_eq_of_lt (by omega) (by exact_mod_cast r1)] at c
+  rw [Int.ModEq, Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast hD),
+    Int.emod_eq_of_lt (by omega_using []) (by exact_mod_cast r1)] at c
   exact_mod_cast c
 
 /-- `d`, `f` and `g` do not depend on `invRun`'s `m`. -/
@@ -347,7 +348,7 @@ theorem deRun_cong {p x : Nat} (hp : p % 2 = 1) (hp1 : 1 < p) : ∀ i,
     (invRun 30 p 0 x i).f ≡ x * (deRun p x i).1 [ZMOD p] ∧
       (invRun 30 p 0 x i).g ≡ x * (deRun p x i).2 [ZMOD p] ∧ (deRun p x i).1 < p ∧ (deRun p x i).2 < p
   | 0 => by
-    refine ⟨?_, ?_, by simp only [deRun]; omega, by simp only [deRun]; exact hp1⟩
+    refine ⟨?_, ?_, by simp only [deRun]; omega_using [hp], by simp only [deRun]; exact hp1⟩
     · simp [invRun, deRun, Int.ModEq]
     · simp [invRun, deRun]
   | i + 1 => by
@@ -360,7 +361,7 @@ theorem deRun_cong {p x : Nat} (hp : p % 2 = 1) (hp1 : 1 < p) : ∀ i,
     obtain ⟨b1, b2⟩ := red30_spec hp ((msteps 30 (MSt.init (invRun 30 p 0 x i).d (invRun 30 p 0 x i).f
       (invRun 30 p 0 x i).g)).q * (deRun p x i).1 + (msteps 30 (MSt.init (invRun 30 p 0 x i).d
       (invRun 30 p 0 x i).f (invRun 30 p 0 x i).g)).r * (deRun p x i).2)
-    have c := batch_cong30 (m := 0) hpI (by omega) hodd hF hG a2 b2
+    have c := batch_cong30 (m := 0) hpI (by omega_using [hp]) hodd hF hG a2 b2
     simp only [invRun, deRun, deStep]
     exact ⟨c.1, c.2, a1, b1⟩
 

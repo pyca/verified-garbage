@@ -64,10 +64,10 @@ theorem init_exec {s₀ : State} (hp : IPre s₀) :
     WP isa init s₀ fun s' => s'.mem = initMem s₀.mem (st s₀) (kp s₀) ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → s'.gpr r = s₀.gpr r) := by
   have o : ∀ d, d + 8 ≤ 128 → InRegions s₀.wr (off (st s₀) d) 8 :=
-    fun d hd => ⟨_, by rw [hp.wr]; exact List.mem_singleton_self _, contains_off hd (by omega)⟩
+    fun d hd => ⟨_, by rw [hp.wr]; exact List.mem_singleton_self _, contains_off hd (by omega_using [hd])⟩
   have i : ∀ d, d + 8 ≤ 32 → InRegions (s₀.rd ++ s₀.wr) (off (kp s₀) d) 8 :=
     fun d hd => ⟨_, by rw [hp.rd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-      contains_off hd (by omega)⟩
+      contains_off hd (by omega_using [hd])⟩
   have o0 := o 0 (by decide); have o8 := o 8 (by decide); have o16 := o 16 (by decide)
   have o24 := o 24 (by decide); have o32 := o 32 (by decide); have o40 := o 40 (by decide)
   have o48 := o 48 (by decide)
@@ -84,24 +84,24 @@ theorem init_exec {s₀ : State} (hp : IPre s₀) :
 
 theorem initMem_frame (m : Mem) (st key : Addr) : Frame [sR st] m (initMem m st key) := by
   have c : ∀ d, d + 8 ≤ 128 → (sR st).Contains (off st d) (64 / 8) :=
-    fun d hd => contains_off hd (by omega)
+    fun d hd => contains_off hd (by omega_using [hd])
   simp only [initMem]
   refine ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 24 ?_)).writeW
     (List.mem_singleton_self _) _ (c 32 ?_)).writeW (List.mem_singleton_self _) _ (c 40 ?_)).writeW
     (List.mem_singleton_self _) _ (c 48 ?_)).writeW (List.mem_singleton_self _) _ (c 0 ?_)).writeW
-    (List.mem_singleton_self _) _ (c 8 ?_) |>.writeW (List.mem_singleton_self _) _ (c 16 ?_) <;> omega
+    (List.mem_singleton_self _) _ (c 8 ?_) |>.writeW (List.mem_singleton_self _) _ (c 16 ?_) <;> omega_using []
 
 theorem initMem_word (m : Mem) (st key : Addr) {j : Nat} (hj : j < 4) :
     (initMem m st key).readW (off st (24 + 8 * j)) 64 = m.readW (off key (8 * j)) 64 := by
   simp only [initMem]
-  obtain rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega_using [hj]
   all_goals simp (config := {decide := true}) only [Nat.mul_zero, Nat.add_zero, Nat.mul_one,
     Mem.readW_writeW_self64, readW_writeW_off]
 
 theorem initMem_acc (m : Mem) (st key : Addr) {d : Nat} (hd : d < 24) (h8 : d % 8 = 0) :
     (initMem m st key).readW (off st d) 64 = 0 := by
   simp only [initMem]
-  obtain rfl | rfl | rfl : d = 0 ∨ d = 8 ∨ d = 16 := by omega
+  obtain rfl | rfl | rfl : d = 0 ∨ d = 8 ∨ d = 16 := by omega_using [hd, h8]
   all_goals simp (config := {decide := true}) only [Mem.readW_writeW_self64, readW_writeW_off]
 
 theorem init_correct {s₀ : State} (hp : IPre s₀) :

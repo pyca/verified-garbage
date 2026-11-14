@@ -25,14 +25,14 @@ open VG VG.Proof.Mont
 theorem prefix_mod (m : Mem) (base : Addr) (a k n : Nat) (h : k ≤ n) :
     val32 m base a k = val32 m base a n % 2 ^ (32 * k) := by
   have E := val32_append m base a k (n - k)
-  rw [show k + (n - k) = n by omega] at E
+  rw [show k + (n - k) = n by omega_using [h]] at E
   rw [E, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (val32_lt m base a k)]
 
 theorem shifted_prefix_mod (m : Mem) (base : Addr) (a k n : Nat) (h : k ≤ n) :
     (2 ^ 32 * val32 m base a k) % 2 ^ (32 * (k + 1)) =
       (2 ^ 32 * val32 m base a n) % 2 ^ (32 * (k + 1)) := by
   have E := val32_append m base a k (n - k)
-  rw [show k + (n - k) = n by omega] at E
+  rw [show k + (n - k) = n by omega_using [h]] at E
   rw [E]
   have F : 2 ^ 32 * (val32 m base a k + 2 ^ (32 * k) *
       val32 m base (a + 4 * k) (n - k)) =

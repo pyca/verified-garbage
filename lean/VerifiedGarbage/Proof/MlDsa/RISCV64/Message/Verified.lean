@@ -61,7 +61,7 @@ theorem mvcMem_key {p : Params} (hp : p.pkLen ≤ 0xB000) :
   intro i hi
   have he : ((0x1000 : Addr) + BitVec.ofNat 64 i).toNat = 0x1000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hp, hi]
   simp only [mvcMem, he]
   split
   · rename_i h; omega
@@ -76,10 +76,10 @@ theorem mvcMem_tr {p : Params} (hp : p.pkLen ≤ 0xB000) :
   intro i hi
   have he : ((0xC000 : Addr) + BitVec.ofNat 64 i).toNat = 0xC000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [mvcMem, he, show 0xC000 ≤ 0xC000 + i ∧ 0xC000 + i < 0xC040 by omega, and_self, ite_true,
+    omega_using [hi]
+  simp only [mvcMem, he, show 0xC000 ≤ 0xC000 + i ∧ 0xC000 + i < 0xC040 by omega_using [hi], and_self, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 /-- `vg_mldsa*_sign_message` (or, with a prepared key `q`,
 `vg_mldsa*_sign_message_prepared`) of the parameter set `p`, calling the
@@ -90,7 +90,7 @@ theorem signMessage_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨
     (hsat : ∃ s, (signMessageEK p q S).pre s) :
     Verified RISCV64.target (signMessage n f p) (signMessageEK p q S) := by
   have hF := mfacts hp3
-  obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega_using [h48]⟩
   refine ⟨fun s hs => signMessage_wp hF h48 hf (Nat.le_refl _) (mspre_of hs),
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
   have hpub' : MSPub p s₁ s₂ := by
@@ -120,7 +120,7 @@ theorem verifyMessageCached_verified {p : Params} (hp3 : p = mlDsa44 ∨ p = mlD
     (n : String) (hsat : ∃ s, (verifyMessageEK p q S).pre s) :
     Verified RISCV64.target (verifyMessageCached n f p) (verifyMessageEK p q S) := by
   have hF := mfacts hp3
-  obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, S = k + 1 := ⟨S - 1, by omega_using [h48]⟩
   refine ⟨fun s hs => verifyMessageCached_wp hF h48 hf (Nat.le_refl _) (mvcpre_of hs),
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
   have hpub' : MVCPub p s₁ s₂ := by

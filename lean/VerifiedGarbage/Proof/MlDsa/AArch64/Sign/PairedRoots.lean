@@ -31,7 +31,7 @@ theorem PairedRoots.apart_write {S : Nat}
   apply h.writable r hr a ha
   apply hp.byte
   change (a-p).toNat+1≤n at hb
-  omega
+  omega_using [hb]
 
 /-- A caller frame preserves roots, including across calls that use stack
 space. Symbol equality is explicit rather than inferred from register ABI. -/
@@ -42,7 +42,7 @@ theorem PairedRoots.step {S : Nat}
   refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hp.frame.readW (r := ⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩)
-      (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)]
     · exact h.held i hi
     · intro r hr
       rcases List.mem_append.mp hr with hr | hr

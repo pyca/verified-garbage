@@ -26,7 +26,9 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::dispatch::rsa_pss::{vg_rsa_pss_sign_auto, vg_rsa_pss_verify_precomputed_auto};
+use crate::arch::dispatch::rsa_pss::{
+    vg_rsa_pss_sign_precomputed_auto, vg_rsa_pss_verify_precomputed_auto,
+};
 use crate::error::InvalidSignature;
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
@@ -107,17 +109,14 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 /// A hash function, as the verified functions take it: the words of one of
-/// the tables of `MdHash` (`crate::arch::fn_tables`), their argument `hash`.
+/// the tables of `MdHash` (`crate::arch::fn_tables`), their arguments `hash`
+/// and, for MGF1's, `mgf1`.
 type MdTable = *const [usize; 11];
 
-/// MGF1's hash function, as the verified functions take it: the words of
-/// one of the tables of `Hash`, their last argument, `mgf1`.
-type Table = *const [usize; 5];
-
 /// The tables of the hash function `hash` and of MGF1's `mgf1_hash`
-/// (`table::md_table`, `table::table`).
-fn with_tables(hash: Hash, mgf1_hash: Hash) -> (MdTable, Table) {
-    (table::md_table(hash), table::table(mgf1_hash))
+/// (`table::md_table`).
+fn with_tables(hash: Hash, mgf1_hash: Hash) -> (MdTable, MdTable) {
+    (table::md_table(hash), table::md_table(mgf1_hash))
 }
 
 /// The words of working space the functions need for an `n_len`-byte
@@ -175,8 +174,10 @@ fn sign_with(
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PrivateKey::from_crt` gives
     // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
-    // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
-    // `out_len = n_len` and `scratch_len = 16 n_len + 1056`; `hash` is the
+    // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`,
+    // and `pre`, of `pre_len` words, the key's precomputed values
+    // (`PrivateKey::precompute`); `out_len = n_len` and
+    // `scratch_len = 16 n_len + 1056`; `hash` is the
     // words of a table of the crate's of `MdHash` and `mgf1` of one of
     // `Hash`, and `digest_len` is the digest length of `hash`'s, its word 6
     // (`hashes::tables::tests::table_words` checks it, and `sign_pss`
@@ -184,7 +185,7 @@ fn sign_with(
     // (`table::md_table`, `table::table`), call only implementations the
     // CPU has the features of.
     let r = unsafe {
-        vg_rsa_pss_sign_auto(
+        vg_rsa_pss_sign_precomputed_auto(
             dit,
             out.as_mut_ptr(),
             k,
@@ -210,6 +211,8 @@ fn sign_with(
             scratch.len(),
             h,
             m,
+            key.pre.as_ptr(),
+            key.pre.len(),
         )
     };
     // `PrivateKey::from_crt` checked the key, so a refusal means the encoding

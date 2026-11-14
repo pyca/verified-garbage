@@ -48,7 +48,7 @@ theorem pc_pub_facts {s t : State} (H : pcContract.pub s t) :
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=
     fun h => (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp h
   refine ⟨SP, fun i hi => ?_, inj L, ?_⟩
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega)
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega_using [hi])
       with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact a0
     · exact a1
@@ -108,7 +108,7 @@ theorem pe_of {s f : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) (Bf 
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have espf : (narrowed (wsBase pArgs s) (wsSize pArgs s) f (pcOut s)).gpr .esp =
@@ -209,14 +209,14 @@ theorem pcSat_arg (words : List (BitVec 64)) (i : Nat) (hi : i < 7) :
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   have := (argAddr pcSat0 i).isLt
   have : j < 4 := hj
-  omega
+  omega_arith
 
 theorem pcSat_domain (words : List (BitVec 64)) :
     Spec.Rsa.bytesAt (pcSatState words).mem 0x3000 128 = CachedSat.domain := by
   apply CachedSat.bytesAt_eq
   intro i hi
   change (if _ then _ else _) = _
-  rw [ite_eq_left (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; change (0x3000 + _ % _) % _ < _; omega)]
+  rw [ite_eq_left (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; change (0x3000 + _ % _) % _ < _; omega_using [hi])]
   have : ∀ i < 128, pcSatBase (0x3000 + BitVec.ofNat 64 i) = CachedSat.domainMem (0x3000 + BitVec.ofNat 64 i) := by
     decide
   exact this i hi
@@ -256,9 +256,9 @@ theorem pcSat_held (words : List (BitVec 64)) (size : words.length = 2218) :
     change (if (0x200000 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat < 0x30000 then _ else _) = _
     have n : i < 2218 := by rw [size] at hi; exact hi
     rw [Offset.add_add, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show 8 * i + j < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show (0x200000 : Addr).toNat + (8 * i + j) < 2 ^ 64 by change 2097152 + _ < _; omega)]
-    simp only [show ¬ (0x200000 : Addr).toNat + (8 * i + j) < 0x30000 by change ¬ 2097152 + _ < _; omega,
+      Nat.mod_eq_of_lt (show 8 * i + j < 2 ^ 64 by omega_using [hj, n]),
+      Nat.mod_eq_of_lt (show (0x200000 : Addr).toNat + (8 * i + j) < 2 ^ 64 by change 2097152 + _ < _; omega_using [hj, n])]
+    simp only [show ¬ (0x200000 : Addr).toNat + (8 * i + j) < 0x30000 by change ¬ 2097152 + _ < _; omega_using [],
       ↓reduceIte]
   exact same.trans (constMem_held 0x200000 words (by rw [size]; decide) i hi)
 

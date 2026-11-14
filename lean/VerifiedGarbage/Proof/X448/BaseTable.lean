@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.X448.BaseTable
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The fixed-base tables represent `[k 256^j] B`, and `baseG` represents `[G] B`
@@ -49,7 +50,7 @@ private theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : 
     cases i with
     | zero => rw [List.getD_cons_zero, zero_nsmul, zero_add]; exact hq
     | succ i =>
-      have := ih _ _ (pointAdd_rep hq hb) hrest i (by simp only [List.length_cons] at hi; omega)
+      have := ih _ _ (pointAdd_rep hq hb) hrest i (by simp only [List.length_cons] at hi; omega_using [hi])
       rw [List.getD_cons_succ, succ_nsmul, add_assoc, add_comm c a]
       exact this
 
@@ -75,7 +76,7 @@ private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
     | succ j =>
       rw [List.getD_cons_succ] at hk ⊢
       have := ih (pointMul 256 b) ((256 : Nat) • c) (pointMul_rep 256 hb) hc.2 j
-        (by simp only [List.length_cons] at hj; omega) hk
+        (by simp only [List.length_cons] at hj; omega_using [hj]) hk
       rw [smul_smul, smul_smul] at this
       rw [smul_smul, pow_succ, ← Nat.mul_assoc]
       exact this
@@ -99,7 +100,7 @@ theorem baseTable_ok (j k : Nat) (hj : j < 57) (hk : k < 9) :
     have hlen : (baseRows.getD j []).length = 8 :=
       beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ hrow)
     have hr := checkTables_ok basePoint baseAff basePoint_rep _ tables_check j
-      (by rw [tables_length.1]; exact hj) k (by rw [hlen]; omega)
+      (by rw [tables_length.1]; exact hj) k (by rw [hlen]; omega_using [hk])
     simp only [baseTable, Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
     rw [smul_smul] at hr
     exact hr

@@ -34,7 +34,7 @@ theorem streamRanges_whole {n size : Nat} {base : Addr} {s t : State}
   intro r hr
   simp only [streamRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [stride] at b1 b2 b6 b7
-  rcases hr with rfl | rfl | rfl | rfl <;> omega
+  rcases hr with rfl | rfl | rfl | rfl <;> omega_arith
 
 theorem StreamInput.byte {s t : State} {base : Addr} {size len i : Nat} {p : BitVec 32}
     (I : StreamInput s base size p len) (hi : i < len) (O : Outside base 0 size s.mem t.mem) :

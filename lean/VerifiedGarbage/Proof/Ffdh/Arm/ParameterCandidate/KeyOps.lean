@@ -25,7 +25,7 @@ private theorem viewLarge {s : State} {base : BitVec 32} {capacity w : Nat}
     (h : KeyReady base capacity w s) : 96 < 8 * capacity := by
   have fit := h.arrayFit (j := 0) (by decide)
   simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fit
-  omega
+  omega_using [fit]
 
 theorem keyClrTop_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
     (workspace : Workspace s base (8 * capacity)) (ready : KeyReady base capacity w s)
@@ -39,8 +39,8 @@ theorem keyClrTop_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
   have fits : base.toNat + 96 < 2 ^ 32 := by
     have := workspace.nowrap
     have := viewLarge ready
-    omega
-  have proof := VG.Proof.Rsa.Arm.Recover.clrTop_ok ready bound (by decide) (by omega)
+    omega_arith
+  have proof := VG.Proof.Rsa.Arm.Recover.clrTop_ok ready bound (by decide) (by omega_using [])
     (rest := []) (Q := fun t => VG.Proof.Rsa.Arm.Keys.Ws t (base + 96#32) (8 * capacity - 96)
       (2 * w + 2) 30 ∧
       VG.Proof.Rsa.Arm.Keys.Keep (base + 96#32) (2 * w + 2) [j] [] s.mem t.mem ∧
@@ -48,7 +48,7 @@ theorem keyClrTop_ok {s : State} {base : BitVec 32} {capacity w j : Nat}
         Proof.Rsa.Mont.numAt s.mem (State.addr base) w j ∧
       Rest VG.Proof.Rsa.Arm.Keys.opRegs (s.withRegions s.rd [keyViewRegion base capacity]) t)
     (fun t ht keep value rest => WP.block_nil ⟨ht, keep, by
-      rw [show 2 * w + 2 - 2 = 2 * w by omega] at value
+      rw [show 2 * w + 2 - 2 = 2 * w by omega_using []] at value
       exact value.trans (keyView_low s.mem base w j fits), rest⟩)
   simp only [List.append_nil] at proof
   refine keyView_inline workspace (viewLarge ready) proof rfl ?_

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PSS signing, by cases
@@ -31,7 +32,7 @@ theorem privateChecked_zero (rest eB xB pB qB dPB dQB qInvB : List Byte) :
   simp only [Rsa.privateChecked, Rsa.modulusValid, os2ip_zero_cons, List.length_cons, Nat.add_sub_cancel]
   rw [ifn]
   simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq]
-  intro ⟨⟨_, h⟩, _⟩; omega
+  intro ⟨⟨_, h⟩, _⟩; omega_using [this, h]
 
 theorem sign_zero₂ (H : Hash) (rest eB pB qB dPB dQB qInvB mHash salt : List Byte) :
     sign H G (0 :: rest) eB pB qB dPB dQB qInvB mHash salt = .invalid := by

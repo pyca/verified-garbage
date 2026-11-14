@@ -79,7 +79,7 @@ theorem points_ok (hc : CfgOk p521) (hC : Law p521.C) (hO : PrimeOrder p521.C)
  have source₀ := FixedGenerator.of_pre hc hC hT ht rfl
  have source := source₀.unch hm.unch (by decide) hm.rd hm.wr hm.syms
  have hp := unitMod_pow_two hc.p_odd (64*P521Joint.K.M.n)
- have hone : P521Joint.K.one<p521.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
+ have hone : P521Joint.K.one<p521.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])
  have one : toM p521.C.p (2^(64*P521Joint.K.M.n)) (p521.mont 1)=1 := by
   rw [show P521Joint.K.M.n=p521.n from rfl,toM_cmont hc.toBaseCfgOk]; rfl
  have pn : p521.C.p<2^(64*P521Joint.K.M.n) := by

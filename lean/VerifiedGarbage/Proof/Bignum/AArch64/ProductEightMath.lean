@@ -23,14 +23,14 @@ theorem wv_window_delta {s t : Mem} {B : Addr} {e n j k : Nat}
     (ho : Outside B (e + 8 * j) (8 * k) s t) :
     wv t B e n + 2 ^ (64 * j) * wv s B (e + 8 * j) k =
       wv s B e n + 2 ^ (64 * j) * wv t B (e + 8 * j) k := by
-  have pre := ho.wv (d := e) (k := j) (by omega) (by omega)
-  have post := ho.wv (d := e + 8 * (j + k)) (k := n - (j + k)) (by omega) (by omega)
+  have pre := ho.wv (d := e) (k := j) (by omega_using []) (by omega_using [hn, hjk])
+  have post := ho.wv (d := e + 8 * (j + k)) (k := n - (j + k)) (by omega_using []) (by omega_using [hn, hjk])
   have hs := wv_add s B e j (k + (n - (j + k)))
   have ht := wv_add t B e j (k + (n - (j + k)))
   have hs' := wv_add s B (e + 8 * j) k (n - (j + k))
   have ht' := wv_add t B (e + 8 * j) k (n - (j + k))
-  have len : j + (k + (n - (j + k))) = n := by omega
-  have off : e + 8 * j + 8 * k = e + 8 * (j + k) := by omega
+  have len : j + (k + (n - (j + k))) = n := by omega_using [hjk]
+  have off : e + 8 * j + 8 * k = e + 8 * (j + k) := by omega_using []
   rw [len] at hs ht
   rw [off] at hs' ht'
   rw [ht, hs, ht', hs', pre, post]
@@ -58,12 +58,12 @@ theorem row_carry_zero {radix span old q operand out c : Nat}
     (hr : 0 < radix) (ho : old ≤ operand)
     (hq : q < radix) (hb : operand < span)
     (hv : out + (radix * span) * c = old + q * operand) : c = 0 := by
-  have hp := Nat.mul_le_mul_right operand (show q + 1 ≤ radix by omega)
+  have hp := Nat.mul_le_mul_right operand (show q + 1 ≤ radix by omega_using [hq])
   have hbound := Nat.mul_lt_mul_of_pos_left hb hr
   rw [Nat.add_mul, Nat.one_mul] at hp
   by_contra h
   have hc := Nat.mul_le_mul_left (radix * span) (show 1 ≤ c by omega)
   simp only [Nat.mul_one] at hc
-  omega
+  omega_using [ho, hv, hp, hbound, hc]
 
 end VG.Proof.Bignum.AArch64.ProductEight

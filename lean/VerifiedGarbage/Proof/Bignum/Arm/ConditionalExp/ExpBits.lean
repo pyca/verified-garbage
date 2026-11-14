@@ -27,21 +27,21 @@ theorem expBitState_step (s : State) {base : BitVec 32} {len w M x E v j : Nat}
       (∀ d, d + 4 ≤ 192 → t.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32 =
         s.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32) ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega : j ≤ 7)
+  have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega_using [hj] : j ≤ 7)
   have valueFit : v * 2 ^ j < 2 ^ 32 := by
     have := Nat.mul_le_mul_left v hp
-    omega
-  refine WP.mono (expRound_ok s h.power valueFit (by omega) (by omega) h.byte h.count) ?_
+    omega_using [hv, this]
+  refine WP.mono (expRound_ok s h.power valueFit (by omega_using [hj]) (by omega_using []) h.byte h.count) ?_
   rintro t ⟨power, byte, count, zero, header, frame, rest⟩
   have expEq : 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
       E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) := by
-    rw [Nat.mul_add, Nat.add_assoc, bit_step hj, show 7 - j = 8 - (j + 1) by omega,
+    rw [Nat.mul_add, Nat.add_assoc, bit_step hj, show 7 - j = 8 - (j + 1) by omega_using [],
       Nat.pow_succ, Nat.mul_comm 2 (E * 2 ^ j), Nat.mul_assoc]
   rw [expEq] at power
   refine ⟨⟨power, ?_, ?_⟩, ?_, header, frame, rest⟩
   · rw [byte, Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_two]
   · rw [count]; congr 1
-  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+  · rw [zero]; exact decide_eq_decide.mpr (by omega_using [])
 
 theorem expBits_ok (s : State) {base : BitVec 32} {len w M x E v : Nat}
     (h : ExpBitState ok base len w M x E v 0 s) (hv : v < 256) :
@@ -57,7 +57,7 @@ theorem expBits_ok (s : State) {base : BitVec 32} {len w M x E v : Nat}
   refine WP.loop (M := isa) I ?_ 8 s ?_
   · intro k t inv
     obtain ⟨j, jk, hk, state, header, frame, rest⟩ := inv
-    refine WP.mono (expBitState_step t state hv (by omega)) ?_
+    refine WP.mono (expBitState_step t state hv (by omega_using [jk, hk])) ?_
     rintro u ⟨next, zero, headerU, frameU, restU⟩
     have headerAll := fun d hd => (headerU d hd).trans (header d hd)
     by_cases last : j + 1 = 8
@@ -69,7 +69,7 @@ theorem expBits_ok (s : State) {base : BitVec 32} {len w M x E v : Nat}
         simpa only [last, Nat.sub_self, Nat.pow_zero, Nat.div_one, show 2 ^ 8 = 256 from rfl,
           Nat.mul_comm E 256] using power
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, next, headerAll, frame.trans frameU, rest.trans restU⟩
+      refine ⟨?_, k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, last], next, headerAll, frame.trans frameU, rest.trans restU⟩
       change some (!u.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
   · exact ⟨0, by decide, by decide, h, fun _ _ => rfl, Frame.refl _ _, Rest.refl _ _⟩

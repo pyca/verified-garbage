@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Cast5.Arm.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # CAST5 key expansion and ECB on baseline ARMv7 -/
+/-! # CAST5 (RFC 2144) on ARMv7 -/
 
 @[expose] public section
 

@@ -46,10 +46,10 @@ theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
   obtain ⟨s0, t0, ⟨hs, ht, sp, hP⟩, ps, pt⟩ := hp
   have ps' := push_pushed
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide)
-    (s := s0) (by have := hs.spLo; simp only [List.length_cons, List.length_nil]; omega)
+    (s := s0) (by have := hs.spLo; simp only [List.length_cons, List.length_nil]; omega_using [this])
   have pt' := push_pushed
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) (by decide)
-    (s := t0) (by have := ht.spLo; simp only [List.length_cons, List.length_nil]; omega)
+    (s := t0) (by have := ht.spLo; simp only [List.length_cons, List.length_nil]; omega_using [this])
   have es : pcPushed s0 = s := Option.some.inj (ps'.symm.trans ps)
   have et : pcPushed t0 = t := Option.some.inj (pt'.symm.trans pt)
   subst s; subst t

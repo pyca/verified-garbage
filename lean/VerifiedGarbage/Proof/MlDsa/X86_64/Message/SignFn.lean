@@ -37,7 +37,7 @@ theorem depthCompN (n : Nat) : Comp (fun c => decide (c.depth ≤ n + 1)) (fun c
   · simp only [Code.depth, Nat.max_le, Bool.decide_and]
   · simp only [Code.depth, Nat.max_le, Bool.decide_and]
   · simp only [Code.depth]
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_using [])
 
 /-- `NoSp` from evaluating the code. -/
 noncomputable abbrev noSpB (c : Prog isa) : Bool := c.allInstrs fun i => !Taint.clobbers i .rsp
@@ -71,7 +71,7 @@ theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
     SignFn p (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := by
   have h3 := ok3_of hp
   have dep : ∀ {c : Prog isa}, c.depth ≤ 3 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true h
-  have dep2 : ∀ {c : Prog isa}, c.depth ≤ 2 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true (by omega)
+  have dep2 : ∀ {c : Prog isa}, c.depth ≤ 2 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true (by omega_using [h])
   refine ⟨sign_correct (prims_okWith v) h3 (Proof.MlDsa.X86_64.Sign.sign_ctl v h3), sign_ct (prims_okWith v) h3,
     noSp_of (Same.ok (sign_same (Comp.all _) (noSpB_of v.ok.ntt.nosp) (noSpB_of v.ok.invNtt.nosp)
       (noSpB_of v.ok.mul.nosp) (noSpB_of v.ok.add.nosp) (noSpB_of v.ok.sub.nosp)

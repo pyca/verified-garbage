@@ -21,7 +21,7 @@ theorem field_keep {s t : State} {base : Addr} {f other : Field}
     (O : Outside base (Layout.field f) 4 s.mem t.mem) (h : other ≠ f) :
     pointerValue base t (.input other) = pointerValue base s (.input other) := by
   have B := VG.Proof.Dsa.X86.Layout.field_bounds other
-  have H := O.val32 (k := 1) (field_separate h) (by have : Layout.saved = 8256 := rfl; omega)
+  have H := O.val32 (k := 1) (field_separate h) (by have : Layout.saved = 8256 := rfl; omega_using [B, this])
   apply BitVec.eq_of_toNat_eq
   simpa only [val32, w32, pointerValue, Nat.mul_zero, Nat.add_zero] using H
 

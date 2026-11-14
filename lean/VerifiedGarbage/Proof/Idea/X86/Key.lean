@@ -80,18 +80,18 @@ theorem arg_src {s : State} {i n : Nat} (hi : 4 * i + 4 ≤ n) (h : ⟨argAddr s
   show Region.Contains _ (addr (s.gpr .esp) (4 + 4 * i)) 4
   simp only [argAddr]
   rw [show ((s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 : Addr) = addr (s.gpr .esp) 4 from rfl,
-    addr_eq (by omega), addr_eq (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+    addr_eq (by omega_using [hi, hf]), addr_eq (by omega_using [hi, hf])]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [hf])
 
 theorem expand_correct (s : State) (hs : expandContract.pre s) :
     WP isa expandKey s (fun s' => abiPreserved s s' ∧ expandContract.post s s') := by
   obtain ⟨hrd, hwr, dKS, dAS, dRS, fitK, fitS, fitSp⟩ := hs
   have hargs : ⟨argAddr s 0, 8⟩ ∈ s.rd := by rw [hrd]; simp
-  obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .eax _ _ s (arg_src (i := 0) (by decide) hargs (by omega))
+  obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .eax _ _ s (arg_src (i := 0) (by decide) hargs (by omega_using [fitSp]))
   have hargs₁ : ⟨argAddr s₁ 0, 8⟩ ∈ s₁.rd := by
     rw [e₁.rd]; simp only [argAddr, e₁.reg .esp (by decide)]; exact hargs
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mov_run .ecx _ _ s₁ (arg_src (i := 1) (by decide) hargs₁
-    (by rw [e₁.reg .esp (by decide)]; omega))
+    (by rw [e₁.reg .esp (by decide)]; omega_using [fitSp]))
   have a1 : arg s₁ 1 = arg s 1 := by simp only [arg, argAddr, e₁.mem, e₁.reg .esp (by decide)]
   have ecx₂ : s₂.gpr .ecx = arg s 1 := v₂.trans a1
   have eax₂ : s₂.gpr .eax = arg s 0 := (e₂.reg .eax (by decide)).trans v₁
@@ -99,25 +99,25 @@ theorem expand_correct (s : State) (hs : expandContract.pre s) :
   have hok : Ok eCfg s₂ := by
     refine ⟨fun k hk => ?_, fun k hk => ?_, ?_, fun k hk j hj => ?_⟩
     · show InRegions s₂.wr (addr (s₂.gpr .ecx) (4 * k)) 4
-      rw [e₀₂.wr, hwr, ecx₂, addr_eq (by simp only [eCfg] at hk; omega)]
-      exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by simp only [eCfg] at hk; omega)
-        (by simp only [eCfg] at hk; omega)⟩
+      rw [e₀₂.wr, hwr, ecx₂, addr_eq (by simp only [eCfg] at hk; omega_using [fitS, hk])]
+      exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by simp only [eCfg] at hk; omega_using [hk])
+        (by simp only [eCfg] at hk; omega_using [hk])⟩
     · show InRegions (s₂.rd ++ s₂.wr) (addr (s₂.gpr .eax) (4 * k)) 4
       simp only [eCfg] at hk
-      rw [e₀₂.rd, hrd, eax₂, addr_eq (by omega)]
-      exact ⟨⟨(arg s 0).setWidth 64, 16⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      rw [e₀₂.rd, hrd, eax₂, addr_eq (by omega_using [fitK, hk])]
+      exact ⟨⟨(arg s 0).setWidth 64, 16⟩, by simp, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
     · show (s₂.gpr .ecx).toNat + 4 * 26 ≤ 2 ^ 32
-      rw [ecx₂]; omega
+      rw [ecx₂]; omega_using [fitS]
     · simp only [eCfg] at hk hj
       show Mem.Sep (addr (s₂.gpr .ecx) (4 * k)) 4 (addr (s₂.gpr .eax) (4 * j)) 4
-      rw [ecx₂, eax₂, addr_eq (by omega), addr_eq (by omega)]
-      exact fun x h₁ h₂ => dKS x (Region.Contains.byte (Offset.contains_base _ (by omega) (by omega)) h₂)
-        (Region.Contains.byte (Offset.contains_base _ (by omega) (by omega)) h₁)
+      rw [ecx₂, eax₂, addr_eq (by omega_using [fitS, hk]), addr_eq (by omega_using [fitK, hj])]
+      exact fun x h₁ h₂ => dKS x (Region.Contains.byte (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) h₂)
+        (Region.Contains.byte (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])) h₁)
   obtain ⟨s', hs', hout, hrd', hwr', hoth, hfr⟩ := linear_ok expand_check hok
     (fun i => s₂.mem.readW (wordAddr (s₂.gpr .eax) i) 32)
     (fun r i h => by simp at h) (fun j hj => by
       have hj' : j < 4 := hj
-      refine ⟨by omega, ?_⟩
+      refine ⟨by omega_using [hj'], ?_⟩
       simp only [Nat.zero_add]
       rfl)
   refine WP.of_runBlock ⟨s', ?_, ⟨fun r hr => ?_, ?_⟩, ?_⟩
@@ -138,19 +138,19 @@ theorem expand_correct (s : State) (hs : expandContract.pre s) :
     rw [← getD_lt _ 0 hn, ← getD_lt _ 0 hn]
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    have hw := hout (n / 2) (eG (n / 2)) (List.mem_map.mpr ⟨n / 2, List.mem_range.mpr (by omega), rfl⟩)
-      (16 * (n % 2) + b) (by omega)
-    rw [scheduleAt_getLsbD32 _ _ hn hb, ← addr_eq (by omega), ← ecx₂]
+    have hw := hout (n / 2) (eG (n / 2)) (List.mem_map.mpr ⟨n / 2, List.mem_range.mpr (by omega_using [hn]), rfl⟩)
+      (16 * (n % 2) + b) (by omega_using [hb])
+    rw [scheduleAt_getLsbD32 _ _ hn hb, ← addr_eq (by omega_using [fitS, hn]), ← ecx₂]
     show (s'.mem.readW (wordAddr (s₂.gpr eCfg.base) (n / 2)) 32).getLsbD _ = _
     rw [hw]
     have src := keyLoc32_spec (keyBit_lt (2 * (n / 2) + (16 * (n % 2) + b) / 16) ((16 * (n % 2) + b) % 16))
     simp only [eG, xorBits_cons, xorBits_nil, Bool.xor_false]
     rw [bitOf_word _ _ _ (by simpa [expandSrc32] using src.2.1), expandKey_getLsbD _ hn hb]
     simp only [expandSrc32] at src ⊢
-    rw [show 2 * (n / 2) + (16 * (n % 2) + b) / 16 = n by omega, show (16 * (n % 2) + b) % 16 = b by omega]
+    rw [show 2 * (n / 2) + (16 * (n % 2) + b) / 16 = n by omega_using [hb], show (16 * (n % 2) + b) % 16 = b by omega_using [hb]]
       at src ⊢
-    rw [wordAddr, eax₂, addr_eq (by omega), readW32_getLsbD _ _ src.2.1, Offset.add_ofNat_add_ofNat,
-      src.2.2.1, src.2.2.2, keyValue_getLsbD _ (keyBit_lt _ _), keyAt_getD _ _ (by omega), e₀₂.mem]
+    rw [wordAddr, eax₂, addr_eq (by omega_using [fitK, src]), readW32_getLsbD _ _ src.2.1, Offset.add_ofNat_add_ofNat,
+      src.2.2.1, src.2.2.2, keyValue_getLsbD _ (keyBit_lt _ _), keyAt_getD _ _ (by omega_using []), e₀₂.mem]
 
 def keyTaint : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 12 }
 
@@ -161,7 +161,7 @@ theorem keyTaint_wf {s : State} (h : expandContract.pre s) : VG.X86.Taint.Wf key
     fun _ h => (List.not_mem_nil h).elim⟩
   simp only [keyTaint, wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r rfl
-  exact Taint.frame_disjoint (n := 8) (by omega) ro ao
+  exact Taint.frame_disjoint (n := 8) (by omega_using [spfit]) ro ao
 
 theorem keyTaint_agree {s₁ s₂ : State} (h₁ : expandContract.pre s₁) (h₂ : expandContract.pre s₂)
     (hp : expandContract.pub s₁ s₂) : VG.X86.Taint.Agree keyTaint s₁ s₂ := by
@@ -178,7 +178,7 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : expandContract.pre s₁) (h�
     rw [Taint.argByte_eq (fit _ h₁) h4 hk, Taint.argByte_eq (fit _ h₂) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_using [hk]))
 
 theorem expandKey_constantTime : ConstantTime isa expandContract.pre expandContract.pub expandKey :=
   VG.Taint.constantTime (A := taint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)

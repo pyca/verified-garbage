@@ -129,9 +129,9 @@ theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
   have hHNB := HNB_le s₀
   have hwrap : (dp s₀ + BitVec.ofNat 64 (H s₀)).toNat + 64 * NB s₀ ≤ 2 ^ 64 := by
     have := hp.wrap_d
-    rw [BitVec.toNat_add, toNat_ofNat_lt (by omega)]
-    omega
-  have hn : (BitVec.ofNat 64 (64 * NB s₀)).toNat = 64 * NB s₀ := toNat_ofNat_lt (by omega)
+    rw [BitVec.toNat_add, toNat_ofNat_lt (by omega_using [hL, hH])]
+    omega_using [hHNB, this]
+  have hn : (BitVec.ofNat 64 (64 * NB s₀)).toNat = 64 * NB s₀ := toNat_ofNat_lt (by omega_using [hL, hHNB])
   simp only [Proof.ChaCha20.xorRISCV64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs),
     callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a2 ∉ linkRegs),
@@ -139,7 +139,7 @@ theorem Args.pre {s₀ s : State} (hp : APre s₀) (h : Args s₀ s) :
     h.a0, h.a1, h.a2, h.a3, h.a4, hn]
   have hSD : (cpR s₀).Disjoint (blR s₀) := (hp.st_d.sub_left (cpR_sub s₀)).sub_right (blR_sub s₀)
   have hDB : (blR s₀).Disjoint (wkR s₀) := (hp.st_d.sub_left (wkR_sub s₀)).symm.sub_left (blR_sub s₀)
-  exact ⟨trivial, trivial, hSD, hSD, Offset.disjoint _ (by omega) (by omega) (by omega), hDB, hDB,
+  exact ⟨trivial, trivial, hSD, hSD, Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []), hDB, hDB,
     .inl trivial, hwrap, hwrap, al4_of_al8 hp.st_al (by decide), al4_of_al8 hp.st_al (by decide)⟩
 
 /-! ## The call of the block function -/
@@ -192,12 +192,12 @@ theorem TArgs.pre {s₀ s : State} (h : TArgs s₀ s) :
   simp only [Proof.ChaCha20.blockRISCV64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     callEntry_gpr' s (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.a1 ∉ linkRegs),
     h.a0, h.a1]
-  exact ⟨trivial, trivial, Offset.disjoint_base _ (by omega) (by omega), by have := h.al; omega,
+  exact ⟨trivial, trivial, Offset.disjoint_base _ (by omega_using []) (by omega_using []), by have := h.al; omega_using [this],
     al4_of_al8 h.al (by decide)⟩
 
 theorem TArgs.call {s₀ s : State} (h : TArgs s₀ s) :
     WP isa (.call "vg_chacha20_block" Impl.ChaCha20.RISCV64.block) s (TAfter s₀) :=
-  block_call h.a0 h.a1 (Offset.disjoint_base _ (by omega) (by omega)) (by have := h.al; omega)
+  block_call h.a0 h.a1 (Offset.disjoint_base _ (by omega_using []) (by omega_using [])) (by have := h.al; omega_using [this])
     (al4_of_al8 h.al (by decide)) h.covers.1 h.covers.2
     fun _ k _ => ⟨by rw [k.cs .s5 (by decide), h.s5], by rw [k.cs .s6 (by decide), h.s6],
       by rw [k.cs .s7 (by decide), h.s7]⟩
@@ -314,7 +314,7 @@ theorem apply_rel : RelCT isa (fun x y => x = a ∧ y = b) apply fun _ _ => True
     have he := hp.2
     rw [e4 hp.1.1.1] at he
     simp [hlt] at he
-  have hle : L a ≤ N a := by omega
+  have hle : L a ≤ N a := by omega_using [hlt]
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
     (RelCT.seq (part2_rel h) (RelCT.seq (part3_rel h) ?_))
   exact taintRegs [.s5] (fun x y ⟨⟨hx, sx⟩, ⟨hy, sy⟩⟩ => by

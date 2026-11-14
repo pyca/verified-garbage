@@ -62,38 +62,38 @@ theorem ctrs_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
       (c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 8) (0 : BitVec 64)).writeW (c.W + BitVec.ofNat 64 48)
       (BitVec.ofNat 8 (15 - c.nl - 1) : Byte)) := by
     rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.gpr, u₄.gpr, u₄.other .r6 (by decide), u₃.gpr, u₂.gpr,
-      u₁.other .r6 (by decide), h6, Proof.AesCcm.sub_low_byte (by omega), u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₂.mem, u₁.mem, u₁.gpr]
+      u₁.other .r6 (by decide), h6, Proof.AesCcm.sub_low_byte (by omega_using [h13]), u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₂.mem, u₁.mem, u₁.gpr]
     rfl
   have hb : VG.Proof.Gather.PPC64LE.BytesPre s₉ N (c.W + BitVec.ofNat 64 49) c.nl :=
     { r3 := by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.gpr, g₄ .r5 (by decide) (by decide), h5]
       r9 := by rw [u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), u₆.gpr,
         g₄ .r14 (by decide) (by decide), E.r14]; rfl
       r4 := by rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, g₄ .r6 (by decide) (by decide), h6]
-      pos := by omega
-      lt := by omega
+      pos := by omega_using [h7]
+      lt := by omega_using [h13]
       rd := by rw [pk₉.rd, pk₉.wr]; exact hN.rd
-      wr := E₉.perm.wC (by omega)
-      disj := hN.wd (by omega) }
+      wr := E₉.perm.wC (by omega_using [h13])
+      disj := hN.wd (by omega_using [h13]) }
   refine WP.mono (copyBytes_wp s₉ hb) fun s₁₀ ⟨hm, _, k₁₀⟩ => ⟨pk₉.trans (PK.ofKeeps k₁₀), ?_, ?_⟩
   · rw [hm, m₉]
     have cB : ∀ d k, 48 ≤ d → d + k ≤ 64 →
         (⟨c.W + BitVec.ofNat 64 48, 16⟩ : Region).Contains (c.W + BitVec.ofNat 64 d) k :=
-      fun d k h₁ h₂ => Offset.contains c.W h₁ (by omega) (by decide)
+      fun d k h₁ h₂ => Offset.contains c.W h₁ (by omega_using [h₂]) (by decide)
     refine ((Proof.Cmac.frame_store2 _ _ _).writeW (List.mem_singleton_self _) _ (cB 48 1 (by decide) (by decide))).trans
       (writeBytes_frame _ _ _ ?_)
-    rw [length_bytesAt]; exact cB 49 c.nl (by decide) (by omega)
+    rw [length_bytesAt]; exact cB 49 c.nl (by decide) (by omega_using [h13])
   · have hx : bytesAt s₉.mem N c.nl = bytesAt s.mem N c.nl := by
       rw [m₉]
       refine Proof.Cmac.bytesAt_frame (rs := [⟨c.W + BitVec.ofNat 64 48, 16⟩])
         (((Proof.Cmac.frame_store2 _ _ _).writeW (List.mem_singleton_self _) _
-          (Offset.contains c.W (Nat.le_refl _) (by decide) (by decide)))) (fun r hr => ?_) (by omega)
+          (Offset.contains c.W (Nat.le_refl _) (by decide) (by decide)))) (fun r hr => ?_) (by omega_using [h13])
       simp only [List.mem_singleton] at hr; subst hr; exact hN.wd (by decide)
     have hz : bytesAt ((s.mem.writeW (c.W + BitVec.ofNat 64 48) (0 : BitVec 64)).writeW
         (c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 8) (0 : BitVec 64)) (c.W + BitVec.ofNat 64 48) 16 =
         Spec.Ccm.zeros 16 := zeros16_bytes _ _
     rw [hm, hx, m₉, show c.W + BitVec.ofNat 64 49 = c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 1 from
         (Offset.add_add c.W 48 1).symm,
-      Proof.AesCcm.bytesAt_writeBytes_at _ _ (o := 1) (n := 16) _ (by rw [length_bytesAt]; omega) (by decide),
+      Proof.AesCcm.bytesAt_writeBytes_at _ _ (o := 1) (n := 16) _ (by rw [length_bytesAt]; omega_using [h13]) (by decide),
       Proof.AesCcm.bytesAt_writeW8_base _ _ _ (by decide) (by decide), hz, length_bytesAt]
     simp only [Spec.Ccm.ctrBlock, length_bytesAt, Proof.AesCcm.be_zero, Spec.Ccm.zeros, List.take_succ_cons,
       List.take_zero, List.drop_replicate, List.cons_append, List.nil_append]
@@ -112,16 +112,16 @@ theorem tagOut_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (S : Slots c s.
   have pk₃ : PK s s₃ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans (PK.ofUpd u₃))
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   have hwt : (⟨c.W, c.tl⟩ : Region).Disjoint ⟨c.T, c.tl⟩ :=
-    (L.t_w.sub_right (Region.sub_prefix (by omega))).symm.sub_left (Region.sub_prefix (Nat.le_refl _))
+    (L.t_w.sub_right (Region.sub_prefix (by omega_using [ht16]))).symm.sub_left (Region.sub_prefix (Nat.le_refl _))
   have hb : VG.Proof.Gather.PPC64LE.BytesPre s₃ c.W c.T c.tl :=
     { r3 := by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.r14]
       r9 := by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, S.tag]
       r4 := by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.r15]
-      pos := by omega
-      lt := by omega
+      pos := by omega_using [ht4]
+      lt := by omega_using [ht16]
       rd := by
         rw [pk₃.rd, pk₃.wr]
-        have h := E.perm.wCR (d := 0) (n := c.tl) (by omega)
+        have h := E.perm.wCR (d := 0) (n := c.tl) (by omega_using [ht16])
         rw [BitVec.add_zero] at h
         exact h
       wr := by rw [pk₃.wr]; exact hT
@@ -130,7 +130,7 @@ theorem tagOut_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (S : Slots c s.
   · rw [hm, m₃]; exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _)
   · rw [hm, m₃]
     have := Proof.AesCcm.bytesAt_writeBytes_base s.mem c.T (bytesAt s.mem c.W c.tl) (n := c.tl)
-      (by rw [length_bytesAt]) (by have := L.tw; omega)
+      (by rw [length_bytesAt]) (by have := L.tw; omega_using [ht16])
     rw [this, length_bytesAt, List.drop_eq_nil_of_le (by rw [length_bytesAt]), List.append_nil]
 
 end VG.Proof.AesCcm.PPC64LE

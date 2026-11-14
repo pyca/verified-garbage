@@ -60,17 +60,17 @@ theorem lays_ok {s₁ : State} (hp : PreB s₁) :
     obtain ⟨hlen, h1, h2, h3⟩ := lens_inv len (hls len (List.mem_cons_self ..))
     have hl0 := (lens_facts len hlen).2.2.2.1
     refine WP.seq (WP.mono (lay_ok bflyInv_spec negZetaTab_of hp.fitF hp.fitS hlen .sub (.inr rfl)
-      (fun c => 256 / len - 1 - c) (fun c hc => by omega)
+      (fun c => 256 / len - 1 - c) (fun c hc => by omega_using [h2])
       (fun c hc => by
         simp only [nextZ, reduceCtorEq, ite_false]
-        rw [show 4 * (256 / len - 1 - c) = 4 * (256 / len - 1 - (c + 1)) + 4 by omega, BitVec.ofNat_add,
+        rw [show 4 * (256 / len - 1 - c) = 4 * (256 / len - 1 - (c + 1)) + 4 by omega_using [h1, hc], BitVec.ofNat_add,
           ← BitVec.add_assoc]
         exact BitVec.add_sub_cancel _ _)
       G s hI.r0 (by rw [hI.r1, hk]; rfl) hI.r4 hI.poly (by rw [hI.keep.wr]; exact hp.wF)
       (by rw [hI.keep.wr]; exact List.mem_append_right _ hp.wS) hp.fs.symm hI.tab)
       fun s' ⟨hP, hf, h0, h1', hk'⟩ => ?_)
     refine lays_ok hp ls _ (128 / len - 1) s' (fun l hl => hls l (List.mem_cons_of_mem _ hl)) hc
-      (hI.step hP hf h0 (by rw [h1']; congr 3; omega) hk' hp.fs.symm)
+      (hI.step hP hf h0 (by rw [h1']; congr 3; omega_using [h3]) hk' hp.fs.symm)
 
 theorem chain_inv : ChainInv 255 nttInvLens := by simp only [nttInvLens, ChainInv]; decide
 
@@ -122,7 +122,7 @@ theorem scale_step {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {m₀ : Mem}
     rw [h.r0, eA, ← coeffAt_eq, h.coeff t ht, ite_eq_right (Nat.lt_irrefl t), coeffAt_eq, word_val hG ht]
   rw [scale_split, WP.block_append_iff]
   refine WP.of_runBlock ⟨_, by
-    rw [runBlock_cons, exec_ldr (by omega) (by rw [h.r0, eA]; exact rd_at hw' htn), runStep_some, runBlock_nil], ?_⟩
+    rw [runBlock_cons, exec_ldr (by omega_using []) (by rw [h.r0, eA]; exact rd_at hw' htn), runStep_some, runBlock_nil], ?_⟩
   rw [WP.block_append_iff, hv]
   refine WP.mono (mulz_ok (s := s.setReg .r8 _) (b := BitVec.ofNat 32 (G[t]!).val)
     (z₂ := BitVec.ofNat 32 cInv.val >>> 14) (z₁ := BitVec.ofNat 32 cInv.val <<< 18 >>> 25)
@@ -152,8 +152,8 @@ theorem scale_step {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {m₀ : Mem}
     · subst e; rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self t), Fin.mul_comm]
     · rw [ite_eq_right e]
       by_cases hj' : j < t
-      · rw [ite_eq_left hj', ite_eq_left (by omega)]
-      · rw [ite_eq_right hj', ite_eq_right (by omega)]
+      · rw [ite_eq_left hj', ite_eq_left (by omega_using [hj'])]
+      · rw [ite_eq_right hj', ite_eq_right (by omega_using [e, hj'])]
   · rw [hzf]; exact count_z (k := 1) ht (by decide) (by decide)
 
 theorem scale_ok {p : BitVec 32} (hp : p.toNat + 1024 ≤ 2 ^ 32) {G : Poly} {s : State}

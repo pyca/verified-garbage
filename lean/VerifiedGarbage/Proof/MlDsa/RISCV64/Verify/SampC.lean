@@ -53,7 +53,7 @@ theorem ball_m {σ : State} :
   exact ⟨⟨vptr_ok rfl (by decide), by vsep hF⟩, ⟨vptr_ok rfl (by decide), by vsep hF⟩,
     ⟨vptr_ok rfl (by decide), by vsep hF⟩, show ix Reg.s11 ∈ vWb by decide,
     show ix Reg.s11 ∈ vWb by decide, by vsep hF, by vsep hF, by vsep hF, hF.ball.1,
-    ⟨by rcases hF.ct with e | e | e <;> omega, by rcases hF.ct with e | e | e <;> omega, hF.ball.2⟩, by valsep, by valsep⟩
+    ⟨by rcases hF.ct with e | e | e <;> omega_using [e], by rcases hF.ct with e | e | e <;> omega_using [e], hF.ball.2⟩, by valsep, by valsep⟩
 
 theorem vball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
     WP isa (sampled (ballAt P (.s8, 0) p.ctildeLen p.τ pC) pC) s (VS4 p STK σ) := by
@@ -63,7 +63,7 @@ theorem vball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
   unfold sampled ballAt
   refine WP.seq (KeyGen.ball_ok hP.ball hs hS (ball_m hF) fun s₃ k₃ hred hout => ?_)
   have eb : bytesAt s.mem (lpa (vlay p STK σ) (.s8, 0)) p.ctildeLen = vCt p (sgOf p σ) := by
-    have := sig_slice h.vb.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega)
+    have := sig_slice h.vb.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega_arith)
     rw [List.drop_zero] at this
     exact this
   rw [eb] at hout
@@ -81,7 +81,7 @@ theorem vball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
       (Reduced s₃.mem (aA p STK σ r s') → Reduced s₄.mem (aA p STK σ r s')) := fun r hr s' hs' => by
     rw [← r₅.mem]
     exact ⟨polyAt_keepW hL k₄.frame (by vsep hF) (by decide) rfl, reduced_keepW hL k₄.frame (by vsep hF) (by decide) rfl⟩
-  have dn : ∀ r s', s' < p.ℓ → (Dn p.k 0 r s' ↔ r < p.k) := fun r s' _ => by simp only [Dn]; omega
+  have dn : ∀ r s', s' < p.ℓ → (Dn p.k 0 r s' ↔ r < p.k) := fun r s' _ => by simp only [Dn]; omega_using []
   obtain ⟨q, hq, hok, hbad⟩ := h.ok
   refine ⟨kv₄, fun r hr s' hs' => (kA4 r hr s' hs').2 ((kA3 r hr s' hs').2 (h.red r s' hs' ((dn r s' hs').mpr hr))),
     pi.1, ⟨q && decide ((s₃.gpr .a0).setWidth 32 = 1), ?_, fun hq' => ⟨fun r hr s' hs' => ?_, ?_⟩, fun hq' => ?_⟩⟩
@@ -124,8 +124,8 @@ theorem ball_piece :
       fun x hs => ok x hs).mono (fun _ _ h => h) fun x y h => ⟨σ, h⟩
   · refine ⟨σ₁, vc_twoL pub h₁.vb.vc h₂.vb.vc, ?_⟩
     show bytesAt _ ((vlay p STK σ₁).A 4 0) _ = bytesAt _ ((vlay p STK σ₁).A 4 0) _
-    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega), pub.2.2.2.2.2.2.2.1, vlay_pub pub,
-      sig_slice h₂.vb.vc (by have := hF.sig; have := hF.hint; omega)]
+    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega_arith), pub.2.2.2.2.2.2.2.1, vlay_pub pub,
+      sig_slice h₂.vb.vc (by have := hF.sig; have := hF.hint; omega_arith)]
 
 /-! ## The samplers -/
 

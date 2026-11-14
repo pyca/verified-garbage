@@ -64,7 +64,7 @@ theorem montOne_ct : RelCT isa (Two MontR2)
     have fit : arrAt p.words 3 + 32 ≤ 8 * p.capacity := by
       have fits : arrAt p.words 8 ≤ 8 * p.capacity := left.1.width ▸ left.1.layout.2.2.1
       dsimp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits ⊢
-      omega
+      omega_using [fits]
     exact montOp_ct (o := 1) (a := 1) (b := 4)
       (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
       (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])

@@ -68,7 +68,7 @@ theorem productLoad_ok (s : State) {p : Inputs} {sp : BitVec 32} {count low expo
       Core p sp t ∧ Power5 p exponent t ∧ numAt t.mem (State.addr p.base) p.w 1 = entryValue p low ∧
       TablePrefix p count t.mem ∧ WorkspaceEq (State.addr p.output) (bytes p) s.mem t.mem ∧
       Frame [⟨State.addr p.base,8*p.len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have geometry := entry_geometry h.memory (by omega : low < 32)
+  have geometry := entry_geometry h.memory (by omega_using [hc, hl] : low < 32)
   obtain ⟨address,sourceFit,read,sep⟩ := geometry
   have header := nativeHeader_of_layout s.mem p.base h.memory.ready.workspace.nowrap (Nat.le_refl _) h.memory.ready.layout
   rw [h.memory.ready.width] at header
@@ -78,7 +78,7 @@ theorem productLoad_ok (s : State) {p : Inputs} {sp : BitVec 32} {count low expo
     have := h.memory.ready.layout.2.2.1
     rw [h.memory.ready.width] at this
     simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   rw [VG.Impl.Ffdh.Arm.CombPrecompute.productLoad,WP.seq_iff,WP.block_append_iff,WP.block_append_iff]
   refine WP.mono (localLoad_ok s .r3 h.memory.context.locals (d := 40) (by decide)) ?_
   rintro u ⟨loaded,memU,restU⟩
@@ -115,11 +115,11 @@ theorem productLoad_ok (s : State) {p : Inputs} {sp : BitVec 32} {count low expo
   have selected := value.trans (table low hl)
   rw [mz] at frame
   have contextEq : WorkspaceEq (State.addr p.output) (bytes p) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := h.memory.output.fits; omega) frame
+    WorkspaceEq.of_frame (by have := h.memory.output.fits; omega_using [this]) frame
       (by intro r hr; have eq := List.mem_singleton.mp hr; subst r; exact h.memory.workspaceSeparate.symm)
   have tableT : TablePrefix p count t.mem := by
     intro digit hd
-    rw [contextEq.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega))]
+    rw [contextEq.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [hc, hd]))]
     exact table digit hd
   exact ⟨coreT,powerT,selected,tableT,contextEq,frame,rz.trans rest⟩
 

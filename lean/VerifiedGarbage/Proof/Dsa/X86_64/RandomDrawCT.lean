@@ -52,7 +52,7 @@ private theorem head_ok {p : RandomDrawDecisionPublic} {s : State} (h : RandomDr
   have hw := VG.Proof.Dsa.significant_fits p.draw.qBytes
   have hq := p.draw.qlen
   refine WP.mono (random_drawHead_ok hr.scr hr.sp hrlen hr.usedWord hr.width p.draw.usedBound p.draw.randBound
-    (by dsimp only [RandomDrawPublic.context]; omega)) fun t ⟨hc, hm, hk⟩ => ?_
+    (by dsimp only [RandomDrawPublic.context]; omega_using [hw, hq])) fun t ⟨hc, hm, hk⟩ => ?_
   exact ⟨⟨rand, hlen, m, hr.congr hm hk, ha⟩, hc⟩
 
 private theorem full_of_head {p : RandomDrawDecisionPublic} {s : State}
@@ -60,7 +60,7 @@ private theorem full_of_head {p : RandomDrawDecisionPublic} {s : State}
     p.draw.used + p.draw.width ≤ p.draw.randLen := by
   simp only [eval, h.2, Option.some.injEq, decide_eq_false_iff_not] at hc
   have := p.draw.usedBound
-  omega
+  omega_using [hc, this]
 
 def RandomDrawDecisionFull (p : RandomDrawDecisionPublic) (s : State) : Prop :=
   RandomDrawDecisionPre p s ∧ p.draw.used + p.draw.width ≤ p.draw.randLen

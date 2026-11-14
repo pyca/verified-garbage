@@ -23,15 +23,15 @@ theorem lanesFrom_ok (g : Glob) (hg : DataOk g) {B p sk : Nat} (hsk : sk ≤ 15)
   induction n with
   | zero => exact WP.block_nil h
   | succ n ih =>
-    exact WP.seq (WP.mono (ih (by omega)) fun t ht => lane_ok g hg hsk (by omega) ht)
+    exact WP.seq (WP.mono (ih (by omega_using [hn])) fun t ht => lane_ok g hg hsk (by omega_using [hn]) ht)
 
 theorem ofNat_wrap (B k : Nat) : BitVec.ofNat 8 (B + (k + 16) % 256) = BitVec.ofNat 8 (B + 16 + k) := by
-  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_ofNat]; omega
+  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_ofNat]; omega_using []
 
 theorem byte_shift (x : BitVec 8) (B : Nat) : x - bB B - 16 = x - bB (B + 16) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (16 : BitVec 8).toNat = 16 from rfl]
-  omega
+  omega_using []
 
 theorem treg_step : ∀ a < 16, treg a ∈ stepRegs := by decide
 
@@ -41,14 +41,14 @@ theorem group_ok (g : Glob) (hg : DataOk g) {B p sk : Nat} (hsk : sk ≤ 15) {s 
   apply WP.seq (WP.mono (lanesFrom_ok g hg hsk (Nat.le_refl 16) h) fun s₁ h₁ => ?_)
   refine WP.mono (rotate_ok true h₁.prga.consts h₁.prga.j fun _ => h₁.prga.nb) fun t ⟨tab, j, nb, x8, gg, vv, m, rd, wr, sp⟩ => ?_
   have hd0 : doneAt g (doneAt g p sk 16) 0 0 = doneAt g p sk 16 := by
-    have := h₁.data.le; simp only [doneAt] at this ⊢; omega
+    have := h₁.data.le; simp only [doneAt] at this ⊢; omega_using []
   let q := doneAt g p sk 16
   have notRot : ∀ r, r ∉ rotRegs → r ∉ stepRegs ∨ r = negBase → True := fun _ _ _ => trivial
   exact {
     prga := by
       rw [hd0]
       refine ⟨fun k hk => ?_, ?_, ?_, ?_⟩
-      · rw [tab k hk, h₁.prga.table _ (by omega), ofNat_wrap]
+      · rw [tab k hk, h₁.prga.table _ (by omega_using []), ofNat_wrap]
       · rw [j, byte_shift]
       · simp only [ite_true] at nb; rw [nb, byte_shift]
       · exact h₁.prga.consts.congr fun r hr => vv r (by
@@ -57,14 +57,14 @@ theorem group_ok (g : Glob) (hg : DataOk g) {B p sk : Nat} (hsk : sk ≤ 15) {s 
       rw [hd0]
       exact ⟨h₁.data.le, by rw [gg _ (by decide), h₁.data.x1], by rw [gg _ (by decide), h₁.data.x2],
         fun k hk => by rw [m]; exact h₁.data.bytes k hk, by rw [m]; exact h₁.data.frame⟩
-    x5 := by rw [gg _ (by decide), h₁.x5]; congr 1; omega
+    x5 := by rw [gg _ (by decide), h₁.x5]; congr 1; omega_using [hsk]
     x8 := by
       rw [x8, h₁.x8, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]
     next := by
       rw [hd0]
       intro hlt
       obtain ⟨hi, hsi⟩ := h₁.next hlt
-      rw [show max 16 sk = 16 by omega] at hi hsi
+      rw [show max 16 sk = 16 by omega_using [hsk]] at hi hsi
       refine ⟨by rw [hi]; simp, ?_⟩
       rw [vv _ (by decide), hsi, show max 0 0 = 0 from rfl, tab 0 (by decide)]
     kept := ⟨fun r a b c d e f => by rw [gg r f, h₁.kept.gpr r a b c d e f], rd.trans h₁.kept.rd,
@@ -90,15 +90,15 @@ theorem loop_ok (g : Glob) (hg : DataOk g) (m : Nat) {s : State} (h : LoopInv g 
   have hfit := hg.fit
   let q := doneAt g p sk 16
   have hd0 : doneAt g q 0 0 = q := by
-    have := ht.data.le; simp only [doneAt, q] at this ⊢; omega
+    have := ht.data.le; simp only [doneAt, q] at this ⊢; omega_using []
   have hq : q ≤ g.N := by have := ht.data.le; rw [hd0] at this; exact this
   have x2 : t.gpr .x2 = BitVec.ofNat 64 (g.N - q) := by rw [ht.data.x2, hd0]
-  have flag := eval_nonzero' t .x2 x2 (by omega)
+  have flag := eval_nonzero' t .x2 x2 (by omega_using [hfit])
   by_cases hend : q = g.N
   · left
-    exact ⟨by rw [flag]; simp [hend], B + 16, 0, by omega, hend ▸ ht⟩
+    exact ⟨by rw [flag]; simp [hend], B + 16, 0, by omega_using [hB], hend ▸ ht⟩
   · right
-    exact ⟨by rw [flag]; simp; omega, g.N - q, by simp only [doneAt, q] at hend ⊢; omega,
-      B + 16, q, 0, by omega, rfl, by omega, by decide, ht⟩
+    exact ⟨by rw [flag]; simp; omega_using [hq, hend], g.N - q, by simp only [doneAt, q] at hend ⊢; omega_using [hm, hp, hsk],
+      B + 16, q, 0, by omega_using [hB], rfl, by omega_using [hq, hend], by decide, ht⟩
 
 end VG.Proof.Rc4.AArch64

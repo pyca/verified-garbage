@@ -15,7 +15,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 The claims of `CrtCTDefs.lean` for the primes' setup: the loads
 (`loadArr_ct_pN`, `loadArr_ct_pI`, `loadArr_ct_qN`, in `CrtCTSetupLoad.lean`),
 `primesSetup` (`setup_ct`, in `CrtCTSetupWs.lean`), and `checks`
-(`checks_ct`), from its pieces (`CrtCTSetupChk.lean`).
+(`checks_ct`) and `checksP` (`checksP_ct`), from their pieces
+(`CrtCTSetupChk.lean`).
 -/
 
 @[expose] public section
@@ -36,6 +37,19 @@ theorem checks_ct : ChecksCT := by
   refine two_map id (fun _ _ h => h.ck) ?_
   refine RelCT.seqs_append (by simp [pqProduct, zeroAccs]) (by simp [eqCheck]) (RelCT.seq pq_ct ?_)
   refine RelCT.seqs_append (by simp [eqCheck]) (by simp) (RelCT.seq eq_ct ?_)
+  refine RelCT.seqs_append (by simp) (by simp [qinvCheck]) (RelCT.seq (two_piece [.rdi] (pins_ckr _)
+    (by taint_decide) fun p s h => enterP_ck h) ?_)
+  refine RelCT.seqs_append (by simp [qinvCheck]) (by simp [primeFix]) (RelCT.seq qinv_ct ?_)
+  refine RelCT.seqs_append (by simp [primeFix]) (by simp) (RelCT.seq fixP_ct ?_)
+  refine RelCT.seqs_append (by simp) (by simp [primeFix]) (RelCT.seq leaveEnterQ_ck ?_)
+  refine RelCT.seqs_append (by simp [primeFix]) (by simp) (RelCT.seq fixQ_ct ?_)
+  exact two_taint [.rdi] (pins_ckr _) (by taint_decide)
+
+/-- The checks but `p q = n`'s. -/
+theorem checksP_ct : ChecksPCT := by
+  unfold ChecksPCT checksP
+  simp only [List.append_assoc]
+  refine two_map id (fun _ _ h => h.ck) ?_
   refine RelCT.seqs_append (by simp) (by simp [qinvCheck]) (RelCT.seq (two_piece [.rdi] (pins_ckr _)
     (by taint_decide) fun p s h => enterP_ck h) ?_)
   refine RelCT.seqs_append (by simp [qinvCheck]) (by simp [primeFix]) (RelCT.seq qinv_ct ?_)

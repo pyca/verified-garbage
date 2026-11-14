@@ -37,8 +37,8 @@ theorem storeAll_ok (r : Reg) : ∀ (ks : List Nat) {s : State} {b : Addr}, s.gp
   | [], s, _, _, _, _ => ⟨s, rfl, by simp, fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | k :: ks, s, b, hb, hw, hk => by
     have hk0 : k < slots := hk k List.mem_cons_self
-    have e₁ := stS_ok s r (k := k) (by rw [slots_eq] at hk0; omega) ⟨_, hw, by
-      rw [hb]; exact VG.Offset.contains_base b (by omega) (by rw [slots_eq] at hk0; omega)⟩
+    have e₁ := stS_ok s r (k := k) (by rw [slots_eq] at hk0; omega_using [hk0]) ⟨_, hw, by
+      rw [hb]; exact VG.Offset.contains_base b (by omega_using [hk0]) (by rw [slots_eq] at hk0; omega_using [hk0])⟩
     let s₁ : State := { s with mem := s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr r) }
     obtain ⟨s', e', v', o', g', rd', wr', f'⟩ := storeAll_ok r ks (s := s₁) hb hw
       fun k h => hk k (List.mem_cons_of_mem _ h)
@@ -58,7 +58,7 @@ theorem storeAll_ok (r : Reg) : ∀ (ks : List Nat) {s : State} {b : Addr}, s.gp
     · refine Frame.trans (fun x hx => ?_) f'
       simp only [s₁, Mem.writeW, Mem.write, wordAddr, hb]
       exact ite_eq_right fun h => hx _ (List.mem_singleton_self _) (VG.Offset.sub_base b
-        (show 8 * k + 8 ≤ 8 * slots by omega) _ (by simp only [Region.Contains]; omega))
+        (show 8 * k + 8 ≤ 8 * slots by omega_using [hk0]) _ (by simp only [Region.Contains]; omega_using [h]))
 
 /-! ## `MK ⊕ FK` -/
 
@@ -87,7 +87,7 @@ theorem keyWord_ok (s : State) (h : Nat) (hh : h < 2)
     ∃ s', runBlock isa (([.ldr .x t0 .x0 (8 * h)] : List Instr) ++ imm t1 (fkWord h) ++ ([eorR t0 t0 t1] : List Instr)) s = some s' ∧
       s'.gpr t0 = s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (8 * h)) 64 ^^^ fkWord h ∧
       (∀ r, r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := loadAt_ok s t0 .x0 (8 * h) ⟨by omega, by omega⟩ hr
+  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := loadAt_ok s t0 .x0 (8 * h) ⟨by omega_using [], by omega_using [hh]⟩ hr
   obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := imm_ok s₁ t1 (fkWord h)
   obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := xorReg_ok s₂ t0 t1
   refine ⟨s₃, ?_, ?_, fun r h0 h1 => by rw [o₃ r h0, o₂ r h1, o₁ r h0], by rw [m₃, m₂, m₁],
@@ -96,7 +96,7 @@ theorem keyWord_ok (s : State) (h : Nat) (hh : h < 2)
   · rw [v₃, o₂ _ (by decide), v₁, v₂]
 
 theorem tailAt_lt {b h : Nat} (hb : b < 16) (hh : h < 2) : tailAt b h < slots := by
-  simp only [tailAt, tailSlot_eq, slots_eq]; omega
+  simp only [tailAt, tailSlot_eq, slots_eq]; omega_using [hb, hh]
 
 /-- Half `h` of the key, XOR `FK`, to the sixteen blocks. -/
 theorem loadHalf_ok {s : State} {b : Addr} (h : Nat) (hh : h < 2) (hb : s.gpr sb = b)

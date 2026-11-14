@@ -1042,5 +1042,6 @@ vg_sha1_compress_avx_bmi:
 	mov r13, QWORD PTR [rcx+88]
 	mov r14, QWORD PTR [rcx+96]
 	mov r15, QWORD PTR [rcx+104]
+	vzeroupper
 	ret
 	.p2align 6

@@ -461,6 +461,10 @@ pub mod rc2;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod rc2_cbc;
+
+#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
+#[rustfmt::skip]
 pub mod rc4;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]

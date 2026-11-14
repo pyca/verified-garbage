@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Slots
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `Slots` operations for the kernel
@@ -103,7 +104,7 @@ theorem not_has_of_touchesK {S : Slots} {i d w : Nat} (h : S.touchesK i d w = fa
     have := Nat.eq_of_beq_eq_true h; exact this
   have := congrArg (·.testBit (k - d)) e
   simp only [Nat.testBit_and, Nat.testBit_shiftRight, Nat.testBit_two_pow_sub_one, Nat.zero_testBit,
-    show d + (k - d) = k by omega, show decide (k - d < w) = true from decide_eq_true (by omega),
+    show d + (k - d) = k by omega_using [h₁], show decide (k - d < w) = true from decide_eq_true (by omega_using [h₁, h₂]),
     Bool.and_true] at this
   rw [has_eq, get]; exact this
 

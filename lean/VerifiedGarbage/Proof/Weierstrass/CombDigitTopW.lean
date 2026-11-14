@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! A comb may read only the actual bits of its final, shorter window. -/
 
@@ -9,8 +10,8 @@ namespace VG.Proof.Weierstrass
 
 theorem hornerVal_eq_at (k d c : Nat) :
     hornerVal (fun i => (k.testBit i).toNat) d c = k/2^d%2^c := by
-  have h := hornerVal_eq k (d+c) 0 c (by omega)
-  simpa only [Nat.mul_zero,Nat.zero_add,show d+c-c=d by omega] using h
+  have h := hornerVal_eq k (d+c) 0 c (by omega_using [])
+  simpa only [Nat.mul_zero,Nat.zero_add,show d+c-c=d by omega_using []] using h
 
 theorem hornerVal_window (k d c : Nat) :
     hornerVal (fun i => (k.testBit (d+i)).toNat) 0 c = k/2^d%2^c := by
@@ -22,8 +23,8 @@ theorem topWindow_le {w J bits : Nat} (hJ : 1≤J) (hb : bits≤w*J) :
   have e : w*(J-1)+w=w*J := by
     rw [← Nat.mul_succ]
     congr 1
-    omega
-  omega
+    omega_using [hJ]
+  omega_using [hb, e]
 
 theorem windowBits_bounds {w J bits j : Nat} (hj : j<J)
     (hs : w*(J-1)≤bits) (hb : bits≤w*J) :
@@ -33,12 +34,12 @@ theorem windowBits_bounds {w J bits j : Nat} (hj : j<J)
   by_cases h : j=J-1
   · simp only [h,↓reduceIte]
     have e : w*(J-1)+(bits-w*(J-1))=bits := Nat.add_sub_of_le hs
-    exact ⟨topWindow_le (by omega) hb,by omega,.inr e⟩
+    exact ⟨topWindow_le (by omega_using [hj]) hb,by omega_using [hs],.inr e⟩
   · rw [show (if j=J-1 then bits-w*(J-1) else w)=w by simp only [h,↓reduceIte]]
     refine ⟨Nat.le_refl _,?_,.inl rfl⟩
     calc
       w*j+w=w*(j+1) := by rw [Nat.mul_add,Nat.mul_one]
-      _ ≤ w*(J-1) := Nat.mul_le_mul_left w (by omega)
+      _ ≤ w*(J-1) := Nat.mul_le_mul_left w (by omega_using [hj, h])
       _ ≤ bits := hs
 
 theorem window_without_padding {w k j count bits : Nat}
@@ -49,7 +50,7 @@ theorem window_without_padding {w k j count bits : Nat}
   · rfl
   · have div : k/2^(w*j)<2^count := by
       apply (Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)).mpr
-      rw [← Nat.pow_add,show count+w*j=bits by omega]
+      rw [← Nat.pow_add,show count+w*j=bits by omega_using [h]]
       exact hk
     have div' : k/2^(w*j)<2^w :=
       Nat.lt_of_lt_of_le div (Nat.pow_le_pow_right (by decide) hc)

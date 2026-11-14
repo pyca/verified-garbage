@@ -542,8 +542,28 @@ theorem store_ok (s : State) (v : HashValue)
 
 /-! ## The loop over the blocks -/
 
-open VG.Proof.Sha512.X86_64 (Pre pre_of st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
+open VG.Proof.Sha512.X86_64 (st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
   compressBlocks_succ contains_offset contains_offset')
+
+/-- What the proofs need of the precondition with no scratch space
+(`compressWideX86_64S 0`): this code uses none. -/
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = [blR s₀]
+  wr : s₀.wr = [stR s₀, ⟨scr s₀, 0⟩]
+  blk_st : (blR s₀).Disjoint (stR s₀)
+  ret_st : (retR s₀).Disjoint (stR s₀)
+
+theorem pre_of (s₀ : State) (h : (Proof.Sha512.compressWideX86_64S 0).pre s₀) : Pre s₀ := by
+  obtain ⟨h1, h2, -, h4, -, h6, -⟩ := h
+  exact ⟨h1, h2, h4, h6⟩
+
+/-- The blocks fit in the address space (or they could not be disjoint from the state). -/
+theorem Pre.nb_lt {s₀ : State} (h : Pre s₀) : 128 * nb s₀ < 2 ^ 64 := by
+  by_contra hn
+  refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
+  simp only [Region.Contains]
+  have := (st s₀ - bp s₀).isLt
+  omega_arith
 
 theorem Pre.in_blk32 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s₀) (hn : n < 4) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((32 * n : Nat) : Int)) 32 := by
@@ -720,8 +740,9 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     · show stateAt s'.mem (st s₀) = _
       rw [← hrdi]; exact hst
 
-theorem compress_verified :
-    Verified X86_64.target Impl.Sha512.X86_64.ShaNi.compress Proof.Sha512.compressX86_64 := by
+/-- The compression function, verified with no scratch space, which it does not use. -/
+theorem compress_verified0 :
+    Verified X86_64.target Impl.Sha512.X86_64.ShaNi.compress (Proof.Sha512.compressWideX86_64S 0) := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
@@ -730,18 +751,11 @@ theorem compress_verified :
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
-  · exact (Proof.Sha512.X86_64.compress_verified).2.2
+  · exact wideSatS 0 (.inl rfl)
 
-/-- `compress_verified`, with the scratch space of the shared contract (which it does not use). -/
+/-- `compress_verified0`, with the scratch space of the shared contract (which it does not use). -/
 theorem compressWide_verified :
     Verified X86_64.target Impl.Sha512.X86_64.ShaNi.compress Proof.Sha512.compressWideX86_64 :=
-  Verified.widen compress_verified
-    (fun s => [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 176⟩])
-    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇⟩ =>
-      ⟨h₁, rfl, h₃.sub_right (sub176 _), h₄, h₅.sub_right (sub176 _), h₆, h₇.sub_right (sub176 _)⟩)
-    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons (pfx rfl) .nil))
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h)
-    ⟨wideSat, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
-      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
+  compressWideS_widen compress_verified0 (by decide) (wideSatS 1328 (.inr (.inr rfl)))
 
 end VG.Proof.Sha512.X86_64.ShaNi

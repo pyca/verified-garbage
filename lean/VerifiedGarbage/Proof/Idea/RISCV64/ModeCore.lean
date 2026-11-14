@@ -115,7 +115,7 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Idea.Schedu
     rwa [m₂, a0₂, hk] at h
   have hc (i : Nat) (hi : i < 8) : (⟨B, 8 * 8⟩ : Region).Contains
       (B + BitVec.ofNat 64 48 + BitVec.ofNat 64 i) 1 := by
-    rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   have hread : BlockRead s₂ (B + BitVec.ofNat 64 48) := fun i hi => by
     rw [K₂.2.1, K₂.2.2]
     exact ⟨_, List.mem_append_right _ hW, hc i hi⟩
@@ -128,7 +128,7 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Idea.Schedu
   have a0t : t.gpr .a0 = s.gpr .a0 := Kt.gpr (by decide)
   have ft : Frame [⟨B + BitVec.ofNat 64 48, 8⟩] s.mem t.mem := by rw [← m₂]; exact f
   have hbuf : (keyR s).Disjoint ⟨B + BitVec.ofNat 64 48, 8⟩ :=
-    hkB.sub_right (Offset.sub_base B (by omega))
+    hkB.sub_right (Offset.sub_base B (by omega_using []))
   have hB0 : blkAddr core B 0 = B + BitVec.ofNat 64 48 := by simp [blkAddr, slotA, core, bufSlot]
   refine ⟨(Kt.gpr (by decide)).trans hB, fun r hr => Kt.gpr (kept_apart r hr),
     ⟨⟨?_, by rw [Kt.2.1, Kt.2.2, keyR, a0t]; exact hin, by rw [keyR, a0t]; exact hd⟩,

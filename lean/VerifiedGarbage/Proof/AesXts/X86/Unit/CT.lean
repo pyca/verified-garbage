@@ -59,12 +59,12 @@ theorem arg_cur {s₀ s : State} (hesp : s.gpr .esp = s₀.gpr .esp) {i : Nat}
 theorem UPre.argsOut {s₀ : State} (hp : UPre s₀) {s : State} (hesp : s.gpr .esp = s₀.gpr .esp)
     (hwr : s.wr = s₀.wr) : ArgsOut 7 s := by
   have hs : (s₀.gpr .esp).toNat + 4 + 28 ≤ 2 ^ 32 := hp.esp_fit
-  refine ⟨by rw [hesp]; omega, ?_⟩
+  refine ⟨by rw [hesp]; omega_using [hs], ?_⟩
   rw [hwr, hp.wr, hesp]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) hp.ret_data hp.data_args.symm
-  · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) hp.ret_scr hp.scr_args.symm
+  · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.ret_data hp.data_args.symm
+  · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.ret_scr hp.scr_args.symm
 
 section
 variable {s₀ s₀' : State} (hq : unitPub s₀ s₀')
@@ -191,7 +191,7 @@ theorem encrypt_rel {f : Impl.Aes.X86.Blocks} (hf : XFn true f) :
   have hM := pub_M hq
   have t := tweak_rel hp hp' hq hf
   have a := ready_rel hp hp' hq
-  have c := blocks_rel hp hp' hq hf (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) hM
+  have c := blocks_rel hp hp' hq hf (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) hM
   have sp := rel_agree (F := AllPost true s₀ (M s₀)) (F' := AllPost true s₀' (M s₀'))
     (G := SplitPost true s₀ (M s₀)) (G' := SplitPost true s₀' (M s₀')) (argTaint [] (4 + 4 * 7))
     (fun _ _ h₁ h₂ => tagree hq hp hp' h₁.inv h₂.inv fun _ h => absurd h List.not_mem_nil) split_taint
@@ -243,7 +243,7 @@ theorem decrypt_rel {e d : Impl.Aes.X86.Blocks} (he : XFn true e) (hd : XFn fals
           h.1.1.1, h.1.2.1⟩) fun _ _ h => h
       have hb' : B s₀' = 0 := by rw [← pub_B hq]; exact hb
       have a := ready_rel hp hp' hq
-      have c := blocks_rel hp hp' hq hd (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) hM
+      have c := blocks_rel hp hp' hq hd (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) hM
       exact a.seq (c.mono (fun _ _ h => h) fun _ _ h => ⟨whole_fin h.1 hb, whole_fin h.2 hb'⟩)
     · refine (RelCT.exists_ (P := fun (_ : B s₀ ≠ 0) (a b : State) =>
           (TwPost s₀ a ∧ a.gpr .esi = BitVec.ofNat 32 (B s₀)) ∧
@@ -267,9 +267,9 @@ theorem decrypt_rel {e d : Impl.Aes.X86.Blocks} (he : XFn true e) (hd : XFn fals
           (fun _ _ h => ⟨_, _, _, _, _, _, h.1.1.pre,
             (show M s₀ - 1 = M s₀' - 1 by rw [hM]) ▸ h.2.1.pre |>.of_eq (pub_W hq) (pub_Tv hq) (pub_D hq) (pub_S hq)
               (pub_R hq), esp_eq hq h.1.1.tw.inv h.2.1.tw.inv⟩)
-          fun _ _ h => ⟨WP.mono (blocks_call hp hd (by rw [len_eq s₀]; omega) h.1.1.tw h.1.1.pre)
+          fun _ _ h => ⟨WP.mono (blocks_call hp hd (by rw [len_eq s₀]; omega_using []) h.1.1.tw h.1.1.pre)
               fun _ h' => ⟨h'.1, h'.2.trans h.1.2⟩,
-            WP.mono (blocks_call hp' hd (by rw [len_eq s₀']; omega) h.2.1.tw h.2.1.pre)
+            WP.mono (blocks_call hp' hd (by rw [len_eq s₀']; omega_using []) h.2.1.tw h.2.1.pre)
               fun _ h' => ⟨h'.1, h'.2.trans h.2.2⟩⟩
       have l₁ := rel_agree (F := fun s => AllPost false s₀ (M s₀ - 1) s ∧ s.gpr .esi = BitVec.ofNat 32 (B s₀))
         (F' := fun s => AllPost false s₀' (M s₀' - 1) s ∧ s.gpr .esi = BitVec.ofNat 32 (B s₀'))

@@ -197,7 +197,7 @@ theorem copyW_piece (sa so da dO n : Nat) (hn : 0 < n) (_hn' : n < 2 ^ 30)
           exact fu.bytes (R := S.rgn s₀) (fun r hr => by
             rw [List.mem_singleton] at hr; subst hr; exact dd) (by show 4 * n ≤ 2 ^ 64; omega_using [fD])
             (show j < 4 * n by omega_using [hk, hj])
-        · exact cpu j (by omega)
+        · exact cpu j (by omega_arith)
       · show u₅.zf.map (!·) = _
         rw [z₅, ex]; exact cnt_ne hk (by omega_using [fD])
     · refine hQ s₀ s u hp ha cu fu ?_
@@ -316,7 +316,7 @@ theorem maskA_piece (ao po : Nat)
     · rw [m₅, coeffAt_writeW _ _ (by rw [n_eq]; omega_using [hk, hi']) hk']
       split
       · rename_i e; subst e; rfl
-      · exact lo i (by omega)
+      · exact lo i (by omega_arith)
     · rw [m₅, coeffAt_writeW_ne _ _ (by rw [n_eq]; omega_using [hi₂]) hk' (by omega_using [hi₁])]
       exact hi i (by omega_using [hi₁]) hi₂
     · show u₅.zf.map (!·) = _

@@ -39,18 +39,18 @@ theorem loadNum0_ok (k : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg} {off
   refine wp_li (imm := 0) (by decide) fun s₁ u₁ => ?_
   have r₁ : Rest [.t0, .t1] s s₁ := u₁.rest (by decide)
   have hw₁ := hw.of_rest r₁
-  refine sd_ws hw₁ (d := o + 8 * k) (by omega) (by omega) fun s₂ u₂ => ?_
+  refine sd_ws hw₁ (d := o + 8 * k) (by omega_using [ho']) (by omega_using [ho]) fun s₂ u₂ => ?_
   have r₂ : Rest [.t0, .t1] s s₂ := r₁.trans (u₂.rest _)
   have O₂ : Outside base (o + 8 * k) 8 s.mem s₂.mem := by
-    rw [u₂.mem, u₁.mem]; exact writeW_outside _ _ _ (by omega)
+    rw [u₂.mem, u₁.mem]; exact writeW_outside _ _ _ (by omega_using [ho'])
   have g₂ : s₂.gpr p = s.gpr p := r₂.gpr _ (by simp [hp.1, hp.2])
-  refine WP.mono (loadNum_ok k (hw.of_rest r₂) (p := p) (off := off) (by simp [hp.1, hp.2]) ho (by omega)
+  refine WP.mono (loadNum_ok k (hw.of_rest r₂) (p := p) (off := off) (by simp [hp.1, hp.2]) ho (by omega_using [ho'])
     hoff (fun j hj => by rw [r₂.rd, r₂.wr, g₂]; exact hin j hj)
     (fun i hi => by rw [g₂]; exact hsep i hi))
-    fun s₃ ⟨r₃, O₃, e₃⟩ => ⟨r₂.trans r₃, (O₂.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega)), ?_⟩
+    fun s₃ ⟨r₃, O₃, e₃⟩ => ⟨r₂.trans r₃, (O₂.mono (by omega_using []) (by omega_using [])).trans (O₃.mono (by omega_using []) (by omega_using [])), ?_⟩
   have e₃' : wordsVal s₃.mem base o k = ofBytes (bytesAt s.mem (s.gpr p + BitVec.ofNat 64 off) (8 * k)) := by
-    rw [e₃, g₂, bytesAt_out O₂ (by omega) (fun i hi => by rw [add_ofNat_add]; exact hsep i hi)]
-  rw [wordsVal_succ_top, e₃', O₃.word (by omega) (by omega), u₂.mem, word_writeW_self, u₁.gpr]
+    rw [e₃, g₂, bytesAt_out O₂ (by omega_using [ho']) (fun i hi => by rw [add_ofNat_add]; exact hsep i hi)]
+  rw [wordsVal_succ_top, e₃', O₃.word (by omega_using []) (by omega_using [ho']), u₂.mem, word_writeW_self, u₁.gpr]
   simp
 
 open VG.WriteBytes in
@@ -64,12 +64,12 @@ theorem storeNum_low_ok (c : Bool) (k : Nat) {s : State} {base : Addr} {a : Nat}
     WP isa (.block (storeNum k a q off)) s fun s' =>
       Rest [.t0, .t1] s s' ∧ s'.mem = writeBytes s.mem (s.gpr q + BitVec.ofNat 64 off)
         (toBytes (8 * k) (if c then wordsVal s.mem base a (k + 1) else 0)) := by
-  refine WP.mono (storeNum_ok c k hw hc hq ha (by omega) hoff hout hsep) fun s' ⟨r, m⟩ => ⟨r, ?_⟩
+  refine WP.mono (storeNum_ok c k hw hc hq ha (by omega_using [ha']) hoff hout hsep) fun s' ⟨r, m⟩ => ⟨r, ?_⟩
   rw [m]
   congr 1
   cases c
   · rfl
   · simp only [↓reduceIte]
-    rw [wordsVal_succ_top, show 2 ^ (64 * k) = 2 ^ (8 * (8 * k)) by congr 1; omega, toBytes_mod]
+    rw [wordsVal_succ_top, show 2 ^ (64 * k) = 2 ^ (8 * (8 * k)) by congr 1; omega_using [], toBytes_mod]
 
 end VG.Proof.Weierstrass.RISCV64

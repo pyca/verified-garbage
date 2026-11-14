@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtSave
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Framework.Offset
@@ -34,9 +35,14 @@ open VG.Proof.Bignum (slot)
 /-- The arguments on the stack: ten words. -/
 abbrev stackArgs (s : State) : Region := ⟨stackArgAddr s 0, 80⟩
 
-/-- `vg_rsa_private_crt`, on the registers and the stack. -/
-def fnContract : Contract isa where
-  pre s :=
+/-- The regions `vg_rsa_private_crt` reads. -/
+abbrev baseRd (s : State) : List Region :=
+  [⟨s.gpr .a2, (s.gpr .a3).toNat⟩, ⟨s.gpr .a4, (s.gpr .a5).toNat⟩, ⟨s.gpr .a6, (s.gpr .a7).toNat⟩,
+    ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩,
+    ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩, stackArgs s]
+
+/-- `vg_rsa_private_crt`'s precondition, with the regions it reads `rd`. -/
+def preCore (rd : List Region) (s : State) : Prop :=
     let out : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
     let n : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
     let inp : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
@@ -46,7 +52,7 @@ def fnContract : Contract isa where
     let dq : Region := ⟨stackArg s 4, (stackArg s 5).toNat⟩
     let qi : Region := ⟨stackArg s 6, (stackArg s 7).toNat⟩
     let scr : Region := ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩
-    s.rd = [n, inp, p, q, dp, dq, qi, stackArgs s] ∧ s.wr = [out, scr] ∧
+    s.rd = rd ∧ s.wr = [out, scr] ∧
       out.Disjoint n ∧ out.Disjoint inp ∧ out.Disjoint p ∧ out.Disjoint q ∧ out.Disjoint dp ∧
       out.Disjoint dq ∧ out.Disjoint qi ∧ out.Disjoint scr ∧ out.Disjoint (stackArgs s) ∧
       n.Disjoint scr ∧ inp.Disjoint scr ∧ p.Disjoint scr ∧ q.Disjoint scr ∧ dp.Disjoint scr ∧
@@ -65,7 +71,9 @@ def fnContract : Contract isa where
       (stackArg s 7).toNat = (s.gpr .a7).toNat ∧ (stackArg s 5).toNat = (stackArg s 1).toNat ∧
       Spec.Rsa.scratchWords (s.gpr .a3).toNat ≤ (stackArg s 9).toNat ∧
       (stackArg s 8).toNat % 8 = 0 ∧ s.sp.toNat % 16 = 0
-  post s s' :=
+
+/-- `vg_rsa_private_crt`'s result. -/
+def postCore (s s' : State) : Prop :=
     Spec.Rsa.written s'.mem (s.gpr .a0) (s.gpr .a3).toNat ((s'.gpr .a0).setWidth 32)
       (Spec.Rsa.privateCrt (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a3).toNat)
@@ -74,11 +82,41 @@ def fnContract : Contract isa where
         (Spec.Rsa.bytesAt s.mem (stackArg s 2) (s.gpr .a7).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
         (Spec.Rsa.bytesAt s.mem (stackArg s 6) (s.gpr .a7).toNat))
-  pub s₁ s₂ :=
+
+/-- `vg_rsa_private_crt`'s public data. -/
+def pubCore (s₁ s₂ : State) : Prop :=
     (∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r) ∧ s₁.sp = s₂.sp ∧
       (List.range 10).map (stackArg s₁) = (List.range 10).map (stackArg s₂) ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .a2) (s₁.gpr .a3).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .a2) (s₂.gpr .a3).toNat
+
+/-- `vg_rsa_private_crt`, on the registers and the stack. -/
+def fnContract : Contract isa where
+  pre s := preCore (baseRd s) s
+  post := postCore
+  pub := pubCore
+
+/-- The cached `R² mod p` and `R² mod q` of `vg_rsa_private_crt_precomputed`,
+at `s1`: `max(2, ⌈len / 8⌉)` words each. -/
+abbrev r2R (s : State) : Region :=
+  ⟨s.gpr .s1, 8 * (wordsOf (s.gpr .a7).toNat + wordsOf (stackArg s 1).toNat)⟩
+
+/-- `vg_rsa_private_crt_precomputed`, which takes in `s1` the address of the
+primes' `R² mod p` and `R² mod q` (`Spec.Rsa.primeR2`), given `p q = n`
+(as its caller's `Spec.Rsa.privatePrecompute` gives), and computes what
+`vg_rsa_private_crt` does. -/
+def fnContractP : Contract isa where
+  pre s := preCore (baseRd s ++ [r2R s]) s ∧ (⟨s.gpr .a0, (s.gpr .a1).toNat⟩ : Region).Disjoint (r2R s) ∧
+    (r2R s).Disjoint ⟨stackArg s 8, (stackArg s 9).toNat * 8⟩ ∧ (s.gpr .s1).toNat + (r2R s).len ≤ 2 ^ 64 ∧
+    (s.gpr .s1).toNat % 8 = 0 ∧
+    Spec.Rsa.wordsAt s.mem (s.gpr .s1) (wordsOf (s.gpr .a7).toNat + wordsOf (stackArg s 1).toNat) =
+      Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat) ++
+        Spec.Rsa.primeR2 (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) ∧
+    Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a6) (s.gpr .a7).toNat) *
+        Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat) =
+      Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
+  post := postCore
+  pub s₁ s₂ := pubCore s₁ s₂ ∧ s₁.gpr .s1 = s₂.gpr .s1
 
 /-- The working space. -/
 abbrev cS (s : State) : Addr := stackArg s 8
@@ -133,7 +171,7 @@ theorem rd_of_mem {s : State} {A : Addr} {L n : Nat} (h : (⟨A, L⟩ : Region) 
     ∀ i < n, InRegions (s.rd ++ s.wr) (off A i) 1 := fun i hi =>
   ⟨_, List.mem_append_left _ h, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
-theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
+theorem pre_factsG {s₀ : State} {ex : List Region} (h : preCore (baseRd s₀ ++ ex) s₀) : PF s₀ := by
   obtain ⟨hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl, alS, alsp⟩ := h
@@ -167,6 +205,9 @@ theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
   show slot (2 * (((s₀.gpr .a3).toNat + 7) / 8)) 8 + slot (wordsOf (s₀.gpr .a7).toNat) 24 +
     slot (wordsOf (stackArg s₀ 1).toNat) 24 ≤ (stackArg s₀ 9).toNat * 8
   unfold slot hdrBytes; omega_arith
+
+theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ :=
+  pre_factsG (ex := []) (by rw [List.append_nil]; exact h)
 
 /-! ## The front: `save`, `args`, `setupX` -/
 
@@ -214,9 +255,10 @@ theorem z0 (x : Addr) : x = Mont.off x 0 := (BitVec.add_zero x).symm
 
 theorem ofNat_toNat (x : BitVec 64) : x = BitVec.ofNat 64 x.toNat := (VG.Proof.Bignum.ofNat_toNat64 _).symm
 
-theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
-    WP isa (.block (Crt.save ++ Crt.args ++ setupX)) s₀ (Front s₀) := by
-  have hP := pre_facts h
+theorem front_okG {pc : Bool} {ex : List Region} (s₀ : State) (h : preCore (baseRd s₀ ++ ex) s₀) :
+    WP isa (.block (Crt.save ++ argsG pc ++ setupX)) s₀ fun s =>
+      Front s₀ s ∧ (pc = true → Mont.word s.mem (cS s₀) oR2 = s₀.gpr .s1) := by
+  have hP := pre_factsG h
   obtain ⟨hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl, alS, alsp⟩ := h
@@ -269,9 +311,9 @@ theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
       · show (x - (s₀.sp + BitVec.ofNat 64 (8 * 0))).toNat + 1 ≤ 80
         rw [show 8 * 0 = 0 from rfl, BitVec.add_zero]; omega_arith
   rw [WP.block_append_iff]
-  refine WP.mono (args_ok (hscr.congr kt.2.2) (by omega_arith) (by rw [t6]; exact z0 _)
+  refine WP.mono (argsG_ok (pc := pc) (hscr.congr kt.2.2) (by omega_arith) (by rw [t6]; exact z0 _)
     (by rw [hSv.sp]; omega_arith) (fun i hi => by rw [tsp, kt.2.1, kt.2.2]; exact hst i (by omega_arith)) hsep)
-    fun u ⟨⟨A, Ou⟩, ku⟩ => ?_
+    fun u ⟨⟨A, ⟨m₁, Ou, Oc⟩, hR2⟩, ku⟩ => ?_
   have ktu := kt.trans ku
   have u6 : u.gpr .s6 = cS s₀ := (ku.gpr (by decide)).trans t6
   refine WP.mono (setupX_ok (k := ck s₀) (pl := cpL s₀) (hscr.congr ktu.2.2) (by omega_arith)
@@ -281,8 +323,8 @@ theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
   have k := ktu.trans kv
   have hw : ∀ d, d + 8 ≤ 96 → Mont.word v.mem (cS s₀) d = Mont.word u.mem (cS s₀) d := fun d hd =>
     Ov.word (Or.inl hd) (by omega_arith)
-  refine ⟨hscr.congr k.2.2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, vBP, ?_,
-    (kv.gpr (by decide)).trans u6, v7, vra, v5, v11, v0, k.mono (by decide), fun i hi => ?_, ?_⟩
+  refine ⟨⟨hscr.congr k.2.2, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, vBP, ?_,
+    (kv.gpr (by decide)).trans u6, v7, vra, v5, v11, v0, k.mono (by decide), fun i hi => ?_, ?_⟩, fun hp => ?_⟩
   · rw [hw _ (by decide), A.out, kt.gpr (by decide)]
   · rw [hw _ (by decide), A.n, kt.gpr (by decide)]; exact z0 _
   · rw [hw _ (by decide), A.nLen, kt.gpr (by decide)]; exact ofNat_toNat _
@@ -301,10 +343,18 @@ theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
     rw [Offset.add_add] at hs1 ⊢
     have h1 := Ov.word (d := 112 + 8 * i) (Or.inr (by unfold oBP; omega_arith)) (by omega_arith)
     have h2 := Ou.word (d := 112 + 8 * i) (Or.inr (by omega_arith)) (by omega_arith)
-    simp only [Mont.word, Mont.off] at h1 h2
-    rw [h1, h2]; exact hs1
+    have h3 := Oc.word (d := 112 + 8 * i) (Or.inl (by omega_arith)) (by omega_arith)
+    simp only [Mont.word, Mont.off] at h1 h2 h3
+    rw [h1, h3, h2]; exact hs1
   · have fr : Frame [⟨Mont.off (cS s₀) 112, 104⟩] s₀.mem t.mem := hSv.frame
-    exact (((frame_sub fr (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
-      (Ou.mono (by omega_arith) (by omega_arith))).trans (Ov.mono (by omega_arith) (by unfold oBP; omega_arith))
+    exact ((((frame_sub fr (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+      (Ou.mono (by omega_arith) (by omega_arith))).trans (Oc.mono (by omega_arith) (by omega_arith))).trans
+      (Ov.mono (by omega_arith) (by unfold oBP; omega_arith))
+  · rw [Ov.word (Or.inr (by unfold oR2 oBP; omega_arith)) (by unfold oR2; omega_arith), hR2 hp,
+      kt.gpr (by decide)]
+
+theorem front_ok (s₀ : State) (h : fnContract.pre s₀) :
+    WP isa (.block (Crt.save ++ Crt.args ++ setupX)) s₀ (Front s₀) :=
+  WP.mono (front_okG (pc := false) (ex := []) s₀ (by rw [List.append_nil]; exact h)) fun _ h => h.1
 
 end VG.Proof.Bignum.RISCV64.Crt

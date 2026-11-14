@@ -120,7 +120,7 @@ theorem parity_eq (w : BitVec 32) (b : Bool) :
   have he : w &&& 1 = BitVec.ofNat 32 (w.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl,
-      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 32 by omega)]
+      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 32 by omega_using [])]
   rw [he]
   rcases Nat.mod_two_eq_zero_or_one w.toNat with h | h <;> rw [h] <;> cases b <;> decide
 

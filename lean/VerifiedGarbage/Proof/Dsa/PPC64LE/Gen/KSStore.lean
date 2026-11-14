@@ -31,7 +31,7 @@ theorem SS.wsFull (h : SS G STK σ c s) (hr : KR G s) : Ws s G.KB (kz G.pLen) G.
   have e := h.kbNat
   have l := h.lens
   have inS : G.rScr ∈ s.wr := by rw [h.gi.wr, h.gi.pre.wr, h.gi.hG]; simp
-  refine ⟨⟨⟨G.scr, kB G.pLen, G.scrLen * 8, inS, rfl, by omega, by omega⟩, by omega⟩,
+  refine ⟨⟨⟨G.scr, kB G.pLen, G.scrLen * 8, inS, rfl, by omega_arith, by omega_using [this]⟩, by omega_arith⟩,
     ?_, ?_, ?_, hr.r29, hr.r30, hr.r31⟩ <;>
     simp only [arr, S, VG.Proof.Rsa.KeyWorkspace.hdr, nArrs, kz, GP.w] <;> rcases l with e | e | e <;> rw [e] <;> decide
 
@@ -43,7 +43,7 @@ theorem frame_of_outside {O : Addr} {L : Nat} {m m' : Mem} (h : VG.Proof.Bignum.
   have := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at this
   show 0 + L ≤ (x - O).toNat
-  omega))
+  omega_using [this]))
 
 section
 variable {G : GP} {c : Cfg} {X : State → Prop}
@@ -100,21 +100,21 @@ theorem storeS_vp {j o n : Nat} (cert : CertS j) (hj : j ∈ c.live) (hn0 : 0 < 
   have va := h.arrs.get hj
   have hsep : Region.Disjoint ⟨G.sa o, n⟩ G.rK := (gi.kdisj ok.2.1 ok.2.2).symm
   have hc : ∀ i < n, (⟨G.sa o, n⟩ : Region).Contains (G.sa o + BitVec.ofNat 64 i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn15, hi])
   refine WP.mono (storeBytes_ok hw hjN (by decide) p5 p8 p9 hn0 hnw
     (fun i hi => by
       show InRegions s.wr (G.sa o + BitVec.ofNat 64 i) 1
-      rw [GP.sa_add]; exact gi.inScr (by omega) (by omega))
+      rw [GP.sa_add]; exact gi.inScr (by omega_using [ok, hi]) (by omega_using []))
     (fun i hi x hx e => by subst e; exact absurd (past_of_disjoint' hsep (hc i hi)) (Nat.not_le.mpr hx))
-    (by rw [GP.sa, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega),
-      Nat.mod_eq_of_lt (by omega)]; omega)) fun t ⟨_, bt, ot, kt⟩ => ⟨⟨?_, x⟩, kr.of_keep ⟨kt.gpr, kt.rd, kt.wr⟩⟩
+    (by rw [GP.sa, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho15]),
+      Nat.mod_eq_of_lt (by omega_using [hn0, fit, ok])]; omega_using [fit, ok])) fun t ⟨_, bt, ot, kt⟩ => ⟨⟨?_, x⟩, kr.of_keep ⟨kt.gpr, kt.rd, kt.wr⟩⟩
   have bs : Spec.Rsa.bytesAt t.mem (G.sa o) n = Spec.Rsa.i2osp (c.A j % 2 ^ (8 * n)) n := by
     rw [bytes_of_store hnw fun i hi => by rw [bt i hi]; rfl, Nat.pow_mul, va]
   refine h.of_scrs ⟨kt.gpr, kt.rd, kt.wr⟩ kt.sp (os := [(o, n)]) (fun p hp => ?_)
     ((frame_of_outside ot).mono (by simp)) fun y hy => ?_
-  · simp only [List.mem_singleton] at hp; subst hp; simp only [ClOk, List.length_replicate]; omega
+  · simp only [List.mem_singleton] at hp; subst hp; simp only [ClOk, List.length_replicate]; omega_using [ok]
   rcases List.mem_cons.mp hy with rfl | hy
-  · exact .inr ⟨by rw [VG.Proof.Rsa.i2osp_length]; exact bs, by simp only [ClOk, VG.Proof.Rsa.i2osp_length]; omega⟩
+  · exact .inr ⟨by rw [VG.Proof.Rsa.i2osp_length]; exact bs, by simp only [ClOk, VG.Proof.Rsa.i2osp_length]; omega_using [ok]⟩
   · exact .inl ⟨(hcl y hy).1, fun p hp => by simp only [List.mem_singleton] at hp; subst hp; exact (hcl y hy).2⟩
 
 end

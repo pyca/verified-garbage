@@ -66,7 +66,7 @@ theorem loop_ct : RelCT isa (Rel2 rnK.pre rnK.pub Z) rnLoop fun _ _ => True := b
   · have l := lpre hp h
     obtain ⟨t, u, e, -⟩ := RejNtt.loop_ok (X_length σ) (s₀ := s.withRegions (lrd σ) (lwr σ))
       ⟨l.buf, fun p hp' => Proof.MlKem.AArch64.in_rd (Proof.MlKem.AArch64.in_regions
-        (List.mem_singleton_self _) (Offset.contains_base _ (by omega) (by omega))),
+        (List.mem_singleton_self _) (Offset.contains_base _ (by omega_using [hp']) (by omega_using [hp']))),
         fun i hi => Proof.MlKem.AArch64.in_regions (List.mem_singleton_self _) (coeff_contains _ hi),
         l.disj, l.x25, l.x26⟩
     exact ⟨t, u, e⟩

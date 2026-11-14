@@ -53,7 +53,7 @@ private theorem attempt_progress (S : Signer) {s t : State} {h : RandomSignABI S
   cases fuel with
   | zero => omega
   | succ fuel =>
-    refine WP.mono (random_sign_attempt S hr hpos (by omega) hval) fun u hu => ?_
+    refine WP.mono (random_sign_attempt S hr hpos (by omega_using [hbound]) hval) fun u hu => ?_
     cases hc : (randomSignDraw (randomInput s) used).scalar with
     | none =>
       simp only [RandomSignAttemptPost, hc] at hu
@@ -90,9 +90,9 @@ private theorem attempt_progress (S : Signer) {s t : State} {h : RandomSignABI S
             ⟨0, by rw [hused]; exact hr'⟩, by rw [hword, hstatus]; rfl, ?_⟩⟩
           intro he
           omega
-        · have hn : fuel + 1 ≠ 1 := by omega
+        · have hn : fuel + 1 ≠ 1 := by omega_using [hz]
           refine ⟨hready.scr, hready.sp, Or.inr ⟨by rw [hword, ite_eq_right hn], fuel,
-            by omega, by omega, by omega, used + (randomSignDraw (randomInput s) used).used, hr', hrel'⟩⟩
+            by omega_using [], by omega_using [hz], by omega_using [hbound], used + (randomSignDraw (randomInput s) used).used, hr', hrel'⟩⟩
 
 theorem random_sign_loop_correct (S : Signer) {s t : State} {h : RandomSignABI S.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
@@ -160,7 +160,7 @@ theorem random_finish_ready_result {extra : Nat} {s t : State} (h : RandomSignAB
     have hl := h.lengths
     have ho := h.outLength
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl, ho]
   have hptr : word t.mem (randomBase s) Random.oUsedPtr = s.gpr .x2 :=
     hr.saved (56, s.gpr .x2) (by simp [randomSavedValues])
   have hframeOut := h.stackOut.sub_left (random_frame_sub h)
@@ -202,7 +202,7 @@ theorem random_finish_ready_result {extra : Nat} {s t : State} (h : RandomSignAB
         rw [hstatus] at he
         have hn := congrArg BitVec.toNat he
         change result.status % 2 ^ 64 = 1 at hn
-        omega
+        omega_using [hbound, hs, hn]
       rw [hsig hs]
       exact bytes_zero (hbad hw)
   · rw [hum, ← hpM, random_publish_used, huM]

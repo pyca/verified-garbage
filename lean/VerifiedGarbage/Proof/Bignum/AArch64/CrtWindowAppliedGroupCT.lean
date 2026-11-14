@@ -38,7 +38,7 @@ theorem appliedGroup_ct (W : Window) (n : Nat) (hn : n ≤ 8) :
   | zero =>
     exact two_taint [] (fun _ _ _ _ _ _ h => by cases h) (hc := .block []) rfl
   | succ n ih =>
-    exact RelCT.seq (two_post (appliedStep_ct W (5 * n) (by omega))
-      (fun _ _ h => appliedStep_post W (5 * n) (by omega) h)) (ih (by omega))
+    exact RelCT.seq (two_post (appliedStep_ct W (5 * n) (by omega_using [hn]))
+      (fun _ _ h => appliedStep_post W (5 * n) (by omega_using [hn]) h)) (ih (by omega_using [hn]))
 
 end VG.Proof.Bignum.AArch64.WindowFive

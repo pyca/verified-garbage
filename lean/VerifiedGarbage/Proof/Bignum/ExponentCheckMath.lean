@@ -23,7 +23,7 @@ theorem exponentHigh_step (x b : Nat) (hb : b < 256) :
   have splitX := Nat.div_add_mod x (2 ^ 32)
   have splitLow := Nat.div_add_mod (x % 2 ^ 32) (2 ^ 24)
   unfold exponentHigh
-  omega
+  omega_using [hb]
 
 theorem exponentLow_step (x b : Nat) :
     (256 * (x % 2 ^ 32) + b) % 2 ^ 32 = (256 * x + b) % 2 ^ 32 := by
@@ -38,8 +38,8 @@ theorem exponent_valid_words (x : Nat) :
   have splitX := Nat.div_add_mod x (2 ^ 32)
   have low := Nat.mod_lt x (by decide : 0 < 2 ^ 32)
   have parity : x % 2 ^ 32 % 2 = x % 2 := Nat.mod_mod_of_dvd x (by decide)
-  have upper : exponentHigh x < 2 ↔ x < 2 ^ 33 := by unfold exponentHigh; omega
-  have lower : (0 < exponentHigh x ∨ 3 ≤ x % 2 ^ 32) ↔ 3 ≤ x := by unfold exponentHigh; omega
+  have upper : exponentHigh x < 2 ↔ x < 2 ^ 33 := by unfold exponentHigh; omega_using []
+  have lower : (0 < exponentHigh x ∨ 3 ≤ x % 2 ^ 32) ↔ 3 ≤ x := by unfold exponentHigh; omega_using []
   simp only [Spec.Rsa.exponentValid, upper, lower, parity, Bool.beq_eq_decide_eq]
   cases decide (x % 2 = 1) <;> cases decide (3 ≤ x) <;> cases decide (x < 2 ^ 33) <;> rfl
 

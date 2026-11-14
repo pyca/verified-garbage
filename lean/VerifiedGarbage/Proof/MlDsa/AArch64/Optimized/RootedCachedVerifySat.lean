@@ -91,8 +91,8 @@ private theorem satMem_low (p : Params) (a : Addr) (n : Nat) (ha : a.toNat+n≤1
   have e : (a+BitVec.ofNat 64 i).toNat=a.toNat+i := by
     rw [BitVec.toNat_add,BitVec.toNat_ofNat]
     have := a.isLt
-    omega
-  have hh : a.toNat+i<1048576 := by omega
+    omega_using [ha, hi]
+  have hh : a.toNat+i<1048576 := by omega_using [ha, hi]
   simp only [satMem,e,hh,ite_true]
 
 private theorem satMem_high (p : Params) (a : Addr) (ha : 1048576≤a.toNat) (hb : a.toNat+8≤2^64) :
@@ -101,8 +101,8 @@ private theorem satMem_high (p : Params) (a : Addr) (ha : 1048576≤a.toNat) (hb
   intro i hi
   have e : (a+BitVec.ofNat 64 i).toNat=a.toNat+i := by
     rw [BitVec.toNat_add,BitVec.toNat_ofNat]
-    omega
-  have hh : ¬a.toNat+i<1048576 := by omega
+    omega_using [hb, hi]
+  have hh : ¬a.toNat+i<1048576 := by omega_using [ha]
   simp only [satMem,e,hh,ite_false]
 
 private theorem roots (p : Params) (hp : Ok3 p) : StaticRoots 16 (verifySat p) := by

@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p521_verify_adx` if the CPU supports its features (`VG_ECDSA_P521_VERIFY_ADX_FEATURES`); or else `vg_ecdsa_p521_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `public` must be valid for reads of 133 bytes.
@@ -58,6 +60,8 @@ pub unsafe fn vg_ecdsa_p521_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pub
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ecdsa_p521_sign_adx` if the CPU supports its features (`VG_ECDSA_P521_SIGN_ADX_FEATURES`); or else `vg_ecdsa_p521_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

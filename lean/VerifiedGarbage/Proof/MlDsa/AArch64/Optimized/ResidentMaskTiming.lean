@@ -142,9 +142,9 @@ theorem finish_ok {σ s : State} {d : Nat} (hp : Pre σ) (hd : Decoded σ s d) :
   have access (off : Nat) (hb : off+8≤8192) :
       InRegions (s.rd++s.wr) (σ.gpr .x4+BitVec.ofNat 64 off) 8 := by
     rw [he.rd,he.wr]
-    exact ⟨_,List.mem_append_right _ hp.scratch,Offset.contains_base _ hb (by omega)⟩
+    exact ⟨_,List.mem_append_right _ hp.scratch,Offset.contains_base _ hb (by omega_using [hb])⟩
   refine WP.mono (epi_ok σ s (σ.gpr .x4) he.base he.sp he.lr he.saved
-    (fun i hi => access _ (by omega)) (fun i hi => access _ (by omega))) ?_
+    (fun i hi => access _ (by omega_using [hi])) (fun i hi => access _ (by omega_using [hi]))) ?_
   intro t ⟨hab,hm,hrd,hwr⟩
   exact ⟨hab,hm ▸ he.frame,hm ▸ hl,hm ▸ hr,hrd.trans he.rd,hwr.trans he.wr⟩
 

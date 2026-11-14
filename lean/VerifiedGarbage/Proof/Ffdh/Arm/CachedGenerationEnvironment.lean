@@ -34,8 +34,8 @@ theorem CachedGenerationContext.after {p : Inputs} {s t : State}
     have hi' := List.mem_range.mp hi
     apply frame.readW (r := cachedRegion p) _ h.separate (by decide)
     simp only [cachedRegion, Region.Contains, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.fit; omega : 8 * i < 2 ^ 64)]
-    omega
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.fit; omega_using [hi', this] : 8 * i < 2 ^ 64)]
+    omega_using [hi']
   refine ⟨?_, h.valid, h.fit, ?_, ?_⟩
   · simpa only [Spec.Ffdh.generationContextAt, words] using h.canonical
   · rw [rest.rd, rest.wr]; exact h.readable

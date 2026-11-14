@@ -26,7 +26,7 @@ theorem validateArgs_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
   have cast (n : Nat) (hn : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hn]
   refine WP.mono (WP.keep [.x0, .x4, .x2, .x3] (Q := fun t =>
       t.gpr .x0 = VG.Proof.Bignum.off (W 5) packed ∧ t.gpr .x4 = VG.Proof.Bignum.off (W 5) domainCheck ∧
       t.gpr .x2 = BitVec.ofNat 64 pLen ∧ t.gpr .x3 = BitVec.ofNat 64 qLen ∧ t.mem = s.mem) (by

@@ -45,7 +45,7 @@ theorem blockEnd_ok (len : Nat) (hl : len ≤ 128) (s : State) :
         s'.mem = s.mem) ∧ Keep [.x2,.x4] s s') ∧ s'.v = s.v := by
   apply VG.Proof.MlKem.AArch64.WP.keepV (by rfl)
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
-  arun [show 4*len < 4096 by omega]
+  arun [show 4*len < 4096 by omega_using [hl]]
   rfl
 
 section
@@ -63,25 +63,25 @@ theorem block_ok {fP zP : Addr} {len st k : Nat} (h4 : 4 ≤ len) (hl : len ≤ 
       PolyIs s'.mem fP (blk G len k st len) ∧ s'.gpr .x2 = coeffAddr fP (st+2*len) ∧
       s'.gpr .x3 = (if up then s.gpr .x3+4 else s.gpr .x3-4) ∧
       s'.gpr .x4 = s.gpr .x4-1 ∧ BInv fP s s' := by
-  have hN : len/4 < 65536 := by omega
-  have hN0 : 0 < len/4 := by omega
-  have hcov : 4*(len/4) = len := by omega
+  have hN : len/4 < 65536 := by omega_using [hl]
+  have hN0 : 0 < len/4 := by omega_using [h4]
+  have hcov : 4*(len/4) = len := by omega_using [hl4]
   unfold block
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (zetas_large_ok hzt (by omega) (by omega) up hk h3 ht hzp hc)
+  refine WP.mono (zetas_large_ok hzt (by omega_using [h4]) (by omega_using [h4]) up hk h3 ht hzp hc)
     fun s₁ ⟨lz,c₁,h31,hm₁,k₁⟩ => ?_
   refine WP.mono (counter5_ok (len/4) hN s₁) fun s₂ ⟨⟨⟨hcnt,hm₂⟩,k₂⟩,hv₂⟩ => ?_
   have c₂ : VConsts s₂ := ⟨by rw [hv₂]; exact c₁.q, by rw [hv₂]; exact c₁.qi⟩
   have z₂ : Zetas (s₂.v .v18) (fun _ => zt (Spec.MlDsa.zetas k)) := by rw [hv₂]; exact lz
-  refine WP.seq (WP.mono (wp_countdown (cnt := .x5) (N := len/4) (by omega) hN0
+  refine WP.seq (WP.mono (wp_countdown (cnt := .x5) (N := len/4) (by omega_using [hl]) hN0
     (fun u s' => PolyIs s'.mem fP (blk G len k st (4*u)) ∧
       s'.gpr .x2 = coeffAddr fP (st+4*u) ∧ s'.v .v18 = s₂.v .v18 ∧ Keep [.x2,.x5] s₂ s' ∧ BInv fP s₂ s')
     (fun u hu s' ⟨hp,hx',hv',hki,hi⟩ _ => ?_)
     ⟨by rw [hblk.zero,hm₂,hm₁]; exact hP,
       by rw [k₂.get .x2,k₁.get .x2,hx]; rfl,rfl,Keep.refl _ _,BInv.refl c₂⟩ hcnt)
     fun s₃ ⟨hp,hx3,hv3,hki3,hi3⟩ => ?_)
-  · refine WP.mono (step_ok hbf hblk (by omega) hl4 hs (by omega) hi.consts
+  · refine WP.mono (step_ok hbf hblk (by omega_using [h4]) hl4 hs (by omega_using [hu]) hi.consts
       (by rw [hv']; exact z₂) hx' hp (by rw [hi.keep.wr,k₂.wr,k₁.wr]; exact hw))
       fun s'' ⟨hp',hf',hc',hv'',hx'',hcnt',hk'⟩ =>
         ⟨⟨hp',hx'',hv''.trans hv',(hki.trans hk').mono,hi.trans ⟨hk'.mono,hf',hc'⟩⟩,hcnt'⟩
@@ -89,7 +89,7 @@ theorem block_ok {fP zP : Addr} {len st k : Nat} (h4 : 4 ≤ len) (hl : len ≤ 
       ⟨by rw [hm4]; simpa only [hcov] using hp, ?_, ?_, ?_,
         ⟨(((k₁.trans k₂).trans hi3.keep).trans k₄).mono, ?_,
           ⟨by rw [hv4]; exact hi3.consts.q, by rw [hv4]; exact hi3.consts.qi⟩⟩⟩
-    · rw [hx4,hx3,hcov,coeffAddr_add,show st+len+len = st+2*len by omega]
+    · rw [hx4,hx3,hcov,coeffAddr_add,show st+len+len = st+2*len by omega_using []]
     · rw [k₄.get .x3,hki3.get .x3,k₂.get .x3,h31]
     · rw [hcnt4,hki3.get .x4,k₂.get .x4,k₁.get .x4]
     · rw [hm4]; simpa only [hm₂,hm₁] using hi3.frame

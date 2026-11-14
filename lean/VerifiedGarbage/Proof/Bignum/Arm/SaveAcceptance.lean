@@ -24,7 +24,7 @@ theorem saveAcceptance_ok (s : State) (fit : s.sp.toNat + 52 ≤ 2 ^ 32)
   unfold saveAcceptance
   refine wp_stackAddr (by decide) fun u a => ?_
   refine wp_str (a := off (State.addr s.sp) 48) (by decide)
-    (by rw [a.gpr]; simp only [BitVec.add_zero]; exact addr_add (by omega))
+    (by rw [a.gpr]; simp only [BitVec.add_zero]; exact addr_add (by omega_using [fit]))
     (by rw [a.wr]; exact write) fun t b => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr s.sp) 48) (s.gpr .r11) := by
     rw [b.mem, a.mem, a.other .r11 (by decide)]

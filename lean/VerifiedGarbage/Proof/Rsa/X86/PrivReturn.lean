@@ -18,7 +18,7 @@ theorem popped_four_value (s : State) :
 theorem PrivFnInput.returnWord {g : PrivGeometry} {bs : Fin 8 → List Byte} {s t : State}
     (h : PrivFnInput g bs s) (frame : Frame (bodyWrites g) (entered s).mem t.mem) :
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
-  have low : 16 ≤ (s.gpr .esp).toNat := by have := h.stackFit; unfold stackBytes at this; omega
+  have low : 16 ≤ (s.gpr .esp).toNat := by have := h.stackFit; unfold stackBytes at this; omega_using [this]
   have savedFrame := pushed_frame (rs := savedRegisters) (s := s) (by decide) low
   have contains : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Contains ((s.gpr .esp).setWidth 64) (32 / 8) :=
     Region.contains_self _ _

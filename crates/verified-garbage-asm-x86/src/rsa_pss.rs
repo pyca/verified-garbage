@@ -5,7 +5,7 @@
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+/// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -18,7 +18,7 @@
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -32,9 +32,9 @@
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash` or `mgf1` (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the arguments on the stack, overlap the return address on the stack or the 260 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1VWV42kJHD///+LlCTcAAAAi1IUg/oA"
 je 20f
@@ -54,7 +54,7 @@ je 212f
 jne 214f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULggAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULggAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 216:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 217:
@@ -167,7 +167,7 @@ jmp 213f
 jne 243f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgcAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgcAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 245:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 246:
@@ -281,7 +281,7 @@ jmp 211f
 jne 272f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULhAAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULhAAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 274:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 275:
@@ -395,7 +395,7 @@ jmp 29f
 jne 2101f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgwAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgwAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 2103:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2104:
@@ -509,7 +509,7 @@ jmp 27f
 jne 2130f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULggAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULggAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 2132:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2133:
@@ -623,7 +623,7 @@ jmp 25f
 jne 2159f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgcAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgcAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 2161:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2162:
@@ -737,7 +737,7 @@ jmp 23f
 jne 2188f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgUAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgUAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 2190:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2191:
@@ -851,7 +851,7 @@ jmp 21f
 jne 2217f
 .base64 "iegFAAQAAIkEJIuEJKgAAACJRCQEi4Qk1AAAAIlEJAiLhCTYAAAAiUQkDIuEJKwAAACJRCQQi4QksAAAAIlEJBSLhCS8AAAAiUQkGIuEJKgAAACJRCQciegFACAAAIlEJCCLhCTQAAAALQAEAACJRCQk"
 call {vg_rsa_public_precomputed_checked}
-.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgQAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AQiYQkiAAAALgAAAAAiUQkaIlEJGw="
+.base64 "ie6BxgAEAACJ9wO8JKgAAACD7wGJ8wNcJCgPtgc1vAAAAA+2FrkAAAAAK0wkKCHKCdAPthOLTCQsgfH/AAAAIcoJ0IlEJHCJ6AUABAAAA0QkKIlEJFiLTCQwiUwkXAHIiUQkULgQAAAAiUQkVIuEJOAAAACJhCSEAAAAi0AYiYQkiAAAALgAAAAAiUQkaIlEJGw="
 2219:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2220:
@@ -965,9 +965,9 @@ jmp 2218f
     )
 }
 
-/// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the `digest_len`-byte digest `digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - digest_len - 2`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPss.signTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -985,7 +985,8 @@ jmp 2218f
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -994,14 +995,16 @@ jmp 2218f
 /// * `digest_len` must be the digest length of the hash function `hash` names.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash` or `mgf1` (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash` and `mgf1` may overlap the arguments on the stack, overlap the return address on the stack or the 3608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1` or `pre` (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "U1VWV42kJHD///+LlCT8AAAAi1IUg/oA"
 je 20f
@@ -1071,7 +1074,7 @@ jmp 228f
 230:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 230b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuCAAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuCAAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 231:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 232:
@@ -1079,8 +1082,8 @@ jne 230b
 jne 232b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 231b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 215f
 214:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1145,7 +1148,7 @@ jmp 248f
 250:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 250b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBwAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBwAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 251:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 252:
@@ -1153,8 +1156,8 @@ jne 250b
 jne 252b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 251b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 235f
 234:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1220,7 +1223,7 @@ jmp 268f
 270:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 270b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuEAAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuEAAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 271:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 272:
@@ -1228,8 +1231,8 @@ jne 270b
 jne 272b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 271b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 255f
 254:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1295,7 +1298,7 @@ jmp 288f
 290:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 290b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuDAAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuDAAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 291:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 292:
@@ -1303,8 +1306,8 @@ jne 290b
 jne 292b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 291b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 275f
 274:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1370,7 +1373,7 @@ jmp 2108f
 2110:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 2110b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuCAAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuCAAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 2111:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2112:
@@ -1378,8 +1381,8 @@ jne 2110b
 jne 2112b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 2111b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 295f
 294:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1445,7 +1448,7 @@ jmp 2128f
 2130:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 2130b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBwAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBwAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 2131:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2132:
@@ -1453,8 +1456,8 @@ jne 2130b
 jne 2132b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 2131b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 2115f
 2114:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1520,7 +1523,7 @@ jmp 2148f
 2150:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 2150b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBQAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBQAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 2151:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2152:
@@ -1528,8 +1531,8 @@ jne 2150b
 jne 2152b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 2151b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 2135f
 2134:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1595,7 +1598,7 @@ jmp 2168f
 2170:
 .base64 "D7YGiAODwwGDxgGD6QGD+QA="
 jne 2170b
-.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBAAAACJRCRUi4QkAAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "ie6BxgAEAAADtCSwAAAAg+4BuLwAAACIBonoBQAEAAADRCQoiUQkWItMJDCJTCRcAciJRCRQuBAAAACJRCRUi4QkAAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 2171:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 2172:
@@ -1603,8 +1606,8 @@ jne 2170b
 jne 2172b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 2171b
-.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
+.base64 "ie6BxgAEAAADdCQoD7YGI0QkLIgGi4QkpAAAAIkEJIuEJLAAAACJRCQEi4QkrAAAAIlEJAiLhCSwAAAAiUQkDIuEJLQAAACJRCQQi4QkuAAAAIlEJBSJ6AUABAAAiUQkGIuEJLAAAACJRCQci4QkvAAAAIlEJCCLhCTAAAAAiUQkJIuEJMQAAACJRCQoi4QkyAAAAIlEJCyLhCTMAAAAiUQkMIuEJMAAAACJRCQ0i4Qk1AAAAIlEJDiLhCTIAAAAiUQkPIuEJNwAAACJRCRAi4QkwAAAAIlEJESJ6AUAIAAAiUQkSIuEJPgAAAAtAAQAAIlEJEyLhCQEAQAAiUQkUIuEJAgBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
 jmp 2155f
 2154:
 .base64 "i7QkpAAAAIuMJLAAAAC4AAAAAA=="
@@ -1616,6 +1619,6 @@ jne 2173b
 21:
 .base64 "jaQkkAAAAIs8JIt0JASLbCQIW1tbW8M="
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

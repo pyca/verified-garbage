@@ -22,9 +22,9 @@ theorem crt_primeArgs_ok (s : State) {base child : BitVec 32} {size slot w : Nat
       t.gpr .r7 = BitVec.ofNat 32 w ∧ t.gpr .r2 = child ∧ t.mem = s.mem ∧ Rest [.r7, .r2] s t := by
   unfold primeArgs
   refine wp_ldr (a := off (State.addr base) 48) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun u a => ?_
   refine wp_ldr (a := off (State.addr base) slot) hs
-    (by rw [a.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [a.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega_using [slotFit, this]))
     (by rw [a.rd, a.wr]; exact ws.read slotFit) fun t b => WP.block_nil ?_
   exact ⟨(b.other .r7 (by decide)).trans (a.gpr.trans count),
     by rw [b.gpr, a.mem]; exact link, b.mem.trans a.mem, (a.rest (by simp)).trans (b.rest (by simp))⟩

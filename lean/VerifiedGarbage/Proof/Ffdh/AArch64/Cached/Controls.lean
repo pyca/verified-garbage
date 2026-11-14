@@ -23,7 +23,7 @@ def TablePointer (B table : Addr) (s : State) : Prop := word s.mem B (8*sTab)=ta
 
 theorem arrays_header {B : Addr} {w i : Nat} {m m' : Mem} {js : List Nat}
  (frame : Arrays B w js m m') (hi : i<32) : word m' B (8*i)=word m B (8*i) :=
- frame.word_eq (fun j _ => Or.inl (hdr_lt_slot w j hi)) (by omega)
+ frame.word_eq (fun j _ => Or.inl (hdr_lt_slot w j hi)) (by omega_using [hi])
 
 theorem Controls.after_arrays {B src ctx : Addr} {k N w : Nat} {s t : State} {js : List Nat}
  (h : Controls B src ctx k N s) (frame : Arrays B w js s.mem t.mem) : Controls B src ctx k N t := by

@@ -75,7 +75,7 @@ def AttAt (a : AttPub V) (s₀ t : State) : Prop := AttFacts a s₀ ∧ Att s₀
 
 theorem AttFacts.spl_trace {a : AttPub V} {s₀ : State} (F : AttFacts a s₀) :
     (spl s₀ 128 a.used).trace = randomSamplingTrace a.tr := by
-  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega⟩
+  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega_using [this]⟩
   rw [← F.tr, hf]
   exact (VG.Proof.Dsa.random_sign_trace_draw _ _ _).symm
 
@@ -95,7 +95,7 @@ theorem AttFacts.signed {a : AttPub V} {s₀ : State} (F : AttFacts a s₀) {k :
     (hk : (spl s₀ 128 a.used).scalar = some k) :
     (Spec.Dsa.signBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key
       (Spec.Dsa.encodeBE (rInput s₀).qLen k) (rInput s₀).digest).isSome = a.signed := by
-  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega⟩
+  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := F.pos; omega_using [this]⟩
   have htr := F.tr
   rw [hf] at htr
   unfold AttPub.signed
@@ -146,7 +146,7 @@ theorem args_ok {a : AttPub V} {s₀ t : State} (A : RandomSignABI s₀) (h : Te
   rw [← m₃] at o₃
   refine ⟨S.facts, h₃, fun i hi => ?_, ⟨k, hk, ?_⟩, ?_⟩
   · rw [m₃, k₃.1 .esp (by decide)]; exact argsMem_slots s₀ _ _ i hi
-  · rw [outs_frame_bytes o₃ (by decide) (by unfold oNonce; omega)]; exact S.out.nonce k hk
+  · rw [outs_frame_bytes o₃ (by decide) (by unfold oNonce; omega_using [hql])]; exact S.out.nonce k hk
   · rw [outs_high o₃ (e := 44) (by decide) (by decide) (by decide)]; exact S.attempts
 
 /-- After the call. -/
@@ -189,7 +189,7 @@ theorem callFinish_ct : RelCT isa (Two fun (a : AttPub V) => At (Called a) a.pub
   · refine RelCT.seq (two_piece (Ψ := fun a => At (Spent' a) a.pub) [.esp]
       (pins_at' AttPub.pub fun _ _ _ h => h.1) (by taint_decide)
       fun a t ⟨⟨s₀, A, e, h, _, ha, hp, hl⟩, _⟩ => ?_) ?_
-    · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by omega⟩
+    · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by omega_using [hp]⟩
       rw [hf] at ha hl
       refine WP.mono (finDec_ok h ha hl) fun u ⟨h', _, _, z⟩ => ⟨s₀, A, e, h', ?_⟩
       rw [z, hf, Nat.add_sub_cancel]
@@ -222,7 +222,7 @@ theorem attempt_ct (F : SignFn) :
       by rw [fu.mem]; exact S.out.status, by rw [fu.mem]; exact S.out.nonce⟩, S.ready.fupd fu,
       by rw [fu.mem]; exact S.attempts⟩
   · have hle := sampleStatus_le (spl s₀ 128 a.used)
-    rw [z, eax, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega) (by decide),
+    rw [z, eax, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_beq (by omega_using [hle]) (by decide),
       S.facts.status]
   refine two_ite (fun a t₁ t₂ ⟨_, _, _, _, z₁⟩ ⟨_, _, _, _, z₂⟩ => by simp only [eval, z₁, z₂]) ?_ ?_
   · refine RelCT.seq (two_piece (Ψ := fun a => At (Args a) a.pub) [.esp]

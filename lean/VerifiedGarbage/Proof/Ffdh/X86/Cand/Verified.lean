@@ -49,7 +49,7 @@ def satState : State where
   syms _ := 0x30000
 
 theorem sat_arguments (i : Nat) (index : i < 9) : arg satState i = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 private theorem single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
@@ -80,7 +80,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
   have address : ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat =
       65532 + 8 * i + j := by
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [small, bound]
   change (if _ then _ else _) = _
   apply ite_eq_right
   intro inside
@@ -88,7 +88,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
   apply (show ¬ ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat < 36 from by
     change ¬ ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat < 36
     rw [address]
-    omega) inside
+    omega_using []) inside
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩

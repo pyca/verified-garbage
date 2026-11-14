@@ -145,13 +145,13 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3824) (hd : d + k ≤ 3824) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 omit L in
 /-- `W` and a part of it. -/
 theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 3824) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.base_disjoint _ h (by omega)
+  Offset.base_disjoint _ h (by omega_using [hd])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 3824) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
@@ -164,7 +164,7 @@ theorem d_w' {d k : Nat} (hd : d + k ≤ 3824) : (⟨c.D, c.n⟩ : Region).Disjo
 
 theorem wrapW {d : Nat} (hd : d < 3824) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem rb : 16 * (c.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 

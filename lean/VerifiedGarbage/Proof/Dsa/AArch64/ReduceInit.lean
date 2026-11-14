@@ -26,7 +26,7 @@ theorem header_work {B : Addr} {w i : Nat} {mem mem' : Mem}
   intro x hx
   apply h x
   have hb := hx (136, slot w 8 + tabBytes w - 136) (List.mem_singleton_self _)
-  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   omega
 
 /-- Initialize source and count without touching the prepared arrays. -/
@@ -46,7 +46,7 @@ theorem reduceInit_ok {s : State} {B p : Addr} {Z o w wx m : Nat} {minv : BitVec
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   have hlo := hc.lo
   have hhi := hc.hi
-  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   have hcl := hdr_lt_slot wx 8 (show Crt.sLink < 32 by decide)
   have hcs := hdr_lt_slot wx 8 (show Crt.sSrc < 32 by decide)
   have hcr := hdr_lt_slot wx 8 (show Crt.sRem < 32 by decide)
@@ -57,11 +57,11 @@ theorem reduceInit_ok {s : State} {B p : Addr} {Z o w wx m : Nat} {minv : BitVec
   · unfold Arithmetic.reduceInit
     drun [Crt.ldw, hc.x0, hdr_enc hsp, hdr_enc hsl, hdr_enc (show Crt.sLink < 32 by decide),
       hdr_enc (show Crt.sSrc < 32 by decide), hdr_enc (show Crt.sRem < 32 by decide), hc.link, hp, hl,
-      hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot wx 8 by omega),
-      hc.scr.ld (show 8 * sp + 8 ≤ Z by omega),
-      hc.scr.ld (show 8 * sl + 8 ≤ Z by omega),
-      hc.good.scr.st (show 8 * Crt.sSrc + 8 ≤ slot wx 8 by omega),
-      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega)]
+      hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot wx 8 by omega_using [hcl]),
+      hc.scr.ld (show 8 * sp + 8 ≤ Z by omega_using [hsp, hlo, hhi, hslot]),
+      hc.scr.ld (show 8 * sl + 8 ≤ Z by omega_using [hsl, hlo, hhi, hslot]),
+      hc.good.scr.st (show 8 * Crt.sSrc + 8 ≤ slot wx 8 by omega_using [hcs]),
+      hc.good.scr.st (show 8 * Crt.sRem + 8 ≤ slot wx 8 by omega_using [hcr])]
   have hs : Outside (off B o) (8 * Crt.sSrc) 8 s.mem
       (s.mem.writeW (off (off B o) (8 * Crt.sSrc)) p) := writeW_outside _ _ _ (by decide)
   have hr : Outside (off B o) (8 * Crt.sRem) 8

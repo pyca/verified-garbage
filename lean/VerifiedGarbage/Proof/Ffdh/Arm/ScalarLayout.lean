@@ -25,16 +25,16 @@ theorem Inputs.scalarBound_bits_fit (p : Inputs) :
       have h := VG.Proof.Bignum.os2ip_lt ((p.dom.drop (2 * p.k)).take p.k)
       have size : ((p.dom.drop (2 * p.k)).take p.k).length ≤ p.k := List.length_take_le _ _
       rw [VG.Proof.Bignum.pow256_eq] at h
-      exact Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by omega))
+      exact Nat.lt_of_lt_of_le h (Nat.pow_le_pow_right (by decide) (by omega_using [size]))
     · simp only [Option.getD_none]
       have h := VG.Proof.Bignum.os2ip_lt (p.dom.take p.k)
       rw [p.pLength, VG.Proof.Bignum.pow256_eq] at h
-      omega
+      omega_using [h]
   unfold Spec.RsaKeyGen.bitLength
   split
-  · omega
+  · omega_using []
   · have h := (Nat.log2_lt (by assumption)).mpr bound
-    omega
+    omega_using [h]
 
 def vettedScalarOctets (p : Inputs) (rb : List Byte) : List Byte :=
   VG.Proof.Ffdh.VettedPolicy.octets (Spec.Ffdh.domainOf p.k p.dom) rb
@@ -42,7 +42,7 @@ def vettedScalarOctets (p : Inputs) (rb : List Byte) : List Byte :=
 theorem vettedScalarOctets_value {p : Inputs} {rb : List Byte} (size : rb.length = p.k) :
     Spec.Rsa.os2ip (vettedScalarOctets p rb) =
       Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf p.k p.dom) rb :=
-  VG.Proof.Ffdh.VettedPolicy.octets_value (by have := p.minLength; omega)
+  VG.Proof.Ffdh.VettedPolicy.octets_value (by have := p.minLength; omega_using [size, this])
     (by rw [size]; exact p.scalarBound_bits_fit)
 
 end VG.Proof.Ffdh.Arm
@@ -74,11 +74,11 @@ def encode {p : Inputs} (l : ScalarLayout p) (rb : List Byte) : List Byte :=
 theorem width_bounds {p : Inputs} (l : ScalarLayout p) : 0 < l.width ∧ l.width ≤ p.k := by
   have := l.lead_lt
   unfold width
-  omega
+  omega_using [this]
 
 theorem encode_length {p : Inputs} (l : ScalarLayout p) {rb : List Byte}
     (size : rb.length = p.k) : (l.encode rb).length = p.k := by
-  rw [encode, VG.Proof.Ffdh.KeyScalar.cut_length _ (by have := l.lead_lt; omega), size]
+  rw [encode, VG.Proof.Ffdh.KeyScalar.cut_length _ (by have := l.lead_lt; omega_using [size, this]), size]
 
 theorem encode_significant {p : Inputs} (l : ScalarLayout p) (rb : List Byte) :
     Spec.Rsa.os2ip ((l.encode rb).drop l.lead) = Spec.Rsa.os2ip (l.encode rb) :=
@@ -89,7 +89,7 @@ def vetted (p : Inputs) : ScalarLayout p :=
   let count := VG.Proof.Ffdh.ScalarWidth.width bits
   ⟨p.k - count, (VG.Proof.Ffdh.ScalarWidth.mask bits).zeroExtend 32, by
     have positive := VG.Proof.Ffdh.ScalarWidth.width_pos bits
-    have fits : count ≤ p.k := VG.Proof.Ffdh.ScalarWidth.width_le (by have := p.minLength; omega)
+    have fits : count ≤ p.k := VG.Proof.Ffdh.ScalarWidth.width_le (by have := p.minLength; omega_using [this])
       (Nat.le_trans (VG.Proof.Ffdh.VettedPolicy.bits_le_bound _) p.scalarBound_bits_fit)
     change p.k - count < p.k
     omega⟩

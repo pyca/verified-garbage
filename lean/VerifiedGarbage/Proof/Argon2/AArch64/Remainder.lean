@@ -44,7 +44,7 @@ theorem extr_value (a x : BitVec 64) (ha : a.toNat < 2 ^ 32) :
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt hx,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   simp only [Nat.reducePow] at *
-  omega
+  omega_using [ha]
 
 theorem reduce_value (e l : BitVec 64) (hl : l.toNat < 2 ^ 32) (he : e.toNat < 2 * l.toNat) :
     (if decide (2 ^ 64 ≤ e.toNat + (~~~l).toNat + (true).toNat) = true
@@ -52,12 +52,12 @@ theorem reduce_value (e l : BitVec 64) (hl : l.toNat < 2 ^ 32) (he : e.toNat < 2
   have hn := BitVec.toNat_not (x := l)
   simp only [Bool.toNat_true, decide_eq_true_eq, Nat.reducePow] at *
   split
-  · have hle : l.toNat ≤ e.toNat := by omega
+  · have hle : l.toNat ≤ e.toNat := by omega_arith
     have hm : e.toNat % l.toNat = e.toNat - l.toNat := by
-      rw [Nat.mod_eq_sub_mod hle, Nat.mod_eq_of_lt (by omega : e.toNat - l.toNat < l.toNat)]
+      rw [Nat.mod_eq_sub_mod hle, Nat.mod_eq_of_lt (by omega_using [he] : e.toNat - l.toNat < l.toNat)]
     rw [BitVec.toNat_add, BitVec.toNat_add, hn, BitVec.toNat_ofNat, hm]
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)]
+    omega_arith
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem step_ok (s : State) (ha : (s.gpr .x4).toNat < (s.gpr .x1).toNat)
     (hl : (s.gpr .x1).toNat < 2 ^ 32) :
@@ -65,14 +65,14 @@ theorem step_ok (s : State) (ha : (s.gpr .x4).toNat < (s.gpr .x1).toNat)
       (t.gpr .x4).toNat = (2 * (s.gpr .x4).toNat + (s.gpr .x0).toNat / 2 ^ 63) %
         (s.gpr .x1).toNat ∧
       t.gpr .x0 = s.gpr .x0 <<< 1 ∧ t.gpr .x1 = s.gpr .x1 ∧ Keeps changed s t := by
-  have he := extr_value (s.gpr .x4) (s.gpr .x0) (by omega)
+  have he := extr_value (s.gpr .x4) (s.gpr .x0) (by omega_using [ha, hl])
   apply WP.of_runBlock
   simp only [step, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     show 63 < 64 from by decide, show 1 < 64 from by decide, ite_true, CondCode.holds,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, BitVec.setWidth_eq,
     reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, trivial, ?_⟩
-  · have hr := reduce_value _ _ hl (by rw [he]; have := (s.gpr .x0).isLt; omega)
+  · have hr := reduce_value _ _ hl (by rw [he]; have := (s.gpr .x0).isLt; omega_using [ha])
     rw [hr, he]
   · constructor
     · intro r hr
@@ -90,7 +90,7 @@ structure Invariant (n l : BitVec 64) (k : Nat) (s : State) : Prop where
 theorem next_bit (n : BitVec 64) (k : Nat) (hk : k < 32) :
     n.toNat / 2 ^ (32 - (k + 1)) =
       2 * (n.toNat / 2 ^ (32 - k)) + (n <<< (32 + k)).toNat / 2 ^ 63 := by
-  have hj : 32 - k = (32 - (k + 1)) + 1 := by omega
+  have hj : 32 - k = (32 - (k + 1)) + 1 := by omega_using [hk]
   rw [hj, Divide.prefix_step n (32 - (k + 1))]
   congr 1
   have hlt := (n <<< (32 + k)).isLt
@@ -99,11 +99,11 @@ theorem next_bit (n : BitVec 64) (k : Nat) (hk : k < 32) :
     generalize (n <<< (32 + k)).toNat = v at hlt ⊢
     have : v / 2 ^ 63 < 2 := by
       rw [Nat.div_lt_iff_lt_mul (by decide)]; simpa using hlt
-    rcases (by omega : v / 2 ^ 63 = 0 ∨ v / 2 ^ 63 = 1) with h | h <;> rw [h] <;> rfl
+    rcases (by omega_using [hlt] : v / 2 ^ 63 = 0 ∨ v / 2 ^ 63 = 1) with h | h <;> rw [h] <;> rfl
   rw [hbit, BitVec.getLsbD_shiftLeft]
   simp only [show (63 : Nat) < 64 from by decide, decide_true, Bool.true_and,
-    show ¬ (63 < 32 + k) from by omega, decide_false, Bool.not_false,
-    show 63 - (32 + k) = 32 - (k + 1) from by omega]
+    show ¬ (63 < 32 + k) from by omega_using [hk], decide_false, Bool.not_false,
+    show 63 - (32 + k) = 32 - (k + 1) from by omega_using []]
 
 theorem steps_ok (n l : BitVec 64) (hl0 : 0 < l.toNat)
     (hl : l.toNat < 2 ^ 32) (k m : Nat) (hkm : k + m = 32) (s : State)
@@ -111,7 +111,7 @@ theorem steps_ok (n l : BitVec 64) (hl0 : 0 < l.toNat)
     WP isa (.block (steps m)) s fun t => Invariant n l 32 t ∧ Keeps changed s t := by
   induction m generalizing k s with
   | zero =>
-    rw [show k = 32 by omega] at h
+    rw [show k = 32 by omega_using [hkm]] at h
     exact WP.block_nil ⟨h, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | succ m ih =>
     rw [steps, List.replicate_succ, List.flatten_cons, WP.block_append_iff]
@@ -122,10 +122,10 @@ theorem steps_ok (n l : BitVec 64) (hl0 : 0 < l.toNat)
     have ht : Invariant n l (k + 1) t := by
       refine ⟨?_, h1.trans h.divisor, ?_⟩
       · rw [h0, h.numerator, ← BitVec.shiftLeft_add, Nat.add_assoc]
-      · rw [h4, h.remainder, h.divisor, h.numerator, next_bit n k (by omega),
+      · rw [h4, h.remainder, h.divisor, h.numerator, next_bit n k (by omega_using [hkm]),
           Nat.add_mod (2 * (_ % _)), Nat.add_mod (2 * _), Nat.mul_mod 2 (_ % _),
           Nat.mul_mod 2 (_ / _), Nat.mod_mod]
-    refine (ih (k + 1) (by omega) t ht).mono ?_
+    refine (ih (k + 1) (by omega_using [hkm]) t ht).mono ?_
     rintro u ⟨hu, ku⟩
     exact ⟨hu, kt.trans ku⟩
 

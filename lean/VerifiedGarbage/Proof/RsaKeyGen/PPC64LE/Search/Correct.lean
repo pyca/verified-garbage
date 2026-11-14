@@ -75,7 +75,7 @@ theorem search_finish {p : SearchPublic} {original s : State} {final : PrimeSear
   have hus : inUsed original = ⟨p.up, 8⟩ := by rw [← hi.2]; rfl
   have hsw : ∀ d, d + 8 ≤ 32 → InRegions s.wr (p.stp + BitVec.ofNat 64 d) 8 := fun d hd =>
     ⟨inState original, by rw [h.wr, hi.wr_eq]; exact List.mem_cons_of_mem _ (by simp [inWrites]),
-      by rw [hst]; exact Offset.contains_base _ hd (by omega)⟩
+      by rw [hst]; exact Offset.contains_base _ hd (by omega_using [hd])⟩
   have huw : InRegions s.wr (p.up + BitVec.ofNat 64 0) 8 :=
     ⟨inUsed original, by rw [h.wr, hi.wr_eq]; exact List.mem_cons_of_mem _ (by simp [inWrites]),
       by rw [hus]; exact Offset.contains_base _ (by decide) (by decide)⟩
@@ -123,7 +123,7 @@ theorem finished_bytes {p : SearchPublic} {original : State} (h : SearchInput p 
   exact hf.bytes (R := ⟨p.op, p.len⟩) (fun q hq => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl
-    exacts [hos, hou]) (by simp only at hn ⊢; omega) (List.mem_range.mp hi)
+    exacts [hos, hou]) (by simp only at hn ⊢; omega_using [hn]) (List.mem_range.mp hi)
 
 theorem finished_used {p : SearchPublic} (m : Mem) (r : PrimeSearchResult) :
     Spec.Rsa.wordsAt (finished p m r) p.up 1 = [BitVec.ofNat 64 r.used] := by
@@ -141,7 +141,7 @@ theorem finished_state {p : SearchPublic} {original : State} (h : SearchInput p 
   have hpast (d : Nat) (hd : d + 8 ≤ 32) : word (finished p m r) p.stp d =
       word (SearchInit.written m p.stp [BitVec.ofNat 64 r.remaining, BitVec.ofNat 64 p.len,
         BitVec.ofNat 64 (primeEntropy p.len), BitVec.ofNat 64 (requested p.len r)]) p.stp d :=
-    read_past hsu (Offset.contains_base _ hd (by omega))
+    read_past hsu (Offset.contains_base _ hd (by omega_using [hd]))
       (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; decide)
       (by show 8 ≤ 2 ^ 64; decide) _
   change [word (finished p m r) p.stp 0, word (finished p m r) p.stp 8, word (finished p m r) p.stp 16,
@@ -169,7 +169,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
   refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · change ((q.gpr .r3).setWidth 32).toNat = _
-    rw [hr, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [hr, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]
   · change Spec.Rsa.bytesAt q.mem p.op p.len = _
     rw [hmq, finished_bytes hp]
     exact hd.output

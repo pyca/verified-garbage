@@ -21,7 +21,7 @@ open VG VG.X86 VG.Impl.X448.X86
 theorem sub_toNat_lt_one (x a : Addr) : (x - a).toNat < 1 ↔ x = a := by
   constructor
   · intro h
-    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega)
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega_using [h])
     calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
       _ = a := by rw [h0]; exact BitVec.zero_add a
   · rintro rfl; simp

@@ -48,18 +48,18 @@ theorem counter_nat (index : Addr) : counter index = BitVec.ofNat 64 (index.toNa
   have shifted : index >>> 7 = BitVec.ofNat 64 (index.toNat / 128) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := index.isLt; omega)]
+      Nat.mod_eq_of_lt (by have := index.isLt; omega_using [])]
   unfold counter
   rw [shifted]
   exact (BitVec.ofNat_add _ _).symm
 
 theorem counter_ne_zero (index : Addr) : counter index ≠ 0 := by
-  have bound : index.toNat / 128 + 1 < 2 ^ 64 := by have := index.isLt; omega
+  have bound : index.toNat / 128 + 1 < 2 ^ 64 := by have := index.isLt; omega_using []
   intro h
   have nat := congrArg BitVec.toNat h
   rw [counter_nat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt bound] at nat
   change index.toNat / 128 + 1 = 0 at nat
-  omega
+  omega_using [nat]
 
 theorem wordArgs_ok (s : State)
     (hr : InRegions (s.rd ++ s.wr) (off (s.gpr .x19) 248) 8) :
@@ -87,7 +87,7 @@ theorem wordArgs_ok (s : State)
 
 theorem index_nat (index : Addr) : index &&& 127 = BitVec.ofNat 64 (index.toNat % 128) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
   exact Nat.and_two_pow_sub_one_eq_mod index.toNat 7
 
 end VG.Proof.Argon2.AArch64.AddressCache

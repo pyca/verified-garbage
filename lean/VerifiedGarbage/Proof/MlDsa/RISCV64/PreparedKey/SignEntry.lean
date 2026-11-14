@@ -47,7 +47,7 @@ theorem efacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : 
   rcases h with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide, by decide⟩
 
 theorem skBytes_le (p : Params) (hF : EFacts p) (q : Bool) : p.skLen ≤ skBytes p q := by
-  cases q <;> simp only [skBytes, hF.pb] <;> omega
+  cases q <;> simp only [skBytes, hF.pb] <;> omega_using []
 
 /-! ## The precondition -/
 
@@ -142,7 +142,7 @@ theorem disj_of_sub {X Y R : Region} (h : X.len = 0 ∨ Region.Sub X Y) (d : Y.D
 theorem key_sub {p : Params} (hF : EFacts p) (q : Bool) (s : State) :
     Region.Sub ⟨s.gpr .a0, p.skLen⟩ ⟨s.gpr .a0, skBytes p q⟩ := by
   have := skBytes_le p hF q
-  have e := Offset.sub_base (s.gpr .a0) (d := 0) (n := p.skLen) (k := skBytes p q) (by omega)
+  have e := Offset.sub_base (s.gpr .a0) (d := 0) (n := p.skLen) (k := skBytes p q) (by omega_using [this])
   rwa [BitVec.add_zero] at e
 
 theorem cache_sub {p : Params} (hF : EFacts p) (q : Bool) (s : State) :
@@ -153,18 +153,18 @@ theorem cache_sub {p : Params} (hF : EFacts p) (q : Bool) (s : State) :
   · refine .inr ?_
     have := hF.c
     simp only [cpVal, clVal, skBytes, hF.pb, BitVec.toNat_ofNat]
-    exact Offset.sub_base _ (by rw [Nat.mod_eq_of_lt (by omega)])
+    exact Offset.sub_base _ (by rw [Nat.mod_eq_of_lt (by omega_using [this])])
 
 theorem cache_fit {p : Params} (hF : EFacts p) {q : Bool} {s : State} (hk : (s.gpr .a0).toNat + skBytes p q ≤ 2 ^ 64) :
     (cpVal s p.skLen q).toNat + (clVal (sCacheBytes p) q).toNat ≤ 2 ^ 64 := by
   have := hF.c; have := hF.sk
   cases q
-  · simp only [cpVal, clVal, skBytes] at hk ⊢; rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega
+  · simp only [cpVal, clVal, skBytes] at hk ⊢; rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using []
   · simp only [cpVal, clVal, skBytes, hF.pb] at hk ⊢
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.skLen) (by omega),
-      Nat.mod_eq_of_lt (a := sCacheBytes p) (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.skLen) (by omega_using [this]),
+      Nat.mod_eq_of_lt (a := sCacheBytes p) (by omega_arith)]
     have := Nat.mod_le ((s.gpr .a0).toNat + p.skLen) (2 ^ 64)
-    omega
+    omega_using [hk]
 
 /-- A cover of regions by others, each in one of them at an offset. -/
 theorem cov_of {rs rs' : List Region}
@@ -187,7 +187,7 @@ theorem cache_off {p : Params} (hF : EFacts p) (q : Bool) (s : State) :
   · exact ⟨0, by simp [cpVal], by simp [clVal]⟩
   · refine ⟨p.skLen, rfl, ?_⟩
     simp only [clVal, skBytes, hF.pb, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [this])]
 
 /-! ## The call -/
 
@@ -205,7 +205,7 @@ theorem cached_pushed {p : Params} (hF : EFacts p) {S : Nat} {s : State} (h : EP
   have hfk := h.f_k
   simp only [skBytes, hF.pb] at hfk
   have kb : bytesAt (pushed .ra s).mem (s.gpr .a0) p.skLen = bytesAt s.mem (s.gpr .a0) p.skLen :=
-    bytes_pushed (R := ⟨s.gpr .a0, p.skLen⟩) (by omega) (by simp only; omega)
+    bytes_pushed (R := ⟨s.gpr .a0, p.skLen⟩) (by omega_using []) (by simp only; omega_using [hfk])
       (h.b_k.sub_right (key_sub hF true s))
   intro i hi
   rw [kb]
@@ -216,9 +216,9 @@ theorem cached_pushed {p : Params} (hF : EFacts p) {S : Nat} {s : State} (h : EP
   refine Proof.MlDsa.PreparedKey.polyIs_of_copy ?_ (hk i hi)
   have hsub : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 (p.skLen + 4 * n * i), 1024⟩
       ⟨s.gpr .a0, skBytes p true⟩ :=
-    Offset.sub_base _ (by simp only [skBytes, hF.pb, sCacheBytes, n] at *; omega)
-  exact bytes_pushed (R := ⟨s.gpr .a0 + BitVec.ofNat 64 (p.skLen + 4 * n * i), 1024⟩) (by omega)
-    (by simp only; omega) (h.b_k.sub_right hsub)
+    Offset.sub_base _ (by simp only [skBytes, hF.pb, sCacheBytes, n] at *; omega_using [hi])
+  exact bytes_pushed (R := ⟨s.gpr .a0 + BitVec.ofNat 64 (p.skLen + 4 * n * i), 1024⟩) (by omega_using [])
+    (by simp only; omega_using []) (h.b_k.sub_right hsub)
 
 section
 variable {p : Params} (hF : EFacts p) {q : Bool} {S : Nat} {K : Prog isa}
@@ -235,7 +235,7 @@ theorem kernel_call {s u : State} (h : EPre p q (S + 16) s)
   have hspl := s.sp.isLt
   have hsk := hF.sk; have hc := hF.c
   have spm : (s.sp - 16).toNat = s.sp.toNat - 16 := by
-    rw [BitVec.toNat_sub, show (16 : BitVec 64).toNat = 16 from rfl]; omega
+    rw [BitVec.toNat_sub, show (16 : BitVec 64).toNat = 16 from rfl]; omega_using [hstk]
   have gu : ∀ r, r ≠ .a5 → r ≠ .a6 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
   have g5 : u.gpr .a5 = cpVal s p.skLen q := by rw [hu.vcp]; cases q <;> rfl
   have g6 : u.gpr .a6 = clVal (sCacheBytes p) q := hu.vcl
@@ -254,8 +254,8 @@ theorem kernel_call {s u : State} (h : EPre p q (S + 16) s)
       (by rw [gx _ (by simp), gu _ (by decide) (by decide)]) (by rw [gx _ (by simp), gu _ (by decide) (by decide)])
       (by rw [gx _ (by simp), gu _ (by decide) (by decide)]) (by rw [gx _ (by simp), g5])
       (by rw [gx _ (by simp), g6]) rfl (by rw [State.withRegions_wr]; exact h.wr)
-      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; omega)
-      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; have := h.al; omega) h.al_c
+      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; omega_using [hstk])
+      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; have := h.al; omega_using [this]) h.al_c
       (h.d_kg.sub_left ksub) (h.d_kc.sub_left ksub) h.d_mg h.d_mc h.d_rg h.d_rc h.d_gc
       (disj_of_sub csub h.d_kg).symm (disj_of_sub csub h.d_kc).symm ?_ ?_ ?_ ?_ ?_ ?_
       (Nat.le_trans (Nat.add_le_add_left (skBytes_le p hF q) _) h.f_k) h.f_m h.f_r h.f_g h.f_c (cache_fit hF h.f_k) ?_
@@ -270,7 +270,7 @@ theorem kernel_call {s u : State} (h : EPre p q (S + 16) s)
       cases q
       · exact .inl rfl
       · refine .inr ⟨?_, cached_pushed hF h⟩
-        simp only [clVal, BitVec.toNat_ofNat, n, sCacheBytes] at hc ⊢; omega
+        simp only [clVal, BitVec.toNat_ofNat, n, sCacheBytes] at hc ⊢; omega_using [hc]
   have hcov : Covers (kRd p q s ++ s.wr) (u.rd ++ u.wr) := by
     rw [hu.rd, hu.wr]
     refine cov_of fun r hr => ?_
@@ -299,13 +299,13 @@ theorem signEntry_wp (name : String) {s : State} (h : EPre p q (S + 16) s) :
   have hspl := s.sp.isLt
   have hsk := hF.sk; have hc := hF.c
   unfold signEntry entry
-  refine WP.frame (by omega) ?_
+  refine WP.frame (by omega_using [hstk]) ?_
   refine WP.seq (WP.mono (cacheArgs_ok (by decide) (by decide) hF.sk hF.c q _) fun u hu => ?_)
   obtain ⟨hpre, hcov, hcw⟩ := kernel_call hF h hu
   have gu : ∀ r, r ≠ .a5 → r ≠ .a6 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
   have usp : u.sp = s.sp - 16 := hu.sp
   have ksub := key_sub hF q s
-  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' => ?_) (by omega)
+  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' => ?_) (by omega_using [hd, hstk])
   have sp₂ : s'.sp = s.sp - 16 := sp'.trans usp
   -- The return address, in the frame's slot, which the kernel does not write.
   have hslot : s'.mem.read (s'.sp + 8) 8 = s.gpr .ra := by
@@ -314,13 +314,13 @@ theorem signEntry_wp (name : String) {s : State} (h : EPre p q (S + 16) s) :
       (by decide), hu.mem]
     · exact slot_read .ra s
     · have fs : Region.Sub ⟨s.sp - 16 + BitVec.ofNat 64 8, 8⟩ (below s.sp (S + 16)) :=
-        fun x hx => frame_sub (s := s) (N := S + 16) (by omega) x (Offset.sub_base (s.sp - 16) (d := 8) (n := 8)
-          (k := 16) (by omega) x hx)
+        fun x hx => frame_sub (s := s) (N := S + 16) (by omega_using []) x (Offset.sub_base (s.sp - 16) (d := 8) (n := 8)
+          (k := 16) (by omega_using []) x hx)
       simp only [List.mem_append, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with (rfl | rfl) | rfl
       · exact h.b_g.sub_left fs
       · exact h.b_c.sub_left fs
-      · rw [usp]; exact Offset.disjoint_below _ (by omega)
+      · rw [usp]; exact Offset.disjoint_below _ (by omega_using [hd, hstk])
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · show (s'.write .ra _).gpr r = _
     rw [gpr_write_of_ne _ _ (fun e => by subst e; revert hr; decide), cs' r hr,
@@ -333,9 +333,9 @@ theorem signEntry_wp (name : String) {s : State} (h : EPre p q (S + 16) s) :
     simp only [hu.mem] at post'
     rw [gu .a0 (by decide) (by decide), gu .a1 (by decide) (by decide), gu .a2 (by decide) (by decide),
       gu .a3 (by decide) (by decide)] at post'
-    rw [bytes_pushed (R := ⟨s.gpr .a0, p.skLen⟩) (by omega) (by simp only; omega) ((h.b_k.sub_right ksub)),
-      bytes_pushed (R := ⟨s.gpr .a1, 64⟩) (by omega) (by simp only; omega) h.b_m,
-      bytes_pushed (R := ⟨s.gpr .a2, 32⟩) (by omega) (by simp only; omega) h.b_r] at post'
+    rw [bytes_pushed (R := ⟨s.gpr .a0, p.skLen⟩) (by omega_using []) (by simp only; omega_using [hsk]) ((h.b_k.sub_right ksub)),
+      bytes_pushed (R := ⟨s.gpr .a1, 64⟩) (by omega_using []) (by simp only; omega_using []) h.b_m,
+      bytes_pushed (R := ⟨s.gpr .a2, 32⟩) (by omega_using []) (by simp only; omega_using []) h.b_r] at post'
     show Outcome _ (((s'.write .ra (s'.mem.read (s'.sp + 8) 8)).gpr .a0).setWidth 32)
       (bytesAt (s'.write .ra (s'.mem.read (s'.sp + 8) 8)).mem _ _)
     rw [gpr_write_of_ne _ _ (by decide)]
@@ -411,16 +411,16 @@ theorem signEntry_ct (name : String) :
           (bytesAt σ'.mem (σ'.gpr .a2) 32) := by
     intro σ' u N hp hN hu
     have := hF.sk
-    rw [hu.mem, bytes_pushed (R := ⟨σ'.gpr .a0, p.skLen⟩) hN (by simp only; omega) (hp.b_k.sub_right (key_sub hF q σ')),
-      bytes_pushed (R := ⟨σ'.gpr .a1, 64⟩) hN (by simp only; omega) hp.b_m,
-      bytes_pushed (R := ⟨σ'.gpr .a2, 32⟩) hN (by simp only; omega) hp.b_r]
+    rw [hu.mem, bytes_pushed (R := ⟨σ'.gpr .a0, p.skLen⟩) hN (by simp only; omega_using [this]) (hp.b_k.sub_right (key_sub hF q σ')),
+      bytes_pushed (R := ⟨σ'.gpr .a1, 64⟩) hN (by simp only; omega_using []) hp.b_m,
+      bytes_pushed (R := ⟨σ'.gpr .a2, 32⟩) hN (by simp only; omega_using []) hp.b_r]
   sig_pub [signWithCacheContract, signWithCacheSig, signSig, RISCV64.abi, RISCV64.argRegs]
   refine ⟨by simp only [a₁.sp, a₂.sp, pushed, psp], ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_⟩
   · rw [gu a₁ .a0 (by simp), gu a₁ .a1 (by simp), gu a₁ .a2 (by simp), gu a₂ .a0 (by simp), gu a₂ .a1 (by simp),
       gu a₂ .a2 (by simp)]
     simp only [reduceCtorEq, ↓reduceIte]
-    rw [hb p₁ (by omega) a₁, hb p₂ (by omega) a₂]
+    rw [hb p₁ (by omega_using []) a₁, hb p₂ (by omega_using []) a₂]
     exact pl
   all_goals rw [gu a₁ _ (by simp), gu a₂ _ (by simp)]
   all_goals simp only [reduceCtorEq, ↓reduceIte, cpVal, q0, q1, q2, q3, q4]

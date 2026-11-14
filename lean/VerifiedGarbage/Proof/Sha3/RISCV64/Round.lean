@@ -131,7 +131,7 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
   obtain ⟨e₃, he₃, hpost⟩ := Straight.of_check _ _ _ hchk
   let V : Nat → Lane := fun i => if i = 25 then rc else s.mem.readW (wordAddr src i) 64
   have hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i := fun i hi => by
-    simp only [V, show i ≠ 25 by omega, ite_false]
+    simp only [V, show i ≠ 25 by omega_using [hi], ite_false]
     rw [← cmpl_get A hi]; exact hA i hi
   have hV25 : V 25 = rc := by simp [V]
   have hok : Ok (cfg sR dR) s :=
@@ -147,13 +147,13 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
   have hrel : Rel (AnfRel V) (cfg sR dR) ext env₀ s :=
     { reg := fun r a h => by
         obtain ⟨x, hx, rfl, rfl⟩ := env₀_reg h
-        simp only [ValRel, AnfRel, eval_atom, V, show 20 + x ≠ 25 by omega, ite_false]
-        rw [hrow x hx]; exact hA _ (by omega)
+        simp only [ValRel, AnfRel, eval_atom, V, show 20 + x ≠ 25 by omega_using [hx], ite_false]
+        rw [hrow x hx]; exact hA _ (by omega_using [hx])
       slot := fun _ _ _ h => by cases h
       ext := fun j a hj h => by
         simp only [ext, Option.some.injEq] at h; subst h
         simp only [cfg] at hj ⊢
-        simp only [AnfRel, eval_atom, V, show j ≠ 25 by omega, ite_false, hs] }
+        simp only [AnfRel, eval_atom, V, show j ≠ 25 by omega_using [hj], ite_false, hs] }
   obtain ⟨s₁, hs₁, p₁⟩ := Straight.run (anf_sound V) (anfRel_fun V) hok hrel he₁
   have hk' : ∀ r ∈ kept, (roundA sR).all (fun i => Straight.dst i != some r) = true ∧
       (roundB sR dR).all (fun i => Straight.dst i != some r) = true := fun r hr => by
@@ -203,7 +203,7 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
     simp only [AnfRel, eval_specP hV hV25 hi, cfg, hbase] at h
     exact h.symm
   · have h := p₄.rel.reg _ _ (hpost.2 x hx)
-    simp only [ValRel, AnfRel, eval_specP hV hV25 (show 20 + x < 25 by omega)] at h
+    simp only [ValRel, AnfRel, eval_specP hV hV25 (show 20 + x < 25 by omega_using [hx])] at h
     exact h.symm
   · have f₁ := p₁.frame
     have f₄ := p₄.frame

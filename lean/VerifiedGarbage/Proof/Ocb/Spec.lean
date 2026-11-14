@@ -64,31 +64,31 @@ theorem ofBytes_xor {xs ys : List Byte} (hx : xs.length = 16) (hy : ys.length = 
 
 theorem ntzAux_succ : ∀ f n, n ≤ f → ntzAux (f + 1) n = ntzAux f n
   | 0, n, h => by
-    obtain rfl : n = 0 := by omega
+    obtain rfl : n = 0 := by omega_using [h]
     rfl
   | f + 1, n, h => by
     show (if n = 0 ∨ n % 2 = 1 then 0 else ntzAux (f + 1) (n / 2) + 1) =
       (if n = 0 ∨ n % 2 = 1 then 0 else ntzAux f (n / 2) + 1)
     split
     · rfl
-    · rw [ntzAux_succ f (n / 2) (by omega)]
+    · rw [ntzAux_succ f (n / 2) (by omega_using [h])]
 
 theorem ntzAux_ge {f n : Nat} (h : n ≤ f) : ntzAux f n = ntz n := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   induction k with
   | zero => rfl
-  | succ k ih => rw [← Nat.add_assoc, ntzAux_succ _ _ (by omega), ih (by omega)]
+  | succ k ih => rw [← Nat.add_assoc, ntzAux_succ _ _ (by omega_using []), ih (by omega_using [])]
 
 theorem ntz_odd {n : Nat} (h : n % 2 = 1) : ntz n = 0 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [h]⟩
   show (if k + 1 = 0 ∨ (k + 1) % 2 = 1 then 0 else ntzAux k ((k + 1) / 2) + 1) = 0
   exact ite_eq_left_iff.mpr fun hn => absurd (.inr h) hn
 
 theorem ntz_even {n : Nat} (h0 : 0 < n) (h : n % 2 = 0) : ntz n = ntz (n / 2) + 1 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [h0]⟩
   show (if k + 1 = 0 ∨ (k + 1) % 2 = 1 then 0 else ntzAux k ((k + 1) / 2) + 1) = _
-  simp only [show ¬(k + 1 = 0 ∨ (k + 1) % 2 = 1) by omega, ↓reduceIte]
-  rw [ntzAux_ge (by omega)]
+  simp only [show ¬(k + 1 = 0 ∨ (k + 1) % 2 = 1) by omega_using [h], ↓reduceIte]
+  rw [ntzAux_ge (by omega_using [])]
 
 /-! ## The folds over the whole blocks -/
 
@@ -221,7 +221,7 @@ theorem bytesAt_append (m : Mem) (p : Addr) (a b : Nat) :
 /-- The bytes from `a` to `a + b`. -/
 theorem bytesAt_slice (m : Mem) (p : Addr) {a b n : Nat} (h : a + b ≤ n) :
     ((Spec.Aes.bytesAt m p n).drop a).take b = Spec.Aes.bytesAt m (p + BitVec.ofNat 64 a) b := by
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega)
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega_using [h])
   intro k h₁ h₂
   simp only [List.length_take, List.length_drop, Spec.Aes.bytesAt, List.length_map,
     List.length_range] at h₁
@@ -229,13 +229,13 @@ theorem bytesAt_slice (m : Mem) (p : Addr) {a b n : Nat} (h : a + b ≤ n) :
 
 theorem bytesAt_drop (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     (Spec.Aes.bytesAt m p n).drop a = Spec.Aes.bytesAt m (p + BitVec.ofNat 64 a) (n - a) := by
-  rw [← bytesAt_slice m p (a := a) (b := n - a) (n := n) (by omega),
+  rw [← bytesAt_slice m p (a := a) (b := n - a) (n := n) (by omega_using [h]),
     List.take_of_length_le (by simp [Spec.Aes.bytesAt])]
 
 /-- Block `i` of the bytes at `p`. -/
 theorem blockAt_bytesAt (m : Mem) (p : Addr) {n i : Nat} (h : 16 * (i + 1) ≤ n) :
     blockAt (Spec.Aes.bytesAt m p n) i = blockAtMem m (p + BitVec.ofNat 64 (16 * i)) := by
-  rw [blockAt, bytesAt_slice m p (by omega), blockAtMem]
+  rw [blockAt, bytesAt_slice m p (by omega_using [h]), blockAtMem]
 
 /-- The bytes of `k` blocks, a block at a time. -/
 theorem bytesAt_blocks (m : Mem) (p : Addr) (k : Nat) :
@@ -244,7 +244,7 @@ theorem bytesAt_blocks (m : Mem) (p : Addr) (k : Nat) :
   induction k with
   | zero => rfl
   | succ k ih =>
-    rw [show 16 * (k + 1) = 16 * k + 16 by omega, bytesAt_append, ih, List.range_succ,
+    rw [show 16 * (k + 1) = 16 * k + 16 by omega_using [], bytesAt_append, ih, List.range_succ,
       List.flatMap_append]
     simp
 

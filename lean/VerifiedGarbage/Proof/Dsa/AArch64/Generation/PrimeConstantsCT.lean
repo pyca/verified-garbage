@@ -32,15 +32,15 @@ def PrimeR2Ready (p : PrimeParams) (s : State) : Prop :=
 
 theorem primeR2_ready (M : Mont) {p : PrimeParams} {s : State} (h : PrimeSetupBefore p s) :
     WP isa (Impl.Dsa.AArch64.Generation.primeR2 M.mm) s (PrimeR2Ready p) :=
-  WP.mono (primeR2_ok M h.1 h.2.2 h.2.1 p.odd (by have := p.n3; omega))
+  WP.mono (primeR2_ok M h.1 h.2.2 h.2.1 p.odd (by have := p.n3; omega_using [this]))
     (fun _ ⟨ws, inv, hn, hone, hr2, _, _⟩ => ⟨ws, inv, hn, hone, hr2⟩)
 
 theorem primeMontOne_good (M : Mont) {p : PrimeParams} {s : State} (h : PrimeR2Ready p s) :
     WP isa (M.mm aY aR2 aOne) s (PrimeGood p) := by
   obtain ⟨hw, hi, hn, hone, _⟩ := h
-  refine WP.mono (M.mm_ok hw.good.1 hw.good.2 hw.w1 (by have := hw.w2; omega)
+  refine WP.mono (M.mm_ok hw.good.1 hw.good.2 hw.w1 (by have := hw.w2; omega_using [this])
     (o := aY) (a := aR2) (b := aOne) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hi (by rw [hone, hn]; have := p.n3; omega))
+    (by decide) (by decide) (by decide) hi (by rw [hone, hn]; have := p.n3; omega_using [this]))
     fun t ⟨_, _, _, ha, hk⟩ => ?_
   have hf : Frm p.B (VG.Proof.Ffdh.AArch64.ParameterCandidate.mpTail p.w) s.mem t.mem :=
     Frm.of_arrays ha (by simp [VG.Proof.Ffdh.AArch64.ParameterCandidate.mpTail])

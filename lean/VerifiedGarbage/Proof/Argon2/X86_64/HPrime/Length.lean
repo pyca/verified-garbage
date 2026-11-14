@@ -34,14 +34,14 @@ theorem chooseLength_ok (s : State) :
   · intro h
     have hn : (s.gpr .r15).toNat ≤ 64 := by
       have h' := of_decide_eq_true h
-      omega
+      omega_using [h']
     apply WP.block_nil
     refine ⟨?_, ku⟩
     rw [gu, n, Nat.min_eq_left hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · intro h
     have hn : 64 ≤ (s.gpr .r15).toNat := by
       have h' := of_decide_eq_false h
-      omega
+      omega_using [h']
     refine wp_mov32i fun t ht _ _ => WP.block_nil ?_
     refine ⟨?_, ku.trans ⟨fun r hr => ?_, ht.rd, ht.wr, ?_⟩⟩
     · rw [Nat.min_eq_right hn]; exact ht.gpr

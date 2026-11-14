@@ -97,7 +97,7 @@ theorem significantByte_ok {s : State} {p : Addr} {found : Nat × Byte} {remaini
     simp only [Mem.read, BitVec.toNat_setWidth, BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.zeroExtend]
     have := (s.mem p).isLt
     simp
-    omega
+    omega_using []
   have hu8 := (hku.gpr .x8 (by decide)).trans h8
   have hu9 := (hku.gpr .x10 (by decide)).trans h9
   have huc := (hku.gpr .x9 (by decide)).trans hcx
@@ -110,7 +110,7 @@ theorem significantByte_ok {s : State} {p : Addr} {found : Nat × Byte} {remaini
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     simp only [Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide)]
-    omega
+    omega_using [h1]
   refine WP.mono (WP.keep [.x1, .x9] (Q := fun t =>
     t.gpr .x1 = p + 1 ∧ t.gpr .x9 = BitVec.ofNat 64 (remaining - 1) ∧ t.mem = v.mem)
     ?_ rfl rfl rfl) fun t ⟨⟨htsi, htc, htm⟩, hkt⟩ => ?_
@@ -118,7 +118,7 @@ theorem significantByte_ok {s : State} {p : Addr} {found : Nat × Byte} {remaini
     exact ⟨rfl, hsub⟩
   · refine ⟨htsi, htc, (hkt.gpr .x8 (by decide)).trans hv8, (hkt.gpr .x10 (by decide)).trans hv9,
       ?_, (htm.trans hvm).trans hum, ((hku.trans hkv).trans hkt).mono (by decide)⟩
-    rw [htc, ofNat_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+    rw [htc, ofNat_beq_zero (by omega_using [h64])]
+    exact decide_eq_decide.mpr (by omega_using [h1])
 
 end VG.Proof.Dsa.AArch64

@@ -207,9 +207,9 @@ theorem ofNat_pred {n : Nat} (h0 : 0 < n) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub_of_le (by
-    simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt h]; omega)]
+    simp only [BitVec.le_def, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt h]; omega_using [h0])]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem key_rejected_scalar {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (hs : 0 < scalars) :
@@ -218,7 +218,7 @@ theorem key_rejected_scalar {p : KeyPublic} {original s : State} {used keys scal
   have a := h.access
   have hv1 := h.header (j := 1) (v := BitVec.ofNat 64 scalars) (by simp [KeyPublic.headers])
   simp only [Bignum.word, off, Nat.reduceMul] at hv1
-  have e1 := ofNat_pred hs (by have := h.scalars_le; omega)
+  have e1 := ofNat_pred hs (by have := h.scalars_le; omega_using [this])
   refine WP.mono (WP.keep [.x10, .x11] (Q := fun t =>
     t.mem = writeController s.mem p.control (scalarValues scalars)) ?_ (by decide) (by decide)
       (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
@@ -235,7 +235,7 @@ theorem key_rejected_scalar {p : KeyPublic} {original s : State} {used keys scal
       simp only [controllerValue, scalarValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
         ite_true, ite_false] <;>
       first | rfl | exact h.header (by simp [KeyPublic.headers])
-  refine ⟨h.update h.used_le h.keys_le (by have := h.scalars_le; omega) _ (scalarValues_bound scalars)
+  refine ⟨h.update h.used_le h.keys_le (by have := h.scalars_le; omega_using [this]) _ (scalarValues_bound scalars)
     (by simp only [scalarValues, List.mem_cons, List.not_mem_nil, or_false]
         rintro _ (rfl | rfl) <;> dsimp only <;> decide) hm k.mono hh, ?_⟩
   rw [show (112 : Nat) = 8 * 14 from rfl, hm, writeController_word _ _ _ (scalarValues_bound scalars) 14 (by decide)]
@@ -249,7 +249,7 @@ theorem key_rejected_public {p : KeyPublic} {original s : State} {used keys scal
   have a := h.access
   have hv0 := h.header (j := 0) (v := BitVec.ofNat 64 keys) (by simp [KeyPublic.headers])
   simp only [Bignum.word, off] at hv0
-  have e0 := ofNat_pred hk (by have := h.keys_le; omega)
+  have e0 := ofNat_pred hk (by have := h.keys_le; omega_using [this])
   refine WP.mono (WP.keep [.x10, .x11, .x12] (Q := fun t =>
     t.mem = writeController s.mem p.control (publicValues keys)) ?_ (by decide) (by decide)
       (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
@@ -266,7 +266,7 @@ theorem key_rejected_public {p : KeyPublic} {original s : State} {used keys scal
       simp only [controllerValue, publicValues, List.foldl_cons, List.foldl_nil, Nat.reduceEqDiff,
         ite_true, ite_false] <;>
       first | rfl | exact h.header (by simp [KeyPublic.headers])
-  refine ⟨h.update h.used_le (by have := h.keys_le; omega) (by decide) _ (publicValues_bound keys)
+  refine ⟨h.update h.used_le (by have := h.keys_le; omega_using [this]) (by decide) _ (publicValues_bound keys)
     (by simp only [publicValues, List.mem_cons, List.not_mem_nil, or_false]
         rintro _ (rfl | rfl | rfl) <;> dsimp only <;> decide) hm k.mono hh, ?_⟩
   rw [show (112 : Nat) = 8 * 14 from rfl, hm, writeController_word _ _ _ (publicValues_bound keys) 14 (by decide)]

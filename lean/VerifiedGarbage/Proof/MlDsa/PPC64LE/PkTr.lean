@@ -109,7 +109,7 @@ theorem lay_ok {p : Params} {σ : State} (hp : Pre p σ) : OkW (lay p σ) tWb :=
   have es : (⟨σ.sp - BitVec.ofNat 64 48, 48⟩ : Region) = below σ.sp 48 := rfl
   refine ⟨fun i hi => ?_, fun i hi j hj hij hw => ?_⟩
   · simp only [lay, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_c
     · show (σ.sp - BitVec.ofNat 64 48).toNat + 48 ≤ 2 ^ 64
       have := hp.stk; have := σ.sp.isLt; bv_omega
@@ -118,8 +118,8 @@ theorem lay_ok {p : Params} {σ : State} (hp : Pre p σ) : OkW (lay p σ) tWb :=
     · exact hp.f_t
   · simp only [lay, List.length_cons, List.length_nil] at hi hj
     simp only [tWb, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [Lay.buf, lay, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     all_goals first
@@ -260,7 +260,7 @@ abbrev hK (i : Nat) : Bool := i != 2
 theorem hK_ok : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → hK i = true → hK j = true → i ∈ tWb ∨ j ∈ tWb :=
   fun i _ j _ hij _ _ hi hj => by
     simp only [hK, bne_iff_ne, ne_eq] at hi hj
-    simp only [tWb, List.mem_cons, List.not_mem_nil, or_false]; omega
+    simp only [tWb, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
 
 theorem trPieces {p : Params} (hp' : PS p) {σ s : State} (hs : Site (lay p σ) tWb 48 s) :
     (∀ pc ∈ ([⟨.r29, 0, p.pkLen⟩] : List Impl.MlKem.PPC64LE.Piece),

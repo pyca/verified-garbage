@@ -33,7 +33,7 @@ theorem Input.header {base : Addr} {size w candidate exponent : Nat} {s : State}
     (S : Input base size w candidate exponent s) : 136 ≤ size := by
   have := S.space
   simp only [slot, VG.Impl.Bignum.X86.PublicContext.stride, VG.Impl.Bignum.hdrBytes] at this
-  omega
+  omega_using [this]
 
 theorem Input.keepReadonly {base : Addr} {size w candidate exponent : Nat} {s t : State}
     (S : Input base size w candidate exponent s) (M : t.mem = s.mem) (K : Keeps [.eax] s t) :
@@ -77,22 +77,22 @@ theorem Input.stackFrameValue {base : Addr} {size w candidate exponent : Nat} {s
   apply val32_congr
   intro i index
   have far : (⟨base, size⟩ : Region).Disjoint (below (s.gpr .esp) 20) :=
-    FilterStack.allocated_apart (by have := S.fit; omega) S.scratch.nowrap
-      (by have := S.separate; rcases this with h | h; exact Or.inl h; exact Or.inr (by omega))
+    FilterStack.allocated_apart (by have := S.fit; omega_using [this]) S.scratch.nowrap
+      (by have := S.separate; rcases this with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
   have sourceFit : slot w 0 + 8 * w ≤ size := by
     have := S.space
     simp only [slot, VG.Impl.Bignum.X86.PublicContext.stride, VG.Impl.Bignum.hdrBytes] at this ⊢
-    omega
+    omega_using [this]
   exact congrArg BitVec.toNat (F.readW (r := ⟨base, size⟩)
-    (Offset.contains_base _ (by omega) (by have := S.scratch.nowrap; omega))
+    (Offset.contains_base _ (by omega_using [index, sourceFit]) (by have := S.scratch.nowrap; omega_using [index, sourceFit, this]))
     (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact far) (by decide))
 
 theorem Input.stackWorkspaceFrame {base : Addr} {size w candidate exponent : Nat} {s t : State}
     (S : Input base size w candidate exponent s) (F : Frame [below (s.gpr .esp) 20] s.mem t.mem) :
     WorkspaceFrame ⟨base, size, w⟩ (ranges w) s.mem t.mem := by
   have far : (⟨base, size⟩ : Region).Disjoint (below (s.gpr .esp) 20) :=
-    FilterStack.allocated_apart (by have := S.fit; omega) S.scratch.nowrap
-      (by have := S.separate; rcases this with h | h; exact Or.inl h; exact Or.inr (by omega))
+    FilterStack.allocated_apart (by have := S.fit; omega_using [this]) S.scratch.nowrap
+      (by have := S.separate; rcases this with h | h; exact Or.inl h; exact Or.inr (by omega_using [h]))
   have W : WorkspaceFrame ⟨base, size, w⟩ [] s.mem t.mem :=
     workspace_of_frame F S.scratch.nowrap (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact far)
   exact W.mono (by intro r mem; nomatch mem)
@@ -100,6 +100,6 @@ theorem Input.stackWorkspaceFrame {base : Addr} {size w candidate exponent : Nat
 theorem Output.savedValue {base : Addr} {size w candidate exponent : Nat} {s t : State}
     (O : Output base size w candidate exponent s t) (width : 4 ≤ w) (space : slot w 5 + 8 * w ≤ size) :
     val32 t.mem base (slot w 5) (2 * w) = val32 s.mem base (slot w 5) (2 * w) :=
-  O.workspace.val32 (by change slot w 5 + 4 * (2 * w) ≤ size; omega) (fun _ mem => Or.inr (saved_apart width mem))
+  O.workspace.val32 (by change slot w 5 + 4 * (2 * w) ≤ size; omega_using [space]) (fun _ mem => Or.inr (saved_apart width mem))
 
 end VG.Proof.RsaKeyGen.X86.ExponentFilter

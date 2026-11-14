@@ -21,8 +21,8 @@ theorem load_step {s₀ : State}
     {n : Nat} (hn : n < 16) {s : State} (h : LI s₀ s₀ n s) :
     WP isa (.block (loadWord n)) s (LI s₀ s₀ (n + 1)) := by
   have hr : readSrc32 s (.mem (at_ .rdi (4 * n))) = some (V s₀)[n] := by
-    rw [mem_read (by rw [h.rdi, h.rd, h.wr]; exact access hi (by omega)), h.rdi]
-    rw [h.frame.readW (r := bR (bp s₀)) (a := bufAt (bp s₀) (4 * n)) (w := 32) (contains_off (by omega) (by omega)) (fun R hR => by
+    rw [mem_read (by rw [h.rdi, h.rd, h.wr]; exact access hi (by omega_using [hn])), h.rdi]
+    rw [h.frame.readW (r := bR (bp s₀)) (a := bufAt (bp s₀) (4 * n)) (w := 32) (contains_off (by omega_using [hn]) (by omega_using [hn])) (fun R hR => by
       simp only [List.mem_singleton] at hR; subst R
       exact hd.sub_right (Region.sub_prefix (by decide))) (by decide)]
     simp only [V_get _ hn]
@@ -36,13 +36,13 @@ theorem load_step {s₀ : State}
       (u.other _ ne.2.2.2.symm).trans h.rsp⟩
     · by_cases e : k = n
       · subst e; exact u.gpr
-      · rw [u.other _ fun h' => e (wreg_inj k hk n hn12 h'), h.regs k hk (by omega)]
-    · rw [u.mem]; exact h.slots k hk h12 (by omega)
+      · rw [u.other _ fun h' => e (wreg_inj k hk n hn12 h'), h.regs k hk (by omega_using [hkn, e])]
+    · rw [u.mem]; exact h.slots k hk h12 (by omega_using [hn12, h12, hkn])
   · rename_i hn12
     refine wp_cons (mov32_upd (d := .rax) hr) fun s' u => ?_
     have hout : InRegions s'.wr (s'.ea (at_ .rsi (slotOff n))) 4 := by
       rw [ea_at, u.other _ (by decide), h.rsi, u.wr, h.wr]
-      exact access hw (by simp only [slotOff]; omega) (by simp only [slotOff]; omega)
+      exact access hw (by simp only [slotOff]; omega_using [hn]) (by simp only [slotOff]; omega_using [hn])
     refine WP.block_cons_iff.mpr ⟨_, store32_exec hout, WP.block_nil ?_⟩
     rw [ea_at, u.other _ (by decide), h.rsi, u.gpr, u.mem]
     have e : ((V s₀)[n].setWidth 64).setWidth 32 = (V s₀)[n] := by simp
@@ -50,14 +50,14 @@ theorem load_step {s₀ : State}
     refine ⟨fun k hk hkn => ?_, fun k hk h12 hkn => ?_, ?_, u.rd.trans h.rd, u.wr.trans h.wr,
       (u.other _ (by decide)).trans h.rsi, (u.other _ (by decide)).trans h.rdi,
       (u.other _ (by decide)).trans h.rsp⟩
-    · rw [u.other _ (wreg_ne k hk).1]; exact h.regs k hk (by omega)
+    · rw [u.other _ (wreg_ne k hk).1]; exact h.regs k hk (by omega_using [hn12, hk])
     · by_cases e : k = n
       · subst e; exact Mem.readW_writeW_self32 _ _ _
-      · rw [readW_writeW_off _ _ _ (by omega) (by simp only [slotOff]; omega)
-          (by simp only [slotOff]; omega) (by simp only [slotOff]; omega)]
-        exact h.slots k hk h12 (by omega)
+      · rw [readW_writeW_off _ _ _ (by omega_using []) (by simp only [slotOff]; omega_using [hk])
+          (by simp only [slotOff]; omega_using [hn]) (by simp only [slotOff]; omega_using [hn12, h12, e])]
+        exact h.slots k hk h12 (by omega_using [hkn, e])
     · exact h.frame.writeW (List.mem_singleton_self _) _
-        (contains_off (by simp only [slotOff]; omega) (by simp only [slotOff]; omega))
+        (contains_off (by simp only [slotOff]; omega_using [hn]) (by simp only [slotOff]; omega_using [hn]))
 
 
 theorem load_ok {s : State}
@@ -70,6 +70,6 @@ theorem load_ok {s : State}
     Frame.refl _ _, rfl, rfl, rfl, rfl, rfl⟩
   exact WP.mono (wp_range_flatMap (M := isa) (f := loadWord) (N := 16) (LI s s)
     (fun _ _ hn h => load_step hi hw hd hn h) 16 (Nat.le_refl _) s ini) fun t h =>
-    ⟨⟨fun k hk => h.regs k hk (by omega), fun k hk h12 => h.slots k hk h12 hk, h.rsi⟩,
+    ⟨⟨fun k hk => h.regs k hk (by omega_using [hk]), fun k hk h12 => h.slots k hk h12 hk, h.rsi⟩,
       h.frame, h.rd, h.wr, h.rdi, h.rsp⟩
 end VG.Proof.Scrypt.X86_64.Retained

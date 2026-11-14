@@ -43,7 +43,7 @@ def GenerationContext.ctWindowLen (c : GenerationContext) (u : Nat) : Nat :=
 
 theorem GenerationContext.ctWindow_fit (c : GenerationContext) {u : Nat} (hu : u ≤ c.rand.bytes.length) :
     u + c.ctWindowLen u ≤ c.rand.bytes.length := by
-  unfold ctWindowLen; omega
+  unfold ctWindowLen; omega_using [hu]
 
 /-- The window from the witness tape's `u`-th octet. -/
 def GenerationContext.ctWindow (c : GenerationContext) (u : Nat) (hu : u ≤ c.rand.bytes.length) :
@@ -68,12 +68,12 @@ def SeedGeneratorPublic.windowed (g : SeedGeneratorPublic) : SeedGeneratorPublic
 theorem ctFrame_bytes {g : GenerationGeometry} {m m' : Mem}
     (hf : Frame [⟨g.F, frameBytes⟩] m m') {d n : Nat} (hd : d + n ≤ usedBytes g.pLen) :
     Spec.Rsa.bytesAt m' (off g.B d) n = Spec.Rsa.bytesAt m (off g.B d) n := by
-  have pn : g.pLen ≤ 384 := by rcases g.width with hh | hh | hh <;> omega
+  have pn : g.pLen ≤ 384 := by rcases g.width with hh | hh | hh <;> omega_using [hh]
   apply VG.Proof.Dsa.Generation.frame_bytesAt hf
   · intro r hr
     rcases List.mem_singleton.mp hr with rfl
     exact (g.frame_part hd).symm
-  · unfold usedBytes domainCheck at hd; omega
+  · unfold usedBytes domainCheck at hd; omega_using [hd, pn]
 
 /-- Two word stores to the frame change only the frame. -/
 theorem ctFrame_two (F : Addr) {j k : Nat} (hj : j < nW) (hk : k < nW) (m : Mem) (a b : BitVec 64) :
@@ -96,7 +96,7 @@ theorem ctWindowHead_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
       rw [BitVec.le_def]
       simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hmax, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hmax)] using hle)]
     simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hmax,
-      Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hmax), Nat.mod_eq_of_lt (by omega : total - used < 2 ^ 64)]
+      Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle hmax), Nat.mod_eq_of_lt (by omega_using [hmax] : total - used < 2 ^ 64)]
   have R1 := R.wf L.geo (k := 11) (by decide) (off base used)
   have r120 : (s.mem.writeW (off F 88) (off base used)).readW (off F 120) 64 = BitVec.ofNat 64 total :=
     R1.slot (d := 120) (k := 15) rfl (by decide) (by simp [upd, h15])
@@ -109,8 +109,8 @@ theorem ctWindowHead_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat →
       L.ld (d := 120) (by decide),
       R.slot (d := 104) (k := 13) rfl (by decide) h13, R.slot (d := 128) (k := 16) rfl (by decide) h16,
       r120, r128, sx_ofNat hw, hsub]
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : total - used < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : width < 2 ^ 64)]) rfl)
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hmax] : total - used < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_using [hw] : width < 2 ^ 64)]) rfl)
     fun _ ⟨⟨hc, hr, hm⟩, hk⟩ => ⟨hc, hr, hm, hk⟩
 
 /-- The window's two words written: the generator search's input over the window. -/
@@ -132,8 +132,8 @@ theorem seedGeneratorBefore_windowed {n pLen qLen : Nat} {g : SeedGeneratorPubli
     rw [hm]
     exact (R.wf L.geo (k := 11) (by decide) _).wf L.geo (k := 12) (by decide) _
   have Lt := lay_of_rep L R Rt (by simp [upd]) hsp hwr
-  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega
-  have qn : g.seed.context.geo.qLen ≤ 32 := by rcases g.seed.context.geo.qWidth with hh | hh <;> omega
+  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : g.seed.context.geo.qLen ≤ 32 := by rcases g.seed.context.geo.qWidth with hh | hh <;> omega_using [hh]
   have rt := hm0.rand.frame ff hrd hwr
   have mt : GenerationMemory g.windowed.seed.context
       (upd (upd W 11 (off g.seed.context.rand.ptr g.seed.used)) 12
@@ -161,13 +161,13 @@ theorem seedGeneratorBefore_windowed {n pLen qLen : Nat} {g : SeedGeneratorPubli
   · simpa [upd, SeedGeneratorPublic.windowed] using h16
   · simpa [upd, SeedGeneratorPublic.windowed] using h10
   · change Spec.Rsa.bytesAt t.mem (off g.seed.context.geo.B q) g.seed.context.geo.qLen = _
-    rw [ctFrame_bytes fr (g.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega))]
+    rw [ctFrame_bytes fr (g.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [qn]))]
     exact bq
   · change Spec.Rsa.bytesAt t.mem (off g.seed.context.geo.B VG.Impl.Dsa.Generation.Layout.p) g.seed.context.geo.pLen = _
-    rw [ctFrame_bytes fr (g.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega))]
+    rw [ctFrame_bytes fr (g.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn]))]
     exact bp
   · change Spec.Rsa.bytesAt t.mem (off g.seed.context.geo.B exponent) g.seed.context.geo.pLen = _
-    rw [ctFrame_bytes fr (g.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega))]
+    rw [ctFrame_bytes fr (g.seed.context.geo.small_bound (by decide) (by unfold arithmeticBytes; omega_using [pn]))]
     exact be
 
 
@@ -183,7 +183,7 @@ theorem ctStoreImm96_ok {t : State} {F S : Addr} (L : Lay t F S) {w : Nat} (hw :
   have hv : (BitVec.ofNat 32 w).setWidth 64 = BitVec.ofNat 64 w := by
     apply BitVec.eq_of_toNat_eq
     simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : w < 4294967296)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hw] : w < 4294967296)]
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t.mem.writeW (off F 96) (BitVec.ofNat 64 w)) (by
     xrun [ea_sp, L.rsp, L.st (d := 96) (by decide), hv]) rfl) fun _ h => h
 
@@ -202,7 +202,7 @@ def WindowChecked (n pLen qLen : Nat) (g : SeedGeneratorPublic) (t : State) : Pr
 
 theorem windowBytes_lt (pLen : Nat) (hp : pLen ≤ 384) :
     Impl.Dsa.X86_64.Generation.Refill.windowBytes pLen < 2 ^ 31 := by
-  unfold Impl.Dsa.X86_64.Generation.Refill.windowBytes; omega
+  unfold Impl.Dsa.X86_64.Generation.Refill.windowBytes; omega_using [hp]
 
 theorem windowHead_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : State}
     (h : SeedGeneratorBefore n pLen qLen g s) :
@@ -212,7 +212,7 @@ theorem windowHead_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s : Stat
         g.seed.context.geo.pLen)))]) s (WindowCheckedFrom n pLen qLen g s) := by
   obtain ⟨⟨⟨⟨W, hm, _, h16, _⟩, _⟩, _⟩, _⟩ := id h
   obtain ⟨V, R⟩ := hm.rep
-  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega
+  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega_using [hh]
   refine WP.mono (ctWindowHead_ok hm.layout R
     ((hm.slots 13 (by simp [generationSlots])).trans g.seed.context.randSlot) h16
     ((hm.slots 15 (by simp [generationSlots])).trans g.seed.context.randLengthSlot)
@@ -248,7 +248,7 @@ theorem windowTaken_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : S
     simpa using this
   refine WP.mono (ctStoreRcx96_ok (windowChecked_lay hs hm hk)) fun u ⟨hu, ku⟩ => ?_
   have len : g.seed.context.ctWindowLen g.seed.used = g.seed.context.rand.bytes.length - g.seed.used := by
-    unfold GenerationContext.ctWindowLen; omega
+    unfold GenerationContext.ctWindowLen; omega_using [short]
   have hw := seedGeneratorBefore_windowed hs (t := u) (by rw [hu, hm, hr, len])
     ((ku.gpr (by decide)).trans (hk.gpr (by decide))) (ku.2.1.trans hk.2.1) (ku.2.2.trans hk.2.2)
   exact ⟨hw.1, hw.2, ku.2.1.trans hk.2.1, ku.2.2.trans hk.2.2⟩
@@ -269,12 +269,12 @@ theorem windowFull_ready {n pLen qLen : Nat} {g : SeedGeneratorPublic} {s t : St
         Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen)) := by simp only [eval, hc]
     have := hb.symm.trans e
     simpa using this
-  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega
+  have pn : g.seed.context.geo.pLen ≤ 384 := by rcases g.seed.context.geo.width with hh | hh | hh <;> omega_using [hh]
   refine WP.mono (ctStoreImm96_ok (windowChecked_lay hs hm hk)
-    (by have := windowBytes_lt _ pn; omega)) fun u ⟨hu, ku⟩ => ?_
+    (by have := windowBytes_lt _ pn; omega_using [this])) fun u ⟨hu, ku⟩ => ?_
   have len : g.seed.context.ctWindowLen g.seed.used =
       Impl.Dsa.X86_64.Generation.Refill.windowBytes g.seed.context.geo.pLen := by
-    unfold GenerationContext.ctWindowLen; omega
+    unfold GenerationContext.ctWindowLen; omega_using [full]
   have hw := seedGeneratorBefore_windowed hs (t := u) (by rw [hu, hm, len])
     ((ku.gpr (by decide)).trans (hk.gpr (by decide))) (ku.2.1.trans hk.2.1) (ku.2.2.trans hk.2.2)
   exact ⟨hw.1, hw.2, ku.2.1.trans hk.2.1, ku.2.2.trans hk.2.2⟩

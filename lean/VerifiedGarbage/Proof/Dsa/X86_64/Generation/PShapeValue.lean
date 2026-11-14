@@ -37,7 +37,7 @@ theorem hash_shaped_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   have hsuf := VG.Proof.Dsa.Generation.bytesAt_suffix_value s.mem p.output ((p.count + 1) * p.len - plen) plen
   rw [Nat.sub_add_cancel hroom, hash_complete_value hs, pow256_eq] at hsuf
   change Spec.Ffdh.candidateOf (8 * plen) (Spec.Dsa.decodeBE _) = _
-  rw [← hsuf, VG.Proof.Dsa.Generation.candidateOf_mod_width (by omega) (Nat.le_refl _)]
+  rw [← hsuf, VG.Proof.Dsa.Generation.candidateOf_mod_width (by omega_using [hl]) (Nat.le_refl _)]
   rfl
 
 theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
@@ -58,7 +58,7 @@ theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
   have hrd : ∀ i < bs.length, InRegions (u.rd ++ u.wr) (off rp i) 1 := by
     intro i hi
     rw [hbl] at hi
-    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega)
+    obtain ⟨r, hr, hc⟩ := hs.outputWrite ((p.count + 1) * p.len - plen + i) (by omega_using [hroom, hi])
     refine ⟨r, ?_, ?_⟩
     · rw [hk.2.1, hk.2.2]; exact List.mem_append_right _ hr
     · simpa only [rp, off_off] using hc
@@ -66,9 +66,9 @@ theorem pShape_value {p : HashPlan} {H : Spec.Mgf1.Hash} {s : State}
     intro i hi
     rw [hm]
     simp only [bs, Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD]
-    simp [show i < plen by omega]
+    simp [show i < plen by omega_using [hbl, hi]]
   refine WP.mono (VG.Proof.Ffdh.X86_64.ParameterCandidate.shape_ok
-    (by omega : 9 ≤ 8 * plen) (by omega) (by rw [hbl]; omega)
+    (by omega_using [hl] : 9 ≤ 8 * plen) (by omega_using [hlmax]) (by rw [hbl]; omega_using [])
     hsi hdi (by rw [hbl]; exact hcx) hdx hrd
     (fun i hi => by rw [hk.2.2]; exact hout i (hbl ▸ hi)) hb
     (fun i hi j hj => hsep i (hbl ▸ hi) j (hbl ▸ hj)))

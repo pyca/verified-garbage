@@ -44,7 +44,7 @@ theorem signBytes_compute (L : ExecutionLayout) (data : SignValues) (yb key dige
     Spec.Dsa.signBytes L.pLen L.qLen key data.nonce digest =
       if signAccepted L data yb true then some (Spec.Dsa.encodeBE L.qLen (data.r L) ++
         Spec.Dsa.encodeBE L.qLen (data.s L)) else none := by
-  have hqpos : 0 < L.subgroup := by have := (VG.Proof.Dsa.supported_bounds hsize).2.1; omega
+  have hqpos : 0 < L.subgroup := by have := (VG.Proof.Dsa.supported_bounds hsize).2.1; omega_using [hoq]
   rw [signAccepted_nonzero L data yb true hqpos hqf, privateAccepted_spec L data yb hsize hop hoq hpf hyl]
   unfold Spec.Dsa.signBytes
   simp only [L.lengths, decide_true, Bool.not_true, hkl, hnl, bne_self_eq_false,

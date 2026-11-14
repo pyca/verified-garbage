@@ -25,7 +25,7 @@ abbrev mxH (p : Addr) : Region := ⟨p + BitVec.ofNat 64 1016, 8⟩
 
 theorem mxH_in {p : Addr} {rs : List Region} (hw : pR p ∈ rs) (d : Nat) (hd : 1016 ≤ d ∧ d ≤ 1020) :
     InRegions rs (p + BitVec.ofNat 64 d) 4 :=
-  ⟨_, hw, Offset.contains_base p (by omega) (by omega)⟩
+  ⟨_, hw, Offset.contains_base p (by omega_using [hd]) (by omega_using [hd])⟩
 
 theorem mxH_sub (p : Addr) : Region.Sub (mxH p) (pR p) := Offset.sub_base p (by decide)
 

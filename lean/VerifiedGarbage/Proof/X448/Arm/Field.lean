@@ -42,13 +42,13 @@ theorem load_ok {s : State} {base : Addr} (hs : Scr s base) {r : Reg} {d : Nat}
     (hd : d + 4 ≤ 4096) {is : List Instr} {Q : State → Prop}
     (k : ∀ t, VG.Proof.X25519.Arm.Upd s t r (word s.mem base d) → WP isa (.block is) t Q) :
     WP isa (.block (ld r d :: is)) s Q :=
-  VG.Proof.X25519.Arm.wp_ldr (by omega) (hs.ea (by omega)) (hs.read (by omega)) k
+  VG.Proof.X25519.Arm.wp_ldr (by omega_using [hd]) (hs.ea (by omega_using [hd])) (hs.read (by omega_using [hd])) k
 
 theorem store_ok {s : State} {base : Addr} (hs : Scr s base) {r : Reg} {d : Nat}
     (hd : d + 4 ≤ 4096) {is : List Instr} {Q : State → Prop}
     (k : ∀ t, VG.Proof.X25519.Arm.Mupd s t (s.mem.writeW (off base d) (s.gpr r)) →
       WP isa (.block is) t Q) : WP isa (.block (st r d :: is)) s Q :=
-  VG.Proof.X25519.Arm.wp_str (by omega) (hs.ea (by omega)) (hs.write (by omega)) k
+  VG.Proof.X25519.Arm.wp_str (by omega_using [hd]) (hs.ea (by omega_using [hd])) (hs.write (by omega_using [hd])) k
 
 theorem Ptr.of_upd {s t : State} {p r : Reg} {v : BitVec 32} {o : Nat} (h : Ptr s p o)
     (u : VG.Proof.X25519.Arm.Upd s t r v) (hp : p ≠ r) (h0 : Reg.r0 ≠ r) : Ptr t p o := by
@@ -58,6 +58,6 @@ theorem loadP_ok {s : State} {base : Addr} (hs : Scr s base) {p r : Reg} {o d : 
     (hd : d < 4096) (hod : o + d + 4 ≤ 4096) {is : List Instr} {Q : State → Prop}
     (k : ∀ t, VG.Proof.X25519.Arm.Upd s t r (word s.mem base (o + d)) → WP isa (.block is) t Q) :
     WP isa (.block (.ldr r p d :: is)) s Q :=
-  VG.Proof.X25519.Arm.wp_ldr hd (hs.eaP hp (by omega)) (hs.read (by omega)) k
+  VG.Proof.X25519.Arm.wp_ldr hd (hs.eaP hp (by omega_using [hod])) (hs.read (by omega_using [hod])) k
 
 end VG.Proof.X448.Arm

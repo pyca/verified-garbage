@@ -41,7 +41,7 @@ theorem privateAccepted_signingKey (L : ExecutionLayout) (data : SignValues)
   · by_cases hg : Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) L.subgroup L.modulus = 1
     · have hy : Spec.Dsa.decodeBE yb =
           Spec.Dsa.powMod (Spec.Dsa.decodeBE data.generator) (Spec.Dsa.decodeBE data.privateScalar) L.modulus := by
-        rw [← he, decodeBE_encodeBE (Nat.lt_of_lt_of_le (VG.Proof.Dsa.powMod_lt _ _ (by omega)) hpf)]
+        rw [← he, decodeBE_encodeBE (Nat.lt_of_lt_of_le (VG.Proof.Dsa.powMod_lt _ _ (by omega_using [hp])) hpf)]
       have hsub : Spec.Dsa.powMod (Spec.Dsa.decodeBE yb) L.subgroup L.modulus = 1 := by
         rw [hy, VG.Proof.Dsa.powMod_eq, VG.Proof.Dsa.powMod_eq, ← Nat.pow_mod,
           ← Nat.pow_mul, Nat.mul_comm (Spec.Dsa.decodeBE data.privateScalar) L.subgroup,
@@ -81,9 +81,9 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
       Spec.Rsa.bytesAt s5.mem (off L.base s) L.qLen = Spec.Dsa.encodeBE L.qLen (data.s L) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
-  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega
-  have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega
-  have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega
+  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
+  have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega_using [hqu]
+  have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega_using [hqu]
   unfold signCompute
   refine WP.seq (WP.mono (signingKey_ok M h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
     fun s1 ⟨h1, hm1, hqm1, hf1, hk1⟩ => ?_)
@@ -108,13 +108,13 @@ theorem signCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready
   have hr3 := h3.encodedLocal .q r (data.r L) (by decide) hr hr3bytes
   have hs3 := h3.encodedLocal .q s (data.s L) (by decide) hs hs3bytes
   refine WP.seq (WP.mono (readyZero_ok h3 (Core.scalar r) (by change r < 2 ^ 16; decide) hr3
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) true hm3) fun s4 h4 => ?_)
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) true hm3) fun s4 h4 => ?_)
   have hr4 := h4.preserve h3 (Nat.le_refl _) (by decide) (by trivial) hr3
   have hs4 := h4.preserve h3 (Nat.le_refl _) (by decide) (by trivial) hs3
   refine WP.mono (readyZero_ok h4.ready (Core.scalar s) (by change s < 2 ^ 16; decide) hs4
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) true h4.mask) fun s5 h5 => ?_
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) true h4.mask) fun s5 h5 => ?_
   have hr5 := h5.preserve h4.ready (Nat.le_refl _) (by decide) (by trivial) hr4
   have hs5 := h5.preserve h4.ready (Nat.le_refl _) (by decide) (by trivial) hs4
   refine ⟨h5.ready, ?_, ?_, ?_, (((hf1.trans hf2).trans hf3).trans h4.scheduleFrame).trans h5.scheduleFrame,

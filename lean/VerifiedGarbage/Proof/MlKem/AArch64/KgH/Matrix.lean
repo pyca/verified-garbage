@@ -26,8 +26,8 @@ variable {P : KemLay}
 
 theorem rowsBy_mono (P : KemLay) (p : Nat) : rowsBy P p ≤ rowsBy P (p + 1) := by
   simp only [rowsBy]
-  have := Nat.div_le_div_right (c := P.k) (show 2 * p ≤ 2 * (p + 1) by omega)
-  omega
+  have := Nat.div_le_div_right (c := P.k) (show 2 * p ≤ 2 * (p + 1) by omega_using [])
+  omega_using [this]
 
 /-- The first `rowsBy p` rows use only the first `2 p` entries. -/
 theorem rowsBy_mul (P : KemLay) (p : Nat) : P.k * rowsBy P p ≤ 2 * p := by
@@ -42,15 +42,15 @@ theorem hashed_le (P : KemLay) : ∀ p, 136 * hashedBy P p ≤ 384 * rowsBy P p
   | p + 1 => by
     have ih := hashed_le P p
     have hm := rowsBy_mono P p
-    have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 := (Nat.le_div_iff_mul_le (by decide)).2 (by omega)
+    have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 := (Nat.le_div_iff_mul_le (by decide)).2 (by omega_using [ih])
     have hB : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
     simp only [hashedBy]
     have := Nat.min_le_right 3 (384 * rowsBy P p / 136 - hashedBy P p)
-    omega
+    omega_using [ih, hm]
 
 theorem hashed_succ (P : KemLay) (p : Nat) :
     hashedBy P (p + 1) = hashedBy P p + (hashedBy P (p + 1) - hashedBy P p) := by
-  simp only [hashedBy]; omega
+  simp only [hashedBy]; omega_using []
 
 /-- `n` steps, each a list of programs, by an invariant `I i` before step `i`. -/
 theorem wps_flatMap_range {f : Nat → List (Prog isa)} {I : Nat → State → Prop} :
@@ -59,8 +59,8 @@ theorem wps_flatMap_range {f : Nat → List (Prog isa)} {I : Nat → State → P
   | 0, _, _, h => h
   | n + 1, hf, _, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WPs.append (WPs.mono (wps_flatMap_range (fun i hi => hf i (by omega)) h)
-      fun s' h' => hf n (by omega) s' h')
+    exact WPs.append (WPs.mono (wps_flatMap_range (fun i hi => hf i (by omega_using [hi])) h)
+      fun s' h' => hf n (by omega_using []) s' h')
 
 /-- Rows `a` to `a + d - 1` of `t̂`, once the matrix holds their entries. -/
 theorem rows_ok {s₀ : State} (hp : Pre P s₀) (hr : Noise.Room P) {n h : Nat} :
@@ -71,13 +71,13 @@ theorem rows_ok {s₀ : State} (hp : Pre P s₀) (hr : Noise.Room P) {n h : Nat}
     exact H
   | d + 1, a, hd, hn, s, H => by
     have e : kgRows P a (a + (d + 1)) = Kem16.kgRow P a :: kgRows P (a + 1) (a + 1 + d) := by
-      simp only [kgRows, show a + (d + 1) - a = d + 1 by omega, show a + 1 + d - (a + 1) = d by omega,
+      simp only [kgRows, show a + (d + 1) - a = d + 1 by omega_using [], show a + 1 + d - (a + 1) = d by omega_using [],
         List.range'_succ, List.map_cons]
     rw [e]
-    refine WPs.cons (WP.mono (row_step hp hr (by omega)
-      (Nat.le_trans (Nat.mul_le_mul_left _ (by omega)) hn) H) fun t ht => ?_)
-    have e2 : a + 1 + d = a + (d + 1) := by omega
-    have r := rows_ok hp hr d (a + 1) (by omega) (by rw [e2]; exact hn) ht
+    refine WPs.cons (WP.mono (row_step hp hr (by omega_using [hd])
+      (Nat.le_trans (Nat.mul_le_mul_left _ (by omega_using [])) hn) H) fun t ht => ?_)
+    have e2 : a + 1 + d = a + (d + 1) := by omega_using []
+    have r := rows_ok hp hr d (a + 1) (by omega_using [hd]) (by rw [e2]; exact hn) ht
     exact WPs.mono r fun u hu => by rwa [e2] at hu
 
 /-- Pair `p` of the matrix and the rows of `t̂` it completes. -/
@@ -87,36 +87,36 @@ theorem pairRows_ok {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
       (IL P s₀ (2 * (p + 1)) (rowsBy P (p + 1)) (hashedBy P (p + 1))) := by
   have hw := hp.wf
   have hf := hw.facts
-  have hek : 384 * P.k < P.ekLen := by simp only [KemLay.ekLen]; omega
+  have hek : 384 * P.k < P.ekLen := by simp only [KemLay.ekLen]; omega_using []
   have hmono := rowsBy_mono P p
   have hle := rowsBy_le P (p + 1)
   have h2 := hashed_le P (p + 1)
   have hrk := rowsBy_le P p
   refine WPs.cons (WP.mono (pair_step hp hk hr (p := p) (r := rowsBy P p) (h := hashedBy P p)
-    (m := hashedBy P (p + 1) - hashedBy P p) (by omega)
-    (by simp only [hashedBy]; omega) (fun k hk' => ?_) ?_ Hs) fun t ht => ?_)
+    (m := hashedBy P (p + 1) - hashedBy P p) (by omega_using [hp'])
+    (by simp only [hashedBy]; omega_using []) (fun k hk' => ?_) ?_ Hs) fun t ht => ?_)
   · have := Nat.mul_le_mul_left 384 hrk
     have h3 := hashed_le P (p + 1)
     simp only [hashedBy] at h3 hk' ⊢
     have : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
-    omega
+    omega_using [hek, hmono, hle, hk']
   · rw [← hashed_succ]
     have hA : hashedBy P p ≤ 384 * rowsBy P p / 136 :=
-      (Nat.le_div_iff_mul_le (by decide)).2 (by have := hashed_le P p; omega)
+      (Nat.le_div_iff_mul_le (by decide)).2 (by have := hashed_le P p; omega_using [this])
     have hB : 136 * (384 * rowsBy P p / 136) ≤ 384 * rowsBy P p := Nat.mul_div_le _ _
     simp only [hashedBy]
     have := Nat.min_le_right 3 (384 * rowsBy P p / 136 - hashedBy P p)
-    omega
+    omega_using [hA]
   · rw [← hashed_succ] at ht
-    have r := rows_ok hp hr (n := 2 * p + 2) (rowsBy P (p + 1) - rowsBy P p) (rowsBy P p) (by omega)
-      (by rw [Nat.add_sub_cancel' hmono]; exact Nat.le_trans (rowsBy_mul P (p + 1)) (by omega)) ht
+    have r := rows_ok hp hr (n := 2 * p + 2) (rowsBy P (p + 1) - rowsBy P p) (rowsBy P p) (by omega_using [hmono, hle])
+      (by rw [Nat.add_sub_cancel' hmono]; exact Nat.le_trans (rowsBy_mul P (p + 1)) (by omega_using [])) ht
     rw [Nat.add_sub_cancel' hmono] at r
     exact r
 
 /-- No row is complete, and no block of `ek` absorbed, before the third pair. -/
 theorem rowsBy_two (hk3 : 3 ≤ P.k) : rowsBy P 1 = 0 ∧ hashedBy P 2 = 0 := by
   have r1 : rowsBy P 1 = 0 := by
-    simp only [rowsBy, Nat.mul_one, Nat.div_eq_of_lt (show 2 < P.k by omega), Nat.min_zero]
+    simp only [rowsBy, Nat.mul_one, Nat.div_eq_of_lt (show 2 < P.k by omega_using [hk3]), Nat.min_zero]
   refine ⟨r1, ?_⟩
   simp only [hashedBy, r1, show rowsBy P 0 = 0 by simp [rowsBy]]
   rfl
@@ -130,7 +130,7 @@ theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (
   have hf := hw.facts
   have hkk := Nat.mul_le_mul hk3 hk3
   have h2 := (rowsBy_two (P := P) hk3).2
-  have first := rows_ok hp hr (n := 4) (h := 0) (rowsBy P 2) 0 (by have := rowsBy_le P 2; omega)
+  have first := rows_ok hp hr (n := 4) (h := 0) (rowsBy P 2) 0 (by have := rowsBy_le P 2; omega_using [this])
     (by rw [Nat.zero_add]; exact rowsBy_mul P 2) H
   rw [Nat.zero_add] at first
   unfold Impl.MlKem.AArch64.Kem16P.kgMatrixRows Impl.MlKem.AArch64.Kem16P.pairs
@@ -138,23 +138,23 @@ theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (
   refine WPs.append (WPs.append (WPs.mono first fun t ht => WPs.mono (wps_flatMap_range (n := P.k * P.k / 2 - 2)
     (I := fun q s => IL P s₀ (2 * (q + 2)) (rowsBy P (q + 2)) (hashedBy P (q + 2)) s)
     (f := fun q => kgPair P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
-    (fun q hq s Hs => pairRows_ok hp hk hr (p := q + 2) (by omega) Hs)
+    (fun q hq s Hs => pairRows_ok hp hk hr (p := q + 2) (by omega_using [hq]) Hs)
     (show IL P s₀ 4 (rowsBy P 2) (hashedBy P 2) t by rw [h2]; exact ht)) fun u hu => ?_))
-  have e2 : P.k * P.k / 2 - 2 + 2 = P.k * P.k / 2 := by omega
+  have e2 : P.k * P.k / 2 - 2 + 2 = P.k * P.k / 2 := by omega_using [hkk]
   rw [e2] at hu
   have hle := rowsBy_le P (P.k * P.k / 2)
   by_cases ho : P.k * P.k % 2 = 1
   · rw [show decide (P.k * P.k % 2 = 1) = true from decide_eq_true ho, ite_eq_left rfl]
-    have e : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega
+    have e : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega_using [ho]
     rw [e] at hu
     refine WPs.cons (WP.mono (last_step hp hr ho hu) fun v hv => ?_)
     have r := rows_ok hp hr (n := P.k * P.k) (P.k - rowsBy P (P.k * P.k / 2)) (rowsBy P (P.k * P.k / 2))
-      (by omega) (by rw [Nat.add_sub_cancel' hle]) hv
+      (by omega_using [hle]) (by rw [Nat.add_sub_cancel' hle]) hv
     rwa [Nat.add_sub_cancel' hle] at r
   · rw [show decide (P.k * P.k % 2 = 1) = false from decide_eq_false ho, ite_eq_right Bool.false_ne_true]
-    have e : 2 * (P.k * P.k / 2) = P.k * P.k := by omega
+    have e : 2 * (P.k * P.k / 2) = P.k * P.k := by omega_using [ho]
     have er : rowsBy P (P.k * P.k / 2) = P.k := by
-      simp only [rowsBy, e, Nat.mul_div_cancel_left _ (show 0 < P.k by omega), Nat.min_self]
+      simp only [rowsBy, e, Nat.mul_div_cancel_left _ (show 0 < P.k by omega_using [hk3]), Nat.min_self]
     rw [e, er] at hu
     exact hu
 

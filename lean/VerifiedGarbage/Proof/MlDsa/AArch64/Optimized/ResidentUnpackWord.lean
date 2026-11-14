@@ -16,15 +16,15 @@ private theorem toInt32 (x : BitVec 32) :
     x.toInt = if x.toNat < 2147483648 then (x.toNat : Int) else (x.toNat : Int)-4294967296 := by
   rw [BitVec.toInt_eq_toNat_cond]
   have := x.isLt
-  split <;> split <;> first | rfl | omega
+  split <;> split <;> first | rfl | omega_arith
 
 theorem signMask32 (d : BitVec 32) : d.sshiftRight 31 = if d.toNat < 2^31 then 0 else -1 := by
   apply BitVec.eq_of_toInt_eq
   rw [BitVec.toInt_sshiftRight,toInt32]
   have := d.isLt
   split
-  · rw [show (0 : BitVec 32).toInt=0 by decide,Int.shiftRight_eq_div_pow]; omega
-  · rw [show (-1 : BitVec 32).toInt= -1 by decide,Int.shiftRight_eq_div_pow]; omega
+  · rw [show (0 : BitVec 32).toInt=0 by decide,Int.shiftRight_eq_div_pow]; omega_arith
+  · rw [show (-1 : BitVec 32).toInt= -1 by decide,Int.shiftRight_eq_div_pow]; omega_arith
 
 /-- Canonical coefficient correction used by the vector parser. -/
 def unpackWord (b x : BitVec 32) : BitVec 32 :=
@@ -37,11 +37,11 @@ theorem unpackWord_toNat {b x : BitVec 32} (hb : b.toNat < 8380417) (hx : x.toNa
   by_cases h : b.toNat < x.toNat
   · have hs : (b-x).sshiftRight 31=0xffffffff#32 := by rw [signMask32,ite_eq_right (by bv_omega)]; rfl
     rw [hs,show (0xffffffff#32 &&& 8380417#32)=8380417#32 from rfl,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [h])]
     bv_omega
   · have hs : (b-x).sshiftRight 31=0#32 := by rw [signMask32,ite_eq_left (by bv_omega)]; rfl
     rw [hs,show (0#32 &&& 8380417#32)=0#32 from rfl]
-    have he : (b.toNat+8380417-x.toNat)%8380417=b.toNat-x.toNat := by omega
+    have he : (b.toNat+8380417-x.toNat)%8380417=b.toNat-x.toNat := by omega_using [hb, h]
     rw [he]
     bv_omega
 
@@ -63,7 +63,7 @@ theorem align_field (x : BitVec 32) {d e : Nat} (hd : d=18 ∨ d=20) :
       simp (disch := omega) only [decide_eq_true,decide_eq_false,Bool.true_and,Bool.and_true,
         Bool.not_false]
       congr 1
-      omega
+      omega_using []
   · rcases hd with rfl | rfl <;>
       simp only [ite_true,ite_eq_right (by decide : ¬ (18:Nat)=20)] at *
     all_goals simp (disch := omega) only [decide_eq_true,decide_eq_false,Bool.false_and,Bool.and_false]

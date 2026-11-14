@@ -63,7 +63,7 @@ theorem htcall_vp (hg : Geo L scr) {F G : State → State → Prop} {p : BitVec 
     (ha : ∀ σ s, F σ s → σ.mem.readW (tA p (4 * k)) 32 = a ∧
       ts.find? (fun q => (σ.syms q.1).setWidth 64 == a.setWidth 64) = some (n, c))
     (h : VP F (.call n c) G) : VP F (tcall k ts) G := by
-  have hk4 : 4 * k + 4 ≤ 44 := by omega
+  have hk4 : 4 * k + 4 ≤ 44 := by omega_using [hk]
   obtain ⟨tR, tRo, tC⟩ := hR
   refine tcall_vp hne (F₁ := fun σ s => F σ s ∧ s.gpr .r4 = a) ?_ (fun σ s ⟨hs, hr4⟩ => ?_)
     (fun _ _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm) (h.mono (fun _ _ hh => hh.1) fun _ _ hh => hh)
@@ -77,7 +77,7 @@ theorem htcall_vp (hg : Geo L scr) {F G : State → State → Prop} {p : BitVec 
     · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
     · obtain ⟨hs', hsi⟩ := hs
       have hc := (hF σ s hs').1
-      refine WP.mono (wp_ldrT (by omega) hsi (St_roR hc.st tRo (tC _ hk4))
+      refine WP.mono (wp_ldrT (by omega_using [hk]) hsi (St_roR hc.st tRo (tC _ hk4))
         ((St_roW hc.st tRo (tC _ hk4)).trans (ha σ s hs').1)) fun t e => ?_
       subst e
       exact ⟨hX σ s _ hs', by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩

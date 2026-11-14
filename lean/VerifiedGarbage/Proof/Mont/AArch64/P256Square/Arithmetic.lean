@@ -22,7 +22,7 @@ theorem reduction_words {u lo hi t3 t6 borrow : Nat}
     u * ((p + 1) / B) = lo + B * hi + 2 ^ 128 * t3 + 2 ^ 192 * t6 := by
   have hhigh : t3 + B * t6 = u * (B + 1 - 2 ^ 32) := by
     simp only [B] at *
-    omega
+    omega_using [hu, h3, h6]
   have hsplit : 2 ^ 128 * t3 + 2 ^ 192 * t6 = 2 ^ 128 * (t3 + B * t6) := by
     simp only [B, Nat.mul_add, ← Nat.mul_assoc]
   rw [Nat.add_assoc (lo + B * hi), hsplit, hhigh, ← hu]
@@ -36,11 +36,11 @@ theorem reduction_round {t u q r : Nat} (ht : t < R) (hu : u < B)
   have hmul : B * ((p + 1) / B) = p + 1 := by decide
   have he : B * r = t + u * p := by
     rw [hr, Nat.mul_add, Nat.mul_left_comm B u, hmul, Nat.mul_add, Nat.mul_one, hq]
-    omega
+    omega_using []
   refine ⟨he,?_⟩
-  have hup : u * p ≤ (B - 1) * p := Nat.mul_le_mul_right _ (by omega)
+  have hup : u * p ≤ (B - 1) * p := Nat.mul_le_mul_right _ (by omega_using [hu])
   simp only [B, R, p, Spec.P256.curve, Spec.P256.p] at *
-  omega
+  omega_using [ht, hu, hq, hr]
 
 /-- Four rounds and addition of the original high half give a REDC result. -/
 theorem reduction_four {lo hi t1 t2 t3 t4 u0 u1 u2 u3 r : Nat}
@@ -50,15 +50,15 @@ theorem reduction_four {lo hi t1 t2 t3 t4 u0 u1 u2 u3 r : Nat}
     R*r = lo + R*hi + (u0+B*u1+2^128*u2+2^192*u3)*p := by
   rw [hr, Nat.mul_add]
   simp only [Nat.add_mul, B, R, p, Spec.P256.curve, Spec.P256.p] at *
-  omega
+  omega_using [h0, h1, h2, h3]
 
 /-- The unnormalized square lies below twice the modulus. -/
 theorem square_redc_bound {a r u : Nat} (ha : a < p) (hu : u < R)
     (he : R*r = a*a + u*p) : r < 2*p := by
   have hpR : p < R := by decide
   have haa : a*a < p*R := Nat.mul_lt_mul'' ha (Nat.lt_trans ha hpR)
-  have hup : u*p ≤ (R-1)*p := Nat.mul_le_mul_right p (by omega)
+  have hup : u*p ≤ (R-1)*p := Nat.mul_le_mul_right p (by omega_using [hu])
   simp only [R, p, Spec.P256.curve, Spec.P256.p] at *
-  omega
+  omega_using [hu, he, haa]
 
 end VG.Proof.Mont.AArch64.P256Square

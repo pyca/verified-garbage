@@ -29,12 +29,12 @@ theorem loopStep_ok (M : Mont) {s₀ s : State} {B : Addr} {Z w N X x i : Nat} {
     WP isa (Folded.squareStep M.mm) s fun t =>
       ((t.gpr .x3).toNat ≠ 0 ↔ i+1 ≠ 16) ∧ SquareInv s₀ B Z w N X x mi (i+1) t := by
   refine WP.mono (squareStep_ok M h.ctx hZ hw hw' hR h.reduced h.value
-    (by omega) (by omega) h.count) fun t ⟨ctx,lt,val,count,zf,frame,keep⟩ => ?_
+    (by omega_using [hi]) (by omega_using []) h.count) fun t ⟨ctx,lt,val,count,zf,frame,keep⟩ => ?_
   have hp : 2 * 2^i = 2^(i+1) := by rw [Nat.pow_succ, Nat.mul_comm]
   rw [hp] at val
   refine ⟨?_,ctx,lt,val,?_,h.frame.trans frame,(h.keep.trans keep).mono (by decide)⟩
-  · rw [zf, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [zf, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hi]
   · simpa only [Nat.sub_sub] using count
 
 theorem squares_ok (M : Mont) {s : State} {B : Addr} {Z w N X x : Nat} {mi : BitVec 64}

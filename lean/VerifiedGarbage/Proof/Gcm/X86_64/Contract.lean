@@ -46,4 +46,17 @@ def ghashX86_64 : Contract X86_64.isa where
   pub s₁ s₂ :=
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
+
+open VG.X86_64 in
+/-- `ghashX86_64` without `scratch`, which `vg_ghash_pclmul` and
+`vg_ghash_vpclmul` never touch: their callers then need not set aside one. -/
+def ghashX86_64F : Contract X86_64.isa where
+  pre s :=
+    let h : Region := ⟨s.gpr .rdi, 16⟩
+    let y : Region := ⟨s.gpr .rsi, 16⟩
+    let data : Region := ⟨s.gpr .rdx, 16 * (s.gpr .rcx).toNat⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [h, data] ∧ s.wr = [y] ∧ h.Disjoint y ∧ y.Disjoint data ∧ ret.Disjoint y
+  post := ghashX86_64.post
+  pub := ghashX86_64.pub
 end VG.Proof.Gcm

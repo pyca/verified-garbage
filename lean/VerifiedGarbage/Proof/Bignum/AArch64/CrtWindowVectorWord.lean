@@ -51,8 +51,8 @@ theorem loadBit_ok {s : State} {r : VReg} {i : Nat} {choose : Prop} [Decidable c
       t = (s.setV .v21 (s.mem.read (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16)).setV r
         (if choose then s.mem.read (s.gpr .x16 + BitVec.ofNat 64 (16 * i)) 16 else s.v r) := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, exec, addr, show 16 * i % 16 = 0 by omega,
-    show 16 * i < 4096 * 16 by omega, and_self, ite_true, Option.bind_some,
+  simp only [runBlock_cons, exec, addr, show 16 * i % 16 = 0 by omega_using [],
+    show 16 * i < 4096 * 16 by omega_using [hi], and_self, ite_true, Option.bind_some,
     State.load, hld, Option.map_some, runStep_some, reduceVOpEval,
     RegUpd.v_setV_self, RegUpd.v_setV_of_ne _ _ (show VReg.v20 ≠ .v21 by decide),
     RegUpd.v_setV_of_ne _ _ hr', hm, bit_mask, runBlock_nil,

@@ -106,8 +106,8 @@ theorem yconst_ok (r : XReg) (v : BitVec 32) (s : State) :
       rw [RegUpd.xmm_setV, ifp rfl, RegUpd.gpr_setReg_self]
       apply BitVec.eq_of_getLsbD_eq; intro i hi
       simp only [dword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
-      rw [BitVec.getLsbD_append, ifp (by omega), BitVec.getLsbD_setWidth]
-      simp [show i < 64 by omega]
+      rw [BitVec.getLsbD_append, ifp (by omega_using [hi]), BitVec.getLsbD_setWidth]
+      simp [show i < 64 by omega_using [hi]]
     rcases lane01 hl with rfl | rfl <;> simp only [ite_true, ite_false, this, Nat.one_ne_zero]
   · simp only [List.mem_singleton] at hr'
     rw [RegUpd.gpr_setV, RegUpd.gpr_setV, RegUpd.gpr_setReg_of_ne _ _ hr']
@@ -126,7 +126,7 @@ theorem wp_rcxLoopY {body : List Instr} {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 31
       s.gpr .rcx = BitVec.ofNat 64 N)
     (by vrunm [RegUpd.ymmHi_setReg]; exact ⟨by gonly, by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega⟩) fun s ⟨o, hy, hc⟩ => ?_)
-  exact wp_countdown (by omega) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s o hy hc) hc
+      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hN']⟩) fun s ⟨o, hy, hc⟩ => ?_)
+  exact wp_countdown (by omega_using [hN']) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s o hy hc) hc
 
 end VG.Proof.MlKem.X86_64

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The prepared-key transforms are the existing sign/verify transforms
 
@@ -35,15 +36,15 @@ theorem secret_s2 (p : Params) (sk : List Byte) {i : Nat} (hi : i < p.k) :
     (preparedSecretPolys p sk)[p.ℓ + i]! = Sign.s2F p sk i := by
   rw [secretPolys_eq]
   simp [List.getElem!_eq_getElem?_getD, List.getElem?_append, hi,
-    show ¬ p.ℓ + i < p.ℓ by omega]
+    show ¬ p.ℓ + i < p.ℓ by omega_using []]
 
 theorem secret_t0 (p : Params) (sk : List Byte) {i : Nat} (hi : i < p.k) :
     (preparedSecretPolys p sk)[p.ℓ + p.k + i]! = Sign.t0F p sk i := by
   rw [secretPolys_eq]
   simp only [List.getElem!_eq_getElem?_getD, List.getElem?_append,
     List.length_append, List.length_map, List.length_range]
-  rw [ite_eq_right (by omega)]
-  rw [show p.ℓ + p.k + i - (p.ℓ + p.k) = i by omega]
+  rw [ite_eq_right (by omega_using [])]
+  rw [show p.ℓ + p.k + i - (p.ℓ + p.k) = i by omega_using []]
   simp [hi]
 
 theorem publicPolys_eq (p : Params) (pk : List Byte) :
@@ -73,7 +74,7 @@ theorem polyIs_of_copy {m m' : Mem} {src dst : Addr} {f : Poly}
     rw [Mem.extractLsb'_read _ _ hj]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add,
       BitVec.add_assoc, ← BitVec.ofNat_add]
-    have hij : 4 * i + j < 1024 := by change i < 256 at hi; omega
+    have hij : 4 * i + j < 1024 := by change i < 256 at hi; omega_using [hj, hi]
     have he := congrArg (fun xs : List Byte => xs.getD (4 * i + j) 0) hc
     rw [MlKem.bytesAt_getD _ _ hij, MlKem.bytesAt_getD _ _ hij] at he
     exact he
@@ -107,7 +108,7 @@ theorem preparedSecretKey_of_bytes {p : Params} {m m' : Mem} {key : Addr}
     simp only [preparedSecretKeyBytes, h256]
     have : 1024 * (i + 1) ≤ 1024 * (p.ℓ + 2 * p.k) := Nat.mul_le_mul_left _ this
     change 32 / 8 > t at ht
-    omega
+    omega_using [hi, hj, ht]
   have he := congrArg (fun xs : List Byte => xs.getD (p.skLen + 4 * n * i + 4 * j + t) 0) hb
   rw [MlKem.bytesAt_getD _ _ ho, MlKem.bytesAt_getD _ _ ho] at he
   rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, ← Nat.add_assoc]
@@ -136,7 +137,7 @@ theorem preparedPublicKey_of_bytes {p : Params} {m m' : Mem} {key : Addr}
     simp only [preparedPublicKeyBytes, h256]
     have : 1024 * (i + 1) ≤ 1024 * p.k := Nat.mul_le_mul_left _ this
     change 32 / 8 > t at ht
-    omega
+    omega_using [hi, hj, ht]
   have he := congrArg (fun xs : List Byte => xs.getD (p.pkLen + 4 * n * i + 4 * j + t) 0) hb
   rw [MlKem.bytesAt_getD _ _ ho, MlKem.bytesAt_getD _ _ ho] at he
   rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, ← Nat.add_assoc]

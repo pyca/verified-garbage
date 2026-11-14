@@ -30,7 +30,7 @@ theorem coreInputs_ok {s : State} {base : Addr} {size n m al bl : Nat} {a b : Po
     have := h.size_le
     have := h.scr.nowrap
     simp only [stride] at *
-    omega
+    omega_arith
   refine WP.seq (WP.mono (coreLoadSlot_ok h hz (by decide) (by decide) ha4 ha hwa
     Ra.toReadableComponent (Ra.slot (by decide))) fun u ⟨Cu, Au, Ku, Ou⟩ => ?_)
   have OWu := slotOutside_whole Ou (by decide)
@@ -41,7 +41,7 @@ theorem coreInputs_ok {s : State} {base : Addr} {size n m al bl : Nat} {a b : Po
   · rw [slotOutside_val Ot (by decide) (bound 5 (by decide)), Au]
   · rw [Bt, Rb.bytes Ku (by decide) OWu hn]
   · intro j hj
-    rw [slotOutside_val Ot (by omega) (bound j (by omega)),
-      slotOutside_val Ou (by omega) (bound j (by omega))]
+    rw [slotOutside_val Ot (by omega_using [hj]) (bound j (by omega_using [hj])),
+      slotOutside_val Ou (by omega_using [hj]) (bound j (by omega_using [hj]))]
 
 end VG.Proof.Dsa.X86

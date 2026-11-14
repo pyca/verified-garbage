@@ -22,7 +22,7 @@ def PairAt (m : Mem) (p : Addr) (A B : Spec.Sha3.State) : Prop :=
   ∀ i < 25, m.read (wordAddr p i) 16 = ofVDwords A[i]! B[i]!
 
 theorem pair_contains (p : Addr) {i : Nat} (hi : i < 25) :
-    (pairR p).Contains (wordAddr p i) 16 := Offset.contains_base p (by omega) (by omega)
+    (pairR p).Contains (wordAddr p i) 16 := Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 /-- Load two packed states into the same register layout used by the verified rounds. -/
 theorem load_ok {s : State} {p : Addr} {r : Reg} {A B : Spec.Sha3.State}
@@ -35,7 +35,7 @@ theorem load_ok {s : State} {p : Addr} {r : Reg} {A B : Spec.Sha3.State}
     (fun k s' => VChg allV s s' ∧ ∀ i < k, s'.v (vreg i) = ofVDwords A[i]! B[i]!)
     (fun k s' hk ⟨hchg,hvals⟩ => ?_) 25 (Nat.le_refl _) s
     ⟨VChg.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
-  refine wp_ldrq (t := vreg k) (a := wordAddr p k) (by omega)
+  refine wp_ldrq (t := vreg k) (a := wordAddr p k) (by omega_using [hk])
     (by rw [hchg.gpr,hr]; rfl)
     (by rw [hchg.rd,hchg.wr]; exact hin k hk)
     fun s'' h => WP.block_nil_iff.mpr ⟨(hchg.trans h.chg).mono (fun v _ => allV_mem v),?_⟩
@@ -43,6 +43,6 @@ theorem load_ok {s : State} {p : Addr} {r : Reg} {A B : Spec.Sha3.State}
   by_cases he : i = k
   · subst i
     rw [h.v,hchg.mem,hp k hk]
-  · rw [h.get (vreg i) (by rw [ne_eq,vreg_inj i (by omega) k (by omega)]; exact he)]
-    exact hvals i (by omega)
+  · rw [h.get (vreg i) (by rw [ne_eq,vreg_inj i (by omega_using [hk, hi]) k (by omega_using [hk])]; exact he)]
+    exact hvals i (by omega_using [hi, he])
 end VG.Proof.Sha3.AArch64.Neon

@@ -26,7 +26,7 @@ theorem mask3_ofNat {n : Nat} (hn : n < 2 ^ 64) :
   rw [BitVec.toNat_and,
     show (3 : BitVec 64).toNat = 2 ^ 2 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n%4 < 2 ^ 64 by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n%4 < 2 ^ 64 by omega_using [])]
 
 theorem shift_count_ok (s : State) (count : Reg) {n : Nat}
     (hcount : s.gpr count = BitVec.ofNat 64 n) (hn : n < 2 ^ 64) :

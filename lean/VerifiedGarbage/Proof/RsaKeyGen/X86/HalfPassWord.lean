@@ -32,23 +32,23 @@ theorem step_ok {s : State} {base : Addr} {size src out index : Nat} (scratch : 
           2 ^ 31 * (w32 s.mem base (src + 4 * index + 4) % 2) else w32 s.mem base (src + 4 * index)) ∧
       Keeps [.eax, .ebx, .edx] s t := by
   unfold step
-  refine wp_movS (readSrc_at' scratch pointer (by omega)) fun a A _ =>
+  refine wp_movS (readSrc_at' scratch pointer (by omega_using [srcFit])) fun a A _ =>
     wp_logicS (.inl rfl) rfl fun b B => wp_ror (by decide) fun c C => ?_
   have Kc : Keeps [.eax, .ebx, .edx] s c := ((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps
   have pc : c.gpr .ebp = c.gpr .edi + BitVec.ofNat 32 (4 * index) := by
     rw [Kc.1 .ebp (by decide), Kc.1 .edi (by decide)]; exact pointer
-  refine wp_movS (readSrc_at' (scratch.of_keeps Kc (by decide)) pc (by omega)) fun d D _ =>
+  refine wp_movS (readSrc_at' (scratch.of_keeps Kc (by decide)) pc (by omega_using [srcFit])) fun d D _ =>
     wp_shr (by decide) fun e E _ => wp_addS rfl fun f F _ => ?_
   have Kf : Keeps [.eax, .ebx, .edx] s f := ((Kc.widen D.keeps).widen E.keeps).widen F.keeps
   have pf : f.gpr .ebp = f.gpr .edi + BitVec.ofNat 32 (4 * index) := by
     rw [Kf.1 .ebp (by decide), Kf.1 .edi (by decide)]; exact pointer
-  refine wp_movS (readSrc_at' (scratch.of_keeps Kf (by decide)) pf (by omega)) fun g G _ =>
+  refine wp_movS (readSrc_at' (scratch.of_keeps Kf (by decide)) pf (by omega_using [srcFit])) fun g G _ =>
     wp_xor fun h H => wp_and fun i I => wp_xor fun j J => ?_
   have Kj : Keeps [.eax, .ebx, .edx] s j := (((Kf.widen G.keeps).widen H.keeps).widen I.keeps).widen J.keeps
   have pj : j.gpr .ebp = j.gpr .edi + BitVec.ofNat 32 (4 * index) := by
     rw [Kj.1 .ebp (by decide), Kj.1 .edi (by decide)]; exact pointer
   have Sj := scratch.of_keeps Kj (by decide)
-  refine wp_storeS (Sj.ea_at' pj (by omega)) (Sj.write outFit) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sj.ea_at' pj (by omega_using [outFit])) (Sj.write outFit) fun t T => WP.block_nil ?_
   have M : j.mem = s.mem := J.mem.trans (I.mem.trans (H.mem.trans (G.mem.trans
     (F.mem.trans (E.mem.trans (D.mem.trans (C.mem.trans (B.mem.trans A.mem))))))))
   have old : g.gpr .ebx = s.mem.readW (off base (src + 4 * index)) 32 := by
@@ -57,7 +57,7 @@ theorem step_ok {s : State} {base : Addr} {size src out index : Nat} (scratch : 
       (s.mem.readW (off base (src + 4 * index + 4)) 32 &&& 1).rotateRight 1 := by
     rw [F.gpr, E.gpr, D.gpr, E.other .eax (by decide), D.other .eax (by decide), C.gpr, B.gpr, A.gpr,
       C.mem, B.mem, A.mem]
-    rw [show src + 4 + 4 * index = src + 4 * index + 4 by omega]
+    rw [show src + 4 + 4 * index = src + 4 * index + 4 by omega_using []]
     rfl
   have selected : j.gpr .ebx = if choice then f.gpr .edx else g.gpr .ebx := by
     rw [J.gpr, I.other .ebx (by decide), H.other .ebx (by decide), I.gpr, H.gpr,
@@ -65,7 +65,7 @@ theorem step_ok {s : State} {base : Addr} {size src out index : Nat} (scratch : 
       G.other .ecx (by decide), Kf.1 .ecx (by decide), mask, select_word]
   refine ⟨?_, ?_, Kj.widen (T.keeps [])⟩
   · rw [T.mem, M]
-    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega_using [outFit, this])
   · rw [T.mem, w32_write_self, selected, old, half]
     cases choice
     · rfl

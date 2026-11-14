@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ct.PPC64LE
 public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.Registration
 
+/-! # Constant-time byte comparison on PPC64LE -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Ct.PPC64LE

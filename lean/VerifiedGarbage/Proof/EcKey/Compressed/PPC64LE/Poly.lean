@@ -109,11 +109,11 @@ theorem rhs_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base)
   have hn := hw.nowrap
   have hp3 := hc.p_ge
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   have hr2' : sv c base s R2P = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.p := hr2
   rw [rhsOps_eq]
   refine WP.seq (WP.mono (slMul_ok hc.fp hc.fpk hc.fpm h7 hw (o := QXM) (a := E) (b := R2P) (by decide)
-    (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega))) fun s₁ ⟨k₁, U₁, lt₁, e₁⟩ => ?_)
+    (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega_using [hp3]))) fun s₁ ⟨k₁, U₁, lt₁, e₁⟩ => ?_)
   have hw₁ := hw.of_rk k₁
   have v₁ : ∀ {i}, i < 45 → i ≠ QXM → sv c base s₁ i = sv c base s i := fun hi h₁ =>
     sv_unch U₁ h7 hn hi (apart_callW h7 hi h₁)
@@ -170,7 +170,7 @@ theorem checkPoly_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx'
     rcases hx' with rfl | rfl | rfl
     · exact hy
-    · rw [hr2]; exact Nat.mod_lt _ (by omega)
+    · rw [hr2]; exact Nat.mod_lt _ (by omega_using [hy])
     · exact hr
   have hW3 : W3 ∈ validAfter checkN [QY, R2P, W2] := by decide
   have v := I.val W3 hW3

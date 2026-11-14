@@ -35,7 +35,7 @@ theorem pcEntry_ok (s : State) {base : BitVec 32}
   refine wp_stackAddr (by decide) fun u h => ?_
   have ptr : u.gpr .r12 = s.sp := by simpa only [BitVec.add_zero] using h.gpr
   refine wp_str (a := off (State.addr s.sp) 4) (by decide)
-    (by rw [ptr]; exact addr_add (by omega))
+    (by rw [ptr]; exact addr_add (by omega_using [fit]))
     (by rw [h.wr]; exact ⟨_, stack, Offset.contains_base _ (by decide) (by decide)⟩) fun v j => ?_
   have outside := writeW32_outside s.mem (State.addr s.sp) (d := 4) (s.gpr .r0) (by decide)
   have memV : v.mem = s.mem.writeW (off (State.addr s.sp) 4) (s.gpr .r0) := by
@@ -43,7 +43,7 @@ theorem pcEntry_ok (s : State) {base : BitVec 32}
   have argV : v.mem.readW (off (State.addr s.sp) 56) 32 = base := by
     rw [memV, outside_read32 outside (by decide) (by decide)]; exact arg
   refine wp_loadStack (a := off (State.addr s.sp) 56) (by decide)
-    (by rw [j.sp, h.sp]; exact addr_add (by omega))
+    (by rw [j.sp, h.sp]; exact addr_add (by omega_using [fit]))
     (by rw [j.rd, j.wr, h.rd, h.wr]; exact argRead) fun z l => ?_
   have baseZ : z.gpr .r0 = base := l.gpr.trans argV
   refine wp_str (a := State.addr s.sp) (by decide)

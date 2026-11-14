@@ -122,18 +122,18 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .r9 ∧ dR ≠ .r10 ∧ dR ≠ .r
   | succ n ih =>
     intro hn rest s Q gd gx gy hinx hiny hout k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih (by omega) _ s Q gd gx gy hinx hiny hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine ih (by omega_using [hn]) _ s Q gd gx gy hinx hiny hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     simp only [xorW, List.cons_append, List.nil_append]
-    refine wp_ld (a := x + BitVec.ofNat 64 (8 * n)) ⟨by omega, by omega⟩
-      (by rw [g₁ _ hx.1 hx.2.1, gx]) (by rw [rd₁, wr₁]; exact hinx n (by omega)) (fun s₂ u₂ => ?_)
+    refine wp_ld (a := x + BitVec.ofNat 64 (8 * n)) ⟨by omega_using [hn], by omega_using []⟩
+      (by rw [g₁ _ hx.1 hx.2.1, gx]) (by rw [rd₁, wr₁]; exact hinx n (by omega_using [hn])) (fun s₂ u₂ => ?_)
       hx.2.2
-    refine wp_ld (a := y + BitVec.ofNat 64 (8 * n)) ⟨by omega, by omega⟩
+    refine wp_ld (a := y + BitVec.ofNat 64 (8 * n)) ⟨by omega_using [hn], by omega_using []⟩
       (by rw [u₂.other _ hs.1, g₁ _ hs.1 hs.2.1, gy])
-      (by rw [u₂.rd, u₂.wr, rd₁, wr₁]; exact hiny n (by omega)) (fun s₃ u₃ => ?_) hs.2.2
+      (by rw [u₂.rd, u₂.wr, rd₁, wr₁]; exact hiny n (by omega_using [hn])) (fun s₃ u₃ => ?_) hs.2.2
     refine wp_xor fun s₄ u₄ => ?_
-    refine wp_std (a := d + BitVec.ofNat 64 (8 * n)) ⟨by omega, by omega⟩
+    refine wp_std (a := d + BitVec.ofNat 64 (8 * n)) ⟨by omega_using [hn], by omega_using []⟩
       (by rw [u₄.other _ hd.1, u₃.other _ hd.2.1, u₂.other _ hd.1, g₁ _ hd.1 hd.2.1, gd])
-      (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁]; exact hout n (by omega))
+      (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁]; exact hout n (by omega_using [hn]))
       (fun s₅ u₅ => k s₅ (fun r h9 h10 => by
           rw [u₅.gpr, u₄.other r h9, u₃.other r h10, u₂.other r h9, g₁ r h9 h10])
         (by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁])
@@ -142,17 +142,17 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .r9 ∧ dR ≠ .r10 ∧ dR ≠ .r
       rw [xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]
     have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (8 * n), 8⟩ ⟨d, (xorBytes (bytesAt s.mem x (8 * n))
         (bytesAt s.mem y (8 * n))).length⟩ := by
-      rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-        (Region.sub_prefix (by omega))
+      rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_using [hn]) (by omega_using [hn]))).sub_right
+        (Region.sub_prefix (by omega_using [hn]))
     have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (8 * n), 8⟩ ⟨d, (xorBytes (bytesAt s.mem x (8 * n))
         (bytesAt s.mem y (8 * n))).length⟩ := by
-      rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-        (Region.sub_prefix (by omega))
+      rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_using [hn]) (by omega_using [hn]))).sub_right
+        (Region.sub_prefix (by omega_using [hn]))
     rw [u₅.mem, u₄.gpr, u₄.mem, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₃.mem, u₂.mem, writeW_xor,
-      m₁, bytesAt_writeBytes_sep _ _ sx (by omega), bytesAt_writeBytes_sep _ _ sy (by omega)]
+      m₁, bytesAt_writeBytes_sep _ _ sx (by omega_using []), bytesAt_writeBytes_sep _ _ sy (by omega_using [])]
     have e := writeBytes_append s.mem d _ (xorBytes (bytesAt s.mem (x + BitVec.ofNat 64 (8 * n)) 8)
       (bytesAt s.mem (y + BitVec.ofNat 64 (8 * n)) 8))
-      (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
+      (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_using [hn])
     rw [hl] at e
     rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
       List.zipWith_append (by simp [bytesAt])]

@@ -29,9 +29,9 @@ open VG.Proof.Bignum (slot slot_sep)
 
 theorem slot_lt {w j k : Nat} (h : j < k) : slot w j + 8 * (w + 2) ≤ slot w k := by
   unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega)
+  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega_using [h])
   rw [Nat.add_mul, Nat.one_mul] at this
-  omega
+  omega_using [this]
 
 /-- What every piece of the round keeps. -/
 structure Env (s : State) (B : Addr) (Z w : Nat) : Prop where
@@ -95,10 +95,10 @@ theorem sel_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) {b : Bool} {
   refine WP.mono (selectAcc64_ok32 e3.hs (dA := slot w a) (dT := slot w t) (dO := slot w o) (w := w) (b := b)
       (by rw [k3.gpr .r8 (by decide), k2.gpr .r8 (by decide), a8])
       (by rw [k3.gpr .r9 (by decide), a9]) a5 e3.h11
-      (by rw [k13.gpr .r20 (by decide), h20]) (by have := h.hw; omega) (by have := h.hw'; omega)
-      (by omega) (by omega) (by omega)
-      (by have := sep hoa; omega) (by have := sep hot; omega)) fun s' ⟨hv, hout, k⟩ => ?_
+      (by rw [k13.gpr .r20 (by decide), h20]) (by have := h.hw; omega_using [this]) (by have := h.hw'; omega_using [this])
+      (by omega_using [hA]) (by omega_using [hT]) (by omega_using [hO])
+      (by have := sep hoa; omega_using [this]) (by have := sep hot; omega_using [this])) fun s' ⟨hv, hout, k⟩ => ?_
   rw [hm] at hv hout
-  exact ⟨⟨hv, hout.mono (Nat.le_refl _) (by omega)⟩, (k13.trans k).mono (by simp [selRegs])⟩
+  exact ⟨⟨hv, hout.mono (Nat.le_refl _) (by omega_using [])⟩, (k13.trans k).mono (by simp [selRegs])⟩
 
 end VG.Proof.MillerRabin.PPC64LE

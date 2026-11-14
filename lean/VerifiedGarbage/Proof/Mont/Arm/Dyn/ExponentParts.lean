@@ -24,8 +24,8 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp op2_imm 
 
 theorem Context.odd {n size m : Nat} {base : Addr} {s : State} (h : Context n m base size s) : m % 2 = 1 := by
   have hi := h.inverse
-  have hmod : (m * w32 s.mem base invO + 1) % 2 = 0 := by omega
-  rcases (by omega : m % 2 = 0 ∨ m % 2 = 1) with hm | hm
+  have hmod : (m * w32 s.mem base invO + 1) % 2 = 0 := by omega_using [hi]
+  rcases (by omega_using [] : m % 2 = 0 ∨ m % 2 = 1) with hm | hm
   · rw [Nat.add_mod, Nat.mul_mod, hm] at hmod; simp at hmod
   · exact hm
 
@@ -36,19 +36,19 @@ theorem Context.coprime {n size m : Nat} {base : Addr} {s : State} (h : Context 
 /-- The right-to-left exponentiation step consumes one bit. -/
 theorem exponent_step_value (y b e : Nat) :
     (if e % 2 = 1 then y * b else y) * (b * b) ^ (e / 2) = y * b ^ e := by
-  have he : e = e % 2 + 2 * (e / 2) := by omega
+  have he : e = e % 2 + 2 * (e / 2) := by omega_using []
   have hp : b * b = b ^ 2 := by simp only [Nat.pow_succ, Nat.pow_zero, Nat.one_mul]
   rw [hp, ← Nat.pow_mul]
   have hpowe : b ^ e = b ^ (e % 2) * b ^ (2 * (e / 2)) := by
     rw [← Nat.pow_add]
     exact congrArg (b ^ ·) he
   rw [hpowe]
-  rcases (by omega : e % 2 = 0 ∨ e % 2 = 1) with hm | hm
+  rcases (by omega_using [] : e % 2 = 0 ∨ e % 2 = 1) with hm | hm
   · rw [hm]; simp
   · rw [hm]; simp only [ite_true, Nat.pow_one, Nat.mul_assoc]
 
 theorem radix_squared (n : Nat) : 2 ^ (128 * n) = 2 ^ (64 * n) * 2 ^ (64 * n) := by
-  rw [← Nat.pow_add]; congr 1; omega
+  rw [← Nat.pow_add]; congr 1; omega_using []
 
 theorem mont_one {v n m : Nat} (hc : Nat.Coprime (2 ^ (64 * n)) m) (hv : v < m)
     (h : v * 2 ^ (64 * n) % m = 2 ^ (128 * n) % m) : v = 2 ^ (64 * n) % m := by
@@ -68,7 +68,7 @@ theorem lowBit_nat (x : BitVec 32) : (x &&& 1).toNat = x.toNat % 2 := by
 
 theorem negative_lowBit (x : BitVec 32) :
     (0 : BitVec 32) - (x &&& 1) = if x.toNat % 2 = 1 then BitVec.allOnes 32 else 0 := by
-  rcases (by omega : x.toNat % 2 = 0 ∨ x.toNat % 2 = 1) with h | h
+  rcases (by omega_using [] : x.toNat % 2 = 0 ∨ x.toNat % 2 = 1) with h | h
   · have e : x &&& 1 = 0 := by apply BitVec.eq_of_toNat_eq; rw [lowBit_nat, h]; rfl
     rw [e, h]; rfl
   · have e : x &&& 1 = 1 := by apply BitVec.eq_of_toNat_eq; rw [lowBit_nat, h]; rfl
@@ -83,13 +83,13 @@ theorem exponentMask_ok {n size : Nat} {base : Addr} {s : State} (hs : Ws s base
   unfold exponentMask
   refine wp_ptr (d := .r1) (by decide) h16 fun s₁ u₁ => ?_
   have w₁ := hs.of_upd u₁ (by decide)
-  refine wp_ldr (by decide) (w₁.ea (d := 0) (K := expS n) (by rw [u₁.gpr, u₁.other .r12 (by decide)]) (by omega))
-    (w₁.read (d := expS n + 0) (n := 4) (by omega)) fun s₂ u₂ => ?_
+  refine wp_ldr (by decide) (w₁.ea (d := 0) (K := expS n) (by rw [u₁.gpr, u₁.other .r12 (by decide)]) (by omega_using [he]))
+    (w₁.read (d := expS n + 0) (n := 4) (by omega_using [he])) fun s₂ u₂ => ?_
   refine wp_dp (op2_imm (by decide)) fun s₃ u₃ => wp_mov (op2_imm (by decide)) fun s₄ u₄ =>
     wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
   have w₅ := (((w₁.of_upd u₂ (by decide)).of_upd u₃ (by decide)).of_upd u₄ (by decide)).of_upd u₅ (by decide)
-  refine wp_str (by decide) (w₅.ea12 (by simp only [maskO]; omega)) (w₅.write (d := maskO) (n := 4)
-    (by simp only [maskO]; omega)) fun t m => WP.block_nil ⟨w₅.of_mupd m, ?_, ?_, ?_⟩
+  refine wp_str (by decide) (w₅.ea12 (by simp only [maskO]; omega_using [hm])) (w₅.write (d := maskO) (n := 4)
+    (by simp only [maskO]; omega_using [hm])) fun t m => WP.block_nil ⟨w₅.of_mupd m, ?_, ?_, ?_⟩
   · rw [m.mem, w32_write_self]
     simp only [u₅.get, u₄.get, u₃.get, u₂.get, reduceCtorEq, ↓reduceIte, dpVal, u₁.mem, Nat.add_zero]
     rw [negative_lowBit]
@@ -103,12 +103,12 @@ theorem shifted_word (x y : BitVec 32) :
     (x >>> 1 ||| y <<< 31).toNat = x.toNat / 2 + 2 ^ 31 * (y.toNat % 2) := by
   rw [BitVec.toNat_or, toNat_shr, toNat_shl]
   have hx := x.isLt
-  have e : y.toNat * 2 ^ 31 % 2 ^ 32 = (y.toNat % 2) <<< 31 := by rw [Nat.shiftLeft_eq]; omega
-  rw [e, Nat.or_comm, ← Nat.shiftLeft_add_eq_or_of_lt (by omega : x.toNat / 2 ^ 1 < 2 ^ 31), Nat.shiftLeft_eq]
-  omega
+  have e : y.toNat * 2 ^ 31 % 2 ^ 32 = (y.toNat % 2) <<< 31 := by rw [Nat.shiftLeft_eq]; omega_using []
+  rw [e, Nat.or_comm, ← Nat.shiftLeft_add_eq_or_of_lt (by omega_using [] : x.toNat / 2 ^ 1 < 2 ^ 31), Nat.shiftLeft_eq]
+  omega_using []
 
 theorem val32_parity (m : Mem) (base : Addr) (out n : Nat) : val32 m base out (n + 1) % 2 = w32 m base out % 2 := by
-  rw [val32]; omega
+  rw [val32]; omega_using []
 
 /-- The `k` words at `[r1 + 4j]` (`r1 = r12 + E`) shifted down a bit. -/
 theorem shiftWords_ok {E size : Nat} {base : Addr} :

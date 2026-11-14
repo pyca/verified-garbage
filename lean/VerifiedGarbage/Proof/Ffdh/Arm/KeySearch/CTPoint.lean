@@ -48,7 +48,7 @@ theorem attempt_status {q : KeyPoint sampling} {original s : State}
     (keys : q.keys ≠ 0) (scalars : q.scalars ≠ 0) (room : q.used + q.inputs.len ≤ q.inputs.randLen) :
     currentStatus q.inputs original q.used = q.status := by
   have head := keyTail_statuses_head (policy := sampling) (a := q.inputs.a) (len := q.inputs.len)
-    (rand := keyRand q.inputs original) (used := q.used) keys scalars (by rw [h.rand_length]; omega)
+    (rand := keyRand q.inputs original) (used := q.used) keys scalars (by rw [h.rand_length]; omega_using [room])
   rw [statuses] at head
   simp only [KeyPoint.status, head, Option.getD_some]
 

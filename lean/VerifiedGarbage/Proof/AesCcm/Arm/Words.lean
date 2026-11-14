@@ -55,9 +55,9 @@ theorem le4_shr16 (a : BitVec 32) : le4 (a >>> 16) = (le4 a).drop 2 ++ Spec.Ccm.
       if k < 2 then a.extractLsb' (8 * (k + 2)) 8 else 0 := fun k hk => by
     ext j hj
     simp only [BitVec.getElem_extractLsb']
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
       simp [BitVec.getLsbD_ushiftRight] <;>
-      first | rfl | (apply BitVec.getLsbD_of_ge; omega) | (congr 1; omega)
+      first | rfl | (apply BitVec.getLsbD_of_ge; omega_using []) | (congr 1; omega_using [])
   rw [le4_eq (a >>> 16), e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), le4_eq]
   rfl
 
@@ -66,11 +66,11 @@ theorem le4_shl16 (a : BitVec 32) : le4 (a <<< 16) = Spec.Ccm.zeros 2 ++ (le4 a)
       if k < 2 then 0 else a.extractLsb' (8 * (k - 2)) 8 := fun k hk => by
     ext j hj
     simp only [BitVec.getElem_extractLsb']
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
       simp [BitVec.getLsbD_shiftLeft] <;>
-      first | rfl | (intro; omega) |
-        (rw [decide_eq_true (by omega : 24 + j < 32), decide_eq_false (by omega : ¬ 24 + j < 16)]
-         simp only [Bool.true_and, Bool.not_false]; congr 1; omega)
+      first | rfl | (intro; omega_using [hj]) |
+        (rw [decide_eq_true (by omega_using [hj] : 24 + j < 32), decide_eq_false (by omega_using [] : ¬ 24 + j < 16)]
+         simp only [Bool.true_and, Bool.not_false]; congr 1; omega_using [])
   rw [le4_eq (a <<< 16), e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), le4_eq]
   rfl
 

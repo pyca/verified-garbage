@@ -1,14 +1,99 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSetup
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.ResidentCore
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentControl
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSelect
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Sha3.AArch64.Sha3.Vector.ResidentSetup`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
+open VG VG.AArch64
+open VG.Impl.Sha3.AArch64.Sha3.Vector
+open VG.Spec.Sha3 (stateAt bytesAt)
+
+structure Setup (b s : State) : Prop where
+  gpr : ∀ r ∈ [.x0,.x1,.x3,.x4,.x6], s.gpr r = b.gpr r
+  rd : s.rd = b.rd
+  wr : s.wr = b.wr
+  sp : s.sp = b.sp
+  frame : Frame [stateR b,scratchR b] b.mem s.mem
+  saved : Saved b s.mem
+  lanes : Lanes s (stateAt b.mem (st b))
+
+theorem save_gpr : ∀ r, ∀ i ∈ save, clobbers i r = false := by intro r; cases r <;> decide +kernel
+
+theorem bulk_save (b : State) (hp : BulkPre b) :
+    WP isa (.block save) b fun s =>
+      (∀ r, s.gpr r = b.gpr r) ∧ s.rd = b.rd ∧ s.wr = b.wr ∧ s.sp = b.sp ∧
+      Frame [stateR b,scratchR b] b.mem s.mem ∧ Saved b s.mem ∧
+      stateAt s.mem (st b) = stateAt b.mem (st b) := by
+  let q := b.withRegions [] [stateR b,⟨scratch b,512⟩]
+  have hpq : VG.Proof.Sha3.AArch64.Pre q :=
+    ⟨rfl,rfl,hp.st_scr.sub_right (Region.sub_prefix (by decide))⟩
+  obtain ⟨t,s,he,hptr,hv,hf,hs⟩ := save_ok q hpq
+  have hw : Covers q.wr b.wr := by
+    rw [hp.wr]
+    apply Covers.of_sub
+    intro r hr
+    change r ∈ [stateR b,⟨scratch b,512⟩] at hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨stateR b,by simp,0,by simp,by simp⟩
+    · exact ⟨scratchR b,by simp,0,by simp,by change 512 ≤ 640; decide⟩
+  have hc : Covers (q.rd ++ q.wr) (b.rd ++ b.wr) := by
+    change Covers q.wr (b.rd ++ b.wr)
+    intro p n hi
+    obtain ⟨r,hr,hc⟩ := hw p n hi
+    exact ⟨r,List.mem_append_right _ hr,hc⟩
+  have he' := Exec.widen he hc hw
+  simp only [q,State.withRegions_withRegions,State.withRegions_self] at he'
+  have hh := Exec.regions he' (by rfl)
+  refine ⟨t,s.withRegions b.rd b.wr,he',fun r => Exec.gpr (c := .block save) (r := r) (save_gpr r) he' (.inl rfl),
+    rfl,rfl,hh.2.2.1,?_,hs,?_⟩
+  · simpa only [hp.wr] using hh.2.2.2
+  · have h := state_frame q s hpq hptr.x0 hf
+    simpa only [q,State.withRegions_gpr,State.withRegions_mem,hptr.x0] using h
+
+theorem setup_ok (b : State) (hp : BulkPre b) :
+    WP isa (.block (save ++ load)) b (Setup b) := by
+  rw [WP.block_append_iff]
+  refine (bulk_save b hp).mono fun s ⟨hg,hr,hw,hsp,hf,hs,ha⟩ => ?_
+  have hl := WP.gprs (load_ok s (fun i hi => ?_) ?_)
+    (rs := [.x0,.x1,.x3,.x4,.x6])
+    (by decide +kernel) rfl
+  · refine hl.mono fun s' ⟨⟨hptr,hm,hA⟩,hreg⟩ => ?_
+    refine ⟨fun r hr => (hreg r hr).trans (hg r),hptr.rd.trans hr,hptr.wr.trans hw,hptr.sp.trans hsp,?_,?_,?_⟩
+    · rwa [hm]
+    · rwa [hm]
+    · rw [hg .x0,ha] at hA
+      exact hA
+  · rw [hr,hw,hp.rd,hp.wr,hg .x0]
+    exact ⟨stateR b,by simp,state_pair_contains b hi⟩
+  · rw [hr,hw,hp.rd,hp.wr,hg .x0]
+    exact ⟨stateR b,by simp,VG.Proof.Sha3.lane_contains _ (by decide : 24 < 25)⟩
+
+end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
+
+end
+
+end
+
 
 @[expose] public section
 
@@ -22,7 +107,7 @@ open VG.Proof.Sha3 (Rep)
 theorem rate_bounds {b : State} (hp : BulkPre b) : 0 < rate b ∧ rate b ≤ 168 := by
   have h := hp.rate_mem
   simp only [Spec.Sha3.rates,List.mem_cons,List.not_mem_nil,or_false] at h
-  rcases h with h|h|h|h|h <;> omega
+  rcases h with h|h|h|h|h <;> omega_using [h]
 
 theorem input_bytes (b : State) (hp : BulkPre b) (m : Mem)
     (hf : Frame [stateR b,scratchR b] b.mem m) (c n : Nat) (hcn : c+n ≤ len b) :
@@ -33,7 +118,7 @@ theorem input_bytes (b : State) (hp : BulkPre b) (m : Mem)
   have hi := List.mem_range.mp hi
   rw [BitVec.add_assoc,← BitVec.ofNat_add]
   exact hf.bytes (R := dataR b) (by simpa using ⟨hp.d_st,hp.d_scr⟩)
-    (Nat.le_of_lt (BitVec.isLt _)) (by change c+i < len b; omega)
+    (Nat.le_of_lt (BitVec.isLt _)) (by change c+i < len b; omega_using [hcn, hi])
 
 theorem bytesAt_add (m : Mem) (p : Addr) (c : Nat) :
     ∀ n, bytesAt m p (c+n) = bytesAt m p c ++ bytesAt m (p+BitVec.ofNat 64 c) n
@@ -84,11 +169,11 @@ theorem body_ok (b : State) (hp : BulkPre b) (m : Mem)
     have h6 : u.gpr .x6 = BitVec.ofNat 64 (rate b) := by
       rw [hu.gpr _ (by decide),hk.gpr _ (by decide) (by decide),h.x6,BitVec.ofNat_toNat,BitVec.setWidth_eq]
     have ctl := advance_test_ok u (data b+BitVec.ofNat 64 c) (len b-c) (rate b)
-      (by have hlen : len b < 2^64 := BitVec.isLt _; omega) (by omega) (rate_bounds hp).2
-      (by have := hp.len_upper; omega) h3 h4 h6
+      (by have hlen : len b < 2^64 := BitVec.isLt _; omega_using [hlen]) (by omega_using [hc]) (rate_bounds hp).2
+      (by have := hp.len_upper; omega_using [this]) h3 h4 h6
     rw [← WP.block_append_iff]
     refine ctl.mono fun v ⟨hm,hr,hw,hsp,hv,h3',h4',h6',he⟩ => ?_
-    refine ⟨Spec.Sha3.keccakF (Spec.Sha3.xorBytes A (bytesAt s.mem (s.gpr .x3) (rate b))),⟨by omega,?_,hm.trans (hu.mem.trans (hk.mem.trans h.mem)),
+    refine ⟨Spec.Sha3.keccakF (Spec.Sha3.xorBytes A (bytesAt s.mem (s.gpr .x3) (rate b))),⟨by omega_using [hc],?_,hm.trans (hu.mem.trans (hk.mem.trans h.mem)),
       hr.trans (hu.rd.trans (hk.rd.trans h.rd)),hw.trans (hu.wr.trans (hk.wr.trans h.wr)),
       ?_,?_,?_,?_,?_⟩,?_⟩
     · rw [Nat.add_mod,h.aligned,Nat.mod_self,Nat.zero_add,Nat.zero_mod]
@@ -104,7 +189,7 @@ theorem body_ok (b : State) (hp : BulkPre b) (m : Mem)
       have hal : (msg ++ bytesAt b.mem (data b) c).length % rate b = 0 := by
         simp only [List.length_append,VG.Proof.Sha3.bytesAt_length,Nat.add_mod,halign,
           h.aligned,Nat.zero_add,Nat.zero_mod]
-      rw [← rep_whole (rate_bounds hp).1 (by have := (rate_bounds hp).2; omega)
+      rw [← rep_whole (rate_bounds hp).1 (by have := (rate_bounds hp).2; omega_using [this])
         _ _ hal (VG.Proof.Sha3.bytesAt_length _ _ _),List.append_assoc,← bytesAt_add]
     · simpa only [Nat.sub_sub] using he
 
@@ -121,12 +206,12 @@ theorem loop_ok (b : State) (hp : BulkPre b) (s₀ : State) (hs : Setup b s₀) 
       refine ⟨?_,len b-(c+rate b),?_,c+rate b,A',h',rfl,?_⟩
       · simpa only [hk,decide_true] using he
       · have := (rate_bounds hp).1
-        omega
-      · omega
+        omega_using [hn, hc, this]
+      · omega_using [hc, hk]
     · left
       exact ⟨by simpa only [hk,decide_false] using he,c+rate b,A',h'⟩
-  · refine ⟨0,stateAt b.mem (st b),⟨by omega,by simp,rfl,hs.rd,hs.wr,?_,?_,?_,hs.lanes,?_⟩,
-      by omega,?_⟩
+  · refine ⟨0,stateAt b.mem (st b),⟨by omega_using [],by simp,rfl,hs.rd,hs.wr,?_,?_,?_,hs.lanes,?_⟩,
+      by omega_using [],?_⟩
     · simpa only [BitVec.ofNat_eq_ofNat,BitVec.add_zero] using hs.gpr .x3 (by simp)
     · simpa only [Nat.sub_zero,BitVec.ofNat_toNat,BitVec.setWidth_eq] using hs.gpr .x4 (by simp)
     · exact hs.gpr .x6 (by simp)

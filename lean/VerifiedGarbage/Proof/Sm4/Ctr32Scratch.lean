@@ -65,7 +65,7 @@ private theorem scheduleAt_congr
   congr 1
   funext i
   refine foldl_congr _ _ fun j hj out => ?_
-  rw [h _ (by have := i.isLt; have := List.mem_range.mp hj; omega)]
+  rw [h _ (by have := i.isLt; have := List.mem_range.mp hj; omega_using [this])]
 
 private theorem bytesAt_congr {k : Nat}
     (h : ∀ i < k, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
@@ -85,7 +85,7 @@ private theorem gcmBlocksAt_congr {n : Nat}
   refine List.map_congr_left fun i hi => gcmBlockAt_congr fun j hj => ?_
   have := List.mem_range.mp hi
   rw [Offset.add_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hj, this])
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
@@ -94,10 +94,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 end
 
@@ -128,7 +128,7 @@ theorem ctr32PostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ctr32Sig.words p
   dsimp only [Curry.apply, ctr32Post, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [gcmBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega), gcmBlockAt_congr hc]
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega_arith), gcmBlockAt_congr hc]
   exact h
 
 theorem ctr32Post_local : ∀ vs m₁ m₂ m' r, vs.length = (ctr32Sig.words pb).length →
@@ -155,7 +155,7 @@ theorem ctr32Post_local : ∀ vs m₁ m₂ m' r, vs.length = (ctr32Sig.words pb)
   dsimp only [Curry.apply, ctr32Post, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, gcmBlockAt_congr hv, gcmBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega_arith)]
   exact h
 
 end VG.Proof.Sm4

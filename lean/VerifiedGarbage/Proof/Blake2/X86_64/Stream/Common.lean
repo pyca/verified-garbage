@@ -103,7 +103,7 @@ theorem Ok.bb (h : Ok P) : blockBytes w = 64 ∨ blockBytes w = 128 := by
 theorem Ok.N (h : Ok P) : bufOff w = blockBytes w / 2 := by
   rcases h.w with rfl | rfl <;> decide
 
-theorem Ok.pos (h : Ok P) : 0 < blockBytes w := by rcases h.bb with h | h <;> omega
+theorem Ok.pos (h : Ok P) : 0 < blockBytes w := by rcases h.bb with h | h <;> omega_using [h]
 
 theorem N_eq : Impl.Blake2.X86_64.Stream.N w = bufOff w := rfl
 theorem B_eq : Impl.Blake2.X86_64.Stream.B w = blockBytes w := rfl
@@ -264,7 +264,7 @@ theorem copyLoop_ok {s₀ : State} {st src : Addr} {r k : Nat} (hk : 1 ≤ k) (h
     WP isa (copyLoop (w := w)) s₀ Q := by
   refine WP.loop (M := isa) (fun n (s : State) => ∃ j, n = k - j ∧ j < k ∧
       CopyI s₀ (st + BitVec.ofNat 64 (bufOff w + r)) src r k j s) ?_ k s₀
-    ⟨0, by omega, by omega, by omega, by simp [hrbp],
+    ⟨0, by omega_using [], by omega_using [hk], by omega_using [], by simp [hrbp],
       by rw [hr13, Nat.add_zero], by rw [hrax, Nat.sub_zero], fun _ _ _ _ _ => rfl, rfl, rfl,
       by rw [List.take_zero, writeBytes_nil]⟩
   rintro n s ⟨j, rfl, hj, h⟩
@@ -274,8 +274,8 @@ theorem copyLoop_ok {s₀ : State} {st src : Addr} {r k : Nat} (hk : 1 ≤ k) (h
     rw [h.rd, h.wr]; exact hsrc j hj
   have hbyte : s.mem (src + BitVec.ofNat 64 j) = s₀.mem (src + BitVec.ofNat 64 j) := by
     rw [h.mem]
-    exact (writeBytes_frame s₀.mem _ _ (contains_prefix (k := k) _ (by simp; omega))).bytes (R := ⟨src, k⟩)
-      (by simpa using hd) (by show k ≤ 2 ^ 64; omega) hj
+    exact (writeBytes_frame s₀.mem _ _ (contains_prefix (k := k) _ (by simp; omega_using [hj]))).bytes (R := ⟨src, k⟩)
+      (by simpa using hd) (by show k ≤ 2 ^ 64; omega_using [hk']) hj
   -- The byte written.
   have hout : InRegions s.wr (st + BitVec.ofNat 64 (bufOff w + r) + BitVec.ofNat 64 j) 1 := by
     rw [h.wr]; exact hdst j hj
@@ -292,9 +292,9 @@ theorem copyLoop_ok {s₀ : State} {st src : Addr} {r k : Nat} (hk : 1 ≤ k) (h
     rw [u₅.other x h1, u₄.other x h2, u₃.other x h3, g₂, u₁.other x h4]
   have hrax' : s₅.gpr .rax = BitVec.ofNat 64 (k - (j + 1)) := by
     rw [u₅.gpr, u₄.other .rax (by decide), u₃.other .rax (by decide), g₂, u₁.other .rax (by decide), h.rax,
-      sx1, ofNat_pred (by omega), Nat.sub_sub]
+      sx1, ofNat_pred (by omega_using [hj]), Nat.sub_sub]
   have hI : CopyI s₀ (st + BitVec.ofNat 64 (bufOff w + r)) src r k (j + 1) s₅ := by
-    refine ⟨by omega, ?_, ?_, hrax', fun x h1 h2 h3 h4 => ?_, ?_, ?_, ?_⟩
+    refine ⟨by omega_using [hj], ?_, ?_, hrax', fun x h1 h2 h3 h4 => ?_, ?_, ?_, ?_⟩
     · rw [u₅.other .rbp (by decide), u₄.other .rbp (by decide), u₃.gpr, g₂, u₁.other .rbp (by decide), h.rbp,
         sx1, ofNat_succ, BitVec.add_assoc]
     · rw [u₅.other .r13 (by decide), u₄.gpr, u₃.other .r13 (by decide), g₂, u₁.other .r13 (by decide), h.r13,
@@ -302,26 +302,26 @@ theorem copyLoop_ok {s₀ : State} {st src : Addr} {r k : Nat} (hk : 1 ≤ k) (h
     · rw [g x h2 h4 h3 h1, h.other x h1 h2 h3 h4]
     · rw [u₅.rd, u₄.rd, u₃.rd, rd₂, u₁.rd, h.rd]
     · rw [u₅.wr, u₄.wr, u₃.wr, wr₂, u₁.wr, h.wr]
-    · have hj' : j < (bytesAt s₀.mem src k).length := by omega
+    · have hj' : j < (bytesAt s₀.mem src k).length := by omega_using [hj, hxs]
       have hlen : (List.take j (bytesAt s₀.mem src k)).length < 2 ^ 64 := by
-        simp only [List.length_take]; omega
+        simp only [List.length_take]; omega_using [hk', hj]
       rw [u₅.mem, u₄.mem, u₃.mem, m₂, u₁.mem, u₁.gpr, hbyte, h.mem, List.take_add_one,
         List.getElem?_eq_getElem hj', Option.toList_some, writeBytes_snoc _ _ _ _ hlen]
       have hl : (List.take j (bytesAt s₀.mem src k)).length = j := by
         rw [List.length_take, Nat.min_eq_left (Nat.le_of_lt hj')]
-      rw [hl, BitVec.setWidth_setWidth_of_le _ (by omega), BitVec.setWidth_eq]
+      rw [hl, BitVec.setWidth_setWidth_of_le _ (by omega_using []), BitVec.setWidth_eq]
       congr 1
       simp [bytesAt]
   have hzf : s₅.zf = some (decide (k - (j + 1) = 0)) := by
     rw [hz₅, u₄.other .rax (by decide), u₃.other .rax (by decide), g₂, u₁.other .rax (by decide),
-      h.rax, sx1, ofNat_pred (show 1 ≤ k - j by omega), ofNat_beq_zero (by omega),
-      show k - j - 1 = k - (j + 1) by omega]
+      h.rax, sx1, ofNat_pred (show 1 ≤ k - j by omega_using [hj]), ofNat_beq_zero (by omega_using [hk']),
+      show k - j - 1 = k - (j + 1) by omega_using []]
   by_cases hjk : j + 1 = k
   · refine .inl ⟨?_, hQ _ (hjk ▸ hI)⟩
-    simp only [eval, hzf, show k - (j + 1) = 0 by omega, decide_true, Option.map_some,
+    simp only [eval, hzf, show k - (j + 1) = 0 by omega_using [hjk], decide_true, Option.map_some,
       Bool.not_true]
-  · refine .inr ⟨?_, k - (j + 1), by omega, j + 1, rfl, by omega, hI⟩
-    simp only [eval, hzf, show k - (j + 1) ≠ 0 by omega, decide_false, Option.map_some,
+  · refine .inr ⟨?_, k - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hjk], hI⟩
+    simp only [eval, hzf, show k - (j + 1) ≠ 0 by omega_using [hj, hjk], decide_false, Option.map_some,
       Bool.not_false]
 
 end X86_64.Stream

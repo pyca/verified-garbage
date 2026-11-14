@@ -65,7 +65,7 @@ theorem clear_ct {i : Nat} (index : i<32) {hc : VG.Taint.Hint VG.AArch64.Taint.T
    · exact hs.2.trans ht.2.symm) (by taint_decide))
  intro q s h
  brun [h.base,hdr_enc index,hdr_enc (show sLen<32 by decide),h.pointer,h.length,
-  h.scratch.ld (d:=8*i) (by have :=q.room;omega),h.scratch.ld (d:=8*sLen) (by have :=q.room;unfold sLen;omega)]
+  h.scratch.ld (d:=8*i) (by have :=q.room;omega_using [index, this]),h.scratch.ld (d:=8*sLen) (by have :=q.room;unfold sLen;omega_using [this])]
 
 theorem maskX_ct : RelCT isa (Two OutputReady) Generate.maskX (fun _ _ =>True) := by
  unfold Generate.maskX
@@ -94,14 +94,14 @@ theorem finish_ct : RelCT isa (Two FinishReady) Generate.finish (fun _ _ =>True)
   (maskX_ct.mono (fun _ _ ⟨q,hs,ht,sp⟩ =>⟨q,hs.1,ht.1,sp⟩) (fun _ _ h =>h)) ?_) ?_
  · rintro q s ⟨h,c,flag⟩
    obtain ⟨good,x,y,len,write⟩ := h
-   have room256 : 256≤q.p.Z := by have :=q.p.room;dsimp only [slot,hdrBytes] at this;omega
+   have room256 : 256≤q.p.Z := by have :=q.p.room;dsimp only [slot,hdrBytes] at this;omega_using [this]
    refine WP.mono (maskX_ok good.scr room256 good.x0 q.positive q.size x len flag write q.outsideX) ?_
    rintro t ⟨_,_,_,same,rest⟩
-   have header (i : Nat) (hi : i<32) := workspace_word (B:=q.p.B) (by have :=good.scr.nowrap;omega) same
-    (by have :=hdr_lt_slot q.p.w 8 hi;have :=q.p.room;omega : 8*i+8≤q.p.Z)
+   have header (i : Nat) (hi : i<32) := workspace_word (B:=q.p.B) (by have :=good.scr.nowrap;omega_using [this]) same
+    (by have :=hdr_lt_slot q.p.w 8 hi;have :=q.p.room;omega_using [room256, hi] : 8*i+8≤q.p.Z)
    exact ⟨⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,
     (header sW (by decide)).trans good.hdr.hw,(header sMinv (by decide)).trans good.hdr.hminv,
-    fun i hi =>(header (sArr i) (by unfold sArr;omega)).trans (good.hdr.harr i hi)⟩,
+    fun i hi =>(header (sArr i) (by unfold sArr;omega_using [hi])).trans (good.hdr.harr i hi)⟩,
     (header sX (by decide)).trans x,(header sY (by decide)).trans y,(header sLen (by decide)).trans len,
     fun i hi =>by rw [rest.wr];exact write i hi⟩
  · refine RelCT.seq (two_piece (Ψ:=fun q s =>s.gpr .x0=q.p.B ∧ s.gpr .x8=off q.p.B (slot q.p.w 6) ∧
@@ -127,7 +127,7 @@ theorem finish_ct : RelCT isa (Two FinishReady) Generate.finish (fun _ _ =>True)
 theorem fail_ct : RelCT isa (Two OutputReady) Generate.fail (fun _ _ =>True) := by
  unfold Generate.fail
  let clearInfo (q : OutputPublic) (out : Addr) : ClearPublic := ⟨q.p.B,q.p.Z,out,q.p.k,by
-  have :=q.p.room;dsimp only [slot,hdrBytes] at this;omega⟩
+  have :=q.p.room;dsimp only [slot,hdrBytes] at this;omega_using [this]⟩
  refine RelCT.seq (two_post (Ψ:=fun q s =>ClearReady (clearInfo q q.yp) sY s)
   (two_map (fun q =>clearInfo q q.p.src) (fun q s h =>⟨h.1.scr,h.1.x0,h.2.1,h.2.2.2.1⟩)
    (clear_ct (by decide : sX<32) (by taint_decide))) ?_)
@@ -137,9 +137,9 @@ theorem fail_ct : RelCT isa (Two OutputReady) Generate.fail (fun _ _ =>True) := 
    refine WP.mono (clear_ok good.scr (clearInfo q q.p.src).room good.x0 q.positive q.size (by decide : sX<32) x len write) ?_
    rintro t ⟨_,frame,rest⟩
    have same (a : Addr) (ha : ofs q.p.B a<q.p.Z) : t.mem a=s.mem a :=
-    frame a (Or.inr (by have :=le_ofs_of_sep q.outsideX ha;omega))
-   have header (i : Nat) (hi : i<32) := workspace_word (B:=q.p.B) (by have :=good.scr.nowrap;omega) same
-    (by have :=hdr_lt_slot q.p.w 8 hi;have :=q.p.room;omega : 8*i+8≤q.p.Z)
+    frame a (Or.inr (by have :=le_ofs_of_sep q.outsideX ha;omega_using [this]))
+   have header (i : Nat) (hi : i<32) := workspace_word (B:=q.p.B) (by have :=good.scr.nowrap;omega_using [this]) same
+    (by have :=hdr_lt_slot q.p.w 8 hi;have :=q.p.room;omega_arith : 8*i+8≤q.p.Z)
    exact ⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,
     (header sY (by decide)).trans y,(header sLen (by decide)).trans len⟩
  · intro s t trS trT u v _ es et

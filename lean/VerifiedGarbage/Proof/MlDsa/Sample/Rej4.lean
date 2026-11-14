@@ -21,8 +21,8 @@ def rej4Res (m : Mem) (a : Addr) : BitVec 32 :=
 theorem seed4_of136 {m m' : Mem} {a a' : Addr} (h : bytesAt m a 136 = bytesAt m' a' 136) {k : Nat} (hk : k < 4) :
     Proof.MlDsa.seed4 m a k = Proof.MlDsa.seed4 m' a' k := by
   unfold Proof.MlDsa.seed4
-  rw [← Proof.MlKem.bytesAt_slice m a (show 34 * k + 34 ≤ 136 by omega),
-    ← Proof.MlKem.bytesAt_slice m' a' (show 34 * k + 34 ≤ 136 by omega), h]
+  rw [← Proof.MlKem.bytesAt_slice m a (show 34 * k + 34 ≤ 136 by omega_using [hk]),
+    ← Proof.MlKem.bytesAt_slice m' a' (show 34 * k + 34 ≤ 136 by omega_using [hk]), h]
 
 /-- The result depends only on the 136 bytes of the seeds. -/
 theorem rej4Res_congr {m m' : Mem} {a a' : Addr} (h : bytesAt m a 136 = bytesAt m' a' 136) :

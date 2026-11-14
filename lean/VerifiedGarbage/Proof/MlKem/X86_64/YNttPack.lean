@@ -32,9 +32,9 @@ theorem lanes_pack2 {m : Mem} {p : Addr} {F : Poly} (hF : PolyIs m p F) {j j' : 
   have hc : ∀ k, k < 256 → (coeffAt m p k).toNat = (F[k]!).val := fun k hk =>
     polyIs_toNat hF (by rw [n_eq]; exact hk)
   rw [word_packssdw_small _ _ he (fun k hk => by
-      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j + k]!; omega)
+      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j + k]!; omega_using [this])
     (fun k hk => by
-      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j' + k]!; omega)]
+      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j' + k]!; omega_using [this])]
   split
   · rw [dword_readW _ _ (by bdd_omega), coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; dsimp only; rw [ifp ‹_›]
   · rw [dword_readW _ _ (by bdd_omega), coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; dsimp only; rw [ifn ‹_›]

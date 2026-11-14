@@ -120,7 +120,7 @@ theorem search_start {p : SearchPublic} {s : State} (h : SearchInput p s) :
     WP isa (.block entry) s fun t => SearchLive p s 0 p.remaining t := by
   refine WP.mono (search_entry_ok h) fun t ⟨hr, hm, k⟩ => ?_
   have hf := writeController_frame s.mem p.control (searchEntryValues s) (searchEntryValues_bound s)
-  refine ⟨h, by omega, by omega, k.2.1, k.2.2, ?_, hr, ?_, ?_, ?_, ?_⟩
+  refine ⟨h, by omega_using [], by omega_using [], k.2.1, k.2.2, ?_, hr, ?_, ?_, ?_, ?_⟩
   · cases h.2
     exact k.gpr (by decide)
   · intro r hcal hne

@@ -33,7 +33,7 @@ theorem incr_byte (I : BitVec 8) :
   congr 1
   simp only [i1, BitVec.toNat_add, BitVec.toNat_setWidth, show (1#64).toNat = 1 from rfl]
   have := I.isLt
-  omega
+  omega_using []
 
 theorem low4 (n : Nat) (hn : n < 256) :
     BitVec.ofNat 64 n &&& BitVec.setWidth 64 15#16 = BitVec.ofNat 64 (n % 16) := by
@@ -67,11 +67,11 @@ theorem setupA_ok {s : State} (hp : InRegions (s.rd ++ s.wr) (s.gpr .x0) 258) :
   have hc (x : BitVec 8) : (x.setWidth 32).setWidth 64 = x.setWidth 64 :=
     BitVec.setWidth_setWidth (by decide)
   unfold save saved
-  have hi1 : i1 (s.mem (s.gpr .x0 + 256#64)) < 256 := by simp only [i1]; omega
+  have hi1 : i1 (s.mem (s.gpr .x0 + 256#64)) < 256 := by simp only [i1]; omega_using []
   rrun [List.cons_append, List.nil_append, List.map_cons, List.map_nil, h256, h257, read_byte', hc,
     incr_byte, low4 _ hi1]
   refine ⟨rfl, rfl, rfl, ?_, ?_, ?_, ?_⟩
-  · rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]; rfl
+  · rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [])]; rfl
   · simp [State.write]
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -86,24 +86,24 @@ theorem low_sub (j : BitVec 8) (B : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := j.isLt
-  omega
+  omega_using []
 
 theorem low_neg (B : Nat) : (255#64 - BitVec.ofNat 64 B + 1#64).setWidth 8 = 0 - bB B := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat,
     show (255#64).toNat = 255 from rfl, show (1#64).toNat = 1 from rfl,
     show (0 : BitVec 8).toNat = 0 from rfl]
-  omega
+  omega_using []
 
 theorem low_nat (n : Nat) : (BitVec.ofNat 64 n).setWidth 8 = BitVec.ofNat 8 n := by
-  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using []
 
 theorem tbl_bc (x : BitVec 128) {k : Nat} (hk : k < 16) :
     (ofVBytes fun i => if (vbyte (bc (BitVec.ofNat 8 k)) i).toNat < 16 then
       vbyte x (vbyte (bc (BitVec.ofNat 8 k)) i).toNat else 0#8) = bc (vbyte x k) :=
   vbyte_ext fun e he => by
     rw [vbyte_ofVBytes _ he, vbyte_bc _ he, vbyte_bc _ he, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega), ite_eq_left hk]
+      Nat.mod_eq_of_lt (by omega_using [hk]), ite_eq_left hk]
 
 theorem setupD_ok {s : State} {j : BitVec 8} {B sk : Nat} (hsk : sk < 16)
     (h13 : s.gpr .x13 = j.setWidth 64) (h8 : s.gpr .x8 = BitVec.ofNat 64 B)
@@ -129,11 +129,11 @@ theorem setupD_ok {s : State} {j : BitVec 8} {B sk : Nat} (hsk : sk < 16)
 theorem i1_eq (i : BitVec 8) : BitVec.ofNat 8 (base0 i + sk0 i) = i + 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [base0, sk0, i1, BitVec.toNat_ofNat, BitVec.toNat_add, show (1 : BitVec 8).toNat = 1 from rfl]
-  omega
+  omega_using []
 
-theorem base0_mod (i : BitVec 8) : base0 i % 16 = 0 := by simp only [base0, sk0]; omega
+theorem base0_mod (i : BitVec 8) : base0 i % 16 = 0 := by simp only [base0, sk0]; omega_using []
 
-theorem sk0_lt (i : BitVec 8) : sk0 i < 16 := by simp only [sk0]; omega
+theorem sk0_lt (i : BitVec 8) : sk0 i < 16 := by simp only [sk0]; omega_using []
 
 /-- The loop's globals for the call from `s`, entering the loop in `t`. -/
 def glob (s t : State) : Glob :=
@@ -180,7 +180,7 @@ theorem applySetup_ok {s : State} (hp : InRegions s.wr (s.gpr .x0) 258) :
     rw [tg g h6, eg g h6 h7, bg g h6 h7, ag g hg]
   have hsk := sk0_lt (contextAt s.mem (s.gpr .x0)).i
   have hd : doneAt (glob s t) 0 (sk0 (contextAt s.mem (s.gpr .x0)).i) 0 = 0 := by
-    simp only [doneAt]; omega
+    simp only [doneAt]; omega_using []
   refine ⟨LaneInv.mk ?_ ?_ ?_ ?_ ?_ ⟨fun _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩ fun _ _ _ => rfl, ?_, ?_,
     fun p hp => ?_, gk, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hd]

@@ -77,15 +77,15 @@ namespace HashOK
 variable {H : Hash} (hH : HashOK H)
 
 theorem hashLen (x : List Byte) : (hH.SH.H.hash x).length = H.D := by
-  rw [hH.hashTake, List.length_take, hH.fhLen]; have := hH.hDF; omega
+  rw [hH.hashTake, List.length_take, hH.fhLen]; have := hH.hDF; omega_using [this]
 
 include hH in
-theorem hD64 : H.D ≤ 64 := by have := hH.hDF; have := hH.hFD64; omega
+theorem hD64 : H.D ≤ 64 := by have := hH.hDF; have := hH.hFD64; omega_arith
 
 /-- A callee's frames are in the 48 bytes below the stack pointer. -/
 theorem frame48 {c : Prog isa} (hd : c.fdepth ≤ 1) {wr : List Region} {sp : Addr} {m m' : Mem}
     (h : Frame (wr ++ [below sp (48 * c.fdepth)]) m m') : Frame (wr ++ [below sp 48]) m m' :=
-  Frame.below_mono h (by omega) (by omega)
+  Frame.below_mono h (by omega_using [hd]) (by omega_using [])
 
 /-- The call of the streaming `init` on the state at `st`. -/
 theorem callInit_ok {s : State} {st : Addr} (h3 : s.gpr .r3 = st)
@@ -97,7 +97,7 @@ theorem callInit_ok {s : State} {st : Addr} (h3 : s.gpr .r3 = st)
     WP isa H.callInit s Q := by
   have c3 : s.callEntry.gpr .r3 = st := (State.callEntry_gpr _ (by decide)).trans h3
   refine WP.callF (k := initK H.S hH.SH.Repr) hH.init (rd := []) (wr := [⟨st, H.S⟩]) ?_
-    (by simpa using hc) hw ?_ (by have := hH.initFd; omega) hH.initPf
+    (by simpa using hc) hw ?_ (by have := hH.initFd; omega_using [this]) hH.initPf
   · simp only [initK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3]
     exact ⟨trivial, trivial, hpre.1, hpre.2⟩
@@ -128,7 +128,7 @@ theorem callUpd_ok {s : State} {st dat scr : Addr} {len : Nat}
   have c6 : (s.callEntry.gpr .r6).toNat = len := by rw [State.callEntry_gpr _ (by decide), h6]
   have c7 : s.callEntry.gpr .r7 = scr := (State.callEntry_gpr _ (by decide)).trans h7
   refine WP.callF (k := updK H.S H.W hH.SH.Repr) hH.upd (rd := [⟨dat, len⟩])
-    (wr := [⟨st, H.S⟩, ⟨scr, H.W⟩]) ?_ hc hw ?_ (by have := hH.updFd; omega) hH.updPf
+    (wr := [⟨st, H.S⟩, ⟨scr, H.W⟩]) ?_ hc hw ?_ (by have := hH.updFd; omega_using [this]) hH.updPf
   · simp only [updK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3, c5, c6, c7]
     exact ⟨trivial, trivial, hd₁, hd₂, hd₃, hsp, hs₁, hs₂, hs₃⟩
@@ -159,7 +159,7 @@ theorem callFin_ok {s : State} {st o scr : Addr}
   have c6 : s.callEntry.gpr .r6 = scr := (State.callEntry_gpr _ (by decide)).trans h6
   refine WP.callF (k := finK H.S H.W H.FD hH.SH.Repr hH.fh) hH.fin (rd := [])
     (wr := [⟨st, H.S⟩, ⟨o, H.FD⟩, ⟨scr, H.W⟩]) ?_ (by simpa using hc) hw ?_
-    (by have := hH.finFd; omega) hH.finPf
+    (by have := hH.finFd; omega_using [this]) hH.finPf
   · simp only [finK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c3, c5, c6]
     exact ⟨trivial, trivial, hd₁, hd₂, hd₃, hsp, hs₁, hs₂, hs₃⟩

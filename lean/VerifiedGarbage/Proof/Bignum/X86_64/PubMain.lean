@@ -69,7 +69,7 @@ theorem expPhaseRanges_fixed (w : Nat) :
   have := hdr_lt_slot w aTmp (show 31 < 32 by decide)
   have := hdr_lt_slot w aY (show 31 < 32 by decide)
   simp only [expPhaseRanges, expRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega_arith
 
 /-- `main`, for a valid modulus `m`: `i2osp (x^e mod m)` if `x < m` and
 zeros otherwise, and `x < m` returned. -/
@@ -85,29 +85,29 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {op np ep ip : Addr} {L : Nat
   have hL2 := h.L2
   have hZ := h.z
   have hn := h.scr.nowrap
-  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
+  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hZ, hn]
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ Z :=
     fun h' r hr => Nat.le_trans (h' r hr) hZ
   rw [main_eq]
   refine wp_seqs_append (by simp [loadSteps]) (by simp [r2Steps])
-    (WP.mono (setup_ok h.scr h.rdi hZ (by omega) (by omega) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
+    (WP.mono (setup_ok h.scr h.rdi hZ (by omega_using [hk1]) (by omega_using [hk2]) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
       fun t₁ ⟨minv, so, f₁, k₁⟩ => ?_)
   have x₁ := Fixed.of_frm f₁ (setupRanges_fixed _)
   have i₁ := InScr.of_frm f₁ (hZs (setupRanges_le _))
   refine wp_seqs_append (by simp [r2Steps]) (by simp [expSteps])
-    (WP.mono (r2_ok Mont.base so.good hZ (by omega) (by omega) so.n so.inv so.r12 so.r10 hodd hlo)
+    (WP.mono (r2_ok Mont.base so.good hZ (by omega_using [hk1]) (by omega_using [hk2]) so.n so.inv so.r12 so.r10 hodd hlo)
       fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have x₂ := Fixed.of_frm f₂ (r2Ranges_fixed _)
   have i₂ := InScr.of_frm f₂ (hZs (r2Ranges_le _))
   have x₁₂ := x₁.trans x₂
   refine wp_seqs_append (by simp [expSteps]) (by simp [outSteps, outStepsArr])
-    (WP.mono (expPhase_ok (X := Spec.Rsa.os2ip xb) hg₂ hZ (by omega) (by omega) hodd hN1
+    (WP.mono (expPhase_ok (X := Spec.Rsa.os2ip xb) hg₂ hZ (by omega_using [hk1]) (by omega_using [hk2]) hodd hN1
       (by rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.n)
       (by rw [f₂.r2_word hn' (by decide) (by decide) (by decide) (by decide)]; exact so.inv)
       (by rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.x)
       (by rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.one)
       hlt₂ hr₂ (by rw [x₁₂ sE (by decide)]; exact h.hE) (by rw [x₁₂ sElen (by decide)]; exact h.hL)
-      h.el h.L1 (by omega) (h.e.congrK (i₁.trans i₂) (k₁.trans k₂)))
+      h.el h.L1 (by omega_using [hk2, hL2]) (h.e.congrK (i₁.trans i₂) (k₁.trans k₂)))
       fun t₃ ⟨hg₃, hY₃, f₃, k₃⟩ => ?_)
   have x₃ := Fixed.of_frm f₃ (expPhaseRanges_fixed _)
   have i₃ := InScr.of_frm f₃ (hZs (expPhaseRanges_le _))
@@ -115,11 +115,11 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {op np ep ip : Addr} {L : Nat
   have k₁₃ := (k₁.trans k₂).trans k₃
   have hM₃ : word t₃.mem B (8 * sMask) = mask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) := by
     rw [f₃.ep_hdr (by decide) (by decide) (by decide) (by decide),
-      f₂.word_eq (r2Ranges_hdr _ (by decide) (by decide)) (by unfold sMask sFn; omega)]
+      f₂.word_eq (r2Ranges_hdr _ (by decide) (by decide)) (by unfold sMask sFn; omega_using [])]
     exact so.mask
-  refine WP.mono (outPhase_ok hg₃ hZ (by omega) (by omega) hY₃ (by rw [x₁₃ sOut (by decide)]; exact h.hO)
+  refine WP.mono (outPhase_ok hg₃ hZ (by omega_using [hk1]) (by omega_using [hk2]) hY₃ (by rw [x₁₃ sOut (by decide)]; exact h.hO)
     (by rw [x₁₃ sK (by decide)]; exact h.hK) hM₃ (fun j hj => by rw [k₁₃.2.2]; exact h.out j hj) h.outSep)
-    fun t ⟨hb, hax, hsv, hfr, k₄⟩ => ⟨?_, hax, fun i hi => by rw [hsv i hi]; exact x₁₃ i (by omega),
+    fun t ⟨hb, hax, hsv, hfr, k₄⟩ => ⟨?_, hax, fun i hi => by rw [hsv i hi]; exact x₁₃ i (by omega_using [hi]),
       fun x hx hx' => by rw [hfr x hx', i₃ x hx, i₂ x hx, i₁ x hx], (k₁₃.trans k₄).mono (by decide)⟩
   rw [hb]
   by_cases hc : Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb <;> simp [hc]

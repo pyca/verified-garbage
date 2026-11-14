@@ -24,16 +24,16 @@ def candidatePhase (p : CandidateParams) (q : Bool) : WitnessParams where
 
 theorem CandidateParams.phase_large (p : CandidateParams) (q : Bool) : 1 < (candidatePhase p q).modulus := by
   obtain ⟨odd, lower, upper⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape
-    (by have := p.minBits; omega : 2 ≤ p.bits) (Spec.Rsa.os2ip (p.bytes.take p.length))
-  obtain ⟨halfLower, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by have := p.minBits; omega) odd lower upper
-  have lowP : 2 ^ 2 ≤ 2 ^ (p.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := p.minBits; omega)
-  have lowQ : 2 ^ 2 ≤ 2 ^ (p.bits - 2) := Nat.pow_le_pow_right (by decide) (by have := p.minBits; omega)
+    (by have := p.minBits; omega_using [this] : 2 ≤ p.bits) (Spec.Rsa.os2ip (p.bytes.take p.length))
+  obtain ⟨halfLower, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by have := p.minBits; omega_using [this]) odd lower upper
+  have lowP : 2 ^ 2 ≤ 2 ^ (p.bits - 1) := Nat.pow_le_pow_right (by decide) (by have := p.minBits; omega_using [this])
+  have lowQ : 2 ^ 2 ≤ 2 ^ (p.bits - 2) := Nat.pow_le_pow_right (by decide) (by have := p.minBits; omega_using [this])
   change 1 < if q then (p.candidate - 1) / 2 else p.candidate
   change 2 ^ (p.bits - 1) ≤ p.candidate at lower
   change 2 ^ (p.bits - 2) ≤ (p.candidate - 1) / 2 at halfLower
   change 4 ≤ 2 ^ (p.bits - 1) at lowP
   change 4 ≤ 2 ^ (p.bits - 2) at lowQ
-  cases q <;> simp only [Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases q <;> simp only [Bool.false_eq_true, ite_false, ite_true] <;> omega_arith
 
 theorem CandidateParams.phase_normalized (p : CandidateParams) (q : Bool) :
     p.length % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords p.length - 1)) ≤
@@ -42,15 +42,15 @@ theorem CandidateParams.phase_normalized (p : CandidateParams) (q : Bool) :
   · exact Or.inl boundary
   right
   obtain ⟨odd,lower,upper⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape
-    (by have := p.minBits; omega : 2 ≤ p.bits) (Spec.Rsa.os2ip (p.bytes.take p.length))
+    (by have := p.minBits; omega_using [this] : 2 ≤ p.bits) (Spec.Rsa.os2ip (p.bytes.take p.length))
   obtain ⟨halfLower,_⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape
-    (by have := p.minBits; omega) odd lower upper
+    (by have := p.minBits; omega_using [this]) odd lower upper
   have exponent : 64 * (Spec.Rsa.modulusWords p.length - 1) ≤ p.bits - 2 := by
     have := p.minBits
     dsimp only [CandidateParams.length,Spec.Rsa.modulusWords] at *
-    omega
+    omega_using [boundary]
   have power := Nat.pow_le_pow_right (n := 2) (by decide) exponent
-  have powerP := Nat.pow_le_pow_right (n := 2) (by decide) (show p.bits - 2 ≤ p.bits - 1 by omega)
+  have powerP := Nat.pow_le_pow_right (n := 2) (by decide) (show p.bits - 2 ≤ p.bits - 1 by omega_using [])
   change 2 ^ (p.bits - 1) ≤ p.candidate at lower
   change 2 ^ (p.bits - 2) ≤ (p.candidate - 1) / 2 at halfLower
   cases q
@@ -62,9 +62,9 @@ theorem CandidateParams.phase_bits_exact (p : CandidateParams) (q : Bool)
     (candidatePhase p q).bits = Spec.RsaKeyGen.bitLength ((candidatePhase p q).modulus - 1) := by
   cases q
   · exact (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := p.bits)
-      (by have := p.minBits; omega) (Spec.Rsa.os2ip (p.bytes.take p.length))).2.symm
+      (by have := p.minBits; omega_using [this]) (Spec.Rsa.os2ip (p.bytes.take p.length))).2.symm
   · exact (VG.Proof.Ffdh.ParameterCandidate.half_pred_bitLength (bits := p.bits)
-      (by have := p.minBits; omega) (Spec.Rsa.os2ip (p.bytes.take p.length)) odd).symm
+      (by have := p.minBits; omega_using [this]) (Spec.Rsa.os2ip (p.bytes.take p.length)) odd).symm
 
 theorem CandidateParams.phase_bounds (p : CandidateParams) (q : Bool) :
     0 < (candidatePhase p q).bits ∧ (candidatePhase p q).bits ≤ 8192 ∧
@@ -74,14 +74,14 @@ theorem CandidateParams.phase_bounds (p : CandidateParams) (q : Bool) :
   have high := p.maxBits
   have bitsFit : p.bits ≤ 64 * p.words := by
     dsimp only [CandidateParams.words, CandidateParams.length, Spec.Rsa.modulusWords]
-    omega
+    omega_using []
   have phaseFit : phaseBits q p.bits ≤ p.bits := by cases q <;> simp [phaseBits]
-  have phasePositive : 0 < phaseBits q p.bits := by cases q <;> simp [phaseBits] <;> omega
+  have phasePositive : 0 < phaseBits q p.bits := by cases q <;> simp [phaseBits] <;> omega_using [low]
   have count : 0 < Spec.Ffdh.primeChecks (phaseBits q p.bits) ∧
       Spec.Ffdh.primeChecks (phaseBits q p.bits) ≤ 128 := by
     unfold Spec.Ffdh.primeChecks
     split <;> decide
-  exact ⟨phasePositive, by change phaseBits q p.bits ≤ 8192; omega,
-    by change phaseBits q p.bits ≤ 64 * p.words; omega, count⟩
+  exact ⟨phasePositive, by change phaseBits q p.bits ≤ 8192; omega_using [high, phaseFit],
+    by change phaseBits q p.bits ≤ 64 * p.words; omega_using [bitsFit, phaseFit], count⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

@@ -17,12 +17,12 @@ open VG.Proof.Sha3.AArch64.Neon
 
 theorem Rate128.byte {m : Mem} {p : Addr} {A : Spec.Sha3.State} (h : Rate128 m p A)
     {j : Nat} (hj : j < 128) : m (p+BitVec.ofNat 64 j) = Proof.Sha3.byteOf A j := by
-  have hw := h (j/8) (by omega)
+  have hw := h (j/8) (by omega_using [hj])
   have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) hw
   change (m.read (outAddr p (j/8)) 8).extractLsb' (8*(j%8)) 8 = _ at he
-  rw [Mem.extractLsb'_read m _ (by omega)] at he
+  rw [Mem.extractLsb'_read m _ (by omega_using [])] at he
   rw [outAddr,BitVec.add_assoc,← BitVec.ofNat_add,
-    show 8*(j/8)+j%8 = j by omega] at he
+    show 8*(j/8)+j%8 = j by omega_using []] at he
   exact he
 
 theorem output_prf {m input : Mem} {p seed : Addr} {n : Nat} (hn : n < 256)

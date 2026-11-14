@@ -90,22 +90,22 @@ theorem toNat_sub_add (x E : Addr) {c : Nat} (hc : c < 16) :
     exact Offset.sub_add_eq _ _ _
   rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := (x - E).isLt
-  rw [Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega)]
+  rw [Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_using [hc])]
   constructor
   · intro h
     by_contra hn
-    have : (x - E).toNat < c ∨ 16 ≤ (x - E).toNat := by omega
+    have : (x - E).toNat < c ∨ 16 ≤ (x - E).toNat := by omega_using [hn]
     rcases this with h' | h'
-    · rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 - (c - (x - E).toNat) by omega,
-        Nat.mod_eq_of_lt (by omega)] at h
-      omega
-    · rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega, Nat.add_mod_left,
-        Nat.mod_eq_of_lt (by omega)] at h
-      omega
+    · rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 - (c - (x - E).toNat) by omega_using [h, hn],
+        Nat.mod_eq_of_lt (by omega_using [h'])] at h
+      omega_using [h]
+    · rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega_using [h], Nat.add_mod_left,
+        Nat.mod_eq_of_lt (by omega_using [])] at h
+      omega_using [h, h']
   · rintro ⟨h₁, h₂⟩
-    rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega, Nat.add_mod_left,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show 2 ^ 64 - c + (x - E).toNat = 2 ^ 64 + ((x - E).toNat - c) by omega_using [h₁], Nat.add_mod_left,
+      Nat.mod_eq_of_lt (by omega_using [])]
+    omega_using [hc, h₂]
 
 theorem toNat_sub_add_eq (x E : Addr) {c : Nat} (hc : c < 16) (h : c ≤ (x - E).toNat)
     (h' : (x - E).toNat < 16) : (x - (E + BitVec.ofNat 64 c)).toNat = (x - E).toNat - c := by
@@ -130,7 +130,7 @@ theorem ks_mem (m : Mem) (E S : Addr) {r : Nat} (hr : r < 16) :
       writeBytes m (E + BitVec.ofNat 64 (16 - r)) (xorBytes m (E + BitVec.ofNat 64 (16 - r)) S r) := by
   funext x
   have hlen := length_xorBytes m (E + BitVec.ofNat 64 (16 - r)) S r
-  have hc : 16 - r < 16 ∨ r = 0 := by omega
+  have hc : 16 - r < 16 ∨ r = 0 := by omega_using []
   simp only [Mem.write, writeBytes, hlen]
   by_cases ht : (x - E).toNat < 16
   · rw [ite_t ( ht)]
@@ -141,22 +141,22 @@ theorem ks_mem (m : Mem) (E S : Addr) {r : Nat} (hr : r < 16) :
     by_cases hu : 16 - r ≤ (x - E).toNat
     · rcases hc with hc | hc
       · have hl : (x - (E + BitVec.ofNat 64 (16 - r))).toNat < r := by
-          have := (toNat_sub_add x E hc).mpr ⟨hu, ht⟩; omega
-        rw [ite_t ( hu), ite_t ( hl), toNat_sub_add_eq x E hc hu ht, vbyte, Mem.extractLsb'_read m S (by omega)]
-        rw [xorBytes_getD _ _ _ (by omega), BitVec.add_assoc, ← BitVec.ofNat_add,
-          show 16 - r + ((x - E).toNat - (16 - r)) = (x - E).toNat by omega, ← eq_add_toNat]
+          have := (toNat_sub_add x E hc).mpr ⟨hu, ht⟩; omega_using [this]
+        rw [ite_t ( hu), ite_t ( hl), toNat_sub_add_eq x E hc hu ht, vbyte, Mem.extractLsb'_read m S (by omega_using [ht])]
+        rw [xorBytes_getD _ _ _ (by omega_using [ht, hu]), BitVec.add_assoc, ← BitVec.ofNat_add,
+          show 16 - r + ((x - E).toNat - (16 - r)) = (x - E).toNat by omega_using [hu], ← eq_add_toNat]
       · subst hc; omega
     · have hl : ¬ (x - (E + BitVec.ofNat 64 (16 - r))).toNat < r := by
         rcases hc with hc | hc
-        · intro h; exact hu ((toNat_sub_add x E hc).mp (by omega)).1
-        · omega
+        · intro h; exact hu ((toNat_sub_add x E hc).mp (by omega_using [hr, h])).1
+        · omega_using [hc]
       rw [ite_f ( hu), ite_f ( hl)]
       exact BitVec.xor_zero
   · rw [ite_f ( ht)]
     have hl : ¬ (x - (E + BitVec.ofNat 64 (16 - r))).toNat < r := by
       rcases hc with hc | hc
-      · intro h; exact ht ((toNat_sub_add x E hc).mp (by omega)).2
-      · omega
+      · intro h; exact ht ((toNat_sub_add x E hc).mp (by omega_using [hr, h])).2
+      · omega_using [hc]
     rw [ite_f ( hl)]
 
 /-- The `r` bytes at `P` padded with zeros to a block, in a memory of their
@@ -167,7 +167,7 @@ def padMem (m : Mem) (P : Addr) (r : Nat) : Mem :=
 theorem blockAt_padMem (m : Mem) (P : Addr) {r : Nat} (hr : r ≤ 16) :
     Spec.Gcm.blockAt (padMem m P r) 0 = Spec.Gcm.ofBytes (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)) := by
   have hl : (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)).length = 16 := by
-    simp [length_bytesAt, Spec.Gcm.zeros]; omega
+    simp [length_bytesAt, Spec.Gcm.zeros]; omega_using [hr]
   have e := bytesAt_writeBytes_self m 0 (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)) (by rw [hl]; decide)
   rw [hl] at e
   rw [Spec.Gcm.blockAt, padMem, e]
@@ -176,17 +176,17 @@ theorem blockAt_padMem (m : Mem) (P : Addr) {r : Nat} (hr : r ≤ 16) :
 theorem padMem_at (m : Mem) (P : Addr) {r k : Nat} (hr : r ≤ 16) (hk : k < 16) :
     padMem m P r (0 + BitVec.ofNat 64 k) = if k < r then m (P + BitVec.ofNat 64 k) else 0 := by
   have hl : (bytesAt m P r ++ Spec.Gcm.zeros (16 - r)).length = 16 := by
-    simp [length_bytesAt, Spec.Gcm.zeros]; omega
+    simp [length_bytesAt, Spec.Gcm.zeros]; omega_using [hr]
   have ha : ((0 : Addr) + BitVec.ofNat 64 k - 0).toNat = k := by
-    simp [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega)]
+    simp [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [hk])]
   simp only [padMem, writeBytes, hl, ha, hk, ↓reduceIte]
   by_cases h : k < r
   · rw [ite_t (h), List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [length_bytesAt]; exact h)]
     simp [bytesAt, h]
   · rw [ite_f (h), List.getD_eq_getElem?_getD,
-      List.getElem?_append_right (by rw [length_bytesAt]; omega)]
+      List.getElem?_append_right (by rw [length_bytesAt]; omega_using [h])]
     simp only [Spec.Gcm.zeros, length_bytesAt, List.getElem?_replicate]
-    rw [ite_t ((by omega))]
+    rw [ite_t ((by omega_using [hk, h]))]
     rfl
 
 /-- The 16 bytes `X` moved down by `16 - r` bytes into the bytes of a block
@@ -208,12 +208,12 @@ theorem pad_vec (m : Mem) (E : Addr) {r : Nat} (hr0 : 0 < r) (hr : r < 16) :
   intro i hi
   rw [downV, vbyte_ofVBytes _ hi, VRevOp.eval, vbyte_ofVBytes _ hi]
   simp only [VArr.map2, vbyte_ofVBytes _ hi, vbyte_revV i hi, setWidth_ofNat8]
-  have hrv : 8 * (i / 8) + (7 - i % 8) = rv i := by simp only [rv]; omega
+  have hrv : 8 * (i / 8) + (7 - i % 8) = rv i := by simp only [rv]; omega_using []
   simp only [hrv, vbyte]
-  rw [Mem.extractLsb'_read (padMem m _ r) 0 (rv_lt i hi), padMem_at _ _ (by omega) (rv_lt i hi)]
+  rw [Mem.extractLsb'_read (padMem m _ r) 0 (rv_lt i hi), padMem_at _ _ (by omega_using [hr]) (rv_lt i hi)]
   obtain ⟨h₁, h₂⟩ := down_idx r hr hr0 i hi
   by_cases h : rv i < r
-  · rw [ite_t (h₁.mpr h), ite_t h, h₂ h, Mem.extractLsb'_read _ _ (by omega), BitVec.add_assoc,
+  · rw [ite_t (h₁.mpr h), ite_t h, h₂ h, Mem.extractLsb'_read _ _ (by omega_using [hr, h]), BitVec.add_assoc,
       ← BitVec.ofNat_add, Nat.add_comm]
   · rw [ite_f (fun e => h (h₁.mp e)), ite_f h]
 

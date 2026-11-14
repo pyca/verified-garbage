@@ -71,7 +71,7 @@ theorem stS_list_ok (R : Region) : ∀ (L : List (Nat × Reg)) (s : State), (L.m
     obtain ⟨s', e', g', rd', wr', f', o', v'⟩ :=
       stS_list_ok R L s₁ hnd.2 fun y hy => hin y (List.mem_cons_of_mem _ hy)
     have hsep : ∀ k, k ≠ x.1 → k < 2 ^ 58 → slotW s₁ k = slotW s k := fun k hk hk58 =>
-      Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hk) (by decide)
+      Mem.readW_writeW_sep (slot_sep _ (by omega_using [hk58]) (by omega) hk) (by decide)
     refine ⟨s', ?_, g', rd', wr', ?_, fun k hk hk58 => ?_, fun y hy => ?_⟩
     · rw [List.map_cons, ← List.singleton_append, runBlock_append', stS_ok s x.2 hx.1 hx.2.1,
         Option.bind_some]

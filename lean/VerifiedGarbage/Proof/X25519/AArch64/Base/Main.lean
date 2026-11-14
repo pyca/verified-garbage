@@ -60,7 +60,7 @@ def ScratchTail (base : Addr) (m m' : Mem) : Prop :=
 theorem outside_tail {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
     (hon : o + n ≤ 1024) {i : Nat} (hi : 1024 ≤ i) (hi' : i < 8192) :
     m' (base + BitVec.ofNat 64 i) = m (base + BitVec.ofNat 64 i) :=
-  h _ (Or.inr (by rw [show base + BitVec.ofNat 64 i = off base i from rfl, ofs_off' base (by omega)]; omega))
+  h _ (Or.inr (by rw [show base + BitVec.ofNat 64 i = off base i from rfl, ofs_off' base (by omega_using [hi'])]; omega_using [hon, hi]))
 
 theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : baseLocal.pre s) :
     WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t ∧
@@ -84,10 +84,10 @@ theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} 
   apply WP.seq
   refine WP.mono (engine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .x1, 32⟩, by rw [rb, ra, hr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩)
+      Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩)
     (fun q hq => farScr hd hq (by decide))
     (htb.of_far (by rw [rb, ra, wb, wa]) fun x hx => by
-      rw [mb x (Or.inr (by omega)), ma x (Or.inr (by omega))])
+      rw [mb x (Or.inr (by omega_using [hx])), ma x (Or.inr (by omega_using [hx]))])
     (by rw [syb, sya])) fun c ⟨kc, w, vc, xc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .x2) s.gpr c.mem := svb.outside mc (by decide)
@@ -131,12 +131,12 @@ theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} 
   · -- `out` is outside `scratch`, and every step before it wrote below byte 1024
     have hx : ¬ (⟨s.gpr .x0, 32⟩ : Region).Contains (s.gpr .x2 + BitVec.ofNat 64 i) 1 :=
       fun hc => hD _ hc (by
-        have e := ofs_off' (s.gpr .x2) (d := i) (by omega)
+        have e := ofs_off' (s.gpr .x2) (d := i) (by omega_using [hi'])
         simp only [ofs, off] at e
-        simp only [Region.Contains, e]; omega)
+        simp only [Region.Contains, e]; omega_using [hi'])
     simp only [Region.Contains] at hx
     have ho := st4_outside e.mem (s.gpr .x0) (o := 0) (by decide) (e.gpr .x4) (e.gpr .x5) (e.gpr .x6)
-      (e.gpr .x7) (s.gpr .x2 + BitVec.ofNat 64 i) (Or.inr (by simp only [ofs]; omega))
+      (e.gpr .x7) (s.gpr .x2 + BitVec.ofNat 64 i) (Or.inr (by simp only [ofs]; omega_using [hx]))
     change st4 e.mem (s.gpr .x0) 0 _ _ _ _ _ = _
     rw [ho, ke.mem, kd.mem, outside_tail mc (by decide) hi hi', outside_tail mb (by decide) hi hi',
       outside_tail ma (by decide) hi hi']

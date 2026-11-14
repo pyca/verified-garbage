@@ -37,7 +37,7 @@ theorem os2ip_i2osp_lt {x k : Nat} (hx : x < 256 ^ k) : Spec.Rsa.os2ip (Spec.Rsa
 theorem bitLength_lt {n b : Nat} (h : bitLength n = b) : n < 2 ^ b := by
   unfold bitLength at h
   split at h
-  · subst h; omega
+  · subst h; omega_arith
   · rw [← h]; exact Nat.lt_log2_self
 
 theorem le_of_bitLength {n b : Nat} (h : bitLength n = b + 1) : 2 ^ b ≤ n := by
@@ -46,11 +46,11 @@ theorem le_of_bitLength {n b : Nat} (h : bitLength n = b + 1) : 2 ^ b ≤ n := b
   · omega
   · rename_i h0
     have := Nat.log2_self_le h0
-    rwa [show n.log2 = b by omega] at this
+    rwa [show n.log2 = b by omega_using [h]] at this
 
 theorem bitLength_of {n b : Nat} (h1 : 2 ^ b ≤ n) (h2 : n < 2 ^ (b + 1)) : bitLength n = b + 1 := by
   unfold bitLength
-  have h0 : n ≠ 0 := by have := Nat.two_pow_pos b; omega
+  have h0 : n ≠ 0 := by have := Nat.two_pow_pos b; omega_using [h1, h2]
   rw [ite_eq_right h0, (Nat.log2_eq_iff h0).mpr ⟨h1, h2⟩]
 
 theorem mul_odd {p q : Nat} : (p * q) % 2 = 1 ↔ p % 2 = 1 ∧ q % 2 = 1 := by

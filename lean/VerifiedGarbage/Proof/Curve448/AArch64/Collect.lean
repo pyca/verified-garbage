@@ -19,17 +19,17 @@ theorem coeff_low {m : Mem} {base : Addr} {i v : Nat}
     (word m base (TMP + 16 * i)).toNat = v := by
   have low := (word m base (TMP + 16 * i)).isLt
   simp only [coeff, pair] at h
-  omega
+  omega_using [h, hv]
 
 theorem collectStep_ok {s : State} {base : Addr} (hs : Scr s base) {o i : Nat}
     (ho : o + 128 ≤ ACC) (ho8 : o % 8 = 0) (hi : i < 8) :
     WP isa (.block [ld .x4 (TMP + 16 * i), st .x4 (o + 8 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (o + 8 * i)) (word s.mem base (TMP + 16 * i)) ∧
       Keeps [.x4] s t := by
-  have l := hs.read (d := TMP + 16 * i) (n := 8) (by simp only [TMP]; omega)
-  have w := hs.write (d := o + 8 * i) (n := 8) (by simp only [ACC] at ho; omega)
-  have ae : (TMP + 16 * i) % 8 = 0 ∧ TMP + 16 * i < 32768 := by simp only [TMP]; omega
-  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 32768 := by simp only [ACC] at ho; omega
+  have l := hs.read (d := TMP + 16 * i) (n := 8) (by simp only [TMP]; omega_using [hi])
+  have w := hs.write (d := o + 8 * i) (n := 8) (by simp only [ACC] at ho; omega_using [ho, hi])
+  have ae : (TMP + 16 * i) % 8 = 0 ∧ TMP + 16 * i < 32768 := by simp only [TMP]; omega_using [hi]
+  have oe : (o + 8 * i) % 8 = 0 ∧ o + 8 * i < 32768 := by simp only [ACC] at ho; omega_using [ho, ho8, hi]
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     State.read, State.load, State.store, RegUpd.gpr_write, RegUpd.mem_write,
@@ -53,18 +53,18 @@ theorem collect_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     intro n t hn ⟨tf, tm, tk⟩
     refine WP.mono (collectStep_ok (hs.of_keeps tk (by decide)) ho ho8 hn) fun u ⟨um, uk⟩ => ?_
     have out : Outside base (o + 8 * n) 8 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by simp only [ACC] at ho; omega)
-    refine ⟨?_, tm.trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by simp only [ACC] at ho; omega_using [ho, hn])
+    refine ⟨?_, tm.trans (out.mono (by omega_using []) (by omega_using [hn])), tk.trans uk⟩
     intro i hi
     change (word u.mem base (o + 8 * i)).toNat = _
-    rw [um, word_write t.mem base (by simp only [ACC] at ho; omega)
-      (by simp only [ACC] at ho; omega)]
+    rw [um, word_write t.mem base (by simp only [ACC] at ho; omega_using [ho, hn])
+      (by simp only [ACC] at ho; omega_using [ho, hn, hi])]
     by_cases h : i = n
     · subst i
-      rw [ite_eq_left rfl, tm.word (Or.inr (by simp only [ACC, TMP] at ho ⊢; omega))
-        (by simp only [TMP]; omega)]
+      rw [ite_eq_left rfl, tm.word (Or.inr (by simp only [ACC, TMP] at ho ⊢; omega_using [ho]))
+        (by simp only [TMP]; omega_using [hn])]
       exact coeff_low (hf n hn) (Nat.lt_trans (hb n hn) (by decide))
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 end VG.Proof.Curve448.AArch64

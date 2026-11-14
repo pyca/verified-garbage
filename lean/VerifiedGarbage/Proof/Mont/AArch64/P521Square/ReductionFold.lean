@@ -21,7 +21,7 @@ theorem value_lt (xs : List Word) : value xs < 2^(64*xs.length) := by
     have hx := x.isLt
     simp only [value, List.length_cons, Nat.mul_add, Nat.mul_one, Nat.pow_add]
     rw [Nat.mul_comm (2^(64*xs.length)) (2^64)]
-    omega
+    omega_using [ih]
 
 def inputValue (w : Nat → Word) : Nat := value ((List.range 17).map w)
 
@@ -43,7 +43,7 @@ theorem foldHigh_value (w : Nat → Word) : value (foldHigh w) = inputValue w / 
   have hlow := value_lt ((List.range 8).map w)
   have hm := Nat.mod_lt (w 8).toNat (by decide : 0 < 512)
   simp only [List.length_map, List.length_range] at hlow
-  omega
+  omega_using [h, hlow]
 
 theorem foldLow_value (w : Nat → Word) :
     value (foldLow w) = inputValue w % 2^521 + (2^576-2^521) := by
@@ -53,7 +53,7 @@ theorem foldLow_value (w : Nat → Word) :
   simp only [List.length_map, List.length_range] at hlow
   simp only [foldLow, value_append, List.length_map, List.length_range, value,
     Nat.mul_zero, Nat.add_zero, orHigh9_value]
-  omega
+  omega_using [h, hlow]
 
 theorem folded_value (w : Nat → Word) :
     value (folded w).1 + 2^576 * (folded w).2.toNat =
@@ -64,6 +64,6 @@ theorem folded_value (w : Nat → Word) :
   rw [hlen, show 64*9=576 by decide] at h
   change value (folded w).1 + 2^576 * (folded w).2.toNat =
     inputValue w % 2^521 + (2^576-2^521) + inputValue w / 2^521 + 1 at h
-  omega
+  omega_using [h]
 
 end VG.Proof.Mont.AArch64.P521Square

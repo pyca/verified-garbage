@@ -52,10 +52,10 @@ structure EntryPre (bytes count : Nat) (s : State) : Prop where
   nt : (s.gpr .r2).toNat + 1024 ≤ 2 ^ 32
 
 theorem publicBytes_eq (p : Params) : preparedPublicKeyBytes p = p.pkLen + 1024 * p.k := by
-  unfold preparedPublicKeyBytes n; omega
+  unfold preparedPublicKeyBytes n; omega_using []
 
 theorem secretBytes_eq (p : Params) : preparedSecretKeyBytes p = p.skLen + 1024 * (p.ℓ + 2 * p.k) := by
-  unfold preparedSecretKeyBytes n; omega
+  unfold preparedSecretKeyBytes n; omega_using []
 
 theorem public_pre {p : Params} {s : State} (h : (preparePublicKeyContract p Arm.abi prepStack).pre s) :
     EntryPre p.pkLen p.k s := by
@@ -93,7 +93,7 @@ section
 variable {bytes count : Nat} {σ : State} (h : EntryPre bytes count σ)
 include h
 
-theorem h16 : 16 ≤ σ.sp.toNat := by have := h.stk; simp only [prepStack] at this; omega
+theorem h16 : 16 ≤ σ.sp.toNat := by have := h.stk; simp only [prepStack] at this; omega_using [this]
 
 /-- The frame, below `σ`'s stack pointer. -/
 theorem frame_sub : Region.Sub (Argon2.Arm.stkR σ.sp 16) (Argon2.Arm.stkR σ.sp prepStack) :=
@@ -152,8 +152,8 @@ theorem entry_lay (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32) {u 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hb'
     rcases hb' with rfl | rfl <;> simp only [h8, h7] <;>
       exact ⟨_, by rw [hwr, h.wr]; simp, Region.contains_self _ _⟩
-  · rw [hsp, FrameStack.sub_toNat' (by omega)]
-    have := h.stk; simp only [prepStack, callStack] at this ⊢; omega
+  · rw [hsp, FrameStack.sub_toNat' (by omega_using [h16])]
+    have := h.stk; simp only [prepStack, callStack] at this ⊢; omega_using [this]
 
 /-- The word `i` of the frame. -/
 theorem word_sub {i : Nat} (hi : i < 4) :
@@ -161,9 +161,9 @@ theorem word_sub {i : Nat} (hi : i < 4) :
   have h16 := h16 h
   have e : State.addr (σ.sp - BitVec.ofNat 32 16 + BitVec.ofNat 32 (4 * i)) =
       (State.addr σ.sp - BitVec.ofNat 64 16) + BitVec.ofNat 64 (4 * i) := by
-    rw [addr_add (by rw [FrameStack.sub_toNat' h16]; have := σ.sp.isLt; omega), FrameStack.addr_sub' h16]
+    rw [addr_add (by rw [FrameStack.sub_toNat' h16]; have := σ.sp.isLt; omega_using [hi]), FrameStack.addr_sub' h16]
   rw [e]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hi])
 
 end
 
@@ -180,7 +180,7 @@ theorem ldrSp_ok (r : Reg) {off : Nat} (ho : off < 4096) (s : State)
 theorem word_addr {sp : BitVec 32} (h16 : 16 ≤ sp.toNat) {i : Nat} (hi : i < 4) :
     State.addr (sp - BitVec.ofNat 32 16 + BitVec.ofNat 32 (4 * i)) =
       State.addr (sp - BitVec.ofNat 32 16) + BitVec.ofNat 64 (4 * i) :=
-  addr_add (by rw [FrameStack.sub_toNat' h16]; have := sp.isLt; omega)
+  addr_add (by rw [FrameStack.sub_toNat' h16]; have := sp.isLt; omega_using [hi])
 
 /-! ## The entry -/
 
@@ -196,7 +196,7 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
       B s'.mem (State.addr (σ.gpr .r1)) := by
   have h16 := h16 h
   unfold entry
-  refine WP.frame (rs := saved) (r := .r4) (by decide) (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.frame (rs := saved) (r := .r4) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [h16])
     (by decide) ?_
   refine WP.seq (WP.mono (movs_ok _) fun u ⟨g4, g8, g7, g, gm, grd, gwr, gsp⟩ => ?_)
   have u4 : u.gpr .r4 = σ.gpr .r0 := by rw [g4, pushed_gpr]
@@ -213,7 +213,7 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
       (saved.map σ.gpr)[i]'(by simpa using hi) := by
     intro i hi
     rw [hP.frame.readW (Region.contains_self _ _) ?_ (by decide), umem]
-    · exact Argon2.Arm.storeWords_readW _ _ _ (by rw [FrameStack.sub_toNat' h16]; have := σ.sp.isLt; simp; omega)
+    · exact Argon2.Arm.storeWords_readW _ _ _ (by rw [FrameStack.sub_toNat' h16]; have := σ.sp.isLt; simp; omega_using [])
         (by simpa using hi)
     · intro R hR
       have ws := word_sub h hi
@@ -223,14 +223,14 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
       · rw [List.mem_singleton] at hR; subst hR
         rw [usp, word_addr h16 hi]
         show Region.Disjoint _ ⟨State.addr (σ.sp - BitVec.ofNat 32 16) - BitVec.ofNat 64 callStack, callStack⟩
-        exact Offset.disjoint_below _ (by simp only [callStack]; omega)
+        exact Offset.disjoint_below _ (by simp only [callStack]; omega_using [hi])
   have tsp : t.sp = σ.sp - BitVec.ofNat 32 16 := hP.sp.trans usp
   have twr : t.wr = ⟨State.addr (σ.sp - BitVec.ofNat 32 16), 16⟩ :: σ.wr := hP.wr.trans uwr
   have inF : ∀ (s : State) (i : Nat), i < 4 → s.sp = σ.sp - BitVec.ofNat 32 16 →
       s.wr = ⟨State.addr (σ.sp - BitVec.ofNat 32 16), 16⟩ :: σ.wr →
       InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * i))) 4 := fun s i hi hs hw =>
     ⟨_, List.mem_append_right _ (by rw [hw]; exact List.mem_cons_self ..), by
-      rw [hs, word_addr h16 hi]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      rw [hs, word_addr h16 hi]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   refine WP.seq (WP.mono (ldrSp_ok .r7 (off := 4 * 1) (by decide) t (inF t 1 (by decide) tsp twr)) fun t₁ e₁ => ?_)
   subst e₁
   refine WP.seq (WP.mono (ldrSp_ok .r8 (off := 4 * 2) (by decide) _ (inF _ 2 (by decide) tsp twr)) fun t₂ e₂ => ?_)
@@ -263,8 +263,8 @@ theorem entry_correct {body : Prog isa} {bytes count : Nat} {B : Mem → Addr �
   · have ek : bytesAt u.mem (State.addr (σ.gpr .r0)) bytes = bytesAt σ.mem (State.addr (σ.gpr .r0)) bytes := by
       rw [gm]
       exact VG.Proof.MlKem.bytesAt_frame (Argon2.Arm.pushed_stk (rs := saved) (s := σ)
-        (by simp only [List.length_cons, List.length_nil]; omega)) (fun R hR => by
-          simp only [List.mem_singleton] at hR; subst hR; exact (h.si.sub_left (frame_sub h)).symm) (by omega)
+        (by simp only [List.length_cons, List.length_nil]; omega_using [h16])) (fun R hR => by
+          simp only [List.mem_singleton] at hR; subst hR; exact (h.si.sub_left (frame_sub h)).symm) (by omega_using [hb])
     simp only [pa, BitVec.add_zero, e8, u4] at henc
     rw [henc, ek]
   · simp only [pa, BitVec.add_zero, e8] at hB; exact hB

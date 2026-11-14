@@ -51,15 +51,15 @@ theorem arrays_apart : ∀ k ∈ arrays, ∀ k' ∈ arrays, k ≠ k' → k + 8 �
 theorem lane_in {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (s : State) :
     (scratchR s).Contains (laneA s k b) 4 := by
   have := arrays_bound k hk
-  exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)
+  exact Offset.contains_base _ (by unfold scratchSlots; omega_using [hb, this]) (by omega_using [hb, this])
 
 theorem lane_inArrays {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) (s : State) :
     (arraysR s).Contains (laneA s k b) 4 := by
   have := arrays_bound k hk
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_using [this]) (by omega_using [hb, this]) (by omega_using [])
 
 theorem arraysR_sub (s : State) : Region.Sub (arraysR s) (scratchR s) :=
-  Offset.sub_base _ (by unfold scratchSlots; omega)
+  Offset.sub_base _ (by unfold scratchSlots; omega_using [])
 
 /-- Two different lanes do not overlap. -/
 theorem lane_sep {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16) (hk' : k' ∈ arrays)
@@ -70,9 +70,9 @@ theorem lane_sep {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16) (hk' : k' �
   by_cases hkk : k = k'
   · subst hkk
     have : b ≠ b' := by simpa using h
-    exact Offset.sep _ (by omega) (by omega) (by omega)
+    exact Offset.sep _ (by omega_using [h]) (by omega_using [hb, h1]) (by omega_using [hb', h1])
   · have := arrays_apart k hk k' hk' hkk
-    exact Offset.sep _ (by omega) (by omega) (by omega)
+    exact Offset.sep _ (by omega_using [hb, hb', this]) (by omega_using [hb, h1]) (by omega_using [hb', h2])
 
 /-! ## Steps on every lane -/
 
@@ -182,8 +182,8 @@ theorem lanes_ok {f : Nat → List Instr} {sp : LaneSpec} (hsp : ∀ kv ∈ sp, 
     exact ⟨s₀, runBlock_nil, h₀, fun k _ b _ => by simp, Frame.refl _ _, rfl, rfl, rfl,
       fun _ _ _ => rfl⟩
   | succ n ih =>
-    obtain ⟨s, hs, hPs, hv, hfr, hrd, hwr, hsp', hregs⟩ := ih (by omega)
-    obtain ⟨s', hs', hok⟩ := hf n (by omega) s hPs
+    obtain ⟨s, hs, hPs, hv, hfr, hrd, hwr, hsp', hregs⟩ := ih (by omega_using [hn])
+    obtain ⟨s', hs', hok⟩ := hf n (by omega_using [hn]) s hPs
     have hsb : s.gpr sb = s₀.gpr sb := hregs _ (by decide) (by decide)
     have hsb' : s'.gpr sb = s.gpr sb := hok.regs _ (by decide) (by decide)
     refine ⟨s', ?_, hP n s s' hPs hok, fun k hk b hb => ?_, ?_, hok.rd.trans hrd, hok.wr.trans hwr,
@@ -192,16 +192,16 @@ theorem lanes_ok {f : Nat → List Instr} {sp : LaneSpec} (hsp : ∀ kv ∈ sp, 
         List.flatMap_singleton, hs']
     · have hl : lv s' k b = (laneWrites s sp n).readW (laneA s k b) 32 := by
         rw [lv, laneA, hsb', ← hok.mem]; rfl
-      rw [hl, lv_laneWrites hsp s hk hb (by omega)]
+      rw [hl, lv_laneWrites hsp s hk hb (by omega_using [hn])]
       have hx : newVal sp k (fun k' => lv s k' n) = newVal sp k (fun k' => lv s₀ k' n) :=
-        newVal_congr hd hk fun k' hk' => by rw [hv k' hk' n (by omega)]; simp
+        newVal_congr hd hk fun k' hk' => by rw [hv k' hk' n (by omega_using [hn])]; simp
       by_cases hbn : b = n
       · subst hbn; simp [hx]
       · rw [ite_eq_right hbn, hv k hk b hb]
         by_cases hbl : b < n
-        · simp [hbl, show b < n + 1 by omega]
-        · simp [hbl, show ¬ b < n + 1 by omega]
-    · have hfr' := laneWrites_frame hsp s (b := n) (by omega)
+        · simp [hbl, show b < n + 1 by omega_using [hbl]]
+        · simp [hbl, show ¬ b < n + 1 by omega_using [hbn, hbl]]
+    · have hfr' := laneWrites_frame hsp s (b := n) (by omega_using [hn])
       rw [← hok.mem] at hfr'
       refine hfr.trans ?_
       simpa [arraysR, hsb] using hfr'
@@ -239,7 +239,7 @@ theorem contains_trans {r : Region} {b a : Addr} {n m : Nat} (h₁ : (⟨b, n⟩
     rw [Offset.sub_add_sub_cancel]
   rw [e, BitVec.toNat_add]
   have := Nat.mod_le ((a - b).toNat + (b - r.base).toNat) (2 ^ 64)
-  omega
+  omega_using [h₁, h₂]
 
 /-- What the scratch buffer contains is writable. -/
 theorem Room.wr {s : State} (h : Room s) {a : Addr} {m : Nat} (hc : (scratchR s).Contains a m) :
@@ -260,14 +260,14 @@ theorem lane_rw {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b
 theorem laneOff_ok {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
     laneOff k b % 4 = 0 ∧ laneOff k b < 2048 := by
   have := arrays_bound k hk
-  unfold laneOff; omega
+  unfold laneOff; omega_using [hb, this]
 
 /-- An offset that is a multiple of 4 from an 8-byte aligned base. -/
 theorem al4 {b : Addr} (hb : b.toNat % 8 = 0) {off : Nat} (ho : off % 4 = 0) (ho' : off < 2048) :
     (b + BitVec.ofNat 64 off).toNat % 4 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [ho'])]
   have := b.isLt
-  omega
+  omega_using [hb, ho]
 
 theorem lane_al {s : State} (h : Room s) {k b : Nat} (hk : k ∈ arrays) (hb : b < 16) :
     (laneA s k b).toNat % 4 = 0 :=

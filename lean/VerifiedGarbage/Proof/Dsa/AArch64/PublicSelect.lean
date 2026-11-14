@@ -33,9 +33,9 @@ theorem selectHead_ok {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc
     hc.ld (i := sW) (by decide), hc.ld (i := Crt.sNib) (by decide), hc.ld (i := Crt.sTab) (by decide),
     hc.ld (i := sArr Crt.aT) (sArr_lt (by decide)), hc.good.hdr.hw, hc.good.hdr.harr Crt.aT (by decide), ht, hn]
   have hp : (wx + 2) * v < 2 ^ 40 := by
-    have := Nat.mul_le_mul (show wx + 2 ≤ 2 ^ 30 + 2 by omega) (show v ≤ 16 by omega); omega
+    have := Nat.mul_le_mul (show wx + 2 ≤ 2 ^ 30 + 2 by omega_using [hw']) (show v ≤ 16 by omega_using [hv]); omega_using [this]
   rw [show (2#64 : BitVec 64) = BitVec.ofNat 64 2 from rfl, ofNat_add_ofNat, ← BitVec.ofNat_mul,
-    shl3_ofNat (show 8 * ((wx + 2) * v) < 2 ^ 64 by omega), VG.Offset.add_add]
+    shl3_ofNat (show 8 * ((wx + 2) * v) < 2 ^ 64 by omega_using [hp]), VG.Offset.add_add]
   congr 1
   unfold slot
   rw [Nat.add_mul (8 : Nat) v]
@@ -51,19 +51,19 @@ theorem select_ok {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v :
       Outside P (slot wx Crt.aT) (8 * wx) s.mem t.mem ∧ Keep mmRegs s t := by
   have hT := slot_le (w := wx) (show Crt.aT < 8 by decide)
   have hE := ent_le wx hv
-  have hE0 := slot_mono wx (show 8 ≤ 8 + v by omega)
+  have hE0 := slot_mono wx (show 8 ≤ 8 + v by omega_using [])
   have hsep := slot_mono wx (show Crt.aT + 1 ≤ 8 by decide)
   have hz := hc.scrT.nowrap
   unfold select
   refine WP.seq (WP.mono (selectHead_ok hc hw' hv ht hn) fun u ⟨⟨h12, h16, h17, hm⟩, hk⟩ => ?_)
   have hs := hc.scrT.congr hk.wr
-  refine WP.mono (copyWords_ok h16 h17 h12 (by omega) (by omega) (by omega)
-    (fun i hi => hs.ld (by omega)) (fun i hi => hs.st (by omega))
-    (fun i hi b hb => by rw [ofs_off P (by omega)]; omega)) fun t ⟨hval, _, hf, _, _, hkt⟩ => ?_
+  refine WP.mono (copyWords_ok h16 h17 h12 (by omega_using [hw]) (by omega_using [hw']) (by omega_using [hT, hz])
+    (fun i hi => hs.ld (by omega_using [hE, hi])) (fun i hi => hs.st (by omega_using [hT, hi]))
+    (fun i hi b hb => by rw [ofs_off P (by omega_using [hE, hz, hi, hb])]; omega_using [hT, hE0])) fun t ⟨hval, _, hf, _, _, hkt⟩ => ?_
   rw [hm] at hf hval
   have k := (hk.trans hkt).mono (show ∀ r ∈ [.x3, .x4, .x12, .x16, .x17] ++ [.x3, .x14, .x16, .x17], r ∈ mmRegs by
     decide)
-  exact ⟨hc.of_win (Frm.of_outside (hf.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (by omega) (by omega))
+  exact ⟨hc.of_win (Frm.of_outside (hf.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (by omega_using []) (by omega_using []))
     (by simp [crtWinRanges])) k.wr (k.gpr .x0 (by decide)), hval, hf, k⟩
 
 end VG.Proof.Dsa.AArch64.PublicPower

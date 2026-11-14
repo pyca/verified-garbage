@@ -84,14 +84,14 @@ theorem setKL_taint : ∀ v < 16, ∀ w < 16, (VG.Arm.taint.check (Taint.ofRegs 
 
 theorem ktrue : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → (fun _ => true) i = true → (fun _ => true) j = true →
     i ∈ kWb ∨ j ∈ kWb := fun i _ j _ hij _ _ _ _ => by
-  simp only [kWb, List.mem_cons, List.not_mem_nil, or_false]; omega
+  simp only [kWb, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
 
 theorem seeds_two {p : Params} (hF : PFacts p) {STK : Nat} (σ : State) :
     RelCT isa (Two (lay p STK σ) kWb STK) (seeds p) fun _ _ => True := by
   have hk := hF.k; have hl := hF.l
   have hP : ∀ x y, Two (lay p STK σ) kWb STK x y → Two (lay p STK σ) kWb STK x y := fun _ _ h => h
   unfold seeds
-  refine RelCT.seq (RelCT.two hP (taint7 hP (setKL_taint p.k (by omega) p.ℓ (by omega))) fun x hs => ?_) ?_
+  refine RelCT.seq (RelCT.two hP (taint7 hP (setKL_taint p.k (by omega_using [hk]) p.ℓ (by omega_using [hl]))) fun x hs => ?_) ?_
   · refine WP.block_append (WP.mono (setB_ok hs (q := sc oKL) ⟨sc_ok _, by lsep hF⟩ (by decide) (by decide) p.k)
       fun s₁ ⟨k₁, _⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oKL + 1)) ⟨sc_ok _, by lsep hF⟩ (by decide)
         (by decide) p.ℓ) fun s₂ ⟨k₂, _⟩ => ⟨_, (k₁.monoL (W' := [tri (sc oKL) 1, tri (sc (oKL + 1)) 1])

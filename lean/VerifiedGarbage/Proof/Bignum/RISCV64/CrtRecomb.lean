@@ -57,7 +57,7 @@ theorem xb_ok {t : State} {BX : Addr} {w : Nat} {rd : Reg} (hrd : rd ≠ .s11)
       (k1.gpr (r := .s11) (by simpa using Ne.symm hrd)).trans h11]
     refine ⟨_, rfl, ⟨?_, m1⟩, (k1.trans (Keep.write _ _ _)).mono (by simp)⟩
     rw [gpr_write, ite_eq_left_iff.mpr fun e => absurd rfl e, off_add, show slot w (j + 1) = slot w j + 8 * (w + 2) by
-      unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega]
+      unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega_using []]
 
 /-! ## `recombineP` -/
 
@@ -186,12 +186,12 @@ theorem wordsVal_of_words {m m' : Mem} {B B' : Addr} : ∀ {d d' k : Nat},
     (∀ i < k, Mont.word m B (d + 8 * i) = Mont.word m' B' (d' + 8 * i)) → wordsVal m B d k = wordsVal m' B' d' k
   | _, _, 0, _ => rfl
   | d, d', k + 1, h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero] at h0
     simp only [wordsVal]
     rw [h0, wordsVal_of_words (d := d + 8) (d' := d' + 8) fun i hi => by
-      have := h (i + 1) (by omega)
-      rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega, show d' + 8 * (i + 1) = d' + 8 + 8 * i by omega] at this]
+      have := h (i + 1) (by omega_using [hi])
+      rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega_using [], show d' + 8 * (i + 1) = d' + 8 + 8 * i by omega_using []] at this]
 
 /-- The registers `recMont` writes. -/
 def recMRegs : List Reg := [.a0, .a1, .a2, .a3, .a4, .a5, .a6, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4]
@@ -332,7 +332,7 @@ theorem seq4_then {a b c d e : Prog isa} {s : State} {P Q : State → Prop}
 
 theorem word0_odd {m : Mem} {B : Addr} {d w : Nat} (hw : 1 ≤ w) (h : wordsVal m B d w % 2 = 1) :
     (Mont.word m B d).toNat % 2 = 1 := by
-  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega_using [hw]⟩
   simp only [wordsVal] at h
   rwa [show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl, Nat.mul_assoc, Nat.add_mul_mod_self_left] at h
 
@@ -524,17 +524,17 @@ theorem wordsVal_widen {m m' : Mem} {B B' : Addr} : ∀ {d d' w W : Nat},
     (∀ i, w ≤ i → i < W → Mont.word m B (d + 8 * i) = 0) → w ≤ W → wordsVal m B d W = wordsVal m' B' d' w
   | d, _, 0, W, _, hz, _ => ModArith.ma_wordsVal_zero fun i hi => hz i (Nat.zero_le _) hi
   | d, d', w + 1, W + 1, h, hz, hw => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero] at h0
     simp only [wordsVal]
     rw [h0, wordsVal_widen (d := d + 8) (d' := d' + 8) (w := w) (W := W)
       (fun i hi => by
-        have := h (i + 1) (by omega)
-        rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega, show d' + 8 * (i + 1) = d' + 8 + 8 * i by omega] at this)
+        have := h (i + 1) (by omega_using [hi])
+        rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega_using [], show d' + 8 * (i + 1) = d' + 8 + 8 * i by omega_using []] at this)
       (fun i h1 h2 => by
-        have := hz (i + 1) (by omega) (by omega)
-        rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega] at this) (by omega)]
-  | _, _, _ + 1, 0, _, _, hw => absurd hw (by omega)
+        have := hz (i + 1) (by omega_using [h1]) (by omega_using [h2])
+        rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega_using []] at this) (by omega_using [hw])]
+  | _, _, _ + 1, 0, _, _, hw => absurd hw (by omega_using [])
 
 theorem wX_val {W : Nat} (h : W < 2 ^ 31) :
     (BitVec.ofNat 64 (8 * (W + 2)) - BitVec.ofNat 64 16) >>> 3 = BitVec.ofNat 64 W := by
@@ -542,7 +542,7 @@ theorem wX_val {W : Nat} (h : W < 2 ^ 31) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     omega_arith, ofNat_shr3 _ (by omega_arith)]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- The registers `widen` writes. -/
 def widenRegs : List Reg := [.a7, .ra, .s5, .t0, .t2, .t3, .t4, .t5, .s0, .s8, .s9]
@@ -619,11 +619,11 @@ theorem widen_ok {s : State} {S Bp : Addr} {ZX Zp wX l oB oLen xj : Nat} (hx : S
 /-- The low word of `2^(64 W) - 1`: all ones. -/
 theorem word0_ones {m : Mem} {B : Addr} {d W : Nat} (hW : 1 ≤ W) (h : wordsVal m B d W = 2 ^ (64 * W) - 1) :
     (Mont.word m B d).toNat = 2 ^ 64 - 1 := by
-  obtain ⟨k, rfl⟩ : ∃ k, W = k + 1 := ⟨W - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, W = k + 1 := ⟨W - 1, by omega_using [hW]⟩
   simp only [wordsVal] at h
   have hp : 1 ≤ 2 ^ (64 * k) := Nat.one_le_two_pow
   have hw := (Mont.word m B d).isLt
-  rw [show 64 * (k + 1) = 64 + 64 * k by omega, Nat.pow_add] at h
+  rw [show 64 * (k + 1) = 64 + 64 * k by omega_using [], Nat.pow_add] at h
   have := Nat.mul_le_mul_left (2 ^ 64) hp
   omega_arith
 
@@ -633,7 +633,7 @@ theorem mont_ones {R x a : Nat} (hR : 2 ≤ R - 1) (hx : x < R - 1) (h : x * R %
     (ha : a < R - 1) : x = a := by
   have e : x * R = x + (R - 1) * x := by
     rw [show x * R = x * (R - 1) + x by
-      rw [← Nat.mul_add_one, show R - 1 + 1 = R by omega], Nat.add_comm, Nat.mul_comm]
+      rw [← Nat.mul_add_one, show R - 1 + 1 = R by omega_using [hR]], Nat.add_comm, Nat.mul_comm]
   rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt ha] at h
   exact h
 
@@ -672,7 +672,7 @@ theorem recombineX_ok {s : State} {S BP BQ : Addr} {ZX ZP ZQ wX lp lq qv : Nat}
   have hfit : ∀ j < 8, slot wX j + 8 * wX ≤ 2 ^ 64 := fun j hj => by
     have := slot_le (w := wX) hj; omega_arith
   have hR : 2 ≤ 2 ^ (64 * wX) - 1 := by
-    have : 2 ^ 64 ≤ 2 ^ (64 * wX) := Nat.pow_le_pow_right (by decide) (by omega)
+    have : 2 ^ 64 ≤ 2 ^ (64 * wX) := Nat.pow_le_pow_right (by decide) (by omega_using [hw2])
     omega_arith
   unfold recombineX
   -- `h` into array 7.
@@ -712,7 +712,7 @@ theorem recombineX_ok {s : State} {S BP BQ : Addr} {ZX ZP ZQ wX lp lq qv : Nat}
   have k13 := k12.trans k3
   rw [← m3] at m0 q5 v7' v6
   -- `q h mod M = q h` into array 4.
-  have w0 : (Mont.word s₃.mem S (slot wX 0)).toNat = 2 ^ 64 - 1 := word0_ones (by omega) m0
+  have w0 : (Mont.word s₃.mem S (slot wX 0)).toNat = 2 ^ 64 - 1 := word0_ones (by omega_using [hw2]) m0
   refine WP.seq (WP.mono (Pub.montOp_ok (o := 4) (a := 5) (b := 7) (hx.congr k13.2.2) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' hZX c7 c5 c0
     (by rw [show (word s₃.mem S (slot wX 0)).toNat = 2 ^ 64 - 1 from w0, c1]; decide)
@@ -738,7 +738,7 @@ theorem recombineX_ok {s : State} {S BP BQ : Addr} {ZX ZP ZQ wX lp lq qv : Nat}
   have m47 : s₇.mem = s₄.mem := by rw [m7, m6, m5]
   refine WP.mono (ModArith.addMask64_ok (b := true) (dT := slot wX 4) (dM := slot wX 6) (hx.congr k17.2.2)
     ((k6.trans k7).gpr (by decide) |>.trans b3) ((k7.gpr (by decide)).trans b4) ((((k4.trans k5).trans k6).trans k7).gpr (by decide) |>.trans c0)
-    b5 (slot_al8 _ _) (slot_al8 _ _) (by omega) hw' (by omega_arith) (by omega_arith) (Or.inl (by omega_arith)))
+    b5 (slot_al8 _ _) (slot_al8 _ _) (by omega_using [hw2]) hw' (by omega_arith) (by omega_arith) (Or.inl (by omega_arith)))
     fun t ⟨hv, o8, k8⟩ => ⟨⟨?_, ?_⟩, (k17.trans k8).mono (by decide)⟩
   · rw [m47, x4, v6'] at hv
     rw [hv]; simp only [↓reduceIte]; exact Nat.mod_eq_of_lt (by omega_arith)

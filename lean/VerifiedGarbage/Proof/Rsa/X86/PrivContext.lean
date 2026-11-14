@@ -56,7 +56,7 @@ theorem PrivContext.after {g : PrivGeometry} {bs : Fin 8 → List Byte} {s t : S
     by rw [rest.2.1, rest.2.2]; exact h.argumentsRead, ?_⟩
   intro j hj
   have word := frame.readW (r := g.argumentsRegion)
-    (Offset.contains_base _ (by omega : 4 * j + 32 / 8 ≤ 80) (by omega : 4 * j < 2 ^ 64))
+    (Offset.contains_base _ (by omega_using [hj] : 4 * j + 32 / 8 ≤ 80) (by omega_using [hj] : 4 * j < 2 ^ 64))
     h.argumentsSeparate (by decide : 32 / 8 < 2 ^ 64)
   have address : g.argumentsRegion.base + BitVec.ofNat 64 (4 * j) =
       byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * j) :=

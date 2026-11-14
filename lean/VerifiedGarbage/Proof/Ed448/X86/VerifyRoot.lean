@@ -90,14 +90,14 @@ theorem rootEnv_eval (e : Env) : rootEnv e 21 = Proof.Ed448.rootPow (e 12) := by
   rfl
 
 theorem rootEnv_keep (e : Env) (i : Index) (hi : i.val < 14) : rootEnv e i = e i := by
-  have h14 : i ≠ 14 := fun h => by subst h; omega
-  have h15 : i ≠ 15 := fun h => by subst h; omega
-  have h16 : i ≠ 16 := fun h => by subst h; omega
-  have h17 : i ≠ 17 := fun h => by subst h; omega
-  have h18 : i ≠ 18 := fun h => by subst h; omega
-  have h19 : i ≠ 19 := fun h => by subst h; omega
-  have h20 : i ≠ 20 := fun h => by subst h; omega
-  have h21 : i ≠ 21 := fun h => by subst h; omega
+  have h14 : i ≠ 14 := fun h => by subst h; omega_using [hi]
+  have h15 : i ≠ 15 := fun h => by subst h; omega_using [hi]
+  have h16 : i ≠ 16 := fun h => by subst h; omega_using [hi]
+  have h17 : i ≠ 17 := fun h => by subst h; omega_using [hi]
+  have h18 : i ≠ 18 := fun h => by subst h; omega_using [hi]
+  have h19 : i ≠ 19 := fun h => by subst h; omega_using [hi]
+  have h20 : i ≠ 20 := fun h => by subst h; omega_using [hi]
+  have h21 : i ≠ 21 := fun h => by subst h; omega_using [hi]
   simp only [rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
     Function.update_of_ne h21, Function.update_of_ne h14, Function.update_of_ne h15,
     Function.update_of_ne h16, Function.update_of_ne h17, Function.update_of_ne h18,

@@ -34,7 +34,7 @@ abbrev wsRegion (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩
 
 theorem ws_sub {bits : Nat} {s : State} (A : PrimeABI bits s) {d n : Nat} (h : d + n ≤ domainCheck) :
     Region.Sub ⟨off (s.gpr .rdi) d, n⟩ (wsRegion s) :=
-  Offset.sub_base _ (by have := A.size; omega)
+  Offset.sub_base _ (by have := A.size; omega_using [h, this])
 
 theorem frame_stack_sub (s : State) {d n : Nat} (h : d + n ≤ 56) :
     Region.Sub ⟨off (frameSp s) d, n⟩ (below (s.gpr .rsp) 184) := by
@@ -42,7 +42,7 @@ theorem frame_stack_sub (s : State) {d n : Nat} (h : d + n ≤ 56) :
     simp only [off, frameSp]
     rw [Offset.sub_ofNat_eq (s.gpr .rsp) (show 56 ≤ 184 by decide), BitVec.add_assoc,
       BitVec.ofNat_add_ofNat]]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [h])
 
 theorem below_frame_sub (s : State) :
     Region.Sub (below (frameSp s) 128) (below (s.gpr .rsp) 184) := by
@@ -70,24 +70,24 @@ def params {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) 
   drawMin := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   lenWords := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   predBits := by
-    rw [VG.Proof.Dsa.Generation.predecessor_bits (by have := hb.le; omega) A.odd A.bits]
+    rw [VG.Proof.Dsa.Generation.predecessor_bits (by have := hb.le; omega_using [this]) A.odd A.bits]
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   drawWidth := by
-    rw [VG.Proof.Dsa.Generation.witness_width (by have := hb.le; omega) A.odd A.bits]
+    rw [VG.Proof.Dsa.Generation.witness_width (by have := hb.le; omega_using [this]) A.odd A.bits]
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   odd := A.odd
   n3 := by
-    have h := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
-    have h4 : 2 ^ 2 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+    have h := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
+    have h4 : 2 ^ 2 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
     exact Nat.le_trans (by decide) (Nat.le_trans h4 h)
   checksMax := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   randMax := by rw [bytesAt_length]; exact (s.gpr .rcx).isLt
   stackSize := by
     change 128 ≤ (s.gpr .rsp - BitVec.ofNat 64 56).toNat
     have : 184 ≤ (s.gpr .rsp).toNat := A.stackLower
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega)]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [this])]
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   stackSeparate :=
     ((A.stackWs.sub_left (below_frame_sub s)).sub_right (ws_sub A (by decide))).symm
   bufferSeparate := Offset.disjoint _ (by

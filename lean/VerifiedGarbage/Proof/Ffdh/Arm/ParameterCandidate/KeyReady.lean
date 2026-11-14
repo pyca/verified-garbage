@@ -6,12 +6,61 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Spec.Rsa.Contract
-
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyView
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyContext
-import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+
+/-! ### `Ffdh.Arm.ParameterCandidate.KeyContext`, which only this module used -/
+
+section
+
+/-! Bind RSA's native key-array registers to FFDH's existing Montgomery
+allocation. Register setup changes neither memory nor argument slots. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Ffdh.Arm
+open VG.Proof.X25519.Arm (Rest)
+
+private theorem nativeKeyWords (w : Nat) :
+    (BitVec.ofNat 32 w <<< 1) + 2 = BitVec.ofNat 32 (2 * w + 2) := by
+  rw [BitVec.shiftLeft_eq_mul_twoPow]
+  change BitVec.ofNat 32 w * BitVec.ofNat 32 2 + BitVec.ofNat 32 2 = _
+  rw [BitVec.ofNat_mul_ofNat, BitVec.ofNat_add_ofNat]
+  congr 1
+  omega_using []
+
+private theorem nativeKeyStride (w : Nat) :
+    (BitVec.ofNat 32 (2 * w + 2) + 2) <<< 2 = BitVec.ofNat 32 (8 * (w + 2)) := by
+  rw [BitVec.shiftLeft_eq_mul_twoPow]
+  change (BitVec.ofNat 32 (2 * w + 2) + BitVec.ofNat 32 2) * BitVec.ofNat 32 4 = _
+  rw [BitVec.ofNat_add_ofNat, BitVec.ofNat_mul_ofNat]
+  congr 1
+  omega_using []
+
+theorem keyContext_ok (s : State) (base : BitVec 32) (w : Nat)
+    (readBase : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4)
+    (saved : s.mem.readW (State.addr s.sp) 32 = base)
+    (readWidth : InRegions (s.rd ++ s.wr) (State.addr (base + 48#32)) 4)
+    (width : s.mem.readW (State.addr (base + 48#32)) 32 = BitVec.ofNat 32 w) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.keyContext) s fun t =>
+      (t.gpr .r0 = base ∧ t.gpr .r8 = base + 96#32 ∧
+        t.gpr .r9 = BitVec.ofNat 32 (2 * w + 2) ∧ t.gpr .r7 = BitVec.ofNat 32 (8 * (w + 2)) ∧
+        t.mem = s.mem) ∧ Rest [.r0, .r7, .r8, .r9] s t := by
+  refine withRest_all [.r0, .r7, .r8, .r9] ?_ (by rfl) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.keyContext VG.Impl.Rsa.Arm.Keys.stride
+  ffrun [List.cons_append, List.nil_append, BitVec.add_zero, readBase, saved, readWidth, width,
+    nativeKeyWords w, nativeKeyStride w, show (96 : BitVec 32) = 96#32 from rfl]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+
+end
+
+end
+
 /-! Select the same arrays through RSA's proved native key-operation view. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/KeyViewExec.lean`, which only this module imported.
@@ -35,15 +84,15 @@ theorem keyView_covers {s : State} {base : BitVec 32} {capacity : Nat}
   intro r member
   rw [List.mem_singleton] at member
   subst r
-  refine ⟨⟨State.addr base, 8 * capacity⟩, h.writable, 96, ?_, by simp only [keyViewRegion]; omega⟩
-  exact VG.Arm.addr_add (by have := h.nowrap; omega)
+  refine ⟨⟨State.addr base, 8 * capacity⟩, h.writable, 96, ?_, by simp only [keyViewRegion]; omega_using [large]⟩
+  exact VG.Arm.addr_add (by have := h.nowrap; omega_using [large, this])
 
 theorem keyView_dimensions {k capacity : Nat} (minLength : 64 ≤ k) (maxLength : k ≤ 1024)
     (space : Spec.Rsa.scratchWords k ≤ capacity) :
     0 < 2 * ((k + 7) / 8) + 2 ∧ 2 * ((k + 7) / 8) + 2 ≤ 1024 ∧
       160 + 30 * (4 * (2 * ((k + 7) / 8) + 4)) ≤ 8 * capacity - 96 := by
   simp only [Spec.Rsa.scratchWords] at space
-  omega
+  omega_using [minLength, maxLength, space]
 
 theorem keyView_inline {c : Prog isa} {s : State} {base : BitVec 32} {capacity : Nat}
     {P Q : State → Prop} (workspace : Workspace s base (8 * capacity)) (large : 96 < 8 * capacity)
@@ -92,18 +141,18 @@ theorem keyContext_ready (s : State) {base : BitVec 32} {capacity k : Nat}
   have capLarge : 96 < 8 * capacity := by
     have := minLength
     simp only [Spec.Rsa.scratchWords] at space
-    omega
-  have shiftFits : base.toNat + 96 < 2 ^ 32 := by have := workspace.nowrap; omega
+    omega_using [space]
+  have shiftFits : base.toNat + 96 < 2 ^ 32 := by have := workspace.nowrap; omega_using [dims, this]
   have shifted : (base + 96#32).toNat = base.toNat + 96 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by decide : 96 < 2 ^ 32),
       Nat.mod_eq_of_lt shiftFits]
   have native := nativeHeader_of_layout s.mem base workspace.nowrap (Nat.le_refl _) data.layout
   rw [data.width] at native
   have readWidth : InRegions (s.rd ++ s.wr) (State.addr (base + 48#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := workspace.nowrap; omega)]
-    exact workspace.read (by omega)
+    rw [VG.Arm.addr_add (by have := workspace.nowrap; omega_using [shiftFits])]
+    exact workspace.read (by omega_using [dims])
   have width : s.mem.readW (State.addr (base + 48#32)) 32 = BitVec.ofNat 32 (VG.Spec.Rsa.modulusWords k) := by
-    rw [VG.Arm.addr_add (by have := workspace.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := workspace.nowrap; omega_using [shiftFits])]
     exact native.count
   refine WP.mono (keyContext_ok s base (VG.Spec.Rsa.modulusWords k) readBase saved readWidth width) ?_
   rintro t ⟨⟨ptr, r8, r9, r7, mem⟩, rest⟩
@@ -111,7 +160,7 @@ theorem keyContext_ready (s : State) {base : BitVec 32} {capacity k : Nat}
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, r8, r9⟩
   · rw [shifted]
     have := workspace.nowrap
-    omega
+    omega_using [dims, this]
   · exact List.mem_cons_self
   · exact dims.2.2
   · exact dims.1

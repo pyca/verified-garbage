@@ -42,14 +42,14 @@ theorem hstate_blk {E : List Byte} {d : Byte} (hE : Partial E) {t : Nat} (ht : t
     keccakF (xorAt (hstate E t d) 0 (blk E t d)) = hstate E (t + 1) d := by
   unfold blk
   split
-  · exact HSponge.hstate_full (by omega)
+  · exact HSponge.hstate_full (by omega_arith)
   · have := Nat.div_add_mod E.length 136
-    exact HSponge.hstate_padBlock (by obtain ⟨h1, h2⟩ := hE; omega) (by obtain ⟨h1, h2⟩ := hE; omega)
+    exact HSponge.hstate_padBlock (by obtain ⟨h1, h2⟩ := hE; omega_using [ht, h1]) (by obtain ⟨h1, h2⟩ := hE; omega_arith)
 
 theorem habs_blk {E : List Byte} {d : Byte} (hE : Partial E) {i : Nat} (hi : 3 * i + 3 ≤ E.length / 136 + 1) :
     SH.habs (hstate E (3 * i) d) (fun j => blk E (3 * i + j) d) 3 = hstate E (3 * i + 3) d := by
   simp only [SH.habs, Nat.add_zero]
-  rw [hstate_blk hE (by omega), hstate_blk hE (by omega), hstate_blk hE (by omega)]
+  rw [hstate_blk hE (by omega_using [hi]), hstate_blk hE (by omega_using [hi]), hstate_blk hE (by omega_using [hi])]
 
 /-! ## The sponge's state -/
 
@@ -82,15 +82,15 @@ theorem zeros_ok (b : Reg) (off n : Nat) (s : State) (h0 : s.gpr .rax = 0) (hn :
   refine WP.mono (zeroStep_ok b (off + 8 * k) s' (by rw [hk'.2.2, hb, e]; exact hw k hk))
     fun s'' ⟨hm, hk''⟩ => ⟨(hk'.trans hk'').mono (by simp), ?_, fun i hi => ?_⟩
   · rw [hm, hb, e]
-    exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hn, hk]))
   · rw [hm, hb, e, ha]
     simp only [Mem.writeW, Mem.write]
     split
     · simp
     · rename_i hc
       refine hz i (Nat.lt_of_not_le fun hik => hc ?_)
-      rw [Offset.sub_toNat _ hik (by omega)]
-      omega
+      rw [Offset.sub_toNat _ hik (by omega_using [hn, hk, hi])]
+      omega_using [hi]
 
 theorem mov0_ok (s : State) :
     WP isa (.block [.mov32 .rax (.imm 0)]) s fun s' => s'.gpr .rax = 0 ∧ s'.mem = s.mem ∧ Keep [.rax] s s' := by
@@ -116,20 +116,20 @@ theorem hbE_blk {E : List Byte} {d : Byte} {i j : Nat} (hj : j < 3)
     ((hbE E i d).drop (136 * j)).take 136 = blk E (3 * i + j) d := by
   unfold hbE blk
   split
-  · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega), List.drop_take, List.take_take, List.drop_drop]
-    rw [show 408 * i + 136 * j = 136 * (3 * i + j) by omega, Nat.min_eq_left (by omega)]
+  · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega_arith), List.drop_take, List.take_take, List.drop_drop]
+    rw [show 408 * i + 136 * j = 136 * (3 * i + j) by omega_using [], Nat.min_eq_left (by omega_using [hj])]
   · rename_i hn
     have hA : (E.drop (408 * i)).length = E.length - 408 * i := List.length_drop
-    rcases (by omega : j < 2 ∨ j = 2) with hj2 | rfl
-    · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega), List.drop_append_of_le_length (by omega),
-        List.take_append_of_le_length (by rw [List.length_drop]; omega), List.drop_drop,
-        show 408 * i + 136 * j = 136 * (3 * i + j) by omega]
-    · rw [ite_eq_right (show ¬136 * (3 * i + 2) + 136 ≤ E.length by omega), List.drop_append_of_le_length (by omega), List.drop_drop,
+    rcases (by omega_using [hj] : j < 2 ∨ j = 2) with hj2 | rfl
+    · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega_using [hp, hj2]), List.drop_append_of_le_length (by omega_using [hj, hp, hA]),
+        List.take_append_of_le_length (by rw [List.length_drop]; omega_using [hp, hA, hj2]), List.drop_drop,
+        show 408 * i + 136 * j = 136 * (3 * i + j) by omega_using []]
+    · rw [ite_eq_right (show ¬136 * (3 * i + 2) + 136 ≤ E.length by omega_using [hn]), List.drop_append_of_le_length (by omega_using [hp, hA]), List.drop_drop,
         List.take_of_length_le (by simp only [List.length_append, List.length_drop, List.length_cons,
-          List.length_replicate, List.length_nil]; omega)]
+          List.length_replicate, List.length_nil]; omega_using [hp, hn])]
       simp only [padBlock, List.length_drop, List.append_assoc, List.cons_append, List.nil_append,
-        show 408 * i + 136 * 2 = 136 * (3 * i + 2) by omega,
-        show 134 - (E.length - 136 * (3 * i + 2)) = 406 - (E.length - 408 * i) by omega]
+        show 408 * i + 136 * 2 = 136 * (3 * i + 2) by omega_using [],
+        show 134 - (E.length - 136 * (3 * i + 2)) = 406 - (E.length - 408 * i) by omega_using [hp]]
 
 /-! ## The entries of a fragment -/
 
@@ -138,11 +138,11 @@ theorem allOk_add3 {k : Nat} {ρ : List Byte} {e : Nat} :
       (sampleNTT minIterations (matSeed ρ ((e + t) / k) ((e + t) % k))).isSome) = true := by
   simp only [List.all_eq_true, List.mem_range]
   constructor
-  · intro h; exact ⟨fun e' he => h e' (by omega), fun t ht => h (e + t) (by omega)⟩
+  · intro h; exact ⟨fun e' he => h e' (by omega_using [he]), fun t ht => h (e + t) (by omega_using [ht])⟩
   · rintro ⟨h, h3⟩ e' he
-    rcases (by omega : e' < e ∨ e ≤ e') with he' | he'
+    rcases (by omega_using [] : e' < e ∨ e ≤ e') with he' | he'
     · exact h e' he'
-    · have := h3 (e' - e) (by omega)
+    · have := h3 (e' - e) (by omega_using [he])
       rwa [Nat.add_sub_cancel' he'] at this
 
 theorem habs_congr (H : Spec.Sha3.State) {f g : Nat → List Byte} :
@@ -150,7 +150,7 @@ theorem habs_congr (H : Spec.Sha3.State) {f g : Nat → List Byte} :
   | 0, _ => rfl
   | n + 1, h => by
     simp only [SH.habs]
-    rw [habs_congr H n fun j hj => h j (by omega), h n (by omega)]
+    rw [habs_congr H n fun j hj => h j (by omega_using [hj]), h n (by omega_using [])]
 
 /-- Code whose runs are never related. -/
 theorem relFalse {P Q : State → State → Prop} {c : Prog isa} (h : ∀ x y, P x y → False) : RelCT isa P c Q :=

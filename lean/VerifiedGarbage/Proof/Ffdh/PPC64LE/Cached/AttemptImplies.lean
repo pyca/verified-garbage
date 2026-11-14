@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptFn
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.CachedSat
@@ -25,8 +26,8 @@ theorem cgStackArgs_five (s : State) :
     List.map (stackArg s) (List.range 5) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4] :=
   rfl
 
-theorem cg_pre {s : State} (h : (Spec.Ffdh.cachedGenerateKeyContract abi).pre s) : cgContract.pre s := by
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+theorem cg_pre {s : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pre s) : cgContract.pre s := by
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argRegs, cgContract, cgStackArgs_five, List.getD_cons_succ, List.getD_cons_zero, Spec.Ffdh.pLenValid,
     Spec.Ffdh.domainLenValid, List.append_eq, List.filter_cons, List.filter_nil, List.map_cons, List.map_nil,
     List.filterMap_cons, List.filterMap_nil, Sig.pairFacts, Sig.conj_cons, Sig.conj_append, List.cons_append,
@@ -93,9 +94,9 @@ private theorem attempt_domain : Spec.Rsa.bytesAt attemptState.mem 0x3000 128 = 
     decide
   exact this
 
-theorem attempt_sat : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi).pre s := by
+theorem attempt_sat : ∃ s, (Proof.Ffdh.cachedGenerateKeyContract abi).pre s := by
   refine ⟨attemptState, ?_⟩
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig,
     Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid, Spec.Ffdh.generationContextAt, abi, argRegs, attempt_args]
   simp only [a0, a1, a2, a3, a4]
   repeat' apply And.intro
@@ -109,19 +110,19 @@ theorem attempt_sat : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi).pre s := 
           some (Spec.Rsa.wordsAt attemptState.mem 0x100000 275)
        rw [attempt_domain]; exact (CachedSat.canonical attemptBase).2)
 
-theorem cg_post {s t : State} (h : cgContract.post s t) : (Spec.Ffdh.cachedGenerateKeyContract abi).post s t := by
-  sig_post [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+theorem cg_post {s t : State} (h : cgContract.post s t) : (Proof.Ffdh.cachedGenerateKeyContract abi).post s t := by
+  sig_post [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argRegs, cgStackArgs_five, List.getD_cons_succ, List.getD_cons_zero, List.append_eq]
   sig_reduce [cgContract, cgDom, cgA, cgScalar] at h
   exact h
 
-theorem cg_pub {s₁ s₂ : State} (h : (Spec.Ffdh.cachedGenerateKeyContract abi).pub s₁ s₂) : cgContract.pub s₁ s₂ := by
-  sig_pub [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+theorem cg_pub {s₁ s₂ : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pub s₁ s₂) : cgContract.pub s₁ s₂ := by
+  sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argRegs, cgStackArgs_five, List.append_eq, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   exact h
 
-theorem cg_implies : cgContract.Implies (Spec.Ffdh.cachedGenerateKeyContract abi) where
+theorem cg_implies : cgContract.Implies (Proof.Ffdh.cachedGenerateKeyContract abi) where
   pre _ h := cg_pre h
   post _ _ _ h := cg_post h
   pub _ _ _ _ h := cg_pub h

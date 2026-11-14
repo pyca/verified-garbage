@@ -44,7 +44,7 @@ theorem policyLoop_record_ok {q : PolicyLoopPublic} {s : State} (h : PolicyLoopR
  WP isa Policy.record s (RecordOutcome q s) := by
  have r:=h.record
  refine WP.mono (policyStep_ok r.scratch q.choice.room r.base r.source r.record q.choice.shape q.choice.positive q.choice.size
-  r.domain r.length r.keyLength r.width q.fit r.pointer h.count (by omega)) ?_
+  r.domain r.length r.keyLength r.width q.fit r.pointer h.count (by omega_using [])) ?_
  rintro t ⟨mem,count,ptr,rest⟩
  have count' : t.gpr .x7=BitVec.ofNat 64 (if recordMatches q then 0 else q.tail.length) :=by
   simpa only [Nat.add_sub_cancel,loopRecord,recordMatches] using count
@@ -52,7 +52,7 @@ theorem policyLoop_record_ok {q : PolicyLoopPublic} {s : State} (h : PolicyLoopR
  exact ⟨mem,count',ptr,rest⟩
 
 def policyNext (q : PolicyLoopPublic) (g : Policy.Group) (tail : List Policy.Group) (shorter : tail.length<q.tail.length) : PolicyLoopPublic :=
- ⟨{q.choice with recordPtr:=off q.choice.recordPtr (8+3*q.choice.g.len),g:=g},tail,q.N,q.fit,by have :=q.small;omega⟩
+ ⟨{q.choice with recordPtr:=off q.choice.recordPtr (8+3*q.choice.g.len),g:=g},tail,q.N,q.fit,by have :=q.small;omega_using [shorter, this]⟩
 
 theorem policyLoop_next {q : PolicyLoopPublic} {s t : State} {g : Policy.Group} {tail : List Policy.Group}
  (h : PolicyLoopReady q s) (outcome : RecordOutcome q s t) (miss : ¬recordMatches q) (tails : q.tail=g::tail) :

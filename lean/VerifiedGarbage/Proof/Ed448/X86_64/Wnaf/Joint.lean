@@ -43,14 +43,14 @@ theorem RecInv.env {base : Addr} {dst k n : Nat} {s u : State} (h : RecInv base 
   left
   have hi := slot_lt i
   simp only [VG.Impl.X448.X86_64.ACC] at hi
-  omega
+  omega_using [hd, hi]
 
 theorem RecInv.table {base : Addr} {dst k n : Nat} {s u : State} (h : RecInv base dst k s n u)
     (hd : dst + 461 ≤ Impl.Ed448.X86_64.Window.TAB) (i : Nat) (hi : i < 17) :
     tablePoint u.mem base i = tablePoint s.mem base i := by
   apply pointAt_outside h.mem
-  · simp only [Impl.Ed448.X86_64.Window.tabOffset, Impl.Ed448.X86_64.Window.TAB]; omega
-  · right; simp only [Impl.Ed448.X86_64.Window.tabOffset]; omega
+  · simp only [Impl.Ed448.X86_64.Window.tabOffset, Impl.Ed448.X86_64.Window.TAB]; omega_using [hi]
+  · right; simp only [Impl.Ed448.X86_64.Window.tabOffset]; omega_using [hd]
 
 theorem joint_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops} (hP : Point64.PointOk P)
     {s : State} {base : Addr} {S K o : Nat} (hs : Scr s base) (ho : 2048 ≤ o) (hb : o + 460 ≤ SDIG)
@@ -64,35 +64,35 @@ theorem joint_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
         Rep (pt (E u.mem base) 0 1 2) (S • baseAff + K • a) := by
   refine WP.seq (WP.mono (table_ok hP hs hd hz hp) fun a ⟨ka, da, ta⟩ => ?_)
   have bsA := bs.keepW (by decide) (by decide) ka
-  have bkA := bk.keepW ho (by simp only [SDIG, Impl.Ed448.X86_64.Window.TAB] at *; omega) ka
+  have bkA := bk.keepW ho (by simp only [SDIG, Impl.Ed448.X86_64.Window.TAB] at *; omega_using [hb]) ka
   refine WP.seq (WP.mono (recode_ok (ka.scr hs) (by decide) (by decide) (by decide) bsA hS)
     fun b hB => ?_)
   have bkB : Window.Bits base o K b := by
     intro i hi
-    rw [hB.mem _ (Or.inl (by rw [ofs_off' base (by simp only [SDIG] at hb; omega)]; omega))]
+    rw [hB.mem _ (Or.inl (by rw [ofs_off' base (by simp only [SDIG] at hb; omega_using [hb, hi])]; omega_using [ho, hb, hi]))]
     exact bkA i hi
-  refine WP.seq (WP.mono (recode_ok hB.scr (by omega) (by simp only [SDIG, KDIG] at *; omega)
+  refine WP.seq (WP.mono (recode_ok hB.scr (by omega_using [ho]) (by simp only [SDIG, KDIG] at *; omega_using [hb])
     (by decide) bkB hK) fun c hC => ?_)
   have sb : Digits base SDIG S b := hB.digits
   have sc : Digits base SDIG S c := by
     intro i hi
-    rw [hC.mem _ (Or.inl (by rw [ofs_off' base (by simp only [SDIG]; omega)]; simp only [SDIG, KDIG]; omega))]
+    rw [hC.mem _ (Or.inl (by rw [ofs_off' base (by simp only [SDIG]; omega_using [hi])]; simp only [SDIG, KDIG]; omega_using [hi]))]
     exact sb i hi
   have kc : Digits base KDIG K c := hC.digits
   refine WP.seq (WP.mono (initPoint_ok hC.scr) fun d hD => ?_)
   have inv : Inv base S K (pt (E s.mem base) 6 7 10) d 461 d := by
     refine ⟨hD.scr, hD.rbx, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, ?_, ?_, ?_, ?_⟩
     · intro i hi
-      rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [SDIG]; omega)]; simp only [SDIG]; omega))]
+      rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [SDIG]; omega_using [hi])]; simp only [SDIG]; omega_using []))]
       exact sc i hi
     · intro i hi
-      rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [KDIG]; omega)]; simp only [KDIG]; omega))]
+      rw [hD.mem _ (Or.inr (by rw [ofs_off' base (by simp only [KDIG]; omega_using [hi])]; simp only [KDIG]; omega_using []))]
       exact kc i hi
     · rw [hD.d, hC.env (by decide), hB.env (by decide)]; exact da
     · intro i hi
       have ht : tablePoint d.mem base i = tablePoint c.mem base i := by
         apply pointAt_outside hD.mem <;>
-          simp only [Impl.Ed448.X86_64.Window.tabOffset, Impl.Ed448.X86_64.Window.TAB] <;> omega
+          simp only [Impl.Ed448.X86_64.Window.tabOffset, Impl.Ed448.X86_64.Window.TAB] <;> omega_arith
       rw [ht, hC.table (by decide) i hi, hB.table (by decide) i hi]
       exact ta i hi
     · intro aa _
@@ -105,9 +105,9 @@ theorem joint_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
     exact (((hu.gpr r hr).trans (hD.gpr r hr)).trans (hC.gpr r hr)).trans
       ((hB.gpr r hr).trans (ka.gpr r (fun hh => hr (List.mem_cons_of_mem _ hh))))
   · intro p hx hy
-    rw [hu.mem p hx, hD.mem p hx, hC.mem p (by rcases hy with hy | hy <;> simp only [SDIG, KDIG] at * <;> omega),
-      hB.mem p (by rcases hy with hy | hy <;> simp only [SDIG] at * <;> omega)]
-    exact ka.mem p hx (by rcases hy with hy | hy <;> simp only [SDIG, Impl.Ed448.X86_64.Window.TAB] at * <;> omega)
+    rw [hu.mem p hx, hD.mem p hx, hC.mem p (by rcases hy with hy | hy <;> simp only [SDIG, KDIG] at * <;> omega_using [hy]),
+      hB.mem p (by rcases hy with hy | hy <;> simp only [SDIG] at * <;> omega_using [hy])]
+    exact ka.mem p hx (by rcases hy with hy | hy <;> simp only [SDIG, Impl.Ed448.X86_64.Window.TAB] at * <;> omega_using [hy])
   · intro aa ha
     simpa only [residual, natCast_zsmul] using hu.rep aa ha
 

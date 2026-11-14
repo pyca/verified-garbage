@@ -82,11 +82,11 @@ theorem PrivateValidatingABI.used {s : State} (A : PrivateValidatingABI s) :
   unfold Spec.Dsa.lengthsValid at L
   unfold Spec.Dsa.scratchWords at H
   change 15712 ≤ _
-  omega
+  omega_using [L, H]
 
 theorem PrivateValidatingABI.stackArgument {s : State} (A : PrivateValidatingABI s) {i : Nat} (hi : i < 6) :
     StackArgument s (argumentPointer s 4) ((arg s 5).toNat * 8) i := by
-  apply stackArgument_of (count := 6) (by have := A.stackBound; omega) hi
+  apply stackArgument_of (count := 6) (by have := A.stackBound; omega_using [this]) hi
   · rw [A.rd, A.wr]; simp
   · exact A.scratchArgs.symm
 
@@ -96,13 +96,13 @@ theorem PrivateValidatingABI.stack {s : State} (A : PrivateValidatingABI s) :
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth,
       Nat.mod_eq_of_lt (Nat.lt_trans (arg s 4).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
-  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   · exact A.belowScratch
 
 theorem PrivateValidatingABI.room {s : State} (A : PrivateValidatingABI s) :
     Pow.Room (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) := by
   apply room_of A.stackLow
-  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  · have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   · exact A.belowScratch
 
 /-- A caller's buffer, through another field holding the same pointer. -/
@@ -118,14 +118,14 @@ theorem nonceAtX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have B := VG.Proof.Dsa.X86.Layout.field_bounds .nonce
   have X := VG.Proof.Dsa.X86.Layout.field_bounds .x
   unfold PrevalidatedSign.nonceAtX
-  refine wp_movS (readSrc_sc hs (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [hz, X])) fun u U _ => ?_
   have hu := hs.of_keeps U.keeps (by decide)
-  refine wp_storeS (hu.ea (by omega)) (hu.write (by omega)) fun t ut => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine wp_storeS (hu.ea (by omega_using [hz, B])) (hu.write (by omega_using [hz, B])) fun t ut => WP.block_nil ⟨?_, ?_, ?_⟩
   · change t.mem.readW (off base (Layout.field .nonce)) 32 = _
     rw [ut.mem, Mem.readW_writeW_self32, U.gpr]; rfl
   · exact U.keeps.trans (ut.keeps [.eax])
   · rw [ut.mem, U.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hz, B, this])
 
 /-- The checker's installation, with the nonce field pointing at x. -/
 structure PrivateInstalled (s t : State) : Prop where
@@ -138,7 +138,7 @@ theorem PrivateInstalled.compare {s t u : State} (I : PrivateInstalled s t)
 
 theorem privateValidatingEntry_ok {s : State} (A : PrivateValidatingABI s) :
     WP isa (.block PrevalidatedSign.validateEntry) s (PrivateInstalled s) := by
-  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   unfold PrevalidatedSign.validateEntry Generate.checkEntry
   refine WP.block_append (WP.mono (installArguments_ok Generate.checkArguments (scratchArg := 4)
     (keyArg := 0) (pLenArg := 2) (qLenArg := 3)
@@ -149,15 +149,15 @@ theorem privateValidatingEntry_ok {s : State} (A : PrivateValidatingABI s) :
     apply A.stackArgument
     simp only [Generate.checkArguments, List.mem_cons, List.not_mem_nil, or_false] at ha
     rcases ha with rfl | rfl | rfl | rfl <;> decide
-  · refine WP.mono (nonceAtX_ok Sc (by change 8256 ≤ _; omega)) fun t ⟨N, K2, O2⟩ => ?_
+  · refine WP.mono (nonceAtX_ok Sc (by change 8256 ≤ _; omega_using [sz])) fun t ⟨N, K2, O2⟩ => ?_
     have B := VG.Proof.Dsa.X86.Layout.field_bounds .nonce
     have Oh : Outside (argumentPointer s 4) 8192 64 t1.mem t.mem :=
-      O2.mono B.1 (by have : Layout.saved = 8256 := rfl; omega)
+      O2.mono B.1 (by have : Layout.saved = 8256 := rfl; omega_using [B, this])
     refine ⟨⟨Sc.of_keeps K2 (by decide), saved_header Oh Sv, fun a ha => ?_,
       (field_keep O2 (by decide)).trans Q, (field_keep O2 (by decide)).trans G,
       (field_keep O2 (by decide)).trans Y, (field_keep O2 (by decide)).trans X,
       K.trans (K2.mono (by decide)),
-      O.trans (O2.mono (Nat.zero_le _) (by have : Layout.saved = 8256 := rfl; omega))⟩, ?_⟩
+      O.trans (O2.mono (Nat.zero_le _) (by have : Layout.saved = 8256 := rfl; omega_using [sz, B, this]))⟩, ?_⟩
     · have hn : a.2 ≠ .nonce := by
         simp only [Generate.checkArguments, List.mem_cons, List.not_mem_nil, or_false] at ha
         rcases ha with rfl | rfl | rfl | rfl <;> decide
@@ -185,7 +185,7 @@ theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Na
       Keeps powerClob s sf ∧ StackOutside (s.gpr .esp) base usedBytes s.mem sf.mem ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
   have value := validatePrivateKeyBytes_eq widths keyLen keyValue
   have K0 := X.retarget N
   have hk : operandValue s base (.input .nonce) qLen = x := by
@@ -228,7 +228,7 @@ theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Na
     · rw [Of]
       intro a ha hstack
       exact (execution_outside Ev a ha (by rw [K.1 .esp (by decide)]; exact hstack)).trans
-        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega)))
+        ((shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega_using [ha])))
     · intro regs saved
       rw [Of]
       exact Ev.saved (shapeFrame_saved O saved)
@@ -241,7 +241,7 @@ theorem privateValidatingSized_spec {base : Addr} {size pLen qLen p q g y x : Na
       rfl
     · rw [Of]
       intro a ha _
-      exact (shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega))
+      exact (shapeFrame_outside O) a (.inr (by change 15712 ≤ ofs base a at ha; omega_using [ha]))
     · intro regs saved
       rw [Of]
       exact shapeFrame_saved O saved
@@ -255,13 +255,13 @@ theorem privateValidatingInstalled_spec {s t : State} (A : PrivateValidatingABI 
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 4)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 4)) regs Entry.savedRegisters := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Key, Bytes⟩ := I.installed.input (by decide : (0, .p) ∈ Generate.checkArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Qptr, Gptr, Yptr, Xptr⟩ := I.installed.pointers (by decide)
   obtain ⟨P, Q, G, Y, X, Value⟩ := privateKey_buffers Key L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr Yptr Xptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr Yptr Xptr
   exact privateValidatingSized_spec I.installed.scr A.used A.lengths P Q G Y X I.nonce rfl rfl rfl rfl rfl
     (by simpa only [Spec.Rsa.bytesAt, List.length_map, List.length_range] using A.keyLength) Value
 
@@ -272,11 +272,11 @@ theorem privateValidatingOperation_spec {s : State} (A : PrivateValidatingABI s)
       abiPreserved s sf ∧
       StackOutside (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
-  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   unfold PrevalidatedSign.validate Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (privateValidatingEntry_ok A) fun t I => ?_)
-  refine WP.seq (generationDispatch_ok _ _ I.installed.scr (by change 8256 ≤ _; omega)
+  refine WP.seq (generationDispatch_ok _ _ I.installed.scr (by change 8256 ≤ _; omega_using [sz])
     (supportedWidths_member A.lengths) (by decide)
     (congrArg BitVec.toNat (I.installed.arguments (2, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.installed.arguments (3, .qLen) (by decide))) ?_)
@@ -284,7 +284,7 @@ theorem privateValidatingOperation_spec {s : State} (A : PrivateValidatingABI s)
   have J := I.compare Ku Ou
   refine WP.mono (privateValidatingInstalled_spec A J) fun v ⟨Value, K, O, Saved⟩ => ?_
   have Ov : StackOutside (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) s.mem v.mem :=
-    fun a ha hstack => (O a (by have := A.used; omega)
+    fun a ha hstack => (O a (by have := A.used; omega_using [ha, this])
       (by rw [J.installed.keeps.1 .esp (by decide)]; exact hstack)).trans
         (J.installed.outside a (.inr (by simpa only [Nat.zero_add] using ha)))
   have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.installed.keeps.1 _ (by decide))

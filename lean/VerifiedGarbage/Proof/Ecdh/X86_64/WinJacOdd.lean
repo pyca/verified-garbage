@@ -3,17 +3,153 @@ module
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddP
 public import VerifiedGarbage.Proof.Weierstrass.OddWin
-import VerifiedGarbage.Proof.Weierstrass.X86_64.OddScalar
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacOdd
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacOddState
+
+/-! ### `Weierstrass.X86_64.OddScalar`, which only this module used -/
+
+section
+
+/-!
+# The odd scalar on x86-64
+
+The mask of a number's parity, `rcx = ([x] ∧ 1) - 1`, all ones for an even
+`[x]` (`parityMask_ok`); and `oddScalar n nv k t`: `[t] = nv - [k]` by the
+borrow chain (modulo `2^(64 n)`), selected into `[k]` by that mask
+(`oddScalar_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
+
+private theorem parity_fact (w : BitVec 64) :
+    (w &&& BitVec.signExtend 64 (1 : BitVec 32)) - BitVec.signExtend 64 (1 : BitVec 32) =
+      bmask (decide (w.toNat % 2 = 0)) := by
+  have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1#64 := by decide
+  rw [e1, BitVec.and_one_eq_setWidth_ofBool_getLsbD]
+  have hb : w.getLsbD 0 = decide (w.toNat % 2 = 1) := by
+    rw [BitVec.getLsbD, Nat.testBit_zero]
+  rw [hb]
+  by_cases h : w.toNat % 2 = 1
+  · rw [decide_eq_true h, decide_eq_false (by omega_using [h])]; decide
+  · rw [decide_eq_false h, decide_eq_true (by omega_using [h])]; decide
+
+/-- `rcx` all ones if the word at `x` is even, else zero. -/
+theorem parityMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {x : Nat}
+    (hx : x + 8 ≤ size) :
+    WP isa (.block [.mov .rcx (.mem (sc x)), .alu .and .rcx (.imm 1), .alu .sub .rcx (.imm 1)]) s fun t =>
+      t.gpr .rcx = bmask (decide ((word s.mem base x).toNat % 2 = 0)) ∧ Keeps [.rcx] s t := by
+  rw [← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (movMem_ok hs .rcx hx) fun u ⟨lu, _, ku⟩ => ?_
+  crun [lu]
+  rw [parity_fact]
+  refine ⟨rfl, fun r hr => ?_, ku.2.1, ku.2.2.1, ku.2.2.2⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+  exact ku.1 r (by simpa using hr)
+
+/-- The low word decides the parity. -/
+theorem wordsVal_mod_two (m : Mem) (base : Addr) (d k : Nat) (hk : 0 < k) :
+    wordsVal m base d k % 2 = (word m base d).toNat % 2 := by
+  obtain ⟨k, rfl⟩ : ∃ i, k = i + 1 := ⟨k - 1, by omega_using [hk]⟩
+  rw [wordsVal]; omega_using []
+
+/-- `[k] = nv - [k]` (modulo `2^(64 n)`) if `[k]` is even, through `[t]`. -/
+theorem oddScalar_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n nv k t : Nat}
+    (h0 : 0 < n) (hk : k + 8 * n ≤ size) (ht : t + 8 * n ≤ size) (hsep : k + 8 * n ≤ t ∨ t + 8 * n ≤ k)
+    (hnv : nv < 2 ^ (64 * n)) :
+    WP isa (.block (oddScalar n nv k t)) s fun s' =>
+      (∃ tv : Nat, tv < 2 ^ (64 * n) ∧
+        (tv + wordsVal s.mem base k n = nv ∨ tv + wordsVal s.mem base k n = nv + 2 ^ (64 * n)) ∧
+        wordsVal s'.mem base k n =
+          if wordsVal s.mem base k n % 2 = 1 then wordsVal s.mem base k n else tv) ∧
+      KeepRegs [.rax, .rcx, .rdx, .r8] s s' ∧
+      Unch base [(k, 8 * n), (t, 8 * n)] s.mem s'.mem := by
+  have hn := hs.nowrap
+  rw [oddScalar, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (setConst_ok hs (n := n) (o := t) (x := nv) ht hnv) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  have vk₁ : wordsVal s₁.mem base k n = wordsVal s.mem base k n := O₁.wordsVal (by omega_using [hsep]) (by omega_using [hk, hn])
+  rw [WP.block_append_iff]
+  refine WP.mono (chainWSub_ok n (op := .sub) (c := false) (t := t) (a := t) (b := k) hs₁
+    (Or.inl ⟨rfl, rfl⟩) (Or.inl h0) (by omega_using [ht]) (by omega_using [ht]) (by omega_using [hk]) (Or.inl rfl)
+    (by unfold Near; omega_using [hsep])) fun s₂ ⟨c', _, e₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  have vk₂ : wordsVal s₂.mem base k n = wordsVal s.mem base k n := by
+    rw [O₂.wordsVal (by omega_using [hsep]) (by omega_using [hk, hn]), vk₁]
+  have wk₂ : word s₂.mem base k = word s.mem base k := by
+    rw [O₂.word (by omega_using [h0, hsep]) (by omega_using [h0, hk, hn]), O₁.word (by omega_using [h0, hsep]) (by omega_using [h0, hk, hn])]
+  rw [WP.block_append_iff]
+  refine WP.mono (parityMask_ok hs₂ (x := k) (by omega_using [h0, hk])) fun s₃ ⟨x₃, k₃⟩ => ?_
+  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  have m₃ : s₃.mem = s₂.mem := k₃.2.1
+  have hev : decide ((word s₂.mem base k).toNat % 2 = 0) = decide (wordsVal s.mem base k n % 2 = 0) := by
+    rw [wk₂, wordsVal_mod_two _ _ _ _ h0]
+  rw [hev] at x₃
+  refine WP.mono (sel_ok (decide (wordsVal s.mem base k n % 2 = 0)) n hs₃ x₃ (o := k) (a := k) (b := t)
+    hk hk ht (Or.inl (Nat.le_refl _)) (by omega_using [hsep])) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+  rw [m₃, vk₂] at e₄
+  refine ⟨⟨wordsVal s₂.mem base t n, wordsVal_lt _ _ _ _, ?_, ?_⟩, ?_, ?_⟩
+  · rw [vk₁, e₁] at e₂
+    simp only [Bool.toNat_false, Nat.add_zero] at e₂
+    cases c' <;> simp at e₂ <;> omega_using [e₂]
+  · rw [e₄]
+    by_cases h : wordsVal s.mem base k n % 2 = 1
+    · rw [decide_eq_false (by omega_using [h]), ite_eq_left_of_eq_true _ _ (eq_true h)]; rfl
+    · rw [decide_eq_true (by omega_using [h]), ite_eq_right_of_eq_false _ _ (eq_false h)]; rfl
+  · have hcl : ∀ r ∈ [Reg.rax], r ∈ [Reg.rax, .rcx, .rdx, .r8] := by decide
+    exact (((k₁.mono hcl).trans (k₂.mono (by decide))).trans ((Keeps.regs k₃).mono (by decide))).trans
+      (k₄.mono (by decide))
+  · rw [m₃] at O₄
+    exact ((O₁.unch.trans O₂.unch).trans O₄.unch).mono fun w hw => by
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      rcases hw with (h | h) | h <;> simp [h]
+
+/-- `rcx = b - 1` for the byte `b ∈ {0, 1}` at `x`: all ones for `0`. -/
+theorem byteMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {x : Nat}
+    (hx : x + 1 ≤ size) {b : Bool} (hb : s.mem (off base x) = if b then 1 else 0) :
+    WP isa (.block [.movzx8 .rcx (sc x), .alu .sub .rcx (.imm 1)]) s fun t =>
+      t.gpr .rcx = bmask (!b) ∧ Keeps [.rcx] s t := by
+  have hn := hs.nowrap
+  have hr : InRegions (s.rd ++ s.wr) (off base x) 1 :=
+    ⟨_, List.mem_append_right _ hs.wr, hs.contains (by omega_using [hx]) (by decide)⟩
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load8, ea_sc, hs.rdi, hr, hb,
+    ite_true, Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr' => ?_, rfl, rfl, rfl⟩
+  · cases b <;> decide
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr', ite_false]
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
+
 
 /-!
 # ECDH on x86-64: `[d]P` by odd 5-bit windows in Jacobian coordinates
@@ -82,7 +218,7 @@ theorem jwLayQO (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQO c) 
         refine Or.inl ?_
         dsimp only
         rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
-        rw [h6] at hJle ⊢; omega
+        rw [h6] at hJle ⊢; omega_using [hJle]
       · exact Or.inr (Nat.le_succ_of_le (sl_lt c h (by
           by_cases ht : i = TMP
           · exact .inr (.inr ⟨fun e => h6 ⟨ht, e⟩, by decide⟩)
@@ -99,25 +235,32 @@ theorem negPt_negPt {C : Curve} (Q : Point C) : negPt (negPt Q) = Q := by
   | infinity => rfl
   | affine x y => show Point.affine x (- -y) = _; congr 1; grind
 
-/-- The odd window method computes `[d]P` for `d < n` (`MulOk`), for four or
-six words and a curve of prime order `n`, odd, with `n mod 64 < 33`, killed
-by `n`, whose scalars fit the windows' top digit (`64 n ≤ 5 (J - 1) + 1`),
-with any doubling `dbl` that doubles a Jacobian triple in place. -/
-theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO : PrimeOrder c.C)
-    (hKn : KilledByN c.C) {dbl : Pt → Prog isa} (hD : DblOk c.MP' c.rcbSlots c.C dbl)
-    (hn2 : c.C.n % 2 = 1) (hn64 : c.C.n % 64 < 33) (hnb : 128 ≤ c.C.n)
-    (hJ5 : 64 * c.n ≤ 5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1) :
-    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJO c dbl) (mulQJW c) := by
+/-- `Cfg.mulQJO` with any code `wnd` for the window method, which may also write `V`, apart from the
+constants and the tables of bits: it computes `[d]P` for `d < n` (`MulOk`), for four or six words and a
+curve whose order `n` is odd and kills it, whose scalars fit the windows' top digit
+(`64 n ≤ 5 (J - 1) + 1`), if `wnd` computes `[k]P` for the odd `k < n` whose bits the table has, as
+`windowOW` does (`winJacOW_ok`). -/
+theorem mulQJO_with (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hKn : KilledByN c.C)
+    (hn2 : c.C.n % 2 = 1) (hJ5 : 64 * c.n ≤ 5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1)
+    {wnd : Prog isa} {V : List (Nat × Nat)} (hV : FixedOk c V)
+    (hVt : ∀ j, j < 3 → ∀ t, t < 64 * c.n → ∀ w ∈ V, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t)
+    (hwnd : ∀ {P : Point c.C}, onCurve c.C P = true → ∀ {k : Nat}, k ≤ 2 * 32 ^ ((jwQO c).J - 1) →
+      ∀ {base : Addr} {s : State}, Scr s base size → ModOkW (jwQO c).M size c.C.p s.mem base →
+      JacWinFixedO (jwQO c) c.C base s P k →
+      WP isa wnd.inline s fun s' => KeepRegs (powClob (jwQO c).M.n) s s' ∧
+        Unch base (jwW (jwQO c) ++ V) s.mem s'.mem ∧ ModOkW (jwQO c).M size c.C.p s'.mem base ∧
+        (∀ x ∈ [(jwQO c).R.x, (jwQO c).R.y, (jwQO c).R.z], wordsVal s'.mem base x (jwQO c).M.n < c.C.p) ∧
+        (k % 2 = 1 ∧ k < c.C.n → Rep c.C (tmv c.C (jwQO c).M.n base s' (jwQO c).R.x)
+          (tmv c.C (jwQO c).M.n base s' (jwQO c).R.y) (tmv c.C (jwQO c).M.n base s' (jwQO c).R.z) (mul k P))) :
+    MulOk c (.seq (.block (Impl.Ecdh.X86_64.Cfg.maskK c)) (.seq (Impl.Ecdh.X86_64.Cfg.jwinPrepO c)
+      (.seq wnd (.block (Impl.Ecdh.X86_64.Cfg.fixSign c))))) (mulQJW c ++ V) := by
   intro base s hs g F hbp P hP hpx hpy hrep _ _ _ k hk hk8 ht₀ ht₁ rest R h
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
   have hsz : size = 8192 := rfl
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hJle := jwinJ_le hc
-  unfold Impl.Ecdh.X86_64.Cfg.mulQJO
   refine WP.seq (WP.seq (WP.mono (maskK_ok hc hs (hk ▸ hk8)) fun s₁ ⟨hs₁, k₁, e₁, U₁⟩ => ?_))
   have F₁ := F.unch h7 hn (fixedOk_slW (l := [K]) (by decide)) U₁
   have v₁ : ∀ {i}, i < 45 → i ≠ K → sv c base s₁ i = sv c base s i := fun hi hne =>
@@ -198,12 +341,10 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     have : 2 ^ (64 * c.n) ≤ 2 ^ (5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1) :=
       Nat.pow_le_pow_right (by decide) hJ5
     omega_arith
-  refine WP.seq (WP.mono (winJacOW_ok (jwLayQO hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
-    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn2 hn64 hnb hP
-    hkJ hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄, M₄, L₄, R₄⟩ => ?_)
+  refine WP.seq (WP.mono (hwnd hP hkJ hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄, M₄, L₄, R₄⟩ => ?_)
   rw [show jwW (jwQO c) = jwW (jwQ c) from rfl, jwW_eq] at U₄
   have hs₄ := hs₃.of_keepRegs K₄ (rdi_not_powClob _)
-  have F₄ := F₃.unch h7 hn (fixedOk_slW (by decide)) U₄
+  have F₄ := F₃.unch h7 hn ((fixedOk_slW (by decide)).append hV) U₄
   have L := jwLayQO hc h46
   have hRY : (jwQO c).R.y = c.sl RY := rfl
   have hPT : (jwQO c).neg = c.sl PT := rfl
@@ -242,7 +383,9 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
             (List.mem_map.mpr ⟨PT, List.mem_singleton_self _, rfl⟩)
         · exact (tbl_apart_slW' (c := c) (l := [TMP]) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)) _
             (List.mem_map.mpr ⟨TMP, List.mem_singleton_self _, rfl⟩)),
-      hb₀ U₄ (tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)),
+      hb₀ U₄ (fun w hw => (List.mem_append.mp hw).elim
+        ((tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)) w)
+        (hVt 0 (by decide) 0 (by omega_arith) w)),
       hb₀ U₃ (fun w hw => (List.mem_append.mp hw).elim
         ((tbl_apart_winX (c := c) (j := 0) (t := 0) (by decide) (by omega_arith)) w)
         ((tbl_apart_slW' (c := c) (by decide) (j := 0) (t := 0) (by decide) (by omega_arith)) w)),
@@ -280,7 +423,8 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
   refine WP.seq (WP.mono (pPow_ok hc hs₇ hM₇ rz₇ F₇.onep (fun h9 t ht => by
       rw [tbl_unch U47 h7 hn (j := 1) (by decide) ht
           (tbl_apart_slW' (by decide) (by decide) ht (.inr (.inr (by omega_arith)))),
-        tbl_unch U₄ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht),
+        tbl_unch U₄ h7 hn (j := 1) (by decide) ht (fun w hw => (List.mem_append.mp hw).elim
+          ((tbl_apart_slW' (by decide) (by decide) ht) w) (hVt 1 (by decide) t ht w)),
         tbl_unch U₃ h7 hn (j := 1) (by decide) ht (fun w hw => (List.mem_append.mp hw).elim
           ((tbl_apart_winX (by decide) ht) w) ((tbl_apart_slW' (by decide) (by decide) ht) w)),
         tbl_unch U₁ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht)]
@@ -317,23 +461,28 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
       rw [K₈.gpr _ (rsi_not_invClob _), KK.gpr _ (rsi_not_powClob _)], by rw [K₈.rd, KK.rd],
     by rw [K₈.wr, KK.wr], ((U₁.trans U₃).trans ((U₄.trans U47).trans U₈)).mono ?_, fun h1 hlt => ?_, lt₈, ?_, ?_⟩
   · intro w hw
+    refine (?_ : w ∈ mulQJW c ∨ w ∈ V).elim (List.mem_append_left _) (List.mem_append_right _)
     rcases List.mem_append.mp hw with hw | hw
-    · rcases List.mem_append.mp hw with hw | hw
+    · refine Or.inl ?_
+      rcases List.mem_append.mp hw with hw | hw
       · exact List.mem_append_left _ (List.mem_append_right _ (slW_mono (by decide) hw))
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_left _ (List.mem_append_left _ hw)
         · exact List.mem_append_left _ (List.mem_append_right _ (slW_mono (by decide) hw))
     · rcases List.mem_append.mp hw with hw | hw
       · rcases List.mem_append.mp hw with hw | hw
-        · exact List.mem_append_left _ (List.mem_append_right _
-            (slW_mono (l' := mulJI) (fun _ hi => List.mem_append_left _ hi) hw))
-        · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+        · rcases List.mem_append.mp hw with hw | hw
+          · exact Or.inl (List.mem_append_left _ (List.mem_append_right _
+              (slW_mono (l' := mulJI) (fun _ hi => List.mem_append_left _ hi) hw)))
+          · exact Or.inr hw
+        · refine Or.inl ?_
+          obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
           rcases hi with rfl | rfl | rfl
           · exact List.mem_append_right _ (List.mem_append_left _ (by simp [slW]))
           · exact List.mem_append_left _ (List.mem_append_right _ (by simp [slW, mulJI, otherJ, gridJ]))
           · exact List.mem_append_left _ (List.mem_append_right _ (by simp [slW, mulJI, otherJ]))
-      · exact List.mem_append_right _ hw
+      · exact Or.inl (List.mem_append_right _ hw)
   · -- `R` represents `[k]P`.
     have hk' : k < 2 ^ c.nbits := Nat.lt_of_lt_of_le hlt hc.n_bits
     have hkv : wordsVal s₁.mem base (c.sl K) c.n = k := by
@@ -378,5 +527,27 @@ theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
     rw [r₈ (i := RZ) (by decide) (by decide)]
     exact v₈
   · rw [r₈ (i := RZ) (by decide) (by decide)]; exact rz₇
+
+/-- The odd window method computes `[d]P` for `d < n` (`MulOk`), for four or
+six words and a curve of prime order `n`, odd, with `n mod 64 < 33`, killed
+by `n`, whose scalars fit the windows' top digit (`64 n ≤ 5 (J - 1) + 1`),
+with any doubling `dbl` that doubles a Jacobian triple in place. -/
+theorem mulQJO_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO : PrimeOrder c.C)
+    (hKn : KilledByN c.C) {dbl : Pt → Prog isa} (hD : DblOk c.MP' c.rcbSlots c.C dbl)
+    (hn2 : c.C.n % 2 = 1) (hn64 : c.C.n % 64 < 33) (hnb : 128 ≤ c.C.n)
+    (hJ5 : 64 * c.n ≤ 5 * (Impl.Ecdh.X86_64.Cfg.jwinJ c - 1) + 1) :
+    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJO c dbl) (mulQJW c) := by
+  have hp3 := hc.p_ge
+  have h : MulOk c (.seq (.block (Impl.Ecdh.X86_64.Cfg.maskK c)) (.seq (Impl.Ecdh.X86_64.Cfg.jwinPrepO c)
+      (.seq ((jwQO c).windowOW dbl) (.block (Impl.Ecdh.X86_64.Cfg.fixSign c))))) (mulQJW c ++ []) :=
+    mulQJO_with hc h46 hC hKn hn2 hJ5 (fun _ h => absurd h List.not_mem_nil)
+      (fun _ _ _ _ _ h => absurd h List.not_mem_nil)
+    (fun hP _ hkJ _ _ hs hM hF =>
+      WP.mono (winJacOW_ok (jwLayQO hc h46) (unitMod_pow_two hc.p_odd (64 * c.n)) hC hc.am3 hO hD hc.p_lt
+        (show c.mont 1 < c.C.p from Nat.mod_lt _ (by omega_arith))
+        (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn2 hn64 hnb hP hkJ hs hM hF)
+        fun _ ⟨a, b, r⟩ => ⟨a, b.mono fun _ hw => List.mem_append_left _ hw, r⟩)
+  rw [List.append_nil] at h
+  exact @h
 
 end VG.Proof.Ecdh.X86_64

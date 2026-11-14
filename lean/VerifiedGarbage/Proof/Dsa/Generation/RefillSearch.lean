@@ -78,7 +78,7 @@ theorem parameterSearch_available {pLen : Nat} :
     · split at h
       · simp at h
       · simp only [Spec.Entropy.Outcome.entropy.injEq] at h
-        omega
+        omega_arith
     · simp at h
     · exact parameterSearch_available k _ h
 
@@ -87,7 +87,7 @@ theorem requested_requests {pLen : Nat} (hp : 0 < pLen) (k : Nat) (R : List Byte
     (parameterSearch pLen k R).Requests (parameterEntropy pLen)
       (requested pLen (parameterSearch pLen k R)) :=
   Entropy.requested_requests fun _ _ h =>
-    Entropy.request_valid (by omega) (parameterSearch_available k R h)
+    Entropy.request_valid (by omega_using [hp]) (parameterSearch_available k R h)
 
 /-! ## The search's steps -/
 
@@ -117,7 +117,7 @@ theorem seedCandidate_drop {pLen c : Nat} (hw : 0 < pLen) {R : List Byte}
       refillAttempt pLen (generationQLen pLen) ((R.drop c).take (generationQLen pLen))
         (R.drop (c + generationQLen pLen)) := by
   rw [seedCandidate_eq hw]
-  simp only [List.length_drop, show ¬R.length - c < generationQLen pLen by omega, ↓reduceIte, List.drop_drop]
+  simp only [List.length_drop, show ¬R.length - c < generationQLen pLen by omega_using [hc], ↓reduceIte, List.drop_drop]
 
 theorem search_attemptNone {pLen k c : Nat} (hw : 0 < pLen) {R : List Byte}
     (hc : c + generationQLen pLen ≤ R.length)
@@ -146,7 +146,7 @@ theorem search_rejected {pLen k c u : Nat} (hw : 0 < pLen) {R : List Byte}
   rw [consume_consume]
   simp only [List.length_drop]
   congr 1
-  omega
+  omega_using [hu, hcu]
 
 theorem search_accepted {pLen k c u : Nat} (hw : 0 < pLen) {R : List Byte} {a : Params}
     (hc : c + generationQLen pLen ≤ R.length) (hu : u ≤ R.length)
@@ -157,6 +157,6 @@ theorem search_accepted {pLen k c u : Nat} (hw : 0 < pLen) {R : List Byte} {a : 
   rw [parameterSearch, seedCandidate_drop hw hc, h]
   simp only [List.length_drop, Spec.Entropy.Result.consume, List.append_nil, Spec.Entropy.Result.mk.injEq,
     true_and, and_true]
-  omega
+  omega_using [hu, hcu]
 
 end VG.Proof.Dsa.Generation

@@ -20,7 +20,7 @@ theorem SearchLive.call_bytes {p : SearchParams} {used remaining : Nat} {s u : S
       (p.c.bytes.length - used) = p.c.bytes.drop used := by
   rw [mem]
   refine (rsa_bytes_frame (callMem_frame p used s.mem (s.sp - 24#32))
-    (by have := p.c.tapeCount; omega) ?_).trans (h.source_bytes room)
+    (by have := p.c.tapeCount; omega_using [this]) ?_).trans (h.source_bytes room)
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
   exact (((h.buffers.stackSeparate _ (by simp)).2.sub_left

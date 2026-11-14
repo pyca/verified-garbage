@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.Argon2
 
 import VerifiedGarbage.Proof.Argon2.FillStep
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The reviewed flattened reference log determines every lane/column pair. -/
 
@@ -26,7 +27,7 @@ theorem fillBlock_columns (p : Params) (positive : 0 < p.laneLen)
   by_cases skipped : pass = 0 ∧ slice = 0 ∧ index < 2
   · rw [fillBlock, ite_eq_left skipped]; exact h
   · unfold Columns
-    rw [FillStep.indices p pass lane slice index s (by omega)]
+    rw [FillStep.indices p pass lane slice index s (by omega_using [skipped])]
     split
     · exact h
     · intro ref hr

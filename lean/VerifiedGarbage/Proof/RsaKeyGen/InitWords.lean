@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Starting the RSA prime search, for any target
 
@@ -60,8 +61,8 @@ private theorem foldl_os2ip_eq_zero (bs : List Byte) (a : Nat) :
   | nil => simp
   | cons b bs ih =>
     rw [List.foldl_cons, ih, List.forall_mem_cons, ← and_assoc]
-    refine and_congr_left' ⟨fun h => ⟨by omega, BitVec.eq_of_toNat_eq (by
-      rw [show (0 : Byte).toNat = 0 from rfl]; omega)⟩, ?_⟩
+    refine and_congr_left' ⟨fun h => ⟨by omega_using [h], BitVec.eq_of_toNat_eq (by
+      rw [show (0 : Byte).toNat = 0 from rfl]; omega_using [h])⟩, ?_⟩
     rintro ⟨rfl, rfl⟩; rfl
 
 private theorem os2ip_eq_zero (bs : List Byte) : Spec.Rsa.os2ip bs = 0 ↔ ∀ b ∈ bs, b = 0 := by
@@ -80,14 +81,14 @@ theorem os2ip_eq_three (bs : List Byte) (b : Byte) :
         simpa [BitVec.xor_assoc] using this
       apply BitVec.eq_of_toNat_eq
       have := congrArg BitVec.toNat h'
-      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [])] at this
       simpa using this
     · rintro rfl; rfl
   rw [or_eq_zero, hx, orOf_eq_zero, ← os2ip_eq_zero]
   constructor
   · intro h
-    refine ⟨by omega, BitVec.eq_of_toNat_eq ?_⟩
-    have : b.toNat = 3 := by omega
+    refine ⟨by omega_using [h], BitVec.eq_of_toNat_eq ?_⟩
+    have : b.toNat = 3 := by omega_using [h]
     simpa using this
   · rintro ⟨h1, rfl⟩
     rw [h1]
@@ -151,15 +152,15 @@ theorem primeInit_eq (L : Nat) (eB : List Byte) :
   by_cases hv : 32 ≤ L ∧ L ≤ 512 ∧ L % 8 = 0 ∧ 1 ≤ eB.length ∧ eB.length ≤ 8
   · obtain ⟨h1, h2, h3, h4, h5⟩ := hv
     have hb : (32 ≤ L && L ≤ 512 && L % 8 == 0 && 1 ≤ eB.length && eB.length ≤ 8) = true := by
-      simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]; omega
+      simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]; omega_using [h1, h2, h3, h4, h5]
     rw [hb, ite_eq_left_of_eq_true _ _ (eq_true rfl),
       ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, h2, h3, h4, h5⟩)]
     simp only [Spec.RsaKeyGen.primeLimit, Spec.RsaKeyGen.primeEntropy, Option.some.injEq,
       List.cons.injEq, and_true]
-    split <;> omega
+    split <;> omega_using []
   · have hb : (32 ≤ L && L ≤ 512 && L % 8 == 0 && 1 ≤ eB.length && eB.length ≤ 8) = false := by
       simp only [Bool.and_eq_false_iff, decide_eq_false_iff_not, beq_eq_false_iff_ne, ne_eq]
-      omega
+      omega_using [hv]
     rw [hb, ite_eq_right_of_eq_false _ _ (eq_false hv)]
     rfl
 

@@ -96,11 +96,11 @@ theorem left_eq (c : BitVec 32) :
     apply BitVec.eq_of_toNat_eq
     rw [show (0x100000000 : BitVec 64) = BitVec.ofNat 64 (2 ^ 32) from rfl, BitVec.toNat_sub,
       BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   intro v
   simp only [v, h0, BitVec.ofNat_add_ofNat]
   congr 1
-  omega
+  omega_using []
 
 /-! ## `set_nonce` -/
 
@@ -135,7 +135,7 @@ theorem setNonce_exec {s : State} {st np : Addr} (hp : NPre s st np) :
   have o128 := hp.w_st 128 (by decide)
   have i0 := hp.r_n 0 (by decide); have i8 := hp.r_n 8 (by decide)
   have i0' : InRegions (s.rd ++ s.wr) (off np 0) 4 := by
-    obtain ⟨r, hr, hc⟩ := i0; exact ⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega⟩
+    obtain ⟨r, hr, hc⟩ := i0; exact ⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega_using [hc]⟩
   simp only [off] at o0 o8 o48 o56 o128 i0 i8 i0'
   apply WP.of_runBlock
   simp (config := {decide := true}) only [setNonceInstrs, runBlock_cons, runStep_some,
@@ -153,7 +153,7 @@ theorem nonceMem_word (m : Mem) (st np : Addr) {k : Nat} (hk : k < 8) :
       else if k = 7 then m.readW (off np 8) 64 else m.readW (off st (8 * k)) 64 := by
   simp only [nonceMem]
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
   all_goals simp (config := {decide := true}) only [Nat.mul_zero, Nat.mul_one, Mem.readW_writeW_self64,
     readW64_writeW_off, ite_true, ite_false]
 
@@ -162,7 +162,7 @@ theorem nonceMem_left (m : Mem) (st np : Addr) :
   have hc := (m.readW (off np 0) 32).isLt
   simp only [leftAt, nonceMem]
   rw [show (st + 128 : Addr) = off st 128 by rw [off_eq]; rfl, Mem.readW_writeW_self64, left_eq,
-    toNat_ofNat_lt (by omega)]
+    toNat_ofNat_lt (by omega_using [])]
 
 
 /-- A word of the state from the bytes of memory. -/
@@ -183,28 +183,28 @@ theorem nonceMem_post (m : Mem) (st np : Addr) :
   have hn : ∀ k, 0 ≤ k → k < 2 → m.readW (np + BitVec.ofNat 64 (8 * k)) 64 = m.readW (off np (8 * k)) 64 :=
     fun k _ _ => word_off _ _ _
   refine stream_of_parts (by simp [keyAt, length_bytesAt]) (fun i hi => ?_) (fun i hi => ?_) (fun i hi => ?_) ?_
-  · rw [byte_of_words64 hw (Nat.zero_le _) (by omega)]
+  · rw [byte_of_words64 hw (Nat.zero_le _) (by omega_using [hi])]
     by_cases h : i < 8
-    · rw [show i / 8 = 0 by omega, ite_pos rfl, c0_bytes _ (Nat.mod_lt _ (by decide)), Nat.mod_eq_of_lt h]
-    · rw [show i / 8 = 1 by omega, ite_neg (by decide), ite_pos rfl, c1_bytes _ (Nat.mod_lt _ (by decide)),
-        show 8 + i % 8 = i by omega]
-  · rw [byte_of_words64 hw (Nat.zero_le _) (by omega), keyAt,
+    · rw [show i / 8 = 0 by omega_using [h], ite_pos rfl, c0_bytes _ (Nat.mod_lt _ (by decide)), Nat.mod_eq_of_lt h]
+    · rw [show i / 8 = 1 by omega_using [hi, h], ite_neg (by decide), ite_pos rfl, c1_bytes _ (Nat.mod_lt _ (by decide)),
+        show 8 + i % 8 = i by omega_using [hi, h]]
+  · rw [byte_of_words64 hw (Nat.zero_le _) (by omega_using [hi]), keyAt,
       show (st + 16 : Addr) = st + BitVec.ofNat 64 16 from rfl, bytesAt_getD _ _ hi, Offset.add_add,
-      byte_of_words64 hm (Nat.zero_le _) (by omega)]
-    rw [ite_neg (by omega), ite_neg (by omega), ite_neg (by omega), ite_neg (by omega)]
-  · rw [byte_of_words64 hw (Nat.zero_le _) (by omega), bytesAt_getD _ _ hi,
-      byte_of_words64 hn (i := i) (Nat.zero_le _) (by omega)]
+      byte_of_words64 hm (Nat.zero_le _) (by omega_using [hi])]
+    rw [ite_neg (by omega_using []), ite_neg (by omega_using []), ite_neg (by omega_using [hi]), ite_neg (by omega_using [hi])]
+  · rw [byte_of_words64 hw (Nat.zero_le _) (by omega_using [hi]), bytesAt_getD _ _ hi,
+      byte_of_words64 hn (i := i) (Nat.zero_le _) (by omega_using [hi])]
     by_cases h : i < 8
-    · rw [show (48 + i) / 8 = 6 by omega, show i / 8 = 0 by omega, show (48 + i) % 8 = i % 8 by omega]
+    · rw [show (48 + i) / 8 = 6 by omega_using [h], show i / 8 = 0 by omega_using [h], show (48 + i) % 8 = i % 8 by omega_using []]
       simp
-    · rw [show (48 + i) / 8 = 7 by omega, show i / 8 = 1 by omega, show (48 + i) % 8 = i % 8 by omega]
+    · rw [show (48 + i) / 8 = 7 by omega_using [hi, h], show i / 8 = 1 by omega_using [hi, h], show (48 + i) % 8 = i % 8 by omega_using []]
       simp
   · rw [nonceMem_left, wordLE_bytesAt _ _ (by decide), off_eq]; simp
 
 
 theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonceMem m st np) := by
   have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (off st d) (64 / 8) :=
-    fun d hd => contains_off hd (by omega)
+    fun d hd => contains_off hd (by omega_using [hd])
   simp only [nonceMem]
   exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 48 (by decide))).writeW
     (List.mem_singleton_self _) _ (c 56 (by decide))).writeW (List.mem_singleton_self _) _
@@ -219,9 +219,9 @@ theorem setNonce_ok (s : State) (hs : Proof.ChaCha20.setNonceX86_64.pre s) :
     ∃ t s', Exec isa setNonce s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.setNonceX86_64.post s s' := by
   obtain ⟨hrd, hwr, _, hret⟩ := hs
   have hp : NPre s (s.gpr .rdi) (s.gpr .rsi) :=
-    ⟨rfl, rfl, fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, contains_off hd (by omega)⟩,
+    ⟨rfl, rfl, fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, contains_off hd (by omega_using [hd])⟩,
       fun d hd => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-        contains_off hd (by omega)⟩⟩
+        contains_off hd (by omega_using [hd])⟩⟩
   obtain ⟨t, s', he, hm, -, -, hg⟩ := setNonce_exec hp
   refine ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · exact hg r (calleeSaved_ne hr).1 (calleeSaved_ne hr).2.1 (calleeSaved_ne hr).2.2
@@ -284,7 +284,7 @@ theorem key_exec {s : State} {st kp : Addr} (hrdi : s.gpr .rdi = st) (hrsi : s.g
 
 theorem keyMem_frame (m : Mem) (st kp : Addr) : Frame [⟨st, 768⟩] m (keyMem m st kp) := by
   have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (off st d) (64 / 8) :=
-    fun d hd => contains_off hd (by omega)
+    fun d hd => contains_off hd (by omega_using [hd])
   simp only [keyMem]
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 16 (by decide))).writeW
     (List.mem_singleton_self _) _ (c 24 (by decide))).writeW (List.mem_singleton_self _) _
@@ -296,7 +296,7 @@ theorem keyMem_key (m : Mem) (st kp : Addr) : keyAt (keyMem m st kp) st = bytesA
     intro k h₁ h₂
     rw [word_off, word_off]
     simp only [keyMem]
-    obtain rfl | rfl | rfl | rfl : k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 := by omega
+    obtain rfl | rfl | rfl | rfl : k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 := by omega_using [h₁, h₂]
     all_goals simp (config := {decide := true}) only [Mem.readW_writeW_self64, readW64_writeW_off]
   have hk : ∀ k, 0 ≤ k → k < 4 → m.readW (kp + BitVec.ofNat 64 (8 * k)) 64 = m.readW (kp + BitVec.ofNat 64 (8 * k)) 64 :=
     fun _ _ _ => rfl
@@ -305,9 +305,9 @@ theorem keyMem_key (m : Mem) (st kp : Addr) : keyAt (keyMem m st kp) st = bytesA
   · intro i h₁ h₂
     simp only [keyAt, length_bytesAt] at h₁
     rw [getElem_eq_getD, getElem_eq_getD, keyAt, show (st + 16 : Addr) = st + BitVec.ofNat 64 16 from rfl,
-      bytesAt_getD _ _ h₁, bytesAt_getD _ _ h₁, Offset.add_add, byte_of_words64 hw (by omega) (by omega),
-      byte_of_words64 hk (Nat.zero_le _) (by omega)]
-    rw [show (16 + i) / 8 - 2 = i / 8 by omega, show (16 + i) % 8 = i % 8 by omega]
+      bytesAt_getD _ _ h₁, bytesAt_getD _ _ h₁, Offset.add_add, byte_of_words64 hw (by omega_using []) (by omega_using [h₁]),
+      byte_of_words64 hk (Nat.zero_le _) (by omega_using [h₁])]
+    rw [show (16 + i) / 8 - 2 = i / 8 by omega_using [], show (16 + i) % 8 = i % 8 by omega_using []]
 
 theorem init_eq : init = .block (keyInstrs ++ setNonceInstrs) := rfl
 
@@ -315,9 +315,9 @@ theorem init_ok (s : State) (hs : Proof.ChaCha20.initX86_64.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.initX86_64.post s s' := by
   obtain ⟨hrd, hwr, hdk, hdn, hret⟩ := hs
   have hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
-    fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, contains_off hd (by omega)⟩
+    fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, contains_off hd (by omega_using [hd])⟩
   have h₁ := key_exec (s := s) rfl rfl hw fun d hd => ⟨_, by rw [hrd]; simp,
-    contains_off (base := s.gpr .rsi) (len := 32) hd (by omega)⟩
+    contains_off (base := s.gpr .rsi) (len := 32) hd (by omega_using [hd])⟩
   rw [init_eq]
   obtain ⟨t, s', he, hm, hpost⟩ : WP isa (.block (keyInstrs ++ setNonceInstrs)) s fun s' =>
       s'.mem = nonceMem (keyMem s.mem (s.gpr .rdi) (s.gpr .rsi)) (s.gpr .rdi) (s.gpr .rdx) ∧
@@ -325,7 +325,7 @@ theorem init_ok (s : State) (hs : Proof.ChaCha20.initX86_64.pre s) :
     refine WP.block_append (WP.mono h₁ fun s₁ ⟨m₁, rd₁, wr₁, rdi₁, rsi₁, g₁⟩ => ?_)
     have hp : NPre s₁ (s.gpr .rdi) (s.gpr .rdx) :=
       ⟨rdi₁, rsi₁, fun d hd => by rw [wr₁]; exact hw d hd, fun d hd => ⟨⟨s.gpr .rdx, 16⟩,
-        by rw [rd₁, wr₁, hrd]; simp, contains_off hd (by omega)⟩⟩
+        by rw [rd₁, wr₁, hrd]; simp, contains_off hd (by omega_using [hd])⟩⟩
     refine WP.mono (setNonce_exec hp) fun s' ⟨m', _, _, g'⟩ => ⟨by rw [m', m₁], fun r hr => ?_⟩
     have := calleeSaved_ne hr
     rw [g' r this.1 this.2.1 this.2.2]

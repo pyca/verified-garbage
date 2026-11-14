@@ -89,7 +89,7 @@ theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s)
   rw [hA] at d_da d_wa
   have hSt : (⟨stackArg s w + BitVec.ofNat 64 16, 80⟩ : Region).Sub ⟨stackArg s w, 2560⟩ := Lay.wSub (by decide)
   have L : Lay (s.gpr .rdi) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w) (s.gpr .rsp) := by
-    refine ⟨wc, ?_, ww, d_cw.sub_right hSt, d_cw, ?_, ?_, k_c, k_w.sub_right hSt, k_w⟩
+    refine ⟨wc, ?_, ww, d_cw.sub_right hSt, d_cw, ?_, ?_, k_c, k_w.sub_right hSt, k_w, by decide, by decide⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le ((stackArg s w).toNat + 16 % 2 ^ 64) (2 ^ 64)
       omega_arith
     · simpa using Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide))
@@ -807,7 +807,7 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
   have hJ₅ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
     rw [hm₅, blockAt_frame ft dT0, blockAt_frame fa dS0]
   have hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [hm₅, hf.hH]
-  refine WP.mono (WP.with_rdwr (tag_ok v L ho he₅ hH₅ hR₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
+  refine WP.mono (WP.with_rdwr (tag_ok v L (by decide) (TagCall.base v) ho he₅ hH₅ hR₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
     ⟨ht.env, (wFrame_cons g₅).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄, hrd₁],
       by rw [hwr₆, hwr₅, hwr₄, hwr₁], ?_, ht.j, fun hab => ?_⟩
   · have d48 : ∀ r ∈ tagFrame (W + BitVec.ofNat 64 16) W SP o,

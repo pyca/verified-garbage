@@ -80,7 +80,7 @@ theorem aad_eq {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s.
     rcases hr with rfl | rfl | rfl
     · exact hp.c_a.symm
     · exact hp.o_a.symm
-    · exact hp.b_a.symm) (by have := (s₀.gpr .r9).isLt; simp only [AL]; omega)
+    · exact hp.b_a.symm) (by have := (s₀.gpr .r9).isLt; simp only [AL]; omega_using [])
 
 /-- The data is unchanged by a frame of the context and the stack below. -/
 theorem data_frame {s₀ : State} (hp : APre e s₀) {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
@@ -90,7 +90,7 @@ theorem data_frame {s₀ : State} (hp : APre e s₀) {rs : List Region} {m m' : 
     obtain ⟨k, n, h⟩ := hd r hr
     rcases h with ⟨hk, hs⟩ | rfl
     · exact (hp.c_d.sub_left (sub_ctx s₀ hk)).symm.sub_right hs
-    · exact hp.b_d.symm) (by have := (s₀.gpr .r11).isLt; simp only [L]; omega)
+    · exact hp.b_d.symm) (by have := (s₀.gpr .r11).isLt; simp only [L]; omega_using [])
 
 theorem sub_self' (s₀ : State) (k n : Nat) : Region.Sub (sub s₀ k n) (sub s₀ k n) := fun _ h => h
 
@@ -142,7 +142,7 @@ theorem sealMain_ok {s₀ : State} (hp : APre true s₀) : WP isa sealMain s₀ 
     rw [data_frame hp f₂ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨0, 256, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+      · exact ⟨0, 256, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
       · exact ⟨keyOff, 32, .inl ⟨by simp [keyOff], sub_self' _ _ _⟩⟩, d₁]
   refine WP.seq (WP.mono (crypt_ok hp h₂.inv h₂.st) fun s₃ ⟨i₃, k₃, c₃⟩ => ?_)
   rw [d₂, show op s₀ = dp s₀ by simp only [op, dp, hp.inPlace]] at c₃
@@ -155,14 +155,14 @@ theorem sealMain_ok {s₀ : State} (hp : APre true s₀) : WP isa sealMain s₀ 
   refine WP.seq (WP.mono (polyInit_ok hp i₃ key₃) fun s₄ ⟨i₄, k₄, r₄⟩ => ?_)
   have c₄ : bytesAt s₄.mem (dp s₀) (L s₀) = Ct s₀ := by
     rw [data_frame hp k₄.frame fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩, c₃]
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩, c₃]
   refine WP.seq (WP.mono (macPad_ok hp (p := .r8) (n := .r9) ⟨.inl rfl, .inl rfl⟩ (srcA hp) i₄ i₄.regs.r8
     (by rw [i₄.regs.r9]; exact hAL s₀)) fun s₅ ⟨i₅, k₅, r₅⟩ => ?_)
   have hmac : ∀ r ∈ macR s₀, ∃ k n, k + n ≤ 632 ∧ Region.Sub r (sub s₀ k n) ∨ r = belR s₀ := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+    · exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
     · exact ⟨padOff, 16, .inl ⟨by simp [padOff], sub_self' _ _ _⟩⟩
   have c₅ : bytesAt s₅.mem (dp s₀) (L s₀) = Ct s₀ := by rw [data_frame hp k₅.frame hmac, c₄]
   refine WP.seq (WP.mono (macPad_ok hp (p := .r10) (n := .r11) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₅ i₅.regs.r10
@@ -173,7 +173,7 @@ theorem sealMain_ok {s₀ : State} (hp : APre true s₀) : WP isa sealMain s₀ 
     rw [data_frame hp k₇.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+      · exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
       · exact ⟨lenOff, 16, .inl ⟨by simp [lenOff], sub_self' _ _ _⟩⟩, c₆]
   refine WP.mono (finArgs_ok i₇ (by decide) (out_seal i₇)) fun s₈ ⟨i₈, k₈, h0, h1, h12, hc⟩ => ?_
   have hlen : (Ct s₀).length = L s₀ := by
@@ -208,7 +208,7 @@ theorem finalize_seal_ok {s₀ : State} (hp : APre true s₀) {s : State} (h : P
         · exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).symm
         · exact hp.d_t
         · exact (hp.c_d.sub_left (sub_ctx s₀ (by simp [scrOff]))).symm
-        · exact hp.b_d.symm) (by have := (s₀.gpr .r11).isLt; simp only [L]; omega), h.data]⟩
+        · exact hp.b_d.symm) (by have := (s₀.gpr .r11).isLt; simp only [L]; omega_using []), h.data]⟩
 
 /-! ## After the frame -/
 
@@ -274,7 +274,7 @@ theorem macR_hd (s₀ : State) {a n : Nat} (h : 128 ≤ a) (h' : padOff + 16 ≤
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact .inl ⟨0, 128, by omega, by omega, rfl⟩
+  · exact .inl ⟨0, 128, by omega_using [], by omega_using [h], rfl⟩
   · exact .inl ⟨padOff, 16, by simp [padOff], h', rfl⟩
 
 theorem openMain_ok {s₀ : State} (hp : APre false s₀) : WP isa openMain s₀ (PreFo s₀) := by
@@ -289,17 +289,17 @@ theorem openMain_ok {s₀ : State} (hp : APre false s₀) : WP isa openMain s₀
       r = belR s₀ := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨0, 256, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+    · exact ⟨0, 256, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
     · exact ⟨keyOff, 32, .inl ⟨by simp [keyOff], sub_self' _ _ _⟩⟩
   have d₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by rw [data_frame hp f₂ hd₂, d₁]
   refine WP.seq (WP.mono (polyInit_ok hp h₂.inv h₂.key) fun s₃ ⟨i₃, k₃, r₃⟩ => ?_)
   have hd₀ : ∀ {a n : Nat}, 128 ≤ a → ∀ r ∈ [sub s₀ 0 128],
       (∃ k l, k + l ≤ 632 ∧ (k + l ≤ a ∨ a + n ≤ k) ∧ r = sub s₀ k l) ∨ r = oR s₀ ∨ r = belR s₀ :=
     fun ha r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact .inl ⟨0, 128, by omega, by omega, rfl⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact .inl ⟨0, 128, by omega_using [], by omega_using [ha], rfl⟩
   have d₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [data_frame hp k₃.frame fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩, d₂]
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩, d₂]
   have st₃ : stateAt s₃.mem (off (cx s₀) stOff) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [ctx_state hp k₃.frame (hd₀ (by simp [stOff])), h₂.st]
   refine WP.seq (WP.mono (macPad_ok hp (p := .r8) (n := .r9) ⟨.inl rfl, .inl rfl⟩ (srcA hp) i₃ i₃.regs.r8
@@ -308,7 +308,7 @@ theorem openMain_ok {s₀ : State} (hp : APre false s₀) : WP isa openMain s₀
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+    · exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
     · exact ⟨padOff, 16, .inl ⟨by simp [padOff], sub_self' _ _ _⟩⟩
   have d₄ : bytesAt s₄.mem (dp s₀) (L s₀) = D s₀ := by rw [data_frame hp k₄.frame hmac, d₃]
   have st₄ : stateAt s₄.mem (off (cx s₀) stOff) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
@@ -324,13 +324,13 @@ theorem openMain_ok {s₀ : State} (hp : APre false s₀) : WP isa openMain s₀
     fun ha ha' r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact .inl ⟨0, 128, by omega, by omega, rfl⟩
+      · exact .inl ⟨0, 128, by omega_using [], by omega_using [ha], rfl⟩
       · exact .inl ⟨lenOff, 16, by simp [lenOff], ha', rfl⟩
   have d₆ : bytesAt s₆.mem (dp s₀) (L s₀) = D s₀ := by
     rw [data_frame hp k₆.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+      · exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
       · exact ⟨lenOff, 16, .inl ⟨by simp [lenOff], sub_self' _ _ _⟩⟩, d₅]
   have st₆ : stateAt s₆.mem (off (cx s₀) stOff) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [ctx_state hp k₆.frame (hl (by simp [stOff]) (by simp [stOff, lenOff])), st₅]
@@ -357,7 +357,7 @@ theorem fin_hd (s₀ : State) {a n : Nat} (h : 128 ≤ a) (h' : tagOff + 16 ≤ 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact .inl ⟨0, 128, by omega, by omega, rfl⟩
+  · exact .inl ⟨0, 128, by omega_using [], by omega_using [h], rfl⟩
   · exact .inl ⟨tagOff, 16, by simp [tagOff], h', rfl⟩
   · exact .inl ⟨scrOff, 128, by simp [scrOff], h'', rfl⟩
   · exact .inr (.inr rfl)
@@ -383,7 +383,7 @@ theorem finalize_open_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : 
   · rw [data_frame hp k'.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨0, 128, .inl ⟨by omega, sub_self' _ _ _⟩⟩
+      · exact ⟨0, 128, .inl ⟨by omega_using [], sub_self' _ _ _⟩⟩
       · exact ⟨tagOff, 16, .inl ⟨by simp [tagOff], sub_self' _ _ _⟩⟩
       · exact ⟨scrOff, 128, .inl ⟨by simp [scrOff], sub_self' _ _ _⟩⟩
       · exact ⟨0, 0, .inr rfl⟩, h.data]
@@ -397,7 +397,7 @@ theorem tag_eq0 {s₀ s : State} (hp : APre e s₀) (h : Inv s₀ s) : bytesAt s
     rcases hr with rfl | rfl | rfl
     · exact hp.c_t.symm
     · exact hp.o_t.symm
-    · exact hp.b_t.symm) (by omega)
+    · exact hp.b_t.symm) (by omega_using [])
 
 /-- After the source is decrypted to the destination in `open`. -/
 structure PostC (s₀ : State) (s : State) : Prop where
@@ -414,7 +414,7 @@ theorem cryptOpen_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Post
     fun ha _ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact .inl ⟨0, stOff + 64, by simp [stOff], by omega, rfl⟩
+      · exact .inl ⟨0, stOff + 64, by simp [stOff], by omega_using [ha], rfl⟩
       · exact .inr (.inl rfl)
   rw [h.data] at c₁
   exact ⟨i₁, by rw [ctx_bytes hp k₁ (by simp [tagOff]) (hc (by simp [stOff, tagOff]) (by simp [tagOff])), h.tag],
@@ -477,10 +477,10 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hu : Inv 
   have h2' : u.gpr .r2 + BitVec.ofNat 32 0 = oP s₀ + BitVec.ofNat 32 j := by
     rw [h2]; exact BitVec.add_zero _
   have ha : State.addr (u.gpr .r2 + BitVec.ofNat 32 0) = op s₀ + BitVec.ofNat 64 j := by
-    rw [h2', addr_add (by omega)]
+    rw [h2', addr_add (by omega_using [hj, hfit])]
   have hd : (op s₀).toNat = (oP s₀).toNat := addr_toNat _
   have hc : (oR s₀).Contains (op s₀ + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj, hfit])
   refine wp_strb (by decide) ha ⟨oR s₀, by rw [hu.wr]; exact hp.o_wr, hc⟩ fun u₁ m₁ => ?_
   refine wp_add (op2_imm (by decide)) fun u₂ v₂ =>
     wp_subs (op2_imm (by decide)) fun u₃ v₃ z₃ => WP.block_nil ?_
@@ -499,7 +499,7 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {u : State} (hu : Inv 
     by rw [o _ (by decide) (by decide), h0], ?_, by rw [v₃.gpr, e3], by rw [z₃, e3], o, ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, h2, BitVec.add_assoc, BitVec.ofNat_add]; rfl
   · rw [v₃.mem, v₂.mem, m₁.mem, h0, show BitVec.setWidth 8 (0 : BitVec 32) = 0 by decide]
-    exact Proof.Zeroize.prefix_writeW hz (by omega)
+    exact Proof.Zeroize.prefix_writeW hz (by omega_using [hj, hfit])
 
 /-- `zeroData`, with `r0` zero: zeros at the destination, and only `r2`,
 `r3` and the flags written. -/
@@ -524,19 +524,19 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
   · refine WP.ite true (by show some u₃.z = some true; rw [z₃', hz]; rfl)
       (fun _ => WP.block_nil ⟨i₃, ?_, o₃⟩) (by simp)
     rw [hz]; rfl
-  · have hne := ofNat32_ne_zero (n := L s₀) (by omega) hL
+  · have hne := ofNat32_ne_zero (n := L s₀) (by omega_using [hz]) hL
     refine WP.ite false (by show some u₃.z = some false; rw [z₃', beq_false_of_ne hne])
       (by simp) fun _ => ?_
     refine WP.loop (M := isa) (fun rem u => ∃ j, j < L s₀ ∧ rem = L s₀ - j ∧ Inv s₀ u ∧ u.gpr .r0 = 0 ∧
       u.gpr .r2 = oP s₀ + BitVec.ofNat 32 j ∧ u.gpr .r3 = BitVec.ofNat 32 (L s₀ - j) ∧
       (∀ r, r ≠ .r2 → r ≠ .r3 → u.gpr r = s.gpr r) ∧ Proof.Zeroize.Prefix u.mem (op s₀) j) ?_ (L s₀) u₃
-      ⟨0, by omega, by omega, i₃, by rw [o₃ _ (by decide) (by decide), h0],
+      ⟨0, by omega_using [hz], by omega_using [], i₃, by rw [o₃ _ (by decide) (by decide), h0],
         by rw [r2₃]; exact (BitVec.add_zero _).symm, by rw [r3₃, Nat.sub_zero], o₃,
         fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     intro rem u ⟨j, hj, hr, hu, e0, e2, e3, ho, hpz⟩
     refine WP.mono (zeroStep_ok hp hu hj e0 e2 hpz) fun u' ⟨i', r0', r2', r3', z', o', p'⟩ => ?_
     have hsub : BitVec.ofNat 32 (L s₀ - j) - 1 = BitVec.ofNat 32 (L s₀ - (j + 1)) := by
-      rw [ofNat32_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [ofNat32_sub_one (by omega_using [hj]) (by omega_using [hL]), Nat.sub_sub]
     rw [e3, hsub] at r3' z'
     have o'' : ∀ r, r ≠ .r2 → r ≠ .r3 → u'.gpr r = s.gpr r := fun r a b => by rw [o' r a b, ho r a b]
     by_cases he : j + 1 = L s₀
@@ -545,9 +545,9 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
       rw [he] at p'
       exact Proof.Zeroize.prefix_spec p'
     · right
-      have hne := ofNat32_ne_zero (n := L s₀ - (j + 1)) (by omega) (by omega)
+      have hne := ofNat32_ne_zero (n := L s₀ - (j + 1)) (by omega_using [hj, he]) (by omega_using [hL])
       refine ⟨by show some (!u'.z) = some true; rw [z', beq_false_of_ne hne]; rfl,
-        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, i', r0', r2', r3', o'', p'⟩
+        L s₀ - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, i', r0', r2', r3', o'', p'⟩
 
 /-- The epilogue, from the invariant: our caller's registers restored. -/
 theorem restoreEnd_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) :
@@ -645,8 +645,8 @@ theorem Entered.inputs {s b : State} {w t : Nat} (he : Entered s w t b) (hp : AP
       exact (hd.sub_left (sub_ctx b (by decide))).symm) hn
   refine ⟨(hb hp.c_k (by decide)).trans (by simp only [kp, kP, he.r0]),
     (hb hp.c_n (by decide)).trans (by simp only [np, nP, he.r1]),
-    (hb hp.c_a (by have := (b.gpr .r9).isLt; simp only [AL]; omega)).trans (by simp only [ad, aP, AL, he.r8, he.r9]),
-    (hb hp.c_d (by have := (b.gpr .r11).isLt; simp only [L]; omega)).trans (by simp only [dp, dP, L, he.r10, he.r11]),
+    (hb hp.c_a (by have := (b.gpr .r9).isLt; simp only [AL]; omega_using [])).trans (by simp only [ad, aP, AL, he.r8, he.r9]),
+    (hb hp.c_d (by have := (b.gpr .r11).isLt; simp only [L]; omega_using [])).trans (by simp only [dp, dP, L, he.r10, he.r11]),
     (hb hp.c_t (by decide)).trans (by simp only [tp, tP, he.r4]),
     by simp only [dp, dP, he.r10], by simp only [L, he.r11], by simp only [tp, tP, he.r4]⟩
 
@@ -805,7 +805,7 @@ theorem wr_facts {s : State} (hp : APre e s) :
       simp only [List.mem_singleton] at hr; subst hr; exact hp.c_o.symm) (List.pairwise_singleton _ _),
       fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [addr_toNat] <;> omega
+    rcases hr with rfl | rfl <;> simp only [addr_toNat] <;> omega_arith
   · have hw : s.wr = [dR s, tR s, ctxR s] := hp.wr
     rw [hw]
     refine ⟨.cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)),
@@ -817,7 +817,7 @@ theorem wr_facts {s : State} (hp : APre e s) :
       · exact hp.c_d.symm
     · simp only [List.mem_singleton] at hr; subst hr; exact hp.c_t.symm
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only [addr_toNat] <;> omega
+      rcases hr with rfl | rfl | rfl <;> simp only [addr_toNat] <;> omega_arith
 
 /-- The context is the writable region `ci e`. -/
 theorem region_ctx {s₀ s : State} (hp : APre e s₀) (h : s.wr = s₀.wr) :
@@ -1151,7 +1151,7 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub Impl.ChaCha20Poly1305
     (RelCT.taint (A := taint) (τP (4 * 4)) (fun a b (h : a = s₁ ∧ b = s₂) => by
       obtain ⟨rfl, rfl⟩ := h
       exact agreeP psp (EntryOk.ofIn h₁).spfit p0 p1 p2 p3 (fun i hi => by
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> with_reducible assumption)
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> with_reducible assumption)
         (argWrIn h₁) (argWrIn h₂)) (by native_taint_decide)).wp
       fun a b (h : a = s₁ ∧ b = s₂) => by
         obtain ⟨rfl, rfl⟩ := h; exact ⟨inPlace_ok (EntryOk.ofIn h₁), inPlace_ok (EntryOk.ofIn h₂)⟩
@@ -1168,7 +1168,7 @@ theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305
     (RelCT.taint (A := taint) (τP (4 * 4)) (fun a b (h : a = s₁ ∧ b = s₂) => by
       obtain ⟨rfl, rfl⟩ := h
       exact agreeP psp (EntryOk.ofIn h₁).spfit p0 p1 p2 p3 (fun i hi => by
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> with_reducible assumption)
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> with_reducible assumption)
         (argWrIn h₁) (argWrIn h₂)) (by native_taint_decide)).wp
       fun a b (h : a = s₁ ∧ b = s₂) => by
         obtain ⟨rfl, rfl⟩ := h; exact ⟨inPlace_ok (EntryOk.ofIn h₁), inPlace_ok (EntryOk.ofIn h₂)⟩
@@ -1187,7 +1187,7 @@ theorem openTo_ct : ConstantTime isa openToArm.pre openToArm.pub Impl.ChaCha20Po
     (RelCT.taint (A := taint) (τP (4 * 6)) (fun a b (h : a = s₁ ∧ b = s₂) => by
       obtain ⟨rfl, rfl⟩ := h
       exact agreeP psp (EntryOk.ofTo h₁).spfit p0 p1 p2 p3 (fun i hi => by
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with
           rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
         (argWrTo h₁) (argWrTo h₂)) (by native_taint_decide)).wp
       fun a b (h : a = s₁ ∧ b = s₂) => by

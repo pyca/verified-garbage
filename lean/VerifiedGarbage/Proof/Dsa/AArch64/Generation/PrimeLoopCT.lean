@@ -51,7 +51,7 @@ private theorem loop_step (n : Nat) :
   obtain ⟨s₀, res, hstate⟩ := hnext.1
   have hroom : p.draw.used + p.draw.prime.drawBytes ≤ p.draw.prime.rand.length := hstate.usedBound
   have hdraw := p.draw.prime.drawMin
-  refine ⟨p.draw.prime.rand.length - (p.draw.used + p.draw.prime.drawBytes), by omega,
+  refine ⟨p.draw.prime.rand.length - (p.draw.used + p.draw.prime.drawBytes), by omega_using [hn, hroom, hdraw],
     p.next, ⟨rfl, hnext⟩, ⟨rfl, ht.2 hg⟩, hsp⟩
 
 theorem primeLoop_ct : RelCT isa (Two (LoopBefore len drawBytes))

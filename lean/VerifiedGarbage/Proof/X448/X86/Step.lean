@@ -69,9 +69,9 @@ theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
       Keeps [.eax, .ebx, .edx] s t := by
   intro v
   unfold carryBlock
-  refine load_ok hs (by omega) fun t ht => ?_
+  refine load_ok hs (by omega_using [ha]) fun t ht => ?_
   have ts := hs.of_upd ht (by decide)
-  refine WP.mono (carryRaw_ok (by decide) (ts.ea (by omega)) (ts.write (by omega))
+  refine WP.mono (carryRaw_ok (by decide) (ts.ea (by omega_using [ho])) (ts.write (by omega_using [ho]))
     (by rw [ht.gpr, ht.other .ebx (by decide)]; exact hb)) fun u ⟨uc, um, uk⟩ => ?_
   rw [ht.gpr, ht.other .ebx (by decide)] at uc um
   exact ⟨uc, by rw [um, ht.mem], (ht.rest (by decide)).trans uk⟩

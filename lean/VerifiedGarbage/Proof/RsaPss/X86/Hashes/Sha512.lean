@@ -22,10 +22,10 @@ theorem ext128 {x : Nat} (hx : x < 2 ^ 64) (i : Nat) :
   apply BitVec.eq_of_toNat_eq
   split
   · simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : x < 2 ^ 128), Nat.mod_eq_of_lt hx]
+    rw [Nat.mod_eq_of_lt (by omega_using [hx] : x < 2 ^ 128), Nat.mod_eq_of_lt hx]
   · simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : x < 2 ^ 128), Nat.shiftRight_eq_div_pow,
-      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (by omega)))]
+    rw [Nat.mod_eq_of_lt (by omega_using [hx] : x < 2 ^ 128), Nat.shiftRight_eq_div_pow,
+      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (by omega_arith)))]
     rfl
 
 /-- The 128-bit length field of a message shorter than `2^29` bytes. -/
@@ -33,7 +33,7 @@ theorem len512 (n : Nat) (hn : n < 2 ^ 29) :
     Proof.Sha512.md.lenBytes n = List.replicate 8 0 ++ Proof.MdStream.bytes64 true (BitVec.ofNat 64 (8 * n)) := by
   show Proof.Sha512.lenField _ = _
   unfold Proof.Sha512.lenField Proof.MdStream.bytes64
-  simp only [ite_true, ext128 (show 8 * n < 2 ^ 64 by omega)]
+  simp only [ite_true, ext128 (show 8 * n < 2 ^ 64 by omega_using [hn])]
   simp [List.range_succ]
 
 theorem sha384Certs : Certs (shapeOf Proof.Pbkdf2.Md.X86.sha384M) := by

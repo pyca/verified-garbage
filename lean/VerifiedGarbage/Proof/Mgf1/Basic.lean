@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Mgf1
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # MGF1: lengths and masking
@@ -41,6 +42,6 @@ theorem mgf1_length {H : Hash} (hH : Valid H) (seed : List Byte) (maskLen : Nat)
   have hd := Nat.div_add_mod (maskLen + H.len - 1) H.len
   have hm := Nat.mod_lt (maskLen + H.len - 1) hpos
   simp only [mgf1, List.length_take, hl]
-  omega
+  omega_using [hd, hm]
 
 end VG.Proof.Mgf1

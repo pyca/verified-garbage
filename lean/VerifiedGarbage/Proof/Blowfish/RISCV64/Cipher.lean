@@ -34,7 +34,7 @@ theorem combine_run (u : State) {j : Nat} (hj : j < 4) :
     WP isa (.block [combine j]) u fun t =>
       lo (t.gpr .a5) = (if j = 0 then lo (u.gpr .t2) else if j = 2 then lo (u.gpr .a5) ^^^ lo (u.gpr .t2)
         else lo (u.gpr .a5) + lo (u.gpr .t2)) ∧ t.mem = u.mem := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     brun [combine] <;> simp only [lo_xor, lo_add, BitVec.or_self]
 
 /-- What a run of `Keep (r :: rs)` that leaves `r` as it was keeps. -/
@@ -63,7 +63,7 @@ theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : S
   apply WP.seq
   refine WP.mono (lookup_run Eu hj h7) fun v ⟨v10, vk, vm⟩ => ?_
   refine WP.mono (WP.keep [.a5] (combine_run v hj) (by
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide) rfl)
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide) rfl)
     fun t ⟨⟨t7, tm⟩, tk⟩ => hQ t ?_ ((k.trans vk).trans tk |>.mono (by decide)) (by rw [tm, vm, hm])
       (by rw [tk.gpr (by decide), vk.gpr (by decide)])
   have e4 : u.gpr .a3 = s₀.gpr .a3 := k.gpr (by decide)
@@ -132,12 +132,12 @@ theorem ofs_sub (S : BitVec 64) {a b : Nat} (h : b ≤ a) :
     S + BitVec.ofNat 64 a - BitVec.ofNat 64 b = S + BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- The address of the P-array entry of round `i`. -/
 theorem addr_P (S : BitVec 64) (up : Bool) {i : Nat} (hi : i < 16) :
     S + BitVec.ofNat 64 (pBase up i) + BitVec.ofNat 64 (pAt up) = S + BitVec.ofNat 64 (4096 + 4 * ord up i) :=
-  Offset.add_add_eq _ (by cases up <;> simp [pBase, pAt, ord] <;> omega)
+  Offset.add_add_eq _ (by cases up <;> simp [pBase, pAt, ord] <;> omega_using [hi])
 
 /-- After `i` rounds from `s₀`. -/
 structure CInv (s₀ : State) (up : Bool) (i : Nat) (u : State) : Prop where
@@ -164,7 +164,7 @@ theorem sub_end (S : Addr) (a : Nat) {e : Nat} (he : 4094 ≤ e) :
     S + BitVec.ofNat 64 a - S - BitVec.ofNat 64 2047 - BitVec.ofNat 64 2047 - BitVec.ofNat 64 (e - 4094) =
       BitVec.ofNat 64 a - BitVec.ofNat 64 e := by
   rw [Offset.add_sub_cancel_left, BitVec.sub_sub, BitVec.sub_sub, BitVec.ofNat_add_ofNat,
-    BitVec.ofNat_add_ofNat, show 2047 + (2047 + (e - 4094)) = e by omega]
+    BitVec.ofNat_add_ofNat, show 2047 + (2047 + (e - 4094)) = e by omega_using [he]]
 
 theorem round_tail (u : State) (up : Bool) (S : BitVec 64) {i : Nat} (hi : i < 16)
     (h3 : u.gpr .a7 = S) (h8 : u.gpr .a6 = S + BitVec.ofNat 64 (pBase up i)) :
@@ -180,7 +180,7 @@ theorem round_tail (u : State) (up : Bool) (S : BitVec 64) {i : Nat} (hi : i < 1
   have e4 : 4094 ≤ pEnd up := by cases up <;> decide
   cases up
   · have e : S + BitVec.ofNat 64 (4160 - 4 * i) - 4#64 = S + BitVec.ofNat 64 (4160 - 4 * (i + 1)) := by
-      rw [show (4#64 : BitVec 64) = BitVec.ofNat 64 4 from rfl, ofs_sub S (by omega)]; congr 2
+      rw [show (4#64 : BitVec 64) = BitVec.ofNat 64 4 from rfl, ofs_sub S (by omega_using [hi])]; congr 2
     brun [h3, h8, show pEnd false - 4094 ≤ 2048 by decide]
     simp only [pBase, Bool.false_eq_true, ite_false, lo_xor, BitVec.or_self, e]
     refine ⟨trivial, trivial, trivial, ?_⟩
@@ -201,14 +201,14 @@ theorem round_step {s₀ : State} (E : LookEnv s₀) (up : Bool) {i : Nat} (hi :
     (I : CInv s₀ up i u) :
     WP isa (round up) u fun u' => CInv s₀ up (i + 1) u' ∧
       u'.gpr .t4 = BitVec.ofNat 64 (pBase up (i + 1)) - BitVec.ofNat 64 (pBase up 16) := by
-  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega
+  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega_arith
   let K := scheduleAt s₀.mem (s₀.gpr .a7)
   have u3 : u.gpr .a7 = s₀.gpr .a7 := I.keep.gpr (by decide)
   unfold round
   apply WP.seq
   refine WP.mono (WP.keep [.a3, .t4] (round_head u up (P := pEntry K (ord up i))
-    (by rw [I.p, addr_P _ up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega) (by omega))
-    (al_add E.al (by omega) (by omega))
+    (by rw [I.p, addr_P _ up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega_using []) (by omega_using [ho]))
+    (al_add E.al (by omega_using []) (by omega_using [ho]))
     (by rw [I.mem, pEntry_read _ _ ho])) (by cases up <;> decide) rfl) fun v ⟨⟨v4, vm⟩, vk⟩ => ?_
   have kv : Keep cRegs s₀ v := (I.keep.trans vk).mono (by decide)
   have Ev : LookEnv v := E.keep kv (by decide)
@@ -220,7 +220,7 @@ theorem round_step {s₀ : State} (E : LookEnv s₀) (up : Bool) {i : Nat} (hi :
   refine WP.mono (WP.keep [.a3, .a4, .a6, .t4] (round_tail w up _ hi w3 w8) (by
     cases up <;> decide) rfl) fun x ⟨⟨x4, x5, x8, x12, xm⟩, xk⟩ => ?_
   have hK : scheduleAt v.mem (v.gpr .a7) = K := by rw [vm, I.mem, vk.gpr (by decide), u3]
-  refine ⟨⟨by omega, x8, ?_, ((kv.trans wk).trans xk).mono (by decide), by rw [xm, wm, vm, I.mem]⟩, x12⟩
+  refine ⟨⟨by omega_using [hi], x8, ?_, ((kv.trans wk).trans xk).mono (by decide), by rw [xm, wm, vm, I.mem]⟩, x12⟩
   have w4 : w.gpr .a3 = v.gpr .a3 := wk.gpr (by decide)
   have w5 : w.gpr .a4 = u.gpr .a4 := by rw [wk.gpr (by decide), vk.gpr (by decide)]
   rw [x4, x5, w7, hK, w4, w5, v4, iter_succ, ← I.halves]
@@ -239,15 +239,15 @@ theorem rounds_run {s : State} (E : LookEnv s) (up : Bool) {u : State} (I : CInv
     (fun (n : Nat) (v : State) => ∃ i, i < 16 ∧ n = 16 - i ∧ CInv s up i v) ?_ 16 u ⟨0, by decide, rfl, I⟩
   intro n v ⟨i, hi, hn, J⟩
   refine WP.mono (round_step E up hi J) fun v' ⟨J', hz⟩ => ?_
-  rw [tmp, Steps.eval_nonzero, hz, ofNat_sub_bne (by cases up <;> simp [pBase] <;> omega)
+  rw [tmp, Steps.eval_nonzero, hz, ofNat_sub_bne (by cases up <;> simp [pBase] <;> omega_arith)
     (by cases up <;> simp [pBase])]
-  have e : (pBase up (i + 1) = pBase up 16) ↔ i + 1 = 16 := by cases up <;> simp [pBase] <;> omega
+  have e : (pBase up (i + 1) = pBase up 16) ↔ i + 1 = 16 := by cases up <;> simp [pBase] <;> omega_using []
   by_cases e' : i + 1 = 16
   · left
     exact ⟨by simp [e.mpr e'], e' ▸ J'⟩
   · right
     have hne : ¬ pBase up (i + 1) = pBase up 16 := fun h => e' (e.mp h)
-    exact ⟨by simp [hne], n - 1, by omega, i + 1, by omega, by omega, J'⟩
+    exact ⟨by simp [hne], n - 1, by omega_using [hi, hn], i + 1, by omega_using [hi, e'], by omega_using [hn], J'⟩
 
 theorem cipher_end (u : State) (up : Bool) {P₁₆ P₁₇ : BitVec 32} {a b : Addr}
     (ha : u.gpr .a6 + BitVec.ofNat 64 (pAt up) = a)
@@ -291,8 +291,8 @@ theorem cipher_run {s : State} (E : LookEnv s) (up : Bool) :
     (b := s.gpr .a7 + BitVec.ofNat 64 (4096 + 4 * ord up 17))
     (by rw [V.p]; exact Offset.add_add_eq _ (by cases up <;> simp [pBase, pAt, ord]))
     (by rw [V.p]; exact Offset.add_add_eq _ (by cases up <;> simp [pBase, pAt, ord]))
-    (by rw [hrd]; exact E.rd _ (by omega) r16) (by rw [hrd]; exact E.rd _ (by omega) r17)
-    (al_add E.al (by omega) (by omega)) (al_add E.al (by omega) (by omega))
+    (by rw [hrd]; exact E.rd _ (by omega_using []) r16) (by rw [hrd]; exact E.rd _ (by omega_using []) r17)
+    (al_add E.al (by omega_using []) (by omega_using [r16])) (al_add E.al (by omega_using []) (by omega_using [r17]))
     (by rw [V.mem, pEntry_read _ _ o16]) (by rw [V.mem, pEntry_read _ _ o17])) (by cases up <;> decide) rfl)
     fun t ⟨⟨t4, t5, tm⟩, tk⟩ => ?_
   refine ⟨?_, (V.keep.trans tk).mono (by decide), by rw [tm, V.mem]⟩

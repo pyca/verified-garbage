@@ -45,7 +45,7 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
   intro n hn
   rw [← vgetD _ hn 0, ← vgetD _ hn 0, scheduleAt_getD _ _ hn, scheduleAt_getD _ _ hn]
   exact hf.readW (r := ⟨p + BitVec.ofNat 64 (8 * n), 8⟩) (Region.contains_self _ _)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega_using [hn]))) (by decide)
 
 theorem in_rw {rs : List Region} {r : Region} (hr : r ∈ rs) {a : Addr} {n : Nat} (hc : r.Contains a n) :
     InRegions rs a n := ⟨r, hr, hc⟩
@@ -124,7 +124,7 @@ theorem UPre.inScr {d n : Nat} (h : d + n ≤ 640) (hn : 0 < n) :
 
 theorem UPre.scrAddr {d : Nat} (h : d < 640) :
     State.addr (S s₀ + BitVec.ofNat 32 d) = State.addr (S s₀) + BitVec.ofNat 64 d :=
-  addr_add (by have := hp.scr_fit; omega)
+  addr_add (by have := hp.scr_fit; omega_using [h, this])
 
 theorem UPre.sched {m : Mem} (hf : Frame (chg s₀) (savedMem s₀ (S s₀)) m) :
     Spec.TripleDes.scheduleAt m (State.addr (W s₀)) = Spec.TripleDes.scheduleAt s₀.mem (State.addr (W s₀)) := by
@@ -142,7 +142,7 @@ theorem UPre.data {m : Mem} (hf : Frame (chg s₀) (savedMem s₀ (S s₀)) m) {
     Spec.Aes.bytesAt m (State.addr (Dp s₀) + BitVec.ofNat 64 (8 * k)) 8 =
       Spec.Aes.bytesAt s₀.mem (State.addr (Dp s₀) + BitVec.ofNat 64 (8 * k)) 8 := by
   have hsub : Region.Sub ⟨State.addr (Dp s₀) + BitVec.ofNat 64 (8 * k), 8⟩ (dataR s₀) :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [hk])
   rw [bytesAt_frame hf (fun r hr => ?_) (by decide)]
   · exact bytesAt_frame (savedMem_frame s₀ (S s₀)) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -169,7 +169,7 @@ end
 theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
     (blks s₀).take (k + 1) =
       (blks s₀).take k ++ [Spec.Aes.bytesAt s₀.mem (State.addr (Dp s₀) + BitVec.ofNat 64 (8 * k)) 8] := by
-  rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cmac.blocksAt]; omega)]
+  rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cmac.blocksAt]; omega_using [hk])]
   simp [Spec.Cmac.blocksAt]
 
 /-- The two words at `a` XORed, as a big-endian integer. -/
@@ -400,9 +400,9 @@ theorem loop_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [eval_ne, z']; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_using [hk, hz]]
   · right
-    refine ⟨by rw [eval_ne, z']; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [eval_ne, z']; simp [hz], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz], h'⟩
 
 /-! ## The whole function -/
 
@@ -423,7 +423,7 @@ theorem prologue_wp {s₀ : State} (hp : UPre s₀) :
   refine saveList_ok saved s₁ _ (fun p hp' => ?_) fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
   · have hb := saved_bound p hp'
     rw [h12, u₁.wr]
-    exact ⟨by omega, by omega, hp.inScr (by omega) (by decide)⟩
+    exact ⟨by omega_using [hb], by omega_using [hsc, hb], hp.inScr (by omega_using [hb]) (by decide)⟩
   have hm₂ : s₂.mem = savedMem s₀ (S s₀) := by
     rw [m₂, u₁.mem, h12, savedMem]
     exact saveMem_congr _ _ _ fun p hp' => u₁.other _ (saved_ne_r12 p hp')
@@ -452,8 +452,8 @@ theorem prologue_wp {s₀ : State} (hp : UPre s₀) :
       (⟨State.addr (S s₀) + BitVec.ofNat 64 112, 12⟩ : Region).Contains (State.addr (S s₀) + BitVec.ofNat 64 d)
         (32 / 8) := fun d h₁ h₂ => by
     rw [show State.addr (S s₀) + BitVec.ofNat 64 d = State.addr (S s₀) + BitVec.ofNat 64 112 +
-      BitVec.ofNat 64 (d - 112) from (Offset.add_add_eq _ (by omega)).symm]
-    exact Offset.contains_base _ (by omega) (by omega)
+      BitVec.ofNat 64 (d - 112) from (Offset.add_add_eq _ (by omega_using [h₁])).symm]
+    exact Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
   have fr₈ : Frame [⟨State.addr (S s₀) + BitVec.ofNat 64 112, 12⟩] (savedMem s₀ (S s₀)) s₈.mem := by
     rw [m₈]
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cs 112 (by decide) (by decide))).writeW
@@ -489,22 +489,22 @@ theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : LInv s₀ 0 s
   · refine WP.ite true (by rw [ev, hn]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hp (by omega) h
+    exact loop_ok hp (by omega_using [hn]) h
 
 theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s₂ : State} (h₂ : LInv s₀ (N s₀) s₂) :
     WP isa (.block restore) s₂ fun s' => abiPreserved s₀ s' ∧ updateArm.post s₀ s' := by
   have hsc := hp.scr_fit
-  refine WP.mono (restore_ok h₂.r10 (by omega) fun d h₁ h₂' => ?_) fun s' ⟨hl, sp', m', _, _⟩ => ⟨?_, ?_⟩
+  refine WP.mono (restore_ok h₂.r10 (by omega_using [hsc]) fun d h₁ h₂' => ?_) fun s' ⟨hl, sp', m', _, _⟩ => ⟨?_, ?_⟩
   · rw [h₂.rd, h₂.wr, hp.rd, hp.wr]
-    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega))
+    exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_using [h₂']) (by omega_using [h₂']))
   · refine restored (S := S s₀) (fun d h₁ h₂' => ?_) hl (by rw [sp', h₂.sp])
     refine h₂.frame.readW (r := ⟨State.addr (S s₀) + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _)
       (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (hp.st_scr.sub_right (Offset.sub_base _ (by omega))).symm
-    · exact Offset.disjoint_base _ (by omega) (by omega)
-    · exact Offset.disjoint _ (d := d) (e := 112) (by omega) (by omega) (by omega)
+    · exact (hp.st_scr.sub_right (Offset.sub_base _ (by omega_using [h₂']))).symm
+    · exact Offset.disjoint_base _ (by omega_using [h₁]) (by omega_using [h₂'])
+    · exact Offset.disjoint _ (d := d) (e := 112) (by omega_using [h₂']) (by omega_using [h₂']) (by omega_using [])
   · show Spec.Aes.bytesAt s'.mem (State.addr (St s₀)) 8 = Spec.Cmac.chain (ciph s₀) _ (blks s₀)
     rw [m', h₂.state, List.take_of_length_le (by simp [Spec.Cmac.blocksAt])]
 

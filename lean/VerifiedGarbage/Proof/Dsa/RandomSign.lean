@@ -32,7 +32,7 @@ theorem randomSignLoop_used_le (pLen qLen : Nat) (key digest : List VG.Byte)
           (privateKeyBytes pLen qLen key).params.q 128 rand).used)
         simp only [List.length_drop] at hi
         simp only
-        omega
+        omega_using [hd, hi]
 
 theorem randomSignLoop_used_budget (pLen qLen : Nat) (key digest : List VG.Byte)
     (fuel : Nat) (rand : List VG.Byte) :
@@ -46,16 +46,16 @@ theorem randomSignLoop_used_budget (pLen qLen : Nat) (key digest : List VG.Byte)
     split
     · simp only
       rw [Nat.succ_mul]
-      omega
+      omega_using [hd]
     · split
       · simp only
         rw [Nat.succ_mul]
-        omega
+        omega_using [hd]
       · have hi := ih (rand.drop (VG.Spec.Dsa.Random.sample
           (privateKeyBytes pLen qLen key).params.q 128 rand).used)
         simp only
         rw [Nat.succ_mul]
-        omega
+        omega_using [hd, hi]
 
 theorem randomSignBytes_used_le (pLen qLen : Nat) (key digest rand : List VG.Byte) :
     (randomSignBytes pLen qLen key digest rand).used ≤ rand.length := by

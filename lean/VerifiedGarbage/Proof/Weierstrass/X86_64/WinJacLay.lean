@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The Jacobian window method: where it keeps its numbers
@@ -101,9 +102,9 @@ theorem jg_apart (K : JacWinCfg) {i j : Nat} (h : i ≠ j) :
   unfold jg
   rcases Nat.lt_or_gt_of_ne h with h | h
   · left; have := Nat.mul_le_mul_left (8 * K.M.n) (Nat.succ_le_of_lt h)
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_using [this]
   · right; have := Nat.mul_le_mul_left (8 * K.M.n) (Nat.succ_le_of_lt h)
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_using [this]
 
 /-- A slot but the grid's is apart from grid slot `i`. -/
 theorem JacWinLay.jg_apart (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwRo K ++ jwOther K) {i : Nat}
@@ -113,17 +114,17 @@ theorem JacWinLay.jg_apart (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwRo K 
     exact Nat.mul_le_mul_left _ hi
   unfold jg
   rcases hL.tbl x hx with h | h
-  · left; omega
-  · right; omega
+  · left; omega_using [h]
+  · right; omega_using [h85, h]
 
-theorem JacWinLay.n0 (hL : JacWinLay K size) : 0 < K.M.n := by rcases hL.n46 with h | h <;> omega
+theorem JacWinLay.n0 (hL : JacWinLay K size) : 0 < K.M.n := by rcases hL.n46 with h | h <;> omega_using [h]
 
-theorem JacWinLay.n6 (hL : JacWinLay K size) : K.M.n ≤ 6 := by rcases hL.n46 with h | h <;> omega
+theorem JacWinLay.n6 (hL : JacWinLay K size) : K.M.n ≤ 6 := by rcases hL.n46 with h | h <;> omega_using [h]
 
 theorem JacWinLay.jg_ne (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwRo K ++ jwOther K) {i : Nat}
     (hi : i < 85) : x ≠ jg K i := by
   have := hL.n0
-  rcases hL.jg_apart hx hi with h | h <;> omega
+  rcases hL.jg_apart hx hi with h | h <;> omega_using [this, h]
 
 /-- Two distinct slots are apart. -/
 theorem JacWinLay.ap (hL : JacWinLay K size) {x y : Nat} (hx : x ∈ jwSlots K) (hy : y ∈ jwSlots K)
@@ -144,19 +145,19 @@ theorem JacWinLay.le (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwSlots K) : 
 
 /-- `T` and its powers are grid slots `80 … 84`. -/
 theorem JacWinLay.Tx (hL : JacWinLay K size) : K.E.x = jg K 80 := by
-  show K.T = _; rw [hL.T]; unfold jg JacWinCfg.st; omega
+  show K.T = _; rw [hL.T]; unfold jg JacWinCfg.st; omega_using []
 
 theorem JacWinLay.Ty (hL : JacWinLay K size) : K.E.y = jg K 81 := by
-  show K.T + 8 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega
+  show K.T + 8 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega_using []
 
 theorem JacWinLay.Tz (hL : JacWinLay K size) : K.E.z = jg K 82 := by
-  show K.T + 16 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega
+  show K.T + 16 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega_using []
 
 theorem JacWinLay.Tz2 (hL : JacWinLay K size) : K.z2 = jg K 83 := by
-  show K.T + 24 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega
+  show K.T + 24 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega_using []
 
 theorem JacWinLay.Tz3 (hL : JacWinLay K size) : K.z2 + 8 * K.M.n = jg K 84 := by
-  show K.T + 24 * K.M.n + 8 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega
+  show K.T + 24 * K.M.n + 8 * K.M.n = _; rw [hL.T]; unfold jg JacWinCfg.st; omega_using []
 
 theorem JacWinLay.T80 (hL : JacWinLay K size) : K.T = jg K 80 := hL.Tx
 
@@ -166,12 +167,12 @@ theorem entry_addr (K : JacWinCfg) (m c : Nat) :
   unfold jg JacWinCfg.st
   rw [Nat.mul_add, show 40 * K.M.n * (m - 1) = 8 * K.M.n * (5 * (m - 1)) by
     rw [Nat.mul_assoc, Nat.mul_assoc, show 40 = 8 * 5 from rfl, Nat.mul_assoc, Nat.mul_left_comm 5]]
-  omega
+  omega_using []
 
 /-- The grid's region is in the working space. -/
 theorem JacWinLay.grid_le (hL : JacWinLay K size) : K.tbl + 85 * (8 * K.M.n) ≤ size := by
   have := hL.le (jg_mem (K := K) (i := 84) (by decide))
-  unfold jg at this; omega
+  unfold jg at this; omega_using [this]
 
 /-- A slot read only is apart from what is written. -/
 theorem JacWinLay.ro_w (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwRo K) :
@@ -193,7 +194,7 @@ theorem jwLoopW_sub (K : JacWinCfg) : ∀ w ∈ jwLoopW K, w ∈ jwW K := by
   · refine Or.inl ⟨y, ?_, rfl⟩
     rcases hy with hy | ⟨c, hc, rfl⟩
     · exact other_ws hy
-    · exact jg_ws (by have := List.mem_range.mp hc; omega)
+    · exact jg_ws (by have := List.mem_range.mp hc; omega_using [this])
   · exact Or.inr rfl
 
 /-- What is written misses the modulus. -/
@@ -202,7 +203,7 @@ theorem JacWinLay.w_mo (hL : JacWinLay K size) {m : Nat} {mem : Mem} {base : Add
   intro w hw
   simp only [jwW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with ⟨y, hy, rfl⟩ | rfl
-  · have := hL.lay.mo y (ws_mem hy); dsimp only; omega
-  · have := hM.sep; dsimp only; omega
+  · have := hL.lay.mo y (ws_mem hy); dsimp only; omega_using [this]
+  · have := hM.sep; dsimp only; omega_using [this]
 
 end VG.Proof.Weierstrass.X86_64

@@ -72,12 +72,12 @@ structure RevI (p : Prm) (Q : BitVec 32) (k : Nat) (s : State) : Prop where
 
 theorem chunkPre_ct {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
     CT (ChunkI p Q m) chunkPre := by
-  have hk1 : 1 ≤ min (m / 16) 64 := by omega
+  have hk1 : 1 ≤ min (m / 16) 64 := by omega_using [h16]
   refine CT.seq (J := fun s => Env p s ∧ Src p s Q (16 * min (m / 16) 64) ∧ s.gpr .esi = Q ∧
       s.gpr .ecx = BitVec.ofNat 32 (min (m / 16) 64))
     (chunkLen_ct L hm fun s h => ⟨h.env, h.n⟩)
     (fun s h => WP.mono (chunkLen_ok L h.env hm h.n) fun s₁ ⟨E₁, cx₁, _, _, si₁, rd₁, wr₁, _⟩ =>
-      ⟨E₁, (h.src.take (by omega)).of_eq rd₁ wr₁, by rw [si₁, h.esi], cx₁⟩) ?_
+      ⟨E₁, (h.src.take (by omega_using [])).of_eq rd₁ wr₁, by rw [si₁, h.esi], cx₁⟩) ?_
   refine CT.seq (J := RevI p Q (min (m / 16) 64))
     (CT.taint [.ebp] (pin_ebp fun s h => h.1.ebp) (by taint_decide))
     (fun s ⟨E, hQ, si, cx⟩ => WP.of_runBlock ⟨_, by grun [],
@@ -85,12 +85,12 @@ theorem chunkPre_ct {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 
         by gregs [si], by gregs [E.ebp], by gregs [cx]⟩⟩) ?_
   refine CT.seq (J := fun s => s.gpr .ebp = p.W)
     (CT.taint [.esi, .edx, .ecx] (pin3 fun s h => ⟨h.esi, h.edx, h.ecx⟩) (by taint_decide))
-    (fun s h => WP.mono (revLoop_ok L h.env hk1 (by omega) h.src h.esi h.edx h.ecx) fun _ ⟨_, _, _, bp, _⟩ => by
+    (fun s h => WP.mono (revLoop_ok L h.env hk1 (by omega_using []) h.src h.esi h.edx h.ecx) fun _ ⟨_, _, _, bp, _⟩ => by
       rw [bp, h.env.ebp]) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
 
 theorem chunk_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (h16 : 16 ≤ m) :
     CT (ChunkI p Q m) (chunk v.callees) := by
-  have hk : min (m / 16) 64 ≤ 64 := by omega
+  have hk : min (m / 16) 64 ≤ 64 := by omega_using []
   refine CT.seq (J := fun t₅ => ∃ t, ChunkI p Q m t ∧ ChunkPre p Q m (min (m / 16) 64) t t₅)
     (chunkPre_ct L hm h16) (fun t h => WP.mono (chunkPre_ok L h.env hm h16 h.src h.esi h.n) fun t₅ Pr => ⟨t, h, Pr⟩)
     (CT.seq (J := fun s => s.gpr .ebp = p.W)
@@ -109,24 +109,24 @@ abbrev nChunks (b : Nat) : Nat := (b + 63) / 64
 
 theorem chunks_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
     (h16 : 16 ≤ m) : CT (ChunksI p Q m 0) (.loop (chunk v.callees) .ne) := by
-  have hN1 : 0 < nChunks (m / 16) := by unfold nChunks; omega
-  have hN2 : 64 * (nChunks (m / 16) - 1) < m / 16 := by unfold nChunks; omega
-  have hN3 : m / 16 ≤ 64 * nChunks (m / 16) := by unfold nChunks; omega
+  have hN1 : 0 < nChunks (m / 16) := by unfold nChunks; omega_using [h16]
+  have hN2 : 64 * (nChunks (m / 16) - 1) < m / 16 := by unfold nChunks; omega_using [h16]
+  have hN3 : m / 16 ≤ 64 * nChunks (m / 16) := by unfold nChunks; omega_using []
   refine (CT.loopN (fun k s => 0 < k ∧ k ≤ nChunks (m / 16) ∧ ChunksI p Q m (64 * (nChunks (m / 16) - k)) s)
     (fun k => ?_) (fun k s ⟨hk0, hk, σ, I, hQ⟩ => ?_) (nChunks (m / 16))).mono
-    fun s h => ⟨by omega, Nat.le_refl _, by rw [Nat.sub_self, Nat.mul_zero]; exact h⟩
+    fun s h => ⟨by omega_using [hN1], Nat.le_refl _, by rw [Nat.sub_self, Nat.mul_zero]; exact h⟩
   · by_cases hkk : 0 < k ∧ k ≤ nChunks (m / 16)
-    · have hd : 64 * (nChunks (m / 16) - k) < m / 16 := by omega
+    · have hd : 64 * (nChunks (m / 16) - k) < m / 16 := by omega_using [hN2, hkk]
       exact (chunk_ct v L (Q := Q + BitVec.ofNat 32 (16 * (64 * (nChunks (m / 16) - k))))
-        (m := m - 16 * (64 * (nChunks (m / 16) - k))) (by omega) (by omega)).mono fun s ⟨_, _, σ, I, hQ⟩ =>
+        (m := m - 16 * (64 * (nChunks (m / 16) - k))) (by omega_using [hm]) (by omega_using [hN2, hkk])).mono fun s ⟨_, _, σ, I, hQ⟩ =>
           ⟨I.abs.env, I.src hQ hd, I.esi, I.n⟩
     · exact CT.of_empty fun s ⟨hk0, hk, _⟩ => hkk ⟨hk0, hk⟩
-  · have hd : 64 * (nChunks (m / 16) - k) < m / 16 := by omega
-    refine WP.mono (chunk_ok v L I.abs.env (by omega) (by omega) (I.src hQ hd) I.esi I.n) fun s' C => ?_
+  · have hd : 64 * (nChunks (m / 16) - k) < m / 16 := by omega_using [hN2, hk0]
+    refine WP.mono (chunk_ok v L I.abs.env (by omega_using [hm]) (by omega_using [hN2, hk0]) (I.src hQ hd) I.esi I.n) fun s' C => ?_
     obtain ⟨I', z⟩ := I.step L hQ hd C
-    refine ⟨hk0, by rw [eval_ne z]; simp; omega, fun hk1 => ⟨by omega, by omega, σ, ?_, hQ⟩⟩
+    refine ⟨hk0, by rw [eval_ne z]; simp; omega_using [hN2, hN3, hk0, hk], fun hk1 => ⟨by omega_using [hk0, hk1], by omega_using [hk], σ, ?_, hQ⟩⟩
     have e : 64 * (nChunks (m / 16) - k) + min (m / 16 - 64 * (nChunks (m / 16) - k)) 64 =
-        64 * (nChunks (m / 16) - (k - 1)) := by omega
+        64 * (nChunks (m / 16) - (k - 1)) := by omega_using [hN2, hN3, hk, hk1]
     rw [e] at I'
     exact I'
 
@@ -155,12 +155,12 @@ theorem absTailPre_ct {p : Prm} (L : Lay p) {P : BitVec 32} {r : Nat} : CT (Tail
     have dB : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 (p.W + BitVec.ofNat 32 224), r⟩ := by
       rw [L.aW (by decide)]
       exact (T.w.sub_right (Lay.wSub (show 224 + 16 ≤ 2816 by decide))).sub_right
-        (Region.sub_prefix (by have := T.r16; omega))
+        (Region.sub_prefix (by have := T.r16; omega_using [this]))
     have lp : LoopPre t₁ P (p.W + BitVec.ofNat 32 224) r := by
-      refine ⟨di₁, dx₁, cx₁, T.r1, by have := T.r16; omega, T.wrap, ?_, by rw [rd₁, wr₁]; exact T.rd, ?_, dB⟩
-      · rw [L.nW (by decide)]; have := T.r16; omega
+      refine ⟨di₁, dx₁, cx₁, T.r1, by have := T.r16; omega_using [this], T.wrap, ?_, by rw [rd₁, wr₁]; exact T.rd, ?_, dB⟩
+      · rw [L.nW (by decide)]; have := T.r16; omega_using [hw, this]
       · rw [L.aW (by decide)]
-        exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 2816 by decide)) (by have := T.r16; omega)
+        exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 2816 by decide)) (by have := T.r16; omega_using [this])
     exact WP.of_runBlock ⟨t₁, run₁, lp, bp₁⟩
   refine CT.seq (J := fun s => s.gpr .ebp = p.W)
     (copyLoop_ct (pin3 fun s h => ⟨h.1.edi, h.1.edx, h.1.ecx⟩))
@@ -202,23 +202,23 @@ theorem absorb_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q : BitVec 32} {m : Nat} 
     (fun t ⟨A, z⟩ => WP.mono (absMid_ok v L A.env hm A.src A.esi A.n z) fun s ⟨P, si, n⟩ =>
       ⟨t, A, P.env, P.rd, P.wr, si, n⟩) ?_
   · have h0 : m / 16 ≠ 0 := of_decide_eq_false hf
-    exact (chunks_ct v L (Q := Q) hm (by omega)).mono fun s ⟨A, _⟩ =>
-      ⟨s, CInv.zero A.env A.esi A.n, A.src.take (by omega)⟩
+    exact (chunks_ct v L (Q := Q) hm (by omega_using [h0])).mono fun s ⟨A, _⟩ =>
+      ⟨s, CInv.zero A.env A.esi A.n, A.src.take (by omega_using [])⟩
   refine CT.seq (J := fun s => (∃ t, AbsI p Q m t ∧ Env p s ∧ s.rd = t.rd ∧ s.wr = t.wr ∧
       s.gpr .esi = Q + BitVec.ofNat 32 (16 * (m / 16)) ∧ slotv s.mem p.W nO = BitVec.ofNat 32 (m % 16)) ∧
       s.zf = some (decide (m % 16 = 0)))
     (CT.taint [.ebp] (pin_ebp fun s ⟨_, _, E, _⟩ => E.ebp) (by taint_decide)) (fun s ⟨t, A, E, rd, wr, si, n⟩ => ?_) ?_
-  · obtain ⟨s₁, run₁, z₁, E₁, si₁, m₁, rd₁, wr₁⟩ := anyLeft_ok L E (by omega) n
+  · obtain ⟨s₁, run₁, z₁, E₁, si₁, m₁, rd₁, wr₁⟩ := anyLeft_ok L E (by omega_using []) n
     exact WP.of_runBlock ⟨s₁, run₁, ⟨t, A, E₁, by rw [rd₁, rd], by rw [wr₁, wr], by rw [si₁, si],
       by rw [slotv_eq, m₁]; exact n⟩, z₁⟩
   refine CT.ite (decide (m % 16 = 0)) (fun s h => eval_e h.2) (fun _ => CT.nil) fun hf => ?_
   have h0 : m % 16 ≠ 0 := of_decide_eq_false hf
   refine (absTail_ct v L (P := Q + BitVec.ofNat 32 (16 * (m / 16))) (r := m % 16)).mono
     fun s ⟨⟨t, A, E, rd, wr, si, n⟩, _⟩ => ?_
-  have hs := A.src.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)
-  have ea := A.src.addr (j := 16 * (m / 16)) (by omega)
-  exact ⟨E, si, n, by omega, by omega, by rw [rd, wr]; exact hs.rd, hs.wrap,
-    by rw [ea]; exact A.w.sub_left (Offset.sub_base _ (by omega))⟩
+  have hs := A.src.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_using []) (by omega_using [h0])
+  have ea := A.src.addr (j := 16 * (m / 16)) (by omega_using [h0])
+  exact ⟨E, si, n, by omega_using [h0], by omega_using [], by rw [rd, wr]; exact hs.rd, hs.wrap,
+    by rw [ea]; exact A.w.sub_left (Offset.sub_base _ (by omega_using []))⟩
 
 /-! ## The lengths, the tag input, and `polyval` -/
 
@@ -240,7 +240,7 @@ theorem lens_ct (v : GcmImpl) {p : Prm} (L : Lay p) : CT (Env p) (lens v.callees
 
 theorem tagIn_ct {p : Prm} (L : Lay p) : CT (Env p) (.block tagIn) :=
   ldPin (r := .ecx) (o := nonceO) (x := p.N) (W := p.W)
-    (fun s h => ⟨h.ebp, h.slots.nonce, h.perm.wR (by decide)⟩) (by have := L.ww; unfold nonceO; omega)
+    (fun s h => ⟨h.ebp, h.slots.nonce, h.perm.wR (by decide)⟩) (by have := L.ww; unfold nonceO; omega_using [this])
     (by decide) (by taint_decide) (by taint_decide)
 
 theorem polyval_ct (v : GcmImpl) {p : Prm} (L : Lay p) : CT (Env p) (polyval v.callees) := by

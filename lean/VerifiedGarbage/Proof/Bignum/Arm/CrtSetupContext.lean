@@ -46,12 +46,12 @@ theorem CrtSetupContext.size {s : State} {base : BitVec 32} {len w : Nat}
     (h : CrtSetupContext base len w s) : 256 ≤ 8 * len := by
   have := h.arraysFit
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-  omega
+  omega_using [this]
 
 theorem Workspace.eq_of_frame {s : State} {base other : BitVec 32} {size otherSize : Nat} {m m' : Mem}
     (ws : Workspace s base size) (sep : Region.Disjoint ⟨State.addr base, size⟩ ⟨State.addr other, otherSize⟩)
     (frame : Frame [⟨State.addr other, otherSize⟩] m m') : WorkspaceEq (State.addr base) size m m' :=
-  WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+  WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep)
 
 end VG.Proof.Bignum.Arm

@@ -34,7 +34,7 @@ theorem doubleLoop_ok (s : State) {base : BitVec 32} {len w c : Nat}
   refine WP.loop (M := isa) inv ?_ c s ?_
   · intro k t hi
     obtain ⟨i, hik, hk, ready, number, modulus, frame, rest⟩ := hi
-    refine WP.mono (doubleLoopBody_ok t ready hk (by omega)) ?_
+    refine WP.mono (doubleLoopBody_ok t ready hk (by omega_using [hc', hik])) ?_
     rintro u ⟨next, value, modU, zero, frameU, restU⟩
     have step : numAt u.mem (State.addr base) w 4 =
         (2 ^ (i + 1) * numAt s.mem (State.addr base) w 4) % numAt s.mem (State.addr base) w 0 := by
@@ -48,12 +48,12 @@ theorem doubleLoop_ok (s : State) {base : BitVec 32} {len w c : Nat}
       · change some (!u.z) = some false
         simp only [zero, exit, decide_true, Bool.not_true]
       · simpa only [exit, Nat.sub_self] using next
-      · simpa only [show i + 1 = c by omega] using step
+      · simpa only [show i + 1 = c by omega_using [hik, exit]] using step
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, next, step, oldM, wholeFrame, wholeRest⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hk, exit], next, step, oldM, wholeFrame, wholeRest⟩
       change some (!u.z) = some true
       simp only [zero, exit, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, hc, h, ?_, rfl, Frame.refl _ _, Rest.refl _ _⟩
+  · refine ⟨0, by omega_using [], hc, h, ?_, rfl, Frame.refl _ _, Rest.refl _ _⟩
     simp only [Nat.pow_zero, Nat.one_mul, Nat.mod_eq_of_lt h.operand]
 
 end VG.Proof.Bignum.Arm

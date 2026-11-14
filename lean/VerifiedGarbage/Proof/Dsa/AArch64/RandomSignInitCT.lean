@@ -46,7 +46,7 @@ private theorem entry_prepare {p : RandomPreparePublic} {t : State} (hp : Random
     rw [random_q_length h]
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   · change (randomQBytes s).length < 2 ^ 64
     rw [random_q_length h]
     exact (s.gpr .x6).isLt

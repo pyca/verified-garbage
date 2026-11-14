@@ -39,7 +39,7 @@ theorem shared_pre (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64
     rw [hwr]
     exact Covers.of_mem (by simp [scratch])
   refine ⟨⟨⟨?_,?_,?_,?_⟩,hbound,?_,?_,?_⟩,hnr,?_,hwork⟩
-  · refine ⟨?_,?_,?_,?_,?_,?_,?_,by omega⟩
+  · refine ⟨?_,?_,?_,?_,?_,?_,?_,by omega_using [hD]⟩
     · change Covers [⟨s.gpr .r3,256⟩] (s.rd++s.wr)
       rw [hrd]
       exact Covers.of_mem (by simp)
@@ -52,7 +52,7 @@ theorem shared_pre (s : State) (hs : (Proof.Gcm.encryptBlocksSplitContract PPC64
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨⟨s.gpr .r5,16⟩,by simp,0,by exact (BitVec.add_zero _).symm,by change 0+16≤16; decide⟩
       · exact ⟨⟨s.gpr .r6,16⟩,by simp,0,by exact (BitVec.add_zero _).symm,by change 0+16≤16; decide⟩
-      · exact ⟨⟨s.gpr .r9,16*(s.gpr .r10).toNat⟩,by simp,0,by exact (BitVec.add_zero _).symm,by omega⟩
+      · exact ⟨⟨s.gpr .r9,16*(s.gpr .r10).toNat⟩,by simp,0,by exact (BitVec.add_zero _).symm,by omega_using []⟩
       · exact ⟨⟨scratch s,2112⟩,by simp [scratch],64,rfl,by change 64+2048≤2112; decide⟩
     · intro r hr
       change r ∈ [⟨s.gpr .r3,256⟩,⟨s.gpr .r5,16⟩,⟨s.gpr .r6,16⟩,⟨s.gpr .r9,16*(s.gpr .r10).toNat⟩] at hr
@@ -161,11 +161,11 @@ theorem prep_plain {t : State} {n count i : Nat} (lay : Wrapper.Layout (prep t) 
   · rw [ite_eq_left hic,ite_eq_left hic]
     exact prep_block (r := sourceRegion (prep t) count)
       (lay.disjoint ⟨(prep t).gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites]))
-      (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega))
+      (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hic]))
   · rw [ite_eq_right hic,ite_eq_right hic]
     exact prep_block (r := Blocks.coreData (Blocks.wrapperView (prep t)) n)
       (lay.wrapper.scratch _ (by simp))
-      (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega))
+      (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega_using [hi]))
 
 
 
@@ -234,7 +234,7 @@ theorem to_pre (s : State) (hs : (Proof.Gcm.decryptBlocksToContract PPC64LE.abi)
     Offset.sub_base _ (d := 64) (n := 2048) (k := 2112) (by decide)
   have dCY : Region.Disjoint (⟨s.gpr .r5+32,16⟩ : Region) ⟨s.gpr .r5,16⟩ :=
     Offset.disjoint_base _ (d := 32) (n := 16) (k := 16) (by decide) (by decide)
-  refine ⟨⟨⟨⟨?_,?_,?_,?_,?_,?_,?_,by omega⟩,?_,?_,?_⟩,Nat.le_refl _,?_,?_,?_⟩,hnr,?_⟩
+  refine ⟨⟨⟨⟨?_,?_,?_,?_,?_,?_,?_,by omega_using [fR]⟩,?_,?_,?_⟩,Nat.le_refl _,?_,?_,?_⟩,hnr,?_⟩
   · change Covers [⟨s.gpr .r3,256⟩] (s.rd++s.wr)
     rw [hrd]
     exact Covers.of_mem (by simp)
@@ -247,7 +247,7 @@ theorem to_pre (s : State) (hs : (Proof.Gcm.decryptBlocksToContract PPC64LE.abi)
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨⟨s.gpr .r5,48⟩,by simp,32,rfl,by change 32+16≤48; decide⟩
     · exact ⟨⟨s.gpr .r5,48⟩,by simp,0,by exact (BitVec.add_zero _).symm,by change 0+16≤48; decide⟩
-    · exact ⟨⟨s.gpr .r8,16*(s.gpr .r7).toNat⟩,by simp,0,by exact (BitVec.add_zero _).symm,by omega⟩
+    · exact ⟨⟨s.gpr .r8,16*(s.gpr .r7).toNat⟩,by simp,0,by exact (BitVec.add_zero _).symm,by omega_using []⟩
     · exact ⟨⟨s.gpr .r10,2112⟩,by simp,64,rfl,by change 64+2048≤2112; decide⟩
   · intro r hr
     change r ∈ [⟨s.gpr .r3,256⟩,⟨s.gpr .r5+32,16⟩,⟨s.gpr .r5,16⟩,⟨s.gpr .r8,16*(s.gpr .r7).toNat⟩] at hr

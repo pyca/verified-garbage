@@ -23,10 +23,10 @@ theorem stageWide_keep_mask {base : Addr} {size pLen qLen p q d : Nat} {s t : St
     (hd : d ∈ Layout.wideValues) :
     operandValue t base (.local d) pLen = operandValue s base (.local d) pLen := by
   have H := VG.Proof.Dsa.X86.Layout.wide_bounds hd
-  exact F.local_value_keep M.scr (by have := M.lengths; omega)
-    (by change 7048 ≤ d; omega) (Nat.le_trans (M.wideFit hd) M.extent)
-    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega) (M.wideFit hd)
-    (.inr (by change 8248 ≤ d; omega))
+  exact F.local_value_keep M.scr (by have := M.lengths; omega_using [this])
+    (by change 7048 ≤ d; omega_using [H]) (Nat.le_trans (M.wideFit hd) M.extent)
+    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega_using [Hs]) (M.wideFit hd)
+    (.inr (by change 8248 ≤ d; omega_using [H]))
 
 theorem deriveCompute_ok {base : Addr} {size pLen qLen p q g x : Nat} {s0 : State}
     (M : Moduli base size pLen qLen p q s0)
@@ -43,14 +43,14 @@ theorem deriveCompute_ok {base : Addr} {size pLen qLen p q g x : Nat} {s0 : Stat
       Execution base s0 sf := by
   have L := M.lengths
   have A := M.aligned
-  have np : (pLen + 7) / 8 ≤ 48 := by omega
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have pp : 0 < p := by have := M.pLarge; omega
+  have np : (pLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have pp : 0 < p := by have := M.pLarge; omega_using [this]
   unfold Generate.deriveCompute Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (generateParameters_ok M G hg) fun s1 ⟨M1, F1, E1⟩ => ?_)
   have X1 := E1.buffer X (by decide)
-  refine WP.seq (WP.mono (stageRange_ok M1 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (stageRange_ok M1 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     M1.qReady (X1.ready (M1.context nq)) false) fun s2 ⟨M2, F2, R2⟩ => ?_)
   have E2 := R2.execution (.inr ⟨rfl, rfl⟩)
   have E12 := E1.trans E2
@@ -63,7 +63,7 @@ theorem deriveCompute_ok {base : Addr} {size pLen qLen p q g x : Nat} {s0 : Stat
     have V := R3.wide_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
     rw [E12.value G (by decide) M.extent, E12.value X (by decide) M.extent, hg, hx] at V
     exact V
-  refine WP.seq (WP.mono (stageRange_ok M3 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (stageRange_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     M3.pReady (M3.wideReady (by decide) np) true) fun sf ⟨Mf, F4, R4⟩ => ?_)
   refine WP.block_nil ⟨Mf, ?_, (stageWide_keep_mask R4 M3 (by decide)).trans Y3,
     (E12.trans E3).trans (R4.execution (.inr ⟨rfl, rfl⟩))⟩

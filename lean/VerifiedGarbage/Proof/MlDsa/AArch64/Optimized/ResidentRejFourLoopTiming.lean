@@ -18,8 +18,8 @@ private theorem four_public {σ τ s t : State} {b p : Addr} {n d : Nat}
     (ps : ParseInv σ b p n L d s) (pt : ParseInv τ b p n L d t) : FourPublic s t := by
   have hp := ps.publicRegs hm hsp pt
   refine ⟨ps.constants,pt.constants,ps.candidates_eq hs ht hm pt hd,?_,?_,hp.1,?_⟩
-  · rw [ps.keep.rd,ps.keep.wr,ps.x2]; exact hs.read16 _ (by omega)
-  · rw [pt.keep.rd,pt.keep.wr,pt.x2]; exact ht.read16 _ (by omega)
+  · rw [ps.keep.rd,ps.keep.wr,ps.x2]; exact hs.read16 _ (by omega_using [hd])
+  · rw [pt.keep.rd,pt.keep.wr,pt.x2]; exact ht.read16 _ (by omega_using [hd])
   · intro r hr'
     simp only [Taint.ofRegs,RegSet.mem_ofList,List.mem_cons,List.not_mem_nil,or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl
@@ -42,7 +42,7 @@ theorem fourLoopStep_relCT {σ τ : State} {b p : Addr} {n d : Nat}
   have htr := (fourBody_relCT _ _ _ _ _ _ (four_public hs ht hm hsp hd hp.1 hp.2.1) es et).1
   obtain ⟨_,a,ea,ha,h17a,hga⟩ := fourLoopStep_ok hs hp.1 hp.2.2.1 hd hc
   obtain ⟨_,b,eb,hb,h17b,hgb⟩ := fourLoopStep_ok ht hp.2.1 hp.2.2.2 hd
-    (by rw [← parsed_eq hm (by omega) L]; exact hc)
+    (by rw [← parsed_eq hm (by omega_using [hd]) L]; exact hc)
   obtain ⟨_,rfl⟩ := Exec.det es ea
   obtain ⟨_,rfl⟩ := Exec.det et eb
   refine ⟨htr,ha,hb,h17a,h17b,hga,?_⟩
@@ -79,7 +79,7 @@ theorem fourLoop_relCT {σ τ : State} {b p : Addr} {n d : Nat}
       rw [eval_nonzero,hga,ite_eq_left hnext,hx] at hcontinue
       contradiction
     rw [ha.x5] at h5
-    exact ⟨n-(j+4),by omega,j+4,by omega,by omega,by omega,rfl,ha,hb,h17a,h17b⟩
+    exact ⟨n-(j+4),by omega_using [hj],j+4,by omega_using [hmod', h5],by omega_using [hnext],by omega_using [hmod'],rfl,ha,hb,h17a,h17b⟩
   exact (RelCT.loop I hstep (n-d)).mono
     (fun _ _ hp => ⟨d,hd,hc,hmod,rfl,hp⟩) (fun _ _ h => h)
 

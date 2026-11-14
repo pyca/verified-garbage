@@ -51,14 +51,14 @@ theorem over_step4 {m m' : Mem} {P : Addr} {w : Nat} {f : Nat → Byte} (hw : 4 
   rw [h x]
   by_cases hx : (x - (P + BitVec.ofNat 64 (4 * w))).toNat < 4
   · have := (sub_add_lt4 x P hw).mp hx
-    rw [ite_eq_left hx, sub_add_eq4 x P hw this.1, show 4 * w + ((x - P).toNat - 4 * w) = (x - P).toNat by omega]
-    simp only [over]; rw [ite_eq_left (by omega)]
+    rw [ite_eq_left hx, sub_add_eq4 x P hw this.1, show 4 * w + ((x - P).toNat - 4 * w) = (x - P).toNat by omega_using [this]]
+    simp only [over]; rw [ite_eq_left (by omega_using [this])]
   · rw [ite_eq_right hx]
     have := mt (sub_add_lt4 x P hw).mpr hx
     simp only [over]
     by_cases h1 : (x - P).toNat < 4 * w
-    · rw [ite_eq_left h1, ite_eq_left (by omega)]
-    · rw [ite_eq_right h1, ite_eq_right (by omega)]
+    · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1])]
+    · rw [ite_eq_right h1, ite_eq_right (by omega_using [this, h1])]
 
 /-- A byte of a little-endian word stored from the XOR of two loads. -/
 theorem writeW_xor_apply32 (m m₁ m₂ : Mem) (a c e x : Addr) :
@@ -110,12 +110,12 @@ structure NPre (k : Nat) (s : State) (rd rs : Reg) (od os : Nat) (P Q : Addr) : 
 
 theorem word_addr {b : BitVec 32} {o w k : Nat} (hw : w < k) (h : b.toNat + o + 4 * k ≤ 2 ^ 32) :
     State.addr (b + BitVec.ofNat 32 (o + 4 * w)) = State.addr b + BitVec.ofNat 64 o + BitVec.ofNat 64 (4 * w) := by
-  rw [addr_add (by omega), VG.Offset.add_add]
+  rw [addr_add (by omega_using [hw, h]), VG.Offset.add_add]
 
 theorem word_in {rs : List Region} {P : Addr} {k w : Nat} (h : Covers [⟨P, 4 * k⟩] rs) (hw : w < k)
     (hk : 4 * k ≤ 2 ^ 64) :
     InRegions rs (P + BitVec.ofNat 64 (4 * w)) 4 :=
-  h _ _ ⟨_, List.mem_singleton_self _, VG.Offset.contains_base P (by omega) (by omega)⟩
+  h _ _ ⟨_, List.mem_singleton_self _, VG.Offset.contains_base P (by omega_using [hw]) (by omega_using [hw, hk])⟩
 
 theorem copyN_wp {k : Nat} {s : State} {rd rs : Reg} {od os : Nat} {P Q : Addr} (h : NPre k s rd rs od os P Q) :
     WP isa (.block ((List.range k).flatMap (copyWord rd rs od os))) s
@@ -127,20 +127,20 @@ theorem copyN_wp {k : Nat} {s : State} {rd rs : Reg} {od os : Nat} {P Q : Addr} 
     rw [hi.regs _ h.d9 h.d10, word_addr hw h.fP, h.hP]
   have hQ' : State.addr (s'.gpr rs + BitVec.ofNat 32 (os + 4 * w)) = Q + BitVec.ofNat 64 (4 * w) := by
     rw [hi.regs _ h.s9 h.s10, word_addr hw h.fQ, h.hQ]
-  have hfit : 4 * k ≤ 2 ^ 64 := by have := h.fP; omega
-  refine wp_ldr (a := Q + BitVec.ofNat 64 (4 * w)) (by have := h.oQ; omega) hQ' (by rw [hi.rd, hi.wr]; exact word_in h.rQ hw hfit) fun s₁ u₁ => ?_
-  refine wp_str (a := P + BitVec.ofNat 64 (4 * w)) (by have := h.oP; omega) (by rw [u₁.other _ h.d9]; exact hP')
+  have hfit : 4 * k ≤ 2 ^ 64 := by have := h.fP; omega_using [this]
+  refine wp_ldr (a := Q + BitVec.ofNat 64 (4 * w)) (by have := h.oQ; omega_using [hw, this]) hQ' (by rw [hi.rd, hi.wr]; exact word_in h.rQ hw hfit) fun s₁ u₁ => ?_
+  refine wp_str (a := P + BitVec.ofNat 64 (4 * w)) (by have := h.oP; omega_using [hw, this]) (by rw [u₁.other _ h.d9]; exact hP')
     (by rw [u₁.wr, hi.wr]; exact word_in h.wP hw hfit) fun s₂ u₂ => WP.block_nil ⟨fun x h9 h10 => ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₂.gpr, u₁.other _ h9, hi.regs _ h9 h10]
   · rw [u₂.rd, u₁.rd, hi.rd]
   · rw [u₂.wr, u₁.wr, hi.wr]
   · rw [u₂.sp, u₁.sp, hi.sp]
   rw [u₂.mem, u₁.gpr, u₁.mem, hi.mem]
-  refine over_step4 (by omega) fun x => ?_
+  refine over_step4 (by omega_using [hw, hfit]) fun x => ?_
   rw [writeW_readW_apply32]
   split
   · rename_i hx
-    rw [VG.Offset.add_add, over_sep (h.sep.sub_left (Region.sub_prefix (by omega))) (by omega) (by omega)]
+    rw [VG.Offset.add_add, over_sep (h.sep.sub_left (Region.sub_prefix (by omega_using [hw]))) (by omega_using [hw, hx]) (by omega_using [hfit])]
   · rfl
 
 theorem xorN_wp {k : Nat} {s : State} {rd rs : Reg} {od os : Nat} {P Q : Addr} (h : NPre k s rd rs od os P Q) :
@@ -153,12 +153,12 @@ theorem xorN_wp {k : Nat} {s : State} {rd rs : Reg} {od os : Nat} {P Q : Addr} (
     rw [hi.regs _ h.d9 h.d10, word_addr hw h.fP, h.hP]
   have hQ' : State.addr (s'.gpr rs + BitVec.ofNat 32 (os + 4 * w)) = Q + BitVec.ofNat 64 (4 * w) := by
     rw [hi.regs _ h.s9 h.s10, word_addr hw h.fQ, h.hQ]
-  have hfit : 4 * k ≤ 2 ^ 64 := by have := h.fP; omega
-  refine wp_ldr (a := P + BitVec.ofNat 64 (4 * w)) (by have := h.oP; omega) hP' (by rw [hi.rd, hi.wr]; exact word_in (Covers.right h.wP) hw hfit) fun s₁ u₁ => ?_
-  refine wp_ldr (a := Q + BitVec.ofNat 64 (4 * w)) (by have := h.oQ; omega) (by rw [u₁.other _ h.s9]; exact hQ')
+  have hfit : 4 * k ≤ 2 ^ 64 := by have := h.fP; omega_using [this]
+  refine wp_ldr (a := P + BitVec.ofNat 64 (4 * w)) (by have := h.oP; omega_using [hw, this]) hP' (by rw [hi.rd, hi.wr]; exact word_in (Covers.right h.wP) hw hfit) fun s₁ u₁ => ?_
+  refine wp_ldr (a := Q + BitVec.ofNat 64 (4 * w)) (by have := h.oQ; omega_using [hw, this]) (by rw [u₁.other _ h.s9]; exact hQ')
     (by rw [u₁.rd, u₁.wr, hi.rd, hi.wr]; exact word_in h.rQ hw hfit) fun s₂ u₂ => ?_
   refine VG.Proof.CmacAes.Arm.wp_eor (op2_reg _ _) fun s₃ u₃ => ?_
-  refine wp_str (a := P + BitVec.ofNat 64 (4 * w)) (by have := h.oP; omega) (by rw [u₃.other _ h.d9, u₂.other _ h.d10, u₁.other _ h.d9]; exact hP')
+  refine wp_str (a := P + BitVec.ofNat 64 (4 * w)) (by have := h.oP; omega_using [hw, this]) (by rw [u₃.other _ h.d9, u₂.other _ h.d10, u₁.other _ h.d9]; exact hP')
     (by rw [u₃.wr, u₂.wr, u₁.wr, hi.wr]; exact word_in h.wP hw hfit) fun s₄ u₄ =>
       WP.block_nil ⟨fun x h9 h10 => ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₄.gpr, u₃.other _ h9, u₂.other _ h10, u₁.other _ h9, hi.regs _ h9 h10]
@@ -166,12 +166,12 @@ theorem xorN_wp {k : Nat} {s : State} {rd rs : Reg} {od os : Nat} {P Q : Addr} (
   · rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, hi.wr]
   · rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp, hi.sp]
   rw [u₄.mem, u₃.gpr, u₃.mem, u₂.other _ (by decide), u₂.gpr, u₂.mem, u₁.gpr, u₁.mem, hi.mem]
-  refine over_step4 (by omega) fun x => ?_
+  refine over_step4 (by omega_using [hw, hfit]) fun x => ?_
   rw [writeW_xor_apply32]
   split
   · rename_i hx
-    rw [VG.Offset.add_add, VG.Offset.add_add, over_out (by rw [VG.Proof.Modes.off_self P (by omega)]; omega),
-      over_sep (h.sep.sub_left (Region.sub_prefix (by omega))) (by omega) (by omega)]
+    rw [VG.Offset.add_add, VG.Offset.add_add, over_out (by rw [VG.Proof.Modes.off_self P (by omega_using [hw, hfit, hx])]; omega_using []),
+      over_sep (h.sep.sub_left (Region.sub_prefix (by omega_using [hw]))) (by omega_using [hw, hx]) (by omega_using [hfit])]
   · rfl
 
 end VG.Proof.Modes.Arm

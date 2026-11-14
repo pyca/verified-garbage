@@ -51,7 +51,7 @@ theorem consumeCandidate_ok {p : CandidateP} {s : State}
       subst hr
       left
       change 8 * j + 8 ≤ 96
-      omega) (by omega)
+      omega_using [hj]) (by omega_using [hj])
   have hbase := h.base.keep (CandidateFrame.of_scr hscr) hs k ((k.gpr (by decide)).trans h.base.sp)
   refine ⟨⟨hbase, havail, ?_, ?_, ?_⟩, hs, CandidateFrame.of_scr hscr, k.mono (by decide), h.base.output_eq hscr⟩
   · rw [hm]; exact advanceMem_ptr _ _ _ _ _ _

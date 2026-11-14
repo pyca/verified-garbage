@@ -29,6 +29,6 @@ theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m
     (hi : slot i.val + 128 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
   simp only [E, F]
   exact congrArg toFe (valN_congr (fun j hj => h.limbs hi
-    (by have := i.isLt; simp only [slot]; omega) (by omega : j < 16)))
+    (by have := i.isLt; simp only [slot]; omega_using []) (by omega_using [hj] : j < 16)))
 
 end VG.Proof.X448.AArch64.Weak

@@ -10,7 +10,7 @@ Encryption with a precomputed public key
 `H` (the label's), an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
 functions of MD5, SHA-1, SHA-224, SHA-256 or the SHA-512 family), calling
 those functions, MGF1 with the hash function of the table of the interface
-`Hash` that the last argument points to (`Impl/Mgf1/X86_64/Table.lean`,
+`MdHash` that the last argument points to (`Impl/Mgf1/X86_64/Table.lean`,
 among the functions `f : Fns`), and the RSA operation: the public-key
 operation within BoringSSL's limits when encrypting, the private-key
 operation checked against `e` (`vg_rsa_private_checked`) when decrypting.
@@ -182,9 +182,9 @@ def lens : List Nat := [16, 20, 28, 32, 48, 64]
 to, to `sTab` (through `r11`, which keeps `rax`). -/
 def tabSlot (j : Nat) : List Instr := [.mov .r11 (.mem (arg j)), .store (sp sTab) .r11]
 
-/-- The digest length of the table whose address is in `sTab` (its word 4),
+/-- The digest length of the table whose address is in `sTab` (its word 6),
 to `r11`. -/
-def lenLoad : List Instr := [.mov .r11 (.mem (sp sTab)), .mov .r11 (.mem (at_ .r11 32))]
+def lenLoad : List Instr := [.mov .r11 (.mem (sp sTab)), .mov .r11 (.mem (at_ .r11 48))]
 
 /-- `b d` for the digest length `d` in `r11`, among `ds`: the last if it is
 none of the others. -/
@@ -400,12 +400,22 @@ def decTail : Prog isa :=
 
 variable (privN : String) (privC : Prog isa)
 
-def decBody : Prog isa :=
-  seqs [.block (decPrologue ++ privArgs), .call privN privC,
-    .block (tabSlot 17), .block lenLoad,
+/-- `scratch` (the stack argument 15) back to `sScr`, by `r11`, which keeps
+the private operation's result in `rax`. -/
+def scrSlot : List Instr := [.mov .r11 (.mem (arg 15)), .store (sp sScr) .r11]
+
+/-- `decBody`, calling `vg_rsa_private_checked_precomputed` (`privC`), whose
+stack arguments 14 and 15 are the key's precomputed values `pre` and
+`pre_len` (our stack arguments 19 and 20): they go to the frame's words 14
+and 15, `sScr` and `sSrc`, and `scratch` back to `sScr` after the call
+(`scrSlot`; `sSrc` is set before each read). -/
+def decBodyP : Prog isa :=
+  seqs [.block (decPrologue ++ privArgs ++ argSlot 19 sScr ++ argSlot 20 sSrc), .call privN privC,
+    .block (scrSlot ++ tabSlot 17), .block lenLoad,
     byLen (fun d => decTail (ofLen d) f) lens]
 
-/-- `vg_rsa_oaep_decrypt`. -/
-def decrypt : Prog isa := .frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)
+/-- `vg_rsa_oaep_decrypt_precomputed`: `decrypt`, calling
+`vg_rsa_private_checked_precomputed` with the key's precomputed values. -/
+def decryptP : Prog isa := .frame (.alloc frameBytes) (decBodyP f privN privC) (.free frameBytes)
 
 end VG.Impl.RsaOaep.X86_64

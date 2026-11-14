@@ -12,7 +12,7 @@ open VG.Proof.Bignum.X86 VG.Proof.Rsa.X86.Keys
 open VG.Impl.Rsa.X86.KeyCheck
 
 theorem input_index {full : Bool} {i : Nat} (hi : 2 * i < scratchArg full) : i < inputCount full := by
-  cases full <;> simp only [scratchArg, inputCount, Bool.false_eq_true, ite_false, ite_true] at * <;> omega
+  cases full <;> simp only [scratchArg, inputCount, Bool.false_eq_true, ite_false, ite_true] at * <;> omega_using [hi]
 
 theorem ABI.inputMember {full : Bool} {s : State} (a : ABI full s) {i : Nat}
     (hi : 2 * i < scratchArg full) : (caller full s).buffer (2 * i) ∈ s.rd := by
@@ -25,7 +25,7 @@ theorem ABI.inputLength {full : Bool} {s : State} (a : ABI full s) {i : Nat}
   have h := a.inputLengths i (input_index hi)
   have width := a.width
   change 0 < (arg s (2 * i + 1)).toNat ∧ (arg s (2 * i + 1)).toNat ≤ _
-  omega
+  omega_using [h, width]
 
 theorem ABI.inputFit {full : Bool} {s : State} (a : ABI full s) {i : Nat}
     (hi : 2 * i < scratchArg full) :

@@ -82,10 +82,10 @@ theorem sel_ok {r : Reg} {v : Nat} (hv : v < 4096) {p e : Prog isa} {s : State} 
   refine WP.seq (wp_subImm hv fun s₁ o₁ e₁ => wp_nil ?_)
   have hr := (s.gpr r).isLt
   have hz : isa.eval (.zero .x .x9) s₁ = some (decide ((s.gpr r).toNat = v)) := by
-    rw [eval_zero, eq_zero_iff, e₁, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := v) (by omega)]
+    rw [eval_zero, eq_zero_iff, e₁, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := v) (by omega_using [hv])]
     congr 1
     apply decide_eq_decide.mpr
-    omega
+    omega_using [hv]
   refine WP.ite _ hz (fun h => hp s₁ o₁ (of_decide_eq_true h)) (fun h => he s₁ o₁ (of_decide_eq_false h))
 
 /-- The arguments of `BitPack` and `BitUnpack`, by the length. -/

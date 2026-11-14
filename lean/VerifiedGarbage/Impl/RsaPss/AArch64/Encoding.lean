@@ -10,8 +10,8 @@ public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 # EMSA-PSS's encoding and its check on AArch64, and RSASSA-PSS around them
 
 `encode` (EMSA-PSS-ENCODE) and `checkEncoding` (EMSA-PSS-VERIFY), for a
-Merkle–Damgård hash function `H` of a table of `MdHash` and MGF1's of a table
-of `Hash` (their last two arguments, on the stack), run
+Merkle–Damgård hash function `H` of a table of `MdHash` and MGF1's of another
+(their last two arguments, on the stack), run
 the code of `Impl/RsaPss/AArch64.lean` in the same frame (`frameBytes`) and
 the same first 8192 bytes of their working space, as on x86-64
 (`Impl/RsaPss/X86_64/Encoding.lean`): `encode` stores its arguments in the
@@ -64,7 +64,7 @@ def ret0 : Prog isa := .block [movi .x0 0]
 
 /-- The words of the tables to their slots: the table of `MdHash`'s `init`,
 compression function and digest (its words 0, 3 and 4), from the table at
-the stack argument 0, and the address of the table of `Hash`, the stack
+the stack argument 0, and the address of MGF1's table, the stack
 argument 1. -/
 def tabSlots : List Instr :=
   [arg .x9 0, .ldr .x .x10 .x9 0] ++ st .x10 sIniH ++ [.ldr .x .x10 .x9 24] ++ st .x10 sCmpH ++
@@ -204,6 +204,18 @@ def signCBody : Prog isa :=
 /-- `vg_rsa_pss_sign`, calling `encode` for the hash function of the table
 `hash`. -/
 def signC : Prog isa := .frame (.alloc frameBytes) (signCBody f g privN privC) (.free frameBytes)
+
+/-- `signCBody` calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def signCBodyP : Prog isa :=
+  seqs [.block (signPrologue ++ n0 .x2),
+    .ite (.zero .x .x10) signFailP (seqs [.block (emBitsB ++ encArgs),
+      byIdx (fun i => .call (encName i) (encode f (ofIdx i) g)) idxs,
+      .ite (.zero .w .x0) signFailP (.seq (.block privArgsP) (.call privN privC))]),
+    .block restoreP]
+
+/-- `vg_rsa_pss_sign_precomputed`, calling `encode` for the hash function of
+the table `hash`. -/
+def signCP : Prog isa := .frame (.alloc frameBytes) (signCBodyP f g privN privC) (.free frameBytes)
 
 /-- The arguments of the precomputed public operation: its output (`k`
 bytes) at `scratch`, `pre` (`pre_len` words), `e`, the signature (`k` bytes),

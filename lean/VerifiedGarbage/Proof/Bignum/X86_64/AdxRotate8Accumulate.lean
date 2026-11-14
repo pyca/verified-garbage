@@ -36,7 +36,7 @@ theorem addNeg1_ok (s : State) (hb : (s.gpr .rdx).toNat ≤ 1) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   have hv : s.gpr .rdx = 0 ∨ s.gpr .rdx = 1 := by
-    rcases (show (s.gpr .rdx).toNat = 0 ∨ (s.gpr .rdx).toNat = 1 by omega) with h | h
+    rcases (show (s.gpr .rdx).toNat = 0 ∨ (s.gpr .rdx).toNat = 1 by omega_using [hb]) with h | h
     · exact Or.inl (BitVec.eq_of_toNat_eq (by simpa using h))
     · exact Or.inr (BitVec.eq_of_toNat_eq (by simpa using h))
   refine ⟨?_, ?_, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -57,14 +57,14 @@ theorem carryIn_ok {s : State} {B : Addr} {Z eU : Nat}
   rw [show ([Instr.mov .rdx (.mem AdxRotate8.blockCarry), .alu .add .rdx (.imm (BitVec.ofInt 32 (-1)))]) =
     [.mov .rdx (.mem AdxRotate8.blockCarry)] ++ [.alu .add .rdx (.imm (BitVec.ofInt 32 (-1)))] from rfl,
     WP.block_append_iff]
-  have hm := readSrc_word hs (ea_carry hc he) (show eU - 8 + 8 ≤ Z by omega)
+  have hm := readSrc_word hs (ea_carry hc he) (show eU - 8 + 8 ≤ Z by omega_using [he, huZ])
   refine WP.mono (movMem_ok s (dst := .rdx) hm) fun a ⟨da,_,_,ka⟩ => ?_
   refine WP.mono (addNeg1_ok a (by rw [da]; exact hb)) fun t ⟨ct,ot,mt,kt⟩ => ?_
   rw [da] at ct
   exact ⟨ct, ot, mt.trans ka.2.1, (ka.trans kt).mono (by simp)⟩
 
 private theorem bit_toNat (C : Nat) (h : C ≤ 1) : (decide (C = 1)).toNat = C := by
-  rcases (show C = 0 ∨ C = 1 by omega) with rfl | rfl <;> rfl
+  rcases (show C = 0 ∨ C = 1 by omega_using [h]) with rfl | rfl <;> rfl
 
 theorem addInputCarry_ok {s : State} {B : Addr} {Z eU eO : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (ho : s.gpr .rsi = off B eO)
@@ -84,7 +84,7 @@ theorem addInputCarry_ok {s : State} {B : Addr} {Z eU eO : Nat}
     intro k hk t kt
     rw [kt.readMem (by simp [AdxRotate8.at_]) (by intro r h; nomatch h),
       ka.readMem (by simp [AdxRotate8.at_]) (by intro r h; nomatch h)]
-    exact readSrc_word hs (ea_at ho (8 * k)) (by omega)
+    exact readSrc_word hs (ea_at ho (8 * k)) (by omega_using [hoZ, hk])
   refine WP.mono (chain_ok a _ _ ca src (fun _ _ _ h => nomatch h)) fun b ⟨cb, hcb, eb, kb⟩ => ?_
   rw [show ([Instr.mov32 .rax (.imm 0), .adcx .rax (.reg .rax)]) =
     [.mov32 .rax (.imm 0)] ++ [.adcx .rax (.reg .rax)] from rfl, WP.block_append_iff]
@@ -110,7 +110,7 @@ theorem accumulate_ok {s : State} {B : Addr} {Z eU eO : Nat}
   unfold AdxRotate8.accumulate
   refine WP.seq (WP.mono (addInputCarry_ok hs hc ho he huZ hoZ hb) fun b ⟨eb,bb,_,kb⟩ => ?_)
   refine WP.mono (storeMem_ok (hs.congr kb.2.2.2)
-    (ea_carry ((kb.gpr (by decide)).trans hc) he) (show eU - 8 + 8 ≤ Z by omega))
+    (ea_carry ((kb.gpr (by decide)).trans hc) he) (show eU - 8 + 8 ≤ Z by omega_using [he, huZ]))
     fun t ⟨wt,ot,kt⟩ => ?_
   refine ⟨?_,?_,?_,(kb.keep.trans kt).mono (by simp)⟩
   · rw [wt, cols_keep kt (by simp)]; exact eb

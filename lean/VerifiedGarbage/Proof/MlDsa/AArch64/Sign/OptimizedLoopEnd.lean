@@ -64,8 +64,8 @@ theorem positiveDecEnd {D : Nat} {p : Params} (h3 : Ok3 p) (hp : ParamsOk p) (hc
         fun h1 => absurd (h1.symm.trans (e15.trans h.x24)) (by decide), fun _ => loop_none_exh hr⟩
     · refine .inl ⟨by
         have hne : (BitVec.ofNat 64 (814 - (t + 1))).toNat ≠ 0 := by
-          have := h.t_lt; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
-        rw [hz]; intro h0; rw [h0] at hne; exact hne rfl, K, by rw [L.keepW hP k2, h.kap], ?_, by have := h.t_lt; omega, hr⟩
+          have := h.t_lt; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]; omega_using [ht, this]
+        rw [hz]; intro h0; rw [h0] at hne; exact hne rfl, K, by rw [L.keepW hP k2, h.kap], ?_, by have := h.t_lt; omega_using [ht, this], hr⟩
       rw [hP.pa (by decide), hm, Mem.readW_writeW_self64, h.cnt, ofNat_sub_one h.t_lt]
   · -- `SampleInBall` failed
     rw [h.cnt, one_sub_one] at hz

@@ -18,7 +18,7 @@ theorem candidate_bound (m : Mem) (p : Addr) : candidate m p<2^23 := by
   have h1 := (m (p+1)).isLt
   have h2 := (m (p+2)).isLt
   simp only [candidate,rnZ]
-  omega
+  omega_using []
 
 private theorem three_toNat (m : Mem) (p : Addr) :
     (m.read p 3).toNat = (m p).toNat+256*(m (p+1)).toNat+65536*(m (p+2)).toNat := by
@@ -29,7 +29,7 @@ private theorem three_toNat (m : Mem) (p : Addr) :
       ← Nat.shiftLeft_add_eq_or_of_lt (m (p+1)).isLt,
       ← Nat.shiftLeft_add_eq_or_of_lt (m (p+2)).isLt]
   simp only [Nat.shiftLeft_eq,show (0#0).toNat=0 from rfl]
-  omega
+  omega_using []
 
 theorem candidate_read (m : Mem) (p : Addr) :
     (((m.read p 3).setWidth 32) &&& 0x7fffff).toNat = candidate m p := by
@@ -40,7 +40,7 @@ theorem candidate_read (m : Mem) (p : Addr) :
   have h0 := (m p).isLt
   have h1 := (m (p+1)).isLt
   simp only [candidate,rnZ]
-  omega
+  omega_using []
 
 /-- The same candidate is obtained by the scalar unaligned word load. -/
 theorem scalar_candidate (m : Mem) (p : Addr) :
@@ -56,9 +56,9 @@ theorem scalar_candidate (m : Mem) (p : Addr) :
         simp only [BitVec.getLsbD_ofNat,Nat.testBit_two_pow_sub_one,hb,hi,decide_true,Bool.and_true]
       have hm32 : (0x7fffff : BitVec 32).getLsbD i=true := by
         rw [show (0x7fffff : BitVec 32)=BitVec.ofNat 32 (2^23-1) from rfl]
-        simp only [BitVec.getLsbD_ofNat,Nat.testBit_two_pow_sub_one,hb,show i<32 by omega,decide_true,Bool.and_true]
+        simp only [BitVec.getLsbD_ofNat,Nat.testBit_two_pow_sub_one,hb,show i<32 by omega_using [hb],decide_true,Bool.and_true]
       simp only [hm64,hm32,Bool.and_true]
-      rw [getLsbD_read m 4 p i (by omega),getLsbD_read m 3 p i (by omega)]
+      rw [getLsbD_read m 4 p i (by omega_using [hb]),getLsbD_read m 3 p i (by omega_using [hb])]
     · have hm64 : (0x7fffff : BitVec 64).getLsbD i=false := by
         rw [show (0x7fffff : BitVec 64)=BitVec.ofNat 64 (2^23-1) from rfl]
         simp only [BitVec.getLsbD_ofNat,Nat.testBit_two_pow_sub_one,hb,decide_false,Bool.and_false]

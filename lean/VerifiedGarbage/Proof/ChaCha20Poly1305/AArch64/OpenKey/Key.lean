@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.OpenKey.Copy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Pad
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.PadRest
@@ -12,7 +13,113 @@ import VerifiedGarbage.Proof.ChaCha20.Keystream
 import VerifiedGarbage.Proof.ChaCha20.Stream
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `ChaCha20Poly1305.AArch64.OpenKey.Copy`, which only this module used -/
+
+section
+
+/-!
+# ChaCha20-Poly1305 on AArch64, 513 to 704 bytes: the state copied
+
+`OpenKey.copy`: the ChaCha20 state at `ctx[64, 128)` copied to
+`ctx[640, 704)` a word at a time, as `ShortRest.stash` copies it.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.ChaCha20Poly1305.AArch64.OpenKey
+
+open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64 VG.Impl.ChaCha20Poly1305.AArch64.OpenKey
+open VG.Proof.ChaCha20.AArch64.Xor (Upd Mupd wp_ldr32 wp_str32)
+open VG.Spec.ChaCha20 (stateAt)
+
+variable {e : Bool}
+
+/-- One word copied. -/
+theorem copyW_ok {s₀ s : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) (hx21 : s.gpr .x21 = cx s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (.block (copyW k)) s fun s' =>
+      s'.mem = s.mem.writeW (off (cx s₀) (640 + 4 * k)) (s.mem.readW (off (cx s₀) (64 + 4 * k)) 32) ∧
+      (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have o : InRegions s.wr (off (cx s₀) (640 + 4 * k)) 4 := by
+    rw [hwr]; exact hp.in_ctx (by omega_using [hk])
+  have i : InRegions (s.rd ++ s.wr) (off (cx s₀) (64 + 4 * k)) 4 := by
+    rw [hrd, hwr]; exact hp.in_ctx' (by omega_using [hk])
+  unfold copyW
+  refine wp_ldr32 (a := off (cx s₀) (64 + 4 * k)) ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hx21]) i fun s₁ u₁ => ?_
+  refine wp_str32 (a := off (cx s₀) (640 + 4 * k)) ⟨by omega_using [], by omega_using [hk]⟩
+    (by rw [u₁.other _ (by decide), hx21]) (by rw [u₁.wr]; exact o) fun s₂ g₂ =>
+      WP.block_nil ⟨?_, fun r hr => ?_, ?_, ?_⟩
+  · rw [g₂.mem, u₁.gpr, u₁.mem, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+  · rw [g₂.gpr, u₁.other r hr]
+  · rw [g₂.rd, u₁.rd]
+  · rw [g₂.wr, u₁.wr]
+
+/-- The first `n` words of the copy. -/
+def copyN (n : Nat) : List Instr := (List.range n).flatMap copyW
+
+theorem copyN_succ (n : Nat) : copyN (n + 1) = copyN n ++ copyW n := by
+  simp only [copyN, List.range_succ, List.flatMap_append, List.flatMap_singleton]
+
+/-- After the first `n` words. -/
+structure Copied (s₀ s : State) (n : Nat) (s' : State) : Prop where
+  word : ∀ j < n, s'.mem.readW (off (cx s₀) (640 + 4 * j)) 32 = s.mem.readW (off (cx s₀) (64 + 4 * j)) 32
+  frame : Frame [sub s₀ 640 64] s.mem s'.mem
+  gpr : ∀ r, r ≠ .x9 → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem copyN_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀) (hrd : s.rd = s₀.rd)
+    (hwr : s.wr = s₀.wr) : ∀ n ≤ 16, WP isa (.block (copyN n)) s (Copied s₀ s n)
+  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
+  | n + 1, hn => by
+    rw [copyN_succ]
+    refine WP.block_append ((copyN_ok hp hx21 hrd hwr n (by omega_using [hn])).mono fun s₁ h₁ => ?_)
+    refine (copyW_ok hp (k := n) (by omega_using [hn]) (by rw [h₁.gpr _ (by decide), hx21])
+      (by rw [h₁.rd, hrd]) (by rw [h₁.wr, hwr])).mono fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
+    -- The source word `n` is outside the copy written so far.
+    have src : s₁.mem.readW (off (cx s₀) (64 + 4 * n)) 32 = s.mem.readW (off (cx s₀) (64 + 4 * n)) 32 := by
+      refine h₁.frame.readW (r := sub s₀ (64 + 4 * n) 4) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr
+      exact sub_disj s₀ (by omega_using [hn]) (by omega_using [hn]) (by omega_using [])
+    refine ⟨fun j hj => ?_, ?_, fun r hr => by rw [g₂ r hr, h₁.gpr r hr], by rw [rd₂, h₁.rd],
+      by rw [wr₂, h₁.wr]⟩
+    · rw [m₂, src]
+      by_cases hjn : j = n
+      · subst hjn; exact Mem.readW_writeW_self32 _ _ _
+      · rw [Mem.readW_writeW_sep (by
+            rw [show off (cx s₀) (640 + 4 * j) = off (cx s₀) (4 * (160 + j)) by congr 1; omega_using [],
+              show off (cx s₀) (640 + 4 * n) = off (cx s₀) (4 * (160 + n)) by congr 1; omega_using []]
+            exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])) (by decide)]
+        exact h₁.word j (by omega_using [hj, hjn])
+    · rw [m₂]
+      exact h₁.frame.writeW (List.mem_singleton_self _) _ (by
+        show (sub s₀ 640 64).Contains (off (cx s₀) (640 + 4 * n)) 4
+        exact Offset.contains _ (e := 640) (k := 64) (by omega_using []) (by omega_using [hn]) (by omega_using []))
+
+theorem copy_eq : copy = copyN 16 := rfl
+
+/-- The state copied. -/
+theorem stateAt_copy {s₀ s s' : State} (h : Copied s₀ s 16 s') :
+    stateAt s'.mem (off (cx s₀) 640) = stateAt s.mem (off (cx s₀) 64) := by
+  apply Vector.ext
+  intro j hj
+  have w := h.word j hj
+  simp only [stateAt, Vector.getElem_ofFn]
+  rw [show off (cx s₀) 640 + BitVec.ofNat 64 (4 * j) = off (cx s₀) (640 + 4 * j) from off_off _ _ _,
+    show off (cx s₀) 64 + BitVec.ofNat 64 (4 * j) = off (cx s₀) (64 + 4 * j) from off_off _ _ _, w]
+
+/-- `copy`, with the registers but `x9` kept. -/
+theorem copy_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀) (hrd : s.rd = s₀.rd)
+    (hwr : s.wr = s₀.wr) : WP isa (.block copy) s (Copied s₀ s 16) := by
+  rw [copy_eq]; exact copyN_ok hp hx21 hrd hwr 16 (Nat.le_refl _)
+
+end VG.Proof.ChaCha20Poly1305.AArch64.OpenKey
+
+end
+
+end
+
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 513 to 704 bytes: the one-time key
@@ -50,19 +157,19 @@ theorem otk8_eq {s₀ : State} {m : Mem}
       VG.Proof.ChaCha20.length_serialize]
   · intro i h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
-    simp only [bytesAt, List.getElem_map, List.getElem_range, h i (by omega), ks8,
-      VG.Proof.ChaCha20.keystream_getD _ (show i < 512 by omega), show i / 64 = 0 by omega,
-      show i % 64 = i by omega, VG.Proof.ChaCha20.ctr_zero,
+    simp only [bytesAt, List.getElem_map, List.getElem_range, h i (by omega_using [h₁]), ks8,
+      VG.Proof.ChaCha20.keystream_getD _ (show i < 512 by omega_using [h₁]), show i / 64 = 0 by omega_using [h₁],
+      show i % 64 = i by omega_using [h₁], VG.Proof.ChaCha20.ctr_zero,
       Spec.ChaCha20Poly1305.polyKeyGen, Spec.ChaCha20.chacha20Block, List.getElem_take]
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by
-      rw [VG.Proof.ChaCha20.length_serialize]; omega), Option.getD_some]
+      rw [VG.Proof.ChaCha20.length_serialize]; omega_using [h₁]), Option.getD_some]
 
 /-- After the first block, the keystream of the data from counter 1. -/
 theorem ks8_eq (s₀ : State) {i n : Nat} (hi : i < n) (h448 : i < 448) :
     ks8 s₀ (64 + i) = (keystream (initState (K s₀) 1 (N s₀)) n).getD i 0 := by
-  rw [ks8, VG.Proof.ChaCha20.keystream_getD _ (show 64 + i < 512 by omega),
-    VG.Proof.ChaCha20.keystream_getD _ hi, show (64 + i) / 64 = i / 64 + 1 by omega,
-    show (64 + i) % 64 = i % 64 by omega, VG.Proof.ChaCha20Poly1305.ctr_initState,
+  rw [ks8, VG.Proof.ChaCha20.keystream_getD _ (show 64 + i < 512 by omega_using [h448]),
+    VG.Proof.ChaCha20.keystream_getD _ hi, show (64 + i) / 64 = i / 64 + 1 by omega_using [],
+    show (64 + i) % 64 = i % 64 by omega_using [], VG.Proof.ChaCha20Poly1305.ctr_initState,
     VG.Proof.ChaCha20Poly1305.ctr_initState]
   congr 4
   rw [BitVec.ofNat_add, BitVec.add_comm]
@@ -120,9 +227,9 @@ theorem keyed_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre 
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 640, rfl, by show 640 + 64 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 768, rfl, by show 768 + 512 ≤ 1280; omega⟩
-    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega⟩
+    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 640, rfl, by show 640 + 64 ≤ 1280; omega_using []⟩
+    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 768, rfl, by show 768 + 512 ≤ 1280; omega_using []⟩
+    · exact ⟨ctxR s₀, by rw [i₄.wr]; exact hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1280; omega_using []⟩
   -- The stream on the zeros.
   have wc := hp.wrap_c
   refine WP.seq (xor_call v x0₄ x1₄ x2₄ x3₄ (by decide)
@@ -151,7 +258,7 @@ theorem keyed_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre 
     have z : s₄.mem (off (cx s₀) 768 + BitVec.ofNat 64 k) = 0 := by
       rw [k₄.frame _ (fun r hr => absurd hr List.not_mem_nil),
         show off (cx s₀) 768 + BitVec.ofNat 64 k = cx s₀ + BitVec.ofNat 64 (768 + k) from off_off _ _ _]
-      exact z₃.byte (k := k) (by omega) (by decide)
+      exact z₃.byte (k := k) (by omega_using [hk]) (by decide)
     rw [z]; simp
   -- Poly1305 initialized with the key.
   refine WP.seq (WP.mono (WP.preservedV (ptrs2_ok (a := 448) (b := 768) (by lit_omega) (by lit_omega) s₅)

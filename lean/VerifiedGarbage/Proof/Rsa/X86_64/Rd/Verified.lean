@@ -59,7 +59,7 @@ theorem rd_implies : rdContract.Implies (Spec.Rsa.recoverPrimesDetContract abi) 
     sig_close
     all_goals first
       | with_reducible assumption
-      | (simp only [Spec.Rsa.lenValid] at *; omega)
+      | (simp only [Spec.Rsa.lenValid] at *; omega_arith)
   post := by sig_implies_post [Spec.Rsa.recoverPrimesDetContract, Spec.Rsa.recoverPrimesDetSig, abi, argRegs, rdContract,
     stackArgs_six, List.append_eq]
   pub := by

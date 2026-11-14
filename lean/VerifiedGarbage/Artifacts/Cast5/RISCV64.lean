@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Cast5.RISCV64.Lit
 
-/-! # CAST5 key expansion and ECB on RISC-V -/
+/-! # CAST5 (RFC 2144) on RISC-V -/
 
 @[expose] public section
 

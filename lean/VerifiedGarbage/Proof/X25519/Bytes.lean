@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.Ladder
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519: byte strings, numbers and words
@@ -41,7 +42,7 @@ theorem leNum_lt (a : List Byte) : leNum a < 256 ^ a.length := by
   | cons x xs ih =>
     simp only [leNum, List.length_cons, Nat.pow_succ]
     have := x.isLt
-    omega
+    omega_using [ih]
 
 theorem bytesAt_succ (m : Mem) (p : Addr) (n : Nat) :
     bytesAt m p (n + 1) = m p :: bytesAt m (p + 1) n := by
@@ -93,7 +94,7 @@ theorem leNum_bytesAt_words64 (m : Mem) (p : Addr) :
     BitVec.add_assoc]
   show (m.readW p 64).toNat + 256 ^ 8 * ((m.readW (p + 8) 64).toNat +
     256 ^ 8 * ((m.readW (p + 16) 64).toNat + 256 ^ 8 * (m.readW (p + 24) 64).toNat)) = _
-  omega
+  omega_using []
 
 /-- A number stored as eight little-endian 32-bit words. -/
 theorem leNum_bytesAt_words32 (m : Mem) (p : Addr) :
@@ -107,7 +108,7 @@ theorem leNum_bytesAt_words32 (m : Mem) (p : Addr) :
     256 ^ 4 * ((m.readW (p + 8) 32).toNat + 256 ^ 4 * ((m.readW (p + 12) 32).toNat +
     256 ^ 4 * ((m.readW (p + 16) 32).toNat + 256 ^ 4 * ((m.readW (p + 20) 32).toNat +
     256 ^ 4 * ((m.readW (p + 24) 32).toNat + 256 ^ 4 * (m.readW (p + 28) 32).toNat)))))) = _
-  omega
+  omega_using []
 
 /-! ## Numbers as bytes -/
 
@@ -126,10 +127,10 @@ theorem leBytes_mod (n x : Nat) : leBytes n (x % 256 ^ n) = leBytes n x := by
   have hi := List.mem_range.mp hi
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
-  rw [show 256 ^ n = 256 ^ i * 256 ^ (n - i) by rw [← Nat.pow_add]; congr 1; omega,
+  rw [show 256 ^ n = 256 ^ i * 256 ^ (n - i) by rw [← Nat.pow_add]; congr 1; omega_using [hi],
     Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd]
   rw [show (2 : Nat) ^ 8 = 256 from rfl]
-  exact ⟨256 ^ (n - i - 1), by rw [← Nat.pow_succ']; congr 1; omega⟩
+  exact ⟨256 ^ (n - i - 1), by rw [← Nat.pow_succ']; congr 1; omega_using [hi]⟩
 
 theorem leBytes_succ (n x : Nat) : leBytes (n + 1) x = BitVec.ofNat 8 x :: leBytes n (x / 256) := by
   rw [Nat.add_comm, leBytes_add, Nat.pow_one]; simp [leBytes]
@@ -147,10 +148,10 @@ theorem bytesAt_leBytes (m : Mem) (p : Addr) (n : Nat) :
     · apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat]
       have := (m p).isLt
-      omega
+      omega_using []
     · congr 1
       have := (m p).isLt
-      omega
+      omega_using []
 
 theorem bytesAt_leBytes_64 (m : Mem) (p : Addr) :
     bytesAt m p 8 = leBytes 8 (m.readW p 64).toNat := by
@@ -168,7 +169,7 @@ theorem bytesAt_leBytes_words64 (m : Mem) (p : Addr) (x : Nat)
   rw [leNum_bytesAt_read, h₀, h₁, h₂, h₃] at e
   rw [bytesAt_leBytes, e, ← leBytes_mod 32 x]
   congr 1
-  omega
+  omega_using []
 
 /-- Eight little-endian 32-bit words in memory are the 32 bytes of `x`, if they
 are its eight 32-bit digits. -/
@@ -176,18 +177,18 @@ theorem bytesAt_leBytes_words32 (m : Mem) (p : Addr) (x : Nat)
     (h : ∀ j < 8, (m.readW (p + BitVec.ofNat 64 (4 * j)) 32).toNat = x / 2 ^ (32 * j) % 2 ^ 32) :
     bytesAt m p 32 = leBytes 32 x := by
   have e := leNum_bytesAt_words32 m p
-  have h0 : (m.readW p 32).toNat = x % 2 ^ 32 := by simpa using h 0 (by omega)
-  have h1 : (m.readW (p + 4) 32).toNat = x / 2 ^ 32 % 2 ^ 32 := h 1 (by omega)
-  have h2 : (m.readW (p + 8) 32).toNat = x / 2 ^ 64 % 2 ^ 32 := h 2 (by omega)
-  have h3 : (m.readW (p + 12) 32).toNat = x / 2 ^ 96 % 2 ^ 32 := h 3 (by omega)
-  have h4 : (m.readW (p + 16) 32).toNat = x / 2 ^ 128 % 2 ^ 32 := h 4 (by omega)
-  have h5 : (m.readW (p + 20) 32).toNat = x / 2 ^ 160 % 2 ^ 32 := h 5 (by omega)
-  have h6 : (m.readW (p + 24) 32).toNat = x / 2 ^ 192 % 2 ^ 32 := h 6 (by omega)
-  have h7 : (m.readW (p + 28) 32).toNat = x / 2 ^ 224 % 2 ^ 32 := h 7 (by omega)
+  have h0 : (m.readW p 32).toNat = x % 2 ^ 32 := by simpa using h 0 (by omega_using [])
+  have h1 : (m.readW (p + 4) 32).toNat = x / 2 ^ 32 % 2 ^ 32 := h 1 (by omega_using [])
+  have h2 : (m.readW (p + 8) 32).toNat = x / 2 ^ 64 % 2 ^ 32 := h 2 (by omega_using [])
+  have h3 : (m.readW (p + 12) 32).toNat = x / 2 ^ 96 % 2 ^ 32 := h 3 (by omega_using [])
+  have h4 : (m.readW (p + 16) 32).toNat = x / 2 ^ 128 % 2 ^ 32 := h 4 (by omega_using [])
+  have h5 : (m.readW (p + 20) 32).toNat = x / 2 ^ 160 % 2 ^ 32 := h 5 (by omega_using [])
+  have h6 : (m.readW (p + 24) 32).toNat = x / 2 ^ 192 % 2 ^ 32 := h 6 (by omega_using [])
+  have h7 : (m.readW (p + 28) 32).toNat = x / 2 ^ 224 % 2 ^ 32 := h 7 (by omega_using [])
   rw [leNum_bytesAt_read, h0, h1, h2, h3, h4, h5, h6, h7] at e
   rw [bytesAt_leBytes, e, ← leBytes_mod 32 x]
   congr 1
-  omega
+  omega_using []
 
 /-! ## The encodings of RFC 7748 -/
 
@@ -197,7 +198,7 @@ theorem leNum_take_succ (l : List Byte) (n : Nat) :
   rcases h : l[n]? with _ | b
   · simp
   · have hn : n < l.length := (List.getElem?_eq_some_iff.mp h).1
-    rw [leNum_append, List.length_take, Nat.min_eq_left (by omega)]
+    rw [leNum_append, List.length_take, Nat.min_eq_left (by omega_using [hn])]
     simp [leNum]
 
 theorem decodeLittleEndian_eq (l : List Byte) : decodeLittleEndian l = leNum (l.take 32) := by
@@ -218,7 +219,7 @@ theorem encodeUCoordinate_eq (x : Fe) : encodeUCoordinate x = leBytes 32 x.val :
   simp only [encodeUCoordinate, leBytes, Nat.shiftRight_eq_div_pow, Nat.pow_mul]
 
 theorem take_32 {l : List Byte} (h : l.length = 32) : l.take 32 = l :=
-  List.take_of_length_le (by omega)
+  List.take_of_length_le (by omega_using [h])
 
 /-- The decoded u-coordinate is the number of its 32 bytes modulo `2²⁵⁵`. -/
 theorem decodeUCoordinate_eq {l : List Byte} (h : l.length = 32) :
@@ -229,15 +230,15 @@ theorem decodeUCoordinate_eq {l : List Byte} (h : l.length = 32) :
   have h₀ : l₀.length = 31 := by simpa using h
   rw [decodeUCoordinate, decodeLittleEndian_eq]
   rw [show (l₀ ++ [b]).getD 31 0 = b by
-    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega), h₀]; rfl]
-  rw [List.set_append_right _ _ (by omega), h₀, List.take_of_length_le (by simp [h₀]),
+    rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by omega_using [h₀]), h₀]; rfl]
+  rw [List.set_append_right _ _ (by omega_using [h₀]), h₀, List.take_of_length_le (by simp [h₀]),
     leNum_append, leNum_append, h₀]
   simp only [Nat.sub_self, List.set_cons_zero, leNum, BitVec.toNat_and]
   have hl := leNum_lt l₀
   rw [h₀] at hl
   have hb := b.isLt
   rw [show (127 : BitVec 8).toNat = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using [hl]
 
 /-- A bit of a little-endian number is that bit of one of its bytes. -/
 theorem leNum_bit (l : List Byte) (t : Nat) :
@@ -249,15 +250,15 @@ theorem leNum_bit (l : List Byte) (t : Nat) :
     have hb := b.isLt
     rcases Nat.lt_or_ge t 8 with ht | ht
     · rw [Nat.div_eq_of_lt ht, Nat.mod_eq_of_lt ht, List.getD_cons_zero]
-      rw [show 256 = 2 ^ t * 2 ^ (8 - t) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)]]
+      rw [show 256 = 2 ^ t * 2 ^ (8 - t) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega_using [ht])]]
       rw [Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _)]
-      rw [show 2 ^ (8 - t) = 2 * 2 ^ (8 - t - 1) by rw [← Nat.pow_succ']; congr 1; omega]
+      rw [show 2 ^ (8 - t) = 2 * 2 ^ (8 - t - 1) by rw [← Nat.pow_succ']; congr 1; omega_using [ht]]
       rw [Nat.mul_assoc, Nat.add_mul_mod_self_left]
     · have e := ih (t - 8)
       simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod] at e
-      rw [show t / 8 = (t - 8) / 8 + 1 by omega, List.getD_cons_succ,
-        show t % 8 = (t - 8) % 8 by omega, ← e]
-      rw [show t = 8 + (t - 8) by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul]
+      rw [show t / 8 = (t - 8) / 8 + 1 by omega_using [ht], List.getD_cons_succ,
+        show t % 8 = (t - 8) % 8 by omega_using [ht], ← e]
+      rw [show t = 8 + (t - 8) by omega_using [ht], Nat.pow_add, ← Nat.div_div_eq_div_mul]
       rw [show (2 : Nat) ^ 8 = 256 from rfl, Nat.add_mul_div_left _ _ (by decide),
         Nat.div_eq_of_lt hb, Nat.zero_add]
       simp
@@ -286,7 +287,7 @@ theorem scalar_bit {kb : List Byte} (h : kb.length = 32) {t : Nat} (ht : t < 255
   rw [List.take_of_length_le (by simp [h]), leNum_bit,
     getD_set _ _ _ (by simp [h]), getD_set _ _ _ (by simp [h]), getD_set _ _ _ (by simp [h])]
   rcases Nat.lt_or_ge t 8 with h8 | h8
-  · rw [show t / 8 = 0 by omega, show t % 8 = t by omega]
+  · rw [show t / 8 = 0 by omega_using [h8], show t % 8 = t by omega_using [h8]]
     simp (disch := omega) only [ite_true, ite_eq_left, ite_eq_right]
     rw [BitVec.toNat_and, show (248 : BitVec 8).toNat = 248 from rfl,
       bit_and_248 _ (kb.getD 0 0).isLt _ h8]
@@ -294,7 +295,7 @@ theorem scalar_bit {kb : List Byte} (h : kb.length = 32) {t : Nat} (ht : t < 255
     · rw [h31]
       simp (disch := omega) only [ite_true, ite_eq_right]
       rw [BitVec.toNat_or, BitVec.toNat_and, show (127 : BitVec 8).toNat = 127 from rfl,
-        show (64 : BitVec 8).toNat = 64 from rfl, bit_and_or_64 _ (kb.getD 31 0).isLt _ (by omega)]
+        show (64 : BitVec 8).toNat = 64 from rfl, bit_and_or_64 _ (kb.getD 31 0).isLt _ (by omega_using [ht, h31])]
       repeat' split
       all_goals first | rfl | omega
     · simp (disch := omega) only [ite_eq_left, ite_eq_right]

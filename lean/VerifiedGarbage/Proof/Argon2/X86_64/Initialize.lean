@@ -28,8 +28,8 @@ theorem initWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Fin 128)
       t.mem = (s.mem.writeW (off p (8 * i.val)) v).writeW (off p (1024 + 8 * i.val)) v ∧
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   dsimp only
-  have w1 := hs.write (d := 8 * i.val) (n := 8) (by omega)
-  have w2 := hs.write (d := 1024 + 8 * i.val) (n := 8) (by omega)
+  have w1 := hs.write (d := 8 * i.val) (n := 8) (by omega_using [])
+  have w2 := hs.write (d := 1024 + 8 * i.val) (n := 8) (by omega_using [])
   apply WP.of_runBlock
   simp only [initWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load64, State.store64, execAlu, ea_at,
@@ -45,8 +45,8 @@ theorem finishWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Fin 128)
       t.mem = s.mem.writeW (off (s.gpr .rdi) (8 * i.val))
         (word s.mem p i.val ^^^ s.mem.readW (off p (8 * i.val)) 64) ∧
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have r1 := hs.read (d := 8 * i.val) (n := 8) (by omega)
-  have r2 := hs.read (d := 1024 + 8 * i.val) (n := 8) (by omega)
+  have r1 := hs.read (d := 8 * i.val) (n := 8) (by omega_using [])
+  have r2 := hs.read (d := 1024 + 8 * i.val) (n := 8) (by omega_using [])
   apply WP.of_runBlock
   simp only [finishWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load64, State.store64, execAlu, ea_at,
@@ -96,12 +96,12 @@ theorem Inputs.of_copy {s t : State} {x y p : Addr} (h : Inputs s x y p) (hk : C
 
 theorem input_read {s : State} {x : Addr} (h : (⟨x, 1024⟩ : Region) ∈ s.rd ++ s.wr)
     (i : Fin 128) : InRegions (s.rd ++ s.wr) (off x (8 * i.val)) 8 :=
-  ⟨_, h, Offset.contains_base x (by omega) (by omega)⟩
+  ⟨_, h, Offset.contains_base x (by omega_using []) (by omega_using [])⟩
 
 theorem input_unchanged {m m' : Mem} {x p : Addr} (hf : Frame [⟨p, 4096⟩] m m')
     (hd : (⟨x, 1024⟩ : Region).Disjoint ⟨p, 4096⟩) (i : Fin 128) :
     m'.readW (off x (8 * i.val)) 64 = m.readW (off x (8 * i.val)) 64 :=
-  hf.readW (r := ⟨x, 1024⟩) (Offset.contains_base x (by omega) (by omega))
+  hf.readW (r := ⟨x, 1024⟩) (Offset.contains_base x (by omega_using []) (by omega_using []))
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hd) (by decide)
 
 /-- A prefix of the two scratch copies is initialized. -/
@@ -112,8 +112,8 @@ def Initialized (m : Mem) (p : Addr) (r : Block) (n : Nat) : Prop :=
 theorem init_store_frame (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
     Frame [⟨p, 4096⟩] m
       ((m.writeW (off p (8 * i.val)) v).writeW (off p (1024 + 8 * i.val)) v) :=
-  ((Frame.refl [⟨p, 4096⟩] m).writeW (r := ⟨p, 4096⟩) (by simp) v (Offset.contains_base p (by omega) (by omega))).writeW (r := ⟨p, 4096⟩)
-    (by simp) v (Offset.contains_base p (by omega) (by omega))
+  ((Frame.refl [⟨p, 4096⟩] m).writeW (r := ⟨p, 4096⟩) (by simp) v (Offset.contains_base p (by omega_using []) (by omega_using []))).writeW (r := ⟨p, 4096⟩)
+    (by simp) v (Offset.contains_base p (by omega_using []) (by omega_using []))
 
 theorem initialized_step {m : Mem} {p : Addr} {r : Block} {n : Nat}
     (hn : n < 128) (h : Initialized m p r n) :
@@ -124,18 +124,18 @@ theorem initialized_step {m : Mem} {p : Addr} {r : Block} {n : Nat}
       ((m.writeW (off p (8 * n)) r[n]).writeW (off p (1024 + 8 * n)) v).readW
         (off p (8 * i.val)) 64 = (m.writeW (off p (8 * n)) r[n]).readW
         (off p (8 * i.val)) 64 :=
-    Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+    Mem.readW_writeW_sep (Offset.sep p (by omega_using []) (by omega_using []) (by omega_using [hn])) (by decide)
   by_cases he : i.val = n
   · subst n
     simp only [word, lower, Mem.readW_writeW_self64]
     exact ⟨rfl, rfl⟩
-  · have hi' : i.val < n := by omega
+  · have hi' : i.val < n := by omega_using [hi, he]
     have sep1 : Mem.Sep (off p (8 * i.val)) 8 (off p (8 * n)) 8 :=
-      Offset.sep p (by omega) (by omega) (by omega)
+      Offset.sep p (by omega_using [he]) (by omega_using []) (by omega_using [hn])
     have sep2 : Mem.Sep (off p (1024 + 8 * i.val)) 8 (off p (1024 + 8 * n)) 8 :=
-      Offset.sep p (by omega) (by omega) (by omega)
+      Offset.sep p (by omega_using [he]) (by omega_using []) (by omega_using [hn])
     have sep3 : Mem.Sep (off p (1024 + 8 * i.val)) 8 (off p (8 * n)) 8 :=
-      Offset.sep p (by omega) (by omega) (by omega)
+      Offset.sep p (by omega_using [hn]) (by omega_using []) (by omega_using [hn])
     simp only [word, lower, Mem.readW_writeW_sep (w := 64) (w' := 64) sep1 (by decide),
       Mem.readW_writeW_sep (w := 64) (w' := 64) sep2 (by decide), Mem.readW_writeW_sep (w := 64) (w' := 64) sep3 (by decide)]
     exact h i hi'
@@ -157,9 +157,9 @@ theorem init_prefix (n : Nat) (hn : n ≤ 128) (s : State) {x y p : Addr}
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro t ⟨ht, hf, hk⟩
-    have hn' : n < 128 := by omega
+    have hn' : n < 128 := by omega_using [hn]
     have htIn := hin.of_copy hk
     have lx : InRegions (t.rd ++ t.wr) (off (t.gpr .rdi) (8 * n)) 8 := by
       rw [htIn.xreg]

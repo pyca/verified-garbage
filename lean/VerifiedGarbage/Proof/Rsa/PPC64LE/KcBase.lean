@@ -51,7 +51,7 @@ def vals (v : Vals) : Nat → Nat :=
 abbrev bodySlots : List Nat := [sOdd, sB, sC, sF, sMask]
 
 /-- The registers the checks may change. -/
-abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
+abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
 /-- The arrays through a step that writes none of them. -/
 theorem arrsKeep {m m' : Mem} {B : Addr} {w : Nat} {A : Nat → Nat} {live : List Nat} {js ds : List Nat}
@@ -95,7 +95,7 @@ theorem Stg.vd_keep {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (h : Stg g s0 A live c s) {js ds : List Nat} {m' : Mem} (k : KeyWorkspace.Keep g.B g.w js ds s.mem m')
     (hj : ∀ j ∈ js, j ≠ aVD) (hd : ∀ d ∈ ds, d + 4 ≤ KeyWorkspace.hdr) :
     w32 m' g.B (arr g.w aVD + 4 * g.w) = 0 := by
-  rw [k.word (by simp only [S]; omega) hj hd (h.ws.fit64 (by decide)), h.vdTop]
+  rw [k.word (by simp only [S]; omega_using []) hj hd (h.ws.fit64 (by decide)), h.vdTop]
 
 /-- The arrays through a step that writes none of them. -/
 theorem Stg.arrs_keep {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}

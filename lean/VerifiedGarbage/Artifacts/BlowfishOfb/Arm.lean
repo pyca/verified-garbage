@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Blowfish.Arm.FbFinalVerified
 public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
 
-/-! # Blowfish-OFB artifacts on baseline ARMv7 -/
+/-! # Blowfish-OFB on ARMv7 -/
 
 @[expose] public section
 

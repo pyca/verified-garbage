@@ -52,13 +52,13 @@ theorem candidateSlots_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State} (C 
 theorem count_value (w : Nat) (bound : w ≤ 128) :
     ((0#32 - (BitVec.ofBool (decide ((BitVec.ofNat 32 (8 * w)).toNat < (129#32 : BitVec 32).toNat))).setWidth 32) &&&
       BitVec.ofInt 32 (-512)) + 1024#32 = BitVec.ofNat 32 (tableCount w) := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]
   unfold tableCount
   by_cases small : w ≤ 16
-  · rw [decide_eq_true (show 8 * w < (129#32 : BitVec 32).toNat by change 8 * w < 129; omega)]
+  · rw [decide_eq_true (show 8 * w < (129#32 : BitVec 32).toNat by change 8 * w < 129; omega_using [small])]
     simp only [small, ↓reduceIte]
     decide
-  · rw [decide_eq_false (show ¬ 8 * w < (129#32 : BitVec 32).toNat by change ¬ 8 * w < 129; omega)]
+  · rw [decide_eq_false (show ¬ 8 * w < (129#32 : BitVec 32).toNat by change ¬ 8 * w < 129; omega_using [small])]
     simp only [small, ↓reduceIte]
     decide
 

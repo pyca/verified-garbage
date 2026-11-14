@@ -24,9 +24,9 @@ theorem exponentSaturate_ok (s : State) {h : Nat}
   refine WP.ite (decide (h < 2)) (by change some s.z = _; rw [zero]) ?_ ?_
   · intro valid
     have lt : h < 2 := of_decide_eq_true valid
-    exact WP.block_nil ⟨by rw [high, Nat.min_eq_right (by omega)], rfl, Rest.refl _ _⟩
+    exact WP.block_nil ⟨by rw [high, Nat.min_eq_right (by omega_using [lt])], rfl, Rest.refl _ _⟩
   · intro invalid
-    have ge : 2 ≤ h := by have := of_decide_eq_false invalid; omega
+    have ge : 2 ≤ h := by have := of_decide_eq_false invalid; omega_using [this]
     refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_
     exact ⟨by rw [a.gpr, Nat.min_eq_left ge]; rfl, a.mem, a.rest (by simp)⟩
 
@@ -45,7 +45,7 @@ theorem exponentConsume_ok (s : State) {p : Addr} {x : Nat} {b : Byte}
   rintro u ⟨lo, hi, zero, mem, rest⟩
   rw [low, byte, exponent_low_word] at lo
   rw [low, high, exponent_high_word] at hi zero
-  rw [exponent_high_zero _ (by have := exponentHigh_bound x; have := Nat.mod_lt x (by decide : 0 < 2 ^ 32); omega)] at zero
+  rw [exponent_high_zero _ (by have := exponentHigh_bound x; have := Nat.mod_lt x (by decide : 0 < 2 ^ 32); omega_arith)] at zero
   refine WP.mono (exponentSaturate_ok u hi zero) ?_
   rintro t ⟨value, memT, restT⟩
   rw [exponentHigh_step x b.toNat b.isLt] at value

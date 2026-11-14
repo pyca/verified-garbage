@@ -26,7 +26,7 @@ theorem jointDouble_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
     (hj : j < 64 * K.M.n + 1) (h : JointDigitPost K C base size P s₀ s (j + 1) A) :
     WP isa (.seq (.block [decCounter]) (fprogB K.M (dblJ K.S K.R K.D))) s fun t => JointDoublePost K C base size P s₀ t j (Spec.Weierstrass.add A A) := by
   have hW := hL.win
-  refine WP.seq (WP.mono (decCounter_ok s (by omega) (by have := hL.n6; omega) h.x19)
+  refine WP.seq (WP.mono (decCounter_ok s (by omega_using []) (by have := hL.n6; omega_using [hj, this]) h.x19)
     fun s₁ ⟨x₁, k₁⟩ => ?_)
   have S₁ := h.st.regs hW k₁ (fun r hr => nafClob_mem (by
     simp only [List.mem_singleton] at hr; subst hr; simp)) (by decide)

@@ -54,33 +54,33 @@ theorem x0 (L : Lay) : L.X + BitVec.ofNat 64 0 = L.X := BitVec.add_zero _
 theorem x0' (L : Lay) : L.X32 + BitVec.ofNat 32 0 = L.X32 := BitVec.add_zero _
 
 theorem st_ks : Region.Disjoint ⟨L.ST, 200⟩ ⟨L.KS, 640⟩ := by
-  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using [])
   simpa only [x0] using this
 
 theorem st_mu : Region.Disjoint ⟨L.ST, 200⟩ ⟨L.MU, 64⟩ := by
-  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 840) (k := 64) (by omega) (by omega) (by omega)
+  have := Offset.disjoint L.X (d := 0) (n := 200) (e := 840) (k := 64) (by omega_using []) (by omega_using []) (by omega_using [])
   simpa only [x0] using this
 
 theorem mu_ks : Region.Disjoint ⟨L.MU, 64⟩ ⟨L.KS, 640⟩ :=
-  Offset.disjoint L.X (d := 840) (n := 64) (e := 200) (k := 640) (by omega) (by omega) (by omega)
+  Offset.disjoint L.X (d := 840) (n := 64) (e := 200) (k := 640) (by omega_using []) (by omega_using []) (by omega_using [])
 
-theorem w_st : Within ⟨L.ST, 200⟩ L.W := within_base _ (by omega)
-theorem w_ks : Within ⟨L.KS, 640⟩ L.W := within_off _ (by omega)
-theorem w_mu : Within ⟨L.MU, 64⟩ L.W := within_off _ (by omega)
+theorem w_st : Within ⟨L.ST, 200⟩ L.W := within_base _ (by omega_using [])
+theorem w_ks : Within ⟨L.KS, 640⟩ L.W := within_off _ (by omega_using [])
+theorem w_mu : Within ⟨L.MU, 64⟩ L.W := within_off _ (by omega_using [])
 
 theorem k_st (hL : L.Ok) : L.STK.Disjoint ⟨L.ST, 200⟩ := by
-  have := hL.stk_x (e := 0) (k := 200) (by omega); simpa only [x0] using this
-theorem k_ks (hL : L.Ok) : L.STK.Disjoint ⟨L.KS, 640⟩ := hL.stk_x (by omega)
-theorem k_mu (hL : L.Ok) : L.STK.Disjoint ⟨L.MU, 64⟩ := hL.stk_x (by omega)
+  have := hL.stk_x (e := 0) (k := 200) (by omega_using []); simpa only [x0] using this
+theorem k_ks (hL : L.Ok) : L.STK.Disjoint ⟨L.KS, 640⟩ := hL.stk_x (by omega_using [])
+theorem k_mu (hL : L.Ok) : L.STK.Disjoint ⟨L.MU, 64⟩ := hL.stk_x (by omega_using [])
 
 /-- The 40 bytes a call of a sponge function uses lie in `STK`. -/
 theorem b40 (hL : L.Ok) : Region.Sub (below L.E1 40) L.STK := by
   have := hL.nSP; have := hL.hN
-  exact below_sub (by omega) (by rw [Lay.E1, sub_toNat (by omega)]; omega)
+  exact below_sub (by omega_using [this]) (by rw [Lay.E1, sub_toNat (by omega_arith)]; omega_arith)
 
 theorem e40 (hL : L.Ok) : 40 ≤ L.E1.toNat := by
   have := hL.nSP; have := hL.hN
-  rw [Lay.E1, sub_toNat (by omega)]; omega
+  rw [Lay.E1, sub_toNat (by omega_arith)]; omega_arith
 
 theorem ks_eq (hL : L.Ok) : (L.X32 + BitVec.ofNat 32 200).setWidth 64 = L.KS := hL.xo (by decide)
 theorem regKS (hL : L.Ok) : reg32 (L.X32 + BitVec.ofNat 32 200) 640 = ⟨L.KS, 640⟩ := by
@@ -109,7 +109,7 @@ theorem withinRW {t : State} (hc : Ctx L m₁ t) {r : Region} (h : ∃ R ∈ L.r
 /-- The Keccak state and the working space, for ML-KEM's lemmas. -/
 theorem kbufs (hL : L.Ok) : KBufs L.E1 L.X32 (L.X32 + BitVec.ofNat 32 200) := by
   have := hL.x32_lt
-  refine ⟨e40 hL, by omega, by rw [hL.x32_toNat (by omega)]; omega, ?_, ?_, ?_⟩
+  refine ⟨e40 hL, by omega_using [this], by rw [hL.x32_toNat (by omega_using [])]; omega_using [this], ?_, ?_, ?_⟩
   · rw [regKS hL]; exact st_ks
   · exact (k_st hL).sub_left (b40 hL)
   · rw [regKS hL]; exact (k_ks hL).sub_left (b40 hL)
@@ -127,27 +127,27 @@ theorem zeroSt_ok (hL : L.Ok) {t : State} (hc : Ctx L m₁ t) :
   refine WP.mono (wp_range_flatMap (M := isa) Inv (fun k s hk h => ?_) 50 (Nat.le_refl _) t1
     ⟨rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩) fun t' ⟨g, rd, wr, fr, z⟩ => ?_
   · have hb : s.gpr .esi = L.X32 := by rw [h.1, e1]
-    have ea : addr L.X32 (4 * k) = L.X + BitVec.ofNat 64 (4 * k) := hL.xo (by omega)
+    have ea : addr L.X32 (4 * k) = L.X + BitVec.ofNat 64 (4 * k) := hL.xo (by omega_using [hk])
     have hin : InRegions s.wr (addr L.X32 (4 * k)) 4 := by
       rw [ea, h.2.2.1, u1.wr, hc.wr]
-      obtain ⟨R, hR, c⟩ := hL.inW (e := 4 * k) (k := 4) (by omega)
+      obtain ⟨R, hR, c⟩ := hL.inW (e := 4 * k) (k := 4) (by omega_using [hk])
       exact ⟨R, List.mem_cons_of_mem _ hR, c⟩
     refine wp_stm (o := 4 * k) hb hin fun s' m => WP.block_nil ⟨by rw [m.gpr, h.1], by rw [m.rd, h.2.1], by rw [m.wr, h.2.2.1], ?_, fun j hj => ?_⟩
     · rw [m.mem, ea]
       exact h.2.2.2.1.writeW (List.mem_singleton_self _) _ (by
-        have := Offset.contains_base L.X (d := 4 * k) (n := 4) (k := 200) (by omega) (by omega)
+        have := Offset.contains_base L.X (d := 4 * k) (n := 4) (k := 200) (by omega_using [hk]) (by omega_using [hk])
         simpa only [x0] using this)
     · rw [m.mem, ea, h.1, u1.gpr]
       by_cases e : j = k
       · subst e; exact Mem.readW_writeW_self32 _ _ _
-      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-        exact h.2.2.2.2 j (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [e]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+        exact h.2.2.2.2 j (by omega_using [hj, e])
   · have hc1 : Ctx L m₁ t1 := hc.regs u1.rd u1.wr u1.mem (u1.other _ (by decide)) (u1.other _ (by decide))
     refine ⟨hc1.keep hL rd wr (by rw [g]) (by rw [g]) fr fun r hr => ?_, by rw [← u1.mem]; exact fr,
       Proof.MlKem.X86.Sample.stateAt_zero fun j hj => ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact .inl w_st
-    · have e := Mem.readW_byte t'.mem (L.X + BitVec.ofNat 64 (4 * (j / 4))) (i := j % 4) (by omega)
-      rw [add_add, show 4 * (j / 4) + j % 4 = j by omega, z (j / 4) (by omega)] at e
+    · have e := Mem.readW_byte t'.mem (L.X + BitVec.ofNat 64 (4 * (j / 4))) (i := j % 4) (by omega_using [])
+      rw [add_add, show 4 * (j / 4) + j % 4 = j by omega_using [], z (j / 4) (by omega_using [hj])] at e
       rw [e]
       apply BitVec.eq_of_toNat_eq
       simp
@@ -164,7 +164,7 @@ theorem absorb_eax {s s₂ : State} {E S D W : BitVec 32} {pos len : Nat} (hesp 
     {rd wr : List Region} (post : Proof.Sha3.absorbX86.post ((pushed Proof.MlKem.X86.rs6 s).callEntry.withRegions rd wr) s₂) :
     (s₂.gpr .eax).toNat = (pos + len) % 136 := by
   have fit : 4 * Proof.MlKem.X86.rs6.length + 4 ≤ (s.gpr .esp).toNat := by
-    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega
+    rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_using [hE]
   have a1 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 1 = BitVec.ofNat 32 136 := by
     rw [callEntry_arg fit (by decide) (by decide)]; exact ha.ecx
   have a2 : arg (pushed Proof.MlKem.X86.rs6 s).callEntry 2 = BitVec.ofNat 32 pos := by
@@ -255,14 +255,14 @@ theorem kabs_piece (src len pos : Arg) (dp : State → BitVec 32) (n q : State �
     refine ⟨by rw [d₁, d₂], ?_⟩
     simp only [Lay.E1, hp.x, hp.sp]
   · have := e40 (hA s₀ s h₀ ha).ok
-    rw [absorb_stack]; simp only [List.length_cons, List.length_nil]; omega
+    rw [absorb_stack]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
     have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
     obtain ⟨hql, hnl, hfit, hin, dS, dK, kD⟩ := hb s₀ s h₀ ha
     exact absorb_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) hfit dS (by rw [regKS hL]; exact dK)
       (kD.sub_left (b40 hL)) (by decide) hql hnl (withinRW hc1 hin)
-      (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega); rwa [x0] at this))
-      (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega)))
+      (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega_using []); rwa [x0] at this))
+      (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega_using [])))
   · have a := hargs s₀ s s₁ h₀ ha hs
     have a' := hargs s₀' s' s₁' h₀' ha' hs'
     obtain ⟨d₁, d₂, d₃⟩ := hdn s₀ s₀' h₀ h₀' hq
@@ -289,7 +289,7 @@ theorem kabs_piece (src len pos : Arg) (dp : State → BitVec 32) (n q : State �
       rcases hr with rfl | rfl | rfl | rfl
       · exact .inl w_st
       · rw [regKS hL]; exact .inl w_ks
-      · exact .inr (kb_stk hL (by omega))
+      · exact .inr (kb_stk hL (by omega_using []))
       · exact .inr (b40 hL)
     obtain ⟨s₂, m₂, g₂, post⟩ := post
     refine hQ s₀ s s' h₀ ha ⟨hL, hc1.keep hL e₁ e₂ (e₃ .esp (by decide)) (e₃ .esi (by decide)) fr kb⟩ ?_
@@ -302,12 +302,12 @@ theorem kabs_piece (src len pos : Arg) (dp : State → BitVec 32) (n q : State �
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
       · rw [regKS hL]; exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, kb_stk hL (by omega)⟩
+      · exact ⟨_, by simp, kb_stk hL (by omega_using [])⟩
       · exact ⟨_, by simp, b40 hL⟩
-    · have := absorb_post hsp a hE hnl (by decide) (by omega) (kbufs hL).bS (kD.sub_left (b40 hL))
+    · have := absorb_post hsp a hE hnl (by decide) (by omega_using [hql]) (kbufs hL).bS (kD.sub_left (b40 hL))
         ⟨s₂, m₂, post⟩ msg (by rw [hs.2.mem]; exact hm) hp
       rwa [hs.2.mem] at this
-    · rw [← g₂]; exact absorb_eax hsp a hE hnl (by omega) post
+    · rw [← g₂]; exact absorb_eax hsp a hE hnl (by omega_using [hql]) post
 
 /-! ## Padding -/
 
@@ -351,12 +351,12 @@ theorem kpad_piece (pos : Arg) (q : State → Nat) {ht : Taint.Hint VG.X86.Taint
     refine ⟨rfl, ?_⟩
     simp only [Lay.E1, hp.x, hp.sp]
   · have := e40 (hA s₀ s h₀ ha).ok
-    rw [pad_stack]; simp only [List.length_cons, List.length_nil]; omega
+    rw [pad_stack]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
     have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
     exact pad_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) (by decide) (hb s₀ s h₀ ha)
-      (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega); rwa [x0] at this))
-      (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega)))
+      (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega_using []); rwa [x0] at this))
+      (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega_using [])))
   · have a := hargs s₀ s s₁ h₀ ha hs
     have a' := hargs s₀' s' s₁' h₀' ha' hs'
     have hp := hpub s₀ s₀' h₀ h₀' hq
@@ -381,8 +381,8 @@ theorem kpad_piece (pos : Arg) (q : State → Nat) {ht : Taint.Hint VG.X86.Taint
       rcases hr with rfl | rfl | rfl | rfl
       · exact .inl w_st
       · rw [regKS hL]; exact .inl w_ks
-      · exact .inr (kb_stk hL (by omega))
-      · exact .inr (kb_stk hL (by omega))
+      · exact .inr (kb_stk hL (by omega_using []))
+      · exact .inr (kb_stk hL (by omega_using []))
     obtain ⟨s₂, m₂, post⟩ := post
     refine hQ s₀ s s' h₀ ha ⟨hL, hc1.keep hL e₁ e₂ (e₃ .esp (by decide)) (e₃ .esi (by decide)) fr kb⟩ ?_
       (fun msg hm hp => ?_)
@@ -394,9 +394,9 @@ theorem kpad_piece (pos : Arg) (q : State → Nat) {ht : Taint.Hint VG.X86.Taint
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
       · rw [regKS hL]; exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, kb_stk hL (by omega)⟩
-      · exact ⟨_, by simp, kb_stk hL (by omega)⟩
-    · have := pad_post hsp a hE (by decide) (by have := hb s₀ s h₀ ha; omega) (kbufs hL).bS ⟨s₂, m₂, post⟩ msg
+      · exact ⟨_, by simp, kb_stk hL (by omega_using [])⟩
+      · exact ⟨_, by simp, kb_stk hL (by omega_using [])⟩
+    · have := pad_post hsp a hE (by decide) (by have := hb s₀ s h₀ ha; omega_using [hp]) (kbufs hL).bS ⟨s₂, m₂, post⟩ msg
         (by rw [hs.2.mem]; exact hm) hp
       rw [this]; rfl
 
@@ -437,16 +437,16 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
     refine ⟨rfl, ?_⟩
     simp only [Lay.E1, hp.x, hp.sp]
   · have := e40 (hA s₀ s h₀ ha).ok
-    rw [squeeze_stack]; simp only [List.length_cons, List.length_nil]; omega
+    rw [squeeze_stack]; simp only [List.length_cons, List.length_nil]; omega_using [this]
   · obtain ⟨hL, hc⟩ := hA s₀ s h₀ ha
     have hc1 := SetPost.ctx (hok s₀ h₀) hs hc
     have hX := hL.x32_lt
-    exact squeeze_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) (by rw [hL.x32_toNat (by omega)]; omega)
+    exact squeeze_pre hc1.esp (hargs s₀ s s₁ h₀ ha hs) (kbufs hL) (by rw [hL.x32_toNat (by omega_using [])]; omega_using [hX])
       (by rw [regMU hL]; exact st_mu) (by rw [regMU hL, regKS hL]; exact mu_ks)
       (by rw [regMU hL]; exact (k_mu hL).sub_left (b40 hL)) (by decide) (by decide) (by decide)
-      (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega); rwa [x0] at this))
-      (withinW hc1 (by rw [regMU hL]; exact hL.covX (e := 840) (by omega)))
-      (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega)))
+      (withinW hc1 (by have := hL.covX (e := 0) (k := 200) (by omega_using []); rwa [x0] at this))
+      (withinW hc1 (by rw [regMU hL]; exact hL.covX (e := 840) (by omega_using [])))
+      (withinW hc1 (by rw [regKS hL]; exact hL.covX (e := 200) (by omega_using [])))
   · have a := hargs s₀ s s₁ h₀ ha hs
     have a' := hargs s₀' s' s₁' h₀' ha' hs'
     have hp := hpub s₀ s₀' h₀ h₀' hq
@@ -473,7 +473,7 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
       · exact .inl w_st
       · rw [regMU hL]; exact .inl w_mu
       · rw [regKS hL]; exact .inl w_ks
-      · exact .inr (kb_stk hL (by omega))
+      · exact .inr (kb_stk hL (by omega_using []))
       · exact .inr (b40 hL)
     obtain ⟨s₂, m₂, post⟩ := post
     refine hQ s₀ s s' h₀ ha ⟨hL, hc1.keep hL e₁ e₂ (e₃ .esp (by decide)) (e₃ .esi (by decide)) fr kb⟩ ?_ ?_
@@ -486,7 +486,7 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
       · rw [regMU hL]; exact ⟨_, by simp, fun _ h => h⟩
       · rw [regKS hL]; exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, kb_stk hL (by omega)⟩
+      · exact ⟨_, by simp, kb_stk hL (by omega_using [])⟩
       · exact ⟨_, by simp, b40 hL⟩
     · have := (squeeze_post hsp a hE (by decide) (by decide) (by decide) (kbufs hL).bS ⟨s₂, m₂, post⟩).1
       rw [mu_eq hL, hs.2.mem] at this

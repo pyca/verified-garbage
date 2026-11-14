@@ -29,8 +29,8 @@ theorem encodePower_ok (M : Mont) {s : State} {B : Addr} {Z w m x : Nat} {minv :
       wv t.mem B (slot w aY) w = 2 ^ (64 * w) % m ∧
       wv t.mem B (slot w aOne) w = 1 ∧
       Arrays B w [aAcc, aTmp, aR2, aXm, aY] s.mem t.mem ∧ Keep mmRegs s t := by
-  have hm0 : 0 < m := by omega
-  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega
+  have hm0 : 0 < m := by omega_using [hm]
+  have hnZ : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega_using [hZ, this]
   have hR := coprime_pow2 hodd (64 * w)
   unfold Arithmetic.encodePower
   refine WP.seq (WP.mono (mont_step M hc hZ hw hw' (by unfold MmUse; decide)
@@ -55,17 +55,17 @@ theorem encodePower_ok (M : Mont) {s : State} {B : Addr} {Z w m x : Nat} {minv :
     (hfv.wv_of_not_mem (by decide) (by decide) hnZ).trans uy
   have vone : wv v.mem B (slot w aOne) w = 1 :=
     (hfv.wv_of_not_mem (by decide) (by decide) hnZ).trans uone
-  refine WP.mono (copyArr_ok hcv.good hZ (by omega) hw' (by decide) (by decide) (by decide))
+  refine WP.mono (copyArr_ok hcv.good hZ (by omega_using [hw]) hw' (by decide) (by decide) (by decide))
     fun t ⟨hcopy, hf, hk⟩ => ?_
   have hfa : Arrays B w [aR2] v.mem t.mem :=
     Arrays.of_outside (List.mem_singleton_self _) hf (Nat.le_refl _)
-      (by change slot w 4 + 8 * w ≤ slot w 4 + 8 * (w + 2); omega)
+      (by change slot w 4 + 8 * w ≤ slot w 4 + 8 * (w + 2); omega_using [])
   have htg : Good t B Z w minv :=
     ⟨hcv.good.scr.congr hk.2.2, (hk.gpr (by decide)).trans hcv.good.rdi, hfa.hdr hcv.good.hdr⟩
   have htn : wv t.mem B (slot w aN) w = m :=
     (hfa.wv_of_not_mem (by decide) (by decide) hnZ).trans hcv.modulus
   have hti : ((word t.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hfa.word0_of_not_mem (by decide) (by decide) hnZ (by omega)]
+    rw [hfa.word0_of_not_mem (by decide) (by decide) hnZ (by omega_using [hw])]
     exact hcv.inverse
   refine ⟨⟨htg, htn, hti⟩, hcopy.trans vx,
     (hfa.wv_of_not_mem (by decide) (by decide) hnZ).trans vy,

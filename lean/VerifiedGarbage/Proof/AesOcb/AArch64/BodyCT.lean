@@ -110,7 +110,7 @@ theorem restIte_rel (v : BlocksImpl) (enc : Bool) {σ₁ σ₂ : State} (E₁ : 
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (WP.of_runBlock ⟨t₁, run₁, rfl⟩)
     (WP.of_runBlock ⟨t₂, run₂, rfl⟩) fun τ₁ τ₂ h₁ h₂ => ?_
   subst h₁ h₂
-  exact rel_ite (eval_zero x24₁ (by omega)) (eval_zero x24₂ (by omega)) (fun _ => RelCT.block_nil fun _ _ _ => trivial)
+  exact rel_ite (eval_zero x24₁ (by omega_using [])) (eval_zero x24₂ (by omega_using [])) (fun _ => RelCT.block_nil fun _ _ _ => trivial)
     fun _ => rest_rel L hR v enc (E₁.others g₁ sp₁ rd₁ wr₁) (E₂.others g₂ sp₂ rd₂ wr₂) x23₁ x23₂ x24₁ x24₂
 
 /-- The whole blocks (`m` of them, in `x26`), in two runs. -/
@@ -182,7 +182,7 @@ theorem wholeIte_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Stat
       by simp [gpr_write, E.x28, lsr_ofNat _ _ hn], rfl, rfl⟩
   refine rel_seq (rel_env E₁ E₂ [] (by agree_tac []) ⟨_, by taint_decide⟩) (lsr E₁) (lsr E₂)
     fun τ₁ τ₂ ⟨F₁, a₁, r₁, w₁⟩ ⟨F₂, a₂, r₂, w₂⟩ => ?_
-  exact rel_ite (eval_zero a₁ (by omega)) (eval_zero a₂ (by omega)) (fun _ => RelCT.block_nil fun _ _ _ => trivial)
+  exact rel_ite (eval_zero a₁ (by omega_using [hn])) (eval_zero a₂ (by omega_using [hn])) (fun _ => RelCT.block_nil fun _ _ _ => trivial)
     fun _ => whole_rel L hR ok ct nf hc₁ hk₁ hn₁ hc₂ F₁ F₂ a₁ a₂ ((hD₁.take' (Nat.mul_div_le n 16)).of_eq r₁ w₁)
       ((hD₂.take' (Nat.mul_div_le n 16)).of_eq r₂ w₂)
 

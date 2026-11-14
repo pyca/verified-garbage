@@ -142,7 +142,7 @@ theorem n16 : 128 * nb s₀ < 2 ^ 64 := by
     have := hp.o_k (kc s₀) (by
       simp only [Region.Contains]
       have := (kc s₀ - op s₀ to).isLt
-      omega) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_ofNat]; omega)
+      omega_using [h]) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_ofNat]; omega_using [])
     exact this
 
 theorem c_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) :
@@ -153,7 +153,7 @@ theorem c_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) :
 theorem t_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) {o : Nat} (ho : o + 16 ≤ 192) :
     m.readW (wp s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 o) 128 =
       s₀.mem.readW (wp s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 o) 128 :=
-  hf.readW (r := tR s₀) (Offset.contains_base _ (by omega) (by omega))
+  hf.readW (r := tR s₀) (Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
     (by simp only [List.mem_singleton, forall_eq]; exact hp.o_t.symm) (by decide)
 
 theorem sch_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) :
@@ -161,7 +161,7 @@ theorem sch_frame {m : Mem} (hf : Frame [oR s₀ to] s₀.mem m) :
   have hR := hp.rounds
   exact Proof.Cmac.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.o_k.symm.sub_left (Region.sub_prefix (by omega))) (by omega)
+    exact hp.o_k.symm.sub_left (Region.sub_prefix (by omega_using [hR]))) (by omega_using [hR])
 
 end KPreM
 
@@ -173,13 +173,13 @@ theorem LInv.src {s₀ : State} {to : Bool} (hp : KPreM s₀ to) {hb : Nat → B
   cases to with
   | false =>
     have := hI.data i hi
-    rw [ite_eq_right (by omega)] at this
+    rw [ite_eq_right (by omega_using [hc])] at this
     exact this
   | true =>
     have hn := hp.n16
     exact hI.frame.bytes (R := ⟨dp s₀, 16 * (8 * nb s₀)⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.d_o rfl).sub_left (Region.sub_prefix (by omega))) (by simp only; omega) hi
+      exact (hp.d_o rfl).sub_left (Region.sub_prefix (by omega_using []))) (by simp only; omega_using [hn]) hi
 
 /-! ## The blocks -/
 
@@ -190,11 +190,11 @@ theorem blockAt_of_dataInv {m₀ m : Mem} {D : Addr} {n k R : Nat} {w : List Byt
       blockAt m₀ (D + BitVec.ofNat 64 (16 * i)) ^^^ aesWith R w (Nat.repeat inc32 i icb) := by
   refine Proof.Aes.block_ext fun t ht => ?_
   rw [Proof.Aes.toBytes_xor _ _ ht, Proof.Aes.toBytes_blockAt _ _ ht, Proof.Aes.toBytes_blockAt _ _ ht,
-    BitVec.add_assoc, ← BitVec.ofNat_add, h _ (by omega), ite_eq_left (by omega)]
+    BitVec.add_assoc, ← BitVec.ofNat_add, h _ (by omega_using [hi, hk, ht]), ite_eq_left (by omega_using [hi, ht])]
   refine congrArg (_ ^^^ ·) ?_
   unfold Spec.Gcm.aesWith
-  rw [Proof.Aes.toBytes_ofBytes (by simp) ht, keyStream, show (16 * i + t) / 16 = i by omega,
-    show (16 * i + t) % 16 = t by omega, Proof.Aes.getD_eq _ ht, List.getD_eq_getElem?_getD,
+  rw [Proof.Aes.toBytes_ofBytes (by simp) ht, keyStream, show (16 * i + t) / 16 = i by omega_using [ht],
+    show (16 * i + t) % 16 = t by omega_using [ht], Proof.Aes.getD_eq _ ht, List.getD_eq_getElem?_getD,
     Vector.getElem?_toList, Vector.getElem?_eq_getElem ht, Option.getD_some]
   rfl
 
@@ -204,7 +204,7 @@ theorem blockAt_of_dataInv' {m₀ m : Mem} {D : Addr} {n k : Nat} {ks : Nat → 
     blockAt m (D + BitVec.ofNat 64 (16 * i)) = blockAt m₀ (D + BitVec.ofNat 64 (16 * i)) := by
   refine Proof.Aes.block_ext fun t ht => ?_
   rw [Proof.Aes.toBytes_blockAt _ _ ht, Proof.Aes.toBytes_blockAt _ _ ht, BitVec.add_assoc, ← BitVec.ofNat_add,
-    h _ (by omega), ite_eq_right (by omega)]
+    h _ (by omega_using [hn, ht]), ite_eq_right (by omega_using [hi])]
   exact BitVec.xor_zero
 
 /-- The blocks of `ctr32`. -/

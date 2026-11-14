@@ -87,7 +87,7 @@ theorem pkComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass
     obtain ⟨he, hy, a0, a1, a2⟩ := h
     refine ⟨he, ?_, hy⟩
     intro j hj
-    have hj' : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+    have hj' : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
     rcases hj' with rfl | rfl | rfl
     · exact a0
     · exact a1

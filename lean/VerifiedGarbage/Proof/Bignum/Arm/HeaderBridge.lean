@@ -27,7 +27,7 @@ theorem numAt_native (mem : Mem) (base : Addr) (w j : Nat) :
 theorem array_end_le {w j k : Nat} (h : j < k) : arrAt w j + 8 * (w + 2) ≤ arrAt w k := by
   have := Nat.mul_le_mul_right (8 * (w + 2)) h
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes, Nat.succ_mul] at *
-  omega
+  omega_using [this]
 
 theorem nativeHeader_of_layout (mem : Mem) (base : BitVec 32) {size len : Nat}
     (nowrap : base.toNat + size ≤ 2 ^ 32) (fits : 8 * len ≤ size)
@@ -46,18 +46,18 @@ theorem nativeHeader_of_layout (mem : Mem) (base : BitVec 32) {size len : Nat}
     exact read32_low mem (State.addr base) 56
   · intro j hj
     have aj := array_end_le (w := w) hj
-    have bound : base.toNat + arrAt w j < 2 ^ 32 := by omega
+    have bound : base.toNat + arrAt w j < 2 ^ 32 := by omega_using [nowrap, fits, arraysFit, aj]
     have address := arrays j hj
     change word mem (State.addr base) (8 * (8 + j)) = off (State.addr base) (arrAt w j) at address
-    have addrEq : 8 * (8 + j) = 64 + 8 * j := by omega
+    have addrEq : 8 * (8 + j) = 64 + 8 * j := by omega_using []
     rw [addrEq] at address
     apply BitVec.eq_of_toNat_eq
     change w32 mem (State.addr base) (64 + 8 * j) = (base + BitVec.ofNat 32 (arrAt w j)).toNat
     rw [read32_low, address]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, VG.Proof.X25519.Arm.addr_toNat]
-    rw [Nat.mod_eq_of_lt (by omega : arrAt w j < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : base.toNat + arrAt w j < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : arrAt w j < 2 ^ 32)]
+    rw [Nat.mod_eq_of_lt (by omega_using [bound] : arrAt w j < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_using [bound] : base.toNat + arrAt w j < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_using [bound] : arrAt w j < 2 ^ 32)]
 
 
 theorem native_inverse (mem : Mem) (base : Addr) {w : Nat} (hw : 0 < w)
@@ -68,7 +68,7 @@ theorem native_inverse (mem : Mem) (base : Addr) {w : Nat} (hw : 0 < w)
   have inv := inverse32 h
   have low : val32 mem base (arrAt w 0) (2 * w) % 2 ^ 32 =
       (word mem base (arrAt w 0)).toNat % 2 ^ 32 := by
-    rw [show 2 * w = (2 * w - 1) + 1 by omega, val32_mod_low, read32_low]
+    rw [show 2 * w = (2 * w - 1) + 1 by omega_using [hw], val32_mod_low, read32_low]
   rw [BitVec.toNat_ofNat, Nat.add_mod, Nat.mul_mod, low, ← Nat.mul_mod, ← Nat.add_mod]
   exact inv
 

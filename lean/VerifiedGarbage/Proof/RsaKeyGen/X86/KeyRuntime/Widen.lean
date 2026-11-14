@@ -33,24 +33,24 @@ theorem widenTo_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
   change Outside B (out.offset n) (4 * (target.words n + 2)) s.mem u.mem at Ou
   change val32 u.mem B (out.offset n) (target.words n + 2) = 0 at zero
   have source : val32 u.mem B (src.offset n) (w.words n) =
-      val32 s.mem B (src.offset n) (w.words n) := Ou.val32 separate (by omega)
+      val32 s.mem B (src.offset n) (w.words n) := Ou.val32 separate (by omega_using [sourceBound, nowrap])
   have high : val32 u.mem B (out.offset n + 4 * w.words n) (target.words n + 2 - w.words n) = 0 :=
-    VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (by change _ ≤ target.words n + 2; omega)
-  refine WP.mono (copy_loc_ok hu w out src (by omega) sourceBound (by omega))
+    VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (by change _ ≤ target.words n + 2; omega_using [width])
+  refine WP.mono (copy_loc_ok hu w out src (by omega_using [width, fit]) sourceBound (by omega_using [width, separate]))
     fun t ⟨ht, Ot, copied, Kt⟩ => ?_
   have highT : val32 t.mem B (out.offset n + 4 * w.words n) (target.words n + 2 - w.words n) = 0 := by
-    rw [Ot.val32 (Or.inr (Nat.le_refl _)) (by omega), high]
+    rw [Ot.val32 (Or.inr (Nat.le_refl _)) (by omega_using [width, fit, nowrap]), high]
   have full : val32 t.mem B (out.offset n) (target.words n + 2) = val32 s.mem B (src.offset n) (w.words n) := by
     have append := val32_append t.mem B (out.offset n) (w.words n) (target.words n + 2 - w.words n)
-    rw [show w.words n + (target.words n + 2 - w.words n) = target.words n + 2 by omega,
+    rw [show w.words n + (target.words n + 2 - w.words n) = target.words n + 2 by omega_using [width],
       highT, Nat.mul_zero, Nat.add_zero, copied, source] at append
     exact append
   have bound : val32 t.mem B (out.offset n) (target.words n + 2) < 2 ^ (32 * target.words n) := by
     rw [full]
     exact Nat.lt_of_lt_of_le (val32_lt s.mem B (src.offset n) (w.words n))
-      (Nat.pow_le_pow_right (by decide) (by omega))
-  exact ⟨ht, Ou.trans (Ot.mono (Nat.le_refl _) (by omega)), full,
-    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : target.words n ≤ target.words n + 2) bound).trans full,
+      (Nat.pow_le_pow_right (by decide) (by omega_using [width]))
+  exact ⟨ht, Ou.trans (Ot.mono (Nat.le_refl _) (by omega_using [width])), full,
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : target.words n ≤ target.words n + 2) bound).trans full,
     (Ku.mono (by decide)).trans Kt⟩
 
 

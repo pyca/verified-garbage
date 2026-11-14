@@ -92,9 +92,9 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} {any : Bool} (h : CondS W
         rw [ax₄] at ax₆
         refine WP.ite (decide (n < 256)) (eval_b cf₆) (fun h2 => ?_) (fun h2 => ?_)
         · have h2 : n < 256 := by simpa using h2
-          exact WP.block_nil ⟨by simp [ax₆, IsFast, show ¬256 ≤ n by omega], k₂.trans (k₄.trans k₆)⟩
+          exact WP.block_nil ⟨by simp [ax₆, IsFast, show ¬256 ≤ n by omega_using [h2]], k₂.trans (k₄.trans k₆)⟩
         · have h2 : ¬n < 256 := by simpa using h2
-          have hs : IsFast nl al n false := ⟨h12, h5, .inr (by omega)⟩
+          have hs : IsFast nl al n false := ⟨h12, h5, .inr (by omega_using [h2])⟩
           refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
           · have e : (if IsFast nl al n false then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
             rw [e]

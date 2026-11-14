@@ -56,23 +56,23 @@ theorem keyAt_rd {s : State} (h : Room s) {A : Addr} (hk : KeyAt s A) :
     InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 0) 8 := by
   obtain ⟨i, hi, rfl⟩ := keyAt_addr hk
   rw [BitVec.add_zero]
-  have := slot_in h (k := 64 + i) (by omega)
+  have := slot_in h (k := 64 + i) (by omega_using [hi])
   simp only [wordAddr, schedOff] at this ⊢
-  rw [show 512 + 8 * i = 8 * (64 + i) by omega]
+  rw [show 512 + 8 * i = 8 * (64 + i) by omega_using []]
   let ⟨r, hr, hc⟩ := this; exact ⟨r, List.mem_append_right _ hr, hc⟩
 
 theorem keyAt_al {s : State} (h : Room s) {A : Addr} (hk : KeyAt s A) :
     (A + BitVec.ofNat 64 0).toNat % 8 = 0 := by
   obtain ⟨i, hi, rfl⟩ := keyAt_addr hk
-  rw [BitVec.add_zero, show schedOff + 8 * i = 8 * (64 + i) by unfold schedOff; omega]
-  exact wordAddr_al h.al _ (by omega)
+  rw [BitVec.add_zero, show schedOff + 8 * i = 8 * (64 + i) by unfold schedOff; omega_using []]
+  exact wordAddr_al h.al _ (by omega_using [hi])
 
 /-- Round keys are apart from the state words. -/
 theorem keyAt_apart {s : State} (h : Room s) {A : Addr} (hk : KeyAt s A) :
     (⟨A, 8⟩ : Region).Disjoint (stR s) := by
   obtain ⟨i, hi, rfl⟩ := keyAt_addr hk
   have := h.fit
-  exact Offset.disjoint_base _ (by unfold schedOff; omega) (by unfold schedOff frameBytes at *; omega)
+  exact Offset.disjoint_base _ (by unfold schedOff; omega_using []) (by unfold schedOff frameBytes at *; omega_using [hi])
 
 theorem stR_congr {s s' : State} (hb : s'.gpr .s0 = s.gpr .s0) : stR s' = stR s := by
   simp only [stR, hb]
@@ -114,16 +114,16 @@ theorem stepsCode_ok (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {s : S
   induction n with
   | zero => exact ⟨s, runBlock_nil, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, w₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega)
+    obtain ⟨s₁, run₁, w₁, k₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega_using [hn])
     have g0 : s₁.gpr .s0 = s.gpr .s0 := k₁ _ (by decide)
     have g5 : s₁.gpr .a5 = s.gpr .a5 := k₁ _ (by decide)
     obtain ⟨s₂, run₂, w₂, k₂, rd₂, wr₂, sp₂, f₂⟩ :=
-      sboxStep_ok ρ (j := n) (by omega) (h.congr g0 wr₁) k (by rw [g5]; exact hkey)
+      sboxStep_ok ρ (j := n) (by omega_using [hn]) (h.congr g0 wr₁) k (by rw [g5]; exact hkey)
     refine ⟨s₂, ?_, fun x hx => ?_, fun r hr => by rw [k₂ r hr, k₁ r hr], rd₂.trans rd₁, wr₂.trans wr₁,
       sp₂.trans sp₁, ?_⟩
     · rw [stepsCode_succ]; exact runBlock_cat_some run₁ run₂
     · rw [w₂ x hx, steps_succ]
-      exact VG.Proof.TripleDes.Bitslice.step_congr ρ k (by omega) w₁ (w₁ x hx)
+      exact VG.Proof.TripleDes.Bitslice.step_congr ρ k (by omega_using [hn]) w₁ (w₁ x hx)
     · rw [stR_congr g0] at f₂; exact f₁.trans f₂
 
 theorem round_eq (d : Direction) (ρ : Role) : round d ρ = keyLoad d ++ stepsCode ρ 8 := rfl
@@ -228,12 +228,12 @@ def passP (s : State) (c : Nat) (d : Direction) : Addr := schedA s + BitVec.ofNa
 
 theorem passKeyAt {s : State} {c : Nat} (hc : c < 3) (d : Direction) {r : Nat} (hr : r < 16) :
     KeyAt s (passP s c d + BitVec.ofNat 64 r * δ d) := by
-  refine ⟨16 * c + ix d r, by unfold ix; split <;> omega, ?_⟩
+  refine ⟨16 * c + ix d r, by unfold ix; split <;> omega_arith, ?_⟩
   rw [passP, BitVec.add_assoc, kaddr c hc d r hr]
 
 theorem keyOf_pass (m : Mem) (s : State) {c : Nat} (hc : c < 3) (d : Direction) {r : Nat} (hr : r < 16) :
     keyOf m (passP s c d) (δ d) r = roundKey (componentSchedule (scheduleAt m (schedA s)) c) d r := by
-  have hi : ix d r < 16 := by unfold ix; split <;> omega
+  have hi : ix d r < 16 := by unfold ix; split <;> omega_arith
   unfold roundKey
   rw [show (if d = .encrypt then r else 15 - r) = ix d r from rfl, componentSchedule_readW m _ _ _ hc hi, keyOf, passP, BitVec.add_assoc, kaddr c hc d r hr]
 
@@ -256,15 +256,15 @@ theorem pair_step {s₀ : State} (h₀ : Room s₀) {c : Nat} (hc : c < 3) {d : 
     {s : State} (I : PairInv s₀ c d m s) :
     ∃ s', runBlock isa (roundPair d) s = some s' ∧ PairInv s₀ c d (m + 1) s' := by
   have h : Room s := h₀.congr I.s0 I.wr
-  have hk₁ := (passKeyAt (s := s₀) hc d (r := 2 * m) (by omega)).congr I.s0
-  have hk₂ := (passKeyAt (s := s₀) hc d (r := 2 * m + 1) (by omega)).congr I.s0
+  have hk₁ := (passKeyAt (s := s₀) hc d (r := 2 * m) (by omega_using [hm])).congr I.s0
+  have hk₂ := (passKeyAt (s := s₀) hc d (r := 2 * m + 1) (by omega_using [hm])).congr I.s0
   rw [← kptr_succ] at hk₂
   obtain ⟨s', run, w, p3, p4, k, rd, wr, sp, f⟩ := roundPair_ok d h I.ptr hk₁ hk₂
   have rk : ∀ r < 16, s.mem.readW (passP s₀ c d + BitVec.ofNat 64 r * δ d) 64 =
       s₀.mem.readW (passP s₀ c d + BitVec.ofNat 64 r * δ d) 64 := fun r hr => by
     have := Frame.readKey h₀ (passKeyAt (s := s₀) hc d hr) I.frame
     exact this
-  refine ⟨s', run, ⟨by omega, (k _ (by decide)).trans I.s0, (k _ (by decide)).trans I.a1,
+  refine ⟨s', run, ⟨by omega_using [hm], (k _ (by decide)).trans I.s0, (k _ (by decide)).trans I.a1,
     (k _ (by decide)).trans I.a2, ?_, ?_, fun x hx => ?_, rd.trans I.rd, wr.trans I.wr, sp.trans I.sp, ?_⟩⟩
   · rw [p3, kptr_succ, kptr_succ]; congr 3
   · rw [p4, I.cnt]
@@ -272,7 +272,7 @@ theorem pair_step {s₀ : State} (h₀ : Room s₀) {c : Nat} (hc : c < 3) {d : 
       BitVec.ofNat 64 (8 - (m + 1))) m hm
   · have e : passP s₀ c d + BitVec.ofNat 64 (2 * m) * δ d + δ d =
         passP s₀ c d + BitVec.ofNat 64 (2 * m + 1) * δ d := kptr_succ _ _ _
-    rw [w x hx, e, rk _ (by omega), rk _ (by omega)]
+    rw [w x hx, e, rk _ (by omega_using [hm]), rk _ (by omega_using [hm])]
     simp only [VG.Proof.TripleDes.Bitslice.pairs]
     exact VG.Proof.TripleDes.Bitslice.roundW_congr .ab _
       (VG.Proof.TripleDes.Bitslice.roundW_congr .ba _ I.wds) x hx
@@ -287,10 +287,10 @@ theorem pairLoop_ok {s₀ : State} (h₀ : Room s₀) {c : Nat} (hc : c < 3) (d 
   intro n v ⟨m, hm, hn, J⟩
   obtain ⟨v', run, J'⟩ := pair_step h₀ hc hm J
   refine WP.of_runBlock ⟨v', run, ?_⟩
-  rw [show Impl.TripleDes.RISCV64.Bitslice.pairs = Reg.a4 from rfl, Steps.eval_nonzero_ofNat _ _ (by omega) J'.cnt]
+  rw [show Impl.TripleDes.RISCV64.Bitslice.pairs = Reg.a4 from rfl, Steps.eval_nonzero_ofNat _ _ (by omega_using []) J'.cnt]
   by_cases e : m + 1 = 8
   · left; exact ⟨by simp [e], e ▸ J'⟩
-  · right; exact ⟨by simp; omega, 8 - (m + 1), by omega, m + 1, by omega, rfl, J'⟩
+  · right; exact ⟨by simp; omega_using [hm, e], 8 - (m + 1), by omega_using [hm, hn], m + 1, by omega_using [hm, e], rfl, J'⟩
 
 /-- The registers a pass leaves alone. -/
 def passKept : List Reg := [.s0, .a1, .a2]
@@ -304,7 +304,7 @@ theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) 
   apply WP.seq
   have e₁ := exec_addi (s := s) (d := .a3) (n := .s0)
     (imm := ((schedOff : Int) + 128 * (c : Int) + if d = .encrypt then 0 else 120))
-    (by cases d <;> (simp only [imm12, schedOff, reduceCtorEq, ite_true, ite_false]; omega))
+    (by cases d <;> (simp only [imm12, schedOff, reduceCtorEq, ite_true, ite_false]; omega_using [hc]))
   let s₁ := s.write .a3 (s.gpr .s0 +
     BitVec.ofInt 64 ((schedOff : Int) + 128 * (c : Int) + if d = .encrypt then 0 else 120))
   have e₂ := exec_li (s := s₁) (d := .a4) (imm := 8) (by decide)
@@ -365,7 +365,7 @@ theorem passes_ok (d : Direction) {s : State} (h : Room s) :
     VG.Proof.TripleDes.scheduleAt_eq_of_frame _ hf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have := h.fit
-      exact Offset.disjoint_base _ (by unfold schedOff; omega) (by unfold schedOff frameBytes at *; omega)
+      exact Offset.disjoint_base _ (by unfold schedOff; omega_using []) (by unfold schedOff frameBytes at *; omega_using [])
   cases d
   all_goals
     unfold passes

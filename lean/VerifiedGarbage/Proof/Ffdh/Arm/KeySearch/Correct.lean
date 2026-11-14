@@ -37,7 +37,7 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) {p : KeyPu
     rw [← h.2.1] at fits
     change stackUse sampling ≤ s.sp.toNat at fits
     have min := stackUse_min sampling
-    omega
+    omega_using [fits, min]
   unfold VG.Impl.Ffdh.Arm.KeySearch.codeFor
   refine WP.frame (by decide) fit (by decide) ?_
   rw [WP.seq_iff]

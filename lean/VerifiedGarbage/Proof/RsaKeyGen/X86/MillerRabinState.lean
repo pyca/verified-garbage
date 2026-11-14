@@ -93,13 +93,13 @@ theorem StateAt.keepMem {P : Parameters} (v : P.Valid) {s t : State} {k n : Nat}
 theorem StateAt.countFit {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
     w32 s.mem P.g.W 176 + 1 < 2 ^ 32 ∧ w32 s.mem P.g.W 192 + 1 < 2 ^ 32 := by
   have used := S.atLoop.used
-  have positive : 2 ≤ P.bytes := by have := v.narrow; have := v.two; omega
+  have positive : 2 ≤ P.bytes := by have := v.narrow; have := v.two; omega_arith
   have count := Nat.mul_le_mul_right k positive
   rw [v.entropyLength] at used
   rw [S.rounds, S.uniform]
   have uniform := mrSB_uniform_le P.candidate P.bytes P.start P.entropy k
   have bound := v.randLenFit
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem StateAt.sample {P : Parameters} {s : State} {k n : Nat} (S : StateAt P k n s)
     (enough : P.start + P.bytes * k + P.bytes ≤ P.randLen) :

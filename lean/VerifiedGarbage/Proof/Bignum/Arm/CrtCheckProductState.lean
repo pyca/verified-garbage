@@ -38,11 +38,11 @@ theorem crt_padComparison_ready (s : State) {base : BitVec 32} {size len o a d w
     ⟨c.subtraction.nowrap, c.subtraction.outFits, c.subtraction.aFits, c.subtraction.bFits,
       c.subtraction.sepA, c.subtraction.sepB, by rw [rest.wr]; exact c.subtraction.writable⟩
   refine ⟨⟨c.workspace.congr rest.wr, c.fit, ctx, ptr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
-    outside.val32 h.separate (by omega), value, outside, rest⟩
-  · exact (outside_read32 outside (by omega) (by decide)).trans c.count
-  · exact (outside_read32 outside (by omega) (by decide)).trans c.output
-  · exact (outside_read32 outside (by omega) (by decide)).trans c.first
-  · exact (outside_read32 outside (by omega) (by decide)).trans c.second
+    outside.val32 h.separate (by omega_using [nowrap, aFit]), value, outside, rest⟩
+  · exact (outside_read32 outside (by omega_using [small, separate]) (by decide)).trans c.count
+  · exact (outside_read32 outside (by omega_using [small, separate]) (by decide)).trans c.output
+  · exact (outside_read32 outside (by omega_using [small, separate]) (by decide)).trans c.first
+  · exact (outside_read32 outside (by omega_using [small, separate]) (by decide)).trans c.second
   · rw [rest.rd, rest.wr, rest.sp]; exact c.stackRead
   · rw [rest.sp]; exact c.stackSep
   · exact saved_base_kept frame c.stackSep c.saved rest.sp

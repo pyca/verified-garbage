@@ -67,7 +67,7 @@ theorem red_tr {Φ : Lay → Mem → State → Prop} :
       gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp), rsp_ce, g1, g2, g3, g4,
       sp_sub8, State.withRegions_rd, State.withRegions_wr]
     refine ⟨trivial, trivial, ?_, ret_k, ret_x hL, k_x' hL, hL.nScr⟩
-    have := hL.stk_x (d := 32) (n := 114) (e := 0) (k := 8192) (by omega) (by omega)
+    have := hL.stk_x (d := 32) (n := 114) (e := 0) (k := 8192) (by omega_using []) (by omega_using [])
     rw [H_eq]; simpa only [x0] using this
   · obtain ⟨x1, x2, x3, x4⟩ := regs L g₁ mx₁ m₁ a a1 c₁ f₁
     obtain ⟨y1, y2, y3, y4⟩ := regs L g₂ mx₂ m₂ b b1 c₂ f₂
@@ -76,10 +76,10 @@ theorem red_tr {Φ : Lay → Mem → State → Prop} :
       x1, x2, x3, x4, y1, y2, y3, y4, and_self]
   · refine ⟨fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨L.FR, by simp, within_off _ (by omega)⟩
+      exact ⟨L.FR, by simp, within_off _ (by omega_using [])⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      exacts [⟨L.FR, by simp, within_off _ (by omega)⟩, w_scr hL (within_self _)]
+      exacts [⟨L.FR, by simp, within_off _ (by omega_using [])⟩, w_scr hL (within_self _)]
 
 theorem eq_tr (hv : EqOk v) (hct : EqCT v) :
     RelCT isa (Two EqInputs KeyReady) (callA ("vg_ed448_verify_equation" ++ v.suffix) (Impl.Ed448.X86_64.verifyEquationFor v) eqArgs)
@@ -135,7 +135,7 @@ theorem eq_tr (hv : EqOk v) (hct : EqCT v) :
       rcases hr with rfl | rfl | rfl
       · exact ⟨L.PK, List.mem_append_left _ hL.inPk, within_self _⟩
       · exact ⟨L.SIG, List.mem_append_left _ hL.inSig, within_self _⟩
-      · exact ⟨L.FR, by simp, within_off _ (by omega)⟩
+      · exact ⟨L.FR, by simp, within_off _ (by omega_using [])⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact w_scr hL (within_self _)
 

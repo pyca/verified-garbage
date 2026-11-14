@@ -41,12 +41,12 @@ theorem writeScalar_ok {s : State} {B out : Addr} {Z offset q : Nat} {valid : Bo
     intro i hi
     rw [hku.2.1, hku.2.2, show off B offset + BitVec.ofNat 64 i = off B (offset + i) by
       simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-    obtain ⟨r, hr, hc⟩ := hs.region (d := offset + i) (by omega) (show 0 < 1 by decide)
+    obtain ⟨r, hr, hc⟩ := hs.region (d := offset + i) (by omega_using [hsrc, hi]) (show 0 < 1 by decide)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have hsep' : ∀ i < q, ∀ j < q, off B offset + BitVec.ofNat 64 i ≠
       (if second then out + BitVec.ofNat 64 q else out) + BitVec.ofNat 64 j := by
     intro i hi j hj
-    exact scr_ne_out hsep (d := offset) (i := i) (by omega) (by have := hs.nowrap; omega) j hj
+    exact scr_ne_out hsep (d := offset) (i := i) (by omega_using [hsrc, hi]) (by have := hs.nowrap; omega_using [this]) j hj
   refine WP.mono (copyMasked_ok husi hudx hucx hu8 h1 h64 hr
     (fun i hi => by rw [hku.2.2]; exact hw i hi) hsep') fun t ⟨htb, htf, hkt⟩ => ?_
   exact ⟨by rw [hum] at htb; exact htb, fun x hx => (htf x hx).trans (congrFun hum x),

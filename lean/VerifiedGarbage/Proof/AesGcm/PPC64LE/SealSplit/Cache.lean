@@ -55,12 +55,12 @@ theorem source_layout {s s₁ s₂ : State} {H : Spec.Gcm.Block} {iv a : List By
     change (s.sp-112#64).toNat+112≤2^64
     rw [toNat_sub_ofNat' lay.spFit.1]
     have := s.sp.isLt
-    omega
+    omega_using []
   have hslotW : InRegions s₂.wr ((prepared s).sp+96) 8 := by
     rw [wr,h1.en.keeps.wr]
     change InRegions (frameR 112 s::s.wr) ((s.sp-112#64)+96) 8
     exact ⟨frameR 112 s,List.mem_cons_self,Offset.contains _ (d := 96) (n := 8) (e := 32) (k := 80) (by decide) (by decide) (by decide)⟩
-  refine ⟨?_,?_,?_,?_,lay.fits (sourceR s) (by simp),?_,?_,?_,hslotW,by omega,?_,?_,?_,?_,?_,?_⟩
+  refine ⟨?_,?_,?_,?_,lay.fits (sourceR s) (by simp),?_,?_,?_,hslotW,by omega_using [hsp],?_,?_,?_,?_,?_,?_⟩
   · rw [h23]; exact lay.bound
   · change s₂.mem.readW (s₂.gpr .r31+112) 64=s.gpr .r9
     rw [oa.env.r31,h31]

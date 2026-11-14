@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedReduce
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
@@ -12,6 +14,32 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+
+/-! ### `MlDsa.AArch64.Optimized.PairedReduce`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (VChg wp_vop vword_mapWords3)
+open VG.Proof.MlDsa.AArch64.Optimized.Response (reduceWord normMask minMask)
+
+/-- Register-parametric form used by the two interleaved final r0 lanes. -/
+def reduceRegs (a t : VReg) : List Instr :=
+ [.vop (.add .s4 t a .v8),.vop (.shift .sshr .s4 t t 23),.vop (.mls a t .v31)]
+
+def normRegs (a t : VReg) : List Instr :=
+ [.vop (.add .s4 t a .v9),.vop (.umin t t .v10),
+  .vop (.cmeq .s4 t t .v10),.vop (.logic .orr .v30 .v30 t)]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
 
 /-! ## `PairedLowVec` -/
 
@@ -78,23 +106,23 @@ theorem lowReduced_spec {g : Nat} (hg : IsG g) {a : BitVec 32}
     simp only [BitVec.toNat_sub,BitVec.toNat_mul,BitVec.toNat_ofNat] at ht
     rw [hhigh] at ht
     rcases hg with rfl | rfl <;>
-      simp only [hbM,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,Spec.MlDsa.q] at * <;> omega
+      simp only [hbM,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,Spec.MlDsa.q] at * <;> omega_using [ha, ht]
   have hb : -8380417<(a-highWord g a*BitVec.ofNat 32 (2*g)).toInt ∧
       (a-highWord g a*BitVec.ofNat 32 (2*g)).toInt<8380417 := by
     rw [hraw]
     have hr : a.toNat<8380417 := ha
     rcases hg with rfl | rfl <;>
-      simp only [hbM,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,Spec.MlDsa.q] at * <;> omega
-  have hreduce := Response.reduceWord_int (a-highWord g a*BitVec.ofNat 32 (2*g)) (by omega) (by omega)
+      simp only [hbM,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,Spec.MlDsa.q] at * <;> omega_using [ha]
+  have hreduce := Response.reduceWord_int (a-highWord g a*BitVec.ofNat 32 (2*g)) (by omega_using [hb]) (by omega_using [hb])
   rw [hreduce]
-  have hrange := reduce32_bounds (x := (a-highWord g a*BitVec.ofNat 32 (2*g)).toInt) (by omega) (by omega)
+  have hrange := reduce32_bounds (x := (a-highWord g a*BitVec.ofNat 32 (2*g)).toInt) (by omega_using [hb]) (by omega_using [hb])
   have hmod := reduce32_mod (a-highWord g a*BitVec.ofNat 32 (2*g)).toInt
   have hlow := Response.lowBits_centered hg (⟨a.toNat,ha⟩ : Spec.MlDsa.Zq)
   have hlrange := Response.lowBits_bounds hg (⟨a.toNat,ha⟩ : Spec.MlDsa.Zq)
   have hgsmall : g≤261888 := by rcases hg with rfl | rfl <;> decide
   change Spec.MlDsa.lowBits g ⟨a.toNat,ha⟩ = _ at hlow
   rw [← hraw] at hlow
-  split at hlow <;> omega
+  split at hlow <;> omega_using [hrange, hmod, hlrange, hgsmall, hlow]
 
 theorem lowReduced_eq {g : Nat} (hg : IsG g) {a : BitVec 32}
     (ha : a.toNat<Spec.MlDsa.q) :
@@ -286,8 +314,8 @@ theorem lowLoadTwo_ok {r q : VReg} {off : Nat}
         vword (s.mem.read (s.gpr .x15+BitVec.ofNat 64 (off+128)) 16) e-vword (s.v q) e) →
       WP isa (.block rest) v Q) :
     WP isa (.block (lowLoadTwo r q off++rest)) s Q := by
-  refine wp_ldrq (by omega) rfl hread fun s1 h1 => ?_
-  refine wp_ldrq (by omega) rfl (by rw [h1.rd,h1.wr,h1.gpr]; exact hread') fun s2 h2 => ?_
+  refine wp_ldrq (by omega_using [ho]) rfl hread fun s1 h1 => ?_
+  refine wp_ldrq (by omega_using [ho]) rfl (by rw [h1.rd,h1.wr,h1.gpr]; exact hread') fun s2 h2 => ?_
   refine wp_vop (d := .v24) rfl fun s3 h3 => wp_vop (d := r) rfl fun s4 h4 => ?_
   refine k s4 ((((h1.chg.trans h2.chg).trans h3.chg).trans h4.chg).mono (by simp)) ?_ ?_
   · intro e he

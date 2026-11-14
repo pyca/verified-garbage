@@ -50,7 +50,7 @@ theorem jointByte_ct (M : Mont) (Sq : MontS) :
       (by simpa only [hF] using hf.rd) (by simpa only [hF] using hf.val) fout hI)
       fun t ht => ?_
     exact ⟨by decide, t, minv, n, xc, g, y, _, _, _, _, ht, hw, hw', hR,
-      (eb[q.2]'(by omega)).isLt, (fb[q.2]'(by omega)).isLt⟩
+      (eb[q.2]'(by omega_using [hi, hL])).isLt, (fb[q.2]'(by omega_using [hi, hF])).isLt⟩
   refine RelCT.seq (two_map (fun q : JointBytesPublic × Nat => q.1.x) (fun _ _ h => h)
     (jointWindows_ct M Sq)) ?_
   exact rdi_ct (fun p : XPub => off p.B p.o)

@@ -97,17 +97,17 @@ theorem optimizedZ_trace {p : Params} {S : Nat} (hp : Ok3 p) {t r : Nat} (hr : r
     · apply Response.addNormAt_tr (S := S) (inB_argOk hyr) (inB_argOk hcr)
       intro x y ⟨L,⟨⟨σ,hx⟩,rx⟩,⟨⟨τ,hy⟩,ry⟩⟩
       have fx : Reduced x.mem (pa x (yP p r)) := by
-        have h := (hx.y 0 (by omega)).1
+        have h := (hx.y 0 (by omega_using [hr])).1
         simpa only [Nat.add_zero] using h
       have fy : Reduced y.mem (pa y (yP p r)) := by
-        have h := (hy.y 0 (by omega)).1
+        have h := (hy.y 0 (by omega_using [hr])).1
         simpa only [Nat.add_zero] using h
       exact ⟨addNormReady_layout L.lx hyr hcr hyw hsep fx rx hb.1 hb.2,
         addNormReady_layout L.ly hyr hcr hyw hsep fy ry hb.1 hb.2,
         L.pa (inB_bases hyr),L.pa (inB_bases hcr),L.sp⟩
     · rintro x L ⟨⟨σ,hx⟩,rx⟩
       have fx : Reduced x.mem (pa x (yP p r)) := by
-        have h := (hx.y 0 (by omega)).1
+        have h := (hx.y 0 (by omega_using [hr])).1
         simpa only [Nat.add_zero] using h
       exact WP.mono (addNormAt_layout L hyr hcr (addNormReady_layout L hyr hcr hyw hsep fx rx hb.1 hb.2))
         fun _ h=>⟨⟨_,h.1⟩,trivial⟩

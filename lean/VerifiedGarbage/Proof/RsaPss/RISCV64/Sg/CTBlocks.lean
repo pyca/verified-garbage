@@ -107,8 +107,10 @@ theorem dbArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block (dbArgs H)) f
 theorem clearTop_taint (h : Pins Φ [.s0, .s3]) : RelCT isa (Two Φ) (.block clearTop) fun _ _ => True :=
   two_taint [.s0, .s3] h (by taint_decide)
 
-theorem privArgs_taint (h : Pins Φ [.s0]) : RelCT isa (Two Φ) (.block privArgs) fun _ _ => True :=
-  two_taint [.s0] h (by taint_decide)
+theorem privArgs_taint (pc : Bool) (h : Pins Φ [.s0]) : RelCT isa (Two Φ) (.block (privArgs pc)) fun _ _ => True := by
+  cases pc
+  · exact two_taint [.s0] h (by taint_decide)
+  · exact two_taint [.s0] h (by taint_decide)
 
 end
 

@@ -70,13 +70,13 @@ theorem MulAddPre.of {s : State} (h : scalarMulAddLocal.pre s) : MulAddPre s := 
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩
 
 theorem MulAddPre.args {s : State} (h : MulAddPre s) : Args s 5 4 :=
-  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega, by decide, by rw [h.wr]; simp, h.sc_fit,
+  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega_using [this], by decide, by rw [h.wr]; simp, h.sc_fit,
     h.args_sc, h.ret_sc⟩
 
 theorem MulAddPre.input {s : State} (h : MulAddPre s) {base : Addr} (hbase : (arg s 4).setWidth 64 = base)
     {i : Nat} (h1 : 1 ≤ i) (h4 : i < 4) : Input s base (arg s i) 57 := by
   subst hbase
-  rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl
+  rcases (by omega_using [h1, h4] : i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl
   · exact Input.of_region h.r_fit (by rw [h.rd]; simp) h.r_sc
   · exact Input.of_region h.k_fit (by rw [h.rd]; simp) h.k_sc
   · exact Input.of_region h.a_fit (by rw [h.rd]; simp) h.a_sc
@@ -94,19 +94,19 @@ theorem MKeep.trans {base : Addr} {s t u : State} (h : MKeep base s t) (h' : MKe
     MKeep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
 
 theorem MKeep.whole {base : Addr} {s t : State} (h : MKeep base s t) : Outside base 0 8192 s.mem t.mem :=
-  h.mem.mono (by omega) (by omega)
+  h.mem.mono (by omega_using []) (by omega_using [])
 
 theorem MKeep.of2 {base : Addr} {s t : State} {rs : List Reg} (hr : Keeps rs s t)
     (hrs : ∀ r ∈ rs, r ∈ [Reg.eax, .ebx, .ecx, .edx, .ebp, .esi])
     {x nx y ny : Nat} (hm : Outside2 base x nx y ny s.mem t.mem) (hx : 16 ≤ x) (hy : 16 ≤ y)
     (hx' : x + nx ≤ 8192) (hy' : y + ny ≤ 8192) : MKeep base s t :=
-  ⟨hr.mono hrs, fun p hp => hm p (by omega) (by omega)⟩
+  ⟨hr.mono hrs, fun p hp => hm p (by omega_using [hx, hx', hp]) (by omega_using [hy, hy', hp])⟩
 
 theorem MKeep.of1 {base : Addr} {s t : State} {rs : List Reg} (hr : Keeps rs s t)
     (hrs : ∀ r ∈ rs, r ∈ [Reg.eax, .ebx, .ecx, .edx, .ebp, .esi])
     {x nx : Nat} (hm : Outside base x nx s.mem t.mem) (hx : 16 ≤ x) (hx' : x + nx ≤ 8192) :
     MKeep base s t :=
-  ⟨hr.mono hrs, fun p hp => hm p (by omega)⟩
+  ⟨hr.mono hrs, fun p hp => hm p (by omega_using [hx, hx', hp])⟩
 
 theorem inputs_ok {s₀ s : State} (h : MulAddPre s₀) {base : Addr} (hbase : (arg s₀ 4).setWidth 64 = base)
     (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
@@ -138,13 +138,13 @@ theorem inputs_ok {s₀ s : State} (h : MulAddPre s₀) {base : Addr} (hbase : (
   have mt' : MKeep base v t := MKeep.of2 kt (by decide) mt (by decide) (by decide) (by decide) (by decide)
   have eK : ∀ j < 28, limbs t.mem base SK j = limbs u.mem base SK j := fun j hj => by
     show (word t.mem base (SK + 4 * j)).toNat = (word u.mem base (SK + 4 * j)).toNat
-    rw [congrArg BitVec.toNat (mt.word (d := SK + 4 * j) (Or.inr (by simp only [W]; omega))
-      (Or.inl (by omega)) (by omega)),
-      congrArg BitVec.toNat (mv.word (d := SK + 4 * j) (Or.inr (by simp only [W]; omega))
-      (Or.inl (by omega)) (by omega))]
+    rw [congrArg BitVec.toNat (mt.word (d := SK + 4 * j) (Or.inr (by simp only [W]; omega_using [hK]))
+      (Or.inl (by omega_using [hK, hR, hj])) (by omega_using [hK, hj])),
+      congrArg BitVec.toNat (mv.word (d := SK + 4 * j) (Or.inr (by simp only [W]; omega_using [hK]))
+      (Or.inl (by omega_using [hK, hS, hj])) (by omega_using [hK, hj]))]
   have eS : ∀ j < 28, limbs t.mem base SS j = limbs v.mem base SS j := fun j hj =>
-    congrArg BitVec.toNat (mt.word (d := SS + 4 * j) (Or.inr (by simp only [W]; omega))
-      (Or.inl (by omega)) (by omega))
+    congrArg BitVec.toNat (mt.word (d := SS + 4 * j) (Or.inr (by simp only [W]; omega_using [hS]))
+      (Or.inl (by omega_using [hS, hR, hj])) (by omega_using [hS, hj]))
   exact ⟨mu'.trans (mv'.trans mt'), fun j hj => by rw [eK j hj]; exact lu j hj,
     fun j hj => by rw [eS j hj]; exact lv j hj, lt, by rw [← vu]; exact valN_congr eK,
     by rw [← vv]; exact valN_congr eS, vt⟩
@@ -162,7 +162,7 @@ theorem scalarMulAdd_correct {s₀ : State} (h : MulAddPre s₀) :
   unfold scalarMulAdd
   refine WP.seq (WP.mono (save_ok hA) fun s1 ⟨hs1, sv1, o1, k1⟩ => ?_)
   rw [hbase] at hs1 sv1 o1
-  have o1' : Outside base 0 8192 s₀.mem s1.mem := o1.mono (by omega) (by omega)
+  have o1' : Outside base 0 8192 s₀.mem s1.mem := o1.mono (by omega_using []) (by omega_using [])
   -- the inputs
   refine WP.seq (WP.mono (inputs_ok h hbase (k1.1 _ (by decide)) k1.2.1 k1.2.2 o1' hs1)
     fun s2 ⟨k2, lK, lS, lR, vK, vS, vR⟩ => ?_)
@@ -178,9 +178,9 @@ theorem scalarMulAdd_correct {s₀ : State} (h : MulAddPre s₀) :
   -- the reduced `r` survives the product and its reduction
   have eR : ∀ j < 28, limbs s4.mem base SR j = limbs s2.mem base SR j := fun j hj => by
     show (word s4.mem base (SR + 4 * j)).toNat = (word s2.mem base (SR + 4 * j)).toNat
-    rw [congrArg BitVec.toNat (k4.mem.word (d := SR + 4 * j) (Or.inr (by simp only [W]; omega))
-      (Or.inr (by omega)) (by omega)),
-      congrArg BitVec.toNat (m3.word (d := SR + 4 * j) (Or.inl (by omega)) (by omega))]
+    rw [congrArg BitVec.toNat (k4.mem.word (d := SR + 4 * j) (Or.inr (by simp only [W]; omega_using [hR]))
+      (Or.inr (by omega_using [hR, hRA])) (by omega_using [hR, hj])),
+      congrArg BitVec.toNat (m3.word (d := SR + 4 * j) (Or.inl (by omega_using [hR, hC, hj])) (by omega_using [hR, hj]))]
   have lR4 : Bounded s4.mem base SR := fun j hj => by rw [eR j hj]; exact lR j hj
   have vR4 : fe s4.mem base SR = fe s2.mem base SR := valN_congr eR
   have hvR : fe s4.mem base SR < L := by rw [vR4, vR]; exact Nat.mod_lt _ Proof.Ed448.L_pos
@@ -190,7 +190,7 @@ theorem scalarMulAdd_correct {s₀ : State} (h : MulAddPre s₀) :
   refine WP.mono (addPass_ok hs4 l4 lR4 hvA hvR) fun s5 ⟨k5, m5, l5, v5⟩ => ?_
   have hs5 := hs4.of_keeps k5 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (reduceT_ok RA_buf hs5 l5 (by rw [v5]; omega)) fun s6 ⟨k6, m6, l6, v6⟩ => ?_
+  refine WP.mono (reduceT_ok RA_buf hs5 l5 (by rw [v5]; omega_using [hvR, hvA])) fun s6 ⟨k6, m6, l6, v6⟩ => ?_
   have hs6 := hs5.of_keeps k6 (by decide)
   have k5' : MKeep base s4 s5 := MKeep.of1 k5 (by decide) m5 (by decide) (by decide)
   have k6' : MKeep base s5 s6 := MKeep.of1 k6 (by decide) m6 (by decide) (by decide)

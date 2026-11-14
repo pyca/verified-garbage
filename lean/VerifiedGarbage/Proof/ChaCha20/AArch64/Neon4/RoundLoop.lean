@@ -35,7 +35,7 @@ theorem roundCounterDec_ok (s : State) {n : Nat} (hn : 0 < n ∧ n ≤ 10)
     State.read, Size.bits, isa, runStep_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, rfl, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl, rfl⟩⟩
   rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hc]
-  exact Offset.ofNat_sub_ofNat (by omega)
+  exact Offset.ofNat_sub_ofNat (by omega_using [hn])
 
 theorem roundLoop_ok {sve : Bool} {vs : Nat → CState} {s : State} (h : Holds vs s)
     (ht : s.v .v30 = rol8Table) :
@@ -56,19 +56,19 @@ theorem roundLoop_ok {sve : Bool} {vs : Nat → CState} {s : State} (h : Holds v
     have hsc : LoadSame s c := (hsu.trans
       ⟨fun r _ => congrFun hub.gpr r, hub.mem, hub.rd, hub.wr, hub.sp⟩).trans hbc
     have hcH : Holds (fun j => Nat.repeat innerBlock (10 - (n - 1)) (vs j)) c := by
-      have he : 10 - (n - 1) = (10 - n) + 1 := by omega
+      have he : 10 - (n - 1) = (10 - n) + 1 := by omega_using [hn, hle]
       rw [he]
       simpa only [Holds, hcv, Nat.repeat] using hb
     have hct : c.v .v30 = rol8Table := by rw [hcv, hub.v30, hut]
-    have heval := Xor.eval_nonzero_ofNat c .x4 (by omega : n - 1 < 2 ^ 64) hcc
+    have heval := Xor.eval_nonzero_ofNat c .x4 (by omega_using [hle] : n - 1 < 2 ^ 64) hcc
     by_cases hz : n = 1
     · left
       refine ⟨?_, ?_, hsc⟩
       · simpa only [hz, Nat.sub_self, ne_eq, not_true_eq_false, decide_false] using heval
       · simpa only [hz, Nat.sub_self, Nat.sub_zero] using hcH
     · right
-      refine ⟨?_, n - 1, by omega, by omega, by omega, hcc, hcH, hct, hsc⟩
-      simpa only [decide_eq_true (by omega : n - 1 ≠ 0)] using heval
+      refine ⟨?_, n - 1, by omega_using [hn], by omega_using [hn, hz], by omega_using [hle], hcc, hcH, hct, hsc⟩
+      simpa only [decide_eq_true (by omega_using [hn, hz] : n - 1 ≠ 0)] using heval
   · refine ⟨by decide, by decide, ha, ?_, ?_, hsa⟩
     · simpa only [Holds, hav, Nat.sub_self, Nat.repeat] using h
     · rw [hav, ht]

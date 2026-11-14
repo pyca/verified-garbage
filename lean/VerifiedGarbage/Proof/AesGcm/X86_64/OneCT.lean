@@ -310,7 +310,7 @@ theorem oneTag_relT {R al : Nat} {D : Addr} {n N : Nat} {o : Nat} (ho : o = 0 �
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)
   have e := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ (OneT Ctx W SP R al D n N s₁ ∧ OneT Ctx W SP R al D n N s₂)) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => env_agree h.2.1.env h.2.2.env) ⟨_, by taint_decide⟩) (fun _ _ h => h.2) hT hT
-  have t := (tag_rel v L (R := R) ho).mono (P' := fun (s₁ s₂ : State) => True ∧
+  have t := (tag_rel v L (by decide) (TagCall.base v) (R := R) ho).mono (P' := fun (s₁ s₂ : State) => True ∧
       (OneT Ctx W SP R al D n N s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 al ∧ s₁.gpr .rbp = BitVec.ofNat 64 N) ∧
       (OneT Ctx W SP R al D n N s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 al ∧ s₂.gpr .rbp = BitVec.ofNat 64 N))
     (fun _ _ h => ⟨⟨h.2.1.1.env, h.2.2.1.env, fun r hr => by

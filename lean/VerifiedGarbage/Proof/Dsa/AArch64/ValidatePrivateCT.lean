@@ -114,8 +114,8 @@ def PrivateCall.shape (c : PrivateCall) : ShapePublic where
   extentBound := by decide
   pPositive := c.input.pPositive
   qPositive := c.input.qPositive
-  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega
-  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega
+  pBound := by rw [c.input.components.pLength]; have := c.layout.widths; change c.layout.pLen < 2 ^ 64; omega_using [this]
+  qBound := by rw [c.input.components.qLength]; have := c.layout.widths; change c.layout.qLen < 2 ^ 64; omega_using [this]
   digestBound := by decide
 
 theorem PrivateAgrees.shape {reference c : PrivateCall} (h : PrivateAgrees reference c) :

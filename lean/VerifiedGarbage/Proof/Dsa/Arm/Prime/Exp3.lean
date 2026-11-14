@@ -47,7 +47,7 @@ abbrev LSB : List Nat := sTc :: sBit :: LSH
 theorem not_odd (x : Nat) : 1 - b2n (decide (x % 2 = 1)) = b2n (decide (x % 2 = 0)) := by
   by_cases h : x % 2 = 0
   · simp [h, VG.Proof.Rsa.b2n]
-  · have : x % 2 = 1 := by omega
+  · have : x % 2 = 1 := by omega_using [h]
     simp [this, VG.Proof.Rsa.b2n]
 
 theorem halfBody_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) {k : Nat} (hk : k < 8 * P.L) :
@@ -75,7 +75,7 @@ theorem halfBody_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) {k : Na
     have := hv_le (P := P) σ k
     have := pre.k2
     simp (config := {decide := true}) only [VH, upd, ↓reduceIte]
-    omega
+    omega_arith
   · have hm : AB P k σ aHm = (hv P σ k).1 := by simp (config := {decide := true}) only [AB, upd, ↓reduceIte, eA]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -96,38 +96,38 @@ theorem halfBody_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) {k : Na
   refine (St.pcntNext cntNext_taint (by simp) (fun σ e => ?_)).mono (fun _ _ h => h) fun σ s ⟨h, z⟩ => ⟨?_, ?_⟩
   · have := (hE σ e).k2
     simp (config := {decide := true}) only [VB, VH, upd, ↓reduceIte]
-    omega
+    omega_using [hk, this]
   · refine h.mono (fun j hj => ⟨by mem_sub, ?_⟩) fun j hj => ⟨by mem_sub, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         simp (config := {decide := true}) only [AH, AB, upd, ↓reduceIte]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl
-      · simp (config := {decide := true}) only [VB, VH, upd, ↓reduceIte]; omega
+      · simp (config := {decide := true}) only [VB, VH, upd, ↓reduceIte]; omega_using []
       · simp (config := {decide := true}) only [VB, VH, upd, ↓reduceIte, hv_succ, halveStep, evb]
         by_cases h2 : (hv P σ k).1 % 2 = 0 <;> simp [h2, VG.Proof.Rsa.b2n]
       all_goals simp (config := {decide := true}) only [VB, VH, upd, ↓reduceIte]
   · rw [z]
     have := (hE σ h.1).k2
     simp (config := {decide := true}) only [VB, VH, upd, ↓reduceIte]
-    simp only [decide_eq_decide]; omega
+    simp only [decide_eq_decide]; omega_using []
 
 theorem halving_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
     VP (S3 P E) halving (HS P E (8 * P.L)) := by
   refine halfInit_vp.seq ?_
   let I := fun n σ s => n ≤ 8 * P.L ∧ HS P E (8 * P.L - n) σ s
   have hl := VP.loop (I := I) (body := halfBody) (c := .ne) (Q := HS P E (8 * P.L)) (fun n => ?_)
-  · refine VP.ofImp (p := 0 < P.L) (fun σ s h => by have := (hE σ h.1).k1; omega) fun hL => ?_
-    refine (hl (8 * P.L - 1)).mono (fun σ s h => ⟨by omega, ?_⟩) fun _ _ h => h
-    rw [show 8 * P.L - (8 * P.L - 1 + 1) = 0 by omega]; exact h
+  · refine VP.ofImp (p := 0 < P.L) (fun σ s h => by have := (hE σ h.1).k1; omega_using [this]) fun hL => ?_
+    refine (hl (8 * P.L - 1)).mono (fun σ s h => ⟨by omega_using [hL], ?_⟩) fun _ _ h => h
+    rw [show 8 * P.L - (8 * P.L - 1 + 1) = 0 by omega_using []]; exact h
   · refine VP.ofImp (p := n + 1 ≤ 8 * P.L) (fun σ s h => h.1) fun hn => ?_
-    refine (halfBody_vp hE (k := 8 * P.L - (n + 1)) (by omega)).mono (fun σ s h => h.2)
-      fun σ s ⟨h, z⟩ => ⟨?_, fun h0 => ?_, fun hp => ⟨by omega, ?_⟩⟩
+    refine (halfBody_vp hE (k := 8 * P.L - (n + 1)) (by omega_using [hn])).mono (fun σ s h => h.2)
+      fun σ s ⟨h, z⟩ => ⟨?_, fun h0 => ?_, fun hp => ⟨by omega_using [hn], ?_⟩⟩
     · show some (!s.z) = some (decide (0 < n))
-      rw [z, show 8 * P.L - (8 * P.L - (n + 1) + 1) = n by omega]
+      rw [z, show 8 * P.L - (8 * P.L - (n + 1) + 1) = n by omega_using [hn]]
       by_cases h0 : n = 0 <;> simp [h0, Nat.pos_iff_ne_zero]
-    · subst h0; rwa [show 8 * P.L - (0 + 1) + 1 = 8 * P.L by omega] at h
-    · rwa [show 8 * P.L - (n + 1) + 1 = 8 * P.L - n by omega] at h
+    · subst h0; rwa [show 8 * P.L - (0 + 1) + 1 = 8 * P.L by omega_using [hn]] at h
+    · rwa [show 8 * P.L - (n + 1) + 1 = 8 * P.L - n by omega_using [hn]] at h
 
 end
 

@@ -20,10 +20,10 @@ theorem pdHead_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
       t.gpr .r0 = g.output ∧ t.gpr .r1 = BitVec.ofNat 32 g.length ∧
       t.mem = s.mem ∧ Rest [.r0, .r1] s t := by
   refine wp_loadStack (a := off (State.addr g.stack) oOut) (by decide)
-    (by rw [h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oOut, frameBytes] at *; omega))
+    (by rw [h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oOut, frameBytes] at *; omega_using [this]))
     (h.inner.read (by decide)) fun u a => ?_
   refine wp_loadStack (a := off (State.addr g.stack) oK) (by decide)
-    (by rw [a.sp, h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oK, frameBytes] at *; omega))
+    (by rw [a.sp, h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oK, frameBytes] at *; omega_using [this]))
     (by rw [a.rd, a.wr]; exact h.inner.read (by decide)) fun t b => WP.block_nil ?_
   exact ⟨by rw [b.other .r0 (by decide), a.gpr]; exact slots 0 (by decide),
     by rw [b.gpr, a.mem]; exact slots 2 (by decide), b.mem.trans a.mem,

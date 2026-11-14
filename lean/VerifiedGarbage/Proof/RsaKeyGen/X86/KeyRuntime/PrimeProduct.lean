@@ -37,18 +37,18 @@ theorem primeProduct_ok {s : State} {B : Addr} {Z n out a b k : Nat}
   have L : ProductGeometry Z k k (arr n out) (arr n a) (arr n b) := by
     refine ⟨⟨positive, positive, even, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
     all_goals simp only [S, VG.Proof.Rsa.X86.Keys.arr, VG.Impl.Rsa.X86.Keys.hdr] at *
-    all_goals omega
-  have nk : n / 2 = k := by omega
+    all_goals omega_arith
+  have nk : n / 2 = k := by omega_using [width]
   have L' : ProductGeometry Z (Width.prime.words n) (Width.prime.words n)
       ((VG.Impl.RsaKeyGen.X86.KeyRuntime.arr out).offset n) ((VG.Impl.RsaKeyGen.X86.KeyRuntime.arr a).offset n) ((VG.Impl.RsaKeyGen.X86.KeyRuntime.arr b).offset n) := by
     simpa only [Width.words, VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words, nk] using L
-  have A := VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : k ≤ n) boundA
-  have Bv := VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : k ≤ n) boundB
+  have A := VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [width] : k ≤ n) boundA
+  have Bv := VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [width] : k ≤ n) boundB
   have bound : val32 s.mem B (arr n a) k * val32 s.mem B (arr n b) k < 2 ^ (32 * n) := by
     have lt := Nat.lt_of_le_of_lt
       (Nat.mul_le_mul_left (val32 s.mem B (arr n a) k) (Nat.le_of_lt (val32_lt s.mem B (arr n b) k)))
       (Nat.mul_lt_mul_of_pos_right (val32_lt s.mem B (arr n a) k) (Nat.two_pow_pos (32 * k)))
-    rw [show 32 * n = 32 * k + 32 * k by omega, Nat.pow_add]
+    rw [show 32 * n = 32 * k + 32 * k by omega_using [width], Nat.pow_add]
     exact lt
   refine WP.mono (product_ok h L') fun t ⟨ht, O, V, K⟩ => ?_
   simp only [Width.words, VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words, nk] at O V
@@ -69,10 +69,10 @@ theorem primeProduct_ok {s : State} {B : Addr} {Z n out a b k : Nat}
       have h5 := hx (148, 4) (by simp [VG.Proof.Rsa.X86.Keys.ranges, productScalars])
       have h6 := hx (152, 4) (by simp [VG.Proof.Rsa.X86.Keys.ranges, productScalars])
       simp only at *
-      omega
+      omega_using [h0, h1, h2, h3, h4, h5, h6]
     · have H := hx (arr n out, S n) (by simp [VG.Proof.Rsa.X86.Keys.ranges])
       simpa only [S, width, Nat.two_mul, Nat.add_assoc] using H
-  · have low := VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : n ≤ n + 2)
+  · have low := VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : n ≤ n + 2)
       (by rw [value]; exact bound)
     change val32 t.mem B (arr n out) n = _
     rw [low, value, A, Bv]

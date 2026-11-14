@@ -24,8 +24,8 @@ theorem exit_ok {s₀ s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (hdi : s.
       t.gpr .rbx = s₀.gpr .rbx ∧ t.gpr .rbp = s₀.gpr .rbp ∧ t.gpr .r12 = s₀.gpr .r12 ∧
       t.gpr .r13 = s₀.gpr .r13 ∧ t.gpr .r14 = s₀.gpr .r14 ∧ t.gpr .r15 = s₀.gpr .r15 ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hdi, hdrOff,
-      hs.ld (d := 8 * 0) (by omega), hs.ld (d := 8 * 1) (by omega), hs.ld (d := 8 * 2) (by omega),
-      hs.ld (d := 8 * 3) (by omega), hs.ld (d := 8 * 4) (by omega), hs.ld (d := 8 * 5) (by omega),
+      hs.ld (d := 8 * 0) (by omega_using [hZ]), hs.ld (d := 8 * 1) (by omega_using [hZ]), hs.ld (d := 8 * 2) (by omega_using [hZ]),
+      hs.ld (d := 8 * 3) (by omega_using [hZ]), hs.ld (d := 8 * 4) (by omega_using [hZ]), hs.ld (d := 8 * 5) (by omega_using [hZ]),
       hSaved 0 (by decide), hSaved 1 (by decide), hSaved 2 (by decide), hSaved 3 (by decide),
       hSaved 4 (by decide), hSaved 5 (by decide), saved, List.getD_cons_succ, List.getD_cons_zero]) rfl)
     fun t ⟨⟨h0, h1, h2, h3, h4, h5, hm⟩, k⟩ => ⟨?_, hm, k⟩

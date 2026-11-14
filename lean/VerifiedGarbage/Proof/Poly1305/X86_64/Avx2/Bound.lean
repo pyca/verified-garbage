@@ -136,7 +136,7 @@ structure EnvOK (s₀ : State) (B : Bnds) : Prop where
   g : ∀ g, (s₀.gpr g).toNat ≤ B.g g
 
 theorem capW_ge {x y : Nat} (h : x ≤ y) (hx : x < 2 ^ 64) : x ≤ capW y := by
-  unfold capW; split <;> omega
+  unfold capW; split <;> omega_arith
 
 theorem orB_ge {x y a b : Nat} (ha : x ≤ a) (hb : y ≤ b) (hx : x ||| y < 2 ^ 64) : x ||| y ≤ orB a b := by
   apply capW_ge _ hx
@@ -147,11 +147,11 @@ theorem orB_ge {x y a b : Nat} (ha : x ≤ a) (hb : y ≤ b) (hx : x ||| y < 2 ^
     Nat.lt_of_lt_of_le (Nat.lt_of_le_of_lt hb Nat.lt_log2_self)
       (Nat.pow_le_pow_right (by decide) (Nat.le_max_right _ _))
   have := Nat.or_lt_two_pow h₁ h₂
-  omega
+  omega_using [this]
 
 theorem lo32_toNat (x : BitVec 64) : (lo32 x).toNat = x.toNat % 2 ^ 32 := by
   simp only [lo32, BitVec.toNat_setWidth, BitVec.extractLsb'_toNat, Nat.shiftRight_zero]
-  omega
+  omega_using []
 
 theorem loB_ge {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) {t : Q} {k : Nat} (hk : k < 4) {b : Nat}
     (hb : (t.eval s₀ k).toNat ≤ b) : (t.eval s₀ k).toNat % 2 ^ 32 ≤ loB B t b := by
@@ -162,10 +162,10 @@ theorem loB_ge {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) {t : Q} {k : Nat} (
     have h₁ := Nat.mod_le (qw s₀ (xr r) k).toNat (2 ^ 32)
     have h₂ := Nat.mod_lt (qw s₀ (xr r) k).toNat (show 2 ^ 32 > 0 by decide)
     simp only [Q.eval] at hb ⊢
-    omega
+    omega_using [hb, this]
   · have h₁ := Nat.mod_le (t.eval s₀ k).toNat (2 ^ 32)
     have h₂ := Nat.mod_lt (t.eval s₀ k).toNat (show 2 ^ 32 > 0 by decide)
-    omega
+    omega_using [hb]
 
 theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     ∀ (t : Q) {k : Nat}, k < 4 → t.ok B k = true →
@@ -201,7 +201,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     rw [← ea, ← eb]
     have := BitVec.isLt (a.eval s₀ k + b.eval s₀ k)
     rw [BitVec.toNat_add] at this
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this⟩
+    exact ⟨Nat.mod_eq_of_lt (by omega_using [hs, ba, bb]), capW_ge (by rw [Nat.mod_eq_of_lt (by omega_using [hs, ba, bb])]; omega_using [ba, bb]) this⟩
   | mul a b iha ihb =>
     intro k hk ho
     simp only [Q.ok, Bool.and_eq_true] at ho
@@ -250,7 +250,7 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [Q.eval, Q.nat, Q.bnd, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq] at this ⊢
     rw [← ea]
     have hm := Nat.mul_le_mul_right (2 ^ n) ba
-    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega) this⟩
+    exact ⟨Nat.mod_eq_of_lt (by omega), capW_ge (by rw [Nat.mod_eq_of_lt (by omega)]; omega_using [hm]) this⟩
   | shr a n ih =>
     intro k hk ho
     obtain ⟨ea, ba⟩ := ih hk ho
@@ -262,12 +262,12 @@ theorem nat_ok {s₀ : State} {B : Bnds} (hE : EnvOK s₀ B) :
     simp only [Q.eval, Q.nat, Q.bnd, Q.ok] at ho ⊢
     split
     · rename_i h; rw [ite_eq_left h] at ho; exact iha hk ho
-    · rename_i h; rw [ite_eq_right h] at ho; exact ihb (by omega) ho
+    · rename_i h; rw [ite_eq_right h] at ho; exact ihb (by omega_using [hk]) ho
   | unph a b iha ihb =>
     intro k hk ho
     simp only [Q.eval, Q.nat, Q.bnd, Q.ok] at ho ⊢
     split
-    · rename_i h; rw [ite_eq_left h] at ho; exact iha (by omega) ho
+    · rename_i h; rw [ite_eq_left h] at ho; exact iha (by omega_using [hk, h]) ho
     · rename_i h; rw [ite_eq_right h] at ho; exact ihb hk ho
   | perm a o ih =>
     intro k _ ho

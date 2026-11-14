@@ -18,7 +18,7 @@ theorem StaticTable.frame {S : Nat} {name : String} {words : List (BitVec 64)}
   refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hf.readW (r := ⟨s.syms name,3904⟩)
-      (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
     exact h.held i hi
   · simpa only [hy,hr,hw] using h.readable
   · simpa only [hy,hw] using h.writable

@@ -51,7 +51,7 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
       have hz : s.gpr col=0 := by
         apply BitVec.eq_of_toNat_eq
         simp only [value,List.length_cons,List.length_nil,Nat.sub_self,Nat.mul_zero,Nat.pow_zero] at htop
-        simp only [show (0 : BitVec 64).toNat=0 from rfl]; omega
+        simp only [show (0 : BitVec 64).toNat=0 from rfl]; omega_using [htop]
       refine WP.mono (close_ok s hc ho hz (Ne.symm cp)) fun t ⟨ct,ot,hct,hot,eq,kt⟩ => ?_
       refine ⟨ct,ot,hct,hot,?_,kt.mono (by simp)⟩
       simpa only [value,List.length_cons,List.length_nil,Nat.mul_one,Nat.sub_self,wv,
@@ -59,7 +59,7 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
     | cons next rest =>
       have cs := hrs col (by simp)
       have nd : col∉next::rest ∧ (next::rest).Nodup := List.nodup_cons.mp hd
-      have hkZ : e+8*k+8 ≤ Z := by simp only [List.length_cons] at hZ; omega
+      have hkZ : e+8*k+8 ≤ Z := by simp only [List.length_cons] at hZ; omega_using [hZ]
       have hm : readSrc s (.mem (at_ .rbp (8*k)))=some (word s.mem B (e+8*k)) :=
         readSrc_word hs (AdxRotate8.ea_at hp (8*k)) hkZ
       simp only [AdxTri8.chain]
@@ -75,10 +75,10 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
         rw [tailPres]
         have e1 : value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) := rfl
         have e2 : 64*((col::next::rest).length-1)=64+64*((next::rest).length-1) := by
-          simp only [List.length_cons]; omega
+          simp only [List.length_cons]; omega_using []
         rw [e1,e2,Nat.pow_add] at htop
         exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) htop)
-      refine WP.mono (ih (hs.congr ka.2.2.2) pa topA (by simp only [List.length_cons] at *; omega)
+      refine WP.mono (ih (hs.congr ka.2.2.2) pa topA (by simp only [List.length_cons] at *; omega_using [hZ])
         (by simp) nd.2 ho' hh hne.symm hne hh.1 ?_ hca hoa) fun t ⟨ct,ot,hct,hot,et,kt⟩ => ?_
       · intro r hr
         have h := hrs r (by simp [hr])
@@ -97,12 +97,12 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
             rcases h with rfl | rfl | rfl <;> simp
           · exact Or.inr (List.mem_cons_of_mem _ h))⟩
       rw [show value t (col::next::rest)=(t.gpr col).toNat+2^64*value t (next::rest) from rfl,
-        show value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) from rfl,colPres,show 64*(col::next::rest).length=64+64*(next::rest).length by simp; omega,Nat.pow_add]
+        show value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) from rfl,colPres,show 64*(col::next::rest).length=64+64*(next::rest).length by simp; omega_using [],Nat.pow_add]
       have split : wv s.mem B (e+8*k) ((col::next::rest).length-1)=
           (word s.mem B (e+8*k)).toNat+2^64*wv s.mem B (e+8*(k+1)) ((next::rest).length-1) := by
-        rw [show (col::next::rest).length-1=1+((next::rest).length-1) by simp; omega,wv_add]
+        rw [show (col::next::rest).length-1=1+((next::rest).length-1) by simp; omega_using [],wv_add]
         simp only [wv,Nat.mul_zero,Nat.add_zero,Nat.zero_add,Nat.pow_zero,Nat.one_mul,Nat.mul_one]
-        rw [show e+8*k+8=e+8*(k+1) by omega]
+        rw [show e+8*k+8=e+8*(k+1) by omega_using []]
       rw [split]
       exact append_arith eq et
 

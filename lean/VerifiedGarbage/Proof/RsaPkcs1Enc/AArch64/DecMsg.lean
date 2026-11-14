@@ -36,12 +36,12 @@ theorem byte_imm (v : Nat) :
     BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.ofNat 16 v) <<< 0)) = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.shiftLeft_zero, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem byte_reg (x : Nat) : BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.ofNat 64 x)) = BitVec.ofNat 8 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem ascii_length : Spec.RsaPkcs1Enc.ascii "length" = [0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68] := by decide
 
@@ -95,7 +95,7 @@ theorem bytes11 (m : Mem) (B : Addr) : Spec.Rsa.bytesAt m B 11 = [m (B + BitVec.
 theorem am_lo (K : BitVec 64) : BitVec.setWidth 8 (BitVec.setWidth 32 (K <<< 3)) = BitVec.ofNat 8 (8 * K.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem am_hi (K : BitVec 64) (hK : K.toNat ≤ 1024) :
     BitVec.setWidth 8 (BitVec.setWidth 32 (K <<< 3 >>> 8)) = BitVec.ofNat 8 (8 * K.toNat / 256) := by

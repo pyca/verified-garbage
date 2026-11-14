@@ -44,7 +44,7 @@ theorem finish_ok {s : State} {B : Addr} {Z o w wx k : Nat} {minv parentMinv : B
   refine WP.seq (WP.mono (storeSuffix_ok hc (by decide) (by decide) (by decide)
     hp hl hk1 hk' hkw hout hprefix) fun u ⟨hcu, huout, hwrd, _, hfu, hku⟩ => ?_)
   have hpmu : word u.mem B (8 * sMinv) = parentMinv :=
-    (hwrd _ (by have := hc.lo; have := hc.hi; have := hdr_lt_slot w 8 (show sMinv < 32 by decide); omega)).trans hpm
+    (hwrd _ (by have := hc.lo; have := hc.hi; have := hdr_lt_slot w 8 (show sMinv < 32 by decide); omega_arith)).trans hpm
   refine WP.mono (leave_ok hcu hpmu) fun t ⟨hgt, hmem, hkt⟩ =>
     ⟨hgt, hmem ▸ huout, hmem ▸ hwrd, hmem ▸ hfu, (hku.trans hkt).mono (by decide)⟩
 

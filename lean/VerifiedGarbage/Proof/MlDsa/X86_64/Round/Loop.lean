@@ -41,7 +41,7 @@ theorem cfAddr_eq (p : Addr) (j : Nat) :
   rw [e, ← BitVec.sub_eq_add_neg]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-! ## The writes of an iteration -/
 
@@ -122,7 +122,7 @@ variable {s₀ : State} {ins outs fixed : List Reg} {V : Reg → Nat → BitVec 
 /-- The address of the coefficient that iteration `i` handles. -/
 theorem Inv.addr (hI : Inv s₀ fixed outs V J i s) (hc : s.gpr .rcx = BitVec.ofNat 64 (256 - i)) (hi : i < 256)
     {p : Reg} (hp : p ∈ fixed) : cfAddr (s.gpr p) (s.gpr .rcx) = coeffAddr (s₀.gpr p) (255 - i) := by
-  rw [hI.fixed p hp, hc, show 256 - i = 255 - i + 1 by omega]
+  rw [hI.fixed p hp, hc, show 256 - i = 255 - i + 1 by omega_using [hi]]
   exact cfAddr_eq _ _
 
 theorem Inv.inR (hL : Layout s₀ ins outs) (hI : Inv s₀ fixed outs V J i s) {p : Reg} (hp : p ∈ ins) {k : Nat}
@@ -158,7 +158,7 @@ theorem loop_ok {s₀ : State} {ins outs fixed clob : List Reg} {body : List Ins
     (by apply WP.of_runBlock; simp [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
       setReg_gpr, setReg_mem]) (by decide)) fun s₁ ⟨⟨hm, hc⟩, hk⟩ => ?_)
   have h0 : Inv s₀ fixed outs V J 0 s₁ := by
-    refine ⟨fun r hr => hk.gpr fun h => ?_, hk.2.1, hk.2.2, ?_, fun _ _ k h₁ h₂ => absurd h₂ (by omega),
+    refine ⟨fun r hr => hk.gpr fun h => ?_, hk.2.1, hk.2.2, ?_, fun _ _ k h₁ h₂ => absurd h₂ (by omega_using [h₁]),
       hJ s₁ hc hm hk⟩
     · simp only [List.mem_singleton] at h
       subst h
@@ -170,10 +170,10 @@ theorem loop_ok {s₀ : State} {ins outs fixed clob : List Reg} {body : List Ins
     refine ⟨fun r hr => (hk'.gpr (hfix r hr)).trans (hI.fixed r hr), hk'.2.1.trans hI.rd, hk'.2.2.trans hI.wr,
       ?_, fun o ho k h₁ h₂ => ?_, hJ'⟩
     · rw [hm']
-      exact frame_writes _ hI.frame outs _ (by omega) _ fun o ho => List.mem_map_of_mem ho
-    · rw [hm', coeffAt_writes _ _ outs _ (by omega) _ hL.pw ho h₂]
+      exact frame_writes _ hI.frame outs _ (by omega_using []) _ fun o ho => List.mem_map_of_mem ho
+    · rw [hm', coeffAt_writes _ _ outs _ (by omega_using []) _ hL.pw ho h₂]
       split
       · subst k; rfl
-      · exact hI.done o ho k (by omega) h₂
+      · exact hI.done o ho k (by omega_arith) h₂
 
 end VG.Proof.MlDsa.X86_64.Round

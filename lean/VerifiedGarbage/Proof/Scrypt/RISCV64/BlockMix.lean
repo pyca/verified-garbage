@@ -151,18 +151,18 @@ include hp
 /-- `y` is not the whole address space, since `save` is not in it. -/
 theorem r_lt : 128 * rr s₀ < 2 ^ 64 := by
   by_contra hc
-  refine hp.y_s (sv s₀) ?_ (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+  refine hp.y_s (sv s₀) ?_ (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [])
   simp only [Region.Contains]
   have := (sv s₀ - yP s₀).isLt
-  omega
+  omega_using [hc]
 
 theorem in_y {o n : Nat} (h : o + n ≤ 128 * rr s₀) :
     (yR s₀).Contains (yP s₀ + BitVec.ofNat 64 o) n :=
-  contains_off (by omega) (by have := r_lt hp; omega)
+  contains_off (by omega_using [h]) (by have := r_lt hp; omega_using [h, this])
 
 theorem in_b {o n : Nat} (h : o + n ≤ 128 * rr s₀) :
     (bR s₀).Contains (bP s₀ + BitVec.ofNat 64 o) n :=
-  contains_off (by omega) (by have := r_lt hp; omega)
+  contains_off (by omega_using [h]) (by have := r_lt hp; omega_using [h, this])
 
 /-- Two parts of `y`. -/
 theorem y_disj {o₁ n₁ o₂ n₂ : Nat} (h : o₁ + n₁ ≤ o₂ ∨ o₂ + n₂ ≤ o₁) (h₁ : o₁ + n₁ ≤ 128 * rr s₀)
@@ -172,10 +172,10 @@ theorem y_disj {o₁ n₁ o₂ n₂ : Nat} (h : o₁ + n₁ ≤ o₂ ∨ o₂ + 
   disj_off _ h (by omega) (by omega) (by omega) (by omega)
 
 theorem y_sub {o n : Nat} (h : o + n ≤ 128 * rr s₀) : Region.Sub ⟨yP s₀ + BitVec.ofNat 64 o, n⟩ (yR s₀) :=
-  sub_off (by omega) (by have := r_lt hp; omega)
+  sub_off (by omega_using [h]) (by have := r_lt hp; omega_using [h, this])
 
 theorem b_sub {o n : Nat} (h : o + n ≤ 128 * rr s₀) : Region.Sub ⟨bP s₀ + BitVec.ofNat 64 o, n⟩ (bR s₀) :=
-  sub_off (by omega) (by have := r_lt hp; omega)
+  sub_off (by omega_using [h]) (by have := r_lt hp; omega_using [h, this])
 
 /-- A part of `y` and a part of `b`. -/
 theorem yb_disj {o₁ n₁ o₂ n₂ : Nat} (h₁ : o₁ + n₁ ≤ 128 * rr s₀) (h₂ : o₂ + n₂ ≤ 128 * rr s₀) :
@@ -186,11 +186,11 @@ end
 
 theorem in_s (s₀ : State) {o n : Nat} (h : o + n ≤ 96) :
     (svR s₀).Contains (sv s₀ + BitVec.ofNat 64 o) n :=
-  contains_off h (by omega)
+  contains_off h (by omega_using [h])
 
 theorem s_sub (s₀ : State) {o n : Nat} (h : o + n ≤ 96) :
     Region.Sub ⟨sv s₀ + BitVec.ofNat 64 o, n⟩ (svR s₀) :=
-  sub_off h (by omega)
+  sub_off h (by omega_using [h])
 
 /-! ## The loop invariant -/
 
@@ -218,7 +218,7 @@ only in `y` and `save`. -/
 theorem b_frame {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {m : Mem}
     (hf : Frame [yR s₀, svR s₀] s₀.mem m) {o n : Nat} (ho : o + n ≤ 128 * rr s₀) :
     bytesAt m (bP s₀ + BitVec.ofNat 64 o) n = bytesAt s₀.mem (bP s₀ + BitVec.ofNat 64 o) n := by
-  refine frame_bytesAt hf (fun r hr => ?_) (by have := r_lt hp; omega)
+  refine frame_bytesAt hf (fun r hr => ?_) (by have := r_lt hp; omega_using [ho, this])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hp.b_y.sub_left (b_sub hp ho)
@@ -227,7 +227,7 @@ theorem b_frame {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {m : Mem}
 /-- Block `i` of the input. -/
 theorem blk_B (s₀ : State) {i : Nat} (hi : i < 2 * rr s₀) :
     blk (B s₀) i = bytesAt s₀.mem (bP s₀ + BitVec.ofNat 64 (64 * i)) 64 :=
-  blk_bytesAt _ _ (by omega)
+  blk_bytesAt _ _ (by omega_using [hi])
 
 /-! ## A call of Salsa20/8 on a block of `y` -/
 
@@ -265,7 +265,7 @@ theorem salsaAt_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {dR : Reg}
     rw [hw₂]; exact InRegions.of_mem (by simp) (in_s s₀ (by decide))
   refine salsaCall_ok wide e₁ e₂ (hp.y_s.sub_left hsub |>.sub_right (ssv_sub s₀))
     (al8 hp.s_al (by decide))
-    (fun hw => by have := al8 (hp.al hw).2 ho8; omega) hin₁ hin₂
+    (fun hw => by have := al8 (hp.al hw).2 ho8; omega_using [this]) hin₁ hin₂
     fun s' hrd hwr' hsp hcs hf hb => hQ s' (by rw [hrd, u₂.rd, u₁.rd]) (by rw [hwr', u₂.wr, u₁.wr])
       (by rw [hsp, u₂.sp, u₁.sp]) (fun r hr => by rw [hcs r hr, e₃ r hr])
       (by rw [u₂.mem, u₁.mem] at hf; exact hf) (by rw [hb, u₂.mem, u₁.mem])
@@ -290,49 +290,49 @@ theorem xP_in {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {k : Nat} (hk : 
   | zero =>
     simp only [xP]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (in_b hp (by have := hp.pos; omega))
+    exact InRegions.of_mem (by simp) (in_b hp (by have := hp.pos; omega_using [hle, hk]))
   | succ j =>
     simp only [xP]
     rw [add_ofNat]
-    exact InRegions.of_mem (by simp) (in_y hp (by omega))
+    exact InRegions.of_mem (by simp) (in_y hp (by omega_using [hle, hk]))
 
 theorem xP_disj {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {k : Nat} (hk : k < rr s₀) :
     Region.Disjoint (slot s₀ (64 * k)) ⟨xP s₀ k, 64⟩ := by
   cases k with
-  | zero => exact yb_disj hp (by omega) (by have := hp.pos; omega)
-  | succ j => exact y_disj hp (by omega) (by omega) (by omega) (by omega) (by omega)
+  | zero => exact yb_disj hp (by omega_using [hk]) (by have := hp.pos; omega_using [hk])
+  | succ j => exact y_disj hp (by omega_using [hk]) (by omega_using [hk]) (by omega_using [hk]) (by omega_using []) (by omega_using [])
 
 theorem xP_al {wide : Bool} {s₀ : State} (hp : Pre wide s₀) (hw : wide = true) (k : Nat) :
     (xP s₀ k).toNat % 8 = 0 := by
   cases k with
   | zero =>
     simp only [xP]
-    exact al8 (hp.al hw).1 (by omega)
+    exact al8 (hp.al hw).1 (by omega_using [])
   | succ j =>
     simp only [xP]
-    exact al8 (hp.al hw).2 (by omega)
+    exact al8 (hp.al hw).2 (by omega_using [])
 
 /-- What a call keeps: our caller's saved registers. -/
 theorem saved_keep {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀)
     {m m' : Mem} (hf : Frame [slot s₀ o, ssvR s₀] m m') (h : Saved s₀ m) : Saved s₀ m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
   have hp8 : p.2 + 8 ≤ 56 := by revert p; decide
-  have hsub : Region.Sub ⟨sv s₀ + BitVec.ofNat 64 p.2, 8⟩ (svR s₀) := s_sub s₀ (by omega)
+  have hsub : Region.Sub ⟨sv s₀ + BitVec.ofNat 64 p.2, 8⟩ (svR s₀) := s_sub s₀ (by omega_using [hp8])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (hp.y_s.sub_left (y_sub hp ho)).sub_right hsub |>.symm
-  · exact disj_off (sv s₀) (o₁ := p.2) (n₁ := 8) (o₂ := 56) (n₂ := 40) (by omega) (by omega)
-      (by omega) (by omega) (by omega)
+  · exact disj_off (sv s₀) (o₁ := p.2) (n₁ := 8) (o₂ := 56) (n₂ := 40) (by omega_using [hp8]) (by omega_using [hp8])
+      (by omega_using []) (by omega_using [hp8]) (by omega_using [])
 
 /-- What a call keeps: the other blocks of `y`. -/
 theorem slot_keep {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {o o' : Nat} (ho : o + 64 ≤ 128 * rr s₀)
     (ho' : o' + 64 ≤ 128 * rr s₀) (hd : o' + 64 ≤ o ∨ o + 64 ≤ o') {m m' : Mem}
     (hf : Frame [slot s₀ o, ssvR s₀] m m') :
     bytesAt m' (yP s₀ + BitVec.ofNat 64 o') 64 = bytesAt m (yP s₀ + BitVec.ofNat 64 o') 64 := by
-  refine frame_bytesAt hf (fun r hr => ?_) (by omega)
+  refine frame_bytesAt hf (fun r hr => ?_) (by omega_using [])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact y_disj hp hd ho' ho (by omega) (by omega)
+  · exact y_disj hp hd ho' ho (by omega_using []) (by omega_using [])
   · exact slot_s hp ho'
 
 theorem frame_big {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀)
@@ -372,9 +372,9 @@ theorem half_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {dR xR sR : Re
     (Nat.le_refl _) [] s _ gd gx gs hinx
     (fun i hi => by
       rw [hrd, hwr, add_ofNat]
-      exact InRegions.of_mem (by simp) (in_b hp (by have := hle i hi; omega)))
+      exact InRegions.of_mem (by simp) (in_b hp (by have := hle i hi; omega_using [hob, this])))
     (fun i hi => by
-      rw [hwr, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by have := hle i hi; omega)))
+      rw [hwr, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by have := hle i hi; omega_using [ho, this])))
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => WP.block_nil ?_
   rw [hu] at m₁
   have l1 : (xorBytes (bytesAt s.mem x 64) (bytesAt s.mem (bP s₀ + BitVec.ofNat 64 ob) 64)).length
@@ -382,7 +382,7 @@ theorem half_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {dR xR sR : Re
     rw [xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]
   have f₁ : Frame [slot s₀ o] s.mem s₁.mem := by
     rw [m₁]; exact writeBytes_frame _ _ _ (by rw [l1]; exact Region.contains_self _ _)
-  have hw := bytesAt_writeBytes_self s.mem (yP s₀ + BitVec.ofNat 64 o) _ (by rw [l1]; omega)
+  have hw := bytesAt_writeBytes_self s.mem (yP s₀ + BitVec.ofNat 64 o) _ (by rw [l1]; omega_using [])
   rw [l1] at hw
   refine WP.seq (salsaAt_ok hp ho ho8 (by rw [g₁ _ hd.1 hd.2, gd])
     (by rw [g₁ _ (by decide) (by decide), h9]) (by rw [wr₁, hwr, hp.wr])
@@ -421,28 +421,28 @@ theorem mem_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {k : Nat} (hk :
     ∀ i < k + 1, bytesAt s₅.mem (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
       bytesAt s₅.mem (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1) := by
   have lt := r_lt hp
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega
+  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_using [hk]
+  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_using [hk]
   have F₂ := h.frame.trans (frame_big hp oE f₂)
   have yE_eq : bytesAt s₂.mem (yE s₀ k) 64 = yAt (B s₀) (rr s₀) (2 * k) := by
-    rw [b₂, h.x, b_frame hp h.frame (by omega : 128 * k + 64 ≤ 128 * rr s₀),
-      show 128 * k = 64 * (2 * k) by omega, ← blk_B s₀ (by omega), yAt_eq]
+    rw [b₂, h.x, b_frame hp h.frame (by omega_using [hk] : 128 * k + 64 ≤ 128 * rr s₀),
+      show 128 * k = 64 * (2 * k) by omega_using [], ← blk_B s₀ (by omega_using [hk]), yAt_eq]
   have hb : bytesAt s₂.mem (bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1))) 64 =
       blk (B s₀) (2 * k + 1) := by
-    rw [blk_B s₀ (by omega)]
-    exact b_frame hp F₂ (by omega)
+    rw [blk_B s₀ (by omega_using [hk])]
+    exact b_frame hp F₂ (by omega_using [hk])
   refine ⟨F₂.trans (frame_big hp oO f₅), saved_keep hp oO f₅ (saved_keep hp oE f₂ h.saved),
     fun i hi => ?_⟩
   by_cases hik : i = k
   · subst i
     refine ⟨?_, ?_⟩
-    · rw [slot_keep hp oO oE (by omega) f₅, yE_eq]
+    · rw [slot_keep hp oO oE (by omega_using [hk]) f₅, yE_eq]
     · rw [b₅, yE_eq, hb, yAt_eq (B s₀) (rr s₀) (2 * k + 1), xBefore_succ]
-  · have hi' : i < k := by omega
+  · have hi' : i < k := by omega_using [hi, hik]
     obtain ⟨d₁, d₂⟩ := h.done i hi'
     refine ⟨?_, ?_⟩
-    · rw [slot_keep hp oO (by omega) (by omega) f₅, slot_keep hp oE (by omega) (by omega) f₂, d₁]
-    · rw [slot_keep hp oO (by omega) (by omega) f₅, slot_keep hp oE (by omega) (by omega) f₂, d₂]
+    · rw [slot_keep hp oO (by omega_using [hk, hi]) (by omega_using [hk, hi]) f₅, slot_keep hp oE (by omega_using [hk, hi]) (by omega_using [hik]) f₂, d₁]
+    · rw [slot_keep hp oO (by omega_using [hk, hi]) (by omega_using [hik]) f₅, slot_keep hp oE (by omega_using [hk, hi]) (by omega_using [hk]) f₂, d₂]
 
 theorem others_pres : ∀ r ∈ others, r ∈ preserved ∧ r ≠ .s5 := by decide
 
@@ -456,30 +456,30 @@ theorem halves_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {k : Nat}
   have lt := r_lt hp
   have hrd : s.rd = [bR s₀] := by rw [h.rd, hp.rd]
   have hwr : s.wr = [yR s₀, svR s₀] := by rw [h.wr, hp.wr]
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega
-  refine WP.seq (half_ok hp (by decide) (by decide) (by decide) oE (by omega) (ob := 128 * k)
-    (by omega) (by omega) hrd hwr h.s6 h.s9 h.s5 h.s10 (xP_disj hp hk)
+  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega_using [hk]
+  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega_using [hk]
+  refine WP.seq (half_ok hp (by decide) (by decide) (by decide) oE (by omega_using []) (ob := 128 * k)
+    (by omega_using [hk]) (by omega_using []) hrd hwr h.s6 h.s9 h.s5 h.s10 (xP_disj hp hk)
     (fun hw => xP_al hp hw k) (xP_in hp hk hrd hwr)
     fun s₂ rd₂ wr₂ sp₂ cs₂ f₂ b₂ => ?_)
   refine WP.seq (wp_addi (by decide) fun s₃ u₃ => ?_)
   have k3 : ∀ r, r ≠ .s5 → r ∈ preserved → s₃.gpr r = s.gpr r := fun r h1 h2 => by
     rw [u₃.other _ h1, cs₂ r h2]
   have e3 : s₃.gpr .s5 = bP s₀ + BitVec.ofNat 64 (64 * (2 * k + 1)) := by
-    rw [u₃.gpr, cs₂ _ (by decide), h.s5, add_ofNat, show 128 * k + 64 = 64 * (2 * k + 1) by omega]
+    rw [u₃.gpr, cs₂ _ (by decide), h.s5, add_ofNat, show 128 * k + 64 = 64 * (2 * k + 1) by omega_using []]
   have hrd₃ : s₃.rd = [bR s₀] := by rw [u₃.rd, rd₂, hrd]
   have hwr₃ : s₃.wr = [yR s₀, svR s₀] := by rw [u₃.wr, wr₂, hwr]
   have e5 : s₃.gpr .s6 = yE s₀ k := by rw [k3 _ (by decide) (by decide), h.s6]
   have hu := units_mul wide
-  refine half_ok hp (by decide) (by decide) (by decide) oO (by omega) (ob := 64 * (2 * k + 1))
-    (by omega) (by omega) hrd₃ hwr₃ (by rw [k3 _ (by decide) (by decide), h.s7]) e5 e3
+  refine half_ok hp (by decide) (by decide) (by decide) oO (by omega_using []) (ob := 64 * (2 * k + 1))
+    (by omega_using [hk]) (by omega_using []) hrd₃ hwr₃ (by rw [k3 _ (by decide) (by decide), h.s7]) e5 e3
     (by rw [k3 _ (by decide) (by decide), h.s10])
-    (y_disj hp (by omega) oO oE (by omega) (by omega))
-    (fun hw => al8 (hp.al hw).2 (by omega))
+    (y_disj hp (by omega_using [hk]) oO oE (by omega_using []) (by omega_using []))
+    (fun hw => al8 (hp.al hw).2 (by omega_using []))
     (fun i hi => by
       have hle : unitB wide * i + unitB wide ≤ 64 := by
         rw [← hu, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-      rw [hrd₃, hwr₃, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by omega)))
+      rw [hrd₃, hwr₃, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by omega_using [hk, hle])))
     fun s₅ rd₅ wr₅ sp₅ cs₅ f₅ b₅ => ?_
   rw [u₃.mem] at f₅ b₅
   obtain ⟨F, S, D⟩ := mem_ok hp hk h f₂ b₂ f₅ b₅
@@ -514,20 +514,20 @@ theorem regs_ok {s₀ : State} {wide : Bool} (hp : Pre wide s₀) {k : Nat} (hk 
   have g : ∀ r, r ≠ .s5 → r ≠ .s6 → r ≠ .s7 → r ≠ .s8 → r ≠ .s9 → s₁₀.gpr r = s.gpr r :=
     fun r h4 h5 h6 h7 h8 => by
       rw [u₁₀.other _ h7, u₉.other _ h6, u₈.other _ h5, u₇.other _ h4, u₆.other _ h8]
-  refine ⟨(by omega), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨(by omega_using [hk]), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, h.rd]
   · rw [u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, h.wr]
   · rw [u₁₀.sp, u₉.sp, u₈.sp, u₇.sp, u₆.sp, h.sp]
   · rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr,
-      u₆.other _ (by decide), h.s5, add_ofNat, show 64 * (2 * k + 1) + 64 = 128 * (k + 1) by omega]
+      u₆.other _ (by decide), h.s5, add_ofNat, show 64 * (2 * k + 1) + 64 = 128 * (k + 1) by omega_using []]
   · rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide),
-      u₆.other _ (by decide), h.s6, add_ofNat, show 64 * k + 64 = 64 * (k + 1) by omega]
+      u₆.other _ (by decide), h.s6, add_ofNat, show 64 * k + 64 = 64 * (k + 1) by omega_using []]
   · rw [u₁₀.other _ (by decide), u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), h.s7, add_ofNat,
-      show 64 * (rr s₀ + k) + 64 = 64 * (rr s₀ + (k + 1)) by omega]
+      show 64 * (rr s₀ + k) + 64 = 64 * (rr s₀ + (k + 1)) by omega_using []]
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), h.s10]
   · rw [u₁₀.gpr, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
-      u₆.other _ (by decide), h.s8, sub_ofNat' (by omega)]
+      u₆.other _ (by decide), h.s8, sub_ofNat' (by omega_using [hk])]
     congr 1
   · rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
       u₇.other _ (by decide), u₆.gpr, h.s7]
@@ -541,7 +541,7 @@ theorem regs_ok {s₀ : State} {wide : Bool} (hp : Pre wide s₀) {k : Nat} (hk 
   · rw [m₁₀]; exact h.done
   · rw [m₁₀]
     show bytesAt s.mem (yO s₀ k) 64 = _
-    rw [(h.done k (by omega)).2]
+    rw [(h.done k (by omega_using [])).2]
     rfl
 
 theorem body_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {k : Nat}
@@ -578,7 +578,7 @@ theorem shl_eq {x : BitVec 64} {n : Nat} (h : x.toNat * 2 ^ n < 2 ^ 64) :
 
 theorem add_sub64 (a : Addr) {n : Nat} (h : 64 ≤ n) :
     a + BitVec.ofNat 64 n - BitVec.ofNat 64 64 = a + BitVec.ofNat 64 (n - 64) := by
-  rw [show n = (n - 64) + 64 by omega, BitVec.ofNat_add, ← BitVec.add_assoc, Nat.add_sub_cancel,
+  rw [show n = (n - 64) + 64 by omega_using [h], BitVec.ofNat_add, ← BitVec.add_assoc, Nat.add_sub_cancel,
     BitVec.add_sub_cancel]
 
 /-- The registers the loop starts with. -/
@@ -596,9 +596,9 @@ theorem setup_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s₁ : State
     rw [ud.other _ (by decide), uc.other _ (by decide), ub.other _ (by decide),
       ua.other _ (by decide), g]
   have e1 : e.gpr .t1 = BitVec.ofNat 64 (64 * rr s₀) := by
-    rw [ue.gpr, r1, shl_eq (by simp; omega), Nat.mul_comm]
+    rw [ue.gpr, r1, shl_eq (by simp; omega_using [lt]), Nat.mul_comm]
   have g1 : g'.gpr .t1 = BitVec.ofNat 64 (128 * rr s₀) := by
-    rw [ug.gpr, uf.other _ (by decide), ue.other _ (by decide), r1, shl_eq (by simp; omega),
+    rw [ug.gpr, uf.other _ (by decide), ue.other _ (by decide), r1, shl_eq (by simp; omega_using [lt]),
       Nat.mul_comm]
   have hm' : i.mem = saveMem s₀ := by
     rw [ui.mem, uh.mem, ug.mem, uf.mem, ue.mem, ud.mem, uc.mem, ub.mem, ua.mem, hm]
@@ -607,7 +607,7 @@ theorem setup_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s₁ : State
     rw [ui.other _ h8, uh.other _ h8, ug.other _ h1, uf.other _ h6, ue.other _ h1,
       ud.other _ h9, uc.other _ h5, ub.other _ h4, ua.other _ h7, g]
   refine ⟨Nat.zero_le _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    fun i hi => absurd hi (by omega), ?_⟩
+    fun i hi => absurd hi (by omega_using []), ?_⟩
   · rw [ui.rd, uh.rd, ug.rd, uf.rd, ue.rd, ud.rd, uc.rd, ub.rd, ua.rd, hrd]
   · rw [ui.wr, uh.wr, ug.wr, uf.wr, ue.wr, ud.wr, uc.wr, ub.wr, ua.wr, hwr]
   · rw [ui.sp, uh.sp, ug.sp, uf.sp, ue.sp, ud.sp, uc.sp, ub.sp, ua.sp, hsp]
@@ -632,7 +632,7 @@ theorem setup_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s₁ : State
     simp
   · rw [ui.gpr, uh.gpr, g1, ug.other _ (by decide), uf.other _ (by decide),
       ue.other _ (by decide), ud.other _ (by decide), uc.other _ (by decide),
-      ub.other _ (by decide), ua.other _ (by decide), g, add_sub64 _ (by omega)]
+      ub.other _ (by decide), ua.other _ (by decide), g, add_sub64 _ (by omega_using [pos])]
     rfl
   · intro r hr
     have : r ≠ .t1 ∧ r ≠ .s5 ∧ r ≠ .s6 ∧ r ≠ .s7 ∧ r ≠ .s10 ∧ r ≠ .s8 ∧ r ≠ .s9 := by
@@ -644,10 +644,10 @@ theorem setup_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s₁ : State
   · rw [hm']
     show bytesAt (saveMem s₀) (bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)) 64 =
       blk (B s₀) (2 * rr s₀ - 1)
-    rw [blk_B s₀ (by omega), show 64 * (2 * rr s₀ - 1) = 128 * rr s₀ - 64 by omega]
-    refine frame_bytesAt (saveMem_frame s₀) (fun r hr => ?_) (by omega)
+    rw [blk_B s₀ (by omega_using [pos]), show 64 * (2 * rr s₀ - 1) = 128 * rr s₀ - 64 by omega_using []]
+    refine frame_bytesAt (saveMem_frame s₀) (fun r hr => ?_) (by omega_using [])
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.b_s.sub_left (b_sub hp (by omega))
+    exact hp.b_s.sub_left (b_sub hp (by omega_using [pos]))
 
 /-! ## The loop -/
 
@@ -659,11 +659,11 @@ theorem loop_ok {wide : Bool} {s₀ : State} (hp : Pre wide s₀) {s : State}
   rintro n s ⟨k, rfl, hk, hi⟩
   refine WP.mono (body_ok hp hk hi) fun s' hi' => ?_
   have hz : isa.eval (.nonzero .s8) s' = some (decide (rr s₀ - (k + 1) ≠ 0)) :=
-    eval_nonzero_ofNat s' .s8 (by omega) hi'.s8
+    eval_nonzero_ofNat s' .s8 (by omega_using [lt]) hi'.s8
   by_cases hl : rr s₀ - (k + 1) = 0
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
-    rwa [show k + 1 = rr s₀ by omega] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], rr s₀ - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+    rwa [show k + 1 = rr s₀ by omega_using [hk, hl]] at hi'
+  · exact .inr ⟨by rw [hz]; simp [hl], rr s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hl], hi'⟩
 
 /-! ## The epilogue -/
 
@@ -685,7 +685,7 @@ theorem post_of {s₀ : State} {m : Mem}
     (h : ∀ i < rr s₀, bytesAt m (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
       bytesAt m (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1)) :
     bytesAt m (yP s₀) (128 * rr s₀) = blockMix (rr s₀) (B s₀) := by
-  rw [blockMix_eq, show 128 * rr s₀ = 64 * rr s₀ + 64 * rr s₀ by omega, bytesAt_add,
+  rw [blockMix_eq, show 128 * rr s₀ = 64 * rr s₀ + 64 * rr s₀ by omega_using [], bytesAt_add,
     bytesAt_blocks, bytesAt_blocks]
   congr 1
   · refine flatMap_congr fun i hi => ?_

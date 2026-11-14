@@ -43,68 +43,68 @@ theorem signingKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
     decodeBE_encodeBE (Nat.lt_of_lt_of_le h hqf)
   have fitp (n : Nat) (h : n < L.modulus) : Spec.Dsa.decodeBE (Spec.Dsa.encodeBE L.pLen n) = n :=
     decodeBE_encodeBE (Nat.lt_of_lt_of_le h hpf)
-  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
-  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega
+  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_using [hpu]
+  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
+  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
   unfold Checks.signingKey Checks.publicPrefix
   refine WP.seq (WP.mono (readyRange_ok h0 .p Core.generator (by trivial) hg.active
-    (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hgl]; omega_using [hql, hqp]) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     true hm) fun s1 h1 => ?_)
   have hg1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg
   have hy1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy
   have hq1 := h1.preserve h0 (by decide) (by decide) (by change Field.q ≠ .mask; decide) hqb
   refine WP.seq (WP.mono (readyRange_ok h1.ready .p Core.publicValue (by trivial) hy1.active
-    (by rw [hyl]; omega) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hyl]; omega_using [hql, hqp]) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     true h1.mask) fun s2 h2 => ?_)
   have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hq2 := h2.preserve h1.ready (by decide) (by decide) (by change Field.q ≠ .mask; decide) hq1
-  refine WP.seq (WP.mono (readyMinus_ok h2.ready .p 1 (by decide) (by change 1 ≤ L.modulus; omega)
+  refine WP.seq (WP.mono (readyMinus_ok h2.ready .p 1 (by decide) (by change 1 ≤ L.modulus; omega_using [hp])
     t (by decide) ht) fun s3 h3 => ?_)
   have hg3 := h3.external (by decide) ht hg2
   have hq3 := h3.external (by decide) ht hq2
   have hm3 := (h3.fields (by decide) ht .mask).trans h2.mask
   have step4 := readyReduce_ok M h3.ready hq hoq (Core.element t) (by change t < 2 ^ 16; decide)
-    (h3.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega) u (by decide) hu
+    (h3.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hpu]) u (by decide) hu
   have step4' : WP isa (Core.reduce M.mm (Core.element t) (Core.scalar u)) s3
       (CallResult L .q u ((L.modulus - 1) % L.subgroup) s3) := by
-    simpa only [ModulusSide.length, ModulusSide.value, fitp (L.modulus - 1) (by omega)] using step4
+    simpa only [ModulusSide.length, ModulusSide.value, fitp (L.modulus - 1) (by omega_using [hp])] using step4
   refine WP.seq (WP.mono step4' fun s4 h4 => ?_)
   have hg4 := h4.external (by decide) hu hg3
   have hq4 := h4.external (by decide) hu hq3
   have hm4 := (h4.fields (by decide) hu .mask).trans hm3
   refine WP.seq (WP.mono (readyZero_ok h4.ready (Core.scalar u) (by change u < 2 ^ 16; decide)
-    (h4.output (by decide) hu) (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) false hm4) fun s5 h5 => ?_)
+    (h4.output (by decide) hu) (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) false hm4) fun s5 h5 => ?_)
   have hziff : (∀ b ∈ Spec.Dsa.encodeBE L.qLen ((L.modulus - 1) % L.subgroup), b = 0) ↔
       (L.modulus - 1) % L.subgroup = 0 := by
-    rw [← VG.Proof.Dsa.decodeBE_eq_zero, fitq _ (Nat.mod_lt _ (by omega))]
+    rw [← VG.Proof.Dsa.decodeBE_eq_zero, fitq _ (Nat.mod_lt _ (by omega_using [hq]))]
   have hm5 := h5.mask
   simp only [Bool.false_eq_true, ↓reduceIte, ModulusSide.length] at hm5
   simp only [hziff] at hm5
   have hg5 := h5.preserve h4.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg4
   have hq5 := h5.preserve h4.ready (by decide) (by decide) (by change Field.q ≠ .mask; decide) hq4
-  refine WP.seq (WP.mono (readyMinus_ok h5.ready .q 2 (by decide) (by change 2 ≤ L.subgroup; omega)
+  refine WP.seq (WP.mono (readyMinus_ok h5.ready .q 2 (by decide) (by change 2 ≤ L.subgroup; omega_using [hq])
     qMinusTwo (by decide) hqm) fun s6 h6 => ?_)
   have hg6 := h6.external (by decide) hqm hg5
   have hq6 := h6.external (by decide) hqm hq5
   have hm6 := (h6.fields (by decide) hqm .mask).trans hm5
   have step7 := readyPublicPow_ok M h6.ready .p hp hop Core.generator ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
-    hg6.active hq6.active (by rw [hgl]; omega)
+    hg6.active hq6.active (by rw [hgl]; omega_using [hql, hqp])
     (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
-    (by rw [hqlen]; omega) (by rw [hqlen]; omega) t (by decide) ht
+    (by rw [hqlen]; omega_using [hql]) (by rw [hqlen]; omega_using [hqu]) t (by decide) ht
   have step7' : WP isa (Core.publicPow M.mm pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t)) s6
       (CallResult L .p t (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) L.subgroup L.modulus) s6) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, hqval] using step7
   refine WP.seq (WP.mono step7' fun s7 h7 => ?_)
   have hqm7 := h7.local (by decide) ht (h6.output (by decide) hqm)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hqm)
-    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold qMinusTwo t; omega))
+    (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold qMinusTwo t; omega_using [hqu]))
   have hm7 := (h7.fields (by decide) ht .mask).trans hm6
   refine WP.mono (readyIsOne_ok h7.ready .p (Core.element t) (by change t < 2 ^ 16; decide)
-    (h7.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega)
+    (h7.output (by decide) ht) (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql, hqp])
     (by simp only [encodeBE_length, ModulusSide.length]; exact Nat.le_refl _) hm7) fun s8 h8 => ?_
   have hm8 := h8.mask
-  simp only [ModulusSide.length, fitp _ (VG.Proof.Dsa.powMod_lt _ _ (by omega))] at hm8
+  simp only [ModulusSide.length, fitp _ (VG.Proof.Dsa.powMod_lt _ _ (by omega_using [hp]))] at hm8
   have hqm8 := h8.preserve h7.ready (Nat.le_refl _) (by decide) (by trivial) hqm7
   refine ⟨h8.ready, hm8, hqm8, ?_, ?_⟩
   · exact ((((((h1.scheduleFrame.trans h2.scheduleFrame).trans (h3.scheduleFrame (by decide) ht)).trans (h4.scheduleFrame (by decide) hu)).trans h5.scheduleFrame).trans

@@ -41,7 +41,7 @@ theorem length_zeros (n : Nat) : (Ccm.zeros n).length = n := by simp [Ccm.zeros]
 /-- `B₀` is a block for a nonce of at most 15 bytes. -/
 theorem length_b0 (t : Nat) {nonce : List Byte} (hn : nonce.length ≤ 15) (a p : Nat) :
     (Ccm.b0 t nonce a p).length = 16 := by
-  simp only [Ccm.b0, List.cons_append, List.length_cons, List.length_append, length_be]; omega
+  simp only [Ccm.b0, List.cons_append, List.length_cons, List.length_append, length_be]; omega_using [hn]
 
 /-! ## Padding -/
 
@@ -50,7 +50,7 @@ theorem length_pad16 (bs : List Byte) :
   simp [Ccm.pad16, length_zeros]
 
 theorem length_pad16_mod (bs : List Byte) : (Ccm.pad16 bs).length % 16 = 0 := by
-  rw [length_pad16]; omega
+  rw [length_pad16]; omega_using []
 
 theorem pad16_nil : Ccm.pad16 [] = [] := rfl
 
@@ -59,7 +59,7 @@ theorem pad16_append {w r : List Byte} (hw : w.length % 16 = 0) :
     Ccm.pad16 (w ++ r) = w ++ Ccm.pad16 r := by
   simp only [Ccm.pad16, List.length_append, List.append_assoc]
   congr 3
-  omega
+  omega_using [hw]
 
 /-- A block pads to itself. -/
 theorem pad16_block {r : List Byte} (h : r.length = 16) : Ccm.pad16 r = r := by
@@ -74,13 +74,13 @@ theorem pad16_short {r : List Byte} (h : r.length ≤ 16) :
     simp only [Ccm.pad16]
     congr 2
     rcases Nat.lt_or_ge r.length 16 with h1 | h1
-    · rw [Nat.mod_eq_of_lt h1, Nat.mod_eq_of_lt (by omega)]
-    · rw [show r.length = 16 by omega]
+    · rw [Nat.mod_eq_of_lt h1, Nat.mod_eq_of_lt (by omega_using [h0])]
+    · rw [show r.length = 16 by omega_using [h, h1]]
 
 theorem blocks_pad16_short {r : List Byte} (h0 : 0 < r.length) (h : r.length ≤ 16) :
     Cmac.blocks 16 (Ccm.pad16 r) = [r ++ Ccm.zeros (16 - r.length)] := by
   rcases pad16_short h with e | e
-  · rw [e]; exact Proof.Cmac.Stream.blocks_single (by simp [length_zeros]; omega)
+  · rw [e]; exact Proof.Cmac.Stream.blocks_single (by simp [length_zeros]; omega_using [h])
   · subst e; simp at h0
 
 /-- A string padded to whole blocks: its whole blocks, then its last bytes
@@ -90,17 +90,17 @@ theorem blocks_pad16 (x : List Byte) :
       (if x.length % 16 = 0 then [] else
         [x.drop (16 * (x.length / 16)) ++ Ccm.zeros (16 - x.length % 16)]) := by
   have hw : (x.take (16 * (x.length / 16))).length % 16 = 0 := by
-    rw [List.length_take]; omega
+    rw [List.length_take]; omega_using []
   have ex : x = x.take (16 * (x.length / 16)) ++ x.drop (16 * (x.length / 16)) := (List.take_append_drop _ _).symm
-  have hd : (x.drop (16 * (x.length / 16))).length = x.length % 16 := by rw [List.length_drop]; omega
+  have hd : (x.drop (16 * (x.length / 16))).length = x.length % 16 := by rw [List.length_drop]; omega_using []
   conv => lhs; rw [ex]
   rw [pad16_append hw, Proof.Cmac.Stream.blocks_append hw]
   congr 1
   split
   · rename_i h
-    rw [List.eq_nil_of_length_eq_zero (by omega : (x.drop (16 * (x.length / 16))).length = 0)]; rfl
+    rw [List.eq_nil_of_length_eq_zero (by omega_using [hd, h] : (x.drop (16 * (x.length / 16))).length = 0)]; rfl
   · rename_i h
-    rw [blocks_pad16_short (by omega) (by omega), hd]
+    rw [blocks_pad16_short (by omega_using [hd, h]) (by omega_using [hd]), hd]
 
 /-! ## The associated data -/
 
@@ -113,7 +113,7 @@ theorem length_encodeLen (a : Nat) : (Ccm.encodeLen a).length = hdrLen a := by
   · simp [length_be]
   · split <;> simp [length_be]
 
-theorem hdrLen_le (a : Nat) : hdrLen a ≤ 10 := by unfold hdrLen; split <;> [omega; split <;> omega]
+theorem hdrLen_le (a : Nat) : hdrLen a ≤ 10 := by unfold hdrLen; split <;> [omega_using []; split <;> omega_using []]
 
 /-- How many bytes of the associated data fit in its first block, after the
 encoding of its length. -/
@@ -138,9 +138,9 @@ theorem blocks_adata (aad : List Byte) :
     have he := length_encodeLen aad.length
     rcases Nat.lt_or_ge (16 - hdrLen aad.length) aad.length with h | h
     · -- The first block is full.
-      have hl : headLen aad.length = 16 - hdrLen aad.length := by unfold headLen; omega
+      have hl : headLen aad.length = 16 - hdrLen aad.length := by unfold headLen; omega_using [h]
       have h16 : (Ccm.encodeLen aad.length ++ aad.take (headLen aad.length)).length = 16 := by
-        rw [List.length_append, he, List.length_take]; omega
+        rw [List.length_append, he, List.length_take]; omega_using [hh, h, hl]
       have ea : Ccm.encodeLen aad.length ++ aad =
           (Ccm.encodeLen aad.length ++ aad.take (headLen aad.length)) ++ aad.drop (headLen aad.length) := by
         rw [List.append_assoc, List.take_append_drop]
@@ -149,8 +149,8 @@ theorem blocks_adata (aad : List Byte) :
     · -- It all fits in the first block.
       have hl : headLen aad.length = aad.length := by unfold headLen; exact Nat.min_eq_left h
       rw [hl, List.take_of_length_le (Nat.le_refl _), List.drop_length, pad16_nil]
-      rcases pad16_short (r := Ccm.encodeLen aad.length ++ aad) (by rw [List.length_append, he]; omega) with e | e
-      · rw [e, Proof.Cmac.Stream.blocks_single (by simp [List.length_append, he, length_zeros]; omega)]; rfl
+      rcases pad16_short (r := Ccm.encodeLen aad.length ++ aad) (by rw [List.length_append, he]; omega_using [ha, h]) with e | e
+      · rw [e, Proof.Cmac.Stream.blocks_single (by simp [List.length_append, he, length_zeros]; omega_using [ha, h])]; rfl
       · rw [List.append_eq_nil_iff] at e; exact absurd (List.length_eq_zero_iff.mpr e.2) ha
 
 /-! ## The MAC -/

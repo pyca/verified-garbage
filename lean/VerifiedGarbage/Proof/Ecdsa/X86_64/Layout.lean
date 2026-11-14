@@ -174,9 +174,9 @@ structure SetupPre (c : Cfg) (s : State) : Prop where
 
 theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c s where
   wr := by rw [hp.wr]; simp
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega)
-  digest_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega_using [this])
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega_using [this])
+  digest_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega_using [this])
   d_sc := hp.d_sc
   digest_sc := hp.digest_sc
   k_sc := hp.k_sc
@@ -256,10 +256,10 @@ theorem ix_55 (c : Cfg) (h9 : c.n = 9) : ix c 55 = TMP := by
   unfold ix; rw [ite_eq_left h9, ite_eq_right (by decide), ite_eq_left rfl]
 
 theorem ix_tmp6 (c : Cfg) (h6 : c.n = 6) : ix c TMP = 83 := by
-  unfold ix; rw [ite_eq_right (by omega), ite_eq_left h6, ite_eq_left rfl]
+  unfold ix; rw [ite_eq_right (by omega_using [h6]), ite_eq_left h6, ite_eq_left rfl]
 
 theorem ix_83 (c : Cfg) (h6 : c.n = 6) : ix c 83 = TMP := by
-  unfold ix; rw [ite_eq_right (by omega), ite_eq_left h6, ite_eq_right (by decide), ite_eq_left rfl]
+  unfold ix; rw [ite_eq_right (by omega_using [h6]), ite_eq_left h6, ite_eq_right (by decide), ite_eq_left rfl]
 
 /-- What `ix` is, by cases. -/
 theorem ix_cases (c : Cfg) (i : Nat) :
@@ -321,11 +321,11 @@ theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) (hi : i ≠ TMP ∨ 83 < j ∨ (
     have hT : TMP = 2 := rfl
     unfold ix
     repeat' split
-    all_goals omega
+    all_goals omega_arith
   rw [sl_eq' c i, sl_eq' c j]
   have := Nat.mul_le_mul_left (8 * c.n) key
   rw [Nat.mul_succ] at this
-  omega
+  omega_using [this]
 
 /-- Distinct slots are apart. -/
 theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
@@ -334,14 +334,14 @@ theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
   have hne : ix c i ≠ ix c j := fun e => h (ix_inj c e)
   rcases Nat.lt_or_gt_of_ne hne with h' | h'
   · have := Nat.mul_le_mul_left (8 * c.n) h'
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_using [this]
   · have := Nat.mul_le_mul_left (8 * c.n) h'
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_using [this]
 
 theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
   by_contra hij
   have := sl_apart c hij
-  omega
+  omega_using [hn, h, this]
 
 /-- Every slot and table is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
@@ -350,12 +350,12 @@ theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c
     have hT : TMP = 2 := rfl
     unfold ix
     repeat' split
-    all_goals omega
+    all_goals omega_arith
   have := Nat.mul_le_mul_left (8 * c.n) hix
   rw [Nat.mul_succ] at this
-  have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega_using [hn])
   show _ ≤ 8192
-  omega
+  omega_arith
 
 theorem sl_le84 (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 84) : c.sl i + 8 * c.n ≤ size := by
   rw [sl_eq']
@@ -363,19 +363,19 @@ theorem sl_le84 (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 84) : c.sl i + 8 *
     have hT : TMP = 2 := rfl
     unfold ix
     repeat' split
-    all_goals omega
+    all_goals omega_arith
   have := Nat.mul_le_mul_left (8 * c.n) hix
   rw [Nat.mul_succ] at this
-  have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega_using [hn])
   show _ ≤ 8192
-  omega
+  omega_arith
 
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
   have := Nat.mul_le_mul_left (64 * c.n + 8) hj
   rw [Nat.mul_succ] at this
   show _ ≤ 8192
-  omega
+  omega_using [hn, this]
 
 /-- The word past a table of bits is in the working space too. -/
 theorem bitsAt_le_pad (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) :
@@ -384,6 +384,6 @@ theorem bitsAt_le_pad (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) :
   have := Nat.mul_le_mul_left (64 * c.n + 8) hj
   rw [Nat.mul_succ] at this
   show _ ≤ 8192
-  omega
+  omega_using [hn, this]
 
 end VG.Proof.Ecdsa.X86_64

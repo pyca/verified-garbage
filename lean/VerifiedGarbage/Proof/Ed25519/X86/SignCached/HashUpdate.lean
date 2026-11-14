@@ -27,7 +27,7 @@ theorem count_zero_high (x : BitVec 32) : (0#32) ++ x = BitVec.ofNat 64 x.toNat 
   have hx := x.isLt
   simp only [BitVec.toNat_ofNat]
   change 0 * 2 ^ 32 + x.toNat = x.toNat % 2 ^ 64
-  omega
+  omega_using []
 
 theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     {vs : List Value} (hlen : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 6 v)
@@ -79,7 +79,7 @@ theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
       refine List.map_congr_left fun i hi' => ?_
       exact hf.bytes (R := ⟨p.setWidth 64, n.toNat⟩)
         (by rintro r hr; rw [List.mem_singleton.mp hr]; exact hi.args)
-        (by have := n.isLt; change n.toNat ≤ 2 ^ 64; omega) (List.mem_range.mp hi')
+        (by have := n.isLt; change n.toNat ≤ 2 ^ 64; omega_using []) (List.mem_range.mp hi')
     rw [same] at hrepr
     exact hrepr
 

@@ -21,11 +21,11 @@ theorem sieveInitTail_ok (s : State) (stack : Workspace s s.sp 72) {n : Nat} (bo
       (t.gpr .r10 = s.gpr .r11 ∧ t.gpr .r11 = BitVec.ofNat 32 (trialCount n) ∧
         t.mem = s.mem.writeW (State.addr (s.sp + 64#32)) (0#32)) ∧ Rest [.r1, .r10, .r11, .r12] s t := by
   have write : InRegions s.wr (State.addr (s.sp + 64#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.write (by decide)
   refine withRest_all [.r1, .r10, .r11, .r12] ?_ (by rfl) (by rfl)
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 12#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.read (by decide)
   have count := trialCount_word bound
   simp only [show (0 : BitVec 32) = 0#32 from rfl, decide_eq_true_eq] at count
@@ -72,7 +72,7 @@ theorem sieveFinish_ok {s : State} {bad : Bool} (stack : Workspace s s.sp 72)
     WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish) s fun t =>
       (t.z = !bad ∧ t.mem = s.mem) ∧ Rest [.r1] s t := by
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 64#32)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact stack.read (by decide)
   refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish

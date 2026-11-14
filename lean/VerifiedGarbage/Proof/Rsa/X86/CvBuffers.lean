@@ -20,16 +20,16 @@ theorem ABI.inputLength {s : State} (a : ABI s) (i : Fin 4) :
   have lo := a.lengths.1
   have p := a.pPositive; have q := a.qPositive; have d := a.dPositive
   have ps := a.pSmall; have qs := a.qSmall; have ds := a.dBound
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 ∨ i.val = 3 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 ∨ i.val = 3 := by omega_using []
   rcases cases with e | e | e | e <;> rw [e]
   · change 0 < (arg s 7).toNat ∧ (arg s 7).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, lo]
   · change 0 < (arg s 9).toNat ∧ (arg s 9).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, p, ps]
   · change 0 < (arg s 11).toNat ∧ (arg s 11).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, q, qs]
   · change 0 < (arg s 13).toNat ∧ (arg s 13).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, d, ds]
 
 theorem ABI.outputLength {s : State} (a : ABI s) (i : Fin 3) :
     0 < ((caller s).buffer (2 * i.val)).len ∧
@@ -39,46 +39,46 @@ theorem ABI.outputLength {s : State} (a : ABI s) (i : Fin 3) :
   have p := a.pPositive; have q := a.qPositive
   have ps := a.pSmall; have qs := a.qSmall
   have dp := a.dpLen; have dq := a.dqLen; have qi := a.qiLen
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> rw [e]
   · change 0 < (arg s 1).toNat ∧ (arg s 1).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, p, ps, dp]
   · change 0 < (arg s 3).toNat ∧ (arg s 3).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, q, qs, dq]
   · change 0 < (arg s 5).toNat ∧ (arg s 5).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 7).toNat
-    omega
+    omega_using [w, p, ps, qi]
 
 theorem ABI.inputMember {s : State} (a : ABI s) (i : Fin 4) :
     (caller s).buffer (6 + 2 * i.val) ∈ s.rd := by
   rw [a.rd]
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 ∨ i.val = 3 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 ∨ i.val = 3 := by omega_using []
   rcases cases with e | e | e | e <;> simp [e]
 
 theorem ABI.outputMember {s : State} (i : Fin 3) :
     (caller s).buffer (2 * i.val) ∈ [(caller s).buffer 0, (caller s).buffer 2, (caller s).buffer 4] := by
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> simp [e]
 
 theorem ABI.inputFit {s : State} (a : ABI s) (i : Fin 4) :
     (arg s (6 + 2 * i.val)).toNat + ((caller s).buffer (6 + 2 * i.val)).len ≤ 2 ^ 32 := by
   change (arg s _).toNat + (arg s _).toNat ≤ 2 ^ 32
   apply a.bounds
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 ∨ i.val = 3 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 ∨ i.val = 3 := by omega_using []
   rcases cases with e | e | e | e <;> simp [e]
 
 theorem ABI.outputFit {s : State} (a : ABI s) (i : Fin 3) :
     (arg s (2 * i.val)).toNat + ((caller s).buffer (2 * i.val)).len ≤ 2 ^ 32 := by
   change (arg s _).toNat + (arg s _).toNat ≤ 2 ^ 32
   apply a.bounds
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> simp [e]
 
 theorem three_outputs {r : Nat → Region}
     (h : (r 0).Disjoint (r 2) ∧ (r 0).Disjoint (r 4) ∧ (r 2).Disjoint (r 4))
     (i j : Fin 3) (ne : i ≠ j) : (r (2 * i.val)).Disjoint (r (2 * j.val)) := by
   have neq : i.val ≠ j.val := fun h => ne (Fin.ext h)
-  have casesI : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
-  have casesJ : j.val = 0 ∨ j.val = 1 ∨ j.val = 2 := by omega
+  have casesI : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
+  have casesJ : j.val = 0 ∨ j.val = 1 ∨ j.val = 2 := by omega_using []
   rcases casesI with e | e | e <;> rcases casesJ with f | f | f
   all_goals try omega
   all_goals simp only [e, f, Nat.mul_zero, Nat.mul_one, show 2 * 2 = 4 from rfl]

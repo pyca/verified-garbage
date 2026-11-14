@@ -39,7 +39,7 @@ theorem out_of_ofs {s0 : State} {x : Addr} (hx : ¬ (rS s0).Contains x 1) :
     cvZ s0 ≤ ofs (State.addr (cvB s0)) x := by
   simp only [Region.Contains] at hx
   simp only [ofs, cvZ, cvB]
-  omega
+  omega_using [hx]
 
 theorem Base.keep {s0 s t : State} (h : Base s0 s) {js ds : List Nat}
     (k : Keep (cvB s0) (cvW s0) js ds s.mem t.mem) (hjs : ∀ j ∈ js, j < nArr)
@@ -51,7 +51,7 @@ theorem Base.keep {s0 s t : State} (h : Base s0 s) {js ds : List Nat}
       (out_of_ofs (by simpa using hx))
     · exact Nat.le_trans (arr_end (hjs j hj)) fits
     · exact Nat.le_trans (hdh d hd) (Nat.le_trans (Nat.le_add_right _ _) fits)
-  · rw [k.slot (by simp only [hdr]; omega) (fun d hd => by rcases hds d hd with e | e <;> omega)]
+  · rw [k.slot (by simp only [hdr]; omega_using [hi]) (fun d hd => by rcases hds d hd with e | e <;> omega_arith)]
     exact h.saved i hi
 
 theorem Base.of_rest {s0 s t : State} (h : Base s0 s) {ws : List Reg} (r : Rest ws s t)
@@ -66,9 +66,9 @@ theorem Base.arg {s0 s : State} (h : Base s0 s) {i : Nat} (hi : i < 12) : stackA
   rw [ea]
   refine h.frame.readW (r := rA s0) ?_ (fun r hr => ?_) (by decide)
   · simp only [Region.Contains, stackArgAddr]
-    rw [addr_add (by omega), addr_add (by omega), Nat.mul_zero, BitVec.add_zero, Offset.add_sub_cancel_left,
+    rw [addr_add (by omega_using [hi, sp]), addr_add (by omega_using []), Nat.mul_zero, BitVec.add_zero, Offset.add_sub_cancel_left,
       BitVec.toNat_ofNat]
-    omega
+    omega_using [hi]
   · simp only [List.mem_singleton] at hr; subst hr; exact h.pre.sA.symm
 
 theorem Base.rA_mem {s0 s : State} (h : Base s0 s) : rA s ∈ s.rd := by
@@ -79,7 +79,7 @@ theorem Base.ws {s0 s : State} (h : Base s0 s) (h7 : s.gpr .r7 = BitVec.ofNat 32
     (h8 : s.gpr .r8 = cvB s0) (h9 : s.gpr .r9 = BitVec.ofNat 32 (cvW s0)) :
     Ws s (cvB s0) (cvZ s0) (cvW s0) nArr := by
   have := h.pre.w16
-  refine ⟨h.pre.fS, ?_, h.pre.fits, by omega, by omega, h7, h8, h9⟩
+  refine ⟨h.pre.fS, ?_, h.pre.fits, by omega_using [this], by omega_using [this], h7, h8, h9⟩
   rw [h.wr, h.pre.wr]; simp
 
 /-- `ctx`: `r7`, `r8` and `r9` from the stack arguments. -/
@@ -113,7 +113,7 @@ theorem ctx_ok {s0 s : State} (h : Base s0 s) {rest : List Instr} {Q : State →
       show (3 : BitVec 32).toNat = 3 from rfl]
     have : (stackArg s0 3).toNat < 2 ^ 32 := (stackArg s0 3).isLt
     simp only [cvW, cvK] at *
-    omega
+    omega_using [w16]
   have t9 : t.gpr .r9 = BitVec.ofNat 32 (cvW s0) := by
     rw [u6.other _ (by decide), u5.other _ (by decide), e9]
   have e7 : t.gpr .r7 = BitVec.ofNat 32 (S (cvW s0)) := by
@@ -122,7 +122,7 @@ theorem ctx_ok {s0 s : State} (h : Base s0 s) {rest : List Instr} {Q : State →
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       show (2 : BitVec 32).toNat = 2 from rfl]
     simp only [S]
-    omega
+    omega_using []
   have e8 : t.gpr .r8 = cvB s0 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
       u2.other _ (by decide), u1.gpr, h.arg (by decide)]

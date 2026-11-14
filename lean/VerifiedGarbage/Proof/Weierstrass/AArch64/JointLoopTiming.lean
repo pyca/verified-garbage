@@ -25,7 +25,7 @@ theorem jointLoop_relCT {c : Joint.Cfg} {o : Joint.Ops}
     intro j
     by_cases hj : 1≤j
     · by_cases hj256 : j≤256
-      · refine (step (j-1) (by omega)).mono
+      · refine (step (j-1) (by omega_using [hj256])).mono
           (P':=I j) (fun _ _ h => by simpa only [Nat.sub_add_cancel hj] using h.2.2) ?_
         intro s t hp
         obtain ⟨s19,t19⟩ := counter (j-1) s t hp
@@ -36,7 +36,7 @@ theorem jointLoop_relCT {c : Joint.Cfg} {o : Joint.Ops}
               rw [bne_iff_ne]
               intro hh
               have hh' := congrArg BitVec.toNat hh
-              simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : j-1<2^64)] at hh'
+              simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hj256] : j-1<2^64)] at hh'
               exact hn hh'
             have htrue : eval (.nonzero .x .x19) s=some true := by
               change some (s.read .x .x19 != 0)=some true
@@ -45,7 +45,7 @@ theorem jointLoop_relCT {c : Joint.Cfg} {o : Joint.Ops}
           exact hz ▸ hp
         · have hz : j-1≠0 := by
             intro hz; simp only [eval,State.read,s19,hz] at he; cases he
-          exact ⟨j-1,by omega,by omega,by omega,hp⟩
+          exact ⟨j-1,by omega_using [hj],by omega_using [hz],by omega_using [hj256],hp⟩
       · exact RelCT.of_false (fun _ _ h => hj256 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   exact (RelCT.loop I hs 256).mono (fun _ _ h => ⟨by decide,by decide,h⟩) (fun _ _ h => h)

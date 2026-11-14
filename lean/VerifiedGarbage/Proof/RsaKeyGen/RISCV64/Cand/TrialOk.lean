@@ -84,7 +84,7 @@ theorem trialA_ok {s : State} {B : Addr} {Z w n : Nat} (h : DivIn s B Z w n) :
   refine Steps.WP.cons exec_lla ?_
   have c := h.cnt
   simp only [ldh, hTrial, VG.Proof.Bignum.word] at c ⊢
-  brun [e.s6, hs.ld (d := 128) (n := 8) (by omega), hs.al8 (d := 128) (by omega) (by decide), c]
+  brun [e.s6, hs.ld (d := 128) (n := 8) (by omega_using [hZ]), hs.al8 (d := 128) (by omega_using [hZ]) (by decide), c]
 
 /-- What the loop's start gives each entry. -/
 theorem TA.facts {s u : State} {B : Addr} {Z w n : Nat} (h : DivIn s B Z w n) (hu : TA s n u) :
@@ -100,18 +100,18 @@ theorem TA.facts {s u : State} {B : Addr} {Z w n : Nat} (h : DivIn s B Z w n) (h
   have hfit := h.fit
   have hal := h.al
   refine ⟨e.hs.congr uwr, (ug _ (by decide)).trans e.a7, (ug _ (by decide)).trans e.t0,
-    by rw [um, ← wordsVal_eq_val32], by omega, by omega, by simp only [slot, hdrBytes]; omega,
-    by simp only [slot, hdrBytes]; omega, fun i hi => ⟨?_, ⟨_, by rw [urd]; exact List.mem_append_left _ h.tab, ?_⟩, ?_⟩⟩
-  · have hl : i < TrialTable32.packed.length := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length]; omega
-    rw [um, h.held i (by omega), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl, Option.getD_some,
-      VG.Proof.RsaKeyGen.TrialTable32.packed_entry (by omega)]
+    by rw [um, ← wordsVal_eq_val32], by omega_using [hw], by omega_using [hw'], by simp only [slot, hdrBytes]; omega_using [hZ],
+    by simp only [slot, hdrBytes]; omega_using [], fun i hi => ⟨?_, ⟨_, by rw [urd]; exact List.mem_append_left _ h.tab, ?_⟩, ?_⟩⟩
+  · have hl : i < TrialTable32.packed.length := by rw [VG.Proof.RsaKeyGen.TrialTable32.packed_length]; omega_using [hn', hi]
+    rw [um, h.held i (by omega_using [hn', hi]), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hl, Option.getD_some,
+      VG.Proof.RsaKeyGen.TrialTable32.packed_entry (by omega_using [hn', hi])]
   · simp only [Region.Contains, Offset.add_sub_cancel_left]
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn', hi])]; omega_using [hn', hi]
   · have e8 : (s.syms TrialTable32.symbol + BitVec.ofNat 64 (8 * i)).toNat =
         (s.syms TrialTable32.symbol).toNat + 8 * i := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega)]
-      exact Nat.mod_eq_of_lt (by omega)
-    rw [e8]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega_using [hn', hi])]
+      exact Nat.mod_eq_of_lt (by omega_using [hn', hfit, hi])
+    rw [e8]; omega_using [hal]
 
 /-- Trial division of the candidate in array 0 by the table's first `n`
 entries. -/
@@ -169,7 +169,7 @@ theorem TS.init {d : TD} {s u : State} (h : TS d s) (hu : TA s d.n u) :
     TInv u d.T (A s.mem d.B d.w 0) d.n d.n u ∧ u.sp = d.sp := by
   obtain ⟨⟨u9, u10, -⟩, -, -, -, usp, -⟩ := hu
   have h1 := h.1.n1
-  exact ⟨⟨0, by omega, by omega, ⟨by rw [u9, h.2.1, Nat.mul_zero, BitVec.add_zero], by rw [u10, Nat.sub_zero],
+  exact ⟨⟨0, by omega_using [], by omega_using [h1], ⟨by rw [u9, h.2.1, Nat.mul_zero, BitVec.add_zero], by rw [u10, Nat.sub_zero],
     rfl, rfl⟩, Keep.refl _ _⟩, usp.trans h.2.2.1⟩
 
 theorem TL.regs {m : Nat} {d : TD} {v : State} (h : TL m d v) :
@@ -177,7 +177,7 @@ theorem TL.regs {m : Nat} {d : TD} {v : State} (h : TL m d v) :
       v.gpr .s9 = d.T + BitVec.ofNat 64 (8 * (d.n - m)) ∧ v.sp = d.sp := by
   obtain ⟨s, u, hs, hu, ⟨k, hm, hk, ⟨v9, -, -, -⟩, kv⟩, vsp⟩ := h
   obtain ⟨-, h7, ht0, -⟩ := hu.facts hs.1
-  exact ⟨(kv.gpr (by decide)).trans h7, (kv.gpr (by decide)).trans ht0, by rw [v9]; congr 3; omega, vsp⟩
+  exact ⟨(kv.gpr (by decide)).trans h7, (kv.gpr (by decide)).trans ht0, by rw [v9]; congr 3; omega_using [hm, hk], vsp⟩
 
 theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.RISCV64.Trial.trial hTrial) fun _ _ => True := by
   have pS : Pins TS [.s6] := by
@@ -207,7 +207,7 @@ theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.RISCV64.Trial.trial hTr
     (two_taint _ (pL m) (by taint_decide)) fun d v ⟨s, u, hs, hu, hI, vsp⟩ => ?_).mono (fun _ _ h => h) ?_
   · obtain ⟨hsc, h7, ht0, hc, hw, hw', hZ, ho, htab⟩ := hu.facts hs.1
     rw [hs.2.1] at htab
-    have hk : d.n - m < d.n := by obtain ⟨k, hm, hk, -⟩ := hI; omega
+    have hk : d.n - m < d.n := by obtain ⟨k, hm, hk, -⟩ := hI; omega_using [hm, hk]
     refine wp_of_sp_syms (WP.mono (step_ok hsc h7 ht0 hc hw hw' hZ ho hs.1.n2 htab hI)
       fun t ⟨e, _, g⟩ tsp _ => ⟨s, u, hs, hu, ?_, fun he => ⟨(g he).1, (g he).2, tsp.trans vsp⟩⟩)
     rw [e, ← hs.2.2.2 _ hk]
@@ -216,7 +216,7 @@ theorem trial_ct : RelCT isa (Two TS) (VG.Impl.RsaKeyGen.RISCV64.Trial.trial hTr
     refine ⟨e₁.trans e₂.symm, fun _ => trivial, fun he => ?_⟩
     obtain ⟨hm, i₁, sp₁⟩ := g₁ he
     obtain ⟨-, i₂, sp₂⟩ := g₂ (e₂.trans (e₁.symm.trans he))
-    exact ⟨m - 1, by omega, d, ⟨a₁, u₁, h₁, hu₁, i₁, sp₁⟩, ⟨a₂, u₂, h₂, hu₂, i₂, sp₂⟩⟩
+    exact ⟨m - 1, by omega_using [hm], d, ⟨a₁, u₁, h₁, hu₁, i₁, sp₁⟩, ⟨a₂, u₂, h₂, hu₂, i₂, sp₂⟩⟩
 
 /-- The shared trial division is what the candidate's proofs need. -/
 theorem trial_divOk : DivOk (VG.Impl.RsaKeyGen.RISCV64.Trial.trial hTrial) where

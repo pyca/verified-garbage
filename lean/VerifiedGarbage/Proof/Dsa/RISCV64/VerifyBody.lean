@@ -47,25 +47,25 @@ theorem BKept.trans {L : Lay} {m₁ m₂ m₃ : Mem} (h₁ : BKept L m₁ m₂) 
   fun x hx => (h₂ x hx).trans (h₁ x hx)
 
 theorem BKept.ofMask {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hMask 8 m m') : BKept L m m' :=
-  fun x hx => h x (by have := hL.z256; simp only [hMask] at hx ⊢; omega)
+  fun x hx => h x (by have := hL.z256; simp only [hMask] at hx ⊢; omega_using [hx, this])
 
 theorem BKept.ofBody {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Body L m m') : BKept L m m' :=
-  fun x hx => h x (by have := hL.z256; omega)
+  fun x hx => h x (by have := hL.z256; omega_using [hx])
 
 theorem BKept.out {L : Lay} {m m' : Mem} (h : BKept L m m') : Outside L.S 0 L.Z m m' :=
-  fun x hx => h x (Or.inr (by omega))
+  fun x hx => h x (Or.inr (by omega_using [hx]))
 
 /-- A word of the header from byte 8 on, kept. -/
 theorem BKept.word {L : Lay} {m m' : Mem} (h : BKept L m m') {d : Nat} (hd : 8 ≤ d) (hd' : d + 8 ≤ 256) :
     word m' L.S d = word m L.S d :=
   (Mem.readW_congr fun i hi =>
-    (h _ (by rw [ofs_off L.S (by omega)]; omega)).symm).symm
+    (h _ (by rw [ofs_off L.S (by omega_using [hd', hi])]; omega_using [hd, hd', hi])).symm).symm
 
 /-- Memory that changed only at offsets below `qOff` of `scratch` keeps the Q space. -/
 theorem keepQ_of {L : Lay} (hL : L.Ok) {m m' : Mem} (h : ∀ x, L.qOff ≤ ofs L.S x → m' x = m x) :
     Outside L.Q 1600 (2 ^ 64 - 1600) m m' := by
   intro x hx
-  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega
+  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega_using [e]
   have hlt := (x - L.S).isLt
   have hlt' := (x - L.Q).isLt
   refine h x ?_
@@ -82,21 +82,21 @@ theorem mask_keepQ {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hMask 8 m
 
 theorem keepQ_arr0 {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.Q 1600 (2 ^ 64 - 1600) m m') :
     arrQ m' L 0 = arrQ m L 0 :=
-  h.wordsVal (Or.inl (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega))
-    (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega)
+  h.wordsVal (Or.inl (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega_using [this]))
+    (by have := hL.wq_ge; simp only [Lay.slot_eq]; omega_using [this])
 
 /-- The store of the mask keeps the P space's arrays. -/
 theorem mask_arrP {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.S hMask 8 m m') (j : Nat) (hj : j < 28) :
     arrP m' L j = arrP m L j := by
   have h28 : slot L.wp j + 8 * L.wp ≤ L.Z := by
-    have := slot_lt (w := L.wp) hj; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at this; omega
+    have := slot_lt (w := L.wp) hj; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at this; omega_arith
   have hn := hL.nowrap
-  exact h.wordsVal (Or.inr (by have := Lay.slot_eq L.wp j; simp only [hMask]; omega)) (by omega)
+  exact h.wordsVal (Or.inr (by have := Lay.slot_eq L.wp j; simp only [hMask]; omega_using [this])) (by omega_using [h28, hn])
 
 /-- A change in the Q space's arrays or the buffer keeps the P space. -/
 theorem QBuf.keepP {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') :
     Outside L.S (L.qOff + slot L.wq 1) (1600 + 2 * L.pl - slot L.wq 1) m m' := by
-  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega
+  have hq : L.qOff ≤ 11456 := by rw [hL.qOff_eq]; rcases hL.pl with e | e | e <;> omega_using [e]
   have hs := hL.qslot
   have e1 := Lay.slot_eq L.wq 1; have e28 := Lay.slot_eq L.wq 28
   exact outside_shift (B := L.S) (a := L.qOff) h (by have := hL.pl; omega_arith) (by omega_arith)
@@ -104,10 +104,10 @@ theorem QBuf.keepP {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') :
 theorem QBuf.arrP {L : Lay} (hL : L.Ok) {m m' : Mem} (h : QBuf L m m') (j : Nat) (hj : j < 28) :
     arrP m' L j = arrP m L j := by
   have h28 : slot L.wp j + 8 * L.wp ≤ L.Z := by
-    have := slot_lt (w := L.wp) hj; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at this; omega
-  have hj' : slot L.wp j + 8 * L.wp ≤ L.qOff := by have := slot_lt (w := L.wp) hj; simp only [Lay.qOff]; omega
+    have := slot_lt (w := L.wp) hj; have := hL.buf_end; simp only [Lay.bOff, Lay.qOff] at this; omega_arith
+  have hj' : slot L.wp j + 8 * L.wp ≤ L.qOff := by have := slot_lt (w := L.wp) hj; simp only [Lay.qOff]; omega_using [this]
   have hn := hL.nowrap
-  exact (h.keepP hL).wordsVal (Or.inl (by omega)) (by omega)
+  exact (h.keepP hL).wordsVal (Or.inl (by omega_using [hj'])) (by omega_using [h28, hn])
 
 /-- A buffer's first `min n k` octets. -/
 theorem bytesAt_take (m : Mem) (D : Addr) (n k : Nat) :
@@ -119,9 +119,9 @@ theorem sig_kept {s : State} {L : Lay} {sig dig : Addr} {D : Nat} (hsg : Src s L
     (hdg : Src s L dig D) {m m' : Mem} (h : Outside L.S 0 L.Z m m') {k : Nat} (hk : k ≤ D) :
     rOf m' L sig = rOf m L sig ∧ sOf m' L sig = sOf m L sig ∧
       Spec.Rsa.bytesAt m' dig k = Spec.Rsa.bytesAt m dig k := by
-  refine ⟨?_, ?_, (hdg.take hk).bytes h (by omega)⟩
-  · simp only [rOf]; rw [(hsg.take (k := L.ql) (by omega)).bytes h (by omega)]
-  · simp only [sOf]; rw [(hsg.sub (o := L.ql) (k := L.ql) (by omega)).bytes h (by omega)]
+  refine ⟨?_, ?_, (hdg.take hk).bytes h (by omega_using [])⟩
+  · simp only [rOf]; rw [(hsg.take (k := L.ql) (by omega_using [])).bytes h (by omega_using [])]
+  · simp only [sOf]; rw [(hsg.sub (o := L.ql) (k := L.ql) (by omega_using [])).bytes h (by omega_using [])]
 
 /-- `Regs` through a change that keeps the header's lengths. -/
 theorem Regs.keepHdr {s t : State} {L : Lay} {key sig : Addr} {rs : List Reg} (h : Regs s L key sig)
@@ -136,20 +136,20 @@ theorem keepMask_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s
       (QS t L key sig ∧ word t.mem L.S hMask = s.gpr .a4 ∧ Outside L.S hMask 8 s.mem t.mem) ∧
         Keep [] s t := by
   obtain ⟨hin, hal⟩ := ScrL.hdr h.scr hL (d := 0) (by decide) (by decide)
-  have hst : InRegions s.wr (off L.S 0) 8 := h.scr.st (by have := hL.z256; omega)
+  have hst : InRegions s.wr (off L.S 0) 8 := h.scr.st (by have := hL.z256; omega_using [this])
   refine WP.mono (WP.keep [] (Q := fun u => u.mem = s.mem.writeW (off L.S 0) (s.gpr .a4)) (by
       unfold keepMask; brun [hMask, h.regs.s6, hst, hal]) (by decide) (by rfl)) fun t ⟨mt, kt⟩ => ?_
   have wo : Outside L.S hMask 8 s.mem t.mem := by
     rw [mt]; exact writeW_outside s.mem L.S _ (by simp only [hMask]; omega_arith)
   refine ⟨⟨⟨h.inq.keep kt (by decide), h.scr.congr kt.2.2, h.regs.keepHdr kt
-    (wo.word (Or.inr (by decide)) (by have := hL.nowrap; have := hL.z256; simp only [hLens]; omega)) (by decide)⟩,
+    (wo.word (Or.inr (by decide)) (by have := hL.nowrap; have := hL.z256; simp only [hLens]; omega_using [])) (by decide)⟩,
     by rw [mt]; exact word_writeW_self _ _ _ _, wo⟩, kt⟩
 
 theorem q_bits {q ql : Nat} (hq : 1 ≤ q) (hlt : q < 2 ^ (8 * ql)) : Spec.Dsa.bitLength q / 8 ≤ ql := by
-  have hq0 : q ≠ 0 := by omega
+  have hq0 : q ≠ 0 := by omega_using [hq]
   have hlog : q.log2 < 8 * ql := (Nat.log2_lt hq0).mpr hlt
   have : Spec.Dsa.bitLength q = q.log2 + 1 := by simp [Spec.Dsa.bitLength, hq0]
-  omega
+  omega_using [hlog, this]
 
 /-- The registers of the Q space's part of `Verify.body`. -/
 def bodyQRegs : List Reg := rangesRegs ++ [] ++ rrQRegs ++ qm2Regs ++ invRegs ++ prodRegs
@@ -213,7 +213,7 @@ theorem bodyQ_ok {s : State} {L : Lay} {key sig dig : Addr} {q qb d : Nat} {Q : 
       (by rw [K₅.word (by decide) (by decide)]; exact hlen) hqb hd (hdg.keep k₁₅.2.1 k₁₅.2.2)
       (by rw [q0₅]; exact hq2) (by rw [q0₅]; exact hqo) (by rw [q0₅]; exact hql)
       (by rw [q0₅, k24₅ 24 (by decide) (by decide), kj₄ 24 (by decide) (by decide)]; exact h24₃) w4₅
-      (by rw [q0₅]; exact Nat.mod_lt _ (by omega)))
+      (by rw [q0₅]; exact Nat.mod_lt _ (by omega_using [hq2])))
     fun t ⟨⟨Qt, u1, u2, qbt⟩, kt⟩ => ?_)
   have sk := sig_kept hsg hdg K₅.out (Nat.le_refl _)
   rw [q0₅, sk.2.2] at u1
@@ -243,7 +243,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   have hpl := hL.pl
   have hql := hL.ql
   obtain ⟨ip, scr, regs, p0, ptop, inv, p24, q0, qtop, lens⟩ := hc
-  have hk' := hk.take (k := 2 * L.pl + L.ql) (by omega)
+  have hk' := hk.take (k := 2 * L.pl + L.ql) (by omega_using [])
   obtain ⟨ep, eq, eg⟩ := params_kept hk' hkp
   have ey := y_kept hk hkp
   unfold KeyOk at hK
@@ -258,24 +258,24 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   have B := VG.Proof.Dsa.supported_bounds hK.1.1
   have hqo : q % 2 = 1 := hK.1.2.1
   have hpo : p % 2 = 1 := hK.1.2.2
-  have hnq : Spec.Dsa.bitLength q / 8 ≤ L.ql := q_bits (by omega) hqlt
+  have hnq : Spec.Dsa.bitLength q / 8 ≤ L.ql := q_bits (by omega_using [B]) hqlt
   generalize hn : Spec.Dsa.bitLength q / 8 = n at lens hnq ⊢
   unfold Verify.body
-  refine bodyQ_ok (q := q) (qb := n) hL scr regs q0 (by omega) hqo hqlt hsg hdg8 lens hnq hd
+  refine bodyQ_ok (q := q) (qb := n) hL scr regs q0 (by omega_using [B]) hqo hqlt hsg hdg8 lens hnq hd
     (hdg.take (Nat.min_le_left d n)) fun t₁ ⟨Q₁, u1, u2, m₁, K₁, pw₁, q0₁⟩ k₁ => ?_
   have sk := sig_kept hsg hdg K₁.out (Nat.le_refl d)
   -- `g^u1 y^u2 mod p`.
   refine WP.seq (WP.mono (combine_ok hL Q₁.scr Q₁.regs (hk.keep k₁.2.1 k₁.2.2) ((pw₁ 0 (by decide)).trans p0)
-      (by omega) hpo ((pw₁ 24 (by decide)).trans p24)) fun t₂ ⟨⟨v₂, ip₂, B₂, Qk₂⟩, k₂⟩ => ?_)
+      (by omega_using [B]) hpo ((pw₁ 24 (by decide)).trans p24)) fun t₂ ⟨⟨v₂, ip₂, B₂, Qk₂⟩, k₂⟩ => ?_)
   rw [u1, u2] at v₂
-  have hk₁ := hk.take (k := 2 * L.pl + L.ql) (by omega)
+  have hk₁ := hk.take (k := 2 * L.pl + L.ql) (by omega_using [])
   have eg₁ : gOf t₁.mem L key = g := by
     simp only [gOf]
-    rw [(hk.sub (o := L.pl + L.ql) (k := L.pl) (by omega)).bytes K₁.out (by omega)]
+    rw [(hk.sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])).bytes K₁.out (by omega_using [])]
     exact eg.trans hgg
   have ey₁ : yOf t₁.mem L key = y := by
     simp only [yOf]
-    rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega)).bytes K₁.out (by omega)]
+    rw [(hk.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_using [])).bytes K₁.out (by omega_using [])]
     exact ey.trans hyy
   rw [eg₁, ey₁] at v₂
   have k₁₂ := k₁.trans k₂
@@ -285,7 +285,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   have hm₂ : word t₂.mem L.S hMask = mask (decide ((0 < rOf s.mem L sig ∧ rOf s.mem L sig < q) ∧
       (0 < sOf s.mem L sig ∧ sOf s.mem L sig < q))) := by rw [B₂.word (by decide)]; exact m₁
   refine WP.mono (compare_ok hL (scr.congr k₁₂.2.2) (Q₁.regs.keep k₂ B₂) (hsg.keep k₁₂.2.1 k₁₂.2.2)
-      (by rw [q0₂]; omega) hm₂) fun t ⟨⟨a0, Bt⟩, kt⟩ => ?_
+      (by rw [q0₂]; omega_using [B]) hm₂) fun t ⟨⟨a0, Bt⟩, kt⟩ => ?_
   rw [q0₂, v₂, (sig_kept hsg hdg K₂.out (Nat.le_refl d)).1] at a0
   refine ⟨⟨?_, K₂.trans (BKept.ofBody hL Bt), ((k₂.trans kt).gpr (by decide)).trans Q₁.regs.s6,
     scr.congr (k₁₂.trans kt).2.2⟩, k₁₂.trans kt⟩

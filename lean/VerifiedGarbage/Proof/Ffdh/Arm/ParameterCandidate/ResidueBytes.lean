@@ -16,7 +16,7 @@ open VG VG.Proof.Mont
 private theorem bytesAt_snoc (m : Mem) (base : Addr) {n : Nat} (positive : 0 < n) :
     Spec.Rsa.bytesAt m base n = Spec.Rsa.bytesAt m base (n - 1) ++ [m (off base (n - 1))] := by
   calc
-    _ = Spec.Rsa.bytesAt m base ((n - 1) + 1) := congrArg _ (by omega : n = (n - 1) + 1)
+    _ = Spec.Rsa.bytesAt m base ((n - 1) + 1) := congrArg _ (by omega_using [positive] : n = (n - 1) + 1)
     _ = _ := by
       simp only [Spec.Rsa.bytesAt, List.map_append, List.range_succ,
         List.map_nil, List.map_cons, off]
@@ -30,9 +30,9 @@ theorem candidate_mod8_last (m : Mem) (base : Addr) {n : Nat} (positive : 0 < n)
   rw [Nat.add_mod, Nat.mul_mod, show 256 % 8 = 0 by decide, Nat.mul_zero, Nat.zero_mod,
     Nat.zero_add, Nat.mod_mod]
 
-theorem residue24 {n : Nat} : n % 24 = 11 ↔ n % 8 = 3 ∧ n % 3 = 2 := by omega
+theorem residue24 {n : Nat} : n % 24 = 11 ↔ n % 8 = 3 ∧ n % 3 = 2 := by omega_using []
 
 theorem residue10 {n : Nat} (odd : n % 2 = 1) :
-    (n % 10 = 3 ∨ n % 10 = 7) ↔ n % 5 = 2 ∨ n % 5 = 3 := by omega
+    (n % 10 = 3 ∨ n % 10 = 7) ↔ n % 5 = 2 ∨ n % 5 = 3 := by omega_using [odd]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

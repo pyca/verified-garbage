@@ -107,11 +107,11 @@ theorem trHash_piece {p : Params} (hF : PFacts p) : Piece p (KRx p (p.ℓ + p.k)
   refine WP.mono (hash_okM hc (by decide) L) fun s' ⟨⟨hP', ho⟩, hx⟩ => ⟨A, S, R, ?_, ?_⟩
   · have hc : KRChk p (p.ℓ + p.k) p.ℓ p.k [(sc 0, 200), (sc 200, 640), ((.r13, 64), 64)] :=
       (KRChk.rbx hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-        (by simp only [scrLen, Spec.MlDsa.scratchWords]; omega)).append (ws₁ := [_])
+        (by simp only [scrLen, Spec.MlDsa.scratchWords]; omega_using [])).append (ws₁ := [_])
       ((KRChk.rbx hF (Nat.le_refl _) (Nat.le_refl _) (.inl (by decide)) (.inl (by decide))
-        (by simp only [scrLen, Spec.MlDsa.scratchWords]; omega)).append (ws₁ := [_])
+        (by simp only [scrLen, Spec.MlDsa.scratchWords]; omega_using [])).append (ws₁ := [_])
       (KRChk.r13 hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (.inl (by decide))
-        (.inl (by simp only [oT0]; omega)) (by rw [hF.sk, oT0]; omega)))
+        (.inl (by simp only [oT0]; omega_using [])) (by rw [hF.sk, oT0]; omega_using [])))
     exact h.keep hF hp hP'.b hx (hP'.cs .r15 (by decide)) hc
   · simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, pk_bytes hF h] at ho
     rw [hP'.pa (show Reg.r13 ∈ calleeSaved by decide), ho, shake31', ← Proof.MlKem.shake256_eq]
@@ -147,7 +147,7 @@ theorem epi_piece {p : Params} (hF : PFacts p) :
   have e13 : pa s (.r13, 0) = σ.gpr .rdx := by rw [pa, h.kc.top.regs (.r13, .rdx) (by decide), add_ofNat_zero]
   show Spec.MlDsa.Outcome _ _ _
   rw [hr, h.r15, hm, ← e12, ← e13, pk_bytes hF h, sk_bytes hF h htr]
-  exact outcome_of (by have := hF.l; omega) h.good
+  exact outcome_of (by have := hF.l; omega_using [this]) h.good
 
 /-! ## The function -/
 
@@ -156,13 +156,13 @@ theorem rest_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) :
   unfold rest
   refine (copies_piece hF).seq (Piece.seq (J := KRx p (p.ℓ + p.k) 0 0) ?_ (Piece.seq (J := KRx p (p.ℓ + p.k) p.ℓ 0) ?_
     (Piece.seq (J := KRx p (p.ℓ + p.k) p.ℓ p.k) ?_ (trHash_piece hF))))
-  · refine Piece.mono (Piece.seqR (I := fun r => KRx p r 0 0) (p.ℓ + p.k) 0 fun r _ hr => packS_piece hP hF (by omega))
+  · refine Piece.mono (Piece.seqR (I := fun r => KRx p r 0 0) (p.ℓ + p.k) 0 fun r _ hr => packS_piece hP hF (by omega_using [hr]))
       (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
-  · refine Piece.mono (Piece.seqR (I := fun j => KRx p (p.ℓ + p.k) j 0) p.ℓ 0 fun j _ hj => nttS_piece hP hF (by omega))
+  · refine Piece.mono (Piece.seqR (I := fun j => KRx p (p.ℓ + p.k) j 0) p.ℓ 0 fun j _ hj => nttS_piece hP hF (by omega_using [hj]))
       (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
-  · refine Piece.mono (Piece.seqR (I := fun i => KRx p (p.ℓ + p.k) p.ℓ i) p.k 0 fun i _ hi => row_piece hP hF (by omega))
+  · refine Piece.mono (Piece.seqR (I := fun i => KRx p (p.ℓ + p.k) p.ℓ i) p.k 0 fun i _ hi => row_piece hP hF (by omega_using [hi]))
       (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 

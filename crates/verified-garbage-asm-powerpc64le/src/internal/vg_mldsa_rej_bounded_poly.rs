@@ -15,11 +15,11 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly() {
 bl {vg_keccak_absorb_scratch}
 .base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
 bl {vg_keccak_pad_scratch}
-.base64 "AAB/OIgAgDgAAKA4SAPfOCAC4DjIAB85"
+.base64 "AAB/OIgAgDgAAKA4SAPfOBAB4DjIAB85"
 bl {vg_keccak_squeeze_scratch}
 .base64 "/v+bOQAALCg="
 beq %cr0, 20f
-.base64 "SAN/OAAAnjgAAKA4IALAOH8A4DwB4Odg"
+.base64 "SAN/OAAAnjgAAKA4EAHAOH8A4DwB4Odg"
 22:
 .base64 "AAADicbgCXkgJyl59/+JOeAPjHkA/2U54A9reThYjH0EAEA5UFBJfeAPS3nSOWt9FFpKfQAALCg="
 beq %cr0, 23f
@@ -33,11 +33,11 @@ beq %cr0, 25f
 b 26f
 25:
 26:
-.base64 "AQBjOP//xjgAACYo"
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
 bne %cr0, 22b
 b 21f
 20:
-.base64 "SAN/OAAAnjgAAKA4IALAOH8A4DwB4Odg"
+.base64 "SAN/OAAAnjgAAKA4EAHAOH8A4DwB4Odg"
 27:
 .base64 "AAADicbgCXkgJyl58f+JOeAPjHkA/2U54A9reThYjH32/yk54A8reSQfankUUil9pA9qeRRSKX37/yk54A8reWQXankUUil9FFopfQIAQDlQUEl94A9LedI5a30UWkp9AAAsKA=="
 beq %cr0, 28f
@@ -51,9 +51,57 @@ beq %cr0, 210f
 b 211f
 210:
 211:
-.base64 "AQBjOP//xjgAACYo"
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
 bne %cr0, 27b
 21:
+.base64 "AP+FOQAALCg="
+beq %cr0, 212f
+.base64 "AAAAOAAAH/gIAB/4EAAf+BgAH/ggAB/4KAAf+DAAH/g4AB/4QAAf+EgAH/hQAB/4WAAf+GAAH/hoAB/4cAAf+HgAH/iAAB/4iAAf+JAAH/iYAB/4oAAf+KgAH/iwAB/4uAAf+MAAH/gAAH84iACAOAAAoDgAAN04AAD8OMgAHzk="
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAfziIAIA4HwDAOMgA/zg="
+bl {vg_keccak_pad_scratch}
+.base64 "AAB/OIgAgDgAAKA4SAPfOCAC4DjIAB85"
+bl {vg_keccak_squeeze_scratch}
+.base64 "/v+bOQAALCg="
+beq %cr0, 214f
+.base64 "SAN/OAAAnjgAAKA4IALAOH8A4DwB4Odg"
+216:
+.base64 "AAADicbgCXkgJyl59/+JOeAPjHkA/2U54A9reThYjH0EAEA5UFBJfeAPS3nSOWt9FFpKfQAALCg="
+beq %cr0, 217f
+.base64 "AABEkQQAhDgBAKU4"
+b 218f
+217:
+218:
+.base64 "AuEJeff/iTngD4x5AP9lOeAPa3k4WIx9BABAOVBQSX3gD0t50jlrfRRaSn0AACwo"
+beq %cr0, 219f
+.base64 "AABEkQQAhDgBAKU4"
+b 220f
+219:
+220:
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
+bne %cr0, 216b
+b 215f
+214:
+.base64 "SAN/OAAAnjgAAKA4IALAOH8A4DwB4Odg"
+221:
+.base64 "AAADicbgCXkgJyl58f+JOeAPjHkA/2U54A9reThYjH32/yk54A8reSQfankUUil9pA9qeRRSKX37/yk54A8reWQXankUUil9FFopfQIAQDlQUEl94A9LedI5a30UWkp9AAAsKA=="
+beq %cr0, 222f
+.base64 "AABEkQQAhDgBAKU4"
+b 223f
+222:
+223:
+.base64 "AuEJefH/iTngD4x5AP9lOeAPa3k4WIx99v8pOeAPK3kkH2p5FFIpfaQPankUUil9+/8pOeAPK3lkF2p5FFIpfRRaKX0CAEA5UFBJfeAPS3nSOWt9FFpKfQAALCg="
+beq %cr0, 224f
+.base64 "AABEkQQAhDgBAKU4"
+b 225f
+224:
+225:
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
+bne %cr0, 221b
+215:
+b 213f
+212:
+213:
 .base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO""#,
         vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,

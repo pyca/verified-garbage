@@ -58,7 +58,7 @@ theorem reduceCall_init {p : ReducePublic} {s : State} (h : ReduceCallPrepared p
       p.modulus p.minv p.bytes.ptr bs 0 :=
     ⟨hct, hmt, (harr aR2 (by decide)).trans hr,
       fun i hi _ => (wv_eq_zero_iff _ _ _ _).mp ((harr aX (by decide)).trans hx) i hi,
-      (harr aY (by decide)).trans hy, by have := p.greater; omega, hptr, hrem,
+      (harr aY (by decide)).trans hy, by have := p.greater; omega_using [this], hptr, hrem,
       work_source hc hf hk hs⟩
   refine ⟨⟨bs, 0, ?_, ?_⟩, ?_⟩
   · simpa only [Nat.sub_zero] using hlen
@@ -82,6 +82,6 @@ theorem reduceCall_ct (M : Mont) : RelCT isa (Two ReduceCallPre)
       have he := h.2
       change VG.X86_64.eval .e s = some false at he
       simp only [VG.X86_64.eval, hz, Option.some.injEq, decide_eq_false_iff_not] at he
-      omega) (reduceLoop_ct M)
+      omega_using [he]) (reduceLoop_ct M)
 
 end VG.Proof.Dsa.X86_64

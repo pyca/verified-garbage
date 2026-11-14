@@ -10,7 +10,8 @@ public import VerifiedGarbage.Impl.Modes.Wide
 generic counter mode with GCM's `inc₃₂` of `Impl/Modes/PPC64LE/Wide.lean`,
 the counter block stepped before the block cipher, over SM4's core in the
 encryption direction (`Modes.lean`): sixteen blocks a step while sixteen are
-left, then one.
+left, then one; a message of fewer than sixteen blocks one a step by the
+single-block core (`Serial.lean`), without the bitsliced key.
 -/
 
 @[expose] public section
@@ -20,6 +21,8 @@ namespace VG.Impl.Sm4.PPC64LE
 open VG.PPC64LE
 
 /-- `vg_sm4_ctr32`, with its scratch buffer as the fifth argument. -/
-def ctr32 : Prog isa := (dirCore .encrypt).seq2 (Modes.Mode.ctr32Wide 16) Modes.Mode.ctr32Early 4
+def ctr32 : Prog isa :=
+  Modes.PPC64LE.pick 4 ((Serial.core .encrypt).seq Modes.Mode.ctr32Early)
+    ((dirCore .encrypt).seq2 (Modes.Mode.ctr32Wide 16) Modes.Mode.ctr32Early 4)
 
 end VG.Impl.Sm4.PPC64LE

@@ -31,9 +31,9 @@ open VG.Proof.Mont (off)
 theorem ge_val (x y : BitVec 64) :
     (if x < y then (1 : BitVec 64) else 0) ^^^ BitVec.ofInt 64 1 = BitVec.ofNat 64 (if y.toNat ≤ x.toNat then 1 else 0) := by
   by_cases h : x < y
-  · have h' : ¬ y.toNat ≤ x.toNat := by rw [BitVec.lt_def] at h; omega
+  · have h' : ¬ y.toNat ≤ x.toNat := by rw [BitVec.lt_def] at h; omega_using [h]
     simp only [h, h', ↓reduceIte]; decide
-  · have h' : y.toNat ≤ x.toNat := by rw [BitVec.lt_def] at h; omega
+  · have h' : y.toNat ≤ x.toNat := by rw [BitVec.lt_def] at h; omega_using [h]
     simp only [h, h', ↓reduceIte]; decide
 
 /-- `geFlag d a b`: `d := 1` if `a ≥ b` (unsigned), else 0. -/

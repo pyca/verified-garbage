@@ -48,30 +48,30 @@ theorem selectRead_value_step {s0 s t : State} {dst src : BitVec 32} {n i : Nat}
       Frame [⟨State.addr dst, 4 * n⟩] s0.mem t.mem ∧
       val32 t.mem (State.addr dst) 0 (i + 1) = if (s0.gpr .r11).toNat = 0 then
         val32 s0.mem (State.addr dst) 0 (i + 1) else val32 s0.mem (State.addr src) 0 (i + 1) := by
-  have aold := inv.outside.w32 (d := 4 * i) (by omega) (by have := ctx.dstFit; omega)
+  have aold := inv.outside.w32 (d := 4 * i) (by omega_using []) (by have := ctx.dstFit; omega_using [hi, this])
   have bold : s.mem.readW (off (State.addr src) (4 * i)) 32 =
       s0.mem.readW (off (State.addr src) (4 * i)) 32 := by
     apply inv.frame.readW (r := ⟨State.addr src, 4 * n⟩)
-    · exact Offset.contains_base _ (by omega) (by have := ctx.srcFit; omega)
+    · exact Offset.contains_base _ (by omega_using [hi]) (by have := ctx.srcFit; omega_using [hi, this])
     · intro r hr; simp only [List.mem_singleton] at hr; subst r; exact ctx.sep
     · decide
   have bit := inv.rest.gpr .r11 (by simp [selectLoopClobbers])
   have wr := writeW32_outside s.mem (State.addr dst) (d := 4 * i)
     (if (s.gpr .r11).toNat = 0 then s.mem.readW (off (State.addr dst) (4 * i)) 32
-      else s.mem.readW (off (State.addr src) (4 * i)) 32) (by have := ctx.dstFit; omega)
+      else s.mem.readW (off (State.addr src) (4 * i)) 32) (by have := ctx.dstFit; omega_using [hi, this])
   rw [← hm] at wr
-  have low := wr.val32 (d := 0) (k := i) (by omega) (by have := ctx.dstFit; omega)
+  have low := wr.val32 (d := 0) (k := i) (by omega_using []) (by have := ctx.dstFit; omega_using [hi, this])
   have top : w32 t.mem (State.addr dst) (4 * i) = if (s0.gpr .r11).toNat = 0 then
       w32 s0.mem (State.addr dst) (4 * i) else w32 s0.mem (State.addr src) (4 * i) := by
     rw [hm, w32_write_self, bit]
     split
     · exact aold
     · exact congrArg BitVec.toNat bold
-  refine ⟨(inv.outside.mono (by omega) (by omega)).trans (wr.mono (by omega) (by omega)), ?_, ?_⟩
+  refine ⟨(inv.outside.mono (by omega_using []) (by omega_using [])).trans (wr.mono (by omega_using []) (by omega_using [])), ?_, ?_⟩
   · rw [hm]
     exact inv.frame.writeW (r := ⟨State.addr dst, 4 * n⟩) (by simp) _
-      (Offset.contains_base _ (by omega) (by have := ctx.dstFit; omega))
-  · rw [val32_succ, low, show 0 + 4 * i = 4 * i by omega, top, inv.value]
+      (Offset.contains_base _ (by omega_using [hi]) (by have := ctx.dstFit; omega_using [hi, this]))
+  · rw [val32_succ, low, show 0 + 4 * i = 4 * i by omega_using [], top, inv.value]
     split <;> simp only [val32_succ, Nat.zero_add]
 
 end VG.Proof.Bignum.Arm

@@ -160,17 +160,17 @@ theorem mcdtPushed_saved (r : Reg) (s : State) (hr : r ≠ .esp) (hn : 12 ≤ (s
     have := (s.gpr .esp).isLt
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [show (12 : BitVec 32).toNat = 12 from rfl, show (4 : BitVec 32).toNat = 4 from rfl]
-    omega
+    omega_using [hn]
   have he8 : ((s.gpr .esp - 8).setWidth 64 : Addr) = (s.gpr .esp - 12).setWidth 64 + BitVec.ofNat 64 4 := by
     apply BitVec.eq_of_toNat_eq
     have := (s.gpr .esp).isLt
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     rw [show (12 : BitVec 32).toNat = 12 from rfl, show (8 : BitVec 32).toNat = 8 from rfl]
-    omega
+    omega_using [hn]
   simp only [mcdtPushed]
   rw [he, he8, Mem.readW_writeW_sep (fun x h₁ h₂ => by
       rw [Offset.lt_iff x _ (by decide : 4 + 4 ≤ 2 ^ 64)] at h₁
-      omega) (by decide),
+      omega_using [h₁, h₂]) (by decide),
     Mem.readW_writeW_self32]
 
 theorem mcdt_push {r : Reg} {s : State} (hr : r ≠ .esp) (hn : 12 ≤ (s.gpr .esp).toNat) :
@@ -190,7 +190,7 @@ theorem WP.mcdtFrame {r : Reg} {body : Prog isa} {s : State} {Q : State → Prop
   have hx := Exec.mxcsr he
   have hpop : isa.pop .mcdtLeave (mcdtPushed r s) s₂ = some (mcdtPopped s₂) := by
     simp only [isa, pop]
-    refine (ite_eq_left ⟨by omega, hp, hw, ?_, ?_⟩).trans rfl
+    refine (ite_eq_left ⟨by omega_using [hm], hp, hw, ?_, ?_⟩).trans rfl
     · rw [mcdtPushed_wr, mcdtPushed_esp r s hr]; rfl
     · rw [hs, hm, hx, mcdtPushed_mxcsr, Nat.add_sub_cancel]
   exact ⟨_, _, Exec.frame (mcdt_push hr hn) he hpop, hq⟩

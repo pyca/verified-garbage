@@ -57,7 +57,7 @@ structure Env (v : Nat) (σ s : State) : Prop where
 theorem in_scr {v : Nat} {σ s : State} (hp : Pre v σ) (hw : s.wr=σ.wr)
     {d n : Nat} (hd : d+n≤8192) : InRegions s.wr (at' σ d) n := by
   rw [hw,hp.wr]
-  exact ⟨scrR σ,by simp,Offset.contains_base (scr σ) hd (by omega)⟩
+  exact ⟨scrR σ,by simp,Offset.contains_base (scr σ) hd (by omega_using [hd])⟩
 
 theorem in_scr_rd {v : Nat} {σ s : State} (hp : Pre v σ) (hw : s.wr=σ.wr)
     {d n : Nat} (hd : d+n≤8192) : InRegions (s.rd++s.wr) (at' σ d) n := by
@@ -67,7 +67,7 @@ theorem in_scr_rd {v : Nat} {σ s : State} (hp : Pre v σ) (hw : s.wr=σ.wr)
 theorem in_seed {v : Nat} {σ s : State} (hp : Pre v σ) (hr : s.rd=σ.rd)
     {d n : Nat} (hd : d+n≤34*v) : InRegions (s.rd++s.wr) (seedP σ+BitVec.ofNat 64 d) n := by
   rw [hr,hp.rd]
-  exact ⟨seedsR v σ,by simp,Offset.contains_base (seedP σ) hd (by have:=hp.streams; omega)⟩
+  exact ⟨seedsR v σ,by simp,Offset.contains_base (seedP σ) hd (by have:=hp.streams; omega_using [hd, this])⟩
 
 theorem Env.frameStep {v : Nat} {σ s t : State} (he : Env v σ s) {rs : List Region}
     (hf : Frame rs s.mem t.mem)
@@ -81,11 +81,11 @@ theorem Env.frameStep {v : Nat} {σ s t : State} (he : Env v σ s) {rs : List Re
     ?_,?_,he.frame.trans (hf.sub hsub)⟩
   · intro i hi
     rw [hf.readW (Offset.contains (scr σ) (d := oSave+8*i) (e := oSave) (n := 8) (k := 144)
-      (by omega) (by omega) (by decide)) hsave (by decide)]
+      (by omega_using []) (by omega_using [hi]) (by decide)) hsave (by decide)]
     exact he.savedG i hi
   · intro i hi
     rw [hf.readW (Offset.contains (scr σ) (d := oSave+80+8*i) (e := oSave) (n := 8) (k := 144)
-      (by omega) (by omega) (by decide)) hsave (by decide)]
+      (by omega_using []) (by omega_using [hi]) (by decide)) hsave (by decide)]
     exact he.savedV i hi
 
 theorem Env.lowStep {v : Nat} {σ s t : State} (he : Env v σ s) {rs : List Region}

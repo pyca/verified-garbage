@@ -29,19 +29,19 @@ theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro j
     by_cases hj : 1≤j
     · by_cases hj7 : j≤7
-      · refine (nafTable_step_relCT hL hJ hm ht hOne (m:=8-j) (by omega) hc hds).mono
+      · refine (nafTable_step_relCT hL hJ hm ht hOne (m:=8-j) (by omega_using [hj]) hc hds).mono
           (P':=I j) (fun _ _ h => h.2.2) ?_
         intro s t ⟨hp,cs,ct⟩
         refine ⟨cs.trans ct.symm,fun he => ?_,fun he => ?_⟩
         · change s.cf=some false at he
           have hn := of_decide_eq_false (Option.some.inj (cs.symm.trans he))
-          have hj1 : j=1 := by omega
+          have hj1 : j=1 := by omega_using [hj, hn]
           subst j
           exact hp
         · change s.cf=some true at he
           have hy := of_decide_eq_true (Option.some.inj (cs.symm.trans he))
-          refine ⟨j-1,by omega,by omega,by omega,?_⟩
-          rw [show 8-(j-1)=8-j+1 from by omega]
+          refine ⟨j-1,by omega_using [hj],by omega_using [hy],by omega_using [hj7],?_⟩
+          rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
           exact hp
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)

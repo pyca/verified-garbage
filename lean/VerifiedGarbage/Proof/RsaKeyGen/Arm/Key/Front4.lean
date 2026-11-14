@@ -41,16 +41,16 @@ theorem v2_eq (P : KP) (σ : State) : (if (hk P σ (8 * P.K)).2.1 % 2 = 1 then (
   show _ = if (hk P σ (8 * P.K)).2.1 % 2 = 0 then (hk P σ (8 * P.K)).1 else (hk P σ (8 * P.K)).2.1
   generalize hk P σ (8 * P.K) = st
   by_cases h : st.2.1 % 2 = 0
-  · rw [ite_eq_right (by omega), ite_eq_left h]
-  · rw [ite_eq_left (by omega), ite_eq_right h]
+  · rw [ite_eq_right (by omega_using [h]), ite_eq_left h]
+  · rw [ite_eq_left (by omega_using [h]), ite_eq_right h]
 
 theorem u2_eq (P : KP) (σ : State) : (if (hk P σ (8 * P.K)).2.1 % 2 = 1 then (hk P σ (8 * P.K)).1
     else (hk P σ (8 * P.K)).2.1) = u2 P σ := by
   show _ = if (hk P σ (8 * P.K)).2.1 % 2 = 0 then (hk P σ (8 * P.K)).2.1 else (hk P σ (8 * P.K)).1
   generalize hk P σ (8 * P.K) = st
   by_cases h : st.2.1 % 2 = 0
-  · rw [ite_eq_right (by omega), ite_eq_left h]
-  · rw [ite_eq_left (by omega), ite_eq_right h]
+  · rw [ite_eq_right (by omega_using [h]), ite_eq_left h]
+  · rw [ite_eq_left (by omega_using [h]), ite_eq_right h]
 
 theorem A1_two (P : KP) (σ : State) : A1 P σ aTwo = 2 := by
   simp (config := {decide := true}) only [A1, A0, upd, ↓reduceIte]
@@ -70,7 +70,7 @@ theorem v2_odd (P : KP) (σ : State) (h : 2 ≤ v2 P σ) : v2 P σ % 2 = 1 :=
 theorem mG_odd (P : KP) (σ : State) : mG P σ % 2 = 1 ∧ 1 < mG P σ := by
   unfold mG; split
   · exact ⟨rfl, by decide⟩
-  · rename_i h; exact ⟨v2_odd P σ (by omega), by omega⟩
+  · rename_i h; exact ⟨v2_odd P σ (by omega_using [h]), by omega_using [h]⟩
 
 /-- After `lcm(p − 1, q − 1)`. -/
 abbrev S3 (P : KP) (E : State → Prop) : State → State → Prop :=
@@ -129,10 +129,10 @@ theorem gv_pos [VG.Proof.Rsa.Arm.Keys.InvLaw] (P : KP) (σ : State) : 0 < gv P �
   · decide
   · rename_i h
     have lt := hv_lt P σ
-    have u : u2 P σ < 2 ^ (32 * P.W) := by unfold u2; split <;> omega
-    have v : v2 P σ < 2 ^ (32 * P.W) := by unfold v2; split <;> omega
-    rw [(ivr_spec (v2_odd P σ (by omega)) (by omega) u v).1]
-    exact Nat.gcd_pos_of_pos_right _ (by omega)
+    have u : u2 P σ < 2 ^ (32 * P.W) := by unfold u2; split <;> omega_using [lt]
+    have v : v2 P σ < 2 ^ (32 * P.W) := by unfold v2; split <;> omega_using [lt]
+    rw [(ivr_spec (v2_odd P σ (by omega_using [h])) (by omega_using [h]) u v).1]
+    exact Nat.gcd_pos_of_pos_right _ (by omega_using [h])
 
 /-- `L = lcm(p − 1, q − 1)`. -/
 theorem lcm_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (S1 P E) lcmPart (S3 P E) := by

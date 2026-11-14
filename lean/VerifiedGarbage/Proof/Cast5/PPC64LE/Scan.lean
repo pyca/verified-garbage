@@ -45,7 +45,7 @@ structure ScanPre (s : State) : Prop where
 theorem hi64 (a b : BitVec 64) : (a ++ b).extractLsb' 64 64 = a := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
 
 theorem lo64 (a b : BitVec 64) : (a ++ b).extractLsb' 0 64 = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -69,45 +69,45 @@ theorem rep4_bit (b : Byte) {n : Nat} (hn : n < 64) :
   simp only [rep4, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, hn, decide_true,
     Bool.true_and]
   by_cases h8 : n < 8
-  · simp [h8, show n < 32 by omega, show n < 16 by omega, Nat.mod_eq_of_lt h8]
+  · simp [h8, show n < 32 by omega_using [h8], show n < 16 by omega_using [h8], Nat.mod_eq_of_lt h8]
   by_cases h16 : n < 16
-  · simp [h8, h16, show n < 32 by omega, show n - 8 < 8 by omega, z n (by omega),
-      show n % 8 = n - 8 by omega, show n - 8 < 64 by omega]
+  · simp [h8, h16, show n < 32 by omega_using [h16], show n - 8 < 8 by omega_using [h16], z n (by omega_using [h8]),
+      show n % 8 = n - 8 by omega_using [h8, h16], show n - 8 < 64 by omega_using [hn]]
   by_cases h24 : n < 24
-  · simp [h8, h16, show n < 32 by omega, z n (by omega), z (n - 8) (by omega),
-      show n % 8 = n - 16 by omega, show n - 16 < 64 by omega, show n - 16 < 8 by omega, show n - 8 < 64 by omega]
+  · simp [h8, h16, show n < 32 by omega_using [h24], z n (by omega_using [h8]), z (n - 8) (by omega_using [h16]),
+      show n % 8 = n - 16 by omega_using [h16, h24], show n - 16 < 64 by omega_using [hn], show n - 16 < 8 by omega_using [h24], show n - 8 < 64 by omega_using [hn]]
   by_cases h32 : n < 32
-  · simp [h8, h16, h32, z n (by omega), z (n - 8) (by omega), z (n - 16) (by omega),
-      show n % 8 = n - 24 by omega, show n - 16 - 8 = n - 24 by omega, show n - 24 < 8 by omega,
-      show n - 16 < 64 by omega, show n - 8 < 64 by omega, show ¬ n - 16 < 8 by omega,
-      show n - 24 < 64 by omega]
-  · simp [h8, h16, h32, z n (by omega), z (n - 8) (by omega), z (n - 16) (by omega),
-      z (n - 16 - 8) (by omega), show n - 16 < 64 by omega, show n - 8 < 64 by omega]
+  · simp [h8, h16, h32, z n (by omega_using [h8]), z (n - 8) (by omega_using [h16]), z (n - 16) (by omega_using [h24]),
+      show n % 8 = n - 24 by omega_using [h24, h32], show n - 16 - 8 = n - 24 by omega_using [], show n - 24 < 8 by omega_using [h32],
+      show n - 16 < 64 by omega_using [hn], show n - 8 < 64 by omega_using [hn], show ¬ n - 16 < 8 by omega_using [h24],
+      show n - 24 < 64 by omega_using [hn]]
+  · simp [h8, h16, h32, z n (by omega_using [h8]), z (n - 8) (by omega_using [h16]), z (n - 16) (by omega_using [h24]),
+      z (n - 16 - 8) (by omega_using [h32]), show n - 16 < 64 by omega_using [hn], show n - 8 < 64 by omega_using [hn]]
 
 theorem vbyte_pack (b : Nat → Byte) {i : Nat} (hi : i < 16) :
     vbyte (pack fun k => (b k).setWidth 64) i = b (lk i) := by
   apply BitVec.eq_of_getLsbD_eq; intro r hr
   simp only [vbyte, pack, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, BitVec.getLsbD_or,
     BitVec.getLsbD_shiftLeft, hr, decide_true, Bool.true_and]
-  rcases (by omega : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with h | h | h | h
+  rcases (by omega_using [hi] : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with h | h | h | h
   · rw [show lk i = 1 by simp [lk, h]]
-    simp only [show ¬ 8 * (15 - i) + r < 64 by omega, ite_false]
-    rw [rep4_bit _ (by omega), rep4_bit _ (by omega)]
-    simp [show ¬ 8 * (15 - i) + r - 64 < 32 by omega, show 8 * (15 - i) + r - 64 < 64 by omega,
-      show (8 * (15 - i) + r - 64 - 32) % 8 = r by omega, show 8 * (15 - i) + r - 64 - 32 < 32 by omega]
+    simp only [show ¬ 8 * (15 - i) + r < 64 by omega_using [h], ite_false]
+    rw [rep4_bit _ (by omega_using [hr]), rep4_bit _ (by omega_using [hr])]
+    simp [show ¬ 8 * (15 - i) + r - 64 < 32 by omega_using [h], show 8 * (15 - i) + r - 64 < 64 by omega_using [hr],
+      show (8 * (15 - i) + r - 64 - 32) % 8 = r by omega_using [hr, h], show 8 * (15 - i) + r - 64 - 32 < 32 by omega_using [hr]]
   · rw [show lk i = 0 by simp [lk, h]]
-    simp only [show ¬ 8 * (15 - i) + r < 64 by omega, ite_false]
-    rw [rep4_bit _ (by omega)]
-    simp [show 8 * (15 - i) + r - 64 < 32 by omega, show (8 * (15 - i) + r - 64) % 8 = r by omega]
+    simp only [show ¬ 8 * (15 - i) + r < 64 by omega_using [h], ite_false]
+    rw [rep4_bit _ (by omega_using [hr])]
+    simp [show 8 * (15 - i) + r - 64 < 32 by omega_using [hr, h], show (8 * (15 - i) + r - 64) % 8 = r by omega_using [hr, h]]
   · rw [show lk i = 3 by simp [lk, h]]
-    simp only [show 8 * (15 - i) + r < 64 by omega, ite_true]
-    rw [rep4_bit _ (by omega), rep4_bit _ (by omega)]
-    simp [show ¬ 8 * (15 - i) + r < 32 by omega,
-      show (8 * (15 - i) + r - 32) % 8 = r by omega, show 8 * (15 - i) + r - 32 < 32 by omega]
+    simp only [show 8 * (15 - i) + r < 64 by omega_using [hr, h], ite_true]
+    rw [rep4_bit _ (by omega_using [hr, h]), rep4_bit _ (by omega_using [hr, h])]
+    simp [show ¬ 8 * (15 - i) + r < 32 by omega_using [h],
+      show (8 * (15 - i) + r - 32) % 8 = r by omega_using [hr, h], show 8 * (15 - i) + r - 32 < 32 by omega_using [hr, h]]
   · rw [show lk i = 2 by simp [lk, h]]
-    simp only [show 8 * (15 - i) + r < 64 by omega, ite_true]
-    rw [rep4_bit _ (by omega)]
-    simp [show 8 * (15 - i) + r < 32 by omega, show (8 * (15 - i) + r) % 8 = r by omega]
+    simp only [show 8 * (15 - i) + r < 64 by omega_using [hr, h], ite_true]
+    rw [rep4_bit _ (by omega_using [hr, h])]
+    simp [show 8 * (15 - i) + r < 32 by omega_using [hr, h], show (8 * (15 - i) + r) % 8 = r by omega_using [hr]]
 
 /-- Byte `p` of the 32-byte one-hot vector in `hotLo` and `hotHi`. -/
 def hotByte (u : State) (p : Nat) : Byte := if p < 16 then vbyte (u.vpr hotLo) p else vbyte (u.vpr hotHi) (p - 16)
@@ -194,23 +194,23 @@ theorem vbyte_load (m : Mem) (a : Addr) {k : Nat} (hk : k < 16) :
     vbyte (swapDwords (m.readW a 128)) k = m (a + BitVec.ofNat 64 (k ^^^ 7)) := by
   have e : ∀ k < 16, 15 - (if k < 8 then k + 8 else k - 8) = k ^^^ 7 := by decide
   rw [vbyte_swapDwords _ hk, vbyte, Mem.readW, BitVec.setWidth_eq, ← e k hk]
-  exact Mem.extractLsb'_read m a (n := 16) (by split <;> omega)
+  exact Mem.extractLsb'_read m a (n := 16) (by split <;> omega_using [])
 
 theorem vbyte_shift15 (x y : BitVec 128) {k : Nat} (hk : k < 16) :
     vbyte (BitVec.extractLsb' 128 128 ((x ++ y) <<< 120)) k = if k = 0 then vbyte x 15 else vbyte y (k - 1) := by
   apply BitVec.eq_of_getLsbD_eq; intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append, hr,
-    decide_true, Bool.true_and, show 128 + (8 * (15 - k) + r) < 128 + 128 by omega,
-    show ¬ 128 + (8 * (15 - k) + r) < 120 by omega, decide_false, Bool.not_false]
+    decide_true, Bool.true_and, show 128 + (8 * (15 - k) + r) < 128 + 128 by omega_using [hr],
+    show ¬ 128 + (8 * (15 - k) + r) < 120 by omega_using [], decide_false, Bool.not_false]
   by_cases h0 : k = 0
-  · rw [ite_eq_left h0, ite_eq_right (show ¬ 128 + (8 * (15 - k) + r) - 120 < 128 by omega),
-      BitVec.getLsbD_extractLsb', decide_eq_true (show 8 * (15 - k) + r < 128 by omega), Bool.true_and,
+  · rw [ite_eq_left h0, ite_eq_right (show ¬ 128 + (8 * (15 - k) + r) - 120 < 128 by omega_using [h0]),
+      BitVec.getLsbD_extractLsb', decide_eq_true (show 8 * (15 - k) + r < 128 by omega_using [hr]), Bool.true_and,
       decide_eq_true hr, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  · rw [ite_eq_right h0, ite_eq_left (show 128 + (8 * (15 - k) + r) - 120 < 128 by omega),
-      BitVec.getLsbD_extractLsb', decide_eq_true (show 8 * (15 - k) + r < 128 by omega), Bool.true_and,
+    exact congrArg x.getLsbD (by omega_using [h0])
+  · rw [ite_eq_right h0, ite_eq_left (show 128 + (8 * (15 - k) + r) - 120 < 128 by omega_using [hr, h0]),
+      BitVec.getLsbD_extractLsb', decide_eq_true (show 8 * (15 - k) + r < 128 by omega_using [hr]), Bool.true_and,
       decide_eq_true hr, Bool.true_and]
-    exact congrArg y.getLsbD (by omega)
+    exact congrArg y.getLsbD (by omega_using [hk, h0])
 
 theorem vbyte_perm2 (n m c : BitVec 128) {i : Nat} (hi : i < 16) :
     vbyte (ofVBytes fun i => if (vbyte c i).toNat % 32 < 16 then vbyte n ((vbyte c i).toNat % 32)
@@ -229,16 +229,16 @@ theorem tree_sel {α : Type} (e : Nat → α) (n : Nat) :
   rw [tb 0 (by decide), tb 1 (by decide), tb 2 (by decide)]
   have : n % 8 < 8 := Nat.mod_lt _ (by decide)
   generalize n % 8 = r at this ⊢
-  rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7) with
+  rcases (by omega_using [this] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem toNat_small {y : BitVec 64} (h : y.toNat < 256) : (y.setWidth 8).setWidth 64 = y := by
-  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth]; omega
+  apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth]; omega_using [h]
 
 /-- A lane's bytes: the low three bits of its index, or its group. -/
 theorem vbyte_lanes (y : Nat → BitVec 64) (hy : ∀ k < 4, (y k).toNat < 256) {i : Nat} (hi : i < 16) :
     vbyte (pack y) i = BitVec.ofNat 8 (y (lk i)).toNat := by
-  have hl : lk i < 4 := by unfold lk; rcases (by omega : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with
+  have hl : lk i < 4 := by unfold lk; rcases (by omega_using [hi] : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with
     h | h | h | h <;> simp [h]
   have e : pack y = pack fun k => (if k < 4 then (y k).setWidth 8 else (y k).setWidth 8).setWidth 64 := by
     unfold pack; simp only [show (0 : Nat) < 4 by decide, show (1 : Nat) < 4 by decide, show (2 : Nat) < 4 by decide,
@@ -260,8 +260,8 @@ theorem vbyte_bits (u : BitVec 64) {b j : Nat} (hb : b < 3) (hj : j < 8) :
   have e : vbyte (bitsWord b ++ u) j = (bitsWord b).extractLsb' (8 * (7 - j)) 8 := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-      show ¬ 8 * (15 - j) + i < 64 by omega, ite_false]
-    congr 1; omega
+      show ¬ 8 * (15 - j) + i < 64 by omega_using [hj], ite_false]
+    congr 1; omega_using [hj]
   rw [e]
   have : ∀ b < 3, ∀ j < 8, (bitsWord b).extractLsb' (8 * (7 - j)) 8 = if j.testBit b then 255#8 else 0#8 := by
     decide
@@ -291,7 +291,7 @@ structure VScan (s₀ : State) (T : Addr) (g : Nat) (u : State) : Prop where
   mem : u.mem = s₀.mem
 
 theorem lk_lt {i : Nat} (hi : i < 16) : lk i < 4 := by
-  unfold lk; rcases (by omega : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with h | h | h | h <;> simp [h]
+  unfold lk; rcases (by omega_using [hi] : i / 4 = 0 ∨ i / 4 = 1 ∨ i / 4 = 2 ∨ i / 4 = 3) with h | h | h | h <;> simp [h]
 
 theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
     (hrT : (⟨T, 4096⟩ : Region) ∈ s₀.rd ++ s₀.wr) {g : Nat} (hg : g < 32) {u : State} (I : VScan s₀ T g u) :
@@ -299,7 +299,7 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
       VScan s₀ T (g + 1) t ∧ t.gpr tmp = BitVec.ofNat 64 (128 * (g + 1)) - BitVec.ofNat 64 4096 := by
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
   have ad : ∀ o, o + 16 ≤ 128 → InRegions (u.rd ++ u.wr) (T + BitVec.ofNat 64 (128 * g + o)) 16 := fun o ho => by
-    rw [hrd]; exact ⟨_, hrT, Offset.contains_base T (by omega) (by omega)⟩
+    rw [hrd]; exact ⟨_, hrT, Offset.contains_base T (by omega_using [hg, ho]) (by omega_using [hg, ho])⟩
   have f1 : ∀ o, T + BitVec.ofNat 64 (128 * g) + BitVec.ofNat 64 o = T + BitVec.ofNat 64 (128 * g + o) :=
     fun o => Offset.add_add _ _ _
   have f2 : ∀ o, T + BitVec.ofNat 64 (128 * g) + 64#64 + BitVec.ofNat 64 o = T + BitVec.ofNat 64 (128 * g + (64 + o)) :=
@@ -319,23 +319,23 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
     intro a ha
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
     rcases ha with h | h | h | h | h | h | h | h <;> rw [h]
-    · rw [e0]; exact ad _ (by omega)
-    · rw [e1]; exact ad _ (by omega)
-    · rw [e2]; exact ad _ (by omega)
-    · rw [e3]; exact ad _ (by omega)
-    · rw [e4]; exact ad _ (by omega)
-    · rw [e5]; exact ad _ (by omega)
-    · rw [e6]; exact ad _ (by omega)
-    · rw [e7]; exact ad _ (by omega)
+    · rw [e0]; exact ad _ (by omega_using [])
+    · rw [e1]; exact ad _ (by omega_using [])
+    · rw [e2]; exact ad _ (by omega_using [])
+    · rw [e3]; exact ad _ (by omega_using [])
+    · rw [e4]; exact ad _ (by omega_using [])
+    · rw [e5]; exact ad _ (by omega_using [])
+    · rw [e6]; exact ad _ (by omega_using [])
+    · rw [e7]; exact ad _ (by omega_using [])
   refine WP.mono (WP.keep [tmp, ep] (body_run u I.ep I.zero I.o16 I.o32 I.o48 rfl rin) (by decide) rfl)
     fun t ⟨⟨ta, tlo, thi, tz, tg, tb0, tb1, tb2, tep, ttmp, tm⟩, tk⟩ => ?_
   have hB : ∀ b < 3, ∀ i < 16, vbyte (u.vpr (bitV b)) i =
       if (ix s₀ (lk i)).testBit b then 255#8 else 0#8 := I.bits
-  refine ⟨⟨by omega, by rw [tz, I.z], fun i hi => by rw [tg, I.grp i hi], fun b hb i hi => ?_, fun p hp => ?_,
+  refine ⟨⟨by omega_using [hg], by rw [tz, I.z], fun i hi => by rw [tg, I.grp i hi], fun b hb i hi => ?_, fun p hp => ?_,
     fun i hi hlt => ?_, ?_, by rw [tk.gpr (by decide), I.o16], by rw [tk.gpr (by decide), I.o32],
     by rw [tk.gpr (by decide), I.o48], by rw [tk.gpr (by decide), I.zero], by rw [tk.gpr (by decide), I.tblR],
     (I.keep.trans tk).mono (by decide), tm.trans I.mem⟩, ?_⟩
-  · rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl
+  · rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl
     · rw [tb0]; exact I.bits 0 (by decide) i hi
     · rw [tb1]; exact I.bits 1 (by decide) i hi
     · rw [tb2]; exact I.bits 2 (by decide) i hi
@@ -344,30 +344,30 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
     by_cases hp16 : p < 16
     · rw [ite_eq_left hp16, tlo, vbyte_shift15 _ _ hp16, I.z, vbyte_zero]
       by_cases e : p = 0
-      · rw [ite_eq_left e, ite_eq_right (by omega)]
+      · rw [ite_eq_left e, ite_eq_right (by omega_using [e])]
       · rw [ite_eq_right e]
-        have := h0 (p - 1) (by omega)
-        rw [ite_eq_left (by omega)] at this
+        have := h0 (p - 1) (by omega_using [hp])
+        rw [ite_eq_left (by omega_using [hp16])] at this
         rw [this]
         by_cases e' : p - 1 = g
-        · rw [ite_eq_left e', ite_eq_left (by omega)]
-        · rw [ite_eq_right e', ite_eq_right (by omega)]
-    · rw [ite_eq_right hp16, thi, vbyte_shift15 _ _ (by omega)]
+        · rw [ite_eq_left e', ite_eq_left (by omega_using [e, e'])]
+        · rw [ite_eq_right e', ite_eq_right (by omega_using [e'])]
+    · rw [ite_eq_right hp16, thi, vbyte_shift15 _ _ (by omega_using [hp])]
       by_cases e : p - 16 = 0
       · rw [ite_eq_left e]
-        have := h0 15 (by omega)
-        rw [ite_eq_left (by omega)] at this
+        have := h0 15 (by omega_using [])
+        rw [ite_eq_left (by omega_using [])] at this
         rw [this]
         by_cases e' : 15 = g
-        · rw [ite_eq_left e', ite_eq_left (by omega)]
-        · rw [ite_eq_right e', ite_eq_right (by omega)]
+        · rw [ite_eq_left e', ite_eq_left (by omega_using [hp16, e, e'])]
+        · rw [ite_eq_right e', ite_eq_right (by omega_using [hp16, e, e'])]
       · rw [ite_eq_right e]
-        have := h0 (p - 1) (by omega)
-        rw [ite_eq_right (by omega), show p - 1 - 16 = p - 16 - 1 by omega] at this
+        have := h0 (p - 1) (by omega_using [hp])
+        rw [ite_eq_right (by omega_using [e]), show p - 1 - 16 = p - 16 - 1 by omega_using []] at this
         rw [this]
         by_cases e' : p - 1 = g
-        · rw [ite_eq_left e', ite_eq_left (by omega)]
-        · rw [ite_eq_right e', ite_eq_right (by omega)]
+        · rw [ite_eq_left e', ite_eq_left (by omega_using [hp16, e'])]
+        · rw [ite_eq_right e', ite_eq_right (by omega_using [e'])]
   · -- The kept entries.
     have hl := lk_lt hi
     have hx := hidx _ hl
@@ -376,8 +376,8 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
       else vbyte (u.vpr .v7) ((vbyte (u.vpr .v2) i).toNat % 32 - 16)) i =
         if decide (ix s₀ (lk i) / 8 = g) then 255#8 else 0#8 := by
       rw [vbyte_perm2 _ _ _ hi, show VReg.v2 = grpV from rfl, I.grp i hi, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show ix s₀ (lk i) / 8 < 2 ^ 8 by omega), Nat.mod_eq_of_lt (show ix s₀ (lk i) / 8 < 32 by omega)]
-      have := I.hot (ix s₀ (lk i) / 8) (by omega)
+        Nat.mod_eq_of_lt (show ix s₀ (lk i) / 8 < 2 ^ 8 by omega_using [hx]), Nat.mod_eq_of_lt (show ix s₀ (lk i) / 8 < 32 by omega_using [hx])]
+      have := I.hot (ix s₀ (lk i) / 8) (by omega_using [hx])
       unfold hotByte at this
       rw [show VReg.v6 = hotLo from rfl, show VReg.v7 = hotHi from rfl, this]; simp
     rw [ta, vbyte_vsel _ _ _ hi hm]
@@ -389,9 +389,9 @@ theorem body_step {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 256)
     · rw [ite_eq_left (by simpa using e), e7, e6, e5, e4, e3, e2, e1, e0,
         tree_sel (fun t => vbyte (swapDwords (u.mem.readW (T + BitVec.ofNat 64 (128 * g + 16 * t)) 128)) i),
         vbyte_load _ _ hi, Offset.add_add, I.mem]
-      congr 3; omega
+      congr 3; omega_using [e]
     · rw [ite_eq_right (by simpa using e)]
-      exact I.acc i hi (by omega)
+      exact I.acc i hi (by omega_using [hlt, e])
   · rw [tep, e4, show (64#64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, Offset.add_add]
     congr 2 <;> omega
   · rw [ttmp, I.tblR, e4, show (64#64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, Offset.add_add,
@@ -410,17 +410,17 @@ theorem start_inv (s : State) (h : ScanPre s) :
       if (ix s (lk i)).testBit b then 255#8 else 0#8 := fun b hb w i hi => by
     have hm : ix s (lk i) % 8 < 8 := Nat.mod_lt _ (by decide)
     rw [permSelf, vbyte_packed _ hi]
-    simp only [hlow i hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ix s (lk i) % 8 < 2 ^ 8 by omega),
-      Nat.mod_eq_of_lt (show ix s (lk i) % 8 < 32 by omega), show ix s (lk i) % 8 < 16 by omega, ite_true,
+    simp only [hlow i hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show ix s (lk i) % 8 < 2 ^ 8 by omega_using []),
+      Nat.mod_eq_of_lt (show ix s (lk i) % 8 < 32 by omega_using []), show ix s (lk i) % 8 < 16 by omega_using [], ite_true,
       vbyte_bits w hb hm]
     rw [show (8 : Nat) = 2 ^ 3 from rfl, Nat.testBit_mod_two_pow]; simp [hb]
-  refine ⟨by decide, uz, fun i hi => ?_, fun b hb i hi => ?_, fun p hp => ?_, fun i _ h => absurd h (by omega),
+  refine ⟨by decide, uz, fun i hi => ?_, fun b hb i hi => ?_, fun p hp => ?_, fun i _ h => absurd h (by omega_using []),
     by rw [uep, BitVec.add_zero], unum, u19, u21, by rw [uk.gpr (by decide)]; exact h.zero,
     by rw [uk.gpr (by decide)], uk.mono (by decide), um⟩
   · rw [ug, vbyte_lanes _ (fun k hk => by
-      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := hx k hk; simp only [ix] at this; omega) hi,
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := hx k hk; simp only [ix] at this; omega_using [this]) hi,
       BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  · rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl
+  · rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl
     · rw [hu0]; exact bit 0 (by decide) u0 i hi
     · rw [hu1]; exact bit 1 (by decide) u1 i hi
     · rw [hu2]; exact bit 2 (by decide) u2 i hi
@@ -443,7 +443,7 @@ theorem scanLoop_run {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 25
     · have : BitVec.ofNat 64 (128 * (g + 1)) - BitVec.ofNat 64 4096 ≠ 0#64 := fun h' => by
         have := congrArg BitVec.toNat h'
         simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at this
-        omega
+        omega_using [hg, e, this]
       simp [this, e]
   have ev : isa.eval (.nonzero .d tmp) v' = some (!decide (g + 1 = 32)) := by
     simp only [eval, State.read, BitVec.setWidth_eq]; rw [hz]; exact congrArg some hne
@@ -451,7 +451,7 @@ theorem scanLoop_run {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 25
   · left
     exact ⟨by rw [ev, e]; rfl, e ▸ J'⟩
   · right
-    exact ⟨by rw [ev]; simp [e], n - 1, by omega, g + 1, by omega, by omega, J'⟩
+    exact ⟨by rw [ev]; simp [e], n - 1, by omega_using [hg, hn], g + 1, by omega_using [hg, e], by omega_using [hn], J'⟩
 
 /-! ## The words -/
 
@@ -459,10 +459,10 @@ theorem scanLoop_run {s₀ : State} {T : Addr} (hidx : ∀ k < 4, ix s₀ k < 25
 theorem bits_of_bytes (v : BitVec 128) (w : BitVec 32) {base : Nat} (hb : base % 8 = 0) (hb' : base + 32 ≤ 128)
     (h : ∀ c < 4, vbyte v (15 - base / 8 - c) = w.extractLsb' (8 * c) 8) {n : Nat} (hn : n < 32) :
     v.getLsbD (base + n) = w.getLsbD n := by
-  have := congrArg (BitVec.getLsbD · (n % 8)) (h (n / 8) (by omega))
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show n % 8 < 8 by omega, decide_true, Bool.true_and] at this
-  rw [show base + n = 8 * (15 - (15 - base / 8 - n / 8)) + n % 8 by omega, this]
-  exact congrArg w.getLsbD (by omega)
+  have := congrArg (BitVec.getLsbD · (n % 8)) (h (n / 8) (by omega_using [hn]))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show n % 8 < 8 by omega_using [], decide_true, Bool.true_and] at this
+  rw [show base + n = 8 * (15 - (15 - base / 8 - n / 8)) + n % 8 by omega_using [hb, hb', hn], this]
+  exact congrArg w.getLsbD (by omega_using [])
 
 theorem lo_half (v : BitVec 128) (w : BitVec 32) {o : Nat} (ho : o = 0 ∨ o = 64)
     (h : ∀ c < 4, vbyte v (15 - o / 8 - c) = w.extractLsb' (8 * c) 8) :
@@ -471,11 +471,11 @@ theorem lo_half (v : BitVec 128) (w : BitVec 32) {o : Nat} (ho : o = 0 ∨ o = 6
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_extractLsb',
     BitVec.getLsbD_setWidth]
   by_cases h32 : n < 32
-  · simp only [show 32 + n < 64 by omega, decide_true, Bool.true_and, show ¬ 32 + n < 32 by omega,
-      decide_false, Bool.not_false, show 32 + n - 32 = n by omega, show n < 64 by omega]
-    exact bits_of_bytes v w (by omega) (by omega) h h32
-  · rw [BitVec.getLsbD_of_ge w n (by omega)]
-    simp [show ¬ 32 + n < 64 by omega]
+  · simp only [show 32 + n < 64 by omega_using [h32], decide_true, Bool.true_and, show ¬ 32 + n < 32 by omega_using [],
+      decide_false, Bool.not_false, show 32 + n - 32 = n by omega_using [], show n < 64 by omega_using [hn]]
+    exact bits_of_bytes v w (by omega_using [ho]) (by omega_using [ho]) h h32
+  · rw [BitVec.getLsbD_of_ge w n (by omega_using [h32])]
+    simp [show ¬ 32 + n < 64 by omega_using [h32]]
 
 theorem hi_half (v : BitVec 128) (w : BitVec 32) {o : Nat} (ho : o = 0 ∨ o = 64)
     (h : ∀ c < 4, vbyte v (15 - (o + 32) / 8 - c) = w.extractLsb' (8 * c) 8) :
@@ -483,11 +483,11 @@ theorem hi_half (v : BitVec 128) (w : BitVec 32) {o : Nat} (ho : o = 0 ∨ o = 6
   apply BitVec.eq_of_getLsbD_eq; intro n hn
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
   by_cases h32 : n < 32
-  · simp only [show 32 + n < 64 by omega, decide_true, Bool.true_and, show n < 64 by omega]
-    rw [show o + (32 + n) = (o + 32) + n by omega]
-    exact bits_of_bytes v w (by omega) (by omega) h h32
-  · rw [BitVec.getLsbD_of_ge w n (by omega)]
-    simp [show ¬ 32 + n < 64 by omega]
+  · simp only [show 32 + n < 64 by omega_using [h32], decide_true, Bool.true_and, show n < 64 by omega_using [hn]]
+    rw [show o + (32 + n) = (o + 32) + n by omega_using []]
+    exact bits_of_bytes v w (by omega_using [ho]) (by omega_using [ho]) h h32
+  · rw [BitVec.getLsbD_of_ge w n (by omega_using [h32])]
+    simp [show ¬ 32 + n < 64 by omega_using [h32]]
 
 theorem end_run (v : State) :
     WP isa (.block scanEnd) v fun t =>
@@ -513,7 +513,7 @@ theorem scan_ok (s : State) (h : ScanPre s) :
     fun t ⟨⟨t18, t19, t20, t21, tm⟩, tk⟩ => ⟨fun k hk => ?_, (V.keep.trans tk).mono (by decide), tm.trans V.mem⟩
   have byte : ∀ i < 16, vbyte (v.vpr accV) i =
       s.mem (s.gpr tbl + BitVec.ofNat 64 (16 * ix s (lk i) + (i ^^^ 7))) := fun i hi =>
-    V.acc i hi (by have := h.idx _ (lk_lt hi); show (s.gpr (idxReg (lk i))).toNat / 8 < 32; omega)
+    V.acc i hi (by have := h.idx _ (lk_lt hi); show (s.gpr (idxReg (lk i))).toNat / 8 < 32; omega_using [this])
   -- Byte `c` of word `k` is byte `i` of the vector, in lookup `lk i = k`'s lane.
   have wb : ∀ k < 4, ∀ i c, i < 16 → c < 4 → lk i = k → i ^^^ 7 = 4 * k + c →
       vbyte (v.vpr accV) i = (ent s.mem (s.gpr tbl) (ix s k) k).extractLsb' (8 * c) 8 := by
@@ -523,14 +523,14 @@ theorem scan_ok (s : State) (h : ScanPre s) :
   have l3 : ∀ c < 4, lk (3 - c) = 1 ∧ (3 - c) ^^^ 7 = 4 * 1 + c := by decide
   have l15 : ∀ c < 4, lk (15 - c) = 2 ∧ (15 - c) ^^^ 7 = 4 * 2 + c := by decide
   have l11 : ∀ c < 4, lk (11 - c) = 3 ∧ (11 - c) ^^^ 7 = 4 * 3 + c := by decide
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
   · rw [show accReg 0 = .r18 from rfl, t18]
-    exact lo_half _ _ (.inr rfl) fun c hc => wb 0 (by decide) _ c (by omega) hc (l7 c hc).1 (l7 c hc).2
+    exact lo_half _ _ (.inr rfl) fun c hc => wb 0 (by decide) _ c (by omega_using []) hc (l7 c hc).1 (l7 c hc).2
   · rw [show accReg 1 = .r19 from rfl, t19]
-    exact hi_half _ _ (.inr rfl) fun c hc => wb 1 (by decide) _ c (by omega) hc (l3 c hc).1 (l3 c hc).2
+    exact hi_half _ _ (.inr rfl) fun c hc => wb 1 (by decide) _ c (by omega_using []) hc (l3 c hc).1 (l3 c hc).2
   · rw [show accReg 2 = .r20 from rfl, t20]
-    exact lo_half _ _ (.inl rfl) fun c hc => wb 2 (by decide) _ c (by omega) hc (l15 c hc).1 (l15 c hc).2
+    exact lo_half _ _ (.inl rfl) fun c hc => wb 2 (by decide) _ c (by omega_using []) hc (l15 c hc).1 (l15 c hc).2
   · rw [show accReg 3 = .r21 from rfl, t21]
-    exact hi_half _ _ (.inl rfl) fun c hc => wb 3 (by decide) _ c (by omega) hc (l11 c hc).1 (l11 c hc).2
+    exact hi_half _ _ (.inl rfl) fun c hc => wb 3 (by decide) _ c (by omega_using []) hc (l11 c hc).1 (l11 c hc).2
 
 end VG.Proof.Cast5.PPC64LE

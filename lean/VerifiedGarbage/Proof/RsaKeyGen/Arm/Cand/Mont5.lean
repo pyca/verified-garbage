@@ -43,7 +43,7 @@ variable {P : CP}
 
 theorem cv_lt {σ : State} (pre : In P σ) : cv P σ < 2 ^ (64 * P.w) := by
   have := (cv_shape (σ := σ) pre).2.2
-  rwa [show 8 * P.L = 64 * P.w by have := pre.L_eq; omega] at this
+  rwa [show 8 * P.L = 64 * P.w by have := pre.L_eq; omega_using [this]] at this
 
 theorem cv_gt {σ : State} (pre : In P σ) : 1 < cv P σ := by
   have := (cv_shape (σ := σ) pre).2.1
@@ -79,17 +79,17 @@ theorem pinv_vp {E : State → Prop} : VP (SC P E) VG.Impl.Bignum.Arm.precompute
   refine WP.mono (precomputeInverse_ok s i.workspace i.layout i.width i.ptr i.odd i.large i.stackRead i.stackSep
     i.saved) fun t ⟨ar, n0, f, rest⟩ => ⟨⟨e, ?_⟩, ar, by rw [n0]; exact n0_of k⟩
   have k' : KS P σ (AX P σ) LXm (V3 P σ) [sUsed] s :=
-    k.mono (fun j hj => ⟨by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega, rfl⟩)
+    k.mono (fun j hj => ⟨by simp only [List.mem_cons, List.not_mem_nil, or_false] at hj ⊢; omega_using [hj], rfl⟩)
       fun d hd => ⟨hd, rfl⟩
   have kp := keep_of_frameM pre f
-  refine k'.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega) (by simp) rest.sp rest.rd
+  refine k'.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega_using [hj]) (by simp) rest.sp rest.rd
     rest.wr (k'.arrs_keep kp (fun j hj hj' => by
       simp only [List.mem_range'_1] at hj'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl <;> simp [mBase, aCm1, aTwo, aOne] at hj' <;> omega) (by simp))
     (k'.sl_keep kp (by simp) (by simp)) k'.live_lt k'.ls_ok
 
-theorem countFits {σ : State} (pre : In P σ) : 128 * P.w < 2 ^ 32 := by have := pre.w4; omega
+theorem countFits {σ : State} (pre : In P σ) : 128 * P.w < 2 ^ 32 := by have := pre.w4; omega_using [this]
 
 /-- `r2`. -/
 theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2 (SE P E) := by
@@ -101,7 +101,7 @@ theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2 (SE P E) 
   have pre := k.pre
   refine WP.mono (r2_ok s ar cf) fun t ⟨dl, v4, n0', f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
   · have kp := keep_of_frameM pre f
-    refine k.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega) (by simp) rest.sp
+    refine k.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega_using [hj]) (by simp) rest.sp
       rest.rd rest.wr (k.arrs_keep kp (fun j hj hj' => by
         simp only [List.mem_range'_1] at hj'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj

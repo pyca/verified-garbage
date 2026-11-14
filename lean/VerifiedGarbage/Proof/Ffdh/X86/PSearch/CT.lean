@@ -66,7 +66,7 @@ theorem branch_ct : RelCT isa (Two LiveAt) branch fun _ _ => True := by
     have A := L.input.1
     have hp := L.input.2
     have hl : 64 ≤ q.1.len := by rw [← hp]; exact (len_pos A).1
-    exact ⟨⟨o, L⟩, by omega⟩
+    exact ⟨⟨o, L⟩, by omega_using [hf, hl]⟩
   refine RelCT.seq (two_post (Ψ := ClsAt) (two_map id hatt attempt_ct) fun q s h => ?_) classify_ct
   obtain ⟨⟨o, L⟩, hu⟩ := hatt q s h
   obtain ⟨p, used, n⟩ := q
@@ -116,7 +116,7 @@ private theorem iteration_pair (n : Nat) :
     · refine ⟨e₁.trans e₂.symm, fun _ => trivial, fun _ => ⟨q.next.2.2, ?_, q.next, rfl, L₁, L₂⟩⟩
       have := co.1
       show q.2.2 - 1 < n
-      omega
+      omega_using [hn, this]
     · exact absurd co nc
   · rcases h₂ with ⟨co, _, _⟩ | ⟨_, e₂⟩
     · exact absurd co nc

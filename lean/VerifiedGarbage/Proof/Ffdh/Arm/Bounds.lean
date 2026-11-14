@@ -22,13 +22,13 @@ theorem boundTest_ok (s : State) (b : BitVec 16) :
     WP isa (.block (boundTest b)) s fun t =>
       (t.z = decide ((s.gpr .r1).toNat < b.toNat) ∧ t.mem = s.mem) ∧ Rest [.r3, .r12] s t := by
   refine withRest_all [.r3, .r12] ?_ (by rfl) (by rfl)
-  have bw : b.toNat < 2 ^ 32 := by have := b.isLt; omega
+  have bw : b.toNat < 2 ^ 32 := by have := b.isLt; omega_using []
   have hto : (b.setWidth 32).toNat = b.toNat := by
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt bw]
   unfold boundTest
   ffrun [BitVec.add_zero, BitVec.zero_add, hto]
   by_cases h : b.toNat ≤ (s.gpr .r1).toNat
-  · simp [h, show ¬ (s.gpr .r1).toNat < b.toNat by omega]
-  · simp [h, show (s.gpr .r1).toNat < b.toNat by omega]
+  · simp [h, show ¬ (s.gpr .r1).toNat < b.toNat by omega_using [h]]
+  · simp [h, show (s.gpr .r1).toNat < b.toNat by omega_using [h]]
 
 end VG.Proof.Ffdh.Arm

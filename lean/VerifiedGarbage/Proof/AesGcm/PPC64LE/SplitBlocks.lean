@@ -53,15 +53,15 @@ theorem selector_ok (i count : Nat) (hi : i<8) (hc : count<8) (s : State)
         ((s.gpr .r19-BitVec.ofNat 64 (i+1)) >>> 63)) := by
     apply WP.of_runBlock
     simp only [runBlock_cons,runStep_some,runBlock_nil,
-      exec_subi (n := .r19) (imm := i+1) (by decide) (by omega),
+      exec_subi (n := .r19) (imm := i+1) (by decide) (by omega_using [hi]),
       exec_lsr_d (sh := 63) (by decide),RegUpd.gpr_write_self,Option.some.injEq,exists_eq_left']
   refine WP.mono he fun t ht => ?_
   subst t
   refine ⟨?_,?_⟩
-  · rw [RegUpd.gpr_write_self,hr,VG.Proof.AesGcm.PPC64LE.shr63 (by omega) (by omega)]
+  · rw [RegUpd.gpr_write_self,hr,VG.Proof.AesGcm.PPC64LE.shr63 (by omega_using [hc]) (by omega_using [hi])]
     by_cases h : i<count
-    · simp only [ite_eq_left h,ite_eq_right (show ¬count<i+1 by omega)]
-    · simp only [ite_eq_right h,ite_eq_left (show count<i+1 by omega)]
+    · simp only [ite_eq_left h,ite_eq_right (show ¬count<i+1 by omega_using [h])]
+    · simp only [ite_eq_right h,ite_eq_left (show count<i+1 by omega_using [h])]
   · exact ((Local.write s .r12 _).trans (Local.write _ .r12 _)).weaken (by simp) (by simp)
 
 theorem offset_free : ∀ i : Fin 8, dataOffset i≠.r12 := by decide
@@ -132,9 +132,9 @@ theorem partial_step (base : State) (sourceN : Nat) (hp : sourceN<8)
     by_cases he : i=k
     · subst i
       exact hv.trans (readValue_of_local hs.effects sourceN k)
-    · have hne : dataReg i≠dataReg k := fun e => he (Blocks.data_injective ⟨i,by omega⟩ ⟨k,hk⟩ e)
+    · have hne : dataReg i≠dataReg k := fun e => he (Blocks.data_injective ⟨i,by omega_using [hk, hi]⟩ ⟨k,hk⟩ e)
       rw [hf.v _ (by simpa only [List.mem_singleton] using hne)]
-      exact hs.values i (by omega)
+      exact hs.values i (by omega_using [hi, he])
 
 theorem partialLoadsFrom_ok (base : State) (sourceN : Nat) (hp : sourceN<8)
     (hr : base.gpr .r19=BitVec.ofNat 64 sourceN) (offsets : Blocks.DataOffsets base)
@@ -148,10 +148,10 @@ theorem partialLoadsFrom_ok (base : State) (sourceN : Nat) (hp : sourceN<8)
   | succ count ih =>
     rw [Impl.AesGcm.PPC64LE.SplitBlocks.partialLoadsFrom]
     apply WP.seq
-    refine WP.mono (partial_step base sourceN hp hr offsets reads (by omega) hs) fun t ht => ?_
-    have he : start+(count+1)=start+1+count := by omega
+    refine WP.mono (partial_step base sourceN hp hr offsets reads (by omega_using [hb]) hs) fun t ht => ?_
+    have he : start+(count+1)=start+1+count := by omega_using []
     rw [he]
-    exact ih (start+1) (by omega) t ht
+    exact ih (start+1) (by omega_using [hb]) t ht
 
 structure ReadResult (base : State) (count : Nat) (s : State) : Prop where
   effects : Local [.r12,.r17,.r19] dataRegs base s
@@ -231,7 +231,7 @@ theorem load_ok (base : State) (count : Nat) (hn : count<2^64)
         h12,Option.some.injEq,bne_iff_ne] using hshift) (fun _ => ?_) (by simp)
       rw [WP.block_append_iff]
       refine WP.mono (Blocks.dataLoadAt_ok .r17 (by decide) u offs (by
-        intro i hi; simpa only [ite_eq_left (show i<count by omega)] using readu i hi)) fun s hs => ?_
+        intro i hi; simpa only [ite_eq_left (show i<count by omega_using [hbig, hi])] using readu i hi)) fun s hs => ?_
       refine WP.mono (fullAdvance_ok s) fun t ht => ?_
       subst t
       have he := ((hf.trans (Local.of_vector hs.effects)).trans
@@ -239,13 +239,13 @@ theorem load_ok (base : State) (count : Nat) (hn : count<2^64)
       refine ⟨he.weaken (by simp [or_comm]) (by simp),?_,?_,?_⟩
       · intro i hi
         simp only [vpr_write]
-        rw [hs.val i hi,readValue,ite_eq_left (show i<count by omega),hf.mem,hf.keep.gpr (by decide)]
+        rw [hs.val i hi,readValue,ite_eq_left (show i<count by omega_using [hbig, hi]),hf.mem,hf.keep.gpr (by decide)]
       · simp only [RegUpd.gpr_write,reduceCtorEq,ite_false,ite_true,hs.effects.gpr,
           hf.keep.gpr (r := .r17) (by decide),Nat.min_eq_left hbig]
         rfl
       · simp only [RegUpd.gpr_write_self,hs.effects.gpr,hr']
         exact Offset.ofNat_sub_ofNat hbig
-    · have hsmall : count<8 := by omega
+    · have hsmall : count<8 := by omega_using [hbig]
       have hshift := (VG.Proof.Aes.PPC64LE.Crypto.quotient_zero hn).mpr hsmall
       refine WP.ite false (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,h12,hshift]; rfl)
         (by simp) (fun _ => ?_)
@@ -288,14 +288,14 @@ def input (base : State) (count k : Nat) (p left : BitVec 64) : Prop :=
 theorem source_addr {base start : State} {count k i : Nat}
     (hi : i<count-k) (hin : input base count k (start.gpr .r17) (start.gpr .r19)) :
     start.gpr .r17+BitVec.ofNat 64 (16*i)=base.gpr .r17+BitVec.ofNat 64 (16*(k+i)) := by
-  rw [hin.1,Nat.min_eq_left (show k≤count by omega),Offset.add_add]
-  exact congrArg (fun j => base.gpr .r17+BitVec.ofNat 64 j) (by omega)
+  rw [hin.1,Nat.min_eq_left (show k≤count by omega_using [hi]),Offset.add_add]
+  exact congrArg (fun j => base.gpr .r17+BitVec.ofNat 64 j) (by omega_using [])
 
 theorem SourceLayout.read_block {base : State} {n count : Nat} (src : SourceLayout base n count)
     {i : Nat} (hi : i<count) :
     InRegions (base.rd++base.wr) (base.gpr .r17+BitVec.ofNat 64 (16*i)) 16 := by
   exact (Covers.one src.reads) _ _ ⟨_,List.mem_singleton_self _,
-    Offset.contains_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega) (by have := src.size; omega)⟩
+    Offset.contains_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]) (by have := src.size; omega_using [hi, this])⟩
 
 theorem SourceLayout.block_frame {base start : State} {n count : Nat} (src : SourceLayout base n count)
     (hf : Frame [Blocks.coreWork base,Blocks.coreData base n] base.mem start.mem)
@@ -304,7 +304,7 @@ theorem SourceLayout.block_frame {base start : State} {n count : Nat} (src : Sou
       Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i)) := by
   rw [← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,← VG.Proof.Aes.PPC64LE.Crypto.read_blockAt]
   rw [hf.read (r := sourceRegion base count)
-    (Offset.contains_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega) (by have := src.size; omega))
+    (Offset.contains_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]) (by have := src.size; omega_using [hi, this]))
     (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -326,26 +326,26 @@ theorem reader_global (base start : State) (n nr count k : Nat) (lay : Blocks.Co
     rw [fx.rd,fx.wr]
     by_cases hsrc : i<count-k
     · rw [ite_eq_left hsrc,source_addr hsrc hin]
-      exact src.read_block (by omega)
-    · rw [ite_eq_right hsrc,ptr,Offset.add_add,show 16*k+16*i=16*(k+i) by omega]
+      exact src.read_block (by omega_using [hsrc])
+    · rw [ite_eq_right hsrc,ptr,Offset.add_add,show 16*k+16*i=16*(k+i) by omega_using []]
       obtain ⟨r,hr,hp⟩ := lay.writes _ _ ⟨Blocks.coreData base n,by simp,
-        Offset.contains_base _ (d := 16*(k+i)) (n := 16) (k := 16*n) (by omega) (by have := lay.size; omega)⟩
+        Offset.contains_base _ (d := 16*(k+i)) (n := 16) (k := 16*n) (by omega_using [hk, hi]) (by have := lay.size; omega_using [hk, hi, this])⟩
       exact ⟨r,List.mem_append_right _ hr,hp⟩
   · intro i hi
     rw [readValue,VG.Proof.Aes.PPC64LE.Crypto.flip_load,VG.Proof.Aes.PPC64LE.Crypto.read_blockAt,plaintext]
     by_cases hsrc : i<count-k
-    · rw [ite_eq_left hsrc,ite_eq_left (show k+i<count by omega),source_addr hsrc hin]
-      exact src.block_frame hf (by omega)
-    · rw [ite_eq_right hsrc,ite_eq_right (show ¬k+i<count by omega),ptr,Offset.add_add,
-        show 16*k+16*i=16*(k+i) by omega]
-      exact Blocks.processed_original_block hp (by omega) (by omega)
+    · rw [ite_eq_left hsrc,ite_eq_left (show k+i<count by omega_using [hsrc]),source_addr hsrc hin]
+      exact src.block_frame hf (by omega_using [hsrc])
+    · rw [ite_eq_right hsrc,ite_eq_right (show ¬k+i<count by omega_using [hsrc]),ptr,Offset.add_add,
+        show 16*k+16*i=16*(k+i) by omega_using []]
+      exact Blocks.processed_original_block hp (by omega_using []) (by omega_using [hk, hi])
 
 theorem input_advance {base start s : State} {count k : Nat}
     (hin : input base count k (start.gpr .r17) (start.gpr .r19))
     (hr : ReadResult start (count-k) s) : input base count (k+8) (s.gpr .r17) (s.gpr .r19) := by
   refine ⟨?_,?_⟩
   · rw [hr.source,hin.1,Offset.add_add]
-    exact congrArg (fun j => base.gpr .r17+BitVec.ofNat 64 j) (by omega)
+    exact congrArg (fun j => base.gpr .r17+BitVec.ofNat 64 j) (by omega_using [])
   · rw [hr.left,Nat.sub_sub]
 
 theorem stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreLayout base n)
@@ -355,7 +355,7 @@ theorem stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreLayou
   intro k start hk fx frame ptr offsets proc vals hin
   have global := reader_global base start n nr count k lay src hk fx frame ptr proc hin
   apply WP.seq
-  refine WP.mono (load_ok start (count-k) (by have := src.size; omega) hin.2 offsets global.1)
+  refine WP.mono (load_ok start (count-k) (by have := src.size; omega_using [this]) hin.2 offsets global.1)
     fun s hs => ?_
   have hmask := (hs.effects.v .v19 (by decide)).trans fx.mask
   have fxs : Blocks.LoopFixed base nr s := fx.update
@@ -372,7 +372,7 @@ theorem stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreLayou
     rw [hs.effects.keep.2.2,fx.wr]
     exact lay.writes _ _ ⟨Blocks.coreData base n,by simp,
       Offset.contains_base _ (d := 16*(k+i)) (n := 16) (k := 16*n)
-        (by omega) (by have := lay.size; omega)⟩
+        (by omega_using [hk, hi]) (by have := lay.size; omega_using [hk, hi, this])⟩
   have cv : ∀ i<8, Blocks.mixValue s i=Blocks.cipherBlockWith base nr (plaintext base count) (k+i) := by
     intro i hi
     rw [Blocks.mixValue,hs.values i hi,global.2 i hi]
@@ -459,7 +459,7 @@ theorem decMix_step (base : State) (hm : base.vpr .v19=Impl.Aes.PPC64LE.Crypto.b
     by_cases he : i.val=k
     · have hix : i=⟨k,hk⟩ := Fin.ext he
       subst i
-      rw [hv,ht0,ite_eq_left (show k<k+1 by omega)]
+      rw [hv,ht0,ite_eq_left (show k<k+1 by omega_using [])]
     · have hne : Impl.AesGcm.PPC64LE.Blocks.reg i≠Impl.AesGcm.PPC64LE.Blocks.reg k :=
         fun heq => he (Blocks.state_injective i ⟨k,hk⟩ heq)
       have hfree : Impl.AesGcm.PPC64LE.Blocks.reg i ∉ [dataReg k,Impl.AesGcm.PPC64LE.Blocks.reg k] := by
@@ -467,13 +467,13 @@ theorem decMix_step (base : State) (hm : base.vpr .v19=Impl.Aes.PPC64LE.Crypto.b
         exact ⟨Blocks.data_separated i ⟨k,hk⟩,hne⟩
       rw [hf.v _ hfree,h.val i]
       by_cases hi : i.val<k
-      · rw [ite_eq_left hi,ite_eq_left (show i.val<k+1 by omega)]
-      · rw [ite_eq_right hi,ite_eq_right (show ¬i.val<k+1 by omega)]
+      · rw [ite_eq_left hi,ite_eq_left (show i.val<k+1 by omega_using [hi])]
+      · rw [ite_eq_right hi,ite_eq_right (show ¬i.val<k+1 by omega_using [he, hi])]
   · intro i
     by_cases he : i.val=k
     · have hix : i=⟨k,hk⟩ := Fin.ext he
       subst i
-      rw [ht,ht0,hv0,ite_eq_left (show k<k+1 by omega)]
+      rw [ht,ht0,hv0,ite_eq_left (show k<k+1 by omega_using [])]
       rfl
     · have hne : dataReg i≠dataReg k := fun heq => he (Blocks.data_injective i ⟨k,hk⟩ heq)
       have hfree : dataReg i ∉ [dataReg k,Impl.AesGcm.PPC64LE.Blocks.reg k] := by
@@ -481,8 +481,8 @@ theorem decMix_step (base : State) (hm : base.vpr .v19=Impl.Aes.PPC64LE.Crypto.b
         exact ⟨hne,Ne.symm (Blocks.data_separated ⟨k,hk⟩ i)⟩
       rw [hf.v _ hfree,h.temps i]
       by_cases hi : i.val<k
-      · rw [ite_eq_left hi,ite_eq_left (show i.val<k+1 by omega)]
-      · rw [ite_eq_right hi,ite_eq_right (show ¬i.val<k+1 by omega)]
+      · rw [ite_eq_left hi,ite_eq_left (show i.val<k+1 by omega_using [hi])]
+      · rw [ite_eq_right hi,ite_eq_right (show ¬i.val<k+1 by omega_using [he, hi])]
 
 theorem decMix_ok (s : State) (hm : s.vpr .v19=Impl.Aes.PPC64LE.Crypto.byteMask) :
     WP isa (.block Impl.AesGcm.PPC64LE.SplitBlocks.decMix) s (DecMixInv s 8) := by
@@ -513,7 +513,7 @@ theorem decWrite_step {base s : State} {m₀ : Mem} {D : Addr} {n k c : Nat}
   have hg : s.gpr=base.gpr := funext fun r => h.keep.gpr (by simp)
   have addr : s.gpr .r6+s.gpr (dataOffset c)=D+BitVec.ofNat 64 (16*(k+c)) := by
     rw [hg,offsets c hc,ptr,Offset.add_add]
-    exact congrArg (fun i => D+BitVec.ofNat 64 i) (by omega)
+    exact congrArg (fun i => D+BitVec.ofNat 64 i) (by omega_using [])
   have hw : InRegions s.wr (s.gpr .r6+s.gpr (dataOffset c)) 16 := by
     rw [h.keep.2.2,addr]
     exact writes c hc
@@ -521,7 +521,7 @@ theorem decWrite_step {base s : State} {m₀ : Mem} {D : Addr} {n k c : Nat}
   have hdc : s.vpr (dataReg c)=base.vpr (dataReg c) := h.data ⟨c,hc⟩ (Nat.le_refl _)
   have hx : VG.Proof.Aes.PPC64LE.Crypto.aesState (s.vpr (dataReg c))=F (k+c) := by
     rw [hdc]; exact values c hc
-  have hp := h.processed.store hsize (show k+c<n by omega)
+  have hp := h.processed.store hsize (show k+c<n by omega_using [hc, hkn])
     (v := rev128 (s.vpr (dataReg c))) (by
       intro j hj
       change VG.VectorCrypto.vbyte (rev128 (s.vpr (dataReg c))) j=_
@@ -552,10 +552,10 @@ theorem decWrite_step {base s : State} {m₀ : Mem} {D : Addr} {n k c : Nat}
     exact h.v r hr
   · intro j hj
     have hne : dataReg j≠dataReg c := fun he => by
-      have := Blocks.data_injective j ⟨c,hc⟩ he; simp only at this; omega
+      have := Blocks.data_injective j ⟨c,hc⟩ he; simp only at this; omega_using [hj, this]
     change (s.writeV (dataReg c) (VG.Proof.Aes.PPC64LE.Crypto.flip (s.vpr (dataReg c)))).vpr (dataReg j)=_
     rw [vpr_writeV,ite_eq_right hne]
-    exact h.data j (by omega)
+    exact h.data j (by omega_using [hj])
 
 theorem decWrite_ok (base : State) (m₀ : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State)
     (hkn : k+8≤n) (hsize : 16*n≤2^64)
@@ -636,7 +636,7 @@ theorem dec_stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreL
   intro k start hk fx frame ptr offsets proc vals hin
   have global := reader_global base start n nr count k lay src hk fx frame ptr proc hin
   apply WP.seq
-  refine WP.mono (load_ok start (count-k) (by have := src.size; omega) hin.2 offsets global.1)
+  refine WP.mono (load_ok start (count-k) (by have := src.size; omega_using [this]) hin.2 offsets global.1)
     fun s hs => ?_
   have hmask := (hs.effects.v .v19 (by decide)).trans fx.mask
   have fxs : Blocks.LoopFixed base nr s := fx.update
@@ -653,7 +653,7 @@ theorem dec_stores_correct (base : State) (n nr count : Nat) (lay : Blocks.CoreL
     rw [hs.effects.keep.2.2,fx.wr]
     exact lay.writes _ _ ⟨Blocks.coreData base n,by simp,
       Offset.contains_base _ (d := 16*(k+i)) (n := 16) (k := 16*n)
-        (by omega) (by have := lay.size; omega)⟩
+        (by omega_using [hk, hi]) (by have := lay.size; omega_using [hk, hi, this])⟩
   have hin8 : ∀ i<8, VG.Proof.Aes.PPC64LE.Crypto.flip (s.vpr (dataReg i))=plaintext base count (k+i) := by
     intro i hi
     rw [hs.values i hi]; exact global.2 i hi
@@ -719,7 +719,7 @@ theorem core_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
             cases dec
             · exact stores_correct base n nr count lay src hmax
             · exact dec_stores_correct base n nr count lay src hmax) hmin hmax hk hs)
-        (input_initial src) lay hn (by omega) hm hmax hr hH
+        (input_initial src) lay hn (by omega_using [hz]) hm hmax hr hH
   have hkeep : WP isa (Impl.AesGcm.PPC64LE.SplitBlocks.codeOf dec) base fun t =>
       Blocks.CoreResultWith base n nr (plaintext base count) dec (input base count) t ∧
         Keep (coreVolatile++Impl.AesGcm.PPC64LE.Blocks.saved.map Prod.fst) base t := by

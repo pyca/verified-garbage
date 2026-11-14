@@ -56,7 +56,7 @@ theorem tableZ_dst (i : Nat) :
     CachedJac.tableZ3 i=Proof.P256.VerifyTable.dst (i+1) 4 := by
   simp only [CachedJac.tableZ2,CachedJac.tableZ3,Proof.P256.VerifyTable.dst,Nat.reduceLT,↓reduceIte,
     Nat.add_sub_cancel,Nat.reduceSub]
-  omega
+  omega_using []
 
 theorem build_slots : ∀ x∈Proof.P256.VerifyTable.buildSlots,x∈jointSlots P256Joint.cfg := by
   decide +kernel
@@ -100,8 +100,8 @@ theorem buildStage_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.
       tmv p256.C 4 base t (Proof.P256.VerifyTable.dst a j)=
         Proof.P256.VerifyTable.buildEnv (tmv p256.C 4 base s) (Proof.P256.VerifyTable.dst a j) := by
     apply val
-    have := build_entries (a-1) (by omega) j hj
-    rwa [show a-1+1=a by omega] at this
+    have := build_entries (a-1) (by omega_using [ha8]) j hj
+    rwa [show a-1+1=a by omega_using [ha]] at this
   have keep (x : Nat) (hx : ∀ w∈Proof.P256.VerifyTable.buildW,x+8*4≤w.1 ∨ w.1+w.2≤x)
       (hb : x+8*4≤2^64) : wordsVal t.mem base x 4=wordsVal s.mem base x 4 := un.wordsVal hx hb
   refine ⟨kt,(it.sub build_live).to_tmv,⟨⟨?_,fun a ha h8 => ?_,fun j hj => ?_⟩,fun j hj => ?_,?_,
@@ -110,31 +110,31 @@ theorem buildStage_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p256.
   · obtain ⟨ex,ey,ez⟩ := tablePt_dst a
     rw [show P256Joint.cfg.K.M.n=4 from rfl,ex,ey,ez,ev a ha h8 0 (by decide),ev a ha h8 1 (by decide),ev a ha h8 2 (by decide)]
     exact (env a ha h8).1
-  · rw [un.byte (fun w hw => ?_) (by change 1824+j<2^64; omega)]
+  · rw [un.byte (fun w hw => ?_) (by change 1824+j<2^64; omega_using [hj])]
     · exact h.peer.2.1 j hj
     · have : ∀ w∈Proof.P256.VerifyTable.buildW,2088≤w.1 ∨ w.1+w.2≤1824 := by decide
       have := this w hw
       change 1824+j+1≤w.1 ∨ w.1+w.2≤1824+j
-      omega
+      omega_using [hj, this]
   · change j<514 at hj
-    rw [un.byte (fun w hw => ?_) (by change 2112+j<2^64; omega)]
+    rw [un.byte (fun w hw => ?_) (by change 2112+j<2^64; omega_using [hj])]
     · exact h.generator j hj
     · have : ∀ w∈Proof.P256.VerifyTable.buildW,2632≤w.1 ∨ w.1+w.2≤2112 := by decide
       have := this w hw
       change 2112+j+1≤w.1 ∨ w.1+w.2≤2112+j
-      omega
+      omega_using [hj, this]
   · change toM _ _ (wordsVal t.mem base P256Joint.cfg.onep 4)=1
     rw [keep _ (by decide) (by decide)]
     exact h.one
   · obtain ⟨e2,_⟩ := tableZ_dst i
     obtain ⟨_,_,ez⟩ := tablePt_dst (i+1)
-    rw [show P256Joint.cfg.K.M.n=4 from rfl,e2,ez,ev (i+1) (by omega) (by omega) 3 (by decide),ev (i+1) (by omega) (by omega) 2 (by decide)]
-    exact (env (i+1) (by omega) (by omega)).2.1
+    rw [show P256Joint.cfg.K.M.n=4 from rfl,e2,ez,ev (i+1) (by omega_using []) (by omega_using [hi]) 3 (by decide),ev (i+1) (by omega_using []) (by omega_using [hi]) 2 (by decide)]
+    exact (env (i+1) (by omega_using []) (by omega_using [hi])).2.1
   · obtain ⟨e2,e3⟩ := tableZ_dst i
     obtain ⟨_,_,ez⟩ := tablePt_dst (i+1)
-    rw [show P256Joint.cfg.K.M.n=4 from rfl,e3,e2,ez,ev (i+1) (by omega) (by omega) 4 (by decide),ev (i+1) (by omega) (by omega) 3 (by decide),
-      ev (i+1) (by omega) (by omega) 2 (by decide)]
-    exact (env (i+1) (by omega) (by omega)).2.2
+    rw [show P256Joint.cfg.K.M.n=4 from rfl,e3,e2,ez,ev (i+1) (by omega_using []) (by omega_using [hi]) 4 (by decide),ev (i+1) (by omega_using []) (by omega_using [hi]) 3 (by decide),
+      ev (i+1) (by omega_using []) (by omega_using [hi]) 2 (by decide)]
+    exact (env (i+1) (by omega_using []) (by omega_using [hi])).2.2
 
 def allocatedSetup : Prog isa := .seq jointPrepProgram <|
   .seq Impl.P256.VerifyTable.build (.block [])

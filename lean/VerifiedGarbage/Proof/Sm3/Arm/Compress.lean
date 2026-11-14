@@ -53,7 +53,7 @@ theorem var_succ (t : Nat) :
     var (t + 1) 3 = var t 2 ∧ var (t + 1) 4 = var t 7 ∧ var (t + 1) 5 = var t 4 ∧
     var (t + 1) 6 = var t 5 ∧ var (t + 1) 7 = var t 6 := by
   simp only [var]
-  rw [show (t + 1) % 4 = (t % 4 + 1) % 4 by omega]
+  rw [show (t + 1) % 4 = (t % 4 + 1) % 4 by omega_using []]
   have := Nat.mod_lt t (show 4 > 0 by decide)
   generalize t % 4 = c at *
   revert this; revert c; decide
@@ -111,7 +111,7 @@ theorem pub_ne (t : Nat) :
     ∀ r ∈ pubRegs, ¬r = .r12 ∧ ¬r = .lr ∧ ¬r = var t 1 ∧ ¬r = var t 3 ∧ ¬r = var t 5 ∧
       ¬r = var t 7 := by
   simp only [var]
-  have := Nat.mod_lt t (show 4 > 0 by omega)
+  have := Nat.mod_lt t (show 4 > 0 by omega_using [])
   generalize t % 4 = c at *
   revert this; revert c; decide
 
@@ -130,8 +130,8 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Bi
       Vars (t + 1) s' (roundW v t w w₄) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
   by_cases ht : t < 16 <;> (
-    have hs : slot t < 4096 := by simp only [slot]; omega
-    have hs₄ : slot (t + 4) < 4096 := by simp only [slot]; omega
+    have hs : slot t < 4096 := by simp only [slot]; omega_using []
+    have hs₄ : slot (t + 4) < 4096 := by simp only [slot]; omega_using []
     obtain ⟨n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11⟩ := round_ne0 t
     obtain ⟨n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23⟩ := round_ne1 t
     obtain ⟨n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35⟩ := round_ne2 t
@@ -179,7 +179,7 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : BitVec 32)
       s'.mem = s.mem.writeW (slotAddr scr i) (W M i) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r, r ≠ T1 → r ≠ T2 → s'.gpr r = s.gpr r := by
   simp only [slotAddr] at hin hout hwin ⊢
-  have hs : ∀ j, slot j < 4096 := fun j => by simp only [slot]; omega
+  have hs : ∀ j, slot j < 4096 := fun j => by simp only [slot]; omega_using []
   apply WP.of_runBlock
   by_cases ht : i < 16
   · have hi := hbin ht
@@ -200,11 +200,11 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : BitVec 32)
     have e3 := hw (i - 3) (by bdd_omega) (by bdd_omega)
     have e13 := hw (i - 13) (by bdd_omega) (by bdd_omega)
     have e6 := hw (i - 6) (by bdd_omega) (by bdd_omega)
-    rw [show slot (i - 16) = slot i by simp only [slot]; omega] at e16
-    rw [show slot (i - 9) = slot (i + 7) by simp only [slot]; omega] at e9
-    rw [show slot (i - 3) = slot (i + 13) by simp only [slot]; omega] at e3
-    rw [show slot (i - 13) = slot (i + 3) by simp only [slot]; omega] at e13
-    rw [show slot (i - 6) = slot (i + 10) by simp only [slot]; omega] at e6
+    rw [show slot (i - 16) = slot i by simp only [slot]; omega_using [ht]] at e16
+    rw [show slot (i - 9) = slot (i + 7) by simp only [slot]; omega_using [ht]] at e9
+    rw [show slot (i - 3) = slot (i + 13) by simp only [slot]; omega_using [ht]] at e3
+    rw [show slot (i - 13) = slot (i + 3) by simp only [slot]; omega_using [ht]] at e13
+    rw [show slot (i - 6) = slot (i + 10) by simp only [slot]; omega_using [ht]] at e6
     simp only [Impl.Sm3.Arm.expand, ht, ite_false, T1, T2]
     simp only [runBlock_cons, runStep_some,
       runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne,
@@ -246,14 +246,14 @@ abbrev workRegion (scr : BitVec 32) : Region := ⟨State.addr scr, 64⟩
 
 theorem slotAddr_eq {scr : BitVec 32} (h : scr.toNat + 104 ≤ 2 ^ 32) (j : Nat) :
     slotAddr scr j = State.addr scr + BitVec.ofNat 64 (slot j) :=
-  addr_add (by simp only [slot]; omega)
+  addr_add (by simp only [slot]; omega_using [h])
 
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := Offset.contains_base base h ho
 
 theorem win_contains {scr : BitVec 32} (h : scr.toNat + 104 ≤ 2 ^ 32) (j : Nat) :
     (workRegion scr).Contains (slotAddr scr j) 4 := by
-  rw [slotAddr_eq h]; exact contains_offset (by simp only [slot]; omega) (by simp only [slot]; omega)
+  rw [slotAddr_eq h]; exact contains_offset (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [])
 
 theorem slot_sep {scr : BitVec 32} (h : scr.toNat + 104 ≤ 2 ^ 32) {i j : Nat}
     (hij : i % 16 ≠ j % 16) : Mem.Sep (slotAddr scr i) 4 (slotAddr scr j) 4 := by
@@ -399,13 +399,13 @@ include h
 
 theorem stAddr_eq {k : Nat} (hk : k < 8) :
     stAddr s₀ k = State.addr (st s₀) + BitVec.ofNat 64 (4 * k) :=
-  addr_add (by have := h.st_fits; omega)
+  addr_add (by have := h.st_fits; omega_using [hk, this])
 
 theorem blkAddr_eq {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
     State.addr (blkAddr s₀ i + BitVec.ofNat 32 (4 * t)) =
       State.addr (bp s₀) + BitVec.ofNat 64 (64 * i) + BitVec.ofNat 64 (4 * t) := by
   have := h.blk_fits
-  rw [addr_add (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := (bp s₀).isLt; omega),
+  rw [addr_add (by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := (bp s₀).isLt; omega_arith),
     addr_add (by bdd_omega)]
 
 theorem in_state {k : Nat} (hk : k < 8) : InRegions (s₀.rd ++ s₀.wr) (stAddr s₀ k) 4 :=
@@ -415,11 +415,11 @@ theorem out_state {k : Nat} (hk : k < 8) : InRegions s₀.wr (stAddr s₀ k) 4 :
   ⟨stR s₀, by simp [h.wr], contains_sub (by bdd_omega) (by bdd_omega) (h.stAddr_eq hk)⟩
 
 theorem in_slot (j : Nat) : InRegions (s₀.rd ++ s₀.wr) (slotAddr (scr s₀) j) 4 :=
-  ⟨scrR s₀, by simp [h.wr], contains_sub (by simp only [slot]; omega) (by simp only [slot]; omega)
+  ⟨scrR s₀, by simp [h.wr], contains_sub (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [])
     (slotAddr_eq h.scr_fits j)⟩
 
 theorem out_slot (j : Nat) : InRegions s₀.wr (slotAddr (scr s₀) j) 4 :=
-  ⟨scrR s₀, by simp [h.wr], contains_sub (by simp only [slot]; omega) (by simp only [slot]; omega)
+  ⟨scrR s₀, by simp [h.wr], contains_sub (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [])
     (slotAddr_eq h.scr_fits j)⟩
 
 theorem in_save {d : Nat} (hd : d + 4 ≤ 104) :
@@ -727,7 +727,7 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ 
     WP isa (.block restore) s fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sm3.compressArm.post s₀ s' := by
   rw [restore, ← List.append_nil (saved.map _)]
-  refine Spill.restore_slots_ok saved_slots (by decide) (g := s₀.gpr) (by rw [hc.r3]; have := hp.scr_fits; omega)
+  refine Spill.restore_slots_ok saved_slots (by decide) (g := s₀.gpr) (by rw [hc.r3]; have := hp.scr_fits; omega_using [this])
     (fun _ _ hd => by rw [hc.rd, hc.wr, hc.r3]; exact hp.in_save (by bdd_omega)) (by rw [hc.r3]; exact hc.saved)
     fun s' hs _ hm _ _ _ => WP.block_nil ⟨Spill.restored_of hs (by decide), (congrArg (stateAt · _) hm).trans hc.state⟩
 

@@ -26,17 +26,17 @@ theorem setLowBit_store (s : State) {base : BitVec 32} {len w : Nat}
         (s.mem.readW (off (State.addr base) (arrAt w 7)) 32 ||| 1) ∧ Rest [.r3, .r4] s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
   have bound := array_end_le (w := w) (by decide : 7 < 8)
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
   rw [h.width] at header
   have pointer := header.array 7 (by decide)
   have a120 : State.addr (base + BitVec.ofNat 32 120) = off (State.addr base) 120 :=
-    VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
+    VG.Arm.addr_add (by have := h.workspace.nowrap; omega_using [size, this])
   have arrAddr : State.addr (base + BitVec.ofNat 32 (arrAt w 7)) = off (State.addr base) (arrAt w 7) :=
-    VG.Arm.addr_add (by have := h.workspace.nowrap; omega)
-  have rh := h.workspace.read (off := 120) (by omega)
-  have ra := h.workspace.read (off := arrAt w 7) (by omega)
-  have wa := h.workspace.write (off := arrAt w 7) (by omega)
+    VG.Arm.addr_add (by have := h.workspace.nowrap; omega_using [fits, bound, this])
+  have rh := h.workspace.read (off := 120) (by omega_using [size])
+  have ra := h.workspace.read (off := arrAt w 7) (by omega_using [fits, bound])
+  have wa := h.workspace.write (off := arrAt w 7) (by omega_using [fits, bound])
   refine withRest_all [.r3, .r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.setLowBit
   ffrun [h.ptr, a120, arrAddr, rh, ra, wa, pointer, off, BitVec.add_zero]
@@ -55,15 +55,15 @@ theorem setLowBit_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (setLowBit_store s h) ?_
   rintro t ⟨mem, restT⟩
   have outside := writeW32_outside s.mem (State.addr base)
-    (s.mem.readW (off (State.addr base) (arrAt w 7)) 32 ||| 1) (d := arrAt w 7) (by omega)
+    (s.mem.readW (off (State.addr base) (arrAt w 7)) 32 ||| 1) (d := arrAt w 7) (by omega_using [fits, bound, nowrap])
   rw [← mem] at outside
-  have wide := outside.mono (o' := arrAt w 7) (n' := 8 * w) (by omega) (by omega)
-  have keeps := outside_array_keeps wide (len := len) (by omega)
-  have frame := outside_workspace wide (size := 8 * len) (by omega)
+  have wide := outside.mono (o' := arrAt w 7) (n' := 8 * w) (by omega_using []) (by omega_using [hw])
+  have keeps := outside_array_keeps wide (len := len) (by omega_using [nowrap])
+  have frame := outside_workspace wide (size := 8 * len) (by omega_using [fits, bound])
   have rest : Rest roundClobbers s t := restT.mono (by simp [roundClobbers])
   refine ⟨(h.after_array (by decide : 7 ≠ 0) keeps frame rest
     ((restT.gpr .r0 (by simp)).trans h.ptr)).1, ?_, keeps, frame, rest⟩
   rw [numAt_native, numAt_native, mem]
-  exact val32_setLowBit _ _ _ _ (by omega) (by omega)
+  exact val32_setLowBit _ _ _ _ (by omega_using [hw]) (by omega_using [fits, bound, nowrap])
 
 end VG.Proof.Ffdh.Arm

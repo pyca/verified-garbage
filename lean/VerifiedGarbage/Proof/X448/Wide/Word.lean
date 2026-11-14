@@ -27,7 +27,7 @@ theorem madd128 (a b lo hi : BitVec 64)
   have hc := Bool.toNat_le (carryOut hi (mulHi a b) (carryOut lo (a * b) false))
   simp only [Bool.toNat_false, Nat.add_zero] at e0
   simp only [pair] at h ⊢
-  omega
+  omega_using [h, e0, e1, em]
 
 /-- Adding a one-word carry to a coefficient also preserves its value. -/
 theorem add128 (lo hi c : BitVec 64) (h : pair lo hi + c.toNat < 2 ^ 128) :
@@ -37,7 +37,7 @@ theorem add128 (lo hi c : BitVec 64) (h : pair lo hi + c.toNat < 2 ^ 128) :
   have e1 := addCarry_value hi 0 (carryOut lo c false)
   simp only [Bool.toNat_false, Nat.add_zero, show (0 : BitVec 64).toNat = 0 from rfl] at e0 e1
   simp only [pair] at h ⊢
-  omega
+  omega_using [h, e0, e1]
 
 /-- Addition of two coefficients below the two-word capacity. -/
 theorem addPair128 (lo hi a b : BitVec 64) (h : pair lo hi + pair a b < 2 ^ 128) :
@@ -47,7 +47,7 @@ theorem addPair128 (lo hi a b : BitVec 64) (h : pair lo hi + pair a b < 2 ^ 128)
   have e1 := addCarry_value hi b (carryOut lo a false)
   simp only [Bool.toNat_false, Nat.add_zero] at e0
   simp only [pair] at h ⊢
-  omega
+  omega_using [h, e0, e1]
 
 /-- The low 56-bit digit of a coefficient. -/
 theorem low56 (lo hi : BitVec 64) :
@@ -55,16 +55,16 @@ theorem low56 (lo hi : BitVec 64) :
   rw [BitVec.toNat_and, show (BitVec.ofNat 64 (2 ^ 56 - 1)).toNat = 2 ^ 56 - 1 by decide,
     Nat.and_two_pow_sub_one_eq_mod]
   simp only [pair, radix]
-  omega
+  omega_using []
 
 /-- The upper coefficient bits fit in one word after a 56-bit carry step. -/
 theorem high56 (lo hi : BitVec 64) (h : pair lo hi < 2 ^ 119) :
     ((lo >>> 56) + (hi <<< 8)).toNat = pair lo hi / radix := by
-  have hh : hi.toNat < 2 ^ 55 := by simp only [pair] at h; omega
+  have hh : hi.toNat < 2 ^ 55 := by simp only [pair] at h; omega_using [h]
   rw [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft,
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   simp only [pair, radix]
   have hl := lo.isLt
-  omega
+  omega_using [hh]
 
 end VG.Proof.X448.Wide

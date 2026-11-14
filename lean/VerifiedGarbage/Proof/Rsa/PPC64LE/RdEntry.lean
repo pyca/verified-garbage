@@ -35,8 +35,8 @@ the initial state `s0`, the stack pointer, the link register and the
 regions are `s0`'s, memory is the entry's but on the working space's first
 `sv` bytes, and the working space's base is in `r31`.
 
-The slots of the header as numbers and flags as words (`b64`); the top
-digits of an array (`setTop_ok`, `clrW_ok`). `entry_ok`: the entry saves
+The slots of the header as numbers and flags as words (`b64`); the digit
+after the top of an array (`clrW_ok`). `entry_ok`: the entry saves
 the registers, sets up `w` and the stride, and keeps the arguments
 (`RArgs`). `ctxW_ok`, `ctxw_ok`: from `w` digits to `W = 2 w + 2` and
 back; `zeroAll_ok`: every array zeroed. `nCheck_ok`: `r0` is 0 iff `n` is a
@@ -370,8 +370,8 @@ theorem ld_slot {m : Mem} {B : Addr} {d v : Nat} (h : slot m B d = v) :
   apply BitVec.eq_of_toNat_eq
   have := (m.readW (B + BitVec.ofNat 64 d) 32).isLt
   simp only [slot, w32, off] at h
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), h]
-  rw [← h]; omega
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), h]
+  rw [← h]; omega_using []
 
 /-- A flag as a word. -/
 abbrev b64 (b : Bool) : BitVec 64 := BitVec.ofNat 64 (b2n b)
@@ -381,7 +381,7 @@ end VG.Proof.Rsa.PPC64LE.Recover
 namespace VG.Proof.Rsa.PPC64LE.Keys
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE
-open VG.Impl.Rsa.PPC64LE.Recover (setTop clrW)
+open VG.Impl.Rsa.PPC64LE.Recover (clrW)
 open VG.Proof.Rsa.KeyWorkspace (arr S num)
 
 theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) :
@@ -390,45 +390,6 @@ theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) :
   rw [show BitVec.ofNat 64 a = BitVec.ofNat 64 (a - b) + BitVec.ofNat 64 b by
     rw [BitVec.ofNat_add_ofNat]; congr 1; omega_arith, ← BitVec.add_assoc, BitVec.add_sub_cancel]
 
-/-- `setTop j`: the top digit of the zero array `j` := `2^31`. -/
-theorem setTop_ok {s : State} {B : Addr} {Z v N j : Nat} (h : Ws s B Z v N) (hj : j < N) (hN : N ≤ 256)
-    (hz : ∀ i < v, w32 s.mem B (arr v j + 4 * i) = 0) {rest : List Instr} {Q : State → Prop}
-    (k : ∀ t, Ws t B Z v N → KeyWorkspace.Keep B v [j] [] s.mem t.mem → num t.mem B v j = 2 ^ (32 * v - 1) →
-      Keep [.r0, .r5] s t → WP isa (.block rest) t Q) :
-    WP isa (.block (setTop j ++ rest)) s Q := by
-  have fit := h.arr_fit hj
-  have nw := h.nowrap
-  have hS : S v = 4 * (v + 2) := rfl
-  have hv := h.wpos
-  have := h.wle
-  have hs := h.scr
-  rw [setTop, List.append_assoc]
-  refine ptr_ok h (r := .r5) (by decide) (by decide) (by decide) (show j < 2 ^ 15 by omega_arith) ?_
-  rw [WP.block_append_iff]
-  let d := arr v j + 4 * (v - 1)
-  have ea : off B (arr v j + 4 * v) - 4#64 = off B d := by
-    rw [off_sub _ (by omega_arith)]; congr 1; omega_arith
-  have ev : (1#64 <<< 31).setWidth 32 = BitVec.ofNat 32 (2 ^ 31) := by decide
-  refine WP.mono (WP.keep [.r0, .r5] (Q := fun t => t.mem = s.mem.writeW (off B d) (BitVec.ofNat 32 (2 ^ 31)))
-    ?_ (by decide)) fun t ⟨m, kt⟩ => ?_
-  · prun [h.r29, shl2_ofNat, ea, exec_store_w (show Reg.r5 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-      hs.st (d := d) (n := 4) (by omega_arith), BitVec.add_zero, ev]
-  · have o : Outside B d 4 s.mem t.mem := by rw [m]; exact writeW32_outside _ _ _ (by omega_arith)
-    have K : Keep [.r0, .r5] s t := ((Keep.write _ _ _).trans kt).mono
-    refine k t (h.of_keep K) (KeyWorkspace.Keep.of_arr (o := j) (d := 4 * (v - 1)) o (by omega_arith) (by simp)) ?_ K
-    obtain ⟨u, rfl⟩ : ∃ u, v = u + 1 := ⟨v - 1, by omega_arith⟩
-    simp only [num]
-    rw [val32_append t.mem B (arr (u + 1) j) u 1]
-    have lo : val32 t.mem B (arr (u + 1) j) u = 0 := by
-      rw [← CrtValues.val32_of_zero (m := s.mem) (B := B) (d := arr (u + 1) j) (n := u) (fun i hi => hz i (by omega_arith))]
-      refine val32_congr fun i hi => congrArg BitVec.toNat (Mem.readW_congr fun b hb => o _ ?_)
-      rw [ofs_off B (by omega_arith)]; omega_arith
-    have hi : val32 t.mem B (arr (u + 1) j + 4 * u) 1 = 2 ^ 31 := by
-      simp only [val32, Nat.mul_zero, Nat.add_zero]
-      rw [m, show arr (u + 1) j + 4 * u = d by omega_arith, w32_write_self]
-      rfl
-    rw [lo, hi, Nat.zero_add, ← Nat.pow_add]
-    congr 1
 
 /-- `clrW j`: the digit after the top of array `j` := 0. -/
 theorem clrW_ok {s : State} {B : Addr} {Z v N j : Nat} (h : Ws s B Z v N) (hj : j < N) (hN : N ≤ 256)
@@ -554,7 +515,7 @@ theorem W_val (w : Nat) :
     BitVec.ofNat 64 w <<< 1 + BitVec.ofNat 64 2 = BitVec.ofNat 64 (2 * w + 2) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem w_val (w : Nat) (hw : w ≤ 1024) :
     (BitVec.ofNat 64 (2 * w + 2) - 2#64) >>> 1 = BitVec.ofNat 64 w := by
@@ -562,9 +523,9 @@ theorem w_val (w : Nat) (hw : w ≤ 1024) :
   have e : BitVec.ofNat 64 (2 * w + 2) - 2#64 = BitVec.ofNat 64 (2 * w) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   rw [e, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hw]
 
 /-- `ctxW`: `W = 2 w + 2` and its stride. -/
 theorem ctxW_ok {s : State} {B : Addr} {Z w N N' : Nat} (h : Ws s B Z w N) (hW : 2 * w + 2 ≤ 1024)
@@ -574,7 +535,7 @@ theorem ctxW_ok {s : State} {B : Addr} {Z w N N' : Nat} (h : Ws s B Z w N) (hW :
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r29, .r30] (Q := fun t => t.gpr .r29 = BitVec.ofNat 64 (2 * w + 2) ∧
     t.gpr .r30 = BitVec.ofNat 64 (S (2 * w + 2)) ∧ t.mem = s.mem) ?_ (by decide)) fun t ⟨⟨t29, t30, tm⟩, kt⟩ =>
-      k t ⟨h.scr.congr kt.wr, fits, by omega, hW, t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
+      k t ⟨h.scr.congr kt.wr, fits, by omega_using [], hW, t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
   have := h.wle
   prun [ctxW, VG.Impl.Rsa.PPC64LE.Keys.stride, h.r29, W_val, stride_val]
 
@@ -586,9 +547,9 @@ theorem ctxw_ok {s : State} {B : Addr} {Z w N N' : Nat} (h : Ws s B Z (2 * w + 2
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r29, .r30] (Q := fun t => t.gpr .r29 = BitVec.ofNat 64 w ∧
     t.gpr .r30 = BitVec.ofNat 64 (S w) ∧ t.mem = s.mem) ?_ (by decide)) fun t ⟨⟨t29, t30, tm⟩, kt⟩ =>
-      k t ⟨h.scr.congr kt.wr, fits, hw, by have := h.wle; omega, t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
+      k t ⟨h.scr.congr kt.wr, fits, hw, by have := h.wle; omega_using [this], t29, t30, (kt.gpr _ (by decide)).trans h.r31⟩ tm kt
   have := h.wle
-  prun [ctxw, VG.Impl.Rsa.PPC64LE.Keys.stride, h.r29, w_val w (by omega), stride_val]
+  prun [ctxw, VG.Impl.Rsa.PPC64LE.Keys.stride, h.r29, w_val w (by omega_using [this]), stride_val]
 
 theorem digits_val (w : Nat) (hw : w ≤ 1024) :
     (BitVec.ofNat 64 44 * BitVec.ofNat 64 (S w)) >>> 2 = BitVec.ofNat 64 (nArr * (w + 2)) := by
@@ -596,9 +557,9 @@ theorem digits_val (w : Nat) (hw : w ≤ 1024) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   simp only [S, nArr]
-  rw [Nat.mod_eq_of_lt (show 44 * (4 * (w + 2)) < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 44 * (w + 2) < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show 44 * (4 * (w + 2)) < 2 ^ 64 by omega_using [hw]),
+    Nat.mod_eq_of_lt (show 44 * (w + 2) < 2 ^ 64 by omega_using [hw])]
+  omega_using []
 
 /-- `zeroAll`: the digits of the arrays `0`–`nArr - 1` := 0. -/
 theorem zeroAll_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (fits : arr w nArr ≤ Z) :
@@ -607,8 +568,8 @@ theorem zeroAll_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (fits
   have := h.wle
   rw [zeroAll, WP.seq_iff]
   refine WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = BitVec.ofNat 64 (nArr * (w + 2)) ∧ t.mem = s.mem)
-    (by prun [nArr, h.r30, digits_val w (by omega)]) (by decide)) fun u ⟨⟨u8, um⟩, ku⟩ => ?_
-  refine WP.mono (zeroArrays_ok (h.of_keep ku) u8 (by simp only [nArr]; omega) (by simp only [nArr]; omega)
+    (by prun [nArr, h.r30, digits_val w (by omega_using [this])]) (by decide)) fun u ⟨⟨u8, um⟩, ku⟩ => ?_
+  refine WP.mono (zeroArrays_ok (h.of_keep ku) u8 (by simp only [nArr]; omega_using []) (by simp only [nArr]; omega_using [this])
     (by
       have e : 160 + 4 * (nArr * (w + 2)) = arr w nArr := by
         simp only [arr, S, VG.Proof.Rsa.KeyWorkspace.hdr]; rw [Nat.mul_left_comm]
@@ -653,7 +614,7 @@ theorem nc1_ok {s0 s : State} (b : RBase s0 s) (a : RArgs s0 s) :
   have b3 := b.of_regs k3 m3
   have wn' : (s0.gpr .r7).toNat + kK s0 ≤ 2 ^ 64 := wn
   have hc : ∀ i < kK s0, (⟨s0.gpr .r7, kK s0⟩ : Region).Contains (off (s0.gpr .r7) i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
   have h10 : t3.gpr .r10 = BitVec.ofNat 64 (kK s0) := by rw [u10, a.r25]; exact CrtValues.ofNat_toNat64 _
   refine WP.mono (CrtValues.check1_ok (N := s0.gpr .r7) (k := kK s0) (nb := nB0 s0)
     (by rw [u9, a.r24]; simp [off]) h10 hk (len_nB0 _)
@@ -661,8 +622,8 @@ theorem nc1_ok {s0 s : State} (b : RBase s0 s) (a : RArgs s0 s) :
     (fun i hi => by
       rw [b3.frame _ (CrtValues.past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]))
     fun t4 ⟨⟨i0, i11, im⟩, k4⟩ => ⟨⟨b3.of_regs k4 im, (a.of_keep k3).of_keep k4, by rw [k4.gpr _ (by decide), h10],
-      by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega)],
-      by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega)]⟩,
+      by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega_using [hk])],
+      by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega_using [hk])]⟩,
       im.trans m3, (k3.trans k4).mono⟩
 
 theorem nc2_ok {s0 s : State} (h : NC1 s0 s) :
@@ -670,8 +631,8 @@ theorem nc2_ok {s0 s : State} (h : NC1 s0 s) :
   obtain ⟨b, a, h10, i0, i11⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, -⟩ := id b.pre
   refine WP.mono (CrtValues.check2_ok h10 hk hk' (len_nB0 _)
-    (by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega)])
-    (by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega)]))
+    (by rw [i0, getD_of_lt (l := nB0 s0) (i := kK s0 - 1) (by simp only [len_nB0, kK]; omega_using [hk])])
+    (by rw [i11, getD_of_lt (l := nB0 s0) (i := 0) (by simp only [len_nB0, kK]; omega_using [hk])]))
     fun t ⟨hv, tm, kt⟩ => ⟨⟨b.of_regs kt tm, a.of_keep kt, hv⟩, tm, kt.mono⟩
 
 theorem nCheck_ok {s0 s : State} (b : RBase s0 s) (a : RArgs s0 s) :
@@ -743,7 +704,7 @@ end VG.Proof.Rsa.PPC64LE.Recover
 namespace VG.Proof.Rsa.PPC64LE.Recover
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
-open VG.Impl.Rsa.PPC64LE.Recover (loadR loads zeroAll ctxW nArr aN aOne aZ wZ wE wD wM wMod)
+open VG.Impl.Rsa.PPC64LE.Recover (loadR loads zeroAll ctxW nArr aN aOne aZ wZ wE wD wM)
 open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 open VG.Proof.Rsa.KeyWorkspace (arr S num)
 
@@ -796,7 +757,7 @@ structure LdD (s0 t : State) : Prop where
   vN : num t.mem (rvB s0) (ww (kK s0)) aN = nV s0
   vE : num t.mem (rvB s0) (wW (kK s0)) wE = eV s0
   vD : num t.mem (rvB s0) (wW (kK s0)) wD = dV s0
-  zW : ∀ j ∈ [wZ, wM, wMod], ∀ i < wW (kK s0) + 2, w32 t.mem (rvB s0) (arr (wW (kK s0)) j + 4 * i) = 0
+  zW : ∀ j ∈ [wZ, wM], ∀ i < wW (kK s0) + 2, w32 t.mem (rvB s0) (arr (wW (kK s0)) j + 4 * i) = 0
   zK : ∀ j ∈ [aOne, aZ], ∀ i < ww (kK s0) + 2, w32 t.mem (rvB s0) (arr (ww (kK s0)) j + 4 * i) = 0
 
 theorem val32_out {B : Addr} {a n : Nat} {m m' : Mem} (o : Outside B a n m m') {d k : Nat}
@@ -937,7 +898,7 @@ theorem loads_ok {s0 t : State} (e : REnt s0 t) : WP isa loads t fun u => LdD s0
     exact v4
   · rw [um]; exact v5
   · intro j hj i hi
-    simp only [wZ, wM, wMod, List.mem_cons, List.not_mem_nil, or_false] at hj
+    simp only [wZ, wM, List.mem_cons, List.not_mem_nil, or_false] at hj
     rw [hA]
     rcases hj with rfl | rfl | rfl <;>
       exact zz _ (by simp only [nArr, wW] at hi ⊢; omega_arith) (by rw [haN]; simp only [wW] at hi ⊢; omega_arith)

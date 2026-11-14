@@ -358,6 +358,12 @@ def privArgs : List Instr :=
     copyArg 9 11 ++ copyArg 14 12 ++ copyArg 7 13 ++ atS .r0 oRsa ++ [st .r0 56, ld .r0 (arg 21), mw .r1 1024,
     .dp .sub .r0 .r0 (.reg .r1), st .r0 60, ld .r0 (arg 0), ld .r1 (arg 3), ld .r2 (arg 2), ld .r3 (arg 3)]
 
+/-- The arguments of `vg_rsa_private_checked_precomputed`: those of
+`vg_rsa_private_checked`, then `pre` and `pre_len` (our arguments 24 and 25)
+as its stack arguments 16 and 17, the slots `sS` and `sL`, which nothing
+reads after the call. -/
+def privArgsP : List Instr := privArgs ++ [sp0, ld .r4 (arg 24), st .r4 64, ld .r4 (arg 25), st .r4 68]
+
 /-! ## Verifying
 
 `verifyPrecomputed(n = r0, n_len = r1, e = r2, e_len = r3, digest,

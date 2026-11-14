@@ -24,7 +24,7 @@ theorem expBytes_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb : List B
       (isa.eval .ne s = some true → ∃ m, m < k ∧ I m s t) := by
     intro k s t tr1 tr2 u z h e1 e2
     obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
-    have hj : j < eb.length := by omega
+    have hj : j < eb.length := by omega_using [jk, hk]
     have ct := relCT_keep_sp (expByte_ct (ok := ok) (base := base) (ep := ep + BitVec.ofNat 32 j)
       (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2) (E := pre eb j) (b := eb[j]) fit) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨hs.input hj, ht.input hj, sp⟩ e1 e2
@@ -40,8 +40,8 @@ theorem expBytes_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb : List B
         intro last
         change some (!_ ) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, next1, next2, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], next1, next2, sp'⟩
   exact (RelCT.loop I step eb.length).mono
-    (fun _ _ h => ⟨0, by omega, positive, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
+    (fun _ _ h => ⟨0, by omega_using [], positive, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 
 end VG.Proof.Bignum.Arm.ConditionalExp

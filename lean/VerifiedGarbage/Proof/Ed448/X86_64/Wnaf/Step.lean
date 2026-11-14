@@ -54,7 +54,7 @@ theorem step_ok {s : State} {base : Addr} (hs : Scr s base) {dst k n c : Nat}
   rw [WP.block_append_iff]
   have ac : a.gpr .rcx = BitVec.ofNat 64 c := (ak.1 _ (by decide)).trans hrc
   have aD : a.gpr .rdx = BitVec.ofNat 64 (k / 2 ^ n % 32 % 2) := by
-    rw [ad]; congr 1; omega
+    rw [ad]; congr 1; omega_using []
   refine WP.mono (digitStep_ok (Nat.mod_lt _ (by decide)) hc ar aD ac) fun b ⟨bd, bc, bk⟩ => ?_
   have hb' : b.gpr .rbx = BitVec.ofNat 64 n := ((bk.1 _ (by decide)).trans (ak.1 _ (by decide))).trans hb
   have bs : Scr b base := (hs.of_keeps ak (by decide)).of_keeps bk (by decide)

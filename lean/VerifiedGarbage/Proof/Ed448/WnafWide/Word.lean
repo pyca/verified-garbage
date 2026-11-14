@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Recoding
 public import Init.Data.BitVec.Lemmas
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Bounded word arithmetic for public scalar recoding. Only the combined
 lookahead/carry sum is enumerated; the two operands are not cross-multiplied. -/
@@ -26,7 +27,7 @@ private theorem rawDigit_sum : ∀ (wide : Bool), ∀ n < 640,
 theorem rawDigit_ok (wide : Bool) {bits c : Nat} (hb : bits < radix wide) (hc : c ≤ radix wide) :
     rawDigit wide (bits+c+half wide) = BitVec.ofInt 64 (localDigit wide bits c) := by
   have hh : bits+c+half wide < 640 := by
-    cases wide <;> simp only [radix, half, Bool.false_eq_true, ↓reduceIte] at * <;> omega
+    cases wide <;> simp only [radix, half, Bool.false_eq_true, ↓reduceIte] at * <;> omega_using [hb, hc]
   rw [rawDigit_sum wide _ hh, localDigit, digit_mod]
 
 theorem ofInt_sub (x y : Int) :
@@ -40,10 +41,10 @@ theorem rawCarry_ok (wide : Bool) {bits c : Nat} (hb : bits < radix wide) (hc : 
   let n : Int := (c : Int) + (bits%2 : Nat) + half wide - localDigit wide bits c
   have hd := digit_bounds wide ((bits+c+half wide)%radix wide)
   change -(half wide : Int) < localDigit wide bits c ∧ localDigit wide bits c < half wide at hd
-  have h0 : 0 ≤ n := by dsimp only [n]; omega
+  have h0 : 0 ≤ n := by dsimp only [n]; omega_using [hd]
   have hN : n.toNat < 640 := by
     dsimp only [n]
-    cases wide <;> simp only [half, radix, Bool.false_eq_true, ↓reduceIte] at * <;> omega
+    cases wide <;> simp only [half, radix, Bool.false_eq_true, ↓reduceIte] at * <;> omega_using [hc, hd]
   have hw : BitVec.ofNat 64 c + BitVec.ofNat 64 (bits%2) + BitVec.ofNat 64 (half wide) -
       BitVec.ofInt 64 (localDigit wide bits c) = BitVec.ofNat 64 n.toNat := by
     have he := ofInt_sub ((c : Int) + (bits%2 : Nat) + half wide) (localDigit wide bits c)
@@ -55,12 +56,12 @@ theorem rawCarry_ok (wide : Bool) {bits c : Nat} (hb : bits < radix wide) (hc : 
   rw [hw]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  have hn64 : n.toNat < 2^64 := by omega
-  have hn2 : n.toNat / 2 < 2^64 := by omega
+  have hn64 : n.toNat < 2^64 := by omega_using [hN]
+  have hn2 : n.toNat / 2 < 2^64 := by omega_using [hN]
   have eq : carryNext wide bits c = n.toNat / 2 := by
     unfold carryNext n
     congr 2
-    omega
+    omega_using []
   rw [Nat.mod_eq_of_lt hn64, eq, Nat.mod_eq_of_lt hn2]
 
 end VG.Proof.Ed448.WnafWide

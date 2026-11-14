@@ -31,9 +31,9 @@ theorem powers8Repr_congr {m₁ m₂ : Mem} {p : Addr} {H : Block}
     apply Mem.readW_congr
     intro i hi
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h (o + i) (by omega)
+    exact h (o + i) (by omega_using [ho, hi])
   intro k hk
-  rw [keep _ (by omega), keep _ (by omega)]
+  rw [keep _ (by omega_using [hk]), keep _ (by omega_using [hk])]
   exact hr k hk
 
 /-- Zero memory has the prepared powers of the zero subkey. -/
@@ -112,7 +112,7 @@ theorem sealWithPowersPre_local : ∀ vs m₁ m₂, vs.length = (sealWithPowersS
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr] (sealWithPowersPre pb) _ m₂
   dsimp only [Curry.apply, sealWithPowersPre, sealPre, ArgWord.ofRaw] at h ⊢
-  rw [ctxH_congr fun i hi => hc i (by omega)]
+  rw [ctxH_congr fun i hi => hc i (by omega_using [hi])]
   exact ⟨h.1, powers8Repr_congr hp h.2⟩
 
 theorem sealWithPowersPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealWithPowersSig.words pb).length →
@@ -159,13 +159,13 @@ theorem sealWithPowersPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealWithP
   have := Nat.mod_le nl.toNat (2 ^ pb)
   have := Nat.mod_le al.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [ctxCiph_congr hr' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hr' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openWithPowersPre_local : ∀ vs m₁ m₂, vs.length = (openWithPowersSig.words pb).length →
@@ -192,7 +192,7 @@ theorem openWithPowersPre_local : ∀ vs m₁ m₂, vs.length = (openWithPowersS
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
     (openWithPowersPre pb) _ m₂
   dsimp only [Curry.apply, openWithPowersPre, openPre, ArgWord.ofRaw] at h ⊢
-  rw [ctxH_congr fun i hi => hc i (by omega)]
+  rw [ctxH_congr fun i hi => hc i (by omega_using [hi])]
   exact ⟨h.1, powers8Repr_congr hp h.2⟩
 
 theorem openWithPowersPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openWithPowersSig.words pb).length →
@@ -239,9 +239,9 @@ theorem openWithPowersPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openWithP
   dsimp only [Curry.apply, openWithPowersRoundsPost, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega)) hN hA hD hT,
+  rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega_using [hi])) hN hA hD hT,
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hD i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
 theorem openWithPowersLeak_local : ∀ vs m₁ m₂, vs.length = (openWithPowersSig.words pb).length →
@@ -284,7 +284,7 @@ theorem openWithPowersLeak_local : ∀ vs m₁ m₂, vs.length = (openWithPowers
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨
     (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openResult_local (pb := pb) (le15 hr) (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1)
+    simp only [openResult_local (pb := pb) (le15 hr) (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1)
       (agree_of hb.2.2.1) (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]

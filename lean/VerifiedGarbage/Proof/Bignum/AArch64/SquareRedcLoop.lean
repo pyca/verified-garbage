@@ -28,9 +28,9 @@ structure RedcInv (s₀ : State) (B : Addr) (Z w i : Nat) (minv : BitVec 64) (t 
         wv s₀.mem B (slot w aAcc+16) (2*w) + q*wv s₀.mem B (slot w aN) w
 
 theorem digit_bound {q P u : Nat} (hq : q < P) (hu : u < 2 ^ 64) : q+P*u < P*2 ^ 64 := by
-  have h := Nat.mul_le_mul_left P (show u ≤ 2 ^ 64-1 by omega)
+  have h := Nat.mul_le_mul_left P (show u ≤ 2 ^ 64-1 by omega_using [hu])
   rw [Nat.mul_sub, Nat.mul_one] at h
-  omega
+  omega_using [hq, h]
 
 theorem redcStep_ok {s₀ t : State} {B : Addr} {Z w i : Nat} {minv : BitVec 64}
     (hZ : slot w 8 ≤ Z) (h10 : s₀.gpr .x10 = off B (slot w aN))
@@ -79,12 +79,12 @@ theorem redcRows_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     WP isa (.loop VG.Impl.Bignum.AArch64.Square.redcRow (.nonzero .x .x13)) s
       (RedcInv s B Z w w minv) := by
   have h0 : RedcInv s B Z w 0 minv s := by
-    refine ⟨hs, Keep.refl _ _, by simpa using h8, by omega, by simp [h5],
+    refine ⟨hs, Keep.refl _ _, by simpa using h8, by omega_using [], by simp [h5],
       Outside.refl _ _ _ _, ?_⟩
     intro _
     refine ⟨0, by decide, ?_⟩
     simp [h5]
-  exact wp_countdown (N := w) (by omega) (by omega) (fun i => RedcInv s B Z w i minv)
+  exact wp_countdown (N := w) (by omega_using [hw]) (by omega_using [hw1]) (fun i => RedcInv s B Z w i minv)
     (fun i hi t hI _ => redcStep_ok hZ h10 h12 h15 h7 hw1 hw hi hI) h0 h13
 
 end VG.Proof.Bignum.AArch64.Square

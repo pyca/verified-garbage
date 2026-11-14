@@ -30,7 +30,7 @@ theorem rawInputs_ok {s : State} {base : Addr} {size n al bl i j : Nat} {a b : P
   have bound (k : Nat) (hk : k < 9) : slot n k + 8 * n ≤ size := by
     have := slot_bound (n := n) hk
     simp only [stride] at *
-    omega
+    omega_using [cb, hsize, this]
   refine WP.seq (WP.mono (coreLoad_ok hs hz (bound i hi) ha4 ha hwa
     Ra.toReadableComponent (Ra.slot hi)) fun u ⟨Au, Ku, Ou⟩ => ?_)
   have OWu := slotOutside_whole Ou hi
@@ -38,7 +38,7 @@ theorem rawInputs_ok {s : State} {base : Addr} {size n al bl i j : Nat} {a b : P
   refine WP.mono (coreLoad_ok (hs.of_keeps Ku (by decide)) hz (bound j hj) hb4 hb hwb
     Rbu.toReadableComponent (Rbu.slot hj)) fun t ⟨Bt, Kt, Ot⟩ => ?_
   refine ⟨?_, ?_, OWu.trans (slotOutside_whole Ot hj), Ku.trans Kt⟩
-  · rw [slotOutside_val Ot hij (by have := bound i hi; have := hs.nowrap; omega), Au]
+  · rw [slotOutside_val Ot hij (by have := bound i hi; have := hs.nowrap; omega_arith), Au]
   · rw [Bt, Rb.bytes Ku (by decide) OWu hn]
 
 end VG.Proof.Dsa.X86

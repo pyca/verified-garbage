@@ -124,7 +124,7 @@ theorem PI.lay {s : State} (h : PI len σ s) : Lay (pR len) (pW size) s := by
   refine ⟨fun b hb => ?_, fun b hb b' hb' hne hw => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_,
     fun b hb => ?_, fun b hb => ?_, fun b hb => ?_, by rw [h.rsp]; exact hp.sp⟩
   · simp only [pR, pW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
-    rcases hb with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hb with rfl | rfl | rfl <;> simp only <;> omega_arith
   · simp only [pR, pW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb hb'
     rcases hb with rfl | rfl | rfl <;> rcases hb' with rfl | rfl | rfl <;>
       simp only [wRegs, List.mem_singleton, ne_eq, not_true_eq_false, reduceCtorEq, or_self] at hne hw <;>
@@ -181,8 +181,8 @@ theorem pro_ok {len size : Nat} {σ : State} (hp : PPre len size σ) : WP isa (.
   have c : ∀ o, o + 8 ≤ 1024 → (⟨σ.gpr .rdx, 1024⟩ : Region).Contains (σ.gpr .rdx + BitVec.ofNat 64 o) 8 :=
     fun o ho => contains_offset' ho (by decide)
   have w : ∀ o, o + 8 ≤ 1024 → InRegions σ.wr (σ.gpr .rdx + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
-  have w0 := w 840 (by omega); have w1 := w 848 (by omega); have w2 := w 856 (by omega)
-  have w3 := w 864 (by omega); have w4 := w 872 (by omega); have w5 := w 880 (by omega)
+  have w0 := w 840 (by omega_using []); have w1 := w 848 (by omega_using []); have w2 := w 856 (by omega_using [])
+  have w3 := w 864 (by omega_using []); have w4 := w 872 (by omega_using []); have w5 := w 880 (by omega_using [])
   rw [pro_eq]
   refine WP.mono (Proof.MlKem.X86_64.WP.keep [.rbx, .rbp, .r12, .r13] (Q := fun s =>
     s.mem = (((((σ.mem.writeW (σ.gpr .rdx + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
@@ -193,16 +193,16 @@ theorem pro_ok {len size : Nat} {σ : State} (hp : PPre len size σ) : WP isa (.
     (by xrun [w0, w1, w2, w3, w4, w5]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, h13⟩, k⟩ => ?_
   have hf : Frame [⟨σ.gpr .rdx, 1024⟩] σ.mem s.mem := by
     rw [hm]
-    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 848 (by omega))).writeW (List.mem_singleton_self _) _ (c 856 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 864 (by omega))).writeW (List.mem_singleton_self _) _ (c 872 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega)))
+    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c 848 (by omega_using []))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c 864 (by omega_using []))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c 880 (by omega_using [])))
   refine ⟨k.2.1, k.2.2, k.gpr (by decide), hbx, hbp, h12, h13, fun j hj => ?_, ?_, ?_⟩
   · simp only [pa, h12, hm]
     exact Proof.MlKem.X86_64.stores_read σ.mem (σ.gpr .rdx) (fun j => σ.gpr (savedReg j)) j hj
   · exact hf.readW (Region.contains_self _ _) (by simpa using hp.r3) (by decide)
   · rw [pa, hbp, BitVec.add_zero]
-    exact Proof.MlKem.bytesAt_frame hf (by simpa using hp.d2) (by have := hp.n1; omega)
+    exact Proof.MlKem.bytesAt_frame hf (by simpa using hp.d2) (by have := hp.n1; omega_using [this])
 
 theorem epi_eq : Impl.MlDsa.X86_64.PreparedKey.epi = [.mov .rbx (.mem (at_ .r12 840)), .mov .rbp (.mem (at_ .r12 848)),
     .mov .r13 (.mem (at_ .r12 864)), .mov .r14 (.mem (at_ .r12 872)), .mov .r15 (.mem (at_ .r12 880)),
@@ -212,7 +212,7 @@ theorem epi_ok {len size : Nat} {σ s : State} (hp : PPre len size σ) (h : PI l
     WP isa (.block Impl.MlDsa.X86_64.PreparedKey.epi) s fun s' => gprPreserved σ s' ∧ s'.mem = s.mem := by
   have hS : ⟨s.gpr .r12, 1024⟩ ∈ s.rd ++ s.wr := by rw [h.rd, h.wr, hp.wr, h.r12]; simp
   have i : ∀ k < 6, InRegions (s.rd ++ s.wr) (s.gpr .r12 + BitVec.ofNat 64 (840 + 8 * k)) 8 :=
-    fun k hk => ⟨_, hS, contains_offset' (by omega) (by decide)⟩
+    fun k hk => ⟨_, hS, contains_offset' (by omega_using [hk]) (by decide)⟩
   have e : ∀ k < 6, s.mem.readW (s.gpr .r12 + BitVec.ofNat 64 (840 + 8 * k)) 64 = σ.gpr (savedReg k) :=
     fun k hk => h.saved k hk
   have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
@@ -394,7 +394,7 @@ theorem poly_ok {i : Nat} (hi : i < m) {s : State} (h : LI len val σ i s) :
 theorem polys_ok {s : State} (h : LI len val σ 0 s) :
     WP isa (seqR (fun i => .seq (U i) (Impl.MlDsa.X86_64.PreparedKey.nttAt P (slot len i))) 0 m) s (LI len val σ m) := by
   simpa only [Nat.zero_add] using seqR_ok (I := LI len val σ) m 0
-    (fun i _ hi s h => poly_ok C hU hp hc (by omega) h) s h
+    (fun i _ hi s h => poly_ok C hU hp hc (by omega_using [hi]) h) s h
 
 omit C hU in
 theorem copy_ok' {s : State} (h : LI len val σ m s) :
@@ -457,7 +457,7 @@ theorem epi_tr {len size : Nat} {I : State → State → Prop} (hI : ∀ σ s, I
 theorem layOk {len size : Nat} (hl : len < 2 ^ 31 ∧ size < 2 ^ 31) : LayOk (pR len ++ pW size) := by
   intro b hb
   simp only [pR, pW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
-  rcases hb with rfl | rfl | rfl <;> exact ⟨by simp only; omega, by simp [bases]⟩
+  rcases hb with rfl | rfl | rfl <;> exact ⟨by simp only; omega_arith, by simp [bases]⟩
 
 section
 variable {P : Prims} (C : CalleeOk P.ntt (inPlaceContract X86_64.abi ntt 16)) {len size m : Nat}
@@ -488,7 +488,7 @@ theorem prepare_ct : ConstantTime isa (PPre len size) PPub (prepare P len m U) :
   unfold prepare
   refine relStart (RelCT.seq (relInv (I' := fun σ s => LI len val σ 0 s) (fun σ s hp hs => by
       subst hs; exact WP.mono (pro_ok hp) fun s h => ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩) pro_tr)
-    (RelCT.seq (seqR_tr (R := fun i => RP len size fun σ s => LI len val σ i s) m 0 fun k _ hk => poly_tr C hU hUt hc (by omega))
+    (RelCT.seq (seqR_tr (R := fun i => RP len size fun σ s => LI len val σ i s) m 0 fun k _ hk => poly_tr C hU hUt hc (by omega_using [hk]))
     (RelCT.seq (relInv (I' := fun σ s => LI len val σ m s) (fun σ s hp h => WP.mono (copy_ok' hp hc (by rw [Nat.zero_add] at h; exact h)) fun _ h => h.1)
       (Sign.copy_tr ⟨h0, h8⟩ hl1 (by decide) (by decide) (by decide) fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ =>
         ⟨by rw [h₁.1.rbx, h₂.1.rbx, pub.2.1], by rw [h₁.1.rbp, h₂.1.rbp, pub.1]⟩))
@@ -587,20 +587,20 @@ theorem secret_value (p : Params) (key : List Byte) {i : Nat} (hi : i < p.ℓ + 
   have hlen : secretLen p = VG.Proof.MlDsa.Sign.lenS p := rfl
   by_cases h1 : i < p.ℓ
   · rw [PreparedKey.secret_s1 p key h1]
-    simp only [secVal, secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega), hlen]
+    simp only [secVal, secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega_using [h1]), hlen]
     rfl
   · by_cases h2 : i < p.ℓ + p.k
-    · have hj : i - p.ℓ < p.k := by omega
-      have he : p.ℓ + (i - p.ℓ) = i := by omega
+    · have hj : i - p.ℓ < p.k := by omega_using [h1, h2]
+      have he : p.ℓ + (i - p.ℓ) = i := by omega_using [h1]
       rw [← he, PreparedKey.secret_s2 p key hj]
-      simp only [secVal, secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega), hlen]
+      simp only [secVal, secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega_using [h1, h2]), hlen]
       unfold VG.Proof.MlDsa.Sign.s2F
       rw [Nat.mul_add]
-      congr 5 <;> omega
-    · have hj : i - (p.ℓ + p.k) < p.k := by omega
-      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega
+      congr 5 <;> omega_using []
+    · have hj : i - (p.ℓ + p.k) < p.k := by omega_using [hi, h1]
+      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega_using [h2]
       rw [← he, PreparedKey.secret_t0 p key hj]
-      simp only [secVal, secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega), hlen]
+      simp only [secVal, secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega_using []), hlen]
       unfold VG.Proof.MlDsa.Sign.t0F
       have hoff : 128 + VG.Proof.MlDsa.Sign.lenS p * (p.ℓ + p.k) +
           416 * (p.ℓ + p.k + (i - (p.ℓ + p.k)) - p.ℓ - p.k) =
@@ -608,7 +608,7 @@ theorem secret_value (p : Params) (key : List Byte) {i : Nat} (hi : i < p.ℓ + 
             32 * d * (i - (p.ℓ + p.k)) := by
         rw [Nat.mul_add]
         simp only [d]
-        omega
+        omega_using []
       rw [hoff]
       rfl
 

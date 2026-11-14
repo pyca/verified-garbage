@@ -129,6 +129,14 @@ theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
   (h.2.2.1 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
     (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) hc)).1
 
+/-- A table lies apart from every writable region. Stated with the table's
+words a variable, so that a caller's concrete table is never compared with
+another form of `8 * ws.length`, which the kernel would evaluate (the table). -/
+theorem ConstsOk.disjoint_wr (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {r : Region} (hr : r ∈ s.wr) :
+    Region.Disjoint ⟨s.syms name, 8 * ws.length⟩ r :=
+  (h.2.2.1 ⟨s.syms name, 8 * ws.length⟩ (List.mem_map_of_mem (f := fun c =>
+    (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) hc)).2.1 r hr
+
 /-- The table is readable. -/
 theorem ConstsOk.mem_rd (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
     (⟨s.syms name, 8 * ws.length⟩ : Region) ∈ s.rd := by
@@ -140,7 +148,7 @@ theorem ConstsOk.mem_rd (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
 theorem ConstsOk.inRegions (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {x w : Nat}
     (hx : x + w ≤ 8 * ws.length) (hw : 0 < w) (wr : List Region) :
     InRegions (s.rd ++ wr) (s.syms name + BitVec.ofNat 64 x) w :=
-  ⟨_, List.mem_append_left _ (h.mem_rd hc), Offset.contains_base _ hx (by have := h.fit hc; omega)⟩
+  ⟨_, List.mem_append_left _ (h.mem_rd hc), Offset.contains_base _ hx (by have := h.fit hc; omega_using [hx, hw, this])⟩
 
 /-- Word `i` of the table. -/
 theorem ConstsOk.readW (h : ConstsOk K st s) (hc : (name, ws) ∈ K) {i : Nat} (hi : i < ws.length) :

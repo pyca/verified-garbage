@@ -24,18 +24,18 @@ def cutOctets (bs : List Byte) (j : Nat) : List Byte :=
 theorem cutOctets_length {bs : List Byte} (hne : bs ≠ []) (j : Nat) : (cutOctets bs j).length = bs.length := by
   simp only [cutOctets, List.length_cons, List.length_drop]
   have := List.length_pos_iff.mpr hne
-  omega
+  omega_using [this]
 
 theorem cutOctets_value {bs : List Byte} (hne : bs ≠ []) {j bits : Nat} (hj : j < 8)
     (hb : bits = 8 * (bs.length - 1) + j + 1) :
     Spec.Rsa.os2ip (cutOctets bs j) = Spec.Rsa.os2ip bs % 2 ^ bits := by
   have he : cutOctets bs j = KeyScalar.cut bs 0 (BitVec.ofNat 8 (2 ^ (j + 1) - 1)) := by
     simp only [cutOctets, KeyScalar.cut, List.replicate_zero, List.nil_append, Nat.zero_add]
-  have hp : 2 ^ (j + 1) ≤ 256 := show 2 ^ (j + 1) ≤ 2 ^ 8 from Nat.pow_le_pow_right (by decide) (by omega)
+  have hp : 2 ^ (j + 1) ≤ 256 := show 2 ^ (j + 1) ≤ 2 ^ 8 from Nat.pow_le_pow_right (by decide) (by omega_using [hj])
   have hv : (BitVec.ofNat 8 (2 ^ (j + 1) - 1)).toNat = 2 ^ (j + 1) - 1 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have hc := KeyScalar.cut_value (r := bs) (n := 0) (e := bs.length) (j := j + 1) (by omega)
-    (List.length_pos_iff.mpr hne) (by omega) hv
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hp])]
+  have hc := KeyScalar.cut_value (r := bs) (n := 0) (e := bs.length) (j := j + 1) (by omega_using [])
+    (List.length_pos_iff.mpr hne) (by omega_using [hj]) hv
   rw [he]
   simpa only [Nat.add_assoc, hb] using hc
 

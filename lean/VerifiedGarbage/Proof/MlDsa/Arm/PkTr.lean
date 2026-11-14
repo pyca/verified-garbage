@@ -138,7 +138,7 @@ theorem lay_ok {p : Params} {σ : State} (hp : Pre p σ) : OkW (lay p σ) Wb := 
     rw [addr_sub hp.stk]
   refine ⟨fun i hi => ?_, fun i hi j hj hij hw => ?_⟩
   · simp only [lay, sizes, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_c
     · show (σ.sp - BitVec.ofNat 32 8).toNat + 8 ≤ 2 ^ 32
       have := hp.stk; have := σ.sp.isLt; bv_omega
@@ -146,8 +146,8 @@ theorem lay_ok {p : Params} {σ : State} (hp : Pre p σ) : OkW (lay p σ) Wb := 
     · exact hp.f_p
     · exact hp.f_t
   · simp only [lay, sizes, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     simp only [lay, sizes, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first
       | exact absurd rfl hij
@@ -184,14 +184,14 @@ theorem pro_ok {p : Params} (hC : Chk p) {σ : State} (hp : Pre p σ) :
     exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
   have eA : ∀ o, (lay p σ).A 0 o = State.addr (σ.gpr .r2) + BitVec.ofNat 64 o := fun o => rfl
   have wS : ∀ {o n : Nat}, o + n ≤ 32768 → InRegions σ.wr ((lay p σ).A 0 o) n := fun {o n} h =>
-    Lay.covers (o := o) (l := n) w0 (by show o + n ≤ scrLen p; omega) _ _
+    Lay.covers (o := o) (l := n) w0 (by show o + n ≤ scrLen p; omega_using [hs1, h]) _ _
       ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [pro, WP.block_append_iff]
-  refine WP.mono (saveRegs_ok .r2 (off := 840) (by decide) (fit_le (by omega) fc) fun i hi => by
-    rw [add_ofNat_add, ← eA]; exact wS (o := 840 + 4 * i) (n := 4) (by omega)) fun s₁ h₁ => ?_
+  refine WP.mono (saveRegs_ok .r2 (off := 840) (by decide) (fit_le (by omega_using [hs1]) fc) fun i hi => by
+    rw [add_ofNat_add, ← eA]; exact wS (o := 840 + 4 * i) (n := 4) (by omega_using [hi])) fun s₁ h₁ => ?_
   have g2 : s₁.gpr .r2 = pScr σ := by rw [h₁.gpr]
   have e872 : State.addr (s₁.gpr .r2 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32)) = (lay p σ).A 0 872 := by
-    rw [g2]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega)
+    rw [g2]; exact addr_add (by simp only [Impl.MlKem.Arm.oSave]; omega_using [fc, hs1])
   have i872 : InRegions s₁.wr (State.addr (s₁.gpr .r2 + BitVec.ofNat 32 (Impl.MlKem.Arm.oSave + 32))) 4 := by
     rw [e872, h₁.wr]; exact wS (by decide)
   have o1 : Impl.MlKem.Arm.oSave + 32 < 4096 := by decide
@@ -205,7 +205,7 @@ theorem pro_ok {p : Params} (hC : Chk p) {σ : State} (hp : Pre p σ) :
     · rw [List.mem_singleton] at hr; subst hr
       intro x hx; simp only [Region.Contains, eA] at hx ⊢; bv_omega_arith
     · simp only [Region.Contains, eA]; bv_omega_arith
-  refine ⟨⟨hL, rfl, by decide, by decide, by show 32768 ≤ scrLen p; omega, rfl,
+  refine ⟨⟨hL, rfl, by decide, by decide, by show 32768 ≤ scrLen p; omega_using [hs1], rfl,
     show σ.sp - BitVec.ofNat 32 8 = s₁.sp - BitVec.ofNat 32 8 by rw [h₁.sp], Nat.le_refl _,
     by rw [h₁.sp]; exact hp.stk, ?_, ?_, ?_, ?_, fun i hi hi1 => ?_, fun i hi hi1 => ?_⟩, h₁.rd, h₁.wr, h₁.sp,
     fun i hi => ?_, ?_, ?_⟩
@@ -222,7 +222,7 @@ theorem pro_ok {p : Params} (hC : Chk p) {σ : State} (hp : Pre p σ) :
     · simp [Lay.buf, lay, sizes]
   · show _ ∈ s₁.rd ++ s₁.wr
     rw [h₁.rd, h₁.wr, hp.rd, hp.wr]
-    rcases (by omega : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, lay, sizes]
+    rcases (by omega_using [hi, hi1] : i = 0 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl <;> simp [Lay.buf, lay, sizes]
   · show (s₁.mem.writeW _ _).readW _ _ = _
     rw [e872, ne1 i hi]
     exact h₁.saved i hi
@@ -235,7 +235,7 @@ theorem pro_ok {p : Params} (hC : Chk p) {σ : State} (hp : Pre p σ) :
       rw [List.mem_singleton] at hr; subst hr
       exact disjW' (i := 3) (o := 0) (l := p.pkLen) (j := 0) (o' := 840) (l' := 36) hL
         (by rw [lay_sizes]; exact hC.sav_pk) (.inr (.inl (by decide))))
-      (by obtain ⟨-, h⟩ := hC.pk; omega)
+      (by obtain ⟨-, h⟩ := hC.pk; omega_using [h])
 
 theorem pro_piece {p : Params} (hC : Chk p) :
     Piece (Pre p) Pub (fun σ s => s = σ) (KC p) (.block pro) :=
@@ -255,7 +255,7 @@ def K (i : Nat) : Bool := i != 2
 theorem hK : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → K i = true → K j = true → i ∈ Wb ∨ j ∈ Wb :=
   fun i _ j _ hij _ _ hi hj => by
     simp only [K, bne_iff_ne, ne_eq] at hi hj
-    simp only [Wb, List.mem_cons, List.not_mem_nil, or_false]; omega
+    simp only [Wb, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
 
 theorem hashLay_sizes (p : Params) (σ s : State) :
     (hashLay (lay p σ) s K).sizes = [scrLen p, 8, 0, p.pkLen, 64] := rfl
@@ -269,7 +269,7 @@ theorem trPieces {p : Params} (hC : Chk p) {σ s : State} (hs : Site (lay p σ) 
     (by rw [hashLay_sizes]; exact hC.q) (.inr rfl) fun _ => by decide⟩
   rw [List.mem_singleton] at hpc; subst hpc
   exact pieceS hs rfl (show encodable (BitVec.ofNat 32 0) = true by decide) hC.encPk h1
-    (show 0 + p.pkLen < 2 ^ 32 by omega) (by rw [hashLay_sizes]; exact hC.p1) (.inr rfl)
+    (show 0 + p.pkLen < 2 ^ 32 by omega_using [h2]) (by rw [hashLay_sizes]; exact hC.p1) (.inr rfl)
     fun h => absurd h (by decide)
 
 /-- After the sponge: `tr = H(pk, 64)`. -/
@@ -301,7 +301,7 @@ theorem trHash_ok {p : Params} (hC : Chk p) {σ s : State} (h : KC p σ s) :
     · rw [k'.frame.readW (r := (lay p σ).R 0 840 36) (by simp only [Region.Contains]; bv_omega_arith)
         (hd hC.w_sav) (by decide)]
       exact h.lr
-    · rw [Proof.MlKem.bytesAt_frame k'.frame (hd hC.w_pk) (by obtain ⟨-, h⟩ := hC.pk; omega)]; exact h.pk
+    · rw [Proof.MlKem.bytesAt_frame k'.frame (hd hC.w_pk) (by obtain ⟨-, h⟩ := hC.pk; omega_using [h])]; exact h.pk
   · have o₃ : bytesAt s'.mem ((lay p σ).A 4 0) 64 = _ := o'
     rw [o₃]
     simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, Lay.pb,

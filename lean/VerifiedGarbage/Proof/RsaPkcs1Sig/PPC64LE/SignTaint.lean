@@ -23,6 +23,7 @@ namespace VG.Proof.RsaPkcs1Sig.PPC64LE.Sign
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Sig.PPC64LE.Sign
 open VG.Proof.Bignum.PPC64LE (Two Pins two_taint)
 
+
 section
 variable {α : Type} {Φ : α → State → Prop}
 
@@ -36,8 +37,10 @@ theorem encode_taint (h : Pins Φ [.r4, .r5, .r6, .r7, .r8]) :
 theorem zeroOut_taint (h : Pins Φ [.r26, .r28]) : RelCT isa (Two Φ) zeroOut fun _ _ => True :=
   two_taint _ h (by taint_decide)
 
-theorem callArgs_taint (h : Pins Φ []) : RelCT isa (Two Φ) (.block callArgs) fun _ _ => True :=
-  two_taint [] h (by taint_decide)
+theorem callArgs_taint (pc : Bool) (h : Pins Φ []) : RelCT isa (Two Φ) (.block (callArgs pc)) fun _ _ => True := by
+  cases pc
+  · exact two_taint [] h (by taint_decide)
+  · exact two_taint [] h (by taint_decide)
 
 theorem wipe_taint (h : Pins Φ [.r28]) : RelCT isa (Two Φ) wipe fun _ _ => True :=
   two_taint _ h (by taint_decide)

@@ -49,7 +49,7 @@ theorem nibble_eq (v : Nat) (hv : v < 256) (o : Nat) :
   have hl : v / 16 ^ o % 16 < 2 ^ 64 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
   rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, h16,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl,
-    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega), Nat.pow_mul]
+    Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega_using [hv]), Nat.pow_mul]
 
 theorem counter_fact128 : ∀ i < 128,
     BitVec.ofNat 64 i >>> 1 = BitVec.ofNat 64 (i / 2) ∧

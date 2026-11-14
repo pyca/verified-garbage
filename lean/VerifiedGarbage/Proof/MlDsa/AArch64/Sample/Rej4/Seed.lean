@@ -60,22 +60,22 @@ theorem tailWord_eq (m : Mem) (p : Addr) :
   have h0 := (m (p+32)).isLt
   have h1 := (m (p+33)).isLt
   have hs : (((m (p+33)).setWidth 64) <<< 8).toNat = (m (p+33)).toNat * 256 := by
-    rw [toNat_lsl_n (by rw [BitVec.toNat_setWidth]; omega),BitVec.toNat_setWidth]
-    omega
+    rw [toNat_lsl_n (by rw [BitVec.toNat_setWidth]; omega_using []),BitVec.toNat_setWidth]
+    omega_using []
   apply BitVec.eq_of_toNat_eq
   unfold tailWord lastWord
-  rw [toNat_add_n (by rw [BitVec.toNat_add,BitVec.toNat_setWidth,hs]; change (_ % _ + 2031616 < _); omega),
-    toNat_add_n (by rw [BitVec.toNat_setWidth,hs]; omega),BitVec.toNat_setWidth,hs]
+  rw [toNat_add_n (by rw [BitVec.toNat_add,BitVec.toNat_setWidth,hs]; change (_ % _ + 2031616 < _); omega_using []),
+    toNat_add_n (by rw [BitVec.toNat_setWidth,hs]; omega_using []),BitVec.toNat_setWidth,hs]
   simp only [toNat_append_add,BitVec.toNat_ofNat]
   rw [show (0x1f0000 : BitVec 64).toNat = 2031616 from rfl]
   simp only [Nat.reducePow,Nat.zero_mod,Nat.reduceMod,Nat.reduceMul,Nat.reduceAdd]
-  omega
+  omega_using []
 
 theorem tailWord_byte (m : Mem) (p : Addr) {k : Nat} (hk : k < 8) :
     (tailWord m p).extractLsb' (8*k) 8 =
       if k = 0 then m (p+32) else if k = 1 then m (p+33) else if k = 2 then 0x1f else 0 := by
   rw [tailWord_eq]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ 3 ≤ k by omega) with h | h | h | h
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ 3 ≤ k by omega_using []) with h | h | h | h
   · subst k
     simp only [Nat.mul_zero,BitVec.extractLsb'_append_eq_right,ite_true]
   · subst k
@@ -87,10 +87,10 @@ theorem tailWord_byte (m : Mem) (p : Addr) {k : Nat} (hk : k < 8) :
     simp only [Nat.reduceMul,Nat.reduceSub,BitVec.extractLsb'_append_eq_right,
       ite_eq_right (by decide : ¬ (2:Nat) = 0),ite_eq_right (by decide : ¬ (2:Nat) = 1),ite_true]
     rfl
-  · rw [BitVec.extractLsb'_append_eq_of_le (by omega),BitVec.extractLsb'_append_eq_of_le (by omega),
-      BitVec.extractLsb'_append_eq_of_le (by omega)]
-    simp only [ite_eq_right (by omega : ¬ k = 0),ite_eq_right (by omega : ¬ k = 1),
-      ite_eq_right (by omega : ¬ k = 2)]
+  · rw [BitVec.extractLsb'_append_eq_of_le (by omega_using [h]),BitVec.extractLsb'_append_eq_of_le (by omega_using [h]),
+      BitVec.extractLsb'_append_eq_of_le (by omega_using [h])]
+    simp only [ite_eq_right (by omega_using [h] : ¬ k = 0),ite_eq_right (by omega_using [h] : ¬ k = 1),
+      ite_eq_right (by omega_using [h] : ¬ k = 2)]
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     simp
@@ -117,17 +117,17 @@ theorem seedState_eq (m : Mem) (p : Addr) :
   intro j hj
   rw [Proof.Sha3.Seed34.byteOf_A0 (Proof.Sha3.bytesAt_length _ _ _) hj]
   unfold Proof.Sha3.byteOf
-  rw [seedState_get m p (by omega)]
+  rw [seedState_get m p (by omega_using [hj])]
   by_cases h32 : j < 32
-  · rw [ite_eq_left (by omega : j/8 < 4),ite_eq_left (by omega : j < 34),
-      Proof.MlKem.bytesAt_getD m p (by omega)]
+  · rw [ite_eq_left (by omega_using [h32] : j/8 < 4),ite_eq_left (by omega_using [h32] : j < 34),
+      Proof.MlKem.bytesAt_getD m p (by omega_using [h32])]
     change (m.read (p+BitVec.ofNat 64 (8*(j/8))) 8).extractLsb' (8*(j%8)) 8 = _
-    rw [Mem.extractLsb'_read m _ (by omega),BitVec.add_assoc,← BitVec.ofNat_add,
-      show 8*(j/8)+j%8 = j by omega]
-  · rw [ite_eq_right (by omega : ¬ j/8 < 4)]
+    rw [Mem.extractLsb'_read m _ (by omega_using []),BitVec.add_assoc,← BitVec.ofNat_add,
+      show 8*(j/8)+j%8 = j by omega_using []]
+  · rw [ite_eq_right (by omega_using [h32] : ¬ j/8 < 4)]
     by_cases h40 : j < 40
-    · rw [ite_eq_left (by omega : j/8 = 4),tailWord_byte m p (by omega)]
-      rcases (show j = 32 ∨ j = 33 ∨ j = 34 ∨ 35 ≤ j by omega) with h | h | h | h
+    · rw [ite_eq_left (by omega_using [h32, h40] : j/8 = 4),tailWord_byte m p (by omega_using [])]
+      rcases (show j = 32 ∨ j = 33 ∨ j = 34 ∨ 35 ≤ j by omega_using [h32]) with h | h | h | h
       · subst j
         simp only [Nat.reduceMod,ite_true]
         rw [Proof.MlKem.bytesAt_getD m p (by decide)]
@@ -138,13 +138,13 @@ theorem seedState_eq (m : Mem) (p : Addr) :
         rfl
       · subst j
         simp
-      · simp (disch := omega) only [ite_eq_right]
-    · rw [ite_eq_right (by omega : ¬ j/8 = 4)]
+      · simp (disch := omega_arith) only [ite_eq_right]
+    · rw [ite_eq_right (by omega_using [h40] : ¬ j/8 = 4)]
       by_cases h20 : j/8 = 20
-      · rw [ite_eq_left h20,pad_byte (j%8) (by omega)]
+      · rw [ite_eq_left h20,pad_byte (j%8) (by omega_using [])]
         by_cases he : j = 167 <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
       · rw [ite_eq_right h20]
-        simp (disch := omega) only [ite_eq_right]
+        simp (disch := omega_arith) only [ite_eq_right]
         apply BitVec.eq_of_getLsbD_eq
         intro i hi
         simp

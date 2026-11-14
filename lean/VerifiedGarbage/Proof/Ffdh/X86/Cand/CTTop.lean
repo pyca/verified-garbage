@@ -66,7 +66,7 @@ theorem body_trace {T : List Byte} {up Tb : BitVec 32} {bits g : Nat} (hbl : len
         rwa [S.esp, R.2.2] at this
   refine ite_fixed (b := decide (T.length < len)) (fun _ h => h.2)
     (fun _ => short_trace fun x h => h.1.1) fun e => ?_
-  have hL : len ≤ T.length := by simp at e; omega
+  have hL : len ≤ T.length := by simp at e; omega_using [e]
   exact (main_trace G h3 hL hbl hb1 hb2 hg25 TA).mono (fun x y h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h
 
 /-! ## Against the contract -/
@@ -85,7 +85,7 @@ theorem pub_facts {s t : State} (H : contract.pub s t) :
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=
     fun h => (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp h
   refine ⟨SP, fun i hi => ?_, sy, inj L⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact a0
   · exact a1
@@ -122,7 +122,7 @@ theorem narrowed_facts {s f : State} (A : CandABI s) (Bf : BodyAt (Rd s) Impl.Ff
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have sub : Region.Sub ⟨frameAt s, argsFrame⟩ (belowR s) := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have I := VG.Proof.Ffdh.X86.In.narrow Bf.1 (narrowRd Bf.1.extra

@@ -86,11 +86,11 @@ theorem Scratch.al_off {s : State} {p : Addr} (h : Scratch s p) {d : Nat} (hd : 
 
 theorem Scratch.write {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions s.wr (off p d) n :=
-  ⟨_, h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem Scratch.read {s : State} {p : Addr} (h : Scratch s p) {d n : Nat}
     (hd : d + n ≤ 4096) : InRegions (s.rd ++ s.wr) (off p d) n :=
-  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega)⟩
+  ⟨_, List.mem_append_right _ h.wr, Offset.contains_base p hd (by omega_using [hd])⟩
 
 theorem lane_injective : Function.Injective lane := by
   intro i j h
@@ -105,7 +105,7 @@ theorem lane_mem (j : Fin 16) : lane j ∈ roundRegs := by revert j; decide
 
 theorem lane_ne_r6 (j : Fin 16) : lane j ≠ .a3 := by revert j; decide
 theorem word_offset (i : Nat) (hi : i < 128) : 1024 + 8 * i < 2048 := by
-  omega
+  omega_using [hi]
 
 /-- A write changes exactly the selected word of the block. -/
 theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
@@ -118,16 +118,16 @@ theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
     simp only [ite_true, word, Mem.readW_writeW_self64]
   · simp only [h, ite_false, word]
     exact Mem.readW_writeW_sep
-      (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      (Offset.sep p (by omega_using [h]) (by omega_using [hj]) (by omega_using [])) (by decide)
 
 /-- Load one word of the permuted block into its register. -/
 theorem loadWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : Addr}
     (hs : Scratch s p) :
     WP isa (.block [loadWord index j]) s fun t =>
       t = s.write (lane j) (word s.mem p (index j).val) := by
-  have ld := hs.read (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  have ld := hs.read (d := 1024 + 8 * (index j).val) (n := 8) (by omega_using [])
   rw [← hs.reg] at ld
-  refine WP.block_cons_iff.mpr ⟨_, exec_load_d (word_offset _ (index j).isLt) (hs.al_off (by omega)) ld,
+  refine WP.block_cons_iff.mpr ⟨_, exec_load_d (word_offset _ (index j).isLt) (hs.al_off (by omega_using [])) ld,
     WP.block_nil ?_⟩
   rw [hs.reg]
 
@@ -166,9 +166,9 @@ theorem storeWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : 
     (hs : Scratch s p) :
     WP isa (.block [storeWord index j]) s fun t =>
       t = { s with mem := s.mem.writeW (off p (1024 + 8 * (index j).val)) (s.gpr (lane j)) } := by
-  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega_using [])
   rw [← hs.reg] at st
-  refine WP.block_cons_iff.mpr ⟨_, exec_store_d (word_offset _ (index j).isLt) (hs.al_off (by omega)) st,
+  refine WP.block_cons_iff.mpr ⟨_, exec_store_d (word_offset _ (index j).isLt) (hs.al_off (by omega_using [])) st,
     WP.block_nil ?_⟩
   rw [hs.reg]
 
@@ -195,7 +195,7 @@ theorem stores_ok (index : Fin 16 → Fin 128) (js : List (Fin 16)) (s : State) 
     · rw [hw, List.foldl_cons, working_write]
     · exact ((Frame.refl [⟨off p 1024, 1024⟩] s.mem).writeW (by simp) _
         (Offset.contains p (d := 1024 + 8 * (index j).val) (n := 8) (e := 1024) (k := 1024)
-          (by omega) (by omega) (by omega))).trans hf
+          (by omega_using []) (by omega_using []) (by omega_using []))).trans hf
 
 /-- The sixteen words of a row or column, in their registers. -/
 def InRegs (s : State) (v : Vector Word 16) : Prop := ∀ j : Fin 16, s.gpr (lane j) = v[j]
@@ -538,18 +538,18 @@ theorem lineOps_words (x : Nat → Word) {a b d r : Nat} (ha : a < 16) (hb : b <
   have h1816 : (18 : Nat) ≠ 16 := by decide
   have h1817 : (18 : Nat) ≠ 17 := by decide
   have hda : d ≠ a := Ne.symm had
-  have na16 : a ≠ 16 := by omega
-  have na17 : a ≠ 17 := by omega
-  have na18 : a ≠ 18 := by omega
-  have nb16 : b ≠ 16 := by omega
-  have nb17 : b ≠ 17 := by omega
-  have nb18 : b ≠ 18 := by omega
-  have nd16 : d ≠ 16 := by omega
-  have nd17 : d ≠ 17 := by omega
-  have nd18 : d ≠ 18 := by omega
-  have nm16 : m ≠ 16 := by omega
-  have nm17 : m ≠ 17 := by omega
-  have nm18 : m ≠ 18 := by omega
+  have na16 : a ≠ 16 := by omega_using [ha]
+  have na17 : a ≠ 17 := by omega_using [ha]
+  have na18 : a ≠ 18 := by omega_using [ha]
+  have nb16 : b ≠ 16 := by omega_using [hb]
+  have nb17 : b ≠ 17 := by omega_using [hb]
+  have nb18 : b ≠ 18 := by omega_using [hb]
+  have nd16 : d ≠ 16 := by omega_using [hd]
+  have nd17 : d ≠ 17 := by omega_using [hd]
+  have nd18 : d ≠ 18 := by omega_using [hd]
+  have nm16 : m ≠ 16 := by omega_using [hm]
+  have nm17 : m ≠ 17 := by omega_using [hm]
+  have nm18 : m ≠ 18 := by omega_using [hm]
   have sa16 := Ne.symm na16; have sa17 := Ne.symm na17; have sa18 := Ne.symm na18
   have sb16 := Ne.symm nb16; have sb17 := Ne.symm nb17; have sb18 := Ne.symm nb18
   have sd16 := Ne.symm nd16; have sd17 := Ne.symm nd17; have sd18 := Ne.symm nd18
@@ -626,7 +626,7 @@ theorem permute_ok (s : State) (v : Vector Word 16) (hv : InRegs s v) :
       (alines (roundLines ncolumns ++ roundLines ndiagonals) (words (slots s)))[j.1] := by
     simpa only [words, Vector.getElem_ofFn] using congrArg (·[j.1]'j.2) (roundOps_fold (slots s))
   rw [← e']
-  exact h'.holds j.1 (by omega)
+  exact h'.holds j.1 (by omega_using [])
 
 /-- The row/column code meets the specification's gather, P, scatter definition. -/
 theorem permuteAt_ok (index : Fin 16 → Fin 128) (s : State) {p : Addr} (hs : Scratch s p) :

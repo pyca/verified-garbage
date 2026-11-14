@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Parity of a canonical field element in a little-endian workspace -/
 
@@ -23,7 +24,7 @@ theorem word_parity (m : Mem) (base : Addr) (a n : Nat) (hn : 0 < n) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 1 from rfl,
     Nat.and_one_is_mod, BitVec.toNat_ofNat, hp,
-    Nat.mod_eq_of_lt (show (word m base a).toNat % 2 < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show (word m base a).toNat % 2 < 2 ^ 64 by omega_using [])]
 
 theorem tag_byte (m : Mem) (base : Addr) (a n : Nat) (hn : 0 < n) (b : Bool) :
     ((((word m base a &&& 1) + 2) &&& (if b then BitVec.allOnes 64 else 0)).setWidth 8) =
@@ -40,7 +41,7 @@ theorem slot_parity (m : Mem) (base : Addr) (a n : Nat) (hn : 0 < n) :
   have h := congrArg BitVec.toNat (word_parity m base a n hn)
   simpa only [BitVec.toNat_and, show (1 : BitVec 64).toNat = 1 from rfl,
     Nat.and_one_is_mod, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show wordsVal m base a n % 2 < 2 ^ 64 by omega)] using h
+    Nat.mod_eq_of_lt (show wordsVal m base a n % 2 < 2 ^ 64 by omega_using [])] using h
 
 
 theorem xor_low_mask (x y : BitVec 64) :
@@ -59,9 +60,9 @@ theorem readW_low32 (m : Mem) (a : Addr) :
     (m.readW a 64).setWidth 32 = m.readW a 32 := by
   symm
   have e := Mem.read_eq_of_bytes (n := 4) (v := (m.readW a 64).setWidth 32) (a := a) (m := m) fun i hi => by
-    rw [BitVec.extractLsb'_setWidth_of_le (by omega)]
+    rw [BitVec.extractLsb'_setWidth_of_le (by omega_using [hi])]
     show _ = ((m.read a 8).setWidth 64).extractLsb' (8 * i) 8
-    rw [BitVec.extractLsb'_setWidth_of_le (by omega), Mem.extractLsb'_read m a (by omega : i < 8)]
+    rw [BitVec.extractLsb'_setWidth_of_le (by omega_using [hi]), Mem.extractLsb'_read m a (by omega_using [hi] : i < 8)]
   show (m.read a 4).setWidth 32 = _
   rw [e]; exact BitVec.setWidth_eq _
 
@@ -75,6 +76,6 @@ theorem slot32_parity (m : Mem) (base : Addr) (a n : Nat) (hn : 0 < n) :
   have h := congrArg BitVec.toNat (word32_parity m base a n hn)
   simpa only [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl,
     Nat.and_one_is_mod, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show wordsVal m base a n % 2 < 2 ^ 32 by omega)] using h
+    Nat.mod_eq_of_lt (show wordsVal m base a n % 2 < 2 ^ 32 by omega_using [])] using h
 
 end VG.Proof.EcKey.Compressed

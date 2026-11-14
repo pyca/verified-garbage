@@ -80,7 +80,7 @@ theorem disj (hL : L.Ok) {i o l j o' l' : Nat} (h : sepB L.sizes (i, o, l) (j, o
       · exact .inl hs
       · exact .inr hs
     have := (L.ptr i).isLt
-    exact Offset.disjoint _ hs' (by omega) (by omega)
+    exact Offset.disjoint _ hs' (by omega_using [hla, hf]) (by omega_using [hlb, hf])
   · exact ((hL.disj _ ha _ hb e).sub_left (R_sub hla)).sub_right (R_sub hlb)
 
 theorem disjAll (hL : L.Ok) {i o l : Nat} {W : List (Nat × Nat × Nat)} (h : sepAll L.sizes (i, o, l) W = true) :
@@ -194,6 +194,6 @@ theorem Ctx.cs {L : Lay} {s : State} (h : Ctx L s) {o l : Nat} (hl : o + l ≤ 3
     Covers [L.R 0 o l] s.wr := Lay.covers h.cw (Nat.le_trans hl h.sz0)
 
 theorem Ctx.fit {L : Lay} {s : State} (h : Ctx L s) : (L.ptr 0).toNat + 32768 ≤ 2 ^ 64 := by
-  have := h.ok.fit 0 (by have := h.len; omega); have := h.sz0; omega
+  have := h.ok.fit 0 (by have := h.len; omega_using [this]); have := h.sz0; omega_arith
 
 end VG.Proof.MlKem.RISCV64

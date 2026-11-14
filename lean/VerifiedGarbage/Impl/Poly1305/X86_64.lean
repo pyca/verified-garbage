@@ -191,10 +191,13 @@ def saveS : List Instr := savedS.map fun (r, d) => .store (at_ .r8 d) r
 def restoreS : List Instr := savedS.map fun (r, d) => .mov r (.mem (at_ .r15 d))
 
 /-- Copies the `rax > 0` bytes at `rsi` to the buffer from byte `r12` on,
-advancing `rsi` and `r12`. -/
+advancing `rsi` and `r12`. Each byte goes to byte `r12 mod 16` of the buffer,
+which is byte `r12` (`r12 + rax ≤ 16`), so that the store stays within the
+buffer whatever `r12` is: the residue analysis then knows that it writes no
+other memory (`X86_64.RTaint.idxRange`). -/
 def copyIn : Prog isa :=
-  .loop (.block [.movzx8 .r13 (at_ .rsi 0), .store8 (bufAt .r12) .r13, .alu .add .rsi (.imm 1),
-    .alu .add .r12 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
+  .loop (.block [.alu .and .r12 (.imm 15), .movzx8 .r13 (at_ .rsi 0), .store8 (bufAt .r12) .r13,
+    .alu .add .rsi (.imm 1), .alu .add .r12 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
 
 /-- The number of bytes to copy into the buffer, `min(16 - r12, rcx)`, into
 `rax`, and subtracted from `rcx`. -/

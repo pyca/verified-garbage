@@ -83,7 +83,7 @@ theorem habs_of (S : Impl.MlKem.AArch64.Hybrid.HSrc)
       simp only [Impl.MlKem.AArch64.Hybrid.absorbBlock, ite_eq_left hf]
     obtain ⟨h, hc⟩ := hfull
     exact ⟨h, by rw [e]; exact Taint.isSome_check_of_eraseOff (absorbWords_erase _ _ _) hc⟩
-  · rw [show blk = S.len / 136 by omega]
+  · rw [show blk = S.len / 136 by omega_using [hb, hf]]
     exact hlast
 
 theorem habs768 : ∀ blk, 136 * blk < (Impl.MlKem.AArch64.Hybrid.ekSrc lay768).len → ∃ h,

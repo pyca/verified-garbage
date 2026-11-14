@@ -32,16 +32,16 @@ theorem advance_pending (n : Nat) (hn : n < 4096) {s : State} {P : Addr} {w i b 
     rw [hm,hdrStore_hdr _ _ _ (by decide) hk (Ne.symm he)]
   have ea : ∀ j < 40, wv t.mem P (slot w j) w = wv s.mem P (slot w j) w := by
     intro j hj
-    exact out.wv (by have := hdr_lt_slot w j (show Crt.sI < 32 by decide); omega) (by
+    exact out.wv (by have := hdr_lt_slot w j (show Crt.sI < 32 by decide); omega_using [this]) (by
       have := hc.scrT.nowrap
-      have hb := slot_mono w (show j+1 ≤ 40 by omega)
+      have hb := slot_mono w (show j+1 ≤ 40 by omega_using [hj])
       rw [slot_succ] at hb
       unfold slot hdrBytes CrtWindowFive.tabBytes32 at *
-      omega)
+      omega_using [this, hb])
   refine ⟨hc.of_frm ft kt.wr (kt.gpr .x0 (by decide)),?_,?_,?_,ft,kt,hh⟩
   · exact ⟨(hh _ (by decide) (by decide)).trans ht.tab,
-      fun j hj => (ea (8+j) (by omega)).symm ▸ ht.lt j hj,
-      fun hQ j hj => (ea (8+j) (by omega)).symm ▸ ht.val hQ j hj⟩
+      fun j hj => (ea (8+j) (by omega_using [hj])).symm ▸ ht.lt j hj,
+      fun hQ j hj => (ea (8+j) (by omega_using [hj])).symm ▸ ht.val hQ j hj⟩
   · obtain ⟨E,v,hb,hv,hK,hy,hyv,hv',hb'⟩ := hp
     exact ⟨E,v,hb,hv,hK,(ea aY (by decide)).symm ▸ hy,
       by simpa only [ea aY (by decide)] using hyv,

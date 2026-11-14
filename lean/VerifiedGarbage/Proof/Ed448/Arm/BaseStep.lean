@@ -105,9 +105,9 @@ theorem baseMask_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : 
   have ba : State.addr (u1.gpr .r7 + BitVec.ofNat 32 BITS) = off base (BITS + t) := by
     rw [v1.gpr]; change State.addr (s.gpr .r0 + s.gpr .r11 + BitVec.ofNat 32 BITS) = _
     rw [hb, Offset.add_add, Nat.add_comm t BITS]
-    exact hs.ea (by omega)
-  refine VG.Proof.X25519.Arm.wp_ldrb (by omega) ba
-    (by rw [v1.rd, v1.wr]; exact hs.read (by omega)) fun u2 v2 => ?_
+    exact hs.ea (by omega_using [ht, hB])
+  refine VG.Proof.X25519.Arm.wp_ldrb (by omega_using [hB]) ba
+    (by rw [v1.rd, v1.wr]; exact hs.read (by omega_using [ht, hB])) fun u2 v2 => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u3 v3 => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u4 v4 => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [v4.gpr]; change u3.gpr .r5 - u3.gpr .r3 = _
@@ -143,7 +143,7 @@ theorem baseSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEn
   rw [hz, r11]
   change (BitVec.ofNat 32 t - BitVec.ofNat 32 0 == 0) = _
   rw [BitVec.sub_zero]
-  exact VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)
+  exact VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_using [ht])
 
 /-- The loop's invariant, after the bits above `n` of `k`. -/
 structure BaseInv (base : Addr) (k : Nat) (s₀ s : State) (n : Nat) : Prop where
@@ -166,7 +166,7 @@ theorem baseStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 456)
   have hB : BITS = 3072 := rfl
   have hA : ACC = 3584 := rfl
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 ((k >>> n) &&& 1) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by omega_using [hn, hB])]; omega_using [hB]) (by rw [ofs_off' base (by omega_using [hn, hB])]; omega_using [hn, hB, hA])]
     exact hbits n hn
   unfold baseStep
   refine WP.seq (WP.mono (decR11_ok hi.r11) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -180,9 +180,9 @@ theorem baseStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 456)
   have b₃ : s₃.gpr .r11 = BitVec.ofNat 32 n := by
     rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), b₁]
   have bit₃ : s₃.mem (off base (BITS + n)) = BitVec.ofNat 8 ((k >>> n) &&& 1) := by
-    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
-  refine WP.mono (baseSwap_ok hs₃ bb₃ (by omega) b₃ (bit_lt k n) bit₃) fun t ⟨k₄, bb₄, z₄, e₄⟩ => ?_
+    rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega_using [hn, hB])]; omega_using [hB])
+      (by rw [ofs_off' base (by omega_using [hn, hB])]; omega_using [hn, hB, hA]), m₁, bitval]
+  refine WP.mono (baseSwap_ok hs₃ bb₃ (by omega_using [hn]) b₃ (bit_lt k n) bit₃) fun t ⟨k₄, bb₄, z₄, e₄⟩ => ?_
   have core := k₂.trans (k₃.trans k₄)
   have ee : E t.mem base = baseEnv (decide ((k >>> n) &&& 1 = 1)) (E s.mem base) := by
     rw [e₄, e₃, e₂, m₁]; rfl
@@ -208,12 +208,12 @@ theorem baseLoop_ok {s₀ s : State} {base : Addr} {k : Nat}
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 456 ∧ BaseInv base k s₀ s m) ?_ 456 s'
     ⟨by decide, by decide, hi s' h1 h2 h3 h4 h5⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (baseStep_ok (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
+  refine WP.mono (baseStep_ok (by omega_using [h2]) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_using [hm] : ¬m = 0), Bool.not_false], m, by omega_using [],
+      by omega_using [hm], by omega_using [h2], hi'⟩
 
 end VG.Proof.Ed448.Arm

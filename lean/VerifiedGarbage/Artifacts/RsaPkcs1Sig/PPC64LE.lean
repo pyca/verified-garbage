@@ -3,10 +3,11 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.RecoverVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.SignP
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
-/-! # PKCS #1 v1.5 signing, and verification and recovery with a precomputed RSA public key, on PPC64LE -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on PPC64LE -/
 
 @[expose] public section
 
@@ -21,9 +22,9 @@ def artifacts : List Artifact := [
     code := Impl.RsaPkcs1Sig.PPC64LE.RecoverPrecomputed.code
     stack := 2224
     verified := Proof.RsaPkcs1Sig.PPC64LE.Rec.code_verified },
-  Spec.RsaPkcs1Sig.signApi.artifact PPC64LE.target {
-    code := Impl.RsaPkcs1Sig.PPC64LE.Sign.code
+  Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Sig.PPC64LE.Sign.codeP
     stack := Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes
-    verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.code_verified }]
+    verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.codeP_verified }]
 
 end VG.Artifacts.RsaPkcs1Sig.PPC64LE

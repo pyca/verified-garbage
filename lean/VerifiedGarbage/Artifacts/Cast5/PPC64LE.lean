@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.Lit
 
-/-! # CAST5 key expansion and ECB on PPC64LE -/
+/-! # CAST5 (RFC 2144) on PPC64LE -/
 
 @[expose] public section
 

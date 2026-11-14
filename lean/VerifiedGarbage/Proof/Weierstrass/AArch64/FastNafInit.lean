@@ -36,7 +36,7 @@ theorem fastInit_ok (K : WinCfg) {w : Nat} (hw : FastNaf.Wide w) {s : State} {ba
   · simp only [FastNaf.residual_zero,nafVal5,RegUpd.gpr_write,ite_true,ite_false,reduceCtorEq,BitVec.setWidth_eq] at *
     simp only [regsVal] at va
     change _+2^256*0=_
-    omega
+    omega_using [va]
   · rcases hw with rfl | rfl | rfl <;> rfl
   · rcases hw with rfl | rfl | rfl <;> rfl
   · rfl
@@ -62,7 +62,7 @@ theorem fastClear_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat}
   intro i hi
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
-  rw [testBit_byte t.mem base (n:=33) (by omega) hb,ht]
+  rw [testBit_byte t.mem base (n:=33) (by omega_using [hi]) hb,ht]
   simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
 
 end VG.Proof.Weierstrass.AArch64

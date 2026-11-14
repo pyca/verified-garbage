@@ -30,16 +30,16 @@ abbrev rowOff (w j : Nat) : Nat := 24 + 8 * (w * j)
 
 theorem row_bv {w j : Nat} (hw : w < 2 ^ 31) (hj : j < 2 ^ 16) :
     ((BitVec.ofNat 64 (2 * w) >>> 1) * BitVec.ofNat 64 j) <<< 3 = BitVec.ofNat 64 (8 * (w * j)) := by
-  rw [mont_ofNat_shr1 (by omega)]
+  rw [mont_ofNat_shr1 (by omega_using [hw])]
   apply BitVec.eq_of_toNat_eq
   have hwj : w * j < 2 ^ 47 := by
     calc w * j < 2 ^ 31 * 2 ^ 16 := Nat.mul_lt_mul_of_lt_of_lt hw hj
       _ = 2 ^ 47 := by rw [← Nat.pow_add]
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_mul, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show w < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show w * j < 2 ^ 64 by omega), Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (show w * j * 2 ^ 3 < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show 8 * (w * j) < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show w < 2 ^ 64 by omega_using [hw]), Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_using [hj]),
+    Nat.mod_eq_of_lt (show w * j < 2 ^ 64 by omega_using [hwj]), Nat.shiftLeft_eq,
+    Nat.mod_eq_of_lt (show w * j * 2 ^ 3 < 2 ^ 64 by omega_using [hwj]), Nat.mod_eq_of_lt (show 8 * (w * j) < 2 ^ 64 by omega_using [hwj])]
+  omega_using []
 
 /-- `rowPtr`: `r8 :=` the address of row `j` (in `r3`) of the context at `C`
 (`r30`), with `2 w` in `r11`. -/
@@ -50,7 +50,7 @@ theorem rowPtr_ok {s : State} {C : Addr} {w j : Nat}
   refine WP.keep _ ?_ (by decide)
   unfold rowPtr
   prun [h30, h11, h3, row_bv hw hj]
-  rw [show 8 * (w * j) + 24 = rowOff w j by unfold rowOff; omega]
+  rw [show 8 * (w * j) + 24 = rowOff w j by unfold rowOff; omega_using []]
 
 /-- The registers `storeRow` and `loadRow` write. -/
 def rowRegs : List Reg := [.r0, .r8, .r9, .r14, .r15, .r17]
@@ -69,7 +69,7 @@ theorem storeRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w
   refine WP.seq ?_
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (rowPtr_ok h30 h.h11 h3 (by omega) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
+  refine WP.mono (rowPtr_ok h30 h.h11 h3 (by omega_using [hw']) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r14] (Q := fun t => t.gpr .r14 = off C (rowOff w j) ∧ t.mem = t₁.mem)
     (by prun [a8, BitVec.add_zero]) (by decide)) fun t₂ ⟨⟨a14, m2⟩, k2⟩ => ?_
@@ -78,7 +78,7 @@ theorem storeRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w
   have k13 := (k1.trans k2).trans k3
   have hm : t₃.mem = s.mem := by rw [m3, m2, m1]
   refine WP.mono (copyWords_ok (h.hs.congr k13.wr) (hp.congr k13.wr) a15 ((k3.gpr .r14 (by decide)).trans a14)
-    ((k13.gpr .r11 (by decide)).trans h.h11) (by omega) (by omega) (h.arr ha |> fun h' => by omega) hrow hsep)
+    ((k13.gpr .r11 (by decide)).trans h.h11) (by omega_using [hw]) (by omega_using [hw']) (h.arr ha |> fun h' => by omega_using [h']) hrow hsep)
     fun t ⟨⟨_, hw₁, ho⟩, kt⟩ => ⟨⟨fun i hi => by have := hw₁ i hi; rw [hm] at this; exact this,
       by rw [← hm]; exact ho⟩,
       (k13.trans kt).mono (by decide)⟩
@@ -98,7 +98,7 @@ theorem loadRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w)
   refine WP.seq ?_
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (rowPtr_ok h30 h.h11 h3 (by omega) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
+  refine WP.mono (rowPtr_ok h30 h.h11 h3 (by omega_using [hw']) hj) fun t₁ ⟨⟨a8, m1⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r15] (Q := fun t => t.gpr .r15 = off C (rowOff w j) ∧ t.mem = t₁.mem)
     (by prun [a8, BitVec.add_zero]) (by decide)) fun t₂ ⟨⟨a15, m2⟩, k2⟩ => ?_
@@ -107,8 +107,8 @@ theorem loadRow_ok {s : State} {B C : Addr} {Z Zc w j a : Nat} (h : Env s B Z w)
   have k13 := (k1.trans k2).trans k3
   have hm : t₃.mem = s.mem := by rw [m3, m2, m1]
   refine WP.mono (Pub.copyIn_ok (h.hs.congr k13.wr) hCn (fun i hi => by rw [k13.rd, k13.wr]; exact hrd i hi)
-    ((k3.gpr .r15 (by decide)).trans a15) a14 ((k13.gpr .r11 (by decide)).trans h.h11) (by omega) (by omega)
-    hrow (h.arr ha |> fun h' => by omega) hsep)
+    ((k3.gpr .r15 (by decide)).trans a15) a14 ((k13.gpr .r11 (by decide)).trans h.h11) (by omega_using [hw]) (by omega_using [hw'])
+    hrow (h.arr ha |> fun h' => by omega_using [h']) hsep)
     fun t ⟨⟨_, _, hw₁, ho⟩, kt⟩ => ⟨⟨fun i hi => by have := hw₁ i hi; rw [hm] at this; exact this,
       by rw [← hm]; exact ho⟩,
       (k13.trans kt).mono (by decide)⟩

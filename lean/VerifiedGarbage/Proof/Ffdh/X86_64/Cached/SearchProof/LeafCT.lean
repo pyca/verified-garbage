@@ -38,7 +38,7 @@ theorem key_zero_x {p : KeyPublic} {original s : State} {used keys scalars : Nat
   have scr := h.input.control_scr (t := s) h.wr
   refine WP.mono (controller_zero_out scr hdi (by decide) (sPtr := 5) (sLen := 2) (by decide)
     (by decide) (h.header (by simp [KeyPublic.headers])) (h.header (by simp [KeyPublic.headers]))
-    (by omega) (by omega) (h.input.output_x h.wr)) fun _ ⟨_, hfv, kv⟩ => ?_
+    (by omega_using [hk]) (by omega_using [hk]) (h.input.output_x h.wr)) fun _ ⟨_, hfv, kv⟩ => ?_
   exact ⟨zero_live h h.input.x_mem h.input.x_ne_ctl hfv kv, (kv.gpr (by decide)).trans hdi⟩
 
 def KeyZeroCT (p : KeyPublic) (s : State) : Prop := KeyAny p s ∧ s.gpr .rdi = p.control

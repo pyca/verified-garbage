@@ -47,7 +47,7 @@ theorem exchangePrepare_power (s : State) {p : Inputs} {slots : List Nat} {yb xb
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.prepareAt 24) s (ExchangePowerInput p slots yb xb) := by
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   refine WP.mono (prepareAt_ok s 24 h.context stable h24 h32 h0 h.context.pBytes p.pLength pStack large odd) ?_
   rintro u ⟨context, ready, modulus, r2, frame, rest⟩
   have sourceSep {src : BitVec 32} {bs : List Byte} (source : Octets p.base src p.len bs s)
@@ -73,7 +73,7 @@ theorem exchangePower_finish (s : State) {p : Inputs} {slots : List Nat} {yb xb 
   rintro u ⟨context, ready, value, modulus, _, _, _, rest⟩
   refine ⟨⟨context, ready, h.output.after rest, h.workspaceSep, by rw [rest.sp]; exact h.stackSep, ?_⟩, modulus⟩
   rw [value, VG.Proof.Bignum.powMod_eq]
-  exact Nat.lt_trans (Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega)) p.modulusBound
+  exact Nat.lt_trans (Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega_using [odd])) p.modulusBound
 
 theorem exchangeRange_finish (s : State) {p : Inputs} {slots : List Nat}
     (h : ExchangePowered p slots s) (stable : stableSlots slots = true) (odd : p.P % 2 = 1) :
@@ -96,7 +96,7 @@ theorem exchangeMain_ct {p : Inputs} {slots : List Nat} {yb xb1 xb2 : List Byte}
       VG.Impl.Ffdh.Arm.Domain.Exchange.main (fun _ _ => True) := by
   have pStack (s : State) {xb : List Byte} (h : ExchangeMainInput p slots yb xb s) :
       Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   have prepare := (prepareAt_ct (p := p) (slot := 24) stable h24 h32 h0 p.pLength large odd).mono
     (P' := fun (s t : State) => ExchangeMainInput p slots yb xb1 s ∧ ExchangeMainInput p slots yb xb2 t ∧ s.sp = t.sp)
     (fun s t h => ⟨⟨h.1.context, h.1.context.pBytes, pStack s h.1⟩,

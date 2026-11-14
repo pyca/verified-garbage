@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ed448
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448 scalar arithmetic: binary reduction
@@ -23,7 +24,7 @@ theorem reduce_bit {r b : Nat} (hr : r < L) (hb : b < 2) :
     (2 * r + b) % L = if 2 * r + b < L then 2 * r + b else 2 * r + b - L := by
   split
   · exact Nat.mod_eq_of_lt ‹_›
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+  · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_using [hr, hb])]
 
 theorem decodeLE_cons (b : Byte) (bs : List Byte) :
     decodeLE (b :: bs) = b.toNat + 256 * decodeLE bs := rfl
@@ -54,6 +55,6 @@ theorem consumeBits_eq (b : BitVec 64) (n r : Nat) (hr : r < L) :
     rw [hmod, Nat.pow_succ, Nat.mod_mul]
     simp only [← BitVec.testBit_toNat, Nat.toNat_testBit, Nat.mul_add, Nat.mul_assoc]
     congr 1
-    omega
+    omega_using []
 
 end VG.Proof.Ed448

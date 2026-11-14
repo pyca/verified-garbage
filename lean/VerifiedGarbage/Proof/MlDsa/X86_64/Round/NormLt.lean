@@ -46,8 +46,8 @@ theorem msb_sub {u v : BitVec 64} (hu : u.toNat < 2 ^ 63) (hv : v.toNat < 2 ^ 63
     (u - v).msb = decide (u.toNat < v.toNat) := by
   rw [BitVec.msb_eq_decide, BitVec.toNat_sub]
   by_cases h : u.toNat < v.toNat
-  · rw [decide_eq_true h, decide_eq_true_iff]; omega
-  · rw [decide_eq_false h, decide_eq_false_iff_not]; omega
+  · rw [decide_eq_true h, decide_eq_true_iff]; omega_using [hv, h]
+  · rw [decide_eq_false h, decide_eq_false_iff_not]; omega_using [hu, h]
 
 /-- Whether `a < B` or `q - a < B`. -/
 abbrev Good (B a : Nat) : Prop := a < B ∨ q - a < B
@@ -56,9 +56,9 @@ theorem nlV_msb {x : BitVec 32} (hx : x.toNat < q) {B : BitVec 64} (hB : B.toNat
     (nlV x B).msb = decide (Good B.toNat x.toNat) := by
   have hq : (BitVec.setWidth 64 qImm).toNat = q := rfl
   have e : (BitVec.setWidth 64 qImm - BitVec.setWidth 64 x).toNat = q - x.toNat := by
-    rw [BitVec.toNat_sub, hq, setWidth64_toNat]; rw [q_eq] at hx ⊢; omega
-  rw [nlV, BitVec.msb_or, msb_sub (by rw [setWidth64_toNat]; have := x.isLt; omega) (by omega),
-    msb_sub (by rw [e, q_eq]; omega) (by omega), e, setWidth64_toNat]
+    rw [BitVec.toNat_sub, hq, setWidth64_toNat]; rw [q_eq] at hx ⊢; omega_using [hx]
+  rw [nlV, BitVec.msb_or, msb_sub (by rw [setWidth64_toNat]; have := x.isLt; omega_using []) (by omega_using [hB]),
+    msb_sub (by rw [e, q_eq]; omega_using []) (by omega_using [hB]), e, setWidth64_toNat]
   simp only [Good, Bool.decide_or]
 
 section
@@ -81,21 +81,21 @@ theorem nl_loop {s₁ : State} (hdi : s₁.gpr .rdi = s₀.gpr .rdi) (hsi : s₁
   refine loop_ok (clob := [.rax, .rdx, .r9, .rcx]) hL (by decide) (by decide) (fun s _ _ hk => ?_)
     fun i hi s hI hc => ?_
   · rw [hk.gpr (by decide), h9]
-    exact iff_of_true (by decide) fun k h₁ h₂ => absurd h₂ (by omega)
+    exact iff_of_true (by decide) fun k h₁ h₂ => absurd h₂ (by omega_using [h₁])
   · have ha : cfAddr (s.gpr .rdi) (s.gpr .rcx) = coeffAddr (s₁.gpr .rdi) (255 - i) :=
       hI.addr hc hi (by simp)
-    refine WP.mono (nlBody_ok s (by rw [ha]; exact hI.inR hL (by simp) (by omega)))
+    refine WP.mono (nlBody_ok s (by rw [ha]; exact hI.inR hL (by simp) (by omega_using [])))
       fun s' ⟨⟨hm', h9', hc', hz'⟩, hk'⟩ => ⟨⟨hm', hc', hz', ?_⟩, hk'⟩
     have hr : Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2
-    have hx := hr (255 - i) (by rw [n_eq]; omega)
-    rw [h9', BitVec.msb_and, Bool.and_eq_true, hI.j, ha, hI.read hL (by simp) (by omega), hI.fixed .rsi (by simp),
+    have hx := hr (255 - i) (by rw [n_eq]; omega_using [])
+    rw [h9', BitVec.msb_and, Bool.and_eq_true, hI.j, ha, hI.read hL (by simp) (by omega_using []), hI.fixed .rsi (by simp),
       nlV_msb (by rw [hm, hdi]; exact hx) (by rw [hsi, setWidth64_toNat]; exact BitVec.isLt _), hB, hm, hdi,
       decide_eq_true_iff]
-    refine ⟨fun ⟨h₁, h₂⟩ k hk₁ hk₂ => ?_, fun h => ⟨fun k hk₁ hk₂ => h k (by omega) hk₂,
-      h _ (by omega) (by omega)⟩⟩
+    refine ⟨fun ⟨h₁, h₂⟩ k hk₁ hk₂ => ?_, fun h => ⟨fun k hk₁ hk₂ => h k (by omega_using [hk₁]) hk₂,
+      h _ (by omega_using []) (by omega_using [])⟩⟩
     by_cases e : k = 255 - i
     · subst e; exact h₂
-    · exact h₁ k (by omega) hk₂
+    · exact h₁ k (by omega_using [hk₁, e]) hk₂
 
 theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s' ∧ normLtK.post s₀ s' := by
   have hr : Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2
@@ -113,7 +113,7 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
     rw [normRq_lt]
     refine ⟨fun h k _ hk => ?_, fun h k hk => ?_⟩
     · have := h k hk; rwa [normZq_lt, polyAt_val hr hk] at this
-    · rw [normZq_lt, polyAt_val hr hk]; exact h k (by omega) hk
+    · rw [normZq_lt, polyAt_val hr hk]; exact h k (by omega_using []) hk
   have wp : WP isa normLt s₀ fun s' =>
       ((s'.gpr .rax).setWidth 32 = if normRq [polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi then 1 else 0) ∧
         Frame [] s₀.mem s'.mem := by
@@ -132,7 +132,7 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
         have := hj.mpr h
         rw [hmsb, decide_eq_true_iff] at this
         show _ = 1
-        omega
+        omega_using [this]
       · rw [ite_eq_right_of_eq_false _ _ (eq_false h)]
         have : (s₂.gpr .r9).msb = false := by
           cases e : (s₂.gpr .r9).msb
@@ -140,7 +140,7 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
           · exact absurd (hj.mp e) h
         rw [hmsb, decide_eq_false_iff_not] at this
         show _ = 0
-        omega
+        omega_using [this]
     · have := hI.frame
       rw [hm'] at ⊢
       rw [hm] at this

@@ -38,7 +38,7 @@ theorem halves_zero {n : Nat} (hn : n ≤ 2 ^ 32) :
   rw [BitVec.and_self]
   by_cases h : n = 2 ^ 32
   · subst h; decide
-  · have hlt : n < 2 ^ 32 := by omega
+  · have hlt : n < 2 ^ 32 := by omega_using [hn, h]
     rw [Nat.div_eq_of_lt hlt, show BitVec.ofNat 32 0 = 0#32 from rfl, BitVec.or_zero, ofNat_beq_zero hlt]
 
 /-- `mov eax, [esi]; or eax, [esi + 4]; test eax, eax` on the attempts. -/
@@ -58,7 +58,7 @@ theorem attempts_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n
   show t₃.zf = _
   rw [z₃, U₂.gpr, g₁, S₁.words.get (d := attemptsOff + 4) (by decide)]
   simp only [liveF, attemptsOff, ↓reduceIte, Nat.reduceEqDiff]
-  rw [halves_zero (by omega)]
+  rw [halves_zero (by omega_using [hnl, hat])]
 
 /-- `room`: the borrow when the tape holds less than a candidate. -/
 theorem room_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s) :
@@ -77,7 +77,7 @@ theorem room_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s) 
   show t₇.cf = _
   rw [c₇, o₆ .eax (by decide), g₅, g₆]
   simp only [liveF, leftOff, widthOff, ↓reduceIte, Nat.reduceEqDiff]
-  rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt hL]
+  rw [toNat_ofNat_lt (by omega_using [hR]), toNat_ofNat_lt hL]
 
 theorem branch_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s) :
     WP isa branch s (Next p o used n) := by
@@ -104,20 +104,20 @@ theorem branch_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s
     have hs := cand_short (bits := p.bits) (gen := p.gen) (rand := p.rand) (used := used)
       (by rw [hlen, ← hlb]; exact hr)
     have tail := ptail_short hn hs
-    refine WP.mono (request_ok L₂) fun v hv => Or.inl ⟨?_, fun ⟨_, h2, _⟩ => by omega⟩
+    refine WP.mono (request_ok L₂) fun v hv => Or.inl ⟨?_, fun ⟨_, h2, _⟩ => by omega_using [hr, h2]⟩
     show Done _ _ (ptail _ _ _ _ _) v
     rw [tail, hlen]
     split
     · rename_i hc
       exfalso
-      have hcap : p.len ≤ parameterEntropy p.bits := by rw [hlb]; unfold parameterEntropy; omega
-      omega
+      have hcap : p.len ≤ parameterEntropy p.bits := by rw [hlb]; unfold parameterEntropy; omega_using []
+      omega_using [hr, hc, hcap]
     · exact hv
   refine WP.ite false (by rw [e₂]; simp [hr]) (fun h => absurd h (by decide)) (fun _ => ?_)
-  have hu : used < p.randLen := by omega
+  have hu : used < p.randLen := by omega_using [hl64, hr]
   refine WP.seq (WP.mono (attempt_ok L₂ hu) fun u ⟨Su, eu, ou, cu⟩ => ?_)
   obtain ⟨_, rfl⟩ := L₂.input
-  exact classify_ok L₂ Su eu ou cu hn (by omega)
+  exact classify_ok L₂ Su eu ou cu hn (by omega_using [hr])
 
 theorem Done.reg {p : PPub} {o s t : State} {r : ParameterSearchResult} (h : Done p o r s) {q : Reg}
     {v : BitVec 32} (U : Upd s t q v) (hq : Scratch q) : Done p o r t := by
@@ -160,9 +160,9 @@ theorem guard_done {p : PPub} {o v : State} {r : ParameterSearchResult} (D : Don
   show t₂.zf = _
   rw [z₂, U₁.gpr, w]
   simp only [doneF, statusOff, ↓reduceIte, Nat.reduceEqDiff]
-  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega) (by decide)]
+  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_beq (by omega_using [this]) (by decide)]
   simp only [Option.some.injEq, decide_eq_false_iff_not]
-  omega
+  omega_using [this]
 
 theorem guard_rej {p : PPub} {o v : State} {used n : Nat} (R : Rej p o used n v) :
     WP isa (.block guard) v fun t => isa.eval .e t = some true ∧ Live p o used n t := by
@@ -183,7 +183,7 @@ theorem iteration_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used 
   rcases hv with ⟨D, _⟩ | ⟨⟨hn, _, rest, hc⟩, Rj⟩
   · exact WP.mono (guard_done D) fun t ⟨he, Dt⟩ => Or.inl ⟨he, Dt⟩
   · exact WP.mono (guard_rej Rj) fun t ⟨he, Lt⟩ =>
-      Or.inr ⟨he, n - 1, by omega, _, Lt, (ptail_reject hn hc).symm⟩
+      Or.inr ⟨he, n - 1, by omega_using [hn], _, Lt, (ptail_reject hn hc).symm⟩
 
 theorem loop_ok {p : PPub} {o s : State} {used n : Nat} (h : Live p o used n s) :
     WP isa (.loop iteration .e) s (Done p o (p.tail used n)) := by

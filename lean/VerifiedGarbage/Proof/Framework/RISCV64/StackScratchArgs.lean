@@ -46,11 +46,11 @@ theorem widths_le (sig : Sig) : ∀ w ∈ (sig.words abi.ptrBits).map (·.bits a
   obtain ⟨p, -, hp⟩ := hw
   cases h : p.2 with
   | int ty _ =>
-    rw [h] at hp; cases ty <;> simp [Param.words, ArgWord.bits, IntTy.bits, abi] at hp <;> omega
-  | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
-  | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
-  | slice _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
-  | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
+    rw [h] at hp; cases ty <;> simp [Param.words, ArgWord.bits, IntTy.bits, abi] at hp <;> omega_using [hp]
+  | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | slice _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
 
 /-- The arguments of a function whose arguments fill `a0`–`a7` and `m`
 doublewords of stack. -/
@@ -58,7 +58,7 @@ abbrev stkArgs (m : Nat) (s : State) : List (BitVec 64) :=
   argRegs.map s.gpr ++ (List.range m).map (stackArg s)
 
 theorem stkArgs_length (m : Nat) (s : State) : (stkArgs m s).length = 8 + m := by
-  simp [stkArgs, argRegs]; omega
+  simp [stkArgs, argRegs]; omega_using []
 
 /-- The `m` doublewords of stack arguments, which a contract lets the function
 only read. -/
@@ -114,7 +114,7 @@ theorem wf_stk (hk : (sig.words abi.ptrBits).length = 8 + m) (stack : Nat) (s : 
   simp only [List.length_map, hk, argRegs, List.length_cons, List.length_nil, hwf]
   cases m with
   | zero => simp
-  | succ m => simp; intro _ _ h; omega
+  | succ m => simp; intro _ _ h; omega_using [h]
 
 /-- The precondition of a contract, by where the arguments are. -/
 theorem pre_stk {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
@@ -187,7 +187,7 @@ theorem copyArg_run {bytes j : Nat} {u : State} (ht0 : u.gpr .t0 = u.sp) (hal : 
     (hw : InRegions u.wr (u.sp + BitVec.ofNat 64 (8 * j)) 8) :
     execBlock isa (copyArg bytes j) u = some (copyState bytes j u,
       [.addr (u.sp + BitVec.ofNat 64 (bytes + 8 * j)), .addr (u.sp + BitVec.ofNat 64 (8 * j))]) := by
-  have hst : argStep bytes ≤ bytes ∧ argStep bytes < 2048 := by unfold argStep; omega
+  have hst : argStep bytes ≤ bytes ∧ argStep bytes < 2048 := by unfold argStep; omega_using []
   obtain ⟨u₁, hu₁⟩ : ∃ v, v = u.write .t1 (u.sp + BitVec.ofNat 64 (argStep bytes)) := ⟨_, rfl⟩
   have ha := exec_addi_nat (s := u) (d := .t1) (n := .t0) (m := argStep bytes) hst.2
   rw [ht0, ← hu₁] at ha
@@ -196,15 +196,15 @@ theorem copyArg_run {bytes j : Nat} {u : State} (ht0 : u.gpr .t0 = u.sp) (hal : 
     rw [hu₁]
     simp only [State.write, ↓reduceIte]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add,
-      show argStep bytes + (bytes - argStep bytes + 8 * j) = bytes + 8 * j by omega]
+      show argStep bytes + (bytes - argStep bytes + 8 * j) = bytes + 8 * j by omega_using [hst]]
   have hrd : u₁.rd = u.rd ∧ u₁.wr = u.wr ∧ u₁.gpr .t0 = u.sp ∧ u₁.mem = u.mem := by
     subst hu₁; exact ⟨rfl, rfl, by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0], rfl⟩
   have hl := exec_load_d (s := u₁) (t := .t1) (n := .t1) (off := bytes - argStep bytes + 8 * j) ho
-    (by rw [hsrc]; exact Spill.al8 hal (by omega)) (by rw [hsrc, hrd.1, hrd.2.1]; exact hr)
+    (by rw [hsrc]; exact Spill.al8 hal (by omega_using [h8])) (by rw [hsrc, hrd.1, hrd.2.1]; exact hr)
   rw [hsrc, hrd.2.2.2] at hl
   have hs := exec_store_d (s := u₁.write .t1 (u.mem.readW (u.sp + BitVec.ofNat 64 (bytes + 8 * j)) 64))
-    (t := .t1) (n := .t0) (off := 8 * j) (by omega)
-    (by simp only [State.write, reduceCtorEq, ↓reduceIte, hrd.2.2.1]; exact Spill.al8 hal (by omega))
+    (t := .t1) (n := .t0) (off := 8 * j) (by omega_using [ho])
+    (by simp only [State.write, reduceCtorEq, ↓reduceIte, hrd.2.2.1]; exact Spill.al8 hal (by omega_using []))
     (by simp only [State.write, hrd.2.2.1, hrd.2.1, reduceCtorEq, ↓reduceIte]; exact hw)
   simp only [copyArg, execBlock, isa, ha, hl, hs, Option.map_some, addrs, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, hsrc]
@@ -316,7 +316,7 @@ theorem tail_run {m : Nat} {w : State} (ht0 : w.gpr .t0 = w.sp) (hal : w.sp.toNa
   have ha := exec_addi_nat (s := w) (d := .t1) (n := .t0) (m := 8 + 8 * m) hm
   have hs := exec_store_d (s := w.write .t1 (w.gpr .t0 + BitVec.ofNat 64 (8 + 8 * m)))
     (t := .t1) (n := .t0) (off := 8 * m) (by omega_using [hm])
-    (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact Spill.al8 hal (by omega))
+    (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact Spill.al8 hal (by omega_using []))
     (by simp only [State.write, reduceCtorEq, ↓reduceIte, ht0]; exact hw)
   simp only [execBlock, isa, ha, hs, Option.map_some, addrs, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append]

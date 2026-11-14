@@ -30,10 +30,10 @@ theorem jointCopy_ct {o a : Nat} (ho : o < 8) (ha : a < 8) (hoa : o ≠ a)
   refine two_post (two_map (fun p : ProductPublic => p.layout.ws) (fun _ _ h => h.goodW)
     (copyArr_ct ho ha hT)) ?_
   intro p s hg
-  refine WP.mono (copyArr_ok hg.1 p.fits (by have := p.lower; omega) p.upper ho ha hoa)
+  refine WP.mono (copyArr_ok hg.1 p.fits (by have := p.lower; omega_using [this]) p.upper ho ha hoa)
     fun t ⟨_, hf, hk⟩ => ?_
   have ha : Arrays p.layout.B p.layout.w [o] s.mem t.mem :=
-    Arrays.of_outside (List.mem_singleton_self o) hf (Nat.le_refl _) (by omega)
+    Arrays.of_outside (List.mem_singleton_self o) hf (Nat.le_refl _) (by omega_using [])
   exact ⟨⟨hg.1.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.1.rdi, ha.hdr hg.1.hdr⟩, p.fits⟩
 
 theorem jointEncode_ct (M : Mont) :

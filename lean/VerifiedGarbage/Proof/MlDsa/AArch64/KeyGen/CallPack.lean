@@ -111,8 +111,8 @@ theorem hu_pre (hb : HuOk len omega hlen) {s1 : State} (h1 : Args (huArgs y len 
   sig_pre [hintBitUnpackContract, hintBitUnpackSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.sp h1]
   simp only [Arg.val, imm32 hb.hlt.2.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.1; omega),
-    Nat.mod_eq_of_lt (show hlen < 2 ^ 64 by have := hb.hlt.2.2; omega)]
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.1; omega_using [this]),
+    Nat.mod_eq_of_lt (show hlen < 2 ^ 64 by have := hb.hlt.2.2; omega_using [this])]
   cpre L
   exacts [hb.hp, hb.hle, hb.hhl]
 
@@ -135,7 +135,7 @@ theorem huAt_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
   sig_post [hintBitUnpackContract, hintBitUnpackSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.mem h1] at hq
   simp only [Arg.val, imm32 hb.hlt.2.1, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.1; omega)] at hq
+    Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.1; omega_using [this])] at hq
   exact hq
 
 theorem huAt_tr {S : Nat} {P : Prims} (C : CalleeOk S P.hintUnpack (hintBitUnpackContract AArch64.abi S))
@@ -154,7 +154,7 @@ theorem huAt_tr {S : Nat} {P : Prims} (C : CalleeOk S P.hintUnpack (hintBitUnpac
   · sig_pub [hintBitUnpackContract, hintBitUnpackSig, AArch64.abi, VG.AArch64.argRegs]
     rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2,
       Args.r3 h2, Args.r4 h2, Args.sp h1, Args.sp h2, Args.mem h1, Args.mem h2]
-    simp only [Arg.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.1; omega)]
+    simp only [Arg.val, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show len < 2 ^ 64 by have := hb.hlt.1; omega_using [this])]
     exact ⟨e.2, by rw [hy], e.pa hbs.1, trivial, trivial, e.pa hbs.2, trivial⟩
   · rw [e.pa hbs.1, e.pa hbs.2]; exact (rw_cov Lz hc).1
   · rw [e.pa hbs.2]; exact (rw_cov Lz hc).2

@@ -38,39 +38,39 @@ theorem keygen_derive_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra 
   have hq : (s.gpr .x6).toNat ≤ 32 := by
     have hh := h.lengths
     unfold Spec.Dsa.lengthsValid at hh
-    omega
+    omega_using [hh]
   have hk := keygenStackBase_toNat h
   have hR : (randomBase s).toNat = (randomStackBase extra s).toNat + extra := by
-    rw [random_frameBase extra s, keygenStack_offset_toNat h (by omega)]
+    rw [random_frameBase extra s, keygenStack_offset_toNat h (by omega_using [])]
   have hN : (off (randomBase s) Random.oNonce).toNat =
       (randomStackBase extra s).toNat + (extra + 200) := by
-    rw [random_nonceBase extra s, keygenStack_offset_toNat h (by omega)]
+    rw [random_nonceBase extra s, keygenStack_offset_toNat h (by omega_using [])]
   have sM : Region.Sub ⟨off (randomBase s) Random.oNonce, (s.gpr .x6).toNat⟩
       (below (s.sp) (extra + 256)) := by
     rw [random_nonceBase extra s]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [hq])
   have sA : Region.Sub ⟨randomBase s, 8⟩ (below (s.sp) (extra + 256)) := by
     rw [random_frameBase extra s]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [])
   have sK : Region.Sub (below (randomBase s) extra) (below (s.sp) (extra + 256)) := by
     change Region.Sub ⟨randomBase s - BitVec.ofNat 64 extra, extra⟩ _
     rw [random_calleeBase extra s]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   have dKM : (below (randomBase s) extra).Disjoint
       ⟨off (randomBase s) Random.oNonce, (s.gpr .x6).toNat⟩ := by
     change (⟨randomBase s - BitVec.ofNat 64 extra, extra⟩ : Region).Disjoint _
     rw [random_calleeBase extra s, random_nonceBase extra s]
-    exact Offset.base_disjoint _ (by omega) (by omega)
+    exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hl, hq])
   have dKA : (below (randomBase s) extra).Disjoint ⟨randomBase s, 8⟩ := by
     change (⟨randomBase s - BitVec.ofNat 64 extra, extra⟩ : Region).Disjoint _
     rw [random_calleeBase extra s, random_frameBase extra s]
-    exact Offset.base_disjoint _ (by omega) (by omega)
-  refine ⟨?_, by omega, trivial, trivial, h.outParams, (h.stackOut.sub_left sM).symm,
+    exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hl])
+  refine ⟨?_, by omega_using [hl, hk, hR], trivial, trivial, h.outParams, (h.stackOut.sub_left sM).symm,
     h.outScratch, (h.stackOut.sub_left sA).symm, h.paramsScratch,
     h.stackScratch.sub_left sM, (h.stackScratch.sub_left sA).symm,
-    ?_, h.outBound, h.paramsBound, by omega, h.scratchBound,
+    ?_, h.outBound, h.paramsBound, by omega_using [hl, hq, hk, hN], h.scratchBound,
     h.lengths, h.outLength, h.paramsLength, ?_⟩
-  · cases extra <;> simp only <;> omega
+  · cases extra <;> simp only <;> omega_using [hR]
   · cases extra with
     | zero => trivial
     | succ n => exact ⟨h.stackOut.sub_left sK, h.stackParams.sub_left sK, dKM,
@@ -78,7 +78,7 @@ theorem keygen_derive_pre {extra : Nat} {s t : State} (h : GenerateKeyABI extra 
   · have hh := h.scratchLength
     unfold Spec.Dsa.generationScratchWords at hh
     unfold Spec.Dsa.scratchWords
-    omega
+    omega_using [hh]
 
 /-- The checked derivation's contract at key generation's call, once the
 domain check has passed. -/

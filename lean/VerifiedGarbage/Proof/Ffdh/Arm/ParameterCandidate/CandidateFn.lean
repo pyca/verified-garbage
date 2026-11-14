@@ -26,7 +26,7 @@ theorem candidateFn_ok (v : RoundImpl) {s : State} {p : CandidateParams} (h : Ca
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) s fun t =>
       abiPreserved s t ∧ candidatePost p t.mem (t.gpr .r0) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.code
-  exact framed_of_separate _ s (by have := h.stackFits; omega)
+  exact framed_of_separate _ s (by have := h.stackFits; omega_using [this])
     (candidateEnteredRegions p (entered s).sp) (candidatePost p) h.saved
     (candidateEntered_ok v h.start h.incoming h.out h.width h.used h.bits)
 

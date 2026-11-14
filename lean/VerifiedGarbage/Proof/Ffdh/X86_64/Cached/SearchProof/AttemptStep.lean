@@ -79,7 +79,7 @@ theorem key_attempt_run (v : RoundImpl) {p : KeyPublic} {original s : State} {us
     WP isa (attemptRun (attemptCall v)) s fun t =>
       KeyLive p original used keys scalars t ∧ AttemptPost p (keyRand original) used t := by
   have hf := h.callFacts hroom
-  have hroom' : 56 ≤ (s.gpr .rsp).toNat := by rw [h.rsp]; have := hf.room; omega
+  have hroom' : 56 ≤ (s.gpr .rsp).toNat := by rw [h.rsp]; have := hf.room; omega_using [this]
   unfold attemptRun
   apply frame_alloc (by decide) (by decide) (by decide) hroom'
   refine WP.seq (WP.mono (key_arguments_ok h) fun u ⟨ha, hm, k⟩ => ?_)
@@ -89,7 +89,7 @@ theorem key_attempt_run (v : RoundImpl) {p : KeyPublic} {original s : State} {us
   have hpre := call_pre h hroom hf hm hu ha
   have hd := attemptCode_depth v
   refine WP.callF (k := attemptContract) (attempt_correct v) (SpSafe.of_all (attemptCode_sp v))
-    (by omega) hpre (call_covers_reads h hroom k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_
+    (by omega_using [hd]) hpre (call_covers_reads h hroom k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_
   intro t hrd hwr hcs hfr ⟨s₂, hm₂, hg₂, hpost⟩ _
   have htsp : t.gpr .rsp = u.gpr .rsp := hcs .rsp (by decide)
   refine ⟨htsp.trans (k.gpr (by decide)), hwr.trans k.2.2, ?_, ?_⟩

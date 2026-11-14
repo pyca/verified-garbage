@@ -76,7 +76,7 @@ structure St.Ok (e : St) (s : State) (B : Addr) (Z w : Nat) : Prop where
 
 theorem frm_word {m m' : Mem} {B : Addr} {Z : Nat} (hf : Frm B [(Z, 2 ^ 64)] m m') (hZ : 8 * 32 ≤ Z) {i : Nat}
     (hi : i < 32) : word m' B (8 * i) = word m B (8 * i) :=
-  hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+  hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
 
 /-- `St.Ok` after a change below `Z` that keeps the writable regions. -/
 theorem St.Ok.congr {e : St} {s t : State} {B : Addr} {Z w : Nat} (ho : e.Ok s B Z w)
@@ -116,7 +116,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
         have := (ho e' (List.mem_cons_of_mem _ he'')).lw
         have := h.sl hj'
         have := h.scr.nowrap
-        rw [f₁.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)]
+        rw [f₁.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega_arith)) (by omega_arith)]
     · intro x hx
       rw [xt x fun e' he' => hx e' (List.mem_cons_of_mem _ he'), x₁ x (hx e List.mem_cons_self)]
 termination_by structural L => L
@@ -132,7 +132,7 @@ theorem keyExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool
   have hs := h.scr
   have hn := hs.nowrap
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
   refine WP.keep [.x0, .x3, .x4] ?_ (by decide) (by decide) (by decide +kernel)
   brun [h.x0, hdr_enc (show kOk < 32 by decide), hl kOk (by decide), hm, mask_and_one]
 
@@ -153,7 +153,7 @@ theorem zeros_ok {B : Addr} {Z w : Nat} {Q : State → Prop} :
     have h256 := h.h256
     obtain ⟨_, hp, hl, hpv, hlv, hl1, hlw, hwr, hsep⟩ := ho e List.mem_cons_self
     have hpw' := List.pairwise_cons.mp hpw
-    have hz := zeroOut_ok h.scr h.x0 h256 hp hl hpv hlv hl1 (by have := h.w2; omega) ⟨hwr, hsep⟩
+    have hz := zeroOut_ok h.scr h.x0 h256 hp hl hpv hlv hl1 (by have := h.w2; omega_using [hlw, this]) ⟨hwr, hsep⟩
     have step : ∀ s₁, ((∀ i < e.len, s₁.mem (e.out + BitVec.ofNat 64 i) = 0) ∧
         (∀ x, (∀ j < e.len, x ≠ e.out + BitVec.ofNat 64 j) → s₁.mem x = s.mem x) ∧ Keep [.x1, .x2, .x3] s s₁) →
         WP isa (seqs (zerosK L ++ rest)) s₁ Q := by

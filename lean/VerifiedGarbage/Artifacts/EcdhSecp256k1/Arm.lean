@@ -40,7 +40,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
 
-/-! # ECDH over secp256k1 (SP 800-56A) on 32-bit ARM -/
+/-! # ECDH over secp256k1 (SP 800-56A) on ARMv7 -/
 
 @[expose] public section
 
@@ -55,7 +55,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeSecp256k1U
-    verified := Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhSecp256k1.Arm

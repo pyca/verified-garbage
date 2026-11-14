@@ -88,7 +88,7 @@ theorem ccall_pre {s : State} (h : Inv s₀ s) (h6 : s.gpr .r6 = scrP s₀) {o :
     Covers.of_sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, 0, by simp, by simp⟩
   have O_W : Region.Disjoint ⟨scrP s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrP s₀, 4096⟩ :=
-    Offset.disjoint_base _ ho (by omega)
+    Offset.disjoint_base _ ho (by omega_using [ho'])
   have g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
   have pre : Proof.Argon2.PPC64LE.compressLocal.pre (s.callEntry.withRegions cRd cWr) := by
     simp only [Proof.Argon2.PPC64LE.compressLocal, State.withRegions_rd, State.withRegions_wr,
@@ -109,7 +109,7 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (h6 : s.gpr .r6 = scrP s₀) {o : 
   have g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
   obtain ⟨pre, cv, cw⟩ := ccall_pre hp h h6 ho ho' h5 hx hy
   have O_W : Region.Disjoint ⟨scrP s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrP s₀, 4096⟩ :=
-    Offset.disjoint_base _ ho (by omega)
+    Offset.disjoint_base _ ho (by omega_using [ho'])
   refine WP.call (k := Proof.Argon2.PPC64LE.compressLocal) Proof.Argon2.PPC64LE.compress_correct pre cv cw
     (fun t hrd hwr hsp hf hcs _ post => ?_) compress_noFrames
   replace post : blockAt t.mem (s.gpr .r5) =

@@ -37,7 +37,7 @@ theorem crt_qSource_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
   have wp (s : State) {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
       WP isa (.block [.ldrSp .r1 8]) s (fun t => t.gpr .r1 = g.base) := by
     refine wp_loadStack (a := VG.Proof.Mont.off (State.addr s.sp) 8) (by decide)
-      (addr_add (by have := h.stack.nowrap; omega)) (h.stack.read (by decide)) fun t a => WP.block_nil ?_
+      (addr_add (by have := h.stack.nowrap; omega_using [this])) (h.stack.read (by decide)) fun t a => WP.block_nil ?_
     exact a.gpr.trans h.savedMain
   have first := load.wp (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
   have second : RelCT isa (fun s t => True ∧ s.gpr .r1 = g.base ∧ t.gpr .r1 = g.base)

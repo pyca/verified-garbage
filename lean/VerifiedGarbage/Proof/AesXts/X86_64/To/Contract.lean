@@ -132,14 +132,14 @@ theorem callEntry_rsp_toNat {s : State} (h : 24 ≤ (s.gpr .rsp).toNat) :
   rw [State.callEntry_rsp, BitVec.toNat_sub]
   have := (s.gpr .rsp).isLt
   simp only [show (8 : BitVec 64).toNat = 8 from rfl]
-  omega
+  omega_using [h]
 
 /-- The callee's precondition, on entry to a call with the regions it is given. -/
 theorem XtPre.to_pre {enc : Bool} {s : State} {W T Sr D S : Addr} {N R : Nat} (h : XtPre s W T Sr D S N R) :
     (xtsToX86_64 enc).pre
       (s.callEntry.withRegions [⟨W, 240⟩, ⟨Sr, 16 * N⟩] [⟨T, 16⟩, ⟨D, 16 * N⟩, ⟨S, 2176⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hN := Unit.toNat_n (show N < 2 ^ 60 by have := h.n; omega)
+  have hN := Unit.toNat_n (show N < 2 ^ 60 by have := h.n; omega_using [this])
   have hsp := callEntry_rsp_toNat h.rsp_lo
   simp only [xtsToX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
@@ -151,7 +151,7 @@ theorem XtPre.to_pre {enc : Bool} {s : State} {W T Sr D S : Addr} {N R : Nat} (h
     h.stkT.sub_left (ret8_sub s), h.stkD.sub_left (ret8_sub s), h.stkS.sub_left (ret8_sub s),
     h.stkW.sub_left (stack16_sub s), h.stkR.sub_left (stack16_sub s), h.stkT.sub_left (stack16_sub s),
     h.stkD.sub_left (stack16_sub s), h.stkS.sub_left (stack16_sub s), h.wrapT, h.wrapR, h.wrapD, h.wrapS,
-    by have := h.rsp_lo; omega, by have := h.rsp_hi; omega, h.n, h.rounds⟩
+    by have := h.rsp_lo; omega_using [this], by have := h.rsp_hi; omega_using [], h.n, h.rounds⟩
 
 theorem xtsTo_call (enc : Bool) {n : String} {c : Prog isa}
     (ok : ∀ s, (xtsToX86_64 enc).pre s →
@@ -160,11 +160,11 @@ theorem xtsTo_call (enc : Bool) {n : String} {c : Prog isa}
     {s : State} {W T Sr D S : Addr} {N R : Nat} (h : XtPre s W T Sr D S N R) :
     WP isa (.call n c) s (XtPost enc s W T Sr D S N R) := by
   have hR := toNat_rounds h.rounds
-  have hN := Unit.toNat_n (show N < 2 ^ 60 by have := h.n; omega)
-  refine WP.call (k := xtsToX86_64 enc) ok nosp (by omega)
+  have hN := Unit.toNat_n (show N < 2 ^ 60 by have := h.n; omega_using [this])
+  refine WP.call (k := xtsToX86_64 enc) ok nosp (by omega_using [depth])
     (rd := [⟨W, 240⟩, ⟨Sr, 16 * N⟩]) (wr := [⟨T, 16⟩, ⟨D, 16 * N⟩, ⟨S, 2176⟩]) h.to_pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
-  have hf' := Frame.below_mono hf (b := 24) (by omega) (by decide)
+  have hf' := Frame.below_mono hf (b := 24) (by omega_using [depth]) (by decide)
   refine ⟨hrd, hwr, hcs, by simpa using hf', ?_, ?_⟩ <;>
   · simp only [xtsToX86_64, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
@@ -178,7 +178,7 @@ theorem xtsTo_call (enc : Bool) {n : String} {c : Prog isa}
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ((h.stkW.sub_right (Region.sub_prefix hRb)).sub_left b8).symm)
-      (by omega)
+      (by omega_using [hRb])
     have eT := Proof.Cmac.bytesAt_frame fE (p := T) (n := 16)
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -188,7 +188,7 @@ theorem xtsTo_call (enc : Bool) {n : String} {c : Prog isa}
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (h.stkR.sub_left b8).symm)
-      (by have := h.wrapR; omega)
+      (by have := h.wrapR; omega_using [this])
     rw [← hm₂]
     first
       | rw [hpost.1, eW, eT, eR]

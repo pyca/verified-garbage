@@ -32,10 +32,10 @@ theorem pairOfNat (n : Nat) (bound : n < 2 ^ 64) :
     ((BitVec.ofNat 32 (n / 2 ^ 32)) ++ (BitVec.ofNat 32 n) : BitVec 64) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (BitVec.ofNat 32 n).isLt]
-  have high : n / 2 ^ 32 < 2 ^ 32 := by omega
+  have high : n / 2 ^ 32 < 2 ^ 32 := by omega_using [bound]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt high, Nat.mod_eq_of_lt bound, Nat.shiftLeft_eq]
   have split := Nat.mod_add_div n (2 ^ 32)
-  omega
+  omega_using []
 
 theorem writeCounter (m : Mem) (base : BitVec 32) (n : Nat) (bound : n < 2 ^ 64) :
     (m.writeW (State.addr base) (BitVec.ofNat 32 n)).writeW (off (State.addr base) 4)

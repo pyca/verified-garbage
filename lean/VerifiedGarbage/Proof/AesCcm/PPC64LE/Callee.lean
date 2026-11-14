@@ -38,7 +38,7 @@ theorem Buf.src {c : Cx} {s : State} {P : Addr} {len : Nat} (h : Buf c s P len) 
 /-- Bytes of `W` below 384 as data. -/
 theorem Lay.srcW {c : Cx} (L : Lay c) {s : State} (P : Perm c s) {t k : Nat} (hk : t + k ≤ 384) :
     Src c s (c.W + BitVec.ofNat 64 t) k :=
-  ⟨P.wCR (by omega), by rw [L.wrapW (by omega)]; have := L.ww; omega, L.w_w (.inl (by omega)) (by omega) (by decide)⟩
+  ⟨P.wCR (by omega_using [hk]), by rw [L.wrapW (by omega_using [hk])]; have := L.ww; omega_using [hk, this], L.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)⟩
 
 /-- The arguments of `vg_cmac_aes_update`: the key schedule, the state at
 `W + y`, `k` blocks at `Q`, and the working space at `W + 384`. -/
@@ -56,17 +56,17 @@ theorem uargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy : y +
   r8 := r8
   rounds := L.rounds
   hn := hk
-  wc := L.k_w' (by omega)
+  wc := L.k_w' (by omega_using [hy])
   ws := L.k_w' (by decide)
   dc := hqy
   ds := hq.qs
-  cs := L.w_w (.inl (by omega)) (by omega) (by decide)
-  wrapC := by rw [L.wrapW (by omega)]; have := L.ww; omega
+  cs := L.w_w (.inl (by omega_using [hy])) (by omega_using [hy]) (by decide)
+  wrapC := by rw [L.wrapW (by omega_using [hy])]; have := L.ww; omega_using [hy, this]
   wrapD := hq.wrap
-  wrapS := by rw [L.wrapW (by decide)]; have := L.ww; omega
+  wrapS := by rw [L.wrapW (by decide)]; have := L.ww; omega_using [this]
   reads := Covers.append_left (Covers.cons E.perm.k (Covers.cons hq.rd Covers.nil))
-    (Covers.cons (E.perm.wCR (by omega)) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
-  writes := Covers.cons (E.perm.wC (by omega)) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
+    (Covers.cons (E.perm.wCR (by omega_using [hy])) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
+  writes := Covers.cons (E.perm.wC (by omega_using [hy])) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
 
 /-- The arguments of `vg_aes_ctr32`: the key schedule, the counter block at
 `W + o`, `k` blocks at `Q`, which it may write, and the working space at
@@ -85,15 +85,15 @@ theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o +
   r8 := r8
   rounds := L.rounds
   wrap := hq.wrap
-  kc := L.k_w' (by omega)
+  kc := L.k_w' (by omega_using [ho])
   kd := hqk
   ks := L.k_w' (by decide)
   cd := hqo.symm
-  cs := L.w_w (.inl (by omega)) (by omega) (by decide)
+  cs := L.w_w (.inl (by omega_using [ho])) (by omega_using [ho]) (by decide)
   ds := hq.qs.sub_right (Region.sub_prefix (by decide))
   reads := Covers.append_left (Covers.cons E.perm.k Covers.nil)
-    (Covers.cons (E.perm.wCR (by omega)) (Covers.cons hq.rd (Covers.cons (E.perm.wCR (by decide)) Covers.nil)))
-  writes := Covers.cons (E.perm.wC (by omega)) (Covers.cons hqw (Covers.cons (E.perm.wC (by decide)) Covers.nil))
+    (Covers.cons (E.perm.wCR (by omega_using [ho])) (Covers.cons hq.rd (Covers.cons (E.perm.wCR (by decide)) Covers.nil)))
+  writes := Covers.cons (E.perm.wC (by omega_using [ho])) (Covers.cons hqw (Covers.cons (E.perm.wC (by decide)) Covers.nil))
 
 /-- A block of `W` below 384 as the data of a call of `vg_aes_ctr32`. -/
 theorem cargsW {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o + 16 ≤ 384) {d : Nat}
@@ -102,7 +102,7 @@ theorem cargsW {c : Cx} (L : Lay c) {s : State} (E : Env c s) {o : Nat} (ho : o 
     (r6 : s.gpr .r6 = c.W + BitVec.ofNat 64 d) (r7 : s.gpr .r7 = BitVec.ofNat 64 1)
     (r8 : s.gpr .r8 = c.W + BitVec.ofNat 64 384) :
     CtrCall s c.K (c.W + BitVec.ofNat 64 o) (c.W + BitVec.ofNat 64 d) (c.W + BitVec.ofNat 64 384) c.R 1 :=
-  cargs L E ho (L.srcW E.perm (k := 16 * 1) hd) (L.w_w (by omega) (by omega) (by omega)) (L.k_w' (by omega))
-    (E.perm.wC (by omega)) r3 r4 r5 r6 r7 r8
+  cargs L E ho (L.srcW E.perm (k := 16 * 1) hd) (L.w_w (by omega_using [hod]) (by omega_using [hd]) (by omega_using [ho])) (L.k_w' (by omega_using [hd]))
+    (E.perm.wC (by omega_using [hd])) r3 r4 r5 r6 r7 r8
 
 end VG.Proof.AesCcm.PPC64LE

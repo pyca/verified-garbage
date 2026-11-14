@@ -27,7 +27,7 @@ open VG.Proof.MlDsa.AArch64.Sample.Rej4 (absorbArgs_ok absorbBody_ok seedState_e
 
 private theorem seed_sub {v : Nat} {σ : State} {k : Nat} (hk : k<v) :
     Region.Sub (VG.Proof.MlDsa.AArch64.Sample.Rej4.seedR (seedP σ+BitVec.ofNat 64 (34*k)))
-      (seedsR v σ) := Offset.sub_base (seedP σ) (by omega)
+      (seedsR v σ) := Offset.sub_base (seedP σ) (by omega_using [hk])
 
 private theorem seed_eq {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s)
     {k : Nat} (hk : k<v) :
@@ -42,7 +42,7 @@ private theorem seed_eq {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ 
 theorem zeroAll_ok {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s) :
     WP isa (.block Impl.MlDsa.AArch64.Sample.Rej4.zeroStates) s fun t => Env v σ t ∧
       ∀i<50,t.mem.read (wordAddr (scr σ) i) 16=0 := by
-  refine WP.mono (zeros_ok he.x19 (fun i hi => in_scr hp he.wr (by omega))) fun t ⟨ht,hf,hz⟩ => ?_
+  refine WP.mono (zeros_ok he.x19 (fun i hi => in_scr hp he.wr (by omega_using [hi]))) fun t ⟨ht,hf,hz⟩ => ?_
   exact ⟨he.lowStep hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide))
     ht.rd ht.wr ht.sp (fun r _ => ht.gpr r (by simp)),hz⟩
 
@@ -51,7 +51,7 @@ theorem absorbPair_ok {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s)
     WP isa (.block (absorbPair p)) s fun t => Env v σ t ∧
       PairAt t.mem (stateP σ p) (A0 σ (2*p)) (A0 σ (2*p+1)) ∧
       Frame [pairR (stateP σ p)] s.mem t.mem := by
-  have hpn : p<2 := by have:=hp.streams; omega
+  have hpn : p<2 := by have:=hp.streams; omega_using [hstream, this]
   unfold absorbPair
   rw [WP.block_append_iff]
   refine WP.mono (absorbArgs_ok hpn) fun s1 ⟨h1,e2,e3,e4⟩ => ?_
@@ -62,32 +62,32 @@ theorem absorbPair_ok {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s)
   let a := seedP σ+BitVec.ofNat 64 (34*(2*p))
   let b := seedP σ+BitVec.ofNat 64 (34*(2*p+1))
   have e2' : s1.gpr .x2 = stateP σ p := by rw [e2,he.x19]; rfl
-  have e3' : s1.gpr .x3 = a := by rw [e3,he.x20,show 68*p = 34*(2*p) by omega]
-  have e4' : s1.gpr .x4 = b := by rw [e4,he.x20,show 68*p+34 = 34*(2*p+1) by omega]
+  have e3' : s1.gpr .x3 = a := by rw [e3,he.x20,show 68*p = 34*(2*p) by omega_using []]
+  have e4' : s1.gpr .x4 = b := by rw [e4,he.x20,show 68*p+34 = 34*(2*p+1) by omega_using []]
   have seed_in (k : Nat) (hk : k < v) (d n : Nat) (hd : d+n ≤ 34) :
       InRegions (s1.rd++s1.wr) ((seedP σ+BitVec.ofNat 64 (34*k))+BitVec.ofNat 64 d) n := by
     rw [Offset.add_add]
-    exact in_seed hp he1.rd (by omega)
+    exact in_seed hp he1.rd (by omega_using [hk, hd])
   have hws : ∀ j < 25,InRegions s1.wr (wordAddr (stateP σ p) j) 16 := by
     intro j hj
     change InRegions s1.wr ((scr σ+BitVec.ofNat 64 (400*p))+BitVec.ofNat 64 (16*j)) 16
     rw [Offset.add_add]
-    exact in_scr hp he1.wr (by omega)
+    exact in_scr hp he1.wr (by omega_using [hpn, hj])
   have hps : Region.Sub (pairR (stateP σ p)) (scrR σ) :=
-    Offset.sub_base (scr σ) (by omega)
+    Offset.sub_base (scr σ) (by omega_using [hpn])
   refine WP.mono (absorbBody_ok e2' e3' e4'
-    (fun j hj => seed_in (2*p) (by omega) (8*j) 8 (by omega))
-    (fun j hj => seed_in (2*p+1) (by omega) (8*j) 8 (by omega))
-    (seed_in (2*p) (by omega) 32 1 (by decide)) (seed_in (2*p) (by omega) 33 1 (by decide))
-    (seed_in (2*p+1) (by omega) 32 1 (by decide)) (seed_in (2*p+1) (by omega) 33 1 (by decide))
-    hws ((hp.seed_scr.sub_left (seed_sub (by omega))).sub_right hps)
-    ((hp.seed_scr.sub_left (seed_sub (by omega))).sub_right hps)
+    (fun j hj => seed_in (2*p) (by omega_using [hstream]) (8*j) 8 (by omega_using [hj]))
+    (fun j hj => seed_in (2*p+1) (by omega_using [hstream]) (8*j) 8 (by omega_using [hj]))
+    (seed_in (2*p) (by omega_using [hstream]) 32 1 (by decide)) (seed_in (2*p) (by omega_using [hstream]) 33 1 (by decide))
+    (seed_in (2*p+1) (by omega_using [hstream]) 32 1 (by decide)) (seed_in (2*p+1) (by omega_using [hstream]) 33 1 (by decide))
+    hws ((hp.seed_scr.sub_left (seed_sub (by omega_using [hstream]))).sub_right hps)
+    ((hp.seed_scr.sub_left (seed_sub (by omega_using [hstream]))).sub_right hps)
     (by intro i hi; rw [h1.mem]; exact hz i hi)) fun t ⟨h2,hf2,hp2⟩ => ?_
   refine ⟨he1.lowStep hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact pair_sub hpn)
     h2.rd h2.wr h2.sp (fun r hr => h2.gpr r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide)),?_,?_⟩
-  · rw [seedState_eq,seedState_eq,seed_eq hp he1 (by omega : 2*p < v),seed_eq hp he1 (by omega : 2*p+1 < v)] at hp2
+  · rw [seedState_eq,seedState_eq,seed_eq hp he1 (by omega_using [hstream] : 2*p < v),seed_eq hp he1 (by omega_using [hstream] : 2*p+1 < v)] at hp2
     exact hp2
   · rw [← h1.mem]; exact hf2
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
@@ -121,22 +121,22 @@ theorem countsStore_ok (v : Nat) (hv : v≤4) {s : State} {p : Addr}
     (fun k t hk ⟨ht,hf,hs⟩ => ?_) v (Nat.le_refl _) s
     ⟨⟨rfl,rfl,rfl,rfl,rfl,rfl⟩,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
   refine wp_str (a := p+BitVec.ofNat 64 (counts+8*k))
-    (by unfold counts; constructor <;> omega) (by rw [ht.gpr,h19])
+    (by unfold counts; constructor <;> omega_arith) (by rw [ht.gpr,h19])
     (by rw [ht.wr]; exact hw k hk) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact ⟨hu.gpr.trans ht.gpr,rfl,hu.rd.trans ht.rd,hu.wr.trans ht.wr,
       hu.sp.trans ht.sp,hu.vec.trans ht.vec⟩
   · rw [hu.mem]
     exact hf.writeW (List.mem_singleton_self _) _
       (Offset.contains p (d := counts+8*k) (e := counts) (n := 8) (k := 32)
-        (by omega) (by omega) (by decide))
+        (by omega_using []) (by omega_using [hv, hk]) (by decide))
   · intro i hi
     rw [hu.mem,ht.gpr,h4]
     by_cases he : i=k
     · subst i; rw [Mem.readW_writeW_self64]
     · rw [Mem.readW_writeW_sep
         (Offset.sep p (d := counts+8*i) (e := counts+8*k) (n := 8) (k := 8)
-          (by omega) (by unfold counts; omega) (by unfold counts; omega)) (by decide)]
-      exact hs i (by omega)
+          (by omega_using [he]) (by unfold counts; omega_using [hv, hk, hi]) (by unfold counts; omega_using [hv, hk])) (by decide)]
+      exact hs i (by omega_using [hi, he])
 
 theorem initCounts_ok {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s) :
     WP isa (.block (initCountsCode v)) s fun t => Env v σ t ∧
@@ -144,9 +144,9 @@ theorem initCounts_ok {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s)
   rw [initCountsCode,List.cons_append,List.nil_append]
   refine wp_movz fun a ha ea => ?_
   have h4 : a.gpr .x4=256 := by rw [ea]; rfl
-  refine WP.mono (countsStore_ok v (by have:=hp.streams; omega)
+  refine WP.mono (countsStore_ok v (by have:=hp.streams; omega_using [this])
     (by rw [ha.get .x19]; exact he.x19) h4
-    (fun i hi => in_scr hp (ha.wr.trans he.wr) (by have:=hp.streams; unfold counts; omega)))
+    (fun i hi => in_scr hp (ha.wr.trans he.wr) (by have:=hp.streams; unfold counts; omega_using [hi, this])))
     fun t ⟨ht,hf,hs⟩ => ?_
   have hframe : Frame [countR σ] s.mem t.mem := by rw [←ha.mem]; exact hf
   refine ⟨he.lowStep hframe (fun r hr => by

@@ -35,22 +35,22 @@ theorem CrtShared.product_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
   rw [strideEq] at endA endB
   have linear : 3 * stride w + 3 * (16 * w + 8) ≤ g.size := by
     have size0 : 3 * stride w + 4 * (4 * w + 2) + 4 * (4 * w + 2) + 4 * (4 * w + 2) + stride w ≤ g.size := size
-    omega
-  have stridePos : 384 ≤ stride w := by simp only [VG.Impl.Bignum.Arm.Crt.stride, workspaceWords]; omega
-  have aHeader : 256 ≤ arrAt w j := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
-  have bHeader : 256 ≤ arrAt w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
+    omega_using [size0]
+  have stridePos : 384 ≤ stride w := by simp only [VG.Impl.Bignum.Arm.Crt.stride, workspaceWords]; omega_using []
+  have aHeader : 256 ≤ arrAt w j := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+  have bHeader : 256 ≤ arrAt w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
   have wide : WideProductCtx s g.base g.size (productOffset w) (crtProductA w coefficient) (crtProductB w) (2 * w) (2 * w) := by
-    refine ⟨h.buffers.workspace, by omega, by omega, by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    refine ⟨h.buffers.workspace, by omega, by omega, by omega_using [linear, stridePos], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
       ready.stackRead, h.stack.separate.sub_left (Region.sub_prefix (by decide)), ready.saved⟩
     all_goals simp only [crtProductA, crtProductB, pOffset, qOffset, productOffset]
-    · change 256 ≤ stride w + arrAt w j; omega
-    · omega
-    · omega
-    · change stride w + arrAt w j + 4 * (2 * w) ≤ g.size; omega
-    · omega
-    · omega
-    · right; change stride w + arrAt w j + 4 * (2 * w) ≤ 3 * stride w; omega
-    · right; omega
+    · change 256 ≤ stride w + arrAt w j; omega_using [stridePos]
+    · omega_using [stridePos]
+    · omega_using [stridePos]
+    · change stride w + arrAt w j + 4 * (2 * w) ≤ g.size; omega_using [endA, linear]
+    · omega_using [endB, linear]
+    · omega_using [linear]
+    · right; change stride w + arrAt w j + 4 * (2 * w) ≤ 3 * stride w; omega_using [endA]
+    · right; omega_using [endB]
   obtain ⟨paddr, qaddr, _, _⟩ := crt_storage_addresses h.buffers.workspace h.buffers.storageFits
   have ph := nativeHeader_of_layout s.mem (crtP g.base w) h.buffers.context.p.nowrap (Nat.le_refl _) h.p.layout
   have qh := nativeHeader_of_layout s.mem (crtQ g.base w) h.buffers.context.q.nowrap (Nat.le_refl _) h.q.layout
@@ -64,11 +64,11 @@ theorem CrtShared.product_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
   change s.mem.readW (off (State.addr (crtQ g.base w)) 64) 32 = _ at qArray
   rw [qaddr] at qArray
   simp only [off, Offset.add_add] at qArray
-  refine ⟨wide, by omega, by change 256 ≤ stride w; omega, by change 256 ≤ 2 * stride w; omega,
-    ?_, by change 2 * stride w + 68 ≤ 3 * stride w; omega, ready.ptr, h.main.p, h.main.q,
+  refine ⟨wide, by omega_using [linear, stridePos], by change 256 ≤ stride w; omega_using [stridePos], by change 256 ≤ 2 * stride w; omega_using [stridePos],
+    ?_, by change 2 * stride w + 68 ≤ 3 * stride w; omega_using [stridePos], ready.ptr, h.main.p, h.main.q,
     ?_, ?_, h.main.product, h.main.toCrtLayoutState.nativeCount h.buffers.context.main⟩
   · change stride w + productOperandSlot coefficient + 4 ≤ 3 * stride w
-    cases coefficient <;> simp only [productOperandSlot, Bool.false_eq_true, ↓reduceIte] <;> omega
+    cases coefficient <;> simp only [productOperandSlot, Bool.false_eq_true, ↓reduceIte] <;> omega_using [stridePos]
   · simpa only [crtP, off, Offset.add_add, crtProductA, j] using pArray
   · simpa only [crtQ, off, Offset.add_add, crtProductB] using qArray
 

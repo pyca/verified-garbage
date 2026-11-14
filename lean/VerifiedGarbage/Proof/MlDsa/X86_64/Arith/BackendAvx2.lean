@@ -12,7 +12,38 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5CT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
+
+/-! ### `MlDsa.X86_64.Sample.Rej5Verified`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.Rej4.Segment
+
+open VG VG.X86_64
+
+theorem rejNTT4Avx2_verified {fast : Bool} : Verified X86_64.target (Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 fast)
+    (Proof.MlDsa.rejNTT4Contract X86_64.abi 24) := rej4_verified _ (correct (fast := fast)) ct
+
+theorem rejNTT4Avx2_ret {fast : Bool} {s s' : State} {t : List Leak} (h : (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).pre s)
+    (e : Exec isa (Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 fast) s t s') :
+    (s'.gpr .rax).setWidth 32 = rej4Res s.mem (s.gpr .rdi) := rej4_ret (correct (fast := fast)) h e
+
+end VG.Proof.MlDsa.X86_64.Rej4.Segment
+
+end
+
+end
+
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2, as an `ArithImpl`
@@ -67,7 +98,7 @@ def ArithImpl.avx2 : ArithImpl where
 /-- AVX2 arithmetic with the AVX-512VL four-state permutation in both samplers: its other
 functions are the AVX2 code's, which it calls by their names (`asfx`, `_avx2`), so that they
 are emitted once, and the callers that call no sampler are not instantiated for it
-(`samplersOnly`). -/
+(`Proof/Variants/MlDsaArith/X86_64.lean`, `samplerFreeVariants`). -/
 def ArithImpl.avx512 : ArithImpl where
   code := { Backend.avx2Combined with
     rej4 := Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 true
@@ -79,6 +110,5 @@ def ArithImpl.avx512 : ArithImpl where
     expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
       by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ }
   features := ["avx", "avx2", "avx512f", "avx512vl"]
-  samplersOnly := true
 
 end VG.Proof.MlDsa.X86_64

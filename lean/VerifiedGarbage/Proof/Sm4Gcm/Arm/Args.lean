@@ -33,14 +33,14 @@ theorem args_sp {s s' : State} (h : s'.sp = s.sp) (n : Nat) : args s' n = args s
 /-- The stack below `sp` is apart from the stack arguments. -/
 theorem below_args (s : State) {n : Nat} (hf : s.sp.toNat + 4 * n ≤ 2 ^ 32) : (below s.sp).Disjoint (args s n) := by
   simp only [args, argAddr_zero]
-  exact (Offset.base_disjoint_below (State.addr s.sp) (n := 1520) (k := 4 * n) (by omega)).symm
+  exact (Offset.base_disjoint_below (State.addr s.sp) (n := 1520) (k := 4 * n) (by omega_using [hf])).symm
 
 /-- The low word of a 64-bit length gives it modulo 16. -/
 theorem low_mod16 {hi lo : BitVec 32} {L : Nat} (h : hi ++ lo = BitVec.ofNat 64 L) : lo.toNat % 16 = L % 16 := by
   have e := congrArg BitVec.toNat h
   rw [Proof.Gcm.toNat_append, BitVec.toNat_ofNat] at e
   have : L % 2 ^ 64 % 16 = L % 16 := Nat.mod_mod_of_dvd _ (by decide)
-  omega
+  omega_using [e]
 
 structure ArgsKeep (n : Nat) (s₀ s : State) : Prop where
   sp : s.sp = s₀.sp

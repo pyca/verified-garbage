@@ -47,11 +47,11 @@ theorem join_byte (x y : BitVec 32) {i : Nat} (hi : i < 8) :
     BitVec.getLsbD_setWidth]
   split
   · simp only [BitVec.getElem_extractLsb']
-    simp (disch := omega) [show 8 * i + j < 32 by omega, show 8 * i + j < 64 by omega]
+    simp (disch := omega_arith) [show 8 * i + j < 32 by omega_arith, show 8 * i + j < 64 by omega_using [hi, hj]]
   · simp only [BitVec.getElem_extractLsb']
-    simp (disch := omega) [show ¬ 8 * i + j < 32 by omega, show 8 * i + j < 64 by omega,
-      show 8 * i + j - 32 = 8 * (i - 4) + j by omega]
-    intro; omega
+    simp (disch := omega) [show ¬ 8 * i + j < 32 by omega_arith, show 8 * i + j < 64 by omega_using [hi, hj],
+      show 8 * i + j - 32 = 8 * (i - 4) + j by omega_arith]
+    intro; omega_using [hi, hj]
 
 /-- A little-endian doubleword is its two words. -/
 theorem readW64_split (m : Mem) (a : Addr) :
@@ -62,8 +62,8 @@ theorem readW64_split (m : Mem) (a : Addr) :
   rw [join_byte _ _ hi]
   split
   · exact Mem.readW_byte m a ‹_›
-  · rw [← Mem.readW_byte m _ (by omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    congr 3; omega
+  · rw [← Mem.readW_byte m _ (by omega_using [hi]), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    congr 3; omega_arith
 
 /-- The doubleword at `P + d`, as a number. -/
 def dw (m : Mem) (P : Addr) (d : Nat) : Nat := (m.readW (P + BitVec.ofNat 64 d) 64).toNat
@@ -85,9 +85,9 @@ theorem dw_split (m : Mem) (P : Addr) (d : Nat) : dw m P d = wd m P d + 2 ^ 32 *
       BitVec.getElem_zero]
     by_cases h : i < 32
     · simp [h]
-    · simp [h, BitVec.getLsbD_of_ge lo i (by omega)]
+    · simp [h, BitVec.getLsbD_of_ge lo i (by omega_using [h])]
   rw [e, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (by omega : lo.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega : hi.toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [] : lo.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [] : hi.toNat < 2 ^ 64),
     Nat.shiftLeft_eq]
   omega_using [h1, h2]
 
@@ -129,7 +129,7 @@ variable {b : Addr} {is : List Instr} {s : State} {Q : State → Prop}
 theorem ld0_ok (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d + 8 ≤ 4096) (hd4 : d % 4 = 0)
     (k : ∀ s', Upd s s' t (s.mem.readW (b + BitVec.ofNat 64 d) 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.load .d t .r6 d :: is)) s Q := by
-  have e := exec_load_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega, hd4⟩
+  have e := exec_load_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega_using [hd], hd4⟩
     (by rw [hc.r6]; exact hc.inR hd)
   rw [hc.r6] at e
   exact WP.cons e (k _ (Upd.write _ _ _))
@@ -138,7 +138,7 @@ theorem ld0_ok (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d + 8 ≤ 4096) (hd4 : d
 theorem sd0_ok (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d + 8 ≤ 4096) (hd4 : d % 4 = 0)
     (k : ∀ s', Mupd s s' (s.mem.writeW (b + BitVec.ofNat 64 d) (s.gpr t)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store .d t .r6 d :: is)) s Q := by
-  have e := exec_store_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega, hd4⟩
+  have e := exec_store_d (s := s) (t := t) (n := .r6) (off := d) (by decide) ⟨by omega_using [hd], hd4⟩
     (by rw [hc.r6]; exact hc.inW hd)
   rw [hc.r6] at e
   exact WP.cons e (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
@@ -173,19 +173,19 @@ theorem wp_addc {d n m : Reg}
     (k : ∀ s', UpdC s s' d ((s.gpr n).toNat + (s.gpr m).toNat) → WP isa (.block is) s' Q) :
     WP isa (.block (.addc d n m :: is)) s Q := by
   have := (s.gpr n).isLt; have := (s.gpr m).isLt
-  exact WP.cons exec_addc (k _ (UpdC.writeCarry _ _ (by omega)))
+  exact WP.cons exec_addc (k _ (UpdC.writeCarry _ _ (by omega_using [])))
 
 theorem wp_adde {d n m : Reg}
     (k : ∀ s', UpdC s s' d ((s.gpr n).toNat + (s.gpr m).toNat + s.ca.toNat) → WP isa (.block is) s' Q) :
     WP isa (.block (.adde d n m :: is)) s Q := by
   have := (s.gpr n).isLt; have := (s.gpr m).isLt; have : s.ca.toNat ≤ 1 := Bool.toNat_le _
-  exact WP.cons exec_adde (k _ (UpdC.writeCarry _ _ (by omega)))
+  exact WP.cons exec_adde (k _ (UpdC.writeCarry _ _ (by omega_using [this])))
 
 theorem wp_addze {d n : Reg}
     (k : ∀ s', UpdC s s' d ((s.gpr n).toNat + s.ca.toNat) → WP isa (.block is) s' Q) :
     WP isa (.block (.addze d n :: is)) s Q := by
   have := (s.gpr n).isLt; have : s.ca.toNat ≤ 1 := Bool.toNat_le _
-  exact WP.cons exec_addze (k _ (UpdC.writeCarry _ _ (by omega)))
+  exact WP.cons exec_addze (k _ (UpdC.writeCarry _ _ (by omega_using [this])))
 
 theorem wp_mulhu {d n m : Reg}
     (k : ∀ s', Upd s s' d (BitVec.ofNat 64 ((s.gpr n).toNat * (s.gpr m).toNat / 2 ^ 64)) →
@@ -206,7 +206,7 @@ theorem writeCarry_split (s : State) (r : Reg) {v : Nat} (h : v < 2 ^ 65) :
   have := RegUpd.toNat_add_ca s (r := r) h
   have hc : (s.writeCarry r v).ca.toNat ≤ 1 := Bool.toNat_le _
   have := ((s.writeCarry r v).gpr r).isLt
-  omega
+  omega_arith
 
 /-- `l, h, t += x + 2⁶⁴ y` with `addc`, `adde` and `addze`, if the sum fits
 in three words. -/
@@ -224,13 +224,13 @@ theorem acc3_ok {s : State} {l h t x y : Reg} (hlh : l ≠ h) (hlt : l ≠ t) (h
     generalize hs2 : s1.writeCarry h ((s1.gpr h).toNat + (s1.gpr y).toNat + s1.ca.toNat) = s2
     have hL := (s.gpr l).isLt; have hX := (s.gpr x).isLt; have hH := (s.gpr h).isLt
     have hY := (s.gpr y).isLt; have hT := (s.gpr t).isLt
-    obtain ⟨e1, c1, b1⟩ := writeCarry_split s l (v := (s.gpr l).toNat + (s.gpr x).toNat) (by omega)
+    obtain ⟨e1, c1, b1⟩ := writeCarry_split s l (v := (s.gpr l).toNat + (s.gpr x).toNat) (by omega_using [])
     rw [hs1] at e1 c1 b1
     have g1h : s1.gpr h = s.gpr h := by rw [← hs1, RegUpd.gpr_writeCarry, ite_eq_right (Ne.symm hlh)]
     have g1y : s1.gpr y = s.gpr y := by rw [← hs1, RegUpd.gpr_writeCarry, ite_eq_right (Ne.symm hly)]
     have g1t : s1.gpr t = s.gpr t := by rw [← hs1, RegUpd.gpr_writeCarry, ite_eq_right (Ne.symm hlt)]
     obtain ⟨e2, c2, b2⟩ := writeCarry_split s1 h
-      (v := (s1.gpr h).toNat + (s1.gpr y).toNat + s1.ca.toNat) (by omega)
+      (v := (s1.gpr h).toNat + (s1.gpr y).toNat + s1.ca.toNat) (by omega_using [c1])
     rw [hs2] at e2 c2 b2
     have g2l : s2.gpr l = s1.gpr l := by rw [← hs2, RegUpd.gpr_writeCarry, ite_eq_right hlh]
     have g2t : s2.gpr t = s1.gpr t := by rw [← hs2, RegUpd.gpr_writeCarry, ite_eq_right (Ne.symm hht)]
@@ -261,7 +261,7 @@ theorem tsum_le {f : Nat × Nat → Nat} {B : Nat} :
     rw [tsum_cons, List.length_cons, Nat.succ_mul]
     have := h p (List.mem_cons_self ..)
     have := tsum_le (ps := ps) fun q hq => h q (List.mem_cons_of_mem _ hq)
-    omega
+    omega_arith
 
 /-- The sum of the first `k` columns. -/
 def colsV (cs : Nat → Nat) : Nat → Nat
@@ -290,15 +290,15 @@ theorem accW_lt (m : Mem) (b : Addr) : ∀ k, accW acc m b k < (2 ^ 64) ^ k
     have := dw_lt m b (acc + 8 * k)
     rw [accW, Nat.pow_succ (n := 2 ^ 64)]
     calc accW acc m b k + (2 ^ 64) ^ k * dw m b (acc + 8 * k)
-        < (2 ^ 64) ^ k + (2 ^ 64) ^ k * dw m b (acc + 8 * k) := by omega
+        < (2 ^ 64) ^ k + (2 ^ 64) ^ k * dw m b (acc + 8 * k) := by omega_arith
       _ = (2 ^ 64) ^ k * (dw m b (acc + 8 * k) + 1) := by rw [Nat.mul_add, Nat.mul_one, Nat.add_comm]
-      _ ≤ (2 ^ 64) ^ k * 2 ^ 64 := Nat.mul_le_mul_left _ (by omega)
+      _ ≤ (2 ^ 64) ^ k * 2 ^ 64 := Nat.mul_le_mul_left _ (by omega_using [this])
 
 theorem accW_congr {m m' : Mem} : ∀ {k}, (∀ c < k, dw m' b (acc + 8 * c) = dw m b (acc + 8 * c)) →
     accW acc m' b k = accW acc m b k
   | 0, _ => rfl
   | k + 1, h => by
-    rw [accW, accW, accW_congr (fun c hc => h c (by omega)), h k (by omega)]
+    rw [accW, accW, accW_congr (fun c hc => h c (by omega_using [hc])), h k (by omega_using [])]
 
 /-- The product's area at `acc`. -/
 abbrev AR (acc : Nat) (b : Addr) : Region := ⟨b + BitVec.ofNat 64 acc, 64⟩
@@ -308,7 +308,7 @@ theorem dw_acc (hA : acc + 64 ≤ 4096) {m m' : Mem} (hf : Frame [AR acc b] m m'
     (hd : d + 8 ≤ acc) : dw m' b d = dw m b d :=
   dw_frame hf fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inl hd) (by omega) (by omega)
+    exact Offset.disjoint _ (.inl hd) (by omega_using [hA, hd]) (by omega_using [hA])
 
 /-! ## Columns -/
 
@@ -331,20 +331,20 @@ theorem colEnd_ok (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s0 : State} {k :
     WP isa (.block (colEnd acc k)) s (ColInv acc b s0 cs (k + 1)) := by
   obtain ⟨h01, h02, h12, -, -, -, -, -, -, -, -, -, h3, hrr, -, -⟩ := rr_ne k hk
   unfold colEnd
-  refine sd0_ok hc (by omega) (by omega) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_
+  refine sd0_ok hc (by omega_using [hA, hk]) (by omega_using [hA4]) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_
   have hm : s2.mem = s.mem.writeW (b + BitVec.ofNat 64 (acc + 8 * k)) (s.gpr (rr k)) := by
     rw [u2.mem, u1.mem]
   have hr2 : Rest clob s s2 := (u1.rest _).trans (u2.rest (ws := clob) hrr)
   refine ⟨hc.of_rest hr2 (by decide), hr.trans hr2, ?_, ?_, ?_⟩
   · rw [hm]
     exact hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains b (by omega) (by omega) (by omega))
-  · rw [show k + 1 + 2 = k + 3 by omega, h3, u2.gpr]; rfl
+      (Offset.contains b (by omega_using []) (by omega_using [hk]) (by omega_using [hA]))
+  · rw [show k + 1 + 2 = k + 3 by omega_using [], h3, u2.gpr]; rfl
   · have e1 : s2.gpr (rr (k + 1)) = s.gpr (rr (k + 1)) := by rw [u2.other _ (Ne.symm h01), u1.gpr]
     have e2 : s2.gpr (rr (k + 1 + 1)) = s.gpr (rr (k + 2)) := by
-      rw [show k + 1 + 1 = k + 2 by omega, u2.other _ (Ne.symm h02), u1.gpr]
+      rw [show k + 1 + 1 = k + 2 by omega_using [], u2.other _ (Ne.symm h02), u1.gpr]
     have ea : accW acc s2.mem b k = accW acc s.mem b k := accW_congr fun c hc' => by
-      rw [hm, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+      rw [hm, dw_write_other _ _ _ (by omega_using [hc']) (by omega_using [hA, hk, hc']) (by omega_using [hA, hk])]
     have ek : dw s2.mem b (acc + 8 * k) = (s.gpr (rr k)).toNat := by rw [hm, dw_write_self]
     rw [accW, ea, ek, e1, e2, ← hv, v3]
     rw [Nat.pow_succ (n := 2 ^ 64)]
@@ -378,10 +378,10 @@ theorem terms_ok {s0 : State} {k : Nat} {f : Nat × Nat → Nat} {code : Nat × 
     rw [List.flatMap_cons]
     rw [tsum_cons] at hb
     refine WP.append (hok p (List.mem_cons_self ..) s hc hr hf) fun s1 ⟨hc1, hr1, hf1, hm1, hv1⟩ => ?_
-    have hv1 := hv1 (by omega)
+    have hv1 := hv1 (by omega_using [hb])
     refine WP.mono (terms_ok ps (fun q hq => hok q (List.mem_cons_of_mem _ hq)) s1 hc1 hr1 hf1
-      (by omega)) fun s2 ⟨hc2, hr2, hf2, hm2, hv2⟩ => ⟨hc2, hr2, hf2, hm2.trans hm1, ?_⟩
-    rw [hv2, hv1, tsum_cons]; omega
+      (by omega_arith)) fun s2 ⟨hc2, hr2, hf2, hm2, hv2⟩ => ⟨hc2, hr2, hf2, hm2.trans hm1, ?_⟩
+    rw [hv2, hv1, tsum_cons]; omega_using []
 
 /-- Column `k`: its terms `ps`, which sum to `cs k`, then its end. -/
 theorem column_ok (hA : acc + 64 ≤ 4096) (hA4 : acc % 4 = 0) {s0 : State} {k : Nat} (hk : k < 8)
@@ -408,7 +408,7 @@ theorem columns_ok {s0 : State} {cs : Nat → Nat} {col : Nat → List Instr}
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.append (columns_ok hcol n (by omega) s h) fun s1 h1 => hcol n (by omega) s1 h1
+    exact WP.append (columns_ok hcol n (by omega_using [hn]) s h) fun s1 h1 => hcol n (by omega_using [hn]) s1 h1
 
 /-- After the eight columns, the words at `acc` are the columns' sum. -/
 theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv acc b s0 cs 8 s)
@@ -420,9 +420,9 @@ theorem ColInv.final {s0 : State} {cs : Nat → Nat} {s : State} (h : ColInv acc
   generalize (s.gpr (rr 8)).toNat + 2 ^ 64 * (s.gpr (rr (8 + 1))).toNat = C at *
   generalize colsV cs 8 = V at *
   rcases Nat.eq_zero_or_pos C with rfl | hC
-  · omega
+  · omega_using [hv]
   · have : K ≤ K * C := Nat.le_mul_of_pos_right _ hC
-    omega
+    omega_using [hlt, hv, this]
 
 /-! ## The product -/
 
@@ -443,9 +443,9 @@ theorem mulTerm_ok {s0 : State} {x y : Nat} (hx : x + 32 ≤ acc) (hy : y + 32 �
   intro s hc hr hf
   obtain ⟨h01, h02, h12, h04, h05, h07, h14, h15, h17, h24, h25, h27, -, c0, c1, c2⟩ := rr_ne k hk
   simp only [mulTerm]
-  refine ld0_ok hc (d := x + 8 * i) (by omega) (by omega) fun s1 u1 => ?_
+  refine ld0_ok hc (d := x + 8 * i) (by omega_using [hx, hA, hi]) (by omega_using [hx4]) fun s1 u1 => ?_
   have hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := clob) (by decide)) (by decide)
-  refine ld0_ok hc1 (d := y + 8 * j) (by omega) (by omega) fun s2 u2 => ?_
+  refine ld0_ok hc1 (d := y + 8 * j) (by omega_using [hy, hA, hj]) (by omega_using [hy4]) fun s2 u2 => ?_
   refine wp_mul fun s3 u3 => WP.cons exec_mulhu ?_
   generalize hs4 : s3.write .r4 (BitVec.ofNat 64 ((s3.gpr .r4).toNat * (s3.gpr .r5).toNat / 2 ^ 64)) = s4
   have u4 : Upd s3 s4 .r4 _ := hs4 ▸ Upd.write _ _ _
@@ -460,9 +460,9 @@ theorem mulTerm_ok {s0 : State} {x y : Nat} (hx : x + 32 ≤ acc) (hy : y + 32 �
       u3.other _ h27, u2.other _ h05, u2.other _ h15, u2.other _ h25, u1.other _ h04,
       u1.other _ h14, u1.other _ h24]
   have ex : (s3.gpr .r4).toNat = ew s0.mem b x i := by
-    rw [u3.other _ (by decide), u2.other _ (by decide), u1.gpr]; exact dw_acc hA hf (by omega)
+    rw [u3.other _ (by decide), u2.other _ (by decide), u1.gpr]; exact dw_acc hA hf (by omega_using [hx, hi])
   have ey : (s3.gpr .r5).toNat = ew s0.mem b y j := by
-    rw [u3.other _ (by decide), u2.gpr, u1.mem]; exact dw_acc hA hf (by omega)
+    rw [u3.other _ (by decide), u2.gpr, u1.mem]; exact dw_acc hA hf (by omega_using [hy, hj])
   have hX := dw_lt s0.mem b (x + 8 * i)
   have hY := dw_lt s0.mem b (y + 8 * j)
   have elo : (s4.gpr .r7).toNat = ew s0.mem b x i * ew s0.mem b y j % 2 ^ 64 := by
@@ -479,14 +479,14 @@ theorem mulTerm_ok {s0 : State} {x y : Nat} (hx : x + 32 ≤ acc) (hy : y + 32 �
 
 theorem mulF_le (X Y : Nat → Nat) (hX : ∀ i, X i < 2 ^ 64) (hY : ∀ j, Y j < 2 ^ 64) (p : Nat × Nat) :
     mulF X Y p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-  Nat.mul_le_mul (by have := hX p.1; omega) (by have := hY p.2; omega)
+  Nat.mul_le_mul (by have := hX p.1; omega_using [this]) (by have := hY p.2; omega_using [this])
 
 theorem tsum_lt {f : Nat × Nat → Nat} (hf : ∀ p, f p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1))
     {ps : List (Nat × Nat)} (hl : ps.length ≤ 4) : tsum f ps < 4 * 2 ^ 128 := by
   have := tsum_le (ps := ps) fun p _ => hf p
   have : ps.length * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) ≤ 4 * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) :=
     Nat.mul_le_mul_right _ hl
-  omega
+  omega_arith
 
 /-- The columns sum to the product. -/
 theorem mulCols_sum (X Y : Nat → Nat) : colsV (mulCs X Y) 8 = val4 X * val4 Y := by

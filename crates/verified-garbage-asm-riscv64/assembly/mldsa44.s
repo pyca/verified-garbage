@@ -2371,6 +2371,22 @@ vg_mldsa44_sign:
 	ret
 	.option pop
 
+vg_mldsa44_sign_prepared:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	lui a5, 1
+	addi a5, a5, -1536
+	add a5, a0, a5
+	lui a6, 3
+	addi a6, a6, 0
+	call {vg_mldsa44_sign_with_cache}
+	ld ra, 8(sp)
+	addi sp, sp, 16
+	ret
+	.option pop
+
 vg_mldsa44_sign_message:
 	.option push
 	.option arch, +m, +c
@@ -2606,6 +2622,22 @@ vg_mldsa44_verify:
 	sd ra, 8(sp)
 	addi a4, a0, 0
 	addi a5, zero, 0
+	call {vg_mldsa44_verify_with_cache}
+	ld ra, 8(sp)
+	addi sp, sp, 16
+	ret
+	.option pop
+
+vg_mldsa44_verify_prepared:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	lui a4, 0
+	addi a4, a4, 1312
+	add a4, a0, a4
+	lui a5, 1
+	addi a5, a5, 0
 	call {vg_mldsa44_verify_with_cache}
 	ld ra, 8(sp)
 	addi sp, sp, 16

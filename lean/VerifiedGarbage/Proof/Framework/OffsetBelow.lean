@@ -23,7 +23,7 @@ namespace VG.Offset
 /-- `[E - m, E)` and `[E, E + l)` do not overlap. -/
 theorem below_disjoint (E : Addr) {m l : Nat} (h : m + l ≤ 2 ^ 64) :
     Region.Disjoint ⟨E - BitVec.ofNat 64 m, m⟩ ⟨E, l⟩ := by
-  have := disjoint_below_above E (m := m) (a := 0) (l := l) (by omega)
+  have := disjoint_below_above E (m := m) (a := 0) (l := l) (by omega_using [h])
   rwa [BitVec.add_zero] at this
 
 /-- `E - a - b` is `E - (a + b)`. -/

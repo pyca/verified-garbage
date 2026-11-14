@@ -108,17 +108,17 @@ theorem schedule_eq (M : Block) (i : Nat) :
     sha512Su1 (sha512Su0 (pair M i) (pair M (i + 1))) (pair M (i + 7))
       (ofVDwords (W M (2 * (i + 4) + 1)) (W M (2 * (i + 5)))) = pair M (i + 8) := by
   simp only [sha512Su0, sha512Su1, pair, vdword_ofVDwords_0, vdword_ofVDwords_1]
-  have h0 := W_ge M (show 16 ≤ 2 * (i + 8) by omega)
-  have h1 := W_ge M (show 16 ≤ 2 * (i + 8) + 1 by omega)
+  have h0 := W_ge M (show 16 ≤ 2 * (i + 8) by omega_using [])
+  have h1 := W_ge M (show 16 ≤ 2 * (i + 8) + 1 by omega_using [])
   rw [h0, h1]
-  simp only [show 2 * (i + 8) - 2 = 2 * (i + 7) by omega,
-    show 2 * (i + 8) - 7 = 2 * (i + 4) + 1 by omega,
-    show 2 * (i + 8) - 15 = 2 * i + 1 by omega,
-    show 2 * (i + 8) - 16 = 2 * i by omega,
-    show 2 * (i + 8) + 1 - 2 = 2 * (i + 7) + 1 by omega,
-    show 2 * (i + 8) + 1 - 7 = 2 * (i + 5) by omega,
-    show 2 * (i + 8) + 1 - 15 = 2 * (i + 1) by omega,
-    show 2 * (i + 8) + 1 - 16 = 2 * i + 1 by omega, ssig0, ssig1]
+  simp only [show 2 * (i + 8) - 2 = 2 * (i + 7) by omega_using [],
+    show 2 * (i + 8) - 7 = 2 * (i + 4) + 1 by omega_using [],
+    show 2 * (i + 8) - 15 = 2 * i + 1 by omega_using [],
+    show 2 * (i + 8) - 16 = 2 * i by omega_using [],
+    show 2 * (i + 8) + 1 - 2 = 2 * (i + 7) + 1 by omega_using [],
+    show 2 * (i + 8) + 1 - 7 = 2 * (i + 5) by omega_using [],
+    show 2 * (i + 8) + 1 - 15 = 2 * (i + 1) by omega_using [],
+    show 2 * (i + 8) + 1 - 16 = 2 * i + 1 by omega_using [], ssig0, ssig1]
   rw [add_swap4 (W M (2 * i)), add_swap4 (W M (2 * i + 1))]
 
 theorem add_ab (v H : HashValue) :

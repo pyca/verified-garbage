@@ -47,10 +47,10 @@ theorem childBases_ok {s : State} {B parent : Addr} {Z w : Nat}
       (writeW_outside _ B _ (d := 8 * sW) (by decide)).word (Or.inr (by decide)) (by decide)]
   · rw [hft.word (Or.inr (by decide)) (by decide), hum, word_writeW_self]
   · intro x hx
-    rw [hft x (by change ofs B x < 64 ∨ 128 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega), hum]
+    rw [hft x (by change ofs B x < 64 ∨ 128 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega_using [hx]), hum]
     rw [writeW_outside _ B _ (d := 8 * Crt.sLink) (by decide) x
-      (by change ofs B x < 128 ∨ 136 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega)]
+      (by change ofs B x < 128 ∨ 136 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega_using [hx])]
     exact writeW_outside _ B _ (d := 8 * sW) (by decide) x
-      (by change ofs B x < 48 ∨ 56 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega)
+      (by change ofs B x < 48 ∨ 56 ≤ ofs B x; change ofs B x < 48 ∨ 136 ≤ ofs B x at hx; omega_using [hx])
 
 end VG.Proof.Dsa.AArch64

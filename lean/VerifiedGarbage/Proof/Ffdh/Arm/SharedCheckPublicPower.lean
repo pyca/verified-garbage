@@ -51,7 +51,7 @@ theorem sharedCheckPublicPower_ok (backend : MontBackend) (s : State) {p : Input
   have exponentU := exponentBytes.after_workspace frameU restU
   have input : PowerInput p.base (p.slotValue bs) (p.slotValue es) p.len p.w M bb eb u :=
     ⟨readyU, by rw [mem]; exact modulus, odd, by rw [mem]; exact r2,
-      baseU, exponentU, by rw [baseLength]; have := p.minLength; omega,
+      baseU, exponentU, by rw [baseLength]; have := p.minLength; omega_using [this],
       by rw [baseLength]; exact p.width.2.2.2.1, exponentPositive, exponentFits,
       source, by rw [baseLength]; exact count, exponent, exponentCount.trans exponentLength⟩
   rw [WP.seq_iff]

@@ -43,7 +43,7 @@ theorem ltWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a m : Nat}, WsReg 
   | 0, s, _, _, _, _, _, _, _, _, hc => WP.block_nil ⟨Rest.refl _ _, rfl, hc, 0, by simp [wordsVal]⟩
   | k + 1, s, base, a, m, hw, ha, hm, ha', hm', hc => by
     rw [ltWords, ltWord, List.append_assoc, List.append_assoc]
-    refine ldAt_ws hw (by omega) ha fun s₁ u₁ => ldAt_ws (hw.of_rest (u₁.rest (ws := [.t3]) (by decide))) (by omega)
+    refine ldAt_ws hw (by omega_using [ha']) ha fun s₁ u₁ => ldAt_ws (hw.of_rest (u₁.rest (ws := [.t3]) (by decide))) (by omega_using [hm'])
       hm fun s₂ u₂ => ?_
     have r₂ : Rest [.t3, .t4] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
@@ -55,20 +55,20 @@ theorem ltWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a m : Nat}, WsReg 
     obtain ⟨e₃, c₃⟩ := h₃ (by rw [c₂]; exact hc)
     have r₃ : Rest [.t3, .t4, .t5, .t6, .a4] s s₃ := (r₂.app (Wide.Keeps.rest k₃)).mono (by decide)
     have m₃ : s₃.mem = s.mem := by rw [k₃.2.1, m₂]
-    refine WP.mono (ltWords_ok k (hw.of_rest r₃) (a := a + 8) (m := m + 8) (by omega) (by omega) (by omega)
-      (by omega) c₃) fun s₄ ⟨r₄, m₄, c₄, D, hD, eD⟩ => ⟨r₃.trans r₄ |>.mono (by decide), by rw [m₄, m₃], c₄,
+    refine WP.mono (ltWords_ok k (hw.of_rest r₃) (a := a + 8) (m := m + 8) (by omega_using [ha]) (by omega_using [hm]) (by omega_using [ha'])
+      (by omega_using [hm']) c₃) fun s₄ ⟨r₄, m₄, c₄, D, hD, eD⟩ => ⟨r₃.trans r₄ |>.mono (by decide), by rw [m₄, m₃], c₄,
         (s₃.gpr .t3).toNat + 2 ^ 64 * D, ?_, ?_⟩
     · rw [pow64_succ]
       have := (s₃.gpr .t3).isLt
       have : 2 ^ 64 * D + 2 ^ 64 ≤ 2 ^ 64 * 2 ^ (64 * k) := by
         rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hD
-      omega
+      omega_using [hD]
     · rw [m₃] at eD
       rw [x₂, y₂, c₂] at e₃
       simp only [wordsVal]
       rw [pow64_succ, Nat.mul_assoc]
       generalize 2 ^ (64 * k) * (s₄.gpr .t5).toNat = Z at eD ⊢
-      omega
+      omega_using [e₃, eD]
 
 /-- The mask `a7` of `[a] < [m]`, numbers of `n ≥ 1` words. -/
 theorem ltMask_ok {n : Nat} {s : State} {base : Addr} (hw : WsReg s base) {a m : Nat} (ha : a % 8 = 0)
@@ -88,16 +88,16 @@ theorem ltMask_ok {n : Nat} {s : State} {base : Addr} (hw : WsReg s base) {a m :
     have hA := wordsVal_lt s.mem base a n
     have hM := wordsVal_lt s.mem base m n
     rw [u₄.gpr, u₃.gpr, u₃.other _ (by decide)]
-    have : (s₂.gpr .t5).toNat = 0 ∨ (s₂.gpr .t5).toNat = 1 := by omega
+    have : (s₂.gpr .t5).toNat = 0 ∨ (s₂.gpr .t5).toNat = 1 := by omega_using [c₂]
     rcases this with h | h
     · have hv : s₂.gpr .t5 = 0 := BitVec.eq_of_toNat_eq h
       rw [h] at eD
-      have : ¬ wordsVal s.mem base a n < wordsVal s.mem base m n := by simp at eD; omega
+      have : ¬ wordsVal s.mem base a n < wordsVal s.mem base m n := by simp at eD; omega_using [eD]
       rw [hv, decide_eq_false this]; rfl
     · have hv : s₂.gpr .t5 = 1 := BitVec.eq_of_toNat_eq h
       rw [h] at eD
       have : wordsVal s.mem base a n < wordsVal s.mem base m n := by
-        simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.add_zero, Nat.mul_one] at eD; omega
+        simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.add_zero, Nat.mul_one] at eD; omega_using [hD, eD]
       rw [hv, decide_eq_true this]; rfl
 
 /-- The words or'ed into `t3`. -/
@@ -109,11 +109,11 @@ theorem orWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a : Nat}, WsReg s 
   | 0, s, _, _, _, _, _ => WP.block_nil ⟨Rest.refl _ _, rfl, by simp [wordsVal]⟩
   | k + 1, s, base, a, hw, ha, ha' => by
     rw [orWords, List.append_assoc, List.singleton_append]
-    refine ldAt_ws hw (by omega) ha fun s₁ u₁ => ?_
+    refine ldAt_ws hw (by omega_using [ha']) ha fun s₁ u₁ => ?_
     refine wp_or fun s₂ u₂ => ?_
     have r₂ : Rest [.t3, .t4] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-    refine WP.mono (orWords_ok k (hw.of_rest r₂) (a := a + 8) (by omega) (by omega)) fun s₃ ⟨r₃, m₃, e₃⟩ =>
+    refine WP.mono (orWords_ok k (hw.of_rest r₂) (a := a + 8) (by omega_using [ha]) (by omega_using [ha'])) fun s₃ ⟨r₃, m₃, e₃⟩ =>
       ⟨(r₂.trans r₃).mono (by decide), by rw [m₃, m₂], ?_⟩
     have hor : ∀ x y : BitVec 64, x ||| y = 0 ↔ x = 0 ∧ y = 0 := fun _ _ => BitVec.or_eq_zero_iff
     rw [e₃, u₂.gpr, u₁.other _ (by decide), u₁.gpr, m₂, hor]
@@ -124,8 +124,8 @@ theorem orWords_ok : ∀ (k : Nat) {s : State} {base : Addr} {a : Nat}, WsReg s 
       refine ⟨h1, ?_⟩
       rw [h2, h3]; rfl
     · rintro ⟨h1, h2⟩
-      have hw' : (word s.mem base a).toNat = 0 := by omega
-      have hr : wordsVal s.mem base (a + 8) k = 0 := by omega
+      have hw' : (word s.mem base a).toNat = 0 := by omega_using [h2]
+      have hr : wordsVal s.mem base (a + 8) k = 0 := by omega_using [h2]
       exact ⟨⟨h1, BitVec.eq_of_toNat_eq hw'⟩, hr⟩
 
 /-- `x | -x` has its top bit set iff `x ≠ 0`. -/
@@ -140,14 +140,14 @@ theorem top_or_neg (x : BitVec 64) : ((0 - x ||| x) >>> 63) + BitVec.ofInt 64 (-
       have hx' : x.toNat ≠ 0 := fun h => hx (BitVec.eq_of_toNat_eq h)
       have hxl := x.isLt
       show ((2 ^ 64 - x.toNat + 0) % 2 ^ 64 ||| x.toNat) >>> 63 = 1
-      rw [Nat.add_zero, Nat.mod_eq_of_lt (by omega)]
+      rw [Nat.add_zero, Nat.mod_eq_of_lt (by omega_using [hx'])]
       rw [Nat.shiftRight_eq_div_pow]
-      have hlt : (2 ^ 64 - x.toNat ||| x.toNat) < 2 ^ 64 := Nat.or_lt_two_pow (by omega) hxl
+      have hlt : (2 ^ 64 - x.toNat ||| x.toNat) < 2 ^ 64 := Nat.or_lt_two_pow (by omega_using [hx']) hxl
       have hge : 2 ^ 63 ≤ (2 ^ 64 - x.toNat ||| x.toNat) := by
         by_cases h : 2 ^ 63 ≤ x.toNat
         · exact Nat.le_trans h (Nat.right_le_or)
-        · exact Nat.le_trans (by omega) (Nat.left_le_or)
-      omega
+        · exact Nat.le_trans (by omega_using [h]) (Nat.left_le_or)
+      omega_using [hlt, hge]
     rw [h1]; decide
 
 /-- The mask `a7` of `[a] = 0`. -/

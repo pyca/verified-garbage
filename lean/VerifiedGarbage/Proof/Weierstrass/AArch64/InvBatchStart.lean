@@ -42,7 +42,7 @@ theorem slots (P : InvCfg) :
       P.sB = P.tbl + 16 * (P.M.n + 1) + 8 * P.M.n ∧ P.sNF = P.tbl + 16 * (P.M.n + 1) + 16 * P.M.n ∧
       P.sNG = P.tbl + 24 * (P.M.n + 1) + 16 * P.M.n ∧ P.sT = P.tbl + 32 * (P.M.n + 1) + 16 * P.M.n := by
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [InvCfg.L, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sNF, InvCfg.sNG, InvCfg.sT] <;> omega
+    simp only [InvCfg.L, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sNF, InvCfg.sNG, InvCfg.sT] <;> omega_using []
 
 /-- What a batch writes: the slots, `7 n + 6` words. -/
 def batchW (P : InvCfg) : List (Nat × Nat) := [(P.tbl, 8 * (7 * P.M.n + 6))]

@@ -434,30 +434,30 @@ theorem nb_lt : 16 * nb s₀ < 2 ^ 64 := by
   refine h.y_d (yp s₀) (by simp [Region.Contains]) ?_
   simp only [Region.Contains]
   have := (yp s₀ - dp s₀).isLt
-  omega
+  omega_using [hn]
 
 theorem in_h {d : Nat} (hd : d + 8 ≤ 16) :
     InRegions (s₀.rd ++ s₀.wr) (hA s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨hR s₀, by simp [h.rd], contains_offset hd (by omega)⟩
+  ⟨hR s₀, by simp [h.rd], contains_offset hd (by omega_using [hd])⟩
 
 theorem in_y {d : Nat} (hd : d + 8 ≤ 16) :
     InRegions (s₀.rd ++ s₀.wr) (yp s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨yR s₀, by simp [h.wr], contains_offset hd (by omega)⟩
+  ⟨yR s₀, by simp [h.wr], contains_offset hd (by omega_using [hd])⟩
 
 theorem out_y {d : Nat} (hd : d + 8 ≤ 16) :
     InRegions s₀.wr (yp s₀ + BitVec.ofNat 64 d) 8 :=
-  ⟨yR s₀, by simp [h.wr], contains_offset hd (by omega)⟩
+  ⟨yR s₀, by simp [h.wr], contains_offset hd (by omega_using [hd])⟩
 
 theorem blk_sub {i : Nat} (hi : i < nb s₀) : Region.Sub ⟨blkAddr s₀ i, 16⟩ (dR s₀) := by
   have := h.nb_lt
-  exact sub_offset (by omega) (by omega)
+  exact sub_offset (by omega_using [hi]) (by omega_using [hi, this])
 
 theorem in_blk {i d : Nat} (hi : i < nb s₀) (hd : d + 8 ≤ 16) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofNat 64 d) 8 := by
   have := h.nb_lt
   refine ⟨dR s₀, by simp [h.rd], ?_⟩
   rw [blkAddr, Offset.add_add]
-  exact contains_offset (by omega) (by omega)
+  exact contains_offset (by omega_using [hi, hd]) (by omega_using [hi, hd, this])
 
 end Pre
 
@@ -570,7 +570,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hk : ∀ r ∈ keepRegs, s₂.gpr r = s.gpr r := hI₂.keep
   have hx3 : s₂.gpr .x3 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [hk .x3 (by decide), hL.x3, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+      Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
   have hy : blockAt s₃.mem (yp s₀) =
       ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i + 1)) := by
     have hz1 := congrArg Prod.fst hI₂.zv
@@ -590,13 +590,13 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     rw [hlast, Nat.sub_self] at hev
     exact ⟨hev.trans (by decide), hlast ▸ hcommon⟩
   · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega
-    refine ⟨?_, by omega, { hcommon with x2 := ?_, x3 := ?_ }⟩
+    have hne : nb s₀ - (i + 1) ≠ 0 := by omega_using [hi, hlast]
+    refine ⟨?_, by omega_using [hi, hlast], { hcommon with x2 := ?_, x3 := ?_ }⟩
     · have := hp.nb_lt
       have h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
         intro h
         have h' := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h'
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])] at h'
         exact hne h'
       exact hev.trans (by simpa using h0)
     · rw [hx2₃, hk .x2 (by decide), hL.x2, blkAddr, blkAddr,
@@ -627,7 +627,7 @@ theorem loops_ok {s₀ : State} (hp : Pre s₀) :
       refine WP.mono (body_ok hp hi hL) fun s' h => ?_
       rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
       · exact .inl ⟨he, hc⟩
-      · exact .inr ⟨he, nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL'⟩
+      · exact .inr ⟨he, nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl, hi', hL'⟩
     have hL₀ : LInv s₀ 0 s₀ :=
       { common_zero s₀ with
         x2 := by simp [blkAddr]

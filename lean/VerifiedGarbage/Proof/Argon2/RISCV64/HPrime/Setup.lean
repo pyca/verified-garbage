@@ -52,7 +52,7 @@ theorem setupMem_saved (s : State) : Spill.Saved (s.gpr .a4) s.gpr saved (setupM
   intro p hp
   have hd := saved_bounds p hp
   unfold setupMem
-  rw [Mem.readW_writeW_sep (Offset.sep _ (Or.inr (by omega)) (by omega) (by decide)) (by decide)]
+  rw [Mem.readW_writeW_sep (Offset.sep _ (Or.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)) (by decide)]
   exact Spill.saveMem_saved (by decide) _ _ _ p hp
 
 structure Setup (s t : State) : Prop where
@@ -72,10 +72,10 @@ theorem setup_ok (s : State) (hw : (⟨s.gpr .a4, 16384⟩ : Region) ∈ s.wr)
     WP isa (.block setup) s (Setup s) := by
   have write (d n : Nat) (h : d + n ≤ 16384) :
       InRegions s.wr (s.gpr .a4 + BitVec.ofNat 64 d) n :=
-    ⟨_, hw, Offset.contains_base _ h (by omega)⟩
+    ⟨_, hw, Offset.contains_base _ h (by omega_using [h])⟩
   unfold setup
   rw [show saved.map (fun (r, d) => Instr.store .d r .a4 d) = Spill.saveCode .a4 saved from rfl]
-  refine Spill.save_ok hal saved_fits (fun p hp => write _ _ (by have := saved_in p hp; omega)) ?_
+  refine Spill.save_ok hal saved_fits (fun p hp => write _ _ (by have := saved_in p hp; omega_using [this])) ?_
   generalize hs₀ : ({ s with mem := Spill.saveMem s.mem (s.gpr .a4) s.gpr saved } : State) = s₀
   refine wp_mv fun d hd => wp_mv fun e he => wp_mv fun f hf => wp_mv fun g hg =>
     wp_mv fun h hh => ?_
@@ -83,7 +83,7 @@ theorem setup_ok (s : State) (hw : (⟨s.gpr .a4, 16384⟩ : Region) ∈ s.wr)
   refine wp_sw (a := s.gpr .a4 + BitVec.ofNat 64 832) (by decide)
     (by rw [hh.other _ (by decide), hg.other _ (by decide), hf.other _ (by decide),
       he.other _ (by decide), hd.gpr, g4])
-    (by have h8 := Spill.al8 hal (d := 832) (by decide); omega)
+    (by have h8 := Spill.al8 hal (d := 832) (by decide); omega_using [h8])
     (by rw [hh.wr, hg.wr, hf.wr, he.wr, hd.wr, ← hs₀]; exact write 832 4 (by decide))
     fun t ht => WP.block_nil ?_
   have o : ∀ r, r ≠ .s4 → r ≠ .s0 → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 →
@@ -123,10 +123,10 @@ theorem restore_ok (original s : State) (base : s.gpr .s4 = original.gpr .a4)
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   have read (d : Nat) (h : d + 8 ≤ 16384) :
       InRegions (s.rd ++ s.wr) (original.gpr .a4 + BitVec.ofNat 64 d) 8 :=
-    ⟨_, readable, Offset.contains_base _ h (by omega)⟩
+    ⟨_, readable, Offset.contains_base _ h (by omega_using [h])⟩
   rw [show restore = Spill.restoreCode .s4 saved from rfl]
   refine WP.mono (Spill.restore_wp (b := .s4) hal base saved_fits (by decide)
-    (fun p (hp : p ∈ saved) => read _ (by have := saved_bounds p hp; omega)) values) fun t ht => ?_
+    (fun p (hp : p ∈ saved) => read _ (by have := saved_bounds p hp; omega_using [this])) values) fun t ht => ?_
   refine ⟨fun r hr => ht.gpr_of ?_, ht.gpr (.ra, 880) (by decide), ht.mem, ht.rd, ht.wr, ht.sp⟩
   by_cases hm : r ∈ saved.map Prod.fst
   · exact .inl hm

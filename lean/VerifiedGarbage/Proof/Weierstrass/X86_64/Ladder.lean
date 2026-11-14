@@ -144,7 +144,7 @@ theorem ladSel_ok {L : LadderCfg} {base : Addr} {size : Nat} (hL : LadLay L size
   have hnb := hL.nbits
   have hbl := hL.bits
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (bitMask_bool_ok hs hrbx (by omega) hc) fun s₄ ⟨c₄, k₄⟩ => ?_
+  refine WP.mono (bitMask_bool_ok hs hrbx (by omega_using [ht, hbl]) hc) fun s₄ ⟨c₄, k₄⟩ => ?_
   have hs₄ := hs.of_keeps k₄ (by decide)
   have hm₄ : s₄.mem = s.mem := k₄.2.1
   have hap : ∀ x ∈ [L.R.x, L.R.y, L.R.z, L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z],
@@ -162,7 +162,7 @@ theorem ladSel_ok {L : LadderCfg} {base : Addr} {size : Nat} (hL : LadLay L size
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   have hrbx₅ : s₅.gpr .rbx = BitVec.ofNat 64 t := by
     rw [k₅.gpr _ (by decide), k₄.1 _ (by decide), hrbx]
-  refine WP.mono (testRbx_ok s₅ (by omega) hrbx₅) fun s₆ ⟨z₆, k₆⟩ => ?_
+  refine WP.mono (testRbx_ok s₅ (by omega_using [ht, hnb]) hrbx₅) fun s₆ ⟨z₆, k₆⟩ => ?_
   have hm₆ : s₆.mem = s₅.mem := k₆.2.1
   refine ⟨hs₅.of_keeps k₆ (by decide), by rw [k₆.1 .rbx (by decide), hrbx₅], z₆,
     ((Keeps.regs k₄).mono (by sub_regs)).trans ((k₅.mono (by sub_regs)).trans
@@ -187,12 +187,12 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
   have hro : ∀ x ∈ ladRo L, wordsVal s.mem base x L.M.n = wordsVal s₀.mem base x L.M.n :=
     fun x hx => hI.unch.wordsVal
       (hL.apart_w (ladR_slots L x (mem_ladRo_ladR hx)) (hL.ro x hx))
-      (by have := hL.lay.le x (ladR_slots L x (mem_ladRo_ladR hx)); omega)
+      (by have := hL.lay.le x (ladR_slots L x (mem_ladRo_ladR hx)); omega_using [hn, this])
   have hE : ∀ x ∈ ladRo L, tmv C L.M.n base s x = tmv C L.M.n base s₀ x := fun x hx => by
     rw [tmv, hro x hx]
   -- `sub rbx, 1`.
   rw [ladderBody]
-  refine WP.seq (WP.mono (decRbx_ok s hj (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (decRbx_ok s hj (by omega_using [hjn, hnb]) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   have I₁ : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) (tmv C L.M.n base s) s₁ := by
     refine ⟨hI.scr.of_keeps k₁ (by decide), hm₁ ▸ hI.mod, ladR_slots L, fun x hx => ?_,
@@ -210,15 +210,15 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
     rcases List.mem_append.mp hw with hw | hw <;> exact hw
   have hbyte : s₃.mem (off base (L.bits + (j - 1))) = if k.testBit (j - 1) then 1 else 0 := by
     have hbl := hL.bits
-    rw [hU₃.byte (fun w hw => by have := hL.bits_w w hw; omega) (by omega), hbits _ (by omega)]
+    rw [hU₃.byte (fun w hw => by have := hL.bits_w w hw; omega_using [hj, hjn, this]) (by omega_using [hj, hjn, hn, hbl]), hbits _ (by omega_using [hj, hjn])]
   have hrbx₃ : s₃.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [A.gpr _ (rbx_not_clob _), b₁]
-  have hstep := hstep (j - 1) (by omega) (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y)
+  have hstep := hstep (j - 1) (by omega_using [hj, hjn]) (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y)
     (tmv C L.M.n base s L.R.z) X2 Y2 Z2 X3 Y3 Z3 (by rw [Nat.sub_add_cancel hj]; exact hI.q)
     (by rw [← hE L.S.a (by simp [ladRo]), ← hE L.S.b3 (by simp [ladRo])]; exact h2)
     (by rw [← hE L.S.a (by simp [ladRo]), ← hE L.S.b3 (by simp [ladRo]), ← hE L.G.x (by simp [ladRo]),
         ← hE L.G.y (by simp [ladRo]), ← hE L.G.z (by simp [ladRo])]; exact h3)
-  refine WP.mono (ladSel_ok hL A.scr (by omega) hrbx₃ hbyte)
+  refine WP.mono (ladSel_ok hL A.scr (by omega_using [hj, hjn]) hrbx₃ hbyte)
     fun s' ⟨hs', b', z', k', U', ex, ey, ez⟩ => ⟨⟨hs', b', ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, z'⟩
   · have hr' : r ∉ clob L.M.n := fun h => hr (List.mem_cons_of_mem _ h)
     have hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
@@ -241,7 +241,7 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
       rcases hw with rfl | rfl | rfl
       · exact (hmo L.R.x (ladPts_slots L _ (by simp))).symm
       · exact (hmo L.R.y (ladPts_slots L _ (by simp))).symm
-      · exact (hmo L.R.z (ladPts_slots L _ (by simp))).symm) (by have := A.scr.nowrap; have := hM.mo; omega)]
+      · exact (hmo L.R.z (ladPts_slots L _ (by simp))).symm) (by have := A.scr.nowrap; have := hM.mo; omega_using [hn, this])]
     exact hM.val
   · have hlt := A.lt
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hlt ⊢
@@ -288,7 +288,7 @@ theorem ladder_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by
   have hnb := hL.nbits
   rw [ladder]
-  refine WP.seq (WP.mono (mov32Rbx_ok s (by omega)) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (mov32Rbx_ok s (by omega_using [hnb])) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   refine countLoop_ok (Inv := fun j s' => LadInv L C base size Q s s' j) (n := L.nbits)
     (fun j s' h1 h2 hi => ladderBody_ok hL hp (fun x hx => hlt x (mem_ladRo_ladR hx))

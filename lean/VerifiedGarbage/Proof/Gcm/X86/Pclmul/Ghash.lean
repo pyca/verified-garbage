@@ -150,12 +150,12 @@ theorem assembled_eq (c : BitVec 128) : assembled c = c := by
   intro i hi
   simp only [assembled, catWord, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (by omega : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i)
+  rcases (by omega_using [] : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i)
     with h | h | h | h <;>
     simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true,
       decide_eq_false, Bool.true_and, Bool.false_and, Bool.not_true, Bool.not_false,
       Bool.false_or, BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero, Bool.or_false] <;>
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_arith)
 
 /-- Setup changes only eax and the listed vector registers. -/
 structure SetupFrame (rs : List XReg) (s s' : State) : Prop where
@@ -236,7 +236,7 @@ theorem args_in {s : State} (hp : GPre s) {i : Nat} (hi : i < 5) :
   refine ⟨aR s, by simp only [hp.rd, List.mem_append, List.mem_cons,
     List.not_mem_nil, or_false, or_true, true_or], ?_⟩
   exact Proof.Aes.X86.part_contains (N := 24) (a := 4) (k := 20)
-    hp.fSp (by decide) (by omega) (by omega) (by decide)
+    hp.fSp (by decide) (by omega_using []) (by omega_using [hi]) (by decide)
 
 theorem movArg_exec {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : i < 5)
     (hsp : s.gpr .esp = s₀.gpr .esp) (hm : s.mem = s₀.mem)
@@ -471,9 +471,9 @@ theorem data_read {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : Inv s₀ i s
   have hf := hp.fD
   have he : s.ea (at_ .edx 0) = (dP s₀).setWidth 64 + BitVec.ofNat 64 (16 * i) := by
     simp only [State.ea, at_, hi.data, BitVec.add_zero]
-    exact addr_eq (by omega)
+    exact addr_eq (by omega_using [hb, hf])
   rw [he, hi.env.rd, hi.env.wr, hp.rd]
-  refine ⟨dR s₀, ?_, Offset.contains_base _ (by omega) (by omega)⟩
+  refine ⟨dR s₀, ?_, Offset.contains_base _ (by omega_using [hb]) (by omega_using [hb, hf])⟩
   simp only [List.mem_append, List.mem_cons, or_true, true_or]
 
 theorem xor_ok (s : State) :
@@ -524,7 +524,7 @@ theorem body_ok {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : Inv s₀ i s)
       rw [input₁, hi.env.mem]
       refine congrArg (Spec.Gcm.blockAt _) ?_
       simp only [State.ea, at_, hi.data, BitVec.add_zero]
-      exact addr_eq (by have hf := hp.fD; omega)
+      exact addr_eq (by have hf := hp.fD; omega_using [hb, hf])
     rw [mul₃, acc₂, hin, f₁.xmm _ (by decide), hi.acc]
     rw [f₂.xmm _ (by decide), f₁.xmm _ (by decide)]
     rw [mul_assoc, mul_left_comm x, hi.hash]
@@ -535,18 +535,18 @@ theorem body_ok {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : Inv s₀ i s)
   have regs₃ : s₃.gpr = s.gpr := f₃.gpr.trans (f₂.gpr.trans f₁.gpr)
   have bound : nBlk s₀ < 2 ^ 32 := (arg s₀ 3).isLt
   have count : s₃.gpr .eax - 1 = BitVec.ofNat 32 (nBlk s₀ - (i + 1)) := by
-    rw [regs₃, hi.count, Wp.ofNat_pred (by omega), Nat.sub_sub]
+    rw [regs₃, hi.count, Wp.ofNat_pred (by omega_using [hb]), Nat.sub_sub]
   constructor
-  · refine ⟨env₃.trans ef₄, by omega, count₄.trans count, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · refine ⟨env₃.trans ef₄, by omega_using [hb], count₄.trans count, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [data₄, regs₃, hi.data, BitVec.add_assoc]
       change dP s₀ + (BitVec.ofNat 32 (16 * i) + BitVec.ofNat 32 16) = _
-      rw [← BitVec.ofNat_add, show 16 * i + 16 = 16 * (i + 1) by omega]
+      rw [← BitVec.ofNat_add, show 16 * i + 16 = 16 * (i + 1) by omega_using []]
     · rw [out₄, regs₃]; exact hi.out
     · rw [xmm₄, f₃.xmm _ (by decide), f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.rev
     · rw [xmm₄, f₃.xmm _ (by decide)]; exact poly₂
     · rw [xmm₄, f₃.xmm _ (by decide), f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.hash
     · rw [xmm₄]; exact acc₃
-  · rw [zf₄, count, Wp.ofNat_beq_zero (by omega)]
+  · rw [zf₄, count, Wp.ofNat_beq_zero (by omega_using [bound])]
 
 end VG.Proof.Gcm.X86.Pclmul
 
@@ -588,8 +588,8 @@ theorem blocks_ok {s₀ s : State} (hp : GPre s₀) (hi : Inv s₀ 0 s) (hn : 0 
   by_cases hl : i + 1 = nBlk s₀
   · refine .inl ⟨by simp [X86.eval, z, hl], ?_⟩
     rw [hl] at inv; exact inv
-  · exact .inr ⟨by simp [X86.eval, z]; omega,
-      nBlk s₀ - (i + 1), by omega, i + 1, rfl, by omega, inv⟩
+  · exact .inr ⟨by simp [X86.eval, z]; omega_using [hb, hl],
+      nBlk s₀ - (i + 1), by omega_using [hk, hb], i + 1, rfl, by omega_using [hb, hl], inv⟩
 
 theorem epilogue_ok {s₀ s : State} (hp : GPre s₀) (hi : Inv s₀ (nBlk s₀) s) :
     WP isa (.block Impl.Gcm.X86.Pclmul.epilogue) s fun s' =>
@@ -626,7 +626,7 @@ theorem gh_correct (s₀ : State) (hp : GPre s₀) :
     · intro h
       have hn : 0 < nBlk s₀ := by
         have hne : nBlk s₀ ≠ 0 := of_decide_eq_false h
-        omega
+        omega_using [hne]
       exact blocks_ok hp hi hn
   exact WP.seq (WP.mono loop fun s₂ inv => epilogue_ok hp inv)
 

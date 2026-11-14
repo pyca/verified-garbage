@@ -37,6 +37,8 @@ macro_rules! ml_dsa {
         pk_tr: $pk_tr:path,
         prepare_sign: $prepare_sign:path,
         prepare_verify: $prepare_verify:path,
+        sign_prepared: $sign_prepared:path,
+        verify_prepared: $verify_prepared:path,
         sign_message_prepared: $sign_message_prepared:path,
         verify_message_prepared: $verify_message_prepared:path,
         pk: $pk:literal,
@@ -369,6 +371,24 @@ macro_rules! ml_dsa {
         }
 
         impl $PreparedVerifyingKey {
+            #[doc = concat!("What [`", stringify!($VerifyingKey), "::verify_mu`] gives with the key it was prepared from.")]
+            pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
+                let dit = $crate::dit::public($crate::dit::Why::Verify);
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<Scratch>::uninit());
+                // SAFETY: `self.prepared.0`, `mu`, `sig` and `scratch` are valid
+                // for reads (and, for `scratch`, writes) of their sizes; they
+                // are distinct Rust objects, so they do not overlap each other
+                // or the stack, or wrap around the end of the address space.
+                // The prepared key was written by key preparation and is immutable.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
+                let r = unsafe {
+                    $verify_prepared(dit, &self.prepared.0, mu, sig, scratch.0.as_mut_ptr())
+                };
+                if r == 1 { Ok(()) } else { Err(InvalidSignature) }
+            }
+
             /// The key it was prepared from.
             pub fn verifying_key(&self) -> &$VerifyingKey {
                 &self.key
@@ -446,6 +466,35 @@ macro_rules! ml_dsa {
         }
 
         impl $PreparedSigningKey {
+            #[doc = concat!("What [`", stringify!($SigningKey), "::sign_mu`] gives with the key it was prepared from.")]
+            pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
+                $crate::dit::enter!(dit);
+                let mut sig = [0u8; $sig];
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<Scratch>::uninit());
+                // SAFETY: `self.prepared.0`, `mu`, `rnd`, `sig` and `scratch` are
+                // valid for reads (and, for the last two, writes) of their
+                // sizes; they are distinct Rust objects, so they do not
+                // overlap each other or the stack, or wrap around the end of
+                // the address space. `self.prepared.0` was written by key preparation
+                // from a private key written by key generation.
+                // The dispatcher calls only an implementation the CPU has the
+                // features of.
+                let r = unsafe {
+                    $sign_prepared(dit, &self.prepared.0, mu, rnd, &mut sig, scratch.0.as_mut_ptr())
+                };
+                $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
+                if r != 1 {
+                    // A loop reaches its bound with probability about 2^-256
+                    // or less.
+                    // NO-COVERAGE-START
+                    zeroize(&mut sig);
+                    return Err(MlDsaError::LoopBound);
+                    // NO-COVERAGE-END
+                }
+                Ok(sig)
+            }
+
             /// The key it was prepared from.
             pub fn signing_key(&self) -> &$SigningKey {
                 &self.key

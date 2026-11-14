@@ -29,8 +29,8 @@ def PrimeSetupBefore (p : PrimeParams) (s : State) : Prop :=
   (∃ mi, Good s p.B p.Z p.w mi) ∧ wv s.mem p.B (slot p.w aN) p.w = p.N ∧ p.w ≤ 48
 
 def PrimeParams.product (p : PrimeParams) (mi : BitVec 64) : ProductPublic :=
-  ⟨⟨p.B, p.Z, p.w, mi⟩, p.N, p.dims.z, by change 2 ≤ p.w; have := p.dims.w4; omega,
-    by change p.w < 2 ^ 31; have := p.dims.w128; omega⟩
+  ⟨⟨p.B, p.Z, p.w, mi⟩, p.N, p.dims.z, by change 2 ≤ p.w; have := p.dims.w4; omega_using [this],
+    by change p.w < 2 ^ 31; have := p.dims.w128; omega_using [this]⟩
 
 def PrimeInverse (p : PrimeParams) (s : State) : Prop := ∃ mi, SetupPre (p.product mi) s
 
@@ -39,7 +39,7 @@ theorem primeHeadArgs_state {p : PrimeParams} {s : State} (h : PrimeSetupBefore 
       (fun t => t.gpr .rdi = p.B ∧ t.gpr .r10 = off p.B (slot p.w aN)) := by
   obtain ⟨mi, hg⟩ := h.1
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega)
+    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega_arith)
   xrun [State.ea, hdr, hdrOff, hg.rdi, hl (sArr aN) (by decide), hl sW (by decide), hg.hdr.harr aN (by decide)]
 
 theorem primeHead_ct : RelCT isa (Two PrimeSetupBefore)
@@ -72,25 +72,25 @@ theorem primeHead_inverse {p : PrimeParams} {s : State} (h : PrimeSetupBefore p 
   have hnow := hg.scr.nowrap
   have hfit := p.dims.z
   have hodd : (word s.mem p.B (slot p.w aN)).toNat % 2 = 1 := by
-    rw [← wv_mod64 (n := p.w) _ _ _ (by omega), h.2.1,
+    rw [← wv_mod64 (n := p.w) _ _ _ (by omega_using [hw]), h.2.1,
       Nat.mod_mod_of_dvd _ (show 2 ∣ 2 ^ 64 by decide)]
     exact p.odd
   refine WP.mono (msHead_ok hg p.dims.z hodd) fun t ⟨ht, hi, _, _, _, hm, _⟩ => ?_
   have hn : wv t.mem p.B (slot p.w aN) p.w = p.N := by
-    rw [hm, hdrStore_wv _ _ _ (by decide) (by decide) (by omega)]
+    rw [hm, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_using [hnow, hfit])]
     exact h.2.1
   have hinv : ((word t.mem p.B (slot p.w aN)).toNat * (t.gpr .r15).toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hm, hdrStore_word _ _ _ (by decide) (by decide) (by omega)]
+    rw [hm, hdrStore_word _ _ _ (by decide) (by decide) (by omega_using [hnow, hfit])]
     exact hi
-  exact ⟨t.gpr .r15, ⟨ht, hn, hinv⟩, h.2.2, by change 1 < p.N; have := p.n3; omega, p.odd⟩
+  exact ⟨t.gpr .r15, ⟨ht, hn, hinv⟩, h.2.2, by change 1 < p.N; have := p.n3; omega_using [this], p.odd⟩
 
 theorem primeInverse_public {s t : State} (h : Two PrimeInverse s t) : Two SetupPre s t := by
   obtain ⟨p, ⟨mi, hs⟩, ⟨mi', ht⟩⟩ := h
   have hw := p.dims.w4
   have low₁ : (word s.mem p.B (slot p.w aN)).toNat = p.N % 2 ^ 64 := by
-    rw [← wv_mod64 (n := p.w) _ _ _ (by omega), show wv s.mem p.B (slot p.w aN) p.w = p.N from hs.1.modulus]
+    rw [← wv_mod64 (n := p.w) _ _ _ (by omega_using [hw]), show wv s.mem p.B (slot p.w aN) p.w = p.N from hs.1.modulus]
   have low₂ : (word t.mem p.B (slot p.w aN)).toNat = p.N % 2 ^ 64 := by
-    rw [← wv_mod64 (n := p.w) _ _ _ (by omega), show wv t.mem p.B (slot p.w aN) p.w = p.N from ht.1.modulus]
+    rw [← wv_mod64 (n := p.w) _ _ _ (by omega_using [hw]), show wv t.mem p.B (slot p.w aN) p.w = p.N from ht.1.modulus]
   have hi := hs.1.inverse
   have hi' := ht.1.inverse
   change ((word s.mem p.B (slot p.w aN)).toNat * mi.toNat + 1) % 2 ^ 64 = 0 at hi

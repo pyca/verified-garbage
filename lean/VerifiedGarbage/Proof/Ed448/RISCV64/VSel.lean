@@ -46,10 +46,10 @@ theorem selG {o q r : Nat} {qs : List Nat} {v : Nat → Fe} {x y : Fe} (hq : Sep
     WP isa (.block (sel o q r)) s fun s' => Rest [.a2, .a4] s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (pick sw x y)) := by
   have hA := X448.RISCV64.ACC_eq
-  refine WP.mono (sel_ok (b := b) (o := o) (q := q) (r := r) (by omega) hqf hrf hoq hor (sep1_o hq) hq4 hr4 hc hsw h11)
+  refine WP.mono (sel_ok (b := b) (o := o) (q := q) (r := r) (by omega_using [ho, hA]) hqf hrf hoq hor (sep1_o hq) hq4 hr4 hc hsw h11)
     fun s' h => ⟨h.rest, ?_, fun q' hq' => ?_⟩
   · exact h.frame.sub fun x hx => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hx]; exact Offset.sub_base _ (by omega)⟩
+      rw [List.mem_singleton.mp hx]; exact Offset.sub_base _ (by omega_using [ho])⟩
   · by_cases hqo : q' = o
     · subst hqo
       rw [upd_self, fs_pick hsw h.lo, hx, hy]

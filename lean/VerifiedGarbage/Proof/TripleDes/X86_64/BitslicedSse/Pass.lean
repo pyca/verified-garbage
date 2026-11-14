@@ -96,7 +96,7 @@ theorem roundLoop_ok {s₀ : State} (hk : ∀ r < 16,
   have hsi : s.gpr .rsi = s₀.gpr .rsi :=
     hs.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have a₁ : Apart s (s.gpr .r8) := by
-    rw [hs.key]; exact (hk (16 - m) (by omega)).congr hc hsi hs.rd hs.wr
+    rw [hs.key]; exact (hk (16 - m) (by omega_using [hpos])).congr hc hsi hs.rd hs.wr
   obtain ⟨s', run', w', key', cnt', zf', ptrs', g', o', rd', wr', f'⟩ :=
     round_ok (roleAt (16 - m)) hs.room hs.ptrs hs.ones a₁.read
   refine WP.of_runBlock ⟨s', run', ?_⟩
@@ -107,7 +107,7 @@ theorem roundLoop_ok {s₀ : State} (hk : ∀ r < 16,
     exact this.trans f'
   have k1 : (s.mem.readW (s.gpr .r8) 64).setWidth 48 = keyAt s₀.mem a₀ δ (16 - m) := by
     rw [hs.key]; simp only [keyAt]
-    rw [((hk (16 - m) (by omega)).readW hs.frame)]
+    rw [((hk (16 - m) (by omega_using [hpos])).readW hs.frame)]
   have words' : ∀ x < 64, words s' x = rounds (keyAt s₀.mem a₀ δ) (16 - m + 1) (words s₀) x := by
     intro x hx
     rw [w' x hx, k1]
@@ -129,8 +129,8 @@ theorem roundLoop_ok {s₀ : State} (hk : ∀ r < 16,
     show s'.zf.map (!·) = some false
     rw [zf', cntv]; rfl
   · right
-    refine ⟨?_, m - 1, by omega, ⟨room', ones', rd'.trans hs.rd, wr'.trans hs.wr, by omega,
-      by have := hs.le; omega, ?_, ?_, ?_, ?_, gpr', frame'⟩⟩
+    refine ⟨?_, m - 1, by omega_using [hpos], ⟨room', ones', rd'.trans hs.rd, wr'.trans hs.wr, by omega_using [hpos, h1],
+      by have := hs.le; omega_using [hle], ?_, ?_, ?_, ?_, gpr', frame'⟩⟩
     · show s'.zf.map (!·) = some true
       rw [zf', cntv]
       have : (BitVec.ofNat 64 (m - 1) == 0) = false := by
@@ -140,17 +140,17 @@ theorem roundLoop_ok {s₀ : State} (hk : ∀ r < 16,
         have := congrArg BitVec.toNat h0
         have z : (0 : BitVec 64).toNat = 0 := rfl
         simp only [BitVec.toNat_ofNat] at this
-        rw [z, Nat.mod_eq_of_lt (by omega)] at this
+        rw [z, Nat.mod_eq_of_lt (by omega_using [hle])] at this
         have := hs.pos
-        omega
+        omega_arith
       rw [this]; rfl
-    · have e : 16 - (m - 1) = 16 - m + 1 := by have := hs.le; omega
+    · have e : 16 - (m - 1) = 16 - m + 1 := by have := hs.le; omega_using [hpos, hle]
       rw [e]; exact words'
     · rw [key', hs.key, hδ, kptr_succ]
       congr 3
-      have := hs.le; omega
+      have := hs.le; omega_using [hpos, hle]
     · rw [cnt', cntv]
-    · have e : 16 - (m - 1) = 16 - m + 1 := by have := hs.le; omega
+    · have e : 16 - (m - 1) = 16 - m + 1 := by have := hs.le; omega_using [hpos, hle]
       rw [e]; exact ptrs'
 
 /-! ## The start of a pass -/
@@ -265,7 +265,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
       exact branch t₂ g₂ m₂ rd₂ wr₂ (fun _ => rfl)
     · intro h2
       have : p = 1 := by have : p ≠ 2 := by simpa using h2
-                         omega
+                         omega_using [hp, hp3, this]
       subst this
       exact branch t₂ g₂ m₂ rd₂ wr₂ (fun _ => rfl)
 
@@ -331,7 +331,7 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
     apply swapW_congr _ x hx
     intro y hy
     rw [p₂.words y hy, show (16 : Nat) = 2 * 8 from rfl, rounds_two_mul,
-      pairs_keys_congr 8 (fun r hr => keys r (by omega))]
+      pairs_keys_congr 8 (fun r hr => keys r (by omega_using [hr]))]
     exact pairs_congr _ 8 state₁ y hy
   · rw [cnt₄, r11₃]
   · rw [zf₄, r11₃]

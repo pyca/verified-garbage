@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
 
-/-! # Triple DES-CBC artifacts on baseline RISC-V -/
+/-! # Triple DES-CBC on RISC-V -/
 
 @[expose] public section
 

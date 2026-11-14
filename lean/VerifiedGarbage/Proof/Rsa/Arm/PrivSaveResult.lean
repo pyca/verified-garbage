@@ -21,9 +21,9 @@ theorem saveResult_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
   unfold saveResult
   refine wp_stackAddr (by decide) fun u a => ?_
   have ptr : u.gpr .r12 = g.stack := by simpa only [BitVec.add_zero, h.sp] using a.gpr
-  refine wp_str (a := off (State.addr g.stack) d) (by omega)
-    (by rw [ptr]; exact addr_add (by have := h.valid.stackHigh; simp only [frameBytes] at *; omega))
-    (by rw [a.wr]; exact h.inner.write (by simp only [frameBytes]; omega)) fun t b => WP.block_nil ?_
+  refine wp_str (a := off (State.addr g.stack) d) (by omega_using [high])
+    (by rw [ptr]; exact addr_add (by have := h.valid.stackHigh; simp only [frameBytes] at *; omega_using [high, this]))
+    (by rw [a.wr]; exact h.inner.write (by simp only [frameBytes]; omega_using [high])) fun t b => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr g.stack) d) (s.gpr .r0) := by
     rw [b.mem, a.mem, a.other .r0 (by decide)]
   have frame : Frame [⟨off (State.addr g.stack) d, 4⟩] s.mem t.mem := by
@@ -34,9 +34,9 @@ theorem saveResult_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
   · intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [frameBytes]; omega)⟩
+    exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [frameBytes]; omega_using [high])⟩
   · intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact Offset.disjoint _ (Or.inl (by omega)) (by decide) (by omega)
+    exact Offset.disjoint _ (Or.inl (by omega_using [low])) (by decide) (by omega_using [high])
 end VG.Proof.Rsa.Arm

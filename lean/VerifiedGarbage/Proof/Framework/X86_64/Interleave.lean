@@ -199,7 +199,7 @@ theorem xctorIdx_inj {a c : XReg} (h : a.ctorIdx = c.ctorIdx) : a = c := by
 theorem testBit_range (off n o : Nat) : (range off n).testBit o = decide (off ≤ o ∧ o < off + n) := by
   rw [range, ← Nat.shiftLeft_eq, Nat.testBit_shiftLeft, Nat.testBit_two_pow_sub_one]
   by_cases h : off ≤ o
-  · have : o - off < n ↔ o < off + n := by omega
+  · have : o - off < n ↔ o < off + n := by omega_using [h]
     simp [h, this]
   · simp [h]
 
@@ -230,12 +230,12 @@ theorem read_congr {m m' : Mem} {a : Addr} {n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, ih fun k hk => by
-      have := h (k + 1) (by omega)
+      have := h (k + 1) (by omega_using [hk])
       rwa [show a + BitVec.ofNat 64 (k + 1) = a + 1 + BitVec.ofNat 64 k by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega] at this]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []] at this]
 
 theorem write_frame (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) (x : Addr)
     (h : ∀ k < n, x ≠ a + BitVec.ofNat 64 k) : m.write a n v x = m x := by
@@ -246,7 +246,7 @@ theorem write_frame (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) (x : Add
 theorem write_at (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) {k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
     m.write a n v (a + BitVec.ofNat 64 k) = v.extractLsb' (8 * k) 8 := by
   simp only [Mem.write]
-  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn]),
     ite_eq_left_iff.mpr fun h => absurd hk h]
 
 theorem addr_ne {a : Addr} {o o' : Nat} (h : o ≠ o') (ho : o < 2 ^ 64) (ho' : o' < 2 ^ 64) :
@@ -266,7 +266,7 @@ theorem memOff_ea {m : MemOp} {o : Nat} (h : memOff b ix sc m = some o) (s : Sta
   · rename_i hc
     obtain ⟨hb, hi, hs, h0, h1⟩ := hc
     cases h
-    refine ⟨?_, by omega⟩
+    refine ⟨?_, by omega_using [h1]⟩
     have hd : BitVec.ofInt 64 m.disp = BitVec.ofNat 64 m.disp.toNat := by
       obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le h0
       rw [hn, Int.toNat_natCast, BitVec.ofInt_natCast]
@@ -396,7 +396,7 @@ theorem execAluW_frame {F : Fp} {op : AluOp} {d : Reg} {v : BitVec 64} {s s' : S
 
 
 theorem testBit_range_add {o n k : Nat} (hk : k < n) : (range o n).testBit (o + k) = true := by
-  simp [testBit_range]; omega
+  simp [testBit_range]; omega_using [hk]
 
 theorem VOp.frame {op : VOp} {F : Fp} (hf : VOp.fp op = some F) (s : State) :
     Frame b ix sc F s (op.exec s) := by
@@ -457,7 +457,7 @@ theorem frame {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) {s s' : State} (
     cases len <;> simp only [exec, State.store128, State.store256, ea] at he <;> split at he <;>
       first
       | (simp only [Option.some.injEq] at he; subst he; rw [writeW_eq]
-         exact Frame.store _ fun k hk => testBit_range_add (by simp [lenBytes]; omega))
+         exact Frame.store _ fun k hk => testBit_range_add (by simp [lenBytes]; omega_using [hk]))
       | cases he
 
 
@@ -522,7 +522,7 @@ theorem readSrc_det {F : Fp} {s t : State} (h : Reads b ix sc F s t) {src : Src}
     obtain ⟨et, -⟩ := memOff_ea ho t
     simp only [readSrc, State.load64, es, et, ← h.base, ← h.rd, ← h.wr]
     split
-    · have e := readW_eq (w := 64) h fun k hk => hm _ (testBit_range_add (by omega))
+    · have e := readW_eq (w := 64) h fun k hk => hm _ (testBit_range_add (by omega_using [hk]))
       rw [e, h.base]
     · rfl
 
@@ -596,7 +596,7 @@ theorem store_writes {F : Fp} {s t : State} {o : Nat} {w : Nat} (v : BitVec w) (
     simp only [writeW_eq]
     rw [← hb, show bAddr b ix sc s + BitVec.ofNat 64 o' = (bAddr b ix sc s + BitVec.ofNat 64 o) + BitVec.ofNat 64 (o' - o) by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' h1]]
-    rw [write_at _ _ _ _ (by omega) hw8, write_at _ _ _ _ (by omega) hw8]
+    rw [write_at _ _ _ _ (by omega_using [h1, h2]) hw8, write_at _ _ _ _ (by omega_using [h1, h2]) hw8]
 
 theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F := by
   intro s t h s' he
@@ -678,7 +678,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
     have hin : ∀ n, InRegions (s.rd ++ s.wr) (s.ea m) n ↔ InRegions (t.rd ++ t.wr) (t.ea m) n := fun n => by
       rw [es, et, h.base, h.rd, h.wr]
     have e : ∀ w, w / 8 ≤ lenBytes len → s.mem.readW (s.ea m) w = t.mem.readW (t.ea m) w := fun w hw => by
-      rw [es, et]; exact readW_eq h fun k hk => testBit_range_add (by omega)
+      rw [es, et]; exact readW_eq h fun k hk => testBit_range_add (by omega_using [hw, hk])
     cases len <;> simp only [reduceExec, State.load128, State.load256] at he ⊢ <;> split at he <;>
       first
       | (rename_i hs
@@ -704,7 +704,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
          simp only [Option.some.injEq] at he
          subst he
          refine ⟨_, by rw [ite_eq_left_of_eq_true _ _ (eq_true (hin _ hs))], ?_⟩
-         exact store_writes _ (by decide) (fun o' ho => by simp [testBit_range, lenBytes] at ho; omega)
+         exact store_writes _ (by decide) (fun o' ho => by simp [testBit_range, lenBytes] at ho; omega_using [ho])
            rfl rfl rfl h.base)
       | cases he
 
@@ -720,9 +720,9 @@ theorem lt_pow {m o : Nat} (hm : m >>> 65536 = 0) (h : m.testBit o = true) : o <
   have : o < 65536 := by
     by_contra hc
     have := Nat.testBit_shiftRight m (i := 65536) (j := o - 65536)
-    rw [hm, Nat.zero_testBit, show 65536 + (o - 65536) = o by omega, h] at this
+    rw [hm, Nat.zero_testBit, show 65536 + (o - 65536) = o by omega_using [hc], h] at this
     exact Bool.noConfusion this
-  omega
+  omega_using [this]
 
 /-- What independence says, one location at a time. -/
 structure Indep (bm : Nat) (F G : Fp) : Prop where

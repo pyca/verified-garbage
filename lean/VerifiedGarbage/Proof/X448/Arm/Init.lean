@@ -23,7 +23,7 @@ theorem rowStore_ok {s : State} (hc : RowCtx b s) {t : Reg} {d : Nat}
     (hd : d + 4 ≤ 4096) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', Mupd s s' (s.mem.writeW (State.addr b + BitVec.ofNat 64 d) (s.gpr t)) →
       WP isa (.block is) s' Q) : WP isa (.block (st t d :: is)) s Q :=
-  wp_str (by omega) (hc.ea (by omega)) (hc.inW hd) k
+  wp_str (by omega_using [hd]) (hc.ea (by omega_using [hd])) (hc.inW hd) k
 
 theorem zeroAcc_ok {s : State} (hc : RowCtx b s) :
     WP isa (.block zeroAcc) s fun s' => (∀ j < 28, accw s'.mem (State.addr b) j = 0) ∧
@@ -39,14 +39,14 @@ theorem zeroAcc_ok {s : State} (hc : RowCtx b s) :
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, Rest.refl _ _, u1.gpr⟩)
     fun s' ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [← u1.mem]; exact h2,
       (u1.rest (by decide)).trans (h3.mono (by decide))⟩
-  refine rowStore_ok (hc1.of_rest h3 (by decide)) (d := ACC + 4 * n) (by omega) fun s2 u2 =>
+  refine rowStore_ok (hc1.of_rest h3 (by decide)) (d := ACC + 4 * n) (by omega_using [hA, hn]) fun s2 u2 =>
     WP.block_nil ⟨fun j hj => ?_, ?_, h3.trans (u2.rest _), by rw [u2.gpr, h4]⟩
   · rw [accw, u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h1 j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hA, hn])]; exact h1 j hj
     · rw [wd_write_self, h4]; rfl
   · rw [u2.mem]
-    exact h2.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+    exact h2.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by omega_using [hA]))
 
 theorem mulPre_ok {x y : Nat} {s : State} (hc : RowCtx b s) (h6 : s.gpr .r6 = mask16) :
     WP isa (.block mulPre) s (RowInv b x y s 0) := by

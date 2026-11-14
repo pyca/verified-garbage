@@ -117,13 +117,13 @@ theorem checkingInstalled_spec {s t : State} (A : CheckingABI s)
       ∀ regs, VG.X86.Spill.Saved t.mem (off (argumentPointer s 4)) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 4)) regs Entry.savedRegisters := by
   have L : 0<(arg s 2).toNat ∧ 0<(arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Params,Bytes⟩ := I.input (by decide : (0,.p)∈Generate.checkArguments) A.keyBound
     (by rw [A.rd,A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Qptr,Gptr,_⟩ := I.pointers (by decide)
   obtain ⟨P,Q,G,Value⟩ := parameters_buffers Params L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr
   refine checkingSizedWith_spec I.scr A.used A.lengths P Q G rfl rfl rfl
     (by simpa only [Spec.Rsa.bytesAt,List.length_map,List.length_range] using A.keyLength) Value
     parameters (checkContext s) ((arg s 5).toNat*8) A.used ?_

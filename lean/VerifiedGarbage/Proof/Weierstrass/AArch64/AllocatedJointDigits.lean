@@ -58,7 +58,7 @@ theorem allocatedCachedDigit_ok {C : Curve} {base : Addr} {size u v j : Nat}
       JointCore cfg C base size Q u v External (add A (FastNaf.point C Q 5 v j)) t := by
   rw [CachedJac.digit]
   apply WP.seq
-  refine WP.mono_syms (nafRead_ok h.field.scr (by decide) (by change 1824+j<size; omega) h19
+  refine WP.mono_syms (nafRead_ok h.field.scr (by decide) (by change 1824+j<size; omega_using [hsize, hj]) h19
     (h.stable.peer.bits j hj) .x2) fun b ⟨b2,kb⟩ sy => ?_
   have kp : ProgKeep K.M base (jointWork cfg) s b := keeps_prog kb (by
     intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -70,8 +70,8 @@ theorem allocatedCachedDigit_ok {C : Curve} {base : Addr} {size u v j : Nat}
     rw [read_x,b2,byteTest,magnitude_byte]) (fun hn => ?_) (fun hz => ?_)
   · have hm0 : FastNaf.magnitude 5 v j≠0 := of_decide_eq_true hn
     apply WP.seq
-    refine WP.mono (entry_core_ok hL (by omega) hm hj
-      (by rw [magnitude_byte]; omega)
+    refine WP.mono (entry_core_ok hL (by omega_using [hsize]) hm hj
+      (by rw [magnitude_byte]; omega_using [hm0])
       (by rw [magnitude_byte]; exact FastNaf.magnitude_le (Or.inl rfl) v j)
       (by rw [magnitude_byte]; exact (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hm0)
       hExt cb b19 b2) fun d ⟨⟨kd,id,jd,d2,d3⟩,cd⟩ => ?_

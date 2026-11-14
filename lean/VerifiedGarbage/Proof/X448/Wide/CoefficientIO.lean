@@ -18,10 +18,10 @@ theorem loadAt_ok {s : State} {base : Addr} (hs : Scr s base) {o k : Nat}
     WP isa (.block [ld .x4 (o + 16 * k), ld .x5 (o + 16 * k + 8)]) s fun t =>
       pair (t.gpr .x4) (t.gpr .x5) = coeff s.mem base o k ∧
       t.mem = s.mem ∧ Keeps [.x4, .x5] s t := by
-  have ae : (o + 16 * k) % 8 = 0 ∧ o + 16 * k < 32768 := ⟨by omega, by omega⟩
-  have be : (o + 16 * k + 8) % 8 = 0 ∧ o + 16 * k + 8 < 32768 := ⟨by omega, by omega⟩
-  have al := hs.read (d := o + 16 * k) (n := 8) (by omega)
-  have bl := hs.read (d := o + 16 * k + 8) (n := 8) (by omega)
+  have ae : (o + 16 * k) % 8 = 0 ∧ o + 16 * k < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have be : (o + 16 * k + 8) % 8 = 0 ∧ o + 16 * k + 8 < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have al := hs.read (d := o + 16 * k) (n := 8) (by omega_using [ho])
+  have bl := hs.read (d := o + 16 * k + 8) (n := 8) (by omega_using [ho])
   apply WP.of_runBlock
   simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, be, and_self, State.load, hs.x3, al, bl, ite_true, Option.map_some,
@@ -37,10 +37,10 @@ theorem storeAt_ok {s : State} {base : Addr} (hs : Scr s base) {o k : Nat}
     (r0 : Reg := .x4) (r1 : Reg := .x5) :
     WP isa (.block [st r0 (o + 16 * k), st r1 (o + 16 * k + 8)]) s fun t =>
       t.mem = putCoeff s.mem base o k (s.gpr r0) (s.gpr r1) ∧ Keeps [] s t := by
-  have ae : (o + 16 * k) % 8 = 0 ∧ o + 16 * k < 32768 := ⟨by omega, by omega⟩
-  have be : (o + 16 * k + 8) % 8 = 0 ∧ o + 16 * k + 8 < 32768 := ⟨by omega, by omega⟩
-  have aw := hs.write (d := o + 16 * k) (n := 8) (by omega)
-  have bw := hs.write (d := o + 16 * k + 8) (n := 8) (by omega)
+  have ae : (o + 16 * k) % 8 = 0 ∧ o + 16 * k < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have be : (o + 16 * k + 8) % 8 = 0 ∧ o + 16 * k + 8 < 32768 := ⟨by omega_using [ho8], by omega_using [ho]⟩
+  have aw := hs.write (d := o + 16 * k) (n := 8) (by omega_using [ho])
+  have bw := hs.write (d := o + 16 * k + 8) (n := 8) (by omega_using [ho])
   apply WP.of_runBlock
   simp only [st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     ae, be, and_self, State.read, State.store, hs.x3, aw, bw, ite_true,

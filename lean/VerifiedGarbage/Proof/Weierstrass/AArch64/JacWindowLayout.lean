@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The sixteen-entry public Jacobian table and its disjoint scratch slots. -/
 
@@ -41,7 +42,7 @@ theorem JacWinLay.old_slots {K : WinCfg} {size : Nat} (hL : JacWinLay K size) :
   · apply Or.inr
     obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
     apply List.mem_map.mpr
-    refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega),?_⟩
+    refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega_using [this]),?_⟩
     simp only [hL.n]
 
 /-- Existing coordinate and scratch-separation lemmas remain available for
@@ -55,8 +56,8 @@ theorem JacWinLay.toWinLay {K : WinCfg} {size : Nat} (hL : JacWinLay K size)
             apart := fun x y hx hy hxy => hL.lay.apart x y (hL.old_slots x hx) (hL.old_slots y hy) hxy }
   · intro x hx
     have := hL.tbl x hx
-    rw [hL.n]; omega
-  · have := hL.bits; rw [hJ]; omega
+    rw [hL.n]; omega_using [this]
+  · have := hL.bits; rw [hJ]; omega_using [this]
   · intro w hw
     simp only [winW,List.mem_append,List.mem_map,List.mem_singleton] at hw
     rcases hw with ⟨x,hx,rfl⟩ | rfl
@@ -67,13 +68,13 @@ theorem JacWinLay.toWinLay {K : WinCfg} {size : Nat} (hL : JacWinLay K size)
         · apply Or.inr
           obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
           apply List.mem_map.mpr
-          refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega),?_⟩
+          refine ⟨i,List.mem_range.mpr (by have := List.mem_range.mp hi; omega_using [this]),?_⟩
           simp only [hL.n]
       have := hL.bits_w x hnew
       dsimp only
-      rw [hL.n,hJ]; omega
+      rw [hL.n,hJ]; omega_using [this]
     · have := hL.bits_tmp
       dsimp only
-      rw [hL.n,hJ]; omega
+      rw [hL.n,hJ]; omega_using [this]
 
 end VG.Proof.Weierstrass.AArch64

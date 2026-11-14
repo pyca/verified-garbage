@@ -31,11 +31,11 @@ theorem BInvW.singleton {w16 : Bool} {s₀ s t : State} (hp : Pre P s₀) {e : N
       by_cases hb : (sampleNTT 280 (matSeed (rhoK P s₀) (e/P.k) (e%P.k))).isSome <;>
       simp [allOk_succ,ha,hb]
   · intro i hi
-    rcases (by omega : i<e ∨ i=e) with hi|rfl
+    rcases (by omega_using [hi] : i<e ∨ i=e) with hi|rfl
     · exact reducedW_frame fr (old hi) (h.red i hi)
     · exact ht.reduced
   · intro i hi
-    rcases (by omega : i<e ∨ i=e) with hi|rfl
+    rcases (by omega_using [hi] : i<e ∨ i=e) with hi|rfl
     · rw [aAtW,polyAtW_frame fr (old hi)]; exact h.res i hi
     · exact ht.result
 

@@ -105,18 +105,18 @@ theorem sub_scr {a n : Nat} (h : a + n ≤ 8192) : Region.Sub ⟨at' σ a, n⟩ 
 
 omit hp in
 theorem sub_poly {k : Nat} (hk : k < 4) : Region.Sub ⟨poly4 (aP σ) k, 1024⟩ (aR σ) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hk])
 
 theorem in_scr {s : State} (hw : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 8192) : InRegions s.wr (at' σ a) n := by
-  rw [hw, hp.wr]; exact ⟨scrR σ, by simp, Offset.contains_base _ h (by omega)⟩
+  rw [hw, hp.wr]; exact ⟨scrR σ, by simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem in_scr' {s : State} (hr : s.rd = σ.rd) (hw : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 8192) :
     InRegions (s.rd ++ s.wr) (at' σ a) n := by
-  rw [hr, hw, hp.rd, hp.wr]; exact ⟨scrR σ, by simp, Offset.contains_base _ h (by omega)⟩
+  rw [hr, hw, hp.rd, hp.wr]; exact ⟨scrR σ, by simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem in_sd' {s : State} (hr : s.rd = σ.rd) (hw : s.wr = σ.wr) {a n : Nat} (h : a + n ≤ 264) :
     InRegions (s.rd ++ s.wr) (sd σ + BitVec.ofNat 64 a) n := by
-  rw [hr, hw, hp.rd, hp.wr]; exact ⟨sdR σ, by simp, Offset.contains_base _ h (by omega)⟩
+  rw [hr, hw, hp.rd, hp.wr]; exact ⟨sdR σ, by simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 /-- The seeds are not written. -/
 theorem seeds_frame {m : Mem} (hf : Frame [aR σ, scrR σ, stkR σ] σ.mem m) {a : Nat} (ha : a < 264) :
@@ -126,7 +126,7 @@ theorem seeds_frame {m : Mem} (hf : Frame [aR σ, scrR σ, stkR σ] σ.mem m) {a
 /-- Byte `a` of seed `k`. -/
 theorem seed_byte {m : Mem} (hf : Frame [aR σ, scrR σ, stkR σ] σ.mem m) {k a : Nat} (hk : k < 4) (ha : a < 66) :
     m (sd σ + BitVec.ofNat 64 (66 * k + a)) = (B σ k).getD a 0 := by
-  rw [seeds_frame hp hf (by omega), B, seed66, ← Offset.add_add]
+  rw [seeds_frame hp hf (by omega_using [hk, ha]), B, seed66, ← Offset.add_add]
   simp [bytesAt, ha]
 
 end
@@ -136,7 +136,7 @@ end
 /-- A read of 8 bytes at `scratch + d` after a write of 8 elsewhere. -/
 theorem rd64_off {σ : State} {m : Mem} {d e : Nat} {v : BitVec 64} (hd : d < 2 ^ 32) (he : e < 2 ^ 32)
     (h : d + 8 ≤ e ∨ e + 8 ≤ d) : (m.writeW (at' σ e) v).readW (at' σ d) 64 = m.readW (at' σ d) 64 :=
-  readW_writeW_off m _ v (n := 8) (by omega) (by omega) h
+  readW_writeW_off m _ v (n := 8) (by omega_using [hd]) (by omega_using [he]) h
 
 theorem pro_eq : pro = [.store (VG.Impl.MlKem.X86_64.at_ .rcx 5088) .rbx, .store (VG.Impl.MlKem.X86_64.at_ .rcx 5096) .rbp,
     .store (VG.Impl.MlKem.X86_64.at_ .rcx 5104) .r12, .store (VG.Impl.MlKem.X86_64.at_ .rcx 5112) .r13,
@@ -149,19 +149,19 @@ theorem pro_ok {σ : State} (hp : Pre σ) : WP isa (.block pro) σ (Env σ) := b
       s.mem = ((((σ.mem.writeW (at' σ 5088) (σ.gpr .rbx)).writeW (at' σ 5096) (σ.gpr .rbp)).writeW (at' σ 5104)
           (σ.gpr .r12)).writeW (at' σ 5112) (σ.gpr .r13)).writeW (at' σ 5120) (σ.gpr .r14) ∧
         s.gpr .rbx = scr σ ∧ s.gpr .r12 = sd σ ∧ s.gpr .r13 = aP σ ∧ s.gpr .r14 = σ.gpr .rsi)
-    (by xrun [in_scr hp rfl (a := 5088) (n := 8) (by omega), in_scr hp rfl (a := 5096) (n := 8) (by omega),
-      in_scr hp rfl (a := 5104) (n := 8) (by omega), in_scr hp rfl (a := 5112) (n := 8) (by omega),
-      in_scr hp rfl (a := 5120) (n := 8) (by omega)])
+    (by xrun [in_scr hp rfl (a := 5088) (n := 8) (by omega_using []), in_scr hp rfl (a := 5096) (n := 8) (by omega_using []),
+      in_scr hp rfl (a := 5104) (n := 8) (by omega_using []), in_scr hp rfl (a := 5112) (n := 8) (by omega_using []),
+      in_scr hp rfl (a := 5120) (n := 8) (by omega_using [])])
     (by decide)) fun s1 ⟨⟨hm1, hbx, h12, h13, h14⟩, k1⟩ => ⟨k1.2.1, k1.2.2, hbx, h12, h13, h14,
       k1.gpr (by decide), k1.gpr (by decide), fun i hi => ?_, ?_⟩
   · rw [hm1]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
-      simp (disch := omega) only [oSave, Mem.readW_writeW_self64, rd64_off, Nat.reduceMul, Nat.reduceAdd] <;> rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+      simp (disch := omega_using []) only [oSave, Mem.readW_writeW_self64, rd64_off, Nat.reduceMul, Nat.reduceAdd] <;> rfl
   · rw [hm1]
     have hin : ∀ a, a + 8 ≤ 8192 → (scrR σ).Contains (at' σ a) (64 / 8) := fun a ha =>
-      Offset.contains_base _ (by omega) (by omega)
-    exact ((((((Frame.refl _ _).writeW (by simp) _ (hin 5088 (by omega))).writeW (by simp) _
-      (hin 5096 (by omega))).writeW (by simp) _ (hin 5104 (by omega))).writeW (by simp) _
-      (hin 5112 (by omega))).writeW (by simp) _ (hin 5120 (by omega)))
+      Offset.contains_base _ (by omega_using [ha]) (by omega_using [ha])
+    exact ((((((Frame.refl _ _).writeW (by simp) _ (hin 5088 (by omega_using []))).writeW (by simp) _
+      (hin 5096 (by omega_using []))).writeW (by simp) _ (hin 5104 (by omega_using []))).writeW (by simp) _
+      (hin 5112 (by omega_using []))).writeW (by simp) _ (hin 5120 (by omega_using [])))
 
 end VG.Proof.MlDsa.X86_64.Mask4

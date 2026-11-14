@@ -37,7 +37,7 @@ theorem ArgumentMemory.store_slot {p : Inputs} {slots : List Nat} {s t : State} 
     have bounds := stableSlots_at stable old
     have item := List.all_eq_true.mp stable e old
     simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, bne_iff_ne] at item
-    rw [mem, Mem.readW_writeW_sep (Offset.sep (State.addr s.sp) (by omega) (by omega) (by omega)) (by decide)]
+    rw [mem, Mem.readW_writeW_sep (Offset.sep (State.addr s.sp) (by omega_using [aligned, same, item]) (by omega_using [bounds]) (by omega_using [fit])) (by decide)]
     exact h.saved e old
 
 theorem Context.store_slot {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}

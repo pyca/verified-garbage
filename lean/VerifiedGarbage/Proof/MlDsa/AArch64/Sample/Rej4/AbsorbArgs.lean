@@ -26,7 +26,7 @@ theorem absorbArgs_ok {s : State} {p : Nat} (hp : p < 2) :
       t.gpr .x3 = s.gpr .x20+BitVec.ofNat 64 (68*p) ∧
       t.gpr .x4 = s.gpr .x20+BitVec.ofNat 64 (68*p+34) := by
   unfold absorbArgs
-  refine wp_addImm (by omega) fun s1 h1 e1 => wp_addImm (by omega) fun s2 h2 e2 =>
+  refine wp_addImm (by omega_using [hp]) fun s1 h1 e1 => wp_addImm (by omega_using [hp]) fun s2 h2 e2 =>
     wp_addImm (by decide) fun t h3 e3 => WP.block_nil_iff.mpr ⟨?_,?_,?_,?_⟩
   · exact ((h1.trans h2).trans h3).mono (by simp)
   · rw [h3.get .x2,h2.get .x2,e1]
@@ -37,7 +37,7 @@ theorem absorbArgs_ok {s : State} {p : Nat} (hp : p < 2) :
 theorem zeroAll_ok {σ s : State} (hp : Pre σ) (he : Env σ s) :
     WP isa (.block Impl.MlDsa.AArch64.Sample.Rej4.zeroStates) s fun t => Env σ t ∧
       ∀ i < 50,t.mem.read (wordAddr (scr σ) i) 16 = 0 := by
-  refine WP.mono (zeros_ok he.x19 (fun i hi => in_scr hp he.wr (by omega))) fun t ⟨ht,hf,hz⟩ => ?_
+  refine WP.mono (zeros_ok he.x19 (fun i hi => in_scr hp he.wr (by omega_using [hi]))) fun t ⟨ht,hf,hz⟩ => ?_
   exact ⟨he.lowStep hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide))
     ht.rd ht.wr ht.sp (fun r _ => ht.gpr r (by simp)),hz⟩
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

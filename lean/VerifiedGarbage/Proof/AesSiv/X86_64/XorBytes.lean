@@ -111,26 +111,26 @@ theorem xorBytes_wp (s : State) {Q K W : Addr} {n : Nat} (hn : 0 < n) (hn16 : n 
   have hq : t.mem (Q + BitVec.ofNat 64 j) = s.mem (Q + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat Q (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat Q (show j < 2 ^ 64 by omega)] at hcon; omega_using [hn, hn16, h13, h15, hrcx, hwq, r10₁, hj, r10, hk, r10', hlen, hcon]
   have hkk : t.mem (K + BitVec.ofNat 64 j) = s.mem (K + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hdis _ (Region.sub_prefix (by omega) _ hcon) (Offset.contains_base K (by omega) (by omega))
+      exact hdis _ (Region.sub_prefix (by omega_using [hj]) _ hcon) (Offset.contains_base K (by omega_using [hj]) (by omega_using [hn16, hj]))
   have hmem : t'.mem = writeBytes s.mem Q
       (Spec.Cmac.xor (Spec.Aes.bytesAt s.mem Q (j + 1)) (Spec.Aes.bytesAt s.mem K (j + 1))) := by
     rw [mem', hq, hkk, mem, bytesAt_succ, bytesAt_succ, Proof.Cmac.xor_append (by simp [Spec.Aes.bytesAt]),
       show Spec.Cmac.xor [s.mem (Q + BitVec.ofNat 64 j)] [s.mem (K + BitVec.ofNat 64 j)] =
         [s.mem (Q + BitVec.ofNat 64 j) ^^^ s.mem (K + BitVec.ofNat 64 j)] from rfl,
-      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen]
+      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_using [hn16, hj]), hlen]
   have hz : t'.zf = some (decide (j + 1 = n)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_using [hn16, hj]) (by omega_using [hn16])]
   have gg : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r10 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ => by
     rw [g' r h₁ h₂ h₃, g r h₁ h₂ h₃]
   by_cases he : j + 1 = n
   · left
     exact ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], n - (j + 1), by omega, j + 1, rfl, by omega, by rw [r10', succ_ofNat], hmem, gg,
+    refine ⟨by simp [eval, hz, he], n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], by rw [r10', succ_ofNat], hmem, gg,
       by rw [rd', rd], by rw [wr', wr]⟩
 
 end VG.Proof.AesSiv.X86_64

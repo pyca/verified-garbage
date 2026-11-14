@@ -55,7 +55,7 @@ theorem minLen_ok (s : State) {o n : Nat} (hbx : s.gpr .rbx = BitVec.ofNat 64 o)
     refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [gpr_setReg, hbx, ofNat_sub ho (by decide)]
     · simp only [cf_arithFlags, hbp, hbx, setWidth_imm, ofNat_sub ho (by decide),
-        toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show 16 - o < 2 ^ 64 by omega),
+        toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show 16 - o < 2 ^ 64 by omega_using []),
         show (16 : Nat) % 2 ^ 32 = 16 from rfl]
     · intro r hr; simp [gpr_setReg, hr]
     all_goals rfl
@@ -66,9 +66,9 @@ theorem minLen_ok (s : State) {o n : Nat} (hbx : s.gpr .rbx = BitVec.ofNat 64 o)
     subst hs'
     refine ⟨?_, fun r hr => ?_, hm, hrd, hwr⟩
     · simp only [gpr_setReg, ite_true, hg _ (by decide : Reg.rbp ≠ .rcx), hbp]
-      simp at ht; rw [Nat.min_eq_right (by omega)]
+      simp at ht; rw [Nat.min_eq_right (by omega_using [ht])]
     · simp only [gpr_setReg, hr, ite_false]; exact hg r hr
   · refine WP.block_nil ⟨?_, hg, hm, hrd, hwr⟩
-    simp at hf; rw [hcx, Nat.min_eq_left (by omega)]
+    simp at hf; rw [hcx, Nat.min_eq_left (by omega_using [hf])]
 
 end VG.Proof.AesGcm.X86_64

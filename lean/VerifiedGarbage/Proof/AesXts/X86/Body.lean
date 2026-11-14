@@ -94,7 +94,7 @@ theorem pstep_wp {ys : List (List Byte)} {i : Nat} (hi : i < N s₀) {s : State}
   have b₃ : s₃.gpr .ebx = Iv s₀ := u₃.gpr
   have i₃ : s₃.gpr .esi = D32 s₀ i := by rw [u₃.other _ (by decide), h.esi]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [i₃, qN]; omega) (by rw [b₃]; omega) (by rw [i₃, qN]; omega)
+    (by rw [i₃, qN]; omega_using [hi, hdf]) (by rw [b₃]; omega_using [hiv]) (by rw [i₃, qN]; omega_using [hi, hdf])
     (by rw [i₃, add0, hd, u₃.rd, u₃.wr, rwl]; exact covBlk hi (by simp))
     (by rw [b₃, add0, u₃.rd, u₃.wr, rwl]; exact covIv (by simp))
     (by rw [i₃, add0, hd, u₃.wr, wl]; exact covBlk hi (by simp)) fun s₄ g₄ => ?_
@@ -105,9 +105,9 @@ theorem pstep_wp {ys : List (List Byte)} {i : Nat} (hi : i < N s₀) {s : State}
   have rwl₄ : s₄.rd ++ s₄.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [g₄.rd, g₄.wr, u₃.rd, u₃.wr, rwl]
   have wl₄ : s₄.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [g₄.wr, u₃.wr, wl]
-  obtain ⟨s₅, run₅, g₅, mem₅, rd₅, wr₅⟩ := mulA_ok s₄ (Q := (Iv s₀).setWidth 64) (by rw [b₄]) (by rw [b₄]; omega)
-    (fun d n hdn => by rw [rwl₄]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega)⟩)
-    (fun d n hdn => by rw [wl₄]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega)⟩)
+  obtain ⟨s₅, run₅, g₅, mem₅, rd₅, wr₅⟩ := mulA_ok s₄ (Q := (Iv s₀).setWidth 64) (by rw [b₄]) (by rw [b₄]; omega_using [hiv])
+    (fun d n hdn => by rw [rwl₄]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega_using [hdn])⟩)
+    (fun d n hdn => by rw [wl₄]; exact ⟨ivR s₀, by simp, Offset.contains_base _ hdn (by omega_using [hdn])⟩)
   rw [WP.block_append_iff]
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   have f₅ : Frame [ivR s₀] s₄.mem s₅.mem := by rw [mem₅]; exact alphaMem_frame _ _
@@ -164,7 +164,7 @@ theorem pass_wp {ys : List (List Byte)} (hN : 0 < N s₀) {s : State} (h : PInv 
     refine ⟨by rw [ev]; simp [hz'], ?_⟩
     rwa [← hz']
   · right
-    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hz'], h'⟩
 
 omit hp in
 theorem saveT_eq : saveT = .mov .ebx (argOp 2) :: .mov .ebp (argOp 5) ::
@@ -188,14 +188,14 @@ theorem saveT_wp {M : Mode} (hM : ∀ R w t, M.chain R w t [] = t) (hO : ∀ R w
   have b₂ : s₂.gpr .ebx = Iv s₀ := by rw [u₂.other _ (by decide), u₁.gpr]
   have p₂ : s₂.gpr .ebp = S s₀ := u₂.gpr
   have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₂.wr, u₁.wr, h.wr, hp.wr]
-  refine zero4_ok (by decide) (by rw [p₂]; unfold cOff; omega) (by rw [p₂, w₂]; exact covSv (by simp))
+  refine zero4_ok (by decide) (by rw [p₂]; unfold cOff; omega_using [hsc]) (by rw [p₂, w₂]; exact covSv (by simp))
     fun s₃ g₃ m₃ rd₃ wr₃ => ?_
   have p₃ : s₃.gpr .ebp = S s₀ := by rw [g₃ _ (by decide), p₂]
   have b₃ : s₃.gpr .ebx = Iv s₀ := by rw [g₃ _ (by decide), b₂]
   have rw₃ : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₃, wr₃, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [p₃]; unfold cOff; omega) (by rw [b₃]; omega) (by rw [p₃]; unfold cOff; omega)
+    (by rw [p₃]; unfold cOff; omega_using [hsc]) (by rw [b₃]; omega_using [hiv]) (by rw [p₃]; unfold cOff; omega_using [hsc])
     (by rw [p₃, rw₃]; exact covSv (by simp))
     (by rw [b₃, add0, rw₃]; exact covIv (by simp))
     (by rw [p₃, wr₃, w₂]; exact covSv (by simp)) fun s₄ g₄ => WP.block_nil ?_
@@ -229,7 +229,7 @@ theorem UPre.bcall {s : State} (eax : s.gpr .eax = W s₀) (ecx : s.gpr .ecx = a
     by rw [esp]; exact hp.esp24, hp.sch_data, hp.sch_scr.sub_right (Region.sub_prefix (by decide)),
     hp.data_scr.sub_right (Region.sub_prefix (by decide)), by rw [hb]; exact hp.b_sch, by rw [hb]; exact hp.b_data,
     by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, hdf,
-    by have := hp.scr_fit; omega, ?_, ?_⟩
+    by have := hp.scr_fit; omega_using [this], ?_, ?_⟩
   · rw [hrd, hwr, hp.rd, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -265,14 +265,14 @@ theorem callArgs_wp {ys : List (List Byte)} {s : State} (h : PInv s₀ ys (N s�
   have b₂ : s₂.gpr .ebx = Iv s₀ := by rw [u₂.other _ (by decide), u₁.gpr]
   have p₂ : s₂.gpr .ebp = S s₀ := u₂.gpr
   have w₂ : s₂.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [u₂.wr, u₁.wr, h.wr, hp.wr]
-  refine zero4_ok (by decide) (by rw [b₂]; omega) (by rw [b₂, add0, w₂]; exact covIv (by simp))
+  refine zero4_ok (by decide) (by rw [b₂]; omega_using [hiv]) (by rw [b₂, add0, w₂]; exact covIv (by simp))
     fun s₃ g₃ m₃ rd₃ wr₃ => ?_
   have p₃ : s₃.gpr .ebp = S s₀ := by rw [g₃ _ (by decide), p₂]
   have b₃ : s₃.gpr .ebx = Iv s₀ := by rw [g₃ _ (by decide), b₂]
   have rw₃ : s₃.rd ++ s₃.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rd₃, wr₃, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, h.wr, hp.rd, hp.wr]; rfl
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [b₃]; omega) (by rw [p₃]; unfold cOff; omega) (by rw [b₃]; omega)
+    (by rw [b₃]; omega_using [hiv]) (by rw [p₃]; unfold cOff; omega_using [hsc]) (by rw [b₃]; omega_using [hiv])
     (by rw [b₃, add0, rw₃]; exact covIv (by simp))
     (by rw [p₃, rw₃]; exact covSv (by simp))
     (by rw [b₃, add0, wr₃, w₂]; exact covIv (by simp)) fun s₄ g₄ => ?_
@@ -315,7 +315,7 @@ theorem callArgs_wp {ys : List (List Byte)} {s : State} (h : PInv s₀ ys (N s�
     u₉.gpr
     (by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), g₄.gpr _ (by decide) (by decide), p₃])
     esp₉ rd₉ wr₉, ?_⟩
-  refine ⟨by rw [esi₉]; simp [D32], esp₉, rd₉, wr₉, ?_, by rw [length_xored _ _ _ (by omega), hlen], ?_, ?_, ?_⟩
+  refine ⟨by rw [esi₉]; simp [D32], esp₉, rd₉, wr₉, ?_, by rw [length_xored _ _ _ (by omega_using [hlen]), hlen], ?_, ?_, ?_⟩
   · rw [mem₉]; exact h.frame.trans (fC.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨ivR s₀, by simp, fun _ h => h⟩)
   · rw [mem₉, blocksAt_frame fC (fun j hj r hr => by
@@ -378,9 +378,9 @@ theorem final_of (enc : Bool) {s : State}
   exact { esi := h.esi, esp := h.esp, rd := h.rd, wr := h.wr, frame := h.frame
           data := by
             rw [h.data, xored_all _ h.len, xored_all _ hl, ce, outK, AesXts.xtsMode_out,
-              List.take_of_length_le (by omega), List.drop_of_length_le (by omega), List.append_nil]
+              List.take_of_length_le (by omega_using [hl]), List.drop_of_length_le (by omega_using [hl]), List.append_nil]
           iv := by
-            rw [h.iv, chainK, AesXts.xtsMode_chain, List.take_of_length_le (by omega), hl] }
+            rw [h.iv, chainK, AesXts.xtsMode_chain, List.take_of_length_le (by omega_using [hl]), hl] }
 
 /-- All the blocks. -/
 theorem batch_wp (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}

@@ -48,7 +48,7 @@ abbrev ksBlock (ciph : Spec.GcmSiv.Cipher) (icb : List Byte) (i : Nat) : List By
 theorem length_ctr (ciph : Spec.GcmSiv.Cipher) (hc : ∀ y, (ciph y).length = 16) (icb x : List Byte) :
     (Spec.GcmSiv.ctr ciph icb x).length = x.length := by
   simp only [Spec.GcmSiv.ctr, List.length_zipWith, Siv.length_flatMap16 _ (fun i => hc _)]
-  omega
+  omega_using []
 
 /-- Byte `p` of counter mode's output. -/
 theorem ctr_getD (ciph : Spec.GcmSiv.Cipher) (hc : ∀ y, (ciph y).length = 16) (icb x : List Byte) {p : Nat}
@@ -57,12 +57,12 @@ theorem ctr_getD (ciph : Spec.GcmSiv.Cipher) (hc : ∀ y, (ciph y).length = 16) 
   have hl := Siv.length_flatMap16 (fun i => ciph (Spec.GcmSiv.counterBlock icb i)) (fun i => hc _)
     ((x.length + 15) / 16)
   simp only [Spec.GcmSiv.ctr, List.getD_eq_getElem?_getD, List.getElem?_zipWith,
-    List.getElem?_eq_getElem hp, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega)]
+    List.getElem?_eq_getElem hp, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega_using [hp])]
   show x[p] ^^^ _ = _
   congr 1
   have h := Siv.getD_flatMap16 (fun i => ciph (Spec.GcmSiv.counterBlock icb i)) (fun i => hc _)
-    ((x.length + 15) / 16) (p := p) (by omega)
-  simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega),
+    ((x.length + 15) / 16) (p := p) (by omega_using [hp])
+  simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega_using [hp]),
     Option.getD_some] using h
 
 /-- Counter mode with the first `k` bytes done. -/
@@ -87,7 +87,7 @@ theorem ctrPart_all (ciph : Spec.GcmSiv.Cipher) (hc : ∀ y, (ciph y).length = 1
     (hk : x.length ≤ k) : ctrPart ciph icb x k = Spec.GcmSiv.ctr ciph icb x :=
   ext_getD (by rw [length_ctrPart, length_ctr ciph hc]) fun p hp => by
     rw [length_ctrPart] at hp
-    rw [getD_ctrPart _ _ _ _ hp, ite_eq_left (by omega), ctr_getD ciph hc icb x hp]
+    rw [getD_ctrPart _ _ _ _ hp, ite_eq_left (by omega_using [hk, hp]), ctr_getD ciph hc icb x hp]
 
 theorem getD_xor {a b : List Byte} {k : Nat} (ha : k < a.length) (hb : k < b.length) :
     (Spec.Cmac.xor a b).getD k 0 = a.getD k 0 ^^^ b.getD k 0 := by
@@ -113,17 +113,17 @@ theorem ctrPart_step (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) {m m' : Mem
   rw [Proof.Cmac.getD_bytesAt _ _ hp, getD_ctrPart _ _ _ _ hp]
   by_cases h₁ : 16 * i ≤ p ∧ p < 16 * i + n
   · have e : P + BitVec.ofNat 64 p = P + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 (p - 16 * i) := by
-      rw [Offset.add_add, show 16 * i + (p - 16 * i) = p by omega]
+      rw [Offset.add_add, show 16 * i + (p - 16 * i) = p by omega_using [h₁]]
     have hb' := congrArg (fun l => l.getD (p - 16 * i) 0) hb
-    rw [Proof.Cmac.getD_bytesAt _ _ (by omega),
-      getD_xor (by rw [Proof.Cmac.bytesAt_length]; omega) (by rw [List.length_take, hk]; omega),
-      Proof.Cmac.getD_bytesAt _ _ (by omega), getD_take (by omega)] at hb'
-    rw [e, hb', ← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right (by omega), ite_eq_left (by omega),
-      show p / 16 = i by omega, show p % 16 = p - 16 * i by omega]
-  · rw [hf p hp (by omega), hdk p hp, getD_ctrPart _ _ _ _ hp]
+    rw [Proof.Cmac.getD_bytesAt _ _ (by omega_using [h₁]),
+      getD_xor (by rw [Proof.Cmac.bytesAt_length]; omega_using [h₁]) (by rw [List.length_take, hk]; omega_using [hn, h₁]),
+      Proof.Cmac.getD_bytesAt _ _ (by omega_using [h₁]), getD_take (by omega_using [h₁])] at hb'
+    rw [e, hb', ← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right (by omega_using [h₁]), ite_eq_left (by omega_using [h₁]),
+      show p / 16 = i by omega_using [hn, h₁], show p % 16 = p - 16 * i by omega_using [hn, h₁]]
+  · rw [hf p hp (by omega_using [h₁]), hdk p hp, getD_ctrPart _ _ _ _ hp]
     by_cases h₂ : p < 16 * i
-    · rw [ite_eq_left h₂, ite_eq_left (by omega)]
-    · rw [ite_eq_right h₂, ite_eq_right (by omega)]
+    · rw [ite_eq_left h₂, ite_eq_left (by omega_using [h₂])]
+    · rw [ite_eq_right h₂, ite_eq_right (by omega_using [h₁, h₂])]
 
 /-- The `k` whole blocks from block `i` in memory changed to their XOR with
 their keystream blocks, and no other byte of the data. -/
@@ -140,19 +140,19 @@ theorem ctrPart_stepN (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) {m m' : Me
   rw [Proof.Cmac.bytesAt_length] at hp
   rw [Proof.Cmac.getD_bytesAt _ _ hp, getD_ctrPart _ _ _ _ hp]
   by_cases h₁ : 16 * i ≤ p ∧ p < 16 * (i + k)
-  · have hl : p / 16 - i < k := by omega
+  · have hl : p / 16 - i < k := by omega_using [h₁]
     have e : P + BitVec.ofNat 64 p = P + BitVec.ofNat 64 (16 * (i + (p / 16 - i))) + BitVec.ofNat 64 (p % 16) := by
-      rw [Offset.add_add, show 16 * (i + (p / 16 - i)) + p % 16 = p by omega]
+      rw [Offset.add_add, show 16 * (i + (p / 16 - i)) + p % 16 = p by omega_using [h₁]]
     have hb' := congrArg (fun l => l.getD (p % 16) 0) (hb _ hl)
-    rw [Proof.Cmac.getD_bytesAt _ _ (by omega),
-      getD_xor (by rw [Proof.Cmac.bytesAt_length]; omega) (by rw [hk _ hl]; omega),
-      Proof.Cmac.getD_bytesAt _ _ (by omega)] at hb'
-    rw [e, hb', ← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right (by omega), ite_eq_left (by omega),
-      show i + (p / 16 - i) = p / 16 by omega]
-  · rw [hf p hp (by omega), hdk p hp, getD_ctrPart _ _ _ _ hp]
+    rw [Proof.Cmac.getD_bytesAt _ _ (by omega_using []),
+      getD_xor (by rw [Proof.Cmac.bytesAt_length]; omega_using []) (by rw [hk _ hl]; omega_using []),
+      Proof.Cmac.getD_bytesAt _ _ (by omega_using [])] at hb'
+    rw [e, hb', ← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right (by omega_using [h₁]), ite_eq_left (by omega_using [h₁]),
+      show i + (p / 16 - i) = p / 16 by omega_using [h₁]]
+  · rw [hf p hp (by omega_using [h₁]), hdk p hp, getD_ctrPart _ _ _ _ hp]
     by_cases h₂ : p < 16 * i
-    · rw [ite_eq_left h₂, ite_eq_left (by omega)]
-    · rw [ite_eq_right h₂, ite_eq_right (by omega)]
+    · rw [ite_eq_left h₂, ite_eq_left (by omega_using [h₂])]
+    · rw [ite_eq_right h₂, ite_eq_right (by omega_using [h₁, h₂])]
 
 /-! ## The counter blocks -/
 
@@ -164,11 +164,11 @@ theorem initialCounter_words (a b : BitVec 64) :
   have hi : i < 16 := by simpa [Spec.GcmSiv.initialCounter] using h₁
   simp only [Spec.GcmSiv.initialCounter, List.getElem_map, List.getElem_range, List.getD_eq_getElem?_getD]
   by_cases h : i < 8
-  · rw [ite_eq_right (by omega), List.getElem?_append_left (by simp [length_le8]; omega),
-      List.getElem_append_left (by simp [length_le8]; omega)]
+  · rw [ite_eq_right (by omega_using [h]), List.getElem?_append_left (by simp [length_le8]; omega_using [h]),
+      List.getElem_append_left (by simp [length_le8]; omega_using [h])]
     simp [le8, h]
-  · rw [List.getElem?_append_right (by simp [length_le8]; omega),
-      List.getElem_append_right (by simp [length_le8]; omega)]
+  · rw [List.getElem?_append_right (by simp [length_le8]; omega_using [h]),
+      List.getElem_append_right (by simp [length_le8]; omega_using [h])]
     simp only [length_le8]
     by_cases h15 : i = 15
     · subst h15
@@ -179,11 +179,11 @@ theorem initialCounter_words (a b : BitVec 64) :
       have : ∀ k (h : k < 8), (128#8)[k] = (0x8000000000000000#64).getLsbD (56 + k) := by decide
       rw [this k hk]
     · rw [ite_eq_right h15]
-      simp [le8, show i - 8 < 8 by omega]
+      simp [le8, show i - 8 < 8 by omega_using [hi]]
       ext k hk
       simp [BitVec.getElem_extractLsb']
       have : ∀ j < 7, ∀ k < 8, (0x8000000000000000#64).getLsbD (8 * j + k) = false := by decide
-      simp [this (i - 8) (by omega) k hk]
+      simp [this (i - 8) (by omega_using [hi, h15]) k hk]
 
 theorem leNat_le4 (w : BitVec 32) : Spec.GcmSiv.leNat (le4 w) = w.toNat := by
   have h := w.isLt
@@ -191,7 +191,7 @@ theorem leNat_le4 (w : BitVec 32) : Spec.GcmSiv.leNat (le4 w) = w.toNat := by
     BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
   generalize w.toNat = x at h ⊢
   have h3 : x / 2 ^ (8 * 3) % 2 ^ 8 + 256 * 0 = x / 2 ^ (8 * 3) := by
-    rw [Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega))]
+    rw [Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega_using [h]))]
   rw [h3, byte_step x (8 * 2), byte_step x (8 * 1), byte_step x (8 * 0), Nat.mul_zero, Nat.pow_zero,
     Nat.div_one]
 
@@ -200,7 +200,7 @@ theorem le4_ofNat (y : Nat) : le4 (BitVec.ofNat 32 y) = Spec.GcmSiv.le32 y := by
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
-  omega
+  omega_using []
 
 /-- Counter block `j`: the first word of `icb` plus `j`. -/
 theorem counterBlock_word (icb : List Byte) (j : Nat) :
@@ -209,7 +209,7 @@ theorem counterBlock_word (icb : List Byte) (j : Nat) :
   congr 2
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- A little-endian word in memory. -/
 theorem readW32_leNat (m : Mem) (p : Addr) : m.readW p 32 = BitVec.ofNat 32 (Spec.GcmSiv.leNat (bytesAt m p 4)) := by

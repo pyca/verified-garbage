@@ -43,13 +43,13 @@ theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spec
     {s : State} (hi : GInv s₀ b D n E 0 s) :
     WP isa (.loop group .ne) s (GDone s₀ b D n E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 8 * k ∧ GInv s₀ b D n E k s) (fun m s hs => ?_) n s
-    ⟨0, by omega, hi⟩
+    ⟨0, by omega_using [], hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
   refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨(eval_ne s').trans (by rw [z]; rfl), d⟩
   · exact .inr ⟨(eval_ne s').trans (by rw [z]; rfl), n - 8 * (k + 1),
-      by have := d.lt; have := hk.lt; omega, k + 1, rfl, d⟩
+      by have := d.lt; have := hk.lt; omega_arith, k + 1, rfl, d⟩
 
 theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j : Nat) :
     outF m D (dirKeys dir sch) j =
@@ -111,24 +111,24 @@ theorem ecbWith_wp (sr : Reg) (kt : Prog isa) (dir : Dir) {s₀ : State}
   have f₀₂ : Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s₂.mem :=
     f₁.trans (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega)⟩)
+      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega_using [])⟩)
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have hi₂ : ∀ j, tableEnd ≤ j → j < slots → s₂.mem.readW (wordAddr b j) 32 = s₁.mem.readW (wordAddr b j) 32 :=
     fun j h1 h2 => by
-      rw [slot_addr (by rw [slots_eq] at h2; omega)]
+      rw [slot_addr (by rw [slots_eq] at h2; omega_using [fitB, h2])]
       refine k₂.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base _ (by omega) (by rw [slots_eq] at h2; omega)
+      exact VG.Offset.disjoint_base _ (by omega_using [h1]) (by rw [slots_eq] at h2; omega_using [h2])
   have sc₂ : ScrOk s₀ b E s₂.mem := by
     refine ⟨fun e he => ?_, fun i hi => ?_⟩
     · have := k₂.key.keys e he
       rw [base₂, hsch] at this
       exact this
-    · rw [hi₂ _ (by rw [savedSlot_eq, tableEnd_eq]; omega) (by rw [savedSlot_eq, slots_eq]; omega)]
+    · rw [hi₂ _ (by rw [savedSlot_eq, tableEnd_eq]; omega_using []) (by rw [savedSlot_eq, slots_eq]; omega_using [hi])]
       exact sv₁ i hi
   have data₂ : ∀ i < 16 * n, s₂.mem (State.addr D + BitVec.ofNat 64 i) = s₀.mem (State.addr D + BitVec.ofNat 64 i) :=
     fun i hi => f₀₂.bytes (R := ⟨State.addr D, 16 * n⟩)
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega) hi
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega_using []) hi
   have fr₂ : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s₀.mem s₂.mem :=
     f₀₂.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   have rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
@@ -165,7 +165,7 @@ theorem ecbWith_wp (sr : Reg) (kt : Prog isa) (dir : Dir) {s₀ : State}
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₄, by show s₂.gpr .r1 = _; rw [r1₂]; simp [D],
       by show s₂.gpr .r2 = _; rw [r2₂, Nat.mul_zero, Nat.sub_zero], by omega,
       mem₄ ▸ sc₂, fun i hi => ?_, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
-    rw [mem₄, data₂ i hi, ite_eq_right (by omega)]
+    rw [mem₄, data₂ i hi, ite_eq_right (by omega_using [])]
   -- The epilogue.
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆, sp₆⟩ := movR_ok s₅ .r12 sb
   obtain ⟨s₇, e₇, rg₇, -, m₇, -, -, -⟩ := restore_ok (s₀ := s₀) (b := b) (by rw [wr₆, d₅.wr]; exact hwS)
@@ -187,7 +187,7 @@ def dirOf (decrypt : BitVec 32) : Dir := if decrypt = 0 then .encrypt else .decr
 theorem dirOf_eq (decrypt : BitVec 32) :
     specDirArm (dirOf decrypt) = Proof.Sm4.directionOf (decrypt.setWidth 64).toNat := by
   unfold dirOf Proof.Sm4.directionOf
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := decrypt.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := decrypt.isLt; omega_using [])]
   by_cases h : decrypt = 0
   · subst h; rfl
   · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')

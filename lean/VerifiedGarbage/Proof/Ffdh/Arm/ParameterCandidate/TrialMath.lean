@@ -24,11 +24,11 @@ theorem trialRemaining_congruence {s acc next digit remaining value j : Nat}
       (next * 2 ^ 16 + remaining * 2 ^ 16) * 2 ^ (16 * j) := by
     rw [← Nat.add_mul, Nat.mul_assoc, ← Nat.pow_add]
     congr 2
-    omega
+    omega_using []
   rw [power, scale _ add]
   have rearrange : digit + acc + remaining * 2 ^ 16 = acc + (digit + 2 ^ 16 * remaining) := by
     rw [Nat.mul_comm remaining]
-    omega
+    omega_using []
   rw [rearrange]
   exact previous
 
@@ -52,8 +52,8 @@ theorem trialDigit_divides {acc value divisor j : Nat}
     · right; rw [eq, Nat.mul_one]
     · exfalso
       rw [eq] at bound
-      have := Nat.mul_le_mul_left divisor (show 2 ≤ q + 1 + 1 by omega)
-      omega
+      have := Nat.mul_le_mul_left divisor (show 2 ≤ q + 1 + 1 by omega_using [])
+      omega_using [bound, this]
   · rintro (rfl | rfl)
     · simp
     · exact Nat.mod_eq_zero_of_dvd (Nat.dvd_mul_right _ _)

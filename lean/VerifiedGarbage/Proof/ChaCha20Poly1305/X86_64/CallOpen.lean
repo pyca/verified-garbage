@@ -192,7 +192,7 @@ theorem inner_xdepth (v : XorImpl) : (inner v).x86_64Depth ≤ 24 := by
       padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_true, Impl.ChaCha20.X86_64.Xor.callTo,
       absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBufTo_xdepth, foldM_xdepth, init_xdepth,
       finalize_xdepth, Nat.max_le] at hc ha ⊢
-    omega
+    omega_using [hx, hb, hc, ha]
 
 theorem callOpen_eq (v : XorImpl) : callOpen v.callee v.poly =
     .frame (.push [.r11, .rax, .r10]) (.call (bodyName false v.callee v.poly) (inner v)) (.pop .r10 3) := rfl
@@ -344,7 +344,7 @@ include hs
 
 theorem hB_lt : (hB h).toNat + 56 ≤ 2 ^ 64 := by
   have := hs.sp_lo
-  rw [toNat_sub_ofNat (by omega)]; omega
+  rw [toNat_sub_ofNat (by omega_using [this])]; omega_using []
 
 omit hs in
 /-- A part of the 56 bytes of stack is apart from a region apart from all of
@@ -359,7 +359,7 @@ theorem stk0 {r : Region} (hd : (hstk h).Disjoint r) {n : Nat} (hn : n ≤ 56) :
   hd.sub_left (Region.sub_prefix hn)
 
 theorem entry : Entry h (eS h) := by
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega
+  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega_using [this]
   have hB' := hs.hB_lt
   obtain ⟨pf, pw⟩ := pushRegs_mem h frameRegs (by decide) hn
   rw [sub_hB h (by decide)] at pf
@@ -367,7 +367,7 @@ theorem entry : Entry h (eS h) := by
       (pushed frameRegs h).mem.readW (hB h + BitVec.ofNat 64 d) 64 = h.gpr frameRegs[j] := by
     intro j hj d hd
     have := pw j hj
-    rw [sub_hB h (by omega), show 56 - 8 * (j + 1) = d by omega] at this
+    rw [sub_hB h (by omega_using [hj]), show 56 - 8 * (j + 1) = d by omega_using [hd]] at this
     exact this
   have prsp : (pushed frameRegs h).gpr .rsp = hB h + BitVec.ofNat 64 32 := by
     rw [pushed_rsp, sub_hB h (by decide)]; rfl
@@ -386,7 +386,7 @@ theorem entry : Entry h (eS h) := by
       (eS h).mem.readW (hB h + BitVec.ofNat 64 d) 64 = (pushed frameRegs h).mem.readW (hB h + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => fr.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by decide)
+      exact Offset.disjoint _ (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by omega_using [])) (by decide)
   refine ⟨fun r hr => ?_, ersp, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [State.callEntry_gpr _ hr, pushed_gpr _ _ hr]
   · rw [rw' 32 (by decide) (by decide), pw' 2 (by decide) 32 (by decide)]; rfl
@@ -566,7 +566,7 @@ end Entry
 
 theorem pushed_frame {h : State} (hs : CPre h) :
     Frame [⟨hB h + BitVec.ofNat 64 32, 24⟩] h.mem (pushed frameRegs h).mem := by
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega
+  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega_using [this]
   have pf := (pushRegs_mem h frameRegs (by decide) hn).1
   rw [sub_hB h (by decide)] at pf
   exact pf
@@ -574,13 +574,13 @@ theorem pushed_frame {h : State} (hs : CPre h) :
 /-- The call, from a state satisfying `CPre`. -/
 theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
     WP isa (callOpen v.callee v.poly) h (COut h) := by
-  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega
+  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega_using [this]
   have hu := hs.entry
   have hB' := hs.hB_lt
   have hd := inner_xdepth v
   rw [callOpen_eq]
   refine WP.frame (by decide) (by decide) (by decide) hn ?_
-  refine WP.callF (k := sharedK) (inner_ok v) (SpSafe.of_all (inner_spSafe v)) (by omega) (hu.spre hs)
+  refine WP.callF (k := sharedK) (inner_ok v) (SpSafe.of_all (inner_spSafe v)) (by omega_using [hd]) (hu.spre hs)
     (Covers.append_left (hu.rd_cov hs) (hu.wr_cov hs).right) (hu.wr_cov hs)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, post₂⟩ mx' => ?_
   have prsp : (pushed frameRegs h).gpr .rsp = hB h + BitVec.ofNat 64 32 := by
@@ -596,7 +596,7 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
   · -- The pushes, the return address and the callee: within the stack, the
     -- destination and `work`.
     rw [popped_mem]
-    have f₂ := Frame.below_mono f' (b := 32) (by omega) (by decide)
+    have f₂ := Frame.below_mono f' (b := 32) (by omega_using [hd]) (by decide)
     rw [prsp, show wrB (eS h) = [hdR h, hwR h] by show [dR (eS h), ctxR (eS h)] = _; rw [hu.ed, hu.ec]] at f₂
     simp only [below, BitVec.add_sub_cancel] at f₂
     refine Frame.trans (Frame.sub (pushed_frame hs) fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_)

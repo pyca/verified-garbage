@@ -39,13 +39,13 @@ theorem setup_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc v : Nat
     hc.ld (i := sW) (by decide), hc.ld (i := Crt.sNib) (by decide),
     hc.ld (i := sArr Crt.aT) (by decide), hc.good.hdr.hw, hv,
     hc.good.hdr.harr Crt.aT (by decide), ofNat_add_ofNat,
-    shl3_ofNat (show 8 * (w + 2) < 2 ^ 64 by omega),
+    shl3_ofNat (show 8 * (w + 2) < 2 ^ 64 by omega_using [hw]),
     exec_dup2, dup2, RegUpd.v_setV_self, RegUpd.v_setV_of_ne,
     RegUpd.v_write, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV]
 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show w < 2 ^ 64 by omega), Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show w < 2 ^ 64 by omega_using [hw]), Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega_using [hw])]
 
 end VG.Proof.Bignum.AArch64.WindowVector

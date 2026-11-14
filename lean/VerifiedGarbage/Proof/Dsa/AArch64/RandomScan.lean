@@ -42,7 +42,7 @@ theorem random_significant_ok {s : State} {B p : Addr} {Z : Nat} {bs : List Byte
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     have hw := VG.Proof.Dsa.significant_fits bs
-    omega
+    omega_using [hw]
   refine WP.mono (WP.keep [.x13, .x9, .x12, .x0] (Q := fun t =>
       t.gpr .x12 = p + BitVec.ofNat 64 (bs.length - (VG.Proof.Dsa.significant bs).1) ∧
       t.gpr .x9 = BitVec.ofNat 64 (VG.Proof.Dsa.significant bs).1 ∧

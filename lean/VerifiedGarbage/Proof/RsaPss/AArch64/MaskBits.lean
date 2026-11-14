@@ -41,7 +41,7 @@ theorem maskBit_ok (j : Nat) (hj : j < 8) {u : State} {is : List Instr} {Q : Sta
     WP isa (.block (maskBit j ++ is)) u Q := by
   unfold maskBit
   simp only [List.cons_append, List.nil_append]
-  refine wp_subImm (by omega) fun u₁ o₁ e₁ => wp_lsr (by decide) fun u₂ o₂ e₂ => wp_lsl (by omega) fun u₃ o₃ e₃ =>
+  refine wp_subImm (by omega_using []) fun u₁ o₁ e₁ => wp_lsr (by decide) fun u₂ o₂ e₂ => wp_lsl (by omega_using [hj]) fun u₃ o₃ e₃ =>
     wp_orr fun u₄ o₄ e₄ => k u₄ (o₁.trans (o₂.trans (o₃.trans o₄))).mono ?_
   rw [e₄, o₃.get .x11, o₂.get .x11, o₁.get .x11, e₃, e₂, e₁]
 
@@ -52,14 +52,14 @@ theorem maskSteps_ok : ∀ n, n ≤ 8 → ∀ {u : State} {is : List Instr} {Q :
   | n + 1, hn, u, is, Q, h, k => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       List.append_assoc]
-    exact maskSteps_ok n (by omega) h fun u₁ o₁ e₁ => maskBit_ok n (by omega) fun u₂ o₂ e₂ =>
+    exact maskSteps_ok n (by omega_using [hn]) h fun u₁ o₁ e₁ => maskBit_ok n (by omega_using [hn]) fun u₂ o₂ e₂ =>
       k u₂ (o₁.trans o₂).mono (by rw [e₂, e₁, o₁.get .x9]; rfl)
 
 theorem shl3_ofNat {k : Nat} (hk : k < 2 ^ 60) : BitVec.ofNat 64 k <<< 3 = BitVec.ofNat 64 (8 * k) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [hk])]
+  omega_using []
 
 /-- The mask to `sC` and `lo = 0` to `sLo`, from `emLen = k` in `x23` and
 `emBits = eb` in `r`. -/
@@ -91,10 +91,10 @@ theorem fitH_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {k : Nat} (hk : u.g
     WP isa (.block (fitH H)) u fun u' => Only [.x9, .x10] u u' ∧ u'.gpr .x9 = BitVec.ofNat 64 k ∧
       (u'.gpr .x10 != 0) = decide (k < H.D + 2) := by
   unfold fitH
-  refine wp_mov fun u₁ o₁ e₁ => wp_subImm (by omega) fun u₂ o₂ e₂ => wp_lsr (by decide) fun u₃ o₃ e₃ =>
+  refine wp_mov fun u₁ o₁ e₁ => wp_subImm (by omega_using [hD]) fun u₂ o₂ e₂ => wp_lsr (by decide) fun u₃ o₃ e₃ =>
     wp_nil ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x9, o₂.get .x9, e₁, hk], ?_⟩
   rw [e₃, e₂, e₁, hk]
-  exact borrow_ne hk2 (by omega)
+  exact borrow_ne hk2 (by omega_using [hD])
 
 /-- `saltFits`, with the salt's length in `x12`. -/
 theorem saltFitsR_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {a : Nat} (ha : H.D + 2 ≤ a) (ha' : a < 2 ^ 32)
@@ -102,13 +102,13 @@ theorem saltFitsR_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {a : Nat} (ha 
     WP isa (.block (saltFits H)) u fun u' => Only [.x9, .x10, .x13] u u' ∧
       u'.gpr .x9 = BitVec.ofNat 64 (a - (H.D + 2)) ∧ (u'.gpr .x10 != 0) = decide (a - (H.D + 2) < y.toNat) := by
   unfold saltFits
-  refine wp_subImm (by omega) fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr (by decide) fun u₄ o₄ e₄ =>
+  refine wp_subImm (by omega_using [hD]) fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr (by decide) fun u₄ o₄ e₄ =>
     wp_lsr (by decide) fun u₅ o₅ e₅ => wp_orr fun u₆ o₆ e₆ =>
       wp_nil ⟨(o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆)))).mono, ?_, ?_⟩
   · rw [o₆.get .x9, o₅.get .x9, o₄.get .x9, o₃.get .x9, e₂, h9, Offset.ofNat_sub_ofNat ha]
   · have h12' : u₂.gpr .x12 = BitVec.ofNat 64 y.toNat := by rw [o₂.get .x12, h12, BitVec.ofNat_toNat,
       BitVec.setWidth_eq]
     rw [e₆, o₅.get .x10, e₄, e₃, e₂, h9, Offset.ofNat_sub_ofNat ha, h12', e₅, o₄.get .x12, o₃.get .x12, h12']
-    exact borrow_or (by omega) y.isLt
+    exact borrow_or (by omega_using [ha']) y.isLt
 
 end VG.Proof.RsaPss.AArch64

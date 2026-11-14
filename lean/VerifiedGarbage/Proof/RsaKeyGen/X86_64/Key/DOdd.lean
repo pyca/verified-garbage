@@ -29,7 +29,7 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X
 
 theorem two_le_pow {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {x : Nat} (hx : x < 2 ^ 64) :
     x < 2 ^ (64 * I.W) :=
-  Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (by have := h.ws.w1; omega))
+  Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (by have := h.ws.w1; omega_using [this]))
 
 /-- `loadEv`: `[aE] := e` over `W + 2` words. -/
 theorem loadEv_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e : Nat} (he : e < 2 ^ 64)
@@ -49,17 +49,17 @@ theorem loadEv_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e : Nat} 
   have hdi₃ : s₃.gpr .rdi = I.B := ((k₂.trans k₃).gpr (by decide)).trans h₁.ws.rdi
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s₁.mem.writeW (off I.B (slot I.W aE)) (BitVec.ofNat 64 e)) (by
     xrun [State.ea, at0, hdr, hbx, hdi₃, hdrOff, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-      hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega), hs₃.st (d := slot I.W aE) (by omega),
+      hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_using [this]), hs₃.st (d := slot I.W aE) (by omega_using [sE]),
       m₃, m₂, hev₁]) rfl) fun t ⟨hm, k₄⟩ => ?_
-  have o₄ := writeW_outside s₁.mem I.B (BitVec.ofNat 64 e) (d := slot I.W aE) (by omega)
+  have o₄ := writeW_outside s₁.mem I.B (BitVec.ofNat 64 e) (d := slot I.W aE) (by omega_using [hn, sE])
   rw [← hm] at o₄
-  have f₄ := KF.arr1 (I := I) (j := aE) o₄ (Nat.le_refl _) (by omega)
+  have f₄ := KF.arr1 (I := I) (j := aE) o₄ (Nat.le_refl _) (by omega_using [])
   refine ⟨h₁.step f₄ (all_mut_arr (by decide)) ((k₂.trans k₃).trans k₄) (by decide), (f₁.trans f₄).mono (by decide), ?_⟩
   rw [hm]
   have := wv_put (m := s₁.mem) (B := I.B) (d := slot I.W aE) (N := I.W + 2) (k := 0) (BitVec.ofNat 64 e)
-    ((wv_eq_zero_iff _ _ _ _).mp z₁) (by omega) (by omega) (I.W + 2) (Nat.le_refl _)
+    ((wv_eq_zero_iff _ _ _ _).mp z₁) (by omega_using [hn, sE]) (by omega_using []) (I.W + 2) (Nat.le_refl _)
   rw [Nat.mul_zero, Nat.add_zero] at this
-  rw [this, ite_eq_left (show 0 < I.W + 2 by omega), Nat.pow_zero, Nat.one_mul, BitVec.toNat_ofNat,
+  rw [this, ite_eq_left (show 0 < I.W + 2 by omega_using []), Nat.pow_zero, Nat.one_mul, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt he]
 
 /-- `lGe2`: `kOk := ` the mask of `L ≥ 2`. -/
@@ -76,11 +76,11 @@ theorem lGe2_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     fun s₂ ⟨h₂, m₂, hbp, _, _, _, k₂⟩ => ?_)
   rw [vL, c2] at hbp
   simp only [seqs]
-  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
   refine WP.mono (WP.keep [.rbp] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (8 * kOk))
     (mask (!decide (av I s.mem aL < 2)))) (by xrun [State.ea, hdr, h₂.ws.rdi, hdrOff, hst, hbp, sxM1, maskNot]) rfl)
     fun t ⟨hm, k₃⟩ => ?_
-  obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k₃ (by decide)
+  obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega_using []) hm k₃ (by decide)
   exact ⟨ht, (f₁.trans (by rw [← m₂]; exact f₃)).mono (by decide), hw⟩
 
 /-- `gcdIsOne`: `kOk &= ` the mask of `[aV] = 1`. -/
@@ -99,14 +99,14 @@ theorem gcdIsOne_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Boo
     (by decide)) fun s₂ ⟨h₂, m₂, hbp, k₂⟩ => ?_)
   rw [vV, c1] at hbp
   simp only [seqs]
-  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
-  have hld := h₂.ws.scr.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
+  have hld := h₂.ws.scr.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
   have hok₂ : word s₂.mem I.B (8 * kOk) = mask c := by rw [m₂, hok₁]
   refine WP.mono (WP.keep [.rbp] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (8 * kOk))
     (mask (decide (av I s.mem aV = 1) && c))) (by
       xrun [State.ea, hdr, h₂.ws.rdi, hdrOff, hst, hld, hbp, hok₂, mask_and']) rfl)
     fun t ⟨hm, k₃⟩ => ?_
-  obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k₃ (by decide)
+  obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega_using []) hm k₃ (by decide)
   exact ⟨ht, (f₁.trans (by rw [← m₂]; exact f₃)).mono (by decide), hw⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Key

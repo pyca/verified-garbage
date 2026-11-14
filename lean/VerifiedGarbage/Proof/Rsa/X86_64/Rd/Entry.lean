@@ -57,7 +57,7 @@ theorem rpFail_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (hdi : s.gpr
   have fw : ∀ {m m' : Mem} {op : Addr} {len : Nat}, (∀ j < len, Z ≤ ofs B (op + BitVec.ofNat 64 j)) →
       (∀ x, (∀ j < len, x ≠ op + BitVec.ofNat 64 j) → m' x = m x) → ∀ i < 32, word m' B (8 * i) = word m B (8 * i) :=
     fun hsep hx i hi => (frm_scr hsep hx).word_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
   unfold fail
   simp only [seqs]
   refine WP.seq (WP.mono (zeroOut_ok hs hdi hZ (by decide) (by decide) ha.p ha.k hk1 hk2 oP)
@@ -71,7 +71,7 @@ theorem rpFail_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (hdi : s.gpr
   have w₂ := fw oQ.sep x₂
   have hs₂ := hs₁.congr k₂.2.2
   have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans hdi₁
-  have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off B (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+  have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off B (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hi])
   have hw : ∀ i < 32, word s₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     rw [w₂ i hi, w₁ i hi]
   rw [exit_eq]
@@ -91,7 +91,7 @@ theorem rpFail_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (hdi : s.gpr
     kk.gpr (by decide)⟩
   · rw [x₂ _ (fun j hj => a i hi j hj)]
     exact z₁ i hi
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact h0.trans (ha.saved 0 (by decide))
     · exact h1.trans (ha.saved 1 (by decide))
     · exact h2.trans (ha.saved 2 (by decide))

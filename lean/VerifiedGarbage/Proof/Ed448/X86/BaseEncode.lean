@@ -90,7 +90,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   have hfar56 : ∀ j < 8192, 56 ≤ ofs ((arg s₀ 0).setWidth 64) (off base j) :=
     fun j hj => Nat.le_trans (by decide) (hfar j hj)
   have hw57 : ∀ j < 57, InRegions s₀.wr (off ((arg s₀ 0).setWidth 64) j) 1 := fun j hj =>
-    ⟨_, hout, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, hout, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have ws : (⟨base, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] :=
     List.mem_append_left _ (hwr ▸ hs.wr)
   -- What code writing the working space and the call stack keeps.
@@ -144,7 +144,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   have esi₇ : s₇.gpr .esi = arg s₀ 0 := by
     rw [u₇.other .esi (by decide), u₆.other .esi (by decide), u₅.other .esi (by decide), u₄.gpr]
   refine wp_store8 (a := (arg s₀ 0).setWidth 64 + BitVec.ofNat 64 56)
-    (by change addr (s₇.gpr .esi) 56 = _; rw [esi₇]; exact addr_eq (by omega))
+    (by change addr (s₇.gpr .esi) 56 = _; rw [esi₇]; exact addr_eq (by omega_using [hofit]))
     (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, kk.2.2, hwr]; exact hw57 56 (by decide)) fun s₈ u₈ => ?_
   have hx : (E s₂.mem base 1).val = fe s₂.mem base X2 % Spec.X448.P := Proof.X448.toFe_val _
   have byte₈ : s₈.mem ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 56) =
@@ -158,7 +158,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem]
   have o₈ : Outside ((arg s₀ 0).setWidth 64) 0 57 s₃.mem s₈.mem := by
     rw [m₈]; intro q hq
-    exact writeW8_outside _ _ _ (d := 56) (by decide) (by omega)
+    exact writeW8_outside _ _ _ (d := 56) (by decide) (by omega_using [hq])
   have w₈ : ∀ d, d + 4 ≤ 8192 → word s₈.mem base d = word s₃.mem base d := fun d hd4 =>
     out_word o₈ hd4 hfar
   have hs₈ : Scr s₈ base := (((hs₃.of_upd u₄ (by decide)).of_upd u₅ (by decide)).of_upd u₆ (by decide)).of_upd
@@ -167,7 +167,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     funext i
     simp only [E, F]
     exact congrArg Proof.X448.toFe (valN_congr fun j hj =>
-      congrArg BitVec.toNat (w₈ _ (by have := i.isLt; simp only [slot]; omega)))
+      congrArg BitVec.toNat (w₈ _ (by have := i.isLt; simp only [slot]; omega_using [hj])))
   have E₃ : E s₃.mem base = E s₂.mem base := by
     rw [E_update (o := 1) (m₃.ws (by decide))]
     funext i
@@ -179,7 +179,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   have b₃ : BoundedEnv s₃.mem base := bounded_update (o := 1) (m₃.ws (by decide)) b₂ bx₃
   have b₈ : BoundedEnv s₈.mem base := fun i j hj => by
     change (word s₈.mem base (slot i.val + 4 * j)).toNat < _
-    rw [w₈ _ (by have := i.isLt; simp only [slot]; omega)]; exact b₃ i j hj
+    rw [w₈ _ (by have := i.isLt; simp only [slot]; omega_using [hj])]; exact b₃ i j hj
   -- `y` into slot 1, fully reduced.
   change WP isa (.block (Impl.X448.X86.copy X2 (slot 4) ++ _)) s₈ _
   rw [WP.block_append_iff]
@@ -201,23 +201,23 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     rw [k₁₀.2.2, k₉.regs.2.2, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, kk.2.2, hwr]
   rw [WP.block_append_iff]
   refine WP.mono (output_ok (p := (arg s₀ 0).setWidth 64) hs₁₀ by₁₀ (by rw [esi₁₀])
-    (by rw [esi₁₀]; omega) (fun j hj => by rw [wr₁₀]; exact hw57 j (by omega)) hfar56)
+    (by rw [esi₁₀]; omega_using [hofit]) (fun j hj => by rw [wr₁₀]; exact hw57 j (by omega_using [hj])) hfar56)
     fun s₁₁ ⟨v₁₁, o₁₁, k₁₁⟩ => ?_
   -- The saved registers.
   have sv₃ : Saved base g s₃.mem :=
     ((sv.wsout2 k₁.mem (by decide) (by decide)).wsout2 k₂.mem (by decide) (by decide)).field m₃
       (by decide)
   have sv₈ : Saved base g s₈.mem := sv₃.of_readW fun q hq => by
-    have := savedSlots_bound q hq; exact w₈ _ (by omega)
+    have := savedSlots_bound q hq; exact w₈ _ (by omega_using [this])
   have sv₁₀ : Saved base g s₁₀.mem :=
     (sv₈.wsout2 k₉.mem (by decide) (by decide)).field m₁₀ (by decide)
   have sv₁₁ : Saved base g s₁₁.mem := sv₁₀.of_readW fun q hq => by
     have := savedSlots_bound q hq
-    exact out_word o₁₁ (by omega) fun j hj => Nat.le_trans (by decide) (hfar j hj)
+    exact out_word o₁₁ (by omega_using [this]) fun j hj => Nat.le_trans (by decide) (hfar j hj)
   have hs₁₁ : Scr s₁₁ base := hs₁₀.of_keeps k₁₁ (by decide)
   refine WP.mono (restore_ok hs₁₁ sv₁₁) fun t ⟨rt, mt, kt⟩ => ?_
   have f810 : Outside base 0 8192 s₈.mem s₁₀.mem :=
-    Outside.trans (fun p hp => m₉ p (Or.inr (by simp only [X2, slot]; omega))) (m₁₀.whole (by decide))
+    Outside.trans (fun p hp => m₉ p (Or.inr (by simp only [X2, slot]; omega_using [hp]))) (m₁₀.whole (by decide))
   refine ⟨?_, rt, ?_, ?_⟩
   · have b56 : s₁₁.mem ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 56) =
         s₈.mem ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 56) := by

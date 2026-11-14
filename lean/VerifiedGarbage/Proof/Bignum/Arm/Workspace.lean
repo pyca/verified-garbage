@@ -26,12 +26,12 @@ theorem Workspace.ea {s : State} {base : BitVec 32} {size off imm : Nat} {r : Re
     (hd : off + imm < size) :
     State.addr (s.gpr r + BitVec.ofNat 32 imm) = VG.Proof.Mont.off (State.addr base) (off + imm) := by
   rw [hp, Offset.add_add]
-  exact VG.Arm.addr_add (by have := h.nowrap; omega)
+  exact VG.Arm.addr_add (by have := h.nowrap; omega_using [hd, this])
 
 theorem Workspace.write {s : State} {base : BitVec 32} {size off : Nat}
     (h : Workspace s base size) (hd : off + 4 ≤ size) :
     InRegions s.wr (VG.Proof.Mont.off (State.addr base) off) 4 :=
-  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega)⟩
+  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega_using [hd, this])⟩
 
 theorem Workspace.read {s : State} {base : BitVec 32} {size off : Nat}
     (h : Workspace s base size) (hd : off + 4 ≤ size) :

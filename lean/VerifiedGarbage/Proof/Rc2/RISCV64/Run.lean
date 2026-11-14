@@ -49,7 +49,7 @@ theorem countLoop (body : Prog isa) (r : Reg) (I : Nat → State → Prop) (stop
     exact ⟨by simp, he ▸ h'⟩
   · right
     rw [Steps.eval_nonzero, hc]
-    exact ⟨by simp [he], stop - (j + 1), by omega, j + 1, by omega, rfl, h'⟩
+    exact ⟨by simp [he], stop - (j + 1), by omega_using [hj, hn], j + 1, by omega_using [hj, he], rfl, h'⟩
 
 theorem succ_ofNat (i : Nat) : BitVec.ofNat 64 i + 1#64 = BitVec.ofNat 64 (i + 1) := by
   rw [BitVec.ofNat_add]

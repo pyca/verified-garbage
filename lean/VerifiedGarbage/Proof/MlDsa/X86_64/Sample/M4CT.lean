@@ -62,7 +62,7 @@ theorem cmp_ok {σ : State} {s : State} (h : SqInv σ 5 s) :
         by_cases e : r = .r14
         · subst e; exact h14
         · exact k1'.gpr (by simp [e]),
-      fun k hk p hp' => by rw [hm1]; exact h.buf k hk p (by omega), fun _ hk => absurd hk (by omega)⟩,
+      fun k hk p hp' => by rw [hm1]; exact h.buf k hk p (by omega_using [hp']), fun _ hk => absurd hk (by omega_using [])⟩,
     by rw [hz1, h.env.r14]⟩
 
 /-- The comparison of `γ₁`, as `γ₁ = 2¹⁷`. -/

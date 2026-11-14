@@ -19,7 +19,7 @@ theorem square_raw_ok (M : Mont) {s : State} {P : Addr} {w : Nat} {mi : BitVec 6
         wv s.mem P (slot w aY) w * wv s.mem P (slot w aY) w % X ∧
       (∀ k < 32, word t.mem P (8 * k) = word s.mem P (8 * k)) ∧
       Frm P (crtWinRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (M.mm_ok (o := aY) (a := aY) (b := aY) hc.good (Nat.le_refl _) hw (by omega)
+  refine WP.mono (M.mm_ok (o := aY) (a := aY) (b := aY) hc.good (Nat.le_refl _) hw (by omega_using [hw'])
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
     (by rw [hc.n]; exact hy)) fun t ⟨_,ht,hm,ha,kt⟩ => ?_
   rw [hc.n] at ht hm
@@ -50,7 +50,7 @@ theorem squares_scaled_ok (M : Mont) (n : Nat) {s : State} {P : Addr} {w k A : N
     have he : 2 ^ (n + 1) * (2 * k + 1) + (2 ^ (n + 1) - 1) =
         2 ^ (n + 1 + 1) * k + (2 ^ (n + 1 + 1) - 1) := by
       rw [Nat.pow_succ 2 (n + 1), Nat.mul_add, Nat.mul_one, ← Nat.mul_assoc]
-      omega
+      omega_using []
     rw [he] at vt
     have ep : (A ^ 2) ^ (2 ^ (n + 1)) = A ^ (2 ^ (n + 1 + 1)) := by
       rw [← Nat.pow_mul, Nat.mul_comm 2, ← Nat.pow_succ]

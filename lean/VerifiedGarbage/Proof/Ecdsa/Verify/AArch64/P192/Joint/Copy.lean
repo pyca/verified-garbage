@@ -33,7 +33,7 @@ theorem source_ptr {s : State} {base : Addr} {size a : Nat} (hs : Scr s base siz
   enc := by have := hs.enc; omega
   ld d hd := by
     rw [VG.Offset.add_add]
-    exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hd]) (by decide)⟩
 
 /-- The selected entry is above or wholly below the destination. -/
 theorem copyFrom_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {a src dst : Nat},
@@ -47,23 +47,23 @@ theorem copyFrom_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {a sr
     WP.block_nil ⟨rfl,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Outside.refl _ _ _ _⟩
   | n+1, s, base, a, src, dst, hs, hr, hd, ha, hd8, hs8, hsep => by
     have hn := hs.nowrap
-    have hp := source_ptr hs (by omega : a ≤ size) hr
+    have hp := source_ptr hs (by omega_using [ha] : a ≤ size) hr
     rw [copyFrom,WP.block_append_iff,←List.singleton_append,WP.block_append_iff]
-    refine WP.mono (ldR_ok hp (d:=src) (by omega) hs8 .x4) fun s₀ ⟨e₀,k₀,_⟩ => ?_
+    refine WP.mono (ldR_ok hp (d:=src) (by omega_using [ha]) hs8 .x4) fun s₀ ⟨e₀,k₀,_⟩ => ?_
     rw [word_at_offset] at e₀
     have hs₀ := hs.of_keeps k₀ (by decide)
-    refine WP.mono (st_out hs₀ (o:=dst) (by omega) hd8 .x4) fun s₁ ⟨m₁,k₁,g₁⟩ => ?_
+    refine WP.mono (st_out hs₀ (o:=dst) (by omega_using [hd]) hd8 .x4) fun s₁ ⟨m₁,k₁,g₁⟩ => ?_
     rw [e₀,k₀.mem] at m₁
     have k₀₁ : KeepRegs [.x4] s s₁ := (Keeps.regs k₀).trans (k₁.mono (by simp))
     have hs₁ := hs.of_keepRegs k₀₁ (by decide)
     have O₁ : Outside base dst 8 s.mem s₁.mem := by
-      rw [m₁]; exact writeW_outside _ _ _ (by omega)
+      rw [m₁]; exact writeW_outside _ _ _ (by omega_using [hd, hn])
     have hr₁ : s₁.gpr .x16 = off base a := (k₀₁.gpr .x16 (by decide)).trans hr
     have e₁ : wordsVal s₁.mem base (a+src+8) n = wordsVal s.mem base (a+src+8) n :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_using [hsep]) (by omega_using [ha, hn])
     refine WP.mono (copyFrom_ok n hs₁ hr₁ (dst:=dst+8) (src:=src+8)
-      (by omega) (by omega) (by omega) (by omega) (by omega)) fun s₂ ⟨e₂,k₂,O₂⟩ => ?_
-    refine ⟨?_,k₀₁.trans k₂,fun x hx => by rw [O₂ x (by omega),O₁ x (by omega)]⟩
-    rw [show a+(src+8)=a+src+8 by omega] at e₂
-    rw [wordsVal,O₂.word (by omega) (by omega),m₁,word_writeW_self,e₂,e₁,wordsVal]
+      (by omega_using [hd]) (by omega_using [ha]) (by omega_using [hd8]) (by omega_using [hs8]) (by omega_using [hsep])) fun s₂ ⟨e₂,k₂,O₂⟩ => ?_
+    refine ⟨?_,k₀₁.trans k₂,fun x hx => by rw [O₂ x (by omega_using [hx]),O₁ x (by omega_using [hx])]⟩
+    rw [show a+(src+8)=a+src+8 by omega_using []] at e₂
+    rw [wordsVal,O₂.word (by omega_using []) (by omega_using [hd, hn]),m₁,word_writeW_self,e₂,e₁,wordsVal]
 end VG.Proof.Ecdsa.Verify.AArch64.P192.Joint

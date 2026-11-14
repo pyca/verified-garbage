@@ -28,8 +28,8 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.Mont
 theorem layout_pointer_low {m : Mem} {W : Addr} {wsLen j : Nat}
     (layout : Layout m W wsLen) (index : j < 8) :
     w32 m W (64 + 8 * j) = (W.toNat + arrAt (wOf m W) j) % 2 ^ 32 := by
-  rw [show 64 + 8 * j = 8 * arrWord j by unfold arrWord; omega, header_low,
+  rw [show 64 + 8 * j = 8 * arrWord j by unfold arrWord; omega_using [], header_low,
     layout.2.2.2 j index, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 end VG.Proof.Mont.X86.Compact

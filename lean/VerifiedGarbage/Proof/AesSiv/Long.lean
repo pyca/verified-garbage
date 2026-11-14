@@ -41,21 +41,21 @@ theorem kOf_lt {L : Nat} (h : L < 17) : kOf L = 0 := by simp [kOf, h]
 theorem kOf_ge {L : Nat} (h : ¬ L < 17) : kOf L = (L - 1) / 16 - 1 := by simp [kOf, h]
 
 theorem kOf_tail {L : Nat} (h : 16 ≤ L) : 16 ≤ L - 16 * kOf L ∧ L - 16 * kOf L ≤ 32 := by
-  unfold kOf; split <;> omega
+  unfold kOf; split <;> omega_arith
 
 theorem jOf_rest {L : Nat} (h : 16 ≤ L) :
     16 * jOf L ≤ L - 16 * kOf L ∧ 0 < L - 16 * kOf L - 16 * jOf L ∧ L - 16 * kOf L - 16 * jOf L ≤ 16 := by
-  unfold kOf jOf; split <;> omega
+  unfold kOf jOf; split <;> omega_arith
 
-theorem jOf_le (L : Nat) : jOf L ≤ 1 := by unfold jOf; split <;> omega
+theorem jOf_le (L : Nat) : jOf L ≤ 1 := by unfold jOf; split <;> omega_using []
 
 /-- XORing `D` into the last 16 of `T` bytes. -/
 theorem xorend_mem (m : Mem) {B Q : Addr} {T : Nat} (hT : 16 ≤ T) (hw : B.toNat + T ≤ 2 ^ 64)
     (hd : (⟨B, T⟩ : Region).Disjoint ⟨Q, 16⟩) :
     Spec.Aes.bytesAt (Proof.Cmac.xor2Mem m (B + BitVec.ofNat 64 (T - 16)) (B + BitVec.ofNat 64 (T - 16)) Q) B T =
       Spec.Siv.xorend (Spec.Aes.bytesAt m B T) (Spec.Aes.bytesAt m Q 16) := by
-  have hc : Region.Sub ⟨B + BitVec.ofNat 64 (T - 16), 16⟩ ⟨B, T⟩ := Offset.sub_base B (by omega)
-  have e : T = (T - 16) + 16 := by omega
+  have hc : Region.Sub ⟨B + BitVec.ofNat 64 (T - 16), 16⟩ ⟨B, T⟩ := Offset.sub_base B (by omega_using [hT])
+  have e : T = (T - 16) + 16 := by omega_using [hT]
   have hs := Proof.Cmac.Stream.bytesAt_append (Proof.Cmac.xor2Mem m (B + BitVec.ofNat 64 (T - 16))
     (B + BitVec.ofNat 64 (T - 16)) Q) B (T - 16) 16
   rw [← e] at hs
@@ -65,9 +65,9 @@ theorem xorend_mem (m : Mem) {B Q : Addr} {T : Nat} (hT : 16 ≤ T) (hw : B.toNa
   rw [← e] at tk dr
   rw [tk, dr, Proof.Cmac.bytesAt_frame (Proof.Cmac.xor2Mem_frame _ _ _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.base_disjoint B (by omega) (by omega)) (by omega),
+      exact Offset.base_disjoint B (by omega_using []) (by omega_using [hw])) (by omega_using [hw]),
     Proof.Cmac.xor2Mem_bytes _ ?_ ?_, Siv.xor_eq]
-  · rw [Offset.add_add]; exact Offset.disjoint B (by omega) (by omega) (by omega)
+  · rw [Offset.add_add]; exact Offset.disjoint B (by omega_using []) (by omega_using [hw]) (by omega_using [hw])
   · exact (hd.sub_left (fun a ha => hc a (Region.sub_prefix (base := B + BitVec.ofNat 64 (T - 16)) (len := 8)
       (len' := 16) (by decide) a ha))).sub_right (Offset.sub_base Q (d := 8) (n := 8) (k := 16) (by decide))
 
@@ -83,12 +83,12 @@ theorem long_spec (ciph : Spec.Cmac.Cipher) (k1 k2 d p : List Byte) (hd : d.leng
   have hT := kOf_tail hL16
   have hJ := jOf_rest hL16
   have hlT : (Spec.Siv.xorend (p.drop (16 * kOf p.length)) d).length = p.length - 16 * kOf p.length := by
-    rw [Siv.length_xorend (by rw [List.length_drop, hd]; omega), List.length_drop]
-  rw [Siv.s2vFinish_long _ hd (a := 16 * kOf p.length) (by omega)]
+    rw [Siv.length_xorend (by rw [List.length_drop, hd]; omega_using [hT]), List.length_drop]
+  rw [Siv.s2vFinish_long _ hd (a := 16 * kOf p.length) (by omega_using [hT])]
   generalize Spec.Siv.xorend (List.drop (16 * kOf p.length) p) d = tl at hlT ⊢
   conv => rhs; rw [← List.take_append_drop (16 * jOf p.length) tl]
-  rw [← List.append_assoc, Siv.macWith_split₂ _ _ _ (by rw [List.length_take]; omega)
-      (by rw [List.length_take, hlT]; omega) (by rw [List.length_drop, hlT]; omega)
-      (Or.inr (by rw [List.length_drop, hlT]; omega)), Proof.Cmac.xor_comm]
+  rw [← List.append_assoc, Siv.macWith_split₂ _ _ _ (by rw [List.length_take]; omega_using [hT])
+      (by rw [List.length_take, hlT]; omega_using [hJ]) (by rw [List.length_drop, hlT]; omega_using [hJ])
+      (Or.inr (by rw [List.length_drop, hlT]; omega_using [hJ])), Proof.Cmac.xor_comm]
 
 end VG.Proof.AesSiv

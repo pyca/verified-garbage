@@ -47,7 +47,7 @@ def jointGCell (c : Joint.Cfg) (u j : Nat) : BitVec 64 :=
 def jointGTop (c : Joint.Cfg) : Nat := if c.gw=9 then 255 else 63
 
 theorem jointGLen_lt_span (c : Joint.Cfg) : jointGLen c<jointGSpan c := by
-  unfold jointGLen jointGSpan; split <;> omega
+  unfold jointGLen jointGSpan; split <;> omega_using []
 
 def jointStableRanges (c : Joint.Cfg) : List (Nat×Nat) :=
   (jointStableFields c).map (·,8*c.K.M.n)++[(c.K.bits,64*c.K.M.n+1),(c.gBits,jointGLen c)]
@@ -79,17 +79,17 @@ theorem jointStable_table (c : Joint.Cfg) {a : Nat} (ha : 1≤a) (hb : a≤9)
   simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl|rfl|rfl
   · rw [tblPt_x]; exact nafTbl_slot c.K (by omega)
-  · rw [tblPt_y]; exact nafTbl_slot c.K (by omega)
-  · rw [tblPt_z]; exact nafTbl_slot c.K (by omega)
+  · rw [tblPt_y]; exact nafTbl_slot c.K (by omega_using [hb])
+  · rw [tblPt_z]; exact nafTbl_slot c.K (by omega_using [hb])
 
 theorem jointStable_cache2 (c : Joint.Cfg) {i : Nat} (hi : i<8) :
     c.cache+16*c.K.M.n*i∈jointStableFields c :=
-  List.mem_append_right _ (List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega),
+  List.mem_append_right _ (List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega_using [hi]),
     by rw [slot_two_mul]⟩)
 
 theorem jointStable_cache3 (c : Joint.Cfg) {i : Nat} (hi : i<8) :
     c.cache+16*c.K.M.n*i+8*c.K.M.n∈jointStableFields c :=
-  List.mem_append_right _ (List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega),
+  List.mem_append_right _ (List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega_using [hi]),
     by rw [slot_two_mul_add,Nat.add_assoc]⟩)
 
 theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat}
@@ -109,14 +109,14 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
     apply hk.unch.byte
     · intro w hw
       have := hsep _ ho w hw
-      dsimp only at this ⊢; omega
-    · have := hb _ ho; dsimp only at this; omega
+      dsimp only at this ⊢; omega_using [hj, this]
+    · have := hb _ ho; dsimp only at this; omega_using [hj, this]
   refine ⟨?_,?_,?_,?_,?_,?_⟩
   · rw [hf c.K.zero (by simp [jointStableFields,winRo]),h.zero]
   · intro a ha hb
-    rw [hf _ (jointStable_table c ha (by omega) (by simp [jacCoords])),
-      hf _ (jointStable_table c ha (by omega) (by simp [jacCoords])),
-      hf _ (jointStable_table c ha (by omega) (by simp [jacCoords]))]
+    rw [hf _ (jointStable_table c ha (by omega_using [hb]) (by simp [jacCoords])),
+      hf _ (jointStable_table c ha (by omega_using [hb]) (by simp [jacCoords])),
+      hf _ (jointStable_table c ha (by omega_using [hb]) (by simp [jacCoords]))]
     exact h.table a ha hb
   · intro j hj
     rw [hbits c.K.bits _ (by simp [jointStableRanges]) j hj]
@@ -125,11 +125,11 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
     rw [hbits c.gBits _ (by simp [jointStableRanges]) j hj]
     exact h.generator j hj
   · intro i hi
-    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
+    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega_using []) (by omega_using [hi]) (by simp [jacCoords]))]
     exact h.cache2 i hi
   · intro i hi
     rw [hf _ (jointStable_cache3 c hi),hf _ (jointStable_cache2 c hi),
-      hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
+      hf _ (jointStable_table c (a:=i+1) (by omega_using []) (by omega_using [hi]) (by simp [jacCoords]))]
     exact h.cache3 i hi
 
 theorem JointStable.of_mem {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat}
@@ -176,7 +176,7 @@ theorem JointCore.next {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat
     (hp : InvJ C (E c.K.R.x) (E c.K.R.y) (E c.K.R.z) B) (ht : External t) :
     JointCore c C base size Q u v External B t :=
   ⟨hi.to_tmv,h.stable.keep hk (fun r hr => by
-    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hL.stableSep,
+    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega_arith) hL.stableSep,
     ht,hi.point_tmv (jointLive_R c) hp⟩
 
 theorem JointCore.of_write {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
@@ -188,7 +188,7 @@ theorem JointCore.of_write {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v :
     (hi : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) E t) (ht : External t) :
     JointCore c C base size Q u v External A t :=
   ⟨hi.to_tmv,h.stable.keep (hk.mono hw) (fun r hr => by
-    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hL.stableSep,ht,
+    have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega_arith) hL.stableSep,ht,
     hk.invJ hL.lay h.field.scr hsl (fun x hx => h.field.sl x (jointLive_R c x hx)) hn h.point⟩
 
 end VG.Proof.Weierstrass.X86_64

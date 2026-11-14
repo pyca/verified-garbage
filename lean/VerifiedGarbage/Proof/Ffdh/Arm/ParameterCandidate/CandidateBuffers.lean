@@ -18,7 +18,7 @@ open VG VG.Arm VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 
 theorem CandidateContext.mask {s : State} {p : CandidateParams} {consumed : Nat}
     (h : CandidateContext p consumed s) : MaskCtx s p.out p.length :=
-  maskCtx_of_region s (by have := p.length_bounds; omega) p.outputFits h.outputWrite
+  maskCtx_of_region s (by have := p.length_bounds; omega_using [this]) p.outputFits h.outputWrite
 
 theorem CandidateContext.output_read {s : State} {p : CandidateParams} {consumed : Nat}
     (h : CandidateContext p consumed s) : InRegions (s.rd ++ s.wr) (State.addr p.out) p.length := by
@@ -27,8 +27,8 @@ theorem CandidateContext.output_read {s : State} {p : CandidateParams} {consumed
 
 theorem CandidateContext.read_context {s : State} {p : CandidateParams} {consumed : Nat}
     (h : CandidateContext p consumed s) : ReadContext p.out p.length s := by
-  refine ⟨h.saved.project ?_ ?_, by have := p.length_bounds; omega,
-    by have := p.length_bounds; omega, p.outputFits, ?_⟩
+  refine ⟨h.saved.project ?_ ?_, by have := p.length_bounds; omega_using [this],
+    by have := p.length_bounds; omega_using [this], p.outputFits, ?_⟩
   · intro d hd
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl <;> simp [candidateSlots]
@@ -36,14 +36,14 @@ theorem CandidateContext.read_context {s : State} {p : CandidateParams} {consume
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl <;> rfl
   · intro i hi
-    rw [VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega : i + 1 ≤ p.length)]
-    exact h.mask.readable (p.length - (i + 1)) (by omega)
+    rw [VG.Proof.Rsa.Arm.Recover.add_ofNat_sub32 _ (by omega_using [hi] : i + 1 ≤ p.length)]
+    exact h.mask.readable (p.length - (i + 1)) (by omega_using [hi])
 
 theorem CandidateContext.result_context {s : State} {p : CandidateParams} {consumed : Nat}
     (h : CandidateContext p consumed s) : ResultContext p.out p.usedPtr p.length consumed s := by
   refine ⟨h.saved.project ?_ ?_, ⟨p.outputFits, h.outputWrite⟩, ⟨p.usedFits, h.usedWrite⟩,
-    by have := p.length_bounds; omega, by have := p.length_bounds; omega,
-    by have := h.consumedBound; have := p.tapeCount; omega,
+    by have := p.length_bounds; omega_using [this], by have := p.length_bounds; omega_using [this],
+    by have := h.consumedBound; have := p.tapeCount; omega_arith,
     h.stackOutput.symm, h.stackUsed.symm, p.outputUsed⟩
   · intro d hd
     simp only [resultSlots, List.mem_cons, List.not_mem_nil, or_false] at hd

@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Idea.X86.ModesLit
 import VerifiedGarbage.Proof.Idea.X86.FbFinalLit
 
-/-! # IDEA-OFB artifacts on baseline x86 (32-bit) -/
+/-! # IDEA-OFB on x86 -/
 
 @[expose] public section
 

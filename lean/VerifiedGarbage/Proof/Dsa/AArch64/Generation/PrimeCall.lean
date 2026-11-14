@@ -98,7 +98,7 @@ theorem primeCallArgs_ok {bits : Nat} {F S A rp : Addr} {rand : List Byte} {N us
     have := h.tapeSize
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have l40 := L.ld (d := 40) (n := 8) (by decide)
   have l112 := L.ld (d := 112) (n := 8) (by decide)
   have l120 := L.ld (d := 120) (n := 8) (by decide)
@@ -128,7 +128,7 @@ def primeCallWr (F A : Addr) : List Region :=
 /-- The regions the call involves, as subregions of the generation's. -/
 theorem primeCall_rest_sub (rp : Addr) {used n : Nat} (h : used ≤ n) :
     Region.Sub ⟨rp + BitVec.ofNat 64 used, n - used⟩ ⟨rp, n⟩ :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [h])
 
 theorem primeCall_used_sub (F : Addr) : Region.Sub ⟨off F 152, 8⟩ ⟨F, frameBytes⟩ :=
   Offset.sub_base _ (by decide)
@@ -147,7 +147,7 @@ theorem primeCall_pre {bits : Nat} {F S A rp : Addr} {rand : List Byte}
   have hdc : (BitVec.ofNat 64 (domainCheck / 8)).toNat * 8 = domainCheck := by decide
   have hn := h.tapeSize
   have hl : (BitVec.ofNat 64 (rand.length - used)).toNat = rand.length - used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   have hFw := h.layout.geo.Fw
   have rest := primeCall_rest_sub rp h.usedBound
   have hval : Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) u.mem A = N := by
@@ -170,14 +170,14 @@ theorem primeCall_pre {bits : Nat} {F S A rp : Addr} {rand : List Byte}
   · have := g.tapeBound
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     have := h.usedBound
-    have : used % 2 ^ 64 = used := Nat.mod_eq_of_lt (by omega)
+    have : used % 2 ^ 64 = used := Nat.mod_eq_of_lt (by omega_using [hn, this])
     rw [this]
     have := Nat.mod_le (rp.toNat + used) (2 ^ 64)
-    omega
+    omega_arith
   · simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := Nat.mod_le (F.toNat + 152 % 2 ^ 64) (2 ^ 64)
     unfold frameBytes at hFw
-    omega
+    omega_using [hFw]
   · decide
   · rw [hval]; exact h.odd
   · rw [hval]; exact h.bitLen
@@ -221,7 +221,7 @@ theorem primeCall_entry {bits : Nat}
   have htape : Spec.Rsa.bytesAt u.mem (rp + BitVec.ofNat 64 used) (rand.length - used) = rand.drop used := by
     rw [hm]
     have happ := VG.Proof.Dsa.Generation.bytesAt_append s.mem rp used (rand.length - used)
-    rw [show used + (rand.length - used) = rand.length by omega, h.tapeBytes] at happ
+    rw [show used + (rand.length - used) = rand.length by omega_using [hu], h.tapeBytes] at happ
     generalize rand.length = L at happ ⊢
     rw [happ, List.drop_left' (VG.Proof.Bignum.bytesAt_length _ _ _)]
   -- The callee's regions are the generation's.
@@ -240,7 +240,7 @@ theorem primeCall_entry {bits : Nat}
     rw [hrd, hwr]
     refine Covers.trans (Covers.of_sub fun r hr => ?_) h.tapeCover
     obtain rfl := List.mem_singleton.mp hr
-    exact ⟨⟨rp, rand.length⟩, List.mem_cons_self, used, rfl, by simp only; omega⟩
+    exact ⟨⟨rp, rand.length⟩, List.mem_cons_self, used, rfl, by simp only; omega_using [hu]⟩
   have cW : Covers (primeCallWr F A) u.wr := cA.cons (cU.cons Covers.nil)
   exact ⟨primeCall_pre h g h0 h1 h2 h3 h4 hm hsp, cR.append_left cW.right, cW, hval, htape⟩
 
@@ -256,11 +256,11 @@ theorem primeCall_call_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppo
   have hd := T.depth bits
   have E := primeCall_entry h g h0 h1 h2 h3 h4 hm hsp hrd hwr
   have hl : (BitVec.ofNat 64 (rand.length - used)).toNat = rand.length - used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.usedBound; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.usedBound; omega_using [hn])]
   have hval := E.candidate
   have htape := E.tape
   refine WP.callF (T.verified bits hb).1 E.pre E.reads E.writes ?_
-    (by have : ProbablePrime.stack = 272 := rfl; omega)
+    (by have : ProbablePrime.stack = 272 := rfl; omega_using [hd, this])
   intro t hrd' hwr' hsp' hf _ hpost
   sig_post [ProbablePrime.contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs]
     at hpost
@@ -272,7 +272,7 @@ theorem primeCall_call_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppo
       simp only [Proof.Dsa.ProbablePrime.status] <;> decide
   refine ⟨hrd', hwr', hsp'.trans hsp, ?_, ?_, ?_⟩
   · apply BitVec.eq_of_toNat_eq
-    rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hr])]
   · intro b r hres
     have hw := hused b r hres
     simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, List.cons.injEq,
@@ -282,9 +282,9 @@ theorem primeCall_call_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppo
   · intro x hx
     have hxl : ∀ (d n : Nat), d + n ≤ 2 ^ 64 → ¬ (⟨off A d, n⟩ : Region).Contains x 1 →
         ¬ (d ≤ (x - A).toNat ∧ (x - A).toNat < d + n) := fun d n hdn hc h' =>
-      hc (by unfold Region.Contains; have := (Offset.lt_iff x A hdn).mpr h'; simp only [off]; omega)
+      hc (by unfold Region.Contains; have := (Offset.lt_iff x A hdn).mpr h'; simp only [off]; omega_using [this])
     by_cases hxA : (⟨A, domainCheck⟩ : Region).Contains x 1
-    · have hi : (x - A).toNat < domainCheck := by unfold Region.Contains at hxA; simp only at hxA; omega
+    · have hi : (x - A).toNat < domainCheck := by unfold Region.Contains at hxA; simp only at hxA; omega_using [hxA]
       have hx' : x = A + BitVec.ofNat 64 (x - A).toNat := by
         rw [VG.Proof.Bignum.ofNat_toNat64, BitVec.add_comm A, BitVec.sub_add_cancel]
       have h1' := hxl arithmetic arithmeticBytes (by decide) (hx _ List.mem_cons_self)
@@ -292,12 +292,12 @@ theorem primeCall_call_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppo
         (hx _ (List.mem_cons_of_mem _ List.mem_cons_self))
       have hk := hkeeps (x - A).toNat (by
         have : 8 * (BitVec.ofNat 64 (domainCheck / 8)).toNat = domainCheck := by decide
-        omega) (by
+        omega_using [hi, this]) (by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · simp only [Impl.Dsa.AArch64.ProbablePrime.len]; omega
-        · simp only; omega)
+        · simp only [Impl.Dsa.AArch64.ProbablePrime.len]; omega_using [h2']
+        · simp only; omega_using [h1'])
       rw [← hx'] at hk
       rw [hk, hm]
     · rw [hf x (fun r hr hc => by
@@ -323,7 +323,7 @@ theorem primeCallResult_ok {t : State} {F S : Addr} {V : Nat → Byte} {W : Nat 
       Frame [⟨F, frameBytes⟩] t.mem t'.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   unfold Impl.Dsa.AArch64.Generation.primeCallStatus
   have hz : (BitVec.ofNat 32 k).setWidth 64 = BitVec.ofNat 64 k := by
-    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hk]
   have run0 : WP isa (.block [.addImm .w .x0 .x0 0]) t fun u => u.gpr .x0 = BitVec.ofNat 64 k ∧ u.mem = t.mem := by
     brun [exec_addImm_w_zero, State.write, hx0, hz]
   refine WP.seq (WP.mono (WP.keep [.x0] run0 (by decide)) fun u ⟨⟨hx, hmu⟩, ku⟩ => ?_)
@@ -334,7 +334,7 @@ theorem primeCallResult_ok {t : State} {F S : Addr} {V : Nat → Byte} {W : Nat 
       Frame [⟨F, frameBytes⟩] t.mem v.mem ∧ v.rd = t.rd ∧ v.wr = t.wr)
     (WP.ite (decide (k = 0)) (by
       simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hx, Option.some.injEq]
-      rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> decide)
+      rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> decide)
       (fun h0 => ?_) (fun h0 => ?_)) fun v hv => ?_)
   · have h0' : k = 0 := of_decide_eq_true h0
     refine WP.block_nil ⟨Lu, ?_, hx, by rw [hmu]; exact Frame.refl _ _, ku.rd, ku.wr⟩
@@ -363,7 +363,7 @@ theorem primeCallResult_ok {t : State} {F S : Addr} {V : Nat → Byte} {W : Nat 
     exact (Frame.refl _ _).writeW List.mem_cons_self _ (cF F (by decide))
   · obtain ⟨Lv, Rv, hxv, fv, rdv, wrv⟩ := hv
     have hsum : BitVec.ofNat 64 k + BitVec.ofNat 64 k >>> 1 = BitVec.ofNat 64 (k + k / 2) := by
-      rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> decide
+      rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> decide
     have s152 : InRegions v.wr (v.sp + BitVec.ofNat 64 152) 8 := by
       rw [Lv.sp]; exact Lv.st (d := 152) (n := 8) (by decide)
     have run : WP isa (.block [.lsr .x .x3 .x0 1, .add .x .x0 .x0 .x3, .strSp .x0 152]) v
@@ -396,7 +396,7 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
   -- The frame and the hash workspace, but for word 19, are as they were.
   have fused : ∀ {k : Nat}, k < nW → k ≠ 19 →
       (⟨off F (8 * k), 8⟩ : Region).Disjoint ⟨off F 152, 8⟩ := fun hk hne =>
-    Offset.disjoint F (by omega) (by have : nW = 34 := rfl; omega) (by decide)
+    Offset.disjoint F (by omega_using [hne]) (by have : nW = 34 := rfl; omega_using [hk, this]) (by decide)
   have hlist : ∀ r ∈ [(⟨off A arithmetic, arithmeticBytes⟩ : Region), ⟨off A witness, bits / 8⟩, below F callStack],
       Region.Sub r ⟨A, domainCheck⟩ ∨ r = below F callStack := by
     intro r hr
@@ -409,7 +409,7 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
     refine ⟨fun o ho => ?_, fun k hk => ?_⟩
     · rw [C.frame _ (fun r hr hc => ?_)]
       · exact R.scr o ho
-      have hS := cS S (o := o) (n := 1) (by omega)
+      have hS := cS S (o := o) (n := 1) (by omega_using [ho])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact g.hashTest _ List.mem_cons_self _ (hS.byte (by rw [BitVec.sub_self]; decide)) hc
@@ -422,7 +422,7 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
         refine C.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         have hf : Region.Sub ⟨off F (8 * k), 8⟩ ⟨F, frameBytes⟩ :=
-          Offset.sub_base _ (by have : nW = 34 := rfl; have : frameBytes = 272 := rfl; omega)
+          Offset.sub_base _ (by have : nW = 34 := rfl; have : frameBytes = 272 := rfl; omega_arith)
         rcases hr with rfl | rfl | rfl | rfl
         · exact (g.arenaFrame.symm.sub_left hf).sub_right (Offset.sub_base _ (by decide))
         · exact (g.arenaFrame.symm.sub_left hf).sub_right
@@ -464,8 +464,8 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
     have hu := h.usedBound
     have hsum : BitVec.ofNat 64 (rand.length - used - rest.length) + BitVec.ofNat 64 used =
         BitVec.ofNat 64 (rand.length - rest.length) := by
-      rw [← BitVec.ofNat_add]; congr 1; omega
-    refine ⟨rand.length - rest.length, BitVec.ofNat 64 (if b then 1 else 3), by omega, Lt', ?_, fun h' => by simp at h',
+      rw [← BitVec.ofNat_add]; congr 1; omega_using [hsuf, hu]
+    refine ⟨rand.length - rest.length, BitVec.ofNat 64 (if b then 1 else 3), by omega_using [], Lt', ?_, fun h' => by simp at h',
       fun b' rest' h' => ?_, hframe, hrd, hwr⟩
     · have hk0 : Proof.Dsa.ProbablePrime.status (some (b, rest)) ≠ 0 := by
         cases b <;> simp [Proof.Dsa.ProbablePrime.status]
@@ -514,14 +514,14 @@ theorem PrimeCallPlan.changed_eq (p : PrimeCallPlan) :
 /-- A shaped candidate of `8 * len` bits has exactly that many: from the plan's
 `PrimeParams`. -/
 theorem PrimeParams.bitLength_eq (P : PrimeParams) : Spec.Dsa.bitLength P.N = 8 * P.len := by
-  have hk : 0 < 8 * P.len := by have := P.len2; omega
+  have hk : 0 < 8 * P.len := by have := P.len2; omega_using [this]
   obtain ⟨hlo, hhi⟩ := (VG.Proof.Dsa.bitLength_iff_bounds hk).mp
     (show Spec.Dsa.bitLength (P.N - 1) = 8 * P.len from P.predBits)
   apply (VG.Proof.Dsa.bitLength_iff_bounds hk).mpr
   have ho := P.odd
   have h3 := P.n3
   have heven : 2 ^ (8 * P.len) % 2 = 0 := by
-    rw [show 8 * P.len = (8 * P.len - 1) + 1 by omega, Nat.pow_succ]; omega
-  constructor <;> omega
+    rw [show 8 * P.len = (8 * P.len - 1) + 1 by omega_using [hk], Nat.pow_succ]; omega_using []
+  constructor <;> omega_arith
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -369,8 +369,8 @@ theorem wtail_ok {t : State} {B : Addr} {o n : Nat} (hB : t.gpr .rbx = B)
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax, .r14] (Q := fun u =>
     u.mem = t.mem.writeW (off B o) (word t.mem B o <<< 2) ∧ u.gpr .r14 = BitVec.ofNat 64 (n - 1) ∧
       u.zf = some (decide (n - 1 = 0)) ∧ u.mxcsr = t.mxcsr) (by
-    xrun [ea_at'', hB, hld, hst, h14, VG.Proof.MlKem.X86_64.ofNat64_pred hn (by omega),
-      VG.Proof.MlKem.X86_64.ofNat64_beq_zero (k := n - 1) (by omega), RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags]
+    xrun [ea_at'', hB, hld, hst, h14, VG.Proof.MlKem.X86_64.ofNat64_pred hn (by omega_using [hn']),
+      VG.Proof.MlKem.X86_64.ofNat64_beq_zero (k := n - 1) (by omega_using [hn']), RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags]
     ) rfl) fun u ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, k, d⟩
 
 theorem am_flag (w : BitVec 64) (P q : Bool) :
@@ -382,7 +382,7 @@ theorem am_flag (w : BitVec 64) (P q : Bool) :
   rw [e, h1]
   by_cases hd : w.toNat / 2 ^ 62 = 0
   · rw [hd, VG.Proof.MlKem.X86_64.ifp rfl]; cases P <;> cases q <;> decide
-  · rw [VG.Proof.MlKem.X86_64.ifn hd, decide_eq_false (by omega)]; cases P <;> cases q <;> decide
+  · rw [VG.Proof.MlKem.X86_64.ifn hd, decide_eq_false (by omega_using [hd])]; cases P <;> cases q <;> decide
 
 /-- After a window's multiplication's tail: the flag at `f`. -/
 theorem amTail_ok {t : State} {B : Addr} {o f : Nat} {P q : Bool} (hB : t.gpr .rbx = B)
@@ -427,7 +427,7 @@ theorem al_flag (K w : BitVec 64) (P q m : Bool) (hK : K &&& w = 0 ↔ m = false
     · rw [decide_eq_true ?_]; rfl
       have := hK.mpr rfl; rw [this]; decide
     · rw [decide_eq_false ?_]; rfl
-      intro h; have := hK.mp (BitVec.eq_of_toNat_eq (by show _ = 0; omega)); cases this
+      intro h; have := hK.mp (BitVec.eq_of_toNat_eq (by show _ = 0; omega_using [h])); cases this
   rw [h1, e]; cases P <;> cases q <;> cases m <;> decide
 
 /-- After squaring `j` of the last three's tail. -/
@@ -480,7 +480,7 @@ theorem load_ok {t : State} {B H : Addr} {o d n : Nat} {V : BitVec 64} (hB : t.g
   have hw' : t.mem.readW (H + BitVec.ofNat 64 (d + 8 * (n - 1))) 64 = V := hw
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax, .rcx, .r14] (Q := fun u =>
     u.mem = t.mem.writeW (off B o) V ∧ u.gpr .r14 = BitVec.ofNat 64 32 ∧ u.mxcsr = t.mxcsr) (by
-    xrun [ea_at'', ea_idx, hB, hdi, h15, VG.Proof.MlKem.X86_64.ofNat64_pred hn (by omega), idx_ofNat, hld, hw', hst,
+    xrun [ea_at'', ea_idx, hB, hdi, h15, VG.Proof.MlKem.X86_64.ofNat64_pred hn (by omega_using [hn']), idx_ofNat, hld, hw', hst,
       RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags]
     all_goals rfl) rfl) fun u ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, k, c⟩
 
@@ -496,7 +496,7 @@ theorem init_ok {t : State} {B : Addr} {o W : Nat} (hB : t.gpr .rbx = B) (hW : W
     refine ⟨rfl, ?_⟩
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (a := W) (by omega), Nat.mod_eq_of_lt (a := W) (by omega)]) rfl)
+    rw [Nat.mod_eq_of_lt (a := W) (by omega_using [hW]), Nat.mod_eq_of_lt (a := W) (by omega_using [hW])]) rfl)
     fun u ⟨⟨a, b, c⟩, k⟩ => ⟨a, b, k, c⟩
 
 theorem next_ok {t : State} {n : Nat} (h15 : t.gpr .r15 = BitVec.ofNat 64 n) (hn : n < 2 ^ 63) :
@@ -515,8 +515,8 @@ theorem next_ok {t : State} {n : Nat} (h15 : t.gpr .r15 = BitVec.ofNat 64 n) (hn
       have := congrArg BitVec.toNat h'
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_allOnes] at this
       have h1 : (1 : BitVec 64).toNat = 1 := rfl
-      rw [h1, Nat.mod_eq_of_lt (a := n) (by omega)] at this
-      omega
+      rw [h1, Nat.mod_eq_of_lt (a := n) (by omega_using [hn])] at this
+      omega_using [hn, h, this]
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r15] (Q := fun u =>
     u.gpr .r15 = BitVec.ofNat 64 n - 1 ∧ u.zf = some (decide (n = 0)) ∧ u.mem = t.mem ∧ u.mxcsr = t.mxcsr) (by
     xrun [h15, e, RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags]) rfl) fun u ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, k, d⟩
@@ -576,19 +576,19 @@ theorem shl_div62 (x : BitVec 64) {t : Nat} (ht : t < 32) :
     Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_mul_two_pow, Nat.testBit_mod_two_pow,
     Nat.testBit_div_two_pow]
   by_cases hi : i < 2
-  · simp only [show i + 62 < 64 by omega, hi, decide_true, Bool.true_and, show 2 * t ≤ i + 62 by omega]
-    congr 1; omega
-  · simp only [show ¬ i + 62 < 64 by omega, hi, decide_false, Bool.false_and]
+  · simp only [show i + 62 < 64 by omega_using [hi], hi, decide_true, Bool.true_and, show 2 * t ≤ i + 62 by omega_using [ht]]
+    congr 1; omega_using [ht]
+  · simp only [show ¬ i + 62 < 64 by omega_using [hi], hi, decide_false, Bool.false_and]
 
 /-- The digit of window `t` of word `n − 1` of `E`. -/
 theorem digit {V : BitVec 64} {E n t W : Nat} (hV : V.toNat = E / 2 ^ (64 * (n - 1)) % 2 ^ 64) (hn : 1 ≤ n)
     (hnW : n ≤ W) (ht : t < 32) :
     (V <<< (2 * t)).toNat / 2 ^ 62 = E / (2 ^ 2) ^ (32 * W - 1 - (32 * (W - n) + t)) % 2 ^ 2 := by
-  rw [shl_div62 V ht, hV, VG.Proof.RsaKeyGen.mod_div_mod (by omega), Nat.div_div_eq_div_mul, ← Nat.pow_add,
-    ← Nat.pow_mul, show 64 * (n - 1) + (62 - 2 * t) = 2 * (32 * W - 1 - (32 * (W - n) + t)) by omega]
+  rw [shl_div62 V ht, hV, VG.Proof.RsaKeyGen.mod_div_mod (by omega_using []), Nat.div_div_eq_div_mul, ← Nat.pow_add,
+    ← Nat.pow_mul, show 64 * (n - 1) + (62 - 2 * t) = 2 * (32 * W - 1 - (32 * (W - n) + t)) by omega_using [hn, hnW, ht]]
 
 theorem shl2_succ (x : BitVec 64) (t : Nat) : x <<< (2 * t) <<< 2 = x <<< (2 * (t + 1)) := by
-  rw [← BitVec.shiftLeft_add, show 2 * t + 2 = 2 * (t + 1) by omega]
+  rw [← BitVec.shiftLeft_add, show 2 * t + 2 = 2 * (t + 1) by omega_using []]
 
 theorem mov14_ok (u : State) : WP isa (.block [.mov32 .r14 (.imm 1)]) u fun t =>
     t.gpr .r14 = BitVec.ofNat 64 1 ∧ t.mem = u.mem ∧ Keep [.r14] u t ∧ t.mxcsr = u.mxcsr := by

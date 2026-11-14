@@ -38,7 +38,7 @@ theorem PTs_frame {s₀ : State} {rs : List Region} {m m' : Mem} (hf : Frame rs 
   have hk' := List.mem_range.mp hk
   split
   · rename_i h
-    exact hf _ fun r hr hc => hs r hr _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) hc
+    exact hf _ fun r hr hc => hs r hr _ (Offset.contains_base _ (by omega_using [h]) (by have := hT.wrap_s; omega_using [h, this])) hc
   · exact hf _ fun r hr hc => hd r hr _ (byte_dR hk') hc
 
 theorem cryptSplit_mx : cryptSplit.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide

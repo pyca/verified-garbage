@@ -94,7 +94,7 @@ theorem blockLoad_ok (s : State)
     rw [packedInput, lo₁, hi₁, decodeBlock_readW]
     simp only [BitVec.setWidth_eq]
     rw [show wordAddr (dataArg s) 0 = addr32 (dataArg s) from by simp [wordAddr, addr, addr32],
-      show wordAddr (dataArg s) 1 = addr32 (dataArg s) + 4 from addr_eq (by omega)]
+      show wordAddr (dataArg s) 1 = addr32 (dataArg s) + 4 from addr_eq (by omega_using [fit])]
   rw [input] at lo₂ hi₂
   refine WP.of_runBlock ⟨_, by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, rr, readSrc, Option.map_some,
@@ -160,7 +160,7 @@ theorem saveWithArg_ok (s : State) (slot : Nat)
   have hw₀ : ∀ i < 4, InRegions s₀.wr (addr32 (s₀.gpr .eax) + BitVec.ofNat 64 (4 * i)) 4 := by
     rw [ptr₀]; exact hw
   apply WP.mono (VG.Proof.Rc2.X86.saveCode_ok s₀ .eax savedReg 4 (by decide)
-    (by rw [ptr₀]; omega) hw₀)
+    (by rw [ptr₀]; omega_using [fit]) hw₀)
   intro s₁ h₁
   refine WP.of_runBlock ⟨s₁.setReg .ebp (s₁.gpr .eax), by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, rr, readSrc, Option.map_some], ?_⟩
@@ -204,8 +204,8 @@ theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
   have hregs : (List.range 4).map savedReg = savedRegs := by decide
   have separate : ∀ i ∈ List.range 4, savedReg i ≠ .eax := by decide
   have h := VG.Proof.Rc2.X86.restoreCode_ok s₀ .eax savedReg (List.range 4)
-    original.gpr (by rw [hptr]; omega)
-    (fun i hi => by have := List.mem_range.mp hi; omega) separate
+    original.gpr (by rw [hptr]; omega_using [fit])
+    (fun i hi => by have := List.mem_range.mp hi; omega_using [this]) separate
     (fun i hi => by rw [hptr]; exact hread i (List.mem_range.mp hi))
     (fun i hi => by rw [hptr]; exact hsaved i (List.mem_range.mp hi))
   rw [hregs] at h
@@ -217,7 +217,7 @@ theorem blockRestore_ok (original s : State) (hsaved : Saved original s)
 
 theorem savedSlot_work_disjoint (s : State) (i : Nat) (hi : i < 4) :
     (⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 (4 * i), 4⟩ : Region).Disjoint (workRegion s) :=
-  Offset.disjoint _ (by omega) (by omega) (by decide)
+  Offset.disjoint _ (by omega_using [hi]) (by omega_using [hi]) (by decide)
 
 theorem Saved.congr {original s t : State} (hs : Saved original s)
     (hbase : t.gpr .ebp = s.gpr .ebp) (hf : Frame [workRegion s] s.mem t.mem) :

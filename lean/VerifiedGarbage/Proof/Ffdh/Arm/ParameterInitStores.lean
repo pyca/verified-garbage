@@ -24,7 +24,7 @@ theorem budget_ok (s : State) {base : BitVec 32}
     simpa only [off, BitVec.add_zero] using h.write (off := 0) (by decide)
   have w4 := h.write (off := 4) (by decide)
   have a4 : State.addr (base + BitVec.ofNat 32 4) = off (State.addr base) 4 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   unfold Generation.budget pairStore
   ffrun [ptr, w0, w4, a4, off, BitVec.add_zero]
 
@@ -36,9 +36,9 @@ theorem width_ok (s : State) {base : BitVec 32}
   have w8 := h.write (off := 8) (by decide)
   have w12 := h.write (off := 12) (by decide)
   have a8 : State.addr (base + BitVec.ofNat 32 8) = off (State.addr base) 8 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   have a12 : State.addr (base + BitVec.ofNat 32 12) = off (State.addr base) 12 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   unfold Generation.width pairStore
   ffrun [ptr, w8, w12, a8, a12, off]
 
@@ -50,9 +50,9 @@ theorem entropy_ok (s : State) {base : BitVec 32}
   have w16 := h.write (off := 16) (by decide)
   have w20 := h.write (off := 20) (by decide)
   have a16 : State.addr (base + BitVec.ofNat 32 16) = off (State.addr base) 16 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   have a20 : State.addr (base + BitVec.ofNat 32 20) = off (State.addr base) 20 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   unfold Generation.entropy pairStore
   ffrun [ptr, zero, w16, w20, a16, a20, off]
 
@@ -63,9 +63,9 @@ theorem request_ok (s : State) {base : BitVec 32}
   have w24 := h.write (off := 24) (by decide)
   have w28 := h.write (off := 28) (by decide)
   have a24 : State.addr (base + BitVec.ofNat 32 24) = off (State.addr base) 24 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   have a28 : State.addr (base + BitVec.ofNat 32 28) = off (State.addr base) 28 :=
-    VG.Arm.addr_add (by have := h.nowrap; omega)
+    VG.Arm.addr_add (by have := h.nowrap; omega_using [this])
   unfold Generation.request pairStore
   ffrun [ptr, zero, w24, w28, a24, a28, off]
 

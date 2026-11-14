@@ -32,11 +32,11 @@ open VG.Spec.Gcm (Block blockAt StreamRepr ctxH ctxCiph ghashInput fullTag zeros
 open VG.Proof.Cmac (store4)
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : bytesAt m p k = (bytesAt m p n).take k := by
-  rw [show n = k + (n - k) by omega, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
+  rw [show n = k + (n - k) by omega_using [h], bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
 
 theorem tagLenOk_bounds {tl : Nat} (h : Spec.Gcm.tagLenOk tl = true) : 1 ≤ tl ∧ tl ≤ 16 := by
   simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at h
-  omega
+  omega_using [h]
 
 /-- What `verify` promises, for the additional data `a` and the text `ct`. -/
 def VerPost (s₀ : State) (a ct : List Byte) (s : State) : Prop :=
@@ -64,7 +64,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
       ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ := fun hd => tW.sub_right (Lay.wSub hd)
   have dW : ∀ {d k : Nat}, d + k ≤ 2560 → (164 ≤ d ∨ d + k ≤ 128) →
       (savedR (arg s₀ 6)).Disjoint ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ :=
-    fun h₁ h₂ => Lay.w_w (by omega) (by decide) h₁
+    fun h₁ h₂ => Lay.w_w (by omega_using [h₂]) (by decide) h₁
   refine WP.seq (WP.block_append (fin1_wp (wi := 6) h' (by decide) (by decide) fun s₁ h1 => ?_))
   obtain ⟨i5, v5⟩ := h1.args.at spf hin 5 (by decide) (show 4 * 5 = 20 from rfl)
   obtain ⟨s₂, run₂, h6₂, g₂, k₂⟩ : ∃ s₂, runBlock isa [.ldrSp .r6 20] s₁ = some s₂ ∧
@@ -172,7 +172,7 @@ theorem ver_run {s₀ : State} (h : streamVerifyPreArm s₀) {a ct : List Byte} 
               · exact (L.stk_w (by decide)).symm) (by decide), hb₄, k₁₃.mem,
             bytesAt_frame h1.frame (fun r hr => by
               simp only [List.mem_singleton] at hr; subst hr
-              exact dT (d := 128) (k := 36) (by decide)) (by omega)]
+              exact dT (d := 128) (k := 36) (by decide)) (by omega_using [])]
         have hX : (bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 0) (arg s₀ 5).toNat ++
               zeros (16 - (arg s₀ 5).toNat) = bytesAt s₆.mem (State.addr (arg s₀ 6) + BitVec.ofNat 64 256) 16) ↔
             (fullTag (ctxCiph s₀.mem (State.addr (s₀.gpr .r0)) (s₀.gpr .r1).toNat)

@@ -127,7 +127,7 @@ theorem aad_rel :
         (∀ r, r ≠ .rcx → s₃.gpr r = s.gpr r) ∧ s₃.mem = s.mem ∧ s₃.rd = s.rd ∧ s₃.wr = s.wr := by
       refine ⟨_, by xrun [h15, q₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
       · simp [gpr_setReg, hal]
-      · simp only [zf_arithFlags, gpr_setReg, ite_true, hal]; rw [and_self_beq (by omega)]
+      · simp only [zf_arithFlags, gpr_setReg, ite_true, hal]; rw [and_self_beq (by omega_using [h16])]
       · intro r h; simp [gpr_setReg, h]
       all_goals rfl
     have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he.keep (fun r hr => by
@@ -144,7 +144,7 @@ theorem aad_rel :
       (StreamTo.RelCT.of_imp (1 ≤ al) (fun _ _ h => by
         have e := h.1.1.2.2.symm.trans h.2
         simp only [Option.some.injEq, decide_eq_false_iff_not] at e
-        omega) fun h1 => ?_)
+        omega_using [e]) fun h1 => ?_)
     -- The length compared with 5.
     have w₅ : ∀ s, A3 M Ctx W SP R A al D n s →
         WP isa (.block [.alu .cmp .rcx (imm 5)]) s (A5 M Ctx W SP R A al D n) := fun s h => by
@@ -244,7 +244,7 @@ theorem sel_rel (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn)) {pre : Prog
       ⟨z, E, by rw [K.mem]; exact h.src, by rw [K.mem]; exact h.slen⟩
   have c := rel_next (cond_rel (F₁ := SEntry s₀ Ctx W SP A D S n sl) (F₂ := SEntry s₀' Ctx W SP A D S n sl)
       (fun _ h => condS_of h.toOneEntry hnl hal) (fun _ h => condS_of h.toOneEntry hnl' hal')
-      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega))
+      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_using [hlt]))
     (hw C hnl hal) (hw C' hnl' hal')
   refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     ((ho C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR').mono
@@ -253,13 +253,13 @@ theorem sel_rel (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn)) {pre : Prog
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
-    have a := (aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
+    have a := (aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega_using [h17])).mono
       (P' := fun (s₁ s₂ : State) => SEntry s₀ Ctx W SP A D S n sl s₁ ∧ SEntry s₀' Ctx W SP A D S n sl s₂)
       (fun _ _ g => ⟨g.1.toOneEntry.aadPre C.toOneCtx X hNp hnl hal hR,
         g.2.toOneEntry.aadPre C'.toOneCtx X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial
     exact (splitRun_rel_of_pre hpre hrel hq (fbody_rel hks hkr B hfr) C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR' a
-      (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega))
-      (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega))).mono
+      (fun s E => aad_mid hF C.toOneCtx X E.toOneEntry hNp hnl hal (by omega_using [h17]))
+      (fun s E => aad_mid hF C'.toOneCtx X' E.toOneEntry hNp' hnl' hal' (by omega_using [h17]))).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 

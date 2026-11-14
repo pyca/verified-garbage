@@ -27,7 +27,7 @@ theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
     exec (.strq t n off) s =
       some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
-  simp only [exec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
+  simp only [exec, addr, show off < 4096 * 16 by omega_using [ho], ho, and_self, ite_true, Option.bind_some,
     State.store, h]
 
 theorem off_add (p : Addr) (a b : Nat) :
@@ -63,31 +63,31 @@ theorem zeroStores_ok {c : Addr} {b J j : Nat} (hb : b % 16 = 0) (hbJ : b + 16 *
   induction j with
   | zero =>
     refine WP.block_nil (M := isa) ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, fun x => ?_⟩
-    rw [ite_eq_right_iff.mpr fun h => absurd h.2 (by omega)]
+    rw [ite_eq_right_iff.mpr fun h => absurd h.2 (by omega_using [h])]
   | succ j ih =>
     rw [zeroStores_step]
-    refine WP.block_append (WP.mono (ih (by omega)) fun s₁ ⟨g₁, z₁⟩ => ?_)
+    refine WP.block_append (WP.mono (ih (by omega_using [hj])) fun s₁ ⟨g₁, z₁⟩ => ?_)
     have ho : InRegions s₁.wr (s₁.gpr .x21 + BitVec.ofNat 64 (b + 16 * j)) 16 := by
-      rw [g₁.wr, g₁.gpr, hx21]; exact hw (16 * j) (by omega)
-    refine WP.block_cons_iff.mpr ⟨_, exec_strq (by omega) ho, WP.block_nil ⟨⟨g₁.gpr, g₁.v, g₁.rd, g₁.wr,
+      rw [g₁.wr, g₁.gpr, hx21]; exact hw (16 * j) (by omega_using [hj])
+    refine WP.block_cons_iff.mpr ⟨_, exec_strq (by omega_using [hb, hbJ, hj]) ho, WP.block_nil ⟨⟨g₁.gpr, g₁.v, g₁.rd, g₁.wr,
       g₁.sp⟩, fun x => ?_⟩⟩
     show (if (x - (s₁.gpr .x21 + BitVec.ofNat 64 (b + 16 * j))).toNat < 16 then
       (s₁.v .v0).extractLsb' (8 * (x - (s₁.gpr .x21 + BitVec.ofNat 64 (b + 16 * j))).toNat) 8
       else s₁.mem x) = _
     rw [g₁.gpr, hx21, g₁.v, hv]
     by_cases h : (x - (c + BitVec.ofNat 64 (b + 16 * j))).toNat < 16
-    · have h' := (Offset.lt_iff x c (by omega)).mp h
-      have h2 : b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * (j + 1) := by omega
+    · have h' := (Offset.lt_iff x c (by omega_using [hbJ, hj])).mp h
+      have h2 : b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * (j + 1) := by omega_using [h']
       simp only [h, h2, ite_true]
       ext i hi
       simp
-    · have h' := mt (Offset.lt_iff x c (d := b + 16 * j) (n := 16) (by omega)).mpr h
+    · have h' := mt (Offset.lt_iff x c (d := b + 16 * j) (n := 16) (by omega_using [hbJ, hj])).mpr h
       simp only [h, ite_false]
       rw [z₁ x]
       by_cases h'' : b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * j
-      · have h2 : b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * (j + 1) := by omega
+      · have h2 : b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * (j + 1) := by omega_using [h'']
         simp only [h'', h2]
-      · have h2 : ¬(b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * (j + 1)) := by omega
+      · have h2 : ¬(b ≤ (x - c).toNat ∧ (x - c).toNat < b + 16 * (j + 1)) := by omega_using [h', h'']
         simp only [h'', h2, ite_false]
 
 /-- `v0` zeroed, then `J` stores of it from `ctx + b`: `ctx[b, b + 16 J)` zeroed. -/
@@ -118,8 +118,8 @@ theorem zero_ok {c : Addr} {s : State} (hx21 : s.gpr .x21 = c)
 theorem ZeroedAt.byte {c : Addr} {b J : Nat} {m₀ m : Mem} (h : ZeroedAt c b J m₀ m) {k : Nat}
     (hk : k < 16 * J) (hb : b + 16 * J < 2 ^ 64) :
     m (c + BitVec.ofNat 64 (b + k)) = 0 := by
-  have h2 : b ≤ b + k ∧ b + k < b + 16 * J := by omega
-  rw [h, Mem.sub_ofNat_toNat c (by omega)]
+  have h2 : b ≤ b + k ∧ b + k < b + 16 * J := by omega_using [hk]
+  rw [h, Mem.sub_ofNat_toNat c (by omega_using [hk, hb])]
   simp only [h2, and_self, ite_true]
 
 theorem Zeroed.byte {c : Addr} {m₀ m : Mem} (h : Zeroed c 20 m₀ m) {k : Nat} (hk : k < 320) :
@@ -135,10 +135,10 @@ theorem ZeroedAt.frame {c : Addr} {b J : Nat} {m₀ m : Mem} (h : ZeroedAt c b J
   simp only [Region.Contains] at hx'
   rw [h x]
   refine ite_eq_right_iff.mpr fun ⟨h₁, h₂⟩ => absurd ?_ hx'
-  rw [Offset.toNat_sub_add x c (by omega),
-    show 2 ^ 64 - b + (x - c).toNat = (x - c).toNat - b + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.toNat_sub_add x c (by omega_using [hb]),
+    show 2 ^ 64 - b + (x - c).toNat = (x - c).toNat - b + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_using [])]
+  omega_arith
 
 theorem Zeroed.frame {c : Addr} {m₀ m : Mem} (h : Zeroed c 20 m₀ m) :
     Frame [⟨c + BitVec.ofNat 64 64, 320⟩] m₀ m := ZeroedAt.frame h (by decide)

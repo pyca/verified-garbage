@@ -36,7 +36,7 @@ theorem nafDigit_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve}
       NafCore K C base size P (Naf5.byte k) (Naf5.residual k j) t := by
   rw [Naf.digit]
   apply WP.seq
-  refine WP.mono (nafRead_ok h.field.scr (by have:=hL.bits; omega) hc (h.stable.bits j hj))
+  refine WP.mono (nafRead_ok h.field.scr (by have:=hL.bits; omega_using [hj, this]) hc (h.stable.bits j hj))
     fun u ⟨u8,uz,ku⟩ => ?_
   have cu := h.of_keeps ku (by decide)
   have kp : ProgKeep K.M base wk (winOther K) s u := nafPrefix_keep ku (by
@@ -48,14 +48,14 @@ theorem nafDigit_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve}
     have he : Naf5.residual k j=2*Naf5.residual k (j+1) := by
       have hh := Naf5.recurrence k j
       rw [hm0] at hh
-      split at hh <;> omega
+      split at hh <;> omega_using [hh]
     apply WP.block_nil
     exact ⟨kp,he.symm ▸ cu⟩
   · have hm0 : Naf5.magnitude k j≠0 := fun he =>
       of_decide_eq_false hn ((Naf5.byte_zero_iff k j).mpr he)
     apply WP.seq
     refine WP.mono (nafEntry_ok hL hAcc hBitsWk hm
-      (by rw [nafMagnitude_byte]; omega)
+      (by rw [nafMagnitude_byte]; omega_using [hm0])
       (by rw [nafMagnitude_byte]; exact Naf5.magnitude_le k j)
       (by rw [nafMagnitude_byte]; exact (Naf5.magnitude_odd_or_zero k j).resolve_left hm0)
       cu u8) fun v ⟨kv,cv,iv,jv⟩ => ?_
@@ -100,7 +100,7 @@ theorem nafStep_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} 
       t.gpr .esi=BitVec.ofNat 32 j ∧ t.zf=some (decide (j=0)) := by
   rw [Naf.windowStep]
   apply WP.seq
-  refine wp_decCounter (by omega) hc fun a ca ka ma => WP.block_nil ?_
+  refine wp_decCounter (by omega_using []) hc fun a ca ka ma => WP.block_nil ?_
   have cka : CKeeps [.esi] s a := ⟨ka.1,ma,ka.2⟩
   have ia := h.of_keeps cka (by decide)
   apply WP.assoc
@@ -109,10 +109,10 @@ theorem nafStep_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} 
   have cb : b.gpr .esi=BitVec.ofNat 32 j := by
     rw [kb.gpr _ (by decide),ca,Nat.add_sub_cancel]
   apply WP.seq
-  refine WP.mono (nafDigit_ok hL hJ hAcc hBitsWk hm hC ha hOne (by omega) hP ib cb)
+  refine WP.mono (nafDigit_ok hL hJ hAcc hBitsWk hm hC ha hOne (by omega_using [hj]) hP ib cb)
     fun c ⟨kc,ic⟩ => ?_
   have cc : c.gpr .esi=BitVec.ofNat 32 j := (kc.gpr _ (by decide)).trans cb
-  refine wp_testCounter (by omega) cc fun t ft zt => WP.block_nil ?_
+  refine wp_testCounter (by omega_using [hj]) cc fun t ft zt => WP.block_nil ?_
   have kt : CKeeps [] c t := ⟨fun r _ => congrFun ft.gpr r,ft.mem,ft.rd,ft.wr⟩
   have kp := kb.trans kc
   refine ⟨⟨?_,?_⟩,ic.of_keeps kt (by decide),(congrFun ft.gpr .esi).trans cc,zt⟩
@@ -149,10 +149,10 @@ theorem nafLoop_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} 
   apply countLoop_ok (Inv:=I) (n:=256)
   · intro j a hj1 hj256 hi
     obtain ⟨ka,ca,ac⟩ := hi
-    have he : j-1+1=j := by omega
+    have he : j-1+1=j := by omega_using [hj1]
     have cp : NafCore K C base size P (Naf5.byte k) (Naf5.residual k (j-1+1)) a := he.symm ▸ ca
     have ap : a.gpr .esi=BitVec.ofNat 32 (j-1+1) := he.symm ▸ ac
-    refine WP.mono (nafStep_ok hL hJ hAcc hBitsWk hm hC ha hOne (by omega) hP cp ap)
+    refine WP.mono (nafStep_ok hL hJ hAcc hBitsWk hm hC ha hOne (by omega_using [hj256]) hP cp ap)
       fun t ⟨kt,ct,tc,tz⟩ => ⟨⟨ka.trans kt,ct,tc⟩,tz⟩
   · intro t ht
     obtain ⟨kt,ct,tc⟩ := ht
@@ -225,7 +225,7 @@ theorem nafWindow_init_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : 
   apply WP.seq
   refine WP.mono (nafTable_ok hL hAcc hJ hm hC ha hOne hP hI hp) fun a ia => ?_
   have za : wordsVal a.mem base K.zero K.M.n=0 := by
-    rw [ia.unch.wordsVal (fun w hw => ?_) (by have := hL.lay.le K.zero (nafRo_slots K _ (by simp [winRo])); have := hI.scr.nowrap; omega),hz]
+    rw [ia.unch.wordsVal (fun w hw => ?_) (by have := hL.lay.le K.zero (nafRo_slots K _ (by simp [winRo])); have := hI.scr.nowrap; omega_arith),hz]
     simp only [nafTableWrites,List.mem_append,List.mem_map,List.mem_cons,List.not_mem_nil,or_false] at hw
     rcases hw with ⟨x,hx,rfl⟩|rfl|rfl|rfl
     · exact hL.lay.apart K.zero x (nafRo_slots K _ (by simp [winRo])) (by
@@ -239,12 +239,12 @@ theorem nafWindow_init_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {C : 
           obtain ⟨i,hi,he⟩ := List.mem_map.mp hx
           have hi' := List.mem_range.mp hi
           rw [hL.n] at *
-          omega)
+          omega_using [sep, he, hi'])
     · exact hL.lay.tmp _ (nafRo_slots K _ (by simp [winRo]))
     · exact Or.inl (hAcc.sl _ (nafRo_slots K _ (by simp [winRo])))
     · have := hL.lay.le K.zero (nafRo_slots K _ (by simp [winRo]))
       have := hL.size_le
-      dsimp only [Mont.outW]; omega
+      dsimp only [Mont.outW]; omega_arith
   have sa : NafStable K C base P (Naf5.byte k) a :=
     ⟨za,ia.table,ia.digits hL hBitsWk hb⟩
   rw [WP.block_append_iff]

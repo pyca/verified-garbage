@@ -40,8 +40,8 @@ theorem Scr.wide {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 theorem Scr.toNat_add {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat} (hd : d < size) :
     (s.gpr .edi + BitVec.ofNat 32 d).toNat = base.toNat + d := by
   have := hs.nowrap; have := hs.edi_toNat
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), hs.edi_toNat,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith), hs.edi_toNat,
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- A part of the working space is within the writable regions. -/
 theorem Scr.covers {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
@@ -57,28 +57,28 @@ variable {is : List Instr} {s : State} {Q : State → Prop} {base : Addr} {size 
 theorem ld_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
     (k : ∀ s', Upd s s' r (s.mem.readW (off base d) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.mov r (.mem (sc d)) :: is)) s Q := by
-  have e := Scr.addr hs (d := d) (by omega)
+  have e := Scr.addr hs (d := d) (by omega_using [hd])
   exact wp_ldm (B := s.gpr .edi) rfl (by rw [e]; exact hs.read hd) fun s' u => by rw [e] at u; exact k s' u
 
 /-- `mov [edi + d], r`. -/
 theorem st_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) (s.gpr r)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store (sc d) r :: is)) s Q := by
-  have e := Scr.addr hs (d := d) (by omega)
+  have e := Scr.addr hs (d := d) (by omega_using [hd])
   exact wp_stm (B := s.gpr .edi) rfl (by rw [e]; exact hs.write hd) fun s' u => by rw [e] at u; exact k s' u
 
 /-- `add r, [edi + d]`. -/
 theorem addm_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
     (k : ∀ s', Upd s s' r (s.gpr r + s.mem.readW (off base d) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .add r (.mem (sc d)) :: is)) s Q := by
-  have e := Scr.addr hs (d := d) (by omega)
+  have e := Scr.addr hs (d := d) (by omega_using [hd])
   exact wp_addm (B := s.gpr .edi) rfl (by rw [e]; exact hs.read hd) fun s' u => by rw [e] at u; exact k s' u
 
 /-- `and r, [edi + d]`. -/
 theorem andm_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
     (k : ∀ s', Upd s s' r (s.gpr r &&& s.mem.readW (off base d) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .and r (.mem (sc d)) :: is)) s Q := by
-  have e := Scr.addr hs (d := d) (by omega)
+  have e := Scr.addr hs (d := d) (by omega_using [hd])
   have hin := hs.read hd
   rw [← e] at hin
   refine cons (by simp [exec, execAlu, sc, VG.Impl.Mont.X86.at_, readSrc_mem (B := s.gpr .edi) rfl hin]; rfl)
@@ -89,7 +89,7 @@ theorem andm_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 4 ≤ size)
 theorem ld8_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (k : ∀ s', Upd s s' r ((s.mem (off base d)).setWidth 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.movzx8 r (sc d) :: is)) s Q := by
-  have e := Scr.addr hs (d := d) (by omega)
+  have e := Scr.addr hs (d := d) (by omega_using [hd])
   refine cons (s' := s.setReg r ((s.mem (off base d)).setWidth 32)) ?_ (k _ (Upd.setReg _ _ _))
   have hin := hs.read (d := d) (n := 1) hd
   simp only [exec, State.load8, sc, VG.Impl.Mont.X86.at_, ea_mk, e, hin, ↓reduceIte, Option.map_some]
@@ -98,7 +98,7 @@ theorem ld8_ok {r : Reg} {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
 theorem st8_ok {r : Reg8} {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 (sc d) r :: is)) s Q := by
-  have e := Scr.addr hs (d := d) (by omega)
+  have e := Scr.addr hs (d := d) (by omega_using [hd])
   refine cons (s' := { s with mem := s.mem.writeW (off base d) ((s.gpr r.reg).setWidth 8) }) ?_
     (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   have hout := hs.write (d := d) (n := 1) hd
@@ -114,8 +114,8 @@ theorem or_byte (b : Byte) (v : Nat) (hv : v < 256) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_ofNat]
   have := b.isLt
-  rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega), Nat.mod_eq_of_lt (a := v) (by omega),
-    Nat.mod_eq_of_lt (a := v) (by omega), Nat.mod_eq_of_lt (Nat.or_lt_two_pow (n := 8) (by omega) (by omega))]
+  rw [Nat.mod_eq_of_lt (a := b.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := v) (by omega_using [hv]),
+    Nat.mod_eq_of_lt (a := v) (by omega_using [hv]), Nat.mod_eq_of_lt (Nat.or_lt_two_pow (n := 8) (by omega_using []) (by omega_using [hv]))]
 
 /-- The byte at `scratch + o` ORed with `v`. -/
 theorem orByte_ok {o v : Nat} (hs : Scr s base size) (ho : o + 1 ≤ size) (hv : v < 256)

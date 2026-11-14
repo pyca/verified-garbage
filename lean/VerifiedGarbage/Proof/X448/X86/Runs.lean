@@ -192,7 +192,7 @@ theorem sqBody_ok {base : Addr} (o : Index) {m : Nat} (hm : m + 1 < 2 ^ 16) {s :
   rw [WP.seq_iff]
   refine WP.mono (mulE hf.scr hf.ctx hf.bounded o o o) fun v ⟨kv, bv, _⟩ => ?_
   have cv : v.gpr .esi = BitVec.ofNat 32 (m + 1) := (kv.regs.1 _ (by decide)).trans he
-  refine WP.mono (decCounter_ok (k := m) (by omega) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
+  refine WP.mono (decCounter_ok (k := m) (by omega_using [hm]) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
   exact ⟨FInv.of_counter ⟨kv.scr hf.scr, kv.ctx hf.ctx, bv⟩ wg wm wr ww,
     (wg _ (by decide)).trans (kv.regs.1 _ (by decide)), cw, wz⟩
 
@@ -205,9 +205,9 @@ theorem sqn_rel (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 
         t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr)
       fun s₁ s₂ _ => ⟨setCounter_ok s₁ n hn', setCounter_ok s₂ n hn'⟩).mono (fun _ _ h => h) ?_
     rintro t₁ t₂ ⟨-, s₁, s₂, ⟨f₁, f₂, e⟩, ⟨c₁, g₁, m₁, r₁, w₁⟩, ⟨c₂, g₂, m₂, r₂, w₂⟩⟩
-    have hn1 : n - 1 + 1 = n := by omega
+    have hn1 : n - 1 + 1 = n := by omega_using [hn]
     refine ⟨FInv.of_counter f₁ g₁ m₁ r₁ w₁, FInv.of_counter f₂ g₂ m₂ r₂ w₂, ?_, by rw [hn1]; exact c₁,
-      by rw [hn1]; exact c₂, by omega⟩
+      by rw [hn1]; exact c₂, by omega_using [hn']⟩
     rw [g₁ _ (by decide), g₂ _ (by decide), e]
   · intro m
     have tr : RelCT isa (SqRel base m)
@@ -223,9 +223,9 @@ theorem sqn_rel (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 
     rw [eval_ne z₁, eval_ne z₂]
     refine ⟨rfl, fun hz => ⟨f₁, f₂, by rw [p₁, p₂, h.2.2.1]⟩, fun hz => ?_⟩
     have hm0 : m ≠ 0 := fun h0 => by simp [h0] at hz
-    refine ⟨m - 1, by omega, f₁, f₂, by rw [p₁, p₂, h.2.2.1], ?_, ?_, by have := h.2.2.2.2.2; omega⟩
-    · rw [show m - 1 + 1 = m by omega]; exact c₁
-    · rw [show m - 1 + 1 = m by omega]; exact c₂
+    refine ⟨m - 1, by omega_using [hm0], f₁, f₂, by rw [p₁, p₂, h.2.2.1], ?_, ?_, by have := h.2.2.2.2.2; omega_using [this]⟩
+    · rw [show m - 1 + 1 = m by omega_using [hm0]]; exact c₁
+    · rw [show m - 1 + 1 = m by omega_using [hm0]]; exact c₂
 
 theorem invert_rel (base : Addr) : RelCT isa (RF base) Impl.X448.X86.invert (RF base) := by
   have h : RelCT isa (RF base) _ (RF base) :=
@@ -281,12 +281,12 @@ theorem FE.argByte {bs : State → Addr} {σ s : State} (h : FE bs σ s) {n : Na
   have e : VG.X86.Taint.argByte s k = argAddr σ 0 + BitVec.ofNat 64 (k - 4) := by
     simp only [argAddr, Nat.mul_zero, Nat.add_zero]
     rw [show (σ.gpr .esp + BitVec.ofNat 32 4).setWidth 64 = addr (σ.gpr .esp) 4 from rfl,
-      addr_eq (by omega)]
+      addr_eq (by omega_using [hfit, h4, hk])]
     simp only [VG.X86.Taint.argByte, h.sp]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
+    congr 2; omega_using [h4]
   have hc : (⟨argAddr σ 0, n⟩ : Region).Contains (VG.X86.Taint.argByte s k) 1 := by
-    rw [e]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [e]; exact Offset.contains_base _ (by omega_using [h4, hk]) (by omega_using [hfit, hk])
   rw [h.frame _ fun r hr hr' => hd r hr _ hc hr']
   simp only [VG.X86.Taint.argByte, h.sp]
 
@@ -323,7 +323,7 @@ theorem FE.agreeA {bs : State → Addr} {σ₁ σ₂ s₁ s₂ : State} (h₁ : 
     · exact esp
     · exact edi
   · simp only [τa, VG.X86.Taint.depth, Nat.zero_add] at hk ⊢
-    rw [h₁.argByte (by omega) hd₁ h4 (by omega), h₂.argByte (by omega) hd₂ h4 (by omega)]
+    rw [h₁.argByte (by omega_using [hfit₁, h4, hk]) hd₁ h4 (by omega_using [hk]), h₂.argByte (by omega_using [hfit₂, h4, hk]) hd₂ h4 (by omega_using [hk])]
     exact hm k h4 hk
 
 end VG.Proof.X448.X86

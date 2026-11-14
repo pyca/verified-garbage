@@ -27,8 +27,8 @@ theorem chaining_bytes (s₀ : State) (k : Nat) (hk : k ≤ N s₀) :
   cases k with
   | zero => simp only [chaining,st_readW,List.take_zero]; exact (bytesAt_toList _ _).symm
   | succ k =>
-    rw [next_take_succ _ _ k (by rw [length_blocksAt]; omega),
-      list_getD (by rw [length_blocksAt]; omega),getElem_blocksAt (hk := by omega)]
+    rw [next_take_succ _ _ k (by rw [length_blocksAt]; omega_using [hk]),
+      list_getD (by rw [length_blocksAt]; omega_using [hk]),getElem_blocksAt (hk := by omega_using [hk])]
     exact (congrArg Vector.toList (st_readW _ _)).trans (bytesAt_toList _ _).symm
 
 theorem block_bytes (s₀ : State) (k : Nat) (hk : k < N s₀) :
@@ -60,6 +60,6 @@ theorem data_done {s₀ : State} {m : Mem}
   · intro k hk _
     have hk' : k < N s₀ := by simpa using hk
     simp only [List.getElem_map,List.getElem_range,Function.comp_def]
-    rw [block_bytes _ _ hk',list_getD (by simp [length_decrypt,length_blocksAt]; omega)]
+    rw [block_bytes _ _ hk',list_getD (by simp [length_decrypt,length_blocksAt]; omega_using [hk'])]
 
 end VG.Proof.AesCbc.AArch64.Decrypt

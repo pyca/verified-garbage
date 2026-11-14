@@ -21,7 +21,7 @@ registration whose functions of distinct names are at distinct addresses).
 function's `init`, compression function and digest (`dn`), which the calls
 of `MdFns` reach, in a view `W` of the frame's words; it holds of any view
 that differs from `W` only in other words (`HT.upd`). `GT`: the slots of the
-table of `Hash` hold the addresses of MGF1's hash function's streaming
+table of `MdHash` hold the addresses of MGF1's hash function's streaming
 functions, which the calls of `Fns` reach, and its digest length.
 -/
 
@@ -93,7 +93,7 @@ theorem HT.congr {H : Impl.Pbkdf2.Md.X86_64.Hash} {dn : String} {f : MdFns} {W W
   subst hsy
   exact ⟨h8.trans h.wi, h9.trans h.wc, h10.trans h.wd, h.fi, h.fc, h.fd⟩
 
-/-- The slots of the table of `Hash` (frame words 11 to 14) hold the
+/-- The slots of the table of `MdHash` (frame words 11 to 14) hold the
 addresses `sy` gives `G`'s `init`, `update` and `finalize`, which the calls
 of `g` reach, and its digest length. -/
 structure GT (G : Impl.Pbkdf2.Md.X86_64.Stream) (g : Impl.Mgf1.X86_64.Table.Fns) (W : Nat → BitVec 64)
@@ -137,7 +137,7 @@ structure Tabs where
   g : Impl.Mgf1.X86_64.Table.Fns
 
 /-- What `encode` and `checkEncoding` need of the tables at `pH` (of
-`MdHash`) and `pG` (of `Hash`) in the state `s`: the words `hSlots` and
+`MdHash`) and `pG` (of `MdHash`) in the state `s`: the words `hSlots` and
 `gSlots` copy, the addresses of `H`'s and `G`'s functions and `G`'s digest
 length, which the calls of `f` and `g` reach. -/
 structure TabsAt (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (G : Impl.Pbkdf2.Md.X86_64.Stream)
@@ -148,7 +148,7 @@ structure TabsAt (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (G :
   g0 : s.mem.readW (off pG 0) 64 = s.syms G.initN
   g1 : s.mem.readW (off pG 8) 64 = s.syms G.updN
   g2 : s.mem.readW (off pG 16) 64 = s.syms G.finN
-  g4 : s.mem.readW (off pG 32) 64 = BitVec.ofNat 64 G.D
+  g4 : s.mem.readW (off pG 48) 64 = BitVec.ofNat 64 G.D
   hf : HTF H dn f s.syms
   gf : GTF G g s.syms
 
@@ -156,7 +156,7 @@ structure TabsAt (H : Impl.Pbkdf2.Md.X86_64.Hash) (dn : String) (f : MdFns) (G :
 agree on. -/
 def tabWords (m : Mem) (pH pG : Addr) : List (BitVec 64) :=
   [m.readW (off pH 0) 64, m.readW (off pH 24) 64, m.readW (off pH 32) 64, m.readW (off pG 0) 64,
-    m.readW (off pG 8) 64, m.readW (off pG 16) 64, m.readW (off pG 32) 64]
+    m.readW (off pG 8) 64, m.readW (off pG 16) 64, m.readW (off pG 48) 64]
 
 /-- What the calls of the digest of `H` need of its code, which the kernel
 checks of each hash function: it never loads MXCSR or writes `rsp`, and

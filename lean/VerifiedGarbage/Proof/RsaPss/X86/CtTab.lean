@@ -96,16 +96,16 @@ theorem initT_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
   · refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => WP.block_nil ⟨(hc.upd u1 (by decide) (by decide)).upd u2
       (by decide) (by decide), by rw [u2.mem, u1.mem]; exact hi, by rw [u2.gpr, u1.gpr, hc.ebp]⟩
   have fitS : (scr + BitVec.ofNat 32 oSt).toNat + h.H.S ≤ 2 ^ 32 := by
-    rw [hg.scr_lt (by decide), hS]; unfold oSt oRsa at *; omega
+    rw [hg.scr_lt (by decide), hS]; unfold oSt oRsa at *; omega_using [hN, hBl, fit]
   have hsub : Region.Sub ⟨(scr + BitVec.ofNat 32 oSt).setWidth 64, h.H.S⟩ (sR scr oSt (h.N + h.B)) := by
     rw [hg.scrA (by decide), hS]; exact fun _ h => h
   have args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSt →
       InitArgs (H := h.H.st) s .ebx (scr + BitVec.ofNat 32 oSt) := fun σ s hc bx => by
     refine ⟨bx, by decide, ?_, ?_, ?_, fitS⟩
-    · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega
+    · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega_arith
     · rw [hg.scrA (by decide), show h.H.st.S = h.N + h.B from hS]
-      exact Covers.one (hg.wr hc.st (by unfold oSt oRsa; omega))
-    · exact (((hg.low hc.st.ok (o := oSt) (n := h.N + h.B) (by unfold oSt oRsa; omega)).symm.sub_left
+      exact Covers.one (hg.wr hc.st (by unfold oSt oRsa; omega_using [hN, hBl]))
+    · exact (((hg.low hc.st.ok (o := oSt) (n := h.N + h.B) (by unfold oSt oRsa; omega_using [hN, hBl])).symm.sub_left
         (stk_low hg hc)).sub_right hsub)
   refine tcallP_vp hg (k := 0) (by decide) hT.ne.1 (fun _ _ h => h.1.1)
     (fun σ s t v ⟨⟨hc, hi, bx⟩, sy⟩ u => ⟨⟨hc.upd u (by decide) (by decide), u.mem ▸ hi,
@@ -125,7 +125,7 @@ theorem initT_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
   refine ⟨hc.write fr (fun r hr => ?_) af.rd af.wr af.esp (af.cs .ebp (by simp [calleeSaved])), hI σ _ _ hi fr, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hg.inW (by unfold oSt oRsa; omega)
+    · exact hg.inW (by unfold oSt oRsa; omega_using [hN, hBl])
     · exact ⟨L.LOW, by simp [Lay.W], fun _ h => h⟩
   · rw [hg.scrA (by decide)] at rp
     obtain ⟨e, -⟩ := h.ok.link.repr _ _ _ rp
@@ -145,7 +145,7 @@ theorem cmpT_vp (hg : Geo L scr) {X : State → Mem → Prop} (hT : TabAt L h dn
   have hso := h.so_le
   have hBl := h.B_le
   have hB64 := h.B_ge
-  have hB0 : 0 < h.B := by omega
+  have hB0 : 0 < h.B := by omega_using [hB64]
   have fit := hg.fit
   unfold oRsa at fit
   have a0 : sa scr oCW = scr.setWidth 64 := by simp [sa, oCW]
@@ -154,7 +154,7 @@ theorem cmpT_vp (hg : Geo L scr) {X : State → Mem → Prop} (hT : TabAt L h dn
       s.gpr .eax = scr + BitVec.ofNat 32 (oSt + h.N) →
       CmpArgs h.N h.B h.H.so s (scr + BitVec.ofNat 32 oSt) scr := fun σ s hc bx ax => by
     refine ⟨bx, by rw [ax, BitVec.add_assoc, BitVec.ofNat_add_ofNat], hc.ebp, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega
+    · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega_arith
     · rw [aSt]; exact Covers.one (hg.wr hc.st (by pomega))
     · rw [← a0]; exact Covers.one (hg.wr hc.st (by pomega))
     · rw [aSt, ← a0]; exact Geo.sep (by pomega) (by pomega) (by pomega)
@@ -210,7 +210,7 @@ theorem outT_vp (hg : Geo L scr) (hd : DigCerts h) {X : State → Mem → Prop} 
       s.gpr .eax = scr + BitVec.ofNat 32 oDig →
       DigArgs h.N s (scr + BitVec.ofNat 32 oSel) (scr + BitVec.ofNat 32 oDig) := fun σ s hc bx ax => by
     refine ⟨bx, ax, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega
+    · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega_arith
     · rw [aB]; exact Covers.one (hg.rd hc.st (by pomega))
     · rw [aA]; exact Covers.one (hg.wr hc.st (by pomega))
     · rw [aB, aA]; exact Geo.sep (by pomega) (by pomega) (by pomega)

@@ -37,7 +37,7 @@ theorem setWidth_8_64 (x : BitVec 8) : x.setWidth 64 = (x.setWidth 32).setWidth 
   simp only [BitVec.getLsbD_setWidth]
   by_cases h : i < 32
   · simp [h]
-  · rw [BitVec.getLsbD_of_ge x i (by omega)]; simp [h]
+  · rw [BitVec.getLsbD_of_ge x i (by omega_using [h])]; simp [h]
 
 theorem gather_ok (s : State) {a b c d : Pos}
     (ha : InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 (srcOff a)) 1)
@@ -97,7 +97,7 @@ theorem tail_ok (s : State) {e : Nat} (he : 5 ≤ e) {wd : Option (Arr × Nat)}
   have e1 := scr_rw hw (d := 4) (n := 4) (by decide)
   have e2 := scr_rw hw (d := 8) (n := 4) (by decide)
   have e3 := scr_rw hw (d := 12) (n := 4) (by decide)
-  have ex := scr_rw hw (d := extraOff + 4 * (8 - e)) (n := 4) (by unfold extraOff; omega)
+  have ex := scr_rw hw (d := extraOff + 4 * (8 - e)) (n := 4) (by unfold extraOff; omega_using [he])
   have w0 : InRegions s.wr (s.gpr .rcx) 16 := by
     have := scr_w hw (d := 0) (n := 16) (by decide); rwa [BitVec.add_zero] at this
   have d0 : dword (L v) 0 = v 0 := dword_L v (by decide)
@@ -107,7 +107,7 @@ theorem tail_ok (s : State) {e : Nat} (he : 5 ≤ e) {wd : Option (Arr × Nat)}
   have sx : (s.mem.writeW (s.gpr .rcx) (L v)).readW
       (s.gpr .rcx + BitVec.ofNat 64 (extraOff + 4 * (8 - e))) 32 =
       s.mem.readW (s.gpr .rcx + BitVec.ofNat 64 (extraOff + 4 * (8 - e))) 32 :=
-    Mem.readW_writeW_sep (sep_base' _ (by unfold extraOff; omega) (by unfold extraOff; omega))
+    Mem.readW_writeW_sep (sep_base' _ (by unfold extraOff; omega_using []) (by unfold extraOff; omega_using []))
       (by decide)
   unfold tail
   cases wd with
@@ -118,11 +118,11 @@ theorem tail_ok (s : State) {e : Nat} (he : 5 ≤ e) {wd : Option (Arr × Nat)}
   | some aq =>
     obtain ⟨a, q⟩ := aq
     have hq4 := hq a q rfl
-    have eq := scr_rw hw (d := off a + 4 * q) (n := 4) (by have := off_lt a; omega)
+    have eq := scr_rw hw (d := off a + 4 * q) (n := 4) (by have := off_lt a; omega_using [hq4, this])
     have sq : (s.mem.writeW (s.gpr .rcx) (L v)).readW (s.gpr .rcx + BitVec.ofNat 64 (off a + 4 * q)) 32 =
         s.mem.readW (s.gpr .rcx + BitVec.ofNat 64 (off a + 4 * q)) 32 :=
-      Mem.readW_writeW_sep (sep_base' _ (by have := off_ge a; omega)
-        (by have := off_lt a; omega)) (by decide)
+      Mem.readW_writeW_sep (sep_base' _ (by have := off_ge a; omega_using [this])
+        (by have := off_lt a; omega_using [hq4, this])) (by decide)
     xrun [VG.Proof.Cast5.X86_64.ea_at, State.store128, w0, h1, e0, e1, e2, e3, ex, eq, rd_lane0, rd_lane1,
       rd_lane2, rd_lane3, d0, d1, d2, d3, sx, sq, List.cons_append, List.nil_append, bswap32_eq]
     exact ⟨rfl, rfl⟩
@@ -137,12 +137,12 @@ theorem ofNat_setWidth8 (x : BitVec 8) : BitVec.ofNat 8 (x.setWidth 32).toNat = 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth]
   have := x.isLt
-  omega
+  omega_using []
 
 theorem gIdx_lt (m : Mem) (p : Addr) (a b c d : Pos) {k : Nat} (_ : k < 4) :
     (gIdx m p a b c d k).toNat < 256 := by
   have (x : Byte) : (x.setWidth 32).toNat < 256 := by
-    rw [BitVec.toNat_setWidth]; have := x.isLt; omega
+    rw [BitVec.toNat_setWidth]; have := x.isLt; omega_using []
   match k with
   | 0 => exact this _
   | 1 => exact this _
@@ -162,7 +162,7 @@ theorem line_ok (s : State) (st : XZ) (l : Impl.Cast5.Line) (hl : lineOk l = tru
   simp only [lineOk, Bool.and_eq_true, decide_eq_true_eq] at hl
   obtain ⟨⟨⟨⟨⟨⟨ha, hb⟩, hc⟩, hd⟩, he5⟩, _⟩, hwd⟩ := hl
   have hin (q : Pos) (hq : q.2 < 16) : InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 (srcOff q)) 1 :=
-    scr_rw hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega)
+    scr_rw hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega_using [hq, this])
   rw [line_eq]
   refine WP.seq (WP.mono_syms (WP.keep [.rax, .r9, .r10] (gather_ok s (hin _ ha) (hin _ hb) (hin _ hc)
     (hin _ hd)) (by rfl)) fun u ⟨⟨u0, um, urd, uwr⟩, uk⟩ usy => ?_)

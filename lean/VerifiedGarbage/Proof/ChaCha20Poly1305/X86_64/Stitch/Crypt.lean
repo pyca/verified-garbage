@@ -545,7 +545,7 @@ theorem preS_mid (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 44
       (tailPS_ok _ hl (by omega_arith) (by omega_arith) w₁ r₁ d₁ c₁ R₁)
   · simp only [decide_eq_false_iff_not] at hc
     obtain ⟨w₁, r₁, d₁, c₁, R₁⟩ := bp rfl
-    exact fin (by generalize v.callee.vl = vl; cases vl <;> decide +kernel) (bulkP_ok _ hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
+    exact fin (by generalize v.callee.vl = vl; cases vl <;> decide +kernel) (bulkP_ok _ hl (by omega_using [hc]) (by omega) w₁ r₁ d₁ c₁ R₁)
 
 theorem beq_ofNat_zero {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n == 0) = decide (n = 0) := by
   by_cases hn : n = 0

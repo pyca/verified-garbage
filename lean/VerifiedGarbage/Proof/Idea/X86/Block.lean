@@ -41,10 +41,10 @@ theorem hi16 (b0 b1 b2 b3 : BitVec 8) :
   intro i hi
   rw [BitVec.getLsbD_ushiftRight, cat4, BitVec.getLsbD_setWidth, cat2, decide_eq_true hi, Bool.true_and]
   by_cases h : i < 8
-  · simp only [show ¬16 + i < 8 by omega, show ¬16 + i < 16 by omega, show 16 + i < 24 by omega, h,
-      ite_true, ite_false, show 16 + i - 16 = i by omega]
-  · simp only [show ¬16 + i < 8 by omega, show ¬16 + i < 16 by omega, show ¬16 + i < 24 by omega, h,
-      ite_false, show 16 + i - 24 = i - 8 by omega]
+  · simp only [show ¬16 + i < 8 by omega_using [], show ¬16 + i < 16 by omega_using [], show 16 + i < 24 by omega_using [h], h,
+      ite_true, ite_false, show 16 + i - 16 = i by omega_using []]
+  · simp only [show ¬16 + i < 8 by omega_using [], show ¬16 + i < 16 by omega_using [], show ¬16 + i < 24 by omega_using [h], h,
+      ite_false, show 16 + i - 24 = i - 8 by omega_using []]
 theorem lo16 (b0 b1 b2 b3 : BitVec 8) :
     (b0 ++ b1 ++ b2 ++ b3 : BitVec 32) &&& 65535 = (b2 ++ b3).setWidth 32 := by
   apply BitVec.eq_of_getLsbD_eq
@@ -54,23 +54,23 @@ theorem lo16 (b0 b1 b2 b3 : BitVec 8) :
     simp only [Nat.testBit_two_pow_sub_one, hi, decide_true, Bool.true_and]
   rw [BitVec.getLsbD_and, hm, cat4, BitVec.getLsbD_setWidth, cat2, decide_eq_true hi, Bool.true_and]
   by_cases h : i < 8
-  · simp only [h, ite_true, show i < 16 by omega, decide_true, Bool.and_true]
+  · simp only [h, ite_true, show i < 16 by omega_using [h], decide_true, Bool.and_true]
   · by_cases h' : i < 16
     · simp only [h, h', ite_true, ite_false, decide_true, Bool.and_true]
     · simp only [h, h', ite_false, decide_false, Bool.and_false]
-      exact (BitVec.getLsbD_of_ge _ _ (by omega)).symm
+      exact (BitVec.getLsbD_of_ge _ _ (by omega_using [h'])).symm
 theorem join16 (y₁ y₂ : BitVec 16) :
     (y₁.setWidth 32).rotateRight 16 ||| y₂.setWidth 32 = (y₁ ++ y₂ : BitVec 32) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   rw [BitVec.getLsbD_or, BitVec.getLsbD_rotateRight, BitVec.getLsbD_append, BitVec.getLsbD_setWidth]
   by_cases h : i < 16
-  · simp only [h, ite_true, BitVec.getLsbD_setWidth, show 16 % 32 + i < 32 by omega,
+  · simp only [h, ite_true, BitVec.getLsbD_setWidth, show 16 % 32 + i < 32 by omega_using [h],
       decide_true, Bool.true_and, hi]
-    rw [BitVec.getLsbD_of_ge _ _ (by omega), Bool.false_or]
+    rw [BitVec.getLsbD_of_ge _ _ (by omega_using []), Bool.false_or]
   · simp only [h, ite_false, BitVec.getLsbD_setWidth, decide_eq_true hi, decide_true,
-      Bool.true_and, show i - (32 - 16 % 32) < 32 by omega, show i - (32 - 16 % 32) = i - 16 by omega]
-    rw [BitVec.getLsbD_of_ge y₂ _ (by omega), Bool.or_false]
+      Bool.true_and, show i - (32 - 16 % 32) < 32 by omega_using [hi], show i - (32 - 16 % 32) = i - 16 by omega_using []]
+    rw [BitVec.getLsbD_of_ge y₂ _ (by omega_using [h]), Bool.or_false]
 
 theorem bswap_readW' (m : Mem) (A : Addr) (k : Nat) :
     bswap (m.readW (A + BitVec.ofNat 64 k) 32) =
@@ -89,7 +89,7 @@ theorem bswap_byte (w : BitVec 32) {i : Nat} (hi : i < 4) :
     rw [← h]
     simp [hj]
   rw [show bswap w = byteRev32 w from rfl, e i hi]
-  obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+  obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
   all_goals rfl
 
 /-- The bytes of two words, high first. -/
@@ -100,14 +100,14 @@ theorem join_byte (y₁ y₂ : BitVec 16) {i : Nat} (hi : i < 4) :
   intro t ht
   rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_append, decide_eq_true ht, Bool.true_and]
-  obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
-  · simp only [show ¬24 - 8 * 0 + t < 16 by omega, show (0 : Nat) < 2 by omega, ite_true, ite_false]
-    congr 1; omega
-  · simp only [show ¬24 - 8 * 1 + t < 16 by omega, show (1 : Nat) < 2 by omega, ite_true, ite_false]
-    congr 1; omega
-  · simp only [show 24 - 8 * 2 + t < 16 by omega, show ¬(2 : Nat) < 2 by omega, ite_true, ite_false,
+  obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [hi]
+  · simp only [show ¬24 - 8 * 0 + t < 16 by omega_using [], show (0 : Nat) < 2 by omega_using [], ite_true, ite_false]
+    congr 1; omega_using []
+  · simp only [show ¬24 - 8 * 1 + t < 16 by omega_using [], show (1 : Nat) < 2 by omega_using [], ite_true, ite_false]
+    congr 1; omega_using []
+  · simp only [show 24 - 8 * 2 + t < 16 by omega_using [ht], show ¬(2 : Nat) < 2 by omega_using [], ite_true, ite_false,
       Bool.true_and]
-  · simp only [show 24 - 8 * 3 + t < 16 by omega, show ¬(3 : Nat) < 2 by omega, ite_true, ite_false,
+  · simp only [show 24 - 8 * 3 + t < 16 by omega_using [ht], show ¬(3 : Nat) < 2 by omega_using [], ite_true, ite_false,
       Bool.true_and]
 
 /-! ## Single instructions -/
@@ -158,7 +158,7 @@ theorem slot_src {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {d : Nat} 
 
 theorem addrP {P : BitVec 32} {A : Addr} (hA : P.setWidth 64 = A) (hf : P.toNat + 8 ≤ 2 ^ 32) {d : Nat}
     (hd : d < 8) : addr P d = A + BitVec.ofNat 64 d := by
-  rw [addr_eq (by omega), hA]
+  rw [addr_eq (by omega_using [hf, hd]), hA]
 
 theorem load_run {z : Spec.Idea.Schedule} {P : BitVec 32} {A : Addr} (s : State) (h : BlockAt z P A s) :
     ∃ s', runBlock isa load s = some s' ∧
@@ -214,10 +214,10 @@ theorem load_run {z : Spec.Idea.Schedule} {P : BitVec 32} {A : Addr} (s : State)
 /-! ## The rounds -/
 
 theorem regB_succ (n : Nat) : regB (n + 1) = regC n := by
-  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega]
+  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega_using []]
 
 theorem regC_succ (n : Nat) : regC (n + 1) = regB n := by
-  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega]
+  unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h, show (n + 1) % 2 = 0 ↔ ¬ n % 2 = 0 by omega_using []]
 
 theorem regBC_ok (n : Nat) : (regB n == .ecx && regC n == .edi || regB n == .edi && regC n == .ecx) = true := by
   unfold regB regC; by_cases h : n % 2 = 0 <;> simp [h]
@@ -228,8 +228,8 @@ theorem rounds_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
         Holds (roundsSpec z n x) (regB n) (regC n) s' ∧ KeepT roundWrites s s'
   | 0, _, s, hx, _ => ⟨s, by simp [runBlock_nil], hx, (Keep.refl _ _).toT⟩
   | n + 1, hn, s, hx, hk => by
-    obtain ⟨s₁, h₁, x₁, e₁⟩ := rounds_run z x n (by omega) s hx hk
-    obtain ⟨s₂, h₂, x₂, e₂⟩ := round_run n (by omega) (regB n) (regC n) (regBC_ok n) z _ s₁ x₁
+    obtain ⟨s₁, h₁, x₁, e₁⟩ := rounds_run z x n (by omega_using [hn]) s hx hk
+    obtain ⟨s₂, h₂, x₂, e₂⟩ := round_run n (by omega_using [hn]) (regB n) (regC n) (regBC_ok n) z _ s₁ x₁
       (hk.keepT e₁ (by decide))
     refine ⟨s₂, ?_, ?_, e₁.trans (by decide) e₂⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
@@ -288,7 +288,7 @@ theorem writeW4_other (m : Mem) (A : Addr) (v : BitVec 32) {i : Nat} (hi : i < 4
     (m.writeW (A + BitVec.ofNat 64 4) v) (A + BitVec.ofNat 64 i) = m (A + BitVec.ofNat 64 i) := by
   refine Mem.write_apply ?_
   rw [Offset.add_sub_add_left, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [hi]
 
 /-- Byte `i` of a 32-bit word written at `a`. -/
 theorem writeW4_byte (m : Mem) (a : Addr) (v : BitVec 32) {i : Nat} (hi : i < 4) :
@@ -305,12 +305,12 @@ theorem store_block (m : Mem) (A : Addr) (y : Spec.Idea.State) :
   by_cases h4 : i < 4
   · rw [writeW4_other _ _ _ h4, show A + BitVec.ofNat 64 i = A + BitVec.ofNat 64 0 + BitVec.ofNat 64 i by
       rw [Offset.add_ofNat_add_ofNat, Nat.zero_add], writeW4_byte _ _ _ h4, bswap_byte _ h4, join_byte _ _ h4]
-    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+    obtain rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_using [h4]
     all_goals rfl
   · rw [show A + BitVec.ofNat 64 i = A + BitVec.ofNat 64 4 + BitVec.ofNat 64 (i - 4) by
-      rw [Offset.add_ofNat_add_ofNat, show 4 + (i - 4) = i by omega], writeW4_byte _ _ _ (by omega),
-      bswap_byte _ (by omega), join_byte _ _ (by omega)]
-    obtain rfl | rfl | rfl | rfl : i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+      rw [Offset.add_ofNat_add_ofNat, show 4 + (i - 4) = i by omega_using [h4]], writeW4_byte _ _ _ (by omega_using [hi]),
+      bswap_byte _ (by omega_using [hi]), join_byte _ _ (by omega_using [hi])]
+    obtain rfl | rfl | rfl | rfl : i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [hi, h4]
     all_goals rfl
 
 /-! ## A block -/
@@ -352,7 +352,7 @@ theorem cryptBlockWith_run (z : Spec.Idea.Schedule) (pre : List Instr) (R : BitV
       (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     have := h.key.fit
-    rw [addr_eq (by simp only [dataSlot, slots] at *; omega), addr_eq (by simp only [t0Slot, slots] at *; omega)]
+    rw [addr_eq (by simp only [dataSlot, slots] at *; omega_using [this]), addr_eq (by simp only [t0Slot, slots] at *; omega_using [this])]
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mov_run .eax _ _ s₃ (slot_src k₃ (d := dataSlot) (by decide))
   rw [slot₃] at v₄

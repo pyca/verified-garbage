@@ -25,7 +25,7 @@ theorem pdImported_ok (s : State) {base dst pp ep xp : BitVec 32} {len k eLen N 
   rintro v ⟨ready, modulus, r2, frameV, restV⟩
   have hv := hu.after_workspace frameV restV ready.ptr
   have check : PdCheckState base len (Spec.Rsa.modulusWords k) N R v :=
-    ⟨ready, by have := hv.stack.nowrap; omega,
+    ⟨ready, by have := hv.stack.nowrap; omega_using [this],
       ⟨_, hv.stack.frameWritable, Offset.contains_base _ (by decide) (by decide)⟩,
       hv.stack.separate.symm.sub_right (Offset.sub_base _ (by decide)),
       modulus.trans hu.modulus, r2.trans hu.r2⟩

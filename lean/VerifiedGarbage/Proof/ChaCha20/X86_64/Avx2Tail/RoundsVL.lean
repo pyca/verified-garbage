@@ -57,7 +57,7 @@ theorem stepV_ok {B : Nat} (i : HI) (hi : hiOkV B i = true) {ws : Nat → W} {s 
     (h : HYB B ws s) :
     WP isa (.block (ymmOfV i)) s fun s' => HYB B (fun l => hstep (ws l) i) s' ∧
       (∀ r l, B ≤ xidx r → s'.lane r l = s.lane r l) ∧ Frame' s s' := by
-  have ne : ∀ {d r : XReg}, xidx d < B → B ≤ xidx r → r ≠ d := fun hd hr e => by subst e; omega
+  have ne : ∀ {d r : XReg}, xidx d < B → B ≤ xidx r → r ≠ d := fun hd hr e => by subst e; omega_using [hr, hd]
   cases i with
   | add d a b =>
     simp only [hiOkV, Bool.and_eq_true, decide_eq_true_eq] at hi
@@ -134,7 +134,7 @@ theorem doubleRound1V_ok {vs : Nat → CState} {s : State} (h : HB 1 vs s) (hm :
   rw [doubleRound1V_eq]
   refine WP.mono (blockV_ok (B := 8) _ (by decide) (hy_wordsOf s)) fun s' ⟨h', k', f⟩ =>
     ⟨hb_of h' (fun k hk l hl => ?_) (by decide), ym_keep hm k', f⟩
-  obtain rfl : k = 0 := by omega
+  obtain rfl : k = 0 := by omega_using [hk]
   rw [dr1_words, blk_wordsOf h hk hl]
 
 theorem doubleRound2V_ok {vs : Nat → CState} {s : State} (h : HB 2 vs s) (hm : YM s) :

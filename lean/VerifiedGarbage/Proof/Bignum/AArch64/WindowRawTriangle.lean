@@ -38,7 +38,7 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
   have hn := hs.nowrap
   have hP : productBase k + 8 * (16 * k + 2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [hZ]
   have sep : ∀ j < 8, j ≠ Public.aAcc → j ≠ Public.aTmp →
       slot (8 * k) j + 64 * k ≤ productBase k ∨
         productBase k + 8 * (16 * k + 2) ≤ slot (8 * k) j := by
@@ -46,18 +46,18 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     have := slot_sep (w := 8 * k) hj1
     have := slot_sep (w := 8 * k) hj2
     unfold productBase slot Public.aAcc Public.aTmp at *
-    omega
+    omega_arith
   unfold triangle
   refine WP.seq (WP.mono (WindowSetup.start_ok hs h0 hH hZ)
     fun u ⟨⟨hu8, hu12, hu7, hum⟩, ku⟩ => ?_)
-  refine WP.seq (WP.mono (WindowSparse.padding_ok (e := productBase k) (hs.congr ku.wr) hu8 hu12 hu7 (by omega) hk')
+  refine WP.seq (WP.mono (WindowSparse.padding_ok (e := productBase k) (hs.congr ku.wr) hu8 hu12 hu7 (by omega_using [hP]) hk')
     fun v ⟨hv0, hvo, kv⟩ => ?_)
   have ksv := ku.trans kv
   have hvs : Outside B (productBase k) (8 * (16 * k + 2)) s.mem v.mem := by
     intro x hx
-    exact (hvo x (by omega)).trans (congrArg (fun m : Mem => m x) hum)
+    exact (hvo x (by omega_using [hx])).trans (congrArg (fun m : Mem => m x) hum)
   have hHv : Hdr v.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_using []] using hvs)).hdr hH
   refine WP.seq (WP.mono (start_ok (hs.congr ksv.wr)
     ((ksv.gpr .x0 (by decide)).trans h0) hHv hZ ha hk'
     ((kv.gpr .x12 (by decide)).trans hu12))
@@ -76,24 +76,24 @@ theorem triangle_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     have hvs1 : Outside B (productBase k) (8 * (16 * k + 2)) s.mem v1.mem := by
       intro x hx
       exact (congrArg (fun m : Mem => m x) hv1m).trans (hvs x hx)
-    exact hvs1.trans (hr.frame.mono (by omega) (by omega))
+    exact hvs1.trans (hr.frame.mono (by omega_using []) (by omega_using []))
   have hHv3 : Hdr v2.mem B (8 * k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs3)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega_using []] using hvs3)).hdr hH
   refine WP.mono (WindowSetup.square_ok (hs.congr kv3.wr)
     ((kv3.gpr .x0 (by decide)).trans h0) hHv3 hZ ha)
     fun t ⟨⟨ht8, ht9, ht12, htm⟩, kt⟩ => ?_
   have kout := kv3.trans kt
   refine ⟨?_, ?_, ht8, ht9, ht12, (kt.gpr .x7 (by decide)).trans ((hr.keep.gpr .x7 (by decide)).trans ((kstart.gpr .x7 (by decide)).trans ((kv.gpr .x7 (by decide)).trans hu7))), ?_⟩
   · rw [htm,show 16*k+2 = 16*k+2 from rfl,wv_add,
-      show productBase k+8*(16*k) = productBase k+128*k by omega,
-      hr.frame.wv (d := productBase k+128*k) (k := 2) (by omega) (by omega),hv1zero,
+      show productBase k+8*(16*k) = productBase k+128*k by omega_using [],
+      hr.frame.wv (d := productBase k+128*k) (k := 2) (by omega_using []) (by omega_using [hn, hP]),hv1zero,
       Nat.mul_zero,Nat.add_zero,hr.value]
     apply Square.crossValue_congr
     intro j hj
     rw [hv1m]
-    exact hvs.word (by have := sep a ha ha1 ha2; omega) (by
+    exact hvs.word (by have := sep a ha ha1 ha2; omega_using [hj, this]) (by
       have := slot_le (w := 8*k) ha
-      omega)
+      omega_using [hZ, hn, hj, this])
   · intro x hx
     exact (congrArg (fun m : Mem => m x) htm).trans (hvs3 x hx)
   · exact kout.mono (by decide)

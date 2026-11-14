@@ -45,12 +45,12 @@ theorem shape : ShapeD (P := mdParams) md 64 where
 /-- A digest of the first `n` words. -/
 theorem shapeN {n : Nat} (hn : n ≤ 8) {o : List Instr} (ho : o = out64 n) :
     ShapeD (P := { mdParams with out := o }) md (8 * n) where
-  le := by show 8 * n ≤ 64; omega
+  le := by show 8 * n ≤ 64; omega_using [hn]
   len := shape.len
   out s hin hout hd := by
     subst ho
-    refine (out64_ok (n := n) (by omega) (inRegions_prefix hin (by show 8 * n ≤ 64; omega)) hout
-      (hd.sub_left (Region.sub_prefix (by show 8 * n ≤ 64; omega)))).mono fun s' ⟨g, rd, wr, sp, m⟩ => ⟨g, rd, wr, sp, ?_⟩
+    refine (out64_ok (n := n) (by omega_using [hn]) (inRegions_prefix hin (by show 8 * n ≤ 64; omega_using [hn])) hout
+      (hd.sub_left (Region.sub_prefix (by show 8 * n ≤ 64; omega_using [hn])))).mono fun s' ⟨g, rd, wr, sp, m⟩ => ⟨g, rd, wr, sp, ?_⟩
     rw [m, digest_take _ _ hn]
 
 theorem shape384 : ShapeD (P := mdParams384) md 48 := shapeN (n := 6) (by decide) rfl

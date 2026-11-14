@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 public import VerifiedGarbage.Impl.X448.AArch64.BaseFn
@@ -13,6 +17,49 @@ import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.X448.BaseAdd
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+
+/-! ### `X448.AArch64.Base.Finish`, which only this module used -/
+
+section
+
+/-!
+# X448 of the base point on AArch64: `Y² / X²`, encoded
+
+Untrusted: everything here is checked by Lean. `Y²` and `X²` go to the ladder's
+`x₂` and `z₂` slots; the ladder's inversion and finish (`Fast.invert_ok`,
+`Fast.finish_ok`) encode `Y² · (X²)^(p-2)` to the output, reloaded from the
+working space, and restore the callee-saved registers.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X448.AArch64.Base
+
+open VG VG.AArch64 VG.Impl.X448.AArch64 VG.Impl.X448.AArch64.Base
+open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 Saved ofs)
+open VG.Proof.X448.AArch64.Weak (Index Env)
+open VG.Proof.X448.AArch64.Fast
+open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
+
+local notation "EV" => VG.Proof.X448.AArch64.Weak.E
+
+/-- `Y²` to slot 1 and `X²` to slot 2. -/
+theorem squares_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) :
+    WP isa (.block (Impl.X448.AArch64.Fast.codeOf [.mul X2 AY AY, .mul Z2 AX AX])) s fun t =>
+      FKeep base s t ∧ BEnv t.mem base ∧
+      EV t.mem base = Function.update (Function.update (EV s.mem base) 1 (EV s.mem base 1 * EV s.mem base 1)) 2
+        (EV s.mem base 0 * EV s.mem base 0) := by
+  refine block_codeOf (mulOp hs hb 1 1 1 (Or.inl rfl) fun t1 k1 b1 _ _ e1 => ?_)
+  refine mulOp (k1.scr hs) b1 2 0 0 (Or.inl rfl) fun t2 k2 b2 _ _ e2 => WP.block_nil ⟨k1.trans k2, b2, ?_⟩
+  rw [e2, e1]
+  rfl
+
+end VG.Proof.X448.AArch64.Base
+
+end
+
+end
+
 
 /-!
 # X448 of the base point on AArch64: the whole function
@@ -70,15 +117,15 @@ theorem Pre.of (s : State) (h : Proof.X448.x448BaseAArch64.pre s) : Pre s := by
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem far_output {base p : Addr} (hd : (⟨p, 56⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < 8192) : 56 ≤ ofs p (off base i) := by
-  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega) (by omega))
+  refine Nat.le_of_not_lt fun h => hd _ ?_ (Offset.contains_base base (d := i) (n := 1) (k := 8192) (by omega_using [hi]) (by omega_using [hi]))
   simp only [Region.Contains]
   change ofs p (off base i) + 1 ≤ 56
-  omega
+  omega_using [h]
 
 /-- The tables, from the precondition. -/
 theorem Pre.tbl {s : State} (hp : Pre s) : TblAt s (s.gpr .x2) (s.syms combSym) :=
@@ -99,7 +146,7 @@ theorem correct {sE : State} (hp : Pre sE) :
   have hn := hp.sc_fit
   have hw : (⟨sE.gpr .x2, 8192⟩ : Region) ∈ sE.wr := by rw [hp.wr]; simp
   have kr : ∀ q < 56, InRegions (sE.rd ++ sE.wr) (sE.gpr .x1 + BitVec.ofNat 64 q) 1 := fun q hq =>
-    ⟨⟨sE.gpr .x1, 56⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨sE.gpr .x1, 56⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   have kd : ∀ q < 56, 8192 ≤ ofs (sE.gpr .x2) (sE.gpr .x1 + BitVec.ofNat 64 q) :=
     fun q hq => far hp.scalar_sc hq (by decide)
   set base := sE.gpr .x2 with hbase
@@ -127,7 +174,7 @@ theorem correct {sE : State} (hp : Pre sE) :
     rw [x16, k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), f3.out, R.out]
   have wr6 : s6.wr = sE.wr := by rw [k6.2.2, k5.regs.2.2, k4.regs.2.2, f3.wr, R.wr]
   have hw6 : ∀ j < 56, InRegions s6.wr (off (sE.gpr .x0) j) 1 := fun j hj =>
-    ⟨⟨sE.gpr .x0, 56⟩, by rw [wr6, hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨sE.gpr .x0, 56⟩, by rw [wr6, hp.wr]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have sv6 : Saved base sE.gpr s6.mem := R.saved.outside2 o16 (by decide) (by decide)
   have svx6 : SavedX base sE.gpr s6.mem := R.savedX.outside2 o16 (by decide) (by decide)
   have svV6 : SavedV base sE.v s6.mem := R.savedV.outside2 o16 (by decide) (by decide)

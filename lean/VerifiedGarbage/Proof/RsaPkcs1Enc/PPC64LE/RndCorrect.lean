@@ -43,7 +43,7 @@ theorem body_ok {s : State} (hp : RPre s) :
     · exact WP.ite true (by rw [ev, decide_eq_true hf.symm]) (fun _ => accept_ok hp hM hv hf hpre)
         (fun h => absurd h (by decide))
     · subst hi
-      exact WP.ite false (by rw [ev, decide_eq_false (by omega)]) (fun h => absurd h (by decide))
+      exact WP.ite false (by rw [ev, decide_eq_false (by omega_using [hc])]) (fun h => absurd h (by decide))
         fun _ => reject_ok hp hM hv hc
   · intro w F
     refine WP.mono (restore_ok F.sv) ?_
@@ -58,6 +58,6 @@ theorem code_correct (s : State) (h : (Spec.RsaPkcs1Enc.encryptRandomContract ab
   have hp := pre_of h
   show WP isa code s fun t => abiPreserved s t ∧ post s t
   unfold code
-  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hp.sp1; unfold rndStack at this; omega) (body_ok hp)
+  exact WP.alloc ⟨by decide, by decide, by decide⟩ (by have := hp.sp1; unfold rndStack at this; omega_using [this]) (body_ok hp)
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd

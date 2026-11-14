@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_finalize_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "SIlZQEiJaUhMiWFQTIlpWEyJcWBMiXloSIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SIkZSIlpCEyJYRBMiWkYTIlxIEyJeShIiftJic9IidVJifRJifVJg+U/QbmAAAAAQb4AAAAASYP9OA=="
 jae 20f
 jmp 21f
 20:
@@ -20,7 +20,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxBJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMQSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -29,7 +29,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxBJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMQSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -37,7 +37,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxBJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMQSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -53,7 +53,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrEGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExBmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -70,7 +70,7 @@ jmp 219f
 call {vg_md5_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19ASYtvSE2LZ1BNi29YTYt3YE2Lf2jD"
+.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJix9Ji28ITYtnEE2LbxhNi3cgTYt/KMM="
 .p2align 6"#,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )

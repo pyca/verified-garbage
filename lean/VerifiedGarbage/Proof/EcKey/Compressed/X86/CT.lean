@@ -26,13 +26,13 @@ theorem codec_wf {inputLen outputLen : Nat} {s : State}
   · intro r hr
     rw [hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rcases hr with rfl | rfl <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · intro r hr
     rw [hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) hro hao
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) hrw haw
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [hsf]) hro hao
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [hsf]) hrw haw
   · intro p hp'
     simp only [codecT, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by simp [codecT], ?_⟩ <;>
@@ -62,9 +62,9 @@ theorem codec_agree {inputLen outputLen : Nat} {s t : State}
     change (t.gpr .esp).toNat + 16 ≤ 2 ^ 32 at htf
     change k < 16 at hk
     rw [show VG.X86.Taint.depth (codecT outputLen).stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by omega) h4 hk, VG.X86.Taint.argByte_eq (by omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by omega_using [hsf]) h4 hk, VG.X86.Taint.argByte_eq (by omega_using [htf]) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    have h : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 := by omega
+    have h : (k - 4) / 4 = 0 ∨ (k - 4) / 4 = 1 ∨ (k - 4) / 4 = 2 := by omega_using [hk]
     rcases h with h | h | h <;> rw [h]
     · exact congrArg _ a0
     · exact congrArg _ a1

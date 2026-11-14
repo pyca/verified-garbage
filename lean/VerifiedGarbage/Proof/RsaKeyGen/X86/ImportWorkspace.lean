@@ -16,14 +16,14 @@ theorem context_workspace {s : State} {base : Addr} {size out n : Nat} {src : Bi
     (readable : InRegions (s.rd ++ s.wr) (src.setWidth 64) (4 * n))
     (separate : (⟨src.setWidth 64, 4 * n⟩ : Region).Disjoint ⟨base, size⟩) :
     Context ⟨src, s.gpr .edi + BitVec.ofNat 32 out, n⟩ s := by
-  have outBound : out < 2 ^ 32 := by have := S.nowrap; omega
-  have destAddress : (s.gpr .edi + BitVec.ofNat 32 out).setWidth 64 = off base out := S.ea (by omega)
+  have outBound : out < 2 ^ 32 := by have := S.nowrap; omega_using [positive, space, this]
+  have destAddress : (s.gpr .edi + BitVec.ofNat 32 out).setWidth 64 = off base out := S.ea (by omega_using [positive, space])
   refine context_of_regions positive sourceFit ?_ readable ?_ ?_
   · change (s.gpr .edi + BitVec.ofNat 32 out).toNat + 4 * n ≤ 2 ^ 32
     rw [BitVec.toNat_add, S.edi_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt outBound,
-      Nat.mod_eq_of_lt (by have := S.nowrap; omega)]
+      Nat.mod_eq_of_lt (by have := S.nowrap; omega_using [positive, space, this])]
     have := S.nowrap
-    omega
+    omega_using [space, this]
   · change InRegions s.wr ((s.gpr .edi + BitVec.ofNat 32 out).setWidth 64) (4 * n)
     rw [destAddress]
     exact S.write space

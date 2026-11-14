@@ -48,12 +48,12 @@ theorem step_ok (s₀ s : State) (hp : Pre s₀) (hlen : s₀.gpr .r3 = s₀.gpr
   obtain ⟨hrd, hm, h0, h2, h1, h3⟩ := h
   have hn := (s₀.gpr .r1).isLt
   have ha : State.addr (s₀.gpr .r0 + BitVec.ofNat 32 i) =
-      State.addr (s₀.gpr .r0) + BitVec.ofNat 64 i := addr_add (by have := hp.2.1; omega)
+      State.addr (s₀.gpr .r0) + BitVec.ofNat 64 i := addr_add (by have := hp.2.1; omega_using [hi, this])
   have hb : State.addr (s₀.gpr .r2 + BitVec.ofNat 32 i) =
-      State.addr (s₀.gpr .r2) + BitVec.ofNat 64 i := addr_add (by have := hp.2.2; rw [hlen] at this; omega)
+      State.addr (s₀.gpr .r2) + BitVec.ofNat 64 i := addr_add (by have := hp.2.2; rw [hlen] at this; omega_using [hi, this])
   have reads (r : Reg) (hr : r = .r0 ∨ r = .r2) :
       InRegions (s.rd ++ s.wr) (State.addr (s₀.gpr r) + BitVec.ofNat 64 i) 1 := by
-    refine ⟨⟨State.addr (s₀.gpr r), (s₀.gpr .r1).toNat⟩, ?_, Offset.contains_base _ (by omega) (by omega)⟩
+    refine ⟨⟨State.addr (s₀.gpr r), (s₀.gpr .r1).toNat⟩, ?_, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
     rw [hrd, hp.1, hlen]
     rcases hr with rfl | rfl <;> simp
   have hadd (p : BitVec 32) : p + BitVec.ofNat 32 i + 1 = p + BitVec.ofNat 32 (i+1) := by
@@ -85,7 +85,7 @@ theorem loop_ok (s₀ s : State) (hp : Pre s₀) (hlen : s₀.gpr .r3 = s₀.gpr
   change u.z = decide (j+1=n) at hz
   by_cases he : j+1 = n
   · exact .inl ⟨by simp [eval, hz, he], by simpa only [he] using hu⟩
-  · exact .inr ⟨by simp [eval, hz, he], n-(j+1), by omega, j+1, by omega, rfl, hu⟩
+  · exact .inr ⟨by simp [eval, hz, he], n-(j+1), by omega_using [hj, hr], j+1, by omega_using [hj, he], rfl, hu⟩
 
 theorem finish_ok (s : State) (d : Byte) (ha : s.gpr .r3 = d.setWidth 32) :
     WP isa finish s fun t => t.mem = s.mem ∧ t.gpr .r0 = if d=0 then 1 else 0 := by
@@ -152,7 +152,7 @@ theorem frame_addr (s : State) (h : 4 ≤ s.sp.toNat) :
   have h4 : (4 : BitVec 32).toNat = 4 := rfl
   have h4' : (4 : BitVec 64).toNat = 4 := rfl
   rw [h4, h4']
-  omega
+  omega_using [h]
 
 theorem push_frame (s : State) (h : 4 ≤ s.sp.toNat) :
     Frame [frameR s] s.mem (pushed [.r4] s).mem := by
@@ -195,8 +195,8 @@ theorem correct (s : State) (hp : contract.pre s) :
     change t.gpr .r0 = if Spec.Ct.eq
       (Spec.Ct.bytesAt (pushed [.r4] s).mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat)
       (Spec.Ct.bytesAt (pushed [.r4] s).mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat) then 1 else 0 at ho
-    rw [push_bytes s hp _ _ hp.2.2.2.1 (by have := (s.gpr .r1).isLt; omega),
-      push_bytes s hp _ _ hp.2.2.2.2 (by have := (s.gpr .r3).isLt; omega)] at ho
+    rw [push_bytes s hp _ _ hp.2.2.2.1 (by have := (s.gpr .r1).isLt; omega_using []),
+      push_bytes s hp _ _ hp.2.2.2.2 (by have := (s.gpr .r3).isLt; omega_using [])] at ho
     exact ho
 
 theorem body_ct : ConstantTime isa (fun _ => True)

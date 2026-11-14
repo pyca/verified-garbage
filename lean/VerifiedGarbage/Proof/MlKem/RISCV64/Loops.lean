@@ -82,8 +82,8 @@ theorem Upd.same {s s₁ s₂ : State} {d : Reg} {v₁ v₂ : BitVec 64} (h₁ :
 theorem shl10_ofNat {i : Nat} (h : i < 2 ^ 50) : BitVec.ofNat 64 i <<< 10 = BitVec.ofNat 64 (1024 * i) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (a := i) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := i) (by omega_using [h])]
+  omega_using []
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -96,8 +96,8 @@ theorem wp_polyAddr {d : Reg} {j : Nat} (hj : j + 2 < 2048) (hd : d ≠ .s11)
   refine wp_li hj fun s₁ h₁ => wp_slli (by decide) fun s₂ h₂ => wp_add fun s₃ h₃ => k s₃ ?_
   have u := Upd.same h₁ (Upd.same h₂ h₃)
   refine ⟨?_, u.other, u.mem, u.rd, u.wr, u.sp⟩
-  rw [h₃.gpr, h₂.other _ (Ne.symm hd), h₁.other _ (Ne.symm hd), h₂.gpr, h₁.gpr, shl10_ofNat (by omega),
-    show oPoly j = 1024 * (j + 2) by unfold oPoly; omega]
+  rw [h₃.gpr, h₂.other _ (Ne.symm hd), h₁.other _ (Ne.symm hd), h₂.gpr, h₁.gpr, shl10_ofNat (by omega_using [hj]),
+    show oPoly j = 1024 * (j + 2) by unfold oPoly; omega_using []]
 
 /-- `d ← s11 + oPoly j + 1024 i`, with `i` in `c`. -/
 theorem wp_slotAt {d c : Reg} {j i : Nat} (hj : j + 2 < 2048) (hi : i + j + 2 < 2 ^ 50) (hd : d ≠ .s11)
@@ -109,7 +109,7 @@ theorem wp_slotAt {d c : Reg} {j i : Nat} (hj : j + 2 < 2048) (hi : i + j + 2 < 
   have u := Upd.same h₁ (Upd.same h₂ h₃)
   refine ⟨?_, u.other, u.mem, u.rd, u.wr, u.sp⟩
   rw [h₃.gpr, h₂.other _ (Ne.symm hd), h₁.other _ (Ne.symm hd), h₂.gpr, h₁.gpr, hc, ← BitVec.ofNat_add,
-    shl10_ofNat (by omega), show oPoly j + 1024 * i = 1024 * (i + (j + 2)) by unfold oPoly; omega]
+    shl10_ofNat (by omega_using [hi]), show oPoly j + 1024 * i = 1024 * (i + (j + 2)) by unfold oPoly; omega_using []]
 
 /-- `s'` is `s` with `d` set to `v` and `t0` changed. -/
 structure Upd2 (s s' : State) (d : Reg) (v : BitVec 64) : Prop where
@@ -152,7 +152,7 @@ end
 theorem setWidth_byte (b : Byte) : (b.setWidth 64).setWidth 8 = b := by
   apply BitVec.eq_of_toNat_eq
   have := b.isLt
-  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 64),
+  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [] : b.toNat < 2 ^ 64),
     Nat.mod_eq_of_lt this]
 
 /-! ## `copy` -/
@@ -200,8 +200,8 @@ theorem copy_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
     {k : Nat} (hk : k < len) {s : State} (h : CopyInv S D len s₀ k s) :
     WP isa (.block copyBody) s fun s' =>
       CopyInv S D len s₀ (k + 1) s' ∧ (s'.gpr .a2 != 0) = decide (k + 1 ≠ len) := by
-  have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
-  have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
+  have cS : (⟨S, len⟩ : Region).Contains (S + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hlen, hk])
+  have cD : (⟨D, len⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega_using [hk]) (by omega_using [hlen, hk])
   have h3 := h.a0; have h4 := h.a1
   rw [Nat.one_mul] at h3 h4
   refine WP.mono (copyBody_ok h3 h4 h.a2 (by rw [h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_singleton_self _, cS⟩)
@@ -212,12 +212,12 @@ theorem copy_step {S D : Addr} {len : Nat} {s₀ : State} (hlen : len < 2 ^ 64)
   · rw [r4]; simpa using ptr_succ D 1 k
   · rw [r5]; exact count_sub hk
   · rw [m]; exact h.frame.writeW (List.mem_singleton_self _) _ cD
-  · rw [m, byte_writeW8 _ _ (by omega) (by omega)]
+  · rw [m, byte_writeW8 _ _ (by omega_using [hlen, hk]) (by omega_using [hlen, hk, ht])]
     have hsrc : s.mem (S + BitVec.ofNat 64 k) = s₀.mem (S + BitVec.ofNat 64 k) :=
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd _ cS
     by_cases e : t = k
     · subst e; rw [ite_eq_left rfl, hsrc]
-    · rw [ite_eq_right e]; exact h.bytes t (by omega)
+    · rw [ite_eq_right e]; exact h.bytes t (by omega_using [ht, e])
   · rw [r5, count_sub hk]; exact count_nz hk hlen
 
 /-- `len` bytes copied from `S` to `D`, with the pointers and the count set
@@ -260,7 +260,7 @@ theorem copyL {L : Lay} {s : State} (hL : L.Ok) {sb db : Reg} {so dO len i j : N
       Kept (L.RL [(j, dO, len)]) s s' ∧ bytesAt s'.mem (L.A j dO) len = bytesAt s.mem (L.A i so) len := by
   refine WP.seq (WP.mono (copy_setup hdb hsb hse hde hle) fun s₁ ⟨o₁, g3, g4, g5⟩ => ?_)
   rw [gs] at g3; rw [gd] at g4
-  refine WP.mono (copy_loop (by omega) hl0 (Lay.disj hL hs)
+  refine WP.mono (copy_loop (by omega_using [hle]) hl0 (Lay.disj hL hs)
     (by rw [o₁.rd, o₁.wr]; exact Lay.covers ri (sepB_bounds hs).2)
     (by rw [o₁.wr]; exact Lay.covers wj (sepB_bounds (sepB_symm hs)).2) g3 g4 g5)
     fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ⟨(o₁.kept _).trans ⟨cs, sp, rd, wr, fr⟩, ?_⟩
@@ -322,9 +322,9 @@ theorem zero_step {P : Addr} {s₀ : State} (cw : Covers [polyRegion P] s₀.wr)
 /-- Polynomial `j` of `scratch` is aligned. -/
 theorem Ctx.alP {L : Lay} {s : State} (hc : Ctx L s) (j : Nat) : L.Al 0 (oPoly j) := by
   have := hc.al0
-  have h8 : oPoly j % 8 = 0 := by unfold oPoly; omega
+  have h8 : oPoly j % 8 = 0 := by unfold oPoly; omega_using []
   show (L.ptr 0 + BitVec.ofNat 64 (oPoly j)).toNat % 8 = 0
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [this, h8]
 
 theorem zeroPoly_ok {L : Lay} {s : State} (hc : Ctx L s) {j : Nat} (hoff : oPoly j + 1024 ≤ 32768) :
     WP isa (zeroPoly j) s fun s' => Kept (L.RL [(0, oPoly j, 1024)]) s s' ∧ PolyIs s'.mem (L.A 0 (oPoly j)) zero := by
@@ -336,7 +336,7 @@ theorem zeroPoly_ok {L : Lay} {s : State} (hc : Ctx L s) {j : Nat} (hoff : oPoly
       ite_eq_left (by rw [VG.Proof.MlKem.n_eq] at ht; exact ht), zero,
       getElem!_pos (Vector.replicate n (0 : Zq)) t ht, Vector.getElem_replicate]
     rfl
-  have hj : j + 2 < 2048 := by unfold oPoly at hoff; omega
+  have hj : j + 2 < 2048 := by unfold oPoly at hoff; omega_using [hoff]
   refine WP.seq (wp_polyAddr hj (by decide) fun s₁ h₁ => wp_li (by decide) fun s₂ h₂ =>
     wp_li (by decide) fun s₃ h₃ => WP.block_nil ?_)
   refine wp_loop_nz (ZeroInv (L.A 0 (oPoly j)) s) (N := 256) (by decide)

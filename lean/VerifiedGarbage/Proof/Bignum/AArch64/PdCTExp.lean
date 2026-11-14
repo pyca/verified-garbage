@@ -52,7 +52,7 @@ variable {M : Mont}
 theorem eval_count_r {t : State} {r : Reg} {j n : Nat} (hj : j < n) (h : (t.gpr r).toNat ≠ 0 ↔ j + 1 ≠ n) :
     isa.eval (.nonzero .x r) t = some (decide (j + 1 < n)) := by
   rw [eval_nonzero, ne_zero_iff]
-  exact congrArg some (decide_eq_decide.mpr (by rw [h]; omega))
+  exact congrArg some (decide_eq_decide.mpr (by rw [h]; omega_using [hj]))
 
 /-! ## A bit -/
 
@@ -103,7 +103,7 @@ theorem start_ct : RelCT isa (Two GoodL) start fun _ _ => True := by
   rintro L t ⟨hg, hZ⟩
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot L.w 8 hi; omega_using [hZ, this])
   refine WP.mono (WP.keep [.x12, .x16, .x17] (Q := fun t₁ => t₁.gpr .x12 = BitVec.ofNat 64 L.w ∧
       t₁.gpr .x16 = off L.B (slot L.w aXm) ∧ t₁.gpr .x17 = off L.B (slot L.w aY)) (by
     brun [hg.x0, hdr_enc (show sW < 32 by decide), hdr_enc (show sArr aXm < 32 by decide),
@@ -120,7 +120,7 @@ theorem bitTest_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
   WP.mono (WP.keep [.x3, .x4] (Q := fun t' => t'.gpr .x3 = BitVec.ofNat 64 (V / 128 % 2) ∧ t'.mem = t.mem) (by
     unfold bitTest
     brun [hg.x0, hdr_enc (show sV < 32 by decide), hg.scr.ld (d := 8 * sV)
-      (by have := hdr_lt_slot w 8 (show sV < 32 by decide); have := hg.scr.nowrap; omega), hV,
+      (by have := hdr_lt_slot w 8 (show sV < 32 by decide); have := hg.scr.nowrap; omega_arith), hV,
       show BitVec.setWidth 64 (1#16) = (1 : BitVec 64) from rfl, bit7 V hV'])
     (by decide) (by decide) (by decide +kernel))
     fun t' ⟨⟨h1, h2⟩, k⟩ => ⟨h1, h2, k⟩
@@ -144,9 +144,9 @@ theorem pExpBit_ct : RelCT isa (Two PQ) (Precomputed.expBit M.mm) fun _ _ => Tru
       isa.eval (.nonzero .x .x3) t = some (decide (p.V / 128 % 2 ≠ 0))) [.x0]
     (fun p s₁ s₂ h₁ h₂ => pins_PQ _ s₁ s₂ h₁ h₂) (by taint_decide) ?_) ?_
   · rintro p t ⟨X, x, hc, hy, hf, hV, hV'⟩
-    exact WP.mono (bitTest_ok hc.good hf.1 hV (by omega)) fun t' ⟨h3, hm, k⟩ =>
+    exact WP.mono (bitTest_ok hc.good hf.1 hV (by omega_using [hV'])) fun t' ⟨h3, hm, k⟩ =>
       ⟨⟨X, x, hc.mem hm k (by decide), by rw [hm]; exact hy, hf, by rw [hm]; exact hV, hV'⟩,
-        eval_nz_ofNat h3 (by omega)⟩
+        eval_nz_ofNat h3 (by omega_using [])⟩
   -- If the bit is set: `Y := Y X` once started, `Y := X` and started if not; then the next bit.
   refine RelCT.seq (R := Two fun (p : PBitPub) t => t.gpr .x0 = p.L.B)
     (two_post (two_ite (fun p s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_
@@ -183,8 +183,8 @@ def PBitsInv (p : BitsPub) (j : Nat) (s : State) : Prop :=
 theorem pBitsInv_pq {p : BitsPub} {j : Nat} {s : State} (hj : j < 8) (h : PBitsInv p j s) :
     PQ ⟨p.L, p.N, p.E * 2 ^ j + p.v / 2 ^ (8 - j), p.v * 2 ^ j⟩ s := by
   obtain ⟨t₀, X, x, hI, hf, hv⟩ := h
-  have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
-  exact ⟨X, x, hI.ctx, hI.y, hf, hI.v, by have := Nat.mul_le_mul_left p.v hp; dsimp only; omega⟩
+  have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega_using [hj])
+  exact ⟨X, x, hI.ctx, hI.y, hf, hI.v, by have := Nat.mul_le_mul_left p.v hp; dsimp only; omega_using [hv, this]⟩
 
 /-- The eight bits of a byte leak the same in runs that agree on `e`. -/
 theorem pBits_ct : RelCT isa (Two fun p s => 0 < 8 ∧ PBitsInv p 0 s)
@@ -221,8 +221,8 @@ def EFacts (a : EPub) (X x : Nat) : Prop :=
     X % a.N = x * 2 ^ (64 * a.L.w) % a.N
 
 theorem ESrc.bytes {a : EPub} {t₀ : State} (h : ESrc a t₀) :
-    ∀ i (hi : i < a.len), t₀.mem (a.ep + BitVec.ofNat 64 i) = a.eb[i]'(by have := h.1; omega) :=
-  fun i hi => by rw [h.2.2.2.1 i hi]; simp [List.getD_eq_getElem?_getD, show i < a.eb.length by have := h.1; omega]
+    ∀ i (hi : i < a.len), t₀.mem (a.ep + BitVec.ofNat 64 i) = a.eb[i]'(by have := h.1; omega_using [hi, this]) :=
+  fun i hi => by rw [h.2.2.2.1 i hi]; simp [List.getD_eq_getElem?_getD, show i < a.eb.length by have := h.1; omega_using [hi, this]]
 
 /-- The bits of byte `i`. -/
 def bitsPub (q : EPub × Nat) : BitsPub := ⟨q.1.L, q.1.N, pre q.1.eb q.2, (q.1.eb.getD q.2 0).toNat⟩
@@ -266,7 +266,7 @@ theorem pByteBody_ct : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len �
     refine WP.mono (pByteHead2_ok hf.1 hsrc.1 hi hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2 hI h3 h4)
       fun t ⟨_, _, hB⟩ => ⟨by decide, t, X, x, ?_, hf, ?_⟩
     · simp only [bitsPub, List.getD_eq_getElem?_getD,
-        List.getElem?_eq_getElem (show q.2 < q.1.eb.length by have := hsrc.1; omega), Option.getD_some]
+        List.getElem?_eq_getElem (show q.2 < q.1.eb.length by have := hsrc.1; omega_using [hi, this]), Option.getD_some]
       exact hB
     · simp only [bitsPub]; exact (List.getD q.1.eb q.2 0).isLt
   have h₁ : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len ∧ PBytesInv q.1 q.2 s)
@@ -336,7 +336,7 @@ theorem finish_ct : RelCT isa (Two FPre) (Precomputed.finish M.mm) fun _ _ => Tr
     (by taint_decide) ?_) ?_
   · rintro p t ⟨⟨⟨X, x, hc, hy, hZ, hw, hw'⟩, _⟩, _⟩
     have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
-      hc.good.scr.ld (by have := hdr_lt_slot p.L.w 8 hi; have := hc.good.scr.nowrap; omega)
+      hc.good.scr.ld (by have := hdr_lt_slot p.L.w 8 hi; have := hc.good.scr.nowrap; omega_arith)
     refine WP.mono (WP.keep [.x12, .x9, .x13] (Q := fun t₂ => t₂.gpr .x12 = BitVec.ofNat 64 p.L.w ∧
         t₂.gpr .x13 = BitVec.ofNat 64 0 ∧ t₂.mem = t.mem) (by
       brun [hc.good.x0, hdr_enc (show sW < 32 by decide), hl sW (by decide), hc.good.hdr.hw])
@@ -354,7 +354,7 @@ theorem finish_ct : RelCT isa (Two FPre) (Precomputed.finish M.mm) fun _ _ => Tr
       · rw [h₁.2.2.2, h₂.2.2.2]) (by taint_decide))
   rintro p t ⟨⟨hg, hZ⟩, h12, h13⟩
   have hl : InRegions (t.rd ++ t.wr) (off p.L.B (8 * sArr aY)) 8 :=
-    hg.scr.ld (by have := hdr_lt_slot p.L.w 8 (show sArr aY < 32 by decide); have := hg.scr.nowrap; omega)
+    hg.scr.ld (by have := hdr_lt_slot p.L.w 8 (show sArr aY < 32 by decide); have := hg.scr.nowrap; omega_arith)
   refine WP.mono (WP.keep [.x7, .x8] (Q := fun t' => t'.gpr .x8 = off p.L.B (slot p.L.w aY) ∧ t'.gpr .x7 = 0) (by
     brun [hg.x0, hdr_enc (show sArr aY < 32 by decide), hl, hg.hdr.harr aY (by decide)])
     (by decide) (by decide) (by decide +kernel))

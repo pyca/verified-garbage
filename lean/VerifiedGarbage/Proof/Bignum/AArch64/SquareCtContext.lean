@@ -103,21 +103,21 @@ theorem raw_body_ctx {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp
   have hw := goodW_width (show GoodW L s from ⟨mi, hg, hz⟩)
   have hA : slot L.w aAcc+16+8*(2*L.w+2) ≤ L.Z := by
     have := slot_le (w := L.w) (show aTmp < 8 by decide)
-    unfold slot aAcc aTmp at *; omega
-  have hb : slot L.w a+8*L.w ≤ L.Z := by have := slot_le (w := L.w) ha; omega
+    unfold slot aAcc aTmp at *; omega_using [hz]
+  have hb : slot L.w a+8*L.w ≤ L.Z := by have := slot_le (w := L.w) ha; omega_using [hz, this]
   have sb : slot L.w a+8*L.w ≤ slot L.w aAcc+16 ∨
       slot L.w aAcc+16+8*(2*L.w+2) ≤ slot L.w a := by
     have := slot_sep (w := L.w) ha1; have := slot_sep (w := L.w) ha2
-    unfold slot aAcc aTmp at *; omega
-  refine WP.seq (WP.mono (cross_ok hg.scr h.x8 h.x9 h.x12 h.x7 (by omega) hw hA hb sb)
+    unfold slot aAcc aTmp at *; omega_arith
+  refine WP.seq (WP.mono (cross_ok hg.scr h.x8 h.x9 h.x12 h.x7 (by omega_using [hsz]) hw hA hb sb)
     fun u ⟨_, hou, _, ku⟩ => ?_)
   refine WP.mono (diagonal_ok (hg.scr.congr ku.wr)
     ((ku.gpr .x8 (by decide)).trans h.x8) ((ku.gpr .x9 (by decide)).trans h.x9)
     ((ku.gpr .x12 (by decide)).trans h.x12) ((ku.gpr .x7 (by decide)).trans h.x7)
-    (by omega) hw (by omega) hb (by omega)) fun t ⟨_, hot, h16, kt⟩ => ?_
+    (by omega_using [hsz]) hw (by omega_using [hA]) hb (by omega_using [sb])) fun t ⟨_, hot, h16, kt⟩ => ?_
   have kAll := ku.trans kt
   have ho := hou.trans (hot.mono (o' := slot L.w aAcc+16)
-    (n' := 8*(2*L.w+2)) (Nat.le_refl _) (by omega))
+    (n' := 8*(2*L.w+2)) (Nat.le_refl _) (by omega_using []))
   exact ⟨⟨⟨mi, ⟨hg.scr.congr kAll.wr, (kAll.gpr .x0 (by decide)).trans hg.x0,
     (scratch_arrays ho).hdr hg.hdr⟩, hz⟩, hsz⟩,
     (kAll.gpr .x8 (by decide)).trans h.x8,
@@ -130,7 +130,7 @@ theorem redc_ctx (L : Ws) (s : State) (h : RawCtx L s) :
   obtain ⟨⟨mi, hg, hz⟩, hsz⟩ := h.good
   have hw := goodW_width (show GoodW L s from ⟨mi, hg, hz⟩)
   refine WP.mono (redc_ok hg.scr hz h.x8 h.x10 h.x12 (minv := s.gpr .x15) rfl
-    h.x7 (by omega) hw) fun t ⟨_, ho, h8, h10, h12, h7, kt⟩ => ?_
+    h.x7 (by omega_using [hsz]) hw) fun t ⟨_, ho, h8, h10, h12, h7, kt⟩ => ?_
   exact ⟨⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr .x0 (by decide)).trans hg.x0,
     (scratch_arrays ho).hdr hg.hdr⟩, hz⟩, hsz⟩, h8, h10, h12, h7⟩
 

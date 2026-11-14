@@ -17,7 +17,7 @@ theorem shr_arith32 (j V s t : Nat) (hV : V < 2 ^ (32 * j)) :
     ((V + 2 ^ (32 * j) * s + 2 ^ (32 * j) * 2 ^ 32 * t) / 2 ^ 30) % (2 ^ (32 * j) * 2 ^ 32) =
       ((V + 2 ^ (32 * j) * s) / 2 ^ 30) % 2 ^ (32 * j) + 2 ^ (32 * j) * ((s / 2 ^ 30 + 2 ^ 2 * t) % 2 ^ 32) := by
   generalize 2 ^ (32 * j) = A at *
-  have hA0 : 0 < A := by omega
+  have hA0 : 0 < A := by omega_using [hV]
   have e1 : A * 2 ^ 32 * t = 2 ^ 30 * (A * (2 ^ 2 * t)) := by
     rw [show (2 : Nat) ^ 32 = 2 ^ 30 * 2 ^ 2 from rfl, Nat.mul_comm A, Nat.mul_assoc, Nat.mul_assoc,
       Nat.mul_left_comm A]

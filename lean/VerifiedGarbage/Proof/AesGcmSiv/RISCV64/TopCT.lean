@@ -86,7 +86,7 @@ theorem entryLd_wp {c : Cx} {s : State} (Ar : Args c s) :
   have L := Ar.lay
   refine wp_addSp (imm := 0) (by decide) fun s₁ u₁ => ?_
   refine wp_ld (a := stackArgAddr s 0) (by decide) (by rw [u₁.gpr, stackArgAddr, Nat.mul_zero, BitVec.add_zero, BitVec.add_zero])
-    (by rw [stackArgAddr, Ar.sp]; exact Spill.al8 (by have := L.spal; omega) (by decide))
+    (by rw [stackArgAddr, Ar.sp]; exact Spill.al8 (by have := L.spal; omega_using [this]) (by decide))
     (by rw [u₁.rd, u₁.wr]; simpa using in_off Ar.argsC (d := 0) (n := 8) (by decide) (by decide))
     fun s₂ u₂ => WP.block_nil ⟨by rw [u₂.gpr, u₁.mem, ← Ar.w]; rfl,
       fun r hr => by rw [u₂.other _ hr, u₁.other _ hr], by rw [u₂.sp, u₁.sp]⟩
@@ -177,11 +177,11 @@ theorem open_rel [VG.Proof.Gcm.RISCV64.GhashLaw] {c : Cx} {σ₁ σ₂ : State} 
         (⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun hd r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.d_w' (by omega)).symm
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact (L.d_w' (by omega_using [hd])).symm
     have dN : ∀ r ∈ cryR c.W c.D c.n, (⟨nP c.W, 12⟩ : Region).Disjoint r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl

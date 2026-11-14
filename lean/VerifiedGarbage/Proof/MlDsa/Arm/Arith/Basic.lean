@@ -69,7 +69,7 @@ theorem bfix_sub {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
 theorem bcsub_add {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (bcsub (a + b)).toNat = (a.toNat + b.toNat) % q := by
   have : (a + b).toNat = a.toNat + b.toNat := by rw [q_eq] at *; bv_omega
-  rw [bcsub_toNat (by omega), this]
+  rw [bcsub_toNat (by omega_using [ha, hb, this]), this]
 
 theorem pieces_toNat (a : BitVec 32) :
     (a >>> 14).toNat = a.toNat / 16384 ∧ ((a <<< 18) >>> 25).toNat = a.toNat / 128 % 128 ∧
@@ -89,8 +89,8 @@ theorem bmulz_toNat {b a : BitVec 32} (hb : b.toNat < q) (ha : a.toNat < 2 ^ 23)
     unfold redMax at hr
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_shiftLeft, e1, p1, Nat.shiftLeft_eq,
       show (2 : Nat) ^ 7 = 128 from rfl]
-    have hm : b.toNat * (a.toNat / 128 % 128) < 2 ^ 32 := by omega
-    rw [Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (a := mulz1 b.toNat a.toNat * 128) (by omega)]
+    have hm : b.toNat * (a.toNat / 128 % 128) < 2 ^ 32 := by omega_using [h2]
+    rw [Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (a := mulz1 b.toNat a.toNat * 128) (by omega_using [h2])]
     exact Nat.mod_eq_of_lt h2
   have e2 : (bred (b * ((a <<< 18) >>> 25) + bred (b * (a >>> 14)) <<< 7)).toNat = mulz2 b.toNat a.toNat := by
     rw [bred_toNat, s1]; rfl
@@ -100,8 +100,8 @@ theorem bmulz_toNat {b a : BitVec 32} (hb : b.toNat < q) (ha : a.toNat < 2 ^ 23)
     unfold redMax at hr
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_shiftLeft, e2, p0, Nat.shiftLeft_eq,
       show (2 : Nat) ^ 7 = 128 from rfl]
-    have hm : b.toNat * (a.toNat % 128) < 2 ^ 32 := by omega
-    rw [Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (a := mulz2 b.toNat a.toNat * 128) (by omega)]
+    have hm : b.toNat * (a.toNat % 128) < 2 ^ 32 := by omega_using [h3]
+    rw [Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt (a := mulz2 b.toNat a.toNat * 128) (by omega_using [h3])]
     exact Nat.mod_eq_of_lt h3
   unfold bmulz
   rw [bred_toNat, s2]; rfl
@@ -109,7 +109,7 @@ theorem bmulz_toNat {b a : BitVec 32} (hb : b.toNat < q) (ha : a.toNat < 2 ^ 23)
 /-- `csub` after `mulz`: the product of `b` and `a`, reduced. -/
 theorem bcsub_mulz {b a : BitVec 32} (hb : b.toNat < q) (ha : a.toNat < q) :
     (bcsub (bmulz b (a >>> 14) ((a <<< 18) >>> 25) ((a <<< 25) >>> 25))).toNat = b.toNat * a.toNat % q := by
-  have ha' : a.toNat < 2 ^ 23 := by rw [q_eq] at ha; omega
+  have ha' : a.toNat < 2 ^ 23 := by rw [q_eq] at ha; omega_using [ha]
   have := (mulzN_bounds hb ha').2.2.2
   rw [bcsub_toNat (by rw [bmulz_toNat hb ha']; exact Nat.lt_of_le_of_lt this redMax_lt), bmulz_toNat hb ha',
     mulzN_mod]
@@ -117,16 +117,16 @@ theorem bcsub_mulz {b a : BitVec 32} (hb : b.toNat < q) (ha : a.toNat < q) :
 /-- `mulz` is less than `2q`. -/
 theorem bmulz_le {b a : BitVec 32} (hb : b.toNat < q) (ha : a.toNat < q) :
     (bmulz b (a >>> 14) ((a <<< 18) >>> 25) ((a <<< 25) >>> 25)).toNat ≤ redMax := by
-  have ha' : a.toNat < 2 ^ 23 := by rw [q_eq] at ha; omega
+  have ha' : a.toNat < 2 ^ 23 := by rw [q_eq] at ha; omega_using [ha]
   rw [bmulz_toNat hb ha']; exact (mulzN_bounds hb ha').2.2.2
 
 /-- A word is the element of `ℤ_q` it represents, once reduced. -/
 theorem ofNat_val_eq {v : BitVec 32} {x : Zq} (h : v.toNat = x.val) : v = BitVec.ofNat 32 x.val := by
   apply BitVec.eq_of_toNat_eq
-  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [h])]
 
 theorem toNat_val (x : Zq) : (BitVec.ofNat 32 x.val).toNat = x.val := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [this])]
 
 /-! ## Registers kept -/
 

@@ -53,8 +53,8 @@ theorem CandidateContext.sieve_context {s : State} {p : CandidateParams} {consum
   · simpa only [candidateValues, BitVec.add_zero] using h.saved.saved 0 (by simp [candidateSlots])
   · exact Nat.le_trans (Nat.add_le_add_left fit p.base.toNat) p.scratchFits
   · intro i hi
-    exact h.workspace.read (by have := fit; omega)
+    exact h.workspace.read (by have := fit; omega_using [fit, hi])
   · intro i hi
-    exact h.stackScratch.symm.sub_left (Offset.sub_base _ (by have := fit; omega))
+    exact h.stackScratch.symm.sub_left (Offset.sub_base _ (by have := fit; omega_using [fit, hi]))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

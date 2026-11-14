@@ -37,18 +37,18 @@ theorem sanitizeModulus_ok (s : State) {base : BitVec 32} {len w : Nat}
       Outs (State.addr base) [(arrAt w 7, 8 * w), (arrAt w 0, 8 * w)] s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t ∧ t.gpr .r0 = base := by
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   rw [sanitizeModulus, WP.seq_iff]
   refine WP.mono (smallConstLayout_ok s 3 ws layout width ptr (by decide : 7 < 8)
     (by decide) (by decide) stackRead stackSep saved) ?_
   rintro u ⟨layoutU, widthU, number, outsideU, frameU, restU, ptrU⟩
   have oldBit := outside_read32 outsideU (d := 212)
-    (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) (by decide)
-  have keeps := outside_array_keeps outsideU (len := len) (by have := ws.nowrap; omega)
+    (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) (by decide)
+  have keeps := outside_array_keeps outsideU (len := len) (by have := ws.nowrap; omega_using [this])
   have oldM := keeps_array_num keeps fits
     (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp] : Operand 0) (by decide : 0 ≠ 7)
   rw [WP.seq_iff]
-  refine WP.mono (sanitizeBit_ok u (ws.congr restU.wr) (by omega) ptrU) ?_
+  refine WP.mono (sanitizeBit_ok u (ws.congr restU.wr) (by omega_using [size]) ptrU) ?_
   rintro v ⟨loaded, memV, restV⟩
   rw [oldBit] at loaded
   have restUV : Rest roundClobbers s v := restU.trans (restV.mono (by decide))

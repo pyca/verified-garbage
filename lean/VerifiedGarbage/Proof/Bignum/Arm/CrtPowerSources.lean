@@ -45,8 +45,8 @@ theorem CrtPowerStack.after_workspace {s t : State} {base xp ep : BitVec 32} {le
     by rw [rest.sp]; exact h.separate, fit, ?_, ?_, ?_, ?_⟩
   · rw [rest.sp, eq.word (d := 56) (bits := 32) (by decide)]; exact h.input
   · rw [rest.sp, eq.word (d := 12) (bits := 32) (by decide)]; exact h.inputCount
-  · rw [rest.sp, eq.word (d := slot) (bits := 32) (by omega)]; exact h.exponent
-  · rw [rest.sp, eq.word (d := slot + 4) (bits := 32) (by omega)]; exact h.exponentCount
+  · rw [rest.sp, eq.word (d := slot) (bits := 32) (by omega_using [fit])]; exact h.exponent
+  · rw [rest.sp, eq.word (d := slot + 4) (bits := 32) (by omega_using [fit])]; exact h.exponentCount
 
 end VG.Proof.Bignum.Arm
 end

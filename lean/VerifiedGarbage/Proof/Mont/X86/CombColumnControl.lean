@@ -30,15 +30,15 @@ theorem columnAdvance_ok {s : State} {base : Addr} {size i : Nat}
       apply BitVec.eq_of_toNat_eq
       change w32 s.mem base 28 = _
       rw [h, BitVec.toNat_ofNat]
-      exact (Nat.mod_eq_of_lt (column_bound i (by omega))).symm
+      exact (Nat.mod_eq_of_lt (column_bound i (by omega_using [hi]))).symm
     rw [read, doubled i hi]
   have K := U.keeps.trans V.keeps
   have hv := hs.of_keeps K (by decide)
-  refine wp_storeS (hv.ea (d := 28) (by omega)) (hv.write hz) fun t M => WP.block_nil ?_
+  refine wp_storeS (hv.ea (d := 28) (by omega_using [hz])) (hv.write hz) fun t M => WP.block_nil ?_
   refine ⟨?_, ?_, M.gpr ▸ reg, K.trans (M.keeps _)⟩
   · rw [M.mem, V.mem, U.mem]; exact writeW32_outside _ _ _ (by decide)
   · rw [M.mem, w32_write_self, reg, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (column_bound (i+1) (by omega))
+    exact Nat.mod_eq_of_lt (column_bound (i+1) (by omega_using [hi]))
 
 theorem column_end : ∀ i < 4,
     (BitVec.ofNat 32 (2^(i+1)) - 16#32 == 0) = decide (i+1 = 4) := by decide

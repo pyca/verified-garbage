@@ -169,18 +169,18 @@ theorem remNext_ok (s : State) {m : Nat} (h1 : 1 ≤ m) (h15 : m ≤ 15) {i : Na
     rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add]; congr 1
   have s9 : BitVec.ofNat 64 (16 + m) - 1 = BitVec.ofNat 64 (16 + (m - 1)) := by
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
+      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega_using []) (by omega_using [h15])]
+    congr 1; omega_using [h1]
   have z9 : (BitVec.ofNat 64 (16 + (m - 1)) - 16 == 0) = decide (m = 1) := by
     rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
-      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
+      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega_using []) (by omega_using [h15])]
     by_cases h : m = 1
     · subst h; rfl
     · have : BitVec.ofNat 64 (16 + (m - 1) - 16) ≠ 0 := fun e => by
         have := congrArg BitVec.toNat e
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 + (m - 1) - 16 < 2 ^ 64 by omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 + (m - 1) - 16 < 2 ^ 64 by omega_using [h15])] at this
         have h0 : BitVec.toNat (0 : BitVec 64) = 0 := rfl
-        omega
+        omega_using [h1, h, this, h0]
       rw [beq_false_of_ne this, decide_eq_false h]
   apply WP.of_runBlock
   simp only [remNext, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,

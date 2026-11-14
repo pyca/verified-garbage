@@ -19,11 +19,11 @@ theorem arena_source {s : State} {B work : Addr} {size Z d : Nat} {bs : List Byt
   refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
   · change InRegions (s.rd ++ s.wr) (off (off B d) i) 1
     rw [off_off]
-    obtain ⟨r, hr, hc⟩ := h.region (d := d + i) (n := 1) (by omega) (by decide)
+    obtain ⟨r, hr, hc⟩ := h.region (d := d + i) (n := 1) (by omega_using [hb, hi]) (by decide)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · have he := congrArg (fun xs : List Byte => xs[i]?) bytes
     simpa only [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range, hi, ↓reduceIte,
       Option.map_some, List.getElem?_eq_getElem hi, Option.some.injEq] using he
-  · exact out_scr sep (Offset.contains_base _ (by omega) (by omega))
+  · exact out_scr sep (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hlen, hi]))
 
 end VG.Proof.Dsa.X86_64.Generation

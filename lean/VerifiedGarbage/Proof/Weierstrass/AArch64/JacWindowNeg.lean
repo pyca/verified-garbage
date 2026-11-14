@@ -34,8 +34,8 @@ theorem selectField_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
         (Function.update E o (if c then E b else E a)) t := by
   have hap (x : Nat) (hx : Sl x) : o ≤ x ∨ x+8*M.n ≤ o := by
     by_cases h : o=x
-    · omega
-    · have := hL.apart o x ho hx h; omega
+    · omega_using [h]
+    · have := hL.apart o x ho hx h; omega_using [this]
   refine WP.mono (sel_ok c M.n hI.scr hc (hL.le o ho)
     (hL.le a (hI.sl a ha)) (hL.le b (hI.sl b hb)) (hAl.sl o ho)
     (hAl.sl a (hI.sl a ha)) (hAl.sl b (hI.sl b hb))
@@ -56,7 +56,7 @@ theorem selectField_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 The bit table is framed across the temporary subtraction. -/
 theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    (hm : UnitMod m (2^(64*M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (_hm : UnitMod m (2^(64*M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {neg z y w bits k j N : Nat}
     (hneg : Sl neg) (hz : z ∈ V) (hy : y ∈ V) (hny : neg ≠ y) (hzero : E z=0)
     (hw1 : 1 ≤ w) (hw : w<65536) (hj : w*j+w ≤ N)
@@ -83,13 +83,13 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     simp only [FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl <;> with_reducible assumption
-  refine WP.mono (fop_ok hL hAl hm hI hsl hr) fun a ⟨ka,ia⟩ => ?_
+  refine WP.mono (subRaw_ok hL hAl hI hsl hr) fun a ⟨ka,ia⟩ => ?_
   have hb : ∀ t<N, a.mem (off base (bits+t))=if k.testBit t then 1 else 0 := by
     intro t ht
-    rw [ka.unch.byte (fun q hq => ?_) (by omega)]
+    rw [ka.unch.byte (fun q hq => ?_) (by omega_using [hN, hn, ht])]
     · exact hbits t ht
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-      rcases hq with rfl | rfl <;> dsimp only [FOp.out] <;> omega
+      rcases hq with rfl | rfl <;> dsimp only [FOp.out] <;> omega_arith
   have h19 : a.gpr .x19=BitVec.ofNat 64 j := by rw [ka.gpr _ (x19_not_clob _),hx]
   rw [WP.block_append_iff]
   refine WP.mono (signMaskW_ok ia.scr w bits hw1 hw hj hN hbw h19 hb) fun b ⟨b3,kb⟩ => ?_
@@ -100,7 +100,7 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     refine ⟨fun r hr => kb.gpr r (fun hh => hr ?_),kb.rd,kb.wr,kb.sp,fun _ _ _ => congrFun kb.mem _⟩
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hh
     rcases hh with rfl | rfl <;> simp [clob]
-  refine ⟨(progKeep_of_op ka (by simp [FOp.out])).trans (kpb.trans (progKeep_of_op kt (by simp))),?_⟩
+  refine ⟨(progKeep_of_op ka (by simp)).trans (kpb.trans (progKeep_of_op kt (by simp))),?_⟩
   simpa only [FOp.out,FOp.run,hzero,show (0 : Fin m)-E y = -E y by grind,
     Function.update_self,Function.update_of_ne (Ne.symm hny)] using it
 

@@ -32,12 +32,12 @@ structure SubCtx (t : State) (B : Addr) (Z o w wx : Nat) (minv : BitVec 64) : Pr
 
 theorem SubCtx.good {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv) :
     Good t (off B o) (slot wx 8) wx minv :=
-  ⟨h.scr.sub (by have := h.hi; omega) (by unfold slot hdrBytes; omega), h.x0, h.hdr⟩
+  ⟨h.scr.sub (by have := h.hi; omega_using [this]) (by unfold slot hdrBytes; omega_using []), h.x0, h.hdr⟩
 
 /-- The prime's workspace with its table. -/
 theorem SubCtx.scrT {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv) :
     Scr t (off B o) (slot wx 8 + tabBytes wx) :=
-  h.scr.sub (by have := h.hi; omega) (by unfold slot hdrBytes; omega)
+  h.scr.sub (by have := h.hi; omega_using [this]) (by unfold slot hdrBytes; omega_using [])
 
 /-- What changes within the arrays and the functions' own slots of the
 prime's workspace (but its link) keeps it. -/
@@ -47,25 +47,25 @@ theorem SubCtx.of_frmT {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 
     (h0 : t.gpr .x0 = s.gpr .x0) : SubCtx t B Z o w wx minv := by
   have hn := h.scr.nowrap
   have hi := h.hi
-  have hL : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64 := by omega
+  have hL : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64 := by omega_using [hn, hi]
   have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 + tabBytes wx := fun r hr' => (hr r hr').2
   have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega))
-      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-          omega)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_using [hi', this]))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+          omega_using [hi'])
   have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega)
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega_using [hL]) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega_arith)
   exact ⟨h.scr.congr hwr, h0.trans h.x0,
     ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
-      fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
+      fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
-    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+    fun j hj => (hb _ (by unfold sArr; omega_using [hj])).trans (h.narr j hj), h.lo, h.hi⟩
 
 theorem SubCtx.of_frm {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}
     (h : SubCtx s B Z o w wx minv) (hf : Frm (off B o) rs s.mem t.mem)
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (hwr : t.wr = s.wr)
     (h0 : t.gpr .x0 = s.gpr .x0) : SubCtx t B Z o w wx minv :=
-  h.of_frmT hf (fun r hr' => ⟨(hr r hr').1, by have := (hr r hr').2; omega⟩) hwr h0
+  h.of_frmT hf (fun r hr' => ⟨(hr r hr').1, by have := (hr r hr').2; omega_using [this]⟩) hwr h0
 
 
 /-! ## The prime's header, at offsets of `B`
@@ -78,13 +78,13 @@ variable {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (hc : SubCtx
 include hc
 
 theorem ld' {i : Nat} (hi : i < 32) : InRegions (t.rd ++ t.wr) (off B (o + 8 * i)) 8 :=
-  hc.scr.ld (by have := hdr_lt_slot wx 8 hi; have := hc.hi; omega)
+  hc.scr.ld (by have := hdr_lt_slot wx 8 hi; have := hc.hi; omega_arith)
 
 theorem st' {i : Nat} (hi : i < 32) : InRegions t.wr (off B (o + 8 * i)) 8 :=
-  hc.scr.st (by have := hdr_lt_slot wx 8 hi; have := hc.hi; omega)
+  hc.scr.st (by have := hdr_lt_slot wx 8 hi; have := hc.hi; omega_arith)
 
 theorem ldn {i : Nat} (hi : i < 32) : InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 :=
-  hc.scr.ld (by have := hdr_lt_slot w 8 hi; have := hc.lo; have := hc.hi; omega)
+  hc.scr.ld (by have := hdr_lt_slot w 8 hi; have := hc.lo; have := hc.hi; omega_arith)
 
 theorem link' : word t.mem B (o + 8 * sLink) = B := by rw [← word_off]; exact hc.link
 

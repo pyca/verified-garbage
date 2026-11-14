@@ -40,19 +40,19 @@ theorem ors_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a 
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | k + 1, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ors_ok hs ha8 k (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (ors_ok hs ha8 k (by omega_using [hk])) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by decide)
     rw [← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs₁ (d := a + 8 * (k + 1)) (by omega) (by omega) .x2) fun s₂ ⟨l₂, k₂, _⟩ => ?_
+    refine WP.mono (ld_ok hs₁ (d := a + 8 * (k + 1)) (by omega_using [hk]) (by omega_using [ha8]) .x2) fun s₂ ⟨l₂, k₂, _⟩ => ?_
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write_self,
       BitVec.setWidth_eq, Option.some.injEq, exists_eq_left', or_eq_zero, l₂,
       k₂.gpr .x1 (by decide), e₁, k₁.mem]
-    refine ⟨⟨fun ⟨⟨h₀, h⟩, hw⟩ => ⟨h₀, fun j hj => ?_⟩, fun ⟨h₀, h⟩ => ⟨⟨h₀, fun j hj => h j (by omega)⟩,
-      h k (by omega)⟩⟩, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨⟨fun ⟨⟨h₀, h⟩, hw⟩ => ⟨h₀, fun j hj => ?_⟩, fun ⟨h₀, h⟩ => ⟨⟨h₀, fun j hj => h j (by omega_using [hj])⟩,
+      h k (by omega_using [])⟩⟩, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
     · rcases Nat.lt_or_ge j k with hj' | hj'
       · exact h j hj'
-      · obtain rfl : j = k := by omega
+      · obtain rfl : j = k := by omega_using [hj, hj']
         exact hw
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [RegUpd.gpr_write_of_ne _ _ _ hr.1, k₂.gpr r (by simpa using hr.2), k₁.gpr r (by simpa using hr)]
@@ -69,8 +69,8 @@ theorem not_carryOut (x y : BitVec 64) (c : Bool) :
   have := x.isLt
   generalize Word64.carryOut x (~~~y) c = co at h ⊢
   cases co <;> simp only [Bool.not_true, Bool.not_false, Bool.toNat_true, Bool.toNat_false] at h ⊢
-  · exact (decide_eq_true (by omega)).symm
-  · exact (decide_eq_false (by omega)).symm
+  · exact (decide_eq_true (by omega_using [h])).symm
+  · exact (decide_eq_false (by omega_using [h])).symm
 
 /-- `x2` is the mask of a borrow. -/
 theorem sbcMask2_ok (s : State) (hz : s.gpr .x7 = 0) :
@@ -118,10 +118,10 @@ theorem zeroMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     WP.block_append_iff]
   refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
   have hs₀ := hs.of_keeps k₀ (by decide)
-  refine WP.mono (ld_ok hs₀ (d := a) (by omega) ha8 .x1) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+  refine WP.mono (ld_ok hs₀ (d := a) (by omega_using [hn, ha]) ha8 .x1) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs₀.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ ha8 (n - 1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine WP.mono (ors_ok hs₁ ha8 (n - 1) (by omega_using [hn, ha])) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [e₁, k₁.mem, k₀.mem] at e₂
   have hz : s₂.gpr .x1 = 0 ↔ wordsVal s.mem base a n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -129,9 +129,9 @@ theorem zeroMask_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     · intro ⟨h₀, h⟩ j hj
       rcases j with _ | j
       · simpa using h₀
-      · exact h j (by omega)
+      · exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega_using [hj])⟩
   have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), z₀]
   refine WP.mono (isZeroMask_ok s₂ hz₂) fun s₃ ⟨e₃, k₃⟩ => ⟨?_, ?_⟩
   · rw [e₃]

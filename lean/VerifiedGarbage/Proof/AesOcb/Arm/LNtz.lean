@@ -36,7 +36,7 @@ theorem and1 {v : Nat} (hv : v < 2 ^ 32) :
     BitVec.ofNat 32 v &&& BitVec.ofNat 32 1 = BitVec.ofNat 32 (v % 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, toNat_ofNat32 hv, show (BitVec.ofNat 32 1).toNat = 1 from rfl, Nat.and_one_is_mod,
-    toNat_ofNat32 (by omega)]
+    toNat_ofNat32 (by omega_using [])]
 
 theorem shr1 {v : Nat} (hv : v < 2 ^ 32) : BitVec.ofNat 32 v >>> 1 = BitVec.ofNat 32 (v / 2) := by
   rw [ofNat_lsr32 hv]
@@ -58,7 +58,7 @@ theorem low1_wp (s : State) {v : Nat} (hv : v < 2 ^ 32) (hlr : s.gpr .lr = BitVe
     WP isa (.block low1) s fun s' => s'.z = decide (v % 2 = 0) ∧ Ran [.r12] s.mem s s' := by
   refine WP.of_runBlock ⟨_, by orun [low1], ?_, by rfl, by others_tac, by rfl, by rfl, by rfl⟩
   simp only [z_subFlags, gpr_setReg, ite_true, hlr, and1 hv, BitVec.sub_zero]
-  exact z_cmp0 (by omega)
+  exact z_cmp0 (by omega_using [])
 
 theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i : Nat}
     (hi : 0 < i) (hi' : i < 2 ^ 32) (h6 : s.gpr .r6 = BitVec.ofNat 32 i)
@@ -67,7 +67,7 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
   have fw := L.ww
   unfold lNtz
   refine WP.seq (WP.block_append (WP.block_append (WP.mono (copy16_wp (W := State.addr p.W) (by rw [E.r11])
-    (by decide) (by decide) (by rw [E.r11]; omega) (by decide) (by decide) (E.perm.wCR (by decide))
+    (by decide) (by decide) (by rw [E.r11]; omega_using [fw]) (by decide) (by decide) (E.perm.wCR (by decide))
     (E.perm.wC (by decide))) fun s₁ R₁ => ?_)))
   have g₁ : ∀ r, r ∉ [Reg.r0, .r1, .r2, .r3] → s₁.gpr r = s.gpr r := R₁.gpr
   refine WP.block_cons_iff.mpr ⟨s₁.setReg .lr (s₁.gpr .r6), by simp [isa, exec, Op2.eval], WP.block_nil ?_⟩
@@ -96,7 +96,7 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
   refine WP.ite (decide (i % 2 = 0)) (eval_eq' z₂) (fun hb => ?_)
     (fun hb => WP.block_nil (post_of s₂ fr₂ ?_ (fun _ _ => rfl) sp₂ rd₂ wr₂))
   rotate_left
-  · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega)]
+  · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega_using [hb])]
   have he : i % 2 = 0 := of_decide_eq_true hb
   refine WP.loop (M := isa)
     (fun (k : Nat) (t : State) => ∃ j, k = i / 2 ^ j ∧ 0 < i / 2 ^ j ∧ i / 2 ^ j % 2 = 0 ∧
@@ -112,11 +112,11 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
   have Pt : Perm p t := E.perm.of_eq rd wr
   refine WP.block_append (WP.block_append (WP.mono (dbl_wp (b := .r11) (W := State.addr p.W)
     (P := State.addr p.W) (by decide) (by rw [r11t]) (by rw [r11t]) (by decide) (by decide)
-    (by rw [r11t]; simp only [lO]; omega) (by rw [r11t]; simp only [lO]; omega) (Pt.wCR (by decide)) (Pt.wC (by decide))) fun t₁ D₁ => ?_))
+    (by rw [r11t]; simp only [lO]; omega_using [fw]) (by rw [r11t]; simp only [lO]; omega_using [fw]) (Pt.wCR (by decide)) (Pt.wC (by decide))) fun t₁ D₁ => ?_))
   have e : i / 2 ^ (j + 1) = i / 2 ^ j / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
   have lr₁ : t₁.gpr .lr = BitVec.ofNat 32 (i / 2 ^ j) := by rw [D₁.gpr _ (by decide), lrt]
   refine WP.block_cons_iff.mpr ⟨t₁.setReg .lr (t₁.gpr .lr >>> 1), by simp [isa, exec, Op2.eval], WP.block_nil ?_⟩
-  refine WP.mono (low1_wp _ (v := i / 2 ^ (j + 1)) (by omega) (by simp [gpr_setReg, lr₁, shr1 hv, e]))
+  refine WP.mono (low1_wp _ (v := i / 2 ^ (j + 1)) (by omega_using [hv, e]) (by simp [gpr_setReg, lr₁, shr1 hv, e]))
     fun t₃ ⟨z₃, R₃⟩ => ?_
   have fr' : Frame [⟨State.addr p.W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
     rw [R₃.mem, mem_setReg, D₁.mem]
@@ -134,13 +134,13 @@ theorem lNtz_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {l : Block} {i :
   have lr₃ : t₃.gpr .lr = BitVec.ofNat 32 (i / 2 ^ (j + 1)) := by
     rw [R₃.gpr _ (by decide), gpr_setReg_self, lr₁, shr1 hv, e]
   have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
-    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega
+    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega_using []
   by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
   · right
-    refine ⟨(eval_eq' z₃).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega, j + 1, rfl,
-      by rw [e]; omega, hodd, hntz', lr₃, fr', v', g', sp', rd', wr'⟩
+    refine ⟨(eval_eq' z₃).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega_using [hpos], j + 1, rfl,
+      by rw [e]; omega_using [hpos, hev], hodd, hntz', lr₃, fr', v', g', sp', rd', wr'⟩
   · left
     refine ⟨(eval_eq' z₃).trans (by simp [hodd]), post_of t₃ fr' ?_ g' sp' rd' wr'⟩
-    rw [v', hntz', Proof.Ocb.ntz_odd (by omega)]
+    rw [v', hntz', Proof.Ocb.ntz_odd (by omega_using [hodd])]
 
 end VG.Proof.AesOcb.Arm

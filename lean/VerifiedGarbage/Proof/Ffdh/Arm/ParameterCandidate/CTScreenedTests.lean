@@ -86,7 +86,7 @@ private structure CandidateFirstCompared (p : CandidatePoint) (s : State) : Prop
 
 private theorem candidateFirstCompare_ok (p : CandidatePoint) (s : State) (h : CandidateFirstReady p s) :
     WP isa (.block [.cmp .r3 (.imm 1)]) s (CandidateFirstCompared p) := by
-  refine WP.mono (cmpStatus_ok _ 1 (by have := witnessResultStatus_bound (qAnswer p); omega) (by decide) h.status) ?_
+  refine WP.mono (cmpStatus_ok _ 1 (by have := witnessResultStatus_bound (qAnswer p); omega_using [this]) (by decide) h.status) ?_
   rintro t ⟨⟨zero, mem⟩, rest⟩
   obtain ⟨next, ctx, suffix⟩ := h.context
   exact ⟨⟨h.enough, h.odd, ⟨next, ctx.after_memory mem rest, suffix⟩,
@@ -114,7 +114,7 @@ private theorem acceptedContext (p : CandidatePoint) (s : State) (h : CandidateF
         rw [List.length_drop] at size
         simp only [acceptedUsed, answer, Option.map_some, Option.getD_some]
         have := ctx.consumedBound
-        omega
+        omega_using [size, this]
   exact ⟨by rw [same]; exact ctx, h.ready.enough, h.ready.number, h.ready.odd⟩
 
 private theorem screenedFirst_ct (v : RoundImpl) : RelCT isa (Two ScreenedFirstStart)

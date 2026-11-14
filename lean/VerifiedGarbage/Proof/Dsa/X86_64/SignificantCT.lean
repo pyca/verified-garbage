@@ -67,7 +67,7 @@ theorem scanLoop_step {p : ScanPublic} {j : Nat} {s : State}
       isa.eval .ne t = some (decide (j + 1 < p.bytes.length)) ∧ ScanLoop p (j + 1) t := by
   have hb := scanLoop_byte hj h
   refine WP.mono (significantByte_ok (remaining := p.bytes.length - j) hb.1 hb.2.1 hb.2.2.1 hb.2.2.2.1 hb.2.2.2.2.2.1
-    hb.2.2.2.2.2.2 (by omega) (by have := h.2.2.2.2.2; omega))
+    hb.2.2.2.2.2.2 (by omega_using [hj]) (by have := h.2.2.2.2.2; omega_using [this]))
     fun t ⟨hsi, hcx, h8, h9, hz, hm, hk⟩ => ?_
   have hbyte := hb.2.2.2.2.1
   have hpos : p.pointer + BitVec.ofNat 64 j + 1 = p.pointer + BitVec.ofNat 64 (j + 1) := by
@@ -79,10 +79,10 @@ theorem scanLoop_step {p : ScanPublic} {j : Nat} {s : State}
     apply Bool.eq_iff_iff.mpr
     by_cases he : p.bytes.length - j = 1
     · simp only [he, decide_true, Bool.not_true, Bool.false_eq_true, decide_eq_true_eq, false_iff]
-      omega
+      omega_using [he]
     · simp only [he, decide_false, Bool.not_false, decide_eq_true_eq, true_iff]
-      omega
-  · rw [hcx, show p.bytes.length - j - 1 = p.bytes.length - (j + 1) by omega]
+      omega_using [hj, he]
+  · rw [hcx, show p.bytes.length - j - 1 = p.bytes.length - (j + 1) by omega_using []]
   · rw [h8, hbyte]; rfl
   · rw [h9, hbyte]; rfl
   · rw [hm]; exact InScr.refl _ _ _

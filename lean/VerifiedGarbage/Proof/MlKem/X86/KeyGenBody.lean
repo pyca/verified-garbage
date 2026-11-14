@@ -67,7 +67,7 @@ theorem post [FinOK L] (hη : L.p.η₁ = 2) {s₀ s : State} (hp : TPre (Y L) s
         bytesAt s.mem (Buf.addr s₀ ⟨2, 0, L.p.dkLen⟩) L.p.dkLen) := by
   rcases h.acc with e | e
   · obtain ⟨k, hk, hn⟩ := h.fail e
-    have hk0 : 0 < L.p.k := Nat.pos_of_ne_zero fun h0 => by rw [h0] at hk; omega
+    have hk0 : 0 < L.p.k := Nat.pos_of_ne_zero fun h0 => by rw [h0] at hk; omega_using [hk]
     refine .inr ⟨e, ?_⟩
     show keyGenInternal L.p minIterations (d s₀) (z s₀) = none
     rw [KPke.keyGenInternal_eq, KPke.kpkeKeyGen_none (i := k / L.p.k) (j := k % L.p.k)
@@ -76,7 +76,7 @@ theorem post [FinOK L] (hη : L.p.η₁ = 2) {s₀ s : State} (hp : TPre (Y L) s
   · obtain ⟨M, hM⟩ := samples h e
     refine .inl ⟨e, M, ?_⟩
     show keyGenInternal L.p M (d s₀) (z s₀) = _
-    rw [KPke.keyGenInternal_eq, KPke.kpkeKeyGen_some hη hM, ek_full hp h.toF (by omega) e, dk_full hp h.toF e]
+    rw [KPke.keyGenInternal_eq, KPke.kpkeKeyGen_some hη hM, ek_full hp h.toF (by omega_using []) e, dk_full hp h.toF e]
     rfl
 
 end VG.Proof.MlKem.X86.KeyGen

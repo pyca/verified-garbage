@@ -128,14 +128,14 @@ theorem shortGh_ok {W : Addr} {H : Spec.Gcm.Block} (gh : Gh8Ok) (s : State) (h19
   refine WP.mono (ghPart_ok _ ⟨fun j hj => ?_, fun k hk1 hk8 => ?_, fun p hp => ?_⟩ ?_) fun s' ⟨e, o⟩ => ?_
   · simp only [rd_write, wr_write, rd_setV, wr_setV] at *
     rw [hx9 j]
-    exact Proof.AesGcm.AArch64.in_off hr (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega) (by decide)
+    exact Proof.AesGcm.AArch64.in_off hr (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_using [hj]) (by decide)
   · simp only [rd_write, wr_write, rd_setV, wr_setV, gpr_write_of_ne _ _ _ (show Reg.x19 ≠ Reg.x9 by decide),
       gpr_setV, gpr_write_of_ne _ _ _ (show Reg.x19 ≠ Reg.x12 by decide), h19]
-    exact Proof.AesGcm.AArch64.in_off hr (by unfold Impl.Gcm.AArch64.Stitch.sOff Impl.Gcm.AArch64.Stitch.tbl; omega)
+    exact Proof.AesGcm.AArch64.in_off hr (by unfold Impl.Gcm.AArch64.Stitch.sOff Impl.Gcm.AArch64.Stitch.tbl; omega_using [hk8])
       (by decide)
   · simp only [rd_write, wr_write, rd_setV, wr_setV, gpr_write_of_ne _ _ _ (show Reg.x19 ≠ Reg.x9 by decide),
       gpr_setV, gpr_write_of_ne _ _ _ (show Reg.x19 ≠ Reg.x12 by decide), h19]
-    exact Proof.AesGcm.AArch64.in_off hr (by unfold Impl.Gcm.AArch64.Stitch.kOff Impl.Gcm.AArch64.Stitch.tbl; omega)
+    exact Proof.AesGcm.AArch64.in_off hr (by unfold Impl.Gcm.AArch64.Stitch.kOff Impl.Gcm.AArch64.Stitch.tbl; omega_using [hp])
       (by decide)
   · simp only [v_write, v_setV_of_ne _ _ (show Impl.Gcm.AArch64.Stitch.C ≠ Impl.Gcm.AArch64.Stitch.Y by decide),
       v_setV_self, gpr_write_self]
@@ -205,7 +205,7 @@ theorem byteRev64_xor (a b : BitVec 64) : byteRev64 (a ^^^ b) = byteRev64 a ^^^ 
   intro i hi
   simp only [byteRev64, BitVec.getLsbD_xor, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   repeat (split; · simp [*])
-  have : i - 8 - 8 - 8 - 8 - 8 - 8 - 8 < 8 := by omega
+  have : i - 8 - 8 - 8 - 8 - 8 - 8 - 8 < 8 := by omega_using [hi]
   simp [this]
 
 open VG.Proof.Gcm.AArch64.Pmull (vdwords vdword_xor vdword_rev64b) in
@@ -236,14 +236,14 @@ theorem shortTagAt_ok {W : Addr} {c : Nat} {g : Spec.Gcm.Block} {o : Nat} (ho : 
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_cons_iff]
   refine ⟨_, exec_rev64b _ _ _, WP.block_nil ?_⟩
   obtain ⟨t₁, run₁, x9₁, g₁, m₁, v₁, sp₁, rd₁, wr₁⟩ := atP_ok (c := c) .x9 Impl.AesGcm.AArch64.Stitch.b1O 0
-    (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega)
+    (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using []) (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using [hc6])
     (s.setV Impl.Gcm.AArch64.Stitch.Y (VRevOp.eval .rev64b (s.v Impl.Gcm.AArch64.Stitch.Y)))
     (by rw [gpr_setV, h19]) (by rw [gpr_setV, h25]) (by decide)
   refine WP.of_runBlock ⟨t₁, run₁, ?_⟩
   have hin : InRegions (t₁.rd ++ t₁.wr) (t₁.gpr .x9 + BitVec.ofNat 64 0) 16 := by
     rw [rd₁, wr₁, x9₁, BitVec.add_zero, rd_setV, wr_setV]
     exact Proof.AesGcm.AArch64.in_left (Proof.AesGcm.AArch64.in_off hr
-      (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega) (by decide))
+      (by unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using []) (by decide))
   rw [WP.block_cons_iff]
   refine ⟨_, exec_ldrq (by decide) (by decide) hin, ?_⟩
   rw [WP.block_cons_iff]
@@ -266,7 +266,7 @@ theorem shortTagAt_ok {W : Addr} {c : Nat} {g : Spec.Gcm.Block} {o : Nat} (ho : 
     rw [gpr_setV, gpr_setV, hx19, v_setV_self, v_setV_of_ne _ _ (by decide), v_setV_self, v₁, v_setV_self,
       mem_setV, mem_setV, m₁, mem_setV, x9₁, BitVec.add_zero, hY,
       show Impl.AesGcm.AArch64.Stitch.b1O + 96 + 16 * 0 - 16 * c = 864 - 16 * c by
-        unfold Impl.AesGcm.AArch64.Stitch.b1O; omega,
+        unfold Impl.AesGcm.AArch64.Stitch.b1O; omega_using [],
       ← rev64b_rev64b (s.mem.read (W + BitVec.ofNat 64 (864 - 16 * c)) 16), ← rev64b_xor, blockAt_store,
       ext8_xor, ext8_ext8, rev64b_read, ext8_ext8]
   · dsimp only
@@ -300,12 +300,12 @@ theorem shortCtr_ok {W St : Addr} {c : Nat} (hc6 : c ≤ 6) (s : State) (h19 : s
   · simp only [State.read, gpr_write, ite_true, reduceCtorEq, ite_false, Size.bits, h25, mem_write,
       Proof.Aes.AArch64.Aese.sw32, BitVec.setWidth_eq]
     rw [h20, show St + BitVec.ofNat 64 60 = St + BitVec.ofNat 64 48 + BitVec.ofNat 64 12 by rw [Offset.add_add],
-      Proof.Aes.AArch64.icb_lo, Proof.AesGcm.AArch64.Gather.ofNat_lsr4 (show 16 * c < 2 ^ 64 by omega),
-      show 16 * c / 16 = c by omega]
+      Proof.Aes.AArch64.icb_lo, Proof.AesGcm.AArch64.Gather.ofNat_lsr4 (show 16 * c < 2 ^ 64 by omega_using [hc6]),
+      show 16 * c / 16 = c by omega_using []]
     generalize (Spec.Gcm.blockAt s.mem (St + BitVec.ofNat 64 48)).extractLsb' 0 32 = x
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · simp [gpr_write, State.read, h19]
   · simp [gpr_write, h9, h10]
   all_goals simp [mem_write, v_write, sp_write, rd_write, wr_write]

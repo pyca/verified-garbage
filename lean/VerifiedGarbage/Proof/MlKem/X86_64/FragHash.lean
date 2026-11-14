@@ -179,7 +179,7 @@ theorem hash_ok {rbs wbs : List (Reg × Nat)} (hcs : ∀ b ∈ rbs ++ wbs, b.1 �
   obtain ⟨hrate, hk, hps, hsq, hna, hocs⟩ := hashChk_spec hc
   obtain ⟨_, _, _, _, _, w0, _⟩ := kChk_spec L hk
   have hr0 : 0 < rate := by
-    simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at hrate; omega
+    simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at hrate; omega_using [hrate]
   refine WP.seq (WP.mono (kzero_okP s w0) fun s₁ ⟨hP₁, hz⟩ => ?_)
   have L₁ := L.post hP₁.b hcs
   have e1 : pa s₁ (sc 0) = pa s (sc 0) := hP₁.pa (by decide)
@@ -253,7 +253,7 @@ theorem hash_tr {rbs wbs : List (Reg × Nat)} (hcs : ∀ b ∈ rbs ++ wbs, b.1 �
     RelCT isa (LRel rbs wbs) (hashAt ps rate suffix out len) fun _ _ => True := by
   obtain ⟨hrate, hk, hps, hsq, hna, _⟩ := hashChk_spec hc
   have hr0 : 0 < rate := by
-    simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at hrate; omega
+    simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at hrate; omega_using [hrate]
   have hin : inB (rbs ++ wbs) out len = true := by
     simp only [ksqzChk, wrOk, rdOk, Bool.and_eq_true] at hsq; exact hsq.1.1.1.2.1.2
   refine RelCT.seq (LRel.step hcs (kzero_tr fun x y h => h.eq (kChk_in hk))

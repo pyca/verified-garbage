@@ -92,7 +92,7 @@ theorem VFacts.inKey (F : VFacts p prepared L) (hL : L.Ok) :
 
 /-- The working space of the function on `μ` is writable. -/
 theorem VFacts.wScr (F : VFacts p prepared L) (hL : L.Ok) : ∃ R ∈ L.wr, Within ⟨State.addr L.scr, sScr p⟩ R :=
-  ⟨_, hL.inSC, within_base _ (by show sScr p ≤ L.scrLen; rw [F.scrLen, mScr_eq]; simp only [sScr, oE]; omega)⟩
+  ⟨_, hL.inSC, within_base _ (by show sScr p ≤ L.scrLen; rw [F.scrLen, mScr_eq]; simp only [sScr, oE]; omega_using [])⟩
 
 /-- The registers after the moves of the arguments. -/
 theorem verifyRegs_of (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1 : State}
@@ -103,10 +103,10 @@ theorem verifyRegs_of (hL : L.Ok) {g : Reg → BitVec 32} {m₀ : Mem} {t t1 : S
   have e1 := hm (.r1, .off oMU) (by simp)
   have e2 := hm (.r2, .slot fSig) (by simp)
   have e3 := hm (.r3, .slot fScr) (by simp)
-  rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega)] at e0
+  rw [hc.slotV hL (f := fKey) (j := 0) rfl (by omega_using [])] at e0
   rw [hc.off] at e1
-  rw [hc.slotV hL (f := fSig) (j := 6) rfl (by omega)] at e2
-  rw [hc.slotV hL (f := fScr) (j := 7) rfl (by omega)] at e3
+  rw [hc.slotV hL (f := fSig) (j := 6) rfl (by omega_using [])] at e2
+  rw [hc.slotV hL (f := fScr) (j := 7) rfl (by omega_using [])] at e3
   simp only [Lay.vals, List.getD_cons_zero, List.getD_cons_succ] at e0 e2 e3
   exact ⟨e0, e1, e2, e3⟩
 
@@ -134,7 +134,7 @@ theorem verifyK_pre (hL : L.Ok) (F : VFacts p prepared L) {g : Reg → BitVec 32
   refine verifyC_pre ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;> try simp only [g0, g1, g2, g3, gsp, grd, gwr, gm]
   · exact hL.nSP
   · exact xKey.symm.sub_right hsub
-  · exact x_sScr hL F.hE (by omega)
+  · exact x_sScr hL F.hE (by omega_using [])
   · exact F.xSig.symm.sub_right hsub
   · exact kKey
   · exact k_mu hL
@@ -143,9 +143,9 @@ theorem verifyK_pre (hL : L.Ok) (F : VFacts p prepared L) {g : Reg → BitVec 32
   · exact nKey
   · rw [gr (by decide), e1]
     have := hL.x32_lt
-    rw [x32_toNat hL (by omega)]; omega
+    rw [x32_toNat hL (by omega_using [])]; omega_using [this]
   · exact F.nSig
-  · have := hL.nScr; rw [F.scrLen] at this; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega
+  · have := hL.nScr; rw [F.scrLen] at this; simp only [mScrLen, sScr, messageScratchWords] at this ⊢; omega_using [this]
   · exact hk
 
 /-- The call of the verification function on `μ`. -/
@@ -163,7 +163,7 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p prepared c) (
   have hsp1 : t1.sp = L.SP := hc1.sp
   have hpre := verifyK_pre hL F hc hA hsp1 (by rw [o.mem]; exact hk)
   obtain ⟨RS, hRS, wS⟩ := F.wScr hL
-  refine WP.callF hV.ok hpre ?_ ?_ (by rw [hsp1]; have := hV.su; have := hL.nSP; omega)
+  refine WP.callF hV.ok hpre ?_ ?_ (by rw [hsp1]; have := hV.su; have := hL.nSP; omega_arith)
     fun s' hrd hwr hsp hf hcs hpost => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
@@ -184,12 +184,12 @@ theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p prepared c) (
     hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact x_sScr hL F.hE (by omega)
+      · exact x_sScr hL F.hE (by omega_using [hd'])
       · rw [hsp1]
         exact hL.sv_disj (r := belowA L.SP (stackUse c)) (.inr (belowA_sub hV.su)) hd') (by decide)
   refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .r7 (by decide) (by decide)).trans hc1.r7,
     fun r hr h7 hl => (hcs r hr hl).trans (hc1.cs r hr h7 hl),
-    (hsv 0 (by omega)).trans hc1.s7, (hsv 4 (by omega)).trans hc1.sLR⟩, ?_⟩
+    (hsv 0 (by omega_using [])).trans hc1.s7, (hsv 4 (by omega_using [])).trans hc1.sLR⟩, ?_⟩
   have hpost' : Verify.VOut p (t1.callEntry.withRegions (verifyRd p prepared L) (verifyWr p L))
       ((s'.withRegions (verifyRd p prepared L) (verifyWr p L)).gpr .r0) := hpost
   unfold Verify.VOut Verify.vv at hpost'

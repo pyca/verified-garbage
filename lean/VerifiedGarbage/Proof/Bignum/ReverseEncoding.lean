@@ -23,20 +23,20 @@ theorem reversed_read (m m' : Mem) (p q : Addr) (n : Nat)
   | succ n ih =>
     have last : m' q = m (p + BitVec.ofNat 64 n) := by
       simpa only [Nat.add_sub_cancel, Nat.sub_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero]
-        using bytes 0 (by omega)
+        using bytes 0 (by omega_using [])
     have tail : ∀ j < n, m' (q + 1 + BitVec.ofNat 64 j) =
         m (p + BitVec.ofNat 64 (n - 1 - j)) := by
       intro j hj
-      have h := bytes (j + 1) (by omega)
+      have h := bytes (j + 1) (by omega_using [hj])
       rw [show q + 1 + BitVec.ofNat 64 j = q + BitVec.ofNat 64 (j + 1) by
         change q + BitVec.ofNat 64 1 + BitVec.ofNat 64 j = _
         rw [Offset.add_add, Nat.add_comm 1]]
-      simpa only [show n + 1 - 1 - (j + 1) = n - 1 - j by omega] using h
+      simpa only [show n + 1 - 1 - (j + 1) = n - 1 - j by omega_using []] using h
     have snoc : Spec.Rsa.bytesAt m p (n + 1) =
         Spec.Rsa.bytesAt m p n ++ [m (p + BitVec.ofNat 64 n)] := by
       simp only [Spec.Rsa.bytesAt, List.range_succ, List.map_append, List.map_cons, List.map_nil]
     rw [read_toNat_succ, last, ih (q + 1) tail, snoc, VG.Proof.Rsa.os2ip_snoc]
-    omega
+    omega_using []
 
 /-- Reversing a little-endian memory read produces its I2OSP encoding. -/
 theorem reversed_i2osp (m m' : Mem) (p q : Addr) (n : Nat)
@@ -45,8 +45,8 @@ theorem reversed_i2osp (m m' : Mem) (p q : Addr) (n : Nat)
   have value : (m.read p n).toNat = Spec.Rsa.os2ip (Spec.Rsa.bytesAt m' q n) := by
     apply reversed_read
     intro j hj
-    have h := bytes (n - 1 - j) (by omega)
-    rw [show n - 1 - (n - 1 - j) = j by omega] at h
+    have h := bytes (n - 1 - j) (by omega_using [hj])
+    rw [show n - 1 - (n - 1 - j) = j by omega_using [hj]] at h
     exact h.symm
   rw [value]
   have len : (Spec.Rsa.bytesAt m' q n).length = n := by

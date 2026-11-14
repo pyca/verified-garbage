@@ -17,8 +17,9 @@ lengths in `r2` and `out` in the header's word `hOut`, as verification does
 * the mask in the header's word `hMask` all ones: validation checked
   `g^x mod p = y` (`keyPair`, the mask of it, which validation runs);
 * in the P space, `g^k mod p` to the buffer;
-* in the Q space, `r = (g^k mod p) mod q` (`reduce`) into array 9, the masks of
-  `0 < k < q`, `0 < x < q` and `r ≠ 0`, `R² mod q`, `q − 2` to the buffer,
+* in the Q space, `R² mod q` (`Verify.rrQ`), `r = (g^k mod p) mod q`
+  (`Verify.vModQ`) into array 9, the masks of `0 < k < q`, `0 < x < q` and
+  `r ≠ 0`, `q − 2` to the buffer,
   `w = k^(q − 2) mod q`, then `s = w (z + x r) mod q` for the digest's scalar
   `z` (`addMod`: `addArr`, `subMod`, `selectAcc`) and the mask of `s ≠ 0`;
 * r and s, selected with 0 by the mask, to `out`; the result is the mask's
@@ -72,11 +73,10 @@ def nonZero (a : Nat) : Prog isa :=
 /-- In the Q space: `r = (g^k mod p) mod q` into array 9, and `hMask &=` the
 masks of `0 < k < q`, `0 < x < q` and `r ≠ 0`. -/
 def rRanges : Prog isa :=
-  .seq (.block (enterQ ++ bufBase .r30 .r0 ++ getP .r31)) (.seq ModArith.reduce
-    (.seq (.block [.addi .r31 .r23 0]) (.seq (copy 9 1) (.seq (Verify.zeroArr 7)
+  .seq (copy 6 4) (.seq (.block enterQ) (.seq Verify.rrQ (.seq Verify.vModQ (.seq (copy 9 4) (.seq (copy 8 1) (.seq (Verify.zeroArr 7)
       (.seq (.block Verify.ptrR) (.seq (loadArr 6) (.seq (.block ptrX) (.seq (loadArr 5)
         (.seq (.block [.load .d .r22 .r21 hMask]) (.seq (Verify.inRange 6) (.seq (Verify.inRange 5)
-          (.seq (nonZero 9) (.block [.store .d .r22 .r21 hMask])))))))))))))
+          (.seq (nonZero 9) (.block [.store .d .r22 .r21 hMask])))))))))))))))
 
 /-- `w = k^(q − 2) mod q` into array 4: k into array 4, `R² mod q` into array
 1, the power over the buffer's `q_len` octets. -/
@@ -119,8 +119,8 @@ def output : Prog isa :=
 /-- The signing, for a key known to pass validation, after the setup of the
 working spaces. -/
 def body : Prog isa :=
-  .seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.rrQ (.seq Verify.qMinus2 (.seq inverseK
-    (.seq sValue output))))))
+  .seq (.block markValid) (.seq gk (.seq rRanges (.seq Verify.qMinus2 (.seq inverseK
+    (.seq sValue output)))))
 
 /-- `out`'s `2 q_len` octets := 0, and `r3 := 0`. -/
 def zeroOut : Prog isa :=

@@ -38,13 +38,13 @@ theorem sampleRound_ready {len : Nat} {p : SamplePublic} {s : State} (h : Sample
   rw [← h.2]
   exact WP.mono (sampleWitness_ok h.1 p.prime.exponentRoom p.prime.odd
     (by rw [p.length]; exact p.prime.len2)
-    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega)
+    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega_arith)
     (by rw [p.length]; exact p.prime.lenWords) (by rw [p.length]; exact p.prime.predBits))
     (fun _ ⟨hr, hx, _, _, _⟩ => ⟨hr, hx⟩)
 
 theorem witnessMont_ready (M : Mont) {p : RoundPublic} {s : State} (h : BeforeRound p s) :
     WP isa (M.mm aXm aX aR2) s (Caller.Before ⟨p.prime.B, p.prime.Z, p.prime.w⟩) := by
-  refine WP.mono (witnessMont_ok M h.1 p.prime.exponentRoom p.prime.odd (by have := p.prime.n3; omega) h.2)
+  refine WP.mono (witnessMont_ok M h.1 p.prime.exponentRoom p.prime.odd (by have := p.prime.n3; omega_using [this]) h.2)
     fun t ⟨ht, hx, _, _⟩ => ?_
   refine ⟨p.prime.w4, p.prime.w128, p.prime.exponentRoom, p.prime.N,
     wv t.mem p.prime.B (slot p.prime.w aB) p.prime.w, p.witness,

@@ -20,13 +20,13 @@ theorem previous_column_lt (p : Params) (hl : 0 < p.lanes)
     (column + p.laneLen - 1) % p.laneLen < p.laneLen := by
   have seg := segmentLen_ge_two p hl hm
   have lanes := laneLen_segments p hl
-  exact Nat.mod_lt _ (by omega)
+  exact Nat.mod_lt _ (by omega_using [seg, lanes])
 
 theorem cell_bytes (p : Params) (hl : 0 < p.lanes) {lane column : Nat}
     (hlane : lane < p.lanes) (hcolumn : column < p.laneLen) :
     (lane * p.laneLen + column) * 1024 + 1024 ≤ p.blocks * 1024 := by
   have cell := cell_lt p hl hlane hcolumn
-  have scaled := Nat.mul_le_mul_right 1024 (show lane * p.laneLen + column + 1 ≤ p.blocks by omega)
+  have scaled := Nat.mul_le_mul_right 1024 (show lane * p.laneLen + column + 1 ≤ p.blocks by omega_using [cell])
   simpa only [Nat.add_mul, Nat.one_mul] using scaled
 
 theorem current_cell_lt (p : Params) (hl : 0 < p.lanes) {lane slice index : Nat}

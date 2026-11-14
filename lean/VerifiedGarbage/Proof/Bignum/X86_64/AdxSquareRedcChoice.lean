@@ -21,7 +21,7 @@ theorem and7 (w : Nat) (hw : w < 2 ^ 64) :
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw,
     show (7 : BitVec 64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem redcTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w mi)
@@ -29,7 +29,7 @@ theorem redcTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     WP isa (.block AdxSquare.redcTest) s fun t =>
       t.zf = some (decide (w % 8 = 0)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
   have hl := hs.ld (show 8 * sW + 8 ≤ Z by
-    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega)
+    have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this])
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     t.zf = some (decide (w % 8 = 0)) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
@@ -37,7 +37,7 @@ theorem redcTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   xrun [State.ea, hdr, hdi, hdrOff, hl, hH.hw, and7 w hw]
   change ((BitVec.ofNat 64 w &&& 7) - BitVec.ofNat 64 0 == 0) = _
   rw [and7 w hw]
-  exact ofNat_sub_beq (by omega) (by decide)
+  exact ofNat_sub_beq (by omega_using []) (by decide)
 
 /-- A reduction of the square at `aAcc + 16` into `aTmp`, for sizes `w` with `P w`. -/
 structure RedOk (red : Prog isa) (P : Nat → Prop) : Prop where
@@ -51,6 +51,6 @@ structure RedOk (red : Prog isa) (P : Nat → Prop) : Prop where
 
 theorem redc_red (P : Nat → Prop) : RedOk AdxSquare.redc P := ⟨fun hs hdi hH hZ hw1 hw hinv _ =>
   WP.mono (redc_ok hs hdi hH hZ hw1 hw hinv) fun _ ⟨vt, ot, kt⟩ =>
-    ⟨vt, ot.mono (by omega) (by omega), kt.mono (by decide)⟩⟩
+    ⟨vt, ot.mono (by omega_using []) (by omega_using []), kt.mono (by decide)⟩⟩
 
 end VG.Proof.Bignum.X86_64.AdxSquare

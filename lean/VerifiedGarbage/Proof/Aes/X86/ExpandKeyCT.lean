@@ -114,18 +114,18 @@ theorem ek_wf₀ {s : State} (hp : EPre s) : VG.X86.Taint.Wf ekτ₀ s := by
   have hS := hp.fS; have hB := hp.fB; have hs := hp.fSp
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ekτ₀]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ekτ₀]; omega_using [hs], ?_⟩, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨hp.dSB, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega
+    rintro r (rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.rS hp.aS
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.rB hp.aB
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [hs]) hp.rS hp.aS
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [hs]) hp.rB hp.aB
   · intro p hp'
     simp only [ekτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -141,12 +141,12 @@ theorem ek_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.expandKeyX86.pre s₁)
   · simp only [ekτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
-    simp only [ekSchR, ekScrR, ekSchP, ekScrP, ha 2 (by omega), ha 3 (by omega)]
+    simp only [ekSchR, ekScrR, ekSchP, ekScrP, ha 2 (by omega_using []), ha 3 (by omega_using [])]
   · simp only [ekτ₀] at hk
     rw [show VG.X86.Taint.depth ekτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 20) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 20) hp₂.fSp h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem expandKey_ct :
     ConstantTime isa Proof.Aes.expandKeyX86.pre Proof.Aes.expandKeyX86.pub Impl.Aes.X86.expandKey :=

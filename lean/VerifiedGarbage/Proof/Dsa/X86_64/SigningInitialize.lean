@@ -40,7 +40,7 @@ theorem signingInitialize_ok {p : SigningInput} {original s : State} (h : Signin
   have hqs : Src s L.base usedBytes (L.fields .q) p.components.q := by
     change Src s p.base usedBytes (original.gpr .rdx + original.gpr .r8) p.components.q
     rw [h.pLength]
-    exact source_slice hkey (by rw [p.keyLength]; omega)
+    exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
   refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.rdi hs.fields hps hqs p.components.pLength p.components.qLength
     rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_
@@ -51,6 +51,6 @@ theorem signingInitialize_ok {p : SigningInput} {original s : State} (h : Signin
     (h.nonceSource.congrK hfull hkeep) (h.digestSource.congrK hfull hkeep), ?_, ?_, hfull, hkeep.mono (by decide)⟩
   · exact hm.trans ((hs.fields .mask).trans (congrArg mask ha))
   · intro i hi
-    exact (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi)
+    exact (hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hs.saved i hi)
 
 end VG.Proof.Dsa.X86_64

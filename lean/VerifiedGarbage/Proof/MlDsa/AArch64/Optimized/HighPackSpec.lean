@@ -32,7 +32,7 @@ theorem highCoefficients_bound {g : Nat} (hg : IsG g) (p : Poly) :
   · change _ < 16 at h ⊢; exact h
   · change _ < 44 at h
     change _ < 64
-    omega
+    omega_using [h]
 
 theorem packWidth_eq {g : Nat} (hg : IsG g) :
     bitlen (hbM g-1)=packWidth g := by rcases hg with rfl | rfl <;> rfl

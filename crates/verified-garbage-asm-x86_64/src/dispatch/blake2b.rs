@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_blake2b_init`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -27,6 +29,8 @@ pub unsafe fn vg_blake2b_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blake2b_update_avx512` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX512_FEATURES`); `vg_blake2b_update_avx2` if the CPU supports its features (`VG_BLAKE2B_UPDATE_AVX2_FEATURES`); or else `vg_blake2b_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -81,6 +85,8 @@ pub unsafe fn vg_blake2b_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state:
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_blake2b_finalize_avx512` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX512_FEATURES`); `vg_blake2b_finalize_avx2` if the CPU supports its features (`VG_BLAKE2B_FINALIZE_AVX2_FEATURES`); or else `vg_blake2b_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

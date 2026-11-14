@@ -337,10 +337,10 @@ theorem pro_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) :
   have hsc := W.scr
   have hS : ⟨σ.gpr .rcx, L.scr⟩ ∈ σ.wr := by rw [hwr]; simp
   have c : ∀ o, o + 8 ≤ L.scr → (⟨σ.gpr .rcx, L.scr⟩ : Region).Contains (σ.gpr .rcx + BitVec.ofNat 64 o) 8 :=
-    fun o ho => contains_offset' ho (by omega)
+    fun o ho => contains_offset' ho (by omega_using [hsc])
   have w : ∀ o, o + 8 ≤ L.scr → InRegions σ.wr (σ.gpr .rcx + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
-  have w0 := w 840 (by omega); have w1 := w 848 (by omega); have w2 := w 856 (by omega)
-  have w3 := w 864 (by omega); have w4 := w 872 (by omega); have w5 := w 880 (by omega)
+  have w0 := w 840 (by omega_using [hsc]); have w1 := w 848 (by omega_using [hsc]); have w2 := w 856 (by omega_using [hsc])
+  have w3 := w 864 (by omega_using [hsc]); have w4 := w 872 (by omega_using [hsc]); have w5 := w 880 (by omega_using [hsc])
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r15] (Q := fun s =>
     s.mem = (((((σ.mem.writeW (σ.gpr .rcx + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
@@ -352,10 +352,10 @@ theorem pro_ok {L : Kem} (W : KgWfB L) {σ : State} (hp : (keyGenK L).pre σ) :
     (by xrun [w0, w1, w2, w3, w4, w5]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, h13, h15⟩, k⟩ => ⟨?_, h15⟩
   have hf : Frame [⟨σ.gpr .rcx, L.scr⟩] σ.mem s.mem := by
     rw [hm]
-    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 848 (by omega))).writeW (List.mem_singleton_self _) _ (c 856 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 864 (by omega))).writeW (List.mem_singleton_self _) _ (c 872 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega)))
+    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_using [hsc]))).writeW
+      (List.mem_singleton_self _) _ (c 848 (by omega_using [hsc]))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_using [hsc]))).writeW
+      (List.mem_singleton_self _) _ (c 864 (by omega_using [hsc]))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_using [hsc]))).writeW
+      (List.mem_singleton_self _) _ (c 880 (by omega_using [hsc])))
   have hsd : bytesAt s.mem (σ.gpr .rdi) 64 = bytesAt σ.mem (σ.gpr .rdi) 64 :=
     bytesAt_frame hf (by simpa using d3) (by decide)
   have hsp : s.gpr .rsp = σ.gpr .rsp := k.gpr (by decide)

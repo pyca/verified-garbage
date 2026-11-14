@@ -67,7 +67,7 @@ theorem ct_scalar : ConstantTime isa em4K.pre em4K.pub expandMask4 := by
   refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ s => PC σ 0 s)
     (fun σ s hp h => by
       subst h
-      exact WP.mono (pro_ok (pre_of hp)) fun _ h => ⟨h, fun _ h => absurd h (by omega)⟩)
+      exact WP.mono (pro_ok (pre_of hp)) fun _ h => ⟨h, fun _ h => absurd h (by omega_using [])⟩)
     (taintRel [.rdi, .rdx, .rcx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

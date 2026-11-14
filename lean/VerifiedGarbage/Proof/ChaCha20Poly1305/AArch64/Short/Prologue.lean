@@ -135,7 +135,7 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
       exact ⟨workR s₀, List.mem_singleton_self _, sub1 s₀ (by lit_omega) h⟩
   have dj : ∀ k n a w, k + n ≤ a ∨ a + w ≤ k → k + n ≤ 1280 → a + w ≤ 1280 →
       ∀ r ∈ [sub s₀ k n], (sub s₀ a w).Disjoint r := fun k n a w h h₁ h₂ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact sub_disj s₀ (by omega) h₂ h₁
+    simp only [List.mem_singleton] at hr; subst hr; exact sub_disj s₀ (by omega_using [h]) h₂ h₁
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), e21]
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), e22]
@@ -176,10 +176,10 @@ theorem Post1.cp {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) : CP s :
   have w : ∀ a n, a + n ≤ 1280 → InRegions s.wr (off (cx s₀) a) n := fun a n hn => by
     rw [h.wr]; exact hp.in_ctx hn
   refine ⟨h.x20r, fun k => ?_, ?_, fun d n hd => ?_, fun d n hd => ?_, ?_, ?_, ?_⟩
-  · rw [h.x0, off_add, h.rd, h.wr]; exact hp.in_ctx' (by have := k.isLt; omega)
+  · rw [h.x0, off_add, h.rd, h.wr]; exact hp.in_ctx' (by have := k.isLt; omega_using [])
   · rw [h.x0, off_add]; exact w _ _ (by decide)
-  · rw [h.x3, off_add]; exact w _ _ (by omega)
-  · rw [h.x1, off_add]; exact w _ _ (by omega)
+  · rw [h.x3, off_add]; exact w _ _ (by omega_using [hd])
+  · rw [h.x1, off_add]; exact w _ _ (by omega_using [hd])
   · show (⟨s.gpr .x0, 64⟩ : Region).Disjoint ⟨s.gpr .x3, 320⟩
     rw [h.x0, h.x3]; exact sub_disj s₀ (by decide) (by decide) (by decide)
   · show (⟨s.gpr .x0, 64⟩ : Region).Disjoint ⟨s.gpr .x1, 320⟩
@@ -238,9 +238,9 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
       ∀ r ∈ [sub s₀ 0 64, sub s₀ 384 64, sub s₀ 64 320], (sub s₀ a w).Disjoint r := by
     intro a w ha haw r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact sub_disj s₀ (by omega) haw (by decide)
+    rcases hr with rfl | rfl | rfl <;> exact sub_disj s₀ (by omega_using [ha]) haw (by decide)
   have rd : ∀ a, 632 ≤ a → a + 8 ≤ 1280 → s₂.mem.readW (off (cx s₀) a) 64 = s.mem.readW (off (cx s₀) a) 64 :=
-    fun a h₁ h₂ => hf₂.readW (r := sub s₀ a 8) (Region.contains_self _ _) (dj a 8 (by omega) h₂) (by decide)
+    fun a h₁ h₂ => hf₂.readW (r := sub s₀ a 8) (Region.contains_self _ _) (dj a 8 (by omega_using [h₁]) h₂) (by decide)
   refine WP.mono (WP.withSp (leave_ok hp x21₂ (by rw [c₂.rd, h.rd]) (by rw [c₂.wr, h.wr])))
     fun s₇ ⟨⟨x19₇, x20₇, x26₇, x0₇, x1₇, g, hm, rd₇, wr₇⟩, sp₇⟩ => ?_
   have cs : ∀ r ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x27, .x28], s₇.gpr r = s.gpr r := by
@@ -297,11 +297,11 @@ theorem otk_eq {s₀ : State} {m : Mem} (h : ∀ k < 320, m (off (cx s₀) 64 + 
       VG.Proof.ChaCha20.length_serialize]
   · intro i h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
-    simp only [bytesAt, List.getElem_map, List.getElem_range, h i (by omega), ks5,
-      show i / 64 = 0 by omega, show i % 64 = i by omega, VG.Proof.ChaCha20.ctr_zero,
+    simp only [bytesAt, List.getElem_map, List.getElem_range, h i (by omega_using [h₁]), ks5,
+      show i / 64 = 0 by omega_using [h₁], show i % 64 = i by omega_using [h₁], VG.Proof.ChaCha20.ctr_zero,
       Spec.ChaCha20Poly1305.polyKeyGen, Spec.ChaCha20.chacha20Block, List.getElem_take]
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by
-      rw [VG.Proof.ChaCha20.length_serialize]; omega), Option.getD_some]
+      rw [VG.Proof.ChaCha20.length_serialize]; omega_using [h₁]), Option.getD_some]
 
 theorem prologue_ok {sve : Bool} {s₀ : State} (hp : APre e s₀) :
     WP isa (Short.prologue sve) s₀ (PostP e s₀) := by

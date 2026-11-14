@@ -61,24 +61,24 @@ theorem mulKeep_ok {s : State} {M : Nat} (E : Env base bytes len args M s) (A : 
   have nw' := h.scratch.nowrap
   have wbe := wb_eq len
   have f5 := (h.fits (j := 5) (by decide)).2
-  have fo := (h.fits (j := o) (by omega)).1
+  have fo := (h.fits (j := o) (by omega_using [ho4])).1
   have n0 : numOff = 256 := rfl
   refine WP.mono (mulRaw_ok E hbytes ho ho4 ha hb hB) fun u ⟨Eu, _, K, F, L, _⟩ =>
     ⟨Eu, A.keep K (by decide), K, L, fun j hj hjo => ?_, ?_⟩
   · have h5 : numAt len j + 4 * nw len ≤ numAt len 5 := by
-      have := Nat.mul_le_mul_right (wb len) (show j + 1 ≤ 5 by omega)
-      simp only [numAt]; rw [Nat.add_mul, Nat.one_mul] at this; omega
-    refine mulFrame_val32 E.room nw' F ?_ h5 (by omega) fo f5
+      have := Nat.mul_le_mul_right (wb len) (show j + 1 ≤ 5 by omega_using [hj])
+      simp only [numAt]; rw [Nat.add_mul, Nat.one_mul] at this; omega_using [wbe, this]
+    refine mulFrame_val32 E.room nw' F ?_ h5 (by omega_using [f5, h5]) fo f5
     rcases Nat.lt_or_gt_of_ne hjo with hl | hl
     · left
-      have := Nat.mul_le_mul_right (wb len) (show j + 1 ≤ o by omega)
-      simp only [numAt] at this ⊢; rw [← wbe]; rw [Nat.add_mul, Nat.one_mul] at this; omega
+      have := Nat.mul_le_mul_right (wb len) (show j + 1 ≤ o by omega_using [hl])
+      simp only [numAt] at this ⊢; rw [← wbe]; rw [Nat.add_mul, Nat.one_mul] at this; omega_using [this]
     · right
-      have := Nat.mul_le_mul_right (wb len) (show o + 1 ≤ j by omega)
-      simp only [numAt] at this ⊢; rw [Nat.add_mul, Nat.one_mul] at this; omega
+      have := Nat.mul_le_mul_right (wb len) (show o + 1 ≤ j by omega_using [hl])
+      simp only [numAt] at this ⊢; rw [Nat.add_mul, Nat.one_mul] at this; omega_using [this]
   · have f0 := (h.fits (j := 0) (by decide)).1
     simp only [numAt, numOff] at f0
-    rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E.room nw' F (by decide) (by omega) fo f5]
+    rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E.room nw' F (by decide) (by omega_using [f0]) fo f5]
 
 variable (sp : BitVec 32)
 
@@ -89,7 +89,7 @@ theorem bit_st {M k : Nat} {s : State} (S : St base bytes len args sp M k s) :
   have h := E.pi
   have f0 := (h.fits (j := 0) (by decide)).1
   simp only [numAt, numOff] at f0
-  refine WP.mono (PublicContext.bitTest_ok h.scratch (by omega)) fun u ⟨M₁, K₁, Z₁⟩ => ?_
+  refine WP.mono (PublicContext.bitTest_ok h.scratch (by omega_using [f0])) fun u ⟨M₁, K₁, Z₁⟩ => ?_
   refine ⟨⟨E.keep K₁ (by decide) (by decide) (by rw [M₁]; exact Frame.refl _ _), A.keep K₁ (by decide),
     (K₁.1 _ (by decide)).trans sp₀, by rw [M₁]; exact X, by rw [M₁]; exact O, by rw [M₁]; exact c₀⟩, ?_⟩
   rw [Z₁, ← c₀, val32_parity]
@@ -114,17 +114,17 @@ theorem tail_st {M k : Nat} {s : State} (S : St base bytes len args sp M k s) :
   have nw' := h.scratch.nowrap
   have wbe := wb_eq len
   have f5 := (h.fits (j := 5) (by decide)).2
-  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega
+  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega_using []
   have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
   have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
-  refine WP.block_append (WP.mono (shiftExponent_ok h.scratch 2 128 (by omega)) fun u₆ ⟨O₆, V₆, K₆⟩ => ?_)
+  refine WP.block_append (WP.mono (shiftExponent_ok h.scratch 2 128 (by omega_using [f5, e5])) fun u₆ ⟨O₆, V₆, K₆⟩ => ?_)
   have E₆ := E.keep K₆ (by decide) (by decide) (Outside.chg O₆ (.inl ⟨by decide, by decide⟩))
-  refine WP.mono (PublicContext.exponentLeft_ok E₆.pi.scratch (by omega)) fun t ⟨M₇, K₇, Z₇⟩ => ?_
+  refine WP.mono (PublicContext.exponentLeft_ok E₆.pi.scratch (by omega_using [f5, e5])) fun t ⟨M₇, K₇, Z₇⟩ => ?_
   have W : val32 u₆.mem base 128 2 = k / 2 := by rw [V₆, c₀]
   exact ⟨⟨E₆.keep K₇ (by decide) (by decide) (by rw [M₇]; exact Frame.refl _ _),
     (A.keep K₆ (by decide)).keep K₇ (by decide), (K₇.1 _ (by decide)).trans ((K₆.1 _ (by decide)).trans sp₀),
-    by rw [M₇, O₆.val32 (.inr (by omega)) (by omega)]; exact X,
-    by rw [M₇, O₆.val32 (.inr (by omega)) (by omega)]; exact O, by rw [M₇, W]⟩, by rw [Z₇, W]⟩
+    by rw [M₇, O₆.val32 (.inr (by omega_using [e1])) (by omega_using [nw', wbe, f5, e1])]; exact X,
+    by rw [M₇, O₆.val32 (.inr (by omega_using [e3])) (by omega_using [nw', wbe, f5, e3])]; exact O, by rw [M₇, W]⟩, by rw [Z₇, W]⟩
 
 theorem sparseRound_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
     RelCT isa (Both fun s => ∃ M, St base bytes len args sp M k s) sparseRound
@@ -140,7 +140,7 @@ theorem sparseRound_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
       intro M s S; rcases hb13 with rfl | rfl
       · exact S.2.2.2.1
       · exact S.2.2.2.2.1
-    exact relCT_both ((mul_relCT hbytes sp ho4 ha hb (by omega) hT).mono (fun _ _ ⟨⟨_, S₁⟩, ⟨_, S₂⟩⟩ =>
+    exact relCT_both ((mul_relCT hbytes sp ho4 ha hb (by omega_using [ho]) hT).mono (fun _ _ ⟨⟨_, S₁⟩, ⟨_, S₂⟩⟩ =>
         ⟨S₁.2.2.1, S₂.2.2.1, ⟨⟨_, S₁.1, lt S₁⟩, S₁.2.1⟩, ⟨⟨_, S₂.1, lt S₂⟩, S₂.2.1⟩⟩) fun _ _ h => h)
       fun _ ⟨M, S⟩ => WP.mono (mulSt_ok sp hbytes ho ho4 ha hb h1 h3 S (lt S)) fun _ h => ⟨M, h⟩
   unfold sparseRound
@@ -165,7 +165,7 @@ theorem sparseRound_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
       fun _ ⟨M, S⟩ => WP.mono (PublicContext.exponentLeft_ok S.1.pi.scratch (by
           have h0 := (S.1.pi.fits (j := 0) (by decide)).1
           simp only [numAt, numOff] at h0
-          omega))
+          omega_using [h0]))
         fun t ⟨Mt, Kt, Zt⟩ => ⟨⟨M, S.1.keep Kt (by decide) (by decide) (by rw [Mt]; exact Frame.refl _ _),
           S.2.1.keep Kt (by decide), (Kt.1 _ (by decide)).trans S.2.2.1,
           by rw [Mt]; exact S.2.2.2.1, by rw [Mt]; exact S.2.2.2.2.1,
@@ -187,7 +187,7 @@ theorem sparseLoop_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
     exact ⟨S₁, S₂⟩
   · rw [e₁] at h
     have : k / 2 ≠ 0 := by simpa using h
-    exact ⟨k / 2, by omega, S₁, S₂⟩
+    exact ⟨k / 2, by omega_using [this], S₁, S₂⟩
 
 end
 

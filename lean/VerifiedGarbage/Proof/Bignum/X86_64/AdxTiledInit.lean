@@ -20,16 +20,16 @@ theorem frame_hdr {m m' : Mem} {B : Addr} {w : Nat} {mi : BitVec 64}
     apply hf.word_eq
     · intro r hr
       simp only [ranges,List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega
-    · omega
+      rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega_using [hk]
+    · omega_using [hk]
   exact ⟨(low sW (by decide)).trans hh.hw,(low sMinv (by decide)).trans hh.hminv,
-    fun k hk => (low (sArr k) (by unfold sArr; omega)).trans (hh.harr k hk)⟩
+    fun k hk => (low (sArr k) (by unfold sArr; omega_using [hk])).trans (hh.harr k hk)⟩
 
 theorem frame_ops {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)}
     (hv : Ops m B w ps) (hf : Frm B (ranges w) m m') : Ops m' B w ps :=
   hv.of_frm hf fun r hr => by
     simp only [ranges,List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega
+    rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega_using []
 
 theorem input_preserved {m m' : Mem} {B : Addr} {w a i n : Nat}
     (ha : a < 8) (h1 : a ≠ aAcc) (h2 : a ≠ aTmp) (hi : i+n ≤ w)
@@ -42,8 +42,8 @@ theorem input_preserved {m m' : Mem} {B : Addr} {w a i n : Nat}
   · intro r hr
     simp only [ranges,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl <;> simp only [] <;>
-      simp only [rawBase,sFn,slot,hdrBytes,aAcc,aTmp] at * <;> omega
-  · omega
+      simp only [rawBase,sFn,slot,hdrBytes,aAcc,aTmp] at * <;> omega_arith
+  · omega_using [hi, hZ, sa]
 
 theorem rowInit_ok {s : State} {B : Addr} {Z w : Nat}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hZ : slot w 8 ≤ Z) :
@@ -52,9 +52,9 @@ theorem rowInit_ok {s : State} {B : Addr} {Z w : Nat}
       Outside B (8*sFn 13) 16 s.mem t.mem ∧ Keep [.rax] s t := by
   have hn := hs.nowrap
   have cZ : carryOffset+8 ≤ Z := by
-    have := hdr_lt_slot w 8 (show sFn 14 < 32 by decide); unfold carryOffset; omega
+    have := hdr_lt_slot w 8 (show sFn 14 < 32 by decide); unfold carryOffset; omega_using [hZ, this]
   have jZ : 8*sFn 13+8 ≤ Z := by
-    have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega
+    have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega_using [hZ, this]
   have body : WP isa (.block AdxTiledProduct.rowInit) s fun t =>
       t.mem = (s.mem.writeW (off B carryOffset) (0 : BitVec 64)).writeW (off B (8*sFn 13)) (0 : BitVec 64) ∧ Keep [.rax] s t := by
     apply WP.keep [.rax] (Q := fun t => t.mem = (s.mem.writeW (off B carryOffset) (0 : BitVec 64)).writeW (off B (8*sFn 13)) (0 : BitVec 64)) _ rfl
@@ -62,13 +62,13 @@ theorem rowInit_ok {s : State} {B : Addr} {Z w : Nat}
     xrun [State.ea,hdr,hd,hdrOff,carryOffset,hs.st (show 8*sFn 14+8 ≤ Z from cZ),hs.st jZ]
     rfl
   refine WP.mono body fun t ⟨mt,kt⟩ => ?_
-  have c := writeW_outside s.mem B (0 : BitVec 64) (by omega : carryOffset+8 ≤ 2^64)
-  have j := writeW_outside (s.mem.writeW (off B carryOffset) (0 : BitVec 64)) B (0 : BitVec 64) (by omega : 8*sFn 13+8 ≤ 2^64)
+  have c := writeW_outside s.mem B (0 : BitVec 64) (by omega_using [hn, cZ] : carryOffset+8 ≤ 2^64)
+  have j := writeW_outside (s.mem.writeW (off B carryOffset) (0 : BitVec 64)) B (0 : BitVec 64) (by omega_using [hn, jZ] : 8*sFn 13+8 ≤ 2^64)
   refine ⟨?_,?_,?_,kt⟩
-  · rw [mt,j.word (by unfold carryOffset sFn; omega) (by omega),word_writeW_self]
+  · rw [mt,j.word (by unfold carryOffset sFn; omega_using []) (by omega_using [hn, cZ]),word_writeW_self]
   · rw [mt,word_writeW_self]
   · rw [mt]
-    exact (c.mono (o' := 8*sFn 13) (n' := 16) (by unfold carryOffset sFn; omega) (by unfold carryOffset sFn; omega)).trans
-      (j.mono (o' := 8*sFn 13) (n' := 16) (by omega) (by omega))
+    exact (c.mono (o' := 8*sFn 13) (n' := 16) (by unfold carryOffset sFn; omega_using []) (by unfold carryOffset sFn; omega_using [])).trans
+      (j.mono (o' := 8*sFn 13) (n' := 16) (by omega_using []) (by omega_using []))
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

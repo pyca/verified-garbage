@@ -30,11 +30,11 @@ private theorem copy_header (d : PreparePublic) (s : State) (h : HeaderGood d s)
     WP isa copyR1 s (HeaderGood d) := by
   obtain ⟨mi, hg, hd, hz, hw, hk⟩ := h
   have hfit : slot d.w aR1 + 8 * (d.w + 2) ≤ d.IZ := by
-    simp only [slot, aR1] at hz ⊢; omega
+    simp only [slot, aR1] at hz ⊢; omega_using [hz]
   refine WP.mono (copyToExt_ok hg hd.z (by omega_using [hd.w4]) (by omega_using [hd.w128])
     (a := aY) (d := aR1) (by decide) (by decide) hfit) fun t ⟨_, hf, k⟩ => ?_
   exact ⟨mi, ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-    hg.hdr.outside hf (by unfold slot; omega)⟩, hd, hz, k.2.2.trans hw, hk⟩
+    hg.hdr.outside hf (by unfold slot; omega_using [])⟩, hd, hz, k.2.2.trans hw, hk⟩
 
 theorem prepareConstants_ct (M : Mont) :
     RelCT isa (Two R2Ready) (prepareConstants M.mm) fun _ _ => True := by
@@ -50,7 +50,7 @@ theorem prepareConstants_ct (M : Mont) :
 theorem prepareConstants_header (M : Mont) (d : PreparePublic) (s : State) (h : R2Ready d s) :
     WP isa (prepareConstants M.mm) s (HeaderGood d) := by
   obtain ⟨mi, hg, hd, hz, hw, hk, hi, hn, hone, hr2, ho, hN⟩ := h
-  have hfit : slot d.w aRm1 + 8 * (d.w + 2) ≤ d.IZ := by simp only [slot, aRm1] at hz ⊢; omega
+  have hfit : slot d.w aRm1 + 8 * (d.w + 2) ≤ d.IZ := by simp only [slot, aRm1] at hz ⊢; omega_using [hz]
   refine WP.mono (prepareConstants_ok M hg hd.z hfit (by omega_using [hd.w4])
     (by omega_using [hd.w128]) hn hi hone ho hN hr2) fun t ⟨ht, _, _, _, k⟩ => ?_
   exact ⟨mi, ht, hd, hz, k.2.2.trans hw, hk⟩

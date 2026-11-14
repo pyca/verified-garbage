@@ -21,7 +21,7 @@ open VG.Proof.Mont.X86
 theorem val32_parity (m : Mem) (base : Addr) (out n : Nat) :
     val32 m base out (n + 1) % 2 = w32 m base out % 2 := by
   rw [val32]
-  omega
+  omega_using []
 
 theorem shiftExponent_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
     ∀ n out, out + 4 * n ≤ size →
@@ -35,22 +35,22 @@ theorem shiftExponent_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
     have hnext : (n == 0) = false → out + 8 ≤ size := by
       intro h
       have hn : n ≠ 0 := by intro e; subst n; contradiction
-      omega
-    refine WP.block_append (WP.mono (shiftWord_ok hs (n == 0) (by omega) hnext)
+      omega_using [ho, hn]
+    refine WP.block_append (WP.mono (shiftWord_ok hs (n == 0) (by omega_using [ho]) hnext)
       fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
-    refine WP.mono (shiftExponent_ok hs₁ n (out + 4) (by omega)) fun t ⟨O₂, V₂, K₂⟩ => ?_
+    refine WP.mono (shiftExponent_ok hs₁ n (out + 4) (by omega_using [ho])) fun t ⟨O₂, V₂, K₂⟩ => ?_
     have hn := hs.nowrap
-    refine ⟨(O₁.mono (o' := out) (n' := 4 * (n + 1)) (by omega) (by omega)).trans
-      (O₂.mono (o' := out) (n' := 4 * (n + 1)) (by omega) (by omega)), ?_, K₁.trans K₂⟩
-    have tail := O₁.val32 (d := out + 4) (k := n) (by omega) (by omega)
-    have head := O₂.w32 (d := out) (by omega) (by omega)
+    refine ⟨(O₁.mono (o' := out) (n' := 4 * (n + 1)) (by omega_using []) (by omega_using [])).trans
+      (O₂.mono (o' := out) (n' := 4 * (n + 1)) (by omega_using []) (by omega_using [])), ?_, K₁.trans K₂⟩
+    have tail := O₁.val32 (d := out + 4) (k := n) (by omega_using []) (by omega_using [ho, hn])
+    have head := O₂.w32 (d := out) (by omega_using []) (by omega_using [ho, hn])
     rw [val32, val32, head, V₁, V₂, tail]
     cases n with
-    | zero => simp only [beq_self_eq_true, ite_true, val32]; omega
+    | zero => simp only [beq_self_eq_true, ite_true, val32]; omega_using []
     | succ n =>
       have hp := val32_parity s.mem base (out + 4) n
       simp only [show (n + 1 == 0) = false from by simp, Bool.false_eq_true, ite_false]
-      omega
+      omega_using [hp]
 
 end VG.Proof.Mont.X86.Dynamic

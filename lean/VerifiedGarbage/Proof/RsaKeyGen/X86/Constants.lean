@@ -97,7 +97,7 @@ theorem code_ok {mont : Prog isa} {name : String}
   refine WP.mono (subtract_ok v D oneD (Nat.mod_lt _ positive)) fun t ⟨T, oneT, minusT, Ot, Kt⟩ => ?_
   have Wa : WorkspaceFrame g (ranges g) s.mem a.mem :=
     WorkspaceFrame.of_outs S.scratch.nowrap (Outs.of_outside
-      (Oa.mono (Nat.le_refl _) (by unfold Geometry.words; omega))
+      (Oa.mono (Nat.le_refl _) (by unfold Geometry.words; omega_using []))
       (show (g.array 6, 8 * (g.w + 2)) ∈ ranges g from by simp [ranges, montWrites]))
   have Wb := Ob.mono (fun r mem => List.mem_append_left _ mem : ∀ r ∈ montWrites g 6, r ∈ ranges g)
   have Wd : WorkspaceFrame g (ranges g) b.mem d.mem :=

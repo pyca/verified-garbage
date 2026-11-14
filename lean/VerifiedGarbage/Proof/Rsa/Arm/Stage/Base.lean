@@ -152,13 +152,13 @@ theorem In.sizes {P : RP} {σ : State} (h : In P σ) : Sizes P := by
   have k1 := h.k1; have k2 := h.k2; have scr := h.scr; have fS := h.fS
   simp only [Spec.Rsa.scratchWords] at scr
   simp only [RP.Z] at fS
-  refine ⟨show 8 ≤ (P.K + 7) / 8 by omega, show (P.K + 7) / 8 ≤ 128 by omega,
-    show 2 * ((P.K + 7) / 8) + 2 ≤ 258 by omega, show 2 * (2 * ((P.K + 7) / 8) + 2) + 2 ≤ 518 by omega,
-    show P.K ≤ 4 * (2 * ((P.K + 7) / 8) + 2) - 8 by omega, ?_, ?_, ?_, ?_, show P.SL * 8 ≤ 2 ^ 32 by omega⟩
-  · simp only [arr, S, hdr, nArr, RP.w, RP.w6, RP.Z]; omega
-  · simp only [RP.oM, arr, S, hdr, mBase, RP.w, RP.w6]; omega
-  · simp only [RP.oM, RP.lenM, arr, S, hdr, mBase, RP.w, RP.w6]; omega
-  · simp only [S, RP.w]; omega
+  refine ⟨show 8 ≤ (P.K + 7) / 8 by omega_using [k1], show (P.K + 7) / 8 ≤ 128 by omega_using [k2],
+    show 2 * ((P.K + 7) / 8) + 2 ≤ 258 by omega_using [k2], show 2 * (2 * ((P.K + 7) / 8) + 2) + 2 ≤ 518 by omega_using [k2],
+    show P.K ≤ 4 * (2 * ((P.K + 7) / 8) + 2) - 8 by omega_using [], ?_, ?_, ?_, ?_, show P.SL * 8 ≤ 2 ^ 32 by omega_using [fS]⟩
+  · simp only [arr, S, hdr, nArr, RP.w, RP.w6, RP.Z]; omega_using [k1, scr]
+  · simp only [RP.oM, arr, S, hdr, mBase, RP.w, RP.w6]; omega_using [k1]
+  · simp only [RP.oM, RP.lenM, arr, S, hdr, mBase, RP.w, RP.w6]; omega_using []
+  · simp only [S, RP.w]; omega_using []
 
 /-! ## Steps -/
 
@@ -184,6 +184,6 @@ theorem Keep.frameS {P : RP} {v : Nat} {js ds : List Nat} {m m' : Mem}
   intro x hx
   have hz' : ¬ P.rS.Contains x 1 := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hz'
-  exact k.out (Z := P.Z) hj (fun d hd' => Nat.le_trans (hd d hd') hz) (by simp only [ofs]; omega)
+  exact k.out (Z := P.Z) hj (fun d hd' => Nat.le_trans (hd d hd') hz) (by simp only [ofs]; omega_using [hz'])
 
 end VG.Proof.Rsa.Arm.Keys

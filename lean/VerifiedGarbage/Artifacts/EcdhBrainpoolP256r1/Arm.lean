@@ -40,7 +40,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Law
 
-/-! # ECDH over brainpoolP256r1 (SP 800-64A) on 32-bit ARM -/
+/-! # ECDH over brainpoolP256r1 (SP 800-56A) on ARMv7 -/
 
 @[expose] public section
 
@@ -55,7 +55,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP256r1.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeBrainpoolP256r1U
-    verified := Proof.Ecdh.Arm.BrainpoolP256r1.ecdhU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdh.Arm.BrainpoolP256r1.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhBrainpoolP256r1.Arm

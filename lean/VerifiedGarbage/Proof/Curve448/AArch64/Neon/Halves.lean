@@ -37,11 +37,11 @@ theorem prodVal_eq {m : Mem} {base : Addr} {h : Nat} {X Y : Nat → Nat → Nat}
       X e (ia p) * Y e (ib p) := by
   obtain ⟨-, -, -, hz⟩ := prods_pos p hpm
   obtain ⟨pi, pb⟩ := prods_facts p hpm
-  have hc : hp p.hi + e < 4 := by unfold hp; split <;> omega
+  have hc : hp p.hi + e < 4 := by unfold hp; split <;> omega_using [he]
   simp only [prodVal]
   rw [vword_ld _ _ _ hc, vword_ld _ _ _ hc, hm.a _ pi _ hc]
-  have e1 : (hp p.hi + e) % 2 = e := by unfold hp; split <;> omega
-  have e2 : (hp p.hi + e) / 2 = if p.hi then 1 else 0 := by unfold hp; split <;> omega
+  have e1 : (hp p.hi + e) % 2 = e := by unfold hp; split <;> omega_using [he]
+  have e2 : (hp p.hi + e) / 2 = if p.hi then 1 else 0 := by unfold hp; split <;> omega_using [he]
   rw [e1, e2]
   congr 1
   unfold bOff ib
@@ -49,13 +49,13 @@ theorem prodVal_eq {m : Mem} {base : Addr} {h : Nat} {X Y : Nat → Nat → Nat}
   · rename_i hb; rw [hm.b _ hb _ hc, e1, e2]
   · rename_i hb
     rw [show NBP + 80 * h + 16 * (p.bv - 4) + 4 * (hp p.hi + e) = NBP + 80 * h + 16 * (p.bv - 4) + 4 * (hp p.hi + e)
-      from rfl, hm.sh _ (by omega) _ hc, e1]
+      from rfl, hm.sh _ (by omega_using [pb]) _ hc, e1]
     cases hhi : p.hi
-    · have := (hz (by omega)).1 hhi
+    · have := (hz (by omega_using [hb])).1 hhi
       simp only [hp, Bool.false_eq_true, ite_false, Nat.zero_add, Nat.add_zero, show e < 2 from he, ite_true,
-        show p.bv - 4 ≠ 0 by omega]
-    · have := (hz (by omega)).2 hhi
-      simp only [hp, ite_true, show ¬ (2 + e < 2) by omega, ite_false, show p.bv - 4 ≠ 4 by omega,
+        show p.bv - 4 ≠ 0 by omega_using [hb, this]]
+    · have := (hz (by omega_using [hb])).2 hhi
+      simp only [hp, ite_true, show ¬ (2 + e < 2) by omega_using [], ite_false, show p.bv - 4 ≠ 4 by omega_using [this],
         Nat.add_sub_cancel]
 
 theorem cast_sum {α : Type} (l : List α) (f : α → Nat) :

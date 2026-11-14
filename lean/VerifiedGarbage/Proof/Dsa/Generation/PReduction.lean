@@ -18,13 +18,13 @@ namespace VG.Proof.Dsa.Generation
 theorem pReduction_quotient (x q : Nat) :
     x + 1 - x % (2 * q) = 2 * q * (x / (2 * q)) + 1 := by
   have h := Nat.mod_add_div x (2 * q)
-  omega
+  omega_using [h]
 
 /-- Division's remainder is safe to subtract, even before the bit-size check. -/
 theorem pReduction_sub (x q : Nat) :
     x + 1 - x % (2 * q) = (x - x % (2 * q)) + 1 := by
   have := Nat.mod_le x (2 * q)
-  omega
+  omega_using [this]
 
 /-- Every reduced candidate is odd. -/
 theorem pReduction_odd (x q : Nat) : (x + 1 - x % (2 * q)) % 2 = 1 := by

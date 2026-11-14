@@ -28,7 +28,7 @@ theorem suffix_frame {s e t : State} (h : Lay s) (he : Entered s e) (hc : 0<Cnt 
   refine ⟨dR s,List.mem_singleton_self _,Offset.sub_base _ ?_⟩
   have := first_bound (gatherPre_of h he) hc
   change (firstLen e).toNat+(L s-(firstLen e).toNat)≤L s
-  omega
+  omega_using [this]
 
 
 theorem suffix_slots {s e t : State} (h : Lay s) (he : Entered s e) (hc : 0<Cnt s)

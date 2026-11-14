@@ -65,9 +65,9 @@ theorem mrInit_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ EM P �
   have pre := h.pre
   obtain ⟨fr, fw, fn⟩ := mr_facts pre (hE σ e).2
   have sz := pre.sizes
-  refine h.strM m hw (d := sChk) (by decide) fun t ht hwt mt _ => WP.block_nil ⟨by omega, Nat.le_refl _, ?_, ⟨e, ?_, hwt⟩, mt⟩
+  refine h.strM m hw (d := sChk) (by decide) fun t ht hwt mt _ => WP.block_nil ⟨by omega_using [], Nat.le_refl _, ?_, ⟨e, ?_, hwt⟩, mt⟩
   · rw [Nat.sub_self, Nat.add_sub_cancel, fn, ← rB_length P σ]
-    exact VG.Proof.Dsa.Generation.dmrAt_zero fw (by omega)
+    exact VG.Proof.Dsa.Generation.dmrAt_zero fw (by omega_using [sz])
   · have hc : chP P < 2 ^ 32 := by simp only [chP, Spec.Dsa.primeChecks]; split <;> decide
     rw [r1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc] at ht
     refine ht.mono (fun j hj => ⟨hj, rfl⟩) fun j hj => ⟨by mem_sub, ?_⟩

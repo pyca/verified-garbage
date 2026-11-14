@@ -44,11 +44,11 @@ theorem step_ok {u : State} {B T : Addr} {Z o w c n m : Nat} (hs : Scr u B Z)
   subst hm
   have hv : Scr v B Z := hs.congr kv.wr
   obtain ⟨tk, tr⟩ := htab k hk
-  have hnk : n - (n - k) = k := by omega
+  have hnk : n - (n - k) = k := by omega_using [hk]
   rw [hnk]
   refine WP.mono (entry_ok (c := c) (i := k) (n := n - k) hv ((kv.gpr .r10 (by decide)).trans h10) ((kv.gpr .r11 (by decide)).trans h11)
-    (by rw [vm]; exact hc) hw hw' hZ (by omega) v23 (by rw [vm]; exact tk) (by rw [kv.rd, kv.wr]; exact tr) v24
-    (by omega) (by omega)) fun t ⟨⟨t22, t23, t24, tm⟩, kt⟩ => ?_
+    (by rw [vm]; exact hc) hw hw' hZ (by omega_using [hn', hk]) v23 (by rw [vm]; exact tk) (by rw [kv.rd, kv.wr]; exact tr) v24
+    (by omega_using [hk]) (by omega_using [hn'])) fun t ⟨⟨t22, t23, t24, tm⟩, kt⟩ => ?_
   have kut := (kv.trans kt).mono (by intro r hr; simp only [List.mem_append] at hr; rcases hr with hr | hr <;> exact hr)
   by_cases hit : c % tabEntry k = 0
   · simp only [hit, ↓reduceIte] at t22 t24
@@ -67,11 +67,11 @@ theorem step_ok {u : State} {B T : Addr} {Z o w c n m : Nat} (hs : Scr u B Z)
       refine ⟨by rw [ev]; simp, fun _ => ⟨⟨by rw [t22, hpre']; rfl, by rw [tm, vm]⟩, kut⟩,
         fun h => by rw [ev] at h; cases h⟩
     · have ev : isa.eval (.nonzero .d .r24) t = some true := by
-        rw [eval_nonzero, t24, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        rw [eval_nonzero, t24, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn'])]
         simp only [Option.some.injEq, decide_eq_true_eq]
-        omega
+        omega_using [hk, hl]
       refine ⟨by rw [ev]; simp only [Option.some.injEq]; exact (decide_eq_true ⟨hit, hl⟩).symm,
-        fun h => (by rw [ev] at h; cases h), fun _ => ⟨by omega, k + 1, by omega, by omega,
+        fun h => (by rw [ev] at h; cases h), fun _ => ⟨by omega_using [hk], k + 1, by omega_using [], by omega_using [hk, hl],
           ⟨by rw [t23, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2,
             by rw [t24]; congr 1, hpre', by rw [tm, vm]⟩, kut⟩⟩
 
@@ -87,7 +87,7 @@ theorem loop_ok {u : State} {B T : Addr} {Z o w c n : Nat} (hs : Scr u B Z)
       (t.gpr .r22 = BitVec.ofNat 64 (if trialPrefix c n then 1 else 0) ∧ t.mem = u.mem) ∧ Keep entryRegs u t := by
   refine WP.loop (M := isa) (Q := fun t => (t.gpr .r22 = BitVec.ofNat 64 (if trialPrefix c n then 1 else 0) ∧
       t.mem = u.mem) ∧ Keep entryRegs u t) (TInv u T c n) (fun m v hI => ?_) n u
-    ⟨0, by omega, by omega, ⟨by rw [h23, Nat.mul_zero, BitVec.add_zero], by rw [h24, Nat.sub_zero], rfl, rfl⟩,
+    ⟨0, by omega_using [], by omega_using [hn], ⟨by rw [h23, Nat.mul_zero, BitVec.add_zero], by rw [h24, Nat.sub_zero], rfl, rfl⟩,
       Keep.refl _ _⟩
   refine WP.mono (step_ok hs h10 h11 hc hw hw' hZ hn' htab hI) fun t ⟨he, hf, ht⟩ => ?_
   cases e : isa.eval (.nonzero .d .r24) t with
@@ -96,6 +96,6 @@ theorem loop_ok {u : State} {B T : Addr} {Z o w c n : Nat} (hs : Scr u B Z)
     cases b
     · exact .inl ⟨rfl, hf e⟩
     · obtain ⟨hm, hI'⟩ := ht e
-      exact .inr ⟨rfl, m - 1, by omega, hI'⟩
+      exact .inr ⟨rfl, m - 1, by omega_using [hm], hI'⟩
 
 end VG.Proof.RsaKeyGen.PPC64LE.Trial

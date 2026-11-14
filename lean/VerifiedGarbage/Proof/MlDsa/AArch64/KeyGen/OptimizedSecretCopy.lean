@@ -26,7 +26,7 @@ theorem secretCopyPart_ok {S : Nat} {p : Params} (hF : PFacts p) {s : State}
       PPostB S s t [(sc (1408+66*j+b),32)] ∧ Keep [.x9] s t ∧
       bytesAt t.mem (pa s (sc (1408+66*j+b))) 32=bytesAt s.mem (pa s (sc (oSB+b))) 32 := by
   have hkl:=hF.kl; have hl:=hF.l; have hk:=hF.k; have hsc:=scr_eq p
-  have hb64 : b+32≤64 := by omega
+  have hb64 : b+32≤64 := by omega_using [hb]
   have hb8 : b%8=0 := by rcases hb with rfl|rfl <;> decide
   have he : pa s (sc (1408+66*j))+BitVec.ofNat 64 b=pa s (sc (1408+66*j+b)) := sc_add _ _ _
   have hsep : sepB kgR (kgW p) (sc (oSB+b)) 32 (sc (1408+66*j+b)) 32=true := by layd
@@ -34,7 +34,7 @@ theorem secretCopyPart_ok {S : Nat} {p : Params} (hF : PFacts p) {s : State}
   have hwrite : inB (kgW p) (sc (1408+66*j+b)) 32=true := by layd
   refine WP.mono (Proof.MlKem.AArch64.KeyGen.copy_ok (S := s.gpr .x28)
     (D := pa s (sc (1408+66*j))) (sb := .x28) (db := .x10) (so := oSB+b) (dO := b)
-    (by decide) (by decide) (by dsimp only [oSB]; omega) ⟨hb8,by omega⟩
+    (by decide) (by decide) (by dsimp only [oSB]; omega_using [hb]) ⟨hb8,by omega_using [hb]⟩
     (by rw [he]; change (⟨pa s (sc (oSB+b)),32⟩ : Region).Disjoint ⟨pa s (sc (1408+66*j+b)),32⟩; exact L.disj hsep) rfl hd
     (by change Covers [⟨pa s (sc (oSB+b)),32⟩] (s.rd++s.wr); exact L.cR hread) (by rw [he]; exact L.cW hwrite)) fun t ⟨ht,hf,hv⟩=>?_
   rw [he] at hf hv

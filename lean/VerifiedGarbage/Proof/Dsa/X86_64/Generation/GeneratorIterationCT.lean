@@ -61,6 +61,6 @@ theorem generatorIteration_ct (M : Mont) (Sq : MontS) (len : Nat)
       (Two (GeneratorSearchIterationAfter len)) := by
   rcases hl with rfl | rfl | rfl
   all_goals
-    exact generatorIteration_ct_of M Sq _ (by omega) (by taint_decide) (by taint_decide)
+    exact generatorIteration_ct_of M Sq _ (by omega_using []) (by taint_decide) (by taint_decide)
 
 end VG.Proof.Dsa.X86_64.Generation

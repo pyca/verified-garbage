@@ -251,7 +251,7 @@ theorem ew_tabSlot {s t : State} {G' : Stream} {f : Impl.Mgf1.X86_64.Table.Fns} 
   obtain ⟨V, W, R, hW⟩ := h.rep
   exact WP.mono (wp_good (block_good _ rfl) (tabSlot_ok h.L R T)) fun t' ⟨⟨k, L', R', sy⟩, sp, mx, f'⟩ =>
     ⟨⟨⟨h.he.step k.2.1 k.2.2 sp (keep_cs3 k (by decide)) mx f', L', V, _, R', fun k hk => by
-      simp only [upd]; rw [ifn (by omega)]; exact hW k hk⟩, by rw [R'.fr 35 (by decide)]; simp [upd]⟩, sy⟩
+      simp only [upd]; rw [ifn (by omega_using [hk])]; exact hW k hk⟩, by rw [R'.fr 35 (by decide)]; simp [upd]⟩, sy⟩
 
 include hH mH in
 /-- `EM` before masking, with the label's hash function that of the table at
@@ -273,7 +273,7 @@ theorem encEm_ct {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (
     fun s t hs h => WP.mono_syms (ew_clearEm h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14, 31] (by decide) nopin
       ⟨_, copySeed_taint Hl.D hD65⟩)
-    fun s t hs h => WP.mono_syms (ew_copySeed hs (Hm := Hl.stream) mH.len (by omega) (by omega) h.1)
+    fun s t hs h => WP.mono_syms (ew_copySeed hs (Hm := Hl.stream) mH.len (by omega_using [hz]) (by omega_using [hz]) h.1)
       fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   -- The table's address to its slot.
   refine RelCT.seq (e_postS (J' := fun s t => EK Hl.D s t ∧ word t.mem (fb s) (8 * 35) = stackArg s 10)
@@ -295,7 +295,7 @@ theorem encEm_ct {f : Impl.Mgf1.X86_64.Table.Fns} (hgi : Table.FnsGood f.init) (
       fun _ e sy => ⟨e, h.1.2.1, sy.trans h.1.2.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14] (by decide) nopin
       ⟨_, copyLh_taint Hl.D hD65⟩)
-    fun s t hs h => WP.mono_syms (ew_copyLh (Hm := Hl.stream) (by omega) (by omega) h.1)
+    fun s t hs h => WP.mono_syms (ew_copyLh (Hm := Hl.stream) (by omega_using [hz]) (by omega_using [hz]) h.1)
       fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩) ?_
   exact e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14, 23, 29, 30] (by decide) nopin ⟨_, by taint_decide⟩)
     fun s t hs h => WP.mono_syms (ew_putMsg hs h.2.1 h.1) fun _ e sy => ⟨e, h.2.1, sy.trans h.2.2⟩
@@ -305,13 +305,13 @@ theorem fit_db {D : Nat} {s : State} {Hs : Spec.Mgf1.Hash} (hp : EPre Hs s)
     (hk : 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
     MFit (oEm + 1) D (oEm + 1 + D) ((s.gpr .rcx).toNat - (D + 1)) := by
   have := hp.k2
-  exact ⟨by unfold oEm oSt; omega, by unfold oEm oSt; omega, by omega, by omega, by omega⟩
+  exact ⟨by unfold oEm oSt; omega_using [hk, this], by unfold oEm oSt; omega_using [hk, this], by omega_using [], by omega_using [hk], by omega_using [this]⟩
 
 theorem fit_seed {D : Nat} {s : State} {Hs : Spec.Mgf1.Hash} (hp : EPre Hs s)
     (hk : 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) (hD : 0 < D) :
     MFit (oEm + 1 + D) ((s.gpr .rcx).toNat - (D + 1)) (oEm + 1) D := by
   have := hp.k2
-  exact ⟨by unfold oEm oSt; omega, by unfold oEm oSt; omega, by omega, by omega, by omega⟩
+  exact ⟨by unfold oEm oSt; omega_using [hk, this], by unfold oEm oSt; omega_using [hk, this], by omega_using [], by omega_using [hD], by omega_using [hk, this]⟩
 
 /-- Where MGF1 starts, for the anchor's public data. -/
 theorem me_of {src srcLen dst dstLen : Nat → Nat} {a s t : State} (S : ESib H G P a s)
@@ -364,8 +364,8 @@ theorem chkMsg_step {s t : State} (hs : EPre mH.G s) (h : J2' Hl.D s t) :
   obtain ⟨V, W, R, hW⟩ := e.rep
   obtain ⟨-, -, -, -, -, -, -, -, -, -, w30, -⟩ := hW.w
   refine WP.mono_syms (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) e.L R (k := (s.gpr .rcx).toNat)
-    (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax (by omega)
-    (by omega) (stackArg s 3).isLt (by omega)))
+    (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax (by omega_using [hk2])
+    (by omega_using [hsD, hk]) (stackArg s 3).isLt (by omega_using [hz])))
     fun t3 ⟨⟨k3, hm3, hcf3⟩, sp3, mx3, f3⟩ sy => ⟨⟨e.he.step k3.2.1 k3.2.2 sp3 (keep_cs3 k3 (by decide)) mx3 f3,
       e.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3]), V, W, hm3 ▸ R, hW⟩, hk, by rw [hcf3, hsD], sy.trans hsy⟩
 
@@ -436,19 +436,19 @@ theorem encBodyWith_ct {f : Impl.Mgf1.X86_64.Table.Fns} {main : Nat → Prog isa
       obtain ⟨-, -, -, w23, -⟩ := hW.w
       have hk1 := hs.k1; have hk2 := hs.k2
       exact WP.mono_syms (wp_good (block_good _ rfl) (chkK_ok (Hm := Hl.stream) e.L R
-          (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) (by omega)))
+          (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2]) (by omega_using [hz])))
         fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, f2⟩ sy2 => ⟨⟨e.he.step k2.2.1 k2.2.2 sp2 (keep_cs3 k2 (by decide))
           mx2 f2, e.L.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2]), V, W, hm2 ▸ R, hW⟩, hax2,
           by rw [hcf2, hsD], sy2.trans sy⟩) ?_
   refine e_ite (fun s => some (decide ((s.gpr .rcx).toNat < 2 * Hl.D + 2))) (fun s t h => h.2.2.1)
     (fun a s S => by rw [S.k]) (e_branch (J' := EW) (fun _ _ _ h _ => h.1) zeroOut_ct)
-    (e_branch (J' := J2' Hl.D) (fun s t _ h e => ⟨h.1, h.2.1, by have := cf_false h.2.2.1 e; omega, h.2.2.2⟩) ?_)
+    (e_branch (J' := J2' Hl.D) (fun s t _ h e => ⟨h.1, h.2.1, by have := cf_false h.2.2.1 e; omega_using [this], h.2.2.2⟩) ?_)
   refine RelCT.seq (e_post (J' := J3 Hl.D) (two_taint [.rsp] (e_pins_rsp fun s t _ h => h.1.he.rsp)
       (chkMsg_taint Hl.D hD65)) fun s t hs h => chkMsg_step (hH := hH) (mH := mH) hs h) ?_
   refine e_ite (fun s => some (decide ((s.gpr .rcx).toNat - (2 * Hl.D + 2) < (stackArg s 3).toNat)))
     (fun s t h => h.2.2.1) (fun a s S => by rw [S.k, S.arg (i := 3) (by decide)])
     (e_branch (J' := EW) (fun _ _ _ h _ => h.1) zeroOut_ct)
-    (e_branch (J' := EK Hl.D) (fun s t _ h e => ⟨h.1, by have := cf_false h.2.2.1 e; have := h.2.1; omega,
+    (e_branch (J' := EK Hl.D) (fun s t _ h e => ⟨h.1, by have := cf_false h.2.2.1 e; have := h.2.1; omega_arith,
       h.2.2.2⟩) hmain)
 
 /-! ## The frame -/

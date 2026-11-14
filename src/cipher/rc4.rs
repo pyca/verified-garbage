@@ -21,6 +21,9 @@ use crate::error::InvalidKeyLength;
 use crate::zeroize::zeroize;
 
 /// An incremental raw RC4 encryptor or decryptor.
+///
+/// The context is wiped when it is dropped. Raw RC4 emits no final bytes or
+/// tag, so there is nothing to finalize.
 pub struct Rc4 {
     /// The permutation and two indices. Initialization writes every byte
     /// on success; only verified primitives read this opaque context.
@@ -59,9 +62,6 @@ impl Rc4 {
         // includes every instruction used by the primitive.
         unsafe { vg_rc4_apply_auto(dit, self.ctx.0.as_mut_ptr(), data.as_mut_ptr(), data.len()) };
     }
-
-    /// Consumes and wipes the context. Raw RC4 emits no final bytes or tag.
-    pub fn finalize(self) {}
 }
 
 impl Drop for Rc4 {

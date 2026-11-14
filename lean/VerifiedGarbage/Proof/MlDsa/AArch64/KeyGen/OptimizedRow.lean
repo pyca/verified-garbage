@@ -117,7 +117,7 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   have hk' := h.keep hF hp hP' x' (chk_bp hF hi)
   refine ⟨hk'.kc, hk'.x24, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
     fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact hk'.rows i' hi'
   · refine ⟨by
       have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right

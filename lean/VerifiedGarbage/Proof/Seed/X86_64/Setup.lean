@@ -43,7 +43,7 @@ theorem slotW_stMem (s : State) {k : Nat} (hk : k < scratchSlots) (v : BitVec 64
   split
   · subst j; exact Mem.readW_writeW_self64 _ _ _
   · rename_i hne
-    rw [Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hne) (by decide)]
+    rw [Mem.readW_writeW_sep (slot_sep _ (by omega_using [hj]) (by omega_using [hk]) hne) (by decide)]
     rfl
 
 theorem stMem_frame {s : State} {k : Nat} (hk : k < scratchSlots) (v : BitVec 64) :

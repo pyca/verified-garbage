@@ -15,7 +15,7 @@ private theorem sub_nat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem random_drawHead_ok {s : State} {B : Addr} {len used width : Nat}
     (hs : Scr s B Random.frameBytes) (hsp : s.gpr .rsp = B)
@@ -33,7 +33,7 @@ theorem random_drawHead_ok {s : State} {B : Addr} {len used width : Nat}
   xrun [random_ea_sp, hsp, hs.ld (d := Random.oRandLen) (by decide),
     hs.ld (d := Random.oUsed) (by decide), hs.ld (d := Random.oWidth) (by decide),
     hl, hu, hw, sub_nat hused, BitVec.ult, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show len - used < 2 ^ 64 by omega), Nat.mod_eq_of_lt hwidth]
+    Nat.mod_eq_of_lt (show len - used < 2 ^ 64 by omega_using [hlen]), Nat.mod_eq_of_lt hwidth]
 
 theorem random_status_ok {s : State} {B : Addr} (v : BitVec 32)
     (hs : Scr s B Random.frameBytes) (hsp : s.gpr .rsp = B) :
@@ -94,8 +94,8 @@ theorem random_decrement_ok {s : State} {B : Addr} {draws : Nat}
       t.gpr .rax = BitVec.ofNat 64 (draws - 1) ∧ t.zf = some (decide (draws = 1)) ∧
       t.mem = s.mem.writeW (off B Random.oDraws) (BitVec.ofNat 64 (draws - 1)) ∧ Keep [.rax] s t := by
   have hz : (BitVec.ofNat 64 (draws - 1) == 0) = decide (draws = 1) := by
-    rw [ofNat64_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+    rw [ofNat64_beq_zero (by omega_using [hbound])]
+    exact decide_eq_decide.mpr (by omega_using [hpos])
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
       t.gpr .rax = BitVec.ofNat 64 (draws - 1) ∧ t.zf = some (decide (draws = 1)) ∧
       t.mem = s.mem.writeW (off B Random.oDraws) (BitVec.ofNat 64 (draws - 1))) ?_ rfl)

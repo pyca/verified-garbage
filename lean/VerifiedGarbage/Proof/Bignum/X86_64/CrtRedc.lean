@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.CrtMath
 public import VerifiedGarbage.Proof.Bignum.CrtRedc
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.CrtKey
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -447,5 +448,18 @@ theorem redc_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVe
   have hv' := hI.val
   rw [hlK, ← Nat.pow_mul] at hv'
   exact ⟨hI.ctx, hI.xv, hI.lt, hv', hI.frm, hI.keep⟩
+
+/-- What the checks give from `s`: the mask `M` of `c < n` (`m0`), `p q = n`
+and `qInv < p`; `p := M ? p : 3`, `q := M ? q : 3`, their `-X⁻¹` and 1. -/
+abbrev ChecksPost (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (op oq wp wq N P Q QI : Nat) (m0 : Bool)
+    (t : State) : Prop :=
+  Good t B Z w minv ∧
+      word t.mem B (8 * Public.sMask) = mask (keyMask m0 N P Q QI) ∧
+      word t.mem B (8 * sWsP) = off B op ∧ word t.mem B (8 * sWsQ) = off B oq ∧
+      (∃ mp', WsAt t.mem B op wp mp' ∧ XVals t B op wp mp' (if keyMask m0 N P Q QI then P else 3) ∧
+        word t.mem (off B op) (8 * sMaskX) = mask (keyMask m0 N P Q QI)) ∧
+      (∃ mq', WsAt t.mem B oq wq mq' ∧ XVals t B oq wq mq' (if keyMask m0 N P Q QI then Q else 3)) ∧
+      Frm B [(slot w Public.aAcc, 8 * (2 * w + 2)), (8 * Public.sMask, 8), (op, slot wp 8), (oq, slot wq 8)]
+        s.mem t.mem ∧ Keep mmRegs s t
 
 end VG.Proof.Bignum.X86_64

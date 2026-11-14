@@ -15,22 +15,24 @@ registers, with the 32-bit forms of the instructions) and the parameters `P`
 through one of them at a constant offset. `scratch` is laid out as:
 
 * `[0, 128)`: a copy of the current block (word `j` at `(w/8)·j`), so that the
-  rounds address everything through `r9`;
+  rounds address the message through `r9`;
 * `[128, 256)`: word `k` of the work vector `v` at `128 + 8k` (its low `w`
-  bits): the home slots of words 8–11 during the rounds, and of words 9 and
-  12–15 after them;
+  bits): the slots of words 8–11 during the rounds, and of words 12–15
+  after them;
 * `[256, 296)`: the current block's address, the blocks left, the offset
   counter (low word; and for BLAKE2b the high word), and the final block flag
   as all-zero or all-one bits;
 * `[296, 344)`: the saved `rbx, rbp, r12–r15`.
 
 During the rounds, words 0–7 and 12–15 live in fixed registers (`wreg`), and
-words 8–11 (the third row) share `r14`: one of them is in `r14` and the other
-three in their home slots. Before each `G` whose third-row word is not the one
-in `r14`, the word in `r14` is stored to its slot and the next one loaded.
-Between rounds `r14` holds word 9 (each round's last `G` uses it), so each round
-starts by swapping it for word 8. The rounds are fully unrolled; each `G` adds
-its message words straight from the copy of the block.
+words 8–11 (the third row) in their slots: each half of a `G` loads its
+third-row word into `rsi`, updates it there and stores it back, so that the
+next half to read it, of the same `G`, comes after three other `G`s' halves
+and the store need not be forwarded to it quickly. Each `G` adds its message
+words straight from the copy of the block. Each half-round's four `G`s are
+run a half at a time: the first halves of all four, then their second halves
+(`half`), so that the four independent chains of dependent instructions
+overlap. The rounds are fully unrolled.
 
 Every address is `r9`, `rdi` or the block's address plus a constant, and
 the only branches are on `last` and on the count of blocks, so only the
@@ -76,10 +78,11 @@ def tloOff : Nat := 272
 def thiOff : Nat := 280
 def fOff : Nat := 288
 
-/-- The register holding word `k` whenever it is in a register. -/
+/-- The register holding word `k`, for the words not in the third row (whose
+`wreg` is unused: they are in their slots). -/
 def wreg : Nat → Reg
   | 0 => .rax | 1 => .rbx | 2 => .rcx | 3 => .rdx
-  | 4 => .rsi | 5 => .r15 | 6 => .rbp | 7 => .r8
+  | 4 => .r14 | 5 => .r15 | 6 => .rbp | 7 => .r8
   | 8 => .r14 | 9 => .r14 | 10 => .r14 | 11 => .r14
   | 12 => .r10 | 13 => .r11 | 14 => .r12 | _ => .r13
 
@@ -88,33 +91,38 @@ variable {w : Nat} (P : Spec.Blake2.Params w)
 
 /-! ## The rounds -/
 
-/-- `G` (RFC 7693 §3.1) on the words in `a, b, c, d`, with the message words
-`j` and `k` of the copy of the block. -/
-def g (a b c d : Reg) (j k : Nat) : List Instr := [
-  add w a (.reg b), add w a (.mem (at_ .r9 (msgOff w j))), xor w d (.reg a), ror w d P.R1,
-  add w c (.reg d), xor w b (.reg c), ror w b P.R2,
-  add w a (.reg b), add w a (.mem (at_ .r9 (msgOff w k))), xor w d (.reg a), ror w d P.R3,
-  add w c (.reg d), xor w b (.reg c), ror w b P.R4]
+/-- Half of `G` (RFC 7693 §3.1): `a := a + b + m[j]; d := (d ^ a) >>> n1;
+c := c + d; b := (b ^ c) >>> n2`, on the words in `a`, `b` and `d` and the
+third-row word `c`, loaded from its slot into `rsi` and stored back, with
+the message word `j` of the copy of the block, added to `a` first: it is
+ready before `b`. -/
+def half (a b : Reg) (c : Nat) (d : Reg) (j n1 n2 : Nat) : List Instr := [
+  ld w .rsi (at_ .r9 (vOff c)), add w a (.mem (at_ .r9 (msgOff w j))), add w a (.reg b),
+  xor w d (.reg a), ror w d n1, add w .rsi (.reg d), xor w b (.reg .rsi), ror w b n2,
+  st w (at_ .r9 (vOff c)) .rsi]
 
-/-- `G(v, x, y, z, u, m[s[2i]], m[s[2i+1]])` of round `r` (the `i`-th `G` of the
-round). -/
-def gAt (r i x y z u : Nat) : Prog isa :=
-  .block (g P (wreg x) (wreg y) (wreg z) (wreg u) (Spec.Blake2.sigmaAt r (2 * i))
-    (Spec.Blake2.sigmaAt r (2 * i + 1)))
+/-- The first (`second = false`) or second half of `G(v, x, y, z, u, m[s[2i]],
+m[s[2i+1]])` of round `r` (the `i`-th `G` of the round). -/
+def halfAt (r i x y z u : Nat) (second : Bool) : Prog isa :=
+  .block (half (w := w) (wreg x) (wreg y) z (wreg u) (Spec.Blake2.sigmaAt r (2 * i + if second then 1 else 0))
+    (if second then P.R3 else P.R1) (if second then P.R4 else P.R2))
 
-/-- Store third-row word `i` (in `r14`) to its slot and load word `j`. -/
-def swap (i j : Nat) : Prog isa := .block [st w (at_ .r9 (vOff i)) .r14, ld w .r14 (at_ .r9 (vOff j))]
+/-- Four `G`s of round `r` on disjoint words (`i`-th to `i + 3`-th of the
+round, the words `q k` of the `k`-th): their first halves, then their
+second halves. -/
+def quad (r i : Nat) (q : Nat → Nat × Nat × Nat × Nat) : Prog isa :=
+  let h (k : Nat) (second : Bool) := halfAt P r (i + k) (q k).1 (q k).2.1 (q k).2.2.1 (q k).2.2.2 second
+  .seq (h 0 false) <| .seq (h 1 false) <| .seq (h 2 false) <| .seq (h 3 false) <|
+  .seq (h 0 true) <| .seq (h 1 true) <| .seq (h 2 true) (h 3 true)
 
-/-- Round `r` (RFC 7693 §3.2). Starts and ends with word 9 in `r14`. -/
-def round (r : Nat) : Prog isa :=
-  .seq (swap (w := w) 9 8) <| .seq (gAt P r 0 0 4 8 12) <|
-  .seq (swap (w := w) 8 9) <| .seq (gAt P r 1 1 5 9 13) <|
-  .seq (swap (w := w) 9 10) <| .seq (gAt P r 2 2 6 10 14) <|
-  .seq (swap (w := w) 10 11) <| .seq (gAt P r 3 3 7 11 15) <|
-  .seq (swap (w := w) 11 10) <| .seq (gAt P r 4 0 5 10 15) <|
-  .seq (swap (w := w) 10 11) <| .seq (gAt P r 5 1 6 11 12) <|
-  .seq (swap (w := w) 11 8) <| .seq (gAt P r 6 2 7 8 13) <|
-  .seq (swap (w := w) 8 9) (gAt P r 7 3 4 9 14)
+/-- The words of the columns' `G`s and of the diagonals'. -/
+def cols : Nat → Nat × Nat × Nat × Nat
+  | 0 => (0, 4, 8, 12) | 1 => (1, 5, 9, 13) | 2 => (2, 6, 10, 14) | _ => (3, 7, 11, 15)
+def diags : Nat → Nat × Nat × Nat × Nat
+  | 0 => (0, 5, 10, 15) | 1 => (1, 6, 11, 12) | 2 => (2, 7, 8, 13) | _ => (3, 4, 9, 14)
+
+/-- Round `r` (RFC 7693 §3.2): the columns' `G`s, then the diagonals'. -/
+def round (r : Nat) : Prog isa := .seq (quad P r 0 cols) (quad P r 4 diags)
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
@@ -128,20 +136,20 @@ def copy : List Instr :=
   ld 64 .rsi (at_ .r9 blOff) :: (List.range 16).flatMap fun j =>
     [ld w .rax (at_ .rsi (ws w * j)), st w (at_ .r9 (msgOff w j)) .rax]
 
-/-- Initialize the work vector (RFC 7693 §3.2): words 8, 10 and 11 in their
-slots, the others in their registers (word 9 in `r14`). -/
+/-- Initialize the work vector (RFC 7693 §3.2): words 8–11 in their slots,
+the others in their registers. -/
 def init : List Instr :=
-  [imm w .rax P.IV[0], st w (at_ .r9 (vOff 8)) .rax, imm w .rax P.IV[2],
+  [imm w .rax P.IV[0], st w (at_ .r9 (vOff 8)) .rax, imm w .rax P.IV[1],
+    st w (at_ .r9 (vOff 9)) .rax, imm w .rax P.IV[2],
     st w (at_ .r9 (vOff 10)) .rax, imm w .rax P.IV[3], st w (at_ .r9 (vOff 11)) .rax] ++
   (List.range 8).map (fun k => ld w (wreg k) (at_ .rdi (ws w * k))) ++
-  [imm w .r14 P.IV[1],
-    imm w .r10 P.IV[4], xor w .r10 (.mem (at_ .r9 tloOff)),
+  [imm w .r10 P.IV[4], xor w .r10 (.mem (at_ .r9 tloOff)),
     imm w .r11 P.IV[5], xor w .r11 (.mem (at_ .r9 (if w = 64 then thiOff else tloOff + 4))),
     imm w .r12 P.IV[6], xor w .r12 (.mem (at_ .r9 fOff)),
     imm w .r13 P.IV[7]]
 
 /-- The words of the second half in registers at the end of the rounds. -/
-def spillWords : List Nat := [9, 12, 13, 14, 15]
+def spillWords : List Nat := [12, 13, 14, 15]
 
 /-- Store the words of the second half that are in registers to their slots. -/
 def spill : List Instr := spillWords.map fun k => st w (at_ .r9 (vOff k)) (wreg k)

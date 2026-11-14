@@ -116,10 +116,10 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 544) (h : LAt σ t s) :
   have hw : pR (σ.gpr .rdx) ∈ s.wr := by rw [h.env.wr, hp.2.1]; simp
   have hp' := spOk hp
   refine WP.mono (rbBody_ok (eta hp) s (aP := σ.gpr .rdx) h.env.rbp h.rdi (Lt_length_le t) (.of_mem hw) h.stored
-    (by rw [h.rsi, at_add]; exact inScrRd hp' h.env (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
+    (by rw [h.rsi, at_add]; exact inScrRd hp' h.env (by omega_using [ht]))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
   have ht1 : Lt σ (t + 1) = rbStep (etaOf σ) (Lt σ t) ((X σ).getD t 0) := by
     simp only [Lt]
-    rw [take_succ' _ (by rw [X_length]; omega), rbFold_snoc]
+    rw [take_succ' _ (by rw [X_length]; omega_using [ht]), rbFold_snoc]
   rw [out_byte h ht, ← ht1] at hdi hst
   have hk' : Keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] s s' := hk.mono (by simp)
   have hsv : ∀ k, 2024 ≤ k → k + 8 ≤ 2048 →
@@ -129,12 +129,12 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 544) (h : LAt σ t s) :
     by rw [hk'.gpr (by decide), h.env.rbp], by rw [hk'.gpr (by decide), h.env.r12],
     by rw [hk'.gpr (by decide), h.env.rsp],
     fun r hr => by rw [hk'.gpr (r13_not hr), h.env.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_using []) (by omega_using []), hsv 2032 (by omega_using []) (by omega_using []), hsv 2040 (by omega_using []) (by omega_using [])];
         exact h.env.saved), h.env.frame.trans (hf.mono (by simp))⟩,
-    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 544) (by omega)).symm)
-      (by omega)]; exact h.out,
+    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 544) (by omega_using [])).symm)
+      (by omega_using [])]; exact h.out,
     by rw [hsi, h.rsi, offAdd],
-    hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega) (by omega)]; rfl, hst⟩, by rw [hz, h.rcx]⟩
+    hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega_using [ht]) (by omega_using [])]; rfl, hst⟩, by rw [hz, h.rcx]⟩
 
 /-- The end: the postcondition and the calling convention. -/
 theorem end_ok {s : State} (h : LAt σ 544 s) :

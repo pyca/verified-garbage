@@ -55,7 +55,7 @@ theorem value_of_row {m : Mem} {cp : Addr} {w j V : Nat} (h : row m cp w j = Spe
 
 /-- A number of `2 W` 32-bit words is one of `W` 64-bit words. -/
 theorem val32_eq_wv (m : Mem) (P : Addr) (d W : Nat) : Mont.val32 m P d (2 * W) = wv m P d W := by
-  rw [← VG.Proof.Bignum.read_eq_val32, ← VG.Proof.Bignum.read_eq_wv, show 4 * (2 * W) = 8 * W by omega]
+  rw [← VG.Proof.Bignum.read_eq_val32, ← VG.Proof.Bignum.read_eq_wv, show 4 * (2 * W) = 8 * W by omega_using []]
 
 /-- The address of word `i` of row `j`, as a word of the context. -/
 theorem rowOff {w j i : Nat} : 24 + 8 * w * j + 8 * i = 8 * (3 + w * j + i) := by
@@ -87,7 +87,7 @@ theorem wordsAt_rows (m : Mem) (cp : Addr) (w : Nat) :
   rw [h3]
   refine congrArg (_ ++ ·) (flatMap_congr' fun j _ => List.map_congr_left fun i _ => ?_)
   simp only [Function.comp_apply, Bignum.word, off]
-  rw [rowOff, show 3 + (w * j + i) = 3 + w * j + i by omega]
+  rw [rowOff, show 3 + (w * j + i) = 3 + w * j + i by omega_using []]
 
 /-- The context's words from its parts. -/
 theorem ctx_words {m : Mem} {cp : Addr} {w : Nat} {h₀ h₁ h₂ : BitVec 64} {r₀ r₁ : List (BitVec 64)}
@@ -185,7 +185,7 @@ theorem bitLength_le_of_lt {x n : Nat} (h : x < 2 ^ n) : Spec.RsaKeyGen.bitLengt
   · have hb := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds hx).1
     refine Classical.byContradiction fun hc => ?_
     have : 2 ^ n ≤ 2 ^ (Spec.RsaKeyGen.bitLength x - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-    omega
+    omega_using [h, hb, this]
 
 /-- The public scalar width of valid parameters: at least 1 and at most p's bits. -/
 theorem genBits_facts {k : Nat} {dom : List Byte} (hv : Spec.Ffdh.domainValid k dom = true) :
@@ -196,30 +196,30 @@ theorem genBits_facts {k : Nat} {dom : List Byte} (hv : Spec.Ffdh.domainValid k 
     unfold Spec.Ffdh.scalarBound
     cases hq : (Spec.Ffdh.domainOf k dom).q with
     | none => simp only [Option.getD_none]; omega
-    | some q => have := (hv'.2.2 q hq).1.2.1; simp only [Option.getD_some]; omega
+    | some q => have := (hv'.2.2 q hq).1.2.1; simp only [Option.getD_some]; omega_using [this]
   have hle : Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≤ (Spec.Ffdh.domainOf k dom).p := by
     unfold Spec.Ffdh.scalarBound
     cases hq : (Spec.Ffdh.domainOf k dom).q with
-    | none => simp only [Option.getD_none]; omega
-    | some q => have := (hv'.2.2 q hq).1.2.2; simp only [Option.getD_some]; omega
+    | none => simp only [Option.getD_none]; omega_using []
+    | some q => have := (hv'.2.2 q hq).1.2.2; simp only [Option.getD_some]; omega_using [this]
   have hp : (Spec.Ffdh.domainOf k dom).p < 2 ^ (8 * k) := by
     have h1 := VG.Proof.Bignum.os2ip_lt (dom.take k)
     have h2 : 256 ^ (dom.take k).length ≤ 2 ^ (8 * k) := by
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega)
+      exact Nat.pow_le_pow_right (by decide) (by simp only [List.length_take]; omega_using [])
     change Spec.Rsa.os2ip (dom.take k) < _
-    omega
+    omega_using [h1, h2]
   have hb := VG.Proof.Ffdh.VettedPolicy.bits_le_bound (Spec.Ffdh.domainOf k dom)
   have hbl : 1 ≤ Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) := by
     have := (VG.Proof.Ffdh.KeyScalar.bitLength_bounds
-      (show Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≠ 0 by omega)).2
+      (show Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) ≠ 0 by omega_using [hbnd])).2
     refine Classical.byContradiction fun hc => ?_
     have e : Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) = 0 := by omega
-    rw [e] at this; omega
+    rw [e] at this; omega_using [hbnd, this]
   refine ⟨?_, Nat.le_trans hb (bitLength_le_of_lt (Nat.lt_of_le_of_lt hle hp))⟩
   unfold Spec.Ffdh.generationScalarBits
   cases he : Spec.Ffdh.vettedExponentBits (Spec.Ffdh.domainOf k dom) with
   | none => simpa using hbl
-  | some b => have := recognized_nonzero he; simp only; omega
+  | some b => have := recognized_nonzero he; simp only; omega_using [hbl, this]
 
 end VG.Proof.Ffdh.ContextRows

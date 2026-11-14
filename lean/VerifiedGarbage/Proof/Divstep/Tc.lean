@@ -5,6 +5,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Positivity
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inversion by batches of divsteps: words in two's complement
@@ -26,28 +27,28 @@ theorem tc_eq {H x W : Int} (hH : 0 < H) (hx1 : -H ≤ x) (hx2 : x < H) (hW0 : 0
   obtain ⟨c, hc'⟩ := hc''.dvd
   have c1 : c ≤ 0 := by
     by_contra h; push Not at h
-    have : 2 * H * 1 ≤ 2 * H * c := mul_le_mul_of_nonneg_left (by omega) (by omega)
+    have : 2 * H * 1 ≤ 2 * H * c := mul_le_mul_of_nonneg_left (by omega_using [h]) (by omega_using [hH])
     linarith
   have c2 : -1 ≤ c := by
     by_contra h; push Not at h
-    have : 2 * H * c ≤ 2 * H * (-2) := mul_le_mul_of_nonneg_left (by omega) (by omega)
+    have : 2 * H * c ≤ 2 * H * (-2) := mul_le_mul_of_nonneg_left (by omega_using [h]) (by omega_using [hH])
     linarith
   split
   · have : c = -1 := by
       by_contra h
-      have : c = 0 := by omega
+      have : c = 0 := by omega_using [c1, c2, h]
       subst this; linarith
     subst this; linarith
   · have : c = 0 := by
       by_contra h
-      have : c = -1 := by omega
+      have : c = -1 := by omega_using [c1, c2, h]
       subst this; linarith
     subst this; linarith
 
 /-- The sign of such a word: its top half. -/
 theorem tc_neg {H x W : Int} (hx1 : -H ≤ x) (hx2 : x < H)
     (h : W = x + if x < 0 then 2 * H else 0) : (H ≤ W ↔ x < 0) := by
-  split at h <;> constructor <;> intro <;> omega
+  split at h <;> constructor <;> intro <;> omega_arith
 
 /-- `-p < mredRaw t < 2p` for `|t| ≤ 2^63 p`. -/
 theorem mredRaw_range {p m t : Int} (hp : 0 < p) (hm : (p * m + 1) % 2 ^ 64 = 0) (ht : |t| ≤ 2 ^ 63 * p) :
@@ -81,10 +82,10 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) 
   subst hB hH
   have hH : 0 < A * 2 ^ 63 := by positivity
   have hQ : A * 2 ^ 64 = 2 * (A * 2 ^ 63) := by ring
-  have hpH : 2 * p < A * 2 ^ 63 := by omega
+  have hpH : 2 * p < A * 2 ^ 63 := by omega_using [hA, hpA]
   rw [abs_le] at ht
   have htH : -(A * 2 ^ 63) ≤ t ∧ t < A * 2 ^ 63 := by
-    constructor <;> omega
+    constructor <;> omega_using [hpA, ht]
   -- `W` holds `t`.
   have eW := tc_eq hH htH.1 htH.2 hW0 (by rw [← hQ]; exact hW1) (by rw [← hQ]; exact hWt)
   have sW := tc_neg htH.1 htH.2 eW
@@ -98,7 +99,7 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) 
   set r := mredRaw p m t with hr
   have hraw : 2 ^ 64 * r = t + (t * m) % 2 ^ 64 * p := mredRaw_spec hm
   rw [← hk'] at hraw
-  obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm (abs_le.mpr ⟨by omega, ht.2⟩)
+  obtain ⟨rlo, rhi⟩ := mredRaw_range hp hm (abs_le.mpr ⟨by omega_using [ht], ht.2⟩)
   rw [← hr] at rlo rhi
   have hE' : E = 2 ^ 64 * (r + if r < 0 then A * 2 ^ 64 else 0) := by
     have hX : W + A * 2 ^ 64 * (if A * 2 ^ 63 ≤ W then 2 ^ 64 - 1 else 0) + k * p =
@@ -106,19 +107,19 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) 
           ((if t < 0 then 1 else 0) - (if r < 0 then 1 else 0)) := by
       have hS : (if A * 2 ^ 63 ≤ W then (2 : Int) ^ 64 - 1 else 0) = if t < 0 then 2 ^ 64 - 1 else 0 := by
         simp only [sW]
-      have hkp : k * p = 2 ^ 64 * r - t := by omega
+      have hkp : k * p = 2 ^ 64 * r - t := by omega_using [hp, hpA, ht, hk0, hm, hWt, hk1, hk, hR₂, hpH, htH, sW, hk', hr, hraw, rlo, rhi]
       rw [hS, eW, hkp]
       by_cases h1 : t < 0 <;> by_cases h2 : r < 0 <;> simp only [h1, h2, ↓reduceIte] <;> ring
     rw [hE, hX, Int.add_mul_emod_self_left]
     have h0 : 0 ≤ 2 ^ 64 * r + (if r < 0 then A * 2 ^ 64 * 2 ^ 64 else 0) := by
-      split <;> omega
+      split <;> omega_arith
     have h1 : 2 ^ 64 * r + (if r < 0 then A * 2 ^ 64 * 2 ^ 64 else 0) < A * 2 ^ 64 * 2 ^ 64 := by
-      split <;> omega
+      split <;> omega_arith
     rw [Int.emod_eq_of_lt h0 h1]
     split <;> ring
   have eR : R = r + if r < 0 then 2 * (A * 2 ^ 63) else 0 := by
     rw [hR, hE', Int.mul_ediv_cancel_left _ (by norm_num), hQ]
-  have rH : -(A * 2 ^ 63) ≤ r ∧ r < A * 2 ^ 63 := ⟨by omega, by omega⟩
+  have rH : -(A * 2 ^ 63) ≤ r ∧ r < A * 2 ^ 63 := ⟨by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, hr, hraw, rlo, rhi], by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, hr, hraw, rlo, rhi]⟩
   have sR := tc_neg rH.1 rH.2 eR
   -- `R₁ = r + p` if negative, else `r`.
   have eR₁ : R₁ = r + if r < 0 then p else 0 := by
@@ -127,19 +128,19 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) 
     by_cases h : r < 0
     · simp only [h, ↓reduceIte]
       rw [show r + 2 * (A * 2 ^ 63) + p = r + p + 2 * (A * 2 ^ 63) * 1 by ring, Int.add_mul_emod_self_left,
-        Int.emod_eq_of_lt (by omega) (by omega)]
+        Int.emod_eq_of_lt (by omega_using [hp, hpA, ht, hm, hR₂, hpH, hr, hraw, rlo, rhi, rH, sR, h]) (by omega_using [hA, hp, hpA, ht, hm, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, hr, hraw, rlo, rhi, rH, sR, h])]
     · simp only [h, ↓reduceIte, Int.add_zero]
-      rw [Int.emod_eq_of_lt (by omega) (by omega)]
+      rw [Int.emod_eq_of_lt (by omega_using [h]) (by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, hr, hraw, rlo, rhi, rH, sR, h])]
   -- `R₂ = R₁ - p`, in two's complement.
   obtain ⟨r₂, hr₂⟩ : ∃ r₂, r₂ = r + (if r < 0 then p else 0) - p := ⟨_, rfl⟩
-  have r₂lo : -p ≤ r₂ := by rw [hr₂]; split <;> omega
-  have r₂hi : r₂ < p := by rw [hr₂]; split <;> omega
+  have r₂lo : -p ≤ r₂ := by rw [hr₂]; split <;> omega_arith
+  have r₂hi : r₂ < p := by rw [hr₂]; split <;> omega_arith
   have eR₂ : R₂ = r₂ + if r₂ < 0 then 2 * (A * 2 ^ 63) else 0 := by
-    refine tc_eq hH (by omega) (by omega) hR₂0 (by rw [← hQ]; exact hR₂1) ?_
+    refine tc_eq hH (by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, rH, sR, hr₂, r₂lo, r₂hi]) (by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, rH, sR, hr₂, r₂lo, r₂hi]) hR₂0 (by rw [← hQ]; exact hR₂1) ?_
     have h1 : (R₂ + p) % (A * 2 ^ 64) = (r₂ + p) % (A * 2 ^ 64) := by
-      rw [hR₂, eR₁, Int.emod_eq_of_lt (a := r₂ + p) (by omega) (by omega), hr₂]; ring
+      rw [hR₂, eR₁, Int.emod_eq_of_lt (a := r₂ + p) (by omega_using [rlo, hr₂]) (by omega_using [hA, hp, hpA, ht, hm, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, hraw, rlo, rhi, rH, sR, hr₂, r₂lo, r₂hi]), hr₂]; ring
     rw [← hQ]; exact Int.ModEq.add_right_cancel' p h1
-  have sR₂ := tc_neg (by omega) (by omega) eR₂
+  have sR₂ := tc_neg (by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, rH, sR, hr₂, r₂lo, r₂hi]) (by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, rH, sR, hr₂, r₂lo, r₂hi]) eR₂
   -- `R₃ = norm p r`.
   have hc₂ : (if A * 2 ^ 63 ≤ R₂ then p else 0) = if r₂ < 0 then p else 0 := by simp only [sR₂]
   rw [hR₃, hc₂, eR₂, hQ]
@@ -148,16 +149,16 @@ theorem mred_words {A B H p m t W k E R R₁ R₂ R₃ : Int} (hB : B = 2 ^ 64) 
   by_cases h2 : r₂ < 0
   · simp only [h2, ↓reduceIte]
     rw [show r₂ + 2 * (A * 2 ^ 63) + p = r₂ + p + 2 * (A * 2 ^ 63) * 1 by ring, Int.add_mul_emod_self_left,
-      Int.emod_eq_of_lt (by omega) (by omega), hr₂]
+      Int.emod_eq_of_lt (by omega_using [hp, hpA, ht, hm, hR₂, hpH, hraw, rlo, rhi, hr₂, r₂lo, r₂hi, sR₂, h2]) (by omega_using [hA, hp, hpA, ht, hm, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, hraw, rlo, rhi, rH, sR, hr₂, r₂lo, r₂hi, sR₂, h2]), hr₂]
     by_cases h : r < 0
     · simp only [h, ↓reduceIte]; ring
-    · have h' : ¬ p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
+    · have h' : ¬ p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_using [hp, hpA, ht, hm, hR₂, hpH, hr, hraw, rlo, rhi, rH, sR, r₂lo, r₂hi, h, h2]
       simp only [h, h', ↓reduceIte]; ring
   · simp only [h2, ↓reduceIte, Int.add_zero]
-    rw [Int.emod_eq_of_lt (by omega) (by omega), hr₂]
+    rw [Int.emod_eq_of_lt (by omega_using [h2]) (by omega_using [hA, hpA, hW1, hWt, hR₂1, hR₂, hH, hQ, hpH, htH, sW, rH, sR, hr₂, r₂lo, r₂hi, sR₂, h2]), hr₂]
     by_cases h : r < 0
-    · rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
-    · have h' : p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega
+    · rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_using [hp, hpA, ht, hm, hR₂, hpH, hr, hraw, rlo, rhi, rH, sR, r₂lo, r₂hi, h, h2]
+    · have h' : p ≤ r := by rw [hr₂] at h2; simp only [h, ↓reduceIte] at h2; omega_using [hp, hpA, ht, hm, hR₂, hpH, hr, hraw, rlo, rhi, rH, sR, r₂lo, r₂hi, h, h2]
       simp only [h, h', ↓reduceIte]; ring
 
 /-- `mred_words` on natural numbers, as words hold them. -/
@@ -179,11 +180,11 @@ theorem mred_nat {A B H p m W k E R R₁ R₂ R₃ : Nat} {t : Int} (hB : B = 2 
     (hR₃ : R₃ = (R₂ + if A * H ≤ R₂ then p else 0) % (A * B)) :
     (R₃ : Int) = mred p m t := by
   have hB1 : 1 ≤ B := by rw [hB]; exact Nat.one_le_two_pow
-  have hk1 : k < B := by rw [hk]; exact Nat.mod_lt _ (by omega)
+  have hk1 : k < B := by rw [hk]; exact Nat.mod_lt _ (by omega_using [hB])
   refine mred_words (A := A) (B := B) (H := H) (p := p) (m := m) (t := t) (W := W) (k := k) (E := E) (R := R)
     (R₁ := R₁) (R₂ := R₂) (R₃ := R₃) (by rw [hB]; norm_num) (by rw [hH]; norm_num) (by exact_mod_cast hA)
-    (by exact_mod_cast hp) (by exact_mod_cast hpA) (by exact_mod_cast hm) ht (by omega) (by exact_mod_cast hW1)
-    (by exact_mod_cast hWt) (by omega) (by exact_mod_cast hk1) ?_ ?_ ?_ ?_ (by omega) (by exact_mod_cast hR₂1) ?_ ?_
+    (by exact_mod_cast hp) (by exact_mod_cast hpA) (by exact_mod_cast hm) ht (by omega_using []) (by exact_mod_cast hW1)
+    (by exact_mod_cast hWt) (by omega_using []) (by exact_mod_cast hk1) ?_ ?_ ?_ ?_ (by omega_using []) (by exact_mod_cast hR₂1) ?_ ?_
   · rw [hk]
     have h1 : W % B * m % B = W * m % B := by rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
     rw [h1]; push_cast; rw [Int.emod_emod_of_dvd _ (dvd_refl _)]
@@ -203,10 +204,10 @@ theorem divstep_le {M : Int} {t : Int × Int × Int} (hf : t.2.1 % 2 = 1) (h1 : 
   split
   · rename_i h
     simp only at h ⊢
-    refine ⟨abs_le.mpr h2, abs_le.mpr ⟨?_, ?_⟩⟩ <;> omega
+    refine ⟨abs_le.mpr h2, abs_le.mpr ⟨?_, ?_⟩⟩ <;> omega_using [h1, h2]
   · simp only
     refine ⟨abs_le.mpr h1, abs_le.mpr ⟨?_, ?_⟩⟩ <;>
-    · rcases Int.emod_two_eq_zero_or_one g with hg | hg <;> rw [hg] <;> omega
+    · rcases Int.emod_two_eq_zero_or_one g with hg | hg <;> rw [hg] <;> omega_arith
 
 theorem divsteps_le {M d f g : Int} (hd : d % 2 = 1) (hf : f % 2 = 1) (h1 : |f| ≤ M) (h2 : |g| ≤ M) :
     ∀ n, |(divsteps n (d, f, g)).2.1| ≤ M ∧ |(divsteps n (d, f, g)).2.2| ≤ M
@@ -262,7 +263,7 @@ theorem lin_words {M V X X' Y Y' W W' : Int} {c c' : Prop} [Decidable c] [Decida
 theorem toInt_sgn (w : BitVec 64) : (w.toNat : Int) - (if 2 ^ 63 ≤ w.toNat then 2 ^ 64 else 0) = w.toInt := by
   rw [BitVec.toInt_eq_toNat_cond]
   have := w.isLt
-  split_ifs <;> push_cast <;> omega
+  split_ifs <;> push_cast <;> omega_arith
 
 /-- `shr_words` on natural numbers, as words hold them (`c = 2^59`, `B = 2^64`). -/
 theorem shr_nat {H V D c B : Nat} {y z : Int} (hc : 2 ^ 59 = c) (hB : 2 ^ 64 = B) (hH : 0 < H) (hV1 : V < 2 * H)
@@ -276,12 +277,12 @@ theorem shr_nat {H V D c B : Nat} {y z : Int} (hc : 2 ^ 59 = c) (hB : 2 ^ 64 = B
   have hD' := congrArg (Nat.cast : Nat → Int) hD
   push_cast [Nat.cast_sub hB1] at hD' hVy ⊢
   rw [← ite_natCast_le] at hD'
-  exact shr_words hc' hB' (by exact_mod_cast hH) (by omega) (by exact_mod_cast hV1) hVy hy1 hy2 hz' hD'
+  exact shr_words hc' hB' (by exact_mod_cast hH) (by omega_using []) (by exact_mod_cast hV1) hVy hy1 hy2 hz' hD'
 
 /-- A small integer's word, as a signed number. -/
 theorem toInt_small {u : Int} (h : |u| ≤ 2 ^ 59) : (BitVec.ofInt 64 u).toInt = u := by
   rw [abs_le] at h
-  exact BitVec.toInt_ofInt_eq_self (by decide) (by norm_num; omega) (by norm_num; omega)
+  exact BitVec.toInt_ofInt_eq_self (by decide) (by norm_num; omega_using [h]) (by norm_num; omega_using [h])
 
 /-- The combination of congruent numbers. -/
 theorem cong_comb {Q u v X Y f g : Int} (hX : X % Q = f % Q) (hY : Y % Q = g % Q) :
@@ -337,7 +338,7 @@ theorem invRun_bounds {N : Nat} (hN : N ≤ 62) {p m x : Int} (hp : p % 2 = 1) (
   have e2 : (invRun N p m x B).f = (divsteps (N * B) (1, p, x)).2.1 := by rw [← hd]
   have e3 : (invRun N p m x B).g = (divsteps (N * B) (1, p, x)).2.2 := by rw [← hd]
   obtain ⟨lf, lg⟩ := divsteps_le (M := p) (d := 1) (f := p) (g := x) (by decide) hp
-    (by rw [abs_of_pos (by omega)]) (by rw [abs_of_nonneg hx0]; omega) (N * B)
+    (by rw [abs_of_pos (by omega_using [hp1])]) (by rw [abs_of_nonneg hx0]; omega_using [hxp]) (N * B)
   have ld := divsteps_d (1, p, x) (N * B)
   refine ⟨?_, hodd, by rw [e2]; exact lf, by rw [e3]; exact lg, a0, a1, b0, b1⟩
   rw [e1]; simpa using ld
@@ -367,6 +368,6 @@ theorem invRun_zero {N : Nat} {p m : Int} (hp : 0 < p) :
     subst hg ha
     rw [MSt.init, msteps_g0]
     simp only [mul_zero, add_zero, zero_add, mul_one]
-    simp [mred, mredRaw, norm, show ¬ p ≤ 0 by omega]
+    simp [mred, mredRaw, norm, show ¬ p ≤ 0 by omega_using [hp]]
 
 end VG.Proof.Divstep

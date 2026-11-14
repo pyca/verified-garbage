@@ -50,9 +50,9 @@ theorem selectBody_ok (K : TCombCfg) {s : State} {base X : Addr} {size a m : Nat
   rw [List.append_assoc]
   refine VG.Proof.X25519.Arm.WP.append (eqMask_ok (op2_reg s .r7)) fun s₁ ⟨v₁,k₁,mem₁⟩ => ?_
   have cm₁ : s₁.gpr .r10=if decide (a=m) then BitVec.allOnes 32 else 0 := by
-    rw [v₁,ga,gm,equality_mask (by simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show a<2^32 by omega)] using ha)
-      (by simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show m<2^32 by omega)] using hm)]
-    simp only [ofNat32_eq (by omega : a<2^32) (by omega : m<2^32),decide_eq_true_eq]
+    rw [v₁,ga,gm,equality_mask (by simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show a<2^32 by omega_using [ha])] using ha)
+      (by simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show m<2^32 by omega_using [hm])] using hm)]
+    simp only [ofNat32_eq (by omega_using [ha] : a<2^32) (by omega_using [hm] : m<2^32),decide_eq_true_eq]
   have hs₁ := hs.of_rest k₁ (by decide)
   have hx₁ : State.addr (s₁.gpr .r8)=X := by rw [k₁.gpr .r8 (by decide),hX]
   have hr₁ : InRegions (s₁.rd ++ s₁.wr) X (16*K.L.M.n) := by rw [k₁.rd,k₁.wr]; exact hr
@@ -74,7 +74,7 @@ theorem selectBody_ok (K : TCombCfg) {s : State} {base X : Addr} {size a m : Nat
     simp only [decide_eq_true_eq]
   · rw [mem₁] at O₂
     rw [mem₅]
-    simpa only [show 4*(4*K.L.M.n)=16*K.L.M.n by omega] using O₂
+    simpa only [show 4*(4*K.L.M.n)=16*K.L.M.n by omega_using []] using O₂
   · rw [f₅.gpr,u₄.other .r8 (by decide),u₃.gpr,dpVal,k₁₂.gpr .r8 (by decide)]
   · have g₇' : s₄.gpr .r7=BitVec.ofNat 32 (m+1) := by rw [← f₅.gpr,g₇]
     rw [z₅,g₇']

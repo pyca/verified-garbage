@@ -40,9 +40,9 @@ theorem random_zeroOut_ok {s : State} {B op : Addr} {k : Nat}
     xrun [random_ea_sp, hsp, hs.ld (d := Random.oOut) (by decide),
       hs.ld (d := Random.oOutLen) (by decide), hO, hK]) rfl)
     fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (wp_upto (a := 0) (N := k) (by omega) (RandomZeroInv s₁ op k) ?_ (fun t h => h)
+  refine WP.mono (wp_upto (a := 0) (N := k) (by omega_using [hk1]) (RandomZeroInv s₁ op k) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
         rw [hI.frame x hx, hm₁], ((k₁.trans hI.keep).mono (by decide))⟩
   intro j _ hj t hI
   have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
@@ -53,18 +53,18 @@ theorem random_zeroOut_ok {s : State} {B op : Addr} {k : Nat}
       t'.gpr .r10 = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .r11 = BitVec.ofNat 64 (k - (j + 1)) ∧
       t'.zf = some (decide (j + 1 = k))) (by
     xrun [State.ea, hI.r10, hI.r11, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hst, hax',
-      ofNat64_pred (show 1 ≤ k - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-      ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega)]
-    exact ⟨by rw [show k - j - 1 = k - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩) rfl)
+      ofNat64_pred (show 1 ≤ k - j by omega_using [hj]) (by omega_using [hk']), BitVec.add_assoc, ofNat_add_one,
+      ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega_using [hk'])]
+    exact ⟨by rw [show k - j - 1 = k - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩) rfl)
     fun t' ⟨⟨hm, hsi', hcx', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩
   · intro i hi
     rw [hm, writeW8_apply]
     by_cases hij : i = j
     · subst hij; simp
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-      exact hI.bytes i (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hk', hj, hi]) (by omega_using [hk', hj]) hij))]
+      exact hI.bytes i (by omega_using [hi, hij])
   · intro x hx
-    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-    exact hI.frame x fun i hi => hx i (by omega)
+    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+    exact hI.frame x fun i hi => hx i (by omega_using [hi])
 
 end VG.Proof.Dsa.X86_64

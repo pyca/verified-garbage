@@ -21,13 +21,13 @@ theorem KeyLive.allocated_data {p : KeyPublic sampling} {original s : State} {us
   have outerFit : sampling.argumentBytes ≤ s.sp.toNat := by
     have size := argumentBytes_max sampling
     have total := stackUse_min sampling
-    rw [h.sp, FrameStack.sub_toNat' (by omega : 24 ≤ p.sp.toNat)]; omega
+    rw [h.sp, FrameStack.sub_toNat' (by omega_using [rootFit, total] : 24 ≤ p.sp.toNat)]; omega_using [rootFit, size, total]
   refine ⟨⟨h.input.control_space (fun _ hr => List.mem_cons_of_mem _ (by rw [h.wr]; exact List.mem_cons_of_mem _ hr)), h.pointer⟩,
     ⟨?_, List.mem_cons_self⟩, ?_⟩
   · change (s.sp - BitVec.ofNat 32 sampling.argumentBytes).toNat + sampling.argumentBytes ≤ 2 ^ 32
     rw [FrameStack.sub_toNat' outerFit]
     have := s.sp.isLt
-    omega
+    omega_using [outerFit]
   · exact ((h.input.stack_separate (r := rControl p) (by rw [h.input.write_regions]; simp)).sub_left
       (arguments_sub h.input.bounds.stackFits)).symm
 

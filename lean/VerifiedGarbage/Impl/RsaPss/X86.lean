@@ -353,6 +353,10 @@ def privArgs : List Instr :=
     copyArg 9 11 ++ copyArg 10 12 ++ copyArg 7 13 ++ copyArg 12 14 ++ copyArg 9 15 ++ copyArg 14 16 ++
     copyArg 7 17 ++ atS .eax oRsa ++ [st .eax 72, ld .eax (arg 21), .alu .sub .eax (.imm 1024), st .eax 76]
 
+/-- The arguments of `vg_rsa_private_checked_precomputed`: `privArgs`, then
+`pre` and `pre_len` (`vg_rsa_pss_sign_precomputed`'s arguments 24 and 25). -/
+def privArgsP : List Instr := privArgs ++ copyArg 24 20 ++ copyArg 25 21
+
 /-! ## Verifying
 
 `verifyPrecomputed(n, n_len, e, e_len, digest, digest_len, sig, sig_len,

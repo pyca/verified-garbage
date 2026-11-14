@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Spec.Dsa.Generate
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # DSA key generation's resources on 32-bit ARM, from the shared contract
@@ -115,13 +116,13 @@ theorem rBytes_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).
 
 theorem rQBytes_length {s₀ : State} (A : KeyABI s₀) : (rQBytes s₀).length = (stackArg s₀ 2).toNat := by
   simp only [rQBytes, rInput, List.length_take, List.length_drop, rBytes_length, A.keyLength]
-  omega
+  omega_using []
 
 theorem rQBytes_le {s₀ : State} (A : KeyABI s₀) : (rQBytes s₀).length ≤ 32 := by
-  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 theorem rQBytes_pos {s₀ : State} (A : KeyABI s₀) : 0 < (rQBytes s₀).length := by
-  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 theorem rWidth_le (s₀ : State) : rWidth s₀ ≤ (rQBytes s₀).length :=
   VG.Proof.Dsa.significant_fits _

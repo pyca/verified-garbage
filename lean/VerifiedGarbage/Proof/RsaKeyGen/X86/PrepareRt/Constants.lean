@@ -44,9 +44,9 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   have a09 : g.array 0 + 4 * g.words ≤ g.array 10 := g.arrayBefore (by decide)
   have a910 : g.array 9 + 4 * g.words ≤ g.array 10 := g.arrayBefore (by decide)
   unfold subtract
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega) (NoSp.of_all (by rfl)) ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by rw [sp]; omega_using [low]) (NoSp.of_all (by rfl)) ?_
   have St : StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
-    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega)
+    VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; omega_using [low])
   have Ci : Context g (allocFrame 20 s) :=
     ⟨⟨List.mem_cons_of_mem _ C.ws.wr, C.ws.nowrap⟩, by rw [PtrAt, allocFrame_gpr _ _ (by decide)]; exact C.base,
       C.width, C.stride, C.pointers⟩
@@ -79,9 +79,9 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   have ediF : PtrAt f g.W .edi (g.array 10) := by
     rw [PtrAt, F.other .edi (by decide), F5.gpr, L4.1 .eax (by decide)]; exact Q3
   have edxF : (f.gpr .edx).toNat = 4 * g.words := by
-    rw [F.other .edx (by decide), F5.other .edx (by decide), D4, BitVec.toNat_ofNat]; have := v.maxWidth; omega
+    rw [F.other .edx (by decide), F5.other .edx (by decide), D4, BitVec.toNat_ofNat]; have := v.maxWidth; omega_using [words, this]
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.reduceLoop_ok (Ce.ws.of_keeps Lf) (a := g.array 0)
-    (m := g.array 9) (d := g.array 10) (N := g.words) (by omega) fit0 fit9 fit10 (Or.inr a09) (Or.inr a910)
+    (m := g.array 9) (d := g.array 10) (N := g.words) (by omega_using [many]) fit0 fit9 fit10 (Or.inr a09) (Or.inr a910)
     ebpF ebxF ediF edxF F.gpr) fun h ⟨Oh, _, ⟨borrow, _, equation⟩, Kh⟩ => ?_)
   rw [Mf] at Oh equation
   have Keh : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] e h := Lf.trans Kh
@@ -118,11 +118,11 @@ theorem subtract_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity one : N
   refine ⟨S.keepWorkOf v K (by decide) (by decide) Ws (fun r mem => by
       obtain rfl := List.mem_singleton.mp mem; exact v.arrayHeader _)
       (fun r mem => by obtain rfl := List.mem_singleton.mp mem; exact a09) Fs, ?_, ?_, Ws, Fs, K⟩
-  · rw [freed_mem, Mu, Oh.val32 (Or.inl a910) (by omega), oneE]
+  · rw [freed_mem, Mu, Oh.val32 (Or.inl a910) (by omega_using [nowrap, fit9]), oneE]
   · rw [freed_mem, Mu]
     have bound := val32_lt h.mem g.W (g.array 10) g.words
     cases borrow <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero]
-      at equation <;> omega
+      at equation <;> omega_arith
 
 theorem constants_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
@@ -140,7 +140,7 @@ theorem constants_ok {mont : Prog isa} {name : String}
   have r2A : val32 a.mem g.W (g.array 4) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c := by
     have fit4 := v.arrayFit (j := 4) (by decide)
     have nowrap := S.scratch.nowrap
-    rw [Oa.val32 (Or.inl (g.arrayBefore (by decide))) (by omega)]
+    rw [Oa.val32 (Or.inl (g.arrayBefore (by decide))) (by omega_using [fit4, nowrap])]
     exact r2
   refine WP.seq (WP.mono (mulY_ok verified noSp stack v A.context length A.modulus
     (by unfold Proof.Rsa.Mont.Operand; decide) odd (by rw [r2A]; exact Nat.mod_lt _ positive)
@@ -156,7 +156,7 @@ theorem constants_ok {mont : Prog isa} {name : String}
   refine WP.mono (subtract_ok v D oneD (Nat.mod_lt _ positive)) fun t ⟨T, oneT, minusT, Wt, Ft, Kt⟩ => ?_
   have Wa : WorkspaceFrame g (Constants.ranges g) s.mem a.mem :=
     WorkspaceFrame.of_outs S.scratch.nowrap (Outs.of_outside
-      (Oa.mono (Nat.le_refl _) (by unfold Geometry.words; omega))
+      (Oa.mono (Nat.le_refl _) (by unfold Geometry.words; omega_using []))
       (show (g.array 6, 8 * (g.w + 2)) ∈ Constants.ranges g from by simp [Constants.ranges, montWrites]))
   have Wb := Ob.mono (fun r mem => List.mem_append_left _ mem : ∀ r ∈ montWrites g 6, r ∈ Constants.ranges g)
   have Wd : WorkspaceFrame g (Constants.ranges g) b.mem d.mem :=

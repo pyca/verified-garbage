@@ -36,7 +36,7 @@ theorem remaining_le (h : SearchInput p o) : p.remaining ≤ 32768 := by
   rw [← h.2] at hv ⊢
   unfold primeLimit at hr
   change searchRemaining o ≤ 32768
-  split at hr <;> simp only [searchOfState] at hv <;> omega
+  split at hr <;> simp only [searchOfState] at hv <;> omega_using [hv, hr]
 
 /-- The `n` bytes `a` below the stack pointer are in the search's stack. -/
 theorem stack_sub (_h : SearchInput p o) {a n : Nat} (ha : a ≤ stackUse) (hn : stackUse - a + n ≤ stackUse) :
@@ -66,9 +66,9 @@ theorem push_saved {p : SearchPublic} {o : State} (h : SearchInput p o) :
   have top := h.1.2.1
   let sp := o.sp - BitVec.ofNat 32 40
   have bound : sp.toNat + 40 ≤ 2 ^ 32 := by
-    rw [show sp = o.sp - BitVec.ofNat 32 40 from rfl, FrameStack.sub_toNat' hroom]; omega
+    rw [show sp = o.sp - BitVec.ofNat 32 40 from rfl, FrameStack.sub_toNat' hroom]; omega_using []
   have address (k : Nat) (hk : k < 40) : State.addr (sp + BitVec.ofNat 32 k) = off (State.addr sp) k :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [bound, hk])
   have memEq : (pushed pushRegs o).mem = Spill.saveMem o.mem (State.addr sp) o.gpr slots := by
     change storeWords o.mem sp _ = _
     simp only [storeWords, List.map_cons, List.map_nil, Spill.saveMem]
@@ -87,7 +87,7 @@ theorem low_half {m : Mem} {a : Addr} {n : Nat} (h : m.readW a 64 = BitVec.ofNat
   rw [← VG.Proof.Rc2.Word32.readW64_lo, h]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero]
-  omega
+  omega_using []
 
 theorem entry_ok {p : SearchPublic} {o : State} (h : SearchInput p o) :
     WP isa (.block entry) (pushed pushRegs o) (SearchLive p o 0 p.remaining) := by
@@ -102,7 +102,7 @@ theorem entry_ok {p : SearchPublic} {o : State} (h : SearchInput p o) :
     refine ⟨inArgs o, List.mem_append_left _ (by rw [h.rd]; simp [inReads]), ?_⟩
     have e : stackArgAddr o 7 = stackArgAddr o 0 + BitVec.ofNat 64 28 := by
       simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
-      exact VG.Arm.addr_add (by omega)
+      exact VG.Arm.addr_add (by omega_using [top])
     rw [e]; exact Offset.contains_base _ (by decide) (by decide)
   have v68 : (pushed pushRegs o).mem.readW (stackArgAddr o 7) 32 = p.stp := by
     rw [h.arg_frame hf (by decide), ← h.2]; rfl

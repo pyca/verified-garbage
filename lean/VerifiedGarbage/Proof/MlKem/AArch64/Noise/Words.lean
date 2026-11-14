@@ -69,25 +69,25 @@ theorem seedWords_ok {s : State} {p a : Addr} {sb : Nat}
           (s.mem.readW (a+BitVec.ofNat 64 (8*j)) 64))
     (fun k t hk ⟨ht,hf,hvals⟩ => ?_) 4 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
-  refine WP.mono (seedWord_ok (a := a+BitVec.ofNat 64 (8*k)) hk (by omega) (by omega)
+  refine WP.mono (seedWord_ok (a := a+BitVec.ofNat 64 (8*k)) hk (by omega_using [hoff, hk]) (by omega_using [halign])
     ((ht.gpr .x19 (by simp)).trans hp)
     (by rw [ht.gpr .x28 (by simp),← ha,BitVec.add_assoc,← BitVec.ofNat_add])
     (by rw [ht.rd,ht.wr]; exact hin k hk)
     (by rw [ht.wr]; exact hw k hk)) fun u ⟨hu,hm⟩ => ?_
   have hs : t.mem.readW (a+BitVec.ofNat 64 (8*k)) 64 =
       s.mem.readW (a+BitVec.ofNat 64 (8*k)) 64 := by
-    exact hf.read (r := ⟨a,32⟩) (Offset.contains_base a (d := 8*k) (n := 8) (k := 32) (by omega) (by omega))
+    exact hf.read (r := ⟨a,32⟩) (Offset.contains_base a (d := 8*k) (n := 8) (k := 32) (by omega_using [hk]) (by omega_using [hk]))
       (by intro r hr; rw [List.mem_singleton.mp hr]; exact hsep) (by decide)
   refine ⟨(ht.trans hu).mono (by simp),?_,?_⟩
   · rw [hm]
-    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))
+    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_using [hk]) (by omega_using [hk]))
   · intro j hj
     rw [hm,hs]
     by_cases he : j = k
     · subst j; rw [read_write16]
     · have hd : Mem.Sep (wordAddr p j) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*j) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*j) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hk, hj]) (by omega_using [hk])
       rw [Mem.read_write_sep hd (by decide)]
-      exact hvals j (by omega)
+      exact hvals j (by omega_using [hj, he])
 
 end VG.Proof.MlKem.AArch64.Noise

@@ -89,13 +89,13 @@ abbrev U1 (P : EP) (σ s : State) : Prop :=
 /-- The label's hash function's table, the argument 23, in a buffer only
 read. -/
 theorem tblL_of {P : EP} {σ : State} (hi : In P σ) :
-    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA P.tabL o) 4 := by
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA P.tabL o) 4 := by
   have hf := hi.ok.fits P.TABL (by simp)
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TABL, by simp, fun o ho => ?_⟩
-  show (⟨State.addr P.tabL, 5 * (32 / 8)⟩ : Region).Contains (State.addr (P.tabL + BitVec.ofNat 32 o)) 4
-  rw [VG.Arm.addr_add (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  show (⟨State.addr P.tabL, 11 * (32 / 8)⟩ : Region).Contains (State.addr (P.tabL + BitVec.ofNat 32 o)) 4
+  rw [VG.Arm.addr_add (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 /-- What the label's hash keeps, with its table's address in its slot. -/
 abbrev L0 (P : EP) (σ : State) (m : Mem) : Prop :=
@@ -328,13 +328,13 @@ abbrev U5 (P : EP) (σ s : State) : Prop :=
 
 /-- MGF1's table, the argument 24, in a buffer only read. -/
 theorem tbl_of {P : EP} {σ : State} (hi : In P σ) :
-    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (P.lay.argv.getD 24 0) o) 4 := by
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA (P.lay.argv.getD 24 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
-  show (⟨State.addr P.tab, 5 * (32 / 8)⟩ : Region).Contains (State.addr (P.tab + BitVec.ofNat 32 o)) 4
-  rw [VG.Arm.addr_add (by omega)]
-  exact Offset.contains_base _ (by omega) (by omega)
+  show (⟨State.addr P.tab, 11 * (32 / 8)⟩ : Region).Contains (State.addr (P.tab + BitVec.ofNat 32 o)) 4
+  rw [VG.Arm.addr_add (by omega_using [hf, ho])]
+  exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
 
 theorem unmask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.tab P.ai P.au P.af σ)
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :

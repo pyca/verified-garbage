@@ -62,7 +62,7 @@ theorem geometry {s : State} (h : contract.pre s) : Geometry s := by
     have low := sizes.1
     change Spec.Rsa.scratchWords (s.gpr .rdx).toNat ≤ (s.gpr .r8).toNat at space
     simp only [Spec.Rsa.scratchWords] at space
-    omega
+    omega_using [space]
   · obtain ⟨r, member, contains⟩ := (show InRegions ((plain s).rd ++ (plain s).wr)
         ((plain s).gpr .rdi) ((plain s).gpr .rsi).toNat from
       ⟨_, List.mem_append_left _ (by rw [rd]; exact List.mem_cons_self), Region.contains_self _ _⟩)

@@ -34,7 +34,7 @@ theorem range_modulus {m m' : Mem} {B : Addr} {W : Nat}
   simp only [ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> simp only [slot, aM, aR, aT, aV] <;> omega_arith
 
-theorem range_top {m m' : Mem} {B : Addr} {W : Nat} (hW : 4 ≤ W)
+theorem range_top {m m' : Mem} {B : Addr} {W : Nat} (hW : 6 ≤ W)
     (hf : Frm B (ranges W) m m') (h : slot W aM + 8 * (W / 2 - 1) + 8 ≤ 2 ^ 64) :
     word m' B (slot W aM + 8 * (W / 2 - 1)) = word m B (slot W aM + 8 * (W / 2 - 1)) := by
   apply hf.word_eq _ h

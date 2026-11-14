@@ -119,7 +119,7 @@ theorem derivingInstalled_spec {s t : State} (A : DerivingABI s)
         VG.X86.Spill.Saved sf.mem (off (argumentPointer s 7)) regs Entry.savedRegisters := by
   dsimp only
   have L : 0 < (arg s 4).toNat ∧ 0 < (arg s 6).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Params, Bytes⟩ := I.input (by decide : (2, .p) ∈ Generate.deriveArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
@@ -128,7 +128,7 @@ theorem derivingInstalled_spec {s t : State} (A : DerivingABI s)
     (by rw [callStack_eq A.stackLow]; exact A.belowScalar.symm)
   obtain ⟨Qptr, Gptr, _⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Value⟩ := parameters_buffers Params L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr
   rw [A.outLength]
   have Ct : deriveContext s t.mem := by
     unfold deriveContext parameterContext at C ⊢
@@ -137,7 +137,7 @@ theorem derivingInstalled_spec {s t : State} (A : DerivingABI s)
     obtain rfl := List.mem_singleton.mp hr
     apply Or.inr
     change 8272≤context (((arg s 4).toNat+7)/8)
-    unfold context; split <;> omega
+    unfold context; split <;> omega_using []
   have fits := Nat.le_trans (context_fits A.lengths) (Nat.mul_le_mul_right 8 A.scratchLength)
   apply derivingSized_spec (out := arg s 0) I.scr A.used A.lengths
     (by rw [← A.keyLength]; exact Params) P Q G X rfl rfl rfl rfl
@@ -147,10 +147,10 @@ theorem derivingInstalled_spec {s t : State} (A : DerivingABI s)
     (by rw [I.arguments (5, .nonce) (by decide), ← A.outLength]; exact A.scalarOut) Value valid fits Ct
   intro i hi
   rw [I.keeps.2.2, A.wr]
-  refine ⟨_, List.mem_cons_self, Offset.contains_base _ (by have := A.outLength; omega) ?_⟩
+  refine ⟨_, List.mem_cons_self, Offset.contains_base _ (by have := A.outLength; omega_using [hi, this]) ?_⟩
   have := A.outBound
   have := A.outLength
-  omega
+  omega_using [hi]
 
 theorem derivingOperation_spec {s : State} (A : DerivingABI s)
     (valid : validParameters s) (C : deriveContext s s.mem) :

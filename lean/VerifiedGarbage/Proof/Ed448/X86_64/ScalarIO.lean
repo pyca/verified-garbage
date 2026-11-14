@@ -34,13 +34,13 @@ theorem saveAt_ok (b : Reg) {s : State} {base : Addr} (hc : s.gpr b = base)
       Saved base s.gpr s'.mem := by
   refine WP.mono (Spill.save_ok b saved s fun p hp => ?_) fun s' ⟨hg, hrd, hwr, hm⟩ =>
     ⟨hg, hrd, hwr, ?_, ?_⟩
-  · have := saved_lt p hp; rw [hc]; exact ⟨_, hw, contains_sc (by omega)⟩
+  · have := saved_lt p hp; rw [hc]; exact ⟨_, hw, contains_sc (by omega_using [this])⟩
   · rw [hm, hc]
     intro x hx
     refine Spill.saveMem_frame_base _ _ _ _ saved_lt (by decide) x fun r hr hx' => ?_
     rw [List.mem_singleton.mp hr] at hx'
     simp only [Region.Contains, ofs] at hx hx'
-    omega
+    omega_using [hx, hx']
   · rw [hm, hc]; exact Spill.saveMem_saved _ _ _ _ (by decide)
 
 theorem loadK_ok (s : State) :
@@ -80,11 +80,11 @@ theorem ea_at (s : State) (b : Reg) (d : Nat) :
 theorem rotr56 (x : BitVec 64) (h : x.toNat < 2 ^ 8) : (x.rotateRight 56).toNat = 256 * x.toNat := by
   rw [BitVec.toNat_rotateRight]
   simp only [Nat.reduceMod, Nat.reduceSub, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  rw [Nat.div_eq_of_lt (by omega), Nat.zero_or, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.div_eq_of_lt (by omega_using [h]), Nat.zero_or, Nat.mod_eq_of_lt (by omega_using [h])]
+  omega_using []
 
 theorem toNat_byte (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- The remainder of the top byte of a 57-byte input. -/
 theorem init57_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 56) 1) :
@@ -154,18 +154,18 @@ theorem storesR_ok (b : Reg) {q : Addr} {R : Region} :
   | s, o, r :: rs, hq, hR, hc, hn => by
     rw [Proof.X448.X86_64.storesR, WP.block_cons_iff]
     let s1 : State := { s with mem := s.mem.writeW (off q o) (s.gpr r) }
-    have hw : InRegions s.wr (off q o) 8 := ⟨R, hR, hc o (Nat.le_refl _) (by simp; omega)⟩
+    have hw : InRegions s.wr (off q o) 8 := ⟨R, hR, hc o (Nat.le_refl _) (by simp; omega_using [])⟩
     refine ⟨s1, by simp only [exec, ea_at, hq, State.store64, hw, ite_true]; rfl, ?_⟩
-    refine WP.mono (storesR_ok b s1 (o + 8) rs hq hR (fun d h₁ h₂ => hc d (by omega)
-      (by simp; omega)) (by simp at hn; omega)) fun s' ⟨hv, ho', hf, hg, hrd, hwr⟩ => ?_
-    have o1 : Outside q o 8 s.mem s1.mem := writeW_outside _ _ _ (by simp at hn; omega)
-    refine ⟨?_, (o1.mono (by omega) (by simp; omega)).trans (ho'.mono (by omega) (by simp; omega)),
+    refine WP.mono (storesR_ok b s1 (o + 8) rs hq hR (fun d h₁ h₂ => hc d (by omega_using [h₁])
+      (by simp; omega_using [h₂])) (by simp at hn; omega_using [hn])) fun s' ⟨hv, ho', hf, hg, hrd, hwr⟩ => ?_
+    have o1 : Outside q o 8 s.mem s1.mem := writeW_outside _ _ _ (by simp at hn; omega_using [hn])
+    refine ⟨?_, (o1.mono (by omega_using []) (by simp; omega_using [])).trans (ho'.mono (by omega_using []) (by simp; omega_using [])),
       ?_, fun r' => hg r', hrd, hwr⟩
-    · rw [List.length_cons, mv, hv, rv, ho'.word (by omega) (by simp at hn; omega)]
+    · rw [List.length_cons, mv, hv, rv, ho'.word (by omega_using []) (by simp at hn; omega_using [hn])]
       simp only [s1, word_writeW_self]
       rw [Proof.X448.X86_64.rv_congr (s := s) (s' := s1) fun _ _ => rfl]
     · exact (Frame.refl _ _ |>.writeW (List.mem_singleton_self R) _
-        (hc o (Nat.le_refl _) (by simp; omega))).trans hf
+        (hc o (Nat.le_refl _) (by simp; omega_using []))).trans hf
 
 theorem finish_eq : finish = ([.mov .rax (.mem (sc OUT))] : List Instr) ++
     (Proof.X448.X86_64.storesR .rax 0 W ++ (([.mov32 .rcx (.imm 0), .store8 (at_ .rax 56) .rcx] :
@@ -209,7 +209,7 @@ theorem word_frame {base : Addr} {m m' : Mem} {R : Region} (hF : Frame [R] m m')
   rw [List.mem_singleton.mp hr] at hc
   refine hd _ hc ?_
   rw [Offset.add_add]
-  exact Offset.contains_base base (d := d + i) (n := 1) (by omega) (by omega)
+  exact Offset.contains_base base (d := d + i) (n := 1) (by omega_using [hd8, hi]) (by omega_using [hd8, hi])
 
 theorem bytesAt_57 (m : Mem) (q : Addr) :
     bytesAt m q 57 = bytesAt m q 56 ++ [m (q + BitVec.ofNat 64 56)] := by
@@ -231,23 +231,23 @@ theorem finish_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : word s.mem
   rw [WP.block_append_iff]
   have hc8 : ∀ d, 0 ≤ d → d + 8 ≤ 0 + 8 * W.length → (⟨q, 57⟩ : Region).Contains (off q d) 8 :=
     fun d _ hd' => by
-      rw [Proof.X448.X86_64.W_len] at hd'; exact Offset.contains_base _ (by omega) (by omega)
+      rw [Proof.X448.X86_64.W_len] at hd'; exact Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])
   refine WP.mono (storesR_ok .rax (R := ⟨q, 57⟩) a 0 W (ra.trans hq) (ka.2.2.2 ▸ hwo) hc8
     (by decide)) fun b ⟨vb, ob, fb, gb, rdb, wrb⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (zeroByte_ok b (q := q) ((gb _).trans (ra.trans hq))
-    ⟨_, by rw [wrb, ka.2.2.2]; exact hwo, Offset.contains_base _ (by omega) (by omega)⟩)
+    ⟨_, by rw [wrb, ka.2.2.2]; exact hwo, Offset.contains_base _ (by omega_using []) (by omega_using [])⟩)
     fun c ⟨mc, gc, rdc, wrc⟩ => ?_
   have fc : Frame [⟨q, 57⟩] s.mem c.mem := by
     rw [mc, ← ka.2.1]
-    exact fb.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact fb.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using []))
   have hsc : Scr c base :=
     ⟨by rw [gc _ (by decide), gb, ka.1 _ (by decide)]; exact hs.rdi,
       by rw [wrc, wrb, ka.2.2.2]; exact hs.wr, hs.nowrap⟩
   have svc : Saved base g c.mem := fun rd hrd => by
     have := saved_lt rd hrd
     rw [← hsv rd hrd]
-    exact word_frame fc hd (by omega)
+    exact word_frame fc hd (by omega_using [this])
   refine WP.mono (Proof.X448.X86_64.restore_ok hsc svc) fun t ⟨rt, gt, mt, rdt, wrt⟩ => ?_
   refine ⟨?_, rt, fun r hr => ?_, by rw [mt]; exact fc, by rw [rdt, rdc, rdb, ka.2.2.1], by rw [wrt, wrc, wrb, ka.2.2.2]⟩
   swap
@@ -262,9 +262,9 @@ theorem finish_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : word s.mem
       simp only [List.mem_range] at hi
       simp only [Mem.writeW]
       apply Mem.write_apply
-      rw [Offset.lt_iff _ q (by omega), Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.lt_iff _ q (by omega_using []), Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt (by omega_using [hi])]
+      omega_using [hi]
     rw [e]
     change Spec.X448.bytesAt b.mem q 56 = _
     rw [Proof.X448.X86_64.bytesAt_mv]

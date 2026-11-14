@@ -188,7 +188,7 @@ theorem lo32_pred (x : BitVec 64) : (x - BitVec.ofNat 64 1).setWidth 32 = x.setW
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_using []
 
 section
 variable {hF : FnsOK F} {s₀ s₀' : State} (hp : Pre F s₀) (hp' : Pre F s₀') (hq : PubEq s₀ s₀')
@@ -200,7 +200,7 @@ theorem block_rel {k : Nat} (hk : k < nbk s₀ (F := F)) :
     RelCT isa (fun s s' => Inv hF s₀ k s ∧ Inv hF s₀' k s') F.block
       fun s s' => Inv hF s₀ (k + 1) s ∧ Inv hF s₀' (k + 1) s' := by
   have hk' : k < nbk s₀' (F := F) := by rw [hq.nbk]; exact hk
-  have hk32 : k + 1 < 2 ^ 32 := by have := nbk_lt (hF := hF) hp; omega
+  have hk32 : k + 1 < 2 ^ 32 := by have := nbk_lt (hF := hF) hp; omega_using [hk, this]
   have sl' : sl s₀' = sl s₀ := by simp only [RISCV64.sl, hq.a3]
   unfold Fns.block
   have r1 := rel_agree (fun s s' (h : Inv hF s₀ k s) (h' : Inv hF s₀' k s') => ag_lp hq h h') hc.b1
@@ -302,16 +302,16 @@ theorem loop_rel :
           rw [eval_nonzero, i.s5, left_ne (hF := hF) hp (k := k + 1) hk]
         rw [e] at ht
         have h1 := of_decide_eq_true (Option.some.inj ht)
-        exact ⟨nbk s₀ (F := F) - (k + 1), by omega, k + 1, rfl, h1, i, i'⟩
+        exact ⟨nbk s₀ (F := F) - (k + 1), by omega_using [hk], k + 1, rfl, h1, i, i'⟩
       · exact RelCT.of_false fun s s' h => hk ⟨h.1, h.2.1⟩
     · have hD := (sizes hF).D
       have e : isa.eval (.zero .s5) s = some (decide (ol s₀ = 0)) := by
-        rw [eval_zero, h.s5, ofNat_beq_zero (by have := ol_lt (hF := hF) hp; omega)]
+        rw [eval_zero, h.s5, ofNat_beq_zero (by have := ol_lt (hF := hF) hp; omega_using [this])]
         congr 2; show (ol s₀ - min (0 * F.H.D) (ol s₀) = 0) = _; simp
       rw [e] at hz
       have := of_decide_eq_false (Option.some.inj hz)
       have : nbk s₀ (F := F) ≠ 0 := fun h' => this ((Whole.nb_zero hD.1).1 h')
-      omega
+      omega_using [this]
 
 include hF in
 /-- Two runs of `pbkdf2` in its frames. -/

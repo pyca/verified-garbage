@@ -33,18 +33,18 @@ theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
     b3At k + elemBytes k = ownAt k ∧ aAt k + elemBytes k = b3At k ∧
     qAt k + 3 * elemBytes k = aAt k ∧ pAt k + 3 * elemBytes k = qAt k ∧
     oAt k + 3 * elemBytes k = pAt k ∧ 1000 ≤ oAt k ∧ ownAt k % 8 = 0 := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   all_goals decide +kernel
 
 /-- The slots the function reads first lie below its own working space. -/
 theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ x ∈ rIds, enc k dbl x + 8 * k ≤ ownAt k := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   all_goals cases dbl <;> decide +kernel
 
 /-- The slots `enc` gives are laid out as the program needs. -/
 theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   all_goals cases dbl <;> exact ⟨by decide +kernel, by decide +kernel⟩
 
 /-- Those it writes lie apart from the saved `lr` and within `O` or the own
@@ -53,7 +53,7 @@ theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ ownAt k ∨ ownAt k + 8 ≤ enc k dbl w) ∧
       ((oAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ pAt k) ∨
         (ownAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ 4096)) := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   all_goals cases dbl <;> decide +kernel
 
 /-- The precondition of the function, on the state: the working space at
@@ -97,16 +97,16 @@ theorem fnOps_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.
   have hent : WP isa (.block (entry S.k)) s fun s₁ => Kp fnClob s s₁ ∧
       s₁.mem = s.mem.writeW (off (s.gpr .r3) (saveAt S.k)) s.lr := by
     refine wp_step exec_mflr (wp_step (std_ok (hs.write _ _) (h3.write _) (by decide) (d := saveAt S.k)
-      (by simp only [saveAt]; omega) (by simp only [saveAt]; omega)) (WP.block_nil ?_))
+      (by simp only [saveAt]; omega_using [hl]) (by simp only [saveAt]; omega_using [hl])) (WP.block_nil ?_))
     simp only [write_gpr, ite_true, Nat.zero_add]
     exact ⟨(Kp.write s _ (by decide)).trans (Kp.store _ _ _), rfl⟩
   refine WP.seq (WP.mono hent fun s₁ ⟨K₁, m₁⟩ => ?_)
-  have O₁ := writeW_outside s.mem (s.gpr .r3) (d := saveAt S.k) s.lr (by simp only [saveAt]; omega)
+  have O₁ := writeW_outside s.mem (s.gpr .r3) (d := saveAt S.k) s.lr (by simp only [saveAt]; omega_using [hl])
   rw [← m₁] at O₁
   have hI : InvR S.k 17 (enc S.k dbl) (s.gpr .r3) S.m rIds (E₀ S.k S.m dbl s) s₁ := by
     have heq : ∀ x ∈ rIds, wordsVal s₁.mem (s.gpr .r3) (enc S.k dbl x) S.k =
         wordsVal s.mem (s.gpr .r3) (enc S.k dbl x) S.k := fun x hx =>
-      O₁.wordsVal (by have := hR x hx; simp only [saveAt]; omega) (by have := hR x hx; omega)
+      O₁.wordsVal (by have := hR x hx; simp only [saveAt]; omega_using [this]) (by have := hR x hx; omega_using [hl, this])
     exact ⟨⟨by rw [K₁.g], by rw [K₁.wr, hp.wr]; simp, hfit⟩, rIds_lt,
       fun x hx => by rw [heq x hx]; exact hp.lt x hx, fun x hx => by rw [heq x hx]; rfl⟩
   refine WP.seq (WP.mono (opsR_ok hM rfl (enc_lay hp.k3 hp.k6 dbl) (unitMod_pow_two hodd _) hO hI)
@@ -115,14 +115,14 @@ theorem fnOps_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.
   have hs₂ : Ws s₂ (s.gpr .r3) 4096 := ⟨⟨8192, by decide, by rw [K.wr, K₁.wr, hp.wr]; simp, hfit⟩, by decide⟩
   have h3₂ : At s₂ (s.gpr .r3) .r3 0 := by rw [At, K.gpr _ (by decide), K₁.g]; exact h3
   have hsv : word s₂.mem (s.gpr .r3) (saveAt S.k) = s.lr := by
-    rw [Outs.word K.mem (fun r hr => ?_) (by simp only [saveAt]; omega), m₁, word_writeW_self]
+    rw [Outs.word K.mem (fun r hr => ?_) (by simp only [saveAt]; omega_using [hl]), m₁, word_writeW_self]
     simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
     rcases hr with ⟨x, hx, rfl⟩ | rfl
-    · rcases (hW x hx).1 with h | h <;> [exact .inr (by simp only [saveAt]; omega);
-        exact .inl (by simp only [saveAt]; omega)]
-    · exact .inl (by simp only [saveAt]; omega)
-  refine wp_step (ld_ok hs₂ h3₂ (by decide) (by simp only [saveAt]; omega) (d := saveAt S.k)
-    (by simp only [saveAt]; omega)) (wp_step exec_mtlr (WP.block_nil ?_))
+    · rcases (hW x hx).1 with h | h <;> [exact .inr (by simp only [saveAt]; omega_using [h]);
+        exact .inl (by simp only [saveAt]; omega_using [h])]
+    · exact .inl (by simp only [saveAt]; omega_using [hl])
+  refine wp_step (ld_ok hs₂ h3₂ (by decide) (by simp only [saveAt]; omega_using [hl]) (d := saveAt S.k)
+    (by simp only [saveAt]; omega_using [hl])) (wp_step exec_mtlr (WP.block_nil ?_))
   simp only [write_gpr, ite_true, Nat.zero_add, hsv]
   refine ⟨⟨fun r hr => ?_, ?_, rfl⟩, fun r hr => ?_, ?_, fun j hj => ?_, ?_⟩
   · have hr' : r ∉ fnClob := fun h => absurd h ((by decide : ∀ r ∈ preserved, r ∉ fnClob) r hr)
@@ -135,17 +135,17 @@ theorem fnOps_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.
     rw [K.gpr r hr, K₁.gpr r hr]
   · simp only [write_mem]
     refine (Outs.cover (rs := [(saveAt S.k, 8)]) ?_ fun r hr => ?_).trans (Outs.cover K.mem fun r hr => ?_)
-    · rw [m₁]; exact Outs.of_outside (writeW_outside s.mem _ s.lr (by simp only [saveAt]; omega))
+    · rw [m₁]; exact Outs.of_outside (writeW_outside s.mem _ s.lr (by simp only [saveAt]; omega_using [hl]))
         (List.mem_singleton_self _)
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [saveAt]; omega,
-        by simp only [saveAt]; omega⟩
+      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [saveAt]; omega_using [],
+        by simp only [saveAt]; omega_using [hl]⟩
     · simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
       rcases hr with ⟨x, hx, rfl⟩ | rfl
       · rcases (hW x hx).2 with h | h
-        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega⟩
-        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega, by dsimp only; omega⟩
+        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega_using [hl, h]⟩
+        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega_using [h]⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega_using [hl], by dsimp only; omega_using [hl]⟩
   · simp only [write_mem]; exact I₂.lt j (hO.outs j hj)
   · simp only [write_mem]
     rw [I₂.val 0 (hO.outs 0 (by decide)), I₂.val 1 (hO.outs 1 (by decide)),

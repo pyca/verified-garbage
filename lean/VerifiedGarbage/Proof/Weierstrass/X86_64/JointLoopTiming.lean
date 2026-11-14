@@ -19,7 +19,7 @@ theorem joint_top_guard {c : Joint.Cfg} (h : c.peel=false) : Joint.top c=64*c.K.
   simp only [Joint.top,h,Bool.false_eq_true,ite_false]
 
 theorem joint_top_le (c : Joint.Cfg) : 64*c.K.M.n≤Joint.top c ∧ Joint.top c≤64*c.K.M.n+1 := by
-  unfold Joint.top; split <;> omega
+  unfold Joint.top; split <;> omega_using []
 
 theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
     (R : Nat → State → State → Prop)
@@ -34,7 +34,7 @@ theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
     intro j
     by_cases hj : 1≤j
     · by_cases hb : j≤Joint.top c
-      · refine (step (j-1) (by omega)).mono
+      · refine (step (j-1) (by omega_using [hj, hb])).mono
           (P':=I j) (fun _ _ h => by simpa only [Nat.sub_add_cancel hj] using h.2.2) ?_
         intro s t ⟨hp,sz,tz⟩
         have se : eval .ne s=some (!decide (j-1=0)) := by change s.zf.map (!·)=_; rw [sz]; rfl
@@ -51,10 +51,10 @@ theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
             intro hz
             simp only [se,hz,decide_true,Bool.not_true] at he
             cases he
-          exact ⟨j-1,by omega,by omega,by omega,hp⟩
+          exact ⟨j-1,by omega_using [hj],by omega_using [hz],by omega_using [hb],hp⟩
       · exact RelCT.of_false (fun _ _ h => hb h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
-  exact (RelCT.loop I hs (Joint.top c)).mono (fun _ _ h => ⟨by omega,by omega,h⟩) (fun _ _ h => h)
+  exact (RelCT.loop I hs (Joint.top c)).mono (fun _ _ h => ⟨by omega_using [hn, ht],by omega_using [],h⟩) (fun _ _ h => h)
 
 /-- The loop, after the top digit's copy if `peel`. -/
 theorem jointRun_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)

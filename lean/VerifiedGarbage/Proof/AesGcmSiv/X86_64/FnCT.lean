@@ -146,9 +146,9 @@ theorem tag_st (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-    · exact L.w_w (.inr (by omega)) (by decide) (by omega)
+    · exact L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-    · exact (L.stk_w' (by decide)).symm) ((Tg.frame.sub (tagR_mutW W SP (by omega))).sub (mutW_mut W SP D n))
+    · exact (L.stk_w' (by decide)).symm) ((Tg.frame.sub (tagR_mutW W SP (by omega_using [ho]))).sub (mutW_mut W SP D n))
     Tg.rd Tg.wr
 
 theorem crypt_st0 (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
@@ -165,11 +165,11 @@ theorem crypt_st (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool) 
     fun h₁ h₂ q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.stk_w' (by omega)).symm
-      · exact (h.1.bufs.data.w.sub_right (Lay.wSub (by omega))).symm
+      · exact L.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+      · exact L.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+      · exact L.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+      · exact (L.stk_w' (by omega_using [h₂])).symm
+      · exact (h.1.bufs.data.w.sub_right (Lay.wSub (by omega_using [h₂]))).symm
   refine ⟨h.1.frame Cr.env Cr.frame (slots_cryR L h.1.bufs.data) (Cr.frame.sub (cryR_mut W SP D n)) Cr.rd Cr.wr,
     ?_, ?_⟩
   · rw [Proof.AesGcm.X86_64.blockAt_frame Cr.frame (dK (by decide) (by decide)), h.2.1,

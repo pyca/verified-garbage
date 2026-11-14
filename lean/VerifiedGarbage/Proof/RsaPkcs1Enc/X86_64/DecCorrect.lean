@@ -29,12 +29,7 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPk
 open VG.Proof.Sha256.X86_64 (Compress)
 
 /-- Everything after the private-key operation. -/
-def rest (H : Impl.Pbkdf2.Md.X86_64.Hash) : Prog isa :=
-  .seq dBuild (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H) (.seq (amLoop H) (.seq maskPart (.seq alPart
-    (.seq scanPart selPart)))))))
-
-theorem body_eq (H : Impl.Pbkdf2.Md.X86_64.Hash) (privN : String) (priv : Prog isa) :
-    body H privN priv = .seq (.block setup) (.seq (.call privN priv) (rest H)) := rfl
+abbrev rest (H : Impl.Pbkdf2.Md.X86_64.Hash) : Prog isa := afterPriv H
 
 theorem rest_ok (v : Compress) {s t : State} (hp : DPre s) (h : PostPriv s t)
     (hcs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r) :
@@ -83,11 +78,11 @@ theorem result_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {m 
     obtain ⟨hr, hb⟩ := hres
     rw [hEM] at hb; subst hb
     have hok : okOf R = true := by simp [okOf, hr]
-    rw [decryptWith_of_ok (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega) hO]
+    rw [decryptWith_of_ok (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega_using [hkk1]) hO]
     have hEMl : EM.length = kOf s := by rw [← hEM, blen]
     have hal := altFold_le (kOf s) (clOf s) 128
     rw [← altLength_eq] at hal
-    obtain ⟨hL, hmap⟩ := sel_eq hEMl hAM (by omega) hal
+    obtain ⟨hL, hmap⟩ := sel_eq hEMl hAM (by omega_using [hkk1]) hal
     have hM : Spec.RsaPkcs1Enc.implicitDecode (dB s) (cB s) EM = (if Spec.RsaPkcs1Enc.valid EM then
         Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.msgLength EM) EM
         else Spec.RsaPkcs1Enc.lastN (Spec.RsaPkcs1Enc.altLength (kOf s) (clOf s)) (amOf s)) := by
@@ -108,7 +103,7 @@ theorem result_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {m 
     rw [hO] at hres
     obtain ⟨hr, -⟩ := hres
     have hok : okOf R = false := by simp [okOf, hr]
-    rw [decryptWith_of_fault (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega) hO]
+    rw [decryptWith_of_fault (rsadp := fun C => Spec.Rsa.privateChecked (nB s) (eB s) C (pB s) (qB s) (dpB s) (dqB s) (qiB s)) (C := cB s) (dB := dB s) (k := (nB s).length) (by rw [hn]; exact hC) (by rw [hn]; omega_using [hkk1]) hO]
     refine ⟨hr, ?_, ?_⟩
     · rw [hout]; simp [hok, outByte_false]
     · rw [hml, hok]; simp [bmask]
@@ -120,12 +115,12 @@ open VG.Proof.Pbkdf2.Md.X86_64 (core_hmacInit core_hmacFin core_updC core_finC)
 SHA-256's and HMAC's functions, by what is proven of them, nor its own. -/
 theorem rest_mx (v : Compress) : (rest (HH v)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
-  have C := Proof.Pbkdf2.Md.X86_64.Sha256.coreOK
-  have hI : (HH v).hmacInit.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacInit K.cMx K.iMx C.hinitMx
+  have C := Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v
+  have hI : (HH v).hmacInit.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacInit K.iMx K.b.bMx C.hinitMx
   have hU : (HH v).updC.allInstrs (fun i => !loadsMxcsr i) = true := core_updC K.cMx C.updMx
   have hFi : (HH v).finC.allInstrs (fun i => !loadsMxcsr i) = true := core_finC K.cMx C.finMx
   have hF : (HH v).hmacFin.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacFin K.cMx C.hfinMx
-  simp only [rest, dBuild, zeroLoop, copyLoop, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, maskLoop,
+  simp only [rest, afterPriv, dBuild, zeroLoop, copyLoop, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, maskLoop,
     alPart, alLoop, scanPart, scanLoop, selPart, selLoop, Code.allInstrs, hI, hU, hFi, hF, K.iMx, Bool.and_true,
     Bool.true_and]
   decide +kernel
@@ -138,27 +133,22 @@ theorem ret_frame {s : State} (hp : DPre s) {m : Mem} (h : Frame (wrs s) s.mem m
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · have := Offset.disjoint_below (s.gpr .rsp) (n := decStack) (d := 0) (k := 8)
-      (by unfold decStack frameBytes privStack; omega)
+      (by unfold decStack frameBytes privStack; omega_using [])
     simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRm
   · exact hp.dRs
 
-theorem dec_correct (v : Compress) (pv : PrivImpl) (s : State) (h : decK.pre s) :
-    ∃ t s', Exec isa (code (HH v) pv.name pv.code) s t s' ∧ abiPreserved s s' ∧ decK.post s s' := by
-  have hp := dPre_of h
-  suffices hw : WP isa (code (HH v) pv.name pv.code) s fun s' => abiPreserved s s' ∧ decK.post s s' by
-    obtain ⟨t, s', he, hq⟩ := hw
-    exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold decStack at this; omega) ?_
-  rw [body_eq]
-  refine WP.seq (WP.mono_mx (by decide +kernel)
-    (WP.keep [.rax, .rsi, .rdx, .rcx, .r8, .r9] (setup_run hp) (by decide +kernel))
-    fun t₁ ⟨h₁, k₁⟩ hmx₁ => ?_)
-  refine WP.seq (WP.mono (priv_call pv hp h₁) fun t₂ ⟨hpost, hcs₂, hmx₂⟩ => ?_)
-  have hcs : ∀ r ∈ calleeSaved, r ≠ .rsp → t₂.gpr r = s.gpr r := fun r hr hr' => by
-    rw [hcs₂ r hr, k₁.cs (by decide) r hr]
-    simp only [allocState_gpr, hr', ↓reduceIte]
+/-- The function, with the code `A`, `B` before `rest`, which leave what
+the call of the private-key operation leaves (`hfront`). -/
+theorem decWith_ok (v : Compress) {A : List Instr} {B : Prog isa} {s : State} (hp : DPre s)
+    (hfront : WP isa (.block A) (allocState frameBytes s) fun t₁ => WP isa B t₁ fun t₂ =>
+      PostPriv s t₂ ∧ (∀ r ∈ calleeSaved, r ≠ .rsp → t₂.gpr r = s.gpr r) ∧
+      t₂.mxcsr.extractLsb' 6 10 = (allocState frameBytes s).mxcsr.extractLsb' 6 10) :
+    WP isa (.frame (.alloc frameBytes) (.seq (.block A) (.seq B (rest (HH v)))) (.free frameBytes)) s
+      fun s' => abiPreserved s s' ∧ decK.post s s' := by
+  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold decStack at this; omega_using [this]) ?_
+  refine WP.seq (WP.mono hfront fun t₁ h₁ => WP.seq (WP.mono h₁ fun t₂ ⟨hpost, hcs, hmx₂⟩ => ?_))
   refine WP.mono_mx (rest_mx v) (rest_ok v hp hpost hcs) fun t₃ hF hmx₃ => ?_
   refine ⟨hF.rsp, by rw [hF.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp hF.mem, ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
@@ -169,7 +159,7 @@ theorem dec_correct (v : Compress) (pv : PrivImpl) (s : State) (h : decK.pre s) 
       simp only [hr', ↓reduceIte]
       exact hF.cs r hr hr'
   · show t₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
-    rw [hmx₃, hmx₂, hmx₁]; rfl
+    rw [hmx₃, hmx₂]; rfl
   · have hAM : (amOf s).length = kOf s := hF.amLen
     have := result_ok hp hpost.res rfl hF hAM
     simp only [decK]

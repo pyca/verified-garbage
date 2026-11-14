@@ -56,10 +56,10 @@ theorem status_ok {p : CandidateP} {used n : Nat} {s : State}
   have hh : ∀ j < 15, word t.mem p.B (8 * j) = word s.mem p.B (8 * j) := by
     intro j hj
     rw [hm]
-    exact hdrStore_hdr _ _ _ (by decide) (by omega) (by change 19 ≠ j; omega)
+    exact hdrStore_hdr _ _ _ (by decide) (by omega_using [hj]) (by change 19 ≠ j; omega_using [hj])
   have hf' := CandidateFrame.of_scr (InScr.of_frm hf hfit)
   exact ⟨h.keep hf' hh k ((k.gpr (by decide)).trans h.base.sp), (k.gpr (by decide)).trans hdi,
-    by rw [hm]; exact word_writeW_self _ _ _ _, fun j hj => hh j (by omega), hf', k.mono (by decide)⟩
+    by rw [hm]; exact word_writeW_self _ _ _ _, fun j hj => hh j (by omega_using [hj]), hf', k.mono (by decide)⟩
 
 theorem leaveStatus_ok {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = off p.B 256)

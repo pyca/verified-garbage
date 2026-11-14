@@ -35,12 +35,12 @@ theorem writeBytes_set (m : Mem) (q : Addr) (xs : List Byte) {j : Nat} (hj : j <
   simp only [writeBytes, List.length_set]
   by_cases hx : x = q + BitVec.ofNat 64 j
   · subst hx
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hl])]
     simp [hj, List.getD_eq_getElem?_getD]
   · have hne : (x - q).toNat ≠ j := by
       intro h'
       apply hx
-      have : x - q = BitVec.ofNat 64 j := BitVec.eq_of_toNat_eq (by rw [h', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+      have : x - q = BitVec.ofNat 64 j := BitVec.eq_of_toNat_eq (by rw [h', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h'])])
       rw [← BitVec.sub_add_cancel x q, this, BitVec.add_comm]
     simp only [hx, ite_false]
     split
@@ -52,14 +52,14 @@ theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) {d k : Nat} (h 
     (hl : xs.length < 2 ^ 64) :
     Spec.Rsa.bytesAt (writeBytes m q xs) (q + BitVec.ofNat 64 d) k = (xs.drop d).take k := by
   apply List.ext_getElem
-  · simp [Spec.Rsa.bytesAt]; omega
+  · simp [Spec.Rsa.bytesAt]; omega_using [h]
   · intro i h1 h2
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, writeBytes, List.getElem_take,
       List.getElem_drop]
     rw [BitVec.add_assoc, Offset.add_sub_cancel_left, ← BitVec.ofNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by simp [Spec.Rsa.bytesAt] at h1; omega)]
+      Nat.mod_eq_of_lt (by simp [Spec.Rsa.bytesAt] at h1; omega_using [h, hl, h1])]
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h1
-    simp [show d + i < xs.length by omega, List.getD_eq_getElem?_getD]
+    simp [show d + i < xs.length by omega_using [h, h1], List.getD_eq_getElem?_getD]
 
 /-- The 16 words from `r0` := `r3` (0): 64 zero bytes. -/
 theorem zeros_ok {s : State} {a : Addr} (r3 : s.gpr .r3 = 0)
@@ -71,17 +71,17 @@ theorem zeros_ok {s : State} {a : Addr} (r3 : s.gpr .r3 = 0)
   | 0, _, rest, Q, k => k s (Rest.refl _ _) (by simp [writeBytes_nil])
   | j + 1, hj, rest, Q, k => by
     rw [List.range_succ, List.map_append, List.append_assoc]
-    refine zeros_ok r3 ha hw j (by omega) fun t R m => ?_
+    refine zeros_ok r3 ha hw j (by omega_using [hj]) fun t R m => ?_
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append]
-    refine wp_str (a := a + BitVec.ofNat 64 (4 * j)) (by omega) (by rw [R.gpr .r0 (by simp), ha j (by omega)])
-      (by rw [R.wr]; exact hw j (by omega)) fun t' u => k t' (R.trans (u.rest [])) ?_
+    refine wp_str (a := a + BitVec.ofNat 64 (4 * j)) (by omega_using [hj]) (by rw [R.gpr .r0 (by simp), ha j (by omega_using [hj])])
+      (by rw [R.wr]; exact hw j (by omega_using [hj])) fun t' u => k t' (R.trans (u.rest [])) ?_
     rw [u.mem, m, R.gpr _ (by simp), r3]
     show Mem.write (writeBytes s.mem a (List.replicate (4 * j) 0)) (a + BitVec.ofNat 64 (4 * j)) 4
       ((0 : BitVec 32).setWidth (8 * 4)) = _
     rw [write_eq_writeBytes]
     have z4 : ((List.range 4).map fun i => ((0 : BitVec 32).setWidth (8 * 4)).extractLsb' (8 * i) 8) =
         List.replicate 4 (0 : Byte) := by decide
-    have ap := writeBytes_append s.mem a (List.replicate (4 * j) (0 : Byte)) (List.replicate 4 0) (by simp; omega)
+    have ap := writeBytes_append s.mem a (List.replicate (4 * j) (0 : Byte)) (List.replicate 4 0) (by simp; omega_using [hj])
     rw [List.length_replicate] at ap
     rw [z4, ap, List.replicate_append_replicate, Nat.mul_succ]
 

@@ -33,17 +33,17 @@ theorem ExponentState.input {s : State} {ep : BitVec 32} {eb : List Byte} {j : N
     (h : ExponentState ep eb j s) (hj : j < eb.length) :
     ExponentByteInput (ep + BitVec.ofNat 32 j) (pre eb j) s := by
   refine ⟨h.ptr, h.low, h.high, ?_⟩
-  rw [addr_add (by have := h.buffer.sourceFit; omega)]
-  exact CallLay.inRegions_sub h.buffer.read (by omega) (by have := h.buffer.countFit; omega)
+  rw [addr_add (by have := h.buffer.sourceFit; omega_using [hj, this])]
+  exact CallLay.inRegions_sub h.buffer.read (by omega_using [hj]) (by have := h.buffer.countFit; omega_using [this])
 
 theorem exponentState_step (s : State) {ep : BitVec 32} {eb : List Byte} {j : Nat}
     (h : ExponentState ep eb j s) (hj : j < eb.length) :
     WP isa exponentByte s fun t => ExponentState ep eb (j + 1) t ∧ t.z = decide (j + 1 = eb.length) := by
   have input := h.input hj
   have byte : s.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
-    rw [addr_add (by have := h.buffer.sourceFit; omega)]
+    rw [addr_add (by have := h.buffer.sourceFit; omega_using [hj, this])]
     exact h.buffer.bytes j hj
-  refine WP.mono (exponentByte_ok s (by omega) (by have := h.buffer.countFit; omega)
+  refine WP.mono (exponentByte_ok s (by omega_using [hj]) (by have := h.buffer.countFit; omega_using [this])
     h.ptr h.count input.read byte h.low h.high) ?_
   rintro t ⟨lo, hi, ptr, count, zero, mem, rest⟩
   have next : 256 * pre eb j + (eb[j]).toNat = pre eb (j + 1) := by
@@ -56,7 +56,7 @@ theorem exponentState_step (s : State) {ep : BitVec 32} {eb : List Byte} {j : Na
     change ep + BitVec.ofNat 32 j + BitVec.ofNat 32 1 = _
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   · rw [count]; congr 1
-  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+  · rw [zero]; exact decide_eq_decide.mpr (by omega_using [])
 
 theorem exponentInit_ready (s : State) {ep : BitVec 32} {eb : List Byte}
     (h : ExponentBuffer ep eb s) (ptr : s.gpr .r1 = ep) (count : s.gpr .lr = BitVec.ofNat 32 eb.length) :

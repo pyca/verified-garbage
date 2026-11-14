@@ -46,7 +46,7 @@ theorem i2osp_mod (x L : Nat) : Spec.Rsa.i2osp (x % 2 ^ (8 * L)) L = Spec.Rsa.i2
   refine List.map_congr_left fun i hi => ?_
   have hi' := List.mem_range.mp hi
   have e : 2 ^ (8 * L) = 256 ^ (L - 1 - i) * 256 ^ (i + 1) := by
-    rw [← Nat.pow_add, show L - 1 - i + (i + 1) = L by omega, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
+    rw [← Nat.pow_add, show L - 1 - i + (i + 1) = L by omega_using [hi'], show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
   rw [e, Nat.mod_mul_right_div_self]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
@@ -89,7 +89,7 @@ theorem oExp_eq {σ : State} (h : smv P σ = false) (i : Nat) (hi : i < 7) : oEx
   · rfl
   · simp only [↓reduceIte]
     rw [i2osp_mod]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp (config := {decide := true}) only [AK, A5, AS3, upd, ↓reduceIte, AH_P, AH_Q, oArr, oLen, outv,
       List.getD_cons_zero, List.getD_cons_succ]
@@ -114,7 +114,7 @@ theorem body_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] : VP (fun σ s => In P σ ∧ Bk 
     refine ⟨h.bo, ?_, fun i hi => ?_⟩
     · rw [r0, resv_key h.e.2]
       have := b2n_le' (maskv P σ)
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])]
       cases maskv P σ <;> rfl
     · rw [h.outs i hi, oExp_eq h.e.2 i hi]
 

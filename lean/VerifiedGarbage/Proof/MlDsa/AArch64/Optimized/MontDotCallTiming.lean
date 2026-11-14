@@ -46,7 +46,7 @@ theorem at_pre {s s1 : State} {count : Nat} {out a b : Ptr}
       (s1.callEntry.withRegions [family (pa s a) count,family (pa s b) count] [polyRegion (pa s out)]) := by
   sig_pre [montProductContract,montDotSig,abi,argRegs]
   simp only [Args.r0 h1,Args.r1 h1,Args.r2 h1,Args.mem h1,Arg.val]
-  have he : 256*count*4=1024*count := by omega
+  have he : 256*count*4=1024*count := by omega_using []
   rw [he]
   exact ⟨rfl,trivial,h.outA,h.outB,h.outFit,h.aFit,h.bFit,h.positiveA,h.positiveB⟩
 

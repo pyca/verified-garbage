@@ -94,8 +94,8 @@ theorem cryptWhole_ct {k8 : BitVec 32} {D : BitVec 32} {n q j : Nat} :
         hk₂.sp hk₂.rd hk₂.wr, hd.of_eq hk₂.rd hk₂.wr, hj, h0', h2',
         by rw [hg₂ _ (by decide) (by decide), h3], by rw [hg₂ _ (by decide) (by decide), h12]⟩
     · refine CT.ctr fun s₁ s₂ ⟨_, he₁, hd₁, hj₁, a0, a2, a3, a12⟩ ⟨_, he₂, hd₂, _, b0, b2, b3, b12⟩ => ?_
-      exact ⟨_, _, _, _, ctrWhole_mk L he₁ a0 a2 a3 a12 (hd₁.sub (by omega) (by omega)),
-        ctrWhole_mk L he₂ b0 b2 b3 b12 (hd₂.sub (by omega) (by omega)), he₁.sp.trans he₂.sp.symm⟩
+      exact ⟨_, _, _, _, ctrWhole_mk L he₁ a0 a2 a3 a12 (hd₁.sub (by omega_using [h0]) (by omega_using [h0])),
+        ctrWhole_mk L he₂ b0 b2 b3 b12 (hd₂.sub (by omega_using [h0]) (by omega_using [h0])), he₁.sp.trans he₂.sp.symm⟩
 
 theorem cryptTail_ct {k8 : BitVec 32} {D : BitVec 32} {n q j : Nat} :
     CT (CrM c st w sp k8 D n q j) cryptTail := by
@@ -105,7 +105,7 @@ theorem cryptTail_ct {k8 : BitVec 32} {D : BitVec 32} {n q j : Nat} :
         true := ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r5, h₂.r5]) hc
-  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 hs.r5 (by have := hs.data.ok.lt32; omega)
+  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 hs.r5 (by have := hs.data.ok.lt32; omega_using [this])
     refine WP.of_runBlock ⟨s₁, run₁, ⟨k7, icb, P, m₀, hP, ?_⟩, hz⟩
     exact ⟨hs.env.keep (fun r _ => by rw [hg₁]) hsp₁ hrd₁ hwr₁, hs.le, by rw [hg₁, hs.r4], by rw [hg₁, hs.r5],
       hs.data.of_eq hrd₁ hwr₁, fun h => by rw [hm₁]; exact hs.ctr h,

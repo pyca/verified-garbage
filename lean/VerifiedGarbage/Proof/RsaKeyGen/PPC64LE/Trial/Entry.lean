@@ -1,14 +1,95 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Trial.Digit
+public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Trial
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.RsaKeyGen.Trial32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
-import VerifiedGarbage.Proof.RsaKeyGen.Trial32
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontRound
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.PowLit
+
+/-! ### `RsaKeyGen.PPC64LE.Trial.Digit`, which only this module used -/
+
+section
+
+/-!
+# Trial division on PPC64LE: one digit
+
+`digit_ok`: one 32-bit digit `x` of the candidate reduced into the
+accumulator by Montgomery's reduction by `2³²` (`redc32_math`): from
+`acc < 2 s`, `acc' < 2 s` and `acc' 2³² ≡ x + acc (mod s)`. The model's
+64-bit arithmetic is exact: `X = acc + x < 2³³` and `q s < 2⁴⁶` (`redc_word`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaKeyGen.PPC64LE.Trial
+
+open VG VG.PPC64LE VG.Impl.RsaKeyGen.PPC64LE.Trial VG.Proof.Bignum.PPC64LE VG.Proof.Mont
+
+/-- The reduction's value in 64-bit words: exact, since nothing overflows. -/
+theorem redc_word {X s sv : Nat} (hX : X < 2 ^ 34) (hs : s < 2 ^ 14) :
+    ((BitVec.ofNat 64 X * BitVec.ofNat 64 sv) <<< 32 >>> 32 * BitVec.ofNat 64 s + BitVec.ofNat 64 X) >>> 32 =
+      BitVec.ofNat 64 ((X + X * sv % 2 ^ 32 * s) / 2 ^ 32) := by
+  have hq : ((BitVec.ofNat 64 X * BitVec.ofNat 64 sv) <<< 32 >>> 32).toNat = X * sv % 2 ^ 32 := by
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_mul, BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.mod_mul_mod,
+      show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 from rfl, Nat.mul_mod_mul_right,
+      Nat.mul_div_cancel _ (Nat.two_pow_pos 32), Nat.mod_eq_of_lt (show X < 2 ^ 32 * 2 ^ 32 by omega_using [hX]),
+      Nat.mul_mod, Nat.mod_mod_of_dvd _ (Nat.dvd_mul_right _ _), ← Nat.mul_mod]
+  have hq' : X * sv % 2 ^ 32 < 2 ^ 32 := Nat.mod_lt _ (Nat.two_pow_pos _)
+  have hqs : X * sv % 2 ^ 32 * s < 2 ^ 46 := by
+    calc X * sv % 2 ^ 32 * s < 2 ^ 32 * 2 ^ 14 := Nat.mul_lt_mul'' hq' hs
+      _ = 2 ^ 46 := (Nat.pow_add 2 32 14).symm
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_mul, hq, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  rw [Nat.mod_eq_of_lt (show s < 2 ^ 64 by omega_using [hs]), Nat.mod_eq_of_lt (show X < 2 ^ 64 by omega_using [hX])]
+  generalize X * sv % 2 ^ 32 * s = qs at hqs ⊢
+  omega_using [hX, hqs]
+
+/-- The registers `digit` writes. -/
+def digitRegs : List Reg := [.r0, .r3, .r5, .r6]
+
+/-- One digit `x` at `o + 4 j` into `acc`. -/
+theorem digit_ok {u : State} {B : Addr} {Z o j s sv acc : Nat} (hs : Scr u B Z)
+    (h5 : u.gpr .r5 = off B (o + 4 * j)) (h3 : u.gpr .r3 = BitVec.ofNat 64 acc)
+    (h8 : u.gpr .r8 = BitVec.ofNat 64 s) (h9 : u.gpr .r9 = BitVec.ofNat 64 sv) (hacc : acc < 2 * s)
+    (hs2 : 2 ≤ s) (hs' : s < 2 ^ 14) (hinv : (s * sv + 1) % 2 ^ 32 = 0) (hZ : o + 4 * j + 4 ≤ Z) :
+    WP isa (.block digit) u fun t =>
+      ((∃ r, t.gpr .r3 = BitVec.ofNat 64 r ∧ r < 2 * s ∧ r * 2 ^ 32 % s = (w32 u.mem B (o + 4 * j) + acc) % s) ∧
+        t.gpr .r5 = off B (o + 4 * (j + 1)) ∧ t.mem = u.mem) ∧ Keep digitRegs u t := by
+  refine WP.keep _ ?_ (by decide)
+  have hld : InRegions (u.rd ++ u.wr) (off B (o + 4 * j)) 4 := hs.ld hZ
+  have hx : w32 u.mem B (o + 4 * j) < 2 ^ 32 := (u.mem.readW (off B (o + 4 * j)) 32).isLt
+  have eX : (u.mem.readW (off B (o + 4 * j)) 32).setWidth 64 + BitVec.ofNat 64 acc =
+      BitVec.ofNat 64 (w32 u.mem B (o + 4 * j) + acc) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    simp only [w32]
+    omega_using []
+  simp only [digit]
+  prun [h5, h3, h8, h9, hld, BitVec.add_zero]
+  rw [eX, redc_word (by omega_using [hacc, hs', hx]) hs']
+  obtain ⟨-, hlt, hcong⟩ := redc32_math (X := w32 u.mem B (o + 4 * j) + acc) hinv (by
+    have : 2 ^ 32 + 2 * s ≤ s * 2 ^ 32 := by
+      have : 2 * 2 ^ 32 ≤ s * 2 ^ 32 := Nat.mul_le_mul_right _ hs2
+      omega_using [hs2]
+    omega_using [hacc, hs2, hx])
+  refine ⟨⟨_, rfl, hlt, hcong⟩, ?_⟩
+  rw [show o + 4 * j + 4 = o + 4 * (j + 1) by omega_using []]
+
+end VG.Proof.RsaKeyGen.PPC64LE.Trial
+
+end
+
+end
+
 
 /-!
 # Trial division on PPC64LE: one table entry
@@ -38,14 +119,14 @@ theorem digits_ok {u : State} {B : Addr} {Z o w s sv : Nat} (hs : Scr u B Z)
   let Inv : Nat → State → Prop := fun j t =>
     ((∃ acc, t.gpr .r3 = BitVec.ofNat 64 acc ∧ acc < 2 * s ∧ acc * 2 ^ (32 * j) % s = val32 u.mem B o j % s) ∧
       t.gpr .r5 = off B (o + 4 * j) ∧ t.mem = u.mem) ∧ Keep (.r4 :: digitRegs) u t
-  refine WP.mono (wp_countdown (cnt := .r4) (N := 2 * w) (by omega) (by omega) Inv
+  refine WP.mono (wp_countdown (cnt := .r4) (N := 2 * w) (by omega_using [hw']) (by omega_using [hw]) Inv
     (fun j hj t ⟨⟨⟨acc, t3, hacc, hv⟩, t5, tm⟩, kt⟩ _ => ?_)
-    ⟨⟨⟨0, h3, by omega, by simp [val32]⟩, by rw [h5, Nat.mul_zero, Nat.add_zero], rfl⟩, Keep.refl _ _⟩ h4)
+    ⟨⟨⟨0, h3, by omega_using [hs2], by simp [val32]⟩, by rw [h5, Nat.mul_zero, Nat.add_zero], rfl⟩, Keep.refl _ _⟩ h4)
     fun t ⟨⟨⟨acc, t3, hacc, hv⟩, _, tm⟩, kt⟩ => ⟨⟨⟨acc, t3, hacc, by rw [← hv, ← Nat.mul_assoc]⟩, tm⟩, kt⟩
   rw [WP.block_append_iff]
   have ht : Scr t B Z := hs.congr kt.wr
   refine WP.mono (digit_ok ht t5 t3 ((kt.gpr .r8 (by decide)).trans h8) ((kt.gpr .r9 (by decide)).trans h9) hacc hs2
-    hs' hinv (by omega)) fun t₁ ⟨⟨⟨r, a3, hr, hrv⟩, a5, am⟩, k1⟩ => ?_
+    hs' hinv (by omega_using [hZ, hj])) fun t₁ ⟨⟨⟨r, a3, hr, hrv⟩, a5, am⟩, k1⟩ => ?_
   refine WP.mono (subi_ok t₁ .r4 (by decide)) fun t₂ e => ?_
   subst e
   refine ⟨⟨⟨⟨r, by simp only [gpr_write, reduceCtorEq, ↓reduceIte]; exact a3, hr, ?_⟩,
@@ -61,7 +142,7 @@ theorem zero_flag {x : Nat} (hx : x < 2 ^ 63) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  split <;> omega
+  split <;> omega_arith
 
 theorem xor_zero_iff {a b : Nat} : a ^^^ b = 0 ↔ a = b := by
   constructor
@@ -78,8 +159,8 @@ theorem eq_flag {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
   have exs : BitVec.ofNat 64 a ^^^ BitVec.ofNat 64 b = BitVec.ofNat 64 (a ^^^ b) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (Nat.xor_lt_two_pow (show a < 2 ^ 64 by omega) (show b < 2 ^ 64 by omega))]
+      Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_using [ha]), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_using [hb]),
+      Nat.mod_eq_of_lt (Nat.xor_lt_two_pow (show a < 2 ^ 64 by omega_using [ha]) (show b < 2 ^ 64 by omega_using [hb]))]
   rw [exs, zero_flag (Nat.xor_lt_two_pow ha hb)]
   simp only [xor_zero_iff]
 
@@ -93,8 +174,8 @@ theorem count_flag {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 64) (b : Bool) :
     rw [BitVec.toNat_and, BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn',
       show (2 ^ 64 - 1 % 2 ^ 64 + 0 % 2 ^ 64) % 2 ^ 64 = 2 ^ 64 - 1 by decide,
-      Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod, Nat.mod_eq_of_lt (show n - 1 < 2 ^ 64 by omega)]
-    omega
+      Nat.and_two_pow_sub_one_eq_mod, Nat.mod_mod, Nat.mod_eq_of_lt (show n - 1 < 2 ^ 64 by omega_using [hn'])]
+    omega_using [hn, hn']
   · simp only [↓reduceIte]
     rw [BitVec.toNat_and, BitVec.toNat_ofNat]
     simp
@@ -132,12 +213,12 @@ theorem entry_ok {u : State} {B T : Addr} {Z o w c i n : Nat} (hs : Scr u B Z)
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
         Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt heb,
         show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 from rfl, Nat.mul_mod_mul_right,
-        Nat.mul_div_cancel _ (Nat.two_pow_pos 32), hlo, Nat.mod_eq_of_lt (by omega)]
+        Nat.mul_div_cancel _ (Nat.two_pow_pos 32), hlo, Nat.mod_eq_of_lt (by omega_using [h8162])]
     · apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-        Nat.mod_eq_of_lt heb, hhi, Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt heb, hhi, Nat.mod_eq_of_lt (by omega_using [hsv])]
   have hv' : Scr v B Z := hs.congr kv.wr
-  refine WP.seq (WP.mono (digits_ok hv' v5 v3 v4 v8 v9 (by omega) (by omega) hinv hw hw' hZ)
+  refine WP.seq (WP.mono (digits_ok hv' v5 v3 v4 v8 v9 (by omega_using [h3]) (by omega_using [h8162]) hinv hw hw' hZ)
     fun x ⟨⟨⟨acc, x3, hacc, hacv⟩, xm⟩, kx⟩ => ?_)
   rw [vm, hc] at hacv
   have key : c % s = 0 ↔ acc = 0 ∨ acc = s := VG.Proof.RsaKeyGen.trial_div hodd hacc hacv
@@ -150,24 +231,24 @@ theorem entry_ok {u : State} {B T : Addr} {Z o w c i n : Nat} (hs : Scr u B Z)
     fun y ⟨⟨y22, y23, y24, ym⟩, ky⟩ => ⟨⟨y22, y23, y24, by rw [ym, xm, vm]⟩,
       ((kv.trans kx).trans ky).mono (by decide)⟩
   simp only [finish]
-  prun [x3, x8, x23, x24, zero_flag (show acc < 2 ^ 63 by omega), eq_flag (show acc < 2 ^ 63 by omega)
-    (show s < 2 ^ 63 by omega)]
+  prun [x3, x8, x23, x24, zero_flag (show acc < 2 ^ 63 by omega_using [h8162, hacc]), eq_flag (show acc < 2 ^ 63 by omega_using [h8162, hacc])
+    (show s < 2 ^ 63 by omega_using [h8162])]
   have hf : (BitVec.ofNat 64 (if acc = 0 then 1 else 0) ||| BitVec.ofNat 64 (if acc = s then 1 else 0)) =
       BitVec.ofNat 64 (if decide (c % s = 0) then 1 else 0) := by
     by_cases a0 : acc = 0
     · have hd : decide (c % s = 0) = true := decide_eq_true (key.mpr (Or.inl a0))
-      have a1 : ¬ (0 = s) := by omega
+      have a1 : ¬ (0 = s) := by omega_using [hodd]
       simp only [a0, a1, hd, ↓reduceIte]
       decide
     · by_cases a1 : acc = s
       · have hd : decide (c % s = 0) = true := decide_eq_true (key.mpr (Or.inr a1))
-        have s0 : ¬ (s = 0) := by omega
+        have s0 : ¬ (s = 0) := by omega_using [hodd]
         simp only [a1, s0, hd, ↓reduceIte]
         decide
       · have hd : decide (c % s = 0) = false := decide_eq_false (fun h => (key.mp h).elim a0 a1)
         simp only [a0, a1, hd, ↓reduceIte, Bool.false_eq_true]
         decide
-  rw [hf, count_flag hn (by omega)]
+  rw [hf, count_flag hn (by omega_using [hn'])]
   by_cases hit : c % s = 0 <;> simp [hit]
 
 end VG.Proof.RsaKeyGen.PPC64LE.Trial

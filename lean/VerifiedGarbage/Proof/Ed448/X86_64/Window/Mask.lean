@@ -24,8 +24,8 @@ def Bits (base : Addr) (o k : Nat) (s : State) : Prop :=
 theorem Bits.bit {base : Addr} {o k : Nat} {s : State} (h : Bits base o k s)
     (ho : 1 ≤ o) {t : Nat} (ht : t < 460) :
     s.mem (off base (o + t)) = BitVec.ofNat 8 (k / 2 ^ t % 2) := by
-  have hh := h (t + 1) (by omega)
+  have hh := h (t + 1) (by omega_using [ht])
   simpa only [SignedWindow.carry, Nat.add_eq_zero_iff, Nat.one_ne_zero, and_false,
-    ite_false, Nat.add_sub_cancel, show o - 1 + (t + 1) = o + t by omega] using hh
+    ite_false, Nat.add_sub_cancel, show o - 1 + (t + 1) = o + t by omega_using [ho]] using hh
 
 end VG.Proof.Ed448.X86_64.Window

@@ -71,7 +71,7 @@ theorem slot_ok {P : Params} (hF : PFacts P) {S : Nat} {σ : State} (hp : kgPre 
   have L1 := h1.k1.kc.lay hF hp
   unfold setSR
   refine WP.mono (setTwo_ok L1 (o := oSA4+34*j+32) (a := (e+j)%P.ℓ) (b := (e+j)/P.ℓ)
-    (by dsimp only [oSA4]; omega) (by layd) (by layd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
+    (by dsimp only [oSA4]; omega_using [hj]) (by layd) (by layd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
   refine ⟨h1.keep hF hp hP2 (by unfold k1Chk kcChk; layd) (fun k hk => by layd)
     (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hk2.get .x24),fun k hk => ?_⟩
   by_cases heq : k = j
@@ -79,7 +79,7 @@ theorem slot_ok {P : Params} (hF : PFacts P) {S : Nat} {σ : State} (hp : kgPre 
     rw [bytes34,L1.keepBytes hP2 (by layd),sc_pa hP2,sc_pa hP1,hb1,h.ks.k1.sa,
       sc_add,← sc_pa hP1,hb2,Proof.MlDsa.KeyGen.seedA_eq]
   · rw [L1.keepBytes hP2 (by layd),L.keepBytes hP1 (by layd)]
-    exact h.done k (by omega)
+    exact h.done k (by omega_using [hk, heq])
 end VG.Proof.MlDsa.AArch64.KeyGen
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
@@ -90,7 +90,7 @@ open VG.Spec.MlDsa (Params)
 theorem slot_taint (p : Params) (e : Nat) {j : Nat} (hj : j < 4) :
     (taint.check (Taint.ofRegs [.x28]) (seedSlot4 p e j) (.seq (Taint.ofRegs [.x28,.x10]) (.block []) (.block []))).isSome = true := by
   unfold seedSlot4 copySeed4 lea
-  rw [VG.Proof.MlDsa.KeyGen.ifp (by dsimp only [oSA4]; omega : oSA4+34*j < 4096)]
+  rw [VG.Proof.MlDsa.KeyGen.ifp (by dsimp only [oSA4]; omega_using [hj] : oSA4+34*j < 4096)]
   with_unfolding_all rfl
 
 theorem slot_piece {p : Params} (hF : PFacts p) {S e j : Nat} (he : e+4 ≤ p.k*p.ℓ) (hj : j < 4) :

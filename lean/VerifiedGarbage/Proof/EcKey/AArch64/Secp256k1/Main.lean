@@ -41,9 +41,9 @@ theorem publicKeyWithStage_ok {c : Cfg} (hc : BaseCfgOk c) (hC : Law c.C)
   have hp₁ : SetupPre c s₁ := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [k₁.wr, hp.wr, x4₁]; simp
-    · rw [x3₁]; exact inRegions_words (by rw [k₁.rd, hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega)
-    · rw [x1₁]; exact inRegions_words (by rw [k₁.rd, hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega)
-    · rw [x2₁]; exact inRegions_words (by rw [k₁.rd, hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega)
+    · rw [x3₁]; exact inRegions_words (by rw [k₁.rd, hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega_arith)
+    · rw [x1₁]; exact inRegions_words (by rw [k₁.rd, hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega_arith)
+    · rw [x2₁]; exact inRegions_words (by rw [k₁.rd, hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega_arith)
     · rw [x1₁, x4₁]; exact hp.d_sc
     · rw [x2₁, x4₁]; exact hp.d_sc
     · rw [x3₁, x4₁]; exact hp.d_sc
@@ -91,15 +91,15 @@ theorem publicKeyWithStage_ok {c : Cfg} (hc : BaseCfgOk c) (hC : Law c.C)
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
     by_cases h0 : sv c (s₀.gpr .x2) s₂ RZ = 0
-    · have hok : ok c (s₀.gpr .x2) s₂ = false := decide_eq_false (by rw [hD]; omega)
+    · have hok : ok c (s₀.gpr .x2) s₂ = false := decide_eq_false (by rw [hD]; omega_using [h0])
       rw [ite_eq_left_of_eq_true _ _ (eq_true (hz.mpr h0))]
       exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
-    · have hok : ok c (s₀.gpr .x2) s₂ = true := decide_eq_true (by rw [hD]; omega)
+    · have hok : ok c (s₀.gpr .x2) s₂ = true := decide_eq_true (by rw [hD]; omega_using [hd, h0])
       rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h => h0 (hz.mp h)))]
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       rfl
-  · have hok : ok c (s₀.gpr .x2) s₂ = false := decide_eq_false (by rw [hD]; omega)
+  · have hok : ok c (s₀.gpr .x2) s₂ = false := decide_eq_false (by rw [hD]; omega_using [hd])
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
 

@@ -40,7 +40,7 @@ theorem hashOk : HashOk Impl.Md5.PPC64LE.Stream.params 16 (8 * Spec.Hmac.md5I.sc
     apply Vector.ext
     intro j hj
     simp only [Proof.Md5.md, Spec.Md5.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega_using [hj])
   lenOk := trivial
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => by
     show Spec.Md5.hash m = _

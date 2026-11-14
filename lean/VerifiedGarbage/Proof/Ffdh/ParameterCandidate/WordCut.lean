@@ -22,7 +22,7 @@ open VG VG.Proof.Bignum VG.Proof.RsaKeyGen
 
 theorem testBit_ofNat_pow_sub_one {k : Nat} (hk : k ≤ 64) (j : Nat) :
     (BitVec.ofNat 64 (2 ^ k - 1)).toNat.testBit j = decide (j < k) := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.pow_le_pow_right (show 0 < 2 by decide) hk; omega),
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.pow_le_pow_right (show 0 < 2 by decide) hk; omega_using [this]),
     Nat.testBit_two_pow_sub_one]
 
 theorem testBit_ofNat_pow {k : Nat} (hk : k < 64) (j : Nat) :
@@ -64,23 +64,23 @@ theorem wv_shape {m m' : Mem} {p : Addr} {d w k : Nat} (hw : 2 ≤ w) (hk1 : 1 �
   · rw [testBit_wv m' p d w i hi, testBit_wv m p d w i hi]
     by_cases hj0 : i / 64 = 0
     · rw [hj0, Nat.mul_zero, Nat.add_zero, h0, BitVec.toNat_or, Nat.testBit_or,
-        show (1 : BitVec 64).toNat = 1 from rfl, show i % 64 = i by omega,
-        decide_eq_true (show i < 64 * (w - 1) + k by omega), decide_eq_false (show ¬ 64 * (w - 1) + k - 1 = i by omega)]
+        show (1 : BitVec 64).toNat = 1 from rfl, show i % 64 = i by omega_using [hj0],
+        decide_eq_true (show i < 64 * (w - 1) + k by omega_using [hw, hj0]), decide_eq_false (show ¬ 64 * (w - 1) + k - 1 = i by omega_using [hw, hk1, hj0])]
       simp only [Bool.true_and, Bool.or_false]
-    · have h1 := testBit_one_ne (show i ≠ 0 by omega)
+    · have h1 := testBit_one_ne (show i ≠ 0 by omega_using [hj0])
       rw [h1, Bool.or_false]
       by_cases hjt : i / 64 = w - 1
       · rw [hjt, htop, BitVec.toNat_or, Nat.testBit_or, BitVec.toNat_and, Nat.testBit_and,
-          testBit_ofNat_pow_sub_one hk, testBit_ofNat_pow (show k - 1 < 64 by omega)]
-        have e1 : decide (i % 64 < k) = decide (i < 64 * (w - 1) + k) := decide_eq_decide.mpr (by omega)
-        have e2 : decide (k - 1 = i % 64) = decide (64 * (w - 1) + k - 1 = i) := decide_eq_decide.mpr (by omega)
+          testBit_ofNat_pow_sub_one hk, testBit_ofNat_pow (show k - 1 < 64 by omega_using [hk])]
+        have e1 : decide (i % 64 < k) = decide (i < 64 * (w - 1) + k) := decide_eq_decide.mpr (by omega_using [hjt])
+        have e2 : decide (k - 1 = i % 64) = decide (64 * (w - 1) + k - 1 = i) := decide_eq_decide.mpr (by omega_using [hk1, hjt])
         rw [e1, e2, Bool.and_comm]
-      · rw [hmid (i / 64) (by omega) (by omega), decide_eq_true (show i < 64 * (w - 1) + k by omega),
-          decide_eq_false (show ¬ 64 * (w - 1) + k - 1 = i by omega)]
+      · rw [hmid (i / 64) (by omega_using [hj0]) (by omega_using [hi, hjt]), decide_eq_true (show i < 64 * (w - 1) + k by omega_using [hi, hjt]),
+          decide_eq_false (show ¬ 64 * (w - 1) + k - 1 = i by omega_using [hk1, hk, hjt])]
         simp
-  · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (wv_lt m' p d w) (Nat.pow_le_pow_right (by decide) (by omega))),
-      testBit_one_ne (show i ≠ 0 by omega), decide_eq_false (show ¬ 64 * (w - 1) + k - 1 = i by omega),
-      decide_eq_false (show ¬ i < 64 * (w - 1) + k by omega)]
+  · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (wv_lt m' p d w) (Nat.pow_le_pow_right (by decide) (by omega_using [hi]))),
+      testBit_one_ne (show i ≠ 0 by omega_using [hw, hi]), decide_eq_false (show ¬ 64 * (w - 1) + k - 1 = i by omega_using [hw, hk, hi]),
+      decide_eq_false (show ¬ i < 64 * (w - 1) + k by omega_using [hw, hk, hi])]
     simp
 
 end VG.Proof.Ffdh.ParameterCandidate

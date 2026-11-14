@@ -50,7 +50,7 @@ open Spec.Weierstrass
     (((AllocatedFrame.of_keeps kb).widenRegs (by decide)).trans kt)
   refine ⟨fr,⟨fb.keep kt,?_,?_,ct.trans cb⟩⟩
   · intro m hm hm1
-    have : m=1 := by omega
+    have : m=1 := by omega_using [hm, hm1]
     subst m
     simpa only [mul_one_pt] using pt
   · simpa only [mul_one_pt] using pb'
@@ -94,7 +94,7 @@ theorem copyD_ok {base : Addr} {P Q : Point C} {k : Nat} {s : State}
   have sel : ∀i<5,wordsVal t.mem base (selectedSlot i) 4=wordsVal s.mem base (selectedSlot i) 4 := by
     intro i hi
     exact un.wordsVal ((show ∀i<5,∀w∈[(608,32),(640,32),(128,32)],selectedSlot i+32≤w.1 ∨ w.1+w.2≤selectedSlot i from by decide +kernel) i hi)
-      (by unfold selectedSlot; split <;> omega)
+      (by unfold selectedSlot; split <;> omega_using [hi])
   have vx := it.val K.D.x (by decide)
   have vy := it.val K.D.y (by decide)
   change tmv C 4 base t 608=_ at vx
@@ -134,22 +134,22 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
     WP isa (.block Impl.P256.EcdhJac.storeEntry) s fun t =>
       Frame base buildWork s t ∧ CoZInv base P k m t := by
   refine WP.mono (storePoint_ok hf.field.scr hm hm16 h19 hp) fun t ⟨kt,ot,pt,ct⟩ => ?_
-  have old := table_store ht (by omega) ot
+  have old := table_store ht (by omega_using [hm16]) ot
   have selected := selected_store hp hm hm16 ot
   have hv : ∀x∈[K.D.x,K.D.y,K.E.z],wordsVal t.mem base x 4=wordsVal s.mem base x 4 := by
     intro x hx
     exact ot.wordsVal (by
       have h : x=608∨x=640∨x=768 := by
         simpa only [show K.D.x=608 from rfl,show K.D.y=640 from rfl,show K.E.z=768 from rfl,List.mem_cons,List.not_mem_nil,or_false] using hx
-      rcases h with rfl|rfl|rfl <;> omega) (by
+      rcases h with rfl|rfl|rfl <;> omega_using []) (by
       have h : x=608∨x=640∨x=768 := by
         simpa only [show K.D.x=608 from rfl,show K.D.y=640 from rfl,show K.E.z=768 from rfl,List.mem_cons,List.not_mem_nil,or_false] using hx
-      rcases h with rfl|rfl|rfl <;> omega)
+      rcases h with rfl|rfl|rfl <;> omega_using [])
   refine ⟨kt,⟨⟨hf.keep kt,?_,selected,ct.trans h19⟩,?_,?_⟩⟩
   · intro a ha ham
     by_cases h : a=m
     · subst a; exact pt
-    · exact old a ha (by omega)
+    · exact old a ha (by omega_using [ham, h])
   · intro x hx
     rw [hv x (by
       rcases List.mem_cons.mp hx with rfl|hx

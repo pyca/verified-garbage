@@ -11,25 +11,33 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_init_scratch() {
     core::arch::naked_asm!(
-        r#".base64 "SYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_md5_init}
+        r#".base64 "SYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0TYnHSInVSYnNSInf"
+call {vg_md5_init_core}
 .base64 "TInn"
-call {vg_md5_init}
-.base64 "uDY2NjaJQxCJQxSJQxiJQxyJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0xBvgAAAABNhe0="
+call {vg_md5_init_core}
+.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0MQ8w9/QyDzD39DMPMPf0NAQb4AAAAATInpSMHpBEiFyQ=="
 je 20f
 22:
-.base64 "Qg+2RDUAg/A2QohEMxBJg8YBTTnu"
+.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTEEmDxhBIg+kB"
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0MQNWpqampBiUQkEItDFDVqampqQYlEJBSLQxg1ampqakGJRCQYi0McNWpqampBiUQkHItDIDVqampqQYlEJCCLQyQ1ampqakGJRCQki0MoNWpqampBiUQkKItDLDVqampqQYlEJCyLQzA1ampqakGJRCQwi0M0NWpqampBiUQkNItDODVqampqQYlEJDiLQzw1ampqakGJRCQ8i0NANWpqampBiUQkQItDRDVqampqQYlEJESLQ0g1ampqakGJRCRIi0NMNWpqampBiUQkTEiJ3kiDxhBIid+6AQAAAEyJ+Q=="
+.base64 "TTnu"
+je 23f
+25:
+.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMQSYPGAU057g=="
+jne 25b
+jmp 24f
+23:
+24:
+.base64 "SLhqampqampqamZID27IZg9syfMPb1MQZg/v0fNBD39UJBDzD29TIGYP79HzQQ9/VCQg8w9vUzBmD+/R80EPf1QkMPMPb1NAZg/v0fNBD39UJEBIid5Ig8YQSInfugEAAABMifk="
 call {vg_md5_compress}
 .base64 "SIn7SYnPTInjTInmSIPGEEiJ37oBAAAATIn5"
 call {vg_md5_compress}
-.base64 "SIn7SYnPSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAAww=="
+.base64 "SIn7SYnPSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39Yww=="
 .p2align 6"#,
-        vg_md5_init = sym crate::md5::vg_md5_init,
+        vg_md5_init_core = sym crate::md5::vg_md5_init_core::vg_md5_init_core,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )
 }

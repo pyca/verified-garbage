@@ -3,12 +3,160 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Composition
-import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Body
-import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Save
+public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rc2.X86_64.Save
+public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
+
+/-! ### `TripleDes.X86_64.Key.Body`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86_64.Key
+
+open VG VG.X86_64 VG.X86_64.RegUpd
+open VG.Proof.Rc2.X86_64 (Keep)
+
+theorem cmpLength_ok (s : State) :
+    ∃ s', runBlock isa [.alu .cmp .rsi (.imm 16)] s = some s' ∧
+      s'.zf = some (s.gpr .rsi == 16) ∧ Keep [] s s' := by
+  refine ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some]
+    rfl, ?_, ?_⟩
+  · rw [zf_arithFlags]
+    exact congrArg some (by
+      apply Bool.eq_iff_iff.mpr
+      simp only [beq_iff_eq]
+      change (s.gpr .rsi - (16 : BitVec 64) = (0 : BitVec 64)) ↔ s.gpr .rsi = (16 : BitVec 64)
+      bv_omega)
+  · exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+
+theorem Components.keep {origin s t : State} {n : Nat} (hs : Components origin s n)
+    (ht : Keep [] s t) : Components origin t n :=
+  ⟨fun c hc j hj => by rw [ht.mem]; exact hs.keys c hc j hj,
+    ht.rd.trans hs.rd, ht.wr.trans hs.wr,
+    fun r hr => (ht.reg r (by simp)).trans (hs.reg r hr), by rw [ht.mem]; exact hs.frame⟩
+
+theorem beq16_toNat (x : BitVec 64) : (x == 16) = decide (x.toNat = 16) := by
+  apply Bool.eq_iff_iff.mpr
+  simp only [beq_iff_eq, decide_eq_true_eq]
+  constructor
+  · intro h; rw [h]; rfl
+  · intro h
+    apply BitVec.eq_of_toNat_eq
+    exact h
+
+theorem body_ok (origin s : State) (hp : Permissions origin) (hs : Components origin s 0)
+    (Q : State → Prop)
+    (finish : ∀ t, Components origin t 3 → WP isa (.block Impl.TripleDes.X86_64.Key.restore) t Q) :
+    WP isa (.seq (Impl.TripleDes.X86_64.Key.component 0 0)
+      (.seq (Impl.TripleDes.X86_64.Key.component 8 1)
+        (.seq (.block [.alu .cmp .rsi (.imm 16)])
+          (.seq (.ite .e (.block Impl.TripleDes.X86_64.Key.copyThird)
+            (Impl.TripleDes.X86_64.Key.component 16 2)) (.block Impl.TripleDes.X86_64.Key.restore))))) s Q := by
+  apply WP.seq
+  apply WP.mono (componentStep_ok origin s 0 (by decide) hp hs (by rfl))
+  intro s₁ hs₁
+  apply WP.seq
+  apply WP.mono (componentStep_ok origin s₁ 1 (by decide) hp hs₁ (by rfl))
+  intro s₂ hs₂
+  apply WP.seq
+  obtain ⟨s₃, run₃, flag₃, keep₃⟩ := cmpLength_ok s₂
+  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
+  have hs₃ := hs₂.keep keep₃
+  apply WP.seq
+  apply WP.mono (Q := (Components origin · 3)) ?_
+  · intro t ht
+    exact finish t ht
+  have flag : s₃.zf = some (decide ((origin.gpr .rsi).toNat = 16)) := by
+    rw [flag₃, hs₂.reg .rsi (by decide), beq16_toNat]
+  by_cases h16 : (origin.gpr .rsi).toNat = 16
+  · apply WP.ite true (by simp only [eval, flag, h16, decide_true])
+    · intro _; exact copyThird_ok origin s₃ hp hs₃ h16
+    · simp
+  · apply WP.ite false (by simp only [eval, flag, h16, decide_false])
+    · simp
+    · intro _
+      exact componentStep_ok origin s₃ 2 (by decide) hp hs₃
+        (by simp only [VG.Proof.TripleDes.componentOffset, h16, and_false, ite_false])
+
+end VG.Proof.TripleDes.X86_64.Key
+
+end
+
+end
+
+/-! ### `TripleDes.X86_64.Key.Save`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.X86_64.Key
+
+open VG VG.X86_64 VG.Impl.TripleDes.X86_64
+
+/-- The six callee-saved registers, in slot order. -/
+def savedReg (i : Nat) : Reg := (Impl.TripleDes.X86_64.Key.savedRegs).getD i .rdi
+
+theorem save_eq : Impl.TripleDes.X86_64.Key.save = VG.Proof.Rc2.X86_64.saveCode .rcx savedReg 6 := by
+  decide +kernel
+
+theorem restore_eq : Impl.TripleDes.X86_64.Key.restore = VG.Proof.Rc2.X86_64.restoreCode .rcx savedReg (List.range 6) := by
+  decide +kernel
+
+def Saved (original current : State) : Prop :=
+  ∀ i < 6, current.mem.readW (current.gpr .rcx + BitVec.ofNat 64 (8 * i)) 64 =
+    original.gpr (savedReg i)
+
+theorem save_ok (s : State)
+    (hw : ∀ i < 6, InRegions s.wr (s.gpr .rcx + BitVec.ofNat 64 (8 * i)) 8) :
+    WP isa (.block Impl.TripleDes.X86_64.Key.save) s (fun s' =>
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Saved s s' ∧
+      Frame [⟨s.gpr .rcx, 48⟩] s.mem s'.mem) := by
+  rw [save_eq]
+  apply WP.mono (VG.Proof.Rc2.X86_64.saveCode_ok s .rcx savedReg 6 hw)
+  intro s' hs
+  refine ⟨hs.1, hs.2.1, hs.2.2.1, ?_, ?_⟩
+  · intro i hi
+    rw [hs.1, hs.2.2.2]
+    exact VG.Proof.Rc2.X86_64.saveMem_read _ _ _ 6 (by decide) i hi
+  · rw [hs.2.2.2]
+    exact VG.Proof.Rc2.X86_64.saveMem_frame _ _ _ 6 (by decide)
+
+theorem savedReg_separate : ∀ i < 6, savedReg i ≠ .rcx := by decide +kernel
+
+theorem restore_ok (original s : State) (hsaved : Saved original s)
+    (hread : ∀ i < 6, InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 (8 * i)) 8) :
+    WP isa (.block Impl.TripleDes.X86_64.Key.restore) s (fun s' =>
+      (∀ r ∈ Impl.TripleDes.X86_64.Key.savedRegs, s'.gpr r = original.gpr r) ∧
+      VG.Proof.Rc2.X86_64.Keep (Impl.TripleDes.X86_64.Key.savedRegs) s s') := by
+  rw [restore_eq]
+  have hregs : (List.range 6).map savedReg = Impl.TripleDes.X86_64.Key.savedRegs := by decide +kernel
+  have h := VG.Proof.Rc2.X86_64.restoreCode_ok s .rcx savedReg (List.range 6) original.gpr
+    (fun i hi => savedReg_separate i (List.mem_range.mp hi))
+    (fun i hi => hread i (List.mem_range.mp hi))
+    (fun i hi => hsaved i (List.mem_range.mp hi))
+  rw [hregs] at h
+  exact h
+
+
+
+end VG.Proof.TripleDes.X86_64.Key
+
+end
+
+end
+
 
 @[expose] public section
 

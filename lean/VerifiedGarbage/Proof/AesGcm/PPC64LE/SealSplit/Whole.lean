@@ -28,9 +28,9 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
   subst a
   refine WP.mono (Call.ok (Call.args_config L he hd lay hR hv)) fun t ht => ?_
   obtain ⟨h3,h4,h5,h6,h7,h8,h9,h10,_⟩ := Call.args_values he lay
-  have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega
-  have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega
-  have hr : R<2^64 := by rcases hv with h | h | h <;> omega
+  have hc : count/16<2^64 := by have := lay.bound; have := (V .r23).isLt; omega_arith
+  have hn : (V .r23).toNat/16<2^64 := by have := (V .r23).isLt; omega_using []
+  have hr : R<2^64 := by rcases hv with h | h | h <;> omega_using [h]
   have hd' := ht.ciphertext
   have hb := ht.counter
   have hy := ht.hash
@@ -44,7 +44,7 @@ theorem whole_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fo
 theorem input_length (m : Mem) (S D : Addr) (total count : Nat) (hc : count≤total) :
     (Input.blocks m S D total count).length=total/16 := by
   simp only [Input.blocks,List.length_append,List.length_drop,Proof.Gcm.length_blocksAt]
-  omega
+  omega_using [hc]
 
 
 theorem whole_done {V : Reg → BitVec 64} {sp : Addr} {R count : Nat} {S : Addr} {a : List Byte}

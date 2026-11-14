@@ -17,7 +17,7 @@ theorem PrivContext.temporaryWrite {g : PrivGeometry} {bs : Fin 8 → List Byte}
     (h : PrivContext g bs s) : InRegions s.wr (State.addr g.temporary) g.length := by
   rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
   exact ⟨_, h.inner.writable, Offset.contains_base _
-    (by have := h.valid.maxLength; simp only [oM, frameBytes]; omega) (by decide : oM < 2 ^ 64)⟩
+    (by have := h.valid.maxLength; simp only [oM, frameBytes]; omega_using [this]) (by decide : oM < 2 ^ 64)⟩
 
 theorem crtCovers {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State} (h : PrivContext g bs s) :
     Covers (crtRd g ++ crtWr g) (s.rd ++ s.wr) ∧ Covers (crtWr g) s.wr := by
@@ -37,7 +37,7 @@ theorem crtWrites_sub {g : PrivGeometry} (h : g.Valid) :
   rcases hr with rfl | rfl
   · refine ⟨g.innerRegion, by simp [bodyWrites], ?_⟩
     rw [PrivGeometry.temporary, h.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.maxLength; simp only [oM, frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.maxLength; simp only [oM, frameBytes]; omega_using [this])
   · exact ⟨g.workspaceRegion, by simp [bodyWrites], fun _ hx => hx⟩
 
 theorem crtWrites_slots {g : PrivGeometry} (h : g.Valid) :
@@ -46,7 +46,7 @@ theorem crtWrites_slots {g : PrivGeometry} (h : g.Valid) :
   simp only [crtWr, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · rw [PrivGeometry.temporary, h.offsetAddr (by decide)]
-    exact Offset.disjoint _ (Or.inl (by decide : 64 + 24 ≤ oM)) (by decide) (by have := h.maxLength; simp only [oM]; omega)
+    exact Offset.disjoint _ (Or.inl (by decide : 64 + 24 ≤ oM)) (by decide) (by have := h.maxLength; simp only [oM]; omega_using [this])
   · exact h.stackWorkspace.sub_left (fun x hx => h.innerSub x
       (Offset.sub_base _ (by decide : 64 + 24 ≤ frameBytes) x hx))
 
@@ -64,9 +64,9 @@ theorem crt_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s 
   refine ⟨ht, slotsT, frame, rest, ?_⟩
   sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   have sa := fun {j} (hj : j < 14) => crtArgs_stack h args hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega
-  have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega_using [kfit, this]
+  have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega_using [kfit, this]
   simp only [args.output, args.modulus, args.length,
     sa (by decide : 0 < 14), sa (by decide : 2 < 14), sa (by decide : 3 < 14),
     sa (by decide : 4 < 14), sa (by decide : 5 < 14), sa (by decide : 6 < 14),

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Convert a selected Montgomery comb entry into the shared group-law invariant. -/
 
@@ -22,8 +23,8 @@ theorem combEntry_rep {C : Curve} (hC : Law C) {w J j a R one : Nat}
     simp only [↓reduceIte,toM_zero,hone,combPtW,Nat.zero_mul,Spec.Weierstrass.mul]
     exact rep_infinity' hC
   · simp only [zero,↓reduceIte,toM_mont unit,hone]
-    have entry := h.entry j hj (a-1) (by omega)
-    rw [Nat.sub_add_cancel (show 1≤a by omega)] at entry
+    have entry := h.entry j hj (a-1) (by omega_using [ha, zero])
+    rw [Nat.sub_add_cancel (show 1≤a by omega_using [zero])] at entry
     unfold combPtW
     rw [entry]
     exact rep_affine' hC _ _
@@ -46,7 +47,7 @@ theorem combSigned_rep {C : Curve} (hC : Law C) {w J j k R one : Nat}
     apply magH_le
     have pow : 2^w=2*2^(w-1) := by
       calc
-        2^w=2^((w-1)+1) := congrArg (fun n => 2^n) (by omega)
+        2^w=2^((w-1)+1) := congrArg (fun n => 2^n) (by omega_using [hw])
         _ = 2*2^(w-1) := by rw [Nat.pow_succ,Nat.mul_comm]
     rw [← pow]
     exact combWin_lt w k j
@@ -58,7 +59,7 @@ theorem combSigned_rep {C : Curve} (hC : Law C) {w J j k R one : Nat}
     simpa only [magH,pos,↓reduceIte] using rep
   · simp only [pos,↓reduceIte]
     have neg : toM C.p R ((C.p-y)%C.p) = -toM C.p R y := by
-      have sub := toM_sub (m := C.p) (R := R) (A := 0) (B := y) (by omega)
+      have sub := toM_sub (m := C.p) (R := R) (A := 0) (B := y) (by omega_using [hlt])
       simp only [Nat.zero_add,toM_zero] at sub
       grind
     rw [neg]

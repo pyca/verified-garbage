@@ -35,9 +35,9 @@ theorem getD_le8_append (a b : BitVec 64) {k : Nat} (hk : k < 16) :
     (le8 a ++ le8 b).getD k 0 = if k < 8 then a.extractLsb' (8 * k) 8 else b.extractLsb' (8 * (k - 8)) 8 := by
   rw [List.getD_eq_getElem?_getD]
   split
-  · rw [List.getElem?_append_left (by rw [length_le8]; omega), ← List.getD_eq_getElem?_getD, getD_le8 _ ‹_›]
-  · rw [List.getElem?_append_right (by rw [length_le8]; omega), length_le8, ← List.getD_eq_getElem?_getD,
-      getD_le8 _ (by omega)]
+  · rw [List.getElem?_append_left (by rw [length_le8]; omega_arith), ← List.getD_eq_getElem?_getD, getD_le8 _ ‹_›]
+  · rw [List.getElem?_append_right (by rw [length_le8]; omega_arith), length_le8, ← List.getD_eq_getElem?_getD,
+      getD_le8 _ (by omega_using [hk])]
 
 /-! ## The counter as a block -/
 
@@ -49,8 +49,8 @@ theorem toBytes_be128 (x : Nat) : Spec.Gcm.toBytes (BitVec.ofNat 128 x) = Spec.S
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   have : 2 ^ 128 = 2 ^ (8 * (15 - i)) * 2 ^ (128 - 8 * (15 - i)) := by
-    rw [← Nat.pow_add]; congr 1; omega
-  rw [this, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega)),
+    rw [← Nat.pow_add]; congr 1; omega_using []
+  rw [this, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [])),
     show 256 ^ (15 - i) = 2 ^ (8 * (15 - i)) by rw [Nat.pow_mul]]
 
 theorem beNat_eq (q : List Byte) : Spec.Gcm.ofBytes q = BitVec.ofNat 128 (Spec.Siv.beNat q) := rfl
@@ -90,11 +90,11 @@ theorem counter_words (w₀ w₁ : BitVec 64) :
     · omega
     · rfl
   · rw [getD_le8_append _ _ hk, getD_le8_append _ _ hk]
-    simp only [show ¬ k < 8 by omega, ↓reduceIte]
-    rw [extractLsb'_and, qmask_byte (k - 8) (by omega)]
+    simp only [show ¬ k < 8 by omega_using [h8], ↓reduceIte]
+    rw [extractLsb'_and, qmask_byte (k - 8) (by omega_using [hk])]
     by_cases hk' : k = 8 ∨ k = 12
-    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = True from eq_true (by omega), hk', ite_true]
-    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = False from eq_false (by omega), hk', ite_false]
+    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = True from eq_true (by omega_using [hk']), hk', ite_true]
+    · simp only [show (k - 8 = 0 ∨ k - 8 = 4) = False from eq_false (by omega_using [h8, hk']), hk', ite_false]
       apply BitVec.eq_of_getLsbD_eq; intro j hj
       simp only [BitVec.getLsbD_and]
       have : (0xff : Byte).getLsbD j = true := by revert j; decide
@@ -105,9 +105,9 @@ theorem counter_words (w₀ w₁ : BitVec 64) :
 theorem le8_inj {a b : BitVec 64} (h : le8 a = le8 b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   have := congrArg (fun l => (l.getD (j / 8) 0).getLsbD (j % 8)) h
-  simp only [getD_le8 _ (show j / 8 < 8 by omega), BitVec.getLsbD_extractLsb',
-    show j % 8 < 8 by omega, decide_true, Bool.true_and] at this
-  rwa [show 8 * (j / 8) + j % 8 = j by omega] at this
+  simp only [getD_le8 _ (show j / 8 < 8 by omega_using [hj]), BitVec.getLsbD_extractLsb',
+    show j % 8 < 8 by omega_using [], decide_true, Bool.true_and] at this
+  rwa [show 8 * (j / 8) + j % 8 = j by omega_using []] at this
 
 theorem or_xor_eq_zero (v₀ t₀ v₁ t₁ : BitVec 64) :
     ((v₀ ^^^ t₀) ||| (v₁ ^^^ t₁)) = 0 ↔ v₀ = t₀ ∧ v₁ = t₁ := by
@@ -146,10 +146,10 @@ theorem eqz (a : BitVec 64) : ((a - 1) &&& ~~~a) >>> 63 = if a = 0 then 1 else 0
     apply Nat.div_eq_of_lt
     by_cases hm : a.toNat < 2 ^ 63
     · calc _ ≤ (2 ^ 64 - 1 + a.toNat) % 2 ^ 64 := Nat.and_le_left
-        _ < 2 ^ 63 := by rw [show 2 ^ 64 - 1 + a.toNat = (a.toNat - 1) + 2 ^ 64 by omega, Nat.add_mod_right,
-            Nat.mod_eq_of_lt (by omega)]; omega
+        _ < 2 ^ 63 := by rw [show 2 ^ 64 - 1 + a.toNat = (a.toNat - 1) + 2 ^ 64 by omega_using [h0], Nat.add_mod_right,
+            Nat.mod_eq_of_lt (by omega_using [])]; omega_using [hm]
     · calc _ ≤ 2 ^ 64 - 1 - a.toNat := Nat.and_le_right
-        _ < 2 ^ 63 := by omega
+        _ < 2 ^ 63 := by omega_using [hm]
 
 /-! ## Blocks -/
 

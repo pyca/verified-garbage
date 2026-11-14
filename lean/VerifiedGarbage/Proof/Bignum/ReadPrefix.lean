@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A shorter native read contains the low bytes of an RSA array -/
 
@@ -13,10 +14,10 @@ theorem read_prefix (m : Mem) (a : Addr) {n k : Nat} (hk : k ≤ n) :
     m.read a k = (m.read a n).setWidth (8 * k) := by
   apply Mem.read_eq_of_bytes
   intro j hj
-  rw [← Mem.extractLsb'_read m a (n := n) (by omega)]
+  rw [← Mem.extractLsb'_read m a (n := n) (by omega_using [hk, hj])]
   ext i hi
   simp only [BitVec.getElem_extractLsb']
-  rw [BitVec.getLsbD_setWidth, decide_eq_true (by omega : 8 * j + i < 8 * k), Bool.true_and]
+  rw [BitVec.getLsbD_setWidth, decide_eq_true (by omega_using [hj, hi] : 8 * j + i < 8 * k), Bool.true_and]
 
 theorem read_prefix_value (m : Mem) (a : Addr) {n k : Nat} (hk : k ≤ n)
     (fit : (m.read a n).toNat < 2 ^ (8 * k)) :

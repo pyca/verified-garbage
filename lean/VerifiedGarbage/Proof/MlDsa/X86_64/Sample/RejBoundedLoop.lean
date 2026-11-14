@@ -99,7 +99,7 @@ theorem rbTry_ok {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) {aP : Addr} {L
     WP isa (rbTry η) s fun s' =>
       s'.gpr .rdi = BitVec.ofNat 64 (hbTry η L b).length ∧ Stored s'.mem aP (hbTry η L b) ∧
         Frame [pR aP] s.mem s'.mem ∧ Keep [.rdx, .r8, .rdi] s s' := by
-  have hbn : ((s.gpr .rdx).setWidth 32).toNat = b := by rw [hdx, BitVec.toNat_ofNat]; omega
+  have hbn : ((s.gpr .rdx).setWidth 32).toNat = b := by rw [hdx, BitVec.toNat_ofNat]; omega_using [hb]
   refine WP.seq (WP.mono (rbCmp_ok hη s) fun s1 ⟨hc, hm, hg, hrd, hwr⟩ => ?_)
   have k1 : Keep [] s s1 := ⟨fun r _ => by rw [hg], hrd, hwr⟩
   rw [hbn] at hc
@@ -133,7 +133,7 @@ theorem rbLoad_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1) :
   xrun [h0, sx256, show (256 : BitVec 64).toNat = 256 from rfl]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, bw32, show (15 : BitVec 32).toNat = 2 ^ 4 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ % 16) (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ % 16) (by omega_using [])]
 
 theorem rbHi_ok (s : State) {z : Byte} (hax : s.gpr .rax = BitVec.setWidth 64 z) :
     WP isa (.block rbHi) s fun s' =>
@@ -144,7 +144,7 @@ theorem rbHi_ok (s : State) {z : Byte} (hax : s.gpr .rax = BitVec.setWidth 64 z)
   unfold rbHi
   xrun [hax, sx256, show (256 : BitVec 64).toNat = 256 from rfl]
   apply BitVec.eq_of_toNat_eq
-  rw [shr_toNat, bw32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 16) (by have := z.isLt; omega)]
+  rw [shr_toNat, bw32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := _ / 16) (by have := z.isLt; omega_using [])]
 
 /-- The coefficients after the second try, if `j < 256`. -/
 def rbMid2 (η : Nat) (L : List Zq) (b : Nat) : List Zq := if L.length < 256 then hbTry η L b else L
@@ -155,7 +155,7 @@ theorem rbStep_eq (η : Nat) (L : List Zq) (z : Byte) :
   rw [rbStep, rbMid2]
 
 theorem hbTry_length_le {η : Nat} {L : List Zq} (hL : L.length < 256) (b : Nat) : (hbTry η L b).length ≤ 256 := by
-  rw [hbTry_length]; have := halfByteOk_le η b; omega
+  rw [hbTry_length]; have := halfByteOk_le η b; omega_using [hL, this]
 
 /-- The second try, if `j < 256`. -/
 theorem rbMid2_ok {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) {aP : Addr} {L : List Zq} (hbp : s.gpr .rbp = aP)
@@ -165,7 +165,7 @@ theorem rbMid2_ok {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) {aP : Addr} {
     WP isa (.ite .b (rbTry η) (.block [])) s fun s' =>
       s'.gpr .rdi = BitVec.ofNat 64 (rbMid2 η L b).length ∧ Stored s'.mem aP (rbMid2 η L b) ∧
         Frame [pR aP] s.mem s'.mem ∧ Keep [.rdx, .r8, .rdi] s s' := by
-  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega)]
+  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega_using [hL])]
   refine WP.ite (decide (L.length < 256)) (by rw [← hl]; exact hcf) (fun hbb => ?_) (fun hbb => ?_)
   · simp only [decide_eq_true_eq] at hbb
     rw [rbMid2, ifT hbb]
@@ -182,7 +182,7 @@ theorem rbMid_ok {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) {aP : Addr} {L
     WP isa (.ite .b (.seq (rbTry η) (.seq (.block rbHi) (.ite .b (rbTry η) (.block [])))) (.block [])) s
       fun s' => s'.gpr .rdi = BitVec.ofNat 64 (rbStep η L z).length ∧ Stored s'.mem aP (rbStep η L z) ∧
         Frame [pR aP] s.mem s'.mem ∧ Keep [.rax, .rdx, .r8, .rdi] s s' := by
-  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega)]
+  have hl : (s.gpr .rdi).toNat = L.length := by rw [hdi, ofNat64_toNat (by omega_using [hL])]
   rw [rbStep_eq]
   refine WP.ite (decide (L.length < 256)) (by rw [← hl]; exact hcf) (fun hbb => ?_) (fun hbb => ?_)
   · simp only [decide_eq_true_eq] at hbb
@@ -193,7 +193,7 @@ theorem rbMid_ok {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) {aP : Addr} {L
       fun s2 ⟨⟨hdx2, hcf2, hm2, hdi2⟩, k2⟩ => ?_)
     refine WP.mono (rbMid2_ok hη s2 (aP := aP) (L := hbTry η L (z.toNat % 16)) (by rw [k2.gpr (by decide), k1.gpr (by decide), hbp])
       (by rw [hdi2, hdi1]) (hbTry_length_le hbb _) (by rw [k2.2.2, k1.2.2]; exact hw) (by rw [hm2]; exact hst1)
-      (by rw [hcf2, hdi2]) (by have := z.isLt; omega) hdx2) fun s3 ⟨hdi3, hst3, hf3, k3⟩ => ?_
+      (by rw [hcf2, hdi2]) (by have := z.isLt; omega_using []) hdx2) fun s3 ⟨hdi3, hst3, hf3, k3⟩ => ?_
     exact ⟨hdi3, hst3, hf1.trans (by rw [← hm2]; exact hf3), ((k1.trans k2).trans k3).mono (by simp)⟩
   · simp only [decide_eq_false_iff_not] at hbb
     rw [ifF hbb]

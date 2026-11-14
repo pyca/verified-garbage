@@ -35,6 +35,30 @@ namespace VG.Proof.CmacAes.X86_64
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
+/-- `updateX86_64` without the scratch buffer, for an implementation that
+never touches it: its callers then need not set one aside. -/
+def updateX86_64F : Contract isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .rdi, 240⟩
+    let state : Region := ⟨s.gpr .rdx, 16⟩
+    let data : Region := ⟨s.gpr .rcx, 16 * (s.gpr .r8).toNat⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack := below (s.gpr .rsp) 8
+    s.rd = [sched, data] ∧ s.wr = [state] ∧
+      sched.Disjoint state ∧ data.Disjoint state ∧ ret.Disjoint state ∧
+      stack.Disjoint sched ∧ stack.Disjoint data ∧ stack.Disjoint state ∧
+      (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 16 * (s.gpr .r8).toNat ≤ 2 ^ 64 ∧
+      ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
+  post := updateX86_64.post
+  pub := updateX86_64.pub
+
+/-- What an implementation of `vg_cmac_aes_update` that never touches its
+scratch buffer gives: its contract without one (`updateX86_64F`). -/
+structure UpdateFree (callee : Impl.CmacAes.X86_64.Update) : Type where
+  ok : ∀ s, updateX86_64F.pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ updateX86_64F.post s s'
+  ct : ConstantTime isa updateX86_64F.pre updateX86_64F.pub callee.code
+
 /-- An implementation of `vg_cmac_aes_update` on x86-64. -/
 structure UpdateImpl where
   /-- Its symbol and code. -/
@@ -59,6 +83,8 @@ structure UpdateImpl where
   /-- The implementation of `vg_aes_ctr32` that goes with it, for callers
   that also call it or the other CMAC functions made with it. -/
   ctr : Ctr32Impl
+  /-- Its contract without a scratch buffer, if it never touches one. -/
+  free : Option (UpdateFree callee) := none
 
 theorem update_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.update v.callee) := by
   have h : (Impl.CmacAes.X86_64.update v.callee).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
@@ -96,6 +122,10 @@ theorem aesniCbc_nosp : NoSp Impl.CmacAes.X86_64.AesNi.update := by
     rw [← Code.allInstrs_eq]; decide +kernel
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
+theorem aesniCbc_pre {s : State} (h : updateX86_64F.pre s) : AesNi.cbcX86_64.pre s :=
+  let ⟨a, b, _, _, c, _, _, _, _, d, e⟩ := h
+  ⟨a, by rw [b]; exact List.mem_singleton_self _, c, d, e⟩
+
 /-- The chaining in AES-NI registers, `vg_cmac_aes_update_aesni`, which goes
 with `vg_aes_ctr32_aesni`. -/
 def UpdateImpl.aesniCbc : UpdateImpl where
@@ -110,5 +140,7 @@ def UpdateImpl.aesniCbc : UpdateImpl where
   suffix := "_aesni"
   features := ["aes"]
   ctr := .aesni
+  free := some ⟨fun s hs => AesNi.correct s (aesniCbc_pre hs),
+    fun _ _ _ _ _ _ h₁ h₂ hq => AesNi.ct _ _ _ _ _ _ (aesniCbc_pre h₁) (aesniCbc_pre h₂) hq⟩
 
 end VG.Proof.CmacAes.X86_64

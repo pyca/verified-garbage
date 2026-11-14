@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: Montgomery reduction with 32-bit words, for every target
@@ -48,7 +49,7 @@ theorem montM_lt (x : Nat) : montM x < 2 ^ 32 := Nat.mod_lt _ (by decide)
 theorem mont_mul (x : Nat) : mont x * 2 ^ 32 = x + montM x * q := by
   have h := montM_mul_mod x
   have hd : (x + montM x * q) % 2 ^ 32 = 0 :=
-    (fun P (h : P % 2 ^ 32 = x % 2 ^ 32 * 4294967295 % 2 ^ 32) => show (x + P) % 2 ^ 32 = 0 by omega) _ h
+    (fun P (h : P % 2 ^ 32 = x % 2 ^ 32 * 4294967295 % 2 ^ 32) => show (x + P) % 2 ^ 32 = 0 by omega_using [h]) _ h
   unfold mont
   exact Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hd)
 
@@ -56,7 +57,7 @@ theorem mont_lt {x : Nat} (hx : x < q * 2 ^ 32) : mont x < 2 * q := by
   have h := mont_mul x
   have hm : montM x * q < 2 ^ 32 * q := Nat.mul_lt_mul_of_pos_right (montM_lt x) (by decide)
   rw [q_eq] at hx hm ⊢
-  exact (fun P (h : mont x * 2 ^ 32 = x + P) (hm : P < 2 ^ 32 * 8380417) => show mont x < 2 * 8380417 by omega)
+  exact (fun P (h : mont x * 2 ^ 32 = x + P) (hm : P < 2 ^ 32 * 8380417) => show mont x < 2 * 8380417 by omega_using [hx, h, hm])
     _ h hm
 
 /-- `mont x` from the halves of `x` and of `m · q`, as a 32-bit machine computes it. -/
@@ -65,7 +66,7 @@ theorem mont_halves (x : Nat) :
   have h := montM_mul_mod x
   unfold mont
   exact (fun P (h : P % 2 ^ 32 = x % 2 ^ 32 * 4294967295 % 2 ^ 32) =>
-    show (x + P) / 2 ^ 32 = x / 2 ^ 32 + P / 2 ^ 32 + (if 1 ≤ P % 2 ^ 32 then 1 else 0) by split <;> omega) _ h
+    show (x + P) / 2 ^ 32 = x / 2 ^ 32 + P / 2 ^ 32 + (if 1 ≤ P % 2 ^ 32 then 1 else 0) by split <;> omega_arith) _ h
 
 /-- `mont x · 2³² ≡ x (mod q)`. -/
 theorem mont_mod (x : Nat) : mont x * 2 ^ 32 % q = x % q := by

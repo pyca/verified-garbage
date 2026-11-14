@@ -85,8 +85,8 @@ theorem CInv.readW {s t : State} {Sp Dp : Addr} {j L : Nat} (h : CInv s t Sp Dp 
     (by rw [Proof.Cmac.bytesAt_length]; exact Region.contains_self _ _)) _ fun r hr hcon => ?_
   simp only [List.mem_singleton] at hr; subst hr
   simp only [Offset.add_add] at hcon
-  exact hd _ (Offset.contains_base Sp (show j + k + 1 ≤ L by omega) (by omega))
-    (Region.sub_prefix (show j ≤ L by omega) _ hcon)
+  exact hd _ (Offset.contains_base Sp (show j + k + 1 ≤ L by omega_using [hj, hk]) (by omega_using [hj, hL, hk]))
+    (Region.sub_prefix (show j ≤ L by omega_using [hj]) _ hcon)
 
 theorem copyBlocks_wp (s : State) {Sp Dp : Addr} {k : Nat} (h : CopyPre s Sp Dp k) :
     WP isa copyBlocks s fun s' => s'.mem = writeBytes s.mem Dp (bytesAt s.mem Sp (16 * k)) ∧
@@ -104,9 +104,9 @@ theorem copyBlocks_wp (s : State) {Sp Dp : Addr} {k : Nat} (h : CopyPre s Sp Dp 
     ⟨0, rfl, h.pos, ⟨r10₁, by simp [bytesAt, writeBytes_nil, mem_setReg], fun r h₁ h₂ => by simp [gpr_setReg, h₁],
       rfl, rfl⟩, by simp [gpr_setReg, h.rcx]⟩
   rintro w t ⟨i, rfl, hi, ht, hcx⟩
-  have hin : 16 * i + 16 ≤ 16 * k := by omega
+  have hin : 16 * i + 16 ≤ 16 * k := by omega_using [hi]
   have cov (rs : List Region) (P : Addr) (hc : Covers [⟨P, 16 * k⟩] rs) : InRegions rs (P + BitVec.ofNat 64 (16 * i)) 16 :=
-    hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hin (by omega)⟩
+    hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P hin (by omega_using [hL, hi])⟩
   obtain ⟨t', run', mem', r10', rcx', zf', g', rd', wr'⟩ := copyStep_ok t (Sp := Sp) (Dp := Dp) (j := 16 * i)
     (w := k - i) (by rw [ht.keep _ (by decide) (by decide), h.rsi]) (by rw [ht.keep _ (by decide) (by decide), h.rdi])
     ht.r10 hcx (by rw [ht.rd, ht.wr]; exact cov _ _ h.rd) (by rw [ht.wr]; exact cov _ _ h.wr)
@@ -119,11 +119,11 @@ theorem copyBlocks_wp (s : State) {Sp Dp : Addr} {k : Nat} (h : CopyPre s Sp Dp 
     rw [← Mem.extractLsb'_read s.mem _ (n := 16) hj]
     rfl
   have hmem : t'.mem = writeBytes s.mem Dp (bytesAt s.mem Sp (16 * (i + 1))) := by
-    rw [mem', ht.readW h.disj hin (by omega), ht.mem, writeW_eq_writeBytes, hb,
-      show 16 * (i + 1) = 16 * i + 16 by omega, bytesAt_append,
-      ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega), Proof.Cmac.bytesAt_length]
+    rw [mem', ht.readW h.disj hin (by omega_using [hL]), ht.mem, writeW_eq_writeBytes, hb,
+      show 16 * (i + 1) = 16 * i + 16 by omega_using [], bytesAt_append,
+      ← writeBytes_append _ _ _ _ (by simp [Proof.Cmac.bytesAt_length]; omega_using [hL, hi]), Proof.Cmac.bytesAt_length]
   have hsub : BitVec.ofNat 64 (k - i) - 1 = BitVec.ofNat 64 (k - (i + 1)) := by
-    rw [show k - i = (k - (i + 1)) + 1 by omega, ← succ_ofNat, BitVec.add_sub_cancel]
+    rw [show k - i = (k - (i + 1)) + 1 by omega_using [hi], ← succ_ofNat, BitVec.add_sub_cancel]
   have hcx' : t'.gpr .rcx = BitVec.ofNat 64 (k - (i + 1)) := by rw [rcx', hsub]
   have hz : t'.zf = some (decide (i + 1 = k)) := by
     rw [zf', hsub]
@@ -131,16 +131,16 @@ theorem copyBlocks_wp (s : State) {Sp Dp : Addr} {k : Nat} (h : CopyPre s Sp Dp 
     · rw [he, Nat.sub_self]; simp
     · have : BitVec.ofNat 64 (k - (i + 1)) ≠ 0 := fun e => by
         have := congrArg BitVec.toNat e
-        rw [toNat_ofNat_of_lt (by omega)] at this; simp at this; omega
+        rw [toNat_ofNat_of_lt (by omega_using [hL])] at this; simp at this; omega_using [hi, he, this]
       rw [beq_eq_false_iff_ne.mpr this]; simp [he]
   have ht' : CInv s t' Sp Dp (16 * (i + 1)) :=
-    ⟨by rw [r10', show 16 * (i + 1) = 16 * i + 16 by omega, BitVec.ofNat_add]; rfl, hmem,
+    ⟨by rw [r10', show 16 * (i + 1) = 16 * i + 16 by omega_using [], BitVec.ofNat_add]; rfl, hmem,
       fun r h₁ h₂ => by rw [g' r h₁ h₂, ht.keep r h₁ h₂], by rw [rd', ht.rd], by rw [wr', ht.wr]⟩
   by_cases he : i + 1 = k
   · left
     refine ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), ?_, ht'.keep, ht'.rd, ht'.wr⟩
     rw [ht'.mem, he]
   · right
-    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), k - (i + 1), by omega, i + 1, rfl, by omega, ht', hcx'⟩
+    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), k - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], ht', hcx'⟩
 
 end VG.Proof.AesGcm.X86_64.BlocksTo

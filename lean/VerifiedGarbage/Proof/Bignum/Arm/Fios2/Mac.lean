@@ -23,7 +23,7 @@ theorem macAt_ok (s : State) {base : BitVec 32} {size o k : Nat} {p c x : Reg}
         w32 s.mem (State.addr base) (o + k) * (s.gpr x).toNat + (s.gpr .r6).toNat + (s.gpr c).toNat ∧
       t.mem = s.mem ∧ Rest [.r3, .r6, c] s t := by
   rw [VG.Impl.Bignum.Arm.Fios2.macAt, WP.seq_iff]
-  refine wp_ldr (a := off (State.addr base) (o + k)) hk (ws.ea pp (by omega)) (ws.read fit)
+  refine wp_ldr (a := off (State.addr base) (o + k)) hk (ws.ea pp (by omega_using [fit])) (ws.read fit)
     fun u hu => WP.block_nil ?_
   refine WP.mono (Fios.umaal_ok u .r6 c .r3 x (Ne.symm c6)) ?_
   rintro t ⟨value, frame⟩

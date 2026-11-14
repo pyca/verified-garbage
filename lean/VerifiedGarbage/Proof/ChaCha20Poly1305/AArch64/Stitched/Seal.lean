@@ -85,11 +85,11 @@ variable {e : Bool}
 theorem srcAt {s₀ : State} (hp : APre e s₀) {p : Nat} (hle : p ≤ L s₀) :
     Src s₀ (dp s₀ + BitVec.ofNat 64 p) (L s₀ - p) := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-  refine ⟨by omega, ?_, hp.c_d.sub_right (Offset.sub_base _ (by omega)),
-    (srcD hp).cov_sub (a := p) (n := L s₀ - p) (by omega) rfl rfl⟩
+  refine ⟨by omega_using [hL], ?_, hp.c_d.sub_right (Offset.sub_base _ (by omega_using [hle])),
+    (srcD hp).cov_sub (a := p) (n := L s₀ - p) (by omega_using [hle]) rfl rfl⟩
   have := hp.wrap_d
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [this]
 
 /-- The data absorbed in two parts, at a multiple of 16 bytes, padded. -/
 theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤ n) :
@@ -97,7 +97,7 @@ theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤
       pad16 (bytesAt m (p + BitVec.ofNat 64 a) (n - a))) = bytesAt m p n ++ pad16 (bytesAt m p n) := by
   have hp : pad16 (bytesAt m (p + BitVec.ofNat 64 a) (n - a)) = pad16 (bytesAt m p n) := by
     simp only [pad16, VG.Proof.Poly1305.length_bytesAt]
-    rw [show (n - a) % 16 = n % 16 by omega]
+    rw [show (n - a) % 16 = n % 16 by omega_using [ha, hn]]
   rw [hp, ← List.append_assoc, ← VG.Proof.Poly1305.bytesAt_add, Nat.add_sub_cancel' hn]
 
 /-- The Poly1305 state after the chunks, from that before, through `rs`. -/
@@ -145,7 +145,7 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   have hpre := hc.aP
   have hle := hc.le
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-    (srcAt hp (p := A) (by omega)) i₅.x21 i₅.rd i₅.wr
+    (srcAt hp (p := A) (by omega_using [hpre, hle])) i₅.x21 i₅.rd i₅.wr
     (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22])
     (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
   have i₆ := mac_inv0 i₅ k₆
@@ -156,7 +156,7 @@ theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     (prefix_rest hp f₅ hpre hle).symm
   rw [X₄] at R₄
   have R₆ := r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄)
-  rw [List.append_assoc, split_pad hc.a16 (by omega), ct₅] at R₆
+  rw [List.append_assoc, split_pad hc.a16 (by omega_using [hpre, hle]), ct₅] at R₆
   have R₇ := r₇ _ _ R₆
   have L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame k₆.frame (by rdisj_all) (by lit_omega),
@@ -179,7 +179,7 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     (hL : 512 ≤ L s₀) :
     WP isa (sealWideMain v.callee) s₀ (MainS s₀) := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  have hL256 : 256 ≤ L s₀ := by omega
+  have hL256 : 256 ≤ L s₀ := by omega_using [hL]
   unfold sealWideMain
   refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve))
     fun s₁ ⟨h₁, v₁⟩ => ?_)
@@ -224,8 +224,8 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     · rw [m₇, data_frame k₆.frame (by rdisj_all) hk]
       by_cases h : k < 256
       · rw [x₅ k h, K₄ k h, Short.ks5_eq s₀ hk, ite_eq_left h]
-      · rw [f₅ _ (ShortRest.rest_out hp.o (by omega) hk), ite_eq_right h]
-    · rw [m₇, bytesAt_frame k₆.frame f₆ (by omega)]
+      · rw [f₅ _ (ShortRest.rest_out hp.o (by omega_using [h]) hk), ite_eq_right h]
+    · rw [m₇, bytesAt_frame k₆.frame f₆ (by omega_using [])]
       exact r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄)
     · exact (v₇ r hr).trans ((v₆ r hr).trans (v₅ r hr))
   refine WP.seq ((Tail.cryptStitchedSeal_ok v.callee.sve hp E).mono fun s₈ ⟨P, A', hc⟩ => ?_)
@@ -236,7 +236,7 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   have hpre := hc.aP
   have hle := hc.le
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-    (srcAt hp (p := A') (by omega)) i₉.x21 i₉.rd i₉.wr
+    (srcAt hp (p := A') (by omega_using [hpre, hle])) i₉.x21 i₉.rd i₉.wr
     (by rw [k₉.cs _ (pres .x22) (pres30 .x22), hc.x22])
     (by rw [k₉.cs _ (pres .x23) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₁₀ ⟨⟨k₁₀, r₁₀⟩, v₁₀⟩ => ?_)
   have i₁₀ := mac_inv0 i₉ k₁₀
@@ -248,7 +248,7 @@ theorem sealWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     (prefix_rest hp f₉ hpre hle).symm
   rw [X₈] at R₈
   have R₁₀ := r₁₀ _ _ (Repr.frame k₉.frame (by rdisj_all) R₈)
-  rw [List.append_assoc, split_pad hc.a16 (by omega), ct₉] at R₁₀
+  rw [List.append_assoc, split_pad hc.a16 (by omega_using [hpre, hle]), ct₉] at R₁₀
   have R₁₁ := r₁₁ _ _ R₁₀
   have L₁₀ : bytesAt s₁₀.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame k₁₀.frame (by rdisj_all) (by lit_omega),

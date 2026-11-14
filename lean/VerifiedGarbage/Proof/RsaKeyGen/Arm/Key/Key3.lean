@@ -45,24 +45,24 @@ variable {P : KP}
 
 theorem nv_lt (P : KP) (σ : State) : nv P σ < 2 ^ (16 * P.K) := by
   unfold nv
-  rw [show 16 * P.K = 8 * P.K + 8 * P.K by omega, Nat.pow_add]
+  rw [show 16 * P.K = 8 * P.K + 8 * P.K by omega_using [], Nat.pow_add]
   exact Nat.mul_lt_mul'' (pv_lt P σ) (qv_lt P σ)
 
 theorem n_vp {E : State → Prop} : VP (KC P E) nPart (KN P E) := by
   have b : ∀ σ, pv P σ < 2 ^ (32 * P.W - 1) := fun σ =>
-    Nat.lt_of_lt_of_le (pv_lt P σ) (Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega))
+    Nat.lt_of_lt_of_le (pv_lt P σ) (Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using []))
   refine (St.pmulFrom myQ_taint mxP_taint maZero_taint nMa_taint St.pcnt8 (n := 8 * P.K)
-    (fun σ pre => by have := pre.k1; have := pre.k2; omega)
+    (fun σ pre => by have := pre.k1; have := pre.k2; omega_arith)
     (by simp) (by simp) (by simp) (by simp) (by simp) (by decide) (by decide)
     (by intro j hj; mem_cases <;> decide) (by intro j hj; mem_cases <;> decide) fun σ _ => ?_).mono
     (fun _ _ h => h) fun σ s h => h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d hd => ⟨hd, rfl⟩)
   · simp (config := {decide := true}) only [upd, ↓reduceIte, AH_zero, AH_mod, AH_P]
     refine ⟨trivial, Nat.two_pow_pos _, b σ, ?_⟩
-    rw [Nat.mul_comm, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega)
+    rw [Nat.mul_comm, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using [])
   · have phi : (0 + qv P σ % 2 ^ (8 * P.K) * pv P σ) % 2 ^ (32 * P.W - 1) = nv P σ := by
       rw [Nat.zero_add, Nat.mod_eq_of_lt (qv_lt P σ), Nat.mul_comm]
       refine Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (nv_lt P σ) (Nat.pow_le_pow_right (by decide) ?_))
-      simp only [KP.W]; omega
+      simp only [KP.W]; omega_using []
     mem_cases <;> simp (config := {decide := true}) only [upd, ↓reduceIte, AH_zero, AH_mod, AH_P, AH_Q, phi]
 
 /-- The mask of the checks. -/

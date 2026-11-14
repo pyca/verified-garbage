@@ -94,7 +94,8 @@ theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP256r1.inst
   have held := Comb.combSatMem_held
   rw [show Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombConsts = [(Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1Sym,
     Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombWords)] from rfl]
-  generalize Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombWords = W' at hl held ⊢
+  obtain ⟨W', eW⟩ : ∃ W, Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : verifySatC = s
   sig_pre [Spec.Ecdsa.BrainpoolP256r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig,
     Spec.BrainpoolP256r1.curve, Spec.Ecdsa.scratchWords, RISCV64.abi, RISCV64.argRegs, Abi.withConsts,

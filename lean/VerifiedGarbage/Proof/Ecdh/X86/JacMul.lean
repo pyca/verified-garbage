@@ -2,11 +2,107 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Ecdh.X86.JacWrites
-import VerifiedGarbage.Proof.Ecdh.X86.JacPrep
+public import VerifiedGarbage.Impl.Ecdh.X86.WinJac
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLoop
 import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+
+/-! ### `Ecdh.X86.JacPrep`, which only this module used -/
+
+section
+
+/-! # Scalar recoding for the x86 P-256 variable-base window -/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.X86
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.X86
+open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass
+open VG.Proof.Ecdsa.X86
+variable {c : Impl.Ecdsa.X86.Cfg}
+
+/-- Recoding preserves the original scalar and all existing arithmetic slots. -/
+theorem jwinPrep_ok (h4 : c.n = 4) {s : State} {base : Addr}
+    (hs : Scr s base size) :
+    WP isa (Impl.Ecdh.X86.Cfg.jwinPrep c) s fun u =>
+      (∀ t < 260, u.mem (off base (Impl.Ecdh.X86.Cfg.windowBits + t)) =
+        if (sv c base s K + JacWinCfg.offset 52).testBit t then 1 else 0) ∧
+      Keeps [.eax, .ebx, .edx, .esi] s u ∧
+      Unch base [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] s.mem u.mem := by
+  have hi : K<45 := by decide
+  have hn := hs.nowrap
+  have hv : c.sl K + 32 ≤ 3520 := by rw [sl_eq, h4]; omega_using [hi]
+  have hvsize : c.sl K + 32 ≤ size := by change _ ≤ 8192; omega_using [hv]
+  unfold Impl.Ecdh.X86.Cfg.jwinPrep
+  simp only [List.append_assoc]
+  refine WP.seq (WP.block_append (WP.mono (copy_ok 8 hs (o := 3520) (by decide) hvsize (Or.inr hv))
+    fun s₁ ⟨v₁, k₁, O₁⟩ => ?_))
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  refine WP.block_append (WP.mono (setConst_ok hs₁ (n := 1) (o := 3552) (x := 0)
+    (by decide) (by decide)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_)
+  have padded : wordsVal s₂.mem base 3520 5 = sv c base s K := by
+    rw [wordsVal_succ_top]
+    have top : (word s₂.mem base 3552).toNat = 0 := by
+      simpa only [wordsVal, Nat.mul_zero, Nat.add_zero] using v₂
+    change wordsVal s₂.mem base 3520 4 + 2 ^ 256 * (word s₂.mem base 3552).toNat = _
+    rw [top, Nat.mul_zero, Nat.add_zero, wordsVal_eq_val32,
+      O₂.val32 (by omega_using []) (by decide), v₁]
+    change _ = wordsVal s.mem base (c.sl K) c.n
+    rw [wordsVal_eq_val32, h4]
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  refine WP.block_append (WP.mono (setConst_ok hs₂ (n := 5) (o := 3560) (x := JacWinCfg.offset 52)
+    (by decide) (by decide +kernel)) fun s₄ ⟨vb, k₃, O₃⟩ => ?_)
+  have va : wordsVal s₄.mem base 3520 5 = sv c base s K :=
+    (O₃.wordsVal (by omega_using []) (by decide)).trans padded
+  have k₄ := (k₁.trans k₂).trans k₃
+  have O₄ : Outside base 3520 120 s.mem s₄.mem :=
+    ((O₁.mono (by decide) (by decide)).trans (O₂.mono (by decide) (by decide))).trans
+      (O₃.mono (by decide) (by decide))
+  have hs₄ := hs.of_keeps k₄ (by decide)
+  rw [chain_eq]
+  refine WP.mono (chainAdd_ok hs₄ (acc := 3600) (a := 3520) (b := 3560) 9
+    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₅ ⟨O₅, ⟨carry, _, v₅⟩, k₅⟩ => ?_
+  have ha : val32 s₄.mem base 3520 10 = sv c base s K := by
+    rw [← wordsVal_eq_val32 (n := 5)]; exact va
+  have hb : val32 s₄.mem base 3560 10 = JacWinCfg.offset 52 := by
+    rw [← wordsVal_eq_val32 (n := 5)]; exact vb
+  rw [ha, hb] at v₅
+  have hvlt : sv c base s K < 2 ^ 256 := by
+    have := wordsVal_lt s.mem base (c.sl K) c.n
+    change wordsVal s.mem base (c.sl K) c.n < 2 ^ 256
+    rw [h4] at *
+    exact this
+  have hoff : JacWinCfg.offset 52 < 2 ^ 261 := by decide +kernel
+  have value : wordsVal s₅.mem base 3600 5 = sv c base s K + JacWinCfg.offset 52 := by
+    rw [wordsVal_eq_val32]
+    have hsum : sv c base s K + JacWinCfg.offset 52 < 2 ^ (32 * (9 + 1)) :=
+      Nat.lt_of_lt_of_le (Nat.add_lt_add hvlt hoff) (by decide +kernel)
+    have radix : (2 : Nat) ^ (32 * (9 + 1)) = 2 ^ 256 * 2 ^ 64 := by decide +kernel
+    simp only [radix] at v₅ hsum
+    cases carry with
+    | false => simpa only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] using v₅
+    | true =>
+      simp only [Bool.toNat_true, Nat.mul_one] at v₅
+      rw [← v₅] at hsum
+      exact False.elim (Nat.not_lt_of_ge (Nat.le_add_left _ _) hsum)
+  have hs₅ := hs₄.of_keeps k₅ (by decide)
+  refine WP.mono (bits_ok hs₅ (n := 5) (src := 3600) (dst := Impl.Ecdh.X86.Cfg.windowBits)
+    (by decide) (by decide) (by decide) (by decide)) fun u ⟨bits, ku, Ou⟩ => ?_
+  refine ⟨fun t ht => ?_, (k₄.trans k₅).mono (by decide) |>.trans ku,
+    ((O₄.trans (O₅.mono (by decide) (by decide))).unch).trans (Ou.unch)⟩
+  rw [bits t (by omega_using [ht]), value]
+
+end VG.Proof.Ecdh.X86
+
+end
+
+end
+
 
 /-! # The x86 P-256 variable-base product -/
 
@@ -36,7 +132,7 @@ theorem jwinMul_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
         (tmv c.C c.n base u (c.sl RZ)) (mul (sv c base s K) P)) := by
   have hn := hs.nowrap
   have hp := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hpx])
   unfold Impl.Ecdh.X86.Cfg.jwinMul
   refine WP.seq (WP.mono (setConst_ok hs (sl_le c hc.n10 (i := EM) (by decide))
     (Nat.lt_trans (hmont _) hc.p_lt)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_)
@@ -54,7 +150,7 @@ theorem jwinMul_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
     intro i hi w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     left; rw [sl_eq, h4]
-    rcases hw with rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits] <;> omega
+    rcases hw with rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits] <;> omega_using [hi]
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s₁ i :=
     fun hi => sv_unch U₂ hc.n10 hn hi (ap₂ hi)
   have F₂ := F₁.unch hc.n10 hn (show FixedOk c [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] from by
@@ -76,8 +172,8 @@ theorem jwinMul_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
       rw [e₂ (by decide),e₁ (by decide) (by decide)]; exact hpx
     · change sv c base s₂ PY < _
       rw [e₂ (by decide),e₁ (by decide) (by decide)]; exact hpy
-    · rw [F₂.onep]; exact Nat.mod_lt _ (by omega)
-    · rw [F₂.zero]; omega
+    · rw [F₂.onep]; exact Nat.mod_lt _ (by omega_using [hpx])
+    · rw [F₂.zero]; omega_using [hpx]
   have hz : tmv c.C c.n base s₂ (c.sl ONEP)=1 := by
     change toM _ _ (wordsVal s₂.mem base (c.sl ONEP) c.n)=1
     rw [F₂.onep]

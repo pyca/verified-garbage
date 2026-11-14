@@ -50,8 +50,8 @@ theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Re
     m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
   refine hf _ fun r hr hc => hd r hr _ ?_ hc
   simp only [Region.Contains]
-  rw [Offset.add_sub_cancel_left, toNat_ofNat_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, toNat_ofNat_lt (by omega_using [hR, hi])]
+  omega_using [hi]
 
 /-- Addresses within a region that does not wrap around the 32-bit space. -/
 theorem addr_off {a : BitVec 32} {k : Nat} (h : a.toNat + k < 2 ^ 32) :
@@ -59,14 +59,14 @@ theorem addr_off {a : BitVec 32} {k : Nat} (h : a.toNat + k < 2 ^ 32) :
 
 theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 /-- Byte `k` of the `n` bytes of stack arguments. -/
 theorem argByte_eq {s : State} {n : Nat} (hsp : s.sp.toNat + n ≤ 2 ^ 32) {k : Nat} (hk : k < n) :
     VG.Arm.Taint.argByte s k = stackArgAddr s (k / 4) + BitVec.ofNat 64 (k % 4) := by
   simp only [VG.Arm.Taint.argByte, stackArgAddr]
-  rw [addr_off (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
-  congr 2; omega
+  rw [addr_off (by omega_using [hsp, hk]), BitVec.add_assoc, ← BitVec.ofNat_add]
+  congr 2; omega_using []
 
 /-! ## One instruction at a time -/
 
@@ -234,7 +234,7 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 theorem ofNat_shr {a n : Nat} (h : a < 2 ^ 32) : BitVec.ofNat 32 a >>> n = BitVec.ofNat 32 (a / 2 ^ n) := by
   apply BitVec.eq_of_toNat_eq
@@ -253,8 +253,8 @@ theorem and_pow_sub_one (x : BitVec 32) {n : Nat} (hn : n ≤ 32) :
   have : 2 ^ n ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) hn
   have : 0 < 2 ^ n := Nat.two_pow_pos n
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show 2 ^ n - 1 < 2 ^ 32 by omega), Nat.and_two_pow_sub_one_eq_mod,
-    Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega)) (by omega))]
+  rw [Nat.mod_eq_of_lt (show 2 ^ n - 1 < 2 ^ 32 by omega_arith), Nat.and_two_pow_sub_one_eq_mod,
+    Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_using [this])) (by omega_arith))]
 
 /-! ## Saving and restoring registers -/
 
@@ -262,7 +262,7 @@ export VG.Arm.Spill (saveMem saveList_ok saveMem_frame restoreList_ok)
 
 theorem save_sep (B : Addr) {d e : Nat} (hd : d < 2 ^ 32) (he : e < 2 ^ 32)
     (h : d + 4 ≤ e ∨ e + 4 ≤ d) : Mem.Sep (B + BitVec.ofNat 64 d) 4 (B + BitVec.ofNat 64 e) 4 := by
-  exact Offset.sep _ h (by omega) (by omega)
+  exact Offset.sep _ h (by omega_using [hd]) (by omega_using [he])
 
 theorem readW_writeW_save (m : Mem) (B : Addr) (v : BitVec 32) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
@@ -275,13 +275,13 @@ theorem readW_writeW_save_so {so : Nat} (hso : so ≤ 256) (m : Mem) (B : Addr) 
     {d e : Nat} (hd : d ≤ 64) (he : e ≤ 64) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (m.writeW (B + BitVec.ofNat 64 (so + e)) v).readW (B + BitVec.ofNat 64 (so + d)) 32 =
       m.readW (B + BitVec.ofNat 64 (so + d)) 32 :=
-  readW_writeW_save m B v (by omega) (by omega) (by omega)
+  readW_writeW_save m B v (by omega_using [hso, hd]) (by omega_using [hso, he]) (by omega_using [h])
 
 theorem readW_writeW_save_so_l {so : Nat} (hso : so ≤ 256) (m : Mem) (B : Addr) (v : BitVec 32)
     {e : Nat} (he : e ≤ 64) (h : 4 ≤ e) :
     (m.writeW (B + BitVec.ofNat 64 (so + e)) v).readW (B + BitVec.ofNat 64 so) 32 =
       m.readW (B + BitVec.ofNat 64 so) 32 :=
-  readW_writeW_save m B v (by omega) (by omega) (by omega)
+  readW_writeW_save m B v (by omega_using [hso]) (by omega_using [hso, he]) (by omega_using [h])
 
 
 /-! ## Sizes -/
@@ -301,9 +301,9 @@ structure Dims (P : Params) : Prop where
 section
 variable {P : Params}
 
-theorem Dims.pos (hd : Dims P) : 0 < P.B := by rcases hd.B with h | h <;> omega
+theorem Dims.pos (hd : Dims P) : 0 < P.B := by rcases hd.B with h | h <;> omega_using [h]
 
-theorem Dims.le (hd : Dims P) : 64 ≤ P.B ∧ P.B ≤ 128 := by rcases hd.B with h | h <;> omega
+theorem Dims.le (hd : Dims P) : 64 ≤ P.B ∧ P.B ≤ 128 := by rcases hd.B with h | h <;> omega_using [h]
 
 /-- The shift count of `direct`, `fill` and `finalize`. -/
 theorem Dims.lg (hd : Dims P) : 1 ≤ Nat.log2 P.B ∧ Nat.log2 P.B ≤ 31 ∧ 2 ^ Nat.log2 P.B = P.B := by
@@ -313,14 +313,14 @@ theorem Dims.lg (hd : Dims P) : 1 ≤ Nat.log2 P.B ∧ Nat.log2 P.B ≤ 31 ∧ 2
 
 /-- A block size divides `2³²`. -/
 theorem Dims.mod (hd : Dims P) (h l : Nat) : (h * 2 ^ 32 + l) % P.B = l % P.B := by
-  rcases hd.B with e | e <;> rw [e] <;> omega
+  rcases hd.B with e | e <;> rw [e] <;> omega_using []
 
 /-- A block size divides `2⁶⁴`. -/
 theorem Dims.mod64 (hd : Dims P) (n : Nat) : n % 2 ^ 64 % P.B = n % P.B := by
-  rcases hd.B with e | e <;> rw [e] <;> omega
+  rcases hd.B with e | e <;> rw [e] <;> omega_using []
 
 theorem Dims.div_eq_zero (hd : Dims P) {a : Nat} : a / P.B = 0 ↔ a < P.B := by
-  rcases hd.B with e | e <;> rw [e] <;> omega
+  rcases hd.B with e | e <;> rw [e] <;> omega_using []
 
 theorem shrB (hd : Dims P) {a : Nat} (h : a < 2 ^ 32) :
     BitVec.ofNat 32 a >>> Nat.log2 P.B = BitVec.ofNat 32 (a / P.B) := by
@@ -335,7 +335,7 @@ theorem cmp0_shrB (hd : Dims P) {a : Nat} (h : a < 2 ^ 32) :
 theorem andB (hd : Dims P) (x : BitVec 32) :
     x &&& BitVec.ofNat 32 (P.B - 1) = BitVec.ofNat 32 (x.toNat % P.B) := by
   have := hd.lg
-  have e := and_pow_sub_one x (n := Nat.log2 P.B) (by omega)
+  have e := and_pow_sub_one x (n := Nat.log2 P.B) (by omega_using [this])
   rwa [this.2.2] at e
 
 theorem op2_shrB (hd : Dims P) {s : State} {r : Reg} :
@@ -348,7 +348,7 @@ theorem ofNat_shlB (hd : Dims P) {a : Nat} (h : P.B * a < 2 ^ 32) :
   have : a ≤ P.B * a := Nat.le_mul_of_pos_left a this
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, hd.lg.2.2,
-    Nat.mod_eq_of_lt (show a < 2 ^ 32 by omega), Nat.mul_comm, Nat.mod_eq_of_lt h]
+    Nat.mod_eq_of_lt (show a < 2 ^ 32 by omega_using [h, this]), Nat.mul_comm, Nat.mod_eq_of_lt h]
 
 theorem op2_shlB (hd : Dims P) {s : State} {r : Reg} :
     (Op2.shifted r .lsl (Nat.log2 P.B)).eval s = some (s.gpr r <<< Nat.log2 P.B) :=
@@ -365,7 +365,7 @@ theorem saved_bound (hd : Dims P) : ∀ p ∈ saved P, P.so ≤ p.2 ∧ p.2 + 4 
   have := hd.so
   intro p hp
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
 
 theorem saved_nodup (P : Params) : ((saved P).map Prod.fst).Nodup := by
   simp only [saved, List.map_cons, List.map_nil]; decide
@@ -384,7 +384,7 @@ theorem save_ok (hd : Dims P) {b : Reg} {rest : List Instr} {s : State} {Q : Sta
   have := hd.so
   refine saveList_ok (saved P) s Q (fun p hp => ?_) k
   have := saved_bound hd p hp
-  exact ⟨by omega, by omega, hin _ this.1 this.2⟩
+  exact ⟨by omega_arith, by omega_using [hfit, this], hin _ this.1 this.2⟩
 
 set_option simprocs false in
 theorem saveMem_saved (hd : Dims P) (m : Mem) (B : Addr) (g : Reg → BitVec 32) :
@@ -411,7 +411,7 @@ theorem restore_ok (hd : Dims P) {s : State} {scr : BitVec 32} (h3 : s.gpr .r3 =
     fun s' ho hr hm hrd hwr hsp => WP.block_nil (k s' (fun p hp => ?_) hr hm hrd hwr hsp)
   · have := saved_bound hd p hp
     rw [h3]
-    exact ⟨saved_ne_r3 hp, by omega, by omega, hin _ this.1 this.2⟩
+    exact ⟨saved_ne_r3 hp, by omega_arith, by omega_using [hfit, this], hin _ this.1 this.2⟩
   · rw [ho p hp, h3, hsv p hp]
 
 /-- The callee-saved registers are the caller's again once `restore` has run. -/

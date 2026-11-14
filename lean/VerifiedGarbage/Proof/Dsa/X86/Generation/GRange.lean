@@ -37,8 +37,8 @@ theorem cmask_and (a b : Bool) : (cmask a &&& cmask b) = cmask (a && b) := by ca
 theorem borrow_lt {o a b K : Nat} {c : Bool} (h : o + b = a + K * c.toNat) (ho : o < K) :
     c = decide (a < b) := by
   cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h
-  · exact (decide_eq_false (by omega)).symm
-  · exact (decide_eq_true (by omega)).symm
+  · exact (decide_eq_false (by omega_using [h])).symm
+  · exact (decide_eq_true (by omega_using [ho, h])).symm
 
 /-- A change of memory that a helper call makes within ranges of `scratch`
 and the call's stack. -/
@@ -49,10 +49,10 @@ theorem Env.Chg.of_stackOuts {E : Env} (v : E.Valid) {rs : List (Nat × Nat)} {m
   intro x hx
   refine O x (fun r hr => ?_) (.inr fun hc => ?_)
   · have H := hx ⟨off E.base r.1, r.2⟩ (List.mem_append_left _ (List.mem_map.mpr ⟨r, hr, rfl⟩))
-    have I := Offset.lt_iff x E.base (show r.1 + r.2 ≤ 2 ^ 64 by have := fit r hr; omega)
+    have I := Offset.lt_iff x E.base (show r.1 + r.2 ≤ 2 ^ 64 by have := fit r hr; omega_using [nw, this])
     change ¬ ((x - off E.base r.1).toNat + 1 ≤ r.2) at H
     change (x - off E.base r.1).toNat < r.2 ↔ r.1 ≤ ofs E.base x ∧ ofs E.base x < r.1 + r.2 at I
-    omega
+    omega_using [H, I]
   · exact hx E.stackRegion (List.mem_append_right _ (List.mem_singleton_self _))
       (below_sub (by decide : 108 ≤ 200) v.low x (show (below E.sp 108).Contains x 1 from hc))
 
@@ -76,17 +76,17 @@ theorem rRanges_apart {E : Env} (v : E.Valid) : E.Apart rRanges := by
   have sz := v.size_ge
   intro o ho
   simp only [rRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-  rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, fOut, fWitLen, hdr] <;> omega
+  rcases ho with rfl | rfl | rfl <;> simp only [aTmp, aH, arr, fLo, fOut, fWitLen, hdr] <;> omega_using [sz]
 
 /-- The `pLen` bytes of `h` number `j` at its address in the tape. -/
 theorem h_bytes {E : Env} (v : E.Valid) {s : State} (B : Base E s) {j : Nat} (hj : (j + 1) * E.pLen ≤ E.hsLen) :
     Spec.Rsa.bytesAt s.mem (E.hs + BitVec.ofNat 64 (j * E.pLen)) E.pLen = hChunk E j := by
   rw [Nat.succ_mul] at hj
   have := v.hsIn
-  rw [Env.hs, VG.Offset.add_add, B.part (by omega)]
+  rw [Env.hs, VG.Offset.add_add, B.part (by omega_using [hj, this])]
   simp only [hChunk, Env.hT, List.drop_take, List.drop_drop, List.take_take]
   congr 1
-  omega
+  omega_using [hj]
 
 /-- `h` number `j` is loaded, and compared with 1 and `p − 1`. -/
 theorem gRange_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = g.pLen) {s : State} (B : Base E s)

@@ -107,14 +107,14 @@ theorem ce_ret {sp : Addr} {D : Nat} {R : Region} (h : (below sp D).Disjoint R) 
       rw [show BitVec.ofNat 64 (D - 8) = BitVec.ofNat 64 D - 8 by
         apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         have : (8 : BitVec 64).toNat = 8 := rfl
-        rw [this]; omega]
-      bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := D - 8) (by omega)]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    omega
+        rw [this]; omega_using [hD]]
+      bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := D - 8) (by omega_using [hDs])]
+    rw [Nat.mod_eq_of_lt (by omega_using [hDs, hx])]
+    omega_using [hD, hx]
 
 theorem ce_below {sp : Addr} {D S : Nat} {R : Region} (h : (below sp D).Disjoint R) (hS : S + 8 ≤ D)
     (hDs : D < 2 ^ 32) : (below (sp - 8) S).Disjoint R :=
-  (h.sub_left (below_sub hS (by omega))).sub_left (below_callee sp S)
+  (h.sub_left (below_sub hS (by omega_using [hDs]))).sub_left (below_callee sp S)
 
 theorem ce_wf {sp : Addr} {D S : Nat} (hS : S + 8 ≤ D) (hsp : D ≤ sp.toNat) :
     S ≤ (sp - 8).toNat := by
@@ -122,7 +122,7 @@ theorem ce_wf {sp : Addr} {D S : Nat} (hS : S + 8 ≤ D) (hsp : D ≤ sp.toNat) 
   have : (8 : BitVec 64).toNat = 8 := rfl
   rw [this]
   have := sp.isLt
-  omega
+  omega_using [hS, hsp]
 
 theorem abi_wf_of {ws : List Nat} (hws : ws.length ≤ 6) {S : Nat} {s : State} (h : S ≤ (s.gpr .rsp).toNat) :
     X86_64.abi.wf ws S s := by
@@ -187,14 +187,14 @@ theorem glueCall_ok {D : Nat} {glue : List Instr} {n : String} {c : Prog isa} {k
       ∃ s1, V s1 ∧ s1.mem = s.mem ∧ Keep argRegs s s1 ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧
         (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post (s1.callEntry.withRegions rd wr) s₂ := by
   refine WP.seq (WP.mono hg fun s1 ⟨⟨hV, hm⟩, k1⟩ => ?_)
-  refine WP.call hv hsp (by omega) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
+  refine WP.call hv hsp (by omega_using [hd, hD]) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
     (by rw [k1.2.2]; exact hw) fun s' hrd hwr hcs hf _ hpost => ⟨⟨hrd.trans k1.2.1, hwr.trans k1.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k1.gpr (argRegs_cs r (bases_cs r hr))],
       by rw [hcs .rsp (by decide), k1.gpr (by decide)], ?_⟩,
       fun r hr => by rw [hcs r hr, k1.gpr (argRegs_cs r hr)], s1, hV, hm, k1, hpost⟩
   have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
   rw [hm, hsp1] at hf
-  exact Frame.below_mono hf hd (by omega)
+  exact Frame.below_mono hf hd (by omega_using [hD])
 
 /-- The trace of the moves then a call, from two runs where the moves are
 the same and the callee's public data agree. -/

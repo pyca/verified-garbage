@@ -66,7 +66,7 @@ theorem mask_vp {p : BitVec 32} {n : Nat} (hb : WBuf L p n) (hn : 0 < n)
     · rcases List.mem_cons.mp hR with rfl | hR
       · exact List.mem_cons_self
       · exact List.mem_cons_of_mem _ (List.mem_append_left _ hR)
-    · simp only [Region.Contains] at ha; omega
+    · simp only [Region.Contains] at ha; omega_using [ha]
   · simp only [List.mem_singleton] at hr; subst hr; exact hb.slot
   · rw [← byte32 fit hi', inv.masked i hi', r2, byte32 fit hi', hf i hi']
 
@@ -86,7 +86,7 @@ theorem pred_top {a : BitVec 32} (ha : a.toNat < 2 ^ 31) : (a - 1) >>> 31 = if a
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     simp
-    omega
+    omega_using [ha, this]
 
 theorem r_top (o : Spec.Rsa.Outcome) : ((rOf o ^^^ 1) - 1) >>> 31 = if rOf o = 1 then 1 else 0 := by
   cases o <;> simp only [rOf] <;> decide
@@ -147,7 +147,7 @@ theorem okMask_vp (P : EP) : VP (SF h g P) (.block okMask) (O1 h g P) := by
   have hg := hi.geo
   obtain ⟨σ', ok⟩ := hg.ok
   have hok : 0#32 - ((((rV P σ ^^^ 1) - 1) >>> 31) &&& ((a - 1) >>> 31)) = okW h g P σ := by
-    rw [okV_eq (oc P σ) (by omega)]
+    rw [okV_eq (oc P σ) (by omega_using [hab])]
     exact maskOf_congr (and_congr_right fun _ => hae)
   have hw : WP isa (.block okMask) s fun t => t.mem = s.mem.writeW (P.lay.fr sOk) (okW h g P σ) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
@@ -190,7 +190,7 @@ theorem outCopy_vp (P : EP) : VP (O1 h g P) (.seq (.block outSet) Impl.Bignum.Ar
       prun [outSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, a0, r0, v0, a4, r4, v4, arg_lt,
         movw_val (show oBuf < 2 ^ 16 by decide)]
     refine WP.mono hw fun t ⟨m, rd, wr, sp, t0, t1, tl⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk⟩, t0, t1, tl, fun i hi' => ?_⟩
-    rw [m, hg.byteAt_scr (by oomega)]; exact hb i (by omega)
+    rw [m, hg.byteAt_scr (by oomega)]; exact hb i (by omega_using [hK, hi'])
   have sO : Region.Disjoint (sR P.scr oBuf P.K) P.OUT := by
     have hs := hi₀.slK
     unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
@@ -202,8 +202,8 @@ theorem outCopy_vp (P : EP) : VP (O1 h g P) (.seq (.block outSet) Impl.Bignum.Ar
         forall_eq] at this
       exact this.1.2
     exact (d.sub_right (Offset.sub_base _ (by oomega))).symm
-  refine (copy_vp (out_wbuf hi₀) (hg.rbuf (o := oBuf) (n := P.K) (by oomega) (by omega))
-    (by rw [hg.addr (by oomega)]; exact sO) (by omega) (Inv := Ko h g P)
+  refine (copy_vp (out_wbuf hi₀) (hg.rbuf (o := oBuf) (n := P.K) (by oomega) (by omega_using [hK']))
+    (by rw [hg.addr (by oomega)]; exact sO) (by omega_using [hK']) (Inv := Ko h g P)
     (f := fun σ i => Bp h g P σ (i + aV h g P σ)) fun σ m m' hk hf => hk.keep h g hf (ko_out hk.1.1)).mono
     (fun σ s ⟨⟨hc, hk⟩, r0, r1, lr, hb⟩ => ⟨hc, hk, r0, r1, lr, hb⟩) fun σ s hh => hh
 
@@ -232,7 +232,7 @@ theorem outMask_vp (P : EP) : VP (O2 h g P) (.seq (.block outMask) Impl.Bignum.A
         t.gpr .r0 = P.out ∧ t.gpr .r2 = okW h g P σ ∧ t.gpr .lr = BitVec.ofNat 32 P.K := by
       prun [outMask, sp0, ld, hc.st.sp, hc.aFr hg, hc.rFr hg, a0, r0, v0, a4, r4, v4, arg_lt, hk.2.2, sOk_lt]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, t0, t2, tl⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hk⟩, t0, t2, tl, m ▸ hb⟩
-  refine (mask_vp (out_wbuf hi₀) (by omega) (Inv := Ko h g P)
+  refine (mask_vp (out_wbuf hi₀) (by omega_using [hK]) (Inv := Ko h g P)
     (fun σ m m' hk hf => hk.keep h g hf (ko_out hk.1.1)) (f := fun σ i => Bp h g P σ (i + aV h g P σ))
     (w := okW h g P)).mono (fun σ s ⟨⟨hc, hk⟩, r0, r2, lr, hb⟩ => ⟨hc, hk, r0, r2, lr, hb⟩)
     fun σ s ⟨hc, hk, hb⟩ => ⟨hc, hk, fun i hi => by rw [hb i hi, and_maskOf]⟩

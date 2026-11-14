@@ -32,7 +32,7 @@ theorem length_flatMap_uniform {α β : Type} (f : α → List β) (k : Nat) :
 
 theorem tcombWords_entry_len (n R p : Nat) (xy : Nat × Nat) :
     ((List.range n).map (wordOf (xy.1 * R % p)) ++ (List.range n).map (wordOf (xy.2 * R % p))).length =
-      2 * n := by simp; omega
+      2 * n := by simp; omega_using []
 
 theorem tcombWords_length {n R p H J : Nat} {tbl : List (List (Nat × Nat))} (hJ : tbl.length = J)
     (hH : ∀ j < J, (tbl.getD j []).length = H) :
@@ -40,7 +40,7 @@ theorem tcombWords_length {n R p H J : Nat} {tbl : List (List (Nat × Nat))} (hJ
   unfold tcombWords
   rw [length_flatMap_uniform _ (H * (2 * n)) _ (fun t ht => by
     obtain ⟨j', hj', rfl⟩ := List.getElem_of_mem ht
-    have := hH j' (by omega)
+    have := hH j' (by omega_using [hJ, hj'])
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj'] at this
     simp only [Option.getD_some] at this
     rw [length_flatMap_uniform _ (2 * n) _ fun xy _ => tcombWords_entry_len n R p xy, this]), hJ]
@@ -56,12 +56,12 @@ theorem getD_flatMap_uniform {α β : Type} (f : α → List β) (k : Nat) (d : 
     cases q with
     | zero =>
       simp only [Nat.zero_mul, Nat.zero_add, List.getD_cons_zero]
-      rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by omega), ← List.getD_eq_getElem?_getD]
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by omega_using [hr, hx]), ← List.getD_eq_getElem?_getD]
     | succ q =>
       simp only [List.getD_cons_succ, List.length_cons] at hq ⊢
-      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [hx, Nat.succ_mul]; omega), hx,
-        show (q + 1) * k + r - k = q * k + r by rw [Nat.succ_mul]; omega, ← List.getD_eq_getElem?_getD]
-      exact getD_flatMap_uniform f k d l da (fun y hy => h y (List.mem_cons_of_mem _ hy)) q (by omega) r hr
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [hx, Nat.succ_mul]; omega_using []), hx,
+        show (q + 1) * k + r - k = q * k + r by rw [Nat.succ_mul]; omega_using [], ← List.getD_eq_getElem?_getD]
+      exact getD_flatMap_uniform f k d l da (fun y hy => h y (List.mem_cons_of_mem _ hy)) q (by omega_using [hq]) r hr
 
 /-- Word `i < 2n` of entry `m` of table `j`: its `x`'s words, then its `y`'s. -/
 theorem tcombWords_getD {n R p H J : Nat} {tbl : List (List (Nat × Nat))} (hJ : tbl.length = J)
@@ -71,11 +71,11 @@ theorem tcombWords_getD {n R p H J : Nat} {tbl : List (List (Nat × Nat))} (hJ :
   unfold tcombWords
   rw [Nat.add_assoc, getD_flatMap_uniform _ (H * (2 * n)) 0 tbl [] (fun t ht => by
       obtain ⟨j', hj', rfl⟩ := List.getElem_of_mem ht
-      have := hH j' (by omega)
+      have := hH j' (by omega_using [hJ, hj'])
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj'] at this
       simp only [Option.getD_some] at this
       rw [length_flatMap_uniform _ (2 * n) _ fun xy _ => tcombWords_entry_len n R p xy, this]) j
-      (by omega) _ (by
+      (by omega_using [hJ, hj]) _ (by
       refine Nat.lt_of_lt_of_le (Nat.add_lt_add_left hi _) ?_
       have := Nat.mul_le_mul_right (2 * n) (show m + 1 ≤ H from hm)
       rwa [Nat.succ_mul] at this)]
@@ -85,8 +85,8 @@ theorem tcombWords_getD {n R p H J : Nat} {tbl : List (List (Nat × Nat))} (hJ :
   by_cases h : i < n
   · rw [List.getElem?_append_left (by simp; exact h), List.getElem?_map, List.getElem?_range h]
     simp [h, combAt]
-  · rw [List.getElem?_append_right (by simp; omega), List.getElem?_map, List.length_map,
-      List.length_range, List.getElem?_range (by omega)]
+  · rw [List.getElem?_append_right (by simp; omega_using [h]), List.getElem?_map, List.length_map,
+      List.length_range, List.getElem?_range (by omega_using [hi])]
     simp [h, combAt]
 
 /-- The `x` and `y` of entry `m` of table `j`, in Montgomery form, at
@@ -105,11 +105,11 @@ theorem tcombWords_entry {mem : Mem} {T : Addr} {n R p H J : Nat} {tbl : List (L
   have hidx : ∀ i < 2 * n, j * (H * (2 * n)) + m * (2 * n) + i < J * (H * (2 * n)) := fun i hi => by
     have h1 : j * (H * (2 * n)) + m * (2 * n) + i < j * (H * (2 * n)) + H * (2 * n) := by
       have := Nat.mul_le_mul_right (2 * n) (show m + 1 ≤ H from hm)
-      rw [Nat.succ_mul] at this; omega
+      rw [Nat.succ_mul] at this; omega_using [hi, this]
     have h2 : j * (H * (2 * n)) + H * (2 * n) ≤ J * (H * (2 * n)) := by
       have := Nat.mul_le_mul_right (H * (2 * n)) (show j + 1 ≤ J from hj)
       rwa [Nat.succ_mul] at this
-    omega
+    omega_using [h1, h2]
   have hw : ∀ i < 2 * n, word mem (T + BitVec.ofNat 64 (j * (16 * n * H))) (16 * n * m + 8 * i) =
       (tcombWords n R p tbl).getD (j * (H * (2 * n)) + m * (2 * n) + i) 0 := fun i hi => by
     rw [← hT _ (by rw [hlen]; exact hidx i hi), word, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -117,11 +117,11 @@ theorem tcombWords_entry {mem : Mem} {T : Addr} {n R p H J : Nat} {tbl : List (L
     grind
   constructor
   · refine wordsVal_of_shifts _ _ _ _ _ hx fun i hi => ?_
-    rw [hw i (by omega), tcombWords_getD hJ hH hj hm (by omega)]; simp only [hi, ↓reduceIte]; rfl
+    rw [hw i (by omega_using [hi]), tcombWords_getD hJ hH hj hm (by omega_using [hi])]; simp only [hi, ↓reduceIte]; rfl
   · refine wordsVal_of_shifts _ _ _ _ _ hy fun i hi => ?_
-    rw [show 16 * n * m + 8 * n + 8 * i = 16 * n * m + 8 * (n + i) by omega, hw (n + i) (by omega),
-      tcombWords_getD hJ hH hj hm (by omega)]
-    simp only [show ¬ n + i < n by omega, ↓reduceIte, Nat.add_sub_cancel_left]; rfl
+    rw [show 16 * n * m + 8 * n + 8 * i = 16 * n * m + 8 * (n + i) by omega_using [], hw (n + i) (by omega_using [hi]),
+      tcombWords_getD hJ hH hj hm (by omega_using [hi])]
+    simp only [show ¬ n + i < n by omega_using [], ↓reduceIte, Nat.add_sub_cancel_left]; rfl
 
 /-- `[T, T + L)` within a region holds the ranges at offsets of `T` within it. -/
 theorem Region.contains_off {r : Region} {T : Addr} {L d n : Nat} (h : r.Contains T L)
@@ -133,6 +133,6 @@ theorem Region.contains_off {r : Region} {T : Addr} {L d n : Nat} (h : r.Contain
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((T - r.base).toNat + d % 2 ^ 64) (2 ^ 64)
   have := Nat.mod_le d (2 ^ 64)
-  omega
+  omega_using [h, hd]
 
 end VG.Proof.Weierstrass

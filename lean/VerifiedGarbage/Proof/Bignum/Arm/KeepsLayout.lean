@@ -22,11 +22,11 @@ theorem keeps_header_word {m m' : Mem} {base : Addr} {len w o d : Nat}
   intro j hj
   change m' (base + BitVec.ofNat 64 d + BitVec.ofNat 64 j) = _
   rw [Offset.add_add]
-  apply keep (d + j) (by omega)
+  apply keep (d + j) (by omega_using [size, hd, hj])
   intro a _
   left
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
-  omega
+  omega_using [hd, hj]
 
 theorem keeps_header_readW {m m' : Mem} {base : Addr} {len w o d bits : Nat}
     (keep : Keeps base len w o m m') (size : 256 ≤ 8 * len) (hd : d + bits / 8 ≤ 256) :
@@ -35,11 +35,11 @@ theorem keeps_header_readW {m m' : Mem} {base : Addr} {len w o d bits : Nat}
   intro j hj
   change m' (base + BitVec.ofNat 64 d + BitVec.ofNat 64 j) = _
   rw [Offset.add_add]
-  apply keep (d + j) (by omega)
+  apply keep (d + j) (by omega_using [size, hd, hj])
   intro a _
   left
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes]
-  omega
+  omega_using [hd, hj]
 
 theorem keeps_layout {m m' : Mem} {base : Addr} {len o : Nat}
     (layout : Layout m base len) (keep : Keeps base len (wOf m base) o m m') :
@@ -47,7 +47,7 @@ theorem keeps_layout {m m' : Mem} {base : Addr} {len o : Nat}
   have size : 256 ≤ 8 * len := by
     have := layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have width : wOf m' base = wOf m base :=
     congrArg BitVec.toNat (keeps_header_word keep size (d := 48) (by decide))
   refine ⟨width, ?_⟩
@@ -56,7 +56,7 @@ theorem keeps_layout {m m' : Mem} {base : Addr} {len o : Nat}
   refine ⟨layout.1, layout.2.1, layout.2.2.1, ?_⟩
   intro j hj
   change word m' base (8 * (8 + j)) = _
-  rw [keeps_header_word keep size (by omega)]
+  rw [keeps_header_word keep size (by omega_using [hj])]
   exact layout.2.2.2 j hj
 
 theorem keeps_array_read {m m' : Mem} {base : Addr} {len w o q d n : Nat}
@@ -68,7 +68,7 @@ theorem keeps_array_read {m m' : Mem} {base : Addr} {len w o q d n : Nat}
   intro j hj
   change m' (base + BitVec.ofNat 64 (arrAt w q + d) + BitVec.ofNat 64 j) = _
   rw [Offset.add_add]
-  apply keep (arrAt w q + d + j) (by omega)
+  apply keep (arrAt w q + d + j) (by omega_using [hd, bound, hj])
   intro a ha
   have different : q ≠ a := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
@@ -77,7 +77,7 @@ theorem keeps_array_read {m m' : Mem} {base : Addr} {len w o q d n : Nat}
     · exact hq.2.2
     · exact neq
   have sep := array_sep (w := w) different
-  omega
+  omega_using [hd, hj, sep]
 
 theorem keeps_array_word {m m' : Mem} {base : Addr} {len w o q d bits : Nat}
     (keep : Keeps base len w o m m') (fits : arrAt w 8 ≤ 8 * len)
@@ -88,7 +88,7 @@ theorem keeps_array_word {m m' : Mem} {base : Addr} {len w o q d bits : Nat}
 theorem keeps_array_num {m m' : Mem} {base : Addr} {len w o q : Nat}
     (keep : Keeps base len w o m m') (fits : arrAt w 8 ≤ 8 * len)
     (hq : Operand q) (neq : q ≠ o) : numAt m' base w q = numAt m base w q := by
-  have h := keeps_array_read (d := 0) (n := 8 * w) keep fits hq neq (by omega)
+  have h := keeps_array_read (d := 0) (n := 8 * w) keep fits hq neq (by omega_using [])
   simpa only [numAt, off, Nat.add_zero] using congrArg BitVec.toNat h
 
 end VG.Proof.Bignum.Arm

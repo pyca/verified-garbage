@@ -26,7 +26,7 @@ theorem enter_input_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Vali
   refine WP.mono (KeyArgs.enter_ok I.arguments) fun t ⟨C, header, O, K⟩ => ?_
   have dimensions := v.widths
   have ws : Ws t E.base E.size E.n 32 :=
-    ⟨C.scratch, v.bankFit, by omega, by omega⟩
+    ⟨C.scratch, v.bankFit, by omega_using [dimensions], by omega_using [dimensions]⟩
   have input : Input E t := by
     refine ⟨v, ws, header, ?_, ?_⟩
     · intro i hi
@@ -35,7 +35,7 @@ theorem enter_input_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Vali
     · rw [K.2.1, K.2.2]
       exact I.exponentRead
   have frame : Frame [E.workspaceRegion] s.mem t.mem :=
-    outs_scratch_frame (by have := C.scratch.nowrap; omega)
+    outs_scratch_frame (by have := C.scratch.nowrap; omega_using [this])
       (Outs.of_outside (rs := [(0, 72)]) O (List.mem_singleton_self _))
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr; change 0 + 72 ≤ E.size; exact I.arguments.header)
   exact ⟨input, frame, K⟩

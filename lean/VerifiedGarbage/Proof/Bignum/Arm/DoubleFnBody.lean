@@ -44,14 +44,14 @@ theorem doubleFnBody_ok (s : State) {base : BitVec 32} {len o a b : Nat}
   obtain ⟨ctx, finish⟩ := layout_context ws hw fits ho ha hb
   have bound : 128 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   rw [doubleFnBody, WP.seq_iff]
   refine WP.mono (bases_ok s ws bound header ho.1 ha.1 hb.1 ptr po pa pb) ?_
   rintro u ⟨regs, mem, keep⟩
   refine WP.mono (doubleBody_ok u (ctx.congr keep.wr) (finish.congr keep.wr) regs
     (by rw [mem]; exact two) ?_ ?_) ?_
   · rw [mem, ← numAt_native, ← numAt_native]; exact operand
-  · rw [mem]; exact native_inverse s.mem (State.addr base) (by omega) inverse
+  · rw [mem]; exact native_inverse s.mem (State.addr base) (by omega_using [hw]) inverse
   · rintro t ⟨value, outside, rest⟩
     rw [mem] at value outside
     have frame : Outs (State.addr base)

@@ -18,7 +18,7 @@ theorem rowStep_ok {v blocks k off n : Nat} {σ s : State} {L : Nat → List Zq}
     WP isa (Impl.MlDsa.AArch64.Optimized.ResidentRej.segment variant n) s fun t =>
       Rows v blocks σ (updateRow L k (rowResult σ k off n (L k))) t ∧
       Ptrs σ off (k+1) t ∧ t.gpr .x27=s.gpr .x27-BitVec.ofNat 64 1 := by
-  refine WP.mono (segmentEnv_ok hp h.env hk hptr (by have:=h.blockBound; omega) hmod
+  refine WP.mono (segmentEnv_ok hp h.env hk hptr (by have:=h.blockBound; omega_using [hn, this]) hmod
     (h.length k hk) (h.counts k hk) (h.stored k hk) variant)
     fun t ⟨he,hf,hc,hs,hptr',h27⟩ => ?_
   rw [segmentResult_rows h hk hn] at hc hs
@@ -26,7 +26,7 @@ theorem rowStep_ok {v blocks k off n : Nat} {σ s : State} {L : Nat → List Zq}
   · intro p hpv
     exact segment_pair_keep hp hk hpv hf (h.pairs p hpv)
   · intro j hj d hd
-    rw [segment_buffer_keep hp hk hj (by have:=h.blockBound; omega) hf]
+    rw [segment_buffer_keep hp hk hj (by have:=h.blockBound; omega_using [hd, this]) hf]
     exact h.bytes j hj d hd
   · intro j hj
     by_cases heq : j=k

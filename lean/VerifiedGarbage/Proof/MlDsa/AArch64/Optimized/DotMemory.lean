@@ -31,7 +31,7 @@ theorem dotBankValues_word (s : State) (count : Nat) (j : Fin 8) {e : Nat} (he :
     vword (dotBankValues s count)[j.val] e=dotResult s count (16*j.val) e := by
   simp only [dotBankValues,Vector.getElem_ofFn]
   rw [VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
   rcases h with rfl | rfl | rfl | rfl <;> rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized
@@ -71,10 +71,10 @@ theorem dotPass_frame {m : Mem} {p a b : Addr} {count u : Nat} (hu : u≤8) :
   | zero => exact Frame.refl _ _
   | succ u ih =>
     simp only [dotPassMem]
-    apply writeBank_frame _ _ _ (r:=⟨p,1024⟩) (by simp) ?_ (ih (by omega))
+    apply writeBank_frame _ _ _ (r:=⟨p,1024⟩) (by simp) ?_ (ih (by omega_using [hu]))
     intro i
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact VG.Offset.contains_base p (by omega) (by omega)
+    exact VG.Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 end Inverse
 end VG.Proof.MlDsa.AArch64.Optimized

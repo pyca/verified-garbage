@@ -40,27 +40,27 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
     rw [Oa.val32 (fun r mem => by
       simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       have := v.arrayHeader 5
-      rcases mem with (rfl | rfl | rfl) | rfl <;> right <;> omega)
-      (by have := I.scratch.nowrap; have := v.arrayFit (j := 5) (by decide); omega)]
+      rcases mem with (rfl | rfl | rfl) | rfl <;> right <;> omega_using [this])
+      (by have := I.scratch.nowrap; have := v.arrayFit (j := 5) (by decide); omega_arith)]
     exact I.minusOne
   refine WP.seq (WP.mono (PreparedR2.code_okAt verified noSp stack v length A bound I.odd positive eLt I.top)
     fun b ⟨B, r2B, Fb, Kb, Wb⟩ => ?_)
   have strideB : word b.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change b.mem.readW (off g.W 224) 64 = _
-    rw [Wb.read64 (by have := v.headerFit; omega) (fun r mem => by
+    rw [Wb.read64 (by have := v.headerFit; omega_using [this]) (fun r mem => by
       simp only [PreparedR2.ranges, PreparedR2.coreRanges, PreparedR2.phaseRanges, montWrites, List.mem_append,
         List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with ((rfl | rfl | rfl) | (rfl | rfl | rfl)) | rfl <;>
-        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
+        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))]
     exact strideA
   have minusB := (PreparedR2.preserve v Wb (j := 5) (Or.inl rfl)).trans minusA
-  refine WP.seq (WP.mono (Constants.code_ok verified noSp stack v length B I.odd (by have := I.large; omega) r2B)
+  refine WP.seq (WP.mono (Constants.code_ok verified noSp stack v length B I.odd (by have := I.large; omega_using [this]) r2B)
     fun d ⟨D, oneD, minusD, Wd, Fd, Kd⟩ => ?_)
   have strideD : word d.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change d.mem.readW (off g.W 224) 64 = _
-    rw [Wd.read64 (by have := v.headerFit; omega) (fun r mem => by
+    rw [Wd.read64 (by have := v.headerFit; omega_using [this]) (fun r mem => by
       simp only [Constants.ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
-      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
+      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))]
     exact strideB
   have minusSaved := (Constants.preserve v Wd (j := 5) (Or.inr (Or.inl rfl))).trans minusB
   have r2D := (Constants.preserve v Wd (j := 4) (Or.inl rfl)).trans r2B
@@ -69,7 +69,7 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
     (workspaceGlobalFrame Oa (fun r mem => by
       simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       have := v.headerFit
-      rcases mem with (rfl | rfl | rfl) | rfl <;> omega)).mono (fun r mem => List.mem_append_left _ mem)
+      rcases mem with (rfl | rfl | rfl) | rfl <;> omega_using [this])).mono (fun r mem => List.mem_append_left _ mem)
   have Ft : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) d.mem t.mem :=
     (workspaceGlobalFrame Ot (fun r mem => by
       simp only [Exponent.preparedRanges, Exponent.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -77,7 +77,7 @@ theorem code_full_okAt {mont : Prog isa} {name : String}
       have outFit := Prepared.paddedFit v (j := 27) (by decide)
       have := v.headerFit
       rcases mem with rfl | rfl | rfl <;>
-        simp only [VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega)).mono
+        simp only [VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega_arith)).mono
       (fun r mem => List.mem_append_left _ mem)
   have Wa : WorkspaceFrame g PrepareHeader.ranges s.mem a.mem := WorkspaceFrame.of_outs I.scratch.nowrap Oa
   have Wt : WorkspaceFrame g (Exponent.preparedRanges g) d.mem t.mem := WorkspaceFrame.of_outs I.scratch.nowrap Ot

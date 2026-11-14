@@ -53,18 +53,18 @@ theorem signPrevCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c :
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega
+  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   have Q₁ := operand_lt_of (X.C₁.inp mq)
   have Q₂ := operand_lt_of (X.C₂.inp mq)
   have hQ₁ := D₁.hQ
   have hQ₂ := D₂.hQ
   simp only [PrevalidatedSign.compute, Core.sequence, List.foldr]
   refine SameTrace.seq (minus_trace (amount := 2) (output := Impl.Dsa.Layout.qMinusTwo)
-      (X.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo) (X.E _ mq))
-    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega) X.C₁.S.wq (X.C₁.inp mq).toReady
-      (X.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by decide) (by decide) (by omega) (by decide))
-    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega) X.C₁.S.wq (X.C₂.inp mq).toReady
-      (X.C₂.inp mq).value (by omega) D₂.hQo (by omega) (by decide) (by decide) (by omega) (by decide))
+      (X.C₁.opPre mq X.C₁.S.wq (by omega_using [hQ₁]) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega_using [hQ₂]) D₂.hQo) (X.E _ mq))
+    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega_using [b₁]) X.C₁.S.wq (X.C₁.inp mq).toReady
+      (X.C₁.inp mq).value (by omega_using [hQ₁]) D₁.hQo (by omega_using [hQ₁]) (by decide) (by decide) (by omega_using [q32, b₁, L2]) (by decide))
+    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_using [b₂]) X.C₁.S.wq (X.C₂.inp mq).toReady
+      (X.C₂.inp mq).value (by omega_using [hQ₂]) D₂.hQo (by omega_using [hQ₂]) (by decide) (by decide) (by omega_using [q32, b₂, L2]) (by decide))
     fun u₁ u₂ ⟨B₁, St₁⟩ ⟨B₂, St₂⟩ => ?_
   have T₁ := St₁.run (.inr ho)
   have T₂ := St₂.run (.inr ho)
@@ -79,10 +79,10 @@ theorem signPrevCompute_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c :
   have X₂ := X₁.run R₁ R₂
   have M₁ : localVal base v₁ Impl.Dsa.Layout.qMinusTwo qLen = val₁ (.input .q) - 2 := by
     rw [Sa₁.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith)]
-    exact localVal_of_bytes B₁ (by omega)
+    exact localVal_of_bytes B₁ (by omega_using [Q₁])
   have M₂ : localVal base v₂ Impl.Dsa.Layout.qMinusTwo qLen = val₂ (.input .q) - 2 := by
     rw [Sa₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith)]
-    exact localVal_of_bytes B₂ (by omega)
+    exact localVal_of_bytes B₂ (by omega_using [Q₂])
   have c₁ := ((countValue_run R₁).trans (countValue_run T₁)).trans hc₁
   have c₂ := ((countValue_run R₂).trans (countValue_run T₂)).trans hc₂
   refine SameTrace.seq (sign_trace X₂ mp mq mg mx mk md c₁ c₂ D₁ D₂)

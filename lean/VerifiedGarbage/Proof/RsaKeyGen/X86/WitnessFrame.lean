@@ -15,21 +15,21 @@ def ranges (g : Geometry) : List (Nat × Nat) := montWrites g 6 ++ [(g.array 5, 
 theorem preserve {g : Geometry} (v : g.Valid) {s t : Mem} (F : WorkspaceFrame g (ranges g) s t)
     {j : Nat} (index : j = 4 ∨ j = 9 ∨ j = 10 ∨ j = 27) :
     val32 t g.W (g.array j) g.words = val32 s g.W (g.array j) g.words := by
-  apply F.val32 (v.arrayFit (by omega))
+  apply F.val32 (v.arrayFit (by omega_using [index]))
   intro r mem
   simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases index with rfl | rfl | rfl | rfl <;>
     rcases mem with (rfl | rfl | rfl) | rfl <;>
-    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using []
 
 theorem marker_preserve {g : Geometry} (v : g.Valid) {s t : Mem}
     (F : WorkspaceFrame g (ranges g) s t) :
     word t g.W (g.array 27 + 8 * g.w) = word s g.W (g.array 27 + 8 * g.w) := by
-  apply F.read64 (by have := Prepared.paddedFit v (j := 27) (by decide); omega)
+  apply F.read64 (by have := Prepared.paddedFit v (j := 27) (by decide); omega_using [this])
   intro r mem
   simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with (rfl | rfl | rfl) | rfl <;>
-    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega
+    simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] <;> omega_using []
 
 theorem data_keep {g : Geometry} (v : g.Valid) {s t : VG.X86.State} {c capacity : Nat} {p : BitVec 32}
     (S : Prepare.Data g c capacity p s) (T : PreparedR2.Ready g c capacity p t)
@@ -38,10 +38,10 @@ theorem data_keep {g : Geometry} (v : g.Valid) {s t : VG.X86.State} {c capacity 
     (preserve v F (Or.inr (Or.inl rfl))).trans S.one,
     (preserve v F (Or.inr (Or.inr (Or.inl rfl)))).trans S.minusOne,
     (preserve v F (Or.inr (Or.inr (Or.inr rfl)))).trans S.exponent,
-    (marker_preserve v F).trans S.marker, (F.read64 (by have := v.headerFit; omega) (fun r mem => by
+    (marker_preserve v F).trans S.marker, (F.read64 (by have := v.headerFit; omega_using [this]) (fun r mem => by
       simp only [ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with (rfl | rfl | rfl) | rfl <;>
-        exact Or.inl (by simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))).trans S.stride⟩
+        exact Or.inl (by simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))).trans S.stride⟩
 
 theorem data_outside {g : Geometry} (v : g.Valid) {s t : VG.X86.State} {c capacity : Nat} {p : BitVec 32}
     (S : Prepare.Data g c capacity p s) (O : Outside g.W (g.array 6) (4 * g.words) s.mem t.mem)
@@ -60,6 +60,6 @@ theorem data_outside {g : Geometry} (v : g.Valid) {s t : VG.X86.State} {c capaci
       A.scratch.of_keeps K base sp⟩
   apply data_keep v S T
   exact WorkspaceFrame.of_outs A.scratch.nowrap (Outs.of_outside
-    (O.mono (o' := g.array 6) (n' := 8 * (g.w + 2)) (Nat.le_refl _) (by unfold Geometry.words; omega)) (by simp [ranges, montWrites]))
+    (O.mono (o' := g.array 6) (n' := 8 * (g.w + 2)) (Nat.le_refl _) (by unfold Geometry.words; omega_using [])) (by simp [ranges, montWrites]))
 
 end VG.Proof.RsaKeyGen.X86.WitnessMont

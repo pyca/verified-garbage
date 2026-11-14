@@ -44,7 +44,7 @@ theorem step_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i : Nat
   have hn := (arg s₀ 1).isLt
   have hc : (⟨(arg s₀ 0).setWidth 64, (arg s₀ 1).toNat⟩ : Region).Contains
       ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 i) (if word then 4 else 1) :=
-    Offset.contains_base _ hi (by cases word <;> simp_all <;> omega)
+    Offset.contains_base _ hi (by cases word <;> simp_all <;> omega_using [hi])
   have hs : InRegions s.wr ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 i) (if word then 4 else 1) :=
     ⟨_, by rw [hw, hp.2.1]; simp, hc⟩
   have hmem := List.mem_singleton_self (⟨(arg s₀ 0).setWidth 64, (arg s₀ 1).toNat⟩ : Region)
@@ -56,15 +56,15 @@ theorem step_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i : Nat
       (arg s₀ 0).setWidth 64 + BitVec.ofNat 64 i := by
     simpa only [addr, BitVec.add_zero, Nat.add_zero] using
       (VG.Proof.MlKem.X86.addr_add (x := arg s₀ 0) (k := i) (d := 0)
-        (by have := hp.2.2.1; cases word <;> simp_all only [↓reduceIte, Bool.false_eq_true] <;> omega))
+        (by have := hp.2.2.1; cases word <;> simp_all only [↓reduceIte, Bool.false_eq_true] <;> omega_using [this, hi]))
   cases word <;> simp only [Bool.false_eq_true, ↓reduceIte] at hi hc hs ⊢ <;> unfold step <;>
     xrun [hd, ha, hs, Inv, hrd, hsp, hw, haddr, State.ea,
       (show BitVec.ofNat 32 0 = 0 from rfl),
       (show (0 : BitVec 32).setWidth 8 = 0 from rfl),
       (show ∀ a : BitVec 32, a + BitVec.ofNat 32 0 = a from BitVec.add_zero),
       (show ∀ a : BitVec 32, a + 0 = a from BitVec.add_zero)]
-  · exact ⟨hadd _, prefix_writeW hz (by omega), hf.writeW hmem _ hc⟩
-  · exact ⟨hadd _, prefix_writeW hz (by omega), hf.writeW hmem _ hc⟩
+  · exact ⟨hadd _, prefix_writeW hz (by omega_using [hi]), hf.writeW hmem _ hc⟩
+  · exact ⟨hadd _, prefix_writeW hz (by omega_using [hi]), hf.writeW hmem _ hc⟩
 
 /-- `body` `n` times, each zeroing `w` more bytes. -/
 theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i n : Nat)
@@ -77,7 +77,7 @@ theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i
   have hlt : n < 2 ^ 32 := by
     have := (arg s₀ 1).isLt
     have : n ≤ w * n := Nat.le_mul_of_pos_left n hw
-    omega
+    omega_using [hn, this]
   have start : WP isa (.block [.alu .cmp .edx (.imm 0)]) s fun t =>
       Inv s₀ i t ∧ t.gpr .edx = BitVec.ofNat 32 n ∧ t.gpr .esp = s.gpr .esp ∧
       t.zf = some (BitVec.ofNat 32 n == 0) := by
@@ -105,9 +105,9 @@ theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i
         exact ⟨hv, hsv.trans hsu⟩
       · right
         have hnz : BitVec.ofNat 32 (n-(j+1)) ≠ (0 : BitVec 32) := by bv_omega_arith
-        refine ⟨by simp only [eval, hzv, beq_eq_false_iff_ne.mpr hnz]; rfl, n-(j+1), by omega,
-          j+1, by omega, rfl, hv, hcv, hsv.trans hsu⟩
-    · exact ⟨0, by omega, by omega, by simpa using ht, by simpa using hct, hst⟩
+        refine ⟨by simp only [eval, hzv, beq_eq_false_iff_ne.mpr hnz]; rfl, n-(j+1), by omega_using [hj, hr],
+          j+1, by omega_using [hj, hend], rfl, hv, hcv, hsv.trans hsu⟩
+    · exact ⟨0, by omega_using [he], by omega_using [], by simpa using ht, by simpa using hct, hst⟩
 
 theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : Nat)
     (hn : i + (if word then 4 else 1) * n ≤ (arg s₀ 1).toNat)
@@ -119,7 +119,7 @@ theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : N
       have hs := step_ok word s₀ u hp _ (by
         have : (if word then 4 else 1) * (j + 1) ≤ (if word then 4 else 1) * n :=
           Nat.mul_le_mul_left _ hj
-        rw [Nat.mul_succ] at this; omega) hu
+        rw [Nat.mul_succ] at this; omega_using [hn, this]) hu
       rwa [Nat.mul_succ, ← Nat.add_assoc])
     h hc
 
@@ -133,7 +133,7 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
   have hfit := hp.2.2.1
   have hc : ∀ k, k ≤ 28 → (⟨(arg s₀ 0).setWidth 64, (arg s₀ 1).toNat⟩ : Region).Contains
       ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 (i + k)) (32 / 8) :=
-    fun k hk => Offset.contains_base _ (by omega) (by omega)
+    fun k hk => Offset.contains_base _ (by omega_using [hi, hk]) (by omega_using [hi, hk])
   have hmem := List.mem_singleton_self (⟨(arg s₀ 0).setWidth 64, (arg s₀ 1).toNat⟩ : Region)
   rw [← hp.2.1] at hmem
   have hs : ∀ k, k ≤ 28 → InRegions s₀.wr ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 (i + k)) 4 :=
@@ -142,7 +142,7 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
       (arg s₀ 0).setWidth 64 + BitVec.ofNat 64 (i + k) := fun k hk => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     simpa only [addr, BitVec.add_zero, Nat.add_zero] using
-      (VG.Proof.MlKem.X86.addr_add (x := arg s₀ 0) (k := i + k) (d := 0) (by omega))
+      (VG.Proof.MlKem.X86.addr_add (x := arg s₀ 0) (k := i + k) (d := 0) (by omega_using [hi, hfit, hk]))
   have e0 : ((arg s₀ 0 + BitVec.ofNat 32 i + BitVec.ofNat 32 0).setWidth 64) =
       (arg s₀ 0).setWidth 64 + BitVec.ofNat 64 i := by rw [ea 0 (by decide), Nat.add_zero]
   have s0 : InRegions s₀.wr ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 i) 4 := by
@@ -158,7 +158,7 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
       ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 i) (32 / 8) := by
     have := hc 0 (by decide); rwa [Nat.add_zero] at this
   exact ⟨by rw [BitVec.add_assoc, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, ← BitVec.ofNat_add],
-    prefix_writeW8 hz (by omega),
+    prefix_writeW8 hz (by omega_using [hi]),
     (((((((hf.writeW (w := 32) hmem _ c0).writeW hmem _ (hc 4 (by decide))).writeW hmem _ (hc 8 (by decide))).writeW
       hmem _ (hc 12 (by decide))).writeW hmem _ (hc 16 (by decide))).writeW hmem _ (hc 20 (by decide))).writeW
       hmem _ (hc 24 (by decide))).writeW hmem _ (hc 28 (by decide))⟩
@@ -166,12 +166,12 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
 theorem arg_addr (s : State) (hn : (s.gpr .esp).toNat + 12 ≤ 2 ^ 32)
     (k : Nat) (hk : k < 2) :
     argAddr s k = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4*k) :=
-  VG.Proof.MlKem.X86.ea_off (by omega)
+  VG.Proof.MlKem.X86.ea_off (by omega_using [hn, hk])
 
 theorem arg_contains (s : State) (hp : contract.pre s) (k : Nat) (hk : k < 2) :
     (⟨argAddr s 0, 8⟩ : Region).Contains (argAddr s k) 4 := by
   rw [arg_addr s hp.2.2.2.1 0 (by decide), arg_addr s hp.2.2.2.1 k hk]
-  exact Offset.contains _ (by omega) (by omega) (by decide)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hk]) (by decide)
 
 theorem args_out (s : State) (hp : contract.pre s) : ArgsOut 2 s := by
   refine ⟨hp.2.2.2.1, ?_⟩
@@ -180,15 +180,15 @@ theorem args_out (s : State) (hp : contract.pre s) : ArgsOut 2 s := by
   obtain rfl := List.mem_singleton.mp hr
   intro a ha hb
   let j := (a - (s.gpr .esp).setWidth 64).toNat
-  have hj : j < 12 := by change j + 1 ≤ 12 at ha; omega
+  have hj : j < 12 := by change j + 1 ≤ 12 at ha; omega_using [ha]
   have he : (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 j = a := by
     change (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (a - (s.gpr .esp).setWidth 64).toNat = a
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   by_cases h : j < 4
-  · exact hp.2.2.2.2.1 a (by rw [← he]; exact Offset.contains_base _ (by omega) (by omega)) hb
+  · exact hp.2.2.2.2.1 a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
   · apply hp.2.2.2.2.2 a ?_ hb
     rw [arg_addr s hp.2.2.2.1 0 (by decide), ← he]
-    exact Offset.contains _ (by omega) (by omega) (by decide)
+    exact Offset.contains _ (by omega_using [h]) (by omega_using [hj]) (by decide)
 
 theorem read_arg (s₀ s : State) (hp : contract.pre s₀) (i : Nat) (h : Inv s₀ i s)
     (k : Nat) (hk : k < 2) :
@@ -216,12 +216,12 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
       (show (s₀.gpr .esp + BitVec.ofNat 32 8).setWidth 64 = argAddr s₀ 1 from rfl), reads 0 (by decide), reads 1 (by decide),
       (show s₀.mem.readW (argAddr s₀ 0) 32 = arg s₀ 0 from rfl),
       (show s₀.mem.readW (argAddr s₀ 1) 32 = arg s₀ 1 from rfl), shr32]
-    exact ⟨⟨by omega, Frame.refl _ _⟩, rfl⟩
+    exact ⟨⟨by omega_using [], Frame.refl _ _⟩, rfl⟩
   unfold zeroize
   refine WP.seq (WP.mono start fun t ⟨ht, hc⟩ => ?_)
-  refine WP.seq (WP.mono (loopOf_ok wideStep 32 (by decide) s₀ t 0 (n / 32) (by dsimp [n]; omega)
+  refine WP.seq (WP.mono (loopOf_ok wideStep 32 (by decide) s₀ t 0 (n / 32) (by dsimp [n]; omega_using [])
     (fun j u hj hu => by
-      have := wideStep_ok s₀ u hp _ (by dsimp [n] at hj ⊢; omega) hu
+      have := wideStep_ok s₀ u hp _ (by dsimp [n] at hj ⊢; omega_using [hj]) hu
       rwa [Nat.mul_succ, ← Nat.add_assoc]) ht hc) fun u ⟨hu, _⟩ => ?_)
   obtain ⟨hread, hval⟩ := read_arg s₀ u hp _ hu 1 (by decide)
   have mid : WP isa (.block [.mov .edx (.mem {base := .esp, disp := 8}), .shift .shr .edx 2,
@@ -233,7 +233,7 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
     have hu' : Inv s₀ (32 * (n / 32)) u := by simpa only [Nat.zero_add] using hu
     exact ⟨hu'.1, hu'.2.2⟩
   refine WP.seq (WP.mono mid fun v ⟨hv, hcv⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok true s₀ v hp (32 * (n / 32)) (n / 4 % 8) (by dsimp [n]; omega) hv hcv)
+  refine WP.seq (WP.mono (loop_ok true s₀ v hp (32 * (n / 32)) (n / 4 % 8) (by dsimp [n]; omega_using []) hv hcv)
     fun w ⟨hw, _⟩ => ?_)
   obtain ⟨hread', hval'⟩ := read_arg s₀ w hp _ hw 1 (by decide)
   have tl : WP isa (.block [.mov .edx (.mem {base := .esp, disp := 8}), .alu .and .edx (.imm 3)]) w
@@ -244,8 +244,8 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
     have hw' : Inv s₀ (32 * (n / 32) + 4 * (n / 4 % 8)) w := by simpa only [↓reduceIte] using hw
     exact ⟨hw'.1, hw'.2.2⟩
   refine WP.seq (WP.mono tl fun x ⟨hx, hcx⟩ => ?_)
-  refine WP.mono (loop_ok false s₀ x hp _ (n % 4) (by dsimp [n]; simp; omega) hx hcx) fun y ⟨hy, _⟩ => ?_
-  have he : 32 * (n / 32) + 4 * (n / 4 % 8) + (if false then 4 else 1) * (n % 4) = n := by simp; omega
+  refine WP.mono (loop_ok false s₀ x hp _ (n % 4) (by dsimp [n]; simp; omega_using []) hx hcx) fun y ⟨hy, _⟩ => ?_
+  have he : 32 * (n / 32) + 4 * (n / 4 % 8) + (if false then 4 else 1) * (n % 4) = n := by simp; omega_using []
   rw [he] at hy
   exact ⟨prefix_spec hy.2.2.2.2.2.1, hy.2.2.2.2.2.2⟩
 
@@ -275,7 +275,7 @@ theorem verified : Verified target zeroize (Spec.Zeroize.zeroizeContract abi) :=
     intro s t hs ht hp
     refine agree_argTaint (k := 2) (fun _ h => nomatch h) hp.1 (args_out s hs) (args_out t ht) ?_
     intro i hi
-    rcases (show i=0 ∨ i=1 by omega) with rfl | rfl
+    rcases (show i=0 ∨ i=1 by omega_using [hi]) with rfl | rfl
     · exact hp.2.1
     · exact hp.2.2
   · sig_implies [Spec.Zeroize.zeroizeContract, Spec.Zeroize.zeroizeSig, contract, abi, argSlots,

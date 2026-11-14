@@ -54,7 +54,7 @@ theorem prep_widen {c : Prog isa} {s s' : State} {b : BitVec 32} {len : Nat} {t 
     (he : Exec isa c (prepNarrow s b) t s') : Exec isa c s t (s'.withRegions s.rd s.wr) := by
   have hc : Covers [⟨State.addr b, 4 * slots⟩] s.wr := Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨State.addr b, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by change 0 + 4 * slots ≤ len; omega⟩
+    exact ⟨⟨State.addr b, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by change 0 + 4 * slots ≤ len; omega_using [hl]⟩
   have h := Exec.widen he (Covers.append (Covers.refl _) hc) hc
   change Exec isa c s t (s'.withRegions s.rd s.wr) at h
   exact h
@@ -64,15 +64,15 @@ theorem prepared_abi {s s' : State} (h : ∀ i < 9, s'.gpr (sreg i) = s.gpr (sre
   refine ⟨fun r hr => ?_, hsp⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h 0 (by omega)
-  · exact h 1 (by omega)
-  · exact h 2 (by omega)
-  · exact h 3 (by omega)
-  · exact h 4 (by omega)
-  · exact h 5 (by omega)
-  · exact h 6 (by omega)
-  · exact h 7 (by omega)
-  · exact h 8 (by omega)
+  · exact h 0 (by omega_using [])
+  · exact h 1 (by omega_using [])
+  · exact h 2 (by omega_using [])
+  · exact h 3 (by omega_using [])
+  · exact h 4 (by omega_using [])
+  · exact h 5 (by omega_using [])
+  · exact h 6 (by omega_using [])
+  · exact h 7 (by omega_using [])
+  · exact h 8 (by omega_using [])
 
 theorem prepared_keeps_outside {m m' : Mem} {b : BitVec 32} {len : Nat}
     (hf : Frame [⟨State.addr b, 4 * slots⟩] m m') (fit : b.toNat + len * 8 ≤ 2 ^ 32)
@@ -81,8 +81,8 @@ theorem prepared_keeps_outside {m m' : Mem} {b : BitVec 32} {len : Nat}
   refine hf _ fun r hr hc => ?_
   simp only [List.mem_singleton] at hr; subst hr
   simp only [Region.Contains] at hc
-  rw [Mem.sub_ofNat_toNat _ (by omega)] at hc
-  omega
+  rw [Mem.sub_ofNat_toNat _ (by omega_using [fit, hi])] at hc
+  omega_using [hout, hc]
 
 def prepArm : Contract isa where
   pre s :=
@@ -102,8 +102,8 @@ theorem prepared_prep_correct (s : State) (hs : prepArm.pre s) :
     ∃ t s', Exec isa prepareKeys s t s' ∧ abiPreserved s s' ∧ prepArm.post s s' := by
   obtain ⟨rd, wr, sep, fitK, fitW, -, hsz⟩ := hs
   rw [prepared_size_eq] at hsz
-  have hl : 4 * slots ≤ (s.gpr .r3).toNat * 8 := by omega
-  have hw : ScrIn (prepNarrow s (s.gpr .r2)).wr (s.gpr .r2) := ⟨by simp, by omega⟩
+  have hl : 4 * slots ≤ (s.gpr .r3).toNat * 8 := by omega_using [hsz]
+  have hw : ScrIn (prepNarrow s (s.gpr .r2)).wr (s.gpr .r2) := ⟨by simp, by omega_using [fitW, hsz]⟩
   obtain ⟨t, s', he, hg, -, -, hsp, hf, hwords⟩ := prepareBody_wp hw rfl rfl
     (by simp [prepNarrow, rd]) fitK (sep.sub_right (Region.sub_prefix hl))
   have he' := prep_widen wr hl he
@@ -111,10 +111,10 @@ theorem prepared_prep_correct (s : State) (hs : prepArm.pre s) :
   · apply holds_of_words hw.fit
     rw [ofSpecDir_directionOf]
     exact hwords
-  · apply prepared_keeps_outside hf fitW (by omega)
+  · apply prepared_keeps_outside hf fitW (by omega_using [hi])
     have h := hout (0, 4 * slots) (by simp [layout])
     dsimp only at h
-    omega
+    omega_using [h]
 
 def cryptArm : Contract isa where
   pre s :=
@@ -145,8 +145,8 @@ theorem prepared_crypt_correct (s : State) (hs : cryptArm.pre s) :
     ∃ t s', Exec isa cryptPrepared s t s' ∧ abiPreserved s s' ∧ cryptArm.post s s' := by
   obtain ⟨-, wr, fitW, hsz, k₀, d₀, hH⟩ := hs
   rw [prepared_size_eq] at hsz
-  have hl : 4 * slots ≤ (s.gpr .r1).toNat * 8 := by omega
-  have hw : ScrIn (prepNarrow s (s.gpr .r0)).wr (s.gpr .r0) := ⟨by simp, by omega⟩
+  have hl : 4 * slots ≤ (s.gpr .r1).toNat * 8 := by omega_using [hsz]
+  have hw : ScrIn (prepNarrow s (s.gpr .r0)).wr (s.gpr .r0) := ⟨by simp, by omega_using [fitW, hsz]⟩
   have hwords := words_of_holds hw.fit hH
   obtain ⟨t, s', he, hg, -, -, hsp, hf, hR, -⟩ :=
     cryptBody_wp hw rfl (readyAt_of_words hwords)
@@ -167,13 +167,13 @@ theorem prepared_crypt_correct (s : State) (hs : cryptArm.pre s) :
       have htable : 384 ≤ i ∧ i < 1408 := by
         rw [slots_eq] at hi'
         rw [tableSlot_eq] at hLo; rw [savedSlot_eq, slots_eq] at hHi
-        omega
+        omega_using [hi', hLo, hHi]
       have hH' := holds_of_words hw.fit (words_of_readyAt hR)
-      have a := hH (384, 1024) (by rw [layout_table]; simp) (i - 384) (by omega)
-      have a' := hH' (384, 1024) (by rw [layout_table]; simp) (i - 384) (by omega)
+      have a := hH (384, 1024) (by rw [layout_table]; simp) (i - 384) (by omega_using [htable])
+      have a' := hH' (384, 1024) (by rw [layout_table]; simp) (i - 384) (by omega_using [htable])
       dsimp only at a a'
-      rw [show 384 + (i - 384) = i by omega] at a a'
+      rw [show 384 + (i - 384) = i by omega_using [htable]] at a a'
       exact a'.trans a.symm
-    · exact prepared_keeps_outside hf fitW (by omega) (by omega)
+    · exact prepared_keeps_outside hf fitW (by omega_using [hi]) (by omega_using [hi'])
 
 end VG.Proof.Sm4.Arm

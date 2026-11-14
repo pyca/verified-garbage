@@ -61,7 +61,7 @@ theorem kakb_halves (kl kr : BitVec 128) :
 theorem getLsbD_ofBytes_bytesAt (m : Mem) (p : Addr) {n len k : Nat} (hk : k < n) (hl : 8 * len = n) :
     (ofBytes n (bytesAt m p len)).getLsbD k = (m (p + BitVec.ofNat 64 (len - 1 - k / 8))).getLsbD (k % 8) := by
   rw [getLsbD_ofBytes n _ hk (by simp [bytesAt, hl])]
-  simp [bytesAt, show len - 1 - k / 8 < len by omega]
+  simp [bytesAt, show len - 1 - k / 8 < len by omega_using [hk, hl]]
 
 theorem getLsbD_wordAt (m : Mem) (p : Addr) {k : Nat} (hk : k < 64) :
     (wordAt m p).getLsbD k = (m (p + BitVec.ofNat 64 (7 - k / 8))).getLsbD (k % 8) :=
@@ -83,57 +83,57 @@ theorem klkr_halves (m : Mem) (p : Addr) {len : Nat} (hlen : len = 16 ∨ len = 
   · simp only [klkr, hl, ↓reduceIte]
     refine ⟨?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_getLsbD_eq <;> intro t ht
     · simp only [hiW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 128) (len := 16) (k := 64 + t) (by omega) rfl, getLsbD_wordAt m p ht]
-      rw [show 16 - 1 - (64 + t) / 8 = 7 - t / 8 by omega, show (64 + t) % 8 = t % 8 by omega]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 128) (len := 16) (k := 64 + t) (by omega_using [ht]) rfl, getLsbD_wordAt m p ht]
+      rw [show 16 - 1 - (64 + t) / 8 = 7 - t / 8 by omega_using [], show (64 + t) % 8 = t % 8 by omega_using []]
     · simp only [loW, BitVec.getLsbD_setWidth, ht, decide_true, Bool.true_and]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 128) (len := 16) (k := t) (by omega) rfl, wordAt_off_bit m p 8 ht,
-        show 16 - 1 - t / 8 = 8 + (7 - t / 8) by omega]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 128) (len := 16) (k := t) (by omega_using [ht]) rfl, wordAt_off_bit m p 8 ht,
+        show 16 - 1 - t / 8 = 8 + (7 - t / 8) by omega_using [ht]]
     · simp [hiW]
     · simp [loW]
   · simp only [klkr, hl, show (24 : Nat) ≠ 16 by decide, ↓reduceIte]
     refine ⟨?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_getLsbD_eq <;> intro t ht
     · simp only [hiW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and,
-        show 64 + t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := 64 + (64 + t)) (by omega) rfl,
-        getLsbD_wordAt m p ht, show 24 - 1 - (64 + (64 + t)) / 8 = 7 - t / 8 by omega,
-        show (64 + (64 + t)) % 8 = t % 8 by omega]
+        show 64 + t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := 64 + (64 + t)) (by omega_using [ht]) rfl,
+        getLsbD_wordAt m p ht, show 24 - 1 - (64 + (64 + t)) / 8 = 7 - t / 8 by omega_using [],
+        show (64 + (64 + t)) % 8 = t % 8 by omega_using []]
     · simp only [loW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and,
-        show t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := 64 + t) (by omega) rfl,
-        wordAt_off_bit m p 8 ht, show 24 - 1 - (64 + t) / 8 = 8 + (7 - t / 8) by omega,
-        show (64 + t) % 8 = t % 8 by omega]
+        show t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := 64 + t) (by omega_using [ht]) rfl,
+        wordAt_off_bit m p 8 ht, show 24 - 1 - (64 + t) / 8 = 8 + (7 - t / 8) by omega_using [ht],
+        show (64 + t) % 8 = t % 8 by omega_using []]
     · simp only [hiW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_or,
         BitVec.getLsbD_shiftLeft, BitVec.getLsbD_not, ht, decide_true, Bool.true_and,
-        show 64 + t < 128 by omega, show ¬ 64 + t < 64 by omega, show 64 + t - 64 = t by omega,
+        show 64 + t < 128 by omega_using [ht], show ¬ 64 + t < 64 by omega_using [], show 64 + t - 64 = t by omega_using [],
         decide_false, Bool.false_and, Bool.or_false, Bool.not_false, Bool.and_true]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := t) (by omega) rfl,
-        wordAt_off_bit m p 16 ht, show 24 - 1 - t / 8 = 16 + (7 - t / 8) by omega]
-      simp only [show t < 128 by omega, decide_true, Bool.true_and]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := t) (by omega_using [ht]) rfl,
+        wordAt_off_bit m p 16 ht, show 24 - 1 - t / 8 = 16 + (7 - t / 8) by omega_using [ht]]
+      simp only [show t < 128 by omega_using [ht], decide_true, Bool.true_and]
     · simp only [loW, BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_not,
-        ht, decide_true, Bool.true_and, show t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := t) (by omega) rfl,
-        wordAt_off_bit m p 16 ht, show 24 - 1 - t / 8 = 16 + (7 - t / 8) by omega]
+        ht, decide_true, Bool.true_and, show t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 192) (len := 24) (k := t) (by omega_using [ht]) rfl,
+        wordAt_off_bit m p 16 ht, show 24 - 1 - t / 8 = 16 + (7 - t / 8) by omega_using [ht]]
       simp only [Bool.not_true, Bool.false_and, Bool.false_or]
   · simp only [klkr, hl, show (32 : Nat) ≠ 16 by decide, show (32 : Nat) ≠ 24 by decide, ↓reduceIte]
     refine ⟨?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_getLsbD_eq <;> intro t ht
     · simp only [hiW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and,
-        show 64 + t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := 128 + (64 + t)) (by omega) rfl,
-        getLsbD_wordAt m p ht, show 32 - 1 - (128 + (64 + t)) / 8 = 7 - t / 8 by omega,
-        show (128 + (64 + t)) % 8 = t % 8 by omega]
+        show 64 + t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := 128 + (64 + t)) (by omega_using [ht]) rfl,
+        getLsbD_wordAt m p ht, show 32 - 1 - (128 + (64 + t)) / 8 = 7 - t / 8 by omega_using [],
+        show (128 + (64 + t)) % 8 = t % 8 by omega_using []]
     · simp only [loW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and,
-        show t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := 128 + t) (by omega) rfl,
-        wordAt_off_bit m p 8 ht, show 32 - 1 - (128 + t) / 8 = 8 + (7 - t / 8) by omega,
-        show (128 + t) % 8 = t % 8 by omega]
+        show t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := 128 + t) (by omega_using [ht]) rfl,
+        wordAt_off_bit m p 8 ht, show 32 - 1 - (128 + t) / 8 = 8 + (7 - t / 8) by omega_using [ht],
+        show (128 + t) % 8 = t % 8 by omega_using []]
     · simp only [hiW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and,
-        show 64 + t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := 64 + t) (by omega) rfl,
-        wordAt_off_bit m p 16 ht, show 32 - 1 - (64 + t) / 8 = 16 + (7 - t / 8) by omega,
-        show (64 + t) % 8 = t % 8 by omega]
-    · simp only [loW, BitVec.getLsbD_setWidth, ht, decide_true, Bool.true_and, show t < 128 by omega]
-      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := t) (by omega) rfl,
-        wordAt_off_bit m p 24 ht, show 32 - 1 - t / 8 = 24 + (7 - t / 8) by omega]
+        show 64 + t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := 64 + t) (by omega_using [ht]) rfl,
+        wordAt_off_bit m p 16 ht, show 32 - 1 - (64 + t) / 8 = 16 + (7 - t / 8) by omega_using [ht],
+        show (64 + t) % 8 = t % 8 by omega_using []]
+    · simp only [loW, BitVec.getLsbD_setWidth, ht, decide_true, Bool.true_and, show t < 128 by omega_using [ht]]
+      rw [getLsbD_ofBytes_bytesAt m p (n := 256) (len := 32) (k := t) (by omega_using [ht]) rfl,
+        wordAt_off_bit m p 24 ht, show 32 - 1 - t / 8 = 24 + (7 - t / 8) by omega_using [ht]]
 
 /-- A half of `H ++ L` rotated left by `r`, from the halves: the high one
 if `hi`. -/
@@ -146,14 +146,14 @@ theorem rot128_bit (H L : BitVec 64) {r k : Nat} (hr : r < 128) (hk : k < 128) :
     ((H ++ L : BitVec (64 + 64)).rotateLeft r).getLsbD k =
       if (k + 128 - r) % 128 < 64 then L.getLsbD ((k + 128 - r) % 128) else H.getLsbD ((k + 128 - r) % 128 - 64) := by
   rw [BitVec.getLsbD_rotateLeft]
-  simp only [show r % (64 + 64) = r by omega]
-  split <;> rename_i h1 <;> simp only [BitVec.getLsbD_append, show k < 64 + 64 by omega, decide_true, Bool.true_and] <;>
-    split <;> rename_i h2 <;> split <;> rename_i h3 <;> first | omega | (congr 1; omega)
+  simp only [show r % (64 + 64) = r by omega_using [hr]]
+  split <;> rename_i h1 <;> simp only [BitVec.getLsbD_append, show k < 64 + 64 by omega_using [hk], decide_true, Bool.true_and] <;>
+    split <;> rename_i h2 <;> split <;> rename_i h3 <;> first | omega | (congr 1; omega_arith)
 
 theorem hi_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : hi (H ++ L) r = rotHalf H L r true := by
   apply BitVec.eq_of_getLsbD_eq; intro t ht
   change ((((H ++ L : BitVec (64 + 64)).rotateLeft r) >>> 64).setWidth 64).getLsbD t = _
-  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, rot128_bit H L hr (by omega)]
+  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, rot128_bit H L hr (by omega_using [ht])]
   simp only [ht, decide_true, Bool.true_and, rotHalf]
   by_cases h64 : r < 64 <;> by_cases h0 : r % 64 = 0 <;>
     simp only [h64, h0, decide_true, decide_false, ↓reduceIte, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
@@ -164,12 +164,12 @@ theorem hi_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : hi (H ++ L) r = rotHa
       Bool.false_or]) <;>
     split <;> rename_i h1 <;>
     (try rw [BitVec.getLsbD_of_ge _ (64 - r % 64 + t) (by omega), Bool.or_false]) <;>
-    first | omega | (congr 1; omega))
+    first | omega | (congr 1; omega_arith))
 
 theorem lo_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : lo (H ++ L) r = rotHalf H L r false := by
   apply BitVec.eq_of_getLsbD_eq; intro t ht
   change (((H ++ L : BitVec (64 + 64)).rotateLeft r).setWidth 64).getLsbD t = _
-  rw [BitVec.getLsbD_setWidth, rot128_bit H L hr (by omega)]
+  rw [BitVec.getLsbD_setWidth, rot128_bit H L hr (by omega_using [ht])]
   simp only [ht, decide_true, Bool.true_and, rotHalf]
   by_cases h64 : r < 64 <;> by_cases h0 : r % 64 = 0 <;>
     simp only [h64, h0, decide_true, decide_false, ↓reduceIte, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
@@ -180,7 +180,7 @@ theorem lo_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : lo (H ++ L) r = rotHa
       Bool.false_or]) <;>
     split <;> rename_i h1 <;>
     (try rw [BitVec.getLsbD_of_ge _ (64 - r % 64 + t) (by omega), Bool.or_false]) <;>
-    first | omega | (congr 1; omega))
+    first | omega | (congr 1; omega_arith))
 
 
 theorem split128 (x : BitVec 128) : x = hiW x ++ loW x := by
@@ -190,7 +190,7 @@ theorem split128 (x : BitVec 128) : x = hiW x ++ loW x := by
   simp only [hiW, loW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
   split
   · simp [*]
-  · simp only [show i - 64 < 64 by omega, decide_true, Bool.true_and]; congr 1; omega
+  · simp only [show i - 64 < 64 by omega_using [hi], decide_true, Bool.true_and]; congr 1; omega_arith
 
 theorem hi_split (x : BitVec 128) {r : Nat} (hr : r < 128) : hi x r = rotHalf (hiW x) (loW x) r true := by
   rw [← hi_eq _ _ hr, ← split128]

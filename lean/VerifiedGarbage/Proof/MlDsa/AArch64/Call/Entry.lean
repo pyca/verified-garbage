@@ -77,7 +77,7 @@ theorem Args.sp {as : List (Reg × Arg)} {s s1 : State} (h : Args as s s1) : s1.
 theorem Args.mem {as : List (Reg × Arg)} {s s1 : State} (h : Args as s s1) : s1.mem = s.mem := h.1.2
 
 theorem imm32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.setWidth 32 (BitVec.ofNat 64 v)).toNat = v := by
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem ptr_ok {p : Ptr} (h : p.1 ∈ keptRegs) : (Arg.ptr p).Ok := by
   show p.1 ∉ argRegs

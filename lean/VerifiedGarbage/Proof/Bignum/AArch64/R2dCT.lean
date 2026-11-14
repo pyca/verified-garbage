@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 Every loop count, branch and address of `fast` depends on the working
 space's layout alone (`r2dFast_ct`): each step's loads of the bases from the
 header, then the rest checked by the taint analysis from those bases
-(`r2dStep_ct`), and `steps`' count `w` (`steps_ct`).
+(`r2dStep_ct`), whose `quot3` tests `w` alone, and `steps`' count `w` (`steps_ct`).
 -/
 
 @[expose] public section
@@ -89,11 +89,10 @@ theorem pins_r2dGood {α : Type} {Φ : α → State → Prop} (f : α → Ws) (h
 /-- After `bases`. -/
 def R2dStepR (L : Ws) (s : State) : Prop := R2dGoodS L s ∧ StepRegs s L.B L.w
 
-theorem pins_r2dStepR : Pins R2dStepR [.x8, .x9, .x11, .x6, .x12, .x7] := by
+theorem pins_r2dStepR : Pins R2dStepR [.x9, .x11, .x6, .x12, .x7] := by
   intro L s₁ s₂ h₁ h₂ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [h₁.2.x8, h₂.2.x8]
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · rw [h₁.2.x9, h₂.2.x9]
   · rw [h₁.2.x11, h₂.2.x11]
   · rw [h₁.2.x6, h₂.2.x6]
@@ -102,28 +101,15 @@ theorem pins_r2dStepR : Pins R2dStepR [.x8, .x9, .x11, .x6, .x12, .x7] := by
 
 theorem r2dBases_ok {L : Ws} {t : State} (h : R2dGoodS L t) : WP isa (.block R2Div.bases) t (R2dStepR L) := by
   obtain ⟨mi, hg, hw, hw'⟩ := h
-  have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off L.B (8 * i)) 8 := fun i hi =>
-    hg.1.scr.ld (by have := hdr_lt_slot L.w 8 hi; have := hg.2; omega_arith)
-  refine WP.mono (WP.keep [.x6, .x7, .x8, .x9, .x11, .x12] (Q := fun t' => (t'.gpr .x8 = off L.B (slot L.w aAcc) ∧
-      t'.gpr .x9 = off L.B (slot L.w aN) ∧ t'.gpr .x11 = off L.B (slot L.w aR2) ∧
-      t'.gpr .x6 = off L.B (slot L.w aTmp) ∧ t'.gpr .x12 = BitVec.ofNat 64 L.w ∧ t'.gpr .x7 = 0) ∧ t'.mem = t.mem)
-    (by
-      brun [R2Div.bases, hg.1.x0, hdr_enc (show sArr aAcc < 32 by decide), hdr_enc (show sArr aN < 32 by decide),
-        hdr_enc (show sArr aR2 < 32 by decide), hdr_enc (show sArr aTmp < 32 by decide),
-        hdr_enc (show sW < 32 by decide), hl (sArr aAcc) (by decide), hl (sArr aN) (by decide),
-        hl (sArr aR2) (by decide), hl (sArr aTmp) (by decide), hl sW (by decide),
-        hg.1.hdr.harr aAcc (by decide), hg.1.hdr.harr aN (by decide), hg.1.hdr.harr aR2 (by decide),
-        hg.1.hdr.harr aTmp (by decide), hg.1.hdr.hw])
-    (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨⟨a, b, c, d, e, f⟩, hm⟩, k⟩ =>
-      ⟨⟨mi, ⟨hg.1.keep hm k (by decide), hg.2⟩, hw, hw'⟩, ⟨a, b, c, d, e, f⟩⟩
+  exact WP.mono (r2dBasesRun_ok hg.1 hg.2) fun t' ⟨⟨r, hm⟩, k⟩ =>
+    ⟨⟨mi, ⟨hg.1.keep hm k (by decide), hg.2⟩, hw, hw'⟩, r⟩
 
 theorem quot_stepR {L : Ws} {t : State} (h : R2dStepR L t) : WP isa (.block quot) t (R2dStepR L) := by
   obtain ⟨⟨mi, hg, hw, hw'⟩, hr⟩ := h
   exact WP.mono (quot_runs hg.1.scr hr.x11 hr.x9 hr.x12 hr.x6 hw hw' hg.2) fun t' ⟨hm, k⟩ =>
     ⟨⟨mi, ⟨hg.1.keep hm k (by decide), hg.2⟩, hw, hw'⟩, hr.keep k⟩
 
-theorem r2dStep_eq : step = .seq (.block (R2Div.bases ++ quot))
-    (.seq zeroAcc (.seq mulAddRow (.seq subPass (.seq addBack (.seq addBack copyBack))))) := rfl
+theorem r2dStep_eq : step = .seq (.block (R2Div.bases ++ quot)) (.seq (.block quot3) (.seq mulSub addBack)) := rfl
 
 /-- A step leaks the same in runs with the same working space. -/
 theorem r2dStep_ct : RelCT isa (Two R2dGoodS) step fun _ _ => True := by

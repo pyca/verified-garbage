@@ -22,7 +22,7 @@ theorem advance_ok (s : State) : WP isa (.block advance) s fun t => Only [.x24,.
       wp_subImm (by decide) fun t h5 e5 => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact ((((h1.trans h2).trans h3).trans h4).trans h5).mono (by simp)
   · intro k hk
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl
     · change t.gpr .x24 = s.gpr .x24+168
       rw [h5.get .x24,h4.get .x24,h3.get .x24,h2.get .x24,e1]; rfl
     · change t.gpr .x25 = s.gpr .x25+168

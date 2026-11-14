@@ -68,7 +68,7 @@ private theorem head_first (q : SPoint) (s : State) (h : SCandidated q s) :
   have hst : q.status < 3 := status_lt (q.inputs.cand q.used)
   have h0 : (s.gpr .x0).setWidth 32 = BitVec.ofNat 32 q.status := by
     apply BitVec.eq_of_toNat_eq
-    rw [hp.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hp.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hst])]
   refine WP.mono (WP.keep [.x9, .x11] (Q := fun t =>
     (t.gpr .x11 = q.inputs.up ∧ t.gpr .x9 = BitVec.ofNat 64 q.status) ∧ t.mem = s.mem) ?_
     (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨⟨h11, h9⟩, hm⟩, k⟩ => ?_
@@ -76,7 +76,7 @@ private theorem head_first (q : SPoint) (s : State) (h : SCandidated q s) :
       VG.Proof.RsaKeyGen.AArch64.exec_addImm_w (show 0 < 4096 by decide), h0]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.add_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hst]
   · refine ⟨⟨original, h.keep k hm, hk, ?_⟩, h11, h9⟩
     unfold CandPost at hp ⊢
     rw [hm, k.gpr .x0 (by decide)]
@@ -278,7 +278,7 @@ private theorem iteration_pair (c : Cand) (n : Nat) :
     refine ⟨(nextPoint q).k + 1, ?_, nextPoint q, rfl, h₁.2, h₂.2, hsp⟩
     have := hb.1
     simp only [nextPoint]
-    omega
+    omega_using [hn, this]
   · simp only [SCTStep, hb, ite_false] at h₁ h₂
     exact ⟨h₁.trans h₂.symm, fun _ => trivial, fun ht => absurd (ht.symm.trans h₁) (by decide)⟩
 

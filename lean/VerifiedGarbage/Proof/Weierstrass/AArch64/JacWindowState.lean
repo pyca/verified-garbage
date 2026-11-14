@@ -44,7 +44,7 @@ theorem Inv.of_progKeep {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     · exact hlt x hw
     · have hv : x ∈ V := (List.mem_append.mp hx).resolve_left hw
       have hb := hL.le x (hI.sl x hv)
-      rw [hk.unch.wordsVal (fun w hw' => ?_) (by omega)]
+      rw [hk.unch.wordsVal (fun w hw' => ?_) (by omega_using [hn, hb])]
       · exact hI.lt x hv
       · simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw'
         rcases hw' with ⟨y,hy,rfl⟩ | rfl

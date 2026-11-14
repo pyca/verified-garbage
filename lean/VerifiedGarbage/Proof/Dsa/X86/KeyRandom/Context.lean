@@ -158,7 +158,7 @@ theorem rLow_eq (s₀ : State) : rLow s₀ = off (rCall s₀) 88 := by
   simp only [rLow, rCall, off]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem rLow_off (s₀ : State) (d : Nat) : off (rLow s₀) d = off (rCall s₀) (88 + d) := by
   rw [rLow_eq, off, off, off, Offset.add_add]
@@ -200,33 +200,33 @@ theorem rLow_toNat : (rLow s₀).toNat = (s₀.gpr .esp).toNat - 144 := by
   have := A.stackLow
   have := (s₀.gpr .esp).isLt
   rw [rLow, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := (s₀.gpr .esp).toNat) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := (s₀.gpr .esp).toNat) (by omega_using [])]
+  omega_arith
 
 theorem rLow_fit {d : Nat} (hd : d ≤ 192) : (rLow s₀).toNat + d ≤ 2 ^ 32 := by
-  have := A.stackBound; rw [rLow_toNat A]; omega
+  have := A.stackBound; rw [rLow_toNat A]; omega_using [hd, this]
 
 theorem off_rLow_toNat {d : Nat} (hd : d ≤ 192) : (off (rLow s₀) d).toNat = (rLow s₀).toNat + d := by
   have := rLow_fit A hd
-  rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]),
+    Nat.mod_eq_of_lt (by omega_using [this])]
 
 theorem argAddr_eq {j : Nat} (hj : j < 11) : argAddr s₀ j = off (rLow s₀) (148 + 4 * j) := by
   apply BitVec.eq_of_toNat_eq
   have := A.stackBound
-  rw [off_rLow_toNat A (by omega), rLow_toNat A, argAddr, BitVec.toNat_setWidth, BitVec.toNat_add,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 + 4 * j) (by omega), Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [off_rLow_toNat A (by omega_using [hj]), rLow_toNat A, argAddr, BitVec.toNat_setWidth, BitVec.toNat_add,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 + 4 * j) (by omega_using [hj]), Nat.mod_eq_of_lt (by omega_using []),
+    Nat.mod_eq_of_lt (by omega_using [hj, this])]
   have := A.stackLow
-  omega
+  omega_using [this]
 
 theorem rBase_arg {j : Nat} (hj : j < 11) : off (rBase s₀) (argOff j) = argAddr s₀ j := by
-  rw [rBase_off, argAddr_eq A hj, show 24 + argOff j = 148 + 4 * j by unfold argOff KeyRandom.frameBytes; omega]
+  rw [rBase_off, argAddr_eq A hj, show 24 + argOff j = 148 + 4 * j by unfold argOff KeyRandom.frameBytes; omega_using []]
 
 /-- The frame reserved on entry. -/
 theorem alloc_base : (s₀.gpr .esp - BitVec.ofNat 32 KeyRandom.frameBytes).setWidth 64 = rBase s₀ := by
   have := A.stackLow
-  rw [show KeyRandom.frameBytes = 120 from rfl, Taint.sub_setWidth (by omega), rBase, rLow, off,
+  rw [show KeyRandom.frameBytes = 120 from rfl, Taint.sub_setWidth (by omega_using [this]), rBase, rLow, off,
     Offset.sub_ofNat_eq _ (show 120 ≤ 144 by decide)]
 
 theorem alloc_rf : RF (allocated KeyRandom.frameBytes s₀) (rBase s₀) := by
@@ -234,7 +234,7 @@ theorem alloc_rf : RF (allocated KeyRandom.frameBytes s₀) (rBase s₀) := by
   · rw [allocated_wr, alloc_base A]; exact List.mem_cons_self
   · rw [allocated_wr, rBase_arg A (by decide), A.wr]; simp
   · have := rLow_fit A (d := 192) (by decide)
-    rw [rBase, off_rLow_toNat A (by decide)]; unfold argOff KeyRandom.frameBytes; omega
+    rw [rBase, off_rLow_toNat A (by decide)]; unfold argOff KeyRandom.frameBytes; omega_using [this]
 
 /-- The arguments' 44 bytes are apart from where the body writes. -/
 theorem args_apart : ∀ r ∈ rWrites s₀, Region.Disjoint ⟨argAddr s₀ 0, 44⟩ r := by
@@ -284,7 +284,7 @@ theorem frame_store (s₀ : State) (m : Mem) {d : Nat} (hd : d + 4 ≤ KeyRandom
   refine Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) v ?_
   rw [rBase_off, rLow_off]
   have : KeyRandom.frameBytes = 120 := rfl
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hd, this]) (by omega_using [hd, this])
 
 /-- A byte store to the frame. -/
 theorem frame_store8 (s₀ : State) (m : Mem) {d : Nat} (hd : d + 1 ≤ KeyRandom.frameBytes)
@@ -292,7 +292,7 @@ theorem frame_store8 (s₀ : State) (m : Mem) {d : Nat} (hd : d + 1 ≤ KeyRando
   refine Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) v ?_
   rw [rBase_off, rLow_off]
   have : KeyRandom.frameBytes = 120 := rfl
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hd, this]) (by omega_using [hd, this])
 
 /-- The caller's arguments. -/
 theorem Ready.arg {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) {j : Nat} (hj : j < 11) :
@@ -302,7 +302,7 @@ theorem Ready.arg {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) {j : Nat
   · exact Offset.contains_base _ (show 0 + 4 ≤ 4 by decide) (by decide) |> fun h => by
       simpa only [BitVec.add_zero] using h
   · rw [argAddr_eq A hj, argAddr_eq A (by decide)]
-    exact Offset.sub _ (by omega) (by omega)
+    exact Offset.sub _ (by omega_using []) (by omega_using [hj])
 
 theorem Ready.argSrc {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) {j : Nat} (hj : j < 11) :
     readSrc t (.mem (KeyRandom.arg j)) = some (X86.arg s₀ j) := by
@@ -315,10 +315,10 @@ theorem Ready.bytes {s₀ t : State} (h : Ready s₀ t) {p : BitVec 32} {n : Nat
     BytesIn t p (Spec.Rsa.bytesAt s₀.mem (p.setWidth 64) n) := by
   refine ⟨by rw [rBytes_length]; exact hfit, fun i hi => ?_, fun i hi => ?_⟩
   · rw [rBytes_length] at hi
-    exact ⟨_, List.mem_append_left _ (h.rd ▸ hr), Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ (h.rd ▸ hr), Offset.contains_base _ (by omega_using [hi]) (by omega_using [hfit, hi])⟩
   · rw [rBytes_length] at hi
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range]
-    exact h.frame.bytes (R := ⟨p.setWidth 64, n⟩) hd (show n ≤ 2 ^ 64 by omega) hi
+    exact h.frame.bytes (R := ⟨p.setWidth 64, n⟩) hd (show n ≤ 2 ^ 64 by omega_using [hfit]) hi
 
 theorem Ready.rand {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
     BytesIn t (X86.arg s₀ 7) (rInput s₀).rand := by
@@ -342,18 +342,18 @@ theorem Ready.key {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
 
 theorem rQBytes_length {s₀ : State} (A : KeyABI s₀) : (rQBytes s₀).length = (X86.arg s₀ 6).toNat := by
   simp only [rQBytes, rInput, List.length_take, List.length_drop, rBytes_length, A.keyLength]
-  omega
+  omega_using []
 
 theorem rQBytes_le {s₀ : State} (A : KeyABI s₀) : (rQBytes s₀).length ≤ 32 := by
-  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 theorem rQBytes_pos {s₀ : State} (A : KeyABI s₀) : 0 < (rQBytes s₀).length := by
-  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [rQBytes_length A]; have := A.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 theorem Ready.q {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) : BytesIn t (rQ s₀) (rQBytes s₀) := by
   have hk := h.key A
   have hp : (X86.arg s₀ 5).toNat ≤ (rInput s₀).key.length := by
-    simp only [rInput, rBytes_length, A.keyLength]; omega
+    simp only [rInput, rBytes_length, A.keyLength]; omega_using []
   have := (hk.drop _ hp).take (rInput s₀).qLen
   simpa only [rQ, rQBytes, rInput, BitVec.ofNat_toNat, BitVec.setWidth_eq] using this
 

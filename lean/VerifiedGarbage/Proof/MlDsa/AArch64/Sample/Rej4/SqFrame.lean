@@ -22,13 +22,13 @@ theorem pair_frame {σ : State} {p n i : Nat} (hp : p < 2) (hn : n < 6) (hi : i 
   simp only [blockW,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.disjoint (scr σ) (d := 400*i) (n := 400) (e := 400*p) (k := 400)
-      (by omega) (by omega) (by omega)
+      (by omega_using [hip]) (by omega_using [hi]) (by omega_using [hp])
   · exact Offset.disjoint (scr σ) (d := 400*i) (n := 400) (e := oBuf+1008*(2*p)+168*n) (k := 168)
-      (by dsimp only [oBuf]; omega) (by omega) (by dsimp only [oBuf]; omega)
+      (by dsimp only [oBuf]; omega_using [hi]) (by omega_using [hi]) (by dsimp only [oBuf]; omega_using [hp, hn])
   · exact Offset.disjoint (scr σ) (d := 400*i) (n := 400) (e := oBuf+1008*(2*p+1)+168*n) (k := 168)
-      (by dsimp only [oBuf]; omega) (by omega) (by dsimp only [oBuf]; omega)
+      (by dsimp only [oBuf]; omega_using [hi]) (by omega_using [hi]) (by dsimp only [oBuf]; omega_using [hp, hn])
   · exact Offset.disjoint (scr σ) (d := 400*i) (n := 400) (e := oX2) (k := 136)
-      (by dsimp only [oX2]; omega) (by omega) (by decide)
+      (by dsimp only [oX2]; omega_using [hi]) (by omega_using [hi]) (by decide)
 
 theorem b_regs : ∀ k < 4,bReg k ∉ blockRegs := by decide
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

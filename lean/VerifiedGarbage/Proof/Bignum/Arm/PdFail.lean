@@ -26,8 +26,8 @@ theorem pdFail_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : 
   refine WP.mono (publicFailArgs_ok s h.stack) ?_
   rintro u ⟨output, count, mask, memU, restU⟩
   rw [WP.seq_iff]
-  refine WP.mono (maskBuffer_ok u (by have := h.buffers.minLength; omega)
-    (by have := h.buffers.maxLength; omega) h.buffers.outputFit
+  refine WP.mono (maskBuffer_ok u (by have := h.buffers.minLength; omega_using [this])
+    (by have := h.buffers.maxLength; omega_using [this]) h.buffers.outputFit
     (by rw [restU.wr]; exact h.buffers.write) output count) ?_
   rintro v ⟨bytes, frame, restV⟩
   have zero : (u.gpr .r2).setWidth 8 = (-BitVec.ofNat 32 false.toNat).setWidth 8 := by rw [mask]; rfl

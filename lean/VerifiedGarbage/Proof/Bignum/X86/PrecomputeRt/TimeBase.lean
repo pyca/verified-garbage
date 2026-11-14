@@ -62,7 +62,7 @@ theorem agreeA {s₁ s₂ : State} (h₁ : PcIn base bytes len args s₁) (h₂ 
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (show arg s₁ _ = arg s₂ _ from
-      (h₁.stack _ (by omega)).value.trans (h₂.stack _ (by omega)).value.symm)
+      (h₁.stack _ (by omega_using [hk])).value.trans (h₂.stack _ (by omega_using [hk])).value.symm)
 
 theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
     VG.X86.Taint.Wf τF (allocFrame 36 s) := by
@@ -70,7 +70,7 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
   refine ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨?_, fun r hr => ?_⟩, fun _ h => (List.not_mem_nil h).elim, ?_, fun p hp => ?_, fun h => absurd h (by decide)⟩
   · show _ + 36 + 28 ≤ _
-    rw [allocFrame_esp, sub_toNat low]; omega
+    rw [allocFrame_esp, sub_toNat low]; omega_using [f]
   · rw [show VG.X86.Taint.depth τF.stk = 36 + 0 from rfl, argByte_alloc low, VG.X86.Taint.argByte, BitVec.add_zero]
     rw [allocFrame_wr, List.mem_cons] at hr
     rcases hr with rfl | hr
@@ -78,7 +78,7 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
       exact (Offset.base_disjoint_below _ (by decide)).symm.symm
     · exact A.2 r hr
   · show _ + 36 < _
-    rw [allocFrame_esp, sub_toNat low]; omega
+    rw [allocFrame_esp, sub_toNat low]; omega_using []
   · simp only [τF, VG.X86.Taint.frameList, List.mem_singleton] at hp
     subst hp
     simp only [allocFrame_wr, allocFrame_esp, List.getElem?_cons_zero, addr, BitVec.add_zero]
@@ -138,8 +138,8 @@ theorem mulArgs_call {sp : BitVec 32} {s : State} (I : MulIn base bytes len args
   have nwr := h.scratch.nowrap
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := 4) (a := 4) (b := 4) (wl := 5)
-    (argAt_alloc h.width) (argAt_alloc (h.stack 5 (by decide)).readSrc) h.upper (by omega) (by omega)
-    (by omega) (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega)
+    (argAt_alloc h.width) (argAt_alloc (h.stack 5 (by decide)).readSrc) h.upper (by omega_using []) (by omega_using [])
+    (by omega_using []) (by rw [fEsp, VG.X86.sub_toNat (by omega_using [low])]; omega_using [])
     (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)) fun g ⟨Kg, Fg, Rg⟩ => ?_
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]
   have hFg : Frame [below (s.gpr .esp) 36] s.mem g.mem := by
@@ -150,7 +150,7 @@ theorem mulArgs_call {sp : BitVec 32} {s : State} (I : MulIn base bytes len args
     intro i hi; rw [Kg.1 _ (by decide), Rg i hi, mulArg_eq, allocFrame_gpr _ _ (by decide)]
   have edi : s.gpr .edi = BitVec.ofNat 32 base.toNat := by
     apply BitVec.eq_of_toNat_eq
-    rw [h.edi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (h.fits (j := 0) (by decide)).1; have := VG.Proof.Bignum.X86.PublicRt.wb_ge h.lower; omega)]
+    rw [h.edi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := (h.fits (j := 0) (by decide)).1; have := VG.Proof.Bignum.X86.PublicRt.wb_ge h.lower; omega_arith)]
   refine ⟨callee_pre (callee_abi h.scratch h.hbytes R h.offs gEsp hFg hread (by rw [C.mod]; exact C.inv)
     (by rw [C.mod]; exact C.lt)) R gEsp, by rw [gEsp, hsp], fun i hi => ?_, ?_, ?_⟩
   · rw [callee_arg (base := base) (bytes := bytes) low gEsp hread hi, edi]
@@ -167,7 +167,7 @@ theorem mul_relCT (sp : BitVec 32)
         obtain ⟨⟨M₁, C₁⟩, A₁, e₁⟩ := I₁
         obtain ⟨⟨M₂, C₂⟩, A₂, e₂⟩ := I₂
         subst q₁ q₂
-        exact agreeF C₁.pi C₂.pi A₁ A₂ (e₁.trans e₂.symm) (by have := C₁.room.low; omega)) hT).wp
+        exact agreeF C₁.pi C₂.pi A₁ A₂ (e₁.trans e₂.symm) (by have := C₁.room.low; omega_using [this])) hT).wp
     (F₁ := CallOk base bytes len args sp) (F₂ := CallOk base bytes len args sp)
     (fun _ _ ⟨s₁, s₂, ⟨I₁, I₂⟩, q₁, q₂⟩ => by
       subst q₁ q₂

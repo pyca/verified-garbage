@@ -40,23 +40,23 @@ theorem wordLoop_ok {code : Prog isa} {name : String}
     refine ⟨?_, WorkspaceFrame.refl _ _ _, Keeps.refl _ _⟩
     rw [exponentValues_initial, exponentCounters_initial V A c g.w g.words F count flag]
     exact S
-  have positive : 0 < g.words := by have := v.minWidth; unfold Geometry.words; omega
+  have positive : 0 < g.words := by have := v.minWidth; unfold Geometry.words; omega_using [this]
   apply countLoop positive I ?_ start
   intro i t index H
   obtain ⟨St, Ot, Kt⟩ := H
   have yBound : exponentValues A c g.w g.words F i aY < c := by
     rw [exponentValues, setAt_self]
-    exact exponentState_lt A (by omega : 0 < c) g.w g.words F Ylt i
+    exact exponentState_lt A (by omega_using [odd] : 0 < c) g.w g.words F Ylt i
   have sameOne : exponentValues A c g.w g.words F i aTable = exponentValues A c g.w g.words F i aOne := by
     unfold exponentValues
     rw [setAt_other _ _ (by decide : aTable ≠ aY), setAt_other _ _ (by decide : aOne ≠ aY)]
     exact one
   have powersLt : ∀ j < 16, exponentValues A c g.w g.words F i (aTable + j) < c := by
     intro j bound
-    rw [exponentValues, setAt_other _ _ (by unfold aTable aY; omega)]
+    rw [exponentValues, setAt_other _ _ (by unfold aTable aY; omega_using [])]
     exact tableLt j bound
   refine WP.mono (wordStep_ok verified noSp stack v St length odd yBound yKnown oneKnown minusKnown expKnown
-    xUnknown tableKnown sameOne powersLt (by omega : 0 < g.words - i) (by omega : g.words - i ≤ g.words)
+    xUnknown tableKnown sameOne powersLt (by omega_using [index] : 0 < g.words - i) (by omega_using [] : g.words - i ≤ g.words)
     (exponentState A c g.w g.words F i).2 rfl rfl) fun u ⟨Su, Z, Ou, Ku⟩ => ?_
   have Snext : Stage g capacity c p (exponentValues A c g.w g.words F (i + 1)) Js
       (exponentCounters V A c g.w g.words F (i + 1)) wordFields u := Su.mono
@@ -65,6 +65,6 @@ theorem wordLoop_ok {code : Prog isa} {name : String}
   refine ⟨⟨Snext, Ot.trans Ou, Kt.trans Ku⟩, ?_⟩
   rw [Z]
   congr 1
-  exact decide_eq_decide.mpr (by omega)
+  exact decide_eq_decide.mpr (by omega_using [])
 
 end VG.Proof.MillerRabin.X86

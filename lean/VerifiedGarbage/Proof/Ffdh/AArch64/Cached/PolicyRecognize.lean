@@ -39,7 +39,7 @@ theorem policyRecognize_ok {s : State} {B domPtr : Addr} {Z k dl L : Nat} {dom b
  let N := 8*(bs.length-L-1)+bitLength (bs.getD L 0).toNat
  unfold Policy.recognize
  rw [WP.seq_iff]
- refine WP.mono_syms (policyBound_ok scratch room base positive (by omega) shape pointer length domainLength
+ refine WP.mono_syms (policyBound_ok scratch room base positive (by omega_using [size]) shape pointer length domainLength
   source bsLength inside zeros nonzero) ?_
  rintro a ⟨memA,restA⟩ symsA
  have frameA : Outside B (8*sBits) 8 s.mem a.mem := by rw [memA];exact writeW_outside _ _ _ (by decide)
@@ -55,11 +55,11 @@ theorem policyRecognize_ok {s : State} {B domPtr : Addr} {Z k dl L : Nat} {dom b
    have rest := restA.trans restB
    have cap : word b.mem B (8*sBits)=BitVec.ofNat 64 N := by rw [memB,memA,word_writeW_self]
    refine WP.mono (policyLoop_ok (scratch.congr rest.wr) room ((rest.gpr .x0 (by decide)).trans base)
-    (sourceA.of_mem memB restB) (recordsA.after_mem memB restB) (by omega) positive size
+    (sourceA.of_mem memB restB) (recordsA.after_mem memB restB) (by omega_using [shape, domLength]) positive size
     (by rw [memB,headerA sDom (by decide) (by decide)];exact pointer)
     (by rw [memB,headerA sDL (by decide) (by decide),domainLength,domLength])
     (by rw [memB,headerA sLen (by decide) (by decide)];exact length) cap
-    (by have h := byteCount_bound (bs.getD L 0#8);dsimp [N];omega) ptrB countB (by decide) (by decide)) ?_
+    (by have h := byteCount_bound (bs.getD L 0#8);dsimp [N];omega_using [size, bsLength, h]) ptrB countB (by decide) (by decide)) ?_
    rintro t ⟨widthT,frameT,restT⟩
    refine ⟨widthT,?_,(rest.trans restT).mono (by simp [recordClobbers])⟩
    have frameB : Outside B (8*sBits) 8 s.mem b.mem := by rw [memB];exact frameA

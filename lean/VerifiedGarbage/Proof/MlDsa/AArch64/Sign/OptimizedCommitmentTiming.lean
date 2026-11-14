@@ -41,9 +41,9 @@ theorem PositiveICw.inputs {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   constructor
   · intro j hj
     have he : p.ℓ*i+j<p.k*p.ℓ := by
-      have hl := Nat.mul_le_mul_left p.ℓ (show i+1≤p.k by omega)
+      have hl := Nat.mul_le_mul_left p.ℓ (show i+1≤p.k by omega_using [hi])
       simp only [Nat.mul_add,Nat.mul_one] at hl
-      rw [Nat.mul_comm p.k p.ℓ]; omega
+      rw [Nat.mul_comm p.k p.ℓ]; omega_using [hj, hl]
     have hv := h.masks.l.k.d.im.A (p.ℓ*i+j) he
     rw [aVal_ij hj] at hv
     change PolyIs s.mem (pa s (pS (aBase p+(p.ℓ*i+j)))) _ at hv
@@ -62,15 +62,15 @@ theorem positiveRows_tr {p : Params} {S : Nat} (hp : Ok3 p) {E : State → State
   refine RelCT.mono (seqR_tr (Q := fun i => RootRS p S E (PositiveICw p S · t i)) p.k 0
     (fun i _ hi => ?_)) (fun _ _ h => h.mono (fun _ _ h => ⟨h,by simp [Fam]⟩))
     (fun _ _ h => by simpa only [Nat.zero_add] using h)
-  refine liftRootR (fun _ _ _ h => positiveRowW_ok hp (by omega) h) ?_
-  have hc := positiveRowChk_ok hp i (by omega)
+  refine liftRootR (fun _ _ _ h => positiveRowW_ok hp (by omega_using [hi]) h) ?_
+  have hc := positiveRowChk_ok hp i (by omega_using [hi])
   simp only [positiveRowChk,Bool.and_eq_true] at hc
   apply optimizedDot_tr hp hc.1.1
   intro x y h
   have L := h.1.lrel (fun _ _ h => h.masks.l.st)
   obtain ⟨σ,τ,_,_,_,_,hx,hy⟩ := h.1
-  have ix := hx.inputs (by omega)
-  have iy := hy.inputs (by omega)
+  have ix := hx.inputs (by omega_using [hi])
+  have iy := hy.inputs (by omega_using [hi])
   exact ⟨⟨σ,hx.masks.l.st,hx.masks.l.k.d.roots⟩,⟨τ,hy.masks.l.st,hy.masks.l.k.d.roots⟩,
     ix.1,ix.2,iy.1,iy.2,L.regs .x28 (by decide),L.sp,h.2.2⟩
 
@@ -84,8 +84,8 @@ theorem positivePackRows_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params
   refine RelCT.mono (seqR_tr (Q := fun i => RootRS p S E (PositiveICh p S · t i)) p.k 0
     (fun i _ hi => ?_)) (fun _ _ h => h.mono (fun _ _ h => ⟨h,by simp [w1Enc]; rfl⟩))
     (fun _ _ h => by simpa only [Nat.zero_add] using h)
-  have hc := hh i (by omega)
-  refine liftRootR (fun _ _ _ h => positiveW1R_ok hP hp (by omega) hc h) ?_
+  have hc := hh i (by omega_using [hi])
+  refine liftRootR (fun _ _ _ h => positiveW1R_ok hP hp (by omega_using [hi]) hc h) ?_
   simp only [hChk,Bool.and_eq_true,decide_eq_true_eq] at hc
   obtain ⟨⟨⟨cr,_⟩,_⟩,hg⟩ := hc
   unfold w1R
@@ -94,7 +94,7 @@ theorem positivePackRows_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params
   intro x y h
   have L := h.1.lrel (fun _ _ h => h.c.masks.l.st)
   obtain ⟨σ,τ,_,_,_,_,hx,hy⟩ := h.1
-  exact ⟨L.lx,L.ly,(hx.c.w i (by omega)).1,(hy.c.w i (by omega)).1,L.same⟩
+  exact ⟨L.lx,L.ly,(hx.c.w i (by omega_using [hi])).1,(hy.c.w i (by omega_using [hi])).1,L.same⟩
 
 theorem positiveMasks_root_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     (hp : Ok3 p) {E : State → State → Prop} {t : Nat} :

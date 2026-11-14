@@ -25,11 +25,11 @@ open VG.Proof.Rsa.X86.KeyRt (RtWs kw)
 
 theorem kw_full {n : Nat} (h : n % 4 = 0) : kw (4 * n) = n := by
   simp only [kw, Spec.Rsa.modulusWords]
-  omega
+  omega_using [h]
 
 theorem kw_prime {n : Nat} (h : n % 4 = 0) : kw (2 * n) = n / 2 := by
   simp only [kw, Spec.Rsa.modulusWords]
-  omega
+  omega_using [h]
 
 structure Ws (s : State) (B : Addr) (Z n N : Nat) : Prop where
   full : RtWs Width.modulus.lay s B Z (4 * n) N

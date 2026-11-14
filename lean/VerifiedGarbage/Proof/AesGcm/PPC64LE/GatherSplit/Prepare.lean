@@ -33,25 +33,25 @@ theorem registerArgs_ok {s e t : State} (h : Lay s) (he : Entered s e)
   have hin {d : Nat} (hd : d+8≤Cnt s*16) :
       InRegions (t.rd++t.wr) (Src s+BitVec.ofNat 64 d) 8 := by
     rw [ht.keep.rd,ht.keep.wr]
-    exact hg.dsr _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ hd (by have := hg.dw; omega)⟩
+    exact hg.dsr _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ hd (by have := hg.dw; omega_using [hd, this])⟩
   have hread {d : Nat} (hd : d+8≤Cnt s*16) :
       t.mem.readW (Src s+BitVec.ofNat 64 d) 64=e.mem.readW (Src s+BitVec.ofNat 64 d) 64 := by
     exact (suffix_frame h he hc ht).readW
-      (Offset.contains_base _ hd (by have := hg.dw; omega)) (fun r hr => by
+      (Offset.contains_base _ hd (by have := hg.dw; omega_using [hd, this])) (fun r hr => by
         rw [List.mem_singleton] at hr
         subst r
         exact hg.dsd) (by decide)
   have hsrc : t.mem.readW (Src s) 64=e.mem.readW (Src s) 64 := by
-    have hh := hread (d := 0) (by omega)
+    have hh := hread (d := 0) (by omega_using [hc])
     simpa only [BitVec.add_zero] using hh
   have hlen : t.mem.readW (Src s+8#64) 64=firstLen e := by
-    rw [hread (d := 8) (by omega)]
+    rw [hread (d := 8) (by omega_using [hc])]
     rw [firstLen,he.r7]
     rfl
   refine WP.block_append (WP.mono (firstArgs_ok ht.next
     (by rw [ht.keep.gpr _ (by decide),hcount]; symm; exact BitVec.ofNat_toNat 64 (s.gpr .r10))
-    (by simpa only [BitVec.add_zero] using hin (d := 0) (by omega))
-    (hin (d := 8) (by omega))) fun a ha => ?_)
+    (by simpa only [BitVec.add_zero] using hin (d := 0) (by omega_using [hc]))
+    (hin (d := 8) (by omega_using [hc]))) fun a ha => ?_)
   subst a
   have ma : (firstArgsState t (Src s)).mem=t.mem := by
     simp only [firstArgsState,RegUpd.mem_write]
@@ -99,7 +99,7 @@ theorem RegisterArgs.incoming {s e t u : State} (h : Lay s) (he : Entered s e)
   have hr : (⟨sa s j,8⟩ : Region).Disjoint (dR s) := by
     apply darg.symm.sub_left
     rw [h.hargR]
-    exact Offset.sub _ (by omega) (by omega)
+    exact Offset.sub _ (by omega_using []) (by omega_using [hj])
   rw [(suffix_frame h he hc ht).readW (Region.contains_self _ _)
     (fun r hr' => by rw [List.mem_singleton] at hr'; subst r; exact hr) (by decide),he.mem,h.eArg hj]
 

@@ -54,13 +54,13 @@ theorem signingAgreement {s₁ s₂ : State} (h₁ : SigningABI s₁) (h₂ : Si
     rw [bytesAt_length, bytesAt_length, a2]
   rw [← hp, ← hq] at hpub
   have hpb : h₁.input.components.p = h₂.input.components.p := by
-    have he := prefix_component_eq (offset := 0) (len := h₁.input.pLen) hpub (by omega)
+    have he := prefix_component_eq (offset := 0) (len := h₁.input.pLen) hpub (by omega_using [])
     simp only [List.drop_zero] at he
     change h₁.input.key.take h₁.input.pLen = h₂.input.key.take h₂.input.pLen
     rw [← hp]
     exact he
   have hqb : h₁.input.components.q = h₂.input.components.q := by
-    have he := prefix_component_eq (offset := h₁.input.pLen) (len := h₁.input.qLen) hpub (by omega)
+    have he := prefix_component_eq (offset := h₁.input.pLen) (len := h₁.input.qLen) hpub (by omega_using [])
     change (h₁.input.key.drop h₁.input.pLen).take h₁.input.qLen = (h₂.input.key.drop h₂.input.pLen).take h₂.input.qLen
     rw [← hp, ← hq]
     exact he

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ECDSA verification of the hash function's output: the curves
@@ -31,7 +32,7 @@ theorem p192_len : 8 * Spec.Ecdsa.P192.inst.curve.len =
   rw [hn]
   show 8 * 24 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem p224_len : 8 * Spec.Ecdsa.P224.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.P224.inst.curve + if false then 7 else 0 := by
@@ -41,7 +42,7 @@ theorem p224_len : 8 * Spec.Ecdsa.P224.inst.curve.len =
   rw [hn]
   show 8 * 28 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem p256_len : 8 * Spec.Ecdsa.P256.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.P256.inst.curve + if false then 7 else 0 := by
@@ -51,7 +52,7 @@ theorem p256_len : 8 * Spec.Ecdsa.P256.inst.curve.len =
   rw [hn]
   show 8 * 32 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem p384_len : 8 * Spec.Ecdsa.P384.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.P384.inst.curve + if false then 7 else 0 := by
@@ -61,7 +62,7 @@ theorem p384_len : 8 * Spec.Ecdsa.P384.inst.curve.len =
   rw [hn]
   show 8 * 48 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem p521_len : 8 * Spec.Ecdsa.P521.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.P521.inst.curve + if true then 7 else 0 := by
@@ -71,7 +72,7 @@ theorem p521_len : 8 * Spec.Ecdsa.P521.inst.curve.len =
   rw [hn]
   show 8 * 66 = _
   rw [ite_eq_left rfl]
-  omega
+  omega_using [h₁, h₂]
 
 theorem secp256k1_len : 8 * Spec.Ecdsa.Secp256k1.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.Secp256k1.inst.curve + if false then 7 else 0 := by
@@ -81,7 +82,7 @@ theorem secp256k1_len : 8 * Spec.Ecdsa.Secp256k1.inst.curve.len =
   rw [hn]
   show 8 * 32 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem brainpoolP256r1_len : 8 * Spec.Ecdsa.BrainpoolP256r1.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.BrainpoolP256r1.inst.curve + if false then 7 else 0 := by
@@ -91,7 +92,7 @@ theorem brainpoolP256r1_len : 8 * Spec.Ecdsa.BrainpoolP256r1.inst.curve.len =
   rw [hn]
   show 8 * 32 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem brainpoolP384r1_len : 8 * Spec.Ecdsa.BrainpoolP384r1.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.BrainpoolP384r1.inst.curve + if false then 7 else 0 := by
@@ -101,7 +102,7 @@ theorem brainpoolP384r1_len : 8 * Spec.Ecdsa.BrainpoolP384r1.inst.curve.len =
   rw [hn]
   show 8 * 48 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 theorem brainpoolP512r1_len : 8 * Spec.Ecdsa.BrainpoolP512r1.inst.curve.len =
     Spec.Ecdsa.nBits Spec.Ecdsa.BrainpoolP512r1.inst.curve + if false then 7 else 0 := by
@@ -111,6 +112,6 @@ theorem brainpoolP512r1_len : 8 * Spec.Ecdsa.BrainpoolP512r1.inst.curve.len =
   rw [hn]
   show 8 * 64 = _
   rw [ite_eq_right Bool.false_ne_true]
-  omega
+  omega_using [h₁, h₂]
 
 end VG.Proof.Ecdsa.Verify

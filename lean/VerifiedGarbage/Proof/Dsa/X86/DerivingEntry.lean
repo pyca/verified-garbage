@@ -15,13 +15,13 @@ open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Dsa.Layout V
 theorem derivingEntry_precise {s : State} (A : DerivingABI s) :
     WP isa (.block Generate.deriveEntry) s fun t =>
       Installed (argumentPointer s 7) ((arg s 8).toNat * 8) Generate.deriveArguments 2 4 6 s t ∧ Outside (argumentPointer s 7) 0 8272 s.mem t.mem := by
-  have sz : 8272 ≤ (arg s 8).toNat * 8 := by have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 8).toNat * 8 := by have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega_using [H]
   apply WP.mono (installArguments_precise Generate.deriveArguments (scratchArg := 7)
     (keyArg := 2) (pLenArg := 4) (qLenArg := 6)
     (A.stackArgument (by decide : 7 < 9)).readSrc rfl A.scratchBound sz
     (by rw [A.wr]; simp [stackValue_arg]) A.stack (by decide) ?_ (by decide) (by decide) (by decide) (by decide))
   · intro t ⟨Scr, Saved, Args, Q, G, Y, X, K, O⟩
-    exact ⟨⟨Scr, Saved, Args, Q, G, Y, X, K, O.mono (Nat.le_refl _) (by omega)⟩,O⟩
+    exact ⟨⟨Scr, Saved, Args, Q, G, Y, X, K, O.mono (Nat.le_refl _) (by omega_using [sz])⟩,O⟩
   · intro a ha
     apply A.stackArgument
     simp only [Generate.deriveArguments, List.mem_cons, List.not_mem_nil, or_false] at ha

@@ -23,34 +23,34 @@ theorem expGroups_ok (W : Window) {s t : State} {P ep : Addr} {w : Nat}
     (h : PrefixInv s P w mi X Xc Q x ep bs 0 0 t) :
     WP isa (expGroups W.code) t (PrefixInv s P w mi X Xc Q x ep bs (5*(bs.length/5)) 0) := by
   unfold expGroups
-  refine WP.seq (WP.mono (haveFive_ok h.ctx (by omega) hL h.idx h.len)
+  refine WP.seq (WP.mono (haveFive_ok h.ctx (by omega_using []) hL h.idx h.len)
     fun a ⟨⟨hm,h9⟩,ka⟩ => ?_)
   have ha := h.keepMem hm ka (by decide) (by decide)
   by_cases hz : bs.length / 5 = 0
   · refine WP.ite false ?_ (by simp) (fun _ => ?_)
     · change some (!(a.gpr .x9 == 0)) = some false
       rw [h9]
-      simp only [show ¬ 0+5 ≤ bs.length by omega,ite_false]
+      simp only [show ¬ 0+5 ≤ bs.length by omega_using [hz],ite_false]
       rfl
     · apply WP.block_nil
       simpa only [hz,Nat.mul_zero] using ha
   · refine WP.ite true ?_ (fun _ => ?_) (by simp)
     · change some (!(a.gpr .x9 == 0)) = some true
       rw [h9]
-      simp only [show 0+5 ≤ bs.length by omega,ite_true]
+      simp only [show 0+5 ≤ bs.length by omega_using [hz],ite_true]
       rfl
-    · apply count_loop (cr := .x9) (n := bs.length/5) (by omega)
+    · apply count_loop (cr := .x9) (n := bs.length/5) (by omega_using [hz])
         (fun j => PrefixInv s P w mi X Xc Q x ep bs (5*j) 0)
       · intro j hj u hu
-        refine WP.mono (groupBody_ok W hw hw' hR hL (by omega) hread hbytes hout hu)
+        refine WP.mono (groupBody_ok W hw hw' hR hL (by omega_using [hj]) hread hbytes hout hu)
           fun v ⟨hv,h9v⟩ => ⟨?_,?_⟩
         · simpa only [Nat.mul_add,Nat.mul_one] using hv
         · rw [h9v]
           split
           · change (1 ≠ 0 ↔ _)
-            omega
+            omega_arith
           · change (0 ≠ 0 ↔ _)
-            omega
+            omega_arith
       · simpa only [Nat.mul_zero] using ha
 
 end VG.Proof.Bignum.AArch64.WindowFive

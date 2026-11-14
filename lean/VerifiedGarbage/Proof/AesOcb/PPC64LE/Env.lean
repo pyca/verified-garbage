@@ -120,7 +120,7 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
     (⟨K + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
@@ -129,7 +129,7 @@ theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
 /-- `W + d`, as a number. -/
 theorem toNat_w {d : Nat} (hd : d < 2560) : (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 end Lay
 
@@ -171,27 +171,27 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf W s' 
 
 /-- The bytes from `k` on. -/
 theorem drop {k : Nat} (hk : k ≤ n) : Buf W s (D + BitVec.ofNat 64 k) (n - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
+  rd := covers_off h.rd (by omega_using [hk]) h.lt
+  lt := by have := h.lt; omega_using [this]
   wrap := by
     have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega_using [hk, this])]
     have := Nat.mod_le (D.toNat + k) (2 ^ 64)
-    omega
-  w := h.w.sub_left (Offset.sub_base D (by omega))
+    omega_arith
+  w := h.w.sub_left (Offset.sub_base D (by omega_using [hk]))
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : Buf W s D k where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩
+  lt := by have := h.lt; omega_using [hk, this]
+  wrap := by have := h.wrap; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
 
 /-- Bytes `[a, a + k)`. -/
 theorem slice {a k : Nat} (hk : a + k ≤ n) : Buf W s (D + BitVec.ofNat 64 a) k :=
-  (h.drop (k := a) (by omega)).take (by omega)
+  (h.drop (k := a) (by omega_using [hk])).take (by omega_using [hk])
 
 end Buf
 
@@ -213,7 +213,7 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DBuf K W 
 theorem slice {a k : Nat} (hk : a + k ≤ n) : DBuf K W s (D + BitVec.ofNat 64 a) k where
   toBuf := h.toBuf.slice hk
   wr := fun x m hx => covers_off h.wr (d := a) (n := k) hk h.lt x m hx
-  k := h.k.sub_right ((Offset.sub_base D (by omega)))
+  k := h.k.sub_right ((Offset.sub_base D (by omega_using [hk])))
 
 end DBuf
 
@@ -228,10 +228,10 @@ abbrev wB (W : Addr) : Region := ⟨W + BitVec.ofNat 64 256, 2304⟩
 abbrev mutR (W D : Addr) (n : Nat) : List Region := [wA W, wB W, ⟨D, n⟩]
 
 theorem sub_wA {W : Addr} {d k : Nat} (h : d + k ≤ 128) : Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wA W) := by
-  simpa using Offset.sub W (d := d) (n := k) (e := 0) (k := 128) (by omega) (by omega)
+  simpa using Offset.sub W (d := d) (n := k) (e := 0) (k := 128) (by omega_using []) (by omega_using [h])
 
 theorem sub_wB {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h : d + k ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wB W) := Offset.sub W (by omega) (by omega)
+    Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wB W) := Offset.sub W (by omega_using [h₁]) (by omega_using [h])
 
 /-- A part of `W` within `[0, 128)`, as a part the pieces may write. -/
 theorem in_mutA {W D : Addr} {n d k : Nat} (h : d + k ≤ 128) :

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The specification's inverse S-box, on all 256 inputs at once
@@ -35,8 +36,8 @@ theorem row_invAffT (A : List Nat) {c : Nat} (hc : c < 256) :
   simp only [invAffT, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj,
     Option.map_some, Option.getD_some, Nat.testBit_xor]
   simp only [← List.getD_eq_getElem?_getD]
-  rw [getLsbD_row _ _ (Nat.mod_lt _ (by omega)), getLsbD_row _ _ (Nat.mod_lt _ (by omega)),
-    getLsbD_row _ _ (Nat.mod_lt _ (by omega))]
+  rw [getLsbD_row _ _ (Nat.mod_lt _ (by omega_using [])), getLsbD_row _ _ (Nat.mod_lt _ (by omega_using [])),
+    getLsbD_row _ _ (Nat.mod_lt _ (by omega_using []))]
   congr 1
   rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega |
     (simp only [testBit_ite_ONES, hc, decide_true, Bool.and_true] <;> decide)

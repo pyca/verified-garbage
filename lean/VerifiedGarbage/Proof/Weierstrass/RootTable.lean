@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.RootTable
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Correctness of the square root by a table (`rootTable`)
@@ -53,8 +54,8 @@ theorem pow_cyc (hL : Law C) : ∀ (k : Nat) (h x : Fe C), h ^ (2 ^ k) = -1 → 
     have hsq : x * x = h ^ e * h ^ e := by rw [hxe, mul_pow_exponent]
     have h2 := two_mul_two_pow (k + 1)
     rcases square_roots_eq_or_neg hL hsq with h1 | h1
-    · exact ⟨e, by omega, h1⟩
-    · refine ⟨e + 2 ^ (k + 1), by omega, ?_⟩
+    · exact ⟨e, by omega_using [he], h1⟩
+    · refine ⟨e + 2 ^ (k + 1), by omega_using [he], ?_⟩
       rw [h1, Lean.Grind.Semiring.pow_add, hh]
       grind
 
@@ -72,24 +73,24 @@ theorem tacc_pow {T : Nat → Nat → Fe C} {c : Fe C} (hT : ∀ m d, T m d = c 
 /-- `digAcc` of an entry, for a row of different entries. -/
 theorem digAcc_eq {G : Nat → Fe C} (hG : ∀ e e', e < 16 → e' < 16 → G e = G e' → e = e') {e : Nat}
     (he : e < 16) : ∀ f, f ≤ 16 → digAcc G (G e) f = if e < f then (16 - e) % 16 else 0
-  | 0, _ => by rw [digAcc, ite_eq_right (by omega)]
+  | 0, _ => by rw [digAcc, ite_eq_right (by omega_using [])]
   | f + 1, hf => by
-    rw [digAcc, digAcc_eq hG he f (by omega)]
+    rw [digAcc, digAcc_eq hG he f (by omega_using [hf])]
     by_cases h : e = f
     · subst h
       rw [ite_eq_right (Nat.lt_irrefl e), ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self e), Nat.zero_add]
-    · have hne : G e ≠ G f := fun h' => h (hG e f he (by omega) h')
+    · have hne : G e ≠ G f := fun h' => h (hG e f he (by omega_using [hf]) h')
       rw [ite_eq_right hne, Nat.add_zero]
       by_cases hl : e < f
-      · rw [ite_eq_left hl, ite_eq_left (by omega)]
-      · rw [ite_eq_right hl, ite_eq_right (by omega)]
+      · rw [ite_eq_left hl, ite_eq_left (by omega_using [hl])]
+      · rw [ite_eq_right hl, ite_eq_right (by omega_using [h, hl])]
 
 theorem neg_one_ne_one (hp3 : 2 < C.p) : (-1 : Fe C) ≠ 1 := by
   intro h
   have h' := congrArg Fin.val h
-  have h1 : ((1 : Fe C) : Nat) = 1 := by show 1 % C.p = 1; exact Nat.mod_eq_of_lt (by omega)
-  rw [Fin.val_neg', h1, Nat.mod_eq_of_lt (by omega)] at h'
-  omega
+  have h1 : ((1 : Fe C) : Nat) = 1 := by show 1 % C.p = 1; exact Nat.mod_eq_of_lt (by omega_using [hp3])
+  rw [Fin.val_neg', h1, Nat.mod_eq_of_lt (by omega_using [hp3])] at h'
+  omega_using [hp3, h']
 
 theorem one_pow' (l : Nat) : (1 : Fe C) ^ l = 1 := by
   induction l with
@@ -107,7 +108,7 @@ theorem neg_one_pow_odd (l : Nat) : (-1 : Fe C) ^ (2 * l + 1) = -1 := by
 theorem sixteen_pow_mul_eight {n : Nat} (hn : 0 < n) : 16 ^ (n - 1) * 2 ^ 3 = 2 ^ (4 * n - 1) := by
   rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul, ← Nat.pow_add]
   congr 1
-  omega
+  omega_using [hn]
 
 theorem sixteen_pow {n : Nat} : 16 ^ n = 2 ^ (4 * n) := by
   rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]
@@ -119,9 +120,9 @@ theorem kGo_lt {p : Nat} [NeZero p] (T : Nat → Nat → Fin p) (s : Nat → Fin
   | j + 1 => by
     rw [kGo]
     have h := kGo_lt T s n j
-    have hd : digAcc (T (n - 1)) (tacc T (n - 1 - j) (kGo T s n j) (s (n - 1 - j)) j) 16 % 16 ≤ 15 := by omega
+    have hd : digAcc (T (n - 1)) (tacc T (n - 1 - j) (kGo T s n j) (s (n - 1 - j)) j) 16 % 16 ≤ 15 := by omega_using []
     have := Nat.mul_le_mul_right (16 ^ j) hd
-    rw [Nat.pow_succ]; omega
+    rw [Nat.pow_succ]; omega_using [h, this]
 
 /-- The digits found keep `(t c^k)^(16^(n-j)) = 1`. -/
 theorem kGo_inv (hL : Law C) {c t : Fe C} {T : Nat → Nat → Fe C} {s : Nat → Fe C} {n : Nat} (hn : 0 < n)
@@ -133,13 +134,13 @@ theorem kGo_inv (hL : Law C) {c t : Fe C} {T : Nat → Nat → Fe C} {s : Nat �
     refine ⟨by rw [kGo]; decide, ?_⟩
     rw [kGo, Lean.Grind.Semiring.pow_zero, Lean.Grind.Semiring.mul_one, Nat.sub_zero]; exact ht
   | j + 1, hj => by
-    obtain ⟨hk, hz⟩ := kGo_inv hL hn hc hT hG hs ht j (by omega)
+    obtain ⟨hk, hz⟩ := kGo_inv hL hn hc hT hG hs ht j (by omega_using [hj])
     generalize hK : kGo T s n j = k at hk hz
     have hkGo : kGo T s n (j + 1) =
         k + digAcc (T (n - 1)) (tacc T (n - 1 - j) k (s (n - 1 - j)) j) 16 % 16 * 16 ^ j := by
       rw [kGo, hK]
     generalize ho : n - 1 - j = o at hkGo
-    have hno : n - j = o + 1 := by omega
+    have hno : n - j = o + 1 := by omega_using [hj, ho]
     -- `y = z^(16^o)`.
     have hy : tacc T o k (s o) j = (t * c ^ k) ^ (16 ^ o) := by
       rw [tacc_pow hT, hs, Nat.mod_eq_of_lt hk, mul_pow_exponent, pow_mul_exponents]
@@ -153,20 +154,20 @@ theorem kGo_inv (hL : Law C) {c t : Fe C} {T : Nat → Nat → Fe C} {s : Nat �
       rw [hye, ← hTe, digAcc_eq hG he 16 (Nat.le_refl _), ite_eq_left he, Nat.mod_mod]
     rw [hd] at hkGo
     rw [hkGo]
-    have hdl : (16 - e) % 16 ≤ 15 := by omega
+    have hdl : (16 - e) % 16 ≤ 15 := by omega_using []
     refine ⟨?_, ?_⟩
     · have := Nat.mul_le_mul_right (16 ^ j) hdl
-      rw [Nat.pow_succ]; omega
+      rw [Nat.pow_succ]; omega_using [hk, this]
     · generalize hgd : c ^ (16 ^ (n - 1)) = g at hg hTe hye
       have hcd : (c ^ ((16 - e) % 16 * 16 ^ j)) ^ (16 ^ o) = g ^ ((16 - e) % 16) := by
         rw [← hgd, pow_mul_exponents, pow_mul_exponents, Nat.mul_assoc, ← Nat.pow_add,
-          show j + o = n - 1 by omega, Nat.mul_comm]
-      rw [show n - (j + 1) = o by omega, Lean.Grind.Semiring.pow_add, ← Lean.Grind.Semiring.mul_assoc,
+          show j + o = n - 1 by omega_using [hj, ho], Nat.mul_comm]
+      rw [show n - (j + 1) = o by omega_using [ho], Lean.Grind.Semiring.pow_add, ← Lean.Grind.Semiring.mul_assoc,
         mul_pow_exponent, ← hy, hye, hcd, ← Lean.Grind.Semiring.pow_add]
       by_cases he0 : e = 0
       · subst he0
         rw [show 0 + (16 - 0) % 16 = 0 from rfl, Lean.Grind.Semiring.pow_zero]
-      · rw [show e + (16 - e) % 16 = 2 ^ 3 * 2 by omega, ← pow_mul_exponents, hg, neg_one_pow_two]
+      · rw [show e + (16 - e) % 16 = 2 ^ 3 * 2 by omega_using [he, he0], ← pow_mul_exponents, hg, neg_one_pow_two]
 
 /-- The candidate root of a square is a root. -/
 theorem rootTable_square (hL : Law C) (hp3 : 2 < C.p) {q n : Nat} {c : Fe C} {T : Nat → Nat → Fe C}
@@ -187,7 +188,7 @@ theorem rootTable_square (hL : Law C) (hp3 : 2 < C.p) {q n : Nat} {c : Fe C} {T 
   -- `t = a^q`, `t^(16^n) = 1`.
   have ht : w * (w * a) = a ^ q := by
     rw [← hw, ← Lean.Grind.Semiring.mul_assoc, ← Lean.Grind.Semiring.pow_add, ← Lean.Grind.Semiring.pow_succ]
-    exact congrArg (a ^ ·) (by omega)
+    exact congrArg (a ^ ·) (by omega_using [hq])
   have ht1 : (w * (w * a)) ^ (16 ^ n) = 1 := by
     rw [ht, pow_mul_exponents, ← hp]; exact root_fermat hL hp3 a ha0
   obtain ⟨hKl, hKz⟩ := kGo_inv hL hn hc hT hG (fun m => pow_eq_npow _ _) ht1 n (Nat.le_refl _)
@@ -195,7 +196,7 @@ theorem rootTable_square (hL : Law C) (hp3 : 2 < C.p) {q n : Nat} {c : Fe C} {T 
   rw [hK] at hKl
   -- `K` is even.
   have hu : (y ^ q) ^ (2 ^ (4 * n - 1 + 1)) = 1 := by
-    rw [pow_mul_exponents, show 4 * n - 1 + 1 = 4 * n by omega, ← sixteen_pow, ← hp]
+    rw [pow_mul_exponents, show 4 * n - 1 + 1 = 4 * n by omega_using [hn], ← sixteen_pow, ← hp]
     exact root_fermat hL hp3 y hy0
   obtain ⟨m, -, hm⟩ := pow_cyc hL (4 * n - 1) c (y ^ q) hc hu
   have hKe : K % 2 = 0 := by
@@ -204,17 +205,17 @@ theorem rootTable_square (hL : Law C) (hp3 : 2 < C.p) {q n : Nat} {c : Fe C} {T 
     exfalso
     have hta : w * (w * a) = c ^ m * c ^ m := by rw [ht, ← hy, mul_pow_exponent, hm]
     have h1 : c ^ (2 * m + K) = 1 := by
-      rw [Lean.Grind.Semiring.pow_add, show 2 * m = m + m by omega, Lean.Grind.Semiring.pow_add, ← hta]
+      rw [Lean.Grind.Semiring.pow_add, show 2 * m = m + m by omega_using [], Lean.Grind.Semiring.pow_add, ← hta]
       exact hKz
     have h2 : (c ^ (2 * m + K)) ^ (2 ^ (4 * n - 1)) = -1 := by
       rw [pow_mul_exponents, Nat.mul_comm, ← pow_mul_exponents, hc,
-        show 2 * m + K = 2 * (m + K / 2) + 1 by omega, neg_one_pow_odd]
+        show 2 * m + K = 2 * (m + K / 2) + 1 by omega_using [hodd], neg_one_pow_odd]
     rw [h1, one_pow'] at h2
     exact neg_one_ne_one hp3 h2.symm
   rw [Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hKl)]
   have hr : w * a * (w * a) = a * (w * (w * a)) := by grind
   calc w * a * c ^ (K / 2) * (w * a * c ^ (K / 2)) = a * (w * (w * a) * c ^ (K / 2 + K / 2)) := by
         rw [Lean.Grind.Semiring.pow_add]; grind
-    _ = a := by rw [show K / 2 + K / 2 = K by omega, hKz, Lean.Grind.Semiring.mul_one]
+    _ = a := by rw [show K / 2 + K / 2 = K by omega_using [hKe], hKz, Lean.Grind.Semiring.mul_one]
 
 end VG.Proof.Weierstrass

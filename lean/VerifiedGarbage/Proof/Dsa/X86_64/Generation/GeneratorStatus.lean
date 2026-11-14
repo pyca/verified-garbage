@@ -46,7 +46,7 @@ theorem generatorSetStatus_ok {p : GeneratorPlan} {W : Nat → BitVec 64} {s : S
     have hn := ha ⟨p.F, frameBytes⟩ (by simp)
     change ¬ ofs p.F a < frameBytes at hn
     unfold frameBytes at hn
-    omega
+    omega_using [hn]
   have frame : Frame p.changed s.mem t.mem := ff.mono (by
     intro r hr; rcases List.mem_singleton.mp hr with rfl; simp [GeneratorPlan.changed])
   refine ⟨h.frame Lt ⟨V, Rt⟩ (by simpa [upd] using h.base) (by simpa [upd] using h.input)
@@ -54,6 +54,6 @@ theorem generatorSetStatus_ok {p : GeneratorPlan} {W : Nat → BitVec 64} {s : S
   apply VG.Proof.Dsa.Generation.frame_bytesAt ff
   · intro r hr; rcases List.mem_singleton.mp hr with rfl
     exact (p.frameSeparate _ (by simp)).symm
-  · rcases p.width with hh | hh | hh <;> omega
+  · rcases p.width with hh | hh | hh <;> omega_using [hh]
 
 end VG.Proof.Dsa.X86_64.Generation

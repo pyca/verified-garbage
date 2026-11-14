@@ -34,7 +34,7 @@ theorem field_lift {s : State} {base : Addr} (hs : Scratch s base) (code : List 
       Keep base t u ∧ env u.mem base = f (env t.mem base)) :
     WP isa (.block code) s fun t => Keep base s t ∧ env t.mem base = f (env s.mem base) := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
   obtain ⟨tr, t, he, hk, hv⟩ := correct narrow hn
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub
@@ -55,7 +55,7 @@ theorem fieldCodeWide_frame {s : State} {base : Addr} (hs : Scratch s base) (ops
     WP isa (.block (fieldCode fld ops)) s fun t => Keep base s t ∧
       env t.mem base = evalOps ops (env s.mem base) ∧ ∀ x, Outs ops base x → t.mem x = s.mem x := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega_using [this]⟩
   obtain ⟨tr, t, he, hk, hv, hf⟩ := fieldCode_frame (fld := fld) ops hn
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub

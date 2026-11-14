@@ -98,7 +98,7 @@ theorem copy_ok {src dst cnt : Reg} {so dd : Nat} (hso : so < 4096) (hdd : dd < 
     exact hI₀.post
   simp only [decide_eq_false_iff_not] at hb
   refine WP.loop (M := isa) (fun n (s : State) => ∃ j, n = k - j ∧ j < k ∧
-      CopyI s₀ src dst cnt A B k j s) ?_ k s₀ ⟨0, by omega, by omega, hI₀⟩
+      CopyI s₀ src dst cnt A B k j s) ?_ k s₀ ⟨0, by omega_using [], by omega_using [hb], hI₀⟩
   rintro n s ⟨j, rfl, hj, h⟩
   -- The byte read.
   have hin : InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 j) 1 := by
@@ -107,8 +107,8 @@ theorem copy_ok {src dst cnt : Reg} {so dd : Nat} (hso : so < 4096) (hdd : dd < 
     rw [h.mem]
     exact (writeBytes_frame s₀.mem _ _ (R := ⟨B, k⟩)
       (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add,
-        List.length_take, Spec.Rc2.bytesAt, List.length_map, List.length_range]; omega)).bytes
-      (R := ⟨A, k⟩) (by simpa using hd) (by show k ≤ 2 ^ 64; omega) hj
+        List.length_take, Spec.Rc2.bytesAt, List.length_map, List.length_range]; omega_using [])).bytes
+      (R := ⟨A, k⟩) (by simpa using hd) (by show k ≤ 2 ^ 64; omega_using [hk']) hj
   have hout : InRegions s.wr (B + BitVec.ofNat 64 j) 1 := by
     rw [h.wr]; exact hdst j hj
   unfold copyBody
@@ -121,9 +121,9 @@ theorem copy_ok {src dst cnt : Reg} {so dd : Nat} (hso : so < 4096) (hdd : dd < 
     wp_subImm (by decide) fun s₅ u₅ => WP.block_nil ?_
   have hcnt : s₅.gpr cnt = BitVec.ofNat 64 (k - (j + 1)) := by
     rw [u₅.gpr, u₄.other _ hr.dc.symm, u₃.other _ hr.sc.symm, g₂.gpr, u₁.other _ hr.c9, h.pcnt,
-      sub_ofNat (by omega), Nat.sub_sub]
+      sub_ofNat (by omega_using [hj]), Nat.sub_sub]
   have hI : CopyI s₀ src dst cnt A B k (j + 1) s₅ := by
-    refine ⟨by omega, ?_, ?_, hcnt, fun x h1 h2 h3 h4 => ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨by omega_using [hj], ?_, ?_, hcnt, fun x h1 h2 h3 h4 => ?_, ?_, ?_, ?_, ?_⟩
     · rw [u₅.other _ hr.sc, u₄.other _ hr.sd, u₃.gpr, g₂.gpr, u₁.other _ hr.s9, h.psrc,
         BitVec.add_assoc, ← BitVec.ofNat_add]
     · rw [u₅.other _ hr.dc, u₄.gpr, u₃.other _ hr.sd.symm, g₂.gpr, u₁.other _ hr.d9, h.pdst,
@@ -132,21 +132,21 @@ theorem copy_ok {src dst cnt : Reg} {so dd : Nat} (hso : so < 4096) (hdd : dd < 
     · rw [u₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd, h.rd]
     · rw [u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr, h.wr]
     · rw [u₅.sp, u₄.sp, u₃.sp, g₂.sp, u₁.sp, h.sp]
-    · have hj' : j < (Spec.Rc2.bytesAt s₀.mem A k).length := by simp [Spec.Rc2.bytesAt]; omega
+    · have hj' : j < (Spec.Rc2.bytesAt s₀.mem A k).length := by simp [Spec.Rc2.bytesAt]; omega_using [hj]
       have hl : (List.take j (Spec.Rc2.bytesAt s₀.mem A k)).length = j := by
         rw [List.length_take, Nat.min_eq_left (Nat.le_of_lt hj')]
       rw [u₅.mem, u₄.mem, u₃.mem, g₂.mem, u₁.mem, u₁.gpr, hbyte, h.mem,
         List.take_add_one, List.getElem?_eq_getElem hj', Option.toList_some,
-        writeBytes_snoc _ _ _ _ (by rw [hl]; omega), hl, setWidth_byte]
+        writeBytes_snoc _ _ _ _ (by rw [hl]; omega_using [hk', hj]), hl, setWidth_byte]
       congr 1
       simp [Spec.Rc2.bytesAt]
   have hne : isa.eval (.nonzero .x cnt) s₅ = some (decide (k - (j + 1) ≠ 0)) := by
     show VG.AArch64.eval (.nonzero .x cnt) s₅ = _
-    rw [eval_nonzero, hcnt, bne, ofNat_beq_zero (by omega)]
+    rw [eval_nonzero, hcnt, bne, ofNat_beq_zero (by omega_using [hk'])]
     simp
   by_cases hjk : j + 1 = k
-  · exact .inl ⟨by rw [hne]; simp; omega, hQ _ (hjk ▸ hI).post⟩
-  · exact .inr ⟨by rw [hne]; simp; omega, k - (j + 1), by omega, j + 1, rfl, by omega, hI⟩
+  · exact .inl ⟨by rw [hne]; simp; omega_using [hjk], hQ _ (hjk ▸ hI).post⟩
+  · exact .inr ⟨by rw [hne]; simp; omega_using [hj, hjk], k - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hjk], hI⟩
 
 /-! ## The frame saving `x30` -/
 

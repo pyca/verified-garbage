@@ -129,7 +129,7 @@ theorem K_toNat {s : State} (h : Pre s) : (K s).toNat + 628 = (esp s).toNat := b
   have := h.sp
   simp only [K, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have := (esp s).isLt
-  omega
+  omega_arith
 
 /-- `n` bytes below `esp`, as an offset of `K s`. -/
 theorem below_eq {s : State} (h : Pre s) {n : Nat} (hn : n ≤ 628) :
@@ -140,7 +140,7 @@ theorem below_eq {s : State} (h : Pre s) {n : Nat} (hn : n ≤ 628) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn, hk]
 
 theorem ret_eq (s : State) : (esp s).setWidth 64 = K s + BitVec.ofNat 64 628 := by
   simp only [K, BitVec.sub_add_cancel]
@@ -153,7 +153,7 @@ theorem argAddr_eq {s : State} (h : Pre s) {j : Nat} (hj : j < 4) :
   simp only [esp] at hk this
   apply BitVec.eq_of_toNat_eq
   simp only [argAddr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hj, hk, this]
 
 /-- `esp - n`, widened, as an offset of `K s`. -/
 theorem sub_eq {s : State} (h : Pre s) {n : Nat} (hn : n ≤ 628) :
@@ -165,8 +165,8 @@ theorem sub16 (x : BitVec 32) : x - 4 - 4 - 4 - 4 = x - BitVec.ofNat 32 16 := by
 
 theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     p + BitVec.ofNat 64 a - BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a - b) := by
-  have : b < 2 ^ 64 := by omega
-  have : a - b < 2 ^ 64 := by omega
+  have : b < 2 ^ 64 := by omega_using [h, ha]
+  have : a - b < 2 ^ 64 := by omega_using [ha]
   bv_omega
 
 theorem off_sub' (p : Addr) : p + BitVec.ofNat 64 612 - BitVec.ofNat 64 612 = p + BitVec.ofNat 64 0 := by
@@ -220,7 +220,7 @@ theorem Ctx.argKeep {s t : State} (h : Pre s) (hc : Ctx s t) {j : Nat} (hj : j <
   refine hc.frame.readW (r := ARGS s) ?_ (fun r hr => ?_) (by decide)
   · show (⟨argAddr s 0, 16⟩ : Region).Contains _ _
     rw [argAddr_eq h hj, argAddr_eq h (by decide : 0 < 4)]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact h.oa.symm
@@ -236,7 +236,7 @@ theorem Ctx.argIn {s t : State} (h : Pre s) (hc : Ctx s t) {j : Nat} (hj : j < 4
   refine ⟨ARGS s, by simp, ?_⟩
   show (⟨argAddr s 0, 16⟩ : Region).Contains _ _
   rw [argAddr_eq h (by decide : 0 < 4)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  exact Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [])
 
 theorem Ctx.argRead {s t : State} (h : Pre s) (hc : Ctx s t) {j d : Nat} (hj : j < 4) (hd : d = 4 + 4 * j) :
     t.mem.readW (addr (t.gpr .esp) d) 32 = arg s j := by
@@ -313,7 +313,7 @@ theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
     (hc' : t.gpr .ecx = BitVec.ofNat 32 32) (hd : t.gpr .edx = arg s 1) :
     dgK.pre ((pushed argRegs t).callEntry.withRegions [SEED s, below (t.gpr .esp) 12] [EXP s]) := by
   have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by
-    show 16 ≤ _; rw [show t.gpr .esp = s.gpr .esp from hc.esp]; have := h.sp; simp only [esp] at this; omega
+    show 16 ≤ _; rw [show t.gpr .esp = s.gpr .esp from hc.esp]; have := h.sp; simp only [esp] at this; omega_using [this]
   have a0 : arg (pushed argRegs t).callEntry 0 = arg s 2 :=
     (callEntry_arg hfit (by decide) (by decide)).trans ha
   have a1 : arg (pushed argRegs t).callEntry 1 = BitVec.ofNat 32 32 :=
@@ -334,10 +334,10 @@ theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
   have ht := h.top
   simp only [esp] at hk ht
   refine ⟨?_, ?_, rfl, trivial, h.es.symm, (h.kE (by decide)).symm, h.kS (by decide), h.kE (by decide),
-    Offset.disjoint _ (by omega) (by omega) (by omega), h.kS (by decide), h.kE (by decide),
-    Offset.disjoint _ (by omega) (by omega) (by omega), h.ns, h.ne⟩
-  · rw [sub_toNat (by omega)]; omega
-  · rw [sub_toNat (by omega)]; omega
+    Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []), h.kS (by decide), h.kE (by decide),
+    Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []), h.ns, h.ne⟩
+  · rw [sub_toNat (by omega_using [hk])]; omega_using [hk]
+  · rw [sub_toNat (by omega_using [hk])]; omega_using []
 
 /-- `STK s`, as the stack below `esp`. -/
 theorem stk_below {s : State} (h : Pre s) : STK s = below (s.gpr .esp) 628 := by
@@ -389,12 +389,12 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (ha : t
   have hsp := h.sp
   simp only [esp] at hsp
   have hu := dg_stack
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega
+  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
   have cp := dg_cp h hc ha hc' hd
   have hn : 4 * argRegs.length + stackUse dgCode + 4 ≤ 628 := by
     rw [show 4 * argRegs.length = 12 from rfl]
     generalize stackUse dgCode = u at hu ⊢
-    omega
+    omega_using [hu]
   refine WP.of_syms (WP.callWith dg_verified.1 dg_nosp (by decide) (by decide)
     (hn.trans (by rw [e]; exact hsp)) cp fun t' hrd hwr hcs hf ⟨s₂, hm₂, hpost⟩ hsy => ⟨?_, ?_⟩)
   · exact Ctx.call h hc hn (by simp) hrd hwr hcs hf hsy
@@ -464,14 +464,14 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
   simp only [esp] at e
   have hsp := h.sp
   simp only [esp] at hsp
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega
+  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
   have hce := callEntry_frame hfit (by decide : Reg.esp ∉ argRegs)
   have hheld : ∀ i < combWords.length, (pushed argRegs t).callEntry.mem.readW
       ((s.syms combSym).setWidth 64 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
     intro i hi
     have hn := h.fit
-    rw [hce.readW (r := TB s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide),
-      hc.frame.readW (r := TB s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)]
+    rw [hce.readW (r := TB s) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hn])) (fun r hr => ?_) (by decide),
+      hc.frame.readW (r := TB s) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hn])) (fun r hr => ?_) (by decide)]
     · exact h.held i hi
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -520,10 +520,10 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
   have k12 : below (t.gpr .esp) 12 = ⟨K s + BitVec.ofNat 64 616, 12⟩ := by rw [e]; exact below_eq h (by decide)
   have hd : ∀ {a b : Nat}, a + 4 ≤ b → b + 12 ≤ 628 →
       Region.Disjoint ⟨K s + BitVec.ofNat 64 a, 4⟩ ⟨K s + BitVec.ofNat 64 b, 12⟩ :=
-    fun h₁ h₂ => Offset.disjoint _ (by omega) (by omega) (by omega)
+    fun h₁ h₂ => Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₁, h₂]) (by omega_using [h₂])
   have hd' : Region.Disjoint ⟨K s + BitVec.ofNat 64 (612 - 280), 280⟩ ⟨K s + BitVec.ofNat 64 616, 12⟩ :=
-    Offset.disjoint _ (by omega) (by omega) (by omega)
-  refine ⟨by rw [sub_toNat (by omega)]; omega, by rw [sub_toNat (by omega)]; omega, rfl, xheld, h.fit,
+    Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
+  refine ⟨by rw [sub_toNat (by omega_using [hsp])]; omega_using [hsp], by rw [sub_toNat (by omega_using [hsp])]; omega_using [], rfl, xheld, h.fit,
     fun r hr => ?_, h.kT (by decide), h.kT (by decide), h.al, rfl, by simp only [pkWr, k12], h.oe, h.oc,
     (h.kO (by decide)).symm, h.ec, (h.kE (by decide)).symm, (h.kC (by decide)).symm,
     h.kO (by decide), h.kE (by decide), h.kC (by decide), hd (by decide) (by decide),
@@ -564,13 +564,13 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
   have hsp := h.sp
   simp only [esp] at hsp
   have hu := pk_stack
-  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega
+  have hfit : 4 * argRegs.length + 4 ≤ (t.gpr .esp).toNat := by show 16 ≤ _; rw [e]; omega_using [hsp]
   have k12 : below (t.gpr .esp) 12 = ⟨K s + BitVec.ofNat 64 616, 12⟩ := by rw [e]; exact below_eq h (by decide)
   have cp := pk_cp h hc ha hc' hd hE
   have hn : 4 * argRegs.length + stackUse PublicKey.publicKeyExpanded + 4 ≤ 628 := by
     rw [show 4 * argRegs.length = 12 from rfl]
     generalize stackUse PublicKey.publicKeyExpanded = u at hu ⊢
-    omega
+    omega_using [hu]
   have hfit' := hfit
   refine WP.of_syms (WP.callWith PublicKey.publicKeyExpanded_verified.1 pk_nosp (by decide) (by decide)
     (hn.trans (by rw [e]; exact hsp)) cp fun t' hrd hwr hcs hf ⟨s₂, hm₂, hpost⟩ hsy => ⟨?_, ?_, ?_⟩)
@@ -737,10 +737,10 @@ theorem body_ct (S : State) {dn pn : String} :
     refine ⟨k₁, k₂, ea.trans eb.symm, ?_⟩
     have f₁ : 4 * argRegs.length + 4 ≤ (a.gpr .esp).toNat := by
       rw [show a.gpr .esp = s₁.gpr .esp from c₁.esp]; have := h₁.sp; simp only [esp] at this
-      show 16 ≤ _; omega
+      show 16 ≤ _; omega_using [this]
     have f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
       rw [show b.gpr .esp = s₂.gpr .esp from c₂.esp]; have := h₂.sp; simp only [esp] at this
-      show 16 ≤ _; omega
+      show 16 ≤ _; omega_using [this]
     sig_pub [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, ea, eb,
@@ -773,10 +773,10 @@ theorem body_ct (S : State) {dn pn : String} :
     refine ⟨k₁, k₂, ea.trans eb.symm, ?_⟩
     have f₁ : 4 * argRegs.length + 4 ≤ (a.gpr .esp).toNat := by
       rw [show a.gpr .esp = s₁.gpr .esp from c₁.esp]; have := h₁.sp; simp only [esp] at this
-      show 16 ≤ _; omega
+      show 16 ≤ _; omega_using [this]
     have f₂ : 4 * argRegs.length + 4 ≤ (b.gpr .esp).toNat := by
       rw [show b.gpr .esp = s₂.gpr .esp from c₂.esp]; have := h₂.sp; simp only [esp] at this
-      show 16 ≤ _; omega
+      show 16 ≤ _; omega_using [this]
     sig_pub [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts]
@@ -826,7 +826,7 @@ theorem sat_arg (j : Nat) (hj : j < 4) : arg satState j = satArgs.readW (argAddr
   rw [satMemWith_out]
   have : ∀ j < 4, ∀ b < 4, 8 * 32 * 96 ≤ (argAddr satState j + BitVec.ofNat 64 b - 0x100000).toNat := by
     decide
-  exact this j hj b (by omega)
+  exact this j hj b (by omega_using [hb])
 
 theorem sat_pre : Pre satState := by
   have hl := combWords_length

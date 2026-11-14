@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cast5.ModeScratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CAST5-CFB64 and CAST5-OFB of a message's last piece on the subkeys at `schedule`
@@ -33,10 +34,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat} (h : ∀ a, Regi
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 private theorem bytesAt_congr' {m₁ m₂ : Mem} {p : Addr} {k : Nat}
     (h : ∀ i < k, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
@@ -104,7 +105,7 @@ theorem cfbEncFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (c
   dsimp only [Curry.apply, cfbEncFinalPost, ArgWord.ofRaw, Spec.Cfb.EncryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h
 
 theorem cfbEncFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (cfbFinalSig.words pb).length →
@@ -133,7 +134,7 @@ theorem cfbEncFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = 
   dsimp only [Curry.apply, cfbEncFinalPost, ArgWord.ofRaw, Spec.Cfb.EncryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h
 
 /-- `cfbDecryptFinalContract`'s postcondition on the subkeys at `schedule`, with
@@ -184,7 +185,7 @@ theorem cfbDecFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (c
   dsimp only [Curry.apply, cfbDecFinalPost, ArgWord.ofRaw, Spec.Cfb.DecryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h
 
 theorem cfbDecFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (cfbFinalSig.words pb).length →
@@ -213,7 +214,7 @@ theorem cfbDecFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = 
   dsimp only [Curry.apply, cfbDecFinalPost, ArgWord.ofRaw, Spec.Cfb.DecryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h
 
 /-! ## OFB of a message's last piece -/
@@ -278,7 +279,7 @@ theorem ofbFinalPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (ofbF
   dsimp only [Curry.apply, ofbFinalPost, ArgWord.ofRaw, Spec.Ofb.CryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h
 
 theorem ofbFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (ofbFinalSig.words pb).length →
@@ -307,7 +308,7 @@ theorem ofbFinalPostOut_local (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (of
   dsimp only [Curry.apply, ofbFinalPost, ArgWord.ofRaw, Spec.Ofb.CryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h
 
 end VG.Proof.Cast5

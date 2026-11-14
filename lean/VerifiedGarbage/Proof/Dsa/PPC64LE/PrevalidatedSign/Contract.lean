@@ -45,7 +45,7 @@ theorem validatePrivate_spec {m : Mem} {L : Lay} {key : Addr} (hv : Spec.Dsa.len
   have hkey : Spec.Dsa.privateKeyBytes L.pl L.ql (Spec.Rsa.bytesAt m key (3 * L.pl + 2 * L.ql)) =
       ⟨⟨pOf m L key, qOf m L key, gOf m L key⟩, yOf m L key, some (xOf m L key)⟩ := by
     rw [VG.Proof.Dsa.privateKeyBytes_at m key (Nat.le_refl _),
-      VG.Proof.Dsa.publicKeyBytes_at m key (by omega)]
+      VG.Proof.Dsa.publicKeyBytes_at m key (by omega_using [])]
     rfl
   unfold Spec.Dsa.validatePrivateKeyBytes
   simp only [hv, decide_true, Bool.not_true, VG.Proof.Bignum.bytesAt_length, bne_self_eq_false,

@@ -20,11 +20,11 @@ open Impl.MlKem.AArch64.Ntt16
 
 private theorem toInt_add16' {a r : BitVec 16} (h1 : -32768 ≤ a.toInt + r.toInt)
     (h2 : a.toInt + r.toInt < 32768) : (a + r).toInt = a.toInt + r.toInt := by
-  rw [BitVec.toInt_add]; simp only [Int.bmod_def]; split <;> omega
+  rw [BitVec.toInt_add]; simp only [Int.bmod_def]; split <;> omega_arith
 
 private theorem toInt_sub16' {a r : BitVec 16} (h1 : -32768 ≤ a.toInt - r.toInt)
     (h2 : a.toInt - r.toInt < 32768) : (a - r).toInt = a.toInt - r.toInt := by
-  rw [BitVec.toInt_sub]; simp only [Int.bmod_def]; split <;> omega
+  rw [BitVec.toInt_sub]; simp only [Int.bmod_def]; split <;> omega_arith
 
 /-- An inverse butterfly on one lane: `a + b`, and `r = d · z - t · q` for
 `d = b - a`, `t = sqrdmulh(d, tw z)`. -/

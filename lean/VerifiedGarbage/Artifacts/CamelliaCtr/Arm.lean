@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.Arm.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Camellia-CTR artifacts on baseline ARMv7 -/
+/-! # Camellia-CTR on ARMv7 -/
 
 @[expose] public section
 

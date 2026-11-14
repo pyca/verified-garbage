@@ -36,7 +36,7 @@ theorem pro_ok {σ : State} (hp : Pre σ) : WP isa (.block pro) σ (Env σ) := b
     rw [h3.mem]
     have hd : (⟨at' σ (oSave+8*i),8⟩ : Region).Disjoint (vSaveR σ) :=
       Offset.disjoint (scr σ) (d := oSave+8*i) (n := 8) (e := oSave+80) (k := 64)
-        (by omega) (by dsimp only [oSave]; omega) (by decide)
+        (by omega_using [hi]) (by dsimp only [oSave]; omega_using [hi]) (by decide)
     rw [hf2.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide)]
     exact hg1 i hi
   · intro i hi

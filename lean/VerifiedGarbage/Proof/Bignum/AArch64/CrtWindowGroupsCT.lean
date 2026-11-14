@@ -32,14 +32,14 @@ theorem groups_loop_ct (W : Window) :
   · exact two_map (fun p : RunPub × Nat => (p.1,5*p.2))
       (fun _ _ h => ⟨by dsimp; omega,h.2⟩) (groupBody_ct W)
   · intro p j s hj hs
-    refine WP.mono (hs.groupStep W (by omega)) fun t ⟨ht,h9⟩ => ?_
+    refine WP.mono (hs.groupStep W (by omega_using [hj])) fun t ⟨ht,h9⟩ => ?_
     have hnext : RunInv p (5*(j+1)) 0 t := by simpa only [Nat.mul_add,Nat.mul_one] using ht
     refine ⟨?_,fun _ => hnext,fun he => by simpa only [he] using hnext⟩
     change some (!(t.gpr .x9 == 0)) = some (decide (j+1 < p.len/5))
     rw [h9]
     by_cases he : 5*j+10 ≤ p.len
-    · simp only [he,ite_true,show j+1 < p.len/5 by omega,decide_true]; rfl
-    · simp only [he,ite_false,show ¬ j+1 < p.len/5 by omega,decide_false]; rfl
+    · simp only [he,ite_true,show j+1 < p.len/5 by omega_using [he],decide_true]; rfl
+    · simp only [he,ite_false,show ¬ j+1 < p.len/5 by omega_using [he],decide_false]; rfl
 
 def GroupsReady (p : RunPub) (s : State) : Prop :=
   RunInv p 0 0 s ∧ s.gpr .x9 = if 5 ≤ p.len then 1 else 0
@@ -57,7 +57,7 @@ theorem expGroups_ct (W : Window) :
   · exact two_map id (fun p s ⟨hs,he⟩ => ⟨by
       change 0 < p.len/5
       by_contra hz
-      have hn : ¬ 5 ≤ p.len := by omega
+      have hn : ¬ 5 ≤ p.len := by omega_using [hz]
       change some (!(s.gpr .x9 == 0)) = some true at he
       rw [hs.2,ite_eq_right hn] at he
       contradiction,hs.1⟩) (groups_loop_ct W)

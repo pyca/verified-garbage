@@ -32,7 +32,7 @@ open VG.Proof.Cast5 (tableEnt)
 theorem slot_rd {s : State} {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32)
     (hw : InRegions s.wr (S.setWidth 64) 256) {d n : Nat} (h : d + n ≤ 256) (hn : 0 < n := by decide) :
     InRegions (s.rd ++ s.wr) (addr S d) n := by
-  rw [addr_off hfit d (by omega)]
+  rw [addr_off hfit d (by omega_using [h, hn])]
   obtain ⟨g, hg, hc⟩ := hw
   exact CallLay.inRegions_sub ⟨g, List.mem_append_right _ hg, hc⟩ h (by decide)
 
@@ -40,15 +40,15 @@ theorem slot_rd {s : State} {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32)
 theorem slot_wr {s : State} {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32)
     (hw : InRegions s.wr (S.setWidth 64) 256) {d n : Nat} (h : d + n ≤ 256) (hn : 0 < n := by decide) :
     InRegions s.wr (addr S d) n := by
-  rw [addr_off hfit d (by omega)]
+  rw [addr_off hfit d (by omega_using [h, hn])]
   exact CallLay.inRegions_sub hw h (by decide)
 
 /-- Slots that do not overlap. -/
 theorem slot_sep {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32) {d n e k : Nat}
     (hd : d < 256) (he : e < 256) (h : d + n ≤ e ∨ e + k ≤ d) (hn : n ≤ 256) (hk : k ≤ 256) :
     Mem.Sep (addr S d) n (addr S e) k := by
-  rw [addr_off hfit d (by omega), addr_off hfit e (by omega)]
-  exact Offset.sep _ h (by omega) (by omega)
+  rw [addr_off hfit d (by omega_using [hd]), addr_off hfit e (by omega_using [he])]
+  exact Offset.sep _ h (by omega_using [hd, hn]) (by omega_using [he, hk])
 
 /-- The region of slot `d`, `n` bytes. -/
 abbrev slotR (S : BitVec 32) (d n : Nat) : Region := ⟨S.setWidth 64 + BitVec.ofNat 64 d, n⟩
@@ -61,7 +61,7 @@ theorem rotateStep_ok (s : State) {b : Nat} (hb : b < 5) {a kb : BitVec 32}
       t.gpr .eax = Proof.Cast5.step a kb b ∧ t.gpr .ecx = (if b < 4 then kb >>> 1 else kb) ∧
       t.mem = s.mem ∧ t.xmm = s.xmm := by
   have hn : 1 ≤ 32 - 2 ^ b ∧ 32 - 2 ^ b ≤ 31 := by
-    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+    rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_using [hb]) with h | h | h | h | h <;>
       subst h <;> decide
   unfold rotateStep
   by_cases h4 : b < 4
@@ -103,7 +103,7 @@ theorem idx_lt (i : BitVec 32) {k : Nat} (hk : k < 4) : (idx i k).toNat < 256 :=
   · simp only [idx, BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
   · simp only [idx, BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
   · simp only [idx, BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-  · simp only [idx, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := i.isLt; omega
+  · simp only [idx, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; have := i.isLt; omega_using []
 
 theorem idx_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
     BitVec.ofNat 8 (idx i k).toNat = Spec.Cast5.byte i (3 - k) := by
@@ -113,7 +113,7 @@ theorem idx_byte (i : BitVec 32) {k : Nat} (hk : k < 4) :
   rcases cases4 hk with rfl | rfl | rfl | rfl <;>
     simp only [idx, BitVec.toNat_and, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
       show (255 : BitVec 32).toNat = 255 from rfl, Nat.and_two_pow_sub_one_eq_mod _ 8] <;>
-    omega
+    omega_using []
 
 theorem dword_movd0 (v : BitVec 32) : dword ((0 : BitVec 96) ++ v) 0 = v := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -195,7 +195,7 @@ theorem post_ok (s : State) {t : Nat} (ht : t = 1 ∨ t = 2 ∨ t = 3) (up : Boo
         u.mem = (s.mem.writeW (addr S 0) (L v)).writeW (addr S kpOff) (if up then P + 4 else P - 4) ∧
         u.rd = s.rd ∧ u.wr = s.wr ∧ u.syms = s.syms ∧ u.xmm = s.xmm := by
   have e (j : Nat) (hj : j < 4) : (s.mem.writeW (addr S 0) (L v)).readW (addr S (4 * j)) 32 = v j := by
-    rw [addr_off hfit (4 * j) (by omega), addr_off hfit 0 (by omega), BitVec.add_zero, rd_lane _ _ _ hj,
+    rw [addr_off hfit (4 * j) (by omega_using [hj]), addr_off hfit 0 (by omega_using []), BitVec.add_zero, rd_lane _ _ _ hj,
       dword_L _ hj]
   have e0 := e 0 (by decide)
   have e1 := e 1 (by decide)

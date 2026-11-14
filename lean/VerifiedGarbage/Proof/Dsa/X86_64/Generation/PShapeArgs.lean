@@ -32,12 +32,12 @@ theorem pShapeArgs_ok {s : State} {F S op hp : Addr} {len count plen : Nat}
     simpa [off] using R.slot (d := 0) (k := 0) rfl (by decide) hop
   xrun [Impl.Dsa.X86_64.Generation.pShapeArgs, ea_sp, L.rsp,
     hld0, hv0, L.ld (d := 32) (by decide), R.slot (d := 32) (k := 4) rfl (by decide) hhp,
-    sx_ofNat (show (count + 1) * len - plen < 2 ^ 31 by omega)]
+    sx_ofNat (show (count + 1) * len - plen < 2 ^ 31 by omega_using [hn])]
   change BitVec.setWidth 64 (BitVec.ofNat 32 plen) = BitVec.ofNat 64 plen ∧
     BitVec.setWidth 64 (BitVec.ofNat 32 (8 * plen)) = BitVec.ofNat 64 (8 * plen)
   constructor <;> apply BitVec.eq_of_toNat_eq <;>
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat] <;>
-    simp only [Nat.mod_eq_of_lt (by omega : plen < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : 8 * plen < 2 ^ 32)]
+    simp only [Nat.mod_eq_of_lt (by omega_using [hl] : plen < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [hl] : 8 * plen < 2 ^ 32)]
 
 end VG.Proof.Dsa.X86_64.Generation

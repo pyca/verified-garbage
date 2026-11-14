@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Idea.X86.ModesLit
 import VerifiedGarbage.Proof.Idea.X86.FbFinalLit
 
-/-! # IDEA-CFB artifacts on baseline x86 (32-bit) -/
+/-! # IDEA-CFB64 on x86 -/
 
 @[expose] public section
 

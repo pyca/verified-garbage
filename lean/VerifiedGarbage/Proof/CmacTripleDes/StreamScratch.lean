@@ -103,7 +103,7 @@ theorem streamInitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesStreamIni
   dsimp only [Curry.apply, tdesStreamInitPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [Proof.CmacTripleDes.tdesBytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem absorbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesAbsorbSig.words pb).length →
@@ -132,8 +132,8 @@ theorem absorbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesAbsorbSig.wor
   intro key msg hr h1 h2
   have := Nat.mod_le len.toNat (2 ^ pb)
   rw [Proof.CmacTripleDes.bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
-  exact h key msg (repr_congr_416 (fun i hi => (hs i (by omega)).symm) hr) h1 h2
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  exact h key msg (repr_congr_416 (fun i hi => (hs i (by omega_using [hi])).symm) hr) h1 h2
 
 theorem finishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesFinishSig.words pb).length →
     (∀ b ∈ Sig.bufs tdesFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -155,6 +155,6 @@ theorem finishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesFinishSig.wor
     (tdesFinishPost pb) _ m₂ m' r
   dsimp only [Curry.apply, tdesFinishPost, ArgWord.ofRaw] at h ⊢
   intro key msg hr
-  exact h key msg (repr_congr_416 (fun i hi => (hs i (by omega)).symm) hr)
+  exact h key msg (repr_congr_416 (fun i hi => (hs i (by omega_using [hi])).symm) hr)
 
 end VG.Proof.CmacTripleDes.Stream

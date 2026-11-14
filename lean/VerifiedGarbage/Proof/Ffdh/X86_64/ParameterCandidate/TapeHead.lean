@@ -26,7 +26,7 @@ theorem drawHead_ok {s : State} {B O : Addr} {Z left len : Nat}
     WP isa (.block drawHead) s fun t => t.cf = some (decide (left < len)) ∧
       t.mem = s.mem ∧ Keep [.rax, .rcx] s t := by
   have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off O (8 * j)) 8 :=
-    fun j hj => ho.ld (by omega)
+    fun j hj => ho.ld (by omega_using [hj])
   refine WP.mono (WP.keep [.rax, .rcx]
     (Q := fun t => t.cf = some (decide (left < len)) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨hc, hm⟩, k⟩ => ⟨hc, hm, k⟩
@@ -44,7 +44,7 @@ theorem drawShort_ok {s : State} {B O : Addr} {Z : Nat}
     t.mem = s.mem.writeW (off O (8 * oStatus)) (0#64) ∧ t.zf = some false) ?_ rfl)
     fun t ⟨⟨hm, hf⟩, k⟩ => ⟨hm, hf, k⟩
   xrun [drawShort, State.ea, hdr, hdi, hdrOff, ws, hl, hs.ld (d := 8 * sLink) (by change 136 ≤ Z; exact hz),
-    ho.st (d := 8 * oStatus) (by unfold oStatus; omega)]
+    ho.st (d := 8 * oStatus) (by unfold oStatus; omega_using [])]
   rfl
 
 theorem drawFinish_ok {s : State} {B O : Addr} {Z : Nat}
@@ -57,7 +57,7 @@ theorem drawFinish_ok {s : State} {B O : Addr} {Z : Nat}
     t.mem = s.mem.writeW (off O (8 * oStatus)) (1#64) ∧ t.zf = s.zf) ?_ rfl)
     fun t ⟨⟨hm, hf⟩, k⟩ => ⟨hm, hf, k⟩
   xrun [drawFinish, State.ea, hdr, hdi, hdrOff, ws, hl, hs.ld (d := 8 * sLink) (by change 136 ≤ Z; exact hz),
-    ho.st (d := 8 * oStatus) (by unfold oStatus; omega)]
+    ho.st (d := 8 * oStatus) (by unfold oStatus; omega_using [])]
   rfl
 
 theorem drawLoad_ok {s : State} {B O op : Addr} {Z len : Nat}
@@ -68,7 +68,7 @@ theorem drawLoad_ok {s : State} {B O op : Addr} {Z len : Nat}
     WP isa (.block drawLoad) s fun t => t.gpr .rdi = B ∧ t.gpr .rsi = op ∧
       t.gpr .rcx = BitVec.ofNat 64 len ∧ t.mem = s.mem ∧ Keep [.rdi, .rax, .rsi, .rcx] s t := by
   have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off O (8 * j)) 8 :=
-    fun j hj => ho.ld (by omega)
+    fun j hj => ho.ld (by omega_using [hj])
   refine WP.mono (WP.keep [.rdi, .rax, .rsi, .rcx] (Q := fun t => t.gpr .rdi = B ∧ t.gpr .rsi = op ∧
     t.gpr .rcx = BitVec.ofNat 64 len ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨hd, hr, hc, hm⟩, k⟩ => ⟨hd, hr, hc, hm, k⟩
@@ -94,8 +94,8 @@ theorem drawSetup_ok {s : State} {B O op rp : Addr} {Z len bits left used : Nat}
       t.gpr .rcx = BitVec.ofNat 64 len ∧ t.gpr .rdx = BitVec.ofNat 64 bits ∧
       Keep [.rax, .rsi, .rcx, .rdx, .r8, .rbp, .rdi] s t := by
   have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off O (8 * j)) 8 :=
-    fun j hj => ho.ld (by omega)
-  have hwr : ∀ j < 32, InRegions s.wr (off O (8 * j)) 8 := fun j hj => ho.st (by omega)
+    fun j hj => ho.ld (by omega_using [hj])
+  have hwr : ∀ j < 32, InRegions s.wr (off O (8 * j)) 8 := fun j hj => ho.st (by omega_using [hj])
   have hskip (m : Mem) (v : BitVec 64) {i j : Nat} (hi : i < 32) (hj : j < 32) (hne : i ≠ j) :
       word (m.writeW (off O (8 * i)) v) O (8 * j) = word m O (8 * j) :=
     hdrStore_hdr m O v hi hj hne

@@ -51,7 +51,7 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
     fun t₁ ⟨H₁, m₁, k₁⟩ => ?_
   apply WP.seq
   have E : KeyEnv (s.gpr .r3) t₁ := ⟨k₁.gpr (by decide), fun o n hn => by
-    rw [k₁.2.1, k₁.2.2, hrd]; exact ⟨_, by simp, Offset.contains_base _ hn (by omega)⟩⟩
+    rw [k₁.2.1, k₁.2.2, hrd]; exact ⟨_, by simp, Offset.contains_base _ hn (by omega_using [hn])⟩⟩
   refine WP.mono (rounds_runsTo d t₁ E rfl _ H₁) fun t₂ ⟨H₂, m₂, k₂⟩ => ?_
   have p4 : t₂.gpr .r4 = s.gpr .r4 := by rw [k₂.gpr (by decide), k₁.gpr (by decide)]
   refine WP.mono (blockStore_run t₂ H₂ (by rw [p4, k₂.2.2, k₁.2.2, hwr]; exact ⟨_, by simp, Region.contains_self _ _⟩))

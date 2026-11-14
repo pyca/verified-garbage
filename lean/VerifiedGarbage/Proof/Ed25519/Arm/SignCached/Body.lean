@@ -23,7 +23,7 @@ theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (State.addr L.E + 184) 64) := by
   refine WP.seq (WP.mono (args_regs_ok hc hL ha
     (args := [(.r0, .frame d), (.r1, .frame 184), (.r2, .caller 5 0)])
-    (by simp) (by simp [Whole.valid]; omega) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by simp) (by simp [Whole.valid]; omega_using [hd]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.r0, .frame d) (by simp)
   have a1 := hs (.r1, .frame 184) (by simp)
   have a2 := hs (.r2, .caller 5 0) (by simp)
@@ -154,7 +154,7 @@ theorem challenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
 theorem wipe_ok (hc : Ctx L g m₀ s) (hL : L.Ok) :
     WP isa (.block wipe) s fun t => Ctx L g m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.bytesAt s.mem (State.addr L.out) 64 := by
-  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega) (start := 6) (count := 56) (by decide))
+  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega_using [this]) (start := 6) (count := 56) (by decide))
     fun t ⟨ht, hf, _⟩ => ⟨ht, ?_⟩
   refine frame_bytes hf L.OUT ?_ (by change 64 ≤ 2 ^ 64; decide)
   rintro r hr; rw [List.mem_singleton.mp hr]

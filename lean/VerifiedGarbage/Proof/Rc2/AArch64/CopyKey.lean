@@ -23,7 +23,7 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
   let key := Spec.Rc2.bytesAt s.mem (s.gpr .x19) t
   let I (i : Nat) (s' : State) := s'.gpr .x23 = BitVec.ofNat 64 i ∧ KeyFrame s s' ∧
     BytesPrefix s'.mem (s.gpr .x21) (fill key 0) i
-  apply forwardLoop (.block copyKey) I t _ 0 (by omega) s
+  apply forwardLoop (.block copyKey) I t _ 0 (by omega_using [ht]) s
     ⟨zero, KeyFrame.refl s, fun i hi => by omega⟩
   intro i hi s₁ ⟨index₁, frame₁, prefix₁⟩
   have keyPtr := frame₁.reg .x19 (by decide)
@@ -34,10 +34,10 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
     exact readable i hi
   have write₁ : InRegions s₁.wr (s₁.gpr .x21 + s₁.gpr .x23) 1 := by
     rw [frame₁.wr, outPtr, index₁]
-    exact writable i (by omega)
+    exact writable i (by omega_using [ht', hi])
   have byte₁ : s₁.mem (s₁.gpr .x19 + s₁.gpr .x23) = key.getD i 0 := by
     rw [keyPtr, index₁, bytesAt_getD _ _ _ _ hi]
-    exact frame₁.mem.bytes (by simpa using sep) (by change t ≤ 2 ^ 64; omega) hi
+    exact frame₁.mem.bytes (by simpa using sep) (by change t ≤ 2 ^ 64; omega_using [ht']) hi
   obtain ⟨s₂, run₂, index₂, flag₂, keep₂⟩ := copyKey_ok s₁ read₁ write₁
   have keep₂' : Keep keyTemps
       {s₁ with mem := s₁.mem.writeW (s.gpr .x21 + BitVec.ofNat 64 i) (key.getD i 0)} s₂ := by
@@ -45,13 +45,13 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
     simpa only [outPtr, index₁] using keep₂
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   constructor
-  · refine ⟨?_, frame₁.step i (by omega) _ keep₂', ?_⟩
+  · refine ⟨?_, frame₁.step i (by omega_using [ht', hi]) _ keep₂', ?_⟩
     · rw [index₂, index₁, counter_add]
     · rw [keep₂'.mem]
-      have prefix₂ := prefix₁.extend (show i < 128 by omega) (key.getD i 0)
+      have prefix₂ := prefix₁.extend (show i < 128 by omega_using [ht', hi]) (key.getD i 0)
       rw [initial_set key i] at prefix₂
       exact prefix₂
   · rw [flag₂, index₁, len₁, counter_add]
-    exact congrArg some (counter_eq (i + 1) t (by omega) (by omega))
+    exact congrArg some (counter_eq (i + 1) t (by omega_using [ht', hi]) (by omega_using [ht']))
 
 end VG.Proof.Rc2.AArch64

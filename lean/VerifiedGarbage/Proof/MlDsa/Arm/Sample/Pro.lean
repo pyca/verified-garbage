@@ -42,7 +42,7 @@ include hp
 /-- A part of the working space, in the writable regions of the entry state. -/
 theorem inScrσ {a n : Nat} (h : a + n ≤ 2048) : InRegions σ.wr (P.at' a) n := by
   rw [hp.wr]
-  exact ⟨P.scrR, by simp, Offset.contains_base _ h (by omega)⟩
+  exact ⟨P.scrR, by simp, Offset.contains_base _ h (by omega_using [h])⟩
 
 /-- The prologue, from a state `s` that differs from the entry state `σ`
 only in registers that are not callee-saved, given what its moves leave. -/
@@ -57,15 +57,15 @@ theorem pro_ok {scr a msg : Reg} {prm len : Op2} {s : State} (hm : s.mem = σ.me
   have fs := hp.fscr
   unfold pro
   rw [WP.block_append_iff]
-  refine WP.mono (saveRegs_ok scr (off := 2012) (by decide) (by rw [hscr]; omega) fun i hi => by
-    rw [hscr, add_ofNat_add, hwr]; exact inScrσ hp (by omega)) fun s1 h1 => ?_
+  refine WP.mono (saveRegs_ok scr (off := 2012) (by decide) (by rw [hscr]; omega_using [fs]) fun i hi => by
+    rw [hscr, add_ofNat_add, hwr]; exact inScrσ hp (by omega_using [hi])) fun s1 h1 => ?_
   rw [← List.singleton_append, WP.block_append_iff]
   have ea : State.addr (s1.gpr scr + BitVec.ofNat 32 (2012 + 32)) = P.at' 2044 := by
     rw [h1.gpr, hscr]; exact at_eq hp (by decide)
   refine WP.mono (Q := fun s2 => s2 = { s1 with mem := s1.mem.writeW (P.at' 2044) (s1.gpr .lr) }) ?_
     fun s2 e2 => ?_
   · apply WP.of_runBlock
-    rw [runBlock_cons, exec_str (by decide) (by rw [ea, h1.wr, hwr]; exact inScrσ hp (by omega)), runStep_some,
+    rw [runBlock_cons, exec_str (by decide) (by rw [ea, h1.wr, hwr]; exact inScrσ hp (by omega_using [])), runStep_some,
       runBlock_nil]
     exact ⟨_, rfl, by rw [ea]⟩
   subst e2
@@ -79,7 +79,7 @@ theorem pro_ok {scr a msg : Reg} {prm len : Op2} {s : State} (hm : s.mem = σ.me
     rw [hscr, add_ofNat_add] at hs
     rw [m3]
     show (s1.mem.writeW _ _).readW _ _ = _
-    rw [add_ofNat_add, Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide), hs,
+    rw [add_ofNat_add, Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by omega_using [])) (by decide), hs,
       hcs _ (savedRegs_preserved i hi)]
   · rw [m3]
     show (s1.mem.writeW _ _).readW _ _ = _
@@ -89,9 +89,9 @@ theorem pro_ok {scr a msg : Reg} {prm len : Op2} {s : State} (hm : s.mem = σ.me
     have f1 := h1.frame
     rw [hscr] at f1
     refine (f1.sub fun r hr => ⟨P.scrR, by simp, ?_⟩).writeW (r := P.scrR) (by simp) _
-      (Offset.contains_base _ (d := 2044) (by omega) (by omega))
+      (Offset.contains_base _ (d := 2044) (by omega_using []) (by omega_using []))
     rw [List.mem_singleton] at hr; subst hr
-    exact sub_scr (by omega)
+    exact sub_scr (by omega_using [])
 
 /-- The prologue of `vg_mldsa_rej_ntt_poly`: `seed = r0`, `a = r1`,
 `scratch = r2`. -/
@@ -160,15 +160,15 @@ theorem epi_ok {s : State} (he : Env P σ s) :
   subst e1
   have g3 : (s.setReg .r3 P.scr).gpr .r3 = P.scr := gpr_setReg_self _ _ _
   rw [WP.block_append_iff]
-  refine WP.mono (restoreRegs_ok .r3 (by decide) (off := 2012) (by decide) (by rw [g3]; omega)
+  refine WP.mono (restoreRegs_ok .r3 (by decide) (off := 2012) (by decide) (by rw [g3]; omega_using [fs])
     (g := σ.gpr) (by rw [g3]; exact he.sav) fun i hi => by
-      rw [g3, add_ofNat_add]; exact inScrRd hp he (by omega)) fun s2 h2 => ?_
+      rw [g3, add_ofNat_add]; exact inScrRd hp he (by omega_using [hi])) fun s2 h2 => ?_
   have e3 : s2.gpr .r3 = P.scr := by rw [h2.other .r3 (by decide), g3]
   have ea : State.addr (s2.gpr .r3 + BitVec.ofNat 32 (2012 + 32)) = P.at' 2044 := by
     rw [e3]; exact at_eq hp (by decide)
   refine WP.mono (Q := fun s3 => s3 = s2.setReg .lr (s2.mem.readW (P.at' 2044) 32)) (by
     apply WP.of_runBlock
-    rw [runBlock_cons, exec_ldr (by decide) (by rw [ea, h2.rd, h2.wr]; exact inScrRd hp he (by omega)),
+    rw [runBlock_cons, exec_ldr (by decide) (by rw [ea, h2.rd, h2.wr]; exact inScrRd hp he (by omega_using [])),
       runStep_some, runBlock_nil, ea]
     exact ⟨_, rfl, rfl⟩) fun s3 e3' => ?_
   subst e3'
@@ -234,8 +234,8 @@ theorem jFull_ok (s : State) {j : Nat} (hj : s.gpr .r2 = BitVec.ofNat 32 j) (hj'
     WP isa (.block jFull) s fun s' =>
       s'.z = decide (256 ≤ j) ∧ (∀ r, r ≠ .r11 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
         s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  have ht : (s.gpr .r2).toNat = j := by rw [hj, toNat_ofNat32 (by omega)]
-  refine WP.mono (sgn_ok s .r2 (.imm 256) (y := 256) rfl (by omega) (by decide)) fun s' h => ⟨?_, h.2⟩
+  have ht : (s.gpr .r2).toNat = j := by rw [hj, toNat_ofNat32 (by omega_using [hj'])]
+  refine WP.mono (sgn_ok s .r2 (.imm 256) (y := 256) rfl (by omega_using [hj', ht]) (by decide)) fun s' h => ⟨?_, h.2⟩
   rw [h.1, ht]; rfl
 
 /-- `step k`: `r0 ← r0 + k`, `r3 ← r3 - 1`, `Z` if it is zero. -/
@@ -250,7 +250,7 @@ theorem step_ok (s : State) {k : Nat} (ek : encodable (BitVec.ofNat 32 k) = true
 theorem shl2 (j : Nat) : BitVec.ofNat 32 j <<< 2 = BitVec.ofNat 32 (4 * j) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 section
 variable {P : Sp} {σ : State} (hp : SpOk P σ)
@@ -258,7 +258,7 @@ include hp
 
 theorem addr_aJ {j : Nat} (hj : j < 256) :
     State.addr (P.a + BitVec.ofNat 32 j <<< 2 + BitVec.ofNat 32 0) = coeffAddr P.A j := by
-  rw [shl2]; exact addr_coeff hp.fa (by omega) hj
+  rw [shl2]; exact addr_coeff hp.fa (by omega_using []) hj
 
 /-- `storeJ v`: `a[j] ← v`, `j ← j + 1`, for `j < 256` in `r2`. -/
 theorem storeJ_ok {s : State} (he : Env P σ s) {v : Reg} (hv : v ≠ .r11) {j : Nat}

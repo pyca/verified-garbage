@@ -40,7 +40,7 @@ theorem getElem_tweaks (t : List Byte) {n k : Nat} (hk : k < n) :
   | succ n ih =>
     cases k with
     | zero => rfl
-    | succ k => simp only [Spec.Xts.tweaks, List.getElem_cons_succ]; rw [ih _ (by omega), AesXts.next_succ']
+    | succ k => simp only [Spec.Xts.tweaks, List.getElem_cons_succ]; rw [ih _ (by omega_using [hk]), AesXts.next_succ']
 
 /-- After the setup, with what the rounds need. -/
 theorem SInvK.ginv {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s₀) {s : State} (hk : SInvK s₀ s)
@@ -112,12 +112,12 @@ theorem finish_wp {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s
   let T := slot s₀ (N s₀ - b)
   have inT0 : InRegions (s.rd ++ s.wr) (s.gpr .rax + 0#64) 8 := ⟨scrR s₀, by rw [hR]; simp, by
     rw [h.rax]; simpa using Offset.contains_base (S s₀) (d := bufOff + 16 * (N s₀ - b)) (n := 8) (k := 2176)
-      (by simp only [bufOff]; omega) (by simp only [bufOff]; omega)⟩
+      (by simp only [bufOff]; omega_using [hlt]) (by simp only [bufOff]; omega_using [hlt])⟩
   have inI0 : InRegions s.wr (Iv s₀ + 0#64) 8 := ⟨ivR s₀, by rw [hW]; simp, by simpa using AesCbc.X86_64.cIv0⟩
   have inI8 : InRegions s.wr (Iv s₀ + BitVec.ofNat 64 8) 8 := ⟨ivR s₀, by rw [hW]; simp, AesCbc.X86_64.cIv8⟩
   have inT8 : InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofNat 64 8) 8 := ⟨scrR s₀, by rw [hR]; simp, by
     rw [h.rax, slot, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.contains_base _ (by simp only [bufOff]; omega) (by simp only [bufOff]; omega)⟩
+    exact Offset.contains_base _ (by simp only [bufOff]; omega_using [hlt]) (by simp only [bufOff]; omega_using [hlt])⟩
   have hrdx := hg.rdx
   apply WP.of_runBlock
   simp only [finish, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
@@ -130,14 +130,14 @@ theorem finish_wp {enc : Bool} {KP : State → Prop} {s₀ : State} (hp : UPre s
     refine hiv.sub_left ?_
     show Region.Sub ⟨slot s₀ (N s₀ - b) + BitVec.ofNat 64 8, 8⟩ (scrR s₀)
     rw [slot, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact Offset.sub_base _ (by simp only [bufOff]; omega)
+    exact Offset.sub_base _ (by simp only [bufOff]; omega_using [hlt])
   have f1 : Frame [⟨Iv s₀, 8⟩] s.mem (s.mem.writeW (Iv s₀) (s.mem.readW T 64)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   rw [h.rax]
   refine post_of hp hg _ (AesCbc.frame_store2 _ _ _) ?_ fun r hr => ?_
   · rw [Proof.Cmac.bytesAt_store2, f1.readW (r := ⟨T + BitVec.ofNat 64 8, 8⟩) (Region.contains_self _ _)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hT8) (by decide)]
-    rw [← tw, tw_readW, hg.buf _ (by omega), show b + (N s₀ - b) = N s₀ by omega]
+    rw [← tw, tw_readW, hg.buf _ (by omega_using [hlt]), show b + (N s₀ - b) = N s₀ by omega_using [hbc]]
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
@@ -167,7 +167,7 @@ theorem body_wp {enc : Bool} {KP : State → Prop} {pre L : Prog isa} {f : List 
   have g₃ := SInvK.ginv (enc := enc) hp h₃ kp₃
   refine WP.seq (WP.mono (cmp8_ok hst g₃) fun s₄ ⟨g₄, cf₄⟩ => ?_)
   refine WP.seq (WP.mono (hL s₄ g₄ (by simpa using cf₄)) fun s₅ ⟨c, hc, g₅⟩ => ?_)
-  exact WP.seq (WP.mono (tail_wp hp hst hf (by omega) g₅) fun s₆ h₆ => finish_wp hp h₆)
+  exact WP.seq (WP.mono (tail_wp hp hst hf (by omega_using [hc]) g₅) fun s₆ h₆ => finish_wp hp h₆)
 
 /-- The whole function. -/
 theorem crypt_wp {enc : Bool} {KP : State → State → Prop} {pre L : Prog isa} {f : List XReg → Prog isa} {s₀ : State}

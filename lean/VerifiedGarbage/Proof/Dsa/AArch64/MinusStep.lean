@@ -47,13 +47,13 @@ theorem minusStep_ok {s₀ : State} {B : Addr} {Z w eN eY amount : Nat}
       u.gpr .x16 = off B (eN + 8 * j + 8) ∧ u.gpr .x17 = off B (eY + 8 * j + 8)) ?_ rfl rfl rfl)
     fun u ⟨⟨r, hm, hr, hp, hq⟩, hk⟩ => ?_
   · unfold minusTail
-    brun [hI.source, hI.dest, hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega),
-      hI.scr.st (show eY + 8 * j + 8 ≤ Z by omega)]
+    brun [hI.source, hI.dest, hI.scr.ld (show eN + 8 * j + 8 ≤ Z by omega_using [hN, hj]),
+      hI.scr.st (show eY + 8 * j + 8 ≤ Z by omega_using [hY, hj])]
     refine ⟨_, rfl, ?_⟩
     exact minus_word _ _ t.c (by rw [t7]; rfl)
 
   refine WP.mono (dec_ok u .x14) fun v ⟨⟨h14, hvm, hc⟩, hkv⟩ => ⟨?_, by rw [h14, hk.gpr .x14 (by decide)]⟩
-  have hx : word t.mem B (eN + 8 * j) = word s₀.mem B (eN + 8 * j) := hI.out.word (by omega) (by omega)
+  have hx : word t.mem B (eN + 8 * j) = word s₀.mem B (eN + 8 * j) := hI.out.word (by omega_using [hsep, hj]) (by omega_using [hN, hj, hn])
   rw [hx] at hr
   refine ⟨hI.scr.congr (hkv.wr.trans hk.wr), ((hI.keep.trans hk).trans hkv).mono (by decide),
     ?_, ?_, ?_, ?_⟩
@@ -61,10 +61,10 @@ theorem minusStep_ok {s₀ : State} {B : Addr} {Z w eN eY amount : Nat}
   · rw [hkv.gpr .x17 (by decide), hq, Nat.mul_succ, Nat.add_assoc]
   · rw [hvm, hm]
     intro x hx'
-    rw [writeW_outside t.mem B r (by omega) x (by omega)]
-    exact hI.out x (by omega)
+    rw [writeW_outside t.mem B r (by omega_using [hY, hj, hn]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
   · have hlow : wv t.mem B eY j = wv (t.mem.writeW (off B (eY + 8 * j)) r) B eY j :=
-      ((writeW_outside t.mem B r (by omega)).wv (Or.inl (by omega)) (by omega)).symm
+      ((writeW_outside t.mem B r (by omega_using [hY, hj, hn])).wv (Or.inl (by omega_using [])) (by omega_using [hY, hj, hn])).symm
     rw [hvm, hm, hc]
     simp only [wv]
     rw [← hlow, word_writeW_self, pow64_succ]
@@ -72,6 +72,6 @@ theorem minusStep_ok {s₀ : State} {B : Addr} {Z w eN eY amount : Nat}
     have hh := congrArg (fun x : Nat => 2 ^ (64 * j) * x) hr
     simp only [Nat.mul_add] at hh
     simp only [Nat.mul_assoc]
-    omega
+    omega_using [hv, hh]
 
 end VG.Proof.Dsa.AArch64

@@ -52,7 +52,7 @@ theorem wide_implies_ctr :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *
          first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Sm4.ctrScratchContract, Proof.Sm4.ctrScratchSig, Spec.Sm4.ctrSig, Proof.Sm4.ctrPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctrPost, ciph, ivAt, dataAt]

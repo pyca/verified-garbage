@@ -66,10 +66,10 @@ theorem callee_arg (low : 96 ≤ (s.gpr .esp).toNat) (hesp : g.gpr .esp = s.gpr 
         callArg (s.gpr .edi) wsLen n m inv sc o a b i) {i : Nat} (hi : i < 9) :
     arg (calleeOf g base bytes) i = callArg (s.gpr .edi) wsLen n m inv sc o a b i := by
   have hsp := (s.gpr .esp).isLt
-  have gEsp : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [hesp, VG.X86.sub_toNat (by omega)]
+  have gEsp : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [hesp, VG.X86.sub_toNat (by omega_using [low])]
   show arg g.callEntry i = _
-  rw [arg_callEntry (by omega) (by omega)]
-  have e := addr_eq (x := g.gpr .esp) (k := 4 * i) (by omega)
+  rw [arg_callEntry (by omega_using [low, gEsp]) (by omega_using [hi, gEsp])]
+  have e := addr_eq (x := g.gpr .esp) (k := 4 * i) (by omega_using [hi, gEsp])
   simp only [addr] at e
   rw [e, hread i hi]
 
@@ -83,11 +83,11 @@ theorem callee_abi (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8)
     (hB : val32 s.mem base b (2 * n) < val32 s.mem base m (2 * n)) :
     RtABI (calleeOf g base bytes) := by
   have low := R.low
-  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega
+  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega_using [low]
   have hsp := (s.gpr .esp).isLt
   have nwr := scr.nowrap
   have blt := scr.size_lt
-  have gEsp : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [hesp, VG.X86.sub_toNat (by omega)]
+  have gEsp : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [hesp, VG.X86.sub_toNat (by omega_using [low])]
   have argc := fun i (hi : i < 9) => callee_arg (base := base) (bytes := bytes) low hesp hread hi
   have vn : ∀ {v : Nat}, v < 2 ^ 32 → (BitVec.ofNat 32 v).toNat = v := fun hv => by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv]
@@ -101,40 +101,40 @@ theorem callee_abi (scr : Scr s base bytes) (hbytes : bytes = wsLen.toNat * 8)
   have v0 : (arg (calleeOf g base bytes) 0).toNat = base.toNat := by rw [argc 0 (by decide)]; exact scr.edi_toNat
   have v1 : (arg (calleeOf g base bytes) 1).toNat * 8 = bytes := by rw [argc 1 (by decide)]; exact hbytes.symm
   have v2 : (arg (calleeOf g base bytes) 2).toNat = n := by
-    rw [argc 2 (by decide)]; exact vn (by omega)
-  have v3 : (arg (calleeOf g base bytes) 3).toNat = m := by rw [argc 3 (by decide)]; exact vn (by omega)
-  have v4 : (arg (calleeOf g base bytes) 4).toNat = inv := by rw [argc 4 (by decide)]; exact vn (by omega)
+    rw [argc 2 (by decide)]; exact vn (by omega_using [hbytes, O2])
+  have v3 : (arg (calleeOf g base bytes) 3).toNat = m := by rw [argc 3 (by decide)]; exact vn (by omega_using [blt, O2])
+  have v4 : (arg (calleeOf g base bytes) 4).toNat = inv := by rw [argc 4 (by decide)]; exact vn (by omega_using [nwr, O3])
   have v5 : (arg (calleeOf g base bytes) 5).toNat = sc := by
-    rw [argc 5 (by decide)]; exact vn (by simp only [scratchBytes] at O4; omega)
-  have v6 : (arg (calleeOf g base bytes) 6).toNat = o := by rw [argc 6 (by decide)]; exact vn (by omega)
-  have v7 : (arg (calleeOf g base bytes) 7).toNat = a := by rw [argc 7 (by decide)]; exact vn (by omega)
-  have v8 : (arg (calleeOf g base bytes) 8).toNat = b := by rw [argc 8 (by decide)]; exact vn (by omega)
+    rw [argc 5 (by decide)]; exact vn (by simp only [scratchBytes] at O4; omega_using [nwr, O4])
+  have v6 : (arg (calleeOf g base bytes) 6).toNat = o := by rw [argc 6 (by decide)]; exact vn (by omega_using [blt, O5])
+  have v7 : (arg (calleeOf g base bytes) 7).toNat = a := by rw [argc 7 (by decide)]; exact vn (by omega_using [blt, O6])
+  have v8 : (arg (calleeOf g base bytes) 8).toNat = b := by rw [argc 8 (by decide)]; exact vn (by omega_using [blt, O7])
   have ws : wsOf (calleeOf g base bytes) = base := by
     show (arg (calleeOf g base bytes) 0).setWidth 64 = base
     rw [argc 0 (by decide)]; exact scr.edi
   have ln : lenOf (calleeOf g base bytes) = bytes := v1
-  have v1' : 8 * (arg (calleeOf g base bytes) 1).toNat = bytes := by omega
+  have v1' : 8 * (arg (calleeOf g base bytes) 1).toNat = bytes := by omega_using [v1]
   have Fc := callee_frame (base := base) (bytes := bytes) low hesp hFg
   have numc : ∀ d k, d + k ≤ bytes → Proof.Rsa.MontMul.numAt (calleeOf g base bytes).mem base d k =
       Proof.Rsa.MontMul.numAt s.mem base d k := fun d k hdk => by
     unfold Proof.Rsa.MontMul.numAt
-    rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega))
-      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega)]
+    rw [Fc.read (r := ⟨base, bytes⟩) (Offset.contains_base _ hdk (by omega_using [hbytes, hdk]))
+      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega_using [hbytes, hdk])]
   have argAddr0 : argAddr (calleeOf g base bytes) 0 = (g.gpr .esp).setWidth 64 := by
     show argAddr g.callEntry 0 = _
     rw [argAddr_callEntry]; simp
   have retBase : ((calleeOf g base bytes).gpr .esp).setWidth 64 = (g.gpr .esp - 4).setWidth 64 := by
     simp [calleeOf]
-  have e8 : 8 * n = 4 * (2 * n) := by omega
+  have e8 : 8 * n = 4 * (2 * n) := by omega_using []
   refine ⟨?_, rfl, by rw [ws, ln]; rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
   · show (g.gpr .esp - 4).toNat + 4 + 36 ≤ 2 ^ 32
-    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.sub_toNat (by omega)]; omega
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.sub_toNat (by omega_using [low, gEsp])]; omega_using [gEsp]
   · rw [ws, ln, argAddr0, hesp]; exact (R.apart.sub_left (below_sub (by decide) low)).symm
   · rw [retBase, ws, ln, hesp]; exact R.apart.sub_left (below_inner (a := 4) (k := 36) (b := 96) (by decide) low)
   · rw [retBase, argAddr0]
     refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [setWidth_toNat] <;>
-      (try rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.sub_toNat (by omega)]) <;> omega
+      (try rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.sub_toNat (by omega_using [low, gEsp])]) <;> omega_arith
   · rw [v0, ln]; exact nwr
   · rw [v2]; exact O1
   · rw [v3, v2, v1']; exact O2
@@ -179,11 +179,11 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
       val32 t.mem base o (2 * n) * 2 ^ (64 * n) % val32 s.mem base m (2 * n) =
         val32 s.mem base a (2 * n) * val32 s.mem base b (2 * n) % val32 s.mem base m (2 * n) := by
   have low := R.low
-  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega
+  have low40 : 40 ≤ (s.gpr .esp).toNat := by omega_using [low]
   have hsp := (s.gpr .esp).isLt
   have nwr := scr.nowrap
   unfold callCode
-  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega) hns ?_
+  refine WP.frameAlloc (by decide) (by decide) (by decide) (by omega_using [low]) hns ?_
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.seq (WP.mono hargs fun g ⟨Kg, Fg, Rg⟩ => ?_)
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]
@@ -194,7 +194,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
     intro i hi; rw [Kg.1 _ (by decide), Rg i hi]
   have A := callee_abi scr hbytes R O gEsp hFg hread hinv hB
   have Fc := callee_frame (base := base) (bytes := bytes) low gEsp hFg
-  have gEspN : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [gEsp, VG.X86.sub_toNat (by omega)]
+  have gEspN : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [gEsp, VG.X86.sub_toNat (by omega_using [low])]
   have hframe : (⟨(g.gpr .esp).setWidth 64, 36⟩ : Region) ∈ g.wr := by
     rw [Kg.2.2, allocFrame_wr, gEsp]; exact List.mem_cons_self ..
   have hscr : (⟨base, bytes⟩ : Region) ∈ g.wr := by
@@ -202,7 +202,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
   have argA : argAddr g.callEntry 0 = (g.gpr .esp).setWidth 64 := by rw [argAddr_callEntry]; simp
   have low96 := R.low
   refine WP.call (k := Proof.Rsa.MontMul.mulContract abi 56) (rd := [⟨argAddr g.callEntry 0, 36⟩])
-    (wr := [⟨base, bytes⟩]) VG.Proof.Mont.X86.Sse2.at_correct rtBody_noSp (by rw [rtBody_stackUse]; omega)
+    (wr := [⟨base, bytes⟩]) VG.Proof.Mont.X86.Sse2.at_correct rtBody_noSp (by rw [rtBody_stackUse]; omega_using [low, gEspN])
     (callee_pre A R gEsp)
     (Covers.of_mem fun r hr => ?_) (Covers.of_mem fun r hr => ?_) fun s' rd' wr' cs' F _ ⟨s₂, m₂, _, post⟩ => ?_
   · rcases List.mem_append.mp hr with hr | hr <;> rw [List.mem_singleton.mp hr]
@@ -225,22 +225,22 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
   have w0 : BitVec.setWidth 64 (arg (calleeOf g base bytes) 0) = base := by
     rw [ca 0 (by decide)]; exact scr.edi
   have w1 : (arg (calleeOf g base bytes) 1).toNat = wsLen.toNat := by rw [ca 1 (by decide)]; rfl
-  have w2 : (arg (calleeOf g base bytes) 2).toNat = n := by rw [ca 2 (by decide)]; exact vn (by omega)
-  have w3 : (arg (calleeOf g base bytes) 3).toNat = m := by rw [ca 3 (by decide)]; exact vn (by omega)
+  have w2 : (arg (calleeOf g base bytes) 2).toNat = n := by rw [ca 2 (by decide)]; exact vn (by omega_using [hbytes, O2])
+  have w3 : (arg (calleeOf g base bytes) 3).toNat = m := by rw [ca 3 (by decide)]; exact vn (by omega_using [blt, O2])
   have w5 : (arg (calleeOf g base bytes) 5).toNat = sc := by
-    rw [ca 5 (by decide)]; exact vn (by simp only [scratchBytes] at O4; omega)
-  have w6 : (arg (calleeOf g base bytes) 6).toNat = o := by rw [ca 6 (by decide)]; exact vn (by omega)
-  have w7 : (arg (calleeOf g base bytes) 7).toNat = a := by rw [ca 7 (by decide)]; exact vn (by omega)
-  have w8 : (arg (calleeOf g base bytes) 8).toNat = b := by rw [ca 8 (by decide)]; exact vn (by omega)
-  have e8 : 8 * n = 4 * (2 * n) := by omega
+    rw [ca 5 (by decide)]; exact vn (by simp only [scratchBytes] at O4; omega_using [nwr, O4])
+  have w6 : (arg (calleeOf g base bytes) 6).toNat = o := by rw [ca 6 (by decide)]; exact vn (by omega_using [blt, O5])
+  have w7 : (arg (calleeOf g base bytes) 7).toNat = a := by rw [ca 7 (by decide)]; exact vn (by omega_using [blt, O6])
+  have w8 : (arg (calleeOf g base bytes) 8).toNat = b := by rw [ca 8 (by decide)]; exact vn (by omega_using [blt, O7])
+  have e8 : 8 * n = 4 * (2 * n) := by omega_using []
   simp only [w0, w1, w2, w3, w5, w6, w7, w8, numAt_val32] at L₂ C₂ K₂
   have Fc' : Frame [below (s.gpr .esp) 40] s.mem (g.mem.writeW ((g.gpr .esp - 4).setWidth 64) (g.unknowns 0)) := Fc
   have vc : ∀ d, d + 8 * n ≤ bytes →
       val32 (g.mem.writeW ((g.gpr .esp - 4).setWidth 64) (g.unknowns 0)) base d (2 * n) =
         val32 s.mem base d (2 * n) := fun d hd => by
     rw [← read_eq_val32, ← read_eq_val32, Fc'.read (r := ⟨base, bytes⟩)
-      (Offset.contains_base _ (by rw [← e8]; exact hd) (by omega))
-      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega)]
+      (Offset.contains_base _ (by rw [← e8]; exact hd) (by omega_using [hbytes, hd]))
+      (fun r' hr' => by rw [List.mem_singleton.mp hr']; exact R.apart40.symm) (by omega_using [w2])]
   rw [vc _ O2] at L₂ C₂
   rw [vc _ O6, vc _ O7] at C₂
   refine ⟨fun r hr => ?_, by rw [freed_rd, rd', Kg.2.1, allocFrame_rd],
@@ -260,7 +260,7 @@ theorem call_ok {s : State} {base : Addr} {bytes n m inv sc o a b : Nat} {wsLen 
     · have hi := ofs_in hin
       have os := ofs_out nos
       have oo := ofs_out noo
-      rw [← m₂, ofs_eq base x, K₂ _ (by rw [hbytes] at hi; omega) (fun r hr => by
+      rw [← m₂, ofs_eq base x, K₂ _ (by rw [hbytes] at hi; omega_using [hi]) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact os

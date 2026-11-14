@@ -34,7 +34,7 @@ theorem words_step (m : Mem) (p : Addr) (len k : Nat) (hk : 8 * (k + 1) ≤ len)
     decodeLE (bytesAt m (p + BitVec.ofNat 64 (8 * k)) (len - 8 * k)) =
       (m.readW (p + BitVec.ofNat 64 (8 * k)) 64).toNat +
         2 ^ 64 * decodeLE (bytesAt m (p + BitVec.ofNat 64 (8 * (k + 1))) (len - 8 * (k + 1))) := by
-  have e : len - 8 * k = 8 + (len - 8 * (k + 1)) := by omega
+  have e : len - 8 * k = 8 + (len - 8 * (k + 1)) := by omega_using [hk]
   have hs : bytesAt m (p + BitVec.ofNat 64 (8 * k)) (8 + (len - 8 * (k + 1))) =
       bytesAt m (p + BitVec.ofNat 64 (8 * k)) 8 ++
         bytesAt m (p + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 8) (len - 8 * (k + 1)) :=
@@ -43,7 +43,7 @@ theorem words_step (m : Mem) (p : Addr) (len k : Nat) (hk : 8 * (k + 1) ≤ len)
       (m.readW (p + BitVec.ofNat 64 (8 * k)) 64).toNat := by
     rw [decodeLE_eq]; exact Proof.X25519.leNum_bytesAt_64 m _
   have ha : p + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (8 * (k + 1)) := by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega_using []]
   rw [e, hs, decodeLE_append, bytesAt_length, hw, ha]
 
 def wordRead : List Instr :=
@@ -57,7 +57,7 @@ theorem wordRead_ok (s : State) (k : Nat) (hb : s.gpr .rbx = BitVec.ofNat 64 (8 
       Keeps [.rbx, .rax] s t := by
   have hn : s.gpr .rbx - (8 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (8 * k) := by
     rw [hb, show (8 : BitVec 32).signExtend 64 = BitVec.ofNat 64 8 from rfl,
-      show 8 * (k + 1) = 8 * k + 8 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+      show 8 * (k + 1) = 8 * k + 8 by omega_using [], BitVec.ofNat_add, BitVec.add_sub_cancel]
   apply WP.of_runBlock
   simp only [wordRead, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
     State.ea, State.load64, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
@@ -112,8 +112,8 @@ theorem scalarWord_ok {s : State} {base : Addr} (hs : Scr s base)
   refine WP.mono (csub_ok hsb (by rw [mb]; exact hK) b2) fun c ⟨cv, gc, rdc, wrc, oc⟩ => ?_
   have hbc : c.gpr .rbx = BitVec.ofNat 64 (8 * k) := by
     rw [gc _ (by decide), kb.1 _ (by decide)]; exact ab
-  refine WP.mono (test_ok c (8 * k) (by omega) hbc) fun t ⟨tz, tg, tm, trd, twr⟩ => ?_
-  refine ⟨(tg _).trans hbc, by rw [tz]; simp; omega, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
+  refine WP.mono (test_ok c (8 * k) (by omega_using [hk]) hbc) fun t ⟨tz, tg, tm, trd, twr⟩ => ?_
+  refine ⟨(tg _).trans hbc, by rw [tz]; simp; omega_using [], ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · rw [show rem t = rem c from Proof.X448.X86_64.rv_congr fun r _ => tg r, cv, bm, ax, av]
   · simp only [bodyClob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [tg, gc r (by simp [csubClob, hr.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1,
@@ -158,27 +158,27 @@ theorem scalarLoop_ok {s₀ : State} {base : Addr} (hs : Scr s₀ base)
       Outside base TMP 56 s₀.mem t.mem := by
   apply WP.loop (fun n s => 0 < n ∧ n ≤ n₀ ∧ LoopInv base (s₀.gpr .rsi) len s₀ n s) (n := n₀)
   · intro n s ⟨hn, hnn, hi⟩
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega_using [hn] : n ≠ 0)
     have hp : s.gpr .rsi = s₀.gpr .rsi := hi.gpr .rsi (by decide)
     have hss : Scr s base := ⟨(hi.gpr .rdi (by decide)).trans hs.rdi, hi.wr ▸ hs.wr, hs.nowrap⟩
     have hKs : mv s.mem base KC 7 = wv kWords := by
-      rw [← hK]; exact hi.mem.mv (Or.inl (by decide)) (by simp only [KC]; omega)
+      rw [← hK]; exact hi.mem.mv (Or.inl (by decide)) (by simp only [KC]; omega_using [])
     have hread : InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (8 * k)) 8 := by
-      rw [hi.rd, hi.wr, hp]; exact hr k (by omega)
+      rw [hi.rd, hi.wr, hp]; exact hr k (by omega_using [hnn])
     have hb := hi.bound
     have hv : rem s < L := by rw [hi.value]; exact Nat.mod_lt _ L_pos
-    refine WP.mono (scalarWord_ok hss hKs k (by omega) hi.counter hread hv)
+    refine WP.mono (scalarWord_ok hss hKs k (by omega_using [hlen, hb]) hi.counter hread hv)
       fun t ⟨tb, tz, tv, tg, trd, twr, tm⟩ => ?_
     have hw : s.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 (8 * k)) 64 =
         s₀.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 (8 * k)) 64 :=
       readW_outside hi.mem fun i hi' => by
-        rw [Offset.add_add]; exact hin (8 * k + i) (by omega)
+        rw [Offset.add_add]; exact hin (8 * k + i) (by omega_using [hb, hi'])
     have vt : rem t =
         decodeLE (bytesAt s₀.mem (s₀.gpr .rsi + BitVec.ofNat 64 (8 * k)) (len - 8 * k)) % L := by
       rw [tv, hp, hw, hi.value, words_step _ _ len k hb, Nat.mul_comm (2 ^ 64), Nat.add_comm,
         mod_step]
     have it : LoopInv base (s₀.gpr .rsi) len s₀ k t :=
-      ⟨by omega, tb, vt, fun r hr => (tg r hr).trans (hi.gpr r hr), trd.trans hi.rd,
+      ⟨by omega_using [hb], tb, vt, fun r hr => (tg r hr).trans (hi.gpr r hr), trd.trans hi.rd,
         twr.trans hi.wr, hi.mem.trans tm⟩
     by_cases hk0 : k = 0
     · subst hk0
@@ -186,7 +186,7 @@ theorem scalarLoop_ok {s₀ : State} {base : Addr} (hs : Scr s₀ base)
         it.gpr, it.rd, it.wr, it.mem⟩
       simpa only [Nat.mul_zero, BitVec.add_zero, Nat.sub_zero] using vt
     · exact Or.inr ⟨by simp only [eval, tz, decide_eq_false hk0, Option.map_some, Bool.not_false],
-        k, by omega, by omega, by omega, it⟩
+        k, by omega_using [], by omega_using [hk0], by omega_using [hnn], it⟩
   · exact ⟨hn, Nat.le_refl _, hi⟩
 
 end VG.Proof.Ed448.X86_64

@@ -40,7 +40,7 @@ def dbodyRegs : List Reg := yValueRegs ++ xRangeRegs ++ doutputRegs
 
 theorem dmask_eq (y k q : Nat) :
     (decide (y ≠ 0) && decide (y ≠ 1) && decide (0 < k ∧ k < q)) = decide (1 < y ∧ 0 < k ∧ k < q) := by
-  by_cases h0 : y = 0 <;> by_cases h1 : y = 1 <;> simp [h0, h1] <;> omega
+  by_cases h0 : y = 0 <;> by_cases h1 : y = 1 <;> simp [h0, h1] <;> omega_using [h0, h1]
 
 theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP : ParamsOk s₀.mem L key)
     (hc : Checked s₀ s L key x 0) (hkp : Kept L s₀.mem s.mem) (hw : word s.mem L.S Sign.hOut = out)
@@ -67,10 +67,10 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   have hwq := hL.wq_ge
   obtain ⟨ip, scr, regs, p0, -, inv, p24, q0⟩ := hc
   obtain ⟨-, -, eg⟩ := params_kept hk hkp
-  have ex : kOf s.mem L x = kOf s₀.mem L x := by simp only [kOf]; rw [hx.bytes hkp.out (by omega)]
+  have ex : kOf s.mem L x = kOf s₀.mem L x := by simp only [kOf]; rw [hx.bytes hkp.out (by omega_using [])]
   have ekey : Spec.Rsa.bytesAt s.mem key (2 * L.pl + L.ql) = Spec.Rsa.bytesAt s₀.mem key (2 * L.pl + L.ql) :=
-    hk.bytes hkp.out (by omega)
-  have exb : Spec.Rsa.bytesAt s.mem x L.ql = Spec.Rsa.bytesAt s₀.mem x L.ql := hx.bytes hkp.out (by omega)
+    hk.bytes hkp.out (by omega_using [])
+  have exb : Spec.Rsa.bytesAt s.mem x L.ql = Spec.Rsa.bytesAt s₀.mem x L.ql := hx.bytes hkp.out (by omega_using [])
   have B := VG.Proof.Dsa.supported_bounds hP.1.1
   have hpo := hP.1.2.2
   have hplt : pOf s₀.mem L key < 256 ^ L.pl := by
@@ -81,20 +81,20 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   generalize gOf s₀.mem L key = g at eg
   unfold body
   -- y.
-  refine WP.seq (WP.mono (yValue_ok hL scr regs ip inv hk hx p0 (by omega) hpo p24)
+  refine WP.seq (WP.mono (yValue_ok hL scr regs ip inv hk hx p0 (by omega_using [B]) hpo p24)
     fun s₁ ⟨⟨vy, my, ip1, b1, oq1⟩, k1⟩ => ?_)
   rw [eg, ex] at vy my
   generalize hy : g ^ kOf s₀.mem L x % p = y at vy my
-  have hyp : y < p := by rw [← hy]; exact Nat.mod_lt _ (by omega)
+  have hyp : y < p := by rw [← hy]; exact Nat.mod_lt _ (by omega_using [hpo])
   have hr1 := regs.keep k1 b1
   -- x's range.
   refine WP.seq (WP.mono (xRange_ok hL (scr.congr k1.2.2) hr1 (hx.keep k1.2.1 k1.2.2) my)
     fun s₂ ⟨⟨m2, Q2, qa2⟩, k2⟩ => ?_)
   have aq : arrQ s₁.mem L 0 = q := by
     rw [← q0]
-    exact oq1.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega)) (by simp only [Lay.slot_eq]; omega)
+    exact oq1.wordsVal (Or.inl (by simp only [Lay.slot_eq]; omega_using [hwq])) (by simp only [Lay.slot_eq]; omega_using [hwq])
   have ex1 : kOf s₁.mem L x = kOf s₀.mem L x := by
-    rw [kOf, kOf, hx.bytes b1 (by omega), exb]
+    rw [kOf, kOf, hx.bytes b1 (by omega_using [hZ]), exb]
   rw [aq, ex1] at m2
   -- The output.
   have b12 : Body L s.mem s₂.mem := b1.trans (qa2.body hL)
@@ -106,11 +106,11 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
     unfold DeriveOk; rw [hy]
   rw [dmask_eq] at vt t0
   have eb : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Dsa.encodeBE L.pl y := by
-    rw [qa2.bufBytes hL (by omega)]
-    exact ((VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) (by omega)).mpr vy.symm).symm
+    rw [qa2.bufBytes hL (by omega_using [hno])]
+    exact ((VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) (by omega_using [hplt, hyp])).mpr vy.symm).symm
   have kall := k12.trans kt
   have K2 := Kept.ofBody hL b12
-  rw [eb, hk.bytes K2.out (by omega), hx.bytes K2.out (by omega), ekey, exb] at vt
+  rw [eb, hk.bytes K2.out (by omega_using []), hx.bytes K2.out (by omega_using []), ekey, exb] at vt
   simp only [decide_eq_true_eq] at vt t0
   simp only [hD]
   refine ⟨⟨vt, t0, ⟨s₂.mem, K2, ot⟩, (kall.gpr (by decide)).trans regs.s6, scr.congr kall.2.2⟩, ?_⟩

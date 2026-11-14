@@ -51,7 +51,7 @@ theorem takeBit_ok (W : Window) {s : State} {P : Addr} {w b v V i : Nat}
   by_cases h4 : b = 4
   · subst b
     refine WP.ite true (by change some (u.gpr .x3 == 0) = some true; rw [flag]; rfl) (fun _ => ?_) (by simp)
-    refine WP.mono (W.ok cu tu hw hw' hR yu' vu (by omega) nu)
+    refine WP.mono (W.ok cu tu hw hw' hR yu' vu (by omega_using [hv]) nu)
       fun t ⟨ct,tt,yt,vt,ft,kt,nt,bt,hh⟩ => ?_
     refine ⟨ct,tt,yt,vt,fu.trans (ft.mono (rawWindowRanges_sub w)),
       (ku.trans kt).mono (by decide),nt,bt,?_⟩

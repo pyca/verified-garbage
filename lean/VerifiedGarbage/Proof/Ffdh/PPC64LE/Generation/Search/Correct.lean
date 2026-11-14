@@ -91,7 +91,7 @@ theorem search_finish {p : SPub} {original s : State} {result : ParameterSearchR
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hd.1)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   have hc (j : Nat) (hj : j < 4) : word t.mem p.control (8 * j) = word s.mem p.control (8 * j) :=
     hf.readW (r := ⟨p.control, 128⟩)
       (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
@@ -100,7 +100,7 @@ theorem search_finish {p : SPub} {original s : State} {result : ParameterSearchR
   · rw [ha]
     have := result_status_lt result
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   · have ho := h.output
     unfold SOutput at ho ⊢
     rw [hb]
@@ -127,7 +127,7 @@ theorem iteration_depth (c : Cand) : sdepth (iteration c.call) ≤ 288 := by
   have := c.stack
   simp only [iteration, candidateRun, exhausted, zeroOut, classify, short, Impl.Bignum.PPC64LE.countLoop,
     sdepth, Cand.call, Instr.frameBytes]
-  omega
+  omega_using [this]
 
 /-- After the frame: a finished search, with `r0` and the stack pointer
 back. -/
@@ -157,7 +157,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     prun [exec_mflr]) (by decide)) fun t₁ ⟨⟨h0, hm₁⟩, k₁⟩ hy₁ => ?_)
   have k' : Keep entryRegs s t₁ := k.trans' (k₁.mono (by decide))
   have hl := search_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k' (hy₁.trans hy)
-  have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega
+  have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
   refine WP.seq (WP.mono (WP.frameRegAny (r := .r0)
     (Q := fun u => SDone p s (searchResult s) u ∧ u.gpr .r0 = s.lr ∧ u.sp = s.sp) hsp ?_ ?_ ?_)
     fun u ⟨hd, h0', hsp'⟩ => ?_)
@@ -173,7 +173,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     rw [RegUpd.gpr_write_self, h0, k.lr]
   · have := iteration_depth c
     simp only [sdepth]
-    omega
+    omega_using [this]
   · prun [exec_mtlr]
     exact ⟨⟨hd.input, hd.rd, hd.wr, hd.r31, hd.saved, hd.savedR31, hd.usedPtr, hd.used, hd.status, hd.policy,
       hd.output⟩, h0', hsp'⟩

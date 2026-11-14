@@ -52,7 +52,7 @@ theorem blkCallIv {s₀ : State} (hp : UPre s₀) {s : State}
   have hb : below s.sp = belowR s₀ := by rw [sp]; rfl
   have hsc := hp.scr_fit
   refine ⟨r0, by rw [r1]; simp [R], r2, by rw [r3]; rfl, r12, hp.rounds, by rw [sp]; exact hp.sp8, hp.sch_fit,
-    by have := hp.iv_fit; omega, by omega, hp.sch_iv, hp.sch_scr.sub_right (Region.sub_prefix (by decide)),
+    by have := hp.iv_fit; omega_using [this], by omega_using [hsc], hp.sch_iv, hp.sch_scr.sub_right (Region.sub_prefix (by decide)),
     hp.iv_scr.sub_right (Region.sub_prefix (by decide)), by rw [hb]; exact hp.b_sch, by rw [hb]; exact hp.b_iv,
     by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
   · rw [hrd, hwr, hp.rd, hp.wr]
@@ -138,8 +138,8 @@ theorem body_ok : BodyOk ofbMode body := by
   have rw₂ : s₂.rd ++ s₂.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [rg₂.rd, rg₂.wr, hp.rd, hp.wr]; rfl
   rw [post_eq]
-  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega)
-    (by rw [rg₂.r7, qN]; omega) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
+  refine xorIn_wp (by decide) (by decide) (by decide) (by decide) (by rw [rg₂.r6]; omega_using [hiv])
+    (by rw [rg₂.r7, qN]; omega_using [hk, hdf]) (by rw [rg₂.r6, add0, rw₂]; exact covIv (by simp))
     (by rw [rg₂.r7, add0, hd, w₂]; exact covBlk hk (by simp)) fun s₃ g₃ => ?_
   have m₃ : s₃.mem = Proof.Cmac.xor4Mem s₂.mem (blk s₀ k) (blk s₀ k) (State.addr (Iv s₀)) := by
     rw [g₃.mem, rg₂.r7, rg₂.r6, add0, add0, hd]
@@ -170,7 +170,7 @@ theorem body_ok : BodyOk ofbMode body := by
         · exact (hp.data_scr.sub_left (UPre.data_sub hk)).sub_right (Region.sub_prefix (by decide))
         · exact hp.b_data.symm.sub_left (UPre.data_sub hk)) (by decide),
       Proof.Cmac.bytesAt_frame (Proof.Cmac.xor4Mem_frame _ _ _ _) (one (hp.blk_iv hk).symm) (by decide)]
-  have hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega
+  have hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc : outK ofbMode s₀ (k + 1) = outK ofbMode s₀ k ++ [bytesAt s₃.mem (blk s₀ k) 16] := by
     rw [newBlk, newIv]
     simp only [outK, chainK, ofbMode_out, ofbMode_chain, take_succ_blks s₀ hk, crypt_snoc, hl]

@@ -192,7 +192,7 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.keygen fun _ _ =
         ∀ N < 2 * K.k, PolyIs b.mem ((lay s₂ K).A 0 (oPoly (K.k + N)))
           (ntt (VG.Proof.MlKem.cbd (VG.Proof.MlKem.KPke.kgSigma K.p (D s₂)) N))))
     (relct_wp (RelCT.pointwise fun x y hxy =>
-      prfLoop_ct hK (L := lay s₁ K) true (by have := hK.k1; omega) (by omega) hxy.1.1.ctx
+      prfLoop_ct hK (L := lay s₁ K) true (by have := hK.k1; omega_using [this]) (by omega_using []) hxy.1.1.ctx
         (by rw [← two.lay]; exact hxy.2.1.ctx) rfl rfl)
       fun a b hab => ⟨prf_phase hp₁ hab.1.1 hab.1.2.1 hab.1.2.2,
         prf_phase hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_

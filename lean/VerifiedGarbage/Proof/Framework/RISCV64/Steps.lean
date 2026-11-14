@@ -65,7 +65,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_addi {d n : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_addi (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_addi (by unfold imm12; omega_using [h])) ?_
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
 /-- `mv d, n` (`addi d, n, 0`). -/
@@ -76,13 +76,13 @@ theorem wp_mv {d n : Reg} (k : ∀ s', Upd s s' d (s.gpr n) → WP isa (.block i
 theorem wp_subi {d n : Reg} {imm : Nat} (h : imm ≤ 2048)
     (k : ∀ s', Upd s s' d (s.gpr n - BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (-(imm : Int)) :: is)) s Q := by
-  refine WP.cons (exec_addi (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_addi (by unfold imm12; omega_using [h])) ?_
   rw [add_ofInt_neg]; exact k _ (Upd.write _ _ _)
 
 theorem wp_li {d : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.li d (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_li (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_li (by unfold imm12; omega_using [h])) ?_
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
 theorem wp_add {d n m : Reg}
@@ -120,7 +120,7 @@ theorem and63 (x : BitVec 64) : x &&& BitVec.ofInt 64 63 = BitVec.ofNat 64 (x.to
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 63).toNat = 2 ^ 6 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem wp_andi63 {d n : Reg}
     (k : ∀ s', Upd s s' d (BitVec.ofNat 64 ((s.gpr n).toNat % 64)) → WP isa (.block is) s' Q) :

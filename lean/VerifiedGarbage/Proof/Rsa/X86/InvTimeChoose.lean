@@ -4,17 +4,40 @@ meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 meta import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
+public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
 import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
-public import VerifiedGarbage.Proof.Rsa.X86.InvTimeCompare
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Rsa.X86.InvChoice
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.TimeBody
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBodyRel
+
+/-! ### `Rsa.X86.InvTimeCompare`, which only this module used -/
+
+section
+
+/-! # Relating public length comparisons in the inverse dispatcher -/
+
+@[expose] public section
+namespace VG.Proof.Rsa.X86.InvTiming
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.CrtValuesRt VG.Proof.Rsa.X86.KeyRt
+
+ def Pair (args : Nat → BitVec 32) (base : Addr) (size len P Q P' Q' : Nat) (sp : BitVec 32) (s t : State) : Prop :=
+  (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+  (InvInput args base size len P' Q' t ∧ Public args base size sp t)
+end VG.Proof.Rsa.X86.InvTiming
+
+end
+
+end
+
 
 /-! # The inverse's trace: a public guard, then the batches or the general inverse
 
@@ -39,16 +62,16 @@ theorem fits {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : 
   change kw a = kw len at aw
   have eq : BitVec.ofNat 32 a = args 7 := Option.some.inj (arg.readSrc.symm.trans h.gate.nArg.readSrc)
   have ae := congrArg BitVec.toNat eq
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at ae
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [al])] at ae
   have nwl : VG.Proof.Rsa.X86.InvBatchRt.nw len = a / 8 := by
     have aw' := aw
     simp only [kw, Spec.Rsa.modulusWords] at aw'
-    simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega
+    simp only [VG.Proof.Rsa.X86.InvBatchRt.nw, kw, Spec.Rsa.modulusWords]; omega_using [m16, ae, aw']
   have hf : VG.Impl.Rsa.X86.Keys.hdr + VG.Impl.Rsa.X86.CrtValues.nArr * VG.Proof.Rsa.X86.Keys.S (kw len) ≤ size :=
     h.ws.ws.fits
   have ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq len
   simp only [VG.Impl.Rsa.X86.Keys.hdr, VG.Impl.Rsa.X86.CrtValues.nArr, VG.Proof.Rsa.X86.Keys.S] at hf
-  exact ⟨⟨by omega, by omega⟩, by omega, by omega⟩
+  exact ⟨⟨by omega_using [hf, ke], by omega_using [big, ae, nwl]⟩, by omega_using [m16, ae, nwl], by omega_using [al, nwl]⟩
 
 theorem setup_check :
     ∃ hint, (VG.Taint.check sseTaint τ VG.Impl.Rsa.X86.CrtValuesRt.callSetup hint).isSome = true :=

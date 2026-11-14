@@ -159,7 +159,7 @@ j 21f
 .insn 2, 0x8082
 .option pop",
         vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -245,7 +245,7 @@ j 21f
 .insn 2, 0x8082
 .option pop",
         vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 

@@ -18,7 +18,7 @@ theorem CrtShared.pad_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List B
     Nat.le_trans (crt_modulus_end_le _) h.buffers.storageFits, ready.ptr, h.main.modulus, ready.stackRead,
     h.stack.separate.sub_left (Region.sub_prefix (by decide)), ready.saved⟩
   simp only [modulusOffset, compareOffset, productOffset, stride]
-  omega
+  omega_using []
 
 theorem CrtShared.compare_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
@@ -28,17 +28,17 @@ theorem CrtShared.compare_input {s : State} {g : CrtGeometry} {bs : Fin 7 → Li
     have fit := h.buffers.context.main.nowrap
     have size' := h.main.toCrtLayoutState.size
     simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productOffset, stride] at size
-    omega
+    omega_using [size, size']
   refine ⟨h.buffers.workspace, small, ?_, ready.ptr,
     h.main.toCrtLayoutState.nativeCount h.buffers.context.main, h.main.compare, h.main.product,
     h.main.modulus, ready.stackRead, h.stack.separate.sub_left (Region.sub_prefix (by decide)), ready.saved⟩
   refine ⟨h.buffers.workspace.nowrap, ?_, ?_, Nat.le_trans (crt_modulus_end_le _) size, ?_, ?_,
     h.buffers.workspace.writable⟩
   all_goals simp only [totalBytes, narrowOffset, modulusOffset, compareOffset, productBytes, productWords] at size ⊢
-  · omega
-  · omega
-  · right; omega
-  · left; omega
+  · omega_using [size]
+  · omega_using [size]
+  · right; omega_using []
+  · left; omega_using []
 
 theorem CrtShared.validate_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s) :
@@ -48,7 +48,7 @@ theorem CrtShared.validate_input {s : State} {g : CrtGeometry} {bs : Fin 7 → L
   refine ⟨h.product_input ready false, ⟨h.pad_input ready, h.compare_input ready, ?_⟩, ?_⟩
   · left
     simp only [modulusOffset, compareOffset, productBytes, productWords]
-    omega
-  · simp only [productOffset, stride]; omega
+    omega_using []
+  · simp only [productOffset, stride]; omega_using []
 
 end VG.Proof.Bignum.Arm

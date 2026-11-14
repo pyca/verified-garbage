@@ -39,12 +39,12 @@ theorem writeWords_ok (m : Mem) (B : Addr) (e : Nat) (v : Nat → BitVec 64) (n 
   induction n with
   | zero => exact ⟨rfl, Outside.refl _ _ _ _⟩
   | succ n ih =>
-    have ⟨hv, ho⟩ := ih (by omega)
-    have ht := writeW_outside (writeWords m B e v n) B (v n) (d := e + 8 * n) (by omega)
+    have ⟨hv, ho⟩ := ih (by omega_using [he])
+    have ht := writeW_outside (writeWords m B e v n) B (v n) (d := e + 8 * n) (by omega_using [he])
     constructor
-    · rw [writeWords, wv_writeW_top _ _ _ _ _ (by omega), hv]; rfl
-    · exact (ho.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega)).trans
-        (ht.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega))
+    · rw [writeWords, wv_writeW_top _ _ _ _ _ (by omega_using [he]), hv]; rfl
+    · exact (ho.mono (o' := e) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])).trans
+        (ht.mono (o' := e) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using []))
 
 theorem storeCols_ok {s : State} {B : Addr} {Z e : Nat} (hs : Scr s B Z)
     (hp : s.gpr .rsi = off B e) (he : e + 64 ≤ Z) :
@@ -57,16 +57,16 @@ theorem storeCols_ok {s : State} {B : Addr} {Z e : Nat} (hs : Scr s B Z)
     fun t ⟨hm, k⟩ => ?_
   · unfold AdxRotate8.storeCols
     xrun [State.ea, at_, hp, ad, Nat.add_zero,
-      hs.st (show e + 0 + 8 ≤ Z by omega),
-      hs.st (show e + 8 + 8 ≤ Z by omega),
-      hs.st (show e + 16 + 8 ≤ Z by omega),
-      hs.st (show e + 24 + 8 ≤ Z by omega),
-      hs.st (show e + 32 + 8 ≤ Z by omega),
-      hs.st (show e + 40 + 8 ≤ Z by omega),
-      hs.st (show e + 48 + 8 ≤ Z by omega),
-      hs.st (show e + 56 + 8 ≤ Z by omega)]
+      hs.st (show e + 0 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 8 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 16 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 24 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 32 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 40 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 48 + 8 ≤ Z by omega_using [he]),
+      hs.st (show e + 56 + 8 ≤ Z by omega_using [he])]
     rfl
-  · have ⟨hv, ho⟩ := writeWords_ok s.mem B e (regWord s) 8 (by omega)
+  · have ⟨hv, ho⟩ := writeWords_ok s.mem B e (regWord s) 8 (by omega_using [he, hn])
     rw [← hm] at hv ho
     refine ⟨?_, ho, k⟩
     rw [hv]

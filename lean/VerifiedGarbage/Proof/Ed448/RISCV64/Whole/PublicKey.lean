@@ -77,7 +77,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
   have sl₃ : (slotArea (s.gpr .a3) 120 pkRegs).Disjoint (below s.sp 1168) := hp.bF.symm.sub_left hsS
   have sl₄ : ∀ d n, d + n ≤ 120 →
       (slotArea (s.gpr .a3) 120 pkRegs).Disjoint ⟨s.gpr .a3 + BitVec.ofNat 64 d, n⟩ := fun d n h =>
-    Offset.disjoint _ (.inr h) (by decide) (by omega)
+    Offset.disjoint _ (.inr h) (by decide) (by omega_using [h])
   have F0 : s.gpr .a3 + BitVec.ofNat 64 0 = s.gpr .a3 := BitVec.add_zero _
   have hF114 : Region.Sub ⟨s.gpr .a3, 114⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
   have hF57 : Region.Sub ⟨s.gpr .a3, 57⟩ ⟨s.gpr .a3, 160⟩ := Region.sub_prefix (by decide)
@@ -136,7 +136,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
     exact this
   -- The pruning, and the arguments of `scalar_base`.
   have hFw' : ∀ j < 57, InRegions t₂.wr (s.gpr .a3 + BitVec.ofNat 64 j) 1 := fun j hj => by
-    rw [h₂.wr]; exact in_base hFw (by omega) (by omega)
+    rw [h₂.wr]; exact in_base hFw (by omega_using [hj]) (by omega_using [hj])
   refine WP.seq (prune_ok (f := .s10) (o := 0) (q := s.gpr .a3) (by decide) (by decide)
     (by rw [h₂.regs _ (by decide)]; exact F0) hFw' fun u um usp urd uwr ug => ?_)
   unfold mov
@@ -187,7 +187,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
   -- The restores.
   have hrl : ∀ p ∈ restoreList 120 pkRegs, p.2 + 8 ≤ 160 := by decide
   refine restore_ok h₄ hp.alF (h₄.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
-    (fun p hp' => by rw [h₄.wr]; exact in_base (List.mem_append_right _ hFw) (hrl p hp') (by have := hrl p hp'; omega))
+    (fun p hp' => by rw [h₄.wr]; exact in_base (List.mem_append_right _ hFw) (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₅ g₅ sp₅ ra₅ m₅ _ => ⟨g₅, sp₅, ra₅, ?_⟩
   rw [m₅, hb, Spec.Ed448.scalarBase, m₃, pruned_prune, hh]
   rfl

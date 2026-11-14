@@ -45,19 +45,19 @@ theorem storePair_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi :
     apply BitVec.eq_of_toNat_eq
     rw [shr28, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (s.gpr .x4).isLt)]
   have enc : ∀ d, d % 8 = 0 → d + 8 ≤ 8192 → d % 8 = 0 ∧ d < 32768 :=
-    fun d hd hb => ⟨hd, by omega⟩
+    fun d hd hb => ⟨hd, by omega_using [hb]⟩
   apply WP.of_runBlock
   simp only [storePair, st, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
     Size.bits, State.read, State.store, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.wr_write, BitVec.setWidth_eq, hs.x3, hs.mask,
-    enc (X1 + 16 * i) (by simp only [X1, slot]; omega) (by simp only [X1, slot]; omega),
-    enc (X3 + 16 * i) (by simp only [X3, slot]; omega) (by simp only [X3, slot]; omega),
-    enc (X1 + 16 * i + 8) (by simp only [X1, slot]; omega) (by simp only [X1, slot]; omega),
-    enc (X3 + 16 * i + 8) (by simp only [X3, slot]; omega) (by simp only [X3, slot]; omega),
-    w (X1 + 16 * i) (by simp only [X1, slot]; omega),
-    w (X3 + 16 * i) (by simp only [X3, slot]; omega),
-    w (X1 + 16 * i + 8) (by simp only [X1, slot]; omega),
-    w (X3 + 16 * i + 8) (by simp only [X3, slot]; omega),
+    enc (X1 + 16 * i) (by simp only [X1, slot]; omega_using []) (by simp only [X1, slot]; omega_using [hi]),
+    enc (X3 + 16 * i) (by simp only [X3, slot]; omega_using []) (by simp only [X3, slot]; omega_using [hi]),
+    enc (X1 + 16 * i + 8) (by simp only [X1, slot]; omega_using []) (by simp only [X1, slot]; omega_using [hi]),
+    enc (X3 + 16 * i + 8) (by simp only [X3, slot]; omega_using []) (by simp only [X3, slot]; omega_using [hi]),
+    w (X1 + 16 * i) (by simp only [X1, slot]; omega_using [hi]),
+    w (X3 + 16 * i) (by simp only [X3, slot]; omega_using [hi]),
+    w (X1 + 16 * i + 8) (by simp only [X1, slot]; omega_using [hi]),
+    w (X3 + 16 * i + 8) (by simp only [X3, slot]; omega_using [hi]),
     Nat.reduceLT, and_self, ite_true, ite_false, reduceCtorEq,
     Option.bind_some, write8_eq, Option.some.injEq, exists_eq_left']
   refine ⟨?_, (fun r hr => ?_), rfl, rfl⟩
@@ -79,11 +79,11 @@ theorem pairMem_limbs (m : Mem) (base : Addr) {i j v : Nat} (hi : i < 8) (hj : j
   let m₁ := (m.writeW (off base (X1 + 8 * (2 * i))) (BitVec.ofNat 64 (v % radix))).writeW
     (off base (X3 + 8 * (2 * i))) (BitVec.ofNat 64 (v % radix))
   have p₁ := pair_write (m := m) (base := base) (x := X1) (y := X3) (n := 2 * i)
-    (by decide) (by decide) (by decide) (by omega) hj (BitVec.ofNat 64 (v % radix)) (BitVec.ofNat 64 (v % radix))
+    (by decide) (by decide) (by decide) (by omega_using [hi]) hj (BitVec.ofNat 64 (v % radix)) (BitVec.ofNat 64 (v % radix))
   have p₂ := pair_write (m := m₁) (base := base) (x := X1) (y := X3) (n := 2 * i + 1)
-    (by decide) (by decide) (by decide) (by omega) hj (BitVec.ofNat 64 (v / radix)) (BitVec.ofNat 64 (v / radix))
-  have index0 : 8 * (2 * i) = 16 * i := by omega
-  have index1 : 8 * (2 * i + 1) = 16 * i + 8 := by omega
+    (by decide) (by decide) (by decide) (by omega_using [hi]) hj (BitVec.ofNat 64 (v / radix)) (BitVec.ofNat 64 (v / radix))
+  have index0 : 8 * (2 * i) = 16 * i := by omega_using []
+  have index1 : 8 * (2 * i + 1) = 16 * i + 8 := by omega_using []
   simp only [m₁, index0, index1, ← Nat.add_assoc, lo, high] at p₁ p₂
   rw [p₁.1, p₁.2] at p₂
   exact p₂
@@ -92,12 +92,12 @@ theorem pairMem_outside (m : Mem) (base : Addr) {i : Nat} (hi : i < 8) (v : Nat)
     Outside2 base X1 (16 * (i + 1)) X3 (16 * (i + 1)) m (pairMem m base i v) := by
   intro p hx hy
   simp only [pairMem]
-  have x0 : X1 + 16 * i + 8 ≤ 8192 := by simp only [X1, slot]; omega
-  have x1 : X1 + 16 * i + 8 + 8 ≤ 8192 := by simp only [X1, slot]; omega
-  have y0 : X3 + 16 * i + 8 ≤ 8192 := by simp only [X3, slot]; omega
-  have y1 : X3 + 16 * i + 8 + 8 ≤ 8192 := by simp only [X3, slot]; omega
-  rw [writeW_outside _ _ _ y1 p (by omega), writeW_outside _ _ _ x1 p (by omega),
-    writeW_outside _ _ _ y0 p (by omega), writeW_outside _ _ _ x0 p (by omega)]
+  have x0 : X1 + 16 * i + 8 ≤ 8192 := by simp only [X1, slot]; omega_using [hi]
+  have x1 : X1 + 16 * i + 8 + 8 ≤ 8192 := by simp only [X1, slot]; omega_using [hi]
+  have y0 : X3 + 16 * i + 8 ≤ 8192 := by simp only [X3, slot]; omega_using [hi]
+  have y1 : X3 + 16 * i + 8 + 8 ≤ 8192 := by simp only [X3, slot]; omega_using [hi]
+  rw [writeW_outside _ _ _ y1 p (by omega_using [hy]), writeW_outside _ _ _ x1 p (by omega_using [hx]),
+    writeW_outside _ _ _ y0 p (by omega_using [hy]), writeW_outside _ _ _ x0 p (by omega_using [hx])]
 
 theorem decodePair_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat} (hi : i < 8)
     (hp : s.gpr .x2 = p) (hr : ∀ j < 7, InRegions (s.rd ++ s.wr) (off p (7 * i + j)) 1) :

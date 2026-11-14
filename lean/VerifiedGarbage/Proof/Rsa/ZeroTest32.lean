@@ -13,8 +13,8 @@ theorem shr31 (y : BitVec 32) : (y >>> 31).toNat = if y.msb then 1 else 0 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_decide]
   have := y.isLt
   by_cases h : 2 ^ (32 - 1) ≤ y.toNat
-  · rw [decide_eq_true h]; simp only [ite_true]; simp only [Nat.reduceSub] at h; omega
-  · rw [decide_eq_false h]; simp only [Bool.false_eq_true, ite_false]; simp only [Nat.reduceSub] at h; omega
+  · rw [decide_eq_true h]; simp only [ite_true]; simp only [Nat.reduceSub] at h; omega_using [h]
+  · rw [decide_eq_false h]; simp only [Bool.false_eq_true, ite_false]; simp only [Nat.reduceSub] at h; omega_using [h]
 
 theorem msb_or_neg (x : BitVec 32) : (x ||| (0 - x)) >>> 31 = if x = 0 then 0 else 1 := by
   apply BitVec.eq_of_toNat_eq
@@ -26,7 +26,7 @@ theorem msb_or_neg (x : BitVec 32) : (x ||| (0 - x)) >>> 31 = if x = 0 then 0 el
   · subst h; decide
   · have hx : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
     have : 2 ^ (32 - 1) ≤ x.toNat ∨ 2 ^ (32 - 1) ≤ (2 ^ 32 - x.toNat) % 2 ^ 32 := by
-      rw [Nat.mod_eq_of_lt (by omega)]; omega
+      rw [Nat.mod_eq_of_lt (by omega_using [hx])]; omega_using []
     simp only [h, ite_false, Bool.or_eq_true, decide_eq_true_eq]
     simp only [this, ite_true]; rfl
 

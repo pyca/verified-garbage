@@ -114,30 +114,30 @@ theorem inv_step {base : State} {total count k : Nat} (cfg : Config base total c
   have hread : s.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16=
       base.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16 :=
     hs.frame.read (r := ⟨base.gpr .r17,16*count⟩)
-      (Offset.contains_base _ (d := 16*k) (n := 16) (k := 16*count) (by omega)
-        (by have := cfg.bound; have := cfg.size; omega))
+      (Offset.contains_base _ (d := 16*k) (n := 16) (k := 16*count) (by omega_using [hk])
+        (by have := cfg.bound; have := cfg.size; omega_arith))
       (by simpa only [List.mem_singleton,forall_eq] using cfg.disjoint) (by decide)
-  have hp := hs.processed.store cfg.size (show k<total by have := cfg.bound; omega)
+  have hp := hs.processed.store cfg.size (show k<total by have := cfg.bound; omega_using [hk, this])
     (v := base.mem.read (base.gpr .r17+BitVec.ofNat 64 (16*k)) 16) (by
       intro i hi
       change VG.VectorCrypto.vbyte (base.mem.read _ 16) i=(value base k).getD i 0
       rw [← VG.Proof.Aes.Vector.getD_st _ hi,VG.Proof.Aes.PPC64LE.Crypto.stateAt_read16]
       rfl)
   refine WP.mono (step_ok s hs.zero hr hw) fun t ht => ?_
-  refine ⟨by omega,(hs.keep.trans ht.keep).mono (by simp [registers]),
+  refine ⟨by omega_using [hk],(hs.keep.trans ht.keep).mono (by simp [registers]),
     fun r hr => (ht.vectors r hr).trans (hs.vectors r hr),
     (ht.keep.gpr (by decide)).trans hs.zero,?_,?_,?_,?_,?_⟩
   · rw [ht.source,hs.source]
     change base.gpr .r17+BitVec.ofNat 64 (16*k)+BitVec.ofNat 64 16=_
     rw [Offset.add_add]
-    exact congrArg (fun j => base.gpr .r17+BitVec.ofNat 64 j) (by omega)
+    exact congrArg (fun j => base.gpr .r17+BitVec.ofNat 64 j) (by omega_using [])
   · rw [ht.dest,hs.dest]
     change base.gpr .r30+BitVec.ofNat 64 (16*k)+BitVec.ofNat 64 16=_
     rw [Offset.add_add]
-    exact congrArg (fun j => base.gpr .r30+BitVec.ofNat 64 j) (by omega)
+    exact congrArg (fun j => base.gpr .r30+BitVec.ofNat 64 j) (by omega_using [])
   · rw [ht.left,hs.left]
     change BitVec.ofNat 64 (count-k)-BitVec.ofNat 64 1=_
-    rw [Offset.ofNat_sub_ofNat (show 1≤count-k by omega),Nat.sub_sub]
+    rw [Offset.ofNat_sub_ofNat (show 1≤count-k by omega_using [hk]),Nat.sub_sub]
   · rw [ht.mem,hs.source,hs.dest,hread]; exact hp.1
   · rw [ht.mem,hs.source,hs.dest,hread]; exact hs.frame.trans hp.2
 
@@ -162,9 +162,9 @@ theorem loop_ok {base s : State} {total count k : Nat} (cfg : Config base total 
     have hne : u.gpr .r19 ≠ 0 := by
       intro hz
       have hh := congrArg BitVec.toNat hz
-      rw [hu.left,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := cfg.bound; have := cfg.size; omega)] at hh
-      exact he (by change count-(j+1)=0 at hh; omega)
-    exact ⟨hev.trans (by simpa using hne),count-(j+1),by omega,j+1,rfl,by omega,hu⟩
+      rw [hu.left,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := cfg.bound; have := cfg.size; omega_arith)] at hh
+      exact he (by change count-(j+1)=0 at hh; omega_using [hj, hh])
+    exact ⟨hev.trans (by simpa using hne),count-(j+1),by omega_using [hj],j+1,rfl,by omega_using [hj, he],hu⟩
 
 
 def initialState (base : State) : State := (base.write .r11 (base.gpr .r30)).write .r0 0
@@ -178,7 +178,7 @@ theorem initial_ok (base : State) :
 
 theorem initial_inv {base : State} {total count : Nat} (cfg : Config base total count) :
     Inv base total count 0 (initialState base) := by
-  refine ⟨by omega,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  refine ⟨by omega_using [],?_,?_,?_,?_,?_,?_,?_,?_⟩
   · exact ((Local.write base .r11 _).trans (Local.write _ .r0 _)).keep.mono (by simp [registers])
   · intro r _; simp only [initialState,vpr_write]
   · exact RegUpd.gpr_write_self ..
@@ -205,14 +205,14 @@ theorem ok (base : State) (total count : Nat) (cfg : Config base total count) :
     · have hne : base.gpr .r19≠0 := by
         intro he
         have hh := congrArg BitVec.toNat (cfg.left.symm.trans he)
-        rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := cfg.bound; have := cfg.size; omega)] at hh
+        rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by have := cfg.bound; have := cfg.size; omega_arith)] at hh
         exact hz hh
       simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
         Option.some.injEq,beq_eq_false_iff_ne] using hne
     · apply WP.seq
       refine WP.mono (initial_ok base) fun s hs => ?_
       subst s
-      refine WP.mono (loop_ok cfg (by omega) (initial_inv cfg)) fun t ht => ?_
+      refine WP.mono (loop_ok cfg (by omega_using [hz]) (initial_inv cfg)) fun t ht => ?_
       exact ⟨ht.keep,ht.vectors,ht.source,ht.left.trans (by rw [Nat.sub_self]; rfl),
         ht.processed,ht.frame⟩
 
@@ -231,6 +231,6 @@ theorem Result.blockAt {base s : State} {total count i : Nat} (hs : Result base 
   · rw [ite_eq_right hic]
     apply VG.Proof.Aes.PPC64LE.Crypto.aesState_inj
     rw [VG.Proof.Aes.PPC64LE.Crypto.aesState_blockAt,VG.Proof.Aes.PPC64LE.Crypto.aesState_blockAt]
-    exact hs.processed.original (by omega) hi
+    exact hs.processed.original (by omega_using [hic]) hi
 
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks.Copy

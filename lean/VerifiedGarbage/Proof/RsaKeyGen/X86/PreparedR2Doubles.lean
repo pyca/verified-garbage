@@ -103,7 +103,7 @@ theorem doublesAt_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : N
     change slot g.w 0 + 8 * g.w ≤ g.array 6
     rw [Prepared.slot_eq]
     unfold Geometry.words at apart
-    omega
+    omega_using [apart]
   refine WP.mono (FastR2.doublesAt_ok S.scratch (Prepared.dynamicModulus v S.modulus)
     (Prepared.layout v) apart' bound odd positive eLt top) fun t ⟨value, _, O, K⟩ => ?_
   change Outs g.W [(g.array 6, 8 * g.w), ((modulus g.w).tmp, 8 * g.w),
@@ -113,7 +113,7 @@ theorem doublesAt_ready {g : Geometry} (v : g.Valid) {s : State} {c capacity : N
   rw [Prepared.slot_eq] at O
   have F := WorkspaceFrame.of_outs S.scratch.nowrap O
   refine ⟨⟨Prepared.keepRanges v S.context K (by decide) O (fun _ mem => phase_header g mem),
-    S.modulus.keep v F (fun r mem => Or.inl (by have := phase_header g mem; omega))
+    S.modulus.keep v F (fun r mem => Or.inl (by have := phase_header g mem; omega_using [this]))
       (fun r mem => Or.inl (phase_candidate g mem)),
     S.caller.keepOuts K (by decide) O (fun r mem => phase_fits v mem),
     S.scratch.of_keeps K (by decide)⟩, ?_, O, K⟩

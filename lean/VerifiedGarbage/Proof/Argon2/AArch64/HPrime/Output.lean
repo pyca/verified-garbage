@@ -27,7 +27,7 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (xs : List Byte) (hn : xs.length
   apply List.ext_getElem (by simp only [bytesAt, List.length_map, List.length_range])
   intro i _ hi
   simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64),
+    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hi] : i < 2 ^ 64),
     hi, ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
 
 theorem bytesAt_take (m : Mem) (p : Addr) (n k : Nat) (hn : n ≤ k) :
@@ -62,8 +62,8 @@ theorem copy_ok (s : State) (k : Nat) (lo : 1 ≤ k) (hi : k ≤ 64)
     rw [rd, wr, BitVec.add_assoc,
       show (768 : Addr) = BitVec.ofNat 64 768 from rfl, ← BitVec.ofNat_add]
     exact ⟨_, List.mem_append_right _ work,
-      Offset.contains_base _ (by omega : 768 + i + 1 ≤ 16384) (by omega)⟩
-  have loop := copyLoop_ok u _ _ k lo (by omega) src (other .x22 (by decide))
+      Offset.contains_base _ (by omega_using [hi, hi'] : 768 + i + 1 ≤ 16384) (by omega_using [hi, hi'])⟩
+  have loop := copyLoop_ok u _ _ k lo (by omega_using [hi]) src (other .x22 (by decide))
     ((other .x8 (by decide)).trans count) read
     (by intro i hi'; rw [wr]; exact out i hi') sep
   obtain ⟨tr, t, he, ht⟩ := loop
@@ -78,7 +78,7 @@ theorem Copied.frame {s t : State} {k : Nat} (h : Copied s k t) :
   rw [h.mem]
   apply writeBytes_frame
   simpa only [bytesAt, List.length_map, List.length_range, BitVec.add_zero] using
-    Offset.contains_base (s.gpr .x22) (d := 0) (n := k) (k := k) (by omega) (by decide)
+    Offset.contains_base (s.gpr .x22) (d := 0) (n := k) (k := k) (by omega_using []) (by decide)
 
 structure Emitted (s t : State) : Prop where
   output : t.gpr .x22 = s.gpr .x22 + 32

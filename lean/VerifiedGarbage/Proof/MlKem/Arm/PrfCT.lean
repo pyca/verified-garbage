@@ -58,9 +58,9 @@ theorem prfBody_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₁ N :
   refine RelCT.seq (R := fun a b => PS L N a ∧ PS L N b)
     (relct_wp (taint_block [.r7] (fun a b hab r hr => by
       rw [List.mem_singleton] at hr; subst hr; rw [hab.1.1.r7, hab.2.1.r7]) (by taint_decide))
-      fun a b hab => ⟨WP.mono (strb9_ok hab.1.1 (by omega) hab.1.2) fun s' ⟨k', _⟩ =>
+      fun a b hab => ⟨WP.mono (strb9_ok hab.1.1 (by omega_using [hN, hN₁, k4]) hab.1.2) fun s' ⟨k', _⟩ =>
           ⟨k'.ctx (by decide) hab.1.1, by rw [k'.cs .r9 (by decide) (by decide) (by decide), hab.1.2]⟩,
-        WP.mono (strb9_ok hab.2.1 (by omega) hab.2.2) fun s' ⟨k', _⟩ =>
+        WP.mono (strb9_ok hab.2.1 (by omega_using [hN, hN₁, k4]) hab.2.2) fun s' ⟨k', _⟩ =>
           ⟨k'.ctx (by decide) hab.2.1, by rw [k'.cs .r9 (by decide) (by decide) (by decide), hab.2.2]⟩⟩) ?_
   -- `PRF`
   have hh : ∀ s, PS L N s → WP isa (hash 136 0x1f [⟨.r7, oSigma, 33⟩] [⟨.r7, oPrf, 128⟩]) s (PS L N) :=
@@ -73,7 +73,7 @@ theorem prfBody_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₁ N :
   -- `SamplePolyCBD₂`
   let F : State → Prop := fun s => PS L N s ∧ s.gpr .r0 = L.ptr 0 + BitVec.ofNat 32 oPrf ∧
     s.gpr .r1 = L.ptr 0 + BitVec.ofNat 32 (oPoly (K.k + N))
-  have eo : oPoly (K.k + N) = oPoly K.k + 1024 * N := by simp only [oPoly]; omega
+  have eo : oPoly (K.k + N) = oPoly K.k + 1024 * N := by simp only [oPoly]; omega_using []
   have ha : ∀ s, PS L N s → WP isa (.block (ptrTo .r0 .r7 oPrf :: slotAt .r1 .r9 (oPoly K.k))) s F :=
     fun s h => WP.mono (cbdArgs_ok hK h.1.r7 h.2) fun s' ⟨o', g0, g1⟩ =>
       ⟨⟨h.1.only o', by rw [o'.cs .r9 (by decide) (by decide), h.2]⟩, g0,
@@ -104,18 +104,18 @@ theorem prfLoop_ct {K : KemLay} (hK : K.WF) {L : Lay} (withNtt : Bool) {N₀ N�
   have k4 := hK.k4
   refine RelCT.seq (R := fun a b => PrfInv K L withNtt σ₁ N₀ N₁ s₀₁ 0 a ∧ PrfInv K L withNtt σ₂ N₀ N₁ s₀₂ 0 b)
     (relct_wp (relct_noMem rfl) fun a b hab => ⟨?_, ?_⟩) (RelCT.mono (relct_loop_ne (I₁ := PrfInv K L withNtt σ₁ N₀ N₁ s₀₁) (I₂ := PrfInv K L withNtt σ₂ N₀ N₁ s₀₂)
-      (N := N₁ - N₀) (by omega) fun t ht => ?_)
+      (N := N₁ - N₀) (by omega_using [h01]) fun t ht => ?_)
       (fun _ _ h => h) fun _ _ _ => trivial)
   · rw [hab.1]
-    exact WP.mono (mov9_ok (enc_le9 N₀ (by omega))) fun s₁ ⟨k₁, g₁, m₁⟩ =>
+    exact WP.mono (mov9_ok (enc_le9 N₀ (by omega_using [h01, hN₁, k4]))) fun s₁ ⟨k₁, g₁, m₁⟩ =>
       ⟨k₁.mono (fun _ h => absurd h List.not_mem_nil), by rw [g₁, Nat.add_zero], by rw [m₁]; exact hσ₁,
-        fun N h1 h2 => absurd h2 (by omega)⟩
+        fun N h1 h2 => absurd h2 (by omega_using [h1])⟩
   · rw [hab.2]
-    exact WP.mono (mov9_ok (enc_le9 N₀ (by omega))) fun s₁ ⟨k₁, g₁, m₁⟩ =>
+    exact WP.mono (mov9_ok (enc_le9 N₀ (by omega_using [h01, hN₁, k4]))) fun s₁ ⟨k₁, g₁, m₁⟩ =>
       ⟨k₁.mono (fun _ h => absurd h List.not_mem_nil), by rw [g₁, Nat.add_zero], by rw [m₁]; exact hσ₂,
-        fun N h1 h2 => absurd h2 (by omega)⟩
+        fun N h1 h2 => absurd h2 (by omega_using [h1])⟩
   -- one iteration: the body's timing from where it runs, and each run by correctness
-  exact relct_wp (RelCT.mono (prfBody_ct hK (N := N₀ + t) withNtt (by omega) hN₁) (fun a b hab =>
+  exact relct_wp (RelCT.mono (prfBody_ct hK (N := N₀ + t) withNtt (by omega_using [ht]) hN₁) (fun a b hab =>
       ⟨⟨hab.1.kx.ctx (by decide) hc₁, hab.1.r9⟩, ⟨hab.2.kx.ctx (by decide) hc₂, hab.2.r9⟩⟩) fun _ _ h => h)
     fun a b hab => ⟨prfStep_ok hK hc₁ withNtt hN₁ ht hab.1, prfStep_ok hK hc₂ withNtt hN₁ ht hab.2⟩
 

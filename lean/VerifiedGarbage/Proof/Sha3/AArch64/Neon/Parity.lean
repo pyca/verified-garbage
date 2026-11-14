@@ -35,7 +35,7 @@ theorem parity_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) {x : Na
     WP isa (.block (parity x)) s fun s' => VChg [vreg (25+x)] s s' ∧
       s'.v (vreg (25+x)) = ofVDwords (C A x) (C B x) := by
   have hn (j : Nat) (hj : j < 25) : vreg j ≠ vreg (25+x) := by
-    rw [ne_eq,vreg_inj j (by omega) (25+x) (by omega)]; omega
+    rw [ne_eq,vreg_inj j (by omega_using [hj]) (25+x) (by omega_using [hx])]; omega_using [hj]
   unfold parity
   refine wp_vop (d := vreg (25+x)) rfl fun s₁ h1 =>
     wp_vop (d := vreg (25+x)) rfl fun s₂ h2 =>
@@ -44,10 +44,10 @@ theorem parity_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) {x : Na
       WP.block_nil_iff.mpr ⟨(((h1.chg.trans h2.chg).trans h3.chg).trans h4.chg).mono
         (by intro r hr; simpa using hr),?_⟩
   rw [h4.v,h3.v,h2.v,h1.v,
-    h3.get (vreg (x+20)) (hn _ (by omega)),h2.get (vreg (x+20)) (hn _ (by omega)),
-    h1.get (vreg (x+20)) (hn _ (by omega)),h2.get (vreg (x+15)) (hn _ (by omega)),
-    h1.get (vreg (x+15)) (hn _ (by omega)),h1.get (vreg (x+10)) (hn _ (by omega)),
-    hp x (by omega),hp (x+5) (by omega),hp (x+10) (by omega),hp (x+15) (by omega),hp (x+20) (by omega)]
+    h3.get (vreg (x+20)) (hn _ (by omega_using [hx])),h2.get (vreg (x+20)) (hn _ (by omega_using [hx])),
+    h1.get (vreg (x+20)) (hn _ (by omega_using [hx])),h2.get (vreg (x+15)) (hn _ (by omega_using [hx])),
+    h1.get (vreg (x+15)) (hn _ (by omega_using [hx])),h1.get (vreg (x+10)) (hn _ (by omega_using [hx])),
+    hp x (by omega_using [hx]),hp (x+5) (by omega_using [hx]),hp (x+10) (by omega_using [hx]),hp (x+15) (by omega_using [hx]),hp (x+20) (by omega_using [hx])]
   simp only [pair_xor,C]
 /-- All five column parities are ready before any state lane changes. -/
 theorem parityAll_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
@@ -70,13 +70,13 @@ theorem parityAll_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
   · intro i hi
     rw [hchg.get (vreg i) (by
       simp only [List.mem_singleton]
-      rw [vreg_inj i (by omega) (25+k) (by omega)]; omega)]
+      rw [vreg_inj i (by omega_using [hi]) (25+k) (by omega_using [hk])]; omega_using [hi])]
     exact hpairs i hi
   · intro x hx
     by_cases he : x = k
     · subst x; exact hcol
     · rw [hchg.get (vreg (25+x)) (by
         simp only [List.mem_singleton]
-        rw [vreg_inj (25+x) (by omega) (25+k) (by omega)]; omega)]
-      exact hcols x (by omega)
+        rw [vreg_inj (25+x) (by omega_using [hk, hx]) (25+k) (by omega_using [hk])]; omega_using [he])]
+      exact hcols x (by omega_using [hx, he])
 end VG.Proof.Sha3.AArch64.Neon

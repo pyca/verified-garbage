@@ -120,8 +120,8 @@ theorem cbcEncChained_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     cbcEncX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cbcEncChained_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := 8 * (s.gpr .rcx).toNat)
-    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by simp only [blkLen] at fitD; omega_using [fitD])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   refine ⟨?_, ?_⟩
   · show Spec.TripleDes.cbcBlocksAt _ _ _ = _

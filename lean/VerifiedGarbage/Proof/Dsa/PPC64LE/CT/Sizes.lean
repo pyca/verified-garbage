@@ -32,13 +32,13 @@ def VD.qB (v : VD) : List Byte := v.at v.L.pl v.L.ql
 
 theorem Base.bytesP {v : VD} {s : State} (h : Base v s) : Spec.Rsa.bytesAt s.mem v.key v.L.pl = v.pB := by
   have := h.kn
-  have := h.bytes (o := 0) (k := v.L.pl) (by omega)
+  have := h.bytes (o := 0) (k := v.L.pl) (by omega_using [this])
   rwa [off, BitVec.add_zero] at this
 
 theorem Base.bytesQ {v : VD} {s : State} (h : Base v s) :
     Spec.Rsa.bytesAt s.mem (off v.key v.L.pl) v.L.ql = v.qB := by
   have := h.kn
-  exact h.bytes (by omega)
+  exact h.bytes (by omega_using [this])
 
 /-- The sizes are supported, on the public data. -/
 def SzOk (v : VD) : Prop :=
@@ -99,7 +99,7 @@ theorem rel_weaken {α : Type} {Φ E : α → State → Prop} {c : Prog isa} {Q 
   h.mono (fun _ _ => two_mono fun _ _ h => h.1) fun _ _ h => h
 
 theorem pl_bounds {v : VD} {s : State} (h : Base v s) : 128 ≤ v.L.pl ∧ v.L.pl ≤ 384 := by
-  rcases h.ok.pl with e | e | e <;> omega
+  rcases h.ok.pl with e | e | e <;> omega_using [e]
 
 /-- `ptrP` and p's scan. -/
 theorem w_scanP {v : VD} {s : State} (h : S0 v s) : WP isa (.seq (.block ptrP) sigLen) s (S0a v) := by
@@ -108,7 +108,7 @@ theorem w_scanP {v : VD} {s : State} (h : S0 v s) : WP isa (.seq (.block ptrP) s
   have := B.kn
   refine WP.seq (WP.mono (ptrP_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (sigLen_ok a12 a6 (by omega) (by omega) fun i hi => B1.hk.rd i (by omega))
+  refine WP.mono (sigLen_ok a12 a6 (by omega_using [hb]) (by omega_using [hb]) fun i hi => B1.hk.rd i (by omega_using [this, hi]))
     fun u ⟨⟨b16, m2⟩, k2⟩ => ⟨B1.step k2 (by rw [m2]; exact Outside.refl _ _ _ _), ?_, ?_, trivial⟩
   · rw [k2.gpr .r2 (by decide), k1.gpr .r2 (by decide), r2]
   · simp only [FixL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
@@ -122,7 +122,7 @@ theorem w_bitsP {v : VD} {s : State} (h : S0 v s) : WP isa (.seq (.block ptrP) b
   have := B.kn
   refine WP.seq (WP.mono (ptrP_ok B.regs) fun t ⟨⟨a12, a6, m1⟩, k1⟩ => ?_)
   have B1 := B.step k1 (by rw [m1]; exact Outside.refl _ _ _ _)
-  refine WP.mono (bytesBits_ok a12 a6 (by omega) (by omega) fun i hi => B1.hk.rd i (by omega))
+  refine WP.mono (bytesBits_ok a12 a6 (by omega_using [hb]) (by omega_using [hb]) fun i hi => B1.hk.rd i (by omega_using [this, hi]))
     fun u ⟨⟨b16, b0, m2⟩, k2⟩ => ⟨B1.step k2 (by rw [m2]; exact Outside.refl _ _ _ _), ?_, ?_, ?_⟩
   · rw [k2.gpr .r2 (by decide), k1.gpr .r2 (by decide), r2]
   · simp only [FixL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]

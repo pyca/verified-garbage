@@ -23,7 +23,7 @@ theorem WP.chunk_loop {M : ISA} {I : Nat → M.State → Prop} {n N k : Nat} {s 
     have he := test (j+N) u hj hu
     by_cases hl : n-(j+N) < N
     · exact Or.inl ⟨he.1 hl, j+N, hj, hl, hu⟩
-    · exact Or.inr ⟨he.2 (by omega), n-(j+N), by omega, j+N, rfl, by omega, hu⟩
+    · exact Or.inr ⟨he.2 (by omega_using [hl]), n-(j+N), by omega_using [hN, hj], j+N, rfl, by omega_using [hN, hl], hu⟩
   exact WP.loop (M := M) J advance (n-k) s ⟨k, rfl, hk, hs⟩
 
 end VG

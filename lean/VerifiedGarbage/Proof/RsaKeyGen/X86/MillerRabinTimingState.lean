@@ -21,7 +21,7 @@ def LoopPair (P : Parameters) (other : Nat) (entropy : Spec.RsaKeyGen.Rand) (k n
 
 theorem StateAt.stepInitial {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
     WitnessStep.Initial P.g P.capacity P.p P.rand (P.start + P.bytes * k) P.randLen s P.words :=
-  ⟨P.candidate, S.prepared, S.randPtr, S.used, v.odd, by have := v.large; omega, v.shape,
+  ⟨P.candidate, S.prepared, S.randPtr, S.used, v.odd, by have := v.large; omega_using [this], v.shape,
     (S.countFit v).1, (S.countFit v).2, S.readable⟩
 
 theorem StateAt.available {P : Parameters} (v : P.Valid) {s : State} {k n : Nat} (S : StateAt P k n s) :
@@ -30,7 +30,7 @@ theorem StateAt.available {P : Parameters} (v : P.Valid) {s : State} {k n : Nat}
   have usedBound : P.start + P.bytes * k ≤ P.randLen := by
     have := S.atLoop.used; rw [v.entropyLength] at this; exact this
   refine WP.mono (WitnessAvailable.codeAt_ok (D := P.bytes) S.prepared.ready.scratch v.geometry.headerFit
-    (by have := v.geometry.maxWidth; have := v.wide; omega) S.randLength S.used usedBound) fun t ⟨CF, mem, K⟩ => ?_
+    (by have := v.geometry.maxWidth; have := v.wide; omega_arith) S.randLength S.used usedBound) fun t ⟨CF, mem, K⟩ => ?_
   exact ⟨S.keepMem v mem K (by decide) (by decide), CF⟩
 
 def AvailablePair (P : Parameters) (other : Nat) (entropy : Spec.RsaKeyGen.Rand) (k n : Nat) (s t : State) : Prop :=

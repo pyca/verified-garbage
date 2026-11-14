@@ -42,42 +42,42 @@ theorem packField_ok {b p : BitVec 32} {a dst : Nat} {s0 : State} (hc : Ctx b s0
   have he : wd s.mem (State.addr b) (a + 4 * k) = limb s0.mem (State.addr b) a k :=
     wd_frame h.frame fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact (hsep.sub_left (Offset.sub _ (by omega) (by omega))).sub_right
-        (Region.sub_prefix (by omega))
+      exact (hsep.sub_left (Offset.sub _ (by omega_using []) (by omega_using [hk]))).sub_right
+        (Region.sub_prefix (by omega_using [hk]))
   unfold packStep
-  refine ldr0_ok hcs (by omega) fun s1 u1 => ?_
+  refine ldr0_ok hcs (by omega_using [ha, hk]) fun s1 u1 => ?_
   have e1 : (s1.gpr .r3).toNat = limb s0.mem (State.addr b) a k := by rw [u1.gpr]; exact he
-  refine wp_strb (a := O + BitVec.ofNat 64 (2 * k)) (by omega)
-    (by rw [u1.other _ (by decide), hp', addr_add (by omega)]; simp only [O, Offset.add_add])
-    (by rw [u1.wr, h.rest.wr]; simpa only [O, Offset.add_add] using hw (2 * k) (by omega))
+  refine wp_strb (a := O + BitVec.ofNat 64 (2 * k)) (by omega_using [hd, hk])
+    (by rw [u1.other _ (by decide), hp', addr_add (by omega_using [hfit, hk])]; simp only [O, Offset.add_add])
+    (by rw [u1.wr, h.rest.wr]; simpa only [O, Offset.add_add] using hw (2 * k) (by omega_using [hk]))
     fun s2 u2 => wp_mov (op2_lsr (by decide)) fun s3 u3 => ?_
-  refine wp_strb (a := O + BitVec.ofNat 64 (2 * k + 1)) (by omega)
-    (by rw [u3.other _ (by decide), u2.gpr, u1.other _ (by decide), hp', addr_add (by omega)]
+  refine wp_strb (a := O + BitVec.ofNat 64 (2 * k + 1)) (by omega_using [hd, hk])
+    (by rw [u3.other _ (by decide), u2.gpr, u1.other _ (by decide), hp', addr_add (by omega_using [hfit, hk])]
         simp only [O, Offset.add_add, Nat.add_assoc])
     (by rw [u3.wr, u2.wr, u1.wr, h.rest.wr]
-        simpa only [O, Offset.add_add, Nat.add_assoc] using hw (2 * k + 1) (by omega))
+        simpa only [O, Offset.add_add, Nat.add_assoc] using hw (2 * k + 1) (by omega_using [hk]))
     fun t ht => WP.block_nil ?_
   have hm : t.mem = (s.mem.writeW (O + BitVec.ofNat 64 (2 * k)) ((s1.gpr .r3).setWidth 8)).writeW
       (O + BitVec.ofNat 64 (2 * k + 1)) ((s1.gpr .r3 >>> 8).setWidth 8) := by
     rw [ht.mem, u3.gpr, u2.gpr, u3.mem, u2.mem, u1.mem]
   have ne : ∀ i j : Nat, i < 32 → j < 32 → i ≠ j → O + BitVec.ofNat 64 i ≠ O + BitVec.ofNat 64 j :=
-    fun i j hi hj hij => Offset.add_ofNat_ne _ (by omega) (by omega) hij
+    fun i j hi hj hij => Offset.add_ofNat_ne _ (by omega_using [hi]) (by omega_using [hj]) hij
   refine ⟨h.rest.trans ((u1.rest (by decide)).trans ((u2.rest _).trans
     ((u3.rest (by decide)).trans (ht.rest _)))), ?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [hm]
     refine ((h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [hk]))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [hk]))
   · rw [hm, VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply,
-      ite_eq_right (ne _ _ (by omega) (by omega) (by omega))]
+      ite_eq_right (ne _ _ (by omega_using [hk, hi]) (by omega_using [hk]) (by omega_using []))]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [ite_eq_right (ne _ _ (by omega) (by omega) (by omega))]; exact h.b0 i hi
+    · rw [ite_eq_right (ne _ _ (by omega_arith) (by omega_using [hk]) (by omega_using [hi]))]; exact h.b0 i hi
     · rw [ite_eq_left rfl]; exact byte_eq e1
   · rw [hm, VG.WriteBytes.writeW8_apply, VG.WriteBytes.writeW8_apply]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [ite_eq_right (ne _ _ (by omega) (by omega) (by omega)),
-        ite_eq_right (ne _ _ (by omega) (by omega) (by omega))]
+    · rw [ite_eq_right (ne _ _ (by omega_arith) (by omega_using [hk]) (by omega_using [hi])),
+        ite_eq_right (ne _ _ (by omega_arith) (by omega_using [hk]) (by omega_using []))]
       exact h.b1 i hi
     · rw [ite_eq_left rfl]; exact byte_eq (by rw [toNat_shr, e1])
 

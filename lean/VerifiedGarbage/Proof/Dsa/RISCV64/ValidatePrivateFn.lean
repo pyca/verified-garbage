@@ -75,7 +75,7 @@ theorem privChecks_iff {p q g y x : Nat}
     (VG.Proof.Dsa.shapeValid p q ∧ VG.Proof.Dsa.publicChecks p q g y ∧ (0 < x ∧ x < q) ∧ g ^ x % p = y) ↔
       (g ^ x % p = y ∧ (0 < x ∧ x < q)) :=
   ⟨fun ⟨_, _, hx, hg⟩ => ⟨hg, hx⟩, fun ⟨hg, hx⟩ =>
-    ⟨hP.1, ⟨⟨hP.2.1, hy⟩, hP.2.2.1, hP.2.2.2, pow_order_of_gen (by omega) hP.2.2.2 hg⟩, hx, hg⟩⟩
+    ⟨hP.1, ⟨⟨hP.2.1, hy⟩, hP.2.2.1, hP.2.2.2, pow_order_of_gen (by omega_using [hy]) hP.2.2.2 hg⟩, hx, hg⟩⟩
 
 /-- The registers `xRange` writes. -/
 def xRangePRegs : List Reg :=
@@ -88,7 +88,7 @@ theorem xRangeP_ok {s : State} {L : Lay} {key sig : Addr} {b : Bool} (hL : L.Ok)
     WP isa PrevalidatedSign.xRange s fun t =>
       (t.gpr .a0 = BitVec.ofNat 64 (if b && decide (0 < xOf s.mem L key ∧ xOf s.mem L key < arrQ s.mem L 0)
           then 1 else 0) ∧ QS t L key sig ∧ Body L s.mem t.mem) ∧ Keep xRangePRegs s t := by
-  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega
+  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
   have hZ := hL.z256
   have hwq := hL.wq_ge
   have hqs := hL.qslot
@@ -99,15 +99,15 @@ theorem xRangeP_ok {s : State} {L : Lay} {key sig : Addr} {b : Bool} (hL : L.Ok)
   refine WP.seq (WP.mono (enterQ_ok hL hs hr) fun s₁ ⟨⟨q1, m1⟩, k1⟩ => ?_)
   have Q1 : QS s₁ L key sig := ⟨q1, hs.congr k1.2.2, hr.keepM k1 m1⟩
   refine WP.seq (WP.mono (zeroArr_ok Q1.inq.env (j := 7) (by decide)) fun s₂ ⟨⟨z7, o2⟩, k2⟩ => ?_)
-  have Q2 := Q1.step k2 (Body.ofQ hL o2 (by omega))
+  have Q2 := Q1.step k2 (Body.ofQ hL o2 (by omega_using [hwq, e7]))
   refine WP.seq (WP.mono (ptrX_ok Q2.scr hL Q2.regs) fun s₃ ⟨⟨c7, c8, m3⟩, k3⟩ => ?_)
   have Q3 := Q2.stepM k3 m3
   have k13 := (k1.trans k2).trans k3
   refine WP.seq (WP.mono (loadQ_ok (j := 5) Q3 hL (by decide)
-      ((hk.keep k13.2.1 k13.2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)) c7 c8
-      (by omega) (by omega)) fun s₄ ⟨⟨Q4, v5, top5, o4⟩, k4⟩ => ?_)
-  have b2 : Body L s.mem s₂.mem := by rw [← m1]; exact Body.ofQ hL o2 (by omega)
-  have b4 : Body L s.mem s₄.mem := b2.trans (by rw [← m3]; exact Body.ofQ hL o4 (by omega))
+      ((hk.keep k13.2.1 k13.2.2).sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])) c7 c8
+      (by omega_using [hql]) (by omega_using [hwq])) fun s₄ ⟨⟨Q4, v5, top5, o4⟩, k4⟩ => ?_)
+  have b2 : Body L s.mem s₂.mem := by rw [← m1]; exact Body.ofQ hL o2 (by omega_using [hwq, e7])
+  have b4 : Body L s.mem s₄.mem := b2.trans (by rw [← m3]; exact Body.ofQ hL o4 (by omega_using [hwq, e5]))
   obtain ⟨hld, hal⟩ := ScrL.hdr Q4.scr hL (d := 0) (by decide) (by decide)
   have hw4 : word s₄.mem L.S hMask = mask b := by rw [b4.word (by decide)]; exact hm
   refine WP.seq (WP.mono (WP.keep [.a4] (Q := fun u => u.gpr .a4 = mask b ∧ u.mem = s₄.mem)
@@ -115,12 +115,12 @@ theorem xRangeP_ok {s : State} {L : Lay} {key sig : Addr} {b : Bool} (hL : L.Ok)
   have Q5 := Q4.stepM k5 m5
   have z7' : wordsVal s₅.mem L.Q (slot L.wq 7) L.wq = 0 := by
     rw [m5, show wordsVal s₄.mem L.Q (slot L.wq 7) L.wq = arrQ s₄.mem L 7 from rfl,
-      qa_eq hL o4 (by decide) (by omega), m3]
+      qa_eq hL o4 (by decide) (by omega_using [e5, e7]), m3]
     exact z7
   have top5' : word s₅.mem L.Q (slot L.wq 5 + 8 * L.wq) = 0 := by rw [m5]; exact top5
   refine WP.seq (WP.mono (inRange_ok Q5.inq.env (a := 5) (b := b) (by decide) (by decide) (by decide) top5' z7' a4)
     fun s₆ ⟨⟨c4, o6⟩, k6⟩ => ?_)
-  have Q6 := Q5.step k6 (Body.ofQ hL o6 (by omega))
+  have Q6 := Q5.step k6 (Body.ofQ hL o6 (by omega_using [hwq, e3]))
   refine WP.mono (WP.keep [.a0] (Q := fun u => u.gpr .a0 = BitVec.ofNat 64 (if (b && decide
       (0 < wordsVal s₅.mem L.Q (slot L.wq 5) L.wq ∧
         wordsVal s₅.mem L.Q (slot L.wq 5) L.wq < wordsVal s₅.mem L.Q (slot L.wq 0) L.wq)) then 1 else 0) ∧
@@ -129,13 +129,13 @@ theorem xRangeP_ok {s : State} {L : Lay} {key sig : Addr} {b : Bool} (hL : L.Ok)
   have A5 : wordsVal s₅.mem L.Q (slot L.wq 5) L.wq = xOf s.mem L key := by
     rw [m5]
     refine v5.trans ?_
-    rw [xOf, m3, (hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)).bytes b2 (by omega)]
+    rw [xOf, m3, (hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])).bytes b2 (by omega_using [hZ])]
   have A0 : wordsVal s₅.mem L.Q (slot L.wq 0) L.wq = arrQ s.mem L 0 := by
     rw [m5, show wordsVal s₄.mem L.Q (slot L.wq 0) L.wq = arrQ s₄.mem L 0 from rfl,
-      qa_eq hL o4 (by decide) (by omega), m3, qa_eq hL o2 (by decide) (by omega), m1]
+      qa_eq hL o4 (by decide) (by omega_using [e0, e5]), m3, qa_eq hL o2 (by decide) (by omega_using [e0, e7]), m1]
   rw [A5, A0] at t0
   refine ⟨⟨t0, Q6.stepM kt mt, ?_⟩, ?_⟩
-  · rw [mt]; exact b4.trans (by rw [← m5]; exact Body.ofQ hL o6 (by omega))
+  · rw [mt]; exact b4.trans (by rw [← m5]; exact Body.ofQ hL o6 (by omega_using [hwq, e3]))
   · exact ((((k13.trans k4).trans k5).trans k6).trans kt).mono (by decide)
 
 /-- The registers `keyPair; xRange` write. -/
@@ -150,14 +150,14 @@ theorem vrest_ok {s₀ s : State} {L : Lay} {key sig : Addr} {d : Nat} (hL : L.O
       (t.gpr .a0 = BitVec.ofNat 64 (if gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key = yOf s₀.mem L key ∧
           (0 < xOf s.mem L key ∧ xOf s.mem L key < qOf s₀.mem L key) then 1 else 0) ∧
         t.gpr .s6 = L.S ∧ ScrL t L ∧ BKept L s.mem t.mem) ∧ Keep vrestRegs s t := by
-  have hk3 : Src s L key (3 * L.pl + L.ql) := hk.take (by omega)
-  have hk2 : Src s L key (2 * L.pl + L.ql) := hk.take (by omega)
+  have hk3 : Src s L key (3 * L.pl + L.ql) := hk.take (by omega_using [])
+  have hk2 : Src s L key (2 * L.pl + L.ql) := hk.take (by omega_using [])
   obtain ⟨-, eq, eg⟩ := params_kept hk2 hkp
   have ey := y_kept hk3 hkp
   have ep := (params_kept hk2 hkp).1
   have B := VG.Proof.Dsa.supported_bounds hK.1.1
   have hpo : pOf s₀.mem L key % 2 = 1 := hK.1.2.2
-  refine WP.seq (WP.mono (keyPair_ok hL hc.scr hc.regs hc.inp hc.inv hk hc.p0 (by omega) hpo hc.p24)
+  refine WP.seq (WP.mono (keyPair_ok hL hc.scr hc.regs hc.inp hc.inv hk hc.p0 (by omega_using [B]) hpo hc.p24)
     fun s₁ ⟨⟨mx₁, _, _, m, o₁, w₁⟩, k₁⟩ => ?_)
   have K₁ : BKept L s.mem s₁.mem := (BKept.ofBody hL (PLow.body hL o₁)).trans (BKept.ofMask hL w₁)
   have q0₁ : arrQ s₁.mem L 0 = qOf s₀.mem L key := by
@@ -165,7 +165,7 @@ theorem vrest_ok {s₀ s : State} {L : Lay} {key sig : Addr} {d : Nat} (hL : L.O
   refine WP.mono (xRangeP_ok hL (hc.scr.congr k₁.2.2) (hc.regs.ofBKept k₁ K₁) (hk.keep k₁.2.1 k₁.2.2) mx₁)
     fun t ⟨⟨t0, Qt, bt⟩, kt⟩ => ⟨⟨?_, Qt.regs.s6, Qt.scr, K₁.trans (BKept.ofBody hL bt)⟩, k₁.trans kt⟩
   have ex : xOf s₁.mem L key = xOf s.mem L key := by
-    simp only [xOf]; rw [(hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega)).bytes K₁.out (by omega)]
+    simp only [xOf]; rw [(hk.sub (o := 3 * L.pl + L.ql) (k := L.ql) (by omega_using [])).bytes K₁.out (by omega_using [])]
   rw [t0, q0₁, ex, eg, ey]
   congr 1
   by_cases h₁ : gOf s₀.mem L key ^ xOf s.mem L key % pOf s₀.mem L key = yOf s₀.mem L key <;>
@@ -177,7 +177,7 @@ theorem validatePriv_correct (s : State) (h : vpkContract.pre s) :
   have hL : (playOf s).Ok := playOf_ok_of h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.2.1
   have hZ := hL.z256
   obtain ⟨hrd, hwr, dKS, -, nw, hv, hkl, -, alS, -⟩ := h
-  have hplq : 3 * (playOf s).pl + 2 * (playOf s).ql = (s.gpr .a1).toNat := by simp only [playOf]; omega
+  have hplq : 3 * (playOf s).pl + 2 * (playOf s).ql = (s.gpr .a1).toNat := by simp only [playOf]; omega_using [hkl]
   have src : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr →
       Src t (playOf s) (s.gpr .a0) (3 * (playOf s).pl + 2 * (playOf s).ql) :=
     fun hr hw => psrc_of hrd dKS (Nat.le_of_eq hplq) hr hw
@@ -185,8 +185,8 @@ theorem validatePriv_correct (s : State) (h : vpkContract.pre s) :
       (Spec.Rsa.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) =
       ⟨⟨pOf s.mem (playOf s) (s.gpr .a0), qOf s.mem (playOf s) (s.gpr .a0), gOf s.mem (playOf s) (s.gpr .a0)⟩,
         yOf s.mem (playOf s) (s.gpr .a0), some (xOf s.mem (playOf s) (s.gpr .a0))⟩ := by
-    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .a0) (by simp only [playOf] at hplq; omega),
-      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .a0) (by simp only [playOf] at hplq; omega)]
+    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .a0) (by simp only [playOf] at hplq; omega_using [hkl]),
+      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .a0) (by simp only [playOf] at hplq; omega_using [hkl])]
     rfl
   have hspec := validatePrivate_eq hv (by rw [VG.Proof.Bignum.bytesAt_length]; exact hkl) hkey
   suffices main : WP isa PrevalidatedSign.validate s fun w =>
@@ -199,14 +199,14 @@ theorem validatePriv_correct (s : State) (h : vpkContract.pre s) :
   refine WP.seq (WP.mono (pfront_ok_of hL hwr nw alS) fun s₁ ⟨F, k₁⟩ => ?_)
   have hsav' : ∀ u : State, Kept (playOf s) s₁.mem u.mem → ∀ i < 13,
       word u.mem (s.gpr .a4) (saveOff i) = s.gpr (saved i) := fun u hu i hi =>
-    (hu.word (Or.inr ⟨by simp only [saveOff, hLens]; omega, by simp only [saveOff]; omega⟩)).trans (F.sav i hi)
+    (hu.word (Or.inr ⟨by simp only [saveOff, hLens]; omega_using [], by simp only [saveOff]; omega_using [hi]⟩)).trans (F.sav i hi)
   have Out₁ : Outside (playOf s).S 0 (playOf s).Z s.mem s₁.mem :=
-    F.out.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega)
+    F.out.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := keyVals_kept ((src rfl rfl).take (k := 3 * (playOf s).pl + (playOf s).ql)
-    (by omega)) Out₁
+    (by omega_using [])) Out₁
   have hKs : SignKeyOk s₁.mem (playOf s) (s.gpr .a0) ↔ SignKeyOk s.mem (playOf s) (s.gpr .a0) := by
     simp only [SignKeyOk, ParamsOk, ep₁, eq₁, eg₁, ey₁]
-  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.lens (by decide) ((src k₁.2.1 k₁.2.2).take (by omega))
+  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.lens (by decide) ((src k₁.2.1 k₁.2.2).take (by omega_using []))
     (fun t hK hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     refine WP.mono (vrest_ok hL hK.1 hc Kd (src kt.2.1 kt.2.2)) fun u ⟨⟨u0, u6, scru, Ku⟩, _⟩ => ?_
@@ -216,14 +216,14 @@ theorem validatePriv_correct (s : State) (h : vpkContract.pre s) :
       (fun i hi => by
         rw [← saveOff_eq]
         exact scru.al8 (d := saveOff i) (by simp only [saveOff, playOf] at hZ ⊢; omega_arith)
-          (by simp only [saveOff]; omega))
-      (fun i hi => (Ku.word (by simp only [saveOff]; omega) (by simp only [saveOff]; omega)).trans
+          (by simp only [saveOff]; omega_using []))
+      (fun i hi => (Ku.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi])).trans
         (hsav' t Kd i hi))) fun w ⟨hab, w0, _⟩ => ⟨hab, ?_⟩
     have Ot : Outside (playOf s).S 0 (playOf s).Z s.mem t.mem := Out₁.trans Kd.out
     have ex : xOf t.mem (playOf s) (s.gpr .a0) = xOf s.mem (playOf s) (s.gpr .a0) := by
       simp only [xOf]
-      rw [((src rfl rfl).sub (o := 3 * (playOf s).pl + (playOf s).ql) (k := (playOf s).ql) (by omega)).bytes Ot
-        (by omega)]
+      rw [((src rfl rfl).sub (o := 3 * (playOf s).pl + (playOf s).ql) (k := (playOf s).ql) (by omega_using [])).bytes Ot
+        (by omega_using [])]
     have hKt := hKs.mp hK
     rw [w0, u0, ep₁, eq₁, eg₁, ey₁, ex]
     have e := privChecks_iff (x := xOf s.mem (playOf s) (s.gpr .a0)) hKt.1 hKt.2

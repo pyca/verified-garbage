@@ -96,9 +96,9 @@ theorem frame_outside {base : Addr} {o n : Nat} {m m' : Mem}
   rw [List.mem_singleton.mp hr] at hc
   change (x-off base o).toNat+1≤n at hc
   simp only [off] at hc
-  have hi := (Offset.lt_iff x base (d:=o) (n:=n) (by omega)).mp (by omega)
+  have hi := (Offset.lt_iff x base (d:=o) (n:=n) (by omega_using [hn])).mp (by omega_using [hc])
   change (x-base).toNat<o ∨ o+n≤(x-base).toNat at hx
-  omega
+  omega_using [hi, hx]
 
 theorem select_ok (s : State) {s0 : State} {base table : BitVec 32} {len w M g N j : Nat}
     (h : ArithmeticReady base len w s0) (tableReady : CombTable table w M g N s0)
@@ -117,44 +117,44 @@ theorem select_ok (s : State) {s0 : State} {base table : BitVec 32} {len w M g N
       Keeps (State.addr base) len w 1 s0.mem t.mem ∧
       Frame [⟨State.addr base,8*len⟩] s0.mem t.mem ∧ Rest roundClobbers s0 t := by
   have fits : arrAt w 8≤8*len := h.width ▸ h.layout.2.2.1
-  have arrayFits : arrAt w 1+8*w≤8*len := by have := array_end_le (w:=w) (show 1<8 by decide); omega
+  have arrayFits : arrAt w 1+8*w≤8*len := by have := array_end_le (w:=w) (show 1<8 by decide); omega_using [fits, this]
   have entryFits : 8*w*j+8*w≤32*(8*w) := by
-    have bound := Nat.mul_le_mul_left (8*w) (show j+1≤32 by omega)
+    have bound := Nat.mul_le_mul_left (8*w) (show j+1≤32 by omega_using [hj])
     simpa only [Nat.mul_add,Nat.mul_one,Nat.mul_comm (8*w) 32] using bound
   let dst := base+BitVec.ofNat 32 (arrAt w 1)
   let src := table+BitVec.ofNat 32 (8*w*j)
-  have dstAddr : State.addr dst=off (State.addr base) (arrAt w 1) := addr_add (by have := h.workspace.nowrap; have := tableReady.positive; omega)
-  have srcAddr : State.addr src=off (State.addr table) (8*w*j) := addr_add (by have := tableReady.fits; have := tableReady.positive; omega)
+  have dstAddr : State.addr dst=off (State.addr base) (arrAt w 1) := addr_add (by have := h.workspace.nowrap; have := tableReady.positive; omega_arith)
+  have srcAddr : State.addr src=off (State.addr table) (8*w*j) := addr_add (by have := tableReady.fits; have := tableReady.positive; omega_arith)
   have dstVal : dst.toNat=base.toNat+arrAt w 1 := by
     simp only [dst,BitVec.toNat_add,BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by have := h.workspace.nowrap; have := tableReady.positive; omega),
-      Nat.mod_eq_of_lt (by have := h.workspace.nowrap; have := tableReady.positive; omega)]
+    rw [Nat.mod_eq_of_lt (by have := h.workspace.nowrap; have := tableReady.positive; omega_arith),
+      Nat.mod_eq_of_lt (by have := h.workspace.nowrap; have := tableReady.positive; omega_arith)]
   have srcVal : src.toNat=table.toNat+8*w*j := by
     simp only [src,BitVec.toNat_add,BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by have := tableReady.fits; have := tableReady.positive; omega),
-      Nat.mod_eq_of_lt (by have := tableReady.fits; have := tableReady.positive; omega)]
+    rw [Nat.mod_eq_of_lt (by have := tableReady.fits; have := tableReady.positive; omega_arith),
+      Nat.mod_eq_of_lt (by have := tableReady.fits; have := tableReady.positive; omega_arith)]
   have ctx : SelectReadCtx s dst src (2*w) := by
     refine ⟨?_,?_,?_,?_,?_,?_⟩
-    · rw [dstVal]; have := h.workspace.nowrap; omega
-    · rw [srcVal]; have := tableReady.fits; omega
-    · have := h.workspace.nowrap; have := tableReady.fits; omega
+    · rw [dstVal]; have := h.workspace.nowrap; omega_using [arrayFits, this]
+    · rw [srcVal]; have := tableReady.fits; omega_using [entryFits, this]
+    · have := h.workspace.nowrap; have := tableReady.fits; omega_using [this]
     · rw [dstAddr,rest.wr]
-      exact ⟨_,h.workspace.writable,Offset.contains_base _ (by omega) (by have := h.workspace.nowrap; omega)⟩
+      exact ⟨_,h.workspace.writable,Offset.contains_base _ (by omega_using [arrayFits]) (by have := h.workspace.nowrap; omega_using [dstVal])⟩
     · rw [srcAddr,rest.rd,rest.wr]
-      exact VG.CallLay.inRegions_sub tableReady.readable (by omega) (by have := tableReady.fits; omega)
+      exact VG.CallLay.inRegions_sub tableReady.readable (by omega_using [entryFits]) (by have := tableReady.fits; omega_using [this])
     · rw [srcAddr,dstAddr]
-      exact (separate.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega : arrAt w 1+4*(2*w)≤8*len))
+      exact (separate.sub_left (Offset.sub_base _ (by omega_using [entryFits]))).sub_right (Offset.sub_base _ (by omega_using [arrayFits] : arrAt w 1+4*(2*w)≤8*len))
   rw [WP.seq_iff]
-  refine WP.mono (selectReadRow_ok s ctx (by have := tableReady.positive; omega) p0 p10 p12 count bit) ?_
+  refine WP.mono (selectReadRow_ok s ctx (by have := tableReady.positive; omega_using [this]) p0 p10 p12 count bit) ?_
   intro v inv
   have value := inv.value
   simp only [dstAddr,srcAddr,val32_rebase,Nat.add_zero,mem] at value
   rw [←numAt_native,←numAt_native,tableReady.values j hj] at value
   have narrow : Frame [⟨off (State.addr base) (arrAt w 1),8*w⟩] s0.mem v.mem := by
-    simpa only [dstAddr,show 4*(2*w)=8*w by omega,mem] using inv.frame
-  have outside := frame_outside narrow (by have := h.workspace.nowrap; omega)
+    simpa only [dstAddr,show 4*(2*w)=8*w by omega_using [],mem] using inv.frame
+  have outside := frame_outside narrow (by have := h.workspace.nowrap; omega_using [arrayFits, this])
   have frame := outside_workspace outside arrayFits
-  have keeps := outside_array_keeps outside (by have := h.workspace.nowrap; omega : 8*len<2^64)
+  have keeps := outside_array_keeps outside (by have := h.workspace.nowrap; omega_using [this] : 8*len<2^64)
   have restV : Rest roundClobbers s0 v := rest.trans (inv.rest.mono (by decide))
   refine WP.mono (restoreBase_ok v (by rw [restV.rd,restV.wr,restV.sp]; exact h.stackRead)
     (saved_base_kept frame h.stackSep h.saved restV.sp)) ?_

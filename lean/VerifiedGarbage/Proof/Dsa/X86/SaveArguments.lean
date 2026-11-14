@@ -30,8 +30,8 @@ theorem saveArguments_ok (args : List (Nat × Field)) {s : State} {base : Addr} 
     have hi : Layout.field a.2 + 4 ≤ 8256 := B.2
     change WP isa (.block (Entry.saveArgument a.1 a.2 ++ Entry.saveArguments args)) s _
     refine WP.block_append (WP.mono (saveArgument_ok a.2 hs hz A.readSrc) fun u ⟨V, K, O⟩ => ?_)
-    have Oheader : Outside base 8192 64 s.mem u.mem := O.mono B.1 (by omega)
-    have Owhole : Outside base 0 size s.mem u.mem := O.mono (Nat.zero_le _) (by omega)
+    have Oheader : Outside base 8192 64 s.mem u.mem := O.mono B.1 (by omega_using [hi])
+    have Owhole : Outside base 0 size s.mem u.mem := O.mono (Nat.zero_le _) (by omega_using [hz, B])
     refine WP.mono (ih (hs.of_keeps K (by decide)) D.2
       (fun b hb => (inputs b (List.mem_cons_of_mem _ hb)).keep K (by decide))) fun t ⟨Values, Other, Keep, Frame⟩ => ?_
     refine ⟨?_, ?_, K.trans Keep, Oheader.trans Frame⟩

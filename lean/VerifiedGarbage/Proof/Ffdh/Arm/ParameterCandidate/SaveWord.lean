@@ -17,9 +17,9 @@ theorem saveR1_ok {s : State} {d : Nat} (stack : Workspace s s.sp 72) (fit : d +
     WP isa (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 d)) s fun t =>
       t.mem = s.mem.writeW (State.addr (s.sp + BitVec.ofNat 32 d)) (s.gpr .r1) ∧ Rest [.r12] s t := by
   have write : InRegions s.wr (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])]
     exact stack.write fit
-  have offset : d < 4096 := by omega
+  have offset : d < 4096 := by omega_using [fit]
   refine withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [BitVec.add_zero, write, offset]
@@ -29,9 +29,9 @@ theorem saveWord_ok {s : State} {d : Nat} (stack : Workspace s s.sp 72) (fit : d
     WP isa (.block (([.mov .r1 (.imm value)] : List Instr) ++ VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 d)) s fun t =>
       t.mem = s.mem.writeW (State.addr (s.sp + BitVec.ofNat 32 d)) value ∧ Rest [.r1, .r12] s t := by
   have write : InRegions s.wr (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])]
     exact stack.write fit
-  have offset : d < 4096 := by omega
+  have offset : d < 4096 := by omega_using [fit]
   refine withRest_all [.r1, .r12] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.save
   ffrun [List.cons_append, List.nil_append, BitVec.add_zero, write, enc, offset]

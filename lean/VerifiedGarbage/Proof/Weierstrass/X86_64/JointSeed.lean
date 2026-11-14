@@ -25,7 +25,7 @@ theorem jointCounter_ok (s : State) {n : Nat} (hn : n<2^32) :
   refine ⟨?_,fun r hr => by simp only [List.mem_singleton] at hr; simp only [RegUpd.gpr_setReg,hr,ite_false],rfl,rfl,rfl⟩
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt hn,Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt hn,Nat.mod_eq_of_lt (by omega_using [hn])]
 
 theorem jointSeed_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
@@ -47,10 +47,10 @@ theorem jointSeed_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat
   have ca : JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity a :=
     ⟨(ia.sub (fun _ hx => List.mem_append_right _ hx)).to_tmv,
       hs.keep kw (fun r hr => by
-        have := hL.stableBounds r hr; have := hi.scr.nowrap; omega) hL.stableSep,
+        have := hL.stableBounds r hr; have := hi.scr.nowrap; omega_arith) hL.stableSep,
       JointGenerator.workKeep hL hi.mod.tmp s a kw sa he,
       ia.point_tmv (fun _ hx => List.mem_append_left _ hx) pa⟩
-  refine WP.mono_syms (jointCounter_ok a (by have := hL.n; have := joint_top_le c; omega)) fun t ⟨tb,kt⟩ st => ?_
+  refine WP.mono_syms (jointCounter_ok a (by have := hL.n; have := joint_top_le c; omega_arith)) fun t ⟨tb,kt⟩ st => ?_
   exact ⟨(JointLoopKeep.of_prog kw).trans (JointLoopKeep.of_keeps kt),
     ca.of_keeps kt (by decide) (fun n hn hn' ho => (ca.external n hn hn' ho).of_keeps kt st),tb⟩
 

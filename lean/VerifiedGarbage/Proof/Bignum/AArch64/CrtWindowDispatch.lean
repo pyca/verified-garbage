@@ -88,11 +88,11 @@ theorem lengthGuard_ok {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dq
   have hk := h.k1
   exact WP.mono (WP.keep [.x9,.x10,.x11] (Q := fun t => t.gpr .x9 = guardValue k pl ql ∧ t.mem = s.mem)
     (by brun [VG.Impl.Rsa.AArch64.WindowFive.lengthGuard,h.x0,hdr_enc (show Public.sK < 32 by decide),
-      h.scr.ld (d := 8 * Public.sK) (by unfold Public.sK sFn; omega),h.hK,
+      h.scr.ld (d := 8 * Public.sK) (by unfold Public.sK sFn; omega_using [hz, hk]),h.hK,
       hdr_enc (show VG.Impl.Bignum.Crt.sPlen < 32 by decide),
       hdr_enc (show VG.Impl.Bignum.Crt.sQlen < 32 by decide),
-      h.scr.ld (d := 8 * VG.Impl.Bignum.Crt.sPlen) (by unfold VG.Impl.Bignum.Crt.sPlen sFn; omega),
-      h.scr.ld (d := 8 * VG.Impl.Bignum.Crt.sQlen) (by unfold VG.Impl.Bignum.Crt.sQlen sFn; omega),
+      h.scr.ld (d := 8 * VG.Impl.Bignum.Crt.sPlen) (by unfold VG.Impl.Bignum.Crt.sPlen sFn; omega_using [hz, hk]),
+      h.scr.ld (d := 8 * VG.Impl.Bignum.Crt.sQlen) (by unfold VG.Impl.Bignum.Crt.sQlen sFn; omega_using [hz, hk]),
       h.hPl,h.hQl,guardValue,alignedPrimes,CondCode.holds,exec_tst_x,exec_csel_eq,RegUpd.zf_write]
         simp only [decide_eq_true_eq]
         rfl)
@@ -106,7 +106,7 @@ theorem lengthGuard_zero {k : Nat} (hk : k < 2 ^ 64) :
   simp only [BitVec.toNat_ushiftRight,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hk,
     Nat.shiftRight_eq_div_pow]
   change k / 128 = 0 ↔ k < 128
-  omega
+  omega_using []
 
 theorem guardValue_nonzero {k pl ql : Nat} (hk : k < 2 ^ 64)
     (h : (guardValue k pl ql == (0 : BitVec 64)) = false) : 128 ≤ k := by
@@ -118,27 +118,28 @@ theorem guardValue_nonzero {k pl ql : Nat} (hk : k < 2 ^ 64)
 theorem dispatch_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
-    WP isa (VG.Impl.Rsa.AArch64.WindowFive.dispatch W.code S.code M.mm) s fun t => ∃ Mk : Bool, MainPost s t B Z k op
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G)
+    (hG : G (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)) :
+    WP isa (VG.Impl.Rsa.AArch64.WindowFive.dispatchWith C W.code S.code M.mm) s fun t => ∃ Mk : Bool, MainPost s t B Z k op
       (if Mk then crtResult (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dpb) (Spec.Rsa.os2ip dqb)
         (Spec.Rsa.os2ip qib) (Spec.Rsa.os2ip xb) else 0) Mk ∧
       (Mk = true ↔ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb =
         Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) := by
-  unfold VG.Impl.Rsa.AArch64.WindowFive.dispatch
+  unfold VG.Impl.Rsa.AArch64.WindowFive.dispatchWith
   refine WP.seq (WP.mono (lengthGuard_ok h) fun t ⟨h9,hm,kk⟩ => ?_)
   have ht := pre_keep h hm kk
-  have hk64 : k < 2 ^ 64 := by have := h.k2; omega
+  have hk64 : k < 2 ^ 64 := by have := h.k2; omega_using [this]
   have finish : ∀ u r c, MainPost t u B Z k op r c → MainPost s u B Z k op r c := by
     intro u r c hp
     exact ⟨hp.bytes,hp.x0,fun x hx ho => by rw [hp.frame x hx ho,hm],
       (kk.trans hp.keep).mono (by decide)⟩
   refine WP.ite (guardValue k pl ql == (0 : BitVec 64)) (by rw [eval_zero,h9]) ?_ ?_
   · intro _
-    exact WP.mono (VG.Proof.Bignum.AArch64.crtMain_ok M ht hv)
+    exact WP.mono (VG.Proof.Bignum.AArch64.crtMain_ok M ht hv hC hG)
       fun u ⟨c,hp,hi⟩ => ⟨c,finish u _ _ hp,hi⟩
   · intro hk
     have h128 : 128 ≤ k := guardValue_nonzero hk64 hk
-    exact WP.mono (crtMain_ok W M S ht h128 hv)
+    exact WP.mono (crtMain_ok W M S ht h128 hv hC hG)
       fun u ⟨c,hp,hi⟩ => ⟨c,finish u _ _ hp,hi⟩
 
 end VG.Proof.Bignum.AArch64.WindowFive

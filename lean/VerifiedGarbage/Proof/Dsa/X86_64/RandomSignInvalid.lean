@@ -45,14 +45,14 @@ theorem random_sign_init_invalid {extra : Nat} {s : State} (h : RandomSignABI ex
       rw [random_q_length h]
       have hl := h.lengths
       unfold Spec.Dsa.lengthsValid at hl
-      omega
+      omega_using [hl]
     refine WP.mono (random_prepare_valid hus husp hqu hql ((random_initial_q h).congrK hf hku)
       hlen (by rw [random_q_length h]; exact (stackArg s 0).isLt)) fun t ⟨ha, hm, hk⟩ => ?_
     have hw (d : Nat) (hd : d + 8 ≤ 168) : word t.mem (randomBase s) d = word u.mem (randomBase s) d := by
       rw [hm]
-      exact (random_prepare_outside _ _ _ _).word (by omega) (by omega)
+      exact (random_prepare_outside _ _ _ _).word (by omega_using [hd]) (by omega_using [hd])
     exact ⟨by rw [ite_eq_right hq] at ha; exact ha, hus.congr hk.2.2,
-      (hk.gpr (by decide)).trans husp, hsaved.congr (fun d _ hd => hw d (by omega)),
+      (hk.gpr (by decide)).trans husp, hsaved.congr (fun d _ hd => hw d (by omega_using [hd])),
       (hw 144 (by decide)).trans huu⟩
   · refine ⟨ha, hscr, hsp, hsaved, hu, hk.2.1, hk.2.2, ?_, ?_⟩
     · intro r hr hne
@@ -64,7 +64,7 @@ theorem random_invalid_remaining {s : State}
     (hq : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes s)) :
     randomSignRemaining (randomInput s) 0 8 = ⟨none, 0, 0, [4]⟩ := by
   have hle : (Spec.Dsa.privateKeyBytes (randomInput s).pLen (randomInput s).qLen
-      (randomInput s).key).params.q ≤ 1 := by rw [← random_q_decode]; omega
+      (randomInput s).key).params.q ≤ 1 := by rw [← random_q_decode]; omega_using [hq]
   have hd : Spec.Dsa.Random.sample (Spec.Dsa.privateKeyBytes (randomInput s).pLen (randomInput s).qLen
       (randomInput s).key).params.q 128 (randomInput s).rand = ⟨none, 0, [4]⟩ := by
     rw [Spec.Dsa.Random.sample]
@@ -89,9 +89,9 @@ theorem random_sign_invalid_store {s t : State} (hr : RandomSignFinishPre s 0 t)
       (by xrun [random_ea_sp, husp, hus.st (d := Random.oStatus) (by decide), hua]) rfl)
     fun w ⟨hwm, hkw⟩ hmxw => ?_
   have hw (d : Nat) (hd : d + 8 ≤ 192) : word w.mem (randomBase s) d = word t.mem (randomBase s) d := by
-    rw [hwm, (writeW_outside _ (randomBase s) _ (by decide)).word (by simp only [Random.oStatus]; omega) (by omega), hum]
+    rw [hwm, (writeW_outside _ (randomBase s) _ (by decide)).word (by simp only [Random.oStatus]; omega_using [hd]) (by omega_using [hd]), hum]
   refine ⟨⟨hus.congr hkw.2.2, (hkw.gpr (by decide)).trans husp,
-    hr.saved.congr (fun d _ hd => hw d (by omega)), (hw 144 (by decide)).trans hr.usedWord,
+    hr.saved.congr (fun d _ hd => hw d (by omega_using [hd])), (hw 144 (by decide)).trans hr.usedWord,
     hkw.2.1.trans (hku.2.1.trans hr.rd), hkw.2.2.trans (hku.2.2.trans hr.wr), ?_, ?_⟩, ?_⟩
   · intro r hc hn
     exact (hkw.gpr (by simp)).trans ((hku.gpr (by

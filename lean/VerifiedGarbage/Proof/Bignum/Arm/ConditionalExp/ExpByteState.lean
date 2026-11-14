@@ -30,10 +30,10 @@ theorem ExpByteState.input {s : State} {base ep : BitVec 32} {len w M x j : Nat}
     (h : ExpByteState ok base ep len w M x eb j s) (hj : j < eb.length) :
     ExpByteInput ok base (ep + BitVec.ofNat 32 j) len w M x (pre eb j) eb[j] s := by
   have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-    addr_add (by have := h.sourceFit; omega)
+    addr_add (by have := h.sourceFit; omega_using [hj, this])
   refine ⟨h.power, h.pointer, ?_, ?_⟩
   · rw [address]
-    exact CallLay.inRegions_sub h.read (by omega) (by have := h.countFit; omega)
+    exact CallLay.inRegions_sub h.read (by omega_using [hj]) (by have := h.countFit; omega_using [this])
   · rw [address]; exact h.bytes j hj
 
 theorem expByteState_step (s : State) {base ep : BitVec 32} {len w M x j : Nat} {eb : List Byte}
@@ -41,7 +41,7 @@ theorem expByteState_step (s : State) {base ep : BitVec 32} {len w M x j : Nat} 
     WP isa (.seq expByteHead (.seq expBits (.block expByteNext))) s fun t =>
       ExpByteState ok base ep len w M x eb (j + 1) t ∧ t.z = decide (j + 1 = eb.length) := by
   have input := h.input hj
-  refine WP.mono (expByte_ok s h.power (by omega) (by have := h.countFit; omega)
+  refine WP.mono (expByte_ok s h.power (by omega_using [hj]) (by have := h.countFit; omega_using [this])
     h.pointer h.count input.read) ?_
   rintro t ⟨power, pointer, count, zero, frame, rest⟩
   rw [input.byte] at power
@@ -57,8 +57,8 @@ theorem expByteState_step (s : State) {base ep : BitVec 32} {len w M x j : Nat} 
   · intro i hi
     rw [frame.bytes (R := ⟨State.addr ep, eb.length⟩)
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
-      (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega) hi]
+      (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega_using [this]) hi]
     exact h.bytes i hi
-  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+  · rw [zero]; exact decide_eq_decide.mpr (by omega_using [])
 
 end VG.Proof.Bignum.Arm.ConditionalExp

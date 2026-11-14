@@ -43,10 +43,10 @@ theorem packField_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
   refine wp_range_flatMap (M := isa) (PackInv b q a dst s0) (fun k s hk h => ?_)
     8 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩
   have hcs : Ctx b s := hc.of_rest h.rest (by decide)
-  refine lw0_ok hcs (d := a + 4 * k) (by omega) (by omega) fun t1 v1 => ?_
+  refine lw0_ok hcs (d := a + 4 * k) (by omega_using [ha, hk]) (by omega_using [ha4]) fun t1 v1 => ?_
   have hq1 : t1.gpr p = q := by rw [v1.other _ hp'.1, h.rest.gpr _ hp, h14]
   refine WP.mono (ByteLoad.storeLE32_ok (v := .a4) (tmp := .a5) (n := p) (off := dst + 4 * k)
-    (by decide) hp'.2.symm (by omega) (by rw [hq1, v1.wr, h.rest.wr]; exact hw k hk)) fun t2 e2 => ?_
+    (by decide) hp'.2.symm (by omega_using [hdst, hk]) (by rw [hq1, v1.wr, h.rest.wr]; exact hw k hk)) fun t2 e2 => ?_
   have em : t2.mem = s.mem.writeW (q + BitVec.ofNat 64 (dst + 4 * k)) ((t1.gpr .a4).setWidth 32) := by
     rw [e2, RegUpd.mem_write, hq1]
     show t1.mem.writeW _ _ = _
@@ -58,17 +58,17 @@ theorem packField_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     refine wd_frame h.frame fun r hr => ?_
     rw [List.mem_singleton.mp hr]
     refine fun x hx hx' => hd x ?_ ?_
-    · exact Region.sub_prefix (by omega) x hx'
-    · exact Offset.sub b (d := a + 4 * k) (n := 4) (e := a) (k := 32) (by omega) (by omega) x hx
+    · exact Region.sub_prefix (by omega_using [hk]) x hx'
+    · exact Offset.sub b (d := a + 4 * k) (n := 4) (e := a) (k := 32) (by omega_using []) (by omega_using [hk]) x hx
   refine ⟨h.rest.trans ((v1.rest (by decide)).trans hr2), ?_, fun j hj => ?_⟩
   · rw [em]
     refine (h.frame.sub fun r hmem => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hdst, hk]))
     rw [List.mem_singleton.mp hmem]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · rw [em]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hdst, hk])]
       exact h.outs j hj
     · rw [wd_write_self, toNat_lo32, v1.gpr, toNat_ext32, Nat.mod_eq_of_lt (BitVec.isLt _)]
       exact hsrc
@@ -95,7 +95,7 @@ theorem unpackField_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     fun t ht => ⟨ht.rest, ht.frame, ht.outs⟩
   have hq : s.gpr p = q := by rw [h.rest.gpr _ hp, h14]
   refine WP.append (ByteLoad.loadLE32_ok (d := .a4) (tmp := .a5) (n := p) (off := src + 4 * k)
-    hp'.1.symm hp'.2.symm (by decide) (by omega)
+    hp'.1.symm hp'.2.symm (by decide) (by omega_using [hsrc, hk])
     (by rw [hq, h.rest.rd, h.rest.wr]; exact hr k hk)) fun t1 e1 => ?_
   have hr1 : Rest [.a4, .a5] s t1 := by
     rw [e1]
@@ -108,21 +108,21 @@ theorem unpackField_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     refine wd_frame h.frame fun r hr' => ?_
     rw [List.mem_singleton.mp hr']
     refine fun x hx hx' => hd x ?_ ?_
-    · exact Offset.sub q (d := src + 4 * k) (n := 4) (e := src) (k := 32) (by omega) (by omega) x hx
-    · exact Region.sub_prefix (by omega) x hx'
+    · exact Offset.sub q (d := src + 4 * k) (n := 4) (e := src) (k := 32) (by omega_using []) (by omega_using [hk]) x hx
+    · exact Region.sub_prefix (by omega_using [hk]) x hx'
   refine sw0_ok ((hc.of_rest h.rest (by decide)).of_rest hr1 (by decide))
-    (by omega) (by omega) fun u hu => WP.block_nil ?_
+    (by omega_using [ho, hk]) (by omega_using [ho4]) fun u hu => WP.block_nil ?_
   have em : u.mem = s.mem.writeW (b + BitVec.ofNat 64 (o + 4 * k)) ((t1.gpr .a4).setWidth 32) := by
     rw [hu.mem, hm1]
   refine ⟨h.rest.trans (hr1.trans (hu.rest _)), ?_, fun j hj => ?_⟩
   · rw [em]
     refine (h.frame.sub fun r hmem => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [ho, hk]))
     rw [List.mem_singleton.mp hmem]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · rw [limb, em]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ho, hk])]
       exact h.outs j hj
     · rw [wd_write_self, toNat_lo32, hv]
 

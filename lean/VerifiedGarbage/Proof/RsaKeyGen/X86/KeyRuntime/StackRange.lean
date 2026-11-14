@@ -24,7 +24,7 @@ def stackRange (B : Addr) (sp : BitVec 32) : Nat × Nat := (ofs B (below sp 52).
 theorem below52_toNat {sp : BitVec 32} (h : 52 ≤ sp.toNat) : (below sp 52).base.toNat = sp.toNat - 52 := by
   change ((sp - 52#32).setWidth 64).toNat = _
   rw [BitVec.toNat_setWidth, sub_toNat h]
-  exact Nat.mod_eq_of_lt (by have := sp.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := sp.isLt; omega_using [])
 
 /-- `x` is in the stack below `sp` exactly when its offset is in `stackRange`. -/
 theorem stack_contains {sp : BitVec 32} {B : Addr} {Z : Nat} (D : DeepStk sp B Z)
@@ -68,14 +68,14 @@ theorem argument_keepBelow {s t : State} {B : Addr} {Z i : Nat} {v : BitVec 32} 
     · have address : (VG.Proof.Dsa.X86.stackAddress s i).toNat = (s.gpr .esp).toNat + 4 + 4 * i := by
         simp only [VG.Proof.Dsa.X86.stackAddress, addr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
         have := (s.gpr .esp).isLt
-        omega
+        omega_using [fit]
       have b : (below (s.gpr .esp) 52).base.toNat = (s.gpr .esp).toNat - 52 := below52_toNat low
       intro a ha hb
       simp only [Region.Contains, BitVec.toNat_sub] at ha hb
       rw [b] at hb
       rw [address] at ha
       have := a.isLt
-      omega
+      omega_using [low, fit, ha, hb]
   exact value.trans A.value
 
 theorem rtWs_keepBelow {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s t : State} {B : Addr} {Z len N : Nat}
@@ -91,9 +91,9 @@ theorem Ws.keepBelow {s t : State} {B : Addr} {Z n N : Nat} {rs : List Reg}
     (h : Ws s B Z n N) (K : Keeps rs s t) (F : Frame [⟨B, Z⟩, below (s.gpr .esp) 52] s.mem t.mem)
     (edi : .edi ∉ rs := by decide) (esp : .esp ∉ rs := by decide) : Ws t B Z n N := by
   obtain ⟨low, high, _⟩ := h.deep
-  exact ⟨rtWs_keepBelow h.full K edi esp F low (by change _ + 8 + 4 * 7 ≤ _; omega) (by change _ + 8 + 4 * 20 ≤ _; omega),
-    rtWs_keepBelow h.prime K edi esp F low (by change _ + 8 + 4 * 9 ≤ _; omega) (by change _ + 8 + 4 * 20 ≤ _; omega),
-    rtWs_keepBelow h.exponent K edi esp F low (by change _ + 8 + 4 * 19 ≤ _; omega) (by change _ + 8 + 4 * 20 ≤ _; omega),
+  exact ⟨rtWs_keepBelow h.full K edi esp F low (by change _ + 8 + 4 * 7 ≤ _; omega_using [high]) (by change _ + 8 + 4 * 20 ≤ _; omega_using [high]),
+    rtWs_keepBelow h.prime K edi esp F low (by change _ + 8 + 4 * 9 ≤ _; omega_using [high]) (by change _ + 8 + 4 * 20 ≤ _; omega_using [high]),
+    rtWs_keepBelow h.exponent K edi esp F low (by change _ + 8 + 4 * 19 ≤ _; omega_using [high]) (by change _ + 8 + 4 * 20 ≤ _; omega_using [high]),
     h.width, h.size, by rw [K.1 .esp esp]; exact h.deep⟩
 
 /-- The workspace is apart from the stack a call uses. -/
@@ -104,7 +104,7 @@ theorem deep_disjoint {sp : BitVec 32} {B : Addr} {Z : Nat} (D : DeepStk sp B Z)
   have F := stack_far D nowrap
   have : (stackRange B sp).2 = 52 := rfl
   simp only [Region.Contains] at hx
-  omega
+  omega_using [hx, H, F]
 
 /-! ## Changes in ranges of the workspace and in the stack a call uses -/
 
@@ -172,7 +172,7 @@ theorem outs {Z : Nat} (h : OutsS B sp rs m₁ m₂) (D : DeepStk sp B Z) (nowra
   have far : (x - B).toNat < Z ∨ Z + (2 ^ 64 - Z) ≤ (x - B).toNat :=
     hx _ (List.mem_append_right _ (List.mem_singleton_self _))
   have := (x - B).isLt
-  omega
+  omega_using [H, F, far]
 
 end OutsS
 

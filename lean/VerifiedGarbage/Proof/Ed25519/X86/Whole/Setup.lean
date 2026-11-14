@@ -135,12 +135,12 @@ theorem setup_ok {s : State} {E : BitVec 32} {n start : Nat} {vs : List Value}
     · have fs : Frame [⟨E.setWidth 64 + BitVec.ofNat 64 (4 * start), 4 * (v :: vs).length⟩] s.mem u.mem := by
         rw [hm, addr_eq (by omega_using [hf, hs])]
         exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, List.length_cons]; omega)
+          (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, List.length_cons]; omega_using [])
       refine fs.trans (Frame.sub ft ?_)
       rintro r hr'
       simp only [List.mem_singleton] at hr'; subst hr'
       refine ⟨_, List.mem_singleton_self _, ?_⟩
-      exact Offset.sub _ (by omega) (by simp; omega)
+      exact Offset.sub _ (by omega_using []) (by simp; omega_using [])
     · intro j hj
       cases j with
       | zero =>
@@ -150,12 +150,12 @@ theorem setup_ok {s : State} {E : BitVec 32} {n start : Nat} {vs : List Value}
           refine ft.readW (Region.contains_self _ _) ?_ (by decide)
           rintro r hr'
           simp only [List.mem_singleton] at hr'; subst hr'
-          exact Offset.disjoint _ (by omega) (by simp only [List.length_cons] at hlen; omega_using [hlen])
+          exact Offset.disjoint _ (by omega_using []) (by simp only [List.length_cons] at hlen; omega_using [hlen])
             (by simp only [List.length_cons] at hlen; omega_using [hlen])
         rw [keep, hm, Mem.readW_writeW_self32]
       | succ j =>
         have hj' : j < vs.length := by simpa using hj
-        have e : start + (j + 1) = start + 1 + j := by omega
+        have e : start + (j + 1) = start + 1 + j := by omega_using []
         rw [e, vt j hj']
         exact value_congr hf (hv _ (List.mem_cons_of_mem _ (List.getElem_mem _))) hf24
 

@@ -557,68 +557,6 @@ def featureCheck (name doc : String) (required declared : List String) :
     | parts => unless parts.getLast!.startsWith "Safety\n" do
         throw s!"{name} needs CPU features but its doc does not end with its `# Safety` section"
 
-/-- The value of `f` on the code of each call of `calls` (`Code.calls`), in
-order, but for a call whose value is that of the first call of the same
-function.
-
-`calls` holds a function once per call of it, through every function that
-calls it, and its code is usually the same value in memory at each of them:
-`withPtrEq` finds that at once, without computing `f` again (which, on the
-code of every call, was most of the time of the checks using this). -/
-def distinctCalls {I C β : Type} [BEq β] [LawfulBEq β] (f : Code I C → β)
-    (calls : List (String × Code I C)) : List β := Id.run do
-  -- The first call of each function so far, with its code and its value.
-  let mut first : List {p : String × Code I C × β // p.2.2 = f p.2.1} := []
-  let mut values : List β := []
-  for (n, body) in calls do
-    match first.find? (·.1.1 == n) with
-    | some ⟨(_, body₀, v₀), h₀⟩ =>
-      unless withPtrEq body body₀ (fun _ => f body == v₀) (fun h => by simp_all) do
-        values := f body :: values
-    | none =>
-      let v := f body
-      first := ⟨(n, body, v), rfl⟩ :: first
-      values := v :: values
-  return values.reverse
-
-/-- The features that the instructions of `c` require, but not those of the
-functions it calls, each once, in first-seen order after those of `acc`. -/
-def ownRequires {I C : Type} (req : I → List String) : List String → Code I C → List String
-  | acc, .block is => is.foldl (fun acc i => add acc (req i)) acc
-  | acc, .seq a b => ownRequires req (ownRequires req acc a) b
-  | acc, .ite _ t e => ownRequires req (ownRequires req acc t) e
-  | acc, .loop b _ => ownRequires req acc b
-  | acc, .call _ _ => acc
-  | acc, .frame i b j => add (ownRequires req (add acc (req i)) b) (req j)
-  | acc, .icall i _ _ n => ownRequires req (add acc (req i)) n
-where
-  add (acc fs : List String) : List String :=
-    fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
-
-/-- The calls in `c`, and in the functions it calls, as `Code.calls`, but
-not those of an indirect call (`Code.icall`), nor any in the functions it
-may reach: the calls whose code's features `Code.requires` counts. -/
-def reqCalls {I C : Type} : Code I C → List (String × Code I C)
-  | .block _ => []
-  | .seq a b => reqCalls a ++ reqCalls b
-  | .ite _ t e => reqCalls t ++ reqCalls e
-  | .loop b _ => reqCalls b
-  | .call n b => (n, b) :: reqCalls b
-  | .frame _ b _ => reqCalls b
-  | .icall _ _ _ nx => reqCalls nx
-
-/-- The features that the instructions of `c`, and of the functions it
-calls, require (`Code.requires`), each once: those of the instructions of
-`c` outside its calls (`ownRequires`), then those of the code of each call
-(`reqCalls`, which has every call, those in the code of a call too, but not
-the functions an indirect call may reach),
-skipping a call whose code requires what the first call of the same
-function's does (`distinctCalls`). These are the features of
-`dedup (c.requires req)`, without building the list with repetitions or
-going through the code of a function once per call of it. -/
-def requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
-  (distinctCalls (ownRequires req []) (reqCalls c)).foldl ownRequires.add (ownRequires req [] c)
-
 /-- The first `some` of `f` over the instructions of `c`, but not those of
 the functions it calls. -/
 def ownFirstSome? {I C : Type} (f : I → Option String) : Code I C → Option String
@@ -637,7 +575,7 @@ calls, if there is one: the first of those of `c` outside its calls
 call whose value is the first call of the same function's is skipped
 (`distinctCalls`): that value is `none`, or the first call's was found. -/
 def firstSome? {I C : Type} (f : I → Option String) (c : Code I C) : Option String :=
-  ownFirstSome? f c <|> (distinctCalls (ownFirstSome? f) c.calls).findSome? id
+  ownFirstSome? f c <|> (Code.distinctCalls (ownFirstSome? f) c.calls).findSome? id
 
 /-- `doc` with the paragraphs `notes` inserted before its `# Safety` section. -/
 def insertNotes (doc : String) : List String → String
@@ -671,14 +609,23 @@ def fnTablesDoc (a : Artifact) : List String :=
       (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` \
       gives, if it has one."
 
+/-- The note that a function returns without secret residue, if it runs one
+of `as` and each proves it (`Artifact.residue`). -/
+def residueDoc (as : List Artifact) : List String :=
+  if !as.isEmpty && as.all (·.residue.isSome) then
+    ["It returns without secret residue: what it leaves in the registers, the flags and the \
+      stack below the caller's stack pointer is determined by what its caller left there and \
+      by public data (`Target.noResidue`)."]
+  else []
+
 /-- The documentation of `a` as emitted: its `doc`, with what its signature's
 contract requires of the memory each buffer is valid for and of where its
 buffers are (`Sig.layoutNote` before its `# Safety` section, `Sig.validDoc`
 first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
-(`featureDoc`), and what the tables of functions it takes must be
-(`fnTablesDoc`). -/
+(`featureDoc`), what the tables of functions it takes must be
+(`fnTablesDoc`), and that it returns without secret residue (`residueDoc`). -/
 def fullDoc (a : Artifact) : String :=
-  fullDocWith a a.name a.stack a.written a.features []
+  fullDocWith a a.name a.stack a.written a.features (residueDoc [a])
 where
   /-- `fullDoc a`, for a function named `name` whose calls and frames use
   `stack` bytes of stack, which writes at most `written` of its arrays and
@@ -937,7 +884,7 @@ where
 (`featureCheck`). -/
 def checkFeatures (p : Prepared) : Except String Unit :=
   let a := p.art
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires a.code)
+  featureCheck s!"{a.target.name}: {a.name}" a.doc (Code.requiresDedup a.target.isa.requires a.code)
     a.features
 
 /-- The target's printer can encode every instruction of the code of `p`'s
@@ -976,6 +923,39 @@ def checkWritten (a : Artifact) : Except String Unit := do
         writable array"
     | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
         one of its parameters"
+
+/-- The functions `ci/residue_allowlist.txt` lists, as `(target, name)`: its
+lines but blank ones and those starting with `#`, each a target's name and a
+function's, separated by spaces. -/
+def parseResidueAllowlist (text : String) : Except String (List (String × String)) :=
+  (text.splitOn "\n").filterMapM fun l =>
+    let l := l.trimAscii.toString
+    if l.isEmpty || l.startsWith "#" then pure none
+    else match (l.splitOn " ").filter (!·.isEmpty) with
+      | [t, n] => pure (some (t, n))
+      | _ => throw s!"ci/residue_allowlist.txt: `{l}` is not a target and a function's name"
+
+/-- Every artifact of a target that defines what it means to return without
+secret residue (`Target.noResidue`) proves it (`Artifact.residue`), or
+`pending` (`parseResidueAllowlist`) lists it. If `complete` (`as` are all the
+artifacts of their targets, as in a part of `Emit.lean`, not `EmitOne.lean`),
+every function `pending` lists of one of those targets is an artifact of it
+without a proof, so that the list only ever shrinks to what is left to
+prove. Every problem is reported, not only the first. -/
+def checkResidue (pending : List (String × String)) (complete : Bool) (as : List Artifact) :
+    Except String Unit := do
+  let missing := as.filter fun a =>
+    a.target.noResidue.isSome && a.residue.isNone && !pending.contains (a.target.name, a.name)
+  let targets := as.map (·.target.name)
+  let stale := if complete then
+      pending.filter fun (t, n) => targets.contains t &&
+        !as.any (fun a => a.target.name == t && a.name == n && a.residue.isNone)
+    else []
+  let msgs := missing.map (fun a => s!"{a.target.name}: {a.name} does not prove that it returns \
+      without secret residue (`Artifact.residue`), and ci/residue_allowlist.txt does not list it") ++
+    stale.map fun (t, n) => s!"ci/residue_allowlist.txt lists `{t} {n}`, which is not a function \
+      of {t} without a proof that it returns without secret residue: remove the line"
+  unless msgs.isEmpty do throw ("\n".intercalate msgs)
 
 /-- No two artifacts of a target have the same name. -/
 def checkUnique (as : List Artifact) : Except String Unit :=
@@ -1063,7 +1043,7 @@ structure Internal where
   tables : List (String × List (BitVec 64))
   syms : List String
   lines_eq : lines = fn.1.printer.function fn.2
-  features_eq : features = requiresDedup fn.1.isa.requires fn.2
+  features_eq : features = Code.requiresDedup fn.1.isa.requires fn.2
   tables_eq : tables = fn.1.printer.codeTables fn.2
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 
@@ -1650,8 +1630,17 @@ every CPU but where `VG_CPU_FEATURES` is `none`), so that the tests run the
 base everywhere with `VG_CPU_FEATURES=none` (AArch64's `_neon` code needs
 none: AdvSIMD is part of its baseline), or where the compilation target
 enables some (`COMPILED`). It falls back on the base, which needs
-no feature. An implementation that can be chosen only where one before it
-can would never run, and fails the emitter (`armsOf`).
+no feature. An implementation whose registration gives `notWith`
+microarchitectures (`Artifact.notWith`: cores it is measured slower on) is
+never chosen where detection reports one of them, and the dispatcher tries
+the next: this only keeps an implementation from being chosen, so it can
+only leave another the CPU can run, the base at last, which needs no
+feature; a microarchitecture never chooses an implementation. The emitter
+refuses `notWith` on a base, which the dispatcher falls back on. An
+implementation that can be chosen only where one before it can would never
+run, and fails the emitter (`armsOf`): one before it can be chosen wherever
+it can if it needs no feature that one does not, and is kept from being
+chosen on no microarchitecture that one is not.
 
 A function whose base is its only implementation gets a dispatcher too, as
 another name of it, so that the Rust code calling the dispatcher is the same
@@ -1735,12 +1724,14 @@ structure Impl where
   `Artifact.vendor`). -/
   extra : List String := []
   vendor : Option String := none
+  /-- Its registration's `notWith` microarchitectures (`Artifact.notWith`). -/
+  notWith : List String := []
 
 /-- The function `a`, as an implementation a dispatcher may call. -/
 def Impl.ofArtifact (a : Artifact) : Impl :=
   { name := a.name, module := a.module, features := a.features
     gate := a.features.filterMap a.target.printer.featureCfg, extra := a.extra
-    vendor := a.vendor }
+    vendor := a.vendor, notWith := a.notWith }
 
 /-- An implementation a dispatcher may choose, with the `extra` features and
 `vendor`s of its registration. -/
@@ -1748,16 +1739,18 @@ structure Arm where
   impl : Impl
   extra : List String
   vendors : List String
+  notWith : List String := []
 
 /-- The implementations `members` of a function or table of the target `t`,
 but its base, that its dispatcher tries, in their order (see above), or the
 first that it would never choose. -/
 def armsOf (t : String) (members : List Impl) : Except String (List Arm) := do
-  let arms := members.map fun a => (⟨a, a.extra, a.vendor.toList⟩ : Arm)
+  let arms := members.map fun a => (⟨a, a.extra, a.vendor.toList, a.notWith⟩ : Arm)
   -- One that can be chosen only where one before it can would never run.
   let weaker (e l : Arm) : Bool :=
     (e.impl.features ++ e.extra).all (l.impl.features ++ l.extra).contains &&
-      e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains
+      e.vendors.all l.vendors.contains && e.impl.gate.all l.impl.gate.contains &&
+      e.notWith.all l.notWith.contains
   let _ ← arms.foldlM (init := ([] : List Arm)) fun before l => do
     if let some e := before.find? (weaker · l) then
       throw s!"{t}: {l.impl.name} would never run: its dispatcher tries {e.impl.name} \
@@ -1814,7 +1807,15 @@ def condOf (ind : String) (a : Arm) : String :=
     | none => ("verified_garbage_cpu::COMPILED.0 != 0", "cpu.0 != 0")
     | some n => (s!"verified_garbage_cpu::target_contains({n})", s!"cpu.contains({n})")
   let has := s!"const \{ {target} }\n{ind}    || {detected}"
-  if vs.isEmpty then has else " && ".intercalate vs ++ s!"\n{ind}    && ({has})"
+  let cond := if vs.isEmpty then has else " && ".intercalate vs ++ s!"\n{ind}    && ({has})"
+  -- Never on the microarchitectures of its `notWith`, which detection reports
+  -- (a microarchitecture is no compilation target's feature).
+  match a.notWith with
+  | [] => cond
+  | ns =>
+    let bits := ns.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
+    let not := s!"!cpu.contains(verified_garbage_cpu::Features({" | ".intercalate bits}))"
+    if vs.isEmpty then s!"({cond})\n{ind}    && {not}" else cond ++ s!"\n{ind}    && {not}"
 
 /-- The paragraph of a dispatcher's documentation saying what it runs. -/
 def dispatchNote (base : String) (arms : List Arm) : String :=
@@ -1828,7 +1829,9 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
       s!"the target's vendor is `{v}` (or `VG_CPU_FEATURES` names every feature it needs)"
     let gate := if a.impl.gate.isEmpty then [] else
       [s!"it is compiled (`{", ".intercalate a.impl.gate}`)"]
-    match gate ++ vendor ++ needs ++ extra with
+    let notWith := if a.notWith.isEmpty then [] else
+      [s!"detection does not report {codeList a.notWith}"]
+    match gate ++ vendor ++ needs ++ extra ++ notWith with
     | [] => s!"`{a.impl.name}`"
     | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
   s!"It runs the first of these implementations that applies, in the order its registration \
@@ -1861,7 +1864,7 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
     if ns.all (·.isSome) then some (p, ns.foldl (fun m o => max m (o.getD 0)) n) else none
   let args := argsOf b.sig
   let abi := b.target.rustAbi
-  let doc := fullDoc.fullDocWith b auto stack written [] [dispatchNote b.name arms]
+  let doc := fullDoc.fullDocWith b auto stack written [] (dispatchNote b.name arms :: residueDoc all)
   let relaxed := "core::sync::atomic::Ordering::Relaxed"
   writtenConsts auto "" written ++
   docComment "" doc ++
@@ -1904,7 +1907,7 @@ def soleDispatcher (g : Group) : String :=
   let auto := autoName b.name
   let note := s!"It runs `{b.name}`, the only implementation of it on this target, which needs \
     no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target."
-  let doc := fullDoc.fullDocWith b auto b.stack b.written [] [note]
+  let doc := fullDoc.fullDocWith b auto b.stack b.written [] (note :: residueDoc [b])
   writtenConsts auto "" b.written ++
   docComment "" doc ++
   safetyAllow doc ++
@@ -1924,13 +1927,13 @@ def vendorOk (v : String) : Bool :=
 def featureOk (f : String) : Bool :=
   !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
 
-/-- The artifact `a`'s vendor, if it names one, and each of its `extra`
-features are as `vendorOk` and `featureOk` require. -/
+/-- The artifact `a`'s vendor, if it names one, and each of its `extra` and
+`notWith` features are as `vendorOk` and `featureOk` require. -/
 def checkChoice (a : Artifact) : Except String Unit := do
   if let some v := a.vendor then
     unless vendorOk v do
       throw s!"{a.target.name}: {a.name} names the vendor `{v}`"
-  for f in a.extra do
+  for f in a.extra ++ a.notWith do
     unless featureOk f do
       throw s!"{a.target.name}: {a.name} needs the feature `{f}`"
 
@@ -1940,6 +1943,9 @@ names of every artifact of the target, none of which may be a
 dispatcher's. -/
 def dispatchers (names : List String) (as : List Artifact) :
     Except String String := do
+  if let some g := (groupsOf as).find? (!·.base.notWith.isEmpty) then
+    throw s!"{g.base.target.name}: {g.base.name} is a base, which its dispatcher falls back on: \
+      `notWith` means nothing for it"
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name

@@ -24,10 +24,10 @@ theorem and_one_zero (w : BitVec 32) : (w &&& 1 == 0) = !decide (w.toNat % 2 = 1
   have hw : (w &&& 1).toNat = w.toNat % 2 := by
     rw [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]
   by_cases hp : w.toNat % 2 = 1
-  · have ne : w &&& 1 ≠ 0 := fun h => by rw [h] at hw; simp at hw; omega
+  · have ne : w &&& 1 ≠ 0 := fun h => by rw [h] at hw; simp at hw; omega_using [hp, hw]
     have e : (w &&& 1 == 0) = false := by simp only [beq_eq_false_iff_ne, ne_eq]; exact ne
     rw [e]; simp [hp]
-  · have eq : w &&& 1 = 0 := BitVec.eq_of_toNat_eq (by rw [hw]; simp; omega)
+  · have eq : w &&& 1 = 0 := BitVec.eq_of_toNat_eq (by rw [hw]; simp; omega_using [hp])
     have e : (w &&& 1 == 0) = true := by simp only [beq_iff_eq]; exact eq
     rw [e]; simp [hp]
 
@@ -57,20 +57,20 @@ theorem checks_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
   unfold checks
   refine WP.seq (WP.mono (compareAt_ok h (a := 3) (b := 0) (by decide) (by decide)) fun u₁ ⟨m₁, c₁, K₁⟩ => ?_)
   have h₁ := h.keep K₁ (by decide) (by decide) (by rw [m₁]; exact Outside.refl _ _ _ _)
-  refine WP.seq (wp_storeS (h₁.scratch.ea (d := 148) (by rw [n0] at f0; omega))
-    (h₁.scratch.write (d := 148) (n := 4) (by rw [n0] at f0; omega)) fun u₂ m₂ => WP.block_nil ?_)
-  have O₂ : Outside base 148 4 s.mem u₂.mem := by rw [m₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega)
-  have h₂ := h₁.keep (m₂.keeps []) (by decide) (by decide) (by rw [m₂.mem]; exact (writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+  refine WP.seq (wp_storeS (h₁.scratch.ea (d := 148) (by rw [n0] at f0; omega_using [f0]))
+    (h₁.scratch.write (d := 148) (n := 4) (by rw [n0] at f0; omega_using [f0])) fun u₂ m₂ => WP.block_nil ?_)
+  have O₂ : Outside base 148 4 s.mem u₂.mem := by rw [m₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega_using [])
+  have h₂ := h₁.keep (m₂.keeps []) (by decide) (by decide) (by rw [m₂.mem]; exact (writeW32_outside _ _ _ (by omega_using [])).mono (by omega_using []) (by omega_using [f0, n0]))
   have V₀ : ∀ j, j ≤ 4 → val32 u₂.mem base (numAt len j) (nw len) = val32 s.mem base (numAt len j) (nw len) :=
-    fun j hj => O₂.val32 (.inr (by simp only [numAt, numOff]; omega)) (by
-      have := (h.fits (j := j) (by omega)).1; simp only [nw, wb] at *; omega)
+    fun j hj => O₂.val32 (.inr (by simp only [numAt, numOff]; omega_using [])) (by
+      have := (h.fits (j := j) (by omega_using [hj])).1; simp only [nw, wb] at *; omega_using [nw', this])
   refine WP.seq (WP.mono (compareAt_ok h₂ (a := 4) (b := 0) (by decide) (by decide)) fun u₃ ⟨m₃, c₃, K₃⟩ => ?_)
   rw [V₀ 4 (by decide), V₀ 0 (by decide)] at c₃
   have h₃ := h₂.keep K₃ (by decide) (by decide) (by rw [m₃]; exact Outside.refl _ _ _ _)
-  refine wp_movS (readSrc_sc h₃.scratch (d := 148) (by rw [n0] at f0; omega)) fun u₄ e₄ _ => ?_
+  refine wp_movS (readSrc_sc h₃.scratch (d := 148) (by rw [n0] at f0; omega_using [f0])) fun u₄ e₄ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun u₅ e₅ => ?_
   refine wp_movS (readSrc_sc ((h₃.scratch.of_keeps e₄.keeps (by decide) (by decide)).of_keeps e₅.keeps
-    (by decide) (by decide)) (d := numOff) (by rw [n0] at f0; simp only [numOff]; omega)) fun u₆ e₆ _ => ?_
+    (by decide) (by decide)) (d := numOff) (by rw [n0] at f0; simp only [numOff]; omega_using [f0, wl])) fun u₆ e₆ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun u₇ e₇ => ?_
   refine wp_logicS (.inl rfl) rfl fun u₈ e₈ => ?_
   refine wp_cmpS rfl fun t F z => WP.block_nil ⟨?_, ?_, ?_⟩
@@ -89,7 +89,7 @@ theorem checks_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
       show u₄.gpr .ecx &&& u₄.gpr .edx = _
       rw [ecx₄, edx₄]
     have par : (u₂.mem.readW (off base numOff) 32).toNat % 2 = val32 s.mem base (numAt len 0) (nw len) % 2 := by
-      obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega⟩
+      obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega_using [dims]⟩
       have n0' : numAt len 0 = numOff := by simp [numAt]
       rw [← V₀ 0 (by decide), hk, VG.Proof.Mont.X86.Dynamic.val32_parity, n0']
     have e₈' : u₈.gpr .ecx = u₇.gpr .ecx &&& u₇.gpr .eax := e₈.gpr

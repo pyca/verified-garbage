@@ -37,7 +37,7 @@ theorem signLeak_call {s₀ u : State} (A : RandomABI s₀) (h : RReady s₀ u) 
       (rInput s₀).key := by
     rw [rBytes_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
-      (by have := (stackArg s₀ 0).isLt; omega), callKey A h]
+      (by have := (stackArg s₀ 0).isLt; omega_using []), callKey A h]
   unfold signLeak
   rw [signRes_call A h C]
   simp only [State.withRegions_mem, State.callEntry_mem, ce_r2 C, ce_r3 C, ce_a0 A h C, ce_a2 A h C, ek]
@@ -65,7 +65,7 @@ theorem call_pub {s₁ s₂ t₁ t₂ : State} (A₁ : RandomABI s₁) (A₂ : R
     rw [pushed_sp, pushed_sp, h₁.sp, h₂.sp, pub_sp e]
   · show stackArg (callEntryOf s₁ t₁) i = stackArg (callEntryOf s₂ t₂) i
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by
-      omega
+      omega_using [hi]
     · rw [(ea 0 (by decide)).1, (ea 0 (by decide)).2]
       exact C₁.r4.trans ((pub_arg e 1 (by decide)).trans C₂.r4.symm)
     · rw [(ea 1 (by decide)).1, (ea 1 (by decide)).2]

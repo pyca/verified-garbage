@@ -55,14 +55,14 @@ theorem start_ok : WP isa (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc 
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (pro_ok hp) fun s₁ h₁ => WP.mono (rc_ok hp h₁) fun s₂ h₂ => ?_
   have he₂ : Env σ s₂ := Env.low h₁ (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega))
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega_using []))
     h₂.frame h₂.keep.2.1 h₂.keep.2.2 fun r hr => h₂.keep.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
   refine WP.mono (absorb_ok hp (m₁ := s₂.mem) ⟨he₂, Frame.refl _ _⟩)
-    fun s₃ ⟨a₃, b₃⟩ => ⟨a₃.env, fun r hr k hk => ?_, lanes_A0 b₃, fun _ _ p hp' => absurd hp' (by omega)⟩
+    fun s₃ ⟨a₃, b₃⟩ => ⟨a₃.env, fun r hr k hk => ?_, lanes_A0 b₃, fun _ _ p hp' => absurd hp' (by omega_using [])⟩
   rw [a₃.frame.readW (Region.contains_self _ _) (by
-    simpa using Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega) (by omega))
+    simpa using Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega_using []) (by omega_using [hr, hk]))
     (by decide)]
   exact h₂.rc r hr k hk
 
@@ -75,7 +75,7 @@ theorem Env.poly {K : Nat} (hK : K < 4) {s s' : State} (he : Env σ s)
     by rw [hg .r15 (by simp), he.r15], fun i hi => ?_, ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (by
         simpa using ((hp.a_scr.sub_left (sub_poly hK)).sub_right (sub_scr (σ := σ) (a := oSave + 8 * i) (n := 8)
-          (by simp only [oSave]; omega))).symm) (by decide)]
+          (by simp only [oSave]; omega_using [hi]))).symm) (by decide)]
     exact he.saved i hi
   · exact he.frame.trans (hf.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨aR σ, by simp, sub_poly hK⟩)
@@ -84,16 +84,16 @@ theorem Env.poly {K : Nat} (hK : K < 4) {s s' : State} (he : Env σ s)
 theorem gpre {c K g : Nat} (hK : K < 4) (hg : g < 64) {s : State} (h : EI σ c K g s) :
     GPre c (X σ K) (at' σ (oBuf + 680 * K)) (poly4 (aP σ) K) g s := by
   refine ⟨h.rsi, h.rdi, hg, fun j hj => ?_, fun j hj => ?_, fun i hi => ?_, fun j hj hc => ?_⟩
-  · rw [at', Offset.add_add, ← at', h.ui.buf K hK j (by omega)]; exact (H_getD _ hj).symm
+  · rw [at', Offset.add_add, ← at', h.ui.buf K hK j (by omega_using [hj])]; exact (H_getD _ hj).symm
   · rw [at', Offset.add_add, ← at']
-    exact in_scr' hp h.ui.env.rd h.ui.env.wr (by simp only [oBuf]; omega)
+    exact in_scr' hp h.ui.env.rd h.ui.env.wr (by simp only [oBuf]; omega_using [hK, hj])
   · rw [h.ui.env.wr, hp.wr]
     refine ⟨aR σ, by simp, ?_⟩
     rw [coeffAddr, poly4, Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [hK, hi]) (by omega_using [hK, hi])
   · rw [at', Offset.add_add] at hc
     exact (hp.a_scr.sub_left (sub_poly hK)) _ hc
-      (Offset.contains_base _ (by simp only [oBuf]; omega) (by simp only [oBuf]; omega))
+      (Offset.contains_base _ (by simp only [oBuf]; omega_using [hK, hj]) (by simp only [oBuf]; omega_using [hK, hj]))
 
 /-- An iteration of the unpacking of seed `K`. -/
 theorem ei_step {c K g : Nat} (hc : emOk c) (hK : K < 4) (hg : g < 64) {s : State} (h : EI σ c K g s) :
@@ -105,19 +105,19 @@ theorem ei_step {c K g : Nat} (hc : emOk c) (hK : K < 4) (hg : g < 64) {s : Stat
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide), fun k hk' p hp' => ?_, fun k hk' i hi => ?_⟩,
     hsi, hdi, fun i hi => ?_⟩, hcx, hz⟩
   · rw [buf_frame (by simpa using ((hp.a_scr.sub_left (sub_poly hK)).sub_right (sub_scr (σ := σ) (a := oBuf)
-        (n := 2720) (by simp only [oBuf]; omega))).symm) hf hk' hp']
+        (n := 2720) (by simp only [oBuf]; omega_using []))).symm) hf hk' hp']
     exact h.ui.buf k hk' p hp'
   · rw [show coeffAt s'.mem (poly4 (aP σ) k) i = coeffAt s.mem (poly4 (aP σ) k) i from
       hf.readW (VG.Proof.MlDsa.Sample.coeff_contains _ hi) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega)
-          (by omega) (by omega)
+        have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega_using [hk'])
+          (by omega_using [hK, hk']) (by omega_using [hK])
         simpa [poly4] using hd) (by decide)]
     exact h.ui.st k hk' i hi
   · by_cases hlo : i < 4 * g
-    · rw [hsame i (by omega) (.inl hlo)]; exact h.cur i hlo
-    · have := hst (i - 4 * g) (by omega)
-      rwa [show 4 * g + (i - 4 * g) = i by omega] at this
+    · rw [hsame i (by omega_using [hg, hi]) (.inl hlo)]; exact h.cur i hlo
+    · have := hst (i - 4 * g) (by omega_using [hi])
+      rwa [show 4 * g + (i - 4 * g) = i by omega_using [hlo]] at this
 
 /-- The unpacking of seed `K`. -/
 theorem unpack_ok {c K : Nat} (hc : emOk c) (hK : K < 4) {s : State} (h : UI σ c K s) :
@@ -125,8 +125,8 @@ theorem unpack_ok {c K : Nat} (hc : emOk c) (hK : K < 4) {s : State} (h : UI σ 
   unfold unpack
   refine WP.seq (WP.mono (WP.keep [.rsi, .rdi, .rcx] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .rsi = at' σ (oBuf + 680 * K) ∧ s'.gpr .rdi = poly4 (aP σ) K ∧ s'.gpr .rcx = BitVec.ofNat 64 64)
-    (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 680 * K < 2 ^ 31 by simp only [oBuf]; omega),
-      sx_ofNat (show 1024 * K < 2 ^ 31 by omega)]) (by rfl)) fun s1 ⟨⟨hm1, hsi1, hdi1, hcx1⟩, k1⟩ => ?_)
+    (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 680 * K < 2 ^ 31 by simp only [oBuf]; omega_using [hK]),
+      sx_ofNat (show 1024 * K < 2 ^ 31 by omega_using [hK])]) (by rfl)) fun s1 ⟨⟨hm1, hsi1, hdi1, hcx1⟩, k1⟩ => ?_)
   have he1 : Env σ s1 := Env.low h.env (rs := []) (by simp) (by rw [hm1]; exact Frame.refl _ _) k1.2.1 k1.2.2
     fun r hr => k1.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -135,10 +135,10 @@ theorem unpack_ok {c K : Nat} (hc : emOk c) (hK : K < 4) {s : State} (h : UI σ 
     WP.mono (ei_step hp hc hK hg hI) fun s' ⟨hI', hc', hz⟩ => ⟨hI', hc', hz⟩) (fun s' hI =>
       ⟨hI.ui.env, hI.ui.buf, fun k hk i hi => ?_⟩)
     ⟨⟨he1, fun k hk p hp' => by rw [hm1]; exact h.buf k hk p hp', fun k hk i hi => by rw [hm1]; exact h.st k hk i hi⟩,
-      by rw [hsi1]; simp, by rw [hdi1]; simp, fun i hi => absurd hi (by omega)⟩ hcx1
+      by rw [hsi1]; simp, by rw [hdi1]; simp, fun i hi => absurd hi (by omega_using [])⟩ hcx1
   by_cases e : k = K
-  · subst e; exact hI.cur i (by omega)
-  · exact hI.ui.st k (by omega) i hi
+  · subst e; exact hI.cur i (by omega_using [hi])
+  · exact hI.ui.st k (by omega_using [hk, e]) i hi
 
 /-- The four unpackings. -/
 theorem unpack4_ok {c : Nat} (hc : emOk c) {s : State} (h : UI σ c 0 s) : WP isa (unpack4 c) s (UI σ c 4) :=
@@ -161,7 +161,7 @@ theorem sel_ok {s : State} (h : SqInv σ 5 s) {Q : State → Prop} (kont : ∀ s
     rw [h.env.r14, gOf, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have hU : ∀ c, UI σ c 0 s1 := fun c => ⟨Env.low h.env (rs := []) (by simp) (by rw [hm1]; exact Frame.refl _ _)
       k1.2.1 k1.2.2 fun r _ => k1.gpr (List.not_mem_nil),
-    fun k hk p hp' => by rw [hm1]; exact h.buf k hk p (by omega), fun _ hk => absurd hk (by omega)⟩
+    fun k hk p hp' => by rw [hm1]; exact h.buf k hk p (by omega_using [hp']), fun _ hk => absurd hk (by omega_using [])⟩
   refine WP.seq (WP.mono (?_ : WP isa (.ite .e (unpack4 18) (unpack4 20)) s1 (UI σ (emC (gOf σ)) 4)) kont)
   rcases hp.gamma with he | he
   · refine WP.ite true (by show s1.zf = _; rw [hz1, hr14, he]; rfl) (fun _ => ?_) (fun hb => absurd hb (by decide))
@@ -177,7 +177,7 @@ theorem epi_eq : epi = [.mov .r14 (.mem (at_ .rbx 5120)), .mov .r13 (.mem (at_ .
 theorem end_ok {s : State} (h : UI σ (emC (gOf σ)) 4 s) :
     WP isa (.block epi) s fun s' => em4K.post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
-    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega_using [hi])
   rw [epi_eq]
   refine WP.mono (WP.keep [.r14, .r13, .r12, .rbp, .rbx] (Q := fun s' => s'.mem = s.mem ∧
       s'.gpr .r14 = s.mem.readW (at' σ (oSave + 8 * 4)) 64 ∧ s'.gpr .r13 = s.mem.readW (at' σ (oSave + 8 * 3)) 64 ∧
@@ -207,7 +207,7 @@ theorem end_ok {s : State} (h : UI σ (emC (gOf σ)) 4 s) :
     · rw [k.gpr (by decide)]; exact h.env.r15
   · rw [hm]
     exact h.env.frame.readW (Region.contains_self _ _) (by
-      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
+      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega_using [])⟩)
       (by decide)
 
 end

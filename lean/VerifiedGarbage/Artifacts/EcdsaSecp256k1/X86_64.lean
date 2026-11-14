@@ -1,8 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Verified
@@ -68,21 +72,49 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Secp256k1.X86_64.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Secp256k1
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
-/-! # secp256k1 on x86-64, generic over its proven group law and inversions -/
+/-! # ECDSA over secp256k1 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over secp256k1 on x86-64, with HMAC as a table
+namespace VG.Artifacts.EcdsaSecp256k1.X86_64.Rfc6979
+
+open VG.Proof.Secp256k1.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK secp256k1 secp256k1T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if hv : OK vs then [
+    Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      suffix := ""
+      tables := [("hmac", tables vs)]
+      code := signCodeT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs
+      stack := stackT
+      verified := secp256k1T_verified hasLaw.law hasLaw.inv vs hv
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.secp256k1.combConsts _ _))]
+  else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+
+end VG.Artifacts.EcdsaSecp256k1.X86_64.Rfc6979
 
 namespace VG.Artifacts.EcdsaSecp256k1.X86_64
 
 open VG.Proof.Secp256k1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target {
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.verifySecp256k1
     stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_verified hasLaw.law
-      (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv }]
+      (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.Secp256k1.inst Impl.Secp256k1.X86_64.secp256k1v.combConsts))] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.X86_64

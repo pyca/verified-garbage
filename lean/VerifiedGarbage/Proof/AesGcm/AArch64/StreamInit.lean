@@ -71,7 +71,7 @@ theorem streamInit_wp (v : GcmImpl) {s : State} (hs : streamInitAArch64.pre s) :
   have sW : Region.Sub (savedR W) ⟨W, 2560⟩ := Lay.wSub (by decide)
   have hiv : bytesAt s₁.mem Np n = bytesAt s.mem Np n :=
     bytesAt_frame fsv (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dnw.sub_right sW) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact dnw.sub_right sW) (by omega_using [hn])
   have hH : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx :=
     blockAt_frame fsv (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (dcw.sub_left (Lay.ctxSub (by decide))).sub_right sW)

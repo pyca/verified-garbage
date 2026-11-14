@@ -89,13 +89,13 @@ theorem mont_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hr2' : sv c base s R2P = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.p := hr2
   rw [WP.block_append_iff]
   refine WP.mono (slMul_ok (MP'_n c) h7 hs hM (MP'_A c) (o := QXM) (a := E) (b := R2P) (by decide)
-    (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
+    (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega_using [hp3]))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
   have hs₁ := k₁.scr hs
   have kP₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have r2₁ : sv c base s₁ R2P = sv c base s R2P := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have y₁ : sv c base s₁ QY = sv c base s QY := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   refine WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (MP'_A c) (o := QYM) (a := QY) (b := R2P) (by decide)
-    (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
+    (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega_using [hp3]))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
   have x₂ : sv c base s₂ QXM = sv c base s₁ QXM := sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
   refine ⟨k₂.scr hs₁, fun r hr => by rw [k₂.gpr r hr, k₁.gpr r hr], by rw [k₂.rd, k₁.rd],
     by rw [k₂.wr, k₁.wr], ?_, kP₁.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide),
@@ -127,12 +127,12 @@ theorem curve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this]
   have hL : Lay c.MP' size (· ∈ curveSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
   have hAl : Aligned c.MP' (· ∈ curveSl.map c.sl) := ⟨fun x hx => by
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
     fun f m' h => (hc.call_p f m' h).2⟩
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hx])
   have I : Inv c.MP' base size c.C.p (· ∈ curveSl.map c.sl) ([QXM, QYM, AP, BP].map c.sl)
       (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
     refine ⟨hs, hM, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
@@ -205,9 +205,9 @@ theorem select_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hn := hs.nowrap
   have hap : ∀ {i j}, i ≠ j → (i ≠ TMP ∨ (j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82)) → (j ≠ TMP ∨ (i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82)) →
       c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h h₁ h₂ => by
-    have := sl_apart c h h₁ h₂; omega
+    have := sl_apart c h h₁ h₂; omega_using [this]
   rw [select_eq, WP.block_append_iff]
-  refine WP.mono (ld_ok hs (d := c.sl FLAG) (by have := sl_le c h7 (i := FLAG) (by decide); omega)
+  refine WP.mono (ld_ok hs (d := c.sl FLAG) (by have := sl_le c h7 (i := FLAG) (by decide); omega_using [h0, this])
     (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hc₁ : s₁.gpr .x3 = if decide P then BitVec.allOnes 64 else 0 := by rw [e₁, hf, mask_bool]
@@ -269,7 +269,7 @@ theorem onCurve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base
   have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   rw [onCurve_wp, WP.block_append_iff]
   refine WP.mono (mont_ok hc hs (modP_of hc F.mp) hr2) fun s₂ Mp => ?_
   have F₂ := F.unch h7 hn (fixedOk_slW (l := [QXM, QYM, TMP]) (by decide)) Mp.unch
@@ -430,19 +430,19 @@ theorem csaves_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤
     simp only [runBlock_cons, Weierstrass.AArch64.Mont.exec_ins (checkLane_lt k), runStep_some, runBlock_nil,
       Option.some.injEq, exists_eq_left']
     refine WP.mono (csaves_ok rs (k + 1) (s := s.setV (Impl.Ecdh.AArch64.Cfg.checkLane k).1 (setLane (s.v (Impl.Ecdh.AArch64.Cfg.checkLane k).1) 64
-      (Impl.Ecdh.AArch64.Cfg.checkLane k).2 (s.gpr r))) (by omega)) fun s' ⟨K, E, L⟩ => ⟨⟨K.gpr, K.mem, K.rd, K.wr, K.sp, K.c⟩, ?_, ?_⟩
+      (Impl.Ecdh.AArch64.Cfg.checkLane k).2 (s.gpr r))) (by omega_using [hk])) fun s' ⟨K, E, L⟩ => ⟨⟨K.gpr, K.mem, K.rd, K.wr, K.sp, K.c⟩, ?_, ?_⟩
     · intro i hi
       cases i with
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
-        rw [L k (by omega), clane_set s (s.gpr r) (by omega) (by omega)]
+        rw [L k (by omega_using []), clane_set s (s.gpr r) (by omega_using [hk]) (by omega_using [hk])]
         simp
       | succ i =>
         simp only [List.getElem_cons_succ]
-        rw [show k + (i + 1) = k + 1 + i by omega, E i (by simpa using hi)]; rfl
+        rw [show k + (i + 1) = k + 1 + i by omega_using [], E i (by simpa using hi)]; rfl
     · intro j hj
-      rw [L j (by omega), clane_set s (s.gpr r) (by omega) (by omega)]
-      simp only [show k ≠ j by omega, ite_false]
+      rw [L j (by omega_using [hj]), clane_set s (s.gpr r) (by omega_using [hk]) (by omega_using [hk, hj])]
+      simp only [show k ≠ j by omega_using [hj], ite_false]
 
 theorem crestores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 6 → rs.Nodup →
     WP isa (.block (cumov rs k)) s fun s' => Keeps rs s s' ∧ s'.v = s.v ∧
@@ -455,7 +455,7 @@ theorem crestores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length 
     apply WP.of_runBlock
     simp only [runBlock_cons, Weierstrass.AArch64.Mont.exec_umov (checkLane_lt k), runStep_some, runBlock_nil,
       Option.some.injEq, exists_eq_left']
-    refine WP.mono (crestores_ok rs (k + 1) (by omega) (List.nodup_cons.mp hnd).2)
+    refine WP.mono (crestores_ok rs (k + 1) (by omega_using [hk]) (List.nodup_cons.mp hnd).2)
       fun s' ⟨K, V, E⟩ => ⟨⟨fun q hq => ?_, K.mem, K.rd, K.wr, K.sp⟩, V, ?_⟩
     · simp only [List.mem_cons, not_or] at hq
       rw [K.gpr q hq.2, RegUpd.gpr_write_of_ne _ _ _ hq.1]
@@ -466,7 +466,7 @@ theorem crestores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length 
         rw [K.gpr r hr, RegUpd.gpr_write_self, BitVec.setWidth_eq]; rfl
       | succ i =>
         simp only [List.getElem_cons_succ]
-        rw [E i (by simpa using hi), show k + (i + 1) = k + 1 + i by omega]; rfl
+        rw [E i (by simpa using hi), show k + (i + 1) = k + 1 + i by omega_using []]; rfl
 
 /-- A program that writes none of a vector register keeps it. -/
 theorem WP.keepV {p : Prog isa} {s : State} {Q : State → Prop} {r : VReg}
@@ -503,7 +503,7 @@ theorem checkFn_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
     have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
     rcases checkLane_v j hj with h | h | h <;> rw [e, h] at this <;> simp at this
   rw [Impl.Ecdh.AArch64.Cfg.checkFn]
-  refine WP.seq (WP.mono (csaves_ok (Impl.Ecdh.AArch64.Cfg.checkKept c) 0 (s := s) (by omega))
+  refine WP.seq (WP.mono (csaves_ok (Impl.Ecdh.AArch64.Cfg.checkKept c) 0 (s := s) (by omega_using [hlen]))
     fun s₁ ⟨K₁, L₁, _⟩ => ?_)
   have hs₁ : Scr s₁ base size := ⟨by rw [K₁.gpr]; exact hs.x0, by rw [K₁.wr]; exact hs.wr, hs.nowrap, hs.enc⟩
   have B := hb s₁ hs₁ K₁.mem K₁.gpr
@@ -514,14 +514,14 @@ theorem checkFn_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
     refine ⟨t, s', he, hq, fun j hj => ?_⟩
     unfold clane; rw [Exec.vec (hnv j hj) he]
   refine WP.seq (WP.mono B' fun s₂ ⟨⟨G₂, rd₂, wr₂, sp₂, R₂⟩, L₂⟩ => ?_)
-  refine WP.mono (crestores_ok (Impl.Ecdh.AArch64.Cfg.checkKept c) 0 (s := s₂) (by omega) (checkKept_nodup c))
+  refine WP.mono (crestores_ok (Impl.Ecdh.AArch64.Cfg.checkKept c) 0 (s := s₂) (by omega_using [hlen]) (checkKept_nodup c))
     fun s₃ ⟨K₃, _, E₃⟩ => ⟨⟨fun r hr => ?_, by rw [K₃.rd, rd₂, K₁.rd], by rw [K₃.wr, wr₂, K₁.wr],
       by rw [K₃.sp, sp₂, K₁.sp]⟩, by rw [K₃.mem, ← K₁.mem]; exact R₂⟩
   by_cases hk : r ∈ Impl.Ecdh.AArch64.Cfg.checkKept c
   · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hk
     have l := L₁ i hi
     rw [Nat.zero_add] at l
-    rw [E₃ i hi, Nat.zero_add, L₂ i (by omega), l]
+    rw [E₃ i hi, Nat.zero_add, L₂ i (by omega_using [hlen, hi]), l]
   · have hcl : r ∉ clob c.n := fun h => hr (List.mem_filter.mpr ⟨h, by simpa using hk⟩)
     rw [K₃.gpr r hk, G₂ r hcl, K₁.gpr]
 
@@ -578,7 +578,7 @@ theorem chkCall_ok (hc : BaseCfgOk c) (hck : Impl.Ecdh.AArch64.Cfg.checkCurve c 
   refine WP.seq (WP.mono (keepLr28_ok s) fun s₁ ⟨k₁, m₁, l₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
-    have := hs.contains (d := 0) (n := size) (by omega) (by decide)
+    have := hs.contains (d := 0) (n := size) (by omega_using []) (by decide)
     simpa [off] using this⟩
   refine WP.seq (WP.callV (k := chkK c base s.mem R)
     (fun t ⟨ht, hm⟩ => by

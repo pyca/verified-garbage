@@ -53,7 +53,7 @@ theorem addInit_ok (s : State) : WP isa (.block addInit) s fun t =>
     intro e he
     rw [hd.other .v24 (by decide),hc.v,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he,
       hb.1.gpr .x2 (by decide),ha.1.gpr .x2 (by decide)]
-    have heq : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+    have heq : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
     rcases heq with rfl | rfl | rfl | rfl <;> rfl
   refine ⟨setup_mono (hsc.trans ht) (by decide),⟨?_,?_,?_,?_⟩,?_⟩
   · intro e he

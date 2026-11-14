@@ -231,9 +231,9 @@ theorem setArgs_ok {p : Params} {s₀ : State} (hp : TPre (Y p) s₀) :
 
 theorem zip_mem {as : List Arg} (hn : as.length ≤ 5) {i : Nat} (hi : i < as.length) :
     (argRegs.getD i .eax, as.getD i (.imm 0)) ∈ argRegs.zip as := by
-  have h1 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega
+  have h1 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hn, hi]
   rw [List.mem_iff_getElem]
-  refine ⟨i, by simp only [List.length_zip]; omega, ?_⟩
+  refine ⟨i, by simp only [List.length_zip]; omega_using [hi, h1], ?_⟩
   simp [List.getElem_zip, List.getD_eq_getElem?_getD, hi, List.getElem?_eq_getElem h1]
 
 theorem argRegs_ne : ∀ r ∈ argRegs, r ≠ .esp ∧ r ≠ .esi := by decide
@@ -251,7 +251,7 @@ theorem setup_piece' {p : Params} {A : State → State → Prop} (as : List Arg)
   | [], _ | [_], _ | [_, _], _ | [_, _, _], _ | [_, _, _, _], _ | [_, _, _, _, _], _ => simp [argRegs]
 
 theorem argPush_len {n : Nat} (hn : n ≤ 5) : (argPush n).length = n := by
-  simp only [argPush, List.length_reverse, List.length_take, argRegs, List.length_cons, List.length_nil]; omega
+  simp only [argPush, List.length_reverse, List.length_take, argRegs, List.length_cons, List.length_nil]; omega_using [hn]
 
 theorem esp_nmem_argPush (n : Nat) : Reg.esp ∉ argPush n := fun h => by
   simp only [argPush, List.mem_reverse] at h
@@ -268,12 +268,12 @@ theorem argPush_arg {n : Nat} (hn : n ≤ 5) {s : State} (hfit : 4 * n + 4 ≤ (
   have hl := argPush_len hn
   rw [callEntry_arg (by rw [hl]; exact hfit) (esp_nmem_argPush n) (by rw [hl]; exact hi)]
   congr 1
-  have h1 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega
+  have h1 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hn, hi]
   simp only [argPush, List.getElem_reverse, List.getElem_take, hl]
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
   congr 1
   simp only [List.length_take, argRegs, List.length_cons, List.length_nil]
-  omega
+  omega_using [hn, hi]
 
 /-! ## Loops of a number of iterations that depends on the initial state -/
 
@@ -289,8 +289,8 @@ theorem loopN {Pre : State → Prop} {Pub : State → State → Prop} {body : Pr
     obtain ⟨k, hn, hk, hi⟩ := hi
     refine ((hb k).wp _ _ h₀ ⟨hi, hk⟩).mono fun s' ⟨hi', hc⟩ => ?_
     by_cases h : k + 1 < N s₀
-    · exact .inr ⟨by rw [hc, decide_eq_true h], N s₀ - (k + 1), by omega, k + 1, rfl, h, hi'⟩
-    · exact .inl ⟨by rw [hc, decide_eq_false h], by rw [show N s₀ = k + 1 by omega]; exact hi'⟩
+    · exact .inr ⟨by rw [hc, decide_eq_true h], N s₀ - (k + 1), by omega_using [hn, hk], k + 1, rfl, h, hi'⟩
+    · exact .inl ⟨by rw [hc, decide_eq_false h], by rw [show N s₀ = k + 1 by omega_using [hk, h]]; exact hi'⟩
   ct s₀ s₀' h₀ h₀' hp := by
     have eN := hNp _ _ h₀ h₀' hp
     have := RelCT.loop (M := isa) (body := body) (c := cnd) (Q := fun _ _ => True)
@@ -302,7 +302,7 @@ theorem loopN {Pre : State → Prop} {Pub : State → State → Prop} {body : Pr
           rintro s s' ⟨⟨i₁, c₁⟩, i₂, c₂⟩
           refine ⟨by rw [c₁, c₂, eN], fun _ => trivial, fun h => ?_⟩
           rw [c₁, Option.some.injEq, decide_eq_true_iff] at h
-          exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, h, i₁, i₂⟩
+          exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, h, i₁, i₂⟩
         · exact RelCT.of_false fun s s' ⟨h1, h2, _⟩ => hk ⟨h1, h2⟩) (N s₀)
     exact this.mono (fun s s' ⟨a, a'⟩ => ⟨0, (Nat.sub_zero _).symm, hN s₀ h₀, a, a'⟩) fun _ _ h => h
 

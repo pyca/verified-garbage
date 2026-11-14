@@ -57,8 +57,8 @@ theorem loadPrime_ok {sp cursor candidate : BitVec 32} {s : State} (C : StackCon
       Keeps [.edx, .ebx, .esi, .edi, .ebp] s t ∧ StackContext sp t := by
   obtain ⟨lo, hi⟩ := table_words bound table
   have address0 : addr cursor 0 = cursor.setWidth 64 := by
-    rw [addr_eq (by omega), show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
-  have address4 : addr cursor 4 = cursor.setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+    rw [addr_eq (by omega_using []), show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
+  have address4 : addr cursor 4 = cursor.setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [nowrap])
   change WP isa (.block [.mov .edx (.mem (slot 8)), .mov .ebx (.mem ⟨.edx, 0⟩),
     .mov .esi (.mem ⟨.edx, 4⟩), .mov .edi (.mem (slot 0)), .mov .ebp (.imm 0)]) s _
   refine wp_movS (C.read 8 (by decide)) fun a A _ => ?_

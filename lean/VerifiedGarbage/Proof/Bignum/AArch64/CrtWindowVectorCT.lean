@@ -49,15 +49,15 @@ theorem loop_ct : RelCT isa (Two fun p s => 0 < p.wx / 8 ∧ LoopPre p 0 s)
   apply two_loop (Φ := LoopPre) (fun p : XPub => p.wx / 8)
     (two_map id (fun _ _ h => loopPre_step h.2) step_ct)
   rintro p j s hj ⟨s₀,mi,X,Xc,v,hI,hw,hw',hv,h13⟩
-  refine WP.mono ((rawStep_wp _ _).mpr (loopStep_ok hv (by omega) hI)) fun t ⟨ht,hc⟩ => ?_
+  refine WP.mono ((rawStep_wp _ _).mpr (loopStep_ok hv (by omega_using [hj]) hI)) fun t ⟨ht,hc⟩ => ?_
   have h13' : t.gpr .x13 = BitVec.ofNat 64 (p.wx / 8 - (j + 1)) := by
     rw [hc,h13]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   have hz : (t.gpr .x13).toNat ≠ 0 ↔ j + 1 ≠ p.wx / 8 := by
-    rw [h13', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p.wx / 8 - (j + 1) < 2 ^ 64 by omega)]
-    omega
+    rw [h13', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p.wx / 8 - (j + 1) < 2 ^ 64 by omega_using [hw'])]
+    omega_using [hj]
   exact ⟨eval_nz_count hj hz, fun _ => ⟨s₀,mi,X,Xc,v,ht,hw,hw',hv,h13'⟩,
     fun _ => ht.ctx.good.x0⟩
 
@@ -68,7 +68,7 @@ theorem setup_ready {p : XPub} {s : State} (h : BlockPre p s) :
   obtain ⟨⟨mi,X,Xc,v,hc,_,hw',hv,ht,hN⟩,hw⟩ := h
   refine WP.mono (setup_ok hc hw' hN) fun u ⟨⟨h6,h13,h17,h22,h24,hm⟩,ku⟩ => ?_
   have ctx := hc.of_win (by rw [hm]; exact Frm.refl _ _ _) ku.wr (ku.gpr .x0 (by decide))
-  refine ⟨by omega, u,mi,X,Xc,v,?_,hw,hw',hv,by simpa using h13⟩
+  refine ⟨by omega_using [hw], u,mi,X,Xc,v,?_,hw,hw',hv,by simpa using h13⟩
   exact ⟨ctx,by rw [hm]; exact ht,h6,by simpa using h17,h22,h24,
     Outside.refl _ _ _ _,fun _ h => by omega,Keep.refl _ _⟩
 

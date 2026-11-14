@@ -44,13 +44,13 @@ theorem code_ok {mont : Prog isa} {name : String}
       simp only [List.mem_append, List.mem_singleton] at mem
       rcases mem with rfl | rfl
       · exact v.randSeparate
-      · exact v.randStackFar.sub_right (below_sub (by decide) v.low)) (by have := v.randLenFit; omega)]
+      · exact v.randStackFar.sub_right (below_sub (by decide) v.low)) (by have := v.randLenFit; omega_using [this])]
     exact I.entropy
-  · rw [Prepare.metadata32 v.geometry W (d := 28) (by unfold Prepare.protectedHeader; omega)]
+  · rw [Prepare.metadata32 v.geometry W (d := 28) (by unfold Prepare.protectedHeader; omega_using [])]
     exact I.randPtr
-  · rw [w32, Prepare.metadata32 v.geometry W (d := 32) (by unfold Prepare.protectedHeader; omega)]
+  · rw [w32, Prepare.metadata32 v.geometry W (d := 32) (by unfold Prepare.protectedHeader; omega_using [])]
     exact I.randLength
-  · rw [w32, Prepare.metadata32 v.geometry W (d := 152) (by unfold Prepare.protectedHeader; omega)]
+  · rw [w32, Prepare.metadata32 v.geometry W (d := 152) (by unfold Prepare.protectedHeader; omega_using [])]
     exact I.used
 
 end VG.Proof.RsaKeyGen.X86.CandidatePrepare

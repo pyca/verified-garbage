@@ -26,8 +26,8 @@ theorem exponent_pair_equal (lo hi value : BitVec 32) :
     have vb := value.isLt
     constructor
     · intro E
-      have H : hi.toNat = 0 := by omega
-      exact ⟨BitVec.eq_of_toNat_eq (by omega), BitVec.eq_of_toNat_eq H⟩
+      have H : hi.toNat = 0 := by omega_using [E]
+      exact ⟨BitVec.eq_of_toNat_eq (by omega_using [E]), BitVec.eq_of_toNat_eq H⟩
     · rintro ⟨rfl, rfl⟩
       simp
   apply Bool.eq_iff_iff.mpr
@@ -39,10 +39,10 @@ theorem equalExponent_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N)
       isa.eval .e t = some (decide (val32 s.mem B kEv 2 = value.toNat)) ∧ Keeps [.eax] s t := by
   have head := h.hdr_le
   unfold equalExponent
-  refine wp_movS (readSrc_sc h.workspace (by unfold kEv hdr at *; omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h.workspace (by unfold kEv hdr at *; omega_using [head])) fun u U _ => ?_
   refine wp_logicS (.inr rfl) rfl fun v V => ?_
   have hv := (h.rest U.keeps).rest V.keeps
-  refine wp_orS (readSrc_sc hv.workspace (by unfold kEvHi hdr at *; omega)) fun w W => ?_
+  refine wp_orS (readSrc_sc hv.workspace (by unfold kEvHi hdr at *; omega_using [head])) fun w W => ?_
   refine wp_cmpS rfl fun t T flag => WP.block_nil ?_
   have K : Keeps [.eax] s t := ((U.keeps.trans V.keeps).trans W.keeps).trans (T.keeps _)
   refine ⟨h.rest K, T.mem.trans (W.mem.trans (V.mem.trans U.mem)), ?_, K⟩
@@ -60,7 +60,7 @@ theorem parityExponent_ok {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N
       isa.eval .e t = some (decide (val32 s.mem B kEv 2 % 2 = 0)) ∧ Keeps [.eax] s t := by
   have head := h.hdr_le
   unfold parityExponent
-  refine wp_movS (readSrc_sc h.workspace (by unfold kEv hdr at *; omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h.workspace (by unfold kEv hdr at *; omega_using [head])) fun u U _ => ?_
   refine wp_logicS (.inl rfl) rfl fun v V => ?_
   refine wp_cmpS rfl fun t T flag => WP.block_nil ?_
   have K : Keeps [.eax] s t := (U.keeps.trans V.keeps).trans (T.keeps _)

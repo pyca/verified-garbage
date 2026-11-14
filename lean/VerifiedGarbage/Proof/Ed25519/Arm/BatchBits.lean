@@ -40,7 +40,7 @@ theorem batchDigit_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
     congr 1
     apply BitVec.eq_of_toNat_eq
     rw [toNat_shl, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   have r3 : Rest [.r2, .r3, .r12] s s3 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
   have m3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
@@ -48,11 +48,11 @@ theorem batchDigit_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
     (by
       rw [ep]
       exact (congrArg State.addr (BitVec.add_zero (p + BitVec.ofNat 32 (2 * j)))).trans
-        (addr_add (by omega)))
-    (by rw [r3.rd, r3.wr]; exact hr _ (by omega)) fun s4 u4 => ?_
+        (addr_add (by omega_using [hj, hfit])))
+    (by rw [r3.rd, r3.wr]; exact hr _ (by omega_using [hj])) fun s4 u4 => ?_
   refine wp_ldrb (a := State.addr p + BitVec.ofNat 64 (2 * j + 1)) (by decide)
-    (by rw [u4.other _ (by decide), ep, Offset.add_add, addr_add (by omega)])
-    (by rw [u4.rd, u4.wr, r3.rd, r3.wr]; exact hr _ (by omega)) fun s5 u5 =>
+    (by rw [u4.other _ (by decide), ep, Offset.add_add, addr_add (by omega_using [hj, hfit])])
+    (by rw [u4.rd, u4.wr, r3.rd, r3.wr]; exact hr _ (by omega_using [hj])) fun s5 u5 =>
     wp_dp (op2_lsl (by decide)) fun t ht => WP.block_nil ?_
   have el : (s5.gpr .r3).toNat = byteN s.mem (State.addr p) (2 * j) := by
     rw [u5.other _ (by decide), u4.gpr, m3, toNat_setWidth8]; rfl
@@ -60,7 +60,7 @@ theorem batchDigit_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
     rw [u5.gpr, u4.mem, m3, toNat_shl, toNat_setWidth8]
     have := (s.mem (State.addr p + BitVec.ofNat 64 (2 * j + 1))).isLt
     simp only [byteN]
-    omega
+    omega_using []
   refine ⟨r3.trans ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (ht.rest (by decide)))),
     by rw [ht.mem, u5.mem, u4.mem, m3], ?_⟩
   rw [ht.gpr]
@@ -101,9 +101,9 @@ theorem expandBits_ok {b : BitVec 32} {s₀ : State} (hc : Ctx b s₀)
     rw [u1.gpr]
     change (s.gpr .r3 &&& (1 : BitVec 32)).toNat = _
     rw [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, h.value]
-  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (32 + k)) (by omega)
-    (by rw [u1.other _ (by decide)]; exact hs.ea (by omega))
-    (by rw [u1.wr]; exact hs.inW (by omega)) fun s2 u2 =>
+  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (32 + k)) (by omega_using [hk])
+    (by rw [u1.other _ (by decide)]; exact hs.ea (by omega_using [hk]))
+    (by rw [u1.wr]; exact hs.inW (by omega_using [hk])) fun s2 u2 =>
     wp_mov (op2_lsr (by decide)) fun t ht => WP.block_nil ?_
   have hm : t.mem = s.mem.writeW (State.addr b + BitVec.ofNat 64 (32 + k)) ((s1.gpr .r9).setWidth 8) := by
     rw [ht.mem, u2.mem, u1.mem]
@@ -111,17 +111,17 @@ theorem expandBits_ok {b : BitVec 32} {s₀ : State} (hc : Ctx b s₀)
     ?_, ?_, fun i hi => ?_⟩
   · rw [hm]
     refine (h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩).writeW
       (List.mem_singleton_self _) _ ?_
     exact Offset.contains (State.addr b) (d := 32 + k) (n := 1) (e := 32) (k := k + 1)
-      (by omega) (by omega) (by omega)
+      (by omega_using []) (by omega_using []) (by omega_using [hk])
   · rw [ht.gpr]
     change (s2.gpr .r3 >>> 1).toNat = _
     rw [toNat_shr, u2.gpr, u1.other _ (by decide), h.value, Nat.div_div_eq_div_mul]
     simp only [Nat.pow_succ, Nat.pow_zero, Nat.one_mul]
   · rw [hm, VG.WriteBytes.writeW8_apply]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))]
+    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hk]) (by omega_using [hi]))]
       exact h.bits i hi
     · rw [ite_eq_left rfl]; exact byte_eq e1
 
@@ -135,9 +135,9 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 theorem digit_bit (scalar start i : Nat) (hi : i < 16) :
     ((scalar / 2 ^ start) % 65536 / 2 ^ i) % 2 = (scalarBit scalar (start + i)).toNat := by
   have hp : (65536 : Nat) = 2 ^ i * 2 ^ (16 - i) := by
-    rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)]
+    rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega_using [hi])]
   rw [scalarBit_nat, hp, Nat.mod_mul_right_div_self,
-    Nat.mod_mod_of_dvd _ (show 2 ∣ 2 ^ (16 - i) from Nat.pow_dvd_pow (m := 1) (n := 16 - i) 2 (by omega)),
+    Nat.mod_mod_of_dvd _ (show 2 ∣ 2 ^ (16 - i) from Nat.pow_dvd_pow (m := 1) (n := 16 - i) 2 (by omega_using [hi])),
     Nat.div_div_eq_div_mul, ← Nat.pow_add]
 
 theorem packedLimb_digit (m : Mem) (p : Addr) (n j : Nat) (hj : j < n) :

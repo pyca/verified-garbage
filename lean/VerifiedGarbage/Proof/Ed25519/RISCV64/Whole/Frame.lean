@@ -46,7 +46,7 @@ theorem slots_in (o : Nat) (rs : List Reg) : ∀ p ∈ slots o rs, o ≤ p.2 ∧
   have := (List.mem_zipIdx hm).2.1
   simp only [List.length_append, List.length_singleton, Nat.zero_add] at this
   dsimp only
-  omega
+  omega_using [this]
 
 /-- A step that keeps the registers our caller keeps and writes only within `W` and outside the
 slots. -/
@@ -121,6 +121,6 @@ theorem bytes_keep {W : List Region} {m m' : Mem} (hf : Frame W m m') {p : Addr}
   simp only [Spec.Ed25519.bytesAt]
   refine List.map_congr_left fun i hi => hf _ fun r hr hc => ?_
   have hi' := List.mem_range.mp hi
-  exact hd r hr _ (Offset.contains_base p (by omega) (by omega)) hc
+  exact hd r hr _ (Offset.contains_base p (by omega_using [hi']) (by omega_using [hn, hi'])) hc
 
 end VG.Proof.Ed25519.RISCV64.Whole

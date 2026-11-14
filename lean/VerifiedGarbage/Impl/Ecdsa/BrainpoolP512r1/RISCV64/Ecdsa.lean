@@ -22,6 +22,6 @@ def signBrainpoolP512r1 : Prog isa := Sign.Cfg.sign brainpoolp512r1 brainpoolp51
 
 /-- `vg_ecdsa_brainpoolp512r1_verify`. -/
 def verifyBrainpoolP512r1 : Prog isa :=
-  VerifyJ.Cfg.verify brainpoolp512r1 WindowA.dblJa brainpoolp512r1Order "vg_brainpoolp512r1_check_point" Ecdh.RISCV64.checkBrainpoolP512r1
+  VerifyJ.Cfg.verify brainpoolp512r1 Impl.Weierstrass.dblJa brainpoolp512r1Order "vg_brainpoolp512r1_check_point" Ecdh.RISCV64.checkBrainpoolP512r1
 
 end VG.Impl.Ecdsa.RISCV64

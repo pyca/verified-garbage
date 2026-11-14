@@ -19,7 +19,7 @@ open VG.Proof.X25519.Arm (Rest wp_ldr wp_str wp_dp wp_mov wp_subs op2_imm op2_re
 theorem val32_zero_head {m : Mem} {b : Addr} {d k : Nat} (h : val32 m b d (k + 1) = 0) :
     w32 m b d = 0 := by
   rw [val32] at h
-  omega
+  omega_using [h]
 
 /-- The count of rows decremented, Z after the last. -/
 theorem sqCount_ok (s : State) {base : BitVec 32} {size M c : Nat} (ws : Workspace s base size)
@@ -31,20 +31,20 @@ theorem sqCount_ok (s : State) {base : BitVec 32} {size M c : Nat} (ws : Workspa
       t.z = decide (c = 1) ∧ Rest [.lr] s t := by
   have nowrap := ws.nowrap
   unfold sqCount
-  refine wp_ldr (by decide) (sq_ea nowrap p0 (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (sq_ea nowrap p0 (by omega_using [fit])) (ws.read (by omega_using [fit])) fun s1 u1 => ?_
   refine wp_subs (op2_imm (by decide)) fun s2 u2 hz => ?_
   refine wp_str_z (by decide) (sq_ea nowrap ((u2.other .r0 (by decide)).trans ((u1.other .r0 (by decide)).trans p0))
-    (by omega)) (by rw [u2.wr, u1.wr]; exact ws.write (by omega)) fun t u3 z3 => WP.block_nil ?_
+    (by omega_using [fit])) (by rw [u2.wr, u1.wr]; exact ws.write (by omega_using [fit])) fun t u3 z3 => WP.block_nil ?_
   have v : s2.gpr .lr = BitVec.ofNat 32 (c - 1) := by
     rw [u2.gpr, u1.gpr, hc]
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [h1])]
   refine ⟨?_, ?_, ?_⟩
   · rw [u3.mem, u2.mem, u1.mem, v]
   · rw [z3, hz, u1.gpr, hc]
     change (BitVec.ofNat 32 c - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show c - 1 = 0 ↔ c = 1 by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [h1]), ofNat_beq_zero (by omega_using [h32])]
+    simp only [show c - 1 = 0 ↔ c = 1 by omega_using [h1]]
   · exact (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest _))
 
 theorem crossArgs_ok (s : State) {base : BitVec 32} {size M A C P : Nat} (ws : Workspace s base size)
@@ -60,23 +60,23 @@ theorem crossArgs_ok (s : State) {base : BitVec 32} {size M A C P : Nat} (ws : W
       Rest [.r0, .r2, .r3, .r4, .r11, .r12, .lr] s t := by
   have nowrap := ws.nowrap
   unfold crossArgs
-  refine wp_ldr (by decide) (sq_ea nowrap p0 (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (sq_ea nowrap p0 (by omega_using [fit])) (ws.read (by omega_using [fit])) fun s1 u1 => ?_
   have p1 := (u1.other .r0 (by decide)).trans p0
-  refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega)) (by rw [u1.rd, u1.wr]; exact ws.read (by omega))
+  refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega_using [fit])) (by rw [u1.rd, u1.wr]; exact ws.read (by omega_using [fit]))
     fun s2 u2 => ?_
   have p2 := (u2.other .r0 (by decide)).trans p1
-  refine wp_ldr (by decide) (sq_ea nowrap p2 (by omega))
-    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega)) fun s3 u3 => ?_
+  refine wp_ldr (by decide) (sq_ea nowrap p2 (by omega_using [fit]))
+    (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega_using [fit])) fun s3 u3 => ?_
   have p3 := (u3.other .r0 (by decide)).trans p2
   refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
   have p4 := (u4.other .r0 (by decide)).trans p3
-  refine wp_str (by decide) (sq_ea nowrap p4 (by omega))
-    (by rw [u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega)) fun s5 u5 => ?_
+  refine wp_str (by decide) (sq_ea nowrap p4 (by omega_using [fit]))
+    (by rw [u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_using [fit])) fun s5 u5 => ?_
   have p5 : s5.gpr .r0 = base + BitVec.ofNat 32 M := by rw [u5.gpr]; exact p4
   refine wp_dp (op2_imm (by decide)) fun s6 u6 => ?_
   have p6 := (u6.other .r0 (by decide)).trans p5
-  refine wp_str (by decide) (sq_ea nowrap p6 (by omega))
-    (by rw [u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega)) fun s7 u7 => ?_
+  refine wp_str (by decide) (sq_ea nowrap p6 (by omega_using [fit]))
+    (by rw [u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_using [fit])) fun s7 u7 => ?_
   refine wp_mov (op2_reg _ _) fun s8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u9 => WP.block_nil ?_
   have g2 : s2.gpr .r2 = base + BitVec.ofNat 32 A := by rw [u2.other .r2 (by decide), u1.gpr, hn]
@@ -107,7 +107,7 @@ theorem crossScalar_ok (s : State) {base : BitVec 32} {size A : Nat} (ws : Works
     WP isa (.block crossScalar) s fun t =>
       t.gpr .r1 = s.mem.readW (off (State.addr base) A) 32 ∧ t.mem = s.mem ∧ Rest [.r1] s t := by
   unfold crossScalar
-  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p2 (imm := 0) (by omega))
+  refine wp_ldr (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p2 (imm := 0) (by omega_using [fit]))
     (ws.read fit) fun t u => WP.block_nil ⟨u.gpr, u.mem, u.rest (by decide)⟩
 
 /-- The row's carry stored above it. -/
@@ -116,7 +116,7 @@ theorem crossCarry_ok (s : State) {base : BitVec 32} {size d : Nat} (ws : Worksp
     WP isa (.block crossCarry) s fun t =>
       t.mem = s.mem.writeW (off (State.addr base) d) (s.gpr .r11) ∧ Rest [] s t := by
   unfold crossCarry
-  refine wp_str (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p0 (imm := 0) (by omega))
+  refine wp_str (by decide) (by simpa only [Nat.add_zero] using sq_ea ws.nowrap p0 (imm := 0) (by omega_using [fit]))
     (ws.write fit) fun t u => WP.block_nil ⟨u.mem, u.rest _⟩
 
 /-- A row's value step: the window, extended by the zero word above it,
@@ -260,18 +260,18 @@ theorem crossRows_ok (s : State) (h : CrossInv m0 base size out a mod M n inv 0 
   refine WP.loop (M := isa) loopInv ?_ (n - 1) s ?_
   · intro k t hk
     obtain ⟨i, hik, hk, hi, rest⟩ := hk
-    refine WP.mono (crossRound_ok t hi (by omega)) ?_
+    refine WP.mono (crossRound_ok t hi (by omega_using [hik, hk])) ?_
     rintro u ⟨hu, hz, ru⟩
     by_cases he : i + 2 = n
     · left
-      refine ⟨?_, by rw [show n - 1 = i + 1 by omega]; exact hu, rest.trans ru⟩
+      refine ⟨?_, by rw [show n - 1 = i + 1 by omega_using [he]]; exact hu, rest.trans ru⟩
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu, rest.trans ru⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, he], hu, rest.trans ru⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, by omega, h, Rest.refl _ _⟩
+  · exact ⟨0, by omega_using [], by omega_using [hn], h, Rest.refl _ _⟩
 
 end
 

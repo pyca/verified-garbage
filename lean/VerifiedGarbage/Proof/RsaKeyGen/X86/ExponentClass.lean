@@ -20,7 +20,7 @@ theorem exponent_word (m : Mem) (base : Addr) (offset : Nat) :
 
 theorem pair_parity (low high : BitVec 32) : Mod64.pair low high % 2 = low.toNat % 2 := by
   unfold Mod64.pair
-  omega
+  omega_using []
 
 theorem pair_equal (low high : BitVec 32) {value : Nat} (bound : value < 2 ^ 32) :
     (low ^^^ BitVec.ofNat 32 value ||| high == 0#32) = decide (Mod64.pair low high = value) := by
@@ -30,14 +30,14 @@ theorem pair_equal (low high : BitVec 32) {value : Nat} (bound : value < 2 ^ 32)
   simp only [← BitVec.toNat_inj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt bound]
   change (low.toNat = value ∧ high.toNat = 0) ↔ low.toNat + 2 ^ 32 * high.toNat = value
   have := low.isLt
-  omega
+  omega_using [bound]
 
 theorem parity_ok {s : State} {base : Addr} {size : Nat} (S : Scr s base size) (fit : 136 ≤ size) :
     WP isa (.block parity) s fun t =>
       t.zf = some (decide (Mod64.exponentValue s.mem base 128 % 2 = 0)) ∧
       t.mem = s.mem ∧ Keeps [.eax] s t := by
   unfold parity
-  refine wp_movS (readSrc_sc S (d := 128) (by omega)) fun a A _ => wp_andi fun b B =>
+  refine wp_movS (readSrc_sc S (d := 128) (by omega_using [fit])) fun a A _ => wp_andi fun b B =>
     wp_cmpS rfl fun t T Z => WP.block_nil ?_
   refine ⟨?_, T.mem.trans (B.mem.trans A.mem), (A.keeps.trans B.keeps).trans (T.keeps _)⟩
   rw [Z, B.gpr, A.gpr]
@@ -58,10 +58,10 @@ theorem equal_ok {s : State} {base : Addr} {size value : Nat} (S : Scr s base si
       t.zf = some (decide (Mod64.exponentValue s.mem base 128 = value)) ∧
       t.mem = s.mem ∧ Keeps [.eax] s t := by
   unfold equal
-  refine wp_movS (readSrc_sc S (d := 128) (by omega)) fun a A _ =>
+  refine wp_movS (readSrc_sc S (d := 128) (by omega_using [fit])) fun a A _ =>
     wp_logicS (Or.inr rfl) rfl fun b B => ?_
   have K : Keeps [.eax] s b := A.keeps.trans B.keeps
-  refine wp_orS (readSrc_sc (S.of_keeps K (by decide)) (d := 132) (by omega)) fun d D =>
+  refine wp_orS (readSrc_sc (S.of_keeps K (by decide)) (d := 132) (by omega_using [fit])) fun d D =>
     wp_cmpS rfl fun t T Z => WP.block_nil ?_
   refine ⟨?_, T.mem.trans (D.mem.trans (B.mem.trans A.mem)), (K.trans D.keeps).trans (T.keeps _)⟩
   rw [Z, D.gpr, B.gpr, A.gpr, B.mem, A.mem]

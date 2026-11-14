@@ -26,7 +26,7 @@ theorem macAt_ok (s : State) (k : Nat) {B : Addr} {Z eD eS : Nat}
           carry s + (word s.mem B (eD + 8*k)).toNat ∧ carry t < 2 ^ 64) ∧
       Keep [.x2, .x3, .x4] s t := by
   have enc : (8*k) % 8 = 0 ∧ 8*k < 32768 :=
-    ⟨by omega, by omega⟩
+    ⟨by omega_using [], by omega_using [hk]⟩
   refine WP.keep [.x2, .x3, .x4] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.Square.macAt carry
   unfold carry at hc

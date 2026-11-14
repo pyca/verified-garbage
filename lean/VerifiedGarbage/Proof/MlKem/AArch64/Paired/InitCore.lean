@@ -38,12 +38,12 @@ theorem initCore_ok {s : State} {p seed : Addr} {sb a b k : Nat}
   refine WP.mono (seedWords_ok hoff halign ((hz.gpr .x19 (by simp)).trans hp)
     (by rw [hz.gpr .x28 (by simp)]; exact ha)
     (fun j hj => by rw [hz.rd,hz.wr]; exact hin j hj)
-    (fun j hj => by rw [hz.wr]; exact hw j (by omega))
+    (fun j hj => by rw [hz.wr]; exact hw j (by omega_using [hj]))
     (hsep.sub_right (Region.sub_prefix (by decide : 64≤400)))) fun v ⟨hv,hfv,hvals⟩ => ?_
   have hseed : SeedWords v.mem s.mem p seed := seedWords_of_zero hzero hfv (fun j hj => by
     rw [hvals j hj]
     have hr : z.mem.readW (seed+BitVec.ofNat 64 (8*j)) 64 = s.mem.readW (seed+BitVec.ofNat 64 (8*j)) 64 :=
-      hfz.read (Offset.contains_base seed (d := 8*j) (n := 8) (k := 32) (by omega) (by omega))
+      hfz.read (Offset.contains_base seed (d := 8*j) (n := 8) (k := 32) (by omega_using [hj]) (by omega_using [hj]))
         (by intro r hr; rw [List.mem_singleton.mp hr]; exact hsep) (by decide)
     rw [hr])
   rw [WP.block_append_iff]

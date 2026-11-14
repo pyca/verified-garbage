@@ -47,8 +47,8 @@ theorem upd_argsS {a s t : State} (P : Pre s) (p : Pub a s) (b : Base S vf s t) 
   obtain ⟨_, _, _, _, hW, hR⟩ := offs
   have hS : S s = S a := (X.agree p).S
   exact ⟨X.fits P, b, by rw [h3, hS], by rw [h5, hS], h6, by rw [h7, hS],
-    Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) hl), sdis (.inr (by omega)) hl (by omega),
-    sdis (.inr (by omega)) hl (by omega), cR_dis (X.fits P) hl⟩
+    Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) hl), sdis (.inr (by omega_arith)) hl (by omega_arith),
+    sdis (.inr (by omega_using [ho, F])) hl (by omega_using [ho, hl, F]), cR_dis (X.fits P) hl⟩
 
 include X hH in
 theorem upd_argsG {a t : State} (h : B S vf Pre Pub a t) {o len : Nat} (ho : oW + 1024 ≤ o) (hl : o + len ≤ oRsa)
@@ -152,13 +152,13 @@ theorem hashFixedG_ct {D : Nat} (hD : H.D = D) (sl : State → Nat)
     t.gpr .r5 = off (S a) oY ∧ t.gpr .r6 = BitVec.ofNat 64 (sl a + 8 + H.D)
   refine two_seq (Ψ := U) (fixUpd_taint H (pin fun _ _ h => h.1)) (fun a t ⟨h, hb⟩ => ?_) ?_
   · refine WP.of_syms (wp_li (by decide) fun t₁ o₁ e₁ => wp_addi (h := by decide) fun t₂ o₂ e₂ =>
-      wp_addi (h := by omega) fun t₃ o₃ e₃ => wp_nil fun y => ?_)
+      wp_addi (h := by omega_using [hD64]) fun t₃ o₃ e₃ => wp_nil fun y => ?_)
     have k₃ : Only [.r4, .r5, .r6] t t₃ := (o₁.trans (o₂.trans o₃)).mono
     refine ⟨bto h k₃ y (by decide), hb, by rw [o₃.get .r4, o₂.get .r4, e₁],
       by rw [o₃.get .r5, e₂, o₁.get .r14, r14 h], ?_⟩
-    rw [e₃, o₂.get .r19, o₁.get .r19, r19 h, BitVec.ofNat_add_ofNat]; congr 1; omega
+    rw [e₃, o₂.get .r19, o₁.get .r19, r19 h, BitVec.ofNat_add_ofNat]; congr 1; omega_using []
   have h6 : ∀ {a t : State}, U a t → (t.gpr .r6).toNat = sl a + 8 + H.D := fun {a t} h => by
-    rw [h.2.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.2.1; omega)]
+    rw [h.2.2.2.2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.2.1; omega_using [this])]
   let U' := fun (a t : State) => U a t ∧ t.gpr .r3 = off (S a) oSt ∧ t.gpr .r7 = off (S a) oW
   have hU' : ∀ a t, U a t → WP isa (.block [.addi .r3 .r14 oSt, .addi .r7 .r14 oW]) t (U' a) := fun a t h =>
     WP.of_syms (wp_addi fun t₁ o₁ e₁ => wp_addi fun t₂ o₂ e₂ => wp_nil fun y => by
@@ -169,7 +169,7 @@ theorem hashFixedG_ct {D : Nat} (hD : H.D = D) (sl : State → Nat)
       (tcall_twoM X.s A (an := id) (fun a t h => h.1.1) (k := 1) (by decide)
         (fun P p => ⟨(A.tab P).ok.u, by rw [Nat.mul_one]; exact (A.tab P).mem.2.1, A.au p⟩)
         (upd_twoG X hH cH (an := id) (o := fun _ => oY) (len := fun a => sl a + 8 + H.D)
-          (fun a u ⟨t, h, o, _⟩ => ⟨h.1.1.b.only X o, by decide, by have := h.1.2.1; omega,
+          (fun a u ⟨t, h, o, _⟩ => ⟨h.1.1.b.only X o, by decide, by have := h.1.2.1; omega_using [hR, hY, this],
             by rw [o.get .r3, h.2.1]; rfl, by rw [o.get .r5, h.1.2.2.2.1]; rfl, by rw [o.get .r6, h6 h.1],
             by rw [o.get .r7, h.2.2]; rfl⟩)
           (fun a u₁ u₂ ⟨t₁, h₁, o₁, _⟩ ⟨t₂, h₂, o₂, _⟩ => by
@@ -178,12 +178,12 @@ theorem hashFixedG_ct {D : Nat} (hD : H.D = D) (sl : State → Nat)
       have h6' := h6 h'.1
       have hb' := h'.1.2.1
       obtain ⟨⟨⟨s, P, p, b, sy⟩, hb, -, h5, -⟩, h3, h7⟩ := h'
-      have A' := upd_argsS X hH P p b (o := oY) (by decide) (by omega) h3 h5 h6' h7
+      have A' := upd_argsS X hH P p b (o := oY) (by decide) (by omega_using [hR, hY, hb']) h3 h5 h6' h7
       exact WP.mono (updM_ok A'.P (A.tab P) hH A'.b sy A'.h3 A'.h5 A'.h6 A'.h7 A'.hdc A'.hd₁ A'.hd₂ A'.hd₃)
         fun t'' ⟨⟨b', _⟩, y'⟩ => ⟨⟨s, P, p, b', y'⟩, hb⟩)) ?_
   -- `finalize` after `8 + hLen + salt_len` bytes.
   let V := fun (a t : State) => BT S vf Pre Pub a t ∧ t.gpr .r4 = vf a .r19 + BitVec.ofNat 64 (8 + H.D)
-  refine two_seq (Ψ := V) (fixFin_taint H (pin fun _ _ h => h.1)) (fun a t h => WP.of_syms (wp_addi (h := by omega)
+  refine two_seq (Ψ := V) (fixFin_taint H (pin fun _ _ h => h.1)) (fun a t h => WP.of_syms (wp_addi (h := by omega_using [hD64])
       fun t' o e => wp_nil fun y => ⟨bto h.1 o y (by decide), by rw [e, (h.1.b.agree X).2.2 .r19 (by decide)]⟩)) ?_
   let V' := fun (a t : State) => V a t ∧ t.gpr .r3 = off (S a) oSt ∧ t.gpr .r5 = off (S a) oDig ∧
     t.gpr .r6 = off (S a) oW

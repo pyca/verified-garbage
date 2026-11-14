@@ -45,11 +45,11 @@ theorem widths_le (sig : Sig) : ∀ w ∈ (sig.words abi.ptrBits).map (·.bits a
   obtain ⟨p, -, hp⟩ := hw
   cases h : p.2 with
   | int ty _ =>
-    rw [h] at hp; cases ty <;> simp [Param.words, ArgWord.bits, IntTy.bits, abi] at hp <;> omega
-  | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
-  | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
-  | slice _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
-  | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega
+    rw [h] at hp; cases ty <;> simp [Param.words, ArgWord.bits, IntTy.bits, abi] at hp <;> omega_using [hp]
+  | array _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | table _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | slice _ _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
+  | slices _ _ => rw [h] at hp; simp [Param.words, ArgWord.bits, abi] at hp; omega_using [hp]
 
 /-- The arguments of a function whose arguments fill `r3`–`r10` and `m`
 doublewords of stack. -/
@@ -57,7 +57,7 @@ abbrev stkArgs (m : Nat) (s : State) : List (BitVec 64) :=
   argRegs.map s.gpr ++ (List.range m).map (stackArg s)
 
 theorem stkArgs_length (m : Nat) (s : State) : (stkArgs m s).length = 8 + m := by
-  simp [stkArgs, argRegs]; omega
+  simp [stkArgs, argRegs]; omega_using []
 
 /-- The `m` doublewords of stack arguments, which a contract lets the function
 only read. -/
@@ -113,7 +113,7 @@ theorem wf_stk (hk : (sig.words abi.ptrBits).length = 8 + m) (stack : Nat) (s : 
   simp only [List.length_map, hk, argRegs, List.length_cons, List.length_nil]
   cases m with
   | zero => simp [hwf]
-  | succ m => simp [hwf]; intro h; omega
+  | succ m => simp [hwf]; intro h; omega_using [h]
 
 /-- The precondition of a contract, by where the arguments are. -/
 theorem pre_stk {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
@@ -185,9 +185,9 @@ theorem copyArg_run {bytes j : Nat} {u : State} (hr12 : u.gpr .r12 = u.sp)
       [.addr (u.sp + BitVec.ofNat 64 (bytes + 96 + 8 * j)),
         .addr (u.sp + BitVec.ofNat 64 (96 + 8 * j))]) := by
   have hl := exec_load_d (s := u) (t := .r0) (n := .r12) (off := bytes + 96 + 8 * j) (by decide)
-    ⟨ho, by omega⟩ (by rw [hr12]; exact hr)
+    ⟨ho, by omega_using [h4]⟩ (by rw [hr12]; exact hr)
   have hs := exec_store_d (s := u.write .r0 (u.mem.readW (u.gpr .r12 + BitVec.ofNat 64 (bytes + 96 + 8 * j)) 64))
-    (t := .r0) (n := .r12) (off := 96 + 8 * j) (by decide) ⟨by omega, by omega⟩
+    (t := .r0) (n := .r12) (off := 96 + 8 * j) (by decide) ⟨by omega_using [ho], by omega_using []⟩
     (by simp only [State.write, reduceCtorEq, ↓reduceIte, hr12]; exact hw)
   simp only [copyArg, execBlock, isa, hl, hs, Option.map_some, addrs, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append]

@@ -36,7 +36,7 @@ abbrev EOdd (P : KP) (E : State → Prop) (σ : State) : Prop := E σ ∧ P.e �
 theorem dOdd_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (SE P (EOdd P E)) dOdd (G4 P (EOdd P E)) := by
   simp only [dOdd, seqs, List.cons_append, List.nil_append]
   refine VP.seq (St.pinv mE_taint l0_taint (by simp) (by simp) (by simp) (by simp) (by intro j hj; mem_cases <;> decide)
-    (by decide) fun σ ⟨_, e0, e1, eo⟩ => ⟨AS3_zero, AS3_one, by rw [AS3_e]; exact eo, by rw [AS3_e]; omega⟩) ?_
+    (by decide) fun σ ⟨_, e0, e1, eo⟩ => ⟨AS3_zero, AS3_one, by rw [AS3_e]; exact eo, by rw [AS3_e]; omega_using [e0, e1]⟩) ?_
   refine VP.seq (St.peqS eqG_taint (by simp) (by simp) (by decide) (by decide) (by decide) (by decide)) ?_
   refine VP.assoc (VP.seq (St.pltS ltL2_taint (by simp) (by simp) (by decide) (by decide) (by decide)) ?_)
   refine VP.seq (St.pandNotS (X := fun σ => decide (lv P σ < 2))
@@ -47,14 +47,14 @@ theorem dOdd_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] {E : State → Prop} : VP (SE P (
   refine VP.seq (St.pmulFrom myT_taint mxL_taint maOne_taint qdMa_taint St.pmov64 (n := 64)
     (fun _ _ => ⟨by decide, by decide⟩) (by simp) (by simp) (by simp) (by simp) (by simp) (by decide) (by decide)
     (by intro j hj; mem_cases <;> decide) (by intro d hj; mem_cases <;> decide) fun σ _ => ?_) ?_
-  · have wge : 4 ≤ P.W := by simp only [KP.W]; omega
+  · have wge : 4 ≤ P.W := by simp only [KP.W]; omega_using []
     simp (config := {decide := true}) only [upd, ↓reduceIte, AH_zero, AH_one, AH_mod, AS3_L]
-    refine ⟨trivial, Nat.one_lt_two_pow (by omega), ?_, ?_⟩
+    refine ⟨trivial, Nat.one_lt_two_pow (by omega_using [wge]), ?_, ?_⟩
     · have := lv_lt P σ
-      exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega))
-    · rw [Nat.mul_comm, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega)
+      exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using []))
+    · rw [Nat.mul_comm, ← Nat.pow_succ]; exact Nat.pow_le_pow_right (by decide) (by omega_using [wge])
   refine VP.seq (St.pdivBy dvE_taint hdrQd_taint (by decide) (by simp) (by simp) (by intro j hj; mem_cases <;> decide)
-    fun σ ⟨_, e0, _, _⟩ => by simp (config := {decide := true}) only [upd, ↓reduceIte, AH_e]; omega) ?_
+    fun σ ⟨_, e0, _, _⟩ => by simp (config := {decide := true}) only [upd, ↓reduceIte, AH_e]; omega_using [e0]) ?_
   refine (St.pcopy dQd_taint (by decide) (by simp) (by decide)).mono (fun _ _ h => h) fun σ s h => h.mono
     (fun j hj => ⟨by mem_sub, ?_⟩) (fun j hj => ⟨by mem_sub, ?_⟩)
   · obtain ⟨_, e0, e1, eo⟩ := h.1

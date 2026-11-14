@@ -30,7 +30,7 @@ theorem toNat_ofNat32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
 theorem toNat_setWidth64 (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
 
 theorem eq_ofNat_of_toNat {x : BitVec 32} {n : Nat} (h : x.toNat = n) : x = BitVec.ofNat 32 n := by
   subst h; simp
@@ -44,11 +44,11 @@ theorem condSub_bv (x d : BitVec 32) (hx : x.toNat < 2 * q) :
   unfold condSub
   rw [q_eq] at hx ⊢
   by_cases h : x.toNat < 3329
-  · rw [ite_eq_right (by omega), decide_eq_true h]
+  · rw [ite_eq_right (by omega_using [h]), decide_eq_true h]
     have e : (d - d - (BitVec.ofBool true).setWidth 32) &&& Q = Q := by
       rw [BitVec.sub_self]; decide
     rw [e, BitVec.sub_add_cancel]
-  · rw [ite_eq_left (by omega), decide_eq_false h]
+  · rw [ite_eq_left (by omega_using [h]), decide_eq_false h]
     have e : (d - d - (BitVec.ofBool false).setWidth 32) &&& Q = 0 := by
       rw [BitVec.sub_self]; decide
     rw [e]; unfold Q; bv_omega
@@ -87,7 +87,7 @@ theorem setWidth_append32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm,
     ← Nat.two_pow_add_eq_or_of_lt b.isLt]
-  omega
+  omega_using []
 
 /-- A pointer advanced by `d`. -/
 theorem ptr_next (x : BitVec 32) (k d : Nat) :
@@ -97,17 +97,17 @@ theorem ptr_next (x : BitVec 32) (k d : Nat) :
 /-- A counter counted down. -/
 theorem cnt_next {N k : Nat} (hk : k < N) :
     BitVec.ofNat 32 (N - k) - 1 = BitVec.ofNat 32 (N - (k + 1)) := by
-  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat_sub_ofNat (by omega)]
+  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat_sub_ofNat (by omega_using [hk])]
   congr 1
 
 /-- The loop condition after counting down. -/
 theorem cnt_ne {N k : Nat} (hk : k < N) (hN : N < 2 ^ 32) :
     (some (BitVec.ofNat 32 (N - k) - 1 == 0) : Option Bool).map (!·) = some (decide (k + 1 < N)) := by
-  rw [cnt_next hk, ofNat_beq_zero (by omega)]
+  rw [cnt_next hk, ofNat_beq_zero (by omega_using [hN])]
   simp only [Option.map_some, Option.some.injEq]
   by_cases h : k + 1 < N
-  · simp [h, show N - (k + 1) ≠ 0 by omega]
-  · simp [h, show N - (k + 1) = 0 by omega]
+  · simp [h, show N - (k + 1) ≠ 0 by omega_using [h]]
+  · simp [h, show N - (k + 1) = 0 by omega_using [h]]
 
 /-! ## Bits -/
 
@@ -128,8 +128,8 @@ theorem toNat_shr (x : BitVec 32) (n : Nat) : (x >>> n).toNat = x.toNat / 2 ^ n 
 theorem toNat_and_mask (x : BitVec 32) (k : Nat) (hk : k < 32) :
     (x &&& BitVec.ofNat 32 (2 ^ k - 1)).toNat = x.toNat % 2 ^ k := by
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-    have : 2 ^ k ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)
-    omega), Nat.and_two_pow_sub_one_eq_mod]
+    have : 2 ^ k ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega_using [hk])
+    omega_using [this]), Nat.and_two_pow_sub_one_eq_mod]
 
 /-- The low byte of a word. -/
 theorem setWidth8_eq (x : BitVec 32) : x.setWidth 8 = BitVec.ofNat 8 x.toNat := by
@@ -138,14 +138,14 @@ theorem setWidth8_eq (x : BitVec 32) : x.setWidth 8 = BitVec.ofNat 8 x.toNat := 
 
 /-- A byte, zero-extended. -/
 theorem toNat_byte32 (b : Byte) : (b.setWidth 32).toNat = b.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega)
+  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])
 
 /-- `csub` as the code computes it, as a word. -/
 theorem csub_eq (x d : BitVec 32) (hx : x.toNat < 2 * q) :
     x - Q + ((d - d - (BitVec.ofBool (decide (x.toNat < Q.toNat))).setWidth 32) &&& Q) =
       BitVec.ofNat 32 (x.toNat % q) := by
   apply BitVec.eq_of_toNat_eq
-  rw [condSub_bv x d hx, condSub_eq hx, toNat_ofNat32 (by rw [q_eq]; omega)]
+  rw [condSub_bv x d hx, condSub_eq hx, toNat_ofNat32 (by rw [q_eq]; omega_using [])]
 
 /-- Coefficients `i < k + c` after `c` words `V (k + t)` are written. -/
 theorem coef_extend2 {m : Mem} {p : Addr} {V : Nat → BitVec 32} {k : Nat} (hk : k + 2 ≤ 256)
@@ -153,15 +153,15 @@ theorem coef_extend2 {m : Mem} {p : Addr} {V : Nat → BitVec 32} {k : Nat} (hk 
     ∀ i < k + 2, coeffAt ((m.writeW (coeffAddr p k) (V k)).writeW (coeffAddr p (k + 1)) (V (k + 1))) p i =
       V i := by
   intro i hi
-  rw [coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) (show k + 1 < n by rw [n_eq]; omega),
-    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) (show k < n by rw [n_eq]; omega)]
+  rw [coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [hk, hi]) (show k + 1 < n by rw [n_eq]; omega_using [hk]),
+    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [hk, hi]) (show k < n by rw [n_eq]; omega_using [hk])]
   by_cases e1 : k + 1 = i
   · rw [ite_eq_left e1, e1]
   rw [ite_eq_right e1]
   by_cases e0 : k = i
   · rw [ite_eq_left e0, e0]
   rw [ite_eq_right e0]
-  exact h i (by omega)
+  exact h i (by omega_using [hi, e1, e0])
 
 /-! ## States -/
 
@@ -253,11 +253,11 @@ theorem addr_add {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := d) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []),
+    Nat.mod_eq_of_lt (a := k + d) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega_using [h])]
+  omega_using []
 
 /-- The same, as the model computes it for an access `[r + d]` with `r = x + k`. -/
 theorem ea_add {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
@@ -267,19 +267,19 @@ theorem ea_add {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
 /-- `[x + d]` of a 32-bit pointer `x`, where nothing wraps around. -/
 theorem ea_off {x : BitVec 32} {d : Nat} (h : x.toNat + d < 2 ^ 32) :
     (x + BitVec.ofNat 32 d).setWidth 64 = x.setWidth 64 + BitVec.ofNat 64 d := by
-  have := ea_add (x := x) (k := 0) (d := d) (by omega)
+  have := ea_add (x := x) (k := 0) (d := d) (by omega_using [h])
   simpa using this
 
 /-- An access within a region is a sub-region of it. -/
 theorem sub_of_contains {r : Region} {a : Addr} {n : Nat} (h : r.Contains a n) : Region.Sub ⟨a, n⟩ r :=
-  fun _ hx => h.byte (by simp only [Region.Contains] at hx; omega)
+  fun _ hx => h.byte (by simp only [Region.Contains] at hx; omega_using [hx])
 
 /-- An access of `n` bytes at offset `o` of a region at a 32-bit pointer. -/
 theorem contains_at {x : BitVec 32} {len o n : Nat} (h : o + n ≤ len) (hx : x.toNat + len ≤ 2 ^ 32) :
     (⟨x.setWidth 64, len⟩ : Region).Contains (x.setWidth 64 + BitVec.ofNat 64 o) n := by
   simp only [Region.Contains]
   rw [show x.setWidth 64 + BitVec.ofNat 64 o - x.setWidth 64 = BitVec.ofNat 64 o by bv_omega,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hx])]
   exact h
 
 theorem polyLen (p : Addr) : (polyRegion p).len ≤ 2 ^ 64 := by show 1024 ≤ 2 ^ 64; decide
@@ -305,14 +305,14 @@ theorem bytes_extend {m : Mem} {o : Addr} {L : List Byte} {k : Nat} (hk : k + 3 
   simp only [writeW8_apply]
   by_cases e2 : j = k + 2
   · subst e2; simp [h2]
-  rw [ite_eq_right_iff.mpr fun e => absurd e (add_ofNat_ne (by omega) (by omega) e2)]
+  rw [ite_eq_right_iff.mpr fun e => absurd e (add_ofNat_ne (by omega_using [hk, hj]) (by omega_using [hk]) e2)]
   by_cases e1 : j = k + 1
   · subst e1; simp [h1]
-  rw [ite_eq_right_iff.mpr fun e => absurd e (add_ofNat_ne (by omega) (by omega) e1)]
+  rw [ite_eq_right_iff.mpr fun e => absurd e (add_ofNat_ne (by omega_using [hk, hj]) (by omega_using [hk]) e1)]
   by_cases e0 : j = k
   · subst e0; simp [h0]
-  rw [ite_eq_right_iff.mpr fun e => absurd e (add_ofNat_ne (by omega) (by omega) e0)]
-  exact h j (by omega)
+  rw [ite_eq_right_iff.mpr fun e => absurd e (add_ofNat_ne (by omega_using [hk, hj]) (by omega_using [hk]) e0)]
+  exact h j (by omega_using [hj, e2, e1, e0])
 
 /-- Bytes `j < k + 1` at `o`, after the byte `x = L[k]` is written at `o + k`. -/
 theorem bytes_extend1 {m : Mem} {o : Addr} {L : List Byte} {k : Nat} (hk : k < 2 ^ 64)
@@ -322,8 +322,8 @@ theorem bytes_extend1 {m : Mem} {o : Addr} {L : List Byte} {k : Nat} (hk : k < 2
   simp only [writeW8_apply]
   by_cases e : j = k
   · subst e; simp [hx]
-  rw [ite_eq_right_iff.mpr fun e' => absurd e' (add_ofNat_ne (by omega) (by omega) e)]
-  exact h j (by omega)
+  rw [ite_eq_right_iff.mpr fun e' => absurd e' (add_ofNat_ne (by omega_using [hk, hj]) (by omega_using [hk]) e)]
+  exact h j (by omega_using [hj, e])
 
 /-- Two accesses at offsets `a` and `b` of a region at a 32-bit pointer. -/
 theorem sep_at {x : BitVec 32} {len a b n k : Nat} (ha : a + n ≤ len) (hb : b + k ≤ len)
@@ -346,5 +346,5 @@ theorem reduced_of_zero {m : Mem} {p : Addr} (h : ∀ k < 1024, m (p + BitVec.of
 theorem reduced_below {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0) (p : Nat)
     (hp : p + 1024 ≤ 0x5000) : VG.Proof.MlKem.Reduced m (BitVec.ofNat 64 p) :=
   reduced_of_zero fun k hk => hm _ (by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega)
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hp, hk])
 end VG.Proof.MlKem.X86

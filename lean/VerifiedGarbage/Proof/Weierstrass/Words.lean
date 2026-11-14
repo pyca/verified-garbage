@@ -37,8 +37,8 @@ theorem testBit_wordsVal (m : Mem) (base : Addr) : ∀ (a n j b : Nat), j < n �
     rcases j with _ | j
     · simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add]
       exact ite_eq_left hb
-    · rw [ite_eq_right (show ¬64 * (j + 1) + b < 64 by omega), show 64 * (j + 1) + b - 64 = 64 * j + b by omega,
-        testBit_wordsVal m base (a + 8) n j b (by omega) hb, show a + 8 + 8 * j = a + 8 * (j + 1) by omega]
+    · rw [ite_eq_right (show ¬64 * (j + 1) + b < 64 by omega_using []), show 64 * (j + 1) + b - 64 = 64 * j + b by omega_using [],
+        testBit_wordsVal m base (a + 8) n j b (by omega_using [hj]) hb, show a + 8 + 8 * j = a + 8 * (j + 1) by omega_using []]
 
 /-- Byte `8 j + r` of memory at `p` is byte `r` of the word at `p + 8 j`. -/
 theorem byte_word (m : Mem) (p : Addr) (j : Nat) {r : Nat} (hr : r < 8) :
@@ -51,9 +51,9 @@ number there. -/
 theorem testBit_byte (m : Mem) (base : Addr) {a n i b : Nat} (hi : i < 8 * n) (hb : b < 8) :
     (m (off base (a + i))).getLsbD b = (wordsVal m base a n).testBit (8 * i + b) := by
   have e := byte_word m (off base a) (i / 8) (r := i % 8) (Nat.mod_lt _ (by decide))
-  rw [Offset.add_add, Offset.add_add, show a + (8 * (i / 8) + i % 8) = a + i by omega] at e
-  rw [e, show 8 * i + b = 64 * (i / 8) + (8 * (i % 8) + b) by omega,
-    testBit_wordsVal m base a n (i / 8) _ (by omega) (by omega), BitVec.getLsbD_extractLsb',
+  rw [Offset.add_add, Offset.add_add, show a + (8 * (i / 8) + i % 8) = a + i by omega_using []] at e
+  rw [e, show 8 * i + b = 64 * (i / 8) + (8 * (i % 8) + b) by omega_using [],
+    testBit_wordsVal m base a n (i / 8) _ (by omega_using [hi]) (by omega_using [hb]), BitVec.getLsbD_extractLsb',
     decide_eq_true hb, Bool.true_and, BitVec.testBit_toNat]
 
 /-! ## Numbers given word by word -/
@@ -61,16 +61,16 @@ theorem testBit_byte (m : Mem) (base : Addr) {a n i b : Nat} (hi : i < 8 * n) (h
 /-- The words of `x`, word by word, are `x`. -/
 theorem wordsVal_of_shifts (m : Mem) (base : Addr) : ∀ (o n x : Nat), x < 2 ^ (64 * n) →
     (∀ j < n, word m base (o + 8 * j) = BitVec.ofNat 64 (x >>> (64 * j))) → wordsVal m base o n = x
-  | _, 0, x, hx, _ => by simp only [Nat.mul_zero, Nat.pow_zero] at hx; simp only [wordsVal]; omega
+  | _, 0, x, hx, _ => by simp only [Nat.mul_zero, Nat.pow_zero] at hx; simp only [wordsVal]; omega_using [hx]
   | o, n + 1, x, hx, h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero, Nat.shiftRight_zero] at h0
     have hr := wordsVal_of_shifts m base (o + 8) n (x >>> 64) (by
         rw [Nat.shiftRight_eq_div_pow]
         rw [pow64_succ] at hx
         exact Nat.div_lt_of_lt_mul hx) fun j hj => by
-      rw [show o + 8 + 8 * j = o + 8 * (j + 1) by omega, h (j + 1) (by omega), ← Nat.shiftRight_add,
-        show 64 + 64 * j = 64 * (j + 1) by omega]
+      rw [show o + 8 + 8 * j = o + 8 * (j + 1) by omega_using [], h (j + 1) (by omega_using [hj]), ← Nat.shiftRight_add,
+        show 64 + 64 * j = 64 * (j + 1) by omega_using []]
     rw [wordsVal, hr, h0, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
     exact Nat.mod_add_div x _
 
@@ -83,17 +83,17 @@ theorem wordsVal_eq_zero_iff (m : Mem) (base : Addr) : ∀ (a n : Nat),
     constructor
     · intro h j hj
       rcases j with _ | j
-      · rw [Nat.mul_zero, Nat.add_zero]; exact BitVec.eq_of_toNat_eq (by show _ = 0; omega)
-      · rw [show a + 8 * (j + 1) = a + 8 + 8 * j by omega]
+      · rw [Nat.mul_zero, Nat.add_zero]; exact BitVec.eq_of_toNat_eq (by show _ = 0; omega_using [h])
+      · rw [show a + 8 * (j + 1) = a + 8 + 8 * j by omega_using []]
         exact (Nat.eq_zero_of_add_eq_zero_left h |> fun h' => by
           rcases Nat.mul_eq_zero.mp h' with h'' | h''
           · exact absurd h'' (by decide)
-          · exact (wordsVal_eq_zero_iff m base (a + 8) n).mp h'' j (by omega))
+          · exact (wordsVal_eq_zero_iff m base (a + 8) n).mp h'' j (by omega_using [hj]))
     · intro h
-      have h0 := h 0 (by omega)
+      have h0 := h 0 (by omega_using [])
       rw [Nat.mul_zero, Nat.add_zero] at h0
       rw [h0, (wordsVal_eq_zero_iff m base (a + 8) n).mpr fun j hj => by
-        rw [show a + 8 + 8 * j = a + 8 * (j + 1) by omega]; exact h (j + 1) (by omega)]
+        rw [show a + 8 + 8 * j = a + 8 * (j + 1) by omega_using []]; exact h (j + 1) (by omega_using [hj])]
       rfl
 
 /-! ## Memory that changed elsewhere -/
@@ -105,17 +105,17 @@ theorem keep_of_disjoint {base p : Addr} {o len k : Nat} {m m' : Mem} (h : Outsi
     (hk : k ≤ 2 ^ 64) : m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) := by
   refine h _ ?_
   by_cases h' : o ≤ ofs base (p + BitVec.ofNat 64 i) ∧ ofs base (p + BitVec.ofNat 64 i) < o + len
-  · refine absurd ?_ (hd _ (Offset.contains_base p (d := i) (n := 1) (k := k) (by omega) (by omega)))
+  · refine absurd ?_ (hd _ (Offset.contains_base p (d := i) (n := 1) (k := k) (by omega_using [hi]) (by omega_using [hi, hk])))
     show (p + BitVec.ofNat 64 i - (base + BitVec.ofNat 64 o)).toNat + 1 ≤ len
     have := (Offset.lt_iff (p + BitVec.ofNat 64 i) base ho).mpr h'
-    omega
-  · omega
+    omega_using [this]
+  · omega_using [h']
 
 /-- The same, for a range that alone changed at `q`. -/
 theorem keep_of_disjoint' {q p : Addr} {len k : Nat} {m m' : Mem} (h : Outside q 0 len m m')
     (hd : Region.Disjoint ⟨p, k⟩ ⟨q, len⟩) (hl : len ≤ 2 ^ 64) {i : Nat} (hi : i < k)
     (hk : k ≤ 2 ^ 64) : m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) :=
-  keep_of_disjoint (base := q) (o := 0) h (by rw [off, BitVec.add_zero]; exact hd) (by omega) hi hk
+  keep_of_disjoint (base := q) (o := 0) h (by rw [off, BitVec.add_zero]; exact hd) (by omega_using [hl]) hi hk
 
 /-- A word of a range whose bytes are kept. -/
 theorem readW_keep {m m' : Mem} {p : Addr} {d : Nat}
@@ -183,7 +183,7 @@ theorem byteRev64_ofBytes (m : Mem) (q : Addr) :
     show q + BitVec.ofNat 64 0 = q from BitVec.add_zero q,
     show q + BitVec.ofNat 64 1 = q + 1 from rfl]
   simp only [BitVec.toNat_append, shl8_or, Spec.Weierstrass.ofBytes, List.foldl_cons, List.foldl_nil]
-  omega
+  omega_using []
 
 /-- The words `j` of a number, each the byte reversal of the word at
 `p + 8 (k - 1 - j)`, are the `8 k` bytes at `p` big-endian. -/
@@ -192,14 +192,14 @@ theorem wordsVal_eq_ofBytes (m m' : Mem) (base p : Addr) : ∀ (o k : Nat),
     wordsVal m base o k = Spec.Weierstrass.ofBytes (bytesAt m' p (8 * k))
   | _, 0, _ => rfl
   | o, k + 1, h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero, Nat.add_sub_cancel, Nat.sub_zero] at h0
     rw [wordsVal, wordsVal_eq_ofBytes m m' base p (o + 8) k fun j hj => by
-        rw [show o + 8 + 8 * j = o + 8 * (j + 1) by omega, h (j + 1) (by omega),
-          show k + 1 - 1 - (j + 1) = k - 1 - j by omega],
-      show 8 * (k + 1) = 8 * k + 8 by omega, bytesAt_add, ofBytes_append, length_bytesAt,
+        rw [show o + 8 + 8 * j = o + 8 * (j + 1) by omega_using [], h (j + 1) (by omega_using [hj]),
+          show k + 1 - 1 - (j + 1) = k - 1 - j by omega_using []],
+      show 8 * (k + 1) = 8 * k + 8 by omega_using [], bytesAt_add, ofBytes_append, length_bytesAt,
       ← byteRev64_ofBytes, h0, show (256 : Nat) ^ 8 = 2 ^ 64 from rfl]
-    omega
+    omega_using []
 
 /-- The bit `i < 64` of a byte-reversed word. -/
 theorem getLsbD_byteRev64 (w : BitVec 64) {i : Nat} (hi : i < 64) :
@@ -217,8 +217,8 @@ theorem bytesAt_eq_toBytes (m m₀ : Mem) (base q : Addr) {a n : Nat} (c : Bool)
       (byteRev64 (word m₀ base (a + 8 * (n - 1 - k / 8)) &&& (if c then BitVec.allOnes 64 else 0))).extractLsb'
         (8 * (k % 8)) 8 := fun k hk => by
     have e := byte_word m q (k / 8) (r := k % 8) (Nat.mod_lt _ (by decide))
-    rw [show 8 * (k / 8) + k % 8 = k by omega,
-      show 8 * (k / 8) = 8 * (n - 1 - (n - 1 - k / 8)) by omega, h _ (by omega)] at e
+    rw [show 8 * (k / 8) + k % 8 = k by omega_using [],
+      show 8 * (k / 8) = 8 * (n - 1 - (n - 1 - k / 8)) by omega_using [hk], h _ (by omega_using [hk])] at e
     exact e
   cases c
   · simp only [Bool.false_eq_true, ite_false] at hb ⊢
@@ -227,7 +227,7 @@ theorem bytesAt_eq_toBytes (m m₀ : Mem) (base q : Addr) {a n : Nat} (c : Bool)
     rw [getElem_bytesAt, List.getElem_replicate, hb k h₁]
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
-    have : 8 * (k % 8) + i < 64 := by omega
+    have : 8 * (k % 8) + i < 64 := by omega_using [hi]
     have z : ∀ {w} j, (0 : BitVec w).getLsbD j = false := fun _ => BitVec.getLsbD_zero
     simp only [BitVec.getLsbD_extractLsb', getLsbD_byteRev64 _ this, BitVec.getLsbD_and, z, Bool.and_false]
   · simp only [ite_true, BitVec.and_allOnes] at hb ⊢
@@ -237,10 +237,10 @@ theorem bytesAt_eq_toBytes (m m₀ : Mem) (base q : Addr) {a n : Nat} (c : Bool)
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_ofNat, decide_eq_true hi, Bool.true_and, Bool.true_and,
-      getLsbD_byteRev64 _ (by omega), Nat.testBit_shiftRight,
+      getLsbD_byteRev64 _ (by omega_using [hi]), Nat.testBit_shiftRight,
       show 8 * (8 * n - 1 - k) + i = 64 * (n - 1 - k / 8) + (8 * (7 - (8 * (k % 8) + i) / 8) + (8 * (k % 8) + i) % 8)
-        by omega,
-      testBit_wordsVal _ _ _ _ _ _ (by omega) (by omega), BitVec.testBit_toNat]
+        by omega_using [h₁, hi],
+      testBit_wordsVal _ _ _ _ _ _ (by omega_using [h₁]) (by omega_using []), BitVec.testBit_toNat]
 
 /-- The word a selection stores. -/
 theorem sel_word (c : Bool) (x y : BitVec 64) :
@@ -264,17 +264,17 @@ theorem mask_and (p q : Prop) [Decidable p] [Decidable q] : mask p &&& mask q = 
 theorem lt_top {A M P x y : Nat} (hA : A < P) (hM : M < P) :
     (A + P * x < M + P * y) ↔ x < y + (decide (A < M)).toNat := by
   rcases Nat.lt_trichotomy x y with h | rfl | h
-  · have := Nat.mul_le_mul_left P (show x + 1 ≤ y by omega)
+  · have := Nat.mul_le_mul_left P (show x + 1 ≤ y by omega_using [h])
     rw [Nat.mul_succ] at this
     constructor
-    · intro; omega
-    · intro; omega
-  · by_cases h : A < M <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
-  · have := Nat.mul_le_mul_left P (show y + 1 ≤ x by omega)
+    · intro; omega_using [h]
+    · intro; omega_using [hA, this]
+  · by_cases h : A < M <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_using [h]
+  · have := Nat.mul_le_mul_left P (show y + 1 ≤ x by omega_using [h])
     rw [Nat.mul_succ] at this
     have := Bool.toNat_le (decide (A < M))
     constructor
-    · intro; omega
-    · intro; omega
+    · intro; omega_arith
+    · intro; omega_arith
 
 end VG.Proof.Weierstrass

@@ -331,9 +331,10 @@ def step (τ : T) : Instr → Option T
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m | .vpmadd52Load _ _ _ m =>
     if memPub τ m then some (noX τ) else none
   | .vmovdqu32Store m _ => storeStep τ m 64 false
-  | .eop _ => some (noX τ)
-  | .evLoad _ m | .evMadd52Load _ _ _ m => if memPub τ m then some (noX τ) else none
-  | .evStore m _ => storeStep τ m 32 false
+  | .eop _ | .e5op _ => some (noX τ)
+  | .evLoad _ m | .evMadd52Load _ _ _ m | .evBroadcastLoad _ m | .e5InsertLoad _ _ m _ =>
+    if memPub τ m then some (noX τ) else none
+  | .evStore m _ | .e5ExtractStore m _ _ => storeStep τ m 32 false
   -- A masked move accesses the quadwords (or bytes) its mask enables, which
   -- must be public as its address is.
   | .kLoad k _ m | .kLoad8 k _ m => if memPub τ m && pub τ k then some (noX τ) else none
@@ -622,7 +623,7 @@ theorem addrOf_some {τ : T} {m : MemOp} {i d : Nat} (h : addrOf τ m = some (i,
   have hm := List.mem_of_find?_eq_some hq
   have hb := List.find?_some hq
   simp only [beq_iff_eq] at hb
-  refine ⟨q.2.2, hc.1, ?_, by rw [Nat.add_sub_cancel_left, Int.toNat_of_nonneg hc.2], by omega⟩
+  refine ⟨q.2.2, hc.1, ?_, by rw [Nat.add_sub_cancel_left, Int.toNat_of_nonneg hc.2], by omega_using []⟩
   rw [← hb]; exact hm
 
 theorem ea_of_addrOf {τ : T} {s : State} (hw : Wf τ s) {m : MemOp} {i d : Nat}
@@ -638,14 +639,14 @@ theorem byteAddr_add (s : State) (i d k : Nat) :
 
 theorem lens_ne {τ : T} {i n : Nat} (h : 0 < n) (hn : n ≤ τ.lens.getD i 0) : τ.lens ≠ [] := by
   rintro h'; simp only [h', List.getD_eq_getElem?_getD, List.length_nil, Nat.not_lt_zero,
-      not_false_eq_true, getElem?_neg, Option.getD_none, Nat.le_zero_eq] at hn; omega
+      not_false_eq_true, getElem?_neg, Option.getD_none, Nat.le_zero_eq] at hn; omega_using [h, hn]
 
 /-- Slots live in regions of the same address in both runs. -/
 theorem Agree.byteAddr_eq {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {sl : Nat × Nat × Nat}
     (h : sl ∈ τ.slots) {k : Nat} (hk : k < sl.2.1 + sl.2.2) :
     byteAddr s₁ sl.1 k = byteAddr s₂ sl.1 k := by
   have := ha.ok sl h
-  simp only [byteAddr, region, ha.wr (lens_ne (n := sl.2.1 + sl.2.2) (by omega) this)]
+  simp only [byteAddr, region, ha.wr (lens_ne (n := sl.2.1 + sl.2.2) (by omega_using [hk]) this)]
 
 /-- A load of `w` bytes from a public slot. -/
 theorem Agree.load {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : MemOp} {w : Nat}
@@ -658,7 +659,7 @@ theorem Agree.load {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : M
   obtain ⟨sl, hsl, ⟨rfl, ho⟩, hd⟩ := hp
   intro k hk
   rw [ea_of_addrOf ha.wf₁ h, ea_of_addrOf ha.wf₂ h, byteAddr_add, byteAddr_add]
-  exact ha.slots sl hsl _ (by omega) (by omega)
+  exact ha.slots sl hsl _ (by omega_using [ho]) (by omega_using [hd, hk])
 
 theorem Agree.readW {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : MemOp} {w : Nat}
     (hm : memPub τ m = true) (hp : slotPub τ m (w / 8) = true) :
@@ -692,7 +693,7 @@ theorem region_mem {τ : T} {s : State} (hw : Wf τ s) (hne : τ.lens ≠ []) {i
   have : i < τ.lens.length := by
     by_contra h'
     rw [List.getD_eq_getElem?_getD,
-        List.getElem?_eq_none (by omega)] at hi; simp only [Option.getD_none, Nat.lt_irrefl] at hi
+        List.getElem?_eq_none (by omega_using [h'])] at hi; simp only [Option.getD_none, Nat.lt_irrefl] at hi
   have hi' : i < s.wr.length := hl ▸ this
   exact ⟨hi', by simp only [region, BitVec.ofNat_eq_ofNat, List.getD_eq_getElem?_getD,
                    List.getElem?_eq_getElem hi', Option.getD_some]⟩
@@ -703,10 +704,10 @@ theorem write_other {τ : T} {s : State} (hw : Wf τ s) {i d n j k : Nat} (hn : 
     (hd : d + n ≤ τ.lens.getD i 0) (hk : k < τ.lens.getD j 0) (hsep : j ≠ i ∨ k < d ∨ d + n ≤ k)
     (V : BitVec (8 * n)) :
     s.mem.write (byteAddr s i d) n V (byteAddr s j k) = s.mem (byteAddr s j k) := by
-  have hne := lens_ne (n := d + n) (by omega) hd
+  have hne := lens_ne (n := d + n) (by omega_using [hn]) hd
   obtain ⟨-, hdisj, hbound⟩ := hw.1 hne
-  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega)
-  obtain ⟨hj, hrj⟩ := region_mem hw hne (i := j) (by omega)
+  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega_using [hn, hd])
+  obtain ⟨hj, hrj⟩ := region_mem hw hne (i := j) (by omega_using [hk])
   have hli := region_len hw hne i
   have hlj := region_len hw hne j
   have hbi : (region s i).len ≤ 2 ^ 64 := by rw [hri]; exact hbound _ (List.getElem_mem _)
@@ -719,16 +720,16 @@ theorem write_other {τ : T} {s : State} (hw : Wf τ s) {i d n j k : Nat} (hn : 
     have hsep := hsep.resolve_left (· rfl)
     have h : byteAddr s j k - byteAddr s j d = BitVec.ofNat 64 k - BitVec.ofNat 64 d :=
       Offset.add_sub_add_left _ _ _
-    exact Offset.not_lt_sub_ofNat hsep (by omega) hn (by omega) (h ▸ hlt)
+    exact Offset.not_lt_sub_ofNat hsep (by omega_using [hk, hlj, hbj]) hn (by omega_using [hlj, hbj, hd]) (h ▸ hlt)
   · -- Another region: the regions are disjoint.
     have hA : (region s i).Contains (byteAddr s i d) n := by
       simp only [Region.Contains, byteAddr]
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hd, hli, hbi])]
+      omega_using [hd, hli]
     have hX : (region s j).Contains (byteAddr s j k) 1 := by
       simp only [Region.Contains, byteAddr]
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hlj, hbj])]
+      omega_using [hk, hlj]
     have hXi := hA.byte hlt
     rw [List.pairwise_iff_getElem] at hdisj
     rcases Nat.lt_or_gt_of_ne hji with h | h
@@ -801,9 +802,9 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : 
           simp only at hk₁ hk₂
           simp only [e₁, e₂, Mem.write, hv hp]
           have hd : ∀ s : State, byteAddr s i k - byteAddr s i d = BitVec.ofNat 64 (k - d) :=
-            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega))
+            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega_using [hk₁]))
           have hlt : (BitVec.ofNat 64 (k - d)).toNat < n := by
-            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega)
+            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega_using [hn, hk₂])
           rw [hd, hd]; simp only [hlt, ite_true]
         · by_cases hp : p = true
           · exact same h hp
@@ -811,11 +812,11 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : 
             rcases hsep with h' | h' | h' | h'
             · exact absurd h' hp
             · exact .inl h'
-            · exact .inr (.inr (by omega))
-            · exact .inr (.inl (by omega))
+            · exact .inr (.inr (by omega_using [hk₁, h']))
+            · exact .inr (.inl (by omega_using [hk₂, h']))
           have hk := ha.ok sl h
-          rw [e₁, e₂, write_other ha.wf₁ hn hfit (by omega) hsep,
-            write_other ha.wf₂ hn hfit (by omega) hsep]
+          rw [e₁, e₂, write_other ha.wf₁ hn hfit (by omega_using [hk₂, hk]) hsep,
+            write_other ha.wf₂ hn hfit (by omega_using [hk₂, hk]) hsep]
           exact ha.slots sl h k hk₁ hk₂
       · split at hsl <;> [exact same hsl ‹_›; cases hsl]
     · split at hsl <;> [exact same hsl ‹_›; cases hsl]
@@ -836,6 +837,7 @@ def dstOf : Instr → Option Reg
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
+  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
@@ -875,6 +877,28 @@ theorem EOp.exec_eq (op : EOp) (s : State) :
         ymmH := (op.exec s).ymmH
         zmmHiH := (op.exec s).zmmHiH } := by
   cases op <;> exact setVy_eq _ _ _
+
+/-- An `EVEX.512` instruction's write changes only the vector registers. -/
+theorem setVz_eq (s : State) (r : VReg) (l0 l1 l2 l3 : BitVec 128) :
+    s.setVz r l0 l1 l2 l3 =
+      { s with
+        xmm := (s.setVz r l0 l1 l2 l3).xmm
+        ymmHi := (s.setVz r l0 l1 l2 l3).ymmHi
+        zmmHi := (s.setVz r l0 l1 l2 l3).zmmHi
+        ymmH := (s.setVz r l0 l1 l2 l3).ymmH
+        zmmHiH := (s.setVz r l0 l1 l2 l3).zmmHiH } := by
+  cases r <;> rfl
+
+/-- An `EVEX.512` instruction on registers changes only the vector registers. -/
+theorem E5Op.exec_eq (op : E5Op) (s : State) :
+    op.exec s =
+      { s with
+        xmm := (op.exec s).xmm
+        ymmHi := (op.exec s).ymmHi
+        zmmHi := (op.exec s).zmmHi
+        ymmH := (op.exec s).ymmH
+        zmmHiH := (op.exec s).zmmHiH } := by
+  cases op <;> exact setVz_eq _ _ _ _ _ _
 
 /-- Changing only the SSE registers, which then are all secret. -/
 theorem Agree.withXmm {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (x₁ x₂ : XReg → BitVec 128) :
@@ -1117,7 +1141,7 @@ theorem aluBases_ok {τ : T} {s s' : State} (hw : Wf τ s) {op : AluOp} {d : Reg
       rcases hp with hp | ⟨q, ⟨hq, hqd, hle⟩, rfl⟩
       · exact kill_bases hw hwr hg p hp
       · simp only
-        rw [hd, ← hqd, hw.2 q hq, show q.2.2 = (q.2.2 - v.toNat) + v.toNat by omega, BitVec.ofNat_add,
+        rw [hd, ← hqd, hw.2 q hq, show q.2.2 = (q.2.2 - v.toNat) + v.toNat by omega_using [hle], BitVec.ofNat_add,
           ← BitVec.add_assoc, BitVec.add_sub_cancel, Nat.add_sub_cancel]
         simp only [region, BitVec.ofNat_eq_ofNat, List.getD_eq_getElem?_getD, hwr]
     · exact kill_bases hw hwr hg
@@ -1487,7 +1511,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     subst e₁ e₂
     rw [EOp.exec_eq op s₁, EOp.exec_eq op s₂]
     exact ⟨rfl, ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
-  | evLoad d m | evMadd52Load _ d _ m =>
+  | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -1495,6 +1519,29 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨by simp [addrs, ha.ea hok], ha.setVy _ _ _ _⟩
   | evStore m r =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [reduceExec, State.store256] at e₁ e₂
+    split at e₁ <;> [cases e₁; cases e₁]
+    split at e₂ <;> [cases e₂; cases e₂]
+    exact ⟨by simp [addrs, ha.ea hok], ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
+  | e5op op =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    rw [E5Op.exec_eq op s₁, E5Op.exec_eq op s₂]
+    exact ⟨rfl, ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
+  | e5InsertLoad d a m n =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
+    rw [setVz_eq s₁, setVz_eq s₂]
+    exact ⟨by simp [addrs, ha.ea hok], ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
+  | e5ExtractStore m r n =>
     simp only [step, storeStep] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -2168,9 +2215,10 @@ def stepK (τ : T) : Instr → Option T
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m | .vpmadd52Load _ _ _ m =>
     bif memPub τ m then some (noX τ) else none
   | .vmovdqu32Store m _ => storeStepK τ m 64 false
-  | .eop _ => some (noX τ)
-  | .evLoad _ m | .evMadd52Load _ _ _ m => bif memPub τ m then some (noX τ) else none
-  | .evStore m _ => storeStepK τ m 32 false
+  | .eop _ | .e5op _ => some (noX τ)
+  | .evLoad _ m | .evMadd52Load _ _ _ m | .evBroadcastLoad _ m | .e5InsertLoad _ _ m _ =>
+    bif memPub τ m then some (noX τ) else none
+  | .evStore m _ | .e5ExtractStore m _ _ => storeStepK τ m 32 false
   | .kLoad k _ m | .kLoad8 k _ m => bif memPub τ m && pub τ k then some (noX τ) else none
   | .kStore m k _ | .kStore8 m k _ => bif pub τ k then storeStepK τ m 64 false else none
   | .stmxcsr m => storeStepK τ m 4 false
@@ -2465,9 +2513,10 @@ def stepKDFn : Instr → Step
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
     bif memPub τ m then some (noX τ) else none⟩
   | .vmovdqu32Store m _ => ⟨fun τ => storeStepKD τ m 64 false⟩
-  | .eop _ => ⟨fun τ => some (noX τ)⟩
-  | .evLoad _ m | .evMadd52Load _ _ _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .evStore m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
+  | .eop _ | .e5op _ => ⟨fun τ => some (noX τ)⟩
+  | .evLoad _ m | .evMadd52Load _ _ _ m | .evBroadcastLoad _ m | .e5InsertLoad _ _ m _ =>
+    ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
+  | .evStore m _ | .e5ExtractStore m _ _ => ⟨fun τ => storeStepKD τ m 32 false⟩
   | .kLoad k _ m | .kLoad8 k _ m => ⟨fun τ => bif memPub τ m && pub τ k then some (noX τ) else none⟩
   | .kStore m k _ | .kStore8 m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
   | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
@@ -2551,6 +2600,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
   case vmovdqu32Store m _ => exact st m 64 _
   case evStore m _ => exact st m 32 _
+  case e5ExtractStore m _ _ => exact st m 32 _
   case kStore m k _ | kStore8 m k _ =>
     simp only [stepKD, stepKDFn, step]
     cases pub τ k

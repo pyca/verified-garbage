@@ -51,12 +51,12 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
   show 384 ≤ Spec.P384.curve.n.log2 + 1
   have : 383 ≤ Spec.P384.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 /-- No bit of a hash of `48` bytes is dropped. -/
 theorem p384_sh : p384.sh = 0 := by
   have h : 64 * 6 ≤ Spec.Ecdsa.nBits p384.C := p384_nBits
-  show 8 * 48 - Spec.Ecdsa.nBits p384.C = 0; omega
+  show 8 * 48 - Spec.Ecdsa.nBits p384.C = 0; omega_using [h]
 
 theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   n0 := by decide

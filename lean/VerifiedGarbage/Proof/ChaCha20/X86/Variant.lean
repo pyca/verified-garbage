@@ -124,7 +124,7 @@ variable {s : State} {rb rn rx rt : Reg} {E St S D B : BitVec 32} {n : Nat}
 include h
 
 theorem fit : 4 * [rb, rn, rx, rt].length + 4 ≤ (s.gpr .esp).toNat := by
-  rw [h.esp]; have := h.sp_lo; simp only [List.length_cons, List.length_nil]; omega
+  rw [h.esp]; have := h.sp_lo; simp only [List.length_cons, List.length_nil]; omega_using [this]
 
 theorem args : arg (pushed [rb, rn, rx, rt] s).callEntry 0 = St ∧
     arg (pushed [rb, rn, rx, rt] s).callEntry 1 = S ∧
@@ -150,15 +150,15 @@ theorem callPre : CallPre Proof.ChaCha20.xorX86 [rb, rn, rx, rt] (xorRd S n) (xo
   have hlo := h.sp_lo
   have hE := E.isLt
   have es : (E - BitVec.ofNat 32 20).setWidth 64 - 12 = (E - BitVec.ofNat 32 32).setWidth 64 := by
-    rw [VG.X86.Taint.sub_setWidth (by omega), VG.X86.Taint.sub_setWidth (by omega), BitVec.sub_sub]; rfl
-  have espN : (E - BitVec.ofNat 32 20).toNat = E.toNat - 20 := sub_toNat (by omega)
+    rw [VG.X86.Taint.sub_setWidth (by omega_using [hlo]), VG.X86.Taint.sub_setWidth (by omega_using [hlo]), BitVec.sub_sub]; rfl
+  have espN : (E - BitVec.ofNat 32 20).toNat = E.toNat - 20 := sub_toNat (by omega_using [hlo])
   have esp64 : (pushed [rb, rn, rx, rt] s).callEntry.gpr .esp = E - BitVec.ofNat 32 20 := by
     rw [callEntry_esp', h.esp]; rfl
   have aa : argAddr (pushed [rb, rn, rx, rt] s).callEntry 0 = (E - BitVec.ofNat 32 16).setWidth 64 := by
     rw [callEntry_argAddr0, h.esp]; rfl
-  have ka : Region.Sub (below E 16) (below E 32) := h.stk_part (by omega) (by omega)
-  have kr : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 4⟩ (below E 32) := h.stk_part (by omega) (by omega)
-  have ks : Region.Sub ⟨(E - BitVec.ofNat 32 32).setWidth 64, 12⟩ (below E 32) := h.stk_part (by omega) (by omega)
+  have ka : Region.Sub (below E 16) (below E 32) := h.stk_part (by omega_using []) (by omega_using [])
+  have kr : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 4⟩ (below E 32) := h.stk_part (by omega_using []) (by omega_using [])
+  have ks : Region.Sub ⟨(E - BitVec.ofNat 32 32).setWidth 64, 12⟩ (below E 32) := h.stk_part (by omega_using []) (by omega_using [])
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.ChaCha20.xorX86, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, h.esi', aa, esp64, espN,
@@ -167,7 +167,7 @@ theorem callPre : CallPre Proof.ChaCha20.xorX86 [rb, rn, rx, rt] (xorRd S n) (xo
       h.stk_st.sub_left ka, h.stk_d.sub_left ka, h.stk_b.sub_left ka,
       h.stk_st.sub_left kr, h.stk_d.sub_left kr, h.stk_b.sub_left kr,
       h.stk_st.sub_left ks, h.stk_s.sub_left ks, h.stk_d.sub_left ks, h.stk_b.sub_left ks,
-      h.st_fit, h.s_fit, h.d_fit, h.b_fit, by omega, by omega⟩
+      h.st_fit, h.s_fit, h.d_fit, h.b_fit, by omega_using [hlo], by omega_using []⟩
   · rw [h.esp, show xorRd S n ++ xorWr E St D B n = (xorRd S n ++
       [⟨St.setWidth 64, 64⟩, ⟨D.setWidth 64, n⟩, ⟨B.setWidth 64, 320⟩]) ++ [below E 16] from rfl]
     refine Covers.append_left (h.cov.trans (Covers.of_mem fun r hr => ?_)) (Covers.of_mem fun r hr => ?_)
@@ -210,7 +210,7 @@ theorem call_to (v : XorImpl) (h : XorCall s rb rn rx rt E St S D B n) {Q : Stat
     WP isa (.frame (.push [rb, rn, rx, rt]) (.call v.callee.name v.callee.code) (.pop .eax 4)) s Q := by
   have hlo := h.sp_lo
   refine WP.callWith v.ok v.nosp (by simp) h.regs
-    (by rw [v.stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega)
+    (by rw [v.stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega_using [hlo])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   rw [v.stack, h.esp] at f'
   refine hQ s' rd' wr' cs' (f'.sub fun r hr => ?_) ?_
@@ -220,8 +220,8 @@ theorem call_to (v : XorImpl) (h : XorCall s rb rn rx rt E St S D B n) {Q : Stat
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below E 32, by simp, below_sub (by omega) hlo⟩
-    · exact ⟨below E 32, by simp, below_sub (by omega) hlo⟩
+    · exact ⟨below E 32, by simp, below_sub (by omega_using []) hlo⟩
+    · exact ⟨below E 32, by simp, below_sub (by omega_using []) hlo⟩
   · obtain ⟨a0, a1, a2, -⟩ := h.args
     have hn : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h.n_lt
     simp only [Proof.ChaCha20.xorX86, arg_withRegions, State.withRegions_mem, State.withRegions_gpr, a0, a1, a2,
@@ -229,8 +229,8 @@ theorem call_to (v : XorImpl) (h : XorCall s rb rn rx rt E St S D B n) {Q : Stat
     have ef : Frame [below E 32] s.mem (pushed [rb, rn, rx, rt] s).callEntry.mem :=
       (callEntry_frame h.fit h.regs).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_singleton_self _, by rw [h.esp]; exact below_sub (by simp only [List.length_cons, List.length_nil]; omega) hlo⟩
-    rw [post, xor_bytesAt_frame ef (by simpa using h.stk_s.symm) (by have := h.n_lt; omega),
+        exact ⟨_, List.mem_singleton_self _, by rw [h.esp]; exact below_sub (by simp only [List.length_cons, List.length_nil]; omega_using []) hlo⟩
+    rw [post, xor_bytesAt_frame ef (by simpa using h.stk_s.symm) (by have := h.n_lt; omega_using [hn]),
       Xor.stateAt_frame ef (by simpa using h.stk_st.symm)]
 
 /-- A call of an implementation in place (`dst = src`). -/
@@ -255,7 +255,7 @@ theorem rel (v : XorImpl) {P : State → State → Prop}
   refine ⟨hx.callPre, hy.callPre, by rw [hx.esp, hy.esp], ?_, fun i hi => ?_, ?_⟩
   · simp only [State.withRegions_gpr, callEntry_esp', hx.esp, hy.esp]
   · simp only [arg_withRegions]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl
     · rw [x0, y0]
     · rw [x1, y1]
     · rw [x2, y2]

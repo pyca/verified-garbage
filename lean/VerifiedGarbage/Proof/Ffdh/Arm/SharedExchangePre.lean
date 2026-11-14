@@ -27,7 +27,7 @@ theorem pre128 (s : State) (pre : (Spec.Ffdh.exchangeContract abi 176).pre s) :
   have inner : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 128, 128⟩
       ⟨State.addr s.sp - BitVec.ofNat 64 176, 176⟩ :=
     Offset.below_mono _ (by decide) (by decide)
-  exact ⟨by omega, argFit, rd, wr, outDom, outX, outY, outS, outArgs, domS, xS, yS, sArgs,
+  exact ⟨by omega_using [stackFit], argFit, rd, wr, outDom, outX, outY, outS, outArgs, domS, xS, yS, sArgs,
     stackOut.sub_left inner, stackDom.sub_left inner, stackX.sub_left inner,
     stackY.sub_left inner, stackS.sub_left inner, stackArgs.sub_left inner,
     outFit, domFit, xFit, yFit, sFit, bounds, domainLen, outLen, yLen, xPositive, xMax, space⟩
@@ -71,7 +71,7 @@ theorem input (s : State) (pre : (Spec.Ffdh.exchangeContract abi 176).pre s)
     subst r
     have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
     have fit : (entered s).sp.toNat + 72 < 2^32 := by
-      rw [entered_nat s (by omega)]; have := s.sp.isLt; omega
+      rw [entered_nat s (by omega_using [stackFit])]; have := s.sp.isLt; omega_using []
     rw [shifted,VG.Arm.addr_add fit,belowA,addr_sub' calls.stack.fit]
     exact (Offset.disjoint_below_above _ (m:=48) (a:=72) (l:=56) (by decide)).symm
 

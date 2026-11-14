@@ -54,8 +54,8 @@ theorem env_keeps {b : Addr} {m m' : Mem} (h : Proof.Ed25519.Point32.Keeps b m m
   unfold Kept at hi'
   have ho : offset i = 64 + 32 * i.val := rfl
   rw [Offset.add_add]
-  refine (h (offset i + j) (by simp only [Proof.Ed25519.Point32.wsBytes]; omega)
-    (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega))
+  refine (h (offset i + j) (by simp only [Proof.Ed25519.Point32.wsBytes]; omega_using [hs, hj])
+    (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega_using [hi', ho]) (by omega_using [hj, hi', ho]) (by omega_using [hs, hj]))
 
 /-- The registers `vg_ed25519_r32_point_add` never writes. -/
 def keptRegs : List Reg := [.r2, .r3, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23,
@@ -114,10 +114,10 @@ theorem addCall_ok {b : Addr} {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 =
         by_contra hc
         refine hnf ?_
         rw [hx']
-        exact Offset.contains _ (by omega) (by omega) (by omega)
+        exact Offset.contains _ (by omega_using [hc]) (by omega_using [hc]) (by omega_using [])
       rw [hx']
-      exact hks _ (by simp only [Proof.Ed25519.Point32.wsBytes]; omega)
-        (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega) (by omega) (by omega)
+      exact hks _ (by simp only [Proof.Ed25519.Point32.wsBytes]; omega_using [hi])
+        (by simp only [Proof.Ed25519.Point32.pAt, Proof.Ed25519.Point32.elemBytes]; omega_using [hlo]) (by omega_using [hlo]) (by omega_using [hlo])
     · rw [← u1.mem]
       exact hfr x fun r hr => by rw [List.mem_singleton.mp hr]; exact hw
   · rw [v1.mem, ← pointAt_eq, hpt, pointAt_eq, pointAt_q]

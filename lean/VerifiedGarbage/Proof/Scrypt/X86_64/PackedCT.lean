@@ -47,7 +47,7 @@ theorem loop_rel :
       · have hl : k + 1 = rr s₀ := by simpa using hf
         exact ⟨hl ▸ i, hl ▸ i'⟩
       · have hl : k + 1 ≠ rr s₀ := by simpa using ht'
-        exact ⟨rr s₀ - (k + 1), by omega, k + 1, rfl, by omega, i, i'⟩) (rr s₀)
+        exact ⟨rr s₀ - (k + 1), by omega_using [hn, hk], k + 1, rfl, by omega_using [hk, hl], i, i'⟩) (rr s₀)
   exact lp.mono (fun _ _ h => ⟨0, rfl, hp.pos, h.1, h.2⟩) fun _ _ h => h
 
 theorem blockMix_rel :

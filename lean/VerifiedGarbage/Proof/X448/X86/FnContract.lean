@@ -57,7 +57,7 @@ def a24X86 : Contract isa where
 
 theorem not_contains_ofs {base x : Addr} (h : ¬ (⟨base, 8192⟩ : Region).Contains x 1) :
     8192 ≤ ofs base x := by
-  simp only [Region.Contains] at h; simp only [ofs]; omega
+  simp only [Region.Contains] at h; simp only [ofs]; omega_using [h]
 
 /-- The entry the facts of the contract give. -/
 theorem FnEntry.of_pre {s : State} {n : Nat} (hn : 3 ≤ n) (h : fnPre (4 * n) s)
@@ -65,17 +65,17 @@ theorem FnEntry.of_pre {s : State} {n : Nat} (hn : 3 ≤ n) (h : fnPre (4 * n) s
     FnEntry s (wsOf s) n (arg s 1).toNat (arg s 2).toNat := by
   obtain ⟨hsp, hrd, hwr, hdis, hret, hfit⟩ := h
   have cont : ∀ i < n, (⟨argAddr s 0, 4 * n⟩ : Region).Contains (argAddr s i) 4 := fun i hi =>
-    VG.Proof.X25519.X86.sub_contains (x := s.gpr .esp) (a := 4) (k := 4 * n) (by omega) (by omega)
-      (by omega) (by decide)
+    VG.Proof.X25519.X86.sub_contains (x := s.gpr .esp) (a := 4) (k := 4 * n) (by omega_using [hsp]) (by omega_using [])
+      (by omega_using [hi]) (by decide)
   refine ⟨rfl, by rw [hwr]; exact List.mem_singleton_self _, hfit, ⟨fun i hi => ?_, fun i hi k hk => ?_⟩, hn,
     fun k hk => ?_, by simp, by simp,
     ho, ha⟩
   · exact ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _), cont i hi⟩
   · refine not_contains_ofs fun hw => hdis _ hw ((cont i hi).byte ?_)
-    rw [Offset.add_sub_cancel_left]; simp only [BitVec.toNat_ofNat]; omega
+    rw [Offset.add_sub_cancel_left]; simp only [BitVec.toNat_ofNat]; omega_using [hk]
   · refine not_contains_ofs fun hw => hret _ ?_ hw
     simp only [Region.Contains]
-    rw [Offset.add_sub_cancel_left]; simp only [BitVec.toNat_ofNat]; omega
+    rw [Offset.add_sub_cancel_left]; simp only [BitVec.toNat_ofNat]; omega_using [hk]
 
 /-- The value of an element, as `Spec` states it. -/
 theorem valN_spec (m : Mem) (ws : Addr) (o : BitVec 32) :
@@ -96,7 +96,7 @@ theorem FieldMem.keeps {base : Addr} {o : BitVec 32} {m m' : Mem} (h : FieldMem 
     Proof.X448.Field16.Keeps base o m m' := by
   intro i hi hw ho
   simp only [Proof.X448.Field16.ownAt, Proof.X448.Field16.elemBytes, Proof.X448.Field16.limbs] at hw ho
-  exact h _ (by rw [ofs, Mem.sub_ofNat_toNat base (by omega)]; omega)
-    (by rw [ofs, Mem.sub_ofNat_toNat base (by omega)]; simp only [ACC]; omega)
+  exact h _ (by rw [ofs, Mem.sub_ofNat_toNat base (by omega_using [hi])]; omega_using [ho])
+    (by rw [ofs, Mem.sub_ofNat_toNat base (by omega_using [hi])]; simp only [ACC]; omega_using [hw])
 
 end VG.Proof.X448.X86

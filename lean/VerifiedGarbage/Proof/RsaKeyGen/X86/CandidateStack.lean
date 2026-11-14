@@ -24,15 +24,15 @@ theorem allocated_scratch {g : Geometry} {s : State} (S : Scr s g.W g.L)
   refine ⟨?_, List.mem_cons_of_mem _ S.wr, S.nowrap, ?_⟩
   · rw [allocFrame_gpr _ _ (by decide)]; exact S.edi
   · change 20 ≤ (privateSp s).toNat ∧ ((privateSp s).toNat ≤ g.W.toNat ∨ g.W.toNat + g.L + 20 ≤ (privateSp s).toNat)
-    rw [privateSp_nat (by omega)]
-    rcases separate with h | h <;> constructor <;> omega
+    rw [privateSp_nat (by omega_using [fit])]
+    rcases separate with h | h <;> constructor <;> omega_arith
 
 theorem allocated_workspace {s : State} (fit : 28 ≤ (s.gpr .esp).toNat) :
     Ws (allocFrame 28 s) ((privateSp s).setWidth 64) 28 := by
   refine ⟨List.mem_cons_self, ?_⟩
-  rw [BitVec.toNat_setWidth, privateSp_nat fit, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+  rw [BitVec.toNat_setWidth, privateSp_nat fit, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
   have := (s.gpr .esp).isLt
-  omega
+  omega_using []
 
 theorem allocated_base {s : State} :
     PtrAt (allocFrame 28 s) ((privateSp s).setWidth 64) .esp 0 := by
@@ -49,7 +49,7 @@ theorem slot_ok {g : Geometry} {s : State} {capacity : Nat} (S : Scr s g.W g.L)
       Scr t g.W g.L ∧ Caller g capacity (privateSp s) t ∧
       (lengthRegion (privateSp s)).Disjoint (below (privateSp s) 108) ∧
       Frame [below (s.gpr .esp) 28] s.mem t.mem ∧ Keeps [] (allocFrame 28 s) t := by
-  have low : 28 ≤ (s.gpr .esp).toNat := by omega
+  have low : 28 ≤ (s.gpr .esp).toNat := by omega_using [fit]
   have W := allocated_workspace low
   have P := allocated_base (s := s)
   have A := allocated_scratch S fit separate
@@ -66,41 +66,41 @@ theorem slot_ok {g : Geometry} {s : State} {capacity : Nat} (S : Scr s g.W g.L)
   have lenNat : (lengthRegion (privateSp s)).base.toNat = (privateSp s).toNat + 24 := by
     change ((privateSp s + 24#32).setWidth 64).toNat = _
     rw [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega), Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+      Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using []), Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [pnat])]
   have belowNat : (below (privateSp s) 108).base.toNat = (privateSp s).toNat - 108 := by
     change ((privateSp s - 108#32).setWidth 64).toNat = _
-    rw [BitVec.toNat_setWidth, sub_toNat (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, sub_toNat (by omega_using [fit, pnat]), Nat.mod_eq_of_lt (by omega_using [])]
   have lenStack : (lengthRegion (privateSp s)).Disjoint (below (privateSp s) 108) := by
     apply Region.Disjoint.symm
     apply Offset.disjoint_of_le
     · change (below (privateSp s) 108).base.toNat + 108 ≤ (lengthRegion (privateSp s)).base.toNat
-      rw [belowNat, lenNat]; omega
+      rw [belowNat, lenNat]; omega_using [fit, pnat]
     · change (lengthRegion (privateSp s)).base.toNat + 4 ≤ 2 ^ 64
-      rw [lenNat]; omega
+      rw [lenNat]; omega_using []
   have stackFar : (⟨g.W, g.L⟩ : Region).Disjoint (below (privateSp s) 108) := by
     rcases separate with h | h
     · apply Region.Disjoint.symm
       apply Offset.disjoint_of_le
       · change (below (privateSp s) 108).base.toNat + 108 ≤ g.W.toNat
-        rw [belowNat]; omega
+        rw [belowNat]; omega_using [fit, pnat, h]
       · exact Nat.le_trans S.nowrap (by decide)
     · apply Offset.disjoint_of_le
       · change g.W.toNat + g.L ≤ (below (privateSp s) 108).base.toNat
-        rw [belowNat]; omega
+        rw [belowNat]; omega_using [pnat, h]
       · change (below (privateSp s) 108).base.toNat + 108 ≤ 2 ^ 64
-        rw [belowNat]; omega
+        rw [belowNat]; omega_using []
   have lenFar : (lengthRegion (privateSp s)).Disjoint ⟨g.W, g.L⟩ := by
     rcases separate with h | h
     · apply Offset.disjoint_of_le
       · change (lengthRegion (privateSp s)).base.toNat + 4 ≤ g.W.toNat
-        rw [lenNat]; omega
+        rw [lenNat]; omega_using [fit, pnat, h]
       · exact Nat.le_trans S.nowrap (by decide)
     · apply Region.Disjoint.symm
       apply Offset.disjoint_of_le
       · change g.W.toNat + g.L ≤ (lengthRegion (privateSp s)).base.toNat
-        rw [lenNat]; omega
+        rw [lenNat]; omega_using [pnat, h]
       · change (lengthRegion (privateSp s)).base.toNat + 4 ≤ 2 ^ 64
-        rw [lenNat]; omega
+        rw [lenNat]; omega_using []
   have readLen : readSrc t (.mem (at_ .esp 24)) = some (BitVec.ofNat 32 capacity) := by
     have Pt : PtrAt t ((privateSp s).setWidth 64) .esp 0 := by
       rw [PtrAt, spT, pn, Nat.add_zero, Nat.mod_eq_of_lt pbound]
@@ -113,8 +113,8 @@ theorem slot_ok {g : Geometry} {s : State} {capacity : Nat} (S : Scr s g.W g.L)
     change (off ((privateSp s).setWidth 64) 24 - (below (s.gpr .esp) 28).base).toNat + 4 ≤ 28
     change (off ((privateSp s).setWidth 64) 24 - (privateSp s).setWidth 64).toNat + 4 ≤ 28
     rw [Mem.sub_ofNat_toNat _ (by decide : 24 < 2 ^ 64)]
-  exact ⟨A.of_keeps K (by decide), ⟨spT, by omega,
-    stackFar.sub_right (below_sub (by decide : 80 ≤ 108) (by omega)), lenFar,
-    lenStack.sub_right (below_sub (by decide : 80 ≤ 108) (by omega)), readLen⟩, lenStack, F, K⟩
+  exact ⟨A.of_keeps K (by decide), ⟨spT, by omega_using [fit, pnat],
+    stackFar.sub_right (below_sub (by decide : 80 ≤ 108) (by omega_using [fit, pnat])), lenFar,
+    lenStack.sub_right (below_sub (by decide : 80 ≤ 108) (by omega_using [fit, pnat])), readLen⟩, lenStack, F, K⟩
 
 end VG.Proof.RsaKeyGen.X86.CandidateFrame

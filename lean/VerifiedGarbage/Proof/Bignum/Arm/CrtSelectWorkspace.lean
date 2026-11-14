@@ -31,7 +31,7 @@ theorem CrtShared.workspace_eq_after_base {s t : State} {g : CrtGeometry} {bs : 
     (member : (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words)
     (frame : Frame [⟨State.addr s.sp, 4⟩] s.mem t.mem) :
     WorkspaceEq (State.addr child) (8 * workspaceWords g.words) s.mem t.mem :=
-  WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame (by
+  WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame (by
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
@@ -52,7 +52,7 @@ theorem crt_selected_ready {s t : State} {g : CrtGeometry} {bs : Fin 7 → List 
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep)
   have childSub := crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member
   have eq : WorkspaceEq (State.addr child) (8 * workspaceWords g.words) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+    WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep.sub_left childSub)
   have childLayout := layout.congr eq
   refine ⟨shared, ⟨⟨ws.congr rest.wr, childLayout.layout, childLayout.width, ptr⟩, ?_, ?_, ?_⟩⟩
@@ -77,7 +77,7 @@ theorem crt_selectLinked_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
 theorem crt_selectMain_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtShared g bs s) :
     WP isa selectMain s fun t => CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       Frame [⟨State.addr s.sp, 4⟩] s.mem t.mem ∧ Rest [.r0, .r12] s t := by
-  refine WP.mono (crt_selectMain_ok s (by have := h.stack.nowrap; omega)
+  refine WP.mono (crt_selectMain_ok s (by have := h.stack.nowrap; omega_using [this])
     (h.stack.read (by decide)) h.savedMain
     (by simpa only [off, BitVec.add_zero] using h.stack.write (d := 0) (by decide))) ?_
   rintro t ⟨ptr, mem, frame, rest⟩

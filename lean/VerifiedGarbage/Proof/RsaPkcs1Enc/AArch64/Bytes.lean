@@ -40,7 +40,7 @@ theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec (8 * 1)) :
       have := BitVec.eq_of_toNat_eq (x := x - a) (y := 0) (by simpa using h)
       rw [← BitVec.sub_add_cancel x a, this]; exact BitVec.zero_add _)
     simp only [hx, ite_false]
-    exact ite_eq_right_iff.mpr fun h => absurd h (by omega)
+    exact ite_eq_right_iff.mpr fun h => absurd h (by omega_using [this])
 
 /-- A byte of the `n` bytes at `p`, from memory written elsewhere. -/
 theorem write1_ne (m : Mem) {a x : Addr} (v : BitVec (8 * 1)) (h : x ≠ a) : m.write a 1 v x = m x := by
@@ -58,24 +58,24 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
     (hstep : ∀ k < n, ∀ s, I k s →
       WP isa body s fun s' => I (k + 1) s' ∧ (s'.gpr cr != 0) = decide (k + 1 ≠ n))
     {s : State} (h0 : I 0 s) : WP isa (.loop body (.nonzero .x cr)) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_using [], hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
   have hz : isa.eval (.nonzero .x cr) s' = some (decide (k + 1 ≠ n)) := by rw [eval_nonzero, hc]
   by_cases hl : k + 1 = n
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
     rwa [hl] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], hi'⟩
 
 /-- The counter after one more iteration. -/
 theorem counter_step {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 (n - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - (k + 1)) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show n - k < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show n - (k + 1) < 2 ^ 64 by omega),
+  rw [Nat.mod_eq_of_lt (show n - k < 2 ^ 64 by omega_using [hn]), Nat.mod_eq_of_lt (show n - (k + 1) < 2 ^ 64 by omega_using [hn]),
     show (1 : Nat) % 2 ^ 64 = 1 from rfl]
-  rw [show 2 ^ 64 - 1 + (n - k) = (n - (k + 1)) + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+  rw [show 2 ^ 64 - 1 + (n - k) = (n - (k + 1)) + 2 ^ 64 by omega_using [hk], Nat.add_mod_right,
+    Nat.mod_eq_of_lt (by omega_using [hn])]
 
 /-- Whether the counter is zero. -/
 theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
@@ -84,8 +84,8 @@ theorem counter_ne {n k : Nat} (hk : k + 1 ≤ n) (hn : n < 2 ^ 64) :
     constructor
     · intro h
       have := congrArg BitVec.toNat h
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-      simp at this; omega
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])] at this
+      simp at this; omega_using [hk, this]
     · intro h; rw [h, Nat.sub_self]; rfl
   by_cases h : k + 1 = n
   · simp [h]
@@ -116,7 +116,7 @@ theorem byte64 (b : Byte) : BitVec.setWidth 64 (BitVec.setWidth 32 b) = b.setWid
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 /-- A byte, zero-extended and truncated back. -/
 theorem byte_rt (b : Byte) :
@@ -124,13 +124,13 @@ theorem byte_rt (b : Byte) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 theorem byte_rt64 (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (b.setWidth 64)) = b := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := b.isLt
-  omega
+  omega_using []
 
 /-- `x - 1`'s borrow, by `x + NOT(x) + C` after `subs` of 1: all ones exactly
 when `x` is zero. -/
@@ -142,7 +142,7 @@ theorem borrow (x : BitVec 64) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, BitVec.toNat_not, BitVec.toNat_allOnes]
     have := x.isLt
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (by omega_using [])]; omega_using []
   rw [hn, h1]
   by_cases hx : x = 0
   · subst hx
@@ -151,7 +151,7 @@ theorem borrow (x : BitVec 64) :
       rcases Nat.eq_zero_or_pos x.toNat with h | h
       · exact absurd (BitVec.eq_of_toNat_eq (by simpa using h)) hx
       · exact h
-    rw [decide_eq_true (by omega)]
+    rw [decide_eq_true (by omega_using [this])]
     simp only [hx, ite_false]
     decide
 

@@ -23,7 +23,7 @@ theorem external_pointer {s t : State} {base out : Addr} {size len : Nat}
   have field (f : Field) :
       t.mem.readW (off base (Layout.field f)) 32 = s.mem.readW (off base (Layout.field f)) 32 := by
     have B := VG.Proof.Dsa.X86.Layout.field_bounds f
-    exact F.scratch_word A (Nat.zero_le _) (by omega) (by have := hs.nowrap; omega)
+    exact F.scratch_word A (Nat.zero_le _) (by omega_using [hz, B]) (by have := hs.nowrap; omega_using [this])
   cases p with
   | input f => exact field f
   | «local» d => simp only [pointerValue, K.1 .edi (by decide)]
@@ -38,10 +38,10 @@ theorem external_bytes {m m' : Mem} {src out : Addr} {count len : Nat}
   apply List.map_congr_left
   intro i hi
   have H := List.mem_range.mp hi
-  have D := A _ (Offset.contains_base src (by omega) (by omega : i < 2 ^ 64))
+  have D := A _ (Offset.contains_base src (by omega_using [H]) (by omega_using [hb, H] : i < 2 ^ 64))
   apply O _ (.inr ?_)
   change ¬ (ofs out (src + BitVec.ofNat 64 i) + 1 ≤ len) at D
-  omega
+  omega_using [D]
 
 structure KeyPartReady (s : State) (base out : Addr) (total : Nat)
     (part : Pointer × Nat) : Prop where
@@ -69,6 +69,6 @@ theorem KeyPartReady.bytes {s t : State} {base out : Addr} {size total : Nat} {p
     Spec.Rsa.bytesAt t.mem ((pointerValue base t part.1).setWidth 64) part.2 =
       Spec.Rsa.bytesAt s.mem ((pointerValue base s part.1).setWidth 64) part.2 := by
   rw [external_pointer hs hz O A K part.1]
-  exact external_bytes O R.apart (by have := R.fits; omega)
+  exact external_bytes O R.apart (by have := R.fits; omega_using [this])
 
 end VG.Proof.Dsa.X86

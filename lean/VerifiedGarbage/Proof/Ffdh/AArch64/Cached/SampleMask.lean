@@ -34,15 +34,15 @@ theorem maskShift_ok (s : State) {n : Nat} (positive : 0<n) (fit : n<2^64)
  t.gpr .x12=s.gpr .x12 >>> n ∧ t.gpr .x3=0#64 ∧ t.mem=s.mem ∧ Keep [.x3,.x12] s t := by
  let I := fun k t => 0<k ∧ k≤n ∧ t.gpr .x3=BitVec.ofNat 64 k ∧
   t.gpr .x12=s.gpr .x12 >>> (n-k) ∧ t.mem=s.mem ∧ Keep [.x3,.x12] s t
- refine WP.loop (M:=isa) I ?_ n s ⟨positive,by omega,count,by simp,rfl,Keep.refl _ _⟩
+ refine WP.loop (M:=isa) I ?_ n s ⟨positive,by omega_using [],count,by simp,rfl,Keep.refl _ _⟩
  intro k t h
  obtain ⟨posK,leK,countK,word,mem,rest⟩ := h
- refine WP.mono (maskShift_step t posK (by omega) countK) ?_
+ refine WP.mono (maskShift_step t posK (by omega_using [fit, leK]) countK) ?_
  rintro u ⟨⟨wordU,countU,memU⟩,restU⟩
  have next : u.gpr .x12=s.gpr .x12 >>> (n-(k-1)) := by
   rw [wordU,word,←BitVec.shiftRight_add]
   congr 1
-  omega
+  omega_using [posK, leK]
  by_cases last : k=1
  · left
    refine ⟨?_,?_,?_,memU.trans mem,(rest.trans restU).mono (by decide)⟩
@@ -52,15 +52,15 @@ theorem maskShift_ok (s : State) {n : Nat} (positive : 0<n) (fit : n<2^64)
    · simpa only [last,Nat.sub_self,Nat.sub_zero] using next
    · simpa only [last,Nat.sub_self] using countU
  · right
-   refine ⟨?_,k-1,by omega,by omega,by omega,countU,next,memU.trans mem,(rest.trans restU).mono (by decide)⟩
+   refine ⟨?_,k-1,by omega_using [posK],by omega_using [posK, last],by omega_using [leK],countU,next,memU.trans mem,(rest.trans restU).mono (by decide)⟩
    change some (u.gpr .x3 != 0#64) = some true
    rw [countU]
    have ne : BitVec.ofNat 64 (k-1) ≠ 0#64 := by
     intro eq
     have h := congrArg BitVec.toNat eq
     change (k-1)%2^64=0 at h
-    rw [Nat.mod_eq_of_lt (by omega)] at h
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [fit, leK])] at h
+    omega_using [positive, fit, count, posK, leK, countK, word, wordU, countU, next, last, eq, h]
    simp [ne]
 
 end VG.Proof.Ffdh.AArch64.Cached
@@ -90,11 +90,11 @@ theorem sampleMaskHead_ok {s : State} {B : Addr} {Z N : Nat}
   simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
   change ((N-1)%2^64) &&& (2^3-1)=_
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
  have sub : (7#64 : Addr)-BitVec.ofNat 64 ((N-1)%8)=BitVec.ofNat 64 (7-(N-1)%8) :=
-  BitVec.ofNat_sub_ofNat_of_le 7 ((N-1)%8) (by omega) (by omega)
+  BitVec.ofNat_sub_ofNat_of_le 7 ((N-1)%8) (by omega_using []) (by omega_using [])
  refine WP.keep [.x3,.x4,.x12] ?_ rfl rfl rfl
- brun [movi_nat (show 7<2^16 by decide),movi_nat (show 255<2^16 by decide),base,hdr_enc (show sBits<32 by decide),scratch.ld (d:=8*sBits) (by unfold sBits;omega),bits,
+ brun [movi_nat (show 7<2^16 by decide),movi_nat (show 255<2^16 by decide),base,hdr_enc (show sBits<32 by decide),scratch.ld (d:=8*sBits) (by unfold sBits;omega_using [room]),bits,
   BitVec.ofNat_sub_ofNat_of_le (w:=64) N 1 (by decide) positive,low,sub]
 
 theorem sampleMask_ok {s : State} {B : Addr} {Z N : Nat}
@@ -111,22 +111,22 @@ theorem sampleMask_ok {s : State} {B : Addr} {Z N : Nat}
   (.loop (.block [.lsr .x .x12 .x12 1,.subImm .x .x3 .x3 1]) (.nonzero .x .x3))) a fun b =>
   b.gpr .x12=sampleMask N ∧ b.mem=a.mem ∧ Keep [.x3,.x12] a b := by
   by_cases zero : 7-(N-1)%8=0
-  · have value : a.gpr .x12=sampleMask N := by rw [valueA,sampleMask,←byteMask ((N-1)%8) (by omega),zero];rfl
+  · have value : a.gpr .x12=sampleMask N := by rw [valueA,sampleMask,←byteMask ((N-1)%8) (by omega_using []),zero];rfl
     refine ⟨_,a,.iteT ?_ (.block rfl),value,rfl,Keep.refl _ _⟩
     rw [eval_zero,countA,zero];decide
-  · obtain ⟨tr,b,run,word,_,mem,rest⟩ := maskShift_ok a (by omega : 0<7-(N-1)%8) (by omega) countA
+  · obtain ⟨tr,b,run,word,_,mem,rest⟩ := maskShift_ok a (by omega_using [zero] : 0<7-(N-1)%8) (by omega_using []) countA
     refine ⟨_,b,.iteF ?_ run,?_,mem,rest⟩
     · rw [eval_zero,countA]
       have nz : BitVec.ofNat 64 (7-(N-1)%8)≠0#64 := by
-       intro eq;have := congrArg BitVec.toNat eq;change (7-(N-1)%8)%2^64=0 at this;omega
+       intro eq;have := congrArg BitVec.toNat eq;change (7-(N-1)%8)%2^64=0 at this;omega_using [zero, this]
       simp [nz]
-    · rw [word,valueA,byteMask ((N-1)%8) (by omega)];rfl
+    · rw [word,valueA,byteMask ((N-1)%8) (by omega_using [])];rfl
  refine WP.mono shifts ?_
  rintro b ⟨maskB,memB,restB⟩
  have rest := restA.trans restB
  refine WP.mono (WP.keep [] (Q:=fun t =>t.mem=b.mem.writeW (off B (8*sMask)) (sampleMask N)) ?_ rfl rfl rfl) ?_
  · brun [(rest.gpr .x0 (by decide)).trans base,hdr_enc (show sMask<32 by decide),maskB,
-    (scratch.congr rest.wr).st (d:=8*sMask) (by unfold sMask;omega)]
+    (scratch.congr rest.wr).st (d:=8*sMask) (by unfold sMask;omega_using [room])]
  · rintro t ⟨mem,restT⟩
    refine ⟨(restT.gpr .x12 (by simp)).trans maskB,?_,?_,?_,(rest.trans restT).mono (by simp)⟩
    · rw [mem,word_writeW_self]

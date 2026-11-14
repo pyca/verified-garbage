@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPrepare
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyReady
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
-
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Primes
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LcmFrame
@@ -17,17 +16,21 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOddPrepared
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionFrame
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOddPrepareFrame
+import VerifiedGarbage.Proof.Rsa.WordRanges
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.GcdIsOne
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CorrectionGeometry
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CorrectionNumerator
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CorrectionGeometry
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Product
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Small
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCorrectionGeometry
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionGeometry
 import VerifiedGarbage.Proof.Rsa.X86.DivLoop
 import Mathlib.Data.Nat.Init
@@ -37,16 +40,521 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DProduct
-import VerifiedGarbage.Proof.Rsa.WordRanges
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import Mathlib.Tactic.ToAdditive
-import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Complement
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.RsaKeyGen.OddInverseQuotient
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DEven
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEvenFrame
 public import VerifiedGarbage.Spec.Rsa.Contract
+
+/-! ### `RsaKeyGen.X86.KeyOddPrepared`, which only this module used -/
+
+section
+
+/-! # The quotient, remainder, and tiny inverse ready for native assembly -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.Proof.Mont VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key
+
+structure OddPrepared (B : Addr) (n e L : Nat) (s : State) : Prop where
+  exponent : val32 s.mem B kEv 2 = e
+  lcm : num s.mem B n aL = L
+  quotient : num s.mem B n aU = L / e
+  remainder : num s.mem B n aV = L % e
+  one : num s.mem B n aOne = 1
+  coefficient : num s.mem B 2 3 < e
+  congruence : (e : Int) ∣ (num s.mem B 2 3 : Int) * (L % e) - Nat.gcd (L % e) e
+  mask : slot s.mem B kOk = (if 2 ≤ L ∧ Nat.gcd (L % e) e = 1 then 1 else 0)
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyOddPrepareFrame`, which only this module used -/
+
+section
+
+/-! # Frames for preparing the quotient-based inverse -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.Proof.Mont VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key
+
+theorem exponent_mask_coefficient {m m' : Mem} {B : Addr} {n : Nat}
+    (O : Keep B n [aT1, aT2] [kOk] m m') : num m' B 2 3 = num m B 2 3 := by
+  change val32 m' B (arr 2 3) 2 = val32 m B (arr 2 3) 2
+  apply O.val32 _ (by decide)
+  intro r hr
+  simp only [ranges, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  all_goals simp only [arr, S, aT1, aT2, hdr, kOk]
+  all_goals omega_using []
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.CorrectionNumerator`, which only this module used -/
+
+section
+
+/-! # Form the correction's exact 128-bit numerator with native products -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key (aV aDen kProduct)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
+
+theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (_width : 2 ≤ n)
+    (fits : val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 < 2 ^ 128) :
+    WP isa correctionNumerator s fun t =>
+      Ws t B Z n 32 ∧ Outs B correctionScratch s.mem t.mem ∧
+      val32 t.mem B (arr 4 0) 4 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have hn := h.old.workspace.nowrap
+  have fr := h.arr_fit (j := aV) (by decide)
+  have ft := h.arr_fit (j := aDen) (by decide)
+  have bank := VG.Proof.RsaKeyGen.X86.Key.correction_workspace h.old
+  have hz : 256 ≤ Z := bank.fits
+  have L : ProductGeometry Z 2 2 (arr 4 1) (arr n aV) (arr n aDen) := by
+    refine ⟨⟨by decide, by decide, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+    all_goals simp only [arr, S, aV, aDen, hdr] at *
+    all_goals omega_arith
+  unfold correctionNumerator seqs
+  refine WP.seq (WP.mono (product_ok (left := .exponent) (right := .exponent)
+    (out := .array .correction 1) (a := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aV)
+    (b := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) h L) fun u ⟨hu, Ou, V, Ku⟩ => ?_)
+  change Outs B [(kProduct, 28), (arr 4 1, 24)] s.mem u.mem at Ou
+  change val32 u.mem B (arr 4 1) 6 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 at V
+  have low : num u.mem B 4 1 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 4 ≤ 6) (by rw [V]; omega_arith)).trans V
+  refine WP.seq (WP.mono (small_ok (j := 2) hu .correction 1 (by change 232 ≤ Z; omega_arith))
+    fun v ⟨hv, Ov, wideOne, Kv⟩ => ?_)
+  change Outside B (arr 4 2) 24 u.mem v.mem at Ov
+  change val32 v.mem B (arr 4 2) 6 = 1 at wideOne
+  have one : val32 v.mem B (arr 4 2) 4 = 1 :=
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 4 ≤ 6)
+      (by rw [wideOne]; decide)).trans wideOne
+  have productV : val32 v.mem B (arr 4 1) 4 =
+      val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
+    (Ov.val32 (by decide) (by decide)).trans low
+  refine WP.mono (chainAddW_ok hv.old.workspace (by decide : 0 < 4)
+    (by change 176 ≤ Z; omega_arith) (by change 200 ≤ Z; omega_arith) (by change 224 ≤ Z; omega_arith)
+    (by decide) (by decide)) fun t ⟨Ot, ⟨carry, _, sum⟩, Kt⟩ => ?_
+  change Outside B (arr 4 0) 16 v.mem t.mem at Ot
+  change val32 t.mem B (arr 4 0) 4 + 2 ^ 128 * carry.toNat =
+    val32 v.mem B (arr 4 1) 4 + val32 v.mem B (arr 4 2) 4 at sum
+  rw [productV] at sum
+  change val32 v.mem B (arr 4 2) 4 = 1 at one
+  rw [one] at sum
+  have result : val32 t.mem B (arr 4 0) 4 =
+      val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 := by
+    cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega_arith
+  have rest := Ku.trans ((Kv.mono (by decide)).trans (Kt.mono (by decide)))
+  have frame : Outs B correctionScratch s.mem t.mem := by
+    have first : Outs B correctionScratch s.mem u.mem := VG.Proof.Rsa.outs_cover Ou (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨(kProduct, 28), by simp [correctionScratch], Nat.le_refl _, Nat.le_refl _⟩
+      · exact ⟨(hdr, 96), by simp [correctionScratch], by decide, by decide⟩)
+    exact (first.trans (correction_scratch_arr (by decide) Ov)).trans
+      (correction_scratch_outside (by decide) (by decide) Ot)
+  refine ⟨h.keep rest (VG.Proof.Rsa.X86.KeyRt.outs_outside frame ?_), frame, result, rest.mono (by decide)⟩
+  intro region member
+  simp only [correctionScratch, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl <;> simp only [kProduct, hdr] <;> omega_arith
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.DProduct`, which only this module used -/
+
+section
+
+/-! # Assemble the private exponent from a quotient and a two-word scalar -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key (aD aU aV aDen)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
+
+def dProductRanges (n : Nat) : List (Nat × Nat) :=
+  [(128, 28), (arr n 0, 4 * (n + 4)), (arr n aD, S n)]
+
+theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (width : 2 ≤ n)
+    (fits : num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV < 2 ^ (32 * n)) :
+    WP isa dProduct s fun t =>
+      Ws t B Z n 32 ∧ Outs B (dProductRanges n) s.mem t.mem ∧
+      num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have hn := h.old.workspace.nowrap
+  have f0 := h.arr_fit (j := 0) (by decide)
+  have f1 := h.arr_fit (j := 1) (by decide)
+  have fu := h.arr_fit (j := aU) (by decide)
+  have ft := h.arr_fit (j := aDen) (by decide)
+  have fc := h.arr_fit (j := aV) (by decide)
+  have fd := h.arr_fit (j := aD) (by decide)
+  have L : ProductGeometry Z n 2 (arr n 0) (arr n aU) (arr n aDen) := by
+    refine ⟨⟨h.wpos, by decide, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+    all_goals simp only [arr, S, aU, aDen, VG.Impl.Rsa.X86.Keys.hdr] at *
+    all_goals omega_arith
+  unfold dProduct
+  refine WP.seq (WP.mono (product_ok (left := .modulus) (right := .exponent)
+    (out := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr 0)
+    (a := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aU)
+    (b := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) h L) fun u ⟨hu, Ou, V, Ku⟩ => ?_)
+  change Outs B [(128, 28), (arr n 0, 4 * (n + 4))] s.mem u.mem at Ou
+  change val32 u.mem B (arr n 0) (n + 4) =
+    val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 at V
+  change val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 + val32 s.mem B (arr n aV) n < 2 ^ (32 * n) at fits
+  have low : val32 u.mem B (arr n 0) n = val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 :=
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_arith : n ≤ n + 4) (by rw [V]; omega_arith)).trans V
+  have C : val32 u.mem B (arr n aV) n = val32 s.mem B (arr n aV) n := by
+    apply Ou.val32 _ (by unfold S at fc; omega_arith)
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    all_goals simp only [arr, S, aV, VG.Impl.Rsa.X86.Keys.hdr]
+    all_goals omega_arith
+  have addition := VG.Proof.Rsa.X86.KeyRt.chainAdd_ok (o := aD) (a := 0) (b := aV)
+    hu.full (by decide) (by decide) (by decide) false
+  simp only [kw_full h.width, VG.Proof.Rsa.X86.KeyRt.kk, Bool.toNat_false, Nat.add_zero] at addition
+  refine WP.mono addition fun t ⟨_, Ot, ⟨carry, _, sum⟩, Kt⟩ => ?_
+  change val32 t.mem B (arr n aD) n + 2 ^ (32 * n) * carry.toNat =
+    val32 u.mem B (arr n 0) n + val32 u.mem B (arr n aV) n at sum
+  rw [low, C] at sum
+  have result : num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV := by
+    change val32 t.mem B (arr n aD) n = _
+    cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega_arith
+  have keep := Ku.trans (Kt.mono (by decide))
+  have ht := hu.afterKeep Kt Ot (by decide) (by simp)
+  refine ⟨ht, ?_, result, keep.mono (by decide)⟩
+  have first : Outs B (dProductRanges n) s.mem u.mem := Ou.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> simp [dProductRanges])
+  exact first.trans (VG.Proof.Mont.Outs.mono Ot (by
+    intro r hr
+    change r ∈ [(arr n aD, S n)] at hr
+    obtain rfl := List.mem_singleton.mp hr
+    simp [dProductRanges]))
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.Complement`, which only this module used -/
+
+section
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.PairSubtract`, which only this module used -/
+
+section
+
+/-! # Paired native subtraction for the private-exponent complement -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.Mont.X86.Rt (PtrAt)
+
+theorem subtractPair_ok {s : State} {B : Addr} {Z out a b : Nat} (h : Scr s B Z) (P : PtrAt s B .ebp out)
+    (fa : a + 8 ≤ Z) (fb : b + 8 ≤ Z) (fo : out + 8 ≤ Z) :
+    WP isa (.block (subtractPair a b)) s fun t =>
+      Outside B out 8 s.mem t.mem ∧
+      (∃ borrow : Bool, val32 t.mem B out 2 + val32 s.mem B b 2 =
+        val32 s.mem B a 2 + 2 ^ 64 * borrow.toNat) ∧ Keeps [.eax, .edx] s t := by
+  have hn := h.nowrap
+  unfold subtractPair
+  refine wp_movS (readSrc_sc h (by omega_using [fa])) fun u U _ => ?_
+  have hu := h.of_keeps U.keeps (by decide)
+  refine wp_movS (readSrc_sc hu (by omega_using [fa])) fun v V _ => ?_
+  have Kv : Keeps [.eax, .edx] s v := (U.keeps.mono (by decide)).widen V.keeps
+  have hv := h.of_keeps Kv (by decide)
+  have loRead := readSrc_sc hv (d := b) (by omega_using [fb])
+  rw [V.mem, U.mem] at loRead
+  refine wp_subS loRead fun w W cfW => ?_
+  have Kw : Keeps [.eax, .edx] s w := Kv.widen W.keeps
+  have hw := h.of_keeps Kw (by decide)
+  have hiRead := readSrc_sc hw (d := b + 4) (by omega_using [fb])
+  rw [W.mem, V.mem, U.mem] at hiRead
+  refine wp_sbbS hiRead cfW fun x X _ => ?_
+  have Kx : Keeps [.eax, .edx] s x := Kw.widen X.keeps
+  have hx := h.of_keeps Kx (by decide)
+  have Px : PtrAt x B .ebp out := by rw [PtrAt, Kx.1 _ (by decide)]; exact P
+  have Rx : VG.Proof.Mont.X86.Rt.Ws x B Z := ⟨hx.wr, hx.nowrap⟩
+  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Rx Px (d := 0) (by omega_using [fo]))
+    (VG.Proof.Mont.X86.Rt.ws_write Rx (by omega_using [fo])) fun y Y => ?_
+  have hy := hx.of_keeps (Y.keeps []) (by decide)
+  have Py : PtrAt y B .ebp out := by rw [PtrAt, Y.gpr]; exact Px
+  have Ry : VG.Proof.Mont.X86.Rt.Ws y B Z := ⟨hy.wr, hy.nowrap⟩
+  refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Ry Py (d := 4) (by omega_using [fo]))
+    (VG.Proof.Mont.X86.Rt.ws_write Ry (by omega_using [fo])) fun t T => WP.block_nil ?_
+  simp only [Nat.add_zero] at Y
+  let lowBorrow := decide ((v.gpr .eax).toNat < (s.mem.readW (off B b) 32).toNat)
+  let highBorrow := decide ((w.gpr .edx).toNat < (s.mem.readW (off B (b + 4)) 32).toNat + lowBorrow.toNat)
+  have low : (w.gpr .eax).toNat + w32 s.mem B b = (v.gpr .eax).toNat + 2 ^ 32 * lowBorrow.toNat := by
+    rw [W.gpr]
+    have H := sbb_rel (v.gpr .eax) (s.mem.readW (off B b) 32) false
+    simpa only [show (BitVec.ofBool false).setWidth 32 = 0#32 from rfl, BitVec.sub_zero,
+      Bool.toNat_false, Nat.add_zero] using H
+  have high : (x.gpr .edx).toNat + w32 s.mem B (b + 4) + lowBorrow.toNat =
+      (w.gpr .edx).toNat + 2 ^ 32 * highBorrow.toNat := by rw [X.gpr]; exact sbb_rel ..
+  rw [V.other _ (by decide), U.gpr] at low
+  rw [W.other _ (by decide), V.gpr, U.mem] at high
+  change (w.gpr .eax).toNat + w32 s.mem B b = w32 s.mem B a + 2 ^ 32 * lowBorrow.toNat at low
+  change (x.gpr .edx).toNat + w32 s.mem B (b + 4) + lowBorrow.toNat =
+    w32 s.mem B (a + 4) + 2 ^ 32 * highBorrow.toNat at high
+  have oldMem : x.mem = s.mem := X.mem.trans (W.mem.trans (V.mem.trans U.mem))
+  have Oy : Outside B out 4 s.mem y.mem := by
+    rw [Y.mem, oldMem]
+    exact writeW32_outside _ _ _ (by omega_using [fo, hn])
+  have Ot : Outside B (out + 4) 4 y.mem t.mem := by
+    rw [T.mem]
+    exact writeW32_outside _ _ _ (by omega_using [fo, hn])
+  have lowT : w32 t.mem B out = (x.gpr .eax).toNat := by
+    rw [Ot.w32 (Or.inl (Nat.le_refl _)) (by omega_using [fo, hn]), Y.mem, w32_write_self]
+  have highT : w32 t.mem B (out + 4) = (x.gpr .edx).toNat := by
+    rw [T.mem, w32_write_self, Y.gpr]
+  refine ⟨(Oy.mono (Nat.le_refl _) (by omega_using [])).trans (Ot.mono (by omega_using []) (by omega_using [])),
+    ⟨highBorrow, ?_⟩, Kx.trans ((Y.keeps _).trans (T.keeps _))⟩
+  simp only [val32, Nat.mul_zero, Nat.add_zero]
+  rw [lowT, highT, X.other _ (by decide)]
+  omega_using [low, high]
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+
+/-! # Form the public-exponent complement from the tiny inverse coefficient -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key (aDen kEv)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
+
+theorem complement_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (width : 2 ≤ n)
+    (less : val32 s.mem B (arr 2 3) 2 < val32 s.mem B kEv 2) :
+    WP isa complement s fun t =>
+      Ws t B Z n 32 ∧ Outside B (arr n aDen) (S n) s.mem t.mem ∧
+      val32 t.mem B (arr n aDen) (n + 2) = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 ∧
+      num t.mem B n aDen = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 ∧
+      Keeps [.eax, .ecx, .edx, .ebp] s t := by
+  have fit := h.arr_fit (j := aDen) (by decide)
+  have fits := h.old.fits
+  have hn := h.old.workspace.nowrap
+  have eBound : kEv + 8 ≤ Z := by have := h.hdr_le; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [this]
+  have xBound : arr 2 3 + 8 ≤ Z := by unfold arr S VG.Impl.Rsa.X86.Keys.hdr at fits ⊢; omega_using [fits]
+  have beforeE : kEv + 8 ≤ arr n aDen := by unfold arr S kEv aDen VG.Impl.Rsa.X86.Keys.hdr; omega_using []
+  have beforeX : arr 2 3 + 8 ≤ arr n aDen := by unfold arr S aDen VG.Impl.Rsa.X86.Keys.hdr; omega_using []
+  unfold complement
+  refine WP.seq (WP.mono (zero_ok h .modulus (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) fit)
+    fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
+  change Outside B (arr n aDen) (4 * (n + 2)) s.mem u.mem at Ou
+  change val32 u.mem B (arr n aDen) (n + 2) = 0 at zero
+  have E : val32 u.mem B kEv 2 = val32 s.mem B kEv 2 := Ou.val32 (Or.inl beforeE) (by omega_using [hn, eBound])
+  have X : val32 u.mem B (arr 2 3) 2 = val32 s.mem B (arr 2 3) 2 := Ou.val32 (Or.inl beforeX) (by omega_using [hn, xBound])
+  refine hu.ptr_ok (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) (by decide) (by decide)
+    (by simp only [VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words]; unfold S at fit; omega_using [fit, hn])
+    fun v Kv mv P => ?_
+  have hv := hu.keep Kv (by rw [mv]; exact Outside.refl _ _ _ _)
+  refine WP.mono (subtractPair_ok hv.old.workspace P eBound xBound
+    (by change arr n aDen + 8 ≤ Z; unfold S at fit; omega_using [fit])) fun t ⟨Ot, ⟨borrow, value⟩, Kt⟩ => ?_
+  rw [mv] at Ot value
+  change Outside B (arr n aDen) 8 u.mem t.mem at Ot
+  change val32 t.mem B (arr n aDen) 2 + val32 u.mem B (arr 2 3) 2 =
+    val32 u.mem B kEv 2 + 2 ^ 64 * borrow.toNat at value
+  rw [E, X] at value
+  have noBorrow := (VG.Proof.Rsa.borrow_iff value (val32_lt t.mem B (arr n aDen) 2) (Bool.toNat_le borrow)).mpr
+    (Nat.le_of_lt less)
+  rw [noBorrow, Nat.mul_zero, Nat.add_zero] at value
+  have result : val32 t.mem B (arr n aDen) 2 = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 := by omega_using [value]
+  have high : val32 u.mem B (arr n aDen + 8) n = 0 :=
+    VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 2) (c := n) (by omega_using [])
+  have highT : val32 t.mem B (arr n aDen + 8) n = 0 := by
+    rw [Ot.val32 (Or.inr (Nat.le_refl _)) (by unfold S at fit; omega_using [fit, hn]), high]
+  have full : val32 t.mem B (arr n aDen) (n + 2) = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 := by
+    rw [show n + 2 = 2 + n by omega_using [], val32_append, highT, Nat.mul_zero, Nat.add_zero, result]
+  have bound : val32 t.mem B (arr n aDen) (n + 2) < 2 ^ (32 * n) := by
+    rw [full]
+    exact Nat.lt_of_lt_of_le (Nat.lt_of_le_of_lt (Nat.sub_le _ _) (val32_lt s.mem B kEv 2))
+      (Nat.pow_le_pow_right (by decide) (by omega_using [width]))
+  have frame := Ou.trans (Ot.mono (Nat.le_refl _) (by omega_using []))
+  have K : Keeps [.eax, .ecx, .edx, .ebp] s t := Ku.trans
+    ((Kv.mono (by decide)).trans (Kt.mono (by decide)))
+  exact ⟨h.keep K (frame.mono (Nat.zero_le _) (by unfold S at fit; omega_using [fit])), frame, full,
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : n ≤ n + 2) bound).trans full,
+    K⟩
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
+/-! ### `RsaKeyGen.X86.KeyRuntime.DEven`, which only this module used -/
+
+section
+
+/-! # A modulus-width fallback for public even exponents -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key (aE aL aDen aU aV aD kEv kOk kFlag)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
+open VG.Proof.RsaKeyGen.X86.Key (exponentRanges exponentTemps exponent_keep_frame
+  exponent_temps_inverse inverse_array_layout)
+
+theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
+    (even : val32 s.mem B kEv 2 % 2 = 0)
+    (loaded : num s.mem B n aE = val32 s.mem B kEv 2) :
+    WP isa dEven s fun t =>
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (exponentRanges n) s.mem t.mem ∧ slot t.mem B kOk ≤ 1 ∧
+      Spec.Rsa.inverse (val32 s.mem B kEv 2) (num s.mem B n aL) =
+        (if slot t.mem B kOk = 0 then none else some (num t.mem B n aD)) ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
+  let e := val32 s.mem B kEv 2
+  let L := num s.mem B n aL
+  let valid := L % 2 = 1 ∧ 3 ≤ L
+  let M := if valid then L else 3
+  have eo : e % 2 = 0 := even
+  have mo : M % 2 = 1 := by
+    unfold M
+    split
+    · next H => exact H.1
+    · decide
+  have ml : 1 < M := by unfold M; split <;> omega
+  unfold dEven seqs
+  refine WP.seq (WP.mono (oddModulus_ok h (by decide) (by decide) (by decide))
+    fun u ⟨hu, Ou, flag, modulus, Ku⟩ => ?_)
+  change num u.mem B n aDen = M at modulus
+  change slot u.mem B kFlag = (if valid then 1 else 0) at flag
+  have Eu : num u.mem B n aE = e :=
+    (Ou.num (by decide) (by decide) (h.fit64 (by decide))).trans loaded
+  have frameU := exponent_keep_frame (by decide) (by decide) Ou
+  refine WP.seq (WP.mono (saveSlot_ok hu (by decide) (by decide))
+    fun v ⟨hv, Ov, saved, Kv⟩ => ?_)
+  have maskV : slot v.mem B kOk = (if valid then 1 else 0) := saved.trans flag
+  have Mv : num v.mem B n aDen = M :=
+    (Ov.num (by simp) (by decide) (h.fit64 (by decide))).trans modulus
+  have Ev : num v.mem B n aE = e :=
+    (Ov.num (by simp) (by decide) (h.fit64 (by decide))).trans Eu
+  have frameV := exponent_keep_frame (by decide) (by decide) Ov
+  refine WP.seq (WP.mono (arrayDivision_ok hv (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [Mv]; omega_using [mo]))
+    fun w ⟨hw, Ow, _, R, Kw⟩ => ?_)
+  rw [Ev, Mv] at R
+  have Mw : num w.mem B n aDen = M :=
+    (arrayDivision_preserves_num (by decide) (by decide) (by decide) (h.fit64 (by decide)) Ow).trans Mv
+  have maskW : slot w.mem B kOk = (if valid then 1 else 0) :=
+    (arrayDivision_preserves_slot (by decide) Ow).trans maskV
+  have frameW := exponent_division_frame Ow
+  have layout := inverse_array_layout hw.old (Nat.le_refl n) (by decide : aV < 32)
+    (by decide : aDen < 32) (by decide) (by decide)
+  refine WP.seq (WP.mono (inverseFrom_ok (w := .modulus)
+    (src := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aV)
+    (mo := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) hw (by decide) (by decide) layout (by change num w.mem B n aDen % 2 = 1; rw [Mw]; exact mo)
+    (by change 1 < num w.mem B n aDen; rw [Mw]; exact ml))
+    fun a ⟨ha, Oa, gcd, congruence, boundX, Ka⟩ => ?_)
+  change num a.mem B n 1 = Nat.gcd (num w.mem B n aV) (num w.mem B n aDen) at gcd
+  change (num w.mem B n aDen : Int) ∣ (num a.mem B n 3 : Int) * num w.mem B n aV - num a.mem B n 1 at congruence
+  change num a.mem B n 3 < num w.mem B n aDen at boundX
+  rw [R, Mw] at gcd congruence
+  rw [Mw] at boundX
+  rw [gcd] at congruence
+  have maskA : slot a.mem B kOk = (if valid then 1 else 0) :=
+    (hw.inverse_slot (by decide) Oa).trans maskW
+  have spW : w.gpr .esp = s.gpr .esp := by
+    rw [Kw.1 .esp (by decide), Kv.1 .esp (by decide), Ku.1 .esp (by decide)]
+  have frameA : OutsS B (s.gpr .esp) (exponentRanges n) w.mem a.mem := by
+    rw [← spW]
+    exact OutsS.lift (fun _ _ O => (exponent_temps_inverse (Nat.le_refl n) O).mono
+      (fun r hr => List.mem_append_left _ hr)) Oa
+  refine WP.seq (WP.mono (gcdIsOne_ok (w := .modulus) ha (by decide) (by decide)) fun b ⟨hb, Ob, flagB, Kb⟩ => ?_)
+  simp only [Width.words] at Ob
+  change slot b.mem B kFlag = (if num a.mem B n 1 = 1 then 1 else 0) at flagB
+  rw [gcd] at flagB
+  have maskB : slot b.mem B kOk = (if valid then 1 else 0) :=
+    (Ob.slot (by decide) (by decide)).trans maskA
+  have Xb : num b.mem B n 3 = num a.mem B n 3 :=
+    Ob.num (by decide) (by decide) (h.fit64 (by decide))
+  have frameB := exponent_keep_frame (by decide) (by decide) Ob
+  refine WP.seq (WP.mono (andS_ok hb (by decide) (by decide) (by decide)
+    (by rw [maskB]; split <;> omega_using []) (by rw [flagB]; split <;> omega_using []))
+    fun c ⟨hc, Oc, maskC, Kc⟩ => ?_)
+  rw [maskB, flagB] at maskC
+  have Xc : num c.mem B n 3 = num a.mem B n 3 :=
+    (Oc.num (by simp) (by decide) (h.fit64 (by decide))).trans Xb
+  have frameC := exponent_keep_frame (by decide) (by decide) Oc
+  refine WP.mono (copy_ok hc (by decide) (by decide) (by decide)) fun t ⟨ht, Ot, copied, Kt, _⟩ => ?_
+  rw [Xc] at copied
+  have maskT : slot t.mem B kOk =
+      (if (if valid then 1 else 0) = 1 ∧ (if Nat.gcd (e % M) M = 1 then 1 else 0) = 1 then 1 else 0) :=
+    (Ot.slot (by decide) (by simp)).trans maskC
+  have frameT := exponent_keep_frame (by decide) (by simp) Ot
+  refine ⟨ht, (((((OutsS.of_outs ((frameU.trans frameV).trans frameW)).trans frameA).trans
+      (OutsS.of_outs frameB)).trans (OutsS.of_outs frameC)).trans (OutsS.of_outs frameT)),
+    ?_, ?_, (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans
+      (Kw.trans (Ka.trans ((Kb.mono (by decide)).trans ((Kc.mono (by decide)).trans (Kt.mono (by decide)))))))⟩
+  · rw [maskT]
+    by_cases V : valid <;> by_cases G : Nat.gcd (e % M) M = 1 <;> simp [V, G]
+  · change Spec.Rsa.inverse e L = _
+    by_cases V : valid
+    · have ME : M = L := ite_eq_left V
+      have V' : L % 2 = 1 ∧ 3 ≤ L := V
+      by_cases G : Nat.gcd (e % M) M = 1
+      · have C : (L : Int) ∣ (num a.mem B n 3 : Int) * (e % L) - 1 := by
+          rw [G, ME] at congruence
+          exact congruence
+        have I := VG.Proof.RsaKeyGen.inverse_even V'.2 C (by simpa only [ME] using boundX)
+        simpa only [maskT, V, G, ite_true, true_and, Nat.one_ne_zero, ite_false, copied] using I
+      · have I := VG.Proof.RsaKeyGen.inverse_even_none eo (by
+          intro H; exact G (by simpa only [ME] using H.2.2))
+        simpa only [maskT, V, G, ite_true, ite_false, Nat.zero_ne_one, and_false, ↓reduceIte] using I
+    · have I := VG.Proof.RsaKeyGen.inverse_even_none eo (by
+        intro H; exact V ⟨H.1, H.2.1⟩)
+      simpa only [maskT, V, ite_false, Nat.zero_ne_one, false_and, ↓reduceIte] using I
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+
+end
+
+end
+
 /-! # The native factor, LCM, and private-inverse stages compose -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/DOne.lean`, which only this module imported.
@@ -623,8 +1131,8 @@ theorem prepareLoaded_ok {s : State} {B : Addr} {Z n k : Nat}
       Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n prepareArrays) s.mem t.mem ∧
       KeyReady B n (val32 s.mem B kEv 2) (num s.mem B n aPa) (num s.mem B n aQa) t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have small : k ≤ n := by omega
-  have wide : 2 ≤ n := by omega
+  have small : k ≤ n := by omega_using [width]
+  have wide : 2 ≤ n := by omega_using [width, positive]
   have pBound : max (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
   have qBound : min (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) :=
     Nat.lt_of_le_of_lt (Nat.min_le_left ..) boundP

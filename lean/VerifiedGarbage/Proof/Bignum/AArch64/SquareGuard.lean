@@ -43,7 +43,7 @@ theorem guard_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Keep [.x12, .x3] s t := by
   refine WP.keep [.x12, .x3] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.Square.guard
-  brun [h0, hs.ld (show 8*sW+8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega),
+  brun [h0, hs.ld (show 8*sW+8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this]),
     hH.hw, shr3_ofNat hw]
 
 structure GuardCtx (L : Ws) (s : State) : Prop where
@@ -54,16 +54,16 @@ theorem guard_ctx (L : Ws) (s : State) (h : GoodW L s) :
     WP isa (.block VG.Impl.Bignum.AArch64.Square.guard) s (GuardCtx L) := by
   have hw := goodW_width h
   obtain ⟨mi, hg, hz⟩ := h
-  refine WP.mono (guard_ok hg.scr hg.x0 hg.hdr hz (by omega)) fun t ⟨⟨hm, _, h3⟩, k⟩ => ?_
+  refine WP.mono (guard_ok hg.scr hg.x0 hg.hdr hz (by omega_using [hw])) fun t ⟨⟨hm, _, h3⟩, k⟩ => ?_
   exact ⟨⟨mi, ⟨hg.scr.congr k.wr, (k.gpr .x0 (by decide)).trans hg.x0, hm ▸ hg.hdr⟩, hz⟩, h3⟩
 
 theorem guard_width {L : Ws} {s : State} (h : GuardCtx L s)
     (ht : isa.eval (.nonzero .x .x3) s = some true) : 8 ≤ L.w := by
   have hw := goodW_width h.good
   rw [eval_nonzero, h.test, ne_zero_iff, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show L.w/8 < 2 ^ 64 by omega)] at ht
+    Nat.mod_eq_of_lt (show L.w/8 < 2 ^ 64 by omega_using [hw])] at ht
   have hn := of_decide_eq_true (Option.some.inj ht)
-  omega
+  omega_using [hn]
 
 theorem guarded_ct {o a : Nat} (ho : o < 8) (ha : a < 8)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hu : MmUse o a a)

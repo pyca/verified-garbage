@@ -16,6 +16,8 @@ after the frame's push, the saves and the prologue leave `Base` with `n₀` in
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.RsaPss.PPC64LE.Sign
 open VG.Impl.RsaOaep.PPC64LE (frameBytes saved oLr arg save restore)
 open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off fx kR fb fr frameR_eq save_ok Saves stackArgAddr_fb
@@ -24,11 +26,12 @@ open VG.Proof.RsaOaep.PPC64LE (Base Fits SC off fx kR fb fr frameR_eq save_ok Sa
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo wp_ld wp_mov wp_nil wp_lbz wp_lsr wp_or wp_subi)
 
 /-- The stack arguments are in `aR`. -/
-theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+theorem in_aR {s : State} {j : Nat} (hj : j < 16) : (aR pc s).Contains (stackArgAddr s j) 8 := by
+  rw [stackArgAddr_eq s j]
+  cases pc <;> exact Offset.contains_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [hj]) (by omega_using [hj])
 
-theorem in_aR_sub {s : State} {j : Nat} (hj : j < 16) : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR s) := by
-  rw [stackArgAddr_eq s j]; exact Offset.sub_base _ (by omega)
+theorem in_aR_sub {s : State} {j : Nat} (hj : j < 16) : Region.Sub ⟨stackArgAddr s j, 8⟩ (aR pc s) := by
+  rw [stackArgAddr_eq s j]; cases pc <;> exact Offset.sub_base _ (by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [hj])
 
 /-- The modulus' first byte. -/
 abbrev n0 (s : State) : BitVec 64 := (s.mem (s.gpr .r5)).setWidth 64
@@ -39,7 +42,7 @@ structure Entered (s t : State) : Prop where
   r9 : t.gpr .r9 = n0 s
 
 section
-variable {D : Nat} {s : State} (P : PreS D s)
+variable {D : Nat} {s : State} (P : PreS pc D s)
 include P
 
 /-- A load of our stack argument `j` through `r12`, the frame's base. -/
@@ -49,15 +52,15 @@ theorem wp_arg {t : State} {r : Reg} {j : Nat} {is : List Instr} {Q : State → 
     (ho : arg j < 2 ^ 15 ∧ arg j % 4 = 0 := by decide) :
     WP isa (.block (.load .d r .r12 (arg j) :: is)) t Q := by
   refine wp_ld (a := stackArgAddr s j) (by rw [h12, stackArgAddr_fb]) ?_ (fun t' o e => k t' o ?_) (by decide) ho
-  · rw [hrd, P.hrd]; exact ⟨aR s, by simp, in_aR hj⟩
-  · rw [e, stackArg, hm.readW (in_aR hj) (fun r hr => by
+  · rw [hrd, P.hrd]; exact ⟨aR pc s, by simp, in_aR hj⟩
+  · rw [e, stackArg, hm.readW (in_aR (pc := pc) hj) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (P.ka.sub_left kR_sub).symm
       · exact (P.sa.sub_left (sc_sub P)).symm) (by decide)]
 
 theorem n_contains : (nR s).Contains (s.gpr .r5) 1 := by
-  have := Offset.contains_base (s.gpr .r5) (d := 0) (n := 1) (k := (s.gpr .r6).toNat) (by have := P.k1; omega)
+  have := Offset.contains_base (s.gpr .r5) (d := 0) (n := 1) (k := (s.gpr .r6).toNat) (by have := P.k1; omega_using [this])
     (by decide)
   rwa [BitVec.add_zero] at this
 

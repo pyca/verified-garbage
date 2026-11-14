@@ -58,15 +58,15 @@ theorem finTag_rel {na : Nat} (hna : 2 ≤ na) {o : Nat} (ho : o = 0 ∨ o = 112
   have hf' : s₀'.sp.toNat + 4 * na ≤ 2 ^ 32 := by rw [← hsp]; exact hf
   have ag : ∀ {s s'}, ArgsKeep na s₀ s → ArgsKeep na s₀' s' →
       VG.Arm.Taint.Agree (argTaint [] (4 * 2)) s s' := fun k k' =>
-    (k.weaken hna).agree (k'.weaken hna) hsp (by omega) (fun i hi => ha i (by omega))
+    (k.weaken hna).agree (k'.weaken hna) hsp (by omega_using [hna, hf]) (fun i hi => ha i (by omega_using [hna, hi]))
       (fun r hr => (hw r hr).sub_left (args_sub _ hna)) (fun r hr => (hw' r hr).sub_left (args_sub _ hna)) (by simp)
   -- whether there is text
   let GA : State → State → Prop := fun t₀ s => FT na t₀ c st w sp k8 s ∧
     s.z = decide ((arg t₀ 1 ++ arg t₀ 0).toNat = 0)
   have runA : ∀ {t₀ s : State}, FT na t₀ c st w sp k8 s → t₀.sp.toNat + 4 * na ≤ 2 ^ 32 → args t₀ na ∈ t₀.rd →
       WP isa (.block tlenZero) s (GA t₀) := fun {t₀ s} ⟨k7, he, hk⟩ f i => by
-    obtain ⟨i2, v2⟩ := hk.at f i 0 (by omega) (show 4 * 0 = 0 from rfl)
-    obtain ⟨i3, v3⟩ := hk.at f i 1 (by omega) (show 4 * 1 = 4 from rfl)
+    obtain ⟨i2, v2⟩ := hk.at f i 0 (by omega_using [hna]) (show 4 * 0 = 0 from rfl)
+    obtain ⟨i3, v3⟩ := hk.at f i 1 (by omega_using [hna]) (show 4 * 1 = 4 from rfl)
     refine WP.of_runBlock ⟨_, by simp only [tlenZero]; arun [i2, v2, i3, v3], ?_⟩
     refine ⟨⟨k7, he.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -94,7 +94,7 @@ theorem finTag_rel {na : Nat} (hna : 2 ≤ na) {o : Nat} (ho : o = 0 ∨ o = 112
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl, hk.of_eq rfl rfl rfl rfl⟩, ?_⟩
       have : (arg t₀ 1 ++ arg t₀ 0).toNat = 0 := by simpa using ht
       simp [gpr_setReg, h8, v, this]
-    · obtain ⟨i2, v2⟩ := hk.at f i 0 (by omega) (show 4 * 0 = 0 from rfl)
+    · obtain ⟨i2, v2⟩ := hk.at f i 0 (by omega_using [hna]) (show 4 * 0 = 0 from rfl)
       refine WP.of_runBlock ⟨_, by arun [i2, v2], ?_⟩
       refine ⟨⟨k7, he.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -104,7 +104,7 @@ theorem finTag_rel {na : Nat} (hna : 2 ≤ na) {o : Nat} (ho : o = 0 ∨ o = 112
   have b : RelCT isa (fun a b => GA s₀ a ∧ GA s₀' b) (.ite .eq (.block [.mov .r6 (.reg .r8)]) (.block [.ldrSp .r6 0]))
       fun _ _ => True := by
     refine rel_ite (decide ((arg s₀ 1 ++ arg s₀ 0).toNat = 0)) (fun s h => h.2)
-      (fun s h => by rw [h.2, ha 1 (by omega), ha 0 (by omega)]) (fun _ => ?_) (fun _ => ?_)
+      (fun s h => by rw [h.2, ha 1 (by omega_using [hna]), ha 0 (by omega_using [hna])]) (fun _ => ?_) (fun _ => ?_)
     · obtain ⟨_, hc⟩ : ∃ h, (taint.check (Taint.ofRegs [.r8]) (.block [.mov .r6 (.reg .r8)]) h).isSome = true :=
         ⟨_, by taint_decide⟩
       exact RelCT.taint (A := taint) (Taint.ofRegs [.r8]) (fun s s' h => Taint.agree_ofRegs fun r hr => by
@@ -115,7 +115,7 @@ theorem finTag_rel {na : Nat} (hna : 2 ≤ na) {o : Nat} (ho : o = 0 ∨ o = 112
       exact RelCT.taint (A := taint) (argTaint [] (4 * 2)) (fun s s' h =>
         ag h.1.1.choose_spec.2 h.2.1.choose_spec.2) hc
   refine (rel_wp b (fun s h => runB h hf hin) (fun s h => runB h hf' hin')).seq ?_
-  have hv : v s₀' = v s₀ := by simp only [v, ha 0 (by omega), ha 1 (by omega)]
+  have hv : v s₀' = v s₀ := by simp only [v, ha 0 (by omega_using [hna]), ha 1 (by omega_using [hna])]
   -- modulo 16
   let GC : State → State → Prop := fun t₀ s => FT na t₀ c st w sp k8 s ∧
     s.gpr .r6 = BitVec.ofNat 32 ((v s₀).toNat % 16)
@@ -150,8 +150,8 @@ theorem finTag_rel {na : Nat} (hna : 2 ≤ na) {o : Nat} (ho : o = 0 ∨ o = 112
       WP isa (.block [.mov .r4 (.reg .r8), .mov .r5 (.reg .r7), .ldrSp .r6 0, .ldrSp .r7 4]) s
         (FT na t₀ c st w sp k8) :=
     fun {t₀ s} f i ⟨k7, he, hk⟩ => by
-    obtain ⟨j0, w0⟩ := hk.at f i 0 (by omega) (show 4 * 0 = 0 from rfl)
-    obtain ⟨j1, w1⟩ := hk.at f i 1 (by omega) (show 4 * 1 = 4 from rfl)
+    obtain ⟨j0, w0⟩ := hk.at f i 0 (by omega_using [hna]) (show 4 * 0 = 0 from rfl)
+    obtain ⟨j1, w1⟩ := hk.at f i 1 (by omega_using [hna]) (show 4 * 1 = 4 from rfl)
     refine WP.of_runBlock ⟨_, by arun [j0, w0, j1, w1], ?_⟩
     exact ⟨_, he.set7 (k7' := arg t₀ 1) (by simp [gpr_setReg, w1]) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -12,7 +12,8 @@ from it, and `vg_bad_id`, the identity, with `@[implemented_by]` of a function t
 is not, which `add` (that the artifact's contract uses) applies, and an `initialize`
 in the namespace of the records' own (`VG.AuditRecords`); and adds a module
 with another such axiom, `Proof/Selftest/AuditPrivate.lean`, which the self-test's
-proof imports with a plain `import`. It proves `add_correct` from both theorems, and
+proof imports with a plain `import`. It proves `addScrubbed_correct` (which the
+artifact's proof uses) from both theorems, and
 checks that `EmitOne.lean --check Selftest.X86_64` fails with the axiom audit's
 `depends on non-standard axioms: [...]`, listing both `VG.Spec.Selftest.vg_bad` and
 `VG.Proof.Selftest.AuditPrivate.vg_bad`, and with the override audit's
@@ -78,8 +79,9 @@ OVERRIDE = "@[implemented_by] on VG.Spec.Selftest.vg_bad_id"
 # An initializer, though in `TCB/AuditRecords.lean`'s namespace.
 INIT = "@[init] on VG.AuditRecords.vg_bad_init"
 
-# The self-test's proof: its first theorem, proven from the axiom instead.
-CORRECT = "theorem add_correct "
+# The self-test's proof: the theorem its artifact's proof uses, proven from the
+# axiom instead.
+CORRECT = "theorem addScrubbed_correct "
 
 # The second case: a module with the axiom, imported privately.
 PRIVATE = LEAN / "VerifiedGarbage" / "Proof" / "Selftest" / "AuditPrivate.lean"
@@ -116,7 +118,7 @@ def inject_module(text: str) -> str:
 
 
 def inject_proof(text: str, proof: str) -> str:
-    """`text` with `add_correct`'s proof replaced by one from `proof`, a
+    """`text` with `addScrubbed_correct`'s proof replaced by one from `proof`, a
     proof of `False`."""
     start = text.find(CORRECT)
     if start < 0:
@@ -124,13 +126,13 @@ def inject_proof(text: str, proof: str) -> str:
     body = text.find(":= by", start)
     end = text.find("\n\n", body)
     if body < 0 or end < 0:
-        raise SystemExit(f"{PROOF}: `add_correct` is not `:= by …` followed by a blank line")
+        raise SystemExit(f"{PROOF}: `addScrubbed_correct` is not `:= by …` followed by a blank line")
     return text[:body] + f":=\n  {proof}.elim" + text[end:]
 
 
 def inject_private_import(text: str) -> str:
     """`text` (a module) with a plain `import` of the module with the axiom,
-    after its last import, and `add_correct` proven from both axioms'
+    after its last import, and `addScrubbed_correct` proven from both axioms'
     theorems (each must reach the audit)."""
     lines = text.split("\n")
     last = max(i for i, l in enumerate(lines) if IMPORT_LINE.match(l))

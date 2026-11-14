@@ -117,7 +117,7 @@ theorem Outs.wordsVal {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : O
     {d k : Nat} (hd : ∀ r ∈ rs, d + 8 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) :
     VG.Proof.Mont.wordsVal m' base d k = VG.Proof.Mont.wordsVal m base d k := by
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
-  exact h.val32 (fun r hr => by have := hd r hr; omega) (by omega)
+  exact h.val32 (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hd'])
 
 /-- A slot apart from what a program writes keeps its number. -/
 theorem ProgKeep.wordsVal {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : State} {size : Nat}
@@ -125,7 +125,7 @@ theorem ProgKeep.wordsVal {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s
     (hW : ∀ w ∈ W, y + 8 * M.n ≤ w ∨ w + 8 * M.n ≤ y) (ht : y + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ y)
     (hk : y + 8 * M.n ≤ wk) (hz : y + 8 * M.n ≤ 8192) :
     VG.Proof.Mont.wordsVal s'.mem base y M.n = VG.Proof.Mont.wordsVal s.mem base y M.n := by
-  refine Outs.wordsVal h.mem (fun r hr => ?_) (by omega)
+  refine Outs.wordsVal h.mem (fun r hr => ?_) (by omega_using [hz])
   simp only [progW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with ⟨w, hw, rfl⟩ | rfl | rfl | rfl
   · exact hW w hw
@@ -147,13 +147,13 @@ theorem Inv.update {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {
       (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         subst hw; exact hL.apart x w hx ho hxo)
-      (hL.tmp x hx) (hW.sl x hx) (by have := hW.sl x hx; have := hW.toCallCfg.own_le; omega)
+      (hL.tmp x hx) (hW.sl x hx) (by have := hW.sl x hx; have := hW.toCallCfg.own_le; omega_arith)
   refine ⟨hk.scr hI.scr, ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hW.mo
     have := hW.toCallCfg.own_le
     rw [hk.wordsVal hn hM.mo (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        subst hw; have := hL.mo w ho; omega) hM.sep hW.mo (by omega)]
+        subst hw; have := hL.mo w ho; omega_using [this]) hM.sep hW.mo (by omega_arith)]
     exact hM.val
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -192,8 +192,8 @@ theorem fop_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addC_ok hW.toCallCfg hI.scr (hW.sl o hS.1) (hW.sl a hS.2.1) (hW.sl b hS.2.2)
-      (by omega)) fun s' ⟨hk, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+      (by omega_using [hA, hB])) fun s' ⟨hk, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) ?_ ?_⟩
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -202,8 +202,8 @@ theorem fop_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size
     have hB := hI.lt b hR.2
     refine WP.mono (subC_ok hW.toCallCfg hI.scr (hW.sl o hS.1) (hW.sl a hS.2.1) (hW.sl b hS.2.2) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State → Prop}
     (h : WP isa p s fun s' => WP isa (progs ps) s' Q) : WP isa (progs (p :: ps)) s Q := by

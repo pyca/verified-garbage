@@ -21,9 +21,9 @@ theorem bswap_byte (v : BitVec 64) {j : Nat} (hj : j < 8) :
     (bswap64 v).extractLsb' (8*j) 8 = v.extractLsb' (8*(7-j)) 8 := by
   ext r hr
   simp only [BitVec.getElem_extractLsb', bswap64, getLsbD_append_block _ _ _ hr]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
     h | h | h | h | h | h | h | h <;> subst h <;>
-  simp (disch := omega) only [↓reduceIte, Nat.reduceSub, Nat.reduceEqDiff, Nat.mul_zero, Nat.zero_add,
+  simp (disch := omega_using [hr]) only [↓reduceIte, Nat.reduceSub, Nat.reduceEqDiff, Nat.mul_zero, Nat.zero_add,
     Nat.reduceMul, BitVec.getLsbD_extractLsb', decide_eq_true, Bool.true_and, Nat.add_comm]
 
 /-- An input byte is the corresponding radix-256 digit of OS2IP. -/
@@ -37,18 +37,18 @@ theorem extract_nat (x : Nat) {j : Nat} (hj : j < 8) :
     (BitVec.ofNat 64 x).extractLsb' (8*j) 8 = BitVec.ofNat 8 (x / 256^j) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [show (2:Nat)^64 = 2^(8*j) * 2^(64-8*j) by rw [← Nat.pow_add]; congr 1; omega,
-    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))]
+  rw [show (2:Nat)^64 = 2^(8*j) * 2^(64-8*j) by rw [← Nat.pow_add]; congr 1; omega_using [hj],
+    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [hj]))]
   rw [show (256:Nat)^j = 2^(8*j) by rw [show (256:Nat) = 2^8 from rfl, ← Nat.pow_mul]]
 
 /-- Equality of all eight bytes is equality of words. -/
 theorem eq_of_bytes {x y : BitVec 64}
     (h : ∀ j < 8, x.extractLsb' (8*j) 8 = y.extractLsb' (8*j) 8) : x = y := by
   ext i hi
-  have e := congrArg (fun v : Byte => v.getLsbD (i%8)) (h (i/8) (by omega))
+  have e := congrArg (fun v : Byte => v.getLsbD (i%8)) (h (i/8) (by omega_using [hi]))
   simp only [BitVec.getLsbD_extractLsb', show i%8 < 8 from Nat.mod_lt _ (by decide),
     decide_true, Bool.true_and] at e
-  rw [show 8*(i/8)+i%8 = i by omega] at e
+  rw [show 8*(i/8)+i%8 = i by omega_using []] at e
   simpa only [BitVec.getLsbD_eq_getElem hi] using e
 
 theorem read_digit {m : Mem} {src : Addr} {bs : List Byte} {q : Nat}
@@ -60,10 +60,10 @@ theorem read_digit {m : Mem} {src : Addr} {bs : List Byte} {q : Nat}
   intro j hj
   rw [bswap_byte _ hj, extract_nat _ hj]
   change (m.read (src + BitVec.ofNat 64 (bs.length-8*(q+1))) 8).extractLsb' (8*(7-j)) 8 = _
-  rw [Mem.extractLsb'_read _ _ (by omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-    hb _ (by omega), os2ip_byte]
+  rw [Mem.extractLsb'_read _ _ (by omega_using []), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+    hb _ (by omega_using [hq]), os2ip_byte]
   rw [Nat.div_div_eq_div_mul, ← Nat.pow_add]
   congr 3
-  omega
+  omega_using [hq, hj]
 
 end VG.Proof.Bignum.X86_64.WordIO

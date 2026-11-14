@@ -53,11 +53,11 @@ theorem prevalidatedCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0
       Ready L s5 ∧ word s5.mem L.base Field.mask.offset = mask (prevalidatedAccepted L data valid) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
-  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega
+  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
+  have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega_using [hqu]
   unfold Prevalidated.compute
   refine WP.seq (WP.mono (readyMinus_ok h0 .q 2 (by decide)
-    (by change 2 ≤ L.subgroup; omega) qMinusTwo (by decide) hqm) fun s1 h1 => ?_)
+    (by change 2 ≤ L.subgroup; omega_using [hq]) qMinusTwo (by decide) hqm) fun s1 h1 => ?_)
   have hg1 := h1.external (by decide) hqm hg
   have hy1 := h1.external (by decide) hqm hy
   have hr1 := h1.external (by decide) hqm hr
@@ -66,7 +66,7 @@ theorem prevalidatedCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0
   have hm1 := (h1.fields (by decide) hqm .mask).trans hm
   have hqm1 := h1.output (by decide) hqm
   refine WP.seq (WP.mono (readyRange_ok h1.ready .q Core.signatureR (by trivial) hr1.active
-    (by rw [hrl]; omega) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hrl]; omega_using [hql]) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm1) fun s2 h2 => ?_)
   have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hy2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
@@ -75,7 +75,7 @@ theorem prevalidatedCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0
   have hz2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz1
   have hqm2 := h2.preserve h1.ready (Nat.le_refl _) (by decide) (by trivial) hqm1
   refine WP.seq (WP.mono (readyRange_ok h2.ready .q Core.signatureS (by trivial) hs2.active
-    (by rw [hsl]; omega) (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hsl]; omega_using [hql]) (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false h2.mask) fun s3 h3 => ?_)
   have hg3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg2
   have hy3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy2
@@ -91,8 +91,8 @@ theorem prevalidatedCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0
   refine WP.mono (readyEqual_ok h4 (Core.scalar u) Core.signatureR
     (by change u < 2 ^ 31; decide) (by trivial) hu4 hr4.active
     (by simp only [encodeBE_length, ModulusSide.length, hrl])
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) false hm4) fun s5 h5 => ?_
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) false hm4) fun s5 h5 => ?_
   refine ⟨h5.ready, ?_, ((((h1.scheduleFrame (by decide) hqm).trans h2.scheduleFrame).trans
       h3.scheduleFrame).trans hf4).trans h5.scheduleFrame,
     ((((h1.keep.trans h2.keep).trans h3.keep).trans hk4).trans h5.keep).mono (by decide)⟩
@@ -120,7 +120,7 @@ theorem prevalidatedBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : 
     fun s1 ⟨h1, hm1, hf1, hk1⟩ => ?_)
   refine WP.mono (result_ok h1.scratch h1.parent.rdi (by decide) hm1)
     fun t ⟨ha, hsave, hmem, hk⟩ => ?_
-  exact ⟨ha, fun i hi => (hsave i hi).trans (hf1.word (Or.inl (by omega)) (by omega)),
+  exact ⟨ha, fun i hi => (hsave i hi).trans (hf1.word (Or.inl (by omega_using [hi])) (by omega_using [hi])),
     by rw [hmem]; exact hf1, (hk1.trans hk).mono (by decide)⟩
 
 theorem prevalidatedBody_spec (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)

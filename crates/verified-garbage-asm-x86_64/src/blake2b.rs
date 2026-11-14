@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Blake2.initBContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -26,7 +28,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "ww=="
+.base64 "McAxyUUxwMM="
 .p2align 6"#,
     )
 }
@@ -37,6 +39,8 @@ pub const VG_BLAKE2B_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -104,7 +108,7 @@ jmp 214f
 jmp 23f
 22:
 23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQksP3//8X+f4QkMAIAAMX+f4QkEAIAAMX+f4Qk8AEAAMX+f4Qk0AEAAMX+f4QksAEAAMX+f4QkkAEAAMX+f4QkcAEAAMX+f4QkUAEAAMX+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJFACAAAxwDHJMdIx9jH/RTHARTHJww=="
 .p2align 6"#,
         vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512::vg_blake2b_compress_avx512,
     )
@@ -116,6 +120,8 @@ pub const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -145,7 +151,7 @@ jmp 23f
 23:
 .base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
 call {vg_blake2b_compress_avx512}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjaQksP3//0iNpCRQAgAAMcAxyTHSMfYx/0UxwEUxycM="
 .p2align 6"#,
         vg_blake2b_compress_avx512 = sym super::blake2b::vg_blake2b_compress_avx512::vg_blake2b_compress_avx512,
     )
@@ -157,6 +163,8 @@ pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -224,7 +232,7 @@ jmp 214f
 jmp 23f
 22:
 23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQksP3//8X+f4QkMAIAAMX+f4QkEAIAAMX+f4Qk8AEAAMX+f4Qk0AEAAMX+f4QksAEAAMX+f4QkkAEAAMX+f4QkcAEAAMX+f4QkUAEAAMX+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJFACAAAxwDHJMdIx9jH/RTHARTHJww=="
 .p2align 6"#,
         vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
     )
@@ -236,6 +244,8 @@ pub const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -265,7 +275,7 @@ jmp 23f
 23:
 .base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
 call {vg_blake2b_compress_avx2}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9IjaQksP3//0iNpCRQAgAAMcAxyTHSMfYx/0UxwEUxycM="
 .p2align 6"#,
         vg_blake2b_compress_avx2 = sym super::blake2b::vg_blake2b_compress_avx2::vg_blake2b_compress_avx2,
     )
@@ -274,6 +284,8 @@ call {vg_blake2b_compress_avx2}
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -340,7 +352,7 @@ jmp 214f
 jmp 23f
 22:
 23:
-.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.base64 "SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAABmD+/ARTHbSI2kJLD9///zD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRQAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -349,6 +361,8 @@ jmp 23f
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -377,7 +391,7 @@ jmp 23f
 23:
 .base64 "SInfSIneSIPGQLoBAAAATInxQbgBAAAATYn5"
 call {vg_blake2b_compress}
-.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAADD"
+.base64 "SIn7TYnPSIsDSIlFAEiLQwhIiUUISItDEEiJRRBIi0MYSIlFGEiLQyBIiUUgSItDKEiJRShIi0MwSIlFMEiLQzhIiUU4SYufAAIAAEmLrwgCAABNi6cQAgAATYuvGAIAAE2LtyACAABNi78oAgAASI2kJEgCAABmD+/ARTHbSI2kJLD9///zD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRQAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -406,6 +420,10 @@ pub(crate) mod vg_blake2b_finalize_scratch_avx2;
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_finalize_scratch_avx512.rs"]
 pub(crate) mod vg_blake2b_finalize_scratch_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_init_core.rs"]
+pub(crate) mod vg_blake2b_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_update_scratch.rs"]

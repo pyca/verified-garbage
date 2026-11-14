@@ -573,7 +573,7 @@ theorem slotsS (P : InvCfg) :
     P.sBS = P.tbl + 24 * (P.M.n + 1) ∧ P.sNFS = P.tbl + 32 * (P.M.n + 1) ∧
       P.sNGS = P.tbl + 40 * (P.M.n + 1) ∧ P.sTS = P.tbl + 48 * (P.M.n + 1) := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;>
-    simp only [InvCfg.sTS, InvCfg.sNGS, InvCfg.sNFS, InvCfg.sBS, InvCfg.sA, InvCfg.L] <;> omega
+    simp only [InvCfg.sTS, InvCfg.sNGS, InvCfg.sNFS, InvCfg.sBS, InvCfg.sA, InvCfg.L] <;> omega_using []
 
 /-- What a signed batch writes: the slots, `7 n + 8` words. -/
 def batchWS (P : InvCfg) : List (Nat × Nat) := [(P.tbl, 8 * (7 * P.M.n + 8))]

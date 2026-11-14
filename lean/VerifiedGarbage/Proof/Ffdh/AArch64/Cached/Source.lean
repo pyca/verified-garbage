@@ -24,10 +24,10 @@ theorem Source.drop {p : Addr} {bs : List Byte} {s : State} (h : Source p bs s) 
  Source (p+BitVec.ofNat 64 n) (bs.drop n) s := by
  constructor
  · intro i hi
-   have inside : n+i<bs.length := by rw [List.length_drop] at hi;omega
+   have inside : n+i<bs.length := by rw [List.length_drop] at hi;omega_using [hi]
    simpa only [BitVec.ofNat_add,BitVec.add_assoc] using h.readable (n+i) inside
  · intro i hi
-   have inside : n+i<bs.length := by rw [List.length_drop] at hi;omega
+   have inside : n+i<bs.length := by rw [List.length_drop] at hi;omega_using [hi]
    rw [BitVec.add_assoc,←BitVec.ofNat_add,h.bytes (n+i) inside]
    simp only [List.getD_eq_getElem?_getD,List.getElem?_drop]
 

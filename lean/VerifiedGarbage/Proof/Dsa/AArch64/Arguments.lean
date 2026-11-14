@@ -31,10 +31,10 @@ theorem call_word {mem mem' : Mem} {B : Addr} {sp sl i : Nat}
     (hf : Frm B (callRanges sp sl) mem mem') (_hsp : sp < 32) (_hsl : sl < 32)
     (hi : i < 32) (h1 : i ≠ sp) (h2 : i ≠ sl) :
     word mem' B (8 * i) = word mem B (8 * i) := by
-  apply hf.word_eq _ (by omega)
+  apply hf.word_eq _ (by omega_using [hi])
   intro r hr
   simp only [callRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> omega
+  rcases hr with rfl | rfl <;> omega_arith
 
 /-- All six call-header words, expressed using the original saved fields. -/
 def Arguments (mem original : Mem) (B : Addr) (a b output : Operand) : Prop :=
@@ -63,11 +63,11 @@ theorem arguments_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv 
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hg hZ a ha (by decide) (by decide) (by decide) (by decide) (by decide))
     fun u ⟨hgu, hua, hual, hfieldsu, hfu, hku⟩ => ?_
-  have hchildu := call_ready child hfu (by decide) (by decide) ho (by omega)
+  have hchildu := call_ready child hfu (by decide) (by decide) ho (by omega_using [hhi, hn])
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hgu hZ b hb (by decide) (by decide) (by decide) (by decide) (by decide))
     fun v ⟨hgv, hvb, hvbl, hfieldsv, hfv, hkv⟩ => ?_
-  have hchildv := call_ready hchildu hfv (by decide) (by decide) ho (by omega)
+  have hchildv := call_ready hchildu hfv (by decide) (by decide) ho (by omega_using [hhi, hn])
   have hfieldsv' : ∀ f : Field, word v.mem B f.offset = word s.mem B f.offset :=
     fun f => (hfieldsv f).trans (hfieldsu f)
   rw [pointerValue_congr hfieldsu] at hvb
@@ -78,7 +78,7 @@ theorem arguments_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv 
     fun t ⟨hgt, hto, htol, hfieldst, hft, hkt⟩ => ?_
   rw [pointerValue_congr hfieldsv'] at hto
   rw [hfieldsv' output.length] at htol
-  refine ⟨hgt, call_ready hchildv hft (by decide) (by decide) ho (by omega), ?_,
+  refine ⟨hgt, call_ready hchildv hft (by decide) (by decide) ho (by omega_using [hhi, hn]), ?_,
     fun f => (hfieldst f).trans (hfieldsv' f), ?_, ((hku.trans hkv).trans hkt).mono (by decide)⟩
   · exact ⟨(call_word hft (by decide) (by decide) (by decide) (by decide) (by decide)).trans hva,
       (call_word hft (by decide) (by decide) (by decide) (by decide) (by decide)).trans hval,

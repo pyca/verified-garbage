@@ -26,23 +26,23 @@ theorem numAt_low_odd (mem : Mem) (base : Addr) {w o : Nat} (hw : 0 < w)
     unfold numAt
     rw [read_eq_wordsVal]
     exact congrArg (fun n => VG.Proof.Mont.wordsVal mem base (arrAt w o) n)
-      (show w = (w - 1) + 1 by omega)
+      (show w = (w - 1) + 1 by omega_using [hw])
   rw [split] at odd
-  omega
+  omega_using [odd]
 
 theorem array_outside_layout {m m' : Mem} {base : Addr} {len w o : Nat}
     (outside : VG.Proof.Mont.Outside base (arrAt w o) (8 * w) m m')
     (layout : Layout m base len) : wOf m' base = wOf m base ∧ Layout m' base len := by
-  have start : 256 ≤ arrAt w o := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
+  have start : 256 ≤ arrAt w o := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
   have width : wOf m' base = wOf m base :=
-    congrArg BitVec.toNat (outside.word (d := 48) (by omega) (by decide))
+    congrArg BitVec.toNat (outside.word (d := 48) (by omega_using [start]) (by decide))
   refine ⟨width, ?_⟩
   unfold Layout
   rw [width]
   refine ⟨layout.1, layout.2.1, layout.2.2.1, ?_⟩
   intro j hj
   change VG.Proof.Mont.word m' base (8 * (8 + j)) = _
-  rw [outside.word (by omega) (by omega)]
+  rw [outside.word (by omega_using [start, hj]) (by omega_using [hj])]
   exact layout.2.2.2 j hj
 
 end VG.Proof.Bignum.Arm

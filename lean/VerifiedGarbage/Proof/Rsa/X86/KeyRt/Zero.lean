@@ -42,20 +42,20 @@ theorem zeroWide_ok {s : State} (h : RtWs L s B Z len N) {j : Nat} (hj : j < N) 
   have hle := h.lenLe
   unfold zeroWide
   simp only [List.append_assoc]
-  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
+  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega_using [fit, nw]) fun u₁ K₁ m₁ p₁ _ => ?_)
   have hl₁ := hl.keep K₁ (by decide) m₁
   refine count_ok hl₁ hle fun u₂ K₂ m₂ c₂ => wp_movS rfl fun u₃ U₃ _ => WP.block_nil ?_
   have K : Keeps [.eax, .ecx, .edx, .ebp] s u₃ :=
     ((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (U₃.keeps.mono (by decide))
   have m : u₃.mem = s.mem := by rw [U₃.mem, m₂, m₁]
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.zeroLoop_ok (h.rt.of_keeps K) (x := arr (kw len) j)
-    (N := kw len + 1) (by omega) (by omega)
+    (N := kw len + 1) (by omega_using []) (by omega_using [fit])
     (by rw [PtrAt, U₃.other _ (by decide), K₂.1 _ (by decide)]; exact p₁)
     (by rw [U₃.other _ (by decide), c₂]; simp) U₃.gpr) fun t ⟨O, V, Kt⟩ => ?_
   rw [m] at O
   have Kall : Keeps [.eax, .ecx, .edx, .ebp] s t := K.trans (Kt.mono (by decide))
-  exact ⟨h.keep Kall (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega)),
-    Keep.of_arr (d := 0) (by simpa using O) (by simp only [S]; omega) (by simp), V, Kall⟩
+  exact ⟨h.keep Kall (by decide) (by decide) (O.mono (Nat.zero_le _) (by omega_using [fit])),
+    Keep.of_arr (d := 0) (by simpa using O) (by simp only [S]; omega_using []) (by simp), V, Kall⟩
 
 theorem zeroArrays_ok {s : State} (h : RtWs L s B Z len N) {n : Nat} (hn : 0 < n) (hnN : n ≤ N) :
     WP isa (zeroArrays L n) s fun t => RtWs L t B Z len N ∧
@@ -66,9 +66,9 @@ theorem zeroArrays_ok {s : State} (h : RtWs L s B Z len N) {n : Nat} (hn : 0 < n
     simp only [arr, S, VG.Impl.Rsa.X86.Keys.hdr] at this
     rwa [Nat.mul_left_comm] at this
   have le : n * (kw len + 2) ≤ N * (kw len + 2) := Nat.mul_le_mul_right _ hnN
-  have pos : 1 ≤ n * (kw len + 2) := Nat.mul_pos hn (by omega)
+  have pos : 1 ≤ n * (kw len + 2) := Nat.mul_pos hn (by omega_using [])
   have e8 : n * (4 * kw len + 8) = 4 * (n * (kw len + 2)) := by
-    rw [show 4 * kw len + 8 = 4 * (kw len + 2) by omega, Nat.mul_left_comm]
+    rw [show 4 * kw len + 8 = 4 * (kw len + 2) by omega_using [], Nat.mul_left_comm]
   have a0 : arr (kw len) 0 = 160 := by simp [arr, VG.Impl.Rsa.X86.Keys.hdr]
   have nw := h.ws.workspace.nowrap
   have hl := lenSrc h
@@ -88,18 +88,18 @@ theorem zeroArrays_ok {s : State} (h : RtWs L s B Z len N) {n : Nat} (hn : 0 < n
     rw [U₄.other _ (by decide), e₃, U₂.gpr, edx₂]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [show (0 : BitVec 32).toNat = 0 from rfl]
-    rw [e8, Nat.mod_eq_of_lt (a := 4 * (n * (kw len + 2))) (by omega)]
+    rw [e8, Nat.mod_eq_of_lt (a := 4 * (n * (kw len + 2))) (by omega_using [fits, le, nw])]
     simp only [Nat.zero_add]
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [fits, le, nw])]
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.zeroLoop_ok (h.rt.of_keeps K) (x := arr (kw len) 0)
-    (N := n * (kw len + 2)) pos (by rw [a0]; omega)
+    (N := n * (kw len + 2)) pos (by rw [a0]; omega_using [fits, le])
     (by rw [PtrAt, U₄.other _ (by decide), K₃.1 _ (by decide), U₂.other _ (by decide)]; exact p₁)
     ecx U₄.gpr) fun t ⟨O, V, Kt⟩ => ?_
   rw [m] at O
   have Kall : Keeps [.eax, .ecx, .edx, .ebp] s t := K.trans (Kt.mono (by decide))
-  refine ⟨h.keep Kall (by decide) (by decide) (O.mono (Nat.zero_le _) (by rw [a0]; omega)), O, ?_, Kall⟩
+  refine ⟨h.keep Kall (by decide) (by decide) (O.mono (Nat.zero_le _) (by rw [a0]; omega_using [fits, le])), O, ?_, Kall⟩
   intro j hj
-  have bound := Nat.mul_le_mul_right (kw len + 2) (show j + 1 ≤ n by omega)
+  have bound := Nat.mul_le_mul_right (kw len + 2) (show j + 1 ≤ n by omega_using [hj])
   rw [Nat.add_mul, Nat.one_mul] at bound
   have part := VG.Proof.Rsa.KeyWorkspace.val32_zero_part V (a := j * (kw len + 2)) (c := kw len + 2) bound
   have e : arr (kw len) 0 + 4 * (j * (kw len + 2)) = arr (kw len) j := by
@@ -120,6 +120,6 @@ theorem bits_ok {s : State} {is : List Instr} {Q : State → Prop} (h : RtWs L s
   apply BitVec.eq_of_toNat_eq
   rw [T.gpr, U₃.gpr, U₂.gpr]
   simp only [BitVec.toNat_add, e₁, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 end VG.Proof.Rsa.X86.KeyRt

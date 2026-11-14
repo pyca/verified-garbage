@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Words of 32 bits at a base, and `u64`s of two of them (ARMv7)
 
@@ -45,7 +46,7 @@ theorem slot_store (m : Mem) (B : Addr) (v : BitVec 32) {N i j : Nat} (hN : 4 * 
     rw [ite_eq_left rfl]
     exact Mem.readW_writeW_self32 _ _ _
   · rw [ite_eq_right same]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [same]) (by omega_using [hN, hj]) (by omega_using [hN, hi])) (by decide)
 
 theorem slot_writeSlots (m : Mem) (B : Addr) {N : Nat} (hN : 4 * N ≤ 2 ^ 64)
     (values : List (Nat × BitVec 32)) (bounds : ∀ e ∈ values, e.1 < N) (j : Nat) (hj : j < N) :
@@ -66,7 +67,7 @@ theorem writeSlots_frame (m : Mem) (B : Addr) {N : Nat} (hN : 4 * N < 2 ^ 64)
     have he := bounds e (List.mem_cons_self ..)
     have first : Frame [⟨B, 4 * N⟩] m (m.writeW (off B (4 * e.1)) e.2) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using [he]) (by omega_using [hN, he]))
     exact first.trans (ih _ (fun v hv => bounds v (List.mem_cons_of_mem _ hv)))
 
 /-- A read apart from every store. -/
@@ -84,17 +85,17 @@ theorem pair_word (m : Mem) (B : Addr) (j : Nat) :
     m.readW (off B (8 * j)) 64 = slot m B (2 * j + 1) ++ slot m B (2 * j) := by
   rw [VG.Proof.Rc2.Word32.read64_pair]
   have a1 : off B (8 * j) + BitVec.ofNat 64 4 = off B (4 * (2 * j + 1)) := by
-    rw [off, off, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-  have a0 : off B (8 * j) = off B (4 * (2 * j)) := by rw [off, off]; congr 2; omega
+    rw [off, off, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+  have a0 : off B (8 * j) = off B (4 * (2 * j)) := by rw [off, off]; congr 2; omega_using []
   rw [a1, a0]; rfl
 
 theorem pair_ofNat {n : Nat} (hn : n < 2 ^ 32) :
     (0#32 ++ BitVec.ofNat 32 n : BitVec 64) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [])]
   simp only [BitVec.toNat_ofNat, Nat.zero_shiftLeft, Nat.zero_or]
-  omega
+  omega_using [hn]
 
 /-- The caller's four `u64`s, from their halves. -/
 theorem wordsAt_slots (m : Mem) (B : Addr) {a b c d : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32)

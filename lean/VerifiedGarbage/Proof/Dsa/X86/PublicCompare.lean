@@ -19,7 +19,7 @@ theorem publicCompare_ok {s : State} {base : Addr} {size value wanted : Nat} (f 
     WP isa (.block [.mov .eax (.mem (sc (Layout.field f))), .alu .cmp .eax (.imm (BitVec.ofNat 32 wanted))]) s fun t =>
       t.zf = some (decide (value = wanted)) ∧ Keeps [.eax] s t ∧ t.mem = s.mem := by
   have B := VG.Proof.Dsa.X86.Layout.field_bounds f
-  have bound : Layout.field f + 4 ≤ size := by omega
+  have bound : Layout.field f + 4 ≤ size := by omega_using [hz, B]
   refine wp_movS (readSrc_sc hs bound) fun u su _ => ?_
   refine wp_cmpS rfl fun t ut zt => WP.block_nil ⟨?_, su.keeps.trans (ut.keeps [] |>.mono (by simp)), ut.mem.trans su.mem⟩
   rw [zt, su.gpr]

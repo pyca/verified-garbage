@@ -43,7 +43,7 @@ theorem ofBytes_lt (l : List Byte) : Spec.Weierstrass.ofBytes l < 256 ^ l.length
     have h1 : (x.toNat + 1) * 256 ^ l.length ≤ 256 * 256 ^ l.length :=
       Nat.mul_le_mul_right _ (show x.toNat + 1 ≤ 256 from x.isLt)
     rw [Nat.add_mul, Nat.one_mul] at h1
-    omega
+    omega_using [ih, h1]
 
 theorem pow256 (k : Nat) : (256 : Nat) ^ k = 2 ^ (8 * k) := by
   rw [Nat.pow_mul]
@@ -58,7 +58,7 @@ theorem ofBytes_bytesAt_lt (m : Mem) (p : Addr) (n : Nat) :
 theorem top_bytes (m : Mem) (p : Addr) {t : Nat} (ht : t ≤ 8) :
     (byteRev64 (m.readW p 64)).toNat >>> (8 * (8 - t)) = Spec.Weierstrass.ofBytes (bytesAt m p t) := by
   have e := bytesAt_add m p t (8 - t)
-  rw [show t + (8 - t) = 8 by omega] at e
+  rw [show t + (8 - t) = 8 by omega_using [ht]] at e
   have hb := ofBytes_lt (bytesAt m (p + BitVec.ofNat 64 t) (8 - t))
   rw [length_bytesAt] at hb
   rw [byteRev64_ofBytes, e, ofBytes_append, length_bytesAt, Nat.shiftRight_eq_div_pow, ← pow256,
@@ -74,20 +74,20 @@ theorem wordsVal_eq_ofBytes_len (m m' : Mem) (base p : Addr) (o k len : Nat) (hl
       else byteRev64 (m'.readW p 64) >>> (8 * (8 * (j + 1) - len))) :
     wordsVal m base o (k + 1) = Spec.Weierstrass.ofBytes (bytesAt m' p len) := by
   have hlow := wordsVal_eq_ofBytes m m' base (p + BitVec.ofNat 64 (len - 8 * k)) o k fun j hj => by
-    rw [h j (by omega), ite_eq_left_of_eq_true _ _ (eq_true (by omega)), Offset.add_add,
-      show len - 8 * k + 8 * (k - 1 - j) = len - 8 * (j + 1) by omega]
+    rw [h j (by omega_using [hj]), ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [hlo, hj])), Offset.add_add,
+      show len - 8 * k + 8 * (k - 1 - j) = len - 8 * (j + 1) by omega_using [hlo, hj]]
   have htop : (word m base (o + 8 * k)).toNat =
       Spec.Weierstrass.ofBytes (bytesAt m' p (len - 8 * k)) := by
-    rw [h k (by omega)]
+    rw [h k (by omega_using [])]
     by_cases hc : 8 * (k + 1) ≤ len
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true hc), show len - 8 * (k + 1) = 0 by omega,
-        show len - 8 * k = 8 by omega, BitVec.add_zero, byteRev64_ofBytes]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true hc), show len - 8 * (k + 1) = 0 by omega_using [hhi],
+        show len - 8 * k = 8 by omega_using [hhi, hc], BitVec.add_zero, byteRev64_ofBytes]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false hc), BitVec.toNat_ushiftRight,
-        show 8 * (8 * (k + 1) - len) = 8 * (8 - (len - 8 * k)) by omega, top_bytes _ _ (by omega)]
+        show 8 * (8 * (k + 1) - len) = 8 * (8 - (len - 8 * k)) by omega_using [hlo], top_bytes _ _ (by omega_using [hhi])]
   have e := bytesAt_add m' p (len - 8 * k) (8 * k)
-  rw [show len - 8 * k + 8 * k = len by omega] at e
+  rw [show len - 8 * k + 8 * k = len by omega_using [hlo]] at e
   rw [wordsVal_succ_top, hlow, htop, e, ofBytes_append, length_bytesAt, pow256,
-    show 8 * (8 * k) = 64 * k by omega, Nat.mul_comm (2 ^ (64 * k)), Nat.add_comm]
+    show 8 * (8 * k) = 64 * k by omega_using [], Nat.mul_comm (2 ^ (64 * k)), Nat.add_comm]
 
 /-! ## Shifting right in place -/
 
@@ -107,34 +107,34 @@ theorem wordsVal_shr (m m' : Mem) (base : Addr) (o n sh : Nat) (hsh : 0 < sh) (h
   refine Nat.eq_of_testBit_eq fun i => ?_
   rw [Nat.testBit_shiftRight]
   by_cases hi : i < 64 * n
-  · have hj : i / 64 < n := by omega
+  · have hj : i / 64 < n := by omega_using [hi]
     have hb : i % 64 < 64 := Nat.mod_lt _ (by decide)
-    rw [show i = 64 * (i / 64) + i % 64 by omega, testBit_wordsVal _ _ _ _ _ _ hj hb, BitVec.testBit_toNat,
+    rw [show i = 64 * (i / 64) + i % 64 by omega_using [], testBit_wordsVal _ _ _ _ _ _ hj hb, BitVec.testBit_toNat,
       h _ hj]
     by_cases hlo : sh + i % 64 < 64
-    · rw [show sh + (64 * (i / 64) + i % 64) = 64 * (i / 64) + (sh + i % 64) by omega,
+    · rw [show sh + (64 * (i / 64) + i % 64) = 64 * (i / 64) + (sh + i % 64) by omega_using [],
         testBit_wordsVal _ _ _ _ _ _ hj hlo, BitVec.testBit_toNat]
       split
       · simp only [BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateRight,
           BitVec.getLsbD_and, BitVec.getLsbD_ofNat, Nat.testBit_two_pow_sub_one,
-          Nat.mod_eq_of_lt hsh', show i % 64 < 64 - sh by omega, ite_true]
-        simp only [show ¬sh + i % 64 < sh by omega, decide_false, Bool.and_false, Bool.or_false]
+          Nat.mod_eq_of_lt hsh', show i % 64 < 64 - sh by omega_using [hlo], ite_true]
+        simp only [show ¬sh + i % 64 < sh by omega_using [], decide_false, Bool.and_false, Bool.or_false]
       · rw [BitVec.getLsbD_ushiftRight]
     · split
       · rename_i hn
-        rw [show sh + (64 * (i / 64) + i % 64) = 64 * (i / 64 + 1) + (sh + i % 64 - 64) by omega,
-          testBit_wordsVal _ _ _ _ _ _ hn (by omega), BitVec.testBit_toNat]
+        rw [show sh + (64 * (i / 64) + i % 64) = 64 * (i / 64 + 1) + (sh + i % 64 - 64) by omega_using [hlo],
+          testBit_wordsVal _ _ _ _ _ _ hn (by omega_using [hsh']), BitVec.testBit_toNat]
         simp only [BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateRight,
           BitVec.getLsbD_and, BitVec.getLsbD_ofNat, Nat.testBit_two_pow_sub_one,
-          Nat.mod_eq_of_lt hsh', show ¬i % 64 < 64 - sh by omega, ite_false, hb, decide_true,
-          Bool.true_and, show i % 64 - (64 - sh) = sh + i % 64 - 64 by omega]
-        rw [BitVec.getLsbD_of_ge _ _ (show 64 ≤ sh + i % 64 by omega)]
-        simp only [Bool.false_or, show sh + i % 64 - 64 < 64 by omega, show sh + i % 64 - 64 < sh by omega,
+          Nat.mod_eq_of_lt hsh', show ¬i % 64 < 64 - sh by omega_using [hlo], ite_false, hb, decide_true,
+          Bool.true_and, show i % 64 - (64 - sh) = sh + i % 64 - 64 by omega_using [hsh']]
+        rw [BitVec.getLsbD_of_ge _ _ (show 64 ≤ sh + i % 64 by omega_using [hlo])]
+        simp only [Bool.false_or, show sh + i % 64 - 64 < 64 by omega_using [hsh'], show sh + i % 64 - 64 < sh by omega_using [hsh],
           decide_true, Bool.and_true]
       · rename_i hn
-        rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_of_ge _ _ (by omega),
-          testBit_high hx (by omega)]
-  · rw [testBit_high (wordsVal_lt m' base o n) (by omega), testBit_high hx (by omega)]
+        rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_of_ge _ _ (by omega_using [hlo]),
+          testBit_high hx (by omega_using [hlo, hn])]
+  · rw [testBit_high (wordsVal_lt m' base o n) (by omega_using [hi]), testBit_high hx (by omega_using [hi])]
 
 /-! ## Writing `len` bytes -/
 
@@ -167,28 +167,28 @@ theorem bytesAt_eq_toBytes_len (m m₀ : Mem) (base q : Addr) {a k len : Nat} (c
       · simp
       · simp only [ite_true, BitVec.and_allOnes]
         rw [← wordsVal_shiftRight_top, ← Nat.shiftRight_add,
-          show 64 * k + 8 * (len - 8 * k - 1 - i) = 8 * (len - 1 - i) by omega]
-    · have hj : (len - 1 - i) / 8 < k + 1 := by omega
-      have hj8 : 8 * ((len - 1 - i) / 8 + 1) ≤ len := by omega
+          show 64 * k + 8 * (len - 8 * k - 1 - i) = 8 * (len - 1 - i) by omega_using [hk]]
+    · have hj : (len - 1 - i) / 8 < k + 1 := by omega_using [hhi]
+      have hj8 : 8 * ((len - 1 - i) / 8 + 1) ≤ len := by omega_using [hlo, hhi, hi, hk]
       have e := byte_word m (q + BitVec.ofNat 64 (len - 8 * ((len - 1 - i) / 8 + 1))) 0
-        (r := i - (len - 8 * ((len - 1 - i) / 8 + 1))) (by omega)
+        (r := i - (len - 8 * ((len - 1 - i) / 8 + 1))) (by omega_using [hi])
       rw [Nat.mul_zero, Nat.zero_add, show q + BitVec.ofNat 64 (len - 8 * ((len - 1 - i) / 8 + 1)) +
           BitVec.ofNat 64 0 = q + BitVec.ofNat 64 (len - 8 * ((len - 1 - i) / 8 + 1)) from BitVec.add_zero _,
         Offset.add_add_eq q (show len - 8 * ((len - 1 - i) / 8 + 1) + (i - (len - 8 * ((len - 1 - i) / 8 + 1))) = i
-          by omega), hw _ hj hj8] at e
+          by omega_using []), hw _ hj hj8] at e
       rw [e]
       apply BitVec.eq_of_getLsbD_eq
       intro b hb
       rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_ofNat, decide_eq_true hb, Bool.true_and, Bool.true_and,
-        getLsbD_byteRev64 _ (by omega), BitVec.getLsbD_and]
+        getLsbD_byteRev64 _ (by omega_using [hi, hb]), BitVec.getLsbD_and]
       cases c
       · simp
       · simp only [ite_true, BitVec.getLsbD_allOnes]
-        rw [decide_eq_true (by omega), Bool.and_true, Nat.testBit_shiftRight,
+        rw [decide_eq_true (by omega_using []), Bool.and_true, Nat.testBit_shiftRight,
           show 8 * (len - 1 - i) + b = 64 * ((len - 1 - i) / 8) +
             (8 * (7 - (8 * (i - (len - 8 * ((len - 1 - i) / 8 + 1))) + b) / 8) +
-              (8 * (i - (len - 8 * ((len - 1 - i) / 8 + 1))) + b) % 8) by omega,
-          testBit_wordsVal _ _ _ _ _ _ hj (by omega), BitVec.testBit_toNat]
+              (8 * (i - (len - 8 * ((len - 1 - i) / 8 + 1))) + b) % 8) by omega_using [hlo, hhi, hi, hk, hb],
+          testBit_wordsVal _ _ _ _ _ _ hj (by omega_using []), BitVec.testBit_toNat]
   cases c
   · simp only [Bool.false_eq_true, ite_false] at hb ⊢
     refine List.ext_getElem (by rw [length_bytesAt, List.length_replicate]) fun i h₁ _ => ?_

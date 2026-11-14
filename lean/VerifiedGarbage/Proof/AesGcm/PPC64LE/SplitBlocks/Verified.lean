@@ -53,14 +53,14 @@ theorem rest_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   refine WP.mono (Wrapper.rest_ok t (by
     intro p hp
     have ho : ∀ p ∈ Impl.AesGcm.PPC64LE.SplitBlocks.extraSaved, p.2+8≤2112 := by decide
-    exact hwork _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega)⟩))
+    exact hwork _ _ ⟨_,List.mem_singleton_self _,Offset.contains_base _ (ho p hp) (by have := ho p hp; omega_using [this])⟩))
     fun restState hr => ?_
   subst restState
   refine WP.mono (Wrapper.body_ok dec (Contract.prep t) (t.gpr .r10).toNat (t.gpr .r4).toNat (t.gpr .r8).toNat lay
     (by change t.gpr .r10=BitVec.ofNat 64 (t.gpr .r10).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq])
     (by change t.gpr .r4=BitVec.ofNat 64 (t.gpr .r4).toNat; simp only [BitVec.ofNat_toNat,BitVec.setWidth_eq])
     hv t.gpr (Contract.prep_saved t)) fun u hu => ?_
-  have hnr : (t.gpr .r4).toNat<15 := by rcases hv with h | h | h <;> omega
+  have hnr : (t.gpr .r4).toNat<15 := by rcases hv with h | h | h <;> omega_using [h]
   have hc := hu.ciphertext
   have hctr := hu.counter
   have hy := hu.y

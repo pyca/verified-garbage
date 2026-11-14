@@ -105,7 +105,7 @@ theorem withLr_rel {P : State → State → Prop} {main : Prog isa}
 /-- The frame's region is in the contract's stack, below the stack pointer. -/
 theorem frame_sub (s : State) :
     Region.Sub ⟨s.sp - 48 + 32, 16⟩ ⟨s.sp - 48, 48⟩ := by
-  have := Offset.sub_base (s.sp - 48) (d := 32) (n := 16) (k := 48) (by omega)
+  have := Offset.sub_base (s.sp - 48) (d := 32) (n := 16) (k := 48) (by omega_using [])
   exact this
 
 /-! ## `absorb` -/
@@ -142,7 +142,7 @@ theorem absorb_main_agree {a b : State}
   · simp only [pushed, State.write, hw₁]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_using []
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [SlotTaint.region, pushed, State.write, hw₁]
@@ -196,7 +196,7 @@ theorem squeeze_main_agree {a b : State}
   · simp only [pushed, State.write, hw₁]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> first | omega | exact Nat.le_of_lt (BitVec.isLt _)
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> first | omega_using [] | exact Nat.le_of_lt (BitVec.isLt _)
   · intro p hp
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [SlotTaint.region, pushed, State.write, hw₁]

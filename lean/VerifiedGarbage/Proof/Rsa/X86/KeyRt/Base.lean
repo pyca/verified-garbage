@@ -26,7 +26,7 @@ open VG.Proof.Bignum.X86.PublicRt (wb wb_le widthB_ok adds_ok)
 /-- The width in 32-bit words: `2 ⌈len / 8⌉`. -/
 abbrev kw (len : Nat) : Nat := 2 * Spec.Rsa.modulusWords len
 
-theorem wb_kw (len : Nat) : wb len = 4 * kw len := by simp only [wb, kw]; omega
+theorem wb_kw (len : Nat) : wb len = 4 * kw len := by simp only [wb, kw]; omega_using []
 
 /-- The length whose width `kw` is the shape's, from the modulus's length `a`. -/
 def _root_.VG.Impl.Rsa.X86.KeyRt.Lay.toLen (L : Lay) (a : Nat) : Nat :=
@@ -36,7 +36,7 @@ def _root_.VG.Impl.Rsa.X86.KeyRt.Lay.toLen (L : Lay) (a : Nat) : Nat :=
   | .wide => 2 * wb a + 24
 
 theorem kw_bound {len : Nat} (hle : len ≤ 4096) : 4 * kw len ≤ 4104 := by
-  simp only [kw, Spec.Rsa.modulusWords]; omega
+  simp only [kw, Spec.Rsa.modulusWords]; omega_using [hle]
 
 /-- What every operation needs of a state. -/
 structure RtWs (L : Lay) (s : State) (B : Addr) (Z len N : Nat) : Prop where
@@ -51,7 +51,7 @@ variable {L : Lay} {B : Addr} {Z len N : Nat}
 /-- What a frame inside the workspace keeps: everything else. -/
 theorem outs_outside {m m' : Mem} {rs : List (Nat × Nat)} (h : Outs B rs m m')
     (hr : ∀ r ∈ rs, r.1 + r.2 ≤ Z) : Outside B 0 Z m m' :=
-  fun x hx => h x fun r hm => by have := hr r hm; omega
+  fun x hx => h x fun r hm => by have := hr r hm; omega_using [hx, this]
 
 theorem RtWs.keep {s t : State} (h : RtWs L s B Z len N) {rs : List Reg} (K : Keeps rs s t)
     (edi : .edi ∉ rs) (esp : .esp ∉ rs) (O : Outside B 0 Z s.mem t.mem) : RtWs L t B Z len N :=
@@ -66,7 +66,7 @@ abbrev lenOp (L : Lay) : MemOp := VG.Impl.Bignum.X86.PublicRt.argAt (L.len - 1) 
 
 theorem lenOp_eq (hL : 1 ≤ L.len) : lenOp L = VG.Impl.Bignum.X86.PublicFn.argument L.len := by
   simp only [lenOp, VG.Impl.Bignum.X86.PublicRt.argAt, VG.Impl.Bignum.X86.PublicFn.argument]
-  congr 1; omega
+  congr 1; omega_using [hL]
 
 /-- The modulus's length argument, as `widthB` reads it, of the width `kw len` for the shape. -/
 def LenSrc (L : Lay) (s : State) (len : Nat) : Prop :=
@@ -105,7 +105,7 @@ theorem bytesB_ok {r : Reg} (hl : LenSrc L s len) (_hle : len ≤ 4096)
   unfold bytesB
   rw [List.append_assoc]
   refine widthB_ok hr ha fun t K m e => ?_
-  have et : (t.gpr r).toNat = wb a := by rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have et : (t.gpr r).toNat = wb a := by rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]
   unfold Lay.toLen at k
   cases hs : L.shape with
   | base =>
@@ -117,7 +117,7 @@ theorem bytesB_ok {r : Reg} (hl : LenSrc L s len) (_hle : len ≤ 4096)
     refine wp_addS rfl fun u U _ => k u (K.trans U.keeps) (U.mem.trans m) ?_
     rw [U.gpr, BitVec.toNat_add, et, show (8 : BitVec 32).toNat = 8 from rfl]
     simp only [wb, kw, Spec.Rsa.modulusWords]
-    omega
+    omega_using [ha]
   | wide =>
     simp only [hs] at k
     simp only [Shape.extra, List.cons_append, List.nil_append]
@@ -125,7 +125,7 @@ theorem bytesB_ok {r : Reg} (hl : LenSrc L s len) (_hle : len ≤ 4096)
       k v ((K.trans U.keeps).trans V.keeps) (V.mem.trans (U.mem.trans m)) ?_
     rw [V.gpr, U.gpr, BitVec.toNat_add, BitVec.toNat_add, et, show (24 : BitVec 32).toNat = 24 from rfl]
     simp only [wb, kw, Spec.Rsa.modulusWords]
-    omega
+    omega_using [ha]
 
 /-- `count r extra`: `r = 4 w`, or `4 w + 4` with `extra`. -/
 theorem count_ok {r : Reg} {extra : Bool} (hl : LenSrc L s len)
@@ -140,7 +140,7 @@ theorem count_ok {r : Reg} {extra : Bool} (hl : LenSrc L s len)
   | true =>
     simp only [ite_true, List.append_assoc, List.cons_append, List.nil_append]
     refine bytesB_ok hl hle fun t K m e => wp_addS rfl fun u U _ => k u (K.trans U.keeps) (U.mem.trans m) ?_
-    rw [U.gpr, BitVec.toNat_add, e]; simp; omega
+    rw [U.gpr, BitVec.toNat_add, e]; simp; omega_using [hw]
 
 /-- `addMul r t fuel j`: `r += j t`, `t` kept, for `j t` below `2^32`. -/
 theorem addMul_ok {r t : Reg} (hrt : r ≠ t) : ∀ (fuel j : Nat) {s : State} {is : List Instr}
@@ -161,7 +161,7 @@ theorem addMul_ok {r t : Reg} (hrt : r ≠ t) : ∀ (fuel j : Nat) {s : State} {
         exact wp_addS rfl fun u U _ => k' u U.keeps U.mem (by rw [U.gpr, h, Nat.one_mul, BitVec.ofNat_toNat, BitVec.setWidth_eq])
       · next h =>
         simp only [List.nil_append]
-        exact k' s (Keeps.refl _ _) rfl (by rw [show j % 2 = 0 by omega, Nat.zero_mul]; simp)
+        exact k' s (Keeps.refl _ _) rfl (by rw [show j % 2 = 0 by omega_using [h], Nat.zero_mul]; simp)
     refine odd fun u K m e => ?_
     have ut : u.gpr t = s.gpr t := K.1 _ (by simp [hrt.symm])
     have split : j * (s.gpr t).toNat = j % 2 * (s.gpr t).toNat + j / 2 * (2 * (s.gpr t).toNat) := by
@@ -174,19 +174,19 @@ theorem addMul_ok {r t : Reg} (hrt : r ≠ t) : ∀ (fuel j : Nat) {s : State} {
       rw [e, split, h0, Nat.zero_mul, Nat.add_zero]
     · next h0 =>
       simp only [List.cons_append, List.append_assoc, List.nil_append]
-      have h2 : 2 * (s.gpr t).toNat ≤ j * (s.gpr t).toNat := Nat.mul_le_mul_right _ (by omega)
+      have h2 : 2 * (s.gpr t).toNat ≤ j * (s.gpr t).toNat := Nat.mul_le_mul_right _ (by omega_using [h0])
       refine wp_addS rfl fun v V _ => ?_
       have vt : (v.gpr t).toNat = 2 * (s.gpr t).toNat := by
-        rw [V.gpr, BitVec.toNat_add, ut]; omega
+        rw [V.gpr, BitVec.toNat_add, ut]; omega_using [hb, h2]
       have vr : v.gpr r = u.gpr r := V.other _ hrt
-      have hb' : j / 2 * (v.gpr t).toNat < 2 ^ 32 := by rw [vt]; omega
+      have hb' : j / 2 * (v.gpr t).toNat < 2 ^ 32 := by rw [vt]; omega_using [hb, split]
       refine addMul_ok hrt fuel (j / 2) hb' fun w W mw ew => wp_shr (by decide) fun z Z _ => ?_
       have wt : w.gpr t = v.gpr t := W.1 _ (by simp [hrt.symm])
       have zt : z.gpr t = s.gpr t := by
         rw [Z.gpr, wt]
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_ushiftRight, vt, Nat.shiftRight_eq_div_pow]
-        omega
+        omega_using []
       refine k z ⟨fun x hx => ?_, ?_, ?_⟩ (by rw [Z.mem, mw, V.mem, m]) ?_
       · by_cases hxt : x = t
         · rw [hxt, zt]
@@ -198,7 +198,7 @@ theorem addMul_ok {r t : Reg} (hrt : r ≠ t) : ∀ (fuel j : Nat) {s : State} {
         congr 1
         apply BitVec.eq_of_toNat_eq
         simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-        omega
+        omega_using []
 
 /-- `arrPtr r j t`: `r` at array `j`, `t = 4 w + 8`, for `edi` at the workspace. -/
 theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : LenSrc L s len)
@@ -212,19 +212,19 @@ theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : LenSrc L s len)
   refine bytesB_ok hl hle fun s₁ K₁ m₁ e₁ => wp_addS rfl fun s₂ u₂ _ => wp_movS rfl fun s₃ u₃ _ => ?_
   refine wp_addS rfl fun s₄ u₄ _ => ?_
   have et : (s₂.gpr t).toNat = 4 * kw len + 8 := by
-    rw [u₂.gpr, BitVec.toNat_add, e₁]; simp; omega
+    rw [u₂.gpr, BitVec.toNat_add, e₁]; simp; omega_using [hw]
   have et₄ : s₄.gpr t = s₂.gpr t := by rw [u₄.other _ hrt.symm, u₃.other _ hrt.symm]
   have edi₂ : s₂.gpr .edi = s.gpr .edi := by rw [u₂.other _ hte.symm, K₁.1 _ (by simp [hte.symm])]
-  have e8 : 4 * (kw len + 2) = 4 * kw len + 8 := by omega
+  have e8 : 4 * (kw len + 2) = 4 * kw len + 8 := by omega_using []
   have this : j * (4 * kw len + 8) < 2 ^ 32 := by
-    simp only [arr, S, VG.Impl.Rsa.X86.Keys.hdr] at hj; rw [e8] at hj; omega
+    simp only [arr, S, VG.Impl.Rsa.X86.Keys.hdr] at hj; rw [e8] at hj; omega_using [hj]
   refine addMul_ok hrt _ j (by rw [et₄, et]; exact this) fun u K m e => ?_
   refine k u (((K₁.mono (by simp)).trans (u₂.keeps.mono (by simp))).trans
       (((u₃.keeps.trans u₄.keeps).trans K).mono (by simp)))
     (by rw [m, u₄.mem, u₃.mem, u₂.mem, m₁]) ?_ (by rw [K.1 _ (by simp [hrt.symm]), et₄, et])
   rw [PtrAt, e, u₄.gpr, u₃.gpr, edi₂, et₄]
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, et, hedi, arr, S, VG.Impl.Rsa.X86.Keys.hdr]
-  rw [Nat.mod_eq_of_lt (a := 160) (by omega), Nat.mod_eq_of_lt (a := j * (4 * kw len + 8)) this,
+  rw [Nat.mod_eq_of_lt (a := 160) (by omega_using []), Nat.mod_eq_of_lt (a := j * (4 * kw len + 8)) this,
     Nat.mod_add_mod, e8, Nat.add_assoc]
 
 end

@@ -68,14 +68,14 @@ theorem tailGroup_ok (r : Ren) (g : Fin 4) (len : Nat) (hlen : len=1 ∨ len=2)
     {values : Vector (BitVec 128) 8} {z : Nat → Nat → Nat → Int}
     (hbank : Bank s r.data values) (hconst : TailRoots s z)
     (k : ∀ t, VChg tailRegs s t → TailRoots t z →
-      Bank t r.data (packedValues values ⟨2*g.val,by omega⟩ ⟨2*g.val+1,by omega⟩ len (z g.val len)) →
+      Bank t r.data (packedValues values ⟨2*g.val,by omega_using []⟩ ⟨2*g.val+1,by omega_using []⟩ len (z g.val len)) →
       WP isa (.block rest) t Q) :
     WP isa (.block (rootAt (tailBase len) g.val ++
       renInnerPair r.data[2*g.val] r.data[2*g.val+1] r.free len ++ rest)) s Q := by
-  let i : Fin 8 := ⟨2*g.val,by omega⟩
-  let j : Fin 8 := ⟨2*g.val+1,by omega⟩
+  let i : Fin 8 := ⟨2*g.val,by omega_using []⟩
+  let j : Fin 8 := ⟨2*g.val+1,by omega_using []⟩
   rw [List.append_assoc]
-  refine rootAt_ok (tailBase len) g.val (by omega) ?_
+  refine rootAt_ok (tailBase len) g.val (by omega_using []) ?_
     (hconst.read g.val g.isLt len hlen 16 (by simp)) fun s₁ hc₁ hz₁ hb₁ => ?_
   · simpa only [Nat.add_zero] using hconst.read g.val g.isLt len hlen 0 (by simp)
   · have hp : ∀ v ∈ liveRegs, v ∉ [VReg.v18,.v19] := by decide
@@ -87,7 +87,7 @@ theorem tailGroup_ok (r : Ren) (g : Fin 4) (len : Nat) (hlen : len=1 ∨ len=2)
       intro e he
       rw [hc₁.get .v16]
       exact hconst.q e he
-    refine packedBank_ok r i j len (by intro h; have := congrArg Fin.val h; simp only [i,j] at this; omega)
+    refine packedBank_ok r i j len (by intro h; have := congrArg Fin.val h; simp only [i,j] at this; omega_using [this])
       hr bank₁ (hconst.range g.val g.isLt len hlen) ?_ ?_ hq₁ fun s₂ hc₂ hb₂ => ?_
     · rw [hz₁]
       exact hconst.root g.val g.isLt len hlen
@@ -126,7 +126,7 @@ def tailValues (v : Vector (BitVec 128) 8) (z : Nat → Nat → Nat → Int) :
     List (Fin 4 × Nat) → Vector (BitVec 128) 8
   | [] => v
   | (g,len)::ps => tailValues
-      (packedValues v ⟨2*g.val,by omega⟩ ⟨2*g.val+1,by omega⟩ len (z g.val len)) z ps
+      (packedValues v ⟨2*g.val,by omega_using []⟩ ⟨2*g.val+1,by omega_using []⟩ len (z g.val len)) z ps
 
 theorem tailRun_ok (r : Ren) (ps : List (Fin 4 × Nat))
     (hl : ∀ p ∈ ps, p.2=1 ∨ p.2=2) (hr : GoodRen r)
@@ -186,7 +186,7 @@ def positiveVector (v : BitVec 128) : BitVec 128 :=
 theorem positiveVector_word (v : BitVec 128) {e : Nat} (he : e < 4) :
     vword (positiveVector v) e = positiveWord (vword v e) := by
   rw [positiveVector, VG.AArch64.vword_ofVWords _ _ _ _ he]
-  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- Normalizing the complete bank neither assumes nor establishes canonical
 representatives: the exact outputs are positive and below 3q. -/
@@ -329,7 +329,7 @@ theorem fiveSlice_ok {s : State} {rest : List Instr} {Q : State → Prop}
     (k : ∀ t, (∃ u, VChg fiveRegs s u ∧ VMem u t (fiveSliceMem s zi zt)) →
       WP isa (.block rest) t Q) :
     WP isa (.block (fiveSliceCode ++ rest)) s Q := by
-  have ho : ∀ i : Fin 8, (16*i.val)%16=0 ∧ 16*i.val<65536 := by intro i; omega
+  have ho : ∀ i : Fin 8, (16*i.val)%16=0 ∧ 16*i.val<65536 := by intro i; omega_using []
   have hs : ((bankLoads ({} : Ren).data 16).map Prod.fst) ⊆ outerRegs := by decide
   simp only [fiveSliceCode,List.append_assoc]
   refine loadBank_ok ({} : Ren).data 16 .x2 initial_good.injective ho hr fun s₁ hc₁ hb₁ => ?_
@@ -388,15 +388,15 @@ theorem inner_contains (p : Addr) {u gap g b : Nat} (hu : u<8) (hg : ValidGroup 
     (hb : b=0 ∨ b=16) : (expandedRegion p).Contains (rootAddress p u (innerOffset gap) g b) 16 := by
   have h : 480*u+innerOffset gap+32*g+b+16 ≤ 3904 := by
     rcases hg with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩ <;>
-      simp only [innerOffset,ite_true,show ¬2=4 by decide,show ¬1=4 by decide,show ¬1=2 by decide,ite_false] <;> omega
-  exact Offset.contains_base p h (by omega)
+      simp only [innerOffset,ite_true,show ¬2=4 by decide,show ¬1=4 by decide,show ¬1=2 by decide,ite_false] <;> omega_arith
+  exact Offset.contains_base p h (by omega_using [h])
 
 theorem tail_contains (p : Addr) {u len g b : Nat} (hu : u<8) (hg : g<4)
     (hl : len=1 ∨ len=2) (hb : b=0 ∨ b=16) :
     (expandedRegion p).Contains (rootAddress p u (tailOffset len) g b) 16 := by
   have h : 480*u+tailOffset len+32*g+b+16 ≤ 3904 := by
-    rcases hl with rfl | rfl <;> simp only [tailOffset,show ¬1=2 by decide,ite_false,ite_true] <;> omega
-  exact Offset.contains_base p h (by omega)
+    rcases hl with rfl | rfl <;> simp only [tailOffset,show ¬1=2 by decide,ite_false,ite_true] <;> omega_using [hu, hg, hb]
+  exact Offset.contains_base p h (by omega_using [h])
 
 /-- Logical values of the immutable prearranged inner table, independent of
 its assembler symbol or host allocation. -/

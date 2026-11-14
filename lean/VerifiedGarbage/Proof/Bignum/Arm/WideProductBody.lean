@@ -193,17 +193,17 @@ theorem wideProductBody_ok (s : State) {s0 : State} {base : BitVec 32} {size o a
   rintro u ⟨value, outside, ptr, rest⟩
   have header (d : Nat) (hd : d + 4 ≤ 148) :
       u.mem.readW (off (State.addr base) d) 32 = s.mem.readW (off (State.addr base) d) 32 :=
-    outside_read32 outside (by omega) (by omega)
+    outside_read32 outside (by omega_using [oHeader, hd]) (by omega_using [hd])
   have outsideRow : Outs (State.addr base) [(128, 16), (o, 4 * (m + n + 2))] s.mem u.mem :=
-    Outs.of_outside (outside.mono (o' := o) (n' := 4 * (m + n + 2)) (by omega) (by omega)) (by simp)
+    Outs.of_outside (outside.mono (o' := o) (n' := 4 * (m + n + 2)) (by omega_using []) (by omega_using [hi])) (by simp)
   have restU := h.rest.trans rest
   refine WP.mono (wideProductNext_ok u (ctx.workspace.congr restU.wr) ctx.headerFit ptr
-    (by omega) (by omega) ((header 128 (by decide)).trans h.aPtr)
+    (by omega_using [hi]) (by omega_using [nowrap, outFits]) ((header 128 (by decide)).trans h.aPtr)
     ((header 136 (by decide)).trans h.oPtr) ((header 140 (by decide)).trans h.count)) ?_
   rintro t ⟨mem, zero, restT⟩
   obtain ⟨outsideT, aPtr, oPtr, count, bPtr, width⟩ := wideProductNext_memory mem
   have outsideAll := h.outside.trans (outsideRow.trans (Outs.of_outside outsideT (by simp)))
-  refine ⟨⟨by omega, (restT.gpr .r0 (by decide)).trans ptr, ?_, ?_, ?_, ?_, ?_, outsideAll, ?_,
+  refine ⟨⟨by omega_using [hi], (restT.gpr .r0 (by decide)).trans ptr, ?_, ?_, ?_, ?_, ?_, outsideAll, ?_,
     restU.trans (restT.mono (by decide))⟩, ?_⟩
   · rw [aPtr]
     change base + BitVec.ofNat 32 (a + 4 * i) + BitVec.ofNat 32 4 = _
@@ -216,8 +216,8 @@ theorem wideProductBody_ok (s : State) {s0 : State} {base : BitVec 32} {size o a
     congr 1
   · rw [count]; congr 1
   · exact width.trans ((header 144 (by decide)).trans h.width)
-  · rw [outsideT.val32 (d := o) (k := m + n + 2) (by omega) (by omega)]
+  · rw [outsideT.val32 (d := o) (k := m + n + 2) (by omega_using [oHeader]) (by omega_using [nowrap, outFits])]
     exact value
-  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+  · rw [zero]; exact decide_eq_decide.mpr (by omega_using [])
 
 end VG.Proof.Bignum.Arm

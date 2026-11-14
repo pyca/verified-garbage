@@ -152,6 +152,10 @@ bl {vg_ed448_verify_equation}
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_r32_add.rs"]
+pub(crate) mod vg_ed448_r32_add;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_r32_add_affine.rs"]
 pub(crate) mod vg_ed448_r32_add_affine;
 

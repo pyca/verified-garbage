@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Doubled words
 
@@ -27,8 +28,8 @@ theorem dbl_rot (x : BitVec 32) (n m : Nat) (hn : n < 32) (hm : m + n = 32) :
   rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, dbl, BitVec.getLsbD_append,
     BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hn]
   by_cases h : i < n
-  · simp only [show m + i < 32 by omega, h, hi, ↓reduceIte, decide_true, Bool.true_and]; congr 1; omega
-  · simp only [show ¬ m + i < 32 by omega, h, hi, ↓reduceIte, decide_true, Bool.true_and]; congr 1; omega
+  · simp only [show m + i < 32 by omega_using [hm, h], h, hi, ↓reduceIte, decide_true, Bool.true_and]; congr 1; omega_using [hm]
+  · simp only [show ¬ m + i < 32 by omega_using [hm, h], h, hi, ↓reduceIte, decide_true, Bool.true_and]; congr 1; omega_using [hm]
 
 /-- A zero-extended word doubled by `slli` and `or`. -/
 theorem dbl_ext (x : BitVec 32) : x.setWidth 64 ||| x.setWidth 64 <<< 32 = dbl x := by
@@ -37,7 +38,7 @@ theorem dbl_ext (x : BitVec 32) : x.setWidth 64 ||| x.setWidth 64 <<< 32 = dbl x
     BitVec.getLsbD_append]
   by_cases h : i < 32
   · simp [h, hi]
-  · simp [hi, h, BitVec.getLsbD_of_ge x i (by omega), show i - 32 < 64 by omega]
+  · simp [hi, h, BitVec.getLsbD_of_ge x i (by omega_using [h]), show i - 32 < 64 by omega_using [hi]]
 
 /-- A register's low word doubled by `slli`, `srli` and `or`. -/
 theorem dbl_mk (v : BitVec 64) : v <<< 32 ||| v <<< 32 >>> 32 = dbl (v.setWidth 32) := by
@@ -45,7 +46,7 @@ theorem dbl_mk (v : BitVec 64) : v <<< 32 ||| v <<< 32 >>> 32 = dbl (v.setWidth 
   rw [BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_shiftLeft, dbl,
     BitVec.getLsbD_append]
   by_cases h : i < 32
-  · simp [h, show 32 + i < 64 by omega]
-  · simp [hi, h, show i - 32 < 32 by omega, show ¬ 32 + i < 64 by omega]
+  · simp [h, show 32 + i < 64 by omega_using [h]]
+  · simp [hi, h, show i - 32 < 32 by omega_using [hi], show ¬ 32 + i < 64 by omega_using [h]]
 
 end VG.RISCV64

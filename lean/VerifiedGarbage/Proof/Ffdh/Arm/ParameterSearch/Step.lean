@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.State
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPost
-
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.LiveGuards
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Exit
@@ -20,9 +19,137 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Memory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Done
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Live
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Advance
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CounterMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CompareResult
 public import VerifiedGarbage.Proof.Ffdh.Contract
+
+/-! ### `Ffdh.Arm.ParameterSearch.Advance`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterSearch.RejectHead`, which only this module used -/
+
+section
+
+/-! Rejection advances the public tape and consumed count by precisely the candidate's usage. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Controller lowWord writeLow)
+
+def rejectFields (p : SearchParams) (used count : Nat) : List (Nat × BitVec 32) :=
+  [(4, BitVec.ofNat 32 (used + count)), (9, p.c.tape + BitVec.ofNat 32 (used + count)),
+    (10, BitVec.ofNat 32 (p.c.bytes.length - (used + count)))]
+
+theorem rejectHead_ok {p : SearchParams} {used remaining count : Nat} {s : State}
+    (h : SearchLive p used remaining s) (bound : count ≤ p.c.bytes.length - used)
+    (consumed : lowWord s.mem p.control 14 = BitVec.ofNat 32 count) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.rejectHead) s fun t =>
+      t.mem = writeLow s.mem p.control (rejectFields p used count) ∧ Rest [.r9, .r10, .r11, .r12] s t := by
+  have usedValue := h.saved 4 (by simp [searchSlots])
+  have sourceValue := h.saved 9 (by simp [searchSlots])
+  have lengthValue := h.saved 10 (by simp [searchSlots])
+  simp only [searchValues] at usedValue sourceValue lengthValue
+  have countFit : count < 2 ^ 32 := by have := p.c.tapeCount; omega_using [bound, this]
+  have countRoom : count ≤ p.c.bytes.length - used := bound
+  have sum : BitVec.ofNat 32 used + BitVec.ofNat 32 count = BitVec.ofNat 32 (used + count) :=
+    BitVec.ofNat_add_ofNat _ _
+  have source : p.c.tape + BitVec.ofNat 32 used + BitVec.ofNat 32 count =
+      p.c.tape + BitVec.ofNat 32 (used + count) := by rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  have length : BitVec.ofNat 32 (p.c.bytes.length - used) - BitVec.ofNat 32 count =
+      BitVec.ofNat 32 (p.c.bytes.length - (used + count)) := by
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ countFit countRoom]
+    congr 1
+    omega_using []
+  refine withRest_all [.r9, .r10, .r11, .r12] ?_ (by rfl) (by rfl)
+  have control := h.buffers.controller
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.rejectHead VG.Impl.Ffdh.Arm.ParameterSearch.ldf
+    VG.Impl.Ffdh.Arm.ParameterSearch.stf lowWord at *
+  unfold writeLow rejectFields
+  simp only [List.foldl_cons, List.foldl_nil]
+  ffrun [control.addr (by decide : 14 < 16), control.addr (by decide : 4 < 16),
+    control.addr (by decide : 9 < 16), control.addr (by decide : 10 < 16),
+    control.read (by decide : 14 < 16), control.read (by decide : 4 < 16),
+    control.read (by decide : 9 < 16), control.read (by decide : 10 < 16),
+    control.write (by decide : 4 < 16), control.write (by decide : 9 < 16),
+    control.write (by decide : 10 < 16), consumed, usedValue, sourceValue, lengthValue, sum, source, length]
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+
+/-! Rejection advances the live entropy suffix and decrements the entire native retry counter. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (lowWord writeLow writeLow_frame lowWord_writeLow lowValue)
+
+theorem SearchLive.reject_head {p : SearchParams} {used remaining count : Nat} {s : State}
+    (h : SearchLive p used remaining s) (bound : count ≤ p.c.bytes.length - used)
+    (consumed : lowWord s.mem p.control 14 = BitVec.ofNat 32 count) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.rejectHead) s fun t =>
+      SearchLive p (used + count) remaining t ∧ Rest [.r9, .r10, .r11, .r12] s t := by
+  have fieldsBound : ∀ e ∈ rejectFields p used count, e.1 < 16 := by simp [rejectFields]
+  refine WP.mono (rejectHead_ok h bound consumed) ?_
+  rintro t ⟨mem, rest⟩
+  have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
+    rw [mem]; exact writeLow_frame _ _ _ fieldsBound
+  refine ⟨?_, rest⟩
+  refine SearchLive.after_control (nextUsed := used + count) (nextRemaining := remaining)
+    h (by decide) frame rest (by have := h.usedBound; omega_using [bound, this]) h.remainingBound ?_ ?_ ?_ ?_
+  · have same := fields_word s.mem p.control (rejectFields p used count) fieldsBound
+      (j := 0) (by decide) (by simp [rejectFields])
+    have address : off (State.addr p.control) 0 = State.addr p.control := by simp [off]
+    rw [show 8 * 0 = 0 from rfl, address] at same
+    rw [mem, same]
+    exact h.counter
+  · rw [mem, fields_word _ _ _ fieldsBound (j := 1) (by decide) (by simp [rejectFields])]
+    exact h.width
+  · rw [mem, fields_word _ _ _ fieldsBound (j := 2) (by decide) (by simp [rejectFields])]
+    exact h.entropy
+  · intro j member
+    have hj : j < 16 := by
+      simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
+      omega_using [member]
+    rw [mem, lowWord_writeLow _ _ _ fieldsBound j hj, h.saved j member]
+    simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals simp [rejectFields, lowValue, searchValues]
+
+theorem SearchLive.decrement {p : SearchParams} {used remaining : Nat} {s : State}
+    (h : SearchLive p used remaining s) (positive : 0 < remaining) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterSearch.decrement) s fun t =>
+      SearchLive p used (remaining - 1) t ∧ Rest [.r9, .r10, .r12] s t := by
+  refine WP.mono (decrement_ok s h.buffers.controller positive h.remaining_bound h.counter) ?_
+  rintro t ⟨mem, rest⟩
+  have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
+    rw [mem]; exact counter_store_frame _ _ _
+  refine ⟨?_, rest⟩
+  refine SearchLive.after_control (nextUsed := used) (nextRemaining := remaining - 1)
+    h (by decide) frame rest h.usedBound (by have := h.remainingBound; omega_using [this]) ?_ ?_ ?_ ?_
+  · rw [mem, Mem.readW_writeW_self64]
+  · rw [mem, counter_store_word _ _ _ (j := 1) (by decide) (by decide)]
+    exact h.width
+  · rw [mem, counter_store_word _ _ _ (j := 2) (by decide) (by decide)]
+    exact h.entropy
+  · intro j member
+    have hj : 0 < j ∧ j < 16 := by
+      simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
+      omega_using [member]
+    rw [mem, counter_store_low _ _ _ hj.1 hj.2]
+    exact h.saved j member
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
 /-! One native search step calls a candidate only when the entropy suffix can hold its modulus. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterSearch/AcceptHead.lean`, which only this module imported.
@@ -354,17 +481,17 @@ theorem SearchLive.step (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
       have width := p.width_bounds
       unfold Spec.Ffdh.parameterEntropy
       change p.c.bytes.length - used < 32769 * p.c.length
-      omega
+      omega_using [short']
     refine WP.mono live.short_request ?_
     rintro t ⟨done, restT⟩
     refine ⟨?_, (rest.mono (by simp [searchClobbers])).trans restT⟩
     simpa only [Classified, noCandidate, p.tail_short positive noCandidate,
-      ite_eq_right (by omega : ¬ Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.bytes.length - used), requestResult] using done
+      ite_eq_right (by omega_using [entropy] : ¬ Spec.Ffdh.parameterEntropy p.c.bits ≤ p.c.bytes.length - used), requestResult] using done
   · intro enough
     have room : used + p.c.length ≤ p.c.bytes.length := by
       have := of_decide_eq_false enough
       have := h.usedBound
-      omega
+      omega_arith
     refine WP.seq (WP.mono (candidateRun_ok backend live room) fun v ⟨⟨liveV, post⟩, restV⟩ => ?_)
     refine WP.mono (liveV.classify positive post) ?_
     rintro t ⟨data, restT⟩

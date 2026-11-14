@@ -7,6 +7,7 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.RISCV64.CrtValTail
 
 /-!
 # `vg_rsa_crt_values` on RISC-V: the set-up, the reads and the checks of `p q = n`
@@ -27,7 +28,7 @@ namespace VG.Proof.Rsa.RISCV64.CrtValues
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64 VG.Proof.Rsa.RISCV64.Keys
 open VG.Impl.Rsa.RISCV64.Keys (seqs setW zeroArrays load copy bitOf eqS mov)
-open VG.Impl.Rsa.RISCV64.CrtValues (setup loads checks divChecks mulChecks lenTest nArr aOne aZero aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD
+open VG.Impl.Rsa.RISCV64.CrtValues (pqProduct setup loads checks divChecks mulChecks lenTest nArr aOne aZero aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD
   sPodd sE1 sE2 sE3 sMask)
 
 /-! ## The values -/
@@ -249,7 +250,7 @@ theorem divChecks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
     rw [f2.word (i := wOf s0) (by omega_arith) (by simp) (by cvx) (fit _ (by cvx))]; exact z1
   have hl : t2.gpr .s4 = BitVec.ofNat 64 (pL s0) := c2.s4.trans (toNat_ofNat_eq _)
   refine WP.mono (divL_ok w2' (q := aDQ) (r := aDR) (d := aDD) (by cvx) (by cvx) (by cvx) (by decide)
-    (by cvx) (by cvx) (by cvx) hl h.p1 (by have := h.p2; simp only [wOf, kOf, pL] at *; omega) z2
+    (by cvx) (by cvx) (by cvx) hl h.p1 (by have := h.p2; simp only [wOf, kOf, pL] at *; omega_using [this]) z2
     (by rw [dd2]; exact pv_lt s0))
     fun t3 ⟨w3, f3, k3, _, v3⟩ => ?_
   have c3 := c2.step h f3 (by cvx) (by simp) k3
@@ -296,7 +297,7 @@ theorem pq_bits {P Q N R : Nat} (hR : P * Q < R) :
       P % 2 * (if N / P = Q then 1 else 0) * (if N % P = 0 then 1 else 0) := by
   rcases Nat.mod_two_eq_zero_or_one P with e | e
   · simp [e]
-  have hP : 0 < P := by omega
+  have hP : 0 < P := by omega_using [e]
   rw [Nat.mod_eq_of_lt hR]
   by_cases hq : P * Q = N
   · subst hq
@@ -328,10 +329,10 @@ theorem lenTest_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) :
   by_cases hc : BitVec.ofNat 64 (wOf s0) <<< 3 < stackArg s0 1 + stackArg s0 3
   · have := hlt.mp hc
     simp only [hc, ↓reduceIte]
-    exact ⟨fun e => absurd e (by decide), fun e => by omega⟩
+    exact ⟨fun e => absurd e (by decide), fun e => by omega_using [this, e]⟩
   · have := mt hlt.mpr hc
     simp only [hc, ↓reduceIte]
-    exact ⟨fun _ => by omega, fun _ => trivial⟩
+    exact ⟨fun _ => by omega_using [this], fun _ => trivial⟩
 
 /-- `a2`, `a3`, `a6` into `s0`, `s7`, `a5`. -/
 theorem save3_ok (s : State) :
@@ -348,6 +349,37 @@ theorem restore3_ok (s : State) :
         Keep [.a2, .a3, .a6] s u := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   brun [mov, add_ofNat_zero']
+
+/-- `pqProduct`: `[aDR] := p q mod 2^(64 w)` from `[aDR] = 0`, over the primes' `w / 2` words for a
+balanced key. -/
+theorem pqProduct_ok {s0 s : State} (h : PreC s0) (ws : Ws s (bOf s0) (zOf s0) (wOf s0) nArr)
+    (r4 : s.gpr .s4 = stackArg s0 1) (r6 : s.gpr .s6 = stackArg s0 3)
+    (z : num s.mem (bOf s0) (wOf s0) aDR = 0) (hp : num s.mem (bOf s0) (wOf s0) aP = Pv s0)
+    (hq : num s.mem (bOf s0) (wOf s0) aQ = Qv s0) :
+    WP isa pqProduct s fun t => Ws t (bOf s0) (zOf s0) (wOf s0) nArr ∧
+      Keys.Frame (bOf s0) (wOf s0) [aDR] [] s.mem t.mem ∧
+      num t.mem (bOf s0) (wOf s0) aDR =
+        num s.mem (bOf s0) (wOf s0) aP * num s.mem (bOf s0) (wOf s0) aQ % 2 ^ (64 * wOf s0) ∧
+      Keep VG.Proof.Rsa.RISCV64.Keys.mulRegs s t := by
+  have ⟨lp, lq⟩ := lt32 h
+  have ⟨w1, w2⟩ := h.w_bounds
+  unfold pqProduct
+  rw [WP.seq_iff]
+  refine WP.mono (shape_ok (pl := pL s0) (ql := qL s0) (w := wOf s0) (by rw [r4]; simp) (by rw [r6]; simp) ws.s9
+    lp lq (by omega_using [w2])) fun u ⟨⟨hiff, mu⟩, ku⟩ => ?_
+  have ku' : Keep VG.Proof.Rsa.RISCV64.Keys.mulRegs s u := ku.mono (by decide)
+  have wu := ws.of_keep ku'
+  have zu : num u.mem (bOf s0) (wOf s0) aDR = 0 := by rw [mu]; exact z
+  refine WP.ite _ (Steps.eval_zero u .t0) (fun hz => ?_) (fun _ => ?_)
+  · obtain ⟨g8, g4w, gpq, g32⟩ := hiff.mp (by simpa using hz)
+    have e32 : 64 * (wOf s0 / 2) = 8 * pL s0 := by omega_using [g8, g4w]
+    refine WP.mono (mulHalf_ok wu (o := aDR) (y := aP) (x := aQ) (by cvx) (by cvx) (by cvx) (by decide) (by cvx)
+      (by cvx) (by omega_using [g4w, e32]) zu (by rw [mu, hp, e32]; exact pv_lt s0)
+      (by rw [mu, hq, e32, gpq]; exact qv_lt s0)) fun t ⟨wt, ft, _, vt, kt⟩ =>
+        ⟨wt, by rw [mu] at ft; exact ft, by rw [vt, mu], Keep.trans' ku' kt⟩
+  · refine WP.mono (mulLow_ok wu (o := aDR) (y := aP) (x := aQ) (by cvx) (by cvx) (by cvx) (by decide) (by cvx)
+      (by cvx) zu) fun t ⟨wt, ft, _, vt, kt⟩ =>
+        ⟨wt, by rw [mu] at ft; exact ft, by rw [vt, mu], Keep.trans' ku' kt⟩
 
 theorem mulChecks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) (hlen : pL s0 + qL s0 ≤ 8 * wOf s0) :
     WP isa mulChecks s fun t => ∃ X₁ X₂, Ck s0 X₁ X₂ t := by
@@ -372,8 +404,9 @@ theorem mulChecks_ok {s0 s : State} (h : PreC s0) (l : Ld s0 s) (hlen : pL s0 + 
     have e := wordsVal_zero_part (a := 0) (c := wOf s0) hz0 (by omega_arith)
     rw [Nat.mul_zero, Nat.add_zero] at e
     exact e
-  refine WP.mono (mulLow_ok w2' (o := aDR) (y := aP) (x := aQ) (by cvx) (by cvx) (by cvx) (by decide)
-    (by cvx) (by cvx) z2) fun t3 ⟨w3, f3, _, v3, k3⟩ => ?_
+  refine WP.mono (pqProduct_ok h w2' c2.s4 c2.s6 z2
+    (by rw [m2, f1.num (by simp) (by cvx) (fit _ (by cvx)), l.p])
+    (by rw [m2, f1.num (by simp) (by cvx) (fit _ (by cvx)), l.q])) fun t3 ⟨w3, f3, v3, k3⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (restore3_ok t3) fun t4 ⟨⟨r2, r3, r6, m4⟩, k4⟩ => ?_
   -- `CB` back: the registers of `CB` are `t2`'s.

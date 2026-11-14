@@ -2,12 +2,44 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-public import VerifiedGarbage.Proof.Bignum.Arm.CombExpShared
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Bignum.Arm.CombTableState
 public import VerifiedGarbage.Proof.Bignum.Arm.CombDigitLoad
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-
 import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `Bignum.Arm.CombExpShared`, which only this module used -/
+
+section
+
+/-! Read-only context and exponent facts persist through the shared arithmetic calls. -/
+
+@[expose] public section
+namespace VG.Proof.Bignum.Arm.CombExp
+open VG VG.Arm
+open VG.Proof.X25519.Arm (Rest)
+
+def withInvariant {base : BitVec 32} {len w : Nat} {P : State→Prop} {regions : List Region}
+    (A : TwoExp.Montgomery base len w P regions) (Q : State→Prop)
+    (stableQ : ∀ {s t : State}, Frame regions s.mem t.mem → Rest roundClobbers s t → Q s → Q t) :
+    TwoExp.Montgomery base len w (fun s=>P s ∧ Q s) regions where
+  op := A.op
+  workspace := A.workspace
+  stable := by
+    intro s t frame rest h
+    exact ⟨A.stable frame rest h.1,stableQ (frame.mono (by simpa using A.workspace)) rest h.2⟩
+  op_ok := by
+    intro s o a b ready h ho ha hb ho0 operand
+    refine WP.mono (A.op_ok s o a b ready h.1 ho ha hb ho0 operand) ?_
+    rintro t ⟨readyT,modulus,bound,value,keeps,pt,frame,rest⟩
+    exact ⟨readyT,modulus,bound,value,keeps,⟨pt,stableQ frame rest h.2⟩,frame,rest⟩
+
+end VG.Proof.Bignum.Arm.CombExp
+
+end
+
+end
+
 /-! Every callable RSA Montgomery backend supports the same immutable comb context. -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CombExpReadOnly.lean`, which only this module imported.
@@ -34,15 +66,15 @@ theorem ReadOnly.after_frame {source table : BitVec 32} {w M g N : Nat} {bs : Li
     ReadOnly source table w M g N bs regions t := by
   have entryFits (digit : Nat) (hd : digit<32) (j : Nat) (hj : j<2*w) :
       8*w*digit+4*j+4≤32*(8*w) := by
-    have last := Nat.mul_le_mul_left (8*w) (show digit+1≤32 by omega)
-    have limb := Nat.mul_le_mul_left 4 (show j+1≤2*w by omega)
+    have last := Nat.mul_le_mul_left (8*w) (show digit+1≤32 by omega_using [hd])
+    have limb := Nat.mul_le_mul_left 4 (show j+1≤2*w by omega_using [hj])
     rw [Nat.mul_add,Nat.mul_one] at last
-    omega
+    omega_using [hj, last]
   refine ⟨⟨h.exponent.fits,?_,?_⟩,⟨h.entries.positive,h.entries.fits,?_,?_⟩,
     h.sourceSeparate,h.tableSeparate⟩
   · rw [rest.rd,rest.wr]; exact h.exponent.readable
   · intro j hj
-    exact (frame.bytes h.sourceSeparate (by change bs.length≤2^64; have := h.exponent.fits; omega) hj).trans (h.exponent.bytes j hj)
+    exact (frame.bytes h.sourceSeparate (by change bs.length≤2^64; have := h.exponent.fits; omega_using [this]) hj).trans (h.exponent.bytes j hj)
   · rw [rest.rd,rest.wr]; exact h.entries.readable
   · intro digit hd
     rw [←h.entries.values digit hd]
@@ -53,7 +85,7 @@ theorem ReadOnly.after_frame {source table : BitVec 32} {w M g N : Nat} {bs : Li
     exact Offset.contains_base _ (entryFits digit hd j hj) (by
       have := entryFits digit hd j hj
       have := h.entries.fits
-      omega)
+      omega_arith)
 
 end VG.Proof.Bignum.Arm.CombExp
 end

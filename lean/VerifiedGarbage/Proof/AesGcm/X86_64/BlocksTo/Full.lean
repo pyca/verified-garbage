@@ -54,14 +54,14 @@ theorem takeAllTo_ok {s₂ : State} (h11 : s₂.gpr .r11 = S s) (h9 : s₂.gpr .
   have e9 : s₂.gpr .r9 = BitVec.ofNat 64 (n s) := by rw [h9]; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by omega_using [hd])
   have kp : ∀ d, d + 8 ≤ 32 → ∀ u v w : BitVec 64,
       (((s₂.mem.writeW (S s + BitVec.ofNat 64 32) u).writeW (S s + BitVec.ofNat 64 48) v).writeW
         (S s + BitVec.ofNat 64 40) w).readW (S s + BitVec.ofNat 64 d) 64 =
         s₂.mem.readW (S s + BitVec.ofNat 64 d) 64 := fun d h₁ u v w => by
-    rw [Mem.readW_writeW_sep (sep d 40 (.inl (by omega)) (by omega) (by decide)) (by decide),
-      Mem.readW_writeW_sep (sep d 48 (.inl (by omega)) (by omega) (by decide)) (by decide),
-      Mem.readW_writeW_sep (sep d 32 (.inl (by omega)) (by omega) (by decide)) (by decide)]
+    rw [Mem.readW_writeW_sep (sep d 40 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide),
+      Mem.readW_writeW_sep (sep d 48 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide),
+      Mem.readW_writeW_sep (sep d 32 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide)]
   apply WP.of_runBlock
   refine ⟨_, by simp only [takeAllTo, argSrc, argDst, argN]; xrun [h11, e9, h8, h10, w₅, w₆, w₇, times16_val], ?_⟩
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, fun r hr => by simp [gpr_setReg, gpr_arithFlags, hr], rfl, rfl⟩
@@ -76,7 +76,7 @@ theorem takeAllTo_ok {s₂ : State} (h11 : s₂.gpr .r11 = S s) (h9 : s₂.gpr .
   · rw [Mem.readW_writeW_sep (sep 48 40 (.inr (by decide)) (by decide) (by decide)) (by decide),
       Mem.readW_writeW_self64, BitVec.add_comm]
   · have c : ∀ d, d + 8 ≤ 56 → (kR' s).Contains (S s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ => Offset.contains_base _ h₁ (by omega)
+      fun d h₁ => Offset.contains_base _ h₁ (by omega_using [h₁])
     exact ((hf.writeW (List.mem_singleton_self _) _ (c 32 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 48 (by decide))).writeW (List.mem_singleton_self _) _ (c 40 (by decide))
 
@@ -100,7 +100,7 @@ theorem restZeroTo_ok {q : Nat} (hq : q = n s) {st : State} (h : Mid s q q st) :
   have e15 : 0#64 &&& 15#64 = 0#64 := by decide
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by omega_using [hd])
   have s₅₇ := sep 32 48 (by decide) (by decide) (by decide)
   have s₅₆ := sep 32 40 (by decide) (by decide) (by decide)
   have s₆₇ := sep 40 48 (by decide) (by decide) (by decide)
@@ -109,9 +109,9 @@ theorem restZeroTo_ok {q : Nat} (hq : q = n s) {st : State} (h : Mid s q q st) :
       (((st.mem.writeW (S s + BitVec.ofNat 64 32) u).writeW (S s + BitVec.ofNat 64 48) v).writeW
         (S s + BitVec.ofNat 64 40) w).readW (S s + BitVec.ofNat 64 d) 64 =
         st.mem.readW (S s + BitVec.ofNat 64 d) 64 := fun d h₁ u v w => by
-    rw [Mem.readW_writeW_sep (sep d 40 (.inl (by omega)) (by omega) (by decide)) (by decide),
-      Mem.readW_writeW_sep (sep d 48 (.inl (by omega)) (by omega) (by decide)) (by decide),
-      Mem.readW_writeW_sep (sep d 32 (.inl (by omega)) (by omega) (by decide)) (by decide)]
+    rw [Mem.readW_writeW_sep (sep d 40 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide),
+      Mem.readW_writeW_sep (sep d 48 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide),
+      Mem.readW_writeW_sep (sep d 32 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide)]
   apply WP.of_runBlock
   refine ⟨_, by
     simp only [rest, argSrc, argN, argDst]
@@ -132,7 +132,7 @@ theorem restZeroTo_ok {q : Nat} (hq : q = n s) {st : State} (h : Mid s q q st) :
     · rw [Mem.readW_writeW_sep (sep 48 40 (.inr (by decide)) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self64]
   · have c : ∀ d, d + 8 ≤ 56 → (kR' s).Contains (S s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ => Offset.contains_base _ h₁ (by omega)
+      fun d h₁ => Offset.contains_base _ h₁ (by omega_using [h₁])
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 32 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 48 (by decide))).writeW (List.mem_singleton_self _) _ (c 40 (by decide))
 
@@ -142,7 +142,7 @@ theorem restFullTo_ok {st : State} (h : Mid s (qf s) (qf s) st) :
   by_cases h16 : n s < 16
   · have hq : qf s = 0 := by simp [qf, h16]
     rw [hq] at h ⊢
-    exact rest_ok hp (by omega) h
+    exact rest_ok hp (by omega_using [h16]) h
   · exact restZeroTo_ok hp (by simp [qf, h16]) h
 
 /-- With `full`, all the blocks by `piece` (if at least 16). -/
@@ -160,8 +160,8 @@ theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
     exact WP.block_nil (mid_entry hp (by rw [g₂]; exact hg _ (by decide) (by decide))
       (fun r hr => by rw [g₂]; exact hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       (by rw [m₂]; exact hk) (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
-  · have h16 : 16 ≤ n s := by simp at h; omega
-    have hq : qf s = n s := by simp [qf, show ¬ n s < 16 by omega]
+  · have h16 : 16 ≤ n s := by simp at h; omega_using [h]
+    have hq : qf s = n s := by simp [qf, show ¬ n s < 16 by omega_using [h16]]
     rw [hq]
     refine WP.seq ?_
     rw [show ((if true = true then takeAllTo else [.mov .rax (.reg .r9), .alu .and .rax (imm 15),

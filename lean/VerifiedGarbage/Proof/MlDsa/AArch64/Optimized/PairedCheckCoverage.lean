@@ -19,7 +19,7 @@ theorem checkCoverage (P : Nat → Nat → Prop) :
     have h := hall _ he _ hu (⟨j,hj⟩,⟨k/32,hi⟩)
     simpa only [←heq] using h
   · intro hall e he u hu i
-    exact hall i.1.val i.1.isLt _ (by change 4*u+32*i.2.val+e<256; omega)
+    exact hall i.1.val i.1.isLt _ (by change 4*u+32*i.2.val+e<256; omega_using [he, hu])
 
 theorem paired_norm_iff (f : Nat → Poly) {B : Nat} (hB : 0<B) :
     normRq ((List.range 2).map f)<B ↔ ∀j<2,∀k<n,normZq (f j)[k]!<B := by

@@ -924,8 +924,8 @@ theorem xor127 {r : Nat} (h : r < 128) :
     BitVec.ofNat 64 r ^^^ BitVec.ofInt 64 127 = BitVec.ofNat 64 (127 - r) := by
   apply BitVec.eq_of_toNat_eq
   have e : ∀ r < 128, r ^^^ 127 = 127 - r := by decide
-  rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.mod_eq_of_lt (by omega), show (BitVec.ofInt 64 127).toNat = 127 from rfl, e r h]
+  rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h]),
+    Nat.mod_eq_of_lt (by omega_using []), show (BitVec.ofInt 64 127).toNat = 127 from rfl, e r h]
 
 theorem wp_xori127 {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg} {r : Nat} (hr : r < 128)
     (hn : s.gpr n = BitVec.ofNat 64 r)

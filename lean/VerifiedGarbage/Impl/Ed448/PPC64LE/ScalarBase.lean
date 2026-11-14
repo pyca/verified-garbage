@@ -44,7 +44,7 @@ pointers can affect timing.
 namespace VG.Impl.Ed448.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.X448.PPC64LE (mul add sub cswap invert freeze bitsBody BITS R X2 Z2)
+open VG.Impl.X448.PPC64LE (mul add sub cswap invert freeze bitsBody BITS R X2 Z2 slotsOf stdsAt ldsAt nvR)
 
 /-! ## The slots -/
 
@@ -156,6 +156,8 @@ def CTAB : Nat := 2048
 /-- The return address and the caller's `r14`, while the loop runs: past the table. -/
 def LRS : Nat := 3840
 def R14S : Nat := 3848
+/-- The caller's `r15`–`r31`, which the multiplication uses. -/
+def SNV : Nat := 3856
 
 /-- A field operation of X448's. -/
 inductive COp where
@@ -237,8 +239,9 @@ def combStep : Prog isa :=
 /-- The 114 rows, from 113 down to 0. -/
 def combLoop : Prog isa := .seq (.block [.li .r3 114]) (.loop combStep (.nonzero .d .r3))
 
-/-- The return address and `r14` kept, and `out` into `r14`. -/
-def combSave : List Instr := [.mflr .r7, .store .d .r7 .r6 LRS, .store .d .r14 .r6 R14S, .addi .r14 .r3 0]
+/-- The return address, `r14` and `r15`–`r31` kept, and `out` into `r14`. -/
+def combSave : List Instr :=
+  [.mflr .r7, .store .d .r7 .r6 LRS, .store .d .r14 .r6 R14S, .addi .r14 .r3 0] ++ stdsAt SNV (slotsOf nvR 17)
 
 /-- And loaded back. -/
 def combRestore : List Instr := [.load .d .r7 .r6 LRS, .mtlr .r7, .addi .r3 .r14 0, .load .d .r14 .r6 R14S]
@@ -246,6 +249,6 @@ def combRestore : List Instr := [.load .d .r7 .r6 LRS, .mtlr .r7, .addi .r3 .r14
 /-- `vg_ed448_scalar_base(out = r3, scalar = r4, scratch = r5)`. -/
 def scalarBase : Prog isa :=
   .seq (.block (.addi .r6 .r5 0 :: combSave ++ combInit ++ tabBuild)) <| .seq baseBits <|
-    .seq combLoop <| .seq (.block combRestore) baseEncode
+    .seq combLoop <| .seq (.block combRestore) <| .seq baseEncode (.block (ldsAt SNV (slotsOf nvR 17)))
 
 end VG.Impl.Ed448.PPC64LE

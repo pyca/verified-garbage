@@ -31,7 +31,7 @@ theorem PdBodyInput.after_checks {s t : State} {base dst pp ep xp : BitVec 32} {
     (frame : Frame [⟨State.addr base, 8 * len⟩, ⟨off (State.addr s.sp) 48, 4⟩] s.mem t.mem)
     (rest : Rest rs s t) (ptr : t.gpr .r0 = base) : PdBodyInput base dst pp ep xp len k eLen N R eb xb t := by
   have eq : WorkspaceEq (State.addr pp) (16 * Spec.Rsa.modulusWords k) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := h.sourceFit; omega) frame (by
+    WorkspaceEq.of_frame (by have := h.sourceFit; omega_using [this]) frame (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -50,10 +50,10 @@ theorem PdBodyInput.after_checks {s t : State} {base dst pp ep xp : BitVec 32} {
     rcases hr with rfl | rfl
     · exact h.buffers.inputSeparate
     · exact h.buffers.stackInput.sub_right (Offset.sub_base _ (by decide))
-  · have read := eq.read (d := 0) (8 * Spec.Rsa.modulusWords k) (by omega)
+  · have read := eq.read (d := 0) (8 * Spec.Rsa.modulusWords k) (by omega_using [])
     simp only [BitVec.add_zero] at read
     rw [read]; exact h.modulus
-  · rw [eq.read (d := 8 * Spec.Rsa.modulusWords k) (8 * Spec.Rsa.modulusWords k) (by omega)]
+  · rw [eq.read (d := 8 * Spec.Rsa.modulusWords k) (8 * Spec.Rsa.modulusWords k) (by omega_using [])]
     exact h.r2
 
 theorem PdBodyInput.after_workspace {s t : State} {base dst pp ep xp : BitVec 32} {len k eLen N R : Nat}

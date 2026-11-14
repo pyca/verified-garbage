@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM-SIV: GHASH's key and the tag input, on 64-bit words
@@ -45,7 +46,7 @@ theorem appLo (a b : BitVec 64) {j : Nat} (h : j < 64) : (a ++ b).getLsbD j = b.
   rw [BitVec.getLsbD_append]; simp [h]
 
 theorem appHi (a b : BitVec 64) {j : Nat} (h : 64 ≤ j) : (a ++ b).getLsbD j = a.getLsbD (j - 64) := by
-  rw [BitVec.getLsbD_append]; simp [show ¬ j < 64 by omega]
+  rw [BitVec.getLsbD_append]; simp [show ¬ j < 64 by omega_using [h]]
 
 /-- `hkeyOf` on the halves of a block, for any words `M` and `C` with the
 bits of the carry into the low half and of `R` in the high half. -/
@@ -64,13 +65,13 @@ theorem hkeyOf_core (hi lo : BitVec 64) (M C : BitVec 64)
       rw [e]
       cases hl : lo.getLsbD 0 <;> simp only [ite_true, ite_false, Bool.false_eq_true, BitVec.getLsbD_xor,
         BitVec.getLsbD_ushiftRight, appHi hi lo (show 64 ≤ 1 + 63 by decide), hR 63 (by decide)] <;> simp
-    · have e : (hi ++ lo).getLsbD (1 + i) = lo.getLsbD (1 + i) := appLo hi lo (by omega)
+    · have e : (hi ++ lo).getLsbD (1 + i) = lo.getLsbD (1 + i) := appLo hi lo (by omega_using [h64, h63])
       cases hl : lo.getLsbD 0 <;> simp only [ite_true, ite_false, Bool.false_eq_true, BitVec.getLsbD_xor,
         BitVec.getLsbD_ushiftRight, e, hR i h64, decide_eq_false h63] <;> simp
-  · rw [appHi _ _ (by omega), BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, hC (i - 64) (by omega),
-      show i - 64 + 64 = i by omega]
+  · rw [appHi _ _ (by omega_using [h64]), BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, hC (i - 64) (by omega_using [hi128]),
+      show i - 64 + 64 = i by omega_using [h64]]
     have e : (hi ++ lo).getLsbD (1 + i) = hi.getLsbD (1 + (i - 64)) := by
-      rw [appHi hi lo (by omega)]; congr 1; omega
+      rw [appHi hi lo (by omega_using [h64])]; congr 1; omega_using [h64]
     cases hl : lo.getLsbD 0 <;> simp only [ite_true, ite_false, Bool.false_eq_true, BitVec.getLsbD_xor,
       BitVec.getLsbD_ushiftRight, e] <;> simp
 
@@ -93,10 +94,10 @@ theorem shl_shr_one (x : BitVec 64) : (x <<< 1) >>> 1 = x &&& 0x7FFFFFFFFFFFFFFF
   have hm : ∀ i < 64, (0x7FFFFFFFFFFFFFFF#64 : BitVec 64).getLsbD i = decide (i < 63) := by decide +kernel
   rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_and, hm i hi, BitVec.getLsbD_shiftLeft]
   by_cases h : i < 63
-  · simp only [show 1 + i < 64 by omega, decide_true, Bool.true_and, show ¬ (1 + i < 1) by omega,
+  · simp only [show 1 + i < 64 by omega_using [h], decide_true, Bool.true_and, show ¬ (1 + i < 1) by omega_using [],
       decide_false, Bool.not_false, h, Bool.and_true]
-    congr 1; omega
-  · simp only [show ¬ (1 + i < 64) by omega, decide_false, Bool.false_and, h, Bool.and_false]
+    congr 1; omega_using []
+  · simp only [show ¬ (1 + i < 64) by omega_using [h], decide_false, Bool.false_and, h, Bool.and_false]
 
 /-- The tag input of RFC 8452 §4 (`Spec.GcmSiv.tagInput`), with POLYVAL
 computed as GHASH with the key `hkeyOf` of the authentication key. -/

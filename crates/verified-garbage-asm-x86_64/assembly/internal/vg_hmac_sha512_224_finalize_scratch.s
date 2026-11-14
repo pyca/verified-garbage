@@ -5,19 +5,19 @@
 // gives.
 
 vg_hmac_sha512_224_finalize_scratch:
-	mov QWORD PTR [r8+1376], rbx
-	mov QWORD PTR [r8+1384], rbp
-	mov QWORD PTR [r8+1392], r12
-	mov QWORD PTR [r8+1400], r13
-	mov QWORD PTR [r8+1408], r14
-	mov QWORD PTR [r8+1416], r15
+	mov QWORD PTR [r8+240], rbx
+	mov QWORD PTR [r8+248], rbp
+	mov QWORD PTR [r8+256], r12
+	mov QWORD PTR [r8+264], r13
+	mov QWORD PTR [r8+272], r14
+	mov QWORD PTR [r8+280], r15
 	mov rbx, rdi
 	mov r12, rsi
 	mov r13, rcx
 	mov r15, r8
 	mov rsi, rdx
 	mov rdx, r15
-	add rdx, 1424
+	add rdx, 288
 	mov rcx, r15
 	call {vg_sha512_finalize_scratch}
 	movdqu xmm0, XMMWORD PTR [r12]
@@ -28,11 +28,11 @@ vg_hmac_sha512_224_finalize_scratch:
 	movdqu XMMWORD PTR [rbx+32], xmm0
 	movdqu xmm0, XMMWORD PTR [r12+48]
 	movdqu XMMWORD PTR [rbx+48], xmm0
-	movdqu xmm0, XMMWORD PTR [r15+1424]
+	movdqu xmm0, XMMWORD PTR [r15+288]
 	movdqu XMMWORD PTR [rbx+64], xmm0
-	mov rax, QWORD PTR [r15+1440]
+	mov rax, QWORD PTR [r15+304]
 	mov QWORD PTR [rbx+80], rax
-	mov eax, DWORD PTR [r15+1448]
+	mov eax, DWORD PTR [r15+312]
 	mov DWORD PTR [rbx+88], eax
 	mov rbp, rbx
 	add rbp, 64
@@ -95,11 +95,11 @@ vg_hmac_sha512_224_finalize_scratch:
 	mov QWORD PTR [r13+16], rax
 	mov eax, DWORD PTR [rbp+24]
 	mov DWORD PTR [r13+24], eax
-	mov rbx, QWORD PTR [r15+1376]
-	mov rbp, QWORD PTR [r15+1384]
-	mov r12, QWORD PTR [r15+1392]
-	mov r13, QWORD PTR [r15+1400]
-	mov r14, QWORD PTR [r15+1408]
-	mov r15, QWORD PTR [r15+1416]
+	mov rbx, QWORD PTR [r15+240]
+	mov rbp, QWORD PTR [r15+248]
+	mov r12, QWORD PTR [r15+256]
+	mov r13, QWORD PTR [r15+264]
+	mov r14, QWORD PTR [r15+272]
+	mov r15, QWORD PTR [r15+280]
 	ret
 	.p2align 6

@@ -20,10 +20,10 @@ theorem vdword_read16 (m : Mem) (p : Addr) {e : Nat} (he : e < 2) :
   intro i hi
   simp only [vdword, BitVec.getLsbD_extractLsb', Mem.readW, BitVec.getLsbD_setWidth,
     hi, decide_true, Bool.true_and]
-  rw [getLsbD_read m 16 _ (64 * e + i) (by omega), getLsbD_read m 8 _ i (by omega),
+  rw [getLsbD_read m 16 _ (64 * e + i) (by omega_using [he, hi]), getLsbD_read m 8 _ i (by omega_using [hi]),
     BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 8 * e + i / 8 = (64 * e + i) / 8 by omega,
-    show (64 * e + i) % 8 = i % 8 by omega]
+    show 8 * e + i / 8 = (64 * e + i) / 8 by omega_using [],
+    show (64 * e + i) % 8 = i % 8 by omega_using []]
 
 theorem read16_dwords (m : Mem) (p : Addr) :
     m.read p 16 = ofVDwords (m.readW p 64) (m.readW (p + BitVec.ofNat 64 8) 64) := by
@@ -52,8 +52,8 @@ theorem getLsbD_rev64 (x : BitVec 64) {i : Nat} (hi : i < 64) :
     (rev64 x).getLsbD i = x.getLsbD (8 * (7 - i / 8) + i % 8) := by
   obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
     ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
-  have ha : a < 8 := by omega
-  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  have ha : a < 8 := by omega_using [hi]
+  rw [show (8 * a + b) / 8 = a by omega_using [hb], show (8 * a + b) % 8 = b by omega_using [hb]]
   unfold rev64
   -- The byte's index is a literal: each `if` and subtraction reduces without `omega`.
   match a, ha with
@@ -66,10 +66,10 @@ theorem vdword_rev64b (x : BitVec 128) {e : Nat} (he : e < 2) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [vdword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, VRevOp.eval]
-  rw [show 64 * e + i = 8 * (8 * e + i / 8) + i % 8 by omega,
-    getLsbD_ofVBytes _ (by omega) (by omega), getLsbD_rev64 _ hi]
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega,
-    show 8 * (7 - i / 8) + i % 8 < 64 by omega, decide_true, Bool.true_and]
-  exact congrArg x.getLsbD (by omega)
+  rw [show 64 * e + i = 8 * (8 * e + i / 8) + i % 8 by omega_using [],
+    getLsbD_ofVBytes _ (by omega_using [he, hi]) (by omega_using []), getLsbD_rev64 _ hi]
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega_using [],
+    show 8 * (7 - i / 8) + i % 8 < 64 by omega_using [], decide_true, Bool.true_and]
+  exact congrArg x.getLsbD (by omega_using [hi])
 
 end VG.AArch64

@@ -54,9 +54,9 @@ theorem redPart1_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s) 
   have i₃ := (i₁.upd u₂ (by decide) (by decide)).upd u₃ (by decide) (by decide)
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   rw [← List.append_nil Impl.Argon2.X86.Derive.blockAddr]
-  refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega)
+  refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega_using [L8])
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.lane])
-    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, Wp.ofNat_pred (by omega)]) fun s₄ a₄ _ k₄ =>
+    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, Wp.ofNat_pred (by omega_using [L8])]) fun s₄ a₄ _ k₄ =>
       WP.block_nil ⟨h.of_keep (((Divide.Keep.of_upd u₁ (by simp)).trans ((Divide.Keep.of_upd u₂ (by simp)).trans
         (Divide.Keep.of_upd u₃ (by simp)))).trans k₄), a₄⟩
 
@@ -102,7 +102,7 @@ theorem reduce_rel {M₁ M₂ : Array Block} :
   have hN₂ : lanesN s₀₂ = N := by rw [← le, hN]
   refine (RelCT.loop (Q := fun _ _ => True) (fun n s₁ s₂ => ∃ l, n = N - l ∧ l < N ∧
       RI s₀₁ M₁ l s₁ ∧ RI s₀₂ M₂ l s₂) ?step N).mono (fun s₁ s₂ h => ?init) fun _ _ h => h
-  case init => exact ⟨0, by omega, hl1, h.1, h.2⟩
+  case init => exact ⟨0, by omega_using [], hl1, h.1, h.2⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨l, hn, hl, g₁, g₂⟩ e₁ e₂
   have body : RelCT isa (fun s₁ s₂ => RI s₀₁ M₁ l s₁ ∧ RI s₀₂ M₂ l s₂)
       (.seq (.block Impl.Argon2.X86.Derive.reduceLane) Impl.Argon2.X86.Derive.reduceXor) fun _ _ => True := by
@@ -120,7 +120,7 @@ theorem reduce_rel {M₁ M₂ : Array Block} :
   have e : l + 1 < N := by
     rw [show isa.eval .b s₁' = s₁'.cf from rfl, c₁] at hc
     simpa using hc
-  exact ⟨N - (l + 1), by omega, l + 1, rfl, e, k₁, k₂⟩
+  exact ⟨N - (l + 1), by omega_using [hn, hl], l + 1, rfl, e, k₁, k₂⟩
 
 /-- `finalOutput` leaks the same trace in two runs. -/
 theorem finalOutput_rel :
@@ -137,10 +137,10 @@ theorem finalOutput_rel :
     have hm := hp.mem_fits
     have ho := hp.out_fits
     have tg := hp.tag_ge
-    refine ⟨i, d, ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega⟩,
-      by rw [si, ax]; show _ + 1024 ≤ 2 ^ 32; omega,
-      ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega⟩,
-      by rw [di, cx]; exact ho, by rw [cx]; show 1 ≤ outL s₀; omega⟩
+    refine ⟨i, d, ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega_using [b1]⟩,
+      by rw [si, ax]; show _ + 1024 ≤ 2 ^ 32; omega_using [b1, hm],
+      ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega_using []⟩,
+      by rw [di, cx]; exact ho, by rw [cx]; show 1 ≤ outL s₀; omega_using [tg]⟩
   unfold Impl.Argon2.X86.Derive.finalOutput
   refine RelCT.seqW (T.leafI [] (fun s₁ s₂ h => ⟨h.1, h.2, by simp⟩) ⟨_, by taint_decide⟩)
     (fun s h => foBlk_ok T.hp₁ h) (fun s h => foBlk_ok T.hp₂ h) ?_

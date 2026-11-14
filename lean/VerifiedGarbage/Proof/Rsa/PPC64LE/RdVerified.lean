@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.RdFinish
 
 /-!
@@ -34,6 +35,8 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Pro
 open VG.Proof.Rsa.PPC64LE.Recover
 open VG.Impl.Rsa.PPC64LE.RecoverDet (code valid)
 open VG.Impl.Rsa.PPC64LE.Recover (fail restore)
+open VG.Impl.Rsa.PPC64LE.RecoverDet (det deMinus twos gcd aProduct divA divB square minus4n sqrt factors sB0 sB1)
+open VG.Impl.Rsa.PPC64LE.Keys (seqs)
 
 /-- Before the restore. -/
 def DD (d : RdD) (u : State) : Prop := ∃ s0, D0 d s0 ∧ RFin s0 u
@@ -61,6 +64,48 @@ theorem DD_fail {d : RdD} {s : State} (h : D4 d s ∧ isa.eval (.zero .d .r0) s 
   obtain ⟨⟨s0, hs, e, -⟩, -⟩ := h
   exact WP.mono (fail_ok (e.base.fin e.r30) e.args.r21 e.args.r23 e.args.r25) fun u ⟨fu, _⟩ => ⟨s0, hs, fu⟩
 
+/-- The valid branch up to the GCD, which calls the inverse. -/
+abbrev preG : Prog isa := seqs [VG.Impl.Rsa.PPC64LE.Recover.loads, VG.Impl.Rsa.PPC64LE.Recover.prod, deMinus, twos, gcd]
+
+/-- And the rest. -/
+abbrev restG : Prog isa :=
+  seqs [aProduct, divA, divB, square, minus4n, sqrt, factors, VG.Impl.Rsa.PPC64LE.Recover.stores]
+
+theorem flat_valid : valid.flat = preG.flat ++ restG.flat := by
+  simp only [valid, det, preG, restG, seqs, Code.flat, List.append_assoc]
+
+/-- After the GCD: the state the rest of the valid branch starts from, whose
+pointers the inverse reloads from memory, and the rest then reaches `DD`. -/
+def G (d : RdD) (u : State) : Prop :=
+  (∃ s0 A V, D0 d s0 ∧ DS s0 false A [(true, 8), (true, 12), (true, 15), (true, 9), (false, 32)] V [sB1, sB0] u) ∧
+    WP isa restG u (DD d)
+
+theorem pins_G : Pins G [.r21, .r23, .r25, .r29, .r30, .r31] := by
+  rintro d s₁ s₂ ⟨⟨a, A₁, V₁, ha, e₁⟩, -⟩ ⟨⟨b, A₂, V₂, hb, e₂⟩, -⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [e₁.r21, e₂.r21]; exact ha.reg hb (by decide)
+  · rw [e₁.r23, e₂.r23]; exact ha.reg hb (by decide)
+  · rw [e₁.r25, e₂.r25]; exact ha.reg hb (by decide)
+  · rw [e₁.ws.r29, e₂.ws.r29, vw, vw, ha.k hb]
+  · rw [e₁.ws.r30, e₂.ws.r30, vw, vw, ha.k hb]
+  · rw [e₁.base.r31, e₂.base.r31]; exact ha.arg hb (by decide)
+
+theorem pre_G [VG.Proof.Rsa.PPC64LE.InvLaw] {d : RdD} {s : State}
+    (h : D4 d s ∧ isa.eval (.zero .d .r0) s = some true) : WP isa preG s (G d) := by
+  obtain ⟨⟨s0, hs, e, hv⟩, hc⟩ := id h
+  rw [eval_zero] at hc
+  have hmv := hv.mp (beq_iff_eq.mp (Option.some.inj hc))
+  exact WP.and (WP.mono (valid_gcd_ok e hmv) fun _ ⟨A, V, h3⟩ => ⟨s0, A, V, hs, h3⟩)
+    (Keys.WP.cut flat_valid (DD_valid h))
+
+/-- The valid branch, in two: the pointers pinned again after the GCD. -/
+theorem validG_ct [VG.Proof.Rsa.PPC64LE.InvLaw] :
+    RelCT isa (Two fun d s => D4 d s ∧ isa.eval (.zero .d .r0) s = some true) valid (Two DD) :=
+  Keys.RelCT.cut flat_valid
+    (two_post (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_D4 d s₁ s₂ h₁.1 h₂.1) (by taint_decide)) fun _ _ h => pre_G h)
+    (two_post (two_taint _ pins_G (by taint_decide)) fun _ _ h => h.2)
+
 theorem validD_eq {d : RdD} {s₁ s₂ : State} (h₁ : D4 d s₁) (h₂ : D4 d s₂) :
     isa.eval (.zero .d .r0) s₁ = isa.eval (.zero .d .r0) s₂ := by
   obtain ⟨a, ha, -, va⟩ := h₁
@@ -72,8 +117,7 @@ theorem validD_eq {d : RdD} {s₁ s₂ : State} (h₁ : D4 d s₁) (h₂ : D4 d 
 theorem branchD_ct [VG.Proof.Rsa.PPC64LE.InvLaw] :
     RelCT isa (Two D4) (.ite (.zero .d .r0) valid fail) (Two DD) := by
   refine RelCT.ite (fun s₁ s₂ ⟨d, h₁, h₂, _⟩ => validD_eq h₁ h₂) ?_ ?_
-  · exact (two_post (Φ := fun d s => D4 d s ∧ isa.eval (.zero .d .r0) s = some true)
-      (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_D4 d s₁ s₂ h₁.1 h₂.1) (by taint_decide)) fun _ _ h => DD_valid h).mono
+  · exact validG_ct.mono
       (fun s₁ s₂ ⟨⟨d, h₁, h₂, sp⟩, hc⟩ => ⟨d, ⟨h₁, hc⟩, ⟨h₂, (validD_eq h₁ h₂) ▸ hc⟩, sp⟩) fun _ _ h => h
   · exact (two_post (Φ := fun d s => D4 d s ∧ isa.eval (.zero .d .r0) s = some false)
       (two_taint _ (fun d s₁ s₂ h₁ h₂ => pins_D4 d s₁ s₂ h₁.1 h₂.1) (by taint_decide)) fun _ _ h => DD_fail h).mono

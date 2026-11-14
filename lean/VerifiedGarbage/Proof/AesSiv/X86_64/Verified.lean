@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Rounds
-import VerifiedGarbage.Proof.AesSiv.X86_64.Init
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Init
 public import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesSiv.Scratch
@@ -25,12 +25,12 @@ namespace VG.Proof.AesSiv.X86_64
 open VG VG.X86_64 VG.Impl.AesSiv.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
-open VG.Proof.CmacAes.Stream.X86_64 (toNat_add_lt)
+open VG.Proof.CmacAes.Stream.X86_64 (toNat_add_lt ekF)
 open VG.Proof.CmacAes.X86_64 (subkeys_mx finalize_mx subkeys_spSafe finalize_spSafe)
 
 theorem init_mx (v : Ctr32Impl) :
     (init v.expand v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [init, Code.allInstrs, v.expandMxcsr, subkeys_mx v]; decide +kernel
+  simp only [init, initAt, Code.allInstrs, v.expandMxcsr, subkeys_mx v]; decide +kernel
 
 theorem encrypt_mx (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
@@ -45,7 +45,7 @@ theorem decrypt_mx (v : UpdateImpl) : (decrypt v.callee v.ctr.callee v.ctr.suffi
 
 theorem init_spSafe (v : Ctr32Impl) :
     (init v.expand v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [init, Code.all, v.expandSpSafe, subkeys_spSafe v]; decide +kernel
+  simp only [init, initAt, Code.all, v.expandSpSafe, subkeys_spSafe v]; decide +kernel
 
 theorem encrypt_spSafe (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
@@ -82,6 +82,44 @@ theorem init_verified (v : Ctr32Impl) :
     sig_implies [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPre,
       Spec.Siv.initPost, initX86_64, X86_64.abi, X86_64.argRegs] [initSat]
       using initSat)
+
+theorem initF_mx (v : Ctr32Impl) :
+    (initF ekF v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have h : ekF.code.allInstrs (fun i => !loadsMxcsr i) = true := Ctr32Impl.aesni.expandMxcsr
+  simp only [initF, initAt, Code.allInstrs, h, subkeys_mx v]; decide +kernel
+
+theorem initF_spSafe (v : Ctr32Impl) :
+    (initF ekF v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h : ekF.code.all (fun i => !X86_64.isa.writesSp i) = true := Ctr32Impl.aesni.expandSpSafe
+  simp only [initF, initAt, Code.all, h, subkeys_spSafe v]; decide +kernel
+
+theorem initF_correct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (s : State)
+    (hs : initX86_64F.pre s) :
+    ∃ t s', Exec isa (initF ekF v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ initX86_64F.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := initF_wp v f hs
+  exact ⟨t, s', he, abiPreserved_of_exec (initF_mx v) he hg, hp⟩
+
+/-- `vg_aes_siv_init` with `scratch: *mut [u64; 9]`, for `initF`. -/
+def initScratchSigF : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 64),
+    ("scratch", .array true .u64 9)]
+
+/-- `Spec.Siv.initContract`, whatever `scratch` is (of 9 words). -/
+def initScratchContractF {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  initScratchSigF.contract A
+    (pre := fun key keyLen ctx _scratch => Spec.Siv.initPre A.ptrBits key keyLen ctx)
+    (post := fun key keyLen ctx _scratch => Spec.Siv.initPost A.ptrBits key keyLen ctx)
+    (writeArgs := true) (stack := stack)
+
+/-- A state satisfying `vg_aes_siv_init`'s precondition, with 72 bytes of
+working space. -/
+def initSatF : State := { initSat with wr := [⟨0x2000, 512⟩, ⟨0x4000, 72⟩] }
+
+theorem initF_verified (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
+    Verified X86_64.target (initF ekF v.callee v.suffix) (initScratchContractF X86_64.abi 16) :=
+  Verified.of_correct (initF_correct v f) (initF_ct v f) (by
+    sig_implies [initScratchContractF, initScratchSigF, Spec.Siv.initPre, Spec.Siv.initPost,
+      initX86_64F, initX86_64, X86_64.abi, X86_64.argRegs] [initSatF, initSat] using initSatF)
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
 
@@ -247,17 +285,17 @@ theorem mkPre {σ : State} {C A P W T : Addr} {R N L : Nat}
   have sd : Region.Sub ⟨W + BitVec.ofNat 64 dOff, 16⟩ ⟨W, 2576⟩ := Offset.sub_base _ (by decide)
   have dw := Offset.disjoint_base W (d := dOff) (n := 16) (k := 2560) (by decide) (by decide)
   have wD : (W + BitVec.ofNat 64 dOff).toNat + 16 ≤ 2 ^ 64 := by
-    rw [toNat_add_lt _ wrW (show dOff < 2576 by decide)]; simp only [dOff]; omega
+    rw [toNat_add_lt _ wrW (show dOff < 2576 by decide)]; simp only [dOff]; omega_using [wrW]
   have inR {r : Region} (h : r ∈ σ.wr) : r ∈ σ.rd ++ σ.wr := List.mem_append_right _ h
   have env (Q : Addr) (n : Nat) (hQ : (⟨Q, n⟩ : Region) ∈ σ.rd ++ σ.wr) (qW : (⟨Q, n⟩ : Region).Disjoint ⟨W, 2576⟩)
       (rQ : (⟨σ.gpr .rsp, 8⟩ : Region).Disjoint ⟨Q, n⟩) (sQ : (below (σ.gpr .rsp) 16).Disjoint ⟨Q, n⟩)
       (wQ : Q.toNat + n ≤ 2 ^ 64) (hn : n < 2 ^ 64) : Env σ C (W + BitVec.ofNat 64 dOff) Q W R n :=
     ⟨hsp, hR, inC, inR inD, hQ, inW, cW.sub_right sw, (qW.sub_right sd).symm, dw, qW.sub_right sw, rC,
       rW.sub_right sd, rQ, rW.sub_right sw, sC, sW.sub_right sd, sQ, sW.sub_right sw, wrC, wD, wQ,
-      by omega, hn⟩
+      by omega_using [wrW], hn⟩
   have inArg {d : Nat} (hd : 8 ≤ d) (hd' : d + 8 ≤ 24) :
       InRegions (σ.rd ++ σ.wr) (σ.gpr .rsp + BitVec.ofNat 64 d) 8 :=
-    ⟨_, inArgs, Offset.contains _ (d := d) (n := 8) (e := 8) (k := 16) hd (by omega) (by decide)⟩
+    ⟨_, inArgs, Offset.contains _ (d := d) (n := 8) (e := 8) (k := 16) hd (by omega_using [hd']) (by decide)⟩
   exact ⟨⟨env P L (inR inP) pW rP sP wrP hL, rfl, cW.sub_right sd, cP, inP, inD, rdi, rsi, rdx, rcx, r8, r9,
     aW, inArg (d := 16) (by decide) (by decide), inA, wA.symm.sub_right sw, wA.symm.sub_right sd, sA, wrA,
     fun r hr => env r.base r.len (inL r hr) (wL r hr).symm (rL r hr) (sL r hr) (wrL r hr) (listed_len hr)⟩,
@@ -302,7 +340,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86_64.a
     (inWr wT) List.mem_cons_self
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
-    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega) wrA wrL
+    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega_using [hwW]) wrA wrL
     (BitVec.isLt _)
   exact ⟨⟨e, t, wT⟩, hwr⟩
 
@@ -342,7 +380,7 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract X86_64.a
     (inRd (by rw [hrd]; exact List.mem_cons_of_mem _ List.mem_cons_self)) List.mem_cons_self
     (List.mem_cons_of_mem _ List.mem_cons_self)
     (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
-    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega) wrA wrL
+    cP cW pW pArgs pT wA wL wArgs tW hrc hrp hrT hrw rL sC sP sT sW sA sL hwC hwP hwT (by omega_using [hwW]) wrA wrL
     (BitVec.isLt _), hwr⟩
 
 /-- A run from a narrowed state is a run from the state. -/

@@ -48,7 +48,7 @@ theorem OddFrame.of_outside2 {base:Addr} {m m':Mem} (h:Outside2 base 64 2816 ACC
 
 theorem OddFrame.of_entry {base:Addr} {m m':Mem} {e:Nat} (he:e<8)
     (h:Outside base (TAB+192*e) 192 m m') : OddFrame base m m':=fun x _ _ c =>
-  h x (by simp only [TAB] at c ⊢;omega)
+  h x (by simp only [TAB] at c ⊢;omega_using [he, c])
 
 structure OddInv (s₀:State) (base:Addr) (P:Point) (k:Nat) (s:State) : Prop where
   bound : 1≤k ∧ k≤8
@@ -74,7 +74,7 @@ theorem oddBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : Odd
   have hs1 := k1.scr hs
   have hc1 : t1.gpr .x19 = BitVec.ofNat 64 k := by rw [k1.regs.1 _ (by decide)]; exact hc
   rw [WP.block_append_iff]
-  refine WP.mono (tabStore_ok hs1 (by omega) hc1) fun t2 ⟨w2, o2, k2⟩ => ?_
+  refine WP.mono (tabStore_ok hs1 (by omega_using [hk]) hc1) fun t2 ⟨w2, o2, k2⟩ => ?_
   have hs2 : Scr t2 base := hs1.of_keeps k2 (by decide)
   have hc2 : t2.gpr .x19 = BitVec.ofNat 64 k := by rw [k2.1 _ (by decide)]; exact hc1
   refine WP.mono (next_ok t2 (n := 8) (by decide) hk hc2) fun t3 ⟨c3, n3, k3, m3⟩ => ⟨n3, ?_⟩
@@ -85,21 +85,21 @@ theorem oddBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : Odd
     have := i.isLt
     simp only [VG.Proof.X448.AArch64.Weak.E, VG.Proof.X448.AArch64.Weak.F]
     refine congrArg _ (VG.Proof.X448.Wide.valN_congr fun w hw => ?_)
-    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
+    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_using [])) (by simp only [slot]; omega_using []) (by omega_using [hw])]
   have hacc1 : pt (EV t1.mem base) 3 4 5 = oddPoint P k := by
     rw [e1, Point56.genEnv_pt, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq, hacc, hpnt]
-    conv_rhs => rw [show k=k-1+1 by omega, oddPoint]
+    conv_rhs => rw [show k=k-1+1 by omega_using [hb2], oddPoint]
   have hpnt1 : pt (EV t1.mem base) 6 7 8 = VG.Proof.Ed448.double P := by
     rw [← hpnt]; simp only [pt]
     rw [Same.env s1 (i := 6) (by decide), Same.env s1 (i := 7) (by decide), Same.env s1 (i := 8) (by decide)]
-  refine ⟨⟨by omega, by omega⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
+  refine ⟨⟨by omega_using [], by omega_using [hk]⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
     ?_, ?_, ?_, ?_, ?_⟩
   · intro i w hw
     have := i.isLt
     show limbs t3.mem base (slot i.val) w < Ib
-    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
+    rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_using [])) (by simp only [slot]; omega_using []) (by omega_using [hw])]
     exact b1 i w hw
-  · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
+  · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega_using [])) (by simp only [slot]; omega_using []) (by omega_using [hw])]
     exact z1 w hw
   · simp only [pt]; rw [e3 3, e3 4, e3 5, Nat.add_sub_cancel]; exact hacc1
   · simp only [pt]; rw [e3 6, e3 7, e3 8]; exact hpnt1
@@ -108,30 +108,30 @@ theorem oddBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : Odd
     by_cases hek : e = k
     · subst hek
       exact ⟨by rw [tabStore_pt w2, hacc1], tabStore_bnd b1 w2⟩
-    · have ⟨te, tb⟩ := htab e (by omega)
+    · have ⟨te, tb⟩ := htab e (by omega_using [he, hek])
       have hmem1 : ∀ w < 24, tw t1.mem base e w = tw s.mem base e w := fun w hw => by
         unfold tw
-        exact k1.mem.word (Or.inr (by simp only [TAB]; omega)) (Or.inr (by simp only [ACC, TAB]; omega))
-          (by simp only [TAB]; omega)
+        exact k1.mem.word (Or.inr (by simp only [TAB]; omega_using [])) (Or.inr (by simp only [ACC, TAB]; omega_using []))
+          (by simp only [TAB]; omega_using [hk, he, hw])
       refine ⟨?_, fun w hw => ?_⟩
-      · rw [TPt_outside o2 hek (by omega), TPt_of_tw hmem1, te]
-      · rw [tw_outside o2 hek (by omega) hw, hmem1 w hw]; exact tb w hw
+      · rw [TPt_outside o2 hek (by omega_using [hk, he]), TPt_of_tw hmem1, te]
+      · rw [tw_outside o2 hek (by omega_using [hk, he]) hw, hmem1 w hw]; exact tb w hw
   · intro e he w hw
     rw [m3]
     by_cases hek:e=k
     · subst e
-      rw [tw,w2 w (by omega)]
+      rw [tw,w2 w (by omega_using [hw])]
       have heq:Window.src w=slot 3+8*w:=by
         simp only [Window.src,slot]
-        omega
+        omega_using [hw]
       rw [heq]
       exact mx1 w hw
-    · rw [tw_outside o2 hek (by omega) (by omega)]
+    · rw [tw_outside o2 hek (by omega_using [hk, he]) (by omega_using [hw])]
       have hm:tw t1.mem base e w=tw s.mem base e w:=
-        k1.mem.word (Or.inr (by simp only [TAB];omega)) (Or.inr (by simp only [ACC,TAB];omega))
-          (by simp only [TAB];omega)
+        k1.mem.word (Or.inr (by simp only [TAB];omega_using [])) (Or.inr (by simp only [ACC,TAB];omega_using []))
+          (by simp only [TAB];omega_using [hk, he, hw])
       rw [hm]
-      exact hxb e (by omega) w hw
+      exact hxb e (by omega_using [he, hek]) w hw
   · rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.regs.1 _ (by decide)]; exact hchk
   · rw [k3.2.1, k2.2.1, k1.regs.2.1]; exact hrd
   · rw [k3.2.2, k2.2.2, k1.regs.2.2]; exact hwr
@@ -146,13 +146,13 @@ theorem oddLoop_ok {s₀ : State} {base : Addr} {P : Point} :
     (Q := fun t => OddInv s₀ base P 8 t)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 7 ∧ OddInv s₀ base P (8 - m) s) ?_ m s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
-  refine WP.mono (oddBody_ok hi (by omega)) fun t ⟨hz, ht⟩ => ?_
+  refine WP.mono (oddBody_ok hi (by omega_using [h1])) fun t ⟨hz, ht⟩ => ?_
   simp only [eval, State.read, BitVec.setWidth_eq, hz]
   by_cases hm : m = 1
   · subst hm
     exact .inl ⟨by decide, ht⟩
-  · refine .inr ⟨congrArg some (decide_eq_true (by omega)), m - 1, by omega, by omega, by omega, ?_⟩
-    rw [show 8 - (m - 1) = 8 - m + 1 by omega]
+  · refine .inr ⟨congrArg some (decide_eq_true (by omega_using [hm])), m - 1, by omega_using [h1], by omega_using [h1, hm], by omega_using [h2], ?_⟩
+    rw [show 8 - (m - 1) = 8 - m + 1 by omega_using [h1, h2]]
     exact ht
 
 

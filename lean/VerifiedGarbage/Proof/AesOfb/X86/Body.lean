@@ -47,7 +47,7 @@ theorem blkPreIv {s₀ : State} (hp : UPre s₀) {s : State}
     hp.sch_iv, hp.sch_scr.sub_right (Region.sub_prefix (by decide)),
     hp.iv_scr.sub_right (Region.sub_prefix (by decide)), by rw [hb]; exact hp.b_sch, by rw [hb]; exact hp.b_iv,
     by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, hp.iv_fit,
-    by have := hp.scr_fit; omega, ?_, ?_⟩
+    by have := hp.scr_fit; omega_using [this], ?_, ?_⟩
   · rw [hrd, hwr, hp.rd, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -144,7 +144,7 @@ theorem body_ok (v : BlocksImpl) : BodyOk ofbMode (body v.enc) := by
   have b₃ : s₃.gpr .ebx = Iv s₀ := u₃.gpr
   have i₃ : s₃.gpr .esi = D32 s₀ k := by rw [u₃.other _ (by decide), esi₂]
   refine xor4_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [i₃, qN]; omega) (by rw [b₃]; omega) (by rw [i₃, qN]; omega)
+    (by rw [i₃, qN]; omega_using [hk, hdf]) (by rw [b₃]; omega_using [hiv]) (by rw [i₃, qN]; omega_using [hk, hdf])
     (by rw [i₃, add0, hd, u₃.rd, u₃.wr, rwl]; exact covBlk hk (by simp))
     (by rw [b₃, add0, u₃.rd, u₃.wr, rwl]; exact covIv (by simp))
     (by rw [i₃, add0, hd, u₃.wr, w₂]; exact covBlk hk (by simp)) fun s₄ g₄ => ?_
@@ -175,7 +175,7 @@ theorem body_ok (v : BlocksImpl) : BodyOk ofbMode (body v.enc) := by
         · exact (hp.data_scr.sub_left (UPre.data_sub hk)).sub_right (Region.sub_prefix (by decide))
         · exact hp.b_data.symm.sub_left (UPre.data_sub hk)) (by decide),
       Proof.Cmac.bytesAt_frame (Proof.Cmac.xor4Mem_frame _ _ _ _) (one (hp.blk_iv hk).symm) (by decide)]
-  have hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega
+  have hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc : outK ofbMode s₀ (k + 1) = outK ofbMode s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
     rw [newBlk, newIv]
     simp only [outK, chainK, ofbMode_out, ofbMode_chain, take_succ_blks s₀ hk, crypt_snoc, hl]

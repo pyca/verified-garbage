@@ -48,7 +48,7 @@ structure Kept (rs : List Region) (s s' : State) : Prop where
   frame : Frame rs s.mem s'.mem
 
 theorem rates_lt {rate : Nat} (h : rate ∈ rates) : rate ≤ 168 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem toNat_ofNat32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -100,7 +100,7 @@ theorem push2_arg {s t : State} (hsp : 8 ≤ s.sp.toNat) (ht : t.sp = s.sp - Bit
 theorem push2_frame {s : State} (hsp : 8 ≤ s.sp.toNat) : Frame [below s 8] s.mem (pushed [.r12, .lr] s).mem := by
   rw [push2_mem hsp]
   refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · simp only [Region.Contains]
     rw [show State.addr s.sp - BitVec.ofNat 64 8 + BitVec.ofNat 64 4 - (State.addr s.sp - BitVec.ofNat 64 8) =
       BitVec.ofNat 64 4 by bv_omega_arith]; decide
@@ -171,7 +171,7 @@ theorem absorb_pre {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, a0, a1, a2, h.r0, h.r1, h.r2, h.r3, h.r12, h.lr, toNat_ofNat32 h.hlen,
-    toNat_ofNat32 (show rate < 2 ^ 32 by omega), toNat_ofNat32 (show pos < 2 ^ 32 by omega),
+    toNat_ofNat32 (show rate < 2 ^ 32 by omega_using [hr]), toNat_ofNat32 (show pos < 2 ^ 32 by omega_using [hr, hp]),
     State.callEntry_sp, push2_sp]
   refine ⟨trivial, trivial, h.d_st_scr, h.d_data_st, h.d_data_scr, h.b_st, h.b_scr, h.fst, h.fdata, h.fscr, ?_,
     h.hrate, h.hpos⟩
@@ -199,8 +199,8 @@ theorem absorb_ok {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
   simp only [Proof.Sha3.absorbArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_mem, State.withRegions_gpr,
-    a1, h.r0, h.r1, h.r2, h.r3, h.r12, toNat_ofNat32 h.hlen, toNat_ofNat32 (show rate < 2 ^ 32 by omega),
-    toNat_ofNat32 (show pos < 2 ^ 32 by omega), State.callEntry_mem] at hpost
+    a1, h.r0, h.r1, h.r2, h.r3, h.r12, toNat_ofNat32 h.hlen, toNat_ofNat32 (show rate < 2 ^ 32 by omega_using [hr]),
+    toNat_ofNat32 (show pos < 2 ^ 32 by omega_using [hr, hp]), State.callEntry_mem] at hpost
   have hst : ∀ r ∈ [below s 8], (regA st 200).Disjoint r := by
     intro r hr; rw [List.mem_singleton] at hr; subst hr; exact h.b_st.symm
   have hdat : ∀ r ∈ [below s 8], (regA data len).Disjoint r := by
@@ -218,7 +218,7 @@ theorem absorb_ok {s : State} {st scr data : BitVec 32} {rate pos len : Nat}
     have e := hpost.1 msg (by
       unfold Spec.Sha3.Repr at hm ⊢
       rw [Proof.Sha3.stateAt_congr (bytes_frame fA hst (by decide))]; exact hm) hp
-    rwa [bytesAt_frame fA hdat (by omega)] at e
+    rwa [bytesAt_frame fA hdat (by omega_using [hl])] at e
   · rw [popped_gpr (by decide), hpost.2]
 
 theorem push_eq {rs : List Reg} {s a : State} (h : isa.push (.push rs) s = some a) : a = pushed rs s := by
@@ -280,14 +280,14 @@ theorem push1_mem {s : State} (hsp : 8 ≤ s.sp.toNat) : (pushed [.lr] s).mem =
   show storeWords s.mem (s.sp - BitVec.ofNat 32 (4 * [Reg.lr].length)) [s.gpr .lr] = _
   rw [e4]
   show s.mem.writeW (State.addr (s.sp - BitVec.ofNat 32 4)) (s.gpr .lr) = _
-  rw [addr_sub (by omega)]
+  rw [addr_sub (by omega_using [hsp])]
 
 theorem push1_arg {s t : State} (hsp : 8 ≤ s.sp.toNat) (ht : t.sp = s.sp - BitVec.ofNat 32 4)
     (hm : t.mem = (pushed [.lr] s).mem) :
     stackArgAddr t 0 = State.addr s.sp - BitVec.ofNat 64 4 ∧ stackArg t 0 = s.gpr .lr := by
   have a0 : stackArgAddr t 0 = State.addr s.sp - BitVec.ofNat 64 4 := by
     unfold stackArgAddr
-    rw [ht, addr_add (by bv_omega_arith), addr_sub (by omega)]; simp
+    rw [ht, addr_add (by bv_omega_arith), addr_sub (by omega_using [hsp])]; simp
   refine ⟨a0, ?_⟩
   rw [stackArg, a0, hm, push1_mem hsp, Mem.readW_writeW_self32]
 
@@ -311,7 +311,7 @@ theorem cov_push1 {s : State} (hsp : 8 ≤ s.sp.toNat) {ws : List Region} (hw : 
   simp only [List.mem_append, List.mem_singleton] at hr
   rcases hr with rfl | hr
   · refine ⟨_, List.mem_append_right _ (by rw [pushed_wr]; exact List.mem_cons_self ..), ?_⟩
-    rw [e4, addr_sub (by omega)]; exact hc'
+    rw [e4, addr_sub (by omega_using [hsp])]; exact hc'
   · obtain ⟨r', hr', hc''⟩ := hw x n ⟨r, hr, hc'⟩
     exact ⟨r', List.mem_append_right _ (by rw [pushed_wr]; exact List.mem_cons_of_mem _ hr'), hc''⟩
 
@@ -344,7 +344,7 @@ theorem pad_pre {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitV
   simp only [Proof.Sha3.padArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     State.withRegions_rd, State.withRegions_wr, State.withRegions_sp, a0, a1, h.r0, h.r1, h.r2, h.lr,
-    toNat_ofNat32 (show rate < 2 ^ 32 by omega), toNat_ofNat32 (show pos < 2 ^ 32 by omega),
+    toNat_ofNat32 (show rate < 2 ^ 32 by omega_using [hr]), toNat_ofNat32 (show pos < 2 ^ 32 by omega_using [hr, hp]),
     State.callEntry_sp, push1_sp]
   refine ⟨trivial, trivial, h.d_st_scr, h.b_st.sub_left hs, h.b_scr.sub_left hs, h.fst, h.fscr, ?_, h.hrate,
     h.hpos⟩
@@ -357,7 +357,7 @@ theorem pad_ok {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitVe
         stateAt s'.mem (State.addr st) = Spec.Sha3.absorb rate (Spec.Sha3.pad rate (suffix.setWidth 8) msg)) →
       Q s') :
     WP isa padCall s Q := by
-  refine WP.frame (rs := [.lr]) (r := .r12) rfl (by simpa using (show 4 ≤ s.sp.toNat by have := h.sp; omega))
+  refine WP.frame (rs := [.lr]) (r := .r12) rfl (by simpa using (show 4 ≤ s.sp.toNat by have := h.sp; omega_using [this]))
     (by decide) ?_
   have hr := rates_lt h.hrate
   have hp := h.hpos
@@ -371,8 +371,8 @@ theorem pad_ok {s : State} {st scr : BitVec 32} {rate pos : Nat} {suffix : BitVe
   simp only [Proof.Sha3.padArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_mem,
-    h.r0, h.r1, h.r2, h.r3, toNat_ofNat32 (show rate < 2 ^ 32 by omega),
-    toNat_ofNat32 (show pos < 2 ^ 32 by omega), State.callEntry_mem] at hpost
+    h.r0, h.r1, h.r2, h.r3, toNat_ofNat32 (show rate < 2 ^ 32 by omega_using [hr]),
+    toNat_ofNat32 (show pos < 2 ^ 32 by omega_using [hr, hp]), State.callEntry_mem] at hpost
   have hst : ∀ r ∈ [below s 8], (regA st 200).Disjoint r := by
     intro r hr; rw [List.mem_singleton] at hr; subst hr; exact h.b_st.symm
   refine hQ _ ⟨fun r hr hl => ?_, ?_, ?_, ?_, ?_⟩ (fun msg hm hp => ?_)
@@ -469,7 +469,7 @@ theorem squeeze_pre {s : State} {st scr out : BitVec 32} {rate pos len : Nat}
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, a0, a1, a2, h.r0, h.r1, h.r2, h.r3, h.r12, h.lr, toNat_ofNat32 h.hlen,
-    toNat_ofNat32 (show rate < 2 ^ 32 by omega), toNat_ofNat32 (show pos < 2 ^ 32 by omega),
+    toNat_ofNat32 (show rate < 2 ^ 32 by omega_using [hr]), toNat_ofNat32 (show pos < 2 ^ 32 by omega_using [hr, hp]),
     State.callEntry_sp, push2_sp]
   refine ⟨trivial, trivial, h.d_st_out, h.d_st_scr, h.d_out_scr, h.b_st, h.b_out, h.b_scr, h.fst, h.fout,
     h.fscr, ?_, h.hrate, h.hpos⟩
@@ -502,8 +502,8 @@ theorem squeeze_ok {s : State} {st scr out : BitVec 32} {rate pos len : Nat}
   simp only [Proof.Sha3.squeezeArm, view_gpr _ _ _ _ (by decide : Reg.r0 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r1 ∉ linkRegs), view_gpr _ _ _ _ (by decide : Reg.r2 ∉ linkRegs),
     view_gpr _ _ _ _ (by decide : Reg.r3 ∉ linkRegs), State.withRegions_mem, State.withRegions_gpr,
-    a1, h.r0, h.r1, h.r2, h.r3, h.r12, toNat_ofNat32 h.hlen, toNat_ofNat32 (show rate < 2 ^ 32 by omega),
-    toNat_ofNat32 (show pos < 2 ^ 32 by omega), State.callEntry_mem] at hpost
+    a1, h.r0, h.r1, h.r2, h.r3, h.r12, toNat_ofNat32 h.hlen, toNat_ofNat32 (show rate < 2 ^ 32 by omega_using [hr]),
+    toNat_ofNat32 (show pos < 2 ^ 32 by omega_using [hr, hp]), State.callEntry_mem] at hpost
   have hst : ∀ r ∈ [below s 8], (regA st 200).Disjoint r := by
     intro r hr; rw [List.mem_singleton] at hr; subst hr; exact h.b_st.symm
   have est : stateAt (pushed [.r12, .lr] s).mem (State.addr st) = stateAt s.mem (State.addr st) :=

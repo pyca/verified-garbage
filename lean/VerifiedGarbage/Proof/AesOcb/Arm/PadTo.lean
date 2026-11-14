@@ -52,9 +52,9 @@ theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
       blockAtMem t.mem (State.addr p.W + BitVec.ofNat 64 d) = pad (bytesAt s.mem (State.addr S) n) ∧
       Others padRegs s t ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have fw := L.ww
-  have ed : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d := L.wA (by omega)
+  have ed : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d := L.wA (by omega_using [hd])
   unfold padTo
-  refine WP.seq (WP.block_append (WP.mono (zero16_wp (s := s) (o := d) (by omega) (by rw [E.r11]; omega)
+  refine WP.seq (WP.block_append (WP.mono (zero16_wp (s := s) (o := d) (by omega_using [hd]) (by rw [E.r11]; omega_using [hd, fw])
     (by rw [E.r11]; exact E.perm.wC hd)) fun s₁ R₁ => ?_))
   rw [E.r11] at R₁
   have r11₁ : s₁.gpr .r11 = p.W := by rw [R₁.gpr _ (by decide), E.r11]
@@ -64,39 +64,39 @@ theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
   have eS : bytesAt s₁.mem (State.addr S) n = bytesAt s.mem (State.addr S) n := by
     rw [R₁.mem]
     exact Proof.Cmac.bytesAt_frame (Proof.Cmac.frame_store4 _ _ _ _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hSD) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hSD) (by omega_using [hn'])
   have z₁ : bytesAt s₁.mem (State.addr p.W + BitVec.ofNat 64 d) 16 = Spec.Ocb.zeros 16 := by
     rw [R₁.mem]; exact Proof.Cmac.zero4_bytes _ _
   refine WP.seq (WP.mono (copyLoop_ok _ (S := S) (D := p.W + BitVec.ofNat 32 d) (n := n)
-    ⟨by simp [gpr_setReg, r4₁], by simp [gpr_setReg], by simp [gpr_setReg, r5₁], hn, by omega, fS,
-      by rw [L.wN (by omega)]; omega, by simp only [rd_setReg, wr_setReg, R₁.rd, R₁.wr]; exact hS,
-      by simp only [wr_setReg, R₁.wr, ed]; exact Proof.AesGcm.Arm.covers_prefix (E.perm.wC hd) (by omega),
-      by rw [ed]; exact hSD.sub_right (Region.sub_prefix (by omega))⟩) fun s₃ ⟨m₃, O₃⟩ => ?_)
+    ⟨by simp [gpr_setReg, r4₁], by simp [gpr_setReg], by simp [gpr_setReg, r5₁], hn, by omega_using [hn'], fS,
+      by rw [L.wN (by omega_using [hd])]; omega_using [hn', hd, fw], by simp only [rd_setReg, wr_setReg, R₁.rd, R₁.wr]; exact hS,
+      by simp only [wr_setReg, R₁.wr, ed]; exact Proof.AesGcm.Arm.covers_prefix (E.perm.wC hd) (by omega_using [hn']),
+      by rw [ed]; exact hSD.sub_right (Region.sub_prefix (by omega_using [hn']))⟩) fun s₃ ⟨m₃, O₃⟩ => ?_)
   simp only [mem_setReg, ed] at m₃
   rw [eS] at m₃
   have edn : State.addr (p.W + BitVec.ofNat 32 d + BitVec.ofNat 32 n + BitVec.ofNat 32 0) =
       State.addr p.W + BitVec.ofNat 64 d + BitVec.ofNat 64 n := by
-    rw [BitVec.add_zero, BitVec.add_assoc, ← BitVec.ofNat_add, L.wA (by omega), Offset.add_add]
+    rw [BitVec.add_zero, BitVec.add_assoc, ← BitVec.ofNat_add, L.wA (by omega_using [hn', hd]), Offset.add_add]
   have w₃ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) 1 := by
-    rw [O₃.wr]; simp only [wr_setReg, R₁.wr, Offset.add_add]; exact E.perm.wW (d := d + n) (n := 1) (by omega)
+    rw [O₃.wr]; simp only [wr_setReg, R₁.wr, Offset.add_add]; exact E.perm.wW (d := d + n) (n := 1) (by omega_using [hn', hd])
   refine WP.of_runBlock ⟨_, by orun [O₃.r2, edn, w₃], ?_⟩
   have hlen : (bytesAt s.mem (State.addr S) n).length = n := length_bytesAt _ _ _
   have key : ∀ (m : Mem) (b : Byte), (writeBytes m (State.addr p.W + BitVec.ofNat 64 d)
       (bytesAt s.mem (State.addr S) n)).writeW (State.addr p.W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) b =
       writeBytes m (State.addr p.W + BitVec.ofNat 64 d) (bytesAt s.mem (State.addr S) n ++ [b]) :=
-    fun m b => by rw [writeBytes_snoc _ _ _ _ (by omega), hlen]
+    fun m b => by rw [writeBytes_snoc _ _ _ _ (by omega_using [hn', hlen]), hlen]
   refine ⟨?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · simp only [mem_store, mem_setReg]
     rw [m₃, key]
     intro x hx
-    rw [writeBytes_frame _ _ _ (by simp [hlen]; exact contains_pre _ (by omega)) x hx]
+    rw [writeBytes_frame _ _ _ (by simp [hlen]; exact contains_pre _ (by omega_using [hn'])) x hx]
     have F1 : Frame [⟨State.addr p.W + BitVec.ofNat 64 d, 16⟩] s.mem s₁.mem := by
       rw [R₁.mem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
     exact F1 x hx
   · simp only [mem_store, mem_setReg]
-    rw [m₃, key, blockAtMem, bytesAt_writeBytes_base _ _ _ (by simp [hlen]; omega) (by decide), z₁]
+    rw [m₃, key, blockAtMem, bytesAt_writeBytes_base _ _ _ (by simp [hlen]; omega_using [hn']) (by decide), z₁]
     simp only [pad, hlen, List.length_append, List.length_singleton, Spec.Ocb.zeros, List.drop_replicate,
-      List.append_assoc, List.singleton_append, show 16 - (n + 1) = 15 - n by omega]
+      List.append_assoc, List.singleton_append, show 16 - (n + 1) = 15 - n by omega_using []]
     rfl
   · simp only [padRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_store, gpr_setReg, hr.1, ite_false]

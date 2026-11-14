@@ -2,7 +2,8 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KcBase
 
-import VerifiedGarbage.Proof.Rsa.X86.KcDiv
+import VerifiedGarbage.Proof.Rsa.X86.KcWord
+import VerifiedGarbage.Proof.Rsa.X86.KcOps
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Framework.Block
@@ -23,6 +24,9 @@ structure BodyIn (g : Geo) (v : Vals) (s : State) : Prop where
   /-- `q`'s length argument, whose bytes bound `q`. -/
   qLen : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.q < 2 ^ (8 * a) ∧
     VG.Proof.Bignum.X86.CallArgument s g.B g.Z (qLenArg g.full) (BitVec.ofNat 32 a)
+  /-- `p`'s. -/
+  pLen : ∃ a, 1 ≤ a ∧ a ≤ 1024 ∧ v.p < 2 ^ (8 * a) ∧
+    VG.Proof.Bignum.X86.CallArgument s g.B g.Z (pLenArg g.full) (BitVec.ofNat 32 a)
 
 abbrev live0 : List Nat := [aZ, aOne, aN, aE, aP, aQ, aDP, aDQ, aQI, aD]
 
@@ -40,18 +44,47 @@ theorem first_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
   refine ⟨ht, (k4.mono (by decide) (by simp)).trans (k5.mono (by simp) (by decide)),
     (r4.mono (by decide)).trans (r5.mono (by decide)), a4.keep k5 ht.ws (by decide) (by decide),
     by decide, ?_, ?_⟩
-  · rw [k5.word (by unfold S Geo.w; omega) (by simp) (by decide) (h.ws.ws.fit64 (by decide)),
-      k4.word (by unfold S Geo.w; omega) (by decide) (by simp) (h.ws.ws.fit64 (by decide)), h.vdTop]
+  · rw [k5.word (by unfold S Geo.w; omega_using []) (by simp) (by decide) (h.ws.ws.fit64 (by decide)),
+      k4.word (by unfold S Geo.w; omega_using []) (by decide) (by simp) (h.ws.ws.fit64 (by decide)), h.vdTop]
   · rw [e5, p4]
     rcases Nat.mod_two_eq_zero_or_one v.p with e | e <;> simp [e]
 
+/-- The arrays after `start`. -/
+abbrev aStart (v : Vals) : Nat → Nat := upd (vals v) aOne 1
+
+/-- `start`: `1`, and the mask of `p` odd and `p q = n`. -/
 theorem start_ok {g : Geo} {v : Vals} {s : State} (h : BodyIn g v s) :
-    WP isa (start g.full) s fun u =>
-      WP isa (division g.full) u fun t => ∃ Xq Xr,
-        (0 < v.p → Xr = v.n % v.p ∧ Xq = v.n / v.p) ∧
-        Stg g s (upd (upd (upd (vals v) aOne 1) aVQ Xq) aVR Xr)
-          (aVR :: aVQ :: live0) (decide (v.p % 2 = 1)) t := by
+    WP isa (start g.full) s (Stg g s (aStart v) live0 (decide (v.p % 2 = 1) && decide (v.p * v.q = v.n))) := by
   unfold start
-  rw [wp_seqs_append (by simp) (by simp [divSet])]
-  exact WP.mono (first_ok h) fun u hu => hu.divSet_ok (a := aN) (d := aP) (by decide) (by decide) (by decide)
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  have f := first_ok h
+  rw [WP.seq_iff] at f
+  refine WP.mono f fun u hu => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono hu fun t ht => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  -- The guard, then the product: over the primes' `w / 2` words where it holds.
+  obtain ⟨ap, -, hap, plt, parg⟩ := h.pLen
+  obtain ⟨aq, -, haq, qlt, qarg⟩ := h.qLen
+  refine WP.mono (ht.balanced_ok (ht.arg parg) (ht.arg qarg) hap haq (by decide))
+    fun t7 ⟨h7, an, _, _, hkw, hg⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (h7.ifBalanced_ok hg (Q := fun t1 => Stg g s (aStart v) live0 (decide (v.p % 2 = 1)) t1 ∧
+      val32 t1.mem g.B (arr g.w aVQ) (2 * g.w) = aStart v aP * aStart v aQ)
+    (fun bal u hu => ?_) fun _ u hu => hu.mulWide_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide)
+      (by decide) (by decide) (by decide)) fun t1 ⟨h1, e1⟩ => ?_
+  · obtain ⟨h8, hpa, hqa, -, -⟩ := bal
+    have hkw' : VG.Proof.Rsa.X86.KeyRt.kw an = g.w := hkw
+    have hw : g.w = an / 4 := by
+      rw [← hkw']
+      simp only [VG.Proof.Rsa.X86.KeyRt.kw, Spec.Rsa.modulusWords]; omega_using [h8]
+    have e8 : 32 * (g.w / 2) = 8 * ap := by omega_using [h8, hpa, hw]
+    exact hu.mulHalf_ok (o := aVQ) (a := aP) (b := aQ) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by show v.p < _; rw [e8]; exact plt) (by show v.q < _; rw [e8, show 8 * ap = 8 * aq by omega_using [hpa, hqa]]; exact qlt)
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (h1.eqWide_ok (o := aVQ) (n := aN) (by decide) (by decide)) fun t2 ⟨h2, e2⟩ => ?_
+  refine h2.acc_ok ?_
+  rw [e2, e1]
+  change (if v.p * v.q = v.n then 1 else 0) = _
+  by_cases hh : v.p * v.q = v.n <;> simp [hh]
 end VG.Proof.Rsa.X86.KeyCheck

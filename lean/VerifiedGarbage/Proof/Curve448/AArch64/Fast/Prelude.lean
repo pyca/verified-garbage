@@ -50,8 +50,8 @@ theorem loadA_ok {s : State} {base : Addr} (hs : Scr s base) {ra : Reg} {D a : N
     · subst h; rw [uv, tm]
     · have hne : Mul.A i ∉ [Mul.A n] := by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
-        exact A_inj i (by omega) n hn h
-      rw [uk.1 _ hne, tv i (by omega)]
+        exact A_inj i (by omega_using [hn, hi]) n hn h
+      rw [uk.1 _ hne, tv i (by omega_using [hi, h])]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hr]; exact A_mem n hn
 
@@ -121,13 +121,13 @@ theorem kakbStep_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg} {D b 
   refine WP.mono (add_ok s _ _ _) fun t1 ⟨v1, m1, k1⟩ => ?_
   have s1 : Scr t1 base := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (stw_ok s1 _ (d := KA + 8 * i) (by omega) (by omega)) fun t2 ⟨w2, o2, g2, r2, wr2⟩ => ?_
+  refine WP.mono (stw_ok s1 _ (d := KA + 8 * i) (by omega_using [hA, hKA]) (by omega_using [hi, hA, hKA])) fun t2 ⟨w2, o2, g2, r2, wr2⟩ => ?_
   have s2 : Scr t2 base := ⟨by rw [g2]; exact s1.x3, by rw [g2]; exact s1.mask, wr2 ▸ s1.wr, s1.nowrap⟩
   have p2 : PtrOk t2 base rb D b := (hp.of_keeps k1 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     exact hrb' _ (by simp [Mul.R]))).keep (by rw [g2])
   rw [WP.block_append_iff]
-  refine WP.mono (ldPtr_ok s2 Mul.R.t p2 (k := i) (by omega)) fun t3 ⟨v3, m3, k3⟩ => ?_
+  refine WP.mono (ldPtr_ok s2 Mul.R.t p2 (k := i) (by omega_using [hi])) fun t3 ⟨v3, m3, k3⟩ => ?_
   have s3 : Scr t3 base := s2.of_keeps k3 (by decide)
   have p3 : PtrOk t3 base rb D b := p2.of_keeps k3 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -135,31 +135,31 @@ theorem kakbStep_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg} {D b 
   have e3 := p3.ptr (32 + 8 * i)
   rw [← Nat.add_assoc, ← Nat.add_assoc] at e3
   rw [WP.block_append_iff]
-  refine WP.mono (ldAt_ok s3 Mul.R.p1 rb e3 (by omega) (by omega) (by omega)) fun t4 ⟨v4, m4, k4⟩ => ?_
+  refine WP.mono (ldAt_ok s3 Mul.R.p1 rb e3 (by omega_using [hal]) (by omega_using [hi, hlt]) (by omega_using [hb, hi, hA])) fun t4 ⟨v4, m4, k4⟩ => ?_
   have s4 : Scr t4 base := s3.of_keeps k4 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (add_ok t4 _ _ _) fun t5 ⟨v5, m5, k5⟩ => ?_
   have s5 : Scr t5 base := s4.of_keeps k5 (by decide)
-  refine WP.mono (stw_ok s5 _ (d := KB + 8 * i) (by omega) (by omega)) fun t6 ⟨w6, o6, g6, r6, wr6⟩ => ?_
+  refine WP.mono (stw_ok s5 _ (d := KB + 8 * i) (by omega_using [hA, hKB]) (by omega_using [hi, hA, hKB])) fun t6 ⟨w6, o6, g6, r6, wr6⟩ => ?_
   have hb1 : word t2.mem base (b + 8 * i) = word s.mem base (b + 8 * i) := by
-    rw [w2 _ (by omega) (by omega), ite_eq_right (by omega), m1]
+    rw [w2 _ (by omega_using [hb, hi, hA]) (by omega_using [hb, hKA]), ite_eq_right (by omega_using [hb, hKA]), m1]
   have hb2 : word t2.mem base (b + 32 + 8 * i) = word s.mem base (b + 32 + 8 * i) := by
-    rw [w2 _ (by omega) (by omega), ite_eq_right (by omega), m1]
+    rw [w2 _ (by omega_using [hb, hi, hA]) (by omega_using [hb, hKA]), ite_eq_right (by omega_using [hb, hKA]), m1]
   refine ⟨?_, ?_, ?_, ?_, fun d hd h1 h2 => ?_⟩
-  · rw [w6 _ (by omega) (by omega), ite_eq_right (by omega), m5, m4, m3, w2 _ (by omega) (by omega),
+  · rw [w6 _ (by omega_using [hi, hA, hKA]) (by omega_using [hKA, hKB]), ite_eq_right (by omega_using [hKA, hKB]), m5, m4, m3, w2 _ (by omega_using [hi, hA, hKA]) (by omega_using []),
       ite_eq_left rfl, v1]
-  · rw [w6 _ (by omega) (by omega), ite_eq_left rfl, v5, k4.1 Mul.R.t (by decide), v3, v4, m3, hb1, hb2]
+  · rw [w6 _ (by omega_using [hi, hA, hKB]) (by omega_using []), ite_eq_left rfl, v5, k4.1 Mul.R.t (by decide), v3, v4, m3, hb1, hb2]
   · rw [← m1]
-    refine (o2.mono (by omega) (by omega)).trans ?_
+    refine (o2.mono (by omega_using []) (by omega_using [hi])).trans ?_
     rw [← m3, ← m4, ← m5]
-    exact o6.mono (by omega) (by omega)
+    exact o6.mono (by omega_using [hKA, hKB]) (by omega_using [hi, hKA, hKB])
   · refine ⟨fun q hq => ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
       rw [g6, k5.1 q (by simp [Mul.R, hq.1]), k4.1 q (by simp [Mul.R, hq.2.1]),
         k3.1 q (by simp [Mul.R, hq.1]), g2, k1.1 q (by simp [Mul.R, hq.2.2])]
     · rw [r6, k5.2.1, k4.2.1, k3.2.1, r2, k1.2.1]
     · rw [wr6, k5.2.2, k4.2.2, k3.2.2, wr2, k1.2.2]
-  · rw [w6 _ hd (by omega), ite_eq_right (by omega), m5, m4, m3, w2 _ hd (by omega),
-      ite_eq_right (by omega), m1]
+  · rw [w6 _ hd (by omega_using [h2]), ite_eq_right (by omega_using [h2]), m5, m4, m3, w2 _ hd (by omega_using [h1]),
+      ite_eq_right (by omega_using [h1]), m1]
 
 end VG.Proof.Curve448.AArch64.Fast

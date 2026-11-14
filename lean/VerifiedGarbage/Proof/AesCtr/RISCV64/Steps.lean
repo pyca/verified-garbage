@@ -64,10 +64,10 @@ theorem sel_min (a b : BitVec 64) :
 theorem rem_toNat (c : BitVec 32) :
     (BitVec.ofNat 64 1 <<< 32 - c.setWidth 64).toNat = 2 ^ 32 - c.toNat := by
   have hc := c.isLt
-  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega
+  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega_using []
   have h2 : (BitVec.ofNat 64 1 <<< 32).toNat = 2 ^ 32 := by decide
   rw [BitVec.toNat_sub, h1, h2]
-  omega
+  omega_using []
 
 /-- The carry out of `L + 2³²`: `1` iff the sum is below `2³²`. -/
 theorem carry_bit (L : BitVec 64) :
@@ -79,13 +79,13 @@ theorem carry_bit (L : BitVec 64) :
     rw [BitVec.toNat_add, h2]
   by_cases h : 2 ^ 64 ≤ L.toNat + 2 ^ 32
   · have : L + BitVec.ofNat 64 1 <<< 32 < BitVec.ofNat 64 1 <<< 32 := by
-      rw [BitVec.lt_def, hs, h2]; omega
+      rw [BitVec.lt_def, hs, h2]; omega_using [h]
     simp only [this, ↓reduceIte]
-    rw [show (1 : BitVec 64).toNat = 1 from rfl]; omega
+    rw [show (1 : BitVec 64).toNat = 1 from rfl]; omega_using [h]
   · have : ¬ L + BitVec.ofNat 64 1 <<< 32 < BitVec.ofNat 64 1 <<< 32 := by
-      rw [BitVec.lt_def, hs, h2]; omega
+      rw [BitVec.lt_def, hs, h2]; omega_using [h]
     simp only [this, ↓reduceIte]
-    rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega
+    rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [h]
 
 theorem svOf_al (S : Addr) : (svOf S).toNat % 8 = 0 := align_al _
 
@@ -153,9 +153,9 @@ theorem count_wp {s : State} {Q S : Addr} {left : Nat} {rest : List Instr} {Φ :
     · have hlt : ¬ BitVec.ofNat 64 left < BitVec.ofNat 64 1 <<< 32 - c.setWidth 64 := by
         rw [BitVec.lt_def, hl', hr]; exact h
       simp only [hlt, ↓reduceIte]
-      rw [Nat.min_eq_right (by omega)]
+      rw [Nat.min_eq_right (by omega_using [h])]
       apply BitVec.eq_of_toNat_eq
-      rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := c.isLt; omega)]
+      rw [hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := c.isLt; omega_using [])]
   have wr₁₀ : s₁₀.wr = s.wr := by
     rw [u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr]; rfl
   refine wp_sd (a := svOf S) (by decide) (t0_svOf _ (by rw [g₁₀ .s6 (by decide) (by decide) (by decide)
@@ -173,7 +173,7 @@ theorem shl4 {m : Nat} (h : 16 * m < 2 ^ 64) : BitVec.ofNat 64 m <<< 4 = BitVec.
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
     Nat.shiftLeft_eq]
-  omega
+  omega_using [h]
 
 /-- On past the call's `m` blocks, with the last 32 bits of the counter
 block in `t1`. -/
@@ -230,9 +230,9 @@ theorem carry_wp {s : State} {Q : Addr} {Φ : State → Prop} (h3 : s.gpr .s3 = 
       Frame [⟨Q, 16⟩] s.mem s'.mem → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → Φ s') :
     WP isa (.block carry) s Φ := by
   have inW : ∀ d n, d + n ≤ 16 → InRegions s.wr (Q + BitVec.ofNat 64 d) n := fun d n h =>
-    ⟨_, hw, Offset.contains_base Q h (by omega)⟩
+    ⟨_, hw, Offset.contains_base Q h (by omega_using [h])⟩
   have inR : ∀ d n, d + n ≤ 16 → InRegions (s.rd ++ s.wr) (Q + BitVec.ofNat 64 d) n := fun d n h =>
-    ⟨_, List.mem_append_right _ hw, Offset.contains_base Q h (by omega)⟩
+    ⟨_, List.mem_append_right _ hw, Offset.contains_base Q h (by omega_using [h])⟩
   unfold carry
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -255,7 +255,7 @@ theorem carry_wp {s : State} {Q : Addr} {Φ : State → Prop} (h3 : s.gpr .s3 = 
   rw [WP.block_append_iff]
   refine WP.mono (storeBE_ok (v := .t1) (tmp := .t3) (n := .s3) (off := 8) (w := 8) (by decide) (by decide)
     (by decide) (by decide) (by decide) fun j hj => by
-      rw [q₄, wr₄]; exact inW (8 + j) 1 (by omega)) fun s₅ e₅ => ?_
+      rw [q₄, wr₄]; exact inW (8 + j) 1 (by omega_using [hj])) fun s₅ e₅ => ?_
   subst e₅
   refine wp_sltu fun s₆ u₆ => ?_
   generalize hm₁ : writeBytes s₄.mem (s₄.gpr .s3 + BitVec.ofNat 64 8) (beBytes 8 (s₄.gpr .t1)) = m₁ at u₆
@@ -282,7 +282,7 @@ theorem carry_wp {s : State} {Q : Addr} {Φ : State → Prop} (h3 : s.gpr .s3 = 
   have wr₈ : s₈.wr = s.wr := by rw [u₈.wr, RegUpd.wr_write, RegUpd.wr_write, wr₆]
   refine WP.mono (storeBE_ok (v := .t1) (tmp := .t2) (n := .s3) (off := 0) (w := 8) (by decide) (by decide)
     (by decide) (by decide) (by decide) fun j hj => by
-      rw [q₈, wr₈]; exact inW (0 + j) 1 (by omega)) fun s₉ e₉ => ?_
+      rw [q₈, wr₈]; exact inW (0 + j) 1 (by omega_using [hj])) fun s₉ e₉ => ?_
   subst e₉
   -- The memory.
   have m₈ : s₈.mem = m₁ := by rw [u₈.mem, RegUpd.mem_write, RegUpd.mem_write, m₆]

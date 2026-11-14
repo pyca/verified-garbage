@@ -74,7 +74,7 @@ structure BPost (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (s
   out : Spec.Aes.statesAt s'.mem D n = (Spec.Aes.statesAt s.mem D n).map (f R (bytesAt s.mem K (16 * (R + 1))))
 
 theorem BCall.n_lt {s : State} {K D S : Addr} {R n : Nat} (h : BCall s K D S R n) : n < 2 ^ 64 := by
-  have := h.wrap; omega
+  have := h.wrap; omega_using [this]
 
 theorem BCall.pre {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s : State} {K D S : Addr} {R n : Nat}
     (h : BCall s K D S R n) :

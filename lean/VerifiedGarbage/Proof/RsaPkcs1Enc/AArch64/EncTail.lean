@@ -70,12 +70,12 @@ theorem store' (hc : Ctx L g vv m₀ t) (hL : L.Ok) {rs : List Region} (hrd : t'
     · obtain ⟨b, n⟩ := R
       simp only at hb h₂; subst hb
       unfold keptOff at hd
-      exact hL.fr_sep (by omega) (by omega) (by omega)
+      exact hL.fr_sep (by omega_using [hd, h₁, h₂]) (by omega_using [hd]) (by omega_using [h₂])
   · rcases hin r hr with hs | ⟨d', h₁, h₂, hb⟩
     · exact ⟨L.OUT, by simp, hs⟩
     · obtain ⟨b, n⟩ := r
       simp only at hb h₂; subst hb
-      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega)⟩
+      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega_using [h₂])⟩
 
 end Ctx
 
@@ -86,21 +86,21 @@ theorem maskLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
   have hk := hL.k1024
   have hk64 := hL.k64
   have hbO := hL.bO
-  refine Bytes.count_loop (by omega) (MaskInv L g vv m₀ y r z) (fun j hj u hu => ?_) h
+  refine Bytes.count_loop (by omega_using [hk64]) (MaskInv L g vv m₀ y r z) (fun j hj u hu => ?_) h
   have hc := hu.ctx
   have hout : InRegions u.wr (L.out + BitVec.ofNat 64 j + BitVec.ofNat 64 0) 1 :=
-    ⟨L.OUT, by rw [hc.wr]; simp, by rw [add_add, Nat.add_zero]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨L.OUT, by rw [hc.wr]; simp, by rw [add_add, Nat.add_zero]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have houtR : InRegions (u.rd ++ u.wr) (L.out + BitVec.ofNat 64 j + BitVec.ofNat 64 0) 1 :=
     let ⟨R, hR, hc'⟩ := hout; ⟨R, List.mem_append_right _ hR, hc'⟩
   refine WP.mono (maskBody_ok (by rw [hu.x11]; exact houtR) (by rw [hu.x11]; exact hout)
-    (by rw [hu.x13]; exact hc.in_fr (by unfold oEM frameBytes; omega))) fun w hw => ?_
+    (by rw [hu.x13]; exact hc.in_fr (by unfold oEM frameBytes; omega_using [hk, hj]))) fun w hw => ?_
   -- `out`'s bytes and `EM`'s are apart.
   have hsep : ∀ i, i < L.k.toNat → L.out + BitVec.ofNat 64 i ≠ L.Q + BitVec.ofNat 64 (oEM + j) := fun i hi e => by
-    have hd := hL.stk_buf (d := oEM + j) (n := 1) (by unfold oEM; omega) (.inl rfl)
+    have hd := hL.stk_buf (d := oEM + j) (n := 1) (by unfold oEM; omega_using [hk, hj]) (.inl rfl)
     refine hd (L.Q + BitVec.ofNat 64 (oEM + j)) (Region.contains_self _ _) ?_
-    rw [← e]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [← e]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
   have hne : ∀ i, i < L.k.toNat → i ≠ j → L.out + BitVec.ofNat 64 i ≠ L.out + BitVec.ofNat 64 j :=
-    fun i hi hij => Offset.add_ofNat_ne _ (by omega) (by omega) hij
+    fun i hi hij => Offset.add_ofNat_ne _ (by omega_using [hi]) (by omega_using [hj]) hij
   have hj' : w.mem (L.out + BitVec.ofNat 64 j) = mb (y (L.out + BitVec.ofNat 64 j)) z := by
     rw [hw.mem, hu.x11, hu.x13, hu.x14, Bytes.write1_ne _ _ (hsep j hj), Bytes.write1_self,
       hu.todo j (Nat.le_refl _) hj]; rfl
@@ -121,14 +121,14 @@ theorem maskLoop_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg →
       (mem_ne hr (by decide)) (mem_ne hr (by decide)) (mem_ne hr (by decide))) hf fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inl (Offset.sub_base _ (by omega))
-    · exact .inr ⟨oEM + j, by unfold oEM; omega, by show oEM + j + 1 ≤ 1072; unfold oEM; omega, rfl⟩
+    · exact .inl (Offset.sub_base _ (by omega_using [hj]))
+    · exact .inr ⟨oEM + j, by unfold oEM; omega_using [], by show oEM + j + 1 ≤ 1072; unfold oEM; omega_using [hk, hj], rfl⟩
   · rw [hw.x11, hu.x11, add_one]
   · rw [hw.x13, hu.x13, add_add, Nat.add_assoc]
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [hi' i (by omega) (by omega)]; exact hu.done i hi
+    · rw [hi' i (by omega_arith) (by omega_using [hi])]; exact hu.done i hi
     · exact hj'
-  · rw [hi' i hik (by omega)]; exact hu.todo i (by omega) hik
+  · rw [hi' i hik (by omega_using [hi])]; exact hu.todo i (by omega_using [hi]) hik
   · rw [hx12]; exact Bytes.counter_ne hj L.k.isLt
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Enc

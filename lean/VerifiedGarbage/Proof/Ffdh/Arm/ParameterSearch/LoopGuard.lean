@@ -22,7 +22,7 @@ theorem statusGuard_ok (s : State) {base : BitVec 32} {status : Nat}
   refine withRest_all [.r9] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord at *
   ffrun [h.addr (by decide : 13 < 16), h.read (by decide : 13 < 16), value]
-  have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 ∨ status = 4 := by omega
+  have casesStatus : status = 0 ∨ status = 1 ∨ status = 2 ∨ status = 3 ∨ status = 4 := by omega_using [small]
   rcases casesStatus with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem SearchDone.after_read {p : SearchParams} {result : Spec.Ffdh.ParameterSearchResult}

@@ -48,12 +48,12 @@ theorem absorbFirst_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv e 
   have hsub : Region.Sub ⟨dp s₀, 16 * 16⟩ ⟨dp s₀, L s₀⟩ := Region.sub_prefix hL
   refine blocks_call (P := off (cx s₀) 448) (p := dp s₀) (n := 16) h0 h1 h2 (by decide)
     ((hs.ctx.sub_left (sub_ctx s₀ (by lit_omega))).sub_right hsub)
-    (by have := hs.wrap; omega)
+    (by have := hs.wrap; omega_using [hL, this])
     (fun a w ⟨r, hr', hc⟩ => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl
       · rw [rd₁, wr₁, h.rd, h.wr]
-        exact hs.cov a w ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+        exact hs.cov a w ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hL, hc]⟩
       · exact covers1 hp (by rw [wr₁, h.wr]) (a := 448) (n := 128) (by lit_omega) a w
           ⟨_, List.mem_singleton_self _, hc⟩ |> fun ⟨r, hr, hc⟩ => ⟨r, List.mem_append_right _ hr, hc⟩)
     (covers1 hp (by rw [wr₁, h.wr]) (a := 448) (n := 128) (by lit_omega))

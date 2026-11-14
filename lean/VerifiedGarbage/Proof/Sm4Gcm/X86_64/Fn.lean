@@ -31,7 +31,7 @@ theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame S
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using (L.lay.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
   · exact L.lay.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.lay.w_w (.inr (by omega)) (by decide) (by omega)
+  · exact L.lay.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
   · exact L.lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.kw.sub_right (Lay.wSub (by decide))).symm
 

@@ -51,11 +51,11 @@ theorem storeCols_eq (c : Nat) : storeCols c =
 
 theorem colOff_read {s : State} {p : Addr} (hs : Scratch s p) {c k : Nat} (hc : c < 4) (hk : k < 4) :
     InRegions (s.rd ++ s.wr) (off p (colOff c k)) 64 :=
-  hs.read (by unfold colOff; omega)
+  hs.read (by unfold colOff; omega_using [hc, hk])
 
 theorem loadCols_ok {c : Nat} (hc : c < 4) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block (loadCols c)) s fun t =>
-      (∀ h (hh : h < 2), words t h = gather (colIndex ⟨2 * c + h, by omega⟩) (cv s.mem p)) ∧
+      (∀ h (hh : h < 2), words t h = gather (colIndex ⟨2 * c + h, by omega_using [hc, hh]⟩) (cv s.mem p)) ∧
       t.mem = s.mem ∧ VKeep s t := by
   apply WP.of_runBlock
   simp only [loadCols_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.load512, ea_at,
@@ -66,14 +66,14 @@ theorem loadCols_ok {c : Nat} (hc : c < 4) {s : State} {p : Addr} (hs : Scratch 
   refine ⟨fun h hh => ?_, trivial, ?_⟩
   · apply Vector.ext
     intro j hj
-    rw [words_get _ _ _ hj, show (gather (colIndex ⟨2 * c + h, by omega⟩) (cv s.mem p))[j] =
-        (cv s.mem p)[colIndex ⟨2 * c + h, by omega⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩,
+    rw [words_get _ _ _ hj, show (gather (colIndex ⟨2 * c + h, by omega_using [hc, hh]⟩) (cv s.mem p))[j] =
+        (cv s.mem p)[colIndex ⟨2 * c + h, by omega_using [hc, hh]⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩,
       Fin.getElem_fin, cv_get _ _ _ (colIndex _ _).isLt]
     have hq := colQ c hc h hh j hj
     simp only [colIndex]
     rcases cases_div4 hj with e | e | e | e <;> rw [e] at hq ⊢ <;>
-      simp (disch := omega) only [vreg, qz_load, ↓reduceIte, reduceCtorEq] <;>
-      refine congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ ?_) <;> unfold colOff <;> omega
+      simp (disch := omega_arith) only [vreg, qz_load, ↓reduceIte, reduceCtorEq] <;>
+      refine congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ ?_) <;> unfold colOff <;> omega_using [hq]
   · exact (((setZ_vkeep _ _ _ _ _ _).trans (setZ_vkeep _ _ _ _ _ _)).trans
       (setZ_vkeep _ _ _ _ _ _)).trans (setZ_vkeep _ _ _ _ _ _)
 
@@ -95,7 +95,7 @@ theorem storeCols_ok {c : Nat} (hc : c < 4) {s : State} {p : Addr} (hs : Scratch
     simp only [State.setMem_zmm, zmm_qz _ _ hq]
     by_cases h : i % 16 / 4 = c
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h)]
-      have : i / 32 = 0 ∨ i / 32 = 1 ∨ i / 32 = 2 ∨ i / 32 = 3 := by omega
+      have : i / 32 = 0 ∨ i / 32 = 1 ∨ i / 32 = 2 ∨ i / 32 = 3 := by omega_using [hi]
       rcases this with e | e | e | e <;> simp only [e, h, vreg, and_self, ite_true, ite_false,
         show (0 : Nat) ≠ 1 by decide, show (0 : Nat) ≠ 2 by decide, show (0 : Nat) ≠ 3 by decide,
         show (1 : Nat) ≠ 2 by decide, show (1 : Nat) ≠ 3 by decide, show (2 : Nat) ≠ 3 by decide,
@@ -129,14 +129,14 @@ theorem cols_ok {c : Nat} (hc : c < 4) {s : State} {p : Addr} (hs : Scratch s p)
   by_cases h : i % 16 / 4 = c
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_left_of_eq_true _ _ (eq_true h)]
     have hh : i % 16 / 2 % 2 < 2 := Nat.mod_lt _ (by decide)
-    have e := congrArg (fun v : Vector Word 16 => v[2 * (i / 16) + i % 2]'(by omega))
+    have e := congrArg (fun v : Vector Word 16 => v[2 * (i / 16) + i % 2]'(by omega_using [hi]))
       ((round_words t1 hh).trans (congrArg permute (hw1 _ hh)))
-    simp only [words_get _ _ _ (show 2 * (i / 16) + i % 2 < 16 by omega),
-      show (2 * (i / 16) + i % 2) / 4 = i / 32 by omega,
-      show 4 * (i % 16 / 2 % 2) + (2 * (i / 16) + i % 2) % 4 = cvQ i by simp only [cvQ]; omega] at e
+    simp only [words_get _ _ _ (show 2 * (i / 16) + i % 2 < 16 by omega_using [hi]),
+      show (2 * (i / 16) + i % 2) / 4 = i / 32 by omega_using [],
+      show 4 * (i % 16 / 2 % 2) + (2 * (i / 16) + i % 2) % 4 = cvQ i by simp only [cvQ]; omega_using []] at e
     rw [e]
-    have er : (⟨2 * c + i % 16 / 2 % 2, by omega⟩ : Fin 8) = ⟨i % 16 / 2, by omega⟩ :=
-      Fin.ext (by simp only; omega)
+    have er : (⟨2 * c + i % 16 / 2 % 2, by omega_using [hc]⟩ : Fin 8) = ⟨i % 16 / 2, by omega_using []⟩ :=
+      Fin.ext (by simp only; omega_using [h])
     rw [er]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_right_of_eq_false _ _ (eq_false h)]
 

@@ -31,9 +31,9 @@ theorem packStep_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat} (hi 
     WP isa (.block (packLimb i)) s fun t =>
       t.mem = packMem s.mem p i (word s.mem base (X2 + 4 * i)) ∧ Keeps [.eax] s t := by
   have ea : ∀ j < 2, addr (s.gpr .esi) (2 * i + j) = off p (2 * i + j) := by
-    intro j hj; rw [addr_eq (by omega), hp]
+    intro j hj; rw [addr_eq (by omega_using [hi, hfit, hj]), hp]
   unfold packLimb
-  refine load_ok hs (by simp only [X2, slot]; omega) fun t ht => ?_
+  refine load_ok hs (by simp only [X2, slot]; omega_using [hi]) fun t ht => ?_
   refine wp_store8 (a := off p (2 * i)) (by change addr (t.gpr .esi) _ = _; rw [ht.other .esi (by decide)]; exact ea 0 (by decide))
     (by rw [ht.wr]; exact hw 0 (by decide)) fun u hu => ?_
   refine wp_shift (by decide) fun v hv => ?_
@@ -46,17 +46,17 @@ theorem packStep_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat} (hi 
 theorem packMem_decoded (m : Mem) (p : Addr) {i : Nat} (hi : i < 28) (v : BitVec 32)
     (hv : v.toNat < radix) : decoded (packMem m p i v) p i = v.toNat := by
   have hn : off p (2 * i) ≠ off p (2 * i + 1) := by
-    rw [ne_eq, off_eq_iff p (by omega) (by omega)]; omega
+    rw [ne_eq, off_eq_iff p (by omega_using [hi]) (by omega_using [hi])]; omega_using []
   simp only [decoded, byteN, packMem, writeW8_apply, hn, ite_false, ite_true,
     BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   simp only [radix] at hv
-  omega
+  omega_using [hv]
 
 theorem packMem_outside (m : Mem) (p : Addr) {i : Nat} (hi : i < 28) (v : BitVec 32) :
     Outside p (2 * i) 2 m (packMem m p i v) := by
   intro x hx
-  rw [packMem, writeW8_outside _ _ _ (by omega) (by omega),
-    writeW8_outside _ _ _ (by omega) (by omega)]
+  rw [packMem, writeW8_outside _ _ _ (by omega_using [hi]) (by omega_using [hx]),
+    writeW8_outside _ _ _ (by omega_using [hi]) (by omega_using [hx])]
 
 theorem packLimb_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2)
     {i : Nat} (hi : i < 28) (hp : (s.gpr .esi).setWidth 64 = p)

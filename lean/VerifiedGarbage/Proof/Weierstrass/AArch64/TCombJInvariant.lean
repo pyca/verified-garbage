@@ -42,8 +42,8 @@ theorem tcombW_mo {K : TCombCfg} {size m : Nat} {mem : Mem} {base : Addr} (hL : 
   intro w hw
   simp only [tcombW, combW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with (⟨y, hy, rfl⟩ | rfl) | rfl
-  · have := hL.comb.lay.mo y (combWs_slots _ y hy); dsimp only [TCombCfg.toComb] at this ⊢; omega
-  · have := hM.sep; dsimp only [TCombCfg.toComb] at this ⊢; omega
-  · have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega
+  · have := hL.comb.lay.mo y (combWs_slots _ y hy); dsimp only [TCombCfg.toComb] at this ⊢; omega_using [this]
+  · have := hM.sep; dsimp only [TCombCfg.toComb] at this ⊢; omega_using [this]
+  · have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega_using [this]
 
 end VG.Proof.Weierstrass.AArch64

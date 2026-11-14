@@ -35,14 +35,14 @@ theorem loadPrimeBytes_ok {P : PrimeParams} {used : Nat} {s : State}
       PrimeInput P used t ∧ Frm P.B [ar P.w 0] s.mem t.mem ∧ Keep mmRegs s t := by
   refine WP.mono (loadCandidateArray_ok h.ws (by decide : 0 < 16)
     (by decide : 20 < 32) (by decide : kUsedP < 32) hptr
-    (by rw [hlen]; exact h.len) hsrc (by rw [hlen]; have := P.len2; omega)
+    (by rw [hlen]; exact h.len) hsrc (by rw [hlen]; have := P.len2; omega_using [this])
     (by rw [hlen]; exact P.lenWords)) fun t ⟨ht, hn, hf, hk⟩ => ?_
   have hh : ∀ i < 32, word t.mem P.B (8 * i) = word s.mem P.B (8 * i) := by
     intro i hi
     exact hf.word_eq (by
       simp only [List.mem_singleton]; rintro r rfl
-      left; simp only [slot, hdrBytes]; omega) (by
-      have := h.ws.scr.nowrap; have := h.ws.h256; omega)
+      left; simp only [slot, hdrBytes]; omega_using [hi]) (by
+      have := h.ws.scr.nowrap; have := h.ws.h256; omega_using [hi])
   refine ⟨⟨ht, hn.trans hvalue, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, hf, hk⟩
   · exact (hh kOut (by decide)).trans h.ptr
   · exact (hh kUsedP (by decide)).trans h.len
@@ -59,7 +59,7 @@ theorem loadPrimeBytes_ok {P : PrimeParams} {used : Nat} {s : State}
     right
     change slot P.w 0 + 8 * (P.w + 2) ≤ ofs P.B a
     have hr := h.ws.sl (by decide : 0 < 16)
-    omega
+    omega_using [ha, hr]
   · intro i hi; rw [hk.wr]; exact h.writable i hi
 
 /-- Trial division and Miller–Rabin operate on the saved candidate bytes;

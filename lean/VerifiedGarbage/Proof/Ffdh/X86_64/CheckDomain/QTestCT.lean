@@ -27,10 +27,10 @@ private theorem zero_keep (p : CdP) (s : State) (h : QResidue p s) :
   obtain ⟨⟨mi, hw, hm, hdl, hq⟩, hr⟩ := h
   have hk := hw.base.k1
   have hk' := hw.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have h2 : 2 ≤ p.wq := Nat.le_max_left _ _
-  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega
-  refine WP.mono (ltArr_ok hw.ctx.good (Nat.le_refl _) (by omega) (by omega)
+  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega_using [hk, ew]
+  refine WP.mono (ltArr_ok hw.ctx.good (Nat.le_refl _) (by omega_using [h2]) (by omega_using [hk', ew, hwq])
     (show aXc < 8 by decide) (show aOne < 8 by decide)) fun t ⟨_, hmem, k⟩ => ?_
   refine ⟨⟨mi, hw.keep hmem k (k.gpr (by decide)), hm, hdl, hq⟩, ?_⟩
   obtain ⟨mi', hw', hz⟩ := hr

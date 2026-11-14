@@ -15,8 +15,10 @@ functions:
 
 1. `encode` writes the encoding of `digest` to a buffer `EM` in the frame;
    if that fails, zeros are written to `out` and 0 is returned;
-2. `vg_rsa_private_checked` computes the signature of `EM` into `out`,
-   checked against `e`, and returns its result;
+2. `vg_rsa_private_checked` (or, for `vg_rsa_pkcs1_sign_precomputed`,
+   `vg_rsa_private_checked_precomputed`, given the key's precomputed values
+   `pre`, our stack arguments 13 and 14) computes the signature of `EM` into
+   `out`, checked against `e`, and returns its result;
 3. `EM` is overwritten with zeros.
 
 Only the public key, the lengths and `hash` decide a branch or an address:
@@ -24,7 +26,7 @@ the hash value is only copied into `EM`, which only the private operation
 reads.
 
 The frame (`stdu r1, -frameBytes(r1)`) holds the Parameter Save Area of the
-call (its twelve stack arguments, at `r1 + 96`); our caller's `r26`–`r30`
+call (its twelve, or fourteen, stack arguments, at `r1 + 96`); our caller's `r26`–`r30`
 and our return address, which the call (`bl`) overwrites in the link
 register (`oSave`, `oLr`); and `EM`, of up to 1024 bytes (`oEM`). Our own
 stack arguments are then at `r1 + frameBytes + 96 + 8 i` (`arg i`). Across
@@ -40,20 +42,26 @@ open VG VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 
 /-- The size of the frame. -/
-def frameBytes : Nat := 1264
+def frameBytes : Nat := 1280
 
 /-- Our caller's `r26`–`r30` and our return address. -/
-def oSave : Nat := 192
-def oLr : Nat := 232
+def oSave : Nat := 208
+def oLr : Nat := 248
 
 /-- `EM`. -/
-def oEM : Nat := 240
+def oEM : Nat := 256
 
 /-- Our stack argument `i` (from 0), in the frame. -/
 def arg (i : Nat) : Nat := frameBytes + 96 + 8 * i
 
-/-- `vg_rsa_private_checked`. -/
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+/-- `vg_rsa_private_checked`, or with `pc` `vg_rsa_private_checked_precomputed`. -/
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.PPC64LE.Priv.codeP
+
+/-- The call's stack arguments: twelve, or with `pc` fourteen (`pre` and
+`pre_len` too). -/
+def nCallArgs (pc : Bool) : Nat := if pc then 14 else 12
 
 /-- `r12 := r1`; our caller's `r26`–`r30` and our return address into the
 frame; `out`, `n`, `k`, `e` and `e_len` into `r26`–`r30`. -/
@@ -74,14 +82,14 @@ def zeroLoop : Prog isa :=
 /-- Zeros to `out` (`k` bytes), keeping 0 in `r3`. -/
 def zeroOut : Prog isa := .seq (.block [mov .r7 .r26, mov .r8 .r28, .li .r0 0]) zeroLoop
 
-/-- Our stack argument `1 + j` (`p` … `scratch_len`) to the call's stack
-argument `j`. -/
+/-- Our stack argument `1 + j` (`p` … `scratch_len`, then `pre` and
+`pre_len`) to the call's stack argument `j`. -/
 def copyArg (j : Nat) : List Instr := [.load .d .r0 .r12 (arg (1 + j)), .store .d .r0 .r12 (96 + 8 * j)]
 
-/-- `vg_rsa_private_checked`'s arguments: `out`, `k`, `n`, `k`, `e`,
-`e_len`, `EM`, `k`, and its twelve stack arguments, ours from `p` on. -/
-def callArgs : List Instr :=
-  [.addSp .r12 0] ++ (List.range 12).flatMap copyArg ++
+/-- The call's arguments: `out`, `k`, `n`, `k`, `e`, `e_len`, `EM`, `k`,
+and its stack arguments, ours from `p` on. -/
+def callArgs (pc : Bool) : List Instr :=
+  [.addSp .r12 0] ++ (List.range (nCallArgs pc)).flatMap copyArg ++
   [mov .r3 .r26, mov .r4 .r28, mov .r5 .r27, mov .r6 .r28, mov .r7 .r29, mov .r8 .r30, .addi .r9 .r12 oEM,
     mov .r10 .r28]
 
@@ -89,8 +97,8 @@ def callArgs : List Instr :=
 def wipe : Prog isa := .seq (.block [.addSp .r12 0, .addi .r7 .r12 oEM, mov .r8 .r28, .li .r0 0]) zeroLoop
 
 /-- After the encoding: zeros and 0 if it failed, else the signature. -/
-def afterEnc : Prog isa :=
-  .ite (.zero .d .r3) zeroOut (.seq (.block callArgs) (.seq privCall wipe))
+def afterEnc (pc : Bool) : Prog isa :=
+  .ite (.zero .d .r3) zeroOut (.seq (.block (callArgs pc)) (.seq (privCall pc) wipe))
 
 /-- Our caller's `r26`–`r30` and our return address back from the frame. -/
 def restore : List Instr :=
@@ -98,10 +106,16 @@ def restore : List Instr :=
     .load .d .r28 .r12 (oSave + 16), .load .d .r29 .r12 (oSave + 24), .load .d .r30 .r12 (oSave + 32)]
 
 /-- The body of the frame. -/
-def body : Prog isa :=
-  .seq (.block (save ++ encArgs)) (.seq encode (.seq afterEnc (.block restore)))
+def body (pc : Bool) : Prog isa :=
+  .seq (.block (save ++ encArgs)) (.seq encode (.seq (afterEnc pc) (.block restore)))
+
+/-- `vg_rsa_pkcs1_sign`, or with `pc` `vg_rsa_pkcs1_sign_precomputed`. -/
+def codeG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body pc) (.free frameBytes)
 
 /-- `vg_rsa_pkcs1_sign`. -/
-def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
+abbrev code : Prog isa := codeG false
+
+/-- `vg_rsa_pkcs1_sign_precomputed`. -/
+abbrev codeP : Prog isa := codeG true
 
 end VG.Impl.RsaPkcs1Sig.PPC64LE.Sign

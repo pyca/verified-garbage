@@ -81,8 +81,8 @@ theorem finalSave_ok (s : State) (hok : Ok sboxCfg s) :
   have bp₁ := regs₁ .ebp (by decide +kernel)
   obtain ⟨s₂, run₂, gpr₂, rd₂, wr₂, mem₂⟩ := finalStores_ok s₁ (hok.congr bp₁ bp₁ rd₁ wr₁)
   have hsep : Mem.Sep (wordAddr (s.gpr .ebp) 6) 4 (wordAddr (s.gpr .ebp) 7) 4 := by
-    rw [wordAddr, wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega),
-      addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega)]
+    rw [wordAddr, wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h]),
+      addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h])]
     exact Offset.sep _ (by decide) (by decide) (by decide)
   have hm : s₂.mem = (s.mem.writeW (wordAddr (s.gpr .ebp) 6) (s₁.gpr .eax)).writeW
       (wordAddr (s.gpr .ebp) 7) (s₁.gpr .ebx) := by rw [mem₂, finalMem, bp₁, mem₁]
@@ -93,10 +93,10 @@ theorem finalSave_ok (s : State) (hok : Ok sboxCfg s) :
   · rw [hm, Mem.readW_writeW_self32, hi₁]
     rfl
   · have h6 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 6) 4 := by
-      rw [wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega)]
+      rw [wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h])]
       exact Offset.contains _ (by decide) (by decide) (by decide)
     have h7 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 7) 4 := by
-      rw [wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega)]
+      rw [wordAddr, addr_eq (by have h := hok.fit; change (s.gpr .ebp).toNat + 512 ≤ 2^32 at h; omega_using [h])]
       exact Offset.contains _ (by decide) (by decide) (by decide)
     rw [hm]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ h6).writeW
@@ -139,7 +139,7 @@ theorem restoredOutput_ok (s : State) (fit : (dataArg s).toNat + 8 ≤ 2 ^ 32)
     rfl, ?_, ?_, ?_, ?_⟩
   · dsimp only [mem_setReg, gpr_setReg, reduceCtorEq, ite_true, ite_false]
     have ha0 : (dataArg s + BitVec.ofNat 32 0).setWidth 64 = addr32 (dataArg s) := by simp [addr32]
-    have ha1 : (dataArg s + BitVec.ofNat 32 4).setWidth 64 = addr32 (dataArg s) + 4 := addr_eq (by omega)
+    have ha1 : (dataArg s + BitVec.ofNat 32 4).setWidth 64 = addr32 (dataArg s) + 4 := addr_eq (by omega_using [fit])
     change (s.mem.writeW ((dataArg s + BitVec.ofNat 32 0).setWidth 64)
       (bswap (s.mem.readW (addr (s.gpr .eax) 28) 32))).writeW
       ((dataArg s + BitVec.ofNat 32 4).setWidth 64)

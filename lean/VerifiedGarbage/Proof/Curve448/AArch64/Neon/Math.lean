@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Tactic.Ring
 public import Mathlib.Tactic.LinearCombination
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The arithmetic of `Neon.mul2`'s products
@@ -113,8 +114,8 @@ theorem S_le_U (a b : Nat → Nat) (q : Nat) : S a b q ≤ U a b q :=
 theorem kara_nonneg (a b : Nat → Nat) (k : Nat) : 0 ≤ kara a b k := by
   unfold kara
   split
-  · have := S_le_U a b (k + 8); omega
-  · have := S_le_U a b (k - 8); omega
+  · have := S_le_U a b (k + 8); omega_using [this]
+  · have := S_le_U a b (k - 8); omega_using [this]
 
 /-- Bounds on the radix-2²⁸ limbs of an operand below `Ib` in radix 2⁵⁶. -/
 def lmax (k : Nat) : Nat := if k % 2 = 0 then 2 ^ 28 - 1 else 3 * 2 ^ 28
@@ -123,10 +124,10 @@ theorem kara_le {a b : Nat → Nat} (ha : ∀ k < 16, a k ≤ lmax k) (hb : ∀ 
     (hk : k < 16) : kara a b k < 2 ^ 64 - 2 ^ 40 := by
   have hm : ∀ h < 3, ∀ i < 8, hl a h i ≤ hl lmax h i ∧ hl b h i ≤ hl lmax h i := by
     intro h hh i hi
-    rcases (show h = 0 ∨ h = 1 ∨ h = 2 by omega) with rfl | rfl | rfl <;> simp only [hl]
-    · exact ⟨ha i (by omega), hb i (by omega)⟩
-    · exact ⟨ha _ (by omega), hb _ (by omega)⟩
-    · exact ⟨Nat.add_le_add (ha i (by omega)) (ha _ (by omega)), Nat.add_le_add (hb i (by omega)) (hb _ (by omega))⟩
+    rcases (show h = 0 ∨ h = 1 ∨ h = 2 by omega_using [hh]) with rfl | rfl | rfl <;> simp only [hl]
+    · exact ⟨ha i (by omega_using [hi]), hb i (by omega_using [hi])⟩
+    · exact ⟨ha _ (by omega_using [hi]), hb _ (by omega_using [hi])⟩
+    · exact ⟨Nat.add_le_add (ha i (by omega_using [hi])) (ha _ (by omega_using [hi])), Nat.add_le_add (hb i (by omega_using [hi])) (hb _ (by omega_using [hi]))⟩
   have bS : ∀ q, S a b q ≤ S lmax lmax q := fun q =>
     cv_mono (fun i hi => (hm 0 (by decide) i hi).1) (fun i hi => (hm 0 (by decide) i hi).2) q
   have bT : ∀ q, T a b q ≤ T lmax lmax q := fun q =>
@@ -137,9 +138,9 @@ theorem kara_le {a b : Nat → Nat} (ha : ∀ k < 16, a k ≤ lmax k) (hb : ∀ 
       T lmax lmax (k + 8) + U lmax lmax k + U lmax lmax (k + 8) < 2 ^ 64 - 2 ^ 40 := by decide
   unfold kara
   split
-  · have := num k (by omega); have := bS k; have := bT k; have := bU (k + 8); omega
-  · have := num (k - 8) (by omega); have := bT k; have := bU (k - 8); have := bU k
-    rw [show k - 8 + 8 = k by omega] at *
-    omega
+  · have := num k (by omega_arith); have := bS k; have := bT k; have := bU (k + 8); omega_arith
+  · have := num (k - 8) (by omega_using [hk]); have := bT k; have := bU (k - 8); have := bU k
+    rw [show k - 8 + 8 = k by omega_arith] at *
+    omega_arith
 
 end VG.Proof.Curve448.AArch64.Neon

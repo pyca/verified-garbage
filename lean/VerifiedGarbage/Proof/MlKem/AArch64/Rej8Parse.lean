@@ -36,7 +36,7 @@ def gatherValue (x : BitVec 128) : BitVec 128 :=
 theorem gather_byte (m : Mem) (p : Addr) {e : Nat} (he : e<16) :
     vbyte (gatherValue (m.read p 16)) e = m (p+BitVec.ofNat 64 (gatherSrc e)) := by
   rw [gatherValue,vbyte_ofVBytes _ he,gatherIndex_byte he]
-  have hs : gatherSrc e < 16 := by simp only [gatherSrc]; omega
+  have hs : gatherSrc e < 16 := by simp only [gatherSrc]; omega_using [he]
   rw [ite_eq_left hs]
   exact Mem.extractLsb'_read m p hs
 
@@ -63,7 +63,7 @@ theorem bif_half_even (a : BitVec 16) : a ^^^ ((a ^^^ a >>> 4) &&& ~~~4095) = a 
     decide_true, Bool.true_and]
   by_cases h : i<12
   · simp [h]
-  · have : a.getLsbD (4+i) = false := BitVec.getLsbD_of_ge a _ (by omega)
+  · have : a.getLsbD (4+i) = false := BitVec.getLsbD_of_ge a _ (by omega_using [h])
     simp [h, this]
 
 theorem bif_half_odd (a : BitVec 16) : a ^^^ ((a ^^^ a >>> 4) &&& ~~~(0 : BitVec 16)) = a >>> 4 := by
@@ -78,7 +78,7 @@ theorem vhalf_not (x : BitVec 128) {e : Nat} (he : e < 8) :
     vhalf (~~~x) e = ~~~vhalf x e := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vhalf, BitVec.getLsbD_extractLsb', BitVec.getLsbD_not, hi, decide_true, Bool.true_and,
-    show 16*e+i<128 by omega]
+    show 16*e+i<128 by omega_using [he, hi]]
 
 theorem parsed_lane (x : BitVec 128) {e : Nat} (he : e < 8) :
     vhalf (parsed x) e =
@@ -99,7 +99,7 @@ def candidate (m : Mem) (p : Addr) (e : Nat) : BitVec 16 :=
 theorem candidate_lt (m : Mem) (p : Addr) (e : Nat) : (candidate m p e).toNat < 4096 := by
   simp only [candidate, BitVec.toNat_setWidth]
   have := ((m.read (p + BitVec.ofNat 64 (3*(e/2))) 3).extractLsb' (12*(e%2)) 12).isLt
-  omega
+  omega_using []
 
 theorem parsed_candidate (m : Mem) (p : Addr) {e : Nat} (he : e < 8) :
     vhalf (parsed (m.read p 16)) e = candidate m p e := by
@@ -108,15 +108,15 @@ theorem parsed_candidate (m : Mem) (p : Addr) {e : Nat} (he : e < 8) :
   intro i hi
   have hg : ∀ j < 16, (vhalf (gatherValue (m.read p 16)) e).getLsbD j =
       (m (p + BitVec.ofNat 64 (gatherSrc (2*e + j/8)))).getLsbD (j%8) := fun j hj => by
-    rw [getLsbD_vhalf _ _ hj, ← gather_byte m p (e := 2*e + j/8) (by omega)]
-    simp only [vbyte, BitVec.getLsbD_extractLsb', show j%8 < 8 by omega, decide_true, Bool.true_and]
-    congr 1; omega
+    rw [getLsbD_vhalf _ _ hj, ← gather_byte m p (e := 2*e + j/8) (by omega_using [he, hj])]
+    simp only [vbyte, BitVec.getLsbD_extractLsb', show j%8 < 8 by omega_using [], decide_true, Bool.true_and]
+    congr 1; omega_using []
   have hc : (candidate m p e).getLsbD i = (decide (i < 12) &&
       (m (p + BitVec.ofNat 64 (3*(e/2) + (12*(e%2)+i)/8))).getLsbD ((12*(e%2)+i)%8)) := by
     simp only [candidate, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
     by_cases h : i < 12
     · simp only [h, decide_true, Bool.true_and]
-      rw [getLsbD_read m 3 _ _ (by omega), Offset.add_add]
+      rw [getLsbD_read m 3 _ _ (by omega_using [h]), Offset.add_add]
     · simp [h]
   rw [hc]
   by_cases hp : e%2=0
@@ -125,19 +125,19 @@ theorem parsed_candidate (m : Mem) (p : Addr) {e : Nat} (he : e < 8) :
       have finite : ∀ j<16, (4095 : BitVec 16).getLsbD j = decide (j<12) := by decide +kernel
       exact finite i hi
     rw [k, Bool.and_comm, hp]
-    have : gatherSrc (2*e + i/8) = 3*(e/2) + (12*0+i)/8 := by simp only [gatherSrc]; omega
+    have : gatherSrc (2*e + i/8) = 3*(e/2) + (12*0+i)/8 := by simp only [gatherSrc]; omega_using [hi, hp]
     by_cases h : i < 12
-    · rw [this, show (12*0+i)%8 = i%8 by omega]
+    · rw [this, show (12*0+i)%8 = i%8 by omega_using []]
     · simp [h]
   · rw [ite_eq_right hp, BitVec.getLsbD_ushiftRight]
-    have ho : e%2=1 := by omega
+    have ho : e%2=1 := by omega_using [hp]
     rw [ho]
     by_cases h : i < 12
-    · rw [hg (4+i) (by omega)]
-      have : gatherSrc (2*e + (4+i)/8) = 3*(e/2) + (12*1+i)/8 := by simp only [gatherSrc]; omega
-      rw [this, show (4+i)%8 = (12*1+i)%8 by omega]
+    · rw [hg (4+i) (by omega_using [h])]
+      have : gatherSrc (2*e + (4+i)/8) = 3*(e/2) + (12*1+i)/8 := by simp only [gatherSrc]; omega_using [hi, hp]
+      rw [this, show (4+i)%8 = (12*1+i)%8 by omega_using []]
       simp [h]
-    · rw [BitVec.getLsbD_of_ge _ (4+i) (by omega)]
+    · rw [BitVec.getLsbD_of_ge _ (4+i) (by omega_using [h])]
       simp [h]
 
 /-- One symbolic execution for the four-instruction parsing shape. -/

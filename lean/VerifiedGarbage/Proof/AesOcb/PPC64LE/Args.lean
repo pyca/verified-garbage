@@ -43,11 +43,11 @@ theorem dstW {K W : Addr} {s : State} (L : Lay K W) (P : Perm K W s) {d n : Nat}
   wrap := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp only [Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt (W + BitVec.ofNat 64 d).isLt
-    · rw [L.toNat_w (by omega)]; have := L.ww; omega
-  k := L.k_w.sub_right (Lay.wSub (by omega))
-  scr := L.w_w (.inl (by omega)) (by omega) (by decide)
-  rd := covers_left (P.wC (by omega))
-  wr := P.wC (by omega)
+    · rw [L.toNat_w (by omega_using [h])]; have := L.ww; omega_using [h, this]
+  k := L.k_w.sub_right (Lay.wSub (by omega_using [h]))
+  scr := L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
+  rd := covers_left (P.wC (by omega_using [h]))
+  wr := P.wC (by omega_using [h])
 
 /-- Blocks of the data. -/
 theorem dstD {K W : Addr} {s : State} {D : Addr} {n : Nat} (h : DBuf K W s D (16 * n)) : Dst K W s D n where
@@ -153,8 +153,8 @@ theorem encOne_ok {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : V .r28 = 
     WP isa (encOne d) s (BPost Spec.Aes.cipher s (V .r29) (V .r31 + BitVec.ofNat 64 d)
       (V .r31 + BitVec.ofNat 64 512) R 1) :=
   callBlocks_ok L Proof.Aes.PPC64LE.encryptBlocks_correct encryptBlocks_noFrames hR h28 E
-    (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E.r31]) (by omega))
-    (dstW L E.perm (by omega))
+    (fun s₁ g₁ _ => oneBlock_ok (by rw [g₁ _ (by decide) (by decide) (by decide), E.r31]) (by omega_using [hd]))
+    (dstW L E.perm (by omega_using [hd]))
 
 end
 

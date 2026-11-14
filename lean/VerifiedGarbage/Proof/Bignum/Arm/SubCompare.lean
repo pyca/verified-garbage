@@ -29,15 +29,15 @@ theorem subCompare_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
   change val32 t.mem (State.addr base) o n + val32 s.mem (State.addr base) b n + 0 =
     val32 s.mem (State.addr base) a n + 2 ^ (32 * n) * (t.gpr .r11).toNat at equation
   have diff := val32_lt t.mem (State.addr base) o n
-  have bit : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1 := by have := inv.borrow; omega
+  have bit : (t.gpr .r11).toNat = 0 ∨ (t.gpr .r11).toNat = 1 := by have := inv.borrow; omega_using [this]
   refine ⟨?_, inv.outside, inv.rest⟩
   apply BitVec.eq_of_toNat_eq
   rcases bit with zero | one
   · rw [zero] at equation ⊢
-    have ge : ¬ val32 s.mem (State.addr base) a n < val32 s.mem (State.addr base) b n := by omega
+    have ge : ¬ val32 s.mem (State.addr base) a n < val32 s.mem (State.addr base) b n := by omega_using [equation]
     rw [ite_eq_right ge]; rfl
   · rw [one] at equation ⊢
-    have lt : val32 s.mem (State.addr base) a n < val32 s.mem (State.addr base) b n := by omega
+    have lt : val32 s.mem (State.addr base) a n < val32 s.mem (State.addr base) b n := by omega_using [equation, diff]
     rw [ite_eq_left lt]; rfl
 
 end VG.Proof.Bignum.Arm

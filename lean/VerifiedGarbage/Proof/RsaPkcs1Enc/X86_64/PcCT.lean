@@ -83,7 +83,7 @@ theorem pub_view {a s t : State} (S : PR a s) (h : Pc.J5 s t) :
   · simp only [State.withRegions_gpr, State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
     rw [entryBytes hpc _ _ hp.dKe (by have := hp.dOe; rw [outR]; exact this) hp.des.symm
-      (by have := hp.wE; omega)]
+      (by have := hp.wE; omega_using [])]
     exact S'.e
 
 theorem call_ct (v : PublicImpl) : RelCT isa (Two (At PR Pc.J5)) (.call v.name v.code) fun _ _ => True := by

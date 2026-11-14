@@ -54,9 +54,9 @@ theorem core_ct : RelCT isa (Two CorePre)
     (two_map id ?_ WindowVector.blocked_ct) ?_)
     (two_map workspace (fun _ _ h => h) WindowArithmetic.product_ct)
   · rintro p s ⟨mi,X,Xc,v,hc,ht,hw,hw',hd,hv,hn⟩
-    exact ⟨⟨mi,X,Xc,v,hc,by change 2 ≤ p.wx; omega,hw',hv,ht.tab,hn⟩,by change 8 ≤ p.wx; omega⟩
+    exact ⟨⟨mi,X,Xc,v,hc,by change 2 ≤ p.wx; omega_using [hw],hw',hv,ht.tab,hn⟩,by change 8 ≤ p.wx; omega_using [hw]⟩
   · rintro p s ⟨mi,X,Xc,v,hc,ht,hw,hw',hd,hv,hn⟩
-    exact WP.mono (WindowVector.blocked_ok hc (by omega) hw' hd hv ht.tab hn)
+    exact WP.mono (WindowVector.blocked_ok hc (by omega_using [hw]) hw' hd hv ht.tab hn)
       fun t ⟨ct,_⟩ => ⟨⟨mi,ct.good,Nat.le_refl _⟩,hw,hd⟩
 
 theorem init_post (p : XPub) (s : State) (h : FastPre p s) :

@@ -193,7 +193,7 @@ theorem prefixN_xdepth {fTo : Fn} {c : Prog isa} (hc : c.x86_64Depth = 0) {d : N
     (h : (SealSplit.prefix fTo).x86_64Depth ≤ d) : (SealSplit.prefixN fTo c).x86_64Depth ≤ d := by
   have e := nPart_xdepth hc
   simp only [SealSplit.prefixN, Code.x86_64Depth] at e h ⊢
-  rw [e]; simp only [Nat.max_le] at h ⊢; omega
+  rw [e]; simp only [Nat.max_le] at h ⊢; omega_using [h]
 
 /-! ## `StitchR.encN` -/
 

@@ -63,7 +63,7 @@ def ok (iv : HashValue) (D : Nat) (initN hmacInitN : String) (HF : Spec.Hmac.Has
     by simp [hash, Hash.lsv, Hash.ldg, Hash.lst, Hash.S]⟩
   hN4 := by simp [hash]
   hD0 := hD.1
-  hDB := by show D ≤ 128; omega
+  hDB := by show D ≤ 128; omega_using [hD]
   hD4 := hD.2.1
   hDF := hD.2.2
   hFD64 := by simp [hash]

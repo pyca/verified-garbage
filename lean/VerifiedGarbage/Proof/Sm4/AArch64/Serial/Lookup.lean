@@ -70,13 +70,13 @@ theorem low_word_bytes (v : BitVec 128) :
   simp only [hi, decide_true, Bool.true_and]
   by_cases h0 : i < 8
   · simp [h0]
-  have h08 : 8 ≤ i := by omega
+  have h08 : 8 ≤ i := by omega_using [h0]
   by_cases h1 : i - 8 < 8
-  · simp [h0,h1,show 8 + (i-8) = i by omega]
+  · simp [h0,h1,show 8 + (i-8) = i by omega_using [h0]]
   by_cases h2 : i - 8 - 8 < 8
-  · simp [h0,h1,h2,show 16 + (i-8-8) = i by omega]
-  · have h3 : i - 8 - 8 - 8 < 8 := by omega
-    simp [h0,h1,h2,h3,show 24 + (i-8-8-8) = i by omega]
+  · simp [h0,h1,h2,show 16 + (i-8-8) = i by omega_using [h1]]
+  · have h3 : i - 8 - 8 - 8 < 8 := by omega_using [hi]
+    simp [h0,h1,h2,h3,show 24 + (i-8-8-8) = i by omega_using [h2]]
 
 theorem dup_low_byte (x : BitVec 32) (j : Nat) (hj : j < 4) :
     vbyte (ofVWords x x x x) j = (x >>> (8*j)).setWidth 8 := by
@@ -84,7 +84,7 @@ theorem dup_low_byte (x : BitVec 32) (j : Nat) (hj : j < 4) :
   intro i hi
   simp only [vbyte, ofVWords, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
     BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
-  have h : 8*j+i < 32 := by omega
+  have h : 8*j+i < 32 := by omega_using [hj, hi]
   simp only [hi,h,decide_true,Bool.true_and,ite_true]
 
 theorem substituted_word (v : BitVec 128) (x : BitVec 32)
@@ -157,7 +157,7 @@ theorem substitute_run (s : State) (hc : Constants s) (ht : Table s) :
     exact ht k hk
   have bytes : ∀ j < 4, vbyte (b.v .v0) j = Spec.Sm4.sbox.getD ((x >>> (8*j)).setWidth 8).toNat 0 := by
     intro j hj
-    rw [bo j (by omega),tab _ (I j).isLt]
+    rw [bo j (by omega_using [hj]),tab _ (I j).isLt]
     unfold I
     rw [dup_low_byte x j hj]
   have word : (b.v .v0).extractLsb' 0 32 = Spec.Sm4.tau x := substituted_word _ _ bytes

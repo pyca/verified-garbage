@@ -50,7 +50,7 @@ theorem cmpIdx_ok {t : State} {i j : Nat} (hi : i < 2 ^ 31) (hj : j < 2 ^ 31)
     fun t' ⟨⟨hm, hz, h11'⟩, k⟩ sy => ⟨⟨fun r _ => if e : r = .r11 then e ▸ h11' else k.gpr (by simpa using e), k.2.1,
       k.2.2⟩, hm, hz, sy⟩
   xrun [h11, VG.Proof.MlKem.X86_64.sx_ofNat hj,
-    VG.Proof.Bignum.X86_64.ofNat_sub_beq (show i < 2 ^ 64 by omega) (show j < 2 ^ 64 by omega)]
+    VG.Proof.Bignum.X86_64.ofNat_sub_beq (show i < 2 ^ 64 by omega_using [hi]) (show j < 2 ^ 64 by omega_using [hj])]
 
 /-- `byIdx b is` runs `b i`. -/
 theorem byIdx_wp {b : Nat → Prog isa} {Q : State → Prop} : ∀ {is : List Nat} {i : Nat} {t : State},

@@ -11,12 +11,16 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
+public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
+public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
 
-/-! # DSA on ARMv7 -/
+/-! # DSA (FIPS 186-4) on ARMv7 -/
 
 @[expose] public section
 
 namespace VG.Artifacts.Dsa.Arm
+
+open VG Proof.Dsa.Arm.Gen
 
 def artifacts : List Artifact := [
   Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target {
@@ -42,6 +46,12 @@ def artifacts : List Artifact := [
     verified := Proof.Dsa.Arm.prevalidated_verified },
   Spec.Dsa.parameterInitApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Generation.init
-    verified := Proof.Dsa.Arm.Gen.Init.init_verified }]
+    verified := Proof.Dsa.Arm.Gen.Init.init_verified }] ++
+  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) => [
+    Spec.Dsa.parameterSearchApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Generation.code (geo1 v) (geo2 v) (geo3 v)
+      stack := 304
+      verified := search_params v }])
 
 end VG.Artifacts.Dsa.Arm

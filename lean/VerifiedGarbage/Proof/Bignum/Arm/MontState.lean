@@ -44,19 +44,19 @@ theorem montLoopBody_ok {s0 s : State} {base : BitVec 32} {size tmp a b mod acc 
   have tm := ctx.tmpM
   have oldB := h.outside.val32 (d := b) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fb])
   have oldM := h.outside.val32 (d := mod) (k := n) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fm])
   have oldA := outs_word32 h.outside (d := a + 4 * i) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hi, nowrap, fa])
   refine WP.mono (montRound_ok s (ctx.congr h.rest.wr) h.hdr hi h.ptr
     (by rw [oldM]; exact h.bound) (by rw [oldB, oldM]; exact hB) (by rw [oldM]; exact hInv)) ?_
   intro t post
   obtain ⟨q, _, value⟩ := post.value
   rw [oldA, oldB, oldM] at value
-  refine ⟨⟨by omega, post.hdr, post.ptr, ?_, ?_, h.outside.trans post.outside,
+  refine ⟨⟨by omega_using [hi], post.hdr, post.ptr, ?_, ?_, h.outside.trans post.outside,
     h.rest.trans post.rest⟩, post.zero⟩
   · rw [pow32_succ, Nat.mul_comm (2 ^ 32) (2 ^ (32 * i)), val32_succ s0.mem (State.addr base) a i]
     exact round_step value h.value

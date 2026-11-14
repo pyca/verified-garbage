@@ -26,7 +26,7 @@ open VG VG.AArch64 VG.Impl.X448.AArch64
 theorem sub_toNat_lt_one (x a : Addr) : (x - a).toNat < 1 ↔ x = a := by
   constructor
   · intro h
-    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega)
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega_using [h])
     calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
       _ = a := by rw [h0]; exact BitVec.zero_add a
   · rintro rfl; simp
@@ -69,14 +69,14 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
     WP isa (.block (bitJ j)) s fun t =>
       t.mem = s.mem.writeW (off base (BITS + (8 * i + j)))
         (BitVec.ofNat 8 ((b.toNat >>> j) &&& 1)) ∧ Keeps [.x5] s t := by
-  have w := hs.write (d := BITS + (8 * i + j)) (n := 1) (by simp only [BITS]; omega)
-  have enc : (BITS + j) % 1 = 0 ∧ BITS + j < 4096 := by simp only [BITS]; omega
-  have shift : j < 64 := by omega
+  have w := hs.write (d := BITS + (8 * i + j)) (n := 1) (by simp only [BITS]; omega_using [hi, hj])
+  have enc : (BITS + j) % 1 = 0 ∧ BITS + j < 4096 := by simp only [BITS]; omega_using [hj]
+  have shift : j < 64 := by omega_using [hj]
   apply WP.of_runBlock
   simp only [bitJ, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     BitVec.setWidth_eq, shift, addr, enc, and_self,
     RegUpd.gpr_write, RegUpd.mem_write, RegUpd.wr_write, hp, hc, ha, off, Offset.add_add,
-    show 8 * i + (BITS + j) = BITS + (8 * i + j) by omega,
+    show 8 * i + (BITS + j) = BITS + (8 * i + j) by omega_using [],
     State.store, w, ite_true, ite_false, reduceCtorEq,
     Option.bind_some, write1_eq, bit_byte b j hj, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, (fun r hr => ?_), rfl, rfl⟩
@@ -102,14 +102,14 @@ theorem byteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
     · intro j hj
       rw [um, writeW8_apply]
       have eq : off base (BITS + (8 * i + j)) = off base (BITS + (8 * i + n)) ↔ j = n := by
-        rw [off_eq_iff base (by simp only [BITS]; omega) (by simp only [BITS]; omega)]
-        omega
+        rw [off_eq_iff base (by simp only [BITS]; omega_using [hi, hn, hj]) (by simp only [BITS]; omega_using [hi, hn])]
+        omega_using []
       by_cases he : j = n
       · rw [ite_eq_left (eq.mpr he), he]
-      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
     · intro x hx
       rw [um]
-      exact writeW8_outside _ _ _ (by simp only [BITS]; omega) (by omega)
+      exact writeW8_outside _ _ _ (by simp only [BITS]; omega_using [hi, hn]) (by omega_using [hn, hx])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

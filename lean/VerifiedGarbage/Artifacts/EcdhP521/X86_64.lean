@@ -46,25 +46,10 @@ namespace VG.Artifacts.EcdhP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-/-- The function of `Spec.Ecdh.P521.exchangeApi`, multiplying modulo `p` with
-BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
-instruction writing `rsp` (`hsp`). -/
-def exchange (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
-    stack := 8
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
-
 def artifacts : List Artifact := [
-  exchange false Impl.Ecdh.X86_64.exchangeP521
-    (Proof.Ecdh.X86_64.P521.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime),
-  exchange true Impl.Ecdh.X86_64.exchangeP521Adx
-    (Proof.Ecdh.X86_64.P521.ecdh_verified_adx hasLaw.law hasLaw.inv hasLaw.prime)]
+  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.P521.scrubReg hasLaw.law hasLaw.inv hasLaw.prime),
+  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.P521.scrubRegAdx hasLaw.law hasLaw.inv hasLaw.prime)]
 
 end VG.Artifacts.EcdhP521.X86_64

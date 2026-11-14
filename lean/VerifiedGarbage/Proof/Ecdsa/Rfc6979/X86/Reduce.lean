@@ -308,7 +308,7 @@ theorem reduce_ok (hA : P.R.big = false) (hL : L.Ok) {t : State} (hc : Ctx L g m
       exact Proof.Pbkdf2.Whole.byteRev32_byteRev32 _
   have hch := chain P.R.E.C.n P.k u₀.mem (xa L) P.k
   have e32 : 32 * P.k = 8 * P.R.E.C.len := by have := (P.sizesA hA).1; simp only [RfcHash.Q] at this; omega_arith
-  rw [wsum_nWn, Nat.mod_eq_of_lt (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega))] at hch
+  rw [wsum_nWn, Nat.mod_eq_of_lt (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega_using []))] at hch
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _
   rw [hH, hX, wsum_sel]

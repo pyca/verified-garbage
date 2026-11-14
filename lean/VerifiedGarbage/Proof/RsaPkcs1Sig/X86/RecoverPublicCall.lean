@@ -43,7 +43,7 @@ theorem private_call_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
       ∃ u : State, u.mem = t.mem ∧ (∀ r, r ≠ .esp → u.gpr r = t.gpr r) ∧
         contract.post (s.callEntry.withRegions rd wr) u := by
   refine VG.X86.WP.call verified.1 noSp
-    (by rw [h.sp]; have := h.valid.stackLow; omega) pre read write ?_
+    (by rw [h.sp]; have := h.valid.stackLow; omega_using [stack, this]) pre read write ?_
   intro t rdT wrT regs frame _ post
   have K := call_keeps rdT wrT regs
   have SP := K.1 .esp (by decide)
@@ -55,7 +55,7 @@ theorem private_call_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     · obtain rfl := List.mem_singleton.mp hr
       refine ⟨g.calleeRegion, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
       rw [h.sp]
-      exact VG.X86.below_sub (by omega : stackUse code + 4 ≤ 100) h.valid.stackLow
+      exact VG.X86.below_sub (by omega_using [stack] : stackUse code + 4 ≤ 100) h.valid.stackLow
   have Fbody : Frame (bodyWrites g) s.mem t.mem := F.sub (by
     intro r hr
     rcases List.mem_append.mp hr with hr | hr
@@ -103,7 +103,7 @@ theorem Context.callFrame {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
 theorem Context.callBytes {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) (i : Fin 4) :
     Spec.Rsa.bytesAt s.callEntry.mem (byteAddr (g.sources i)) (g.sourceLength i) = bs i :=
-  (VG.Proof.Rsa.rsa_bytes_frame h.callFrame (by have := (h.sources i).fits; omega)
+  (VG.Proof.Rsa.rsa_bytes_frame h.callFrame (by have := (h.sources i).fits; omega_using [this])
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr
         exact ((h.valid.stackSources i).sub_left h.valid.calleeSub).symm)).trans (h.sources i).bytes
 
@@ -114,7 +114,7 @@ theorem Context.callWords {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
   VG.Proof.Rsa.wordsAt_frame h.callFrame (by
       have fit := h.valid.sourceFits 3
       change (g.sources 3).toNat + 8 * g.preLength ≤ 2 ^ 32 at fit
-      omega)
+      omega_using [fit])
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr
         exact ((h.valid.stackSources 3).sub_left h.valid.calleeSub).symm)
 
@@ -133,12 +133,12 @@ theorem public_call (v : PublicImpl) {g : Geometry} {bs : Fin 4 → List Byte} {
   refine ⟨ht, F, K, ?_⟩
   sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes] at post
   have sa := fun {j} (hj : j < 10) => publicArgs_values h a hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
   have pfit : g.preLength < 2 ^ 32 := by
     have fit := h.valid.sourceFits 3
     change (g.sources 3).toNat + 8 * g.preLength ≤ 2 ^ 32 at fit
-    omega
+    omega_using [fit]
   simp only [sa (by decide : 0 < 10), sa (by decide : 1 < 10), sa (by decide : 2 < 10),
     sa (by decide : 3 < 10), sa (by decide : 4 < 10), sa (by decide : 5 < 10), sa (by decide : 6 < 10),
     publicArgument, BitVec.toNat_ofNat, Nat.mod_eq_of_lt kfit, Nat.mod_eq_of_lt efit, Nat.mod_eq_of_lt pfit] at post

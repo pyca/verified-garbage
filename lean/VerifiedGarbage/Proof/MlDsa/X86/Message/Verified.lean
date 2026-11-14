@@ -96,13 +96,13 @@ abbrev secretKey (p : Params) : KeyArg := ⟨preparedSecretKeyBytes p, PreparedS
 abbrev publicKey (p : Params) : KeyArg := ⟨preparedPublicKeyBytes p, PreparedPublicKey p⟩
 
 theorem secretKey_ok {p : Params} (hp : p ∈ params) : (secretKey p).Ok p.skLen := by
-  refine ⟨(skLen_ge hp).1, by simp only [preparedSecretKeyBytes]; omega, ?_,
+  refine ⟨(skLen_ge hp).1, by simp only [preparedSecretKeyBytes]; omega_using [], ?_,
     fun h k => secret_congr k (bytes_pt h)⟩
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;> decide
 
 theorem publicKey_ok {p : Params} (hp : p ∈ params) : (publicKey p).Ok p.pkLen := by
-  refine ⟨(pkLen_ge hp).1, by simp only [preparedPublicKeyBytes]; omega, ?_,
+  refine ⟨(pkLen_ge hp).1, by simp only [preparedPublicKeyBytes]; omega_using [], ?_,
     fun h k => public_congr k (bytes_pt h)⟩
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl <;> decide
@@ -164,32 +164,32 @@ def satMemVP (p : Params) (m : Mem) : Mem := fun a =>
   else above satMemVP0 m a
 
 theorem satMemVP_low {p : Params} {m : Mem} {x : Addr} (hx : x.toNat < 0x7800) : satMemVP p m x = satMemVP0 x := by
-  simp only [satMemVP, show ¬(0x7800 ≤ x.toNat ∧ x.toNat < 0x7840) by omega, ↓reduceIte]
-  exact above_low (a := satMemVP0) (m := m) (by omega)
+  simp only [satMemVP, show ¬(0x7800 ≤ x.toNat ∧ x.toNat < 0x7840) by omega_using [hx], ↓reduceIte]
+  exact above_low (a := satMemVP0) (m := m) (by omega_using [hx])
 
 theorem satMemVP_high {p : Params} {m : Mem} {i : Nat} (hi : i < 2 ^ 32) :
     satMemVP p m (0x8000 + BitVec.ofNat 64 i) = m (0x8000 + BitVec.ofNat 64 i) := by
   have e : (0x8000 + BitVec.ofNat 64 i : Addr).toNat = 0x8000 + i := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega
-  simp only [satMemVP, e, show ¬(0x7800 ≤ 0x8000 + i ∧ 0x8000 + i < 0x7840) by omega, ↓reduceIte]
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega_using [hi]
+  simp only [satMemVP, e, show ¬(0x7800 ≤ 0x8000 + i ∧ 0x8000 + i < 0x7840) by omega_using [], ↓reduceIte]
   exact above_eq hi
 
 theorem verifyPrepared_sat {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     ∃ s, (verifyMessageKContract p (preparedPublicKeyBytes p) (preparedTr p) X86.abi 172).pre s := by
   obtain ⟨m, hm⟩ := PreparedKey.public_at Verify.prims_ok hp3
   have hb : preparedPublicKeyBytes p < 2 ^ 32 := by rcases hp3 with rfl | rfl | rfl <;> decide
-  have hk : PreparedPublicKey p (satMemVP p m) 0x8000 := public_congr hm fun i hi => satMemVP_high (by omega)
+  have hk : PreparedPublicKey p (satMemVP p m) 0x8000 := public_congr hm fun i hi => satMemVP_high (by omega_using [hb, hi])
   have hkb : bytesAt (satMemVP p m) 0x8000 p.pkLen = bytesAt m 0x8000 p.pkLen :=
-    Proof.MlKem.bytesAt_congr fun i hi => satMemVP_high (by simp only [preparedPublicKeyBytes] at hb; omega)
+    Proof.MlKem.bytesAt_congr fun i hi => satMemVP_high (by simp only [preparedPublicKeyBytes] at hb; omega_using [hb, hi])
   have htr : bytesAt (satMemVP p m) 0x7800 64 = pkTr (bytesAt (satMemVP p m) 0x8000 p.pkLen) := by
     rw [hkb]
     apply Proof.MlKem.bytesAt_eq (H_length _ _)
     intro i hi
     have he : ((0x7800 : Addr) + BitVec.ofNat 64 i).toNat = 0x7800 + i := by
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega
-    simp only [satMemVP, he, show 0x7800 ≤ 0x7800 + i ∧ 0x7800 + i < 0x7840 by omega, and_self, ↓reduceIte,
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega_using [hi]
+    simp only [satMemVP, he, show 0x7800 ≤ 0x7800 + i ∧ 0x7800 + i < 0x7840 by omega_using [hi], and_self, ↓reduceIte,
       Nat.add_sub_cancel_left]
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [pkTr, H_length]; omega), Option.getD_some]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [pkTr, H_length]; omega_using [hi]), Option.getD_some]
     rfl
   refine ⟨Proof.MlKem.X86.satState (satMemVP p m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x2000, 0⟩, ⟨0x2000, 0⟩,
     ⟨0x3000, p.sigLen⟩, ⟨0x7800, 64⟩] [⟨0x10000, mScrLen p⟩, ⟨0x5004, 32⟩], ?_⟩

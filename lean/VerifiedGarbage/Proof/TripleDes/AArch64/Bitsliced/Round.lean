@@ -77,13 +77,13 @@ theorem stepsCode_ok (ρ : Role) {K : BitVec 64} {n : Nat} (hn : n ≤ 8) {s : S
   induction n with
   | zero => exact ⟨s, runBlock_nil, fun _ _ => rfl, hk, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, w₁, k₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega)
+    obtain ⟨s₁, run₁, w₁, k₁, g₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega_using [hn])
     have h₁ := room_congr h (by rw [g₁]) wr₁
-    obtain ⟨s₂, run₂, w₂, k₂, g₂, rd₂, wr₂, sp₂, -, f₂⟩ := sboxStep_ok ρ (by omega : n < 8) h₁ k₁
+    obtain ⟨s₂, run₂, w₂, k₂, g₂, rd₂, wr₂, sp₂, -, f₂⟩ := sboxStep_ok ρ (by omega_using [hn] : n < 8) h₁ k₁
     refine ⟨s₂, ?_, fun x hx => ?_, k₂, g₂.trans g₁, rd₂.trans rd₁, wr₂.trans wr₁, sp₂.trans sp₁, ?_⟩
     · rw [stepsCode_succ]; exact runBlock_cat_some run₁ run₂
     · rw [w₂ x hx, steps_succ]
-      exact step_congr ρ _ (by omega) w₁ (w₁ x hx)
+      exact step_congr ρ _ (by omega_using [hn]) w₁ (w₁ x hx)
     · rw [show stateR s₁ = stateR s by simp only [stateR, g₁]] at f₂
       exact f₁.trans f₂
 

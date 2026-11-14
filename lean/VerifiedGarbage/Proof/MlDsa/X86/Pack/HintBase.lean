@@ -140,7 +140,7 @@ theorem b8_eq (x : BitVec 32) : BitVec.setWidth 8 x = BitVec.ofNat 8 x.toNat := 
 
 /-- A byte, zero-extended. -/
 theorem toNat_setWidth32_8 (x : BitVec 8) : (BitVec.setWidth 32 x).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; omega
+  simp only [BitVec.toNat_setWidth]; omega_using []
 
 theorem add_one' (x : BitVec 32) (t : Nat) : x + BitVec.ofNat 32 t + 1 = x + BitVec.ofNat 32 (t + 1) := by
   rw [BitVec.add_assoc, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, ofNat_add_ofNat]
@@ -162,7 +162,7 @@ theorem add_sub_one' (x : BitVec 32) {a : Nat} (h : 1 ≤ a) : x + BitVec.ofNat 
 /-- A byte, zero-extended, as a number. -/
 theorem byte32 (b : Byte) : b.setWidth 32 = BitVec.ofNat 32 b.toNat := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_setWidth32_8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [toNat_setWidth32_8, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- The loop condition after counting down. -/
 theorem eval_ne_cnt {s : State} {N k : Nat} (hk : k < N) (hN : N < 2 ^ 32)
@@ -199,7 +199,7 @@ theorem loopC {body : Prog isa} {cnd : Cond} (Inv : Nat → State → State → 
     cases h : cont k s₀
     · exact .inl ⟨by rw [he, h], hf h⟩
     · have := hM k s₀ h₀ h
-      exact .inr ⟨by rw [he, h], M s₀ - (k + 1), by omega, k + 1, rfl, ht h⟩
+      exact .inr ⟨by rw [he, h], M s₀ - (k + 1), by omega_using [hn, this], k + 1, rfl, ht h⟩
   ct s₀ s₀' h₀ h₀' hp := by
     have := RelCT.loop (M := isa) (body := body) (c := cnd) (Q := fun _ _ => True)
       (fun n s s' => ∃ k, n = M s₀ - k ∧ Inv k s₀ s ∧ Inv k s₀' s')
@@ -211,7 +211,7 @@ theorem loopC {body : Prog isa} {cnd : Cond} (Inv : Nat → State → State → 
           refine ⟨by rw [e₁, e₂, hc k _ _ h₀ h₀' hp], fun _ => trivial, fun h => ?_⟩
           rw [e₁, Option.some.injEq] at h
           have := hM k s₀ h₀ h
-          exact ⟨M s₀ - (k + 1), by omega, k + 1, rfl, t₁ h, t₂ (by rw [← hc k _ _ h₀ h₀' hp]; exact h)⟩
+          exact ⟨M s₀ - (k + 1), by omega_using [hk, this], k + 1, rfl, t₁ h, t₂ (by rw [← hc k _ _ h₀ h₀' hp]; exact h)⟩
         · exact RelCT.of_false fun s s' ⟨h1, _⟩ => hk h1) (M s₀)
     exact this.mono (fun s s' ⟨a, a'⟩ => ⟨0, (Nat.sub_zero _).symm, a, a'⟩) fun _ _ h => h
 
@@ -225,7 +225,7 @@ theorem loopN {body : Prog isa} {cnd : Cond} (Inv : Nat → State → State → 
     (fun _ _ _ h => of_decide_eq_true h) (fun k s₀ s₀' h₀ h₀' hp => by rw [hNp _ _ h₀ h₀' hp])
     fun k => (addX (X := fun s₀ => k < N s₀) (hb k) fun _ _ _ h => h.2).mono (fun _ _ _ h => h)
       fun s₀ s _ ⟨⟨hi, he⟩, hk⟩ => ⟨he, fun h => ⟨hi, of_decide_eq_true h⟩, fun h => by
-        rw [show N s₀ = k + 1 by have := of_decide_eq_false h; omega]; exact hi⟩).mono
+        rw [show N s₀ = k + 1 by have := of_decide_eq_false h; omega_using [hk, this]]; exact hi⟩).mono
     (fun s₀ _ h₀ h => ⟨h, hN s₀ h₀⟩) fun _ _ _ h => h
 
 /-- `loopN` over a block, which the taint analysis proves from `R`. -/
@@ -314,8 +314,8 @@ theorem r_keep {s : State} {W : List Region} (hf : Frame W (P0 s₀).mem s.mem)
     (hW : ∀ r ∈ W, (⟨rA s₀, a⟩ : Region).Disjoint r) {t : Nat} (ht : t < a) :
     s.mem (rA s₀ + BitVec.ofNat 64 t) = s₀.mem (rA s₀ + BitVec.ofNat 64 t) := by
   have := hl.r_fit
-  rw [hf.bytes (R := ⟨rA s₀, a⟩) hW (show a ≤ 2 ^ 64 by omega) ht,
-    hl.P0_keep.bytes (R := ⟨rA s₀, a⟩) (by simpa [← hl.stk_eq] using hl.stk_r.symm) (show a ≤ 2 ^ 64 by omega) ht]
+  rw [hf.bytes (R := ⟨rA s₀, a⟩) hW (show a ≤ 2 ^ 64 by omega_using [this]) ht,
+    hl.P0_keep.bytes (R := ⟨rA s₀, a⟩) (by simpa [← hl.stk_eq] using hl.stk_r.symm) (show a ≤ 2 ^ 64 by omega_using [this]) ht]
 
 theorem wW : ∀ r ∈ [(⟨wA s₀, b⟩ : Region)], (frameR s₀).Disjoint r ∧ (retR s₀).Disjoint r := by
   intro r hr

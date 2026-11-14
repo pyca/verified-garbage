@@ -91,7 +91,7 @@ theorem high_phase_ok (ps : List (VReg × VReg)) (br : VReg)
   · intro t ht hv
     refine k t ht fun p hp e he => ?_
     rw [hv p hp, VG.AArch64.vword_ofVWords _ _ _ _ he]
-    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- Final MLS phase reads the previously computed high products. -/
 theorem reduce_phase_ok (ps : List (VReg × VReg)) (qr : VReg)

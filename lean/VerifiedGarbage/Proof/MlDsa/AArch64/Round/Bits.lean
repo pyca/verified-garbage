@@ -71,7 +71,7 @@ theorem hb_val {g : Nat} (hg : IsG g) {a : BitVec 32} (ha : a.toNat < q) :
     ((r1X g (a.setWidth 64)).setWidth 32).toNat = hbF g a.toNat % hbM g := by
   have h := r1X_lt hg (a := a.setWidth 64) (by rw [toNat_setWidth64]; exact ha)
   have : hbM g ≤ 44 := by rcases hg with rfl | rfl <;> decide
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega), r1X_toNat hg (by rw [toNat_setWidth64]; exact ha),
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [h, this]), r1X_toNat hg (by rw [toNat_setWidth64]; exact ha),
     toNat_setWidth64]
 
 theorem lb_val {g : Nat} (hg : IsG g) {a : BitVec 32} (ha : a.toNat < q) :
@@ -88,15 +88,15 @@ theorem lb_val {g : Nat} (hg : IsG g) {a : BitVec 32} (ha : a.toNat < q) :
   have hle : hbF g a.toNat % hbM g * (2 * g) ≤ q := by
     rw [← hr]
     have := Nat.mul_le_mul_right (2 * g) (Nat.le_of_lt hlt)
-    omega
+    omega_using [hmul, this]
   have hk : (r1X g (a.setWidth 64) * BitVec.ofNat 64 (2 * g)).toNat = hbF g a.toNat % hbM g * (2 * g) := by
-    rw [BitVec.toNat_mul, hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_mul, hr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * g) (by omega_using [hg2])]
+    exact Nat.mod_eq_of_lt (by omega_using [hq, hle])
   have hv := addQ_sub_toNat (v := a.setWidth 64) (k := r1X g (a.setWidth 64) * BitVec.ofNat 64 (2 * g))
-    (by rw [toNat_setWidth64]; omega) (by rw [hk]; exact hle)
+    (by rw [toNat_setWidth64]; omega_using []) (by rw [hk]; exact hle)
   rw [hk, toNat_setWidth64] at hv
   rw [BitVec.toNat_setWidth, hv]
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## The functions -/
 

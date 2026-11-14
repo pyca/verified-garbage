@@ -60,7 +60,7 @@ theorem fastEntry_ok {w : Nat} (hw : w = 1 ∨ w = 2) {extra extraW : List Regio
     WP isa (.block (oneEntry (8 * w) ++ stashArg 0)) s fun s₁ =>
       SealEntry w s s₁ ∧ ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
-  exact WP.block_and (sealEntry_ok hw hs) (entry_keeps (by omega) (by decide) rfl (ol.hsp w (by omega))
-    (ol.hsp 0 (by omega)) ol.perm.w)
+  exact WP.block_and (sealEntry_ok hw hs) (entry_keeps (by omega_using [hw]) (by decide) rfl (ol.hsp w (by omega_using []))
+    (ol.hsp 0 (by omega_using [])) ol.perm.w)
 
 end VG.Proof.AesGcm.AArch64.Fast

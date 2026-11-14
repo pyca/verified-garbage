@@ -42,7 +42,7 @@ def aNat (E : Env) (j : Nat) : Nat → Nat
 
 theorem vaddAS_nat (E : Env) : ∀ j < 5, ∀ l < 4, (vaddAS.reg j).nat E l = aNat E j l := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 /-- Bounds: the point's limbs below `2⁶¹`, and the bias. -/
@@ -92,7 +92,7 @@ def bOp2 (E : Env) (j : Nat) : Nat → Nat
 theorem vaddBS_nat (E : Env) : ∀ j < 5, ∀ l < 4,
     (vaddBS.reg j).nat E l = bOp1 E j l ∧ (vaddBS.reg (5 + j)).nat E l = bOp2 E j l := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> exact ⟨rfl, rfl⟩
 
 theorem vaddBS_ok : ∀ j < 5, ∀ l < 4, (vaddBS.reg j).ok addB l = true ∧

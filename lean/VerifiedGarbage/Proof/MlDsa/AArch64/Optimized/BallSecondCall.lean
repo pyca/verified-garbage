@@ -114,11 +114,11 @@ theorem resume_call_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : Sta
       · exact ⟨200,rfl,by simp⟩
   refine squeeze_callWith v (st := P.scr) (out := P.at' 840) (sc := P.at' 200)
     (rate := 136) (pos := pos) (len := 136) ha.x0 ha.x1 ha.x2 ha.x3 ha.x4 ha.x5 (by decide) hpos
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (disj_scr (.inr (by omega)) (by omega) (by omega))
-    (by rw [he.sp]; exact hp.sp16) (by rw [stk,he.sp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega)))
-    (by rw [stk,he.sp]; exact stk_scr' hp (by omega)) (by rw [stk,he.sp]; exact stk_scr' hp (by omega))
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_using [])) (by omega_using []) (by omega_using []))
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_using [])) (by omega_using []) (by omega_using []))
+    (disj_scr (.inr (by omega_using [])) (by omega_using []) (by omega_using []))
+    (by rw [he.sp]; exact hp.sp16) (by rw [stk,he.sp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega_using [])))
+    (by rw [stk,he.sp]; exact stk_scr' hp (by omega_using [])) (by rw [stk,he.sp]; exact stk_scr' hp (by omega_using []))
     (cov_rd cw) cw fun u hk hout _ _ => ?_
   refine ⟨he.call hp hk ?_,hs.keep hk.frame ?_,stored_frame hc hk.frame ?_,hout.trans hn⟩
   · intro r hr
@@ -129,12 +129,12 @@ theorem resume_call_ok (v : Proof.Sha3.AArch64.Permutation) {P : Sp} {σ s : Sta
     · exact .inr rfl
   · intro d hd r hr
     have hd0 : 1800≤d ∧ d≤1816 := by
-      rcases mem3 hd with rfl | rfl | rfl <;> omega
+      rcases mem3 hd with rfl | rfl | rfl <;> omega_using []
     rcases mem4 hr with rfl|rfl|rfl|rfl
-    · simpa only [at_zero] using (disj_scr (P := P) (a := d) (n := 8) (b := 0) (m := 200) (.inr (by omega)) (by omega) (by omega))
-    · exact disj_scr (P := P) (a := d) (n := 8) (b := 840) (m := 136) (.inr (by omega)) (by omega) (by omega)
-    · exact disj_scr (P := P) (a := d) (n := 8) (b := 200) (m := 640) (.inr (by omega)) (by omega) (by omega)
-    · rw [he.sp]; exact (stk_scr' hp (a := d) (n := 8) (by omega)).symm
+    · simpa only [at_zero] using (disj_scr (P := P) (a := d) (n := 8) (b := 0) (m := 200) (.inr (by omega_using [hd0])) (by omega_using [hd0]) (by omega_using []))
+    · exact disj_scr (P := P) (a := d) (n := 8) (b := 840) (m := 136) (.inr (by omega_using [hd0])) (by omega_using [hd0]) (by omega_using [])
+    · exact disj_scr (P := P) (a := d) (n := 8) (b := 200) (m := 640) (.inr (by omega_using [hd0])) (by omega_using [hd0]) (by omega_using [])
+    · rw [he.sp]; exact (stk_scr' hp (a := d) (n := 8) (by omega_using [hd0])).symm
   · intro r hr
     rcases mem4 hr with rfl|rfl|rfl|rfl
     · exact hp.a_scr.sub_right (sub_scr0 (by decide))

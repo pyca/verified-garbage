@@ -18,9 +18,9 @@ theorem ModulusReady.write_header {s : State} {B : Addr} {Z w N i : Nat} (v : Bi
     ModulusReady {s with mem := s.mem.writeW (off B (8 * i)) v} B Z w N := by
   have hi32 : i < 32 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    omega
+    omega_using [hi]
   have hf : Frm B [(8 * i, 8)] s.mem (s.mem.writeW (off B (8 * i)) v) :=
-    Frm.of_outside (writeW_outside _ B v (by omega)) (by simp)
+    Frm.of_outside (writeW_outside _ B v (by omega_using [hi32])) (by simp)
   have hk : Keep [] s {s with mem := s.mem.writeW (off B (8 * i)) v} :=
     ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
   refine h.of_frm hEZ hf ?_ hk (by decide) ?_ ?_ ?_

@@ -60,7 +60,7 @@ theorem VP₀.hp {σ₁ σ₂ : State} (h : VP₀ σ₁ σ₂) : bsV σ₁ = bsV
 
 theorem VP₀.arg {σ₁ σ₂ : State} (h : VP₀ σ₁ σ₂) {i : Nat} (hi : i < 4) : arg σ₁ i = arg σ₂ i := by
   obtain ⟨_, _, _, a0, a1, a2, a3, _⟩ := h
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3]
 
 /-- What the blocks between the calls need public: `esp` and `edi`. -/
@@ -147,12 +147,12 @@ theorem verifyTaint_wf {s : State} (h : verifyEquationLocal.pre s) : VG.X86.Tain
   have hf := hp.f3; have spfit := hp.sp_fit
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, verifyTaint], by simp [hp.wr], ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [verifyTaint]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [verifyTaint]; omega_using [spfit], ?_⟩, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl; simp only [BitVec.toNat_setWidth]; omega
+    rintro r rfl; simp only [BitVec.toNat_setWidth]; omega_using [hf]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl
-    exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_sc hp.args_sc
+    exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [spfit]) hp.ret_sc hp.args_sc
   · intro p hp'
     simp only [verifyTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     subst hp'
@@ -164,7 +164,7 @@ theorem verifyTaint_agree {s t : State} (hs : verifyEquationLocal.pre s) (ht : v
   have ps := VerifyPre.of hs
   have pt := VerifyPre.of ht
   have ha : ∀ i < 4, arg s i = arg t i := fun i hi => by
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3]
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, verifyTaint_wf hs, verifyTaint_wf ht,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hsp,
@@ -176,10 +176,10 @@ theorem verifyTaint_agree {s t : State} (hs : verifyEquationLocal.pre s) (ht : v
     have fs := ps.sp_fit
     have ft := pt.sp_fit
     rw [show VG.X86.Taint.depth verifyTaint.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by omega) h4 hk, VG.X86.Taint.argByte_eq (by omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by omega_using [fs]) h4 hk, VG.X86.Taint.argByte_eq (by omega_using [ft]) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (ha ((k - 4) / 4) (by omega))
+    exact congrArg _ (ha ((k - 4) / 4) (by omega_using [hk]))
 
 /-- `S` and `k`, from the entry state. -/
 abbrev SV (σ : State) : Nat :=
@@ -250,7 +250,7 @@ theorem decode_FE (hR : RecoverOk) {σ u : State} {n : Nat} (h : MidAt σ n u) :
   obtain ⟨hn, s₁, t, e, ht, ⟨ae, ak, ao, _, _⟩⟩ := h
   have kt := ht.keeps.trans ak
   have Eu : ∀ i : Index, E u.mem (bsV σ) i = E t.mem (bsV σ) i := fun i =>
-    E_out ao i (Or.inl (by have := slot_range i; simp only [RX]; omega))
+    E_out ao i (Or.inl (by have := slot_range i; simp only [RX]; omega_using [this]))
   have h10u : E u.mem (bsV σ) 10 = 1 := by rw [Eu, ht.other 10 (by decide) (by decide) (by decide), e.lp.e10]
   have h11u : E u.mem (bsV σ) 11 = Spec.Ed448.d := by
     rw [Eu, ht.other 11 (by decide) (by decide) (by decide), e.lp.e11]
@@ -305,7 +305,7 @@ theorem FE.agreeV {σ₁ σ₂ s₁ s₂ : State} (hP : VP₀ σ₁ σ₂) (f₁
     rw [p.wr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) p.ret_sc p.args_sc
+    exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [this]) p.ret_sc p.args_sc
   have ad : ∀ {σ : State}, VerifyPre σ → ∀ r ∈ σ.wr ++ [below (σ.gpr .esp) 20],
       (⟨argAddr σ 0, 20 - 4⟩ : Region).Disjoint r := by
     intro σ p r hr
@@ -345,7 +345,7 @@ theorem vdecodeBody_rel (hR : RecoverOk) (n : Nat) :
       rw [h0] at l₁ l₂
       exact ⟨σ₁, σ₂, hP, l₁, l₂⟩
     · have h0 : n - 1 ≠ 0 := by simpa using hz
-      exact ⟨n - 1, by omega, σ₁, σ₂, hP, ⟨by omega, l₁⟩, ⟨by omega, l₂⟩⟩
+      exact ⟨n - 1, by omega_using [h0], σ₁, σ₂, hP, ⟨by omega_using [h0], l₁⟩, ⟨by omega_using [h0], l₂⟩⟩
 
 
 /-! ## After the decodings -/
@@ -382,8 +382,8 @@ theorem V4.start {σ s₄ : State} (h : V4 σ s₄) :
     rw [e₄]; exact Function.update_of_ne hi _ _
   have k41 : ∀ i : Index, i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) →
       E s₄.mem (bsV σ) i = E s₁.mem (bsV σ) i := fun i hi => by
-    rw [e₄k i (fun h => by subst h; omega), k₃e i (fun h => by subst h; omega),
-      e₂ i (fun h => by subst h; omega) (fun h => by subst h; omega) (by omega)]
+    rw [e₄k i (fun h => by subst h; omega_using [hi]), k₃e i (fun h => by subst h; omega_using [hi]),
+      e₂ i (fun h => by subst h; omega_using [hi]) (fun h => by subst h; omega_using [hi]) (by omega_using [hi])]
   intro s' h1 h2 h3 h4 h5
   have k' : Keeps (.esi :: workRegs) s₄ s' :=
     ⟨fun r hr => h2 r (fun e => hr (by subst r; exact List.mem_cons_self)), h4, h5⟩
@@ -449,7 +449,7 @@ theorem vstep_tr (n : Nat) : RelCT isa (Runs VP₀ (VI n)) Impl.Ed448.X86.vstep 
     ((fieldV n _ (by decide)).seq ((fieldV n _ (by decide)).seq ((vmaskSwap_rel n false).seq
       ((fieldV n _ (by decide)).seq ?_))))
   · rintro σ s ⟨hn, s₄, v, L, fe⟩
-    refine WP.mono (decCounter_ok (by omega) L.esi) fun t ⟨c, g, m, r, w, _⟩ =>
+    refine WP.mono (decCounter_ok (by omega_using [hn]) L.esi) fun t ⟨c, g, m, r, w, _⟩ =>
       ⟨⟨FInv.of_counter fe.fin g m r w, (g _ (by decide)).trans fe.sp⟩, c,
         show VBits _ _ _ t.mem from m ▸ VBits.kept (WsOut2.widen L.mem) v.bits, hn⟩
   · exact RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) (fun _ _ h => StepV.agree h) (by taint_decide)
@@ -495,8 +495,8 @@ theorem vloop_rel : RelCT isa (Runs VP₀ V4) Impl.Ed448.X86.vloop (Runs VP₀ V
     · have hn0 : n ≠ 0 := fun h0 => by simp [h0] at hz
       obtain ⟨hn, a₁, v₁, L₁, f₁⟩ := l₁
       obtain ⟨-, a₂, v₂, L₂, f₂⟩ := l₂
-      have e : n - 1 + 1 = n := by omega
-      exact ⟨n - 1, by omega, σ₁, σ₂, hP, ⟨by omega, a₁, v₁, e ▸ L₁, f₁⟩, ⟨by omega, a₂, v₂, e ▸ L₂, f₂⟩⟩
+      have e : n - 1 + 1 = n := by omega_using [hn0]
+      exact ⟨n - 1, by omega_using [hn0], σ₁, σ₂, hP, ⟨by omega_using [hn], a₁, v₁, e ▸ L₁, f₁⟩, ⟨by omega_using [hn], a₂, v₂, e ▸ L₂, f₂⟩⟩
 
 
 /-! ## The whole function -/
@@ -575,15 +575,15 @@ theorem vdouble_rel : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vdouble (Ru
     ((field_tr (fun _ _ h => h.1) _ (by decide)).seq (RelCT.taint (A := taint) (τr [])
       (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide))) ?_ ?_
   · rintro σ s ⟨f, e, hk⟩
-    exact WP.mono (vdoubleStep_ok f.1.scr f.1.ctx f.1.bounded (k := k) (by omega) e)
+    exact WP.mono (vdoubleStep_ok f.1.scr f.1.ctx f.1.bounded (k := k) (by omega_using [hk]) e)
       fun t ⟨et, zt, kt, _, bt, _⟩ => ⟨⟨⟨f.1.scr.of_keeps kt (by decide), f.1.ctx.keep (kt.1 _ (by decide)), bt⟩,
-        (kt.1 _ (by decide)).trans f.2⟩, et, zt, by omega⟩
+        (kt.1 _ (by decide)).trans f.2⟩, et, zt, by omega_using [hk]⟩
   · rintro σ₁ σ₂ t₁ t₂ hP - ⟨f₁, e₁, z₁, b₁⟩ ⟨f₂, e₂, z₂, b₂⟩
     rw [eval_ne z₁, eval_ne z₂]
     refine ⟨rfl, fun _ => ⟨σ₁, σ₂, hP, f₁, f₂⟩, fun hz => ?_⟩
     have hk0 : k ≠ 0 := fun h0 => by simp [h0] at hz
-    have e : k - 1 + 1 = k := by omega
-    exact ⟨k - 1, by omega, σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega⟩, ⟨f₂, e ▸ e₂, by omega⟩⟩
+    have e : k - 1 + 1 = k := by omega_using [hk0]
+    exact ⟨k - 1, by omega_using [hk0], σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega_using [b₁]⟩, ⟨f₂, e ▸ e₂, by omega_using [b₁]⟩⟩
 
 /-- In the comparison, `k + 1` passes left. -/
 def CI (k : Nat) (σ s : State) : Prop := FS bsV σ s ∧ s.gpr .esi = BitVec.ofNat 32 (k + 1) ∧ k < 2
@@ -633,8 +633,8 @@ theorem vfinish_tr : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vfinish fun 
     rw [eval_ne z₁, eval_ne z₂]
     refine ⟨rfl, fun _ => ⟨σ₁, σ₂, hP, f₁, f₂⟩, fun hz => ?_⟩
     have hk0 : k ≠ 0 := fun h0 => by simp [h0] at hz
-    have e : k - 1 + 1 = k := by omega
-    exact ⟨k - 1, by omega, σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega⟩, ⟨f₂, e ▸ e₂, by omega⟩⟩
+    have e : k - 1 + 1 = k := by omega_using [hk0]
+    exact ⟨k - 1, by omega_using [hk0], σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega_using [b₁]⟩, ⟨f₂, e ▸ e₂, by omega_using [b₁]⟩⟩
 
 theorem vafter_tr : RelCT isa (Runs VP₀ (LoopAt · 0 ·)) Impl.Ed448.X86.vafter fun _ _ => True := by
   unfold Impl.Ed448.X86.vafter

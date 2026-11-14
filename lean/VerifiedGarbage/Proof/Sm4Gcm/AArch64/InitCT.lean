@@ -66,7 +66,7 @@ theorem init1_ok {s : State} {K Ctx W : Addr} (hK : s.gpr .x0 = K) (hCtx : s.gpr
   have rd₂' : s₂.rd = s.rd := rd₂.trans rd₁
   have wr₂' : s₂.wr = s.wr := wr₂.trans wr₁
   have sp₂' : s₂.sp = s.sp := sp₂.trans sp₁
-  refine ⟨⟨x0₂, x1₂, by rw [sp₂']; exact hsp, fK, by omega, d_kc.sub_right (Region.sub_prefix (by decide)),
+  refine ⟨⟨x0₂, x1₂, by rw [sp₂']; exact hsp, fK, by omega_using [fC], d_kc.sub_right (Region.sub_prefix (by decide)),
       by rw [sp₂']; exact sK, by rw [sp₂']; exact sC.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩,
     x19₂, x21₂, sp₂', rd₂', wr₂'⟩
   · rw [rd₂', wr₂']
@@ -100,13 +100,13 @@ theorem init2_ok {s : State} {Ctx W : Addr} (h19 : s.gpr .x19 = W) (h21 : s.gpr 
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ he)
   have dK0 : (⟨Ctx, 128⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_using [])
   have pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄]; exact pC
   have pW' : Covers [⟨W, 768⟩] s₄.wr := by rw [wr₄]; exact pW
-  refine ⟨x0₄, x1₄, x2₄, x3₄, by rw [sp₄]; exact hsp, by decide, ?_, by omega, ?_,
+  refine ⟨x0₄, x1₄, x2₄, x3₄, by rw [sp₄]; exact hsp, by decide, ?_, by omega_using [fC], ?_,
     ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega
-  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (W.toNat + 96 % 2 ^ 64) (2 ^ 64); omega
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_using [fC]
+  · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (W.toNat + 96 % 2 ^ 64) (2 ^ 64); omega_using [fW]
   · simpa using dCW 0 128 (by decide) 96 16 (by decide)
   · exact (dCW 240 16 (by decide) 96 16 (by decide)).symm
   · rw [sp₄]; exact sC.sub_right (Region.sub_prefix (by decide))

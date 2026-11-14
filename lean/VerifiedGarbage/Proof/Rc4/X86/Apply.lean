@@ -22,7 +22,7 @@ theorem apply_entry (s : State) {P D L Sc : BitVec 32} (hp : ApplyPre s P D L Sc
   have v4 : s.mem.readW (addr (s.gpr .esp) 4) 32 = P := hp.aP
   have h12 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 12) 4 := hp.arg_in (i := 2) (by decide)
   have v12 : s.mem.readW (addr (s.gpr .esp) 12) 32 = L := hp.aL
-  have a256 : addr P 256 = P.setWidth 64 + 256#64 := addr_of_fit (by have := hp.ctxFit; omega)
+  have a256 : addr P 256 = P.setWidth 64 + 256#64 := addr_of_fit (by have := hp.ctxFit; omega_using [this])
   have r256 : InRegions (s.rd ++ s.wr) (P.setWidth 64 + 256#64) 1 := by
     obtain ⟨r, hr, hc⟩ := region_offset _ _ _ 256 1 (by decide) (by decide) hp.ctx
     exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -41,7 +41,7 @@ theorem apply_start (b : State) (P : BitVec 32) (hfit : P.toNat + 258 ≤ 2 ^ 32
     WP isa (.block start) b fun c => c.mem = b.mem ∧ Keep [.esi, .edi, .ebp, .ebx] b c ∧
       c.gpr .esi = b.gpr .eax ∧ c.gpr .edi = P ∧
       c.gpr .ebp = (b.mem (P.setWidth 64 + 257#64)).setWidth 32 ∧ c.gpr .ebx = 0#32 := by
-  have a257 : addr P 257 = P.setWidth 64 + 257#64 := addr_of_fit (by omega)
+  have a257 : addr P 257 = P.setWidth 64 + 257#64 := addr_of_fit (by omega_using [hfit])
   refine WP.mono (WP.keep (Q := fun c => c.mem = b.mem ∧ c.gpr .esi = b.gpr .eax ∧
       c.gpr .edi = P ∧ c.gpr .ebp = (b.mem (P.setWidth 64 + 257#64)).setWidth 32 ∧
       c.gpr .ebx = 0#32) [.esi, .edi, .ebp, .ebx] ?_ (by decide +kernel))
@@ -55,8 +55,8 @@ theorem apply_finish (d : State) (i j : Byte) (P : BitVec 32) (hfit : P.toNat + 
     WP isa (.block finish) d fun e =>
       e.mem = (d.mem.write (P.setWidth 64 + 256#64) 1 i).write (P.setWidth 64 + 257#64) 1 j ∧
       Keep [.eax] d e := by
-  have a256 : addr P 256 = P.setWidth 64 + 256#64 := addr_of_fit (by omega)
-  have a257 : addr P 257 = P.setWidth 64 + 257#64 := addr_of_fit (by omega)
+  have a256 : addr P 256 = P.setWidth 64 + 256#64 := addr_of_fit (by omega_using [hfit])
+  have a257 : addr P 257 = P.setWidth 64 + 257#64 := addr_of_fit (by omega_using [hfit])
   have h256 := region_offset _ _ _ 256 1 (by decide) (by decide) hw
   have h257 := region_offset _ _ _ 257 1 (by decide) (by decide) hw
   refine WP.mono (WP.keep (Q := fun e =>
@@ -69,7 +69,7 @@ theorem saved_spill (Sc : BitVec 32) :
     Region.Disjoint ⟨Sc.setWidth 64, 16⟩ ⟨Sc.setWidth 64 + BitVec.ofNat 64 16, 4⟩ := by
   intro x h₁ h₂
   exact Offset.sep_base (Sc.setWidth 64) (n := 16) (e := 16) (k := 4) (Nat.le_refl _) (by decide) x
-    (by simp only [Region.Contains] at h₁; omega) (by simp only [Region.Contains] at h₂; omega)
+    (by simp only [Region.Contains] at h₁; omega_using [h₁]) (by simp only [Region.Contains] at h₂; omega_using [h₂])
 
 /-- The full stream function, including empty input. -/
 theorem apply_ok (s : State) {P D L Sc : BitVec 32} (hp : ApplyPre s P D L Sc) :
@@ -138,7 +138,7 @@ theorem apply_ok (s : State) {P D L Sc : BitVec 32} (hp : ApplyPre s P D L Sc) :
           exact hsave.bytes (R := ⟨D.setWidth 64, L.toNat⟩) (fun r hr => by
             simp only [List.mem_singleton] at hr
             subst hr
-            exact hp.dataScratch) (show L.toNat ≤ 2 ^ 64 by have := L.isLt; omega) hx
+            exact hp.dataScratch) (show L.toNat ≤ 2 ^ 64 by have := L.isLt; omega_using []) hx
         frame := by rw [hcm]; exact Frame.refl _ _
         bx := hcbx
         p := hcdi
@@ -193,8 +193,8 @@ theorem apply_ok (s : State) {P D L Sc : BitVec 32} (hp : ApplyPre s P D L Sc) :
   have hDP (o : Nat) (ho : o < 258) :
       Mem.Sep (D.setWidth 64) L.toNat (P.setWidth 64 + BitVec.ofNat 64 o) 1 :=
     sep_of_sub hp.ctxData.symm (contains_prefix _ (Nat.le_refl _))
-      (Offset.contains_base _ (by omega) (by omega))
-  have hLn : L.toNat < 2 ^ 64 := by have := L.isLt; omega
+      (Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
+  have hLn : L.toNat < 2 ^ 64 := by have := L.isLt; omega_using []
   refine ⟨⟨?_, ?_⟩, by rw [gm]; exact hse, gbx.trans (hak.gpr (by decide)),
     gsi.trans (hak.gpr (by decide)), gdi.trans (hak.gpr (by decide)),
     gbp.trans (hak.gpr (by decide))⟩

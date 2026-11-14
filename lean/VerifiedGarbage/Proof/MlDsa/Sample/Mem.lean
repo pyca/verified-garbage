@@ -38,11 +38,11 @@ abbrev polyR (p : Addr) : Region := ⟨p, 1024⟩
 theorem coeffAt_eq (m : Mem) (p : Addr) (i : Nat) : coeffAt m p i = m.readW (coeffAddr p i) 32 := rfl
 
 theorem coeff_contains (p : Addr) {i : Nat} (hi : i < 256) : (polyR p).Contains (coeffAddr p i) 4 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 theorem coeff_sep (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256) (h : i ≠ j) :
     Mem.Sep (coeffAddr p i) 4 (coeffAddr p j) 4 :=
-  Offset.sep p (by omega) (by omega) (by omega)
+  Offset.sep p (by omega_using [h]) (by omega_using [hi]) (by omega_using [hj])
 
 /-- Writing coefficient `j` of the polynomial at `p`. -/
 theorem coeffAt_writeW (m : Mem) (p : Addr) {i j : Nat} (hi : i < 256) (hj : j < 256) (v : BitVec 32) :
@@ -68,15 +68,15 @@ theorem stored_snoc {m : Mem} {p : Addr} {L : List Zq} (h : Stored m p L) (hL : 
     Stored (m.writeW (coeffAddr p L.length) (zw x)) p (L ++ [x]) := by
   intro k hk
   rw [List.length_append, List.length_singleton] at hk
-  rw [coeffAt_writeW _ _ (show k < 256 by omega) hL]
+  rw [coeffAt_writeW _ _ (show k < 256 by omega_using [hL, hk]) hL]
   by_cases e : L.length = k
   · subst e
     simp only [↓reduceIte]
     rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (Nat.le_refl _), Nat.sub_self]
     rfl
   · simp only [e, ↓reduceIte]
-    rw [h k (by omega), List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-      List.getElem?_append_left (by omega)]
+    rw [h k (by omega_using [hk, e]), List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+      List.getElem?_append_left (by omega_using [hk, e])]
 
 /-- `Fin.ofNat` of the word that represents `x` is `x`. -/
 theorem ofNat_zw (x : Zq) : Fin.ofNat q (zw x).toNat = x := by
@@ -98,14 +98,14 @@ abbrev toPoly (L : List Zq) : Poly := Vector.ofFn fun i => L.getD i.val 0
 theorem stored_polyIs {m : Mem} {p : Addr} {L : List Zq} (h : Stored m p L) (hL : L.length = 256) :
     PolyIs m p (toPoly L) :=
   polyIs_of_coeffAt fun i hi => by
-    rw [h i (by simp only [n] at hi; omega), getElem!_pos (toPoly L) i hi]
+    rw [h i (by simp only [n] at hi; omega_using [hL, hi]), getElem!_pos (toPoly L) i hi]
     simp only [toPoly, Vector.getElem_ofFn]
 
 /-- A stored list is unchanged by writes apart from the polynomial. -/
 theorem stored_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
     (hd : ∀ r ∈ rs, (polyR p).Disjoint r) {L : List Zq} (h : Stored m p L) (hL : L.length ≤ 256) :
     Stored m' p L := fun k hk => by
-  rw [coeffAt_eq, hf.readW (coeff_contains p (by omega)) hd (by decide)]
+  rw [coeffAt_eq, hf.readW (coeff_contains p (by omega_using [hL, hk])) hd (by decide)]
   exact h k hk
 
 end VG.Proof.MlDsa.Sample

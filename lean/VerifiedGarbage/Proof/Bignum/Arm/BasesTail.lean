@@ -25,20 +25,20 @@ theorem basesTail_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc w 
       Rest [.r5, .r6, .r7, .r11, .r12] s t := by
   have p0 : s.gpr .r0 = base + BitVec.ofNat 32 0 := by simpa using ptr
   unfold MontFn.basesTail
-  refine wp_ldr (by decide) (ws.ea p0 (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (ws.ea p0 (by omega_using [fit])) (ws.read (by omega_using [fit])) fun s1 u1 => ?_
   have p1 := (u1.other .r0 (by decide)).trans p0
   have w1 := ws.congr u1.wr
-  refine wp_ldr (by decide) (w1.ea p1 (by omega)) (w1.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (by decide) (w1.ea p1 (by omega_using [fit])) (w1.read (by omega_using [fit])) fun s2 u2 => ?_
   have p2 := (u2.other .r0 (by decide)).trans p1
   have w2 := w1.congr u2.wr
-  refine wp_ldr (by decide) (w2.ea p2 (by omega)) (w2.read (by omega)) fun s3 u3 => ?_
+  refine wp_ldr (by decide) (w2.ea p2 (by omega_using [fit])) (w2.read (by omega_using [fit])) fun s3 u3 => ?_
   refine wp_dp (op2_reg _ _) fun s4 u4 => ?_
   have p4 := (u4.other .r0 (by decide)).trans ((u3.other .r0 (by decide)).trans p2)
   have w4 := (w2.congr u3.wr).congr u4.wr
-  refine wp_ldr (by decide) (w4.ea p4 (by omega)) (w4.read (by omega)) fun s5 u5 => ?_
+  refine wp_ldr (by decide) (w4.ea p4 (by omega_using [fit])) (w4.read (by omega_using [fit])) fun s5 u5 => ?_
   have p5 := (u5.other .r0 (by decide)).trans p4
   have w5 := w4.congr u5.wr
-  refine wp_ldr (by decide) (w5.ea p5 (by omega)) (w5.read (by omega)) fun t u6 => WP.block_nil ?_
+  refine wp_ldr (by decide) (w5.ea p5 (by omega_using [fit])) (w5.read (by omega_using [fit])) fun t u6 => WP.block_nil ?_
   have keep : Rest [.r5, .r6, .r7, .r11, .r12] s t :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
@@ -49,7 +49,7 @@ theorem basesTail_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc w 
   · rw [u6.other .r6 (by decide), u5.other .r6 (by decide), u4.other .r6 (by decide),
       u3.other .r6 (by decide), u2.gpr, u1.mem, mc]
   · rw [u6.other .r7 (by decide), u5.other .r7 (by decide), u4.gpr, dpVal, u3.gpr, u2.mem, u1.mem, mw]
-    rw [← BitVec.ofNat_add, show w + w = 2 * w by omega]
+    rw [← BitVec.ofNat_add, show w + w = 2 * w by omega_using []]
   · rw [u6.other .r11 (by decide), u5.gpr, u4.mem, u3.mem, u2.mem, u1.mem, mm]
   · rw [u6.gpr, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, mi]
   · rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]

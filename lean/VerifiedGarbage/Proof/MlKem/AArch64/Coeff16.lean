@@ -30,15 +30,15 @@ theorem vhalf_read_toNat (m : Mem) (a : Addr) {e : Nat} (he : e < 8) :
     (vhalf (m.read a 16) e).toNat =
       (m (a + BitVec.ofNat 64 (2 * e))).toNat + 256 * (m (a + BitVec.ofNat 64 (2 * e + 1))).toNat := by
   rw [Cbd16.half_bytes, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (BitVec.isLt _),
-    Nat.shiftLeft_eq, vbyte, vbyte, Mem.extractLsb'_read m a (by omega),
-    Mem.extractLsb'_read m a (by omega)]
-  omega
+    Nat.shiftLeft_eq, vbyte, vbyte, Mem.extractLsb'_read m a (by omega_using [he]),
+    Mem.extractLsb'_read m a (by omega_using [he])]
+  omega_using []
 
 /-- Halfword `e` of the vector at coefficient `j` of a polynomial stored with 16 bits. -/
 theorem vhalf_read_coeff (m : Mem) (p : Addr) (j : Nat) {e : Nat} (he : e < 8) :
     (vhalf (m.read (p + BitVec.ofNat 64 (2 * j)) 16) e).toNat = (coeffAtW 16 m p (j + e)).toNat := by
-  rw [vhalf_read_toNat _ _ he, coeffAtW16_toNat, ptr_add, ptr_add, show 2 * j + 2 * e = 2 * (j + e) by omega,
-    show 2 * j + (2 * e + 1) = 2 * (j + e) + 1 by omega]
+  rw [vhalf_read_toNat _ _ he, coeffAtW16_toNat, ptr_add, ptr_add, show 2 * j + 2 * e = 2 * (j + e) by omega_using [],
+    show 2 * j + (2 * e + 1) = 2 * (j + e) + 1 by omega_using []]
 
 /-- `n` bytes `x` stored at byte `t` of `N`. -/
 theorem BytesUpTo.writeN {m : Mem} {p : Addr} {N t n : Nat} {L old : Nat → Byte}
@@ -48,15 +48,15 @@ theorem BytesUpTo.writeN {m : Mem} {p : Addr} {N t n : Nat} {L old : Nat → Byt
   intro j hj
   have d : ((p + BitVec.ofNat 64 j) - (p + BitVec.ofNat 64 t)).toNat =
       if t ≤ j then j - t else 2 ^ 64 + j - t :=
-    Offset.sub_toNat' p (by omega) (by omega)
+    Offset.sub_toNat' p (by omega_using [hN, hn]) (by omega_using [hN, hj])
   rw [Mem.write, d]
   by_cases ht : t ≤ j
   · rw [ite_eq_left ht]
     by_cases hnj : j - t < n
-    · rw [ite_eq_left hnj, ite_eq_left (by omega), hx _ hnj]
-      congr 1; omega
-    · rw [ite_eq_right hnj, h j hj, ite_eq_right (by omega), ite_eq_right (by omega)]
-  · rw [ite_eq_right ht, ite_eq_right (by omega), h j hj, ite_eq_left (by omega), ite_eq_left (by omega)]
+    · rw [ite_eq_left hnj, ite_eq_left (by omega_using [hnj]), hx _ hnj]
+      congr 1; omega_using [ht]
+    · rw [ite_eq_right hnj, h j hj, ite_eq_right (by omega_using [ht]), ite_eq_right (by omega_using [ht, hnj])]
+  · rw [ite_eq_right ht, ite_eq_right (by omega_using [hN, hn]), h j hj, ite_eq_left (by omega_using [ht]), ite_eq_left (by omega_using [ht])]
 
 /-- All bytes of a polynomial written: the polynomial, stored with 16 bits. -/
 theorem polyIsW16_of_bytes' {m : Mem} {p : Addr} {f : Poly} {old : Nat → Byte}
@@ -68,13 +68,13 @@ theorem write16_byte (m : Mem) (p : Addr) {t j : Nat} (ht : 2 * t + 16 ≤ 512) 
     (x : BitVec 128) :
     m.write (p + BitVec.ofNat 64 (2 * t)) 16 x (p + BitVec.ofNat 64 j) =
       if 2 * t ≤ j ∧ j < 2 * t + 16 then vbyte x (j - 2 * t) else m (p + BitVec.ofNat 64 j) := by
-  rw [Mem.write, Offset.sub_toNat' p (by omega) (by omega)]
+  rw [Mem.write, Offset.sub_toNat' p (by omega_using [ht]) (by omega_using [hj])]
   by_cases c : 2 * t ≤ j
   · rw [ite_eq_left c]
     by_cases c' : j - 2 * t < 16
-    · rw [ite_eq_left c', ite_eq_left ⟨c, by omega⟩]; rfl
-    · rw [ite_eq_right c', ite_eq_right (by omega)]
-  · rw [ite_eq_right c, ite_eq_right (by omega), ite_eq_right (by omega)]
+    · rw [ite_eq_left c', ite_eq_left ⟨c, by omega_using [c']⟩]; rfl
+    · rw [ite_eq_right c', ite_eq_right (by omega_using [c'])]
+  · rw [ite_eq_right c, ite_eq_right (by omega_using [ht]), ite_eq_right (by omega_using [c])]
 
 /-- A 16-bit coefficient after a vector of eight is stored at coefficient `t`. -/
 theorem coeffAtW16_write (m : Mem) (p : Addr) {t i : Nat} (ht : t + 8 ≤ 256) (hi : i < 256)
@@ -82,14 +82,14 @@ theorem coeffAtW16_write (m : Mem) (p : Addr) {t i : Nat} (ht : t + 8 ≤ 256) (
     coeffAtW 16 (m.write (p + BitVec.ofNat 64 (2 * t)) 16 x) p i =
       if t ≤ i ∧ i < t + 8 then vhalf x (i - t) else coeffAtW 16 m p i := by
   apply BitVec.eq_of_toNat_eq
-  rw [coeffAtW16_toNat, write16_byte m p (by omega) (by omega), write16_byte m p (by omega) (by omega)]
+  rw [coeffAtW16_toNat, write16_byte m p (by omega_using [ht]) (by omega_using [hi]), write16_byte m p (by omega_using [ht]) (by omega_using [hi])]
   by_cases c : t ≤ i ∧ i < t + 8
-  · rw [ite_eq_left ⟨by omega, by omega⟩, ite_eq_left ⟨by omega, by omega⟩, ite_eq_left c,
+  · rw [ite_eq_left ⟨by omega_using [c], by omega_using [c]⟩, ite_eq_left ⟨by omega_using [c], by omega_using [c]⟩, ite_eq_left c,
       Cbd16.half_bytes, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (BitVec.isLt _),
-      Nat.shiftLeft_eq, show 2 * i - 2 * t = 2 * (i - t) by omega,
-      show 2 * i + 1 - 2 * t = 2 * (i - t) + 1 by omega]
-    omega
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right c, coeffAtW16_toNat]
+      Nat.shiftLeft_eq, show 2 * i - 2 * t = 2 * (i - t) by omega_using [],
+      show 2 * i + 1 - 2 * t = 2 * (i - t) + 1 by omega_using [c]]
+    omega_using []
+  · rw [ite_eq_right (by omega_using [c]), ite_eq_right (by omega_using [c]), ite_eq_right c, coeffAtW16_toNat]
 
 /-- The coefficients `i ∈ S` of the polynomial stored with 16 bits at `p` are `G i`, the others
 `old i`. -/
@@ -105,8 +105,8 @@ theorem CoeffsInW.write16 {m : Mem} {p : Addr} {S S' : Nat → Prop} [DecidableP
     CoeffsInW (m.write (p + BitVec.ofNat 64 (2 * t)) 16 x) p S' G old := fun i hi => by
   rw [coeffAtW16_write _ _ ht hi, h i hi]
   by_cases c : t ≤ i ∧ i < t + 8
-  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 (Or.inr c)), hx _ (by omega),
-      show t + (i - t) = i by omega]
+  · rw [ite_eq_left c, ite_eq_left ((hS i hi).2 (Or.inr c)), hx _ (by omega_using [c]),
+      show t + (i - t) = i by omega_using [c]]
   · rw [ite_eq_right c]
     by_cases c' : S i
     · rw [ite_eq_left c', ite_eq_left ((hS i hi).2 (Or.inl c'))]

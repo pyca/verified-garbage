@@ -15,7 +15,7 @@ theorem raw_ctx {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     WP isa (VG.Impl.Bignum.AArch64.Square.rawSquare a) s (FastRaw L) := by
   unfold VG.Impl.Bignum.AArch64.Square.rawSquare
   apply WP.seq
-  refine WP.mono (Square.setup_ctx ha L s ⟨h.1, by have := h.2.1; omega⟩) fun u hu => ?_
+  refine WP.mono (Square.setup_ctx ha L s ⟨h.1, by have := h.2.1; omega_using [this]⟩) fun u hu => ?_
   exact WP.mono (Square.raw_body_ctx ha ha1 ha2 L u hu) fun _ ht => ⟨ht, h.2⟩
 
 theorem raw_ct {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)

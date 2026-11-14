@@ -55,6 +55,9 @@ own changes are rebuilt either way, on top of the restored build.
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
   and Thumb, as text), and its assembly file, the text of that code,
   `assembly/<module>.s`, which is not compiled: read the code there.
+  The one exception is a prototype measuring an instruction the ISA model
+  lacks (the `benchmarking` skill): it lives only on a `bench/` branch,
+  is never opened as a PR, and is deleted once measured.
 * **The cryptography is in the verified code, never in Rust.** The Rust
   around a verified function is tested, not proven, so it does only what
   cannot be verified: it checks the API's arguments, lays out buffers and
@@ -77,10 +80,11 @@ own changes are rebuilt either way, on top of the restored build.
   `lake build` and the emitter enforce this (warnings are errors, and
   `#assert_standard_axioms` audits every artifact); never work around it.
 * **Changes to `lean/VerifiedGarbage/TCB/` or `Spec/` are trust changes.**
-  Keep them minimal, call them out explicitly in the PR description, and
-  justify each ISA semantics change by citing the vendor manual (e.g. Intel SDM
-  pseudocode). Never weaken a model, contract or `Verified` to make a proof go
-  through: fix the proof or the code. An instruction outside the target's
+  Keep them minimal (adding an instruction for a measured speedup is fine),
+  call them out explicitly in the PR description, and justify each ISA
+  semantics change by citing the vendor manual (e.g. Intel SDM pseudocode).
+  Never weaken a model, contract or `Verified` to make a proof go through:
+  fix the proof or the code. An instruction outside the target's
   baseline ISA must list the CPU features it needs in the model's
   `requires`, citing the manual (the SDM's "CPUID Feature Flag", the Arm
   ARM's `FEAT_*`).
@@ -129,13 +133,16 @@ own changes are rebuilt either way, on top of the restored build.
   implementation of a function for CPU features (or, where no feature
   tells apart the CPUs it is faster on, for a compilation target; see
   below) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
-  with the same signature and contract. Every function that calls a
-  function with variants is generic over them (step 4 of the
-  `adding-a-primitive` skill), so a new variant is emitted for its callers
-  too, and their callers, without anyone listing it, and their dispatchers
-  (below) run it: the Rust code calls only dispatchers, names no variant
-  and chooses nothing, so a new variant needs no Rust change. Never add a
-  caller that calls only the baseline implementation.
+  with the same signature and contract. The variants of a function that
+  others call are one list, best first
+  (`Proof/Variants/<Iface>/<Target>.lean`), and every function that calls
+  it is generic over them, its registration mapping over that list (step 4
+  of the `adding-a-primitive` skill): so a new variant, an element of the
+  list, is emitted for its callers too, and their callers, without editing
+  them, and their dispatchers (below) run it: the Rust code calls only
+  dispatchers, names no variant and chooses nothing, so a new variant needs
+  no Rust change. Never add a caller that calls only the baseline
+  implementation.
   The emitter writes each function's *dispatcher*, `<function>_auto`
   (`crate::arch::dispatch::<module>`, `Rust.dispatcher` in
   `lean/VerifiedGarbage/TCB/Rust.lean`), which runs
@@ -153,9 +160,23 @@ own changes are rebuilt either way, on top of the restored build.
   features, and its `vendor` for a choice by compilation target).
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
-  compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and
-  slower on Neoverse N2, is chosen for `target_vendor = "apple"`). Then the
-  dispatcher, with that `vendor`, chooses it for that target, and
+  CPU's microarchitecture, or on the compilation target. A
+  microarchitecture bit is detected and no instruction needs it
+  (`verified_garbage_cpu::TUNING`). It names cores (`zen5`), never a
+  property they are thought to share, and its detection lists them by
+  family and models, as Linux tells them apart: a choice by it records a
+  measurement on those cores, which another core does not inherit. It only
+  vetoes, never chooses: an implementation measured slower on those cores
+  than the one its dispatcher would try next lists the bit in its
+  registration's `notWith` (`Registration.notWith`), and is then never
+  chosen there; a base, which the dispatcher falls back on, cannot. Never
+  use an unrelated instruction set feature as its stand-in where a
+  microarchitecture bit can say it.
+  `VG_CPU_FEATURES` may name a microarchitecture on any CPU, so that every
+  CI runner can test what it chooses. A choice by compilation target
+  (`vg_poly1305_update_neon`, faster on Apple's cores and
+  slower on Neoverse N2, is chosen for `target_vendor = "apple"`) is the
+  dispatcher's with that `vendor`: it chooses it for that target, and
   elsewhere where `VG_CPU_FEATURES` names its features
   (`verified_garbage_cpu::requested`), so that every CI runner of the
   architecture can test it.
@@ -171,6 +192,13 @@ own changes are rebuilt either way, on top of the restored build.
   features of the algorithm's variants (and a variant that needs none, by
   its suffix): never describe an implementation's techniques there, or
   anywhere else that is not its code and proofs.
+* **x86-64 functions return without secret residue.** Every x86-64
+  artifact proves `NoResidue` (`TCB/X86_64/Residue.lean`;
+  `Registration.residue`, which `X86_64.Scrub.scrubReg` provides), but those
+  `ci/residue_allowlist.txt` lists. The list only shrinks: never add a line
+  (`ci/check_residue_allowlist.py`); the emitter refuses an unlisted function
+  without a proof, and a listed one that has one or no longer exists, so
+  converting a function removes its line (the `adding-a-primitive` skill).
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a
@@ -241,6 +269,9 @@ they only bind (`ci/check_registrations.py` checks it). The
 
 Many PRs are in flight at once, so adding an algorithm or an architecture
 should add files, not edit lists that every other PR edits too.
+A new variant is the exception: it is an element of its interface's list
+(`Proof/Variants/<Iface>/<Target>.lean`), placed where it ranks, which only
+the PRs about that one function's implementations edit.
 
 * A Rust module states the architectures it supports in its own file, as an
   inner `#![cfg(...)]` after its `//!` docs; the parent only says
@@ -396,8 +427,10 @@ lemmas and tactics to use; read it before writing a proof:
 * **Unfolding:** close goals about symbolic memory or hash values with
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
   `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
-  large concrete value; rewrite tables' regions with
-  `Abi.constRegions_cons`; evaluate a recursive definition that reuses a
+  large concrete value, which `generalize` does not hide from the kernel
+  (abstract it with `obtain`); rewrite tables' regions with
+  `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`
+  lemmas; evaluate a recursive definition that reuses a
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into
@@ -437,10 +470,7 @@ lake env lean --run EmitOne.lean Md5.X86_64
 lake env lean --run EmitOne.lean --check Md5.X86_64
 ```
 
-Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`, or
-`<Iface₁>.….<Ifaceₙ>.<Target>`, e.g. `Blake2b.Argon2Compress.X86_64`) to
-emit its generic callers for each variant (or combination of variants). It
-refuses a file that is new or that other registration files also emit into
+It refuses a file that is new or that other registration files also emit into
 (each table of constants has a file of its own, `consts/<name>.rs`, which it
 writes like any other); the full emitter handles those, and the checks below
 still run everything before pushing.

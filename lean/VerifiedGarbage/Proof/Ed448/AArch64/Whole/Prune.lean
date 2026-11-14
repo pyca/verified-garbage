@@ -52,8 +52,8 @@ theorem pruneWord_ok {s : State} {h d k : Nat} (hk : k < 7) (hh8 : h % 8 = 0) (h
     WP isa (.block (pruneWord h d k)) s fun t => Step s t ∧
       t.mem = s.mem.writeW (s.sp + BitVec.ofNat 64 (d + 8 * k))
         (pruneValue k (s.mem.readW (s.sp + BitVec.ofNat 64 (h + 8 * k)) 64)) := by
-  have ho : (h + 8 * k) % 8 = 0 ∧ h + 8 * k < 32768 := by omega
-  have hs : d + 8 * k < 4096 := by omega
+  have ho : (h + 8 * k) % 8 = 0 ∧ h + 8 * k < 32768 := by omega_using [hk, hh8, hhl]
+  have hs : d + 8 * k < 4096 := by omega_using [hk, hdl]
   apply WP.of_runBlock
   by_cases h0 : k = 0
   · subst k
@@ -109,31 +109,31 @@ theorem prunePrefix_ok {s : State} {h d : Nat} (hw : (⟨s.sp, 256⟩ : Region) 
   | 0, _ => WP.block_nil ⟨.refl s, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (prunePrefix_ok hw hh8 hhl hdl hsep n (by omega)) fun u hu => ?_
+    refine WP.mono (prunePrefix_ok hw hh8 hhl hdl hsep n (by omega_using [hn])) fun u hu => ?_
     have ur : InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 (h + 8 * n)) 8 := by
       rw [hu.step.sp, hu.step.wr]
-      exact ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (by omega_using [hhl, hn]) (by omega_using [hhl, hn])⟩
     have uw : InRegions u.wr (u.sp + BitVec.ofNat 64 (d + 8 * n)) 8 := by
       rw [hu.step.sp, hu.step.wr]
-      exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
-    refine WP.mono (pruneWord_ok (by omega) hh8 hhl hdl ur uw) fun t ⟨kt, mt⟩ => ?_
+      exact ⟨_, hw, Offset.contains_base _ (by omega_using [hdl, hn]) (by omega_using [hdl, hn])⟩
+    refine WP.mono (pruneWord_ok (by omega_using [hn]) hh8 hhl hdl ur uw) fun t ⟨kt, mt⟩ => ?_
     rw [hu.step.sp] at mt
     have same : u.mem.readW (s.sp + BitVec.ofNat 64 (h + 8 * n)) 64 =
         s.mem.readW (s.sp + BitVec.ofNat 64 (h + 8 * n)) 64 := by
       apply hu.frame.readW (Region.contains_self _ _) _ (by decide)
       simp only [List.mem_singleton]
       rintro r rfl
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      exact Offset.disjoint _ (by omega_using [hsep, hn]) (by omega_using [hhl, hn]) (by omega_using [hdl])
     rw [same] at mt
     refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
     · rw [mt]
-      exact hu.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+      exact hu.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using [hn]) (by omega_using [hdl]))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self64 _ _ _
       · rw [Mem.readW_writeW_sep ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hdl, hn, hj]) (by omega_using [hdl, hn])
 
 theorem byte_of_zero (m : Mem) (p : Addr) (h : m.readW p 64 = 0) : m p = 0 := by
   have e := Mem.extractLsb'_read m p (n := 8) (j := 0) (by decide)
@@ -166,16 +166,16 @@ theorem prune_run {s : State} {h d : Nat} (hw : (⟨s.sp, 256⟩ : Region) ∈ s
       Spec.Ed448.decodeLE (Spec.Ed448.bytesAt t.mem (s.sp + BitVec.ofNat 64 d) 57) = Spec.Ed448.prune hb := by
   rw [pruneAt, WP.block_append_iff]
   refine WP.mono (prunePrefix_ok hw hh8 hhl hdl hsep 7 (by decide)) fun u hu => ?_
-  have e7 : 8 * (d / 8 + 7) = d + 56 := by omega
+  have e7 : 8 * (d / 8 + 7) = d + 56 := by omega_using [hd8]
   refine WP.mono (VG.Proof.Ed25519.AArch64.Whole.zeroWord_ok hu.step.sp (by rw [hu.step.wr]; exact hw)
-    (k := d / 8 + 7) (by omega)) fun t ⟨kt, mt⟩ => ⟨?_, ?_, ?_⟩
+    (k := d / 8 + 7) (by omega_using [hdl])) fun t ⟨kt, mt⟩ => ⟨?_, ?_, ?_⟩
   · exact hu.step.trans ⟨kt.rd, kt.wr, kt.sp, kt.vec, fun r _ _ h14 h15 => kt.regs r h14 h15⟩
   · rw [mt, e7]
-    exact hu.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+    exact hu.frame.writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hdl]))
   · rw [e7] at mt
     have hw' : ∀ j < 7, t.mem.readW (s.sp + BitVec.ofNat 64 (d + 8 * j)) 64 =
         pruneValue j (s.mem.readW (s.sp + BitVec.ofNat 64 (h + 8 * j)) 64) := fun j hj => by
-      rw [mt, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+      rw [mt, Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hj]) (by omega_using [hdl, hj]) (by omega_using [hdl])) (by decide)]
       exact hu.words j hj
     have hz : t.mem (s.sp + BitVec.ofNat 64 (d + 56)) = 0 :=
       byte_of_zero _ _ (by rw [mt]; exact Mem.readW_writeW_self64 _ _ _)

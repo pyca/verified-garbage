@@ -61,7 +61,7 @@ theorem doubleInit_ready {base : BitVec 32} {size out tmp a b mod acc n : Nat}
   rw [outs_word32 outside (d := a) (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)]
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fit])]
   exact h.2
 
 theorem doubleBody_ct {base : BitVec 32} {size out tmp a b mod acc n : Nat}

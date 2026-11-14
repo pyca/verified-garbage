@@ -87,7 +87,7 @@ theorem ofMod_Cn (M : Mod) (acc base tbl m : Nat) :
 theorem InvOk.ofMod {M : Mod} {acc base tbl m : Nat} (hC : 0 < (InvCfg.ofMod M acc base tbl m).C)
     (hn : M.n ≤ 9) : InvOk (InvCfg.ofMod M acc base tbl m) m := by
   refine ⟨?_, ?_, ofMod_C _ _ _ _ _, hC, ofMod_Cn _ _ _ _ _, ?_⟩ <;>
-    simp only [InvCfg.ofMod] <;> split <;> (try split) <;> omega
+    simp only [InvCfg.ofMod] <;> split <;> (try split) <;> omega_arith
 
 /-- The power with an inversion's slots. -/
 def _root_.VG.Impl.Weierstrass.AArch64.InvCfg.toChain (P : InvCfg) : ChainCfg :=

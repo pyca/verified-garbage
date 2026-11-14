@@ -62,7 +62,7 @@ theorem incr_ok (s : State) {Q : Addr} (hq : State.addr (s.gpr .r6) = Q)
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.mem = incMem s.mem Q ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have a (d : Nat) (hd : d < 16) : State.addr (s.gpr .r6 + BitVec.ofNat 32 d) = Q + BitVec.ofNat 64 d := by
-    rw [addr_add (by omega), hq]
+    rw [addr_add (by omega_using [hfit, hd]), hq]
   have a0 : State.addr (s.gpr .r6 + BitVec.ofNat 32 0) = Q := by rw [a 0 (by decide)]; simp
   have r0 : InRegions (s.rd ++ s.wr) Q 4 := by simpa using hr 0 4 (by decide)
   have w0 : InRegions s.wr Q 4 := by simpa using hw 0 4 (by decide)
@@ -84,8 +84,8 @@ theorem carry_toNat (x y : BitVec 32) : (carry x y).toNat = (x.toNat + y.toNat) 
   have := x.isLt
   have := y.isLt
   by_cases h : 2 ^ 32 ≤ x.toNat + y.toNat
-  · rw [carry, decide_eq_true h]; simp only [Bool.toNat_true]; omega
-  · rw [carry, decide_eq_false h]; simp only [Bool.toNat_false]; omega
+  · rw [carry, decide_eq_true h]; simp only [Bool.toNat_true]; omega_using [h]
+  · rw [carry, decide_eq_false h]; simp only [Bool.toNat_false]; omega_using [h]
 
 theorem add_cw_toNat (a : BitVec 32) (c : Bool) : (a + cw c).toNat = (a.toNat + c.toNat) % 2 ^ 32 := by
   rw [BitVec.toNat_add, cw_toNat]
@@ -95,9 +95,9 @@ theorem add_ite_toNat (a : BitVec 32) (c : Bool) :
   have e₀ : (0 : BitVec 32).toNat = 0 := rfl
   cases c
   · have e : ((if false = true then 1 else 0 : BitVec 32)).toNat = 0 := rfl
-    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_false]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_false]; omega_using []
   · have e : ((if true = true then 1 else 0 : BitVec 32)).toNat = 1 := rfl
-    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_true]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_add, e₀, e]; simp only [Bool.toNat_true]; omega_using []
 
 theorem incMem_bytes (m : Mem) (Q : Addr) : bytesAt (incMem m Q) Q 16 = Spec.Ctr.inc (bytesAt m Q 16) := by
   have e₁ : (1 : BitVec 32).toNat = 1 := rfl

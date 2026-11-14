@@ -42,7 +42,7 @@ theorem decodeLE_wide (m : Mem) (base : Addr) :
 theorem fe_frame {base p : Addr} {m m' : Mem} (hf : Frame [⟨base, 8192⟩] m m')
     (hp : (⟨p, 32⟩ : Region).Disjoint ⟨base, 8192⟩) : fe m' p 0 = fe m p 0 := by
   have h : ∀ d, d + 8 ≤ 32 → m'.readW (off p d) 64 = m.readW (off p d) 64 := fun d hd =>
-    hf.readW (r := ⟨p, 32⟩) (Offset.contains_base _ hd (by omega))
+    hf.readW (r := ⟨p, 32⟩) (Offset.contains_base _ hd (by omega_using [hd]))
       (by simpa only [List.mem_singleton, forall_eq]) (by decide)
   simp only [fe, val4, Proof.X25519.X86_64.word, h 0 (by decide), h 8 (by decide), h 16 (by decide), h 24 (by decide)]
 
@@ -70,7 +70,7 @@ theorem reduceArgs_ok {s : State} {base : Addr} (hb : s.gpr .rdi = base)
     WP isa (.block reduceArgs) s fun t =>
       t.gpr .rsi = off base 128 ∧ t.mem = s.mem.writeW (off base 48) (s.gpr .rbx) ∧
       (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have w : InRegions s.wr (off base 48) 8 := ⟨_, hw, Offset.contains_base base (by omega) (by omega)⟩
+  have w : InRegions s.wr (off base 48) 8 := ⟨_, hw, Offset.contains_base base (by omega_using []) (by omega_using [])⟩
   apply WP.of_runBlock
   simp only [reduceArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, ea_at,
     State.store64, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,

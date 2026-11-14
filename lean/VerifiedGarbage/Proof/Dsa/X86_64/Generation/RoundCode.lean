@@ -21,7 +21,7 @@ theorem roundCode_depth (v : RoundImpl) : generationDepth (Kernel.called v).run 
   simp only [Nat.zero_max, Nat.max_zero]
   have hd := v.depth
   change v.code.x86_64Depth ≤ 120 at hd
-  omega
+  omega_using [hd]
 
 theorem inlineMul_depth (v : RoundImpl) (o a b : Nat) : generationDepth (v.inlineMont.mm o a b) := by
   unfold generationDepth

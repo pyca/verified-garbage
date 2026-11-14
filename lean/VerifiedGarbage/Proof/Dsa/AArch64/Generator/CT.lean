@@ -108,24 +108,24 @@ theorem packPart_stage (hb : Supported pLen) {s : State} (A : StageABI pLen s) {
   have c1 : packed = 27008 := rfl
   have c6 : domainCheck = 40960 := rfl
   have c12 : usedBytes pLen = domainCheck + 128 * pLen := rfl
-  have srcB := used_small hb (d := src) (n := len) (by omega) (by unfold arithmeticBytes; omega)
-  have dstB := used_small hb (d := dst) (n := len) (by omega) (by unfold arithmeticBytes; omega)
+  have srcB := used_small hb (d := src) (n := len) (by omega_using [hsrc, c1, c6]) (by unfold arithmeticBytes; omega_using [hlen])
+  have dstB := used_small hb (d := dst) (n := len) (by omega_using [hend, c1, c6]) (by unfold arithmeticBytes; omega_using [hlen])
   let bs := Spec.Rsa.bytesAt t.mem (off (s.gpr .x0) src) len
   have bl : bs.length = len := bytesAt_length _ _ _
   have source : Src t (off (s.gpr .x0) dst) len (off (s.gpr .x0) src) bs := by
     apply VG.Proof.Dsa.AArch64.Generation.arena_source scr (by rw [bl]; exact srcB)
-      (by rw [bl]; omega) (by rw [bl])
-    rw [bl]; exact A.parts hb srcB dstB (Or.inl (by omega))
+      (by rw [bl]; omega_using [hlen]) (by rw [bl])
+    rw [bl]; exact A.parts hb srcB dstB (Or.inl (by omega_using [hsrc, hdst]))
   have hashSep : (⟨hashBase s, oRsa⟩ : Region).Disjoint ⟨off (s.gpr .x0) dst, len⟩ := by
     have hh := used_small hb (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
     have c8 : VG.Impl.Dsa.Generation.Layout.hash = 16384 := rfl
     have c9 : oRsa = 8192 := rfl
-    exact A.parts hb hh dstB (Or.inl (by omega))
+    exact A.parts hb hh dstB (Or.inl (by omega_using [hdst, c1, c8, c9]))
   have call := VG.Proof.Dsa.AArch64.Generation.packPart_ok (src := src) (dst := dst) (bs := bs) L R
-    (by omega) (by omega) (by rw [bl]; omega)
+    (by omega_using [hsrc, c1]) (by omega_using [hend, c1]) (by rw [bl]; omega_using [hlen])
   rw [h5] at call
   have run := call source.rd (fun i hi => by
-    rw [off_off]; exact scr.region (by rw [bl] at hi; omega) (by decide))
+    rw [off_off]; exact scr.region (by rw [bl] at hi; omega_using [dstB, hi]) (by decide))
     (fun i hi => by simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some] using source.val i hi)
     (fun i hi j hj heq => by
       have outside := source.out i hi
@@ -133,8 +133,8 @@ theorem packPart_stage (hb : Supported pLen) {s : State} (A : StageABI pLen s) {
       rw [heq] at outside
       rw [bl] at hj
       simp only [ofs, off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega : j < 2 ^ 64)] at outside
-      omega)
+        Nat.mod_eq_of_lt (by omega_using [hlen, hj] : j < 2 ^ 64)] at outside
+      omega_using [h5, hsrc, hdst, hend, hlen, c1, c6, c12, srcB, dstB, bl, hi, hj, outside])
     (by rw [bl]; exact A.framePart hb dstB) (by rw [bl]; exact hashSep)
   rw [bl] at run
   exact WP.mono run fun t' ⟨_, Lt, Rt, _, kt⟩ => ⟨Lt, Rt, scr.congr kt.wr⟩
@@ -146,8 +146,8 @@ theorem packPart_mem_ct (hb : Supported pLen) (src dst len : Nat) (hsrc : src + 
     RelCT isa (Two (PackMem hb)) (Impl.Dsa.AArch64.Generation.packPart src dst len) (Two (PackMem hb)) := by
   refine two_post (two_map StagePublic.pack (fun P t ⟨s, A, hP, L, ⟨V, W, R, h5⟩, _⟩ => by
       subst hP; exact ⟨L, V, W, R, h5⟩)
-    (VG.Proof.Dsa.AArch64.Generation.packPart_ct src dst len (by unfold packed at *; omega)
-      (by unfold packed at *; omega) (by omega) ht)) ?_
+    (VG.Proof.Dsa.AArch64.Generation.packPart_ct src dst len (by unfold packed at *; omega_using [hsrc])
+      (by unfold packed at *; omega_using [hend]) (by omega_using [hlen]) ht)) ?_
   intro P t ⟨s, A, hP, L, ⟨V, W, R, h5⟩, scr⟩
   exact WP.mono (packPart_stage hb A L R h5 scr src dst len hsrc hdst hend hlen)
     fun t' ⟨L', R', scr'⟩ => ⟨s, A, hP, L', ⟨V, W, R', h5⟩, scr'⟩

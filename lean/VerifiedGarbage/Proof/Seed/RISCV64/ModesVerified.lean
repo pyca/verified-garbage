@@ -103,7 +103,7 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.Di
   refine ⟨al, by rw [total_eq]; exact sp, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
     by rw [e16]; exact fV, by rw [hwr, hstep]; simp, by rw [hstep]; exact fD,
     by rw [hstep, scr_eq]; exact dSD.symm, by rw [eV, scr_eq]; exact dSV.symm,
-    fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e16]; omega⟩, layout d hg1 hg⟩
+    fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega_using [hstep], by rw [e16]; omega_using [hstep]⟩, layout d hg1 hg⟩
 
 theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.Direction) {g : Nat}
     (hstep : M.step = 16) {s : State} (h : (modeContract g post).pre s) :

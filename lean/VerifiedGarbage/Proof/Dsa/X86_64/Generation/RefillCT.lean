@@ -6,14 +6,62 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillCTOutput
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillCorrect
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInnerCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetupCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetupCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.TCB.X86_64.Target
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterCTState
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputPlan
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Bignum.Octets
+
+/-! ### `Dsa.X86_64.Generation.EntryInnerCT`, which only this module used -/
+
+section
+
+/-! # The inner ABI frame preserves the proved generator trace and stack pointer -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Proof.MillerRabin.X86_64 VG.Impl.Dsa.X86_64.Generation
+
+variable {checkName : String}
+
+theorem generation_alloc {s : State} {bytes : Nat}
+    (hb : 0 < bytes ∧ bytes < 4096 ∧ bytes % 8 = 0) (hl : bytes ≤ (s.gpr .rsp).toNat) :
+    isa.push (.alloc bytes) s = some (allocState bytes s) := by
+  simp only [isa, push, allocState]
+  exact ite_eq_left ⟨hb.1, hb.2.1, hb.2.2, hl⟩
+
+theorem generation_free_rsp {s u v : State} {bytes : Nat}
+    (h : isa.pop (.free bytes) (allocState bytes s) u = some v) : v.gpr .rsp = s.gpr .rsp := by
+  simp only [isa, pop] at h
+  split at h
+  · rename_i hc
+    obtain rfl := Option.some.inj h
+    exact freeState_rsp hc.2.2.2.1
+  · cases h
+
+end VG.Proof.Dsa.X86_64.Generation
+
+end
+
+end
+
 
 -- separate module: its proofs build in parallel with the correctness ones, `RefillBackend`
 
@@ -193,15 +241,15 @@ theorem refillInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
   have la : 568 ≤ (s.gpr .rsp).toNat := hs.stackLower
   have lb : 568 ≤ (t.gpr .rsp).toNat := ht.stackLower
   have arsp : (a.gpr .rsp).toNat = (s.gpr .rsp).toNat - 48 := by
-    rw [ga]; exact Refill.toNat_sub_k (by omega)
+    rw [ga]; exact Refill.toNat_sub_k (by omega_using [la])
   have brsp : (b.gpr .rsp).toNat = (t.gpr .rsp).toNat - 48 := by
-    rw [gb]; exact Refill.toNat_sub_k (by omega)
+    rw [gb]; exact Refill.toNat_sub_k (by omega_using [lb])
   cases ea with
   | frame pa ia qa =>
     cases eb with
     | frame pb ib qb =>
-      rw [generation_alloc (by decide) (by omega), Option.some.injEq] at pa
-      rw [generation_alloc (by decide) (by omega), Option.some.injEq] at pb
+      rw [generation_alloc (by decide) (by omega_using [la, arsp]), Option.some.injEq] at pa
+      rw [generation_alloc (by decide) (by omega_using [lb, brsp]), Option.some.injEq] at pb
       subst pa; subst pb
       cases ia with
       | frame pa' ba qa' =>
@@ -209,10 +257,10 @@ theorem refillInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
         | frame pb' bb qb' =>
           rw [generation_alloc (by decide) (by
             change 296 ≤ (a.gpr .rsp - BitVec.ofNat 64 32).toNat
-            rw [Refill.toNat_sub_k (by omega)]; omega), Option.some.injEq] at pa'
+            rw [Refill.toNat_sub_k (by omega_using [la, arsp])]; omega_using [la, arsp]), Option.some.injEq] at pa'
           rw [generation_alloc (by decide) (by
             change 296 ≤ (b.gpr .rsp - BitVec.ofNat 64 32).toNat
-            rw [Refill.toNat_sub_k (by omega)]; omega), Option.some.injEq] at pb'
+            rw [Refill.toNat_sub_k (by omega_using [lb, brsp])]; omega_using [lb, brsp]), Option.some.injEq] at pb'
           subst pa'; subst pb'
           have ia := refill_init hs ga ra wa fa
           have ib := refill_init ht gb rb wb fb
@@ -243,8 +291,8 @@ theorem refill_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
   | frame pa ba _ =>
     cases eb with
     | frame pb bb _ =>
-      rw [generation_alloc (by decide) (by omega : 48 ≤ (s.gpr .rsp).toNat), Option.some.injEq] at pa
-      rw [generation_alloc (by decide) (by omega : 48 ≤ (t.gpr .rsp).toNat), Option.some.injEq] at pb
+      rw [generation_alloc (by decide) (by omega_using [la] : 48 ≤ (s.gpr .rsp).toNat), Option.some.injEq] at pa
+      rw [generation_alloc (by decide) (by omega_using [lb] : 48 ≤ (t.gpr .rsp).toNat), Option.some.injEq] at pb
       subst pa; subst pb
       cases ba with | seq sa restA => cases restA with | seq ia ra =>
       cases bb with | seq sb restB => cases restB with | seq ib rb =>

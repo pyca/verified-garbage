@@ -31,7 +31,7 @@ theorem candidateBytes_eq_bytesAt (m : Mem) (p : Addr) (n : Nat) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [candidateBytes_append,candidateBytes_one,ih,show 3*(n+1)=3*n+3 by omega,
+    rw [candidateBytes_append,candidateBytes_one,ih,show 3*(n+1)=3*n+3 by omega_using [],
       bytesAt_append]
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

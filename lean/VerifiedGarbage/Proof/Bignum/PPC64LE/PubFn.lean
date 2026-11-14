@@ -62,17 +62,17 @@ theorem ofNat_add7_shr3 (k : Nat) (hk : k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hk]
 
 theorem ofNat_shl3 (a : Nat) : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem ofNat_shl1 (a : Nat) : BitVec.ofNat 64 a <<< 1 = BitVec.ofNat 64 (2 * a) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-- `setup`, `out` and `k` in `r3` and `r4` and the working space at `r23`. -/
 theorem setup_ok {s : State} {S : Addr} {k : Nat} (h4 : s.gpr .r4 = BitVec.ofNat 64 k)
@@ -85,7 +85,7 @@ theorem setup_ok {s : State} {S : Addr} {k : Nat} (h4 : s.gpr .r4 = BitVec.ofNat
       Keep [.r10, .r11, .r27, .r28, .r29] s t := by
   refine WP.keep _ ?_ (by decide)
   unfold setup
-  prun [h4, h23, BitVec.add_zero, ofNat_add7_shr3 k (by omega), ofNat_shl3, ofNat_shl1, hdrBytes]
+  prun [h4, h23, BitVec.add_zero, ofNat_add7_shr3 k (by omega_using [hk]), ofNat_shl3, ofNat_shl1, hdrBytes]
   refine ⟨?_, by simp [off, slot, hdrBytes]⟩
   rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]
   congr 1

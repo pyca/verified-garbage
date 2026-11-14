@@ -58,13 +58,13 @@ theorem tabSlot_ok {G : Stream} {f : Fns} {j : Nat} (hj : arg j < 32768 ∧ arg 
 /-- The digest length of the table at `p`, whose address is in its slot, to
 `x16`. -/
 theorem lenLoad_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (h32 : W 32 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 32) 8) {D : Nat}
-    (hD : u.mem.readW (off p 32) 64 = BitVec.ofNat 64 D) :
+    (R : Rep u.mem F S V W) (h32 : W 32 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 48) 8) {D : Nat}
+    (hD : u.mem.readW (off p 48) 64 = BitVec.ofNat 64 D) :
     WP isa (.block lenLoad) u fun u' => Step F S [] u u' ∧ u'.mem = u.mem ∧ u'.gpr .x16 = BitVec.ofNat 64 D ∧
       u'.gpr .x0 = u.gpr .x0 := by
   have h256 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 256) 8 := L.ld (d := 256) (by decide)
   have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) h32
-  have hD' : u.mem.read (p + BitVec.ofNat 64 32) 8 = BitVec.ofNat 64 D := by simpa [Mem.readW] using hD
+  have hD' : u.mem.read (p + BitVec.ofNat 64 48) 8 = BitVec.ofNat 64 D := by simpa [Mem.readW] using hD
   oaep_run [lenLoad, sTab, h256, L.sp, r32, hrd, hD']
   oaep_fin
 
@@ -73,7 +73,7 @@ theorem mem_lens {G : Spec.Mgf1.Hash} (h : G ∈ VG.Proof.Pbkdf2.Md.AArch64.mdHa
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem mem_lens_lt {d : Nat} (h : d ∈ lens) : d < 4096 := by
-  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [lens, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem ofNat_sub_beq {j N : Nat} (hj : j < 2 ^ 64) (hN : N < 2 ^ 64) :
     (BitVec.ofNat 64 j - BitVec.ofNat 64 N == 0) = decide (j = N) := by
@@ -94,7 +94,7 @@ theorem cmpLen_ok {F S : Addr} {u : State} {d x : Nat} (h16 : u.gpr .x16 = BitVe
       Step F S [] u u' ∧ u'.mem = u.mem ∧ (∀ r, r ≠ .x17 → u'.gpr r = u.gpr r) := by
   oaep_run [h16, hx]
   refine ⟨?_, blk_step, trivial, fun r hr => by simp [hr]⟩
-  rw [ofNat_sub_beq (by omega) (by omega)]
+  rw [ofNat_sub_beq (by omega_using [hd]) (by omega_using [hx])]
 
 /-- The code for the digest length `d` in `x16`, from a state that differs
 only in `x17`. -/
@@ -190,11 +190,11 @@ theorem hashLabelT_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.ha
     fun u6 ⟨L6, S6, R6, hr6⟩ => ?_
   have hlb : (Spec.Rsa.bytesAt u2.mem lab labLen).length = labLen := by
     simp [Spec.Rsa.bytesAt]
-  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega) (by rw [x15, hlb])
+  have hdig := hr6 _ (hm5 ▸ hR4) (by rw [hlb]; omega_using [hlen]) (by rw [x15, hlb])
   have hlab : Spec.Rsa.bytesAt u2.mem lab labLen = Spec.Rsa.bytesAt u.mem lab labLen := by
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => (S1.trans S2).frame.bytes (R := ⟨lab, labLen⟩) (fun r hr => ?_)
-      (by show labLen ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+      (by show labLen ≤ 2 ^ 64; omega_using [hlen]) (List.mem_range.mp hi)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     exacts [A.dF, A.dS, A.dK.symm]
@@ -202,9 +202,9 @@ theorem hashLabelT_ok {Hs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hG.SH.H.ha
   refine ⟨L6, S15.trans S6, V6, R6, fun x hx => ?_, fun i hi => ?_⟩
   · simp only [labR, inR_cons, inR_nil, or_false] at hx
     have : hG.Wb ≤ 1072 := hzW
-    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
-  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig i hi, hHh, hlab]
+    rw [hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzF, hzW, hx]),
+      hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzW, hx]),
+      hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hx])]
+  · rw [hV6' _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzDF, hi]), hdig i hi, hHh, hlab]
 
 end VG.Proof.RsaOaep.AArch64

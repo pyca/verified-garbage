@@ -49,7 +49,7 @@ theorem mulAddSave_ok {s : State} {base : Addr} (hc : s.gpr .x4 = base)
   simp only [mulAddSave, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
     exec, addr, Size.bytes, State.store, read_x, hc, BitVec.setWidth_eq,
     Nat.reduceMod, Nat.reduceMul, Nat.reduceLT, and_self, ite_true,
-    w 0 (by omega), w 8 (by omega), w 16 (by omega), w 24 (by omega), w 32 (by omega), w 40 (by omega),
+    w 0 (by omega_using []), w 8 (by omega_using []), w 16 (by omega_using []), w 24 (by omega_using []), w 32 (by omega_using []), w 40 (by omega_using []),
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨True.intro, True.intro, True.intro, True.intro, ?_, fun rd hrd => ?_⟩
   · exact ((((((Outside.refl base 0 48 s.mem).writeW (by decide) (by decide) (by decide) _).writeW
@@ -91,8 +91,8 @@ theorem copyScalar_ok {s : State} {base : Addr} (hs : Scr s base)
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) ho) fun u hu => ?_
   subst u
   refine ⟨?_, hk.gpr, hk.rd, hk.wr, hk.sp, ?_⟩
-  · rw [fe_st4 _ _ (by have hh := ho.2; change o + 32 ≤ 8192 at hh; omega)]; exact hv
-  · rw [hk.mem]; exact st4_outside _ _ (by have hh := ho.2; change o + 32 ≤ 8192 at hh; omega) _ _ _ _
+  · rw [fe_st4 _ _ (by have hh := ho.2; change o + 32 ≤ 8192 at hh; omega_using [hh])]; exact hv
+  · rw [hk.mem]; exact st4_outside _ _ (by have hh := ho.2; change o + 32 ≤ 8192 at hh; omega_using [hh]) _ _ _ _
 
 theorem Saved.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved base g m)
     {o n : Nat} (ho : Outside base o n m m') (hn : 48 ≤ o) : Saved base g m' := by
@@ -100,7 +100,7 @@ theorem Saved.outside {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Sa
   have hd : rd.2 + 8 ≤ 48 := by
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  rw [ho.word (Or.inl (by omega)) (by omega)]
+  rw [ho.word (Or.inl (by omega_using [hn, hd])) (by omega_using [hd])]
   exact h rd hr
 
 end VG.Proof.Ed25519.AArch64

@@ -139,7 +139,7 @@ theorem feistelTree_check :
 theorem feiCfg_ok {s : State} (h : Ok scratchCfg s) : Ok feiCfg s where
   slotIn k hk := by simp [feiCfg] at hk
   extIn k hk := by
-    obtain ⟨r, hr, hc⟩ := h.slotIn k (by simp only [feiCfg] at hk; simp only [scratchCfg]; omega)
+    obtain ⟨r, hr, hc⟩ := h.slotIn k (by simp only [feiCfg] at hk; simp only [scratchCfg]; omega_using [hk])
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   slots := by decide
   sep k hk := by simp [feiCfg] at hk
@@ -226,9 +226,9 @@ theorem feistelTree_ok (s : State) (h : FeiReady s) :
       split at hja
       · cases hja
         intro p hp
-        have hc : j - 15 < 47 := by simp only [feiCfg] at hj; omega
+        have hc : j - 15 < 47 := by simp only [feiCfg] at hj; omega_using [hj]
         have hw := h.consts (j - 15) hc
-        rw [show 15 + (j - 15) = j by omega] at hw
+        rw [show 15 + (j - 15) = j by omega_arith] at hw
         rw [testBit_spreadConst hp (hcs p hp), BitVec.testBit_toNat]
         exact congrArg (fun x : BitVec 64 => x.getLsbD p) hw.symm
       · cases hja
@@ -269,13 +269,13 @@ theorem bitOf_lo (W : Nat → BitVec 64) {a : Nat} (ha : a < 64) : bitOf W a = (
 
 theorem bitOf_hi (W : Nat → BitVec 64) {a : Nat} (ha : a < 64) :
     bitOf W (64 + a) = (W 1).getLsbD a := by
-  have hd : (64 + a) / 64 = 1 := by omega
+  have hd : (64 + a) / 64 = 1 := by omega_using [ha]
   simp only [bitOf, hd, Nat.add_mod_left, Nat.mod_eq_of_lt ha]
 
 theorem maskBits_bounds : ∀ p < 64, ∀ k < 6,
     32 - Spec.TripleDes.expansion.getD (6 * (7 - p / 8) + 5 - k) 1 < 64 ∧
     47 - (6 * (7 - p / 8) + 5 - k) < 64 := by
-  intro p _ k _; omega
+  intro p _ k _; omega_using []
 
 /-- Each lane's input bits are its S-box's six bits of E of R XORed with
 the round key. -/
@@ -285,7 +285,7 @@ theorem laneInput_eq {s s' : State}
     laneInput s' p = roundChunk (7 - p / 8) ((s.gpr .r15).setWidth 32) ((s.gpr t4).setWidth 48) := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  rw [laneInput, getLsbD_ofBits, roundChunk_bit (7 - p / 8) k (by omega) hk, hm k hk p hp]
+  rw [laneInput, getLsbD_ofBits, roundChunk_bit (7 - p / 8) k (by omega_using []) hk, hm k hk p hp]
   obtain ⟨h1, h2⟩ := maskBits_bounds p hp k hk
   simp only [hk, decide_true, Bool.true_and, maskBits, xorBits_cons, xorBits_nil, Bool.xor_false,
     bitOf_lo _ h1, bitOf_hi _ h2, inWords, ite_true, show (1 : Nat) ≠ 0 by decide, ite_false]
@@ -295,14 +295,14 @@ output on every input. -/
 theorem lane_pair (b l x : Nat) (hl : l < 4) (hx : x < 64) :
     (laneBit (8 * b + l) x ^^ laneBit (8 * b + l + 4) x) =
       (Spec.TripleDes.sBox (7 - b) (BitVec.ofNat 6 x)).getLsbD (laneOut b l) := by
-  have h1 : (8 * b + l) / 8 = b := by omega
-  have h2 : (8 * b + l) % 8 = l := by omega
-  have h3 : (8 * b + l + 4) / 8 = b := by omega
-  have h4 : (8 * b + l + 4) % 8 = l + 4 := by omega
+  have h1 : (8 * b + l) / 8 = b := by omega_using [hl]
+  have h2 : (8 * b + l) % 8 = l := by omega_using [hl]
+  have h3 : (8 * b + l + 4) / 8 = b := by omega_using [hl]
+  have h4 : (8 * b + l + 4) % 8 = l + 4 := by omega_using [hl]
   have h5 : laneOut b (l + 4) = laneOut b l := by
-    simp only [laneOut, show (l + 4) % 4 = l % 4 by omega]
-  simp only [laneBit, h1, h2, h3, h4, h5, show l / 4 = 0 by omega, show (l + 4) / 4 = 1 by omega]
-  rcases (show x / 32 = 0 ∨ x / 32 = 1 by omega) with hx' | hx' <;> simp [hx']
+    simp only [laneOut, show (l + 4) % 4 = l % 4 by omega_using []]
+  simp only [laneBit, h1, h2, h3, h4, h5, show l / 4 = 0 by omega_using [hl], show (l + 4) / 4 = 1 by omega_using [hl]]
+  rcases (show x / 32 = 0 ∨ x / 32 = 1 by omega_using [hx]) with hx' | hx' <;> simp [hx']
 
 theorem pSrc_shape : ∀ q < 32,
     let t := 32 - Spec.TripleDes.p.getD (31 - q) 1
@@ -393,19 +393,19 @@ theorem feistel_ok (s : State) (h : FeiReady s) (l r : BitVec 32)
       generalize 32 - Spec.TripleDes.p.getD (31 - q) 1 = t at hb hll hlo hsrc ⊢
       generalize hb' : t / 4 = b at hb hll hlo hsrc ⊢
       generalize hl' : outLane b (t % 4) = ll at hll hlo hsrc
-      have hs64 : pSrc q < 64 := by omega
-      have hs64' : pSrc q + 4 < 64 := by omega
+      have hs64 : pSrc q < 64 := by omega_using [hb, hll, hsrc]
+      have hs64' : pSrc q + 4 < 64 := by omega_using [hb, hll, hsrc]
       rw [bitOf_lo _ hs64, bitOf_lo _ hs64']
       simp only [outWords, ite_true]
       rw [tabs _ hs64, tabs _ hs64', laneInput_eq masks _ hs64, laneInput_eq masks _ hs64', hsrc,
-        show (8 * b + ll + 4) / 8 = b by omega, show (8 * b + ll) / 8 = b by omega,
+        show (8 * b + ll + 4) / 8 = b by omega_using [hll], show (8 * b + ll) / 8 = b by omega_using [hll],
         lane_pair b ll _ hll (BitVec.isLt _), hlo, hR₀, hK₀, BitVec.ofNat_toNat,
         BitVec.setWidth_eq]
       rfl
     · simp only [outBits, hq32, ite_false, List.append_nil, xorBits_cons, xorBits_nil,
         Bool.xor_false, hLq, BitVec.getLsbD_setWidth, BitVec.getLsbD_xor]
-      rw [BitVec.getLsbD_of_ge l q (by omega),
-        BitVec.getLsbD_of_ge (Spec.TripleDes.roundFunction _ _) q (by omega)]
+      rw [BitVec.getLsbD_of_ge l q (by omega_using [hq32]),
+        BitVec.getLsbD_of_ge (Spec.TripleDes.roundFunction _ _) q (by omega_using [hq32])]
       rfl
   · have hA : q ∈ .r14 :: feistelKept := List.mem_cons_of_mem _ hq
     have hne : q ≠ t4 := by revert hq; cases q <;> decide

@@ -103,7 +103,7 @@ theorem sr_of {T : Tabs} {a w : State} (h : ∃ s, E T a s ∧ AtM T.H.D s w) :
   · show 1 ≤ (a.gpr .x1).toNat; rw [← h1]; exact hk1
   · show (a.gpr .x1).toNat ≤ 1024; rw [← h1]; exact hk2
   · show T.H.D + (a.gpr .x4).toNat + 2 ≤ (a.gpr .x1).toNat - 0
-    rw [← h1, ← h4]; omega
+    rw [← h1, ← h4]; omega_using [hf]
 
 section
 variable {T : Tabs} (hH : HashOK T.H) (hGm : VG.Proof.Pbkdf2.Md.AArch64.Calls.StreamOK T.G)
@@ -136,7 +136,7 @@ theorem main_ct : RelCT isa (Two fun a w => ∃ s, E T a s ∧ AtM T.H.D s w) (e
 
 include hH hHs hGh hGl hGv hc hdo in
 theorem code_ct : RelCT isa (Two (E T)) (encode T.f T.H T.g) fun _ _ => True := by
-  have hD : T.H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega
+  have hD : T.H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   unfold encode
   refine two_alloc (R := fun _ _ => True) ?_
   unfold encBody seqs seqs seqs
@@ -164,7 +164,7 @@ theorem code_ct : RelCT isa (Two (E T)) (encode T.f T.H T.g) fun _ _ => True := 
     rw [WP.block_append_iff]
     exact WP.mono (tabSlotsT_ok h.1 hu o e9 sy) fun u₀ hu₀ =>
       WP.mono_syms (fitH_ok T.H hD (k := (s.gpr .x1).toNat) (by rw [hu₀.e.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-        (by omega)) fun t' ⟨O, x9, x10⟩ sy' => ⟨s, h, hu₀.only O sy', x9, x10⟩
+        (by omega_using [hk2])) fun t' ⟨O, x9, x10⟩ sy' => ⟨s, h, hu₀.only O sy', x9, x10⟩
   refine RelCT.seq ?_ (two_taint (Φ := fun a t => t.sp = fb a) [] (fun a t₁ t₂ h₁ h₂ =>
     ⟨by rw [h₁, h₂], fun _ h => absurd h List.not_mem_nil⟩) (by taint_decide))
   refine two_ite (fun a u₁ u₂ ⟨s₁, h₁, _, _, x₁⟩ ⟨s₂, h₂, _, _, x₂⟩ => by
@@ -182,7 +182,7 @@ theorem code_ct : RelCT isa (Two (E T)) (encode T.f T.H T.g) fun _ _ => True := 
     have hk2 := h.1.k2
     exact WP.mono_syms (saltFits_ok T.H hD (F := fb s) j.e.sp
       (by rw [j.e.rd, j.e.wr]; exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide) (by decide))))
-      (a := (s.gpr .x1).toNat) (sl := (s.gpr .x4).toNat) (by omega) (by omega) x9
+      (a := (s.gpr .x1).toNat) (sl := (s.gpr .x4).toNat) (by omega_using [hb]) (by omega_using [hk2]) x9
       (by rw [j.e.fr.rs (.x4, sSaltLen) (by simp [encSlots]), BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (s.gpr .x4).isLt) fun w ⟨O, x9', x10'⟩ sy => ⟨s, h, j.only O sy, x9', x10', hb⟩
   refine two_ite (fun a u₁ u₂ ⟨s₁, h₁, _, _, x₁, _⟩ ⟨s₂, h₂, _, _, x₂, _⟩ => by
@@ -194,7 +194,7 @@ theorem code_ct : RelCT isa (Two (E T)) (encode T.f T.H T.g) fun _ _ => True := 
       ¬ (s.gpr .x1).toNat < T.H.D + 2) ∧ isa.eval (.nonzero .x .x10) w = some false) →
       ∃ s, E T a s ∧ AtM T.H.D s w := fun a w ⟨⟨s, h, j, x9, x10, hk⟩, hb⟩ => by
     rw [eval_nonzero, x10, Option.some.injEq, decide_eq_false_iff_not] at hb
-    exact ⟨s, h, j, x9, by omega⟩
+    exact ⟨s, h, j, x9, by omega_using [hk, hb]⟩
   exact two_post (two_map (fun a => a) hm (main_ct hH hGm hHs hGh hGl hGv hc hdo)) fun a w hw => by
     obtain ⟨s, h, m⟩ := hm a w hw
     unfold encMain seqs seqs

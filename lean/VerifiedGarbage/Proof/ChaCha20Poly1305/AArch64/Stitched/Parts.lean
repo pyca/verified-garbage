@@ -97,7 +97,7 @@ theorem absorbLengths_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv
   have m₁ := k₁.mem_eq
   refine blocks_call (n := 1) h0 h1 h2 (by lit_omega)
     (sub_disj s₀ (b := 0) (m := 16 * 1) (by lit_omega) (by lit_omega) (by lit_omega))
-    (by rw [hp.off_toNat (by lit_omega)]; have := hp.wrap_c; omega)
+    (by rw [hp.off_toNat (by lit_omega)]; have := hp.wrap_c; omega_using [this])
     (covers2 hp wr₁ (a := 448) (n := 128) (b := 0) (m := 16 * 1) (by lit_omega) (by lit_omega))
     (covers1 hp wr₁ (a := 448) (n := 128) (by lit_omega)) fun s₂ k₂ repr₂ => ?_
   have hk : Kept (macR s₀) s s₂ :=
@@ -115,17 +115,17 @@ theorem finalizeTo_ok0 {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv0 e
   rw [h.x21] at h0 h2
   have wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, h.wr]
   have m₁ := k₁.mem_eq
-  have ho : out + 16 ≤ 1280 := by omega
+  have ho : out + 16 ≤ 1280 := by omega_using [hout]
   refine finalize_call h0 h1 h2 (sub_disj s₀ (by lit_omega) (by lit_omega) ho)
     (Covers.right (covers_sub hp wr₁ _ (by
       intro r hr; simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨448, rfl, show 448 + 128 ≤ 1280 by omega⟩
+      · exact ⟨448, rfl, show 448 + 128 ≤ 1280 by omega_using []⟩
       · exact ⟨out, rfl, ho⟩)))
     (covers_sub hp wr₁ _ (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨448, rfl, show 448 + 128 ≤ 1280 by omega⟩
+      · exact ⟨448, rfl, show 448 + 128 ≤ 1280 by omega_using []⟩
       · exact ⟨out, rfl, ho⟩))
     fun s₂ k₂ tag₂ => ?_
   exact ⟨(k₁.sub fun _ hr => absurd hr List.not_mem_nil).trans k₂,

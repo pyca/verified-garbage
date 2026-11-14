@@ -34,8 +34,8 @@ theorem Context.address {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat
     (C : Context base size p inputs s) {i : Nat} (index : i < 18) :
     s.ea (arg i) = off (argsRegion p).base (4 * i) := by
   change addr (s.gpr .esp) (20 + 4 * i) = _
-  rw [C.sp, addr_eq (by have := C.fit; omega)]
-  have start : (p + 20#32).setWidth 64 = off (p.setWidth 64) 20 := addr_eq (by have := C.fit; omega)
+  rw [C.sp, addr_eq (by have := C.fit; omega_using [index, this])]
+  have start : (p + 20#32).setWidth 64 = off (p.setWidth 64) 20 := addr_eq (by have := C.fit; omega_using [this])
   change off (p.setWidth 64) (20 + 4 * i) = off ((p + 20#32).setWidth 64) (4 * i)
   rw [start]
   simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
@@ -54,7 +54,7 @@ theorem Context.keep {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat �
     have memory : t.mem.readW (s.ea (arg i)) 32 = s.mem.readW (s.ea (arg i)) 32 := by
       rw [C.address index]
       exact F.readW (r := argsRegion p)
-        (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega) (by omega : 4 * i < 2 ^ 64))
+        (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega_using [index]) (by omega_using [index] : 4 * i < 2 ^ 64))
         (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact C.separate) (by decide)
     have same : readSrc t (.mem (arg i)) = readSrc s (.mem (arg i)) := by
       show t.load32 (t.ea (arg i)) = s.load32 (s.ea (arg i))
@@ -70,14 +70,14 @@ theorem args_below_disjoint {p : BitVec 32} (low : 52 ≤ p.toNat) (fit : p.toNa
   have e₁ : ((p + 20#32).setWidth 64).toNat = p.toNat + 20 := by
     rw [BitVec.toNat_setWidth, BitVec.toNat_add]
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [fit])]
   have e₂ : ((p - 52#32).setWidth 64).toNat = p.toNat - 52 := by
     rw [BitVec.toNat_setWidth, sub_toNat low]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [])
   rw [BitVec.toNat_sub, e₁] at hx
   rw [BitVec.toNat_sub, e₂] at hb
   have := x.isLt
-  omega
+  omega_using [low, hx, hb]
 
 /-- `Context.keep`, for code that also writes the stack below `esp` that a call uses. -/
 theorem Context.keepBelow {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat → BitVec 32} {s t : State}
@@ -94,7 +94,7 @@ theorem Context.keepBelow {base : Addr} {size : Nat} {p : BitVec 32} {inputs : N
   have memory : t.mem.readW (s.ea (arg i)) 32 = s.mem.readW (s.ea (arg i)) 32 := by
     rw [C.address index]
     refine F.readW (r := argsRegion p)
-      (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega) (by omega : 4 * i < 2 ^ 64)) ?_ (by decide)
+      (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega_using [index]) (by omega_using [index] : 4 * i < 2 ^ 64)) ?_ (by decide)
     intro r mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl

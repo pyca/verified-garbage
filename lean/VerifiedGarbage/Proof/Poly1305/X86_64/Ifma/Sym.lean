@@ -214,16 +214,16 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
         rw [qword_punpcklqdq _ _ (mod2_lt k)]
         split
         · rename_i h0; rw [hR a k hk, qz, h0]
-        · rw [hR b (k - 1) (by omega), qz, show (k - 1) / 2 = k / 2 by omega,
-            show (k - 1) % 2 = 0 by omega]
+        · rw [hR b (k - 1) (by omega_using [hk]), qz, show (k - 1) / 2 = k / 2 by omega_arith,
+            show (k - 1) % 2 = 0 by omega_arith]
       · cases e
         refine h.set (hv_of (fun k hk => ?_) (fun r hr k hk => by rw [qz_zbin _ _ _ _ _ _ hk, ite_eq_right hr])) he
         rw [qz_zbin _ _ _ _ _ _ hk, ite_eq_left rfl]; simp only [ZBinOp.sse, Q.eval]
         rw [qword_punpckhqdq _ _ (mod2_lt k)]
         split
-        · rw [hR a (k + 1) (by omega), qz, show (k + 1) / 2 = k / 2 by omega,
-            show (k + 1) % 2 = 1 by omega]
-        · rw [hR b k hk, qz, show k % 2 = 1 by omega]
+        · rw [hR a (k + 1) (by omega_arith), qz, show (k + 1) / 2 = k / 2 by omega_arith,
+            show (k + 1) % 2 = 1 by omega_arith]
+        · rw [hR b k hk, qz, show k % 2 = 1 by omega_arith]
       · split at e
         · rename_i hab
           cases e; subst hab

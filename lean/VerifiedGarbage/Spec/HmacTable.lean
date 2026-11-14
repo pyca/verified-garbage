@@ -20,12 +20,13 @@ addresses of `fns` functions, which the function calls indirectly
    through (HMAC's state is the inner hash's);
 2. HMAC's `finalize`, which writes the MAC (`vg_hmac_<h>_finalize`);
 
-then three words of data: the two a table of `Hash` (`Spec/HashTable.lean`)
-has, the index of the hash function `H` in `Mgf1.hashes` and its digest
-length `hLen` in octets, and HMAC's block size, in octets, which the caller
-needs for the counts the streaming `update` and HMAC's `finalize` take (the
-inner hash's input starts with a block of key). The table names `H`
-(`hashAt`) and HMAC over it with `H`'s block size (`hmacOf H`).
+then three words of data: the two of `HashTable.dataOf`
+(`Spec/HashTable.lean`), the index of the hash function `H` in `Mgf1.hashes`
+and its digest length `hLen` in octets, and HMAC's block size, in octets,
+which the caller needs for the counts the streaming `update` and HMAC's
+`finalize` take (the inner hash's input starts with a block of key). The
+table names `H` (`hashAt`) and HMAC over it with `H`'s block size
+(`hmacOf H`).
 
 A contract says what a function computes with the HMAC its table names. It
 does not say what the table's functions do: the proof of each function

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Generate
 public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate, as the implementations compute it
@@ -32,8 +33,8 @@ theorem draw_drop (r : Rand) (a n : Nat) (hn : 0 < n) :
   unfold draw seg
   simp only [List.length_take, List.length_drop, List.drop_drop]
   by_cases h : a + n ≤ r.length
-  · rw [ite_t (by omega), ite_t h, Nat.add_comm]
-  · rw [ite_f (by omega), ite_f h]
+  · rw [ite_t (by omega_using [h]), ite_t h, Nat.add_comm]
+  · rw [ite_f (by omega_using [hn, h]), ite_f h]
 
 /-- What `candidateStep` makes of a candidate `c` once drawn, for the
 randomness `r'` after it. -/
@@ -52,7 +53,7 @@ theorem candidateStep_eq (L e : Nat) (p : Option Nat) (r : Rand) (hL : 0 < L) :
   have hd := draw_drop r 0 L hL
   simp only [List.drop_zero, Nat.zero_add] at hd
   unfold candidateStep afterDraw
-  rw [show 8 * L / 8 = L by omega, hd]
+  rw [show 8 * L / 8 = L by omega_using [], hd]
   by_cases h : L ≤ r.length
   · simp only [h, ↓reduceIte, Option.bind_eq_bind, Option.bind_some]
     split
@@ -86,7 +87,7 @@ theorem mrLoop_step (c checks a m L : Nat) (r : Rand) (i uni used : Nat) (hgo : 
   · by_cases hm : mrIteration c a m (witness (c - 1) (os2ip (seg r used L))).1 = true
     · simp only [hgo, ↓reduceIte, hwb, draw_drop r used L hL, h, hm, Option.bind_eq_bind, Option.bind_some,
         Option.pure_def, List.length_drop]
-      exact ite_t (by omega) _ _
+      exact ite_t (by omega_using [hL, h]) _ _
     · simp only [hgo, ↓reduceIte, hwb, draw_drop r used L hL, h, hm, Option.bind_eq_bind, Option.bind_some,
         Option.pure_def, Bool.false_eq_true]
   · simp only [hgo, ↓reduceIte, hwb, draw_drop r used L hL, h, Option.bind_eq_bind, Option.bind_none]
@@ -102,7 +103,7 @@ theorem mrLoop_done (c checks a m : Nat) (r : Rand) (i uni : Nat) (hgo : ¬(i �
 
 theorem bitLength_eq {n b : Nat} (h1 : 2 ^ b ≤ n) (h2 : n < 2 ^ (b + 1)) : bitLength n = b + 1 := by
   unfold bitLength
-  rw [ite_f (by have := Nat.two_pow_pos b; omega), (Nat.log2_eq_iff (by have := Nat.two_pow_pos b; omega)).mpr ⟨h1, h2⟩]
+  rw [ite_f (by have := Nat.two_pow_pos b; omega_using [h1, h2]), (Nat.log2_eq_iff (by have := Nat.two_pow_pos b; omega_using [h1, h2])).mpr ⟨h1, h2⟩]
 
 /-- A candidate of `64 w` bits: the bits of it and of it minus one, and the
 octets of a witness. -/
@@ -110,16 +111,16 @@ theorem cand_bits {w c : Nat} (hw : 1 ≤ w) (hc : PrimeShape (64 * w) c) :
     bitLength c = 64 * w ∧ bitLength (c - 1) = 64 * w ∧ witnessBytes c = 8 * w := by
   obtain ⟨hodd, hlo, hhi⟩ := hc
   have h2 : 2 ^ (64 * w) = 2 ^ (64 * w - 2) * 4 := by
-    rw [show (4 : Nat) = 2 ^ 2 from rfl, ← Nat.pow_add]; congr 1; omega
+    rw [show (4 : Nat) = 2 ^ 2 from rfl, ← Nat.pow_add]; congr 1; omega_using [hw]
   have h1 : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by
-    rw [← Nat.pow_succ]; congr 1; omega
-  have hb1 := bitLength_eq (n := c) (b := 64 * w - 1) (by omega) (by rw [show 64 * w - 1 + 1 = 64 * w by omega]; omega)
-  have hb2 := bitLength_eq (n := c - 1) (b := 64 * w - 1) (by omega)
-    (by rw [show 64 * w - 1 + 1 = 64 * w by omega]; omega)
-  refine ⟨by rw [hb1]; omega, by rw [hb2]; omega, ?_⟩
+    rw [← Nat.pow_succ]; congr 1; omega_using [hw]
+  have hb1 := bitLength_eq (n := c) (b := 64 * w - 1) (by omega_using [hlo, h1]) (by rw [show 64 * w - 1 + 1 = 64 * w by omega_using [hw]]; omega_using [hhi])
+  have hb2 := bitLength_eq (n := c - 1) (b := 64 * w - 1) (by omega_using [hlo, h1])
+    (by rw [show 64 * w - 1 + 1 = 64 * w by omega_using [hw]]; omega_using [hhi])
+  refine ⟨by rw [hb1]; omega_using [hw], by rw [hb2]; omega_using [hw], ?_⟩
   unfold witnessBytes
-  rw [hb2, show 64 * w - 1 + 1 = 64 * w by omega]
-  omega
+  rw [hb2, show 64 * w - 1 + 1 = 64 * w by omega_using [hw]]
+  omega_using []
 
 /-- `primalityTest` of a candidate: the witnesses' loop from `(1, 0)`. -/
 theorem primalityTest_cand {w c : Nat} (hw : 1 ≤ w) (hc : PrimeShape (64 * w) c) (r : Rand) :
@@ -129,9 +130,9 @@ theorem primalityTest_cand {w c : Nat} (hw : 1 ≤ w) (hc : PrimeShape (64 * w) 
   obtain ⟨hodd, hlo, hhi⟩ := hc
   have : 4 ≤ 2 ^ (64 * w - 2) := by
     calc 4 = 2 ^ 2 := rfl
-      _ ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
+      _ ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [hw])
   unfold primalityTest
-  rw [ite_f (by omega), ite_f (by omega), ite_f (by omega), hb]
+  rw [ite_f (by omega_using [hlo, this]), ite_f (by omega_using [hodd]), ite_f (by omega_using [hlo, this]), hb]
 
 /-- `BN_prime_checks_for_size` for the sizes of the candidates, as the
 implementations choose it from `w`. -/

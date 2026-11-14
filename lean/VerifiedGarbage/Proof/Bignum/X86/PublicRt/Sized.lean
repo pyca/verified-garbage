@@ -35,25 +35,25 @@ theorem setup_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   have n0 : numAt len 0 = 256 := by simp [numAt, numOff]
   have wbe := wb_eq len
   rw [n0] at f0
-  have b264 : 264 ≤ bytes := by have := dims.1; simp only [wb] at f0; omega
+  have b264 : 264 ≤ bytes := by have := dims.1; simp only [wb] at f0; omega_using [f0, dims]
   simp only [List.cons_append, List.nil_append, PublicFn.acceptanceOffset] at *
-  refine wp_storeS (h.scratch.ea (d := 144) (by omega)) (h.scratch.write (d := 144) (n := 4) (by omega))
+  refine wp_storeS (h.scratch.ea (d := 144) (by omega_using [f0])) (h.scratch.write (d := 144) (n := 4) (by omega_using [f0]))
     fun u m => ?_
   have hu : Scr u base bytes := h.scratch.of_keeps (m.keeps []) (by decide) (by decide)
-  have O₁ : Outside base 144 4 s.mem u.mem := by rw [m.mem]; exact writeW32_outside _ _ _ (by omega)
+  have O₁ : Outside base 144 4 s.mem u.mem := by rw [m.mem]; exact writeW32_outside _ _ _ (by omega_using [])
   have w₁ : w32 u.mem base numOff = w32 s.mem base numOff :=
-    Outside.w32 O₁ (by simp only [numOff]; omega) (by simp only [numOff]; omega)
+    Outside.w32 O₁ (by simp only [numOff]; omega_using []) (by simp only [numOff]; omega_using [])
   have hodd' : w32 u.mem base numOff % 2 = 1 := by
     rw [w₁]
-    obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega⟩
+    obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega_using [dims]⟩
     rw [hk, val32_parity] at hodd; exact hodd
-  refine WP.mono (setupInverse_ok hu (mo := numOff) (inv := invOff) (by simp only [numOff]; omega) (by simp only [invOff]; omega) hodd')
+  refine WP.mono (setupInverse_ok hu (mo := numOff) (inv := invOff) (by simp only [numOff]; omega_using [b264]) (by simp only [invOff]; omega_using [f0]) hodd')
     fun t ⟨I, O₂, K⟩ => ⟨?_, ?_, ?_, (m.keeps _).trans K⟩
   · have a₂ : t.mem.readW (off base 144) 32 = u.mem.readW (off base 144) 32 :=
-      BitVec.eq_of_toNat_eq (Outside.w32 O₂ (by simp only [invOff]; omega) (by omega))
+      BitVec.eq_of_toNat_eq (Outside.w32 O₂ (by simp only [invOff]; omega_using []) (by omega_using []))
     rw [a₂, m.mem, Mem.readW_writeW_self32, hc]
   · rw [w₁] at I
-    obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega⟩
+    obtain ⟨k, hk⟩ : ∃ k, nw len = k + 1 := ⟨nw len - 1, by simp only [nw]; omega_using [dims]⟩
     rw [hk, val32, Nat.add_mul, Nat.mul_assoc, Nat.add_right_comm, Nat.add_mul_mod_self_left]
     exact I
   · exact (O₁.mono (by decide) (by decide)).trans (O₂.mono (by simp [invOff]) (by simp [invOff]))

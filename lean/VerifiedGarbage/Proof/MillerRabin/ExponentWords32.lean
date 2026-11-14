@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native exponent words are digits of the represented integer -/
 
@@ -14,9 +15,9 @@ theorem val32_digit (m : Mem) (W : Addr) {d N i : Nat} (index : i < N) :
     val32 m W d N / 2 ^ (32 * i) % 2 ^ 32 = w32 m W (d + 4 * i) := by
   have positive : 0 < 2 ^ (32 * i) := Nat.two_pow_pos _
   have low := val32_lt m W d i
-  rw [show N = i + (N - i) by omega, val32_append,
+  rw [show N = i + (N - i) by omega_using [index], val32_append,
     Nat.add_mul_div_left _ _ positive, Nat.div_eq_of_lt low, Nat.zero_add,
-    show N - i = (N - i - 1) + 1 by omega, val32, Nat.add_mul_mod_self_left]
+    show N - i = (N - i - 1) + 1 by omega_using [index], val32, Nat.add_mul_mod_self_left]
   exact Nat.mod_eq_of_lt (m.readW (off W (d + 4 * i)) 32).isLt
 
 theorem read_exponentWord {m : Mem} {W : Addr} {d N i E : Nat}

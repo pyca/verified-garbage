@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Sig
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448's whole functions: their contracts read only their buffers
@@ -30,10 +31,10 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   refine List.map_congr_left fun i hi => (h _ ?_).symm
   have hi := List.mem_range.mp hi
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 variable (pb : Nat)
 
@@ -43,7 +44,7 @@ theorem slice_agree {m₁ m₂ : Mem} {p l : BitVec 64}
     ∀ a, Region.Contains ⟨p, (l.setWidth pb).toNat⟩ a 1 → m₁ a = m₂ a := fun a ha => h a (by
   simp only [Region.Contains, BitVec.toNat_setWidth] at ha ⊢
   have := Nat.mod_le l.toNat (2 ^ pb)
-  omega)
+  omega_using [ha, this])
 
 /-! ## `vg_ed448_public_key` -/
 
@@ -191,10 +192,10 @@ theorem sat_seed : bytesAt satMem 0x2000 57 = satSeed := by
   have hi' := List.mem_range.mp hi
   have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
     change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
+    omega_using [hi']
   unfold satMem
   rw [ha]
-  simp only [show 0x2000 + i < 0x2100 from by omega, ite_true]
+  simp only [show 0x2000 + i < 0x2100 from by omega_using [hi'], ite_true]
 
 theorem sat_key : bytesAt satMem 0x2100 57 = satKey := by
   apply List.ext_getElem
@@ -203,9 +204,9 @@ theorem sat_key : bytesAt satMem 0x2100 57 = satKey := by
     have hi' : i < 57 := by simpa only [bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2100 : Addr) + BitVec.ofNat 64 i).toNat = 0x2100 + i := by
       change (0x2100 + i % 2 ^ 64) % 2 ^ 64 = 0x2100 + i
-      omega
+      omega_using [hi']
     simp only [bytesAt, List.getElem_map, List.getElem_range, satMem, ha,
-      show ¬ 0x2100 + i < 0x2100 from by omega, ite_false, show 0x2100 + i < 0x2139 from by omega, ite_true,
+      show ¬ 0x2100 + i < 0x2100 from by omega_using [], ite_false, show 0x2100 + i < 0x2139 from by omega_using [hi'], ite_true,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem sat_pk : bytesAt satMem 0x2100 57 = publicKey (bytesAt satMem 0x2000 57) := by

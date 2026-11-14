@@ -46,11 +46,11 @@ theorem ok_bs {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) 
     simp only [bsCfg, tableSlot_eq] at hk
     simp only [wordAddr, bsCfg, hc.base]
     rw [slots_eq] at hfit ⊢
-    exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+    exact VG.Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   extIn k hk := by simp [bsCfg] at hk
   baseAl _ := by simp only [bsCfg]; rw [hc.base]; exact hp.al
   extAl h := by simp [bsCfg] at h
-  slots := by simp only [bsCfg, tableSlot_eq]; omega
+  slots := by simp only [bsCfg, tableSlot_eq]; omega_using []
   sep k _ j hj := by simp [bsCfg] at hj
 
 /-- What a block of slots below the table that keeps the masks keeps of `Ctx`. -/
@@ -76,8 +76,8 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
     (fun j i hji => by
       simp only [tailIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       obtain ⟨k, hk, rfl, rfl⟩ := hji
-      exact ⟨by simp only [bsCfg, tableSlot_eq, tailSlot_eq]; omega, by omega, rfl⟩)
-    (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega, hc.masks kv hkv⟩)
+      exact ⟨by simp only [bsCfg, tableSlot_eq, tailSlot_eq]; omega_using [hk], by omega_using [hk], rfl⟩)
+    (fun kv hkv => ⟨by have := mask_lt hkv; simp only [bsCfg, tableSlot_eq]; omega_using [this], hc.masks kv hkv⟩)
     (fun j hj => by simp [bsCfg] at hj)
   simp only [bsCfg] at hb' hso hkr
   have hall : (restRegs.all fun r => toBs.all fun i => dst i != some r) = true := by
@@ -85,21 +85,21 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
   have hkeep : ∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_sboxWrites r hr))
   refine ⟨s', h', hc.bs rd' wr' hkeep f' (fun kv hkv => ?_), hkeep _ (by decide), fun w hw b hb i hi j hj => ?_⟩
-  · rw [slotW, hb', hkr kv.1 (List.mem_map_of_mem hkv) (by have := mask_lt hkv; rw [tableSlot_eq]; omega)]
+  · rw [slotW, hb', hkr kv.1 (List.mem_map_of_mem hkv) (by have := mask_lt hkv; rw [tableSlot_eq]; omega_using [this])]
     exact hc.masks kv hkv
-  · have hp16 : 16 * i + b < 64 := by omega
+  · have hp16 : 16 * i + b < 64 := by omega_using [hb, hi]
     have hmem := hso (64 + (8 * w + j)) (toBsG ((8 * w + j) / 8) ((8 * w + j) % 8)) (by
-        simp only [toBsOuts, List.mem_map, List.mem_range]; exact ⟨8 * w + j, by omega, rfl⟩)
-        (by rw [tableSlot_eq]; omega) _ hp16
-    rw [show (8 * w + j) / 8 = w by omega, show (8 * w + j) % 8 = j by omega] at hmem
-    have ht : 8 * (4 * (w % 2) + i) + j < 64 := by omega
+        simp only [toBsOuts, List.mem_map, List.mem_range]; exact ⟨8 * w + j, by omega_using [hw, hj], rfl⟩)
+        (by rw [tableSlot_eq]; omega_using [hw, hj]) _ hp16
+    rw [show (8 * w + j) / 8 = w by omega_using [hj], show (8 * w + j) % 8 = j by omega_using [hj]] at hmem
+    have ht : 8 * (4 * (w % 2) + i) + j < 64 := by omega_using [hi, hj]
     show (slotW s' (stateSlot w j)).getLsbD (16 * i + b) = _
-    rw [slotW, hb', show stateSlot w j = 64 + (8 * w + j) by simp only [stateSlot]; omega, hmem, toBsG,
-      show (16 * i + b) % 16 = b by omega, show (16 * i + b) / 16 = i by omega, xorBits_cons, xorBits_nil,
-      Bool.xor_false, Nat.add_assoc, bitOf_word _ _ _ ht, slotW, readW64_bit _ _ (by omega) hj]
+    rw [slotW, hb', show stateSlot w j = 64 + (8 * w + j) by simp only [stateSlot]; omega_using [], hmem, toBsG,
+      show (16 * i + b) % 16 = b by omega_using [hb], show (16 * i + b) / 16 = i by omega_using [hb], xorBits_cons, xorBits_nil,
+      Bool.xor_false, Nat.add_assoc, bitOf_word _ _ _ ht, slotW, readW64_bit _ _ (by omega_using [hi]) hj]
     simp only [ofBlock]
-    rw [getLsbD_wordAt _ _ hi hj, blockAt_getD _ _ (by omega), byte_addr _ rfl, addr_add]
-    rw [show 8 * (tailSlot + (2 * b + w / 2)) + (4 * (w % 2) + i) = 8 * tailSlot + 16 * b + (4 * w + i) by omega]
+    rw [getLsbD_wordAt _ _ hi hj, blockAt_getD _ _ (by omega_using [hw, hi]), byte_addr _ rfl, addr_add]
+    rw [show 8 * (tailSlot + (2 * b + w / 2)) + (4 * (w % 2) + i) = 8 * tailSlot + 16 * b + (4 * w + i) by omega_using []]
 
 /-- The state's planes back to the tail buffer's blocks. -/
 theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s)

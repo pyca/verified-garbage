@@ -43,7 +43,7 @@ theorem newton_val (a x : BitVec 32) :
     rw [BitVec.toNat_sub, show ((0x2 : BitVec 16).setWidth 32).toNat = 2 from rfl,
       Int.natCast_emod, show ((2 ^ 32 : Nat) : Int) = 2 ^ 32 from rfl, Int.emod_emod]
     have hy := y.isLt
-    omega
+    omega_using []
   rw [BitVec.toNat_mul, Int.natCast_emod, show ((2 ^ 32 : Nat) : Int) = 2 ^ 32 from rfl, Int.emod_emod,
     Int.natCast_mul, Int.mul_emod, sub_mod, Int.sub_emod, BitVec.toNat_mul, Int.natCast_emod,
     show ((2 ^ 32 : Nat) : Int) = 2 ^ 32 from rfl, Int.emod_emod, Int.natCast_mul, ← Int.sub_emod, ← Int.mul_emod]
@@ -70,13 +70,13 @@ theorem newton_step_ok (s : State) {j : Nat} (hj : 2 * j ≤ 32)
 /-- `-x mod 2¹⁶` is `-a⁻¹` for an inverse `x` of `a` modulo `2¹⁶`. -/
 theorem neg_inv16 {a x : Nat} (hx : x < 2 ^ 32) (h : ((a : Int) * x - 1) % (2 ^ 16 : Int) = 0) :
     (a * ((2 ^ 32 - x) % 2 ^ 32 % 2 ^ 16) + 1) % 2 ^ 16 = 0 := by
-  have hr : (((2 ^ 32 - x) % 2 ^ 32 % 2 ^ 16 : Nat) : Int) % 2 ^ 16 = -(x : Int) % 2 ^ 16 := by omega
+  have hr : (((2 ^ 32 - x) % 2 ^ 32 % 2 ^ 16 : Nat) : Int) % 2 ^ 16 = -(x : Int) % 2 ^ 16 := by omega_using [hx]
   have h2 : ((a * ((2 ^ 32 - x) % 2 ^ 32 % 2 ^ 16) + 1 : Nat) : Int) % 2 ^ 16 =
       (-((a : Int) * x - 1)) % 2 ^ 16 := by
     rw [Int.natCast_add, Int.natCast_mul, Int.add_emod, Int.mul_emod, hr, ← Int.mul_emod, ← Int.add_emod]
     congr 1
     rw [Int.mul_neg]
-    omega
+    omega_using []
   have h3 : (-((a : Int) * x - 1)) % 2 ^ 16 = 0 :=
     Int.emod_eq_zero_of_dvd (Int.dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))
   have h4 := h2.trans h3

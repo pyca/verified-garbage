@@ -39,7 +39,7 @@ theorem before_ok (d : Spec.Rc2.Direction) (s : State) (hp : StepPre s) :
     intro s' h
     exact ⟨hp.keep h, fun r hr => h.reg r (sep r hr)⟩
   · apply WP.mono (copy64_ok s .r1 .r2 0 256 (by decide) (by decide)
-      (by simpa using hp.dataFit) (by have := hp.bufFit; omega)
+      (by simpa using hp.dataFit) (by have := hp.bufFit; omega_using [this])
       (by simpa using hp.readData) (hp.writeBuf 256 (by decide)))
     intro s' h
     exact ⟨hp.keep h, fun r hr => h.reg r (sep r hr)⟩

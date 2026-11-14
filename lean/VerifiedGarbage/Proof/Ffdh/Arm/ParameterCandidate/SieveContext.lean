@@ -36,14 +36,14 @@ structure SieveContext (dst base : BitVec 32) (n : Nat) (s : State) : Prop where
 theorem sieveLocal_sub {s : State} (stack : Workspace s s.sp 72) :
     (sieveLocal s.sp).Sub ⟨State.addr s.sp, 72⟩ := by
   unfold sieveLocal
-  rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+  rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
   exact Offset.sub_base _ (by decide)
 
 theorem sieveLocal_separate {s : State} (stack : Workspace s s.sp 72) {d : Nat} (fit : d + 4 ≤ 64) :
     (⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ : Region).Disjoint (sieveLocal s.sp) := by
   unfold sieveLocal
-  rw [VG.Arm.addr_add (by have := stack.nowrap; omega), VG.Arm.addr_add (by have := stack.nowrap; omega)]
-  exact Offset.disjoint _ (.inl fit) (by omega) (by decide)
+  rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this]), VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
+  exact Offset.disjoint _ (.inl fit) (by omega_using [fit]) (by decide)
 
 theorem sieveLocal_frame (s : State) (value : BitVec 32) :
     Frame [sieveLocal s.sp] s.mem (s.mem.writeW (State.addr (s.sp + 64#32)) value) :=
@@ -59,7 +59,7 @@ theorem SieveContext.after_frame {s t : State} {dst base : BitVec 32} {n : Nat} 
     intro d hd r hr
     rw [List.mem_singleton] at hr
     subst r
-    exact sieveLocal_separate stack (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega))
+    exact sieveLocal_separate stack (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd]))
   refine ⟨⟨slots, h.read.positive, h.read.countFits, h.read.bufferFits, ?_⟩,
     h.widthBound, ?_, h.tableFits, ?_, ?_, ?_, ?_⟩
   · intro i hi
@@ -99,7 +99,7 @@ theorem SieveContext.after_memory {s t : State} {dst base : BitVec 32} {n : Nat}
 theorem SieveContext.bytes_after {s t : State} {dst base : BitVec 32} {n : Nat}
     (h : SieveContext dst base n s) (changed : Frame [sieveLocal s.sp] s.mem t.mem) :
     Spec.Rsa.bytesAt t.mem (State.addr dst) n = Spec.Rsa.bytesAt s.mem (State.addr dst) n := by
-  refine rsa_bytes_frame changed (by have := h.read.countFits; omega) ?_
+  refine rsa_bytes_frame changed (by have := h.read.countFits; omega_using [this]) ?_
   intro r hr
   rw [List.mem_singleton] at hr
   subst r

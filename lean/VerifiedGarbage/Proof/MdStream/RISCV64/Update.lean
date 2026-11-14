@@ -201,7 +201,7 @@ theorem Pending.compress_ok (hf : CalleeOk H code) {s₀ : State} (hp : Pre P s�
     · exact .inl (h' ▸ Offset.sub_base (d := P.N) (n := 64) (k := P.N + 64) _ (by omega_arith))
     · exact .inr (h' ▸ Offset.sub_base (d := c₀) (n := 64) (k := len s₀) _ (by omega_arith))
   refine compressAt_ok hf h.s1 h.s2 rfl ((hp.st_scr.sub_left e32).sub_right e80) ?_ ?_
-    (by have := hp.scr_al; omega) ?_ ?_ ?_
+    (by have := hp.scr_al; omega_using [this]) ?_ ?_ ?_
   · rcases h.src with h' | ⟨c₀, h', hc₀⟩
     · rw [h']
       exact Offset.disjoint_base (st s₀) (d := P.N) (n := 64) (k := P.N) (by omega_arith) (by omega_arith)
@@ -361,7 +361,7 @@ theorem copy_step {s₀ : State} (hp : Pre P s₀) {c : Nat} {sI : State} (hI : 
   unfold copyBody
   refine wp_lbu (a := dp s₀ + BitVec.ofNat 64 (c + j)) (by decide) (by rw [h.s3]; simp) hin
     fun s₁ u₁ => ?_
-  refine wp_add fun s₂ u₂ => wp_sb (a := q P s₀ c + BitVec.ofNat 64 j) (by omega) ?_
+  refine wp_add fun s₂ u₂ => wp_sb (a := q P s₀ c + BitVec.ofNat 64 j) (by omega_using [hN]) ?_
     (by rw [u₂.wr, u₁.wr]; exact hout) fun s₃ g₃ => ?_
   · rw [u₂.gpr, u₁.other _ (by decide), u₁.other _ (by decide), h.s1, h.s5, q]
     simp only [BitVec.ofNat_add]
@@ -452,7 +452,7 @@ theorem fill_pending {s₀ : State} (hp : Pre P s₀) {c : Nat} {sI : State} (hI
   obtain ⟨hfr, hsv, hst, hby⟩ := copied_facts hp hI
   have hmem : s.mem = writeBytes sI.mem (q P s₀ c) (xs s₀ c) := by
     rw [h.mem, List.take_of_length_le (by omega_arith)]
-  refine wp_addi (imm := P.N) (by omega) fun s₁ u₁ => wp_li (imm := 0) (by decide) fun s₂ u₂ =>
+  refine wp_addi (imm := P.N) (by omega_using [hN]) fun s₁ u₁ => wp_li (imm := 0) (by decide) fun s₂ u₂ =>
     wp_li (imm := 1) (by decide) fun s₃ u₃ => WP.block_nil ?_
   have g : ∀ r, r ≠ .a1 → r ≠ .s5 → r ≠ .t0 → s₃.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [u₃.other r h3, u₂.other r h2, u₁.other r h1]
@@ -689,7 +689,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre P s₀) :
       u₃.other .a1 (by decide), u₂.other .a1 (by decide), g₁ _ (by decide), Nat.add_zero]; rfl
   · rw [List.take_zero, List.append_nil, hm₆]
     exact H.repr_congr (by decide) (fun i hi => Frame.bytes (saveMem_frame s₀.mem (scr s₀) s₀.gpr) (R := stR P s₀)
-      (by simpa using hp.st_scr) (by show P.N + 64 ≤ 2 ^ 64; omega) hi) hm.1
+      (by simpa using hp.st_scr) (by show P.N + 64 ≤ 2 ^ 64; omega_using [hN]) hi) hm.1
 
 /-- The epilogue's postcondition. -/
 def Post (H : Md 64 P.N 8) (s₀ s' : State) : Prop :=

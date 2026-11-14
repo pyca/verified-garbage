@@ -39,19 +39,19 @@ theorem fill_ok {s : State} {base : Addr} (hs : Scr s base) {o n : Nat} (ho : o 
       WP isa (.block [st .r3 (o + 4 * k)]) t (inv (k + 1)) := by
     intro k t hk ⟨tf, tm, tk⟩
     have ts := hs.of_keeps tk (by decide)
-    refine WP.mono (storeOne_ok ts (by omega) .r3) fun u ⟨um, uk⟩ => ?_
+    refine WP.mono (storeOne_ok ts (by omega_using [ho, hk]) .r3) fun u ⟨um, uk⟩ => ?_
     rw [tk.1 .r3 (by decide), hz] at um
     have out : Outside base (o + 4 * k) 4 t.mem u.mem := by
-      rw [um]; exact writeW_outside _ _ _ (by omega)
-    refine ⟨?_, tm.trans (out.mono (by omega) (by omega)), tk.trans uk⟩
+      rw [um]; exact writeW_outside _ _ _ (by omega_using [ho, hk])
+    refine ⟨?_, tm.trans (out.mono (by omega_using []) (by omega_using [hk])), tk.trans uk⟩
     intro i hi
     change (word u.mem base (o + 4 * i)).toNat = _
-    rw [um, word_write t.mem base (by omega) (by omega)]
+    rw [um, word_write t.mem base (by omega_using [ho, hk]) (by omega_using [ho, hk, hi])]
     by_cases h : i = k
     · rw [ite_eq_left h]; rfl
-    · rw [ite_eq_right h]; exact tf i (by omega)
+    · rw [ite_eq_right h]; exact tf i (by omega_using [hi, h])
   rw [List.map_eq_flatMap]
-  exact wp_range_flatMap (M := isa) (N := n) inv step n (by omega) s
+  exact wp_range_flatMap (M := isa) (N := n) inv step n (by omega_using []) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
 end VG.Proof.X448.Arm

@@ -50,11 +50,11 @@ theorem init_ctx (L : Ws) (s : State) (h : RedcPreCtx L s) :
     WP isa (.block [.lsr .x .x12 .x12 3, movi .x10 0]) s
       (fun t => 0 < blocks L ∧ LoopCtx L 0 t) := by
   have hw := Square.goodW_width h.fast.1
-  have he : 8 * blocks L = L.w := by have := h.fast.2.2; dsimp [blocks]; omega
+  have he : 8 * blocks L = L.w := by have := h.fast.2.2; dsimp [blocks]; omega_using [this]
   obtain ⟨mi, hg, hz⟩ := h.fast.1
   refine WP.mono (redcInit_ok (h.count.trans (congrArg (BitVec.ofNat 64) he.symm))
-    (by omega)) fun t ⟨⟨ht12, ht10, hm⟩, kt⟩ => ?_
-  refine ⟨by have := h.fast.2.1; dsimp [blocks]; omega,
+    (by omega_using [hw, he])) fun t ⟨⟨ht12, ht10, hm⟩, kt⟩ => ?_
+  refine ⟨by have := h.fast.2.1; dsimp [blocks]; omega_using [this],
     ⟨⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr .x0 (by decide)).trans hg.x0,
       hm ▸ hg.hdr⟩, hz⟩, h.fast.2⟩,
       (kt.gpr .x8 (by decide)).trans h.ptr, ht12,
@@ -72,8 +72,8 @@ theorem end_ctx (L : Ws) (s : State) (h : EndCtx L s) :
     WP isa (.block [ldh .x12 sW, .lsl .x .x16 .x12 3, .add .x .x16 .x8 .x16]) s (EndPtr L) := by
   have hw := Square.goodW_width h.fast.1
   obtain ⟨mi, hg, hz⟩ := h.fast.1
-  refine WP.mono (endSetup_ok hg.scr hg.x0 h.ptr (by unfold slot hdrBytes at hz; omega)
-    (by omega) hg.hdr.hw) fun t ⟨⟨_, ht16, hm⟩, kt⟩ => ?_
+  refine WP.mono (endSetup_ok hg.scr hg.x0 h.ptr (by unfold slot hdrBytes at hz; omega_using [hz])
+    (by omega_using [hw]) hg.hdr.hw) fun t ⟨⟨_, ht16, hm⟩, kt⟩ => ?_
   exact ⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr .x0 (by decide)).trans hg.x0,
     hm ▸ hg.hdr⟩, hz⟩, ht16⟩
 
@@ -100,9 +100,9 @@ theorem redc_ctx (L : Ws) (s : State) (h : RedcPreCtx L s) :
   have hw := Square.goodW_width h.fast.1
   obtain ⟨mi, hg, hz⟩ := h.fast.1
   refine WP.mono (redc_layout_ok hg.scr hg.x0 hg.hdr hz h.ptr h.count h.zero
-    h.fast.2.1 (by omega) h.fast.2.2) fun t ⟨_, ho, ht8, ht10, ht12, ht7, kt⟩ => ?_
+    h.fast.2.1 (by omega_using [hw]) h.fast.2.2) fun t ⟨_, ho, ht8, ht10, ht12, ht7, kt⟩ => ?_
   exact ⟨⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr .x0 (by decide)).trans hg.x0,
-    (Square.scratch_arrays ho).hdr hg.hdr⟩, hz⟩, by have := h.fast.2.1; omega⟩,
+    (Square.scratch_arrays ho).hdr hg.hdr⟩, hz⟩, by have := h.fast.2.1; omega_using [this]⟩,
     ht8, ht10, ht12, ht7⟩
 
 end VG.Proof.Bignum.AArch64.BlockedRedc

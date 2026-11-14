@@ -16,20 +16,20 @@ theorem shiftLeft_word (x c : BitVec 32) (hc : c.toNat ≤ 1) :
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ushiftRight]
   simp only [Nat.shiftRight_eq_div_pow]
   have hx := x.isLt
-  omega
+  omega_using [hc]
 
 theorem shiftLeft_insert (x c : BitVec 32) (hc : c.toNat ≤ 1) :
     c ||| (x <<< 1) = x + x + c := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_add]
-  have hbit : c.toNat < 2 := by omega
+  have hbit : c.toNat < 2 := by omega_using [hc]
   have shifted : x.toNat <<< 1 % 2 ^ 32 = (x.toNat % 2 ^ 31) <<< 1 := by
     simp only [Nat.shiftLeft_eq]
-    omega
+    omega_using []
   rw [shifted, Nat.or_comm, ← Nat.shiftLeft_add_eq_or_of_lt hbit]
   simp only [Nat.shiftLeft_eq]
   have := x.isLt
-  omega
+  omega_using [hc]
 
 theorem shiftLeftStep_ok (s : State) (a : Addr)
     (ha : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = a)
@@ -65,7 +65,7 @@ theorem shiftLeftStep_ok (s : State) (a : Addr)
   · rw [value, carry]; exact shiftLeft_word _ _ hc
   · rw [carry, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     have := (s.mem.readW a 32).isLt
-    omega
+    omega_using []
   · rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     rw [u6.other .r3 (by decide), u5.other .r3 (by decide), u4.gpr]
   · rw [u6.other .r0 (by decide), u5.gpr, dpVal, u4.gpr, p0]

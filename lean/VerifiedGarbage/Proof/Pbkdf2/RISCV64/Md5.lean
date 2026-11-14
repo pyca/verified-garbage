@@ -53,13 +53,13 @@ theorem callee : CalleeOk Proof.Md5.md 80 Impl.Md5.RISCV64.compress :=
 theorem hashOkW (Wi : Nat) (h₁ : 223 ≤ Wi) (h₂ : Wi ≤ 8192) :
     HashOk it Wi Spec.Hmac.md5S Proof.Md5.md Spec.Md5.H0 where
   sizes := ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-    by decide, by simp only [it]; omega, h₂⟩
+    by decide, by simp only [it]; omega_using [h₁], h₂⟩
   pad := by decide
   reloc m m' p q h := by
     apply Vector.ext
     intro j hj
     simp only [Proof.Md5.md, Spec.Md5.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega_using [hj])
   out := fun s h₁ h₂ h₃ => (Proof.Md5.RISCV64.Stream.shape.out s h₁ h₂ h₃).mono fun _ ⟨g, a, b, c, d⟩ =>
     ⟨fun r x y _ => g r x y, a, b, c, d⟩
   link := ⟨rfl, rfl, rfl, fun _ _ _ h => h, fun m => by

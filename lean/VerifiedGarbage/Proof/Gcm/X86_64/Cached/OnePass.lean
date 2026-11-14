@@ -63,13 +63,13 @@ theorem phase1G_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s�
   refine WP.seq (WP.mono (WP.hkeep rfl (StitchZ.cmp_ok s₂ i t hi)) fun s₃ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
   have hI₃ := hI₂.of_eq g l m rd wr
   have hCache₃ := hCache₂.keep hh (hI₃.a.keys hp)
-  rw [hI₂.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt ht] at hcf
+  rw [hI₂.r9, toNat_ofNat_lt (by omega_using [hn]), toNat_ofNat_lt ht] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
     (decide (nb s₀ - 16 * (1 - 1) < t)) (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃, hCache₃⟩)
-    (fun h => hbig _ (by simp at h; omega) hI₃ hCache₃)) fun s₄ ⟨e, hI₄, hCache₄⟩ => ?_)
+    (fun h => hbig _ (by simp at h; omega_using [h]) hI₃ hCache₃)) fun s₄ ⟨e, hI₄, hCache₄⟩ => ?_)
   refine WP.seq (WP.mono (WP.hkeep (by decide) (StitchZTo.cmpE_ok hI₄)) fun s₅ ⟨⟨hI₅, hcf₅⟩, hh₅⟩ => ?_)
   exact WP.mono (loopERTo_ok hp hf hI₅ hcf₅ (hCache₄.keep hh₅ (hI₅.a.keys hp))) fun s₆ ⟨e', hlt, hI₆, hK₆⟩ =>
-    ⟨e', by have := hI₆.a.le; have := hI₆.one; omega, hI₆, hK₆⟩
+    ⟨e', by have := hI₆.a.le; have := hI₆.one; omega_arith, hI₆, hK₆⟩
 
 section
 variable {M : CtxMode} {s₀ : State} {N : Nat} (hp : SPreTo M s₀)
@@ -83,7 +83,7 @@ theorem eInvZ (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he : n
     (g : ∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) (hm : t.mem = s.mem) (hx : t.xmm = s.xmm)
     (hy : t.ymmHi = s.ymmHi) (hz : t.zmmHi = s.zmmHi) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) :
     EInv (nState s₀ N) P e t := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
   have hw := hp.wrap_o
   have hwN := hn.wrap
   have hle := hn.le
@@ -99,27 +99,27 @@ theorem eInvZ (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he : n
     rw [hm, nState_mem, hA.frame x (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · simp only [Region.Contains]; omega
+      · simp only [Region.Contains]; omega_using [hle, h₁]
       · simp only [Region.Contains]; exact h₂), nMem_frame s₀ x (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; simp only [Region.Contains]; omega)]
+      simp only [List.mem_singleton] at hr; subst hr; simp only [Region.Contains]; omega_using [hle, h₁])]
   have bl : ∀ k < nb (nState s₀ N), blockAt t.mem (bAddr (nState s₀ N) k) =
       if k < 16 * e then ctb (nState s₀ N) k else blk (nState s₀ N) k := fun k hk => by
     rw [nb_nState hN] at hk
     rw [show bAddr (nState s₀ N) k = oAddr s₀ k by simp only [bAddr, dp, nState_r8], hm]
     by_cases hlo : k < 16 * e
-    · simp only [hlo, ↓reduceIte, ctb_nState hp hwN (by omega) hk]
-      exact hA.blocks k (by omega)
-    · simp only [hlo, ↓reduceIte, blk_nState hp hwN hk, show ¬ k < nb s₀ by omega]
+    · simp only [hlo, ↓reduceIte, ctb_nState hp hwN (by omega_using [he, hlo]) hk]
+      exact hA.blocks k (by omega_using [hlo])
+    · simp only [hlo, ↓reduceIte, blk_nState hp hwN hk, show ¬ k < nb s₀ by omega_using [he, hlo]]
       refine VG.Proof.Aes.X86_64.AesNi.blockAt_frame hA.frame fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base _ (by omega) (by omega)
-      · exact hn.o_p.sub_left (Offset.sub_base _ (by omega))
+      · exact Offset.disjoint_base _ (by omega_using [he, hlo]) (by omega_using [hwN, hk])
+      · exact hn.o_p.sub_left (Offset.sub_base _ (by omega_using [hk]))
   have rbp : s.gpr .rbp = BitVec.ofNat 64 (N - nb s₀) := by
     rw [hI.gpr .rbp (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hn.rbp
   exact {
     a := {
-      le := by rw [nb_nState hN]; omega
+      le := by rw [nb_nState hN]; omega_using [he, hle]
       ctr := fun l hl' => by rw [hl, cb_nState hp]; exact hA.ctr l hl'
       msk := fun l hl' => by rw [hl]; exact hA.msk l hl'
       inc := fun l hl' => by rw [hl]; exact hA.inc l hl'
@@ -136,7 +136,7 @@ theorem eInvZ (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he : n
     rdx := by rw [g .rdx (by decide) (by decide), hI.rdx, dp, nState_r8]
     r9 := by
       rw [g9, hI.r9, rbp, nb_nState hN, ← BitVec.ofNat_add]
-      congr 1; omega
+      congr 1; omega_using [he, hle]
     rax := by rw [g .rax (by decide) (by decide), hI.rax]; exact (hg .rdx (by decide) (by decide)).symm
     gpr := fun r ha hd h9 h10 => by
       by_cases h8 : r = .r8
@@ -151,7 +151,7 @@ theorem eInvZ (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he : n
       congr 1
       refine List.map_congr_left fun k hk => ?_
       have := List.mem_range.mp hk
-      exact (ctb_nState hp hwN (by omega) (by omega)).symm
+      exact (ctb_nState hp hwN (by omega_using [he, this]) (by omega_using [he, hle, this])).symm
     y1 := fun l h1l hl4 => by rw [hl]; exact hI.y1 l h1l hl4 }
 
 omit hp in
@@ -185,7 +185,7 @@ end
 /-- `encN` meets its contract. -/
 theorem encN_ok (h1 : PhaseOne) {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) (hm : nb s₀ % 16 = 0) {N : Nat}
     (hn : NPre CtxMode.prepared s₀ N) : WP isa Impl.Gcm.X86_64.StitchZHTo.encN s₀ (NPost s₀ N) := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
   have hp' := hn.sPre hp
   refine WP.seq (WP.mono (h1 hp hm) fun s₄ ⟨P, e, he, hI₄, hK₄, hf⟩ => ?_)
   refine WP.seq (WP.mono (switchZ_ok hp hn he hI₄ hK₄) fun s₅ ⟨hI₅, hcf₅, hK₅⟩ => ?_)

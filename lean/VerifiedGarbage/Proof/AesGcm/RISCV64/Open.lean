@@ -146,14 +146,14 @@ theorem slot_ot {c : Addr} (L : Lay c (W + BitVec.ofNat 64 16) W) (hk : StkOk c 
   intro r hr
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact (L.st_w (a := 0) (n := 48) (by decide) (.inr ⟨by omega, by omega⟩)).symm.sub_right
+  · exact (L.st_w (a := 0) (n := 48) (by decide) (.inr ⟨by omega_using [hd], by omega_using [hd]⟩)).symm.sub_right
       (by simpa using Region.sub_prefix (base := W + BitVec.ofNat 64 16) (show 48 ≤ 48 by decide))
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact hk.w.sub_left (Lay.wSub (by omega))
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact Lay.w_w (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact hk.w.sub_left (Lay.wSub (by omega_using [hd]))
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
 
 end
 
@@ -709,7 +709,7 @@ theorem openEntry_wp {s₀ : State} (h : openPre s₀) :
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hLd) (by decide)]
     rfl
   refine Steps.wp_ld (off := 8) (a := s₀.sp + BitVec.ofNat 64 8) (by decide) (by rw [h1.t1])
-    (Spill.al8 (by have := hstk.1; omega) (by decide)) hi fun s₂ u₂ => WP.block_nil ?_
+    (Spill.al8 (by have := hstk.1; omega_using [this]) (by decide)) hi fun s₂ u₂ => WP.block_nil ?_
   exact ⟨h1.keep (fun r _ hr => u₂.other r hr) ⟨u₂.mem, u₂.rd, u₂.wr, u₂.sp⟩, by rw [u₂.gpr, hv]⟩
 
 theorem open_wp [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : openRISCV64.pre s₀) :

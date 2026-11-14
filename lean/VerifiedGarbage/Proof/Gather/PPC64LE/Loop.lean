@@ -64,7 +64,7 @@ abbrev sl (i : Nat) : Nat := (m.readW (Src + BitVec.ofNat 64 (16 * i) + BitVec.o
 
 end
 
-theorem desc_off (i : Nat) : i * (2 * (64 / 8)) = 16 * i := by omega
+theorem desc_off (i : Nat) : i * (2 * (64 / 8)) = 16 * i := by omega_using []
 
 theorem gl_succ (m : Mem) (Src : Addr) (i : Nat) :
     gatheredLen 64 m Src (i + 1) = gatheredLen 64 m Src i + sl m Src i := by
@@ -81,7 +81,7 @@ theorem gl_mono (m : Mem) (Src : Addr) {i j : Nat} (h : i ≤ j) :
   | succ j ih =>
     rcases Nat.eq_or_lt_of_le h with rfl | h
     · exact Nat.le_refl _
-    · rw [gl_succ]; exact Nat.le_trans (ih (by omega)) (Nat.le_add_right _ _)
+    · rw [gl_succ]; exact Nat.le_trans (ih (by omega_using [h])) (Nat.le_add_right _ _)
 
 /-- Slice `i` is listed. -/
 theorem slice_mem (m : Mem) (Src : Addr) {i cnt : Nat} (hi : i < cnt) :
@@ -141,7 +141,7 @@ theorem frame_of {xs : List Byte} (hm : u.mem = writeBytes t.mem Dst xs) (hx : x
   rw [hm]
   refine writeBytes_frame t.mem Dst _ ?_
   simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]
-  omega
+  omega_using [hx]
 
 theorem gl_le (hi : i ≤ cnt) : gatheredLen 64 t.mem Src i ≤ L := h.len ▸ gl_mono t.mem Src hi
 
@@ -151,7 +151,7 @@ theorem len_le (hi : i ≤ cnt) : (gathered 64 t.mem Src i).length ≤ L :=
 /-- The descriptors are what they were. -/
 theorem desc_of (hf : Frame [⟨Dst, L⟩] t.mem u.mem) (d : Nat) (hd : d + 8 ≤ cnt * 16) :
     u.mem.readW (Src + BitVec.ofNat 64 d) 64 = t.mem.readW (Src + BitVec.ofNat 64 d) 64 :=
-  hf.readW (r := ⟨Src, cnt * 16⟩) (Offset.contains_base Src hd (by have := h.dw; omega))
+  hf.readW (r := ⟨Src, cnt * 16⟩) (Offset.contains_base Src hd (by have := h.dw; omega_using [hd, this]))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.dsd) (by decide)
 
 theorem next_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
@@ -160,14 +160,14 @@ theorem next_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
   have hfr := frame_of (t := t) hu.mem (len_le h (Nat.le_of_lt hi))
   have hin (d : Nat) (hd : d + 8 ≤ cnt * 16) : InRegions (u.rd ++ u.wr) (Src + BitVec.ofNat 64 d) 8 := by
     rw [hu.keep.rd, hu.keep.wr]
-    exact h.dsr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base Src hd (by omega)⟩
+    exact h.dsr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base Src hd (by omega_using [hdw, hd])⟩
   have ha8 : Src + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 8 = Src + BitVec.ofNat 64 (16 * i + 8) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   unfold next
   refine wp_ld (a := Src + BitVec.ofNat 64 (16 * i)) (by decide) (by decide)
-    (by rw [hu.r7]; exact BitVec.add_zero _) (hin _ (by omega)) fun u₁ v₁ => ?_
+    (by rw [hu.r7]; exact BitVec.add_zero _) (hin _ (by omega_using [hi])) fun u₁ v₁ => ?_
   refine wp_ld (a := Src + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 8) (by decide) (by decide)
-    (by rw [v₁.other _ (by decide), hu.r7]) (by rw [v₁.rd, v₁.wr, ha8]; exact hin _ (by omega))
+    (by rw [v₁.other _ (by decide), hu.r7]) (by rw [v₁.rd, v₁.wr, ha8]; exact hin _ (by omega_using [hi]))
     fun u₂ v₂ => ?_
   refine wp_addi (by decide) (by decide) fun u₃ v₃ => WP.block_nil ?_
   have m₂ : u₁.mem = u.mem := v₁.mem
@@ -177,8 +177,8 @@ theorem next_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
       Nat.mul_succ]
   · rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide), hu.r8]
   · rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide), hu.r9]
-  · rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, desc_of h hfr _ (by omega)]
-  · rw [v₃.other _ (by decide), v₂.gpr, m₂, ha8, desc_of h hfr _ (by omega), ← ha8, BitVec.ofNat_toNat,
+  · rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, desc_of h hfr _ (by omega_using [hi])]
+  · rw [v₃.other _ (by decide), v₂.gpr, m₂, ha8, desc_of h hfr _ (by omega_using [hi]), ← ha8, BitVec.ofNat_toNat,
       BitVec.setWidth_eq]
   · rw [v₃.mem, v₂.mem, m₂, hu.mem]
 
@@ -186,7 +186,7 @@ theorem rest_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
     WP isa (.seq copySlice (.block [.subi .r8 .r8 1])) u (GInv t · Src Dst cnt (i + 1)) := by
   have hc := h.hcnt
   have hL := h.lt
-  have hgl : gatheredLen 64 t.mem Src (i + 1) ≤ L := gl_le h (by omega)
+  have hgl : gatheredLen 64 t.mem Src (i + 1) ≤ L := gl_le h (by omega_using [hi])
   have hlen : (gathered 64 t.mem Src i).length = gatheredLen 64 t.mem Src i := Proof.Gcm.length_gathered _ _ _ _
   rw [gl_succ] at hgl
   have hfr := frame_of (t := t) hu.mem (len_le h (Nat.le_of_lt hi))
@@ -196,22 +196,22 @@ theorem rest_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
   have hsub : (⟨Dst + BitVec.ofNat 64 (gatheredLen 64 t.mem Src i), sl t.mem Src i⟩ : Region).Sub ⟨Dst, L⟩ :=
     Offset.sub_base _ hgl
   have hsp : SlicePre u (sb t.mem Src i) (Dst + BitVec.ofNat 64 (gatheredLen 64 t.mem Src i)) (sl t.mem Src i) :=
-    ⟨hu.r3, hu.r9, hu.r4, by omega, by rw [hu.keep.rd, hu.keep.wr]; exact h.lsr _ hmem,
+    ⟨hu.r3, hu.r9, hu.r4, by omega_using [hL, hgl], by rw [hu.keep.rd, hu.keep.wr]; exact h.lsr _ hmem,
       by rw [hu.keep.wr]; exact covers_off h.dw' hgl hL, hsd.sub_right hsub⟩
   refine WP.seq (WP.mono (copySlice_wp u hsp) fun u₂ ⟨m₂, r9₂, kp₂⟩ => ?_)
   refine wp_subi (by decide) (by decide) fun u₃ v₃ => WP.block_nil ?_
   -- The slice's bytes were what they were on entry.
   have hbytes : bytesAt u.mem (sb t.mem Src i) (sl t.mem Src i) =
       bytesAt t.mem (sb t.mem Src i) (sl t.mem Src i) := by
-    refine bytesAt_frame hfr (fun r hr => ?_) (by omega)
+    refine bytesAt_frame hfr (fun r hr => ?_) (by omega_using [hL, hgl])
     simp only [List.mem_singleton] at hr; subst hr
     exact hsd
   refine ⟨?_, ?_, ?_, ?_, hu.keep.trans ((gkeeps_of_keeps kp₂).trans (gkeeps_of_upd v₃))⟩
   · rw [v₃.other _ (by decide), kp₂.gpr _ (by decide), hu.r7]
-  · rw [v₃.gpr, kp₂.gpr _ (by decide), hu.r8, ofNat_sub_one (by omega), Nat.sub_sub]
+  · rw [v₃.gpr, kp₂.gpr _ (by decide), hu.r8, ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
   · rw [v₃.other _ (by decide), r9₂, BitVec.add_assoc, ← BitVec.ofNat_add, ← gl_succ]
   · rw [v₃.mem, m₂, hbytes, hu.mem, pt_succ, ← hlen,
-      writeBytes_append _ _ _ _ (by rw [hlen, Proof.Cmac.bytesAt_length]; omega)]
+      writeBytes_append _ _ _ _ (by rw [hlen, Proof.Cmac.bytesAt_length]; omega_using [hL, hgl])]
 
 end
 
@@ -225,12 +225,12 @@ theorem gatherLoop_advance_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : Ga
     ⟨0, rfl, hpos, GInv.init h⟩
   rintro w u ⟨i, rfl, hi, hu⟩
   refine WP.seq (WP.mono (next_wp h hi hu) fun u₁ h₁ => WP.mono (rest_wp h hi h₁) fun u₃ h₃ => ?_)
-  have ev := eval_nonzero (r := .r8) (a := cnt - (i + 1)) h₃.r8 (by omega)
+  have ev := eval_nonzero (r := .r8) (a := cnt - (i + 1)) h₃.r8 (by omega_using [hc])
   by_cases he : i + 1 = cnt
   · left
     exact ⟨by rw [ev]; simp [he], by rw [h₃.mem, he], h₃.keep,by rw [h₃.r7,he]⟩
   · right
-    exact ⟨by rw [ev]; simp; omega, cnt - (i + 1), by omega, i + 1, rfl, by omega, h₃⟩
+    exact ⟨by rw [ev]; simp; omega_using [hi, he], cnt - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], h₃⟩
 
 /-- `gather`: the `cnt` slices copied to `Dst`. -/
 theorem gather_advance_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
@@ -240,7 +240,7 @@ theorem gather_advance_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : Gather
     subst h0
     exact WP.block_nil ⟨by simp [gathered, Sig.listed, writeBytes_nil], GKeeps.refl t,by change t.gpr .r7=Src+0#64; rw [BitVec.add_zero]; exact h.r7⟩
   · have h0 : cnt ≠ 0 := by simpa using hf
-    exact gatherLoop_advance_wp t h (by omega)
+    exact gatherLoop_advance_wp t h (by omega_using [h0])
 
 
 /-- `gather`, forgetting the final descriptor pointer. -/

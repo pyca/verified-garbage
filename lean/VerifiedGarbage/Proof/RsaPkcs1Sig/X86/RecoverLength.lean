@@ -36,7 +36,7 @@ theorem lengthCheck_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State} (h 
   · intro eq
     have := congrArg BitVec.toNat eq
     simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.valid.signatureBound,
-      Nat.mod_eq_of_lt (by have := h.valid.maxLength; omega : g.length < 2 ^ 32)] using this
+      Nat.mod_eq_of_lt (by have := h.valid.maxLength; omega_using [this] : g.length < 2 ^ 32)] using this
   · intro eq; rw [eq]
 
 theorem recovered_bad {g : Geometry} {bs : Fin 4 → List Byte} {s : State}

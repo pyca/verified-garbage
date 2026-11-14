@@ -126,7 +126,7 @@ theorem ckCode_ct : RelCT isa (Two CKRel) CheckKey.code fun _ _ => True := by
     have hel1 : 1 ≤ (s.gpr .x3).toNat := c.L.el1
     have hel2 : (s.gpr .x3).toNat ≤ (s.gpr .x1).toNat := c.L.el2
     have hk2 : (s.gpr .x1).toNat ≤ 1024 := c.L.k2
-    refine WP.mono (expCheck_ok (eb := (ckIn s).eb) h.x4 h.x5 hel1 (by omega)
+    refine WP.mono (expCheck_ok (eb := (ckIn s).eb) h.x4 h.x5 hel1 (by omega_using [hel2, hk2])
       (fun i hi => heb.rd i (by rw [hel]; exact hi)) ?_) fun t' ⟨hz, hm, k⟩ => ⟨s, t, hs, h, hm, k, ?_⟩
     · rw [← hel]
       refine List.ext_getElem (by simp [Spec.Rsa.bytesAt]) fun i h1 h2 => ?_
@@ -153,7 +153,7 @@ theorem ckCode_ct : RelCT isa (Two CKRel) CheckKey.code fun _ _ => True := by
     have hZ : 128 * (s.gpr .x1).toNat ≤ (stackArg s 9).toNat * 8 := c.L.z
     have hk1 : 64 ≤ (s.gpr .x1).toNat := c.L.k1
     have h0 : t.gpr .x0 = stackArg s 8 := (k.gpr .x0 (by decide)).trans h.x0
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (stackArg s 8) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (stackArg s 8) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hk1, hi])
     have aN : word t.mem (stackArg s 8) (8 * Public.sN) = s.gpr .x0 := by rw [hm]; exact h.args.n
     have aK : word t.mem (stackArg s 8) (8 * Public.sK) = BitVec.ofNat 64 (s.gpr .x1).toNat := by
       rw [hm]; exact h.args.k

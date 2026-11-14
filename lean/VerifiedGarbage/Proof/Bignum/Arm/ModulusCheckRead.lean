@@ -24,9 +24,9 @@ theorem modulusCheckRead_ok (s : State) {src : BitVec 32} {k : Nat}
       t.gpr .r2 = (s.mem (State.addr src + BitVec.ofNat 64 (k - 1))).setWidth 32 ∧
       t.mem = s.mem ∧ Rest [.r1, .r2] s t := by
   have first : InRegions (s.rd ++ s.wr) (State.addr src) 1 := by
-    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) read (by omega) (by omega)
+    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) read (by omega_using [hk]) (by omega_using [fit])
   have last : InRegions (s.rd ++ s.wr) (State.addr src + BitVec.ofNat 64 (k - 1)) 1 :=
-    CallLay.inRegions_sub read (by omega) (by omega)
+    CallLay.inRegions_sub read (by omega_using [hk]) (by omega_using [fit])
   unfold modulusCheckRead
   refine wp_ldrb (a := State.addr src) (by decide) (by rw [source]; simp) first fun u h => ?_
   refine wp_dp (op2_reg _ _) fun v j => ?_
@@ -36,8 +36,8 @@ theorem modulusCheckRead_ok (s : State) {src : BitVec 32} {k : Nat}
     simp only [BitVec.add_zero]
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg]
     change State.addr (src + (BitVec.ofNat 32 k - BitVec.ofNat 32 1)) = _
-    rw [Offset.ofNat_sub_ofNat (by omega)]
-    exact addr_add (by omega)
+    rw [Offset.ofNat_sub_ofNat (by omega_using [hk])]
+    exact addr_add (by omega_using [fit])
   refine wp_ldrb (a := State.addr src + BitVec.ofNat 64 (k - 1)) (by decide) lastAddr
     (by rw [l.rd, l.wr, j.rd, j.wr, h.rd, h.wr]; exact last) fun t q => WP.block_nil ?_
   refine ⟨?_, ?_, q.mem.trans (l.mem.trans (j.mem.trans h.mem)),

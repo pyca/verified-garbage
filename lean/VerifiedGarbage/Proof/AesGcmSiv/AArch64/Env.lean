@@ -261,7 +261,7 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3808) (hd : d + k ≤ 3808) :
     (⟨p.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
@@ -280,7 +280,7 @@ theorem t_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.T, 16⟩ : Region).Disjoi
 
 theorem toNat_W {d : Nat} (hd : d < 3808) : (p.W + BitVec.ofNat 64 d).toNat = p.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 
@@ -341,10 +341,10 @@ theorem WP.run {is : List Instr} {s : State} {Q R : State → Prop}
 
 /-- The `n` bytes at `p + d` within the `k` bytes at `p`. -/
 theorem contains_at (p : Addr) {d n k : Nat} (h : d + n ≤ k) (hk : k < 2 ^ 64) :
-    (⟨p, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := Offset.contains_base p h (by omega)
+    (⟨p, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := Offset.contains_base p h (by omega_using [h, hk])
 
 theorem contains_at0 (p : Addr) {n k : Nat} (h : n ≤ k) (hk : k < 2 ^ 64) :
     (⟨p, k⟩ : Region).Contains p n := by
-  simpa using contains_at p (d := 0) (by omega : 0 + n ≤ k) hk
+  simpa using contains_at p (d := 0) (by omega_using [h] : 0 + n ≤ k) hk
 
 end VG.Proof.AesGcmSiv.AArch64

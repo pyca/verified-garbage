@@ -26,7 +26,7 @@ theorem addr_word {b r B : Addr} {e j : Nat}
   rw [hb,hr,ofNat_mul8,show (8*(i:Int))=((8*i:Nat):Int) by rw [Int.natCast_mul]; rfl,BitVec.ofInt_natCast]
   simp only [off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
   congr 2
-  omega
+  omega_using []
 
 theorem one_ok {s t : State} {B : Addr} {Z eX eN w j i : Nat}
     (hbx : s.gpr .rbx=off B eX) (h10 : s.gpr .r10=off B eN)
@@ -41,16 +41,16 @@ theorem one_ok {s t : State} {B : Addr} {Z eX eN w j i : Nat}
       (word t.mem B (eX+8*(j+i))).toNat+2^64*c'.toNat) ?_ rfl)
     fun u ⟨⟨hm,c',hcf',r,he⟩,ku⟩ => ?_
   · xrun [one,State.ea,ix,addr_word bx h.index i,addr_word r10 h.index i,
-      h.scr.ld (show eX+8*(j+i)+8≤Z by omega),h.scr.ld (show eN+8*(j+i)+8≤Z by omega),hcf]
+      h.scr.ld (show eX+8*(j+i)+8≤Z by omega_using [hX, hji]),h.scr.ld (show eN+8*(j+i)+8≤Z by omega_using [hN, hji]),hcf]
     exact ⟨_,sbb_toNat _ _ _⟩
   · rw [h.mem] at he
     refine ⟨h.scr.congr ku.2.2,(h.keep.trans ku).mono (by decide),hm.trans h.mem,
       (ku.gpr (by decide)).trans h.index,c',d+2^(64*(j+i))*r.toNat,hcf',?_,?_⟩
     · have hb := Nat.mul_le_mul_left (2^(64*(j+i))) (show r.toNat+1≤2^64 from r.isLt)
-      rw [show j+(i+1)=(j+i)+1 by omega,pow64_succ]
+      rw [show j+(i+1)=(j+i)+1 by omega_using [],pow64_succ]
       rw [Nat.mul_add,Nat.mul_one] at hb
-      omega
-    · rw [show j+(i+1)=(j+i)+1 by omega]
+      omega_using [hd, hb]
+    · rw [show j+(i+1)=(j+i)+1 by omega_using []]
       simp only [wv]
       rw [pow64_succ]
       grind
@@ -66,8 +66,8 @@ theorem words_ok {s : State} {B : Addr} {Z eX eN w j : Nat}
     intro i t hn h
     unfold words
     rw [WP.block_append_iff]
-    refine WP.mono (one_ok hbx h10 hX hN (by omega) h) fun u hu => ?_
-    simpa only [Nat.add_assoc,Nat.add_comm 1 n] using ih (i+1) u (by omega) hu
+    refine WP.mono (one_ok hbx h10 hX hN (by omega_using [hn]) h) fun u hu => ?_
+    simpa only [Nat.add_assoc,Nat.add_comm 1 n] using ih (i+1) u (by omega_using [hn]) hu
 
 theorem block8_ok {s t : State} {B : Addr} {Z w eX eN j : Nat}
     (hbx : s.gpr .rbx=off B eX) (h10 : s.gpr .r10=off B eN)
@@ -83,7 +83,7 @@ theorem block8_ok {s t : State} {B : Addr} {Z w eX eN j : Nat}
   rw [WP.block_append_iff]
   have hc : Chain s B Z eX eN j 0 a := ⟨h.scr.congr ka.2.2,(h.keep.trans ka).mono (by decide),
     hm.trans h.mem,(ka.gpr (by decide)).trans h.r14,c,d,hcf,hd,hval⟩
-  refine WP.mono (words_ok hbx h10 hX hN 8 0 a (by omega) hc) fun b hb => ?_
+  refine WP.mono (words_ok hbx h10 hX hN 8 0 a (by omega_using [hj]) hc) fun b hb => ?_
   obtain ⟨c',d',hcf',hd',hv'⟩ := hb.val
   have hadd : BitVec.ofNat 64 j+8=BitVec.ofNat 64 (j+8) := by rw [BitVec.ofNat_add]; rfl
   refine WP.mono (WP.keep [.rbp,.r14] (Q := fun u => u.mem=b.mem ∧
@@ -91,7 +91,7 @@ theorem block8_ok {s t : State} {B : Addr} {Z w eX eN j : Nat}
     fun u ⟨⟨hu,hbp',h14,hz⟩,ku⟩ =>
       ⟨hz,hb.scr.congr ku.2.2,(hb.keep.trans ku).mono (by decide),hu.trans hb.mem,h14,c',d',hbp',hd',hv'⟩
   xrun [cfToRbp,hcf',hb.index,(hb.keep.gpr (by decide)).trans h12,hadd,
-    ofNat_sub_beq (show j+8<2^64 by omega) (show w<2^64 by omega),mask]
+    ofNat_sub_beq (show j+8<2^64 by omega_using [hw, hj]) (show w<2^64 by omega_using [hw]),mask]
   rfl
 
 theorem loop8_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)
@@ -103,16 +103,16 @@ theorem loop8_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)
   unfold loop8
   refine WP.seq (WP.mono (WP.keep [.r14] (Q := fun a => a.gpr .r14=0 ∧ a.mem=s.mem)
     (by xrun) rfl) fun a ⟨⟨h14,hm⟩,ka⟩ => ?_)
-  refine wp_upto (a := 0) (N := w/8) (by omega) (fun j t => CmpInv s B Z eX eN (8*j) t) ?_ ?_ ?_
+  refine wp_upto (a := 0) (N := w/8) (by omega_using [hw, h8]) (fun j t => CmpInv s B Z eX eN (8*j) t) ?_ ?_ ?_
   · intro j _ hj t h
-    refine WP.mono (block8_ok hbx h10 h12 hw' hX hN (by omega) h) fun u ⟨hz,hu⟩ => ?_
-    have hn : 8*j+8=8*(j+1) := by omega
+    refine WP.mono (block8_ok hbx h10 h12 hw' hX hN (by omega_using [hj]) h) fun u ⟨hz,hu⟩ => ?_
+    have hn : 8*j+8=8*(j+1) := by omega_using []
     rw [hn] at hu
     refine ⟨?_,hu⟩
     rw [hz]
-    exact congrArg some (decide_eq_decide.mpr (by omega))
+    exact congrArg some (decide_eq_decide.mpr (by omega_using [h8]))
   · intro t h
-    have hn : 8*(w/8)=w := by omega
+    have hn : 8*(w/8)=w := by omega_using [h8]
     rw [hn] at h
     obtain ⟨c,d,hc,hd,hv⟩ := h.val
     exact ⟨by rw [hc,lt_of_borrow hd hv],h.mem,h.keep⟩
@@ -129,7 +129,7 @@ theorem code_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)
   refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun a => a.zf=some (decide (w%8=0)) ∧ a.mem=s.mem)
     (by
       xrun [h12,sx0,show BitVec.signExtend 64 (7:BitVec 32)=7 from rfl]
-      simp only [sub_beq_zero,VG.Proof.Bignum.X86_64.and7_eq w (by omega)]) rfl)
+      simp only [sub_beq_zero,VG.Proof.Bignum.X86_64.and7_eq w (by omega_using [hw'])]) rfl)
     fun a ⟨⟨hz,hm⟩,ka⟩ => ?_)
   refine WP.ite (decide (w%8=0)) (by simp [eval,hz]) ?_ ?_
   · intro h8

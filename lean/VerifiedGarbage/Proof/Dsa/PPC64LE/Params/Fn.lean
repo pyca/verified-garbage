@@ -33,15 +33,15 @@ theorem checkParameters_spec {m : Mem} {L : Lay} {key : Addr} (hv : Spec.Dsa.len
       decide (ParamsOk m L key) := by
   rw [VG.Proof.Dsa.checkParametersBytes_eq hv (VG.Proof.Bignum.bytesAt_length _ _ _)]
   have ep : (Spec.Rsa.bytesAt m key (2 * L.pl + L.ql)).take L.pl = Spec.Rsa.bytesAt m key L.pl := by
-    have := VG.Proof.Dsa.bytesAt_slice m key (offset := 0) (len := L.pl) (total := 2 * L.pl + L.ql) (by omega)
+    have := VG.Proof.Dsa.bytesAt_slice m key (offset := 0) (len := L.pl) (total := 2 * L.pl + L.ql) (by omega_using [])
     simp only [List.drop_zero, BitVec.add_zero] at this
     exact this
   have eq : ((Spec.Rsa.bytesAt m key (2 * L.pl + L.ql)).drop L.pl).take L.ql =
       Spec.Rsa.bytesAt m (off key L.pl) L.ql :=
-    VG.Proof.Dsa.bytesAt_slice m key (by omega)
+    VG.Proof.Dsa.bytesAt_slice m key (by omega_using [])
   have eg : ((Spec.Rsa.bytesAt m key (2 * L.pl + L.ql)).drop (L.pl + L.ql)).take L.pl =
       Spec.Rsa.bytesAt m (off key (L.pl + L.ql)) L.pl :=
-    VG.Proof.Dsa.bytesAt_slice m key (by omega)
+    VG.Proof.Dsa.bytesAt_slice m key (by omega_using [])
   simp only [VG.Proof.Dsa.paramsBytes_eq, ep, eq, eg, VG.Proof.Dsa.powMod_eq]
   apply Bool.eq_iff_iff.mpr
   rw [decide_eq_true_iff (p := ParamsOk m L key)]
@@ -60,13 +60,13 @@ theorem psrc_of {s : State} {n : Nat} (hrd : s.rd = [⟨s.gpr .r3, (s.gpr .r4).t
     Src t (playOf s) (s.gpr .r3) n := by
   have := (s.gpr .r4).isLt
   exact ⟨fun i hi => ⟨_, by rw [hr, hw, hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-    Offset.contains_base _ (by omega) (by omega)⟩,
-    fun i hi => Pub.ne_of_disjoint dPS (by omega) i (by omega)⟩
+    Offset.contains_base _ (by omega_using [hn, hi]) (by omega_using [hn, hi])⟩,
+    fun i hi => Pub.ne_of_disjoint dPS (by omega_using []) i (by omega_using [hn, hi])⟩
 
 /-- The domain, readable and apart from `scratch`. -/
 theorem pre_psrc {s : State} (h : pcContract.pre s) {t : State} (hr : t.rd = s.rd) (hw : t.wr = s.wr) :
     Src t (playOf s) (s.gpr .r3) (2 * (playOf s).pl + (playOf s).ql) :=
-  psrc_of h.1 h.2.2.1 (by have := h.2.2.2.2.2.2.1; simp only [playOf]; omega) hr hw
+  psrc_of h.1 h.2.2.1 (by have := h.2.2.2.2.2.2.1; simp only [playOf]; omega_using [this]) hr hw
 
 /-- A check by `X` (`checkParams` or `checkKey`) of the octets at `r3` after
 `Params.entry`, which leaves 1 or 0 as they pass `Ok` or not, then `restore`. -/
@@ -91,11 +91,11 @@ theorem checkLike_ok {X : Prog isa → Prog isa → Prog isa} {Ok : Mem → Lay 
   have hZ := hL.z256
   refine WP.seq (WP.mono (pfront_ok_of hL hwr nw) fun s₁ ⟨⟨hr₁, scr₁, r2₁, sav₁, out₁⟩, k₁⟩ => ?_)
   have hwr' : ∀ u : State, ScrL u (playOf s) → ∀ i < 19, InRegions u.wr (off (savW (s.gpr .r7)) (8 * i)) 8 :=
-    fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [playOf] at hZ ⊢; omega)
+    fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [playOf] at hZ ⊢; omega_using [hZ, hi])
   have hsav' : ∀ u : State, Kept (playOf s) s₁.mem u.mem → ∀ i < 19,
       word u.mem (s.gpr .r7) (saveOff i) = s.gpr (saved i) := fun u hu i hi => (hu.sav i hi).trans (sav₁ i hi)
   have Out₁ : Outside (playOf s).S 0 (playOf s).Z s.mem s₁.mem :=
-    out₁.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega)
+    out₁.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
   have hPs := hOk Out₁
   -- `r3 := c`, then `restore`.
   have ret : ∀ (t : State) (c : Nat), Kept (playOf s) s₁.mem t.mem → t.gpr .r21 = (playOf s).S →
@@ -103,11 +103,11 @@ theorem checkLike_ok {X : Prog isa → Prog isa → Prog isa} {Ok : Mem → Lay 
       WP isa (.block [.li .r3 c]) t fun u => WP isa (.block restore) u fun w =>
         abiPreserved s w ∧ ((w.gpr .r3).setWidth 32).toNat = c := fun t c hkp h21 scrt kc hc hwo => by
     refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = BitVec.ofNat 64 c ∧ u.mem = t.mem)
-      (by prun [show c < 2 ^ 15 by omega]) hwo) fun u ⟨⟨u3, um⟩, ku⟩ => ?_
+      (by prun [show c < 2 ^ 15 by omega_using [hc]]) hwo) fun u ⟨⟨u3, um⟩, ku⟩ => ?_
     refine WP.mono (finish_ok ((ku.gpr .r21 (by decide)).trans h21) (hwr' u (scrt.congr ku.wr))
       (hsav' u (by rw [um]; exact hkp)) ((k₁.trans kc).trans ku)) fun w ⟨hab, w3⟩ => ⟨hab, ?_⟩
-    rw [w3, u3, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [w3, u3, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc]),
+      Nat.mod_eq_of_lt (by omega_using [hc])]
   refine WP.seq (hX scr₁ hr₁ r2₁ (hsrc k₁.rd k₁.wr) (fun t hP hc hkp kc => ?_) (fun t hn hkp hrt scrt kc => ?_))
   · refine WP.mono (ret t 1 (Kept.ofBody hL hkp) hc.regs.r21 hc.scr kc (by decide) (by decide)) fun u hu =>
       WP.mono hu fun w ⟨hab, w3⟩ => ⟨hab, by rw [w3, ite_eq_left (hPs.mp hP)]⟩
@@ -120,7 +120,7 @@ theorem checkParameters_correct (s : State) (h : pcContract.pre s) :
   have hL := playOf_ok h
   have hpre := h
   obtain ⟨-, -, -, -, -, hv, hpl, -⟩ := h
-  have hplq : 2 * (playOf s).pl + (playOf s).ql = (s.gpr .r4).toNat := by simp only [playOf]; omega
+  have hplq : 2 * (playOf s).pl + (playOf s).ql = (s.gpr .r4).toNat := by simp only [playOf]; omega_using [hpl]
   have hspec : Spec.Dsa.checkParametersBytes (s.gpr .r5).toNat (s.gpr .r6).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .r3) (s.gpr .r4).toNat) = decide (ParamsOk s.mem (playOf s) (s.gpr .r3)) := by
     rw [← hplq]; exact checkParameters_spec hv

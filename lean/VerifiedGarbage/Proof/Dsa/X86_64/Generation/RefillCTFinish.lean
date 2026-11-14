@@ -115,8 +115,8 @@ theorem doneAt_frame {n pLen qLen : Nat} {D : DonePublic} {s t : State} (h : Don
 theorem doneAt_ctlIn {n pLen qLen : Nat} {D : DonePublic} {t : State} (h : DoneAt n pLen qLen D t) {k : Nat}
     (hk : k < 4) : InRegions (t.rd ++ t.wr) (off D.ctx.geo.F (296 + 8 * k)) 8 := by
   have cs : Scr t (off D.ctx.geo.F 296) 32 := Scr.of_mem h.2.1.2.2.2 (by
-    have := D.ok.bound; simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
-  have := cs.ld (d := 8 * k) (by omega)
+    have := D.ok.bound; simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [this])
+  have := cs.ld (d := 8 * k) (by omega_using [hk])
   simpa [off_off] using this
 
 theorem doneAt_stIn {n pLen qLen : Nat} {D : DonePublic} {t : State} (h : DoneAt n pLen qLen D t) {d : Nat}
@@ -246,7 +246,7 @@ theorem doneStatus_ready {n pLen qLen : Nat} {D : DonePublic} {s : State} (h : D
     WP isa (.block (Impl.Dsa.X86_64.Generation.stackStatus k)) s
       (DoneAt n pLen qLen (D.withStatus (BitVec.ofNat 64 k))) := by
   obtain ⟨⟨W, hm, _⟩, ⟨c0, c1, c2, cw⟩, c3, hf, hw, _, hp, hq⟩ := h
-  refine WP.mono (Refill.statusMem_ok hm k (by omega)) fun u ⟨mu, fu, ku⟩ => ?_
+  refine WP.mono (Refill.statusMem_ok hm k (by omega_using [hk])) fun u ⟨mu, fu, ku⟩ => ?_
   have cwd : ∀ j < 4, Refill.ctlWord u.mem D.ctx.geo.F j = Refill.ctlWord s.mem D.ctx.geo.F j :=
     fun j hj => D.ok.word fu hj
   refine ⟨⟨_, mu, by simp [upd, DonePublic.withStatus], fun h1 => ?_⟩,
@@ -276,7 +276,7 @@ theorem ranOut_ct (n pLen qLen : Nat) (hp : pLen = 128 ∨ pLen = 256 ∨ pLen =
           (.seq (.block [.alu .add .rax (.reg .rax), .alu .cmp .rax (.reg .rdx)])
             (.ite .b (.block [.mov .rdx (.reg .rax)]) (.block []))))) hc).isSome = true := by
     rcases hp with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  have pn : pLen ≤ 384 := by omega
+  have pn : pLen ≤ 384 := by omega_using [hp]
   unfold Impl.Dsa.X86_64.Generation.Refill.ranOut
   refine RelCT.seq (two_piece (Ψ := RanOutCompared n pLen qLen) [.rsp]
     (fun D s t hs ht => doneAt_pins n pLen qLen D s t hs.1 ht.1) tc.choose_spec fun D s h => ?_) ?_
@@ -308,8 +308,8 @@ theorem ranOut_ct (n pLen qLen : Nat) (hp : pLen = 128 ∨ pLen = 256 ∨ pLen =
       have pl : D.ctx.geo.pLen = pLen := hd.2.2.2.2.2.2.1
       subst pLen
       have hl := D.ends.lenBound
-      refine WP.mono (Refill.request_ok (L := D.ctx.rand.bytes.length - D.cursor) (by omega) (by omega)
-        (by omega) rc rd) fun t ⟨_, mt, kt⟩ => ?_
+      refine WP.mono (Refill.request_ok (L := D.ctx.rand.bytes.length - D.cursor) (by omega_using [hl]) (by omega_using [hp])
+        (by omega_using [hp]) rc rd) fun t ⟨_, mt, kt⟩ => ?_
       rw [e]; exact doneAt_keep' hd mt kt (by decide)
   · refine two_piece [.rsp] (fun D s t hs ht => doneAt_pins n pLen qLen D s t hs.1.1.1 ht.1.1.1)
       (by taint_decide) fun D s h => ?_

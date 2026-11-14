@@ -102,7 +102,7 @@ theorem bhb_toNat {g : Nat} (hg : G2 g) {a : BitVec 32} (ha : a.toNat < q) :
 theorem bhb_highBits {g : Nat} (hg : G2 g) (r : Zq) :
     (bhb g (BitVec.ofNat 32 r.val)).toNat = (VG.Spec.MlDsa.highBits g r).toNat := by
   have : r.val < 8380417 := r.isLt
-  have e : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega
+  have e : (BitVec.ofNat 32 r.val).toNat = r.val := by rw [BitVec.toNat_ofNat]; omega_using [this]
   rw [bhb_toNat hg (by rw [e]; exact r.isLt), e, highBits_eq hg.mem, Int.toNat_natCast]
 
 end VG.Proof.MlDsa.Arm.Round

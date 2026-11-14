@@ -1,6 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.CTCommon
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Args
+public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
@@ -9,11 +15,93 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Secret
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `Ed25519.Arm.SignCached.CTCommon`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.Arm.SignCached
+open VG VG.Arm VG.Impl.Ed25519.Arm.Whole
+
+variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
+
+def Two (L : Lay) (g₁ g₂ : Reg → BitVec 32)
+    (m₁ m₂ : Mem) (P : State → Prop) (a b : State) : Prop :=
+  Ctx L g₁ m₁ a ∧ Ctx L g₂ m₂ b ∧ P a ∧ P b
+
+theorem two_sp {P : State → Prop} {a b : State} (h : Two L g₁ g₂ m₁ m₂ P a b) :
+    a.sp = b.sp := h.1.sp.trans h.2.1.sp.symm
+
+theorem two_wp {P Q : State → Prop} {c : Prog isa}
+    (hct : RelCT isa (Two L g₁ g₂ m₁ m₂ P) c fun _ _ => True)
+    (ha : ∀ t, Ctx L g₁ m₁ t → P t → WP isa c t fun u => Ctx L g₁ m₁ u ∧ Q u)
+    (hb : ∀ t, Ctx L g₂ m₂ t → P t → WP isa c t fun u => Ctx L g₂ m₂ u ∧ Q u) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ P) c (Two L g₁ g₂ m₁ m₂ Q) :=
+  (hct.wp fun a b h => ⟨ha a h.1 h.2.2.1, hb b h.2.1 h.2.2.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => ⟨h.2.1.1, h.2.2.1, h.2.1.2, h.2.2.2⟩
+
+def AllArgs (L : Lay) (args : List (Reg × Value)) (stack : List Value) (s : State) : Prop :=
+  OutArgs L args s ∧ StackArgs L stack s
+
+theorem setup_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    (args : List (Reg × Value)) (stack : List Value) (hn : (args.map Prod.fst).Nodup)
+    (hv : ∀ p ∈ args, Whole.valid p.2) (hs : stack.length ≤ 6)
+    (hvs : ∀ v ∈ stack, Whole.valid v) (hr : ∀ p ∈ args, p.1 ∉ preserved) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block (setup args stack))
+      (Two L g₁ g₂ m₁ m₂ (AllArgs L args stack)) := by
+  refine two_wp ((Whole.setup_ct args stack).mono (fun _ _ h => two_sp h) (fun _ _ _ => True.intro)) ?_ ?_
+  · intro s hc _
+    exact WP.mono (args_ok hc hL ha hn hv hs hvs hr) fun _ ⟨hu, _, hg, ht⟩ => ⟨hu, hg, ht⟩
+  · intro s hc _
+    exact WP.mono (args_ok hc hL hb hn hv hs hvs hr) fun _ ⟨hu, _, hg, ht⟩ => ⟨hu, hg, ht⟩
+
+theorem args_eq {args : List (Reg × Value)} {stack : List Value} {a b : State}
+    (h : Two L g₁ g₂ m₁ m₂ (AllArgs L args stack) a b) {p : Reg × Value} (hp : p ∈ args) :
+    a.gpr p.1 = b.gpr p.1 := (h.2.2.1.1 p hp).trans (h.2.2.2.1 p hp).symm
+
+theorem call_gpr_eq {args : List (Reg × Value)} {stack : List Value} {a b : State}
+    (h : Two L g₁ g₂ m₁ m₂ (AllArgs L args stack) a b) {p : Reg × Value}
+    (hp : p ∈ args) (hl : p.1 ∉ linkRegs) : a.callEntry.gpr p.1 = b.callEntry.gpr p.1 := by
+  rw [State.callEntry_gpr _ hl, State.callEntry_gpr _ hl]
+  exact args_eq h hp
+
+theorem stack_arg_eq {args : List (Reg × Value)} {stack : List Value} {a b : State}
+    (h : Two L g₁ g₂ m₁ m₂ (AllArgs L args stack) a b) {j : Nat} (hj : j < stack.length) :
+    stackArg a j = stackArg b j := (h.2.2.1.2 j hj).trans (h.2.2.2.2 j hj).symm
+
+theorem call_ct {P : State → Prop} {k : Contract isa} {c : Prog isa} {name : String}
+    (correct : ∀ s, k.pre s → ∃ tr s', Exec isa c s tr s' ∧ abiPreserved s s' ∧ k.post s s')
+    (ct : ConstantTime isa k.pre k.pub c) (hn : c.noFrames = true)
+    (ready : ∀ {g m t}, Ctx L g m t → P t → Whole.CallReady k L.E L.inputs L.outputs t)
+    (kp : ∀ (a b : State) ar aw br bw, Two L g₁ g₂ m₁ m₂ P a b →
+      k.pub (a.callEntry.withRegions ar aw) (b.callEntry.withRegions br bw)) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ P) (.call name c)
+      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+  apply two_wp
+  · refine Whole.callEx correct ct fun a b h => ?_
+    let ra := ready h.1 h.2.2.1
+    let rb := ready h.2.1 h.2.2.2
+    obtain ⟨ca, wa⟩ := Whole.CallReady.covers_state h.1 ra
+    obtain ⟨cb, wb⟩ := Whole.CallReady.covers_state h.2.1 rb
+    exact ⟨ra.reads, ra.writes, rb.reads, rb.writes, ra.pre, rb.pre,
+      kp a b _ _ _ _ h, ca, wa, cb, wb⟩
+  · intro t hc hs
+    exact WP.mono (Whole.CallReady.wp hc (ready hc hs) correct hn) fun _ hu => ⟨hu, trivial⟩
+  · intro t hc hs
+    exact WP.mono (Whole.CallReady.wp hc (ready hc hs) correct hn) fun _ hu => ⟨hu, trivial⟩
+
+end VG.Proof.Ed25519.Arm.SignCached
+
+end
+
+end
+
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.CTReady`. -/
 
@@ -31,13 +119,13 @@ def reduce_ready (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184) (ha : ReduceArgs L 
       List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact .inl (digestWithin L)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (scratch_covered L)
   have ws : ∀ r ∈ reduceWr L d, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
     apply writes
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact .inl (fieldWithin L (by omega))
+    · exact .inl (fieldWithin L (by omega_using [hd]))
     · exact .inr (.inr (scratchWithin L))
   exact ⟨reduceRd L, reduceWr L d, reduce_pre hL hd ha, cov, ws⟩
 
@@ -192,7 +280,7 @@ theorem finalize_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (finalize n b)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hv : Whole.valid (if b then .caller 4 n else .const n) := by
-    cases b <;> simp [Whole.valid] <;> omega
+    cases b <;> simp [Whole.valid] <;> omega_using [hn]
   have hvall : ∀ p : Reg × Value, p ∈ [(.r0, .caller 5 0),
       (.r2, if b then .caller 4 n else .const n), (.r3, .const 0)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -374,7 +462,7 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (d : Nat) (hd : d + 32 ≤ 184) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (reduce d)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  have hv : Whole.valid (.frame d) := by change d < 256; omega
+  have hv : Whole.valid (.frame d) := by change d < 256; omega_using [hd]
   have hvall : ∀ p : Reg × Value, p ∈ [(.r0, .frame d), (.r1, .frame 184), (.r2, .caller 5 0)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl)
@@ -505,7 +593,7 @@ theorem lay_ok {s : State} (h : (signLocalWith n key post).pre s) : (lay n s).Ok
   · have he := Whole.base_top (s := s) hb
     have hs := s.sp.isLt
     change (Whole.base s).toNat + 272 ≤ 2 ^ 32
-    omega
+    omega_using [he]
   · simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
     · exact os
@@ -552,7 +640,7 @@ theorem entry_args {s p : State} (h : (signLocalWith n key post).pre s)
     (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay n s) p.mem := by
   intro j hj
   have hw := Whole.saved_words (entry_below h) (by decide : 6 ≤ 6) (entry_top h) hp hj
-  have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+  have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_using [hj]
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
     simpa only [Whole.originalWord, Impl.Ed25519.Arm.Whole.argReg, Nat.reduceLT, ite_true, ite_false,
       Nat.reduceSub, Nat.mul_zero, BitVec.add_zero, Lay.value, lay,
@@ -562,9 +650,9 @@ theorem entry_read {s : State} (h : (signLocalWith n key post).pre s) : ∀ j < 
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4*(j-4)))) 4 := by
   intro j hj h4
   have ht := entry_top h
-  rw [addr_add (by omega)]
+  rw [addr_add (by omega_using [hj, ht])]
   exact ⟨⟨State.addr s.sp,8⟩, List.mem_append_left _ (by rw [h.1]; simp),
-    Offset.contains_base _ (by omega) (by omega)⟩
+    Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 theorem entry_input {s : State} (h : (signLocalWith n key post).pre s) {m : Mem}
     (hf : Frame [Whole.stack s] s.mem m) {r : Region} (hr : r ∈ s.rd) (hn : r.len ≤ 2 ^ 64) :
@@ -594,7 +682,7 @@ theorem entry_tbl {s p : State} (h : (signLocalWith n key post).pre s) (hp : Who
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hw, _, _, tstk⟩ := h
   rw [← hw j hj]
   refine hf.readW (r := TBL (s.syms VG.Impl.Ed25519.Arm.combSym))
-    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) ?_ (by decide)
   intro r hr
   rw [List.mem_singleton.mp hr, stack_eq hb]
   exact tstk
@@ -640,9 +728,9 @@ theorem sat_key : Spec.Ed25519.bytesAt satMem 0x3000 32 = satKey := by
     have hi' : i < 32 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMem, ha,
-      show ¬ 0x3000 + i < 0x3000 from by omega, ite_false, show 0x3000 + i < 0x3020 from by omega, ite_true, Nat.add_sub_cancel_left,
+      show ¬ 0x3000 + i < 0x3000 from by omega_using [], ite_false, show 0x3000 + i < 0x3020 from by omega_using [hi'], ite_true, Nat.add_sub_cancel_left,
       List.getElem?_eq_getElem hj, Option.getD_some]
 
 end VG.Proof.Ed25519.Arm.SignCached

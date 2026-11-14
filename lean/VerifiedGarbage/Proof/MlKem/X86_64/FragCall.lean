@@ -54,12 +54,12 @@ theorem glueCall_ok {glue : List Instr} {n : String} {c : Prog isa} {k : Contrac
       ∃ s1, V s1 ∧ s1.mem = s.mem ∧ Keep argRegs s s1 ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧
         (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post (s1.callEntry.withRegions rd wr) s₂ := by
   refine WP.seq (WP.mono hg fun s1 ⟨⟨hV, hm⟩, k1⟩ => ?_)
-  refine WP.call hv hsp (by omega) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
+  refine WP.call hv hsp (by omega_using [hd]) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
     (by rw [k1.2.2]; exact hw) fun s' hrd hwr hcs hf _ hpost => ⟨⟨hrd.trans k1.2.1, hwr.trans k1.2.2,
       fun r hr => by rw [hcs r hr, k1.gpr (argRegs_cs r hr)], ?_⟩, s1, hV, hm, k1, hpost⟩
   have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
   rw [hm, hsp1] at hf
-  exact Frame.below_mono hf (by omega) (by omega)
+  exact Frame.below_mono hf (by omega_using [hd]) (by omega_using [])
 
 /-- The trace of the moves then a call, from two runs where the moves are
 the same and the callee's public data agree. -/
@@ -113,7 +113,7 @@ theorem stk_disj24 (s : State) {R : Region} (h : (below (s.gpr .rsp) 32).Disjoin
   intro x hx
   simp only [Region.Contains] at hx ⊢
   rw [show x - (s.gpr .rsp - BitVec.ofNat 64 32) = x - (s.gpr .rsp - 8 - BitVec.ofNat 64 24) by bv_omega]
-  omega
+  omega_using [hx]
 
 /-- `ret_disj` for a caller with 24 bytes of stack. -/
 theorem ret_disj24 (s : State) {R : Region} (h : (below (s.gpr .rsp) 24).Disjoint R) :
@@ -134,17 +134,17 @@ theorem stk_disj24' (s : State) {R : Region} (h : (below (s.gpr .rsp) 24).Disjoi
   intro x hx
   simp only [Region.Contains] at hx ⊢
   rw [show x - (s.gpr .rsp - BitVec.ofNat 64 24) = x - (s.gpr .rsp - 8 - BitVec.ofNat 64 16) by bv_omega]
-  omega
+  omega_using [hx]
 
 theorem k16_24 (s : State) {R : Region} (h : (below (s.gpr .rsp) 24).Disjoint R) : (below (s.gpr .rsp) 16).Disjoint R :=
-  h.sub_left (below_sub (by omega) (by omega))
+  h.sub_left (below_sub (by omega_using []) (by omega_using []))
 
 theorem ce_bytesAt24 (s : State) {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
     (h : (below (s.gpr .rsp) 24).Disjoint ⟨p, n⟩) : bytesAt s.callEntry.mem p n = bytesAt s.mem p n :=
   callEntry_bytesAt s hn (k16_24 s h)
 
 theorem k16 (s : State) {R : Region} (h : (below (s.gpr .rsp) 32).Disjoint R) : (below (s.gpr .rsp) 16).Disjoint R :=
-  h.sub_left (below_sub (by omega) (by omega))
+  h.sub_left (below_sub (by omega_using []) (by omega_using []))
 
 /-- A polynomial apart from the stack reads the same on entry to a callee. -/
 theorem ce_polyAt (s : State) {p : Addr} (h : (below (s.gpr .rsp) 32).Disjoint (pR p)) :

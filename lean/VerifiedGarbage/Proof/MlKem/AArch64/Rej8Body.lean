@@ -34,7 +34,7 @@ theorem choosePrefix_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat �
     refine ⟨⟨Scalar.acc_keep h.acc hk hm,(h.keep.trans hk).mono (by decide),
       by rw [hk.get .x2,h.x2],by rw [hk.get .x5,h.x5],by rw [hk.get .x10,h.x10]⟩,?_⟩
     rw [eu,ea,hu.gpr .x4 (by decide),ha.gpr .x4 (by decide),beq_iff_eq]
-    have hb : (s.gpr .x4).toNat≤256 := by rw [h.acc.x4]; omega
+    have hb : (s.gpr .x4).toNat≤256 := by rw [h.acc.x4]; omega_using []
     bv_omega
   refine WP.mono (WP.keepV (by decide) hw) fun u ⟨⟨hi,he⟩,hv⟩ => ⟨hi,?_,he⟩
   exact ⟨by rw [hv]; exact hc.index,by rw [hv]; exact hc.mask,
@@ -81,7 +81,7 @@ theorem body_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byte} 
         rw [eq_zero_iff,decide_eq_true_eq,hb.acc.x4] at hz
         have := hb.acc.len
         change _=256
-        omega
+        omega_using [hz, this]
       have heq := sampleAfter_full hfull N ht
       have hw : WP isa (.block [.movz .x .x5 0 0]) b fun u =>
           Scalar.AccW w16 aP s₀ (Scalar.LA initial B N) u ∧

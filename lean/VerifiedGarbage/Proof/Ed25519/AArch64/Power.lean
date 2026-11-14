@@ -130,7 +130,7 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base large) (o 
     s.gpr .x19 = BitVec.ofNat 64 m ∧
     env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
   rw [WP.block_append_iff]
   refine WP.mono (sqrI_ok (hk.scr hs₀) o o ho) fun s1 ⟨k1, b1, e1⟩ => ?_
   refine WP.mono (decX19_ok (b1.trans hb)) fun s2 ⟨b2, kdec⟩ => ?_
@@ -139,13 +139,13 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base large) (o 
   have e2 : env s2.mem base = Function.update (env s₀.mem base) o (sqn x (n - m)) := by
     rw [kdec.mem, e1, he, opMul_update]
     congr 2
-    rw [show n - m = (n - (m + 1)) + 1 by omega]
+    rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
     rfl
-  simp only [eval, read_x, b2, counter_nonzero (by omega : m < 2 ^ 64)]
+  simp only [eval, read_x, b2, counter_nonzero (by omega_using [hn, h2] : m < 2 ^ 64)]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, k2, by rw [e2, Nat.sub_zero]⟩
-  · exact .inr ⟨by simp only [decide_eq_true (by omega : m ≠ 0)], m, by omega,
-      by omega, by omega, k2, rfl, e2⟩
+  · exact .inr ⟨by simp only [decide_eq_true (by omega_using [hm] : m ≠ 0)], m, by omega_using [],
+      by omega_using [hm], by omega_using [h2], k2, rfl, e2⟩
 
 /-- `sqn o a n`: slot `o` becomes slot `a` squared `n` times (`o` may be `a`). -/
 theorem sqnI (base : Addr) (o a : Slot) (ho : ISlot o) (n : Nat) (hn : 2 ≤ n)
@@ -160,8 +160,8 @@ theorem sqnI (base : Addr) (o a : Slot) (ho : ISlot o) (n : Nat) (hn : 2 ≤ n)
   refine WP.mono (const64_ok s1 .x19 (BitVec.ofNat 64 (n - 1))) fun s2 ⟨b2, kdec⟩ => ?_
   have k2 : IKeep base s s2 := k1.trans ⟨fun r _ hr => kdec.gpr r (by simpa only [List.mem_singleton] using hr), kdec.rd, kdec.wr, kdec.sp,
     by rw [kdec.mem]; exact Outside.refl _ _ _ _⟩
-  refine sqLoop_ok hs o ho (env s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2 b2 ?_
-  rw [kdec.mem, e1, show n - (n - 1) = 1 by omega]
+  refine sqLoop_ok hs o ho (env s.mem base a) n hn' (n - 1) s2 (by omega_using [hn]) (by omega_using [hn]) k2 b2 ?_
+  rw [kdec.mem, e1, show n - (n - 1) = 1 by omega_using [hn]]
   rfl
 
 
@@ -280,7 +280,7 @@ theorem powCall_spec (base : Addr) : ISpec (large := large) base powCall power25
   have hx0 : s₁.gpr .x0 = base := by rw [g₁]; exact hs.x0
   refine WP.callV (k := powK base) (rd := []) (wr := [⟨base, 4096⟩]) ?hv
     ⟨rfl, rfl, by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), hx0],
-      by have := workSize_ge large; have := hs.nowrap; omega⟩
+      by have := workSize_ge large; have := hs.nowrap; omega_arith⟩
     (Covers.right hcov) hcov ?_ (by decide +kernel)
   case hv =>
     intro t ⟨_, hwr, h0, hn⟩

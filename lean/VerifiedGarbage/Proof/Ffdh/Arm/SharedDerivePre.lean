@@ -51,9 +51,9 @@ theorem input (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s)
   rw [reserved] at stackOut stackDom stackX stackS stackArgs
   have inner : Region.Sub (belowA s.sp 128) (belowA s.sp 176) := by
     simp only [belowA]
-    rw [addr_sub' (by omega : 128 ≤ s.sp.toNat), addr_sub' stackFit]
+    rw [addr_sub' (by omega_using [stackFit] : 128 ≤ s.sp.toNat), addr_sub' stackFit]
     exact Offset.below_mono _ (by decide) (by decide)
-  have stackFit' : 128 ≤ s.sp.toNat := by omega
+  have stackFit' : 128 ≤ s.sp.toNat := by omega_using [stackFit]
   have ws : Workspace s p.base (8 * p.len) := ⟨sFit, by rw [wr]; simp [State.addr]⟩
   have domainRead : InRegions (s.rd ++ s.wr) (State.addr p.domain) p.dom.length :=
     ⟨⟨State.addr p.domain, p.dom.length⟩, List.mem_append_left _ (by rw [rd]; simp [State.addr]),
@@ -75,15 +75,15 @@ theorem input (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s)
       stackDom'.symm.sub_right (locals_sub_reserved s stackFit'), by simp⟩
   have argStart : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   have argAddr (i : Nat) (hi : i < 5) : stackArgAddr s i = off (State.addr s.sp) (4 * i) :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [argFit, hi])
   have argSub (i : Nat) (hi : i < 5) :
       (⟨stackArgAddr s i, 4⟩ : Region).Sub ⟨stackArgAddr s 0, 20⟩ := by
     rw [argStart, argAddr i hi]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [hi])
   have incoming (i : Nat) (hi : i < 5) : IncomingWord (stackArg s i) (128 + 4 * i) (entered s) :=
-    enteredIncoming s stackFit' (by omega)
+    enteredIncoming s stackFit' (by omega_using [argFit, hi])
       ⟨⟨stackArgAddr s 0, 20⟩, List.mem_append_left _ (by rw [rd]; simp), by
-        rw [argStart, argAddr i hi]; exact Offset.contains_base _ (by omega) (by omega)⟩
+        rw [argStart, argAddr i hi]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
       ((stackArgs.sub_left inner).sub_right (argSub i hi)) rfl
   have nativeIncoming : DeriveIncoming p (entered s) := by
     refine ⟨?_, ?_, ?_, ?_⟩
@@ -98,7 +98,7 @@ theorem input (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s)
   have outWrite : InRegions (entered s).wr (State.addr p.output) p.k :=
     ⟨⟨State.addr p.output, p.k⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (by rw [wr]; simp [State.addr])),
       Region.contains_self _ _⟩
-  have pLen : p.k ≤ p.dom.length := by rw [p.domainLength]; split <;> omega
+  have pLen : p.k ≤ p.dom.length := by rw [p.domainLength]; split <;> omega_using []
   have pubStack : Region.Disjoint ⟨State.addr p.publicValue, p.k⟩ (belowA s.sp 176) := by
     rw [publicValue]
     exact stackDom.symm.sub_left (Region.sub_prefix pLen)
@@ -106,7 +106,7 @@ theorem input (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s)
     stackS stackDom.symm pubStack (by rw [xLength]; exact stackX.symm) stackOut.symm
   refine ⟨stackFit', args, nativeIncoming, calls, out, domain, ?_,
     entered_octets rootScalar stackFit' (by rw [xLength]; exact stackX'),
-    by rw [xLength]; omega, by rw [xLength]; omega, ?_, ?_,
+    by rw [xLength]; omega_using [xPositive], by rw [xLength]; omega_using [xMax], ?_, ?_,
     ⟨outFit, outWrite⟩, outS.symm, stackOut'.sub_left (locals_sub_reserved s stackFit'), ?_⟩
   · rw [← domLen, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · change BitVec.ofNat 32 p.privateLength = _; rw [xLength]
@@ -122,7 +122,7 @@ theorem input (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s)
       subst r
       have shifted : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
       have fit : (entered s).sp.toNat + 72 < 2^32 := by
-        rw [entered_nat s stackFit']; have := s.sp.isLt; omega
+        rw [entered_nat s stackFit']; have := s.sp.isLt; omega_using []
       rw [shifted, VG.Arm.addr_add fit, belowA, addr_sub' calls.stack.fit]
       exact (Offset.disjoint_below_above _ (m := 48) (a := 72) (l := 56) (by decide)).symm
 

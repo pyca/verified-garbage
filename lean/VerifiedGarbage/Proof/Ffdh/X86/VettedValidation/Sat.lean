@@ -55,9 +55,9 @@ private theorem satHeld (words : List (BitVec 64)) (size : words.length = 2218) 
     change (if (0x100000 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j).toNat < 0x30000 then _ else _) = _
     have n : i < 2218 := by rw [size] at hi; exact hi
     rw [Offset.add_add, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show 8 * i + j < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show (0x100000 : Addr).toNat + (8 * i + j) < 2 ^ 64 by change 1048576 + _ < _; omega)]
-    simp only [show ¬ (0x100000 : Addr).toNat + (8 * i + j) < 0x30000 by change ¬ 1048576 + _ < _; omega,
+      Nat.mod_eq_of_lt (show 8 * i + j < 2 ^ 64 by omega_using [hj, n]),
+      Nat.mod_eq_of_lt (show (0x100000 : Addr).toNat + (8 * i + j) < 2 ^ 64 by change 1048576 + _ < _; omega_using [hj, n])]
+    simp only [show ¬ (0x100000 : Addr).toNat + (8 * i + j) < 0x30000 by change ¬ 1048576 + _ < _; omega_using [],
       ↓reduceIte]
   exact same.trans (constMem_held 0x100000 words (by rw [size]; decide) i hi)
 

@@ -242,7 +242,7 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
       s₀.v (#[VReg.v8,VReg.v9][j]) := by
     intro j
     rw [hu.frame.read (r := ⟨bp s₀ + BitVec.ofNat 64 128,32⟩)
-      (Offset.contains (bp s₀) (by omega) (by have := j.isLt; omega) (by decide))
+      (Offset.contains (bp s₀) (by omega_using []) (by have := j.isLt; omega_using []) (by decide))
       (tsaved_chunk hp h hge (by decide) (by decide)) (by decide),h.savedV j]
   apply WP.block_append
   refine (next_ok u (by rw [hlen]; omega_arith) hi ho).mono fun v
@@ -299,7 +299,7 @@ theorem tnext_ok {s₀ : State} (hp : TPre s₀) {t : Nat}
   · intro j
     show v.mem.read _ 16 = _
     rw [hframe.read (r := ⟨bp s₀ + BitVec.ofNat 64 128,32⟩)
-      (Offset.contains (bp s₀) (by omega) (by have := j.isLt; omega) (by decide))
+      (Offset.contains (bp s₀) (by omega_using []) (by have := j.isLt; omega_using []) (by decide))
       (fun r hr => (hns r hr).1) (by decide),hsavedV j]
   · rw [g _ (by decide),hv5,hlen,show L s₀ - 512 * t - 512 = L s₀ - 512 * (t + 1) by omega_arith]
 

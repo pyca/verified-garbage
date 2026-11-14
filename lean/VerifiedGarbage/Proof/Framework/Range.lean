@@ -23,6 +23,6 @@ theorem wp_range_flatMap {f : Nat → List M.Instr} {N : Nat} (Inv : Nat → M.S
   | succ n ih =>
     intro s hs
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (ih (by omega) s hs) fun s' h => hstep n s' (by omega) h
+    exact WP.mono (ih (by omega_using [hn]) s hs) fun s' h => hstep n s' (by omega_using [hn]) h
 
 end VG

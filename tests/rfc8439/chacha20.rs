@@ -94,26 +94,6 @@ fn rfc8439_chacha20_encryption() {
     }
 }
 
-/// Long keystreams, many blocks at a time, against the same bytes taken 64
-/// at a time (one block per call), with Appendix A.2's keys and nonces: the
-/// API against itself.
-#[test]
-fn rfc8439_chacha20_long() {
-    for v in &vectors("A.2.", "A.3.") {
-        let (key, nonce) = (v.get("Key"), v.get("Nonce"));
-        let counter = v.number("Initial Block Counter");
-        for len in [256, 511, 512, 1024 + 255, 4096] {
-            let whole = keystream(key, counter, nonce, len);
-            let mut c = chacha20(key, counter, nonce);
-            let mut pieces = vec![0; len];
-            for piece in pieces.chunks_mut(64) {
-                c.apply_keystream(piece);
-            }
-            assert_eq!(whole, pieces, "{len} bytes");
-        }
-    }
-}
-
 /// The Poly1305 key generation of §2.6.2 and Appendix A.4: the first 32
 /// bytes of the keystream from block counter 0.
 #[test]

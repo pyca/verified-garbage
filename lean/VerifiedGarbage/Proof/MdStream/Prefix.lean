@@ -21,7 +21,7 @@ namespace VG.Proof.MdStream
 theorem inRegions_prefix {rs : List Region} {a : Addr} {n m : Nat} (h : InRegions rs a n) (hm : m ≤ n) :
     InRegions rs a m := by
   obtain ⟨R, hR, hc⟩ := h
-  exact ⟨R, hR, by unfold Region.Contains at *; omega⟩
+  exact ⟨R, hR, by unfold Region.Contains at *; omega_using [hm, hc]⟩
 
 theorem length_flatMap_range {α : Type} (f : Nat → List α) {w : Nat} (hf : ∀ k, (f k).length = w) (n : Nat) :
     ((List.range n).flatMap f).length = w * n := by

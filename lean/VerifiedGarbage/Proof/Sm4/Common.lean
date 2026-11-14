@@ -27,7 +27,7 @@ open VG VG.Spec.Sm4
 
 theorem off_sub_toNat (B : Addr) {t e : Nat} (h : e ≤ t) (ht : t < 2 ^ 64) :
     (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat = t - e := by
-  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega
+  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega_using [ht]
 
 theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
     (he : e + n ≤ 2 ^ 64) : ¬ (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < n := by
@@ -35,16 +35,16 @@ theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t
 
 theorem not_contains_off (b : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
     (he : e + n ≤ 2 ^ 64) : ¬ (⟨b + BitVec.ofNat 64 e, n⟩ : Region).Contains (b + BitVec.ofNat 64 t) 1 := by
-  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega)
+  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega_using [hc])
 
 /-- A byte of `A`'s area is not among the 8 at `B + e`. -/
 theorem not_in_of_disjoint {A B : Addr} {n t e : Nat} (hsep : Region.Disjoint ⟨A, n⟩ ⟨B, n⟩) (ht : t < n)
     (he : e + 8 ≤ n) (hn : n < 2 ^ 64) : ¬ (A + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < 8 :=
-  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega) (by omega))
-    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega))
+  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega_using [ht]) (by omega_using [ht, hn]))
+    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega_using [h]))
 
 theorem toNat_off (b : Addr) {d : Nat} (h : b.toNat + d < 2 ^ 64) : (b + BitVec.ofNat 64 d).toNat = b.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h] : d < 2 ^ 64), Nat.mod_eq_of_lt h]
 
 theorem ofInt_nat (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toInt_eq; simp
@@ -75,8 +75,8 @@ theorem writeW_readW32_apply (m m' : Mem) (a c x : Addr) :
 theorem writeW32_byte (m : Mem) (a : Addr) (v : BitVec 32) {t j : Nat} (ht : t < 4) (hj : j < 8) :
     ((m.writeW a v) (a + BitVec.ofNat 64 t)).getLsbD j = v.getLsbD (8 * t + j) := by
   simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]
-  simp only [show t < 32 / 8 by omega, ↓reduceIte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
+  rw [Nat.mod_eq_of_lt (by omega_using [ht])]
+  simp only [show t < 32 / 8 by omega_using [ht], ↓reduceIte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
 
 /-- A byte outside a word written. -/
 theorem writeW32_other (m : Mem) (a x : Addr) (v : BitVec 32) (h : ¬ (x - a).toNat < 4) :
@@ -88,7 +88,7 @@ theorem writeW32_other (m : Mem) (a x : Addr) (v : BitVec 32) (h : ¬ (x - a).to
 theorem frame_writeW {m : Mem} {a : Addr} {R : Region} (v : BitVec 64) (hs : Region.Sub ⟨a, 8⟩ R) :
     Frame [R] m (m.writeW a v) := fun x hx => by
   simp only [Mem.writeW, Mem.write]
-  exact ite_eq_right fun h => hx R (List.mem_singleton_self _) (hs x (by simp only [Region.Contains]; omega))
+  exact ite_eq_right fun h => hx R (List.mem_singleton_self _) (hs x (by simp only [Region.Contains]; omega_using [h]))
 
 /-! ## Blocks -/
 
@@ -104,8 +104,8 @@ theorem blocksAt_of_dinv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Block}
   have hj := List.mem_range.mp hj
   apply Vector.ext; intro t ht
   simp only [blockAt, Vector.getElem_ofFn]
-  rw [VG.Offset.add_add, h _ (by omega), ite_eq_left (by omega), show (16 * j + t) / 16 = j by omega,
-    show (16 * j + t) % 16 = t by omega]
+  rw [VG.Offset.add_add, h _ (by omega_using [hj, ht]), ite_eq_left (by omega_using [hj, ht]), show (16 * j + t) / 16 = j by omega_using [ht],
+    show (16 * j + t) % 16 = t by omega_using [ht]]
   simp [Vector.getD, ht]
 
 /-- The block function of each direction. -/

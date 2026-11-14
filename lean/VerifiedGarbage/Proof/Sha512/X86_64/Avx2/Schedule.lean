@@ -38,16 +38,16 @@ theorem qword_append_0 (hi lo : Word) : qword (hi ++ lo) 0 = lo := by
 theorem qword_append_1 (hi lo : Word) : qword (hi ++ lo) 1 = hi := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi'
   simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, Nat.mul_one,
-    decide_eq_true hi', Bool.true_and, show ¬ 64 + i < 64 by omega, ite_false,
-    show 64 + i - 64 = i by omega]
+    decide_eq_true hi', Bool.true_and, show ¬ 64 + i < 64 by omega_using [], ite_false,
+    show 64 + i - 64 = i by omega_using []]
 
 theorem psrlq_eq (hi lo : Word) (n : BitVec 8) (h : n.toNat < 64) :
     XShiftOp.eval .psrlq (hi ++ lo) n = (hi >>> n.toNat) ++ (lo >>> n.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false, qword_append_0, qword_append_1]
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [h], ite_false, qword_append_0, qword_append_1]
 
 theorem psllq_eq (hi lo : Word) (n : BitVec 8) (h : n.toNat < 64) :
     XShiftOp.eval .psllq (hi ++ lo) n = (hi <<< n.toNat) ++ (lo <<< n.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false, qword_append_0, qword_append_1]
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [h], ite_false, qword_append_0, qword_append_1]
 
 theorem pxor_eq (a b c d : Word) : XBinOp.eval .pxor (a ++ b) (c ++ d) = (a ^^^ c) ++ (b ^^^ d) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -62,10 +62,10 @@ theorem alignRight_8 (a b c d : Word) : alignRight (a ++ b) (c ++ d) 8 = b ++ c 
   simp only [alignRight, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, BitVec.getLsbD_append,
     decide_eq_true hi, Bool.true_and, Nat.zero_add, show (8 : BitVec 8).toNat * 8 = 64 from rfl]
   by_cases h1 : i < 64
-  · simp only [h1, ite_true, show 64 + i < 128 by omega, show ¬ 64 + i < 64 by omega, ite_false,
-      show 64 + i - 64 = i by omega]
-  · simp only [h1, ite_false, show ¬ 64 + i < 64 + 64 by omega, show 64 + i - (64 + 64) = i - 64 by omega,
-      show i - 64 < 64 by omega, ite_true]
+  · simp only [h1, ite_true, show 64 + i < 128 by omega_using [h1], show ¬ 64 + i < 64 by omega_using [], ite_false,
+      show 64 + i - 64 = i by omega_using []]
+  · simp only [h1, ite_false, show ¬ 64 + i < 64 + 64 by omega_using [h1], show 64 + i - (64 + 64) = i - 64 by omega_using [],
+      show i - 64 < 64 by omega_using [hi], ite_true]
 
 theorem xor_left_comm (a b c : Word) : a ^^^ (b ^^^ c) = b ^^^ (a ^^^ c) := by
   rw [← BitVec.xor_assoc, BitVec.xor_comm a b, BitVec.xor_assoc]
@@ -80,9 +80,9 @@ theorem rotateRight_eq_xor (x : Word) {n : Nat} (h0 : 0 < n) (h : n < 64) :
   by_cases hl : i < 64 - n
   · rw [Nat.mod_eq_of_lt (by omega), Nat.add_comm, decide_eq_true hl]
     simp only [Bool.not_true, Bool.false_and, Bool.xor_false]
-  · rw [BitVec.getLsbD_of_ge x (n + i) (by omega), decide_eq_false hl, Bool.not_false, Bool.true_and,
+  · rw [BitVec.getLsbD_of_ge x (n + i) (by omega_using [hl]), decide_eq_false hl, Bool.not_false, Bool.true_and,
       Bool.false_xor]
-    exact congrArg x.getLsbD (by omega)
+    exact congrArg x.getLsbD (by omega_using [h, hi, hl])
 
 /-- `σ₀`, as `schedule` computes it: rotations by 1 and 8 as shifts each way, and a shift by 7. -/
 theorem ssig0_shifts (x : Word) :
@@ -142,9 +142,9 @@ theorem xupd_eq (w₀ w₁ w₂ w₃ w₈ w₉ w₁₀ w₁₁ w₁₄ w₁₅ :
 
 theorem W_ge' (M : Block) (t : Nat) :
     W M (t + 16) = ssig1 (W M (t + 14)) + W M (t + 9) + ssig0 (W M (t + 1)) + W M t := by
-  rw [Proof.Sha512.W_ge M (by omega)]
-  simp only [show t + 16 - 2 = t + 14 by omega, show t + 16 - 7 = t + 9 by omega,
-    show t + 16 - 15 = t + 1 by omega, Nat.add_sub_cancel]
+  rw [Proof.Sha512.W_ge M (by omega_using [])]
+  simp only [show t + 16 - 2 = t + 14 by omega_using [], show t + 16 - 7 = t + 9 by omega_using [],
+    show t + 16 - 15 = t + 1 by omega_using [], Nat.add_sub_cancel]
 
 /-- `schedule` computes the next two words of a block's schedule. -/
 theorem xupd_pair (M : Block) (i : Nat) :
@@ -155,7 +155,7 @@ theorem xupd_pair (M : Block) (i : Nat) :
       ssig0 (W M (2 * i + 1)) + W M (2 * i) := W_ge' M (2 * i)
   have w1 : W M (2 * i + 17) = ssig1 (W M (2 * i + 15)) + W M (2 * i + 10) +
       ssig0 (W M (2 * i + 2)) + W M (2 * i + 1) := by
-    rw [show 2 * i + 17 = 2 * i + 1 + 16 by omega, W_ge']
+    rw [show 2 * i + 17 = 2 * i + 1 + 16 by omega_using [], W_ge']
   rw [w0, w1]
   simp only [BitVec.add_assoc, BitVec.add_comm, Proof.Sha512.add_left_comm]
 
@@ -182,7 +182,7 @@ theorem msg_nodup (n : Nat) :
       [msg c, msg (c + 1), msg (c + 4), msg (c + 5), msg (c + 7), t0, t1, t2, t3, mBswap, tmp].Nodup := by
     decide
   have e : ∀ k, msg (n + k) = msg (n % 8 + k) := fun k => by
-    simp only [msg]; rw [show (n % 8 + k) % 8 = (n + k) % 8 by omega]
+    simp only [msg]; rw [show (n % 8 + k) % 8 = (n + k) % 8 by omega_using []]
   rw [show msg n = msg (n % 8) by simp only [msg, Nat.mod_mod], e 1, e 4, e 5, e 7]
   exact key _ (Nat.mod_lt _ (by decide))
 

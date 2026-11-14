@@ -122,7 +122,7 @@ theorem satMem_held : ∀ i < Impl.RsaKeyGen.TrialTable32.packed.length,
     have h1 : (0x20000 : Addr).toNat = 131072 := rfl
     have h2 : (0x4000 : Addr).toNat = 16384 := rfl
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h1, h2]
-    omega
+    omega_using [hi, hj]
   unfold satMem
   simp only [hn, ↓reduceIte]
 
@@ -134,7 +134,7 @@ theorem satMem_small (a : Addr) (ha : (a - 0x4000).toNat + 8 ≤ 0x4080) :
     have h2 : (0x4000 : Addr).toNat = 16384 := rfl
     have := a.isLt
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h2] at ha ⊢
-    omega
+    omega_using [hj, ha]
   unfold satMem
   simp only [hn, ↓reduceIte]
 
@@ -159,7 +159,7 @@ theorem sat_w32 : satMem.readW (0x4000 + 32) 64 = 0 := (satMem_small _ (by decid
 theorem sat_e : Spec.Rsa.bytesAt satMem (0x4000 + 48) 8 = List.replicate 8 0 := by
   have hb : ∀ j < 8, satMem (0x4000 + 48 + BitVec.ofNat 64 j) = 0 := by
     intro j hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
       h | h | h | h | h | h | h | h <;> subst h <;> (unfold satMem; decide)
   simp only [Spec.Rsa.bytesAt]
   refine List.eq_replicate_iff.mpr ⟨by simp, fun b hm => ?_⟩

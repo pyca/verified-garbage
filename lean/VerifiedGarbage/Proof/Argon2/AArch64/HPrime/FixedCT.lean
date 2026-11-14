@@ -336,7 +336,7 @@ theorem fixed_ready {s t : State} {offset size : Nat} (ready : FinalizeReady s)
     UpdateReady t := by
   have k := h.keeps
   have len : (t.gpr .x3).toNat = size := by
-    rw [h.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [h.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi])]
   refine ⟨(ready.keeps k).spBound, (ready.keeps k).work, ?_, ?_, ?_, (ready.keeps k).stack, ?_⟩
   · apply Covers.of_sub
     intro r hr
@@ -345,9 +345,9 @@ theorem fixed_ready {s t : State} {offset size : Nat} (ready : FinalizeReady s)
     change offset + (t.gpr .x3).toNat ≤ 16384
     rw [len]; exact hi
   · rw [h.data, len, k.x24]
-    exact (Offset.base_disjoint _ (by omega) (by omega)).symm
+    exact (Offset.base_disjoint _ (by omega_using [lo]) (by omega_using [hi])).symm
   · rw [h.data, len, k.x24]
-    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega) (by omega) (by decide)
+    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega_using [lo]) (by omega_using [hi]) (by decide)
   · rw [k.sp, h.data, len]
     exact ready.stack.sub_right (Offset.sub_base _ hi)
 
@@ -355,7 +355,7 @@ theorem absorbFixed_keeps (v : Backend) (s : State) (offset size : Nat)
     (ready : FinalizeReady s) (offsetBound : offset < 4096) (lo : 768 ≤ offset) (hi : offset + size ≤ 16384) :
     WP isa (absorbFixed v.hash offset size) s (Keeps s) := by
   unfold absorbFixed
-  refine WP.seq ((fixedArgs_ok s offset size offsetBound (by omega)).mono fun u hu => ?_)
+  refine WP.seq ((fixedArgs_ok s offset size offsetBound (by omega_using [hi])).mono fun u hu => ?_)
   exact (update_keeps v u (fixed_ready ready hu lo hi)).mono fun _ h => hu.keeps.trans h
 
 theorem absorbFixed_rel (v : Backend) (offset size : Nat)
@@ -367,8 +367,8 @@ theorem absorbFixed_rel (v : Backend) (offset size : Nat)
   have args := (RelCT.taint (A := taint) (P := Related F) (Taint.ofRegs [])
     (fun _ _ hp => ⟨hp.2.2.1, by simp [Taint.ofRegs]⟩) (c := .block (fixedArgs offset size))
     ct).wpDep (F := fun s t => FixedArgs s t offset size)
-    fun s₁ s₂ _ => ⟨fixedArgs_ok s₁ offset size offsetBound (by omega),
-      fixedArgs_ok s₂ offset size offsetBound (by omega)⟩
+    fun s₁ s₂ _ => ⟨fixedArgs_ok s₁ offset size offsetBound (by omega_using [hi]),
+      fixedArgs_ok s₂ offset size offsetBound (by omega_using [hi])⟩
   have call := update_rel v (P := fun s₁ s₂ => True ∧
       ∃ σ₁ σ₂, Related F σ₁ σ₂ ∧ FixedArgs σ₁ s₁ offset size ∧ FixedArgs σ₂ s₂ offset size)
     fun s₁ s₂ ⟨_, σ₁, σ₂, hp, h₁, h₂⟩ => by

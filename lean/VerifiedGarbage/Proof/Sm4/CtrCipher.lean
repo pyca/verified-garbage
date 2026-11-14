@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.Rounds
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sm4.Ctr
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # SM4's cipher for the modes, on any target
@@ -27,7 +28,7 @@ theorem scheduleAt_congr {m m' : Mem} {p : Addr}
   apply Vector.ext
   intro i hi
   simp only [Spec.Sm4.scheduleAt, Vector.getElem_ofFn, List.range, List.range.loop, List.foldl]
-  rw [hb (4 * i + 0) (by omega), hb (4 * i + 1) (by omega), hb (4 * i + 2) (by omega), hb (4 * i + 3) (by omega)]
+  rw [hb (4 * i + 0) (by omega_using [hi]), hb (4 * i + 1) (by omega_using [hi]), hb (4 * i + 2) (by omega_using [hi]), hb (4 * i + 3) (by omega_using [hi])]
 
 theorem bytesAt_eq_blockAt (m : Mem) (p : Addr) : bytesAt m p 16 = (Spec.Sm4.blockAt m p).toList := by
   apply List.ext_getElem (by simp [bytesAt])

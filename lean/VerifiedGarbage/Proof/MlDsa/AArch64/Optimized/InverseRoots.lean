@@ -22,42 +22,42 @@ theorem Words.layer1 {m : Mem} {p : Addr} (h : Words m p)
     {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (480*u+0+32*g)) 16) e=BitVec.ofNat 32 (z (255-16*u-4*g-e)) ∧
     vword (m.read (p+BitVec.ofNat 64 (480*u+0+32*g+16)) 16) e=BitVec.ofNat 32 (bar (z (255-16*u-4*g-e))) := by
-  exact h.row (by decide) he (by omega) (layer1_values hu hg he)
+  exact h.row (by decide) he (by omega_using [hu, hg]) (layer1_values hu hg he)
 
 theorem Words.layer2 {m : Mem} {p : Addr} (h : Words m p)
     {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (480*u+128+32*g)) 16) e=BitVec.ofNat 32 (z (127-8*u-2*g-e/2)) ∧
     vword (m.read (p+BitVec.ofNat 64 (480*u+128+32*g+16)) 16) e=BitVec.ofNat 32 (bar (z (127-8*u-2*g-e/2))) := by
-  exact h.row (by decide) he (by omega) (layer2_values hu hg he)
+  exact h.row (by decide) he (by omega_using [hu, hg]) (layer2_values hu hg he)
 
 theorem Words.layer4 {m : Mem} {p : Addr} (h : Words m p)
     {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (480*u+256+32*g)) 16) e=BitVec.ofNat 32 (z (63-4*u-g)) ∧
     vword (m.read (p+BitVec.ofNat 64 (480*u+256+32*g+16)) 16) e=BitVec.ofNat 32 (bar (z (63-4*u-g))) := by
-  exact h.row (by decide) he (by omega) (layer4_values hu hg he)
+  exact h.row (by decide) he (by omega_using [hu, hg]) (layer4_values hu hg he)
 
 theorem Words.layer8 {m : Mem} {p : Addr} (h : Words m p)
     {u g e : Nat} (hu : u<8) (hg : g<2) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (480*u+384+32*g)) 16) e=BitVec.ofNat 32 (z (31-2*u-g)) ∧
     vword (m.read (p+BitVec.ofNat 64 (480*u+384+32*g+16)) 16) e=BitVec.ofNat 32 (bar (z (31-2*u-g))) := by
-  exact h.row (by decide) he (by omega) (layer8_values hu hg he)
+  exact h.row (by decide) he (by omega_using [hu, hg]) (layer8_values hu hg he)
 
 theorem Words.layer16 {m : Mem} {p : Addr} (h : Words m p)
     {u e : Nat} (hu : u<8) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (480*u+448)) 16) e=BitVec.ofNat 32 (z (15-u)) ∧
     vword (m.read (p+BitVec.ofNat 64 (480*u+464)) 16) e=BitVec.ofNat 32 (bar (z (15-u))) := by
-  exact h.row (g := 0) (off := 448) (by decide) he (by omega) (layer16_values hu he)
+  exact h.row (g := 0) (off := 448) (by decide) he (by omega_using [hu]) (layer16_values hu he)
 
 theorem Words.tail {m : Mem} {p : Addr} (h : Words m p)
     {j e : Nat} (hj : j<2) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (3840+16*j)) 16) e=BitVec.ofNat 32 (z (7-(4*j+e))) ∧
     vword (m.read (p+BitVec.ofNat 64 (3872+16*j)) 16) e=BitVec.ofNat 32 (bar (z (7-(4*j+e)))) := by
-  have hv := tail_values (j := 4*j+e) (by omega)
-  have h0 : 3840+16*j=4*(960+4*j) := by omega
-  have h1 : 3872+16*j=4*(968+4*j) := by omega
+  have hv := tail_values (j := 4*j+e) (by omega_using [hj, he])
+  have h0 : 3840+16*j=4*(960+4*j) := by omega_using []
+  have h1 : 3872+16*j=4*(968+4*j) := by omega_using []
   constructor
-  · rw [h0,h.vector (by omega) he,show 960+4*j+e=960+(4*j+e) by omega,hv.1]
-  · rw [h1,h.vector (by omega) he,show 968+4*j+e=968+(4*j+e) by omega,hv.2]
+  · rw [h0,h.vector (by omega_using [hj]) he,show 960+4*j+e=960+(4*j+e) by omega_using [],hv.1]
+  · rw [h1,h.vector (by omega_using [hj]) he,show 968+4*j+e=968+(4*j+e) by omega_using [],hv.2]
 
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTable
 
@@ -80,8 +80,8 @@ theorem rootLoads_ok (off : Nat) (ha : off%16=0) (hi : off+16<65536)
       t.v .v20=s.mem.read (s.gpr .x1+BitVec.ofNat 64 off) 16 →
       t.v .v21=s.mem.read (s.gpr .x1+BitVec.ofNat 64 (off+16)) 16 → WP isa (.block rest) t Q) :
     WP isa (.block (.ldrq .v20 .x1 off :: .ldrq .v21 .x1 (off+16) :: rest)) s Q := by
-  refine wp_ldrq (by omega) rfl hr fun a h₁ => ?_
-  refine wp_ldrq (by omega) rfl ?_ fun t h₂ => ?_
+  refine wp_ldrq (by omega_using [ha, hi]) rfl hr fun a h₁ => ?_
+  refine wp_ldrq (by omega_using [ha, hi]) rfl ?_ fun t h₂ => ?_
   · simpa only [h₁.rd,h₁.wr,h₁.gpr] using hb
   · refine k t (h₁.chg.trans h₂.chg) ?_ ?_
     · rw [h₂.get .v20,h₁.v]

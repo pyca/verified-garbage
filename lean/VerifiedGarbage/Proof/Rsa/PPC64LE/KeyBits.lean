@@ -183,6 +183,28 @@ theorem orOne_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj :
     rw [← e]
     omega_arith
 
+/-- `orOne j`, with digit `w` of `[j]` unchanged. -/
+theorem orOne_top_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N)
+    (hN : N ≤ 256) {rest : List Instr} {Q : State → Prop}
+    (k : ∀ t, Ws t B Z w N → KeyWorkspace.Keep B w [j] [] s.mem t.mem →
+      num t.mem B w j = 2 * (num s.mem B w j / 2) + 1 → Keep opRegs s t →
+      w32 t.mem B (arr w j + 4 * w) = w32 s.mem B (arr w j + 4 * w) → WP isa (.block rest) t Q) :
+    WP isa (.block (orOne j ++ rest)) s Q := by
+  have fit := h.arr_fit hj
+  have nw := h.nowrap
+  have hS : S w = 4 * (w + 2) := rfl
+  have := h.wpos
+  refine lowOp_ok (f := fun x => (x.setWidth 64 ||| BitVec.ofNat 64 1).setWidth 32) h hj hN
+    (fun u u5 um ku => ?_) fun t ht kt v kr ktop => k t ht kt ?_ kr ktop
+  · refine WP.mono (WP.keep [.r0, .r3] ?_ (by decide)) fun u' ⟨m, k⟩ => ⟨m, k.mono⟩
+    prun [u5, um, (h.scr.congr ku.wr).ld (show arr w j + 4 ≤ Z by omega_arith),
+      (h.scr.congr ku.wr).st (show arr w j + 4 ≤ Z by omega_arith)]
+  · rw [v, or_one_arith]
+    have e := num_mod32 s.mem B (w := w) (j := j) (by omega_arith)
+    change _ = (s.mem.readW (off B (arr w j)) 32).toNat at e
+    rw [← e]
+    omega_arith
+
 /-- `clrLow j`: the low bit of `[j]` cleared. -/
 theorem clrLow_ok {s : State} {B : Addr} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N)
     (hN : N ≤ 256) {rest : List Instr} {Q : State → Prop}

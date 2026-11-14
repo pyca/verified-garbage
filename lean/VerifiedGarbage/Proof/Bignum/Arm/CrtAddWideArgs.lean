@@ -54,9 +54,9 @@ theorem crt_addWideArgs_ok (s : State) {base dst src : BitVec 32} {size w : Nat}
       t.mem = s.mem ∧ Rest [.r0, .r1, .r3, .r11, .r12, .lr] s t := by
   rw [addWideArgs, WP.seq_iff]
   refine wp_ldr (a := off (State.addr base) 240) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun u a => WP.block_nil ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun u a => WP.block_nil ?_
   rw [WP.seq_iff]
-  refine WP.mono (crt_clearWideArgs_ok u (dst := dst) (w := w) (ws.congr a.wr) (by omega) (by omega) (by decide)
+  refine WP.mono (crt_clearWideArgs_ok u (dst := dst) (w := w) (ws.congr a.wr) (by omega_using [fit]) (by omega_using [fit]) (by decide)
     ((a.other .r0 (by decide)).trans ptr) (by rw [a.mem]; exact count) (by rw [a.mem]; exact output)) ?_
   rintro v ⟨out, width, _, memV, restV⟩
   refine WP.mono (crt_addWideScalars_ok v width) ?_

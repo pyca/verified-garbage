@@ -78,16 +78,16 @@ theorem PC.call {K : Nat} (hK : K < 4) {s s' : State} (h : PC σ K s) (hrd : s'.
       by rw [hg .r12 (by simp), h.env.r12], by rw [hg .r13 (by simp), h.env.r13], by rw [hg .rsp (by simp), h.env.rsp],
       by rw [hg .r15 (by simp), h.env.r15], fun i hi => ?_, h.env.frame.trans (hf.sub (c_sub (σ := σ) hK))⟩,
     by rw [hg .r14 (by simp), h.r14], fun k hk e => ?_⟩
-  · rw [hf.readW (Region.contains_self _ _) (c_disj hp hK (by simp only [oSave, oScalar]; omega)) (by decide)]
+  · rw [hf.readW (Region.contains_self _ _) (c_disj hp hK (by simp only [oSave, oScalar]; omega_using [hi])) (by decide)]
     exact h.env.saved i hi
   · refine polyIs_frame hf (fun r hr => ?_) (h.polys k hk e)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl) | rfl
-    · have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega) (by omega)
-        (by omega)
+    · have hd := Offset.disjoint (aP σ) (d := 1024 * k) (n := 1024) (e := 1024 * K) (k := 1024) (by omega_using [hk]) (by omega_using [hK, hk])
+        (by omega_using [hK])
       simpa [Proof.MlKem.poly4] using hd
-    · exact (hp.a_scr.sub_left (sub_poly (by omega))).sub_right (sub_scr (by simp only [oScalar]; omega))
-    · exact (hp.stk_a.sub_right (sub_poly (by omega))).symm
+    · exact (hp.a_scr.sub_left (sub_poly (by omega_using [hK, hk]))).sub_right (sub_scr (by simp only [oScalar]; omega_using []))
+    · exact (hp.stk_a.sub_right (sub_poly (by omega_using [hK, hk]))).symm
 
 /-- The arguments of the call on seed `K`. -/
 structure ArgI (σ : State) (K : Nat) (s : State) : Prop where
@@ -108,7 +108,7 @@ theorem argsK_ok {K : Nat} (hK : K < 4) {s : State} (h : PC σ K s) :
 
 theorem argK_kS {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
     (below (s.gpr .rsp) 24).Disjoint ⟨sd σ + BitVec.ofNat 64 (34 * K), 34⟩ := by
-  rw [h.pinv.env.rsp]; exact hp.stk_sd.sub_right (Offset.sub_base (sd σ) (d := 34 * K) (n := 34) (by omega))
+  rw [h.pinv.env.rsp]; exact hp.stk_sd.sub_right (Offset.sub_base (sd σ) (d := 34 * K) (n := 34) (by omega_using [hK]))
 
 theorem argK_pre {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
     rnK.pre (s.callEntry.withRegions (cRd σ K) (cWr σ K)) := by
@@ -117,14 +117,14 @@ theorem argK_pre {K : Nat} (hK : K < 4) {s : State} (h : ArgI σ K s) :
   have kA : (below (s.gpr .rsp) 24).Disjoint (pR (Proof.MlKem.poly4 (aP σ) K)) := by
     rw [hsp]; exact hp.stk_a.sub_right (sub_poly (σ := σ) hK)
   have kZ : (below (s.gpr .rsp) 24).Disjoint ⟨at' σ oScalar, 2048⟩ := by
-    rw [hsp]; exact hp.stk_scr.sub_right (sub_scr (σ := σ) (a := oScalar) (n := 2048) (by simp only [oScalar]; omega))
+    rw [hsp]; exact hp.stk_scr.sub_right (sub_scr (σ := σ) (a := oScalar) (n := 2048) (by simp only [oScalar]; omega_using []))
   simp only [rnK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     ce_gpr' s (by decide : Reg.rdi ≠ .rsp), ce_gpr' s (by decide : Reg.rsi ≠ .rsp),
     ce_gpr' s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx]
   exact ⟨trivial, trivial,
-    (hp.sd_a.sub_left (Offset.sub_base _ (by omega))).sub_right (sub_poly hK),
-    (hp.sd_scr.sub_left (Offset.sub_base _ (by omega))).sub_right (sub_scr (by simp only [oScalar]; omega)),
-    (hp.a_scr.sub_left (sub_poly hK)).sub_right (sub_scr (by simp only [oScalar]; omega)),
+    (hp.sd_a.sub_left (Offset.sub_base _ (by omega_using [hK]))).sub_right (sub_poly hK),
+    (hp.sd_scr.sub_left (Offset.sub_base _ (by omega_using [hK]))).sub_right (sub_scr (by simp only [oScalar]; omega_using [])),
+    (hp.a_scr.sub_left (sub_poly hK)).sub_right (sub_scr (by simp only [oScalar]; omega_using [])),
     ret_disj24 s kS, ret_disj24 s kA, ret_disj24 s kZ, stk_disj24' s kS, stk_disj24' s kA, stk_disj24' s kZ,
     scr6144_lt hp⟩
 
@@ -168,7 +168,7 @@ theorem andK_ok {K : Nat} {s : State} (h : CallI σ K s) :
   rw [hm₄]
   by_cases ek : k = K
   · subst ek; exact h.poly e
-  · exact h.pinv.polys k (by omega) e
+  · exact h.pinv.polys k (by omega_using [hk, ek]) e
 
 theorem callK_ok' {K : Nat} (hK : K < 4) {s : State} (h : PC σ K s) : WP isa (Impl.MlDsa.X86_64.Sample.Rej4.callK K) s (PC σ (K + 1)) :=
   WP.seq (WP.mono (argsK_ok hK h) fun _ h₂ => WP.seq (WP.mono (callK_ok hp hK h₂) fun _ h₃ => andK_ok h₃))
@@ -177,7 +177,7 @@ theorem callK_ok' {K : Nat} (hK : K < 4) {s : State} (h : PC σ K s) : WP isa (I
 theorem endS_ok {s : State} (h : PC σ 4 s) :
     WP isa (.block epi) s fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
-    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega_using [hi])
   rw [epi_eq]
   refine WP.mono (WP.keep [.rax, .r14, .r13, .r12, .rbp, .rbx] (Q := fun s' => s'.mem = s.mem ∧
       (s'.gpr .rax).setWidth 32 = (s.gpr .r14).setWidth 32 ∧
@@ -209,7 +209,7 @@ theorem endS_ok {s : State} (h : PC σ 4 s) :
     · rw [k.gpr (by decide)]; exact h.env.r15
   · rw [hm]
     exact h.env.frame.readW (Region.contains_self _ _) (by
-      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
+      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega_using [])⟩)
       (by decide)
 
 theorem scalar_body_ok {s : State} (h : I0 σ s) :
@@ -217,7 +217,7 @@ theorem scalar_body_ok {s : State} (h : I0 σ s) :
       (.seq (Impl.MlDsa.X86_64.Sample.Rej4.callK 2) (.seq (Impl.MlDsa.X86_64.Sample.Rej4.callK 3) (.block epi)))))
       s fun s' =>
       r4K.post σ s' ∧ gprPreserved σ s' := by
-  have p₀ : PC σ 0 s := ⟨h.env, by rw [h.r14]; rfl, fun _ h _ => absurd h (by omega)⟩
+  have p₀ : PC σ 0 s := ⟨h.env, by rw [h.r14]; rfl, fun _ h _ => absurd h (by omega_using [])⟩
   exact WP.seq (WP.mono (callK_ok' hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (callK_ok' hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (callK_ok' hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (callK_ok' hp (by decide) p₃) fun _ p₄ => endS_ok hp p₄))))
@@ -270,7 +270,7 @@ theorem ct_scalar : ConstantTime isa r4K.pre r4K.pub rejNTT4 := by
   refine relStart (Q := fun _ _ => True) (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => PC σ 0 s)
     (fun σ s hp h => by
       subst h
-      exact WP.mono (pro_ok (pre_of hp)) fun _ h => ⟨h.env, by rw [h.r14]; rfl, fun _ h _ => absurd h (by omega)⟩)
+      exact WP.mono (pro_ok (pre_of hp)) fun _ h => ⟨h.env, by rw [h.r14]; rfl, fun _ h _ => absurd h (by omega_using [])⟩)
     (taintRel [.rdi, .rsi, .rdx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

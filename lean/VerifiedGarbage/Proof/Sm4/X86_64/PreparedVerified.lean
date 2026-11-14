@@ -52,7 +52,7 @@ theorem narrow_covers (s : State) {ws : Addr} {len : Nat} (hw : s.wr = [⟨ws, l
     Covers ((narrow s ws).rd ++ (narrow s ws).wr) (s.rd ++ s.wr) ∧ Covers (narrow s ws).wr s.wr := by
   have h : Covers [⟨ws, 8 * slots⟩] s.wr := Covers.of_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨ws, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by show 0 + 8 * slots ≤ len; omega⟩
+    exact ⟨⟨ws, len⟩, by rw [hw]; simp, 0, by rw [BitVec.add_zero], by show 0 + 8 * slots ≤ len; omega_using [hl]⟩
   exact ⟨Covers.append (Covers.refl _) h, h⟩
 
 /-- A run from the narrowed state is a run from `s`, to the state with `s`'s regions. -/
@@ -94,12 +94,12 @@ theorem blocks_of (B : Addr) {m m' : Mem} {k : Spec.Sm4.Schedule} {d : Spec.Sm4.
 theorem mask_byte {m m' : Mem} {B : Addr} {k k' : Spec.Sm4.Schedule} {d d' : Dir}
     (h : WordsAt m B k d) (h' : WordsAt m' B k' d') {i : Nat} (hi : 8 * evenSlot ≤ i ∧ i < 8 * (grpSlot + 1)) :
     m' (B + BitVec.ofNat 64 i) = m (B + BitVec.ofNat 64 i) := by
-  have hw : (evenSlot ≤ i / 8 ∧ i / 8 ≤ grpSlot) ∨ (tableSlot ≤ i / 8 ∧ i / 8 < tableEnd) := .inl (by omega)
-  rw [word_byte_addr, byte_of_readW m' (wordAddr B (i / 8)) (j := i % 8) (by omega),
-    byte_of_readW m (wordAddr B (i / 8)) (j := i % 8) (by omega), h _ hw, h' _ hw]
+  have hw : (evenSlot ≤ i / 8 ∧ i / 8 ≤ grpSlot) ∨ (tableSlot ≤ i / 8 ∧ i / 8 < tableEnd) := .inl (by omega_using [hi])
+  rw [word_byte_addr, byte_of_readW m' (wordAddr B (i / 8)) (j := i % 8) (by omega_using []),
+    byte_of_readW m (wordAddr B (i / 8)) (j := i % 8) (by omega_using []), h _ hw, h' _ hw]
   have hm : ∀ (k : Spec.Sm4.Schedule) (d : Dir), preparedWord k d (i / 8) =
       (keyMasks.find? (·.1 = i / 8)).elim 0 (·.2) := fun _ _ => by
-    have hc : i / 8 < tableSlot := by rw [tableSlot_eq]; rw [grpSlot_eq] at hi; omega
+    have hc : i / 8 < tableSlot := by rw [tableSlot_eq]; rw [grpSlot_eq] at hi; omega_using [hi]
     simp only [preparedWord, hc, ↓reduceIte]
   rw [hm, hm]
 
@@ -110,22 +110,22 @@ theorem helperGpr_of {s s' : State} (h₁ : ∀ i < 6, s'.gpr (sreg i) = s.gpr (
   refine ⟨fun r hr => ?_, h₃⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
   · exact h₂
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
 
 theorem crypt_correct (s : State) (hs : cryptX86_64.pre s) :
     ∃ t s', Exec isa cryptPrepared s t s' ∧ abiPreserved s s' ∧ cryptX86_64.post s s' := by
   obtain ⟨-, hwr, dRW, fitW, hsz, k₀, d₀, hH⟩ := hs
   rw [size_eq] at hsz
-  have hl : 8 * slots ≤ (s.gpr .rsi).toNat * 8 := by omega
+  have hl : 8 * slots ≤ (s.gpr .rsi).toNat * 8 := by omega_using [hsz]
   have hwN : (⟨(narrow s (s.gpr .rdi)).gpr .rdi, 8 * slots⟩ : Region) ∈ (narrow s (s.gpr .rdi)).wr := by simp
   have fitN : ((narrow s (s.gpr .rdi)).gpr .rdi).toNat + 8 * slots ≤ 2 ^ 64 := by
-    show (s.gpr .rdi).toNat + 8 * slots ≤ 2 ^ 64; omega
+    show (s.gpr .rdi).toNat + 8 * slots ≤ 2 ^ 64; omega_using [fitW, hsz]
   obtain ⟨t, s', he, h₁, hrsp, -, hR, hF, -, -, -⟩ := cryptBody_wp hwN fitN (readyAt_of_words (words_of_holds hH))
   have he' := exec_widen hwr hl he
   have hfit := fitW
@@ -136,8 +136,8 @@ theorem crypt_correct (s : State) (hs : cryptX86_64.pre s) :
   · refine hF'.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact dRW.sub_right (Region.sub_prefix (by rw [tableSlot_eq]; omega))
-    · exact dRW.sub_right (VG.Offset.sub_base _ (by rw [savedSlot_eq]; omega))
+    · exact dRW.sub_right (Region.sub_prefix (by rw [tableSlot_eq]; omega_using [hl]))
+    · exact dRW.sub_right (VG.Offset.sub_base _ (by rw [savedSlot_eq]; omega_using [hl]))
   · obtain ⟨t₂, s₂, he₂, -, -, -, -, -, -, -, hB₂⟩ :=
       cryptBody_wp hwN fitN (readyAt_of_words (words_of_holds hk))
     obtain ⟨-, rfl⟩ := Exec.det he he₂
@@ -148,13 +148,13 @@ theorem crypt_correct (s : State) (hs : cryptX86_64.pre s) :
   · simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hout
     rw [evenSlot_eq, grpSlot_eq, tableSlot_eq, savedSlot_eq, slots_eq] at hout
     by_cases hm : 384 ≤ i ∧ i < 408
-    · exact mask_byte (words_of_holds hH) (words_of_readyAt hR) (by rw [evenSlot_eq, grpSlot_eq]; omega)
+    · exact mask_byte (words_of_holds hH) (words_of_readyAt hR) (by rw [evenSlot_eq, grpSlot_eq]; omega_using [hm])
     · refine hF' _ fun r hr hc => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [Region.Contains, wordAddr] at hc
-      · rw [Mem.sub_ofNat_toNat _ (by omega), tableSlot_eq] at hc; omega
-      · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega) (by omega), savedSlot_eq] at hc
-        split at hc <;> omega
+      · rw [Mem.sub_ofNat_toNat _ (by omega_using [fitW, hi]), tableSlot_eq] at hc; omega_using [hout, hm, hc]
+      · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega_using []) (by omega_using [fitW, hi]), savedSlot_eq] at hc
+        split at hc <;> omega_arith
 
 /-- `cryptX86_64`, and what the body leaves in `sb`: the working space's
 address, which the modes, calling it, keep there. -/
@@ -168,9 +168,9 @@ theorem cryptCall_correct (s : State) (hs : cryptCallX86_64.pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := crypt_correct s hs
   obtain ⟨-, hwr, -, fitW, hsz, k₀, d₀, hH⟩ := hs
   rw [size_eq] at hsz
-  have hl : 8 * slots ≤ (s.gpr .rsi).toNat * 8 := by omega
+  have hl : 8 * slots ≤ (s.gpr .rsi).toNat * 8 := by omega_using [hsz]
   obtain ⟨t₂, s₂, he₂, -, -, hsb, -⟩ := cryptBody_wp (s₀ := narrow s (s.gpr .rdi)) (by simp)
-    (by show (s.gpr .rdi).toNat + 8 * slots ≤ 2 ^ 64; omega) (readyAt_of_words (words_of_holds hH))
+    (by show (s.gpr .rdi).toNat + 8 * slots ≤ 2 ^ 64; omega_using [fitW, hsz]) (readyAt_of_words (words_of_holds hH))
   obtain ⟨-, rfl⟩ := Exec.det he (exec_widen hwr hl he₂)
   exact ⟨t, _, he, ha, hp, hsb⟩
 

@@ -41,25 +41,25 @@ theorem MSp.of_outside {σ s t : State} (pre : In P σ) (h : MSp P σ s) {o n : 
     (sv : t.mem.readW (State.addr t.sp) 32 = s.mem.readW (State.addr s.sp) 32)
     (sp : t.sp = s.sp) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : MSp P σ t := by
   have zl := pre.Z_le
-  have a15 : mHd P ≤ arrAt P.w 5 := by simp only [mHd, arrAt]; omega
-  have a45 : arrAt P.w 4 + 8 * P.w ≤ arrAt P.w 5 := by simp only [arrAt]; omega
+  have a15 : mHd P ≤ arrAt P.w 5 := by simp only [mHd, arrAt]; omega_using []
+  have a45 : arrAt P.w 4 + 8 * P.w ≤ arrAt P.w 5 := by simp only [arrAt]; omega_using []
   refine h.of_read (fun d k hd => ?_) ?_ sv sp rd wr
   · rw [pre.M0_off]
     refine Mem.read_congr fun i hi => out _ ?_
     have := ho d k hd
     have hdk : d + k ≤ mHd P := by
       rcases hd with h1 | ⟨_, h1⟩
-      · have : 128 ≤ mHd P := by simp only [mHd, arrAt, Proof.Rsa.Mont.hdrBytes]; omega
-        omega
+      · have : 128 ≤ mHd P := by simp only [mHd, arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+        omega_using [h1, this]
       · exact h1
-    rw [ofs_off _ (by omega)]
-    omega
+    rw [ofs_off _ (by omega_using [h5, zl, a15, hi, hdk])]
+    omega_using [hi, this]
   · unfold numAt
     rw [show State.addr P.M0 + BitVec.ofNat 64 (arrAt P.w 4) = off (State.addr P.M0) (arrAt P.w 4) from rfl,
       pre.M0_off]
     refine congrArg BitVec.toNat (Mem.read_congr fun i hi => out _ ?_)
-    rw [ofs_off _ (by omega)]
-    omega
+    rw [ofs_off _ (by omega_using [h5, zl, a45, hi])]
+    omega_using [h4, hi]
 
 /-- `ctx` and `c`'s top words cleared. -/
 theorem ctxClr_vp {E : State → Prop} :
@@ -80,10 +80,10 @@ theorem ctxClr_vp {E : State → Prop} :
     have hz := pre.hdr_Z
     have hf := pre.fS
     have ea : State.addr (s.gpr .r8 + BitVec.ofNat 32 16) = off (State.addr P.B) 16 := by
-      rw [r8]; exact addr_add (by simp only [hdr] at hz; omega)
+      rw [r8]; exact addr_add (by simp only [hdr] at hz; omega_using [hz, hf])
     have rd : InRegions (s.rd ++ s.wr) (off (State.addr P.B) 16) 4 :=
       ⟨P.rS, List.mem_append_right _ (by rw [k.wr]; exact pre.rS_mem),
-        Offset.contains_base _ (by simp only [hdr] at hz; omega) (by omega)⟩
+        Offset.contains_base _ (by simp only [hdr] at hz; omega_using [hz]) (by omega_using [])⟩
     simp only [ctxW, stride, List.cons_append, List.nil_append]
     refine wp_ldr (by decide) ea rd fun s2 u2 => ?_
     refine wp_dp (op2_imm (by decide)) fun s3 u3 => wp_mov (op2_lsl (by decide)) fun s4 u4 => WP.block_nil ?_
@@ -95,7 +95,7 @@ theorem ctxClr_vp {E : State → Prop} :
       apply BitVec.eq_of_toNat_eq
       have := k.cnt
       simp only [slot, w32] at this
-      rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [wl])]
     have e7 : s4.gpr .r7 = BitVec.ofNat 32 (S P.W) := by
       rw [u4.gpr, u3.gpr, dpVal, u2.gpr]
       apply BitVec.eq_of_toNat_eq
@@ -103,7 +103,7 @@ theorem ctxClr_vp {E : State → Prop} :
       simp only [slot, w32] at this
       rw [BitVec.toNat_shiftLeft, BitVec.toNat_add, this, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
       simp only [show (2 : BitVec 32).toNat = 2 from rfl, S]
-      omega
+      omega_using []
     have e8 : s4.gpr .r8 = P.B := by rw [r4.gpr _ (by decide), r8]
     have k4 := k.of_rest r4 m4
     exact ⟨⟨⟨⟨⟨e, k4⟩, ar.of_mem m4 r4 (by rw [r4.gpr _ (by decide), ar.ptr]), by rw [m4]; exact n0⟩,
@@ -112,11 +112,11 @@ theorem ctxClr_vp {E : State → Prop} :
     have pre := k.pre
     have hW := pre.W_eq
     rw [← List.append_nil (clrTop mBase)]
-    refine clrTopO_ok hw (by decide) (by decide) (by omega) fun t ht out nt rest => WP.block_nil ?_
+    refine clrTopO_ok hw (by decide) (by decide) (by omega_using [hW]) fun t ht out nt rest => WP.block_nil ?_
     have hS := pre.S_eq
     have fit := pre.fitZ (j := mBase) (by decide)
     have kp : Keep P.B P.W [mBase] [] s.mem t.mem :=
-      Keep.of_arr (d := 4 * (P.W - 2)) out (by simp only [S]; omega) (by simp)
+      Keep.of_arr (d := 4 * (P.W - 2)) out (by simp only [S]; omega_using []) (by simp)
     have v : num t.mem P.B P.W aC = cv P σ := by
       have e0 := pre.numAt_val32 s.mem 0
       simp only [Nat.add_zero] at e0
@@ -130,17 +130,17 @@ theorem ctxClr_vp {E : State → Prop} :
     · have out' : Outside (State.addr P.B) (P.oM + (arrAt P.w 0 + 8 * P.w)) 8 s.mem t.mem := by
         have e0 := pre.oM_arrAt 0
         rw [show P.oM + (arrAt P.w 0 + 8 * P.w) = arr P.W mBase + 4 * (P.W - 2) by
-          rw [← Nat.add_assoc, e0]; congr 1; omega]
+          rw [← Nat.add_assoc, e0]; congr 1; omega_using [hW]]
         exact out
       refine (MSp.of_ar ar n0 n4).of_outside pre out' (fun d k hd => ?_) ?_ ?_ ?_ rest.sp rest.rd rest.wr
       · rcases hd with h1 | ⟨_, h1⟩
-        · left; have : 128 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
-          omega
-        · left; simp only [mHd] at h1; omega
-      · right; simp only [arrAt]; omega
+        · left; have : 128 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+          omega_using [h1, this]
+        · left; simp only [mHd] at h1; omega_using [h1]
+      · right; simp only [arrAt]; omega_using []
       · have := pre.oM_arrAt 5
         have := Nat.le_trans (arr_mono (w := P.W) (show mBase + 5 ≤ nArr by decide)) pre.fits
-        omega
+        omega_arith
       · have hc : P.rW0.Contains (State.addr P.sp) (32 / 8) := by
           simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
         rw [rest.sp, k.sp, pre.sp]

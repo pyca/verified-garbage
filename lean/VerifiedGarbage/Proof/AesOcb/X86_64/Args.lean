@@ -42,11 +42,11 @@ structure Dst (K W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
 theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
     Covers [⟨p, n⟩] rs := fun a m ⟨r, hr, hc⟩ => by
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 theorem toNat_W {W : Addr} (hw : W.toNat + 3584 ≤ 2 ^ 64) {d : Nat} (hd : d < 3584) :
     (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hw, hd])]
 
 /-- Blocks of `W` below 512. -/
 theorem dstW {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) {d n : Nat} (h : d + 16 * n ≤ 512) :
@@ -54,12 +54,12 @@ theorem dstW {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) {d n 
   wrap := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · simp only [Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt (W + BitVec.ofNat 64 d).isLt
-    · rw [toNat_W L.ww (by omega)]; have := L.ww; omega
-  k := L.k_w.sub_right (Lay.wSub (by omega))
-  scr := L.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := L.stk_w' (by omega)
-  rd := covers_left (P.wC (by omega))
-  wr := P.wC (by omega)
+    · rw [toNat_W L.ww (by omega_using [h])]; have := L.ww; omega_using [h, this]
+  k := L.k_w.sub_right (Lay.wSub (by omega_using [h]))
+  scr := L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
+  stk := L.stk_w' (by omega_using [h])
+  rd := covers_left (P.wC (by omega_using [h]))
+  wr := P.wC (by omega_using [h])
 
 /-- Blocks of the data. -/
 theorem dstD {K W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DBuf K W SP s D (16 * n)) :

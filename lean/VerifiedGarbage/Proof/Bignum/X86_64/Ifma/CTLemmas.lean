@@ -92,7 +92,7 @@ theorem doublesW_ct {mo acc tmp o sl : Nat} (hmo : mo < 8) (hacc : acc < 8) (htm
     (fun p s₁ s₂ h₁ h₂ => pins_goodW p.1 s₁ s₂ h₁.1 h₂.1) h' ?_) ?_
   · rintro p s ⟨⟨minv, hg, hZ⟩, hw, hw', hc1, hc', hcx, hO⟩
     exact WP.mono (dblStart_ok (acc := acc) (tmp := tmp) hg.scr hg.rdi hg.hdr hZ hmo ho hsl hsl' hcx hO)
-      fun t hI => ⟨by omega, s, minv, _, _, hI, hZ, hw, hw', hc', by omega⟩
+      fun t hI => ⟨by omega_using [hc1], s, minv, _, _, hI, hZ, hw, hw', hc', by omega_using [hO]⟩
   refine (two_loop (Φ := DblsAtW mo acc tmp o sl) (Ψ := fun _ _ => True) (fun p => p.2) ?_ ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   · refine RelCT.seq (two_post (Ψ := fun (q : (Ws × Nat) × Nat) s => GoodW q.1.1 s)

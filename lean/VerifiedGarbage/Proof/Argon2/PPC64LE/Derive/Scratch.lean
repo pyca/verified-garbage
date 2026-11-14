@@ -32,8 +32,8 @@ theorem repr_frame {m m' : Mem} {rs : List Region} (f : Frame rs m m') {p : Addr
     (h : Repr b h0 m p d) : Repr b h0 m' p d :=
   Proof.Blake2.repr_congr' (by decide) (fun i hi => by
     have hi' : i < 192 := by simpa [Proof.Blake2.bufOff, Spec.Blake2.blockBytes] using hi
-    exact f _ fun r hr hc => hd r hr _ (Offset.contains_base p (show i + 1 ≤ 192 by omega)
-      (by omega)) hc) h
+    exact f _ fun r hr hc => hd r hr _ (Offset.contains_base p (show i + 1 ≤ 192 by omega_using [hi'])
+      (by omega_using [hi'])) hc) h
 
 theorem finalHash_length (h0 : Spec.Blake2.HashValue 64) (d : List Byte) :
     (Spec.Blake2.finalHash b h0 d).length = 64 := by
@@ -94,7 +94,7 @@ theorem wp_stscrw {s : State} (h : Inv s₀ s) {o : Nat} (ho : o + 4 ≤ 16384) 
       Frame [⟨scrP s₀ + BitVec.ofNat 64 o, 4⟩] s.mem t.mem → WP isa (.block is) t Q) :
     WP isa (.block (.store .w r .r31 o :: is)) s Q := by
   have hc : (scrR s₀).Contains (scrP s₀ + BitVec.ofNat 64 o) 4 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
   refine wp_stw (a := scrP s₀ + BitVec.ofNat 64 o) ho' (by rw [h.r31])
     (by rw [h.wr]; exact ⟨scrR s₀, scr_mem hp, hc⟩) fun t u => ?_
   have f : Frame [⟨scrP s₀ + BitVec.ofNat 64 o, 4⟩] s.mem t.mem := by
@@ -103,7 +103,7 @@ theorem wp_stscrw {s : State} (h : Inv s₀ s) {o : Nat} (ho : o + 4 ≤ 16384) 
   refine k t (h.mupd u ((Frame.refl _ _).writeW (r := scrR s₀) (by simp) _ hc)) u.mem u.gpr
     (fun d h₁ h₂ => lw_keep hp f (fun r hr => ?_) h₁ h₂) f
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨scrR s₀, by simp, scr_sub (by omega)⟩
+  exact ⟨scrR s₀, by simp, scr_sub (by omega_using [ho])⟩
 
 /-- `std r, o(r31)`, to `scratch`. -/
 theorem wp_stscrd {s : State} (h : Inv s₀ s) {o : Nat} (ho : o + 8 ≤ 16384) (ho' : o < 2 ^ 15)
@@ -113,7 +113,7 @@ theorem wp_stscrd {s : State} (h : Inv s₀ s) {o : Nat} (ho : o + 8 ≤ 16384) 
       Frame [⟨scrP s₀ + BitVec.ofNat 64 o, 8⟩] s.mem t.mem → WP isa (.block is) t Q) :
     WP isa (.block (.store .d r .r31 o :: is)) s Q := by
   have hc : (scrR s₀).Contains (scrP s₀ + BitVec.ofNat 64 o) 8 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho])
   refine wp_std (a := scrP s₀ + BitVec.ofNat 64 o) ⟨ho', ho4⟩ (by rw [h.r31])
     (by rw [h.wr]; exact ⟨scrR s₀, scr_mem hp, hc⟩) fun t u => ?_
   have f : Frame [⟨scrP s₀ + BitVec.ofNat 64 o, 8⟩] s.mem t.mem := by
@@ -122,7 +122,7 @@ theorem wp_stscrd {s : State} (h : Inv s₀ s) {o : Nat} (ho : o + 8 ≤ 16384) 
   refine k t (h.mupd u ((Frame.refl _ _).writeW (r := scrR s₀) (by simp) _ hc)) u.mem u.gpr
     (fun d h₁ h₂ => lw_keep hp f (fun r hr => ?_) h₁ h₂) f
   simp only [List.mem_singleton] at hr; subst hr
-  exact ⟨scrR s₀, by simp, scr_sub (by omega)⟩
+  exact ⟨scrR s₀, by simp, scr_sub (by omega_using [ho])⟩
 
 /-- A store to the frame is outside `scratch`. -/
 theorem loc_scr {d : Nat} (h₁ : 32 ≤ d) (h₂ : d + 8 ≤ 336) {o n : Nat} (ho : o + n ≤ 16384) :

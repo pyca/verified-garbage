@@ -50,7 +50,7 @@ theorem pointer_ok (s : State) (p : Params) (pass lane slice index : Nat)
   have segment := Proof.Argon2.segmentLen_ge_two p h.bounds.lanesPositive h.bounds.memoryMinimum
   have q := Proof.Argon2.laneLen_segments p h.bounds.lanesPositive
   refine WP.seq ((FillColumn.code_nat_ok a slice p.segmentLen index p.laneLen
-    pos.slice pos.segmentLength pos.index pos.laneLength (by omega)
+    pos.slice pos.segmentLength pos.index pos.laneLength (by omega_using [columnBound])
     (Nat.lt_trans h.bounds.laneLength_bound (by decide)) columnBound).mono ?_)
   rintro b ⟨_, prev, kb⟩
   refine WP.seq ((args_ok b).mono ?_)

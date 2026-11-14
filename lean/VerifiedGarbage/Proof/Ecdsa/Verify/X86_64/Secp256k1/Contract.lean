@@ -49,7 +49,7 @@ theorem secp256k1G9_length : Impl.Secp256k1.secp256k1G9.length = 1 := rfl
 /-- Its one table has 256 points. -/
 theorem secp256k1G9_rows : ∀ j < 1, (Impl.Secp256k1.secp256k1G9.getD j []).length = 256 := by
   intro j hj
-  rw [show j = 0 by omega]
+  rw [show j = 0 by omega_using [hj]]
   decide +kernel
 
 end VG.Proof.Secp256k1
@@ -100,7 +100,7 @@ table). -/
 theorem satMemG_held : ∀ i < secp256k1GW.length,
     satMemG.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = secp256k1GW.getD i 0 := by
   unfold satMemG
-  exact constMem_held _ _ (by rw [secp256k1GW_length]; omega)
+  exact constMem_held _ _ (by rw [secp256k1GW_length]; omega_using [])
 
 end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
 end

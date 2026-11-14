@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time
@@ -30,6 +32,8 @@ open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 open VG.Proof.Sha256.X86_64 (Compress)
 
+variable {X : State → State → Prop}
+
 variable {v : Compress}
 
 /-- After the checks: `EM` in `rdi` and `k` in `r9`. -/
@@ -45,15 +49,15 @@ theorem valid_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
   have hs := hc.frm hp
   have hsep : (firstZero EM (kOf s)).getD 0 < kOf s := by
     cases hf : firstZero EM (kOf s) with
-    | none => simp; omega
+    | none => simp; omega_using [hkk1]
     | some i => have := firstZero_some hf; simpa using this.2.1
   have hR : t.mem.readW (fb s + BitVec.ofNat 64 oR) 64 = R := hc.sR
   have hio : ∀ i n, i + n ≤ kOf s → InRegions (t.rd ++ t.wr) (off (s.gpr .rdi) i) n := fun i n h' =>
     let ⟨r, hr, hcr⟩ := hc.outIn hp h'; ⟨r, List.mem_append_right _ hr, hcr⟩
   exact WP.mono (validBlock_run (p := s.gpr .rdi) (F := fb s) (b0 := EM.getD 0 1) (b1 := EM.getD 1 1)
-    h.rdi (by rw [← hc.em (i := 0) (by omega)]; exact (congrArg t.mem (off_zero _)).symm)
-    (hc.em (by omega)) (by have := hio 0 1 (by omega); rwa [off_zero] at this) (hio 1 1 (by omega)) h.rdx h.r10 h.r11
-    h.r9 hc.rsp hR (hs.ld (d := oR) (by decide)) hsep (by omega))
+    h.rdi (by rw [← hc.em (i := 0) (by omega_using [hkk1])]; exact (congrArg t.mem (off_zero _)).symm)
+    (hc.em (by omega_using [hkk1])) (by have := hio 0 1 (by omega_using [hkk1]); rwa [off_zero] at this) (hio 1 1 (by omega_using [hkk1])) h.rdx h.r10 h.r11
+    h.r9 hc.rsp hR (hs.ld (d := oR) (by decide)) hsep (by omega_using [hkk]))
     fun _ ⟨⟨hm₁, _⟩, k₁⟩ => ⟨⟨R, EM, hc.regs hp hm₁ k₁ (by decide)⟩, (k₁.gpr (by decide)).trans h.rdi,
       (k₁.gpr (by decide)).trans h.r9⟩
 
@@ -88,7 +92,7 @@ theorem outInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
     fun t' ⟨h, k⟩ => ⟨k.gpr (by decide), k.gpr (by decide), k.gpr (by decide), h⟩
   xrun [outInit, ea_atd (p := s.gpr .rdx), h8, hml, hcx]
 
-theorem selPart_ct : RelCT isa (Two (At JSC)) selPart fun _ _ => True := by
+theorem selPart_ct : RelCT isa (Two (At X JSC)) selPart fun _ _ => True := by
   refine RelCT.seq (two_blk (J' := JV) [.rdi, .rsp] (pins (J := JSC) [(.rdi, fun s => s.gpr .rdi), (.rsp, fb)]
     (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -140,38 +144,36 @@ theorem selPart_ct : RelCT isa (Two (At JSC)) selPart fun _ _ => True := by
 
 /-! ## The function -/
 
-theorem body_ct (v : Compress) (pv : PrivImpl) :
-    RelCT isa (Two (At J0)) (body (HH v) pv.name pv.code) fun _ _ => True := by
-  rw [body_eq]
-  exact RelCT.seq setup_two (RelCT.seq (priv_two pv) (RelCT.seq dBuild_two (RelCT.seq hashD_two
-    (RelCT.seq kdkMac_two (RelCT.seq clLoop_two (RelCT.seq amLoop_two (RelCT.seq maskPart_two
-    (RelCT.seq alPart_two (RelCT.seq scanPart_two selPart_ct)))))))))
+/-- The streaming code writes `rsp` only in its callee's frame, for each
+implementation's working space. -/
+theorem core_stream_sp : ∀ so, Proof.Pbkdf2.Md.X86_64.Sha256.SoOk so →
+    (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).updC.allInstrs (fun i => !isa.writesSp i) = true ∧
+      (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).finC.allInstrs (fun i => !isa.writesSp i) = true := by
+  intro so h
+  rcases h with rfl | rfl | rfl <;> exact ⟨by decide +kernel, by decide +kernel⟩
 
-theorem dec_constantTime (v : Compress) (pv : PrivImpl) :
-    ConstantTime isa decK.pre decK.pub (code (HH v) pv.name pv.code) :=
-  RelCT.constantTime (relCT_alloc ((body_ct v pv).mono
-    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, e₁⟩, ⟨s₂, ⟨h₂, hpub⟩, e₂⟩⟩)
-    fun _ _ h => h))
-
-theorem dec_verified (v : Compress) (pv : PrivImpl) :
-    Verified target (code (HH v) pv.name pv.code) (Spec.RsaPkcs1Enc.decryptContract abi decStack) :=
-  Verified.of_correct (k := decK) (dec_correct v pv) (dec_constantTime v pv) decrypt_implies
-
-/-- It writes `rsp` only in its frame's push and pop, and its callees' own. -/
-theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
-    (code (HH v) pv.name pv.code).all (fun i => !isa.writesSp i) = true := by
+/-- What follows the private-key operation writes `rsp` only in its callees'
+own frames. -/
+theorem afterPriv_spSafe (v : Compress) : (afterPriv (HH v)).all (fun i => !isa.writesSp i) = true := by
   have K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
-  have hI : (HH v).hmacInit.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacInitSp
-  have hF : (HH v).hmacFin.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacFinSp
+  have C := Proof.Pbkdf2.Md.X86_64.Sha256.coreOK v
+  have hI : (HH v).hmacInit.all (fun i => !isa.writesSp i) = true := Proof.Pbkdf2.Md.X86_64.hmacInit_sp C K
+  have hF : (HH v).hmacFin.all (fun i => !isa.writesSp i) = true := Proof.Pbkdf2.Md.X86_64.hmacFin_sp C K
   have hU : (HH v).updC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs
-    (Proof.Pbkdf2.Md.X86_64.core_updC K.cSp
-      (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.updC.allInstrs _ = true by decide +kernel))
+    (Proof.Pbkdf2.Md.X86_64.core_updC K.cSp (core_stream_sp _ v.hso).1)
   have hFi : (HH v).finC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs
-    (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp
-      (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.finC.allInstrs _ = true by decide +kernel))
+    (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp (core_stream_sp _ v.hso).2)
   have hIn : (HH v).initC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs K.iSp
-  simp only [code, body, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
-    Code.all, hI, hF, hU, hFi, hIn, pv.spSafe, Bool.and_true, Bool.true_and]
+  simp only [afterPriv, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
+    Code.all, hI, hF, hU, hFi, hIn, Bool.and_true, Bool.true_and]
   decide +kernel
+
+/-! ## Without secret residue
+
+`vg_rsa_pkcs1_decrypt`'s registration scrubs it with `X86_64.Scrub.withScrubAll`,
+which clears the registers its code writes and wipes all the stack its
+frames and calls use: the residue analysis (`X86_64.RTaint`) does not follow
+its code, so nothing of that stack is kept. This is what that needs of the
+contract. -/
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

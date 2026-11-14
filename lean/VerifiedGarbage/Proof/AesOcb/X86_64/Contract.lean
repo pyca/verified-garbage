@@ -140,4 +140,21 @@ def initX86_64 : Contract isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
       s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+/-- `initX86_64`, with only the 24 bytes `init` writes itself of `scratch`,
+when the functions it calls need no working space. -/
+def initX86_64F : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let ctx : Region := ⟨s.gpr .rdx, 256⟩
+    let scr : Region := ⟨s.gpr .rcx, 24⟩
+    s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+      key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
+      (ret s).Disjoint ctx ∧ (ret s).Disjoint scr ∧
+      (stk8 s).Disjoint key ∧ (stk8 s).Disjoint ctx ∧ (stk8 s).Disjoint scr ∧
+      (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 ∧
+      (s.gpr .rcx).toNat + 24 ≤ 2 ^ 64 ∧ 8 ≤ (s.gpr .rsp).toNat ∧
+      ((s.gpr .rsi).toNat = 16 ∨ (s.gpr .rsi).toNat = 24 ∨ (s.gpr .rsi).toNat = 32)
+  post := initX86_64.post
+  pub := initX86_64.pub
+
 end VG.Proof.AesOcb

@@ -29,7 +29,7 @@ theorem flagStep_ok {s : State} {i : Nat} (hi : i<3) {b : Addr} (hb : s.gpr .x19
     WP isa (.block (flagStep i)) s fun t=>Only [.x6,.x27] s t ∧
       t.gpr .x27=s.gpr .x27|||s.mem.readW (countAt b (i+1)) 64 := by
   unfold flagStep
-  refine wp_ldrx (by omega) (by rw [hb]; rfl) hr fun a ha h6=>
+  refine wp_ldrx (by omega_using [hi]) (by rw [hb]; rfl) hr fun a ha h6=>
     wp_orr fun t ht h27=>wp_nil ⟨(ha.trans ht).mono (by decide),?_⟩
   rw [h27,h6,ha.get .x27]
 
@@ -41,10 +41,10 @@ theorem flagsTailN_ok {n : Nat} (hn : n≤3) {s : State} {b : Addr} (hb : s.gpr 
   refine wp_range_flatMap (M := isa) (N := n)
     (fun k t=>Only [.x6,.x27] s t ∧ t.gpr .x27=foldedFlags C k)
     (fun k t hk ht=>?_) n (Nat.le_refl _) s ⟨Only.refl _ _,h27⟩
-  refine WP.mono (flagStep_ok (s := t) (i := k) (b := b) (by omega) (by rw [ht.1.get .x19]; exact hb)
-    (by rw [ht.1.rd,ht.1.wr]; exact hr (k+1) (by omega))) fun u ⟨hu,he⟩=>?_
+  refine WP.mono (flagStep_ok (s := t) (i := k) (b := b) (by omega_using [hn, hk]) (by rw [ht.1.get .x19]; exact hb)
+    (by rw [ht.1.rd,ht.1.wr]; exact hr (k+1) (by omega_using [hk]))) fun u ⟨hu,he⟩=>?_
   refine ⟨(ht.1.trans hu).mono (by decide),?_⟩
-  rw [he,ht.2,ht.1.mem,hc (k+1) (by omega),foldedFlags_succ]
+  rw [he,ht.2,ht.1.mem,hc (k+1) (by omega_using [hk]),foldedFlags_succ]
 
 theorem flags_ok {s : State} {b : Addr} (hb : s.gpr .x19=b) {C : Nat→BitVec 64}
     (hc : ∀i<4,s.mem.readW (countAt b i) 64=C i)

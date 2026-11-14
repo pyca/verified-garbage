@@ -98,11 +98,11 @@ theorem keepB_one_same {bs : List (Reg × Nat)} {r : Reg} {o n o' l : Nat} (hb :
 theorem kcChk_one {p : Params} {r : Reg} {o n : Nat} (hr : r = .r12 ∨ r = .r13)
     (hi : inB (kgB p) (r, o) n = true) : kcChk p [((r, o), n)] = true := by
   have hw : r ∈ wRegs := by rcases hr with rfl | rfl <;> decide
-  have hs : 840 + 48 ≤ scrLen p := by simp only [scrLen, Spec.MlDsa.scratchWords]; omega
+  have hs : 840 + 48 ≤ scrLen p := by simp only [scrLen, Spec.MlDsa.scratchWords]; omega_using []
   simp only [kcChk, topChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, List.all_cons, List.all_nil,
     Bool.and_true]
   refine ⟨⟨fun k hk => keepB_one_diff (by decide) (by rcases hr with rfl | rfl <;> decide) hw
-    (by rw [inB_rbx]; exact decide_eq_true (by simp only [VG.Impl.MlKem.X86_64.oSV]; omega)) hi, hi⟩,
+    (by rw [inB_rbx]; exact decide_eq_true (by simp only [VG.Impl.MlKem.X86_64.oSV]; omega_using [hs, hk])) hi, hi⟩,
     keepB_one_diff (by decide) (by rcases hr with rfl | rfl <;> decide) hw (by rw [inB_rbp]; rfl) hi⟩
 
 /-- A write to `scratch` outside the saved registers and the polynomials. -/
@@ -113,7 +113,7 @@ theorem KRChk.rbx {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   have hk := hF.k; have hl := hF.l
   have hi : inB (kgB p) (.rbx, o) n = true := by rw [inB_rbx]; exact decide_eq_true h3
   have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by
-    simp only [scrLen, Spec.MlDsa.scratchWords]; omega
+    simp only [scrLen, Spec.MlDsa.scratchWords]; omega_using []
   have hsk := hF.sk
   have hpk := hF.pk
   simp only [VG.Impl.MlKem.X86_64.oSV] at h1
@@ -129,8 +129,8 @@ theorem KRChk.rbx {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   have kc : kcChk p [((.rbx, o), n)] = true := by
     simp only [kcChk, topChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, List.all_cons, List.all_nil,
       Bool.and_true]
-    exact ⟨⟨fun k hk' => bx (by rw [hs]; simp only [VG.Impl.MlKem.X86_64.oSV]; omega)
-      (by simp only [VG.Impl.MlKem.X86_64.oSV]; omega), hi⟩,
+    exact ⟨⟨fun k hk' => bx (by rw [hs]; simp only [VG.Impl.MlKem.X86_64.oSV]; omega_using [hk'])
+      (by simp only [VG.Impl.MlKem.X86_64.oSV]; omega_using [h1, hk']), hi⟩,
       keepB_one_diff (by decide) (by decide) (by decide) (by rw [inB_rbp]; rfl) hi⟩
   refine ⟨kc, fun e he => bx ?_ ?_, fun i hi' => bx ?_ ?_, fun j hj => bx ?_ ?_, b12 ?_, b13 ?_, b13 ?_,
     fun r hr' => b13 ?_, fun i hi' => ⟨b12 ?_, b13 ?_⟩⟩
@@ -154,7 +154,7 @@ theorem KRChk.r12 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   have hk := hF.k; have hl := hF.l
   have hi : inB (kgB p) (.r12, o) n = true := by rw [inB_r12]; exact decide_eq_true h2
   have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by
-    simp only [scrLen, Spec.MlDsa.scratchWords]; omega
+    simp only [scrLen, Spec.MlDsa.scratchWords]; omega_using []
   have hsk := hF.sk
   have hpk := hF.pk
   simp only [oT0] at hsk
@@ -187,7 +187,7 @@ theorem KRChk.r13 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   have hk := hF.k; have hl := hF.l
   have hi : inB (kgB p) (.r13, o) n = true := by rw [inB_r13]; exact decide_eq_true h2
   have hs : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by
-    simp only [scrLen, Spec.MlDsa.scratchWords]; omega
+    simp only [scrLen, Spec.MlDsa.scratchWords]; omega_using []
   have hsk := hF.sk
   have hpk := hF.pk
   have bx : ∀ {o' l : Nat}, o' + l ≤ scrLen p → keepB (kgB p) [((.r13, o), n)] (.rbx, o') l = true :=
@@ -270,8 +270,8 @@ theorem copies_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ
     rw [kOf_eq, ← hHX₂, Proof.MlKem.bytesAt_slice _ _ (show 96 + 32 ≤ 128 by decide), pa, pa, off_add]
   refine ⟨A, S, s.gpr .r15, ⟨h.k1.kc.step hF hp hP hx hc.1, h15, hG, fun r hr => (hS r hr).2,
     fun e he => polyIs_frame' L hP (hc.2.1 e he) (hA e he),
-    fun i hi => polyIs_frame' L hP (hc.2.2 _ (by omega)) (hS (p.ℓ + i) (by omega)).1,
-    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact polyIs_frame' L hP (hc.2.2 j (by omega)) (hS j (by omega)).1,
+    fun i hi => polyIs_frame' L hP (hc.2.2 _ (by omega_using [hi])) (hS (p.ℓ + i) (by omega_using [hi])).1,
+    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact polyIs_frame' L hP (hc.2.2 j (by omega_using [hj])) (hS j (by omega_using [hj])).1,
     ?_, ?_, ?_, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
   · rw [L₂.keepBytes hP₃.b (by layd),
       L₁.keepBytes hP₂.b (by layd),

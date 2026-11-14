@@ -70,7 +70,7 @@ theorem pruneOps_ok {s : State} {q : Addr} (hq : State.addr (s.gpr .r12) = q)
     obtain ⟨R, hR, hc⟩ := hw j hj
     exact ⟨R, List.mem_append_right _ hR, hc⟩
   have ea : ∀ j < 57, State.addr (s.gpr .r12 + BitVec.ofNat 32 j) = q + BitVec.ofNat 64 j := fun j hj => by
-    rw [addr_add (by omega), hq]
+    rw [addr_add (by omega_using [hfit, hj]), hq]
   have e0 : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
   have ne55 : q + BitVec.ofNat 64 55 ≠ q := by
     intro h

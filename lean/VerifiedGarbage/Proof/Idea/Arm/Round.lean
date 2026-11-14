@@ -46,11 +46,11 @@ theorem ldr_key_run (r : Reg) (off : Nat) (hoff : off ≤ 100) {z : Spec.Idea.Sc
     (hk : KeyOk z s) :
     ∃ s', runBlock isa [.ldr r .r0 off] s = some s' ∧
       s'.gpr r = s.mem.readW (State.addr (s.gpr .r0) + BitVec.ofNat 64 off) 32 ∧ Keep [r] s s' := by
-  have hfit : (s.gpr .r0).toNat + off < 2 ^ 32 := by have := hk.fit; omega
+  have hfit : (s.gpr .r0).toNat + off < 2 ^ 32 := by have := hk.fit; omega_using [hoff, this]
   have hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 off)) 4 := by
     rw [addr_add hfit]
-    exact ⟨_, hk.read, Offset.contains_base _ (by omega) (by omega)⟩
-  refine ⟨_, by rw [runBlock_cons, exec_ldr (by omega) hin, runStep_some, runBlock_nil], ?_, ?_⟩
+    exact ⟨_, hk.read, Offset.contains_base _ (by omega_using [hoff]) (by omega_using [hoff])⟩
+  refine ⟨_, by rw [runBlock_cons, exec_ldr (by omega_using [hoff]) hin, runStep_some, runBlock_nil], ?_, ?_⟩
   · rw [RegUpd.gpr_setReg_self, addr_add hfit]
   · keep_tac
 
@@ -72,8 +72,8 @@ theorem loadKey_run (r : Reg) (k : Nat) (hk52 : k < 52) {z : Spec.Idea.Schedule}
     · rw [RegUpd.gpr_setReg_self, v₁, subkey_hi32, hk.sched]
     · exact e₁.trans ⟨fun q hq => RegUpd.gpr_setReg_of_ne _ _ (by simpa using hq), rfl, rfl, rfl, rfl⟩
   · rename_i h
-    obtain ⟨s₁, h₁, v₁, e₁⟩ := ldr_key_run r (2 * k) (by omega) s hk
-    exact ⟨s₁, h₁, by rw [v₁, subkey_lo32 _ _ (by omega), hk.sched], e₁⟩
+    obtain ⟨s₁, h₁, v₁, e₁⟩ := ldr_key_run r (2 * k) (by omega_using [hk52, h]) s hk
+    exact ⟨s₁, h₁, by rw [v₁, subkey_lo32 _ _ (by omega_using [hk52]), hk.sched], e₁⟩
 
 /-- A data-processing instruction with a register operand. -/
 theorem dp_run (op : DpOp) (d n r : Reg) (s : State) :
@@ -139,10 +139,10 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   have r12 : ∀ {rs : List Reg} {s s' : State}, Keep rs s s' → .r12 ∉ rs → MaskOk s → MaskOk s' :=
     fun e h hm => (e.reg .r12 h).trans hm
   -- X₁ ⊙ Z₁
-  obtain ⟨s₁, h₁, v₁, e₁⟩ := loadKey_run .r9 (6 * j) (by omega) s hk
+  obtain ⟨s₁, h₁, v₁, e₁⟩ := loadKey_run .r9 (6 * j) (by omega_using [hj]) s hk
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mul_run .r4 .r4 .r9 (by decide) s₁ (r12 e₁ (by decide) hm)
   -- X₄ ⊙ Z₄
-  obtain ⟨s₃, h₃, v₃, e₃⟩ := loadKey_run .r9 (6 * j + 3) (by omega) s₂
+  obtain ⟨s₃, h₃, v₃, e₃⟩ := loadKey_run .r9 (6 * j + 3) (by omega_using [hj]) s₂
     ((hk.keep e₁ (by decide)).keep e₂ (by decide))
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mul_run .r7 .r7 .r9 (by decide) s₃
     (r12 e₃ (by decide) (r12 e₂ (by decide) (r12 e₁ (by decide) hm)))
@@ -152,9 +152,9 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   have k₄ : KeyOk z s₄ := hk.keep e₀₄ (by decide)
   have m₄ : MaskOk s₄ := r12 e₀₄ (by decide) hm
   -- X₂ ⊞ Z₂, X₃ ⊞ Z₃
-  obtain ⟨s₅, h₅, v₅, e₅⟩ := loadKey_run .r9 (6 * j + 1) (by omega) s₄ k₄
+  obtain ⟨s₅, h₅, v₅, e₅⟩ := loadKey_run .r9 (6 * j + 1) (by omega_using [hj]) s₄ k₄
   obtain ⟨s₆, h₆, v₆, e₆⟩ := addKey_run b b12 s₅ (r12 e₅ (by decide) m₄)
-  obtain ⟨s₇, h₇, v₇, e₇⟩ := loadKey_run .r9 (6 * j + 2) (by omega) s₆
+  obtain ⟨s₇, h₇, v₇, e₇⟩ := loadKey_run .r9 (6 * j + 2) (by omega_using [hj]) s₆
     ((k₄.keep e₅ (by decide)).keep e₆ (by simpa using b0.symm))
   obtain ⟨s₈, h₈, v₈, e₈⟩ := addKey_run c c12 s₇
     (r12 e₇ (by decide) (r12 e₆ (by simpa using b12.symm) (r12 e₅ (by decide) m₄)))
@@ -165,7 +165,7 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   have m₈ : MaskOk s₈ := r12 e₄₈ (by simp [b12.symm, c12.symm]) m₄
   -- t₀
   obtain ⟨s₉, h₉, v₉, e₉⟩ := dp_run .eor .r10 .r4 c s₈
-  obtain ⟨s₁₀, h₁₀, v₁₀, e₁₀⟩ := loadKey_run .r9 (6 * j + 4) (by omega) s₉ (k₈.keep e₉ (by decide))
+  obtain ⟨s₁₀, h₁₀, v₁₀, e₁₀⟩ := loadKey_run .r9 (6 * j + 4) (by omega_using [hj]) s₉ (k₈.keep e₉ (by decide))
   obtain ⟨s₁₁, h₁₁, v₁₁, e₁₁⟩ := mul_run .r10 .r10 .r9 (by decide) s₁₀
     (r12 e₁₀ (by decide) (r12 e₉ (by decide) m₈))
   -- t₁
@@ -174,7 +174,7 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   have e₈₁₃ : Keep [.r8, .r9, .r10, .r11] s₈ s₁₃ :=
     ((((e₉.weaken (by decide)).trans (e₁₀.weaken (by decide))).trans (e₁₁.weaken (by decide))).trans
       (e₁₂.weaken (by decide))).trans (e₁₃.weaken (by decide))
-  obtain ⟨s₁₄, h₁₄, v₁₄, e₁₄⟩ := loadKey_run .r9 (6 * j + 5) (by omega) s₁₃ (k₈.keep e₈₁₃ (by decide))
+  obtain ⟨s₁₄, h₁₄, v₁₄, e₁₄⟩ := loadKey_run .r9 (6 * j + 5) (by omega_using [hj]) s₁₃ (k₈.keep e₈₁₃ (by decide))
   obtain ⟨s₁₅, h₁₅, v₁₅, e₁₅⟩ := mul_run .r11 .r11 .r9 (by decide) s₁₄
     (r12 e₁₄ (by decide) (r12 e₈₁₃ (by decide) m₈))
   -- The outputs.

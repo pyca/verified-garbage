@@ -99,11 +99,11 @@ theorem tailJP_ok {s₀ u : State} (hp : Pre P (deL P) s₀) (hk : Stk128 P (deL
     have hz : (KPke.dkZ P.params (dkD P s₀)).length = 32 := by
       simp only [KPke.dkZ, List.length_take, List.length_drop, bytesAt_length,
         show P.params.k = P.k from rfl, KemLay.dkLen]
-      omega
+      omega_using []
     simp only [List.length_append, hz, cD, bytesAt_length, Impl.MlKem.AArch64.Hybrid.hashPairs,
       Impl.MlKem.AArch64.Hybrid.blocks, jM, Impl.MlKem.AArch64.Kem16.jSrc]
-    omega)] at hst
-  refine WP.mono_syms (tailJ_ok hp (by have := ho.pairs; simp only [jM]; omega) hu.b hst)
+    omega_using [h3])] at hst
+  refine WP.mono_syms (tailJ_ok hp (by have := ho.pairs; simp only [jM]; omega_using [this]) hu.b hst)
     fun t ⟨hB₁, _, jb₁, far₁, f₁⟩ sy => ?_
   have b3 : ∀ {o : Nat}, o + 32 ≤ SV P + 48 → 200 ≤ o → (o + 32 ≤ SB + 32 ∨ SB + 34 ≤ o) → o + 32 ≤ AH →
       (o + 32 ≤ SS ∨ SS + 2048 ≤ o) → ∀ r ∈ bW3 P (deL P) s₀, (R (kA s₀) (deL P).sc o 32).Disjoint r :=
@@ -190,7 +190,7 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
   have hw := hp.wf
   have scratch0 : Covers [⟨kA s₀ (deL P).sc,P.scl⟩] s₀.wr := by
     have hh := cov_w₀ hp (b:=(deL P).sc) (o:=0) (l:=P.scl) ⟨hp.scw,hp.scb⟩
-      (by rw [hp.scl]; omega)
+      (by rw [hp.scl]; omega_using [])
     simpa only [R,ptr_zero] using hh
   refine WP.seq (WP.mono_syms (Optimized.WP.tablesDepth (start_using_ok hash hG hp hc tables.transforms tables.gamma
     tables.gammaRead (Optimized.apart_of_covers tables.gammaApart scratch0)) tables depthA) fun uA ⟨hA,ta⟩ syA=>?_)
@@ -211,7 +211,7 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
   have hprf : ∀ N < min (Impl.MlKem.AArch64.Kem16P.placed P
       (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P))) (Impl.MlKem.AArch64.Kem16P.prfs P),
       PrfAt P (deL P) s₀ uB.mem uB.mem N := fun N hN => by
-    have pr := hB.prf N (by simp only [jM] at hfin ⊢; rw [hfin]; omega)
+    have pr := hB.prf N (by simp only [jM] at hfin ⊢; rw [hfin]; omega_using [hN])
     show Noise.Rate128 _ _ _
     rw [seed_mA hp hk hB.fr]
     exact pr

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.X448
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: field elements as natural numbers
@@ -51,10 +52,10 @@ theorem toFe_sub {a b c : Nat} (h : (c + b) % P = a % P) : toFe c = toFe a - toF
   generalize c % P = x at *
   generalize b % P = y at *
   rcases Nat.lt_or_ge (x + y) P with h1 | h1
-  · rw [Nat.mod_eq_of_lt h1, show P - y + (x + y) = x + P by omega, Nat.add_mod_right,
+  · rw [Nat.mod_eq_of_lt h1, show P - y + (x + y) = x + P by omega_using [hy], Nat.add_mod_right,
       Nat.mod_eq_of_lt hx]
-  · rw [show (x + y) % P = x + y - P by rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega)],
-      show P - y + (x + y - P) = x by omega, Nat.mod_eq_of_lt hx]
+  · rw [show (x + y) % P = x + y - P by rw [Nat.mod_eq_sub_mod h1, Nat.mod_eq_of_lt (by omega_using [hx, hy])],
+      show P - y + (x + y - P) = x by omega_using [hy, h1], Nat.mod_eq_of_lt hx]
 
 /-- A multiplication by `a24`, written as the spec writes it. -/
 theorem toFe_a24 {a c : Nat} (h : c % P = 39081 * a % P) : toFe c = a24 * toFe a :=

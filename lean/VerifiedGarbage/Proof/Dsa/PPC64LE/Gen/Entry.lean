@@ -35,7 +35,7 @@ theorem stores_ok {B : Addr} : ∀ (L : List (Reg × Nat)) (s : State) (rest : L
   | p :: L, s, rest, Q, hb, hok, hnd, k => by
     obtain ⟨o1, o2, o3⟩ := hok p List.mem_cons_self
     simp only [List.map_cons, List.cons_append, List.nodup_cons, List.mem_map] at hnd ⊢
-    refine wp_std' (by decide) ⟨o1, by omega⟩ (by rw [hb]) o3 fun s₁ m₁ sp₁ lr₁ => ?_
+    refine wp_std' (by decide) ⟨o1, by omega_using [o2]⟩ (by rw [hb]) o3 fun s₁ m₁ sp₁ lr₁ => ?_
     refine stores_ok L s₁ rest Q (by rw [m₁.gpr, hb]) (fun q hq => ?_) hnd.2 fun t g sp lr rd wr rv f => ?_
     · obtain ⟨q1, q2, q3⟩ := hok q (List.mem_cons_of_mem _ hq)
       exact ⟨q1, q2, by rw [m₁.wr]; exact q3⟩
@@ -47,7 +47,7 @@ theorem stores_ok {B : Addr} : ∀ (L : List (Reg × Nat)) (s : State) (rest : L
         obtain ⟨q', hq', rfl⟩ := List.mem_map.mp hr
         have ne : q'.2 ≠ q.2 := fun e => hnd.1 ⟨q', hq', e⟩
         obtain ⟨a1, a2, _⟩ := hok q' (List.mem_cons_of_mem _ hq')
-        exact Offset.disjoint _ (by omega) (by omega) (by omega)
+        exact Offset.disjoint _ (by omega_using [o2, ne, a2]) (by omega_using [o1]) (by omega_using [a1])
       · rw [rv q hq, m₁.gpr]
     · rw [m₁.mem] at f
       have f1 : Frame (⟨B + BitVec.ofNat 64 p.2, 8⟩ :: L.map fun q => ⟨B + BitVec.ofNat 64 q.2, 8⟩) s.mem
@@ -70,7 +70,7 @@ theorem loads_ok {B : Addr} {b : Reg} (hb0 : b ≠ .r0) :
     obtain ⟨o0, o1, o2, o3⟩ := hok p List.mem_cons_self
     simp only [List.map_cons, List.cons_append, List.nodup_cons, List.mem_map] at hnd ⊢
     refine WP.cons (s' := s.write p.1 (s.mem.readW (B + BitVec.ofNat 64 p.2) 64)) ?_ ?_
-    · rw [exec_load_d hb0 ⟨o1, by omega⟩ (by rw [hb]; exact o3), hb]
+    · rw [exec_load_d hb0 ⟨o1, by omega_using [o2]⟩ (by rw [hb]; exact o3), hb]
     refine loads_ok (B := B) hb0 L _ rest Q (by simp [State.write, Ne.symm o0, hb]) (fun q hq => ?_) hnd.2
       fun t g o m sp lr rd wr => ?_
     · obtain ⟨q0, q1, q2, q3⟩ := hok q (List.mem_cons_of_mem _ hq)
@@ -104,11 +104,11 @@ theorem entry_ok {STK : Nat} {σ : State} (pre : CIn STK σ) :
       GI (mkG σ) STK σ (eV (mkG σ)) entryLS t ∧ t.gpr .r12 = BitVec.ofNat 64 (mkG σ).pLen := by
   have big : 8 * (64 * (mkG σ).pLen + 1024) ≤ (mkG σ).scrLen * 8 := by
     have := pre.scrLen; simp only [Spec.Dsa.generationScratchWords] at this
-    show 8 * (64 * pLenOf σ + 1024) ≤ (σ.gpr .r9).toNat * 8; omega
+    show 8 * (64 * pLenOf σ + 1024) ≤ (σ.gpr .r9).toNat * 8; omega_using [this]
   have fit : (mkG σ).scr.toNat + (mkG σ).scrLen * 8 ≤ 2 ^ 64 := pre.nC
-  have hE : hEnd ≤ (mkG σ).scrLen * 8 := by simp only [hEnd, fSave]; omega
+  have hE : hEnd ≤ (mkG σ).scrLen * 8 := by simp only [hEnd, fSave]; omega_using [big]
   have inSt : ∀ o, o + 8 ≤ 32 → InRegions (σ.rd ++ σ.wr) (σ.gpr .r10 + BitVec.ofNat 64 o) 8 := fun o ho =>
-    ⟨(mkG σ).rSt, List.mem_append_right _ (by rw [pre.wr]; simp), Offset.contains_base _ ho (by omega)⟩
+    ⟨(mkG σ).rSt, List.mem_append_right _ (by rw [pre.wr]; simp), Offset.contains_base _ ho (by omega_using [ho])⟩
   refine WP.sp_eq ?_
   simp only [entry, List.cons_append]
   refine WP.cons exec_mflr ?_
@@ -138,7 +138,7 @@ theorem entry_ok {STK : Nat} {σ : State} (pre : CIn STK σ) :
   have hw : ∀ p ∈ entryStores, p.2 < 2 ^ 15 ∧ p.2 % 8 = 0 ∧
       InRegions s₄.wr ((mkG σ).scr + BitVec.ofNat 64 p.2) 8 := fun p hp => by
     obtain ⟨a, b, c⟩ := entryStores_ok p hp
-    refine ⟨a, b, (mkG σ).rScr, by rw [wr₄, pre.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    refine ⟨a, b, (mkG σ).rScr, by rw [wr₄, pre.wr]; simp, Offset.contains_base _ (by omega_using [hE, c]) (by omega_using [a])⟩
   refine stores_ok entryStores s₄ _ _ v8 hw entryStores_nodup fun t g _ _ rd wr rv f => ?_
   refine wp_addi (d := .r28) (n := .r8) (imm := 0) (by decide) (by decide) fun s₅ u₅ => WP.block_nil
     fun sp₅ => ⟨?_, ?_⟩
@@ -167,7 +167,7 @@ theorem entry_ok {STK : Nat} {σ : State} (pre : CIn STK σ) :
       refine f.sub fun x hx => ?_
       obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hx
       obtain ⟨_, _, c⟩ := entryStores_ok p hp
-      exact ⟨(mkG σ).rScr, List.mem_cons_self, sw (mkG σ) (by omega)⟩
+      exact ⟨(mkG σ).rScr, List.mem_cons_self, sw (mkG σ) (by omega_using [hE, c])⟩
   · rw [u₅.other _ (by decide), g, v12]
 
 theorem restoreLoads_ok : ∀ p ∈ restoreLoads, p.1 ≠ .r28 ∧ p.2 < 2 ^ 15 ∧ p.2 % 8 = 0 ∧ p.2 + 8 ≤ hEnd := by decide
@@ -217,7 +217,7 @@ theorem restore_ok' {G : GP} {σ s : State} (h28 : s.gpr .r28 = G.scr)
       simp only [State.write, ne, ite_false]
       rw [v _ (restoreLoads_mem i hi)]
       show s₁.mem.readW _ 64 = _
-      rw [u₁.mem]; exact hsaved i (by omega)
+      rw [u₁.mem]; exact hsaved i (by omega_using [hi])
   · show t.lr = σ.lr
     rw [lr]; show s₁.gpr .r0 = σ.lr; rw [u₁.gpr]
   · show t.mem = s.mem; exact tm

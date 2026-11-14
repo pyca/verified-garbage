@@ -27,7 +27,7 @@ theorem pointer_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       t.gpr .esi = pointerValue base s p ∧ Keeps [.esi] s t ∧ t.mem = s.mem := by
   have bound (f : Field) : VG.Impl.Dsa.X86.Layout.field f + 4 ≤ size := by
     have := VG.Proof.Dsa.X86.Layout.field_bounds f
-    omega
+    omega_using [hz, this]
   cases p with
   | input f =>
     unfold Core.pointer pointerValue

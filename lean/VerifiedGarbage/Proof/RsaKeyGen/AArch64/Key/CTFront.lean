@@ -145,7 +145,7 @@ theorem loadE_ct0 {F : KIn → State → Prop} :
   have hw := hk.ws
   have hn := hw.scr.nowrap
   have h256 := hw.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hw.scr.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off I.B (8 * i)) 8 := fun i hi => hw.scr.ld (by omega_using [h256, hi])
   refine WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = I.pE ∧ t.gpr .x2 = BitVec.ofNat 64 I.el)
     (by brun [hw.x0, hdr_enc (show kE < 32 by decide), hdr_enc (show kElen < 32 by decide), hl kE (by decide),
       hl kElen (by decide), hk.args.e, hk.args.el]) (by decide) (by decide) (by decide +kernel))
@@ -162,7 +162,7 @@ abbrev loadsL : List (Prog isa) :=
 
 theorem loads_ct0 : RelCT isa (Two (KG NF)) (seqs loadsL) fun _ _ => True := by
   have pl8 : ∀ {I : KIn}, KLens I → I.pl ≤ 8 * I.W ∧ 1 ≤ I.pl := fun L => by
-    have := L.W; have := L.pl1; have := L.pl8; omega
+    have := L.W; have := L.pl1; have := L.pl8; omega_arith
   refine kg_app0 (G := NF) (by simp [loadA]) (by simp [loadA]) (loadA_ct0 (by decide) (by decide) (by decide)
     KQ.pP KQ.pl (fun _ _ _ h => ⟨h.args.pp, h.args.pl⟩) (by taint_decide) (by taint_decide) (by taint_decide))
     (fun I _ s h L _ => WP.mono (loadA_k h (j := aPa) (by decide) (by decide) (by decide) h.args.pp h.args.pl h.p

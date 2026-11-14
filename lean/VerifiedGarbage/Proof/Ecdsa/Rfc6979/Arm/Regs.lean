@@ -39,7 +39,7 @@ end
 theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
   List.any_eq_true.2 ⟨0, by simp, by
     have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by ext i; simp
-    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega : n % 2 ^ 32 < 256)⟩
+    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega_using [h] : n % 2 ^ 32 < 256)⟩
 
 theorem bytesAt_frame {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Addr} {n : Nat}
     (hd : ∀ r ∈ ws, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) :
@@ -57,12 +57,12 @@ variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 /-- `scratch + o` as an address. -/
 theorem scrA (hL : L.Ok) {o : Nat} (ho : o < 8192) :
     State.addr (L.scr + BitVec.ofNat 32 o) = State.addr L.scr + BitVec.ofNat 64 o :=
-  addr_add (by have := hL.nc; omega)
+  addr_add (by have := hL.nc; omega_using [ho, this])
 
 theorem movw_val {o : Nat} (ho : o < 2 ^ 16) : (BitVec.ofNat 16 o).setWidth 32 = BitVec.ofNat 32 o := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [ho]
 
 /-- `d ← scratch + o`, through `r12`. -/
 theorem scrAt_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat} (ho : o < 2 ^ 16)
@@ -116,7 +116,7 @@ theorem tabLd_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = m₀.readW (tA L.tab o) 32 →
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
     WP isa (.block (.ldr d .r6 o :: is)) t Q :=
-  wp_ldrS (a := tA L.tab o) (by omega) (by rw [hc.r6]) (hc.inTab hL ho) fun t₁ u₁ =>
+  wp_ldrS (a := tA L.tab o) (by omega_using [ho]) (by rw [hc.r6]) (hc.inTab hL ho) fun t₁ u₁ =>
     k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, hc.tabWord hL ho]) u₁.other
 
 /-- `d ← D`, the table's digest length. -/
@@ -141,7 +141,7 @@ theorem frLd_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d 
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = t.mem.readW (L.B + BitVec.ofNat 64 (24 + o)) 32 →
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
     WP isa (.block (.ldr d .r8 o :: is)) t Q :=
-  wp_ldrS (a := L.B + BitVec.ofNat 64 (24 + o)) (by omega) (by rw [hc.r8]; exact hL.fpA (by omega))
-    (hc.inFr (by omega) (by omega)) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
+  wp_ldrS (a := L.B + BitVec.ofNat 64 (24 + o)) (by omega_using [ho]) (by rw [hc.r8]; exact hL.fpA (by omega_using [ho]))
+    (hc.inFr (by omega_using []) (by omega_using [ho])) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem u₁.gpr u₁.other
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

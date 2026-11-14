@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Scrypt
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # scryptBlockMix, one block at a time
@@ -64,10 +65,10 @@ theorem blockMix_eq : blockMix r b =
   congr 1
   · refine flatMap_congr fun i hi => ?_
     rw [List.mem_range] at hi
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega)]; rfl
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega_using [hi])]; rfl
   · refine flatMap_congr fun i hi => ?_
     rw [List.mem_range] at hi
-    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega)]; rfl
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega_using [hi])]; rfl
 
 theorem length_flatMap_const {α β : Type} (l : List α) {f : α → List β} {n : Nat}
     (h : ∀ a, (f a).length = n) : (l.flatMap f).length = n * l.length := by

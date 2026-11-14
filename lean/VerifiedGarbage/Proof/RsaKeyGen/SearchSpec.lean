@@ -29,7 +29,7 @@ theorem draw_suffix {n : Nat} {r : Rand} {x : Nat} {rest : Rand} (h : draw n r =
   split at h
   · rename_i hl
     simp only [Option.some.injEq, Prod.mk.injEq] at h
-    exact ⟨h.2.symm, by rw [List.length_take] at hl; omega⟩
+    exact ⟨h.2.symm, by rw [List.length_take] at hl; omega_using [hl]⟩
   · cases h
 
 theorem loop_suffix {σ α : Type} {step : σ → Rand → Option ((α ⊕ σ) × Rand)}
@@ -51,7 +51,7 @@ theorem loop_suffix {σ α : Type} {step : σ → Rand → Option ((α ⊕ σ) �
         obtain ⟨m, hm, rfl⟩ := ih _ hlt _ _ _ h
         refine ⟨n + m, ?_, by rw [List.drop_drop]⟩
         rw [List.length_drop] at hm
-        omega
+        omega_using [hn, hm]
       · cases h
 
 theorem mrStep_suffix {w ch a m : Nat} :
@@ -91,7 +91,7 @@ theorem candidateOp_suffix {L : Nat} {eB pB r : Rand} {x : Candidate} {rest : Ra
   simp only [bind, Option.bind_eq_some_iff] at h
   obtain ⟨⟨y, r₁⟩, hd, h⟩ := h
   obtain ⟨hr₁, hn⟩ := draw_suffix hd
-  have hL : 8 * L / 8 = L := by omega
+  have hL : 8 * L / 8 = L := by omega_using []
   rw [hL] at hr₁ hn
   dsimp only at h
   split at h
@@ -103,9 +103,9 @@ theorem candidateOp_suffix {L : Nat} {eB pB r : Rand} {x : Candidate} {rest : Ra
       obtain ⟨m, hm, rfl⟩ := primalityTest_suffix ht
       have hrest : rest = r₁.drop m := by
         split at h <;> (simp only [pure, Option.some.injEq, Prod.mk.injEq] at h; exact h.2.symm)
-      refine ⟨L + m, ?_, by omega, by rw [hrest, hr₁, List.drop_drop]⟩
+      refine ⟨L + m, ?_, by omega_using [], by rw [hrest, hr₁, List.drop_drop]⟩
       rw [hr₁, List.length_drop] at hm
-      omega
+      omega_using [hn, hm]
     · simp only [Option.bind_some] at h
       have hrest : rest = r₁ := by
         split at h <;> (simp only [pure, Option.some.injEq, Prod.mk.injEq] at h; exact h.2.symm)
@@ -118,7 +118,7 @@ theorem candidateOp_close {L : Nat} {eB pB r : Rand} {rest : Rand}
   simp only [bind, Option.bind_eq_some_iff] at h
   obtain ⟨⟨y, r₁⟩, hd, h⟩ := h
   obtain ⟨hr₁, hn⟩ := draw_suffix hd
-  have hL : 8 * L / 8 = L := by omega
+  have hL : 8 * L / 8 = L := by omega_using []
   rw [hL] at hr₁ hn
   dsimp only at h
   split at h
@@ -195,7 +195,7 @@ theorem search_available_lt (L : Nat) (eB pB : Rand) (remaining : Nat) (r : Rand
       · rename_i hlt
         intro k a h
         simp only [Spec.Entropy.Outcome.entropy.injEq] at h
-        omega
+        omega_using [hlt, h]
     · intro k a h; cases h
     · split
       · rename_i hlt
@@ -213,7 +213,7 @@ theorem search_requests (L : Nat) (eB pB : Rand) (remaining : Nat) (r : Rand) :
       (requested L (primeSearch L eB pB remaining r)) :=
   Entropy.requested_requests fun k a h => by
     have hlt := search_available_lt L eB pB remaining r k a h
-    exact Entropy.request_valid (by unfold primeEntropy at hlt; omega) hlt
+    exact Entropy.request_valid (by unfold primeEntropy at hlt; omega_using [hlt]) hlt
 
 /-! ## What the trace says -/
 
@@ -265,10 +265,10 @@ theorem used_of_leak (r : Rand) :
     | close =>
       obtain ⟨hd, hL⟩ := candidateOp_close hc
       simp only [candidateLeak, hc, usedOfLeak, hd, List.length_drop]
-      omega
+      omega_using [hL]
     | rejected =>
       obtain ⟨n, hn, -, hd⟩ := candidateOp_suffix hc
       simp only [candidateLeak, hc, usedOfLeak, List.length_map, List.length_take, hd, List.length_drop]
-      omega
+      omega_using []
 
 end VG.Proof.RsaKeyGen.Search

@@ -32,7 +32,7 @@ theorem tailHead_ok {s : State} {B : Addr} {Z eQ i : Nat}
       (t.gpr .x1 = BitVec.ofNat 64 s.c.toNat ∧
        t.gpr .x27 = word s.mem B (eQ + 8 * i) ∧ t.mem = s.mem ∧ t.c = s.c) ∧
       Keep [.x1, .x27] s t := by
-  have enc : (8 * i) % 8 = 0 ∧ 8 * i < 32768 := ⟨by omega, by omega⟩
+  have enc : (8 * i) % 8 = 0 ∧ 8 * i < 32768 := ⟨by omega_using [], by omega_using [hi]⟩
   refine WP.keep [.x1, .x27] ?_ rfl rfl rfl
   brun [tailHead, h8, h7, enc, hs.ld hQ]
   simp only [zero_add64]
@@ -95,7 +95,7 @@ theorem tailRow_ok {s : State} {B : Addr} {Z eQ eT eN i : Nat}
   rw [hhi] at hh
   have hx1 : (c.gpr .x1).toNat = s.c.toNat + b.c.toNat := by
     rw [hc1, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by have := Bool.toNat_le s.c; have := Bool.toNat_le b.c; omega)
+    exact Nat.mod_eq_of_lt (by have := Bool.toNat_le s.c; have := Bool.toNat_le b.c; omega_arith)
   have hv := shifted_value c
   rw [keep_accumulator kc (by decide), kc.gpr .x19 (by decide), hx1] at hv
   have hp := block_product_value a (word a.mem B eN)

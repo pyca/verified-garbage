@@ -64,11 +64,11 @@ structure CInv (t : State) (F S : Addr) (V₀ : Nat → Byte) (h₀ : hH.md.HV) 
 /-- An address of the working space outside a region of it. -/
 theorem not_in (S : Addr) {o e k : Nat} (h : o + 1 ≤ e ∨ e + k ≤ o) (ho : o < 8192) (he : e + k ≤ 8192) :
     ¬ (⟨off S e, k⟩ : Region).Contains (off S o) 1 :=
-  fun hc => Offset.disjoint S h (by omega) (by omega) _ (Region.contains_self _ _) hc
+  fun hc => Offset.disjoint S h (by omega_using [ho]) (by omega_using [he]) _ (Region.contains_self _ _) hc
 
 theorem not_in0 (S : Addr) {o k : Nat} (h : k ≤ o) (ho : o < 8192) (hk : k ≤ 8192) :
     ¬ (⟨S, k⟩ : Region).Contains (off S o) 1 := by
-  have := not_in S (o := o) (e := 0) (k := k) (.inr (by omega)) ho (by omega)
+  have := not_in S (o := o) (e := 0) (k := k) (.inr (by omega_using [h])) ho (by omega_using [hk])
   rwa [off, BitVec.add_zero] at this
 
 theorem off_add (p : Addr) (a b : Nat) : off p a + BitVec.ofNat 64 b = off p (a + b) := by
@@ -76,7 +76,7 @@ theorem off_add (p : Addr) (a b : Nat) : off p a + BitVec.ofNat 64 b = off p (a 
 
 include hH in
 theorem so_lt : H.P.so < 2048 := by
-  have := hH.sizes.fits; have := hH.W; omega
+  have := hH.sizes.fits; have := hH.W; omega_arith
 
 theorem lsl_val {x k : Nat} (hx : x * 2 ^ k < 2 ^ 64) : BitVec.ofNat 64 x <<< k = BitVec.ofNat 64 (x * 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq

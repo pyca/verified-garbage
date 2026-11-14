@@ -130,7 +130,7 @@ def R4 (s₁ s₂ : State) : Prop :=
     s₁.cf = some (decide (L.length < 256)) ∧ s₂.cf = some (decide (L.length < 256))
 
 theorem ofNat64_toNat' {j : Nat} (h : j ≤ 256) : (BitVec.ofNat 64 j).toNat = j := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem tailTry_ct : RelCT isa (R4 w16) (.ite .b (.block (snTry .r8 w16)) (.block [])) fun s₁ s₂ => s₁.gpr .rcx = s₂.gpr .rcx := by
   obtain ⟨_, _, c8, _⟩ := try_taint w16
@@ -200,8 +200,8 @@ theorem mid_ct : RelCT isa (R1 w16)
       obtain ⟨d2, s2, _, k2⟩ := f2 aP L ⟨p2.rbp, p2.rdi, hl, p2.wr, p2.st⟩
       rw [e9] at d1 s1
       have hl' := tryL_len L ((y.gpr .r9).setWidth 32).toNat
-      exact ⟨aP, _, ⟨by rw [k1.gpr (by decide), p1.rbp], d1, by omega, by rw [k1.2.2]; exact p1.wr, s1⟩,
-        ⟨by rw [k2.gpr (by decide), p2.rbp], d2, by omega, by rw [k2.2.2]; exact p2.wr, s2⟩,
+      exact ⟨aP, _, ⟨by rw [k1.gpr (by decide), p1.rbp], d1, by omega_using [hl, hl'], by rw [k1.2.2]; exact p1.wr, s1⟩,
+        ⟨by rw [k2.gpr (by decide), p2.rbp], d2, by omega_using [hl, hl'], by rw [k2.2.2]; exact p2.wr, s2⟩,
         by rw [k1.gpr (by decide), k2.gpr (by decide), e8], by rw [k1.gpr (by decide), k2.gpr (by decide), ecx]⟩
   · refine RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil)
       (by taint_decide)) (fun x y _ => ⟨WP.block_nil rfl, WP.block_nil rfl⟩) ?_
@@ -283,14 +283,14 @@ def LI (w16 : Bool) (N n : Nat) (s₁ s₂ : State) : Prop :=
 theorem bpre {σ : State} (hp : (sampleKW w16).pre σ) {N t : Nat} (hN : N ≤ 280) (ht : t < N) {s : State}
     (h : LAt w16 σ N t s) : BPre w16 s (aP σ) (Lt σ t) :=
   ⟨h.env.rbp, h.rdi, sampleAfter_length_le (a := []) (by simp) _ t, WrA.of_mem (by rw [h.env.wr, hp.2.1]; simp), h.stored,
-    by simpa using lat_regions hp hN h (k := 0) (by omega), lat_regions hp hN h (by omega),
-    lat_regions hp hN h (by omega)⟩
+    by simpa using lat_regions hp hN h (k := 0) (by omega_using [ht]), lat_regions hp hN h (by omega_using [ht]),
+    lat_regions hp hN h (by omega_using [ht])⟩
 
 theorem li_brel {N n : Nat} (hN : N ≤ 280) {s₁ s₂ : State} (h : LI w16 N n s₁ s₂) : BRel w16 s₁ s₂ := by
   obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, _, ht, l₁, l₂⟩ := h
   refine ⟨aP σ₁, Lt σ₁ t, bpre p₁ hN ht l₁, by rw [pub_aP hq, pub_Lt hq]; exact bpre p₂ hN ht l₂,
     by rw [l₁.rsi, l₂.rsi, pub_at hq], by rw [l₁.rcx, l₂.rcx], fun k hk => ?_⟩
-  rw [out_byte l₁ (by omega), out_byte l₂ (by omega), pub_B hq]
+  rw [out_byte l₁ (by omega_using [ht, hk]), out_byte l₂ (by omega_using [ht, hk]), pub_B hq]
 
 theorem loop_ct {N : Nat} (hN : N ≤ 280) (n : Nat) :
     RelCT isa (LI w16 N n) (.loop (snBody w16) .ne) (Rel2 (sampleKW w16).pre (sampleKW w16).pub fun σ s => LAt w16 σ N N s) := by
@@ -314,7 +314,7 @@ theorem loop_ct {N : Nat} (hN : N ≤ 280) (n : Nat) :
     · have : t + 1 ≠ N := by
         have : x'.zf.map (!·) = some true := ht'
         rw [z₁] at this; simpa using this
-      exact ⟨N - (t + 1), by omega, σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega, l₁', l₂'⟩
+      exact ⟨N - (t + 1), by omega_using [hn, ht], σ₁, σ₂, t + 1, p₁, p₂, hq, rfl, by omega_using [ht, this], l₁', l₂'⟩
 
 theorem regs_pub {σ₁ σ₂ s₁ s₂ : State} (hq : (sampleKW w16).pub σ₁ σ₂) (e₁ : Env w16 σ₁ s₁) (e₂ : Env w16 σ₂ s₂) :
     s₁.gpr .rbx = s₂.gpr .rbx ∧ s₁.gpr .rsp = s₂.gpr .rsp := by
@@ -382,8 +382,8 @@ theorem sample_ct' {n : BitVec 32} {N : Nat} (hn : n.toNat = N) (h3 : (3 * n).to
     RelCT isa (Rel2 (sampleKW w16).pre (sampleKW w16).pub (I1 w16)) (snSample n w16) (Rel2 (sampleKW w16).pre (sampleKW w16).pub fun σ s => LAt w16 σ N N s) :=
   RelCT.seq absorb_ct' (RelCT.seq (relInv (I' := I3 w16) (fun σ s hp h => blkC_ok hp h)
     (taintRel [] nil_regs (by taint_decide))) (RelCT.seq pad_ct' (RelCT.seq
-      (relInv (I' := fun σ s => I5 w16 σ (3 * N) s) (fun σ s hp h => blkE_ok hp h3 (by omega) h) (taintRel [] nil_regs cE))
-      (RelCT.seq (squeeze_ct' (by omega)) (snLoop_ct hn hN0 hN cB)))))
+      (relInv (I' := fun σ s => I5 w16 σ (3 * N) s) (fun σ s hp h => blkE_ok hp h3 (by omega_using [hN]) h) (taintRel [] nil_regs cE))
+      (RelCT.seq (squeeze_ct' (by omega_using [hN])) (snLoop_ct hn hN0 hN cB)))))
 
 /-- The check of `j`, and the 280 iterations if it is less than 256: both
 runs go the same way, since they sampled the same coefficients. -/
@@ -395,7 +395,7 @@ theorem more_ct : RelCT isa (Rel2 (sampleKW w16).pre (sampleKW w16).pub fun σ s
   · refine RelCT.mono (P := Rel2 (sampleKW w16).pre (sampleKW w16).pub (IM w16)) (RelCT.seq (relInv (I' := I1 w16)
         (fun σ s hp h => redo_ok hp h.env) (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact (regs_pub hq h₁.env h₂.env).1) (by taint_decide)))
-      (sample_ct' (n := 280) (N := 280) (by decide) (by decide) (by omega) (by omega) (by taint_decide)
+      (sample_ct' (n := 280) (N := 280) (by decide) (by decide) (by omega_using []) (by omega_using []) (by taint_decide)
         (by taint_decide))) (fun _ _ h => h.1) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ =>
       ⟨σ₁, σ₂, p₁, p₂, hq, ⟨l₁.env, l₁.rdi, l₁.stored⟩, ⟨l₂.env, l₂.rdi, l₂.stored⟩⟩
   · refine RelCT.mono (P := Rel2 (sampleKW w16).pre (sampleKW w16).pub fun σ s => IM w16 σ s ∧ s.cf = some false)
@@ -414,7 +414,7 @@ theorem sampleW_ct : ConstantTime isa (sampleKW w16).pre (sampleKW w16).pub (Imp
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       exacts [hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1]) (by taint_decide))) ?_)
-  refine RelCT.seq (sample_ct' (n := 168) (N := 168) (by decide) (by decide) (by omega) (by omega) (by taint_decide)
+  refine RelCT.seq (sample_ct' (n := 168) (N := 168) (by decide) (by decide) (by omega_using []) (by omega_using []) (by taint_decide)
     (by taint_decide)) (RelCT.seq more_ct ?_)
   exact taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, l₁, l₂⟩ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact (regs_pub hq l₁.env l₂.env).1) (by taint_decide)

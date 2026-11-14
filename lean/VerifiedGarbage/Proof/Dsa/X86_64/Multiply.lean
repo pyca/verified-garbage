@@ -45,21 +45,21 @@ theorem product_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
     fun u ⟨hcu, hmu, huone, hur2, hfu, hku⟩ => ?_)
   refine WP.seq (WP.mono (load_mod_ok hcu hmu hw2 hwx hw30 (by decide) (by decide) hap hal
     ((work_parent hc hfu hap).trans ha) ((work_parent hc hfu hal).trans halen)
-    (work_source hc hfu hku has) ha1 (by omega) haw)
+    (work_source hc hfu hku has) ha1 (by omega_using [hw48, haw]) haw)
     fun v ⟨hcv, hmv, hva, hkeepv, hfv, hkv⟩ => ?_)
   have hfs := hfu.trans hfv
   have hks := (hku.trans hkv).mono (show ∀ r ∈ mmRegs ++ mmRegs, r ∈ mmRegs by decide)
   refine WP.seq (WP.mono (load_mod_ok hcv hmv hw2 hwx hw30 (by decide) (by decide) hbp hbl
     ((work_parent hc hfs hbp).trans hb) ((work_parent hc hfs hbl).trans hblen)
-    (work_source hc hfs hks hbs) hb1 (by omega) hbw)
+    (work_source hc hfs hks hbs) hb1 (by omega_using [hw48, hbw]) hbw)
     fun z ⟨hcz, hmz, hzb, hkeepz, hfz, hkz⟩ => ?_)
   have hza := (hkeepz aX (by decide) (by decide)).trans hva
   have hzone := ((hkeepz aOne (by decide) (by decide)).trans
     (hkeepv aOne (by decide) (by decide))).trans huone
   have hzr2 := ((hkeepz aR2 (by decide) (by decide)).trans
     (hkeepv aR2 (by decide) (by decide))).trans hur2
-  rw [show 128 * wx = 64 * wx + 64 * wx by omega, Nat.pow_add] at hzr2
-  refine WP.mono (productCore_ok M hmz (Nat.le_refl _) hw2 (by omega) hm hodd hza hzb hzr2 hzone)
+  rw [show 128 * wx = 64 * wx + 64 * wx by omega_using [], Nat.pow_add] at hzr2
+  refine WP.mono (productCore_ok M hmz (Nat.le_refl _) hw2 (by omega_using [hw48]) hm hodd hza hzb hzr2 hzone)
     fun t ⟨hmt, hresult, hft, hkt⟩ =>
       ⟨arrays_context hcz hft (by decide) hkt, hresult, hmt,
         (hfs.trans hfz).trans (arrays_work hft (by decide)),

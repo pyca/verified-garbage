@@ -33,7 +33,7 @@ theorem ReadCache.inR {count S : Nat} {f : Nat → Poly} {s : State}
     InRegions (s.rd ++ s.wr) (pa s (.x21, 1024 * i)) 1024 := by
   have hr : InRegions (s.rd ++ s.wr) (s.gpr .x21) (1024 * count) :=
     h.readable _ _ ⟨_, by simp, Region.contains_self _ _⟩
-  exact inRegions_sub hr (by omega) (by have := h.small; omega)
+  exact inRegions_sub hr (by omega_using [hi]) (by have := h.small; omega_using [this])
 
 theorem ReadCache.apart_write {count S : Nat} {f : Nat → Poly} {s : State}
     (h : ReadCache count S f s) {p : Addr} {n : Nat} (hp : InRegions s.wr p n) :
@@ -43,12 +43,12 @@ theorem ReadCache.apart_write {count S : Nat} {f : Nat → Poly} {s : State}
   apply h.writable R hR a ha
   apply hp.byte
   change (a - p).toNat + 1 ≤ n at hb
-  omega
+  omega_using [hb]
 
 theorem ReadCache.slice_sub {count S : Nat} {f : Nat → Poly} {s : State}
     (_h : ReadCache count S f s) {i : Nat} (hi : i < count) :
     Region.Sub ⟨pa s (.x21, 1024 * i), 1024⟩ ⟨s.gpr .x21, 1024 * count⟩ :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hi])
 
 theorem ReadCache.step {count S : Nat} {f : Nat → Poly} {s t : State}
     (h : ReadCache count S f s) {ws : List (Ptr × Nat)} (hp : PPostB S s t ws)
@@ -75,7 +75,7 @@ theorem ReadCache.exec {count S : Nat} {f : Nat → Poly} {s t : State}
     {code : Prog isa} {tr : List Leak} (h : ReadCache count S f s)
     (he : Exec isa code s tr t) (hd : 16 * code.aarch64Depth ≤ S) (hS : S < 2 ^ 64)
     (h21 : t.gpr .x21 = s.gpr .x21) : ReadCache count S f t := by
-  have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega)) hd hS
+  have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega_using [hd, hS])) hd hS
   obtain ⟨hr, hw, hsp⟩ := VG.AArch64.Exec.rdwr he
   have hdisj : ∀ R ∈ s.wr ++ [below s.sp S],
       (⟨s.gpr .x21, 1024 * count⟩ : Region).Disjoint R := by

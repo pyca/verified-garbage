@@ -23,16 +23,16 @@ theorem KeyInput.pushed_arguments {p : KeyPublic sampling} {s : State} (h : KeyI
   have argsFit : s.sp.toNat + argsBytes sampling ≤ 2 ^ 32 := by have := h.bounds.argsFit; rw [← h.2.1] at this; exact this
   have size := entryWords_bytes sampling
   have bytesBound : argsBytes sampling≤44 := by cases sampling <;> decide
-  have positive : 24 ≤ stackUse sampling := by have := stackUse_min sampling; omega
+  have positive : 24 ≤ stackUse sampling := by have := stackUse_min sampling; omega_using [this]
   have native (i : Nat) (hi : i < entryWords sampling) : stackArgAddr s i = off (State.addr s.sp) (4 * i) :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [argsFit, size, hi])
   have start : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   have wholeRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) (argsBytes sampling) := by
     refine ⟨inArgs sampling s, List.mem_append_left _ ?_, ?_⟩
     · rw [h.layout.rd]; simp [reads]
     · rw [inArgs, start]; exact Region.contains_self _ _
   have pushedFrame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
-    FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by omega : 24 ≤ s.sp.toNat)
+    FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by omega_using [fit, positive] : 24 ≤ s.sp.toNat)
   have rootSp : p.sp = s.sp := by rw [← h.2.1]; rfl
   have savedSub : (FrameStack.belowA s.sp 24).Sub (FrameStack.belowA p.sp (stackUse sampling)) := by
     rw [rootSp]
@@ -46,8 +46,8 @@ theorem KeyInput.pushed_arguments {p : KeyPublic sampling} {s : State} (h : KeyI
       off (State.addr (searchPushed s).sp) (24 + 4 * i) = stackArgAddr s i := by
     have room : (searchPushed s).sp.toNat + (24 + 4 * i) < 2 ^ 32 := by
       change (s.sp - 24#32).toNat + (24 + 4 * i) < 2 ^ 32
-      rw [FrameStack.sub_toNat' (by omega : 24 ≤ s.sp.toNat)]
-      omega
+      rw [FrameStack.sub_toNat' (by omega_using [fit, positive] : 24 ≤ s.sp.toNat)]
+      omega_using [argsFit, size, bytesBound, hi]
     change State.addr (searchPushed s).sp + BitVec.ofNat 64 (24 + 4 * i) = _
     rw [← VG.Arm.addr_add room]
     change State.addr (s.sp - 24#32 + BitVec.ofNat 32 (24 + 4 * i)) = _
@@ -57,10 +57,10 @@ theorem KeyInput.pushed_arguments {p : KeyPublic sampling} {s : State} (h : KeyI
   · intro i hi
     refine ⟨?_, ?_, ?_⟩
     · change (s.sp - 24#32).toNat + (24 + 4 * i) + 4 ≤ 2 ^ 32
-      rw [FrameStack.sub_toNat' (by omega : 24 ≤ s.sp.toNat)]
-      omega
+      rw [FrameStack.sub_toNat' (by omega_using [fit, positive] : 24 ≤ s.sp.toNat)]
+      omega_using [argsFit, size, bytesBound, hi]
     · rw [offsetAddress i hi, native i hi]
-      obtain ⟨r, hr, contains⟩ := CallLay.inRegions_sub wholeRead (by omega : 4 * i + 4 ≤ argsBytes sampling) (by omega)
+      obtain ⟨r, hr, contains⟩ := CallLay.inRegions_sub wholeRead (by omega_using [size, hi] : 4 * i + 4 ≤ argsBytes sampling) (by omega_using [argsFit])
       refine ⟨r, ?_, contains⟩
       rcases List.mem_append.mp hr with hr | hr
       · exact List.mem_append_left _ hr
@@ -68,7 +68,7 @@ theorem KeyInput.pushed_arguments {p : KeyPublic sampling} {s : State} (h : KeyI
     · rw [offsetAddress i hi]
       have sub : (⟨stackArgAddr s i, 4⟩ : Region).Sub (inArgs sampling s) := by
         rw [native i hi, inArgs, start]
-        exact Offset.sub_base _ (by omega)
+        exact Offset.sub_base _ (by omega_using [size, hi])
       have old := pushedFrame.readW (w := 32) (a := stackArgAddr s i) (r := ⟨stackArgAddr s i, 4⟩) (Region.contains_self _ _)
         (by simpa using argsSaved.sub_left sub) (by decide)
       exact old.trans (h.incoming_value hi)
@@ -76,6 +76,6 @@ theorem KeyInput.pushed_arguments {p : KeyPublic sampling} {s : State} (h : KeyI
     rw [offsetAddress i hi]
     apply argsControl.sub_left
     rw [native i hi, inArgs, start]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [size, hi])
 
 end VG.Proof.Ffdh.Arm.KeySearch

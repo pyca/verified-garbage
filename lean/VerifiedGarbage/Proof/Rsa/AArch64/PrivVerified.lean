@@ -53,7 +53,7 @@ theorem aarch64Depth_of_noFrames : ∀ {c : Prog isa}, c.noFrames = true → c.a
 
 /-- Its frames: `x30`'s, and the 3232 bytes of the inner frame. -/
 theorem privCode_depth (v : CrtImpl) : (privCode v).aarch64Depth = stackBytes / 16 := by
-  simp only [privCode, privCodeOf, code, body, check, tail, seqs, List.cons_append, List.nil_append,
+  simp only [privCode, privCodeOf, code, body, check, checkWith, tail, seqs, List.cons_append, List.nil_append,
     Code.aarch64Depth, aarch64Depth_of_noFrames v.noFrames, aarch64Depth_of_noFrames v.pcNoFrames,
     aarch64Depth_of_noFrames v.pdNoFrames, cmpLoop, releaseLoop, Instr.frameUnits, frameBytes, stackBytes]
   decide

@@ -94,7 +94,7 @@ theorem checkAddr_sep (base : Addr) {i j : Fin 2 × Fin 8} (hne : j≠i) :
     by_contra h
     simp only [not_or,not_not] at h
     exact hne (Prod.ext (Fin.ext h.1) (Fin.ext h.2))
-  exact Offset.sep base (by omega) (by omega) (by omega)
+  exact Offset.sep base (by omega_using [hd]) (by omega_using []) (by omega_using [])
 
 /-- Every checked vector has exactly its prescribed output, using its original
 inputs; arbitrary earlier and later disjoint stores cannot alter the result. -/

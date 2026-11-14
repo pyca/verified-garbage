@@ -82,7 +82,7 @@ theorem Ctx.arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 3) :
     t.mem.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 =
       m₀.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 := by
   refine hc.frame.readW (r := L.ARGS)
-    (Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)) ?_ (by decide)
+    (Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)) ?_ (by decide)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact hL.ko.sub_left (args_sub L)

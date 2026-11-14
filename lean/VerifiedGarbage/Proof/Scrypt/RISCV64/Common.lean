@@ -197,7 +197,7 @@ theorem xor64_ok {wide : Bool} {dR xR sR : Reg} (hd : dR ≠ .t0 ∧ dR ≠ .t1)
     have := hp rfl
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     have := p.isLt
-    omega
+    omega_arith
   intro n
   induction n with
   | zero =>
@@ -206,15 +206,15 @@ theorem xor64_ok {wide : Bool} {dR xR sR : Reg} (hd : dR ≠ .t0 ∧ dR ≠ .t1)
   | succ n ih =>
     intro hn rest s Q gd gx gy hinx hiny hout k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
-    refine ih (by omega) _ s Q gd gx gy hinx hiny hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
+    refine ih (by omega_using [hn]) _ s Q gd gx gy hinx hiny hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     have hun : unitB wide * n + unitB wide ≤ 64 := by
       rw [← hum, ← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hn
-    refine xorU_ok hd hs (k := n) (by omega) s₁ (by rw [g₁ _ hd.1 hd.2, gd])
+    refine xorU_ok hd hs (k := n) (by omega_using [hun]) s₁ (by rw [g₁ _ hd.1 hd.2, gd])
       (by rw [g₁ _ hx.1 hx.2, gx]) (by rw [g₁ _ hs.1 hs.2, gy])
       (fun hw => ⟨al (fun h => (hal h).1) hw, al (fun h => (hal h).2.1) hw,
         al (fun h => (hal h).2.2) hw⟩)
-      (by rw [rd₁, wr₁]; exact hinx n (by omega)) (by rw [rd₁, wr₁]; exact hiny n (by omega))
-      (by rw [wr₁]; exact hout n (by omega))
+      (by rw [rd₁, wr₁]; exact hinx n (by omega_using [hn])) (by rw [rd₁, wr₁]; exact hiny n (by omega_using [hn]))
+      (by rw [wr₁]; exact hout n (by omega_using [hn]))
       fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => k s₂ (fun r h0 h1 => by rw [g₂ r h0 h1, g₁ r h0 h1])
         (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) (by rw [sp₂, sp₁]) ?_
     have hl : (xorBytes (bytesAt s.mem x (unitB wide * n))
@@ -222,16 +222,16 @@ theorem xor64_ok {wide : Bool} {dR xR sR : Reg} (hd : dR ≠ .t0 ∧ dR ≠ .t1)
       rw [xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]
     have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (unitB wide * n), unitB wide⟩
         ⟨d, (xorBytes (bytesAt s.mem x (unitB wide * n)) (bytesAt s.mem y (unitB wide * n))).length⟩ := by
-      rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-        (Region.sub_prefix (by omega))
+      rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega_using [hun]) (by omega_using [hun]))).sub_right
+        (Region.sub_prefix (by omega_using [hun]))
     have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (unitB wide * n), unitB wide⟩
         ⟨d, (xorBytes (bytesAt s.mem x (unitB wide * n)) (bytesAt s.mem y (unitB wide * n))).length⟩ := by
-      rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega) (by omega))).sub_right
-        (Region.sub_prefix (by omega))
-    rw [m₂, m₁, bytesAt_writeBytes_sep _ _ sx (by omega), bytesAt_writeBytes_sep _ _ sy (by omega)]
+      rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega_using [hun]) (by omega_using [hun]))).sub_right
+        (Region.sub_prefix (by omega_using [hun]))
+    rw [m₂, m₁, bytesAt_writeBytes_sep _ _ sx (by omega_using [hun]), bytesAt_writeBytes_sep _ _ sy (by omega_using [hun])]
     have e := writeBytes_append s.mem d _ (xorBytes (bytesAt s.mem (x + BitVec.ofNat 64 (unitB wide * n))
       (unitB wide)) (bytesAt s.mem (y + BitVec.ofNat 64 (unitB wide * n)) (unitB wide)))
-      (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
+      (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega_using [hun])
     rw [hl] at e
     rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
       List.zipWith_append (by simp [bytesAt])]

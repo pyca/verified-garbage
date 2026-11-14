@@ -35,7 +35,7 @@ theorem lrep_red {m : Mem} {p : Addr} (h : ReducedW 16 m p) {i : Nat} (hi : i < 
   have hv := polyIsW16_toNat (⟨h, rfl⟩ : PolyIsW 16 m p (polyAtW 16 m p)) hi
   have hl : (coeffAtW 16 m p i).toNat < 3329 := h i hi
   have hz : ((polyAtW 16 m p)[i]!).val < 3329 := ((polyAtW 16 m p)[i]!).isLt
-  rw [LRep, BitVec.toInt_eq_toNat_of_lt (by omega), hv]
-  exact ⟨by omega, by omega, by simp⟩
+  rw [LRep, BitVec.toInt_eq_toNat_of_lt (by omega_using [hl]), hv]
+  exact ⟨by omega_using [], by omega_using [hz], by simp⟩
 
 end VG.Proof.MlKem.AArch64.NttR

@@ -282,16 +282,16 @@ include L
 
 /-- An offset into `W`, as a 64-bit address. -/
 theorem wA {d : Nat} (hd : d < 3760) : State.addr (p.W + BitVec.ofNat 32 d) = State.addr p.W + BitVec.ofNat 64 d :=
-  addr_add (by have := L.ww; omega)
+  addr_add (by have := L.ww; omega_using [hd, this])
 
 theorem wN {d : Nat} (hd : d < 3760) : (p.W + BitVec.ofNat 32 d).toNat = p.W.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3760) (hd : d + k ≤ 3760) :
     (⟨State.addr p.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 3760) :
     (⟨State.addr p.K, 240⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ :=
@@ -321,7 +321,7 @@ theorem args_w' {d k : Nat} (hd : d + k ≤ 3760) : (argR p.SP).Disjoint ⟨Stat
 
 /-- The stack arguments lie above the stack below `SP`. -/
 theorem args_below : (argR p.SP).Disjoint (below p.SP) :=
-  Offset.base_disjoint_below (State.addr p.SP) (n := 8) (k := 20) (by have := L.spf; omega)
+  Offset.base_disjoint_below (State.addr p.SP) (n := 8) (k := 20) (by have := L.spf; omega_using [])
 
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 
@@ -367,23 +367,23 @@ structure Args (p : Prm) (m : Mem) : Prop where
 
 theorem argA {p : Prm} (L : Lay p) {k : Nat} (hk : k < 20) :
     State.addr (p.SP + BitVec.ofNat 32 k) = State.addr p.SP + BitVec.ofNat 64 k :=
-  addr_add (by have := L.spf; omega)
+  addr_add (by have := L.spf; omega_using [hk, this])
 
 /-- The stack arguments, after writes apart from them. -/
 theorem Args.frame {p : Prm} (L : Lay p) {m m' : Mem} (h : Args p m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (argR p.SP).Disjoint r) : Args p m' := by
   have e : ∀ k, k + 4 ≤ 20 → m'.readW (State.addr (p.SP + BitVec.ofNat 32 k)) 32 =
       m.readW (State.addr (p.SP + BitVec.ofNat 32 k)) 32 := fun k hk => by
-    rw [argA L (by omega)]
+    rw [argA L (by omega_using [hk])]
     exact hf.readW (r := ⟨State.addr p.SP + BitVec.ofNat 64 k, 4⟩) (Region.contains_self _ _)
-      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
+      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega_using [hk]))) (by decide)
   exact ⟨by rw [e 0 (by decide), h.a0], by rw [e 4 (by decide), h.a4], by rw [e 8 (by decide), h.a8],
     by rw [e 12 (by decide), h.a12]⟩
 
 /-- A stack argument may be read. -/
 theorem Perm.argR' {p : Prm} {s : State} (P : Perm p s) (L : Lay p) {k : Nat} (hk : k + 4 ≤ 20) :
     InRegions (s.rd ++ s.wr) (State.addr (p.SP + BitVec.ofNat 32 k)) 4 := by
-  rw [argA L (by omega)]; exact in_off P.args hk (by decide)
+  rw [argA L (by omega_using [hk])]; exact in_off P.args hk (by decide)
 
 /-! ## Arithmetic -/
 
@@ -394,6 +394,6 @@ theorem ofNat_lsl32 (a k : Nat) : BitVec.ofNat 32 a <<< k = BitVec.ofNat 32 (a *
 theorem ofNat_lsr32 {a : Nat} (ha : a < 2 ^ 32) (k : Nat) : BitVec.ofNat 32 a >>> k = BitVec.ofNat 32 (a / 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by have := Nat.div_le_self a (2 ^ k); omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by have := Nat.div_le_self a (2 ^ k); omega_using [ha, this])]
 
 end VG.Proof.AesGcmSiv.Arm

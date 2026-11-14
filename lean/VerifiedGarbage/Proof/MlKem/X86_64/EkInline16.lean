@@ -50,7 +50,7 @@ theorem shPre16 {oa oz : Nat} {s s1 : State} (h : SHH16 oa oz s)
   have rr : ∀ rd wr, retR (s1.withRegions rd wr) = retR s := fun _ _ => by
     simp only [retR, State.withRegions_gpr, hsp]
   have b24 : ∀ {R : Region}, (below (s.gpr .rsp) 32).Disjoint R → (below (s1.gpr .rsp) 24).Disjoint R :=
-    fun hd => by rw [hsp]; exact hd.sub_left (below_sub (by omega) (by omega))
+    fun hd => by rw [hsp]; exact hd.sub_left (below_sub (by omega_using []) (by omega_using []))
   simp only [sampleHKW, sample4KW, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, hv.1, hv.2.1,
     hv.2.2]
   exact ⟨trivial, rfl, h.dSA, h.dSZ, h.dAZ, by rw [rr]; exact h.rS, by rw [rr]; exact h.rA,

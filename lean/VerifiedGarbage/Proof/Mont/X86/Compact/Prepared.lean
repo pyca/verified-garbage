@@ -27,11 +27,11 @@ theorem array_mono (w : Nat) {i j : Nat} (bound : i < j) :
   have h := Nat.mul_le_mul_right (8 * (w + 2)) bound
   unfold arrAt hdrBytes
   rw [Nat.succ_mul] at h
-  omega
+  omega_using [h]
 
 theorem array_fit {w L j : Nat} (fit : arrAt w 8 ≤ L) (index : j < 8) :
     arrAt w j + 8 * w ≤ L := by
   have := array_mono w index
-  omega
+  omega_using [fit, this]
 
 end VG.Proof.Mont.X86.Compact

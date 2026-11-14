@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA key generation: the shape of a candidate
@@ -49,14 +50,14 @@ theorem candidate_shape {bits : Nat} (hb : 2 ≤ bits) (x : Nat) :
     PrimeShape bits (candidate bits x) := by
   unfold candidate PrimeShape
   have h4 : 2 ^ bits = 2 ^ (bits - 2) * 4 := by
-    rw [show (4 : Nat) = 2 ^ 2 from rfl, ← Nat.pow_add]; congr 1; omega
+    rw [show (4 : Nat) = 2 ^ 2 from rfl, ← Nat.pow_add]; congr 1; omega_using [hb]
   have hpos := Nat.two_pow_pos (bits - 2)
   refine ⟨?_, ?_, ?_⟩
   · rw [show (2 : Nat) = 2 ^ 1 from rfl, Nat.or_mod_two_pow]
     rcases Nat.mod_two_eq_zero_or_one ((x % 2 ^ bits ||| 3 * 2 ^ (bits - 2))) with h | h <;>
       simp [h]
   · exact Nat.le_trans (Nat.right_le_or) (Nat.left_le_or)
-  · exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.mod_lt _ (Nat.two_pow_pos _)) (by omega))
-      (Nat.one_lt_two_pow (by omega))
+  · exact Nat.or_lt_two_pow (Nat.or_lt_two_pow (Nat.mod_lt _ (Nat.two_pow_pos _)) (by omega_using [h4, hpos]))
+      (Nat.one_lt_two_pow (by omega_using [hb]))
 
 end VG.Proof.RsaKeyGen

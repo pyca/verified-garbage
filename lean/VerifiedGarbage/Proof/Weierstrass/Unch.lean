@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Memory unchanged outside a list of ranges
@@ -40,7 +41,7 @@ theorem Unch.cover {base : Addr} {W W' : List (Nat × Nat)} {m m' : Mem} (h : Un
     (hW : ∀ w ∈ W, ∃ w' ∈ W', w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2) : Unch base W' m m' :=
   fun x hx => h x fun w hw => by
     obtain ⟨w', hw', h1, h2⟩ := hW w hw
-    have := hx w' hw'; omega
+    have := hx w' hw'; omega_using [h1, h2, this]
 
 theorem _root_.VG.Proof.Mont.Outside.unch {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') :
     Unch base [(o, n)] m m' :=
@@ -48,7 +49,7 @@ theorem _root_.VG.Proof.Mont.Outside.unch {base : Addr} {o n : Nat} {m m' : Mem}
 
 theorem Unch.outside {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     {o n : Nat} (hW : ∀ w ∈ W, o ≤ w.1 ∧ w.1 + w.2 ≤ o + n) : Outside base o n m m' :=
-  fun x hx => h x fun w hw => by have := hW w hw; omega
+  fun x hx => h x fun w hw => by have := hW w hw; omega_using [hx, this]
 
 /-- Bytes that changed only in a region apart from the working space. -/
 theorem _root_.VG.Proof.Mont.Outside.unch_far {q base : Addr} {len size : Nat} {m m' : Mem}
@@ -59,14 +60,14 @@ theorem _root_.VG.Proof.Mont.Outside.unch_far {q base : Addr} {len size : Nat} {
   have hlt := (x - base).isLt
   refine h x (Or.inr (Nat.le_of_not_lt fun hl => ?_))
   simp only [ofs] at hx' hl
-  exact hd x (show (x - base).toNat + 1 ≤ size by omega) (show (x - q).toNat + 1 ≤ len by omega)
+  exact hd x (show (x - base).toNat + 1 ≤ size by omega_using [hx']) (show (x - q).toNat + 1 ≤ len by omega_using [hl])
 
 /-- A word apart from the ranges. -/
 theorem Unch.word {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     {d : Nat} (hd : ∀ w ∈ W, d + 8 ≤ w.1 ∨ w.1 + w.2 ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
     word m' base d = word m base d :=
   (Mem.readW_congr fun i hi => (h _ fun w hw' => by
-    rw [ofs_off base (by omega)]; have := hd w hw'; omega).symm).symm
+    rw [ofs_off base (by omega_using [hd', hi])]; have := hd w hw'; omega_using [hi, this]).symm).symm
 
 /-- A number apart from the ranges. -/
 theorem Unch.wordsVal {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
@@ -76,8 +77,8 @@ theorem Unch.wordsVal {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Un
   | zero => rfl
   | succ k ih =>
     simp only [VG.Proof.Mont.wordsVal]
-    rw [h.word (fun w hw => by have := hd w hw; omega) (by omega),
-      ih (fun w hw => by have := hd w hw; omega) (by omega)]
+    rw [h.word (fun w hw => by have := hd w hw; omega_using [this]) (by omega_using [hd']),
+      ih (fun w hw => by have := hd w hw; omega_using [this]) (by omega_using [hd'])]
 
 /-- A byte apart from the ranges. -/
 theorem Unch.byte {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
@@ -85,9 +86,9 @@ theorem Unch.byte {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch b
     m' (off base d) = m (off base d) :=
   h _ fun w hw => by
     have e : ofs base (off base d) = d := by
-      have := ofs_off base (d := d) (i := 0) (by omega)
+      have := ofs_off base (d := d) (i := 0) (by omega_using [hd'])
       simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero, Nat.add_zero] using this
-    rw [e]; have := hd w hw; omega
+    rw [e]; have := hd w hw; omega_using [this]
 
 /-- Memory beyond every range. -/
 theorem Unch.far {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
@@ -99,6 +100,6 @@ theorem _root_.VG.Proof.Mont.ModOkW.unch {M : VG.Impl.Mont.Mod} {size m : Nat} {
     (h : ModOkW M size m mem base) (hU : Unch base W mem mem')
     (hW : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo) (hn : base.toNat + size ≤ 2 ^ 64) :
     ModOkW M size m mem' base :=
-  ⟨h.n0, h.mo, h.tmp, h.sep, by rw [hU.wordsVal hW (by have := h.mo; omega)]; exact h.val, h.inv, h.red⟩
+  ⟨h.n0, h.mo, h.tmp, h.sep, by rw [hU.wordsVal hW (by have := h.mo; omega_using [hn, this])]; exact h.val, h.inv, h.red⟩
 
 end VG.Proof.Weierstrass

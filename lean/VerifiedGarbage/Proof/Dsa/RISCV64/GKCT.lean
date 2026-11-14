@@ -57,8 +57,8 @@ theorem qargs_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀
   have hL := glOf_ok h
   have hq := hL.ql
   have hp := hL.pl
-  have e1 := lenP_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega) (by omega)
-  have e2 := lenQ_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega) (by omega)
+  have e1 := lenP_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
+  have e2 := lenQ_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
   exact wp_sp (WP.keep [.t3, .s7, .s8] (by brun [lenP, lenQ, hc.s1, hc.s2, e1, e2]) (by decide) (by rfl))
 
 /-- q's octets, and the one after, are readable. -/
@@ -73,7 +73,7 @@ theorem q_in {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s�
   intro i hi
   rw [hc.rd, off_off]
   exact ⟨(glOf s₀).parR, List.mem_append_left _ (by rw [hrd]; exact List.mem_cons_self ..),
-    VG.Offset.contains_base _ (by omega) (by omega)⟩
+    VG.Offset.contains_base _ (by omega_using [hp, ekl, hi]) (by omega_using [hq, hp, hi])⟩
 
 theorem prepareQ_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂)
     (eL : glOf s₁ = glOf s₂) (eq : qbOf (glOf s₁) s₁.mem = qbOf (glOf s₁) s₂.mem)
@@ -89,10 +89,10 @@ theorem prepareQ_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (
   have e7 : u₁.gpr .s7 = u₂.gpr .s7 := by rw [a7, b7, eL]
   have e8 : u₁.gpr .s8 = u₂.gpr .s8 := by rw [a8, b8, eL]
   refine SameTrace.seq (st_taint [.s7, .s8] usp ⟨e7, e8⟩ (by taint_decide))
-    (wp_sp (sigLen_ok a7 a8 (by omega) (by omega) fun i hi => by
-      rw [k1.2.1, k1.2.2]; exact q_in h₁ c₁ i (by omega)))
-    (wp_sp (sigLen_ok b7 b8 (by omega) (by omega) fun i hi => by
-      rw [k2.2.1, k2.2.2]; exact q_in h₂ c₂ i (by omega)))
+    (wp_sp (sigLen_ok a7 a8 (by omega_using [hq₁]) (by omega_using [hq₁]) fun i hi => by
+      rw [k1.2.1, k1.2.2]; exact q_in h₁ c₁ i (by omega_using [hi])))
+    (wp_sp (sigLen_ok b7 b8 (by omega_using [hq₂]) (by omega_using [hq₂]) fun i hi => by
+      rw [k2.2.1, k2.2.2]; exact q_in h₂ c₂ i (by omega_using [hi])))
     fun v₁ v₂ ⟨⟨⟨x1, _⟩, kv1⟩, spv1⟩ ⟨⟨⟨y1, _⟩, kv2⟩, spv2⟩ => ?_
   rw [m1, c₁.qb (glOf_ok h₁)] at x1
   rw [m2, c₂.qb (glOf_ok h₂), ← eL, ← eq] at y1
@@ -148,9 +148,9 @@ theorem derive_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h�
     fun u₁ u₂ ⟨⟨⟨m1, a3⟩, k1⟩, sp1⟩ ⟨⟨⟨m2, b3⟩, k2⟩, sp2⟩ => ?_
   have usp : u₁.sp = u₂.sp := by rw [sp1, sp2, tsp]
   have ev₁ : isa.eval (.zero .a0) u₁ = some (decide (sampleStatus (drawOf s₁) = 1)) := by
-    rw [Steps.eval_zero, a3, a10, sub1_beq _ (by omega)]
+    rw [Steps.eval_zero, a3, a10, sub1_beq _ (by omega_using [hs₁])]
   have ev₂ : isa.eval (.zero .a0) u₂ = some (decide (sampleStatus (drawOf s₂) = 1)) := by
-    rw [Steps.eval_zero, b3, b10, sub1_beq _ (by omega)]
+    rw [Steps.eval_zero, b3, b10, sub1_beq _ (by omega_using [hs₂])]
   refine SameTrace.ite (by rw [ev₁, ev₂, est]) (fun hc => ?_) (fun _ => SameTrace.block_nil)
   rw [ev₁, Option.some.injEq, decide_eq_true_eq] at hc
   obtain ⟨x₁, hx₁⟩ := Option.isSome_iff_exists.mp (sampleStatus_some.mp hc)
@@ -191,14 +191,14 @@ theorem after_sample {s₀ t₃ t₄ : State} {S : Spec.Dsa.Random.Sample} (h : 
   have hF := hL.fnw
   refine ⟨sc.ctx.step hL (so.env.sp.trans sc.ctx.sp.symm) so.keep.2.1 so.keep.2.2
     (fun r hr => so.keep.1 r (by revert r hr; decide))
-    (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega) so.out), fun j hj => ?_⟩
+    (outside_frame hL (o := (eOf s₀).ql - (eOf s₀).W) (n := (eOf s₀).W) (by omega_using [hW, hql']) so.out), fun j hj => ?_⟩
   have e : ofs (eOf s₀).F (off (glOf s₀).F (oNonce + j)) = oNonce + j :=
-    Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega)
+    Mont.ofs_off0 _ (by simp only [oNonce, frameBytes] at hF ⊢; omega_using [hql, hj])
   have hj' : oNonce + j < (eOf s₀).o := by
     have e2 : (eOf s₀).ql = (glOf s₀).ql := rfl
-    simp only [SE.o]; omega
+    simp only [SE.o]; omega_using [hj, e2]
   rw [so.out _ (.inl (by rw [e]; exact hj'))]
-  exact nz j (by omega)
+  exact nz j (by omega_using [hql, hj])
 
 theorem valid_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂)
     (eL : glOf s₁ = glOf s₂) (ep : parOf s₁ = parOf s₂) (ck₁ : Chk s₁ t₁) (ck₂ : Chk s₂ t₂)

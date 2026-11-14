@@ -50,11 +50,11 @@ theorem zeroSt_ok (b : Reg) (off : Nat) (s : State) (h0 : s.gpr .rax = 0)
     refine WP.mono (zeroStep_ok b (off + 8 * k) s' (by rw [hk'.2.2, hb, e]; exact hw k hk))
       fun s'' ⟨hm, hk''⟩ => ⟨hk'.trans hk'', ?_, fun j hj => ?_⟩
     · rw [hm, hb, e]
-      exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega_using [hk]) (by omega_using []))
     · rw [hm, hb, e, ha]
       by_cases hjk : j = k
       · subst hjk; rw [Mem.readW_writeW_self64]
-      · rw [Mem.readW_writeW_sep (lane_sep _ (by omega) hk hjk) (by decide), hz j (by omega)]
+      · rw [Mem.readW_writeW_sep (lane_sep _ (by omega_using [hk, hj]) hk hjk) (by decide), hz j (by omega_using [hj, hjk])]
   · apply Vector.ext
     intro i hi
     simp only [Spec.Sha3.stateAt, Spec.Sha3.zero, Vector.getElem_ofFn, Vector.getElem_replicate]

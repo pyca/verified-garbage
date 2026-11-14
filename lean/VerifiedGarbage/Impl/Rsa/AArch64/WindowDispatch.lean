@@ -15,11 +15,26 @@ def lengthGuard : List Instr :=
     movi .x11 0, .cselc .x .x9 .x9 .x11 .eq]
 
 /-- Retain the existing workspace layout below 1024-bit moduli. -/
-def dispatch (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block lengthGuard) (.ite (.zero .x .x9) (Crt.main mul) (main window select mul))
+def dispatchWith (chk : List (Prog isa)) (window : Prog isa) (select : Prog isa)
+    (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block lengthGuard) (.ite (.zero .x .x9) (Crt.mainWith chk mul) (mainWith chk window select mul))
 
-def code (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+/-- `vg_rsa_private_crt`, with the key checks `chk`. -/
+def codeWith (chk : List (Prog isa)) (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) :
+    Prog isa :=
   .seq (.block (Crt.entry ++ invalid))
-    (.ite (.zero .x .x9) Precomputed.fail (dispatch window select mul))
+    (.ite (.zero .x .x9) Precomputed.fail (dispatchWith chk window select mul))
+
+abbrev dispatch (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  dispatchWith Crt.checks window select mul
+
+/-- `vg_rsa_private_crt`. -/
+abbrev code (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  codeWith Crt.checks window select mul
+
+/-- `vg_rsa_private_crt_precomputed`: `vg_rsa_private_crt` for a key whose
+factors' product is the modulus, which it does not check. -/
+abbrev codeGiven (window : Prog isa) (select : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  codeWith Crt.checksGiven window select mul
 
 end VG.Impl.Rsa.AArch64.WindowFive

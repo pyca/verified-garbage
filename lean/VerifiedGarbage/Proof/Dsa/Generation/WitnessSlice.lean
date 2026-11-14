@@ -25,9 +25,9 @@ theorem witness_slice {r : List Byte} {used drawBytes len N : Nat}
         (Spec.Rsa.os2ip ((r.drop (used + (drawBytes - len))).take len)) := by
   let draw := (r.drop used).take drawBytes
   have hdraw : draw.length = drawBytes := by
-    simp only [draw, List.length_take, List.length_drop]; omega
+    simp only [draw, List.length_take, List.length_drop]; omega_using [hroom]
   have htail : (draw.drop (drawBytes - len)).length = len := by
-    rw [List.length_drop, hdraw]; omega
+    rw [List.length_drop, hdraw]; omega_using [hlen]
   have he := witness_drop_padding (draw.take (drawBytes - len)) (draw.drop (drawBytes - len))
     (w := N) (by rwa [htail])
   rw [List.take_append_drop] at he

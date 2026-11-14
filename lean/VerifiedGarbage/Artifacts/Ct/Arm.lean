@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.TCB.Arm.Print
 
+/-! # Constant-time byte comparison on ARMv7 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Ct.Arm

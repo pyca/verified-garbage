@@ -23,10 +23,10 @@ theorem importArgs_ok (s : State) {p : Inputs} {slots : List Nat} (slot countSlo
     WP isa (.block (VG.Impl.Ffdh.Arm.Domain.importArgs slot countSlot)) s fun t =>
       (t.gpr .r4 = p.slotValue slot ∧ t.gpr .r6 = p.slotValue countSlot ∧ t.mem = s.mem) ∧ Rest [.r4, .r6] s t := by
   have bounds (d : Nat) (hd : d ∈ slots) := (stableSlots_at stable hd).1
-  have small (d : Nat) (hd : d ∈ slots) : d < 4096 := by have := bounds d hd; omega
+  have small (d : Nat) (hd : d ∈ slots) : d < 4096 := by have := bounds d hd; omega_using [this]
   have addr (d : Nat) (hd : d ∈ slots) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := bounds d hd; have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := bounds d hd; have := h.locals.space.nowrap; omega_arith)
   have rs := h.locals.read (bounds slot hs)
   have rc := h.locals.read (bounds countSlot hc)
   have vs := h.saved slot hs

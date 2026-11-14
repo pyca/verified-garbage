@@ -25,8 +25,8 @@ theorem product_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
   let g := limbs s.mem base b
   rw [Impl.Curve448.AArch64.product, List.append_assoc, WP.block_append_iff]
   refine WP.mono (columns_ok hs (Or.inl (by omega)) (Or.inl (by omega))
-    (by have := ha; change a + 128 ≤ 3584 at this; omega)
-    (by have := hb; change b + 128 ≤ 3584 at this; omega) ha8 hb8 ab bb) fun s₁ ⟨c₁, m₁, k₁⟩ => ?_
+    (by have := ha; change a + 128 ≤ 3584 at this; omega_using [this])
+    (by have := hb; change b + 128 ≤ 3584 at this; omega_using [this]) ha8 hb8 ab bb) fun s₁ ⟨c₁, m₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have raw : ∀ i < 16, coeff s₁.mem base ACC i < 2 ^ 116 := by
     intro i hi

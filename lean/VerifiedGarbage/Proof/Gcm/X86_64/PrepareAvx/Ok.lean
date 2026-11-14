@@ -79,13 +79,13 @@ structure Inv (N : Nat) (H : Block) (C : Addr) (m₀ : Mem) (env : List (XReg ×
 
 theorem prepOff_bound {n N : Nat} (hN : N = 16 ∨ N = 48) (h1 : 1 ≤ n) (h48 : n ≤ N) :
     256 ≤ prepOff n ∧ prepOff n + 16 ≤ 256 + 16 * N := by
-  simp only [prepOff]; split <;> omega
+  simp only [prepOff]; split <;> omega_arith
 
 theorem prepOff_sep {n n' : Nat} (h : n ≠ n') : prepOff n + 16 ≤ prepOff n' ∨ prepOff n' + 16 ≤ prepOff n := by
-  simp only [prepOff]; split <;> split <;> omega
+  simp only [prepOff]; split <;> split <;> omega_arith
 
 theorem prepOff_pair {k l : Nat} (hl : l < 2) : prepOff (2 * k + 2 - l) = 256 + 32 * k + 16 * l := by
-  simp only [prepOff]; split <;> omega
+  simp only [prepOff]; split <;> omega_arith
 
 theorem readW_sep {m : Mem} {C : Addr} {n n' N : Nat} {v : BitVec 128} (hN : N = 16 ∨ N = 48)
     (h1 : 1 ≤ n) (h48 : n ≤ N) (h1' : 1 ≤ n') (h48' : n' ≤ N) (h : n ≠ n') :
@@ -93,7 +93,7 @@ theorem readW_sep {m : Mem} {C : Addr} {n n' N : Nat} {v : BitVec 128} (hN : N =
       m.readW (C + BitVec.ofNat 64 (prepOff n)) 128 := by
   have b := prepOff_bound hN h1 h48
   have b' := prepOff_bound hN h1' h48'
-  exact Mem.readW_writeW_sep (Offset.sep C (prepOff_sep h) (by omega) (by omega)) (by decide)
+  exact Mem.readW_writeW_sep (Offset.sep C (prepOff_sep h) (by omega_using [hN, b]) (by omega_using [hN, b'])) (by decide)
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
 
@@ -115,7 +115,7 @@ theorem store_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg
   have b := prepOff_bound hi.hN h1 h48
   have hN := hi.hN
   have hin : InRegions t.wr (t.gpr .rdi + BitVec.ofInt 64 ((prepOff n : Nat) : Int)) 16 := by
-    rw [hi.rdi]; exact in_sub_int hi.wr (by omega)
+    rw [hi.rdi]; exact in_sub_int hi.wr (by omega_using [b, hN])
   refine WP.mono (st_ok r _ t hin) fun t' ⟨m', g', x', rd', wr'⟩ => ?_
   rw [hi.rdi, BitVec.ofInt_natCast] at m'
   refine ⟨⟨by rw [x']; exact hi.h1, fun q e hq => by rw [x']; exact hi.pw q e hq, fun k hk => ?_, ?_,
@@ -128,7 +128,7 @@ theorem store_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg
     · obtain ⟨k1, k48, hs⟩ := hi.st k (hk.resolve_left hkn)
       exact ⟨k1, k48, by rw [readW_sep hi.hN k1 k48 h1 h48 hkn]; exact hs⟩
   · rw [m']
-    exact hi.fr.writeW (List.mem_singleton_self _) _ (Offset.contains C (by omega) (by omega) (by omega))
+    exact hi.fr.writeW (List.mem_singleton_self _) _ (Offset.contains C (by omega_using [b]) (by omega_using [b]) (by omega_using [hN]))
 
 theorem lookup_cons {env : List (XReg × Nat)} {d r : XReg} {n : Nat} :
     ((d, n) :: env).lookup r = if r = d then some n else env.lookup r := by
@@ -240,7 +240,7 @@ theorem setupS_ok {N : Nat} (hN : N = 16 ∨ N = 48) (t : State) (hw : InRegions
       rfl
     · cases hr
   have p₄ := (hi₄.pw .xmm3 1 (by simp)).2
-  refine WP.mono (store_ok t₄ hi₄ p₄ (by decide) (by omega)) fun t' ⟨hi', g', rd', wr'⟩ =>
+  refine WP.mono (store_ok t₄ hi₄ p₄ (by decide) (by omega_using [hN])) fun t' ⟨hi', g', rd', wr'⟩ =>
     ⟨hi', fun q hq => by rw [g', o₁₄.gpr q hq], by rw [rd', o₁₄.rd], by rw [wr', o₁₄.wr]⟩
 
 theorem plan_valid : valid 16 [(.xmm3, 1)] plan = true := by decide
@@ -270,7 +270,7 @@ theorem prepare16_ok' {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 102
     exact this
   · have := hi.fr; rw [State.proj_mem] at this
     exact this.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      obtain rfl := List.mem_singleton.mp hr; exact Offset.sub _ (Nat.le_refl _) (by omega)⟩
+      obtain rfl := List.mem_singleton.mp hr; exact Offset.sub _ (Nat.le_refl _) (by omega_using [])⟩
   · rw [← State.proj_gpr s 0, g r hr]
   · rw [← State.proj_rd s 0, rd]
   · rw [← State.proj_wr s 0, wr]

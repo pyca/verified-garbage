@@ -27,5 +27,6 @@ materialize_code Impl.Scrypt.X86_64.Packed.blockMix
 materialize_code Impl.Scrypt.X86_64.roMix
 
 materialize_code Impl.Scrypt.X86_64.roMixDirect
+materialize_code Impl.Scrypt.X86_64.roMixDirectSse2
 
 end VG

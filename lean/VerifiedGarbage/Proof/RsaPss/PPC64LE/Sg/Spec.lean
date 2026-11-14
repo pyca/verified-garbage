@@ -22,6 +22,8 @@ otherwise the private operation (`privOut`) on the encoding `encEm`, with
 
 namespace VG.Proof.RsaPss.PPC64LE.Sg
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE
 open VG.Proof.RsaPss.PPC64LE (cmB byte_ok)
 
@@ -37,7 +39,7 @@ def privOut (s : State) (em : List Byte) : Spec.Rsa.Outcome :=
     (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
     (Spec.Rsa.bytesAt s.mem (stackArg s 6) (s.gpr .r10).toNat)
 
-/-- The outcome `signTableContract.post` asks for. -/
+/-- The outcome `signMdTableContract.post` asks for. -/
 def signOut (s : State) : Spec.Rsa.Outcome :=
   Spec.RsaPss.sign Gs Gm (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r6).toNat)
     (Spec.Rsa.bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat)
@@ -64,7 +66,7 @@ def encEm (s : State) : List Byte :=
 
 theorem bytesAt_cons (m : Mem) (p : Addr) {k : Nat} (hk : 1 ≤ k) :
     Spec.Rsa.bytesAt m p k = m p :: Spec.Rsa.bytesAt m (p + 1) (k - 1) := by
-  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega_using [hk]⟩
   simp only [Spec.Rsa.bytesAt, List.range_succ_eq_map, List.map_cons, List.map_map, Nat.add_sub_cancel]
   refine List.cons_eq_cons.mpr ⟨by simp, List.map_congr_left fun i _ => ?_⟩
   simp only [Function.comp, BitVec.add_assoc]
@@ -81,7 +83,7 @@ theorem emLen_eq {s : State} (hk : 1 ≤ kk s) (h0 : s.mem (s.gpr .r5) ≠ 0) :
       (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (kk s))) - 1) = kk s - loN s := by
   rw [bytesAt_cons _ _ hk, RsaPss.emLength_eq _ h0, VG.Proof.RsaPkcs1Sig.bytesAt_length]
   unfold loN
-  split <;> omega
+  split <;> omega_arith
 
 theorem signOut_long {s : State} (hk : 1 ≤ kk s) (h0 : s.mem (s.gpr .r5) ≠ 0)
     (h : kk s - loN s < Gs.len + (stackArg s 11).toNat + 2) : signOut Gs Gm s = .invalid := by
@@ -116,7 +118,7 @@ theorem signOut_eq (hHv : Proof.Mgf1.Valid Gs) (hGv : Proof.Mgf1.Valid Gm) {s : 
   subst hnB
   rw [RsaPss.sign_eq₂ Gm Gs hHv hGv h0 (lo := loN s) (db := dbS Gs s)
     (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) rfl hel
-    (by rw [List.length_cons, VG.Proof.RsaPkcs1Sig.bytesAt_length]; unfold loN; split <;> omega) rfl
+    (by rw [List.length_cons, VG.Proof.RsaPkcs1Sig.bytesAt_length]; unfold loN; split <;> omega_arith) rfl
     (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; exact hfit)]
   rw [hel] at hc
   rw [hc, ← cS_eq h0]

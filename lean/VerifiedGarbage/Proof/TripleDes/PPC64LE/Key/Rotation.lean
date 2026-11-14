@@ -1,16 +1,63 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.KeySteps
-import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Load
-public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
-import VerifiedGarbage.Proof.TripleDes.KeySchedule
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Word
+public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Write
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.Key.Load
+import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+
+/-! ### `TripleDes.PPC64LE.KeySteps`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.TripleDes.PPC64LE
+
+theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .r8)
+    (x : BitVec 28) (hx : s.gpr r = x.setWidth 64)
+    (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :
+    ∃ s', runBlock isa (Key.rotate28 r n) s = some s' ∧
+      s'.gpr r = (x.rotateLeft n).setWidth 64 ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r', r' ≠ r → r' ≠ .r8 → s'.gpr r' = s.gpr r') := by
+  have hleft : 64 - n < 64 := by omega_using [hn]
+  have hright : 28 - n < 64 := by omega_using []
+  let s₁ := s.write .r8 (s.gpr r >>> (28 - n))
+  let s₂ := s₁.write r ((s₁.gpr r).rotateRight (64 - n))
+  let s₃ := s₂.write r (s₂.gpr r ^^^ s₂.gpr .r8)
+  let s₄ := s₃.write r (s₃.gpr r <<< (64 - 28))
+  let s₅ := s₄.write r (s₄.gpr r >>> (64 - 28))
+  refine ⟨s₅, ?_, ?_, rfl, rfl, rfl, ?_⟩
+  · rw [Key.rotate28, mask, List.cons_append, List.cons_append, List.cons_append, List.nil_append,
+      runBlock_cons, exec_lsr_d hright, runStep_some, runBlock_cons, exec_rotr_d hleft,
+      runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_cons, exec_lsl (by decide),
+      runStep_some, runBlock_cons, exec_lsr_d (by decide), runStep_some, runBlock_nil]
+  · have h₁ : s₁.gpr r = s.gpr r := gpr_write_of_ne _ _ hr
+    have h₈ : s₂.gpr .r8 = s.gpr r >>> (28 - n) := by
+      rw [gpr_write_of_ne _ _ (Ne.symm hr), gpr_write_self]
+    simp only [s₅, s₄, s₃, gpr_write_self]
+    rw [h₈, show s₂.gpr r = (s₁.gpr r).rotateRight (64 - n) from gpr_write_self _ _ _, h₁, hx,
+      mask_word _ 28 (by decide) (by decide)]
+    exact (VG.Proof.TripleDes.mask28 _).symm.trans (VG.Proof.TripleDes.rotate28_word x n hn hn')
+  · intro r' h1 h2
+    simp only [s₅, s₄, s₃, s₂, s₁, gpr_write, h1, h2, ite_false]
+
+end VG.Proof.TripleDes.PPC64LE
+
+end
+
+end
+
 
 @[expose] public section
 
@@ -66,7 +113,7 @@ theorem eqTest_ok (s : State) (j k : Nat) (hj : j < 16) (hk : k < 16)
     ∃ s', runBlock isa [.subi .r8 .r12 k] s = some s' ∧
       isa.eval (.zero .d .r8) s' = some (decide (j = k)) ∧ Kept [.r8] s s' := by
   refine ⟨s.write .r8 (s.gpr .r12 - BitVec.ofNat 64 k), ?_, ?_, write_keep _ _⟩
-  · rw [runBlock_cons, exec_subi (by decide) (by omega), runStep_some, runBlock_nil]
+  · rw [runBlock_cons, exec_subi (by decide) (by omega_using [hk]), runStep_some, runBlock_nil]
   · change VG.PPC64LE.eval (.zero .d .r8) _ = _
     simp only [VG.PPC64LE.eval, State.read, Size.bits, gpr_write_self, BitVec.setWidth_eq, hv]
     exact congrArg some (comparison_values j hj k hk).2

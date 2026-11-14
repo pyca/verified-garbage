@@ -29,8 +29,8 @@ theorem restoreSlots_ok (slots : List (Reg × Nat)) (s : State) (g : Reg → Bit
     obtain ⟨fresh, tail⟩ := List.nodup_cons.mp distinct
     have bound := fits p (by simp)
     simp only [List.map_cons]
-    refine wp_loadStack (a := off (State.addr s.sp) p.2) bound.2 (addr_add (by omega))
-      (CallLay.inRegions_sub read bound.1 (by omega)) fun u loaded => ?_
+    refine wp_loadStack (a := off (State.addr s.sp) p.2) bound.2 (addr_add (by omega_using [nowrap, bound]))
+      (CallLay.inRegions_sub read bound.1 (by omega_using [nowrap])) fun u loaded => ?_
     refine WP.mono (ih u tail (by rw [loaded.sp]; exact nowrap)
       (by rw [loaded.rd, loaded.wr, loaded.sp]; exact read)
       (fun q hq => fits q (by simp [hq]))

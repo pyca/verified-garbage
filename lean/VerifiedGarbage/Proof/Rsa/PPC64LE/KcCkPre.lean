@@ -21,7 +21,7 @@ theorem ck_kpre {s0 : State} (h : ckP.pre s0) : KPre s0 (ckB s0) (ckZ s0) (kK s0
   obtain ⟨hsp, hrd, hwr, -, -, -, -, -, -, -, -, hsa, -, -, -, -, -, -, -, -, nw, ⟨hk, hk'⟩, -, -, -, -, -, -,
     -, -, -, -, -, hsl⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
-  exact ⟨by rw [hwr]; simp, nw, by simp only [ckZ, kK]; omega, hk, hk', by omega, by rw [hrd]; simp, hsa, rfl,
+  exact ⟨by rw [hwr]; simp, nw, by simp only [ckZ, kK]; omega_using [hsl], hk, hk', by omega_using [hsp], by rw [hrd]; simp, hsa, rfl,
     by decide, rfl⟩
 
 end VG.Proof.Rsa.PPC64LE.KeyCheck

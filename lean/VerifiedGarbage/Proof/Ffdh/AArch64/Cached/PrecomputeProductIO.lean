@@ -32,7 +32,7 @@ theorem loadEntry_ok {s : State} {B ctx : Addr} {Z w a j : Nat} {mi : BitVec 64}
  WP isa (loadEntry a) s fun t =>
  Good t B Z w mi ∧ wv t.mem B (slot w a) w=wv s.mem ctx (entryOffset w j) w ∧
  Arrays B w [a] s.mem t.mem ∧ Keep mmRegs s t := by
- have arrHdr : sArr a<32 := by unfold sArr;omega
+ have arrHdr : sArr a<32 := by unfold sArr;omega_using [array]
  have arrayRoom : slot w a+8*(w+2)≤Z := Nat.le_trans (slot_le array) room
  unfold loadEntry
  rw [WP.seq_iff,WP.block_append_iff]
@@ -41,27 +41,27 @@ theorem loadEntry_ok {s : State} {B ctx : Addr} {Z w a j : Nat} {mi : BitVec 64}
  refine WP.mono (WP.keep [.x16,.x17] (Q:=fun v =>v.gpr .x16=off ctx (entryOffset w j) ∧
   v.gpr .x17=off B (slot w a) ∧ v.mem=u.mem) ?_ rfl rfl rfl) ?_
  · brun [restU.rd,restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,hdr_enc arrHdr,
-    good.scr.ld (d:=8*sArr a) (by have := hdr_lt_slot w 8 arrHdr;omega),memU,good.hdr.harr a array,ptrU]
+    good.scr.ld (d:=8*sArr a) (by have := hdr_lt_slot w 8 arrHdr;omega_using [room, this]),memU,good.hdr.harr a array,ptrU]
  · rintro v ⟨⟨srcV,dstV,memV⟩,restV⟩
    have rest := restU.trans restV
    have mem : v.mem=s.mem := memV.trans memU
    refine WP.mono (copyWords_ok (S:=ctx) (D:=B) (eS:=entryOffset w j) (eD:=slot w a) (w:=w) srcV dstV
-    ((restV.gpr .x12 (by decide)).trans countU) (by omega) size (by have := good.scr.nowrap;omega)
+    ((restV.gpr .x12 (by decide)).trans countU) (by omega_using [positive]) size (by have := good.scr.nowrap;omega_using [arrayRoom, this])
     (fun i hi => by rw [rest.rd,rest.wr];exact readable i hi)
-    (fun i hi => by rw [rest.wr];exact good.scr.st (by omega))
+    (fun i hi => by rw [rest.wr];exact good.scr.st (by omega_using [arrayRoom, hi]))
     (fun i hi b hb => Or.inr (by
-     have sep := outside (8*i+b) (by omega)
+     have sep := outside (8*i+b) (by omega_using [hi, hb])
      have same : off ctx (entryOffset w j+8*i)+BitVec.ofNat 64 b=
        off ctx (entryOffset w j)+BitVec.ofNat 64 (8*i+b) := by simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
      rw [same]
-     omega))) ?_
+     omega_using [arrayRoom, sep]))) ?_
    rintro t ⟨value,_,frame,_,_,restT⟩
    have totalRest : Keep mmRegs s t := (rest.trans restT).mono (by simp [mmRegs])
    have arrays : Arrays B w [a] s.mem t.mem := by
     apply Arrays.of_outside (j:=a) (by simp) (o:=slot w a) (n:=8*w)
     · rw [←mem];exact frame
-    · omega
-    · omega
+    · omega_using []
+    · omega_using []
    refine ⟨good_after_arrays good arrays totalRest ((totalRest.gpr .x0 (by simp [mmRegs])).trans good.x0),?_,arrays,totalRest⟩
    rw [mem] at value
    exact value
@@ -91,7 +91,7 @@ theorem productLoad_ok {s : State} {p : Parameters} {j : Nat}
  · rintro u ⟨⟨indexU,memU⟩,restU⟩
    have goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
-   refine WP.mono (loadEntry_ok goodU p.room (by have := p.positive;omega) p.width (by decide : 1<8)
+   refine WP.mono (loadEntry_ok goodU p.room (by have := p.positive;omega_using [this]) p.width (by decide : 1<8)
     (memU ▸ context) indexU
     (fun i hi => (space.after restU).entry_read inside hi)
     (fun i hi => space.entry_outside inside hi)) ?_
@@ -116,7 +116,7 @@ theorem productStore_ok {s : State} {p : Parameters} {j d : Nat}
  · rintro u ⟨⟨indexU,memU⟩,restU⟩
    have goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
-   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega) p.width (by decide : 6<8)
+   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega_using [this]) p.width (by decide : 6<8)
     (memU ▸ context) indexU (entry_fit p inside)
     (fun i hi => (space.after restU).entry_write inside hi)
     (fun i hi => space.entry_outside inside hi)) ?_

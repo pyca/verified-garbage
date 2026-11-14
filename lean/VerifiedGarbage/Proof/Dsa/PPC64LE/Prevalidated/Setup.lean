@@ -28,7 +28,7 @@ theorem setup_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
     (hrest : ∀ t, KeyOk s.mem L key → Checked s t L key sig dig d → Body L s.mem t.mem → Keep ckRegs s t →
       WP isa rest t Q) :
     WP isa (Prevalidated.setup rest fail) s Q := by
-  have hk2 : Src s L key (2 * L.pl + L.ql) := hk.take (by omega)
+  have hk2 : Src s L key (2 * L.pl + L.ql) := hk.take (by omega_using [])
   have vals : ∀ {m : Mem}, Body L s.mem m →
       pOf m L key = pOf s.mem L key ∧ qOf m L key = qOf s.mem L key := fun hm => by
     obtain ⟨a, b, -⟩ := params_kept hk2 (Kept.ofBody hL hm).out
@@ -40,7 +40,7 @@ theorem setup_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   have hqb : Spec.Dsa.bitLength (qOf s.mem L key) / 8 < 2 ^ 16 := by
     have h := hSz
     simp only [SizesOk] at h
-    unfold Spec.Dsa.supportedSizes at h; simp only [Nat.reducePow]; omega
+    unfold Spec.Dsa.supportedSizes at h; simp only [Nat.reducePow]; omega_using [h]
   have hr₁ : Regs t₁ L key sig dig :=
     Regs.of_pack hL ((k₁.gpr .r21 (by decide)).trans hr.r21) ((k₁.gpr .r27 (by decide)).trans hr.r27)
       ((k₁.gpr .r28 (by decide)).trans hr.r28) ((k₁.gpr .r26 (by decide)).trans hr.r26) r2₁ hqb hd

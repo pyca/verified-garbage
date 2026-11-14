@@ -24,14 +24,14 @@ theorem tapeReset_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
       t.mem = s.mem.writeW (off F (8 * slots.used)) (0 : BitVec 64)) (by
     xrun [tapeReset, ea_sp, L.rsp,
-      L.st (d := 8 * slots.used) (by unfold frameBytes; omega)]
+      L.st (d := 8 * slots.used) (by unfold frameBytes; omega_using [hu])]
     rfl) rfl) fun t ⟨hm, hk⟩ => ?_
   have Rt : Rep t.mem F S V (upd W slots.used 0) := by
     rw [hm]; exact R.wf L.geo hu _
   refine ⟨lay_of_rep L R Rt (by simp [upd, Ne.symm hu14])
     (hk.gpr (by decide)) hk.2.2, Rt, ?_, hk⟩
   rw [hm]
-  exact writeW_outside _ _ _ (by omega)
+  exact writeW_outside _ _ _ (by omega_using [hu])
 
 theorem tapeStatus_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay s F S) (R : Rep s.mem F S V W) :

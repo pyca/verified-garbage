@@ -207,9 +207,9 @@ theorem pre_of (s₀ : State) (h : Proof.ChaCha20.blockAArch64.pre s₀) : Pre s
   obtain ⟨h1, h2, h3⟩ := h
   refine ⟨?_, ?_, h3⟩
   · intro k hk
-    exact ⟨stR s₀, by simp [h1], Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨stR s₀, by simp [h1], Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   · intro k hk
-    exact ⟨bufR s₀, by simp [h2], Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨bufR s₀, by simp [h2], Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
 
 theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
@@ -278,7 +278,7 @@ theorem load_step {s₀ : State} (hp : Pre s₀) {n : Nat} (hn : n < 16) {s : St
     rw [h.mem]; exact hp.read_st (Frame.refl _ _) hn
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
-    exec_ldr_w (show 4 * n % 4 = 0 ∧ 4 * n < 16384 by omega) hin, isa,
+    exec_ldr_w (show 4 * n % 4 = 0 ∧ 4 * n < 16384 by omega_using [hn]) hin, isa,
     Option.some.injEq, exists_eq_left', hx0, hv]
   refine ⟨fun j hj hjn => ?_, h.mem, h.rd, h.wr, fun r hr => ?_⟩
   · simp only [State.write]
@@ -307,7 +307,7 @@ structure FI (s₀ : State) (R : CState) (sB : State) (i : Nat) (s : State) : Pr
 theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {sB : State} {i : Nat} (hi : i < 15)
     {s : State} (h : FI s₀ R sB i s) :
     WP isa (.block (addWord (i + 1))) s (FI s₀ R sB (i + 1)) := by
-  have hk : i + 1 < 16 := by omega
+  have hk : i + 1 < 16 := by omega_using [hi]
   have hx0 : s.gpr .x0 = st s₀ := h.keep _ not_words_x0
   have hx1 : s.gpr .x1 = buf s₀ := h.keep _ not_words_x1
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * (i + 1))) 4 := by
@@ -316,14 +316,14 @@ theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {sB : State} {i : N
     rw [h.wr, hx1]; exact hp.out_out hk
   have hv := hp.read_st h.frame hk
   have hr := h.rest (i + 1) hk (by lit_omega)
-  have hne : wreg (i + 1) ≠ .x2 := fun e => absurd (wreg_inj hk (show 0 < 16 by omega) e) (by lit_omega)
+  have hne : wreg (i + 1) ≠ .x2 := fun e => absurd (wreg_inj hk (show 0 < 16 by omega_using []) e) (by lit_omega)
   have n1 : Reg.x1 ≠ wreg (i + 1) := fun e => not_words_x1 ⟨_, hk, e⟩
   apply WP.of_runBlock
   simp only [addWord, runBlock_cons, runStep_some,
-    exec_ldr_w (show 4 * (i + 1) % 4 = 0 ∧ 4 * (i + 1) < 16384 by omega) hin, exec_add, isa, hx0, hv]
+    exec_ldr_w (show 4 * (i + 1) % 4 = 0 ∧ 4 * (i + 1) < 16384 by omega_using [hi]) hin, exec_add, isa, hx0, hv]
   simp only [↓reduceIte, Nat.reduceLeDiff, State.write, State.read, Size.bits, hne, 
     hr, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
-  rw [exec_str_w (show 4 * (i + 1) % 4 = 0 ∧ 4 * (i + 1) < 16384 by omega)
+  rw [exec_str_w (show 4 * (i + 1) % 4 = 0 ∧ 4 * (i + 1) < 16384 by omega_using [hi])
     (by simpa [State.write, hne, n1] using hout)]
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, runStep_some, runBlock_nil, Option.some.injEq,
     exists_eq_left', hx1, n1, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
@@ -336,10 +336,10 @@ theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {sB : State} {i : N
     · rw [readW_writeW_out _ _ _ hj hk (by lit_omega)]; exact h.done j hj h1 (by lit_omega)
     · rw [Mem.readW_writeW_self32]
   · have e1 : wreg j ≠ wreg (i + 1) := fun e => absurd (wreg_inj hj hk e) (by lit_omega)
-    have e2 : wreg j ≠ .x2 := fun e => absurd (wreg_inj hj (show 0 < 16 by omega) e) (by lit_omega)
+    have e2 : wreg j ≠ .x2 := fun e => absurd (wreg_inj hj (show 0 < 16 by omega_using []) e) (by lit_omega)
     simp only [e1, e2, ite_false]; exact h.rest j hj (by lit_omega)
   · have e1 : r ≠ wreg (i + 1) := fun e => hr' ⟨i + 1, hk, e⟩
-    have e2 : r ≠ .x2 := fun e => hr' ⟨0, by omega, e⟩
+    have e2 : r ≠ .x2 := fun e => hr' ⟨0, by omega_using [], e⟩
     simp only [e1, e2, ite_false]; exact h.keep r hr'
 
 /-! ## Storing word 0, and finishing it -/
@@ -355,7 +355,7 @@ theorem first_ok {s₀ : State} (hp : Pre s₀) {R : CState} {s : State} (hh : H
   apply WP.of_runBlock
   simp only [Nat.reduceLeDiff, runBlock_cons, runStep_some,
     runBlock_nil, isa,
-    exec_str_w (show 0 % 4 = 0 ∧ 0 < 16384 by omega) hout, Option.some.injEq, exists_eq_left', hx1, h0,
+    exec_str_w (show 0 % 4 = 0 ∧ 0 < 16384 by omega_using []) hout, Option.some.injEq, exists_eq_left', hx1, h0,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
   refine ⟨by simp only [Nat.mul_zero]; exact Mem.readW_writeW_self32 _ _ _, fun j _ h1 h2 => absurd h2 (by lit_omega),
     fun j hj _ => hh j hj, ?_, hrd, hwr, hk⟩
@@ -384,17 +384,17 @@ theorem last_ok {s₀ : State} (hp : Pre s₀) {R : CState} {sB s : State} (h : 
   rw [last_eq]
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceMul, runBlock_cons, runStep_some,
     runBlock_nil, exec_ldr_w
-    (show 4 * 0 % 4 = 0 ∧ 4 * 0 < 16384 by omega), exec_add, exec_str_w
-    (show 4 * 0 % 4 = 0 ∧ 4 * 0 < 16384 by omega), isa, State.read, State.write, Size.bits, hx0,
+    (show 4 * 0 % 4 = 0 ∧ 4 * 0 < 16384 by omega_using []), exec_add, exec_str_w
+    (show 4 * 0 % 4 = 0 ∧ 4 * 0 < 16384 by omega_using []), isa, State.read, State.write, Size.bits, hx0,
     hx1, hin, hin', hout, hv, h.out0, BitVec.setWidth_setWidth_of_le,
     BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
   refine ⟨fun j hj => ?_, fun r hr => ?_, ?_⟩
   · by_cases hj0 : j = 0
     · subst hj0; exact Mem.readW_writeW_self32 _ _ _
-    · rw [readW_writeW_out _ _ _ hj (show 0 < 16 by omega) hj0]
+    · rw [readW_writeW_out _ _ _ hj (show 0 < 16 by omega_using []) hj0]
       exact h.done j hj (by lit_omega) (by lit_omega)
-  · have e2 : r ≠ .x2 := fun e => hr ⟨0, by omega, e⟩
-    have e3 : r ≠ .x3 := fun e => hr ⟨1, by omega, e⟩
+  · have e2 : r ≠ .x2 := fun e => hr ⟨0, by omega_using [], e⟩
+    have e3 : r ≠ .x3 := fun e => hr ⟨1, by omega_using [], e⟩
     simp only [e2, e3, ite_false]; exact h.keep r hr
 
   · exact h.frame.writeW (List.mem_singleton_self _) _

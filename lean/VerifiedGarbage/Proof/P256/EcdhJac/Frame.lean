@@ -23,7 +23,7 @@ theorem JPt.congr {base : Addr} {s t : State} {o o' : Nat → Nat} {Q : Point C}
   · rw [e 4 (by decide),e 3 (by decide),e 2 (by decide)]; exact h.z3
 
 theorem frame_build {base : Addr} {s t : State} (h : Frame base work s t) : Frame base buildWork s t :=
-  h.mono (fun _ hr => hr) (fun w hw => ⟨w,List.mem_append_left _ hw,by omega,by omega⟩)
+  h.mono (fun _ hr => hr) (fun w hw => ⟨w,List.mem_append_left _ hw,by omega_using [],by omega_using []⟩)
 
 theorem Fixed.keep {base : Addr} {P : Point C} {k : Nat} {s t : State}
     (h : Fixed base P k s) (hk : Frame base buildWork s t) : Fixed base P k t := by
@@ -44,7 +44,7 @@ theorem Fixed.keep {base : Addr} {P : Point C} {k : Nat} {s t : State}
     rw [hk.unch.byte (by
       intro w hw
       have hh : ∀ w∈buildWork,K.bits+260≤w.1 ∨ w.1+w.2≤K.bits := by decide +kernel
-      have := hh w hw; omega) (by change 1824+i+1≤2^64; omega)]
+      have := hh w hw; omega_using [hi, this]) (by change 1824+i+1≤2^64; omega_using [hi])]
     exact h.bits i hi
 
 theorem TblOk.keep {base : Addr} {P : Point C} {s t : State}
@@ -54,7 +54,7 @@ theorem TblOk.keep {base : Addr} {P : Point C} {s t : State}
   intro i hi
   exact hk.unch.wordsVal (by
     have hh : ∀ a∈List.range 17,1≤a→∀ i<5,∀ w∈work,entrySlot a i+32≤w.1 ∨ w.1+w.2≤entrySlot a i := by decide +kernel
-    exact hh a (List.mem_range.mpr (by omega)) ha i hi) (by unfold entrySlot; omega)
+    exact hh a (List.mem_range.mpr (by omega_using [ha16])) ha i hi) (by unfold entrySlot; omega_using [ha16, hi])
 
 theorem RState.next {base : Addr} {P Q Q' : Point C} {k : Nat} {s t : State}
     (h : RState base P Q k s) (hk : Frame base work s t)

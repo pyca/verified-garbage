@@ -47,11 +47,11 @@ theorem sgn_sub {x y : BitVec 64} (hx : x.toNat < 2 ^ 63) (hy : y.toNat < 2 ^ 63
   generalize y.toNat = b at *
   by_cases h : a < b
   · rw [decide_eq_true h]
-    have e : (2 ^ 64 - b + a) % 2 ^ 64 = 2 ^ 64 - b + a := Nat.mod_eq_of_lt (by omega)
-    rw [e]; simp only [Bool.toNat_true]; omega
+    have e : (2 ^ 64 - b + a) % 2 ^ 64 = 2 ^ 64 - b + a := Nat.mod_eq_of_lt (by omega_using [hx, h])
+    rw [e]; simp only [Bool.toNat_true]; omega_using [hy, h]
   · rw [decide_eq_false h]
-    have e : (2 ^ 64 - b + a) % 2 ^ 64 = a - b := by omega
-    rw [e]; simp only [Bool.toNat_false]; omega
+    have e : (2 ^ 64 - b + a) % 2 ^ 64 = a - b := by omega_using [hx, h]
+    rw [e]; simp only [Bool.toNat_false]; omega_using [hx]
 
 theorem bitV_and (b c : Bool) : bitV b &&& bitV c = bitV (b && c) := by cases b <;> cases c <;> decide
 
@@ -82,7 +82,7 @@ theorem allOk_succ (m : Mem) (f : Addr) (B i : Nat) :
   unfold allOk
   by_cases h : okN m f B i = true
   · rw [h, Bool.and_true]
-    exact decide_eq_decide.mpr ⟨fun h' k hk => h' k (by omega), fun h' k hk => by
+    exact decide_eq_decide.mpr ⟨fun h' k hk => h' k (by omega_using [hk]), fun h' k hk => by
       rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
       exacts [h' k hk, h]⟩
   · rw [Bool.not_eq_true] at h
@@ -94,9 +94,9 @@ theorem ok_bit {a B : BitVec 64} (ha : a.toNat < q) (hB : B.toNat < 2 ^ 32) :
   have hq : q = 8380417 := rfl
   have hQ : Qv.toNat = 8380417 := rfl
   have e : (Qv - a).toNat = q - a.toNat := by
-    rw [VG.Proof.MlKem.AArch64.toNat_sub_n (by rw [hQ]; omega), hQ]
-  rw [BitVec.ushiftRight_or_distrib, sgn_sub (by omega) (by omega),
-    sgn_sub (by rw [e]; omega) (by omega), e, bitV_or]
+    rw [VG.Proof.MlKem.AArch64.toNat_sub_n (by rw [hQ]; omega_using [ha, hq]), hQ]
+  rw [BitVec.ushiftRight_or_distrib, sgn_sub (by omega_using [ha, hq]) (by omega_using [hB]),
+    sgn_sub (by rw [e]; omega_using [hq]) (by omega_using [hB]), e, bitV_or]
   rw [Bool.decide_or]
 
 theorem normLt_correct (s₀ : State) (hp : normLtK.pre s₀) :
@@ -117,7 +117,7 @@ theorem normLt_correct (s₀ : State) (hp : normLtK.pre s₀) :
     refine ⟨by rw [k₃.get .x1, k₂.get .x1, h1], by rw [k₃.get .x9, h9]; exact q32, h10,
       by rw [hm₃, hm₂, hm₁], ((k₁.trans k₂).trans k₃).mono⟩
   have hB : (((s₀.gpr .x1).setWidth 32).setWidth 64 : BitVec 64).toNat = B := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := ((s₀.gpr .x1).setWidth 32).isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := ((s₀.gpr .x1).setWidth 32).isLt; omega_using [])]
   have hB32 : B < 2 ^ 32 := ((s₀.gpr .x1).setWidth 32).isLt
   have hW : WP isa normLt s₀ fun s' =>
       (s'.gpr .x0).setWidth 32 = if normRq [polyAt s₀.mem (s₀.gpr .x0)] < B then 1 else 0 := by

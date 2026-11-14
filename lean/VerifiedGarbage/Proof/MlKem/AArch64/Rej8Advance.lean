@@ -39,16 +39,16 @@ theorem advance_ok (w16 : Bool) (s : State) {n : Nat} (hn : n≤8)
   have en : e.gpr .x6=BitVec.ofNat 64 (VG.Proof.MlKem.cs w16*n) := by
     apply BitVec.eq_of_toNat_eq
     cases w16 <;>
-    · rw [ee,toNat_lsl_n (by rw [dn]; simp only [Bool.false_eq_true, ite_false, ite_true]; omega),dn,
+    · rw [ee,toNat_lsl_n (by rw [dn]; simp only [Bool.false_eq_true, ite_false, ite_true]; omega_using [hn]),dn,
         BitVec.toNat_ofNat]
-      simp only [VG.Proof.MlKem.cs_eq, Bool.false_eq_true, ite_false, ite_true]; omega
+      simp only [VG.Proof.MlKem.cs_eq, Bool.false_eq_true, ite_false, ite_true]; omega_using [hn]
   refine ⟨(((((((ha.trans hb).trans hc0).trans hd).trans he).trans hf).trans hg).trans ht).mono
     (by decide),?_,?_,?_,?_⟩
   · rw [ht.get .x3,hg.get .x3,ef,en,he.get .x3,hd.get .x3,hc0.get .x3,hb.get .x3,ha.get .x3]
   · rw [ht.get .x4,hg.get .x4,hf.get .x4,he.get .x4,ed,
       hc0.get .x4,hb.get .x4,ha.get .x4,BitVec.toNat_sub,cn]
     have := (s.gpr .x4).isLt
-    omega
+    omega_using [hn, h4]
   · rw [ht.get .x2,eg,hf.get .x2,he.get .x2,hd.get .x2,hc0.get .x2,hb.get .x2,ha.get .x2]
     rfl
   · rw [et,hg.get .x5,hf.get .x5,he.get .x5,hd.get .x5,hc0.get .x5,hb.get .x5,ha.get .x5,
@@ -56,6 +56,6 @@ theorem advance_ok (w16 : Bool) (s : State) {n : Nat} (hn : n≤8)
     have hb4 : (BitVec.ofNat 64 4).toNat=4 := rfl
     have := (s.gpr .x5).isLt
     simp only [hb4]
-    omega
+    omega_using [h5]
 
 end VG.Proof.MlKem.AArch64.Rej8

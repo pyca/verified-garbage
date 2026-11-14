@@ -44,11 +44,11 @@ theorem setup_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State →
     (hrest : ∀ t, KeyOk s.mem L key → Checked s t L key sig d → Kept L s.mem t.mem → Keep ckRegs s t →
       WP isa rest t Q) :
     WP isa (Prevalidated.setup rest fail) s Q := by
-  have hk2 : Src s L key (2 * L.pl + L.ql) := hk.take (by omega)
+  have hk2 : Src s L key (2 * L.pl + L.ql) := hk.take (by omega_using [])
   have hSz : SizesOk s.mem L key := hK.1.1
   have hp2 : 2 ≤ pOf s.mem L key := (VG.Proof.Dsa.supported_bounds hSz).1
   have hpo : pOf s.mem L key % 2 = 1 := hK.1.2.2
-  have hq0 : 0 < qOf s.mem L key := by have := VG.Proof.Dsa.supported_bounds hSz; omega
+  have hq0 : 0 < qOf s.mem L key := by have := VG.Proof.Dsa.supported_bounds hSz; omega_using [this]
   unfold Prevalidated.setup
   refine sizes_ok hL hs hr hlen hk2 hd (fun t₁ _ o₁ w₁ k₁ hr₁ => ?_) (fun _ hn _ _ _ => absurd hSz hn)
   have K₁ : Kept L s.mem t₁.mem := Kept.ofHdr hL o₁
@@ -77,7 +77,7 @@ theorem prevalidated_correct (s : State) (h : vpContract.pre s) :
   have hkl := hp.2.2.2.2.2.2.2.2.2.2.2.1
   have hK : KeyOk s.mem (layOf s) (s.gpr .a0) := by
     have e := validate_spec (m := s.mem) (L := layOf s) (key := s.gpr .a0) hv
-    rw [show 3 * (layOf s).pl + (layOf s).ql = (s.gpr .a1).toNat by simp only [layOf]; omega] at e
+    rw [show 3 * (layOf s).pl + (layOf s).ql = (s.gpr .a1).toNat by simp only [layOf]; omega_using [hkl]] at e
     exact of_decide_eq_true (e.symm.trans hval)
   suffices main : WP isa Prevalidated.verify s fun t =>
       ((∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra) ∧ vContract.post s t from

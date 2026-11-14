@@ -205,10 +205,10 @@ theorem pro_ok {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK
   have hsc := W.scr
   have hS : ⟨σ.gpr .rcx, L.scr⟩ ∈ σ.wr := by rw [hwr]; simp
   have c : ∀ o, o + 8 ≤ L.scr → (⟨σ.gpr .rcx, L.scr⟩ : Region).Contains (σ.gpr .rcx + BitVec.ofNat 64 o) 8 :=
-    fun o ho => contains_offset' ho (by omega)
+    fun o ho => contains_offset' ho (by omega_using [hsc])
   have w : ∀ o, o + 8 ≤ L.scr → InRegions σ.wr (σ.gpr .rcx + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
-  have w0 := w 840 (by omega); have w1 := w 848 (by omega); have w2 := w 856 (by omega)
-  have w3 := w 864 (by omega); have w4 := w 872 (by omega); have w5 := w 880 (by omega)
+  have w0 := w 840 (by omega_using [hsc]); have w1 := w 848 (by omega_using [hsc]); have w2 := w 856 (by omega_using [hsc])
+  have w3 := w 864 (by omega_using [hsc]); have w4 := w 872 (by omega_using [hsc]); have w5 := w 880 (by omega_using [hsc])
   rw [pro_eq]
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r14, .r15] (Q := fun s =>
     s.mem = (((((σ.mem.writeW (σ.gpr .rcx + BitVec.ofNat 64 840) (σ.gpr .rbx)).writeW
@@ -220,10 +220,10 @@ theorem pro_ok {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK
     (by xrun [w0, w1, w2, w3, w4, w5]) (by decide)) fun s ⟨⟨hm, hbx, hbp, h14, h12, h15⟩, k⟩ => ⟨?_, h15⟩
   have hf : Frame [⟨σ.gpr .rcx, L.scr⟩] σ.mem s.mem := by
     rw [hm]
-    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 848 (by omega))).writeW (List.mem_singleton_self _) _ (c 856 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 864 (by omega))).writeW (List.mem_singleton_self _) _ (c 872 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 880 (by omega)))
+    exact (((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 840 (by omega_using [hsc]))).writeW
+      (List.mem_singleton_self _) _ (c 848 (by omega_using [hsc]))).writeW (List.mem_singleton_self _) _ (c 856 (by omega_using [hsc]))).writeW
+      (List.mem_singleton_self _) _ (c 864 (by omega_using [hsc]))).writeW (List.mem_singleton_self _) _ (c 872 (by omega_using [hsc]))).writeW
+      (List.mem_singleton_self _) _ (c 880 (by omega_using [hsc])))
   have hsp : s.gpr .rsp = σ.gpr .rsp := k.gpr (by decide)
   have hdk := W.small (.rbp, L.dkLen) (by simp)
   have hct := W.small (.r14, L.ctLen) (by simp)
@@ -232,9 +232,9 @@ theorem pro_ok {L : Kem} {oc : Nat} (W : DcWfB L oc) {σ : State} (hp : (decapsK
     exact stores_read σ.mem (σ.gpr .rcx) (fun j => σ.gpr (savedReg j)) j hj
   · exact hf.readW (Region.contains_self _ _) (by simpa using r4) (by decide)
   · rw [pa, hbp, add_ofNat_zero]
-    exact bytesAt_frame hf (by simpa using d2) (by simp only at hdk; omega)
+    exact bytesAt_frame hf (by simpa using d2) (by simp only at hdk; omega_using [n1])
   · rw [pa, h14, add_ofNat_zero]
-    exact bytesAt_frame hf (by simpa using d4) (by simp only at hct; omega)
+    exact bytesAt_frame hf (by simpa using d4) (by simp only at hct; omega_using [n2])
 
 end Decaps
 

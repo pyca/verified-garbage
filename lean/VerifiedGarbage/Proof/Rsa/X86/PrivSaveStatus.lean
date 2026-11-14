@@ -19,11 +19,11 @@ theorem saveStatus_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
       Frame [⟨byteAddr g.stack + BitVec.ofNat 64 d, 4⟩] s.mem t.mem ∧ Keeps [] s t := by
   unfold stackAt
   refine wp_stm (B := s.gpr .esp) rfl
-    (by rw [h.address (d := d) (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)]
-        exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega))
+    (by rw [h.address (d := d) (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hd])]
+        exact h.inner.write (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hd]))
     fun t T => WP.block_nil ?_
   have M : t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 d) (s.gpr .eax) := by
-    rw [T.mem, h.address (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)]
+    rw [T.mem, h.address (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hd])]
   have K := T.keeps []
   have F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 d, 4⟩] s.mem t.mem := by
     rw [M]
@@ -31,7 +31,7 @@ theorem saveStatus_ok (s : State) {g : PrivGeometry} {bs : Fin 8 → List Byte}
   refine ⟨h.after (F.sub ?_) K (K.1 .esp (by decide)), M, F, K⟩
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)⟩
+  exact ⟨g.innerRegion, by simp [bodyWrites], Offset.sub_base _ (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hd])⟩
 
 theorem status_preserved {g : PrivGeometry} {m m' : Mem} {d : Nat} (hd : 72 ≤ d) (hf : d + 4 ≤ 88)
     (F : Frame [⟨byteAddr g.stack, 72⟩] m m') :
@@ -40,6 +40,6 @@ theorem status_preserved {g : PrivGeometry} {m m' : Mem} {d : Nat} (hd : 72 ≤ 
   apply F.readW (r := ⟨byteAddr g.stack + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact Offset.disjoint_base _ hd (by omega)
+  exact Offset.disjoint_base _ hd (by omega_using [hf])
 
 end VG.Proof.Rsa.X86.PrivChecked

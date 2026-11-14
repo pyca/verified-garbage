@@ -68,7 +68,7 @@ include h
 theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataOk St W SP K s' D n :=
   { h with rd := by rw [hrd, hwr]; exact h.rd }
 
-theorem n_lt : n < 2 ^ 64 := by have := h.fit; omega
+theorem n_lt : n < 2 ^ 64 := by have := h.fit; omega_using [this]
 
 /-- The bytes `[j, j + k)`. -/
 theorem part {j k : Nat} (hk : j + k ≤ n) :
@@ -81,10 +81,10 @@ theorem part {j k : Nat} (hk : j + k ≤ n) :
 
 /-- The pointer to byte `j < n`. -/
 theorem ptr {j : Nat} (hj : j < n) : w64 (D + BitVec.ofNat 32 j) = w64 D + BitVec.ofNat 64 j :=
-  w64_add (by have := h.fit; omega)
+  w64_add (by have := h.fit; omega_using [hj, this])
 
 theorem ptrN {j : Nat} (hj : j < n) : (D + BitVec.ofNat 32 j).toNat = D.toNat + j :=
-  toNat_add32 (by have := h.fit; omega)
+  toNat_add32 (by have := h.fit; omega_using [hj, this])
 
 end DataOk
 
@@ -106,7 +106,7 @@ theorem minLen1_ok {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) {
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, e16]
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
   · simp only [cf_setMem, gpr_setMem, cf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, e16,
-      toNat_ofNat32 hnlt, toNat_ofNat32 (show 16 - b < 2 ^ 32 by omega)]
+      toNat_ofNat32 hnlt, toNat_ofNat32 (show 16 - b < 2 ^ 32 by omega_using [])]
   · intro r h₁ h₂; simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, h₁, h₂, ite_false]
   all_goals rfl
 
@@ -127,13 +127,13 @@ theorem minLen_ok {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) {s
   refine WP.ite (decide (n < 16 - b)) cf (fun ht => ?_) (fun hf => ?_)
   · have hlt : n < 16 - b := by simpa using ht
     refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [gpr_setMem, gpr_setReg, ite_true, ax]; congr 1; omega
+    · simp only [gpr_setMem, gpr_setReg, ite_true, ax]; congr 1; omega_using [hlt]
     · intro r h₁ h₂; simp only [gpr_setMem, gpr_setReg, h₂, ite_false]; exact g₁ r h₁ h₂
     · exact m₁
     · exact rd₁
     · exact wr₁
   · have hle : ¬ n < 16 - b := by simpa using hf
-    refine WP.block_nil ⟨by rw [cx]; congr 1; omega, g₁, m₁, rd₁, wr₁⟩
+    refine WP.block_nil ⟨by rw [cx]; congr 1; omega_using [hle], g₁, m₁, rd₁, wr₁⟩
 
 theorem minLen_ct {I : State → Prop} {W : BitVec 32} {n b : Nat}
     (hp : ∀ s, I s → s.gpr .ebp = W ∧ ∃ Ctx St SP : BitVec 32, ∃ K, Lay Ctx St W SP K ∧ Env Ctx St W SP s ∧
@@ -165,12 +165,12 @@ theorem splitWhole_ok {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K
   have hand := and15 (BitVec.ofNat 32 r)
   rw [toNat_ofNat32 hr] at hand
   have h16 : BitVec.ofNat 32 r - BitVec.ofNat 32 (r % 16) = BitVec.ofNat 32 (16 * (r / 16)) := by
-    rw [ofNat_sub32 (Nat.mod_le _ _) hr]; congr 1; omega
+    rw [ofNat_sub32 (Nat.mod_le _ _) hr]; congr 1; omega_using []
   refine ⟨_, by xrun [splitWhole, he.ebp, L.aW, he.wIn, he.wIn', hd, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
   · simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hsh]
   · simp only [zf_setMem, gpr_setMem, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hsh]
-    rw [and_self_beq32 (by omega)]
+    rw [and_self_beq32 (by omega_using [hr])]
   · intro q h₁ h₂ h₃ h₄; simp only [gpr_setMem, gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, h₂, h₃, h₄, ite_false]
   · simp only [mem_setMem, gpr_setMem, mem_setReg, mem_arithFlags, mem_setFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
       ite_false, reduceCtorEq, hsh, hand, h16]
@@ -187,7 +187,7 @@ theorem test_ok {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay Ctx St W SP K) {s :
     WP isa (.block [.mov r (slot o), .alu .test r (.reg r)]) s fun s' =>
       s'.zf = some (decide (v = 0)) ∧ s'.gpr r = BitVec.ofNat 32 v ∧ (∀ q, q ≠ r → s'.gpr q = s.gpr q) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have a := L.aW (o := o) (by omega)
+  have a := L.aW (o := o) (by omega_using [ho])
   have i := he.wIn' (d := o) (n := 4) ho
   refine WP.of_runBlock ⟨_, by xrun [he.ebp, a, i, hv], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · mems []; rw [and_self_beq32 hvl]

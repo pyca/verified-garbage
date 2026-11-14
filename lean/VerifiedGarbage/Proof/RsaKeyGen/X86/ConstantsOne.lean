@@ -17,10 +17,10 @@ theorem plainOne_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} 
       Ready g c capacity p t ∧ val32 t.mem g.W (g.array 6) g.words = 1 ∧
       val32 t.mem g.W (g.array 4) g.words = val32 s.mem g.W (g.array 4) g.words ∧
       Outside g.W (g.array 6) (4 * g.words) s.mem t.mem ∧ Keeps [.eax, .ebp, .edx] s t := by
-  refine WP.mono (VG.Proof.Mont.X86.Dynamic.one_ok S.scratch (by have := v.minWidth; omega)
-    (show g.array 6 + 8 * g.w ≤ g.L from by have := v.arrayFit (j := 6) (by decide); unfold Geometry.words at this; omega))
+  refine WP.mono (VG.Proof.Mont.X86.Dynamic.one_ok S.scratch (by have := v.minWidth; omega_using [this])
+    (show g.array 6 + 8 * g.w ≤ g.L from by have := v.arrayFit (j := 6) (by decide); unfold Geometry.words at this; omega_using [this]))
     fun t ⟨O, V, K⟩ => ?_
-  rw [show 8 * g.w = 4 * g.words by unfold Geometry.words; omega] at O
+  rw [show 8 * g.w = 4 * g.words by unfold Geometry.words; omega_using []] at O
   have W := Outs.of_outside O (List.mem_singleton_self _)
   have F := WorkspaceFrame.of_outs S.scratch.nowrap W
   refine ⟨⟨S.context.keepOutside K (by decide) O (v.arrayHeader _),
@@ -31,6 +31,6 @@ theorem plainOne_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} 
   · unfold Geometry.words
     rw [← wordsVal_eq_val32]
     exact V
-  · exact O.val32 (Or.inl (g.arrayBefore (by decide))) (by have := S.scratch.nowrap; have := v.arrayFit (j := 4) (by decide); omega)
+  · exact O.val32 (Or.inl (g.arrayBefore (by decide))) (by have := S.scratch.nowrap; have := v.arrayFit (j := 4) (by decide); omega_arith)
 
 end VG.Proof.RsaKeyGen.X86.Constants

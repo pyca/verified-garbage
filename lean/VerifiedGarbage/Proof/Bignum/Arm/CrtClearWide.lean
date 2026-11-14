@@ -35,7 +35,7 @@ theorem crt_clearWide_ok (s : State) {base : BitVec 32} {size slot w o : Nat}
   have ctx : ZeroCtx u base size o (4 * w + 2) :=
     ⟨ws.nowrap, outFit, by rw [restU.wr]; exact ⟨_, ws.writable, Region.contains_self _ _⟩⟩
   rw [WP.seq_iff]
-  refine WP.mono (zero_ok u ctx (by omega) ptrU countU zeroU) ?_
+  refine WP.mono (zero_ok u ctx (by omega_using []) ptrU countU zeroU) ?_
   intro v inv
   have outside := inv.outside
   rw [memU] at outside

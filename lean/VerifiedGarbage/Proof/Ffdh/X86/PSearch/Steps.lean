@@ -1,13 +1,66 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Data
-public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Steps
-public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Zero
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.X86.KeySearch
+public import VerifiedGarbage.Proof.Ffdh.X86.KeySearch.Words
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
+import VerifiedGarbage.Proof.Framework.X86.Syms
 public import VerifiedGarbage.Proof.Mont.X86.Words
+
+/-! ### `Ffdh.X86.KeySearch.Steps`, which only this module used -/
+
+section
+
+/-! # Steps of the key search (x86)
+
+The registers the controller uses for itself (`Scratch`), which no
+callee-saved register is (`saved_ne`), and the words of its state through a
+store (`Ctl.write'`) and on fewer offsets (`Ctl.sub`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86.KeySearch
+
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Impl.Mont.X86
+open VG.Impl.Ffdh.X86.KeySearch
+
+/-- The registers the controller uses for itself. -/
+abbrev Scratch (r : Reg) : Prop := r = .eax ∨ r = .ecx ∨ r = .edx
+
+theorem saved_ne {r q : Reg} (hq : Scratch q) (hr : r ∈ calleeSaved) : r ≠ q := by
+  rcases hq with rfl | rfl | rfl <;> simp [calleeSaved] at hr <;> rcases hr with rfl | rfl | rfl | rfl | rfl <;>
+    decide
+
+/-- A store and the word it keeps. -/
+theorem Ctl.write' {m : Mem} {S : BitVec 32} (hS : S.toNat + 128 ≤ 2 ^ 32) {ds : List Nat}
+    {f : Nat → BitVec 32} (h : Ctl m S ds f) (hA : Aligned ds) {d : Nat} (hd : d + 4 ≤ 128) (hd4 : d % 4 = 0)
+    (v : BitVec 32) : Ctl (m.writeW (addr S d) v) S (d :: ds) (upd f d v) := by
+  intro e he
+  rcases List.mem_cons.mp he with rfl | he
+  · rw [readW_write hS v hd hd (Or.inl rfl)]; simp [upd]
+  · exact h.write hS hA hd hd4 v e he
+
+theorem Aligned.cons {ds : List Nat} (h : Aligned ds) {d : Nat} (hd : d + 4 ≤ 128) (hd4 : d % 4 = 0) :
+    Aligned (d :: ds) := fun e he => by
+  rcases List.mem_cons.mp he with rfl | he
+  · exact ⟨hd, hd4⟩
+  · exact h e he
+
+theorem Ctl.sub {m : Mem} {S : BitVec 32} {ds ds' : List Nat} {f : Nat → BitVec 32} (h : Ctl m S ds f)
+    (hs : ∀ d ∈ ds', d ∈ ds) : Ctl m S ds' f := fun d hd => h d (hs d hd)
+
+end VG.Proof.Ffdh.X86.KeySearch
+
+end
+
+end
+
 
 /-! # Steps of the parameter search (x86)
 
@@ -32,9 +85,9 @@ theorem arg_in {o : State} (A : PSearchABI o) {i : Nat} (hi : i < 10) :
     (aR o).Contains (addr (o.gpr .esp) (4 + 4 * i)) 4 := by
   have hb := A.stackBound
   show (⟨argAddr o 0, 40⟩ : Region).Contains _ _
-  rw [addr_eq (by omega), show argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from
-    addr_eq (k := 4) (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [addr_eq (by omega_using [hi, hb]), show argAddr o 0 = (o.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from
+    addr_eq (k := 4) (by omega_using [hb])]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
 
 /-- The state's word at `d` lies in the state's region. -/
 theorem st_in {o : State} (A : PSearchABI o) {d : Nat} (hd : d + 4 ≤ 128) :
@@ -125,7 +178,7 @@ theorem len_pos {o : State} (A : PSearchABI o) : 64 ≤ (arg o 1).toNat ∧ (arg
   have := A.outLen
   have := A.bitsLow
   have := A.bitsHigh
-  omega
+  omega_arith
 
 /-- Zeros at the output, the width's octets. -/
 theorem zeroOut_ok {s : State} {S P : BitVec 32} {n : Nat} (hesi : s.gpr .esi = S)
@@ -157,10 +210,10 @@ theorem zeroOut_ok {s : State} {S P : BitVec 32} {n : Nat} (hesi : s.gpr .esi = 
     · intro i h₁ _
       simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
       simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
-      exact J.zero i (by omega)
+      exact J.zero i (by omega_using [he, h₁])
   · right
-    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega,
-      k + 1, rfl, by omega, J⟩
+    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega_using [hk],
+      k + 1, rfl, by omega_using [he], J⟩
 
 /-- Zeros at the output. -/
 theorem St.zeroOut {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St o ds f s) (hA : Aligned ds)
@@ -173,8 +226,8 @@ theorem St.zeroOut {o s : State} {ds : List Nat} {f : Nat → BitVec 32} (h : St
   have hp := len_pos A
   have ob := A.oBound
   refine WP.mono_syms (zeroOut_ok h.esi (h.rIn (by decide)) (h.rIn (by decide))
-    ((h.words.get hdo).trans ho) ((h.words.get hdl).trans hl) (by rw [h.wr]; exact oR_mem A) (by omega) ob
-    (by omega)) fun t ⟨F, Z, K⟩ sy => ?_
+    ((h.words.get hdo).trans ho) ((h.words.get hdl).trans hl) (by rw [h.wr]; exact oR_mem A) (by omega_using [hp]) ob
+    (by omega_using [])) fun t ⟨F, Z, K⟩ sy => ?_
   refine ⟨⟨A, K.2.1.trans h.rd, K.2.2.trans h.wr, sy.trans h.syms, by rw [K.1 _ (by decide), h.esp],
       by rw [K.1 _ (by decide), h.esi], fun q hq hne => ?_, h.frame.trans (F.mono fun r hr => ?_),
       h.words.frame A.sBound hA F fun r hr => ?_⟩, Z, F, fun r hr => K.1 _ fun hm => hr (by simp at hm; omega)⟩

@@ -1887,6 +1887,7 @@ vg_ec_p521_decompress_public_key:
 	bl {vg_p521_mul_mod_p}
 	umov x30, v29.d[0]
 	movz x7, #0, lsl #0
+	subs x7, x7, x7
 	ldr x8, [x0, #3088]
 	ldr x9, [x0, #3096]
 	ldr x10, [x0, #3104]
@@ -1897,7 +1898,7 @@ vg_ec_p521_decompress_public_key:
 	ldr x15, [x0, #3144]
 	ldr x21, [x0, #3152]
 	ldr x2, [x0, #3016]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #3024]
 	adcs x9, x9, x2
 	ldr x2, [x0, #3032]
@@ -1914,45 +1915,31 @@ vg_ec_p521_decompress_public_key:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3080]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x3, #512, lsl #0
+	and x2, x21, x3
+	subs x2, x2, x3
+	movz x3, #511, lsl #0
+	and x21, x21, x3
+	sbcs x8, x8, x7
 	str x8, [x0, #2800]
+	sbcs x9, x9, x7
 	str x9, [x0, #2808]
+	sbcs x10, x10, x7
 	str x10, [x0, #2816]
+	sbcs x11, x11, x7
 	str x11, [x0, #2824]
+	sbcs x12, x12, x7
 	str x12, [x0, #2832]
+	sbcs x13, x13, x7
 	str x13, [x0, #2840]
+	sbcs x14, x14, x7
 	str x14, [x0, #2848]
+	sbcs x15, x15, x7
 	str x15, [x0, #2856]
+	sbcs x21, x21, x7
 	str x21, [x0, #2864]
 	movz x7, #0, lsl #0
+	subs x7, x7, x7
 	ldr x8, [x0, #2800]
 	ldr x9, [x0, #2808]
 	ldr x10, [x0, #2816]
@@ -1963,7 +1950,7 @@ vg_ec_p521_decompress_public_key:
 	ldr x15, [x0, #2856]
 	ldr x21, [x0, #2864]
 	ldr x2, [x0, #2944]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #2952]
 	adcs x9, x9, x2
 	ldr x2, [x0, #2960]
@@ -1980,43 +1967,28 @@ vg_ec_p521_decompress_public_key:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3008]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x3, #512, lsl #0
+	and x2, x21, x3
+	subs x2, x2, x3
+	movz x3, #511, lsl #0
+	and x21, x21, x3
+	sbcs x8, x8, x7
 	str x8, [x0, #3088]
+	sbcs x9, x9, x7
 	str x9, [x0, #3096]
+	sbcs x10, x10, x7
 	str x10, [x0, #3104]
+	sbcs x11, x11, x7
 	str x11, [x0, #3112]
+	sbcs x12, x12, x7
 	str x12, [x0, #3120]
+	sbcs x13, x13, x7
 	str x13, [x0, #3128]
+	sbcs x14, x14, x7
 	str x14, [x0, #3136]
+	sbcs x15, x15, x7
 	str x15, [x0, #3144]
+	sbcs x21, x21, x7
 	str x21, [x0, #3152]
 	ldr x1, [x0, #3088]
 	str x1, [x0, #1072]
@@ -2146,42 +2118,25 @@ vg_ec_p521_decompress_public_key:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2720]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
 	str x8, [x0, #2728]
+	sbcs x9, x9, x7
 	str x9, [x0, #2736]
+	sbcs x10, x10, x7
 	str x10, [x0, #2744]
+	sbcs x11, x11, x7
 	str x11, [x0, #2752]
+	sbcs x12, x12, x7
 	str x12, [x0, #2760]
+	sbcs x13, x13, x7
 	str x13, [x0, #2768]
+	sbcs x14, x14, x7
 	str x14, [x0, #2776]
+	sbcs x15, x15, x7
 	str x15, [x0, #2784]
+	sbcs x21, x21, x7
+	movz x3, #511, lsl #0
+	and x21, x21, x3
 	str x21, [x0, #2792]
 	ldr x1, [x0, #2656]
 	ldr x2, [x0, #2368]
@@ -2284,42 +2239,25 @@ vg_ec_p521_decompress_public_key:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #3152]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
 	str x8, [x0, #2800]
+	sbcs x9, x9, x7
 	str x9, [x0, #2808]
+	sbcs x10, x10, x7
 	str x10, [x0, #2816]
+	sbcs x11, x11, x7
 	str x11, [x0, #2824]
+	sbcs x12, x12, x7
 	str x12, [x0, #2832]
+	sbcs x13, x13, x7
 	str x13, [x0, #2840]
+	sbcs x14, x14, x7
 	str x14, [x0, #2848]
+	sbcs x15, x15, x7
 	str x15, [x0, #2856]
+	sbcs x21, x21, x7
+	movz x3, #511, lsl #0
+	and x21, x21, x3
 	str x21, [x0, #2864]
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #2800]

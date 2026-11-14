@@ -64,10 +64,10 @@ theorem tabOk_of_pre {s : State} {base : Addr} (hrd : (tabRegion s) ∈ s.rd)
   fit := hfit
   far d hd' := by
     have hc : (tabRegion s).Contains (s.syms p256Sym + BitVec.ofNat 64 d) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])
     have := hd _ hc
     simp only [Region.Contains, Nat.not_le] at this
-    simp only [ofs]; omega
+    simp only [ofs]; omega_using [this]
 
 /-- The saves, at `mulSave = 1504`. -/
 abbrev savesG : List (Nat × Nat) := [(1504, 8), (1512, 8), (1520, 8), (1528, 8)]
@@ -77,12 +77,12 @@ theorem keepsG_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (savesG ++ bodyW) 
   intro i hi hown hp
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
-  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega)]
+  rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
   have hw' := (by decide : ∀ w ∈ savesG ++ bodyW, (w.1 = 512 ∧ w.2 = 544) ∨ 1504 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     MC, Impl.Weierstrass.Mul.p256, true_and] at hown hp
-  omega
+  omega_using [hp, hw', hown]
 
 
 /-- `vg_p256_mul_g` meets `mulGRVc`, given the group law. -/
@@ -121,24 +121,24 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
   have m₆ : s₆.mem = s₄.mem := by rw [u₆.mem, u₅.mem]
   have O₄ : Unch base savesG s.mem s₆.mem := by
     rw [m₆, m₄]
-    exact ((((writeW_outside _ _ _ (by omega)).unch.trans (writeW_outside _ _ _ (by omega)).unch).trans
-      (writeW_outside _ _ _ (by omega)).unch).trans (writeW_outside _ _ _ (by omega)).unch)
+    exact ((((writeW_outside _ _ _ (by omega_using [])).unch.trans (writeW_outside _ _ _ (by omega_using [])).unch).trans
+      (writeW_outside _ _ _ (by omega_using [])).unch).trans (writeW_outside _ _ _ (by omega_using [])).unch)
   have e₆ : ∀ d, d + 32 ≤ 1504 → wordsVal s₆.mem base d 4 = wordsVal s.mem base d 4 := fun d hd =>
-    O₄.wordsVal (by simp; omega) (by omega)
+    O₄.wordsVal (by simp; omega_using [hd]) (by omega_using [hd])
   have cs : ∀ d, d < 4096 → MC.toPoint.coordAt s.mem base d = wordsVal s.mem base d 4 := fun d hd =>
-    coordAt_eq s.mem base (by omega)
+    coordAt_eq s.mem base (by omega_using [hd])
   have tm : ∀ x, toM W.p (2 ^ 256) (x * 2 ^ (64 * 4) % W.p) = Fin.ofNat W.p x := fun x => toM_mont unit
   have hT₆ : TabOk s₆ base (s.syms p256Sym) :=
     hT₀.of_unch (by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, u₀.rd]) (by decide) O₄
-  have hz₆ : wordsVal s₆.mem base 160 4 = 0 := by rw [e₆ 160 (by omega), ← cs 160 (by omega)]; exact hz
+  have hz₆ : wordsVal s₆.mem base 160 4 = 0 := by rw [e₆ 160 (by omega_using []), ← cs 160 (by omega_using [])]; exact hz
   have h1₆ : wordsVal s₆.mem base 224 4 = oneM := by
-    rw [e₆ 224 (by omega), ← cs 224 (by omega)]
+    rw [e₆ 224 (by omega_using []), ← cs 224 (by omega_using [])]
     refine hone.trans ?_
     simp only [Impl.Weierstrass.Mul.Curve.mont, Nat.one_mul]; rfl
   have ha₆ : wordsVal s₆.mem base 256 4 = W.a * 2 ^ (64 * 4) % W.p := by
-    rw [e₆ 256 (by omega), ← cs 256 (by omega)]; exact ha
+    rw [e₆ 256 (by omega_using []), ← cs 256 (by omega_using [])]; exact ha
   have hb₆ : wordsVal s₆.mem base 1344 4 = W.b * 2 ^ (64 * 4) % W.p := by
-    rw [e₆ 1344 (by omega)]; exact hbp
+    rw [e₆ 1344 (by omega_using [])]; exact hbp
   -- The body.
   refine WP.seq (WP.mono (body_ok hL hw₆ (by rw [u₆.gpr, u₅.other _ (by decide), g₄, u₀.gpr]) hT₆ hz₆ h1₆
     (by simp only [tmv]; rw [ha₆]; exact tm _) (by simp only [tmv]; rw [hb₆]; exact tm _)
@@ -150,18 +150,18 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rw [U₇.word (fun w hw => by
       simp only [bodyW, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl <;> simp only <;> omega) (by omega), m₆]
+      rcases hw with rfl | rfl | rfl <;> simp only <;> omega_using [hd]) (by omega_using [hd]), m₆]
   have w28 : word s₇.mem base 1528 = s.gpr .s4 := by rw [far 1528 (by simp), m₄, word_writeW_self]
   have w20 : word s₇.mem base 1520 = s.gpr .ra := by
-    rw [far 1520 (by simp), m₄, (writeW_outside (d := 1528) _ base _ (by omega)).word (by omega) (by omega),
+    rw [far 1520 (by simp), m₄, (writeW_outside (d := 1528) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
       word_writeW_self]
   have w12 : word s₇.mem base 1512 = s.gpr .s1 := by
-    rw [far 1512 (by simp), m₄, (writeW_outside (d := 1528) _ base _ (by omega)).word (by omega) (by omega),
-      (writeW_outside (d := 1520) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
+    rw [far 1512 (by simp), m₄, (writeW_outside (d := 1528) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
+      (writeW_outside (d := 1520) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   have w04 : word s₇.mem base 1504 = s.gpr .s0 := by
-    rw [far 1504 (by simp), m₄, (writeW_outside (d := 1528) _ base _ (by omega)).word (by omega) (by omega),
-      (writeW_outside (d := 1520) _ base _ (by omega)).word (by omega) (by omega),
-      (writeW_outside (d := 1512) _ base _ (by omega)).word (by omega) (by omega), word_writeW_self]
+    rw [far 1504 (by simp), m₄, (writeW_outside (d := 1528) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
+      (writeW_outside (d := 1520) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
+      (writeW_outside (d := 1512) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   refine ld_ws hw₇ (d := 1520) (by decide) (by decide) fun s₈ u₈ => ?_
   refine ld_ws (hw₇.of_kp (Kp.of_upd u₈)) (d := 1528) (by decide) (by decide) fun s₉ u₉ => ?_
   have hw₉ : WsReg s₉ base := ⟨by rw [u₉.other .s0 (by decide), u₈.other .s0 (by decide)]; exact hw₇.s0,
@@ -186,14 +186,14 @@ theorem mulG_rv (hL : Law W) (s : State) (hs : mulGRVc.pre s) :
     rw [hb, m₁₁]
     refine ⟨fun _ _ => ?_, keepsG_of_unch (O₄.trans U₇)⟩
     have e : MC.scalar base s.mem = wordsVal s₆.mem base 1056 4 := by
-      rw [e₆ 1056 (by omega)]; exact cs 1056 (by omega)
+      rw [e₆ 1056 (by omega_using [])]; exact cs 1056 (by omega_using [])
     have c7 : ∀ d, d < 4096 → MC.toPoint.coordAt s₇.mem base d = wordsVal s₇.mem base d 4 := fun d hd =>
-      coordAt_eq s₇.mem base (by omega)
-    have x0 : MC.toPoint.coordAt s₇.mem base MC.pAt = wordsVal s₇.mem base 512 4 := c7 512 (by omega)
+      coordAt_eq s₇.mem base (by omega_using [hd])
+    have x0 : MC.toPoint.coordAt s₇.mem base MC.pAt = wordsVal s₇.mem base 512 4 := c7 512 (by omega_using [])
     have x1 : MC.toPoint.coordAt s₇.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
-        wordsVal s₇.mem base 544 4 := c7 544 (by omega)
+        wordsVal s₇.mem base 544 4 := c7 544 (by omega_using [])
     have x2 : MC.toPoint.coordAt s₇.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
-        wordsVal s₇.mem base 576 4 := c7 576 (by omega)
+        wordsVal s₇.mem base 576 4 := c7 576 (by omega_using [])
     rw [e]
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at lt₇
     refine ⟨⟨?_, ?_, ?_⟩, ?_⟩

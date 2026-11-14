@@ -57,14 +57,14 @@ theorem bufB_eq (st : Addr) (k : Nat) : bufB st k = off st 56 + BitVec.ofNat 64 
 
 theorem bufB_ne {st : Addr} {j k : Nat} (hj : j < 16) (hk : k < 16) (h : j ≠ k) :
     bufB st j ≠ bufB st k :=
-  Offset.add_ofNat_ne st (by omega) (by omega) (by omega)
+  Offset.add_ofNat_ne st (by omega_using [hj]) (by omega_using [hk]) (by omega_using [h])
 
 theorem bufB_in {s : State} {st : Addr} (hw : sR st ∈ s.wr) {k : Nat} (hk : k < 16) :
     InRegions s.wr (bufB st k) 1 :=
-  in_st hw (by omega)
+  in_st hw (by omega_using [hk])
 
 theorem bfR_bufB (st : Addr) {k : Nat} (hk : k < 16) : (bfR st).Contains (bufB st k) 1 := by
-  rw [bufB_eq]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [bufB_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
 
 /-- The buffer's bytes are `f k`. -/
 def BufHas (m : Mem) (st : Addr) (f : Nat → Byte) : Prop := ∀ k < 16, m (bufB st k) = f k

@@ -98,7 +98,7 @@ theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : 
   obtain ⟨e, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at e
   have e := map_toNat_inj e
-  rw [← e0, ← e1, ← e2, ← e3, Nat.min_eq_right (by omega)] at e
+  rw [← e0, ← e1, ← e2, ← e3, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vdOf, layOf, ← e0, ← e2, ← e3, ← e4, ← e6, ← e7, ← sa0, ← sa1, e]
 
 end VG.Proof.Dsa.RISCV64.CT

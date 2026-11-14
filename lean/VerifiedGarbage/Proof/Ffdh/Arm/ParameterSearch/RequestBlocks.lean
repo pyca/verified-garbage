@@ -28,7 +28,7 @@ theorem requestHead_ok (s : State) {base : BitVec 32} {available width : Nat}
     h.read (by decide : 10 < 16), h.read (by decide : 1 < 16), tape, length]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 theorem requestDouble_ok (s : State) {base : BitVec 32} {n cap : Nat}
     (h : Controller base s) (value : s.gpr .r9 = BitVec.ofNat 32 n)
@@ -41,7 +41,7 @@ theorem requestDouble_ok (s : State) {base : BitVec 32} {n cap : Nat}
   ffrun [h.addr (by decide : 2 < 16), h.read (by decide : 2 < 16), value, capacity]
   rw [← BitVec.ofNat_add]
   congr 1
-  omega
+  omega_using []
 
 def requestMem (m : Mem) (base : BitVec 32) (request : Nat) : Mem :=
   ((m.writeW (off (State.addr base) 24) (BitVec.ofNat 32 request)).writeW

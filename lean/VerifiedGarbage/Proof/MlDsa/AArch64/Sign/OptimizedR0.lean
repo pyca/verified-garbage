@@ -173,7 +173,7 @@ theorem optimizedR0_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (responseProductChk_r0 hp i hi) h.b.c (h.b.l.k.d.s2 i hi)) fun a ⟨hpa,h24a,hprod⟩ hsa => ?_)
   have ha := h.step hpa hsa rp wp hwp
   have hw : PolyIs a.mem (pa a (wP p i)) (Wv p σ (p.ℓ*t) i) := by
-    have hv := ha.w 0 (by omega)
+    have hv := ha.w 0 (by omega_using [hi])
     simpa only [Nat.add_zero] using hv
   have hraw : RawPolyIs a.mem (pa a t1P) (nttInv (multiplyNTT
       (VG.Proof.MlDsa.Sign.chF (cV p σ (p.ℓ*t))) (S2v p σ i))) := by

@@ -47,8 +47,8 @@ def dvdOf (s : State) : VD :=
 theorem dsrc {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) ∈ s.rd)
     (hd : (⟨A, n⟩ : Region).Disjoint ⟨s.gpr .r10, (stackArg s 0).toNat * 8⟩)
     (hn : n < 2 ^ 64) (hk : k ≤ n) {t : State} (hr : t.rd = s.rd) (hw : t.wr = s.wr) : Src t (dlayOf s) A k :=
-  ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega) (by omega)⟩,
-    fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
+  ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega_using [hk, hi]) (by omega_using [hn, hk, hi])⟩,
+    fun i hi => Pub.ne_of_disjoint hd (by omega_using [hn]) i (by omega_using [hk, hi])⟩
 
 /-- On entry. -/
 def DC0 (v : VD) (s : State) : Prop := dContract.pre s ∧ dvdOf s = v
@@ -81,10 +81,10 @@ theorem dfront_S0 {v : VD} {s : State} (h : DC0 v s) : WP isa (.block Derive.ent
   obtain ⟨-, hrd, -, -, -, -, -, dPS, dXS, -, -, -, -, -, -, -, hpl, -⟩ := hp
   refine WP.mono (dfront_ok hpre) fun t ⟨⟨hr, scr, r2, _, out⟩, k⟩ => ?_
   have Out : Outside (dlayOf s).S 0 (dlayOf s).Z s.mem t.mem :=
-    out.mono (Nat.le_refl _) (by simp only [dlayOf] at hZ ⊢; omega)
+    out.mono (Nat.le_refl _) (by simp only [dlayOf] at hZ ⊢; omega_using [hZ])
   have hK : ∀ {u : State}, u.rd = s.rd → u.wr = s.wr →
       Src u (dlayOf s) (s.gpr .r5) (2 * (s.gpr .r7).toNat + (s.gpr .r9).toNat) :=
-    fun hr hw => dsrc (A := s.gpr .r5) (by rw [hrd]; simp) dPS (s.gpr .r6).isLt (by omega) hr hw
+    fun hr hw => dsrc (A := s.gpr .r5) (by rw [hrd]; simp) dPS (s.gpr .r6).isLt (by omega_using [hpl]) hr hw
   exact ⟨⟨hL, hr, scr, hK k.rd k.wr,
     dsrc (A := s.gpr .r8) (k := (s.gpr .r9).toNat) (by rw [hrd]; simp) dXS (s.gpr .r9).isLt
       (Nat.le_refl _) k.rd k.wr,
@@ -95,8 +95,8 @@ theorem dentry_rel : RelCT isa (Two DC0) (.block Derive.entry) (Two S0) :=
   two_post (two_taint _ pins_DC0 (by taint_decide)) fun _ _ h => dfront_S0 h
 
 theorem dbody_rel : RelCT isa (Two fun v s => K8 v s ∧ True) Derive.body (Two End) :=
-  rel_end (two_taint _ (pins_and (pins_PP _)) (by taint_decide)) (fun _ _ h => h.1.1.regs.r21)
-    (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
+  rel_end (two_taintR _ (pins_and (pins_PP _)) (by taint_decide_rel)) (fun _ _ h => h.1.1.regs.r21)
+    (by rw [← Code.allInstrs_eq]; decide +kernel)
 
 /-- `out` and its length, to zero it. -/
 def dzL (v : VD) : List (Reg × BitVec 64) :=
@@ -117,14 +117,14 @@ theorem dzfront_ok {v : VD} {s : State} (h : Base v s) :
       u.gpr .r17 = BitVec.ofNat 64 (3 * v.L.pl + 2 * v.L.ql) ∧ u.gpr .r0 = 0) (by
       unfold getP getQ
       prun [hr.r26, Regs.p_eq hr, Regs.q_eq hr, BitVec.add_zero]
-      exact ⟨by simp only [BitVec.ofNat_add_ofNat]; congr 1; omega, rfl⟩) (by decide))
+      exact ⟨by simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_using [], rfl⟩) (by decide))
     fun t ⟨⟨a16, a17, a0⟩, _⟩ => ?_
   simp only [FixL, dzL, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]
   exact ⟨a16, a17, a0⟩
 
 theorem dzero_rel {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s) :
     RelCT isa (Two Φ) Derive.zeroOut (Two End) := by
-  refine rel_end ?_ (fun v s hs => (h v s hs).regs.r21) (by decide) (by decide)
+  refine rel_end ?_ (fun v s hs => (h v s hs).regs.r21) (by decide)
   unfold Derive.zeroOut
   exact RelCT.seq (two_post (two_taint [] (fun _ _ _ _ _ _ h => absurd h List.not_mem_nil) (by taint_decide)) fun v s hs => dzfront_ok (h v s hs))
     (two_taint _ pins_dzL (by taint_decide))

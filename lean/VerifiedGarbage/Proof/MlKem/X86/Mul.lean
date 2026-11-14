@@ -269,7 +269,7 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have x2 : F1.toNat * G1.toNat % q * gammas.getD t 0 + F0.toNat * G0.toNat < 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt lr₁ lz
     have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg0
-    rw [q_eq]; omega
+    rw [q_eq]; omega_arith
   rw [WP.block_append_iff]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul,
@@ -312,7 +312,7 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have x3 : F0.toNat * G1.toNat + F1.toNat * G0.toNat < 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg1
     have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg0
-    omega
+    omega_arith
   rw [WP.block_append_iff]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul,

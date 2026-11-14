@@ -39,7 +39,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
   · rw [hMn]; exact sl_apart c hio
   · rw [hMn, hMt]; exact sl_apart c hit
   · exact .inl hk
-  · exact .inl (by simp only; omega)
+  · exact .inl (by simp only; omega_using [hk, this])
 
 /-- The modulus in slot `j` survives an operation writing another slot. -/
 theorem _root_.VG.Proof.Mont.ModOkW.keepX86 {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}

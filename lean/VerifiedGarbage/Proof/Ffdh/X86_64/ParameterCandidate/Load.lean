@@ -32,10 +32,10 @@ theorem loadNumber_ok {s : State} {B src : Addr} {Z w a : Nat} {mi : BitVec 64} 
       Good t B Z w mi ∧ Outside B (slot w a) (8 * ((bs.length + 7) / 8)) s.mem t.mem ∧
       Keep [.rbx, .rax, .rdx, .rbp, .r14] s t := by
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * sArr a)) 8 :=
-    hg.scr.ld (by have := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega); omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 (show sArr a < 32 by unfold sArr; omega_using [ha]); omega_using [hZ, this])
   have hbound : slot w a + 8 * ((bs.length + 7) / 8) ≤ Z := by
     have := slot_le (w := w) ha
-    omega
+    omega_using [hZ, hw2, this]
   unfold loadNumber
   refine WP.seq (WP.mono (WP.keep [.rbx] (Q := fun u => u.gpr .rbx = off B (slot w a) ∧ u.mem = s.mem)
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.harr a ha]) rfl)
@@ -46,12 +46,12 @@ theorem loadNumber_ok {s : State} {B src : Addr} {Z w a : Nat} {mi : BitVec 64} 
     (fun i hi => by rw [hm]; exact hbytes i hi) hsep) fun t ⟨hv, ho, k'⟩ => ?_
   have hmod : wv t.mem B (slot w a) ((bs.length + 7) / 8) % 2 ^ (64 * w) =
       wv t.mem B (slot w a) w := by
-    conv_lhs => arg 1; rw [show (bs.length + 7) / 8 = w + ((bs.length + 7) / 8 - w) by omega, wv_add]
+    conv_lhs => arg 1; rw [show (bs.length + 7) / 8 = w + ((bs.length + 7) / 8 - w) by omega_using [hw1], wv_add]
     rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wv_lt _ _ _ _)]
   have ho' : Outside B (slot w a) (8 * ((bs.length + 7) / 8)) s.mem t.mem := by rw [← hm]; exact ho
   refine ⟨by rw [← hmod, hv, Nat.mod_eq_of_lt hval],
     ⟨hg.scr.congr (k'.2.2.trans k.2.2), ((k.trans k').gpr (by decide)).trans hg.rdi,
-      hg.hdr.outside ho' (by unfold slot hdrBytes; omega)⟩,
+      hg.hdr.outside ho' (by unfold slot hdrBytes; omega_using [])⟩,
     ho', (k.trans k').mono (by decide)⟩
 
 /-- The modulus instance of the shared number loader. -/

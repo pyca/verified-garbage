@@ -74,13 +74,13 @@ theorem pcEntry_ok {s : State} {B : Addr} (hB : s.gpr .x4 = B)
   have hN : sN = 17 := rfl
   have hO : sOut = 16 := rfl
   refine ⟨h0, ?_, ?_, ?_, ?_, k⟩ <;> rw [hm]
-  · rw [(writeW_outside _ B _ (by omega)).word (by omega) (by omega),
-      (writeW_outside _ B _ (by omega)).word (by omega) (by omega), word_writeW_self]
-  · rw [(writeW_outside _ B _ (by omega)).word (by omega) (by omega), word_writeW_self]
+  · rw [(writeW_outside _ B _ (by omega_using [hK])).word (by omega_using [hK, hO]) (by omega_using [hO]),
+      (writeW_outside _ B _ (by omega_using [hN])).word (by omega_using [hN, hO]) (by omega_using [hO]), word_writeW_self]
+  · rw [(writeW_outside _ B _ (by omega_using [hK])).word (by omega_using [hK, hN]) (by omega_using [hN]), word_writeW_self]
   · rw [word_writeW_self]
   · intro x hx
-    rw [writeW_outside _ B _ (by omega) x (by omega), writeW_outside _ B _ (by omega) x (by omega),
-      writeW_outside _ B _ (by omega) x (by omega)]
+    rw [writeW_outside _ B _ (by omega_using [hK]) x (by omega_using [hK, hx]), writeW_outside _ B _ (by omega_using [hN]) x (by omega_using [hN, hx]),
+      writeW_outside _ B _ (by omega_using [hO]) x (by omega_using [hO, hx])]
 
 /-! ## The whole function -/
 
@@ -108,9 +108,9 @@ theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
   have hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hpre : (⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩ : Region) ∈ s.wr := by rw [hwr]; simp
-  exact ⟨hk1, hk2, hpl, by omega, hs, src_of_region (by rw [hrd]; simp) (by omega) dns,
-    span_of_region (by rw [hrd]; simp), fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dPs (contains_byte _ (by omega) (by omega))⟩
+  exact ⟨hk1, hk2, hpl, by omega_using [hsl], hs, src_of_region (by rw [hrd]; simp) (by omega_using []) dns,
+    span_of_region (by rw [hrd]; simp), fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega_using [hpl, hi]) (by omega_using [hk2, hi])⟩,
+    fun j hj => out_scr dPs (contains_byte _ (by omega_using [hpl, hj]) (by omega_using [wP]))⟩
 
 theorem pcCode_correct (M : Mont) (s : State) (h : pcContract.pre s) :
     ∃ t s', Exec isa (Precompute.code M.mm) s t s' ∧ abiPreserved s s' ∧ pcContract.post s s' := by
@@ -125,9 +125,9 @@ theorem pcCode_correct (M : Mont) (s : State) (h : pcContract.pre s) :
   unfold Precompute.code
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (pcEntry_ok rfl (fun i hi => c.hs.st (by omega)))
+  refine WP.mono (pcEntry_ok rfl (fun i hi => c.hs.st (by omega_using [hZ, hi])))
     fun t₁ ⟨h0, hO, hN, hK, ho₁, k₁⟩ => ?_
-  have i₁ : InScr (s.gpr .x4) ((s.gpr .x5).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
+  have i₁ : InScr (s.gpr .x4) ((s.gpr .x5).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_using [hZ])
   have hnb₁ := c.hnb.congrK i₁ k₁
   refine WP.mono (WP.keep [.x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12] (invalid_ok (k₁.gpr .x2 (by decide))
     (by rw [k₁.gpr .x3 (by decide), ofNat_toNat64]) hk1 hk2
@@ -140,7 +140,7 @@ theorem pcCode_correct (M : Mont) (s : State) (h : pcContract.pre s) :
   have h0₂ : t₂.gpr .x0 = s.gpr .x4 := (k₂.gpr .x0 (by decide)).trans h0
   have hw : ∀ i < 2 * (((s.gpr .x3).toNat + 7) / 8), InRegions t₂.wr (off (s.gpr .x0) (8 * i)) 8 :=
     fun i hi => by rw [kk.wr]; exact c.hpw i hi
-  have hz : slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (s.gpr .x5).toNat * 8 := by unfold slot hdrBytes; omega
+  have hz : slot (((s.gpr .x3).toNat + 7) / 8) 8 ≤ (s.gpr .x5).toNat * 8 := by unfold slot hdrBytes; omega_using [hZ]
   -- What either branch leaves.
   have fin : ∀ t (ws : List (BitVec 64)) (cb : Bool),
       PcPost t₂ t (s.gpr .x4) ((s.gpr .x5).toNat * 8) (((s.gpr .x3).toNat + 7) / 8) (s.gpr .x0) ws cb →
@@ -161,7 +161,7 @@ theorem pcCode_correct (M : Mont) (s : State) (h : pcContract.pre s) :
     (s.gpr .x3).toNat) (by rw [eval_zero, hz₂]; cases Spec.Rsa.modulusValid _ _ <;> rfl) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
         (s.gpr .x3).toNat = false := by simpa using hb
-    refine WP.mono (pcFail_ok hs₂ h0₂ (by omega) (by omega) (by omega) (by rw [hm₂]; exact hO)
+    refine WP.mono (pcFail_ok hs₂ h0₂ (by omega_using [hZ]) (by omega_using [hk1]) (by omega_using [hk2]) (by rw [hm₂]; exact hO)
       (by rw [hm₂, hK, ofNat_toNat64]) hw)
       fun t hp => fin t _ false hp ?_ fun _ => rfl
     simp only [Spec.Rsa.publicPrecompute, bytesAt_length, hv, Bool.false_eq_true, ite_false]

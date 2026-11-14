@@ -31,12 +31,12 @@ theorem ofs_rebase (B x : Addr) {o : Nat} (ho : o < 2 ^ 64) :
   by_cases h : o ≤ (x - B).toNat
   · left
     refine ⟨h, ?_⟩
-    rw [show 2 ^ 64 - o + (x - B).toNat = (x - B).toNat - o + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
+    rw [show 2 ^ 64 - o + (x - B).toNat = (x - B).toNat - o + 2 ^ 64 by omega_using [h], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [])]
   · right
-    refine ⟨by omega, ?_⟩
-    rw [Nat.mod_eq_of_lt (by omega)]
-    omega
+    refine ⟨by omega_using [h], ?_⟩
+    rw [Nat.mod_eq_of_lt (by omega_using [h])]
+    omega_using []
 
 /-- Ranges at `off B o`, at `B`. -/
 def shiftRanges (o : Nat) (rs : List (Nat × Nat)) : List (Nat × Nat) := rs.map fun r => (o + r.1, r.2)
@@ -49,8 +49,8 @@ theorem Frm.rebase {B : Addr} {o : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h
   have hx' := hx (o + r.1, r.2) (List.mem_map.mpr ⟨r, hr', rfl⟩)
   have := hr r hr'
   rcases ofs_rebase B x ho with ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · simp only at hx'; omega
-  · omega
+  · simp only at hx'; omega_using [hx', h1, h2]
+  · omega_using [this, h2]
 
 theorem Frm.of_outside_off {B : Addr} {o d n : Nat} {m m' : Mem} (h : Outside (off B o) d n m m')
     (ho : o < 2 ^ 64) (hd : o + d + n ≤ 2 ^ 64) : Frm B [(o + d, n)] m m' :=
@@ -79,13 +79,13 @@ theorem Frm.word_below {B : Addr} {o L : Nat} {rs : List (Nat × Nat)} {m m' : M
   (Mem.readW_congr fun i hi => (h _ fun r hr' => by
     have := hr r hr'
     rcases ofs_rebase B (off B d + BitVec.ofNat 64 i) ho with ⟨h1, _⟩ | ⟨_, h2⟩
-    · rw [ofs_off B (by omega)] at h1; omega
-    · omega).symm).symm
+    · rw [ofs_off B (by omega_using [hL, hd, hi])] at h1; omega_using [hd, hi, h1]
+    · omega_using [hL, this, h2]).symm).symm
 
 theorem Frm.wv_below {B : Addr} {o L : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, r.1 + r.2 ≤ L) (hL : o + L ≤ 2 ^ 64) (ho : o < 2 ^ 64) {d k : Nat} (hd : d + 8 * k ≤ o) :
     wv m' B d k = wv m B d k :=
-  wv_congr fun i hi => h.word_below hr hL ho (by omega)
+  wv_congr fun i hi => h.word_below hr hL ho (by omega_using [hd, hi])
 
 /-! ## A prime's workspace -/
 
@@ -95,7 +95,7 @@ theorem Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm 
   h x fun r hr' => by
     obtain ⟨r', hr'', h1, h2⟩ := hr r hr'
     have := hx r' hr''
-    omega
+    omega_using [h1, h2, this]
 
 /-- The size of a window's table of `n` entries (16 unless given) of
 `8 (w_X + 2)` bytes. -/
@@ -105,17 +105,17 @@ def tabBytes (wx : Nat) (n : Nat := 16) : Nat := n * (8 * (wx + 2))
 entries, for windows of up to 5 bits. -/
 abbrev wsTab (wx : Nat) : Nat := tabBytes wx 32
 
-theorem tabBytes_le_wsTab (wx : Nat) : tabBytes wx ≤ wsTab wx := by unfold wsTab tabBytes; omega
+theorem tabBytes_le_wsTab (wx : Nat) : tabBytes wx ≤ wsTab wx := by unfold wsTab tabBytes; omega_using []
 
 /-- A table of 16 entries fits where RSA's room for one does. -/
 theorem hi_of_wsTab {a wx Z : Nat} (h : a + wsTab wx ≤ Z) : a + tabBytes wx ≤ Z := by
-  have := tabBytes_le_wsTab wx; omega
+  have := tabBytes_le_wsTab wx; omega_using [h, this]
 
 /-- The words of a prime's workspace for a length of `len` bytes. -/
 def wsWords (len : Nat) : Nat := max 2 ((len + 7) / 8)
 
 theorem wsWords_le {len w : Nat} (h : len < 8 * w) (hw : 2 ≤ w) : wsWords len ≤ w := by
-  unfold wsWords; omega
+  unfold wsWords; omega_using [h, hw]
 
 /-- The workspaces' layout: `p`'s after the modulus', `q`'s after `p`'s. -/
 def offP (w : Nat) : Nat := slot w 8
@@ -127,15 +127,15 @@ theorem crt_room {k pl ql Z : Nat} (hk : 64 ≤ k) (hp : pl < k) (hq : ql < k) (
     offQ ((k + 7) / 8) pl + slot (wsWords ql) 8 + wsTab (wsWords ql) ≤ Z := by
   have hW : 8 * ((k + 7) / 8) ≤ k + 7 := Nat.mul_div_le _ _
   have hP : 8 * wsWords pl ≤ k + 6 := by
-    have := Nat.mul_div_le (pl + 7) 8; unfold wsWords; omega
+    have := Nat.mul_div_le (pl + 7) 8; unfold wsWords; omega_using [hk, hp]
   have hQ : 8 * wsWords ql ≤ k + 6 := by
-    have := Nat.mul_div_le (ql + 7) 8; unfold wsWords; omega
+    have := Nat.mul_div_le (ql + 7) 8; unfold wsWords; omega_using [hk, hq]
   unfold offQ wsTab tabBytes slot hdrBytes
   generalize (k + 7) / 8 = W at *
   generalize wsWords pl = P at *
   generalize wsWords ql = Q at *
-  calc _ = 2176 + 64 * W + 320 * P + 320 * Q := by omega
-    _ ≤ Z := by omega
+  calc _ = 2176 + 64 * W + 320 * P + 320 * Q := by omega_using []
+    _ ≤ Z := by omega_using [hk, hZ, hW, hP, hQ]
 
 /-- A prime's workspace at `off B o`: its header and its link to `B`. -/
 structure WsAt (m : Mem) (B : Addr) (o wx : Nat) (minv : BitVec 64) : Prop where
@@ -145,7 +145,7 @@ structure WsAt (m : Mem) (B : Addr) (o wx : Nat) (minv : BitVec 64) : Prop where
 theorem WsAt.of_words {m m' : Mem} {B : Addr} {o wx : Nat} {minv : BitVec 64} (h : WsAt m B o wx minv)
     (hw : ∀ i < 17, word m' (off B o) (8 * i) = word m (off B o) (8 * i)) : WsAt m' B o wx minv :=
   ⟨⟨(hw _ (by decide)).trans h.hdr.hw, (hw _ (by decide)).trans h.hdr.hminv,
-    fun j hj => (hw _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩, (hw _ (by decide)).trans h.link⟩
+    fun j hj => (hw _ (by unfold sArr; omega_using [hj])).trans (h.hdr.harr j hj)⟩, (hw _ (by decide)).trans h.link⟩
 
 /-- The header of the workspace at `off B o` with whatever `-X⁻¹` it holds. -/
 theorem hdr_any {m : Mem} {B : Addr} {o wx : Nat} (hw : word m (off B o) (8 * sW) = BitVec.ofNat 64 wx)
@@ -160,11 +160,11 @@ theorem Frm.of_load {B : Addr} {o wx j : Nat} {m m' : Mem} {rs : List (Nat × Na
     (hr : (o + 256, slot wx 8 - 256) ∈ rs) : Frm B rs m m' := by
   have h1 := slot_le (w := wx) hj
   have h2 := hdr_lt_slot wx j (show 31 < 32 by decide)
-  have h3 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  refine (Frm.of_outside_off h (by omega) (by omega)).widen fun r hr' => ⟨_, hr, ?_⟩
+  have h3 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  refine (Frm.of_outside_off h (by omega_using [ho, h1]) (by omega_using [ho, h1])).widen fun r hr' => ⟨_, hr, ?_⟩
   rw [List.mem_singleton.mp hr']
   simp only
-  omega
+  omega_using [h1, h2]
 
 /-- What code in a prime's workspace may change, at `B`: all but its link,
 `w_X`, `-X⁻¹` and its arrays' bases. -/
@@ -173,35 +173,35 @@ def xRange (o wx : Nat) : Nat × Nat := (o + 8 * 17, slot wx 8 + wsTab wx - 8 * 
 theorem Frm.to_x {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (ho : o + slot wx 8 ≤ 2 ^ 64)
     {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
-  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  refine (h.rebase (by omega_using [ho, h256]) fun r hr' => by have := hr r hr'; omega_using [ho, this]).widen fun r hr' => ⟨_, hx, ?_⟩
   obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
   have := hr r₀ hr₀
   simp only [xRange]
-  omega
+  omega_using [this]
 
 /-- `Frm.to_x` for changes that reach the table. -/
 theorem Frm.to_xT {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes wx) (ho : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64)
     {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
-  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have := tabBytes_le_wsTab wx
-  refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
+  refine (h.rebase (by omega_using [ho, h256]) fun r hr' => by have := hr r hr'; omega_using [ho, this]).widen fun r hr' => ⟨_, hx, ?_⟩
   obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
   have := hr r₀ hr₀
   simp only [xRange]
-  omega
+  omega_arith
 
 /-- `Frm.to_x` for changes that reach the whole room for a table. -/
 theorem Frm.to_xW {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + wsTab wx) (ho : o + (slot wx 8 + wsTab wx) ≤ 2 ^ 64)
     {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
-  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  refine (h.rebase (by omega_using [ho, h256]) fun r hr' => by have := hr r hr'; omega_using [ho, this]).widen fun r hr' => ⟨_, hx, ?_⟩
   obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
   have := hr r₀ hr₀
   simp only [xRange]
-  omega
+  omega_using [this]
 
 theorem Outside.to_x {B : Addr} {o wx j : Nat} {m m' : Mem} (h : Outside (off B o) (slot wx j) (8 * (wx + 2)) m m')
     (hj : j < 8) (ho : o + slot wx 8 ≤ 2 ^ 64) {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') :
@@ -210,12 +210,12 @@ theorem Outside.to_x {B : Addr} {o wx j : Nat} {m m' : Mem} (h : Outside (off B 
     rw [List.mem_singleton.mp hr]
     have := slot_le (w := wx) hj
     have := hdr_lt_slot wx j (show 31 < 32 by decide)
-    simp only; omega) ho hx
+    simp only; omega_arith) ho hx
 
 /-- The words of the modulus' header and arrays, below `o`, past code in
 the prime's workspace. -/
 theorem Frm.x_below {B : Addr} {o wx : Nat} {m m' : Mem} (h : Frm B [xRange o wx] m m') {d : Nat}
     (hd : d + 8 ≤ o) (ho : o < 2 ^ 64) : word m' B d = word m B d :=
-  h.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega) (by omega)
+  h.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_using [hd]) (by omega_using [hd, ho])
 
 end VG.Proof.Bignum

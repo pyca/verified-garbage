@@ -121,7 +121,7 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
     rcases hr with rfl | rfl
     · exact (hp.blk_iv hk).symm
     · exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))
-  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega
+  have hlt : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
   -- The tweak on entry to the block, the new block, and the new tweak.
   have ivIn : bytesAt s₂.mem (Iv s₀) 16 = chainK (AesXts.xtsMode enc) s₀ k := by
     rw [bytesAt_frame c.frame callIv (by decide), a.mem,
@@ -138,7 +138,7 @@ theorem body_ok (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
     rw [mem₅, mem₄, alphaMem_bytes, mem₃,
       bytesAt_frame (xorMem_frame _ _ _) (one (hp.blk_iv hk).symm) (by decide), ivIn]
   have hl : (outK (AesXts.xtsMode enc) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (AesXts.xtsMode enc) s₀ (k + 1) = outK (AesXts.xtsMode enc) s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
     rw [newBlk]

@@ -23,8 +23,8 @@ def scalarSetup (η : Nat) : List Instr :=
 private theorem count_shift : ∀j≤256,
     ((256#64-BitVec.ofNat 64 (256-j))<<<2)=BitVec.ofNat 64 (4*j) := by
   intro j hj
-  have hs:=BitVec.ofNat_sub_ofNat_of_le (w := 64) 256 (256-j) (by omega) (by omega)
-  rw [hs,show 256-(256-j)=j by omega,BitVec.shiftLeft_eq_mul_twoPow]
+  have hs:=BitVec.ofNat_sub_ofNat_of_le (w := 64) 256 (256-j) (by omega_using []) (by omega_using [])
+  rw [hs,show 256-(256-j)=j by omega_using [hj],BitVec.shiftLeft_eq_mul_twoPow]
   change BitVec.ofNat 64 j * BitVec.ofNat 64 4=BitVec.ofNat 64 (4*j)
   rw [←BitVec.ofNat_mul,Nat.mul_comm]
 

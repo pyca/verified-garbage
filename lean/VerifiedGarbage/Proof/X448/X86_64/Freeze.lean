@@ -75,7 +75,7 @@ theorem sel_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : a + 5
     intro n t hn ⟨tw, tk, tm⟩
     have ht : Scr t base := hs.of_keepsR tk (by decide)
     have tr : t.gpr .r15 = mask sw := (tk.1 _ (by decide)).trans hm
-    refine WP.mono (selStep_ok ht (d := a + 8 * n) (by omega) (w_ne_rax n hn) (w_ne_r15 n hn) tr)
+    refine WP.mono (selStep_ok ht (d := a + 8 * n) (by omega_using [ha, hn]) (w_ne_rax n hn) (w_ne_r15 n hn) tr)
       fun u ⟨uw, uk, um⟩ => ⟨fun i hi => ?_, ?_, um.trans tm⟩
     · by_cases h : i = n
       · subst h
@@ -85,15 +85,15 @@ theorem sel_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : a + 5
           exact ⟨w_ne_rax i hi, fun e => h (w_inj i hi n hn e)⟩
         rw [uk.1 _ hne, tw i hi]
         by_cases h' : i < n
-        · simp only [h', show i < n + 1 by omega, ite_true]
-        · simp only [h', show ¬i < n + 1 by omega, ite_false]
+        · simp only [h', show i < n + 1 by omega_using [h'], ite_true]
+        · simp only [h', show ¬i < n + 1 by omega_using [h, h'], ite_false]
     · refine tk.trans ⟨fun r hr => uk.1 r fun h => hr ?_, uk.2.1, uk.2.2⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl
       · exact List.mem_cons_self
       · exact List.mem_cons_of_mem _ (w_mem n hn)
   refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv step 7 (by decide) s
-    ⟨fun i hi => by rw [ite_eq_right (by omega)], ⟨fun _ _ => rfl, rfl, rfl⟩, rfl⟩)
+    ⟨fun i hi => by rw [ite_eq_right (by omega_using [])], ⟨fun _ _ => rfl, rfl, rfl⟩, rfl⟩)
     fun t ⟨tw, tk, tm⟩ => ⟨fun i hi => by rw [tw i hi, ite_eq_left hi], tk, tm⟩
 
 /-- `freeze a`: `r8–r14` hold `[a] mod p`. -/
@@ -106,7 +106,7 @@ theorem freeze_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Sl
   refine WP.mono (mov32_ok s .r15 1) fun s1 ⟨e1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok hs1 a W W_nodup (by decide) (by rw [W_len]; omega))
+  refine WP.mono (loads_ok hs1 a W W_nodup (by decide) (by rw [W_len]; omega_using [ha']))
     fun s2 ⟨_, v2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
   have r15 : (s2.gpr .r15).toNat = 1 := by rw [k2.1 _ (by decide), e1]; rfl
@@ -124,7 +124,7 @@ theorem freeze_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Sl
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]) fun s4 ⟨m4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by decide)
-  refine WP.mono (sel_ok hs4 (a := a) (by omega) m4) fun s5 ⟨w5, k5, mem5⟩ => ⟨?_, ?_⟩
+  refine WP.mono (sel_ok hs4 (a := a) (by omega_using [ha']) m4) fun s5 ⟨w5, k5, mem5⟩ => ⟨?_, ?_⟩
   · have mm4 : s4.mem = s.mem := k4.2.1.trans (k3.2.1.trans (k2.2.1.trans k1.2.1))
     rw [W_len, k1.2.1] at v2
     rw [v2, r15] at e3
@@ -148,8 +148,8 @@ theorem freeze_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Sl
         refine val7_congr fun i hi => ?_
         rw [w5 i hi, ite_eq_left rfl, k4.1 _ (by simp [w_ne_r15 i hi])]
       simp only [Bool.toNat_true, Nat.mul_one] at e3
-      rw [this, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [this, Nat.mod_eq_sub_mod (by omega_using [hP, e3]), Nat.mod_eq_of_lt (by omega_using [hP, hlt])]
+      omega_using [hP, e3]
   · refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
     · simp only [List.mem_cons, not_or] at hr
       rw [k5.1 r (by simp [hr.1, hr.2.2]), k4.1 r (by simp [hr.2.1]),

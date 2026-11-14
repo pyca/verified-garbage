@@ -57,7 +57,7 @@ theorem var_succ (t k : Nat) (hk : k < 7) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 7 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 /-- The registers of a round are all different. -/
 theorem round_nodup (t : Nat) :
@@ -127,7 +127,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
       BitVec.add_assoc]
 
 theorem slot_ok (j : Nat) : slot j % 8 = 0 ∧ slot j < 32768 := by
-  simp only [slot]; omega
+  simp only [slot]; omega_using []
 
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofNat 64 (slot j)
@@ -163,10 +163,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     have e7 := hw (t - 7) (by bdd_omega) (by bdd_omega)
     have e15 := hw (t - 15) (by bdd_omega) (by bdd_omega)
     have e16 := hw (t - 16) (by bdd_omega) (by bdd_omega)
-    rw [show slot (t - 2) = slot (t + 14) by simp only [slot]; omega] at e2
-    rw [show slot (t - 7) = slot (t + 9) by simp only [slot]; omega] at e7
-    rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega] at e15
-    rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
+    rw [show slot (t - 2) = slot (t + 14) by simp only [slot]; omega_using [ht]] at e2
+    rw [show slot (t - 7) = slot (t + 9) by simp only [slot]; omega_using [ht]] at e7
+    rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega_using [ht]] at e15
+    rw [show slot (t - 16) = slot t by simp only [slot]; omega_using [ht]] at e16
     simp only [Impl.Sha512.AArch64.schedule, ht, ite_false, T0, T1, T2, T3]
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, runBlock_cons, runStep_some,
       runBlock_nil, exec_ldr_x (slot_ok _),
@@ -448,7 +448,7 @@ theorem nb_lt : 128 * nb s₀ < 2 ^ 64 := by
   refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
   have := (st s₀ - bp s₀).isLt
-  omega
+  omega_using [hn]
 
 theorem in_state {k : Nat} (hk : k < 8) :
     InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofNat 64 (8 * k)) 8 :=
@@ -459,10 +459,10 @@ theorem out_state {k : Nat} (hk : k < 8) :
   ⟨stR s₀, by simp [h.wr], contains_offset (by bdd_omega) (by bdd_omega)⟩
 
 theorem in_slot (j : Nat) : InRegions (s₀.rd ++ s₀.wr) (slotAddr (scr s₀) j) 8 :=
-  ⟨scrR s₀, by simp [h.wr], contains_offset (by simp only [slot]; omega) (by simp only [slot]; omega)⟩
+  ⟨scrR s₀, by simp [h.wr], contains_offset (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [])⟩
 
 theorem out_slot (j : Nat) : InRegions s₀.wr (slotAddr (scr s₀) j) 8 :=
-  ⟨scrR s₀, by simp [h.wr], contains_offset (by simp only [slot]; omega) (by simp only [slot]; omega)⟩
+  ⟨scrR s₀, by simp [h.wr], contains_offset (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [])⟩
 
 theorem blk_contains {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
     (blR s₀).Contains (blkAddr s₀ i + BitVec.ofNat 64 (8 * t)) 8 := by

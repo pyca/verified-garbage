@@ -35,7 +35,7 @@ theorem set16_ok {s : State} {w j : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w)
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
   unfold AdxSquareWide.limit16
   xrun [hbp, h14, round16 w hw]
-  exact ofNat_sub_beq hj (by omega)
+  exact ofNat_sub_beq hj (by omega_using [hw])
 
 theorem set4_ok {s : State} {w j : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w)
     (h14 : s.gpr .r14 = BitVec.ofNat 64 j) (hw : w < 2 ^ 64) (hj : j < 2 ^ 64) :
@@ -48,7 +48,7 @@ theorem set4_ok {s : State} {w j : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w)
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
   unfold AdxSquareWide.limit4
   xrun [hbp, h14, AdxSquare.round4 w hw]
-  exact ofNat_sub_beq hj (by omega)
+  exact ofNat_sub_beq hj (by omega_using [hw])
 
 theorem set1_ok {s : State} {w j : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w)
     (h14 : s.gpr .r14 = BitVec.ofNat 64 j) (hw : w < 2 ^ 64) (hj : j < 2 ^ 64) :
@@ -61,7 +61,7 @@ theorem set1_ok {s : State} {w j : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 w)
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
   unfold AdxSquare.rowRemainder
   xrun [hbp, h14]
-  exact ofNat_sub_beq hj (by omega)
+  exact ofNat_sub_beq hj (by omega_using [hw])
 
 theorem RowInv.limit {s₀ s t : State} {B : Addr} {Z e eb j : Nat}
     (hi : RowInv s₀ B Z e eb j s) (hm : t.mem = s.mem)
@@ -93,7 +93,7 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     ⟨hs.congr ku.2.2, Keep.refl _ _, h14, Outside.refl _ _ _ _, by simp [wv]⟩
   have bp1 : u.gpr .rbp = BitVec.ofNat 64 w :=
     (I0.keep.gpr (by decide)).trans ((ku.gpr (by decide)).trans hbp)
-  refine WP.seq (WP.mono (set16_ok bp1 I0.r14 (by omega) (by omega))
+  refine WP.seq (WP.mono (set16_ok bp1 I0.r14 (by omega_using [hw]) (by omega_using []))
     fun a1 ⟨bx1, z1, m1, r1, k1⟩ => ?_)
   have J1 := RowInv.limit I0 m1 r1 k1
   have phase1 : WP isa (.ite .ne (.loop (.block AdxSquareWide.block) .ne) (.block [])) a1
@@ -102,13 +102,13 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     · refine WP.ite false (by simp [eval, z1, eq]) (by simp) (fun _ => WP.block_nil ?_)
       exact eq ▸ J1
     · refine WP.ite true (by simp [eval, z1, eq]) (fun _ => ?_) (by simp)
-      apply blocks_ok (a := 0) hu8 hu9 bx1 (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega)
+      apply blocks_ok (a := 0) hu8 hu9 bx1 (by omega_using []) (by omega_using [eq]) (by omega_using [hw])
+        (by omega_using [hZ]) (by omega_using [hZb]) (by omega_using [sb])
       exact J1
   refine WP.seq (WP.mono phase1 fun u1 I1 => ?_)
   have bp2 : u1.gpr .rbp = BitVec.ofNat 64 w :=
     (I1.keep.gpr (by decide)).trans ((ku.gpr (by decide)).trans hbp)
-  refine WP.seq (WP.mono (set4_ok bp2 I1.r14 (by omega) (by omega))
+  refine WP.seq (WP.mono (set4_ok bp2 I1.r14 (by omega_using [hw]) (by omega_using [hw]))
     fun a2 ⟨bx2, z2, m2, r2, k2⟩ => ?_)
   have J2 := RowInv.limit I1 m2 r2 k2
   have phase2 : WP isa (.ite .ne (.loop (.block AdxSquare.mac4Store) .ne) (.block [])) a2
@@ -117,13 +117,13 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     · refine WP.ite false (by simp [eval, z2, eq]) (by simp) (fun _ => WP.block_nil ?_)
       exact eq ▸ J2
     · refine WP.ite true (by simp [eval, z2, eq]) (fun _ => ?_) (by simp)
-      apply AdxSquare.blocks_ok (a := 4 * (w / 16)) hu8 hu9 bx2 (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega)
+      apply AdxSquare.blocks_ok (a := 4 * (w / 16)) hu8 hu9 bx2 (by omega_using []) (by omega_using [eq]) (by omega_using [hw])
+        (by omega_using [hZ]) (by omega_using [hZb]) (by omega_using [sb])
       simpa only [← Nat.mul_assoc, Nat.reduceMul] using J2
   refine WP.seq (WP.mono phase2 fun u2 I2 => ?_)
   have bp3 : u2.gpr .rbp = BitVec.ofNat 64 w :=
     (I2.keep.gpr (by decide)).trans ((ku.gpr (by decide)).trans hbp)
-  refine WP.seq (WP.mono (set1_ok bp3 I2.r14 (by omega) (by omega))
+  refine WP.seq (WP.mono (set1_ok bp3 I2.r14 (by omega_using [hw]) (by omega_using [hw]))
     fun a3 ⟨bx3, z3, m3, r3, k3⟩ => ?_)
   have J3 := RowInv.limit I2 m3 r3 k3
   have phase3 : WP isa (.ite .ne (.loop (.block AdxSquare.mac1Store) .ne) (.block [])) a3
@@ -132,7 +132,7 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     · refine WP.ite false (by simp [eval, z3, eq]) (by simp) (fun _ => WP.block_nil ?_)
       exact eq ▸ J3
     · refine WP.ite true (by simp [eval, z3, eq]) (fun _ => ?_) (by simp)
-      exact AdxSquare.remainder_ok hu8 hu9 bx3 (by omega) hw hZ hZb sb J3
+      exact AdxSquare.remainder_ok hu8 hu9 bx3 (by omega_using [eq]) hw hZ hZb sb J3
   refine WP.mono phase3 fun t hi => ⟨?_, ?_, hi.r14, (ku.trans hi.keep).mono (by decide)⟩
   · have hv := hi.val
     rw [hm, ku.gpr (by decide), hcx] at hv

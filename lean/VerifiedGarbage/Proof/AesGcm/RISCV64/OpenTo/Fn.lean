@@ -117,16 +117,16 @@ theorem openToEntry_wp {s₀ : State} (h : openToPreR s₀) :
   have hW : Covers [⟨stackArg s₀ 4, 2560⟩] s₀.wr := by rw [hwr]; exact covers_mem (by simp)
   have hA : Covers [args s₀ 5] (s₀.rd ++ s₀.wr) := covers_mem (List.mem_append_left _ (by rw [hrd]; simp))
   have ain : ∀ i < 5, InRegions (s₀.rd ++ s₀.wr) (s₀.sp + BitVec.ofNat 64 (8 * i)) 8 := fun i hi => by
-    have := in_off hA (d := 8 * i) (n := 8) (by omega) (by omega)
+    have := in_off hA (d := 8 * i) (n := 8) (by omega_using [hi]) (by omega_using [])
     rwa [stackArgAddr_0, add_ofNat_assoc, Nat.zero_add] at this
   have dA : (args s₀ 5).Disjoint (oneR (stackArg s₀ 4)) :=
     (dWA.sub_left (Lay.wSub (d := 128) (n := 120) (by decide))).symm
   have dAi : ∀ i < 5, (⟨s₀.sp + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint (oneR (stackArg s₀ 4)) :=
     fun i hi => by
-      have hs := Offset.sub_base (s₀.sp + BitVec.ofNat 64 0) (d := 8 * i) (n := 8) (k := 40) (by omega)
+      have hs := Offset.sub_base (s₀.sp + BitVec.ofNat 64 0) (d := 8 * i) (n := 8) (k := 40) (by omega_using [hi])
       rw [add_ofNat_assoc, Nat.zero_add] at hs
       exact dA.sub_left hs
-  have spa : s₀.sp.toNat % 8 = 0 := by have := hstk.1; omega
+  have spa : s₀.sp.toNat % 8 = 0 := by have := hstk.1; omega_using [this]
   simp only [openEntryWith, ↓reduceIte]
   refine WP.block_append (WP.mono (WP.keep [.t1, .s0, .s1, .s2, .s3, .s4, .s5, .s7, .s9, .s10, .s11]
     (one1At_wp (off := 32) (tagO := 16) (W := stackArg s₀ 4) (T := stackArg s₀ 2) (.inr (.inr rfl)) (.inr rfl) hW
@@ -164,7 +164,7 @@ theorem openToEntry_wp {s₀ : State} (h : openToPreR s₀) :
     rw [m₅.gpr, u₄.other r h2, u₃.other r h2, u₂.other r h8]
   have dS : ∀ {d : Nat}, 232 ≤ d → d + 8 ≤ 248 →
       (⟨stackArg s₀ 4 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint ⟨stackArg s₀ 4 + BitVec.ofNat 64 dstO, 8⟩ :=
-    fun h₁ h₂ => Lay.w_w (.inl (by unfold dstO; omega)) (by omega) (by decide)
+    fun h₁ h₂ => Lay.w_w (.inl (by unfold dstO; omega_using [h₂])) (by omega_using [h₂]) (by decide)
   refine ⟨⟨⟨by rw [m₅.rd, u₄.rd, u₃.rd, u₂.rd, hk₁.rd], by rw [m₅.wr, u₄.wr, u₃.wr, u₂.wr, hk₁.wr],
       by rw [m₅.sp, u₄.sp, u₃.sp, u₂.sp, hk₁.sp]⟩, ?_, ?_, ?_, ?_, fun _ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
     ?_⟩
@@ -214,11 +214,11 @@ theorem wipeLoop_ok (u : State) {D : Addr} {n : Nat} (hn : n < 2 ^ 64) (hD : D.t
         v.gpr .t3 = BitVec.ofNat 64 (n - i) ∧ (∀ r, r ≠ .t2 → r ≠ .t3 → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧
         v.wr = u.wr ∧ v.sp = u.sp ∧ Frame [⟨D, n⟩] u.mem v.mem ∧
         Proof.Zeroize.Prefix v.mem D i) ?_ (n - 0) _
-      ⟨0, rfl, by omega, by rw [h₂]; exact (BitVec.add_zero _).symm, by rw [h₃, Nat.sub_zero],
+      ⟨0, rfl, by omega_using [h0], by rw [h₂]; exact (BitVec.add_zero _).symm, by rw [h₃, Nat.sub_zero],
         fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     rintro w v ⟨i, rfl, hi, r2, r3, gv, rdv, wrv, spv, fv, pv⟩
     have hcn : (⟨D, n⟩ : Region).Contains (D + BitVec.ofNat 64 i) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])
     refine Steps.wp_sb (off := 0) (a := D + BitVec.ofNat 64 i) (by decide) (by rw [r2]; exact BitVec.add_zero _)
       (by rw [wrv]; exact hw _ _ ⟨_, List.mem_singleton_self _, hcn⟩) fun t₁ u₁ => ?_
     refine Steps.wp_addi (imm := 1) (by decide) fun t₂ u₂ => Steps.wp_subi (imm := 1) (by decide) fun t₃ u₃ =>
@@ -229,22 +229,22 @@ theorem wipeLoop_ok (u : State) {D : Addr} {n : Nat} (hn : n < 2 ^ 64) (hD : D.t
     have f' : Frame [⟨D, n⟩] u.mem t₃.mem := by
       rw [m₃]; exact fv.writeW (List.mem_singleton_self _) _ hcn
     have p' : Proof.Zeroize.Prefix t₃.mem D (i + 1) := by
-      rw [m₃]; exact Proof.Zeroize.prefix_writeW (w := 8) pv (by omega)
+      rw [m₃]; exact Proof.Zeroize.prefix_writeW (w := 8) pv (by omega_using [hn, hi])
     have g' : ∀ r, r ≠ .t2 → r ≠ .t3 → t₃.gpr r = u.gpr r := fun r a b => by
       rw [u₃.other _ b, u₂.other _ a, u₁.gpr, gv r a b]
     have r2' : t₃.gpr .t2 = D + BitVec.ofNat 64 (i + 1) := by
       rw [u₃.other _ (by decide), u₂.gpr, u₁.gpr, r2, Offset.add_add]
     have r3' : t₃.gpr .t3 = BitVec.ofNat 64 (n - (i + 1)) := by
-      rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, r3, Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+      rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, r3, Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
     have rd' : t₃.rd = u.rd := by rw [u₃.rd, u₂.rd, u₁.rd, rdv]
     have wr' : t₃.wr = u.wr := by rw [u₃.wr, u₂.wr, u₁.wr, wrv]
     have sp' : t₃.sp = u.sp := by rw [u₃.sp, u₂.sp, u₁.sp, spv]
-    have ev := Steps.eval_nonzero_ofNat t₃ .t3 (k := n - (i + 1)) (by omega) r3'
+    have ev := Steps.eval_nonzero_ofNat t₃ .t3 (k := n - (i + 1)) (by omega_using [hn]) r3'
     by_cases he : i + 1 = n
     · left
       exact ⟨by rw [ev]; simp [he], by rw [← he]; exact p', f', g', rd', wr', sp'⟩
     · right
-      exact ⟨by rw [ev]; simp; omega, n - (i + 1), by omega, i + 1, rfl, by omega, r2', r3', g', rd', wr', sp',
+      exact ⟨by rw [ev]; simp; omega_using [hi, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], r2', r3', g', rd', wr', sp',
         f', p'⟩
 
 /-- The zeros of `Prefix`, as bytes. -/

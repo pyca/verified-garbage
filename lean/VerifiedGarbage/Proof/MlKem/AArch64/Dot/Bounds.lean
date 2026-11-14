@@ -38,7 +38,7 @@ theorem Sums.Bounded.machine {s : Sums} {n : Nat} (h : s.Bounded n) (hn : n ≤ 
   change s.even ≤ 4*(3329*3329) ∧ s.odd ≤ 4*(3329*3329) ∧ s.cross ≤ 8*(3329*3329)
   exact ⟨Nat.le_trans h.1 (Nat.mul_le_mul_right _ hn),
     Nat.le_trans h.2.1 (Nat.mul_le_mul_right _ hn),
-    Nat.le_trans h.2.2 (Nat.mul_le_mul_right _ (show 2*n ≤ 8 by omega))⟩
+    Nat.le_trans h.2.2 (Nat.mul_le_mul_right _ (show 2*n ≤ 8 by omega_using [hn]))⟩
 
 theorem Sums.Bounded.noWrap {s : Sums} {n : Nat} (h : s.Bounded n) (hn : n ≤ 4) :
     s.even < 2^31 ∧ s.odd < 2^31 ∧ s.cross < 2^31 := by

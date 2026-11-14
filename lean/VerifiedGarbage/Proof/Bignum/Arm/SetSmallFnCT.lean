@@ -55,7 +55,7 @@ theorem setSmallFnBody_ct {base : BitVec 32} {len w o : Nat} (ho : o < 8) :
     · exact h.1.index.trans h.2.index.symm
   have wp (s : State) (h : P s) : WP isa (.block setSmallArgs) s Q := by
     have fits := h.layout.2.2.1
-    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     exact WP.mono (setSmallArgs_ok s h.workspace size header ho h.ptr h.index)

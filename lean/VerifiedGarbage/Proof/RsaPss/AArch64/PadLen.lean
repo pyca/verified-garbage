@@ -38,12 +38,12 @@ theorem lenField_ok (H : Hash) {md : Md H.P.B H.P.N H.P.L} (hs : Proof.Pbkdf2.AA
     WP isa (.block (lenField H)) t fun t' => Keep [.x19, .x9, .x12] t t' ∧ t'.gpr .x19 = off S oSt ∧
       Frame [⟨S, oRsa⟩] t.mem t'.mem ∧ Rep t'.mem S (updL V oLen (md.lenOf (t.gpr .x22))) := by
   unfold lenField
-  refine wp_addImm (by unfold oLen; omega) fun u₁ o₁ e₁ => ?_
+  refine wp_addImm (by unfold oLen; omega_using []) fun u₁ o₁ e₁ => ?_
   have ha : u₁.gpr .x19 + BitVec.ofNat 64 (H.P.N + H.P.B - H.P.L) = off S oLen := by
     rw [e₁, L.x20, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    congr 2; unfold oLen; omega
+    congr 2; unfold oLen; omega_using [hNBL]
   have hin : InRegions u₁.wr (u₁.gpr .x19 + BitVec.ofNat 64 (H.P.N + H.P.B - H.P.L)) H.P.L := by
-    rw [ha, o₁.wr]; exact L.st (by unfold oLen oRsa; omega)
+    rw [ha, o₁.wr]; exact L.st (by unfold oLen oRsa; omega_using [hL])
   show WP isa (.block (H.P.len ++ [.addImm .x .x19 .x20 oSt])) u₁ _
   rw [WP.block_append_iff]
   refine WP.mono (WP.preservedV (hs.len u₁ hin) (by rw [Code.allInstrs_eq]; exact hs.lenKeepsV)) fun u₂ ⟨⟨hg, hrd, hwr, hsp, hm⟩, hv⟩ => ?_
@@ -59,9 +59,9 @@ theorem lenField_ok (H : Hash) {md : Md H.P.B H.P.N H.P.L} (hs : Proof.Pbkdf2.AA
     exact (frame_writeBytes _ _ _).sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨_, List.mem_singleton_self _, by
-        rw [md.lenOf_length]; exact Offset.sub_base _ (by unfold oLen oRsa; omega)⟩
+        rw [md.lenOf_length]; exact Offset.sub_base _ (by unfold oLen oRsa; omega_using [hL])⟩
   · rw [o₃.mem, hm, ha, o₁.mem, o₁.get .x22]
-    exact R.writeBytes (by rw [md.lenOf_length]; unfold oLen oRsa; omega)
+    exact R.writeBytes (by rw [md.lenOf_length]; unfold oLen oRsa; omega_using [hL])
 
 
 /-! ## The length field into the last block -/
@@ -93,8 +93,8 @@ theorem vIn_end {B L : Nat} (hL : L ≤ B) (V : Nat → Byte) (fb b : Nat) :
   by_cases h : b = fb
   · subst h
     simp only [true_and, Nat.lt_irrefl, ite_false, Nat.lt_succ_self, ite_true, vLen,
-      show oY + B * b + (B - L) + L = oY + B * b + B by omega]
-  · have e : (fb < b + 1 ↔ fb < b) := by omega
+      show oY + B * b + (B - L) + L = oY + B * b + B by omega_using [hL]]
+  · have e : (fb < b + 1 ↔ fb < b) := by omega_using [h]
     simp only [h, false_and, ite_false, e]
 
 /-- Block `b` starts after block `fb` ends if `fb < b`. -/
@@ -113,16 +113,16 @@ theorem vIn_succ {B L : Nat} (V : Nat → Byte) {fb b j : Nat} :
     rw [ite_eq_left rfl]
     by_cases h : b = fb
     · subst h
-      rw [ite_eq_left rfl, ite_eq_left ⟨rfl, by omega, by omega⟩, show oY + B * b + (B - L) + j -
-        (oY + B * b + (B - L)) = j by omega]
+      rw [ite_eq_left rfl, ite_eq_left ⟨rfl, by omega_using [], by omega_using []⟩, show oY + B * b + (B - L) + j -
+        (oY + B * b + (B - L)) = j by omega_using []]
     · rw [ite_eq_right h, ite_eq_right (fun h' => h h'.1)]
       by_cases hb : fb < b
       · have := blk_le (B := B) hb
-        rw [ite_eq_left hb, ite_eq_right (by omega)]
+        rw [ite_eq_left hb, ite_eq_right (by omega_using [this])]
       · rw [ite_eq_right hb]
   · rw [ite_eq_right e]
     have c : (b = fb ∧ oY + B * b + (B - L) ≤ o ∧ o < oY + B * b + (B - L) + (j + 1)) ↔
-        (b = fb ∧ oY + B * b + (B - L) ≤ o ∧ o < oY + B * b + (B - L) + j) := by omega
+        (b = fb ∧ oY + B * b + (B - L) ≤ o ∧ o < oY + B * b + (B - L) + j) := by omega_using [e]
     simp only [c]
 
 theorem byte_mask (y l : Byte) (c : Prop) [Decidable c] :
@@ -150,7 +150,7 @@ theorem vB_lt {B L : Nat} {V : Nat → Byte} {fb b o : Nat}
   simp only [vB, vLen]
   by_cases h : fb < b
   · have := blk_le (B := B) h
-    rw [ite_eq_left h, ite_eq_right (by omega)]
+    rw [ite_eq_left h, ite_eq_right (by omega_using [ho, this])]
   · rw [ite_eq_right h]
 
 end LenLoop

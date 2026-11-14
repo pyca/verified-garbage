@@ -34,7 +34,7 @@ theorem core_mem {s : State} {B : Addr} {Z e : Nat} (hs : Scr s B Z)
       Keeps [.rbx, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   have hm : ∀ k < 8, readSrc s (.mem (at_ .rbp (8 * k))) = some (word s.mem B (e + 8 * k)) := by
     intro k hk
-    exact readSrc_word hs (ea_at hp (8 * k)) (by omega)
+    exact readSrc_word hs (ea_at hp (8 * k)) (by omega_using [he, hk])
   simpa only [number_words] using core_ok s (fun k => word s.mem B (e + 8 * k)) hm
 
 theorem loadCols_ok {s : State} {B : Addr} {Z e : Nat} (hs : Scr s B Z)
@@ -51,14 +51,14 @@ theorem loadCols_ok {s : State} {B : Addr} {Z e : Nat} (hs : Scr s B Z)
       (fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2, k⟩)
     unfold AdxRotate8.loadCols
     xrun [State.ea, at_, hp, ad, Nat.add_zero,
-      hs.ld (show e + 0 + 8 ≤ Z by omega),
-      hs.ld (show e + 8 + 8 ≤ Z by omega),
-      hs.ld (show e + 16 + 8 ≤ Z by omega),
-      hs.ld (show e + 24 + 8 ≤ Z by omega),
-      hs.ld (show e + 32 + 8 ≤ Z by omega),
-      hs.ld (show e + 40 + 8 ≤ Z by omega),
-      hs.ld (show e + 48 + 8 ≤ Z by omega),
-      hs.ld (show e + 56 + 8 ≤ Z by omega)]
+      hs.ld (show e + 0 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 8 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 16 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 24 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 32 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 40 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 48 + 8 ≤ Z by omega_using [he]),
+      hs.ld (show e + 56 + 8 ≤ Z by omega_using [he])]
   refine WP.mono hm fun t ⟨h0, h1, h2, h3, h4, h5, h6, h7, hm, k⟩ => ⟨?_, k.1, hm, k.2.1, k.2.2⟩
   unfold cols
   rw [h0, h1, h2, h3, h4, h5, h6, h7]

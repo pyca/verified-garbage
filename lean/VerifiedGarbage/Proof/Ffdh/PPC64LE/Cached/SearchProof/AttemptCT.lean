@@ -81,7 +81,7 @@ theorem attempt_status {q : KeyPoint} {original s : State}
     (hk : q.keys ≠ 0) (hs : q.scalars ≠ 0) (hr : q.used + q.inputs.len ≤ q.inputs.randLen) :
     attemptStatus .cached q.inputs.a q.inputs.len ((keyRand original).drop q.used) = q.status := by
   have hhead := keyTail_statuses_head (policy := .cached) (a := q.inputs.a) (len := q.inputs.len)
-    (rand := keyRand original) (used := q.used) hk hs (by rw [h.rand_length]; omega)
+    (rand := keyRand original) (used := q.used) hk hs (by rw [h.rand_length]; omega_using [hr])
   rw [hst] at hhead
   simp only [KeyPoint.status, hhead, Option.getD_some]
 

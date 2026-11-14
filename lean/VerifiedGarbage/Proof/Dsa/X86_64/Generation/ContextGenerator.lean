@@ -41,18 +41,18 @@ open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layou
 def GenerationGeometry.generatorPlan (p : GenerationGeometry) (pb eb : List Byte)
     (hp : pb.length = p.pLen) (he : eb.length = p.pLen)
     (positive : 1 < Spec.Dsa.decodeBE pb) (odd : Spec.Dsa.decodeBE pb % 2 = 1) : GeneratorPlan := by
-  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega
+  have pn : p.pLen ≤ 384 := by rcases p.width with h | h | h <;> omega_using [h]
   have ha := p.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
   have hh := p.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have hg := p.small_bound (d := g) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega)
+  have hg := p.small_bound (d := g) (n := p.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
   have parent : 0 + Impl.Dsa.Layout.activeBytes ≤ usedBytes p.pLen := by simpa using p.parentRoom
   have gp : (p.part g p.pLen).Disjoint ⟨p.B, Impl.Dsa.Layout.activeBytes⟩ := by
     simpa [GenerationGeometry.part, off] using p.parts_disjoint hg parent (Or.inr (by decide))
-  have ga := p.parts_disjoint hg ha (Or.inl (by unfold g arithmetic; omega))
+  have ga := p.parts_disjoint hg ha (Or.inl (by unfold g arithmetic; omega_using [pn]))
   have ps := p.gWork_separate (d := VG.Impl.Dsa.Generation.Layout.p) (n := p.pLen)
-    (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega)
+    (by decide) (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega_using [pn])
   have es := p.gWork_separate (d := exponent) (n := p.pLen)
-    (by decide) (by unfold exponent g; omega)
+    (by decide) (by unfold exponent g; omega_using [pn])
   refine {
     B := p.B
     A := off p.B arithmetic
@@ -96,9 +96,9 @@ def GenerationGeometry.generatorPlan (p : GenerationGeometry) (pb eb : List Byte
         p.parts_disjoint hh parent (Or.inr (by decide))
     · exact p.parts_disjoint hh hg (Or.inl (by decide))
   · intro i hi
-    exact out_scr gp (Offset.contains_base _ (by omega) (by omega))
+    exact out_scr gp (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
   · intro i hi
-    exact out_scr ga (Offset.contains_base _ (by omega) (by omega))
+    exact out_scr ga (Offset.contains_base _ (by omega_using [hi]) (by omega_using [pn, hi]))
 
 end VG.Proof.Dsa.X86_64.Generation
 end
@@ -131,7 +131,7 @@ theorem GenerationMemory.generatorState {p : GenerationContext} {W : Nat → Bit
     (bp : Spec.Rsa.bytesAt s.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen = pb)
     (be : Spec.Rsa.bytesAt s.mem (off p.geo.B exponent) p.geo.pLen = eb) :
     GeneratorSearchMemory (p.generatorPlan W pb eb hp he positive odd qval exponentValue) W s := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
   have ha := p.geo.small_bound (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
   have parent : 0 + Impl.Dsa.Layout.activeBytes ≤ usedBytes p.geo.pLen := by simpa using p.geo.parentRoom
   have src (d : Nat) (bs : List Byte) (hlen : bs.length = p.geo.pLen)
@@ -142,8 +142,8 @@ theorem GenerationMemory.generatorState {p : GenerationContext} {W : Nat → Bit
     apply arena_source h.scratch
     · rw [hlen]
       have bound := p.geo.small_bound (d := g) (n := 0) (by decide) (by decide)
-      omega
-    · rw [hlen]; omega
+      omega_using [hn, bound]
+    · rw [hlen]; omega_using [pn]
     · simpa only [hlen] using bytes
     · simpa only [hlen, GenerationGeometry.part] using p.geo.gWork_separate hd hn _ member
   refine {
@@ -156,14 +156,14 @@ theorem GenerationMemory.generatorState {p : GenerationContext} {W : Nat → Bit
     arithmetic := h.scratch.sub (n := arithmeticBytes) ha (by decide)
     parent := ?_
     pArithmetic := src VG.Impl.Dsa.Generation.Layout.p pb hp (by decide)
-      (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega) bp (off p.geo.B arithmetic) arithmeticBytes (by simp [GenerationGeometry.gWork, GenerationGeometry.part])
+      (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega_using [pn]) bp (off p.geo.B arithmetic) arithmeticBytes (by simp [GenerationGeometry.gWork, GenerationGeometry.part])
     tapeArithmetic := h.hs.source ha
-    eArithmetic := src exponent eb he (by decide) (by unfold exponent g; omega) be (off p.geo.B arithmetic) arithmeticBytes
+    eArithmetic := src exponent eb he (by decide) (by unfold exponent g; omega_using [pn]) be (off p.geo.B arithmetic) arithmeticBytes
       (by simp [GenerationGeometry.gWork, GenerationGeometry.part])
     pParent := src VG.Impl.Dsa.Generation.Layout.p pb hp (by decide)
-      (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega) bp p.geo.B Impl.Dsa.Layout.activeBytes (by simp [GenerationGeometry.gWork])
+      (by unfold VG.Impl.Dsa.Generation.Layout.p g; omega_using [pn]) bp p.geo.B Impl.Dsa.Layout.activeBytes (by simp [GenerationGeometry.gWork])
     tapeParent := ?_
-    eParent := src exponent eb he (by decide) (by unfold exponent g; omega) be p.geo.B Impl.Dsa.Layout.activeBytes
+    eParent := src exponent eb he (by decide) (by unfold exponent g; omega_using [pn]) be p.geo.B Impl.Dsa.Layout.activeBytes
       (by simp [GenerationGeometry.gWork])
     gWrite := ?_ }
   · change Scr s p.geo.B Impl.Dsa.Layout.activeBytes
@@ -174,7 +174,7 @@ theorem GenerationMemory.generatorState {p : GenerationContext} {W : Nat → Bit
     intro i hi
     rw [off_off]
     exact h.scratch.region (by
-      have := p.geo.small_bound (d := g) (n := p.geo.pLen) (by decide) (by unfold arithmeticBytes; omega)
-      omega) (by decide)
+      have := p.geo.small_bound (d := g) (n := p.geo.pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+      omega_using [hi, this]) (by decide)
 
 end VG.Proof.Dsa.X86_64.Generation

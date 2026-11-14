@@ -57,7 +57,7 @@ theorem CoreEnv.word {σ s : State} {wlen : Nat} {w1 work : Addr}
     (hc : CoreConfig σ wlen w1 work) (hd : d+8≤wlen) :
     s.mem.readW (w1+BitVec.ofNat 64 d) 64=σ.mem.readW (w1+BitVec.ofNat 64 d) 64 := by
   have hw : wlen≤1024 := by rcases hc.length with rfl|rfl <;> decide
-  exact h.frame.readW (r:=⟨w1,wlen⟩) (Offset.contains_base w1 hd (by omega))
+  exact h.frame.readW (r:=⟨w1,wlen⟩) (Offset.contains_base w1 hd (by omega_using [hd, hw]))
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hc.separate) (by decide)
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail

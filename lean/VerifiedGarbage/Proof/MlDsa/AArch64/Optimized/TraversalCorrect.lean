@@ -65,7 +65,7 @@ theorem ofInt_zetaNat (k : Nat) : ofInt (zetaNat k : Int)=zetas k := by
   apply Fin.ext
   apply Int.ofNat_inj.mp
   rw [VG.Proof.MlDsa.KeyGen.ofInt_val]
-  rw [Int.emod_eq_of_lt (by omega) (by have := zetaNat_lt k; change _<8380417 at this; omega)]
+  rw [Int.emod_eq_of_lt (by omega_using []) (by have := zetaNat_lt k; change _<8380417 at this; omega_using [this])]
   exact congrArg (fun n : Nat => (n : Int)) (zetaNat_eq k)
 
 end VG.Proof.MlDsa.AArch64.Optimized.Traversal

@@ -81,10 +81,10 @@ theorem pruned_value {m : Mem} {q : Addr} :
           (q + BitVec.ofNat 64 56) (0 : BitVec 8)) q 57) =
       (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m q 57) &&& (2 ^ 448 - 4)) ||| 2 ^ 447 := by
   have ne : ∀ i j, i < 57 → j < 57 → i ≠ j → q + BitVec.ofNat 64 i ≠ q + BitVec.ofNat 64 j :=
-    fun i j hi hj h e => h ((off_eq_iff q (by omega) (by omega)).mp e)
+    fun i j hi hj h e => h ((off_eq_iff q (by omega_using [hi]) (by omega_using [hj])).mp e)
   have z : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
   have ne0 : ∀ j, 0 < j → j < 57 → q + BitVec.ofNat 64 j ≠ q := fun j h1 h2 e =>
-    absurd ((off_eq_iff q (d := j) (e := 0) (by omega) (by omega)).mp (e.trans z.symm)) (by omega)
+    absurd ((off_eq_iff q (d := j) (e := 0) (by omega_using [h2]) (by omega_using [])).mp (e.trans z.symm)) (by omega_using [h1])
   generalize hm' : ((m.writeW q (BitVec.ofNat 8 ((m q).toNat &&& 252))).writeW
         (q + BitVec.ofNat 64 55) (BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128))).writeW
           (q + BitVec.ofNat 64 56) (0 : BitVec 8) = m'
@@ -92,15 +92,15 @@ theorem pruned_value {m : Mem} {q : Addr} :
     unfold Spec.Ed448.bytesAt
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    rw [← hm', Offset.add_add, writeW8_apply, ite_eq_right (ne (1 + i) 56 (by omega) (by omega) (by omega)),
-      writeW8_apply, ite_eq_right (ne (1 + i) 55 (by omega) (by omega) (by omega)), writeW8_apply,
-      ite_eq_right (ne0 (1 + i) (by omega) (by omega))]
+    rw [← hm', Offset.add_add, writeW8_apply, ite_eq_right (ne (1 + i) 56 (by omega_using [hi]) (by omega_using []) (by omega_using [hi])),
+      writeW8_apply, ite_eq_right (ne (1 + i) 55 (by omega_using [hi]) (by omega_using []) (by omega_using [hi])), writeW8_apply,
+      ite_eq_right (ne0 (1 + i) (by omega_using []) (by omega_using [hi]))]
   have e0 : m' q = BitVec.ofNat 8 ((m q).toNat &&& 252) := by
-    rw [← hm', writeW8_apply, ite_eq_right (ne0 56 (by omega) (by omega)).symm,
-      writeW8_apply, ite_eq_right (ne0 55 (by omega) (by omega)).symm,
+    rw [← hm', writeW8_apply, ite_eq_right (ne0 56 (by omega_using []) (by omega_using [])).symm,
+      writeW8_apply, ite_eq_right (ne0 55 (by omega_using []) (by omega_using [])).symm,
       writeW8_apply, ite_eq_left rfl]
   have e55 : m' (q + BitVec.ofNat 64 55) = BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128) := by
-    rw [← hm', writeW8_apply, ite_eq_right (ne 55 56 (by omega) (by omega) (by omega)),
+    rw [← hm', writeW8_apply, ite_eq_right (ne 55 56 (by omega_using []) (by omega_using []) (by omega_using [])),
       writeW8_apply, ite_eq_left rfl]
   have e56 : m' (q + BitVec.ofNat 64 56) = BitVec.ofNat 8 0 := by
     rw [← hm', writeW8_apply, ite_eq_left rfl]; rfl
@@ -130,11 +130,11 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
   have e12 : (t.setReg .r12 (t.sp + BitVec.ofNat 32 HASH)).gpr .r12 = L.E + BitVec.ofNat 32 HASH := by
     simp [State.setReg, hsp]
   refine WP.mono (pruneOps_ok (q := hq L) (by rw [e12]; exact hash_addr hL)
-    (by rw [e12, BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega)]
-        change L.E.toNat + 24 + 57 ≤ 2 ^ 32; omega)
+    (by rw [e12, BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega_using [ht])]
+        change L.E.toNat + 24 + 57 ≤ 2 ^ 32; omega_using [ht])
     (fun j hj => by
       have h := hc.writable_frame (Offset.contains_base (State.addr L.E) (d := HASH + j) (n := 1)
-        (k := 248) (by simp only [HASH]; omega) (by simp only [HASH]; omega))
+        (k := 248) (by simp only [HASH]; omega_using [hj]) (by simp only [HASH]; omega_using [hj]))
       rw [← Offset.add_add] at h
       exact h))
     fun u ⟨um, usp, urd, uwr, ug⟩ => ⟨?_, ?_⟩
@@ -145,14 +145,14 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     · rw [um]
       refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _
         ?_).writeW (List.mem_singleton_self _) _ ?_
-      · have h := Offset.contains_base (hq L) (d := 0) (n := 1) (k := 57) (by omega) (by omega)
+      · have h := Offset.contains_base (hq L) (d := 0) (n := 1) (k := 57) (by omega_using []) (by omega_using [])
         rw [show hq L + BitVec.ofNat 64 0 = hq L from BitVec.add_zero _] at h
         exact h
-      · exact Offset.contains_base _ (by omega) (by omega)
-      · exact Offset.contains_base _ (by omega) (by omega)
+      · exact Offset.contains_base _ (by omega_using []) (by omega_using [])
+      · exact Offset.contains_base _ (by omega_using []) (by omega_using [])
     · intro r hr
       rw [List.mem_singleton.mp hr]
-      exact .inl (Offset.sub_base _ (by simp only [HASH]; omega))
+      exact .inl (Offset.sub_base _ (by simp only [HASH]; omega_using []))
   · rw [um, pruned_value]
     unfold Spec.Ed448.prune
     rw [bytesAt_take57]
@@ -178,9 +178,9 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) :
   rw [e0, e1, e2, State.withRegions_rd, State.withRegions_wr, hash_addr hL]
   have h := hL.top
   refine ⟨rfl, rfl, hL.oc, hL.kc.sub_left (Offset.sub_base _ (by decide : 24 + 57 ≤ 280)), hL.no, ?_, hL.nc⟩
-  rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega)]
+  rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega_using [h])]
   change L.E.toNat + 24 + 57 ≤ 2 ^ 32
-  omega
+  omega_using [h]
 
 theorem base_covers (L : Lay) : Covers ([⟨hq L, 57⟩] ++ L.outputs) (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Covers.of_sub fun r hr => ?_
@@ -226,7 +226,7 @@ theorem base_step (hl : BaseLadderOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Ar
 theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     WP isa (.block wipe) t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 57 = Spec.Ed448.bytesAt t.mem (State.addr L.out) 57 := by
-  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega) (start := 6) (count := 56) (by decide))
+  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega_using [this]) (start := 6) (count := 56) (by decide))
     fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
   unfold Spec.Ed448.bytesAt
   refine List.map_congr_left fun i hi => hf.bytes (R := L.OUT) ?_
@@ -278,7 +278,7 @@ theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
   have he := Whole.base_addr hb
   have top := Whole.base_top hb
   have hs := s.sp.isLt
-  refine ⟨by change (Whole.base s).toNat + 272 ≤ 2 ^ 32; omega, os, oc, sc, ?_, ?_, ?_, no, ns, nc⟩
+  refine ⟨by change (Whole.base s).toNat + 272 ≤ 2 ^ 32; omega_using [top], os, oc, sc, ?_, ?_, ?_, no, ns, nc⟩
   · change (⟨State.addr (Whole.base s), 280⟩ : Region).Disjoint _
     rw [he]; exact ko
   · change (⟨State.addr (Whole.base s), 280⟩ : Region).Disjoint _
@@ -308,7 +308,7 @@ theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Wh
   intro j hj
   have hw := Whole.saved_words hs (by decide : 3 ≤ 6)
     (by simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]; exact Nat.le_of_lt s.sp.isLt) hp hj
-  have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+  have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega_using [hj]
   rcases he with rfl | rfl | rfl <;> exact hw
 
 theorem publicKey_ok (hl : BaseLadderOk) {s : State} (h : pkLocal.pre s) :

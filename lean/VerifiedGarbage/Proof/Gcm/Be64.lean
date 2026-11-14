@@ -30,7 +30,7 @@ theorem be64_mod (x : Nat) : be64 (x % 2 ^ 64) = be64 x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
   have h : 2 ^ 64 = 256 ^ (7 - i) * 256 ^ (i + 1) := by
-    rw [← Nat.pow_add, show 7 - i + (i + 1) = 8 by omega]
+    rw [← Nat.pow_add, show 7 - i + (i + 1) = 8 by omega_using [hi]]
   rw [h, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (show 2 ^ 8 ∣ 256 ^ (i + 1) from
     ⟨256 ^ i, by rw [Nat.pow_succ, Nat.mul_comm]⟩)]
 
@@ -44,8 +44,8 @@ theorem byteRev64_extract (w : BitVec 64) {i : Nat} (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
   simp only [BitVec.getLsbD_extractLsb', hk, decide_true, Bool.true_and]
-  rw [getLsbD_byteRev64 _ _ (by omega)]
-  congr 1; omega
+  rw [getLsbD_byteRev64 _ _ (by omega_using [hi, hk])]
+  congr 1; omega_using [hk]
 
 /-- A byte-reversed word, as its 8 little-endian bytes: `[x]₆₄`. -/
 theorem le8_byteRev64 (w : BitVec 64) : Cmac.le8 (byteRev64 w) = be64 w.toNat := by

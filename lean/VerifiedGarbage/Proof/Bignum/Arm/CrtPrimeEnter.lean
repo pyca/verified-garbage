@@ -20,7 +20,7 @@ theorem crt_primeEnter_ok (s : State) {child : BitVec 32} {size : Nat}
       t.mem = s.mem.writeW (off (State.addr child) 216) (s.gpr .r0) ∧ Rest [.r0, .r3] s t := by
   unfold primeEnter
   refine wp_str (a := off (State.addr child) 216) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.write fit) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.write fit) fun u a => ?_
   refine wp_mov (op2_reg _ _) fun v b => ?_
   refine wp_mov (op2_imm (by decide)) fun t c => WP.block_nil ?_
   have restA : Rest [] s u := a.rest []

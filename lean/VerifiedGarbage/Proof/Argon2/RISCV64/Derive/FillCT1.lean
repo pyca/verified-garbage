@@ -162,8 +162,8 @@ theorem stctr_w {s : State} {pass slice lane index ctr c : Nat} (h : W s₀ pass
     (ha : s.gpr .a0 = BitVec.ofNat 64 c) :
     WP isa (.block [st counterOff .a0]) s (W s₀ pass slice lane index c) :=
   wp_stloc h.inv (d := counterOff) (by decide) fun t it vt ot _ _ => WP.block_nil
-    ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => ot d (by omega) (.inl (by simp only [counterOff]; omega)),
-      h.pos.of_lw fun d h₁ h₂ => ot d (by omega) (.inr (by simp only [counterOff]; omega)), by rw [vt, ha]⟩
+    ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => ot d (by omega_using [h₂]) (.inl (by simp only [counterOff]; omega_using [h₁])),
+      h.pos.of_lw fun d h₁ h₂ => ot d (by omega_using [h₂]) (.inr (by simp only [counterOff]; omega_using [h₂])), by rw [vt, ha]⟩
 
 end
 

@@ -64,7 +64,7 @@ theorem save_sep (p : Addr) {d e : Nat} (hd : d < 2 ^ 32) (he : e < 2 ^ 32)
     (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
     Mem.Sep (p + BitVec.ofInt 64 (d : Int)) 8 (p + BitVec.ofInt 64 (e : Int)) 8 := by
   rw [ofInt_natCast, ofInt_natCast]
-  exact Offset.sep p h (by omega) (by omega)
+  exact Offset.sep p h (by omega_using [hd]) (by omega_using [he])
 
 theorem readW_writeW_save (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
@@ -79,13 +79,13 @@ theorem readW_writeW_save_so {so : Nat} (hso : so ≤ 2048) (m : Mem) (p : Addr)
     (m.writeW (p + BitVec.ofInt 64 ((so + e : Nat) : Int)) v).readW
       (p + BitVec.ofInt 64 ((so + d : Nat) : Int)) 64 =
       m.readW (p + BitVec.ofInt 64 ((so + d : Nat) : Int)) 64 :=
-  readW_writeW_save m p v (by omega) (by omega) (by omega)
+  readW_writeW_save m p v (by omega_using [hso, hd]) (by omega_using [hso, he]) (by omega_using [h])
 
 theorem readW_writeW_save_so_l {so : Nat} (hso : so ≤ 2048) (m : Mem) (p : Addr) (v : BitVec 64)
     {e : Nat} (he : e ≤ 64) (h : 8 ≤ e) :
     (m.writeW (p + BitVec.ofInt 64 ((so + e : Nat) : Int)) v).readW (p + BitVec.ofInt 64 (so : Int)) 64 =
       m.readW (p + BitVec.ofInt 64 (so : Int)) 64 :=
-  readW_writeW_save m p v (by omega) (by omega) (by omega)
+  readW_writeW_save m p v (by omega_using [hso]) (by omega_using [hso, he]) (by omega_using [h])
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) :
     s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
@@ -99,29 +99,29 @@ theorem add_ofNat (p : Addr) (a b : Nat) :
 theorem sx_ofNat {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n := by
   rw [BitVec.signExtend_eq_setWidth_of_msb_false]
   · apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
-  · rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat]; simp; omega
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
+  · rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat]; simp; omega_using [h]
 
 theorem zx_ofNat {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem sx1 : BitVec.signExtend 64 (1 : BitVec 32) = (1 : BitVec 64) := by decide
 
 theorem and_mask {B : Nat} (hB : B = 64 ∨ B = 128) (x : BitVec 64) :
     x &&& (BitVec.ofNat 32 (B - 1)).signExtend 64 = BitVec.ofNat 64 (x.toNat % B) := by
-  rw [sx_ofNat (by omega)]
+  rw [sx_ofNat (by omega_using [hB])]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   rcases hB with rfl | rfl
-  · rw [show (64 - 1 : Nat) % 2 ^ 64 = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega
-  · rw [show (128 - 1 : Nat) % 2 ^ 64 = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega
+  · rw [show (64 - 1 : Nat) % 2 ^ 64 = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega_using []
+  · rw [show (128 - 1 : Nat) % 2 ^ 64 = 2 ^ 7 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega_using []
 
 theorem ofNat_succ (k : Nat) : BitVec.ofNat 64 (k + 1) = BitVec.ofNat 64 k + 1 := by
   rw [BitVec.ofNat_add]; rfl
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [h], ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
   by_cases hk : k = 0
@@ -152,7 +152,7 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 /-! ## Sizes -/
 
@@ -165,9 +165,9 @@ structure Dims (P : Params) : Prop where
   so : P.so ≤ 2048
 
 theorem Dims.mod {P : Params} (hd : Dims P) (n : Nat) : n % 2 ^ 64 % P.B = n % P.B := by
-  rcases hd.B with h | h <;> rw [h] <;> omega
+  rcases hd.B with h | h <;> rw [h] <;> omega_using []
 
-theorem Dims.pos {P : Params} (hd : Dims P) : 0 < P.B := by rcases hd.B with h | h <;> omega
+theorem Dims.pos {P : Params} (hd : Dims P) : 0 < P.B := by rcases hd.B with h | h <;> omega_using [h]
 
 /-- The shift count of `direct`. -/
 theorem Dims.lg {P : Params} (hd : Dims P) :
@@ -222,20 +222,20 @@ theorem saveMem_frame (hd : Dims P) : Frame [⟨s₀.gpr b, P.so + 48⟩] s₀.m
   have := hd.so
   have c : ∀ d : Nat, d + 8 ≤ P.so + 48 →
       (⟨s₀.gpr b, P.so + 48⟩ : Region).Contains (s₀.gpr b + BitVec.ofInt 64 (d : Int)) (64 / 8) :=
-    fun d hd => contains_offset' hd (by omega)
+    fun d hd => contains_offset' hd (by omega_using [this, hd])
   simp only [saveMem]
-  exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c _ (by omega))).writeW
-    (List.mem_singleton_self _) _ (c _ (by omega))).writeW (List.mem_singleton_self _) _
-    (c _ (by omega))).writeW (List.mem_singleton_self _) _ (c _ (by omega))).writeW
-    (List.mem_singleton_self _) _ (c _ (by omega)) |>.writeW (List.mem_singleton_self _) _
-    (c _ (by omega))
+  exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c _ (by omega_using []))).writeW
+    (List.mem_singleton_self _) _ (c _ (by omega_using []))).writeW (List.mem_singleton_self _) _
+    (c _ (by omega_using []))).writeW (List.mem_singleton_self _) _ (c _ (by omega_using []))).writeW
+    (List.mem_singleton_self _) _ (c _ (by omega_using [])) |>.writeW (List.mem_singleton_self _) _
+    (c _ (by omega_using []))
 
 /-- The saved registers are outside the part of the scratch space the
 compression function uses. -/
 theorem saved_offset (hd : Dims P) {p : Reg × Nat} (hp : p ∈ saved P) : P.so ≤ p.2 ∧ p.2 + 8 ≤ P.so + 48 := by
   have := hd.so
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
 
 end
 
@@ -411,6 +411,39 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
   keeps_rdi : ∀ i ∈ instrs code, Taint.clobbers i .rdi = false
   keeps_rcx : ∀ i ∈ instrs code, Taint.clobbers i .rcx = false
 
+/-- The contract of a function compressing two blocks into two hash values
+at once: the hash values at `rdi` and `rdx`, each with the block at `rsi`
+and `rcx`, with scratch space `r8` (`so` bytes). -/
+def compress2K {P : Params} (H : Md P.B P.N P.L) : Contract isa where
+  pre s :=
+    let st₀ : Region := ⟨s.gpr .rdi, P.N⟩
+    let b₀ : Region := ⟨s.gpr .rsi, P.B⟩
+    let st₁ : Region := ⟨s.gpr .rdx, P.N⟩
+    let b₁ : Region := ⟨s.gpr .rcx, P.B⟩
+    let scratch : Region := ⟨s.gpr .r8, P.so⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [b₀, b₁] ∧ s.wr = [st₀, st₁, scratch] ∧
+    st₀.Disjoint st₁ ∧ st₀.Disjoint scratch ∧ st₁.Disjoint scratch ∧
+    b₀.Disjoint st₀ ∧ b₀.Disjoint st₁ ∧ b₀.Disjoint scratch ∧
+    b₁.Disjoint st₀ ∧ b₁.Disjoint st₁ ∧ b₁.Disjoint scratch ∧
+    ret.Disjoint st₀ ∧ ret.Disjoint st₁ ∧ ret.Disjoint scratch
+  post s s' :=
+    H.stateAt s'.mem (s.gpr .rdi) = H.compress (H.stateAt s.mem (s.gpr .rdi)) (H.blockAt s.mem (s.gpr .rsi)) ∧
+    H.stateAt s'.mem (s.gpr .rdx) = H.compress (H.stateAt s.mem (s.gpr .rdx)) (H.blockAt s.mem (s.gpr .rcx))
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
+
+/-- What a caller needs of a function that compresses two blocks at once:
+that it is correct and constant time, does not touch `rsp` or the stack,
+and calls nothing. -/
+structure PairOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop where
+  verified : ∀ s, (compress2K H).pre s →
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compress2K H).post s s'
+  ct : ConstantTime isa (compress2K H).pre (compress2K H).pub code
+  nosp : NoSp code
+  depth : code.depth = 0
+
 /-- `CalleeOk` does not depend on the length field or the digest. -/
 theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
     (o : List Instr) : CalleeOk (P := { P with out := o }) H code :=
@@ -433,7 +466,7 @@ theorem callEntry_byte (s : State) {R : Region} (hd : (below (s.gpr .rsp) 8).Dis
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     s.callEntry.mem (R.base + BitVec.ofNat 64 i) = s.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (s.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (by simpa using hd.symm) hR hi
 
 /-- What the call of the compression function in `compressWith` needs of the
@@ -774,6 +807,41 @@ theorem wp_bswap {d : Reg}
     WP isa (.block (.bswap d :: is)) s Q :=
   WP.cons rfl (k _ (Upd.setReg _ _ _))
 
+/-- `clampWith lim idx dst`, with `idx = c ≤ lim`: `dst = c`. -/
+theorem wp_clampWith {lim c : Nat} {idx dst : Reg} (hne : idx ≠ dst) (hc : c ≤ lim) (hl : lim < 2 ^ 32)
+    (hi : s.gpr idx = BitVec.ofNat 64 c)
+    (k : ∀ s', Upd s s' dst (BitVec.ofNat 64 c) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (clampWith lim idx dst ++ is)) s Q := by
+  have hv : (BitVec.ofNat 32 lim).setWidth 64 = BitVec.ofNat 64 lim := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show lim < 2 ^ 32 by omega_using [hl])]
+  have hcn : (BitVec.ofNat 64 c).toNat = c := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc, hl])]
+  have hbn : (BitVec.ofNat 64 lim).toNat = lim := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
+  have hi' : (s.setReg32 dst (BitVec.ofNat 32 lim)).gpr idx = BitVec.ofNat 64 c := by
+    simp only [State.setReg32, State.setReg, hne, ↓reduceIte, hi]
+  simp only [clampWith, List.cons_append, List.nil_append]
+  refine WP.cons rfl (WP.cons rfl (WP.block_cons_iff.mpr ⟨_, rfl, k _ ?_ ?_⟩))
+  rotate_left
+  · dsimp only; split <;> rfl
+  dsimp only
+  split
+  · refine ⟨by simp [State.setReg, arithFlags, State.setFlags, hi'], fun r h => ?_, rfl, rfl, rfl⟩
+    simp [State.setReg32, State.setReg, arithFlags, State.setFlags, h]
+  · rename_i hn
+    simp only [State.setReg32, State.setReg, ↓reduceIte, hne, hi, hv, hcn, hbn,
+      decide_eq_true_eq] at hn
+    refine ⟨by simp only [State.setReg32, State.setReg, arithFlags, State.setFlags, ↓reduceIte, hv]; congr 1; omega_using [hc, hn],
+      fun r h => ?_, rfl, rfl, rfl⟩
+    simp [State.setReg32, State.setReg, arithFlags, State.setFlags, h]
+
+/-- `clamp P w` before a store at byte `c` of the buffer, `c + w ≤ B`: `r10 = c`. -/
+theorem wp_clamp (P : Params) {w c : Nat} (hc : c + w ≤ P.B) (hB : P.B < 2 ^ 32)
+    (h13 : s.gpr .r13 = BitVec.ofNat 64 c)
+    (k : ∀ s', Upd s s' .r10 (BitVec.ofNat 64 c) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (clamp P w ++ is)) s Q :=
+  wp_clampWith (by decide) (by omega_using [hc]) (by omega_using [hB]) h13 k
 end
 
 /-- `test r, r`, as a block of its own. -/

@@ -150,17 +150,17 @@ abbrev SavedAt (p : Addr) (s : State) (m : Mem) : Prop := Spill.Saved m p s.gpr 
 theorem SavedAt.frame {p : Addr} {s : State} {m m' : Mem} (h : SavedAt p s m) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (⟨p, 128⟩ : Region).Disjoint r) : SavedAt p s m' :=
   Spill.Saved.frame h hf fun q hq r hr =>
-    (hd r hr).sub_left (Offset.sub_base p (by have := savedS_bound q hq; omega))
+    (hd r hr).sub_left (Offset.sub_base p (by have := savedS_bound q hq; omega_using [this]))
 
 theorem saveS_ok (s : State) (hw : (⟨s.gpr .r8, 128⟩ : Region) ∈ s.wr) :
     WP isa (.block saveS) s fun s' =>
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨s.gpr .r8, 128⟩] s.mem s'.mem ∧ SavedAt (s.gpr .r8) s s'.mem :=
   WP.mono (Spill.save_ok .r8 savedS s fun q hq =>
-      ⟨_, hw, Offset.contains_base _ (by have := savedS_bound q hq; omega)
-        (by have := savedS_bound q hq; omega)⟩)
+      ⟨_, hw, Offset.contains_base _ (by have := savedS_bound q hq; omega_using [this])
+        (by have := savedS_bound q hq; omega_using [this])⟩)
     fun s' ⟨hg, hrd, hwr, hm⟩ => ⟨hg, hrd, hwr,
-      hm ▸ Spill.saveMem_frame_base _ _ _ _ (fun q hq => by have := savedS_bound q hq; omega) (by decide),
+      hm ▸ Spill.saveMem_frame_base _ _ _ _ (fun q hq => by have := savedS_bound q hq; omega_using [this]) (by decide),
       hm ▸ Spill.saveMem_saved _ _ _ _ (by decide)⟩
 
 /-! ## Invariants -/

@@ -21,7 +21,7 @@ theorem pushed_bytes {s : State} (h : contract.pre s) {r : Region}
     (far : r.Disjoint (reservedRegion s)) (size : r.len < 2 ^ 64) :
     Spec.Rsa.bytesAt (Compact.entered s).mem r.base r.len = Spec.Rsa.bytesAt s.mem r.base r.len := by
   have A := call_layout h
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [this]
   have F := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
   apply VG.Proof.Rsa.rsa_bytes_frame F size
   intro R hr

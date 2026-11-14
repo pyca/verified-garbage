@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Zeroize.Common32
 public import VerifiedGarbage.TCB.X86.Print
 
+/-! # Zeroization on x86 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Zeroize.X86

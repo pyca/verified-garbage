@@ -118,7 +118,7 @@ theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   simp only [Mem.read]
   ext i hi
   rw [BitVec.getElem_append]
-  simp only [show i < 8 by omega, dite_true]
+  simp only [show i < 8 by omega_using [hi], dite_true]
 
 /-! ## The instructions -/
 
@@ -248,7 +248,7 @@ theorem wp_ldrb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
   have e : ((s.mem a).setWidth 32 : BitVec 32).setWidth 64 = (s.mem a).setWidth 64 := by
     ext i hi; simp
   refine WP.cons (s' := s.write .w t (((s.mem a).setWidth 32))) ?_ (k _ (only_write _ _ _ _) ?_)
-  · simp only [exec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega, ite_true, ha,
+  · simp only [exec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
       Option.bind_some, State.load, hin, Option.map_some, read_one]
   · simp only [State.write, ite_true]
     exact e
@@ -259,7 +259,7 @@ theorem wp_strb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
     WP isa (.block (.strb t n off :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr t).setWidth 8) }) ?_
     (k _ ⟨rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩)
-  simp only [exec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega, ite_true, ha,
+  simp only [exec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
     Option.bind_some, State.store, hout, Mem.writeW, State.read]
   congr 3
   ext i hi; simp [Size.bits]; try omega
@@ -306,7 +306,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
     (hstep : ∀ k < n, ∀ s, I k s →
       WP isa body s fun s' => I (k + 1) s' ∧ ((s'.gpr cr).toNat ≠ 0 ↔ k + 1 ≠ n))
     {s : State} (h0 : I 0 s) : WP isa (.loop body (.nonzero .x cr)) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega, hn, h0⟩
+  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_using [], hn, h0⟩
   rintro m s ⟨k, rfl, hk, hi⟩
   refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
   have hz : isa.eval (.nonzero .x cr) s' = some (decide (k + 1 ≠ n)) := by
@@ -315,7 +315,7 @@ theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat 
   by_cases hl : k + 1 = n
   · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
     rwa [hl] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], hi'⟩
 
 /-! ## Numbers -/
 
@@ -326,7 +326,7 @@ theorem toNat_add_n {a b : BitVec 64} (h : a.toNat + b.toNat < 2 ^ 64) :
 theorem toNat_sub_n {a b : BitVec 64} (h : b.toNat ≤ a.toNat) : (a - b).toNat = a.toNat - b.toNat := by
   rw [BitVec.toNat_sub]
   have := a.isLt
-  omega
+  omega_using [h]
 
 theorem toNat_mul_n {a b : BitVec 64} (h : a.toNat * b.toNat < 2 ^ 64) :
     (a * b).toNat = a.toNat * b.toNat := by
@@ -344,16 +344,16 @@ theorem toNat_and_mask (a b : BitVec 64) {k : Nat} (h : b.toNat = 2 ^ k - 1) :
   rw [BitVec.toNat_and, h, Nat.and_two_pow_sub_one_eq_mod]
 
 theorem toNat_imm (imm : BitVec 16) : (imm.setWidth 64).toNat = imm.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := imm.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := imm.isLt; omega_using [])]
 
 theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
 
 theorem toNat_readW32 (m : Mem) (a : Addr) : ((m.readW a 32).setWidth 64).toNat = (m.readW a 32).toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (m.readW a 32).isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (m.readW a 32).isLt; omega_using [])]
 
 theorem toNat_byte (b : Byte) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- The low 32 bits of a register holding a number less than `2³²`. -/
 theorem setWidth32_of_toNat {x : BitVec 64} {n : Nat} (h : x.toNat = n) :
@@ -384,8 +384,8 @@ theorem contains_off {p : Addr} {off n len : Nat} (h : off + n ≤ len) (hl : le
     (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 off) n := by
   simp only [Region.Contains]
   rw [show p + BitVec.ofNat 64 off - p = BitVec.ofNat 64 off by bv_omega, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [h, hl])]
+  omega_using [h]
 
 theorem in_regions {rs : List Region} {R : Region} (hR : R ∈ rs) {a : Addr} {n : Nat}
     (h : R.Contains a n) : InRegions rs a n := ⟨R, hR, h⟩
@@ -408,10 +408,10 @@ theorem sep_off (p : Addr) {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha
     intro c hc
     rw [show x - (p + BitVec.ofNat 64 c) = (x - p) - BitVec.ofNat 64 c by bv_omega, BitVec.toNat_sub,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc]
-    omega
-  rw [e a (by omega)] at h₁
-  rw [e b (by omega)] at h₂
+    omega_using [hc]
+  rw [e a (by omega_using [ha])] at h₁
+  rw [e b (by omega_using [hb])] at h₂
   have := (x - p).isLt
-  omega
+  omega_using [h, ha, hb, h₁, h₂]
 
 end VG.Proof.MlKem.AArch64

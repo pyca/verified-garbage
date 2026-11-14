@@ -32,14 +32,14 @@ theorem working_write (m : Mem) (p : Addr) (i : Fin 128) (v : Word) :
     simp only [ite_true, word, Mem.readW_writeW_self64]
   · simp only [h, ite_false, word]
     exact Mem.readW_writeW_sep
-      (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      (Offset.sep p (by omega_using [h]) (by omega_using [hj]) (by omega_using [])) (by decide)
 
 /-- Store one register into its word of the permuted block. -/
 theorem storeWord_ok (index : Fin 16 → Fin 128) (j : Fin 16) (s : State) {p : Addr}
     (hs : Scratch s p) :
     WP isa (.block [Impl.Argon2.AArch64.storeWord index j]) s fun t =>
       t = { s with mem := s.mem.writeW (off p (1024 + 8 * (index j).val)) (s.gpr (Impl.Argon2.AArch64.lane j)) } := by
-  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega)
+  have st := hs.write (d := 1024 + 8 * (index j).val) (n := 8) (by omega_using [])
   rw [← hs.reg] at st
   apply WP.of_runBlock
   simp only [Impl.Argon2.AArch64.storeWord, runBlock_cons, runStep_some, runBlock_nil,
@@ -69,6 +69,6 @@ theorem stores_ok (index : Fin 16 → Fin 128) (js : List (Fin 16)) (s : State) 
     · rw [hw, List.foldl_cons, working_write]
     · exact ((Frame.refl [⟨off p 1024, 1024⟩] s.mem).writeW (by simp) _
         (Offset.contains p (d := 1024 + 8 * (index j).val) (n := 8) (e := 1024) (k := 1024)
-          (by omega) (by omega) (by omega))).trans hf
+          (by omega_using []) (by omega_using []) (by omega_using []))).trans hf
 
 end VG.Proof.Argon2.AArch64

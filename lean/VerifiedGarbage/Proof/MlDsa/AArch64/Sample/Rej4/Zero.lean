@@ -36,19 +36,19 @@ theorem zeros_ok {s : State} {p : Addr} (hp : s.gpr .x19 = p)
     ⟨RegKeep.vupd hz,hz.v,by rw [hz.mem]; exact Frame.refl _ _,
       fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
     fun t ⟨ht,_,hf,hvals⟩ => ⟨ht,hf,hvals⟩
-  refine wp_strq (a := wordAddr p k) (by omega)
+  refine wp_strq (a := wordAddr p k) (by omega_using [hk])
     (by rw [ht.gpr .x19 (by simp),hp]; rfl)
     (by rw [ht.wr]; exact hw k hk) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_,?_⟩
   · exact (ht.trans (RegKeep.vmem hu)).mono (by simp)
   · rw [hu.v]; exact hv
   · rw [hu.mem]
-    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))
+    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_using [hk]) (by omega_using [hk]))
   · intro i hi
     rw [hu.mem,hv]
     by_cases he : i = k
     · subst i; rw [read_write16]
     · have hsep : Mem.Sep (wordAddr p i) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])
       rw [Mem.read_write_sep hsep (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

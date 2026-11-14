@@ -71,7 +71,7 @@ tables). -/
 theorem satMem_held : ∀ i < bpW.length,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = bpW.getD i 0 := by
   unfold satMem
-  exact constMem_held _ _ (by rw [bpW_length]; omega)
+  exact constMem_held _ _ (by rw [bpW_length]; omega_using [])
 
 /-- Whether the signature at `sig` of the hash at `digest` is valid for the
 public key at `pk`, as the specification says. -/

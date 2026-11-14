@@ -48,7 +48,7 @@ theorem savedRegion_separate {g : PrivGeometry} (h : g.Valid) :
 theorem PrivFnInput.saved {g : PrivGeometry} {bs : Fin 8 → List Byte} {s t : State}
     (h : PrivFnInput g bs s) (frame : Frame (bodyWrites g) (entered s).mem t.mem) :
     Spill.Saved t.mem (State.addr (pcPushed s).sp) s.gpr pcCalleeSaved := by
-  have initial := pc_push_callee_saved s (by have := h.stackFit; simp only [stackBytes] at this; omega)
+  have initial := pc_push_callee_saved s (by have := h.stackFit; simp only [stackBytes] at this; omega_using [this])
   apply initial.frame (lo := 0) (hi := 56) (by decide) frame
   intro r hr
   change (⟨State.addr (pcPushed s).sp + BitVec.ofNat 64 0, 56 - 0⟩ : Region).Disjoint r

@@ -28,8 +28,8 @@ theorem bytesAt_take_succ (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (Spec.Rsa.bytesAt m p n).take (i + 1) =
       (Spec.Rsa.bytesAt m p n).take i ++ [m (p + BitVec.ofNat 64 i)] := by
   simp only [Spec.Rsa.bytesAt]
-  rw [← List.map_take, ← List.map_take, List.take_range, List.take_range, Nat.min_eq_left (by omega),
-    Nat.min_eq_left (by omega), List.range_succ, List.map_append]
+  rw [← List.map_take, ← List.map_take, List.take_range, List.take_range, Nat.min_eq_left (by omega_using [hi]),
+    Nat.min_eq_left (by omega_using [hi]), List.range_succ, List.map_append]
   rfl
 
 /-- The byte at `a`, outside the buffer, is kept by writing it. -/
@@ -39,7 +39,7 @@ theorem writeBytes_out (m : Mem) (q a : Addr) (xs : List Byte) (k : Nat)
   split
   · rename_i h
     exact absurd (show a = q + BitVec.ofNat 64 (a - q).toNat by
-      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; bv_omega) (hd _ (by omega))
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; bv_omega) (hd _ (by omega_using [hl, h]))
   · rfl
 
 /-- Writing `xs` at `q` changes memory only there. -/
@@ -49,7 +49,7 @@ theorem frame_writeBytes (m : Mem) (q : Addr) (xs : List Byte) :
   have h := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at h
   simp only [writeBytes]
-  rw [ite_eq_right_iff.mpr (fun h' => absurd h' (by omega))]
+  rw [ite_eq_right_iff.mpr (fun h' => absurd h' (by omega_using [h]))]
 
 /-- The bytes written. -/
 theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (hl : xs.length < 2 ^ 64) :
@@ -57,7 +57,7 @@ theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (hl : xs.length
   apply List.ext_getElem (by simp [Spec.Rsa.bytesAt])
   intro i h₁ h₂
   simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
+    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hl, h₂])]
   rw [ite_eq_left_iff.mpr (fun h' => absurd h₂ h')]
   simp [List.getD_eq_getElem?_getD, h₂]
 

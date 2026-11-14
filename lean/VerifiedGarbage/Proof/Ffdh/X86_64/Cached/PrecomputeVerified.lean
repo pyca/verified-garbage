@@ -156,7 +156,7 @@ theorem precomputeCode_verified (v : RoundImpl) : Verified target (precomputeCod
   change _ = some (Spec.Rsa.wordsAt (overlay _ hv b.mem) (s.gpr .rdi) (s.gpr .rsi).toNat)
   rw [VG.Proof.Bignum.X86_64.wordsAt_overlay fun i hi => VG.Proof.Bignum.X86_64.Clear.wr_miss hc (p := s.gpr .rdi) (n := (s.gpr .rsi).toNat * 8)
     (by change _ ∈ (stripConsts VG.Impl.Ffdh.X86_64.VettedValidation.tableConsts s).wr; rw [hwr]; simp)
-    (by omega) (by omega)]
+    (by omega_using [nc]) (by omega_using [hi])]
   exact hw
 
 end VG.Proof.Ffdh.X86_64.Cached

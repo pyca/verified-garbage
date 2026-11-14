@@ -41,7 +41,7 @@ theorem bitHead_ok {s : State} {base k : Addr} (_hs : Scr s base) (hk : State.ad
   refine wp_dp (op2_reg _ _) fun t ht => ?_
   have ea : State.addr (t.gpr .r7 + BitVec.ofNat 32 0) = off k i := by
     rw [ht.gpr]; change State.addr (s.gpr .r1 + s.gpr .r11 + BitVec.ofNat 32 0) = _
-    rw [BitVec.add_zero, hb, addr_add (by omega), hk]
+    rw [BitVec.add_zero, hb, addr_add (by omega_using [hfit, hi]), hk]
   refine wp_ldrb (by decide) ea (by rw [ht.rd, ht.wr]; exact hkr) fun u hu => ?_
   refine wp_dp (op2_lsl (by decide)) fun v hv => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · rw [hv.other .r3 (by decide), hu.gpr, ht.mem]
@@ -51,7 +51,7 @@ theorem bitHead_ok {s : State} {base k : Addr} (_hs : Scr s base) (hk : State.ad
     apply congrArg (u.gpr .r0 + ·)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   · exact hv.mem.trans (hu.mem.trans ht.mem)
   · exact rest_keeps ((ht.rest (by decide)).trans ((hu.rest (by decide)).trans (hv.rest (by decide))))
 

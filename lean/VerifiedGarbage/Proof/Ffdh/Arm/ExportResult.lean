@@ -25,7 +25,7 @@ theorem exportResultArgs_ok (s : State) {p : Inputs} {slots : List Nat}
       Rest [.r2, .r4, .r6] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have r4 := h.locals.read (d := 4) (by decide)
   have r32 := h.locals.read (d := 32) (by decide)
   have v4 := h.saved 4 h4
@@ -48,7 +48,7 @@ theorem exportResult_ok (s : State) {p : Inputs} {slots : List Nat}
   rintro u ⟨⟨index, dst, count, mem⟩, rest⟩
   have readyU := ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans ready.ptr)
   refine WP.mono (exportBE_ok u readyU.workspace readyU.layout readyU.width (by decide : 6 < 8)
-    (by have := p.minLength; omega) p.width.2.2.2.1 (by rw [mem]; exact valueFit) output.fits
+    (by have := p.minLength; omega_using [this]) p.width.2.2.2.1 (by rw [mem]; exact valueFit) output.fits
     (by rw [rest.wr]; exact output.writable) separate readyU.ptr index dst count) ?_
   rintro t ⟨value, frame, _, _, restT⟩
   rw [mem] at value frame

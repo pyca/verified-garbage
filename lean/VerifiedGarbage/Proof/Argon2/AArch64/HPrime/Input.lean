@@ -63,7 +63,7 @@ theorem absorbInput_ok (v : Backend) (s : State)
   have ku := hu.keeps
   have repr' : Repr b h0 u.mem (u.gpr .x24) headBytes := by rw [hu.mem, ku.x24]; exact repr
   have count : u.gpr .x1 = BitVec.ofNat 64 headBytes.length := by rw [prefixLen]; exact hu.count
-  have bound : headBytes.length + (u.gpr .x3).toNat < 2 ^ 64 := by rw [prefixLen, hu.size]; omega
+  have bound : headBytes.length + (u.gpr .x3).toNat < 2 ^ 64 := by rw [prefixLen, hu.size]; omega_using [len]
   have wr : (⟨u.gpr .x24, 16384⟩ : Region) ∈ u.wr := by rw [ku.x24, ku.wr]; exact hwr
   have cover : Covers [⟨u.gpr .x2, (u.gpr .x3).toNat⟩] (u.rd ++ u.wr) := by
     rw [hu.data, hu.size, hu.rd, hu.wr]; exact hdata

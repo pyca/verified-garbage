@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.Joint
 import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Group identities for the unsigned joint radix-four table and Horner loop. -/
 
@@ -43,9 +44,9 @@ theorem pair_zero (P Q : Point C) : pair P Q 0 0 = .infinity := by
 theorem shift_radix (k j : Nat) :
     4 * (k >>> (2*(j+1))) + (k >>> (2*j)) % 4 = k >>> (2*j) := by
   have hs : k >>> (2*(j+1)) = (k >>> (2*j)) / 4 := by
-    rw [show 2*(j+1)=2*j+2 by omega, Nat.shiftRight_add, Nat.shiftRight_eq_div_pow]
+    rw [show 2*(j+1)=2*j+2 by omega_using [], Nat.shiftRight_add, Nat.shiftRight_eq_div_pow]
   rw [hs]
-  omega
+  omega_using []
 
 def stage (P Q : Point C) (u v j : Nat) : Point C := pair P Q (u >>> (2*j)) (v >>> (2*j))
 
@@ -57,9 +58,9 @@ theorem at_step (hC : Law C) {P Q : Point C}
   unfold stage
   rw [pair_add hC hP hQ, pair_add hC hP hQ, pair_add hC hP hQ]
   rw [show (u >>> (2*(j+1))) + (u >>> (2*(j+1))) +
-      ((u >>> (2*(j+1))) + (u >>> (2*(j+1)))) = 4*(u >>> (2*(j+1))) by omega,
+      ((u >>> (2*(j+1))) + (u >>> (2*(j+1)))) = 4*(u >>> (2*(j+1))) by omega_using [],
     show (v >>> (2*(j+1))) + (v >>> (2*(j+1))) +
-      ((v >>> (2*(j+1))) + (v >>> (2*(j+1)))) = 4*(v >>> (2*(j+1))) by omega,
+      ((v >>> (2*(j+1))) + (v >>> (2*(j+1)))) = 4*(v >>> (2*(j+1))) by omega_using [],
     shift_radix,shift_radix]
 
 theorem at_zero (P Q : Point C) (u v : Nat) : stage P Q u v 0 = pair P Q u v := by
@@ -67,7 +68,7 @@ theorem at_zero (P Q : Point C) (u v : Nat) : stage P Q u v 0 = pair P Q u v := 
 
 theorem at_top (P Q : Point C) {n u v : Nat} (hu : u < 2^(64*n)) (hv : v < 2^(64*n)) :
     stage P Q u v (32*n) = .infinity := by
-  rw [stage,show 2*(32*n)=64*n by omega,Nat.shiftRight_eq_div_pow,Nat.shiftRight_eq_div_pow,
+  rw [stage,show 2*(32*n)=64*n by omega_using [],Nat.shiftRight_eq_div_pow,Nat.shiftRight_eq_div_pow,
     Nat.div_eq_of_lt hu,Nat.div_eq_of_lt hv,pair_zero]
 
 theorem pair_generator (P Q : Point C) : pair P Q 1 0 = P := by
@@ -81,7 +82,7 @@ theorem pair_peer (P Q : Point C) : pair P Q 0 1 = Q := by
 def previous (d : Nat) := if d % 4 = 0 then d-4 else d-1
 
 theorem previous_lt {d : Nat} (hd : 1 ≤ d) : previous d < d := by
-  unfold previous; split <;> omega
+  unfold previous; split <;> omega_using [hd]
 
 theorem table_step (hC : Law C) {P Q : Point C}
     (hP : onCurve C P = true) (hQ : onCurve C Q = true) {d : Nat} (hd : 1 ≤ d) :
@@ -91,14 +92,14 @@ theorem table_step (hC : Law C) {P Q : Point C}
   · rw [ite_eq_left hz,previous,ite_eq_left hz]
     have ee := congrArg (fun T => add T (pair P Q ((d-4)%4) ((d-4)/4))) (pair_peer P Q).symm
     rw [ee,pair_add hC hP hQ]
-    have ha : 0+(d-4)%4=d%4 := by omega
-    have hb : 1+(d-4)/4=d/4 := by omega
+    have ha : 0+(d-4)%4=d%4 := by omega_using [hz]
+    have hb : 1+(d-4)/4=d/4 := by omega_using [hd, hz]
     rw [ha,hb]
   · rw [ite_eq_right hz,previous,ite_eq_right hz]
     have ee := congrArg (fun T => add T (pair P Q ((d-1)%4) ((d-1)/4))) (pair_generator P Q).symm
     rw [ee,pair_add hC hP hQ]
-    have ha : 1+(d-1)%4=d%4 := by omega
-    have hb : 0+(d-1)/4=d/4 := by omega
+    have ha : 1+(d-1)%4=d%4 := by omega_using [hz]
+    have hb : 0+(d-1)/4=d/4 := by omega_using [hz]
     rw [ha,hb]
 
 theorem point_comm (hC : Law C) {P Q : Point C}

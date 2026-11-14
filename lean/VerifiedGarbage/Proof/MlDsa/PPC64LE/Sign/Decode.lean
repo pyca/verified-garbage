@@ -496,7 +496,7 @@ theorem cache_poly {p : Params} {STK : Nat} {σ s : State} (hp : SPre p STK σ) 
   obtain ⟨hl, hpoly⟩ := hc.polys.resolve_left hne
   have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r14 + BitVec.ofNat 64 (1024 * i)))
       (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
-    Offset.sub_base _ (by rw [hl]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega)
+    Offset.sub_base _ (by rw [hl]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi])
   refine Proof.MlDsa.Verify.polyIs_frame fc (fun r hr => ?_) ?_
   · rw [hp.wr] at hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -505,7 +505,7 @@ theorem cache_poly {p : Params} {STK : Nat} {σ s : State} (hp : SPre p STK σ) 
     · exact hc.d_c.sub_left hsub
     · exact hc.b.sub_left hsub
   · have := hpoly i hi
-    rwa [show 4 * n * i = 1024 * i by show 4 * 256 * i = 1024 * i; omega] at this
+    rwa [show 4 * n * i = 1024 * i by show 4 * 256 * i = 1024 * i; omega_using []] at this
 
 section
 variable {p : Params} (hF : SFacts p) {STK : Nat}
@@ -531,7 +531,7 @@ theorem cp_piece {a b c j i : Nat} (hj : s1Base p ≤ j ∧ j < aBase p) (ha : a
     obtain ⟨hlen, -⟩ := hp.2.polys.resolve_left hne
     have hsub : Region.Sub ⟨σ.gpr .r14 + BitVec.ofNat 64 (1024 * i), 8 * 128⟩
         (reg (σ.gpr .r14) (σ.gpr .r15).toNat) :=
-      Offset.sub_base _ (by rw [hlen]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega)
+      Offset.sub_base _ (by rw [hlen]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi])
     have dsub : Region.Sub ⟨sScr σ + BitVec.ofNat 64 (oP j), 8 * 128⟩ (reg (sScr σ) (scrLen p)) :=
       Offset.sub_base _ (by show oP j + 1024 ≤ scrLen p; exact hoj)
     have cr : PPC64LE.Covers [⟨s.gpr .r14 + BitVec.ofNat 64 (1024 * i), 8 * 128⟩] (s.rd ++ s.wr) := by
@@ -539,7 +539,7 @@ theorem cp_piece {a b c j i : Nat} (hj : s1Base p ≤ j ∧ j < aBase p) (ha : a
       exact Covers.of_sub fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_append_left _ hp.2.rd, 1024 * i, rfl,
-          by rw [hlen]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega⟩
+          by rw [hlen]; show 1024 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi]⟩
     have cw : PPC64LE.Covers [⟨s.gpr .r31 + BitVec.ofNat 64 (oP j), 8 * 128⟩] s.wr := by
       rw [g31, h.sc.wr, hp.1.wr]
       exact Covers.of_sub fun r hr => by
@@ -648,7 +648,7 @@ omit hP hS in
 theorem rhoPPC_piece :
     CPiece p STK (fun σ s => IM p STK σ s ∧ FC STK σ s) (fun σ s => ID p STK σ 0 0 0 s ∧ FC STK σ s) rhoPP := by
   have r := (rhoPP_piece (STK := STK) hF).cache
-  refine ⟨fun σ s hp ⟨h, fc⟩ => WP.mono (wp_frame (r.ok σ s hp h) (by have := sdepth_rhoPP; omega))
+  refine ⟨fun σ s hp ⟨h, fc⟩ => WP.mono (wp_frame (r.ok σ s hp h) (by have := sdepth_rhoPP; omega_using [this]))
     fun s' ⟨h', fr⟩ => ⟨h', FC.step fc h.sc.wr h.sc.sp (Nat.le_trans sdepth_rhoPP h.sc.site.s48)
       (by have := h.sc.site.spk; have := σ.sp.isLt; rw [h.sc.sp] at *; omega_arith) fr⟩,
     RelCT.mono r.tr (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, i₁.1, i₂.1⟩) fun _ _ h => h⟩

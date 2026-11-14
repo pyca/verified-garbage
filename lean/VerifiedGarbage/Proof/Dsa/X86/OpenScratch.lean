@@ -52,7 +52,7 @@ theorem openScratch_precise {s : State} {base : Addr} {size arg : Nat} {ptr : Bi
     have H : ¬ InRegions [⟨base, 8272⟩] a 1 := by
       simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
       change ¬ (ofs base a + 1 ≤ 8272)
-      omega
+      omega_using [ha]
     exact (F a (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem a)
 
 end VG.Proof.Dsa.X86

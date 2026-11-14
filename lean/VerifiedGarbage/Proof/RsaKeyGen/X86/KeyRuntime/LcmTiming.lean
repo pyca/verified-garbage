@@ -60,11 +60,11 @@ def LcmStart (B : Addr) (Z n k : Nat) (s : State) : Prop :=
 
 theorem lcm_trace (B : Addr) (Z n k : Nat) (width : n = 2 * k) (positive : 0 < k) :
     RelCT isa (Both (LcmStart B Z n k)) lcmPart (VG.X86.Taint.Agree runtimeTaint) := by
-  have small : k ≤ n := by omega
-  have half : n / 2 = k := by omega
+  have small : k ≤ n := by omega_using [width]
+  have half : n / 2 = k := by omega_using [width]
   have three : 3 < 2 ^ (32 * k) := by
-    have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show 32 ≤ 32 * k by omega)
-    omega
+    have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show 32 ≤ 32 * k by omega_using [positive])
+    omega_using [this]
   intro s₁ s₂ tr₁ tr₂ t₁ t₂ P E₁ E₂
   have layout := VG.Proof.RsaKeyGen.X86.Key.inverse_array_layout P.1.1.old small (a := aU) (b := aDen)
     (by decide) (by decide) (by decide) (by decide)

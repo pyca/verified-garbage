@@ -51,7 +51,7 @@ structure CM (L : Lay) (scr : BitVec 32) (T : Nat) (yv : Nat → Byte) (lb b : N
 theorem ofNat_shl {x : Nat} (hx : x * h.B < 2 ^ 32) : BitVec.ofNat 32 x <<< lgB h.sh = BitVec.ofNat 32 (x * h.B) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq, h.pow_lg,
-    Nat.mod_eq_of_lt (a := x) (by have := Nat.le_mul_of_pos_right x (show 0 < h.B by have := h.B_ge; omega); omega)]
+    Nat.mod_eq_of_lt (a := x) (by have := Nat.le_mul_of_pos_right x (show 0 < h.B by have := h.B_ge; omega_using [this]); omega_using [hx, this])]
 
 
 /-- The compression loop. -/

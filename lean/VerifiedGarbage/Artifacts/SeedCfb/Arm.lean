@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # SEED-CFB128 artifacts on baseline ARMv7 -/
+/-! # SEED-CFB128 on ARMv7 -/
 
 @[expose] public section
 

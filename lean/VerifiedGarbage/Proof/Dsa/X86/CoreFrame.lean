@@ -21,7 +21,7 @@ theorem pointerValue_keep {s t : State} {base : Addr} {prefixBytes : Nat} {rs : 
     have fb := VG.Proof.Dsa.X86.Layout.field_bounds f
     have ub : VG.Impl.Dsa.X86.Layout.field f + 4 ≤ 8256 := fb.2
     apply BitVec.eq_of_toNat_eq
-    exact O.w32 (by omega) (by omega)
+    exact O.w32 (by omega_using [hp, fb]) (by omega_using [ub])
   cases p with
   | input f => exact field f
   | «local» offset => simp only [pointerValue, K.1 _ hdi]
@@ -61,7 +61,7 @@ theorem OperandReady.slot {s : State} {base : Addr} {n len i : Nat} {p : Pointer
     Region.Disjoint ⟨(pointerValue base s p).setWidth 64, len⟩ ⟨off base (slot n i), 8 * n⟩ := by
   have b := slot_bound (n := n) hi
   simp only [stride] at b
-  exact R.apart.sub_right (Offset.sub_base base (by omega))
+  exact R.apart.sub_right (Offset.sub_base base (by omega_using [b]))
 
 theorem OperandReady.bytes {s t : State} {base : Addr} {n len : Nat} {rs : List Reg} {p : Pointer}
     (R : OperandReady s base n p len) (K : Keeps rs s t) (hdi : .edi ∉ rs)
@@ -70,19 +70,19 @@ theorem OperandReady.bytes {s t : State} {base : Addr} {n len : Nat} {rs : List 
       Spec.Rsa.bytesAt s.mem ((pointerValue base s p).setWidth 64) len := by
   refine componentBytes_keep K hdi O (Nat.le_trans (VG.Proof.Dsa.X86.Layout.context_bound hn) (by decide)) ?_
   intro i hi
-  have ilt : i < 2 ^ 64 := by have := R.fits; omega
+  have ilt : i < 2 ^ 64 := by have := R.fits; omega_using [hi, this]
   have inside : (⟨(pointerValue base s p).setWidth 64, len⟩ : Region).Contains
-      ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega) ilt
+      ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega_using [hi]) ilt
   have outside := R.apart _ inside
   change ¬ (ofs base ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ contextBytes n) at outside
-  omega
+  omega_using [outside]
 
 theorem slotOutside_whole {s t : State} {base : Addr} {n i : Nat}
     (O : Outside base (slot n i) (8 * n) s.mem t.mem) (hi : i < 9) :
     Outside base 0 (contextBytes n) s.mem t.mem := by
   have b := slot_bound (n := n) hi
   simp only [stride] at b
-  exact O.mono (by omega) (by omega)
+  exact O.mono (by omega_using []) (by omega_using [b])
 
 theorem slotOutside_val {s t : State} {base : Addr} {n i j : Nat}
     (O : Outside base (slot n i) (8 * n) s.mem t.mem) (hij : j ≠ i)
@@ -90,7 +90,7 @@ theorem slotOutside_val {s t : State} {base : Addr} {n i j : Nat}
     wordsVal t.mem base (slot n j) n = wordsVal s.mem base (slot n j) n := by
   have sep := slot_sep (n := n) hij
   simp only [stride] at sep
-  exact O.wordsVal (by omega) hb
+  exact O.wordsVal (by omega_using [sep]) hb
 
 theorem resultKeep_whole {n : Nat} {base : Addr} {s t : State}
     (K : OpKeep (contextMod n) base (slot n 2) (slot n 6) s t) :
@@ -104,6 +104,6 @@ theorem resultKeep_whole {n : Nat} {base : Addr} {s t : State}
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;>
-    simp only [contextMod, accLen, VG.Impl.Mont.X86.words] <;> omega
+    simp only [contextMod, accLen, VG.Impl.Mont.X86.words] <;> omega_arith
 
 end VG.Proof.Dsa.X86

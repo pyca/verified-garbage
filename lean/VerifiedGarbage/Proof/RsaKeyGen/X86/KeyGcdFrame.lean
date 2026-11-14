@@ -20,7 +20,7 @@ theorem gcdPart_preserves_num {m m' : Mem} {B : Addr} {n k j : Nat}
     (fit : arr n j + S n ≤ 2 ^ 64) (changed : Outs B (gcdPartRanges n k) m m') :
     num m' B n j = num m B n j := by
   change val32 m' B (arr n j) n = val32 m B (arr n j) n
-  apply changed.val32 _ (by unfold S at fit; omega)
+  apply changed.val32 _ (by unfold S at fit; omega_using [fit])
   intro r hr
   change r ∈ gcdRanges n k ++ ranges n gcdPartArrays [kFlag] at hr
   rcases List.mem_append.mp hr with inv | other
@@ -30,34 +30,34 @@ theorem gcdPart_preserves_num {m m' : Mem} {B : Addr} {n k j : Nat}
         List.mem_cons, List.not_mem_nil, or_false] at small
       rcases small with rfl | rfl | rfl | rfl
       · have endBound := inverse_end_le width persistent
-        have endEq : arr k 15 = hdr + 4 * (15 * (k + 2)) := by unfold arr S; omega
+        have endEq : arr k 15 = hdr + 4 * (15 * (k + 2)) := by unfold arr S; omega_using []
         rw [endEq] at endBound
         exact Or.inr endBound
       all_goals have lower : hdr ≤ arr n j := Nat.le_add_right ..
       all_goals simp only [sOdd, sB, sC, hdr] at lower ⊢
-      all_goals omega
+      all_goals omega_using [lower]
     · simp only [List.mem_singleton] at den
       subst r
       have D := arr_disj (w := n) jd
       simp only at D ⊢
       unfold S at D ⊢
-      omega
+      omega_using [D]
   · simp only [ranges, List.mem_append, List.mem_map] at other
     rcases other with ⟨a, ha, rfl⟩ | ⟨d, hd, rfl⟩
     · have different : j ≠ a := by
         simp only [gcdPartArrays, List.mem_cons, List.not_mem_nil, or_false] at ha
         rcases ha with rfl | rfl | rfl | rfl | rfl
         · unfold aT1
-          omega
+          omega_using [persistent]
         · unfold aT2
-          omega
+          omega_using [persistent]
         · exact ju
         · exact jv
         · exact jd
       have D := arr_disj (w := n) different
       simp only at D ⊢
       unfold S at D ⊢
-      omega
+      omega_using [D]
     · simp only [List.mem_singleton] at hd
       subst d
       have lower : hdr ≤ arr n j := Nat.le_add_right ..

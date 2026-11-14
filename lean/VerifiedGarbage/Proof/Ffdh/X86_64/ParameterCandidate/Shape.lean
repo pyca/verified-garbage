@@ -5,15 +5,69 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Spec.Rsa.Contract
-
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Copy
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeByte
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+
+/-! ### `Ffdh.X86_64.ParameterCandidate.ShapeByte`, which only this module used -/
+
+section
+
+/-! # FFDH parameter candidates on x86-64: the first shaped byte -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Proof.Ffdh.ParameterCandidate
+
+private theorem top_machine {j : Nat} (hj : j < 8) (b : Byte) :
+    ((b.setWidth 64 &&& BitVec.ofNat 64 (2 ^ j - 1)) ||| BitVec.ofNat 64 (2 ^ j)).setWidth 8 = topByte j b := by
+  have hb := b.isLt
+  have hp : 2 ^ j ≤ 128 := show 2 ^ j ≤ 2 ^ 7 from Nat.pow_le_pow_right (by decide) (by omega_using [hj])
+  apply BitVec.eq_of_toNat_eq
+  rw [topByte_value hj]
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_using []),
+    Nat.mod_eq_of_lt (show 2 ^ j - 1 < 2 ^ 64 by omega_using [hp]), Nat.mod_eq_of_lt (show 2 ^ j < 2 ^ 64 by omega_using [hp]),
+    Nat.and_two_pow_sub_one_eq_mod, Nat.or_two_pow_eq_add_of_lt (Nat.mod_lt _ (Nat.two_pow_pos _)),
+    Nat.mod_eq_of_lt (show b.toNat % 2 ^ j + 2 ^ j < 2 ^ 8 by have := Nat.mod_lt b.toNat (Nat.two_pow_pos j); omega_using [hp])]
+
+theorem firstByte_ok {s : State} {rp op : Addr} {len j : Nat} {b : Byte}
+    (hl : 2 ≤ len) (hk : len < 2 ^ 31) (hj : j < 8)
+    (hrp : s.gpr .rsi = rp) (hop : s.gpr .rdi = op) (hn : s.gpr .rcx = BitVec.ofNat 64 len)
+    (hm : s.gpr .r8 = BitVec.ofNat 64 (2 ^ j - 1)) (hh : s.gpr .r9 = BitVec.ofNat 64 (2 ^ j))
+    (hrd : InRegions (s.rd ++ s.wr) rp 1) (hwr : InRegions s.wr op 1) (hb : s.mem rp = b) :
+    WP isa (.block firstByte) s fun t =>
+      t.mem = s.mem.writeW op (topByte j b) ∧ t.gpr .r10 = off rp 1 ∧ t.gpr .r11 = off op 1 ∧
+      t.gpr .rcx = BitVec.ofNat 64 (len - 1) ∧ Keep [.rax, .r10, .r11, .rcx] s t := by
+  have hsub : BitVec.ofNat 64 len - 1 = BitVec.ofNat 64 (len - 1) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
+    omega
+  refine WP.mono (WP.keep [.rax, .r10, .r11, .rcx] (Q := fun t =>
+    t.mem = s.mem.writeW op (topByte j b) ∧ t.gpr .r10 = off rp 1 ∧ t.gpr .r11 = off op 1 ∧
+      t.gpr .rcx = BitVec.ofNat 64 (len - 1))
+    (by unfold firstByte; xrun [State.ea, at0, hrp, hop, hn, hm, hh,
+      show rp + BitVec.ofInt 64 0 = rp from by simp,
+      show op + BitVec.ofInt 64 0 = op from by simp, hrd, hwr, hb, top_machine hj b, hsub, off]
+        exact ⟨rfl, rfl⟩) rfl)
+    fun _ ⟨⟨hmem, hp, ho, hc⟩, k⟩ => ⟨hmem, hp, ho, hc, k⟩
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+end
+
+end
+
 /-! # FFDH parameter candidates on x86-64: complete shaping and its buffer frame -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/LowByte.lean`, which only this module imported.
@@ -72,17 +126,17 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem op bs.length) = VG.Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip bs) ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧
       Keep [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] s t := by
-  have hl1 : 2 ≤ bs.length := by omega
-  have hl2 : bs.length < 2 ^ 31 := by omega
+  have hl1 : 2 ≤ bs.length := by omega_using [hb1, hlen]
+  have hl2 : bs.length < 2 ^ 31 := by omega_using [hb2, hlen]
   have hj : (bits - 1) % 8 < 8 := Nat.mod_lt _ (by decide)
   have hne : bs ≠ [] := by intro he; simp [he] at hl1
   have htop := topCut_length hne ((bits - 1) % 8)
   have hshaped := (lastOne_length (bs := topCut bs ((bits - 1) % 8)) (by simp [topCut])).trans htop
-  have h0 : 0 < bs.length := by omega
-  have hlast : bs.length - 1 < bs.length := by omega
+  have h0 : 0 < bs.length := by omega_using [hl1]
+  have hlast : bs.length - 1 < bs.length := by omega_using [hl1]
   unfold shape
   simp only [seqs]
-  refine WP.seq (WP.mono (shapeMasks_ok (by omega) (by omega) hbits) fun u₁ ⟨hm₁, hh₁, hmem₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (shapeMasks_ok (by omega_using [hb1]) (by omega_using [hb2]) hbits) fun u₁ ⟨hm₁, hh₁, hmem₁, k₁⟩ => ?_)
   have hrd₁ : InRegions (u₁.rd ++ u₁.wr) rp 1 := by rw [k₁.2.1, k₁.2.2]; simpa [off] using hrd 0 h0
   have hwr₁ : InRegions u₁.wr op 1 := by rw [k₁.2.2]; simpa [off] using hwr 0 h0
   have hb₁ : u₁.mem rp = bs.getD 0 0 := by rw [hmem₁]; simpa [off] using hbytes 0 h0
@@ -106,7 +160,7 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
     rw [ht.keep.2.2]; exact hwrs _ hlast
   have hrd₃ : InRegions (u₃.rd ++ u₃.wr) (off op (bs.length - 1)) 1 :=
     let ⟨r, hr, hc⟩ := hwr₃; ⟨r, List.mem_append_right _ hr, hc⟩
-  refine WP.mono (setLow_ok (by omega) hl2 ht.ptrO hrd₃ hwr₃ (ht.bytes _ hlast))
+  refine WP.mono (setLow_ok (by omega_using [hl1]) hl2 ht.ptrO hrd₃ hwr₃ (ht.bytes _ hlast))
     fun t ⟨hmem, k⟩ => ?_
   have he : Spec.Rsa.bytesAt t.mem op bs.length = shapedOctets bs ((bits - 1) % 8) := by
     apply List.ext_getElem
@@ -120,14 +174,14 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       change t.mem (off op i) = _
       rw [← hg, shapedOctets, lastOne_getD hit, htop, hmem, WriteBytes.writeW8_apply]
       by_cases hx : i + 1 = bs.length
-      · have hi0 : i = bs.length - 1 := by omega
+      · have hi0 : i = bs.length - 1 := by omega_using [hx]
         rw [ite_eq_left hx, hi0, ite_eq_left rfl]
         rfl
-      · have hni : i ≠ bs.length - 1 := by omega
-        rw [ite_eq_right hx, ite_eq_right (out_ne (by omega) (by omega) hni)]
+      · have hni : i ≠ bs.length - 1 := by omega_using [hl1, hx]
+        rw [ite_eq_right hx, ite_eq_right (out_ne (by omega_using [hl2, hil]) (by omega_using [hl2]) hni)]
         exact ht.bytes i hil
   refine ⟨he, ?_, ?_, (k12.trans (ht.keep.trans k)).mono (by decide)⟩
-  · rw [he, shapedOctets_value (bits := bits) hne hj (by omega)]
+  · rw [he, shapedOctets_value (bits := bits) hne hj (by omega_using [hb1, hlen])]
   · intro a ha
     have hx : a ≠ op := by simpa [off] using ha 0 h0
     rw [hmem, WriteBytes.writeW8_apply, ite_eq_right (ha _ hlast), ht.frame a ha,

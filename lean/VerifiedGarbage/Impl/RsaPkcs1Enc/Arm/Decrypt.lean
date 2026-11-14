@@ -10,7 +10,9 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
 e, e_len, d, d_len, input, input_len, p, p_len, q, q_len, dp, dp_len, dq,
 dq_len, qinv, qinv_len, scratch, scratch_len)`, the last nineteen on the
 stack. As on AArch64 (`Impl/RsaPkcs1Enc/AArch64/Decrypt.lean`), with
-`vg_rsa_private_checked` (`priv`, by its name `privN`) and SHA-256's and
+`vg_rsa_private_checked` (`priv`, by its name `privN`; for
+`vg_rsa_pkcs1_decrypt_precomputed`, `vg_rsa_private_checked_precomputed`,
+given the key's precomputed values `pre`, our arguments 23 and 24) and SHA-256's and
 HMAC-SHA-256's functions (`H`), it runs draft-irtf-cfrg-rsa-guidance-10 §7.2:
 
 1. The private-key operation, `EM` (or zeros) to `out` and its result `r`
@@ -53,14 +55,14 @@ open VG VG.Arm
 open VG.Impl.RsaPkcs1Sig.Arm (wrap argOff)
 
 /-- The size of the inner frame. -/
-def frameBytes : Nat := 88
+def frameBytes : Nat := 96
 
 /-! The slots. -/
-def oR : Nat := 64
-def oI : Nat := 68
-def oNB : Nat := 72
-def oAL : Nat := 76
-def oMK : Nat := 80
+def oR : Nat := 72
+def oI : Nat := 76
+def oNB : Nat := 80
+def oAL : Nat := 84
+def oMK : Nat := 88
 
 /-! Where things are in `scratch`. -/
 def sOuter : Nat := 96
@@ -85,13 +87,22 @@ def copyArg (j i : Nat) : List Instr := [.ldrSp .r0 (arg j), .str .r0 .r12 (4 * 
 
 /-! ## 1. The private-key operation -/
 
-/-- Its stack arguments (`e`, `e_len`, the input, `n_len`, then `p` …
-`scratch_len`), then its registers: `out`, `n_len`, `n`, `n_len`. -/
-def privArgs : List Instr :=
+/-- Its first sixteen stack arguments (`e`, `e_len`, the input, `n_len`,
+then `p` … `scratch_len`). -/
+def privStack : List Instr :=
   [.addSp .r12 0] ++ copyArg 5 0 ++ copyArg 6 1 ++ copyArg 9 2 ++ copyArg 4 3 ++ copyArg 11 4 ++
     copyArg 12 5 ++ copyArg 13 6 ++ copyArg 14 7 ++ copyArg 15 8 ++ copyArg 16 9 ++ copyArg 17 10 ++
-    copyArg 18 11 ++ copyArg 19 12 ++ copyArg 20 13 ++ copyArg 21 14 ++ copyArg 22 15 ++
-    ([.ldrSp .r0 (arg 0), .ldrSp .r1 (arg 4), .ldrSp .r2 (arg 3), .ldrSp .r3 (arg 4)] : List Instr)
+    copyArg 18 11 ++ copyArg 19 12 ++ copyArg 20 13 ++ copyArg 21 14 ++ copyArg 22 15
+
+/-- With `pc`, `pre` and `pre_len` (our arguments 23 and 24) too. -/
+def privPre (pc : Bool) : List Instr := if pc then copyArg 23 16 ++ copyArg 24 17 else []
+
+/-- Its registers: `out`, `n_len`, `n`, `n_len`. -/
+def privRegs : List Instr := [.ldrSp .r0 (arg 0), .ldrSp .r1 (arg 4), .ldrSp .r2 (arg 3), .ldrSp .r3 (arg 4)]
+
+/-- Its arguments: sixteen stack arguments, or with `pc`
+(`vg_rsa_private_checked_precomputed`) eighteen, then its registers. -/
+def privArgs (pc : Bool) : List Instr := privStack ++ privPre pc ++ privRegs
 
 /-! ## 2. The key derivation key -/
 
@@ -329,12 +340,13 @@ def selPart : Prog isa :=
 
 /-- The inner frame's body, with the private-key operation `priv` (by its
 name `privN`). -/
-def body (privN : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block privArgs) (.seq (.call privN priv) (.seq (.block dZero) (.seq Bignum.Arm.maskBytes
+def body (pc : Bool) (privN : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block (privArgs pc)) (.seq (.call privN priv) (.seq (.block dZero) (.seq Bignum.Arm.maskBytes
     (.seq (.block dCopy) (.seq Bignum.Arm.copyBytes (.seq (hashD H) (.seq (kdkMac H) (.seq (clLoop H)
     (.seq (amLoop H) (.seq alPart selPart))))))))))
 
-/-- `vg_rsa_pkcs1_decrypt`. -/
-def code (privN : String) (priv : Prog isa) : Prog isa := wrap frameBytes (body H privN priv)
+/-- `vg_rsa_pkcs1_decrypt`; with `pc`, `vg_rsa_pkcs1_decrypt_precomputed`,
+calling `vg_rsa_private_checked_precomputed` with `pre` and `pre_len` too. -/
+def code (pc : Bool) (privN : String) (priv : Prog isa) : Prog isa := wrap frameBytes (body H pc privN priv)
 
 end VG.Impl.RsaPkcs1Enc.Arm.Decrypt

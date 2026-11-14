@@ -19,10 +19,10 @@ theorem ranges_apart32 {g : Geometry} {d : Nat} (safe : safeHeader d) :
     List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with (((rfl | rfl | rfl) | rfl) | (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl)) | rfl <;>
     simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
-      VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset] <;> unfold safeHeader at safe <;> omega
+      VG.Impl.RsaKeyGen.X86.WitnessRound.uniformOffset] <;> unfold safeHeader at safe <;> omega_using [safe]
 
 theorem header32 {g : Geometry} (v : g.Valid) {s t : Mem} (F : WorkspaceFrame g (ranges g) s t)
     {d : Nat} (safe : safeHeader d) : w32 t g.W d = w32 s g.W d :=
-  congrArg BitVec.toNat (F.read32 (by have := v.headerFit; unfold safeHeader at safe; omega) (ranges_apart32 safe))
+  congrArg BitVec.toNat (F.read32 (by have := v.headerFit; unfold safeHeader at safe; omega_using [safe, this]) (ranges_apart32 safe))
 
 end VG.Proof.RsaKeyGen.X86.WitnessRound

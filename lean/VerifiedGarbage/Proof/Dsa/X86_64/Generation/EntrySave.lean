@@ -32,7 +32,7 @@ theorem entrySave_ok {s : State} (hw : (⟨s.gpr .rsp, 48⟩ : Region) ∈ s.wr)
       Frame [⟨s.gpr .rsp, 48⟩] s.mem t.mem := by
   change WP isa (.block (saveCode .rsp spillSlots)) s _
   apply WP.mono (VG.X86_64.Spill.save_ok .rsp spillSlots s (fun p hp =>
-    ⟨_, hw, Offset.contains_base _ (spillSlots_fit p hp) (by have := spillSlots_fit p hp; omega)⟩))
+    ⟨_, hw, Offset.contains_base _ (spillSlots_fit p hp) (by have := spillSlots_fit p hp; omega_using [this])⟩))
   intro t ⟨hg, hr, hw, hm⟩
   refine ⟨hg, hr, hw, ?_, ?_⟩
   · rw [hm]; exact saveMem_saved _ _ _ _ (by decide)
@@ -48,7 +48,7 @@ theorem entryRestore_ok {s : State} (g : Reg → BitVec 64)
   change WP isa (.block (restoreCode .rsp spillSlots)) s _
   apply WP.mono (restore_ok .rsp spillSlots g s (by decide) (fun p hp =>
     ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (spillSlots_fit p hp)
-      (by have := spillSlots_fit p hp; omega)⟩) hs)
+      (by have := spillSlots_fit p hp; omega_using [this])⟩) hs)
   intro t ⟨hr, hk, hm⟩
   exact ⟨hr, hk .rax (by decide), hk .rsp (by decide), hm⟩
 

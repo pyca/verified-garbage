@@ -25,6 +25,8 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Dec
 open VG.RISCV64 VG.Impl.RsaPkcs1Enc.RISCV64.Decrypt VG.Proof.RsaPkcs1Sig.RISCV64
 open VG.Impl.Hmac.Stream.RISCV64 (mov)
 
+variable {pc : Bool}
+
 /-- The number of `AM`'s blocks. -/
 abbrev nbOf (s : State) : BitVec 64 := BitVec.ofNat 64 (((s.gpr .a4).toNat + 31) / 32)
 
@@ -42,7 +44,7 @@ theorem W8.after {i : Nat} {s u v : State} (w : W8 i s u) {ws : List Region} (a 
   ⟨(a.cs _ (by decide)).trans w.1, (a.cs _ (by decide)).trans w.2⟩
 
 section
-variable {e : Env}
+variable {e : Env pc}
 
 theorem w8_agree {i : Nat} {a b : State} (ha : W8 i e.s₁ a) (hb : W8 i e.s₂ b) :
     a.gpr .s8 = b.gpr .s8 ∧ a.gpr .s9 = b.gpr .s9 :=
@@ -76,7 +78,7 @@ structure PrfTaint (label : List Nat) (len count : List Instr) (dst : Nat) : Pro
 theorem prfBody_ct {label : List Nat} {len count : List Instr} {dst : Nat} (T : PrfTaint label len count dst)
     {C : State → BitVec 64} {i : Nat} (hi : i < 256) (hd1 : sCL ≤ dst) (hd2 : dst + 32 * i + 32 ≤ scrBytes)
     (hdst : dst < 2048) (hn : label.length + 4 ≤ 16)
-    (hmsg : ∀ s R EM u, DPre s → Post s R EM u → u.gpr .s8 = BitVec.ofNat 64 i →
+    (hmsg : ∀ s R EM u, DPre pc s → Post s R EM u → u.gpr .s8 = BitVec.ofNat 64 i →
       WP isa (.block (msgBytes label len)) u fun w => Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧ Kept [.t1, .t2] u w)
     (hcount : ∀ s u, u.gpr .s9 = nbOf s →
       WP isa (.block (count ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C s - u.gpr .s8) :
@@ -157,27 +159,27 @@ theorem prfLoop_ct {label : List Nat} {len count : List Instr} {dst N : Nat} (T 
       C e.s₁ - BitVec.ofNat 64 (i + 1) = BitVec.ofNat 64 (N - (i + 1)))
     (hN0 : 0 < N) (hN : N ≤ 256) (hd1 : sCL ≤ dst) (hd2 : dst + 32 * N ≤ scrBytes) (hdst : dst < 2048)
     (hn : label.length + 4 ≤ 16)
-    (hmsg : ∀ i < N, ∀ s R EM u, DPre s → Post s R EM u → u.gpr .s8 = BitVec.ofNat 64 i →
+    (hmsg : ∀ i < N, ∀ s R EM u, DPre pc s → Post s R EM u → u.gpr .s8 = BitVec.ofNat 64 i →
       WP isa (.block (msgBytes label len)) u fun w => Frame [⟨scA s sMsg, 16⟩] u.mem w.mem ∧ Kept [.t1, .t2] u w)
     (hcount : ∀ s u, u.gpr .s9 = nbOf s →
       WP isa (.block (count ++ ([.sub .t1 .t1 .s8] : List Instr))) u fun w => Only [.t1] u w ∧ w.gpr .t1 = C s - u.gpr .s8) :
     RelCT isa (Rel e (L 0)) (.loop (prfBody label len dst count) (.nonzero .t1))
       (Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) := by
   refine (RelCT.loop (Q := Rel e fun s u => PostAt s u ∧ u.gpr .s9 = nbOf s) (fun m a b => ∃ i, m = N - i ∧ i < N ∧ Rel e (L i) a b)
-    (fun m => ?_) N).mono (fun a b h => ⟨0, by omega, hN0, h⟩) fun _ _ h => h
+    (fun m => ?_) N).mono (fun a b h => ⟨0, by omega_using [], hN0, h⟩) fun _ _ h => h
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨i, hm, hiN, hp⟩ e₁ e₂
-  obtain ⟨ht, ⟨l₁, c₁⟩, ⟨l₂, c₂⟩⟩ := prfBody_ct (e := e) T (C := C) (i := i) (by omega) hd1 (by omega) hdst hn
+  obtain ⟨ht, ⟨l₁, c₁⟩, ⟨l₂, c₂⟩⟩ := prfBody_ct (e := e) T (C := C) (i := i) (by omega_using [hN, hiN]) hd1 (by omega_using [hd2, hiN]) hdst hn
     (hmsg i hiN) hcount s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   have v₁ : s₁'.gpr .t1 = BitVec.ofNat 64 (N - (i + 1)) := by rw [c₁, hCN i hiN]
   have v₂ : s₂'.gpr .t1 = BitVec.ofNat 64 (N - (i + 1)) := by rw [c₂, ← hC, hCN i hiN]
   have hz : isa.eval (.nonzero .t1) s₁' = some (decide (i + 1 ≠ N)) := by
     rw [eval_nonzero, ne_zero_iff, v₁]
-    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega)))
+    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega_using [hN])))
   have hz₂ : isa.eval (.nonzero .t1) s₂' = some (decide (i + 1 ≠ N)) := by
     rw [eval_nonzero, ne_zero_iff, v₂]
-    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega)))
+    exact congrArg some (decide_eq_decide.mpr (counter_ne hiN (by omega_using [hN])))
   refine ⟨ht, by rw [hz, hz₂], fun hf => ⟨⟨l₁.1, l₁.2.2⟩, ⟨l₂.1, l₂.2.2⟩⟩, fun ht' => ⟨N - (i + 1), by
-    rw [hz] at ht'; simp at ht'; omega, i + 1, rfl, by rw [hz] at ht'; simp at ht'; omega, l₁, l₂⟩⟩
+    rw [hz] at ht'; simp at ht'; omega_using [hm, hiN], i + 1, rfl, by rw [hz] at ht'; simp at ht'; omega_using [hiN, ht'], l₁, l₂⟩⟩
 
 end
 

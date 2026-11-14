@@ -105,7 +105,7 @@ theorem setXmm_setXmm (s : State) (d : XReg) (v w : BitVec 128) : (s.setXmm d v)
   funext r
   by_cases h : r = d <;> simp [h]
 
-theorem lane01 {l : Nat} (hl : l < 2) : l = 0 ∨ l = 1 := by omega
+theorem lane01 {l : Nat} (hl : l < 2) : l = 0 ∨ l = 1 := by omega_using [hl]
 
 theorem laneSse_ok {i : Instr} {ss : List Instr} (h : laneSse i = some ss) (s : State) :
     ∃ s', exec i s = some s' ∧ VKeep s s' ∧ ∀ l < 2, runBlock isa ss (s.proj l) = some (s'.proj l) := by

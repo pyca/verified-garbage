@@ -15,29 +15,29 @@ theorem jointByteHeadInv_ok {t₀ t : State} {P : Addr} {w n xc g y : Nat}
     {minv : BitVec 64} {ep fp : Addr} {L : Nat} {eb fb : List Byte} {i : Nat}
     (hL : eb.length = L) (hF : fb.length = L) (hi : i < L)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
-    (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega))
+    (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_using [hL, h]))
     (hout : ∀ i < L, slot w 8 + tabBytes w ≤ ofs P (ep + BitVec.ofNat 64 i))
     (frd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (fp + BitVec.ofNat 64 i) 1)
-    (fbytes : ∀ i (h : i < L), t₀.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega))
+    (fbytes : ∀ i (h : i < L), t₀.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega_using [hF, h]))
     (fout : ∀ i < L, slot w 8 + tabBytes w ≤ ofs P (fp + BitVec.ofNat 64 i))
     (hI : JointByteInv t₀ P w minv n xc g y ep fp L eb fb i t) :
     WP isa (.block Joint.byteHead) t fun t₁ =>
       JointWinInv t₁ P w minv n xc g y (pre eb i) (pre fb i)
-        (eb[i]'(by omega)).toNat (fb[i]'(by omega)).toNat 0 t₁ := by
+        (eb[i]'(by omega_using [hL, hi])).toNat (fb[i]'(by omega_using [hF, hi])).toNat 0 t₁ := by
   have hn := hI.ctx.scrT.nowrap
-  let v := (eb[i]'(by omega)).toNat
-  let z := (fb[i]'(by omega)).toNat
-  have hv : v < 256 := (eb[i]'(by omega)).isLt
-  have hz : z < 256 := (fb[i]'(by omega)).isLt
+  let v := (eb[i]'(by omega_using [hL, hi])).toNat
+  let z := (fb[i]'(by omega_using [hF, hi])).toNat
+  have hv : v < 256 := (eb[i]'(by omega_using [hL, hi])).isLt
+  have hz : z < 256 := (fb[i]'(by omega_using [hF, hi])).isLt
   have er : InRegions (t.rd ++ t.wr) (ep + BitVec.ofNat 64 i) 1 := by
     rw [hI.keep.rd, hI.keep.wr]; exact hrd i hi
   have fr : InRegions (t.rd ++ t.wr) (fp + BitVec.ofNat 64 i) 1 := by
     rw [hI.keep.rd, hI.keep.wr]; exact frd i hi
-  have ev : t.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega) := by
-    rw [hI.frm _ fun r hr => Or.inr (by have := (crtExpRanges_ok w r hr).2; have := hout i hi; omega)]
+  have ev : t.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega_using [hL, hi]) := by
+    rw [hI.frm _ fun r hr => Or.inr (by have := (crtExpRanges_ok w r hr).2; have := hout i hi; omega_arith)]
     exact hbytes i hi
-  have fv : t.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega) := by
-    rw [hI.frm _ fun r hr => Or.inr (by have := (crtExpRanges_ok w r hr).2; have := fout i hi; omega)]
+  have fv : t.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega_using [hF, hi]) := by
+    rw [hI.frm _ fun r hr => Or.inr (by have := (crtExpRanges_ok w r hr).2; have := fout i hi; omega_arith)]
     exact fbytes i hi
   refine WP.mono (jointByteHead_ok hI.ctx hI.idx hI.e hI.f er fr ev fv)
     fun t₁ ⟨hm₁, k₁⟩ => ?_
@@ -50,8 +50,8 @@ theorem jointByteHeadInv_ok {t₀ t : State} {P : Addr} {w n xc g y : Nat}
   have hc₁ := hI.ctx.of_win f₁ k₁.wr (k₁.gpr .x0 (by decide))
   have hY0 := slot_le (w := w) (show aY < 8 by decide)
   have hYe : wv t₁.mem P (slot w aY) w = wv t.mem P (slot w aY) w := by
-    rw [o2.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega) (by omega),
-      o1.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega) (by omega)]
+    rw [o2.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega_using [this]) (by omega_using [hn, hY0]),
+      o1.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega_using [this]) (by omega_using [hn, hY0])]
   have hB0 : JointWinInv t₁ P w minv n xc g y (pre eb i) (pre fb i) v z 0 t₁ := by
     refine ⟨hc₁, hI.tab.of_win f₁ hn, hYe ▸ hI.ylt, ?_, ?_, ?_, Frm.refl _ _ _, Keep.refl _ _⟩
     · rw [hYe, hI.val, Nat.pow_zero, Nat.mul_one, Nat.mul_one, Nat.sub_zero,

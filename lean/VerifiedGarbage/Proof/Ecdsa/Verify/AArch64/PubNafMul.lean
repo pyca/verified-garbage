@@ -35,7 +35,7 @@ variable {c : Cfg}
 /-- The cache follows the window method's table: slot `111` on. -/
 theorem cacheAt_q (c : Cfg) : PubNaf.cacheAt (winQ c) 1 = 64 + 8 * c.n * 111 := by
   show c.sl WT + 8 * (24 * c.n) + 16 * c.n * (1 - 1) = _
-  rw [sl_eq c WT]; unfold WT; omega
+  rw [sl_eq c WT]; unfold WT; omega_using []
 
 /-- Slot `i` below the cache: every slot the verifier has. -/
 theorem sl_below_cache (hc : CfgOk c) (hn6 : c.n ≤ 6) {i : Nat} (hi : i ≤ 110) :
@@ -45,10 +45,10 @@ theorem sl_below_cache (hc : CfgOk c) (hn6 : c.n ≤ 6) {i : Nat} (hi : i ≤ 11
   · subst ht
     by_cases hm : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
     · rw [sl_tmp c hm]; simp only [Mont.moAt]; omega
-    · rw [sl_aff c hm]; unfold TMP; omega
+    · rw [sl_aff c hm]; unfold TMP; omega_using []
   · rw [sl_eq c i ht]
     have := Nat.mul_le_mul_left (8 * c.n) hi
-    omega
+    omega_using [this]
 
 /-- The cache's place. -/
 theorem cacheLayQ (hc : CfgOk c) (hn6 : c.n ≤ 6) : PubNaf.CacheLay (winQ c) size where
@@ -64,9 +64,9 @@ theorem cacheLayQ (hc : CfgOk c) (hn6 : c.n ≤ 6) : PubNaf.CacheLay (winQ c) si
     rw [cacheAt_q]
     show c.sl WB + 4 * (16 * c.n + 1) ≤ _
     have := hc.n0
-    rw [sl_eq c WB]; unfold WB; omega
-  top := by rw [cacheAt_q]; show 64 + 8 * c.n * 111 + 128 * c.n ≤ 8192; omega
-  al := by rw [cacheAt_q]; omega
+    rw [sl_eq c WB]; unfold WB; omega_using [this]
+  top := by rw [cacheAt_q]; show 64 + 8 * c.n * 111 + 128 * c.n ≤ 8192; omega_using [hn6]
+  al := by rw [cacheAt_q]; omega_using []
 
 theorem nafLayQ (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) :
     PubNaf.NafLay (winQ c) size where
@@ -74,20 +74,20 @@ theorem nafLayQ (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) :
   win := winLayQ hc
   al := winAQ hc
   n4 := hn4
-  n6 := by change c.n ≤ 9; omega
-  digits := by show 64 * c.n + 1 ≤ 4 * (16 * c.n + 1); omega
+  n6 := by change c.n ≤ 9; omega_using [hn6]
+  digits := by show 64 * c.n + 1 ≤ 4 * (16 * c.n + 1); omega_using []
   rxy := by
     show c.sl RY = c.sl RX + 8 * c.n
-    simp (disch := decide) only [sl_eq]; unfold RX RY; omega
+    simp (disch := decide) only [sl_eq]; unfold RX RY; omega_using []
   rxz := by
     show c.sl RZ = c.sl RX + 16 * c.n
-    simp (disch := decide) only [sl_eq]; unfold RX RZ; omega
+    simp (disch := decide) only [sl_eq]; unfold RX RZ; omega_using []
   exy := by
     show c.sl TY = c.sl TX + 8 * c.n
-    simp (disch := decide) only [sl_eq]; unfold TX TY; omega
+    simp (disch := decide) only [sl_eq]; unfold TX TY; omega_using []
   exz := by
     show c.sl TZ = c.sl TX + 16 * c.n
-    simp (disch := decide) only [sl_eq]; unfold TX TZ; omega
+    simp (disch := decide) only [sl_eq]; unfold TX TZ; omega_using []
 
 /-- The window method's bits, where the digits go, are below its table. -/
 theorem winBits_le (c : Cfg) (h0 : 0 < c.n) : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by

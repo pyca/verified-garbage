@@ -68,9 +68,9 @@ theorem zeroOut_ok {p : SearchPublic} {o s : State} (h : SearchBase p o s) :
       t.mem = s.mem) (by ffrun [h.r4, h.r5]) (by rfl) (by rfl)) fun u ⟨⟨h0, hlr, h2, hm⟩, k⟩ => ?_)
   have write : InRegions u.wr (State.addr p.op) p.len := by
     refine ⟨rO p, ?_, by
-      simpa using Offset.contains_base (State.addr p.op) (d := 0) (n := p.len) (k := p.len) (by omega) (by decide)⟩
+      simpa using Offset.contains_base (State.addr p.op) (d := 0) (n := p.len) (k := p.len) (by omega_using []) (by decide)⟩
     rw [k.wr, h.wr, hi.wr, ← hi.regions.1]; simp [inWrites]
-  refine WP.mono (VG.Proof.Ffdh.Arm.zeroBuffer_ok false u (src := u.gpr .r1) (by omega) (by omega) f.nO write h2
+  refine WP.mono (VG.Proof.Ffdh.Arm.zeroBuffer_ok false u (src := u.gpr .r1) (by omega_using [hl]) (by omega_using [hl]) f.nO write h2
     rfl h0 hlr) fun t ⟨hz, _, _, hf, kt⟩ => ⟨⟨hz, by rw [← hm]; exact hf⟩, (k.mono (by decide)).trans (kt.mono (by decide))⟩
 
 end VG.Proof.RsaKeyGen.Arm.Search

@@ -65,21 +65,21 @@ theorem saves_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 
     simp only [runBlock_cons, exec_ins (slot_lt k), runStep_some, runBlock_nil, Option.some.injEq,
       exists_eq_left']
     refine WP.mono (saves_ok rs (k + 1) (s := s.setV (slot k).1 (setLane (s.v (slot k).1) 64 (slot k).2
-      (s.gpr r))) (by omega)) fun s' ⟨K, E, L, V⟩ => ⟨⟨K.gpr, K.mem, K.rd, K.wr, K.sp, K.c⟩, ?_, ?_, ?_⟩
+      (s.gpr r))) (by omega_using [hk])) fun s' ⟨K, E, L, V⟩ => ⟨⟨K.gpr, K.mem, K.rd, K.wr, K.sp, K.c⟩, ?_, ?_, ?_⟩
     · intro i hi
       cases i with
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
-        rw [L k (by omega), lane_set s (s.gpr r) (by omega) (by omega)]
+        rw [L k (by omega_using []), lane_set s (s.gpr r) (by omega_using [hk]) (by omega_using [hk])]
         simp
       | succ i =>
         simp only [List.getElem_cons_succ]
-        rw [show k + (i + 1) = k + 1 + i by omega, E i (by simpa using hi)]; rfl
+        rw [show k + (i + 1) = k + 1 + i by omega_using [], E i (by simpa using hi)]; rfl
     · intro j hj
-      rw [L j (by omega), lane_set s (s.gpr r) (by omega) (by omega)]
-      simp only [show k ≠ j by omega, ite_false]
+      rw [L j (by omega_using [hj]), lane_set s (s.gpr r) (by omega_using [hk]) (by omega_using [hk, hj])]
+      simp only [show k ≠ j by omega_using [hj], ite_false]
     · intro d hd
-      rw [V d hd, RegUpd.v_setV_of_ne _ _ (hd k (by omega))]
+      rw [V d hd, RegUpd.v_setV_of_ne _ _ (hd k (by omega_using [hk]))]
 
 /-- Restoring `rs` from the `k`-th lane on writes each from its lane and
 keeps the rest. -/
@@ -95,7 +95,7 @@ theorem restores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length �
     apply WP.of_runBlock
     simp only [runBlock_cons, exec_umov (slot_lt k), runStep_some, runBlock_nil, Option.some.injEq,
       exists_eq_left']
-    refine WP.mono (restores_ok rs (k + 1) (by omega) (List.nodup_cons.mp hnd).2)
+    refine WP.mono (restores_ok rs (k + 1) (by omega_using [hk]) (List.nodup_cons.mp hnd).2)
       fun s' ⟨K, V, E⟩ => ⟨⟨fun q hq => ?_, K.mem, K.rd, K.wr, K.sp⟩, V, ?_⟩
     · simp only [List.mem_cons, not_or] at hq
       rw [K.gpr q hq.2, RegUpd.gpr_write_of_ne _ _ _ hq.1]
@@ -106,6 +106,6 @@ theorem restores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length �
         rw [K.gpr r hr, RegUpd.gpr_write_self, BitVec.setWidth_eq]; rfl
       | succ i =>
         simp only [List.getElem_cons_succ]
-        rw [E i (by simpa using hi), show k + (i + 1) = k + 1 + i by omega]; rfl
+        rw [E i (by simpa using hi), show k + (i + 1) = k + 1 + i by omega_using []]; rfl
 
 end VG.Proof.Mont.AArch64.P521Square

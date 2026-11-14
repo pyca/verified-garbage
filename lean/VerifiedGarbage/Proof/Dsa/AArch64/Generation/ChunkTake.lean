@@ -35,18 +35,18 @@ theorem chunkTake_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
     have himm : (BitVec.ofNat 16 width).setWidth 64 = BitVec.ofNat 64 width := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega
+      omega_using [hw]
     have hwb : s.mem.readW (F + BitVec.ofNat 64 (8 * slots.base)) 64 = W slots.base := R.fr slots.base hb
     have hwu : s.mem.readW (F + BitVec.ofNat 64 (8 * slots.used)) 64 = BitVec.ofNat 64 used :=
       (R.fr slots.used hu).trans hused
     unfold tapeTake Impl.Dsa.AArch64.Random.store
-    brun [exec_ldrSp (off := 8 * slots.base) ⟨by omega, by omega⟩,
-      exec_ldrSp (off := 8 * slots.used) ⟨by omega, by omega⟩,
-      exec_addSp (show 8 * slots.pointer < 4096 by omega), exec_addSp (show 8 * slots.used < 4096 by omega), L.sp,
-      L.ld (d := 8 * slots.base) (n := 8) (by unfold frameBytes; omega),
-      L.ld (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega),
-      L.st (d := 8 * slots.pointer) (n := 8) (by unfold frameBytes; omega),
-      L.st (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega), hwb, hwu, himm, hadd]) rfl rfl rfl)
+    brun [exec_ldrSp (off := 8 * slots.base) ⟨by omega_using [], by omega_using [hb]⟩,
+      exec_ldrSp (off := 8 * slots.used) ⟨by omega_using [], by omega_using [hu]⟩,
+      exec_addSp (show 8 * slots.pointer < 4096 by omega_using [hp]), exec_addSp (show 8 * slots.used < 4096 by omega_using [hu]), L.sp,
+      L.ld (d := 8 * slots.base) (n := 8) (by unfold frameBytes; omega_using [hb]),
+      L.ld (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega_using [hu]),
+      L.st (d := 8 * slots.pointer) (n := 8) (by unfold frameBytes; omega_using [hp]),
+      L.st (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega_using [hu]), hwb, hwu, himm, hadd]) rfl rfl rfl)
     fun t ⟨hm, hk⟩ => ?_
   have Rt : Rep t.mem F S V
       (upd (upd W slots.pointer (VG.Proof.Bignum.off (W slots.base) used)) slots.used (BitVec.ofNat 64 (used + width))) := by
@@ -56,13 +56,13 @@ theorem chunkTake_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
     hk.sp hk.wr, Rt, ?_, hk⟩
   have ff : Outside F 0 frameBytes s.mem t.mem := by
     rw [hm]
-    exact ((writeW_outside _ F _ (d := 8 * slots.pointer) (by omega)).mono (by omega) (by unfold frameBytes; omega)).trans
-      ((writeW_outside _ F _ (d := 8 * slots.used) (by omega)).mono (by omega) (by unfold frameBytes; omega))
+    exact ((writeW_outside _ F _ (d := 8 * slots.pointer) (by omega_using [hp])).mono (by omega_using []) (by unfold frameBytes; omega_using [hp])).trans
+      ((writeW_outside _ F _ (d := 8 * slots.used) (by omega_using [hu])).mono (by omega_using []) (by unfold frameBytes; omega_using [hu]))
   intro a ha
   apply ff a
   right
   have hn := ha ⟨F, frameBytes⟩ (by simp)
   change ¬ ofs F a < frameBytes at hn
-  omega
+  omega_using [hn]
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -121,10 +121,10 @@ section
 variable {s : State} (hp : UPre s)
 include hp
 
-theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega
+theorem UPre.m_pos : 1 ≤ M s := by have := hp.len_lo; simp only [M]; omega_using [this]
 
 omit hp in
-theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega
+theorem len_eq (s : State) : Len s = 16 * M s + B s := by simp only [M, B]; omega_using []
 
 omit hp in
 theorem scr_sub {d n : Nat} (h : d + n ≤ 2432) : Region.Sub ⟨S s + BitVec.ofNat 64 d, n⟩ (scrR s) :=
@@ -138,21 +138,21 @@ omit hp in
 theorem wk_sub : Region.Sub (wkR s) (scrR s) := Region.sub_prefix (by decide)
 
 theorem UPre.t_wk : (tR s).Disjoint (wkR s) :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.tO]; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.tO]; omega_using [])
 
 theorem UPre.z_wk : (zR s).Disjoint (wkR s) :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.zO]; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.zO]; omega_using [])
 
 theorem UPre.t_z : (tR s).Disjoint (zR s) :=
-  Offset.disjoint _ (by simp only [Impl.AesXts.AArch64Unit.tO, Impl.AesXts.AArch64Unit.zO]; omega)
-    (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.tO]; omega)
-    (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.zO]; omega)
+  Offset.disjoint _ (by simp only [Impl.AesXts.AArch64Unit.tO, Impl.AesXts.AArch64Unit.zO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.tO]; omega_using [])
+    (by have := hp.scr_wrap; simp only [Impl.AesXts.AArch64Unit.zO]; omega_using [])
 
 omit hp in
 /-- The slots of the saved registers. -/
 theorem slot_sub (d : Nat) (h₁ : 2208 ≤ d) (h₂ : d + 8 ≤ 2264) :
     Region.Sub ⟨S s + BitVec.ofNat 64 d, 8⟩ ⟨S s + BitVec.ofNat 64 2208, 56⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 /-- Everything the code writes but the slots lies within the data or the
 first 2208 bytes of the scratch buffer. -/
@@ -161,7 +161,7 @@ theorem UPre.slots_disj {r : Region} (hr : Region.Sub r (dataR s) ∨ Region.Sub
   have slot : Region.Sub ⟨S s + BitVec.ofNat 64 2208, 56⟩ (scrR s) := scr_sub (by decide)
   rcases hr with h | h
   · exact (hp.data_scr.symm.sub_left slot).sub_right h
-  · exact (Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)).sub_right h
+  · exact (Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])).sub_right h
 
 omit hp in
 theorem t_sub : Region.Sub (tR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decide)
@@ -170,13 +170,13 @@ theorem z_sub : Region.Sub (zR s) ⟨S s, 2208⟩ := Offset.sub_base _ (by decid
 omit hp in
 theorem s_sub : Region.Sub ⟨S s, 2208⟩ (scrR s) := Region.sub_prefix (by decide)
 
-theorem UPre.l_sub : Region.Sub ⟨L s, 16⟩ (dataR s) := data_sub (by have := len_eq s; have := hp.m_pos; omega)
+theorem UPre.l_sub : Region.Sub ⟨L s, 16⟩ (dataR s) := data_sub (by have := len_eq s; have := hp.m_pos; omega_arith)
 
 theorem UPre.l_wrap : (L s).toNat + 16 ≤ 2 ^ 64 := by
   have := hp.data_wrap; have := len_eq s; have := hp.m_pos
   rw [L, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * (M s - 1)) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 end
 
@@ -187,38 +187,38 @@ variable {s : State} (hp : UPre s)
 include hp
 
 theorem UPre.wrapD : (D s).toNat + 16 * M s + B s ≤ 2 ^ 64 := by
-  have := hp.data_wrap; have := len_eq s; omega
+  have := hp.data_wrap; have := len_eq s; omega_arith
 
 omit hp in
 theorem blocks_sub {N : Nat} (h : N ≤ M s) : Region.Sub ⟨D s, 16 * N⟩ (dataR s) :=
-  Region.sub_prefix (by have := len_eq s; omega)
+  Region.sub_prefix (by have := len_eq s; omega_using [h, this])
 
 theorem UPre.lb_sub : Region.Sub ⟨L s, 16 + B s⟩ (dataR s) :=
-  data_sub (by have := len_eq s; have := hp.m_pos; omega)
+  data_sub (by have := len_eq s; have := hp.m_pos; omega_arith)
 
 theorem UPre.tl_eq : L s + 16 = D s + BitVec.ofNat 64 (16 * M s) := by
-  rw [L, Proof.AesXts.Unit.add16, show 16 * (M s - 1) + 16 = 16 * M s by have := hp.m_pos; omega]
+  rw [L, Proof.AesXts.Unit.add16, show 16 * (M s - 1) + 16 = 16 * M s by have := hp.m_pos; omega_using [this]]
 
 theorem UPre.tl_sub : Region.Sub ⟨L s + 16, B s⟩ (dataR s) := by
-  rw [hp.tl_eq]; exact data_sub (by have := len_eq s; omega)
+  rw [hp.tl_eq]; exact data_sub (by have := len_eq s; omega_using [this])
 
 theorem UPre.hd_lb : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16 + B s⟩ :=
-  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.wrapD; have := hp.m_pos; omega)
+  Offset.base_disjoint _ (Nat.le_refl _) (by have := hp.wrapD; have := hp.m_pos; omega_arith)
 
 theorem UPre.hd_l : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s, 16⟩ :=
-  hp.hd_lb.sub_right (Region.sub_prefix (by omega))
+  hp.hd_lb.sub_right (Region.sub_prefix (by omega_using []))
 
 theorem UPre.hd_tl : (⟨D s, 16 * (M s - 1)⟩ : Region).Disjoint ⟨L s + 16, B s⟩ := by
   rw [hp.tl_eq]
-  exact Offset.base_disjoint _ (by omega) (by have := hp.wrapD; omega)
+  exact Offset.base_disjoint _ (by omega_using []) (by have := hp.wrapD; omega_using [this])
 
 omit hp in
 theorem tl_l : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨L s, 16⟩ :=
-  Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega)
+  Offset.disjoint_base (L s) (d := 16) (n := B s) (k := 16) (Nat.le_refl _) (by simp only [B]; omega_using [])
 
 theorem UPre.tl_blocks : (⟨L s + 16, B s⟩ : Region).Disjoint ⟨D s, 16 * M s⟩ := by
   rw [hp.tl_eq]
-  exact Offset.disjoint_base _ (Nat.le_refl _) (by have := hp.wrapD; omega)
+  exact Offset.disjoint_base _ (Nat.le_refl _) (by have := hp.wrapD; omega_using [this])
 
 theorem UPre.l_hd : (⟨L s, 16⟩ : Region).Disjoint ⟨D s, 16 * (M s - 1)⟩ := hp.hd_l.symm
 

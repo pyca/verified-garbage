@@ -60,7 +60,7 @@ theorem reduceCall_init {p : ReducePublic} {s : State} (h : ReduceCallPrepared p
       p.modulus p.minv p.bytes.ptr bs 0 :=
     ⟨hct, hmt, (harr aXm (by decide)).trans hr,
       fun i hi _ => (wv_eq_zero_iff _ _ _ _).mp ((harr aX (by decide)).trans hx) i hi,
-      (harr aY (by decide)).trans hy, by have := p.greater; omega, hptr, hrem,
+      (harr aY (by decide)).trans hy, by have := p.greater; omega_using [this], hptr, hrem,
       work_source hc hf hk hs⟩
   refine ⟨⟨bs, 0, ?_, ?_⟩, ?_⟩
   · simpa only [Nat.sub_zero] using hlen

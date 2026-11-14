@@ -108,8 +108,8 @@ theorem words_congr {R : Nat} {m m' : Mem} {B : BitVec 32} {w : List (BitVec 64)
     (hR : R = 18 ∨ R = 24) (h : TableWordsAt R m B w d)
     (hk : ∀ k, keySlot ≤ k → k < savedSlot → m'.readW (wordAddr B k) 32 = m.readW (wordAddr B k) 32) :
     TableWordsAt R m' B w d := fun k h1 h2 => by
-  have hg : R / 6 ≤ 4 := by omega
-  rw [hk k h1 (by rw [savedSlot_eq]; rw [keySlot_eq] at h2; omega)]; exact h k h1 h2
+  have hg : R / 6 ≤ 4 := by omega_using [hR]
+  rw [hk k h1 (by rw [savedSlot_eq]; rw [keySlot_eq] at h2; omega_using [hR, h2])]; exact h k h1 h2
 
 /-- The regions the rounds write, within the functions' slots. -/
 theorem ctxSub {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) :
@@ -123,8 +123,8 @@ theorem ctxSub {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) :
 theorem byte_keep {m m' : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32)
     (hk : ∀ k, k < savedSlot → m'.readW (wordAddr B k) 32 = m.readW (wordAddr B k) 32) {o : Nat}
     (ho : o < 4 * savedSlot) : m' (B.setWidth 64 + BitVec.ofNat 64 o) = m (B.setWidth 64 + BitVec.ofNat 64 o) := by
-  have hs : o < 4 * slots := by rw [savedSlot_eq] at ho; rw [slots_eq]; omega
-  rw [byte_word (m := m') hfit hs, byte_word (m := m) hfit hs, hk _ (by omega)]
+  have hs : o < 4 * slots := by rw [savedSlot_eq] at ho; rw [slots_eq]; omega_using [ho]
+  rw [byte_word (m := m') hfit hs, byte_word (m := m) hfit hs, hk _ (by omega_using [ho])]
 
 theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)} {d : Spec.Camellia.Direction}
     (hH : Holds layout s.mem ((arg s 1).setWidth 64) (arg s 0).toNat w d) :
@@ -135,11 +135,11 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
       Keeps ((arg s 1).setWidth 64) (arg s 2).toNat layout.cryptScratch s.mem s'.mem := by
   obtain ⟨hrd, hwr, dAW, dRW, fitW, fitE, hR, hsz, -⟩ := hp
   rw [size_eq, slots_eq] at hsz
-  have hfit : (arg s 1).toNat + 4 * slots ≤ 2 ^ 32 := by rw [slots_eq]; omega
+  have hfit : (arg s 1).toNat + 4 * slots ≤ 2 ^ 32 := by rw [slots_eq]; omega_using [fitW, hsz]
   have hsub : Region.Sub ⟨(arg s 1).setWidth 64, 4 * slots⟩ ⟨(arg s 1).setWidth 64, (arg s 2).toNat * 8⟩ :=
-    Region.sub_prefix (by rw [slots_eq]; omega)
-  have hwS : ScrIn s.wr (arg s 1) := ⟨⟨2 * (arg s 2).toNat, by rw [slots_eq]; omega, by omega,
-    by rw [hwr, show 4 * (2 * (arg s 2).toNat) = (arg s 2).toNat * 8 by omega]; exact List.mem_singleton_self _⟩,
+    Region.sub_prefix (by rw [slots_eq]; omega_using [hsz])
+  have hwS : ScrIn s.wr (arg s 1) := ⟨⟨2 * (arg s 2).toNat, by rw [slots_eq]; omega_using [hsz], by omega_using [fitW],
+    by rw [hwr, show 4 * (2 * (arg s 2).toNat) = (arg s 2).toNat * 8 by omega_using []]; exact List.mem_singleton_self _⟩,
     hfit⟩
   have hrA : (⟨argAddr s 0, 12⟩ : Region) ∈ s.rd := by rw [hrd]; exact List.mem_singleton_self _
   have argIn : ∀ {t : State}, t.rd = s.rd → t.wr = s.wr → t.gpr .esp = s.gpr .esp → ∀ i < 3,
@@ -150,8 +150,8 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
   obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, k₁⟩ := saveAt_ok (j := cryptSavedSlot) (k := 1) (by decide) hwS
     (argIn rfl rfl rfl 1 (by decide)) (by rw [ea_arg rfl]; rfl)
   have k₁' : ∀ k, k < savedSlot → s₁.mem.readW (wordAddr (arg s 1) k) 32 = s.mem.readW (wordAddr (arg s 1) k) 32 :=
-    fun k hk => k₁ k (by rw [savedSlot_eq] at hk; rw [slots_eq]; omega)
-      (.inl (by rw [savedSlot_eq] at hk; rw [show cryptSavedSlot = 655 from rfl]; omega))
+    fun k hk => k₁ k (by rw [savedSlot_eq] at hk; rw [slots_eq]; omega_using [hk])
+      (.inl (by rw [savedSlot_eq] at hk; rw [show cryptSavedSlot = 655 from rfl]; omega_using [hk]))
   have esp₁ : s₁.gpr .esp = s.gpr .esp := g₁ _ (by decide) (by decide)
   have argR₁ : s₁.mem.readW (argAddr s 0) 32 = arg s 0 :=
     f₁.readW (arg_contains3 s fitE (i := 0) (by decide)) (fun r hr => by
@@ -166,22 +166,22 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _)]
   have b₂ : s₂.gpr sb = arg s 1 := by rw [o₂ _ (by decide)]; exact b₁
   obtain ⟨g, hgR⟩ : ∃ g, (arg s 0).toNat / 6 = g := ⟨_, rfl⟩
-  have hg : g = 3 ∨ g = 4 := by omega
+  have hg : g = 3 ∨ g = 4 := by omega_using [hR, hgR]
   have hTW₂ : TableWordsAt (arg s 0).toNat s₂.mem (arg s 1) w (ofSpecDir d) := by
     rw [m₂]; exact words_congr hR hTW fun k _ hk => k₁' k hk
   have hcore : CorePre s₂ g (keyEntry w g (ofSpecDir d)) :=
     { scr := by rw [b₂, wr₂, wr₁]; exact hwS
-      nk34 := by omega
+      nk34 := by omega_using [hg]
       keys := fun i hi => by
-        rw [b₂]; have := entries_of_words hTW₂ (e := i) (by omega); rw [hgR] at this; exact this
+        rw [b₂]; have := entries_of_words hTW₂ (e := i) (by omega_using [hgR, hi]); rw [hgR] at this; exact this
       hg := hg }
   refine WP.seq (WP.mono (M := isa) (Q := fun s' => Ctx s₂ s' ∧ ∀ b < 8, blk s' b =
       Spec.Camellia.encodeBlock (cryptWords g (keyEntry w g (ofSpecDir d)) (Spec.Camellia.decodeBlock (blk s₂ b))))
     (WP.ite (decide ((arg s 0).toNat = 18)) ((eval_e s₂).trans hz₂) (fun h => ?_) (fun h => ?_))
     fun s₃ ⟨c₃, bl₃⟩ => ?_)
-  · obtain rfl : g = 3 := by simp at h; omega
+  · obtain rfl : g = 3 := by simp at h; omega_using [hgR, h]
     exact crypt8_ok hcore
-  · obtain rfl : g = 4 := by simp at h; omega
+  · obtain rfl : g = 4 := by simp at h; omega_using [hR, hgR, h]
     exact crypt8_ok hcore
   have base₃ : s₃.gpr sb = arg s 1 := by rw [c₃.base, b₂]
   have f₃ : Frame (ctxRegions (arg s 1)) s₂.mem s₃.mem := by have := c₃.frame; rw [b₂] at this; exact this
@@ -192,7 +192,7 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
       s₃.mem.readW (wordAddr (arg s 1) k) 32 = s₂.mem.readW (wordAddr (arg s 1) k) 32 :=
     fun k h1 h2 => slot_keep hfit (Nat.le_refl _) f₃ (ctx_disj_hi hfit) h1 h2
   have sv₃ : SavedAt cryptSavedSlot s (arg s 1) s₃.mem := fun i hi => by
-    rw [keepHi₃ _ (by rw [grpSlot_eq]; exact Nat.le_add_right _ _) (by rw [slots_eq]; show 655 + i < 672; omega), m₂]
+    rw [keepHi₃ _ (by rw [grpSlot_eq]; exact Nat.le_add_right _ _) (by rw [slots_eq]; show 655 + i < 672; omega_using [hi]), m₂]
     exact sv₁ i hi
   -- The epilogue.
   obtain ⟨s₄, e₄, rg₄, o₄, m₄, -, -⟩ := restoreAt_ok (s₀ := s) (b := arg s 1) (j := cryptSavedSlot) (by decide)
@@ -228,7 +228,7 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
         Spec.Camellia.blockAt s.mem ((arg s 1).setWidth 64 + BitVec.ofNat 64 (4 * tailSlot + 16 * j)) := by
       apply Vector.ext; intro i hi
       simp only [Spec.Camellia.blockAt, Vector.getElem_ofFn, VG.Offset.add_add]
-      exact tail₂ _ (by rw [tailSlot_eq, savedSlot_eq]; omega)
+      exact tail₂ _ (by rw [tailSlot_eq, savedSlot_eq]; omega_using [hj8, hi])
     rw [hE, hb]
   · simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hout
     rw [keySlot_eq, grpSlot_eq] at hout
@@ -236,14 +236,14 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
     · rw [m₄, byte_word (m := s₃.mem) hfit hlo, byte_word (m := s.mem) hfit hlo]
       rw [slots_eq] at hlo
       by_cases hg : i / 4 < grpSlot
-      · rw [keep₃ _ (by rw [keySlot_eq]; omega) hg, m₂,
-          k₁ _ (by rw [slots_eq]; omega) (.inl (by rw [grpSlot_eq] at hg; show _ < 655; omega))]
-      · rw [keepHi₃ _ (by rw [grpSlot_eq] at hg ⊢; omega) (by rw [slots_eq]; omega), m₂,
-          k₁ _ (by rw [slots_eq]; omega) (.inr (by rw [grpSlot_eq] at hg; show 655 + 4 ≤ _; omega))]
+      · rw [keep₃ _ (by rw [keySlot_eq]; omega_using [hout]) hg, m₂,
+          k₁ _ (by rw [slots_eq]; omega_using [hlo]) (.inl (by rw [grpSlot_eq] at hg; show _ < 655; omega_using [hg]))]
+      · rw [keepHi₃ _ (by rw [grpSlot_eq] at hg ⊢; omega_using [hout, hg]) (by rw [slots_eq]; omega_using [hlo]), m₂,
+          k₁ _ (by rw [slots_eq]; omega_using [hlo]) (.inr (by rw [grpSlot_eq] at hg; show 655 + 4 ≤ _; omega_using [hout, hg]))]
     · refine fB _ fun r hr hc => ?_
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base _ (n := 1) (k := 4 * slots) (by rw [slots_eq] at hlo ⊢; omega)
-        (by omega) _ (Region.contains_self _ _) hc
+      exact VG.Offset.disjoint_base _ (n := 1) (k := 4 * slots) (by rw [slots_eq] at hlo ⊢; omega_using [hlo])
+        (by omega_using [hi]) _ (Region.contains_self _ _) hc
 
 theorem crypt_correct (s : State) (hs : cryptX86.pre s) :
     ∃ t s', Exec isa cryptPrepared s t s' ∧ abiPreserved s s' ∧ cryptX86.post s s' := by

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Blowfish.PPC64LE.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
+/-! # Blowfish on PPC64LE -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Blowfish.PPC64LE

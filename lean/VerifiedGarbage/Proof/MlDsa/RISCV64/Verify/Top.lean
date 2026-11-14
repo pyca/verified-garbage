@@ -63,10 +63,10 @@ theorem compute_piece : VPiece p STK (KX p STK 0 false 0) (KE p STK) (compute P 
   refine Piece.seq (J := KX p STK p.ℓ false 0) ?_ ((nttC_piece hP hF hS).seq
     (Piece.seq (J := KX p STK p.ℓ true p.k) ?_ ((vhash_piece hF).seq (cmp_piece hF))))
   · refine Piece.mono (Piece.seqR (I := fun j => KX p STK j false 0) p.ℓ 0
-      fun j _ hj => nttZ_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun j _ hj => nttZ_piece hP hF hS (by omega_using [hj])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun r => KX p STK p.ℓ true r) p.k 0
-      fun r _ hr => row_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun r _ hr => row_piece hP hF hS (by omega_using [hr])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 
 end
@@ -175,7 +175,7 @@ theorem body_piece : VPiece p STK (fun σ s => VC p STK σ s ∧ s.gpr .s4 = 1) 
     dsimp only [hintOf]
     rw [e]
   · refine Piece.seq (Piece.mono (Piece.seqR (I := fun j => V2 p STK j) p.ℓ 0
-      fun j _ hj => zOne_piece hP hF hS (by omega)) (fun _ _ _ h => v1_v2 h.1 h.2) fun _ _ _ h => ?_)
+      fun j _ hj => zOne_piece hP hF hS (by omega_using [hj])) (fun _ _ _ h => v1_v2 h.1 h.2) fun _ _ _ h => ?_)
       (inner_piece hP hF hS)
     rwa [Nat.zero_add] at h
 
@@ -192,7 +192,7 @@ theorem vepi_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : VFi
   have hk := hF.k
   have hin : ∀ o, 1288 ≤ o → o + 8 ≤ 1368 → InRegions (s.rd ++ s.wr) (vScr σ + BitVec.ofNat 64 o) 8 :=
     fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := vlay p STK σ) (o := o) (l := 8) (hs.cw 0 (by decide) (by decide))
-      (by rw [vlay_size0]; omega) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
+      (by rw [vlay_size0]; omega_using [hscr, h₂]) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)
   refine WP.mono (topEnd_ok hs.s11 hs.al0 vc.sav hin vc.pres)
     fun s' ⟨pr, lr, r3, _, sp', _, _⟩ => ⟨⟨pr, sp'.trans vc.sp, lr⟩, ?_⟩
   sig_post [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,
@@ -238,7 +238,7 @@ theorem verify_verified {P : Prims} {S : Nat} (hP : VPrimsOk P S) (h48 : 1168 �
     Verified RISCV64.target (verify P p) (Proof.MlDsa.verifyWithCacheContract p RISCV64.abi S) := by
   have hF := vfacts hp
   have hk := verify_piece hP hF (Nat.le_refl _) h48
-  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega⟩
+  obtain ⟨n, rfl⟩ : ∃ n, S = n + 1 := ⟨S - 1, by omega_using [h48]⟩
   refine ⟨fun s hs => hk.ok s s (vpre_of hs) rfl, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_,
     ⟨verifySat p, hsat⟩⟩
   sig_pub [Proof.MlDsa.verifyWithCacheContract, Proof.MlDsa.verifyWithCacheSig, Spec.MlDsa.verifySig, RISCV64.abi,

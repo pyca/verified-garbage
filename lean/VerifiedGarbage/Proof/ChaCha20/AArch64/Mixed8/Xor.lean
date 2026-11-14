@@ -57,7 +57,7 @@ theorem correct_aux (s : State) (hs : xorAArch64.pre s) :
       fun u => ∃ t, TRest s t u := by
     apply WP.ite (decide (L s < 512)) (nonzero_short h5)
     · intro _
-      refine WP.block_nil ⟨0,?_,?_,?_,?_,?_,by omega,?_,hr,hw,hsp,?_,?_,?_,?_,?_⟩
+      refine WP.block_nil ⟨0,?_,?_,?_,?_,?_,by omega_using [],?_,hr,hw,hsp,?_,?_,?_,?_,?_⟩
       · rw [hg _ (by decide)]
       · rw [hg _ (by decide)]; simp
       · rw [hg _ (by decide)]
@@ -73,7 +73,7 @@ theorem correct_aux (s : State) (hs : xorAArch64.pre s) :
       · rw [hv]
       · rw [hv]
     · intro hshort
-      have hge : 512 ≤ L s := by have hh := of_decide_eq_false hshort; omega
+      have hge : 512 ≤ L s := by have hh := of_decide_eq_false hshort; omega_using [hh]
       apply WP.seq
       refine (tenter_ok hp hg hm hr hw hsp hv).mono fun b hb => ?_
       apply WP.seq

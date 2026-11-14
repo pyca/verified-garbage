@@ -51,7 +51,7 @@ theorem CT.loopN {body : Prog isa} {c : Cond} (Inv : Nat → State → Prop)
     fun ht => ?_⟩
   rw [c₁] at ht
   have h1 : n ≠ 1 := by simpa using ht
-  exact ⟨n - 1, by omega, i₁ h1, i₂ h1⟩
+  exact ⟨n - 1, by omega_using [hn], i₁ h1, i₂ h1⟩
 
 theorem CT.of_empty {I : State → Prop} {c : Prog isa} (h : ∀ s, ¬ I s) : CT I c :=
   RelCT.of_false fun s₁ _ hp => h s₁ hp.1
@@ -73,7 +73,7 @@ theorem ldPin {I : State → Prop} {r : Reg} {o : Nat} {x : BitVec 32} {is : Lis
     (CT.taint [.ebp] (pin_ebp fun s h => (hW s h).1) h₁) (fun s hs => ?_)
     (CT.taint [.ebp, r] (pin2 fun _ h => h) h))
   obtain ⟨bp, sl, ir⟩ := hW s hs
-  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := Proof.AesGcm.X86.w64_add (by omega)
+  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := Proof.AesGcm.X86.w64_add (by omega_using [hwW])
   simp only [slotv_eq] at sl
   have hr' : Reg.ebp ≠ r := fun h => hr h.symm
   refine WP.of_runBlock ⟨_, by grun [bp, aW, ir], ?_, ?_⟩
@@ -85,13 +85,13 @@ theorem ldPin {I : State → Prop} {r : Reg} {o : Nat} {x : BitVec 32} {is : Lis
 theorem deriveBlock_ct {p : Prm} (L : Lay p) {I : State → Prop} (hI : ∀ s, I s → Env p s) :
     CT I (.block deriveBlock) :=
   ldPin (r := .eax) (o := nonceO) (x := p.N) (W := p.W)
-    (fun s h => ⟨(hI s h).ebp, (hI s h).slots.nonce, (hI s h).perm.wR (by decide)⟩) (by have := L.ww; unfold nonceO; omega)
+    (fun s h => ⟨(hI s h).ebp, (hI s h).slots.nonce, (hI s h).perm.wR (by decide)⟩) (by have := L.ww; unfold nonceO; omega_using [this])
     (by decide) (by taint_decide) (by taint_decide)
 
 theorem derivePost_ct {p : Prm} (L : Lay p) {I : State → Prop} {i : Nat}
     (hI : ∀ s, I s → Env p s ∧ slotv s.mem p.W iO = BitVec.ofNat 32 i) : CT I (.block derivePost) :=
   ldPin (r := .edx) (o := iO) (x := BitVec.ofNat 32 i) (W := p.W)
-    (fun s h => ⟨(hI s h).1.ebp, (hI s h).2, (hI s h).1.perm.wR (by decide)⟩) (by have := L.ww; unfold iO; omega)
+    (fun s h => ⟨(hI s h).1.ebp, (hI s h).2, (hI s h).1.perm.wR (by decide)⟩) (by have := L.ww; unfold iO; omega_using [this])
     (by decide) (by taint_decide) (by taint_decide)
 
 /-- The state of a step of `derive` before its call. -/
@@ -154,13 +154,13 @@ theorem derive_ct (v : GcmImpl) {p : Prm} (L : Lay p) : CT (Env p) (derive v.cal
   refine CT.seq (J := fun s => ∃ σ, DInv p σ 0 s) (CT.taint [.ebp] (pin_ebp fun s h => h.ebp) (by taint_decide))
     (fun σ E => by obtain ⟨t₀, run₀, I₀⟩ := derive0_ok L E; exact WP.of_runBlock ⟨t₀, run₀, σ, I₀⟩) ?_
   refine (CT.loopN (fun k s => ∃ σ i, k = p.R / 2 - 1 - i ∧ i < p.R / 2 - 1 ∧ DInv p σ i s) (fun k => ?_)
-    (fun k s ⟨σ, i, hk', hi, I⟩ => ?_) (p.R / 2 - 1)).mono fun s ⟨σ, I⟩ => ⟨σ, 0, by omega, by omega, I⟩
+    (fun k s ⟨σ, i, hk', hi, I⟩ => ?_) (p.R / 2 - 1)).mono fun s ⟨σ, I⟩ => ⟨σ, 0, by omega_using [], by omega_using [hR], I⟩
   · by_cases hkk : 0 < k ∧ k ≤ p.R / 2 - 1
     · exact (derStep_ct v L (i := p.R / 2 - 1 - k)).mono fun s ⟨σ, i, hk', hi, I⟩ => ⟨σ, by
-        rw [show p.R / 2 - 1 - k = i by omega]; exact I⟩
-    · exact CT.of_empty fun s ⟨σ, i, hk', hi, _⟩ => hkk ⟨by omega, by omega⟩
-  · refine WP.mono (derStep_ok v L hi I) fun s' ⟨I', hz⟩ => ⟨by omega, by rw [eval_ne hz]; simp; omega,
-      fun hk1 => ⟨σ, i + 1, by omega, by omega, I'⟩⟩
+        rw [show p.R / 2 - 1 - k = i by omega_using [hkk, hk']]; exact I⟩
+    · exact CT.of_empty fun s ⟨σ, i, hk', hi, _⟩ => hkk ⟨by omega_using [hk', hi], by omega_using [hk']⟩
+  · refine WP.mono (derStep_ok v L hi I) fun s' ⟨I', hz⟩ => ⟨by omega_using [hk', hi], by rw [eval_ne hz]; simp; omega_using [hk'],
+      fun hk1 => ⟨σ, i + 1, by omega_using [hk'], by omega, I'⟩⟩
 
 /-! ## `expand` and `hkey` -/
 

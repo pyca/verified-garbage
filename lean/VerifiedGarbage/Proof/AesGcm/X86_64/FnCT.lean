@@ -43,18 +43,28 @@ theorem restore_check : ∃ hc, (taint.check (Taint.ofRegs [.r13, .r14, .r15, .r
   ⟨_, by taint_decide⟩
 
 /-- A function `entry; body; restore`, in two runs from `s₀` and `s₀'`. -/
-theorem fn_rel {E : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
+theorem fn_relN {E : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr} {N : Nat}
     (rs : List Reg) (hag : ∀ r ∈ rs, s₀.gpr r = s₀'.gpr r)
     (hc : ∃ hc, (taint.check (Taint.ofRegs rs) (.block E) hc).isSome = true)
     (hE₁ : WP isa (.block E) s₀ I₁) (hE₂ : WP isa (.block E) s₀' I₂)
     (hB : RelCT isa (fun s₁ s₂ => True ∧ I₁ s₁ ∧ I₂ s₂) B
-      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) :
+      fun s₁ s₂ => Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (.block E) (.seq B (.block restore))) fun _ _ => True := by
   have e := rel_wp (rel_taint (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') rs (fun _ _ h => by
       obtain ⟨rfl, rfl⟩ := h; exact hag) hc) (fun _ _ h => h) (G₁ := I₁) (G₂ := I₂)
     (fun s h => h ▸ hE₁) (fun s h => h ▸ hE₂)
   exact RelCT.seq e (RelCT.seq hB (rel_taint [.r13, .r14, .r15, .rsp]
     (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.1, h.2, fun _ h => by cases h⟩) restore_check))
+
+/-- `fn_relN`, with the 2560 bytes of working space of the others. -/
+theorem fn_rel {E : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
+    (rs : List Reg) (hag : ∀ r ∈ rs, s₀.gpr r = s₀'.gpr r)
+    (hc : ∃ hc, (taint.check (Taint.ofRegs rs) (.block E) hc).isSome = true)
+    (hE₁ : WP isa (.block E) s₀ I₁) (hE₂ : WP isa (.block E) s₀' I₂)
+    (hB : RelCT isa (fun s₁ s₂ => True ∧ I₁ s₁ ∧ I₂ s₂) B
+      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.seq (.block E) (.seq B (.block restore))) fun _ _ => True :=
+  fn_relN rs hag hc hE₁ hE₂ hB
 
 /-- A stack argument loaded into `rax`. -/
 theorem loadArg_ok {s : State} {k : Nat}
@@ -66,8 +76,8 @@ theorem loadArg_ok {s : State} {k : Nat}
   · intro r a; simp [VG.X86_64.RegUpd.gpr_setReg, a]
 
 /-- A function whose entry first loads `W`, a stack argument, into `rax`. -/
-theorem fn_rel₂ {E₁ : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
-    {k : Nat} (rs : List Reg) (hrs : .rsp ∈ rs)
+theorem fn_rel₂N {E₁ : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
+    {k N : Nat} (rs : List Reg) (hrs : .rsp ∈ rs)
     (hc₀ : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem (at_ .rsp k))]) hc).isSome = true) (hag : ∀ r ∈ rs, s₀.gpr r = s₀'.gpr r)
     (hw : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 k) 64 = s₀'.mem.readW (s₀'.gpr .rsp + BitVec.ofNat 64 k) 64)
     (hr₁ : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rsp + BitVec.ofNat 64 k) 8)
@@ -76,7 +86,7 @@ theorem fn_rel₂ {E₁ : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ 
     (hE₁ : WP isa (.block (([.mov .rax (.mem (at_ .rsp k))] : List Instr) ++ E₁)) s₀ I₁)
     (hE₂ : WP isa (.block (([.mov .rax (.mem (at_ .rsp k))] : List Instr) ++ E₁)) s₀' I₂)
     (hB : RelCT isa (fun s₁ s₂ => True ∧ I₁ s₁ ∧ I₂ s₂) B
-      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) :
+      fun s₁ s₂ => Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
       (.seq (.block (([.mov .rax (.mem (at_ .rsp k))] : List Instr) ++ E₁)) (.seq B (.block restore))) fun _ _ => True := by
   have l := rel_wp (rel_taint (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') [.rsp] (fun _ _ h r hr => by
@@ -95,6 +105,22 @@ theorem fn_rel₂ {E₁ : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ 
     (fun s h => by subst h; exact hE₁) (fun s h => by subst h; exact hE₂)
   exact RelCT.seq e (RelCT.seq hB (rel_taint [.r13, .r14, .r15, .rsp]
     (fun _ _ h => EnvAgree.regs (rs := []) ⟨h.1, h.2, fun _ h => by cases h⟩) restore_check))
+
+/-- `fn_rel₂N`, with the 2560 bytes of working space of the others. -/
+theorem fn_rel₂ {E₁ : List Instr} {B : Prog isa} {s₀ s₀' : State} {I₁ I₂ : State → Prop} {Ctx St W SP : Addr}
+    {k : Nat} (rs : List Reg) (hrs : .rsp ∈ rs)
+    (hc₀ : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov .rax (.mem (at_ .rsp k))]) hc).isSome = true) (hag : ∀ r ∈ rs, s₀.gpr r = s₀'.gpr r)
+    (hw : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 k) 64 = s₀'.mem.readW (s₀'.gpr .rsp + BitVec.ofNat 64 k) 64)
+    (hr₁ : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rsp + BitVec.ofNat 64 k) 8)
+    (hr₂ : InRegions (s₀'.rd ++ s₀'.wr) (s₀'.gpr .rsp + BitVec.ofNat 64 k) 8)
+    (hc : ∃ hc, (taint.check (Taint.ofRegs (.rax :: rs)) (.block E₁) hc).isSome = true)
+    (hE₁ : WP isa (.block (([.mov .rax (.mem (at_ .rsp k))] : List Instr) ++ E₁)) s₀ I₁)
+    (hE₂ : WP isa (.block (([.mov .rax (.mem (at_ .rsp k))] : List Instr) ++ E₁)) s₀' I₂)
+    (hB : RelCT isa (fun s₁ s₂ => True ∧ I₁ s₁ ∧ I₂ s₂) B
+      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
+      (.seq (.block (([.mov .rax (.mem (at_ .rsp k))] : List Instr) ++ E₁)) (.seq B (.block restore))) fun _ _ => True :=
+  fn_rel₂N rs hrs hc₀ hag hw hr₁ hr₂ hc hE₁ hE₂ hB
 
 /-- Constant time, from runs related from each pair of states. -/
 theorem ct_of_rel {k : Contract isa} {c : Prog isa}

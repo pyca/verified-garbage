@@ -40,7 +40,7 @@ structure SI (s₀ : State) (F : Addr) (n : Nat) (s : State) : Prop where
 
 theorem save_sep {F : Addr} (_hF : F.toNat + frameBytes ≤ 2 ^ 64) {i j : Nat} (hi : i < 18) (hj : j < 18)
     (h : i ≠ j) : Mem.Sep (off F (oSave + 8 * i)) 8 (off F (oSave + 8 * j)) 8 :=
-  VG.Offset.sep F (by simp only [oSave]; omega) (by simp only [oSave]; omega) (by simp only [oSave]; omega)
+  VG.Offset.sep F (by simp only [oSave]; omega_using [h]) (by simp only [oSave]; omega_using [hi]) (by simp only [oSave]; omega_using [hj])
 
 theorem save_step (s₀ : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^ 64) (h12 : s₀.gpr .r12 = F)
     (hin : ∀ i < 18, InRegions s₀.wr (off F (oSave + 8 * i)) 8) {n : Nat} (hn : n < 18) {s : State}
@@ -51,13 +51,13 @@ theorem save_step (s₀ : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^ 6
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     exec_store_d (show Reg.r12 ≠ .r0 by decide) (show oSave + 8 * n < 2 ^ 15 ∧ (oSave + 8 * n) % 4 = 0 by
-      simp only [oSave]; omega) hout, Option.some.injEq, exists_eq_left', hw]
+      simp only [oSave]; omega_using [hn]) hout, Option.some.injEq, exists_eq_left', hw]
   refine ⟨h.gpr, h.rd, h.wr, h.sp, h.lr, ?_, fun i hi => ?_⟩
   · simp only [frameBytes] at hF
-    exact h.out.trans ((writeW_outside s.mem F (d := oSave + 8 * n) _ (by simp only [oSave]; omega)).mono
-      (by omega) (by omega))
+    exact h.out.trans ((writeW_outside s.mem F (d := oSave + 8 * n) _ (by simp only [oSave]; omega_using [hn])).mono
+      (by omega_using []) (by omega_using [hn]))
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [Mem.readW_writeW_sep (save_sep hF (by omega) hn (by omega)) (by decide)]
+    · rw [Mem.readW_writeW_sep (save_sep hF (by omega_arith) hn (by omega_using [hi])) (by decide)]
       exact h.saved i hi
     · rw [Mem.readW_writeW_self64, h.gpr]
 
@@ -82,7 +82,7 @@ theorem saveRegs_ok (s₀ : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^
   refine WP.mono (WP.keep [.r12] (Q := fun s => s.gpr .r12 = F ∧ s.mem = s₀.mem)
     (by prun [exec_addSp (show 0 < 2 ^ 15 by decide), hsp, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a12, m1⟩, k1⟩ => ?_
   have hin1 : ∀ i < 18, InRegions s₁.wr (off F (oSave + 8 * i)) 8 := fun i hi => by
-    rw [k1.wr]; exact hin i (by omega)
+    rw [k1.wr]; exact hin i (by omega_using [hi])
   refine WP.mono (wp_range_flatMap (M := isa) (SI s₁ F) (fun k s hk h => save_step s₁ hF a12 hin1 hk h) 18
     (Nat.le_refl _) s₁ ⟨rfl, rfl, rfl, rfl, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s h => ?_
@@ -102,11 +102,11 @@ theorem saveRegs_ok (s₀ : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^
     exact k1.gpr r (by simp [h12])
   · simp only [mem_write, h12']
     rw [← m1]
-    exact (h.out.mono (by omega) (by omega)).trans ((writeW_outside s.mem F (d := oLr) _ (by simp only [oLr]; omega)).mono
-      (by simp only [oLr, oSave]; omega) (by simp only [oLr, oSave]; omega))
+    exact (h.out.mono (by omega_using []) (by omega_using [])).trans ((writeW_outside s.mem F (d := oLr) _ (by simp only [oLr]; omega_using [])).mono
+      (by simp only [oLr, oSave]; omega_using []) (by simp only [oLr, oSave]; omega_using []))
   · simp only [mem_write, h12']
-    rw [Mem.readW_writeW_sep (VG.Offset.sep F (by simp only [oLr, oSave]; omega) (by simp only [oSave]; omega)
-      (by simp only [oLr]; omega)) (by decide), h.saved i hi, k1.gpr _ (by have := nv_ne0 i hi; simp [this.2])]
+    rw [Mem.readW_writeW_sep (VG.Offset.sep F (by simp only [oLr, oSave]; omega_using [hi]) (by simp only [oSave]; omega_using [hi])
+      (by simp only [oLr]; omega_using [])) (by decide), h.saved i hi, k1.gpr _ (by have := nv_ne0 i hi; simp [this.2])]
   · simp only [mem_write, h12']
     rw [Mem.readW_writeW_self64]
     gsimp
@@ -136,12 +136,12 @@ theorem restore_step (sB : State) {F : Addr} {v : Nat → BitVec 64} {lr : BitVe
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil,
     exec_load_d (show Reg.r12 ≠ .r0 by decide) (show oSave + 8 * n < 2 ^ 15 ∧ (oSave + 8 * n) % 4 = 0 by
-      simp only [oSave]; omega) hin', Option.some.injEq, exists_eq_left', h.r12, hv]
+      simp only [oSave]; omega_using [hn]) hin', Option.some.injEq, exists_eq_left', h.r12, hv]
   refine ⟨?_, fun i hi => ?_, fun r h0 h12 hr => ?_, h.mem, h.rd, h.wr, h.sp, h.lr⟩
   · rw [gpr_write, ite_eq_right_iff.mpr fun e => absurd e.symm hne.2]; exact h.r12
   · rw [gpr_write]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · have e : nv i ≠ nv n := fun e => absurd (nv_inj i (by omega) n hn e) (by omega)
+    · have e : nv i ≠ nv n := fun e => absurd (nv_inj i (by omega_arith) n hn e) (by omega_using [hi])
       rw [ite_eq_right_iff.mpr fun e' => absurd e' e]; exact h.restored i hi
     · rw [ite_eq_left_iff.mpr fun e => absurd rfl e]
   · rw [gpr_write, ite_eq_right_iff.mpr fun e => absurd e (hr n hn)]
@@ -163,7 +163,7 @@ theorem restoreRegs_ok (sB : State) {F : Addr} {v : Nat → BitVec 64} {lr : Bit
   have hlv : (sB.write .r12 sB.sp).mem.readW ((sB.write .r12 sB.sp).gpr .r12 + BitVec.ofNat 64 oLr) 64 = lr := by
     rw [mem_write, gpr_write, ite_eq_left rfl, hsp]; exact hlr
   refine WP.mono (Q := RI sB F v lr 0) ?_ fun s₁ h₁ => WP.mono (wp_range_flatMap (M := isa) (RI sB F v lr)
-    (fun k s hk h => restore_step sB (fun i hi => hin i (by omega)) hsav hk h) 18 (Nat.le_refl _) s₁ h₁)
+    (fun k s hk h => restore_step sB (fun i hi => hin i (by omega_using [hi])) hsav hk h) 18 (Nat.le_refl _) s₁ h₁)
     fun s h => ⟨h.restored, h.lr, h.others, h.mem, h.rd, h.wr, h.sp⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_addSp (show 0 < 2 ^ 15 by decide), BitVec.add_zero,
@@ -178,19 +178,19 @@ theorem restoreRegs_ok (sB : State) {F : Addr} {v : Nat → BitVec 64} {lr : Bit
 theorem writeW_zero_byte (m : Mem) (p : Addr) {a d : Nat} (ha : a < 2 ^ 32) (hd : d < 2 ^ 32) :
     (m.writeW (off p a) (BitVec.ofNat 64 0)) (off p d) = if a ≤ d ∧ d < a + 8 then 0 else m (off p d) := by
   simp only [Mem.writeW, Mem.write, off]
-  rw [VG.Offset.sub_toNat' p (by omega) (by omega)]
+  rw [VG.Offset.sub_toNat' p (by omega_using [ha]) (by omega_using [hd])]
   split
   · split
     · rename_i h1 h2
-      rw [ite_eq_left ⟨h1, by omega⟩]
+      rw [ite_eq_left ⟨h1, by omega_using [h2]⟩]
       apply BitVec.eq_of_toNat_eq
       simp
     · rename_i h1 h2
-      rw [ite_eq_right (by omega)]
+      rw [ite_eq_right (by omega_using [h2])]
   · split
     · omega
     · rename_i h1 h2
-      rw [ite_eq_right (by omega)]
+      rw [ite_eq_right (by omega_using [h1])]
 
 /-- `clearNonce`: the nonce's 32 octets := 0. -/
 theorem clearNonce_ok (s : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^ 64) (hsp : s.sp = F)
@@ -201,7 +201,7 @@ theorem clearNonce_ok (s : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^ 
   have hF' := hF
   simp only [frameBytes] at hF'
   have st : ∀ k < 4, InRegions s.wr (off F (oNonce + 8 * k)) 8 := fun k hk => by
-    have := hw.st (d := 8 * k) (n := 8) (by omega) (by decide)
+    have := hw.st (d := 8 * k) (n := 8) (by omega_using [hk]) (by decide)
     rwa [off_off] at this
   refine WP.keep _ ?_ (by decide)
   have s0 : InRegions s.wr (F + BitVec.ofNat 64 120) 8 := st 0 (by decide)
@@ -211,21 +211,21 @@ theorem clearNonce_ok (s : State) {F : Addr} (hF : F.toNat + frameBytes ≤ 2 ^ 
   simp only [clearNonce, oNonce]
   prun [exec_addSp (show 0 < 2 ^ 15 by decide), hsp, BitVec.add_zero, s0, s1, s2, s3]
   refine ⟨fun j hj => ?_, ?_⟩
-  · rw [writeW_zero_byte _ _ (a := 144) (d := 120 + j) (by omega) (by omega)]
+  · rw [writeW_zero_byte _ _ (a := 144) (d := 120 + j) (by omega_using []) (by omega_using [hj])]
     split
     · rfl
-    rw [writeW_zero_byte _ _ (a := 136) (d := 120 + j) (by omega) (by omega)]
+    rw [writeW_zero_byte _ _ (a := 136) (d := 120 + j) (by omega_using []) (by omega_using [hj])]
     split
     · rfl
-    rw [writeW_zero_byte _ _ (a := 128) (d := 120 + j) (by omega) (by omega)]
+    rw [writeW_zero_byte _ _ (a := 128) (d := 120 + j) (by omega_using []) (by omega_using [hj])]
     split
     · rfl
-    rw [writeW_zero_byte _ _ (a := 120) (d := 120 + j) (by omega) (by omega)]
+    rw [writeW_zero_byte _ _ (a := 120) (d := 120 + j) (by omega_using []) (by omega_using [hj])]
     split
     · rfl
     · omega
   · have w := fun (m : Mem) (d : Nat) (h : d + 8 ≤ 2 ^ 64) => writeW_outside m F (d := d) (BitVec.ofNat 64 0) h
-    exact ((((w _ 120 (by omega)).mono (by omega) (by omega)).trans ((w _ 128 (by omega)).mono (by omega) (by omega))).trans
-      ((w _ 136 (by omega)).mono (by omega) (by omega))).trans ((w _ 144 (by omega)).mono (by omega) (by omega))
+    exact ((((w _ 120 (by omega_using [])).mono (by omega_using []) (by omega_using [])).trans ((w _ 128 (by omega_using [])).mono (by omega_using []) (by omega_using []))).trans
+      ((w _ 136 (by omega_using [])).mono (by omega_using []) (by omega_using []))).trans ((w _ 144 (by omega_using [])).mono (by omega_using []) (by omega_using []))
 
 end VG.Proof.Dsa.PPC64LE.Rnd

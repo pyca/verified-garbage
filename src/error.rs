@@ -22,7 +22,7 @@ pub struct InvalidKeyLength;
 /// not a whole number of blocks. The function that returns it says which
 /// input: every call's for CBC and ECB, that of a call that does not end the
 /// message for CFB, OFB and CTR, and the whole message's for the modes that
-/// buffer a partial block (Blowfish-ECB's and RC2-CBC's `finalize`).
+/// buffer a partial block (Blowfish-ECB's `finalize`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct IncompleteBlock;
 
@@ -232,7 +232,6 @@ mod tests {
             crate::aead::chacha20poly1305::Error::TooManyPieces,
             crate::ed448::Error::ContextTooLong,
             crate::cipher::rc2::Error::InvalidEffectiveBits,
-            crate::cipher::rc2::Error::InvalidIvLength,
             crate::cipher::rc2::Error::InvalidKeyLength,
             crate::aead::sm4_gcm::Error::AadAfterText,
             crate::aead::sm4_gcm::Error::InvalidAadLength,

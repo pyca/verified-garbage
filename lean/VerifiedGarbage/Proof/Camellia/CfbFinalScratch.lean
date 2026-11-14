@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Camellia-CFB128 and Camellia-OFB of a message's last piece with its working space as an argument
@@ -108,9 +109,9 @@ theorem cfbEncryptFinalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbFinal
   dsimp only [Curry.apply, cfbEncryptFinalPostSk, ArgWord.ofRaw, Spec.Cfb.EncryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega),
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_using [hR]) fun i hi => hs i (by omega_using [hi]),
     bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h hR
 
 theorem cfbEncryptFinalPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbFinalSig.words pb).length →
@@ -140,7 +141,7 @@ theorem cfbEncryptFinalPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbFin
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h hR
 
 theorem cfbEncryptFinalPost_of_sk : Curry.Imp _ (cfbEncryptFinalPostSk pb) (fun schedule rounds iv data len m m' _ =>
@@ -183,9 +184,9 @@ theorem cfbDecryptFinalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbFinal
   dsimp only [Curry.apply, cfbDecryptFinalPostSk, ArgWord.ofRaw, Spec.Cfb.DecryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega),
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_using [hR]) fun i hi => hs i (by omega_using [hi]),
     bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h hR
 
 theorem cfbDecryptFinalPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbFinalSig.words pb).length →
@@ -215,7 +216,7 @@ theorem cfbDecryptFinalPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfbFin
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h hR
 
 theorem cfbDecryptFinalPost_of_sk : Curry.Imp _ (cfbDecryptFinalPostSk pb) (fun schedule rounds iv data len m m' _ =>
@@ -288,9 +289,9 @@ theorem ofbFinalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbFinalSig.wor
   dsimp only [Curry.apply, ofbFinalPostSk, ArgWord.ofRaw, Spec.Ofb.CryptFinal] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
-  rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega),
+  rw [subkeysAt_congr (by simp only [scheduleLength]; omega_using [hR]) fun i hi => hs i (by omega_using [hi]),
     bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h hR
 
 theorem ofbFinalPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbFinalSig.words pb).length →
@@ -320,7 +321,7 @@ theorem ofbFinalPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbFinalSig.w
   have := Nat.mod_le n.toNat (2 ^ pb)
   intro hR
   rw [bytesAt_congr' (k := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr' hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr' hv]
   exact h hR
 
 theorem ofbFinalPost_of_sk : Curry.Imp _ (ofbFinalPostSk pb) (fun schedule rounds iv data len m m' _ =>

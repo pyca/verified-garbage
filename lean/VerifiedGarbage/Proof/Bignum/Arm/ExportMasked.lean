@@ -41,7 +41,7 @@ theorem exportMasked_truncated_ok (s : State) {base dst : BitVec 32} {len w o k 
     rw [width] at fit
     simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at fit
     have := ws.nowrap
-    omega
+    omega_using [hk', fit, this]
   rw [exportMasked, WP.seq_iff]
   refine WP.mono (exportBE_truncated_ok s ws layout width ho hk hk' dstFit write sep ptr index output count) ?_
   rintro u ⟨bytes, frameU, _, outputU, restU⟩

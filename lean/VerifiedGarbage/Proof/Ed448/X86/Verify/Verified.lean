@@ -54,7 +54,7 @@ theorem args₂ (hp : vfLocal.pub σ₁ σ₂) : Shake.Args (base σ₁) 7 (arg 
   obtain ⟨_, a0, a1, a2, a3, a4, a5, a6, _⟩ := id hp
   intro i hi
   rw [← base_eq hp, args_val σ₂ 7 i hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm]
 
@@ -128,7 +128,7 @@ theorem hash_ct :
   refine RelCT.seq (hk.next_ct ha hb hsc (src := .caller 5 0) (len := .const 57) (P := arg σ₁ 5) (N := 57)
     (show 5 < 7 by decide) trivial (by rw [argVal_caller, BitVec.add_zero]) rfl
     (.inr ⟨_, List.mem_append_left _ (sig_in σ₁), sig57 σ₁⟩) (hk.away_input (sig_in σ₁) (sig57 σ₁))
-    (by have := h.sig; omega) (Nat.mod_lt _ (by decide)) (by taint_decide)) ?_
+    (by have := h.sig; omega_using [this]) (Nat.mod_lt _ (by decide)) (by taint_decide)) ?_
   refine RelCT.seq (hk.next_ct ha hb hsc (src := .caller 0 0) (len := .const 57) (P := arg σ₁ 0) (N := 57)
     (show 0 < 7 by decide) trivial (by rw [argVal_caller, BitVec.add_zero]) rfl
     (.inr ⟨_, List.mem_append_left _ (pk_in σ₁), whole _⟩) (hk.away_input (pk_in σ₁) (whole _))
@@ -190,7 +190,7 @@ theorem reduce_ct :
     (fun _ _ _ hc hs => reduce_ready h hc hs.1)
     (fun a b ea eb ha' hb' ar aw br bw => by
       have e := hk.args_eq ea eb (k := 3) (by decide) (fun i hi => by
-        rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+        rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
         exacts [ha'.1.a0.trans hb'.1.a0.symm, ha'.1.a1.trans hb'.1.a1.symm, ha'.1.a2.trans hb'.1.a2.symm])
         ar aw br bw
       exact ⟨entry_esp ea eb ar aw br bw, e 0 (by decide), e 1 (by decide), e 2 (by decide)⟩)
@@ -233,9 +233,9 @@ theorem equation_ct :
     (fun _ hc hs => WP.mono (eq_call hE h hc hs.1) fun _ hv => ⟨hv.1, trivial⟩)
   intro a b ea eb ha' hb' ar aw br bw
   have ca : ∀ j < 4, arg a.callEntry j = Whole.slots (base σ₁) a j := fun j hj =>
-    VG.Proof.Ed25519.X86.Whole.call_arg ea hk.below hk.frame (by omega)
+    VG.Proof.Ed25519.X86.Whole.call_arg ea hk.below hk.frame (by omega_using [hj])
   have cb : ∀ j < 4, arg b.callEntry j = Whole.slots (base σ₁) b j := fun j hj =>
-    VG.Proof.Ed25519.X86.Whole.call_arg eb hk.below hk.frame (by omega)
+    VG.Proof.Ed25519.X86.Whole.call_arg eb hk.below hk.frame (by omega_using [hj])
   have lpk := (hk.away_input (pk_in σ₁) (whole _)).lo
   have lsig := (hk.away_input (sig_in σ₁) (whole _)).lo
   have lk := lo_fr (base σ₁) (d := K) (l := 57) (by decide) (by decide)

@@ -40,7 +40,7 @@ theorem odd_ct :
     obtain ⟨⟨mi, hg, hZ⟩, _, _⟩ := h
     have hh := hdr_lt_slot L.w 8 (show sArr aXm < 32 by decide)
     refine WP.mono (WP.keep [.rbx] (Q := fun t => t.gpr .rbx = off L.B (slot L.w aXm))
-      (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sArr aXm) (by omega), hg.hdr.harr aXm (by decide)]) rfl)
+      (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sArr aXm) (by omega_using [hZ, hh]), hg.hdr.harr aXm (by decide)]) rfl)
       fun t ⟨hb, _⟩ r hr => ?_
     simp only [List.mem_singleton] at hr
     subst hr

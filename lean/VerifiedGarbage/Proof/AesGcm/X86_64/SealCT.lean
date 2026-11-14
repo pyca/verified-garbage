@@ -171,7 +171,7 @@ theorem sealRun_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) 
   have L := C.lay
   have hDW := C.dE
   have hn := C.data.ok.lt
-  have hDW' := C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega))
+  have hDW' := C.dE.sub_left (Offset.sub_base D (d := 16 * (n / 16)) (n := n - 16 * (n / 16)) (by omega_using []))
   have a := (oneAad_rel v L hDW (T := none) (R := R) (Np := Np) (nl := nl)).mono
     (P' := fun (s₁ s₂ : State) => True ∧ OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂)
     (fun _ _ h => ⟨h.2.1.aadPre C X hNp hnl hal hR, h.2.2.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ h => h

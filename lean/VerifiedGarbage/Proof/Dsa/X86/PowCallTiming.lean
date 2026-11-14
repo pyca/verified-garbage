@@ -52,7 +52,7 @@ theorem bodyIn_of {n : Nat} {s : State} (h : CallIn n s) : BodyIn n (pushed [.ea
   obtain ⟨base, size, hs, ⟨h108, sep⟩, hz, h1, hodd⟩ := h
   have nw := hs.nowrap
   have spBound := (s.gpr .esp).isLt
-  have fit : 4 * [Reg.eax, .edi].length + 4 ≤ (s.gpr .esp).toNat := by simp; omega
+  have fit : 4 * [Reg.eax, .edi].length + 4 ≤ (s.gpr .esp).toNat := by simp; omega_using [h108]
   have a0 : arg (pushed [.eax, .edi] s).callEntry 0 = s.gpr .edi := callEntry_arg fit (by decide) (by decide)
   have ws : (arg (pushed [.eax, .edi] s).callEntry 0).setWidth 64 = base := by rw [a0]; exact hs.edi
   have tsp : ((pushed [.eax, .edi] s).callEntry.gpr .esp).toNat = (s.gpr .esp).toNat - 12 := by
@@ -63,10 +63,10 @@ theorem bodyIn_of {n : Nat} {s : State} (h : CallIn n s) : BodyIn n (pushed [.ea
   rw [show 4 * [Reg.eax, .edi].length + 4 = 12 from rfl] at fr
   have mv : wordsVal (pushed [.eax, .edi] s).callEntry.mem base (slot n 0) n = wordsVal s.mem base (slot n 0) n := by
     rw [wordsVal_eq_val32, wordsVal_eq_val32, frame_val32 ⟨h108, sep⟩ nw fr
-      (by simp only [contextBytes, slot, stride] at hz ⊢; omega)]
+      (by simp only [contextBytes, slot, stride] at hz ⊢; omega_using [hz])]
   unfold BodyIn
   rw [ws, mv]
-  refine ⟨size, ⟨?_, ws, ?_, nw, ?_⟩, ⟨by omega, fun x h₁ h₂ => ?_⟩, hz, h1, hodd⟩
+  refine ⟨size, ⟨?_, ws, ?_, nw, ?_⟩, ⟨by omega_using [h108, tsp], fun x h₁ h₂ => ?_⟩, hz, h1, hodd⟩
   · refine ⟨below (s.gpr .esp) 8, ?_, ?_⟩
     · simp only [State.callEntry_rd, State.callEntry_wr, pushed_rd, pushed_wr]
       exact List.mem_append_right _ (List.mem_cons_self ..)
@@ -74,12 +74,12 @@ theorem bodyIn_of {n : Nat} {s : State} (h : CallIn n s) : BodyIn n (pushed [.ea
       simpa only [BitVec.add_zero] using Offset.contains_base ((s.gpr .esp - BitVec.ofNat 32 8).setWidth 64)
         (d := 0) (n := 4) (k := 8) (by decide) (by decide)
   · simp only [State.callEntry_wr, pushed_wr]; exact List.mem_cons_of_mem _ hs.wr
-  · unfold StkOk; rw [tsp]; constructor <;> omega
+  · unfold StkOk; rw [tsp]; constructor <;> omega_arith
   · rw [tEsp] at h₁
     have h₁' := below_inner (sp := s.gpr .esp) (a := 96) (k := 12) (b := 108) (by decide) h108 x h₁
     have := zone_ofs' ⟨h108, sep⟩ nw (k := 108) (by decide) h₁'
     simp only [Region.Contains, ofs] at h₂ this
-    omega
+    omega_using [h108, sep, hz, h1, hodd, nw, spBound, fit, a0, ws, tsp, tEsp, mv, h₂, this]
 
 theorem framed_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
     RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ CallIn n s ∧ CallIn n t)
@@ -87,7 +87,7 @@ theorem framed_relCT (n e : Nat) (hn : 2 ≤ n) (hn48 : n ≤ 48) (he : 1 < e) (
       (fun _ _ => True) := by
   refine RelCT.frame (R := fun _ _ => True) (fun _ _ H => H.1) ?_
   rintro _ _ tr ur sf tf ⟨s, t, ⟨SP, DI, C₁, C₂⟩, rfl, rfl⟩ E F
-  have fit : 12 ≤ (s.gpr .esp).toNat := by obtain ⟨_, _, _, ⟨h, _⟩, _⟩ := C₁; omega
+  have fit : 12 ≤ (s.gpr .esp).toNat := by obtain ⟨_, _, _, ⟨h, _⟩, _⟩ := C₁; omega_using [h]
   cases E with
   | call C E R =>
     cases F with

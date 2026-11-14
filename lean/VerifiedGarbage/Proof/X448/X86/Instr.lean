@@ -122,12 +122,12 @@ theorem wp_store8 {r : Reg8} {m : MemOp} {a : Addr} (ha : s.ea m = a)
 theorem load_ok {base : Addr} (hs : Scr s base) {d : Reg} {o : Nat} (ho : o + 4 ≤ 8192)
     (k : ∀ t, Upd s t d (word s.mem base o) → WP isa (.block is) t Q) :
     WP isa (.block (ld d o :: is)) s Q :=
-  wp_load (hs.ea (by omega)) (hs.read ho) k
+  wp_load (hs.ea (by omega_using [ho])) (hs.read ho) k
 
 theorem store_ok {base : Addr} (hs : Scr s base) {r : Reg} {o : Nat} (ho : o + 4 ≤ 8192)
     (k : ∀ t, Mupd s t (s.mem.writeW (off base o) (s.gpr r)) → WP isa (.block is) t Q) :
     WP isa (.block (st r o :: is)) s Q :=
-  wp_store (hs.ea (by omega)) (hs.write ho) k
+  wp_store (hs.ea (by omega_using [ho])) (hs.write ho) k
 
 
 theorem wp_mul {r : Reg}

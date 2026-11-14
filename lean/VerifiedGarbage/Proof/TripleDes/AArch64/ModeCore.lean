@@ -96,10 +96,10 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
   refine WP.mono (copyN_wp (k := 48) (u := .x7) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp,
     by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
     fun w hw => ⟨_, hs.wr, by
-      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)⟩,
-    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-    (hsep.sub_right (sched_sub B)).symm, by omega⟩) fun s' h => ?_
-  refine ⟨scheduleAt_copy fun i hi => by rw [h.mem, over_at hi (by omega)],
+      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega_using [hw]) (by simp only [schedSlot]; omega_using [hw])⟩,
+    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_using [hw]) (by omega_using [hw])⟩,
+    (hsep.sub_right (sched_sub B)).symm, by omega_using []⟩) fun s' h => ?_
+  refine ⟨scheduleAt_copy fun i hi => by rw [h.mem, over_at hi (by omega_using [])],
     by rw [h.regs _ (by decide) (by decide), hB], h.regs _ (by decide) (by decide), h.regs _ (by decide) (by decide),
     ?_, h.rd, h.wr⟩
   rw [h.mem, core_eq]
@@ -149,8 +149,8 @@ theorem blockCall_ok (d : Direction) {s : State} {B : Addr}
       State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
       State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
       x0, x1, x2]
-    exact ⟨trivial, trivial, Offset.disjoint_base B (by decide) (by have := hfB; rw [show schedSlot = 65 from rfl]; omega),
-      Offset.disjoint_base B (by decide) (by omega)⟩
+    exact ⟨trivial, trivial, Offset.disjoint_base B (by decide) (by have := hfB; rw [show schedSlot = 65 from rfl]; omega_using []),
+      Offset.disjoint_base B (by decide) (by omega_using [])⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append] at hr
     rcases hr with rfl | rfl | rfl
     · exact sub (8 * schedSlot) 384 (by decide)
@@ -236,9 +236,9 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact Offset.disjoint B (.inr (by decide)) (by decide) (by decide)
-    · exact Offset.disjoint_base B (by decide) (by omega)
+    · exact Offset.disjoint_base B (by decide) (by omega_using [hss])
   · have hG : (dirCore d).G = 1 := by cases d <;> rfl
-    have hj0 : j = 0 := by omega
+    have hj0 : j = 0 := by omega_using [hj, hG]
     subst hj0
     have ea : blkAddr (dirCore d) B 0 = s₃'.gpr .x1 := by rw [x1₃]; rfl
     rw [dirCore_bw, ea, dirCipher_bytes, bytesAt_eq, m₅, res₄, x0₃, mem₃, hr]

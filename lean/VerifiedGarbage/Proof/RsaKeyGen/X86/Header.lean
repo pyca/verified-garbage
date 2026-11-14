@@ -93,16 +93,16 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat}
   unfold code
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_movS rfl fun a A _ => ?_
-  refine WP.block_append (WP.mono (literal_ok (scratch.of_keeps A.keeps (by decide)) (by omega) A.gpr)
+  refine WP.block_append (WP.mono (literal_ok (scratch.of_keeps A.keeps (by decide)) (by omega_using [fit]) A.gpr)
     fun b ⟨Mb, _, Kb⟩ => ?_)
   have K : Keeps [.eax, .edx] s b := (A.keeps.mono (by decide)).widen Kb
   have zeroB : b.gpr .edx = 0#32 := (Kb.1 .edx (by decide)).trans A.gpr
-  refine WP.block_append (WP.mono (literal_ok (scratch.of_keeps K (by decide)) (by omega) zeroB)
+  refine WP.block_append (WP.mono (literal_ok (scratch.of_keeps K (by decide)) (by omega_using [fit]) zeroB)
     fun c ⟨Mc, _, Kc⟩ => ?_)
   have K' : Keeps [.eax, .edx] s c := K.widen Kc
   have zeroC : c.gpr .edx = 0#32 := (Kc.1 .edx (by decide)).trans zeroB
   refine WP.mono (pointers_ok (List.range 8) (scratch.of_keeps K' (by decide))
-    (fun i mem => by have := List.mem_range.mp mem; omega) zeroC) fun t ⟨Mt, Kt⟩ => ?_
+    (fun i mem => by have := List.mem_range.mp mem; omega_using [fit, this]) zeroC) fun t ⟨Mt, Kt⟩ => ?_
   refine ⟨?_, K'.widen Kt⟩
   rw [Mt, K'.1 .edi (by decide), Mc, Mb, A.mem]
   rfl

@@ -163,7 +163,7 @@ theorem lay {M : CtxMode} {s : State} (hs : ToPreS M s) : Lay M s := by
   have a₃ := apart_of_disjoint hs.rdd (show 0 < 8 by decide) hpos
   have := hs.ws; have := hs.wd; have := hs.w₂
   simp only [ret, sR, dR] at a₁ a₂ a₃
-  omega
+  omega_arith
 
 /-- The regions the function writes. -/
 abbrev wrs (s : State) : List Region := [dR s, wR s, stkR s]
@@ -186,7 +186,7 @@ theorem Kept.all {s : State} {r : Region} (hk : Kept s r) : ∀ r' ∈ wrs s, r.
 /-- The memory outside `dst`, `work` and the stack, through a frame of them. -/
 theorem Kept.bytes {s : State} {m : Mem} (hf : Frame (wrs s) s.mem m) {r : Region} (hk : Kept s r) :
     bytesAt m r.base r.len = bytesAt s.mem r.base r.len :=
-  Proof.AesGcm.X86_64.bytesAt_frame hf hk.all (by have := hk.b; omega)
+  Proof.AesGcm.X86_64.bytesAt_frame hf hk.all (by have := hk.b; omega_using [this])
 
 theorem Kept.readW {s : State} {m : Mem} (hf : Frame (wrs s) s.mem m) {r : Region} (hk : Kept s r)
     {a : Addr} (ha : r.Contains a 8) : m.readW a 64 = s.mem.readW a 64 :=
@@ -208,12 +208,12 @@ namespace Lay
 variable {M : CtxMode} {s : State} (h : Lay M s)
 include h
 
-theorem hBn : (Bs s).toNat + 216 ≤ 2 ^ 64 := by have := h.pre.w₂; have := h.hBv; omega
+theorem hBn : (Bs s).toNat + 216 ≤ 2 ^ 64 := by have := h.pre.w₂; have := h.hBv; omega_arith
 
 /-- The stack arguments. -/
 theorem argAddr (i : Nat) : stackArgAddr s i = Bs s + BitVec.ofNat 64 (160 + 8 * i) := by
   show s.gpr .rsp + BitVec.ofNat 64 (8 * (i + 1)) = _
-  rw [h.hB, Offset.add_ofNat_add_ofNat]; congr 2; omega
+  rw [h.hB, Offset.add_ofNat_add_ofNat]; congr 2; omega_using []
 
 theorem hargR : argR s = ⟨Bs s + BitVec.ofNat 64 160, 56⟩ := by
   show (⟨stackArgAddr s 0, 8 * 7⟩ : Region) = _
@@ -228,17 +228,17 @@ theorem arg_kept : Kept s (argR s) := by
   refine ⟨h.pre.da.symm, h.pre.wa'.symm, h.pre.barg.symm, ?_⟩
   rw [h.hargR]; have := h.hBn
   show (Bs s + BitVec.ofNat 64 160).toNat + 56 ≤ 2 ^ 64
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 160) (by decide), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 160) (by decide), Nat.mod_eq_of_lt (by omega_using [this])]
+  omega_using [this]
 theorem ret_kept : Kept s (ret s) :=
-  ⟨h.pre.rdd, h.pre.rw, Offset.base_disjoint_below _ (by have := h.pre.w₁; omega),
-    by have := h.pre.w₂; simp only [ret]; omega⟩
+  ⟨h.pre.rdd, h.pre.rw, Offset.base_disjoint_below _ (by have := h.pre.w₁; omega_using []),
+    by have := h.pre.w₂; simp only [ret]; omega_using [this]⟩
 
 /-- The stack arguments, through a frame of what the function writes. -/
 theorem argW {m : Mem} (hf : Frame (wrs s) s.mem m) (i : Nat) (hi : i < 7) :
     m.readW (Bs s + BitVec.ofNat 64 (160 + 8 * i)) 64 = arg s i := by
   have hBn := h.hBn
-  rw [h.arg_kept.readW hf (by rw [h.hargR]; exact Offset.contains _ (by omega) (by omega) (by omega)),
+  rw [h.arg_kept.readW hf (by rw [h.hargR]; exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])),
     ← h.argAddr]
   rfl
 
@@ -255,7 +255,7 @@ theorem ciph_eq {m : Mem} (hf : Frame (wrs s) s.mem m) : ctxCiph m (K s) (R s) =
   have hk := h.k_kept
   simp only [ctxCiph]
   rw [Proof.AesGcm.X86_64.bytesAt_frame hf (fun r hr => (hk.all r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge)))
-    (by have := hk.b; have := M.ge; omega)]
+    (by have := hk.b; have := M.ge; omega_using [hRb])]
 
 theorem hk_eq {m : Mem} (hf : Frame (wrs s) s.mem m) : ctxH m (K s) = ctxH s.mem (K s) := by
   have hk := h.k_kept
@@ -287,7 +287,7 @@ include h
 
 /-- The push writes only the stack. -/
 theorem frame_eM : Frame (wrs s) s.mem (eM s) := by
-  have := pushRegs_mem s frameRegs (by decide) (by have := h.pre.w₁; simp only [List.length_cons, List.length_nil]; omega)
+  have := pushRegs_mem s frameRegs (by decide) (by have := h.pre.w₁; simp only [List.length_cons, List.length_nil]; omega_using [this])
   rw [Offset.sub_ofNat_eq _ (show 8 * frameRegs.length ≤ 152 by decide)] at this
   exact frame_stk (this.1.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -299,13 +299,13 @@ theorem inArg {rd wr : List Region} (hrd : rd = s.rd) (d : Nat) (h₁ : 96 ≤ d
   have hBn := h.hBn
   rw [hrd, Offset.add_ofNat_add_ofNat]
   refine ⟨argR s, List.mem_append_left _ (by rw [h.pre.rd]; simp), ?_⟩
-  rw [h.hargR]; exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [h.hargR]; exact Offset.contains _ (by omega_using [h₁]) (by omega_using [hd]) (by omega_using [])
 
 /-- Our stack argument at `P + d`, through a frame of what the function
 writes. -/
 theorem argAt {m : Mem} (hf : Frame (wrs s) s.mem m) (i : Nat) (hi : i < 7) :
     m.readW (P s + BitVec.ofNat 64 (96 + 8 * i)) 64 = arg s i := by
-  rw [Offset.add_ofNat_add_ofNat, show 64 + (96 + 8 * i) = 160 + 8 * i by omega]
+  rw [Offset.add_ofNat_add_ofNat, show 64 + (96 + 8 * i) = 160 + 8 * i by omega_using []]
   exact h.argW hf i hi
 
 /-- A word of our frame is writable. -/
@@ -315,7 +315,7 @@ theorem inFr {wr : List Region} (hwr : wr = FR s :: s.wr) (d : Nat) (hd : d + 8 
   rw [hwr]
   refine ⟨FR s, List.mem_cons_self .., ?_⟩
   simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]; omega
+  rw [Nat.mod_eq_of_lt (by omega_using [hd])]; omega_using [hd]
 
 omit h in
 /-- A write of a word of our frame keeps the frame of what the function
@@ -324,7 +324,7 @@ theorem frame_wFr {m : Mem} (hf : Frame (wrs s) s.mem m) (d : Nat) (hd : d + 8 �
     Frame (wrs s) s.mem (m.writeW (P s + BitVec.ofNat 64 d) v) := by
   refine hf.writeW (r := stkR s) (by simp) v ?_
   rw [Offset.add_ofNat_add_ofNat]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])
 
 /-- A word of our frame, read through a write of another. -/
 theorem rApart (m : Mem) (e k : Nat) (hek : e + 8 ≤ k ∨ k + 8 ≤ e) (he : e + 8 ≤ 88) (hk : k + 8 ≤ 88)
@@ -337,7 +337,7 @@ theorem rApart (m : Mem) (e k : Nat) (hek : e + 8 ≤ k ∨ k + 8 ≤ e) (he : e
     (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   rw [Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat]
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_using [hek]) (by omega_using [he]) (by omega_using [hk])
 
 end Lay
 
@@ -362,7 +362,7 @@ theorem stArgI_wp {M : CtxMode} {s c : State} (h : Lay M s) (hc : InFrame s c) (
     WP isa (.block (stArg d (96 + 8 * i))) c fun e =>
       e.mem = c.mem.writeW (P s + BitVec.ofNat 64 d) (arg s i) ∧ InFrame s e := by
   refine WP.mono_mx rfl (stArg_ok c hc.rsp d (96 + 8 * i)
-    (h.inArg (wr := c.wr) hc.rd _ (by omega) (by omega)) (h.inFr hc.wr d hd)) fun e ⟨me, ge, rde, wre⟩ mxe => ?_
+    (h.inArg (wr := c.wr) hc.rd _ (by omega_using []) (by omega_using [hi])) (h.inFr hc.wr d hd)) fun e ⟨me, ge, rde, wre⟩ mxe => ?_
   rw [h.argAt hc.frame i hi] at me
   exact ⟨me, me ▸ Lay.frame_wFr hc.frame d hd _, fun r h₁ h₂ => by rw [ge r h₁, hc.gpr r h₁ h₂],
     by rw [ge _ (by decide), hc.rsp], rde.trans hc.rd, wre.trans hc.wr, mxe.trans hc.mx⟩
@@ -475,12 +475,12 @@ theorem Ready.xarg (i : Nat) (hi : i < 7) :
     arg (xS M s c) i = c.mem.readW (P s + BitVec.ofNat 64 (8 * i)) 64 := by
   have hBn := h.hBn
   show (xS M s c).mem.readW ((xS M s c).gpr .rsp + BitVec.ofNat 64 (8 * (i + 1))) 64 = _
-  rw [hc.xsp, Offset.add_ofNat_add_ofNat, show 56 + 8 * (i + 1) = 64 + 8 * i by omega, ← Offset.add_ofNat_add_ofNat]
+  rw [hc.xsp, Offset.add_ofNat_add_ofNat, show 56 + 8 * (i + 1) = 64 + 8 * i by omega_using [], ← Offset.add_ofNat_add_ofNat]
   refine Frame.readW hc.xmem (r := ⟨P s + BitVec.ofNat 64 (8 * i), 8⟩) (Region.contains_self _ _) (fun r hr => ?_)
     (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   rw [Offset.add_ofNat_add_ofNat]
-  exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hi]) (by omega_using [])
 
 theorem Ready.xa : arg (xS M s c) 0 = Dst s ∧ arg (xS M s c) 1 = arg s 1 ∧ arg (xS M s c) 2 = Tg s ∧
     arg (xS M s c) 3 = arg s 5 ∧ arg (xS M s c) 4 = Src s ∧ arg (xS M s c) 5 = arg s 1 ∧
@@ -506,7 +506,7 @@ theorem Ready.callPre : (Proof.AesGcm.openSplitX86_64M M).pre (xS M s c) ∧
   have hst (d n : Nat) (hn : n ≤ d) : below (Bs s + BitVec.ofNat 64 d) n = ⟨Bs s + BitVec.ofNat 64 (d - n), n⟩ := by
     simp only [below, add_ofNat_sub_ofNat _ hn]
   have hxsp : (Bs s + BitVec.ofNat 64 56).toNat = (Bs s).toNat + 56 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 56) (by decide), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 56) (by decide), Nat.mod_eq_of_lt (by omega_using [hBn])]
   have sb (d n : Nat) (hd : d + n ≤ 152) {r : Region} (hr : (stkR s).Disjoint r) :
       (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := hr.sub_left (stk_sub s d n hd)
   have s0 {r : Region} (hr : (stkR s).Disjoint r) : (⟨Bs s + BitVec.ofNat 64 0, 56⟩ : Region).Disjoint r :=
@@ -521,8 +521,8 @@ theorem Ready.callPre : (Proof.AesGcm.openSplitX86_64M M).pre (xS M s c) ∧
     refine ⟨⟨trivial, trivial, ⟨hp.kd, hp.kw, hp.nd, hp.nw, hp.ad, hp.aw, hp.dw, (sb 64 56 (by decide) hp.bd).symm,
       (sb 64 56 (by decide) hp.bw).symm, sb 56 8 (by decide) hp.bd, sb 56 8 (by decide) hp.bw,
       sb 32 24 (by decide) hp.bk, sb 32 24 (by decide) hp.bn, sb 32 24 (by decide) hp.ba, sb 32 24 (by decide) hp.bd,
-      sb 32 24 (by decide) hp.bw, hp.wk, hp.wn, hp.wa, hp.wd, hp.ww, by omega, by omega, hp.rounds⟩, hp.dt.symm, hp.tw,
-      s0 hp.bt, hp.wt, hp.sd, hp.sw, s0 hp.bk, s0 hp.bn, s0 hp.ba, s0 hp.bs, s0 hp.bd, s0 hp.bw, hp.ws, by omega,
+      sb 32 24 (by decide) hp.bw, hp.wk, hp.wn, hp.wa, hp.wd, hp.ww, by omega_using [hxsp], by omega_using [hBn, hxsp], hp.rounds⟩, hp.dt.symm, hp.tw,
+      s0 hp.bt, hp.wt, hp.sd, hp.sw, s0 hp.bk, s0 hp.bn, s0 hp.ba, s0 hp.bs, s0 hp.bd, s0 hp.bw, hp.ws, by omega_using [hxsp],
       trivial⟩, ?_⟩
     exact M.frame (hc.xframe (M := M)) h.k_kept.all hp.wk hp.ok
   · rw [hc.infr.rd, hc.infr.wr, hp.rd, hp.wr]
@@ -536,7 +536,7 @@ theorem Ready.callPre : (Proof.AesGcm.openSplitX86_64M M).pre (xS M s c) ∧
     · exact covers_of_mem (by simp)
     · intro a n ⟨x, hx', hcn⟩
       simp only [List.mem_singleton] at hx'; subst hx'
-      exact ⟨FR s, by simp, by simp only [Region.Contains] at hcn ⊢; omega⟩
+      exact ⟨FR s, by simp, by simp only [Region.Contains] at hcn ⊢; omega_using [hcn]⟩
     · exact covers_of_mem (by simp)
     · exact covers_of_mem (by simp)
   · rw [hc.infr.wr, hp.wr]
@@ -587,7 +587,7 @@ theorem called_wp {M : CtxMode} (F : OpenSplitFn M) {s c : State} (h : Lay M s) 
   have hBn := h.hBn
   obtain ⟨hcp, hcov, hw⟩ := hc.callPre h
   have hd := F.xd
-  refine WP.call_sp_mx F.ok F.sp (by omega) hcp hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, g₂, post'⟩ mx' => ?_
+  refine WP.call_sp_mx F.ok F.sp (by omega_using [hd]) hcp hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, g₂, post'⟩ mx' => ?_
   have rsp' : s'.gpr .rsp = c.gpr .rsp := cs' .rsp (by decide)
   have hpost : (Proof.AesGcm.openSplitX86_64M M).post (xS M s c) s₂ := post'
   simp only [Proof.AesGcm.openSplitX86_64M] at hpost
@@ -604,7 +604,7 @@ theorem called_wp {M : CtxMode} (F : OpenSplitFn M) {s c : State} (h : Lay M s) 
       rw [hPs]
       simp only [below]
       rw [BitVec.sub_sub, ← BitVec.ofNat_add]
-      exact Offset.sub_below _ (by omega) (by omega)
+      exact Offset.sub_below _ (by omega_using [hd]) (by omega_using [hd])
   refine ⟨hpost, fz, fun r hr hsp => ?_, rsp'.trans hc.infr.rsp, rd'.trans hc.infr.rd, wr'.trans hc.infr.wr,
     mx'.trans (by rw [hc.infr.mx])⟩
   rw [cs' r hr]
@@ -659,7 +659,7 @@ theorem wipeArgs_wp {M : CtxMode} {s z : State} (h : Lay M s) (hz : Called s z) 
     m₁, rd₁, wr₁, mx₁⟩
   rw [zf₁, show BitVec.setWidth 64 (BitVec.ofNat 32 0) = BitVec.ofNat 64 0 from rfl,
     show arg s 1 = BitVec.ofNat 64 (L s) by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-    Offset.ofNat_sub_ofNat_beq (by decide) (by omega)]
+    Offset.ofNat_sub_ofNat_beq (by decide) (by omega_using [hlt])]
 
 /-- `wipe`, after a call that failed. -/
 theorem wipe_wp {M : CtxMode} {s z : State} (h : Lay M s) (hz : Called s z) (hres : res s = none) :
@@ -669,7 +669,7 @@ theorem wipe_wp {M : CtxMode} {s z : State} (h : Lay M s) (hz : Called s z) (hre
   have hout (m : Mem) (hm : m = writeBytes z.mem (Dst s) (zeros (L s))) (d : State) (hdm : d.mem = m)
       (hdax : d.gpr .rax = BitVec.setWidth 64 (BitVec.ofNat 32 0)) : toPost s d := by
     simp only [toPost, hres]
-    exact ⟨by rw [hdax]; rfl, by rw [hdm, hm]; exact bytesAt_zeros _ _ (by omega)⟩
+    exact ⟨by rw [hdax]; rfl, by rw [hdm, hm]; exact bytesAt_zeros _ _ (by omega_using [hlt])⟩
   have hfr (m : Mem) (hm : m = writeBytes z.mem (Dst s) (zeros (L s))) : Frame (wrs s) s.mem m := by
     rw [hm]
     refine hz.frame.trans ((writeBytes_frame (R := dR s) _ _ _ ?_).mono fun r hr => by
@@ -687,7 +687,7 @@ theorem wipe_wp {M : CtxMode} {s z : State} (h : Lay M s) (hz : Called s z) (hre
       rax₁, hfr z.mem (by rw [h0, zeros, List.replicate_zero, writeBytes_nil]) |>.trans (by rw [m₁]; exact Frame.refl _ _),
       hcs w g₁, by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), hz.rsp], by rw [wr₁, hz.wr],
       by rw [mx₁, hz.mx]⟩
-  · have hpos : 1 ≤ L s := by have := of_decide_eq_false he; omega
+  · have hpos : 1 ≤ L s := by have := of_decide_eq_false he; omega_using [this]
     refine WP.mono_mx (by decide +kernel) (zeroLoop_ok w rdi₁ hrcx r10₁ (by rw [rax₁]; rfl) hpos h.lt
       (covers_of_mem (by rw [wr₁, hz.wr, hp.wr]; simp)))
       fun d ⟨md, gd, rdd, wrd⟩ mxd => ?_
@@ -743,7 +743,7 @@ theorem openToSplit_wp {M : CtxMode} (F : OpenSplitFn M) {s : State} (hs : ToPre
     WP isa (openToSplit F.fn) s fun z => abiPreserved s z ∧ toPost s z := by
   have h := lay hs
   have hn : 8 * frameRegs.length ≤ (s.gpr .rsp).toNat := by
-    have := hs.w₁; simp only [List.length_cons, List.length_nil]; omega
+    have := hs.w₁; simp only [List.length_cons, List.length_nil]; omega_using [this]
   refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (body_wp F h) fun d hd => ?_)
   refine ⟨by rw [hd.rsp, hP s], by rw [hd.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp

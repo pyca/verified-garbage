@@ -28,13 +28,13 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Attemp
   have rootFit : stackUse sampling ≤ p.sp.toNat := h.input.bounds.stackFits
   change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at rootFit
   have outerFit : sampling.argumentBytes ≤ s.sp.toNat := by
-    rw [h.sp, FrameStack.sub_toNat' (by omega : 24 ≤ p.sp.toNat)]
-    omega
+    rw [h.sp, FrameStack.sub_toNat' (by omega_using [rootFit] : 24 ≤ p.sp.toNat)]
+    omega_using [rootFit]
   have allocatedFit : (allocated sampling.argumentBytes s).sp.toNat + sampling.argumentBytes ≤ 2 ^ 32 := by
     change (s.sp - BitVec.ofNat 32 sampling.argumentBytes).toNat + sampling.argumentBytes ≤ 2 ^ 32
     rw [FrameStack.sub_toNat' outerFit]
     have := s.sp.isLt
-    omega
+    omega_using [rootFit]
   have control : Controller p.control (allocated sampling.argumentBytes s) :=
     ⟨h.input.control_space (fun _ hr => List.mem_cons_of_mem _ (by rw [h.wr]; exact List.mem_cons_of_mem _ hr)),
       h.pointer⟩

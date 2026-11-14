@@ -168,9 +168,9 @@ theorem retryStep_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s v 
       (retryAgain A B n=false → BoundedW w16 A B p a b c s u) ∧
       (retryAgain A B n=true → RetryInv w16 A B p a b c s 0 u) := by
   have hn := h.le
-  refine WP.seq (WP.mono_syms (step (by omega) h.progress h.syms) fun t ht ts => ?_)
+  refine WP.seq (WP.mono_syms (step (by omega_using [hn]) h.progress h.syms) fun t ht ts => ?_)
   have t30 : t.gpr .x30=BitVec.ofNat 64 n := (ht.keep.get .x30).trans h.count
-  have t6 : (t.gpr .x6).toNat ≤ 1 := by rw [ht.flag]; split <;> omega
+  have t6 : (t.gpr .x6).toNat ≤ 1 := by rw [ht.flag]; split <;> omega_using []
   refine WP.of_syms (wp_sub fun t₁ k₁ e₁ => wp_lsr (by decide) fun t₂ k₂ e₂ =>
     wp_movz fun u k₃ e₃ => wp_nil fun us => ?_)
   have ku : Only ([.x7]++[.x7]++[.x30]) t u := (k₁.trans k₂).trans k₃
@@ -219,7 +219,7 @@ theorem bounded_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : St
   cases hr : retryAgain A B n
   · exact .inl ⟨by rw [ev,hr],hb hr⟩
   · have hn : n=1 := by simp only [retryAgain,decide_eq_true_eq] at hr; exact hr.1
-    exact .inr ⟨by rw [ev,hr],0,by omega,hi hr⟩
+    exact .inr ⟨by rw [ev,hr],0,by omega_using [hn],hi hr⟩
 
 structure ResumePostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b : Addr) (s u : State) : Prop where
   keep : Keep (.x24::retryRegs) s u

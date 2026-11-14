@@ -29,7 +29,7 @@ theorem mergeAcceptance_ok (s : State) (fit : s.sp.toNat + 52 ≤ 2 ^ 32)
   unfold mergeAcceptance
   refine wp_stackAddr (by decide) fun u a => ?_
   have addr : State.addr (u.gpr .r12 + 0#32) = off (State.addr s.sp) 48 := by
-    rw [a.gpr, BitVec.add_zero]; exact addr_add (by omega)
+    rw [a.gpr, BitVec.add_zero]; exact addr_add (by omega_using [fit])
   refine wp_ldr (a := off (State.addr s.sp) 48) (by decide) addr
     (by rw [a.rd, a.wr]; exact read) fun v b => ?_
   refine wp_dp (op2_reg _ _) fun z c => ?_

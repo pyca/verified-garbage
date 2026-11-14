@@ -19,7 +19,7 @@ theorem precomputeBasisLoop_ok (M : Mont) {s : State} {p : Parameters} (h : Basi
  let I := fun i t => BasisState p (i+1) t ∧ BuildFrame p s.mem t.mem ∧ Keep mmRegs s t
  refine WP.mono (count_loop (by decide : 0<4) I (fun i hi t inv => ?_)
   ⟨h,Frame.refl _ _,Keep.refl _ _⟩) ?_
- · refine WP.mono (precomputeBasis_ok M inv.1 (by omega : i+1<5)) ?_
+ · refine WP.mono (precomputeBasis_ok M inv.1 (by omega_using [hi] : i+1<5)) ?_
    rintro u ⟨state,index,frame,rest⟩
    refine ⟨⟨state,inv.2.1.trans frame,(inv.2.2.trans rest).mono (by simp [mmRegs])⟩,?_⟩
    rw [index]

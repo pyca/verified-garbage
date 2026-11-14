@@ -72,7 +72,7 @@ theorem ranOut_wp {pBytes : Nat} {P : LoopPub} {t : State}
   obtain ⟨⟨⟨s₀, h, v, hc, -, hv, hl⟩, x14, x15, x3⟩, ev⟩ := hr
   obtain ⟨hs, W, _, hm, _, _, _, _, wr, h19, c3, cases⟩ := hl
   have hp3 : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
-    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
   have hz : BitVec.ofNat 64 (ctxExit P.ctx P.n P.c) = 0 := by
     simpa [eval, State.read, x3] using ev
   have w0 : W 19 = 0 := by rw [h19, exitStatus_eq, hc]; exact hz

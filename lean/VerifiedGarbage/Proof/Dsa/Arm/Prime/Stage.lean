@@ -80,7 +80,7 @@ theorem St.pload {j : Nat} {src : CP → BitVec 32} {k : CP → Nat} (cert : LCe
       have lt : Spec.Rsa.os2ip (Spec.Rsa.bytesAt σ.mem (State.addr (src P)) (k P)) < 2 ^ (32 * P.W) := by
         have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt σ.mem (State.addr (src P)) (k P))
         rw [bytesAt_length, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega))
+        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega_using [hkL]))
       rw [← v] at lt ⊢
       exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 lt
     exact h.write1 kp hj (by simp) r.sp r.rd r.wr hv (by simp)
@@ -93,8 +93,8 @@ theorem sub32_val {W a b : Nat} (ha : a < 2 ^ (32 * W)) (hb : b < 2 ^ (32 * W)) 
     sub32 W a b = if a < b then a + 2 ^ (32 * W) - b else a - b := by
   unfold sub32
   split
-  · exact Nat.mod_eq_of_lt (by omega)
-  · rw [show a + 2 ^ (32 * W) - b = a - b + 2 ^ (32 * W) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  · exact Nat.mod_eq_of_lt (by omega_arith)
+  · rw [show a + 2 ^ (32 * W) - b = a - b + 2 ^ (32 * W) by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha])]
 
 section
 variable {P : CP}
@@ -113,10 +113,10 @@ theorem cm1_vp {E : State → Prop} : VP (S2 P E) (sub3 aCm1 aC aOne) (S3 P E) :
   rcases hj with rfl | rfl | rfl | rfl | rfl
   · simp (config := {decide := true}) only [A3, A0, upd, ↓reduceIte]
     obtain ⟨hodd, -, hhi⟩ := cv_shape (σ := σ) pre
-    have p8 : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega)
-    have p1 : 1 < 2 ^ (32 * P.W) := Nat.one_lt_two_pow (by have := pre.wge; omega)
+    have p8 : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega_using [])
+    have p1 : 1 < 2 ^ (32 * P.W) := Nat.one_lt_two_pow (by have := pre.wge; omega_using [this])
     rw [sub32_val (by omega) p1]
-    simp only [show ¬ cv P σ < 1 by omega, ↓reduceIte]
+    simp only [show ¬ cv P σ < 1 by omega_using [hodd], ↓reduceIte]
   all_goals simp (config := {decide := true}) only [A3, A0, upd, ↓reduceIte]
 
 end

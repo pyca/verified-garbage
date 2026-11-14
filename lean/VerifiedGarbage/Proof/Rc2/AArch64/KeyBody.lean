@@ -76,9 +76,9 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
       (.ite (.nonzero .x .x10) (.loop (.block descendKey) (.nonzero .x .x10)) (.block [])))) s (fun s' =>
         KeyFrame s s' ∧ BytesPrefix s'.mem (s.gpr .x21)
           (descend (reduce l bits) ((bits + 7) / 8) (128 - (bits + 7) / 8)) 128) := by
-  have bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega
+  have bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega_using [hb, hb']
   have writes : InRegions s.wr (s.gpr .x21 + s.gpr .x23) 1 := by
-    rw [index]; exact writable _ (by omega)
+    rw [index]; exact writable _ (by omega_using [hb])
   have reads : InRegions (s.rd ++ s.wr) (s.gpr .x21 + s.gpr .x23) 1 := by
     obtain ⟨r, hr, hc⟩ := writes
     exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -86,12 +86,12 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
   apply WP.mono (reduceKey_ok s reads writes)
   intro s₁ h₁
   have keep₁ := h₁.2
-  rw [index, initialPrefix _ (by omega), mask] at keep₁
-  have frame₁ := (KeyFrame.refl s).step _ (by omega) _ keep₁
+  rw [index, initialPrefix _ (by omega_using [hb]), mask] at keep₁
+  have frame₁ := (KeyFrame.refl s).step _ (by omega_using [hb]) _ keep₁
   have ptr₁ := keep₁.reg .x21 (by decide)
   have prefix₁ : BytesPrefix s₁.mem (s.gpr .x21) (reduce l bits) 128 := by
     rw [keep₁.mem]
-    exact initialPrefix.write (by decide) (by omega) _
+    exact initialPrefix.write (by decide) (by omega_using [hb]) _
   have write₁ : ∀ i < 128, InRegions s₁.wr (s₁.gpr .x21 + BitVec.ofNat 64 i) 1 := by
     rw [keep₁.wr, ptr₁]; exact writable
   apply WP.mono (maybeDescend_ok s₁ (reduce l bits) ((bits + 7) / 8) bound.1 bound.2

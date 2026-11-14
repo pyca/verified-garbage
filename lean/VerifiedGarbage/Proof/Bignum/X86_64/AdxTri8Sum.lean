@@ -26,7 +26,7 @@ theorem headBases_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
     WP isa (.block AdxTri8.headBases) s fun t =>
       t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem ∧ Keep [.rsi,.rcx] s t := by
   have ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
-    hs.ld (by have := hdr_lt_slot w 8 hk; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   have sh : BitVec.ofNat 64 I <<< (4 : Nat)=BitVec.ofNat 64 (16*I) := by
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 64 I*BitVec.ofNat 64 16=BitVec.ofNat 64 (16*I)
@@ -50,17 +50,17 @@ theorem storeHead_ok {s : State} {B : Addr} {Z w I i : Nat} {lo hi : Reg}
   have nowrap := hs.nowrap
   unfold AdxTri8.storeHead
   refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := lo) hs hc
-    (by omega : slot w aAcc+16*I+(16+8*(2*i+1))+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_)
+    (by omega_using [he] : slot w aAcc+16*I+(16+8*(2*i+1))+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_)
   refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := hi) (hs.congr kb.2.2)
     ((kb.gpr (by simp)).trans hc) he) fun t ⟨vt,ot,kt⟩ => ?_
   have low : word t.mem B (slot w aAcc+16*I+(16+8*(2*i+1)))=s.gpr lo := by
-    rw [ot.word (by omega) (by omega),vb]
+    rw [ot.word (by omega_using []) (by omega_using [he, nowrap]),vb]
   have high : word t.mem B (slot w aAcc+16*I+(16+8*(2*i+2)))=s.gpr hi :=
     vt.trans (kb.gpr (by simp))
-  refine ⟨?_,(ob.mono (n' := 16) (by omega) (by omega)).trans (ot.mono (by omega) (by omega)),(kb.trans kt).mono (by simp)⟩
+  refine ⟨?_,(ob.mono (n' := 16) (by omega_using []) (by omega_using [])).trans (ot.mono (by omega_using []) (by omega_using [])),(kb.trans kt).mono (by simp)⟩
   rw [wv,wv,wv]
   simp only [Nat.mul_zero,Nat.mul_one,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.add_zero]
-  rw [low,show slot w aAcc+16*I+(16+8*(2*i+1))+8=slot w aAcc+16*I+(16+8*(2*i+2)) by omega,high]
+  rw [low,show slot w aAcc+16*I+(16+8*(2*i+1))+8=slot w aAcc+16*I+(16+8*(2*i+2)) by omega_using [],high]
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -174,14 +174,14 @@ theorem rowSum_congr {m m' : Mem} {B : Addr} {e i n : Nat}
     have w : wv m' B (e+8*(i+1)) (n+1)=wv m B (e+8*(i+1)) (n+1) := by
       apply wv_congr
       intro k hk
-      rw [show e+8*(i+1)+8*k=e+8*(i+(k+1)) by omega]
-      exact h (k+1) (by omega)
-    have h0 := h 0 (by omega)
+      rw [show e+8*(i+1)+8*k=e+8*(i+(k+1)) by omega_using []]
+      exact h (k+1) (by omega_using [hk])
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.add_zero] at h0
     rw [rowSum,rowSum,h0,w,ih (by
       intro j hj
-      rw [show (i+1)+j=i+(j+1) by omega]
-      exact h (j+1) (by omega))]
+      rw [show (i+1)+j=i+(j+1) by omega_using []]
+      exact h (j+1) (by omega_using [hj]))]
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 

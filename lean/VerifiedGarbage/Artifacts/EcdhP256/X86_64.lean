@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedIfma
+import VerifiedGarbage.Proof.Ecdh.X86_64.LitIfma
+public import VerifiedGarbage.Impl.Ecdh.P256.X86_64.Ifma
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -87,25 +92,16 @@ namespace VG.Artifacts.EcdhP256.X86_64
 
 open VG.Proof.P256.X86_64 (hasLaw)
 
-/-- The function of `Spec.Ecdh.P256.exchangeApi`, multiplying with BMI2 and ADX
-(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
-`rsp` (`hsp`). -/
-def exchange (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
-    stack := 8
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
-
 def artifacts : List Artifact := [
-  exchange false Impl.Ecdh.X86_64.exchangeP256
-    (Proof.Ecdh.X86_64.ecdh_verified hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed),
-  exchange true Impl.Ecdh.X86_64.exchangeP256Adx
-    (Proof.Ecdh.X86_64.ecdh_verified_adx hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed)]
+  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+      suffix := "_ifma"
+      code := Impl.Ecdh.X86_64.exchangeP256Ifma
+      stack := 16
+      verified := Proof.Ecdh.X86_64.ecdh_verified_ifma hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed }
+    (Proof.EcKey.X86_64.Scrub.exchangeOut _ _)),
+  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.scrubReg hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed),
+  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.scrubRegAdx hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed)]
 
 end VG.Artifacts.EcdhP256.X86_64

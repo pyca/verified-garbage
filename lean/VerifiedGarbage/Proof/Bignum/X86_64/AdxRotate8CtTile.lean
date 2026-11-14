@@ -79,7 +79,7 @@ theorem bit_pins (j : Nat) : Pins (fun L s => TileBit L j s) [.rdi, .rcx, .rbp, 
 theorem begin_fw (L : TileLayout) (s : State) (h : TileGood L s) :
     WP isa AdxRotate8.tileBegin s (TileReady L 0) := by
   obtain ⟨mi, hm⟩ := h.hdr
-  refine WP.mono (tileBegin_ok h.scr h.rdi hm L.hZ h.rcx (by have := L.heZ; have := L.hw; omega))
+  refine WP.mono (tileBegin_ok h.scr h.rdi hm L.hZ h.rcx (by have := L.heZ; have := L.hw; omega_arith))
     fun t ⟨_, hp, ho, mt, kt⟩ => ?_
   exact ⟨⟨h.scr.congr kt.2.2, (kt.gpr (by decide)).trans h.rdi,
     (kt.gpr (by decide)).trans h.rcx, mi, mt ▸ hm⟩,
@@ -92,19 +92,19 @@ theorem head_fw (L : TileLayout) (s : State) (h : TileReady L 0 s) :
   have hw := L.hw; have he := L.he; have heZ := L.heZ; have sep := L.sep
   have hp : s.gpr .rbp = off L.B (slot L.w aN) := by simpa only [Nat.mul_zero, Nat.add_zero] using h.rbp
   refine WP.mono (headN_ok (n := 8) (mi := mi) h.good.scr h.good.rdi h.good.rcx hp
-    (by omega) (by omega) (by omega) (Nat.le_trans (by decide : 8 * sMinv + 8 ≤ hdrBytes + 16) he) hm.hminv)
+    (by omega_using [heZ]) (by omega_using [heZ, sep]) (by omega_using [hw, sep]) (Nat.le_trans (by decide : 8 * sMinv + 8 ≤ hdrBytes + 16) he) hm.hminv)
     fun t ⟨_, ot, kt⟩ => ?_
   exact ⟨⟨h.good.scr.congr kt.2.2, (kt.gpr (by decide)).trans h.good.rdi,
-    (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega)⟩,
+    (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega_using [he])⟩,
     (kt.gpr (by decide)).trans h.rbp, (kt.gpr (by decide)).trans h.rsi⟩
 
 theorem clear_fw (L : TileLayout) (s : State) (h : TileReady L 0 s) :
     WP isa (.block AdxRotate8.clearCarry) s (TileBit L 0) := by
   obtain ⟨mi, hm⟩ := h.good.hdr
   have he := L.he; have heZ := L.heZ
-  refine WP.mono (clearCarry_ok h.good.scr h.good.rcx (by omega) (by omega)) fun t ⟨zt, ot, kt⟩ => ?_
+  refine WP.mono (clearCarry_ok h.good.scr h.good.rcx (by omega_using [he]) (by omega_using [heZ])) fun t ⟨zt, ot, kt⟩ => ?_
   exact ⟨⟨⟨h.good.scr.congr kt.2.2, (kt.gpr (by decide)).trans h.good.rdi,
-    (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega)⟩,
+    (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega_using [he])⟩,
     (kt.gpr (by decide)).trans h.rbp, (kt.gpr (by decide)).trans h.rsi⟩, by rw [zt]; decide⟩
 
 theorem next_fw (L : TileLayout) (j : Nat) (s : State) (hj : j < L.n + 1) (h : TileReady L j s) :
@@ -112,15 +112,15 @@ theorem next_fw (L : TileLayout) (j : Nat) (s : State) (hj : j < L.n + 1) (h : T
       TileReady L (j + 1) t ∧ t.zf = some (decide (j + 1 = L.n + 1)) ∧ t.mem = s.mem := by
   obtain ⟨mi, hm⟩ := h.good.hdr
   have hw := L.hw
-  have hp : s.gpr .rbp = off L.B (slot L.w aN + 8 * (8 * j)) := by rw [h.rbp]; congr 1; omega
-  have ho : s.gpr .rsi = off L.B (L.e + 8 * (8 * j)) := by rw [h.rsi]; congr 1; omega
-  refine WP.mono (nextBlock_ok h.good.scr h.good.rdi hm L.hZ (by omega) hp ho)
+  have hp : s.gpr .rbp = off L.B (slot L.w aN + 8 * (8 * j)) := by rw [h.rbp]; congr 1; omega_using []
+  have ho : s.gpr .rsi = off L.B (L.e + 8 * (8 * j)) := by rw [h.rsi]; congr 1; omega_using []
+  refine WP.mono (nextBlock_ok h.good.scr h.good.rdi hm L.hZ (by omega_using [hj, hw]) hp ho)
     fun t ⟨hp', ho', hz, mt, kt⟩ => ?_
   refine ⟨⟨⟨h.good.scr.congr kt.2.2, (kt.gpr (by decide)).trans h.good.rdi,
     (kt.gpr (by decide)).trans h.good.rcx, mi, mt ▸ hm⟩, ?_, ?_⟩, ?_, mt⟩
-  · rw [hp']; congr 1; omega
-  · rw [ho']; congr 1; omega
-  · rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega))
+  · rw [hp']; congr 1; omega_using []
+  · rw [ho']; congr 1; omega_using []
+  · rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega_using [hw]))
 end VG.Proof.Bignum.X86_64.AdxRotate8
 
 end
@@ -143,8 +143,8 @@ theorem front_ct : RelCT isa (Two TileGood) AdxRotate8.tileFront (Two AfterFront
   refine RelCT.seq (two_piece [.rdi, .rcx, .rbp, .rsi] (ready_pins 0) (by taint_decide) clear_fw) ?_
   refine two_piece [.rdi, .rcx, .rbp, .rsi] (bit_pins 0) (by taint_decide) ?_
   intro L s h
-  refine WP.mono (next_fw L 0 s (by omega) h.1) fun t ⟨ht, hz, hm⟩ => ⟨⟨ht, hm ▸ h.2⟩, ?_⟩
-  rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega))
+  refine WP.mono (next_fw L 0 s (by omega_using []) h.1) fun t ⟨ht, hz, hm⟩ => ⟨⟨ht, hm ▸ h.2⟩, ?_⟩
+  rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega_using []))
 end VG.Proof.Bignum.X86_64.AdxRotate8
 
 end
@@ -163,15 +163,15 @@ theorem middle_fw (L : TileLayout) (i : Nat) (s : State) (hi : i < L.n) (hb : Ti
   obtain ⟨mi, hm⟩ := h.good.hdr
   have he := L.he; have hz := L.heZ; have hw := L.hw; have sep := L.sep
   unfold AdxRotate8.middle
-  refine WP.seq (WP.mono (middleBody_ok h.good.scr h.good.rcx h.rbp h.rsi (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) hb.2) fun a ⟨_, ba, oa, ka⟩ => ?_)
+  refine WP.seq (WP.mono (middleBody_ok h.good.scr h.good.rcx h.rbp h.rsi (by omega_using [he])
+    (by omega_using [hz]) (by omega_using [hi, hz, hw]) (by omega_using [hi, hz, hw, sep]) (by omega_using []) (by omega_using [hi, hw, sep]) hb.2) fun a ⟨_, ba, oa, ka⟩ => ?_)
   have ha : TileReady L (i + 1) a := ⟨⟨h.good.scr.congr ka.2.2,
     (ka.gpr (by decide)).trans h.good.rdi, (ka.gpr (by decide)).trans h.good.rcx, mi,
     hm.of_outside (oa.outside (a := L.e - 8) (b := 64 * (i + 2) + 8)
-      (by omega) (by omega) (by omega) (by omega)) (by omega)⟩,
+      (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])) (by omega_using [he])⟩,
     (ka.gpr (by decide)).trans h.rbp, (ka.gpr (by decide)).trans h.rsi⟩
-  refine WP.mono (next_fw L (i + 1) a (by omega) ha) fun t ⟨ht, hzt, hmt⟩ => ⟨⟨ht, hmt ▸ ba⟩, ?_⟩
-  rw [hzt]; exact congrArg some (decide_eq_decide.mpr (by omega))
+  refine WP.mono (next_fw L (i + 1) a (by omega_using [hi]) ha) fun t ⟨ht, hzt, hmt⟩ => ⟨⟨ht, hmt ▸ ba⟩, ?_⟩
+  rw [hzt]; exact congrArg some (decide_eq_decide.mpr (by omega_using []))
 
 theorem middle_ct : RelCT isa (Two fun p : TileLayout × Nat => fun s =>
     p.2 < p.1.n ∧ TileBit p.1 (p.2 + 1) s) AdxRotate8.middle (fun _ _ => True) := by
@@ -189,7 +189,7 @@ theorem middle_loop_ct : RelCT isa
   · simp only [eval, hz, Option.map_some]
     by_cases he : i + 1 = L.n
     · simp [he]
-    · simp [he]; omega
+    · simp [he]; omega_using [hi, he]
   · simpa only [← he] using ht
 
 theorem middles_ct : RelCT isa (Two AfterFront)
@@ -199,7 +199,7 @@ theorem middles_ct : RelCT isa (Two AfterFront)
     rintro s t ⟨L, ⟨hs, he⟩, ⟨ht, _⟩⟩
     have hn : 0 < L.n := by
       simp only [eval, hs.2, Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at he
-      omega
+      omega_using [he]
     exact ⟨L, ⟨hn, hs.1⟩, hn, ht.1⟩
   · apply RelCT.block_nil
     intro s t h
@@ -225,10 +225,10 @@ theorem tail_fw (L : TileLayout) (s : State) (hb : TileBit L (L.n + 1) s) :
   have h := hb.1
   obtain ⟨mi, hm⟩ := h.good.hdr
   have he := L.he; have heZ := L.heZ; have hw := L.hw
-  refine WP.mono (tailCore_ok h.good.scr h.good.rcx h.rsi (by omega) (by omega) (by omega) hb.2)
+  refine WP.mono (tailCore_ok h.good.scr h.good.rcx h.rsi (by omega_using [he]) (by omega_using [heZ]) (by omega_using [heZ, hw]) hb.2)
     fun t ⟨_, _, ot, kt⟩ => ?_
   exact ⟨h.good.scr.congr kt.2.2, (kt.gpr (by decide)).trans h.good.rdi,
-    (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega)⟩
+    (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega_using [he])⟩
 
 theorem tile_ct : RelCT isa (Two TileGood) AdxRotate8.tile (fun _ _ => True) := by
   unfold AdxRotate8.tile AdxRotate8.tileCompute

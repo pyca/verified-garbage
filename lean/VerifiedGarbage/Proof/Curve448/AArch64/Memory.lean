@@ -20,6 +20,6 @@ theorem field_fe {base : Addr} {o : Nat} {m m' : Mem}
     (h : FieldMem base o m m') {d : Nat}
     (hd : d + 128 ≤ o ∨ o + 128 ≤ d) (hw : d + 128 ≤ Impl.X448.AArch64.ACC) :
     fe m' base d = fe m base d :=
-  VG.Proof.X448.Wide.valN_congr (fun i hi => h.limbs hd hw (by omega : i < 16))
+  VG.Proof.X448.Wide.valN_congr (fun i hi => h.limbs hd hw (by omega_using [hi] : i < 16))
 
 end VG.Proof.Curve448.AArch64

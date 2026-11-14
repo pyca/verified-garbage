@@ -16,7 +16,7 @@ open VG.Proof.MlDsa.Sample
 /-- A stream's coefficient output occupies exactly its share of the public output array. -/
 theorem poly_sub {v k : Nat} {σ : State} (hk : k<v) :
     Region.Sub (polyR (polyP σ k)) (aR v σ) :=
-  Offset.sub_base (aP σ) (by omega)
+  Offset.sub_base (aP σ) (by omega_using [hk])
 
 theorem segment_input_eq {v : Nat} {σ s : State} (he : Env v σ s) (k off : Nat) :
     segmentInput s k off=bufP σ k+BitVec.ofNat 64 off := by
@@ -35,34 +35,34 @@ theorem segment_count_eq {v : Nat} {σ s : State} (he : Env v σ s) (k : Nat) :
 theorem segment_layout {v k off n : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s)
     (hk : k<v) (hn : off+3*n≤1008) :
     StreamLayout s (segmentInput s k off) (segmentOutput s k) n := by
-  have hk4 : k<4 := by have:=hp.streams; omega
+  have hk4 : k<4 := by have:=hp.streams; omega_using [hk, this]
   rw [segment_input_eq he,segment_output_eq he]
-  refine ⟨by omega,?_,?_,?_,?_,?_⟩
+  refine ⟨by omega_using [hn],?_,?_,?_,?_,?_⟩
   · intro j hj
     change InRegions (s.rd++s.wr)
       (((scr σ+BitVec.ofNat 64 (840+1008*k))+BitVec.ofNat 64 off)+BitVec.ofNat 64 (3*j)) 16
     rw [Offset.add_add,Offset.add_add]
-    exact in_scr_rd hp he.wr (by omega)
+    exact in_scr_rd hp he.wr (by omega_using [hn, hk4, hj])
   · intro j hj
     change InRegions (s.rd++s.wr)
       (((scr σ+BitVec.ofNat 64 (840+1008*k))+BitVec.ofNat 64 off)+BitVec.ofNat 64 (3*j)) 4
     rw [Offset.add_add,Offset.add_add]
-    exact in_scr_rd hp he.wr (by omega)
+    exact in_scr_rd hp he.wr (by omega_using [hn, hk4, hj])
   · intro i hi
     rw [he.wr,hp.wr]
     refine ⟨aR v σ,by simp,?_⟩
     change (aR v σ).Contains ((aP σ+BitVec.ofNat 64 (1024*k))+BitVec.ofNat 64 (4*i)) 4
     rw [Offset.add_add]
-    exact Offset.contains_base (aP σ) (by omega) (by have:=hp.streams; omega)
+    exact Offset.contains_base (aP σ) (by omega_using [hk, hi]) (by have:=hp.streams; omega_using [hk4, hi])
   · intro i hi
     rw [he.wr,hp.wr]
     refine ⟨aR v σ,by simp,?_⟩
     change (aR v σ).Contains ((aP σ+BitVec.ofNat 64 (1024*k))+BitVec.ofNat 64 (4*i)) 16
     rw [Offset.add_add]
-    exact Offset.contains_base (aP σ) (by omega) (by have:=hp.streams; omega)
+    exact Offset.contains_base (aP σ) (by omega_using [hk, hi]) (by have:=hp.streams; omega_using [hk4, hi])
   · apply (hp.a_scr.sub_left (poly_sub hk)).symm.sub_left
     change Region.Sub ⟨(scr σ+BitVec.ofNat 64 (840+1008*k))+BitVec.ofNat 64 off,3*n+4⟩ (scrR σ)
     rw [Offset.add_add]
-    exact Offset.sub_base (scr σ) (by omega)
+    exact Offset.sub_base (scr σ) (by omega_using [hn, hk4])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

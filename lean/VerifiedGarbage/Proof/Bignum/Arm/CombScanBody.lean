@@ -53,7 +53,7 @@ theorem body_ok (s : State) {base table : BitVec 32} {len w M g N d j : Nat}
   have tableY := table_after_frame h.table h.separate frameY allRestY
   have hdr (e : Nat) (he : e+4≤256) :
       y.mem.readW (off (State.addr base) e) 32=s.mem.readW (off (State.addr base) e) 32 :=
-    outside_read32 outside (Or.inl (by simp only [arrAt,Proof.Rsa.Mont.hdrBytes]; omega)) (by omega)
+    outside_read32 outside (Or.inl (by simp only [arrAt,Proof.Rsa.Mont.hdrBytes]; omega_using [he])) (by omega_using [he])
   refine WP.mono (next_ok y readyY hj ((hdr 220 (by decide)).trans h.entry)
     ((hdr 228 (by decide)).trans h.index)) ?_
   rintro t ⟨memT,zero,restT⟩
@@ -79,6 +79,6 @@ theorem body_ok (s : State) {base table : BitVec 32} {len w M g N d j : Nat}
     · subst d
       simp only [ite_true,show (1:BitVec 32).toNat=1 from rfl,Nat.one_ne_zero,ite_false]
     · simp only [equal,ite_false,show (0:BitVec 32).toNat=0 from rfl,ite_true]
-      exact h.selected (by omega)
+      exact h.selected (by omega_using [selected, equal])
 
 end VG.Proof.Bignum.Arm.CombScan

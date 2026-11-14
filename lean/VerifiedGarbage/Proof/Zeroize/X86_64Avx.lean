@@ -39,7 +39,7 @@ theorem wideStepY_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
   have hn := (s₀.gpr .rsi).isLt
   have hc : ∀ k, k ≤ 32 → (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region).Contains
       (s₀.gpr .rdi + BitVec.ofNat 64 (i + k)) 32 :=
-    fun k hk => Offset.contains_base _ (by omega) (by omega)
+    fun k hk => Offset.contains_base _ (by omega_using [hi, hk]) (by omega_using [hi, hk])
   have hmem := List.mem_singleton_self (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region)
   rw [← hp.2.1] at hmem
   have hs : ∀ k, k ≤ 32 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (i + k)) 32 :=
@@ -55,8 +55,8 @@ theorem wideStepY_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
     (show BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 64 from rfl),
     (show ∀ a : Addr, a + 0 = a from BitVec.add_zero)]
   refine ⟨⟨?_, ?_⟩, ?_⟩
-  · have h1 := prefix_writeW (w := 256) hz (by omega)
-    have h2 := prefix_writeW (w := 256) h1 (by omega)
+  · have h1 := prefix_writeW (w := 256) hz (by omega_using [hi])
+    have h2 := prefix_writeW (w := 256) h1 (by omega_using [hi])
     exact h2
   · have c0 : (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region).Contains (s₀.gpr .rdi + BitVec.ofNat 64 i) (256 / 8) := by
       have := hc 0 (by decide); rwa [Nat.add_zero] at this
@@ -69,7 +69,7 @@ theorem loopY_ok (s₀ s : State) (hp : contract.pre s₀) (i n : Nat) (hn : i +
     WP isa (loopOf wideStepY) s fun t => InvY s₀ (i + 64 * n) t ∧ t.gpr .rsi = s.gpr .rsi := by
   have hlt : n < 2 ^ 64 := by
     have := (s₀.gpr .rsi).isLt
-    omega
+    omega_using [hn]
   have start : WP isa (.block [.alu .cmp .rdx (.imm 0)]) s fun t =>
       InvY s₀ i t ∧ t.gpr .rdx = BitVec.ofNat 64 n ∧ t.gpr .rsi = s.gpr .rsi ∧
       t.zf = some (BitVec.ofNat 64 n == 0) := by
@@ -85,13 +85,13 @@ theorem loopY_ok (s₀ s : State) (hp : contract.pre s₀) (i n : Nat) (hn : i +
     refine WP.ite true (by simp [eval, hz]) (fun _ => WP.block_nil ?_) (by simp)
     simpa only [Nat.mul_zero, Nat.add_zero] using And.intro ht hsi
   · refine WP.ite false (by simp only [eval, hz, ofNat64_beq_zero hlt, decide_eq_false he]) (by simp) (fun _ => ?_)
-    apply wp_countdown hlt (by omega)
+    apply wp_countdown hlt (by omega_using [he])
       (fun j u => InvY s₀ (i + 64 * j) u ∧ u.gpr .rsi = s.gpr .rsi)
       (cnt := .rdx)
     · intro j hj u ⟨hu, hsu⟩ _
       refine WP.mono (wideStepY_ok s₀ u hp _ (by
         have : 64 * (j + 1) ≤ 64 * n := Nat.mul_le_mul_left _ hj
-        rw [Nat.mul_succ] at this; omega) hu) fun v ⟨hv, hcv, hsv, hzv⟩ => ?_
+        rw [Nat.mul_succ] at this; omega_using [hn, hj]) hu) fun v ⟨hv, hcv, hsv, hzv⟩ => ?_
       exact ⟨⟨by rwa [Nat.mul_succ, ← Nat.add_assoc], hsv.trans hsu⟩, hcv, hzv⟩
     · exact fun _ h => h
     · simpa only [Nat.mul_zero, Nat.add_zero] using And.intro ht hsi
@@ -101,7 +101,7 @@ theorem and7_64 (a : Nat) : BitVec.ofNat 64 a &&& 7 = BitVec.ofNat 64 (a % 8) :=
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (7 : BitVec 64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem correctAvx (s₀ : State) (hp : contract.pre s₀) :
     WP isa zeroizeAvx s₀ fun t => contract.post s₀ t ∧ Frame s₀.wr s₀.mem t.mem := by
@@ -119,21 +119,21 @@ theorem correctAvx (s₀ : State) (hp : contract.pre s₀) :
     rfl
   unfold zeroizeAvx
   refine WP.seq (WP.mono start fun t ⟨ht, hc, hs⟩ => ?_)
-  refine WP.seq (WP.mono (loopY_ok s₀ t hp 0 (n / 64) (by dsimp [n]; omega) ht hc) fun u ⟨⟨hu, _⟩, hsu⟩ => ?_)
+  refine WP.seq (WP.mono (loopY_ok s₀ t hp 0 (n / 64) (by dsimp [n]; omega_using []) ht hc) fun u ⟨⟨hu, _⟩, hsu⟩ => ?_)
   have mid : WP isa (.block [.mov .rdx (.reg .rsi), .shift .shr .rdx 3, .alu .and .rdx (.imm 7)]) u fun v =>
       Inv s₀ (64 * (n / 64)) v ∧ v.gpr .rdx = BitVec.ofNat 64 (n / 8 % 8) ∧ v.gpr .rsi = s₀.gpr .rsi := by
     xrun [Inv, hsu, hs, shr64, (show BitVec.signExtend 64 (7 : BitVec 32) = 7 from rfl), and7_64]
     exact ⟨by simpa only [Nat.zero_add, Inv] using hu, rfl⟩
   refine WP.seq (WP.mono mid fun v ⟨hv, hcv, hsv⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok true s₀ v hp (64 * (n / 64)) (n / 8 % 8) (by dsimp [n]; omega) hv hcv)
+  refine WP.seq (WP.mono (loop_ok true s₀ v hp (64 * (n / 64)) (n / 8 % 8) (by dsimp [n]; omega_using []) hv hcv)
     fun w ⟨hw, hsw⟩ => ?_)
   have tl : WP isa (.block [.mov .rdx (.reg .rsi), .alu .and .rdx (.imm 7)]) w fun x =>
       Inv s₀ (64 * (n / 64) + 8 * (n / 8 % 8)) x ∧ x.gpr .rdx = BitVec.ofNat 64 (n % 8) := by
     xrun [Inv, hsw, hsv, tail, (show BitVec.signExtend 64 (7 : BitVec 32) = 7 from rfl)]
     exact ⟨by simpa only [↓reduceIte, Inv] using hw, rfl⟩
   refine WP.seq (WP.mono tl fun x ⟨hx, hcx⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok false s₀ x hp _ (n % 8) (by dsimp [n]; simp; omega) hx hcx) fun y ⟨hy, _⟩ => ?_)
-  have he : 64 * (n / 64) + 8 * (n / 8 % 8) + (if false then 8 else 1) * (n % 8) = n := by simp; omega
+  refine WP.seq (WP.mono (loop_ok false s₀ x hp _ (n % 8) (by dsimp [n]; simp; omega_using []) hx hcx) fun y ⟨hy, _⟩ => ?_)
+  have he : 64 * (n / 64) + 8 * (n / 8 % 8) + (if false then 8 else 1) * (n % 8) = n := by simp; omega_using []
   rw [he] at hy
   obtain ⟨hyw, _, _, hz, hf⟩ := hy
   xrun [hz, hf]

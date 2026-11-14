@@ -96,7 +96,7 @@ theorem csubR_ok (s : State) {ts : List Reg} {top : Reg} (hlen : ts.length = 6) 
       Keeps (.rax :: .rcx :: .rdx :: .rbp :: top :: ts) s s' := by
   have hft := hf.tail
   have htop := hf.head
-  have hW := pow_split 2 128 256 (64 * 6) (by omega)
+  have hW := pow_split 2 128 256 (64 * 6) (by omega_using [])
   rw [hW] at hV ⊢
   have hfr : ∀ q ∈ ts, q ≠ .rax ∧ q ≠ .rcx ∧ q ≠ .rdx ∧ q ≠ .rbp ∧ q ≠ top := fun q hq =>
     have := hft.2 q hq

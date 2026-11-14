@@ -52,7 +52,7 @@ theorem restC_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
       GInv t u' Src Dst cnt (i + 1) ∧ u'.zf = some (decide (i + 1 = cnt)) := by
   have hc := h.hcnt
   have hL := h.lt
-  have hgl : gatheredLen 64 t.mem Src (i + 1) ≤ L := gl_le h (by omega)
+  have hgl : gatheredLen 64 t.mem Src (i + 1) ≤ L := gl_le h (by omega_using [hi])
   have hlen : (gathered 64 t.mem Src i).length = gatheredLen 64 t.mem Src i := Proof.Gcm.length_gathered _ _ _ _
   rw [ChaCha20Poly1305.X86_64.Gather.gl_succ] at hgl
   have hfr := frame_of (t := t) hu.mem (len_le h (Nat.le_of_lt hi))
@@ -63,12 +63,12 @@ theorem restC_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
     (n := ChaCha20Poly1305.X86_64.Gather.sl t.mem Src i) (k := cnt - i)
     (by rw [g₂ _ (by decide) (by decide) (by decide), hu.rdi])
     (by rw [g₂ _ (by decide) (by decide) (by decide), hu.rcx])
-    (by rw [g₂ _ (by decide) (by decide) (by decide), hu.r9]) (by omega) (by omega))
+    (by rw [g₂ _ (by decide) (by decide) (by decide), hu.r9]) (by omega_using [hi]) (by omega_using [hc]))
     fun u₃ ⟨rdi₃, r9₃, zf₃, g₃, m₃, rd₃, wr₃⟩ => ?_
   have hbytes : bytesAt u.mem (ChaCha20Poly1305.X86_64.Gather.sb t.mem Src i)
       (ChaCha20Poly1305.X86_64.Gather.sl t.mem Src i) =
       bytesAt t.mem (ChaCha20Poly1305.X86_64.Gather.sb t.mem Src i) (ChaCha20Poly1305.X86_64.Gather.sl t.mem Src i) := by
-    refine bytesAt_frame hfr (fun r hr => ?_) (by omega)
+    refine bytesAt_frame hfr (fun r hr => ?_) (by omega_using [hL, hgl])
     simp only [List.mem_singleton] at hr; subst hr
     exact hsd
   refine ⟨⟨?_, ?_, ?_, ?_, hu.keep.trans ⟨fun r hr => ?_, rd₃.trans rd₂, wr₃.trans wr₂⟩⟩, ?_⟩
@@ -76,11 +76,11 @@ theorem restC_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
   · rw [r9₃, Nat.sub_sub]
   · rw [rdi₃, BitVec.add_assoc, ← BitVec.ofNat_add, ← ChaCha20Poly1305.X86_64.Gather.gl_succ]
   · rw [m₃, m₂, hbytes, hu.mem, ChaCha20Poly1305.X86_64.Gather.pt_succ, ← hlen,
-      writeBytes_append _ _ _ _ (by rw [hlen, length_bytesAt]; omega)]
+      writeBytes_append _ _ _ _ (by rw [hlen, length_bytesAt]; omega_using [hL, hgl])]
   · simp only [gatherRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈⟩ := hr
     rw [g₃ r h₄ h₆, g₂ r h₁ h₅ h₇]
-  · rw [zf₃]; congr 1; simp only [decide_eq_decide]; omega
+  · rw [zf₃]; congr 1; simp only [decide_eq_decide]; omega_using [hi]
 
 /-- One iteration of the loop. -/
 theorem bodyC_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
@@ -106,7 +106,7 @@ theorem gatherCopy_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre 
       fun t' ⟨m', k'⟩ => ⟨by rw [m', m₁], kp.trans k'⟩
     refine WP.loop (M := isa) (c := .ne)
       (fun (w : Nat) (u : State) => ∃ i, w = cnt - i ∧ i < cnt ∧ GInv t₁ u Src Dst cnt i) ?_ (cnt - 0) _
-      ⟨0, rfl, by omega, GInv.init h'⟩
+      ⟨0, rfl, by omega_using [hpos], GInv.init h'⟩
     rintro w u ⟨i, rfl, hi, hu⟩
     refine WP.mono (bodyC_wp h' hi hu) fun u₃ ⟨h₃, z₃⟩ => ?_
     have ev : isa.eval .ne u₃ = some !decide (i + 1 = cnt) := by show u₃.zf.map (!·) = _; rw [z₃]; rfl
@@ -114,7 +114,7 @@ theorem gatherCopy_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre 
     · left
       exact ⟨by rw [ev]; simp [he], by rw [h₃.mem, he], h₃.keep⟩
     · right
-      exact ⟨by rw [ev]; simp [he], cnt - (i + 1), by omega, i + 1, rfl, by omega, h₃⟩
+      exact ⟨by rw [ev]; simp [he], cnt - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], h₃⟩
 
 /-! ## Two runs -/
 
@@ -164,7 +164,7 @@ theorem gatherCopy_rel : RelCT isa (Eq2 t₁ t₂) gatherCopy TT := by
   have h₂' := h₂.of_eq g₂ m₂ rd₂ wr₂
   refine (RelCT.loop (Q := TT) (fun n u₁ u₂ => ∃ i, n = cnt - i ∧ i < cnt ∧
       GInv τ₁ u₁ Src Dst cnt i ∧ GInv τ₂ u₂ Src Dst cnt i) (fun n => ?_) (cnt - 0)).mono
-    (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega, GInv.init h₁', GInv.init h₂'⟩) fun _ _ h => h
+    (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega_using [hpos], GInv.init h₁', GInv.init h₂'⟩) fun _ _ h => h
   refine RelCT.exists_ fun i => ?_
   by_cases hin : n = cnt - i ∧ i < cnt
   · obtain ⟨rfl, hi⟩ := hin
@@ -174,8 +174,8 @@ theorem gatherCopy_rel : RelCT isa (Eq2 t₁ t₂) gatherCopy TT := by
     have ev₂ : isa.eval .ne u₂ = some !decide (i + 1 = cnt) := by show u₂.zf.map (!·) = _; rw [z₂]; rfl
     refine ⟨by rw [ev₁, ev₂], fun _ => trivial, fun ht => ?_⟩
     rw [ev₁] at ht
-    have : i + 1 < cnt := by simp at ht; omega
-    exact ⟨cnt - (i + 1), by omega, i + 1, rfl, this, g₁, g₂⟩
+    have : i + 1 < cnt := by simp at ht; omega_using [hi, ht]
+    exact ⟨cnt - (i + 1), by omega_using [hi], i + 1, rfl, this, g₁, g₂⟩
   · exact RelCT.of_false fun _ _ h => hin ⟨h.1, h.2.1⟩
 
 end

@@ -121,7 +121,7 @@ theorem digit_zero {m : Mem} {B : Addr} {w j k : Nat} (hk : k < w) (hv : num m B
   rcases Nat.eq_zero_or_pos (w32 m B (arr w j + 4 * k)) with z | z
   · exact z
   · have : 2 ^ (32 * k) ≤ 2 ^ (32 * k) * w32 m B (arr w j + 4 * k) := Nat.le_mul_of_pos_right _ z
-    omega
+    omega_using [e, hv, this]
 
 /-- `setDigit j x`, the byte offset `4 k` in `r6`, for a number below `2^(32 k)`. -/
 theorem setDigitE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {j x k : Nat} (hj : j < nArr := by decide)
@@ -155,7 +155,7 @@ theorem ltSE (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {d a b : Nat} (ha : a
   rw [WP.seq_iff]
   refine WP.mono (sub3E h ks (o := aT) (a := a) (b := b) (by decide) ha hb haT hbT (by decide)) fun t ⟨ht, kt, b9, kk, kr⟩ => ?_
   rw [← List.append_nil (stBorrow d)]
-  refine stBorrow_ok ht (flag_hdr d hd) (by rw [b9]; split <;> omega) fun u hu ku v ru => WP.block_nil ?_
+  refine stBorrow_ok ht (flag_hdr d hd) (by rw [b9]; split <;> omega_using []) fun u hu ku v ru => WP.block_nil ?_
   exact ⟨hu, kt.flag ku hd (by rw [v, b9]) (fit_of ht), kk.trans (KK.of ku (by simp) (flag_kk hd)),
     kr.trans' ru.mono⟩
 

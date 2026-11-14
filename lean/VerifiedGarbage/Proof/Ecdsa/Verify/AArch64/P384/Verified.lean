@@ -15,29 +15,49 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
 import VerifiedGarbage.Proof.P384.GTable9Shape
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedTable
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedSource
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointPrep
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedBridge
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Impl.AArch64Instrs
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide9Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointStepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
+public import VerifiedGarbage.Proof.Weierstrass.Joint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepDTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedChecks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead9
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedLookupTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDouble
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
@@ -45,8 +65,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointFixedSource
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.JointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
@@ -56,6 +74,497 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.P384
+
+/-! ### `Ecdsa.Verify.AArch64.P384.JointFixedTable`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Weierstrass.AArch64
+open VG.Proof.Weierstrass Spec.Weierstrass
+/-- The table's words, in `p384`'s Montgomery radix. -/
+theorem p384v_words : P384Joint.p384v.combWords = tcombWords p384.n p384.R p384.C.p P384Joint.p384v.tbl := by
+  simp only [Cfg.combWords, P384Joint.p384v, Cfg.R]
+
+namespace FixedGenerator
+theorem coordinates (hc : CfgOk p384)
+    (hT : CombOkW p384.C 9 1 P384Joint.p384v.tbl P384Joint.p384v.start)
+    {s : State} {T : Addr} (ht : TblMem s T P384Joint.p384v.combWords)
+    (a : Nat) (ha : 1≤a) (ha32 : a≤128) :
+    wordsVal s.mem (T+BitVec.ofNat 64 (192*(a-1))) 0 6=p384.mont (combAt P384Joint.p384v.tbl 0 (2*a-2)).1 ∧
+    wordsVal s.mem (T+BitVec.ofNat 64 (192*(a-1))) 48 6=p384.mont (combAt P384Joint.p384v.tbl 0 (2*a-2)).2 := by
+  rw [p384v_words] at ht
+  have he := tbl_entry (n:=6) (R:=p384.R) (p:=p384.C.p) (H:=256) (J:=1)
+    ht hT.len hT.lenH (j:=0) (m:=2*a-2) (by decide) (by omega)
+    (Nat.lt_trans (mont_lt hc _) (by decide +kernel)) (Nat.lt_trans (mont_lt hc _) (by decide +kernel))
+  simp only [Nat.zero_mul,BitVec.add_zero,Nat.reduceMul] at he
+  rw [wordsVal_addr,wordsVal_addr,Nat.add_zero]
+  rw [show 192*(a-1)=96*(2*a-2) from by omega_using []]
+  exact he
+
+theorem of_table (hc : CfgOk p384) (hC : Law p384.C)
+    (hT : CombOkW p384.C 9 1 P384Joint.p384v.tbl P384Joint.p384v.start)
+    {s : State} {T base : Addr} (ht : TblMem s T P384Joint.p384v.combWords)
+    (hout : ∀ i<P384Joint.p384v.combWords.length,∀ b<8,
+      8192≤ofs base (T+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 b))
+    (hsym : s.syms "VG_P384_GTAB"=T) :
+    FixedGenerator p384.C base 8192 (G p384.C) T s := by
+  have hlen : P384Joint.p384v.combWords.length=3072 := by
+    rw [p384v_words]; exact tcombWords_length (n:=6) (R:=p384.R) (p:=p384.C.p) hT.len hT.lenH
+  refine ⟨hsym,?_,?_,?_,?_⟩
+  · intro a ha ha32 i hi
+    rw [Offset.add_add]
+    obtain ⟨r,hr,hreg⟩ := ht.rd
+    exact ⟨r,hr,Region.contains_off hreg (by rw [hlen]; omega_using [ha32, hi])⟩
+  · intro a ha ha32 i hi b hb
+    rw [Offset.add_add T (192*(a-1)) (8*i)]
+    have hd : 192*(a-1)+8*i=8*(24*(a-1)+i) := by omega_using []
+    rw [hd]
+    exact hout _ (by rw [hlen]; omega_using [ha32, hi]) b hb
+  · intro a ha ha32
+    rw [(coordinates hc hT ht a ha ha32).1,(coordinates hc hT ht a ha ha32).2]
+    exact ⟨mont_lt hc _,mont_lt hc _⟩
+  · intro a ha ha32
+    rw [(coordinates hc hT ht a ha ha32).1,(coordinates hc hT ht a ha ha32).2]
+    have hx := toM_cmont hc.toBaseCfgOk (combAt P384Joint.p384v.tbl 0 (2*a-2)).1
+    have hy := toM_cmont hc.toBaseCfgOk (combAt P384Joint.p384v.tbl 0 (2*a-2)).2
+    have radix : (2^(64*p384.n):Nat)=(@HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) 2 (64*6)) := by decide +kernel
+    rw [radix] at hx hy
+    rw [hx,hy]
+    have hp := hT.entry 0 (by decide) (2*a-2) (by omega_using [ha32])
+    simp only [Nat.mul_zero,Nat.pow_zero,Nat.mul_one,show 2*a-2+1=2*a-1 from by omega_using [ha]] at hp
+    rw [hp]
+    exact InvJ.affine hC _ _
+
+theorem of_pre (hc : CfgOk p384) (hC : Law p384.C)
+    (hT : CombOkW p384.C 9 1 P384Joint.p384v.tbl P384Joint.p384v.start)
+    {s : State} {T base : Addr} (ht : TblPre P384Joint.p384v s T base)
+    (hsym : s.syms "VG_P384_GTAB"=T) :
+    FixedGenerator p384.C base 8192 (G p384.C) T s := by
+  obtain ⟨hm,ho⟩ := tbl_of ht rfl (Unch.refl _ _ _)
+  exact of_table hc hC hT hm ho hsym
+
+end FixedGenerator
+end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+
+end
+
+end
+
+/-! ### `Ecdsa.Verify.AArch64.P384.JointPrep`, which only this module used -/
+
+section
+
+/-! # The recoding of both scalars of P-384's joint verification
+
+`u`'s 385 digits of width nine, as words at `KG.bits`, past the window method's area of bits
+(`winX`), where `v`'s digits of width five go. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
+open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
+open VG.Impl.Ecdh.AArch64 (PX PY)
+
+/-- The generator's digits: two bytes for each of `64 n + 1`. -/
+def genW : List (Nat × Nat) := [(P384Joint.KG.bits, 770)]
+
+theorem K_eq : P384Joint.K=winQ p384 := rfl
+
+/-- The generator's digits miss the constants, the saved registers and every numbered slot. -/
+theorem genW_fixed : FixedOk p384 genW := by unfold FixedOk; decide
+
+theorem genW_apart : ∀ i ∈ List.range 45, ∀ w ∈ genW, p384.sl i + 48 ≤ w.1 ∨ w.1 + w.2 ≤ p384.sl i := by
+  decide
+
+/-- The generator's digits are past the window method's areas, which the peer's recoding writes. -/
+theorem genW_winX : ∀ w ∈ winX p384, P384Joint.KG.bits + 770 ≤ w.1 ∨ w.1 + w.2 ≤ P384Joint.KG.bits := by
+  decide
+
+theorem prepare_ok (hc : CfgOk p384) (hC : Law p384.C) {base : Addr} {s : State}
+    (hs : Scr s base size) {g : Reg → BitVec 64} (F : Fixed p384 base g s.mem) {P : Point p384.C}
+    (hpx : sv p384 base s PX < p384.C.p) (hpy : sv p384 base s PY < p384.C.p)
+    (hrep : Rep p384.C (tmv p384.C p384.n base s (p384.sl PX)) (tmv p384.C p384.n base s (p384.sl PY))
+      (tmv p384.C p384.n base s (p384.sl ONEP)) P) :
+    WP isa (.seq P384Joint.prep9 (PubNaf.prep (P384Joint.K) (p384.sl V))) s fun t =>
+      Scr t base size ∧ ModOkA p384.MP' size p384.C.p t.mem base ∧
+      PubNaf.NafFixed (P384Joint.K) p384.C base t P (sv p384 base s V) ∧
+      (∀ x ∈ winRo (P384Joint.K), tmv p384.C p384.n base t x = tmv p384.C p384.n base s x) ∧
+      t.sp = s.sp ∧ Unch base (genW ++ winX p384) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Fixed p384 base g t.mem ∧ tmv p384.C p384.n base t (P384Joint.K).P.z = 1 ∧
+      (∀ j < 770, t.mem (off base (P384Joint.KG.bits + j)) = FastNaf.wbyte (sv p384 base s U) j) := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  rw [K_eq,P384Joint.prep9]
+  refine WP.seq (WP.mono (PubNafWide.prep9_ok P384Joint.KG (PubNaf.regs_ok9 6 (by decide) (by decide))
+    hs (by decide) (by decide) (by decide) (by decide)) fun a ⟨pa, ka, oa⟩ => ?_)
+  have Ua : Unch base genW s.mem a.mem := oa.unch
+  have Fa := F.unch h7 hn genW_fixed Ua
+  have e : ∀ {i}, i < 45 → sv p384 base a i = sv p384 base s i := fun {i} hi =>
+    Ua.wordsVal (genW_apart i (List.mem_range.mpr hi)) (by have h := sl_le p384 h7 hi; omega_using [hn, h])
+  have tv : ∀ {i}, i < 45 → tmv p384.C p384.n base a (p384.sl i) = tmv p384.C p384.n base s (p384.sl i) :=
+    fun hi => by show toM _ _ (sv p384 base a _) = toM _ _ (sv p384 base s _); rw [e hi]
+  have hrep' : Rep p384.C (tmv p384.C p384.n base a (p384.sl PX)) (tmv p384.C p384.n base a (p384.sl PY))
+      (tmv p384.C p384.n base a (p384.sl ONEP)) P := by
+    rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
+  refine WP.mono (pubNafPrep_ok hc (by decide) hC pa.scr Fa
+    (by rw [e (by decide)]; exact hpx) (by rw [e (by decide)]; exact hpy) hrep')
+    fun t ⟨st, mt, nt, rt, spt, ut, rdt, wrt, ft, zt⟩ => ?_
+  rw [e (by decide)] at nt
+  refine ⟨st, mt, nt, ?_, spt.trans ka.sp, ?_, rdt.trans ka.rd, wrt.trans ka.wr, ft, zt, ?_⟩
+  · intro x hx
+    rw [rt x hx]
+    simp only [winRo, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [tv (i := AP) (by decide), tv (i := BM) (by decide), tv (i := ZERO) (by decide),
+      tv (i := PX) (by decide), tv (i := PY) (by decide), tv (i := ONEP) (by decide)]
+  · intro x hx
+    rw [ut x (fun w hw => hx w (List.mem_append_right _ hw)),
+      Ua x (fun w hw => hx w (List.mem_append_left _ hw))]
+  · intro j hj
+    rw [ut.byte (fun w hw => by have := genW_winX w hw; have hb : P384Joint.KG.bits = 3152 := rfl; omega_using [hj, this]) (by have := hs.nowrap; change 3152 + j < 2 ^ 64; omega_using [hj])]
+    exact pa.digits j (by have : P384Joint.KG.M.n = 6 := rfl; omega_using [hj, this])
+
+end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+
+end
+
+end
+
+/-! ### `Ecdsa.Verify.AArch64.P384.JointStepTiming`, which only this module used -/
+
+section
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P384/JointFixedSignTiming.lean`, which only this module imported.
+section
+
+section
+namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
+open VG.Proof.Weierstrass.AArch64.PubNaf
+open VG.Proof.Ed25519.AArch64 (read_x)
+
+theorem fixedSign_relCT {C : Curve} {base : Addr} {u j : Nat} {V : List Nat} {E : Nat → Fe C}
+ (hL : NafLay P384Joint.K 8192) (hm : UnitMod C.p (2^(64*P384Joint.K.M.n)))
+ (hV : ∀x∈[P384Joint.K.zero,P384Joint.K.E.y],x∈V) (hj : j<385) :
+ RelCT isa (fun s t=>FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E s t ∧
+ s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j ∧
+ GBytes base u j s ∧ GBytes base u j t)
+ (Impl.Weierstrass.AArch64.Joint.signEntry P384Joint.cfg)
+ (fun s t=>∃ E',FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E' s t) := by
+ have sign : RelCT isa (fun s t=>FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E s t ∧
+   s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j ∧
+   GBytes base u j s ∧ GBytes base u j t)
+   (.block (Joint.signRead P384Joint.cfg))
+   (fun s t=>FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E s t ∧
+     s.gpr .x3=BitVec.ofNat 64 (FastNaf.negative 9 u j).toNat ∧
+     t.gpr .x3=BitVec.ofNat 64 (FastNaf.negative 9 u j).toNat) := by
+   intro s t ts tt s' t' ⟨hp,s19,t19,sb,tb⟩ es et
+   obtain ⟨_,_,xs,vs,ks⟩ := signRead9_ok cfg_gw hp.left.scr (by decide)
+     (by change 3152+2*j+2≤8192; omega) s19 sb.hi
+   obtain ⟨_,_,xt,vt,kt⟩ := signRead9_ok cfg_gw hp.right.scr (by decide)
+     (by change 3152+2*j+2≤8192; omega) t19 tb.hi
+   obtain ⟨_,rfl⟩ := Exec.det es xs
+   obtain ⟨_,rfl⟩ := Exec.det et xt
+   have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by
+     refine ⟨hp.sp,fun r hr=>?_⟩
+     simp only [Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
+     rcases hr with rfl | rfl
+     · exact hp.left.scr.x0.trans hp.right.scr.x0.symm
+     · exact s19.trans t19.symm
+   exact ⟨fixedSign_ct _ _ _ _ _ _ trivial trivial pub es et,
+     ⟨hp.left.of_keeps ks (by decide),hp.right.of_keeps kt (by decide),ks.sp.trans (hp.sp.trans kt.sp.symm)⟩,vs,vt⟩
+ change RelCT isa _ (.seq (.block (Joint.signRead P384Joint.cfg)) _) _
+ apply RelCT.seq sign
+ apply RelCT.ite
+ · intro s t ⟨_,s3,t3⟩
+   change some (s.read .x .x3 != 0)=some (t.read .x .x3 != 0)
+   rw [read_x,read_x,s3,t3]
+ · have neg : RelCT isa (FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E)
+     (.block (Impl.Mont.AArch64.sub P384Joint.K.M P384Joint.K.E.y P384Joint.K.zero P384Joint.K.E.y))
+     (FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
+       (validAfter [FOp.sub P384Joint.K.E.y P384Joint.K.zero P384Joint.K.E.y] V)
+       (runOps [FOp.sub P384Joint.K.E.y P384Joint.K.zero P384Joint.K.E.y] E)) := by
+     apply fieldWP_relCT fixedNeg_ct
+     intro s hs
+     have w := fprog_ok hL.win.lay hL.al.al hm [FOp.sub P384Joint.K.E.y P384Joint.K.zero P384Joint.K.E.y]
+       hs (by decide) (by simp [readsOk, FOp.ins, hV P384Joint.K.zero (by simp), hV P384Joint.K.E.y (by simp)])
+     simp only [fprog,List.flatMap_cons,List.flatMap_nil,List.append_nil,opCode] at w
+     exact WP.mono w fun t ⟨kt,it⟩=>⟨it,kt.sp⟩
+   exact neg.mono (fun _ _ h=>h.1.1) (fun _ _ h=>⟨_,h.sub (fun _ hx=>List.mem_cons_of_mem _ hx)⟩)
+ · exact RelCT.block_nil (fun _ _ h=>⟨_,h.1.1⟩)
+end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P384/JointFixedLookupTiming.lean`, which only this module imported.
+section
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
+open VG.Proof.Weierstrass.AArch64.PubNaf
+
+structure FixedInput (C : Curve) (base T : Addr) (G : Point C) (u j : Nat) (s : State) : Prop where
+ source : FixedGenerator C base 8192 G T s
+ x19 : s.gpr .x19=BitVec.ofNat 64 j
+ bytes : GBytes base u j s
+ x2 : s.gpr .x2=(FastNaf.wbyte u (2*j)).setWidth 64
+ x3 : s.gpr .x3=(FastNaf.wbyte u (2*j+1)).setWidth 64
+
+theorem fixedLookup_relCT {C : Curve} {base T : Addr} {G : Point C} {u j : Nat}
+ {V : List Nat} {E : Nat → Fe C} (hL : NafLay P384Joint.K 8192) (hC : Law C)
+ (hV : ∀x∈[P384Joint.K.zero,p384.sl ONEP],x∈V) (hone : E (p384.sl ONEP)=1)
+ (hj : j<385) (hm0 : FastNaf.magnitude 9 u j≠0) :
+ RelCT isa (fun s t=>FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E s t ∧
+ FixedInput C base T G u j s ∧ FixedInput C base T G u j t)
+ (.block P384Joint.fixedLoad)
+ (fun s t=>∃ E',FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (fixedCoords++V) E' s t ∧
+ s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j ∧
+ GBytes base u j s ∧ GBytes base u j t) := by
+ intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et
+ obtain ⟨_,_,xs,ks,is,js,zs,s19,sbytes⟩ := fixedLookup_ok hL hp.left hV hone ps.source hj ps.x19 ps.bytes ps.x2 ps.x3 hm0
+ obtain ⟨_,_,xt,kt,it,jt,zt,t19,tbytes⟩ := fixedLookup_ok hL hp.right hV hone pt.source hj pt.x19 pt.bytes pt.x2 pt.x3 hm0
+ obtain ⟨_,rfl⟩ := Exec.det es xs
+ obtain ⟨_,rfl⟩ := Exec.det et xt
+ have pub : Taint.AgreeS ["VG_P384_GTAB"] (Taint.ofRegs [.x0,.x2,.x3]) s t := by
+   refine ⟨⟨hp.sp,fun r hr=>?_⟩,?_⟩
+   · simp only [Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
+     rcases hr with rfl | rfl | rfl
+     · exact hp.left.scr.x0.trans hp.right.scr.x0.symm
+     · exact ps.x2.trans pt.x2.symm
+     · exact ps.x3.trans pt.x3.symm
+   · intro n hn; rw [List.mem_singleton.mp hn]
+     exact ps.source.symbol.trans pt.source.symbol.symm
+ rw [zs] at js
+ rw [zt] at jt
+ have exy := (jointAffine_unique hC js).trans (jointAffine_unique hC jt).symm
+ refine ⟨fixedLookup_ct _ _ _ _ _ _ trivial trivial pub es et,tmv C P384Joint.K.M.n base s',?_,s19,t19,sbytes,tbytes⟩
+ apply hp.rebuild hL.win.lay ks kt (by decide) is it
+ · intro x hx; exact List.mem_append.mp hx
+ · intro x _ hx
+   simp only [fixedCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
+   rcases hx with rfl | rfl | rfl
+   · exact congrArg Prod.fst exy
+   · exact congrArg Prod.snd exy
+   · exact zs.trans zt.symm
+end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P384/JointFixedTiming.lean`, which only this module imported.
+section
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
+open VG.Proof.Weierstrass.AArch64.PubNaf
+open VG.Proof.Ed25519.AArch64 (read_x)
+
+theorem fixedEntry_relCT {C : Curve} {base T : Addr} {G : Point C} {u j : Nat}
+ {V : List Nat} {E : Nat → Fe C} (hL : NafLay P384Joint.K 8192) (hC : Law C)
+ (hm : UnitMod C.p (2^(64*P384Joint.K.M.n)))
+ (hV : ∀x∈[P384Joint.K.zero,p384.sl ONEP],x∈V) (hone : E (p384.sl ONEP)=1)
+ (hj : j<385) (hm0 : FastNaf.magnitude 9 u j≠0) :
+ RelCT isa (fun s t=>FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) V E s t ∧
+ FixedInput C base T G u j s ∧ FixedInput C base T G u j t)
+ P384Joint.fixedEntry
+ (fun s t=>∃ E',FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (fixedCoords++V) E' s t) := by
+ change RelCT isa _ (.seq (.block P384Joint.fixedLoad) (Impl.Weierstrass.AArch64.Joint.signEntry P384Joint.cfg)) _
+ apply RelCT.seq (fixedLookup_relCT hL hC hV hone hj hm0)
+ apply RelCT.exists_
+ intro E'
+ apply fixedSign_relCT hL hm _ hj
+ intro x hx
+ rcases (by simpa only [List.mem_cons,List.not_mem_nil,or_false] using hx : x=P384Joint.K.zero ∨ x=P384Joint.K.E.y) with rfl | rfl
+ · exact List.mem_append_right _ (hV _ (by simp))
+ · exact List.mem_append_left _ (by simp [fixedCoords])
+
+structure FixedDigitInput (C : Curve) (base T : Addr) (G : Point C) (u j : Nat) (s : State) : Prop where
+ source : FixedGenerator C base 8192 G T s
+ x19 : s.gpr .x19=BitVec.ofNat 64 j
+ bytes : GBytes base u j s
+
+theorem fixedDigit_relCT {C : Curve} {base T : Addr} {G : Point C} {u j : Nat}
+ {E : Nat → Fe C} (hL : NafLay P384Joint.K 8192) (hC : Law C)
+ (hm : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hone : P384Joint.K.one<C.p)
+ (h1 : E (p384.sl ONEP)=1) (hj : j<385)
+ (checks : JacMixedChecks P384Joint.K P384Joint.K.R P384Joint.K.E P384Joint.K.D) :
+ RelCT isa (fun s t=>FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (loopLive P384Joint.K) E s t ∧
+ FixedDigitInput C base T G u j s ∧ FixedDigitInput C base T G u j t)
+ P384Joint.fixedDigit
+ (fun s t=>∃ E',FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (loopLive P384Joint.K) E' s t) := by
+ let K := P384Joint.K
+ have read : RelCT isa (fun s t=>FieldPair K.M base 8192 C.p (·∈winSlots K) (loopLive K) E s t ∧
+   FixedDigitInput C base T G u j s ∧ FixedDigitInput C base T G u j t)
+   (.block (Joint.fixedRead P384Joint.cfg))
+   (fun s t=>FieldPair K.M base 8192 C.p (·∈winSlots K) (loopLive K) E s t ∧
+     FixedInput C base T G u j s ∧ FixedInput C base T G u j t) := by
+   intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et
+   obtain ⟨_,_,xs,vs,_,vs3,ks⟩ := fixedRead9_ok cfg_gw hp.left.scr (by decide)
+     (by change 3152+2*j+2≤8192; omega_using [hj]) ps.x19 ps.bytes.lo ps.bytes.hi
+   obtain ⟨_,_,xt,vt,_,vt3,kt⟩ := fixedRead9_ok cfg_gw hp.right.scr (by decide)
+     (by change 3152+2*j+2≤8192; omega_using [hj]) pt.x19 pt.bytes.lo pt.bytes.hi
+   obtain ⟨_,rfl⟩ := Exec.det es xs
+   obtain ⟨_,rfl⟩ := Exec.det et xt
+   have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by
+     refine ⟨hp.sp,fun r hr=>?_⟩
+     simp only [Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
+     rcases hr with rfl | rfl
+     · exact hp.left.scr.x0.trans hp.right.scr.x0.symm
+     · exact ps.x19.trans pt.x19.symm
+   have kp {a b : State} (k : VG.Proof.Ed25519.AArch64.Keeps [.x2,.x3,.x16] a b) : ProgKeep K.M base [] a b := keeps_prog k (by decide)
+   refine ⟨fixedRead_ct _ _ _ _ _ _ trivial trivial pub es et,
+     ⟨hp.left.of_keeps ks (by decide),hp.right.of_keeps kt (by decide),ks.sp.trans (hp.sp.trans kt.sp.symm)⟩,
+     ⟨ps.source.keep (kp ks) (Exec.syms es) (by simp) hp.left.mod.tmp,(ks.gpr _ (by decide)).trans ps.x19,?_,vs,vs3⟩,
+     ⟨pt.source.keep (kp kt) (Exec.syms et) (by simp) hp.right.mod.tmp,(kt.gpr _ (by decide)).trans pt.x19,?_,vt,vt3⟩⟩
+   · exact ⟨by rw [ks.mem]; exact ps.bytes.lo,by rw [ks.mem]; exact ps.bytes.hi⟩
+   · exact ⟨by rw [kt.mem]; exact pt.bytes.lo,by rw [kt.mem]; exact pt.bytes.hi⟩
+ rw [P384Joint.fixedDigit]
+ apply RelCT.seq read
+ apply RelCT.ite
+ · intro s t ⟨_,ps,pt⟩
+   change some (s.read .x .x2 != 0)=some (t.read .x .x2 != 0)
+   rw [read_x,read_x,ps.x2,pt.x2]
+ · intro s t ts tt s' t' ⟨⟨hp,ps,pt⟩,hn⟩ es et
+   have nz : FastNaf.magnitude 9 u j≠0 := by
+     intro hz
+     have hb := (jointGCell_zero_iff (c:=P384Joint.cfg) (Or.inr rfl) u j).mpr (by rw [cfg_gw]; exact hz)
+     rw [jointGCell,ite_eq_left cfg_gw] at hb
+     change some (s.read .x .x2 != 0)=some true at hn
+     rw [read_x,ps.x2,hb] at hn
+     change some false=some true at hn
+     cases hn
+   have entry := fixedEntry_relCT (base:=base) (T:=T) (G:=G) (V:=loopLive K) (E:=E) hL hC hm (by decide) h1 hj nz
+   have sum (F : Nat → Fe C) : RelCT isa
+     (FieldPair K.M base 8192 C.p (·∈winSlots K) (fixedCoords++loopLive K) F)
+     (.seq (Jacobian.jacMixedAdd K K.R K.E K.D) (.block (copyPt 6 K.R K.D)))
+     (fun s t=>∃ E',FieldPair K.M base 8192 C.p (·∈winSlots K) (loopLive K) E' s t) := by
+     obtain ⟨_,_,_,_,_,apart,_,_⟩ := rcbApart_naf hL.win
+     apply RelCT.seq (jacMixedAddB_relCT hL.win.lay hL.al.al (by decide) hm apart (by decide)
+       (hL.al.low (by decide)) (by decide) hone checks)
+     apply RelCT.exists_
+     intro F'
+     have cp := copyPoint_relCT (base:=base) (E:=F') hL.win.lay hL.al.al (o:=K.R) (q:=K.D)
+       (by decide) (V:=jacCoords K.D++(fixedCoords++loopLive K))
+       (by intro x hx; exact List.mem_append_left _ hx) fixedCopy_ct
+     exact cp.mono (fun _ _ h=>h) (fun _ _ h=>⟨_,h.sub (by decide)⟩)
+   exact (RelCT.seq entry (RelCT.exists_ sum)) _ _ _ _ _ _ ⟨hp,ps,pt⟩ es et
+ · exact RelCT.block_nil (fun _ _ h=>⟨E,h.1.1⟩)
+end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Impl.Ecdsa.Verify.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass.AArch64.PubNaf
+open Spec.Weierstrass
+
+/-- Public generator inputs retained throughout the joint loop. -/
+structure GeneratorInput (C : Curve) (base T : Addr) (G : Point C) (u : Nat) (s : State) : Prop where
+ source : FixedGenerator C base 8192 G T s
+ bytes : ∀j<770,s.mem (off base (P384Joint.KG.bits+j))=FastNaf.wbyte u j
+ one : tmv C P384Joint.K.M.n base s (p384.sl ONEP)=1
+
+theorem GeneratorInput.rebase {C : Curve} {base T : Addr} {G : Point C} {u : Nat} {s t : State}
+ (h : GeneratorInput C base T G u s)
+ (hu : Unch base (winW P384Joint.K++cacheW P384Joint.K) s.mem t.mem)
+ (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hy : t.syms=s.syms) :
+ GeneratorInput C base T G u t := by
+ refine ⟨h.source.unch hu (by decide) hr hw hy,?_,?_⟩
+ · intro j hj
+   have hb : P384Joint.KG.bits=3152 := rfl
+   rw [hu.byte (by intro w hw; have ha:=generator_apart w hw; omega_using [hj, ha]) (by omega_using [hj, hb])]
+   exact h.bytes j hj
+ · unfold tmv
+   rw [hu.wordsVal (by decide) (by decide)]
+   exact h.one
+
+theorem GeneratorInput.current {C : Curve} {base T : Addr} {G P A : Point C} {u j : Nat} {s₀ s : State}
+ (h : GeneratorInput C base T G u s₀) (hj : j<385) (sy : s.syms=s₀.syms)
+ (hs : JointDigitPost P384Joint.K C base 8192 P s₀ s j A) :
+ FixedDigitInput C base T G u j s ∧ tmv C P384Joint.K.M.n base s (p384.sl ONEP)=1 := by
+ refine ⟨⟨h.source.unch hs.st.unch (by decide) hs.st.keep.rd hs.st.keep.wr sy,hs.x19,?_⟩,?_⟩
+ · exact GBytes.of_unch hs.st.unch (fun w hw => generator_apart w (List.mem_append_left _ hw)) h.bytes hj
+ · unfold tmv
+   rw [hs.st.unch.wordsVal (by decide) (by decide)]
+   exact h.one
+
+def JointRelation (C : Curve) (base : Addr) (P G : Point C) (u v j : Nat) (s₀ t₀ s t : State) : Prop :=
+ (∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K) (loopLive P384Joint.K) E s t) ∧
+ JointDigitPost P384Joint.K C base 8192 P s₀ s j (jointPoint G P u v j 9) ∧
+ JointDigitPost P384Joint.K C base 8192 P t₀ t j (jointPoint G P u v j 9) ∧
+ s.syms=s₀.syms ∧ t.syms=t₀.syms
+
+theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ : State} {u v j : Nat}
+ (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
+ (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hG : onCurve C G=true)
+ (hF₁ : NafFixed P384Joint.K C base s₀ P v) (hF₂ : NafFixed P384Joint.K C base t₀ P v)
+ (g₁ : GeneratorInput C base T G u s₀) (g₂ : GeneratorInput C base T G u t₀)
+ (checks : StepChecks P384Joint.K)
+ (hD : DblSpec P384Joint.K C base 8192 P384Joint.double P384Joint.K.R P384Joint.K.D (dblVR P384Joint.K))
+ (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) P384Joint.double)
+ (mixed : JacMixedChecks P384Joint.K P384Joint.K.R P384Joint.K.E P384Joint.K.D)
+ (hj : j<384) :
+ RelCT isa (JointRelation C base P G u v (j+1) s₀ t₀) P384Joint.step
+  (JointRelation C base P G u v j s₀ t₀) := by
+ intro s t ts tt s' t' ⟨pair,hs,ht,sys,syt⟩ es et
+ have fs:=fixedStep_of_source hL hp hC hM3 hone hG hF₁ g₁.source g₁.bytes g₁.one
+ have ft:=fixedStep_of_source hL hp hC hM3 hone hG hF₂ g₂.source g₂.bytes g₂.one
+ obtain ⟨_,_,exs,postS⟩:=step_ok hL hp hC hM3 hone hP hG hD hF₁ fs hj sys hs
+ obtain ⟨_,_,ext,postT⟩:=step_ok hL hp hC hM3 hone hP hG hD hF₂ ft hj syt ht
+ obtain ⟨_,rfl⟩:=Exec.det es exs
+ obtain ⟨_,rfl⟩:=Exec.det et ext
+ have result : ts=tt ∧ ∃E,FieldPair P384Joint.K.M base 8192 C.p (·∈winSlots P384Joint.K)
+   (loopLive P384Joint.K) E s' t' := by
+  cases es with
+  | seq ds es => cases es with
+    | seq dbs es => cases es with
+      | seq ps gs =>
+       cases et with
+       | seq dt et => cases et with
+         | seq dbt et => cases et with
+           | seq pt gt =>
+            have eps : Exec isa (PubNaf.stepD P384Joint.K P384Joint.double) _ _ _ := .seq ds (.seq dbs ps)
+            have ept : Exec isa (PubNaf.stepD P384Joint.K P384Joint.double) _ _ _ := .seq dt (.seq dbt pt)
+            obtain ⟨he,E,hpair⟩:=stepDRaw_relCT hL hp hone checks hD hct hF₁ hF₂ (j:=j) (by change j<385; omega_using [hj])
+             _ _ _ _ _ _ ⟨pair,hs.st,ht.st,hs.cache,ht.cache,hs.x19,ht.x19⟩ eps ept
+            have hcA:=jointPoint_curve hC hG hP u v (j+1) 9
+            obtain ⟨_,_,e1,h1⟩:=peerStepD_ok hL hp hC hM3 hone hP hcA hD hF₁ hj hs
+            obtain ⟨_,_,e2,h2⟩:=peerStepD_ok hL hp hC hM3 hone hP hcA hD hF₂ hj ht
+            obtain ⟨_,rfl⟩:=Exec.det eps e1
+            obtain ⟨_,rfl⟩:=Exec.det ept e2
+            have a:=g₁.current (by omega_using [hj]) ((Exec.syms eps).trans sys) h1
+            have b:=g₂.current (by omega_using [hj]) ((Exec.syms ept).trans syt) h2
+            have ev : E (p384.sl ONEP)=1 := by
+             rw [←hpair.left.val _ (by decide)]
+             exact a.2
+            obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev (by omega_using [hj]) mixed
+             _ _ _ _ _ _ ⟨hpair,a.1,b.1⟩ gs gt
+            exact ⟨by simpa only [List.append_assoc] using congrArg₂ (·++·) he hg,res⟩
+ exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
+end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint
+
+end
+
+end
+
 /-!
 # ECDSA verification over P-384 on AArch64: `Verified`
 
@@ -116,7 +625,7 @@ theorem p384v_combWords_length : P384Joint.p384v.combWords.length = 3072 := by
 theorem satMemG_held : ∀ i < P384Joint.p384v.combWords.length,
     satMemG.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = P384Joint.p384v.combWords.getD i 0 := by
   unfold satMemG
-  exact constMem_held _ _ (by rw [p384v_combWords_length]; omega)
+  exact constMem_held _ _ (by rw [p384v_combWords_length]; omega_using [])
 
 /-- Whether the signature at `sig` of the hash at `digest` is valid for the
 public key at `pk`, as the specification says. -/
@@ -307,7 +816,7 @@ theorem points_ok (hc : CfgOk p384) (hC : Law p384.C) (hO : PrimeOrder p384.C)
  have source₀ := FixedGenerator.of_pre hc hC hT ht rfl
  have source := source₀.unch hm.unch (by decide) hm.rd hm.wr hm.syms
  have hp := unitMod_pow_two hc.p_odd (64*P384Joint.K.M.n)
- have hone : P384Joint.K.one<p384.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
+ have hone : P384Joint.K.one<p384.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])
  have one : toM p384.C.p (2^(64*P384Joint.K.M.n)) (p384.mont 1)=1 := by
   rw [show P384Joint.K.M.n=p384.n from rfl,toM_cmont hc.toBaseCfgOk]; rfl
  have pn : p384.C.p<2^(64*P384Joint.K.M.n) := by
@@ -497,9 +1006,9 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
   intro j
   by_cases hj : 1≤j
   · by_cases hn : j≤384
-    · have e : j-1+1=j := by omega
+    · have e : j-1+1=j := by omega_using [hj]
       refine (jointStep_relCT hL hp hC hM3 hone hP hG hF₁ hF₂ g₁ g₂ checks hD hct mixed
-       (j:=j-1) (by omega)).mono (P':=I j) (fun _ _ h=>by rw [e]; exact h.2.2) ?_
+       (j:=j-1) (by omega_using [hn])).mono (P':=I j) (fun _ _ h=>by rw [e]; exact h.2.2) ?_
       intro s t h
       have xs:=h.2.1.x19
       have xt:=h.2.2.1.x19
@@ -510,7 +1019,7 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
           rw [bne_iff_ne]
           intro hh
           have hh':=congrArg BitVec.toNat hh
-          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : j-1<2^64)] at hh'
+          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hn] : j-1<2^64)] at hh'
           exact hz hh'
          have ht : eval (.nonzero .x .x19) s=some true := by
           change some (s.read .x .x19 != 0)=some true
@@ -522,7 +1031,7 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
          intro hz
          simp only [eval,State.read,xs,hz] at he
          cases he
-        exact ⟨j-1,by omega,by omega,by omega,h⟩
+        exact ⟨j-1,by omega_using [hj],by omega_using [hz],by omega_using [hn],h⟩
     · exact RelCT.of_false (fun _ _ h=>hn h.2.1)
   · exact RelCT.of_false (fun _ _ h=>hj h.1)
  exact (RelCT.loop I step 384).mono (fun _ _ h=>⟨by decide,by decide,h⟩) (fun _ _ h=>h)
@@ -722,7 +1231,7 @@ theorem jointMul_relCT (hc : CfgOk p384) (hC : Law p384.C)
    rw [show P384Joint.K.M.n=p384.n from rfl,toM_cmont hc.toBaseCfgOk]; rfl
  obtain ⟨hw,post⟩:=jointWindow_relCT (nafLayQ hc (by decide) (by decide))
    (unitMod_pow_two hc.p_odd (64*P384Joint.K.M.n)) hC hc.am3 (by simpa only [show P384Joint.K.M.n=p384.n from rfl] using hc.p_lt)
-   (Nat.mod_lt _ (by have := hc.p_ge; omega)) one hwin (hD base) hct mixed hO hn17 hP hc.onG vb ub zs'
+   (Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])) one hwin (hD base) hct mixed hO hn17 hP hc.onG vb ub zs'
    _ _ _ _ _ _ ⟨pair,⟨ss,ms,Fs⟩,⟨st,mt,Ft⟩,genS,genT⟩ ws wt
  exact ⟨by rw [he,hw],post⟩
 end VG.Proof.Ecdsa.Verify.AArch64.P384.Joint

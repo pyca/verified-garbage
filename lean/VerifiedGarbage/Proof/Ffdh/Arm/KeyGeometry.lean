@@ -28,7 +28,7 @@ theorem Inputs.boundOctetsP (p : Inputs) (hasQ : p.hasQ = false) : p.boundOctets
   have length : p.dom.length ≠ 3 * p.k := by
     rw [p.domainLength, hasQ]
     simp only [Bool.false_eq_true, ite_false]
-    have := p.minLength; omega
+    have := p.minLength; omega_using [this]
   rw [ite_eq_right length]
 
 theorem Inputs.scalarLeadBound (p : Inputs) : p.scalarLead < p.k := by
@@ -38,7 +38,7 @@ theorem Inputs.scalarLeadBound (p : Inputs) : p.scalarLead < p.k := by
     rw [empty] at size
     have := p.minLength
     simp only [List.length_nil] at size
-    omega
+    omega_using [size, this]
   have bound := VG.Proof.Ffdh.lead_lt nonempty
   rw [p.boundOctetsLength] at bound
   exact bound
@@ -46,7 +46,7 @@ theorem Inputs.scalarLeadBound (p : Inputs) : p.scalarLead < p.k := by
 theorem Inputs.scalarWidthBounds (p : Inputs) : 0 < p.scalarWidth ∧ p.scalarWidth ≤ p.k := by
   have := p.scalarLeadBound
   unfold Inputs.scalarWidth
-  omega
+  omega_using [this]
 
 theorem Context.boundBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s) :
     Octets p.base p.boundSource p.len p.boundOctets s := by

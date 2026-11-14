@@ -24,12 +24,12 @@ theorem tableWords_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
       t.mem = st4 s.mem base (o + dst) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   have w : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hs.wr, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => ⟨_, hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp (disch := omega) only [tableWords, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
     Size.bytes, hp, off, Offset.add_add, State.store, read_x, BitVec.setWidth_eq,
-    w (o + dst) (by omega), w (o + (dst + 8)) (by omega),
-    w (o + (dst + 16)) (by omega), w (o + (dst + 24)) (by omega), ite_eq_left, ite_true,
+    w (o + dst) (by omega_using [ho]), w (o + (dst + 8)) (by omega_using [ho]),
+    w (o + (dst + 16)) (by omega_using [ho]), w (o + (dst + 24)) (by omega_using [ho]), ite_eq_left, ite_true,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, True.intro, True.intro, True.intro, True.intro⟩
   simp only [st4, write64_eq_writeW, Nat.add_assoc]
@@ -40,13 +40,13 @@ theorem fromTableWords_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = fe s.mem base (o + src) ∧
       Keeps [.x4, .x5, .x6, .x7] s t := by
   have r : ∀ d, d + 8 ≤ 8192 → InRegions (s.rd ++ s.wr) (off base d) 8 :=
-    fun d hd => ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp (disch := omega) only [fromTableWords, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
     Size.bytes, State.load, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     hp, off, Offset.add_add, BitVec.setWidth_eq,
-    r (o + src) (by omega), r (o + (src + 8)) (by omega),
-    r (o + (src + 16)) (by omega), r (o + (src + 24)) (by omega),
+    r (o + src) (by omega_using [ho]), r (o + (src + 8)) (by omega_using [ho]),
+    r (o + (src + 16)) (by omega_using [ho]), r (o + (src + 24)) (by omega_using [ho]),
     ite_eq_left, ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · simp only [fe, word, off, Nat.add_assoc]; rfl
@@ -76,28 +76,28 @@ theorem table_env {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base o n m m') (ho : 768 ≤ o) : env m' base = env m base := by
   funext i
   simp only [env, F]
-  rw [h.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+  rw [h.fe (by simp only [offset]; omega_using [ho]) (by simp only [offset]; omega_using [])]
 
 theorem toTableQuarter_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     (hp : s.gpr .x8 = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :
     WP isa (.block (loads (64 + 32 * j) .x4 .x5 .x6 .x7 ++ tableWords (32 * j))) s fun t =>
-      F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega⟩ ∧ TableKeep base (o + 32 * j) 32 s t := by
+      F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega_using [hj]⟩ ∧ TableKeep base (o + 32 * j) 32 s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (loadsField_ok hs ⟨j, by omega⟩) fun t ⟨hv, hk⟩ => ?_
+  refine WP.mono (loadsField_ok hs ⟨j, by omega_using [hj]⟩) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (tableWords_ok (hs.of_keeps hk (by decide))
-    ((hk.gpr _ (by decide)).trans hp) (32 * j) (by omega) (by omega)) fun u ⟨hm, hg, hrd, hwr, hsp⟩ => ?_
+    ((hk.gpr _ (by decide)).trans hp) (32 * j) (by omega_using []) (by omega_using [hj, ho])) fun u ⟨hm, hg, hrd, hwr, hsp⟩ => ?_
   refine ⟨?_, ⟨fun r hr => (congrFun hg r).trans (hk.gpr r hr), hrd.trans hk.rd,
     hwr.trans hk.wr, hsp.trans hk.sp, ?_⟩⟩
-  · rw [F, hm, fe_st4 _ _ (by omega), hv]
+  · rw [F, hm, fe_st4 _ _ (by omega_using [hj, ho]), hv]
     rfl
-  · rw [hm, hk.mem]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [hm, hk.mem]; exact st4_outside _ _ (by omega_using [hj, ho]) _ _ _ _
 
 theorem toTablePrefix_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     (hp : s.gpr .x8 = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192)
     (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j =>
       loads (64 + 32 * j) .x4 .x5 .x6 .x7 ++ tableWords (32 * j))) s fun t =>
-      (∀ j (hj : j < n), F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega⟩) ∧
+      (∀ j (hj : j < n), F t.mem base (o + 32 * j) = env s.mem base ⟨j, by omega_using [hn, hj]⟩) ∧
       TableKeep base o (32 * n) s t := by
   induction n generalizing s with
   | zero =>
@@ -106,14 +106,14 @@ theorem toTablePrefix_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs hp (by omega)) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (ih hs hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
     refine WP.mono (toTableQuarter_ok (hk.scratch hs)
-      ((hk.gpr _ (by decide)).trans hp) n (by omega) ho) fun u ⟨hu, ku⟩ => ?_
-    refine ⟨fun j hj => ?_, (hk.mono (by omega) (by omega)).trans
-      (ku.mono (by omega) (by omega))⟩
+      ((hk.gpr _ (by decide)).trans hp) n (by omega_using [hn]) ho) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans
+      (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · rw [Outside_F ku.mem (by omega) (Or.inl (by omega)), hv j h]
-    · have he : j = n := by omega
+    · rw [Outside_F ku.mem (by omega_using [ho, hn, hj]) (Or.inl (by omega_using [h])), hv j h]
+    · have he : j = n := by omega_using [hj, h]
       subst j
       rw [hu, table_env hk.mem hlo]
 
@@ -147,25 +147,25 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 theorem fromTableQuarter_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     (hp : s.gpr .x8 = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :
     WP isa (.block (fromTableWords (32 * j) ++ stores (64 + 32 * j) .x4 .x5 .x6 .x7)) s fun t =>
-      env t.mem base ⟨j, by omega⟩ = F s.mem base (o + 32 * j) ∧
+      env t.mem base ⟨j, by omega_using [hj]⟩ = F s.mem base (o + 32 * j) ∧
       TableKeep base (64 + 32 * j) 32 s t := by
   have _hcap : workSize true = 8192 := rfl
   rw [WP.block_append_iff]
-  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega) (by omega)) fun t ⟨hv, hk⟩ => ?_
+  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega_using []) (by omega_using [hj, ho])) fun t ⟨hv, hk⟩ => ?_
   have ht := hs.of_keeps hk (by decide)
-  refine WP.mono (stores_ok ht (by constructor <;> omega) .x4 .x5 .x6 .x7) fun u hu => ?_
+  refine WP.mono (stores_ok ht (by constructor <;> omega_arith) .x4 .x5 .x6 .x7) fun u hu => ?_
   subst u
   refine ⟨?_, ⟨hk.gpr, hk.rd, hk.wr, hk.sp, ?_⟩⟩
   · change F (st4 _ _ _ _ _ _ _) base (64 + 32 * j) = _
-    rw [F, fe_st4 _ _ (by omega), hv]
-  · rw [hk.mem]; exact st4_outside _ _ (by omega) _ _ _ _
+    rw [F, fe_st4 _ _ (by omega_using [hj]), hv]
+  · rw [hk.mem]; exact st4_outside _ _ (by omega_using [hj]) _ _ _ _
 
 theorem fromTablePrefix_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     (hp : s.gpr .x8 = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192)
     (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j =>
       fromTableWords (32 * j) ++ stores (64 + 32 * j) .x4 .x5 .x6 .x7)) s fun t =>
-      (∀ j (hj : j < n), env t.mem base ⟨j, by omega⟩ = F s.mem base (o + 32 * j)) ∧
+      (∀ j (hj : j < n), env t.mem base ⟨j, by omega_using [hn, hj]⟩ = F s.mem base (o + 32 * j)) ∧
       TableKeep base 64 (32 * n) s t := by
   induction n generalizing s with
   | zero =>
@@ -174,18 +174,18 @@ theorem fromTablePrefix_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs hp (by omega)) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (ih hs hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
     refine WP.mono (fromTableQuarter_ok (hk.scratch hs)
-      ((hk.gpr _ (by decide)).trans hp) n (by omega) ho) fun u ⟨hu, ku⟩ => ?_
-    refine ⟨fun j hj => ?_, (hk.mono (by omega) (by omega)).trans
-      (ku.mono (by omega) (by omega))⟩
+      ((hk.gpr _ (by decide)).trans hp) n (by omega_using [hn]) ho) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans
+      (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · have he : env u.mem base ⟨j, by omega⟩ = env t.mem base ⟨j, by omega⟩ :=
-        Outside_F ku.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))
+    · have he : env u.mem base ⟨j, by omega_using [hn, hj]⟩ = env t.mem base ⟨j, by omega_using [hn, hj]⟩ :=
+        Outside_F ku.mem (by simp only [offset]; omega_using [hn, hj]) (Or.inl (by simp only [offset]; omega_using [h]))
       rw [he, hv j h]
-    · have he : j = n := by omega
+    · have he : j = n := by omega_using [hj, h]
       subst j
-      rw [hu, Outside_F hk.mem (by omega) (Or.inr (by omega))]
+      rw [hu, Outside_F hk.mem (by omega_using [ho, hn]) (Or.inr (by omega_using [hlo]))]
 
 theorem pointFromTable_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     (hp : s.gpr .x8 = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192) :
@@ -220,7 +220,7 @@ theorem tableAddr_ok {s : State} {base : Addr} (hp : s.gpr .x0 = base)
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
       Nat.shiftLeft_eq, BitVec.toNat_ofNat]
     rw [show 2 ^ 7 = 128 from rfl, Nat.mul_comm]
-    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega : 128 * j < 2 ^ 64)]
+    rw [Nat.mod_eq_of_lt (by omega_using [hj] : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [hj] : 128 * j < 2 ^ 64)]
   apply WP.of_runBlock
   simp only [tableAddr, const64, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, read_x,

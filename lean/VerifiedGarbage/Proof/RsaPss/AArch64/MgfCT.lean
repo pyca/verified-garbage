@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 # RSASSA-PSS on AArch64: `mgfXor` is constant time
 
 Two runs of `mgfXor` with the same frame, working space, `DB` (its place `e`
-and length `db`, public) and table of `Hash`, whose functions are at the same
+and length `db`, public) and table of `MdHash`, whose functions are at the same
 addresses (`MS`), leak the same trace (`mgfXor_ct`): MGF1's arguments to
 its slots by the taint analysis (from `scratch`, `DB` and `dbLen`, which the
 anchor fixes), then OAEP's MGF1 with a table, constant time from what
@@ -34,7 +34,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (Two)
 open VG.Proof.MlKem.AArch64 (Keep)
 
 /-- What two runs of `mgfXor` share: the frame, the working space, `DB`,
-the table of `Hash`, and the addresses of its functions. -/
+the table of `MdHash`, and the addresses of its functions. -/
 structure MA where
   F : Addr
   S : Addr
@@ -76,8 +76,8 @@ theorem mgfXor_ct {H : Hash} : RelCT isa (Two (MS G g H.D)) (mgfXor H g) fun _ _
   swap
   · refine RelCT.of_false fun _ _ ⟨⟨s, h, _⟩, _⟩ => hf ?_
     have := h.hd.fit; have := h.hd.e1; have := h.hd.db1
-    exact ⟨by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega, by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega,
-      .inr (by unfold mgfOff oEm at *; omega), h.hd.db1, by unfold oY oEm at *; omega⟩
+    exact ⟨by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega_arith, by unfold Impl.RsaOaep.AArch64.oSt mgfOff oY oEm at *; omega_arith,
+      .inr (by unfold mgfOff oEm at *; omega_arith), h.hd.db1, by unfold oY oEm at *; omega_arith⟩
   let F : State → State → Prop := fun σ u => ∃ s, MS G g H.D a s ∧ σ = allocated mgfFrame s ∧
     u.syms = s.syms ∧ Proof.RsaOaep.AArch64.Lay u (mF a.F) (off a.S mgfOff) ∧
     Proof.RsaOaep.AArch64.Rep u.mem (mF a.F) (off a.S mgfOff) (fun o => s.mem (off (off a.S mgfOff) o))

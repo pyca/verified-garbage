@@ -177,8 +177,8 @@ theorem CheckPost.point (hc : BaseCfgOk c) {K : List Reg} {base : Addr} {P₀ : 
         (if CheckOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy) := by
   have hp3 := hc.p_ge
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hlt : ∀ x, x * 2 ^ (64 * c.n) % c.C.p < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
+  have hlt : ∀ x, x * 2 ^ (64 * c.n) % c.C.p < c.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [h.px]; split
     · exact hlt _

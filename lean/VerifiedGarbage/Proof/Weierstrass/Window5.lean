@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Signed five-bit windows for public P-256 verification scalars. -/
 
@@ -25,7 +26,7 @@ theorem geom_succ_left (m : Nat) : geom (m + 1) = 1 + 32 * geom m := by
   | succ m ih =>
     show geom (m + 1) + 32 ^ (m + 1) = 1 + 32 * (geom m + 32 ^ m)
     rw [ih, Nat.pow_succ]
-    omega
+    omega_using []
 
 theorem geom_add (j m : Nat) : geom (j + m) = geom j + 32 ^ j * geom m := by
   induction m with
@@ -33,18 +34,18 @@ theorem geom_add (j m : Nat) : geom (j + m) = geom j + 32 ^ j * geom m := by
   | succ m ih =>
     show geom (j + m) + 32 ^ (j + m) = geom j + 32 ^ j * (geom m + 32 ^ m)
     rw [ih, Nat.mul_add, Nat.pow_add]
-    omega
+    omega_using []
 
 theorem geom_mul (j : Nat) : 31 * geom j + 1 = 32 ^ j := by
   induction j with
   | zero => rfl
   | succ j ih =>
     show 31 * (geom j + 32 ^ j) + 1 = 32 ^ (j + 1)
-    rw [Nat.pow_succ]; omega
+    rw [Nat.pow_succ]; omega_using [ih]
 
 /-- `16 Σ_{i<j} 32^i < 32^j`. -/
 theorem half_geom_lt (j : Nat) : 16 * geom j < 32 ^ j := by
-  have := geom_mul j; omega
+  have := geom_mul j; omega_using [this]
 
 /-- The window method's multiple after the digits `J - 1` down to `j`. -/
 def winE (k J j : Nat) : Nat := k / 32 ^ j - 16 * geom (J - j)
@@ -60,7 +61,7 @@ theorem geom_le_div {k J j : Nat} (hk : 16 * geom J ≤ k) (hj : j ≤ J) :
   rw [Nat.le_div_iff_mul_le hpos]
   have := half_geom_lt j
   rw [Nat.mul_comm]
-  omega
+  omega_using [hk, e]
 
 theorem winE_top {k J : Nat} (hk : k < 32 ^ J) : winE k J J = 0 := by
   simp [winE, Nat.div_eq_of_lt hk]
@@ -76,12 +77,12 @@ theorem winE_step {k J j : Nat} (hk : 16 * geom J ≤ k) (hj : j < J) :
   have hd : k / 32 ^ j = 32 * (k / 32 ^ (j + 1)) + nib k j := by
     rw [nib, Nat.pow_succ, ← Nat.div_div_eq_div_mul]
     have := Nat.div_add_mod (k / 32 ^ j) 32
-    omega
+    omega_using []
   have hg : geom (J - j) = 1 + 32 * geom (J - (j + 1)) := by
-    rw [show J - j = J - (j + 1) + 1 by omega, geom_succ_left]
+    rw [show J - j = J - (j + 1) + 1 by omega_using [hj], geom_succ_left]
   simp only [winE]
   rw [hg] at h₁ ⊢
-  omega
+  omega_using [h₁, h₂, hd]
 
 /-- The point of digit `j`: `[k_j - 16]P`, as `[|d_j|]P` reflected for `d_j < 0`. -/
 def winPt (C : Curve) (P : Point C) (k j : Nat) : Point C :=
@@ -96,10 +97,10 @@ theorem win_add (hC : Law C) {P : Point C} (hP : onCurve C P = true) {k J j : Na
   split
   · rw [hC.add_mul_mul hP]
     congr 1
-    omega
-  · rw [hC.add_mul_neg hP (by omega)]
+    omega_arith
+  · rw [hC.add_mul_neg hP (by omega_using [hs])]
     congr 1
-    omega
+    omega_arith
 
 theorem onCurve_winPt (hC : Law C) {P : Point C} (hP : onCurve C P = true) (k j : Nat) :
     onCurve C (winPt C P k j) = true := by
@@ -112,12 +113,12 @@ theorem onCurve_winPt (hC : Law C) {P : Point C} (hP : onCurve C P = true) (k j 
 theorem recode_lt {k : Nat} (hk : k < 2 ^ 256) :
     k + 16 * geom 52 < 32 ^ 52 := by
   have h := geom_mul 52
-  omega
+  omega_using [hk, h]
 
 /-- The offset used by the machine implementation. -/
 theorem offset_eq : 16 * geom 52 = 16 * ((32 ^ 52 - 1) / 31) := by
   have h := geom_mul 52
-  omega
+  omega_using [h]
 
 /-- The common bit reader reads exactly the five-bit window used here. -/
 theorem combWin_five (k j : Nat) : combWin 5 k j = nib k j := by
@@ -126,7 +127,7 @@ theorem combWin_five (k j : Nat) : combWin 5 k j = nib k j := by
 /-- A zero signed digit contributes the identity point. -/
 theorem winPt_zero {P : Point C} {k j : Nat} (h : magH 16 (nib k j)=0) :
     winPt C P k j = .infinity := by
-  have he : nib k j=16 := by unfold magH at h; split at h <;> omega
+  have he : nib k j=16 := by unfold magH at h; split at h <;> omega_arith
   simp only [winPt,he,Nat.le_refl,ite_true,Nat.sub_self]
   rw [Spec.Weierstrass.mul]; simp
 
@@ -136,7 +137,7 @@ theorem winPt_mag (P : Point C) (k j : Nat) :
       negPt (mul (magH 16 (nib k j)) P) else mul (magH 16 (nib k j)) P := by
   unfold winPt magH
   by_cases h : 16 ≤ nib k j
-  · simp [h,show ¬nib k j<16 by omega]
-  · simp [h,show nib k j<16 by omega]
+  · simp [h,show ¬nib k j<16 by omega_using [h]]
+  · simp [h,show nib k j<16 by omega_using [h]]
 
 end VG.Proof.Weierstrass.Window5

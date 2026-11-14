@@ -142,7 +142,7 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
     (hl : len ≤ 2 ^ 64) : ∀ d, d + 4 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 4 :=
-  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
+  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega_using [hl, hd])⟩
 
 theorem stackArgAddr0 (s : State) : stackArgAddr s 0 = State.addr s.sp := by
   simp [stackArgAddr]
@@ -155,9 +155,9 @@ theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extr
   args := by unfold argsOk; decide
   sc_in := fun _ => by rw [stackArgAddr0]; exact ⟨argsR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
   wr := by show (⟨scPtr s, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.k_fit; omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.digest_fit; omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.k_fit; omega_using [this])
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega_using [this])
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.digest_fit; omega_using [this])
   k_sc := hp.k_sc.sub_right (sc_sub s)
   d_sc := hp.d_sc.sub_right (sc_sub s)
   e_sc := hp.digest_sc.sub_right (sc_sub s)
@@ -210,7 +210,7 @@ theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j :=
   rw [sl_eq, sl_eq]
   have := Nat.mul_le_mul_left (8 * c.n) h
   rw [Nat.mul_succ] at this
-  omega
+  omega_using [this]
 
 theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
     c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
@@ -221,54 +221,54 @@ theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
 theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
   by_contra hij
   have := sl_apart c hij
-  omega
+  omega_using [hn, h, this]
 
 /-- A slot is below the functions' own working space. -/
 theorem sl_below_wk (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
   have := sl_lt c hi
   rw [sl_eq c 45] at this
   rw [wk_eq]
-  omega
+  omega_using [hn, this]
 
 /-- The functions' own working space is below the tables. -/
 theorem wk_below_bits (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) (j : Nat) :
     c.wk + 64 * M.n ≤ bitsAt c.n j := by
   rw [wk_eq, bitsAt_eq, hM]
-  omega
+  omega_using [hn]
 
 /-- A slot is below the tables. -/
 theorem sl_below_bits (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) (j t : Nat) :
     c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
   have := sl_below_wk c hn hi
   have := wk_below_bits c hn (M := c.MP') rfl j
-  omega
+  omega_arith
 
 /-- The functions' own working space is in the working space. -/
 theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + 64 * M.n ≤ size := by
   rw [wk_eq, hM]
   show _ ≤ 4096
-  omega
+  omega_using [hn]
 
 /-- Every slot is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   have := sl_below_wk c hn hi
   have := wk_le c hn (M := c.MP') rfl
-  omega
+  omega_arith
 
 /-- Every table is in `scratch`. -/
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ 8192 := by
   rw [bitsAt_eq]
-  have : 64 * c.n * j ≤ 64 * c.n * 2 := Nat.mul_le_mul_left _ (by omega)
-  omega
+  have : 64 * c.n * j ≤ 64 * c.n * 2 := Nat.mul_le_mul_left _ (by omega_using [hj])
+  omega_using [hn, this]
 
 theorem bitsAt_lt {c : Cfg} (hc : CfgOk c) {j : Nat} (hj : j < 3) : bitsAt c.n j < 8192 := by
   have := bitsAt_le c hc.n10 hj
   have := hc.n0
-  omega
+  omega_arith
 
 /-- The tables are at offsets of 8-byte words. -/
 theorem bitsAt_al (c : Cfg) (j : Nat) : bitsAt c.n j % 8 = 0 := by
-  rw [bitsAt_eq, Nat.mul_assoc 64]; omega
+  rw [bitsAt_eq, Nat.mul_assoc 64]; omega_using []
 
 /-- The bytes of a number, an immediate. -/
 theorem enc8n {c : Cfg} (hn : c.n < 10) : encodable (BitVec.ofNat 32 (8 * c.n)) = true := by
@@ -278,7 +278,7 @@ theorem enc8n {c : Cfg} (hn : c.n < 10) : encodable (BitVec.ofNat 32 (8 * c.n)) 
 /-- The bytes of an encoding, an immediate. -/
 theorem encLen {c : Cfg} (hc : CfgOk c) : encodable (BitVec.ofNat 32 c.C.len) = true := by
   have : ∀ x < 73, encodable (BitVec.ofNat 32 x) = true := by decide
-  exact this _ (by have := hc.len_hi; have := hc.n10; omega)
+  exact this _ (by have := hc.len_hi; have := hc.n10; omega_arith)
 
 /-- Table `j` of the bits of slot `i`. -/
 theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
@@ -290,7 +290,7 @@ theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr
       Outside base (bitsAt c.n j) (64 * c.n) s.mem s'.mem := by
   have hb := bitsAt_le c hc.n10 hj
   have := hc.n0
-  exact bits_ok hs hf hc.n0 (sl_le c hc.n10 hi) hb (by omega) (bitsAt_al c j)
+  exact bits_ok hs hf hc.n0 (sl_le c hc.n10 hi) hb (by omega_using [hb, this]) (bitsAt_al c j)
     (Or.inl (sl_below_bits c hc.n10 hi j 0)) (enc8n hc.n10)
 
 end VG.Proof.Ecdsa.Arm

@@ -54,10 +54,10 @@ theorem spillStep_frame (i : Instr) (s s' : State)
     · simp only [Option.some.injEq] at he
       subst s'
       refine ⟨rfl, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_⟩
-      have hnat : m.disp = (m.disp.toNat : Int) := by omega
+      have hnat : m.disp = (m.disp.toNat : Int) := by omega_using [hlo]
       simp only [State.ea, hi, hb]
       rw [hnat, BitVec.ofInt_natCast]
-      exact Offset.contains (s.gpr .rdx) (by omega) (by omega) (by decide)
+      exact Offset.contains (s.gpr .rdx) (by omega_using [hlo]) (by omega_using [hhi]) (by decide)
     · cases he
 
 theorem spillBlock_frame (is : List Instr) (s s' : State)

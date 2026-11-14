@@ -11,9 +11,11 @@ meta import VerifiedGarbage.Spec.Rc2.Contract
 Reads all eight RFC 2268 §5 vectors, all seven OpenSSL 3.5.0 CBC vectors,
 and pyca/cryptography's six-block CBC vector with a nonzero IV
 from the unmodified published files under `vectors/` (provenance in
-`vectors/sources/`). Both encryption and decryption are checked. Every
-two-chunk split, byte-at-a-time updates, empty updates, final IVs and
-incomplete final blocks are checked against those same published answers.
+`vectors/sources/`). Both encryption and decryption are checked, as the
+chained functions' contracts state CBC (`Cbc.encrypt`, `Cbc.decrypt`), from
+the IV `initWithEffectiveBits` keeps: every split at a block boundary,
+continued from `Cbc.next`, the final IVs and empty input are checked against
+those same published answers.
 
 OpenSSL's generic RC2-CBC defaults to 128 effective bits, even for shorter
 keys; RC2-40-CBC and RC2-64-CBC default to 40 and 64. `KeyBits` overrides
@@ -93,47 +95,32 @@ def checkRfc (text : String) : Except String Unit := do
 def init (key iv : List Byte) (direction : Direction) : Except Error Spec.Rc2.Context :=
   initWithEffectiveBits key iv direction (8 * key.length)
 
-/-- Unpadded CBC's finalization: success emits no bytes; a trailing partial
-block is an error in either direction. -/
-def finalize (ctx : Spec.Rc2.Context) : Except Error (List Byte) :=
-  if ctx.pending.isEmpty then .ok [] else .error .incompleteBlock
-
 def context (key iv : List Byte) (direction : Direction) (bits : Nat) : Except String Spec.Rc2.Context :=
   (initWithEffectiveBits key iv direction bits).mapError (fun e => s!"initialization: {repr e}")
 
-def finalized (ctx : Spec.Rc2.Context) : Bool :=
-  match finalize ctx with | .ok bs => bs.isEmpty | .error _ => false
+/-- The 8-byte blocks of `bs`, whose length is a multiple of 8. -/
+def chunks (bs : List Byte) : List (List Byte) :=
+  (List.range (bs.length / 8)).map fun j => (bs.drop (8 * j)).take 8
 
-def incomplete (ctx : Spec.Rc2.Context) : Bool :=
-  match finalize ctx with | .error .incompleteBlock => true | _ => false
+/-- CBC in the context's direction from `iv`, as the chained functions'
+contracts state it: the output blocks and the next IV. -/
+def cbc (ctx : Spec.Rc2.Context) (iv : List Byte) (bs : List (List Byte)) :
+    List (List Byte) × List Byte :=
+  match ctx.direction with
+  | .encrypt => let cs := Spec.Cbc.encrypt (cipher ctx.schedule) iv bs; (cs, Spec.Cbc.next iv cs)
+  | .decrypt => (Spec.Cbc.decrypt (invCipher ctx.schedule) iv bs, Spec.Cbc.next iv bs)
 
-/-- Exercise streaming independently of how the published message is chunked. -/
-def checkStream (ctx : Spec.Rc2.Context) (input expected nextIv : List Byte) : Except String Unit := do
-  let empty := update ctx []
-  unless empty.2.isEmpty && empty.1.iv == ctx.iv && empty.1.pending.isEmpty do
-    throw "empty initial update changed the context"
-  unless finalized empty.1 do throw "empty finalization failed"
-  for split in List.range (input.length + 1) do
-    let (first, a) := update ctx (input.take split)
-    unless a.length == 8 * (split / 8) && first.pending.length == split % 8 do
-      throw s!"wrong buffering at split {split}"
-    if split % 8 != 0 then
-      unless incomplete first do throw "accepted a partial block"
-    let (same, noOutput) := update first []
-    unless noOutput.isEmpty && same.iv == first.iv && same.pending == first.pending do
-      throw "empty intermediate update changed the context"
-    let (last, b) := update same (input.drop split)
-    unless a ++ b == expected do throw s!"wrong streaming output at split {split}"
-    unless last.iv.toList == nextIv do throw s!"wrong final IV at split {split}"
-    unless finalized last do throw "complete blocks failed finalization"
-  let mut ctx := ctx
-  let mut output := []
-  for byte in input do
-    let (next, out) := update ctx [byte]
-    ctx := next
-    output := output ++ out
-  unless output == expected && ctx.iv.toList == nextIv && finalized ctx do
-    throw "byte-at-a-time streaming failed"
+/-- CBC of the message in two calls, split at every block boundary, the
+second continuing from the first's next IV. -/
+def checkChained (ctx : Spec.Rc2.Context) (input expected nextIv : List Byte) : Except String Unit := do
+  let empty := cbc ctx ctx.iv.toList []
+  unless empty.1.isEmpty && empty.2 == ctx.iv.toList do throw "empty CBC changed the IV"
+  let bs := chunks input
+  for split in List.range (bs.length + 1) do
+    let (a, iv) := cbc ctx ctx.iv.toList (bs.take split)
+    let (b, last) := cbc ctx iv (bs.drop split)
+    unless (a ++ b).flatten == expected do throw s!"wrong CBC output at split {split}"
+    unless last == nextIv do throw s!"wrong final IV at split {split}"
 
 def checkOpenSsl (text : String) : Except String Unit := do
   let mut count := 0
@@ -154,8 +141,8 @@ def checkOpenSsl (text : String) : Except String Unit := do
     let nextIv := ct.drop (ct.length - 8)
     if let some value := fs.lookup "NextIV" then
       unless (← unhex value) == nextIv do throw "inconsistent published NextIV"
-    checkStream (← context key iv .encrypt bits) pt ct nextIv
-    checkStream (← context key iv .decrypt bits) ct pt nextIv
+    checkChained (← context key iv .encrypt bits) pt ct nextIv
+    checkChained (← context key iv .decrypt bits) ct pt nextIv
     count := count + 1
   unless count == 7 do throw s!"expected 7 OpenSSL CBC vectors, got {count}"
 
@@ -172,11 +159,11 @@ def checkCryptography (text : String) : Except String Unit := do
   unless key.length == 16 && iv.any (· != 0) && pt.length == 48 && ct.length == 48 do
     throw "unexpected pyca/cryptography vector parameters"
   let nextIv := ct.drop (ct.length - 8)
-  checkStream (← context key iv .encrypt 128) pt ct nextIv
-  checkStream (← context key iv .decrypt 128) ct pt nextIv
+  checkChained (← context key iv .encrypt 128) pt ct nextIv
+  checkChained (← context key iv .decrypt 128) ct pt nextIv
 
-/-- Generated inputs test limits and inverse/streaming properties; these
-are not known-answer vectors. -/
+/-- Generated inputs test limits and that decryption undoes encryption;
+these are not known-answer vectors. -/
 def checkLimits : Except String Unit := do
   let iv := (List.range 8).map (BitVec.ofNat 8)
   let hasError (result : Except Error Spec.Rc2.Context) (expected : Error) : Bool :=
@@ -198,14 +185,10 @@ def checkLimits : Except String Unit := do
     for bits in [1, 7, 8, 9, 40, 63, 64, 128, 129, 1023, 1024] do
       let enc ← context key iv .encrypt bits
       let dec ← context key iv .decrypt bits
-      let (_, ct) := update enc data
-      let (last, pt) := update dec ct
-      unless pt == data && finalized last do
+      let (ct, encIv) := cbc enc enc.iv.toList (chunks data)
+      let (pt, decIv) := cbc dec dec.iv.toList ct
+      unless pt.flatten == data && encIv == decIv do
         throw s!"round trip failed: {len}-byte key, {bits} effective bits"
-      let empty := update enc []
-      unless empty.2.isEmpty && empty.1.iv == enc.iv do throw "empty CBC changed IV"
-      let empty := update dec []
-      unless empty.2.isEmpty && empty.1.iv == dec.iv do throw "empty CBC decryption changed IV"
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)

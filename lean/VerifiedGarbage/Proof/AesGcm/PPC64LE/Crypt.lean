@@ -56,16 +56,16 @@ theorem DataW.sub {c st w : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW c 
 /-- The data from byte `j` on. -/
 theorem DataOk.drop {st w : Addr} {s : State} {D : Addr} {n j : Nat}
     (h : DataOk st w s D n) (hj : j ≤ n) : DataOk st w s (D + BitVec.ofNat 64 j) (n - j) := by
-  have hs : Region.Sub ⟨D+BitVec.ofNat 64 j,n-j⟩ ⟨D,n⟩ := Offset.sub_base _ (by omega)
-  refine ⟨covers_off h.rd (by omega) h.lt,by have := h.lt; omega,?_,h.st.sub_left hs,h.w.sub_left hs⟩
+  have hs : Region.Sub ⟨D+BitVec.ofNat 64 j,n-j⟩ ⟨D,n⟩ := Offset.sub_base _ (by omega_using [hj])
+  refine ⟨covers_off h.rd (by omega_using [hj]) h.lt,by have := h.lt; omega_using [this],?_,h.st.sub_left hs,h.w.sub_left hs⟩
   by_cases hz : n-j=0
   · rw [hz,Nat.add_zero]; exact Nat.le_of_lt (D+BitVec.ofNat 64 j).isLt
-  · rw [h.toNat_add (by omega)]; have := h.fit; omega
+  · rw [h.toNat_add (by omega_using [hz])]; have := h.fit; omega_using [hj, this]
 
 /-- The data from byte `j` on. -/
 theorem DataW.drop {c st w : Addr} {s : State} {D : Addr} {n j : Nat}
     (h : DataW c st w s D n) (hj : j ≤ n) : DataW c st w s (D + BitVec.ofNat 64 j) (n - j) :=
-  ⟨h.ok.drop hj, covers_off h.wr (by omega) h.ok.lt, h.ctx.sub_right (Offset.sub_base _ (by omega))⟩
+  ⟨h.ok.drop hj, covers_off h.wr (by omega_using [hj]) h.ok.lt, h.ctx.sub_right (Offset.sub_base _ (by omega_using [hj]))⟩
 
 theorem DataW.take {c st w : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW c st w s D n)
     {k : Nat} (hk : k ≤ n) : DataW c st w s D k :=
@@ -138,14 +138,14 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
     ciphOf m' c R = ciphOf m c R := by
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   simp only [ciphOf]
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 end
 
 /-- `[D, D + j)` and `[D + j, D + n)` are apart. -/
 theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :
     (⟨D, j⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 j, n - j⟩ := by
-  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega)) (by omega) (by omega)
+  have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega_using [])) (by omega_using [hj, hn]) (by omega_using [hj, hn])
   simpa using this
 
 /-- The text at `S` in `m₀`, decrypted to `E` in `m`, in two pieces. -/

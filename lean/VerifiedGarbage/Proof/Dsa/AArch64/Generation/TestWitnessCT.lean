@@ -52,7 +52,7 @@ theorem sampleLoad_ct : RelCT isa (Two SampleBefore) Impl.Dsa.AArch64.Generation
 theorem sampleLoad_state {p : SamplePublic} {s : State} (h : SampleBefore p s) :
     WP isa Impl.Dsa.AArch64.Generation.loadWitness s (SampleLoaded p) :=
   WP.mono (loadWitness_ok h.ready p.prime.exponentRoom h.ptr h.len h.source
-    (by rw [p.length]; have := p.prime.len2; omega) (by rw [p.length]; exact p.prime.lenWords))
+    (by rw [p.length]; have := p.prime.len2; omega_using [this]) (by rw [p.length]; exact p.prime.lenWords))
     (fun _ ⟨hr, hx, _, _⟩ => ⟨hr, hx⟩)
 
 theorem witnessRange_ct : RelCT isa (Two PrimeGood) Impl.Dsa.AArch64.Generation.witnessRange (fun _ _ => True) := by

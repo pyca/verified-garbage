@@ -96,13 +96,13 @@ theorem initBlock_rel {h₁ h₂ : List Byte} {l c : Nat} (hl : l < lanesN s₀�
   have cellF : ∀ {s₀ : State}, DPre s₀ → l < lanesN s₀ →
       (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 ∧ l * (prm s₀).laneLen + c < blocksN s₀ :=
     fun {s₀} hp hl => by
-      have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+      have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_using [this]
       have : l * (prm s₀).laneLen + c < blocksN s₀ := by
         rw [hp.blocks_eq]
-        have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega)
+        have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega_using [hl])
         rw [Nat.succ_mul] at this
-        omega
-      exact ⟨by omega, this⟩
+        omega_using [hc, L2, this]
+      exact ⟨by omega_using [this], this⟩
   have pre : ∀ {s₀ : State}, DPre s₀ → l < lanesN s₀ → ∀ {s t : State}, IB s₀ h₁ l c s ∨ IB s₀ h₂ l c s →
       Inv s₀ t ∧ t.gpr .r12 = scrP s₀ ∧ t.gpr .r0 = E s₀ ∧ t.gpr .r1 = 72 ∧ t.gpr .r3 = 1024 ∧
         t.gpr .r2 = s.gpr .r6 →
@@ -118,11 +118,11 @@ theorem initBlock_rel {h₁ h₂ : List Byte} {l c : Nat} (hl : l < lanesN s₀�
     have ed : t.gpr .r2 = memP s₀ + BitVec.ofNat 32 ((l * (prm s₀).laneLen + c) * 1024) := by
       rw [e]; rcases hs with hs | hs <;> exact hs.2.2.2.2
     have an : (memP s₀ + BitVec.ofNat 32 ((l * (prm s₀).laneLen + c) * 1024)).toNat =
-        (memP s₀).toNat + (l * (prm s₀).laneLen + c) * 1024 := add_nat (by omega)
+        (memP s₀).toNat + (l * (prm s₀).laneLen + c) * 1024 := add_nat (by omega_using [hm, hc'])
     refine ⟨i, d, ⟨locR s₀, by simp, 0, by rw [a]; simp, by rw [c']; show 0 + 72 ≤ 144; decide⟩,
-      by rw [a, c']; show (E s₀).toNat + 72 ≤ 2 ^ 32; omega,
+      by rw [a, c']; show (E s₀).toNat + 72 ≤ 2 ^ 32; omega_using [hE],
       ⟨memR s₀, by simp, (l * (prm s₀).laneLen + c) * 1024, by rw [ed, cell_addr hp hk]; rfl,
-        by rw [f]; exact hc'⟩, by rw [ed, f, an]; show _ + 1024 ≤ 2 ^ 32; omega,
+        by rw [f]; exact hc'⟩, by rw [ed, f, an]; show _ + 1024 ≤ 2 ^ 32; omega_using [hm, hc'],
       by rw [f]; decide⟩
   unfold Impl.Argon2.Arm.Derive.initBlock
   refine RelCT.seqW (T.leafI [] (fun s₁ s₂ h => ⟨h.1.1, h.2.1, by simp⟩) hchk)
@@ -172,7 +172,7 @@ theorem memoryInit_rel {h₁ h₂ : List Byte} :
   have hN₂ : lanesN s₀₂ = N := by rw [← le, hN]
   refine (RelCT.loop (Q := fun _ _ => True) (fun n s₁ s₂ => ∃ l, n = N - l ∧ l < N ∧
       LI s₀₁ h₁ l s₁ ∧ LI s₀₂ h₂ l s₂) ?step N).mono (fun s₁ s₂ h => ?init) fun _ _ h => h
-  case init => exact ⟨0, by omega, hl1, h.1, h.2⟩
+  case init => exact ⟨0, by omega_using [], hl1, h.1, h.2⟩
   intro n s₁ s₂ t₁ t₂ s₁' s₂' ⟨l, hn, hl, g₁, g₂⟩ e₁ e₂
   obtain ⟨ht, ⟨k₁, c₁⟩, ⟨k₂, c₂⟩⟩ := rel_wp (T.initLane_rel (by rw [hN]; exact hl))
     (fun s h => lane_ok T.hp₁ (by rw [hN]; exact hl) h) (fun s h => lane_ok T.hp₂ (by rw [hN₂]; exact hl) h)
@@ -183,7 +183,7 @@ theorem memoryInit_rel {h₁ h₂ : List Byte} :
   have e : l + 1 ≠ N := by
     rw [show isa.eval .ne s₁' = VG.Arm.eval .ne s₁' from rfl, c₁] at hc
     simpa using hc
-  exact ⟨N - (l + 1), by omega, l + 1, rfl, by omega, k₁, k₂⟩
+  exact ⟨N - (l + 1), by omega_using [hn, hl], l + 1, rfl, by omega_using [hl, e], k₁, k₂⟩
 
 end Two
 

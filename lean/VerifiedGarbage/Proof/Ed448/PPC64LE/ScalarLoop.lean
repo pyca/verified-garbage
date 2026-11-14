@@ -35,7 +35,7 @@ theorem bit_toNat {w : Nat} (hw : w < 256) (j : Nat) :
   · simp only [hj, decide_true, Bool.true_and, Nat.testBit, Nat.shiftRight_eq_div_pow]
     cases h : w / 2 ^ j % 2 == 1 <;> simp_all <;> omega
   · simp only [hj, decide_false, Bool.false_and, Bool.toNat_false]
-    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hw (Nat.pow_le_pow_right (by decide : 2 > 0) (by omega : 8 ≤ j)))]
+    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hw (Nat.pow_le_pow_right (by decide : 2 > 0) (by omega_using [hj] : 8 ≤ j)))]
 
 /-- What the scalar code writes: the remainder at `o` and its candidate. -/
 abbrev RD (b : Addr) (o : Nat) : List Region := [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 SD, 56⟩]
@@ -71,7 +71,7 @@ theorem scalarByte_ok {o : Nat} (ho : Rem o) {s : State} (hc : Ctx b s) {p : Add
   simp only [List.cons_append, List.nil_append]
   refine wp_subi (by decide) (by decide) fun s1 u1 => wp_add fun s2 u2 => ?_
   have e15 : s1.gpr .r15 = BitVec.ofNat 64 n := by
-    rw [u1.gpr, h15, ofNat_sub_one (by omega) (by omega), Nat.add_sub_cancel]
+    rw [u1.gpr, h15, ofNat_sub_one (by omega_using []) (by omega_using [hn]), Nat.add_sub_cancel]
   refine wp_lbz (a := p + BitVec.ofNat 64 n) (by decide) (by decide)
     (by rw [BitVec.add_zero, u2.gpr, u1.other .r14 (by decide), h14, e15])
     (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact hin) fun s3 u3 => ?_
@@ -80,7 +80,7 @@ theorem scalarByte_ok {o : Nat} (ho : Rem o) {s : State} (hc : Ctx b s) {p : Add
   have hm3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
   have hw := (s.mem (p + BitVec.ofNat 64 n)).isLt
   have h16 : (s3.gpr .r16).toNat = (s.mem (p + BitVec.ofNat 64 n)).toNat := by
-    rw [u3.gpr, u2.mem, u1.mem, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [u3.gpr, u2.mem, u1.mem, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
   refine WP.mono (scalarBits_ok ho hw _ (fun j hj => by simpa using hj) (hc.of_rest hr3 (by decide)) h16
     (by rw [hm3]; exact hr)) fun t ⟨rt, ft, vt⟩ => ⟨(hr3.mono (by decide)).trans (rt.mono (by decide)),
       by rw [hm3] at ft; exact ft, by rw [rt.gpr _ (by decide), u3.other _ (by decide), u2.other _ (by decide), e15], ?_⟩
@@ -92,14 +92,14 @@ theorem scalarByte_ok {o : Nat} (ho : Rem o) {s : State} (hc : Ctx b s) {p : Add
     funext fun v => funext fun j => by rw [bit_toNat hw j]
   rw [e]
   have hc8 := Proof.Ed448.consumeBits_eq (BitVec.ofNat 64 w) 8 (V s.mem b o) hr
-  have hw64 : (BitVec.ofNat 64 w).toNat = w := by rw [BitVec.toNat_ofNat]; omega
-  rw [hw64, Nat.mod_eq_of_lt (show w < 2 ^ 8 by omega), show (2 : Nat) ^ 8 = 256 from rfl] at hc8
+  have hw64 : (BitVec.ofNat 64 w).toNat = w := by rw [BitVec.toNat_ofNat]; omega_using [hw]
+  rw [hw64, Nat.mod_eq_of_lt (show w < 2 ^ 8 by omega_using [hw]), show (2 : Nat) ^ 8 = 256 from rfl] at hc8
   unfold Proof.Ed448.consumeBits at hc8
   exact hc8
 
 theorem bytesAt_drop (m : Mem) (p : Addr) {N n : Nat} (hn : n < N) :
     (bytesAt m p N).drop n = m (p + BitVec.ofNat 64 n) :: (bytesAt m p N).drop (n + 1) := by
-  rw [List.drop_eq_getElem_cons (by simp [bytesAt]; omega)]
+  rw [List.drop_eq_getElem_cons (by simp [bytesAt]; omega_using [hn])]
   simp [bytesAt]
 
 /-- After the bytes from `n` up: the remainder of the integer they make. -/
@@ -124,8 +124,8 @@ theorem engine_ok {o : Nat} (ho : Rem o) {N : Nat} (hN : 1 ≤ N) (hN' : N < 2 ^
   rw [List.cons_append]
   refine WP.seq (wp_li (by decide) fun s0 u0 => ?_)
   have hc0 : Ctx b s0 := hc.of_rest (u0.rest (ws := [.r7]) (by decide)) (by decide)
-  refine WP.append (stores_ok (r := .r7) (o := o) (n := 14) (by omega) hc0) fun s1 ⟨hz, hf1, hg1, hr1⟩ =>
-    wp_li (by omega) fun s2 u2 => WP.block_nil ?_
+  refine WP.append (stores_ok (r := .r7) (o := o) (n := 14) (by omega_using [hf]) hc0) fun s1 ⟨hz, hf1, hg1, hr1⟩ =>
+    wp_li (by omega_using [hN']) fun s2 u2 => WP.block_nil ?_
   have iN : EngInv b p o N s N s2 := by
     refine ⟨Nat.le_refl _, hN, (u0.rest (by decide)).trans ((hr1.mono (by decide)).trans (u2.rest (by decide))),
       ?_, u2.gpr, ?_⟩
@@ -136,23 +136,23 @@ theorem engine_ok {o : Nat} (ho : Rem o) {N : Nat} (hN : 1 ≤ N) (hN' : N < 2 ^
       rw [show decodeLE [] = 0 from rfl, Nat.zero_mod]
   refine WP.loop (M := isa) (EngInv b p o N s) ?_ N s2 iN
   intro n t h
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by have := h.pos; omega⟩
-  have hk : k < N := by have := h.le; omega
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by have := h.pos; omega_using [this]⟩
+  have hk : k < N := by have := h.le; omega_using [this]
   have hct : Ctx b t := hc.of_rest h.rest (by decide)
-  refine WP.mono (scalarByte_ok ho hct (p := p) (by rw [h.rest.gpr _ (by decide), h14]) (by omega) h.r15
+  refine WP.mono (scalarByte_ok ho hct (p := p) (by rw [h.rest.gpr _ (by decide), h14]) (by omega_using [hN', hk]) h.r15
     (by rw [h.rest.rd, h.rest.wr]; exact hin k hk)
     (by rw [h.val]; exact Nat.mod_lt _ Proof.Ed448.order_pos)) fun t' ⟨rt, ft, r15, vt⟩ => ?_
   have hb : t.mem (p + BitVec.ofNat 64 k) = s.mem (p + BitVec.ofNat 64 k) :=
     h.frame _ fun r hr => hd k hk r hr
   have hv : V t'.mem b o = decodeLE ((bytesAt s.mem p N).drop k) % L := by
     rw [vt, h.val, hb, bytesAt_drop _ _ hk, Proof.Ed448.reduce_cons]
-  have hz : (t'.gpr .r15 != 0) = decide (k ≠ 0) := by rw [r15, ofNat_ne_zero (by omega)]
+  have hz : (t'.gpr .r15 != 0) = decide (k ≠ 0) := by rw [r15, ofNat_ne_zero (by omega_using [hN', hk])]
   rw [eval_nonzero, hz]
   by_cases hk0 : k = 0
   · subst hk0
     refine .inl ⟨by simp, h.rest.trans rt, h.frame.trans ft, ?_⟩
     rw [hv, List.drop_zero]
-  · exact .inr ⟨by simp [hk0], k, by omega, ⟨by omega, by omega, h.rest.trans rt, h.frame.trans ft, r15, hv⟩⟩
+  · exact .inr ⟨by simp [hk0], k, by omega_using [], ⟨by omega_using [hk], by omega_using [hk0], h.rest.trans rt, h.frame.trans ft, r15, hv⟩⟩
 
 end
 

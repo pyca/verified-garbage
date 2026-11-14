@@ -73,21 +73,21 @@ theorem diagonal_ctx {a : Nat} (ha : a < 8) (ha1 : a ≠ Public.aAcc) (ha2 : a �
   have hsize : slot (8*blocks L) 8 ≤ L.Z := he.symm ▸ hz
   have hP : productBase (blocks L)+8*(16*blocks L+2) ≤ L.Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have hA : slot (8*blocks L) a+64*blocks L ≤ L.Z := by
     have := slot_le (w := 8*blocks L) ha
-    omega
+    omega_using [hsize, this]
   have sep := input_separation fast ha1 ha2
   have h8 : s.gpr .x8 = off L.B (productBase (blocks L)) := by
     simpa only [productBase, he] using h.x8
   have h9 : s.gpr .x9 = off L.B (slot (8*blocks L) a) := by rw [he]; exact h.x9
   have h12 : s.gpr .x12 = BitVec.ofNat 64 (4*(2*blocks L)) := by
-    rw [show 4*(2*blocks L) = 8*blocks L by omega, he]
+    rw [show 4*(2*blocks L) = 8*blocks L by omega_using [], he]
     exact h.x12
-  refine WP.mono (WideLoops.diagonal_ok hg.scr h8 h9 h12 h.x7 (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun t ⟨_, hto, _, kt⟩ => ?_
+  refine WP.mono (WideLoops.diagonal_ok hg.scr h8 h9 h12 h.x7 (by omega_using [hk]) (by omega_using [hk'])
+    (by omega_using [hP]) (by omega_using [hA]) (by omega_using [sep])) fun t ⟨_, hto, _, kt⟩ => ?_
   have hout : Outside L.B (productBase (blocks L)) (8*(16*blocks L+2)) s.mem t.mem :=
-    hto.mono (by omega) (by omega)
+    hto.mono (by omega_using []) (by omega_using [])
   have hHt : Hdr t.mem L.B L.w mi := he ▸ frame_header hout (he.symm ▸ hg.hdr)
   exact ⟨⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr _ (by decide)).trans hg.x0, hHt⟩, hz⟩, h.fast.2⟩,
     (kt.gpr _ (by decide)).trans h.x8, (kt.gpr _ (by decide)).trans h.x12,

@@ -23,7 +23,7 @@ uses, as on 32-bit ARM (`Impl/Ecdh/Arm.lean`):
    on a point of the curve), to the slots the ladder takes its point from;
 6. `[d]P` by the signature's ladder (`exchange`), or by another
    multiplication (`exchangeWith`: P-256's windows,
-   `Impl/Ecdsa/PPC64LE/Window.lean`), and `Z^(p-2)` by its power;
+   `Impl/Ecdsa/PPC64LE/Window.lean`), and `Z^(p-2)` by its addition chain;
 7. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian, through `r14`, where the setup keeps it) and is
@@ -143,7 +143,7 @@ def exchangeWith (mul : Prog isa) : Prog isa :=
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (.block (peerAt c .r12)) <|
   .seq (validate c) <|
-  .seq mul <| .seq (pow c.powP c.SP) (middle c)
+  .seq mul <| .seq c.invP (middle c)
 
 /-- `vg_ecdh_<curve>`, with `[d]P` by `qMul`. -/
 def exchange : Prog isa := exchangeWith c (c.qMul PX PY)

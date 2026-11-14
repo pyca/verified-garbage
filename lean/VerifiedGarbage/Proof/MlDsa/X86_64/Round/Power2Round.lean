@@ -60,7 +60,7 @@ theorem t1V_toNat {x : BitVec 32} (hx : x.toNat < q) : (t1V x).toNat = (x.toNat 
     rw [BitVec.toNat_ushiftRight, p2rX_toNat hx, Nat.shiftRight_eq_div_pow]
   rw [q_eq] at hx
   rw [t1V, BitVec.toNat_setWidth, e]
-  omega
+  omega_using []
 
 theorem t0V_toNat {x : BitVec 32} (hx : x.toNat < q) :
     (t0V x).toNat = if (x.toNat + 4095) % 8192 < 4095 then (x.toNat + 4095) % 8192 + q - 4095
@@ -70,10 +70,10 @@ theorem t0V_toNat {x : BitVec 32} (hx : x.toNat < q) :
       show (8191 : BitVec 32).toNat = 2 ^ 13 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   have hs : (BitVec.signExtend 64 (4095 : BitVec 32)).toNat = 4095 := by decide
   have hq : qImm.toNat = q := rfl
-  rw [t0V, BitVec.toNat_setWidth, condAddV_toNat (by decide) (by rw [e, hs, hq, q_eq]; omega), e, hs, hq]
+  rw [t0V, BitVec.toNat_setWidth, condAddV_toNat (by decide) (by rw [e, hs, hq, q_eq]; omega_using []), e, hs, hq]
   have := Nat.mod_lt (x.toNat + 4095) (show 8192 > 0 by decide)
   rw [q_eq] at *
-  split <;> omega
+  split <;> omega_using []
 
 section
 variable {s₀ : State} (hp : power2RoundK.pre s₀)
@@ -104,11 +104,11 @@ theorem p2r_loop :
     fun i hi s hI hc => ?_
   have ha : ∀ p ∈ [Reg.rdi, .rsi, .rdx], cfAddr (s.gpr p) (s.gpr .rcx) = coeffAddr (s₀.gpr p) (255 - i) :=
     fun p hp' => hI.addr hc hi hp'
-  refine WP.mono (p2rBody_ok s (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega))
-    (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega))
-    (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega))) fun s' ⟨⟨hm, hc', hz⟩, hk⟩ =>
+  refine WP.mono (p2rBody_ok s (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega_using []))
+    (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega_using []))
+    (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega_using []))) fun s' ⟨⟨hm, hc', hz⟩, hk⟩ =>
       ⟨⟨?_, hc', hz, trivial⟩, hk⟩
-  rw [hm, ha _ (by simp), ha _ (by simp), ha _ (by simp), hI.read hL (by simp) (by omega)]
+  rw [hm, ha _ (by simp), ha _ (by simp), ha _ (by simp), hI.read hL (by simp) (by omega_using [])]
   rfl
 
 theorem p2r_correct :
@@ -120,11 +120,11 @@ theorem p2r_correct :
       forall_eq]
     exact ⟨hp.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.1⟩
   · refine natPolyIs_of_toNat fun k hk => ?_
-    rw [hI.done .rsi (by simp) k (by omega) hk, map_get _ _ hk, p2rV, ite_eq_left_of_eq_true _ _ (eq_true rfl), t1V_toNat (hr k hk),
+    rw [hI.done .rsi (by simp) k (by omega_using []) hk, map_get _ _ hk, p2rV, ite_eq_left_of_eq_true _ _ (eq_true rfl), t1V_toNat (hr k hk),
       power2Round_eq, ← polyAt_val hr hk]
     exact (Int.toNat_natCast _).symm
   · refine polyIs_of_toNat fun k hk => ?_
-    rw [hI.done .rdx (by simp) k (by omega) hk, map_get _ _ hk, p2rV, ite_eq_right_of_eq_false _ _ (eq_false (by decide)), t0V_toNat (hr k hk),
+    rw [hI.done .rdx (by simp) k (by omega_using []) hk, map_get _ _ hk, p2rV, ite_eq_right_of_eq_false _ _ (eq_false (by decide)), t0V_toNat (hr k hk),
       power2Round_t0, polyAt_val hr hk]
 
 end

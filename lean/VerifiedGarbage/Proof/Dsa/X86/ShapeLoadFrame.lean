@@ -24,7 +24,7 @@ theorem loadWidths_header {s t : State} {base : Addr} {n output d : Nat}
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> omega
-    · omega
+    · omega_using [hd]
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem loadWidths_whole {s t : State} {base : Addr} {n output : Nat}
@@ -48,7 +48,7 @@ theorem OperandReady.smaller {s : State} {base : Addr} {len n : Nat} {p : VG.Imp
   change (x - base).toNat + 1 ≤ contextBytes n at hx
   change (x - base).toNat + 1 ≤ 7048
   have := VG.Proof.Dsa.X86.Layout.context_bound hn
-  omega
+  omega_using [hx, this]
 
 theorem outside_shapeWord {s t : State} {base : Addr} {o n d : Nat}
     (O : Outside base o n s.mem t.mem) (hd : d + 4 ≤ 2 ^ 64)

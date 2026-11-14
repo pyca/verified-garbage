@@ -30,20 +30,20 @@ open Spec.Hmac (xorPad ipad opad blockKey hmacBlockKey)
 variable {H : Hash} (hH : HashOK H)
 
 theorem ret24 (s : State) : Region.Sub ⟨s.callEntry.gpr .rsp, 8⟩ (below (s.gpr .rsp) 24) := by
-  rw [State.callEntry_rsp]; exact Offset.sub_below _ (a := 8) (by omega) (by omega)
+  rw [State.callEntry_rsp]; exact Offset.sub_below _ (a := 8) (by omega_using []) (by omega_using [])
 
 theorem stk24 (s : State) : Region.Sub ⟨s.callEntry.gpr .rsp - 16, 16⟩ (below (s.gpr .rsp) 24) := by
   rw [State.callEntry_rsp, show s.gpr .rsp - 8 - 16 = s.gpr .rsp - BitVec.ofNat 64 24 from
     Offset.sub_sub_ofNat _ 8 16]
-  exact Offset.sub_below _ (a := 24) (by omega) (by omega)
+  exact Offset.sub_below _ (a := 24) (by omega_using []) (by omega_using [])
 
 theorem stk8 (s : State) : Region.Sub ⟨s.callEntry.gpr .rsp - 8, 8⟩ (below (s.gpr .rsp) 24) := by
   rw [State.callEntry_rsp, show s.gpr .rsp - 8 - 8 = s.gpr .rsp - BitVec.ofNat 64 16 from
     Offset.sub_sub_ofNat _ 8 8]
-  exact Offset.sub_below _ (a := 16) (by omega) (by omega)
+  exact Offset.sub_below _ (a := 16) (by omega_using []) (by omega_using [])
 
 theorem b16 (s : State) : Region.Sub (below (s.gpr .rsp) 16) (below (s.gpr .rsp) 24) :=
-  below_sub (by omega) (by omega)
+  below_sub (by omega_using []) (by omega_using [])
 
 /-- The bytes of a region outside the 24 bytes below `rsp` read the same on
 entry to a callee. -/
@@ -57,7 +57,7 @@ message on entry to a callee. -/
 theorem entry_repr (s : State) {p : Addr} (hd : (below (s.gpr .rsp) 24).Disjoint ⟨p, H.S⟩) {m : List Byte}
     (h : hH.SH.Repr s.mem p m) : hH.SH.Repr s.callEntry.mem p m :=
   hH.stream.repr _ _ _ _ _ (fun i hi => callEntry_bytes s (hd.sub_left (b16 s))
-    (by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 2 ^ 64; omega) hi) h
+    (by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 2 ^ 64; omega_arith) hi) h
 
 /-! ## HMAC's `init` -/
 
@@ -110,14 +110,14 @@ theorem hinit_call (hv : Verified X86_64.target H.hmacInit (initG hH.SH H.W)) (h
       hH.SH.Repr s'.mem inn (xorPad (blockKey hH.SH.H (bytesAt s.mem k kl)) ipad) →
       hH.SH.Repr s'.mem out (xorPad (blockKey hH.SH.H (bytesAt s.mem k kl)) opad) → Q s') :
     WP isa (.call H.hmacInitN H.hmacInit) s Q := by
-  refine WP.call hv.1 hsp (by omega) (a.pre hH) (covers_app a.cr a.cw) a.cw ?_
+  refine WP.call hv.1 hsp (by omega_using [hd]) (a.pre hH) (covers_app a.cr a.cw) a.cw ?_
   intro s' h₁ h₂ h₃ h₄ _ ⟨s₂, hm, _, hpost⟩
   have e : bytesAt s.callEntry.mem k kl = bytesAt s.mem k kl :=
-    entry_bytes s a.stk_k (by have := a.klB; have := hH.B_le; omega)
+    entry_bytes s a.stk_k (by have := a.klB; have := hH.B_le; omega_arith)
   simp only [initG, State.withRegions_gpr, State.withRegions_mem, ne_rsp (by decide : Reg.rdi ≠ .rsp),
     ne_rsp (by decide : Reg.rsi ≠ .rsp), ne_rsp (by decide : Reg.rdx ≠ .rsp),
     ne_rsp (by decide : Reg.rcx ≠ .rsp), a.rdi, a.rsi, a.rdx, a.rcx, hm, e] at hpost
-  exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega) (by omega)) hpost.1 hpost.2
+  exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega_using [hd]) (by omega_using [])) hpost.1 hpost.2
 
 theorem hinit_rel (hv : Verified X86_64.target H.hmacInit (initG hH.SH H.W)) {P : State → State → Prop}
     {inn out k sc : Addr} {kl : Nat}
@@ -178,9 +178,9 @@ theorem hfin_call (hv : Verified X86_64.target H.hmacFin (finG hH.SH H.W)) (hsp 
         hH.SH.Repr s.mem outer (xorPad k0 opad) → bytesAt s'.mem o H.D = hmacBlockKey hH.SH.H k0 text) →
       Q s') :
     WP isa (.call H.hmacFinN H.hmacFin) s Q := by
-  refine WP.call hv.1 hsp (by omega) (a.pre hH) (covers_app a.cr a.cw) a.cw ?_
+  refine WP.call hv.1 hsp (by omega_using [hd]) (a.pre hH) (covers_app a.cr a.cw) a.cw ?_
   intro s' h₁ h₂ h₃ h₄ _ ⟨s₂, hm, _, hpost⟩
-  refine hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega) (by omega)) fun k0 text hk hl hi hc ho => ?_
+  refine hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega_using [hd]) (by omega_using [])) fun k0 text hk hl hi hc ho => ?_
   have hS := hH.hS; have hD := hH.hD; have hB := hH.hB
   simp only [finG, State.withRegions_gpr, State.withRegions_mem, ne_rsp (by decide : Reg.rdi ≠ .rsp),
     ne_rsp (by decide : Reg.rsi ≠ .rsp), ne_rsp (by decide : Reg.rdx ≠ .rsp),
@@ -246,19 +246,19 @@ theorem iter_call (hv : Verified X86_64.target H.iterate (iterK hH.SH H.W)) (hsp
           (bytesAt s.mem u H.D) (bytesAt s.mem t H.D)) →
       Q s') :
     WP isa (.call H.iterN H.iterate) s Q := by
-  refine WP.call hv.1 hsp (by omega) (a.pre hH) (covers_app a.cr a.cw) a.cw ?_
+  refine WP.call hv.1 hsp (by omega_using [hd]) (a.pre hH) (covers_app a.cr a.cw) a.cw ?_
   intro s' h₁ h₂ h₃ h₄ _ ⟨s₂, hm, _, hpost⟩
-  refine hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega) (by omega)) fun k0 hk hi ho => ?_
+  refine hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by omega_using [hd]) (by omega_using [])) fun k0 hk hi ho => ?_
   have hS := hH.hS; have hD := hH.hD; have hB := hH.hB
-  have hS2 : H.S ≤ 256 := by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 256; omega
-  have hDn : H.D ≤ 2 ^ 64 := by have := hH.hDN; have := hH.N_le; omega
+  have hS2 : H.S ≤ 256 := by have := hH.N_le; have := hH.B_le; show H.P.N + H.P.B ≤ 256; omega_arith
+  have hDn : H.D ≤ 2 ^ 64 := by have := hH.hDN; have := hH.N_le; omega_arith
   simp only [iterK, State.withRegions_gpr, State.withRegions_mem, ne_rsp (by decide : Reg.rdi ≠ .rsp),
     ne_rsp (by decide : Reg.rsi ≠ .rsp), ne_rsp (by decide : Reg.rdx ≠ .rsp),
     ne_rsp (by decide : Reg.rcx ≠ .rsp), a.rdi, a.rsi, a.rdx, a.rcx, hm, hD, hB, hS,
     entry_bytes s a.stk_u hDn, entry_bytes s a.stk_t hDn] at hpost
   have eS : H.S = H.P.N + H.P.B := rfl
-  refine hpost k0 hk (entry_repr hH s (a.stk_k.sub_right (Region.sub_prefix (by omega))) hi)
-    (entry_repr hH s (a.stk_k.sub_right (Offset.sub_base _ (by omega))) ho)
+  refine hpost k0 hk (entry_repr hH s (a.stk_k.sub_right (Region.sub_prefix (by omega_using []))) hi)
+    (entry_repr hH s (a.stk_k.sub_right (Offset.sub_base _ (by omega_using [eS]))) ho)
 
 theorem iter_rel (hv : Verified X86_64.target H.iterate (iterK hH.SH H.W)) {P : State → State → Prop}
     {key u t sc : Addr} {n : BitVec 64}

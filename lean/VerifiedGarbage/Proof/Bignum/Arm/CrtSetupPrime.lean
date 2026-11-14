@@ -30,20 +30,20 @@ theorem crt_setupPrime_ok (s : State) {base child : BitVec 32} {size len slot w 
       Layout t.mem (State.addr child) len ∧ wOf t.mem (State.addr child) = w ∧ t.gpr .r0 = child ∧
       t.mem.readW (off (State.addr child) 216) 32 = base ∧
       Frame [⟨State.addr child, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have childFit : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arraysFit; omega
+  have childFit : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at arraysFit; omega_using [arraysFit]
   rw [WP.seq_iff]
-  refine WP.mono (crt_enterPrime_ok s ws childWs fit slotFit hs (by omega) ptr count link) ?_
+  refine WP.mono (crt_enterPrime_ok s ws childWs fit slotFit hs (by omega_using [childFit]) ptr count link) ?_
   rintro u ⟨ptrU, widthU, zeroU, linkU, _, frameU, restU⟩
   refine WP.mono (setup_ok u (childWs.congr restU.wr) hw hw' arraysFit ptrU widthU zeroU) ?_
   rintro t ⟨layoutT, widthT, ptrT, outsideT, restT⟩
-  have word := outs_word32 outsideT (d := 216) (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> omega)
+  have word := outs_word32 outsideT (d := 216) (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> omega_using [])
     (by decide)
   have linkT : t.mem.readW (off (State.addr child) 216) 32 = base := by
     apply BitVec.eq_of_toNat_eq
     change w32 t.mem (State.addr child) 216 = base.toNat
     rw [word]
     exact congrArg BitVec.toNat linkU
-  have frameT := outs_workspace outsideT (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> omega :
+  have frameT := outs_workspace outsideT (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> omega_using [childFit] :
     ∀ r ∈ [(48, 8), (64, 64)], r.1 + r.2 ≤ 8 * len)
   exact ⟨layoutT, widthT, ptrT, linkT, frameU.trans frameT,
     (restU.mono (by decide)).trans (restT.mono (by decide))⟩

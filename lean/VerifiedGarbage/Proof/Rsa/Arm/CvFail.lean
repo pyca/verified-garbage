@@ -39,9 +39,9 @@ theorem Done.arg {s0 s : State} (h : Done s0 s) {i : Nat} (hi : i < 12) : stackA
   rw [ea]
   refine h.frame.readW (r := rA s0) ?_ (fun r hr => ?_) (by decide)
   · simp only [Region.Contains, stackArgAddr]
-    rw [addr_add (by omega), addr_add (by omega), Nat.mul_zero, BitVec.add_zero, Offset.add_sub_cancel_left,
+    rw [addr_add (by omega_using [hi, sp]), addr_add (by omega_using []), Nat.mul_zero, BitVec.add_zero, Offset.add_sub_cancel_left,
       BitVec.toNat_ofNat]
-    omega
+    omega_using [hi]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact h.pre.sA.symm
@@ -71,9 +71,9 @@ theorem slot_frame {s0 : State} (h : CvPre s0) {rs : List Region} {m m' : Mem} (
     slot m' (cvB s0) (20 + 4 * i) = slot m (cvB s0) (20 + 4 * i) := by
   have := h.fits
   have fS := h.fS
-  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) this
+  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) this
   exact congrArg BitVec.toNat
-    (hf.readW (r := rS s0) (Offset.contains_base _ (by simp only [cvZ] at hz; omega) (by omega)) hd (by decide))
+    (hf.readW (r := rS s0) (Offset.contains_base _ (by simp only [cvZ] at hz; omega_using [hi, hz]) (by omega_using [hi])) hd (by decide))
 
 /-- An output written. -/
 theorem Done.out {s0 s t : State} (h : Done s0 s) {R : Region} (hR : R = rDp s0 ∨ R = rDq s0 ∨ R = rQi s0)

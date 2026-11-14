@@ -33,9 +33,9 @@ theorem operand_context {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       Frm B (callRanges sp sl) s.mem t.mem ∧ Keep [.x3, .x4] s t := by
   refine WP.mono (operand_ok hg.scr hg.x0 hZ a ha hsp hsl) fun t ⟨hmem, hk⟩ => ?_
   let first := s.mem.writeW (off B (8 * sp)) (pointerValue s.mem B a.pointer)
-  have ho1 : Outside B (8 * sp) 8 s.mem first := writeW_outside _ _ _ (by omega)
+  have ho1 : Outside B (8 * sp) 8 s.mem first := writeW_outside _ _ _ (by omega_using [hsp])
   have ho2 : Outside B (8 * sl) 8 first t.mem := by
-    rw [hmem]; exact writeW_outside _ _ _ (by omega)
+    rw [hmem]; exact writeW_outside _ _ _ (by omega_using [hsl])
   refine ⟨⟨hg.scr.congr hk.wr, (hk.gpr .x0 (by decide)).trans hg.x0, ?_⟩, ?_, ?_, ?_, ?_, hk⟩
   · rw [hmem]
     exact (hg.hdr.store hsp0 hsp _).store hsl0 hsl _
@@ -44,7 +44,7 @@ theorem operand_context {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   · intro f
     have hf := VG.Proof.Dsa.field_bounds f
     have hp : pWorkspace < 2 ^ 64 := by decide
-    rw [ho2.word (Or.inr (by omega)) (by omega), ho1.word (Or.inr (by omega)) (by omega)]
+    rw [ho2.word (Or.inr (by omega_using [hsl, hf])) (by omega_using [hf, hp]), ho1.word (Or.inr (by omega_using [hsp, hf])) (by omega_using [hf, hp])]
   · exact (Frm.of_outside ho1 (by simp [callRanges])).trans
       (Frm.of_outside ho2 (by simp [callRanges]))
 
@@ -60,7 +60,7 @@ theorem call_child {mem mem' : Mem} {B : Addr} {o wx sp sl : Nat} {minv : BitVec
   · intro r hr
     simp only [callRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> right <;> omega
-  · omega
+  · omega_using [hbound, hi]
 
 /-- Arguments remain in the active arithmetic prefix, so sources in the
 scratch suffix or caller buffers retain their values and permissions. -/
@@ -72,7 +72,7 @@ theorem call_source {s t : State} {B p : Addr} {Z sp sl : Nat} {bytes : List Byt
   apply InScr.of_frm hf
   intro r hr
   simp only [callRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> simp only <;> omega
+  rcases hr with rfl | rfl <;> simp only <;> omega_arith
 
 /-- Saved-field equality is sufficient to resolve every operand identically. -/
 theorem pointerValue_congr {mem mem' : Mem} {B : Addr}
@@ -88,7 +88,7 @@ theorem call_ready {mem mem' : Mem} {B : Addr} {o wx m sp sl : Nat} {minv : BitV
     (h : ChildReady mem B o wx m minv) (hf : Frm B (callRanges sp sl) mem mem')
     (hsp : sp < 32) (hsl : sl < 32) (ho : 256 ≤ o)
     (hbound : o + slot wx 8 ≤ 2 ^ 64) : ChildReady mem' B o wx m minv := by
-  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have hword : ∀ d, 256 ≤ d → d + 8 ≤ 2 ^ 64 → word mem' B d = word mem B d := by
     intro d hd hd'
     apply hf.word_eq _ hd'
@@ -96,11 +96,11 @@ theorem call_ready {mem mem' : Mem} {B : Addr} {o wx m sp sl : Nat} {minv : BitV
     simp only [callRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> right <;> omega
   have hN := slot_le (w := wx) (show aN < 8 by decide)
-  have hNlo : 256 ≤ slot wx aN := by unfold slot hdrBytes; omega
-  refine ⟨call_child h.header hf hsp hsl ho (by omega), ?_, ?_⟩
-  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => by rw [word_off, word_off]; exact hword _ (by omega) (by omega))]
+  have hNlo : 256 ≤ slot wx aN := by unfold slot hdrBytes; omega_using []
+  refine ⟨call_child h.header hf hsp hsl ho (by omega_using [hbound, hslot]), ?_, ?_⟩
+  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => by rw [word_off, word_off]; exact hword _ (by omega_using [ho]) (by omega_using [hbound, hN, hi]))]
     exact h.modulus
-  · rw [word_off, hword _ (by omega) (by omega), ← word_off]
+  · rw [word_off, hword _ (by omega_using [ho]) (by omega_using [hbound, hN]), ← word_off]
     exact h.inverse
 
 end VG.Proof.Dsa.AArch64

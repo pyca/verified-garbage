@@ -1,12 +1,99 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomRemaining
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
+public import VerifiedGarbage.Proof.Dsa.RandomResult
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 public import VerifiedGarbage.Spec.Rsa.Contract
-
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawResult
 import VerifiedGarbage.Proof.Dsa.Encoding
+
+/-! ### `Dsa.X86_64.RandomRemaining`, which only this module used -/
+
+section
+
+/-! Relating a tape offset to the recursive sampling specification. -/
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64 VG.Proof.Dsa.Random
+
+def randomRemaining (C : RandomContext) (used fuel : Nat) : Spec.Dsa.Random.Sample :=
+  Spec.Dsa.Random.sample (Spec.Dsa.decodeBE C.qBytes) fuel (C.rand.drop used)
+
+structure RandomResultRel (C : RandomContext) (start : Nat) (result : Spec.Dsa.Random.Sample)
+    (used fuel : Nat) : Prop where
+  scalar : result.scalar = (randomRemaining C used fuel).scalar
+  consumption : start + result.used = used + (randomRemaining C used fuel).used
+  status : sampleStatus result = sampleStatus (randomRemaining C used fuel)
+
+def RandomSamplePost (C : RandomContext) (start : Nat) (result : Spec.Dsa.Random.Sample) (s : State) : Prop :=
+  (∃ draws, RandomReady C (start + result.used) draws s) ∧
+  word s.mem C.B Random.oStatus = BitVec.ofNat 64 (sampleStatus result) ∧
+  ∀ k, result.scalar = some k → RandomNonceValue C k s
+
+theorem random_remaining_short {C : RandomContext} {used fuel : Nat}
+    (hq : 1 < Spec.Dsa.decodeBE C.qBytes)
+    (hshort : C.rand.length - used < (VG.Proof.Dsa.significant C.qBytes).1) :
+    randomRemaining C used (fuel + 1) = ⟨none, 0, [2]⟩ := by
+  apply sample_short _ _ _ hq
+  rwa [List.length_drop, VG.Proof.Dsa.random_drawBytes_scan]
+
+theorem random_remaining_accept {C : RandomContext} {used fuel : Nat}
+    (hq : 1 < Spec.Dsa.decodeBE C.qBytes)
+    (hfull : used + (VG.Proof.Dsa.significant C.qBytes).1 ≤ C.rand.length)
+    (hk : 0 < randomNextCandidate C used ∧ randomNextCandidate C used < Spec.Dsa.decodeBE C.qBytes) :
+    randomRemaining C used (fuel + 1) =
+      ⟨some (randomNextCandidate C used), (VG.Proof.Dsa.significant C.qBytes).1, [1]⟩ := by
+  have hs : Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes) ≤ (C.rand.drop used).length := by
+    rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop]; omega_using [hfull]
+  have hk' : 0 < Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
+      ((C.rand.drop used).take (Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes))) ∧
+      Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
+      ((C.rand.drop used).take (Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes))) < Spec.Dsa.decodeBE C.qBytes := by
+    rw [VG.Proof.Dsa.random_drawBytes_scan]; exact hk
+  simpa only [randomRemaining, randomNextCandidate, VG.Proof.Dsa.random_drawBytes_scan] using
+    sample_accept _ fuel _ hq hs hk'
+
+theorem random_remaining_reject {C : RandomContext} {used fuel : Nat}
+    (hq : 1 < Spec.Dsa.decodeBE C.qBytes)
+    (hfull : used + (VG.Proof.Dsa.significant C.qBytes).1 ≤ C.rand.length)
+    (hk : ¬ (0 < randomNextCandidate C used ∧ randomNextCandidate C used < Spec.Dsa.decodeBE C.qBytes)) :
+    randomRemaining C used (fuel + 1) =
+      let next := randomRemaining C (used + (VG.Proof.Dsa.significant C.qBytes).1) fuel
+      ⟨next.scalar, (VG.Proof.Dsa.significant C.qBytes).1 + next.used, 0 :: next.trace⟩ := by
+  have hs : Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes) ≤ (C.rand.drop used).length := by
+    rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop]; omega_using [hfull]
+  have hk' : ¬ (0 < Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
+      ((C.rand.drop used).take (Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes))) ∧
+      Spec.Dsa.Random.candidate (Spec.Dsa.decodeBE C.qBytes)
+      ((C.rand.drop used).take (Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE C.qBytes))) < Spec.Dsa.decodeBE C.qBytes) := by
+    rw [VG.Proof.Dsa.random_drawBytes_scan]; exact hk
+  simpa only [randomRemaining, VG.Proof.Dsa.random_drawBytes_scan, List.drop_drop] using
+    sample_reject _ fuel _ hq hs hk'
+
+theorem RandomResultRel.reject {C : RandomContext} {start used fuel : Nat} {result : Spec.Dsa.Random.Sample}
+    (hr : RandomResultRel C start result used (fuel + 1))
+    (hq : 1 < Spec.Dsa.decodeBE C.qBytes)
+    (hfull : used + (VG.Proof.Dsa.significant C.qBytes).1 ≤ C.rand.length)
+    (hk : ¬ (0 < randomNextCandidate C used ∧ randomNextCandidate C used < Spec.Dsa.decodeBE C.qBytes)) :
+    RandomResultRel C start result (used + (VG.Proof.Dsa.significant C.qBytes).1) fuel := by
+  have he := random_remaining_reject hq hfull hk (fuel := fuel)
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hr.scalar, he]
+  · have hu := hr.consumption
+    rw [he] at hu
+    simp only at hu
+    omega_using [hu]
+  · rw [hr.status, he]
+    exact sampleStatus_reject _ _ _ _
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
 /-! Entry and exit of the complete 128-draw sampler. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/RandomFunctional.lean`, which only this module imported.
@@ -191,7 +278,7 @@ theorem random_sample_init_ready {C : RandomContext} {used draws : Nat} {s t : S
     exact (InScr.of_outside hd (by decide)).trans (InScr.of_outside hs (by decide))
   have hw (d : Nat) (hd' : d + 8 ≤ 160 ∨ 168 ≤ d) (hs' : d + 8 ≤ 192) :
       word t.mem C.B d = word s.mem C.B d := by
-    rw [hm, hs.word (Or.inl hs') (by omega), hd.word hd' (by omega)]
+    rw [hm, hs.word (Or.inl hs') (by omega_using [hs']), hd.word hd' (by omega_using [hs'])]
   refine ⟨⟨h.scr.congr hk.2.2, (hk.gpr (by decide)).trans h.sp,
     (hw _ (by decide) (by decide)).trans h.rand, (hw _ (by decide) (by decide)).trans h.randLen,
     (hw _ (by decide) (by decide)).trans h.usedWord, (hw _ (by decide) (by decide)).trans h.width,
@@ -207,9 +294,9 @@ theorem random_sample_init_ready {C : RandomContext} {used draws : Nat} {s t : S
   · intro i hi
     have ho : ofs C.B (off C.B (200 + i)) = 200 + i := by
       have he : off C.B (200 + i) + BitVec.ofNat 64 0 = off C.B (200 + i) := BitVec.add_zero _
-      simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega)
-    rw [hm, hs _ (by rw [ho]; right; unfold Random.oStatus; omega),
-      hd _ (by rw [ho]; right; unfold Random.oDraws; omega)]
+      simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega_using [hi, this])
+    rw [hm, hs _ (by rw [ho]; right; unfold Random.oStatus; omega_using []),
+      hd _ (by rw [ho]; right; unfold Random.oDraws; omega_using [])]
     exact h.padding i hi
   · rw [hm, word_writeW_self]
 

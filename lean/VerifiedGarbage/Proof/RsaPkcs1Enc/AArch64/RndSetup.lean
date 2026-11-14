@@ -57,7 +57,7 @@ theorem psLen_bv {P : Nat} {s : State} (hp : RPre P s) :
   have := hp.hml
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, psLen, kOf]
-  omega
+  omega_using [this]
 
 theorem args_in {P : Nat} {s : State} (hp : RPre P s) {j : Nat} (hj : j < 7) :
     InRegions ((entered s).rd ++ (entered s).wr) (Q s + BitVec.ofNat 64 (1104 + 8 * j)) 8 :=
@@ -65,7 +65,7 @@ theorem args_in {P : Nat} {s : State} (hp : RPre P s) {j : Nat} (hj : j < 7) :
 
 theorem frame_in {s : State} {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (entered s).wr (Q s + BitVec.ofNat 64 d) n :=
-  ⟨⟨Q s, frameBytes⟩, by rw [entered_wr]; simp, Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
+  ⟨⟨Q s, frameBytes⟩, by rw [entered_wr]; simp, Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])⟩
 
 theorem setup_ok {P : Nat} {s : State} (hp : RPre P s) : WP isa (.block setup) (entered s) (Before s) := by
   have a0 : InRegions ((entered s).rd ++ (entered s).wr) (Q s + BitVec.ofNat 64 1104) 8 := args_in hp (j := 0) (by decide)
@@ -91,8 +91,8 @@ theorem setup_ok {P : Nat} {s : State} (hp : RPre P s) : WP isa (.block setup) (
   · show Frame _ s.mem ((entered s).mem.write _ 8 _)
     rw [entered_mem]
     refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).write (List.mem_singleton_self _) _ ?_
-    · exact Offset.contains_base _ (by decide) (by omega)
-    · exact Offset.contains_base _ (by decide) (by omega)
+    · exact Offset.contains_base _ (by decide) (by omega_using [])
+    · exact Offset.contains_base _ (by decide) (by omega_using [])
   · show ((entered s).mem.write _ 8 _).readW _ 64 = _
     have := Mem.readW_writeW_self (entered s).mem (Q s + BitVec.ofNat 64 48) 8
       ((s.gpr .x4 - stackArg s 0 - 3#64).setWidth 64) (by decide)

@@ -38,11 +38,11 @@ theorem wsum_lt (f : Nat → BitVec 32) : ∀ k, wsum f k < 2 ^ (32 * k)
     have := wsum_lt f k
     have := (f k).isLt
     simp only [wsum]
-    rw [show 32 * (k + 1) = 32 + 32 * k by omega, Nat.pow_add]
-    have h1 : (f k).toNat * 2 ^ (32 * k) ≤ (2 ^ 32 - 1) * 2 ^ (32 * k) := Nat.mul_le_mul_right _ (by omega)
+    rw [show 32 * (k + 1) = 32 + 32 * k by omega_using [], Nat.pow_add]
+    have h1 : (f k).toNat * 2 ^ (32 * k) ≤ (2 ^ 32 - 1) * 2 ^ (32 * k) := Nat.mul_le_mul_right _ (by omega_using [])
     have h2 : (2 ^ 32 - 1) * 2 ^ (32 * k) + 2 ^ (32 * k) = 2 ^ 32 * 2 ^ (32 * k) := by
       rw [Nat.sub_mul, Nat.one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left _ (by decide))]
-    omega
+    omega_arith
 
 /-- The 32-bit words of `N`, least significant first. -/
 abbrev nWn (N j : Nat) : BitVec 32 := BitVec.ofNat 32 (N >>> (32 * j))
@@ -51,7 +51,7 @@ abbrev nWn (N j : Nat) : BitVec 32 := BitVec.ofNat 32 (N >>> (32 * j))
 theorem wsum_nWn (N : Nat) : ∀ i, wsum (nWn N) i = N % 2 ^ (32 * i)
   | 0 => by simp [wsum, Nat.mod_one]
   | i + 1 => by
-    rw [wsum, wsum_nWn N i, show 32 * (i + 1) = 32 * i + 32 by omega, Nat.pow_add, Nat.mod_mul,
+    rw [wsum, wsum_nWn N i, show 32 * (i + 1) = 32 * i + 32 by omega_using [], Nat.pow_add, Nat.mod_mul,
       BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mul_comm, Nat.add_comm]
 
 theorem sel_mask32 (x d : BitVec 32) (c : Bool) :
@@ -70,13 +70,13 @@ theorem ofBytes_words (m : Mem) (f : Nat → BitVec 32) : ∀ (p : Addr) (k : Na
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt m p (4 * k)) = wsum f k
   | _, 0, _ => rfl
   | p, k + 1, h => by
-    have h0 := h k (by omega)
+    have h0 := h k (by omega_using [])
     simp only [Nat.add_sub_cancel, Nat.sub_self, Nat.mul_zero, BitVec.add_zero] at h0
-    rw [show 4 * (k + 1) = 4 + 4 * k by omega, Proof.Weierstrass.bytesAt_add,
+    rw [show 4 * (k + 1) = 4 + 4 * k by omega_using [], Proof.Weierstrass.bytesAt_add,
       Proof.Weierstrass.ofBytes_append, Proof.Weierstrass.length_bytesAt,
       ofBytes_words m f (p + BitVec.ofNat 64 4) k fun j hj => by
-        rw [Offset.add_add, show 4 + 4 * (k - 1 - j) = 4 * (k + 1 - 1 - j) by omega]; exact h j (by omega),
+        rw [Offset.add_add, show 4 + 4 * (k - 1 - j) = 4 * (k + 1 - 1 - j) by omega_using [hj]]; exact h j (by omega_using [hj]),
       ← Proof.Weierstrass.byteRev32_ofBytes, h0, wsum, show (256 : Nat) ^ (4 * k) = 2 ^ (32 * k) by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega]
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega_using []]
 
 end VG.Proof.Ecdsa.Rfc6979

@@ -1,14 +1,80 @@
 module
 
-import VerifiedGarbage.Proof.Blowfish.Arm.F
-public import VerifiedGarbage.Proof.Blowfish.Feistel
 public import VerifiedGarbage.Proof.Blowfish.Arm.Lookup
+import VerifiedGarbage.Impl.Blowfish.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Blowfish.Feistel
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Impl.Blowfish.Arm
-import VerifiedGarbage.Proof.Framework.Arm.Exec
+
+/-! ### `Blowfish.Arm.F`, which only this module used -/
+
+section
+
+/-!
+# Blowfish on ARMv7: F
+
+`f_run`: F of xL (`r1`) into `lr`, one S-box at a time (`fAcc`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Blowfish.Arm
+
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.Blowfish.Arm VG.Spec.Blowfish VG.Proof.Blowfish
+
+/-- The registers F writes. -/
+def fRegs : List Reg := .lr :: lookRegs
+
+theorem combine_run (u : State) {j : Nat} (hj : j < 4) :
+    WP isa (.block [combine j]) u fun t =>
+      t.gpr .lr = (if j = 0 then u.gpr .r5 else if j = 2 then u.gpr .lr ^^^ u.gpr .r5
+        else u.gpr .lr + u.gpr .r5) ∧ t.mem = u.mem := by
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+    brun [combine]
+
+/-- S-box `j`'s lookup, then its accumulation, from `fAcc … (j - 1)` (or
+anything, for `j = 0`) in `lr`. -/
+theorem step_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs s₀ u)
+    (hm : u.mem = s₀.mem) (h3 : 0 < j → u.gpr .lr = fAcc (scheduleAt s₀.mem (State.addr (s₀.gpr .r0)))
+      (s₀.gpr .r1) (j - 1)) {Q : State → Prop}
+    (hQ : ∀ t, t.gpr .lr = fAcc (scheduleAt s₀.mem (State.addr (s₀.gpr .r0))) (s₀.gpr .r1) j →
+      Keep fRegs s₀ t → t.mem = s₀.mem → Q t) :
+    WP isa (.seq (lookup j) (.block [combine j])) u Q := by
+  have Eu : LookEnv u := E.keep k (by decide) (by decide)
+  apply WP.seq
+  refine WP.mono (lookup_run Eu hj) fun v ⟨v5, vk, vm⟩ => ?_
+  refine WP.mono (WP.keep [.lr] (combine_run v hj) (by
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide))
+    fun t ⟨⟨t3, tm⟩, tk⟩ => hQ t ?_ ((k.trans vk).trans tk |>.mono (by decide)) (by rw [tm, vm, hm])
+  have e0 : u.gpr .r0 = s₀.gpr .r0 := k.gpr (by decide)
+  have e1 : u.gpr .r1 = s₀.gpr .r1 := k.gpr (by decide)
+  rw [t3, v5, hm, e0, e1, vk.gpr (by decide)]
+  exact fAcc_step _ _ hj _ h3
+
+theorem f_run {s : State} (E : LookEnv s) :
+    WP isa Impl.Blowfish.Arm.f s fun t =>
+      t.gpr .lr = Spec.Blowfish.f (scheduleAt s.mem (State.addr (s.gpr .r0))) (s.gpr .r1) ∧
+        Keep fRegs s t ∧ t.mem = s.mem := by
+  unfold Impl.Blowfish.Arm.f
+  apply WP.reassoc; apply WP.seq
+  refine step_run E (j := 0) (by decide) (Keep.refl _ _) rfl (fun h => absurd h (by decide))
+    fun t0 h0 k0 m0 => ?_
+  apply WP.reassoc; apply WP.seq
+  refine step_run E (j := 1) (by decide) k0 m0 (fun _ => h0) fun t1 h1 k1 m1 => ?_
+  apply WP.reassoc; apply WP.seq
+  refine step_run E (j := 2) (by decide) k1 m1 (fun _ => h1) fun t2 h2 k2 m2 => ?_
+  refine step_run E (j := 3) (by decide) k2 m2 (fun _ => h2) fun t3 h3 k3 m3 => ?_
+  exact ⟨by rw [h3, fAcc_three], k3, m3⟩
+
+end VG.Proof.Blowfish.Arm
+
+end
+
+end
+
 
 /-!
 # Blowfish on ARMv7: the block function
@@ -51,8 +117,8 @@ theorem CipherEnv.look {s : State} (E : CipherEnv s) (h8 : s.gpr .r8 = BitVec.al
 theorem addr_P {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) {i : Nat} (hi : i < 16) :
     State.addr (S + BitVec.ofNat 32 (pBase up i) + BitVec.ofNat 32 (pAt up)) =
       State.addr S + BitVec.ofNat 64 (4096 + 4 * ord up i) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega)]
-  congr 2; cases up <;> simp [pBase, pAt, ord] <;> omega
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega_arith)]
+  congr 2; cases up <;> simp [pBase, pAt, ord] <;> omega_using [hi]
 
 /-- After `i` rounds from `s₀`. -/
 structure CInv (s₀ : State) (up : Bool) (i : Nat) (u : State) : Prop where
@@ -84,14 +150,14 @@ theorem round_tail (u : State) (up : Bool) (S : BitVec 32) {i : Nat} (hi : i < 1
   cases up
   · brun [h0, h12, pOff]
     simp only [pBase, Bool.false_eq_true, ite_false]
-    refine ⟨ofs_sub S (by omega), ?_⟩
-    rw [ofs_sub S (by omega), ofs_diff, ofNat_sub_beq (by omega) (by decide)]
-    congr 1; apply propext; omega
+    refine ⟨ofs_sub S (by omega_using [hi]), ?_⟩
+    rw [ofs_sub S (by omega_using [hi]), ofs_diff, ofNat_sub_beq (by omega_using []) (by decide)]
+    congr 1; apply propext; omega_using []
   · brun [h0, h12, pOff]
     simp only [pBase, ite_true]
     refine ⟨ofs_add S _ _, ?_⟩
-    rw [ofs_add, ofs_diff, ofNat_sub_beq (by omega) (by decide)]
-    congr 1; apply propext; omega
+    rw [ofs_add, ofs_diff, ofNat_sub_beq (by omega_using [hi]) (by decide)]
+    congr 1; apply propext; omega_using []
 
 theorem keep_reads {s t : State} {rs : List Reg} (k : Keep rs s t) : t.rd ++ t.wr = s.rd ++ s.wr := by
   rw [k.2.1, k.2.2.1]
@@ -100,13 +166,13 @@ theorem round_step {s₀ : State} (E : CipherEnv s₀) (up : Bool) {i : Nat} (hi
     (I : CInv s₀ up i u) :
     WP isa (round up) u fun u' => CInv s₀ up (i + 1) u' ∧ u'.z = decide (i + 1 = 16) := by
   have fit := E.fit
-  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega
+  have ho : ord up i < 18 := by cases up <;> simp [ord] <;> omega_arith
   let K := scheduleAt s₀.mem (State.addr (s₀.gpr .r0))
   have u0 : u.gpr .r0 = s₀.gpr .r0 := I.keep.gpr (by decide)
   unfold round
   apply WP.seq
   refine WP.mono (WP.keep [.r1, .r9] (round_head u up (P := pEntry K (ord up i))
-    (by rw [I.p, addr_P fit up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega))
+    (by rw [I.p, addr_P fit up hi]) (by rw [keep_reads I.keep]; exact E.rd _ (by omega_using [ho]))
     (by rw [I.mem, pEntry_read _ _ ho])) (by cases up <;> decide)) fun v ⟨⟨v1, vm⟩, vk⟩ => ?_
   have kv : Keep cRegs s₀ v := I.keep.trans_sub vk (by decide)
   have Ev : LookEnv v := (E.keep kv (by decide)).look (by rw [vk.gpr (by decide), I.ones])
@@ -118,7 +184,7 @@ theorem round_step {s₀ : State} (E : CipherEnv s₀) (up : Bool) {i : Nat} (hi
   refine WP.mono (WP.keep [.r1, .r2, .r9, .r12] (round_tail w up _ hi w0 w12) (by
     cases up <;> decide)) fun x ⟨⟨x1, x2, x12, xz, xm⟩, xk⟩ => ?_
   have hK : scheduleAt v.mem (State.addr (v.gpr .r0)) = K := by rw [vm, I.mem, vk.gpr (by decide), u0]
-  refine ⟨⟨by omega, x12, ?_, ?_, (kv.trans_sub wk (by decide)).trans_sub xk (by decide),
+  refine ⟨⟨by omega_using [hi], x12, ?_, ?_, (kv.trans_sub wk (by decide)).trans_sub xk (by decide),
     by rw [xm, wm, vm, I.mem]⟩, xz⟩
   · have w1 : w.gpr .r1 = u.gpr .r1 ^^^ pEntry K (ord up i) := by rw [wk.gpr (by decide), v1]
     have w2 : w.gpr .r2 = u.gpr .r2 := by rw [wk.gpr (by decide), vk.gpr (by decide)]
@@ -148,7 +214,7 @@ theorem rounds_run {s : State} (E : CipherEnv s) (up : Bool) {u : State} (I : CI
   · left
     exact ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
-    exact ⟨by simp [e], n - 1, by omega, i + 1, by omega, by omega, J'⟩
+    exact ⟨by simp [e], n - 1, by omega_using [hi, hn], i + 1, by omega_using [hi, e], by omega_using [hn], J'⟩
 
 /-- The addresses of the last P-array entries. -/
 theorem addr_last {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) :
@@ -157,7 +223,7 @@ theorem addr_last {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) (up : Bool) 
       State.addr (S + BitVec.ofNat 32 (pBase up 16) + BitVec.ofNat 32 (4 - pAt up)) =
         State.addr S + BitVec.ofNat 64 (4096 + 4 * ord up 17) := by
   constructor <;>
-  · rw [ofs_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega)]
+  · rw [ofs_add, addr_add (by cases up <;> simp [pBase, pAt] <;> omega_using [fit])]
     congr 2; cases up <;> simp [pBase, pAt, ord]
 
 theorem cipher_end (u : State) (up : Bool) {P₁₆ P₁₇ : BitVec 32} {a b : Addr}

@@ -48,7 +48,7 @@ theorem lay (len B : Nat) (hB : len * B = 128) (hBp : 0 < B) (hk : 128 / len + B
     (t₄ : (VG.X86.taint.check (τr [.esp]) (.block (blockEnd zUp)) h₄).isSome = true) :
     Piece Pre Pub (fun s₀ s => LB s₀ (P s₀) (kf len 0) s)
       (fun s₀ s => LB s₀ (layerN bfly kf (P s₀) len B) (kf len B) s) (layerCode bflyBody zUp len) :=
-  layer_piece bf kf P true len B hB hBp (fun c _ => by simp [kf]; omega) (fun c hc => by simp only [kf]; omega)
+  layer_piece bf kf P true len B hB hBp (fun c _ => by simp [kf]; omega_using []) (fun c hc => by simp only [kf]; omega_using [hk, hc])
     (fun h => absurd h (by decide)) t₁ t₂ t₃ t₄
 
 /-- The input polynomial. -/
@@ -109,7 +109,7 @@ theorem hW {s₀ : State} (hp : Pre s₀) : ∀ r ∈ W s₀, (frameR s₀).Disj
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => LB s₀ (nttLens.foldl nttLayer (F s₀)) 128 s) s₀ s') Impl.MlKem.X86.ntt :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     (body_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.mem.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -138,7 +138,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.ntt (nttContract X86.abi 1
         | (rw [show BitVec.setWidth 64 (arg st 0) = BitVec.ofNat 64 0 by decide]
            refine reduced_below (fun a ha => ?_) 0 (by decide)
            simp only [satMem]
-           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])])
         | decide +kernel
 
 end VG.Proof.MlKem.X86.NttFwd

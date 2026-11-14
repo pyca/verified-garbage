@@ -53,17 +53,17 @@ theorem mE_odd (e : Nat) : mE e % 2 = 1 ∧ 1 < mE e := by
   split
   · rename_i h
     have := h.1
-    exact ⟨h.2, by omega⟩
+    exact ⟨h.2, by omega_using [h]⟩
   · decide
 
 theorem mL_odd (L : Nat) : mL L % 2 = 1 ∧ 1 < mL L := by
   unfold mL
   by_cases h : good L
-  · simp only [h, ↓reduceIte]; unfold good at h; exact ⟨h.2, by omega⟩
+  · simp only [h, ↓reduceIte]; unfold good at h; exact ⟨h.2, by omega_using [h]⟩
   · simp only [h, ↓reduceIte]; decide
 
 theorem mE_of {e : Nat} (h1 : e % 2 = 1) (h2 : e ≠ 1) : mE e = e := by
-  unfold mE; simp [show ¬ e < 3 by omega, h1]
+  unfold mE; simp [show ¬ e < 3 by omega_using [h1, h2], h1]
 
 theorem mL_of {L : Nat} (h : good L) : mL L = L := by unfold mL; simp [h]
 
@@ -76,16 +76,16 @@ theorem okv_none {e L : Nat} (h : ¬ okv e L) : Spec.Rsa.inverse e L = none := b
       subst h1 this
       exact inverse_mod_one 1
     · rw [mE_of he h1] at h
-      exact inverse_odd_none (Q := L / e) (R := L % e) (by omega) (Nat.div_add_mod L e).symm
-        fun ⟨a, b⟩ => h (.inl ⟨he, .inr ⟨h1, by omega, b⟩⟩)
-  · refine inverse_even_none' (by omega) fun ⟨a, b, c⟩ => h (.inr ⟨he, ⟨by omega, a⟩, ?_⟩)
-    rw [mL_of ⟨by omega, a⟩]; exact c
+      exact inverse_odd_none (Q := L / e) (R := L % e) (by omega_using [he, h1]) (Nat.div_add_mod L e).symm
+        fun ⟨a, b⟩ => h (.inl ⟨he, .inr ⟨h1, by omega_arith, b⟩⟩)
+  · refine inverse_even_none' (by omega_using [he]) fun ⟨a, b, c⟩ => h (.inr ⟨he, ⟨by omega_arith, a⟩, ?_⟩)
+    rw [mL_of ⟨by omega_arith, a⟩]; exact c
 
 /-- `e` odd, not 1: `d = Q t + (R t + 1) / e`. -/
 theorem inverse_odd' {e L x : Nat} (h1 : e % 2 = 1) (h2 : e ≠ 1) (hL : ¬ L < 2)
     (hx : (e : Int) ∣ (x : Int) * (L % e : Nat) - 1) (hxe : x < e) :
     Spec.Rsa.inverse e L = some (L / e * (e - x) + (L % e * (e - x) + 1) / e) :=
-  oddQuotient_inverse (Q := L / e) (R := L % e) (by omega) (by omega) (Nat.div_add_mod L e).symm hx hxe
+  oddQuotient_inverse (Q := L / e) (R := L % e) (by omega_using [h1, h2]) (by omega_using [hL]) (Nat.div_add_mod L e).symm hx hxe
 
 /-- `e = 1`: `d = 1`, for `L ≠ 1`. -/
 theorem inverse_one' {L : Nat} (h : L ≠ 1) : Spec.Rsa.inverse 1 L = some 1 := by
@@ -94,7 +94,7 @@ theorem inverse_one' {L : Nat} (h : L ≠ 1) : Spec.Rsa.inverse 1 L = some 1 := 
 /-- `e` even: `d = e⁻¹ mod L`, for an odd `L ≥ 3`. -/
 theorem inverse_even' {e L x : Nat} (hL : good L) (hx : (L : Int) ∣ (x : Int) * e - 1) (hxL : x < L) :
     Spec.Rsa.inverse e L = some x :=
-  VG.Proof.Rsa.inverse_eq (by unfold good at hL; omega) hxL hx
+  VG.Proof.Rsa.inverse_eq (by unfold good at hL; omega_using [hL]) hxL hx
 
 /-- The odd case's numbers fit: `Q t ≤ L` and `R t + 1 < 2^128`, and the
 sum `Q t + c ≤ L`, for `t ≤ e < 2^64`. -/
@@ -103,7 +103,7 @@ theorem odd_fits {e L x : Nat} (he : e < 2 ^ 64) (h2 : 2 ≤ e) :
       L / e * (e - x) + (L % e * (e - x) + 1) / e ≤ L := by
   have q : L / e * (e - x) ≤ L / e * e := Nat.mul_le_mul_left _ (Nat.sub_le e x)
   have q' : L / e * e ≤ L := Nat.div_mul_le_self L e
-  refine ⟨by omega, odd_numerator_fits he (Nat.mod_lt _ (by omega)), ?_⟩
-  exact oddQuotient_le (Q := L / e) (R := L % e) (x := x) (by omega) (Nat.div_add_mod L e).symm
+  refine ⟨by omega_using [q, q'], odd_numerator_fits he (Nat.mod_lt _ (by omega_using [h2])), ?_⟩
+  exact oddQuotient_le (Q := L / e) (R := L % e) (x := x) (by omega_using [h2]) (Nat.div_add_mod L e).symm
 
 end VG.Proof.RsaKeyGen.PPC64LE.Key

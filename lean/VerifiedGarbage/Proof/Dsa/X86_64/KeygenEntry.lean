@@ -57,11 +57,11 @@ theorem keygenEntry_finish {original s t : State} {B : Addr} {values : Field →
     (hfields : ∀ f, f ≠ .digestPrefixLen → f ≠ .mask → word t.mem B f.offset = values f)
     (hdi : t.gpr .rdi = B) (hk : Keep [.rax, .rdi, .r11] original t) :
     KeygenEntryPost original B values t := by
-  refine ⟨hdi, hfields, fun i hi => (hf.word (Or.inl (by omega)) (by omega)).trans (hsaved i hi), ?_, hk⟩
+  refine ⟨hdi, hfields, fun i hi => (hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hsaved i hi), ?_, hk⟩
   intro x hx
-  have h : pWorkspace ≤ ofs B x := by omega
-  exact (hf x (Or.inr (by change 48 + (3456 - 48) ≤ ofs B x at *; omega))).trans
-    (hf0 x (Or.inr (by change 3456 ≤ ofs B x at h; omega)))
+  have h : pWorkspace ≤ ofs B x := by omega_using [hx]
+  exact (hf x (Or.inr (by change 48 + (3456 - 48) ≤ ofs B x at *; omega_using [h]))).trans
+    (hf0 x (Or.inr (by change 3456 ≤ ofs B x at h; omega_using [h])))
 
 def checkFieldValues (original : State) (valid : Bool) : Field → Addr
   | .p => original.gpr .rdi

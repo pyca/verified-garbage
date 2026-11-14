@@ -51,12 +51,12 @@ def PiHeld (m : Mem) (T : Addr) : Prop :=
 /-- PITABLE's byte `i`, at `T + i`. -/
 theorem PiHeld.byte {m : Mem} {T : Addr} (h : PiHeld m T) {i : Nat} (hi : i < 256) :
     m (T + BitVec.ofNat 64 i) = Spec.Rc2.piTable.getD i 0 := by
-  have hq : i / 8 < 32 := by omega
+  have hq : i / 8 < 32 := by omega_using [hi]
   have hw := h (i / 8) (by rw [piQuads_length]; exact hq)
   rw [piQuads_getD hq] at hw
   have e : T + BitVec.ofNat 64 i = (T + BitVec.ofNat 64 (8 * (i / 8))) + BitVec.ofNat 64 (i % 8) := by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod]
-  rw [e, ← Mem.extractLsb'_read m _ (n := 8) (by omega), ← piQuad_byte hi, ← hw]
+  rw [e, ← Mem.extractLsb'_read m _ (n := 8) (by omega_using []), ← piQuad_byte hi, ← hw]
   rfl
 
 end VG.Proof.Rc2

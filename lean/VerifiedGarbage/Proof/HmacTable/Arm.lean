@@ -146,8 +146,8 @@ theorem held_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 24 ≤ 2 ^ 32) {s
       m.readW (tA p 16) 32 = BitVec.ofNat 32 w.F.H.D ∧ m.readW (tA p 20) 32 = BitVec.ofNat 32 w.F.H.B := by
   rw [words_tableOf, blockSize_eq] at h
   have a : ∀ i, i < 6 → tA p (4 * i) = State.addr p + BitVec.ofNat 64 (32 / 8 * i) := fun i hi => by
-    rw [tA, VG.Arm.addr_add (by omega)]
-  have e : ∀ i (hi : i < 6), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega)
+    rw [tA, VG.Arm.addr_add (by omega_using [hp, hi])]
+  have e : ∀ i (hi : i < 6), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega_using [hi])
   refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · have := e 0 (by decide); simp only [Nat.mul_zero] at this; rw [this]; simp
   · have := e 1 (by decide); simp only [Nat.mul_one] at this; rw [this]; simp
@@ -161,11 +161,11 @@ theorem hashAt_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 24 ≤ 2 ^ 32) 
     (h : m.readW (tA p 12) 32 = BitVec.ofNat 32 (Spec.HashTable.index w.G)) :
     Spec.HmacTable.hashAt 32 m (State.addr p) = some w.G := by
   simp only [Spec.HmacTable.hashAt, Spec.HmacTable.fns]
-  rw [show State.addr p + BitVec.ofNat 64 (32 / 8 * 3) = tA p 12 by rw [tA, VG.Arm.addr_add (by omega)], h,
+  rw [show State.addr p + BitVec.ofNat 64 (32 / 8 * 3) = tA p 12 by rw [tA, VG.Arm.addr_add (by omega_using [hp])], h,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
       have := List.findIdx_le_length (p := fun G => G.rust == w.G.rust) (xs := Spec.Mgf1.hashes)
       simp only [Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
-      omega)]
+      omega_using [this])]
   exact w.idx
 
 end VG.Proof.HmacTable.Arm

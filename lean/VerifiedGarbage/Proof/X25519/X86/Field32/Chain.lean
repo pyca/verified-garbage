@@ -34,7 +34,7 @@ theorem coff_slot (i : Cs) : isSlot 512 (coff i) = true :=
 theorem coff_inj {i j : Cs} (h : coff i = coff j) : i = j := by
   apply Fin.ext
   simp only [coff] at h
-  omega
+  omega_using [h]
 
 /-- The slots' values. -/
 abbrev CEnv := Cs → Fe
@@ -123,7 +123,7 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : 
   have bu : u.gpr .esi = BitVec.ofNat 32 (m - 1) := by
     rw [hu.gpr, kt.esi, hb]; exact Wp.ofNat_pred h1
   have eu : cenv u.mem x = Function.update (cenv s₀.mem x) o (sqn v (n - (m - 1))) := by
-    rw [hu.mem, et, he, opMul_update, show n - (m - 1) = (n - m) + 1 by omega]
+    rw [hu.mem, et, he, opMul_update, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
     rfl
   have ev : isa.eval .ne u = some (!decide (m - 1 = 0)) := by
     show u.zf.map (!·) = _
@@ -132,8 +132,8 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : 
   by_cases hm : m = 1
   · subst m
     exact .inl ⟨by rw [ev]; rfl, ku, by simpa only [Nat.sub_self, Nat.sub_zero] using eu⟩
-  · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega, decide_false]; rfl,
-      m - 1, by omega, by omega, by omega, ku, bu, eu⟩
+  · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega_using [h1, hm], decide_false]; rfl,
+      m - 1, by omega_using [h1], by omega_using [h1, hm], by omega_using [h2], ku, bu, eu⟩
 
 /-- `a` copied to `o`, unless they are the same slot. -/
 theorem copyC {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) (o a : Cs) :

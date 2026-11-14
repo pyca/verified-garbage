@@ -342,6 +342,18 @@ def rorQwords (x : BitVec 128) (n : BitVec 8) : BitVec 128 :=
   let r (i : Nat) := (qword x i).rotateRight (n.toNat % 64)
   r 1 ++ r 0
 
+/-- SDM Vol. 2, "PSRAW/PSRAD/PSRAQ—Shift Packed Data Right Arithmetic", for
+one lane: `ARITHMETIC_RIGHT_SHIFT_QWORDS1(SRC, COUNT_SRC) { COUNT :=
+COUNT_SRC[63:0]; IF (COUNT < 64) THEN DEST[63:0] := SignExtend(SRC[63:0] >>
+COUNT); ELSE DEST[63:0] := SignBit; FI; }` for each quadword ("VPSRAQ (EVEX
+versions, imm8)" with no write mask and a register source: `DEST[i+63:i] :=
+ARITHMETIC_RIGHT_SHIFT_QWORDS1(SRC1[i+63:i], imm8)` for each quadword `j`,
+`i := j * 64`): a shift by 64 or more leaves the sign bit in every bit, as
+`BitVec.sshiftRight` by 64 does. -/
+def sraQwords (x : BitVec 128) (n : BitVec 8) : BitVec 128 :=
+  let r (i : Nat) := (qword x i).sshiftRight (min n.toNat 64)
+  r 1 ++ r 0
+
 /-- SDM Vol. 2, "VPTERNLOGD/VPTERNLOGQ", for one lane, with no write mask
 and a register `SRC2`: `FOR k := 0 TO 31 … DEST[j][k] := imm[(DEST[i+k] <<
 2) + (SRC1[ i+k ] << 1) + SRC2[ i+k ]]` for each doubleword `j` (`i := j *

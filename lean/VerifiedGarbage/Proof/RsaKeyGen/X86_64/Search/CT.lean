@@ -264,7 +264,7 @@ private theorem reject2_ok (q : SearchPoint) (s : State) (h : Reject1 q s) :
     rfl
   have hz : (BitVec.ofNat 64 q.cand == 0) = decide (q.cand = 0) :=
     ofNat64_beq_zero (by
-      have : candUsed q.inputs o q.used ≤ q.inputs.randLen := by unfold candUsed; split <;> omega
+      have : candUsed q.inputs o q.used ≤ q.inputs.randLen := by unfold candUsed; split <;> omega_using []
       have := hf.rand64; omega)
   refine WP.mono (WP.keep [.rcx] (Q := fun t => eval .e t = some (decide (q.cand = 0)) ∧ t.mem = s.mem) (by
       xrun [State.ea, BitVec.ofInt_ofNat, BitVec.add_zero, eval, hcx, hin, hu, BitVec.and_self, hz]) rfl)
@@ -278,7 +278,7 @@ private theorem reject3_ok (q : SearchPoint) (s : State) (h : Reject2 q s ∧ ev
   refine ⟨(kt.gpr (by decide)).trans hr12, (kt.gpr (by decide)).trans hsp, ?_⟩
   rw [he, hdx]
   congr 1
-  rcases (show q.status = 0 ∨ q.status = 1 ∨ q.status = 2 ∨ q.status = 3 by omega) with h | h | h | h <;>
+  rcases (show q.status = 0 ∨ q.status = 1 ∨ q.status = 2 ∨ q.status = 3 by omega_using [h4]) with h | h | h | h <;>
     rw [h] <;> decide
 
 theorem search_reject_ct : RelCT isa (Two RejectCT) reject (fun _ _ => True) := by
@@ -320,8 +320,8 @@ private theorem classify1_ok (q : SearchPoint) (s : State) (h : CandCT q s) :
   have hlow : (t.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32 := by
     rw [hra]; apply BitVec.eq_of_toNat_eq
     have hst' : (s.gpr .rax).toNat % 2 ^ 32 = q.status := by rw [← BitVec.toNat_setWidth]; exact h.status
-    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_ofNat, hst', Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_ofNat, hst', Nat.mod_eq_of_lt (by omega_using [h4]),
+      Nat.mod_eq_of_lt (by omega_using [h4])]
   exact ⟨⟨h.keep k hm hlow (by decide), hra⟩, he⟩
 
 private theorem classify2_ok (q : SearchPoint) (s : State) (h : Classify1 q s ∧ eval .e s = some false) :
@@ -371,13 +371,13 @@ theorem call_leak {q : SearchPoint} {u : State} (h : CallCT q u) :
   obtain ⟨a0, a1, a2, -, -⟩ := call_args (used := q.used) hu hm
   obtain ⟨-, hsi, -, hcx, h8, h9⟩ := ha
   have t8 : (BitVec.ofNat 64 q.inputs.elen).toNat = q.inputs.elen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.e8; omega_using [this])]
   have tl : (BitVec.ofNat 64 q.inputs.len).toNat = q.inputs.len := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.len64]
   have tp : (BitVec.ofNat 64 q.inputs.plen).toNat = q.inputs.plen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.plen64]
   have tr : (BitVec.ofNat 64 (q.inputs.randLen - q.used)).toNat = q.inputs.randLen - q.used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.rand64; omega_using [this])]
   simp only [candLeak, call_gpr (show Reg.rsi ≠ .rsp by decide), call_gpr (show Reg.rcx ≠ .rsp by decide),
     call_gpr (show Reg.r8 ≠ .rsp by decide), call_gpr (show Reg.r9 ≠ .rsp by decide),
     hsi, hcx, h8, h9, a0, a1, a2, t8, tl, tp, tr, he, hpb, hrand]
@@ -473,7 +473,7 @@ theorem ctl_next {q : SearchPoint} {original s t : State} {final : PrimeSearchRe
   obtain ⟨hr, u, k, -, hi, hu, hk, htail⟩ := hc
   have hs := SearchCTL.status ht hr
   have hcu := CandCT.used hl ht hr
-  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega
+  have hu' : q.next.used = u := by simp only [SearchPoint.next]; omega_using [hu, hcu]
   have hk' : q.next.remaining = k := by
     simp only [SearchPoint.next]
     rcases hk with ⟨rfl, h2⟩ | ⟨rfl, h3⟩
@@ -585,7 +585,7 @@ private theorem iteration_pair (v : RoundImpl) (n : Nat) :
     have hle := hl.used_le
     have hcand := hb.2.2
     simp only [SearchPoint.next] at hle ⊢
-    omega
+    omega_using [hn, hle, hcand]
   · exact absurd hb hb'
   · exact absurd hb' hb
   · exact ⟨e₁.trans e₂.symm, fun _ => trivial, fun h => by rw [e₁] at h; cases h⟩

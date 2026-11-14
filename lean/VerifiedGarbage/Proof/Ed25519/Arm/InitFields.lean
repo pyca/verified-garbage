@@ -26,16 +26,16 @@ theorem stores_ok {r : Reg} {o n : Nat} (ho : o + 4 * n ≤ 4096) {s : State} (h
       Frame [⟨State.addr b + BitVec.ofNat 64 o, 4 * m⟩] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ Rest [] s s')
     (fun m s' hm ⟨h1, h2, h3, h4⟩ => ?_) n (Nat.le_refl _) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, rfl, Rest.refl _ _⟩) fun s' h => h
-  refine str0_ok (hc.of_rest h4 (by decide)) (d := o + 4 * m) (by omega) fun s2 u2 =>
+  refine str0_ok (hc.of_rest h4 (by decide)) (d := o + 4 * m) (by omega_using [ho, hm]) fun s2 u2 =>
     WP.block_nil ⟨fun j hj => ?_, ?_, by rw [u2.gpr, h3], h4.trans (u2.rest _)⟩
   · rw [u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h1 j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ho, hm])]; exact h1 j hj
     · rw [wd_write_self, h3]
   · rw [u2.mem]
     exact (h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [ho, hm]))
 
 /-- `initFields_ok`, which also changes no register but X25519's `clob`. -/
 theorem initFields_rest {s : State} (hc : Ctx b s) :
@@ -48,11 +48,11 @@ theorem initFields_rest {s : State} (hc : Ctx b s) :
     fun t ⟨hout, hf, _, hr⟩ => ?_
   have he : ∀ (i : Slot) k, k < 16 → limb t.mem (State.addr b) (offset i) k = 0 := by
     intro i k hk
-    have h := hout (16 * i.val + k) (by omega)
+    have h := hout (16 * i.val + k) (by omega_using [hk])
     rw [hu.gpr] at h
     have hd : 64 + 4 * (16 * i.val + k) = offset i + 4 * k := by
       simp only [offset]
-      omega
+      omega_using []
     rw [hd] at h
     exact h
   refine ⟨⟨(hu.rest (by decide)).trans (hr.mono (by decide)), ?_⟩,

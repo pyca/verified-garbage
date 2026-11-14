@@ -53,7 +53,7 @@ open VG.Proof.Dsa.Random (sampleStatus)
 theorem pre_kl {s₀ : State} (h : gkContract.pre s₀) : (glOf s₀).kl = (s₀.gpr .a4).toNat := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
     -, hkl, -⟩ := h
-  simp only [GL.kl, glOf]; omega
+  simp only [GL.kl, glOf]; omega_using [hkl]
 
 /-- What the public data fix: the call's data, the domain, and the result's
 status and trace. -/
@@ -95,8 +95,8 @@ theorem qb_eq {s₁ s₂ : State} (h₁ : gkContract.pre s₁) (eL : glOf s₁ =
     simp only [parOf, ← eL] at this
     exact this
   have := VG.Proof.Dsa.bytesAt_slice s₁.mem (glOf s₁).par (offset := (glOf s₁).pl) (len := (glOf s₁).ql)
-    (total := (glOf s₁).kl) (by simp only [GL.kl]; omega)
-  rw [e, VG.Proof.Dsa.bytesAt_slice s₂.mem (glOf s₁).par (by simp only [GL.kl]; omega)] at this
+    (total := (glOf s₁).kl) (by simp only [GL.kl]; omega_using [])
+  rw [e, VG.Proof.Dsa.bytesAt_slice s₂.mem (glOf s₁).par (by simp only [GL.kl]; omega_using [])] at this
   exact this.symm
 
 /-- The sampler's data and q agree. -/
@@ -143,7 +143,7 @@ theorem mkOf_ge (s₀ : State) : ∀ x ∈ mkOf s₀, 5 ≤ x := by
   simp only [mkOf] at hx
   split at hx
   · simp at hx
-  · simp only [List.mem_singleton] at hx; subst hx; split <;> omega
+  · simp only [List.mem_singleton] at hx; subst hx; split <;> omega_using []
 
 /-- Equal traces: equal draws' traces, and the same success of the derivation. -/
 theorem trace_split {s₁ s₂ : State} (c₁ : chkOf s₁ = true) (c₂ : chkOf s₂ = true)
@@ -183,9 +183,9 @@ theorem check_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h�
   have g₁ := fun (r : Reg) (hr : r ∉ linkRegs) => State.callEntry_gpr w₁ (r := r) hr
   have g₂ := fun (r : Reg) (hr : r ∉ linkRegs) => State.callEntry_gpr w₂ (r := r) hr
   have b₁ : Spec.Rsa.bytesAt w₁.mem (glOf s₁).par (BitVec.ofNat 64 (glOf s₁).kl).toNat = parOf s₁ := by
-    rw [tn64 (by simp only [GL.kl]; omega)]; exact A₁.ctx.par
+    rw [tn64 (by simp only [GL.kl]; omega_using [q₁, p₁])]; exact A₁.ctx.par
   have b₂ : Spec.Rsa.bytesAt w₂.mem (glOf s₂).par (BitVec.ofNat 64 (glOf s₂).kl).toNat = parOf s₂ := by
-    rw [tn64 (by simp only [GL.kl]; omega)]; exact A₂.ctx.par
+    rw [tn64 (by simp only [GL.kl]; omega_using [q₂, p₂])]; exact A₂.ctx.par
   refine ⟨(A₁.ctx.sp.trans (by rw [eL])).trans A₂.ctx.sp.symm, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · show w₁.callEntry.gpr .a0 = w₂.callEntry.gpr .a0
     rw [g₁ .a0 (by decide), g₂ .a0 (by decide), A₁.a0, A₂.a0, eL]
@@ -247,7 +247,7 @@ theorem dcall_st {s₁ s₂ w₁ w₂ : State} (h₁ : gkContract.pre s₁) (h�
     by rw [p7, r7, eL], by rw [p8, r8, eL], by rw [p9, r9, eL], by rw [p10, r10, eL], by rw [a0, b0, eL], ?_⟩
   rw [dres_eq h₁ A₁, dres_eq h₂ A₂, hs]
   show (Spec.Rsa.bytesAt w₁.mem _ _).map (·.toNat) ++ _ = (Spec.Rsa.bytesAt w₂.mem _ _).map (·.toNat) ++ _
-  rw [p5, p6, r5, r6, tn64 (by simp only [GL.kl]; omega), tn64 (by simp only [GL.kl]; omega), A₁.ctx.par,
+  rw [p5, p6, r5, r6, tn64 (by simp only [GL.kl]; omega_using [q₁, p₁]), tn64 (by simp only [GL.kl]; omega_using [q₂, p₂]), A₁.ctx.par,
     A₂.ctx.par]
   show (parOf s₁).map (·.toNat) ++ _ = (parOf s₂).map (·.toNat) ++ _
   rw [ep]

@@ -23,11 +23,11 @@ header's words 14–31.
   `eqMask`'s (as in the Miller–Rabin round);
 * with q: `-p⁻¹ mod 2³²` into `r12` (`PublicChecked.minv`), `R² mod p` into
   array 1 (`Precompute.r2Hi`), `y^q mod p` into array 4 by
-  `ModExp.powWin` over q's `p_len` octets, and `eqMask` with 1, again in
-  array 7.
+  `ModExp.powWin` over q's octets from its first nonzero one (`leadScan`),
+  and `eqMask` with 1, again in array 7.
 
-Everything is public, and the code branches on p's validity, y's range and
-whether there is q.
+Everything is public, and the code branches on p's validity, y's range,
+whether there is q and q's leading zero octets.
 
 Registers kept throughout: `r21` `domain`, `r26` `y` and then the mask of
 y's range, `r27` `domain_len`, `r28` `p_len`.
@@ -90,14 +90,33 @@ def range : Prog isa :=
 /-- `r0 := 0` exactly when `domain_len = 3 p_len`: there is q. -/
 def hasQ : List Instr := [.lsl .r0 .r28 1, .add .r0 .r0 .r28, .sub .r0 .r27 .r0]
 
-/-- `r3 := 1` if `y^q mod p = 1`, else 0: `-p⁻¹`, `R² mod p` (`Precompute.r2Hi`),
-the power by q's octets (at `domain + 2 p_len`, `ModExp.powWin`), compared
-with 1 in array 7. -/
-def subgroup : Prog isa :=
+/-- One step of the scan for q's first nonzero octet: `r17 := 1` if the
+octet at `r30` is zero and `r31 ≥ 2` octets are left, else 0, and `r30 += r17`,
+`r31 -= r17`. -/
+def leadBody : List Instr :=
+  [.lbz .r16 .r30 0, .subi .r16 .r16 1, .lsr .d .r16 .r16 63, .li .r17 1, .sub .r17 .r17 .r31,
+    .lsr .d .r17 .r17 63, .logic .and .r17 .r17 .r16, .add .r30 .r30 .r17, .sub .r31 .r31 .r17]
+
+/-- From q's `p_len` octets at `r30` (`r31` of them), `r30` and `r31` past its
+leading zero octets but the last: q is public, and so is the number of
+iterations. -/
+def leadScan : Prog isa := .loop (.block leadBody) (.nonzero .d .r17)
+
+/-- `-p⁻¹`, `R² mod p` (`Precompute.r2Hi`), and q's octets (at
+`domain + 2 p_len`, `p_len` of them) into `r30` and `r31`. -/
+def subFront : Prog isa :=
   .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ PublicChecked.minv)) (.seq Precompute.r2Hi
-    (.seq (.block [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0])
-      (.seq ModExp.powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
-        (.block [.li .r0 1, .logic .and .r3 .r3 .r0])))))))
+    (.block [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0]))
+
+/-- The power by the octets at `r30` (`r31` of them, `ModExp.powWin`), and
+`r3 := 1` if it is 1, else 0. -/
+def subBack : Prog isa :=
+  .seq ModExp.powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
+    (.block [.li .r0 1, .logic .and .r3 .r3 .r0]))))
+
+/-- `r3 := 1` if `y^q mod p = 1`, else 0: the power by q's octets from its
+first nonzero one, compared with 1 in array 7. -/
+def subgroup : Prog isa := .seq subFront (.seq leadScan subBack)
 
 /-- The check of y, after p's. -/
 def checkY : Prog isa :=

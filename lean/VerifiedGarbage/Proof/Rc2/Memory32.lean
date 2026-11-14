@@ -20,21 +20,21 @@ theorem outputBytes_length (v : Spec.Rc2.State) (n : Nat) : (outputBytes v n).le
 
 theorem encode_lo (v : Spec.Rc2.State) (i : Nat) (hi : i < 4) :
     (Spec.Rc2.encodeBlock v).getD (2 * i) 0 = (v.getD i 0).setWidth 8 := by
-  rw [Spec.Rc2.encodeBlock, getD_ofFn _ _ (by omega)]
+  rw [Spec.Rc2.encodeBlock, getD_ofFn _ _ (by omega_using [hi])]
   simp only [Nat.mul_div_cancel_left _ (by decide : 0 < 2), Nat.mul_mod_right,
     Nat.mul_zero, BitVec.ushiftRight_zero]
 
 theorem encode_hi (v : Spec.Rc2.State) (i : Nat) (hi : i < 4) :
     (Spec.Rc2.encodeBlock v).getD (2 * i + 1) 0 = ((v.getD i 0) >>> 8).setWidth 8 := by
-  rw [Spec.Rc2.encodeBlock, getD_ofFn _ _ (by omega)]
-  have hd : (2 * i + 1) / 2 = i := by omega
-  have hm : (2 * i + 1) % 2 = 1 := by omega
+  rw [Spec.Rc2.encodeBlock, getD_ofFn _ _ (by omega_using [hi])]
+  have hd : (2 * i + 1) / 2 = i := by omega_using []
+  have hm : (2 * i + 1) % 2 = 1 := by omega_using []
   simp only [hd, hm, Nat.mul_one]
 
 theorem outputBytes_succ (v : Spec.Rc2.State) (n : Nat) (hn : n < 4) :
     outputBytes v (n + 1) = outputBytes v n ++
       [(v.getD n 0).setWidth 8, ((v.getD n 0) >>> 8).setWidth 8] := by
-  rw [outputBytes, show 2 * (n + 1) = (2 * n + 1) + 1 by omega,
+  rw [outputBytes, show 2 * (n + 1) = (2 * n + 1) + 1 by omega_using [],
     List.range_succ, List.range_succ]
   simp only [List.map_append, List.map_cons, List.map_nil, encode_lo v n hn,
     encode_hi v n hn, List.append_assoc, List.cons_append, List.nil_append]
@@ -48,8 +48,8 @@ theorem outputBytes_write (m : Mem) (p : Addr) (v : Spec.Rc2.State) (n : Nat) (h
   rw [outputBytes_succ v n hn]
   rw [show outputBytes v n ++ [(v.getD n 0).setWidth 8, ((v.getD n 0) >>> 8).setWidth 8] =
     (outputBytes v n ++ [(v.getD n 0).setWidth 8]) ++ [((v.getD n 0) >>> 8).setWidth 8] by simp]
-  rw [writeBytes_snoc _ _ _ _ (by simp only [List.length_append, List.length_singleton, outputBytes_length]; omega),
-    writeBytes_snoc _ _ _ _ (by rw [outputBytes_length]; omega)]
+  rw [writeBytes_snoc _ _ _ _ (by simp only [List.length_append, List.length_singleton, outputBytes_length]; omega_using [hn]),
+    writeBytes_snoc _ _ _ _ (by rw [outputBytes_length]; omega_using [hn])]
   simp only [List.length_append, List.length_singleton, outputBytes_length]
 
 theorem outputBytes_pack (m : Mem) (p : Addr) (v : Spec.Rc2.State) :

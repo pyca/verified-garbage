@@ -173,10 +173,10 @@ theorem Saved.body {x : BitVec 32} (hfit : x.toNat + 8192 ≤ 2 ^ 32) {g : Reg �
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [SAVE] at h₁ h₂
       rcases hr with rfl | rfl | rfl
-      · exact sub_disj (by omega_using [hfit, h₂]) (by omega_using [hfit]) (.inr (by omega))
-      · exact sub_disj (by omega_using [hfit, h₂]) (by omega_using [hfit]) (.inr (by omega))
+      · exact sub_disj (by omega_using [hfit, h₂]) (by omega_using [hfit]) (.inr (by omega_using [h₁]))
+      · exact sub_disj (by omega_using [hfit, h₂]) (by omega_using [hfit]) (.inr (by omega_using [h₁]))
       · exact sub_disj (by omega_using [hfit, h₂]) (by simp only [T]; omega_using [hfit])
-          (.inr (by simp only [T]; omega))
+          (.inr (by simp only [T]; omega_using [h₁]))
   exact ⟨(k _ (by decide) (by decide)).trans h.ebx, (k _ (by decide) (by decide)).trans h.ebp,
     (k _ (by decide) (by decide)).trans h.edi⟩
 
@@ -185,8 +185,8 @@ theorem env_save {x : BitVec 32} (hfit : x.toNat + 8192 ≤ 2 ^ 32) {m m' : Mem}
     (hf : Frame [sub x SAVE 12] m m') : env m' x = env m x := by
   funext i
   apply congrArg VG.Proof.X25519.toFe
-  exact fe_frame1 hf hfit (by decide) (by simp only [offset]; omega)
-    (.inl (by simp only [offset, SAVE]; omega))
+  exact fe_frame1 hf hfit (by decide) (by simp only [offset]; omega_using [])
+    (.inl (by simp only [offset, SAVE]; omega_using []))
 
 /-- A function running the field program `ops`: the callee-saved registers kept, memory
 changed only in slots 0–3 and 8–15 and bytes 864 to 1023, and the slots' values `evalOps ops`

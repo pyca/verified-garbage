@@ -127,7 +127,7 @@ theorem padRest_xdepth (c : Bool) (b : Impl.Poly1305.X86_64.Blocks) (k : Nat) :
 /-- `padSite`'s depth, whichever it is. -/
 theorem padSite_xdepth (c : Bool) (b : Impl.Poly1305.X86_64.Blocks) (p n : Reg) :
     (padSite c b p n).x86_64Depth ≤ max (padCopy b 1).x86_64Depth (padTail b 1).x86_64Depth := by
-  cases c <;> simp only [padSite, cond, Code.iteCold, Code.x86_64Depth] <;> omega
+  cases c <;> simp only [padSite, cond, Code.iteCold, Code.x86_64Depth] <;> omega_using []
 
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
@@ -136,7 +136,7 @@ theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.p
   have ha := padSite_xdepth (dataCopy v.poly) v.poly .rbx .rbp
   simp only [Impl.ChaCha20.X86_64.Callee.inPlace, «seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, padCopy, padTail, crypt, cryptBig, cryptPre, xorKs, callX, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ha ⊢
-  omega
+  omega_using [hx, hb, hc, ha]
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/
 def sealFrameSat : State :=

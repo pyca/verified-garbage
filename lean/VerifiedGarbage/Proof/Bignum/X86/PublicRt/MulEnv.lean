@@ -39,8 +39,8 @@ theorem Outside.chg {base : Addr} {len bytes d n : Nat} {sp : BitVec 32} {m m' :
   by_contra hc
   simp only [not_or, Nat.not_lt] at hc
   rcases hd with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · exact hx ⟨off base 128, 12⟩ (by simp [Chg]) (ofs_in_off (by omega) (by omega))
-  · exact hx ⟨off base (numAt len 1), bytes - numAt len 1⟩ (by simp [Chg]) (ofs_in_off (by omega) (by omega))
+  · exact hx ⟨off base 128, 12⟩ (by simp [Chg]) (ofs_in_off (by omega_using [hc, h₁]) (by omega_using [hc, h₂]))
+  · exact hx ⟨off base (numAt len 1), bytes - numAt len 1⟩ (by simp [Chg]) (ofs_in_off (by omega_using [hc, h₁]) (by omega_using [hc, h₂]))
 
 /-- A multiplication's changes are within `Chg`. -/
 theorem mulFrame_chg {base : Addr} {len bytes o : Nat} {sp : BitVec 32} {m m' : Mem} (ho : 1 ≤ o)
@@ -49,13 +49,13 @@ theorem mulFrame_chg {base : Addr} {len bytes o : Nat} {sp : BitVec 32} {m m' : 
     (ho4 : numAt len o + wb len ≤ bytes) :
     Frame (Chg base len bytes sp) m m' := by
   have : numAt len 1 ≤ numAt len o := by
-    have := Nat.mul_le_mul_right (wb len) ho; simp only [numAt]; omega
-  have : numAt len 1 ≤ numAt len 5 := by simp only [numAt]; omega
+    have := Nat.mul_le_mul_right (wb len) ho; simp only [numAt]; omega_using [this]
+  have : numAt len 1 ≤ numAt len 5 := by simp only [numAt]; omega_using []
   refine F.sub fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨⟨off base (numAt len 1), bytes - numAt len 1⟩, by simp [Chg], sub_off (by omega) (by omega)⟩
-  · exact ⟨⟨off base (numAt len 1), bytes - numAt len 1⟩, by simp [Chg], sub_off (by omega) (by omega)⟩
+  · exact ⟨⟨off base (numAt len 1), bytes - numAt len 1⟩, by simp [Chg], sub_off (by omega_arith) (by omega_using [ho4])⟩
+  · exact ⟨⟨off base (numAt len 1), bytes - numAt len 1⟩, by simp [Chg], sub_off (by omega_using [this]) (by omega_using [hb])⟩
   · exact ⟨below sp 96, by simp [Chg], fun _ h => h⟩
 
 /-- A number apart from a multiplication's changes keeps its value. -/
@@ -68,13 +68,13 @@ theorem mulFrame_val32 {base : Addr} {len bytes o d : Nat} {sp : BitVec 32} {m m
     val32 m' base d (nw len) = val32 m base d (nw len) := by
   rw [← read_eq_val32, ← read_eq_val32]
   refine congrArg BitVec.toNat (F.read (r := ⟨off base d, 4 * nw len⟩) (Region.contains_self _ _)
-    (fun r hr => ?_) (by omega))
+    (fun r hr => ?_) (by omega_using [hn, hdb]))
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.disjoint base (by rw [← wb_eq] at *; omega) (by omega) (by omega)
-  · exact Offset.disjoint base (by omega) (by omega) (by omega)
+  · exact Offset.disjoint base (by rw [← wb_eq] at *; omega_using [hd]) (by omega_using [hn, hdb]) (by omega_using [hn, ho])
+  · exact Offset.disjoint base (by omega_using [h5]) (by omega_using [hn, hdb]) (by omega_using [hn, h5b])
   · refine (R.apart.sub_right ?_).symm
-    have := Offset.sub base (d := d) (n := 4 * nw len) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := d) (n := 4 * nw len) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [hdb])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 /-- The header keeps its bytes across a multiplication. -/
@@ -86,20 +86,20 @@ theorem mulFrame_hdr {base : Addr} {len bytes o d k : Nat} {sp : BitVec 32} {m m
     m'.read (off base d) k = m.read (off base d) k := by
   have : numOff ≤ numAt len o := by simp [numAt]
   have : numOff ≤ numAt len 5 := by simp [numAt]
-  refine F.read (r := ⟨off base d, k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega)
+  refine F.read (r := ⟨off base d, k⟩) (Region.contains_self _ _) (fun r hr => ?_) (by omega_using [hn, hdb])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.disjoint base (by omega) (by omega) (by omega)
-  · exact Offset.disjoint base (by omega) (by omega) (by omega)
+  · exact Offset.disjoint base (by omega_arith) (by omega_using [hn, hdb]) (by omega_using [hn, ho])
+  · exact Offset.disjoint base (by omega_using [hd, this]) (by omega_using [hn, hdb]) (by omega_using [hn, h5b])
   · refine (R.apart.sub_right ?_).symm
-    have := Offset.sub base (d := d) (n := k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega)
+    have := Offset.sub base (d := d) (n := k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [hdb])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 /-- The modulus is odd, so `R` is invertible modulo it. -/
 theorem Env.coprime {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat} {s : State}
     (E : Env base bytes len args M s) (k : Nat) : Nat.Coprime (2 ^ k) M := by
   have hi := E.inv
-  have hmod : (M * w32 s.mem base invOff + 1) % 2 = 0 := by omega
+  have hmod : (M * w32 s.mem base invOff + 1) % 2 = 0 := by omega_using [hi]
   refine VG.Proof.Bignum.coprime_pow2 ?_ k
   rcases Nat.mod_two_eq_zero_or_one M with hm | hm
   · rw [Nat.add_mod, Nat.mul_mod, hm] at hmod; simp at hmod
@@ -119,13 +119,13 @@ theorem mulRaw_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
       val32 t.mem base (numAt len o) (nw len) * 2 ^ (32 * nw len) % M =
         val32 s.mem base (numAt len a) (nw len) * val32 s.mem base (numAt len b) (nw len) % M := by
   have h := E.pi
-  refine WP.mono (mul_ok h hbytes E.room ho4 ha hb (by omega) (by rw [E.mod]; exact E.inv)
+  refine WP.mono (mul_ok h hbytes E.room ho4 ha hb (by omega_using [ho]) (by rw [E.mod]; exact E.inv)
     (by rw [E.mod]; exact hBlt)) fun t ⟨cs, rd, wr, F, L, C⟩ => ?_
   rw [E.mod] at L C
   have K : Keeps [.eax, .ecx, .edx] s t :=
     ⟨fun r hr => cs r (by revert hr; cases r <;> simp [calleeSaved]), rd, wr⟩
   have Fc := mulFrame_chg (base := base) (bytes := bytes) ho (h.fits (j := 5) (by decide)).2 F
-    (h.fits (j := o) (by omega)).1
+    (h.fits (j := o) (by omega_using [ho4])).1
   exact ⟨E.keep K (by decide) (by decide) Fc, Fc, K, F, L, C⟩
 
 theorem mulEnv_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat}
@@ -141,13 +141,13 @@ theorem mulEnv_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
         s.mem t.mem ∧
       val32 t.mem base (numAt len o) (nw len) = x * y * 2 ^ (32 * nw len) % M := by
   have h := E.pi
-  refine WP.mono (mul_ok h hbytes E.room ho4 ha hb (by omega) (by rw [E.mod]; exact E.inv)
+  refine WP.mono (mul_ok h hbytes E.room ho4 ha hb (by omega_using [ho]) (by rw [E.mod]; exact E.inv)
     (by rw [E.mod]; exact hBlt)) fun t ⟨cs, rd, wr, F, L, C⟩ => ?_
   rw [E.mod] at L C
   have K : Keeps [.eax, .ecx, .edx] s t :=
     ⟨fun r hr => cs r (by revert hr; cases r <;> simp [calleeSaved]), rd, wr⟩
   have Fc := mulFrame_chg (base := base) (bytes := bytes) ho (h.fits (j := 5) (by decide)).2 F
-    (h.fits (j := o) (by omega)).1
+    (h.fits (j := o) (by omega_using [ho4])).1
   refine ⟨E.keep K (by decide) (by decide) Fc, Fc, K, F, ?_⟩
   have := VG.Proof.Dsa.mont_product (E.coprime _) hA hB C
   rwa [Nat.mod_eq_of_lt L] at this

@@ -31,13 +31,13 @@ theorem spread_succ (c : Byte) {L j : Nat} (hL : L < 8) :
       spread c L j := by
   unfold spread
   by_cases h1 : j + 1 ≤ L
-  · rw [ite_eq_left h1, rot_byte c (by omega), ite_eq_right (show ¬ L = j by omega),
-      or_zero', ite_eq_left (show j ≤ L by omega), show L - (j + 1) + 1 = L - j by omega]
+  · rw [ite_eq_left h1, rot_byte c (by omega_using [hL]), ite_eq_right (show ¬ L = j by omega_using [h1]),
+      or_zero', ite_eq_left (show j ≤ L by omega_using [h1]), show L - (j + 1) + 1 = L - j by omega_using [h1]]
   · rw [ite_eq_right h1, rot_zero, zero_or']
     by_cases h2 : L = j
-    · rw [ite_eq_left h2, ite_eq_left (show j ≤ L by omega), h2, Nat.sub_self, Nat.mul_zero,
+    · rw [ite_eq_left h2, ite_eq_left (show j ≤ L by omega_using [h2]), h2, Nat.sub_self, Nat.mul_zero,
         BitVec.shiftLeft_zero]
-    · rw [ite_eq_right h2, ite_eq_right (show ¬ j ≤ L by omega)]
+    · rw [ite_eq_right h2, ite_eq_right (show ¬ j ≤ L by omega_using [h1, h2])]
 
 theorem spread_step (s : State) (idx c : Byte) {j : Nat} (hj : j < 8)
     (h9 : s.gpr .r9 = idx.setWidth 64) (hax : s.gpr .rax = c.setWidth 64)
@@ -46,7 +46,7 @@ theorem spread_step (s : State) (idx c : Byte) {j : Nat} (hj : j < 8)
       t.gpr .r11 = spread c (idx.toNat % 8) j ∧ t.gpr .rax = s.gpr .rax ∧
       t.gpr .r9 = s.gpr .r9 ∧ t.mem = s.mem := by
   unfold spreadStep laneMask
-  rrun [h9, hax, h11, sx j (by omega), sx 56]
+  rrun [h9, hax, h11, sx j (by omega_using [hj]), sx 56]
   rw [lane_mask idx hj, spread_succ c (Nat.mod_lt _ (by decide))]
 
 theorem spread_steps (s₀ : State) (idx c : Byte) (h9 : s₀.gpr .r9 = idx.setWidth 64)
@@ -63,9 +63,9 @@ theorem spread_steps (s₀ : State) (idx c : Byte) (h9 : s₀.gpr .r9 = idx.setW
     rw [List.range_succ, List.reverse_append, List.reverse_cons, List.reverse_nil,
       List.nil_append, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (spread_step s idx c (by omega) (h9'.trans h9) (hax'.trans hax) h11)
+    refine WP.mono (spread_step s idx c (by omega_using [hn]) (h9'.trans h9) (hax'.trans hax) h11)
       fun t ⟨t11, tax, t9, tm⟩ => ?_
-    exact ih (by omega) t t11 (tax.trans hax') (t9.trans h9') (tm.trans hm)
+    exact ih (by omega_using [hn]) t t11 (tax.trans hax') (t9.trans h9') (tm.trans hm)
 
 theorem lanesDown_eq : lanesDown = (List.range 8).reverse := rfl
 
@@ -85,13 +85,13 @@ theorem scatter_succ (m : Mem) (p : Addr) (n : Nat) (d : BitVec 64) (k : Nat) :
         (scatter m p n d k).readW (p + BitVec.ofNat 64 (8 * k)) 64) = scatter m p n d (k + 1) := by
   unfold scatter
   by_cases h0 : n / 8 < k
-  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 8 = k by omega), zero_xor', writeW_readW,
-      ite_eq_left (show n / 8 < k + 1 by omega)]
+  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 8 = k by omega_using [h0]), zero_xor', writeW_readW,
+      ite_eq_left (show n / 8 < k + 1 by omega_using [h0])]
   · rw [ite_eq_right h0]
     by_cases h1 : n / 8 = k
-    · rw [ite_eq_left h1, ite_eq_left (show n / 8 < k + 1 by omega), BitVec.xor_comm, h1]
+    · rw [ite_eq_left h1, ite_eq_left (show n / 8 < k + 1 by omega_using [h1]), BitVec.xor_comm, h1]
     · rw [ite_eq_right h1, zero_xor', writeW_readW,
-        ite_eq_right (show ¬ n / 8 < k + 1 by omega)]
+        ite_eq_right (show ¬ n / 8 < k + 1 by omega_using [h0, h1])]
 
 theorem scatter_step (s : State) (idx : Byte) {k : Nat} (hk : k < 32)
     (h9 : s.gpr .r9 = idx.setWidth 64)
@@ -106,7 +106,7 @@ theorem scatter_step (s : State) (idx : Byte) {k : Nat} (hk : k < 32)
     obtain ⟨r, hr, hc⟩ := hw
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   unfold scatterStep rowMask
-  rrun [h9, hr, hw, sx (8 * k) (by omega)]
+  rrun [h9, hr, hw, sx (8 * k) (by omega_using [hk])]
   rw [row_mask idx hk]
 
 theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 64)
@@ -125,11 +125,11 @@ theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 64)
   | succ n ih =>
     intro s h11 h9' hdi hwr hm
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h11 h9' hdi hwr hm) fun t ⟨tm, t11, t9, tdi, twr⟩ => ?_
+    refine WP.mono (ih (by omega_using [hn]) s h11 h9' hdi hwr hm) fun t ⟨tm, t11, t9, tdi, twr⟩ => ?_
     have hq : InRegions t.wr (t.gpr .rdi + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [twr, tdi]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hw
-    refine WP.mono (scatter_step t idx (by omega) (t9.trans h9) hq)
+      exact region_offset _ _ _ _ _ (by omega_using [hn]) (by omega_using [hn]) hw
+    refine WP.mono (scatter_step t idx (by omega_using [hn]) (t9.trans h9) hq)
       fun u ⟨um, u11, u9, udi, _, uwr⟩ => ?_
     refine ⟨?_, u11.trans t11, u9.trans t9, udi.trans tdi, uwr.trans twr⟩
     rw [um, tm, t11, tdi, scatter_succ]
@@ -150,7 +150,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h9 : s.gpr .r9 = idx.setWidth 
     obtain ⟨r, hr, hc⟩ := hw
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have hi : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 ii.toNat) 1 :=
-    region_offset _ _ _ _ _ (by have := ii.isLt; omega) (by have := ii.isLt; omega) hr
+    region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hr
   let p := s.gpr .rdi
   let b := s.mem (p + BitVec.ofNat 64 idx.toNat)
   let v := s.mem (p + BitVec.ofNat 64 ii.toNat)
@@ -174,7 +174,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h9 : s.gpr .r9 = idx.setWidth 
   refine WP.mono h1 fun u ⟨uax, u11, u9, udi, ucx, um, urd, uwr⟩ => ?_
   rw [WP.block_append_iff]
   have hsp := spread_steps u idx (b ^^^ v) (u9.trans h9) uax 8 (by decide) u
-    (by rw [u11]; unfold spread; rw [ite_eq_right (by omega)]) rfl rfl rfl
+    (by rw [u11]; unfold spread; rw [ite_eq_right (by omega_using [])]) rfl rfl rfl
   rw [← lanesDown_eq] at hsp
   refine WP.mono (WP.keep [.r10, .r11] hsp (by decide +kernel)) fun w ⟨⟨w11, wax, wm⟩, wk⟩ => ?_
   have w9 : w.gpr .r9 = s.gpr .r9 := (wk.gpr (by decide)).trans u9
@@ -196,7 +196,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h9 : s.gpr .r9 = idx.setWidth 
   refine ⟨(yk.gpr (by decide)).trans xax, ?_⟩
   rw [ym, x11, w11]
   unfold scatter spread
-  rw [ite_eq_left (by omega), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte,
+  rw [ite_eq_left (by omega_using []), ite_eq_left (Nat.zero_le _), Nat.sub_zero, writeW_byte,
     ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end VG.Proof.Rc4.X86_64

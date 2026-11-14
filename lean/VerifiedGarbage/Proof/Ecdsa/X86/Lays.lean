@@ -74,7 +74,7 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
     ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
+    ⟨show 1 ≤ 64 * c.n by omega_using [hn], show 64 * c.n < 2 ^ 16 by omega_using [h7]⟩,
     bitsAt_le c h7 (j := 0) (by decide), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
@@ -146,7 +146,7 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     · exact sl_apart c hi.2.1
     · exact sl_apart c hi.2.2
   refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
-    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
+    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega_using [hn], show 64 * c.n < 2 ^ 16 by omega_using [h7]⟩,
     sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho),
     hw base hb, ?_,
     hw jm hjm⟩

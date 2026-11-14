@@ -25,4 +25,10 @@ emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
 def variants := [ifma, avx512Vl, avx512, avx2, ssse3, scalar]
 
+/-- The implementations of the XOR of the keystream alone, best first: those
+of `variants` but `ifma`, which differs from `avx512` only in its
+`vg_poly1305_blocks`, for the functions that do not call that (whose
+instances for `ifma` would be `avx512`'s). -/
+def xorVariants := [avx512Vl, avx512, avx2, ssse3, scalar]
+
 end VG.Proof.Variants.ChaCha20Xor.X86_64

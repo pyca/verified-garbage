@@ -34,10 +34,10 @@ private theorem recoverFinish_eval (e : Env) :
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 theorem rootEnv_low (e : Env) (i : Slot) (hi : i.val < 14) : rootEnv e i = e i := by
-  have h14 : i ≠ 14 := by intro h; have := congrArg Fin.val h; omega
-  have h15 : i ≠ 15 := by intro h; have := congrArg Fin.val h; omega
-  have h16 : i ≠ 16 := by intro h; have := congrArg Fin.val h; omega
-  have h17 : i ≠ 17 := by intro h; have := congrArg Fin.val h; omega
+  have h14 : i ≠ 14 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
+  have h15 : i ≠ 15 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
+  have h16 : i ≠ 16 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
+  have h17 : i ≠ 17 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
   simp only [rootEnv, power250Env, opMul, opSqn, Function.update_of_ne h14,
     Function.update_of_ne h15, Function.update_of_ne h16, Function.update_of_ne h17]
 

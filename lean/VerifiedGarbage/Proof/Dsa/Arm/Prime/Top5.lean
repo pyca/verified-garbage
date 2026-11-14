@@ -58,11 +58,11 @@ theorem xCovers (h : CIn bits s) (o : PreOut bits s t) :
     rw [aA_eq h, h.wr]
   have eAl : (mkP bits s).rAl = ⟨fB s + BitVec.ofNat 64 112, 32⟩ := by
     show (⟨State.addr ((mkP bits s).sp + BitVec.ofNat 32 56), 32⟩ : Region) = _
-    rw [addr_add (by show (s.sp - BitVec.ofNat 32 88).toNat + 56 < _; rw [sub_toNat' (by omega)]; have := h.spHi; omega),
+    rw [addr_add (by show (s.sp - BitVec.ofNat 32 88).toNat + 56 < _; rw [sub_toNat' (by omega_using [spLo])]; have := h.spHi; omega_using []),
       spP h, Offset.add_add]
   have hkw : keyWords bits = 16 * (8 * Impl.Dsa.Arm.ProbablePrime.words bits) + 32 := rfl
   have hw : (mkP bits s).w = Impl.Dsa.Arm.ProbablePrime.words bits := by
-    show 8 * Impl.Dsa.Arm.ProbablePrime.words bits / 8 = _; omega
+    show 8 * Impl.Dsa.Arm.ProbablePrime.words bits / 8 = _; omega_using []
   have hoM : (mkP bits s).oM = 8 * (21 * Impl.Dsa.Arm.ProbablePrime.words bits + 30) := by
     show 8 * (21 * (mkP bits s).w + 30) = _; rw [hw]
   have hlM : (mkP bits s).lenM = 8 * Impl.Dsa.Arm.ProbablePrime.words bits + 48 := by
@@ -82,14 +82,14 @@ theorem xCovers (h : CIn bits s) (o : PreOut bits s t) :
   · refine Covers.of_sub fun r hr => ⟨cW s, by simp, 384, ?_, ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr; rw [rS_eq h]; rfl
     · simp only [List.mem_singleton] at hr; subst hr
-      show 384 + keyWords bits * 8 ≤ (s.gpr .r1).toNat * 8; omega
+      show 384 + keyWords bits * 8 ≤ (s.gpr .r1).toNat * 8; omega_using [size]
   · refine Covers.of_sub fun r hr => ⟨cW s, by simp, 384 + (mkP bits s).oM, ?_, ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr
       show State.addr (s.gpr .r0 + BitVec.ofNat 32 keyOff + BitVec.ofNat 32 (mkP bits s).oM) = _
-      rw [Offset.add_add, addr_add (by simp only [keyOff]; rw [hoM]; omega)]; rfl
+      rw [Offset.add_add, addr_add (by simp only [keyOff]; rw [hoM]; omega_using [fw, size, hkw])]; rfl
     · simp only [List.mem_singleton] at hr; subst hr
       show 384 + (mkP bits s).oM + 8 * (mkP bits s).lenM ≤ (s.gpr .r1).toNat * 8
-      rw [hoM, hlM]; omega
+      rw [hoM, hlM]; omega_using [size, hkw, w4]
 
 theorem rdT (o : PreOut bits s t) : (pcPushed t).rd = s.rd := o.rest.rd
 
@@ -106,7 +106,7 @@ theorem allCovers (hb : Bits bits) (h : CIn bits s) (o : PreOut bits s t) :
     rw [h.wr]; simp
   · simp only [List.mem_singleton] at hr; subst hr; exact (BitVec.add_zero _).symm
   · simp only [List.mem_singleton] at hr; subst hr
-    show 0 + Impl.Dsa.Arm.ProbablePrime.len bits ≤ (s.gpr .r1).toNat * 8; omega
+    show 0 + Impl.Dsa.Arm.ProbablePrime.len bits ≤ (s.gpr .r1).toNat * 8; omega_using [this, hl]
 
 /-- The body's run, widened to the caller's regions. -/
 theorem body_wide (v : RoundImpl) (hb : Bits bits) (h : CIn bits s) (o : PreOut bits s t) :
@@ -136,7 +136,7 @@ theorem keeps (h : CIn bits s) (o : PreOut bits s t) {w : State}
   simp only at hr'
   have inW : (cW s).Contains (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) 1 := by
     simpa using Offset.contains_base (State.addr (s.gpr .r0)) (d := i) (n := 1) (k := (s.gpr .r1).toNat * 8)
-      (by omega) (by omega)
+      (by omega_using [hi]) (by omega_using [hi])
   have own : (⟨State.addr (s.gpr .r0) + BitVec.ofNat 64 i, 1⟩ : Region).Contains
       (State.addr (s.gpr .r0) + BitVec.ofNat 64 i) 1 := Region.contains_self _ _
   have pre := bk.pre
@@ -146,7 +146,7 @@ theorem keeps (h : CIn bits s) (o : PreOut bits s t) {w : State}
     · rw [rS_eq h] at hc
       have := h.size; simp only [keyOff] at this hr' ⊢
       exact Offset.disjoint (State.addr (s.gpr .r0)) (d := i) (n := 1) (e := 384) (k := keyWords bits * 8)
-        (by omega) (by omega) (by omega) _ own hc
+        (by omega_using [hr']) (by omega_using [hi]) (by omega_using [this]) _ own hc
     · exact h.wU _ inW hc
     · exact h.FW _ (subC h _ hc) inW
     · exact h.FW _ (subW0 h _ hc) inW

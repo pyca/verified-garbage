@@ -213,7 +213,7 @@ theorem beBytes_be64 (v : BitVec 64) : ByteLoad.beBytes 8 v = Spec.Gcm.be64 v.to
   have hj := List.mem_range.mp hj
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    show 8 * (8 - 1 - j) = 8 * (7 - j) by omega, Nat.pow_mul]
+    show 8 * (8 - 1 - j) = 8 * (7 - j) by omega_using [], Nat.pow_mul]
 
 /-- The 8 bytes of `[8 r]₆₄`. -/
 theorem beBytes_lens (x : BitVec 64) : ByteLoad.beBytes 8 (x <<< 3) = Spec.Gcm.be64 (8 * x.toNat) := by
@@ -237,7 +237,7 @@ theorem lensStore_ok {V : Reg → BitVec 64} {sp : Addr} {s : State} (he : Env V
   have hw : ∀ off, off + 8 ≤ 2560 → ∀ j < 8,
       InRegions s₂.wr (s₂.gpr .s0 + BitVec.ofNat 64 (off + j)) 1 := fun off ho j hj => by
     rw [u₂.wr, u₁.wr, u₂.other _ (by decide), u₁.other _ (by decide), h31]
-    exact he.perm.wW (by omega)
+    exact he.perm.wW (by omega_using [ho, hj])
   refine WP.mono (ByteLoad.storeBE_ok (s := s₂) (v := .a0) (tmp := .t0) (n := .s0) (off := tO) (w := 8)
     (by decide) (by decide) (by decide) (by decide) (by decide) (hw 96 (by decide))) fun s₃ e₃ => ?_
   subst e₃

@@ -158,6 +158,6 @@ theorem EcKey.bytesAt_patch {H : Region} {hv : Mem} {u : Nat → BitVec 64} {b :
 theorem Clear.wr_bytes {H : Region} {s : State} (hc : Clear H s) {p : Addr} {n : Nat}
     (hr : (⟨p, n⟩ : Region) ∈ s.wr) (hn : n ≤ 2 ^ 64) : ∀ i < n, ¬ H.Contains (p + BitVec.ofNat 64 i) 1 :=
   fun i hi => hc _ (List.mem_append_right _ hr) _ (by
-    simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat p (by omega)]; omega)
+    simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat p (by omega_using [hn, hi])]; omega_using [hi])
 
 end VG.X86_64

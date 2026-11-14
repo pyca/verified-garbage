@@ -57,14 +57,14 @@ theorem word64 {m : Mem} {a : Addr} {k : Nat} (hk : k < 2 ^ 32) (lo : m.readW a 
   rw [Proof.Rc2.Word32.read64_pair, lo, hi]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.ofNat_eq_ofNat]
-  rw [Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or, Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or, Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (by omega_using [hk])]
 
 /-- The return address, apart from every region the run writes. -/
 theorem ret_apart {o : State} (A : KeySearchABI o) : ∀ r ∈ frameR o, (retR o).Disjoint r := by
   have h1 : 228 ≤ (o.gpr .esp).toNat := A.stackLow
   have hl : (retR o).Disjoint (lowR o) := by
     show Region.Disjoint ⟨(o.gpr .esp).setWidth 64, 4⟩ ⟨(o.gpr .esp).setWidth 64 - BitVec.ofNat 64 228, 228⟩
-    exact Offset.base_disjoint_below _ (by omega)
+    exact Offset.base_disjoint_below _ (by omega_using [])
   exact apart A A.retX A.retY A.retU A.retB A.retS A.retA hl
 
 /-- A word of the state at offset `d`, as `wordsAt` addresses it. -/
@@ -86,14 +86,14 @@ theorem finish_ok {o s : State} {r : KeySearchResult} (h : Done (ofState o) o r 
   have ec : t₂.gpr .ecx = arg o 4 := by rw [o₂ .ecx (by decide), g₁]; rfl
   have uIn : ∀ t : State, t.wr = o.wr → ∀ d, d + 4 ≤ 8 →
       InRegions t.wr (argumentPointer o 4 + BitVec.ofNat 64 d) 4 := fun t ht d hd =>
-    ⟨uR o, by rw [ht, A.wr]; simp, Offset.contains_base _ hd (by omega)⟩
+    ⟨uR o, by rw [ht, A.wr]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   refine wp_storeS (show t₂.ea (at_ .ecx 0) = argumentPointer o 4 + BitVec.ofNat 64 0 by
-      show (t₂.gpr .ecx + BitVec.ofNat 32 0).setWidth 64 = _; rw [ec]; exact addr_eq (by omega))
+      show (t₂.gpr .ecx + BitVec.ofNat 32 0).setWidth 64 = _; rw [ec]; exact addr_eq (by omega_using []))
     (uIn t₂ S₂.wr 0 (by decide)) fun t₃ M₃ => ?_
   refine wp_movi fun t₄ U₄ => ?_
   refine wp_storeS (show t₄.ea (at_ .ecx 4) = argumentPointer o 4 + BitVec.ofNat 64 4 by
       show (t₄.gpr .ecx + BitVec.ofNat 32 4).setWidth 64 = _
-      rw [U₄.other _ (by decide), M₃.gpr, ec]; exact addr_eq (by omega))
+      rw [U₄.other _ (by decide), M₃.gpr, ec]; exact addr_eq (by omega_using [hub]))
     (by rw [U₄.wr, M₃.wr]; exact uIn t₂ S₂.wr 4 (by decide)) fun t₅ M₅ => ?_
   -- The stores at `used`.
   have mem₅ : t₅.mem = (t₂.mem.writeW (argumentPointer o 4 + BitVec.ofNat 64 0) (BitVec.ofNat 32 r.used)).writeW
@@ -101,8 +101,8 @@ theorem finish_ok {o s : State} {r : KeySearchResult} (h : Done (ofState o) o r 
     rw [M₅.mem, U₄.gpr, U₄.mem, M₃.mem, g₂]; rfl
   have fu : Frame [uR o] t₂.mem t₅.mem := by
     rw [mem₅]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))
   have S₅ : St o doneDs (doneF (ofState o) (o.gpr .esi) r) t₅ := by
     refine ⟨A, M₅.rd.trans (U₄.rd.trans (M₃.rd.trans S₂.rd)), M₅.wr.trans (U₄.wr.trans (M₃.wr.trans S₂.wr)),
       ?_, ?_, fun q hq hne => ?_, S₂.frame.trans (fu.mono fun r hr => ?_), S₂.words.frame hS hA fu fun r hr => ?_⟩
@@ -126,12 +126,12 @@ theorem finish_ok {o s : State} {r : KeySearchResult} (h : Done (ofState o) o r 
         Spec.Rsa.bytesAt s.mem (argumentPointer o 0) (arg o 7).toNat := by
       rw [m₇, ← m₂]
       exact bytes_frame fu (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [← xR_eq A]; exact A.xu) (by omega)
+        simp only [List.mem_singleton] at hr; subst hr; rw [← xR_eq A]; exact A.xu) (by omega_using [])
     have ky : Spec.Rsa.bytesAt t₇.mem (argumentPointer o 2) (arg o 7).toNat =
         Spec.Rsa.bytesAt s.mem (argumentPointer o 2) (arg o 7).toNat := by
       rw [m₇, ← m₂]
       exact bytes_frame fu (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [← yR_eq A]; exact A.yu) (by omega)
+        simp only [List.mem_singleton] at hr; subst hr; rw [← yR_eq A]; exact A.yu) (by omega_using [])
     unfold Output at out ⊢
     split at out <;> exact ⟨kx.trans out.1, ky.trans out.2⟩
   · have W : ∀ d ∈ doneDs, t₇.mem.readW (addr (arg o 12) d) 32 = doneF (ofState o) (o.gpr .esi) r d := by
@@ -140,7 +140,7 @@ theorem finish_ok {o s : State} {r : KeySearchResult} (h : Done (ofState o) o r 
     unfold Spec.Rsa.wordsAt
     rw [show List.range 4 = [0, 1, 2, 3] from rfl]
     simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true]
-    refine ⟨word64 (by omega) ?_ ?_, word64 (by omega) ?_ ?_, word64 hl ?_ ?_, word64 (by split <;> omega) ?_ ?_⟩
+    refine ⟨word64 (by omega_using [hk]) ?_ ?_, word64 (by omega_using [hc]) ?_ ?_, word64 hl ?_ ?_, word64 (by split <;> omega_using []) ?_ ?_⟩
     · rw [← st_addr A (d := 0) (by decide), W 0 (by decide)]; simp [doneF]
     · rw [Offset.add_add, ← st_addr A (d := 4) (by decide), W 4 (by decide)]; simp [doneF]
     · rw [← st_addr A (d := 8) (by decide), W 8 (by decide)]; simp [doneF]
@@ -153,8 +153,8 @@ theorem finish_ok {o s : State} {r : KeySearchResult} (h : Done (ofState o) o r 
     rw [show List.range 1 = [0] from rfl]
     simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true]
     rw [m₇, mem₅]
-    refine word64 (by omega) ?_ ?_
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
+    refine word64 (by omega_using [hu, hR]) ?_ ?_
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using []) (by omega_using []) (by omega_using [])) (by decide),
         show (8 * 0 : Nat) = 0 from rfl, Mem.readW_writeW_self32]
     · rw [show (8 * 0 : Nat) = 0 from rfl, Offset.add_add, Mem.readW_writeW_self32]
 
@@ -191,7 +191,7 @@ theorem correct (s : State) (h : (Spec.Ffdh.cachedKeySearchContract abi stack).p
   unfold Output at out
   sig_post [Spec.Ffdh.cachedKeySearchContract, Spec.Ffdh.cachedKeySearchSig, Spec.Ffdh.keySearchSig, abi, argSlots, argVal, argBytes]
   refine ⟨?_, out, F.policy, F.used⟩
-  rw [BitVec.setWidth_append_eq_right, F.eax, toNat_ofNat_lt (by have := status_le (searchOf s); omega)]
+  rw [BitVec.setWidth_append_eq_right, F.eax, toNat_ofNat_lt (by have := status_le (searchOf s); omega_using [this])]
   rfl
 
 end VG.Proof.Ffdh.X86.Cached.Search

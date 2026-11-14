@@ -32,10 +32,10 @@ theorem expand_getElem! (B : Block) {j i : Nat} (hi : i < j) :
     | zero => simp
     | succ i =>
       simp only [getElem!_pos (W B j :: expand B j) (i + 1) (by
-          simp only [List.length_cons, expand_length]; omega),
+          simp only [List.length_cons, expand_length]; omega_using [hi]),
         List.getElem_cons_succ]
-      rw [← getElem!_pos, ih (by omega)]
-      congr 1; omega
+      rw [← getElem!_pos, ih (by omega_using [hi])]
+      congr 1; omega_using []
 
 theorem W_lt (B : Block) {j : Nat} (h : j < 16) : W B j = B ⟨j, h⟩ := by
   simp [W, expand, h]
@@ -44,12 +44,12 @@ theorem W_ge (B : Block) {j : Nat} (h : 16 ≤ j) :
     W B j = p1 (W B (j - 16) ^^^ W B (j - 9) ^^^ (W B (j - 3)).rotateLeft 15) ^^^
       (W B (j - 13)).rotateLeft 7 ^^^ W B (j - 6) := by
   show (expand B (j + 1)).headD 0 = _
-  simp only [expand, show ¬ j < 16 by omega, dite_false, List.headD_cons]
-  rw [expand_getElem! B (by omega), expand_getElem! B (by omega),
-    expand_getElem! B (by omega), expand_getElem! B (by omega), expand_getElem! B (by omega),
-    show j - 1 - 15 = j - 16 by omega, show j - 1 - 8 = j - 9 by omega,
-    show j - 1 - 2 = j - 3 by omega, show j - 1 - 12 = j - 13 by omega,
-    show j - 1 - 5 = j - 6 by omega]
+  simp only [expand, show ¬ j < 16 by omega_using [h], dite_false, List.headD_cons]
+  rw [expand_getElem! B (by omega_using [h]), expand_getElem! B (by omega_using [h]),
+    expand_getElem! B (by omega_using [h]), expand_getElem! B (by omega_using [h]), expand_getElem! B (by omega_using [h]),
+    show j - 1 - 15 = j - 16 by omega_using [], show j - 1 - 8 = j - 9 by omega_using [],
+    show j - 1 - 2 = j - 3 by omega_using [], show j - 1 - 12 = j - 13 by omega_using [],
+    show j - 1 - 5 = j - 6 by omega_using []]
 
 /-! ## Iterations -/
 
@@ -109,11 +109,11 @@ theorem rotateLeft_eq (x : Word) {n : Nat} (h₀ : 0 < n) (h : n < 32) :
     x.rotateLeft n = x.rotateRight (32 - n) := by
   ext i hi
   rw [BitVec.getElem_rotateLeft hi, BitVec.getElem_rotateRight hi]
-  simp only [Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (show 32 - n < 32 by omega)]
+  simp only [Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (show 32 - n < 32 by omega_using [h₀])]
   by_cases h' : i < n
-  · rw [dite_eq_left_of_eq_true (eq_true h'), dite_eq_left_of_eq_true (eq_true (by omega))]
-  · rw [dite_eq_right_of_eq_false (eq_false h'), dite_eq_right_of_eq_false (eq_false (by omega))]
-    congr 1; omega
+  · rw [dite_eq_left_of_eq_true (eq_true h'), dite_eq_left_of_eq_true (eq_true (by omega_using [h, h']))]
+  · rw [dite_eq_right_of_eq_false (eq_false h'), dite_eq_right_of_eq_false (eq_false (by omega_using [h']))]
+    congr 1; omega_using [h]
 
 /-- `FF_j` for `16 ≤ j`, as the implementations compute it. -/
 theorem maj_eq (x y z : Word) : x &&& y ||| x &&& z ||| y &&& z = (x ||| y) &&& z ||| x &&& y := by

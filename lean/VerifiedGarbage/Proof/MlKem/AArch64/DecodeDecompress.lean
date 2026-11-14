@@ -103,7 +103,7 @@ theorem dd10idxHi : setLane (ofVDwords (BitVec.ofNat 64 ((List.range 8).foldl
 theorem vword_ofVWords4 (a b c d : BitVec 32) : ∀ e < 4, vword (ofVWords a b c d) e = [a, b, c, d][e]! := by
   intro e he
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem loop1_ok {s₀ : State} (hp : Pre width1 s₀) :
     WP isa (ddLoop 1 2 (bytesVec .v18 [1, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0] ++
@@ -118,10 +118,10 @@ theorem loop1_ok {s₀ : State} (hp : Pre width1 s₀) :
           fun r a b c d _ _ => by rw [h4.get r d, v3 r c, v2 r b, v1 r a],
           ⟨by rw [h4.get .v18 (by decide), v3 .v18 (by decide), v2 .v18 (by decide), e1, dd1idx18]
               exact fun e he => by rw [vword_ofVWords4 _ _ _ _ e he]
-                                   rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl,
+                                   rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl,
            by rw [h4.get .v19 (by decide), v3 .v19 (by decide), e2, dd1idx19]
               exact fun e he => by rw [vword_ofVWords4 _ _ _ _ e he]
-                                   rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl,
+                                   rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl,
            fun e he => by
              rw [h4.get .v20 (by decide)]
              apply BitVec.eq_of_toNat_eq; rw [e3 e he]; rfl,
@@ -176,9 +176,9 @@ theorem correct (s : State) (hs : decodeDecompressAArch64.pre s) :
     simp only [BitVec.toNat_ofNat]
     congr 1
     apply decide_eq_decide.mpr
-    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega
+    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega_using []
   refine WP.ite _ z₂ (fun hb => ?_) (fun hb => ?_)
-  · have e : ((s.gpr .x2).setWidth 32).toNat = 1 := by simp at hb; omega
+  · have e : ((s.gpr .x2).setWidth 32).toNat = 1 := by simp at hb; omega_using [hlen, hb]
     exact width_ok (w := width1) hs e k₂ m₂ fun _ hp => loop1_ok hp
   refine WP.seq (wp_subImm (by decide) fun s₃ h₃ e₃ => wp_nil ?_)
   have k₃ : Keep [.x9] s s₃ := (k₂.trans h₃.keep).mono
@@ -187,9 +187,9 @@ theorem correct (s : State) (hs : decodeDecompressAArch64.pre s) :
     simp only [BitVec.toNat_ofNat]
     congr 1
     apply decide_eq_decide.mpr
-    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega
+    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega_using []
   refine WP.ite _ z₃ (fun hb' => ?_) (fun hb' => ?_)
-  · have e : ((s.gpr .x2).setWidth 32).toNat = 4 := by simp at hb'; omega
+  · have e : ((s.gpr .x2).setWidth 32).toNat = 4 := by simp at hb'; omega_using [hlen, hb']
     exact width_ok (w := width4) hs e k₃ (by rw [h₃.mem, m₂]) fun _ hp => loop4_ok hp
   · have e : ((s.gpr .x2).setWidth 32).toNat = 10 := by
       simp at hb hb'

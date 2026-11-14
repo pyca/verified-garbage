@@ -144,18 +144,18 @@ theorem slot_ot112 (L : Lay c (W + BitVec.ofNat 64 16) W) (hbw : (below sp 3248)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact (L.st_w (a := 0) (n := 48) (by decide) (.inr ⟨by omega, by omega⟩)).symm.sub_right
+  · exact (L.st_w (a := 0) (n := 48) (by decide) (.inr ⟨by omega_using [hd], by omega_using [hd]⟩)).symm.sub_right
       (by simpa using Region.sub_prefix (base := W + BitVec.ofNat 64 16) (show 48 ≤ 48 by decide))
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact hbw.symm.sub_left (Lay.wSub (by omega))
+  · exact Lay.w_w (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact hbw.symm.sub_left (Lay.wSub (by omega_using [hd]))
 
 /-- The slots are apart from a block of `W` at `e ≥ 248`. -/
 theorem slot_at {e : Nat} (he : 248 ≤ e) (he' : e + 16 ≤ 2560) {d : Nat} (hd : 232 ≤ d ∧ d + 8 ≤ 248) :
     ∀ r ∈ [(⟨W + BitVec.ofNat 64 e, 16⟩ : Region)], (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
-  exact Lay.w_w (.inl (by omega)) (by omega) he'
+  exact Lay.w_w (.inl (by omega_using [he, hd])) (by omega_using [hd]) he'
 
 variable (L : Lay c (W + BitVec.ofNat 64 16) W)
   (hTd : (⟨T, TL.toNat⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 256, 16⟩) (t1 : 1 ≤ TL.toNat) (t16 : TL.toNat ≤ 16)

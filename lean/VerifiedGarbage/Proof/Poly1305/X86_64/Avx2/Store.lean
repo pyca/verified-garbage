@@ -78,11 +78,11 @@ theorem two_writes (m : Mem) (p : Addr) (v₁ v₂ : BitVec 128) :
     ((m.writeW (off p 0) v₁).writeW (off p 8) v₂).readW (off p 16) 64 = v₂.extractLsb' 64 64 := by
   have z : off p 0 = p := by rw [off_eq, addr0]
   have e16 : off p 16 = off p 8 + BitVec.ofNat 64 8 := by rw [off_eq, off_eq, BitVec.add_assoc]; rfl
-  have hA := _root_.VG.X86_64.readW_writeW_off (m.writeW p v₁) p v₂ (d := 0) (e := 8) (n := 8) (by omega) (by omega)
-    (by omega)
-  have hB := readW_writeW_inside m p v₁ (k := 0) (n := 8) (by omega) (by omega)
-  have hC := readW_writeW_inside (m.writeW p v₁) (off p 8) v₂ (k := 0) (n := 8) (by omega) (by omega)
-  have hD := readW_writeW_inside (m.writeW p v₁) (off p 8) v₂ (k := 8) (n := 8) (by omega) (by omega)
+  have hA := _root_.VG.X86_64.readW_writeW_off (m.writeW p v₁) p v₂ (d := 0) (e := 8) (n := 8) (by omega_using []) (by omega_using [])
+    (by omega_using [])
+  have hB := readW_writeW_inside m p v₁ (k := 0) (n := 8) (by omega_using []) (by omega_using [])
+  have hC := readW_writeW_inside (m.writeW p v₁) (off p 8) v₂ (k := 0) (n := 8) (by omega_using []) (by omega_using [])
+  have hD := readW_writeW_inside (m.writeW p v₁) (off p 8) v₂ (k := 8) (n := 8) (by omega_using []) (by omega_using [])
   rw [addr0] at hA hB hC
   rw [← off_eq] at hA
   simp only [Nat.reduceMul] at hA hB hC hD
@@ -109,12 +109,12 @@ theorem storeH_ok {s : State} (hw : ∀ d, d + 16 ≤ 24 → InRegions s.wr (off
   rw [storeH_eq]
   refine WP.block_append (WP.mono (run_ok (by intro h; cases h) svS_eq) fun s₁ h₁ => ?_)
   have g₁ := h₁.gpr
-  refine WP.block_append (WP.mono (st128_ok s₁ 0 (by rw [h₁.wr, g₁]; exact hw 0 (by omega)))
+  refine WP.block_append (WP.mono (st128_ok s₁ 0 (by rw [h₁.wr, g₁]; exact hw 0 (by omega_using [])))
     fun s₂ e₂ => ?_)
   refine WP.block_append (WP.mono (run_ok (by intro h; cases h) upS_eq) fun s₃ h₃ => ?_)
   have hg₃ : s₃.gpr = s.gpr := by rw [h₃.gpr, e₂, State.setMem_gpr, g₁]
   have hw₃ : InRegions s₃.wr (off (s₃.gpr .rdi) 8) 16 := by
-    rw [h₃.wr, e₂, State.setMem_wr, h₁.wr, hg₃]; exact hw 8 (by omega)
+    rw [h₃.wr, e₂, State.setMem_wr, h₁.wr, hg₃]; exact hw 8 (by omega_using [])
   refine WP.mono (st128_ok s₃ 8 hw₃) fun s₄ e₄ => ?_
   have hm₃ : s₃.mem = s₁.mem.writeW (off (s.gpr .rdi) 0) (s₁.xmm tP) := by
     rw [h₃.mem, e₂, State.setMem_mem, g₁]
@@ -144,8 +144,8 @@ theorem storeH_ok {s : State} (hw : ∀ d, d + 16 ≤ 24 → InRegions s.wr (off
       show ∀ t m, (State.setMem t m).mxcsr = t.mxcsr from fun _ _ => rfl, vm h₁.eq]
   · rw [m₄]
     exact ((Frame.refl [hR (s.gpr .rdi)] s.mem).writeW (List.mem_singleton_self _) _
-      (contains_off (by omega) (by omega))).writeW (List.mem_singleton_self _) _
-      (contains_off (by omega) (by omega))
+      (contains_off (by omega_using []) (by omega_using []))).writeW (List.mem_singleton_self _) _
+      (contains_off (by omega_using []) (by omega_using []))
   · rw [m₄, r0, xmm_lo, q0]
   · rw [m₄, r8, xmm_lo, q1]
   · rw [m₄, r16, xmm_hi, q2]

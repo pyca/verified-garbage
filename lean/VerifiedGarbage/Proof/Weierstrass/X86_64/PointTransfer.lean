@@ -36,7 +36,7 @@ theorem Inv.transferPointFields {M : Mod} {base : Addr} {size m : Nat} [NeZero m
       have hx₂ := hx o.z (by simp [jacCoords])
       rw [hy] at hx₁
       rw [hz] at hx₂
-      omega
+      omega_using [hx₀, hx₁, hx₂]
   have hlt : ∀ x∈jacCoords o, wordsVal t.mem base x M.n<m := by
     intro x hx
     simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx

@@ -55,20 +55,20 @@ theorem tableN_spec (t : List Nat) {p : Addr} :
       (∀ s', Regs [.edx] s s' → Frame [polyRegion p] s.mem s'.mem →
         (∀ k < n, coeffAt s'.mem p k = BitVec.ofNat 32 (t.getD k 0)) → WP isa (.block is) s' P) →
       WP isa (.block (tableN t n ++ is)) s P
-  | 0, is, s, P, _, _, _, k => k s ⟨fun _ _ => rfl, rfl, rfl⟩ (Frame.refl _ _) (fun _ h => absurd h (by omega))
+  | 0, is, s, P, _, _, _, k => k s ⟨fun _ _ => rfl, rfl, rfl⟩ (Frame.refl _ _) (fun _ h => absurd h (by omega_using []))
   | n + 1, is, s, P, hn, hea, hin, k => by
     rw [tableN_succ, List.append_assoc]
-    refine tableN_spec t n _ s P (by omega) hea hin fun s₁ o₁ f₁ c₁ => ?_
+    refine tableN_spec t n _ s P (by omega_using [hn]) hea hin fun s₁ o₁ f₁ c₁ => ?_
     have ea₁ : s₁.ea (at_ .eax (4 * n)) = coeffAddr p n := by
-      rw [← hea n (by omega)]; simp only [State.ea, at_, o₁.gpr .eax (by decide)]
-    have hn' : n < Spec.MlDsa.n := by rw [n_eq]; omega
+      rw [← hea n (by omega_using [hn])]; simp only [State.ea, at_, o₁.gpr .eax (by decide)]
+    have hn' : n < Spec.MlDsa.n := by rw [n_eq]; omega_using [hn]
     refine wp_cons (s' := s₁.setReg .edx (BitVec.ofNat 32 (t.getD n 0)))
       (by simp only [reduceExec, readSrc, Option.map_some]) ?_
     have hin' : InRegions (s₁.setReg .edx (BitVec.ofNat 32 (t.getD n 0))).wr
         ((s₁.setReg .edx (BitVec.ofNat 32 (t.getD n 0))).ea (at_ .eax (4 * n))) 4 := by
       simp only [State.ea, at_, State.setReg, show Reg.eax ≠ Reg.edx by decide, ite_false]
       rw [show (s₁.gpr .eax + BitVec.ofNat 32 (4 * n)).setWidth 64 = coeffAddr p n from ea₁, o₁.wr]
-      exact hin n (by omega)
+      exact hin n (by omega_using [hn])
     refine wp_store hin' ?_
     refine k _ ⟨fun r hr => ?_, o₁.rd, o₁.wr⟩ ?_ ?_
     · simp only [List.mem_singleton] at hr
@@ -81,10 +81,10 @@ theorem tableN_spec (t : List Nat) {p : Addr} :
     · intro j hj
       simp only [State.ea, at_, State.setReg, show Reg.eax ≠ Reg.edx by decide, ite_false, ite_true]
       rw [show (s₁.gpr .eax + BitVec.ofNat 32 (4 * n)).setWidth 64 = coeffAddr p n from ea₁,
-        coeffAt_writeW _ _ (show j < Spec.MlDsa.n by rw [n_eq]; omega) hn']
+        coeffAt_writeW _ _ (show j < Spec.MlDsa.n by rw [n_eq]; omega_using [hn, hj]) hn']
       by_cases e : n = j
       · rw [ite_eq_left e, e]
-      · rw [ite_eq_right e]; exact c₁ j (by omega)
+      · rw [ite_eq_right e]; exact c₁ j (by omega_using [hj, e])
 
 theorem table_spec (t : List Nat) {p : Addr} (is : List Instr) (s : State) (P : State → Prop)
     (hea : ∀ k < 256, s.ea (at_ .eax (4 * k)) = coeffAddr p k)

@@ -24,23 +24,23 @@ theorem slot5_value (edi : BitVec 32) (w : Nat) :
   have h256 : (256 : BitVec 32).toNat = 256 := rfl
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, slot, stride, VG.Impl.Bignum.hdrBytes, h16, h256]
   have := edi.isLt
-  omega
+  omega_using []
 
 theorem slot0_eq (w : Nat) : slot w 0 = 256 := by simp [slot, VG.Impl.Bignum.hdrBytes]
 
 theorem slot5_ge (w : Nat) : 256 + 8 * w ≤ slot w 5 := by
-  simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega
+  simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega_using []
 
 theorem slot5_eq (w : Nat) : slot w 5 = 336 + 40 * w := by
-  simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega
+  simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega_using []
 
 theorem slot5_lo (w : Nat) : 336 ≤ slot w 5 := by
-  simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega
+  simp only [slot, stride, VG.Impl.Bignum.hdrBytes]; omega_using []
 
 theorem ptrAt_edi {s : State} {base : Addr} {size : Nat} (S : Scr s base size) {r : Reg} {d : Nat}
     (h : s.gpr r = s.gpr .edi + BitVec.ofNat 32 d) : PtrAt s base r d := by
   rw [PtrAt, h, BitVec.toNat_add, BitVec.toNat_ofNat, S.edi_toNat]
-  omega
+  omega_using []
 
 /-- `savedPtr r t`: `r` the saved candidate's address, for the length `8 w`
 at header byte 4. -/
@@ -52,7 +52,7 @@ theorem savedPtr_ok {s : State} {base : Addr} {size w : Nat} {r t : Reg} {is : L
       WP isa (.block is) u Q) :
     WP isa (.block (savedPtr r t ++ is)) s Q := by
   simp only [savedPtr, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_sc S (by omega)) fun s₁ u₁ _ => wp_addS rfl fun s₂ u₂ _ => ?_
+  refine wp_movS (readSrc_sc S (by omega_using [header])) fun s₁ u₁ _ => wp_addS rfl fun s₂ u₂ _ => ?_
   refine wp_movS rfl fun s₃ u₃ _ => wp_addS rfl fun s₄ u₄ _ => wp_addS rfl fun s₅ u₅ _ => ?_
   refine wp_addS rfl fun s₆ u₆ _ => wp_addS rfl fun s₇ u₇ _ => wp_addS rfl fun s₈ u₈ _ => ?_
   have kr {a b : State} {v : BitVec 32} (u : Upd a b r v) : Keeps [r, t] a b := u.keeps.mono (by simp)

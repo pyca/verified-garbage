@@ -22,131 +22,52 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize
 20:
 .base64 "AAAD6QAABfkIAGM4CAClOPj/hDgAACQo"
 bne %cr0, 20b
-.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDg="
-21:
-.base64 "AAArgQAALCg="
-beq %cr0, 22f
-.base64 "8P8MOAAAICg="
-beq %cr0, 24f
-b 25f
-24:
-.base64 "4P8HOAAAICg="
-beq %cr0, 26f
-b 27f
-26:
-.base64 "ZwEJfMgFABBnAAl8PgApVQ=="
-27:
+.base64 "6P8HOAAAICg="
+beq %cr0, 21f
+.base64 "UChnfQAAgDmZZit8LAohEBAASzmZZkp8LBJCEMQkhBAAAwA9AgEIYcYHCHkAAwhlAgEIYWcBqHxnAWh8LCqkECwapRABAAA9AwIIYcYHCHkBAAhlAwIIYWcByHxnAWh8LDLEECwaxhAQEAA9BxAIYcYHCHkQEAhlBxAIYWcB6HxnAWh8LDrkECwa5xABAMA48P8HOAAAICg="
+beq %cr0, 23f
+.base64 "BgCAOA=="
 25:
-b 23f
-22:
-.base64 "ZwEJfMgFABBnAAl8PgApVT7AKVV4Mil9wsnAeAAAADlQQAB8GwAAOThAAHwUMsZ8eALGfP8AADk4QMZ8"
+.base64 "ZwEGfeshCBHCycB4AAAAOVBAAHwbAAA5OEAAfBQyxnx4AsZ8/wAAOThAxnxrEQIQyAUAEMREABAsIWEQxBwhECwiYRDEHCEQxAQhECwKIRGZZyV9EAClOKsJARDIBQAQLCFiEMQcQhAsImIQxBxCEMQEQhAsEiIRmWclfRAApTj//4Q4AAAkKA=="
+bne %cr0, 25b
+.base64 "ZwEGfeshCBHCycB4AAAAOVBAAHwbAAA5OEAAfBQyxnx4AsZ8/wAAOThAxnxrEQIQyAUAEMREABAsIWEQxBwhECwiYRDEHCEQxAQhECwKIRGZZyV9EAClOA=="
+b 24f
 23:
-.base64 "AAAKgXhCKX0EACuRBABrOQQASjkEAIw5UGAHfAAAICg="
+.base64 "CgCAOA=="
+26:
+.base64 "ZwEGfeshCBHCycB4AAAAOVBAAHwbAAA5OEAAfBQyxnx4AsZ8/wAAOThAxnxrCQEQyAUAEMREABAsIWEQxBwhECwiYRDEHCEQxAQhECwKIRGZZyV9EAClOP//hDgAACQo"
+bne %cr0, 26b
+24:
+b 22f
+21:
+.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDgAACuB"
+27:
+.base64 "AAAsKA=="
 beq %cr0, 28f
+.base64 "8P8MOAAAICg="
+beq %cr0, 210f
+b 211f
+210:
+.base64 "4P8HOAAAICg="
+beq %cr0, 212f
+b 213f
+212:
+.base64 "ZwEJfMgFABBnAAl8PgApVQ=="
+213:
+211:
 b 29f
 28:
+.base64 "ZwEJfMgFABBnAAl8PgApVT7AKVV4Mil9wsnAeAAAADlQQAB8GwAAOThAAHwUMsZ8eALGfP8AADk4QMZ8"
+29:
+.base64 "AAAKgXhCKX0EACuRBABrOQQASjkEAIw5UGAHfAAAICg="
+beq %cr0, 214f
+b 215f
+214:
 .base64 "AACAOQ=="
-29:
+215:
 .base64 "//+EOAAAJCg="
-bne %cr0, 21b
-.base64 "IACATg==""#,
-    )
-}
-
-/// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
-///
-/// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAAmKA=="
-beq %cr0, 20f
-.base64 "eDPHfHgrpnwAAAA4xAQAEAYHYD0EBWthxgdreQIDa2UAAWthDg+APQwNjGHGB4x5CguMZQgJjGFnAWt+ZwEsfCyaYBIsCnMSwujseAAALCg="
-beq %cr0, 22f
-24:
-.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY4mQZGfOsUQhAQAMY4mQZmfOscYxAQAMY4mQaGfOskhBAQAMY4mQamfOsspRAQAMY4mQbGfOs0xhAQAMY4mQbmfOs85xAQAMY4gP/GOHgbaXyZBgl960QIEcREABDERCEQxERCEMREYxDERIQQxESlEMRExhDEROcQEAApOf//RDk="
-25:
-.base64 "mQYJfetECBEIRQAQCEUhEAhFQhAIRWMQCEWEEAhFpRAIRcYQCEXnEBAAKTn//0o5AAAqKA=="
-bne %cr0, 25b
-.base64 "mQYJfetECBEJRQAQCUUhEAlFQhAJRWMQCUWEEAlFpRAJRcYQCUXnEOsEABCZBwZ8EADGOOsMIRCZByZ8EADGOOsUQhCZB0Z8EADGOOscYxCZB2Z8EADGOOskhBCZB4Z8EADGOOsspRCZB6Z8EADGOOs0xhCZB8Z8EADGOOs85xCZB+Z8EADGOPj/5zjC6Ox4AAAsKA=="
-bne %cr0, 24b
-b 23f
+bne %cr0, 27b
 22:
-23:
-.base64 "AAAnKA=="
-beq %cr0, 26f
-28:
-.base64 "mQYGfOsEABAQAMY48P/GOHgbaXyZBgl960QIEcREABAQACk5//9EOQ=="
-29:
-.base64 "mQYJfetECBEIRQAQEAApOf//SjkAACoo"
-bne %cr0, 29b
-.base64 "mQYJfetECBEJRQAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
-bne %cr0, 28b
-b 27f
-26:
-27:
-b 21f
-20:
-21:
-.base64 "IACATg==""#,
-    )
-}
-
-/// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
-///
-/// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "AAAmKA=="
-beq %cr0, 20f
-.base64 "eDPHfHgrpnwAAAA4xAQAEAYHYD0EBWthxgdreQIDa2UAAWthDg+APQwNjGHGB4x5CguMZQgJjGFnAWt+ZwEsfCyaYBIsCnMSwujseAAALCg="
-beq %cr0, 22f
-24:
-.base64 "mQYGfOsEABAQAMY4mQYmfOsMIRAQAMY4mQZGfOsUQhAQAMY4mQZmfOscYxAQAMY4mQaGfOskhBAQAMY4mQamfOsspRAQAMY4mQbGfOs0xhAQAMY4mQbmfOs85xAQAMY4gP/GOOQmiXgUSiN9mQYJfetECBHERAAQxEQhEMREQhDERGMQxESEEMREpRDERMYQxETnEPD/KTn//0Q5"
-25:
-.base64 "mQYJfetECBFIRQAQSEUhEEhFQhBIRWMQSEWEEEhFpRBIRcYQSEXnEPD/KTn//0o5AAAqKA=="
-bne %cr0, 25b
-.base64 "mQYJfetECBFJRQAQSUUhEElFQhBJRWMQSUWEEElFpRBJRcYQSUXnEOsEABCZBwZ8EADGOOsMIRCZByZ8EADGOOsUQhCZB0Z8EADGOOscYxCZB2Z8EADGOOskhBCZB4Z8EADGOOsspRCZB6Z8EADGOOs0xhCZB8Z8EADGOOs85xCZB+Z8EADGOPj/5zjC6Ox4AAAsKA=="
-bne %cr0, 24b
-b 23f
-22:
-23:
-.base64 "AAAnKA=="
-beq %cr0, 26f
-28:
-.base64 "mQYGfOsEABAQAMY48P/GOOQmiXgUSiN9mQYJfetECBHERAAQ8P8pOf//RDk="
-29:
-.base64 "mQYJfetECBFIRQAQ8P8pOf//SjkAACoo"
-bne %cr0, 29b
-.base64 "mQYJfetECBFJRQAQ6wQAEJkHBnwQAMY4///nOAAAJyg="
-bne %cr0, 28b
-b 27f
-26:
-27:
-b 21f
-20:
-21:
 .base64 "IACATg==""#,
     )
 }
@@ -154,6 +75,14 @@ b 21f
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32.rs"]
 pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_decrypt_blocks.rs"]
+pub(crate) mod vg_aes_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_encrypt_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]

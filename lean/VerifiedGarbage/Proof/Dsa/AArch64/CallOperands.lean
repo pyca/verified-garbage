@@ -20,7 +20,7 @@ theorem CallResult.localFrame {L : ExecutionLayout} {side : ModulusSide} {d valu
   have hi := (side.bounds L).2.2.2.2.1
   have hn := h.ready.scratch.nowrap
   have : activeBytes ≤ usedBytes := by decide
-  exact callFrame_local h.frame (by omega) (by omega)
+  exact callFrame_local h.frame (by omega_using [hi, hn, this]) (by omega_using [hend, hn])
 
 theorem CallResult.fields {L : ExecutionLayout} {side : ModulusSide} {d value : Nat} {s t : State}
     (h : CallResult L side d value s t) (hd : activeBytes ≤ d) (hend : d + side.length L ≤ usedBytes)

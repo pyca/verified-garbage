@@ -30,14 +30,14 @@ theorem crt_loadQStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [CrtFn.loadQ, WP.seq_iff]
   refine WP.mono (crt_selectLinked_ready s h h.buffers.context.q h.q (by simp [crtRegions])
-    (by have := h.buffers.context.size; omega : 228 + 4 ≤ 8 * workspaceWords g.words)
+    (by have := h.buffers.context.size; omega_using [this] : 228 + 4 ≤ 8 * workspaceWords g.words)
     (by decide) ready.ptr h.main.q) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
   have source : SavedOperand (crtQ g.base g.words) g.q (workspaceWords g.words) g.qLength 72 76 (bs 3) u :=
     sharedU.savedOperand 2 (by simp [crtRegions])
   rw [WP.seq_iff]
   refine WP.mono (savedOperandLayout_ok u readyU source (by decide : 0 < 8) h.buffers.qPositive
-    (by have := (crt_width_valid h.buffers.lengthValid).2.2; have := h.buffers.qShort; change _ ≤ 8 * Spec.Rsa.modulusWords g.length; omega)) ?_
+    (by have := (crt_width_valid h.buffers.lengthValid).2.2; have := h.buffers.qShort; change _ ≤ 8 * Spec.Rsa.modulusWords g.length; omega_arith)) ?_
   rintro v ⟨readyV, value, _, frameV, restV⟩
   have frameV' : Frame [⟨State.addr (crtQ g.base g.words), 8 * workspaceWords g.words⟩,
       ⟨off (State.addr u.sp) 48, 4⟩] u.mem v.mem := frameV.mono (by simp)

@@ -35,7 +35,7 @@ theorem rep_of_external_write {m m' : Mem} {F S op : Addr} {len : Nat}
       rw [VG.Proof.Bignum.off_off]
       exact hf _ (fun i hi => Ne.symm (hsep.frame i hi (8 * k + j) (by
         dsimp only [nW, frameBytes] at hk ⊢
-        omega)))
+        omega_using [hk, hj])))
     rw [he]
     exact R.fr k hk
 
@@ -56,11 +56,11 @@ theorem rep_of_disjoint_frame {m m' : Mem} {F S : Addr} {rs : List Region}
     (hS : ∀ r ∈ rs, (⟨S, oRsa⟩ : Region).Disjoint r) : Rep m' F S V W where
   scr o ho := by
     rw [hf _ (fun r hr hcontains => hS r hr _
-      (Offset.contains_base S (by omega : o + 1 ≤ oRsa) (by unfold oRsa at ho; omega)) hcontains)]
+      (Offset.contains_base S (by omega_using [ho] : o + 1 ≤ oRsa) (by unfold oRsa at ho; omega_using [ho])) hcontains)]
     exact R.scr o ho
   fr k hk := by
     have sub : Region.Sub ⟨VG.Proof.Bignum.off F (8 * k), 8⟩ ⟨F, frameBytes⟩ :=
-      Offset.sub_base F (by simp only [nW, frameBytes] at hk ⊢; omega)
+      Offset.sub_base F (by simp only [nW, frameBytes] at hk ⊢; omega_using [hk])
     rw [VG.Proof.RsaOaep.AArch64.word, hf.readW (r := ⟨VG.Proof.Bignum.off F (8 * k), 8⟩)
       (Region.contains_self _ _)
       (fun r hr a ha hb => hF r hr a (sub a ha) hb) (by decide)]

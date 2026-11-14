@@ -58,7 +58,7 @@ theorem gMul_ok (hc : BaseCfgOk secp256k1) (hC : Law secp256k1.C)
         (tmv secp256k1.C 4 base s' (secp256k1.sl RY))
         (tmv secp256k1.C 4 base s' (secp256k1.sl RZ)) (mul (sv secp256k1 base s K) (G secp256k1.C)) := by
   have hp3 := hc.p_ge
-  have hmont : ∀ x, secp256k1.mont x < secp256k1.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, secp256k1.mont x < secp256k1.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   have eG : (Point.affine (tmv secp256k1.C secp256k1.n base s (secp256k1.sl GX)) (tmv secp256k1.C secp256k1.n base s (secp256k1.sl GY)) :
       Point secp256k1.C) = G secp256k1.C := by
     show Point.affine (toM _ _ (wordsVal s.mem base (secp256k1.sl GX) secp256k1.n))

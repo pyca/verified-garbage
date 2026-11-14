@@ -64,7 +64,7 @@ theorem Arg.mov_ok (d : Reg) (a : Arg) (ha : a.ok = true) (hd : d ∈ argRegs6) 
   | imm v =>
     simp only [Arg.ok, decide_eq_true_eq] at ha
     simp only [Arg.mov, Arg.val]
-    xrun [zx32 (show v < 2 ^ 32 by omega), RegUpd.gpr_setReg_self, RegUpd.mxcsr_setReg]
+    xrun [zx32 (show v < 2 ^ 32 by omega_using [ha]), RegUpd.gpr_setReg_self, RegUpd.mxcsr_setReg]
   | sp =>
     simp only [Arg.mov, Arg.val]
     xrun [RegUpd.gpr_setReg_self, RegUpd.mxcsr_setReg]

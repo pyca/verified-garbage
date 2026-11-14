@@ -30,10 +30,10 @@ theorem narrowResources {n e size : Nat} {base : Addr} {s : State}
     refine ⟨?_,E.base_eq,List.mem_singleton_self _,?_,?_⟩
     · obtain ⟨r,hr,hc⟩ := E.arg
       exact ⟨r,List.mem_append_left _ hr,hc⟩
-    · have := E.nowrap; omega
+    · have := E.nowrap; omega_using [hz, this]
     · have := E.stk
       change StkOk (s.gpr .esp) base (layout n e).size
-      unfold StkOk at *; omega
+      unfold StkOk at *; omega_using [hz, this]
   have writable : Covers wr s.wr := Covers.one ⟨⟨base,size⟩,E.wr,by
     change (base-base).toNat+(layout n e).size≤size
     simpa only [BitVec.sub_self,BitVec.toNat_zero,Nat.zero_add] using hz⟩

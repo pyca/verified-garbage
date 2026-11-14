@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The window method: where it keeps its numbers
@@ -98,9 +99,9 @@ theorem tblPt_mem (K : WinCfg) {m : Nat} (h1 : 1 ≤ m) (h8 : m ≤ 8) :
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl
-  · exact ⟨_, by omega, tblPt_x K m, by omega, by omega⟩
-  · exact ⟨_, by omega, tblPt_y K m, by omega, by omega⟩
-  · exact ⟨_, by omega, tblPt_z K m, by omega, by omega⟩
+  · exact ⟨_, by omega_using [h8], tblPt_x K m, by omega_using [], by omega_using [h1]⟩
+  · exact ⟨_, by omega_using [h8], tblPt_y K m, by omega_using [], by omega_using [h1]⟩
+  · exact ⟨_, by omega_using [h8], tblPt_z K m, by omega_using [], by omega_using [h1]⟩
 
 /-- Table slots `i ≠ j` are apart. -/
 theorem winTbl_apart (K : WinCfg) {i j : Nat} (h : i ≠ j) :
@@ -108,9 +109,9 @@ theorem winTbl_apart (K : WinCfg) {i j : Nat} (h : i ≠ j) :
       K.tbl + 8 * K.M.n * j + 8 * K.M.n ≤ K.tbl + 8 * K.M.n * i := by
   rcases Nat.lt_or_gt_of_ne h with h | h
   · left; have := Nat.mul_le_mul_left (8 * K.M.n) (Nat.succ_le_of_lt h)
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_using [this]
   · right; have := Nat.mul_le_mul_left (8 * K.M.n) (Nat.succ_le_of_lt h)
-    rw [Nat.mul_succ] at this; omega
+    rw [Nat.mul_succ] at this; omega_using [this]
 
 /-- A table slot is apart from the other slots. -/
 theorem WinLay.tbl_apart {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat}
@@ -120,13 +121,13 @@ theorem WinLay.tbl_apart {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat
     rw [show 24 * (8 * K.M.n) = 8 * K.M.n * 24 from Nat.mul_comm _ _, ← Nat.mul_succ]
     exact Nat.mul_le_mul_left _ hi
   rcases hL.tbl x hx with h | h
-  · left; omega
-  · right; omega
+  · left; omega_using [h]
+  · right; omega_using [h24, h]
 
 theorem WinLay.tbl_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat}
     (hx : x ∈ winRo K ++ winOther K) {i : Nat} (hi : i < 24) : x ≠ K.tbl + 8 * K.M.n * i := by
   have := hL.n0
-  rcases hL.tbl_apart hx hi with h | h <;> omega
+  rcases hL.tbl_apart hx hi with h | h <;> omega_using [this, h]
 
 /-- A slot not written is apart from what is written. -/
 theorem WinLay.apart_w {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat}
@@ -169,7 +170,7 @@ theorem WinLay.code_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) {i j : Nat
   · simp only [winCode, hi, hj', ↓reduceIte]
     exact fun h => hij ((hL.nodup.getD_inj (hl ▸ hi) (hl ▸ hj')).mp h)
   · simp only [winCode, hi, hj', ↓reduceIte]
-    exact fun h => hL.ro _ (winCode_getD_mem (by omega)) (h ▸ winCode_getD_mem (by omega))
+    exact fun h => hL.ro _ (winCode_getD_mem (by omega_using [hj, hr])) (h ▸ winCode_getD_mem (by omega_using [hi, hl]))
 
 /-- Slots by distinct numbers of written slots are distinct. -/
 theorem WinLay.codes_nodup {K : WinCfg} {size : Nat} (hL : WinLay K size) {l lw : List Nat}
@@ -220,7 +221,7 @@ theorem WinLay.other_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) :
 theorem WinLay.tbl_ne₂ {K : WinCfg} {size : Nat} (hL : WinLay K size) {i j : Nat} (h : i ≠ j) :
     K.tbl + 8 * K.M.n * i ≠ K.tbl + 8 * K.M.n * j := by
   have := hL.n0
-  rcases winTbl_apart K h with h | h <;> omega
+  rcases winTbl_apart K h with h | h <;> omega_using [this, h]
 
 theorem rcbW_mem_other {K : WinCfg} : ∀ x ∈ [K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5],
     x ∈ winRo K ++ winOther K := by

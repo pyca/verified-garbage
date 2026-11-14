@@ -71,7 +71,7 @@ structure EPre (s : State) : Prop where
 /-- The length of `PS`. -/
 theorem EPre.psLen {s : State} (hp : EPre s) :
     (stackArg s 3).toNat + (stackArg s 1).toNat + 3 = (s.gpr .rcx).toNat := by
-  have := hp.hpl; have := hp.hml; omega
+  have := hp.hpl; have := hp.hml; omega_arith
 
 /-! ## The frame -/
 
@@ -90,12 +90,12 @@ theorem fb_eq (s : State) : fb s = off (s.gpr .rsp - BitVec.ofNat 64 encStack) 8
 theorem fb_toNat {s : State} (hp : EPre s) : (fb s).toNat + frameBytes + 8 + 48 ≤ 2 ^ 64 ∧
     (fb s).toNat + frameBytes = (s.gpr .rsp).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack frameBytes at *; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack frameBytes at *; omega_arith
 
 /-- Bytes of the frame are in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Sub ⟨off (fb s) d, n⟩ (stkR s) := by
   rw [fb_eq, off_off]
-  exact Offset.sub_base _ (by unfold frameBytes at h; unfold encStack frameBytes; omega)
+  exact Offset.sub_base _ (by unfold frameBytes at h; unfold encStack frameBytes; omega_using [h])
 
 /-- The return address of a call from the frame. -/
 theorem ret_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
@@ -109,7 +109,7 @@ theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :
   by_contra hlt
   apply hx
   have hc : (⟨fb s, frameBytes⟩ : Region).Contains x 1 := by
-    simp only [Region.Contains, ofs] at hlt ⊢; omega
+    simp only [Region.Contains, ofs] at hlt ⊢; omega_using [hlt]
   have := frame_sub s (d := 0) (n := frameBytes) (by decide)
   simp only [off, BitVec.add_zero] at this
   exact this x hc
@@ -125,16 +125,16 @@ to the frame. -/
 theorem byte_outside {s : State} {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {p : Addr} {n : Nat}
     (hd : (stkR s).Disjoint ⟨p, n⟩) (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < n) :
     m (p + BitVec.ofNat 64 i) = s.mem (p + BitVec.ofNat 64 i) :=
-  h _ (.inr (outside_frame s fun hc => hd _ hc (Offset.contains_base _ (by omega) (by omega))))
+  h _ (.inr (outside_frame s fun hc => hd _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))))
 
 theorem stackArgAddr_fb (s : State) (j : Nat) : stackArgAddr s j = off (fb s) (frameBytes + 8 + 8 * j) := by
-  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega, BitVec.ofNat_add,
+  rw [off, show frameBytes + 8 + 8 * j = frameBytes + 8 * (j + 1) by omega_using [], BitVec.ofNat_add,
     ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rfl
 
 theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
+  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega_using []]
 
 /-- A stack argument, past stores to the frame. -/
 theorem arg_outside {s : State} (hp : EPre s) {m : Mem} (h : Outside (fb s) 0 frameBytes s.mem m) {j : Nat}
@@ -142,7 +142,7 @@ theorem arg_outside {s : State} (hp : EPre s) {m : Mem} (h : Outside (fb s) 0 fr
   have := fb_toNat hp
   show m.readW _ 64 = s.mem.readW _ 64
   rw [stackArgAddr_fb]
-  exact h.word (.inr (by unfold frameBytes; omega)) (by unfold frameBytes at *; omega)
+  exact h.word (.inr (by unfold frameBytes; omega_using [])) (by unfold frameBytes at *; omega_using [hj])
 
 /-! ## The first block -/
 
@@ -163,7 +163,7 @@ theorem arg_in {s : State} (hp : EPre s) {rd : List Region} (hrd : rd = s.rd) (w
   by
     rw [hrd]
     exact hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 48⟩, by simp,
-      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- The memory after the first block. -/
 def setupMem (s : State) : Mem :=
@@ -179,7 +179,7 @@ theorem setup_run {s : State} (hp : EPre s) : WP isa (.block setup) (allocState 
   have hF := fb_toNat hp
   have hsp : (allocState frameBytes s).gpr .rsp = fb s := rfl
   have hs : Scr (allocState frameBytes s) (fb s) frameBytes :=
-    Scr.of_mem (List.mem_cons_self ..) (by unfold frameBytes at *; omega)
+    Scr.of_mem (List.mem_cons_self ..) (by unfold frameBytes at *; omega_using [hF])
   have hrd : (allocState frameBytes s).rd = s.rd := rfl
   have h0 : InRegions (allocState frameBytes s).wr (fb s) 8 := by
     have := hs.st (d := 0) (by decide); rwa [off, BitVec.add_zero] at this

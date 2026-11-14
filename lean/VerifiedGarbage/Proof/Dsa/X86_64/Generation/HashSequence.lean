@@ -33,8 +33,8 @@ theorem hashPrefix_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       exact ⟨hs, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
   | succ k ih =>
     unfold Impl.Dsa.X86_64.Generation.pHashPrefix
-    refine WP.seq (WP.mono (ih (by omega) hs) fun u ⟨hu, rdu, wru, csu, hfu⟩ => ?_)
-    refine WP.mono (hashStep_ok hG hHh hsize hd (by omega) hu) fun t ⟨ht, rdt, wrt, cst, hft⟩ => ?_
+    refine WP.seq (WP.mono (ih (by omega_using [hk]) hs) fun u ⟨hu, rdu, wru, csu, hfu⟩ => ?_)
+    refine WP.mono (hashStep_ok hG hHh hsize hd (by omega_using [hk]) hu) fun t ⟨ht, rdt, wrt, cst, hft⟩ => ?_
     exact ⟨ht, rdt.trans rdu, wrt.trans wru, fun r hr => (cst r hr).trans (csu r hr), hfu.trans hft⟩
 
 theorem pHashes_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)

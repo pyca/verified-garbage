@@ -32,13 +32,13 @@ theorem encW_noise_far {s₀ : State} (hp : Pre P L s₀) (hr : Noise.Room P)
     · have bound := hp.scl
       have hcfit := A.fC
       have hct : CB P+P.ctLen≤SV P := by lom
-      exact .inr (.inr (by rw [hc]; omega))
+      exact .inr (.inr (by rw [hc]; omega_using [hn, hct]))
 
 theorem gamma_frame {m m' : Mem} {p : Addr} {W : List Region}
     (h : Dot.GammaArtifact m p) (hf : Frame W m m')
     (hd : ∀r∈W, (⟨p,512⟩ : Region).Disjoint r) : Dot.GammaArtifact m' p := by
   intro j hj
   rw [←h j hj]
-  exact hf.readW (r := ⟨p,512⟩) (contains_off (by omega) (by decide)) hd (by decide)
+  exact hf.readW (r := ⟨p,512⟩) (contains_off (by omega_using [hj]) (by decide)) hd (by decide)
 
 end VG.Proof.MlKem.AArch64.Kem

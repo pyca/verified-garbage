@@ -175,7 +175,7 @@ theorem store_ok {s₀ : State} (hp : BPre s₀) {t : Nat} {La : List Zq} (x : Z
   have ha := hp.1.a_fit
   have ea : (L.aP s₀ + BitVec.ofNat 32 (4 * La.length) + BitVec.ofNat 32 0).setWidth 64 =
       coeffAddr (L.aA s₀) La.length := by
-    rw [ea_add (by simp only [L] at ha ⊢; omega)]; rfl
+    rw [ea_add (by simp only [L] at ha ⊢; omega_using [hl, ha])]; rfl
   have hin : InRegions s.wr (coeffAddr (L.aA s₀) La.length) 4 := hp.1.inA h.wr hl
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
@@ -183,11 +183,11 @@ theorem store_ok {s₀ : State} (hp : BPre s₀) {t : Nat} {La : List Zq} (x : Z
     hbx, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame.writeW (r := L.aR s₀) (by simp) _
     (coeff_contains _ hl)⟩, fun p hp' => ?_, by simp [h.esi], by simp [h.ebp],
-    (by simp only [List.length_append, List.length_singleton]; omega), ?_, ?_, stored_snoc h.stored hl x⟩, by simp⟩
+    (by simp only [List.length_append, List.length_singleton]; omega_using [hl]), ?_, ?_, stored_snoc h.stored hl x⟩, by simp⟩
   · refine (((Frame.refl _ _).writeW (List.mem_singleton_self (L.aR s₀)) _ (coeff_contains _ hl)) _
       fun r hr hc => ?_).trans (h.out p hp')
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by omega)) _ (Region.contains_self _ _))
+    exact hp.1.a_s _ hc ((hp.1.sub_s (o := 840 + p) (n := 1) (by omega_using [hp'])) _ (Region.contains_self _ _))
   · simp only [ite_true, List.length_append, List.length_singleton]
     rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, add_ofNat_add]; congr 2
   · simp only [ite_true, h.ecx, List.length_append, List.length_singleton]
@@ -232,7 +232,7 @@ theorem try_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (La : State → Lis
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
       Option.bind_some, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨⟨h.flags rfl rfl rfl rfl rfl rfl rfl rfl, hdx, hax, hl, h16⟩, hη⟩, hx⟩, ?_⟩
-    simp only [eval, hdx, hbnd, toNat_ofNat32 (show hb s₀ < 2 ^ 32 by omega), hη]
+    simp only [eval, hdx, hbnd, toNat_ofNat32 (show hb s₀ < 2 ^ 32 by omega_using [h16]), hη]
   · refine Piece.taint [.edi] (fun s₀ s hp ⟨⟨⟨⟨⟨h, hdx, hax, hl, _⟩, hη⟩, hx⟩, _⟩, hb'⟩ => ?_)
       (fun s₀ s₀' s s' h₀ h₀' hq ⟨⟨⟨⟨⟨h, _⟩, _⟩, _⟩, _⟩, _⟩ ⟨⟨⟨⟨⟨h', _⟩, _⟩, _⟩, _⟩, _⟩ r hr => ?_) ts
     · have hb2 : hb s₀ < rbB e := hη ▸ of_decide_eq_true hb'
@@ -293,8 +293,8 @@ theorem load_ok {s₀ : State} (hp : BPre s₀) {t : Nat} (ht : t < 544) {s : St
   have hs := hp.1.s_fit
   have e0 : (L.sP s₀ + BitVec.ofNat 32 (840 + t) + BitVec.ofNat 32 0).setWidth 64 =
       L.sA s₀ + BitVec.ofNat 64 (840 + t) := by
-    rw [ea_add (by simp only [L] at hs ⊢; omega)]; rfl
-  have i0 := hp.1.inS' h.wr (o := 840 + t) (n := 1) (by omega)
+    rw [ea_add (by simp only [L] at hs ⊢; omega_using [ht, hs])]; rfl
+  have i0 := hp.1.inS' h.wr (o := 840 + t) (n := 1) (by omega_using [ht])
   have v0 := h.out t ht
   have hl := h.len
   apply WP.of_runBlock
@@ -305,7 +305,7 @@ theorem load_ok {s₀ : State} (hp : BPre s₀) {t : Nat} (ht : t < 544) {s : St
   · refine eq_ofNat_of_toNat ?_
     rw [show (15 : BitVec 32) = BitVec.ofNat 32 (2 ^ 4 - 1) from rfl, toNat_and_mask _ _ (by decide), toNat_byte32]
   · exact eq_ofNat_of_toNat (toNat_byte32 _)
-  · simp only [eval, h.ecx, toNat_ofNat32 (show (LA s₀ t).length < 2 ^ 32 by omega)]
+  · simp only [eval, h.ecx, toNat_ofNat32 (show (LA s₀ t).length < 2 ^ 32 by omega_using [hl])]
     rfl
 
 theorem hi_ok {s₀ : State} {t : Nat} {La : List Zq} {s : State} (h : Loop s₀ t La s)
@@ -315,13 +315,13 @@ theorem hi_ok {s₀ : State} {t : Nat} {La : List Zq} {s : State} (h : Loop s₀
   have hl := h.len
   have hz := (zb s₀ t).isLt
   have hv : s.gpr .eax >>> 4 = BitVec.ofNat 32 (hi s₀ t) := by
-    rw [hax]; exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (by omega)])
+    rw [hax]; exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (by omega_using [])])
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, and_self, rbHi, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, hv,
     Option.some.injEq, exists_eq_left']
   refine ⟨h.flags (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl, by simp, by simp, ?_⟩
-  simp only [eval, h.ecx, toNat_ofNat32 (show La.length < 2 ^ 32 by omega)]
+  simp only [eval, h.ecx, toNat_ofNat32 (show La.length < 2 ^ 32 by omega_using [hl])]
   rfl
 
 theorem end_ok {s₀ : State} {t : Nat} (ht : t < 544) {La : List Zq} {s : State} (h : Loop s₀ t La s) :
@@ -337,7 +337,7 @@ theorem end_ok {s₀ : State} {t : Nat} (ht : t < 544) {La : List Zq} {s : State
   · simp only [ite_true, h.ebp]
     exact cnt_next ht
   · simp only [eval, h.ebp]
-    exact cnt_ne ht (by omega)
+    exact cnt_ne ht (by omega_using [])
 
 theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
     (tc : TaintOk [] (.block [.alu .cmp .edx (.imm (rbBound e))]))
@@ -375,7 +375,7 @@ theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
         (fun s₀ s₀' h₀ _ hq => ⟨L1_len hq ht, hi_pub h₀ hq ht⟩) tc ts).mono
           (fun s₀ s _ ⟨⟨⟨⟨h, hdx, hax, _⟩, hη⟩, hx⟩, hb⟩ =>
             ⟨⟨⟨h, hdx, hax, of_decide_eq_true hb,
-              show (zb s₀ t).toNat / 16 < 16 by have := (zb s₀ t).isLt; omega⟩, hη⟩, hx, of_decide_eq_true hb⟩) ?_
+              show (zb s₀ t).toNat / 16 < 16 by have := (zb s₀ t).isLt; omega_using []⟩, hη⟩, hx, of_decide_eq_true hb⟩) ?_
       rintro s₀ s _ ⟨⟨⟨h, -⟩, hη⟩, hx, hx'⟩
       refine ⟨?_, hη⟩
       rw [LA_step ht, ifT hx, ifT hx']; exact h
@@ -461,7 +461,7 @@ theorem fin_piece : Piece BPre BPub (fun s₀ s => Loop s₀ 544 (LA s₀ 544) s
     by rw [o.mem]; exact h.stored⟩, ?_⟩
   rw [e]
   simp only [State.setReg, ite_true, h.ecx]
-  exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (show (LA s₀ 544).length < 2 ^ 32 by omega)])
+  exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (show (LA s₀ 544).length < 2 ^ 32 by omega_using [hl])])
 
 end VG.Proof.MlDsa.X86.Sample.RejBounded
 
@@ -486,7 +486,7 @@ theorem main_piece : Piece BPre BPub (fun s₀ s => s = P0 s₀) Fin
 theorem piece : Piece BPre BPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlDsa.X86.Sample.rejBounded :=
   Piece.leaf L.W (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨by have := hp.1.sp; omega, by have := hp.1.sp'; omega⟩)
+    (fun _ hp => ⟨by have := hp.1.sp; omega_using [this], by have := hp.1.sp'; omega_using [this]⟩)
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -530,7 +530,7 @@ theorem verified :
       show (Spec.MlDsa.rejBoundedPoly (η s₀) 544 (L.Msg s₀)).map Spec.MlDsa.toRq =
         some (Proof.MlDsa.polyAt s.mem (L.aA s₀))
       rw [rejBounded_some _ e, hp.2]
-    · rw [Nat.div_eq_of_lt (by omega)]
+    · rw [Nat.div_eq_of_lt (by omega_using [hl, e])]
       rw [LA_all] at e
       refine ⟨fun h => absurd (congrArg BitVec.toNat h) (by show ¬ (0 = 1); decide),
         .inr ⟨rfl, ?_⟩⟩

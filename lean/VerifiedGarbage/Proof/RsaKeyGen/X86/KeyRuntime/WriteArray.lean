@@ -85,7 +85,7 @@ theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer 
   have ebx_b : b.gpr .ebx = p := by rw [Bb.other _ (by decide), A.gpr, pointerEq]
   have ecx_b : b.gpr .ecx = BitVec.ofNat 32 len := by rw [Bb.gpr, lengthEq]
   refine Hb.ptr_ok (arr j) (r := .esi) (t := .edx) (by decide) (by decide)
-    (by change arr E.n j < _; omega) fun c Kc mc Pc => ?_
+    (by change arr E.n j < _; omega_using [fits, nowrap]) fun c Kc mc Pc => ?_
   refine wp_addS rfl fun d D _ => wp_subS rfl fun e Ee _ => WP.block_nil ?_
   have Kce : Keeps [.esi] c e := (D.keeps.mono (by decide)).trans (Ee.keeps.mono (by decide))
   have me : e.mem = u.mem := by rw [Ee.mem, D.mem, mc, mb]
@@ -99,25 +99,25 @@ theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer 
   have ecx_c : c.gpr .ecx = BitVec.ofNat 32 len := by rw [Kc.1 _ (by decide), ecx_b]
   have srcNat : (c.gpr .esi).toNat = E.base.toNat + arr E.n j := by
     have P : (c.gpr .esi).toNat = (E.base.toNat + arr E.n j) % 2 ^ 32 := Pc
-    rw [P, Nat.mod_eq_of_lt (by omega)]
-  have lenSmall : len < 2 ^ 32 := by omega
+    rw [P, Nat.mod_eq_of_lt (by omega_using [fits, nowrap])]
+  have lenSmall : len < 2 ^ 32 := by omega_using [bound, fits, nowrap]
   have esi_e : e.gpr .esi = c.gpr .esi + BitVec.ofNat 32 (len - 1) := by
     rw [Ee.gpr, D.gpr, ecx_c]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [show (1 : BitVec 32).toNat = 1 from rfl]
     have := (c.gpr .esi).isLt
-    omega
+    omega_using [positive]
   have source : byteAddr (c.gpr .esi) = off E.base (arr E.n j) := by
     apply BitVec.eq_of_toNat_eq
     simp only [byteAddr, off, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, srcNat]
-    omega
+    omega_using []
   have rd : e.rd ++ e.wr = s.rd ++ s.wr := by rw [Kse.2.1, Kse.2.2]
   refine WP.mono (VG.Proof.Bignum.X86.reverseBuffer_ok e (src := c.gpr .esi) (dst := p) positive
-    (by omega) fit lenSmall
-    (by rw [rd, source]; exact h.workspace.read (by omega))
+    (by omega_using [bound, fits, nowrap, srcNat]) fit lenSmall
+    (by rw [rd, source]; exact h.workspace.read (by omega_using [bound, fits]))
     (by rw [Kse.2.2]; exact write)
-    (by rw [source]; exact separate.sub_left (Offset.sub_base E.base (by omega)))
+    (by rw [source]; exact separate.sub_left (Offset.sub_base E.base (by omega_using [bound, fits])))
     ebx_e esi_e ecx_e)
     fun t ⟨V, F, _, Kt⟩ => ?_
   rw [source, me] at V
@@ -134,7 +134,7 @@ theorem writeArray_ok {E : Environment} {sp : BitVec 32} {s : State} {j pointer 
   · exact (ownFrame.mono (by simp)).trans (F.mono (by simp))
   · intro d hd
     change w32 t.mem E.base d = w32 s.mem E.base d
-    rw [VG.Proof.RsaKeyGen.X86.Key.output_word h separate F (by omega)]
+    rw [VG.Proof.RsaKeyGen.X86.Key.output_word h separate F (by omega_using [head, hd])]
     exact Ou.slot hd (by simp)
   · intro k hk different
     rw [VG.Proof.RsaKeyGen.X86.Key.output_num h separate F hk]

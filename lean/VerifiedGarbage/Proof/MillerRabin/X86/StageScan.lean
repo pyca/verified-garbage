@@ -3,18 +3,64 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86.Stage
 public import VerifiedGarbage.Impl.MillerRabin.X86.Ops
 public import VerifiedGarbage.Proof.MillerRabin.X86.RoundFrame
-
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundScalarFrame
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundArrayFrame
-import VerifiedGarbage.Proof.MillerRabin.X86.ScanFrame
+public import VerifiedGarbage.Proof.MillerRabin.X86.Context
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 import VerifiedGarbage.Proof.MillerRabin.X86.Mask
 import VerifiedGarbage.Proof.MillerRabin.X86.Select
-import VerifiedGarbage.Proof.MillerRabin.X86.Context
 import VerifiedGarbage.Proof.MillerRabin.X86.Copy
 import VerifiedGarbage.Proof.MillerRabin.X86.MaskMath
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MillerRabin.X86.Data
 import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
+
+/-! ### `MillerRabin.X86.ScanFrame`, which only this module used -/
+
+section
+
+/-! # The precise write footprint of a fixed-window table scan -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.Impl.MillerRabin.X86 VG.Proof.Mont
+
+def scanWrites (g : Geometry) : List (Nat × Nat) := [(sEq1, 4), (g.array aX, 4 * g.words)]
+
+theorem scanFrame_table {g : Geometry} (v : g.Valid) {m m' : Mem}
+    (nowrap : g.W.toNat + g.L ≤ 2 ^ 32) (O : Outs g.W (scanWrites g) m m')
+    {j : Nat} (index : j < 16) :
+    val32 m' g.W (g.array (aTable + j)) g.words = val32 m g.W (g.array (aTable + j)) g.words := by
+  have header := v.arrayHeader (aTable + j)
+  have sep := g.arrayBefore (show aX < aTable + j by unfold aX aTable; omega_using [])
+  have fit := v.arrayFit (j := aTable + j) (by unfold aTable; omega_using [index])
+  refine O.val32 ?_ (by omega_using [nowrap, fit])
+  intro r hr
+  simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · right; unfold sEq1; omega_using [header]
+  · exact Or.inr sep
+
+theorem scanFrame_value {g : Geometry} (v : g.Valid) {m m' : Mem}
+    (O : Outs g.W (scanWrites g) m m') :
+    m'.readW (off g.W sValue) 32 = m.readW (off g.W sValue) 32 := by
+  have header := v.arrayHeader aX
+  have V := O.val32 (d := sValue) (k := 1) (by
+    intro r hr
+    simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · right; decide
+    · left; unfold sValue; omega) (by unfold sValue; decide)
+  apply BitVec.eq_of_toNat_eq
+  simpa only [val32, Nat.mul_zero, Nat.add_zero] using V
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
 /-! # Selecting a secret digit keeps the modulus and caller frame reusable -/
 
 -- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/ScanEntry.lean`, which only this module imported.
@@ -213,17 +259,17 @@ theorem Stage.scan {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 3
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
     · right; decide
-    · left; dsimp only; omega) (by
+    · left; dsimp only; omega_using [head]) (by
     intro r mem
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
-    · right; have := v.arrayHeader 0; unfold sEq1; omega
+    · right; have := v.arrayHeader 0; unfold sEq1; omega_using [this]
     · exact Or.inl (g.arrayBefore (by decide : 0 < aX)))
   have C := S.caller.keepOuts K (by decide) O (by
     intro r mem
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
-    · have := v.headerFit; unfold sEq1; dsimp only; omega
+    · have := v.headerFit; unfold sEq1; dsimp only; omega_using [this]
     · exact v.arrayFit (by decide : aX < 28))
   refine ⟨⟨D, M, C, ?_⟩, ?_, K⟩
   · intro j mem
@@ -235,6 +281,6 @@ theorem Stage.scan {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVec 3
     simp only [scanWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl
     · exact scalar_roundRange g (d := sEq1) (by unfold scratchWord sEq1; simp)
-    · exact array_roundRange g (j := aX) (by unfold roundArray aX; simp) (by unfold Geometry.words; omega)
+    · exact array_roundRange g (j := aX) (by unfold roundArray aX; simp) (by unfold Geometry.words; omega_using [])
 
 end VG.Proof.MillerRabin.X86

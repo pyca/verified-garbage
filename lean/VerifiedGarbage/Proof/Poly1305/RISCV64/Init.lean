@@ -49,18 +49,18 @@ theorem init_correct (s : State) (hs : Proof.Poly1305.initRISCV64.pre s) :
   refine WP.block_append (WP.mono (Bytes.copyBytes_ok (s := s) (tmp := .t0) (src := .a1) (dst := .a0)
     (soff := 0) (doff := 24) (n := 32) (by decide) (by decide) (by decide) (by decide)
     (fun i hi => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-      by rw [Nat.zero_add]; exact contains_off (by omega) (by omega)⟩)
-    (fun i hi => in_st (by rw [hwr]; exact List.mem_singleton_self _) (by omega))
+      by rw [Nat.zero_add]; exact contains_off (by omega_using [hi]) (by omega_using [hi])⟩)
+    (fun i hi => in_st (by rw [hwr]; exact List.mem_singleton_self _) (by omega_using [hi]))
     (fun i hi hc => hdj (s.gpr .a1 + BitVec.ofNat 64 (0 + i))
       ((Offset.sub_base (s.gpr .a0) (d := 24) (n := 32) (k := 128) (by decide)) _ hc)
-      (by rw [Nat.zero_add]; exact contains_off (by omega) (by omega)))) fun s₁ h₁ => ?_)
+      (by rw [Nat.zero_add]; exact contains_off (by omega_using [hi]) (by omega_using [hi])))) fun s₁ h₁ => ?_)
   have a0₁ : s₁.gpr .a0 = s.gpr .a0 := h₁.gpr _ (by decide)
   refine WP.mono (Bytes.storeBytes_ok (s := s₁) (tmp := .t0) (dst := .a0) (doff := 0)
     (bs := List.replicate 24 0) (by decide) (by decide) (by decide)
     (fun i hi => by
       rw [h₁.wr, a0₁]
       exact in_st (by rw [hwr]; exact List.mem_singleton_self _)
-        (by simp only [List.length_replicate] at hi; omega))) fun s₂ h₂ => ?_
+        (by simp only [List.length_replicate] at hi; omega_using [hi]))) fun s₂ h₂ => ?_
   refine ⟨rfl, ?_, ?_⟩
   · simp only [bytesAt]
     refine List.ext_getElem (by simp) fun i hi _ => ?_
@@ -71,7 +71,7 @@ theorem init_correct (s : State) (hs : Proof.Poly1305.initRISCV64.pre s) :
     simp only [List.mem_singleton] at hr
     subst hr
     simp only [List.length_replicate, Region.Contains] at hc
-    rw [add_ofNat_zero, Offset.add_sub_cancel_left, toNat_ofNat_lt (by omega)] at hc
+    rw [add_ofNat_zero, Offset.add_sub_cancel_left, toNat_ofNat_lt (by omega_using [hi])] at hc
     omega_using [hc, hi]
   · rw [show bytesAt s₂.mem (s.gpr .a0) 24 = List.replicate 24 0 from ?_, Poly1305.leNum_replicate_zero]
     · rfl
@@ -79,7 +79,7 @@ theorem init_correct (s : State) (hs : Proof.Poly1305.initRISCV64.pre s) :
     refine List.ext_getElem (by simp) fun i hi _ => ?_
     simp only [List.length_map, List.length_range] at hi
     simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
-    have := h₂.stored i (by simp only [List.length_replicate]; omega)
+    have := h₂.stored i (by simp only [List.length_replicate]; omega_using [hi])
     rw [Nat.zero_add, a0₁] at this
     rw [this]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_replicate, hi, ↓reduceIte, Option.getD_some]

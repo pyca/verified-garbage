@@ -138,18 +138,18 @@ theorem correct (hA:AffineOk) (hR:VG.Proof.Ed448.RecoverOk) {s:State} {base:Addr
   have pb:=pa.outside2 bk.mem
   refine WP.seq (WP.mono_syms (oddTable_ok (bk.scr F.scr) bb bx) fun c T csy => ?_)
   have pc:Persist base s.gpr s.v (fun i => s.mem (s.gpr .x2+BitVec.ofNat 64 i)) c.mem:=
-    pb.of_frame fun x hx => T.mem x (by omega) (by simp only [ACC];omega)
-      (by simp only [RX];omega) (by simp only [RY,CAN];omega)
+    pb.of_frame fun x hx => T.mem x (by omega_using [hx]) (by simp only [ACC];omega_using [hx])
+      (by simp only [RX];omega_using [hx]) (by simp only [RY,CAN];omega_using [hx])
   have cbits:∀ i<456,c.mem (off base (BITS+i))=BitVec.ofNat 8 (WnafWide.bit S i):=by
     intro i hi
-    have ho:ofs base (off base (BITS+i))=BITS+i:=VG.Proof.X448.AArch64.ofs_off' base (by simp only [BITS];omega)
-    rw [T.mem _ (Or.inr (by rw [ho];simp only [BITS];omega))
-      (Or.inl (by rw [ho];simp only [BITS,ACC];omega))
-      (Or.inl (by rw [ho];simp only [BITS,RX];omega))
-      (Or.inl (by rw [ho];simp only [BITS,RY,CAN];omega)),
-      bk.mem _ (Or.inr (by rw [ho];simp only [BITS];omega))
-        (Or.inl (by rw [ho];simp only [BITS,ACC];omega))]
-    have hv:=F.bits i (by omega)
+    have ho:ofs base (off base (BITS+i))=BITS+i:=VG.Proof.X448.AArch64.ofs_off' base (by simp only [BITS];omega_using [hi])
+    rw [T.mem _ (Or.inr (by rw [ho];simp only [BITS];omega_using []))
+      (Or.inl (by rw [ho];simp only [BITS,ACC];omega_using [hi]))
+      (Or.inl (by rw [ho];simp only [BITS,RX];omega_using [hi]))
+      (Or.inl (by rw [ho];simp only [BITS,RY,CAN];omega_using [hi])),
+      bk.mem _ (Or.inr (by rw [ho];simp only [BITS];omega_using []))
+        (Or.inl (by rw [ho];simp only [BITS,ACC];omega_using [hi]))]
+    have hv:=F.bits i (by omega_using [hi])
     rw [VG.Proof.X448.AArch64.Base.bit_eq] at hv
     exact hv
   have ckv:decodeLE (bytesAt c.mem (off base KB) 57)=K:=by
@@ -165,19 +165,19 @@ theorem correct (hA:AffineOk) (hR:VG.Proof.Ed448.RecoverOk) {s:State} {base:Addr
     apply hbt.of_far
     · rw [T.rd,T.wr,bk.regs.2.1,bk.regs.2.2,F.rd,F.wr]
     · intro x hx
-      rw [T.mem x (Or.inr (by omega)) (Or.inr (by simp only [ACC];omega))
-        (Or.inr (by simp only [RX];omega)) (Or.inr (by simp only [TAB];omega)),
-        bk.mem x (Or.inr (by omega)) (Or.inr (by simp only [ACC];omega)),F.mem x (Or.inr hx)]
+      rw [T.mem x (Or.inr (by omega_using [hx])) (Or.inr (by simp only [ACC];omega_using [hx]))
+        (Or.inr (by simp only [RX];omega_using [hx])) (Or.inr (by simp only [TAB];omega_using [hx])),
+        bk.mem x (Or.inr (by omega_using [hx])) (Or.inr (by simp only [ACC];omega_using [hx])),F.mem x (Or.inr hx)]
   refine WP.seq (WP.mono (joint_ok hA T.scr T.env T.tab T.xbound cbt hS hK cbits ckv) fun d J => ?_)
   have pd:Persist base s.gpr s.v (fun i => s.mem (s.gpr .x2+BitVec.ofNat 64 i)) d.mem:=
-    pc.of_frame fun x hx => J.mem x (by omega) (by simp only [ACC];omega)
-      (by simp only [GSAVE];omega) (by simp only [BITS];omega) (by simp only [SDIG];omega)
+    pc.of_frame fun x hx => J.mem x (by omega_using [hx]) (by simp only [ACC];omega_using [hx])
+      (by simp only [GSAVE];omega_using [hx]) (by simp only [BITS];omega_using [hx]) (by simp only [SDIG];omega_using [hx])
   have hrx:∀ i<8,limbs d.mem base RX i=limbs a.mem base (slot 8) i:=by
     intro i hi
     show (VG.Proof.X448.AArch64.word d.mem base (RX+8*i)).toNat=_
-    rw [J.mem.word (Or.inr (by simp only [RX];omega)) (Or.inr (by simp only [RX,ACC];omega))
-      (Or.inr (by simp only [RX,GSAVE];omega)) (Or.inr (by simp only [RX,BITS];omega))
-      (Or.inr (by simp only [RX,SDIG];omega)) (by simp only [RX];omega)]
+    rw [J.mem.word (Or.inr (by simp only [RX];omega_using [])) (Or.inr (by simp only [RX,ACC];omega_using []))
+      (Or.inr (by simp only [RX,GSAVE];omega_using [])) (Or.inr (by simp only [RX,BITS];omega_using []))
+      (Or.inr (by simp only [RX,SDIG];omega_using [])) (by simp only [RX];omega_using [hi])]
     change limbs c.mem base RX i=_
     rw [T.rx i hi]
     change limbs b.mem base (slot (8:Index).val) i=_
@@ -185,9 +185,9 @@ theorem correct (hA:AffineOk) (hR:VG.Proof.Ed448.RecoverOk) {s:State} {base:Addr
   have hry:∀ i<8,limbs d.mem base RY i=limbs a.mem base (slot 9) i:=by
     intro i hi
     show (VG.Proof.X448.AArch64.word d.mem base (RY+8*i)).toNat=_
-    rw [J.mem.word (Or.inr (by simp only [RY,CAN];omega)) (Or.inr (by simp only [RY,CAN,ACC];omega))
-      (Or.inl (by simp only [RY,CAN,GSAVE];omega)) (Or.inr (by simp only [RY,CAN,BITS];omega))
-      (Or.inl (by simp only [RY,CAN,SDIG];omega)) (by simp only [RY,CAN];omega)]
+    rw [J.mem.word (Or.inr (by simp only [RY,CAN];omega_using [])) (Or.inr (by simp only [RY,CAN,ACC];omega_using []))
+      (Or.inl (by simp only [RY,CAN,GSAVE];omega_using [hi])) (Or.inr (by simp only [RY,CAN,BITS];omega_using []))
+      (Or.inl (by simp only [RY,CAN,SDIG];omega_using [hi])) (by simp only [RY,CAN];omega_using [hi])]
     change limbs c.mem base RY i=_
     rw [T.ry i hi]
     change limbs b.mem base (slot (9:Index).val) i=_

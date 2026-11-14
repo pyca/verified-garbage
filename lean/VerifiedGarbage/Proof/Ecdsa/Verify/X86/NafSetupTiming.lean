@@ -50,7 +50,7 @@ theorem nafSetB_ok (hc : CfgOk p256Comb) {s : State} {base : Addr} (hs : Scr s b
       val32 t.mem base (p256Comb.sl V) 8=val32 s.mem base (p256Comb.sl V) 8 := by
   have hp := hc.p_ge
   refine WP.mono (setConst_ok hs (sl_le p256Comb hc.n10 (i:=EM) (by decide))
-    (Nat.lt_trans (Nat.mod_lt _ (by omega)) hc.p_lt)) fun t ⟨_,kt,ot⟩ => ?_
+    (Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) hc.p_lt)) fun t ⟨_,kt,ot⟩ => ?_
   have un : Unch base (slW p256Comb [EM]) s.mem t.mem := ot.unch
   have eq := sv_unch un hc.n10 hs.nowrap (i:=V) (by decide) (apart_slW (by decide))
   change wordsVal t.mem base (p256Comb.sl V) p256Comb.n=wordsVal s.mem base (p256Comb.sl V) p256Comb.n at eq

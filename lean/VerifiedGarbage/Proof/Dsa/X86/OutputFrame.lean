@@ -33,9 +33,9 @@ theorem OutputFrame.scratch_byte {base out : Addr} {prefixSize len size : Nat} {
     (F : OutputFrame base out prefixSize len m m') (apart : Region.Disjoint ⟨base, size⟩ ⟨out, len⟩)
     {a : Addr} (lo : prefixSize ≤ ofs base a) (hi : ofs base a < size) : m' a = m a := by
   apply F a lo
-  have H := apart a (by change ofs base a + 1 ≤ size; omega)
+  have H := apart a (by change ofs base a + 1 ≤ size; omega_using [hi])
   change ¬ (ofs out a + 1 ≤ len) at H
-  omega
+  omega_using [H]
 
 theorem OutputFrame.scratch_word {base out : Addr} {prefixSize len size d : Nat} {m m' : Mem}
     (F : OutputFrame base out prefixSize len m m') (apart : Region.Disjoint ⟨base, size⟩ ⟨out, len⟩)
@@ -45,8 +45,8 @@ theorem OutputFrame.scratch_word {base out : Addr} {prefixSize len size d : Nat}
   intro i hi'
   have H : i < 4 := hi'
   apply F.scratch_byte apart
-  · rw [ofs_off base (by omega)]; omega
-  · rw [ofs_off base (by omega)]; omega
+  · rw [ofs_off base (by omega_using [hi, bound, hi'])]; omega_using [lo]
+  · rw [ofs_off base (by omega_using [hi, bound, hi'])]; omega_using [hi, hi']
 
 theorem OutputFrame.scratch_bytes {base out : Addr} {prefixSize len size d count : Nat} {m m' : Mem}
     (F : OutputFrame base out prefixSize len m m') (apart : Region.Disjoint ⟨base, size⟩ ⟨out, len⟩)
@@ -57,8 +57,8 @@ theorem OutputFrame.scratch_bytes {base out : Addr} {prefixSize len size d count
   intro i hi'
   have H := List.mem_range.mp hi'
   apply F.scratch_byte apart
-  · rw [ofs_off base (by omega)]; omega
-  · rw [ofs_off base (by omega)]; omega
+  · rw [ofs_off base (by omega_using [hi, bound, H])]; omega_using [lo]
+  · rw [ofs_off base (by omega_using [hi, bound, H])]; omega_using [hi, H]
 
 theorem OutputFrame.other_bytes {base out ptr : Addr} {prefixSize len count : Nat} {m m' : Mem}
     (F : OutputFrame base out prefixSize len m m')
@@ -71,12 +71,12 @@ theorem OutputFrame.other_bytes {base out ptr : Addr} {prefixSize len count : Na
   intro i hi
   have H := List.mem_range.mp hi
   have inside : (⟨ptr, count⟩ : Region).Contains (ptr + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base ptr (by omega) (by omega)
+    Offset.contains_base ptr (by omega_using [H]) (by omega_using [bound, H])
   have W := workApart _ inside
   have O := outApart _ inside
   change ¬ (ofs base (ptr + BitVec.ofNat 64 i) + 1 ≤ prefixSize) at W
   change ¬ (ofs out (ptr + BitVec.ofNat 64 i) + 1 ≤ len) at O
-  exact F _ (by omega) (by omega)
+  exact F _ (by omega_using [W]) (by omega_using [O])
 
 theorem OutputFrame.join {base out : Addr} {prefixSize n k : Nat} {m m' m'' : Mem}
     (F : OutputFrame base out prefixSize n m m')
@@ -85,6 +85,6 @@ theorem OutputFrame.join {base out : Addr} {prefixSize n k : Nat} {m m' m'' : Me
   intro a ha hb
   have H := Offset.lt_iff a out bound
   change ofs (out + BitVec.ofNat 64 n) a < k ↔ n ≤ ofs out a ∧ ofs out a < n + k at H
-  exact (G a ha (by omega)).trans (F a ha (by omega))
+  exact (G a ha (by omega_using [hb, H])).trans (F a ha (by omega_using [hb]))
 
 end VG.Proof.Dsa.X86

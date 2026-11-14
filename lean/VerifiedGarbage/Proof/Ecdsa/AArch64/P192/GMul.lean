@@ -58,7 +58,7 @@ theorem gMul_ok (hc : BaseCfgOk p192) (hC : Law p192.C)
         (tmv p192.C 4 base s' (p192.sl RY))
         (tmv p192.C 4 base s' (p192.sl RZ)) (mul (sv p192 base s K) (G p192.C)) := by
   have hp3 := hc.p_ge
-  have hmont : ∀ x, p192.mont x < p192.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, p192.mont x < p192.C.p := fun x => Nat.mod_lt _ (by omega_using [hp3])
   have eG : (Point.affine (tmv p192.C p192.n base s (p192.sl GX)) (tmv p192.C p192.n base s (p192.sl GY)) :
       Point p192.C) = G p192.C := by
     show Point.affine (toM _ _ (wordsVal s.mem base (p192.sl GX) p192.n))

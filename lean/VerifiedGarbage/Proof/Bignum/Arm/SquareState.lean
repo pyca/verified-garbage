@@ -77,7 +77,7 @@ theorem SqEnv.wsFrame (h : SqEnv m0 base size out a mod M n inv s) :
   simp only [List.mem_singleton] at hr
   subst hr
   simp only [ofs]
-  omega
+  omega_using [fits, hb]
 
 /-- The workspace pointer at `sp`. -/
 theorem SqEnv.savedNow (h : SqEnv m0 base size out a mod M n inv s) :
@@ -97,41 +97,41 @@ theorem SqEnv.word (h : SqEnv m0 base size out a mod M n inv s) {d : Nat}
   have nowrap := h.nowrap
   apply BitVec.eq_of_toNat_eq
   exact outs_word32 h.frame (by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega) (by omega)
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega_using [hd]) (by omega_using [fit, nowrap])
 
 theorem SqEnv.metaNow (h : SqEnv m0 base size out a mod M n inv s) :
     s.mem.readW (off (State.addr base) 80) 32 = base + BitVec.ofNat 32 M := by
   have := h.header; have := h.fits
-  rw [h.word (by omega) (by omega)]; exact h.metaPtr
+  rw [h.word (by omega_arith) (by omega_arith)]; exact h.metaPtr
 
 theorem SqEnv.modNow (h : SqEnv m0 base size out a mod M n inv s) :
     s.mem.readW (off (State.addr base) 64) 32 = base + BitVec.ofNat 32 mod := by
   have := h.header; have := h.fits
-  rw [h.word (by omega) (by omega)]; exact h.modPtr
+  rw [h.word (by omega_arith) (by omega_arith)]; exact h.modPtr
 
 theorem SqEnv.invNow (h : SqEnv m0 base size out a mod M n inv s) :
     s.mem.readW (off (State.addr base) 56) 32 = inv := by
   have := h.header; have := h.fits
-  rw [h.word (by omega) (by omega)]; exact h.inverse
+  rw [h.word (by omega_arith) (by omega_arith)]; exact h.inverse
 
 /-- The operand's words. -/
 theorem SqEnv.aWord (h : SqEnv m0 base size out a mod M n inv s) {j : Nat} (hj : j < n) :
     w32 s.mem (State.addr base) (a + 4 * j) = w32 m0 (State.addr base) (a + 4 * j) := by
   have := h.sepA; have := h.aFits
-  exact congrArg BitVec.toNat (h.word (by omega) (by omega))
+  exact congrArg BitVec.toNat (h.word (by omega_arith) (by omega_using [hj, this]))
 
 theorem SqEnv.aVal (h : SqEnv m0 base size out a mod M n inv s) {d k : Nat}
     (hd : a ≤ d) (hk : d + 4 * k ≤ a + 4 * n) :
     val32 s.mem (State.addr base) d k = val32 m0 (State.addr base) d k := by
   have := h.sepA; have := h.aFits; have := h.nowrap
   exact h.frame.val32 (by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega) (by omega)
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega_arith) (by omega_arith)
 
 theorem SqEnv.modVal (h : SqEnv m0 base size out a mod M n inv s) :
     val32 s.mem (State.addr base) mod n = val32 m0 (State.addr base) mod n := by
   have := h.sepM; have := h.mFits; have := h.nowrap
   exact h.frame.val32 (by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega) (by omega)
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp only; omega_arith) (by omega_arith)
 
 theorem SqEnv.read (h : SqEnv m0 base size out a mod M n inv s) {d : Nat} (hd : d + 4 ≤ size) :
     InRegions (s.rd ++ s.wr) (off (State.addr base) d) 4 :=
@@ -150,14 +150,14 @@ theorem sq_ea {base : BitVec 32} {size : Nat} (nowrap : base.toNat + size ≤ 2 
     {d imm : Nat} (hp : x = base + BitVec.ofNat 32 d) (hd : d + imm < size) :
     State.addr (x + BitVec.ofNat 32 imm) = off (State.addr base) (d + imm) := by
   rw [hp, Offset.add_add]
-  exact VG.Arm.addr_add (by omega)
+  exact VG.Arm.addr_add (by omega_using [nowrap, hd])
 
 /-- The address `[x, #imm]` for `x` the workspace's base. -/
 theorem sq_ea0 {base : BitVec 32} {size : Nat} (nowrap : base.toNat + size ≤ 2 ^ 32) {x : BitVec 32}
     {imm : Nat} (hp : x = base) (hd : imm < size) :
     State.addr (x + BitVec.ofNat 32 imm) = off (State.addr base) imm := by
   rw [hp]
-  exact VG.Arm.addr_add (by omega)
+  exact VG.Arm.addr_add (by omega_using [nowrap, hd])
 
 /-- A left shift of a small number. -/
 theorem ofNat_shl {n k : Nat} (h : n * 2 ^ k < 2 ^ 32) :
@@ -174,7 +174,7 @@ theorem val32_zero_tail {m : Mem} {b : Addr} {d i j : Nat} (h : val32 m b d (i +
   rcases Nat.eq_zero_or_pos (val32 m b (d + 4 * i) j) with e | e
   · exact e
   · have : 2 ^ (32 * i) * 1 ≤ 2 ^ (32 * i) * val32 m b (d + 4 * i) j := Nat.mul_le_mul_left _ e
-    omega
+    omega_using [h, hp, this]
 
 /-- A store's word read back. -/
 theorem rd_self (m : Mem) (b : Addr) (d : Nat) (v : BitVec 32) :
@@ -185,7 +185,7 @@ theorem rd_self (m : Mem) (b : Addr) (d : Nat) (v : BitVec 32) :
 theorem rd_other {m : Mem} {b : Addr} {d e : Nat} (v : BitVec 32) (hn : e + 4 ≤ 2 ^ 64)
     (hn' : d + 4 ≤ 2 ^ 64) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (m.writeW (off b d) v).readW (off b e) 32 = m.readW (off b e) 32 :=
-  Mem.readW_writeW_sep (Offset.sep b (by omega) hn hn') (by decide)
+  Mem.readW_writeW_sep (Offset.sep b (by omega_using [h]) hn hn') (by decide)
 
 /-- The metadata every phase keeps: `n`, the output and the operand. -/
 structure SqMeta (mem : Mem) (base : BitVec 32) (out a M n : Nat) : Prop where
@@ -205,6 +205,6 @@ theorem SqMeta.of_outs {mem mem' : Mem} {base : BitVec 32} {out a M n : Nat} {rs
     (sep : ∀ r ∈ rs, M + 12 ≤ r.1 ∨ r.1 + r.2 ≤ M) (fit : M + 12 ≤ 2 ^ 64) :
     SqMeta mem' base out a M n :=
   h.congr fun d hd => BitVec.eq_of_toNat_eq (outs_word32 outs (by
-    intro r hr; have := sep r hr; omega) (by omega))
+    intro r hr; have := sep r hr; omega_using [hd, this]) (by omega_using [fit, hd]))
 
 end VG.Proof.Bignum.Arm

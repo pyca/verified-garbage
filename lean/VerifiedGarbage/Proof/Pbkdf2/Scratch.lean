@@ -42,10 +42,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 variable (S : Spec.Hmac.StreamingHash) (pb : Nat)
 
@@ -94,9 +94,9 @@ theorem pbkdf2Post_local : ∀ vs m₁ m₂ m' r, vs.length = (pbkdf2Sig.words p
   have h₁ := Nat.mod_le pwLen.toNat (2 ^ pb)
   have h₂ := Nat.mod_le saltLen.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (pwLen.setWidth pb).toNat) fun i hi => hp i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_using [h₁, hi]),
     bytesAt_congr (n := (saltLen.setWidth pb).toNat) fun i hi => hs i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [h₂, hi])]
   exact h
 
 end VG.Proof.Pbkdf2

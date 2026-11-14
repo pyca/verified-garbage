@@ -29,9 +29,9 @@ theorem coeffAddr_off (p : Addr) (j k : Nat) :
 theorem lanes_load {m : Mem} {p : Addr} {P : Poly} (h : PolyIs m p P) {j : Nat} (hj : j + 4 ≤ 256) :
     Lanes (m.read (coeffAddr p j) 16) fun e => (P[j + e]!).val := fun e he => by
   rw [read16, vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
     simp only [List.getElem_cons_zero, List.getElem_cons_succ] <;>
-    rw [coeffAddr_off, ← coeffAt_eq, polyIs_toNat h (show _ < n by rw [n_eq]; omega)]
+    rw [coeffAddr_off, ← coeffAt_eq, polyIs_toNat h (show _ < n by rw [n_eq]; omega_using [hj])]
 
 /-- Coefficient `i` after storing the vector `x` at coefficient `j`. -/
 theorem coeffAt_write16 (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (x : BitVec 128) {i : Nat}
@@ -42,23 +42,23 @@ theorem coeffAt_write16 (m : Mem) (p : Addr) {j : Nat} (hj : j + 4 ≤ 256) (x :
       coeffAddr_off p j 1, show coeffAddr p j + BitVec.ofNat 64 8 = coeffAddr p (j + 2) from
       coeffAddr_off p j 2, show coeffAddr p j + BitVec.ofNat 64 12 = coeffAddr p (j + 3) from
       coeffAddr_off p j 3]
-  have hn : ∀ k, k < 4 → j + k < n := fun k hk => by rw [n_eq]; omega
-  rw [coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) (hn 3 (by decide)),
-    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) (hn 2 (by decide)),
-    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) (hn 1 (by decide)),
-    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) (show j < n by rw [n_eq]; omega)]
-  rcases (by omega : i < j ∨ i = j ∨ i = j + 1 ∨ i = j + 2 ∨ i = j + 3 ∨ j + 4 ≤ i) with
+  have hn : ∀ k, k < 4 → j + k < n := fun k hk => by rw [n_eq]; omega_using [hj, hk]
+  rw [coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [hi]) (hn 3 (by decide)),
+    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [hi]) (hn 2 (by decide)),
+    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [hi]) (hn 1 (by decide)),
+    coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [hi]) (show j < n by rw [n_eq]; omega_using [hj])]
+  rcases (by omega_using [] : i < j ∨ i = j ∨ i = j + 1 ∨ i = j + 2 ∨ i = j + 3 ∨ j + 4 ≤ i) with
     h | rfl | rfl | rfl | rfl | h <;>
     simp (disch := omega) only [ite_eq_left, ite_eq_right, ↓reduceIte, Nat.sub_self,
       Nat.add_sub_cancel_left, ofVWords_vword]
 
 theorem frame16 {m m' : Mem} {p : Addr} (hf : Frame [polyRegion p] m m') {j : Nat} (hj : j + 4 ≤ 256)
     (x : BitVec 128) : Frame [polyRegion p] m (m'.write (coeffAddr p j) 16 x) :=
-  hf.write (n := 16) (List.mem_singleton_self _) x (contains_off (by omega) (by decide))
+  hf.write (n := 16) (List.mem_singleton_self _) x (contains_off (by omega_using [hj]) (by decide))
 
 theorem coeffAddr_step (p : Addr) (a : Nat) :
     coeffAddr p a + BitVec.ofNat 64 16 = coeffAddr p (a + 4) := by
-  rw [coeffAddr, coeffAddr, ptr_add, show 4 * a + 16 = 4 * (a + 4) by omega]
+  rw [coeffAddr, coeffAddr, ptr_add, show 4 * a + 16 = 4 * (a + 4) by omega_using []]
 
 theorem CoeffsUpTo.write16 {m : Mem} {p : Addr} {t : Nat} {G old : Nat → BitVec 32}
     (h : CoeffsUpTo m p t G old) (ht : t + 4 ≤ 256) {x : BitVec 128}
@@ -66,18 +66,18 @@ theorem CoeffsUpTo.write16 {m : Mem} {p : Addr} {t : Nat} {G old : Nat → BitVe
   fun i hi => by
     rw [coeffAt_write16 _ _ ht _ hi, h i hi]
     by_cases c : t ≤ i ∧ i < t + 4
-    · rw [ite_eq_left c, ite_eq_left (by omega), hx _ (by omega), show t + (i - t) = i by omega]
+    · rw [ite_eq_left c, ite_eq_left (by omega_using [c]), hx _ (by omega_using [c]), show t + (i - t) = i by omega_using [c]]
     · rw [ite_eq_right c]
       by_cases c' : i < t
-      · rw [ite_eq_left c', ite_eq_left (by omega)]
-      · rw [ite_eq_right c', ite_eq_right (by omega)]
+      · rw [ite_eq_left c', ite_eq_left (by omega_using [c'])]
+      · rw [ite_eq_right c', ite_eq_right (by omega_using [c, c'])]
 
 /-- The lanes of four coefficients, from their values. -/
 theorem lanes_coeffs {m : Mem} {p : Addr} {j : Nat} {A : Nat → Nat}
     (h : ∀ e < 4, (coeffAt m p (j + e)).toNat = A e) : Lanes (m.read (coeffAddr p j) 16) A :=
   fun e he => by
     rw [read16, vword_ofVWords _ _ _ _ he]
-    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
       simp only [List.getElem_cons_zero, List.getElem_cons_succ] <;>
       rw [coeffAddr_off, ← coeffAt_eq] <;> exact h _ (by decide)
 

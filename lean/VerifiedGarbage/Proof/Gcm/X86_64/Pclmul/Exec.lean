@@ -173,7 +173,7 @@ theorem const_ok (x : XReg) (c : BitVec 128) (s : State) (_hx : x ≠ .xmm12)
     simp only [t, RegUpd.gpr_setReg_self]; rfl
   have hoff : (t.ea (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))) - t.gpr (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))).base).toNat = 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) := by
     rw [ea_at, show (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))).base = .rax from rfl, Offset.add_sub_cancel_left, BitVec.ofInt_natCast,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi])]
   have hb : t.gpr (at_ .rax (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c))).base = t.syms Impl.Gcm.X86_64.Pclmul.constsName := hrax
   rw [hb] at hoff
   have hlen : Impl.Gcm.X86_64.Pclmul.constsTable.length = 6 := by decide
@@ -181,9 +181,9 @@ theorem const_ok (x : XReg) (c : BitVec 128) (s : State) (_hx : x ≠ .xmm12)
       Impl.Gcm.X86_64.Pclmul.constsTable) t =
       some (t.setXmm x (Impl.Gcm.X86_64.Pclmul.constsTable.getD (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 1) 0 ++
         Impl.Gcm.X86_64.Pclmul.constsTable.getD (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8) 0)) := by
-    simp only [reduceExec, hoff, hb, hlen, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) % 8 = 0 by omega, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 2 ≤ 6 by omega,
+    simp only [reduceExec, hoff, hb, hlen, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) % 8 = 0 by omega_using [], show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 2 ≤ 6 by omega_using [hi],
       and_self, ite_true, Nat.add_zero]
-  rw [show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 = 2 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) by omega, consts_words hc] at hx8
+  rw [show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 = 2 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) by omega_using [], consts_words hc] at hx8
   show WP isa (.block [.leaSym .rax Impl.Gcm.X86_64.Pclmul.constsName, .movdquTbl x
       (at_ .rax (16 * Impl.Gcm.X86_64.Pclmul.consts.idxOf c)) Impl.Gcm.X86_64.Pclmul.constsName
       Impl.Gcm.X86_64.Pclmul.constsTable]) s _

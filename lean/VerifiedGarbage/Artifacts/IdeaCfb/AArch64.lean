@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
 import VerifiedGarbage.Proof.Idea.AArch64.FbFinalLit
 
-/-! # IDEA-CFB64 artifacts on baseline AArch64 -/
+/-! # IDEA-CFB64 on AArch64 -/
 
 @[expose] public section
 

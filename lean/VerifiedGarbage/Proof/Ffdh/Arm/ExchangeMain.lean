@@ -56,7 +56,7 @@ theorem exchangeMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Lis
   have extend {m m' : Mem} (f : Frame [⟨State.addr p.base, 8 * p.len⟩] m m') : Frame (exchangeWrites p s) m m' :=
     f.mono (by intro r hr; rw [List.mem_singleton] at hr; subst r; simp [exchangeWrites])
   have pStack : Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   rw [VG.Impl.Ffdh.Arm.Domain.Exchange.main, WP.seq_iff]
   refine WP.mono (prepareAt_ok s 24 h stable h24 h32 h0 h.pBytes p.pLength pStack large odd) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
@@ -87,7 +87,7 @@ theorem exchangeMain_ok (s : State) {p : Inputs} {slots : List Nat} {yb xb : Lis
     simpa only [decide_eq_true_eq] using flag
   have valueFit : numAt w.mem (State.addr p.base) p.w 6 < 2 ^ (8 * p.k) := by
     rw [valueW, VG.Proof.Bignum.powMod_eq]
-    exact Nat.lt_trans (Nat.mod_lt _ (by omega : 0 < p.P)) p.modulusBound
+    exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [large] : 0 < p.P)) p.modulusBound
   refine WP.mono (exchangeFinish_ok w (sharedAccepted p yb xb) contextW stable h4 h32 saved readyW
     (((output.after restU).after restV).after restW) workspaceSep
     (by rw [restW.sp, restV.sp, restU.sp]; exact stackSep) valueFit flagW) ?_

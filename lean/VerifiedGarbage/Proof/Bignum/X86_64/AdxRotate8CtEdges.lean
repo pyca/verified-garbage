@@ -28,7 +28,7 @@ theorem setupBases_fw (L : Ws) (s : State) (h : GoodW L s) :
     WP isa (.block AdxRotate8.setupBases) s fun t => t.gpr .rcx = off L.B (slot L.w aAcc + 16) := by
   obtain ⟨mi, hg, hZ⟩ := h
   have hl := hg.scr.ld (show 8 * sArr aAcc + 8 ≤ L.Z by
-    have := hdr_lt_slot L.w 8 (show sArr aAcc < 32 by decide); omega)
+    have := hdr_lt_slot L.w 8 (show sArr aAcc < 32 by decide); omega_using [hZ, this])
   unfold AdxRotate8.setupBases
   xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.harr aAcc (by decide), off_add16]
 

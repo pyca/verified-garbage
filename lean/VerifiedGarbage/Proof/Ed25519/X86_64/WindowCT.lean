@@ -210,7 +210,7 @@ theorem addBase_ct {add : Prog isa}
     rw [WP.block_append_iff]
     refine WP.mono (accumulateDec_ok x n h.rbx) fun b ⟨bc, kb⟩ => ?_
     refine WP.mono (baseAddr_ok (T := T) (h.scratch.of_keeps kb (by decide)) (by rw [kb.2.1]; exact h.header) n
-      (by have := h.bound; omega) bc) fun u ⟨ua, ku⟩ => ?_
+      (by have := h.bound; omega_using [this]) bc) fun u ⟨ua, ku⟩ => ?_
     exact ⟨(ku.1 _ (by decide)).trans ((kb.1 _ (by decide)).trans h.scratch.rdi), ua⟩
   refine reassoc_ct ?_
   have hv (x : State) (h : BasePre base T v x) (he : isa.eval .ne x = some true) : v ≠ 0 := by
@@ -292,9 +292,9 @@ theorem skipBody_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ
   have hw (x : State) (h : P x) : WP isa (.block skipLoad) x fun u => u.gpr .rdi = base ∧
       u.zf = some (decide (K / 256 ^ (32 + j) % 256 = 0)) := by
     obtain ⟨_, _, hl, _, _, hn⟩ := h
-    refine WP.mono (skipLoad_ok hl.ctx (32 + j) (by omega) (by rw [hl.counter]; rfl))
+    refine WP.mono (skipLoad_ok hl.ctx (32 + j) (by omega_using [hn]) (by rw [hl.counter]; rfl))
       fun u ⟨uz, _, ku⟩ => ⟨(ku.byte.scratch hl.ctx.scratch).rdi, ?_⟩
-    rw [uz, scalar_byte (n := 64) (by omega), hl.kVal]
+    rw [uz, scalar_byte (n := 64) (by omega_using [hn]), hl.kVal]
   have hcmp : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block counterCmp) (fun _ _ => True) := by
     rw [counterCmp]; exact counterCmp_ct
   rw [skipBody]
@@ -330,8 +330,8 @@ theorem skipZero_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ
       exact ⟨skipEnd K j, (skipEnd_range K j hj).1, (skipEnd_range K j hj).2, (xf hs).2, (xf hs).1,
         (yf hs).1⟩
     · have hs : skipOn K j = true := Option.some.inj (xz.symm.trans he)
-      exact ⟨j, by omega, xt hs, yt hs⟩
-  · exact VG.RelCT.of_false fun _ _ h => by obtain ⟨_, _, _, _, _, h⟩ := h.1; exact hj (by omega)
+      exact ⟨j, by omega_using [], xt hs, yt hs⟩
+  · exact VG.RelCT.of_false fun _ _ h => by obtain ⟨_, _, _, _, _, h⟩ := h.1; exact hj (by omega_using [h])
 
 /-! ## The comparison -/
 

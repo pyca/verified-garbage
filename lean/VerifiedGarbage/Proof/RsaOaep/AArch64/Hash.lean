@@ -79,7 +79,7 @@ tactic_template "oaep_fin" : tactic =>
 theorem frame_wb {F S : Addr} {ws : List Region} {m m' : Mem}
     (h : Frame (⟨F, frameBytes⟩ :: ⟨S, oRsa⟩ :: retR F :: ws) m m') {o : Nat} (ho : o < oRsa) (v : BitVec (8 * 1)) :
     Frame (⟨F, frameBytes⟩ :: ⟨S, oRsa⟩ :: retR F :: ws) m (m'.write (off S o) 1 v) :=
-  h.write (List.mem_cons_of_mem _ (List.mem_cons_self ..)) v (cS S (by omega))
+  h.write (List.mem_cons_of_mem _ (List.mem_cons_self ..)) v (cS S (by omega_using [ho]))
 
 /-- A step in fewer regions. -/
 theorem Step.mono {F S : Addr} {ws ws' : List Region} {t u : State} (h : Step F S ws t u)
@@ -114,7 +114,7 @@ variable {G : Stream} (hG : StreamOK G)
 
 include hG in
 theorem sizes : G.S ≤ 256 ∧ G.F ≤ 64 ∧ hG.Wb ≤ 1072 ∧ G.D ≤ G.F ∧ 0 < G.D :=
-  ⟨hG.hSB, hG.hF, by have := hG.hWb; have := hG.hW; omega, hG.hDF, hG.hD0⟩
+  ⟨hG.hSB, hG.hF, by have := hG.hWb; have := hG.hW; omega_arith, hG.hDF, hG.hD0⟩
 
 /-! ## `init` -/
 
@@ -125,7 +125,7 @@ theorem init_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W :
       Rep t'.mem F S (fun o => if inR [(oSt, G.S)] o then t'.mem (off S o) else V o) W ∧
       hG.SH.Repr t'.mem (off S oSt) [] := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
   have hr : ∀ p ∈ [(oSt, G.S)], p.1 + p.2 ≤ oRsa := by simp only [List.mem_singleton]; rintro p rfl; exact h1
   refine init_call hG h0 (L.cov h1) fun t' A hrep => ?_
   obtain ⟨L', R'⟩ := L.after_call R hr A
@@ -140,11 +140,11 @@ theorem updArgs_of {t : State} {F S : Addr} (L : Lay t F S) {a len : Nat} (ha : 
     (h0 : t.gpr .x0 = off S oSt) (h2 : t.gpr .x2 = off S a) (h3 : t.gpr .x3 = BitVec.ofNat 64 len)
     (h4 : t.gpr .x4 = off S oW) : UpdArgs hG t (off S oSt) (off S a) (off S oW) len := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega_using [hz]
   exact { x0 := h0, x2 := h2
-          x3 := by rw [h3, BitVec.toNat_ofNat]; unfold oRsa at ha; omega
+          x3 := by rw [h3, BitVec.toNat_ofNat]; unfold oRsa at ha; omega_using [ha]
           x4 := h4
           cd := Covers.right (L.cov ha)
           cw := Covers.pair (L.cov h1) (L.cov h2')
@@ -167,8 +167,8 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
       (∀ m, hG.SH.Repr t.mem (off S oSt) m → t.gpr .x1 = BitVec.ofNat 64 m.length →
         hG.SH.Repr t'.mem (off S oSt) (m ++ (List.range len).map fun i => V (a + i))) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
   have hr : ∀ p ∈ [(oSt, G.S), (oW, hG.Wb)], p.1 + p.2 ≤ oRsa := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption
   refine upd_call hG (updArgs_of hG L ha hda hwa h0 h2 h3 h4) fun t' A hrep => ?_
@@ -178,7 +178,7 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
     simp only [Spec.Sha256.bytesAt]
     exact List.map_congr_left fun i hi => by
       show t.mem (off (off S a) i) = _
-      rw [off_off]; exact R.scr _ (by have := List.mem_range.mp hi; omega)
+      rw [off_off]; exact R.scr _ (by have := List.mem_range.mp hi; omega_using [ha, this])
   rw [← e]; exact hrep m hm hc
 
 /-! ## `finalize` -/
@@ -189,15 +189,15 @@ theorem finArgs_of {t : State} {F S : Addr} (L : Lay t F S) {o : Nat} (ho : o + 
     (h0 : t.gpr .x0 = off S oSt) (h2 : t.gpr .x2 = off S o) (h3 : t.gpr .x3 = off S oW) :
     FinArgs hG t (off S oSt) (off S o) (off S oW) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have h3' : o + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have h3' : o + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega_using [ho, hz]
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega_using [hz]
   exact { x0 := h0, x2 := h2, x3 := h3
           cw := Covers.cons (L.cov h1) (Covers.pair (L.cov h3') (L.cov h2'))
-          st_o := sdis S (by unfold oSt oW at *; omega) h1 h3'
+          st_o := sdis S (by unfold oSt oW at *; omega_using [ho, hz]) h1 h3'
           st_sc := sdis S (Or.inl hsw) h1 h2'
-          o_sc := sdis S (by unfold oSt oW at *; omega) h3' h2'
+          o_sc := sdis S (by unfold oSt oW at *; omega_using [ho, hz]) h3' h2'
           sp16 := L.sp16
           stk_st := L.stk h1, stk_o := L.stk h3', stk_sc := L.stk h2' }
 
@@ -212,9 +212,9 @@ theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
       (∀ m, hG.SH.Repr t.mem (off S oSt) m → m.length < 2 ^ 64 → t.gpr .x1 = BitVec.ofNat 64 m.length →
         ∀ i < G.D, t'.mem (off S (o + i)) = (hG.SH.H.hash m).getD i 0) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have h3' : o + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have h3' : o + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega_using [ho, hz]
   have hr : ∀ p ∈ [(oSt, G.S), (o, G.F), (oW, hG.Wb)], p.1 + p.2 ≤ oRsa := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl) <;> with_reducible assumption
@@ -223,7 +223,7 @@ theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   refine ⟨L', Step.of_after L hr A ws, R', fun m hm hl hc i hi => ?_⟩
   have e := hrep m hm hl hc
   rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
-  simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega),
+  simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega_using [hz, hi]),
     Option.map_some, Option.getD_some, off_off]
 
 include hG in
@@ -235,11 +235,11 @@ theorem updExtArgs_of {t : State} {F S : Addr} (L : Lay t F S) {d : Addr} {len :
     (h0 : t.gpr .x0 = off S oSt) (h2 : t.gpr .x2 = d) (h3 : t.gpr .x3 = BitVec.ofNat 64 len)
     (h4 : t.gpr .x4 = off S oW) : UpdArgs hG t (off S oSt) d (off S oW) len := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega_using [hz]
   exact { x0 := h0, x2 := h2
-          x3 := by rw [h3, BitVec.toNat_ofNat]; omega
+          x3 := by rw [h3, BitVec.toNat_ofNat]; omega_using [hlen]
           x4 := h4
           cd := hcd
           cw := Covers.pair (L.cov h1) (L.cov h2')
@@ -263,8 +263,8 @@ theorem updExt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
       (∀ m, hG.SH.Repr t.mem (off S oSt) m → t.gpr .x1 = BitVec.ofNat 64 m.length →
         hG.SH.Repr t'.mem (off S oSt) (m ++ Spec.Rsa.bytesAt t.mem d len)) := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
-  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega_using [hz]
   have hr : ∀ p ∈ [(oSt, G.S), (oW, hG.Wb)], p.1 + p.2 ≤ oRsa := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption
   refine upd_call hG (updExtArgs_of hG L hlen hcd hds hdk h0 h2 h3 h4) fun t' A hrep => ?_

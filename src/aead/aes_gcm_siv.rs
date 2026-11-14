@@ -90,7 +90,8 @@ impl AesGcmSiv {
             schedule: CacheAligned([0; 240]),
             rounds: key.len() / 4 + 6,
         });
-        if let Ok(k) = &mut k {
+        // `k` is `Ok`: this runs once, on the value it holds.
+        k.iter_mut().for_each(|k| {
             // SAFETY: `key` is valid for reads of `key.len()` bytes, which is
             // 16 or 32, and `k.schedule` for reads and writes of 240 bytes.
             // They are distinct objects, so they do not overlap, nor do they
@@ -99,7 +100,7 @@ impl AesGcmSiv {
             // dispatcher calls only an implementation the CPU has the features
             // of.
             unsafe { vg_aes_expand_key_auto(dit, key.as_ptr(), key.len(), &mut k.schedule.0) };
-        }
+        });
         k
     }
 

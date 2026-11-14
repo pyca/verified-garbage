@@ -48,9 +48,9 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (post := Spec.Hmac.initPost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := initFrame I) h
     (by
-      refine ⟨?_, by simp only [initFrame]; omega, by simp only [initFrame]; omega⟩
+      refine ⟨?_, by simp only [initFrame]; omega_using [hs], by simp only [initFrame]; omega_using []⟩
       change 8 + 4 * 4 + I.scratch * 8 ≤ initFrame I
-      simp only [initFrame]; omega)
+      simp only [initFrame]; omega_using [])
     hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
@@ -66,9 +66,9 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (n := I.scratch) (post := Spec.Hmac.finalizePost I.S X86.abi.ptrBits) (wa := true) (stack := 48)
     (bytes := finFrame I) h
     (by
-      refine ⟨?_, by simp only [finFrame]; omega, by simp only [finFrame]; omega⟩
+      refine ⟨?_, by simp only [finFrame]; omega_using [hs], by simp only [finFrame]; omega_using []⟩
       change 8 + 4 * 5 + I.scratch * 8 ≤ finFrame I
-      simp only [finFrame]; omega)
+      simp only [finFrame]; omega_using [])
     hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Hmac.finalizePost_local I.S _ hR hS) hsat
 

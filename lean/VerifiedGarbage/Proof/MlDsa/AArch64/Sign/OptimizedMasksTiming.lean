@@ -114,8 +114,8 @@ theorem positivePairR_tr {S : Nat} {nm : String} {cd : Prog isa}
   · intro x y tx ty u v h ex ey
     have L := h.1.lrel (fun _ _ h => h.1.1.l.st)
     exact maskPairAt_tr C L.ok cm hg (fun _ _ h => ⟨h.lx,h.ly,h.same⟩) _ _ _ _ _ _ L ex ey
-  refine RelCT.seq (finish_tr (by omega) cf0) ?_
-  exact RelCT.mono (finish_tr (by omega) cf1) (fun _ _ h => h)
+  refine RelCT.seq (finish_tr (by omega_using []) cf0) ?_
+  exact RelCT.mono (finish_tr (by omega_using []) cf1) (fun _ _ h => h)
     (fun _ _ h => h.mono (fun _ _ h => h.1))
 
 theorem positiveMaskR_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} {r t : Nat}
@@ -132,7 +132,7 @@ theorem positiveMaskR_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} {
   refine RelCT.seq (R:=MaskRS p S E A) (liftMask ?_ ?_) ?_
   · intro σ s _ h
     have hx' : p.ℓ*t+r<2^16 := by
-      have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega); omega
+      have := Nat.mul_le_mul_left p.ℓ (show t≤813 by have := h.l.t_lt; omega_using [this]); omega_using [hx, this]
     refine WP.mono_syms (setKappa_okB h.l.st.lay hr hx' k1 w1 h.l.kap)
       fun u ⟨hu,_,hb⟩ hsym => ?_
     have H := h.step hu hsym c1
@@ -147,7 +147,7 @@ theorem positiveMaskR_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} {
     refine ⟨H,H.y.snoc ?_⟩
     show PolyIs _ _ _; rw [hu.pa (pS_bases _)]; exact hy
   · exact RelCT.mono (maskAt_tr hP hγ cm) (fun _ _ h => h.1.lrel (fun _ _ h => h.1.l.st)) (fun _ _ h => h)
-  exact RelCT.mono (finish_tr (by omega) cf) (fun _ _ h => h) (fun _ _ h => h.mono (fun _ _ h => h.1))
+  exact RelCT.mono (finish_tr (by omega_using []) cf) (fun _ _ h => h) (fun _ _ h => h.mono (fun _ _ h => h.1))
 
 theorem positiveMasksPaired_tr {P : Prims} {S : Nat} (hP : PrimsOk P S)
     {nm : String} {cd : Prog isa} (C : CalleeOk S cd (expandMaskPairContract AArch64.abi S))
@@ -162,10 +162,10 @@ theorem positiveMasksPaired_tr {P : Prims} {S : Nat} (hP : PrimsOk P S)
       (p.ℓ/2) 0 fun j _ hj => ?_)
       (fun _ _ h => h.mono (fun _ _ h => ⟨h,fun _ h => by omega,fun _ h => by omega⟩))
       (fun _ _ h => by simpa only [Nat.zero_add] using h)
-    simpa only [Nat.mul_add,Nat.mul_one] using positivePairR_tr C (hc.1 j (by omega)) (t:=t) (E:=E)
-  · have he : 2*(p.ℓ/2)+p.ℓ%2=p.ℓ := by omega
+    simpa only [Nat.mul_add,Nat.mul_one] using positivePairR_tr C (hc.1 j (by omega_using [hj])) (t:=t) (E:=E)
+  · have he : 2*(p.ℓ/2)+p.ℓ%2=p.ℓ := by omega_using []
     have hh := seqR_tr (Q:=fun r => MaskRS p S E fun σ s => PositiveICm p S σ t r s)
-      (p.ℓ%2) (2*(p.ℓ/2)) fun r _ hr => positiveMaskR_tr hP (hc.2 r (by omega))
+      (p.ℓ%2) (2*(p.ℓ/2)) fun r _ hr => positiveMaskR_tr hP (hc.2 r (by omega_using [hr]))
     simpa only [he] using hh
 
 theorem positiveMasks_tr {P : Prims} {S : Nat} (hP : PrimsOk P S)
@@ -178,7 +178,7 @@ theorem positiveMasks_tr {P : Prims} {S : Nat} (hP : PrimsOk P S)
   · exact positiveMasksPaired_tr hP hP.expandMaskPair hc
   · simp only [positiveMasksChk,Bool.and_eq_true,List.all_eq_true,List.mem_range] at hc
     refine RelCT.mono (seqR_tr (Q:=fun r => MaskRS p S E fun σ s => PositiveICm p S σ t r s) p.ℓ 0
-      fun r _ hr => positiveMaskR_tr hP (hc.2 r (by omega)))
+      fun r _ hr => positiveMaskR_tr hP (hc.2 r (by omega_using [hr])))
       (fun _ _ h => h.mono (fun _ _ h => ⟨h,fun _ h => by omega,fun _ h => by omega⟩))
       (fun _ _ h => by simpa only [Nat.zero_add] using h)
 

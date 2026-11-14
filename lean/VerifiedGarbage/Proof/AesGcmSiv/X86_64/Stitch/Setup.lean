@@ -61,9 +61,9 @@ theorem setupC_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]; exact (VG.Proof.Gcm.X86_64.blockAt_eq _ _).symm
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]
   · rw [BitVec.ofInt_natCast, BitVec.add_zero]; rfl
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
   · bv_omega
   · simp [h1, h2, h3]
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2, h13, h14, h15]
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2, h13, h14, h15]
 
 end VG.Proof.AesGcmSiv.X86_64.Stitch

@@ -24,9 +24,9 @@ theorem stackArgs_nine (s : State) : List.map (stackArg s) (List.range 9) =
 private theorem args_nowrap {s : State} (h : (s.gpr .rsp).toNat + 80 ≤ 2 ^ 64) :
     (stackArgAddr s 0).toNat + 72 ≤ 2 ^ 64 := by
   simp only [stackArgAddr, Nat.zero_add, Nat.mul_one]
-  rw [BitVec.toNat_add_of_lt (by simp only [BitVec.toNat_ofNat]; omega)]
+  rw [BitVec.toNat_add_of_lt (by simp only [BitVec.toNat_ofNat]; omega_using [h])]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem key_implies_pre (s : State) (h : (cachedKeySearchContract abi 72).pre s) : keyContract.pre s := by
   sig_pre [cachedKeySearchContract, cachedKeySearchSig, keySearchSig, generationContextAt, abi, argRegs, stackBelow, keyContract, keyPre,

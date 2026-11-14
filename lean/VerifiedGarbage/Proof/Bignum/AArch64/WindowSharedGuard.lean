@@ -32,7 +32,7 @@ theorem guarded_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : N
     WP isa code s (Post s P w mi X Xc v) := by
   unfold code VG.Impl.Rsa.AArch64.WindowShared.code
   refine WP.seq (WP.mono (BlockedRedc.guard_ok hc.good.scr hc.good.x0 hc.good.hdr
-    (Nat.le_refl _) (by omega)) fun u ⟨⟨hm,h3,h4⟩,ku⟩ => ?_)
+    (Nat.le_refl _) (by omega_using [hw'])) fun u ⟨⟨hm,h3,h4⟩,ku⟩ => ?_)
   have cu := hc.of_win (by rw [hm]; exact Frm.refl _ _ _) ku.wr (ku.gpr .x0 (by decide))
   have lift {c : Prog isa} (hp : WP isa c u (Post u P w mi X Xc v)) :
       WP isa c u (Post s P w mi X Xc v) := WP.mono hp fun t ⟨ct,yt,vt,nt,bt,ft,kt⟩ => by
@@ -43,13 +43,13 @@ theorem guarded_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : N
     (fun _ ⟨ct,yt,vt,nt,bt,ft,kt,_⟩ => ⟨ct,yt,vt,nt,bt,ft,kt⟩))
   by_cases hfast : 16 ≤ w
   · refine WP.ite true (by rw [eval_nonzero,h3,ne_zero_iff,BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show w/16 < 2^64 by omega),decide_eq_true (show w/16 ≠ 0 by omega)])
+      Nat.mod_eq_of_lt (show w/16 < 2^64 by omega_using [hw']),decide_eq_true (show w/16 ≠ 0 by omega_using [hfast])])
       (fun _ => ?_) (by simp)
     by_cases hd : w % 8 = 0
     · exact WP.ite true (by rw [eval_zero,h4,hd]; rfl)
         (fun _ => lift (fast_ok cu (hm ▸ ht) hfast hw' hd hv (hm ▸ hnib))) (by simp)
     · exact WP.ite false (by rw [eval_zero,h4,eq_zero_iff,BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show w%8 < 2^64 by omega),decide_eq_false hd]) (by simp) (fun _ => slow)
-  · exact WP.ite false (by rw [eval_nonzero,h3,show w/16 = 0 by omega]; rfl) (by simp) (fun _ => slow)
+        Nat.mod_eq_of_lt (show w%8 < 2^64 by omega_using []),decide_eq_false hd]) (by simp) (fun _ => slow)
+  · exact WP.ite false (by rw [eval_nonzero,h3,show w/16 = 0 by omega_using [hfast]]; rfl) (by simp) (fun _ => slow)
 
 end VG.Proof.Bignum.AArch64.WindowShared

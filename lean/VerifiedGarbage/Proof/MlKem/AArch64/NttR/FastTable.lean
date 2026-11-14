@@ -98,7 +98,7 @@ theorem STable.frameFar {s t : State} {rs : List Region} (h : STable sym H s) (h
     (hd : ∀ r ∈ rs, (sRegion sym s).Disjoint r) : STable sym H t := by
   refine ⟨?_, by simpa only [sRegion, hs, hr, hw] using h.2.1, by simpa only [sRegion, hs, hw] using h.2.2⟩
   intro i hi
-  rw [hs, hf.readW (r := sRegion sym s) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+  rw [hs, hf.readW (r := sRegion sym s) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
   exact h.1 i hi
 
 theorem STable.frame {s t : State} {rs : List Region} (h : STable sym H s) (hs : t.syms = s.syms)
@@ -113,7 +113,7 @@ theorem SReady.frame {s t : State} {f w : Addr} {rs : List Region} (h : SReady s
   refine ⟨?_, by simpa only [sRegion, hs, hr, hw] using h.readable, by simpa only [sRegion, hs] using h.output,
     by simpa only [sRegion, hs] using h.scratch⟩
   intro i hi
-  rw [hs, hf.readW (r := sRegion sym s) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+  rw [hs, hf.readW (r := sRegion sym s) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
   exact h.table i hi
 
 end

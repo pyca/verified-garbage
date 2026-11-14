@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64.Comb
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ECDSA over brainpoolP256r1 on AArch64: the comb's tables in a static
@@ -48,6 +49,6 @@ tables). -/
 theorem satMem_held : ∀ i < combCfg.combWords.length,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combCfg.combWords.getD i 0 := by
   unfold satMem
-  exact constMem_held _ _ (by rw [combCfg_combWords_length]; omega)
+  exact constMem_held _ _ (by rw [combCfg_combWords_length]; omega_using [])
 
 end VG.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb

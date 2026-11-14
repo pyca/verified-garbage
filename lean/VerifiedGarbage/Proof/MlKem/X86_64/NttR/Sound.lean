@@ -186,7 +186,7 @@ theorem pk_ok {R : Rules} (hM : Model R L O) {lo hi : E} {x : BitVec 128} {j : N
       apply BitVec.eq_of_toNat_eq
       rw [satSignedWord_small (by rw [hd]; exact hs), BitVec.toNat_setWidth, hd]
       simp only [E.eval]
-      exact Nat.mod_eq_of_lt (by omega)
+      exact Nat.mod_eq_of_lt (by omega_using [])
     · exact Hd.junk _
   · exact Hd.junk _
 
@@ -214,22 +214,22 @@ theorem word_split (x : BitVec 256) {e : Nat} (he : e < 16) :
   by_cases h : e / 8 = 0
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h)]
     simp only [word, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-      decide_eq_true (show 16 * (e % 8) + j < 128 by omega)]
-    exact congrArg _ (by omega)
+      decide_eq_true (show 16 * (e % 8) + j < 128 by omega_using [hj])]
+    exact congrArg _ (by omega_using [h])
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h)]
     simp only [word, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-      decide_eq_true (show 16 * (e % 8) + j < 128 by omega)]
-    exact congrArg _ (by omega)
+      decide_eq_true (show 16 * (e % 8) + j < 128 by omega_using [hj])]
+    exact congrArg _ (by omega_using [he, h])
 
 theorem ymm_word (s : State) (r : XReg) {e : Nat} (he : e < 16) : (s.ymm r).extractLsb' (16 * e) 16 = wd s r e := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [wd, State.ymm, State.lane, word, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj,
     decide_true, Bool.true_and]
   by_cases h : e < 8
-  · simp only [show 16 * e + j < 128 by omega, ite_true, show e / 8 = 0 by omega]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 16 * e + j < 128 by omega, ite_false, show e / 8 = 1 by omega, Nat.one_ne_zero]
-    exact congrArg _ (by omega)
+  · simp only [show 16 * e + j < 128 by omega_using [hj, h], ite_true, show e / 8 = 0 by omega_using [h]]
+    exact congrArg _ (by omega_using [h])
+  · simp only [show ¬ 16 * e + j < 128 by omega_using [h], ite_false, show e / 8 = 1 by omega_using [he, h], Nat.one_ne_zero]
+    exact congrArg _ (by omega_using [he, h])
 
 /-! ## Words of the instructions -/
 
@@ -237,46 +237,46 @@ theorem word_eq_qword (x : BitVec 128) {i : Nat} (_hi : i < 8) :
     word x i = (qword x (i / 4)).extractLsb' (16 * (i % 4)) 16 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [word, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 16 * (i % 4) + j < 64 by omega)]
-  exact congrArg _ (by omega)
+    decide_eq_true (show 16 * (i % 4) + j < 64 by omega_using [hj])]
+  exact congrArg _ (by omega_using [])
 
 theorem qword_shift (x : BitVec 128) (op : XShiftOp) (hop : op = .psllq ∨ op = .psrlq) {k : Nat} (hk : k < 2) :
     qword (XShiftOp.eval op x 32) k = if op = .psllq then qword x k <<< 32 else qword x k >>> 32 := by
   rcases hop with rfl | rfl <;>
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;>
     simp [XShiftOp.eval, Proof.Poly1305.X86_64.Avx2.qword_app0, Proof.Poly1305.X86_64.Avx2.qword_app1]
 
 theorem word_psllq32 (x : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XShiftOp.eval .psllq x 32) i = if i % 4 < 2 then 0 else word x (i - 2) := by
-  rw [word_eq_qword _ hi, qword_shift _ _ (.inl rfl) (by omega), ite_eq_left_of_eq_true _ _ (eq_true rfl)]
+  rw [word_eq_qword _ hi, qword_shift _ _ (.inl rfl) (by omega_using [hi]), ite_eq_left_of_eq_true _ _ (eq_true rfl)]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   split
   · simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, hj, decide_true, Bool.true_and]
-    simp only [decide_eq_true (show 16 * (i % 4) + j < 64 by omega), decide_eq_true (show 16 * (i % 4) + j < 32 by omega)]
+    simp only [decide_eq_true (show 16 * (i % 4) + j < 64 by omega_using [hj]), decide_eq_true (show 16 * (i % 4) + j < 32 by omega_arith)]
     simp
-  · rw [word_eq_qword _ (by omega)]
+  · rw [word_eq_qword _ (by omega_using [hi])]
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, hj, decide_true, Bool.true_and,
-      decide_eq_true (show 16 * (i % 4) + j < 64 by omega), decide_eq_false (show ¬ 16 * (i % 4) + j < 32 by omega),
-      Bool.not_false, Bool.true_and, show (i - 2) / 4 = i / 4 by omega]
-    exact congrArg _ (by omega)
+      decide_eq_true (show 16 * (i % 4) + j < 64 by omega_using [hj]), decide_eq_false (show ¬ 16 * (i % 4) + j < 32 by omega_arith),
+      Bool.not_false, Bool.true_and, show (i - 2) / 4 = i / 4 by omega_arith]
+    exact congrArg _ (by omega_arith)
 
 theorem word_psrlq32 (x : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XShiftOp.eval .psrlq x 32) i = if i % 4 < 2 then word x (i + 2) else 0 := by
-  rw [word_eq_qword _ hi, qword_shift _ _ (.inr rfl) (by omega), ite_eq_right_of_eq_false _ _ (eq_false (by decide))]
+  rw [word_eq_qword _ hi, qword_shift _ _ (.inr rfl) (by omega_using [hi]), ite_eq_right_of_eq_false _ _ (eq_false (by decide))]
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   split
-  · rw [word_eq_qword _ (by omega)]
+  · rw [word_eq_qword _ (by omega_arith)]
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, hj, decide_true, Bool.true_and,
-      show (i + 2) / 4 = i / 4 by omega]
-    exact congrArg _ (by omega)
+      show (i + 2) / 4 = i / 4 by omega_arith]
+    exact congrArg _ (by omega_arith)
   · simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight, hj, decide_true, Bool.true_and]
-    rw [BitVec.getLsbD_of_ge _ _ (by omega)]
+    rw [BitVec.getLsbD_of_ge _ _ (by omega_arith)]
     simp
 
 theorem word_blend (x y : BitVec 128) (imm : BitVec 4) {i : Nat} (hi : i < 8) :
     word (blendDwords x y imm) i = if imm.getLsbD (i / 2) then word y i else word x i := by
   rw [blendDwords, word_eq_dword _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [Nat.reduceDiv, Nat.reduceMod, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
     dword_ofDwords_3] <;> split <;> rw [word_eq_dword _ (by decide)] <;> rfl

@@ -40,24 +40,24 @@ theorem pcCtx_of {s : State} (h : pcPre s) : PcCtx s := by
   obtain ⟨_, hstack, hrd, hwr, dou, dor, dos, _, _, dus, _, drs, _, _, _, _, _, _, _, _, dbr, dbs, _,
     wo, wu, wr, ws, hb1, hb2, hlen, hgen, hroom⟩ := h
   unfold Spec.Rsa.scratchWords at hroom
-  refine ⟨hb1, hb2, hlen, hgen, by omega, Scr.of_mem (by rw [hwr]; simp) ws,
-    ⟨?_, ?_⟩, ⟨?_, ?_⟩, Scr.of_mem (by rw [hwr]; simp) wu, src_of_region (by rw [hrd]; simp) (by omega) drs,
-    ?_, apart_of dor (by omega) (by omega), apart_of dou (by omega) (by omega), hstack, dbs, dbr⟩
+  refine ⟨hb1, hb2, hlen, hgen, by omega_using [hroom], Scr.of_mem (by rw [hwr]; simp) ws,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩, Scr.of_mem (by rw [hwr]; simp) wu, src_of_region (by rw [hrd]; simp) (by omega_using []) drs,
+    ?_, apart_of dor (by omega_using []) (by omega_using []), apart_of dou (by omega_using []) (by omega_using []), hstack, dbs, dbr⟩
   · intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega_using [hi]) (by omega_using [])⟩
   · intro i hi
-    exact out_scr dos (contains_byte _ (by omega) (by omega))
+    exact out_scr dos (contains_byte _ (by omega_using [hi]) (by omega_using []))
   · intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .rdx, 8⟩, by simp, contains_byte _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdx, 8⟩, by simp, contains_byte _ (by omega_using [hi]) (by omega_using [])⟩
   · intro i hi
-    exact out_scr dus (contains_byte _ (by omega) (by omega))
+    exact out_scr dus (contains_byte _ (by omega_using [hi]) (by omega_using []))
   · intro i hi
     refine ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp, ?_⟩
     rw [show stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) by
-      simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]; congr 2; omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]; congr 2; omega_using []]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 /-- The outer header and all 28 arrays of the shared windowed round fit
 even at the 511/512-bit boundary and with a non-byte-aligned p. -/
@@ -67,10 +67,10 @@ theorem candidate_room {bits len Z : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8
     let nbytes := (nbits + 7) / 8
     let w := (nbytes + 7) / 8
     4 ≤ w ∧ w ≤ 128 ∧ 256 + slot w 28 ≤ Z := by
-  have hlo : 511 ≤ (if q then bits - 1 else bits) := by cases q <;> simp <;> omega
+  have hlo : 511 ≤ (if q then bits - 1 else bits) := by cases q <;> simp <;> omega_using [hb1]
   have hhi : (if q then bits - 1 else bits) ≤ bits := by cases q <;> simp
   dsimp only
   simp only [slot, VG.Impl.Bignum.hdrBytes]
-  omega
+  omega_using [hb2, hlen, hz, hlo, hhi]
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

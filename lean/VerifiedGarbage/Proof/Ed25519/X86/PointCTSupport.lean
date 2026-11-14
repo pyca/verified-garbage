@@ -75,11 +75,11 @@ theorem pointTaint_agree {x : BitVec 32} {s t : State} {o : Nat}
     subst sl
     change o ≤ k at hlo
     change k < o + 4 at hhi
-    obtain ⟨j, hj, rfl⟩ : ∃ j < 4, k = o + j := ⟨k - o, by omega, by omega⟩
+    obtain ⟨j, hj, rfl⟩ : ∃ j < 4, k = o + j := ⟨k - o, by omega_using [hhi], by omega_using [hlo]⟩
     simp only [VG.X86.Taint.byteAddr, hs.region, ht.region]
     have hx := hs.ctx.fit
-    rw [← addr_eq (by omega : x.toNat + (o + j) < 2 ^ 32),
-      addr_offset (x := x) (o := o) (d := j) (by omega),
+    rw [← addr_eq (by omega_using [ho, hj, hx] : x.toNat + (o + j) < 2 ^ 32),
+      addr_offset (x := x) (o := o) (d := j) (by omega_using [ho, hj, hx]),
       Mem.readW_byte s.mem _ hj, Mem.readW_byte t.mem _ hj]
     exact congrArg (BitVec.extractLsb' (8 * j) 8) hv
 

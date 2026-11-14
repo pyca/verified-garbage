@@ -29,7 +29,7 @@ theorem coeffAt_writeW (m : Mem) (p : Addr) {i j : Nat} (hi : i < 2 ^ 62) (hj : 
     coeffAt (m.writeW (coeffAddr p j) v) p i = if j = i then v else coeffAt m p i := by
   split
   · subst j; exact coeffAt_writeW_self m p i v
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 /-- The coefficients at `p`: the first `t` of them are `G`'s, the others `old`'s. -/
 def CoeffsUpTo (m : Mem) (p : Addr) (t : Nat) (G old : Nat → BitVec 32) : Prop :=
@@ -43,13 +43,13 @@ theorem CoeffsUpTo.zero {m : Mem} {p : Addr} (G : Nat → BitVec 32) :
 theorem CoeffsUpTo.write {m : Mem} {p : Addr} {t : Nat} {G old : Nat → BitVec 32}
     (h : CoeffsUpTo m p t G old) (ht : t < 256) {v : BitVec 32} (hv : v = G t) :
     CoeffsUpTo (m.writeW (coeffAddr p t) v) p (t + 1) G old := fun i hi => by
-  rw [coeffAt_writeW m p (by omega) (by omega)]
+  rw [coeffAt_writeW m p (by omega_using [hi]) (by omega_using [ht])]
   by_cases e : t = i
-  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega), hv]
+  · subst e; rw [ite_eq_left rfl, ite_eq_left (by omega_using []), hv]
   · rw [ite_eq_right e, h i hi]
     by_cases hit : i < t
-    · rw [ite_eq_left hit, ite_eq_left (by omega)]
-    · rw [ite_eq_right hit, ite_eq_right (by omega)]
+    · rw [ite_eq_left hit, ite_eq_left (by omega_using [hit])]
+    · rw [ite_eq_right hit, ite_eq_right (by omega_using [e, hit])]
 
 /-- All 256 coefficients written. -/
 theorem CoeffsUpTo.all {m : Mem} {p : Addr} {G old : Nat → BitVec 32} (h : CoeffsUpTo m p 256 G old)
@@ -63,7 +63,7 @@ theorem bytes_of_words {m₁ m₂ : Mem} {p : Addr} {N : Nat}
   simp only [Region.Contains] at ha
   have hw : ∀ i < N, coeffAt m₁ p i = coeffAt m₂ p i := fun i hi =>
     BitVec.eq_of_toNat_eq (List.map_inj_left.mp h i (List.mem_range.mpr hi))
-  have hi : (a - p).toNat / 4 < N := by omega
+  have hi : (a - p).toNat / 4 < N := by omega_using [ha]
   have ht : (a - p).toNat % 4 < 4 := Nat.mod_lt _ (by decide)
   have ea : a = coeffAddr p ((a - p).toNat / 4) + BitVec.ofNat 64 ((a - p).toNat % 4) := by
     rw [coeffAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.ofNat_toNat,

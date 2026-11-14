@@ -1,15 +1,20 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.SignCached
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Totient
 import Mathlib.Tactic.Positivity.Finset
@@ -24,6 +29,314 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+
+/-! ### `Ed25519.X86_64.SignCached.Args`, which only this module used -/
+
+section
+
+/-! ### `Ed25519.X86_64.SignCached.Layout`, which only this module used -/
+
+section
+
+/-! The frame and memory invariant of complete Ed25519 signing. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.SignCached
+
+open VG VG.X86_64
+open VG.Proof.Ed25519.X86_64.PublicKey (Within within_base within_off)
+open VG.Impl.Ed25519.X86_64 (combSym combWords combWordCount)
+
+structure Lay where
+  out : Addr
+  seed : Addr
+  pk : Addr
+  msg : Addr
+  len : BitVec 64
+  scr : Addr
+  B : Addr
+  /-- The comb's tables (the static `combSym`). -/
+  T : Addr
+  /-- The bytes read at `seed`: the seed (32), or its cached SHA-512 digest (64). -/
+  seedLen : Nat
+
+namespace Lay
+variable (L : Lay)
+abbrev OUT : Region := ⟨L.out, 64⟩
+abbrev SEED : Region := ⟨L.seed, L.seedLen⟩
+abbrev PK : Region := ⟨L.pk, 32⟩
+abbrev MSG : Region := ⟨L.msg, L.len.toNat⟩
+abbrev SCR : Region := ⟨L.scr, 8192⟩
+abbrev STK : Region := ⟨L.B, 264⟩
+abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 248⟩
+abbrev DATA : Region := ⟨L.B + BitVec.ofNat 64 16, 192⟩
+abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 264, 8⟩
+abbrev TBL : Region := combRegion L.T
+/-- The regions only read: the seed (or its digest), the public key, the message and the comb's tables. -/
+def inputs : List Region := [L.SEED, L.PK, L.MSG, L.TBL]
+structure Ok : Prop where
+  os : ∀ r ∈ L.inputs, L.OUT.Disjoint r
+  oc : L.OUT.Disjoint L.SCR
+  ko : L.STK.Disjoint L.OUT
+  ro : L.RET.Disjoint L.OUT
+  no : L.out.toNat + 64 ≤ 2 ^ 64
+  sc : ∀ r ∈ L.inputs, r.Disjoint L.SCR
+  ks : ∀ r ∈ L.inputs, L.STK.Disjoint r
+  rs : ∀ r ∈ L.inputs, L.RET.Disjoint r
+  kc : L.STK.Disjoint L.SCR
+  rc : L.RET.Disjoint L.SCR
+  np : L.pk.toNat + 32 ≤ 2 ^ 64
+  nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 64
+  ns : L.seed.toNat + L.seedLen ≤ 2 ^ 64
+  nc : L.scr.toNat + 8192 ≤ 2 ^ 64
+  nt : L.T.toNat + 8 * combWordCount ≤ 2 ^ 64
+  sl : 32 ≤ L.seedLen
+end Lay
+
+namespace Lay.Ok
+variable {L : Lay}
+theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 264) (h₂ : e + k ≤ 8192) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
+  (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
+theorem stk_input (h : L.Ok) {r : Region} (hr : r ∈ L.inputs) {d n : Nat} (hd : d + n ≤ 264) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r :=
+  (h.ks r hr).sub_left (Offset.sub_base _ hd)
+end Lay.Ok
+
+structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t : State) : Prop where
+  rd : t.rd = L.inputs
+  wr : t.wr = [L.FR, L.OUT, L.SCR]
+  rsp : t.gpr .rsp = L.B + BitVec.ofNat 64 16
+  cs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = g r
+  mx : t.mxcsr.extractLsb' 6 10 = mx.extractLsb' 6 10
+  pScr : t.mem.readW (L.B + BitVec.ofNat 64 216) 64 = L.scr
+  pLen : t.mem.readW (L.B + BitVec.ofNat 64 224) 64 = L.len
+  pMsg : t.mem.readW (L.B + BitVec.ofNat 64 232) 64 = L.msg
+  pPk : t.mem.readW (L.B + BitVec.ofNat 64 240) 64 = L.pk
+  pSeed : t.mem.readW (L.B + BitVec.ofNat 64 248) 64 = L.seed
+  pOut : t.mem.readW (L.B + BitVec.ofNat 64 256) 64 = L.out
+  frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
+  sym : t.syms combSym = L.T
+  held : ∀ i < combWordCount, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
+
+namespace Ctx
+variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' : State}
+theorem regs (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
+    (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) :
+    Ctx L g mx m₀ t' :=
+  ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
+    fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
+    by rw [hm]; exact hc.pScr, by rw [hm]; exact hc.pLen,
+    by rw [hm]; exact hc.pMsg, by rw [hm]; exact hc.pPk,
+    by rw [hm]; exact hc.pSeed, by rw [hm]; exact hc.pOut, by rw [hm]; exact hc.frame,
+    by rw [hsy]; exact hc.sym, hc.held⟩
+theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
+  rw [hc.rsp]
+  show (⟨L.B + BitVec.ofNat 64 16 - BitVec.ofNat 64 8, 8⟩ : Region) = _
+  rw [PublicKey.sub8']
+theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 264) :
+    InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 8 :=
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
+theorem inFrW (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ : 16 ≤ d) (h₂ : d + 8 ≤ 264) :
+    InRegions t.wr (L.B + BitVec.ofNat 64 d) 8 :=
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
+theorem ea_fr (hc : Ctx L g mx m₀ t) (d : Nat) :
+    t.ea (Impl.Ed25519.X86_64.stk d) = L.B + BitVec.ofNat 64 (16 + d) := by
+  rw [PublicKey.ea_stk, hc.rsp, PublicKey.add_add]
+theorem input_byte (hL : L.Ok) (hc : Ctx L g mx m₀ t) {r : Region} (hr : r ∈ L.inputs)
+    (hn : r.len ≤ 2 ^ 64) {i : Nat} (hi : i < r.len) :
+    t.mem (r.base + BitVec.ofNat 64 i) = m₀ (r.base + BitVec.ofNat 64 i) :=
+  Frame.bytes hc.frame (by
+    intro R hR
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl | rfl
+    · exact (hL.os r hr).symm
+    · exact hL.sc r hr
+    · exact (hL.ks r hr).symm) hn hi
+end Ctx
+
+/-- Calls may overwrite scratch, output and frame data, but not the saved arguments. -/
+theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
+    {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : NoSp c) (hd : c.depth ≤ 1) {t : State} (hc : Ctx L g mx m₀ t)
+    {rd wr : List Region} (hpre : k.pre (t.callEntry.withRegions rd wr))
+    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.inputs ++ [L.FR, L.OUT, L.SCR], Within r R)
+    (hwsub : ∀ r ∈ wr, Within r L.DATA ∨ Within r L.OUT ∨ Within r L.SCR) {Q : State → Prop}
+    (hQ : ∀ s', Ctx L g mx m₀ s' → Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = t.gpr r) →
+      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
+        k.post (t.callEntry.withRegions rd wr) s₂) → Q s') :
+    WP isa (.call n c) t Q := by
+  have hcov : Covers (rd ++ wr) (t.rd ++ t.wr) := by
+    refine Covers.of_sub fun r hr => ?_
+    obtain ⟨R, hR, hw⟩ := hsub r hr
+    exact ⟨R, by rw [hc.rd, hc.wr]; exact hR, hw⟩
+  have hcovw : Covers wr t.wr := by
+    refine Covers.of_sub fun r hr => ?_
+    rw [hc.wr]
+    rcases hwsub r hr with h | h | h
+    · obtain ⟨off, hb, hn⟩ := h
+      exact ⟨L.FR, by simp, off, hb, by exact Nat.le_trans hn (by show 192 ≤ 248; decide)⟩
+    · exact ⟨L.OUT, by simp, h⟩
+    · exact ⟨L.SCR, by simp, h⟩
+  refine WP.of_syms (WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
+  have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
+    refine Frame.sub hf fun r hr => ?_
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+      rw [hc.rsp]
+      exact PublicKey.below_call_sub _ (by omega)
+  have hdisj : ∀ d, 216 ≤ d → d + 8 ≤ 264 → ∀ r ∈ wr ++ [⟨L.B, 16⟩],
+      Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, 8⟩ r := by
+    intro d h₁ h₂ r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · rcases hwsub r hr with h | h | h
+      · exact (Offset.disjoint L.B (d := d) (n := 8) (e := 16) (k := 192)
+          (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])).sub_right h.sub
+      · exact (hL.ko.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right h.sub
+      · exact (hL.kc.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right h.sub
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint_base _ (by omega_using [h₁]) (by omega_using [h₂])
+  have keep : ∀ d, 216 ≤ d → d + 8 ≤ 264 →
+      s'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
+    fun d h₁ h₂ => hf'.readW (Region.contains_self _ _) (hdisj d h₁ h₂) (by decide)
+  refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, ?_, fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
+    hmx.trans hc.mx, (keep 216 (by omega_using []) (by omega_using [])).trans hc.pScr,
+    (keep 224 (by omega_using []) (by omega_using [])).trans hc.pLen, (keep 232 (by omega_using []) (by omega_using [])).trans hc.pMsg,
+    (keep 240 (by omega_using []) (by omega_using [])).trans hc.pPk, (keep 248 (by omega_using []) (by omega_using [])).trans hc.pSeed,
+    (keep 256 (by omega_using []) (by omega_using [])).trans hc.pOut,
+    hc.frame.trans (Frame.sub hf' fun r hr => ?_), hsy.symm ▸ hc.sym, hc.held⟩ hf' hg hpost
+  · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
+  · rcases List.mem_append.mp hr with hr | hr
+    · rcases hwsub r hr with h | h | h
+      · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base L.B (by decide : 16 + 192 ≤ 264) a (h.sub a ha)⟩
+      · exact ⟨L.OUT, by simp, h.sub⟩
+      · exact ⟨L.SCR, by simp, h.sub⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨L.STK, by simp, ?_⟩
+      have := Offset.sub_base L.B (d := 0) (n := 16) (k := 264) (by omega_using [])
+      simpa using this
+
+end VG.Proof.Ed25519.X86_64.SignCached
+
+end
+
+end
+
+
+/-! Short symbolic executions for the complete signer's call arguments. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64.SignCached
+open VG VG.X86_64
+open VG.Impl.Ed25519.X86_64 (stk shaScratch)
+open VG.Impl.Ed25519.X86_64.SignCached
+open VG.Proof.Ed25519.X86_64.PublicKey (ea_stk add_add sx32 zx32 ne_cs)
+variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
+
+def InitArgs (L : Lay) (t : State) : Prop := t.gpr .rdi = L.scr
+
+theorem initArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (.block initArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ InitArgs L t' := by
+  have hin := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  refine WP.of_runBlock ⟨t.setReg .rdi L.scr, ?_, ?_⟩
+  · simp only [initArgs, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+      State.load64, hc.ea_fr, hin, ite_true, Option.map_some, hc.pScr]
+  exact ⟨hc.regs rfl rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
+    RegUpd.gpr_setReg_self _ _ _⟩
+
+def UpdArgs (L : Lay) (count : BitVec 64) (p : Addr) (n : BitVec 64) (t : State) : Prop :=
+  t.gpr .rdi = L.scr ∧ t.gpr .rsi = count ∧ t.gpr .rdx = p ∧ t.gpr .rcx = n ∧
+    t.gpr .r8 = L.scr + BitVec.ofNat 64 192
+
+theorem inputArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (source count : Nat)
+    (hs : source + 8 ≤ 248) (hcount : count < 2 ^ 32) (p : Addr)
+    (hp : t.mem.readW (L.B + BitVec.ofNat 64 (16 + source)) 64 = p) :
+    WP isa (.block (inputArgs source count)) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧
+      UpdArgs L (BitVec.ofNat 64 count) p 32 t' := by
+  have h216 := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  have hsrc := hc.inFr (d := 16 + source) (by omega_using []) (by omega_using [hs])
+  apply WP.of_runBlock
+  simp only [inputArgs, scrPtr, shaScratch, fScratch, List.cons_append, List.nil_append,
+    runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.load64,
+    State.setReg32, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
+    Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
+    Nat.reduceAdd, h216, hsrc, Option.some.injEq, exists_eq_left', hc.pScr, hp, UpdArgs]
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
+    trivial, rfl, by rw [sx32 (by omega_using [])]⟩
+
+theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (count : Nat)
+    (hcount : count < 2 ^ 32) :
+    WP isa (.block (messageArgs count)) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧
+      UpdArgs L (BitVec.ofNat 64 count) L.msg L.len t' := by
+  have h216 := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  have h224 := hc.inFr (d := 224) (by omega_using []) (by omega_using [])
+  have h232 := hc.inFr (d := 232) (by omega_using []) (by omega_using [])
+  apply WP.of_runBlock
+  simp only [messageArgs, scrPtr, shaScratch, fScratch, fMessage, fLength,
+    List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+    exec, execAlu, readSrc, readSrc32, State.load64, State.setReg32, ea_stk,
+    RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, Option.map_some, Option.bind_some,
+    reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, h216, h224, h232,
+    Option.some.injEq, exists_eq_left', hc.pScr, hc.pMsg, hc.pLen, UpdArgs]
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
+    trivial, trivial, by rw [sx32 (by omega_using [])]⟩
+
+
+theorem prefixArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
+    WP isa (.block prefixArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧
+      UpdArgs L 0 (L.B + BitVec.ofNat 64 48) 32 t' := by
+  have hin := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  apply WP.of_runBlock
+  simp only [prefixArgs, framePtr, scrPtr, shaScratch, fScratch, List.cons_append, List.nil_append,
+    runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.load64,
+    State.setReg32, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
+    Nat.reduceAdd, hin, Option.some.injEq, exists_eq_left', hc.pScr, UpdArgs]
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
+    by rw [sx32 (by decide : 32 < 2 ^ 31), add_add],
+    rfl, by rw [sx32 (by omega_using [])]⟩
+
+def FinArgs (L : Lay) (count : BitVec 64) (t : State) : Prop :=
+  t.gpr .rdi = L.scr ∧ t.gpr .rsi = count ∧ t.gpr .rdx = L.B + BitVec.ofNat 64 144 ∧
+    t.gpr .rcx = L.scr + BitVec.ofNat 64 192
+
+theorem finalizeArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (prefixLen : Nat)
+    (hp : prefixLen < 2 ^ 31) (withMessage : Bool) :
+    WP isa (.block (finalizeArgs prefixLen withMessage)) t fun t' => Ctx L g mx m₀ t' ∧
+      t'.mem = t.mem ∧ FinArgs L
+        (if withMessage then L.len + BitVec.ofNat 64 prefixLen else BitVec.ofNat 64 prefixLen) t' := by
+  have hs := hc.inFr (d := 216) (by omega_using []) (by omega_using [])
+  have hl := hc.inFr (d := 224) (by omega_using []) (by omega_using [])
+  cases withMessage <;> apply WP.of_runBlock <;>
+    simp only [finalizeArgs, framePtr, scrPtr, shaScratch, fScratch, fLength, Bool.false_eq_true,
+      ite_false, ite_true, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+      exec, execAlu, readSrc, readSrc32, State.load64, State.setReg32, ea_stk,
+      RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
+      RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+      Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
+      Nat.reduceAdd, hs, hl, Option.some.injEq, exists_eq_left', hc.pScr, hc.pLen, FinArgs]
+  · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 (by omega_using [hp]),
+      by rw [sx32 (by decide : 128 < 2 ^ 31), add_add],
+      by rw [sx32 (by omega_using [])]⟩
+  · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, by rw [sx32 hp],
+      by rw [sx32 (by decide : 128 < 2 ^ 31), add_add],
+      by rw [sx32 (by omega_using [])]⟩
+
+end VG.Proof.Ed25519.X86_64.SignCached
+
+end
+
+end
+
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Prune`. -/
 
@@ -173,7 +486,7 @@ theorem init_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs
   simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith)
 
 theorem init_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs L t) :
-    WP isa (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
+    WP isa (.call "vg_sha512_init_core" (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr [] ∧ Frame (initWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
   refine call_ok hL (Proof.Sha512.X86_64.Stream.init_verified _).1 (nosp_init _) (by decide) hc
     (init_pre hL hc ha) ?_ ?_ fun s' hc' hf _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_, hf⟩
@@ -218,7 +531,7 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (ha : UpdArgs L count p n t) (hi : Input L ⟨p, n.toNat⟩)
     (hcount : count = BitVec.ofNat 64 prev.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr prev) :
-    WP isa (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
+    WP isa (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.updateOwn v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧
         Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr (prev ++ Spec.Ed25519.bytesAt t.mem p n.toNat) ∧
         Frame (updWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
@@ -270,7 +583,7 @@ theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     {message : List Byte} (hmess : message.length < 2 ^ 64)
     (hlen : count = BitVec.ofNat 64 message.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr message) :
-    WP isa (.call ("vg_sha512_finalize_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
+    WP isa (.call ("vg_sha512_finalize_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.bytesAt t'.mem (L.B + BitVec.ofNat 64 144) 64 =
         Spec.Sha512.sha512 message ∧ Frame (finWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
   refine call_ok hL (fin_verified v).1 (fin_nosp v) (fin_depth v) hc (fin_pre hL hc ha) ?_ ?_

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableLayout
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -34,35 +35,35 @@ theorem layer1_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     expandedVals[120*u+8*g+e]! = z (255-16*u-4*g-e) ∧
     expandedVals[120*u+8*g+e+4]! = bar (z (255-16*u-4*g-e)) := by
   have h := layer1_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
-  exact ⟨expanded_root (by omega) h.1, expanded_bar (by omega) h.2⟩
+  exact ⟨expanded_root (by omega_using [hu, hg, he]) h.1, expanded_bar (by omega_using [hu, hg, he]) h.2⟩
 
 theorem layer2_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     expandedVals[120*u+32+8*g+e]! = z (127-8*u-2*g-e/2) ∧
     expandedVals[120*u+32+8*g+e+4]! = bar (z (127-8*u-2*g-e/2)) := by
   have h := layer2_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
-  exact ⟨expanded_root (by omega) h.1, expanded_bar (by omega) h.2⟩
+  exact ⟨expanded_root (by omega_using [hu, hg, he]) h.1, expanded_bar (by omega_using [hu, hg, he]) h.2⟩
 
 theorem layer4_values {u g e : Nat} (hu : u<8) (hg : g<4) (he : e<4) :
     expandedVals[120*u+64+8*g+e]! = z (63-4*u-g) ∧
     expandedVals[120*u+64+8*g+e+4]! = bar (z (63-4*u-g)) := by
   have h := layer4_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
-  exact ⟨expanded_root (by omega) h.1, expanded_bar (by omega) h.2⟩
+  exact ⟨expanded_root (by omega_using [hu, hg, he]) h.1, expanded_bar (by omega_using [hu, hg, he]) h.2⟩
 
 theorem layer8_values {u g e : Nat} (hu : u<8) (hg : g<2) (he : e<4) :
     expandedVals[120*u+96+8*g+e]! = z (31-2*u-g) ∧
     expandedVals[120*u+96+8*g+e+4]! = bar (z (31-2*u-g)) := by
   have h := layer8_layout ⟨u,hu⟩ ⟨g,hg⟩ ⟨e,he⟩
-  exact ⟨expanded_root (by omega) h.1, expanded_bar (by omega) h.2⟩
+  exact ⟨expanded_root (by omega_using [hu, hg, he]) h.1, expanded_bar (by omega_using [hu, hg, he]) h.2⟩
 
 theorem layer16_values {u e : Nat} (hu : u<8) (he : e<4) :
     expandedVals[120*u+112+e]! = z (15-u) ∧
     expandedVals[120*u+112+e+4]! = bar (z (15-u)) := by
   have h := layer16_layout ⟨u,hu⟩ ⟨e,he⟩
-  exact ⟨expanded_root (by omega) h.1, expanded_bar (by omega) h.2⟩
+  exact ⟨expanded_root (by omega_using [hu, he]) h.1, expanded_bar (by omega_using [hu, he]) h.2⟩
 
 theorem tail_values {j : Nat} (hj : j<8) :
     expandedVals[960+j]! = z (7-j) ∧ expandedVals[968+j]! = bar (z (7-j)) := by
   have h := tail_layout ⟨j,hj⟩
-  exact ⟨expanded_root (by omega) h.1, expanded_bar (by omega) h.2⟩
+  exact ⟨expanded_root (by omega_using [hj]) h.1, expanded_bar (by omega_using [hj]) h.2⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTable

@@ -41,8 +41,8 @@ theorem appliedStep_ok (W : Window) {t : State} {P : Addr} {w : Nat}
   have ca := hc.of_win fa ka.wr (ka.gpr .x0 (by decide))
   have ta := ht.of_win fa hc.scrT.nowrap
   have ya : wv a.mem P (slot w aY) w = wv t.mem P (slot w aY) w :=
-    oa.wv (by have := hdr_lt_slot w aY (show Crt.sNib < 32 by decide); omega)
-      (by have := hc.good.scr.nowrap; have := slot_le (w := w) (show aY < 8 by decide); omega)
+    oa.wv (by have := hdr_lt_slot w aY (show Crt.sNib < 32 by decide); omega_using [this])
+      (by have := hc.good.scr.nowrap; have := slot_le (w := w) (show aY < 8 by decide); omega_arith)
   refine WP.mono (W.ok (Q := Q) (x := x) (E := E) (v := V / 2 ^ shift % 32) ca ta hw hw' hR (ya.symm ▸ hy)
     (fun hQ => by rw [ya]; exact hyv hQ) (Nat.mod_lt _ (by decide))
     (by rw [hm, word_writeW_self])) fun u ⟨cu, tu, yu, vu, fu, ku, nu, bu, hu⟩ => ?_

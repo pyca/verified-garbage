@@ -4,15 +4,15 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pkcs1_sign_umaal:
+vg_rsa_pkcs1_sign_precomputed_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
-	sub sp, sp, #1088
+	sub sp, sp, #1120
 	add r12, sp, #0
-	add r0, r12, #64
-	ldr r1, [sp, #1156]
-	ldr r2, [sp, #1152]
-	ldr r3, [sp, #1100]
-	ldr lr, [sp, #1160]
+	add r0, r12, #72
+	ldr r1, [sp, #1188]
+	ldr r2, [sp, #1184]
+	ldr r3, [sp, #1132]
+	ldr lr, [sp, #1192]
 	cmp r2, #0
 	beq 20f
 	cmp r2, #1
@@ -979,47 +979,51 @@ vg_rsa_pkcs1_sign_umaal:
 	cmp r3, #0
 	beq 296f
 	add r12, sp, #0
-	ldr r0, [sp, #1144]
-	str r0, [r12, #0]
-	ldr r0, [sp, #1148]
-	str r0, [r12, #4]
-	add r0, r12, #64
-	str r0, [r12, #8]
-	ldr r0, [sp, #1100]
-	str r0, [r12, #12]
-	ldr r0, [sp, #1164]
-	str r0, [r12, #16]
-	ldr r0, [sp, #1168]
-	str r0, [r12, #20]
-	ldr r0, [sp, #1172]
-	str r0, [r12, #24]
 	ldr r0, [sp, #1176]
-	str r0, [r12, #28]
+	str r0, [r12, #0]
 	ldr r0, [sp, #1180]
-	str r0, [r12, #32]
-	ldr r0, [sp, #1184]
-	str r0, [r12, #36]
-	ldr r0, [sp, #1188]
-	str r0, [r12, #40]
-	ldr r0, [sp, #1192]
-	str r0, [r12, #44]
+	str r0, [r12, #4]
+	add r0, r12, #72
+	str r0, [r12, #8]
+	ldr r0, [sp, #1132]
+	str r0, [r12, #12]
 	ldr r0, [sp, #1196]
-	str r0, [r12, #48]
+	str r0, [r12, #16]
 	ldr r0, [sp, #1200]
-	str r0, [r12, #52]
+	str r0, [r12, #20]
 	ldr r0, [sp, #1204]
-	str r0, [r12, #56]
+	str r0, [r12, #24]
 	ldr r0, [sp, #1208]
+	str r0, [r12, #28]
+	ldr r0, [sp, #1212]
+	str r0, [r12, #32]
+	ldr r0, [sp, #1216]
+	str r0, [r12, #36]
+	ldr r0, [sp, #1220]
+	str r0, [r12, #40]
+	ldr r0, [sp, #1224]
+	str r0, [r12, #44]
+	ldr r0, [sp, #1228]
+	str r0, [r12, #48]
+	ldr r0, [sp, #1232]
+	str r0, [r12, #52]
+	ldr r0, [sp, #1236]
+	str r0, [r12, #56]
+	ldr r0, [sp, #1240]
 	str r0, [r12, #60]
-	ldr r0, [sp, #1088]
-	ldr r1, [sp, #1100]
-	ldr r2, [sp, #1096]
-	ldr r3, [sp, #1100]
-	bl {vg_rsa_private_checked_umaal}
+	ldr r0, [sp, #1244]
+	str r0, [r12, #64]
+	ldr r0, [sp, #1248]
+	str r0, [r12, #68]
+	ldr r0, [sp, #1120]
+	ldr r1, [sp, #1132]
+	ldr r2, [sp, #1128]
+	ldr r3, [sp, #1132]
+	bl {vg_rsa_private_checked_precomputed_umaal}
 	add r12, sp, #0
 	mov r3, r0
-	add r0, r12, #64
-	ldr lr, [sp, #1100]
+	add r0, r12, #72
+	ldr lr, [sp, #1132]
 	mov r2, #0
 298:
 	ldrb r1, [r0, #0]
@@ -1032,8 +1036,8 @@ vg_rsa_pkcs1_sign_umaal:
 	b 297f
 296:
 	add r12, sp, #0
-	ldr r0, [sp, #1088]
-	ldr lr, [sp, #1100]
+	ldr r0, [sp, #1120]
+	ldr lr, [sp, #1132]
 	mov r2, #0
 299:
 	ldrb r1, [r0, #0]
@@ -1044,7 +1048,7 @@ vg_rsa_pkcs1_sign_umaal:
 	bne 299b
 	mov r0, #0
 297:
-	add sp, sp, #1088
+	add sp, sp, #1120
 	ldr r4, [sp, #16]
 	ldr r5, [sp, #20]
 	ldr r6, [sp, #24]
@@ -3177,15 +3181,15 @@ vg_rsa_pkcs1_recover_precomputed_umaal:
 	ldr r12, [sp], #56
 	bx lr
 
-vg_rsa_pkcs1_sign:
+vg_rsa_pkcs1_sign_precomputed:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
-	sub sp, sp, #1088
+	sub sp, sp, #1120
 	add r12, sp, #0
-	add r0, r12, #64
-	ldr r1, [sp, #1156]
-	ldr r2, [sp, #1152]
-	ldr r3, [sp, #1100]
-	ldr lr, [sp, #1160]
+	add r0, r12, #72
+	ldr r1, [sp, #1188]
+	ldr r2, [sp, #1184]
+	ldr r3, [sp, #1132]
+	ldr lr, [sp, #1192]
 	cmp r2, #0
 	beq 20f
 	cmp r2, #1
@@ -4152,47 +4156,51 @@ vg_rsa_pkcs1_sign:
 	cmp r3, #0
 	beq 296f
 	add r12, sp, #0
-	ldr r0, [sp, #1144]
-	str r0, [r12, #0]
-	ldr r0, [sp, #1148]
-	str r0, [r12, #4]
-	add r0, r12, #64
-	str r0, [r12, #8]
-	ldr r0, [sp, #1100]
-	str r0, [r12, #12]
-	ldr r0, [sp, #1164]
-	str r0, [r12, #16]
-	ldr r0, [sp, #1168]
-	str r0, [r12, #20]
-	ldr r0, [sp, #1172]
-	str r0, [r12, #24]
 	ldr r0, [sp, #1176]
-	str r0, [r12, #28]
+	str r0, [r12, #0]
 	ldr r0, [sp, #1180]
-	str r0, [r12, #32]
-	ldr r0, [sp, #1184]
-	str r0, [r12, #36]
-	ldr r0, [sp, #1188]
-	str r0, [r12, #40]
-	ldr r0, [sp, #1192]
-	str r0, [r12, #44]
+	str r0, [r12, #4]
+	add r0, r12, #72
+	str r0, [r12, #8]
+	ldr r0, [sp, #1132]
+	str r0, [r12, #12]
 	ldr r0, [sp, #1196]
-	str r0, [r12, #48]
+	str r0, [r12, #16]
 	ldr r0, [sp, #1200]
-	str r0, [r12, #52]
+	str r0, [r12, #20]
 	ldr r0, [sp, #1204]
-	str r0, [r12, #56]
+	str r0, [r12, #24]
 	ldr r0, [sp, #1208]
+	str r0, [r12, #28]
+	ldr r0, [sp, #1212]
+	str r0, [r12, #32]
+	ldr r0, [sp, #1216]
+	str r0, [r12, #36]
+	ldr r0, [sp, #1220]
+	str r0, [r12, #40]
+	ldr r0, [sp, #1224]
+	str r0, [r12, #44]
+	ldr r0, [sp, #1228]
+	str r0, [r12, #48]
+	ldr r0, [sp, #1232]
+	str r0, [r12, #52]
+	ldr r0, [sp, #1236]
+	str r0, [r12, #56]
+	ldr r0, [sp, #1240]
 	str r0, [r12, #60]
-	ldr r0, [sp, #1088]
-	ldr r1, [sp, #1100]
-	ldr r2, [sp, #1096]
-	ldr r3, [sp, #1100]
-	bl {vg_rsa_private_checked}
+	ldr r0, [sp, #1244]
+	str r0, [r12, #64]
+	ldr r0, [sp, #1248]
+	str r0, [r12, #68]
+	ldr r0, [sp, #1120]
+	ldr r1, [sp, #1132]
+	ldr r2, [sp, #1128]
+	ldr r3, [sp, #1132]
+	bl {vg_rsa_private_checked_precomputed}
 	add r12, sp, #0
 	mov r3, r0
-	add r0, r12, #64
-	ldr lr, [sp, #1100]
+	add r0, r12, #72
+	ldr lr, [sp, #1132]
 	mov r2, #0
 298:
 	ldrb r1, [r0, #0]
@@ -4205,8 +4213,8 @@ vg_rsa_pkcs1_sign:
 	b 297f
 296:
 	add r12, sp, #0
-	ldr r0, [sp, #1088]
-	ldr lr, [sp, #1100]
+	ldr r0, [sp, #1120]
+	ldr lr, [sp, #1132]
 	mov r2, #0
 299:
 	ldrb r1, [r0, #0]
@@ -4217,7 +4225,7 @@ vg_rsa_pkcs1_sign:
 	bne 299b
 	mov r0, #0
 297:
-	add sp, sp, #1088
+	add sp, sp, #1120
 	ldr r4, [sp, #16]
 	ldr r5, [sp, #20]
 	ldr r6, [sp, #24]

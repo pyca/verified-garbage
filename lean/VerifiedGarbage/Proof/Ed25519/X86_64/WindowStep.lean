@@ -8,7 +8,10 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import VerifiedGarbage.Proof.Ed25519.Recode
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Points
@@ -16,13 +19,67 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X25519.X86_64.Lit
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+
+/-! ### `Ed25519.X86_64.Point64.Ops`, which only this module used -/
+
+section
+
+/-!
+# The point operations a caller runs
+
+Untrusted: everything here is checked by Lean. The proofs of the code that
+doubles and adds points (verification's table and windows) hold for any
+point operations `pt` that change what the field programs `dblOps` and
+`addCachedOps` inlined would (`PtOk`): `Keep` and the slots' values. The
+functions' bodies, which calls of them run as (`Code.inline`), are such
+operations (`bodies_ok`, from `fn_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Point64
+open VG.Proof.X25519.X86_64 (clob ofs)
+
+/-- Point operations that do what the field programs inlined would. -/
+class PtOk (pt : Point64.Ops) : Prop where
+  dbl : ∀ {s : State} {base : Addr}, Scratch s base → ∀ t,
+    WP isa (pt.dbl t) s fun u => Keep base s u ∧ env u.mem base = evalOps (dblOps t) (env s.mem base)
+  add : ∀ {s : State} {base : Addr}, Scratch s base → ∀ t,
+    WP isa (pt.add t) s fun u => Keep base s u ∧ env u.mem base = evalOps (addCachedOps t) (env s.mem base)
+
+namespace Point64
+
+variable {fld : Arith} [EdArith fld]
+
+/-- A body's `Keep`, from `fn_ok`: its results are in slots 0–15. -/
+theorem fn_keep {s : State} {base : Addr} (hs : Scratch s base) (ops : List FieldOp)
+    (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (fn fld ops) = true)
+    (hout : ∀ op ∈ ops, 64 ≤ offset op.out ∧ offset op.out + 32 ≤ 768) :
+    WP isa (fn fld ops) s fun u => Keep base s u ∧ env u.mem base = evalOps ops (env s.mem base) :=
+  WP.mono (fn_ok hs ops hk) fun _ ⟨hg, hrd, hwr, hv, hm⟩ =>
+    ⟨⟨fun r hr => hg r (.inl hr), hrd, hwr, fun x hx => hm x fun op hop => by
+      have := hout op hop; omega_using [hx, this]⟩, hv⟩
+
+end Point64
+
+instance {fld : Arith} [EdArith fld] : PtOk (Point64.bodies fld) where
+  dbl hs t := Point64.fn_keep hs (dblOps t) (Point64.doubleFn_keeps t) (by cases t <;> decide)
+  add hs t := Point64.fn_keep hs (addCachedOps t) (Point64.addFn_keeps t) (by cases t <;> decide)
+
+end VG.Proof.Ed25519.X86_64
+
+end
+
+end
+
 
 /-! Merged from `Proof.Ed25519.X86_64.WindowTables`. -/
 

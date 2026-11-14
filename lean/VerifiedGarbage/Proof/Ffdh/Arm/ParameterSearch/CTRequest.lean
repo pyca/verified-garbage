@@ -55,8 +55,8 @@ private theorem head_ready (q : SearchPoint) (s : State) (h : LiveCT q s) :
 
 private theorem max_ready (q : SearchPoint) (s : State) (h : PairCT available requestFloor q s) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.select true) s (ValueCT requestPeak q) := by
-  refine WP.mono (selectNat_ok true s (by have := q.inputs.c.tapeCount; unfold available; omega)
-    (by have := q.inputs.width_bounds; unfold requestFloor; omega) h.2.1 h.2.2) ?_
+  refine WP.mono (selectNat_ok true s (by have := q.inputs.c.tapeCount; unfold available; omega_using [this])
+    (by have := q.inputs.width_bounds; unfold requestFloor; omega_using [this]) h.2.1 h.2.2) ?_
   rintro t ⟨⟨value, mem⟩, rest⟩
   exact ⟨h.1.after_read (by decide) mem rest, value⟩
 
@@ -73,7 +73,7 @@ private theorem min_ready (q : SearchPoint) (s : State) (h : PairCT requestDoubl
     WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.select false) s
       (ValueCT (fun q => min (requestDouble q) (requestCap q)) q) := by
   have tapeBound : q.inputs.c.bytes.length ≤ Spec.Ffdh.parameterEntropy q.inputs.c.bits := q.inputs.tapeBound
-  have doubleFits : requestDouble q < 2 ^ 32 := q.inputs.policy.double_fits (by unfold available; omega)
+  have doubleFits : requestDouble q < 2 ^ 32 := q.inputs.policy.double_fits (by unfold available; omega_using [tapeBound])
   refine WP.mono (selectNat_ok false s doubleFits q.inputs.entropy_fits h.2.1 h.2.2) ?_
   rintro t ⟨⟨value, mem⟩, rest⟩
   exact ⟨h.1.after_read (by decide) mem rest, value⟩

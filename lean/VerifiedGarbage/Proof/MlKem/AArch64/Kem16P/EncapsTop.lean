@@ -83,7 +83,7 @@ theorem encapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
     · exact hpub.1.2.2.2.2.1
   have ptr : ∀ i < 4, kA s ((enL P).slot i) = kA u ((enL P).slot i) := by
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
       exact rs _ (by simp [enL, argReg])
   have sp : s.sp = u.sp := hpub.1.2.2.2.2.2.1
   have rho : rhoE P s = rhoE P u := map_toNat_inj hpub.1.2.2.2.2.2.2

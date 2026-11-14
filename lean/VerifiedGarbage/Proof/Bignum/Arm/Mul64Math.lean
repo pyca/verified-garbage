@@ -30,6 +30,6 @@ theorem mul64_value (a ah b bh lo hi : BitVec 32)
     Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt bound,
     Nat.add_mul_div_right _ _ (by decide), Nat.div_eq_of_lt bound, Nat.zero_add]
   simp only [Nat.add_mod, Nat.mod_mod, Nat.mul_mod]
-  omega
+  omega_using []
 
 end VG.Proof.Bignum.Arm

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
 public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.WordRt.Prep
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
@@ -40,8 +41,8 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 theorem sum_carry {x a b P : Nat} {c : Bool} (hx : x < P) (e : x + P * c.toNat = a + b) :
     x = (a + b) % P ∧ c = decide (P ≤ a + b) := by
   cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at e
-  · refine ⟨by rw [← e, Nat.mod_eq_of_lt hx], by simp; omega⟩
-  · refine ⟨?_, by simp; omega⟩
+  · refine ⟨by rw [← e, Nat.mod_eq_of_lt hx], by simp; omega_using [hx, e]⟩
+  · refine ⟨?_, by simp; omega_using [e]⟩
     rw [← e, Nat.add_mod_right, Nat.mod_eq_of_lt hx]
 
 theorem KS.add_w {o a b : Nat} (h : KS g s0 A live AW liveW V ls s)
@@ -76,7 +77,7 @@ theorem KS.half_w {j : Nat} (h : KS g s0 A live AW liveW V ls s)
     (hj : j ∈ live) (zero : (s.gpr .ebx).toNat = 0) (hlW : ∀ i ∈ liveW, j / 2 ≠ i) :
     WP isa (half nar j) s fun t =>
       KS g s0 (upd A j (A j / 2)) (j :: live) AW liveW V ls t ∧ Keeps opRegs s t := by
-  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.half_ok h.rt (h.live_lt j hj) (by omega)) fun t ⟨_, k, e, r⟩ => ?_
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.half_ok h.rt (h.live_lt j hj) (by omega_using [zero])) fun t ⟨_, k, e, r⟩ => ?_
   rw [kw_nar] at k e
   exact ⟨h.write_w k (h.live_lt j hj) (by simp) (r.mono (by decide))
     (by rw [e, zero, Nat.mul_zero, Nat.add_zero, h.arrs j hj]) hlW (by simp), r.mono (by decide)⟩
@@ -176,30 +177,30 @@ theorem KS.widen {k a : Nat} (h : KS g s0 A live AW liveW V ls s) (hk : k < 22) 
   have eW : g.W = 2 * g.w + 2 := rfl
   have ew : width g.n = g.w := rfl
   have na : nArr = 44 := rfl
-  have fit2 := h.ws.arr_fit (j := 2 * k) (by omega)
+  have fit2 := h.ws.arr_fit (j := 2 * k) (by omega_using [hk, na])
   simp only [S] at fit2
-  refine WP.mono (copyOut_ok h.rt (o := 2 * k) (a := a) (by omega) (h.live_lt a ha) (Ne.symm hak))
+  refine WP.mono (copyOut_ok h.rt (o := 2 * k) (a := a) (by omega_using [hk, na]) (h.live_lt a ha) (Ne.symm hak))
     fun t ⟨_, O, e, r⟩ => ?_
   rw [kw_nar] at O e
   change Outside g.B (arr g.w (2 * k)) (4 * g.w) s.mem t.mem at O
   change num t.mem g.B g.w (2 * k) = num s.mem g.B g.w a at e
-  have keep : Keep g.B g.w [2 * k] [] s.mem t.mem := Keep.of_arr (d := 0) (by simpa using O) (by simp only [S]; omega) (by simp)
+  have keep : Keep g.B g.w [2 * k] [] s.mem t.mem := Keep.of_arr (d := 0) (by simpa using O) (by simp only [S]; omega_using []) (by simp)
   have zs : val32 s.mem g.B (arr g.w (2 * k) + 4 * g.w) 2 = 0 := by
     have z := zero
-    rw [aW, eW, show 2 * g.w + 2 + 1 = g.w + 2 + (g.w + 1) by omega] at z
+    rw [aW, eW, show 2 * g.w + 2 + 1 = g.w + 2 + (g.w + 1) by omega_using []] at z
     exact val32_zero_mid z
   have zh : num s.mem g.B g.w (2 * k + 1) = 0 := by
     have z := zero
-    rw [aW, eW, show 2 * g.w + 2 + 1 = g.w + 2 + g.w + 1 by omega] at z
+    rw [aW, eW, show 2 * g.w + 2 + 1 = g.w + 2 + g.w + 1 by omega_using []] at z
     have := val32_zero_mid z
     unfold num
     rw [show arr g.w (2 * k + 1) = arr g.w (2 * k) + 4 * (g.w + 2) by rw [arr_succ]]
     exact this
   have zt : val32 t.mem g.B (arr g.w (2 * k) + 4 * g.w) 2 = 0 := by
-    rw [O.val32 (.inr (Nat.le_refl _)) (by omega)]; exact zs
+    rw [O.val32 (.inr (Nat.le_refl _)) (by omega_using [nw, fit2])]; exact zs
   have zh' : num t.mem g.B g.w (2 * k + 1) = 0 := by
     unfold num
-    rw [O.val32 (.inr (by rw [arr_succ]; simp only [S]; omega)) (by rw [arr_succ]; simp only [S]; omega)]
+    rw [O.val32 (.inr (by rw [arr_succ]; simp only [S]; omega_using [])) (by rw [arr_succ]; simp only [S]; omega_using [nw, fit2])]
     exact zh
   have value : num t.mem g.B g.W k = A a := by
     change num t.mem g.B (2 * g.w + 2) k = A a
@@ -208,15 +209,15 @@ theorem KS.widen {k a : Nat} (h : KS g s0 A live AW liveW V ls s) (hk : k < 22) 
     rw [e, h.arrs a ha]
     simp
   have top : w32 t.mem g.B (arr g.W k + 4 * g.W) = 0 := by
-    rw [O.w32 (.inr (by rw [aW, eW]; omega)) (by omega)]
+    rw [O.w32 (.inr (by rw [aW, eW]; omega_using [])) (by omega_using [nw, fit])]
     have z := zero
     rw [val32_succ] at z
     rcases Nat.mul_eq_zero.mp (Nat.eq_zero_of_add_eq_zero z).2 with c | c
     · exact absurd c (Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos _))
     · exact c
-  refine ⟨h.core keep (fun j hj => by simp at hj; subst j; exact h.ws.arr_fit (by omega)) (by simp)
-    (r.mono (by decide)) (h.arrs_w keep (fun j hj i hi => by simp at hi; subst i; have := hl j hj; omega) (by simp))
-    h.live_lt ((h.arrsW_w keep (fun j hj i hi => by simp at hi; subst i; have := hlW j hj; omega) (by simp)).add value)
+  refine ⟨h.core keep (fun j hj => by simp at hj; subst j; exact h.ws.arr_fit (by omega_using [hk, na])) (by simp)
+    (r.mono (by decide)) (h.arrs_w keep (fun j hj i hi => by simp at hi; subst i; have := hl j hj; omega_using [this]) (by simp))
+    h.live_lt ((h.arrsW_w keep (fun j hj i hi => by simp at hi; subst i; have := hlW j hj; omega_using [this]) (by simp)).add value)
     (fun j hj => (List.mem_cons.mp hj).elim (fun e => e ▸ hk) (h.liveW_lt j)) (h.sl_keep keep (by simp)) h.ls_ok, top⟩
 
 /-- A wide number's low half, read narrow. -/
@@ -224,7 +225,7 @@ theorem KS.view {j : Nat} (h : KS g s0 A live AW liveW V ls s) (hj : j ∈ liveW
     KS g s0 (upd A (2 * j) (AW j % 2 ^ (32 * g.w))) (2 * j :: live) AW liveW V ls s :=
   { h with
     arrs := h.arrs.add (by rw [num_low, ← h.arrsW j hj]; rfl)
-    live_lt := fun i hi => (List.mem_cons.mp hi).elim (fun e => by have := h.liveW_lt j hj; show i < 44; omega) (h.live_lt i) }
+    live_lt := fun i hi => (List.mem_cons.mp hi).elim (fun e => by have := h.liveW_lt j hj; show i < 44; omega_using [e, this]) (h.live_lt i) }
 
 /-- Whether two narrow numbers are equal, into the header word `d`. -/
 theorem KS.eq_w {d a b : Nat} (h : KS g s0 A live AW liveW V ls s)
@@ -331,5 +332,38 @@ theorem KS.div_W {q r d t : Nat} (h : KS g s0 A live AW liveW V ls s)
     rw [h.arrsW q hq, h.arrsW d hd] at e1 e2
     exact ⟨e1, e2⟩
 
+
+theorem upd_upd (A : Nat → Nat) (j x y : Nat) : upd (upd A j x) j y = upd A j y := by
+  funext i; simp only [upd]; split <;> rfl
+
+/-- `n`'s length, the argument `nl`, at any point of a stage. -/
+theorem KS.mlen (h : KS g s0 A live AW liveW V ls s) {a : Nat}
+    (ha : g.args VG.Impl.Rsa.X86.RecoverDetRt.nl = BitVec.ofNat 32 a) (ha1 : a ≤ 1024) :
+    VG.Proof.Rsa.X86.WordRt.MLen s g.B g.Z VG.Impl.Rsa.X86.RecoverDetRt.nl a :=
+  ⟨by rw [← ha]; exact h.arg (h.start.2 _ (by decide)).1 (by decide), ha1⟩
+
+/-- Halving a wide number, `ebx` zero. -/
+theorem KS.half_W {j : Nat} (h : KS g s0 A live AW liveW V ls s)
+    (hj : j ∈ liveW) (zero : (s.gpr .ebx).toNat = 0) (hl : ∀ i ∈ live, i / 2 ≠ j) :
+    WP isa (half wid j) s fun t =>
+      KS g s0 A live (upd AW j (AW j / 2)) (j :: liveW) V ls t ∧ Keeps opRegs s t := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.half_ok h.rtW (h.liveW_lt j hj) (by omega_using [zero])) fun t ⟨_, k, e, r⟩ => ?_
+  rw [kw_wid] at k e
+  exact ⟨h.write_W k (h.liveW_lt j hj) (by simp) (r.mono (by decide))
+    (by rw [e, zero, Nat.mul_zero, Nat.add_zero, h.arrsW j hj]) hl (by simp), r.mono (by decide)⟩
+
 end
+
+theorem seqs_cons_iff (c : Prog isa) (cs : List (Prog isa)) (s : State) (Q : State → Prop) :
+    WP isa (VG.Impl.Rsa.X86.Keys.seqs (c :: cs)) s Q ↔ WP isa c s (fun t => WP isa (VG.Impl.Rsa.X86.Keys.seqs cs) t Q) := by
+  cases cs with
+  | nil => simp only [VG.Impl.Rsa.X86.Keys.seqs, WP.block_nil_iff (M := isa)]
+  | cons d ds => exact WP.seq_iff
+
+theorem seqs_append_iff (cs ds : List (Prog isa)) (s : State) (Q : State → Prop) :
+    WP isa (VG.Impl.Rsa.X86.Keys.seqs (cs ++ ds)) s Q ↔ WP isa (VG.Impl.Rsa.X86.Keys.seqs cs) s (fun t => WP isa (VG.Impl.Rsa.X86.Keys.seqs ds) t Q) := by
+  induction cs generalizing s Q with
+  | nil => simp only [List.nil_append, VG.Impl.Rsa.X86.Keys.seqs, WP.block_nil_iff (M := isa)]
+  | cons c cs ih => simp only [List.cons_append, seqs_cons_iff, ih]
+
 end VG.Proof.Rsa.X86.Recover

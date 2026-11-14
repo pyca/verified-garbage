@@ -81,10 +81,10 @@ theorem compute_piece : VPiece p STK (KX p STK 0 false 0) (KE p STK) (compute P 
   refine Piece.seq (J := KX p STK p.ℓ false 0) ?_ ((nttC_piece hP hF hS).seq
     (Piece.seq (J := KX p STK p.ℓ true p.k) ?_ ((vhash_piece hF).seq (cmp_piece hF))))
   · refine Piece.mono (Piece.seqR (I := fun j => KX p STK j false 0) p.ℓ 0
-      fun j _ hj => nttZ_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun j _ hj => nttZ_piece hP hF hS (by omega_using [hj])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
   · refine Piece.mono (Piece.seqR (I := fun r => KX p STK p.ℓ true r) p.k 0
-      fun r _ hr => row_piece hP hF hS (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
+      fun r _ hr => row_piece hP hF hS (by omega_using [hr])) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 
 end
@@ -198,7 +198,7 @@ theorem body_piece : VPiece p STK (fun σ s => VC p STK σ s ∧ s.gpr .r11 = 1)
     dsimp only [hintOf]
     rw [e]
   · refine Piece.seq (Piece.mono (Piece.seqR (I := fun j => V2 p STK j) p.ℓ 0
-      fun j _ hj => zOne_piece hP hF hS (by omega)) (fun _ _ _ h => v1_v2 h.1 h.2) fun _ _ _ h => ?_)
+      fun j _ hj => zOne_piece hP hF hS (by omega_using [hj])) (fun _ _ _ h => v1_v2 h.1 h.2) fun _ _ _ h => ?_)
       (inner_piece hP hF hS)
     rwa [Nat.zero_add] at h
 
@@ -234,7 +234,7 @@ theorem withCache_piece {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (
     (hS : S + 8 ≤ STK) :
     VPiece p STK (fun σ s => s = σ) (fun σ s => Arm.target.abiPreserved σ s ∧ VOut p σ (s.gpr .r0))
       (withCache P p) :=
-  (vpro_piece hF (by omega)).seq ((body_piece hP hF hS).seq vepi_piece)
+  (vpro_piece hF (by omega_using [hS])).seq ((body_piece hP hF hS).seq vepi_piece)
 
 theorem withCache_correct {P : Prims} {S : Nat} (hP : VPrimsOk P S) {p : Params} (hF : VFacts p) {STK : Nat}
     (hS : S + 8 ≤ STK) (σ : State) (hp : (verifyK p STK).pre σ) :

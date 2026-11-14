@@ -55,21 +55,21 @@ theorem cg_lt {w : Width} (hw : WOk w) {g e : Nat} (hg : g < 256 / w.c) (he : e 
   have := hw.cG
   have : w.c * (g + 1) ≤ w.c * (256 / w.c) := Nat.mul_le_mul_left _ hg
   rw [Nat.mul_succ] at this
-  omega
+  omega_arith
 
 theorem nbg_le {w : Width} (hw : WOk w) {g : Nat} (hg : g < 256 / w.c) :
     w.nb * g + w.nb ≤ 32 * w.d := by
   have := hw.bytes
   have : w.nb * (g + 1) ≤ w.nb * (256 / w.c) := Nat.mul_le_mul_left _ hg
   rw [Nat.mul_succ] at this
-  omega
+  omega_arith
 
 /-- Coefficient `e` of group `g` of the output. -/
 theorem G_eq {w : Width} (hw : WOk w) (s₀ : State) {g e : Nat} (hg : g < 256 / w.c) (he : e < w.c) :
     G w s₀ (w.c * g + e) =
       BitVec.ofNat 32 ((q * (num w s₀ g w.nb / 2 ^ (w.d * e) % 2 ^ w.d) + 2 ^ (w.d - 1)) / 2 ^ w.d) := by
   have hi := cg_lt hw hg he
-  have hd12 : w.d < 12 := by have := hw.d_le; omega
+  have hd12 : w.d < 12 := by have := hw.d_le; omega_using [this]
   rw [G, decodeDecompress_get _ _ (show _ < n from hi),
     byteDecode_group hw.dc _ he (show _ < n from hi), bytes_map_take_drop _ (by
       rw [bytesAt_length]; exact nbg_le hw hg), ite_eq_left hd12, Nat.mod_mod,
@@ -80,7 +80,7 @@ theorem Pre.byte_eq {w : Width} {s₀ : State} (hp : Pre w s₀) {m : Mem}
     (hf : Frame [polyRegion (fP s₀)] s₀.mem m) {j : Nat} (hj : j < 32 * w.d) (hw : w.d ≤ 11) :
     (m (bP s₀ + BitVec.ofNat 64 j)).toNat = byte w s₀ j := by
   rw [byte_frame (len := 32 * w.d) hf
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) (by omega) hj]
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) (by omega_using [hw]) hj]
   show _ = ((bytesAt s₀.mem (bP s₀) (32 * w.d)).getD j 0).toNat
   rw [bytesAt_getD _ _ hj]
 

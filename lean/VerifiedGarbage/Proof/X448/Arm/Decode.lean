@@ -29,14 +29,14 @@ theorem decodeLimb_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat}
       t.mem = (s.mem.writeW (off base (X1 + 4 * i)) (BitVec.ofNat 32 (decoded s.mem p i))).writeW
         (off base (X3 + 4 * i)) (BitVec.ofNat 32 (decoded s.mem p i)) ∧ Keeps [.r3, .r4] s t := by
   have ea0 : State.addr (s.gpr .r2 + BitVec.ofNat 32 (2 * i)) = off p (2 * i) := by
-    rw [addr_add (by omega), hp]
+    rw [addr_add (by omega_using [hi, hfit]), hp]
   have ea1 : State.addr (s.gpr .r2 + BitVec.ofNat 32 (2 * i + 1)) = off p (2 * i + 1) := by
-    rw [addr_add (by omega), hp]
+    rw [addr_add (by omega_using [hi, hfit]), hp]
   unfold decodeLimb
-  refine wp_ldrb (a := off p (2 * i)) (by omega) ea0 (hr _ (by omega)) fun s1 h1 => ?_
-  refine wp_ldrb (a := off p (2 * i + 1)) (by omega)
+  refine wp_ldrb (a := off p (2 * i)) (by omega_using [hi]) ea0 (hr _ (by omega_using [hi])) fun s1 h1 => ?_
+  refine wp_ldrb (a := off p (2 * i + 1)) (by omega_using [hi])
     (by rw [h1.other .r2 (by decide)]; exact ea1)
-    (by rw [h1.rd, h1.wr]; exact hr _ (by omega)) fun s2 h2 => ?_
+    (by rw [h1.rd, h1.wr]; exact hr _ (by omega_using [hi])) fun s2 h2 => ?_
   refine wp_dp (op2_lsl (by decide)) fun s3 h3 => ?_
   have value : s3.gpr .r3 = BitVec.ofNat 32 (decoded s.mem p i) := by
     rw [h3.gpr]
@@ -48,13 +48,13 @@ theorem decodeLimb_ok {s : State} {base p : Addr} (hs : Scr s base) {i : Nat}
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth,
       Nat.shiftLeft_eq, BitVec.toNat_ofNat, decoded, byteN]
     simp only [off] at h0 h1 ⊢
-    omega
+    omega_using []
   have hs1 := hs.of_upd h1 (by decide) (by decide)
   have hs2 := hs1.of_upd h2 (by decide) (by decide)
   have hs3 := hs2.of_upd h3 (by decide) (by decide)
-  refine store_ok hs3 (by simp only [X1, slot]; omega) fun s4 h4 => ?_
+  refine store_ok hs3 (by simp only [X1, slot]; omega_using [hi]) fun s4 h4 => ?_
   have hs4 := hs3.of_keeps (rest_keeps (h4.rest [])) (by decide)
-  refine store_ok hs4 (by simp only [X3, slot]; omega) fun s5 h5 => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok hs4 (by simp only [X3, slot]; omega_using [hi]) fun s5 h5 => WP.block_nil ⟨?_, ?_⟩
   · rw [h5.mem, h4.mem, h3.mem, h2.mem, h1.mem, h4.gpr, value]
   · exact rest_keeps ((h1.rest (by decide)).trans ((h2.rest (by decide)).trans
       ((h3.rest (by decide)).trans ((h4.rest _).trans (h5.rest _)))))
@@ -64,8 +64,8 @@ theorem decodeLimb_outside (m : Mem) (base : Addr) {i : Nat} (hi : i < 28) (v : 
     Outside2 base X1 (4 * (i + 1)) X3 (4 * (i + 1)) m
       ((m.writeW (off base (X1 + 4 * i)) v).writeW (off base (X3 + 4 * i)) v) := by
   intro p hp hq
-  rw [writeW_outside _ _ _ (by simp only [X3, slot]; omega) p (by omega),
-    writeW_outside _ _ _ (by simp only [X1, slot]; omega) p (by omega)]
+  rw [writeW_outside _ _ _ (by simp only [X3, slot]; omega_using [hi]) p (by omega_using [hq]),
+    writeW_outside _ _ _ (by simp only [X1, slot]; omega_using [hi]) p (by omega_using [hp])]
 
 theorem fiveLimb_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 28) :
     WP isa (.block (fiveLimb i)) s fun t =>
@@ -74,9 +74,9 @@ theorem fiveLimb_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
   unfold fiveLimb
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by split <;> decide)) fun s1 h1 => ?_
   have hs1 := hs.of_upd h1 (by decide) (by decide)
-  refine store_ok hs1 (by simp only [X1, slot]; omega) fun s2 h2 => ?_
+  refine store_ok hs1 (by simp only [X1, slot]; omega_using [hi]) fun s2 h2 => ?_
   have hs2 := hs1.of_keeps (rest_keeps (h2.rest [])) (by decide)
-  refine store_ok hs2 (by simp only [X3, slot]; omega) fun s3 h3 => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok hs2 (by simp only [X3, slot]; omega_using [hi]) fun s3 h3 => WP.block_nil ⟨?_, ?_⟩
   · have v : s1.gpr .r3 = BitVec.ofNat 32 (if i = 0 then 5 else 0) := by rw [h1.gpr]; split <;> rfl
     rw [h3.mem, h2.mem, h1.mem, h2.gpr, v]
   · exact rest_keeps ((h1.rest (by decide)).trans ((h2.rest _).trans (h3.rest _)))

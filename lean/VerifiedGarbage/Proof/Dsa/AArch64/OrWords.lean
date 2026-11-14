@@ -31,7 +31,7 @@ theorem orWordsStep_ok {s₀ : State} {B : Addr} {Z w e : Nat} {A : Prop}
   refine WP.mono (WP.keep [.x3, .x15, .x16] (Q := fun u => u.mem = t.mem ∧
     u.gpr .x15 = t.gpr .x15 ||| word t.mem B (e + 8 * j) ∧
     u.gpr .x16 = off B (e + 8 * j + 8))
-    (by brun [hI.pointer, hI.scr.ld (show e + 8 * j + 8 ≤ Z by omega)]) rfl rfl rfl)
+    (by brun [hI.pointer, hI.scr.ld (show e + 8 * j + 8 ≤ Z by omega_using [he, hj])]) rfl rfl rfl)
     fun u ⟨⟨hm, hv, hp⟩, hk⟩ => ?_
   refine WP.mono (dec_ok u .x14) fun v ⟨⟨hn, hvm, _⟩, hkv⟩ => ⟨?_, by rw [hn, hk.gpr .x14 (by decide)]⟩
   refine ⟨hI.scr.congr (hkv.wr.trans hk.wr), ((hI.keep.trans hk).trans hkv).mono (by decide),
@@ -44,7 +44,7 @@ theorem orWordsStep_ok {s₀ : State} {B : Addr} {Z w e : Nat} {A : Prop}
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       exacts [h i hi, hb]
     · rintro ⟨ha, h⟩
-      exact ⟨⟨ha, fun i hi => h i (by omega)⟩, h j (by omega)⟩
+      exact ⟨⟨ha, fun i hi => h i (by omega_using [hi])⟩, h j (by omega_using [])⟩
 
 theorem orWords_ok {s : State} {B : Addr} {Z w e : Nat} {A : Prop}
     (hs : Scr s B Z) (hp : s.gpr .x16 = off B e)
@@ -55,7 +55,7 @@ theorem orWords_ok {s : State} {B : Addr} {Z w e : Nat} {A : Prop}
       t.mem = s.mem ∧ Keep [.x3, .x15, .x14, .x16] s t := by
   have h0 : OrWordsInv s B Z e A 0 s :=
     ⟨hs, Keep.refl _ _, rfl, by simpa using hp, by simpa using hv⟩
-  exact WP.mono (wp_countdown hw' (by omega) (OrWordsInv s B Z e A)
+  exact WP.mono (wp_countdown hw' (by omega_using [hw]) (OrWordsInv s B Z e A)
     (fun j hj t hi _ => orWordsStep_ok he hj hi) h0 hn) fun t hi => ⟨hi.val, hi.mem, hi.keep⟩
 
 end VG.Proof.Dsa.AArch64

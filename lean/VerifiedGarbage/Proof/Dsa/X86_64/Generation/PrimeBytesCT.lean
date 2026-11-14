@@ -45,8 +45,8 @@ theorem primeBytesLoad_ct (len drawBytes : Nat) : RelCT isa (Two (PrimeBytesBefo
     (loadPadded_ct (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))
   obtain ⟨mi, hs⟩ := h.1
   exact ⟨⟨mi, hs.good⟩, p.call.draw.prime.dims.z,
-    by change 1 ≤ p.call.draw.prime.w; have := p.call.draw.prime.dims.w4; omega,
-    by change p.call.draw.prime.w < 2 ^ 31; have := p.call.draw.prime.dims.w128; omega,
+    by change 1 ≤ p.call.draw.prime.w; have := p.call.draw.prime.dims.w4; omega_using [this],
+    by change p.call.draw.prime.w < 2 ^ 31; have := p.call.draw.prime.dims.w128; omega_using [this],
     h.2.1, hs.len⟩
 
 theorem primeBytesLoad_ready {len drawBytes : Nat} {p : PrimeBytesPublic} {s : State}

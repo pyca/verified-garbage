@@ -122,7 +122,7 @@ theorem kernel_source (base : State) :
 
 theorem Layout.kernel {base : State} {n count : Nat} (lay : Layout base n count) :
     SourceLayout (kernelBase base) (n-n%8) count := by
-  refine ⟨(kernel_source base).2.trans lay.left,?_,by have := lay.bound; have := lay.wrapper.core.size; omega,?_,?_⟩
+  refine ⟨(kernel_source base).2.trans lay.left,?_,by have := lay.bound; have := lay.wrapper.core.size; omega_arith,?_,?_⟩
   · simpa only [kernelBase,Blocks.bulkArgsState,Blocks.wrapperEntryState,Blocks.wrapperConfigState,
       RegUpd.rd_write,RegUpd.wr_write,RegUpd.gpr_write,reduceCtorEq,ite_false] using lay.reads
   · have hd := lay.disjoint ⟨base.gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites])
@@ -132,7 +132,7 @@ theorem Layout.kernel {base : State} {n count : Nat} (lay : Layout base n count)
     simpa only [sourceRegion,(kernel_source base).1] using hd.sub_right hs
   · have hd := lay.disjoint (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
     have hs : Region.Sub (Blocks.coreData (kernelBase base) (n-n%8))
-        (Blocks.coreData (Blocks.wrapperView base) n) := Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega)
+        (Blocks.coreData (Blocks.wrapperView base) n) := Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega_using [])
     simpa only [sourceRegion,(kernel_source base).1] using hd.sub_right hs
 
 
@@ -144,7 +144,7 @@ theorem header_source {base : State} {n count i : Nat} (lay : Layout base n coun
   rw [List.mem_singleton] at hr
   subst r
   exact ((lay.disjoint ⟨base.gpr .r9,2112⟩ (by simp [Blocks.wrapperFullWrites])).sub_left
-    (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega))).sub_right
+    (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]))).sub_right
       (Region.sub_prefix (by decide))
 
 
@@ -161,7 +161,7 @@ theorem kernel_plain {base : State} {n count i : Nat} (lay : Layout base n count
     rw [List.mem_singleton] at hr
     subst r
     exact (lay.wrapper.header_disjoint (r := Blocks.coreData (Blocks.wrapperView base) n) (by simp)).sub_left
-      (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega))
+      (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega_using [hi]))
 
 
 abbrev Mid (dec : Bool) (base : State) (n nr count k : Nat) (s : State) :=
@@ -179,7 +179,7 @@ theorem bulk_output {base u : State} {n nr count : Nat} {dec : Bool} (lay : Layo
   have hp : (List.range (n-n%8)).map (plaintext (kernelBase base) count)=blocks base count 0 (n-n%8) := by
     apply List.map_congr_left
     intro i hi
-    simpa only [Nat.zero_add] using kernel_plain lay (by have := List.mem_range.mp hi; omega)
+    simpa only [Nat.zero_add] using kernel_plain lay (by have := List.mem_range.mp hi; omega_using [this])
   have hd : Spec.Gcm.blocksAt u.mem (base.gpr .r7) (n-n%8)=Spec.Gcm.ctr32
       (Spec.Gcm.ctxCiph (Blocks.wrapperHeaderMem base) (base.gpr .r3) nr)
       (Spec.Gcm.blockAt (Blocks.wrapperHeaderMem base) (base.gpr .r5))
@@ -240,7 +240,7 @@ theorem saved_core {base u : State} {n nr count : Nat} {dec : Bool} (lay : Layou
     exact Offset.disjoint _ (by decide) (by decide) (by decide)
   · exact ((lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).symm.sub_left
       (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))).sub_right
-        (Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega))
+        (Region.sub_prefix (by change 16*(n-n%8)≤16*n; omega_using []))
   · exact (lay.wrapper.scratch (Blocks.coreCounter (Blocks.wrapperView base)) (by simp)).symm.sub_left
       (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))
   · exact (lay.wrapper.scratch (Blocks.coreY (Blocks.wrapperView base)) (by simp)).symm.sub_left
@@ -264,7 +264,7 @@ theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
     rw [ha.h,ha.ctx]; rfl
   apply WP.seq
   refine WP.mono (core_ok dec _ (n-n%8) nr count (Blocks.bulkEntry_layout lay.wrapper) lay.kernel
-    ha.left (by omega) hmin hmax (ha.rounds.trans hr) hH) fun u ⟨hu,hku⟩ => ?_
+    ha.left (by omega_using []) hmin hmax (ha.rounds.trans hr) hH) fun u ⟨hu,hku⟩ => ?_
   refine WP.mono (Blocks.bulkRest_ok u) fun t ht => ?_
   subst t
   have h25 : u.gpr .r25=BitVec.ofNat 64 n :=
@@ -274,9 +274,9 @@ theorem bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
   have hp := Blocks.bulkRest_pointer u n h25
   have hout := bulk_output lay hmax hu
   have hkeep := ((((Blocks.wrapperEntry_keep base lay.wrapper).trans (Blocks.bulkArgs_keep _)).trans hku).trans (Blocks.bulkRest_keep u))
-  refine ⟨⟨by omega,Blocks.bulkRest_fixed (fixed_keep ha.fixed hku),?_,?_,?_,?_,?_,?_,?_,?_⟩,?_,?_⟩
+  refine ⟨⟨by omega_using [],Blocks.bulkRest_fixed (fixed_keep ha.fixed hku),?_,?_,?_,?_,?_,?_,?_,?_⟩,?_,?_⟩
   · exact hp.1.trans (congrArg (fun p => p+BitVec.ofNat 64 (16*(n-n%8))) h30)
-  · simpa only [show n-(n-n%8)=n%8 by omega] using hp.2
+  · simpa only [show n-(n-n%8)=n%8 by omega_using []] using hp.2
   · intro r hr hs
     have hpres : ∀ r ∈ preserved, r ∉ Blocks.coreVolatile := by decide
     have hv := hpres r hr
@@ -307,28 +307,28 @@ theorem source_frame {base s : State} {n count i : Nat} (lay : Layout base n cou
       Spec.Gcm.blockAt base.mem (base.gpr .r17+BitVec.ofNat 64 (16*i)) := by
   apply Blocks.block_frame (Blocks.wrapper_final_frame hf)
   intro r hr
-  exact (lay.disjoint r hr).sub_left (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega))
+  exact (lay.disjoint r hr).sub_left (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*count) (by omega_using [hi]))
 
 
 theorem copy_config {base s : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
     (hs : Mid dec base n nr count k s) (hin : input base count k (s.gpr .r17) (s.gpr .r19)) :
     Copy.Config s (n-k) (count-k) := by
-  refine ⟨by have := lay.bound; omega,by have := lay.wrapper.core.size; omega,hin.2,?_,?_,?_⟩
+  refine ⟨by have := lay.bound; omega_using [this],by have := lay.wrapper.core.size; omega_using [this],hin.2,?_,?_,?_⟩
   · intro i hi
     rw [hs.fixed.rd,hs.fixed.wr,source_addr hi hin]
     exact Covers.one lay.reads _ _ ⟨_,List.mem_singleton_self _,
-      Offset.contains_base _ (d := 16*(k+i)) (n := 16) (k := 16*count) (by omega)
-        (by have := lay.bound; have := lay.wrapper.core.size; omega)⟩
+      Offset.contains_base _ (d := 16*(k+i)) (n := 16) (k := 16*count) (by omega_using [hi])
+        (by have := lay.bound; have := lay.wrapper.core.size; omega_arith)⟩
   · intro i hi
     rw [hs.fixed.wr,hs.ptr,Offset.add_add]
     exact lay.wrapper.core.writes _ _ ⟨Blocks.coreData (Blocks.wrapperView base) n,by simp,
       Offset.contains_base _ (d := 16*k+16*i) (n := 16) (k := 16*n)
-        (by have := lay.bound; omega) (by have := lay.bound; have := lay.wrapper.core.size; omega)⟩
+        (by have := lay.bound; omega_using [hi, this]) (by have := lay.bound; have := lay.wrapper.core.size; omega_arith)⟩
   · have hd := lay.disjoint (Blocks.coreData (Blocks.wrapperView base) n) (by simp [Blocks.wrapperFullWrites])
     rw [hs.ptr,hin.1]
     exact (hd.sub_left (Offset.sub_base _ (d := 16*min k count) (n := 16*(count-k)) (k := 16*count)
-      (by omega))).sub_right (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n)
-        (by have := hs.bound; omega))
+      (by omega_using []))).sub_right (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n)
+        (by have := hs.bound; omega_using [this]))
 
 
 
@@ -357,10 +357,10 @@ theorem optional_bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
       ∃ k, k≤n ∧ n-k<32 ∧ Mid dec base n nr count k t ∧ input base count k (t.gpr .r17) (t.gpr .r19) ∧
         ∀ g, Spill.Saved (base.gpr .r9) g extraSaved base.mem → Spill.Saved (base.gpr .r9) g extraSaved t.mem := by
   rw [Impl.AesGcm.PPC64LE.SplitBlocks.maybeBulkOf]
-  have ht := Blocks.wrapper_bulk_test base hn (by have := lay.wrapper.core.size; omega)
+  have ht := Blocks.wrapper_bulk_test base hn (by have := lay.wrapper.core.size; omega_using [this])
   by_cases hsmall : n<32
   · refine WP.ite true (by simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,ht.mpr hsmall]; rfl)
-      (fun _ => WP.block_nil ⟨0,by omega,by omega,mid_initial dec base n nr count lay hn,?_,?_⟩) (by simp)
+      (fun _ => WP.block_nil ⟨0,by omega_using [],by omega_using [hsmall],mid_initial dec base n nr count lay hn,?_,?_⟩) (by simp)
     · change input base count 0 (base.gpr .r17) (base.gpr .r19)
       simp only [input,Nat.zero_min,Nat.mul_zero,BitVec.add_zero,Nat.sub_zero,lay.left,and_self]
     · exact saved_header base
@@ -368,7 +368,7 @@ theorem optional_bulk_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] (dec : Bool)
     refine WP.ite false (by simpa only [eval,State.read,Size.bits,BitVec.setWidth_eq,
       Option.some.injEq,beq_eq_false_iff_ne] using hne) (by simp) (fun _ => ?_)
     exact WP.mono (bulk_ok dec base n nr count lay hn hr hmin hmax) fun t hh =>
-      ⟨n-n%8,by omega,by omega,hh⟩
+      ⟨n-n%8,by omega_using [],by omega_using [],hh⟩
 
 
 
@@ -380,19 +380,19 @@ theorem copy_pending {base s t : State} {n nr count k : Nat} {dec : Bool} (lay :
   apply List.map_congr_left
   intro i hi
   have hi : i<n-k := List.mem_range.mp hi
-  have hb := ht.blockAt (by have := lay.bound; omega) hi
+  have hb := ht.blockAt (by have := lay.bound; omega_using [this]) hi
   rw [hs.ptr] at hb
   rw [hb]
   by_cases hic : i<count-k
   · rw [ite_eq_left hic,source_addr hic hin]
-    simp only [plain,ite_eq_left (show k+i<count by omega)]
-    exact source_frame lay hs.frame (by omega)
+    simp only [plain,ite_eq_left (show k+i<count by omega_using [hic])]
+    exact source_frame lay hs.frame (by omega_using [hic])
   · rw [ite_eq_right hic]
     have hp := List.getElem_of_eq hs.pending (i := i)
       (by simpa only [Spec.Gcm.blocksAt,List.length_map,List.length_range] using hi)
     simp only [Spec.Gcm.blocksAt,List.getElem_map,List.getElem_range] at hp
-    rw [hp,plain,ite_eq_right (show ¬k+i<count by omega),Offset.add_add]
-    exact congrArg (fun j => Spec.Gcm.blockAt base.mem (base.gpr .r7+BitVec.ofNat 64 j)) (by omega)
+    rw [hp,plain,ite_eq_right (show ¬k+i<count by omega_using [hic]),Offset.add_add]
+    exact congrArg (fun j => Spec.Gcm.blockAt base.mem (base.gpr .r7+BitVec.ofNat 64 j)) (by omega_using [])
 
 
 
@@ -409,7 +409,7 @@ theorem copy_frame {base s t : State} {n nr count k : Nat} {dec : Bool} (hs : Mi
   subst r
   refine ⟨Blocks.coreData (Blocks.wrapperView base) n,by simp [Blocks.wrapperWrites],?_⟩
   rw [hs.ptr]
-  exact Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega)
+  exact Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega_using [this])
 
 
 theorem copied {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
@@ -422,7 +422,7 @@ theorem copied {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layou
     intro r hr
     rw [hs.ptr]
     exact (lay.wrapper.core.data r (by simpa only [List.mem_cons,List.not_mem_nil,or_false] using Or.inr hr)).sub_right
-      (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega))
+      (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega_using [this]))
   have hcounter : Spec.Gcm.blockAt t.mem (base.gpr .r5)=Spec.Gcm.blockAt s.mem (base.gpr .r5) :=
     Blocks.block_frame ht.frame (by
       intro r hr
@@ -450,7 +450,7 @@ theorem copied {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layou
     rw [List.mem_singleton] at hr
     subst r
     rw [hs.ptr]
-    exact Offset.base_disjoint _ (by omega) (by have := lay.wrapper.core.size; have := hs.bound; omega)
+    exact Offset.base_disjoint _ (by omega_using []) (by have := lay.wrapper.core.size; have := hs.bound; omega_arith)
 
 
 theorem copy_saved {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : Layout base n count)
@@ -464,7 +464,7 @@ theorem copy_saved {base s t : State} {n nr count k : Nat} {dec : Bool} (lay : L
   rw [hs.ptr]
   exact ((lay.wrapper.scratch (Blocks.coreData (Blocks.wrapperView base) n) (by simp)).symm.sub_left
     (Offset.sub_base _ (d := 152) (n := 16) (k := 2112) (by decide))).sub_right
-      (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega))
+      (Offset.sub_base _ (d := 16*k) (n := 16*(n-k)) (k := 16*n) (by have := hs.bound; omega_using [this]))
 
 
 
@@ -541,7 +541,7 @@ theorem ciphertext_split (base : State) (nr count n k : Nat) (hk : k≤n) :
       Spec.Gcm.ctr32 (Spec.Gcm.ctxCiph base.mem (base.gpr .r3) nr)
         (Nat.repeat Spec.Gcm.inc32 k (Spec.Gcm.blockAt base.mem (base.gpr .r5))) (blocks base count k (n-k)) := by
   unfold ciphertext
-  rw [show n=k+(n-k) by omega,blocks_add,VG.Proof.Gcm.ctr32_append]
+  rw [show n=k+(n-k) by omega_using [hk],blocks_add,VG.Proof.Gcm.ctr32_append]
   simp only [blocks,List.length_map,List.length_range,Nat.zero_add,Nat.add_sub_cancel_left]
 
 
@@ -565,11 +565,11 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.Ghas
   rw [Impl.AesGcm.PPC64LE.SplitBlocks.bodyOf]
   apply WP.seq
   refine WP.mono (Blocks.wrapperEntry_ok base (fun off ho => lay.wrapper.header _ _
-    ⟨⟨base.gpr .r9,64⟩,by simp,Offset.contains_base _ ho (by omega)⟩)) fun entry he => ?_
+    ⟨⟨base.gpr .r9,64⟩,by simp,Offset.contains_base _ ho (by omega_using [ho])⟩)) fun entry he => ?_
   subst entry
   apply WP.seq
   refine WP.mono (optional_bulk_ok dec base n nr count lay hn hr
-    (by rcases hv with h | h | h <;> omega) (by rcases hv with h | h | h <;> omega)) fun mid hm => ?_
+    (by rcases hv with h | h | h <;> omega_using [h]) (by rcases hv with h | h | h <;> omega_using [h])) fun mid hm => ?_
   obtain ⟨k,hkn,_,hm,hin,hkeepSaved⟩ := hm
   apply WP.seq
   refine WP.mono (Copy.ok mid (n-k) (count-k) (copy_config lay hm hin)) fun copiedState hc => ?_
@@ -591,7 +591,7 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] [VG.Proof.Gcm.PPC64LE.Ghas
     · refine Blocks.wrapper_decTailWith_ok (restored_layout lay g) hmid (by exact hr) hv (by
         simpa only [restoredBase,RegUpd.gpr_write,RegUpd.mem_write,reduceCtorEq,ite_false] using hjoin) ?_
       have hb := blocks_add base count 0 k (n-k)
-      rw [show k+(n-k)=n by omega,Nat.zero_add] at hb
+      rw [show k+(n-k)=n by omega_using [hkn],Nat.zero_add] at hb
       exact hb
   refine WP.mono hdone fun done hd => ?_
   exact Blocks.wrapper_finish (restored_layout lay g) hd
@@ -602,7 +602,7 @@ theorem blocks_spec (base : State) (n count : Nat) (hc : count≤n) :
     blocks base count 0 n=Spec.Gcm.blocksAt base.mem (base.gpr .r17) count ++
       (Spec.Gcm.blocksAt base.mem (base.gpr .r7) n).drop count := by
   apply List.ext_getElem (by simp only [blocks,Spec.Gcm.blocksAt,List.length_map,List.length_range,
-    List.length_append,List.length_drop]; omega)
+    List.length_append,List.length_drop]; omega_using [hc])
   intro i hi hi'
   have hi : i<n := by simpa only [blocks,List.length_map,List.length_range] using hi
   simp only [blocks,List.getElem_map,List.getElem_range,Nat.zero_add]

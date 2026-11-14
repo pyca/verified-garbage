@@ -9,7 +9,7 @@ import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # IDEA artifacts on baseline AArch64 -/
+/-! # IDEA on AArch64 -/
 
 @[expose] public section
 

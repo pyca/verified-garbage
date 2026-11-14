@@ -85,9 +85,9 @@ abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.ok.SH.H K text
 
 theorem hI : Verified X86_64.target P.H.hmacInit (initG P.ok.SH P.H.W) := hmacInit_ok P.ok P.C P.K P.satI
 
-theorem hIsp : NoSp P.H.hmacInit := nosp_of (core_hmacInit P.K.cNs P.K.iNs P.C.hinitNs)
+theorem hIsp : NoSp P.H.hmacInit := nosp_of (core_hmacInit P.K.iNs P.K.b.bNs P.C.hinitNs)
 
-theorem hId : P.H.hmacInit.depth ≤ 2 := core_hmacInit_depth P.K.cD P.K.iD P.C.hinitD
+theorem hId : P.H.hmacInit.depth ≤ 2 := core_hmacInit_depth P.K.iD P.K.b.bD P.C.hinitD
 
 theorem hF : Verified X86_64.target P.H.hmacFin (finG P.ok.SH P.H.W) := hmacFin_ok P.ok P.C P.K P.satF
 
@@ -104,7 +104,7 @@ abbrev Q : Nat := P.R.E.C.len
 theorem shape (h : (P.H.D, P.H.P.B) ∈ shapes) :
     16 ≤ P.H.D ∧ P.H.D ≤ 64 ∧ P.H.D % 4 = 0 ∧ P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 ∧ 64 ≤ P.H.P.B := by
   simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
-  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega
+  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega_using [h, h']
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 1872 ∧ P.ok.stream.Wb ≤ 1872 ∧
@@ -116,21 +116,21 @@ theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 18
   have hs := P.shape P.hDB
   have hQ : P.Q ≤ 66 := by
     cases hb : P.R.big
-    · have := P.R.sizesA hb; simp only [Q]; omega
-    · have := P.R.sizesW hb; simp only [Q]; omega
+    · have := P.R.sizesA hb; simp only [Q]; omega_using [this]
+    · have := P.R.sizesW hb; simp only [Q]; omega_using [this]
   refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2.1, hs.2.2.2.2.2,
     P.R.n4, hn9, hw.1, hQ, hw.2.2, hw.2.1⟩
 
 /-- Unless `big`, the scalars are `8 w` bytes (or 24 or 28 in 4 words), at most 8 words. -/
 theorem sizesA (h : P.R.big = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧ P.w ≤ 8 ∧ P.Q ≤ 64 := by
   have := P.R.sizesA h
-  rcases this.1 with h' | h' | h' <;> simp only [Q, w] <;> omega
+  rcases this.1 with h' | h' | h' <;> simp only [Q, w] <;> omega_using [this]
 
 /-- If `big`, P-521's sizes, longer than any digest. -/
 theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D < P.Q := by
   have h₁ := P.R.sizesW h
   have h₂ := P.sizes.2.2.2.2.2.2.2.1
-  exact ⟨h₁.1, h₁.2.1, by simp only [Q]; omega⟩
+  exact ⟨h₁.1, h₁.2.1, by simp only [Q]; omega_using [h₁, h₂]⟩
 
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]

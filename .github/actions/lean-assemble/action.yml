@@ -139,9 +139,9 @@ runs:
       with:
         path: .lean-manifest
         key: ${{ steps.manifest.outputs.key }}
-    # The emitter's driver maps every module it imports, private parts
-    # included (lean/README.md): set the limit rather than rely on the
-    # runner's default.
+    # Each of the emitter's drivers maps every module it imports
+    # (lean/README.md): set the limit rather than rely on the margin under
+    # the runner's default.
     - name: Allow the emitter's memory maps
       shell: bash
       run: |

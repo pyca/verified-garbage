@@ -25,8 +25,8 @@ theorem squareCounter_change {s t : State} {P : Addr} {wx : Nat} {mi : BitVec 64
   have hf : Frm P (crtWinRanges wx) s.mem t.mem := Frm.of_outside ho (by simp [crtWinRanges])
   refine ⟨hc.of_win hf hk.2.2 (hk.gpr (by decide)), ?_, ?_, ?_, hf⟩
   · rw [hm, word_writeW_self]
-  · exact ho.wv (by have := hdr_lt_slot wx aY (show Crt.sNib < 32 by decide); omega)
-      (by have := hc.scrT.nowrap; have := slot_le (w := wx) (show aY < 8 by decide); omega)
+  · exact ho.wv (by have := hdr_lt_slot wx aY (show Crt.sNib < 32 by decide); omega_using [this])
+      (by have := hc.scrT.nowrap; have := slot_le (w := wx) (show aY < 8 by decide); omega_arith)
   · intro k hk hn
     rw [hm, hdrStore_hdr _ _ _ (by decide) hk (Ne.symm hn)]
 
@@ -51,7 +51,7 @@ theorem squaresNext_ok {s : State} {P : Addr} {wx : Nat} {mi : BitVec 64} {X Xc 
     t.zf = some (decide (n - 1 = 0))) ?_ rfl) fun t ⟨⟨hm, hz⟩, hk⟩ => ⟨hm, hz, hk⟩
   xrun [squaresNext, State.ea, hdr, hc.good.rdi, hdrOff,
     hc.ld (i := Crt.sNib) (by decide), hc.st (i := Crt.sNib) (by decide), hn,
-    ofNat64_pred hn1 (by omega), ofNat64_beq_zero (show n - 1 < 2 ^ 64 by omega)]
+    ofNat64_pred hn1 (by omega_using [hn4]), ofNat64_beq_zero (show n - 1 < 2 ^ 64 by omega_using [hn4])]
 
 theorem squares_ok (Sq : MontS) {s : State} {P : Addr} {wx : Nat} {mi : BitVec 64}
     {X Xc x E : Nat} {Q : Prop} (hc : CExpCtx s P wx mi X Xc)
@@ -91,15 +91,15 @@ theorem squares_ok (Sq : MontS) {s : State} {P : Addr} {wx : Nat} {mi : BitVec 6
       x ^ (2 ^ (4 - (n - 1)) * E) * 2 ^ (64 * wx) % X := by
     intro hq
     have he : 2 * (2 ^ (4 - n) * E) = 2 ^ (4 - (n - 1)) * E := by
-      rw [show 4 - (n - 1) = 4 - n + 1 by omega, Nat.pow_succ]
+      rw [show 4 - (n - 1) = 4 - n + 1 by omega_using [hn1, hn4], Nat.pow_succ]
       ac_rfl
     rw [valuez, vv hq, he]
   by_cases hn : n = 1
   · subst n
     exact Or.inl ⟨by simp [eval, hz],
       hcz, valuez ▸ vl, by simpa using val, headers, frame, keep⟩
-  · exact Or.inr ⟨by simp [eval, hz, show n - 1 ≠ 0 by omega],
-      n - 1, by omega, by omega, by omega, hcz, valuez ▸ vl, val,
+  · exact Or.inr ⟨by simp [eval, hz, show n - 1 ≠ 0 by omega_using [hn1, hn]],
+      n - 1, by omega_using [hn1], by omega_using [hn1, hn], by omega_using [hn4], hcz, valuez ▸ vl, val,
       countz, headers, frame, keep⟩
 
 end VG.Proof.Dsa.X86_64.PublicPower

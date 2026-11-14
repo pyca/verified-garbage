@@ -36,12 +36,12 @@ theorem cmpW_ok {t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (n : Nat) (h
     (hZ : slot w 8 ≤ Z) (hn : n < 2 ^ 31) (hw : w < 2 ^ 31) :
     WP isa (cmpW n) t fun u => u.zf = some (decide (w = n)) ∧ u.mem = t.mem ∧ Keep [.rax] t u := by
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.zf = some (decide (w = n)) ∧ u.mem = t.mem) (by
     unfold cmpW
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hg.hdr.hw, AmmSym.se_ofNat hn]
     and_intros
-    rw [ofNat_sub_beq (by omega) (by omega)]) rfl) fun u ⟨⟨z, m⟩, k⟩ => ⟨z, m, k⟩
+    rw [ofNat_sub_beq (by omega_using [hw]) (by omega_using [hn])]) rfl) fun u ⟨⟨z, m⟩, k⟩ => ⟨z, m, k⟩
 
 /-- `pubExp`. -/
 theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
@@ -62,7 +62,7 @@ theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr
   rw [seqs_one]
   unfold pubExp
   refine WP.seq (WP.mono_mx (by decide +kernel) (is65537_ok so.good hZ (by rw [xa sE (by decide)]; exact h.hE)
-    (by rw [xa sElen (by decide)]; exact h.hL) hsrc h.el h.L1 (by omega)) fun u ⟨zu, mu, ku⟩ xu => ?_)
+    (by rw [xa sElen (by decide)]; exact h.hL) hsrc h.el h.L1 (by omega_using [hk2, hL2])) fun u ⟨zu, mu, ku⟩ xu => ?_)
   have gu : VG.Proof.Bignum.X86_64.Good u B Z ((k+7)/8) mi := ⟨so.good.scr.congr ku.2.2, (ku.gpr (by decide)).trans so.good.rdi,
     by rw [mu]; exact so.good.hdr⟩
   -- The ADX code's, from a state with `a`'s memory.
@@ -89,7 +89,7 @@ theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr
       fun d ⟨gd, vd, fd, kd, xd⟩ => ⟨VG.Proof.Bignum.wv d.mem B (VG.Proof.Bignum.slot l.W aY) l.W,
         vd, gd, rfl,
         by rw [← mv]; exact fd, (kv.trans kd).mono (by decide), by rw [xd, xv]⟩
-  have hw : (k+7)/8 < 2 ^ 31 := by omega
+  have hw : (k+7)/8 < 2 ^ 31 := by omega_using [hk2]
   refine WP.ite (decide (Spec.Rsa.os2ip eb = 65537)) (by simp [eval, zu]) (fun hb => ?_) (fun _ => adx u mu ku xu)
   have he : Spec.Rsa.os2ip eb = 65537 := by simpa using hb
   refine WP.seq (WP.mono_mx (by decide +kernel) (cmpW_ok 32 gu hZ (by decide) hw) fun u₁ ⟨z₁, m₁, k₁⟩ x₁ => ?_)

@@ -56,13 +56,13 @@ decrypting, all but the last chunk when encrypting. -/
 def pre (o : Nat) (enc : Bool) (T : Nat) : Nat := o + if enc then 512 * (T - 1) else 512 * T
 
 theorem pre_le (o : Nat) (enc : Bool) (T : Nat) : pre o enc T ≤ o + 512 * T := by
-  cases enc <;> simp only [pre, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases enc <;> simp only [pre, Bool.false_eq_true, ite_false, ite_true] <;> omega_using []
 
 theorem pre_zero (o : Nat) (enc : Bool) : pre o enc 0 = o := by
   cases enc <;> simp [pre]
 
 theorem pre_mod {o : Nat} (ho : o % 16 = 0) (enc : Bool) (T : Nat) : pre o enc T % 16 = 0 := by
-  cases enc <;> simp only [pre, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases enc <;> simp only [pre, Bool.false_eq_true, ite_false, ite_true] <;> omega_using [ho]
 
 /-- The keystream from counter 1. -/
 abbrev KS1 (s₀ : State) : List Byte :=
@@ -72,9 +72,9 @@ abbrev KS1 (s₀ : State) : List Byte :=
 theorem ks1_off (s₀ : State) {q k : Nat} (hk : 64 * q + k < L s₀) :
     (keystream (ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) q) (L s₀ - 64 * q)).getD k 0 =
       (KS1 s₀).getD (64 * q + k) 0 := by
-  rw [VG.Proof.ChaCha20.keystream_getD _ (by omega), VG.Proof.ChaCha20.keystream_getD _ hk,
-    VG.Proof.ChaCha20.ctr_ctr, show q + k / 64 = (64 * q + k) / 64 by omega,
-    show k % 64 = (64 * q + k) % 64 by omega]
+  rw [VG.Proof.ChaCha20.keystream_getD _ (by omega_using [hk]), VG.Proof.ChaCha20.keystream_getD _ hk,
+    VG.Proof.ChaCha20.ctr_ctr, show q + k / 64 = (64 * q + k) / 64 by omega_using [],
+    show k % 64 = (64 * q + k) % 64 by omega_using []]
 
 /-- What `cryptStitched` starts from: the data's first `o` bytes (a multiple
 of 64) encrypted from `s` into the output and absorbed, the counter past them,
@@ -124,7 +124,7 @@ theorem Crypted.dataAt {o : Nat} {s₀ s w : State} {key msg : List Byte} {T : N
       else s.mem (dp s₀ + BitVec.ofNat 64 k) := fun k hk => by
   by_cases hkp : k < o + 512 * T
   · rw [ite_eq_left hkp]; exact h.out k hkp
-  · rw [ite_eq_right hkp]; exact h.data k hk (by omega)
+  · rw [ite_eq_right hkp]; exact h.data k hk (by omega_using [hkp])
 
 /-- `Entry`, from its data in place (`seal`). -/
 theorem Entry.ofAt {o : Nat} {s₀ s : State} {key msg : List Byte} {w : State}
@@ -137,8 +137,8 @@ theorem Entry.ofAt {o : Nat} {s₀ s : State} {key msg : List Byte} {w : State}
     (mac : Repr w.mem (off (cx s₀) 448) key (msg ++ bytesAt w.mem (dp s₀) o))
     (vec : ∀ r ∈ preservedV, (w.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) :
     Entry true o s₀ s key msg w :=
-  ⟨inv, o64, le, x22, x23, st, fun k hk hko => by rw [data k hk, ite_eq_right (by omega)],
-    fun k hk => by rw [op_true, data k (by omega), ite_eq_left hk], mac, vec⟩
+  ⟨inv, o64, le, x22, x23, st, fun k hk hko => by rw [data k hk, ite_eq_right (by omega_using [hko])],
+    fun k hk => by rw [op_true, data k (by omega_using [le, hk]), ite_eq_left hk], mac, vec⟩
 
 /-! ## Helpers -/
 
@@ -269,7 +269,7 @@ theorem short_crypted (enc : Bool) {s₀ : State} {o : Nat} {s w : State} {key m
     Crypted enc o s₀ s w key msg 0 s₂ := by
   have h22 : s₂.gpr .x22 = w.gpr .x22 := k₂.cs _ (pres .x22) (pres30 .x22)
   have h23 : s₂.gpr .x23 = w.gpr .x23 := k₂.cs _ (pres .x23) (pres30 .x23)
-  refine ⟨E.inv.kept k₂, by have := E.le; omega, by omega, x0₂, ?_, ?_, x3₂, ?_, ?_, ?_, fun k hk hko => ?_,
+  refine ⟨E.inv.kept k₂, by have := E.le; omega_using [this], by omega_using [hs], x0₂, ?_, ?_, x3₂, ?_, ?_, ?_, fun k hk hko => ?_,
     fun k hk => ?_, ?_, ?_, fun r hr => (v₂ r hr).trans (E.vec r hr)⟩
   · rw [x1₂, E.x22, Nat.mul_zero, Nat.add_zero]
   · rw [x2₂, E.x23, Nat.mul_zero, Nat.add_zero]
@@ -348,12 +348,12 @@ theorem restP_eq (enc : Bool) (d : Addr) {o L T : Nat} (hT : 1 ≤ T) (hle : o +
   cases enc
   · rfl
   · simp only [restP, pre, ite_true]
-    have e : o + 512 * T = o + 512 * (T - 1) + 512 := by omega
+    have e : o + 512 * T = o + 512 * (T - 1) + 512 := by omega_using [hT]
     refine Prod.ext ?_ ?_
     · show d + BitVec.ofNat 64 (o + 512 * T) - BitVec.ofNat 64 512 = _
       rw [e, BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.add_sub_cancel]
     · show BitVec.ofNat 64 (L - (o + 512 * T)) + BitVec.ofNat 64 512 = _
-      rw [← BitVec.ofNat_add]; congr 1; omega
+      rw [← BitVec.ofNat_add]; congr 1; omega_using [hT, hle]
 
 /-- The accumulator `polyIn` loads. -/
 theorem acc_in {s₀ s₂ s₃ : State} {key msg : List Byte}
@@ -403,12 +403,12 @@ theorem saved_bulk {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {o : Nat} (ho : 
     (hf : Frame (streamR s₀ Q o) m m') {d : Nat}
     (hd : d = 32 ∨ d = 40) : m'.readW (off (cx s₀) d) 64 = m.readW (off (cx s₀) d) 64 := by
   refine hf.readW (r := sub s₀ d 8) (Region.contains_self _ _) ?_ (by decide)
-  have h₁ : d + 8 ≤ 1280 := by omega
+  have h₁ : d + 8 ≤ 1280 := by omega_using [hd]
   intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact sub_disj s₀ (by omega) h₁ (by lit_omega)
-  · exact (hq.ctx.sub_left (sub_ctx s₀ h₁)).sub_right (Offset.sub_base _ (by omega))
-  · exact sub_disj s₀ (by omega) h₁ (by lit_omega)
+  · exact sub_disj s₀ (by omega_using [hd]) h₁ (by lit_omega)
+  · exact (hq.ctx.sub_left (sub_ctx s₀ h₁)).sub_right (Offset.sub_base _ (by omega_using [ho]))
+  · exact sub_disj s₀ (by omega_using [hd]) h₁ (by lit_omega)
 
 /-- The output's first `o` bytes are outside the stream's regions. -/
 theorem prefix_streamR {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {o : Nat} (ho : o ≤ L s₀) :
@@ -418,7 +418,7 @@ theorem prefix_streamR {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {o : Nat} (h
   rcases hr with rfl | rfl | rfl
   · exact (hq.ctx.symm.sub_right (sub_ctx s₀ (by lit_omega))).sub_left hP
   · have := hq.wrap
-    exact Offset.base_disjoint Q (Nat.le_refl o) (by omega)
+    exact Offset.base_disjoint Q (Nat.le_refl o) (by omega_using [ho, this])
   · exact (hq.ctx.symm.sub_right (sub_ctx s₀ (by lit_omega))).sub_left hP
 
 /-- The regions of the context `cryptStitched` writes, and the data. -/
@@ -502,7 +502,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre enc s₀) {o : Nat} 
       · exact ⟨sub s₀ 32 16, by simp, hr ▸ fun _ h => h⟩
     · rcases hr with hr | hr | hr
       · exact crypt_sub r 64 64 (by decide) (by decide) hr
-      · exact ⟨oR enc s₀, by simp, hr ▸ (Offset.sub_base _ (by omega) : Region.Sub (qRo s₀ (op enc s₀) o) (oR enc s₀))⟩
+      · exact ⟨oR enc s₀, by simp, hr ▸ (Offset.sub_base _ (by omega_using [hL]) : Region.Sub (qRo s₀ (op enc s₀) o) (oR enc s₀))⟩
       · exact crypt_sub r 128 320 (by decide) (by decide) hr
     · exact crypt_sub r 448 24 (by decide) (by decide) hr
   have hd₂₃ : ∀ r ∈ inR s₀, (dR s₀).Disjoint r := by
@@ -687,7 +687,7 @@ theorem cryptStitched_ok (enc : Bool) (he : enc = false) {s₀ : State} (hp : AP
   rw [show afterBulk sve enc = .block (polyEnd enc) by simp only [afterBulk, he, Bool.false_eq_true,
     ite_false]]
   have hL5 : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-  have hLo : L s₀ - o < 2 ^ 64 := by omega
+  have hLo : L s₀ - o < 2 ^ 64 := by omega_using [hL5]
   refine WP.seq ((setup_ok E.inv.x21).mono fun s₂ ⟨x0₂, x1₂, x2₂, x3₂, x5₂, k₂, m₂, v₂⟩ => ?_)
   rw [E.x23, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hLo] at x5₂
   apply WP.ite (decide (L s₀ - o < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
@@ -695,7 +695,7 @@ theorem cryptStitched_ok (enc : Bool) (he : enc = false) {s₀ : State} (hp : AP
     exact WP.block_nil ⟨0, short_crypted enc E x0₂ x1₂ x2₂ x3₂ k₂ m₂ v₂ (of_decide_eq_true hs)⟩
   · intro hs
     exact (long_crypted enc hp E x0₂ x1₂ x2₂ x3₂ k₂ m₂ v₂
-      (by have := of_decide_eq_false hs; omega)).mono fun _ ⟨T, _, hc⟩ => ⟨T, hc⟩
+      (by have := of_decide_eq_false hs; omega_using [this])).mono fun _ ⟨T, _, hc⟩ => ⟨T, hc⟩
 
 /-! ## When encrypting -/
 
@@ -727,12 +727,12 @@ structure Sealed (s₀ s w : State) (key msg : List Byte) (P A : Nat) (u : State
 theorem Crypted.sealed {s₀ s w : State} {key msg : List Byte} {o T : Nat} {u : State}
     (h : Crypted true o s₀ s w key msg T u) (ho : o % 64 = 0) :
     Sealed s₀ s w key msg (o + 512 * T) (pre o true T) u :=
-  ⟨h.inv, h.le, pre_le o true T, pre_mod (by omega) true T, fun _ => by omega, h.x0, h.x1, h.x2, h.x3,
-    h.x22, h.x23, fun _ => by rw [h.cnt, show (o + 512 * T) / 64 = o / 64 + 8 * T by omega],
+  ⟨h.inv, h.le, pre_le o true T, pre_mod (by omega_using [ho]) true T, fun _ => by omega_using [ho], h.x0, h.x1, h.x2, h.x3,
+    h.x22, h.x23, fun _ => by rw [h.cnt, show (o + 512 * T) / 64 = o / 64 + 8 * T by omega_using []],
     fun k hk => by
       by_cases hkp : k < o + 512 * T
       · rw [ite_eq_left hkp]; exact h.out k hkp
-      · rw [ite_eq_right hkp]; exact h.data k hk (by omega),
+      · rw [ite_eq_right hkp]; exact h.data k hk (by omega_using [hkp]),
     h.frame, by simpa only [ite_true] using h.mac, h.vec⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64

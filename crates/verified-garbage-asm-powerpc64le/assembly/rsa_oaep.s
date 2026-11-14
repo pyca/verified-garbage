@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_oaep_decrypt:
+vg_rsa_oaep_decrypt_precomputed:
 	stdu %r1, -256(%r1)
 	addi %r12, %r1, 0
 	std %r14, 112(%r12)
@@ -31,31 +31,31 @@ vg_rsa_oaep_decrypt:
 	or %r17, %r5, %r5
 	ld %r18, 424(%r12)
 	ld %r19, 432(%r12)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r10, 96(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 104(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 112(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 120(%r12)
+	std %r0, 104(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 600(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 608(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 616(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 624(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 656(%r12)
+	ld %r11, 672(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
 	addi %r3, %r14, 0
@@ -64,14 +64,18 @@ vg_rsa_oaep_decrypt:
 	or %r6, %r15, %r15
 	or %r7, %r8, %r8
 	or %r8, %r9, %r9
-	ld %r9, 632(%r12)
+	ld %r9, 648(%r12)
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	ld %r0, 696(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 704(%r12)
+	std %r0, 200(%r12)
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	rlwinm %r20, %r3, 0, 0, 31
 	addi %r3, %r1, 0
 	ld %r3, 472(%r3)
-	ld %r3, 32(%r3)
+	ld %r3, 48(%r3)
 	addi %r4, %r3, -16
 	cmpldi %cr0, %r4, 0
 	beq %cr0, 20f
@@ -144,7 +148,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -166,7 +170,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 213b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -225,7 +229,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -247,7 +251,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 215b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -487,7 +491,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -509,7 +513,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 227b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -568,7 +572,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -590,7 +594,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 229b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -831,7 +835,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -853,7 +857,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 241b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -912,7 +916,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -934,7 +938,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 243b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1175,7 +1179,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1197,7 +1201,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 255b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1256,7 +1260,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1278,7 +1282,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 257b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1519,7 +1523,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1541,7 +1545,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 269b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1600,7 +1604,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1622,7 +1626,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 271b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1863,7 +1867,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1885,7 +1889,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 283b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1944,7 +1948,7 @@ vg_rsa_oaep_decrypt:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 480(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1966,7 +1970,7 @@ vg_rsa_oaep_decrypt:
 	bne %cr0, 285b
 	addi %r12, %r1, 0
 	ld %r12, 480(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2206,7 +2210,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ld %r11, 368(%r12)
 	addi %r3, %r1, 0
 	ld %r3, 416(%r3)
-	ld %r3, 32(%r3)
+	ld %r3, 48(%r3)
 	addi %r4, %r3, -16
 	cmpldi %cr0, %r4, 0
 	beq %cr0, 20f
@@ -2364,7 +2368,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2386,7 +2390,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 221b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2445,7 +2449,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2467,7 +2471,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 223b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2659,7 +2663,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2681,7 +2685,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 237b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2740,7 +2744,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2762,7 +2766,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 239b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2955,7 +2959,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2977,7 +2981,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 253b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3036,7 +3040,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3058,7 +3062,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 255b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3251,7 +3255,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3273,7 +3277,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 269b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3332,7 +3336,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3354,7 +3358,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 271b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3547,7 +3551,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3569,7 +3573,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 285b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3628,7 +3632,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3650,7 +3654,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 287b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3843,7 +3847,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3865,7 +3869,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 2101b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3924,7 +3928,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 424(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3946,7 +3950,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bne %cr0, 2103b
 	addi %r12, %r1, 0
 	ld %r12, 424(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29

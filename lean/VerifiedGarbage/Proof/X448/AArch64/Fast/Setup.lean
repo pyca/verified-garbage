@@ -122,7 +122,7 @@ theorem setup0_ok {s : State} {base p : Addr} (hc : s.gpr .x3 = base)
     intro i j hj
     have hi := i.isLt
     have hS : SAVE = 2880 := rfl
-    exact tO.limbs (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega) (by omega)
+    exact tO.limbs (Or.inl (by simp only [slot]; omega_using [hS])) (by simp only [slot]; omega_using []) (by omega_using [hj])
   have sm : Same base [] u.mem t.mem := fun i _ j hj => sl i j hj
   have red : ∀ i : Index, Bnd Mb t.mem base (slot i.val) := fun i => sm.bnd (by simp) (weak_bnd (ub i))
   have ug : ∀ r, t.gpr r = u.gpr r := fun r => by rw [tg]
@@ -130,7 +130,7 @@ theorem setup0_ok {s : State} {base p : Addr} (hc : s.gpr .x3 = base)
     fun i j hj => Nat.lt_of_lt_of_le (red i j hj) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib, red, (ug _).trans ux,
     ⟨fun r hr => (ug r).trans (uk.1 r hr), tr.trans uk.2.1, tw.trans uk.2.2⟩,
     um.trans ?_, uv.outside tO (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · intro x hx; exact tO x (by simp only [SAVE]; omega)
+  · intro x hx; exact tO x (by simp only [SAVE]; omega_using [hx])
   · intro k hk; rw [tv k hk, uk.1 _ (saved_not_setup k hk)]
   · rw [sm.env (by simp)]; exact u0
   · rw [sm.env (by simp)]; exact u1
@@ -159,16 +159,16 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .x3 = base)
   have sl : ∀ i : Index, ∀ j < 8, limbs t.mem base (slot i.val) j = limbs u.mem base (slot i.val) j := by
     intro i j hj
     have hi := i.isLt
-    exact tO.limbs (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega) (by omega)
+    exact tO.limbs (Or.inl (by simp only [slot]; omega_using [hV])) (by simp only [slot]; omega_using []) (by omega_using [hj])
   have sm : Same base [] u.mem t.mem := fun i _ j hj => sl i j hj
   refine ⟨VG.Proof.Curve448.AArch64.Neon.scr_of us tg tw, fun i => sm.bnd (by simp) (ub i), fun i => sm.bnd (by simp) (red i), tg ▸ ux,
     ⟨fun r hr => (congrFun tg r).trans (uk.1 r hr), tr.trans uk.2.1, tw.trans uk.2.2⟩,
-    uo.trans fun x hx => tO x (by omega), sv.outside tO (by decide), svx.outside tO (by decide),
+    uo.trans fun x hx => tO x (by omega_using [hV, hx]), sv.outside tO (by decide), svx.outside tO (by decide),
     by rw [sm.env (by simp)]; exact u0, by rw [sm.env (by simp)]; exact u1, by rw [sm.env (by simp)]; exact u2,
     by rw [sm.env (by simp), sm.env (by simp)]; exact u3, by rw [sm.env (by simp)]; exact u4,
     by rw [tO.word (Or.inl (by decide)) (by decide)]; exact uw, fun k hk => ?_⟩
   rw [tv k hk]
-  exact uv _ (by rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 by omega)
+  exact uv _ (by rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 by omega_using [hk])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
 
 end VG.Proof.X448.AArch64.Fast

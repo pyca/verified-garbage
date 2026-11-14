@@ -33,7 +33,7 @@ theorem SampleState.of_frm {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : Lis
     (hp : ∀ r ∈ rs, 8 * kOut + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * kOut)
     (hl : ∀ r ∈ rs, 8 * kUsedP + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * kUsedP)
     (hr : ∀ r ∈ rs, r.1 + r.2 ≤ Z) : SampleState B p Z w N mi bs t := by
-  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega
+  have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega_using [this]
   have hn := h.ready.good.scr.nowrap
   refine ⟨ht, ?_, ?_, ?_, fun i hi => by rw [hk.2.2]; exact h.writable i hi⟩
   · rw [hf.word_eq hp (by change 136 ≤ 2 ^ 64; decide)]; exact h.ptr

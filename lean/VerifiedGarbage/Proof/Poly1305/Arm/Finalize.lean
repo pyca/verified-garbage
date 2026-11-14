@@ -568,7 +568,7 @@ theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 s₀ s) :
       have := hlL j hj; have := hml j
       rw [u₇.other _ hne.2.2.1, u₆.other _ hne.2.1, u₅.other _ hne.2.1, hc₄ j hj9,
         u₃.other _ hne.2.1, u₂.gpr, toNat_add_lt (by rw [e₁, wsum_toNat _ hj9, hword 0 (by decide),
-          hword 1 (by decide), hword 2 (by decide), hword 3 (by decide)]; omega), e₁, wsum_toNat _ hj9,
+          hword 1 (by decide), hword 2 (by decide), hword 3 (by decide)]; omega_arith), e₁, wsum_toNat _ hj9,
         hword 0 (by decide), hword 1 (by decide), hword 2 (by decide), hword 3 (by decide)]
       rfl
     · have e9 : (s₅.gpr .r1).toNat = redL D 9 := by
@@ -580,7 +580,7 @@ theorem tag_ok {s₀ : State} (hp : FPre s₀) {s : State} (h : F4 s₀ s) :
         e9, toNat_shr, e2]
       rfl
   have hfb : ∀ j < 10, sumL D w j < 2 ^ 32 - 2 ^ 19 := fun j hj => by
-    have := hlL j hj; have := hml j; simp only [sumL]; omega
+    have := hlL j hj; have := hml j; simp only [sumL]; omega_arith
   refine WP.append (carries_ok 0 9 (by decide) hfb hcols u₇.gpr) fun s₈ ⟨hc₈, k₈⟩ => ?_
   have hL : ∀ j < 9, carryN (sumL D w) 0 9 j < 2 ^ 13 := fun j hj => carryN_lt _ 0 9 j (by omega_using [hj]) (by omega_using [hj])
   refine WP.append (toWords_ok hc₈ hL) fun s₉ ⟨e3, e5, e7, e10, _, k₉⟩ => ?_

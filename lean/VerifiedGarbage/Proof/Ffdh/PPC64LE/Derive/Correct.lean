@@ -39,7 +39,7 @@ private theorem dp_pres_not_written : ∀ r ∈ preserved, (∀ i < 18, r ≠ Im
 
 theorem ret_status (n : Nat) (hn : n < 2 ^ 32) : ((BitVec.ofNat 64 n).setWidth 32).toNat = n := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn]
 
 theorem dp_correct (s : State) (h : dpContract.pre s) :
     ∃ tr t, Exec isa derivePublic s tr t ∧ abiPreserved s t ∧ dpContract.post s t := by
@@ -51,7 +51,7 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
     rw [hol] at dOS; exact Pub.sep_of_disjoint dOS.symm
   have hin : ∀ i < 18, InRegions s.wr (off (Domain.savW (s.gpr .r10)) (8 * i)) 8 := fun i hi =>
     ⟨⟨s.gpr .r10, (stackArg s 0).toNat * 8⟩, by rw [hwr]; simp, by
-      rw [off, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      rw [off, Offset.add_add]; exact Offset.contains_base _ (by omega_using [hsl, hi]) (by omega_using [hi])⟩
   unfold derivePublic
   refine WP.seq (WP.mono (dp_front hpre) fun s₁ ⟨⟨hb, he⟩, hsav, hby, k1⟩ => ?_)
   have hk := hb.k64
@@ -61,15 +61,15 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
   have hnw := hb.env.hs.nowrap
   have e0 := Domain.slot_eq (dxOf s).c.w 0
   have e28 := Domain.slot_eq (dxOf s).c.w 28
-  refine WP.seq (WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hk' (fun i hi => hb.rdD i (by omega))
-    (fun i hi => hb.sepD i (by omega))) fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_)
+  refine WP.seq (WP.mono (loadP_ok hb.env hb.r21 hb.r28 rfl hk hk' (fun i hi => hb.rdD i (by omega_using [hLk, hi]))
+    (fun i hi => hb.sepD i (by omega_using [hLk, hi]))) fun s₂ ⟨⟨p2, c2, b2⟩, k2⟩ => ?_)
   have hb2 := hb.keep k2 b2
   have he2 := he.keep k2 b2
   have hDk : Spec.Rsa.bytesAt s₁.mem (s.gpr .r5) (s.gpr .r7).toNat =
       Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r7).toNat := by
     rw [← Proof.Ffdh.take_bytesAt _ _ (show (s.gpr .r7).toNat ≤ (s.gpr .r6).toNat by
-      rcases hLk with h | h <;> simp only [dxOf] at h <;> omega), ← Proof.Ffdh.take_bytesAt s.mem _
-      (show (s.gpr .r7).toNat ≤ (s.gpr .r6).toNat by rcases hLk with h | h <;> simp only [dxOf] at h <;> omega)]
+      rcases hLk with h | h <;> simp only [dxOf] at h <;> omega_using [h]), ← Proof.Ffdh.take_bytesAt s.mem _
+      (show (s.gpr .r7).toNat ≤ (s.gpr .r6).toNat by rcases hLk with h | h <;> simp only [dxOf] at h <;> omega_using [h])]
     exact congrArg _ hb.bD
   rw [show (dxOf s).c.D = s.gpr .r5 from rfl, show (dxOf s).c.k = (s.gpr .r7).toNat from rfl, hDk] at p2 c2
   generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r5) (s.gpr .r7).toNat) = p at p2 c2
@@ -94,8 +94,8 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
       have hf := modulus_facts hv
       refine WP.mono (dpBody_ok (O := (dxOf s).O) hb2.env hb2.r23 hb2.r21 hb2.r27 hb2.r28 rfl hk hk' hLk
         he2.xl1 he2.xlk he2.wX he2.wXL he2.wO hb2.rdD hb2.sepD he2.rdX he2.sepX he2.scrO he2.sepO sepSO p2 hf.1
-        hf.2 (top_of_valid hv (by have : (dxOf s).c.k = (s.gpr .r7).toNat := rfl; simp only [CD.w]; omega)
-          (by have : (dxOf s).c.k = (s.gpr .r7).toNat := rfl; simp only [CD.w]; omega)) hpk hxv hgv hbv) fun t ⟨⟨tb, t3, tw, _⟩, kt⟩ => ⟨fun _ => ⟨tb, t3⟩, fun i hi => tw _ (by omega), kt.mono (by decide)⟩
+        hf.2 (top_of_valid hv (by have : (dxOf s).c.k = (s.gpr .r7).toNat := rfl; simp only [CD.w]; omega_using [this])
+          (by have : (dxOf s).c.k = (s.gpr .r7).toNat := rfl; simp only [CD.w]; omega_using [hk])) hpk hxv hgv hbv) fun t ⟨⟨tb, t3, tw, _⟩, kt⟩ => ⟨fun _ => ⟨tb, t3⟩, fun i hi => tw _ (by omega_using [hi]), kt.mono (by decide)⟩
     · refine WP.mono (li_ok s₂ 0 (by decide)) fun t ⟨⟨_, tm⟩, kt⟩ =>
         ⟨fun hv => absurd (c2.mpr hv) (by simpa using hz), fun i hi => by rw [tm], kt.mono (by decide)⟩
   refine WP.seq (WP.mono hite fun t₅ ⟨tpost, tw, k5⟩ => ?_)
@@ -107,7 +107,7 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
     rw [ea]
     show word t₅.mem (s.gpr .r10) (112 + 8 * i) = _
     have b2' : Body (s.gpr .r10) (dxOf s).c.w s₁.mem s₂.mem := b2
-    rw [tw i hi, Outside.word b2' (by omega) (by omega)]
+    rw [tw i hi, Outside.word b2' (by omega_using [e0, hi]) (by omega_using [hi])]
     exact hsav i hi
   refine WP.mono (Domain.restore_ok t₅ ((k5.gpr .r23 (by decide)).trans hb2.r23) (by rw [kall.wr]; exact hin) hsav')
     fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
@@ -121,7 +121,7 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
     intro hdv
     have hL' : (s.gpr .r6).toNat = 2 * (s.gpr .r7).toNat ∨ (s.gpr .r6).toNat = 3 * (s.gpr .r7).toNat := hLk
     have hmod := Proof.Ffdh.domainValid_mod hdv
-    rw [Proof.Ffdh.domainOf_p _ _ (by omega), hp] at hmod
+    rw [Proof.Ffdh.domainOf_p _ _ (by omega_using [hL']), hp] at hmod
     -- The bytes the code read, as the arguments' bytes.
     have hsep : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs (s.gpr .r10) y < (stackArg s 0).toNat * 8 → off Q i ≠ y) →
         Spec.Rsa.bytesAt s₂.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hq => by
@@ -135,14 +135,14 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
       unfold bnd
       by_cases hq : (s.gpr .r6).toNat = 3 * (s.gpr .r7).toNat
       · rw [ite_eq_left hq, ite_eq_left hq, hsep _ _ fun i hi => by
-          rw [off_off']; exact hb.sepD (2 * (s.gpr .r7).toNat + i) (by simp only [dxOf]; omega)]
+          rw [off_off']; exact hb.sepD (2 * (s.gpr .r7).toNat + i) (by simp only [dxOf]; omega_using [hq, hi])]
       · rw [ite_eq_right hq, ite_eq_right hq]
     rw [ex] at hxv
     rw [eg] at hgv
     rw [eb] at hbv
-    have hk0 : 0 < (s.gpr .r7).toNat := by have := hb.k64; simp only [dxOf] at this; omega
+    have hk0 : 0 < (s.gpr .r7).toNat := by have := hb.k64; simp only [dxOf] at this; omega_using [this]
     rw [Proof.Ffdh.PPC64LE.Derive.keyStatus_dom hk0 hL' hdv, hp, hxv, hgv, hbv,
-      Proof.Ffdh.domainOf_g _ _ (by omega), Proof.Ffdh.domainOf_p _ _ (by omega), hp]
+      Proof.Ffdh.domainOf_g _ _ (by omega_using [hL']), Proof.Ffdh.domainOf_p _ _ (by omega_using [hL']), hp]
     obtain ⟨tb, t3⟩ := tpost hmod
     rw [um, uot .r3 (by decide), t3, ret_status _ (by split <;> [decide; split <;> decide])]
     rw [show s.gpr .r5 + BitVec.ofNat 64 (s.gpr .r7).toNat = off (s.gpr .r5) (s.gpr .r7).toNat from rfl, hgv,

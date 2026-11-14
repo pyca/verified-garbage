@@ -348,12 +348,12 @@ include hp
 theorem src_pair {k : Nat} (hk : k + 2 ≤ nb s₀) : InRegions (s₀.rd ++ s₀.wr) (bAddr s₀ k) 32 := by
   refine ⟨dR s₀, ?_, contains_offset (by omega_arith) (by have := hp.wrap; omega_arith)⟩
   cases to with
-  | false => rw [hp.wr]; exact List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  | false => obtain ⟨_, hw⟩ := hp.wr; rw [hw]; exact List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self)
   | true => rw [hp.rd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self)
 
 /-- Blocks `k` and `k + 1` of the output can be written. -/
 theorem out_pair {k : Nat} (hk : k + 2 ≤ nb s₀) : InRegions s₀.wr (oAddr s₀ to k) 32 :=
-  ⟨ddR s₀ to, by rw [hp.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self,
+  ⟨ddR s₀ to, by obtain ⟨_, hw⟩ := hp.wr; rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self,
     contains_offset (by omega_arith) (by have := hp.wrapD; omega_arith)⟩
 
 /-- Block `k` of the data does not overlap blocks `i` and `i + 1` of the
@@ -528,7 +528,7 @@ theorem ctrLoad_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {s : State} (hg
     WP isa (.block ctrLoad) s fun s => VInv to s₀ 0 0 s := by
   have hd := dstReg_ne to
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-    ⟨AesNi.cR s₀, by simp [hrd, hwr, hp.wr], by
+    ⟨AesNi.cR s₀, by obtain ⟨_, hw⟩ := hp.wr; simp [hrd, hwr, hw], by
       rw [hg, ofInt_natCast]; exact contains_offset (by omega_arith) (by omega_arith)⟩
   apply WP.of_runBlock
   simp only [ctrLoad, Impl.Aes.X86_64.Vaes.const, List.cons_append, List.nil_append]
@@ -570,9 +570,9 @@ theorem correct {to : Bool} {s₀ : State} (hp : Pre to s₀) :
   refine WP.ite (decide (nb s₀ < 16)) (by simp [eval, hcf]) (fun _ => ?_) (fun h => ?_)
   · -- Fewer than sixteen blocks: `vg_aes_ctr32_aesni`.
     have hp₁ : Pre to s₁ := by
-      obtain ⟨a, b, c, d, e, f, g, h', i, j, k, l, m, n, o⟩ := hp
+      obtain ⟨a, b, c, d, e, f, g, h', i, j, k⟩ := hp
       constructor <;>
-        simp only [sp, nr, cp, dp, nb, AesNi.sR, AesNi.cR, dR, AesNi.scrR, AesNi.retR, AesNi.ddR, AesNi.dd, hg,
+        simp only [sp, nr, cp, dp, nb, AesNi.sR, AesNi.cR, dR, AesNi.retR, AesNi.ddR, AesNi.dd, hg,
           hrd, hwr] at * <;>
         assumption
     refine WP.mono (AesNi.correct hp₁) fun s' ⟨⟨h1, h2⟩, h3⟩ => ⟨⟨fun r hr => by rw [h1 r hr, hg], ?_⟩, ?_⟩
@@ -599,13 +599,21 @@ theorem ctr32_correct (s : State) (hs : AesNi.ctr32X86_64.pre s) :
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
-theorem ctr32_ct : ConstantTime isa AesNi.ctr32X86_64.pre AesNi.ctr32X86_64.pub ctr32 := by
+theorem ctr32F_correct (s : State) (hs : AesNi.ctr32X86_64F.pre s) :
+    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ AesNi.ctr32X86_64F.post s s' := by
+  obtain ⟨t, s', he, h⟩ := correct (AesNi.preF_of s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+
+/-- Whatever the precondition: the public registers alone fix the trace. -/
+theorem ctr32_ctP {P : State → Prop} : ConstantTime isa P AesNi.ctr32X86_64.pub ctr32 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) ?_
     (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+
+theorem ctr32_ct : ConstantTime isa AesNi.ctr32X86_64.pre AesNi.ctr32X86_64.pub ctr32 := ctr32_ctP
 
 theorem ctr32To_correct (s : State) (hs : AesNi.ctr32ToX86_64.pre s) :
     ∃ t s', Exec isa ctr32To s t s' ∧ abiPreserved s s' ∧ AesNi.ctr32ToX86_64.post s s' := by

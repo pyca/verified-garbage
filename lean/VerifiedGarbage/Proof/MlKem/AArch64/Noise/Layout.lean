@@ -27,18 +27,18 @@ theorem noise_fits {P : KemLay} (hr : Room P) {i : Nat} (hi : i < P.k) :
   unfold Impl.MlKem.AArch64.Noise.noiseOff
   have hmul : 1024*(i+1) ≤ 1024*P.k := Nat.mul_le_mul_left _ hi
   have hs := hr.size
-  omega
+  omega_using [hi, hs]
 
 theorem noise_past_kg {P : KemLay} (hr : Room P) (i : Nat) :
     KG.SV P+48 ≤ Impl.MlKem.AArch64.Noise.noiseOff P i := by
   have := hr.kg
   unfold Impl.MlKem.AArch64.Noise.noiseOff
-  omega
+  omega_using [this]
 
 theorem noise_past_kem {P : KemLay} (hr : Room P) (i : Nat) :
     KEM.SV P+48 ≤ Impl.MlKem.AArch64.Noise.noiseOff P i := by
   have := hr.kem
   unfold Impl.MlKem.AArch64.Noise.noiseOff
-  omega
+  omega_using [this]
 
 end VG.Proof.MlKem.AArch64.Noise

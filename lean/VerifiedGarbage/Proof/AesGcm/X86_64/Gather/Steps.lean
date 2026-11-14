@@ -79,7 +79,7 @@ theorem padLen_ok {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) (
   have r₃ := h.slot hp (d := 24) (by decide)
   have e15 := and15 (AL s)
   rw [imm_eq (by decide)] at e15
-  have hz := and_self_beq (show (AL s).toNat % 16 < 2 ^ 64 by omega)
+  have hz := and_self_beq (show (AL s).toNat % 16 < 2 ^ 64 by omega_using [])
   apply WP.of_runBlock
   refine ⟨_, by simp only [padLen, gAlen, imm]; xrun [h11, r₃, h.kept.alen, e15], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags, h11]
@@ -105,7 +105,7 @@ theorem padArgs_ok {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) 
   have w₁₀ : InRegions st.wr (W s + BitVec.ofNat 64 80) (64 / 8) := by rw [h.wr]; exact w_in hp (by decide)
   have hz : BitVec.setWidth 64 (BitVec.ofNat 32 16) = BitVec.ofNat 64 16 := by decide
   have hsub : BitVec.ofNat 64 16 - BitVec.ofNat 64 ((AL s).toNat % 16) = BitVec.ofNat 64 (16 - (AL s).toNat % 16) :=
-    ofNat_sub (by omega) (by decide)
+    ofNat_sub (by omega_using []) (by decide)
   have i104 := imm_eq (n := 104) (by decide)
   have i88 := imm_eq (n := 88) (by decide)
   have hw := hp.w_w
@@ -130,7 +130,7 @@ theorem padArgs_ok {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) 
       by simp (disch := decide) only [readW_writeW_off, h.kept.z₀],
       by simp (disch := decide) only [readW_writeW_off, h.kept.z₁]⟩
   · simp only [mem_setReg, mem_arithFlags]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega))
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by omega_using []))
   · intro r hr
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
@@ -144,7 +144,7 @@ theorem leftTest_ok {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st)
   obtain ⟨a₅, e₅⟩ := h.w hp
   have r₈ := h.slot hp (d := 64) (by decide)
   have hC : Cnt s < 2 ^ 64 := (stackArg s 1).isLt
-  have hz := and_self_beq (show Cnt s - i < 2 ^ 64 by omega)
+  have hz := and_self_beq (show Cnt s - i < 2 ^ 64 by omega_using [hC])
   apply WP.of_runBlock
   refine ⟨_, by simp only [leftTest, gLeft]; xrun [a₅, e₅, r₈, h.kept.left], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags]
@@ -158,7 +158,7 @@ theorem leftTest_ok {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st)
 theorem desc_in {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) (hi : i < Cnt s) {d : Nat}
     (hd : d + 8 ≤ 16) : InRegions (st.rd ++ st.wr) (Src s + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 d) 8 := by
   rw [h.rd, h.wr, hp.rd, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact ⟨dsR s, by simp, Offset.contains_base _ (by omega) (by have := hp.w_ds; omega)⟩
+  exact ⟨dsR s, by simp, Offset.contains_base _ (by omega_using [hi, hd]) (by have := hp.w_ds; omega_using [hi, hd, this])⟩
 
 /-- The arguments of `vg_aes_gcm_stream_encrypt_to` for slice `i`. -/
 theorem sliceArgs_ok {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st : State} (h : Base s ap i st) :
@@ -206,7 +206,7 @@ theorem sliceNext_ok {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st : State} (h
   have r₈ := h.slot hp (d := 64) (by decide)
   have r₉ := h.slot hp (d := 72) (by decide)
   have w : ∀ d, d + 8 ≤ 104 → InRegions st.wr (W s + BitVec.ofNat 64 d) (64 / 8) := fun d hd => by
-    rw [h.wr]; exact w_in hp (by omega)
+    rw [h.wr]; exact w_in hp (by omega_using [hd])
   have d₈ := desc_in hp h hi (d := 8) (by decide)
   have v₈ := sl_eq hp h.frame hi
   have i16 := imm_eq (n := 16) (by decide)
@@ -216,8 +216,8 @@ theorem sliceNext_ok {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st : State} (h
   have eDesc : Src s + BitVec.ofNat 64 (16 * i) + BitVec.ofNat 64 16 = Src s + BitVec.ofNat 64 (16 * (i + 1)) := by
     rw [BitVec.add_assoc, ofNat_add_ofNat]; congr 2
   have eLeft : BitVec.ofNat 64 (Cnt s - i) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (Cnt s - (i + 1)) := by
-    rw [ofNat_sub (by omega) (by omega)]; congr 1
-  have hz := and_self_beq (show Cnt s - (i + 1) < 2 ^ 64 by omega)
+    rw [ofNat_sub (by omega_using [hi]) (by omega_using [hC])]; congr 1
+  have hz := and_self_beq (show Cnt s - (i + 1) < 2 ^ 64 by omega_using [hC])
   have hw := hp.w_w
   apply WP.of_runBlock
   refine ⟨_, by
@@ -242,7 +242,7 @@ theorem sliceNext_ok {ap : BitVec 64} {i : Nat} (hi : i < Cnt s) {st : State} (h
       by simp (disch := decide) only [readW_writeW_off, h.kept.z₁]⟩
   · simp only [mem_setReg, mem_arithFlags]
     have c : ∀ d, d + 8 ≤ 104 → (kpR s).Contains (W s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₂ => Offset.contains_base _ h₂ (by omega)
+      fun d h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 72 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 56 (by decide))).writeW (List.mem_singleton_self _) _ (c 64 (by decide))
   · intro r hr

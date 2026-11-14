@@ -41,7 +41,7 @@ theorem carry_sub_one (x : BitVec 64) :
   · subst h; decide
   · have : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
     simp only [Bool.toNat_true, h, ne_eq, not_false_eq_true, decide_true, decide_eq_true_eq]
-    omega
+    omega_using [this]
 
 /-- `x16` = table `j`'s address, `x7 = 0`, `x5 = 1` and `x1 = 0`. -/
 theorem selSetup_ok (K : TCombCfg) {s : State}

@@ -50,10 +50,10 @@ theorem cmpLoop_vp (hg : Geo L scr) {oa ob n : Nat} (hn : 0 < n) (ha : oa + n �
   unfold oRsa at fit ha hb
   let I : Nat → State → State → Prop := fun k σ s => k ≤ n ∧ Ctx L scr σ s ∧ X σ s.mem ∧
     CI scr oa ob n (f σ) (g σ) (n - k) s
-  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, si, di, cx, dx⟩ => ⟨by omega, hc, hx,
-    ⟨by rw [si, show n - (n - 1 + 1) = 0 by omega]; rfl, by rw [di, show n - (n - 1 + 1) = 0 by omega]; rfl,
-      by rw [cx, show n - (n - (n - 1 + 1)) = n by omega], by
-        rw [dx, show n - (n - 1 + 1) = 0 by omega]; exact ⟨fun _ i hi => absurd hi (Nat.not_lt_zero _),
+  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, si, di, cx, dx⟩ => ⟨by omega_using [hn], hc, hx,
+    ⟨by rw [si, show n - (n - 1 + 1) = 0 by omega_using []]; rfl, by rw [di, show n - (n - 1 + 1) = 0 by omega_using []]; rfl,
+      by rw [cx, show n - (n - (n - 1 + 1)) = n by omega_using []], by
+        rw [dx, show n - (n - 1 + 1) = 0 by omega_using []]; exact ⟨fun _ i hi => absurd hi (Nat.not_lt_zero _),
           fun _ => rfl⟩⟩⟩) fun _ _ h => h
   refine VP.taint _ cmpBody_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hk, hc, hx, hp⟩ => ?_
   · obtain ⟨-, -, -, p₁⟩ := h₁
@@ -64,13 +64,13 @@ theorem cmpLoop_vp (hg : Geo L scr) {oa ob n : Nat} (hn : 0 < n) (ha : oa + n �
     · rw [p₁.edi, p₂.edi]
     · rw [p₁.ecx, p₂.ecx]
   generalize hj : n - (k + 1) = j at hp
-  have hjn : j < n := by omega
+  have hjn : j < n := by omega_using [hn, hj]
   have aA : VG.X86.addr (scr + BitVec.ofNat 32 (oa + j)) 0 = sa scr (oa + j) := by
-    rw [hg.addrD (by unfold oRsa; omega), Nat.add_zero]
+    rw [hg.addrD (by unfold oRsa; omega_using [ha, hjn]), Nat.add_zero]
   have aB : VG.X86.addr (scr + BitVec.ofNat 32 (ob + j)) 0 = sa scr (ob + j) := by
-    rw [hg.addrD (by unfold oRsa; omega), Nat.add_zero]
-  have rA : InRegions (s.rd ++ s.wr) (sa scr (oa + j)) 1 := hg.rd hc.st (by unfold oRsa; omega)
-  have rB : InRegions (s.rd ++ s.wr) (sa scr (ob + j)) 1 := hg.rd hc.st (by unfold oRsa; omega)
+    rw [hg.addrD (by unfold oRsa; omega_using [hb, hjn]), Nat.add_zero]
+  have rA : InRegions (s.rd ++ s.wr) (sa scr (oa + j)) 1 := hg.rd hc.st (by unfold oRsa; omega_using [ha, hjn])
+  have rB : InRegions (s.rd ++ s.wr) (sa scr (ob + j)) 1 := hg.rd hc.st (by unfold oRsa; omega_using [hb, hjn])
   simp only [cmpBody, addi, Impl.RsaPkcs1Sig.X86.at_]
   refine wp_movzx8 (a := sa scr (oa + j)) (by rw [ea_at, hp.esi]; exact aA) rA fun t1 u1 => ?_
   refine wp_movzx8 (a := sa scr (ob + j)) (by rw [ea_at, u1.other _ (by decide), hp.edi]; exact aB)
@@ -94,21 +94,21 @@ theorem cmpLoop_vp (hg : Geo L scr) {oa ob n : Nat} (hn : 0 < n) (ha : oa + n �
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]
     · simp (disch := decide) only [u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other, u1.other, hp.edi]
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]
-    · rw [u7.gpr, cx6, ofNat_pred (by omega), Nat.sub_sub]
+    · rw [u7.gpr, cx6, ofNat_pred (by omega_using [hn, hj]), Nat.sub_sub]
     · have oz : ∀ x y : BitVec 32, (x ||| y = 0) ↔ (x = 0 ∧ y = 0) := fun x y => BitVec.or_eq_zero_iff
       rw [dx, oz, hp.edx, xor_zero]
       constructor
       · rintro ⟨h1, h2⟩ i hi
-        rcases (by omega : i < j ∨ i = j) with hi | rfl
+        rcases (by omega_using [hi] : i < j ∨ i = j) with hi | rfl
         · exact h1 i hi
         · exact h2
       · intro h'
-        exact ⟨fun i hi => h' i (by omega), h' j (by omega)⟩
-  rw [cx6, ofNat_pred (by omega), Nat.sub_sub, ofNat_beq_zero (by omega), show n - (j + 1) = k by omega] at z7
-  refine ⟨?_, fun h0 => ⟨c7, m7 ▸ hx, by rw [show n = j + 1 by omega]; exact sk.edx⟩,
-    fun hpos => ⟨by omega, c7, m7 ▸ hx, by rw [show n - k = j + 1 by omega]; exact sk⟩⟩
+        exact ⟨fun i hi => h' i (by omega_using [hi]), h' j (by omega_using [])⟩
+  rw [cx6, ofNat_pred (by omega_using [hn, hj]), Nat.sub_sub, ofNat_beq_zero (by omega_using [ha]), show n - (j + 1) = k by omega_using [hk, hj]] at z7
+  refine ⟨?_, fun h0 => ⟨c7, m7 ▸ hx, by rw [show n = j + 1 by omega_using [hn, hj, h0]]; exact sk.edx⟩,
+    fun hpos => ⟨by omega_using [hk], c7, m7 ▸ hx, by rw [show n - k = j + 1 by omega_using [hk, hj]]; exact sk⟩⟩
   show eval .ne t7 = _
   simp only [eval, z7]
-  by_cases h0 : k = 0 <;> simp [h0] <;> omega
+  by_cases h0 : k = 0 <;> simp [h0] <;> omega_using [h0]
 
 end VG.Proof.RsaPss.X86.Vf

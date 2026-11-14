@@ -33,23 +33,23 @@ include hp
 
 theorem UPre.scrN {d : Nat} (hd : d < 2432) : (S s₀ + BitVec.ofNat 32 d).toNat = (S s₀).toNat + d := by
   have := hp.scr_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem UPre.dataN {d : Nat} (hd : d < Len s₀) : (D s₀ + BitVec.ofNat 32 d).toNat = (D s₀).toNat + d := by
   have := hp.data_fit
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, this]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 /-- The last whole block, as a register holds it. -/
 abbrev Lv (s₀ : State) : BitVec 32 := D s₀ + BitVec.ofNat 32 (16 * (M s₀ - 1))
 
 theorem UPre.lA : State.addr (Lv s₀) = L s₀ :=
-  hp.dataA (by have := len_eq s₀; have := hp.m_pos; omega)
+  hp.dataA (by have := len_eq s₀; have := hp.m_pos; omega_arith)
 
 omit hp in
 theorem UPre.stk_eq {s : State} (hsp : s.sp = s₀.sp) : stk16 s.sp = stkR s₀ := by rw [hsp]
 
 theorem UPre.cS (d n : Nat) (h : d + n ≤ 2432) : (scrR s₀).Contains (Sa s₀ + BitVec.ofNat 64 d) n :=
-  Offset.contains_base _ h (by have := hp.scr_wrap; omega)
+  Offset.contains_base _ h (by have := hp.scr_wrap; omega_using [h])
 
 end
 
@@ -85,9 +85,9 @@ theorem xpre_tweak (r0 : s.gpr .r0 = K s₀) (r1 : s.gpr .r1 = BitVec.ofNat 32 (
     stkD := by rw [stk, aT]; exact hp.stk_scr.sub_right (sub_trans t_sub s_sub)
     stkS := by rw [stk]; exact hp.stk_scr.sub_right wk_sub
     fitW := hp.tsch_fit
-    fitT := by rw [hp.scrN (by decide)]; have := hp.scr_fit; simp only [zO]; omega
-    fitD := by rw [hp.scrN (by decide)]; have := hp.scr_fit; simp only [tO]; omega
-    fitS := by have := hp.scr_fit; omega
+    fitT := by rw [hp.scrN (by decide)]; have := hp.scr_fit; simp only [zO]; omega_using [this]
+    fitD := by rw [hp.scrN (by decide)]; have := hp.scr_fit; simp only [tO]; omega_using [this]
+    fitS := by have := hp.scr_fit; omega_using [this]
     reads := by
       rw [hrd, hwr, hp.rd, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -118,7 +118,7 @@ theorem xpre_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) (r0 : s.gpr .r0 = W s�
     r12 := r12
     lr := lr
     rounds := hp.rounds
-    n := by have := hp.len_hi; simp only [Spec.Xts.maxBlocks] at this; omega
+    n := by have := hp.len_hi; simp only [Spec.Xts.maxBlocks] at this; omega_using [hN, this]
     sp16 := by rw [hsp]; exact hp.sp16
     wt := by rw [aT]; exact hp.sch_scr.sub_right (sub_trans t_sub s_sub)
     wd := hp.sch_data.sub_right dS
@@ -131,9 +131,9 @@ theorem xpre_blocks {N : Nat} (hN : 16 * N ≤ Len s₀) (r0 : s.gpr .r0 = W s�
     stkD := by rw [stk]; exact hp.stk_data.sub_right dS
     stkS := by rw [stk]; exact hp.stk_scr.sub_right wk_sub
     fitW := hp.sch_fit
-    fitT := by rw [hp.scrN (by decide)]; have := hp.scr_fit; simp only [tO]; omega
-    fitD := by have := hp.data_fit; omega
-    fitS := by have := hp.scr_fit; omega
+    fitT := by rw [hp.scrN (by decide)]; have := hp.scr_fit; simp only [tO]; omega_using [this]
+    fitD := by have := hp.data_fit; omega_using [hN, this]
+    fitS := by have := hp.scr_fit; omega_using [this]
     reads := by
       rw [hrd, hwr, hp.rd, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -154,7 +154,7 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) (r0 : s.gpr .r0 = W s₀)
     (r3 : s.gpr .r3 = Lv s₀) (r12 : s.gpr .r12 = BitVec.ofNat 32 1) (lr : s.gpr .lr = S s₀) :
     XPre s (W s₀) (S s₀ + BitVec.ofNat 32 o) (Lv s₀) (S s₀) 1 (R s₀) := by
   have ol : o + 16 ≤ 2208 := by rcases ho with rfl | rfl <;> decide
-  have aO := hp.scrA (d := o) (by omega)
+  have aO := hp.scrA (d := o) (by omega_using [ol])
   have aL := hp.lA
   have stk := UPre.stk_eq (s₀ := s₀) hsp
   have oS : Region.Sub ⟨Sa s₀ + BitVec.ofNat 64 o, 16⟩ ⟨Sa s₀, 2208⟩ := Offset.sub_base _ ol
@@ -184,12 +184,12 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) (r0 : s.gpr .r0 = W s₀)
     stkD := by rw [stk, aL]; exact hp.stk_data.sub_right lS
     stkS := by rw [stk]; exact hp.stk_scr.sub_right wk_sub
     fitW := hp.sch_fit
-    fitT := by rw [hp.scrN (by omega)]; have := hp.scr_fit; omega
+    fitT := by rw [hp.scrN (by omega_using [ol])]; have := hp.scr_fit; omega_using [ol, this]
     fitD := by
       have := hp.l_wrap
       rw [← aL, addr_toNat] at this
-      omega
-    fitS := by have := hp.scr_fit; omega
+      omega_using [this]
+    fitS := by have := hp.scr_fit; omega_using [this]
     reads := by
       rw [hrd, hwr, hp.rd, hp.wr]
       refine Covers.of_sub fun r hr => ?_
@@ -201,9 +201,9 @@ theorem xpre_last {o : Nat} (ho : o = tO ∨ o = zO) (r0 : s.gpr .r0 = W s₀)
       refine Covers.of_sub fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨scrR s₀, by simp, o, rfl, by simp; omega⟩
+      · exact ⟨scrR s₀, by simp, o, rfl, by simp; omega_using [ol]⟩
       · exact ⟨dataR s₀, by simp, 16 * (M s₀ - 1), rfl, by
-          have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega⟩
+          have := len_eq s₀; have := hp.m_pos; simp only [M, B] at *; omega_using [this]⟩
       · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩ }
 
 end

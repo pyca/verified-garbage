@@ -133,7 +133,7 @@ theorem KS.eqS_w {d a b : Nat} (h : KS P σ A live AW liveW V ls s) (hv : Ws s P
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
         rcases hy with rfl | rfl
         · exact hls x hx'
-        · have := a1.2.2; have := hd.2.2; omega), h.sl x hx']
+        · have := a1.2.2; have := hd.2.2; omega_arith), h.sl x hx']
   · rcases List.mem_cons.mp hx with rfl | hx'
     · exact hd
     · exact h.ls_ok x hx'

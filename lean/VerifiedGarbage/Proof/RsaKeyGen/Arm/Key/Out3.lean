@@ -38,7 +38,7 @@ section
 variable {P : KP}
 
 theorem oFw_ok (i : Nat) (hi : i < 7) : oFw i + 4 ≤ 112 ∧ oFw i % 4 = 0 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem oFl_ok (i : Nat) : oFl i + 4 ≤ 112 ∧ oFl i % 4 = 0 := by unfold oFl; split <;> decide
@@ -101,18 +101,18 @@ theorem zeroOut_vp {E : State → Prop} (i : Nat) (hi : i < 7) :
       · rw [h₁.2.2.1, h₂.2.2.1]
     have pre := h.pre
     have hl := oLen_le pre i
-    have hW : 4 * P.W < 2 ^ 32 := by have := pre.k2; simp only [KP.W]; omega
+    have hW : 4 * P.W < 2 ^ 32 := by have := pre.k2; simp only [KP.W]; omega_using [this]
     have hwr : InRegions s.wr (State.addr (oPtr P i)) (oLen P i) :=
       ⟨_, by rw [h.wr]; exact pre.oW i hi, Region.contains_self _ _⟩
-    refine WP.mono (maskBuffer_ok s (oLen_pos pre i) (by omega) (pre.oFit i hi) hwr p0 plr)
+    refine WP.mono (maskBuffer_ok s (oLen_pos pre i) (by omega_using [hl, hW]) (pre.oFit i hi) hwr p0 plr)
       fun t ⟨b, f, r⟩ => ⟨e, ⟨pre, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, h.frame.trans (f.mono ?_)⟩,
         fun k hk => ?_⟩
     · intro r' hr; simp only [List.mem_singleton] at hr; subst hr
       exact List.mem_cons_of_mem _ (oR_mem i hi)
-    · rcases (by omega : k < i ∨ k = i) with hk' | rfl
+    · rcases (by omega_using [hk] : k < i ∨ k = i) with hk' | rfl
       · rw [VG.Proof.Rsa.Arm.CrtValues.bytes_frame f (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact pre.oO k i (by omega) hi (by omega))
-          (by have := pre.oFit k (by omega); omega)]
+          simp only [List.mem_singleton] at hr; subst hr; exact pre.oO k i (by omega_using [hi, hk]) hi (by omega_using [hk']))
+          (by have := pre.oFit k (by omega_using [hi, hk]); omega_using [this])]
         exact x k hk'
       · rw [b, p2, VG.Proof.Rsa.Arm.CrtValues.zero_mask_bytes, VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]
 

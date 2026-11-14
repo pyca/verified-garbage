@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Dsa.RandomBytes
 import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # DSA sampling on PPC64LE: the arithmetic of the registers
@@ -57,9 +58,9 @@ theorem smear_ofNat {n : Nat} (hn : n < 256) : smear (BitVec.ofNat 64 n) = BitVe
   have h1 : n ||| n >>> 1 < 256 := or_lt hn (shr_lt hn)
   have h2 : (n ||| n >>> 1) ||| (n ||| n >>> 1) >>> 2 < 256 := or_lt h1 (shr_lt h1)
   unfold smear smearN
-  rw [ofNat_shr (by omega), ofNat_or (by omega) (by have := shr_lt (k := 1) hn; omega),
-    ofNat_shr (by omega), ofNat_or (by omega) (by have := shr_lt (k := 2) h1; omega),
-    ofNat_shr (by omega), ofNat_or (by omega) (by have := shr_lt (k := 4) h2; omega)]
+  rw [ofNat_shr (by omega_using [hn]), ofNat_or (by omega_using [hn]) (by have := shr_lt (k := 1) hn; omega_using [this]),
+    ofNat_shr (by omega_using [h1]), ofNat_or (by omega_using [h1]) (by have := shr_lt (k := 2) h1; omega_using [this]),
+    ofNat_shr (by omega_using [h2]), ofNat_or (by omega_using [h2]) (by have := shr_lt (k := 4) h2; omega_using [this])]
 
 theorem smearN_eq : ∀ n < 256, 0 < n → smearN n = maskOf n := by decide +kernel
 
@@ -69,19 +70,19 @@ theorem smear_eq {n : Nat} (hn : n < 256) (h0 : 0 < n) :
   rw [smear_ofNat hn, smearN_eq n hn h0]
 
 theorem maskOf_lt {n : Nat} (hn : n < 256) (h0 : 0 < n) : maskOf n < 256 := by
-  have := (Nat.log2_lt (show n ≠ 0 by omega)).mpr (show n < 2 ^ 8 by omega)
-  have : 2 ^ (n.log2 + 1) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega)
+  have := (Nat.log2_lt (show n ≠ 0 by omega_using [h0])).mpr (show n < 2 ^ 8 by omega_using [hn])
+  have : 2 ^ (n.log2 + 1) ≤ 2 ^ 8 := Nat.pow_le_pow_right (by decide) (by omega_using [this])
   have := Nat.two_pow_pos (n.log2 + 1)
-  simp only [maskOf]; omega
+  simp only [maskOf]; omega_arith
 
 /-- An octet masked in a register, stored as an octet. -/
 theorem mask_byte (b : Byte) {M : Nat} (hM : M < 256) :
     (BitVec.ofNat 64 b.toNat &&& BitVec.ofNat 64 M).setWidth 8 = b &&& BitVec.ofNat 8 M := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega),
-    Nat.mod_eq_of_lt (a := M) (by omega), Nat.mod_eq_of_lt (a := M) (by omega),
-    Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left (by have := b.isLt; omega))]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_using []),
+    Nat.mod_eq_of_lt (a := M) (by omega_using [hM]), Nat.mod_eq_of_lt (a := M) (by omega_using [hM]),
+    Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left (by have := b.isLt; omega_using []))]
 
 /-- An octet with all ones, stored as an octet. -/
 theorem mask_byte_ff (b : Byte) : (BitVec.ofNat 64 b.toNat &&& BitVec.ofNat 64 255).setWidth 8 = b := by
@@ -98,25 +99,25 @@ theorem short_eq {x w : Nat} (hx : x < 2 ^ 64) (hw : w ≤ 32) :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx, Nat.shiftRight_eq_div_pow]
     split
-    · rw [Nat.div_eq_of_lt (by omega)]; rfl
-    · rw [show x / 2 ^ 63 = 1 by omega]; rfl
+    · rw [Nat.div_eq_of_lt (by omega_arith)]; rfl
+    · rw [show x / 2 ^ 63 = 1 by omega_arith]; rfl
   have hb : (BitVec.ofNat 64 x - BitVec.ofNat 64 w) >>> 63 =
       BitVec.ofNat 64 (if x < w then 1 else if x < 2 ^ 63 then 0 else if x - w < 2 ^ 63 then 0 else 1) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt (a := w) (by omega), Nat.shiftRight_eq_div_pow]
+      Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt (a := w) (by omega_using [hw]), Nat.shiftRight_eq_div_pow]
     split
-    · rw [show (2 ^ 64 - w + x) % 2 ^ 64 = 2 ^ 64 - w + x by omega,
-        show (2 ^ 64 - w + x) / 2 ^ 63 = 1 by omega]; rfl
-    · rw [show (2 ^ 64 - w + x) % 2 ^ 64 = x - w by omega]
+    · rw [show (2 ^ 64 - w + x) % 2 ^ 64 = 2 ^ 64 - w + x by omega_arith,
+        show (2 ^ 64 - w + x) / 2 ^ 63 = 1 by omega_arith]; rfl
+    · rw [show (2 ^ 64 - w + x) % 2 ^ 64 = x - w by omega_arith]
       split
-      · rw [Nat.div_eq_of_lt (by omega)]; rfl
+      · rw [Nat.div_eq_of_lt (by omega_arith)]; rfl
       · split
-        · rw [Nat.div_eq_of_lt (by omega)]; rfl
-        · rw [show (x - w) / 2 ^ 63 = 1 by omega]; rfl
+        · rw [Nat.div_eq_of_lt (by omega_arith)]; rfl
+        · rw [show (x - w) / 2 ^ 63 = 1 by omega_arith]; rfl
   rw [ha, hb]
   by_cases h1 : x < w
-  · rw [ite_eq_left (show x < 2 ^ 63 by omega), ite_eq_left h1, ite_eq_left h1]; rfl
+  · rw [ite_eq_left (show x < 2 ^ 63 by omega_using [hw, h1]), ite_eq_left h1, ite_eq_left h1]; rfl
   · rw [ite_eq_right h1, ite_eq_right h1]
     by_cases h2 : x < 2 ^ 63
     · rw [ite_eq_left h2, ite_eq_left h2]; rfl
@@ -129,12 +130,12 @@ theorem borrow_eq {k q b : Nat} (hk : k < 256) (hq : q < 256) (hb : b ≤ 1) :
   rw [← BitVec.ofNat_add]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := q + b) (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (a := k) (by omega_using [hk]), Nat.mod_eq_of_lt (a := q + b) (by omega_using [hq, hb]), Nat.shiftRight_eq_div_pow]
   split
-  · rw [show (2 ^ 64 - (q + b) + k) % 2 ^ 64 = 2 ^ 64 - (q + b) + k by omega,
-      show (2 ^ 64 - (q + b) + k) / 2 ^ 63 = 1 by omega]
+  · rw [show (2 ^ 64 - (q + b) + k) % 2 ^ 64 = 2 ^ 64 - (q + b) + k by omega_arith,
+      show (2 ^ 64 - (q + b) + k) / 2 ^ 63 = 1 by omega_arith]
     rfl
-  · rw [show (2 ^ 64 - (q + b) + k) % 2 ^ 64 = k - (q + b) by omega, Nat.div_eq_of_lt (by omega)]
+  · rw [show (2 ^ 64 - (q + b) + k) % 2 ^ 64 = k - (q + b) by omega_arith, Nat.div_eq_of_lt (by omega_using [hk])]
     rfl
 
 /-- `(0 − x) >> 63` for `x < 2⁶³`: whether `x` is not zero. -/
@@ -142,11 +143,11 @@ theorem nz_eq {x : Nat} (hx : x < 2 ^ 63) :
     (BitVec.ofNat 64 0 - BitVec.ofNat 64 x) >>> 63 = BitVec.ofNat 64 (if x = 0 then 0 else 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := x) (by omega), Nat.shiftRight_eq_div_pow]
+    Nat.mod_eq_of_lt (a := x) (by omega_using [hx]), Nat.shiftRight_eq_div_pow]
   split
   · subst x; rfl
-  · rw [show (2 ^ 64 - x + 0 % 2 ^ 64) % 2 ^ 64 = 2 ^ 64 - x by omega,
-      show (2 ^ 64 - x) / 2 ^ 63 = 1 by omega]
+  · rw [show (2 ^ 64 - x + 0 % 2 ^ 64) % 2 ^ 64 = 2 ^ 64 - x by omega_arith,
+      show (2 ^ 64 - x) / 2 ^ 63 = 1 by omega_arith]
     rfl
 
 /-- The test of `q > 1` from its significant octets `w` and the first `t`:
@@ -156,10 +157,10 @@ theorem valid_eq {w t : Nat} (hw : w < 256) (ht : t < 256) :
         BitVec.ofNat 64 (if w = 0 then 0 else 1) =
       BitVec.ofNat 64 (if w ≠ 0 ∧ (2 ≤ w ∨ 2 ≤ t) then 1 else 0) := by
   have e : (w >>> 1 ||| t >>> 1) = 0 ↔ w < 2 ∧ t < 2 := by
-    rw [Nat.or_eq_zero_iff, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow]; omega
+    rw [Nat.or_eq_zero_iff, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow]; omega_using []
   generalize (w >>> 1 ||| t >>> 1) = z at e ⊢
   have e1 := e.mp
   have e2 := e.mpr
-  split <;> split <;> split <;> first | rfl | (exfalso; omega)
+  split <;> split <;> split <;> first | rfl | (exfalso; omega_arith)
 
 end VG.Proof.Dsa.PPC64LE.Rnd

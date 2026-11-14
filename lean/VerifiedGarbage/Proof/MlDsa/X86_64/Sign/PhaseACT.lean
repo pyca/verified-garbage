@@ -109,7 +109,7 @@ theorem cpR4_tr {p : Params} {D j : Nat} (hj : j < 4) (hc : cpChk p j = true) (h
     RelCT isa (RR p D (fun σ s => ICopy p D σ j s) fun _ _ => True) (cpR4 j)
       (RR p D (fun σ s => ICopy p D σ (j + 1) s) fun _ _ => True) :=
   stepRR (F := fun _ _ => True) (fun σ s _ h => WP.mono (cpR4_ok hc hsk h) fun _ h => ⟨h, trivial⟩)
-    (copy_tr (by decide) (by decide) (show oRS4 + 34 * j < 2 ^ 31 by simp only [oRS4]; omega) (by decide) (by decide)
+    (copy_tr (by decide) (by decide) (show oRS4 + 34 * j < 2 ^ 31 by simp only [oRS4]; omega_using [hj]) (by decide) (by decide)
       fun x y h => ⟨(h.lrel fun _ _ h => h.st).regs (.rbx, scrLen p) (by simp [sgR, sgW]),
         (h.lrel fun _ _ h => h.st).regs (.rbp, p.skLen) (by simp [sgR, sgW])⟩)
     fun _ _ _ _ _ _ _ _ => trivial
@@ -128,18 +128,18 @@ theorem expandA_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : a
         (h.lrel fun _ _ h => h.1).regs (.rbp, p.skLen) (by simp [sgR, sgW])⟩)
     fun _ _ _ _ _ _ _ _ => trivial) ?_
   have hC := seqR_tr (f := cpR4) (R := fun j => RR p D (fun σ s => ICopy p D σ j s) fun _ _ => True) 4 0
-    fun j _ hj => cpR4_tr (by omega) (hc4 j (by omega)) hsk
+    fun j _ hj => cpR4_tr (by omega_using [hj]) (hc4 j (by omega_using [hj])) hsk
   refine RelCT.seq (R := RR p D (fun σ s => ICopy p D σ 4 s) fun _ _ => True) hC ?_
   have hG := seqR_tr (f := sample4 P p)
     (R := fun g => RR p D (fun σ s => IA4 p D σ (4 * g) s) fun x y => x.gpr .r15 = y.gpr .r15) (p.k * p.ℓ / 4) 0
-    fun g _ hg' => sample4_tr hP (hg g (by omega))
+    fun g _ hg' => sample4_tr hP (hg g (by omega_using [hg']))
   rw [Nat.zero_add] at hG
   refine RelCT.seq (RelCT.mono hG (fun x y h => ?_) fun _ _ h => h) ?_
   · obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, _⟩ := h
     exact ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁.ia4, i₂.ia4⟩, i₁.r15.trans i₂.r15.symm⟩
   have hE := seqR_tr (f := sampleE P p) (R := fun k => RA p D k) (p.k * p.ℓ % 4) (4 * (p.k * p.ℓ / 4))
-    fun k h1 hk => sampleE_tr hP (he k (by omega))
-  rw [show 4 * (p.k * p.ℓ / 4) + p.k * p.ℓ % 4 = p.k * p.ℓ by omega] at hE
+    fun k h1 hk => sampleE_tr hP (he k (by omega_using [hk]))
+  rw [show 4 * (p.k * p.ℓ / 4) + p.k * p.ℓ % 4 = p.k * p.ℓ by omega_using []] at hE
   exact RelCT.mono hE (fun x y h => RR.mono h (fun σ s h => h.ia) id) fun _ _ h => h
 
 end VG.Proof.MlDsa.X86_64.Sign

@@ -32,7 +32,7 @@ theorem generatorFields_ok {s : State} {B : Addr} {Z w len : Nat} {mi : BitVec 6
     have he : (BitVec.ofNat 16 VG.Impl.Dsa.Generation.Layout.exponent).setWidth 64 =
         BitVec.ofNat 64 VG.Impl.Dsa.Generation.Layout.exponent := by decide
     brun [Impl.Dsa.AArch64.Generation.generatorFields, Field.offset, h.x0,
-      h.scr.st (d := 256) (by omega), h.scr.st (d := 288) (by omega), h.scr.st (d := 328) (by omega), hp, he, hv]
+      h.scr.st (d := 256) (by omega_using [hZ]), h.scr.st (d := 288) (by omega_using [hZ]), h.scr.st (d := 328) (by omega_using [hZ]), hp, he, hv]
     rfl) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
   have f1 : Outside B 256 8 s.mem m1 := writeW_outside _ _ _ (by decide)
   have f2 : Outside B 288 8 m1 m2 := writeW_outside _ _ _ (by decide)
@@ -48,8 +48,8 @@ theorem generatorFields_ok {s : State} {B : Addr} {Z w len : Nat} {mi : BitVec 6
     · change word t.mem B 56 = _
       rw [ff.word (d := 56) (Or.inl (by decide)) (by decide)]
       exact h.hdr.hminv
-    · rw [ff.word (Or.inl (by unfold VG.Impl.Bignum.sArr; omega))
-        (by unfold VG.Impl.Bignum.sArr; omega)]
+    · rw [ff.word (Or.inl (by unfold VG.Impl.Bignum.sArr; omega_using [hj]))
+        (by unfold VG.Impl.Bignum.sArr; omega_using [hj])]
       exact h.hdr.harr j hj
   · rw [f3.word (d := 256) (Or.inl (by decide)) (by decide),
       f2.word (d := 256) (Or.inl (by decide)) (by decide)]

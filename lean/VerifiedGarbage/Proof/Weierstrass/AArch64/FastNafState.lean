@@ -37,9 +37,9 @@ theorem fastByte_word (w k j : Nat) :
   rw [BitVec.toNat_ofNat,fastWord_toNat,FastNaf.byte_toNat]
   have hb := fastMagnitude_bound w k j
   cases hn : FastNaf.negative w k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_using [hb]
   · have hp := FastNaf.negative_magnitude_pos w k j hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using [hb, hp]
 
 theorem fastStore_ok {s : State} {base : Addr} {size bits w k j : Nat}
     (hs : Scr s base size) (hb : bits+264≤size) (hj : j<257)
@@ -49,7 +49,7 @@ theorem fastStore_ok {s : State} {base : Addr} {size bits w k j : Nat}
       t.mem=s.mem.writeW (off base (bits+j)) (FastNaf.byte w k j) ∧ KeepRegs [] s t := by
   have hw : InRegions s.wr (s.gpr .x20+BitVec.ofNat 64 0) 1 := by
     rw [hp]; simp only [BitVec.add_zero]
-    exact ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    exact ⟨_,hs.wr,hs.contains (by omega_using [hb, hj]) (by decide)⟩
   refine WP.mono (strb_ok s (by decide) hw) fun t ht => ?_
   subst t
   refine ⟨?_,fun _ _ => rfl,rfl,rfl,rfl⟩
@@ -67,7 +67,7 @@ theorem fastRemain_ok (s : State) :
     simp only [BitVec.or_eq_zero_iff]
     simp only [←BitVec.toNat_inj,BitVec.toNat_zero]
     dsimp only [nafVal5]
-    omega
+    omega_using []
   · intro r hr
     have h : r≠.x19 := by simpa using hr
     simp only [RegUpd.gpr_write,h,ite_false]

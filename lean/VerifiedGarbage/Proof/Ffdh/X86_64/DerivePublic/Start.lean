@@ -5,13 +5,99 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.DerivePublic
 public import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-
-import VerifiedGarbage.Proof.Ffdh.X86_64.DerivePublic.Entry
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Ffdh.X86_64.DerivePublic.Entry`, which only this module used -/
+
+section
+
+/-! # FFDH public-value derivation on x86-64: save the arguments and ABI registers -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.DerivePublic
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Rsa.X86_64.Crt (ws)
+open VG.Impl.Ffdh.X86_64.Domain
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+private def entryMem (s : State) (B : Addr) : Mem :=
+  ((((((((((((s.mem.writeW (off B (8 * 0)) (s.gpr .rbx)).writeW (off B (8 * 1)) (s.gpr .rbp)).writeW (off B (8 * 2)) (s.gpr .r12)).writeW (off B (8 * 3)) (s.gpr .r13)).writeW (off B (8 * 4)) (s.gpr .r14)).writeW (off B (8 * 5)) (s.gpr .r15)).writeW (off B (8 * sDom)) (s.gpr .rdx)).writeW (off B (8 * sDomLen)) (s.gpr .rcx)).writeW (off B (8 * sK)) (s.gpr .r8)).writeW (off B (8 * sY)) (s.gpr .rdi)).writeW (off B (8 * sX)) (s.gpr .r9)).writeW (off B (8 * sXl)) (stackArg s 0))
+
+private theorem entryMem_facts (s : State) (B : Addr) :
+    let m := entryMem s B
+    word m B (8 * 0) = s.gpr .rbx ∧
+    word m B (8 * 1) = s.gpr .rbp ∧
+    word m B (8 * 2) = s.gpr .r12 ∧
+    word m B (8 * 3) = s.gpr .r13 ∧
+    word m B (8 * 4) = s.gpr .r14 ∧
+    word m B (8 * 5) = s.gpr .r15 ∧
+    word m B (8 * sDom) = s.gpr .rdx ∧
+    word m B (8 * sDomLen) = s.gpr .rcx ∧
+    word m B (8 * sK) = s.gpr .r8 ∧
+    word m B (8 * sY) = s.gpr .rdi ∧
+    word m B (8 * sX) = s.gpr .r9 ∧
+    word m B (8 * sXl) = stackArg s 0 ∧ Outside B 0 (8 * 22) s.mem m := by
+  intro m
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> unfold m entryMem
+  all_goals first
+    | (repeat (first | refine word_skip ?_ (by decide) (by decide) (by decide) |
+        exact word_writeW_self _ _ _ _)); done
+    | (repeat (first | exact Outside.refl _ _ _ _ | refine Outside.store_hdr ?_ (by decide) (by decide) _))
+
+theorem dvEntry_ok {s : State} {B : Addr} (hB : stackArg s 1 = B)
+    (hw : ∀ i < 22, InRegions s.wr (off B (8 * i)) 8)
+    (ha : ∀ i < 3, InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8) :
+    WP isa (.block VG.Impl.Ffdh.X86_64.Domain.DerivePublic.entry) s fun t => t.gpr .rdi = B ∧
+      (∀ i < 6, word t.mem B (8 * i) = s.gpr (saved.getD i .rax)) ∧
+      Slots t.mem B [(sDom, s.gpr .rdx), (sDomLen, s.gpr .rcx), (sK, s.gpr .r8),
+        (sY, s.gpr .rdi), (sX, s.gpr .r9), (sXl, stackArg s 0)] ∧
+      Outside B 0 (8 * 22) s.mem t.mem ∧ Keep [.rax, .r10, .rdi] s t := by
+  have hB' : s.mem.readW (off (s.gpr .rsp) (8 * 2)) 64 = B := hB
+  refine WP.mono (WP.keep [.rax, .r10, .rdi] (Q := fun t => t.gpr .rdi = B ∧ t.mem = entryMem s B)
+    (by
+      unfold VG.Impl.Ffdh.X86_64.Domain.DerivePublic.entry save
+      simp only [saved, List.zipIdx_cons, List.zipIdx_nil, List.map_cons, List.map_nil,
+        List.cons_append, List.nil_append]
+      dsimp only [VG.Impl.Rsa.X86_64.Crt.stk, stackArgAddr] at ha ⊢
+      xrun [State.ea, ws, hdrOff, stackArg, stackArgAddr, hB',
+        hw 0 (by decide),
+        hw 1 (by decide),
+        hw 2 (by decide),
+        hw 3 (by decide),
+        hw 4 (by decide),
+        hw 5 (by decide),
+        hw sDom (by decide),
+        hw sDomLen (by decide),
+        hw sK (by decide),
+        hw sY (by decide),
+        hw sX (by decide),
+        hw sXl (by decide), ha 1 (by decide), ha 0 (by decide)]; rfl) rfl)
+    fun t ⟨⟨hdi, hm⟩, k⟩ => ?_
+  obtain ⟨h0, h1, h2, h3, h4, h5, hD, hL, hK, hY, hX, hXl, ho⟩ := entryMem_facts s B
+  rw [← hm] at h0 h1 h2 h3 h4 h5 hD hL hK hY hX hXl ho
+  refine ⟨hdi, ?_, ?_, ho, k⟩
+  · intro i hi
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [h0, h1, h2, h3, h4, h5]
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [hD, hL, hK, hY, hX, hXl]
+
+end VG.Proof.Ffdh.X86_64.DerivePublic
+
+end
+
+end
+
 /-! # FFDH public-value derivation on x86-64: entry, and zeros in y -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/DerivePublic/Context.lean`, which only this module imported.
@@ -45,23 +131,23 @@ theorem dvCtx_of {s : State} (h : dvPre s) : DvCtx s := by
   obtain ⟨_, hrd, hwr, dyd, dyx, dys, _, dds, dxs, _, wY, wD, wX, wS,
     _, _, _, _, _, ⟨hk1, hk2⟩, hdl, hyl, hxl1, hxl2, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
-  refine ⟨hk1, hk2, hdl, hyl, by omega, Scr.of_mem (by rw [hwr]; simp) wS,
-    src_of_region (by rw [hrd]; simp) (by omega) dds, hxl1, hxl2,
-    src_of_region (by rw [hrd]; simp) (by omega) dxs, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨hk1, hk2, hdl, hyl, by omega_using [hsl], Scr.of_mem (by rw [hwr]; simp) wS,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dds, hxl1, hxl2,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dxs, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
   · intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega_using [hyl, hi]) (by omega_using [])⟩
   · intro i hi
-    exact out_scr dys (contains_byte _ (by omega) (by omega))
-  · simpa only [hyl] using (apart_of dyd (by omega) (by omega))
-  · simpa only [hyl] using (apart_of dyx (by omega) (by omega))
+    exact out_scr dys (contains_byte _ (by omega_using [hyl, hi]) (by omega_using []))
+  · simpa only [hyl] using (apart_of dyd (by omega_using []) (by omega_using []))
+  · simpa only [hyl] using (apart_of dyx (by omega_using []) (by omega_using []))
   · intro i hi
     refine ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp, ?_⟩
     rw [show stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) by
       simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]
       congr 2
-      omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      omega_using []]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.DerivePublic
 end
@@ -118,9 +204,9 @@ theorem entry_pre0 {s : State} (c : DvCtx s) :
       Keep (.rdi :: mmRegs) s t := by
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (dvEntry_ok rfl (fun i hi => c.hs.st (by omega)) c.ha)
+  refine WP.mono (dvEntry_ok rfl (fun i hi => c.hs.st (by omega_using [hZ, hi])) c.ha)
     fun t ⟨hd, hs, hh, hf, k⟩ => ?_
-  have hi : InScr (dvOf s).B (dvOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [dvOf]; omega)
+  have hi : InScr (dvOf s).B (dvOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [dvOf]; omega_using [hZ])
   refine ⟨⟨c.k1, c.k2, c.dl, bytesAt_length _ _ _, rfl, bytesAt_length _ _ _, c.xl1, c.xl2, c.hZ,
     c.hs.congr k.2.2, c.dom.congrK hi k, c.x.congrK hi k,
     ⟨fun i hi => by rw [k.2.2]; exact c.y.wr i hi, c.y.sep⟩, c.yd, c.yx, ?_, rfl⟩,
@@ -139,9 +225,9 @@ theorem zero_base {p : KpP} {xb : List Byte} {s : State} (h : Pre0 p xb s) (hd :
   have hk := h.k1
   have hk' := h.k2
   have hZ := h.hZ
-  refine WP.mono (zeroOut_ok h.scr hd (by omega) (by decide) (by decide)
+  refine WP.mono (zeroOut_ok h.scr hd (by omega_using [hZ]) (by decide) (by decide)
     (h.hdr (sY, p.yp) (by simp [KpP.headers]))
-    (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) (by omega) (by omega) h.y)
+    (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) (by omega_using [hk]) (by omega_using [hk']) h.y)
     fun t ⟨hz, hf, k⟩ => ?_
   have hout : Outside p.B p.Z (2 ^ 64 - p.Z) s.mem t.mem := by
     intro a ha
@@ -150,9 +236,9 @@ theorem zero_base {p : KpP} {xb : List Byte} {s : State} (h : Pre0 p xb s) (hd :
     intro i hi he
     have := h.y.sep i hi
     rw [← he] at this
-    omega
+    omega_using [ha, ha64, this]
   have hh : ∀ d, d + 8 ≤ p.Z → word t.mem p.B d = word s.mem p.B d :=
-    fun d hd => hout.word (Or.inl hd) (by have := h.scr.nowrap; omega)
+    fun d hd => hout.word (Or.inl hd) (by have := h.scr.nowrap; omega_using [hd, this])
   have hdom : Src t p.B p.Z p.dp p.dom := ⟨fun i hi => by rw [k.2.1, k.2.2]; exact h.dom.rd i hi,
     fun i hi => by rw [hf _ (fun j hj => Ne.symm (h.yd j hj i (by rw [← h.doml]; exact hi)))]; exact h.dom.val i hi,
     h.dom.out⟩
@@ -173,12 +259,12 @@ theorem zero_base {p : KpP} {xb : List Byte} {s : State} (h : Pre0 p xb s) (hd :
       exact h.y.sep i (by simpa only [List.length_replicate] using hi)
   refine ⟨⟨h.k1, h.k2, h.dl, h.doml, by rw [h.yb, List.length_replicate], h.xlen, h.xl1, h.xl2, h.hZ,
     h.scr.congr k.2.2, hdom, hx, hy, ?_, h.valid⟩, h.y.of_wr k.2.2, (k.gpr (by decide)).trans hd,
-    hf, fun i hi => hh _ (by omega), k.mono (by decide)⟩
+    hf, fun i hi => hh _ (by omega_using [hZ, hi]), k.mono (by decide)⟩
   intro e he
   rw [hh _ (by
     simp only [KpP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [sDom, sDomLen, sK, sY, sX, sXl, sFn] <;> omega)]
+      simp only [sDom, sDomLen, sK, sY, sX, sXl, sFn] <;> omega_using [hZ])]
   exact h.hdr e he
 
 end VG.Proof.Ffdh.X86_64.DerivePublic

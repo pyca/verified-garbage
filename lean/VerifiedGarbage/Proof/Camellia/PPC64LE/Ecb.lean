@@ -63,15 +63,15 @@ theorem groupConsts_ok (dir : Dir) {g : Nat} (hg : g = 3 ∨ g = 4) (s : State) 
       (∀ r, r ≠ .r7 → r ≠ t1 → r ≠ .r3 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   obtain ⟨s₂, e₁₂, r7₂, o₁₂, m₂, rd₂, wr₂⟩ := addI_ok s .r7 sb (imm := 8 * keySlot + 512 * g)
-    (by rw [keySlot_eq]; omega)
+    (by rw [keySlot_eq]; omega_using [hg])
   cases dir
-  · obtain ⟨s₃, e₃, t₃, o₃, m₃, rd₃, wr₃⟩ := li_ok s₂ t1 (v := 8 * g + 2) (by omega)
+  · obtain ⟨s₃, e₃, t₃, o₃, m₃, rd₃, wr₃⟩ := li_ok s₂ t1 (v := 8 * g + 2) (by omega_using [hg])
     refine ⟨s₃, by rw [groupConsts, runBlock_append', endAddr, e₁₂, Option.bind_some, e₃],
       by rw [o₃ _ (by decide), r7₂], t₃, by rw [o₃ _ (by decide), o₁₂ _ (by decide)]; simp [r3Of],
       fun r h1 h2 _ => by rw [o₃ r h2, o₁₂ r h1], by rw [m₃, m₂], by rw [rd₃, rd₂],
       by rw [wr₃, wr₂]⟩
-  · obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := addI_ok s₂ .r3 .r3 (imm := 64 * g) (by omega)
-    obtain ⟨s₄, e₄, t₄, o₄, m₄, rd₄, wr₄⟩ := li_ok s₃ t1 (v := 8 * g - 2) (by omega)
+  · obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := addI_ok s₂ .r3 .r3 (imm := 64 * g) (by omega_using [hg])
+    obtain ⟨s₄, e₄, t₄, o₄, m₄, rd₄, wr₄⟩ := li_ok s₃ t1 (v := 8 * g - 2) (by omega_using [hg])
     refine ⟨s₄, by
       rw [groupConsts, runBlock_append', endAddr, e₁₂, Option.bind_some,
         show ([Instr.addi .r3 .r3 (64 * g), .li t1 (8 * g - 2)] : List Instr) =
@@ -105,7 +105,7 @@ theorem keys_wp (dir : Dir) {s₀ : State} {b sched : Addr} {g : Nat} (hg : g = 
   · obtain rfl : g = 3 := by simpa using h
     obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
     exact WP.of_runBlock ⟨s', e', h'⟩
-  · obtain rfl : g = 4 := by simp at h; omega
+  · obtain rfl : g = 4 := by simp at h; omega_using [hg, h]
     obtain ⟨s', e', h'⟩ := groupConsts_ok dir hg s₀
     exact WP.of_runBlock ⟨s', e', h'⟩
   obtain ⟨r7₁, t₁, r3₁, o₁, m₁, rd₁, wr₁⟩ := h₁
@@ -117,20 +117,20 @@ theorem keys_wp (dir : Dir) {s₀ : State} {b sched : Addr} {g : Nat} (hg : g = 
   cases dir
   · exact WP.mono (encKeys_wp hg hk₁ (by rw [r3₁, hr3]; simp [r3Of]) t₁ hm₁) fun s ⟨h, h4⟩ =>
       ⟨h.of_consts m₁ rd₁ wr₁ o₁, h4.trans r7⟩
-  · exact WP.mono (decKeys_wp hg hk₁ (by rw [r3₁, hr3]; simp only [r3Of]; congr 2; omega) t₁ hm₁)
+  · exact WP.mono (decKeys_wp hg hk₁ (by rw [r3₁, hr3]; simp only [r3Of]; congr 2; omega_using []) t₁ hm₁)
       fun s ⟨h, h4⟩ => ⟨h.of_consts m₁ rd₁ wr₁ o₁, h4.trans r7⟩
 
 theorem dataLoop_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n g)
     {s : State} (hi : GInv s₀ b D n g E 0 s) :
     WP isa (.loop Impl.Camellia.PPC64LE.group (.nonzero .d .r6)) s (GDone s₀ b D n g E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 8 * k ∧ GInv s₀ b D n g E k s) (fun m s hs => ?_) n s
-    ⟨0, by omega, hi⟩
+    ⟨0, by omega_using [], hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
   refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨(eval_nonzero s' .r6).trans (by rw [z]; rfl), d⟩
   · exact .inr ⟨(eval_nonzero s' .r6).trans (by rw [beq_false_of_ne z]; rfl), n - 8 * (k + 1),
-      by have := d.lt; have := hk.lt; omega, k + 1, rfl, d⟩
+      by have := d.lt; have := hk.lt; omega_arith, k + 1, rfl, d⟩
 
 theorem sreg_ne (i : Nat) (hi : i < 18) : sreg i ≠ sb := by
   revert i; decide
@@ -146,7 +146,7 @@ theorem prologue_ok {s₀ : State} {a : Reg} {b : Addr} (hb : s₀.gpr a = b) (h
   obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂, -⟩ := save_ok (b := b) (by rw [wr₁]; exact hw) hb₁
   obtain ⟨s₃, e₃, v₃, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (b := b) (by rw [wr₂, wr₁]; exact hw) (by rw [g₂, hb₁])
   obtain ⟨s₄, e₄, t₄, o₄, m₄, rd₄, wr₄⟩ := subI_ok s₃ t0 .r4 (imm := 18) (by decide)
-  have hfit : ∀ i < 18, savedSlot + i < 2 ^ 58 := fun i hi => by rw [savedSlot_eq]; omega
+  have hfit : ∀ i < 18, savedSlot + i < 2 ^ 58 := fun i hi => by rw [savedSlot_eq]; omega_using [hi]
   refine ⟨s₄, by
     rw [runBlock_append', runBlock_append', runBlock_append', e₁, Option.bind_some, e₂, Option.bind_some,
       e₃, Option.bind_some, e₄],
@@ -157,8 +157,8 @@ theorem prologue_ok {s₀ : State} {a : Reg} {b : Addr} (hb : s₀.gpr a = b) (h
   · rw [m₄, ← o₁ _ (sreg_ne i hi), ← sv₂ i hi]
     refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [keySlot_eq, savedSlot_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [keySlot_eq, savedSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   · show s₄.mem.readW (wordAddr (s₄.gpr sb) kv.1) 64 = kv.2
     rw [m₄, o₄ _ (by decide)]; exact v₃ kv hkv
   · rw [m₄, ← m₁]
@@ -179,7 +179,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
   let sched := s₀.gpr .r3
   let R := (s₀.gpr .r4).toNat
   have hg : R / 6 = 3 ∨ R / 6 = 4 := by omega
-  have hg4 : R / 6 ≤ 4 := by omega
+  have hg4 : R / 6 ≤ 4 := by omega_using [hg]
   have hwS : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
   have hwD : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
   have hrK : (⟨sched, 272⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
@@ -192,12 +192,12 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
   have r3₁ : s₁.gpr .r3 = sched := g₁ _ (by decide) (by decide)
   have hz₁ : (s₁.gpr t0 == 0) = decide (R = 18) := by
     rw [t₁, show s₀.gpr .r4 = BitVec.ofNat 64 R by simp only [R, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      VG.Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+      VG.Offset.ofNat_sub_ofNat_beq (by omega_using []) (by decide)]
   -- The table.
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
   rw [hgR] at hg hg4
   refine WP.seq (WP.mono (keys_wp dir hg ((eval_zero s₁ t0).trans (by
-    rw [hz₁]; exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩)))
+    rw [hz₁]; exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega_using [hgR, h], fun h => by omega⟩)))
     hk₁ r3₁ m₁) fun s₂ ⟨k₂, r7₂⟩ => ?_)
   -- The scratch buffer and the data before the groups.
   let E : Nat → BitVec 64 := fun i => (schedWords s₀.mem sched R).getD (permOf dir g i) 0
@@ -208,29 +208,29 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
       (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Region.sub_prefix (by simp only [slots_eq, keySlot_eq]; omega)
-      · exact VG.Offset.sub_base b (by simp only [slots_eq, savedSlot_eq]; omega)
+      · exact Region.sub_prefix (by simp only [slots_eq, keySlot_eq]; omega_using [])
+      · exact VG.Offset.sub_base b (by simp only [slots_eq, savedSlot_eq]; omega_using [])
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by simp only [slots_eq, endSlot_eq]; omega)
+      exact Region.sub_prefix (by simp only [slots_eq, endSlot_eq]; omega_using [])
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have hE : ∀ i < 8 * g + 2,
       Spec.Camellia.wordAt s₁.mem (sched + BitVec.ofNat 64 (8 * permOf dir g i)) = E i := fun i hi => by
     have hp : permOf dir g i < 8 * g + 2 := dirPerm_lt (specDir dir) hi
-    rw [show E i = _ from schedWords_getD s₀.mem sched (R := R) (by simp only [Spec.Camellia.scheduleLength]; omega)]
+    rw [show E i = _ from schedWords_getD s₀.mem sched (R := R) (by simp only [Spec.Camellia.scheduleLength]; omega_using [hgR, hp])]
     refine wordAt_frame f₁ fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (dSS.sub_left (VG.Offset.sub_base sched (by omega))).sub_right (Region.sub_prefix (by
-        rw [slots_eq, keySlot_eq]; omega))
-    · exact (dSS.sub_left (VG.Offset.sub_base sched (by omega))).sub_right (VG.Offset.sub_base b (by
-        rw [slots_eq, savedSlot_eq]; omega))
+    · exact (dSS.sub_left (VG.Offset.sub_base sched (by omega_using [hg4, hp]))).sub_right (Region.sub_prefix (by
+        rw [slots_eq, keySlot_eq]; omega_using []))
+    · exact (dSS.sub_left (VG.Offset.sub_base sched (by omega_using [hg4, hp]))).sub_right (VG.Offset.sub_base b (by
+        rw [slots_eq, savedSlot_eq]; omega_using []))
   have sc₂ : ScrOk s₀ b g E s₂.mem := by
     refine ⟨k₂.masks.at base₂, fun i hi => hE i hi ▸ k₂.ent i hi, fun i hi => ?_⟩
     rw [← sv₁ i hi]
     refine k₂.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [endSlot_eq, savedSlot_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [endSlot_eq, savedSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   have data₂ : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s₀.mem (D + BitVec.ofNat 64 i) := fun i hi =>
     f₀₂.bytes (R := ⟨D, 16 * n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS)
       (by simp only; omega) hi
@@ -245,7 +245,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
   -- Any blocks?
   have hz₃ : (s₂.gpr .r6 == 0) = decide (n = 0) := by
     rw [r6₂, show s₀.gpr .r6 = BitVec.ofNat 64 n by simp only [n, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      ofNat_beq_zero (by omega)]
+      ofNat_beq_zero (by omega_using [])]
   refine WP.seq (WP.mono (M := isa) (Q := GDone s₀ b D n g E)
     (WP.ite (decide (n = 0)) ((eval_zero s₂ .r6).trans (by rw [hz₃])) (fun h0 => ?_) (fun h0 => ?_))
     fun s₄ d₄ => ?_)
@@ -253,8 +253,8 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbPPC64LE dir).pre s₀) :
     exact WP.block_nil ⟨base₂, sc₂, fun i hi => by omega, fr₂, rd₂, wr₂⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitB, fitD, hg⟩ ⟨base₂, by rw [r5₂]; simp,
-      by rw [r6₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega, r7₂, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂⟩
-    rw [data₂ i hi, ite_eq_right (by omega)]
+      by rw [r6₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega_using [hn0], r7₂, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂⟩
+    rw [data₂ i hi, ite_eq_right (by omega_using [])]
   -- The epilogue.
   obtain ⟨s₅, e₅, rg₅, -, m₅, -, -⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base d₄.scr.saved
   refine WP.of_runBlock ⟨s₅, e₅, rg₅, ?_⟩

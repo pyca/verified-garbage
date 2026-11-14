@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Address arithmetic without `bv_omega`
@@ -81,10 +82,10 @@ theorem not_lt_sub_ofNat {d n k : Nat} (hsep : k < d ∨ d + n ≤ k) (hk : k < 
     (hn : 0 < n) (hdn : d + n ≤ 2 ^ 64) : ¬ (BitVec.ofNat 64 k - BitVec.ofNat 64 d).toNat < n := by
   rw [toNat_sub_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) hk]
   rcases hsep with h | h
-  · rw [Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [Nat.mod_eq_of_lt (a := d) (by omega), show 2 ^ 64 - d + k = (k - d) + 2 ^ 64 by omega,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [Nat.mod_eq_of_lt (a := d) (by omega_using [hn, hdn]), Nat.mod_eq_of_lt (by omega_using [hk, h])]; omega_using [hdn]
+  · rw [Nat.mod_eq_of_lt (a := d) (by omega_using [hn, hdn]), show 2 ^ 64 - d + k = (k - d) + 2 ^ 64 by omega_using [hk, h],
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hk])]
+    omega_using [h]
 
 /-- The `m` bytes below `E` and the `l` bytes from `E + a` do not overlap. -/
 theorem disjoint_below_above (E : Addr) {m a l : Nat} (h : m + a + l ≤ 2 ^ 64) :
@@ -92,7 +93,7 @@ theorem disjoint_below_above (E : Addr) {m a l : Nat} (h : m + a + l ≤ 2 ^ 64)
   intro x hx hy
   simp only [Region.Contains, sub_sub_eq, sub_add_eq, toNat_add_ofNat, toNat_sub_ofNat] at hx hy
   have := (x - E).isLt
-  omega
+  omega_using [h, hx, hy]
 
 /-- The `a` bytes below `E` lie within the `b ≥ a` bytes below `E`. -/
 theorem below_mono (E : Addr) {a b : Nat} (h : a ≤ b) (hb : b < 2 ^ 64) (x : Addr)
@@ -100,11 +101,11 @@ theorem below_mono (E : Addr) {a b : Nat} (h : a ≤ b) (hb : b < 2 ^ 64) (x : A
     Region.Contains ⟨E - BitVec.ofNat 64 b, b⟩ x 1 := by
   simp only [Region.Contains, sub_sub_eq, toNat_add_ofNat] at hx ⊢
   have := (x - E).isLt
-  rw [Nat.mod_eq_of_lt (a := a) (by omega)] at hx
+  rw [Nat.mod_eq_of_lt (a := a) (by omega_using [h, hb])] at hx
   rw [Nat.mod_eq_of_lt (a := b) hb]
   by_cases h' : (x - E).toNat + b < 2 ^ 64
-  · rw [Nat.mod_eq_of_lt h'] at ⊢; omega
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [Nat.mod_eq_of_lt h'] at ⊢; omega_using [h, hx, h']
+  · rw [Nat.mod_eq_sub_mod (by omega_using [h, hx]), Nat.mod_eq_of_lt (by omega_using [hb])]; omega_using [h, hx]
 
 /-- The `m` bytes below `E` lie within the `r` bytes below `E + d`. -/
 theorem below_sub_below (E : Addr) {m d r : Nat} (h : m + d ≤ r) (hr : r < 2 ^ 64) (x : Addr)

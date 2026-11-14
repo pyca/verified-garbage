@@ -37,13 +37,13 @@ theorem LenOperand.prefix {base : Addr} {size n len : Nat} {s : State}
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
   have hs : 8256 ≤ size := hz
   show readSrc t (.mem (VG.Impl.Mont.X86.sc (VG.Impl.Dsa.X86.Layout.field .digestPrefixLen))) = _
-  rw [readSrc_sc ht (by change 8244 ≤ size; omega)]
+  rw [readSrc_sc ht (by change 8244 ≤ size; omega_using [hs])]
   congr 1
   rw [← h]
   apply BitVec.eq_of_toNat_eq
   have f : VG.Impl.Dsa.X86.Layout.field .digestPrefixLen = 8240 := rfl
   rw [f] at *
-  exact O.w32 (.inr (by omega)) (by omega)
+  exact O.w32 (.inr (by omega_using [cb])) (by omega_using [])
 
 /-- The modulus into slot 0, and the bytes' address and length into `esi` and
 `ebx`: the state `Red.call_ok` reduces from. -/
@@ -62,19 +62,19 @@ theorem reduceHead_ok {s : State} {base : Addr} {size len inputLen n m : Nat} {i
       (.block (Core.pointer input ++ ([.mov .ebx src] : List Instr)))) s
       fun w => Red.CallIn n m w base size (pointerValue base s input) inputLen ∧
         Outside base 0 (contextBytes n) s.mem w.mem ∧ Keeps powerClob s w := by
-  have hn48 : n ≤ 48 := by omega
-  have hl : len ≤ 8 * n := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
+  have hl : len ≤ 8 * n := by omega_using [hn]
   have hz' : 8256 ≤ size := hz
   have cb : contextBytes n ≤ 8192 := Nat.le_trans (VG.Proof.Dsa.X86.Layout.context_bound hn48) (by decide)
   have bound (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ contextBytes n := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
-  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega
+    omega_using [H]
+  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega_using [hz', cb, this]
   refine WP.seq (WP.mono (coreLoad_ok hs hz (bounds 0 (by decide)) h4 hl hw4 Rq.toReadableComponent
     (Rq.slot (by decide))) fun u ⟨Vu, Ku, Ou⟩ => ?_)
   have Ou' : Outside base 0 (contextBytes n) s.mem u.mem :=
-    Ou.mono (by omega) (by have := bound 0 (by decide); omega)
+    Ou.mono (by omega_using []) (by have := bound 0 (by decide); omega_using [this])
   have Su : Scr u base size := hs.of_keeps Ku (by decide)
   have Pu := pointerValue_keep Ku (by decide) Ou' cb input
   refine WP.block_append (WP.mono (pointer_ok Su hz input) fun v ⟨Pv, Kv, Mv⟩ => ?_)
@@ -86,7 +86,7 @@ theorem reduceHead_ok {s : State} {base : Addr} {size len inputLen n m : Nat} {i
   have Mw : w.mem = u.mem := W.mem.trans Mv
   refine ⟨{ scr := Su.of_keeps Kuw (by decide)
             room := by rw [Ksw.1 _ (by decide)]; exact room
-            context := by omega
+            context := by omega_using [hz', cb]
             modulus := by rw [Mw, Vu, hm]
             large := hm255
             odd := hodd
@@ -112,28 +112,28 @@ theorem coreReduce_ok {s : State} {base : Addr} {size len inputLen n m output : 
       Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s input).setWidth 64) inputLen) % m) ∧
       StackOuts base (s.gpr .esp) [(0, contextBytes n), (output, len)] s.mem t.mem ∧ Keeps powerClob s t := by
-  have hn48 : n ≤ 48 := by omega
-  have hl : len ≤ 8 * n := by omega
+  have hn48 : n ≤ 48 := by omega_using [hn, hmax]
+  have hl : len ≤ 8 * n := by omega_using [hn]
   have hz' : 8256 ≤ size := hz
   have cb : contextBytes n ≤ 8192 := Nat.le_trans (VG.Proof.Dsa.X86.Layout.context_bound hn48) (by decide)
   have bound (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ contextBytes n := by
     have H := slot_bound (n := n) hj
     simp only [stride] at H
-    omega
-  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega
+    omega_using [H]
+  have bounds (j : Nat) (hj : j < 9) : slot n j + 8 * n ≤ size := by have := bound j hj; omega_using [hz, hused, hn, h4, hmax, hw4, ho, hfar, hn48, hl, hz', cb, this]
   unfold Core.reduce
   dsimp only
   rw [← hn]
   apply WP.assoc
   refine WP.seq (WP.mono (reduceHead_ok hsrc hs hz room hn h4 hmax hw4 Rq Ri Rs hi hm hm255 hodd)
     fun w ⟨C, Ow, Ksw⟩ => ?_)
-  refine WP.seq (WP.mono (Red.call_ok C hused (by omega) hn48) fun x ⟨Vx, Ox, Kx⟩ => ?_)
+  refine WP.seq (WP.mono (Red.call_ok C hused (by omega_using [hn, h4]) hn48) fun x ⟨Vx, Ox, Kx⟩ => ?_)
   refine WP.mono (coreStore_ok (C.scr.of_keeps Kx (by decide)) hz hn.symm (bounds 6 (by decide)) h4 hl hw4 ho
-    (by have := bound 6 (by decide); omega)) fun t ⟨Vt, Kt, Ot⟩ => ?_
+    (by have := bound 6 (by decide); omega_using [hfar, this])) fun t ⟨Vt, Kt, Ot⟩ => ?_
   refine ⟨by rw [Vt, Vx, Ri.bytes Ow], ?_, ?_⟩
   · rw [Ksw.1 _ (by decide)] at Ox
     have Of : StackOuts base (s.gpr .esp) [(0, contextBytes n), (output, len)] w.mem x.mem :=
-      Ox.mono fun r hr => ⟨(0, contextBytes n), by simp, by omega,
+      Ox.mono fun r hr => ⟨(0, contextBytes n), by simp, by omega_using [],
         by simpa only [Nat.zero_add] using Pow.scratch_fits (Nat.le_refl _) r hr⟩
     exact ((StackOuts.of_outs (Outs.of_outside Ow (by simp))).trans Of).trans
       (StackOuts.of_outs (Outs.of_outside Ot (by simp)))

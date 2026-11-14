@@ -229,7 +229,7 @@ theorem signCompute_ok {base : Addr} {size pLen qLen p q g y x k digestLen diges
   dsimp only
   have L := M.lengths
   have A := M.aligned
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
   unfold SignVerify.signCompute Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (publicKey_ok M G Y hg hy) fun s1 ⟨M1, F1, Q1, E1⟩ => ?_)
@@ -244,10 +244,10 @@ theorem signCompute_ok {base : Addr} {size pLen qLen p q g y x k digestLen diges
     ((E12.value G (by decide) M.extent).trans hg) ((E12.value K (by decide) M.extent).trans hk)
     ((E12.value X (by decide) M.extent).trans hx) ((E12.value D (by decide) M.extent).trans hD)
     (Q2.trans Q1)) fun s3 ⟨M3, R3, S3, E3, F3⟩ => ?_)
-  refine WP.seq (WP.seq (WP.mono (stageZero_ok M3 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.seq (WP.mono (stageZero_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     (M3.scalarReady (by decide) nq) true) fun s4 ⟨M4, F4, A4⟩ => ?_))
   have E4 := A4.execution (.inr ⟨rfl, rfl⟩)
-  refine WP.mono (stageZero_ok M4 (by omega) (by omega) (by omega) (M4.scalarReady (by decide) nq) true)
+  refine WP.mono (stageZero_ok M4 (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) (M4.scalarReady (by decide) nq) true)
     fun sf ⟨Mf, F5, A5⟩ => ?_
   refine WP.block_nil ⟨Mf, ?_, ?_, ?_, (((E12.trans E3).trans E4).trans (A5.execution (.inr ⟨rfl, rfl⟩)))⟩
   · rw [A5.scalar_keep_mask M4 (by decide), A4.scalar_keep_mask M3 (by decide), R3]

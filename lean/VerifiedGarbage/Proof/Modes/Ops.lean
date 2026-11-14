@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Modes.Ops
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The modes' operations on areas, for any target
@@ -84,7 +85,7 @@ theorem _root_.VG.Impl.Modes.Op.apply_agree {len : Loc → Nat} {o : Op} (ho : o
       simp only [Op.width, hinc, ite_true] at hd
       have he : (List.range 16).map (fun j => a o.dst (o.dOff + j)) =
           (List.range 16).map (fun j => a' o.dst (o.dOff + j)) :=
-        List.map_congr_left fun j hj => h _ _ (by have := List.mem_range.mp hj; omega)
+        List.map_congr_left fun j hj => h _ _ (by have := List.mem_range.mp hj; omega_using [hd, this])
       rw [he]
     · split
       · rename_i hinc hi32
@@ -92,14 +93,14 @@ theorem _root_.VG.Impl.Modes.Op.apply_agree {len : Loc → Nat} {o : Op} (ho : o
         simp only [Op.width, hinc, hi32, Bool.false_eq_true, ite_true, ite_false] at hd
         have he : (List.range 4).map (fun j => a o.dst (o.dOff + j)) =
             (List.range 4).map (fun j => a' o.dst (o.dOff + j)) :=
-          List.map_congr_left fun j hj => h _ _ (by have := List.mem_range.mp hj; omega)
+          List.map_congr_left fun j hj => h _ _ (by have := List.mem_range.mp hj; omega_using [hd, this])
         rw [he]
-      · rw [h _ _ (by have := ho.2.1; omega)]
+      · rw [h _ _ (by have := ho.2.1; omega_using [h1, h2, this])]
         congr 1
         split
         · rfl
         · rename_i l' off e
-          exact h _ _ (by have := ho.2.2 l' off e; omega)
+          exact h _ _ (by have := ho.2.2 l' off e; omega_using [h1, h2, this])
   · exact h l i hi
 
 theorem applyOps_agree {len : Loc → Nat} : ∀ {os : List Op}, (∀ o ∈ os, o.InBounds len) →
@@ -148,13 +149,13 @@ theorem xorBlk_apply (dst x y : Loc) (a : Areas) :
   | bw + 1, l, i => by
     rw [xorBlk_succ, applyOps_snoc]
     simp only [Op.apply, Op.val, Op.width, Bool.false_eq_true, ite_false, ite_true, xorBlk_apply dst x y a bw]
-    have h4 : ¬ (4 * bw + (i - 4 * bw) < 4 * bw) := by omega
+    have h4 : ¬ (4 * bw + (i - 4 * bw) < 4 * bw) := by omega_using []
     simp only [h4, and_false, ite_false]
     by_cases hl : l = dst
     · subst hl
       simp only [true_and]
       by_cases h1 : 4 * bw ≤ i ∧ i < 4 * bw + 4
-      · rw [ite_eq_left h1, ite_eq_left (by omega), show 4 * bw + (i - 4 * bw) = i by omega]
+      · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1]), show 4 * bw + (i - 4 * bw) = i by omega_using [h1]]
       · rw [ite_eq_right h1]
         arith_ifs
     · simp only [hl, false_and, ite_false]
@@ -168,7 +169,7 @@ theorem shiftBytes_apply (a : Areas) :
   | k + 1, l, i => by
     rw [List.range_succ, List.map_append, List.map_singleton, applyOps_snoc]
     simp only [Op.apply, Op.val, Op.width, Bool.false_eq_true, ite_false, shiftBytes_apply a k]
-    have h4 : ¬ (k + 1 + (i - k) < k) := by omega
+    have h4 : ¬ (k + 1 + (i - k) < k) := by omega_using []
     simp only [h4, and_false, ite_false]
     by_cases hl : l = .chn
     · subst hl
@@ -199,27 +200,27 @@ theorem copyBlk_inBounds {len : Loc → Nat} {bw : Nat} {dst src : Loc} (hd : 4 
   intro o ho
   simp only [copyBlk, List.mem_map, List.mem_range] at ho
   obtain ⟨w, hw, rfl⟩ := ho
-  exact ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun _ _ h => by cases h⟩
+  exact ⟨by simp [Op.width]; omega_using [hd, hw], by simp [Op.width]; omega_using [hs, hw], fun _ _ h => by cases h⟩
 
 theorem xorBlk_inBounds {len : Loc → Nat} {bw : Nat} {dst x y : Loc} (hd : 4 * bw ≤ len dst)
     (hx : 4 * bw ≤ len x) (hy : 4 * bw ≤ len y) : ∀ o ∈ xorBlk bw dst x y, o.InBounds len := by
   intro o ho
   simp only [xorBlk, List.mem_map, List.mem_range] at ho
   obtain ⟨w, hw, rfl⟩ := ho
-  exact ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun l off h => by
-    simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h; simp [Op.width]; omega⟩
+  exact ⟨by simp [Op.width]; omega_using [hd, hw], by simp [Op.width]; omega_using [hx, hw], fun l off h => by
+    simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h; simp [Op.width]; omega_using [hy, hw]⟩
 
 theorem shiftIn_inBounds {len : Loc → Nat} {bw : Nat} (hbw : 0 < bw) (hc : 4 * bw ≤ len .chn)
     (hd : 1 ≤ len .dat) : ∀ o ∈ Mode.shiftIn bw, o.InBounds len := by
   intro o ho
   simp only [Mode.shiftIn, List.mem_append, List.mem_map, List.mem_range, List.mem_singleton] at ho
   rcases ho with ⟨i, hi, rfl⟩ | rfl
-  · exact ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun _ _ h => by cases h⟩
-  · exact ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun _ _ h => by cases h⟩
+  · exact ⟨by simp [Op.width]; omega_using [hc, hi], by simp [Op.width]; omega_using [hc, hi], fun _ _ h => by cases h⟩
+  · exact ⟨by simp [Op.width]; omega_using [hbw, hc], by simp [Op.width]; omega_using [hd], fun _ _ h => by cases h⟩
 
 theorem xorByte_inBounds {len : Loc → Nat} (hd : 1 ≤ len .dat) (hb : 1 ≤ len .buf) :
     ({ wide := false, dst := .dat, dOff := 0, src := .dat, sOff := 0, xr := some (.buf, 0) } : Op).InBounds len :=
-  ⟨by simp [Op.width]; omega, by simp [Op.width]; omega, fun l off h => by
-    simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h; simp [Op.width]; omega⟩
+  ⟨by simp [Op.width]; omega_using [hd], by simp [Op.width]; omega_using [hd], fun l off h => by
+    simp only [Option.some.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h; simp [Op.width]; omega_using [hb]⟩
 
 end VG.Proof.Modes

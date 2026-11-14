@@ -38,7 +38,7 @@ theorem bytesAt_ext {m m' : Mem} {p q : Addr} {k : Nat} {c : Prop} [Decidable c]
 
 theorem contains_of_lt (p : Addr) {k i : Nat} (hk : k ≤ 2 ^ 64) (hi : i < k) :
     (⟨p, k⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hi]) (by omega_using [hk, hi])
 
 section
 variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem}
@@ -62,7 +62,7 @@ theorem Ctx.outM (hL : L.Ok) {t t' : State} (hc : Ctx L g vv m₀ t) (hk : Keep 
       rcases hR with rfl | rfl
       · exact (hL.ko.sub_left (Offset.sub_base _ (by decide))).symm.symm
       · exact Offset.disjoint L.B (d := frameBytes) (n := 16) (e := oM) (k := L.k.toNat) (by
-          simp only [frameBytes, oM]; omega) (by simp only [frameBytes]; omega) (by simp only [oM]; omega)
+          simp only [frameBytes, oM]; omega_using [hk']) (by simp only [frameBytes]; omega_using []) (by simp only [oM]; omega_using [hk'])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨L.OUT, by simp, fun _ h => h⟩
@@ -111,8 +111,8 @@ theorem tail_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t
       Spec.Rsa.bytesAt t'.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat = List.replicate L.k.toNat 0 := by
   have hnB := hL.nB
   have hkk := hL.khi
-  have hk1 : 1 ≤ L.k.toNat := by have := hL.klo; omega
-  have hk64 : L.k.toNat < 2 ^ 63 := by omega
+  have hk1 : 1 ≤ L.k.toNat := by have := hL.klo; omega_using [this]
+  have hk64 : L.k.toNat < 2 ^ 63 := by omega_using [hkk]
   have hok : L.out.toNat + L.k.toNat ≤ 2 ^ 64 := hL.olk ▸ hL.bo
   have hik : L.inp.toNat + L.k.toNat ≤ 2 ^ 64 := hL.ilk ▸ hL.bi
   have hOk : L.OUT = ⟨L.out, L.k.toNat⟩ := by rw [Lay.OUT, hL.olk]
@@ -122,8 +122,8 @@ theorem tail_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t
   have hc₁ := hc.keep k₁ hm₁
   refine WP.seq (WP.mono (cmpLoop_ok (op := L.out) (ip := L.inp) hk1 hk64 x11 x12
     (by rw [x13, BitVec.ofNat_toNat, BitVec.setWidth_eq]) x14
-    (fun i hi => ⟨L.OUT, by rw [hc₁.rd, hc₁.wr]; simp, hOk ▸ contains_of_lt _ (by omega) hi⟩)
-    (fun i hi => ⟨L.IN, by rw [hc₁.rd, hc₁.wr]; simp, by rw [Lay.IN, hL.ilk]; exact contains_of_lt _ (by omega) hi⟩))
+    (fun i hi => ⟨L.OUT, by rw [hc₁.rd, hc₁.wr]; simp, hOk ▸ contains_of_lt _ (by omega_using []) hi⟩)
+    (fun i hi => ⟨L.IN, by rw [hc₁.rd, hc₁.wr]; simp, by rw [Lay.IN, hL.ilk]; exact contains_of_lt _ (by omega_using []) hi⟩))
     fun t₂ hI => ?_)
   have hc₂ := hc₁.keep (Keep.trans ⟨fun r hr => (hI.keep.gpr r (by simp_all)), hI.keep.rd, hI.keep.wr,
     hI.keep.sp, hI.keep.v⟩ (Keep.refl _ _)) hI.mem
@@ -137,13 +137,13 @@ theorem tail_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t
   have hc₃ := hc₂.keep k₃ hm₃
   have hMk : ∀ i < L.k.toNat, InRegions t₃.wr (L.B + BitVec.ofNat 64 oM + BitVec.ofNat 64 i) 1 :=
     fun i hi => ⟨L.FR, by rw [hc₃.wr]; simp, by
-      rw [add_add]; exact Offset.contains_base _ (by simp only [oM, frameBytes]; omega) (by simp only [oM]; omega)⟩
+      rw [add_add]; exact Offset.contains_base _ (by simp only [oM, frameBytes]; omega_using [hkk, hi]) (by simp only [oM]; omega_using [hkk, hi])⟩
   refine WP.seq (WP.mono (releaseLoop_ok (op := L.out) (Mb := L.B + BitVec.ofNat 64 oM) hk1 hk64 y10 y12 y11 y14
     (by rw [y15, BitVec.ofNat_toNat, BitVec.setWidth_eq])
-    (fun i hi i' hi' h => hdisj _ (by rw [hOk]; exact contains_of_lt _ (by omega) hi)
-      (by rw [h]; exact contains_of_lt _ (by omega) hi'))
-    (add_ofNat_inj _ (by omega)) (add_ofNat_inj _ (by omega))
-    (fun i hi => ⟨L.OUT, by rw [hc₃.wr]; simp, hOk ▸ contains_of_lt _ (by omega) hi⟩) hMk)
+    (fun i hi i' hi' h => hdisj _ (by rw [hOk]; exact contains_of_lt _ (by omega_using []) hi)
+      (by rw [h]; exact contains_of_lt _ (by omega_using []) hi'))
+    (add_ofNat_inj _ (by omega_using [])) (add_ofNat_inj _ (by omega_using []))
+    (fun i hi => ⟨L.OUT, by rw [hc₃.wr]; simp, hOk ▸ contains_of_lt _ (by omega_using []) hi⟩) hMk)
     fun t₄ hR => ?_)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits, BitVec.setWidth_eq,
@@ -154,10 +154,10 @@ theorem tail_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t
   have m₃ : t₃.mem = t.mem := hm₃.trans (hI.mem.trans hm₁)
   have kk : Keep tailRegs t t₄ := ((k₁.trans (hI.keep.mono (by decide))).trans k₃).trans (hR.keep.mono (by decide))
   have hf : Frame [L.OUT, L.M] t.mem t₄.mem := fun x hx => by
-    rw [hR.frame x (fun i hi h => hx L.OUT (by simp) (by rw [h, hOk]; exact contains_of_lt _ (by omega) hi))
+    rw [hR.frame x (fun i hi h => hx L.OUT (by simp) (by rw [h, hOk]; exact contains_of_lt _ (by omega_using []) hi))
       (fun i hi h => hx L.M (by simp) (by
         rw [h, add_add]
-        exact Offset.contains _ (by omega) (by omega) (by simp only [oM]; omega))), m₃]
+        exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by simp only [oM]; omega_using [hkk]))), m₃]
   refine ⟨Ctx.outM hL hc ⟨fun r hr => ?_, kk.rd, kk.wr, kk.sp, kk.v⟩ hf, ?_, ?_, ?_⟩
   · rw [RegUpd.gpr_write]
     split

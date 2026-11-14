@@ -39,7 +39,7 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
   have hw1 : 1 ≤ rWidth s₀ := Nat.pos_of_ne_zero ((VG.Proof.Dsa.random_valid_scan (rQBytes s₀)).mp hq).1
   have h := S.ready
   have hub := S.usedBound
-  obtain ⟨d', rfl⟩ : ∃ d', draws = d' + 1 := ⟨draws - 1, by omega⟩
+  obtain ⟨d', rfl⟩ : ∃ d', draws = d' + 1 := ⟨draws - 1, by omega_using [hd]⟩
   have hdw : Spec.Dsa.Random.drawBytes (rq s₀) = rWidth s₀ := rWidth_eq s₀
   have hrlen : ((rInput s₀).rand.drop used).length = (rInput s₀).rand.length - used := List.length_drop
   unfold KeyRandom.draw
@@ -65,7 +65,7 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
     · intro k hk; rw [R.scalarEq, hspl] at hk; simp at hk
   · -- A complete KeyRandom.draw.
     refine WP.ite false (by rw [eval_eq, c₃, decide_eq_false hshort]) (fun e => Bool.noConfusion e) (fun _ => ?_)
-    have hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length := by omega
+    have hfull : used + rWidth s₀ ≤ (rInput s₀).rand.length := by omega_using [hw1, hshort]
     have hdl := drawBytes_length hfull
     -- The copy.
     refine WP.seq (WP.mono (drawCopy_ok A S₃ hfull hw1) fun t₄ ⟨S₄, hc₄, ho₄, k₄⟩ => ?_)
@@ -84,12 +84,12 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
         Spec.Dsa.Random.candidate (rq s₀) (drawBytes s₀ used) < rq s₀) := accepts_candidate hdl hw1
     have htake : ((rInput s₀).rand.drop used).take (Spec.Dsa.Random.drawBytes (rq s₀)) = drawBytes s₀ used := by
       rw [hdw]
-    refine WP.mono (drawFinish_ok A S₈ (by omega) hdb z₈) fun u ⟨k₉, h₉, o₉, hT, hF'⟩ => ?_
+    refine WP.mono (drawFinish_ok A S₈ (by omega_using []) hdb z₈) fun u ⟨k₉, h₉, o₉, hT, hF'⟩ => ?_
     have outs : Outs (rBase s₀) sampleRanges t.mem u.mem := by
       have e₁ : Outs (rBase s₀) sampleRanges t.mem t₃.mem := by rw [m₃]; exact Outs.refl _ _ _
       have e₂ : Outs (rBase s₀) sampleRanges t₃.mem t₄.mem := fun x hx => ho₄ x (by
         have := hx (oNonce, 32) (by decide)
-        unfold drawPlace at *; omega)
+        unfold drawPlace at *; omega_using [hql, hfit, this])
       have e₃ : Outs (rBase s₀) sampleRanges t₄.mem t₇.mem := o₇.mono (by decide)
       have e₄ : Outs (rBase s₀) sampleRanges t₇.mem t₈.mem := by rw [m₈]; exact Outs.refl _ _ _
       exact (((e₁.trans e₂).trans e₃).trans e₄).trans (o₉.mono (by decide))
@@ -101,8 +101,8 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
       have hle : ∀ r ∈ ([(oDraws, 4), (oStatus, 4)] : List (Nat × Nat)), r.1 + r.2 ≤ oNonce := by decide
       rw [o₉ _ fun r hr => by
         have := hle r hr
-        rw [ofs_off0 _ (by unfold drawPlace; omega)]
-        right; unfold drawPlace at *; omega, m₈]
+        rw [ofs_off0 _ (by unfold drawPlace; omega_using [hon, hql, hfit, hi])]
+        right; unfold drawPlace at *; omega_using [this], m₈]
       exact hc₇ i hi
     have st₈ : slot t₈.mem (rBase s₀) oStatus = 4 := by
       rw [m₈, hm₇, slot_write_ne _ _ _ (by decide) (by decide) (by decide),
@@ -117,7 +117,7 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
         rw [hacc] at ha; exact of_decide_eq_true ha
       have hspl : spl s₀ (d' + 1) used =
           ⟨some (Spec.Dsa.Random.candidate (rq s₀) (drawBytes s₀ used)), rWidth s₀, [1]⟩ := by
-        rw [spl, VG.Proof.Dsa.Random.sample_accept _ _ _ hq (by rw [hdw, hrlen]; omega) (by rw [htake]; exact hk),
+        rw [spl, VG.Proof.Dsa.Random.sample_accept _ _ _ hq (by rw [hdw, hrlen]; omega_using [hshort]) (by rw [htake]; exact hk),
           htake, hdw]
       refine ⟨h₉, outs, keeps, .inr ⟨by rw [st₉]; decide, fun S' base R => ⟨?_, ?_, ?_⟩,
         .inl (by rw [hspl]; simp)⟩⟩
@@ -139,13 +139,13 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
           { spl s₀ d' (used + rWidth s₀) with
             used := rWidth s₀ + (spl s₀ d' (used + rWidth s₀)).used,
             trace := 0 :: (spl s₀ d' (used + rWidth s₀)).trace } := by
-        rw [spl, VG.Proof.Dsa.Random.sample_reject _ _ _ hq (by rw [hdw, hrlen]; omega) (by rw [htake]; exact hk),
+        rw [spl, VG.Proof.Dsa.Random.sample_reject _ _ _ hq (by rw [hdw, hrlen]; omega_using [hshort]) (by rw [htake]; exact hk),
           hnext, hdw]
       have hstatus : VG.Proof.Dsa.Random.sampleStatus (spl s₀ (d' + 1) used) =
           VG.Proof.Dsa.Random.sampleStatus (spl s₀ d' (used + rWidth s₀)) := by
         rw [hspl]; exact VG.Proof.Dsa.Random.sampleStatus_reject _ _ _ _
       have rel : ∀ S' base, SampleRel s₀ S' base used (d' + 1) → SampleRel s₀ S' base (used + rWidth s₀) d' :=
-        fun S' base R => ⟨by rw [R.scalarEq, hspl], by rw [R.usedEq, hspl]; dsimp only; omega,
+        fun S' base R => ⟨by rw [R.scalarEq, hspl], by rw [R.usedEq, hspl]; dsimp only; omega_using [],
           R.statusEq.trans hstatus⟩
       by_cases h0 : d' = 0
       · subst h0
@@ -156,7 +156,7 @@ theorem draw_ok {s₀ t : State} (A : KeyABI s₀) {used draws : Nat} (S : Smp s
         refine ⟨⟨0, by rw [R'.usedEq, h0s]; exact S₉⟩, ?_, ?_⟩
         · rw [st₉, R'.statusEq, h0s]; simp only [Nat.add_sub_cancel, ↓reduceIte]; rfl
         · intro k hk'; rw [R'.scalarEq, h0s] at hk'; simp at hk'
-      · refine ⟨h₉, outs, keeps, .inl ⟨?_, by omega, by simpa using S₉, fun S' base R => by simpa using rel S' base R,
+      · refine ⟨h₉, outs, keeps, .inl ⟨?_, by omega_using [h0], by simpa using S₉, fun S' base R => by simpa using rel S' base R,
           by rw [hspl, Nat.add_sub_cancel]⟩⟩
         rw [st₉]; simp only [Nat.add_sub_cancel, h0, ↓reduceIte]; exact st₈
 
@@ -199,7 +199,7 @@ theorem status_beq {k : Nat} (hk : k < 2 ^ 32) : (BitVec.ofNat 32 k - 4 == 0) = 
     have := congrArg BitVec.toNat e
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (4 : BitVec 32).toNat = 4 from rfl,
       show (0 : BitVec 32).toNat = 0 from rfl] at this
-    omega
+    omega_using [hk, h, this]
 
 theorem sample_ok {s₀ t : State} (A : KeyABI s₀) {used d₀ : Nat} (S : Smp s₀ used d₀ t)
     (hq : 1 < rq s₀) :
@@ -222,12 +222,12 @@ theorem sample_ok {s₀ t : State} (A : KeyABI s₀) {used d₀ : Nat} (S : Smp 
   have ov₂ : Outs (rBase s₀) sampleRanges t.mem v₂.mem := by rw [mv₂]; exact ou.trans ov
   rcases hcase with ⟨stv, h2, Sv, rel, _⟩ | ⟨stv, out, _⟩
   · right
-    refine ⟨by rw [eval_eq, zv₂, uv₁.gpr, stv]; rfl, n - 1, by omega, used' + rWidth s₀, by omega, by omega,
+    refine ⟨by rw [eval_eq, zv₂, uv₁.gpr, stv]; rfl, n - 1, by omega_using [hn1], used' + rWidth s₀, by omega_using [h2], by omega_using [hn],
       Sv.mem A hv₂ mv₂, by rw [mv₂]; exact stv, rel S₀ used R, ov₂, kv₂⟩
   · have O := out S₀ used R
     have hz : (slot v.mem (rBase s₀) oStatus - 4 == 0) = false := by
       have := sampleStatus_le S₀
-      rw [O.status, status_beq (by omega), decide_eq_false (by omega)]
+      rw [O.status, status_beq (by omega_using [this]), decide_eq_false (by omega_using [this])]
     left
     refine ⟨by rw [eval_eq, zv₂, uv₁.gpr, hz], ?_⟩
     refine wp_ld hv₂ (by decide) fun u uu => WP.block_nil ?_

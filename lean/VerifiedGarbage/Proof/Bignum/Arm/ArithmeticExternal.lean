@@ -21,15 +21,15 @@ theorem ArithmeticReady.after_external {s t : State} {base : BitVec 32} {len w :
     (rest : Rest rs s t) (ptr : t.gpr .r0 = base) :
     ArithmeticReady base len w t ∧ WorkspaceEq (State.addr base) (8 * len) s.mem t.mem := by
   have fit : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_using [fit]
   have fit0 := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) fit
-  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega : 8 * len < 2 ^ 64) frame workspaceSep
+  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega_using [this] : 8 * len < 2 ^ 64) frame workspaceSep
   have saved := WorkspaceEq.of_frame (by decide : 4 < 2 ^ 64) frame baseSep
-  refine ⟨⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega)).trans h.width, ptr,
+  refine ⟨⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega_using [size])).trans h.width, ptr,
     ?_, ?_, ?_, ?_, ?_⟩, eq⟩
   · change ((t.mem.readW (off (State.addr base) (arrAt w 0)) 64).toNat *
       (t.mem.readW (off (State.addr base) 56) 64).toNat + 1) % 2 ^ 64 = 0
-    rw [eq.word (d := arrAt w 0) (bits := 64) (by omega), eq.word (d := 56) (bits := 64) (by omega)]
+    rw [eq.word (d := arrAt w 0) (bits := 64) (by omega_using [fit0]), eq.word (d := 56) (bits := 64) (by omega_using [size])]
     exact h.inverse
   · rw [eq.number fit (by decide : 0 < 8)]; exact h.modulus
   · rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead

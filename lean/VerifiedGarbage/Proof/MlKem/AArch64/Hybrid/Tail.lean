@@ -34,9 +34,9 @@ theorem bytesAt_squeeze (m : Mem) (p : Addr) : bytesAt m p 32 = squeezeFrom 136 
   · intro i h1 h2
     have hi : i < 32 := by simpa only [bytesAt_length] using h1
     rw [Proof.Sha3.squeezeFrom_getElem (by decide) (by decide) _ hi, Nat.zero_add,
-      Nat.div_eq_of_lt (by omega : i < 136), Nat.mod_eq_of_lt (by omega : i < 136)]
+      Nat.div_eq_of_lt (by omega_using [hi] : i < 136), Nat.mod_eq_of_lt (by omega_using [hi] : i < 136)]
     show _ = Proof.Sha3.byteOf (stateAt m p) i
-    rw [Proof.Sha3.byteOf_stateAt _ _ (by omega)]
+    rw [Proof.Sha3.byteOf_stateAt _ _ (by omega_using [hi])]
     simp only [bytesAt, List.getElem_map, List.getElem_range]
 
 /-- What the tail leaves, after the first `n` entries of `Â`. -/
@@ -145,8 +145,8 @@ theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
   refine ⟨⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩, f14⟩
   · rw [far34 (o := SB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hB.rho
   · rw [k₄.cs _ (by decide) (by decide), x24₃]; exact hB.acc
-  · intro e he; exact reducedW_frame f14 (farA e (by omega)) (hB.red e he)
-  · intro e he; rw [polyAtW_frame f14 (farA e (by omega))]; exact hB.res e he
+  · intro e he; exact reducedW_frame f14 (farA e (by omega_using [hn, he])) (hB.red e he)
+  · intro e he; rw [polyAtW_frame f14 (farA e (by omega_using [hn, he]))]; exact hB.res e he
   · rw [far34 (o := MB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hm
 
 end VG.Proof.MlKem.AArch64.Hybrid

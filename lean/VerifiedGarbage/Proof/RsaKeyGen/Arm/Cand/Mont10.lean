@@ -62,7 +62,7 @@ theorem sub3_keepM {o a b : Nat} (ho : o < nArr) (ha : a ∈ L) (hb : b ∈ L) (
   fun _ _ ⟨_, h, hw⟩ => WP.mono (sub3_ok hw ho (h.live_lt a ha) (h.live_lt b hb) (by decide) hoa hob)
     fun _ ⟨_, k, _, _, r⟩ => ⟨[o], [], k, by simp [hM], by simp, r.sp, r.rd, r.wr⟩
 
-theorem Rm_lt {σ : State} (pre : In P σ) : Rm P σ < cv P σ := Nat.mod_lt _ (by have := cv_gt pre; omega)
+theorem Rm_lt {σ : State} (pre : In P σ) : Rm P σ < cv P σ := Nat.mod_lt _ (by have := cv_gt pre; omega_using [this])
 
 theorem R_coprime {σ : State} (pre : In P σ) : Nat.Coprime (2 ^ (64 * P.w)) (cv P σ) := by
   have hodd := (cv_shape (σ := σ) pre).1
@@ -70,8 +70,8 @@ theorem R_coprime {σ : State} (pre : In P σ) : Nat.Coprime (2 ^ (64 * P.w)) (c
 
 theorem key_lt_R {σ : State} (pre : In P σ) {x : Nat} (hx : x < cv P σ) : x < 2 ^ (32 * P.W) := by
   have := cv_lt pre
-  have : 2 ^ (64 * P.w) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.W_eq; omega)
-  omega
+  have : 2 ^ (64 * P.w) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.W_eq; omega_using [this])
+  omega_arith
 
 theorem montB_vp : VP (fun σ s => SX P E σ s ∧ MS P σ s) montB (SM P E) := by
   simp only [montB, seqs]
@@ -87,14 +87,14 @@ theorem montB_vp : VP (fun σ s => SX P E σ s ∧ MS P σ s) montB (SM P E) := 
       refine VG.Proof.RsaKeyGen.mont_inj (R_coprime pre) lt (Rm_lt pre) ?_
       rw [val, Nat.one_mul]
       show 2 ^ (128 * P.w) % cv P σ % cv P σ = 2 ^ (64 * P.w) % cv P σ * 2 ^ (64 * P.w) % cv P σ
-      rw [Nat.mod_mod, Nat.mod_mul_mod, ← Nat.pow_add, show 64 * P.w + 64 * P.w = 128 * P.w by omega]⟩ :
+      rw [Nat.mod_mod, Nat.mod_mul_mod, ← Nat.pow_add, show 64 * P.w + 64 * P.w = 128 * P.w by omega_using []]⟩ :
       (E σ ∧ KS P σ _ LX (V3 P σ) [sUsed] s) ∧ MS P σ s ∧ numAt s.mem (State.addr P.M0) P.w 1 = Rm P σ)) ?_
   · have pre := h.2.1.pre
     have e := h.2.1.arrs (mBase + 1) (by simp)
     have v1 : AX P σ aOne = 1 := by simp (config := {decide := true}) only [AX, A3, A0, upd, ↓reduceIte]
     simp only [upd_self, v1] at e
-    rw [pre.numAt_eq (by rw [e]; exact Nat.one_lt_two_pow (by have := pre.w4; omega)), e]
-  · exact Nat.mod_lt _ (by have := cv_gt pre; omega)
+    rw [pre.numAt_eq (by rw [e]; exact Nat.one_lt_two_pow (by have := pre.w4; omega_using [this])), e]
+  · exact Nat.mod_lt _ (by have := cv_gt pre; omega_using [this])
   refine VP.seq (St.pctxClr clrTop1_taint (by decide) (by decide)) ?_
   refine VP.seq (VP.withMS (St.pcopy copy9_taint (by decide) (by simp) (by decide)) (fun σ s h => h.inSp)
     (copy_keepM (by decide) (by simp) (by decide) (by decide))) ?_
@@ -108,9 +108,9 @@ theorem montB_vp : VP (fun σ s => SX P E σ s ∧ MS P σ s) montB (SM P E) := 
   · simp (config := {decide := true}) only [upd, ↓reduceIte, AB2, AX, A3, A0]
     have c1 : cv P σ < 2 ^ (32 * P.W) := by
       have := cv_lt pre
-      have : 2 ^ (64 * P.w) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.W_eq; omega)
-      omega
-    rw [sub32_val c1 (key_lt_R pre hlt), ite_eq_right (by omega)]
+      have : 2 ^ (64 * P.w) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.W_eq; omega_using [this])
+      omega_arith
+    rw [sub32_val c1 (key_lt_R pre hlt), ite_eq_right (by omega_using [hlt])]
   all_goals simp (config := {decide := true}) only [upd, ↓reduceIte, AB2, AX]
 
 end

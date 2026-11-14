@@ -35,7 +35,7 @@ theorem rate21_frame {m m' : Mem} {p : Addr} {A : Spec.Sha3.State} {rs : List Re
     (h : Rate21 m p A) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (rateR21 p).Disjoint r) : Rate21 m' p A :=
   fun i hi => by
     show m'.readW (p + BitVec.ofNat 64 (8 * i)) 64 = _
-    rw [hf.readW (r := rateR21 p) (Offset.contains_base p (by omega) (by omega)) hd (by decide)]
+    rw [hf.readW (r := rateR21 p) (Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
     exact h i hi
 
 /-- **The first 16 words of the third state at `st` to buffer `N`.** -/
@@ -55,19 +55,19 @@ theorem prfOut_ok (bt N : Nat) {s : State} {st Bf : Addr} {S : Spec.Sha3.State}
     ⟨h₁.keep.mono (by simp), by rw [e₁, h28, hB], by rw [h₁.mem]; exact Frame.refl _ _,
       fun j hj => absurd hj (Nat.not_lt_zero _)⟩) fun t ⟨kt, _, ft, wt⟩ => ⟨kt, ft, wt⟩
   have hc : (stR st).Contains (st + BitVec.ofNat 64 (Impl.MlKem.AArch64.KEM.ST + 8 * k)) 8 :=
-    Offset.contains_base st (by simp only [Impl.MlKem.AArch64.KEM.ST]; omega) (by simp only [Impl.MlKem.AArch64.KEM.ST]; omega)
-  have hbc : (rateR Bf).Contains (outAddr Bf k) 8 := Offset.contains_base Bf (by omega) (by omega)
+    Offset.contains_base st (by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [hk]) (by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [hk])
+  have hbc : (rateR Bf).Contains (outAddr Bf k) 8 := Offset.contains_base Bf (by omega_using [hk]) (by omega_using [hk])
   refine wp_ldrx (a := st + BitVec.ofNat 64 (Impl.MlKem.AArch64.KEM.ST + 8 * k))
-    ⟨by simp only [Impl.MlKem.AArch64.KEM.ST]; omega, by simp only [Impl.MlKem.AArch64.KEM.ST]; omega⟩
+    ⟨by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [], by simp only [Impl.MlKem.AArch64.KEM.ST]; omega_using [hk]⟩
     (by rw [kt.get .x28 (by decide), h28])
     (by rw [kt.rd, kt.wr]; exact hin _ _ ⟨_, List.mem_singleton_self _, hc⟩) fun u hu e => ?_
-  refine wp_strx (a := outAddr Bf k) ⟨by omega, by omega⟩ (by rw [hu.get .x2 (by decide), xt]; rfl)
+  refine wp_strx (a := outAddr Bf k) ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hu.get .x2 (by decide), xt]; rfl)
     (by rw [hu.wr, kt.wr]; exact hout _ _ ⟨_, List.mem_singleton_self _, hbc⟩) fun v hv => wp_nil ?_
   have hm : v.mem = u.mem.writeW (outAddr Bf k) (u.gpr .x9) := hv.mem
   have hv9 : u.gpr .x9 = S[k]! := by
     rw [e, ft.readW hc (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide), ← hS]
     simp only [stateAt, Impl.MlKem.AArch64.KEM.ST, Nat.zero_add]
-    rw [getElem!_pos _ k (by omega), Vector.getElem_ofFn]
+    rw [getElem!_pos _ k (by omega_using [hk]), Vector.getElem_ofFn]
   refine ⟨(kt.trans (hu.keep.trans hv.keep)).mono (by simp), by rw [hv.gpr, hu.get .x2 (by decide), xt], ?_,
     fun j hj => ?_⟩
   · rw [hm, hu.mem]; exact ft.writeW (List.mem_singleton_self _) _ hbc
@@ -75,7 +75,7 @@ theorem prfOut_ok (bt N : Nat) {s : State} {st Bf : Addr} {S : Spec.Sha3.State}
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · rw [show outAddr Bf j = Bf + BitVec.ofNat 64 (8 * j) from rfl,
         show outAddr Bf k = Bf + BitVec.ofNat 64 (8 * k) from rfl,
-        Mem.readW_writeW_sep (sep_off Bf (.inl (by omega)) (by omega) (by omega)) (by decide), hu.mem]
+        Mem.readW_writeW_sep (sep_off Bf (.inl (by omega_using [hj])) (by omega_arith) (by omega_using [hk])) (by decide), hu.mem]
       exact wt j hj
     · rw [Mem.readW_writeW_self64, hv9]
 

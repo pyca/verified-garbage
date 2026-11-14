@@ -43,9 +43,9 @@ def quad (M : Block) (i : Nat) : BitVec 128 :=
 
 theorem W_ge' (M : Block) (t : Nat) :
     W M (t + 16) = ssig1 (W M (t + 14)) + (ssig0 (W M (t + 1)) + W M t) + W M (t + 9) := by
-  rw [W_ge M (by omega)]
-  simp only [show t + 16 - 2 = t + 14 by omega, show t + 16 - 7 = t + 9 by omega,
-    show t + 16 - 15 = t + 1 by omega, show t + 16 - 16 = t by omega]
+  rw [W_ge M (by omega_using [])]
+  simp only [show t + 16 - 2 = t + 14 by omega_using [], show t + 16 - 7 = t + 9 by omega_using [],
+    show t + 16 - 15 = t + 1 by omega_using [], show t + 16 - 16 = t by omega_using []]
   ac_rfl
 
 theorem schedule_eq (M : Block) (i : Nat) :
@@ -61,13 +61,13 @@ theorem schedule_eq (M : Block) (i : Nat) :
   have w1 := W_ge' M (4 * i + 1)
   have w2 := W_ge' M (4 * i + 2)
   have w3 := W_ge' M (4 * i + 3)
-  simp only [show 4 * i + 16 = 4 * (i + 4) by omega, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega,
-    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega,
-    show 4 * i + 14 = 4 * (i + 3) + 2 by omega, show 4 * i + 1 + 14 = 4 * (i + 3) + 3 by omega,
-    show 4 * i + 9 = 4 * (i + 2) + 1 by omega, show 4 * i + 1 + 9 = 4 * (i + 2) + 2 by omega,
-    show 4 * i + 2 + 9 = 4 * (i + 2) + 3 by omega, show 4 * i + 3 + 9 = 4 * (i + 3) by omega,
-    show 4 * i + 1 + 1 = 4 * i + 2 by omega, show 4 * i + 2 + 1 = 4 * i + 3 by omega,
-    show 4 * i + 3 + 1 = 4 * (i + 1) by omega] at w0 w1 w2 w3
+  simp only [show 4 * i + 16 = 4 * (i + 4) by omega_using [], show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega_using [],
+    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega_using [], show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega_using [],
+    show 4 * i + 14 = 4 * (i + 3) + 2 by omega_using [], show 4 * i + 1 + 14 = 4 * (i + 3) + 3 by omega_using [],
+    show 4 * i + 9 = 4 * (i + 2) + 1 by omega_using [], show 4 * i + 1 + 9 = 4 * (i + 2) + 2 by omega_using [],
+    show 4 * i + 2 + 9 = 4 * (i + 2) + 3 by omega_using [], show 4 * i + 3 + 9 = 4 * (i + 3) by omega_using [],
+    show 4 * i + 1 + 1 = 4 * i + 2 by omega_using [], show 4 * i + 2 + 1 = 4 * i + 3 by omega_using [],
+    show 4 * i + 3 + 1 = 4 * (i + 1) by omega_using []] at w0 w1 w2 w3
   rw [w2, w3, w0, w1]
   rfl
 

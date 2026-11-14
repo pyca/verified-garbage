@@ -21,23 +21,23 @@ theorem one_ok {s : State} {base : Addr} {size n out : Nat} (hs : Scr s base siz
     WP isa (VG.Impl.Mont.X86.Dynamic.one n out) s fun t =>
       Outside base out (8 * n) s.mem t.mem ∧ wordsVal t.mem base out n = 1 ∧ Keeps [.eax, .ebp, .edx] s t := by
   unfold VG.Impl.Mont.X86.Dynamic.one
-  have hz : out + 4 * (2 * n) ≤ size := by omega
-  refine WP.seq (WP.mono (zerosW_ok hs (by omega) hz) fun s₁ ⟨O, V, K⟩ => ?_)
+  have hz : out + 4 * (2 * n) ≤ size := by omega_using [ho]
+  refine WP.seq (WP.mono (zerosW_ok hs (by omega_using [hn]) hz) fun s₁ ⟨O, V, K⟩ => ?_)
   refine wp_movS rfl fun s₂ u₂ _ => ?_
   have ks : Keeps [.eax, .ebp, .edx] s s₂ := K.widen u₂.keeps
   have hs₂ := hs.of_keeps ks (by decide)
-  have hw := writeW32_outside s₂.mem base (d := out) (s₂.gpr .eax) (by have := hs.nowrap; omega)
-  refine wp_storeS (hs₂.ea (d := out) (by omega)) (hs₂.write (d := out) (n := 4) (by omega))
+  have hw := writeW32_outside s₂.mem base (d := out) (s₂.gpr .eax) (by have := hs.nowrap; omega_using [ho, this])
+  refine wp_storeS (hs₂.ea (d := out) (by omega_using [hn, ho])) (hs₂.write (d := out) (n := 4) (by omega_using [hn, ho]))
     fun t mt => WP.block_nil ⟨?_, ?_, ks.trans (mt.keeps _)⟩
   · rw [mt.mem, u₂.mem]
-    exact (O.mono (Nat.le_refl _) (by omega)).trans
-      ((writeW32_outside s₁.mem base (d := out) (s₂.gpr .eax) (by have := hs.nowrap; omega)).mono
-        (Nat.le_refl _) (by omega))
-  · obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega⟩
+    exact (O.mono (Nat.le_refl _) (by omega_using [])).trans
+      ((writeW32_outside s₁.mem base (d := out) (s₂.gpr .eax) (by have := hs.nowrap; omega_using [ho, this])).mono
+        (Nat.le_refl _) (by omega_using [hn]))
+  · obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega_using [hn]⟩
     rw [hk, val32] at V
-    have tail : val32 s₁.mem base (out + 4) k = 0 := by omega
+    have tail : val32 s₁.mem base (out + 4) k = 0 := by omega_using [V]
     rw [wordsVal_eq_val32, hk, val32, mt.mem, w32_write_self]
-    have keep := hw.val32 (d := out + 4) (k := k) (by omega) (by have := hs.nowrap; omega)
+    have keep := hw.val32 (d := out + 4) (k := k) (by omega_using []) (by have := hs.nowrap; omega_using [ho, hk, this])
     rw [keep, u₂.mem, tail, u₂.gpr]
     rfl
 
@@ -57,7 +57,7 @@ theorem counter_zero {k : Nat} (hk : k < 2 ^ 32) (hpos : 0 < k) :
     · intro h
       have h' := congrArg BitVec.toNat h
       simp only [BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl] at h'
-      omega
+      omega_using [hk, hpos, h']
     · rintro rfl; rfl
   apply Bool.eq_iff_iff.mpr
   simpa only [beq_iff_eq, decide_eq_true_eq] using e

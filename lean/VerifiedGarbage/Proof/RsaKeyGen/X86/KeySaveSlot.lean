@@ -19,7 +19,7 @@ theorem saveSlot_ok {s : State} {B : Addr} {Z n N a d : Nat} (h : Ws s B Z n N)
       Ws t B Z n N ∧ Keep B n [] [d] s.mem t.mem ∧
       slot t.mem B d = slot s.mem B a ∧ Keeps [.eax] s t := by
   have head := h.hdr_le
-  refine wp_movS (readSrc_sc h.workspace (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h.workspace (by omega_using [ha, head])) fun u U _ => ?_
   refine WP.mono (store_slot (h.rest U.keeps) hd .eax) fun t ⟨ht, Ot, value, Kt⟩ => ?_
   refine ⟨ht, ?_, ?_, U.keeps.trans (Kt.mono (by decide))⟩
   · simpa only [U.mem] using Ot

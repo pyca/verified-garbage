@@ -30,7 +30,7 @@ theorem cachedPrepareSource_ok (s : State) {p : Inputs} {slots : List Nat}
     WP isa (.block VG.Impl.Ffdh.Arm.CachedPrepare.source) s fun t =>
       (t.gpr .r4 = p.cachedContext + BitVec.ofNat 32 24 ∧ t.mem = s.mem) ∧ Rest [.r4] s t := by
   have addr52 : State.addr (s.sp + BitVec.ofNat 32 52) = off (State.addr s.sp) 52 :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [this])
   refine withRest_all [.r4] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.CachedPrepare.source
   ffrun [addr52, h.locals.read (d := 52) (by decide), h.saved 52 h52, Inputs.slotValue]
@@ -57,25 +57,25 @@ theorem cachedPrepareBody_ok (s : State) {p : Inputs} {slots : List Nat}
   have count : 3 + 2 * p.w ≤ p.cachedWords := by
     rw [environment.canonical.1, Spec.Ffdh.generationPrecomputedWords,
       Spec.Rsa.FixedBaseComb.precomputedWords, Spec.Rsa.precomputedWords, Inputs.w]
-    omega
+    omega_using []
   have widthPositive := p.width.1
   have originalFit := environment.fit
-  have address : State.addr pp = off (State.addr p.cachedContext) 24 := VG.Arm.addr_add (by omega)
+  have address : State.addr pp = off (State.addr p.cachedContext) 24 := VG.Arm.addr_add (by omega_using [count, widthPositive, originalFit])
   have ppFit : pp.toNat + 16 * p.w ≤ 2 ^ 32 := by
     simp only [pp, BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : p.cachedContext.toNat + 24 < 2 ^ 32)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [count, widthPositive, originalFit] : p.cachedContext.toNat + 24 < 2 ^ 32)]
+    omega_using [count, originalFit]
   have readyU : LayoutFrameReady p.base p.len p.w u :=
     ⟨⟨prepared.workspace, prepared.layout, prepared.width, prepared.ptr⟩,
       prepared.stackRead, prepared.stackSep, prepared.saved⟩
   have readyV := readyU.of_mem memV restV ((restV.gpr .r0 (by simp)).trans prepared.ptr)
   have regionSub : (⟨State.addr pp, 16 * p.w⟩ : Region).Sub (cachedRegion p) := by
     rw [address]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [count])
   have importInput : PdImportInput p.base pp p.len p.w v :=
     ⟨readyV, ppFit, by
       rw [restV.rd, restV.wr, address]
-      exact CallLay.inRegions_sub environmentU.readable (by omega) (by omega),
+      exact CallLay.inRegions_sub environmentU.readable (by omega_using [count]) (by omega_using [originalFit]),
       ((environmentU.separate _ (by simp [keyCallWrites, keyWrites])).sub_left regionSub).symm,
       source⟩
   rw [WP.seq_iff]

@@ -255,8 +255,8 @@ abbrev TabTo (base : Addr) (s : State) (Q : Point W) (m : Nat) : Prop := ∀ e �
 theorem TabTo.of_eq {base : Addr} {s s' : State} {Q : Point W} {m : Nat} (h : TabTo base s Q m)
     (he : ∀ d, 4096 ≤ d → d + 48 ≤ 6400 → wordsVal s'.mem base d 6 = wordsVal s.mem base d 6) (hm : m ≤ 15) :
     TabTo base s' Q m :=
-  fun e hlt => (h e hlt).of_eq (he (4096 + 144 * e) (by omega) (by omega))
-    (he (4096 + 144 * e + 48) (by omega) (by omega)) (he (4096 + 144 * e + 96) (by omega) (by omega))
+  fun e hlt => (h e hlt).of_eq (he (4096 + 144 * e) (by omega_using []) (by omega_using [hm, hlt]))
+    (he (4096 + 144 * e + 48) (by omega_using []) (by omega_using [hm, hlt])) (he (4096 + 144 * e + 96) (by omega_using []) (by omega_using [hm, hlt]))
 
 /-- `o = p`, the three coordinates one after the other, for `o`'s slots in
 order and `p`'s apart from them all. -/
@@ -275,17 +275,17 @@ theorem copyPt_ok {s : State} {base : Addr} (hw : WsReg s base) {o p : Pt}
   obtain ⟨⟨ox8, ox⟩, ⟨oy8, oy⟩, ⟨oz8, oz⟩, ⟨px8, px⟩, ⟨py8, py⟩, ⟨pz8, pz⟩⟩ := g
   obtain ⟨hpx, hpy, hpz⟩ := gp
   rw [Cfg.copyPt, show c.n = 6 from rfl, List.append_assoc]
-  refine WP.block_append (WP.mono (copy_ok 6 hw (o := o.x) (a := p.x) ox8 px8 (by omega) (by omega) (by omega))
+  refine WP.block_append (WP.mono (copy_ok 6 hw (o := o.x) (a := p.x) ox8 px8 (by omega_using [ox]) (by omega_using [px]) (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]))
     fun s₁ ⟨e₁, r₁, O₁⟩ => ?_)
   have hw₁ := hw.of_rest r₁
-  refine WP.block_append (WP.mono (copy_ok 6 hw₁ (o := o.y) (a := p.y) oy8 py8 (by omega) (by omega) (by omega))
+  refine WP.block_append (WP.mono (copy_ok 6 hw₁ (o := o.y) (a := p.y) oy8 py8 (by omega_using [oy]) (by omega_using [py]) (by omega_using [hxy, hyz, hpy]))
     fun s₂ ⟨e₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
-  refine WP.mono (copy_ok 6 hw₂ (o := o.z) (a := p.z) oz8 pz8 (by omega) (by omega) (by omega))
+  refine WP.mono (copy_ok 6 hw₂ (o := o.z) (a := p.z) oz8 pz8 (by omega_using [oz]) (by omega_using [pz]) (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]))
     fun s₃ ⟨e₃, r₃, O₃⟩ => ⟨?_, ?_, ?_, (r₁.trans r₂).trans r₃ |>.mono (by simp), ?_⟩
-  · rw [O₃.wordsVal (by omega) (by omega), O₂.wordsVal (by omega) (by omega), e₁]
-  · rw [O₃.wordsVal (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega)]
-  · rw [e₃, O₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
+  · rw [O₃.wordsVal (by omega_using [hxy, hyz]) (by omega_using [ox]), O₂.wordsVal (by omega_using [hxy]) (by omega_using [ox]), e₁]
+  · rw [O₃.wordsVal (by omega_using [hyz]) (by omega_using [oy]), e₂, O₁.wordsVal (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]) (by omega_using [py])]
+  · rw [e₃, O₂.wordsVal (by omega_using [hxy, hyz, hpz]) (by omega_using [pz]), O₁.wordsVal (by omega_using [hxy, hyz, ox8, ox, oy8, oy, oz8, oz, px8, px, py8, py, pz8, pz, hpx, hpy, hpz]) (by omega_using [pz])]
   · exact ((O₁.unch.trans O₂.unch).trans O₃.unch).mono (by simp)
 
 /-- `D`'s slots, as `copyPt` writes them. -/
@@ -301,10 +301,10 @@ theorem store_ok {s : State} {base : Addr} (hw : WsReg s base) {e : Nat} (he : e
   have g := fun x hx => hs x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at g
   obtain ⟨⟨hx8, hx⟩, ⟨hy8, hy⟩, ⟨hz8, hz⟩⟩ := g
-  refine WP.mono (Joint.storePt_ok c hw (e := e) (by decide) (by show 4096 + 144 * e + 144 ≤ 8192; omega)
-    (by show 144 * e + 144 ≤ 4095; omega) ⟨hx8, by show _ + 48 ≤ 4095; omega, by show _ + 48 ≤ 4096; omega⟩
-    ⟨hy8, by show _ + 48 ≤ 4095; omega, by show _ + 48 ≤ 4096; omega⟩
-    ⟨hz8, by show _ + 48 ≤ 4095; omega, by show _ + 48 ≤ 4096; omega⟩) fun s' ⟨ex, ey, ez, r, O⟩ => ?_
+  refine WP.mono (Joint.storePt_ok c hw (e := e) (by decide) (by show 4096 + 144 * e + 144 ≤ 8192; omega_using [he])
+    (by show 144 * e + 144 ≤ 4095; omega_using [he]) ⟨hx8, by show _ + 48 ≤ 4095; omega_using [hx], by show _ + 48 ≤ 4096; omega_using [hx]⟩
+    ⟨hy8, by show _ + 48 ≤ 4095; omega_using [hy], by show _ + 48 ≤ 4096; omega_using [hy]⟩
+    ⟨hz8, by show _ + 48 ≤ 4095; omega_using [hz], by show _ + 48 ≤ 4096; omega_using [hz]⟩) fun s' ⟨ex, ey, ez, r, O⟩ => ?_
   simp only [show c.jt = 4096 from rfl, show Verify.Cfg.jb c = 144 from rfl, show c.n = 6 from rfl,
     Nat.reduceMul] at ex ey ez O
   exact ⟨hp.move ex ey ez, r, O⟩
@@ -331,14 +331,14 @@ theorem dW : ∀ w ∈ ([((c.pt DX DY DZ).x, 48), ((c.pt DX DY DZ).y, 48), ((c.p
 
 /-- Entry `e`'s bytes, within `addsW`. -/
 theorem entW {e : Nat} (he : e < 16) : ∃ w' ∈ addsW, w'.1 ≤ 4096 + 144 * e ∧ 4096 + 144 * e + 144 ≤ w'.1 + w'.2 :=
-  ⟨(4096, 2304), List.mem_cons_of_mem _ List.mem_cons_self, by simp only; omega, by simp only; omega⟩
+  ⟨(4096, 2304), List.mem_cons_of_mem _ List.mem_cons_self, by simp only; omega_using [], by simp only; omega_using [he]⟩
 
 /-- Entry `e`, kept by memory unchanged there. -/
 theorem ent_of {base : Addr} {s s' : State} {e : Nat} {P : Point W} (h : PtOk base s (ent e) P)
     (k : ∀ d, 4096 + 144 * e ≤ d → d + 48 ≤ 4096 + 144 * e + 144 → wordsVal s'.mem base d 6 = wordsVal s.mem base d 6) :
     PtOk base s' (ent e) P :=
-  h.of_eq (k (4096 + 144 * e) (Nat.le_refl _) (by omega)) (k (4096 + 144 * e + 48) (by omega) (by omega))
-    (k (4096 + 144 * e + 96) (by omega) (by omega))
+  h.of_eq (k (4096 + 144 * e) (Nat.le_refl _) (by omega_using [])) (k (4096 + 144 * e + 48) (by omega_using []) (by omega_using []))
+    (k (4096 + 144 * e + 96) (by omega_using []) (by omega_using []))
 
 /-- The additions of `[e]Q` for `e = 2 … m + 1`. -/
 theorem adds_ok (hL : Law W) {base : Addr} {Q : Point W} (hQ : onCurve W Q = true) :
@@ -347,37 +347,37 @@ theorem adds_ok (hL : Law W) {base : Addr} {Q : Point W} (hQ : onCurve W Q = tru
   | 0, _, s, h => WP.block_nil ⟨Kp.refl _, Unch.refl _ _ _, h⟩
   | m + 1, hm, s, h => by
     rw [Cfg.adds]
-    refine WP.seq (WP.mono (adds_ok hL hQ m (by omega) h) fun s₁ ⟨k₁, U₁, A₁⟩ => ?_)
+    refine WP.seq (WP.mono (adds_ok hL hQ m (by omega_using [hm]) h) fun s₁ ⟨k₁, U₁, A₁⟩ => ?_)
     have hw₁ := A₁.ws
     have hn := hw₁.nowrap
     -- `T = D + Q`.
     refine WP.seq (WP.mono (addPt_ok hL hw₁ A₁.kc.ap A₁.kc.bp (p := c.pt DX DY DZ) (q := c.pt RX RY ONEP)
       (o := c.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide) (hL.onCurve_mul hQ _) hQ A₁.d A₁.q)
       fun s₂ ⟨k₂, U₂, p₂⟩ => ?_)
-    rw [mul_succ' hL hQ, show m + 1 + 1 = m + 2 by omega] at p₂
+    rw [mul_succ' hL hQ, show m + 1 + 1 = m + 2 by omega_using []] at p₂
     have hw₂ := hw₁.of_kp k₂
     have e₂ : ∀ d ∈ [c.sl AP, c.sl B3P, c.sl ZERO, c.sl ONEP] ++ [c.sl RX, c.sl RY], wordsVal s₂.mem base d 6 =
         wordsVal s₁.mem base d 6 := keepU U₂ (by decide)
     have far₂ : ∀ d, 4096 ≤ d → d + 48 ≤ 6400 → wordsVal s₂.mem base d 6 = wordsVal s₁.mem base d 6 :=
-      fun d h1 h2 => U₂.wordsVal (fun w hw => by have := (addW_T w hw).2; omega) (by omega)
+      fun d h1 h2 => U₂.wordsVal (fun w hw => by have := (addW_T w hw).2; omega_using [h1, h2, this]) (by omega_using [h2])
     -- Stored to entry `m + 2`.
-    refine WP.block_append (WP.mono (store_ok hw₂ (e := m + 2) (by omega) (by decide) p₂)
+    refine WP.block_append (WP.mono (store_ok hw₂ (e := m + 2) (by omega_using [hm]) (by decide) p₂)
       fun s₃ ⟨p₃, r₃, O₃⟩ => ?_)
     have hw₃ := hw₂.of_rest r₃
     have e₃ : ∀ d, d + 48 ≤ 4095 → wordsVal s₃.mem base d 6 = wordsVal s₂.mem base d 6 := fun d hd =>
-      O₃.wordsVal (by omega) (by omega)
+      O₃.wordsVal (by omega_using [hd]) (by omega_using [hd])
     have pT₃ : PtOk base s₃ (c.pt TX TY TZ) (mul (m + 2) Q) :=
       p₂.of_eq (e₃ _ (by decide)) (e₃ _ (by decide)) (e₃ _ (by decide))
     -- `D = T`.
     refine WP.mono (copyPt_ok hw₃ (o := c.pt DX DY DZ) (p := c.pt TX TY TZ) (by decide) (by decide) (by decide)
       (by decide)) fun s₄ ⟨x₄, y₄, z₄, r₄, U₄⟩ => ?_
     have e₄ : ∀ d, (d + 48 ≤ 880 ∨ 1024 ≤ d) → d + 48 ≤ 8192 → wordsVal s₄.mem base d 6 = wordsVal s₃.mem base d 6 :=
-      fun d h1 h2 => U₄.wordsVal (fun w hw => by have := dSl w hw; omega) (by omega)
+      fun d h1 h2 => U₄.wordsVal (fun w hw => by have := dSl w hw; omega_using [h1, this]) (by omega_using [h2])
     have kd : ∀ d ∈ [c.sl AP, c.sl B3P, c.sl ZERO, c.sl ONEP] ++ [c.sl RX, c.sl RY],
         wordsVal s₄.mem base d 6 = wordsVal s₁.mem base d 6 := fun d hd => by
       have hd' : d + 48 ≤ 880 := (by decide : ∀ d ∈ [c.sl AP, c.sl B3P, c.sl ZERO, c.sl ONEP] ++ [c.sl RX, c.sl RY],
         d + 48 ≤ 880) d hd
-      rw [e₄ d (.inl hd') (by omega), e₃ d (by omega), e₂ d hd]
+      rw [e₄ d (.inl hd') (by omega_using [hd']), e₃ d (by omega_using [hd']), e₂ d hd]
     refine ⟨k₁.trans (k₂.trans ((Kp.of_rest r₃).trans (Kp.of_rest r₄))), ?_, ⟨hw₃.of_rest r₄, ?_, ?_, ?_, ?_⟩⟩
     · refine (((U₁.trans U₂).trans O₃.unch).trans U₄).cover fun w hw => ?_
       rcases List.mem_append.mp hw with hw | hw
@@ -387,15 +387,15 @@ theorem adds_ok (hL : Law W) {base : Addr} {Q : Point W} (hQ : onCurve W Q = tru
           · exact (addW_T w hw).1
         · rw [List.mem_singleton] at hw
           subst hw
-          exact entW (by omega)
+          exact entW (by omega_using [hm])
       · exact dW w hw
     · exact A₁.kc.of_eq fun d hd => kd d (List.mem_append_left _ hd)
     · intro e he
       rcases Nat.lt_or_ge e (m + 2) with h | h
-      · have pe := A₁.tab e (by omega)
+      · have pe := A₁.tab e (by omega_using [h])
         exact ent_of pe fun d h1 h2 => by
-          rw [e₄ d (.inr (by omega)) (by omega), O₃.wordsVal (by omega) (by omega), far₂ d (by omega) (by omega)]
-      · obtain rfl : e = m + 2 := by omega
+          rw [e₄ d (.inr (by omega_using [h1])) (by omega_using [hm, he, h2]), O₃.wordsVal (by omega_using [h, h2]) (by omega_using [hm, he, h2]), far₂ d (by omega_using [h1]) (by omega_using [hm, he, h2])]
+      · obtain rfl : e = m + 2 := by omega_using [he, h]
         exact ent_of p₃ fun d h1 h2 => e₄ d (.inr (by omega_using [h1])) (by omega_using [h2, hm])
     · exact pT₃.move x₄ y₄ z₄
     · exact A₁.q.of_eq (kd _ (by decide)) (kd _ (by decide)) (kd _ (by decide))
@@ -444,17 +444,17 @@ theorem build_ok (hL : Law W) {base : Addr} {s : State} (hp : WPre base s) :
     fun s₁ ⟨p₁, r₁, O₁⟩ => ?_))
   have hw₁ := hw.of_rest r₁
   have e₁ : ∀ d, d + 48 ≤ 4095 → wordsVal s₁.mem base d 6 = wordsVal s.mem base d 6 := fun d hd =>
-    O₁.wordsVal (by omega) (by omega)
+    O₁.wordsVal (by omega_using [hd]) (by omega_using [hd])
   refine WP.block_append (WP.mono (store_ok hw₁ (e := 1) (by decide) (by decide)
     (pQ.of_eq (e₁ _ (by decide)) (e₁ _ (by decide)) (e₁ _ (by decide)))) fun s₂ ⟨p₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
   have e₂ : ∀ d, d + 48 ≤ 4095 → wordsVal s₂.mem base d 6 = wordsVal s.mem base d 6 := fun d hd => by
-    rw [O₂.wordsVal (by omega) (by omega), e₁ d hd]
+    rw [O₂.wordsVal (by omega_using [hd]) (by omega_using [hd]), e₁ d hd]
   refine WP.mono (copyPt_ok hw₂ (o := c.pt DX DY DZ) (p := c.pt RX RY ONEP) (by decide) (by decide) (by decide)
     (by decide)) fun s₃ ⟨x₃, y₃, z₃, r₃, U₃⟩ => ?_
   have hw₃ := hw₂.of_rest r₃
   have e₃ : ∀ d, (d + 48 ≤ 880 ∨ 1024 ≤ d) → d + 48 ≤ 8192 → wordsVal s₃.mem base d 6 = wordsVal s₂.mem base d 6 :=
-    fun d h1 h2 => U₃.wordsVal (fun w hw => by have := dSl w hw; omega) (by omega)
+    fun d h1 h2 => U₃.wordsVal (fun w hw => by have := dSl w hw; omega_using [h1, this]) (by omega_using [h2])
   have pQ₃ : PtOk base s₃ (c.pt RX RY ONEP) (qOf base s) :=
     pQ.of_eq ((e₃ _ (.inl (by decide)) (by decide)).trans (e₂ _ (by decide)))
       ((e₃ _ (.inl (by decide)) (by decide)).trans (e₂ _ (by decide)))
@@ -464,13 +464,13 @@ theorem build_ok (hL : Law W) {base : Addr} {s : State} (hp : WPre base s) :
     · have hd' : d + 48 ≤ 880 := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl <;> decide
-      rw [e₃ d (.inl hd') (by omega), e₂ d (by omega)]
+      rw [e₃ d (.inl hd') (by omega_using [hd']), e₂ d (by omega_using [hd'])]
     · rcases Nat.lt_or_ge e 1 with h | h
-      · obtain rfl : e = 0 := by omega
+      · obtain rfl : e = 0 := by omega_using [h]
         exact p₁.of_eq ((e₃ _ (.inr (by decide)) (by decide)).trans (O₂.wordsVal (by decide) (by decide)))
           ((e₃ _ (.inr (by decide)) (by decide)).trans (O₂.wordsVal (by decide) (by decide)))
           ((e₃ _ (.inr (by decide)) (by decide)).trans (O₂.wordsVal (by decide) (by decide)))
-      · obtain rfl : e = 1 := by omega
+      · obtain rfl : e = 1 := by omega_using [he, h]
         rw [Joint.mul_one']
         exact p₂.of_eq (e₃ _ (.inr (by decide)) (by decide)) (e₃ _ (.inr (by decide)) (by decide))
           (e₃ _ (.inr (by decide)) (by decide))
@@ -486,7 +486,7 @@ theorem build_ok (hL : Law W) {base : Addr} {s : State} (hp : WPre base s) :
     · rcases hw with rfl | rfl | rfl <;> exact ⟨(880, 576), by simp, by decide, by decide⟩
     · exact ⟨w, by simpa using hw, Nat.le_refl _, Nat.le_refl _⟩
   · intro d hd
-    rw [U₄.wordsVal (by simp; omega) (by omega), e₃ d (.inl hd) (by omega), e₂ d (by omega)]
+    rw [U₄.wordsVal (by simp; omega_using [hd]) (by omega_using [hd]), e₃ d (.inl hd) (by omega_using [hd]), e₂ d (by omega_using [hd])]
 
 /-! ## The nibble's entry -/
 
@@ -516,9 +516,9 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
     rw [u₄.gpr, r₂.gpr _ (by decide), r₁.gpr _ (by decide), hw.s0]
   have hm : ∀ b < 4, s₄.gpr (maskReg b) = maskOf (a.testBit b) := fun b hb => by
     rw [r₄.gpr _ (by
-      have : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 := by omega
+      have : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 := by omega_using [hb]
       rcases this with rfl | rfl | rfl | rfl <;> decide), v₂ b hb, v₁, BitVec.getLsbD_ofNat]
-    simp [show b < 64 by omega]
+    simp [show b < 64 by omega_using [hb]]
   refine WP.mono (WP.rdwr (scansJ_ok c (by decide) (by decide) (by decide) (by decide) (by decide) 18
     (Nat.le_refl _) hw₄ h0 hm)) fun s₅ ⟨⟨v₅, O₅, k₅⟩, rd₅, wr₅, sp₅⟩ => ?_
   simp only [show c.jt = 4096 from rfl, show c.sl c.EX = 2848 from rfl, show c.n = 6 from rfl,
@@ -526,12 +526,12 @@ theorem select_ok {s : State} {base : Addr} (hw : WsReg s base) {j : Nat} (hj : 
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, m₂, m₁]
   rw [m₄] at v₅ O₅
   rw [Nat.mod_eq_of_lt ha16] at v₅
-  have he : PtOk base s (ent a) (mul a Q) := hT a (by omega)
+  have he : PtOk base s (ent a) (mul a Q) := hT a (by omega_using [ha])
   have wv : ∀ b < 3, wordsVal s₅.mem base (2848 + 48 * b) 6 = wordsVal s.mem base (4096 + 144 * a + 48 * b) 6 :=
     fun b hb => wordsVal_of_words 6 fun q hq => by
-      rw [show 2848 + 48 * b + 8 * q = 2848 + 8 * (6 * b + q) by omega, v₅ _ (by omega)]
-      congr 1; omega
-  refine ⟨he.move (wv 0 (by decide)) (wv 1 (by decide)) (wv 2 (by decide)), O₅.mono (Nat.le_refl _) (by omega), ?_⟩
+      rw [show 2848 + 48 * b + 8 * q = 2848 + 8 * (6 * b + q) by omega_using [], v₅ _ (by omega_using [hb, hq])]
+      congr 1; omega_using []
+  refine ⟨he.move (wv 0 (by decide)) (wv 1 (by decide)) (wv 2 (by decide)), O₅.mono (Nat.le_refl _) (by omega_using []), ?_⟩
   exact ((r₁.mono (by decide)).trans ((r₂.mono (by decide)).trans ((r₄.mono (by decide)).trans
     ⟨fun r hr => k₅.1 r (fun h => hr ((by decide : ∀ r ∈ treeRegs, r ∈ selRegs) r h)),
       rd₅, wr₅, sp₅⟩)))
@@ -560,26 +560,26 @@ structure WInv (base : Addr) (s₀ s : State) (Q : Point W) (k j : Nat) : Prop w
 theorem stepW_far {base : Addr} {m m' : Mem} (U : Unch base stepW m m') {d : Nat}
     (h1 : d + 48 ≤ 736 ∨ 1456 ≤ d) (h2 : d + 48 ≤ 2848 ∨ 2992 ≤ d) (h3 : d + 48 ≤ 3712 ∨ 4096 ≤ d ∧ d + 48 ≤ 8192) :
     wordsVal m' base d 6 = wordsVal m base d 6 :=
-  U.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega) (by omega)
+  U.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [h1, h2, h3]) (by omega_using [h3])
 
 /-- A window. -/
 theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {Q : Point W} {k : Nat} (hP : WFix base s₀ Q k)
     {j : Nat} (hj1 : 1 ≤ j) (hj : j ≤ 96) {s : State} (hI : WInv base s₀ s Q k j) :
     WP isa (Cfg.step c dblJa) s fun s' => WInv base s₀ s' Q k (j - 1) := by
   have hn := hI.ws.nowrap
-  have hT : TabTo base s Q 15 := hP.tab.of_eq (fun d h1 h2 => stepW_far hI.unch (.inr (by omega))
-    (.inr (by omega)) (by omega)) (by decide)
+  have hT : TabTo base s Q 15 := hP.tab.of_eq (fun d h1 h2 => stepW_far hI.unch (.inr (by omega_using [h1]))
+    (.inr (by omega_using [h1])) (by omega_using [h1, h2])) (by decide)
   rw [Cfg.step]
   refine WP.seq (wp_decCounter hj1 hI.ctr fun s₁ u₁ => ?_)
   have hw₁ := hI.ws.of_kc (Kc.of_rest (u₁.rest (ws := [.s1]) (by decide)))
-  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega) u₁.gpr
+  refine WP.mono (select_ok hw₁ (j := j - 1) (by omega_using [hj]) u₁.gpr
     (hT.of_eq (fun d _ _ => by rw [u₁.mem]) (by decide))) fun s₂ ⟨pE, O₂, r₂⟩ => ?_
   rw [u₁.mem, stepW_far hI.unch (d := c.sl K) (.inr (by decide)) (.inl (by decide)) (by decide), hP.kk] at pE
   rw [u₁.mem] at O₂
   have hw₂ := hw₁.of_rest r₂
   have e₂ : ∀ d, (d + 48 ≤ 736 ∨ 1456 ≤ d) → (d + 48 ≤ 2848 ∨ 2992 ≤ d) → (d + 48 ≤ 3712 ∨ 4096 ≤ d ∧ d + 48 ≤ 8192) →
       wordsVal s₂.mem base d 6 = wordsVal s₀.mem base d 6 := fun d h1 h2 h3 => by
-    rw [O₂.wordsVal (by omega) (by omega), stepW_far hI.unch h1 h2 h3]
+    rw [O₂.wordsVal (by omega_using [h2]) (by omega_using [h3]), stepW_far hI.unch h1 h2 h3]
   have pR₂ : PtOk base s₂ (c.pt RX RY RZ) (wpt Q k j) :=
     hI.rep.of_eq (O₂.wordsVal (by decide) (by decide)) (O₂.wordsVal (by decide) (by decide))
       (O₂.wordsVal (by decide) (by decide))
@@ -596,8 +596,8 @@ theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {Q : Point W} {k : Nat
   refine WP.seq (WP.mono (quad_ok hL hw₂ hK₂ hX pR₂) fun s₃ ⟨K₃, U₃, pR₃⟩ => ?_)
   have hw₃ := hw₂.of_kp K₃
   have k₃ : ∀ d, (d + 48 ≤ 736 ∨ 1456 ≤ d) → (d + 48 ≤ 3712 ∨ 4096 ≤ d ∧ d + 48 ≤ 8192) → wordsVal s₃.mem base d 6 = wordsVal s₂.mem base d 6 :=
-    fun d h1 h2 => U₃.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega)
-      (by omega)
+    fun d h1 h2 => U₃.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [h1, h2])
+      (by omega_using [h2])
   have pE₃ := pE.of_eq (k₃ _ (by decide) (by decide)) (k₃ _ (by decide) (by decide)) (k₃ _ (by decide) (by decide))
   have hK₃ : KC base s₃ := hK₂.of_eq fun d hd => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -616,7 +616,7 @@ theorem step_ok (hL : Law W) {base : Addr} {s₀ : State} {Q : Point W} {k : Nat
   · exact ((((hI.unch.trans (show Unch base [(2848, 144)] s.mem s₂.mem from O₂.unch)).trans U₃).trans U₄).trans
       U₅).cover (by decide)
   · have e := wstep hL hP.q k (j - 1)
-    rw [show j - 1 + 1 = j by omega] at e
+    rw [show j - 1 + 1 = j by omega_using [hj1]] at e
     rw [← e]
     exact pT.move x₅ y₅ z₅
 
@@ -641,13 +641,13 @@ theorem body_ok (hL : Law W) {base : Addr} {s : State} (hp : WPre base s) :
   have hw₃ : WsReg s₃ base := hw₂.of_kc (Kc.of_rest (u₃.rest (ws := [.s1]) (by decide)))
   have U₃ : Unch base [(736, 144)] s₁.mem s₃.mem := by rw [u₃.mem]; exact U₂.cover (by decide)
   have k₃ : ∀ d, d + 48 ≤ 736 ∨ 880 ≤ d → d + 48 ≤ 8192 → wordsVal s₃.mem base d 6 = wordsVal s₁.mem base d 6 :=
-    fun d h h' => U₃.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega)
-      (by omega)
+    fun d h h' => U₃.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega_using [h])
+      (by omega_using [h'])
   have hP : WFix base s₃ (qOf base s) (wordsVal s.mem base (c.sl K) 6) :=
     ⟨hK₁.of_eq fun d hd => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl | rfl <;> exact k₃ _ (by decide) (by decide),
-     T₁.of_eq (fun d h1 h2 => k₃ d (by omega) (by omega)) (by decide),
+     T₁.of_eq (fun d h1 h2 => k₃ d (by omega_using [h1]) (by omega_using [h2])) (by decide),
      by rw [k₃ _ (by decide) (by decide), U₁.wordsVal (by decide) (by decide)], hp.on⟩
   have zv : wordsVal s₁.mem base (c.sl ZERO) 6 = 0 := hK₁.zero
   have ov : wordsVal s₁.mem base (c.sl ONEP) 6 = 2 ^ 384 % W.p := hK₁.onep

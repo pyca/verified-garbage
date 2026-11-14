@@ -106,8 +106,8 @@ theorem shapeTail_ok {s : State} {B pp qp : Addr} {Z n width : Nat} {p q : List 
   have hups := shape_source huf hku (Nat.le_trans (by decide) hZ) hps
   have huqs := shape_source huf hku (Nat.le_trans (by decide) hZ) hqs
   have hudi := (hku.gpr (show Reg.rdi ∉ _ by decide)).trans hdi
-  have hpidx : p.length - 1 < p.length := by omega
-  have hqidx : q.length - 1 < q.length := by omega
+  have hpidx : p.length - 1 < p.length := by omega_using [hp1]
+  have hqidx : q.length - 1 < q.length := by omega_using [hq1]
   rw [WP.block_append_iff]
   refine WP.mono (oddCheck_ok (hs.congr hku.2.2) hudi hZ
     ((shape_field huf .p (by decide) (by decide)).trans hpp)

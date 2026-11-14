@@ -53,10 +53,10 @@ private theorem odd_of_primeShape {v : Nat} (h : Spec.Ffdh.primeShape v = true) 
   exact beq_iff_eq.mp ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp h).1).2
 
 /-- q = (p − 1)/2 is divisible by an odd s exactly when p ≡ 1 mod s. -/
-private theorem half3 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 3 ≠ 0) : P % 3 ≠ 1 := by omega
-private theorem half5 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 5 ≠ 0) : P % 5 ≠ 1 := by omega
-private theorem half17 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 17 ≠ 0) : P % 17 ≠ 1 := by omega
-private theorem half2 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 2 = 1) : P % 4 = 3 := by omega
+private theorem half3 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 3 ≠ 0) : P % 3 ≠ 1 := by omega_using [h, hq]
+private theorem half5 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 5 ≠ 0) : P % 5 ≠ 1 := by omega_using [h, hq]
+private theorem half17 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 17 ≠ 0) : P % 17 ≠ 1 := by omega_using [h, hq]
+private theorem half2 {P : Nat} (h : P % 2 = 1) (hq : (P - 1) / 2 % 2 = 1) : P % 4 = 3 := by omega_using [h, hq]
 
 /-- A candidate with the generator's congruence whose p and q have the
 sieved shape passes `screen`. -/
@@ -102,11 +102,11 @@ theorem screen_of_shape {bits generator P : Nat} (hgen : generator = 2 ∨ gener
 theorem congruent_sieved {p : CandidateP} (hb : 512 ≤ p.bits) (hgen : p.gen = 2 ∨ p.gen = 5) :
     ((p.congruent && p.sieved p.P) && p.sieved p.Q) =
       ((Spec.Ffdh.generationShape p.bits p.gen p.P && p.sieved p.P) && p.sieved p.Q) := by
-  obtain ⟨hodd, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega)
+  obtain ⟨hodd, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := p.bits) (by omega_using [hb])
     (Spec.Rsa.os2ip p.prefix)
-  obtain ⟨hql, -⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega) hodd hl hu
-  have h13 : 2 ^ 13 ≤ 2 ^ (p.bits - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-  have h14 : 2 ^ 13 ≤ 2 ^ (p.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  obtain ⟨hql, -⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_using [hb]) hodd hl hu
+  have h13 : 2 ^ 13 ≤ 2 ^ (p.bits - 2) := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
+  have h14 : 2 ^ 13 ≤ 2 ^ (p.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
   change p.P % 2 = 1 at hodd
   change 2 ^ (p.bits - 1) ≤ p.P at hl
   change 2 ^ (p.bits - 2) ≤ (p.P - 1) / 2 at hql
@@ -114,7 +114,7 @@ theorem congruent_sieved {p : CandidateP} (hb : 512 ≤ p.bits) (hgen : p.gen = 
   cases hs : Spec.Ffdh.generationShape p.bits p.gen p.P <;>
     cases hsp : p.sieved p.P <;> cases hsq : p.sieved p.Q <;> simp only [Bool.false_and, Bool.true_and, Bool.and_false, Bool.and_true]
   unfold CandidateP.sieved at hsp hsq
-  exact screen_of_shape hgen hodd (by omega) (by unfold CandidateP.Q at hsq; omega) hs
+  exact screen_of_shape hgen hodd (by omega_using [h14, hl]) (by unfold CandidateP.Q at hsq; omega_using [h13, hql]) hs
     ((Bool.and_eq_true _ _).mp hsp).1 ((Bool.and_eq_true _ _).mp hsq).1
 
 theorem generatorCheck_state_ok {p : CandidateP} {used : Nat} {c : Checks} {s : State} {mi : BitVec 64}
@@ -136,7 +136,7 @@ theorem generatorCheck_state_ok {p : CandidateP} {used : Nat} {c : Checks} {s : 
     have hz := (h.base.phase_dims false).z
     change 136 ≤ p.Z - 256
     unfold slot hdrBytes at hz
-    omega)
+    omega_using [hz])
   refine WP.seq (WP.mono (WP.keep [.rax, .rdx] (Q := fun u =>
     u.gpr .rdx = BitVec.ofNat 64 p.gen ∧ u.mem = s.mem)
     (by xrun [State.ea, hdr, ws, hg.rdi, hdrOff, hp.link, hgen, hrd, hlinkrd]) rfl)

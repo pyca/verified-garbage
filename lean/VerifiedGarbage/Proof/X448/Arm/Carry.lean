@@ -48,40 +48,40 @@ theorem passR_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg}
   have step : ∀ k t, k < 28 → inv k t → WP isa (.block (carryBlock rb o a k)) t (inv (k + 1)) := by
     intro k t hk ⟨hlo, hhi, hc, hm, ht⟩
     have hts := hs.of_keeps ht (by decide)
-    have he := hhi k (by omega) hk
+    have he := hhi k (by omega_using []) hk
     have hsum : (word t.mem base (a + 4 * k)).toNat + (t.gpr .r5).toNat < 2 ^ 32 := by
       change limbs t.mem base a k + (t.gpr .r5).toNat < _
       rw [he, hc]
       have hcoeff := hb k hk
-      have hcarry := carry_bound (n := k) (fun i hi => hb i (by omega))
+      have hcarry := carry_bound (n := k) (fun i hi => hb i (by omega_using [hk, hi]))
       simp only [radix] at hcoeff
-      omega
+      omega_using [hcoeff, hcarry]
     have hrbt : t.gpr rb = s.gpr rb := ht.1 _ (by simp [hrb.1, hrb.2.1, hrb.2.2])
-    refine WP.mono (carryStep_ok hts (q := q) ⟨hrb.1, hrb.2.1⟩ (by omega) (by omega)
-      (by rw [hrbt]; exact hea k hk) (by omega) hsum) fun u ⟨hu, hmem, huKeep⟩ => ?_
+    refine WP.mono (carryStep_ok hts (q := q) ⟨hrb.1, hrb.2.1⟩ (by omega_using [ho, hk]) (by omega_using [hq, hk])
+      (by rw [hrbt]; exact hea k hk) (by omega_using [ha, hk]) hsum) fun u ⟨hu, hmem, huKeep⟩ => ?_
     have he' : (word t.mem base (a + 4 * k)).toNat + (t.gpr .r5).toNat = f k + carry f k := by
       change limbs t.mem base a k + (t.gpr .r5).toNat = _
       rw [he, hc]
     rw [he'] at hu hmem
     have out : Outside base (q + 4 * k) 4 t.mem u.mem := by
       rw [hmem]
-      exact writeW_outside _ _ _ (by omega)
-    refine ⟨?_, ?_, hu, hm.trans (out.mono (by omega) (by omega)), ht.trans huKeep⟩
+      exact writeW_outside _ _ _ (by omega_using [hq, hk])
+    refine ⟨?_, ?_, hu, hm.trans (out.mono (by omega_using []) (by omega_using [hk])), ht.trans huKeep⟩
     · intro i hi
       change (word u.mem base (q + 4 * i)).toNat = _
-      rw [hmem, word_write t.mem base (by omega) (by omega)]
+      rw [hmem, word_write t.mem base (by omega_using [hq, hk]) (by omega_using [hq, hk, hi])]
       by_cases hik : i = k
       · rw [ite_eq_left hik, hik, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := (f k + carry f k) % radix)
           (Nat.lt_trans (digit_lt f k) (by decide))]
         rfl
       · rw [ite_eq_right hik]
-        exact hlo i (by omega)
+        exact hlo i (by omega_using [hi, hik])
     · intro i hi hi'
       have sep : a + 4 * i + 4 ≤ q + 4 * k ∨ q + 4 * k + 4 ≤ a + 4 * i := by
-        rcases hsep with h | h | h <;> omega
+        rcases hsep with h | h | h <;> omega_arith
       change (word u.mem base (a + 4 * i)).toNat = _
-      rw [out.word sep (by omega)]
-      exact hhi i (by omega) hi'
+      rw [out.word sep (by omega_using [ha, hi'])]
+      exact hhi i (by omega_using [hi]) hi'
   change WP isa (.block ([.mov .r5 (.imm 0)] ++ (List.range 28).flatMap (carryBlock rb o a))) s _
   rw [WP.block_append_iff]
   refine WP.mono (zeroCarry_ok s) fun t ⟨hc, hm, ht⟩ => ?_
@@ -101,18 +101,18 @@ theorem pass_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
       (∀ i < 28, limbs s'.mem base o i = digit f i) ∧
       (s'.gpr .r5).toNat = carry f 28 ∧ Outside base o 112 s.mem s'.mem ∧
       Keeps [.r3, .r5, .r4] s s' :=
-  passR_ok hs (by decide) ho ho ha (fun _ _ => hs.ea (by omega)) hsep hf hb
+  passR_ok hs (by decide) ho ho ha (fun _ _ => hs.ea (by omega_arith)) hsep hf hb
 
 theorem foldStep_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
     (hd : d + 4 ≤ 4096) :
     WP isa (.block [ld .r3 d, .dp .add .r3 .r3 (.reg .r5), st .r3 d]) s
       fun t => t.mem = s.mem.writeW (off base d) (word s.mem base d + s.gpr .r5) ∧
         Keeps [.r3] s t := by
-  refine wp_ldr (a := off base d) (by omega) (hs.ea (by omega)) (hs.read (by omega)) fun t ht => ?_
+  refine wp_ldr (a := off base d) (by omega_using [hd]) (hs.ea (by omega_using [hd])) (hs.read (by omega_using [hd])) fun t ht => ?_
   refine wp_dp (op2_reg _ _) fun u hu => ?_
-  refine wp_str (a := off base d) (by omega)
-    (by rw [hu.other .r0 (by decide), ht.other .r0 (by decide)]; exact hs.ea (by omega))
-    (by rw [hu.wr, ht.wr]; exact hs.write (by omega)) fun v hv => WP.block_nil ⟨?_, ?_⟩
+  refine wp_str (a := off base d) (by omega_using [hd])
+    (by rw [hu.other .r0 (by decide), ht.other .r0 (by decide)]; exact hs.ea (by omega_using [hd]))
+    (by rw [hu.wr, ht.wr]; exact hs.write (by omega_using [hd])) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, hu.mem, ht.mem, hu.gpr]
     change s.mem.writeW _ (t.gpr .r3 + t.gpr .r5) = _
     rw [ht.gpr, ht.other .r5 (by decide)]
@@ -125,17 +125,17 @@ theorem foldLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : 
       (∀ i < 28, limbs t.mem base TMP i =
         if i = k then limbs s.mem base TMP i + (s.gpr .r5).toNat else limbs s.mem base TMP i) ∧
       Outside base TMP 112 s.mem t.mem ∧ Keeps [.r3] s t := by
-  have hd : TMP + 4 * k + 4 ≤ 4096 := by simp only [TMP]; omega
+  have hd : TMP + 4 * k + 4 ≤ 4096 := by simp only [TMP]; omega_using [hk]
   refine WP.mono (foldStep_ok hs hd) fun t ⟨hm, ht⟩ => ?_
   refine ⟨?_, ?_, ht⟩
   · intro i hi
     change (word t.mem base (TMP + 4 * i)).toNat = _
-    rw [hm, word_write s.mem base (by omega) (by simp only [TMP]; omega)]
+    rw [hm, word_write s.mem base (by omega_using [hd]) (by simp only [TMP]; omega_using [hi])]
     by_cases h : i = k
     · rw [ite_eq_left h, ite_eq_left h, h, BitVec.toNat_add, Nat.mod_eq_of_lt hb]
     · rw [ite_eq_right h, ite_eq_right h]
   · rw [hm]
-    exact (writeW_outside _ _ _ (by omega : TMP + 4 * k + 4 ≤ 8192)).mono (by omega) (by omega)
+    exact (writeW_outside _ _ _ (by omega_using [hd] : TMP + 4 * k + 4 ≤ 8192)).mono (by omega_using []) (by omega_using [hk])
 
 /-- The two stores implement the mathematical carry fold. -/
 theorem fold_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
@@ -148,7 +148,7 @@ theorem fold_ok {s : State} {base : Addr} (hs : Scr s base) {f : Nat → Nat}
     intro i _
     have h := digit_lt f i
     simp only [radix] at h
-    omega
+    omega_using [hb, h]
   change WP isa (.block
     (([ld .r3 (TMP + 4 * 0), .dp .add .r3 .r3 (.reg .r5),
        st .r3 (TMP + 4 * 0)] : List Instr) ++

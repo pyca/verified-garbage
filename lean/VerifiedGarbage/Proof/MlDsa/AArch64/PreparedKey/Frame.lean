@@ -23,7 +23,7 @@ theorem frame_depth_bounds {d : Nat} (h : 16 * d + 64 < 2 ^ 64) :
     16 * (d + 1 + 1 + 1) + 16 < 2 ^ 64 ∧
     16 * (d + 1 + 1) + 16 < 2 ^ 64 ∧
     16 * (d + 1) + 16 < 2 ^ 64 ∧ 16 * d + 16 < 2 ^ 64 := by
-  omega
+  omega_using [h]
 
 theorem prepareFrame_correct {bytes count : Nat} {body : Prog isa}
     {B : Mem → Addr → Prop} {ws : List (Ptr × Nat)}

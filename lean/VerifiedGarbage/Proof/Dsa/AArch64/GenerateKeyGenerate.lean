@@ -41,13 +41,13 @@ theorem KeygenState.write_status {extra : Nat} {s t u : State} {h : GenerateKeyA
   have hf : Outside (randomBase s) Random.oStatus 8 t.mem u.mem := by
     rw [hm]; exact writeW_outside _ _ _ (by decide)
   refine ht.of_frame (InScr.of_outside hf (by decide)) (fun d hd hd' => hf.word (Or.inl (by
-    change d + 8 ≤ 192; omega)) (by omega)) hk (hf.word (by decide) (by decide))
+    change d + 8 ≤ 192; omega_using [hd'])) (by omega_using [hd'])) hk (hf.word (by decide) (by decide))
 
 /-- Writes to the frame's outgoing-argument words keep the frame state. -/
 theorem KeygenState.of_outgoing {extra : Nat} {s t u : State} {h : GenerateKeyABI extra s} {used : Nat}
     (ht : KeygenState h used t) (hf : Outside (randomBase s) 0 8 t.mem u.mem)
     (hk : Keep randomVolatile t u) : KeygenState h used u :=
-  ht.of_frame (InScr.of_outside hf (by decide)) (fun d hd _ => hf.word (Or.inr (by omega)) (by omega)) hk
+  ht.of_frame (InScr.of_outside hf (by decide)) (fun d hd _ => hf.word (Or.inr (by omega_using [hd])) (by omega_arith)) hk
     (hf.word (by decide) (by decide))
 
 theorem keygen_bytes_params {extra : Nat} {s t : State} {h : GenerateKeyABI extra s} {used : Nat}

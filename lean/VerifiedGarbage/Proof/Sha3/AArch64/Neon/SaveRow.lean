@@ -37,8 +37,8 @@ theorem saveRow_ok {s : State} {y : Nat} (hy : y < 5) :
   · intro x hx
     by_cases he : x = k
     · subst x
-      rw [h.v,hchg.get _ (hs _ (by omega))]
+      rw [h.v,hchg.get _ (hs _ (by omega_using [hy, hk]))]
     · rw [h.get _ (by
-        rw [ne_eq,vreg_inj (25+x) (by omega) (25+k) (by omega)]; omega)]
-      exact hvals x (by omega)
+        rw [ne_eq,vreg_inj (25+x) (by omega_using [hk, hx]) (25+k) (by omega_using [hk])]; omega_using [he])]
+      exact hvals x (by omega_using [hx, he])
 end VG.Proof.Sha3.AArch64.Neon

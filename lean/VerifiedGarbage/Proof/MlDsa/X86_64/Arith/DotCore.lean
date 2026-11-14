@@ -119,12 +119,12 @@ theorem dot_lane {e o : BitVec 128} {A B : Nat → Nat → Nat} {c : Nat} (hc : 
     have h1 := dsum_le (A := fun j => A j i) (B := fun j => B j i) (b := 3 * q * (3 * q)) (c := c)
       (fun j hj => Nat.mul_le_mul (Nat.le_of_lt (hA j hj i hi)) (Nat.le_of_lt (hB j hj i hi)))
     exact Nat.lt_of_le_of_lt (Nat.le_trans h1 (Nat.mul_le_mul_right _ hc)) (by decide)
-  have he' : ∀ k < 2, (qword e k).toNat < q * 2 ^ 32 := fun k hk => by rw [he k hk]; exact hb _ (by omega)
-  have ho' : ∀ k < 2, (qword o k).toNat < q * 2 ^ 32 := fun k hk => by rw [ho k hk]; exact hb _ (by omega)
+  have he' : ∀ k < 2, (qword e k).toNat < q * 2 ^ 32 := fun k hk => by rw [he k hk]; exact hb _ (by omega_using [hk])
+  have ho' : ∀ k < 2, (qword o k).toNat < q * 2 ^ 32 := fun k hk => by rw [ho k hk]; exact hb _ (by omega_using [hk])
   have fin : ∀ x : Nat, condSub (mont x) = mont x % q → mont x % q = x * 8265825 % q →
       condSub (mont x) = (Fin.ofNat q x * montgomeryRInv).val := fun x h1 h2 => by
     rw [h1, h2, Fin.val_mul, Fin.val_ofNat, Nat.mul_mod]; rfl
-  obtain ⟨k, hk, rfl | rfl⟩ : ∃ k < 2, i = 2 * k ∨ i = 2 * k + 1 := ⟨i / 2, by omega, by omega⟩
+  obtain ⟨k, hk, rfl | rfl⟩ : ∃ k < 2, i = 2 * k ∨ i = 2 * k + 1 := ⟨i / 2, by omega_using [hi], by omega_using []⟩
   · rw [dword_csubV _ hi, csubL_toNat (by rw [(dword_redV he' ho' hk).1]; exact mont_lt (he' k hk)),
       (dword_redV he' ho' hk).1, he k hk]
     exact fin _ (condSub_mont (hb _ hi)) (mont_inverse _)
@@ -141,9 +141,9 @@ theorem prod_bound {c T : Nat} (hc : c ≤ 7) {Av Bv : Nat → Nat → Nat} (hA 
     (hB : ∀ j < c, ∀ t < T, Bv j t < 3 * q) {n : Nat} (hn : n < c) {t : Nat} (ht : t < T) :
     dsum (fun j => Av j t) (fun j => Bv j t) n + Av n t * Bv n t < 2 ^ 64 := by
   have h := dsum_le (A := fun j => Av j t) (B := fun j => Bv j t) (b := 3 * q * (3 * q)) (c := n + 1)
-    (fun j hj => Nat.mul_le_mul (Nat.le_of_lt (hA j (by omega) t ht)) (Nat.le_of_lt (hB j (by omega) t ht)))
+    (fun j hj => Nat.mul_le_mul (Nat.le_of_lt (hA j (by omega_using [hn, hj]) t ht)) (Nat.le_of_lt (hB j (by omega_using [hn, hj]) t ht)))
   rw [dsum] at h
-  exact Nat.lt_of_le_of_lt (Nat.le_trans h (Nat.mul_le_mul_right _ (show n + 1 ≤ 8 by omega))) (by decide)
+  exact Nat.lt_of_le_of_lt (Nat.le_trans h (Nat.mul_le_mul_right _ (show n + 1 ≤ 8 by omega_using [hc, hn]))) (by decide)
 
 theorem addr_fam (p : Addr) (k j : Nat) :
     coeffAddr p k + BitVec.ofNat 64 (1024 * j) = coeffAddr (p + BitVec.ofNat 64 (1024 * j)) k := by
@@ -170,7 +170,7 @@ def dotK (c : Nat) : Contract isa where
 
 /-- A family's polynomial `j`, within it. -/
 theorem fam_sub (p : Addr) {c j : Nat} (hj : j < c) : Region.Sub (pR (p + BitVec.ofNat 64 (1024 * j))) (famR p c) :=
-  VG.Offset.sub_base p (by rw [show 1024 * c = 1024 * (c - 1) + 1024 by omega]; omega)
+  VG.Offset.sub_base p (by rw [show 1024 * c = 1024 * (c - 1) + 1024 by omega_using [hj]]; omega_using [hj])
 
 /-- The pointers and `rsp` are public. -/
 def dotτ : X86_64.Taint.T := X86_64.Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]

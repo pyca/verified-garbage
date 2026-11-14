@@ -30,9 +30,9 @@ theorem negateR1Args_state {p : PrimeParams} {s : State} (h : PrimeGood p s) :
     WP isa (.block (([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] : List Instr) ++
       extBase aR1 .r10 ++ extBase aRm1 .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr))) s (NegateR1Regs p) := by
   obtain ⟨mi, hg⟩ := h
-  have hw : p.w < 2 ^ 31 := by have := p.dims.w128; omega
+  have hw : p.w < 2 ^ 31 := by have := p.dims.w128; omega_using [this]
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega)
+    hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; have := p.dims.z; omega_arith)
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.r12, .r8] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 p.w ∧
     t.gpr .r8 = off p.B (slot p.w aN) ∧ t.mem = s.mem) (by

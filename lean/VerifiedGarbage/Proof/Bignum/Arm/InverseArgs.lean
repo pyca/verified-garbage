@@ -24,13 +24,13 @@ theorem inverseArgs_ok (s : State) {base : BitVec 32} {len w : Nat}
       t.gpr .r0 = base + BitVec.ofNat 32 (arrAt w 0) ∧ t.gpr .r12 = base ∧
       t.mem = s.mem ∧ Rest [.r0, .r12] s t := by
   have fits := layout.2.2.1
-  have size : 68 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 68 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   rw [width] at header
   unfold inverseArgs
   refine wp_mov (op2_reg _ _) fun u moved => ?_
   refine wp_ldr (a := off (State.addr base) 64) (by decide)
-    (by rw [moved.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [moved.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega_using [size, this]))
     (by rw [moved.rd, moved.wr]; exact ws.read size) fun t loaded => WP.block_nil ?_
   refine ⟨?_, ?_, loaded.mem.trans moved.mem, (moved.rest (by simp)).trans (loaded.rest (by simp))⟩
   · rw [loaded.gpr, moved.mem]; exact header.array 0 (by decide)

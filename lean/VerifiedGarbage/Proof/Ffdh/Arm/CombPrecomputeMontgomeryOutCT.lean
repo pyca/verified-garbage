@@ -33,21 +33,21 @@ theorem montgomeryOut_ct {p : Inputs} {sp : BitVec 32} :
       simp only [bytes,Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
         Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries]
       change 24+16*p.w≤8*(3+(2*p.w+32*p.w))
-      omega
-    have dstAddr : State.addr dst=off (State.addr p.output) 24 := addr_add (by have := h.output.fits; omega)
+      omega_using []
+    have dstAddr : State.addr dst=off (State.addr p.output) 24 := addr_add (by have := h.output.fits; omega_using [pos, size, this])
     have dstNat : dst.toNat=p.output.toNat+24 := by
       dsimp [dst]
       change (p.output.toNat+24)%2^32=_
-      exact Nat.mod_eq_of_lt (by have := h.output.fits; omega)
+      exact Nat.mod_eq_of_lt (by have := h.output.fits; omega_using [pos, size, this])
     refine WP.mono (montgomeryOutArgs_ok s h) ?_
     rintro t ⟨⟨out,ptr,mem⟩,rest⟩
     refine ⟨h.ready.workspace.congr rest.wr,by rw [mem]; exact h.ready.layout,
-      by rw [mem]; exact h.ready.width,ptr,out,by omega,?_,?_,?_⟩
+      by rw [mem]; exact h.ready.width,ptr,out,by omega_using [],?_,?_,?_⟩
     · rw [dstNat]
       have := h.output.fits
-      omega
+      omega_using [size, this]
     · rw [rest.wr,dstAddr]
-      exact CallLay.inRegions_sub h.output.writable size (by have := h.output.fits; omega)
+      exact CallLay.inRegions_sub h.output.writable size (by have := h.output.fits; omega_using [this])
     · rw [dstAddr]
       exact h.workspaceSeparate.sub_right (Offset.sub_base _ size)
   have add : RelCT isa (fun _ _ => True) (.block [.dp .add .r4 .r4 (.imm 24)]) (fun _ _ => True) := by

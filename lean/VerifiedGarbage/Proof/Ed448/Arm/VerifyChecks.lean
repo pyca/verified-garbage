@@ -65,8 +65,8 @@ theorem diffLimb_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat} (ha 
       BadUpd (limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r10) (t.gpr .r10) ∧
         t.mem = s.mem ∧ Keeps [.r3, .r2, .r10] s t := by
   unfold diffLimb
-  refine load_ok hs (by simp only [X2, slot]; omega) fun u hu => ?_
-  refine load_ok (hs.of_upd hu (by decide) (by decide)) (by omega) fun v hv => ?_
+  refine load_ok hs (by simp only [X2, slot]; omega_using [hi]) fun u hu => ?_
+  refine load_ok (hs.of_upd hu (by decide) (by decide)) (by omega_using [ha, hi]) fun v hv => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun w hw => ?_
   have x := xor_limb (x := word s.mem base (X2 + 4 * i)) (y := word s.mem base (a + 4 * i)) h1 h2
   refine WP.mono (orBad_ok (P := limbs s.mem base X2 i = limbs s.mem base a i)
@@ -92,7 +92,7 @@ theorem diffSlot_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : 
   refine WP.mono (diffLimb_ok (hs.of_keeps tk (by decide)) ha hn (tm ▸ h1 n hn) (tm ▸ h2 n hn))
     fun u ⟨ub, um, uk⟩ => ⟨?_, um.trans tm, tk.trans uk⟩
   rw [tm] at ub
-  refine (tb.trans ub).congr ⟨fun ⟨h, h'⟩ i hi => ?_, fun h => ⟨fun i hi => h i (by omega), h n (by omega)⟩⟩
+  refine (tb.trans ub).congr ⟨fun ⟨h, h'⟩ i hi => ?_, fun h => ⟨fun i hi => h i (by omega_using [hi]), h n (by omega_using [])⟩⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
   · exact h i hi
   · exact h'
@@ -102,36 +102,36 @@ theorem diffSlot_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : 
 theorem slot_range (i : Index) : 64 ≤ slot i.val ∧ slot i.val + 112 ≤ 2880 := by
   have := i.isLt
   simp only [slot]
-  omega
+  omega_using []
 
 theorem outC {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : 64 ≤ o)
-    (h2 : o + n ≤ 2880) : Outside2 base 64 2816 ACC 512 m m' := fun p hp _ => h p (by omega)
+    (h2 : o + n ≤ 2880) : Outside2 base 64 2816 ACC 512 m m' := fun p hp _ => h p (by omega_using [h1, h2, hp])
 
 theorem fmC {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') (h1 : 64 ≤ o)
-    (h2 : o + 112 ≤ 2880) : Outside2 base 64 2816 ACC 512 m m' := fun p hp hq => h p (by omega) hq
+    (h2 : o + 112 ≤ 2880) : Outside2 base 64 2816 ACC 512 m m' := fun p hp hq => h p (by omega_using [h1, h2, hp]) hq
 
 theorem outV {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : 32 ≤ o)
-    (h2 : o + n ≤ 2880) : Outside2 base 32 2848 ACC 512 m m' := fun p hp _ => h p (by omega)
+    (h2 : o + n ≤ 2880) : Outside2 base 32 2848 ACC 512 m m' := fun p hp _ => h p (by omega_using [h1, h2, hp])
 
 theorem fmV {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') (h1 : 32 ≤ o)
-    (h2 : o + 112 ≤ 2880) : Outside2 base 32 2848 ACC 512 m m' := fun p hp hq => h p (by omega) hq
+    (h2 : o + 112 ≤ 2880) : Outside2 base 32 2848 ACC 512 m m' := fun p hp hq => h p (by omega_using [h1, h2, hp]) hq
 
 theorem valN_inj {f g : Nat → Nat} :
     ∀ {n}, (∀ i < n, f i < radix) → (∀ i < n, g i < radix) → valN f n = valN g n → ∀ i < n, f i = g i
   | 0, _, _, _, i, hi => absurd hi (Nat.not_lt_zero _)
   | n + 1, hf, hg, h, i, hi => by
     rw [valN_succ, valN_succ] at h
-    have lf := valN_lt (n := n) (fun j hj => hf j (by omega))
-    have lg := valN_lt (n := n) (fun j hj => hg j (by omega))
+    have lf := valN_lt (n := n) (fun j hj => hf j (by omega_using [hj]))
+    have lg := valN_lt (n := n) (fun j hj => hg j (by omega_using [hj]))
     have hp : 0 < radix ^ n := Nat.pow_pos (by decide)
     have e1 : f n = g n := by
       have := congrArg (· / radix ^ n) h
       simp only [Nat.add_mul_div_left _ _ hp, Nat.div_eq_of_lt lf, Nat.div_eq_of_lt lg, Nat.zero_add] at this
       exact this
     rw [e1] at h
-    have e0 : valN f n = valN g n := by omega
+    have e0 : valN f n = valN g n := by omega_using [h]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · exact valN_inj (fun j hj => hf j (by omega)) (fun j hj => hg j (by omega)) e0 i hi
+    · exact valN_inj (fun j hj => hf j (by omega_using [hj])) (fun j hj => hg j (by omega_using [hj])) e0 i hi
     · exact e1
 
 theorem limbs_eq_iff {m : Mem} {base : Addr} {a b : Nat} (ha : Bounded m base a) (hb : Bounded m base b) :
@@ -158,33 +158,33 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   unfold eqSlots
   simp only [List.append_assoc]
   -- slot 1 = slot a
-  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs (o := X2) (a := slot a.val) (by decide) (by omega)
-    (Or.inr (by omega))) fun s1 ⟨f1, m1, k1⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs (o := X2) (a := slot a.val) (by decide) (by omega_using [sa])
+    (Or.inr (by omega_using [s1a]))) fun s1 ⟨f1, m1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   have bd1 : Bounded s1.mem base X2 := fun i hi => by rw [f1 i hi]; exact hb a i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs1 bd1) fun s2 ⟨b2, v2, m2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
   -- slot a = slot 1
-  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs2 (o := slot a.val) (a := X2) (by omega) (by decide)
-    (Or.inr (by omega))) fun s3 ⟨f3, m3, k3⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs2 (o := slot a.val) (a := X2) (by omega_using [sa]) (by decide)
+    (Or.inr (by omega_using [s1a]))) fun s3 ⟨f3, m3, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by decide)
   -- slot 1 = slot b
-  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs3 (o := X2) (a := slot b.val) (by decide) (by omega)
-    (Or.inr (by omega))) fun s4 ⟨f4, m4, k4⟩ => ?_
+  refine VG.Proof.X25519.Arm.WP.append (copy_ok hs3 (o := X2) (a := slot b.val) (by decide) (by omega_using [sb])
+    (Or.inr (by omega_using [s1b]))) fun s4 ⟨f4, m4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by decide)
   -- what each stage leaves
   have lb3 : ∀ i < 28, limbs s3.mem base (slot b.val) i = limbs s.mem base (slot b.val) i := by
     intro i hi
-    rw [m3.limbs (by omega) (by omega) hi, m2.limbs s1b (by omega) hi,
-      m1.limbs (by omega) (by omega) hi]
+    rw [m3.limbs (by omega_using [sab]) (by omega_using [sb]) hi, m2.limbs s1b (by omega_using [sb, hA]) hi,
+      m1.limbs (by omega_using [s1b]) (by omega_using [sb]) hi]
   have bd4 : Bounded s4.mem base X2 := fun i hi => by rw [f4 i hi, lb3 i hi]; exact hb b i hi
   refine VG.Proof.X25519.Arm.WP.append (freeze_ok hs4 bd4) fun s5 ⟨b5, v5, m5, k5⟩ => ?_
   have hs5 := hs4.of_keeps k5 (by decide)
   have la5 : ∀ i < 28, limbs s5.mem base (slot a.val) i = limbs s2.mem base X2 i := by
     intro i hi
-    rw [m5.limbs s1a (by omega) hi, m4.limbs (by omega) (by omega) hi, f3 i hi]
+    rw [m5.limbs s1a (by omega_using [sa, hA]) hi, m4.limbs (by omega_using [s1a]) (by omega_using [sa]) hi, f3 i hi]
   have ba5 : Bounded s5.mem base (slot a.val) := fun i hi => by rw [la5 i hi]; exact b2 i hi
-  refine WP.mono (diffSlot_ok hs5 (by omega) b5 ba5) fun t ⟨tb, tm, tk⟩ => ?_
+  refine WP.mono (diffSlot_ok hs5 (by omega_using [sa]) b5 ba5) fun t ⟨tb, tm, tk⟩ => ?_
   -- the values
   have fa : fe s5.mem base (slot a.val) = fe s.mem base (slot a.val) % Spec.X448.P := by
     rw [show fe s5.mem base (slot a.val) = fe s2.mem base X2 from valN_congr la5, v2]
@@ -198,16 +198,16 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     have si := slot_range i
     have s1i : slot i.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot i.val := by rw [hX2]; exact slot_sep hi1
     have sai := slot_sep hia
-    rw [tm, m5.limbs s1i (by omega) hj, m4.limbs (by omega) (by omega) hj,
-      m3.limbs (by omega) (by omega) hj, m2.limbs s1i (by omega) hj,
-      m1.limbs (by omega) (by omega) hj]
+    rw [tm, m5.limbs s1i (by omega_using [hA, si]) hj, m4.limbs (by omega_using [s1i]) (by omega_using [si]) hj,
+      m3.limbs (by omega_using [sai]) (by omega_using [si]) hj, m2.limbs s1i (by omega_using [hA, si]) hj,
+      m1.limbs (by omega_using [s1i]) (by omega_using [si]) hj]
   have kw : Keeps (.r10 :: workRegs) s t := by
     refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
   refine ⟨⟨kw.mono (fun r hr => by revert r; decide), ?_⟩, fun i j hj => ?_, fun i hi => ?_, ?_, kw⟩
   · rw [tm]
     exact ((((outC m1 (by decide) (by decide)).trans (fmC m2 (by decide) (by decide))).trans
-      (outC m3 (by omega) (by omega))).trans (outC m4 (by decide) (by decide))).trans
+      (outC m3 (by omega_using [sa]) (by omega_using [sa]))).trans (outC m4 (by decide) (by decide))).trans
       (fmC m5 (by decide) (by decide))
   · by_cases h1 : i = 1
     · subst i; rw [tm]; exact b5 j hj

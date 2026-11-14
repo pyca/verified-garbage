@@ -21,7 +21,7 @@ theorem OutsS.val32_eq {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m m
     (h : OutsS B sp rs m m') (D : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk sp B Z)
     (nowrap : B.toNat + Z ≤ 2 ^ 32) {d k : Nat} (hd : ∀ r ∈ rs, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d)
     (hs : d + 4 * k ≤ Z) : val32 m' B d k = val32 m B d k := by
-  apply (h.outs D nowrap).val32 _ (by omega)
+  apply (h.outs D nowrap).val32 _ (by omega_using [nowrap, hs])
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
   · exact hd r hr
@@ -55,15 +55,15 @@ theorem OutsS.read {B : Addr} {sp : BitVec 32} {rs : List (Nat × Nat)} {m₁ m�
   have notStack : ¬ (below sp 52).Contains (off B (d + 4 * j) + BitVec.ofNat 64 i) 1 := by
     intro c
     have H := (stack_contains D nowrap _).mp c
-    rw [ofs_off B (by omega)] at H
-    omega
+    rw [ofs_off B (by omega_using [nowrap, fit, hj, hi])] at H
+    omega_using [fit, far, hj, hi, H]
   simp only [notStack, ↓reduceIte]
 
 theorem Ws.read_num {s : State} {B : Addr} {Z n N j : Nat} (W : Ws s B Z n N) (hj : j < N)
     {rs : List (Nat × Nat)} {m₁ m₂ : Mem} (h : OutsS B (s.gpr .esp) rs m₁ m₂)
     (old : Outs B rs m₁ (hyb (s.gpr .esp) m₁ m₂) → num (hyb (s.gpr .esp) m₁ m₂) B n j = num m₁ B n j) :
     num m₂ B n j = num m₁ B n j :=
-  h.read W.deep W.old.workspace.nowrap (by have := W.arr_fit hj; unfold S at this; omega) old
+  h.read W.deep W.old.workspace.nowrap (by have := W.arr_fit hj; unfold S at this; omega_using [this]) old
 
 theorem Ws.read_val32 {s : State} {B : Addr} {Z n N d k : Nat} (W : Ws s B Z n N) (fit : d + 4 * k ≤ hdr)
     {rs : List (Nat × Nat)} {m₁ m₂ : Mem} (h : OutsS B (s.gpr .esp) rs m₁ m₂)
@@ -75,31 +75,31 @@ theorem Ws.inverse_num {s : State} {B : Addr} {Z n N k j : Nat} {m m' : Mem} (h 
     (width : k ≤ n) (persistent : 15 ≤ j) (hj : j < N)
     (changed : OutsS B (s.gpr .esp) (inverseRanges k invSlots) m m') : num m' B n j = num m B n j := by
   have fit := h.arr_fit hj
-  apply changed.val32_eq h.deep h.old.workspace.nowrap _ (by unfold S at fit; omega)
+  apply changed.val32_eq h.deep h.old.workspace.nowrap _ (by unfold S at fit; omega_using [fit])
   intro r hr
   simp only [inverseRanges, invSlots, List.map_cons, List.map_nil,
     List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · have endBound := VG.Proof.RsaKeyGen.X86.Key.inverse_end_le width persistent
-    have endEq : arr k 15 = hdr + 4 * (15 * (k + 2)) := by unfold arr S; omega
+    have endEq : arr k 15 = hdr + 4 * (15 * (k + 2)) := by unfold arr S; omega_using []
     rw [endEq] at endBound
     exact Or.inr endBound
   all_goals have lower : hdr ≤ arr n j := Nat.le_add_right ..
   all_goals simp only [sOdd, sB, sC, hdr] at lower ⊢
-  all_goals omega
+  all_goals omega_using [lower]
 
 theorem Ws.inverse_slot {s : State} {B : Addr} {Z n N k d : Nat} {m m' : Mem} (h : Ws s B Z n N)
     (bound : d + 4 ≤ 100) (changed : OutsS B (s.gpr .esp) (inverseRanges k invSlots) m m') :
     slot m' B d = slot m B d := by
   have header := h.hdr_le
   have value : val32 m' B d 1 = val32 m B d 1 := by
-    apply changed.val32_eq h.deep h.old.workspace.nowrap _ (by unfold hdr at header; omega)
+    apply changed.val32_eq h.deep h.old.workspace.nowrap _ (by unfold hdr at header; omega_using [bound, header])
     intro r hr
     simp only [inverseRanges, invSlots, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     all_goals simp only [sOdd, sB, sC, hdr]
-    all_goals omega
+    all_goals omega_using [bound]
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using value
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

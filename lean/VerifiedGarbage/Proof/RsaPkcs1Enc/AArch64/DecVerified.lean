@@ -43,9 +43,9 @@ theorem dec_ct (v : Compress) (pv : PrivImpl) :
   exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
 
 /-- The stack the function uses: the callee's and the frames'. -/
-def decStack (pv : PrivImpl) : Nat := pv.stack + 224
+def decStack (pv : PrivImpl) : Nat := pv.stack + 240
 
-theorem decStack_eq (pv : PrivImpl) : decStack pv = pv.S + 1 + 224 := by rw [decStack, pv.stack_eq]
+theorem decStack_eq (pv : PrivImpl) : decStack pv = pv.S + 1 + 240 := by rw [decStack, pv.stack_eq]
 
 /-- `vg_rsa_pkcs1_decrypt`, with `v` and `pv`. -/
 theorem dec_verified (v : Compress) (pv : PrivImpl)

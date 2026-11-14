@@ -31,8 +31,8 @@ theorem word_packssdw_small (a b : BitVec 128) {e : Nat} (he : e < 8)
     (word (XBinOp.eval .packssdw a b) e).toNat = if e < 4 then (dword a e).toNat else (dword b (e - 4)).toNat := by
   rw [word_packssdw _ _ he]
   split
-  · rw [satSignedWord_small (ha e (by bdd_omega)), BitVec.toNat_setWidth]; have := ha e (by bdd_omega); omega
-  · rw [satSignedWord_small (hb (e - 4) (by bdd_omega)), BitVec.toNat_setWidth]; have := hb (e - 4) (by bdd_omega); omega
+  · rw [satSignedWord_small (ha e (by bdd_omega)), BitVec.toNat_setWidth]; have := ha e (by bdd_omega); omega_using [this]
+  · rw [satSignedWord_small (hb (e - 4) (by bdd_omega)), BitVec.toNat_setWidth]; have := hb (e - 4) (by bdd_omega); omega_using [this]
 
 theorem dword_eq_words (x : BitVec 128) {j : Nat} (hj : j < 4) :
     (dword x j).toNat = (word x (2 * j)).toNat + 65536 * (word x (2 * j + 1)).toNat := by
@@ -42,7 +42,7 @@ theorem dword_eq_words (x : BitVec 128) {j : Nat} (hj : j < 4) :
   rw [h0, h1, BitVec.extractLsb'_toNat, BitVec.extractLsb'_toNat, Nat.shiftRight_zero,
     Nat.shiftRight_eq_div_pow]
   have := (dword x j).isLt
-  omega
+  omega_using []
 
 /-- The `u32`s that `punpcklwd` with zeros leaves: the low words, zero-extended. -/
 theorem dword_punpcklwd0 (a : BitVec 128) {j : Nat} (hj : j < 4) :
@@ -52,7 +52,7 @@ theorem dword_punpcklwd0 (a : BitVec 128) {j : Nat} (hj : j < 4) :
     show (2 * j + 1) / 2 = j by bdd_omega]
   have : (word (0 : BitVec 128) j).toNat = 0 := by
     rw [word, BitVec.extractLsb'_toNat]; simp
-  omega
+  omega_using [this]
 
 /-- The `u32`s that `punpckhwd` with zeros leaves: the high words, zero-extended. -/
 theorem dword_punpckhwd0 (a : BitVec 128) {j : Nat} (hj : j < 4) :
@@ -62,7 +62,7 @@ theorem dword_punpckhwd0 (a : BitVec 128) {j : Nat} (hj : j < 4) :
     show 4 + (2 * j + 1) / 2 = 4 + j by bdd_omega]
   have : (word (0 : BitVec 128) (4 + j)).toNat = 0 := by
     rw [word, BitVec.extractLsb'_toNat]; simp
-  omega
+  omega_using [this]
 
 /-! ## Packing -/
 
@@ -78,9 +78,9 @@ theorem lanes_pack {m : Mem} {p : Addr} {F : Poly} (hF : PolyIs m p F) {j : Nat}
   have hc : ∀ k, k < 256 → (coeffAt m p k).toNat = (F[k]!).val := fun k hk =>
     polyIs_toNat hF (by rw [n_eq]; exact hk)
   rw [word_packssdw_small _ _ he (fun k hk => by
-      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j + k]!; omega)
+      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j + k]!; omega_using [this])
     (fun k hk => by
-      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j + 4 + k]!; omega)]
+      rw [dword_readW _ _ hk, coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]; have := val_lt F[j + 4 + k]!; omega_using [this])]
   split
   · rw [dword_readW _ _ (by bdd_omega), coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega)]
   · rw [dword_readW _ _ (by bdd_omega), coeffAddr_off, ← coeffAt_eq, hc _ (by bdd_omega),
@@ -173,7 +173,7 @@ theorem vunpack_ok {fP sP : Addr} {F : Poly} {s : State} (hc : VConsts s) (hS : 
       Keep.trans (⟨fun r _ => by rw [o0.gpr], o0.rd, o0.wr⟩ : Keep [] s w0) (o.keep) |>.mono (by simp),
       by rw [o.mxcsr, o0.mxcsr]⟩)
     (fun u hu w ⟨hP, h9', hdx', hf, hc', hz', hk', hx'⟩ => ?_))
-    fun w ⟨hP, _, _, hf, hc', _, hk', hx'⟩ => ⟨polyIs_of_toNat fun i hi => hP i (by rw [n_eq] at hi; omega),
+    fun w ⟨hP, _, _, hf, hc', _, hk', hx'⟩ => ⟨polyIs_of_toNat fun i hi => hP i (by rw [n_eq] at hi; omega_using [hi]),
       hf, hc', hk', hx'⟩
   have hS' : S16 w.mem (spW sP) F := hS.frame hf fun r hr => by
     rw [List.mem_singleton.mp hr]; exact (hd.sub_right hsub).symm
@@ -330,11 +330,11 @@ theorem quad_word {t0 t1 t2 t3 : Nat} (h0 : t0 < 65536) (h1 : t1 < 65536) (h2 : 
       [t0, t1, t2, t3][e]! := by
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reducePow, Nat.reduceMul, List.getElem!_cons_zero, List.getElem!_cons_succ] <;> omega
+    simp only [Nat.reducePow, Nat.reduceMul, List.getElem!_cons_zero, List.getElem!_cons_succ] <;> omega_arith
 
 theorem zmTab_lt (k : Nat) : zmTab k < 65536 := by
   have : zmTab k < 3329 := Nat.mod_lt _ (by decide)
-  omega
+  omega_using [this]
 
 theorem zmTab_eq (k : Nat) : zmTab k = (zeta k).val * 65536 % 3329 := by
   rw [zmTab, zeta, val_pow, Nat.mod_mul_mod]; rfl

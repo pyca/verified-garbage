@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 # `vg_rsa_crt_values` on PPC64LE: the setup of a valid modulus
 
 `Base.of_keep`: a step that writes only the arrays and the slots after the
-header's first 112 bytes keeps `Base`. `setup_ok`: `w = ⌈n_len / 4⌉`
+header's first 112 bytes keeps `Base`. `setup_ok`: `w = 2 ⌈n_len / 8⌉`
 (`n_len` in `r18`) and the stride into `r29` and `r30`, and every array
 zeroed: the working space (`Ws`) with all its digits 0.
 -/
@@ -76,6 +76,13 @@ theorem ofNat_add3_shr2 (x : BitVec 64) (hx : x.toNat ≤ 1024) :
     Nat.shiftRight_eq_div_pow]
   omega_arith
 
+theorem ofNat_even_w (x : BitVec 64) (hx : x.toNat ≤ 1024) :
+    ((x + BitVec.ofNat 64 7) >>> 3) <<< 1 = BitVec.ofNat 64 (2 * ((x.toNat + 7) / 8)) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+  omega_arith
+
 theorem ofNat_stride (w : Nat) :
     (BitVec.ofNat 64 w + BitVec.ofNat 64 2) <<< 2 = BitVec.ofNat 64 (S w) := by
   apply BitVec.eq_of_toNat_eq
@@ -104,12 +111,12 @@ theorem setup_ok {s0 s : State} (h : Base s0 s) (h18 : s.gpr .r18 = s0.gpr .r10)
   have hs : Scr s (cvB s0) (cvZ s0) := Scr.of_mem (by rw [h.wr]; exact hm) nw
   have hkv : (s0.gpr .r10).toNat ≤ 1024 := hk'
   rw [setup, WP.seq_iff]
-  have hb : WP isa (.block ([.addi .r29 .r18 3, .lsr .d .r29 .r29 2] ++
+  have hb : WP isa (.block ([.addi .r29 .r18 7, .lsr .d .r29 .r29 3, .lsl .r29 .r29 1] ++
       VG.Impl.Rsa.PPC64LE.Keys.stride ++ [.li .r8 nArr, .mul .r8 .r8 .r30, .lsr .d .r8 .r8 2])) s fun u =>
         (u.gpr .r29 = BitVec.ofNat 64 (cvW s0) ∧ u.gpr .r30 = BitVec.ofNat 64 (S (cvW s0)) ∧
           u.gpr .r8 = BitVec.ofNat 64 (nArr * (cvW s0 + 2)) ∧ u.mem = s.mem) ∧ Keep [.r8, .r29, .r30] s u := by
     refine WP.keep _ ?_ (by decide)
-    prun [VG.Impl.Rsa.PPC64LE.Keys.stride, h18, ofNat_add3_shr2 _ hkv, ofNat_stride, ofNat_digits _ hw, nArr]
+    prun [VG.Impl.Rsa.PPC64LE.Keys.stride, h18, ofNat_even_w _ hkv, ofNat_stride, ofNat_digits _ hw, nArr]
   refine WP.mono hb fun u ⟨⟨u29, u30, u8, um⟩, ku⟩ => ?_
   have hu : Ws u (cvB s0) (cvZ s0) (cvW s0) nArr :=
     ⟨hs.congr ku.wr, fits, by omega_arith, by omega_arith, u29, u30, (ku.gpr _ (by decide)).trans h.r31⟩

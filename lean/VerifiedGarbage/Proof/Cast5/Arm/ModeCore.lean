@@ -66,7 +66,7 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
   contract := Proof.Cast5.ecbRoundsContract (Arm.abi.withConsts ecbConsts) (upDir up)
   correct := (ecb_verified up).1
   ct := (ecb_verified up).2.1
-  depth := by have := ecb_stack up; omega
+  depth := by have := ecb_stack up; omega_using [this]
   pre_of h := absurd h (by cases up <;> decide)
   post_of h := absurd h (by cases up <;> decide)
   pub_of h := absurd h (by cases up <;> decide)

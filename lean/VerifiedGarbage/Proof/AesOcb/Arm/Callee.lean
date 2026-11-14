@@ -57,7 +57,7 @@ theorem statesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
   intro j hj
   simp only [Vector.getElem_ofFn]
   rw [Offset.add_add]
-  exact hf.bytes (R := ⟨p, 16 * n⟩) hd hn (show 16 * i + j < 16 * n by omega)
+  exact hf.bytes (R := ⟨p, 16 * n⟩) hd hn (show 16 * i + j < 16 * n by omega_using [hi, hj])
 
 theorem enc_noCalls : Impl.Aes.Arm.encryptBlocks.noCalls = true := by decide +kernel
 theorem dec_noCalls : Impl.Aes.Arm.decryptBlocks.noCalls = true := by decide +kernel
@@ -124,9 +124,9 @@ namespace BlkCall
 variable {s : State} {K D S : BitVec 32} {R n : Nat} (h : BlkCall s K D S R n)
 include h
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
-theorem toNat_R : (BitVec.ofNat 32 R).toNat = R := toNat_ofNat32 (by rcases h.rounds with h' | h' | h' <;> omega)
+theorem toNat_R : (BitVec.ofNat 32 R).toNat = R := toNat_ofNat32 (by rcases h.rounds with h' | h' | h' <;> omega_using [h'])
 
 theorem pre (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) : (Proof.Aes.blocksArm f).pre
     ((pushed [.r12, .lr] s).callEntry.withRegions (blkRd s.sp K) (blkWr D S n)) := by
@@ -140,7 +140,7 @@ theorem pre (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) : (Pro
     Proof.AesGcm.Arm.stackArg_callEntry, Proof.AesGcm.Arm.stackArgAddr_callEntry, arg0 h.hsp, argAddr0 h.hsp, h.r12]
   refine ⟨trivial, trivial, h.kd, h.ks, h.ds, (b4 _ h.bd).symm, (b4 _ h.bs).symm, h.fitK, h.fitD, h.fitS, ?_,
     h.rounds⟩
-  have := s.sp.isLt; omega
+  have := s.sp.isLt; omega_using []
 
 theorem cov : Covers (blkRd s.sp K ++ blkWr D S n)
     ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
@@ -162,17 +162,17 @@ theorem blk_call (F : BlkFn) {s : State} {K D S : BitVec 32} {R n : Nat} (h : Bl
     (rd := blkRd s.sp K) (wr := blkWr D S n) (h.pre F.f) h.cov h.covW ?_ F.noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
   have hn := toNat_ofNat32 h.n_lt
-  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_using [h']
   have fA' := fA (s := s) h.hsp
   have bytesK : Spec.Aes.bytesAt (pushed [.r12, .lr] s).mem (State.addr K) (16 * (R + 1)) =
       Spec.Aes.bytesAt s.mem (State.addr K) (16 * (R + 1)) :=
     bytesAt_frame fA' (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.bk.symm.sub_left (Region.sub_prefix hR'))) (by omega)
+      exact (h.bk.symm.sub_left (Region.sub_prefix hR'))) (by omega_using [hR'])
   have statesD : Spec.Aes.statesAt (pushed [.r12, .lr] s).mem (State.addr D) n =
       Spec.Aes.statesAt s.mem (State.addr D) n :=
     statesAt_frame fA' (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact h.bd.symm) (by have := h.fitD; omega_using [hn])
   simp only [Proof.Aes.blocksArm, State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0, h.r1,
     h.r2, h.r3, hn, h.toNat_R, bytesK, statesD] at hpost

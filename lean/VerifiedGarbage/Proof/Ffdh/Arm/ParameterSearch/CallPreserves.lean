@@ -56,9 +56,9 @@ theorem SearchLive.after_call {p : SearchParams} {used remaining : Nat} {s t : S
   · intro j member
     have bound : j ≤ 12 := by
       simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at member
-      omega
+      omega_using [member]
     exact (frame.readW (r := ⟨State.addr p.control, 104⟩)
-      (Offset.contains_base _ (by omega : 8 * j + 4 ≤ 104) (by omega))
+      (Offset.contains_base _ (by omega_using [bound] : 8 * j + 4 ≤ 104) (by omega_using [bound]))
       h.buffers.call_control (by decide)).trans (h.saved j member)
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

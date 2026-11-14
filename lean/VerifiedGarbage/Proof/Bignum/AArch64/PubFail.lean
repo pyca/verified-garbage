@@ -34,7 +34,7 @@ theorem two_w (k : Nat) (hk : k < 2 ^ 32) :
   rw [shr3_w k hk]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  omega
+  omega_using []
 
 /-! ## Zero words -/
 
@@ -61,12 +61,12 @@ theorem zStep_ok {s₀ : State} {op : Addr} {N : Nat} (hN : 8 * N ≤ 2 ^ 64) (h
     by rw [k'.gpr .x1 (by decide), h1, Nat.mul_succ], fun i hi => ?_, ?_⟩
   · rw [hm', hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [(writeW_outside t.mem op _ (by omega)).word (by omega) (by omega)]; exact hI.done i hi
+    · rw [(writeW_outside t.mem op _ (by omega_using [hN, hj])).word (by omega_using [hi]) (by omega_arith)]; exact hI.done i hi
     · exact word_writeW_self _ _ _ _
   · rw [hm', hm]
     intro x hx'
-    rw [writeW_outside t.mem op _ (by omega) x (by omega)]
-    exact hI.frame x (by omega)
+    rw [writeW_outside t.mem op _ (by omega_using [hN, hj]) x (by omega_using [hx'])]
+    exact hI.frame x (by omega_using [hx'])
 
 /-- What `Precompute`'s branches leave: the words `ws` to `pre`, the flag
 `c` returned, and memory outside the working space and `pre` unchanged. -/
@@ -85,14 +85,14 @@ theorem pcFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
     WP isa Precompute.fail s fun t =>
       PcPost s t B Z ((k + 7) / 8) op (List.replicate (2 * ((k + 7) / 8)) 0) false := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold Precompute.fail
   refine WP.seq (WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = off op 0 ∧
       t.gpr .x2 = BitVec.ofNat 64 (2 * ((k + 7) / 8)) ∧ t.gpr .x3 = 0 ∧ t.mem = s.mem) (by
     brun [h0, hdr_enc (show sOut < 32 by decide), hdr_enc (show sK < 32 by decide), hl sOut (by decide),
-      hl sK (by decide), hO, hK, two_w k (by omega)]) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (wp_countdown (N := 2 * ((k + 7) / 8)) (by omega) (by omega) (ZInv s₁ op)
-    (fun j hj t hI _ => zStep_ok (by omega) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
+      hl sK (by decide), hO, hK, two_w k (by omega_using [hk'])]) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (wp_countdown (N := 2 * ((k + 7) / 8)) (by omega_using [hk']) (by omega_using [hk1]) (ZInv s₁ op)
+    (fun j hj t hI _ => zStep_ok (by omega_using [hk']) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
     ⟨Keep.refl _ _, h1, fun i hi => absurd hi (Nat.not_lt_zero _), Outside.refl _ _ _ _⟩ h2) fun t₂ hI => ?_)
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = t₂.mem) (by brun) (by decide) (by decide)
     (by decide +kernel)) fun t ⟨⟨hx, hm⟩, k₃⟩ => ⟨?_, hx, fun x _ hx' => ?_, ((k₁.trans hI.keep).trans k₃).mono
@@ -102,7 +102,7 @@ theorem pcFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
     rw [hm]
     exact hI.done i (List.mem_range.mp hi)
-  · rw [hm, hI.frame x (by omega), hm₁]
+  · rw [hm, hI.frame x (by omega_using [hx']), hm₁]
 
 /-! ## Zero bytes -/
 
@@ -133,10 +133,10 @@ theorem bStep_ok {s₀ : State} {op : Addr} {N : Nat} (hN : N < 2 ^ 63) (h3 : s�
   · rw [hm', hm, writeW8_apply]
     by_cases hij : i = j
     · subst hij; simp
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-      exact hI.bytes i (by omega)
-  · rw [hm', hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-    exact hI.frame x fun i hi => hx i (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hN, hj, hi]) (by omega_using [hN, hj]) hij))]
+      exact hI.bytes i (by omega_using [hi, hij])
+  · rw [hm', hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+    exact hI.frame x fun i hi => hx i (by omega_using [hi])
 
 /-- `Precomputed.fail`: `k` zero bytes to `out`, and 0 returned. -/
 theorem pdFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
@@ -147,14 +147,14 @@ theorem pdFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
       t.gpr .x0 = 0 ∧ (∀ x, (∀ i < k, x ≠ op + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧
       Keep (.x0 :: mmRegs) s t := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold Precomputed.fail
   refine WP.seq (WP.mono (WP.keep [.x1, .x2, .x3] (Q := fun t => t.gpr .x1 = op + BitVec.ofNat 64 0 ∧
       t.gpr .x2 = BitVec.ofNat 64 k ∧ t.gpr .x3 = 0 ∧ t.mem = s.mem) (by
     brun [h0, hdr_enc (show sOut < 32 by decide), hdr_enc (show sK < 32 by decide), hl sOut (by decide),
       hl sK (by decide), hO, hK]) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega) (by omega) (BInv s₁ op)
-    (fun j hj t hI _ => bStep_ok (by omega) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
+  refine WP.seq (WP.mono (wp_countdown (N := k) (by omega_using [hk']) (by omega_using [hk1]) (BInv s₁ op)
+    (fun j hj t hI _ => bStep_ok (by omega_using [hk']) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hj hI)
     ⟨Keep.refl _ _, h1, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩ h2) fun t₂ hI => ?_)
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = 0 ∧ t.mem = t₂.mem) (by brun) (by decide) (by decide)
     (by decide +kernel)) fun t ⟨⟨hx, hm⟩, k₃⟩ => ⟨?_, hx, fun x hx' => ?_, ((k₁.trans hI.keep).trans k₃).mono

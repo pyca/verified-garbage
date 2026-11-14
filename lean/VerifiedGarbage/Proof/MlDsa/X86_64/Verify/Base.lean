@@ -61,22 +61,22 @@ def _root_.VG.Impl.MlDsa.X86_64.Verify.Arg.Ok : Arg → Prop
 
 theorem sx_ofNat {n : Nat} (h : n < 2 ^ 31) : BitVec.signExtend 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem sw_ofNat {n : Nat} (h : n < 2 ^ 32) : BitVec.setWidth 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_setWidth64, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  rw [toNat_setWidth64, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem arg_ok (d : Reg) (a : Arg) (ha : a.Ok) (s : State) :
     WP isa (.block (a.instrs d)) s fun s' => (s'.gpr d = a.val s ∧ s'.mem = s.mem) ∧ Keep [d] s s' := by
   refine WP.keep _ ?_ (by cases a <;> cases d <;> rfl)
   cases a with
   | ptr p => simp only [Arg.instrs, Arg.val]; xrun [sx_ofNat ha.1]
-  | imm v => simp only [Arg.instrs, Arg.val]; xrun [sw_ofNat (show v < 2 ^ 32 by have : v < 2 ^ 31 := ha; omega)]
+  | imm v => simp only [Arg.instrs, Arg.val]; xrun [sw_ofNat (show v < 2 ^ 32 by have : v < 2 ^ 31 := ha; omega_using [this])]
 
 /-- The moves of the arguments `as`, to distinct registers. -/
 theorem glue_ok : ∀ (as : List (Reg × Arg)), (∀ a ∈ as, a.2.Ok ∧ a.1 ∈ argRegs) → (as.map (·.1)).Nodup →
@@ -220,9 +220,9 @@ theorem inRegions_sub {X : List Region} {a : Addr} {n off l : Nat} (h : InRegion
   refine ⟨r, hr, ?_⟩
   simp only [Region.Contains] at hc ⊢
   rw [show a + BitVec.ofNat 64 off - r.base = (a - r.base) + BitVec.ofNat 64 off by bv_omega, BitVec.toNat_add,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [hl, hn])]
   have := Nat.mod_le ((a - r.base).toNat + off) (2 ^ 64)
-  omega
+  omega_using [hl, hc]
 
 /-! ## Layouts -/
 
@@ -258,7 +258,7 @@ theorem Lay.disj {p q : Ptr} {l k : Nat} (h : sepB (rbs ++ wbs) p l q k = true) 
   have sn := L.small _ hn
   have sm := L.small _ hm
   rcases hs with ⟨e, hw⟩ | ⟨e, hs⟩
-  · exact ((L.dj _ hn _ hm e hw).sub_left (sub_offset' hl (by omega))).sub_right (sub_offset' hk (by omega))
+  · exact ((L.dj _ hn _ hm e hw).sub_left (sub_offset' hl (by omega_using [sn]))).sub_right (sub_offset' hk (by omega_using [sm]))
   · show Region.Disjoint ⟨s.gpr p.1 + _, l⟩ ⟨s.gpr q.1 + _, k⟩
     rw [← e]
     rcases hs with h1 | h2
@@ -275,17 +275,17 @@ theorem Lay.nwp {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : (pa s p)
   have h1 := L.nw _ hn
   have h2 := L.small _ hn
   simp only at h1 h2
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega_using [hl, h2])]
   have := Nat.mod_le ((s.gpr p.1).toNat + p.2) (2 ^ 64)
-  omega
+  omega_using [hl, h1]
 
 theorem Lay.inR {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : InRegions (s.rd ++ s.wr) (pa s p) l := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  exact inRegions_sub (L.rd (p.1, n) hn) hl (by have := L.small _ hn; omega)
+  exact inRegions_sub (L.rd (p.1, n) hn) hl (by have := L.small _ hn; omega_using [this])
 
 theorem Lay.inW {p : Ptr} {l : Nat} (h : inB wbs p l = true) : InRegions s.wr (pa s p) l := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  exact inRegions_sub (L.wr (p.1, n) hn) hl (by have := L.small _ (List.mem_append_right _ hn); omega)
+  exact inRegions_sub (L.wr (p.1, n) hn) hl (by have := L.small _ (List.mem_append_right _ hn); omega_using [this])
 
 theorem Lay.cR {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : Covers [⟨pa s p, l⟩] (s.rd ++ s.wr) :=
   Covers.one (L.inR h)

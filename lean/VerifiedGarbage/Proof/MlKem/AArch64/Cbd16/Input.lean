@@ -26,6 +26,6 @@ theorem G_nibble (s : State) {i : Nat} (hi : i < 256) :
     exact Nat.lt_trans this (by decide)
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hmod]
   unfold VG.Proof.MlKem.nibble
-  rcases (by omega : i%2 = 0 ∨ i%2 = 1) with h | h <;> simp [h,q,Cbd2.byte]
+  rcases (by omega_using [] : i%2 = 0 ∨ i%2 = 1) with h | h <;> simp [h,q,Cbd2.byte]
 
 end VG.Proof.MlKem.AArch64.Cbd16

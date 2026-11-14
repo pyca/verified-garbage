@@ -19,9 +19,9 @@ theorem codeAt_ok {s : State} {base : Addr} {size D remaining used : Nat}
     WP isa (.block (codeAt D)) s fun t =>
       t.cf = some (decide (remaining - used < D)) ∧ t.mem = s.mem ∧ Keeps [.eax] s t := by
   unfold codeAt
-  refine wp_movS (readSrc_sc S (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_sc S (by omega_using [head])) fun a A _ => ?_
   have Sa := S.of_keeps A.keeps (by decide)
-  refine wp_subS (readSrc_sc Sa (d := 152) (by omega)) fun b B _ => ?_
+  refine wp_subS (readSrc_sc Sa (d := 152) (by omega_using [head])) fun b B _ => ?_
   have value : (b.gpr .eax).toNat = remaining - used := by
     rw [B.gpr, A.gpr, A.mem, BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; change w32 s.mem base 152 ≤ w32 s.mem base 32; rw [length, consumed]; exact bound)]
     change w32 s.mem base 32 - w32 s.mem base 152 = _

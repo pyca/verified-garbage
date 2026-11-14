@@ -29,8 +29,8 @@ theorem privateValid_dom {m : Mem} {D : Addr} {k L : Nat} (hk : 0 < k) (hL : L =
       decide (0 < x ∧ x < bnd m D k L (os2ip (bytesAt m D k))) := by
   unfold privateValid bnd
   rcases hL with rfl | rfl
-  · rw [Proof.Ffdh.domainOf_q2 m D hk, ite_eq_right (show ¬ (2 * k = 3 * k) by omega),
-      Proof.Ffdh.domainOf_p m D (by omega)]
+  · rw [Proof.Ffdh.domainOf_q2 m D hk, ite_eq_right (show ¬ (2 * k = 3 * k) by omega_using [hk]),
+      Proof.Ffdh.domainOf_p m D (by omega_using [])]
     simp
   · rw [Proof.Ffdh.domainOf_q3 m D k, ite_eq_left rfl]
     simp [off]
@@ -46,7 +46,7 @@ theorem keyStatus_dom {m : Mem} {D : Addr} {k L : Nat} (hk : 0 < k) (hL : L = 2 
     unfold domainValid at hv
     simp only [Bool.and_eq_true] at hv
     exact hv.1
-  have h2k : 2 * k ≤ L := by omega
+  have h2k : 2 * k ≤ L := by omega_using [hL]
   simp only [Proof.Ffdh.KeyScalar.keyStatus_eq hpv, Proof.Ffdh.publicValid_power hpv, privateValid_dom hk hL]
   simp only [Proof.Ffdh.domainOf_p m D h2k, Proof.Ffdh.domainOf_g m D h2k]
   by_cases h : 0 < x ∧ x < bnd m D k L (os2ip (bytesAt m D k))

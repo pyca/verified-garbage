@@ -17,7 +17,7 @@ theorem derivingPublicArgs {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 10
   constructor
   · assumption
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem derivingPublicParams {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 108).pub s t) :

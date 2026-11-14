@@ -41,8 +41,8 @@ theorem qword_extract512 (v : BitVec 512) (l : Nat) {i : Nat} (hi : i < 2) :
     qword (v.extractLsb' (128 * l) 128) i = v.extractLsb' (64 * (2 * l + i)) 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 64 * i + j < 128 by omega)]
-  congr 1; omega
+    decide_eq_true (show 64 * i + j < 128 by omega_using [hi, hj])]
+  congr 1; omega_using []
 
 theorem pick4_extract (v : BitVec 512) {l : Nat} (hl : l < 4) :
     pick4 (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
@@ -53,18 +53,18 @@ theorem pick4_extract (v : BitVec 512) {l : Nat} (hl : l < 4) :
 theorem qz_setZ_load (s : State) (d r : XReg) (v : BitVec 512) {k : Nat} (hk : k < 8) :
     qz (s.setZ d (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128)
       (v.extractLsb' 384 128)) r k = if r = d then v.extractLsb' (64 * k) 64 else qz s r k := by
-  simp only [qz, State.zlane_setZ _ _ _ _ _ _ _ (show k / 2 < 4 by omega)]
+  simp only [qz, State.zlane_setZ _ _ _ _ _ _ _ (show k / 2 < 4 by omega_using [hk])]
   split
-  · rw [pick4_extract _ (show k / 2 < 4 by omega), qword_extract512 _ _ (Nat.mod_lt _ (by decide)),
-      show 2 * (k / 2) + k % 2 = k by omega]
+  · rw [pick4_extract _ (show k / 2 < 4 by omega_using [hk]), qword_extract512 _ _ (Nat.mod_lt _ (by decide)),
+      show 2 * (k / 2) + k % 2 = k by omega_using []]
   · rfl
 
 theorem qz_load (s : State) (d r : XReg) (m : Mem) (a : Addr) {k : Nat} (hk : k < 8) :
     qz (s.setZ d ((m.readW a 512).extractLsb' 0 128) ((m.readW a 512).extractLsb' 128 128)
       ((m.readW a 512).extractLsb' 256 128) ((m.readW a 512).extractLsb' 384 128)) r k =
       if r = d then m.readW (a + BitVec.ofNat 64 (8 * k)) 64 else qz s r k := by
-  rw [qz_setZ_load _ _ _ _ hk, show 64 * k = 8 * (8 * k) by omega,
-    readW_extract _ _ (k := 8 * k) (n := 8) (by omega)]
+  rw [qz_setZ_load _ _ _ _ hk, show 64 * k = 8 * (8 * k) by omega_using [],
+    readW_extract _ _ (k := 8 * k) (n := 8) (by omega_using [hk])]
 
 /-- Quadword `k` of a register, as a stored value. -/
 theorem extract64_split (x : BitVec 512) (a : Nat) :
@@ -74,18 +74,18 @@ theorem extract64_split (x : BitVec 512) (a : Nat) :
   split
   · rename_i h
     rw [decide_eq_true h, Bool.true_and]
-  · rw [decide_eq_true (show j - 32 < 32 by omega), Bool.true_and]
-    congr 1; omega
+  · rw [decide_eq_true (show j - 32 < 32 by omega_using [hj]), Bool.true_and]
+    congr 1; omega_arith
 
 theorem zmm_qz (s : State) (r : XReg) {k : Nat} (hk : k < 8) :
     (s.zmm r).extractLsb' (64 * k) 64 = qz s r k := by
   have e0 : (s.zmm r).extractLsb' (64 * k) 32 = dword (s.zlane r (k / 2)) (2 * (k % 2)) := by
-    have := State.zmm_extract s r (l := k / 2) (q := 2 * (k % 2)) (by omega) (by omega)
-    rw [show 8 * (16 * (k / 2) + 4 * (2 * (k % 2))) = 64 * k by omega] at this
+    have := State.zmm_extract s r (l := k / 2) (q := 2 * (k % 2)) (by omega_using [hk]) (by omega_using [])
+    rw [show 8 * (16 * (k / 2) + 4 * (2 * (k % 2))) = 64 * k by omega_using []] at this
     exact this
   have e1 : (s.zmm r).extractLsb' (64 * k + 32) 32 = dword (s.zlane r (k / 2)) (2 * (k % 2) + 1) := by
-    have := State.zmm_extract s r (l := k / 2) (q := 2 * (k % 2) + 1) (by omega) (by omega)
-    rw [show 8 * (16 * (k / 2) + 4 * (2 * (k % 2) + 1)) = 64 * k + 32 by omega] at this
+    have := State.zmm_extract s r (l := k / 2) (q := 2 * (k % 2) + 1) (by omega_using [hk]) (by omega_using [])
+    rw [show 8 * (16 * (k / 2) + 4 * (2 * (k % 2) + 1)) = 64 * k + 32 by omega_using []] at this
     exact this
   rw [qz, Proof.Poly1305.X86_64.Avx2.qword_eq, extract64_split, e0, e1]
 
@@ -99,10 +99,10 @@ theorem read_write512 (m : Mem) (p : Addr) {d e : Nat} (hd : d + 8 ≤ 4096) (he
   split
   · rename_i h
     rw [show off p d = off p e + BitVec.ofNat 64 (8 * ((d - e) / 8)) from
-      (Offset.add_add_eq p (by omega)).symm]
-    refine (readW_writeW_inside _ _ v (k := 8 * ((d - e) / 8)) (n := 8) (by omega) (by decide)).trans ?_
-    rw [show 8 * (8 * ((d - e) / 8)) = 64 * ((d - e) / 8) by omega]
-  · exact readW_writeW_off m p v (n := 8) (by omega) (by omega) (by omega)
+      (Offset.add_add_eq p (by omega_using [h8, he8, h])).symm]
+    refine (readW_writeW_inside _ _ v (k := 8 * ((d - e) / 8)) (n := 8) (by omega_using [h]) (by decide)).trans ?_
+    rw [show 8 * (8 * ((d - e) / 8)) = 64 * ((d - e) / 8) by omega_using []]
+  · exact readW_writeW_off m p v (n := 8) (by omega_using [hd]) (by omega_using [he]) (by omega_arith)
 
 /-- The offset in `[1024, 2048)` of scratch of word `i` of the block P
 permutes: in register `i / 32` of columns `2c`, `2c + 1` (`c = i % 16 / 4`),
@@ -138,7 +138,7 @@ theorem cvOff_cvIdx : ∀ c < 4, ∀ k < 4, ∀ e < 8, cvOff (cvIdx c k e) = 256
   decide
 
 theorem cvIdx_lt {c k e : Nat} (hc : c < 4) (hk : k < 4) (he : e < 8) : cvIdx c k e < 128 := by
-  simp only [cvIdx]; omega
+  simp only [cvIdx]; omega_using [hc, hk, he]
 
 /-- A word of `cv` after a 64-byte write to the chunk at `colOff c k`. -/
 theorem cv_write512 (m : Mem) (p : Addr) {c k : Nat} (hc : c < 4) (hk : k < 4) (v : BitVec 512)
@@ -146,8 +146,8 @@ theorem cv_write512 (m : Mem) (p : Addr) {c k : Nat} (hc : c < 4) (hk : k < 4) (
     (cv (m.writeW (off p (colOff c k)) v) p)[i] =
       if i % 16 / 4 = c ∧ i / 32 = k then v.extractLsb' (64 * cvQ i) 64 else (cv m p)[i] := by
   have ho := cvOff_lt i hi
-  rw [cv_get _ _ _ hi, cv_get _ _ _ hi, colOff, read_write512 _ _ (by omega) (by omega)
-    (by omega) (by omega)]
+  rw [cv_get _ _ _ hi, cv_get _ _ _ hi, colOff, read_write512 _ _ (by omega_using [ho]) (by omega_using [hc, hk])
+    (by omega_using [ho]) (by omega_using [])]
   by_cases h : i % 16 / 4 = c ∧ i / 32 = k
   · rw [ite_eq_left_of_eq_true _ _ (eq_true ((cvOff_in i hi c hc k hk).mpr h)),
       ite_eq_left_of_eq_true _ _ (eq_true h), ← h.1, ← h.2, cvOff_q i hi]
@@ -159,6 +159,6 @@ theorem cv_chunk (m : Mem) (p : Addr) {c k e : Nat} (hc : c < 4) (hk : k < 4) (h
     m.readW (off p (colOff c k) + BitVec.ofNat 64 (8 * e)) 64 =
       (cv m p)[cvIdx c k e]'(cvIdx_lt hc hk he) := by
   rw [cv_get _ _ _ (cvIdx_lt hc hk he), cvOff_cvIdx c hc k hk e he, Offset.add_add, colOff,
-    show 1024 + 256 * c + 64 * k + 8 * e = 1024 + (256 * c + 64 * k + 8 * e) by omega]
+    show 1024 + 256 * c + 64 * k + 8 * e = 1024 + (256 * c + 64 * k + 8 * e) by omega_using []]
 
 end VG.Proof.Argon2.X86_64.Avx512

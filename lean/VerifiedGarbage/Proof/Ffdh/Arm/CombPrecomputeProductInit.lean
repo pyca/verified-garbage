@@ -20,7 +20,7 @@ private theorem productsInit_raw (s : State) {base : BitVec 32} {len : Nat}
     (locals : Locals base len s) :
     WP isa (.block [.mov .r3 (.imm 1),.addSp .r12 0,VG.Impl.Ffdh.Arm.Domain.st .r3 40]) s fun t =>
       t.mem=s.mem.writeW (off (State.addr s.sp) 40) (1:BitVec 32) ∧ Rest [.r3,.r12] s t := by
-  have addr : State.addr (s.sp+BitVec.ofNat 32 40)=off (State.addr s.sp) 40 := addr_add (by have := locals.space.nowrap; omega)
+  have addr : State.addr (s.sp+BitVec.ofNat 32 40)=off (State.addr s.sp) 40 := addr_add (by have := locals.space.nowrap; omega_using [this])
   have write := locals.space.write (off:=40) (by decide)
   refine withRest_all (c:=.block _) [.r3,.r12] ?_ (by rfl) rfl
   unfold VG.Impl.Ffdh.Arm.Domain.st

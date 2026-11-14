@@ -86,8 +86,8 @@ theorem ready_core {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : S
     simp only [List.mem_singleton] at hr; subst hr; exact hB.sub_right (Region.sub_prefix (by omega_arith)), hk]
 
 theorem layout (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) : Layout (core d g) :=
-  ⟨hg.1, .inr rfl, by simp only [core]; omega, by simp only [core]; omega,
-    by simp only [core, bufSlot]; omega⟩
+  ⟨hg.1, .inr rfl, by simp only [core]; omega_using [], by simp only [core]; omega_using [],
+    by simp only [core, bufSlot]; omega_using [hg]⟩
 
 theorem prepare_wp (d : Direction) {g : Nat} {s : State} {B : Addr} {rs : List Region} {k : Spec.Seed.Schedule}
     (hB : s.gpr .r5 = B) (_hS : ScrIn s B (core d g).total)
@@ -156,7 +156,7 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) {s : State}
   show WP isa (.seq (.block (cryptHead g)) (.seq (blockCall d) (.block (cryptTail d)))) s _
   -- The arguments.
   refine WP.seq (wp_addi (by decide) (by decide) fun s₁ u₁ => wp_mr fun s₂ u₂ =>
-    wp_li (by omega) fun s₃ u₃ => wp_nil ?_)
+    wp_li (by omega_using [hg]) fun s₃ u₃ => wp_nil ?_)
   have g₃ : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → s₃.gpr r = s.gpr r := fun r a b c => by
     rw [u₃.other r b, u₂.other r c, u₁.other r a]
   have r3₃ : s₃.gpr .r3 = s.gpr .r3 := g₃ _ (by decide) (by decide) (by decide)
@@ -174,16 +174,16 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) {s : State}
   have c3 : E.gpr .r3 = s.gpr .r3 := by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r3₃]
   have c4 : E.gpr .r4 = bufA B := by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r4₃]
   have c5 : (E.gpr .r5).toNat = g := by
-    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r5₃, BitVec.toNat_ofNat]; omega
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r5₃, BitVec.toNat_ofNat]; omega_using [hg]
   have c6 : E.gpr .r6 = B := by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r6₃]
   have cm : E.mem = s.mem := by rw [State.withRegions_mem, State.callEntry_mem, m₃]
   have hP : (bufA B).toNat = B.toNat + 8 * bufSlot := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hfit]
   have hcov : Covers wr s.wr := Covers.of_sub fun r hr => by
     simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, hW, 8 * bufSlot, rfl, by simp only; omega⟩
-    · exact ⟨_, hW, 0, (BitVec.add_zero _).symm, by simp only; omega⟩
+    · exact ⟨_, hW, 8 * bufSlot, rfl, by simp only; omega_using []⟩
+    · exact ⟨_, hW, 0, (BitVec.add_zero _).symm, by simp only; omega_using [hbs]⟩
   refine WP.seq (blockCall_wp d (rd := [keyR s]) (wr := wr) ?_
     (Covers.append_left (Covers.left (Covers.of_mem fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [rd₃]; exact hkin))
@@ -193,12 +193,12 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) {s : State}
     · simp only [State.withRegions_rd]; rw [c3]
     · simp only [State.withRegions_wr]; rw [c4, c5, c6]
     · rw [c3, c4, c5]
-      exact hk.sub_right (Offset.sub_base _ (by omega))
+      exact hk.sub_right (Offset.sub_base _ (by omega_using []))
     · rw [c3, c6]
-      exact hk.sub_right (Region.sub_prefix (by omega))
+      exact hk.sub_right (Region.sub_prefix (by omega_using [hbs]))
     · rw [c4, c5, c6]
-      exact Offset.disjoint_base B (by omega) (by omega)
-    · rw [c4, c5, hP]; omega
+      exact Offset.disjoint_base B (by omega_using [hbs]) (by omega_using [hg, hbs])
+    · rw [c4, c5, hP]; omega_using [hfit]
   -- `sb` and `r3` back.
   have hm' : (s'.withRegions [keyR s] wr).mem = s'.mem := rfl
   have r8' : s'.gpr .r8 = B := by
@@ -222,8 +222,8 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg : 0 < g ∧ g ≤ 16) {s : State}
     refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [wr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.sub_base _ (by omega)
-    · exact Region.sub_prefix (by omega)
+    · exact Offset.sub_base _ (by omega_using [])
+    · exact Region.sub_prefix (by omega_using [hbs])
   · intro j hj
     have e := hpost.done j (by rw [c5]; exact hj)
     rw [hm', cm, c3, c4] at e

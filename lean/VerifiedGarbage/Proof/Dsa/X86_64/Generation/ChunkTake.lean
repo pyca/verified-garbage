@@ -29,10 +29,10 @@ theorem chunkTake_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
       t.mem = (s.mem.writeW (off F (8 * slots.pointer)) (off (W slots.base) used)).writeW
         (off F (8 * slots.used)) (BitVec.ofNat 64 (used + width))) (by
     xrun [tapeTake, ea_sp, L.rsp,
-      L.ld (d := 8 * slots.base) (by unfold frameBytes; omega),
-      L.ld (d := 8 * slots.used) (by unfold frameBytes; omega),
-      L.st (d := 8 * slots.pointer) (by unfold frameBytes; omega),
-      L.st (d := 8 * slots.used) (by unfold frameBytes; omega),
+      L.ld (d := 8 * slots.base) (by unfold frameBytes; omega_using [hb]),
+      L.ld (d := 8 * slots.used) (by unfold frameBytes; omega_using [hu]),
+      L.st (d := 8 * slots.pointer) (by unfold frameBytes; omega_using [hp]),
+      L.st (d := 8 * slots.used) (by unfold frameBytes; omega_using [hu]),
       R.slot (d := 8 * slots.base) (k := slots.base) rfl hb rfl,
       R.slot (d := 8 * slots.used) (k := slots.used) rfl hu hused, sx_ofNat hw, hadd]) rfl)
     fun t ⟨hm, hk⟩ => ?_
@@ -44,13 +44,13 @@ theorem chunkTake_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bi
     (hk.gpr (by decide)) hk.2.2, Rt, ?_, hk⟩
   have ff : Outside F 0 frameBytes s.mem t.mem := by
     rw [hm]
-    exact ((writeW_outside _ F _ (d := 8 * slots.pointer) (by omega)).mono (by omega) (by unfold frameBytes; omega)).trans
-      ((writeW_outside _ F _ (d := 8 * slots.used) (by omega)).mono (by omega) (by unfold frameBytes; omega))
+    exact ((writeW_outside _ F _ (d := 8 * slots.pointer) (by omega_using [hp])).mono (by omega_using []) (by unfold frameBytes; omega_using [hp])).trans
+      ((writeW_outside _ F _ (d := 8 * slots.used) (by omega_using [hu])).mono (by omega_using []) (by unfold frameBytes; omega_using [hu]))
   intro a ha
   apply ff a
   right
   have hn := ha ⟨F, frameBytes⟩ (by simp)
   change ¬ ofs F a < frameBytes at hn
-  omega
+  omega_using [hn]
 
 end VG.Proof.Dsa.X86_64.Generation

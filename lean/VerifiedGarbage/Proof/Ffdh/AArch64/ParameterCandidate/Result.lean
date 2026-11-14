@@ -37,7 +37,7 @@ theorem finPrimeL_ok {s : State} {B : Addr} {Z w : Nat} {op up : Addr} {u c L : 
   have hs := h.scr
   have hnw := hs.nowrap
   have h256 := h.h256
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [h256, hi])
   unfold finPrime
   rw [List.append_assoc]
   refine wp_seqs_append (by simp) (by simp [storeA]) ?_
@@ -51,11 +51,11 @@ theorem finPrimeL_ok {s : State} {B : Addr} {Z w : Nat} {op up : Addr} {u c L : 
   have h₁ : Ws s₁ B Z w := h.congr' f₁ (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact KMut.past h256 _) k₁ (by decide)
   have hw₁ : ∀ i < 32, word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
-    f₁.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+    f₁.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
   have hn₁ : wv s₁.mem B (slot w aN) ((L + 7) / 8) = c := by
     rw [f₁.wv_eq (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Or.inl (by have := h₁.sl (show aN < 16 by decide); omega))
-      (by have := h₁.sl (show aN < 16 by decide); omega)]; exact hn
+      rw [List.mem_singleton.mp hr]; exact Or.inl (by have := h₁.sl (show aN < 16 by decide); omega_using [hLw, this]))
+      (by have := h₁.sl (show aN < 16 by decide); omega_using [hLw, hnw, this])]; exact hn
   refine wp_seqs_append (by simp [storeA]) (by simp) ?_
   refine WP.mono (storeA_ok h₁ (j := aN) (sPtr := kOut) (sLen := kLen) (sMsk := Public.sMask) (c := true)
     (by decide) (by decide) (by decide) (by decide) (by rw [hw₁ _ (by decide)]; exact hO)
@@ -87,7 +87,7 @@ theorem MrEnd.stat {p : PP} {w N mb K : Nat} {s₀ s : State} {res : Option (Boo
   refine ⟨h.2.1, fun b rest hr => ?_⟩
   obtain ⟨hs, u, hu, rfl, hU⟩ := h.2.2.1 b rest hr
   refine ⟨hs, ?_⟩
-  rw [hU, List.length_drop]; congr 1; omega
+  rw [hU, List.length_drop]; congr 1; omega_using [hu]
 
 /-- `pResult`, after `p`'s Miller–Rabin ended with `res`. -/
 theorem pResult_ok {s : State} {B : Addr} {Z w c L : Nat} {op up : Addr} {r : List Byte}
@@ -102,7 +102,7 @@ theorem pResult_ok {s : State} {B : Addr} {Z w c L : Nat} {op up : Addr} {r : Li
   have hs := h.scr
   have hnw := hs.nowrap
   have h256 := h.h256
-  have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 := hs.ld (by simp only [kStat, sFn]; omega)
+  have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 := hs.ld (by simp only [kStat, sFn]; omega_using [h256])
   unfold pResult
   have hfirst : ∀ v : Nat, word s.mem B (8 * kStat) = BitVec.ofNat 64 v →
       WP isa (.block [ldh .x3 kStat]) s fun t => (t.gpr .x3 = BitVec.ofNat 64 v ∧ t.mem = s.mem) ∧ Keep [.x3] s t :=
@@ -148,7 +148,7 @@ theorem qResult_ok {s : State} {B : Addr} {Z w c L : Nat} {op up : Addr} {r : Li
   have hs := h.scr
   have hnw := hs.nowrap
   have h256 := h.h256
-  have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 := hs.ld (by simp only [kStat, sFn]; omega)
+  have hl : InRegions (s.rd ++ s.wr) (off B (8 * kStat)) 8 := hs.ld (by simp only [kStat, sFn]; omega_using [h256])
   unfold qResult
   have hfirst : ∀ v : Nat, word s.mem B (8 * kStat) = BitVec.ofNat 64 v →
       WP isa (.block [ldh .x3 kStat]) s fun t => (t.gpr .x3 = BitVec.ofNat 64 v ∧ t.mem = s.mem) ∧ Keep [.x3] s t :=

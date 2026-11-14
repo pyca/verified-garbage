@@ -29,25 +29,25 @@ variable {fld : Arith} [EdArith fld]
 theorem fromTableQuarterQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (j : Nat) (hj : j < 4) (ho : o + 128 ≤ 8192) :
     WP isa (.block (fromTableWords (32 * j) ++ stores (192 + 32 * j) .r8 .r9 .r10 .r11)) s fun t =>
-      env t.mem base ⟨4 + j, by omega⟩ = F s.mem base (o + 32 * j) ∧
+      env t.mem base ⟨4 + j, by omega_using [hj]⟩ = F s.mem base (o + 32 * j) ∧
       TableKeep base (192 + 32 * j) 32 s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega)) fun t ⟨hv, hk⟩ => ?_
+  refine WP.mono (fromTableWords_ok hs hp (32 * j) (by omega_using [hj, ho])) fun t ⟨hv, hk⟩ => ?_
   have ht := hs.of_keeps hk (by decide)
-  refine WP.mono (stores8192_ok ht.rdi ht.wr (by omega : 192 + 32 * j + 32 ≤ 8192)
+  refine WP.mono (stores8192_ok ht.rdi ht.wr (by omega_using [hj] : 192 + 32 * j + 32 ≤ 8192)
     .r8 .r9 .r10 .r11) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   refine ⟨?_, ⟨fun r hr => (congrFun hg r).trans (hk.1 r hr), hrd.trans hk.2.2.1,
     hwr.trans hk.2.2.2, ?_⟩⟩
   · change F u.mem base (64 + 32 * (4 + j)) = _
-    rw [show 64 + 32 * (4 + j) = 192 + 32 * j by omega, F, hm, fe_st4 _ _ (by omega), hv]
-  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+    rw [show 64 + 32 * (4 + j) = 192 + 32 * j by omega_using [], F, hm, fe_st4 _ _ (by omega_using [hj]), hv]
+  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega_using [hj]) _ _ _ _
 
 theorem fromTablePrefixQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192)
     (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j =>
       fromTableWords (32 * j) ++ stores (192 + 32 * j) .r8 .r9 .r10 .r11)) s fun t =>
-      (∀ j (hj : j < n), env t.mem base ⟨4 + j, by omega⟩ = F s.mem base (o + 32 * j)) ∧
+      (∀ j (hj : j < n), env t.mem base ⟨4 + j, by omega_using [hn, hj]⟩ = F s.mem base (o + 32 * j)) ∧
       TableKeep base 192 (32 * n) s t := by
   induction n generalizing s with
   | zero =>
@@ -56,18 +56,18 @@ theorem fromTablePrefixQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o :
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs hp (by omega)) fun t ⟨hv, hk⟩ => ?_
+    refine WP.mono (ih hs hp (by omega_using [hn])) fun t ⟨hv, hk⟩ => ?_
     refine WP.mono (fromTableQuarterQ_ok (hk.scratch hs)
-      ((hk.gpr _ (by decide)).trans hp) n (by omega) ho) fun u ⟨hu, ku⟩ => ?_
-    refine ⟨fun j hj => ?_, (hk.mono (by omega) (by omega)).trans
-      (ku.mono (by omega) (by omega))⟩
+      ((hk.gpr _ (by decide)).trans hp) n (by omega_using [hn]) ho) fun u ⟨hu, ku⟩ => ?_
+    refine ⟨fun j hj => ?_, (hk.mono (by omega_using []) (by omega_using [])).trans
+      (ku.mono (by omega_using []) (by omega_using []))⟩
     by_cases h : j < n
-    · have he : env u.mem base ⟨4 + j, by omega⟩ = env t.mem base ⟨4 + j, by omega⟩ :=
-        Outside_F ku.mem (by simp only [offset]; omega) (Or.inl (by simp only [offset]; omega))
+    · have he : env u.mem base ⟨4 + j, by omega_using [hn, hj]⟩ = env t.mem base ⟨4 + j, by omega_using [hn, hj]⟩ :=
+        Outside_F ku.mem (by simp only [offset]; omega_using [hn, hj]) (Or.inl (by simp only [offset]; omega_using [h]))
       rw [he, hv j h]
-    · have he : j = n := by omega
+    · have he : j = n := by omega_using [hj, h]
       subst j
-      rw [hu, Outside_F hk.mem (by omega) (Or.inr (by omega))]
+      rw [hu, Outside_F hk.mem (by omega_using [ho, hn]) (Or.inr (by omega_using [hlo]))]
 
 theorem pointFromTableQ_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (hlo : 768 ≤ o) (ho : o + 128 ≤ 8192) :

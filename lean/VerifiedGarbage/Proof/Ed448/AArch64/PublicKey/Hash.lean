@@ -52,7 +52,7 @@ theorem zeroStores_ok {u : State} (hu : Ctx L g vec m₀ u) (h15 : u.gpr .x15 = 
     hu.regs wrd wwr wsp (fun r hr _ => wg r (by rintro rfl; simp [preserved] at hr)) wv wm
   have hws : (⟨L.scr, 8192⟩ : Region) ∈ w.wr := by
     rw [hw.wr]; simp [Lay.outputs]
-  refine WP.mono (zstores_ok ((wg _ (by decide)).trans h15) w14 hws 25 (by omega)) fun x hx =>
+  refine WP.mono (zstores_ok ((wg _ (by decide)).trans h15) w14 hws 25 (by omega_using [])) fun x hx =>
     ⟨?_, zero_state hx.words⟩
   refine hw.of_frame hx.rd hx.wr hx.sp (fun r _ _ => by rw [hx.gpr]) (fun r _ => by rw [hx.v]) hx.frame ?_
   intro r hr

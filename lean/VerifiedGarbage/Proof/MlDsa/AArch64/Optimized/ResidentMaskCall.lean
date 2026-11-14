@@ -16,8 +16,8 @@ of the existing ML-DSA caller stack budgets. -/
 theorem pair_callee {S : Nat} (hS : S<2^64) :
     CalleeOk S Impl.MlDsa.AArch64.Optimized.ResidentMask.raw
       (expandMaskPairContract AArch64.abi S) :=
-  CalleeOk.of_verified hS pair_verified (by omega) (by
+  CalleeOk.of_verified hS pair_verified (by omega_using []) (by
     have h : Impl.MlDsa.AArch64.Optimized.ResidentMask.raw.aarch64Depth=0 := by decide
-    rw [h]; omega)
+    rw [h]; omega_using [])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask

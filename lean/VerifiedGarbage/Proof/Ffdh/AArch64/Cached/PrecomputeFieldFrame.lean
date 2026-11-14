@@ -38,9 +38,9 @@ theorem precomputeField_ok (M : Mont) {s : State} {B np : Addr} {Z k : Nat} {nb 
  refine wp_seqs_append (by simp [pcLoadW,pcLoadWith]) (by simp [r2StepsPub]) ?_
  refine WP.mono (pcLoadW_ok scratch base room positive size length modulusPtr source span byteLength odd) ?_
  rintro u ⟨mi,good,modulus,inverse,frame,rest⟩
- refine WP.mono (r2Pub_ok M good room (by omega) (by omega) modulus inverse odd normalized) ?_
+ refine WP.mono (r2Pub_ok M good room (by omega_using [positive]) (by omega_using [size]) modulus inverse odd normalized) ?_
  rintro t ⟨goodT,boundT,valueT,frameT,restT⟩
- have nowrap : B.toNat+slot ((k+7)/8) 8≤2^64 := by have := scratch.nowrap;omega
+ have nowrap : B.toNat+slot ((k+7)/8) 8≤2^64 := by have := scratch.nowrap;omega_using [room, this]
  have sameMod : wv t.mem B (slot ((k+7)/8) 0) ((k+7)/8)=Spec.Rsa.os2ip nb :=
   (frameT.r2_wv nowrap (by decide) (by decide) (by decide) (by decide)).trans modulus
  have sameInverse : ((word t.mem B (slot ((k+7)/8) 0)).toNat*mi.toNat+1)%2^64=0 := by
@@ -49,7 +49,7 @@ theorem precomputeField_ok (M : Mont) {s : State} {B np : Addr} {Z k : Nat} {nb 
  have value : wv t.mem B (slot ((k+7)/8) 4) ((k+7)/8)=2^(128*((k+7)/8))%Spec.Rsa.os2ip nb := by
   rw [Nat.mod_eq_of_lt boundT] at valueT
   rw [←Nat.pow_add] at valueT
-  have exponent : 64*((k+7)/8)+64*((k+7)/8)=128*((k+7)/8) := by omega
+  have exponent : 64*((k+7)/8)+64*((k+7)/8)=128*((k+7)/8) := by omega_using []
   rw [exponent] at valueT
   exact valueT
  exact ⟨mi,goodT,sameMod,sameInverse,value,
@@ -71,7 +71,7 @@ theorem precomputeField_header {B : Addr} {w i : Nat} {m m' : Mem}
  (frame : Frm B (pcLoadRanges w++r2Ranges w) m m')
  (lower : 16≤i) (upper : i<32) (counter : i≠sCnt) :
  word m' B (8*i)=word m B (8*i) := by
- apply frame.word_eq _ (by omega)
+ apply frame.word_eq _ (by omega_using [upper])
  intro r hr
  have belowN := hdr_lt_slot w aN upper
  have belowAcc := hdr_lt_slot w aAcc upper
@@ -80,7 +80,7 @@ theorem precomputeField_header {B : Addr} {w i : Nat} {m m' : Mem}
  simp only [List.mem_append,pcLoadRanges,r2Ranges,List.mem_cons,List.not_mem_nil,or_false] at hr
  rcases hr with (rfl|rfl|rfl|rfl) | (rfl|rfl|rfl|rfl)
  all_goals simp only [sW,sArr,sMinv] at *
- all_goals omega
+ all_goals omega_arith
 
 theorem precomputeField_inscr {B : Addr} {w Z : Nat} {m m' : Mem}
  (frame : Frm B (pcLoadRanges w++r2Ranges w) m m') (room : slot w 8≤Z) : InScr B Z m m' := by
@@ -95,7 +95,7 @@ theorem precomputeField_inscr {B : Addr} {w Z : Nat} {m m' : Mem}
     have four := slot_le (w:=w) (show Public.aR2<8 by decide)
     have count := hdr_lt_slot w 8 (show sCnt<32 by decide)
     simp only [r2Ranges,List.mem_cons,List.not_mem_nil,or_false] at square
-    rcases square with rfl|rfl|rfl|rfl <;> omega
- exact Or.inr (by omega)
+    rcases square with rfl|rfl|rfl|rfl <;> omega_arith
+ exact Or.inr (by omega_using [room, hx, inside])
 
 end VG.Proof.Ffdh.AArch64.Cached

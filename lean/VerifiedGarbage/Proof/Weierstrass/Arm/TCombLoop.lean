@@ -29,7 +29,7 @@ theorem prefix_step {a m : Nat} (hm : 1≤m) (f : Nat → Nat) :
       if 1≤a ∧ a<m+1 then f a else 0 := by
   by_cases h : a=m
   · subst a; simp only [↓reduceIte,hm,true_and,Nat.lt_succ_self]
-  · have he : (1≤a ∧ a<m) ↔ (1≤a ∧ a<m+1) := by omega
+  · have he : (1≤a ∧ a<m) ↔ (1≤a ∧ a<m+1) := by omega_using [h]
     simp only [h,↓reduceIte,he]
 
 theorem scan_step (K : TCombCfg) {s₀ s : State} {base X : Addr} {size a m : Nat}
@@ -49,32 +49,32 @@ theorem scan_step (K : TCombCfg) {s₀ s : State} {base X : Addr} {size a m : Na
   have hmul : 16*K.L.M.n*(m-1)+16*K.L.M.n ≤ 16*K.L.M.n*K.H := by
     calc
       16*K.L.M.n*(m-1)+16*K.L.M.n = 16*K.L.M.n*m := by
-        rw [← Nat.mul_succ]; congr 1; omega
+        rw [← Nat.mul_succ]; congr 1; omega_using [hm]
       _ ≤ 16*K.L.M.n*K.H := Nat.mul_le_mul_left _ mh
-  have hop : 16*K.L.M.n*(m-1)<2^32 := by omega
+  have hop : 16*K.L.M.n*(m-1)<2^32 := by omega_using [fit, hn, hmul]
   have ptrfit : (s₀.gpr .r8).toNat+16*K.L.M.n*(m-1)<2^32 := by
     have hnX : (s₀.gpr .r8).toNat=X.toNat := by rw [← hX,addr_toNat]
-    omega
+    omega_using [fit, hn, hmul, hnX]
   have hx : State.addr (s.gpr .r8)=off X (16*K.L.M.n*(m-1)) := by
     rw [I.ptr,VG.Arm.addr_add ptrfit,hX]
   have efit : (off X (16*K.L.M.n*(m-1))).toNat+16*K.L.M.n ≤ 2^32 := by
-    rw [off,BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 16*K.L.M.n*(m-1)<2^64 by omega),
-      Nat.mod_eq_of_lt (show X.toNat+16*K.L.M.n*(m-1)<2^64 by omega)]
-    omega
+    rw [off,BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show 16*K.L.M.n*(m-1)<2^64 by omega_using [fit, hmul]),
+      Nat.mod_eq_of_lt (show X.toNat+16*K.L.M.n*(m-1)<2^64 by omega_using [fit, hmul])]
+    omega_using [fit, hmul]
   have er : InRegions (s.rd ++ s.wr) (off X (16*K.L.M.n*(m-1))) (16*K.L.M.n) := by
     rw [I.keep.rd,I.keep.wr]
-    exact CallLay.inRegions_sub hr hmul (by omega)
+    exact CallLay.inRegions_sub hr hmul (by omega_using [fit])
   have ed : Region.Disjoint ⟨off X (16*K.L.M.n*(m-1)),16*K.L.M.n⟩ ⟨base,size⟩ :=
     hd.sub_left (Offset.sub_base X hmul)
-  refine WP.mono (selectBody_ok K (a := a) (m := m) hs hx ho hi efit er ed (by omega) (by omega)
-    (by rw [I.keep.gpr .r9 (by decide),ga]) I.index es eh (by omega) (by omega))
+  refine WP.mono (selectBody_ok K (a := a) (m := m) hs hx ho hi efit er ed (by omega_using [hH, ha]) (by omega_using [hH, mh])
+    (by rw [I.keep.gpr .r9 (by decide),ga]) I.index es eh (by omega_using [hH, mh]) (by omega_using [hH]))
     fun t ⟨v,k,O,p,index,z⟩ => ⟨?_,z⟩
   refine ⟨?_,index,I.keep.trans k,I.unch.trans O,?_⟩
   · have he : 16*K.L.M.n*(m-1)+16*K.L.M.n=16*K.L.M.n*m := by
-      rw [← Nat.mul_succ]; congr 1; omega
-    rw [p,I.ptr,BitVec.add_assoc,← BitVec.ofNat_add,he,show m+1-1=m by omega]
+      rw [← Nat.mul_succ]; congr 1; omega_using [hm]
+    rw [p,I.ptr,BitVec.add_assoc,← BitVec.ofNat_add,he,show m+1-1=m by omega_using []]
   · intro i hii
-    have hoff : 16*K.L.M.n*(m-1)+4*i+4 ≤ 16*K.L.M.n*K.H := by omega
+    have hoff : 16*K.L.M.n*(m-1)+4*i+4 ≤ 16*K.L.M.n*K.H := by omega_using [ho, hi, fit, hn, hH, ha, hm, mh, hmul, hop, ptrfit, efit, hii]
     have src : w32 s.mem (off X (16*K.L.M.n*(m-1))) (4*i) =
         w32 s₀.mem X (16*K.L.M.n*(m-1)+4*i) := by
       unfold w32 off
@@ -82,7 +82,7 @@ theorem scan_step (K : TCombCfg) {s₀ s : State} {base X : Addr} {size a m : Na
       apply congrArg BitVec.toNat
       exact (outside_frame (size := size) I.unch ho).readW
         (r := ⟨X,16*K.L.M.n*K.H⟩)
-        (Offset.contains_base (d := 16*K.L.M.n*(m-1)+4*i) (n := 4) X hoff (by omega))
+        (Offset.contains_base (d := 16*K.L.M.n*(m-1)+4*i) (n := 4) X hoff (by omega_using [fit, hmul, hii]))
         (fun r hr' => by rcases List.mem_singleton.mp hr' with rfl; exact hd) (by decide)
     rw [v i hii,src,I.val i hii]
     exact prefix_step hm (fun q => w32 s₀.mem X (16*K.L.M.n*(q-1)+4*i))
@@ -106,30 +106,30 @@ theorem scan_loop_ok (K : TCombCfg) {s₀ : State} {base X : Addr} {size a : Nat
   refine WP.loop (M := isa)
     (fun j s => 1≤j ∧ j≤K.H ∧ ScanInv K base X s₀ a (K.H+1-j) s)
     (fun j s ⟨j1,jH,I⟩ => ?_) K.H s₀ ?_
-  · have m1 : 1≤K.H+1-j := by omega
-    have mH : K.H+1-j≤K.H := by omega
+  · have m1 : 1≤K.H+1-j := by omega_using [jH]
+    have mH : K.H+1-j≤K.H := by omega_using [j1]
     refine WP.mono (scan_step K hs₀ hX ho hi fit hr hd hn hH ha ga es eh m1 mH I)
       fun t ⟨I',z⟩ => ?_
     by_cases je : j=1
-    · have me : K.H+1-j+1=K.H+1 := by omega
+    · have me : K.H+1-j+1=K.H+1 := by omega_using [je]
       refine .inl ⟨?_,me ▸ I'⟩
       rw [VG.Proof.X25519.Arm.eval_ne,z,decide_eq_true me]
       rfl
-    · have me : ¬K.H+1-j+1=K.H+1 := by omega
-      refine .inr ⟨?_,j-1,by omega,by omega,by omega,?_⟩
+    · have me : ¬K.H+1-j+1=K.H+1 := by omega_using [hHp, je]
+      refine .inr ⟨?_,j-1,by omega_using [j1],by omega_using [j1, je],by omega_using [jH],?_⟩
       · rw [VG.Proof.X25519.Arm.eval_ne,z,decide_eq_false me]
         rfl
-      · have e : K.H+1-(j-1)=K.H+1-j+1 := by omega
+      · have e : K.H+1-(j-1)=K.H+1-j+1 := by omega_using [j1, jH]
         rw [e]; exact I'
   · refine ⟨hHp,Nat.le_refl _,?_⟩
-    have e : K.H+1-K.H=1 := by omega
+    have e : K.H+1-K.H=1 := by omega_using []
     rw [e]
     refine ⟨?_,?_,Rest.refl _ _,Outside.refl _ _ _ _,?_⟩
     · simp only [Nat.sub_self,Nat.mul_zero,BitVec.add_zero]
     · exact gm
     · intro i hi'
       rw [hz i hi']
-      have h : ¬(1≤a ∧ a<1) := by omega
+      have h : ¬(1≤a ∧ a<1) := by omega_using []
       simp only [h,↓reduceIte]
 
 end VG.Proof.Weierstrass.Arm.TComb

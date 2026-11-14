@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 97 bytes.
@@ -36,7 +38,7 @@ call {vg_p384_mul_mod_p}
 call {vg_p384_mul_mod_p}
 .base64 "TInmSYn0vlAIAAC6YAcAALkAAQAA"
 call {vg_p384_mul_mod_p}
-.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
+.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCT4TIkcJEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_p384_mul_base = sym super::ec_p384::vg_p384_mul_base::vg_p384_mul_base,
         vg_p384_inv_mod_p = sym super::ec_p384::vg_p384_inv_mod_p::vg_p384_inv_mod_p,
@@ -45,11 +47,13 @@ call {vg_p384_mul_mod_p}
 }
 
 /// The CPU features `vg_ec_p384_public_key_adx` requires (`Artifact.features`).
-pub const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+pub const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// P-384 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (48 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -59,7 +63,7 @@ pub const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = v
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ec_p384_public_key_adx(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -81,7 +85,7 @@ call {vg_p384_mul_mod_p_adx}
 call {vg_p384_mul_mod_p_adx}
 .base64 "TInmSYn0vlAIAAC6YAcAALkAAQAA"
 call {vg_p384_mul_mod_p_adx}
-.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMM="
+.base64 "TInmSIuXQAYAAEgrV3BIi5dIBgAASBtXeEiLl1AGAABIG5eAAAAASIuXWAYAAEgbl4gAAABIi5dgBgAASBuXkAAAAEiLl2gGAABIG5eYAAAASBnASInFSIuXQAYAAEgLl0gGAABIC5dQBgAASAuXWAYAAEgLl2AGAABIC5doBgAAuQAAAABIKdFIGdJIIepIi4eACAAASCHQSImHgAgAAEiLl0ADAABIC5dIAwAASAuXUAMAAEgLl1gDAABIC5dgAwAASAuXaAMAALkAAAAASCnRSBnSSIuHgAgAAEgh0EiJh4AIAABIi4+ACAAAuAQAAABIIciIBkiLh9AGAABIIchID8hIiUYpSIuH2AYAAEghyEgPyEiJRiFIi4fgBgAASCHISA/ISIlGGUiLh+gGAABIIchID8hIiUYRSIuH8AYAAEghyEgPyEiJRglIi4f4BgAASCHISA/ISIlGAUiLh1AIAABIIchID8hIiUZZSIuHWAgAAEghyEgPyEiJRlFIi4dgCAAASCHISA/ISIlGSUiLh2gIAABIIchID8hIiUZBSIuHcAgAAEghyEgPyEiJRjlIi4d4CAAASCHISA/ISIlGMUiJyEiD4AFIix9Ii28ITItnEEyLbxhMi3cgTIt/KMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCT4TIkcJEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_p384_mul_base_adx = sym super::ec_p384::vg_p384_mul_base_adx::vg_p384_mul_base_adx,
         vg_p384_inv_mod_p_adx = sym super::ec_p384::vg_p384_inv_mod_p_adx::vg_p384_inv_mod_p_adx,

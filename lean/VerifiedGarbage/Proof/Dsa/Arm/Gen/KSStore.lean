@@ -60,41 +60,41 @@ theorem storeBE_vp {L j o n : Nat} (cert : Cert7 (storeBE L j o n)) (hL : L = G.
   have hjN := h.liveOk j hj
   have fa : arr G.w j + S G.w ≤ kz G.pLen := (h.ws).arr_fit hjN
   have hS : S G.w = 4 * (G.w + 2) := rfl
-  have w96 : G.w ≤ 96 := by simp only [GP.w]; omega
+  have w96 : G.w ≤ 96 := by simp only [GP.w]; omega_using [l]
   have inS : G.rScr ∈ s.wr := by rw [gi.wr, gi.pre.wr, gi.hG]; simp
   have ad : State.addr (G.KB + BitVec.ofNat 32 (arr G.w j)) = off (State.addr G.KB) (arr G.w j) :=
-    h.ws.addr (by omega)
+    h.ws.addr (by omega_using [fa, hS])
   have e : off (State.addr G.KB) (arr G.w j) = G.sa (sK G.pLen + arr G.w j) := by
     rw [gi.kaddr]; simp only [off, GP.sa]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega)
+  have as : State.addr (G.scr + BitVec.ofNat 32 o) = G.sa o := gi.saddr (by omega_using [hn0, hoK, big])
   have va := h.arrs.get hj
   unfold storeBE
   simp only [List.append_assoc]
-  refine WP.seq (h.ptr_ok (r := .r1) (j := j) (by decide) (by simp only [nArrs] at hjN; omega) fun s₁ p₁ R₁ m₁ => ?_)
+  refine WP.seq (h.ptr_ok (r := .r1) (j := j) (by decide) (by simp only [nArrs] at hjN; omega_using [hjN]) fun s₁ p₁ R₁ m₁ => ?_)
   refine wp_movw fun s₂ u₂ => ?_
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
   have r8₃ : s₃.gpr .r8 = G.KB := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), R₁.gpr _ (by decide), h.r8]
-  refine scr_ok (d := .r0) (o := o) r8₃ rfl l (by omega) fun s₄ v₄ R₄ M₄ => ?_
+  refine scr_ok (d := .r0) (o := o) r8₃ rfl l (by omega_using [hoK]) fun s₄ v₄ R₄ M₄ => ?_
   refine wp_movw fun s₅ u₅ => WP.block_nil ?_
   have R₅ : Rest [.r0, .r1, .r2, .r12, .lr] s s₅ := (R₁.mono (by simp)).trans ((u₂.rest (by simp)).trans
     ((u₃.rest (by simp)).trans ((R₄.mono (by simp)).trans (u₅.rest (by simp)))))
   have m₅ : s₅.mem = s.mem := by rw [u₅.mem, M₄, u₃.mem, u₂.mem, m₁]
   have wr₅ : s₅.wr = s.wr := R₅.wr
   have srcFit : (G.KB + BitVec.ofNat 32 (arr G.w j)).toNat + n ≤ 2 ^ 32 := by
-    rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [big, fit, kb, fa, hS]), BitVec.toNat_ofNat]; omega_using [hnw, big, fit, kb, fa, hS]
   have dstFit : (G.scr + BitVec.ofNat 32 o).toNat + n ≤ 2 ^ 32 := by
-    rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [hoK, kb]), BitVec.toNat_ofNat]; omega_using [hoK, kb]
   refine WP.mono (VG.Proof.Bignum.Arm.reverseBuffer_ok s₅ (src := G.KB + BitVec.ofNat 32 (arr G.w j)) (dst := G.scr + BitVec.ofNat 32 o)
-    (n := n) hn0 srcFit dstFit (by omega)
+    (n := n) hn0 srcFit dstFit (by omega_using [hoK, kb])
     ⟨G.rScr, List.mem_append_right _ (by rw [wr₅]; exact inS), by
-      rw [ad, e]; exact Offset.contains_base _ (by omega) (by omega)⟩
-    ⟨G.rScr, by rw [wr₅]; exact inS, by rw [as]; exact Offset.contains_base _ (by omega) (by omega)⟩
-    (by rw [ad, e, as]; exact gi.sdisj (.inr (by omega)) (by omega) (by omega))
+      rw [ad, e]; exact Offset.contains_base _ (by omega_using [hnw, big, fa, hS]) (by omega_using [big, fit, fa])⟩
+    ⟨G.rScr, by rw [wr₅]; exact inS, by rw [as]; exact Offset.contains_base _ (by omega_using [hoK, big]) (by omega_using [hoK, big, fit])⟩
+    (by rw [ad, e, as]; exact gi.sdisj (.inr (by omega_using [hoK])) (by omega_using [hnw, big, fa, hS]) (by omega_using [hoK, big]))
     (by rw [u₅.other _ (by decide), v₄])
     (by rw [u₅.other _ (by decide), R₄.gpr _ (by decide), u₃.gpr, dpVal, u₂.gpr, u₂.other _ (by decide), p₁,
-      setWidth_ofNat16 (by omega)])
-    (by rw [u₅.gpr, setWidth_ofNat16 (by omega)])) ?_
+      setWidth_ofNat16 (by omega_using [hnw, w96])])
+    (by rw [u₅.gpr, setWidth_ofNat16 (by omega_using [hnw, w96])])) ?_
   rintro t ⟨bt, ft, _, rt⟩
   rw [as, ad, m₅, VG.Proof.Rsa.Arm.CrtValues.read_low _ _ (n := G.w) hnw,
     show val32 s.mem (State.addr G.KB) (arr G.w j) G.w = num s.mem G.KB G.w j from rfl, va] at bt

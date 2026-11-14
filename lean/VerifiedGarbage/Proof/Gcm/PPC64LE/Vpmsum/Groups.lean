@@ -166,16 +166,16 @@ theorem rev128_append (a b : BitVec 64) : rev128 (a ++ b) = rev64 b ++ rev64 a :
   intro i hi
   rw [getLsbD_rev128 _ hi, BitVec.getLsbD_append, BitVec.getLsbD_append]
   by_cases h : i < 64
-  · rw [ite_eq_left h, ite_eq_right (show ¬8*(15-i/8)+i%8 < 64 by omega)]
+  · rw [ite_eq_left h, ite_eq_right (show ¬8*(15-i/8)+i%8 < 64 by omega_using [h])]
     have e := VG.Proof.Gcm.getLsbD_byteRev64 a i h
     change _ = (VG.byteRev64 a).getLsbD i
     rw [e]
-    exact congrArg a.getLsbD (by omega)
-  · rw [ite_eq_right h, ite_eq_left (show 8*(15-i/8)+i%8 < 64 by omega)]
-    have e := VG.Proof.Gcm.getLsbD_byteRev64 b (i-64) (by omega)
+    exact congrArg a.getLsbD (by omega_using [h])
+  · rw [ite_eq_right h, ite_eq_left (show 8*(15-i/8)+i%8 < 64 by omega_using [h])]
+    have e := VG.Proof.Gcm.getLsbD_byteRev64 b (i-64) (by omega_using [hi])
     change _ = (VG.byteRev64 b).getLsbD (i-64)
     rw [e]
-    exact congrArg b.getLsbD (by omega)
+    exact congrArg b.getLsbD (by omega_using [h])
 
 theorem swap_eq (x : BitVec 128) : swapDwords x = ext8 x x := by
   rw [ext8_eq]
@@ -208,7 +208,7 @@ theorem exec_reverse (d n : VReg) (s : State)
   apply congrArg (fun x => some (s.writeV d x))
   apply ofVBytes_congr
   intro i hi
-  rw [mask_byte hi, ite_eq_left (show 15-i < 16 by omega)]
+  rw [mask_byte hi, ite_eq_left (show 15-i < 16 by omega_using [])]
 
 theorem loadRev_ok (d : VReg) (p : Reg) (s : State) (hp : p ≠ .r0)
     (h0 : s.gpr .r0 = 0) (hm : s.vpr MASK = Impl.Gcm.PPC64LE.Vpmsum.reverseMask)
@@ -222,7 +222,7 @@ theorem loadRev_ok (d : VReg) (p : Reg) (s : State) (hp : p ≠ .r0)
       rev128 (swapDwords (s.mem.read (s.gpr p) 16)) := by
     apply ofVBytes_congr
     intro i hi
-    rw [mask_byte hi, ite_eq_left (show 15-i < 16 by omega)]
+    rw [mask_byte hi, ite_eq_left (show 15-i < 16 by omega_using [])]
   rw [he, load_value]
 
 /-- Scalar state shared by setup and every vector-only group. -/
@@ -425,8 +425,8 @@ theorem permPair_halves (a b : BitVec 128) (low : Bool) :
       intro r hr
       simp only [vbyte,BitVec.getLsbD_extractLsb',BitVec.getLsbD_append,hr,decide_true,Bool.true_and]
       simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
-      rw [decide_eq_true (by omega),Bool.true_and]
-      congr 1 <;> omega
+      rw [decide_eq_true (by omega_arith),Bool.true_and]
+      congr 1 <;> omega_arith
 
 theorem packedPermProductsWith_ok (reg : Fin 5 → VReg) (hinj : Function.Injective reg)
     (a b loKey hiKey lowMask highMask : VReg) (ka kb : BitVec 128) (s : State)

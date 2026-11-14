@@ -56,7 +56,7 @@ theorem zx_toNat (x : BitVec 64) : (zx x).toNat = (x.setWidth 32).toNat := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, Nat.shiftRight_eq_div_pow,
     Nat.shiftLeft_eq]
   have := x.isLt
-  omega
+  omega_using []
 
 /-- `loadQ`'s `lis` and `ori`: `q`. -/
 theorem loadQ_val :
@@ -108,7 +108,7 @@ theorem pro_ok {scr a msg : Reg} {len prm : List Instr} (hs : σ.gpr scr = P.scr
     rw [m2, m1]
     refine (((((((Frame.refl _ _).writeW (r := P.scrR) (by simp) _ ?_).writeW (r := P.scrR) (by simp) _ ?_).writeW
       (r := P.scrR) (by simp) _ ?_).writeW (r := P.scrR) (by simp) _ ?_).writeW (r := P.scrR) (by simp) _ ?_).writeW
-      (r := P.scrR) (by simp) _ ?_) <;> exact Offset.contains_base _ (by omega) (by omega)
+      (r := P.scrR) (by simp) _ ?_) <;> exact Offset.contains_base _ (by omega_using []) (by omega_using [])
   refine ⟨⟨⟨rd2.trans rd1, wr2.trans wr1, sp2.trans sp1, g30, g31,
     fun r hr a b c d e => (cs r hr a b c d e).trans (g1 r (pres_of hr)), ?_, ?_, ?_, ?_, ?_, ?_, fr⟩, g29, g28⟩,
     g27⟩ <;>
@@ -267,7 +267,7 @@ theorem accept_store {s : State} (he : Env P σ s) {v : Reg} {L : List Zq}
     rd wr sp, rr, hf⟩
   · rw [r4, List.length_append, List.length_singleton]; exact MlKem.PPC64LE.ptr_succ _ 4 _
   · rw [r5, List.length_append, List.length_singleton, BitVec.ofNat_add]
-  · simp only [List.length_append, List.length_singleton]; omega
+  · simp only [List.length_append, List.length_singleton]; omega_using [hL]
   · rw [m, hx]; exact stored_snoc ha.st hL x
 
 end

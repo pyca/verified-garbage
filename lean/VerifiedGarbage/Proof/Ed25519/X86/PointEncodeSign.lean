@@ -42,7 +42,7 @@ theorem sign_word (w : BitVec 32) :
   have he : w &&& 1 = BitVec.ofNat 32 (w.toNat % 2) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl,
-      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 32 by omega)]
+      Nat.and_one_is_mod, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show w.toNat % 2 < 2 ^ 32 by omega_using [])]
   rw [he]
   rcases Nat.mod_two_eq_zero_or_one w.toNat with h | h <;> rw [h] <;> decide
 
@@ -68,7 +68,7 @@ theorem fe_last_write {x : BitVec 32} (m : Mem) (w : BitVec 32) (hx : x.toNat + 
   have h : num (fun k => wv (m.writeW (addr x 124) w) x (96 + 4 * k)) 7 =
       num (fun k => wv m x (96 + 4 * k)) 7 := num_congr fun k hk => by
     apply congrArg BitVec.toNat
-    exact wd_write_ne _ _ (by omega) (by omega) (Or.inl (by omega))
+    exact wd_write_ne _ _ (by omega_using [hx, hk]) (by omega_using [hx]) (Or.inl (by omega_using [hk]))
   rw [h]
   change _ + 2 ^ 224 * (wd (m.writeW (addr x 124) w) x 124).toNat = _
   rw [wd_write_self]
@@ -82,7 +82,7 @@ theorem encodeSign_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
       (fun k _ => BitVec.isLt _) (by decide)
     change fe s.mem x 96 / 2 ^ 224 % 2 ^ 32 = wv s.mem x 124 at h
     rw [hv] at h
-    omega
+    omega_using [hy, h]
   change (s.mem.readW (addr x 124) 32).toNat < 2 ^ 31 at top
   refine Wp.wp_ldm hc.edi (hc.inRW (by decide) (by decide)) fun a ha => ?_
   refine Wp.wp_add fun b hb _ => ?_
@@ -91,13 +91,13 @@ theorem encodeSign_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
   refine Wp.wp_stm cb.edi (cb.inW (by decide) (by decide)) fun t ht => WP.block_nil ?_
   have val : (b.gpr .eax).toNat = wv s.mem x 124 + parity * 2 ^ 31 := by
     rw [hb.gpr, ha.gpr, ha.other .esi (by decide), hs, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show parity * 2 ^ 31 < 2 ^ 32 by omega), Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (show parity * 2 ^ 31 < 2 ^ 32 by omega_using [hp]), Nat.mod_eq_of_lt (by omega_using [hp, top])]
   refine ⟨⟨kb.trans ⟨by rw [ht.gpr], by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr⟩, ?_⟩, ?_⟩
   · rw [ht.mem, hb.mem, ha.mem]
     exact frame_write1 (Frame.refl _ _) hc.fit (by decide) (by decide) (by decide) _
   · rw [ht.mem, hb.mem, ha.mem, fe_last_write _ _ hc.fit, val]
     have hsum : fe s.mem x 96 = num (fun k => wv s.mem x (96 + 4 * k)) 7 + 2 ^ 224 * wv s.mem x 124 := rfl
     rw [hsum] at hv
-    omega
+    omega_using [hv]
 
 end VG.Proof.Ed25519.X86

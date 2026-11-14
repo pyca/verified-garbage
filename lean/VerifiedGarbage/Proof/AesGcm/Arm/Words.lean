@@ -34,7 +34,7 @@ theorem toBytes_append64 (a c : BitVec 64) : toBytes (a ++ c) = be64 a.toNat ++ 
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   · apply BitVec.eq_of_toNat_eq
     rw [BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, e]
-    omega
+    omega_using []
 
 /-- `8 x`, of `x = hi:lo`, in two words, as `lsl #3` and `orr` with `lsr #29`. -/
 theorem shl3_words (hi lo : BitVec 32) :
@@ -44,15 +44,15 @@ theorem shl3_words (hi lo : BitVec 32) :
   simp only [Proof.Gcm.toNat_append, BitVec.toNat_shiftLeft, BitVec.toNat_or, BitVec.toNat_ushiftRight,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   have hor : (hi.toNat * 2 ^ 3 % 2 ^ 32) ||| (lo.toNat / 2 ^ 29) = hi.toNat * 2 ^ 3 % 2 ^ 32 + lo.toNat / 2 ^ 29 := by
-    have : lo.toNat / 2 ^ 29 < 2 ^ 3 := by omega
-    rw [show hi.toNat * 2 ^ 3 % 2 ^ 32 = 2 ^ 3 * (hi.toNat % 2 ^ 29) by omega, Nat.mul_comm,
+    have : lo.toNat / 2 ^ 29 < 2 ^ 3 := by omega_using []
+    rw [show hi.toNat * 2 ^ 3 % 2 ^ 32 = 2 ^ 3 * (hi.toNat % 2 ^ 29) by omega_using [], Nat.mul_comm,
       ← Nat.shiftLeft_eq, Nat.shiftLeft_add_eq_or_of_lt this]
   rw [hor]
-  omega
+  omega_using []
 
 /-- `8 x` modulo 2⁶⁴, as a number. -/
 theorem shl3_toNat (x : BitVec 64) : (x <<< 3).toNat = 8 * x.toNat % 2 ^ 64 := by
-  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; congr 1; omega
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; congr 1; omega_using []
 
 theorem toBytes_append4 (a b c d : BitVec 32) :
     toBytes (a ++ b ++ c ++ d) = be64 (a ++ b).toNat ++ be64 (c ++ d).toNat := by
@@ -60,7 +60,7 @@ theorem toBytes_append4 (a b c d : BitVec 32) :
     apply BitVec.eq_of_toNat_eq
     have := c.isLt; have := d.isLt
     simp only [Proof.Gcm.toNat_append]
-    omega
+    omega_using []
   rw [e, toBytes_append64]
 
 end VG.Proof.AesGcm.Arm

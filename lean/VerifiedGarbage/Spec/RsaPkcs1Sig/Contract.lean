@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 
 /-!
 # RSASSA-PKCS1-v1_5: the contracts, on every target
@@ -14,7 +15,9 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 * `vg_rsa_pkcs1_verify`: RSASSA-PKCS1-V1_5-VERIFY of a hash value
   (`RsaPkcs1Sig.verify`);
 * `vg_rsa_pkcs1_recover`: the hash value a signature signs
-  (`RsaPkcs1Sig.recover`).
+  (`RsaPkcs1Sig.recover`);
+* `vg_rsa_pkcs1_sign_precomputed`: `vg_rsa_pkcs1_sign` given the key's
+  precomputed values (`Rsa.privatePrecompute`, `Spec/Rsa/PrivatePrecompute.lean`).
 
 The numbers are as in `Spec/Rsa/Contract.lean`: slices of octets, most
 significant first, the modulus `n` `n_len` octets, from 64 to 1024, and `e`
@@ -138,33 +141,6 @@ def hashIdsDoc : String :=
     5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, \
     11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`)"
 
-def signApi : Api where
-  module := "rsa_pkcs1_sig"
-  name := "vg_rsa_pkcs1_sign"
-  sig := signSig
-  writeArgs := true
-  contracts := some fun A stack => signContract A stack
-  summary := s!"RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, \
-    as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most \
-    significant first, odd, from 512 to 8192 bits, its first byte not zero), \
-    {Rsa.exponentDoc} and the private key `(p, q, dP, dQ, qInv)` (as \
-    `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 \
-    §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to \
-    `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: \
-    writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros \
-    and returns 0 if `hash` names no hash function, `digest` is not as long as its values, \
-    `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or \
-    `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal \
-    error) if the signature fails the check against `e`, which is the case for no hash \
-    value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it \
-    writes is one `vg_rsa_pkcs1_verify` accepts. {hashIdsDoc}.\n\n\
-    Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: \
-    timing may depend on the pointers, the lengths, `hash` and the contents of `n` and \
-    `e`, not on `digest` or the private key."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
-    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
-
 /-- The summary of `verify` in the documentation of the functions built on it. -/
 def verifySummary : String :=
   s!"RSASSA-PKCS1-v1_5 signature verification (RFC 8017 §8.2.2) of a hash value, \
@@ -236,5 +212,59 @@ def recoverSafety : List String :=
   ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`.",
     "`hash` must be in 0..=11, and `out_len` the length of its hash function's values."] ++
     publicScratchSafety
+
+/-! ## `vg_rsa_pkcs1_sign_precomputed` -/
+
+/-- The parameters of `vg_rsa_pkcs1_sign`, then the key's precomputed
+values `pre: *const u64, pre_len: usize`. -/
+def signPrecomputedSig : Sig where
+  params := signSig.params ++ [("pre", .slice false .u64 "pre_len")]
+  ret := some .u32
+
+/-- `signContract`, given the key's precomputed values `pre`
+(`Rsa.privatePrecompute`): what `vg_rsa_pkcs1_sign` computes, given `pre`
+holding them. Constant time but for the public key and the modulus' values in
+`pre`. -/
+def signPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  signPrecomputedSig.contract A
+    (pre := fun _out outLen n nLen _e eLen _hash _digest _digestLen p pLen q qLen _dp dpLen
+        _dq dqLen _qinv qinvLen _scratch scratchLen pre preLen m =>
+      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧
+        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat ∧
+        preLen.toNat = Rsa.privatePrecomputedWords nLen.toNat pLen.toNat qLen.toNat ∧
+        Rsa.privatePrecompute (bytesAt m n nLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat))
+    (post := fun out _outLen n nLen e eLen hash digest digestLen p pLen q qLen dp _dpLen dq
+        _dqLen qinv _qinvLen _scratch _scratchLen _pre _preLen m m' r =>
+      writtenOutcome m' out nLen.toNat r
+        (signId (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
+          (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
+          (bytesAt m qinv pLen.toNat) hash.toNat (bytesAt m digest digestLen.toNat)))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun _out _outLen n nLen e eLen _hash _digest _digestLen _p _pLen _q _qLen _dp
+        _dpLen _dq _dqLen _qinv _qinvLen _scratch _scratchLen pre _preLen m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat) ++
+        Rsa.privatePrecomputedLeak m pre nLen.toNat)
+
+def signPrecomputedApi : Api where
+  module := "rsa_pkcs1_sig"
+  name := "vg_rsa_pkcs1_sign_precomputed"
+  sig := signPrecomputedSig
+  writeArgs := true
+  contracts := some fun A stack => signPrecomputedContract A stack
+  summary := "`vg_rsa_pkcs1_sign`, given the key's precomputed values `pre`: computes and \
+    returns what `vg_rsa_pkcs1_sign` does with the same arguments. " ++
+    Rsa.privatePrecomputedDoc ++ ".\n\n\
+    Contract: `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`. Constant time but for the \
+    public key: timing may depend on the pointers, the lengths, `hash`, the contents of `n` \
+    and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on \
+    `digest`, the private key or the rest of `pre`."
+  safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
+    "`e_len` must be in 1..=`n_len`.", "`p_len` and `q_len` must be in 1..`n_len`.",
+    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety ++
+    Rsa.privatePrecomputedSafety
 
 end VG.Spec.RsaPkcs1Sig

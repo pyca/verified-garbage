@@ -72,12 +72,12 @@ theorem copyR_vp {P Q : State → State → Prop} {c : State → Cfg} {L dst n o
     have h := hF σ s hs
     have big := h.gi.scrBig
     subst hL
-    refine scr_ok (d := .r0) (by rw [u.other _ (by decide)]; exact h.r8) rfl h.lens (by omega)
+    refine scr_ok (d := .r0) (by rw [u.other _ (by decide)]; exact h.r8) rfl h.lens (by omega_using [hd])
       fun s₁ v₁ R₁ M₁ => wp_movw fun s₂ u₂ => WP.block_nil
         ⟨s, hs, ((u.rest (by simp)).trans (R₁.mono (by simp))).trans (u₂.rest (by simp)),
           by rw [u₂.mem, M₁, u.mem], by rw [u₂.other _ (by decide), R₁.gpr _ (by decide), u.gpr],
           by rw [u₂.other _ (by decide)]; exact v₁, ?_⟩
-    rw [u₂.gpr]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    rw [u₂.gpr]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hn16]
   refine copyBytes_vp (src := x) (dst := G.scr + BitVec.ofNat 32 dst) (n := n)
     (fun σ t ⟨_, _, _, _, a, b, c⟩ => ⟨a, b, c⟩) fun σ s₂ ⟨s, hs, R, M, v1, v0, vl⟩ => ?_
   have h := hF σ s hs
@@ -88,10 +88,10 @@ theorem copyR_vp {P Q : State → State → Prop} {c : State → Cfg} {L dst n o
   subst hL
   have ad := h.addr hd hn
   refine WP.mono (VG.Proof.Bignum.Arm.copyBuffer_ok s₂ (src := x) (dst := G.scr + BitVec.ofNat 32 dst) hn xf
-    (by rw [h.toNat (by omega)]; omega) (by omega)
+    (by rw [h.toNat (by omega_using [hd])]; omega_using [big, fit, hd]) (by omega_using [hn16])
     (by rw [R.rd]; obtain ⟨r, hr, hc⟩ := rd; exact ⟨r, List.mem_append_left _ hr, hc⟩)
-    (by rw [ad, R.wr]; exact gi.inScr (by omega))
-    (by rw [ad]; exact dj.sub_right (sw G (by omega))) v0 v1 vl)
+    (by rw [ad, R.wr]; exact gi.inScr (by omega_using [big, hd]))
+    (by rw [ad]; exact dj.sub_right (sw G (by omega_using [big, hd]))) v0 v1 vl)
     fun t' ⟨rd', fr, _, rest⟩ => k σ s t' hs ((R.mono (by simp)).trans (rest.mono (by simp)))
       (by rw [← M]; show Frame [⟨G.sa dst, n⟩] _ _; rw [← ad]; exact fr) ?_
   rw [← ad, ← M]; exact bytesAt_of_read rd'
@@ -99,7 +99,7 @@ theorem copyR_vp {P Q : State → State → Prop} {c : State → Cfg} {L dst n o
 /-- A slice of bytes. -/
 theorem bytesAt_slice' (m : Mem) (p : Addr) {k n len : Nat} (h : k + n ≤ len) :
     Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 k) n = ((Spec.Rsa.bytesAt m p len).drop k).take n := by
-  obtain ⟨r, rfl⟩ : ∃ r, len = k + (n + r) := ⟨len - k - n, by omega⟩
+  obtain ⟨r, rfl⟩ : ∃ r, len = k + (n + r) := ⟨len - k - n, by omega_using [h]⟩
   rw [VG.Proof.Dsa.Generation.bytesAt_append, VG.Proof.Dsa.Generation.bytesAt_append,
     List.drop_left' (bytesAt_length' _ _ _),
     List.take_left' (bytesAt_length' _ _ _)]
@@ -112,9 +112,9 @@ theorem GI.keeps {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h : GI 
       ((Spec.Rsa.bytesAt σ.mem (State.addr p) len).drop k).take n := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp [Spec.Rsa.bytesAt]
-  rw [addr_add (by omega), ← bytesAt_slice' σ.mem _ hk]
+  rw [addr_add (by omega_using [hfit, hk, hn]), ← bytesAt_slice' σ.mem _ hk]
   exact VG.Proof.Dsa.Generation.frame_bytesAt h.frame (fun r hr => (hd r hr).sub_left
-    (Offset.sub_base _ (by omega))) (by omega)
+    (Offset.sub_base _ (by omega_using [hk]))) (by omega_using [hfit, hk])
 
 /-- The tapes are apart from what the search writes. -/
 theorem GI.tape_apart {σ s : State} {V : Nat → BitVec 32} {LS : List Nat} (h : GI G σ V LS s) {R : Region}

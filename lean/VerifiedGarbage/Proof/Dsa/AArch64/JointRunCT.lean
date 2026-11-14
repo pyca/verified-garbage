@@ -79,7 +79,7 @@ theorem jointRun_ct (M : Mont) : RelCT isa (Two JointRunPre) (Joint.run M.mm) (f
   refine RelCT.seq (two_post (Ψ := fun p : JointPublic => fun s => 0 < p.scan.len ∧ JointBytesInv p.scan 0 s)
     jointInit_ct ?_) ?_
   · rintro p s ⟨hc, hm, ⟨g, y, ht⟩, hy, ho, eb, fb, he, hf, hL, hF, hl⟩
-    have hfield : 344 ≤ p.x.Z := by have := hc.hi; have : 344 ≤ p.x.o := p.parentSpace; omega
+    have hfield : 344 ≤ p.x.Z := by have := hc.hi; have : 344 ≤ p.x.o := p.parentSpace; omega_arith
     refine WP.mono (jointInit_ok hc hm ht hfield hl)
       fun t ⟨hct, hmt, htt, ha, ep, fp, len, idx, hfrm, hk⟩ => ?_
     have het := work_source hc hfrm hk he
@@ -89,11 +89,11 @@ theorem jointRun_ct (M : Mont) : RelCT isa (Two JointRunPre) (Joint.run M.mm) (f
         (wv t.mem (off p.x.B p.x.o) (slot p.x.wx Crt.aXc) p.x.wx) g y
         (off p.x.B u) (off p.x.B v) p.qLen eb fb 0 t := by
       refine ⟨hmt.exp, htt, ?_, ?_, idx, ep, fp, len, Frm.refl _ _ _, Keep.refl _ _⟩
-      · rw [hyt]; exact Nat.mod_lt _ (by have := p.greater; omega)
+      · rw [hyt]; exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
       · rw [hyt, Nat.mod_mod, pre_zero, pre_zero, Nat.pow_zero, Nat.pow_zero, Nat.one_mul]
     dsimp only [JointBytesInv, JointPublic.scan]
     exact ⟨p.qPositive, t, p.minv, p.modulus, _, g, y, eb, fb, hI, p.lower,
-      by have : p.x.wx ≤ 48 := p.width48; omega, coprime_pow2 p.odd _, hL, hF, p.qBound, het, hft,
+      by have : p.x.wx ≤ 48 := p.width48; omega_using [this], coprime_pow2 p.odd _, hL, hF, p.qBound, het, hft,
       by simpa only [hL] using joint_source_out hct het,
       by simpa only [hF] using joint_source_out hct hft⟩
   refine RelCT.seq (two_map JointPublic.scan (fun _ _ h => h) (jointBytes_ct M)) ?_

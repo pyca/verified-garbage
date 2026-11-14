@@ -1,20 +1,60 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProducts
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProduct
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeControls
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ProductState
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSquares
-
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Basis
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BuildFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ContextBuild
+
+/-! ### `Ffdh.AArch64.Cached.PrecomputeProducts`, which only this module used -/
+
+section
+
+/-! Fill all subsets containing the current tooth on a fixed public loop schedule. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep count_loop)
+
+theorem precomputeProducts_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
+ (h : ProductState p b 1 s) (positive : 0<b) :
+ WP isa (.loop (Precompute.product M.mm) (.nonzero .x .x3)) s fun t =>
+ ProductState p b (2^b) t ∧ BuildFrame p s.mem t.mem ∧ Keep mmRegs s t := by
+ have bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by have := h.tooth;omega_using [this] : b≤4)
+ have atLeast : (2:Nat)^1≤2^b := Nat.pow_le_pow_right (by decide) (by omega_using [positive] : 1≤b)
+ let I := fun i t => ProductState p b (i+1) t ∧ BuildFrame p s.mem t.mem ∧ Keep mmRegs s t
+ have step (i : Nat) (hi : i<2^b-1) (t : State) (inv : I i t) :
+  WP isa (Precompute.product M.mm) t fun u => I (i+1) u ∧ ((u.gpr .x3).toNat≠0 ↔ i+1≠2^b-1) := by
+  refine WP.mono (precomputeProduct_ok M inv.1 (by omega_using [hi])) ?_
+  rintro u ⟨state,index,frame,rest⟩
+  refine ⟨⟨state,inv.2.1.trans frame,(inv.2.2.trans rest).mono (by simp [mmRegs])⟩,?_⟩
+  rw [index,BitVec.toNat_sub,BitVec.toNat_ofNat,BitVec.toNat_ofNat,
+   Nat.mod_eq_of_lt (by omega_using [bound, hi] : i+1+1<2^64),Nat.mod_eq_of_lt (by omega_using [bound] : 2^b<2^64)]
+  omega_using [bound, hi]
+ refine WP.mono (count_loop (by omega_using [atLeast] : 0<2^b-1) I step
+  ⟨h,Frame.refl _ _,Keep.refl _ _⟩) ?_
+ rintro t ⟨state,frame,rest⟩
+ have final : 2^b-1+1=2^b := by omega_using [atLeast]
+ rw [final] at state
+ exact ⟨state,frame,rest⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+
+end
+
+end
+
 /-! Build one tooth and all new subsets containing it. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/BasisState.lean`, which only this module imported.
@@ -67,7 +107,7 @@ theorem basisStore_ok {s : State} {p : Parameters} {d : Nat}
  · rintro u ⟨⟨indexU,memU⟩,restU⟩
    have goodU : Good u p.B p.Z p.w p.mi :=
     ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
-   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega) p.width (by decide : 5<8)
+   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega_using [this]) p.width (by decide : 5<8)
     (memU ▸ context) indexU (entry_fit p inside)
     (fun i hi => (space.after restU).entry_write inside hi)
     (fun i hi => space.entry_outside inside hi)) ?_
@@ -97,19 +137,19 @@ theorem basisSquareRanges_le (w : Nat) : ∀ r∈basisSquareRanges w,r.1+r.2≤s
  have s6 := slot_le (w:=w) (by decide : 6<8)
  have counter := hdr_lt_slot w 8 (show sI<32 by decide)
  simp only [basisSquareRanges,squareRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
- rintro _ ((rfl|rfl|rfl|rfl)|rfl) <;> omega
+ rintro _ ((rfl|rfl|rfl|rfl)|rfl) <;> omega_arith
 
 theorem squareFrame_header {B : Addr} {w i : Nat} {m m' : Mem}
  (frame : Frm B (basisSquareRanges w) m m') (inside : i<32) (different : i≠sI) :
  word m' B (8*i)=word m B (8*i) := by
- apply frame.word_eq ?_ (by omega)
+ apply frame.word_eq ?_ (by omega_using [inside])
  intro r hr
  have s2 := hdr_lt_slot w 2 inside
  have s3 := hdr_lt_slot w 3 inside
  have s5 := hdr_lt_slot w 5 inside
  have s6 := hdr_lt_slot w 6 inside
  simp only [basisSquareRanges,squareRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
- rcases hr with ((rfl|rfl|rfl|rfl)|rfl) <;> omega
+ rcases hr with ((rfl|rfl|rfl|rfl)|rfl) <;> omega_arith
 
 end VG.Proof.Ffdh.AArch64.Cached
 end
@@ -131,13 +171,13 @@ theorem precomputeBasis_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  WP isa (Precompute.basis M.mm) s fun t =>
  BasisState p (b+1) t ∧ t.gpr .x3=BitVec.ofNat 64 (2^(b+1))-32#64 ∧
  BuildFrame p s.mem t.mem ∧ Keep mmRegs s t := by
- have toothBound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by omega : b≤4)
+ have toothBound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by omega_using [more] : b≤4)
  have toothPositive : 0<2^b := Nat.two_pow_pos b
  have rowsPositive := VG.Proof.Rsa.FixedBaseComb.rows_pos h.bits.1
  have rowsBound := (VG.Proof.Rsa.FixedBaseComb.rows_small h.bits.2).1
  unfold Precompute.basis
  rw [WP.seq_iff]
- refine WP.mono (precomputeSquares_ok M h.basis h.rows rowsPositive (by omega)) ?_
+ refine WP.mono (precomputeSquares_ok M h.basis h.rows rowsPositive (by omega_using [rowsBound])) ?_
  rintro a ⟨basisA,_,frameA,restA⟩
  have exponent : 2^((b-1)*Spec.Rsa.FixedBaseComb.rows p.N)*2^(Spec.Rsa.FixedBaseComb.rows p.N)=
    2^(b*Spec.Rsa.FixedBaseComb.rows p.N) := by
@@ -165,35 +205,35 @@ theorem precomputeBasis_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  have entryC : wv c.mem p.ctx (entryOffset p.w (2^b)) p.w=entryValue p (2^b) := by
   unfold entryValue
   rw [valueC,basisA.value,VG.Proof.Rsa.FixedBaseComb.exponent_tooth p.N b more]
- have tableC := tableA.extend (by omega : 2^b<32) frameC entryC
+ have tableC := tableA.extend (by omega_using [toothBound] : 2^b<32) frameC entryC
  rw [WP.seq_iff]
  refine WP.mono (setControlOne_ok goodC p.room (by decide : 16≤sJ) (by decide : sJ<32)) ?_
  rintro d ⟨goodD,oneD,frameD,restD⟩
- have inD : InScr p.B p.Z c.mem d.mem := InScr.of_outside frameD (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega)
+ have inD : InScr p.B p.Z c.mem d.mem := InScr.of_outside frameD (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega_arith)
  have tableD := tableC.after_inscr spaceC (by omega) inD
  have productD : ProductState p b 1 d :=
-  ⟨more,⟨by omega,by omega⟩,basisC.after_header goodD frameD (by decide),spaceC.after restD,
+  ⟨more,⟨by omega_using [],by omega⟩,basisC.after_header goodD frameD (by decide),spaceC.after restD,
    (header_other frameD (by decide) (by decide) (by decide)).trans ctxC,
    (header_other frameD (by decide) (by decide) (by decide)).trans indexC,oneD,tableD,
    (header_other frameD (by decide) (by decide) (by decide)).trans rowsC⟩
  rw [WP.seq_iff]
- refine WP.mono (precomputeProducts_ok M productD (by have := h.tooth;omega)) ?_
+ refine WP.mono (precomputeProducts_ok M productD (by have := h.tooth;omega_using [this])) ?_
  rintro e ⟨stateE,frameE,restE⟩
  refine WP.mono (basisNext_ok stateE.basis.good p.room stateE.basisIndex) ?_
  rintro t ⟨goodT,indexT,testT,frameT,restT⟩
- have inT : InScr p.B p.Z e.mem t.mem := InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sD<32 by decide);have := p.room;omega)
+ have inT : InScr p.B p.Z e.mem t.mem := InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sD<32 by decide);have := p.room;omega_arith)
  have tableT := stateE.table.after_inscr stateE.space stateE.limit inT
- have nextPower : 2*2^b=2^(b+1) := by rw [Nat.pow_succ];omega
- have nextCount : 2^b+2^b=2^(b+1) := by rw [Nat.pow_succ];omega
+ have nextPower : 2*2^b=2^(b+1) := by rw [Nat.pow_succ];omega_using []
+ have nextCount : 2^b+2^b=2^(b+1) := by rw [Nat.pow_succ];omega_using []
  have stateT : BasisState p (b+1) t := by
-  refine ⟨⟨by omega,by omega⟩,h.bits,?_,stateE.space.after restT,
+  refine ⟨⟨by omega_using [],by omega_using [more]⟩,h.bits,?_,stateE.space.after restT,
    (header_other frameT (by decide) (by decide) (by decide)).trans stateE.context,?_,
    (header_other frameT (by decide) (by decide) (by decide)).trans stateE.rows,?_⟩
   · simpa only [Nat.add_sub_cancel] using stateE.basis.after_header goodT frameT (by decide : sD<32)
   · simpa only [nextPower] using indexT
   · simpa only [nextCount] using tableT
  have frames : BuildFrame p s.mem t.mem :=
-  ((((BuildFrame.of_inscr inA).trans (BuildFrame.of_entry (by omega : 2^b<32) frameC)).trans
+  ((((BuildFrame.of_inscr inA).trans (BuildFrame.of_entry (by omega_using [toothBound] : 2^b<32) frameC)).trans
     (BuildFrame.of_inscr inD)).trans frameE).trans (BuildFrame.of_inscr inT)
  refine ⟨stateT,?_,frames,((((restA.trans restC).trans restD).trans restE).trans restT).mono (by simp [mmRegs])⟩
  simpa only [nextPower] using testT

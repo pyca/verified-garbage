@@ -138,11 +138,11 @@ theorem allOk_succ (s₀ : State) {i : Nat} (hi : i < 256) :
     AllOk s₀ (i + 1) ↔ AllOk s₀ i ∧ normZq (polyAt s₀.mem (Fp s₀))[i]! < (B s₀).toNat := by
   unfold AllOk
   constructor
-  · intro h; exact ⟨fun j hj => h j (by omega), h i (by omega)⟩
+  · intro h; exact ⟨fun j hj => h j (by omega_using [hj]), h i (by omega_using [])⟩
   · intro ⟨h, h'⟩ j hj
     by_cases e : j = i
     · subst e; exact h'
-    · exact h j (by omega)
+    · exact h j (by omega_using [hj, e])
 
 theorem inv_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 256) {s : State} (h : Inv s₀ i s) :
     WP isa (.block nlBody) s fun s' => Inv s₀ (i + 1) s' ∧ (s'.gpr .r10 != 0) = decide (i + 1 ≠ 256) := by
@@ -154,7 +154,7 @@ theorem inv_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 256) {s : St
   · have hv := polyAt_val hp.red (i := i) hi
     have ha : ((s.mem.readW (Fp s₀ + BitVec.ofNat 64 (4 * i)) 32).setWidth 64).toNat =
         ((polyAt s₀.mem (Fp s₀))[i]!).val := by
-      rw [h.mem, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (Fp s₀) i).isLt; omega)]
+      rw [h.mem, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (coeffAt s₀.mem (Fp s₀) i).isLt; omega_using [])]
       exact hv.symm
     have hb : (s.gpr .r4).toNat < 2 ^ 32 := by
       rw [h.r4, B, BitVec.toNat_setWidth, BitVec.toNat_setWidth]

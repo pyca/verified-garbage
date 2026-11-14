@@ -46,8 +46,8 @@ abbrev d16 (P : Point C) : Point C := d2 (d2 (d2 (d2 P)))
 abbrev wpt (Q : Point C) (k j : Nat) : Point C := mul (k >>> (4 * j)) Q
 
 theorem shr_four (k j : Nat) : k >>> (4 * j) = 16 * (k >>> (4 * (j + 1))) + (k >>> (4 * j)) % 16 := by
-  rw [show 4 * (j + 1) = 4 * j + 4 by omega, Nat.shiftRight_add, Nat.shiftRight_eq_div_pow (k >>> (4 * j)) 4]
-  omega
+  rw [show 4 * (j + 1) = 4 * j + 4 by omega_using [], Nat.shiftRight_add, Nat.shiftRight_eq_div_pow (k >>> (4 * j)) 4]
+  omega_using []
 
 /-- A window: `16 R + [k_j]Q`, for `R` before it, is `R` after it. -/
 theorem wstep (hL : Law C) {Q : Point C} (hQ : onCurve C Q = true) (k j : Nat) :
@@ -67,14 +67,14 @@ theorem wstep (hL : Law C) {Q : Point C} (hQ : onCurve C Q = true) (k j : Nat) :
   rw [hf.add h16 (hL.onCurve_mul hQ _), hf.add h8 h8, hf.add h4 h4, hf.add h2 h2, hf.add hX hX,
     hf.mul hQ, hf.mul hQ, hf.mul hQ]
   have hu : ((16 * m + a : Nat) : Int) = m + m + m + m + m + m + m + m + m + m + m + m + m + m + m + m + a := by
-    omega
+    omega_using []
   rw [hu]
   simp only [Lean.Grind.IntModule.add_zsmul]
   grind
 
 /-- Before the first window, for `k` of `n` words: `O`. -/
 theorem wpt_top (Q : Point C) {n k : Nat} (hk : k < 2 ^ (64 * n)) : wpt Q k (16 * n) = .infinity := by
-  rw [wpt, Nat.shiftRight_eq_div_pow, show 4 * (16 * n) = 64 * n by omega, Nat.div_eq_of_lt hk,
+  rw [wpt, Nat.shiftRight_eq_div_pow, show 4 * (16 * n) = 64 * n by omega_using [], Nat.div_eq_of_lt hk,
     Spec.Weierstrass.mul]; rfl
 
 /-- After the last window: `[k]Q`. -/
@@ -86,7 +86,7 @@ theorem mul_succ' (hL : Law C) {Q : Point C} (hQ : onCurve C Q = true) (n : Nat)
     Spec.Weierstrass.add (mul n Q) Q = mul (n + 1) Q := by
   obtain ⟨M, _, f, hf⟩ := hL.group
   apply hf.inj (hL.onCurve_add (hL.onCurve_mul hQ _) hQ) (hL.onCurve_mul hQ _)
-  rw [hf.add (hL.onCurve_mul hQ _) hQ, hf.mul hQ, hf.mul hQ, show ((n + 1 : Nat) : Int) = n + 1 by omega]
+  rw [hf.add (hL.onCurve_mul hQ _) hQ, hf.mul hQ, hf.mul hQ, show ((n + 1 : Nat) : Int) = n + 1 by omega_using []]
   simp only [Lean.Grind.IntModule.add_zsmul, Lean.Grind.IntModule.one_zsmul]
 
 end
@@ -116,8 +116,8 @@ theorem nibble_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {j : N
       Rest [.t0, .t1, .t2] s s' ∧ s'.mem = s.mem := by
   have hn := hw.nowrap
   have hal := hw.al
-  have hq : j / 16 < c.n := by omega
-  have hK8 : c.sl K % 8 = 0 := by simp only [Cfg.sl, slot, K]; omega
+  have hq : j / 16 < c.n := by omega_using [hj]
+  have hK8 : c.sl K % 8 = 0 := by simp only [Cfg.sl, slot, K]; omega_using []
   rw [Cfg.nibble]
   simp only [List.cons_append, List.nil_append]
   refine wp_srl (by decide) fun s₁ u₁ => wp_sll (by decide) fun s₂ u₂ => wp_add fun s₃ u₃ => ?_
@@ -126,28 +126,28 @@ theorem nibble_ok (c : Cfg) {s : State} {base : Addr} (hw : WsReg s base) {j : N
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
       Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, Nat.reducePow]
-    rw [Nat.mod_eq_of_lt (by omega : j < 18446744073709551616),
-      Nat.mod_eq_of_lt (by omega : j / 16 * 8 < 18446744073709551616),
-      Nat.mod_eq_of_lt (by omega : 8 * (j / 16) < 18446744073709551616)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hj, hK] : j < 18446744073709551616),
+      Nat.mod_eq_of_lt (by omega_using [hj, hK] : j / 16 * 8 < 18446744073709551616),
+      Nat.mod_eq_of_lt (by omega_using [hj, hK] : 8 * (j / 16) < 18446744073709551616)]
+    omega_using []
   have e₃ : ∀ d, s₃.gpr .t0 + BitVec.ofNat 64 d = off base (d + 8 * (j / 16)) := by
     intro d
     rw [e₃', BitVec.add_assoc, BitVec.ofNat_add_ofNat, off, Nat.add_comm]
   have r₃ : Rest [.t0] s s₃ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  refine wp_ldAt (by omega) (e₃ (c.sl K))
-    (by simp only [off]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
-    ⟨_, List.mem_append_right _ (r₃.wr ▸ hw.wr), Offset.contains_base base (k := 8192) (by omega) (by omega)⟩
+  refine wp_ldAt (by omega_using [hj, hK]) (e₃ (c.sl K))
+    (by simp only [off]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hal, hK8])
+    ⟨_, List.mem_append_right _ (r₃.wr ▸ hw.wr), Offset.contains_base base (k := 8192) (by omega_using [hj, hK]) (by omega_using [hj, hK])⟩
     fun s₄ u₄ => ?_
   refine wp_sll (by decide) fun s₅ u₅ => wp_srlReg fun s₆ u₆ => wp_andi (by decide) fun s₇ u₇ => WP.block_nil ⟨?_, ?_, ?_⟩
   · have t1₅ : (s₅.gpr .t1).toNat % 64 = 4 * j % 64 := by
       rw [u₅.gpr, u₄.other .s1 (by decide), r₃.gpr .s1 (by decide), h1, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat]
       simp only [Nat.shiftLeft_eq, Nat.reducePow]
-      omega
+      omega_using []
     have hu := four_bits (s₄.gpr .t2) (wordsVal s.mem base (c.sl K) c.n) (j := j) fun i hi => by
-      rw [u₄.gpr, m₃, BitVec.getLsbD, show 4 * j % 64 + i = (4 * j + i) % 64 by omega,
-        ← testBit_wordsVal s.mem base c.n (c.sl K) (4 * j + i) (by omega),
-        show (4 * j + i) / 64 = j / 16 by omega, Nat.add_comm]
+      rw [u₄.gpr, m₃, BitVec.getLsbD, show 4 * j % 64 + i = (4 * j + i) % 64 by omega_using [hi],
+        ← testBit_wordsVal s.mem base c.n (c.sl K) (4 * j + i) (by omega_using [hj, hi]),
+        show (4 * j + i) / 64 = j / 16 by omega_using [hi], Nat.add_comm]
     rw [u₇.gpr, u₆.gpr, t1₅, u₅.other .t2 (by decide), hu]
   · exact (r₃.mono (by decide)).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans
       ((u₆.rest (by decide)).trans (u₇.rest (by decide)))))

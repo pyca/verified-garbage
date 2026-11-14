@@ -67,7 +67,7 @@ theorem tabSlot16_taint : TaintOk [.esp, .ebp] (.block (tabSlot 16)) := ⟨_, by
 theorem tabSlot23_taint : TaintOk [.esp, .ebp] (.block (tabSlot 23)) := ⟨_, by taint_decide⟩
 theorem lenArg16_taint : TaintOk [.esp] (.block [ld .edx (arg 16)]) := ⟨_, by taint_decide⟩
 theorem lenArg23_taint : TaintOk [.esp] (.block [ld .edx (arg 23)]) := ⟨_, by taint_decide⟩
-theorem lenWord_taint : TaintOk [.esp, .edx] (.block [.mov .edx (.mem (Impl.RsaPkcs1Sig.X86.at_ .edx 16))]) :=
+theorem lenWord_taint : TaintOk [.esp, .edx] (.block [.mov .edx (.mem (Impl.RsaPkcs1Sig.X86.at_ .edx 24))]) :=
   ⟨_, by taint_decide⟩
 theorem cmpLens_taint : ∀ x ∈ lens, x < 2 ^ 32 ∧
     TaintOk [] (.block [.alu .cmp .edx (.imm (BitVec.ofNat 32 x))]) := by
@@ -76,7 +76,7 @@ theorem cmpLens_taint : ∀ x ∈ lens, x < 2 ^ 32 ∧
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, _, by taint_decide⟩
 
 theorem tabHead_taint : TaintOk [.esp, .ebp, .eax]
-    (.block (([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 16)), Impl.RsaPss.X86.st .eax sHl] : List Instr) ++
+    (.block (([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 24)), Impl.RsaPss.X86.st .eax sHl] : List Instr) ++
       Impl.RsaPss.X86.mgfInit)) := ⟨_, by taint_decide⟩
 theorem tload_taint : TaintOk [.esp, .ebp] (.block [ld .esi sTab]) := ⟨_, by taint_decide⟩
 theorem tword_taint {k : Nat} (hk : k < 3) :

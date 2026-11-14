@@ -58,7 +58,7 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
   unfold Ecb.ecb
   refine WP.ite (s.gpr .a2 == 0) (by rw [eval_zero]) (fun hz => ?_) (fun hz => ?_)
   · have hn : (s.gpr .a2).toNat = 0 := by simp only [beq_iff_eq] at hz; simp [hz]
-    exact WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl⟩, fun b hb => absurd hb (by omega)⟩
+    exact WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl⟩, fun b hb => absurd hb (by omega_using [hn])⟩
   have hn : 0 < n := by
     have : s.gpr .a2 ≠ 0 := by simpa using hz
     have : (s.gpr .a2).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
@@ -107,11 +107,11 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     rw [← e]
     exact f₃.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by simp only [Impl.Modes.RISCV64.coreSlot]; omega)) (by omega)
+      exact Offset.disjoint _ (.inl (by simp only [Impl.Modes.RISCV64.coreSlot]; omega_using [hi])) (by omega_using [hi])
         (by cases d <;> decide)) (by decide)
   have data₃ : ∀ b < n, Spec.TripleDes.blockAt s₃.mem (wAt D b) = Spec.TripleDes.blockAt s.mem (wAt D b) := by
     intro b hb
-    have hsub : Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+    have hsub : Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hb])
     rw [blockAt_eq_of_frame _ f₃ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (sepDF.sub_left hsub).sub_right (Offset.sub_base _ (by cases d <;> decide)),
@@ -127,8 +127,8 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
   have c₃ : s₃.gpr .s3 = BitVec.ofNat 64 (n - 0) := by
     rw [kept₃ _ (by decide), s3₂]; simp [n]
   have I0 : EInv k d (Fb s c) D n s₃ 0 s₃ :=
-    ⟨by omega, p₃, c₃, b₃, ready₃, fun _ _ _ _ => rfl, rfl, rfl, rfl,
-      fun _ _ => rfl, fun b hb => absurd hb (by omega), fun _ _ _ => rfl⟩
+    ⟨by omega_using [], p₃, c₃, b₃, ready₃, fun _ _ _ _ => rfl, rfl, rfl, rfl,
+      fun _ _ => rfl, fun b hb => absurd hb (by omega_using []), fun _ _ _ => rfl⟩
   apply WP.seq
   refine WP.mono (loop_ok E hn I0) fun s₄ I => ?_
   -- The registers restored and the frame zeroed.
@@ -158,7 +158,7 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
         (by decide), I.keep _ (by decide) (by decide) (by decide), kept₃ _ (by decide),
         keep₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
   · show Spec.TripleDes.blockAt s'.mem (wAt D b) = _
-    have hsub : Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+    have hsub : Region.Sub ⟨wAt D b, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hb])
     rw [blockAt_eq_of_frame _ f' fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (sepDF.sub_left hsub).sub_right (Region.sub_prefix (by cases d <;> decide)),

@@ -77,7 +77,7 @@ theorem context_frame (h : KeyInput p s) {m m' : Mem} (hf : Frame (changes s) m 
   have hi' := List.mem_range.mp hi
   change (stackArg s 7).toNat + (stackArg s 8).toNat * 8 ≤ 2 ^ 64 at hn
   change i < (stackArg s 8).toNat at hi'
-  exact hf.readW (r := inContext s) (Offset.contains_base _ (by omega) (by omega))
+  exact hf.readW (r := inContext s) (Offset.contains_base _ (by omega_using [hi']) (by omega_using [hn, hi']))
     (h.read_disjoint (by simp [inReads])) (by decide)
 
 theorem args_frame (h : KeyInput p s) {m m' : Mem} (hf : Frame (changes s) m m') (j : Nat) (hj : j < 9) :
@@ -85,9 +85,9 @@ theorem args_frame (h : KeyInput p s) {m m' : Mem} (hf : Frame (changes s) m m')
   have hn := h.nowrap (r := inArgs s) (by simp [inReads])
   change (stackArgAddr s 0).toNat + 72 ≤ 2 ^ 64 at hn
   have ha : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
-    simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]; congr 2; omega
+    simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]; congr 2; omega_using []
   rw [ha]
-  exact hf.readW (r := inArgs s) (Offset.contains_base _ (by omega) (by omega))
+  exact hf.readW (r := inArgs s) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (h.read_disjoint (by simp [inReads])) (by decide)
 
 /-- The writes but the controller's words. -/

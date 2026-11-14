@@ -65,13 +65,13 @@ theorem step_ok {k : Schedule} {d : Direction} {B D : Addr} {n : Nat} {s₀ : St
     WP isa (.seq (block d .s2 0) (.block advance)) u fun u' =>
       EInv k d B D n s₀ (j + 1) u' ∧ u'.gpr .s3 = BitVec.ofNat 64 (n - (j + 1)) := by
   have fit := E.dataFit
-  have hsub : Region.Sub ⟨wAt D j, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+  have hsub : Region.Sub ⟨wAt D j, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hj])
   have hpre : BlockPre k .s2 0 u := by
-    refine ⟨by decide, by decide, by rw [I.b]; have := E.al; omega, fun o ho => ?_,
+    refine ⟨by decide, by decide, by rw [I.b]; have := E.al; omega_using [this], fun o ho => ?_,
       by rw [I.b]; exact I.keys, ?_, ?_⟩
-    · rw [I.wr, I.b]; exact ⟨_, E.frame, Offset.contains_base _ (by omega) (by have := E.fit; omega)⟩
+    · rw [I.wr, I.b]; exact ⟨_, E.frame, Offset.contains_base _ (by omega_using [ho]) (by have := E.fit; omega_using [ho])⟩
     · rw [I.wr, I.ptr, BitVec.add_zero]
-      exact ⟨_, E.data, Offset.contains_base D (by omega) (by omega)⟩
+      exact ⟨_, E.data, Offset.contains_base D (by omega_using [hj]) (by omega_using [hj, fit])⟩
     · simp only [workRegion, I.ptr, I.b, BitVec.add_zero]
       exact (E.sep.sub_left hsub).sub_right (Offset.sub_base _ (by decide))
   apply WP.seq
@@ -96,15 +96,15 @@ theorem step_ok {k : Schedule} {d : Direction} {B D : Addr} {n : Nat} {s₀ : St
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ((E.sep.sub_left hsub).sub_right
-        (Offset.sub_base B (d := 8 * i) (n := 8) (k := 944) (by omega))).symm
-    · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, fun r hr h2 h3 => ?_, ?_, ?_, ?_, fun i hi => ?_,
+        (Offset.sub_base B (d := 8 * i) (n := 8) (k := 944) (by omega_using [hi]))).symm
+    · exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
+  refine ⟨⟨by omega_using [hj], ?_, ?_, ?_, ?_, fun r hr h2 h3 => ?_, ?_, ?_, ?_, fun i hi => ?_,
     fun b hb => ?_, fun b h1 h2 => ?_⟩, ?_⟩
   · rw [h₃.other _ (by decide), h₂.gpr, ptr₁]
     show D + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 8 = D + BitVec.ofNat 64 (8 * (j + 1))
-    rw [Offset.add_ofNat_add_ofNat, show 8 * j + 8 = 8 * (j + 1) by omega]
+    rw [Offset.add_ofNat_add_ofNat, show 8 * j + 8 = 8 * (j + 1) by omega_using []]
   · rw [h₃.gpr, h₂.other _ (by decide), h₁.regs .s3 (by decide), I.cnt]
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_using [hj]
   · rw [h₃.other _ (by decide), h₂.other _ (by decide), hb₁]
   · rw [m₃, scheduleAt_eq_of_frame _ hfr fun r hr => ?_, I.keys]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -122,15 +122,15 @@ theorem step_ok {k : Schedule} {d : Direction} {B D : Addr} {n : Nat} {s₀ : St
     · subst hbj
       have hr := h₁.result
       rw [I.ptr, BitVec.add_zero] at hr
-      rw [hr, I.rest b (by omega) hj]
-    · rw [blockAt_eq_of_frame _ hfr (frameOut (Offset.sub_base D (by omega))
-        (Offset.disjoint D (by omega) (by omega) (by omega)))]
-      exact I.done b (by omega)
-  · rw [m₃, blockAt_eq_of_frame _ hfr (frameOut (Offset.sub_base D (by omega))
-      (Offset.disjoint D (by omega) (by omega) (by omega)))]
-    exact I.rest b (by omega) h2
+      rw [hr, I.rest b (by omega_using []) hj]
+    · rw [blockAt_eq_of_frame _ hfr (frameOut (Offset.sub_base D (by omega_using [hj, hb]))
+        (Offset.disjoint D (by omega_using [hbj]) (by omega_using [hj, fit, hb]) (by omega_using [hj, fit])))]
+      exact I.done b (by omega_using [hb, hbj])
+  · rw [m₃, blockAt_eq_of_frame _ hfr (frameOut (Offset.sub_base D (by omega_using [h2]))
+      (Offset.disjoint D (by omega_using [h1]) (by omega_using [fit, h2]) (by omega_using [hj, fit])))]
+    exact I.rest b (by omega_using [h1]) h2
   · rw [h₃.gpr, h₂.other _ (by decide), h₁.regs .s3 (by decide), I.cnt]
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_using [hj]
 
 theorem loop_ok {k : Schedule} {d : Direction} {B D : Addr} {n : Nat} {s₀ : State}
     (E : Env B D n s₀.wr) (hn : 0 < n) (I : EInv k d B D n s₀ 0 s₀) :
@@ -140,12 +140,12 @@ theorem loop_ok {k : Schedule} {d : Direction} {B D : Addr} {n : Nat} {s₀ : St
     (fun m v => ∃ j, j < n ∧ m = n - j ∧ EInv k d B D n s₀ j v) ?_ n s₀ ⟨0, hn, rfl, I⟩
   intro m v ⟨j, hj, hm, J⟩
   refine WP.mono (step_ok E hj J) fun v' ⟨J', hz⟩ => ?_
-  have hn64 : n < 2 ^ 64 := by have := E.dataFit; omega
-  rw [eval_nonzero, hz, ofNat_bne_zero' (by omega)]
+  have hn64 : n < 2 ^ 64 := by have := E.dataFit; omega_using [this]
+  rw [eval_nonzero, hz, ofNat_bne_zero' (by omega_using [hn64])]
   by_cases e : j + 1 = n
   · left
     exact ⟨by simp [e], e ▸ J'⟩
   · right
-    exact ⟨by simp; omega, n - (j + 1), by omega, j + 1, by omega, rfl, J'⟩
+    exact ⟨by simp; omega_using [hj, e], n - (j + 1), by omega_using [hj, hm], j + 1, by omega_using [hj, e], rfl, J'⟩
 
 end VG.Proof.TripleDes.RISCV64.Ecb

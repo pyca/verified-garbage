@@ -41,7 +41,7 @@ def MX (S : Addr) (src srcLen dst dstLen D c : Nat) (W : Nat → BitVec 64) (_ :
   MArgs W S src srcLen dst dstLen ∧ W 17 = BitVec.ofNat 64 c ∧ W 18 = BitVec.ofNat 64 (c * D)
 
 theorem lt_ceil {a D j : Nat} (hD : 0 < D) : j < (a + D - 1) / D ↔ j * D < a := by
-  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]; omega
+  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le hD, Nat.succ_mul]; omega_using [hD]
 
 theorem updCtrArgs_eq : updCtrArgs lay = Mgf1.scr lay .x2 lay.oCtr ++ (([.ldrSp .x10 lay.sCtr, .strb .x10 .x2 3,
     .lsr .x .x10 .x10 8, .strb .x10 .x2 2, .lsr .x .x10 .x10 8, .strb .x10 .x2 1, .lsr .x .x10 .x10 8,

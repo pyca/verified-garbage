@@ -43,7 +43,7 @@ theorem ofNat_bne_zero' {a : Nat} (ha : a < 2 ^ 64) :
       intro e
       have := congrArg BitVec.toNat e
       simp only [BitVec.toNat_ofNat, show BitVec.toNat (0 : BitVec 64) = 0 from rfl] at this
-      omega
+      omega_using [ha, h, this]
     rw [decide_eq_false h, Bool.not_false]
     exact bne_iff_ne.mpr this
 
@@ -59,7 +59,7 @@ theorem copyLoop_adv {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ ds
       Frame [⟨s.gpr dst, N⟩] s.mem t.mem ∧ Keep [tmp, src, dst, cnt] s t ∧
       t.gpr dst = s.gpr dst + BitVec.ofNat 64 N := by
   refine WP.loop (M := isa) (fun n t => ∃ k, n = N - k ∧ CopyInv tmp src dst cnt N s k t) ?_ N s
-    ⟨0, rfl, hN, by simp, by simp, by simp [hc], fun j hj => absurd hj (by omega), Frame.refl _ _,
+    ⟨0, rfl, hN, by simp, by simp, by simp [hc], fun j hj => absurd hj (by omega_using []), Frame.refl _ _,
       Keep.refl _ _⟩
   rintro n t ⟨k, rfl, I⟩
   have hk := I.le
@@ -71,8 +71,8 @@ theorem copyLoop_adv {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ ds
   have hbyte : t.mem (s.gpr src + BitVec.ofNat 64 k) = s.mem (s.gpr src + BitVec.ofNat 64 k) :=
     I.frame _ fun r hr hc' => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hsep (s.gpr src + BitVec.ofNat 64 k) (by simp only [Region.Contains] at hc'; omega)
-        (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+      exact hsep (s.gpr src + BitVec.ofNat 64 k) (by simp only [Region.Contains] at hc'; omega_using [hc'])
+        (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hN', hk])]; omega_using [hk])
   have e : WP isa (.block [.load .b tmp src 0, .store .b tmp dst 0, .addi src src 1, .addi dst dst 1,
       .addi cnt cnt (-1)]) t fun u =>
       u.mem = t.mem.write (s.gpr dst + BitVec.ofNat 64 k) 1 (t.mem (s.gpr src + BitVec.ofNat 64 k)) ∧
@@ -84,23 +84,23 @@ theorem copyLoop_adv {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ ds
   refine WP.mono (WP.keep [tmp, src, dst, cnt] e (by
       simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun u ⟨⟨um, us, ud, uc⟩, uk⟩ => ?_
   have hc' : u.gpr cnt = BitVec.ofNat 64 (N - (k + 1)) := by
-    rw [uc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+    rw [uc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hk])]
     congr 1
   have hcopied : ∀ j < k + 1, u.mem (s.gpr dst + BitVec.ofNat 64 j) = s.mem (s.gpr src + BitVec.ofNat 64 j) := by
     intro j hj
     rw [um, ← ByteLoad.writeW_byte, WriteBytes.writeW8_apply]
     by_cases e : j = k
     · subst e; rw [ite_eq_left rfl, hbyte]
-    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega) (by omega) e), I.copied j (by omega)]
+    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega_using [hN', hk, hj]) (by omega_using [hN', hk]) e), I.copied j (by omega_using [hj, e])]
   have hframe : Frame [⟨s.gpr dst, N⟩] s.mem u.mem := by
     rw [um]
-    exact I.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact I.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hN', hk]))
   have hkeep : Keep [tmp, src, dst, cnt] s u := (I.keep.trans uk).mono (by simp)
-  rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega)]
+  rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega_using [hN'])]
   by_cases e : k + 1 = N
-  · refine .inl ⟨by simp [e], fun i hi => hcopied i (by omega), hframe, hkeep, ?_⟩
+  · refine .inl ⟨by simp [e], fun i hi => hcopied i (by omega_using [e, hi]), hframe, hkeep, ?_⟩
     rw [ud, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add, e]
-  · refine .inr ⟨by simp; omega, N - (k + 1), by omega, k + 1, rfl, by omega, ?_, ?_, hc', hcopied, hframe, hkeep⟩
+  · refine .inr ⟨by simp; omega_using [hk, e], N - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, e], ?_, ?_, hc', hcopied, hframe, hkeep⟩
     · rw [us, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add]
     · rw [ud, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.add_add]
 
@@ -132,15 +132,15 @@ theorem fillLoop_ok {v ptr cnt : Reg} (h3 : ptr ≠ cnt) (h1 : v ≠ ptr) (h2 : 
       (∀ j < N, t.mem.readW (s.gpr ptr + BitVec.ofNat 64 (8 * j)) 64 = s.gpr v) ∧
       Frame [⟨s.gpr ptr, 8 * N⟩] s.mem t.mem ∧ Keep [ptr, cnt] s t := by
   refine WP.loop (M := isa) (fun n t => ∃ k, n = N - k ∧ FillInv v ptr cnt N s k t) ?_ N s
-    ⟨0, rfl, hN, by simp, by simp [hc], fun j hj => absurd hj (by omega), Frame.refl _ _, Keep.refl _ _⟩
+    ⟨0, rfl, hN, by simp, by simp [hc], fun j hj => absurd hj (by omega_using []), Frame.refl _ _, Keep.refl _ _⟩
   rintro n t ⟨k, rfl, I⟩
   have hk := I.le
   have hdst : InRegions t.wr (s.gpr ptr + BitVec.ofNat 64 (8 * k)) 8 := by
     rw [I.keep.2.2]; exact hw k hk
   have hal' : (s.gpr ptr + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * k) (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * k) (by omega_using [hN', hk])]
     have := (s.gpr ptr).isLt
-    omega
+    omega_using [hal]
   have e : WP isa (.block [.store .d v ptr 0, .addi ptr ptr 8, .addi cnt cnt (-1)]) t fun u =>
       u.mem = t.mem.writeW (s.gpr ptr + BitVec.ofNat 64 (8 * k)) (t.gpr v) ∧
       u.gpr ptr = s.gpr ptr + BitVec.ofNat 64 (8 * k) + 8#64 ∧
@@ -149,24 +149,24 @@ theorem fillLoop_ok {v ptr cnt : Reg} (h3 : ptr ≠ cnt) (h1 : v ≠ ptr) (h2 : 
   refine WP.mono (WP.keep [ptr, cnt] e (by
       simp [writesOnly, Code.allInstrs_eq, instrs, dstOf]) rfl) fun u ⟨⟨um, up, uc⟩, uk⟩ => ?_
   have hc' : u.gpr cnt = BitVec.ofNat 64 (N - (k + 1)) := by
-    rw [uc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+    rw [uc, show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hk])]
     congr 1
   have hframe : Frame [⟨s.gpr ptr, 8 * N⟩] s.mem u.mem := by
     rw [um]
-    exact I.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact I.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hN', hk]))
   have hkeep : Keep [ptr, cnt] s u := (I.keep.trans uk).mono (by simp)
   have hfill : ∀ j < k + 1, u.mem.readW (s.gpr ptr + BitVec.ofNat 64 (8 * j)) 64 = s.gpr v := by
     intro j hj
     rw [um, ← I.keep.gpr (r := v) (by simp [h1, h2])]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hj]) (by omega_arith) (by omega_using [hN', hk])) (by decide),
         I.keep.gpr (r := v) (by simp [h1, h2])]
       exact I.filled j hj
     · exact Mem.readW_writeW_self64 _ _ _
-  rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega)]
+  rw [Steps.eval_nonzero, hc', ofNat_bne_zero' (by omega_using [hN'])]
   by_cases e : k + 1 = N
-  · exact .inl ⟨by simp [e], fun j hj => hfill j (by omega), hframe, hkeep⟩
-  · refine .inr ⟨by simp; omega, N - (k + 1), by omega, k + 1, rfl, by omega, ?_, hc', hfill, hframe, hkeep⟩
+  · exact .inl ⟨by simp [e], fun j hj => hfill j (by omega_using [e, hj]), hframe, hkeep⟩
+  · refine .inr ⟨by simp; omega_using [hk, e], N - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, e], ?_, hc', hfill, hframe, hkeep⟩
     rw [up, show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.add_add]
     congr 2
 

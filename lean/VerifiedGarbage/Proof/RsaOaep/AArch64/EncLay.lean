@@ -119,21 +119,21 @@ theorem k64 : 64 ≤ L.k.toNat := h.kv.1
 theorem k1024 : L.k.toNat ≤ 1024 := h.kv.2
 
 theorem s8192 : 8192 + Spec.Rsa.publicScratchWords L.k.toNat * 8 ≤ L.sl.toNat * 8 := by
-  have := h.slk; unfold Spec.RsaPss.publicScratchWords at this; omega
+  have := h.slk; unfold Spec.RsaPss.publicScratchWords at this; omega_using [this]
 
 omit h in
 theorem sub_stk {d n : Nat} (hd : d + n ≤ 288) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by
-  rw [q_add L.Q L.P d]; exact Offset.sub_base _ (by omega)
+  rw [q_add L.Q L.P d]; exact Offset.sub_base _ (by omega_using [hd])
 
 omit h in
-theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
+theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega_using [])
 
 theorem fr_low {d n : Nat} (hd : d + n ≤ 328) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
-  Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega)
+  Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega_arith)
 
 theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 328) (h₂ : d' + n' ≤ 328) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ ⟨L.Q + BitVec.ofNat 64 d', n'⟩ :=
-  Offset.disjoint _ hs (by have := h.nQ; omega) (by have := h.nQ; omega)
+  Offset.disjoint _ hs (by have := h.nQ; omega_using [h₁]) (by have := h.nQ; omega_using [h₂])
 
 theorem stk_buf {d n : Nat} (hd : d + n ≤ 288) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
@@ -145,20 +145,20 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 288) {R : Region} (hR : InW L R) :
 theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 328) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
   have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS :=
-    Offset.sub _ h₁ (by have := h.al40; omega)
+    Offset.sub _ h₁ (by have := h.al40; omega_using [h₂, this])
   rcases hR with hR | hR
   · exact (h.oA.symm.sub_left hs).sub_right hR
   · exact (h.sA.symm.sub_left hs).sub_right hR
 
-theorem ours_scr : Region.Sub ⟨L.scr, oRsa⟩ L.SCR := Region.sub_prefix (by have := h.s8192; unfold oRsa; omega)
+theorem ours_scr : Region.Sub ⟨L.scr, oRsa⟩ L.SCR := Region.sub_prefix (by have := h.s8192; unfold oRsa; omega_using [this])
 
 omit h in
-theorem ret_low (hP : 16 ≤ L.P) : Region.Sub (retR L.Q) L.LOW := Offset.sub_below _ hP (by omega)
+theorem ret_low (hP : 16 ≤ L.P) : Region.Sub (retR L.Q) L.LOW := Offset.sub_below _ hP (by omega_using [hP])
 
 theorem geo (hP : 16 ≤ L.P) : Geo L.Q L.scr where
-  F16 := by have := h.pQ; omega
-  Fw := by have := h.nQ; unfold frameBytes; omega
-  Sw := by have := h.bS; have := h.s8192; unfold oRsa; omega
+  F16 := by have := h.pQ; omega_using [hP, this]
+  Fw := by have := h.nQ; unfold frameBytes; omega_using [this]
+  Sw := by have := h.bS; have := h.s8192; unfold oRsa; omega_arith
   dFS := by
     have hf := sub_stk (L := L) (d := 0) (n := frameBytes) (by decide)
     rw [BitVec.add_zero] at hf
@@ -227,7 +227,7 @@ theorem kept_apart (hP : 16 ≤ L.P) {ws : List Region} (hws : ∀ r ∈ ws, Reg
   intro r hr
   simp only [List.mem_cons] at hr
   rcases hr with rfl | rfl | rfl | hr
-  · have := hL.fr_sep (d := d) (n := 8) (d' := 0) (n' := frameBytes) (by unfold frameBytes; omega) hd'
+  · have := hL.fr_sep (d := d) (n := 8) (d' := 0) (n' := frameBytes) (by unfold frameBytes; omega_using [hd]) hd'
       (by decide)
     rwa [BitVec.add_zero] at this
   · exact hb _ (.inr hL.ours_scr)
@@ -244,7 +244,7 @@ theorem step (hP : 16 ≤ L.P) {ws : List Region} (hS : Step L.Q L.scr ws t t')
   refine ⟨hS.rd.trans hc.rd, hS.wr.trans hc.wr, hS.sp.trans hc.sp,
     fun r hr h30 => (hS.cs r hr h30).trans (hc.cs r hr h30), fun r hr => (hS.vec r hr).trans (hc.vs r hr),
     (hk 272 (by decide) (by decide) (by decide)).trans hc.lr,
-    fun j hj => (hk _ (by omega) (by omega) (by omega)).trans (hc.args j hj),
+    fun j hj => (hk _ (by omega_using []) (by omega_using []) (by omega_using [hj])).trans (hc.args j hj),
     hc.frame.trans (hS.frame.sub fun r hr => ?_)⟩
   simp only [List.mem_cons] at hr
   rcases hr with rfl | rfl | rfl | hr
@@ -263,7 +263,7 @@ theorem lay (hP : 16 ≤ L.P) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Re
   sc := Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact ⟨L.SCR, by rw [hc.wr]; simp, 0, (BitVec.add_zero _).symm, by
-      have := hL.s8192; show 0 + oRsa ≤ L.sl.toNat * 8; unfold oRsa; omega⟩
+      have := hL.s8192; show 0 + oRsa ≤ L.sl.toNat * 8; unfold oRsa; omega_using [this]⟩
   slot := by
     have := R.fr 12 (by decide)
     rw [hW] at this
@@ -291,7 +291,7 @@ theorem byte_ro {R : Region} (hR : R ∈ L.ro) {i : Nat} (hi : i < R.len) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     exacts [(hL.oR R hR).symm, (hL.sR R hR).symm, (hL.kR R hR).symm])
-    (by have := hL.bR R hR; omega) hi
+    (by have := hL.bR R hR; omega_using [this]) hi
 
 theorem bytes_ro {R : Region} (hR : R ∈ L.ro) :
     Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt m₀ R.base R.len :=

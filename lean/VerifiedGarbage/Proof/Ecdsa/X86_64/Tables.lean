@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.TCB.Sig
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P256.Comb7Shape
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ECDSA over P-256 on x86-64: the comb's tables in a static
@@ -68,6 +69,6 @@ tables). -/
 theorem satMem_held : ∀ i < p256W.length,
     satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := by
   unfold satMem
-  exact constMem_held _ _ (by rw [p256W_length]; omega)
+  exact constMem_held _ _ (by rw [p256W_length]; omega_using [])
 
 end VG.Proof.Ecdsa.X86_64

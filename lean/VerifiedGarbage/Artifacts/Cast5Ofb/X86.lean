@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Cast5.X86.FbFinalLit
 
-/-! # CAST5-OFB artifacts on baseline x86 (32-bit) -/
+/-! # CAST5-OFB on x86 -/
 
 @[expose] public section
 

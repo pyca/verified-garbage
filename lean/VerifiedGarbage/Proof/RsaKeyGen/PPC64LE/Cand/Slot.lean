@@ -26,7 +26,7 @@ theorem wp_seqs {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State}
   | _ :: _, _ => exact WP.seq_iff
 
 theorem slot_le {w j k : Nat} (h : j ≤ k) : slot w j ≤ slot w k := by
-  unfold slot; have := Nat.mul_le_mul_right (8 * (w + 2)) h; omega
+  unfold slot; have := Nat.mul_le_mul_right (8 * (w + 2)) h; omega_using [this]
 
 theorem slot0 {w : Nat} : slot w 0 = 256 := by simp [slot, VG.Impl.Bignum.hdrBytes]
 

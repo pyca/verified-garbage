@@ -32,9 +32,9 @@ theorem tailBits_ready (W : Window) (n : Nat) (hn : n ≤ 8) {p : XPub × Nat} {
     simpa only [Nat.add_zero, Nat.mod_eq_of_lt hb] using h
   | succ n ih =>
     unfold tailBits
-    refine WP.seq (WP.mono (ih (by omega)) fun u hu => ?_)
-    refine WP.mono (takeBit_ready W (by omega) hu) fun t ht => ?_
-    have he : ((p.2 + n) % 5 + 1) % 5 = (p.2 + (n + 1)) % 5 := by omega
+    refine WP.seq (WP.mono (ih (by omega_using [hn])) fun u hu => ?_)
+    refine WP.mono (takeBit_ready W (by omega_using [hn]) hu) fun t ht => ?_
+    have he : ((p.2 + n) % 5 + 1) % 5 = (p.2 + (n + 1)) % 5 := by omega_using []
     simpa only [he] using ht
 
 theorem tailBits_ct (W : Window) (n : Nat) (hn : n ≤ 8) :
@@ -47,8 +47,8 @@ theorem tailBits_ct (W : Window) (n : Nat) (hn : n ≤ 8) :
   | succ n ih =>
     unfold tailBits
     refine RelCT.seq (two_post (Ψ := fun p s => TailPre (p.1, (p.2 + n) % 5) s)
-      (ih (by omega)) (fun _ _ h => tailBits_ready W n (by omega) h)) ?_
+      (ih (by omega_using [hn])) (fun _ _ h => tailBits_ready W n (by omega_using [hn]) h)) ?_
     exact two_map (fun p : XPub × Nat => (p.1, (p.2 + n) % 5))
-      (fun _ _ h => h) (takeBit_ct W (by omega))
+      (fun _ _ h => h) (takeBit_ct W (by omega_using [hn]))
 
 end VG.Proof.Bignum.AArch64.WindowFive

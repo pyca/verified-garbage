@@ -116,7 +116,7 @@ theorem bytesAt_writeW2 (m : Mem) (a : Addr) (v₁ v₂ : BitVec 64) {x : Spec.A
   intro i h₁ h₂
   simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range]
   have hi : i < 16 := by simpa [Spec.Aes.bytesAt] using h₁
-  rw [writeW2_apply, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [writeW2_apply, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi]),
     ite_eq_left (show i < 16 from hi), hv i hi, getD_eq _ hi]
   simp
 
@@ -159,16 +159,16 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
     refine Nat.lt_of_not_le fun hc => dDSt (s₀.gpr .a2) ?_ (by simp [Region.Contains])
     simp only [Region.Contains]
     have := (s₀.gpr .a2 - s₀.gpr .a3).isLt
-    simp only [n] at hc; omega
-  have hR14 : (s₀.gpr .a1).toNat ≤ 14 := by omega
+    simp only [n] at hc; omega_using [hc]
+  have hR14 : (s₀.gpr .a1).toNat ≤ 14 := by omega_using [hR]
   let X := s₀.gpr .a5
   let b := X + BitVec.ofNat 64 (pad X)
   let R := (s₀.gpr .a1).toNat
   let St := s₀.gpr .a2
   let D := s₀.gpr .a3
-  have dTb : Region.Disjoint ⟨St, 16⟩ ⟨b, 2040⟩ := dStS.sub_right (scr_base X (by omega))
+  have dTb : Region.Disjoint ⟨St, 16⟩ ⟨b, 2040⟩ := dStS.sub_right (scr_base X (by omega_using []))
   unfold Impl.Aes.RISCV64.chainFrame
-  refine WP.ite (decide (n = 0)) (eval_zero_ofNat _ _ (by omega) (by simp [n])) (fun h0 => ?_)
+  refine WP.ite (decide (n = 0)) (eval_zero_ofNat _ _ (by omega_using []) (by simp [n])) (fun h0 => ?_)
     (fun h0 => ?_)
   · -- No blocks: nothing changes.
     have hn0 : n = 0 := by simpa using h0
@@ -182,7 +182,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   have hscr₁ : Scr s₁ X 2048 := ⟨by rw [wr₁]; exact hwS, hb₁⟩
   rw [saveRegs_eq]
   refine Spill.save_ok (rest := []) hscr₁.al savedOffs_ho (fun p hp => ⟨_, hscr₁.wr,
-    hscr₁.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) (WP.block_nil ?_)
+    hscr₁.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) (WP.block_nil ?_)
   generalize hS : ({ s₁ with mem := Spill.saveMem s₁.mem (s₁.gpr sb) s₁.gpr savedOffs } : State) = s₁'
   have g₁' : s₁'.gpr = s₁.gpr := by rw [← hS]
   have mm₁ : s₁'.mem = Spill.saveMem s₁.mem (s₁.gpr sb) s₁.gpr savedOffs := by rw [← hS]
@@ -202,7 +202,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
     rw [g₂ r h0 h1, g₁', o₁ r h2]
   -- The return address in its slot, and the state's address in `ra`.
   have hslot : (⟨X, 2048⟩ : Region).Contains (b + BitVec.ofNat 64 496) 8 := by
-    rw [← hb₂]; exact hscr₂.contains (by omega) (by decide)
+    rw [← hb₂]; exact hscr₂.contains (by omega_using []) (by decide)
   refine wp_sd (t := .ra) (n := sb) (off := 8 * raSlot) (a := b + BitVec.ofNat 64 496) (by decide)
     (by rw [hb₂]; rfl) (by rw [← hb₂]; exact Align.al_add (k := 8) hscr₂.al (by decide) (by decide))
     ⟨_, hscr₂.wr, hslot⟩ fun s₃₀ u₃₀ => ?_
@@ -229,19 +229,19 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   have f₀₄ : Frame [⟨X, 2048⟩] s₀.mem s₄.mem := by
     have f01 : Frame [⟨X, 2048⟩] s₀.mem s₁'.mem := fun x hx =>
       ((f₁.sub fun r hr => ⟨⟨X, 2048⟩, by simp, by
-        simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega)⟩) x hx).trans
+        simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega_using [])⟩) x hx).trans
         (congrFun m₁ x)
     refine (f01.trans (fm₂.sub fun r hr => ⟨⟨X, 2048⟩, by simp, ?_⟩)).trans fslot
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact scr_part X (by omega)
-    · exact scr_part X (by omega)
+    · exact scr_part X (by omega_using [])
+    · exact scr_part X (by omega_using [])
   have mk₄ : MasksAt s₄.mem b allKs := by
     rw [m₄, m₃]
     refine masks_frame ((Frame.refl [⟨b + BitVec.ofNat 64 496, 8⟩] _).writeW (List.mem_singleton_self _) _
       (Region.contains_self _ _)) (fun r hr => ?_) mk₂
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨Offset.disjoint b (by omega) (by omega) (by omega), Offset.disjoint b (by omega) (by omega) (by omega)⟩
+    exact ⟨Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using []), Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])⟩
   let w := Spec.Aes.bytesAt s₀.mem (s₀.gpr .a0) (16 * (R + 1))
   have hk : KSetup s₄ X b (s₀.gpr .a0) R w :=
     { scr := hscr₄
@@ -265,7 +265,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
       sp := rfl
       keep := fun _ _ => rfl
       frame := Frame.refl _ _
-      done := fun i h1 h2 => absurd h2 (by omega) }
+      done := fun i h1 h2 => absurd h2 (by omega_using [h1]) }
   -- The key loop.
   refine WP.seq (WP.mono (keyLoop_ok hk hi₄) fun s₅ d₅ => ?_)
   refine WP.seq ?_
@@ -284,10 +284,10 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
     intro x lx h1 h2 r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint_base _ h1 (by omega)
-    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    · exact Offset.disjoint_base _ h1 (by omega_using [h2])
+    · exact Offset.disjoint _ (by omega_using [h2]) (by omega_using [h2]) (by omega_using [])
   have slot₆ : s₆.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
-    rw [fK.readW (Region.contains_self _ _) (kd (by omega) (by omega)) (by decide), m₄, m₃,
+    rw [fK.readW (Region.contains_self _ _) (kd (by omega_using []) (by omega_using [])) (by decide), m₄, m₃,
       Mem.readW_writeW_self64]
   have hrd₆ : s₆.rd = s₀.rd := by rw [u₆.rd, d₅.rd, rd₄, rd₃, rd₂, rd₁', rd₁]
   have hwr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, d₅.wr, wr₄, wr₃, wr₂, wr₁', wr₁]
@@ -301,16 +301,16 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   have hT : (⟨St, 16⟩ : Region) ∈ s₇.rd ++ s₇.wr :=
     List.mem_append_right _ (by rw [u₇.wr, hwr₆]; exact hwT)
   have hinT : ∀ d, d + 4 ≤ 16 → InRegions (s₇.rd ++ s₇.wr) (s₇.gpr .ra + BitVec.ofNat 64 d) 4 :=
-    fun d hd => by rw [u₇.gpr]; exact in_off hT (by omega) (by omega)
+    fun d hd => by rw [u₇.gpr]; exact in_off hT (by omega_using [hd]) (by omega_using [])
   refine WP.mono (Bytes.loadLE64_ok (d := q 0) (tmp := t0) (hi := t1) (n := .ra) (off := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by simpa using hinT 0 (by omega)) (by simpa using hinT 4 (by omega)))
+    (by simpa using hinT 0 (by omega_using [])) (by simpa using hinT 4 (by omega_using [])))
     fun s₈ ⟨e₈, g₈, m₈, rd₈, wr₈, sp₈⟩ => ?_
   have t2₈ : s₈.gpr .ra = St := by rw [g₈ _ (by decide) (by decide) (by decide), u₇.gpr]
   refine WP.mono (Bytes.loadLE64_ok (d := q 4) (tmp := t0) (hi := t1) (n := .ra) (off := 8)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [t2₈, rd₈, wr₈, ← u₇.gpr]; exact hinT 8 (by omega))
-    (by rw [t2₈, rd₈, wr₈, ← u₇.gpr]; exact hinT 12 (by omega)))
+    (by rw [t2₈, rd₈, wr₈, ← u₇.gpr]; exact hinT 8 (by omega_using []))
+    (by rw [t2₈, rd₈, wr₈, ← u₇.gpr]; exact hinT 12 (by omega_using [])))
     fun s₉ ⟨e₉, g₉, m₉, rd₉, wr₉, sp₉⟩ => ?_
   have mem₉ : s₉.mem = s₆.mem := by rw [m₉, m₈, u₇.mem]
   have o₉ : ∀ r, r ≠ q 0 → r ≠ q 4 → r ≠ t0 → r ≠ t1 → r ≠ .ra → s₉.gpr r = s₆.gpr r :=
@@ -348,7 +348,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
       masks := by rw [mem₉, u₆.mem]; exact masks_kept d₅.frame hk.masks
       keys := fun j hj => keyRel_congr (d₅.keys j hj) fun k hk => by
         rw [mem₉, u₆.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
-          1920 - 64 * (R - j) by omega]
+          1920 - 64 * (R - j) by omega_using [hR, hj]]
       a0 := by rw [o₉ .a0 (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hK0
       rounds := hR
       rdD := by rw [rd₉, rd₈, u₇.rd, wr₉, wr₈, u₇.wr, hrd₆, hwr₆]; exact hrD
@@ -379,13 +379,13 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
     intro x lx h1 h2 h3 h4 h5 r hr
     simp only [fRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact Offset.disjoint_base _ h1 (by omega)
-    · exact Offset.disjoint b (by omega) (by omega) (by omega)
-    · exact Offset.disjoint b (by omega) (by omega) (by omega)
-    · exact Offset.disjoint b (by omega) (by omega) (by omega)
+    · exact Offset.disjoint_base _ h1 (by omega_using [h2])
+    · exact Offset.disjoint b (by omega_using [h3]) (by omega_using [h2]) (by omega_using [])
+    · exact Offset.disjoint b (by omega_using [h4]) (by omega_using [h2]) (by omega_using [])
+    · exact Offset.disjoint b (by omega_using [h5]) (by omega_using [h2]) (by omega_using [])
     · exact (dDS.sub_right (scr_part X h2)).symm
   have slot₁₀ : s₁₀.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
-    rw [c₁₀.frame.readW (Region.contains_self _ _) (dE (by omega) (by omega) (by omega) (by omega) (by omega)) (by decide), mem₉, slot₆]
+    rw [c₁₀.frame.readW (Region.contains_self _ _) (dE (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])) (by decide), mem₉, slot₆]
   have ra₁₀ : s₁₀.gpr .ra = St := c₁₀.ra.trans ra₉
   unfold chainStore
   repeat rw [WP.block_append_iff (M := isa)]
@@ -395,15 +395,15 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   have hTw : (⟨St, 16⟩ : Region) ∈ s₁₁.wr := by rw [u₁₁.wr, c₁₀.wr, wr₉, wr₈, u₇.wr, hwr₆]; exact hwT
   have hinw : ∀ {t : State} (d : Nat), t.gpr .ra = St → t.wr = s₁₁.wr →
       d + 4 ≤ 16 → InRegions t.wr (t.gpr .ra + BitVec.ofNat 64 d) 4 := fun d ha hw hd => by
-    rw [ha, hw]; exact in_off hTw (by omega) (by omega)
+    rw [ha, hw]; exact in_off hTw (by omega_using [hd]) (by omega_using [])
   refine WP.mono (Bytes.storeLE64_ok (v := q 0) (tmp := t0) (hi := t1) (n := .ra) (off := 0)
     (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by simpa using hinw 0 u₁₁.gpr rfl (by omega)) (hinw 4 u₁₁.gpr rfl (by omega)))
+    (by simpa using hinw 0 u₁₁.gpr rfl (by omega_using [])) (hinw 4 u₁₁.gpr rfl (by omega_using [])))
     fun s₁₂ ⟨m₁₂, g₁₂, rd₁₂, wr₁₂, sp₁₂⟩ => ?_
   have t2₁₂ : s₁₂.gpr .ra = St := (g₁₂ _ (by decide) (by decide)).trans u₁₁.gpr
   refine WP.mono (Bytes.storeLE64_ok (v := q 4) (tmp := t0) (hi := t1) (n := .ra) (off := 8)
     (by decide) (by decide) (by decide) (by decide) (by decide)
-    (hinw 8 t2₁₂ wr₁₂ (by omega)) (hinw 12 t2₁₂ wr₁₂ (by omega)))
+    (hinw 8 t2₁₂ wr₁₂ (by omega_using [])) (hinw 12 t2₁₂ wr₁₂ (by omega_using [])))
     fun s₁₃ ⟨m₁₃, g₁₃, rd₁₃, wr₁₃, sp₁₃⟩ => ?_
   have v₀ : s₁₁.gpr (q 0) = s₁₀.gpr (q 0) := u₁₁.other _ (by decide)
   have v₄ : s₁₂.gpr (q 4) = s₁₀.gpr (q 4) := by rw [g₁₂ _ (by decide) (by decide), u₁₁.other _ (by decide)]
@@ -415,30 +415,30 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   have fT : Frame [⟨St, 16⟩] s₁₀.mem s₁₃.mem := by
     rw [hmem]
     refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-    · simpa using Offset.contains_base St (d := 0) (n := 8) (k := 16) (by omega) (by omega)
-    · exact Offset.contains_base St (d := 8) (n := 8) (k := 16) (by omega) (by omega)
+    · simpa using Offset.contains_base St (d := 0) (n := 8) (k := 16) (by omega_using []) (by omega_using [])
+    · exact Offset.contains_base St (d := 8) (n := 8) (k := 16) (by omega_using []) (by omega_using [])
   -- The saved registers are still in their slots.
   have sv : Spill.Saved b s₁.gpr savedOffs s₁₃.mem := by
     have dS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],
         Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint b (by omega) (by omega) (by omega)
-      · exact Offset.disjoint b (by omega) (by omega) (by omega)
+      · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
+      · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
     have dSl : ∀ r ∈ [(⟨b + BitVec.ofNat 64 496, 8⟩ : Region)],
         Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint b (by omega) (by omega) (by omega)
+      exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
     have fSl : Frame [⟨b + BitVec.ofNat 64 496, 8⟩] s₂.mem s₄.mem := by
       rw [m₄, m₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     have dT' : ∀ r ∈ [(⟨St, 16⟩ : Region)], Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r :=
       fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (dTb.sub_right (Offset.sub_base b (by omega))).symm
+        exact (dTb.sub_right (Offset.sub_base b (by omega_using []))).symm
     have fK₉ : Frame (kRegions b) s₄.mem s₉.mem := by rw [mem₉]; exact fK
     exact (((((sv₁.frame_in savedOffs_range fm₂ dS).frame_in savedOffs_range fSl dSl).frame_in
-      savedOffs_range fK₉ (kd (by omega) (by omega))).frame_in savedOffs_range c₁₀.frame
-      (dE (by omega) (by omega) (by omega) (by omega) (by omega))).frame_in savedOffs_range fT dT')
+      savedOffs_range fK₉ (kd (by omega_using []) (by omega_using []))).frame_in savedOffs_range c₁₀.frame
+      (dE (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []))).frame_in savedOffs_range fT dT')
   have hb₁₃ : s₁₃.gpr sb = b := by
     rw [g₁₃ _ (by decide) (by decide), g₁₂ _ (by decide) (by decide), u₁₁.other _ (by decide), hb₁₀]
   have hscr₁₃ : Scr s₁₃ X 2048 :=
@@ -448,7 +448,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   have slot₁₃ : s₁₃.mem.readW (b + BitVec.ofNat 64 496) 64 = s₀.gpr .ra := by
     rw [fT.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (dTb.sub_right (Offset.sub_base b (by omega))).symm) (by decide), slot₁₀]
+        exact (dTb.sub_right (Offset.sub_base b (by omega_using []))).symm) (by decide), slot₁₀]
   refine wp_ld (t := .ra) (n := sb) (off := 8 * raSlot) (a := b + BitVec.ofNat 64 496) (by decide)
     (by rw [hb₁₃]; rfl) (by rw [← hb₄]; exact Align.al_add (k := 8) hscr₄.al (by decide) (by decide))
     ⟨_, List.mem_append_right _ hscr₁₃.wr, hslot⟩ fun s₁₅ u₁₅ => WP.block_nil ?_
@@ -459,7 +459,7 @@ theorem frame_wp {body : Prog isa} {pre post : List Instr} {wd : Bool} {len : Na
   refine WP.mono (Spill.restore_wp (B := b) (by rw [← hb₁]; exact hscr₁.al) hb₁₅ savedOffs_ho
     savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₁₅.wr, by
       rw [← hb₁₅]
-      exact hscr₁₅.contains (by have := savedOffs_range p hp; omega) (by decide)⟩) (by rw [u₁₅.mem]; exact sv))
+      exact hscr₁₅.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) (by rw [u₁₅.mem]; exact sv))
     fun s₁₄ rs₁₄ => ?_
   refine ⟨fun r hr => ?_, ?_, .inr ⟨s₁₀, c₁₀.res, by rw [rs₁₄.mem, u₁₅.mem, hmem]⟩⟩
   · have hr' : r ∈ savedOffs.map Prod.fst := by rw [savedOffs_regs]; exact hr

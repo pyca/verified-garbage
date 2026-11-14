@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 public import VerifiedGarbage.Spec.RsaPkcs1Sig
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PKCS1-v1_5 verification accepts exactly the encoding
@@ -35,7 +36,7 @@ def padded (j : Nat) (T : List Byte) : List Byte :=
   [0x00, 0x01] ++ List.replicate j 0xff ++ [0x00] ++ T
 
 theorem padded_length (j : Nat) (T : List Byte) : (padded j T).length = j + 3 + T.length := by
-  simp [padded]; omega
+  simp [padded]; omega_using []
 
 theorem takeWhile_ff (j : Nat) (T : List Byte) :
     (List.replicate j (0xff : Byte) ++ 0x00 :: T).takeWhile (· == 0xff) = List.replicate j 0xff := by
@@ -85,11 +86,11 @@ theorem unpad_eq_some_iff {em T : List Byte} :
   · intro h
     obtain ⟨j, hj, rfl⟩ := eq_padded_of_unpad h
     rw [padded_length]
-    refine ⟨by omega, ?_⟩
+    refine ⟨by omega_using [hj], ?_⟩
     congr 1
-    omega
+    omega_using []
   · rintro ⟨hl, he⟩
-    rw [he, unpad_padded, ite_eq_left (by omega)]
+    rw [he, unpad_padded, ite_eq_left (by omega_using [hl])]
 
 /-! ## The encoding -/
 
@@ -101,16 +102,16 @@ theorem encode_eq_some_iff {h : Hash} {H em : List Byte} {k : Nat} :
   by_cases hc : H.length ≠ h.len ∨ k < (digestInfo h H).length + 11
   · rw [ite_eq_left hc]
     simp only [reduceCtorEq, false_iff]
-    omega
+    omega_using [hc]
   · rw [ite_eq_right hc, Option.some.injEq]
     constructor
-    · rintro rfl; exact ⟨by omega, by omega, by simp [padded]⟩
+    · rintro rfl; exact ⟨by omega_using [hc], by omega_using [hc], by simp [padded]⟩
     · rintro ⟨-, -, rfl⟩; simp [padded]
 
 theorem encode_length {h : Hash} {H em : List Byte} {k : Nat} (he : encode h H k = some em) :
     em.length = k := by
   obtain ⟨-, hk, rfl⟩ := encode_eq_some_iff.1 he
-  rw [padded_length]; omega
+  rw [padded_length]; omega_using [hk]
 
 /-! ## Verification -/
 

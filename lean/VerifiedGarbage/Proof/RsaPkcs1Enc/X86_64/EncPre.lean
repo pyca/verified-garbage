@@ -42,7 +42,7 @@ structure Slots (s : State) (m : Mem) : Prop where
 theorem Slots.outside {s : State} {m m' : Mem} (h : Slots s m) {o n : Nat} (ho : oZ ≤ o)
     (h' : Outside (fb s) o n m m') : Slots s m' := by
   have w : ∀ {d : Nat}, d + 8 ≤ oZ → word m' (fb s) d = word m (fb s) d := fun hd =>
-    h'.word (.inl (by omega)) (by unfold oZ at hd; omega)
+    h'.word (.inl (by omega_using [ho, hd])) (by unfold oZ at hd; omega_using [hd])
   refine ⟨(w (by decide)).trans h.sOut, (w (by decide)).trans h.sN, (w (by decide)).trans h.sK,
     (w (by decide)).trans h.sE, (w (by decide)).trans h.sEl, ?_, (w (by decide)).trans h.a1,
     (w (by decide)).trans h.a2, (w (by decide)).trans h.a3⟩
@@ -127,11 +127,11 @@ theorem ps_step {s t₁ : State} (hp : EPre s) (h : AfterSetup s t₁) : WP isa 
   have ho₁ : Outside (fb s) 0 frameBytes s.mem t₁.mem := h.mem ▸ setupMem_outside s
   refine WP.mono (psLoop_ok hp hsp₁ hrd₁ hwr₁ ho₁ h.rsi h.rcx h.r10 h.rdx) fun t₂ hI => ?_
   have hb₂ : ∀ d, d < oEM + 2 → byte t₂.mem (fb s) d = byte t₁.mem (fb s) d := fun d hd =>
-    hI.out _ (.inl (by rw [ofs_off0 _ (by omega)]; omega))
+    hI.out _ (.inl (by rw [ofs_off0 _ (by omega_using [hoEM, hd])]; omega_using [hd]))
   exact ⟨(hI.keep.gpr (by decide)).trans hsp₁, hI.keep.2.1.trans hrd₁, hI.keep.2.2.trans hwr₁,
-    Outside.trans ho₁ (Outside.mono hI.out (by omega) (by omega)),
+    Outside.trans ho₁ (Outside.mono hI.out (by omega_using []) (by omega_using [hP, hk2, hfb, hoEM])),
     Slots.outside (h.mem ▸ setupMem_slots s) (by decide) hI.out,
-    by rw [hb₂ _ (by omega), h.mem, setupMem_b0], by rw [hb₂ _ (by omega), h.mem, setupMem_b1],
+    by rw [hb₂ _ (by omega_using []), h.mem, setupMem_b0], by rw [hb₂ _ (by omega_using []), h.mem, setupMem_b1],
     fun i hi => by rw [hI.ps i hi, getD_bytesAt _ _ hi], (hI.keep.gpr (by decide)).trans h.rcx, hI.rdx⟩
 
 /-- After the separator: what the copy of `M` needs and keeps. -/
@@ -162,19 +162,19 @@ theorem sep_step {s t₂ : State} (hp : EPre s) (h : AfterPs s t₂) : WP isa (.
   refine WP.mono (sep_run hp h.rsp h.rd h.wr h.out h.rcx) fun t₃ ⟨hm₃, hdi₃, hsi₃, hcx₃, h10₃, hz₃, k₃⟩ => ?_
   have hb₃ : ∀ d, oEM ≤ d → d < oEM + 2 + (stackArg s 3).toNat → byte t₃.mem (fb s) d = byte t₂.mem (fb s) d := by
     intro d hd hd'
-    rw [hm₃, byte_ww _ _ _ (by unfold oZ oEM at *; omega) (by omega) (by decide),
-      byte_wb _ _ _ (by omega) (by omega) (by omega)]
+    rw [hm₃, byte_ww _ _ _ (by unfold oZ oEM at *; omega_using [hd]) (by omega_using [hP, hk2, hoEM, hd']) (by decide),
+      byte_wb _ _ _ (by omega_using [hd']) (by omega_using [hP, hk2, hoEM, hd']) (by omega_using [hP, hk2, hoEM])]
   refine ⟨(k₃.gpr (by decide)).trans h.rsp, k₃.2.1.trans h.rd, k₃.2.2.trans h.wr, ?_, ?_,
-    by rw [hb₃ _ (Nat.le_refl _) (by omega)]; exact h.e0, by rw [hb₃ _ (by omega) (by omega)]; exact h.e1,
-    fun i hi => by rw [hb₃ _ (by omega) (by omega)]; exact h.ep i hi, ?_, ?_, hdi₃, hsi₃, hcx₃, h10₃, hz₃⟩
+    by rw [hb₃ _ (Nat.le_refl _) (by omega_using [])]; exact h.e0, by rw [hb₃ _ (by omega_using []) (by omega_using [])]; exact h.e1,
+    fun i hi => by rw [hb₃ _ (by omega_using []) (by omega_using [hi])]; exact h.ep i hi, ?_, ?_, hdi₃, hsi₃, hcx₃, h10₃, hz₃⟩
   · rw [hm₃]
-    exact Outside.ww (Outside.wb h.out _ (by omega) (by omega) (by omega)) _ (by decide) (by decide) (by decide)
+    exact Outside.ww (Outside.wb h.out _ (by omega_using []) (by omega_using [hP, hk2, hfb, hoEM]) (by omega_using [hP, hk2, hoEM])) _ (by decide) (by decide) (by decide)
   · rw [hm₃]
     have s₂' : Slots s (t₂.mem.writeW (off (fb s) (oEM + 2 + (stackArg s 3).toNat)) (0 : Byte)) :=
-      Slots.outside h.slots (o := oEM + 2 + (stackArg s 3).toNat) (n := 1) (by unfold oZ oEM; omega)
-        (writeB_outside _ _ _ (by omega))
+      Slots.outside h.slots (o := oEM + 2 + (stackArg s 3).toNat) (n := 1) (by unfold oZ oEM; omega_using [])
+        (writeB_outside _ _ _ (by omega_using [hP, hk2, hoEM]))
     exact Slots.outside s₂' (o := oZ) (n := 8) (Nat.le_refl _) (writeW_outside _ _ _ (by decide))
-  · rw [hm₃, byte_ww _ _ _ (by unfold oZ oEM at *; omega) (by omega) (by decide), byte_wb_self]
+  · rw [hm₃, byte_ww _ _ _ (by unfold oZ oEM at *; omega_using []) (by omega_using [hP, hk2, hoEM]) (by decide), byte_wb_self]
   · rw [hm₃, word_writeW_self]; exact h.rdx
 
 /-- From what `Mid` keeps, and `M` after the separator: `PreCall`. -/
@@ -193,23 +193,23 @@ theorem preCall_of {s t₃ t₄ : State} (hp : EPre s) (h : Mid s t₃) (hsp₄ 
   have hPS : (psB s).length = (stackArg s 3).toNat := bytesAt_len _ _ _
   have hM : (msgB s).length = (stackArg s 1).toNat := bytesAt_len _ _ _
   have hk : ∀ d, d < oEM + 3 + (stackArg s 3).toNat → byte t₄.mem (fb s) d = byte t₃.mem (fb s) d :=
-    fun d hd => ho _ (.inl (by rw [ofs_off0 _ (by omega)]; omega))
-  refine ⟨hsp₄, hrd₄, hwr₄, Outside.trans h.out (Outside.mono ho (by omega) (by unfold frameBytes oEM; omega)),
-    Slots.outside h.slots (by unfold oZ oEM; omega) ho, ?_, ?_⟩
-  · rw [ho.word (.inl (by unfold oZ oEM; omega)) (by decide)]; exact h.ez
-  · refine em_eq (by rw [hPS, hM]; simp only [kOf]; omega) (by simp only [kOf]; omega) ?_ ?_ (fun i hi => ?_) ?_
+    fun d hd => ho _ (.inl (by rw [ofs_off0 _ (by omega_using [hP, hk2, hoEM, hd])]; omega_using [hd]))
+  refine ⟨hsp₄, hrd₄, hwr₄, Outside.trans h.out (Outside.mono ho (by omega_using []) (by unfold frameBytes oEM; omega_using [hP, hk2])),
+    Slots.outside h.slots (by unfold oZ oEM; omega_using []) ho, ?_, ?_⟩
+  · rw [ho.word (.inl (by unfold oZ oEM; omega_using [])) (by decide)]; exact h.ez
+  · refine em_eq (by rw [hPS, hM]; simp only [kOf]; omega_using [hP]) (by simp only [kOf]; omega_using []) ?_ ?_ (fun i hi => ?_) ?_
       (fun j hj => ?_)
     · rw [off_off]; show byte t₄.mem (fb s) (oEM + 0) = 0
-      rw [Nat.add_zero, hk _ (by omega), h.e0]
+      rw [Nat.add_zero, hk _ (by omega_using []), h.e0]
     · rw [off_off]; show byte t₄.mem (fb s) (oEM + 1) = 2
-      rw [hk _ (by omega), h.e1]
+      rw [hk _ (by omega_using []), h.e1]
     · rw [off_off]; show byte t₄.mem (fb s) (oEM + (2 + i)) = _
-      rw [← Nat.add_assoc, hk _ (by omega), h.ep i (by omega)]
+      rw [← Nat.add_assoc, hk _ (by omega_using [hPS, hi]), h.ep i (by omega_using [hPS, hi])]
     · rw [off_off]; show byte t₄.mem (fb s) (oEM + (2 + (psB s).length)) = 0
-      rw [← Nat.add_assoc, hPS, hk _ (by omega), h.es]
+      rw [← Nat.add_assoc, hPS, hk _ (by omega_using []), h.es]
     · rw [off_off]; show byte t₄.mem (fb s) (oEM + (3 + (psB s).length + j)) = _
       rw [hPS, show oEM + (3 + (stackArg s 3).toNat + j) = oEM + 3 + (stackArg s 3).toNat + j by
-        omega, hm j (by omega), getD_bytesAt _ _ (by omega)]
+        omega_using [], hm j (by omega_using [hM, hj]), getD_bytesAt _ _ (by omega_using [hM, hj])]
 
 theorem eval_ne_mid {s t : State} (h : Mid s t) : isa.eval .ne t = some (!(stackArg s 1 == 0)) := by
   simp only [eval, h.zf, Option.map_some]
@@ -218,7 +218,7 @@ theorem eval_ne_mid {s t : State} (h : Mid s t) : isa.eval .ne t = some (!(stack
 theorem msgLoop_step {s t₃ : State} (hp : EPre s) (h : Mid s t₃) (hm0 : 0 < (stackArg s 1).toNat) :
     WP isa msgLoop t₃ (PreCall s) := by
   have hP := hp.psLen
-  refine WP.mono (msgLoop_ok hp (o := oEM + 3 + (stackArg s 3).toNat) (by omega) (by omega) hm0 h.rd h.wr h.out
+  refine WP.mono (msgLoop_ok hp (o := oEM + 3 + (stackArg s 3).toNat) (by omega_using []) (by omega_using [hP]) hm0 h.rd h.wr h.out
     h.rdi h.rsi h.rcx h.r10) fun t₄ hJ => ?_
   exact preCall_of hp h ((hJ.keep.gpr (by decide)).trans h.rsp) (hJ.keep.2.1.trans h.rd)
     (hJ.keep.2.2.trans h.wr) hJ.out hJ.msg
@@ -226,7 +226,7 @@ theorem msgLoop_step {s t₃ : State} (hp : EPre s) (h : Mid s t₃) (hm0 : 0 < 
 /-- An empty `M`. -/
 theorem empty_step {s t₃ : State} (hp : EPre s) (h : Mid s t₃) (hm0 : (stackArg s 1).toNat = 0) :
     PreCall s t₃ :=
-  preCall_of hp h h.rsp h.rd h.wr (by rw [hm0]; exact Outside.refl _ _ _ _) fun i hi => absurd hi (by omega)
+  preCall_of hp h h.rsp h.rd h.wr (by rw [hm0]; exact Outside.refl _ _ _ _) fun i hi => absurd hi (by omega_using [hm0])
 
 theorem copy_step {s t₃ : State} (hp : EPre s) (h : Mid s t₃) : WP isa msgCopy t₃ (PreCall s) := by
   refine WP.ite (!(stackArg s 1 == 0)) (eval_ne_mid h) (fun hne => ?_) (fun heq => ?_)

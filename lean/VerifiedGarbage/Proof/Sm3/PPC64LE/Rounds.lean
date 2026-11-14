@@ -47,7 +47,7 @@ theorem var_succ (t : Nat) :
     var (t + 1) 3 = var t 2 ∧ var (t + 1) 4 = var t 7 ∧ var (t + 1) 5 = var t 4 ∧
     var (t + 1) 6 = var t 5 ∧ var (t + 1) 7 = var t 6 := by
   simp only [var]
-  rw [show (t + 1) % 4 = (t % 4 + 1) % 4 by omega]
+  rw [show (t + 1) % 4 = (t % 4 + 1) % 4 by omega_using []]
   have := Nat.mod_lt t (show 4 > 0 by decide)
   generalize t % 4 = c at *
   revert this; revert c; decide
@@ -62,7 +62,7 @@ theorem round_nodup (t : Nat) :
   revert this; revert c; decide
 
 theorem slot_ok (j : Nat) : slot j < 2 ^ 15 := by
-  simp only [slot]; omega
+  simp only [slot]; omega_using []
 
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofNat 64 (slot j)
@@ -163,31 +163,31 @@ theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
   · have hi' := hbin hi
     have hb := hblk hi
     simp only [Impl.Sm3.PPC64LE.expand, hi, ite_true, T0, T1, T2, T3]
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li (show 4 * i < 2 ^ 15 by omega),
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li (show 4 * i < 2 ^ 15 by omega_using [hi]),
       exec_loadRev_w, exec_store_w, slot_ok, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr4, hr6, hi', hout,
       BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb, Option.some.injEq,
       exists_eq_left', Nat.reduceLeDiff, reduceCtorEq, ↓reduceIte, ne_eq,
       not_false_eq_true, true_and]
     refine fun r h0 _ _ _ h4 => ?_
     simp [h0, h4]
-  · have hw := hwin (by omega)
-    have e16 := hw (i - 16) (by omega) (by omega)
-    have e9 := hw (i - 9) (by omega) (by omega)
-    have e3 := hw (i - 3) (by omega) (by omega)
-    have e13 := hw (i - 13) (by omega) (by omega)
-    have e6 := hw (i - 6) (by omega) (by omega)
-    rw [show slot (i - 16) = slot i by simp only [slot]; omega] at e16
-    rw [show slot (i - 9) = slot (i + 7) by simp only [slot]; omega] at e9
-    rw [show slot (i - 3) = slot (i + 13) by simp only [slot]; omega] at e3
-    rw [show slot (i - 13) = slot (i + 3) by simp only [slot]; omega] at e13
-    rw [show slot (i - 6) = slot (i + 10) by simp only [slot]; omega] at e6
+  · have hw := hwin (by omega_using [hi])
+    have e16 := hw (i - 16) (by omega_using [hi]) (by omega_using [])
+    have e9 := hw (i - 9) (by omega_using [hi]) (by omega_using [])
+    have e3 := hw (i - 3) (by omega_using [hi]) (by omega_using [])
+    have e13 := hw (i - 13) (by omega_using [hi]) (by omega_using [])
+    have e6 := hw (i - 6) (by omega_using [hi]) (by omega_using [])
+    rw [show slot (i - 16) = slot i by simp only [slot]; omega_using [hi]] at e16
+    rw [show slot (i - 9) = slot (i + 7) by simp only [slot]; omega_using [hi]] at e9
+    rw [show slot (i - 3) = slot (i + 13) by simp only [slot]; omega_using [hi]] at e3
+    rw [show slot (i - 13) = slot (i + 3) by simp only [slot]; omega_using [hi]] at e13
+    rw [show slot (i - 6) = slot (i + 10) by simp only [slot]; omega_using [hi]] at e6
     simp only [Impl.Sm3.PPC64LE.expand, hi, ite_false, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_w, exec_store_w, slot_ok,
       exec_logic, exec_rotr_w, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, Option.some.injEq,
       exists_eq_left', Nat.reduceLT, reduceCtorEq, ↓reduceIte, ne_eq, not_false_eq_true, true_and]
     simp only [BitVec.setWidth_xor, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
       e16, e9, e3, e13, e6, Nat.reduceLeDiff]
-    have hW := W_ge M (j := i) (by omega)
+    have hW := W_ge M (j := i) (by omega_using [hi])
     rw [Spec.Sm3.p1, rotl15 (W M (i - 3)), rotl7, rotl15, rotl23] at hW
     refine ⟨by rw [hW], fun r h0 h1 h2 _ _ => ?_⟩
     simp [h0, h1, h2]
@@ -225,16 +225,16 @@ abbrev winRegion (scr : Addr) : Region := ⟨scr, 64⟩
 
 theorem win_contains (scr : Addr) (j : Nat) : (winRegion scr).Contains (slotAddr scr j) 4 := by
   simp only [Region.Contains, slotAddr, slot]
-  have : j % 16 < 16 := Nat.mod_lt _ (by omega)
+  have : j % 16 < 16 := Nat.mod_lt _ (by omega_using [])
   generalize j % 16 = p at *
   rw [Offset.add_sub_cancel_left]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [this]
 
 theorem slot_sep (scr : Addr) {i j : Nat} (h : i % 16 ≠ j % 16) :
     Mem.Sep (slotAddr scr i) 4 (slotAddr scr j) 4 := by
   simp only [slotAddr, slot]
-  exact Offset.sep _ (by omega) (by omega) (by omega)
+  exact Offset.sep _ (by omega_using [h]) (by omega_using []) (by omega_using [])
 
 /-- What holds during the iterations, relative to the state `sB` at their
 start: the registers `V` are those of iteration `t`, and the window holds
@@ -282,15 +282,15 @@ theorem expand_inv {V : HashValue} {t i : Nat} {s : State} (hs : Inv V M scr sB 
     rw [hm₁]
     by_cases hji : j = i
     · subst hji; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (slot_sep scr (by omega)) (by decide)]
-      exact hs.win j (by omega) (by omega)
+    · rw [Mem.readW_writeW_sep (slot_sep scr (by omega_using [hj, hj', hji])) (by decide)]
+      exact hs.win j (by omega_using [hj, hji]) (by omega_using [hj'])
 
 theorem rounds_ok (h0 : Vars 0 sB H) : ∀ t ≤ 64, WP isa (rounds t) sB (RInv H M scr sB t) := by
   intro t ht
   induction t with
   | zero =>
     have i₀ : Inv H M scr sB 0 0 sB :=
-      ⟨h0, fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
+      ⟨h0, fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (by omega_using [])⟩
     show WP isa (.block (expand 0 ++ expand 1 ++ expand 2 ++ expand 3)) sB _
     rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (expand_inv hr4 hr6 hin hout hbin hblk i₀) fun s₁ h₁ => ?_
@@ -298,18 +298,18 @@ theorem rounds_ok (h0 : Vars 0 sB H) : ∀ t ≤ 64, WP isa (rounds t) sB (RInv 
     refine WP.mono (expand_inv hr4 hr6 hin hout hbin hblk h₂) fun s₃ h₃ => ?_
     exact expand_inv hr4 hr6 hin hout hbin hblk h₃
   | succ t ih =>
-    refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [ht])) fun s hs => ?_)
     rw [WP.block_append_iff]
     refine WP.mono (expand_inv hr4 hr6 hin hout hbin hblk hs) fun s₁ h₁ => ?_
     have hr6₁ : s₁.gpr .r6 = scr := (h₁.pub .r6 (by decide)).trans hr6
     refine WP.mono (round_ok t s₁ _ (W M t) (W M (t + 4)) scr h₁.vars hr6₁
       (by rw [h₁.rd, h₁.wr]; exact hin t) (by rw [h₁.rd, h₁.wr]; exact hin (t + 4))
-      (h₁.win t (by omega) (by omega)) (h₁.win (t + 4) (by omega) (by omega)))
+      (h₁.win t (by omega_using []) (by omega_using [])) (h₁.win (t + 4) (by omega_using []) (by omega_using [])))
       fun s₂ ⟨hv₂, hm₂, hrd₂, hwr₂, hr₂⟩ => ?_
     refine ⟨?_, fun r hr => by rw [hr₂ r hr, h₁.pub r hr], by rw [hrd₂, h₁.rd],
       by rw [hwr₂, h₁.wr], by rw [hm₂]; exact h₁.frame, fun j hj hj' => ?_⟩
     · rw [rounds_succ, round_eq]; exact hv₂
-    · rw [hm₂]; exact h₁.win j (by omega) (by omega)
+    · rw [hm₂]; exact h₁.win j (by omega_using [hj]) (by omega_using [hj'])
 
 end
 

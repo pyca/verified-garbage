@@ -62,7 +62,7 @@ theorem ptrY_ok {s : State} {L : Lay} {key sig dig : Addr} (hr : Regs s L key si
     (by decide)) fun u ⟨⟨b12, mu⟩, ku⟩ =>
     ⟨⟨b12, (ku.gpr .r6 (by decide)).trans a6, mu.trans m⟩, (k.trans ku).mono (by decide)⟩
   prun [a12, a6]
-  rw [off, show L.pl + L.ql + L.pl = 2 * L.pl + L.ql by omega]
+  rw [off, show L.pl + L.ql + L.pl = 2 * L.pl + L.ql by omega_using []]
 
 /-- `ptrR`: the signature, `q_len`. -/
 theorem ptrR_ok {s : State} {L : Lay} {key sig dig : Addr} (hr : Regs s L key sig dig) :

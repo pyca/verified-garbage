@@ -39,10 +39,10 @@ theorem regsVal_inj {s t : State} : ∀ {rs : List Reg},
   | q :: qs, h, r, hr => by
     simp only [regsVal] at h
     have := (s.gpr q).isLt; have := (t.gpr q).isLt
-    have hq : s.gpr q = t.gpr q := BitVec.eq_of_toNat_eq (by omega)
+    have hq : s.gpr q = t.gpr q := BitVec.eq_of_toNat_eq (by omega_using [h])
     rcases List.mem_cons.mp hr with rfl | hr
     · exact hq
-    · exact regsVal_inj (by omega) r hr
+    · exact regsVal_inj (by omega_using [h]) r hr
 
 /-- Two runs at the same point of the same recoding. -/
 structure PrepPair (n : Nat) (base : Addr) (size bits k j : Nat) (s t : State) : Prop where
@@ -94,22 +94,22 @@ theorem prepLoop_relCT {K : WinCfg} {src : Nat} (hR : Regs K.M.n) (hc : PrepChec
       (eval (.nonzero .x .x19) s = some true → ∃ n < m, I n s t)) := by
     intro m
     by_cases hm : 1 ≤ m ∧ m ≤ D
-    · have hp := Naf5.residual_boundB (B := 64 * K.M.n) (Nat.le_of_lt hk) (j := D - m) (by omega)
+    · have hp := Naf5.residual_boundB (B := 64 * K.M.n) (Nat.le_of_lt hk) (j := D - m) (by omega_using [hm])
       have hv : Naf5.residual k (D - m) ≤ 2 ^ (64 * K.M.n) :=
-        Nat.le_trans hp (Nat.pow_le_pow_right (by decide) (by omega))
-      refine (prepStep_relCT hR hc hb (j := D - m) (by omega) hv).mono
+        Nat.le_trans hp (Nat.pow_le_pow_right (by decide) (by omega_using []))
+      refine (prepStep_relCT hR hc hb (j := D - m) (by omega_using [hm]) hv).mono
         (P' := I m) (fun _ _ h => h.2.2) ?_
       intro s t hp
-      have s19 : s.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.left.count]; congr 1; omega
-      have t19 : t.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.right.count]; congr 1; omega
+      have s19 : s.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.left.count]; congr 1; omega_using [hm]
+      have t19 : t.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.right.count]; congr 1; omega_using [hm]
       refine ⟨by simp only [eval, read_x, s19, t19], fun _ => trivial, fun he => ?_⟩
       have hn : m - 1 ≠ 0 := by
         intro hz; simp only [eval, read_x, s19, hz] at he; cases he
-      refine ⟨m - 1, by omega, by omega, by omega, ?_⟩
-      have hj : D - (m - 1) = D - m + 1 := by omega
+      refine ⟨m - 1, by omega_using [hm], by omega_using [hn], by omega_using [hm], ?_⟩
+      have hj : D - (m - 1) = D - m + 1 := by omega_using [hm]
       rw [hj]; exact hp
     · exact RelCT.of_false (fun _ _ h => hm ⟨h.1, h.2.1⟩)
-  exact (RelCT.loop I step D).mono (fun _ _ h => ⟨by omega, Nat.le_refl _, by simpa [D] using h⟩)
+  exact (RelCT.loop I step D).mono (fun _ _ h => ⟨by omega_using [], Nat.le_refl _, by simpa [D] using h⟩)
     (fun _ _ h => h)
 
 /-- The recoding of the same scalar in two runs leaks the same trace. -/

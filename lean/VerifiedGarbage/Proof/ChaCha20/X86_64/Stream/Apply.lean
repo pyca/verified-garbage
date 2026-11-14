@@ -112,11 +112,11 @@ theorem APre.of (s₀ : State) (h : Proof.ChaCha20.applyX86_64.pre s₀) : APre 
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
-/-- Our caller's `rbx, rbp, r12`, and the bytes left after `apply`. -/
+/-- Our caller's `rbx, r14, r15`, and the bytes left after `apply`. -/
 structure Saved (s₀ : State) (m : Mem) : Prop where
   rbx : m.readW (off (st s₀) 576) 64 = s₀.gpr .rbx
-  rbp : m.readW (off (st s₀) 584) 64 = s₀.gpr .rbp
-  r12 : m.readW (off (st s₀) 592) 64 = s₀.gpr .r12
+  r14 : m.readW (off (st s₀) 584) 64 = s₀.gpr .r14
+  r15 : m.readW (off (st s₀) 592) 64 = s₀.gpr .r15
   left : m.readW (off (st s₀) 600) 64 = BitVec.ofNat 64 (N s₀ - L s₀)
 
 /-! ## Regions -/
@@ -207,8 +207,8 @@ theorem Saved.frame {s₀ : State} {rs : List Region} {m m' : Mem} (h : Saved s�
     simp only [savR, off_eq]
     exact Offset.contains _ h₁ (by omega_arith) (by omega_arith)
   exact ⟨by rw [hf.readW (c 576 (by decide) (by decide)) hd (by decide), h.rbx],
-    by rw [hf.readW (c 584 (by decide) (by decide)) hd (by decide), h.rbp],
-    by rw [hf.readW (c 592 (by decide) (by decide)) hd (by decide), h.r12],
+    by rw [hf.readW (c 584 (by decide) (by decide)) hd (by decide), h.r14],
+    by rw [hf.readW (c 592 (by decide) (by decide)) hd (by decide), h.r15],
     by rw [hf.readW (c 600 (by decide) (by decide)) hd (by decide), h.left]⟩
 
 theorem savR_sub (s₀ : State) : Region.Sub (savR s₀) (stR s₀) := by
@@ -217,11 +217,11 @@ theorem savR_sub (s₀ : State) : Region.Sub (savR s₀) (stR s₀) := by
 /-- After `start`, with `x` in `rdx`. -/
 structure R1 (s₀ : State) (x : Nat) (s : State) : Prop where
   rbx : s.gpr .rbx = st s₀
-  rbp : s.gpr .rbp = dp s₀
-  r12 : s.gpr .r12 = BitVec.ofNat 64 (L s₀)
+  r14 : s.gpr .r14 = dp s₀
+  r15 : s.gpr .r15 = BitVec.ofNat 64 (L s₀)
   rdx : s.gpr .rdx = BitVec.ofNat 64 x
   rax : s.gpr .rax = BitVec.ofNat 64 (O s₀)
-  keep : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s.gpr r = s₀.gpr r
+  keep : ∀ r ∈ [Reg.r13, .rbp, .r12, .rsp], s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mid : Mid s₀ s.mem
@@ -251,12 +251,12 @@ theorem start_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : 
   simp only [off] at o576 o584 o592 o600
   have hrdi := h.keep .rdi (by decide); have hrsi := h.keep .rsi (by decide)
   have hrdx := h.keep .rdx (by decide)
-  have hrbx := h.keep .rbx (by decide); have hrbp := h.keep .rbp (by decide)
-  have hr12 := h.keep .r12 (by decide)
+  have hrbx := h.keep .rbx (by decide); have hr14 := h.keep .r14 (by decide)
+  have hr15 := h.keep .r15 (by decide)
   apply WP.of_runBlock
   simp (config := {decide := true}) only [start, runBlock_cons, runStep_some, runBlock_nil, exec,
     ea_at, readSrc, execAlu, arithFlags, State.store64, State.setReg, State.setFlags, hrdi, hrsi, hrdx,
-    hrbx, hrbp, hr12, h.rax, o576, o584, o592, o600, ite_true, ite_false, Option.map_some,
+    hrbx, hr14, hr15, h.rax, o576, o584, o592, o600, ite_true, ite_false, Option.map_some,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   have hL := L_lt s₀
   have hN := N_lt s₀
@@ -265,7 +265,7 @@ theorem start_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : 
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, toNat_ofNat_lt hN]; exact hle),
       toNat_ofNat_lt hN, toNat_ofNat_lt (by omega_arith)]
   have hf : Frame [stR s₀] s₀.mem ((((s₀.mem.writeW (off (st s₀) 576) (s₀.gpr .rbx)).writeW (off (st s₀) 584)
-      (s₀.gpr .rbp)).writeW (off (st s₀) 592) (s₀.gpr .r12)).writeW (off (st s₀) 600)
+      (s₀.gpr .r14)).writeW (off (st s₀) 592) (s₀.gpr .r15)).writeW (off (st s₀) 600)
       (BitVec.ofNat 64 (N s₀ - L s₀))) := by
     have c : ∀ d, d + 8 ≤ 768 → (stR s₀).Contains (off (st s₀) d) (64 / 8) :=
       fun d hd => contains_off hd (by omega_arith)
@@ -312,13 +312,13 @@ theorem sel_ok {s₀ : State} {s : State} (h : R1 s₀ (L s₀) s) (hc : s.cf = 
       Option.some.injEq, exists_eq_left']
     have g : ∀ r, r ≠ .rdx → (s.setReg .rdx (s.gpr .rax)).gpr r = s.gpr r := fun r hr => by
       simp [State.setReg, hr]
-    exact ⟨by rw [g _ (by decide), h.rbx], by rw [g _ (by decide), h.rbp], by rw [g _ (by decide), h.r12],
+    exact ⟨by rw [g _ (by decide), h.rbx], by rw [g _ (by decide), h.r14], by rw [g _ (by decide), h.r15],
       by simp [State.setReg, h.rax, H, headLen, bufLeft, Nat.min_eq_left (Nat.le_of_lt hlt)],
       by rw [g _ (by decide), h.rax],
       fun r hr => by rw [g r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)]; exact h.keep r hr,
       h.rd, h.wr, h.mid, h.done, h.frame⟩
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hge
-    refine WP.block_nil (M := isa) ⟨h.rbx, h.rbp, h.r12, ?_, h.rax, h.keep, h.rd, h.wr, h.mid, h.done, h.frame⟩
+    refine WP.block_nil (M := isa) ⟨h.rbx, h.r14, h.r15, ?_, h.rax, h.keep, h.rd, h.wr, h.mid, h.done, h.frame⟩
     rw [h.rdx, H, headLen, bufLeft, Nat.min_eq_right hge]
 
 
@@ -326,11 +326,11 @@ theorem sel_ok {s₀ : State} {s : State} (h : R1 s₀ (L s₀) s) (hc : s.cf = 
 bytes of the whole blocks. -/
 structure Q1 (s₀ s : State) : Prop where
   rbx : s.gpr .rbx = st s₀
-  rbp : s.gpr .rbp = dp s₀ + BitVec.ofNat 64 (H s₀)
-  r12 : s.gpr .r12 = BitVec.ofNat 64 (L s₀ - H s₀)
+  r14 : s.gpr .r14 = dp s₀ + BitVec.ofNat 64 (H s₀)
+  r15 : s.gpr .r15 = BitVec.ofNat 64 (L s₀ - H s₀)
   rdx : s.gpr .rdx = BitVec.ofNat 64 (64 * NB s₀)
   zf : s.zf = some (decide (64 * NB s₀ = 0))
-  keep : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s.gpr r = s₀.gpr r
+  keep : ∀ r ∈ [Reg.r13, .rbp, .r12, .rsp], s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mid : Mid s₀ s.mem
@@ -367,14 +367,14 @@ theorem part1_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : 
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
       Option.some.injEq, exists_eq_left', ite_true, ite_false, h₂.rbx, h₂.rax]
-    refine ⟨⟨h₂.rbx, h₂.rbp, h₂.r12, h₂.rdx, h₂.rax, fun r hr => ?_, h₂.rd, h₂.wr, h₂.mid, h₂.done,
+    refine ⟨⟨h₂.rbx, h₂.r14, h₂.r15, h₂.rdx, h₂.rax, fun r hr => ?_, h₂.rd, h₂.wr, h₂.mid, h₂.done,
       h₂.frame⟩, ptr_eq _ hO⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) <;>
       exact h₂.keep _ (by simp)
   refine WP.seq (WP.mono h₃ fun s₃ ⟨h₃, hrsi⟩ => ?_)
   have hb : BPre s₃ (dp s₀) (st s₀ + BitVec.ofNat 64 (128 - O s₀)) (H s₀) :=
-    ⟨h₃.rbp, hrsi, h₃.rdx, by omega_arith,
+    ⟨h₃.r14, hrsi, h₃.rdx, by omega_arith,
       by
         rw [h₃.wr]
         exact ⟨dR s₀, by rw [hp.wr]; simp, by
@@ -384,24 +384,24 @@ theorem part1_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : 
         exact ⟨stR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
       (hp.st_d.symm.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Offset.sub_base _ (by omega_arith))⟩
   refine WP.seq (WP.mono (xorBytes_ok hb) fun s₄ h₄ => ?_)
-  have hr12 : s₄.gpr .r12 = BitVec.ofNat 64 (L s₀ - H s₀) := by
-    rw [h₄.r12, h₃.r12, Offset.ofNat_sub_ofNat hH]
+  have hr15 : s₄.gpr .r15 = BitVec.ofNat 64 (L s₀ - H s₀) := by
+    rw [h₄.r15, h₃.r15, Offset.ofNat_sub_ofNat hH]
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
-    Option.some.injEq, exists_eq_left', ite_true, hr12, and_mask,
+    Option.some.injEq, exists_eq_left', ite_true, hr15, and_mask,
     toNat_ofNat_lt (show L s₀ - H s₀ < 2 ^ 64 by omega_arith)]
   have hnb : (L s₀ - H s₀) / 64 * 64 = 64 * NB s₀ := by simp only [NB, blocksOf, H]; omega_arith
   rw [hnb]
   have hrbx : s₄.gpr .rbx = st s₀ := by
     rw [h₄.keep _ (by decide) (by decide) (by decide) (by decide) (by decide), h₃.rbx]
-  have hk4 : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s₄.gpr r = s₀.gpr r := fun r hr => by
+  have hk4 : ∀ r ∈ [Reg.r13, .rbp, .r12, .rsp], s₄.gpr r = s₀.gpr r := fun r hr => by
     have := h₃.keep r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
       (rw [← this]; exact h₄.keep _ (by decide) (by decide) (by decide) (by decide) (by decide))
   refine ⟨by simp (config := {decide := true}) [hrbx],
-    by simp (config := {decide := true}) [h₄.rbp], by simp (config := {decide := true}) [hr12],
+    by simp (config := {decide := true}) [h₄.r14], by simp (config := {decide := true}) [hr15],
     by simp (config := {decide := true}), ?_, fun r hr => ?_, by rw [h₄.rd, h₃.rd],
     by rw [h₄.wr, h₃.wr], ⟨fun i hi => ?_, ?_⟩, fun k hk => ?_, ?_⟩
   · rw [← Offset.ofNat_sub_ofNat_beq (x := 64 * NB s₀) (y := 0) (by omega_arith) (by omega_arith)]
@@ -445,10 +445,10 @@ set_option simprocs false in
 theorem args_exec {s : State} {p : Addr} (hrbx : s.gpr .rbx = p)
     (hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off p d) 8) (hrd : s.rd = []) :
     WP isa (.block blocksArgs) s fun s' => s'.mem = copyMem s.mem p ((s.gpr .rdx >>> 6).setWidth 32) ∧
-      s'.gpr .rdi = p + BitVec.ofNat 64 192 ∧ s'.gpr .rsi = s.gpr .rbp ∧ s'.gpr .rcx = p + BitVec.ofNat 64 256 ∧
-      s'.gpr .rdx = s.gpr .rdx ∧ s'.gpr .rbp = s.gpr .rbp + s.gpr .rdx ∧
-      s'.gpr .r12 = s.gpr .r12 - s.gpr .rdx ∧
-      (∀ r ∈ [Reg.rbx, .r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      s'.gpr .rdi = p + BitVec.ofNat 64 192 ∧ s'.gpr .rsi = s.gpr .r14 ∧ s'.gpr .rcx = p + BitVec.ofNat 64 256 ∧
+      s'.gpr .rdx = s.gpr .rdx ∧ s'.gpr .r14 = s.gpr .r14 + s.gpr .rdx ∧
+      s'.gpr .r15 = s.gpr .r15 - s.gpr .rdx ∧
+      (∀ r ∈ [Reg.rbx, .r13, .rbp, .r12, .rsp], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have i : ∀ d, d + 8 ≤ 768 → InRegions (s.rd ++ s.wr) (off p d) 8 := fun d hd => by
     rw [hrd, List.nil_append]; exact hw d hd
   have o4 : InRegions s.wr (off p 48) 4 := by
@@ -545,9 +545,9 @@ theorem shr_eq {nb : Nat} (h : 64 * nb < 2 ^ 64) :
 them. -/
 structure Q2 (s₀ s : State) : Prop where
   rbx : s.gpr .rbx = st s₀
-  rbp : s.gpr .rbp = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)
-  r12 : s.gpr .r12 = BitVec.ofNat 64 (T s₀)
-  keep : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s.gpr r = s₀.gpr r
+  r14 : s.gpr .r14 = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)
+  r15 : s.gpr .r15 = BitVec.ofNat 64 (T s₀)
+  keep : ∀ r ∈ [Reg.r13, .rbp, .r12, .rsp], s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   state : stateAt s.mem (st s₀) = ctr (S0 s₀) (NB s₀)
@@ -565,7 +565,7 @@ theorem Mid.state {s₀ : State} {m : Mem} (h : Mid s₀ m) : stateAt m (st s₀
 
 theorem nb_zero_ok {s₀ : State} {s : State} (h : Q1 s₀ s) (h0 : 64 * NB s₀ = 0) : Q2 s₀ s := by
   have hT := T_eq s₀
-  refine ⟨h.rbx, by rw [h.rbp, h0, Nat.add_zero], by rw [h.r12, hT, h0, Nat.sub_zero], h.keep, h.rd, h.wr,
+  refine ⟨h.rbx, by rw [h.r14, h0, Nat.add_zero], by rw [h.r15, hT, h0, Nat.sub_zero], h.keep, h.rd, h.wr,
     by rw [h.mid.state, show NB s₀ = 0 by omega_arith, ctr_zero], fun i hi => h.mid.keep _ (by omega_arith), h.mid.saved,
     by rw [h0, Nat.add_zero]; exact h.done, h.frame.mono (by simp)⟩
 
@@ -584,19 +584,44 @@ theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_b
 
 
 theorem part2_eq (x : Impl.ChaCha20.X86_64.Callee) :
-    part2 x = .ite .e (.block []) (.seq (.block blocksArgs) x.inPlace) := rfl
+    part2 x = .ite .e (.block []) (.seq (.block blocksArgs) (.seq x.inPlace (.block stateBack))) := rfl
+
+theorem stateBack_exec {s : State} :
+    WP isa (.block [.mov .rbx (.reg .rsi), .alu .sub .rbx (.imm 256)]) s fun s' =>
+      s'.gpr .rbx = s.gpr .rsi - BitVec.ofNat 64 256 ∧
+      (∀ r, r ≠ .rbx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.bind_some,
+    Option.some.injEq, exists_eq_left', ite_true, Option.map_some]
+  exact ⟨rfl, fun r hr => by simp [hr], trivial, trivial, trivial⟩
+
+/-- The state, taken again from the buffer `vg_chacha20_xor` returns in `rsi`. -/
+theorem stateBack_ok {s₀ s : State} (h : Q2 s₀ s) (hsi : s.gpr .rsi = st s₀ + BitVec.ofNat 64 256) :
+    WP isa (.block stateBack) s (Q2 s₀) :=
+  WP.mono stateBack_exec fun s' ⟨hb, hk, hm, hrd, hwr⟩ =>
+    ⟨by rw [hb, hsi, BitVec.add_sub_cancel], by rw [hk _ (by decide), h.r14], by rw [hk _ (by decide), h.r15],
+      fun r hr => by
+        have hne : r ≠ .rbx := by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl <;> decide
+        rw [hk r hne, h.keep r hr],
+      by rw [hrd, h.rd], by rw [hwr, h.wr], by rw [hm]; exact h.state, fun i hi => by rw [hm]; exact h.buf i hi,
+      by rw [hm]; exact h.saved, by rw [hm]; exact h.done, by rw [hm]; exact h.frame⟩
 
 theorem blocks_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s)
-    (hnb : 0 < NB s₀) : WP isa (.seq (.block blocksArgs) v.callee.inPlace) s (Q2 s₀) := by
+    (hnb : 0 < NB s₀) :
+    WP isa (.seq (.block blocksArgs) (.seq v.callee.inPlace (.block stateBack))) s (Q2 s₀) := by
   have hL := L_lt s₀
   have hH := H_le s₀
   have hHNB := HNB_le s₀
   have hT := T_eq s₀
   refine WP.seq (WP.mono (args_exec h.rbx (h.w hp) (by rw [h.rd, hp.rd])) fun s₁ ⟨m₁, rdi₁, rsi₁, rcx₁, rdx₁,
-    rbp₁, r12₁, k₁, rd₁, wr₁⟩ => ?_)
+    r14₁, r15₁, k₁, rd₁, wr₁⟩ => ?_)
   rw [h.rdx, shr_eq (by omega_arith)] at m₁
   rw [h.rdx] at rdx₁
-  rw [h.rbp] at rsi₁
+  rw [h.r14] at rsi₁
   have hsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [k₁ .rsp (by simp), h.keep .rsp (by simp)]
   have hstk : below (s₁.gpr .rsp) 24 = stkR s₀ := by rw [hsp₁]; rfl
   have hwr₁ : s₁.wr = [stR s₀, dR s₀] := by rw [wr₁, h.wr, hp.wr]
@@ -616,15 +641,16 @@ theorem blocks_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
     have := hp.wrap_d
     rw [BitVec.toNat_add, toNat_ofNat_lt (by omega_arith)]
     omega_arith
-  refine xor_call v (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
+  refine WP.seq (xor_call v (S := st s₀ + BitVec.ofNat 64 192) (D := dp s₀ + BitVec.ofNat 64 (H s₀))
     (B := st s₀ + BitVec.ofNat 64 256) (n := 64 * NB s₀) rdi₁ rsi₁ rdx₁ rcx₁ (by omega_arith) dSD dSB dDB hwrap
     (by rw [hstk]; exact hp.stk_st.sub_right (cpR_sub s₀)) (by rw [hstk]; exact hp.stk_d.sub_right (blR_sub s₀))
     (by rw [hstk]; exact hp.stk_st.sub_right (wkR_sub s₀))
     (by rw [hrd₁, hwr₁, List.nil_append, List.nil_append]; exact Covers.of_sub hcov)
-    (by rw [hwr₁]; exact Covers.of_sub hcov) ?_
-  intro s₂ rd₂ wr₂ cs₂ f₂ x₂
+    (by rw [hwr₁]; exact Covers.of_sub hcov) ?_)
+  intro s₂ rd₂ wr₂ cs₂ f₂ x₂ hB₂
+  refine stateBack_ok ?_ hB₂
   rw [hstk] at f₂
-  have g : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp], s₂.gpr r = s₁.gpr r :=
+  have g : ∀ r ∈ [Reg.rbx, .r14, .r15, .r13, .rbp, .r12, .rsp], s₂.gpr r = s₁.gpr r :=
     fun r hr => cs₂ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [calleeSaved])
@@ -654,8 +680,8 @@ theorem blocks_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
   have dk : ∀ R, Region.Sub R (dR s₀) → R.Disjoint (stkR s₀) := fun R hR => hp.stk_d.symm.sub_left hR
   refine ⟨by rw [g .rbx (by simp), k₁ .rbx (by simp), h.rbx], ?_, ?_, fun r hr => ?_, by rw [rd₂, rd₁, h.rd],
     by rw [wr₂, wr₁, h.wr], ?_, fun i hi => ?_, ?_, fun k hk => ?_, ?_⟩
-  · rw [g .rbp (by simp), rbp₁, h.rbp, h.rdx, Offset.add_add]
-  · rw [g .r12 (by simp), r12₁, h.r12, h.rdx, Offset.ofNat_sub_ofNat (by omega_arith), hT, Nat.sub_sub]
+  · rw [g .r14 (by simp), r14₁, h.r14, h.rdx, Offset.add_add]
+  · rw [g .r15 (by simp), r15₁, h.r15, h.rdx, Offset.ofNat_sub_ofNat (by omega_arith), hT, Nat.sub_sub]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [g r (by rcases hr with rfl | rfl | rfl | rfl <;> simp), k₁ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp)]
     exact h.keep r (by rcases hr with rfl | rfl | rfl | rfl <;> simp)
@@ -725,7 +751,7 @@ theorem part2_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre s
 started, if any, which is buffered. -/
 structure Q3 (s₀ s : State) : Prop where
   rbx : s.gpr .rbx = st s₀
-  keep : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s.gpr r = s₀.gpr r
+  keep : ∀ r ∈ [Reg.r13, .rbp, .r12, .rsp], s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   state : stateAt s.mem (st s₀) = ctr (S0 s₀) (NB s₀ + if T s₀ = 0 then 0 else 1)
@@ -758,9 +784,9 @@ theorem ctr_exec {s : State} {p : Addr} (hrbx : s.gpr .rbx = p) (hw : InRegions 
     (hr : InRegions (s.rd ++ s.wr) (off p 48) 4) :
     WP isa (.block [.mov32 .rax (.mem (at_ .rbx 48)), .alu32 .add .rax (.imm 1),
       .store32 (at_ .rbx 48) .rax, .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 64),
-      .mov .rdx (.reg .r12)]) s fun s' =>
+      .mov .rdx (.reg .r15)]) s fun s' =>
       s'.mem = s.mem.writeW (off p 48) (s.mem.readW (off p 48) 32 + 1) ∧
-      s'.gpr .rsi = p + BitVec.ofNat 64 64 ∧ s'.gpr .rdx = s.gpr .r12 ∧
+      s'.gpr .rsi = p + BitVec.ofNat 64 64 ∧ s'.gpr .rdx = s.gpr .r15 ∧
       (∀ r, r ≠ .rax → r ≠ .rsi → r ≠ .rdx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   simp only [off] at hw hr
   apply WP.of_runBlock
@@ -810,7 +836,7 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) (ht 
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨stR s₀, by simp, 64, rfl, show 64 + 256 ≤ 768 by decide⟩) fun s₂ rd₂ wr₂ cs₂ f₂ rsi₂ blk₂ => ?_)
   rw [hb8] at f₂
-  have g : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp], s₂.gpr r = s.gpr r := fun r hr => by
+  have g : ∀ r ∈ [Reg.rbx, .r14, .r15, .r13, .rbp, .r12, .rsp], s₂.gpr r = s.gpr r := fun r hr => by
     rw [cs₂ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
@@ -824,12 +850,12 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) (ht 
   refine WP.seq (WP.mono (ctr_exec (by rw [g .rbx (by simp), h.rbx]) hw48 hr48)
     fun s₃ ⟨m₃, rsi₃, rdx₃, k₃, rd₃, wr₃⟩ => ?_)
   have hT64 : T s₀ < 64 := Nat.mod_lt _ (by decide)
-  have hrbp₃ : s₃.gpr .rbp = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀) := by
-    rw [k₃ .rbp (by decide) (by decide) (by decide), g .rbp (by simp), h.rbp]
+  have hr14₃ : s₃.gpr .r14 = dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀) := by
+    rw [k₃ .r14 (by decide) (by decide) (by decide), g .r14 (by simp), h.r14]
   have dS : ∀ R R', Region.Sub R (dR s₀) → Region.Sub R' (stR s₀) → R.Disjoint R' := fun R R' h₁ h₂ =>
     (hp.st_d.symm.sub_left h₁).sub_right h₂
   have hb : BPre s₃ (dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)) (st s₀ + BitVec.ofNat 64 64) (T s₀) :=
-    ⟨hrbp₃, rsi₃, by rw [rdx₃, g .r12 (by simp), h.r12], by omega_arith,
+    ⟨hr14₃, rsi₃, by rw [rdx₃, g .r15 (by simp), h.r15], by omega_arith,
       by
         rw [wr₃, wr₂, hwr₁]
         exact ⟨dR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
@@ -922,21 +948,21 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) (ht 
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, tR⟩
 
 
-theorem part3_eq : part3 = .seq (.block [.alu .test .r12 (.reg .r12)])
+theorem part3_eq : part3 = .seq (.block [.alu .test .r15 (.reg .r15)])
     (.ite .e (.block []) (.seq (.block tailArgs) (.seq (.call "vg_chacha20_block" Impl.ChaCha20.X86_64.block)
       tailXor))) := rfl
 
 set_option simprocs false in
 theorem part3_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) : WP isa part3 s (Q3 s₀) := by
   have hT64 : T s₀ < 64 := Nat.mod_lt _ (by decide)
-  have h₁ : WP isa (.block [.alu .test .r12 (.reg .r12)]) s fun s₁ =>
+  have h₁ : WP isa (.block [.alu .test .r15 (.reg .r15)]) s fun s₁ =>
       Q2 s₀ s₁ ∧ s₁.zf = some (decide (T s₀ = 0)) := by
     apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       execAlu, RegUpd.zf_arithFlags, Option.bind_some, Option.some.injEq,
       exists_eq_left']
-    refine ⟨⟨h.rbx, h.rbp, h.r12, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
-    rw [BitVec.and_self, h.r12, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega_arith) (by omega_arith)]
+    refine ⟨⟨h.rbx, h.r14, h.r15, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
+    rw [BitVec.and_self, h.r15, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega_arith) (by omega_arith)]
     simp
   rw [part3_eq]
   refine WP.seq (WP.mono h₁ fun s₁ ⟨h₁, hz⟩ => ?_)
@@ -992,14 +1018,14 @@ theorem finish_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · simp (config := {decide := true}) only [ite_true, ite_false]
       rw [sv 576 (by decide) (by decide)]; exact h.saved.rbx
-    · simp (config := {decide := true}) only [ite_true, ite_false]
-      rw [sv 584 (by decide) (by decide)]; exact h.saved.rbp
+    · simp (config := {decide := true}) only [ite_false]; exact h.keep .rbp (by simp)
     · simp (config := {decide := true}) only [ite_false]; exact h.keep .rsp (by simp)
-    · simp (config := {decide := true}) only [ite_true, ite_false]
-      rw [sv 592 (by decide) (by decide)]; exact h.saved.r12
+    · simp (config := {decide := true}) only [ite_false]; exact h.keep .r12 (by simp)
     · simp (config := {decide := true}) only [ite_false]; exact h.keep .r13 (by simp)
-    · simp (config := {decide := true}) only [ite_false]; exact h.keep .r14 (by simp)
-    · simp (config := {decide := true}) only [ite_false]; exact h.keep .r15 (by simp)
+    · simp (config := {decide := true}) only [ite_true, ite_false]
+      rw [sv 584 (by decide) (by decide)]; exact h.saved.r14
+    · simp (config := {decide := true}) only [ite_true, ite_false]
+      rw [sv 592 (by decide) (by decide)]; exact h.saved.r15
   · dsimp only
     exact hF.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -71,8 +71,8 @@ theorem prodSparseX_ok (s : State) {t0 : Reg} (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx 
         (BitVec.ofBool c).setWidth 64).toNat = c.toNat := by
       intro c; cases c <;> rfl
     rw [hc0, hc1]
-    have l0 : u.toNat * 0xffffffff00000001 / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega)
-    have l1 : u.toNat * 0xffffffff / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega)
+    have l0 : u.toNat * 0xffffffff00000001 / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega_using [])
+    have l1 : u.toNat * 0xffffffff / 2 ^ 64 < 2 ^ 64 := Nat.div_lt_of_lt_mul (by omega_using [])
     have e0 : (BitVec.ofNat 64 (u.toNat * 0xffffffff00000001 / 2 ^ 64)).toNat =
         u.toNat * 0xffffffff00000001 / 2 ^ 64 := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt l0]
     have e1 : (BitVec.ofNat 64 (u.toNat * 0xffffffff / 2 ^ 64)).toNat = u.toNat * 0xffffffff / 2 ^ 64 := by
@@ -92,7 +92,7 @@ theorem prodSparseX_ok (s : State) {t0 : Reg} (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx 
     rw [e0, e2] at a1
     rw [e1] at a2
     have hc2 := Bool.toNat_le c₂
-    omega
+    omega_using [a1, a2]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 

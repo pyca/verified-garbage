@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Rcb
 public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The group law, as the proofs of the code use it
@@ -171,7 +172,7 @@ theorem sq_pow {m : Nat} [NeZero m] (x : Fin m) (k : Nat) : (x * x) ^ k = x ^ (k
   induction k with
   | zero => rfl
   | succ k ih =>
-    rw [Lean.Grind.Semiring.pow_succ, ih, show k + 1 + (k + 1) = (k + k) + 1 + 1 by omega,
+    rw [Lean.Grind.Semiring.pow_succ, ih, show k + 1 + (k + 1) = (k + k) + 1 + 1 by omega_using [],
       Lean.Grind.Semiring.pow_succ, Lean.Grind.Semiring.pow_succ, Lean.Grind.Semiring.mul_assoc]
 
 /-- The specification's `pow` is the power. -/
@@ -182,12 +183,12 @@ theorem pow_eq_npow {m : Nat} [NeZero m] (x : Fin m) (e : Nat) : pow x e = x ^ e
     by_cases h0 : e = 0
     · subst h0; rfl
     · simp only [h0, ite_false]
-      rw [ih (e / 2) (by omega), sq_pow]
+      rw [ih (e / 2) (by omega_using [h0]), sq_pow]
       by_cases h2 : e % 2 = 0
       · simp only [h2, ite_true]
-        exact congrArg (x ^ ·) (by omega)
+        exact congrArg (x ^ ·) (by omega_using [h2])
       · simp only [h2, ite_false]
-        rw [show x ^ e = x ^ (e / 2 + e / 2 + 1) from congrArg (x ^ ·) (by omega),
+        rw [show x ^ e = x ^ (e / 2 + e / 2 + 1) from congrArg (x ^ ·) (by omega_using [h2]),
           Lean.Grind.Semiring.pow_succ, Lean.Grind.CommSemiring.mul_comm]
 
 /-- The group law of `C`, as a value: what a curve's proofs on each target take

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Camellia-CFB128 artifacts on baseline ARMv7 -/
+/-! # Camellia-CFB128 on ARMv7 -/
 
 @[expose] public section
 

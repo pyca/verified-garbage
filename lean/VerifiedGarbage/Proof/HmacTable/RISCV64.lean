@@ -187,7 +187,7 @@ theorem hashAt_tableOf {m : Mem} {p : Addr} {w : HVar}
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
       have := List.findIdx_le_length (p := fun G => G.rust == w.G.rust) (xs := Spec.Mgf1.hashes)
       simp only [Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
-      omega)]
+      omega_using [this])]
   exact w.t.idx
 
 end VG.Proof.HmacTable.RISCV64

@@ -66,7 +66,7 @@ theorem spill_ok {s₀ s : State} (hp : CP s₀) (h : Prepared s₀ s 10) :
     · intro k hk
       change InRegions a.wr (a.gpr .x1 + BitVec.ofNat 64 (4 * k)) 4
       rw [ha.wr,h.wr,ha.gpr,hx20]
-      exact hp.buffer _ _ (by omega)
+      exact hp.buffer _ _ (by omega_using [hk])
     · change (⟨a.gpr .x1,256⟩ : Region).Disjoint ⟨a.gpr .x0,64⟩
       rw [ha.gpr,hx20,ha.other _ (by decide),hx0]
       exact hp.st_b.symm.sub_left (Region.sub_prefix (by decide : 256 ≤ 320))
@@ -105,11 +105,11 @@ theorem Spilled.read16 {s₀ s : State} (h : Spilled s₀ s) (r : Fin 4) :
   rw [VG.AArch64.read16]
   have hw : ∀ e (he : e < 4), s.mem.readW
       (s₀.gpr .x3 + BitVec.ofNat 64 (16 * r) + BitVec.ofNat 64 (4 * e)) 32 =
-        (block (ctr (source s₀) 4))[4 * r.val + e]'(by omega) := by
+        (block (ctr (source s₀) 4))[4 * r.val + e]'(by omega_using [he]) := by
     intro e he
     rw [BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 16 * r.val + 4 * e = 4 * (4 * r.val + e) by omega]
-    exact h.words _ (by omega)
+      show 16 * r.val + 4 * e = 4 * (4 * r.val + e) by omega_using []]
+    exact h.words _ (by omega_using [he])
   rw [hw 0 (by decide),hw 1 (by decide),hw 2 (by decide),hw 3 (by decide)]
   simp only [VG.Proof.ChaCha20.AArch64.Neon4.output,Nat.mod_eq_of_lt r.isLt,Nat.add_zero]
 

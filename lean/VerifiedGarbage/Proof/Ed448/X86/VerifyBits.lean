@@ -61,7 +61,7 @@ theorem vbits_ok {s : State} {base : Addr} (hs : Scr s base) {a8 a12 : Addr}
   have ve : v.gpr .esi = ch := by rw [hv.other _ (by decide), hu.gpr]
   -- The bits of `k`.
   refine WP.seq (WP.mono (bitsLoop_ok vs (o := KBITS) (n := 57) (by decide) (by decide) (by decide)
-    (k := ch.setWidth 64) (by rw [ve]) (by rw [ve]; omega) (by rw [rv]; exact hkr) hkd)
+    (k := ch.setWidth 64) (by rw [ve]) (by rw [ve]; omega_using [hfk]) (by rw [rv]; exact hkr) hkd)
     fun w ⟨wk, wo, wb, _⟩ => ?_)
   have ws := vs.of_keeps wk (by decide)
   have wx : w.gpr .ebx = sg := by rw [wk.1 _ (by decide), hv.gpr]
@@ -74,8 +74,8 @@ theorem vbits_ok {s : State} {base : Addr} (hs : Scr s base) {a8 a12 : Addr}
   have ym : y.mem = w.mem := by rw [hy.mem, hx.mem]
   refine WP.seq (WP.mono (bitsLoop_ok ys (o := BITS) (n := 57) (by decide) (by decide) (by decide)
     (k := sg.setWidth 64 + BitVec.ofNat 64 57)
-    (by rw [ye]; exact (addr_eq (x := sg) (k := 57) (by omega) : _))
-    (by rw [ye, BitVec.toNat_add, BitVec.toNat_ofNat]; omega) (by rw [ry]; exact hsr) hsd)
+    (by rw [ye]; exact (addr_eq (x := sg) (k := 57) (by omega_using [hfs]) : _))
+    (by rw [ye, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hfs]) (by rw [ry]; exact hsr) hsd)
     fun z ⟨zk, zo, zb, ze⟩ => ?_)
   refine wp_alu (Or.inr (Or.inl rfl)) rfl fun t ht _ =>
     WP.block_nil ⟨?_, ?_, ⟨w.mem, ?_, ?_⟩, fun j hj => ⟨?_, ?_⟩⟩
@@ -89,11 +89,11 @@ theorem vbits_ok {s : State} {base : Addr} (hs : Scr s base) {a8 a12 : Addr}
   · rw [ht.mem, ← ym]; exact zo
   · have src : y.mem (off (sg.setWidth 64 + BitVec.ofNat 64 57) (j / 8)) =
         s.mem (off (sg.setWidth 64 + BitVec.ofNat 64 57) (j / 8)) := by
-      rw [ym, wo _ (Or.inr (Nat.le_trans (by decide) (hsd (j / 8) (by omega)))), hv.mem, hu.mem]
-    rw [ht.mem, zb j (by omega), src, Proof.Ed448.scalar_bit _ _ hj]
+      rw [ym, wo _ (Or.inr (Nat.le_trans (by decide) (hsd (j / 8) (by omega_using [hj])))), hv.mem, hu.mem]
+    rw [ht.mem, zb j (by omega_using [hj]), src, Proof.Ed448.scalar_bit _ _ hj]
   · have src : v.mem (off (ch.setWidth 64) (j / 8)) = s.mem (off (ch.setWidth 64) (j / 8)) := by
       rw [hv.mem, hu.mem]
-    rw [ht.mem, zo _ (Or.inr (by rw [ofs_off' base (by omega)]; omega)), ym, wb j (by omega), src,
+    rw [ht.mem, zo _ (Or.inr (by rw [ofs_off' base (by omega_using [hK, hj])]; omega_using [hB, hK])), ym, wb j (by omega_using [hj]), src,
       Proof.Ed448.scalar_bit _ _ hj]
 
 end VG.Proof.Ed448.X86

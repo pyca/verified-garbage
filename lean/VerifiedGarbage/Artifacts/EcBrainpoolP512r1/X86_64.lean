@@ -1,6 +1,6 @@
 module
-import VerifiedGarbage.Proof.EcKey.X86_64.BrainpoolP512r1.Lit
 
+import VerifiedGarbage.Proof.EcKey.X86_64.BrainpoolP512r1.Lit
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.EcKey.X86_64.BrainpoolP512r1.Verified
@@ -50,19 +50,46 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.BrainpoolP512r1.X86_64.Law
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.BrainpoolP512r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP512r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP512r1Decompress
 
-/-! # brainpoolP512r1 on x86-64, generic over its proven group law and inversions -/
+/-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
+
+-- Standalone BrainpoolP512r1 public-point compression on x86-64
+namespace VG.Artifacts.EcBrainpoolP512r1.X86_64.Compressed
+
+open VG.Proof.BrainpoolP512r1.X86_64 (hasLaw)
+
+def artifacts : List Artifact :=
+  [Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.BrainpoolP512r1.scrubReg hasLaw.inv),
+    Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact X86_64.target
+      (Proof.EcKey.Compressed.X86_64.BrainpoolP512r1Decompress.scrubReg hasLaw.law hasLaw.inv)]
+
+end VG.Artifacts.EcBrainpoolP512r1.X86_64.Compressed
+
+-- Standalone BrainpoolP512r1 public-key validation on x86-64
+namespace VG.Artifacts.EcBrainpoolP512r1.X86_64.Validate
+
+open VG.Proof.BrainpoolP512r1.X86_64 (hasLaw)
+
+def artifacts : List Artifact :=
+  [Spec.EcKey.BrainpoolP512r1.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.BrainpoolP512r1.scrubReg hasLaw.inv)]
+
+end VG.Artifacts.EcBrainpoolP512r1.X86_64.Validate
 
 namespace VG.Artifacts.EcBrainpoolP512r1.X86_64
 
 open VG.Proof.BrainpoolP512r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact X86_64.target {
-    code := Impl.EcKey.X86_64.publicKeyBrainpoolP512r1
-    stack := 8
-    verified := Proof.EcKey.X86_64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv }]
+  Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact X86_64.target
+    (Proof.EcKey.X86_64.BrainpoolP512r1.scrubReg hasLaw.law hasLaw.inv)] ++
+  Compressed.artifacts ++
+  Validate.artifacts
 
 end VG.Artifacts.EcBrainpoolP512r1.X86_64

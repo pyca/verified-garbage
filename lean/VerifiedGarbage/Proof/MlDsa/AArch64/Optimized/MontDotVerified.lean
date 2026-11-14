@@ -26,13 +26,13 @@ def sat (n : Nat) : State where
 
 theorem sat_pre {n : Nat} (hn : n≤7) : (montDotContract abi n).pre (sat n) := by
   sig_pre [montDotContract,montDotSig,abi,argRegs,stackBelow,sat]
-  have he : 256*n*4=1024*n := by omega
+  have he : 256*n*4=1024*n := by omega_using []
   rw [he]
   refine ⟨rfl,?_,?_,by decide,?_,?_,?_,?_⟩
-  · exact Region.disjoint_of_sep (by simp [Region.sep];omega)
-  · exact Region.disjoint_of_sep (by simp [Region.sep];omega)
-  · simp;omega
-  · simp;omega
+  · exact Region.disjoint_of_sep (by simp [Region.sep];omega_using [hn])
+  · exact Region.disjoint_of_sep (by simp [Region.sep];omega_using [hn])
+  · simp;omega_using [hn]
+  · simp;omega_using [hn]
   all_goals intro j hj i hi; simp [coeffAt,Mem.readW,Mem.read,VG.Spec.MlDsa.q]
 
 theorem pub {n : Nat} {s t : State} (h : (montDotContract abi n).pub s t) : (contract n).pub s t := by
@@ -53,7 +53,7 @@ theorem ct {n : Nat} (hc : n=4∨n=5∨n=7) : ConstantTime isa (contract n).pre 
 
 theorem verified {n : Nat} (hc : n=4∨n=5∨n=7) : Verified target (dot n) (montDotContract abi n) := by
   refine Verified.of_correct (correct hc) (ct hc)
-    {pre:=fun _ h=>pre (by omega) h,post:=?_,pub:=fun _ _ _ _ h=>pub h,sat:=⟨sat n,sat_pre (by omega)⟩}
+    {pre:=fun _ h=>pre (by omega_using [hc]) h,post:=?_,pub:=fun _ _ _ _ h=>pub h,sat:=⟨sat n,sat_pre (by omega_using [hc])⟩}
   intro s t _ h
   sig_post [montDotContract,montDotSig,abi,argRegs]
   exact h

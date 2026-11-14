@@ -59,16 +59,16 @@ theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP
     (hAW : (⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint ⟨W, 3584⟩) :
     WP isa hashFill t (FillPost W A l j i c t) := by
   have hM60 := T.lt
-  obtain ⟨t₁, run₁, h1₁, g₁, m₁, -, rd₁, wr₁⟩ := lAddr_ok E.r15 (i := j + i + 1) (by omega) (by omega) hbp
+  obtain ⟨t₁, run₁, h1₁, g₁, m₁, -, rd₁, wr₁⟩ := lAddr_ok E.r15 (i := j + i + 1) (by omega_using []) (by omega_using [hj]) hbp
   have hs := slot_lt (ntz (j + i + 1))
   have h15₁ : t₁.gpr .r15 = W := by rw [g₁ _ (by decide) (by decide) (by decide), E.r15]
   obtain ⟨t₂, run₂, B₂⟩ := xor16_ok (s := t₁) (b := .rcx) (a := tblO) (d := ohO) h15₁ h1₁ (by decide) (by decide)
-    (by rw [slot_addr, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega))
+    (by rw [slot_addr, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega_using [hs]))
     (by rw [Offset.add_add, rd₁, wr₁, show 16 * slot (ntz (j + i + 1)) + (tblO + 8) =
-          tblO + 16 * slot (ntz (j + i + 1)) + 8 by omega]; exact E.perm.wR (by simp only [tblO]; omega))
+          tblO + 16 * slot (ntz (j + i + 1)) + 8 by omega_using []]; exact E.perm.wR (by simp only [tblO]; omega_using [hs]))
     (by rw [wr₁]; exact E.perm.wW (by decide)) (by rw [wr₁]; exact E.perm.wW (by decide))
   have oh₂ : blockAtMem t₂.mem (W + BitVec.ofNat 64 ohO) = offAt 0 l (j + i + 1) := by
-    rw [B₂.val, slot_addr, m₁, T.ntz (by omega) hM, hoh]
+    rw [B₂.val, slot_addr, m₁, T.ntz (by omega_using []) hM, hoh]
     rfl
   have g₂ : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .r11 → t₂.gpr r = t.gpr r := fun r h1 h2 h3 h4 h5 => by
     rw [B₂.gpr r (by simp [h1, h2]), g₁ r h1 h3 h2]
@@ -99,9 +99,9 @@ theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP
     rw [rd₂, wr₂]; exact Proof.AesCcm.X86_64.in_off (d := 8) (n := 8) hA (by decide) (by decide)
   have rO₀ : InRegions (t₂.rd ++ t₂.wr) (W + BitVec.ofNat 64 144) 8 := by rw [rd₂, wr₂]; exact E.perm.wR (by decide)
   have rO₈ : InRegions (t₂.rd ++ t₂.wr) (W + BitVec.ofNat 64 152) 8 := by rw [rd₂, wr₂]; exact E.perm.wR (by decide)
-  have wS₀ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i)) 8 := by rw [wr₂]; exact E.perm.wW (by omega)
+  have wS₀ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i)) 8 := by rw [wr₂]; exact E.perm.wW (by omega_using [hi, hc])
   have wS₈ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i) + BitVec.ofNat 64 8) 8 := by
-    rw [wr₂, Offset.add_add]; exact E.perm.wW (by omega)
+    rw [wr₂, Offset.add_add]; exact E.perm.wW (by omega_using [hi, hc])
   unfold hashFill
   refine WP.of_runBlock ⟨_, by
     rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂, Option.bind_some]
@@ -115,19 +115,19 @@ theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP
   · simp only [mem_setReg, mem_arithFlags]
     rw [blockAtMem_frame (fs _ _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (a := 144) (n := 16) (d := 384 + 16 * i) (k := 16) (.inl (by omega)) (by decide) (by omega)), oh₂]
+      exact L.w_w (a := 144) (n := 16) (d := 384 + 16 * i) (k := 16) (.inl (by omega_using [])) (by decide) (by omega_using [hi, hc])), oh₂]
   · simp only [mem_setReg, mem_arithFlags]
     rw [blockAtMem_store2, show W + 152#64 = W + BitVec.ofNat 64 144 + BitVec.ofNat 64 8 from (addr8 W 144).symm,
       blockAtMem_xor_words, eA, show W + BitVec.ofNat 64 144 = W + BitVec.ofNat 64 ohO from rfl, oh₂]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbx₂, Offset.add_add]
-    rw [show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega]
+    rw [show 16 * (j + i) + 16 = 16 * (j + i + 1) by omega_using []]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbp₂, ← BitVec.ofNat_add]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hsi₂, Offset.add_add]
-    rw [show 384 + 16 * i + 16 = 384 + 16 * (i + 1) by omega]
+    rw [show 384 + 16 * i + 16 = 384 + 16 * (i + 1) by omega_using []]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h13₂, ← BitVec.ofNat_add]
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h13₂, h12₂,
       ← BitVec.ofNat_add]
-    rw [Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [Offset.ofNat_sub_ofNat_beq (by omega_using [hj]) (by omega_using [hc])]
   · simp only [gpr_setReg, gpr_arithFlags, h1, h2, h3, h4, h5, h6, h7, h8, h9, ite_false]
     exact g₂ r h1 h2 h3 h4 h5
   · simp only [rd_setReg, rd_arithFlags]; exact rd₂

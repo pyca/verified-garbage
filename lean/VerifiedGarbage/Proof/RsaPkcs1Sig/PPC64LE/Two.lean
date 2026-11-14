@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontSum
 
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 
@@ -49,6 +50,17 @@ theorem two_taint {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : 
   RelCT.taint (A := taint) (VG.PPC64LE.Taint.ofRegs rs) (fun _ _ ⟨a, h₁, h₂⟩ => by
     obtain ⟨hsp, hr⟩ := hpin a _ _ h₁ h₂
     exact ⟨hsp, fun r hr' => hr r (VG.PPC64LE.Taint.mem_ofRegs.mp hr')⟩) h
+
+/-- `two_taint`, with the Montgomery kernel's summary in place of its code
+(`Proof/Bignum/PPC64LE/MontSum.lean`). -/
+theorem two_taintR {α : Type} {Φ : α → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins Φ rs)
+    {hc : VG.Taint.RHint VG.PPC64LE.Taint.T}
+    (h : (VG.Taint.checkR taint VG.Proof.Bignum.PPC64LE.montSums (VG.PPC64LE.Taint.ofRegs rs) c hc).isSome = true)
+    (hf : VG.Taint.fillR VG.Proof.Bignum.PPC64LE.montSums c hc = c := by rfl) :
+    RelCT isa (Two Φ) c fun _ _ => True :=
+  RelCT.taintR VG.Proof.Bignum.PPC64LE.montSums_ok (VG.PPC64LE.Taint.ofRegs rs) (fun _ _ ⟨a, h₁, h₂⟩ => by
+    obtain ⟨hsp, hr⟩ := hpin a _ _ h₁ h₂
+    exact ⟨hsp, fun r hr' => hr r (VG.PPC64LE.Taint.mem_ofRegs.mp hr')⟩) hf h
 
 /-- A branch whose condition `Φ a` fixes. -/
 theorem two_ite {α : Type} {Φ : α → State → Prop} {cond : isa.Cond} {th el : Prog isa}

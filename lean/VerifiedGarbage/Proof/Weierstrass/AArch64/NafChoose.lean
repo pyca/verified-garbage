@@ -26,7 +26,7 @@ theorem nafMask (x : BitVec 64) : x &&& 31=BitVec.ofNat 64 (x.toNat%32) := by
   simp only [BitVec.toNat_and,BitVec.toNat_ofNat]
   change x.toNat &&& (2^5-1) = (x.toNat%32)%2^64
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem nafRaw_eq {x : BitVec 64} {k j : Nat}
     (hx : x.toNat%32=Naf5.residual k j%32) : nafRaw x=BitVec.ofInt 64 (Naf5.digit k j) := by
@@ -39,7 +39,7 @@ theorem nafRaw_eq {x : BitVec 64} {k j : Nat}
     change x.toNat &&& 1=0 ↔ x.toNat%2=0
     rw [Nat.and_one_is_mod]
   simp only [nafRaw,he,nafMask,hx,Naf5.digit_mod32]
-  have hp : x.toNat%2=Naf5.residual k j%32%2 := by omega
+  have hp : x.toNat%2=Naf5.residual k j%32%2 := by omega_using [hx]
   rw [hp]
   change (if Naf5.residual k j%32%2=0 then (0:BitVec 64) else
     (x &&& (31:BitVec 64))-(BitVec.ofNat 64 (Naf5.residual k j%32) &&& 16) <<< 1)=_

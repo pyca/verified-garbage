@@ -77,10 +77,10 @@ theorem jointBuildSteps_ct (M : Mont) (j count : Nat) (hcount : j + count ≤ 16
       (fun _ _ ⟨_, _, _, _, _, hI, _⟩ => hI.ctx.mod.good.x0) (by simp only [Joint.buildSteps]; taint_decide)
   | succ count ih =>
     unfold Joint.buildSteps
-    refine RelCT.seq (two_post (Ψ := JointBuildCTInv (j + 1)) (jointBuildStep_ct M j (by omega)) ?_)
-      (ih (j + 1) (by omega))
+    refine RelCT.seq (two_post (Ψ := JointBuildCTInv (j + 1)) (jointBuildStep_ct M j (by omega_using [hcount])) ?_)
+      (ih (j + 1) (by omega_using [hcount]))
     rintro p s ⟨t₀, minv, n, g, y, hI, hw, hw', hn, hR⟩
-    exact WP.mono (jointBuildStep_ok M hw hw' hn hR (by omega) hI)
+    exact WP.mono (jointBuildStep_ok M hw hw' hn hR (by omega_using [hcount]) hI)
       fun t ht => ⟨t₀, minv, n, g, y, ht, hw, hw', hn, hR⟩
 
 theorem jointBuild_ct (M : Mont) :

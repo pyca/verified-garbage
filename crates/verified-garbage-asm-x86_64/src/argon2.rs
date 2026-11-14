@@ -12,6 +12,8 @@ pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: verified_garbage_cpu::Feat
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -32,7 +34,7 @@ pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: verified_garbage_cpu::Feat
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "SIuFuAAAAImDAAMAAEiLhQgBAACJgwQDAABIi4WwAAAAiYMIAwAASItFSImDDAMAALgTAAAAiYMQAwAASItFcImDFAMAAL4AAAAASInaSIHCAAMAALkYAAAASInfSYnYSYHAwAAAAA=="
 call {vg_blake2b_update_scratch_avx512}
 .base64 "QbwYAAAATIt1YESJsxgDAABMieZIidpIgcIYAwAAuQQAAABIid9JidhJgcDAAAAA"
@@ -166,9 +168,9 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx512}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkqP7//8X+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkWAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx512 = sym super::blake2b::vg_blake2b_update_scratch_avx512::vg_blake2b_update_scratch_avx512,
         vg_blake2b_finalize_scratch_avx512 = sym super::blake2b::vg_blake2b_finalize_scratch_avx512::vg_blake2b_finalize_scratch_avx512,
         vg_argon2_hprime_avx512 = sym super::argon2::vg_argon2_hprime_avx512::vg_argon2_hprime_avx512,
@@ -184,6 +186,8 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: verified_garbage_cpu::Featur
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -205,7 +209,7 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: verified_garbage_cpu::Featur
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "SIuFuAAAAImDAAMAAEiLhQgBAACJgwQDAABIi4WwAAAAiYMIAwAASItFSImDDAMAALgTAAAAiYMQAwAASItFcImDFAMAAL4AAAAASInaSIHCAAMAALkYAAAASInfSYnYSYHAwAAAAA=="
 call {vg_blake2b_update_scratch_avx2}
 .base64 "QbwYAAAATIt1YESJsxgDAABMieZIidpIgcIYAwAAuQQAAABIid9JidhJgcDAAAAA"
@@ -339,9 +343,9 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx2}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkqP7//8X+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkWAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
         vg_blake2b_finalize_scratch_avx2 = sym super::blake2b::vg_blake2b_finalize_scratch_avx2::vg_blake2b_finalize_scratch_avx2,
         vg_argon2_hprime_avx2 = sym super::argon2::vg_argon2_hprime_avx2::vg_argon2_hprime_avx2,
@@ -357,6 +361,8 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: verified_garbage_cpu::Features
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -378,7 +384,7 @@ pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: verified_garbage_cpu::Features
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "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"
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "SIuFuAAAAImDAAMAAEiLhQgBAACJgwQDAABIi4WwAAAAiYMIAwAASItFSImDDAMAALgTAAAAiYMQAwAASItFcImDFAMAAL4AAAAASInaSIHCAAMAALkYAAAASInfSYnYSYHAwAAAAA=="
 call {vg_blake2b_update_scratch_avx2}
 .base64 "QbwYAAAATIt1YESJsxgDAABMieZIidpIgcIYAwAAuQQAAABIid9JidhJgcDAAAAA"
@@ -512,9 +518,9 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx2}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkqP7//8X+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkWAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
         vg_blake2b_finalize_scratch_avx2 = sym super::blake2b::vg_blake2b_finalize_scratch_avx2::vg_blake2b_finalize_scratch_avx2,
         vg_argon2_hprime_avx2 = sym super::argon2::vg_argon2_hprime_avx2::vg_argon2_hprime_avx2,
@@ -527,6 +533,8 @@ call {vg_argon2_hprime_avx2}
 /// `iterations` is the pass count, `memory_cost` is the requested KiB count, and `lanes` is the algorithm's parallelism parameter. `threads` limits execution workers and does not change the result; serial execution is permitted.
 ///
 /// Contract: `VG.Spec.Argon2.deriveContract`. Argon2i is constant time in all input contents. Argon2d/id additionally permit timing to depend on the sequence of data-dependent reference block indices (`VG.Spec.Argon2.references`), as required by their addressing rules, but on nothing else secret. Pointers, lengths and numeric parameters are public.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -547,7 +555,7 @@ call {vg_argon2_hprime_avx2}
 pub(crate) unsafe extern "sysv64" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r#".base64 "U1VBVEFVQVZBV1BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBIi4QkSAEAAEiJhCSwAAAASIuEJFABAABIiYQkuAAAAEiLhCRYAQAASImEJMAAAABIi4QkYAEAAEiJhCTIAAAASIuEJGgBAABIiYQk0AAAAEiLhCRwAQAASImEJNgAAABIi4QkeAEAAEiJhCTgAAAASIuEJIABAABIiYQk6AAAAEiLhCSIAQAASImEJPAAAABIi4QkkAEAAEiJhCT4AAAASIuEJJgBAABIiYQkAAEAAEiLhCSgAQAASImEJAgBAABIieWJ/0WJyUyJTUhMiUVQSIlNWEiJVWBIiXVoSIl9cEiLnfgAAABIi4WwAAAAicBIiYWwAAAASIuFuAAAAInASImFuAAAAEiLhcAAAACJwEiJhcAAAABIi72wAAAASIu1uAAAAEgB9kgB9kG4AAAAAEG5AAAAALgAAAAASIP4AEiJ+UjB6SBNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpH00RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekeTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6R1NEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpHE0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekbTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6RpNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpGU0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekYTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6RdNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpFk0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekVTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6RRNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpE00RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekSTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6RFNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpEE0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekPTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6Q5NEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpDU0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekMTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6QtNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpCk0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekJTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6QhNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpB00RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekGTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6QVNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SMHpBE0RwE2Jwkkp8EgZwE0xwkkhwk0x0EiDwAFNAclJAcFIiflIwekDTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwUiJ+UjB6QJNEcBNicJJKfBIGcBNMcJJIcJNMdBIg8ABTQHJSQHBSIn5SNHpTRHATYnCSSnwSBnATTHCSSHCTTHQSIPAAU0ByUkBwU2JzU0B7U0B7b5AAAAASInfSInaSIHCQAMAALkAAAAA"
-call {vg_blake2b_init}
+call {vg_blake2b_init_core}
 .base64 "SIuFuAAAAImDAAMAAEiLhQgBAACJgwQDAABIi4WwAAAAiYMIAwAASItFSImDDAMAALgTAAAAiYMQAwAASItFcImDFAMAAL4AAAAASInaSIHCAAMAALkYAAAASInfSYnYSYHAwAAAAA=="
 call {vg_blake2b_update_scratch}
 .base64 "QbwYAAAATIt1YESJsxgDAABMieZIidpIgcIYAwAAuQQAAABIid9JidhJgcDAAAAA"
@@ -681,9 +689,9 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtmD+/ARTHbSI2kJKj+///zD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJFgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
         vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,

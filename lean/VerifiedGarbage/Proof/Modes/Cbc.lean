@@ -44,7 +44,7 @@ theorem cbcOut_getD {L : Nat} {ciphInv : Spec.Cbc.Cipher} (hc : ∀ b, (ciphInv 
   have h1 : u < (ciphInv (bytesAt m₀ (D + BitVec.ofNat 64 (L * j)) L)).length := by rw [hc]; exact hu
   have h2 : u < (cbcPrev L m₀ D iv j).length := by rw [cbcPrev_length m₀ D hiv]; exact hu
   have h3 : u < (cbcOut L ciphInv m₀ D iv j).length := by
-    simp only [cbcOut, Spec.Cbc.xor, List.length_zipWith]; omega
+    simp only [cbcOut, Spec.Cbc.xor, List.length_zipWith]; omega_using [h1, h2]
   rw [← List.getElem_eq_getD (h := h3) 0, ← List.getElem_eq_getD (h := h1) 0,
     ← List.getElem_eq_getD (h := h2) 0]
   simp only [cbcOut, Spec.Cbc.xor, List.getElem_zipWith]
@@ -73,7 +73,7 @@ theorem blocksOf_of_dinv {L : Nat} {F : Nat → List Byte} (hF : ∀ j, (F j).le
   rw [show (F j)[u] = (F j).getD u 0 from List.getElem_eq_getD 0]
   simp only [bytesAt, List.getElem_map, List.getElem_range]
   have := idx_lt (L := L) hj
-  rw [VG.Offset.add_add, h _ (by omega), ite_eq_left (by omega), idx_div hu, idx_mod hu]
+  rw [VG.Offset.add_add, h _ (by omega_using [hu, this]), ite_eq_left (by omega_using [hu, this]), idx_div hu, idx_mod hu]
 
 /-- The data after the data loop, as CBC decryption's. -/
 theorem cbc_of_dinv {L : Nat} {ciphInv : Spec.Cbc.Cipher} (hc : ∀ b, (ciphInv b).length = L) {m₀ m : Mem}
@@ -88,7 +88,7 @@ theorem cbc_of_dinv {L : Nat} {ciphInv : Spec.Cbc.Cipher} (hc : ∀ b, (ciphInv 
   rw [hg j hj, show (if j = 0 then iv else (blocksOf L m₀ D n).getD (j - 1) []) = cbcPrev L m₀ D iv j by
     unfold cbcPrev; split
     · rfl
-    · rw [hg _ (by omega)]]
+    · rw [hg _ (by omega_using [hj])]]
   rfl
 
 end VG.Proof.Modes

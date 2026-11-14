@@ -36,7 +36,7 @@ theorem recognition_ct {p : Inputs} {slots : List Nat}
     have source (a b : State) (context : Context p slots a)
         (mem : b.mem = a.mem) (rest : VG.Proof.X25519.Arm.Rest [.r4,.r6,.r7,.r8,.r9,.r10] a b) :
         Source p.domain p.k p.dom b :=
-      ⟨by rw [p.domainLength]; split <;> have := p.minLength <;> omega,
+      ⟨by rw [p.domainLength]; split <;> have := p.minLength <;> omega_using [this],
         context.domain.fits, by rw [rest.rd,rest.wr]; exact context.domain.readable,
         by rw [mem]; exact context.domain.bytes, by rw [p.domainLength]; split <;> simp⟩
     have tabU := h.1.2.after mu ru
@@ -48,7 +48,7 @@ theorem recognition_ct {p : Inputs} {slots : List Nat}
   have scanning : RelCT isa Q loop (fun _ _ => True) := by
     apply RelCT.exists_
     intro table
-    exact loop_ct (by decide) (by have := p.maxLength; omega) (by decide)
+    exact loop_ct (by decide) (by have := p.maxLength; omega_using [this]) (by decide)
   have restore : RelCT isa (fun _ _ => True) (.block [.mov .r0 (.reg .r8)]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
     intro _ _ _; exact Taint.agree_ofRegs (by simp)

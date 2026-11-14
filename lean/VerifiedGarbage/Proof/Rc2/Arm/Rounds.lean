@@ -42,8 +42,8 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .r12)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
     ∃ s', runBlock isa (rotate16 r n) s = some s' ∧
       s'.gpr r = (x.rotateLeft n).setWidth 32 ∧ Keep [r, .r12] s s' := by
-  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega
-  have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 31 := by omega
+  have hleft : 1 ≤ 32 - n ∧ 32 - n ≤ 31 := by omega_using [hn, hn']
+  have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 31 := by omega_using [hn']
   refine ⟨_, by
     simp only [rotate16, mask, rr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some, and_self, Nat.reduceSub, hleft, hright, show 1 ≤ 16 ∧ 16 ≤ 31 by decide, ite_true, hr, Ne.symm hr,
        gpr_setReg,
@@ -75,11 +75,11 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
   have h₂ := wordReg_separate (i + 2)
   have h₃ := wordReg_separate (i + 3)
   have lo : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (2 * j))) 1 := by
-    rw [addr_add (by omega)]; exact key_in readable (by omega)
+    rw [addr_add (by omega_using [hj, fit])]; exact key_in readable (by omega_using [hj])
   have hi : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 (2 * j + 1))) 1 := by
-    rw [addr_add (by omega)]; exact key_in readable (by omega)
-  have loOff : 2 * j < 4096 := by omega
-  have hiOff : 2 * j + 1 < 4096 := by omega
+    rw [addr_add (by omega_using [hj, fit])]; exact key_in readable (by omega_using [hj])
+  have loOff : 2 * j < 4096 := by omega_using [hj]
+  have hiOff : 2 * j + 1 < 4096 := by omega_using [hj]
   refine ⟨_, by
     simp (config := {decide := true}) only [mixInputs, loadKey, imm,
       List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
@@ -253,7 +253,7 @@ theorem wordReg_offset_ne (i : Nat) (hi : i < 4) (d : Nat) (hd : 1 ≤ d) (hd' :
   rw [wordReg_mod (i + d)]
   intro he
   have := (wordReg_injective _ (Nat.mod_lt _ (by decide)) i hi).mp he
-  omega
+  omega_using [hd, hd', this]
 
 theorem keep_inputs {s s' : State} (h : Keep [.r8, .r9, .r10, .r11] s s') (i : Nat) :
     Keep (wordReg i :: temps) s s' := h.weaken (by
@@ -287,7 +287,7 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   have sep := wordReg_separate i
   have hn := rotation_bounds i
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := rotate16_ok s (wordReg i) sep.1 (v.getD i 0)
-    (hv i hi) (16 - Spec.Rc2.rotation i) (by omega) (by omega)
+    (hv i hi) (16 - Spec.Rc2.rotation i) (by omega_using [hn]) (by omega_using [hn])
   rw [rotateLeft_reverse _ _ hn.1 hn.2] at out₁
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
@@ -349,7 +349,7 @@ theorem indexWord (x : BitVec 16) :
     ((x.setWidth 32).setWidth 6).toNat = (x &&& 63).toNat := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
   change x.toNat % 4294967296 % 64 = x.toNat &&& (2 ^ 6 - 1)
-  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 4294967296 by have := x.isLt; omega)]
+  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 4294967296 by have := x.isLt; omega_using [])]
 
 def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=

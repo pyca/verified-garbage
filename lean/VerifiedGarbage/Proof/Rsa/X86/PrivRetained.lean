@@ -43,22 +43,22 @@ theorem innerSlice_setup {g : PrivGeometry} {d n : Nat} (low : 88 ≤ d)
     ∀ r ∈ [⟨byteAddr g.stack, 88⟩], (innerSlice g d n).Disjoint r := by
   intro r hr
   obtain rfl := List.mem_singleton.mp hr
-  exact Offset.disjoint_base _ low (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes] at high; omega)
+  exact Offset.disjoint_base _ low (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes] at high; omega_using [high])
 
 theorem temporary_pcCall {g : PrivGeometry} (h : g.Valid) :
     ∀ r ∈ pcWr g ++ [g.calleeRegion], (⟨byteAddr g.temporary, g.length⟩ : Region).Disjoint r := by
   have ex := innerSlice_external h (d := candidateOffset) (n := g.length)
-    (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+    (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
   intro r hr
   rw [temporary_region h]
   simp only [pcWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · rw [precomputation_region h]
-    exact Offset.disjoint _ (Or.inl (by have := h.maxLength; simp only [candidateOffset, precomputeOffset]; omega))
-      (by have := h.maxLength; simp only [candidateOffset]; omega)
-      (by have := h.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega)
+    exact Offset.disjoint _ (Or.inl (by have := h.maxLength; simp only [candidateOffset, precomputeOffset]; omega_using [this]))
+      (by have := h.maxLength; simp only [candidateOffset]; omega_using [this])
+      (by have := h.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega_using [this])
   · exact ex.2.1
-  · exact Offset.disjoint_base _ (by decide : 24 ≤ candidateOffset) (by have := h.maxLength; simp only [candidateOffset]; omega)
+  · exact Offset.disjoint_base _ (by decide : 24 ≤ candidateOffset) (by have := h.maxLength; simp only [candidateOffset]; omega_using [this])
   · exact ex.2.2
 
 theorem innerSlice_pdCall {g : PrivGeometry} (h : g.Valid) {d n : Nat} (low : 40 ≤ d) (fit : d + n ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes) :
@@ -69,7 +69,7 @@ theorem innerSlice_pdCall {g : PrivGeometry} (h : g.Valid) {d n : Nat} (low : 40
   rcases hr with rfl | rfl | rfl | rfl
   · exact ex.1
   · exact ex.2.1
-  · exact Offset.disjoint_base _ low (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes] at fit; omega)
+  · exact Offset.disjoint_base _ low (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes] at fit; omega_using [fit])
   · exact ex.2.2
 
 end VG.Proof.Rsa.X86.PrivChecked
@@ -84,15 +84,15 @@ open VG VG.X86 VG.Impl.Rsa.X86.PrivChecked VG.Proof.Bignum.X86
 theorem status_pcCall {g : PrivGeometry} (h : g.Valid) {d : Nat} (low : 24 ≤ d) (fit : d + 4 ≤ 88) :
     ∀ r ∈ pcWr g ++ [g.calleeRegion], (innerSlice g d 4).Disjoint r := by
   have ex := innerSlice_external h (d := d) (n := 4)
-    (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+    (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [fit])
   intro r hr
   simp only [pcWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · rw [precomputation_region h]
-    exact Offset.disjoint _ (Or.inl (by simp only [precomputeOffset]; omega)) (by omega)
-      (by have := h.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega)
+    exact Offset.disjoint _ (Or.inl (by simp only [precomputeOffset]; omega_using [fit])) (by omega_using [fit])
+      (by have := h.maxLength; simp only [precomputeOffset, Spec.Rsa.modulusWords]; omega_using [this])
   · exact ex.2.1
-  · exact Offset.disjoint_base _ low (by omega)
+  · exact Offset.disjoint_base _ low (by omega_using [fit])
   · exact ex.2.2
 
 theorem status_frame {g : PrivGeometry} {d : Nat} {regions : List Region} {m m' : Mem}
@@ -104,15 +104,15 @@ theorem temporary_setup {g : PrivGeometry} (h : g.Valid) :
     ∀ (r : Region), r ∈ [⟨byteAddr g.stack, 88⟩] → (⟨byteAddr g.temporary, g.length⟩ : Region).Disjoint r := by
   rw [temporary_region h]
   exact innerSlice_setup (by decide : 88 ≤ candidateOffset)
-    (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+    (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
 
 theorem precomputation_setup {g : PrivGeometry} (h : g.Valid) :
     ∀ (r : Region), r ∈ [⟨byteAddr g.stack, 88⟩] →
       (⟨byteAddr g.precomputation, 8 * (2 * Spec.Rsa.modulusWords g.length)⟩ : Region).Disjoint r := by
-  rw [show 8 * (2 * Spec.Rsa.modulusWords g.length) = 16 * Spec.Rsa.modulusWords g.length by omega,
+  rw [show 8 * (2 * Spec.Rsa.modulusWords g.length) = 16 * Spec.Rsa.modulusWords g.length by omega_using [],
     precomputation_region h]
   exact innerSlice_setup (by decide : 88 ≤ precomputeOffset)
-    (by have := h.maxLength; simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords]; omega)
+    (by have := h.maxLength; simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords]; omega_using [this])
 
 theorem setupWrites_sub {g : PrivGeometry} :
     ∀ (r : Region), r ∈ [⟨byteAddr g.stack, 88⟩] → ∃ R ∈ bodyWrites g, r.Sub R := by
@@ -137,6 +137,6 @@ theorem tailWrites_sub {g : PrivGeometry} (h : g.Valid) :
   · exact ⟨g.outputRegion, by simp [bodyWrites], fun _ hx => hx⟩
   · refine ⟨g.innerRegion, by simp [bodyWrites], ?_⟩
     rw [PrivGeometry.temporary, h.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
 
 end VG.Proof.Rsa.X86.PrivChecked

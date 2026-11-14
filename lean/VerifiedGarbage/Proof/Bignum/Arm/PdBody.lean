@@ -31,7 +31,7 @@ theorem pdBody_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : 
   rw [WP.seq_iff]
   refine WP.mono (exponentCheck_ok u
     (by rw [length]; exact hu.buffers.exponentPositive)
-    (by rw [length]; have := hu.buffers.exponentFits; have := hu.buffers.maxLength; omega)
+    (by rw [length]; have := hu.buffers.exponentFits; have := hu.buffers.maxLength; omega_arith)
     (by rw [length]; exact hu.buffers.exponent.fits)
     (by rw [length]; exact hu.buffers.exponent.read) hu.buffers.exponent.byte pointer
     (by rw [length]; exact count)) ?_

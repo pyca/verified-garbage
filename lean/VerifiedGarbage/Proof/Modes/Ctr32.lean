@@ -45,19 +45,19 @@ high 96 bits of `V`, and its low 32 bits plus `j`, modulo 2³². -/
 def ctr32Val (V j : Nat) : Nat := V / 2 ^ 32 * 2 ^ 32 + (V + j) % 2 ^ 32
 
 theorem ctr32Val_zero (V : Nat) : ctr32Val V 0 = V := by
-  unfold ctr32Val; omega
+  unfold ctr32Val; omega_using []
 
 theorem ctr32Val_add (V a b : Nat) : ctr32Val (ctr32Val V a) b = ctr32Val V (a + b) := by
-  unfold ctr32Val; omega
+  unfold ctr32Val; omega_using []
 
 theorem ctr32Val_lt {V : Nat} (hV : V < 2 ^ 128) (j : Nat) : ctr32Val V j < 2 ^ 128 := by
-  unfold ctr32Val; omega
+  unfold ctr32Val; omega_using [hV]
 
 /-- The high half is unchanged. -/
 theorem hiOf_ctr32Val (V j : Nat) : hiOf (ctr32Val V j) = hiOf V := by
   simp only [hiOf, ctr32Val]
   congr 1
-  omega
+  omega_using []
 
 /-- The low half: its high 32 bits, and its low 32 bits plus `j` modulo
 2³² (as a 32-bit addition computes them, zero-extended). -/
@@ -67,7 +67,7 @@ theorem loOf_ctr32Val (V j : Nat) :
   apply BitVec.eq_of_toNat_eq
   simp only [loOf, ctr32Val, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight,
     BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- `inc₃₂` on numbers. -/
 theorem toNat_repeat_inc32 (x : Spec.Gcm.Block) : ∀ j,
@@ -75,7 +75,7 @@ theorem toNat_repeat_inc32 (x : Spec.Gcm.Block) : ∀ j,
   | 0 => (ctr32Val_zero _).symm
   | j + 1 => by
     rw [Nat.repeat, AesCcm.toNat_inc32, toNat_repeat_inc32 x j]
-    unfold ctr32Val; omega
+    unfold ctr32Val; omega_using []
 
 /-- A block as 16 big-endian bytes. -/
 theorem toBytes_eq_ofNat (x : Spec.Gcm.Block) : Spec.Gcm.toBytes x = ofNat x.toNat 16 := by
@@ -104,7 +104,7 @@ theorem ctr32Out_getD {cipher : Spec.Cbc.Cipher} (hc : ∀ b, (cipher b).length 
   have h1 : u < (bytesAt m₀ (D + BitVec.ofNat 64 (16 * j)) 16).length := by simp [bytesAt, hu]
   have h2 : u < (cipher (ofNat (ctr32Val V j) 16)).length := by rw [hc]; exact hu
   have h3 : u < (ctr32Out cipher m₀ D V j).length := by
-    simp only [ctr32Out, Spec.Cbc.xor, List.length_zipWith]; omega
+    simp only [ctr32Out, Spec.Cbc.xor, List.length_zipWith]; omega_using [h1, h2]
   rw [← List.getElem_eq_getD (h := h3) 0, ← List.getElem_eq_getD (h := h2) 0]
   simp only [ctr32Out, Spec.Cbc.xor, List.getElem_zipWith]
   simp [bytesAt, VG.Offset.add_add]
@@ -119,8 +119,8 @@ theorem bytes_of_dinv {cipher : Spec.Cbc.Cipher} (hc : ∀ b, (cipher b).length 
   rw [show (ctr32Out cipher m₀ D V j)[u] = (ctr32Out cipher m₀ D V j).getD u 0 from
     List.getElem_eq_getD 0, ctr32Out_getD hc _ _ _ _ hu]
   simp only [bytesAt, List.getElem_map, List.getElem_range]
-  rw [VG.Offset.add_add, h _ (by omega), ite_eq_left (by omega), show (16 * j + u) / 16 = j by omega,
-    show (16 * j + u) % 16 = u by omega, ctr32Out_getD hc _ _ _ _ hu]
+  rw [VG.Offset.add_add, h _ (by omega_using [hj, hu]), ite_eq_left (by omega_using [hj, hu]), show (16 * j + u) / 16 = j by omega_using [hu],
+    show (16 * j + u) % 16 = u by omega_using [hu], ctr32Out_getD hc _ _ _ _ hu]
 
 /-- The data after the data loop, from the counter block `t`, as
 `Spec.Gcm.ctr32`'s. -/

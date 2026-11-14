@@ -60,8 +60,8 @@ theorem extract_ymm (hi lo : BitVec 128) {e : Nat} (he : e < 8) :
   · rw [ifn h4]
     apply BitVec.eq_of_getLsbD_eq; intro i hi'
     simp only [dword, BitVec.getLsbD_extractLsb', hi', decide_true, Bool.true_and, BitVec.getLsbD_append,
-      ifn (show ¬32 * e + i < 128 by omega)]
-    exact congrArg _ (by omega)
+      ifn (show ¬32 * e + i < 128 by omega_using [h4])]
+    exact congrArg _ (by omega_using [h4])
 
 /-- Coefficient `i` after storing `x` at coefficient `j`. -/
 theorem coeffAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x : BitVec 256) {i : Nat}
@@ -71,13 +71,13 @@ theorem coeffAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x 
   split
   · rename_i h
     rw [coeffAt_eq, show coeffAddr p i = coeffAddr p j + BitVec.ofNat 64 (4 * (i - j)) by
-      rw [coeffAddr_add, show j + (i - j) = i by omega]]
-    rw [show 32 * (i - j) = 8 * (4 * (i - j)) by omega]
-    exact readW_writeW_inside (k := 4 * (i - j)) (n := 4) _ _ _ (by omega) (by decide)
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      rw [coeffAddr_add, show j + (i - j) = i by omega_using [h]]]
+    rw [show 32 * (i - j) = 8 * (4 * (i - j)) by omega_using []]
+    exact readW_writeW_inside (k := 4 * (i - j)) (n := 4) _ _ _ (by omega_using [h]) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_using [hi]) (by omega_using [hj])) (by decide)
 
 theorem pR_contains32 (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) : (pR p).Contains (coeffAddr p j) 32 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hj]) (by omega_using [hj])
 
 theorem f_in32 {rs : List Region} {fP : Addr} (hw : pR fP ∈ rs) {j : Nat} (hj : j + 8 ≤ 256) :
     InRegions rs (coeffAddr fP j) 32 :=
@@ -92,6 +92,6 @@ theorem frame_write2Y {m m' : Mem} {p : Addr} (hf : Frame [pR p] m m') {j j' : N
 /-- Lane `l` of a 256-bit load of coefficient `j`. -/
 theorem lane_load {p : Addr} {j l : Nat} :
     coeffAddr p j + BitVec.ofNat 64 (16 * l) = coeffAddr p (j + 4 * l) := by
-  rw [show 16 * l = 4 * (4 * l) by omega, coeffAddr_add]
+  rw [show 16 * l = 4 * (4 * l) by omega_using [], coeffAddr_add]
 
 end VG.Proof.MlDsa.X86_64.Arith

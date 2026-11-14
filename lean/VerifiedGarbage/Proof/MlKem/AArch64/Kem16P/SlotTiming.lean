@@ -67,7 +67,7 @@ theorem out_eraseOff (bt N : Nat)
     Code.eraseOff (.block (Impl.MlKem.AArch64.Hybrid.squeezeTail ++ Impl.MlKem.AArch64.Kem16P.prfOut bt N)) =
       outE := by
   simp only [Code.eraseOff, outE, Impl.MlKem.AArch64.Kem16P.prfOut, Impl.MlKem.AArch64.ptrTo,
-    ite_eq_right (show ¬ Impl.MlKem.AArch64.Kem16P.bufOff bt N < 4096 by omega), List.map_append,
+    ite_eq_right (show ¬ Impl.MlKem.AArch64.Kem16P.bufOff bt N < 4096 by omega_using [h]), List.map_append,
     List.map_flatMap, List.append_assoc]
   rfl
 

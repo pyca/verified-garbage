@@ -243,7 +243,7 @@ theorem relct_loop_nz {body : Prog isa} {r : Reg} {I₁ I₂ : Nat → State →
           rw [this] at i₁ i₂; exact ⟨i₁, i₂⟩
         · have : t + 1 ≠ N := by
             rw [isa_eval_nonzero, z₁, Option.some.injEq] at e; simpa using e
-          exact ⟨N - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+          exact ⟨N - (t + 1), by omega_using [ht, hn], t + 1, by omega_using [ht, this], rfl, i₁, i₂⟩
       · exact RelCT.of_false fun _ _ hab => hn hab.2.1
     · exact RelCT.of_false fun _ _ hab => ht hab.1
   · exact fun a b hab => ⟨0, hN, rfl, hab⟩

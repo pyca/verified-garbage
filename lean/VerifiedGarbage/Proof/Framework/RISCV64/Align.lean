@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RISC-V: rounding a pointer up to a multiple of 8
@@ -32,7 +33,7 @@ theorem and_neg8 (y : BitVec 64) : y &&& BitVec.ofInt 64 (-8) = (y >>> 3) <<< 3 
     BitVec.getLsbD_allOnes, hi, decide_true, Bool.true_and]
   by_cases h3 : i < 3
   · simp [h3]
-  · simp [h3, show 3 + (i - 3) = i by omega, show i - 3 < 64 by omega]
+  · simp [h3, show 3 + (i - 3) = i by omega_using [h3], show i - 3 < 64 by omega_using [hi]]
 
 /-- `addi 7` then `andi -8`. -/
 theorem align_eq (x : Addr) :
@@ -43,7 +44,7 @@ theorem align_eq (x : Addr) :
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, pad]
   have := x.isLt
   rw [show BitVec.toNat (BitVec.ofInt 64 7) = 7 from rfl]
-  omega
+  omega_using []
 
 /-- `addi (off + 7)` then `andi -8`, rounding `p + off` up. -/
 theorem align_off_eq (p : Addr) {imm : Int} {off : Nat} (h : imm = (off : Int) + 7)
@@ -62,14 +63,14 @@ theorem align_al (x : Addr) : (x + BitVec.ofNat 64 (pad x)).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   unfold pad
   have := x.isLt
-  omega
+  omega_using []
 
 /-- An offset by a multiple of 8 of a rounded address is a multiple of 8. -/
 theorem align_al_add (x : Addr) {d : Nat} (hd : d % 8 = 0) :
     (x + BitVec.ofNat 64 (pad x) + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   have := align_al x
   rw [BitVec.toNat_add (x + _), BitVec.toNat_ofNat]
-  omega
+  omega_using [hd, this]
 
 /-- An offset of a rounded address `p + off + pad`, as one of `p`. -/
 theorem align_add (p : Addr) (off d : Nat) :

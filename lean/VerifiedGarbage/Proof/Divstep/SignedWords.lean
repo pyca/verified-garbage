@@ -36,10 +36,10 @@ theorem extr59 (s0 s1 : BitVec 64) :
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt s0.isLt, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow]
   have := s0.isLt; have := s1.isLt
-  omega
+  omega_using []
 theorem pow_half {L : Nat} (hL : 1 ≤ L) : 2 ^ (64 * L) = 2 * 2 ^ (64 * L - 1) ∧ 2 ^ 63 ≤ 2 ^ (64 * L - 1) := by
-  refine ⟨?_, Nat.pow_le_pow_right (by decide) (by omega)⟩
-  rw [← Nat.pow_succ']; congr 1; omega
+  refine ⟨?_, Nat.pow_le_pow_right (by decide) (by omega_using [hL])⟩
+  rw [← Nat.pow_succ']; congr 1; omega_using [hL]
 
 /-- The end of the shift by 59: the top word from the sign mask `M`. -/
 theorem shr_final {S O lo L M : Nat} (hL : 1 ≤ L) (hS : S < 2 ^ (64 * L)) (hO : O < 2 ^ (64 * L))

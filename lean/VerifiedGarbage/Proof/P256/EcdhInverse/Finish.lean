@@ -32,12 +32,12 @@ theorem finish_power_ok {P : InvCfg} {base : Addr} {size m X : Nat} [NeZero m]
         toM m (2^(64*P.M.n)) X ^ (m-2) := by
   have hodd : m%2=1 := by
     rcases Nat.even_or_odd m with ⟨k,hk⟩|⟨k,hk⟩
-    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k,by omega⟩; omega
-    · omega
+    · have := hpr.eq_one_or_self_of_dvd 2 ⟨k,by omega_using [hk]⟩; omega_using [hm2, this]
+    · omega_using [hk]
   have hmP := hM.val ▸ wordsVal_lt s.mem base P.M.mo P.M.n
   have hfn : (m:Int)<2^(64*P.M.n) := by exact_mod_cast hmP
   have done := Divstep.divsteps_words (by exact_mod_cast hodd)
-    (show (0:Int)≤X by omega) (show (X:Int)≤m by exact_mod_cast hX.le) hfn hC.bound
+    (show (0:Int)≤X by omega_using []) (show (X:Int)≤m by exact_mod_cast hX.le) hfn hC.bound
   have hd := (Divstep.invRun_dfg (N:=59) (p:=m) (m:=P.M.minv.toNat) (x:=X)
     (by exact_mod_cast hodd) P.B).1
   have hz : (Divstep.invRun 59 m P.M.minv.toNat X P.B).g=0 := by

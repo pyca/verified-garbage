@@ -29,20 +29,20 @@ theorem CallerBuffer.ready {s : State} {base : Addr} {size n len : Nat} {p : Poi
   intro x hx
   change (x - base).toNat + 1 ≤ contextBytes n at hx
   change (x - base).toNat + 1 ≤ size
-  omega
+  omega_using [hn, hx]
 
 theorem CallerBuffer.stream {s : State} {base : Addr} {size n len : Nat} {p : Pointer}
     (B : CallerBuffer s base size p len) (hn : contextBytes n ≤ size) :
     StreamInput s base (contextBytes n) (pointerValue base s p) len := by
-  refine ⟨B.fits, fun i hi => B.read i 1 (by omega), ?_,
-    by simpa only [BitVec.add_zero] using B.read 0 len (by omega)⟩
+  refine ⟨B.fits, fun i hi => B.read i 1 (by omega_using [hi]), ?_,
+    by simpa only [BitVec.add_zero] using B.read 0 len (by omega_using [])⟩
   intro i hi
-  have ilt : i < 2 ^ 64 := by have := B.fits; omega
+  have ilt : i < 2 ^ 64 := by have := B.fits; omega_using [hi, this]
   have inside : (⟨(pointerValue base s p).setWidth 64, len⟩ : Region).Contains
-      ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega) ilt
+      ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 i) 1 := Offset.contains_base _ (by omega_using [hi]) ilt
   have outside := B.apart _ inside
   change ¬ (ofs base ((pointerValue base s p).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ size) at outside
-  omega
+  omega_using [hn, outside]
 
 theorem CallerBuffer.keep {s t : State} {base : Addr} {size len : Nat} {p : Pointer} {rs : List Reg}
     (B : CallerBuffer s base size p len) (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem)
@@ -55,15 +55,15 @@ theorem CallerBuffer.value_keep {s t : State} {base : Addr} {size len : Nat} {p 
     (K : Keeps rs s t) (hdi : .edi ∉ rs) (hp : StablePointer p) (hz : usedBytes ≤ size) :
     operandValue t base p len = operandValue s base p len := by
   unfold operandValue
-  rw [runFrame_pointer O K hdi hp, runFrame_bytes O hz (by have := B.fits; omega) B.apart B.stack]
+  rw [runFrame_pointer O K hdi hp, runFrame_bytes O hz (by have := B.fits; omega_using [this]) B.apart B.stack]
 
 theorem CallerBuffer.prefix {s : State} {base : Addr} {size len count : Nat} {p : Pointer}
     (B : CallerBuffer s base size p len) (hc : count ≤ len) : CallerBuffer s base size p count := by
-  refine ⟨B.room, by have := B.fits; omega, fun d k hd => B.read d k (by omega), B.apart.sub_left ?_, B.stack.sub_left ?_⟩
+  refine ⟨B.room, by have := B.fits; omega_using [hc, this], fun d k hd => B.read d k (by omega_using [hc, hd]), B.apart.sub_left ?_, B.stack.sub_left ?_⟩
   all_goals
     intro x hx
     change (x - (pointerValue base s p).setWidth 64).toNat + 1 ≤ count at hx
     change (x - (pointerValue base s p).setWidth 64).toNat + 1 ≤ len
-    omega
+    omega_using [hc, hx]
 
 end VG.Proof.Dsa.X86

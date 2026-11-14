@@ -14,7 +14,7 @@ open VG
 theorem seg_bytesAt (m : Mem) (p : Addr) {a n k : Nat} (h : a + n ≤ k) :
     seg (Spec.Rsa.bytesAt m p k) a n = Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 a) n := by
   unfold seg Spec.Rsa.bytesAt
-  apply List.ext_getElem (by simp; omega)
+  apply List.ext_getElem (by simp; omega_using [h])
   intro i h1 h2
   simp only [List.getElem_take, List.getElem_drop, List.getElem_map, List.getElem_range]
   rw [BitVec.add_assoc, BitVec.ofNat_add]

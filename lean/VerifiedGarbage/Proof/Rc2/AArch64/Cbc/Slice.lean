@@ -22,7 +22,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
   have sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨s'.gpr .x1, 8 * m⟩ ⟨s.gpr .x1, 8 * n⟩
     rw [ptr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [bound])
   constructor
   · have hc : Covers [keyR s', ivR s', dataR s' m, bufR s'] [keyR s, ivR s, dataR s n, bufR s] := by
       apply Covers.of_sub
@@ -31,7 +31,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨keyR s, by simp, 0, by simp [key], by simp⟩
       · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega_using [bound]⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [rd, wr]
     exact fun a k h => hp.reads a k (hc a k h)
@@ -41,7 +41,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega_using [bound]⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [wr]
     exact fun a k h => hp.writes a k (hc a k h)

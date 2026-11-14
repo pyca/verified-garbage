@@ -22,16 +22,16 @@ theorem arg_read {s u : State} (hp : Pre tsH tsG s) (hrd : u.rd = s.rd) {j : Nat
   apply (Covers.one hp.args).left
   refine ⟨_, List.mem_singleton_self _, ?_⟩
   rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-    simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+    simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem arg_keep {s : State} {m : Mem} (hp : Pre tsH tsG s) (hf : Frame (vwrR s) s.mem m) {j : Nat} (hj : j < 10) :
     m.readW (off (fb s) (frameBytes + 8 + 8 * j)) 64 = stackArg s j := by
   rw [argAddr]
   refine hf.readW (r := argsR s) ?_ (fun r hr => ?_) (by decide)
   · rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-    exact Offset.contains_base _ (by omega) (by omega)
+      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · simp only [vwrR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.argsStack

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Hull
-public import VerifiedGarbage.Proof.Divstep.Steps
+public import VerifiedGarbage.Proof.Divstep.HullData
 import VerifiedGarbage.Proof.Divstep.Incl
+public import VerifiedGarbage.Proof.Divstep.Steps
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Tactic.FieldSimp
@@ -11,6 +11,238 @@ import Mathlib.Tactic.NormNum.Ineq
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Divstep.Hull`, which only this module used -/
+
+section
+
+/-!
+# The hulls of the divstep bound: transitions
+
+Bernstein's `hull-light` argument, as J. Harrison checked it in HOL Light
+(`Divstep/hull_light.ml`). For `i = δ - 1/2` of the divstep (`i = 0` at the
+start), the points `(f, g) / (u s^m)` of a run stay in the polygon
+`W i` (`W_even`, `W_odd`): `H1` scaled by powers of `s` and `2` for `i ≥ 0`,
+`H0` for `i = -1`, and `H1` of a sheared point for `i ≤ -2`. Each step is
+one of the checked inclusions (`Incl`), a scaling of `H1` towards its
+origin (`H1_shrink`), a convex combination of two inclusions
+(`H1_shear`), or an identity.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Divstep
+
+/-- `H1` holds `(x, y)`. -/
+abbrev H1P (x y : ℚ) : Prop := inP H1 x y
+/-- `H0` holds `(x, y)`. -/
+abbrev H0P (x y : ℚ) : Prop := inP H0 x y
+
+theorem inP_congr {P : List Row} {x y x' y' : ℚ} (h : inP P x y) (hx : x = x') (hy : y = y') :
+    inP P x' y' := hx ▸ hy ▸ h
+
+/-- A polygon is convex. -/
+theorem inP_convex {P : List Row} {x₁ y₁ x₂ y₂ t : ℚ} (h₁ : inP P x₁ y₁) (h₂ : inP P x₂ y₂)
+    (ht : 0 ≤ t) (ht' : t ≤ 1) : inP P (t * x₁ + (1 - t) * x₂) (t * y₁ + (1 - t) * y₂) := by
+  intro r hr
+  have a := mul_le_mul_of_nonneg_left (h₁ r hr) ht
+  have b := mul_le_mul_of_nonneg_left (h₂ r hr) (by linarith : (0 : ℚ) ≤ 1 - t)
+  nlinarith
+
+theorem H1_zero : H1P 0 0 := by
+  have : H1.all (fun r => decide (0 ≤ r.2.2)) = true := by decide +kernel
+  intro r hr
+  have := List.all_eq_true.mp this r hr
+  simp only [decide_eq_true_eq] at this
+  simp only [mul_zero, add_zero]
+  exact_mod_cast this
+
+/-- `H1` scaled towards its origin. -/
+theorem H1_shrink {x y t : ℚ} (h : H1P x y) (ht : 0 ≤ t) (ht' : t ≤ 1) : H1P (t * x) (t * y) :=
+  inP_congr (inP_convex h H1_zero ht ht') (by ring) (by ring)
+
+/-- `H1` lies in the box `|x| ≤ 8193/8192`, `|y| ≤ 379/512`. -/
+theorem H1_box {x y : ℚ} (h : H1P x y) : |x| ≤ 8193 / 8192 ∧ |y| ≤ 379 / 512 := by
+  have o := Incl.ok_sound inclOuter_ok (x := x) (y := y) h
+  simp only [inclOuter, LinMap.fx, LinMap.fy, LinMap.q, pow_zero, mul_one] at o
+  have r1 := o (0, -512, 379) (by simp [Houter])
+  have r2 := o (8192, 0, 8193) (by simp [Houter])
+  have r3 := o (0, 512, 379) (by simp [Houter])
+  have r4 := o (-8192, 0, 8193) (by simp [Houter])
+  push_cast at r1 r2 r3 r4
+  constructor <;> rw [abs_le] <;> constructor <;> linarith
+
+/-- An inclusion, with its map's coordinates computed. -/
+theorem incl_at {I : Incl} (h : I.ok = true) {x y x' y' : ℚ} (hs : inP I.src x y)
+    (hx : I.map.fx x y = x') (hy : I.map.fy x y = y') : inP I.dst x' y' :=
+  hx ▸ hy ▸ Incl.ok_sound h hs
+
+theorem s_ne : s ≠ 0 := ne_of_gt s_pos
+
+/-- The fudge factor `32/33` of the scaled polygons. -/
+abbrev c32 : ℚ := 32 / 33
+
+/-- `H1` holds `((X/2 ± Y/16) / s², (Y/2) / s²)` with `(X, Y)`. -/
+theorem H1_16 {X Y : ℚ} (h : H1P X Y) :
+    H1P ((X / 2 + Y / 16) / s ^ 2) ((Y / 2) / s ^ 2) ∧ H1P ((X / 2 - Y / 16) / s ^ 2) ((Y / 2) / s ^ 2) := by
+  have hs := s_ne
+  constructor
+  · have a := incl_at inclN4scale_ok (x := X) (y := Y) (by exact h) rfl rfl
+    refine inP_congr (H1_shrink a (t := c32) (by norm_num) (by norm_num)) ?_ ?_ <;>
+      simp only [inclN4scale, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+  · have a := incl_at inclN3scale_ok (x := X) (y := Y) (by exact h) rfl rfl
+    refine inP_congr (H1_shrink a (t := c32) (by norm_num) (by norm_num)) ?_ ?_ <;>
+      simp only [inclN3scale, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+
+/-- `H1` holds `((X/2 ± Y/2^(m+2)) / s², (Y/2) / s²)` with `(X, Y)`, for
+`m ≥ 2`: a combination of the two of `H1_16` along the same `y`. -/
+theorem H1_shear {X Y : ℚ} (h : H1P X Y) {m : Nat} (hm : 2 ≤ m) :
+    H1P ((X / 2 + Y / 2 ^ (m + 2)) / s ^ 2) ((Y / 2) / s ^ 2) ∧
+      H1P ((X / 2 - Y / 2 ^ (m + 2)) / s ^ 2) ((Y / 2) / s ^ 2) := by
+  obtain ⟨a, b⟩ := H1_16 h
+  have hs := s_ne
+  have hp : (4 : ℚ) ≤ 2 ^ m := by
+    calc (4 : ℚ) = 2 ^ 2 := by norm_num
+      _ ≤ 2 ^ m := pow_le_pow_right₀ (by norm_num) hm
+  have hp0 : (0 : ℚ) < 2 ^ m := by positivity
+  have e : (2 : ℚ) ^ (m + 2) = 2 ^ m * 4 := by rw [pow_add]; norm_num
+  -- `t = (1 + 4/2^m)/2` and `1 - t` of the two points.
+  have t0 : (0 : ℚ) ≤ (1 + 4 / 2 ^ m) / 2 := by positivity
+  have t1 : (1 + 4 / 2 ^ m) / 2 ≤ (1 : ℚ) := by
+    rw [div_le_one (by norm_num)]; have : 4 / 2 ^ m ≤ (1 : ℚ) := by rw [div_le_one hp0]; exact hp
+    linarith
+  have u0 : (0 : ℚ) ≤ (1 - 4 / 2 ^ m) / 2 := by
+    apply div_nonneg _ (by norm_num); have : 4 / 2 ^ m ≤ (1 : ℚ) := by rw [div_le_one hp0]; exact hp
+    linarith
+  have u1 : (1 - 4 / 2 ^ m) / 2 ≤ (1 : ℚ) := by
+    have : (0 : ℚ) ≤ 4 / 2 ^ m := by positivity
+    linarith
+  constructor
+  · refine inP_congr (inP_convex a b t0 t1) ?_ ?_ <;> (try rw [e]) <;> field_simp <;> ring
+  · refine inP_congr (inP_convex a b u0 u1) ?_ ?_ <;> (try rw [e]) <;> field_simp <;> ring
+
+/-! ## The polygons `W i` -/
+
+/-- `W i` for `i = n ≥ 0`. -/
+def Wpos (n : Nat) (x y : ℚ) : Prop :=
+  if n ≤ 2 then H1P (x * s ^ n) (y * (2 * s) ^ n) else H1P (c32 * x * s ^ n) (c32 * y * (2 * s) ^ n)
+
+/-- `W i` for `i = -j ≤ -1`. -/
+def Wneg (j : Nat) (x y : ℚ) : Prop :=
+  if j = 1 then H0P x y
+  else if j = 2 then H1P ((x - 2 * y) * s ^ 3) (4 * x * s ^ 3)
+  else H1P (c32 * (x - 2 * y) * s ^ (j + 1)) (c32 * x * s ^ (j + 1) * 2 ^ j)
+
+/-- The polygon of `i = δ - 1/2`. -/
+def W (i : Int) (x y : ℚ) : Prop := if 0 ≤ i then Wpos i.toNat x y else Wneg (-i).toNat x y
+
+/-- An even step from `i ≥ 0`. -/
+theorem Wpos_even {n : Nat} {x y : ℚ} (h : Wpos n x y) : Wpos (n + 1) (x / s) (y / (2 * s)) := by
+  have hs := s_ne
+  unfold Wpos at h ⊢
+  rcases Nat.lt_or_ge n 2 with hn | hn
+  · simp (disch := omega_using [hn]) only [ite_t] at h ⊢
+    refine inP_congr h ?_ ?_ <;> rw [pow_succ] <;> field_simp
+  · rcases Nat.lt_or_ge n 3 with hn' | hn'
+    · obtain rfl : n = 2 := by omega_using [hn, hn']
+      simp (disch := omega_using []) only [ite_t] at h; simp (disch := omega_using []) only [ite_f]
+      refine inP_congr (H1_shrink h (t := c32) (by norm_num) (by norm_num)) ?_ ?_ <;> first | (field_simp; done) | (field_simp; ring)
+    · simp (disch := omega_arith) only [ite_f] at h ⊢
+      refine inP_congr h ?_ ?_ <;> rw [pow_succ] <;> field_simp
+
+/-- An odd step from `i ≥ 0`: the swap, to `i = -n`. -/
+theorem Wpos_odd {n : Nat} {x y : ℚ} (h : Wpos n x y) :
+    (n = 0 → Wpos 0 (y / s) ((y - x) / (2 * s))) ∧ (1 ≤ n → Wneg n (y / s) ((y - x) / (2 * s))) := by
+  have hs := s_ne
+  unfold Wpos at h
+  refine ⟨fun hn => ?_, fun hn => ?_⟩
+  · subst hn
+    simp (disch := omega_using []) only [ite_t, pow_zero, mul_one] at h
+    unfold Wpos
+    simp (disch := omega_using []) only [ite_t, pow_zero, mul_one]
+    refine incl_at incl3_ok (x := x) (y := y) (by exact h) ?_ ?_ <;>
+      simp only [incl3, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+  · unfold Wneg
+    rcases Nat.lt_or_ge n 2 with h2 | h2
+    · obtain rfl : n = 1 := by omega_using [hn, h2]
+      simp (disch := omega) only [ite_t, pow_one] at h ⊢
+      refine incl_at incl5_ok (x := x * s) (y := y * (2 * s)) (by exact h) ?_ ?_ <;>
+        simp only [incl5, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+    · rcases Nat.lt_or_ge n 3 with h3 | h3
+      · obtain rfl : n = 2 := by omega_using [h2, h3]
+        simp (disch := omega_using []) only [ite_t] at h
+        simp (disch := omega) only [ite_f]
+        refine inP_congr h ?_ ?_ <;> field_simp <;> ring
+      · simp (disch := omega_arith) only [ite_f] at h ⊢
+        refine inP_congr h ?_ ?_ <;> simp only [pow_succ, mul_pow] <;> first | (field_simp; done) | (field_simp; ring)
+
+/-- A step from `i = -j` to `i + 1` with `g` even. -/
+theorem Wneg_even {j : Nat} {x y : ℚ} (h : Wneg j x y) :
+    (j = 1 → Wpos 0 (x / s) (y / (2 * s))) ∧ (2 ≤ j → Wneg (j - 1) (x / s) (y / (2 * s))) := by
+  have hs := s_ne
+  unfold Wneg at h
+  refine ⟨fun hj => ?_, fun hj => ?_⟩
+  · subst hj
+    simp only [↓reduceIte] at h
+    unfold Wpos; simp (disch := omega_using []) only [ite_t, pow_zero, mul_one]
+    refine incl_at incl0_ok (x := x) (y := y) (by exact h) ?_ ?_ <;>
+      simp only [incl0, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+  · unfold Wneg
+    rcases Nat.lt_or_ge j 3 with h3 | h3
+    · obtain rfl : j = 2 := by omega_using [hj, h3]
+      simp (disch := omega) only [ite_f] at h ⊢
+      refine incl_at inclN2_ok (x := (x - 2 * y) * s ^ 3) (y := 4 * x * s ^ 3) (by exact h) ?_ ?_ <;>
+        simp only [inclN2, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+    · simp (disch := omega_arith) only [ite_f] at h
+      rcases Nat.lt_or_ge j 4 with h4 | h4
+      · obtain rfl : j = 3 := by omega_using [h3, h4]
+        simp (disch := omega) only [ite_f]
+        refine incl_at inclN4scale_ok (x := c32 * (x - 2 * y) * s ^ (3 + 1))
+          (y := c32 * x * s ^ (3 + 1) * 2 ^ 3) (by exact h) ?_ ?_ <;>
+          simp only [inclN4scale, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+      · simp (disch := omega_arith) only [ite_f]
+        obtain ⟨k, rfl⟩ : ∃ k, j = k + 4 := ⟨j - 4, by omega_using [h4]⟩
+        refine inP_congr (H1_shear h (m := k + 3) (by omega_using [])).1 ?_ ?_ <;>
+          (simp only [show k + 4 - 1 = k + 3 from by omega_using [], pow_succ]
+           first | (field_simp; done) | (field_simp; ring))
+
+/-- A step from `i = -j` to `i + 1` with `g` odd. -/
+theorem Wneg_odd {j : Nat} {x y : ℚ} (h : Wneg j x y) :
+    (j = 1 → Wpos 0 (x / s) ((y + x) / (2 * s))) ∧ (2 ≤ j → Wneg (j - 1) (x / s) ((y + x) / (2 * s))) := by
+  have hs := s_ne
+  unfold Wneg at h
+  refine ⟨fun hj => ?_, fun hj => ?_⟩
+  · subst hj
+    simp only [↓reduceIte] at h
+    unfold Wpos; simp (disch := omega_using []) only [ite_t, pow_zero, mul_one]
+    refine incl_at incl1_ok (x := x) (y := y) (by exact h) ?_ ?_ <;>
+      simp only [incl1, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+  · unfold Wneg
+    rcases Nat.lt_or_ge j 3 with h3 | h3
+    · obtain rfl : j = 2 := by omega_using [hj, h3]
+      simp (disch := omega) only [ite_f] at h ⊢
+      refine incl_at inclN1_ok (x := (x - 2 * y) * s ^ 3) (y := 4 * x * s ^ 3) (by exact h) ?_ ?_ <;>
+        simp only [inclN1, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+    · simp (disch := omega_arith) only [ite_f] at h
+      rcases Nat.lt_or_ge j 4 with h4 | h4
+      · obtain rfl : j = 3 := by omega_using [h3, h4]
+        simp (disch := omega) only [ite_f]
+        refine incl_at inclN3scale_ok (x := c32 * (x - 2 * y) * s ^ (3 + 1))
+          (y := c32 * x * s ^ (3 + 1) * 2 ^ 3) (by exact h) ?_ ?_ <;>
+          simp only [inclN3scale, LinMap.fx, LinMap.fy, LinMap.q] <;> push_cast <;> field_simp <;> ring
+      · simp (disch := omega_arith) only [ite_f]
+        obtain ⟨k, rfl⟩ : ∃ k, j = k + 4 := ⟨j - 4, by omega_using [h4]⟩
+        refine inP_congr (H1_shear h (m := k + 3) (by omega_using [])).2 ?_ ?_ <;>
+          (simp only [show k + 4 - 1 = k + 3 from by omega_using [], pow_succ]
+           first | (field_simp; done) | (field_simp; ring))
+
+end VG.Proof.Divstep
+
+end
+
+end
+
 
 /-!
 # The divstep bound: runs of the relaxed iteration
@@ -38,10 +270,10 @@ def Step (i : Int) (f g : ℚ) (i' : Int) (f' g' : ℚ) : Prop :=
     (if i < 0 then i' = i + 1 ∧ f' = f ∧ g' = (g + f) / 2 else i' = -i ∧ f' = g ∧ g' = (g - f) / 2)
 
 theorem W_pos {n : Nat} {x y : ℚ} : W n x y ↔ Wpos n x y := by
-  unfold W; rw [ite_t (by omega)]; rfl
+  unfold W; rw [ite_t (by omega_using [])]; rfl
 
 theorem W_neg {j : Nat} (hj : 1 ≤ j) {x y : ℚ} : W (-(j : Int)) x y ↔ Wneg j x y := by
-  unfold W; rw [ite_f (by omega), show (-(-(j : Int))).toNat = j by omega]
+  unfold W; rw [ite_f (by omega_using [hj]), show (-(-(j : Int))).toNat = j by omega_using []]
 
 /-- A step keeps the scaled point in `W`. -/
 theorem W_step {i i' : Int} {x y : ℚ} {f g f' g' : ℚ} (c : ℚ) (hc : c ≠ 0) (hx : x = f / c) (hy : y = g / c)
@@ -55,15 +287,15 @@ theorem W_step {i i' : Int} {x y : ℚ} {f g f' g' : ℚ} (c : ℚ) (hc : c ≠ 
     have e2 : g / 2 / (c * s) = g / c / (2 * s) := by fsr
     rw [e1, e2]
     rcases Int.lt_or_le i 0 with hi | hi
-    · obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega⟩
-      have hj : 1 ≤ j := by omega
+    · obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega_using [hi]⟩
+      have hj : 1 ≤ j := by omega_using [hi]
       have := Wneg_even ((W_neg hj).mp h)
       rcases Nat.lt_or_ge j 2 with h2 | h2
-      · obtain rfl : j = 1 := by omega
-        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega, W_pos]; exact this.1 rfl
-      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega, W_neg (by omega)]; exact this.2 h2
-    · obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega⟩
-      rw [show (n : Int) + 1 = ((n + 1 : Nat) : Int) by omega, W_pos]
+      · obtain rfl : j = 1 := by omega_using [hi, h2]
+        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega_using [], W_pos]; exact this.1 rfl
+      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega_using [hi], W_neg (by omega_using [h2])]; exact this.2 h2
+    · obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega_using [hi]⟩
+      rw [show (n : Int) + 1 = ((n + 1 : Nat) : Int) by omega_using [], W_pos]
       exact Wpos_even (W_pos.mp h)
   · split at hs
     · rename_i hi
@@ -72,24 +304,24 @@ theorem W_step {i i' : Int} {x y : ℚ} {f g f' g' : ℚ} (c : ℚ) (hc : c ≠ 
       have e1 : f / (c * s) = f / c / s := by field_simp
       have e2 : (g + f) / 2 / (c * s) = (g / c + f / c) / (2 * s) := by fsr
       rw [e1, e2]
-      obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega⟩
-      have hj : 1 ≤ j := by omega
+      obtain ⟨j, rfl⟩ : ∃ j : Nat, i = -(j : Int) := ⟨(-i).toNat, by omega_using [hi]⟩
+      have hj : 1 ≤ j := by omega_using [hi]
       have := Wneg_odd ((W_neg hj).mp h)
       rcases Nat.lt_or_ge j 2 with h2 | h2
-      · obtain rfl : j = 1 := by omega
-        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega, W_pos]; exact this.1 rfl
-      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega, W_neg (by omega)]; exact this.2 h2
+      · obtain rfl : j = 1 := by omega_using [hi, h2]
+        rw [show -((1 : Nat) : Int) + 1 = ((0 : Nat) : Int) by omega_using [], W_pos]; exact this.1 rfl
+      · rw [show -(j : Int) + 1 = -((j - 1 : Nat) : Int) by omega_using [hi], W_neg (by omega_using [h2])]; exact this.2 h2
     · rename_i hi
       obtain ⟨rfl, hf', hg'⟩ := hs
       rw [hf', hg']
       have e1 : g / (c * s) = g / c / s := by field_simp
       have e2 : (g - f) / 2 / (c * s) = (g / c - f / c) / (2 * s) := by fsr
       rw [e1, e2]
-      obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega⟩
+      obtain ⟨n, rfl⟩ : ∃ n : Nat, i = n := ⟨i.toNat, by omega_using [hi]⟩
       have := Wpos_odd (W_pos.mp h)
       rcases Nat.lt_or_ge n 1 with h1 | h1
-      · obtain rfl : n = 0 := by omega
-        rw [show -((0 : Nat) : Int) = ((0 : Nat) : Int) by omega, W_pos]; exact this.1 rfl
+      · obtain rfl : n = 0 := by omega_using [h1]
+        rw [show -((0 : Nat) : Int) = ((0 : Nat) : Int) by omega_using [], W_pos]; exact this.1 rfl
       · rw [W_neg h1]; exact this.2 h1
 
 /-- A run of the relaxed iteration from `i = 0`. -/
@@ -102,7 +334,7 @@ theorem stable {i : Nat → Int} {f g : Nat → ℚ} (hr : Run i f g) {u : ℚ} 
     (h0 : H1P (f 0 / u) (g 0 / u)) : ∀ m, W (i m) (f m / (u * s ^ m)) (g m / (u * s ^ m))
   | 0 => by
     rw [hr.i0, show (0 : Int) = ((0 : Nat) : Int) from rfl, W_pos]
-    unfold Wpos; rw [ite_t (by omega)]
+    unfold Wpos; rw [ite_t (by omega_using [])]
     simpa using h0
   | m + 1 => by
     have := W_step (u * s ^ m) (by have := s_pos; positivity) rfl rfl (stable hr hu h0 m) (hr.step m)
@@ -132,10 +364,10 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
     exact_mod_cast this
   unfold Wpos at h
   rcases Nat.lt_or_ge n 3 with h3 | h3
-  · rw [ite_t (by omega)] at h
+  · rw [ite_t (by omega_using [h3])] at h
     rcases Nat.lt_or_ge n 2 with h2 | h2
     · rcases Nat.lt_or_ge n 1 with h1 | h1
-      · obtain rfl : n = 0 := by omega
+      · obtain rfl : n = 0 := by omega_using [h1]
         have h' := H1_atL (a := x) (b := y) (u := t) (by simpa using h) ht (by simpa using hc)
         obtain ⟨bx, bY⟩ := H1_box h'
         rw [abs_le] at bx bY
@@ -143,14 +375,14 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
           have : (-2 : ℚ) < x ∧ (x : ℚ) < 2 := by constructor <;> linarith only [bx.1, bx.2]
           have a : (-2 : Int) < x := by exact_mod_cast this.1
           have b : x < (2 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [a, b]
         have hyv : y = -1 ∨ y = 1 := by
           have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith only [bY.1, bY.2]
           have a : (-2 : Int) < y := by exact_mod_cast this.1
           have b : y < (2 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [hy, a, b]
         rcases hx with rfl | rfl | rfl <;> rcases hyv with rfl | rfl <;> revert h' <;> decide +kernel
-      · obtain rfl : n = 1 := by omega
+      · obtain rfl : n = 1 := by omega_using [h2, h1]
         have h' := H1_atL (a := x * s ^ 2) (b := 2 * y * s ^ 2) (u := t * s ^ 1)
           (inP_congr h (by field_simp) (by fsr)) hu hc
         obtain ⟨bx, bY⟩ := H1_box h'
@@ -161,15 +393,15 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
           have : (-3 : ℚ) < x ∧ (x : ℚ) < 3 := by constructor <;> linarith only [bx.1, bx.2]
           have a : (-3 : Int) < x := by exact_mod_cast this.1
           have b : x < (3 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [a, b]
         have hyv : y = -1 ∨ y = 1 := by
           have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith only [bY.1, bY.2]
           have a : (-2 : Int) < y := by exact_mod_cast this.1
           have b : y < (2 : Int) := by exact_mod_cast this.2
-          omega
+          omega_using [hy, a, b]
         rw [hs2] at h'
         rcases hx with rfl | rfl | rfl | rfl | rfl <;> rcases hyv with rfl | rfl <;> revert h' <;> decide +kernel
-    · obtain rfl : n = 2 := by omega
+    · obtain rfl : n = 2 := by omega_using [h3, h2]
       have h' := H1_atL (a := x * s ^ 4) (b := 4 * y * s ^ 4) (u := t * s ^ 2)
         (inP_congr h (by fsr) (by fsr)) hu hc
       have bY := (H1_box h').2
@@ -183,7 +415,7 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
         rw [div_lt_one (by positivity)] at hs4
         nlinarith only [this, hs4, abs_nonneg (y : ℚ)]
       exact absurd hy1 (not_le.mpr this)
-  · rw [ite_f (by omega)] at h
+  · rw [ite_f (by omega_using [h3])] at h
     have h' := H1_atL (a := c32 * x * s ^ (2 * n)) (b := c32 * y * 2 ^ n * s ^ (2 * n)) (u := t * s ^ n)
       (inP_congr h (by rw [pow_mul']; fsr) (by rw [pow_mul', mul_pow]; fsr)) hu hc
     have bY := (H1_box h').2
@@ -224,21 +456,21 @@ theorem sizeBound {i : Nat → Int} {f g : Nat → ℚ} (hr : Run i f g) {u : �
       (t := u * s ^ 0) (by positivity) h
     simpa [hr.i0, J] using this
   · rcases Int.lt_or_le (i (m + 1)) 0 with hi | hi
-    · have ih' := ih fun n hn => hnz n (by omega)
+    · have ih' := ih fun n hn => hnz n (by omega_using [hn])
       have e : m + J (i m) = m + 1 + J (i (m + 1)) := by
         have st := hr.step m
         unfold J
         rcases st with ⟨h1, -, -⟩ | st
-        · rw [ite_f (by omega), ite_f (by omega)]; omega
+        · rw [ite_f (by omega), ite_f (by omega_using [hi])]; omega_using [hi, h1]
         · split at st
-          · rw [ite_f (by omega), ite_f (by omega)]; omega
+          · rw [ite_f (by omega_arith), ite_f (by omega_using [hi])]; omega
           · obtain ⟨h1, -, -⟩ := st
-            rw [ite_t (by omega), ite_f (by omega)]; omega
+            rw [ite_t (by omega_arith), ite_f (by omega_using [hi])]; omega_using [hi, h1]
       rw [← e]; exact ih'
     · obtain ⟨x, hx⟩ := hf (m + 1)
       obtain ⟨y, hy⟩ := hg (m + 1)
       have h := stable hr hu h0 (m + 1)
-      obtain ⟨n, hn⟩ : ∃ n : Nat, i (m + 1) = n := ⟨(i (m + 1)).toNat, by omega⟩
+      obtain ⟨n, hn⟩ : ∃ n : Nat, i (m + 1) = n := ⟨(i (m + 1)).toNat, by omega_using [hi]⟩
       rw [hn, W_pos, hx, hy] at h
       have := lattice (x := x) (y := y) (by intro e; exact hnz (m + 1) (Nat.le_refl _) (by rw [hy, e]; simp))
         (by positivity) h

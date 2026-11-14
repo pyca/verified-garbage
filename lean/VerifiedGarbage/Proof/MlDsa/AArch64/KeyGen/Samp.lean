@@ -84,7 +84,7 @@ theorem expA_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.k1.kc.lay hF hp
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_using [hl])
   unfold expA sampled
   refine WP.seq (WP.mono (setTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by layd) (by layd))
     fun s₁ ⟨hP₁, k₁, hb₁⟩ => ?_)
@@ -109,8 +109,8 @@ theorem expA_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   refine ⟨h₁.k1.step hF hp hP₁₃ (by unfold k1Chk kcChk; layd), fun e' => if e' = e then polyAt s₃.mem (pa s₃ (aP e))
     else A e', S', fun e' he' => ?_, fun _ h => absurd h (Nat.not_lt_zero _), ?_⟩
   · dsimp only
-    rcases (by omega : e' < e ∨ e' = e) with he' | rfl
-    · rw [ifn (by omega)]
+    rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
+    · rw [ifn (by omega_using [he'])]
       exact L₁.keepPoly hP₁₃ (by lay) (hA e' he')
     · rw [ifp rfl]
       refine ⟨?_, rfl⟩
@@ -124,8 +124,8 @@ theorem expA_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
     · rcases hout with ⟨ho, b', hb'⟩ | ⟨ho, hn⟩
       · refine .inl ⟨by rw [ifp ⟨h1, ho⟩], bmax b b', fun e' he' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
         dsimp only
-        rcases (by omega : e' < e ∨ e' = e) with he' | rfl
-        · rw [ifn (by omega)]
+        rcases (by omega_using [he'] : e' < e ∨ e' = e) with he' | rfl
+        · rw [ifn (by omega_using [he'])]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Proof.MlDsa.KeyGen.Bounds.le_max_left b b').rejNTT (hb e' he')
         · rw [ifp rfl, e₃, e₂, (Proof.MlDsa.KeyGen.masked_one ho hco).1]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Proof.MlDsa.KeyGen.Bounds.le_max_right b b').rejNTT hb'
@@ -174,7 +174,7 @@ theorem expA_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
     (he : e < p.k * p.ℓ) : RelCT isa (R p S (KSamp p · e 0)) (expA P p e) fun _ _ => True := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_using [hl])
   refine rel_of (Q := fun x y => Two p S x y ∧ bytesAt x.mem (pa x (sc oSA)) 32 = bytesAt y.mem (pa y (sc oSA)) 32)
     ?_ fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_two hF p₁ p₂ pub h₁.k1.kc h₂.k1.kc, by
       rw [h₁.k1.sa, h₂.k1.sa, rho_pub pub]⟩
@@ -187,7 +187,7 @@ theorem expA_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
       WP isa (.block (setB (sc (oSA + 32)) (e % p.ℓ) ++ setB (sc (oSA + 33)) (e / p.ℓ))) x (F x) := fun x L =>
     WP.mono (setTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by layd) (by layd))
       fun x' ⟨hP₁, _, hb⟩ => ⟨⟨_, hP₁⟩, by rw [bytes34, L.keepBytes hP₁ (by layd), sc_add, sc_pa hP₁, hb]⟩
-  refine RelCT.seq (RelCT.postDep (taintRel [.x28] (fun x y h => h.1.x28) (setIJ_taint _ (by omega) _ (by omega)))
+  refine RelCT.seq (RelCT.postDep (taintRel [.x28] (fun x y h => h.1.x28) (setIJ_taint _ (by omega_using [hl, hr]) _ (by omega_using [hk, hq])))
     (F := F) (fun x y h => ⟨hF1 x h.1.lx, hF1 y h.1.ly⟩)
     (Q := fun x y => Two p S x y ∧ bytesAt x.mem (pa x (sc oSA)) 34 = bytesAt y.mem (pa y (sc oSA)) 34)
     fun x y x' y' ⟨T, e32⟩ ⟨⟨_, hx⟩, bx⟩ ⟨⟨_, hy⟩, by'⟩ => ⟨T.post hx hy, by rw [bx, by', e32]⟩) ?_
@@ -197,7 +197,7 @@ theorem expA_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1) (rejNttInline_tr hP.rejNtt (kgOk p) hc fun x y h =>
       ⟨h.1.lx, h.1.ly, h.2, h.1.same⟩)
       fun x y h => ⟨ok x h.1.lx, ok y h.1.ly⟩)
-    (tail_tr (j := e) (by omega))
+    (tail_tr (j := e) (by omega_using [he, hkl]))
 
 /-! ## The pieces -/
 

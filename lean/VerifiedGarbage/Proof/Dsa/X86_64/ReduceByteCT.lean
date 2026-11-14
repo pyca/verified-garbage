@@ -50,7 +50,7 @@ theorem reduceRead_arithmetic {p : ReducePublic} {s : State} (h : ReduceBytePre 
   obtain ⟨bs, acc, hlen, hpos, h⟩ := h
   have hr := h.source.rd 0 hpos
   simp only [BitVec.add_zero] at hr
-  refine WP.mono (reduceRead_context h.ctx h.modulus (by have := p.lower; omega)
+  refine WP.mono (reduceRead_context h.ctx h.modulus (by have := p.lower; omega_using [this])
     h.pointer hr h.high) fun t ⟨hc, hm, hbyte, harr, _⟩ => ?_
   refine ⟨hc, hm, ?_, ?_⟩
   · rw [harr aY (by decide) (by decide), h.value]
@@ -58,7 +58,7 @@ theorem reduceRead_arithmetic {p : ReducePublic} {s : State} (h : ReduceBytePre 
   · rw [hbyte]
     have := (s.mem p.bytes.ptr).isLt
     have := p.greater255
-    omega
+    omega_using [this]
 
 theorem reduceArithmetic_ct (M : Mont) : RelCT isa (Two ReduceArithmeticPre)
     (Arithmetic.reduceStep M.mm) (fun _ _ => True) :=
@@ -82,11 +82,11 @@ theorem reduceByte_ct (M : Mont) : RelCT isa (Two ReduceBytePre)
   · intro p s ⟨hc, hm, hred, hb⟩
     unfold Arithmetic.reduceStep
     refine WP.seq (WP.mono (mont_step M hm (Nat.le_refl _) p.lower
-      (by have := p.fits; have := p.upper; omega) (by unfold MmUse; decide) hred)
+      (by have := p.fits; have := p.upper; omega_arith) (by unfold MmUse; decide) hred)
       fun u ⟨hmu, hlt, _, hf, _⟩ => ?_)
     have hxu := (hf.wv_of_not_mem (show aX < 8 by decide) (by decide) hc.good.scr.nowrap)
     refine WP.mono (addMod_ok hmu.good.scr hmu.good.rdi hmu.good.hdr (Nat.le_refl _)
-      p.lower (by have := p.fits; have := p.upper; omega)
+      p.lower (by have := p.fits; have := p.upper; omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by rw [hmu.modulus]; exact hlt)
       (by rw [hmu.modulus, hxu]; exact hb)) fun t ⟨_, _, hk⟩ =>

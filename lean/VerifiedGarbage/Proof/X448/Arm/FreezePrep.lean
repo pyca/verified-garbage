@@ -38,19 +38,19 @@ theorem incrementLimb_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (
       (∀ i < 28, limbs t.mem base TMP i =
         if i = k then limbs s.mem base TMP i + 1 else limbs s.mem base TMP i) ∧
       Outside base TMP 112 s.mem t.mem ∧ Keeps [.r3] s t := by
-  have hd : TMP + 4 * k + 4 ≤ 4096 := by simp only [TMP]; omega
+  have hd : TMP + 4 * k + 4 ≤ 4096 := by simp only [TMP]; omega_using [hk]
   refine WP.mono (incrementStep_ok hs hd) fun t ⟨hm, ht⟩ => ?_
   refine ⟨?_, ?_, ht⟩
   · intro i hi
     change (word t.mem base (TMP + 4 * i)).toNat = _
-    rw [hm, word_write s.mem base (by omega) (by simp only [TMP]; omega)]
+    rw [hm, word_write s.mem base (by omega_using [hd]) (by simp only [TMP]; omega_using [hi])]
     by_cases h : i = k
     · rw [ite_eq_left h, ite_eq_left h, h, BitVec.toNat_add]
       change (limbs s.mem base TMP k + 1) % 2 ^ 32 = _
       exact Nat.mod_eq_of_lt hb
     · rw [ite_eq_right h, ite_eq_right h]
   · rw [hm]
-    exact (writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)
+    exact (writeW_outside _ _ _ (by omega_using [hd])).mono (by omega_using []) (by omega_using [hk])
 
 theorem freezePrep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2) :
     WP isa (.block (copy TMP X2 ++ [0, 14].flatMap (fun i =>
@@ -61,7 +61,7 @@ theorem freezePrep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded 
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok hs (by decide) (by decide) (by decide)) fun t ⟨tf, tm, tk⟩ => ?_
   have bound : ∀ i < 28, limbs s.mem base X2 i + 1 < 2 ^ 32 := by
-    intro i hi; have h := hb i hi; simp only [radix] at h; omega
+    intro i hi; have h := hb i hi; simp only [radix] at h; omega_using [h]
   change WP isa (.block
     (([ld .r3 (TMP + 4 * 0), .dp .add .r3 .r3 (.imm 1),
        st .r3 (TMP + 4 * 0)] : List Instr) ++

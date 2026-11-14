@@ -48,7 +48,7 @@ theorem St.fit {s0 s : State} {used : List Nat} (h : St s0 used s) {j : Nat} (hj
 /-- A free array is zero. -/
 theorem St.zero {s0 s : State} {used : List Nat} (h : St s0 used s) {j : Nat} (hj : j < nArr)
     (hu : j ∉ used) : num s.mem (bOf s0) (wOf s0) j = 0 :=
-  wordsVal_zero_part (a := 0) (h.free j hj hu) (by omega)
+  wordsVal_zero_part (a := 0) (h.free j hj hu) (by omega_using [])
 
 /-- A step writing arrays `js` and slots `ds` (from 96 on, below `hdr`) and keeping
 `cbRegs`. -/
@@ -197,7 +197,7 @@ theorem cHigh_ok {s : State} {B : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (hj
         Keep [.t0, .t5] (s.write .t0 (off B (arr w j))) u := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     have e : off B (arr w j) + BitVec.ofNat 64 L = off B (arr w j + 8 * (L / 8)) := by
-      rw [off_add, show arr w j + L = arr w j + 8 * (L / 8) by omega]
+      rw [off_add, show arr w j + L = arr w j + 8 * (L / 8) by omega_using [hL8]]
     brun [hl, e, keys_exec_li_one, h.scr.st (d := arr w j + 8 * (L / 8)) (n := 8) (by omega_arith),
       h.scr.al8 (d := arr w j + 8 * (L / 8)) (by omega_arith) (by have := arr_al w j; omega_arith)]
   refine WP.mono hb fun u ⟨um, ku⟩ => ?_
@@ -209,37 +209,37 @@ theorem cHigh_ok {s : State} {B : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (hj
   · -- The old number: 1 in the low `L / 8` words, 0 above.
     have hv' : wordsVal s.mem B (arr w j) w = 1 := hv
     have split := wordsVal_append s.mem B (d := arr w j) (a := L / 8) (b := w - L / 8)
-    rw [show L / 8 + (w - L / 8) = w by omega, hv'] at split
+    rw [show L / 8 + (w - L / 8) = w by omega_using [hLw], hv'] at split
     have split2 := wordsVal_append s.mem B (d := arr w j + 8 * (L / 8)) (a := 1) (b := w - L / 8 - 1)
-    rw [show 1 + (w - L / 8 - 1) = w - L / 8 by omega] at split2
+    rw [show 1 + (w - L / 8 - 1) = w - L / 8 by omega_using [hLw]] at split2
     have hp : 2 ≤ 2 ^ (64 * (L / 8)) := by
-      have : 1 ≤ 64 * (L / 8) := by omega
+      have : 1 ≤ 64 * (L / 8) := by omega_using [hL8, hL0]
       calc 2 = 2 ^ 1 := rfl
         _ ≤ 2 ^ (64 * (L / 8)) := Nat.pow_le_pow_right (by decide) this
     have lo : wordsVal s.mem B (arr w j) (L / 8) = 1 := by
       rcases Nat.eq_zero_or_pos (wordsVal s.mem B (arr w j + 8 * (L / 8)) (w - L / 8)) with e | e
-      · rw [e] at split; omega
+      · rw [e] at split; omega_using [split]
       · have : 2 ^ (64 * (L / 8)) ≤ 2 ^ (64 * (L / 8)) * wordsVal s.mem B (arr w j + 8 * (L / 8)) (w - L / 8) :=
           Nat.le_mul_of_pos_right _ e
-        omega
+        omega_using [split, hp, this]
     have hi : wordsVal s.mem B (arr w j + 8 * (L / 8)) (w - L / 8) = 0 := by
       rw [lo] at split
       rcases Nat.eq_zero_or_pos (wordsVal s.mem B (arr w j + 8 * (L / 8)) (w - L / 8)) with e | e
       · exact e
       · have : 2 ^ (64 * (L / 8)) ≤ 2 ^ (64 * (L / 8)) * wordsVal s.mem B (arr w j + 8 * (L / 8)) (w - L / 8) :=
           Nat.le_mul_of_pos_right _ e
-        omega
+        omega_using [split, hp, this]
     have hi2 : wordsVal s.mem B (arr w j + 8 * (L / 8) + 8 * 1) (w - L / 8 - 1) = 0 := by
       rw [hi] at split2
       have := Nat.two_pow_pos (64 * 1)
       exact (Nat.mul_eq_zero.mp (show 2 ^ (64 * 1) *
-        wordsVal s.mem B (arr w j + 8 * (L / 8) + 8 * 1) (w - L / 8 - 1) = 0 by omega)).resolve_left (by omega)
+        wordsVal s.mem B (arr w j + 8 * (L / 8) + 8 * 1) (w - L / 8 - 1) = 0 by omega_using [split2])).resolve_left (by omega_using [])
     show wordsVal u.mem B (arr w j) w = _
     rw [um, wordsVal_write_mid s.mem B hLw _ (by omega_arith), lo, show arr w j + 8 * (L / 8) + 8 =
-      arr w j + 8 * (L / 8) + 8 * 1 by omega, show w - L / 8 - 1 = w - L / 8 - 1 from rfl, hi2]
+      arr w j + 8 * (L / 8) + 8 * 1 by omega_using [], show w - L / 8 - 1 = w - L / 8 - 1 from rfl, hi2]
     simp only [BitVec.toNat_ofNat, Nat.mul_zero, Nat.add_zero]
-    rw [show 8 * L = 64 * (L / 8) by omega]
-    omega
+    rw [show 8 * L = 64 * (L / 8) by omega_using [hL8]]
+    omega_using []
 
 /-- `[aC33] := 2^33` and `t4 := 1`, on the zero array. -/
 theorem c33_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hN : aC33 < N) (hN' : N ≤ 2048)
@@ -312,7 +312,7 @@ theorem consts_ok {s0 s : State} {used : List Nat} (h : PreC s0) (c : St s0 used
   have hv4 : num t4.mem (bOf s0) (wOf s0) aC = 1 := by rw [v4]
   rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (cHigh_ok w4 (j := aC) (L := pLen s0) (by decide) (by decide) (pLen_ofNat c4.cb)
-    hp8 (by omega) (by omega) hv4) fun t5 ⟨w5, f5, v5, k5⟩ => ?_
+    hp8 (by omega_using [hw, hpl, w8]) (by omega_using [hp, hpl]) hv4) fun t5 ⟨w5, f5, v5, k5⟩ => ?_
   have c5 := c4.step w5 f5 (by decide) (by simp) k5
   have zC33 : num t5.mem (bOf s0) (wOf s0) aC33 = 0 := by
     rw [keepNum f5 _ (by decide) (by decide), keepNum f4 _ (by decide) (by decide),
@@ -347,7 +347,7 @@ theorem consts_ok {s0 s : State} {used : List Nat} (h : PreC s0) (c : St s0 used
   · rw [vt, zT, t46]
     have e : (1#64).toNat = 1 := rfl
     rw [e, Nat.zero_add, Nat.mul_one]
-    obtain ⟨x, hx⟩ : ∃ x, 64 * wOf s0 = x + 1 := ⟨64 * wOf s0 - 1, by omega⟩
+    obtain ⟨x, hx⟩ : ∃ x, 64 * wOf s0 = x + 1 := ⟨64 * wOf s0 - 1, by omega_using [w8]⟩
     rw [hx, Nat.add_sub_cancel, Nat.pow_succ, Nat.mul_div_cancel _ (by decide : 0 < 2)]
   · have ne : ∀ k ∈ constArrs, k ≠ j := fun k hk e => hjn (e ▸ hk)
     rw [keepNum ft _ hj (Ne.symm (ne _ (by simp))), keepNum f6 _ hj (Ne.symm (ne _ (by simp))),

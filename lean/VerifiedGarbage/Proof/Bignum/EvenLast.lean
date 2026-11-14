@@ -37,8 +37,8 @@ theorem pre_evenLast (bs : List Byte) {i : Nat} (hi : i < bs.length) : pre (even
   apply List.ext_getElem (by simp only [List.length_take, evenLast_length])
   intro j h₁ h₂
   simp only [List.length_take] at h₁
-  rw [List.getElem_take, List.getElem_take, evenLast_getElem bs (by omega)]
-  simp only [show j + 1 ≠ bs.length by omega, ↓reduceIte]
+  rw [List.getElem_take, List.getElem_take, evenLast_getElem bs (by omega_using [hi, h₁])]
+  simp only [show j + 1 ≠ bs.length by omega_using [hi, h₁], ↓reduceIte]
 
 /-- `evenLast bs` is `bs` less one, for `bs` of an odd number. -/
 theorem os2ip_evenLast {bs : List Byte} (hodd : Spec.Rsa.os2ip bs % 2 = 1) :
@@ -47,16 +47,16 @@ theorem os2ip_evenLast {bs : List Byte} (hodd : Spec.Rsa.os2ip bs % 2 = 1) :
     rcases bs with _ | ⟨b, bs⟩
     · exact absurd hodd (by decide)
     · exact Nat.succ_pos _
-  have hl : bs.length - 1 < bs.length := by omega
+  have hl : bs.length - 1 < bs.length := by omega_using [hL]
   have e₁ := pre_succ bs hl
   have e₂ : Spec.Rsa.os2ip (evenLast bs) = 256 * pre bs (bs.length - 1) + (bs[bs.length - 1] &&& 0xFE).toNat := by
     have h₁ : Spec.Rsa.os2ip (evenLast bs) = pre (evenLast bs) (bs.length - 1 + 1) := by
       rw [Nat.sub_add_cancel hL, ← evenLast_length, pre_len]
     rw [h₁, pre_succ (evenLast bs) (by rw [evenLast_length]; exact hl), pre_evenLast bs hl, evenLast_getElem bs hl]
-    simp only [show bs.length - 1 + 1 = bs.length by omega, ↓reduceIte]
+    simp only [show bs.length - 1 + 1 = bs.length by omega_using [hL], ↓reduceIte]
   rw [Nat.sub_add_cancel hL, pre_len] at e₁
   have hc := clear0_toNat bs[bs.length - 1]
   rw [e₁] at hodd
-  omega
+  omega_using [hodd, e₁, e₂, hc]
 
 end VG.Proof.Bignum

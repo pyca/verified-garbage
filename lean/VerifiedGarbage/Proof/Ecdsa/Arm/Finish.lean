@@ -45,8 +45,8 @@ theorem outside_shift {p : Addr} {d len : Nat} {m m' : Mem}
     rcases Nat.lt_or_ge (x - (p + BitVec.ofNat 64 d)).toNat len with hlt | hge
     · have := (Offset.lt_iff x p hd).mp hlt
       simp only [ofs] at hx
-      omega
-    · omega))
+      omega_using [hx, this]
+    · omega_using [hge]))
 
 theorem mask_bit (b : Bool) : (mask32 (b = true) &&& 1 : BitVec 32) = if b then 1 else 0 := by
   cases b <;> decide
@@ -97,7 +97,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun hd' =>
     hd.symm.sub_right (Offset.sub_base out hd')
   rw [finish_eq]
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := c.sl FLAG) (n := 4) (by omega))
+  refine wp_ldr (hs.off_lt (by omega_using [hn0, hF])) (hs.ea (by omega_using [hn0, hF])) (hs.read (d := c.sl FLAG) (n := 4) (by omega_using [hn0, hF]))
     fun s₁ u₁ => ?_
   have k₂ : Rest [.r10] s s₁ := u₁.rest (by simp)
   have hs₂ := hs.of_rest k₂ (by decide)
@@ -105,27 +105,27 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have hc₂ : s₁.gpr .r10 = mask32 (b = true) := by rw [u₁.gpr, ← flagW, hf]
   have hr1 : s₁.gpr .lr = o32 := by rw [u₁.other _ (by decide), hout]
   refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₂ (dst := .lr) (d := 0) (a := c.sl RR) (by decide)
-    (by decide) b hc₂ hRR (by omega) hlhi (by rw [hr1]; omega) (by omega) (fun e m he => ⟨_, by rw [k₂.wr]; exact hw, by
-      rw [hr1, hout64, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hr1, hout64]; exact hdsc hRR (by omega))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+    (by decide) b hc₂ hRR (by omega_using [hl8]) hlhi (by rw [hr1]; omega_using [hofit]) (by omega_using [h7, hlhi]) (fun e m he => ⟨_, by rw [k₂.wr]; exact hw, by
+      rw [hr1, hout64, h0]; exact Offset.contains_base out (by omega_using [he]) (by omega_using [hofit, he])⟩)
+    (by rw [hr1, hout64]; exact hdsc hRR (by omega_using []))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   rw [hr1, hout64] at e₃ O₃
   have hs₃ := hs₂.of_rest k₃ (by decide)
-  have U₃ := O₃.unch_far (hscd (d := 0) (by omega))
+  have U₃ := O₃.unch_far (hscd (d := 0) (by omega_using []))
   have hr1₃ : s₃.gpr .lr = o32 := by rw [k₃.gpr _ (by decide), hr1]
   have hc₃ : s₃.gpr .r10 = mask32 (b = true) := by rw [k₃.gpr _ (by decide), hc₂]
   have ss₃ : wordsVal s₃.mem base (c.sl SS) c.n = sv c base s SS := by
-    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₂]
+    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [hSS]) (by omega_using [hn, hSS]), hm₂]
   refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₃ (dst := .lr) (d := c.C.len) (a := c.sl SS)
-    (by decide) (by decide) b hc₃ hSS (by omega) hlhi (by rw [hr1₃]; omega) (by omega)
+    (by decide) (by decide) b hc₃ hSS (by omega_using [hl8]) hlhi (by rw [hr1₃]; omega_using [hofit]) (by omega_using [h7, hlhi])
     (fun e m he => ⟨_, by rw [k₃.wr, k₂.wr]; exact hw, by
-      rw [hr1₃, hout64, h8]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hr1₃, hout64]; exact hdsc hSS (by omega))) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+      rw [hr1₃, hout64, h8]; exact Offset.contains_base out (by omega_using [he]) (by omega_using [hofit, he])⟩)
+    (by rw [hr1₃, hout64]; exact hdsc hSS (by omega_using []))) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [hr1₃, hout64] at e₄ O₄
   have hs₄ := hs₃.of_rest k₄ (by decide)
-  have U₄ := O₄.unch_far (hscd (d := c.C.len) (by omega))
+  have U₄ := O₄.unch_far (hscd (d := c.C.len) (by omega_using []))
   have first : Spec.Ecdsa.bytesAt s₄.mem out c.C.len =
       if b then toBytes c.C.len (sv c base s RR) else List.replicate c.C.len 0 := by
-    rw [bytesAt_keep O₄ (Offset.base_disjoint out (Nat.le_refl _) (by omega)) (by omega) (by omega)]
+    rw [bytesAt_keep O₄ (Offset.base_disjoint out (Nat.le_refl _) (by omega_using [hofit])) (by omega_using [hofit]) (by omega_using [hofit])]
     have e₃' := e₃
     rw [(BitVec.add_zero out : out + BitVec.ofNat 64 0 = out)] at e₃'
     rw [e₃', hm₂]
@@ -134,7 +134,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     have := saved_lt rd hrd
     have h16 : ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega)
-    rw [Unch.readW32 U₄ h16 (by omega), Unch.readW32 U₃ h16 (by omega), hm₂, hsv rd hrd]
+    rw [Unch.readW32 U₄ h16 (by omega_using [this]), Unch.readW32 U₃ h16 (by omega_using [this]), hm₂, hsv rd hrd]
   -- The return value.
   refine wp_dp (op2_imm (by decide)) fun s₅ u₅ => ?_
   have hs₅ := hs₄.of_rest (u₅.rest (ws := [.r0]) (by simp)) (by decide)
@@ -142,9 +142,9 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     rw [u₅.gpr, dpVal, k₄.gpr _ (by decide), hc₃]; exact mask_bit b
   -- The callee-saved registers.
   rw [restore_eq]
-  refine WP.mono (ldrs_ok hs₅ Cfg.saved (fun p hp => by have := saved_lt p hp; omega) saved_nodup
+  refine WP.mono (ldrs_ok hs₅ Cfg.saved (fun p hp => by have := saved_lt p hp; omega_using [hsz, this]) saved_nodup
     (fun p hp => (saved_r12 p hp).1)) fun s' ⟨m', K', V'⟩ => ⟨?_, ?_, fun rd hrd => ?_, ?_, ?_⟩
-  · rw [m', u₅.mem, show 2 * c.C.len = c.C.len + c.C.len by omega, bytesAt_add, first, e₄, ss₃]
+  · rw [m', u₅.mem, show 2 * c.C.len = c.C.len + c.C.len by omega_using [], bytesAt_add, first, e₄, ss₃]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
     · simp only [ite_true]
@@ -153,7 +153,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   · exact ((k₂.mono (by simp)).trans ((k₃.mono (by simp)).trans (k₄.mono (by simp)))).trans
       ((u₅.rest (by simp)).trans (K'.mono (by decide)))
   · rw [m', u₅.mem, ← hm₂]
-    exact ((outside_shift O₃ (by omega)).mono (Nat.zero_le _) (by omega)).trans
-      ((outside_shift O₄ (by omega)).mono (Nat.zero_le _) (by omega))
+    exact ((outside_shift O₃ (by omega_using [hofit])).mono (Nat.zero_le _) (by omega_using [])).trans
+      ((outside_shift O₄ (by omega_using [hofit])).mono (Nat.zero_le _) (by omega_using []))
 
 end VG.Proof.Ecdsa.Arm

@@ -20,13 +20,13 @@ theorem internal_ok {s : State} {B : Addr} {Z eA eT i n : Nat}
       Outside B (eT+128*i) 120 s.mem t.mem ∧ Keep codeRegs s t := by
   have hn := hs.nowrap
   have hzero := zero_window_of_lt (len := 15) hi hv
-  have hz := zero_window_of_lt (len := 1) (by omega) hv
-  have offeq : eT+8*(16*i) = eT+128*i := by omega
+  have hz := zero_window_of_lt (len := 1) (by omega_using [hi]) hv
+  have offeq : eT+8*(16*i) = eT+128*i := by omega_using []
   rw [offeq] at hzero hz
-  refine WP.mono (code_ok hs h8 h16 hA (by omega) h7 hz) fun t ⟨htv, hto, kt⟩ => ?_
-  have ho : Outside B (eT+128*i) 120 s.mem t.mem := hto.mono (by omega) (by omega)
+  refine WP.mono (code_ok hs h8 h16 hA (by omega_using [hT, hi]) h7 hz) fun t ⟨htv, hto, kt⟩ => ?_
+  have ho : Outside B (eT+128*i) 120 s.mem t.mem := hto.mono (by omega_using []) (by omega_using [])
   have hw := ProductEight.wv_window_delta (n := n) (j := 16*i) (k := 15)
-    (by omega : eT+8*n ≤ 2 ^ 64) hi
+    (by omega_using [hT, hn] : eT+8*n ≤ 2 ^ 64) hi
     (by simpa only [offeq] using ho)
   rw [offeq, hzero, htv, Nat.mul_zero, Nat.add_zero] at hw
   exact ⟨hw, ho, kt⟩

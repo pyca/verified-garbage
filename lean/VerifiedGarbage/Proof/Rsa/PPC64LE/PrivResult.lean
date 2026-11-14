@@ -21,6 +21,8 @@ check's logic on every target computes them (`Proof.Rsa.result`,
 
 namespace VG.Proof.Rsa.PPC64LE.Priv
 
+variable {pc : Bool}
+
 open VG VG.PPC64LE VG.Impl.Rsa.PPC64LE.Priv
 open VG.Proof.Bignum.PPC64LE (Keep)
 
@@ -102,7 +104,7 @@ theorem zb_eq (m : Mem) (a : Addr) : zb m a = (m a).setWidth 64 := by
   omega_arith
 
 /-- The release: `out` := `m` under the mask, `m` := 0. -/
-theorem release_ok {s w : State} (h : PreP s) (L : Late s w) {mask : BitVec 64} {c : Prop} [Decidable c]
+theorem release_ok {s w : State} (h : PreP pc s) (L : Late s w) {mask : BitVec 64} {c : Prop} [Decidable c]
     (hb : ∀ b : Byte, ((b.setWidth 64) &&& mask).setWidth 8 = if c then b else 0)
     (h6 : w.gpr .r6 = s.gpr .r6) (h7 : w.gpr .r7 = s.gpr .r3) (h8 : w.gpr .r8 = fb s + BitVec.ofNat 64 oM)
     (h9 : w.gpr .r9 = mask) :

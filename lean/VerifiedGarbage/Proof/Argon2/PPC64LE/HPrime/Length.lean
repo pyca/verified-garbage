@@ -60,12 +60,12 @@ theorem chooseLength_ok (s : State) (hb : (s.gpr .r30).toNat < 2 ^ 32) :
       simp [eval_nonzero, comparison, hn]
   refine WP.ite (decide ((s.gpr .r30).toNat < 65)) flag ?_ ?_
   · intro h
-    have hn : (s.gpr .r30).toNat ≤ 64 := by have := of_decide_eq_true h; omega
+    have hn : (s.gpr .r30).toNat ≤ 64 := by have := of_decide_eq_true h; omega_using [this]
     apply WP.block_nil
     refine ⟨?_, ku⟩
     rw [n, Nat.min_eq_left hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · intro h
-    have hn : 64 ≤ (s.gpr .r30).toNat := by have := of_decide_eq_false h; omega
+    have hn : 64 ≤ (s.gpr .r30).toNat := by have := of_decide_eq_false h; omega_using [this]
     refine wp_li (by decide) fun t ht => WP.block_nil ?_
     refine ⟨?_, ku.trans (Keeps.of_upd ht (by decide))⟩
     rw [Nat.min_eq_right hn]; exact ht.gpr

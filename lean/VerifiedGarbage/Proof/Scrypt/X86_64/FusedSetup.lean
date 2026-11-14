@@ -19,7 +19,7 @@ theorem memWords_frame {rs : List Region} {m m' : Mem} {p : Addr}
   apply Vector.ext
   intro j hj
   simp only [memWords, Vector.getElem_ofFn]
-  exact hf.readW (r := ⟨p, 64⟩) (contains_off (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨p, 64⟩) (contains_off (by omega_using [hj]) (by omega_using [hj])) hd (by decide)
 
 theorem setup_ok {s₀ s : State} (hp : Pre s₀) (h : BlockMix.Inv s₀ 0 s) :
     WP isa (.block fusedSetup) s (Inv s₀ 0) := by
@@ -30,7 +30,7 @@ theorem setup_ok {s₀ s : State} (hp : Pre s₀) (h : BlockMix.Inv s₀ 0 s) :
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (Spill.save_ok .r13 metaSaved s (fun p hp' => by
     rw [h.r13, h.wr, hp.wr]
-    exact ⟨scR s₀, by simp, in_s s₀ (by have := bound p hp'; omega)⟩)) fun a ⟨ga, ra, wa, ma⟩ => ?_
+    exact ⟨scR s₀, by simp, in_s s₀ (by have := bound p hp'; omega_using [this])⟩)) fun a ⟨ga, ra, wa, ma⟩ => ?_
   rw [h.r13] at ma
   have fa : Frame [⟨sc s₀, 64⟩] s.mem a.mem := by
     rw [ma]; exact Spill.saveMem_frame_base s.mem (sc s₀) s.gpr metaSaved bound (by decide)
@@ -51,24 +51,24 @@ theorem setup_ok {s₀ s : State} (hp : Pre s₀) (h : BlockMix.Inv s₀ 0 s) :
   have spc : c.gpr .rsp = s.gpr .rsp := by rw [uc.other _ (by decide), ub.other _ (by decide), ga]
   have li : InRegions (c.rd ++ c.wr) (bp c) 64 := by
     rw [bp, di, rc, wc, hp.rd, hp.wr]
-    exact ⟨bR s₀, by simp, in_b hp (by omega)⟩
+    exact ⟨bR s₀, by simp, in_b hp (by omega_using [pos])⟩
   have ls : InRegions c.wr (sp c) 64 := by
     rw [sp, si, wc, hp.wr]; exact ⟨scR s₀, by simp, by simpa using in_s s₀ (o := 0) (n := 64) (by decide)⟩
   have ld : (VG.Proof.Scrypt.X86_64.bR (bp c)).Disjoint (VG.Proof.Scrypt.X86_64.scR (sp c)) := by
-    rw [bp, sp, di, si]; exact x_s hp (by omega)
+    rw [bp, sp, di, si]; exact x_s hp (by omega_using [])
   refine WP.mono (Retained.load_ok li ls ld) fun t ⟨wt, ft, rt, wrt, _, spt⟩ => ?_
   simp only [sp, bp, si, di] at wt ft
   have mprev : memWords t.mem (xP s₀ 0) = memWords c.mem (xP s₀ 0) :=
     memWords_frame ft fun R hR => by
       simp only [List.mem_singleton] at hR; subst R
-      exact (x_s hp (by omega)).sub_right (Region.sub_prefix (by decide))
+      exact (x_s hp (by omega_using [])).sub_right (Region.sub_prefix (by decide))
   have f64 : Frame [⟨sc s₀, 64⟩] c.mem t.mem := ft.sub (sub_slot_sc _)
   have log := (Logical.of_old h).scratch hp (fa.trans (mc ▸ f64))
     (rt.trans (uc.rd.trans (ub.rd.trans ra))) (wrt.trans (uc.wr.trans (ub.wr.trans wa))) (spt.trans spc)
   refine ⟨log, ?_, ?_⟩
   · rw [mprev]; exact wt
   · have metac : Meta (sc s₀) (bB s₀ 0) (yE s₀ 0) (yO s₀ 0) (BitVec.ofNat 64 (rr s₀ - 0)) c.mem := mc ▸ metadata
-    exact metac.frame (slot_s hp (o := 0) (by omega)) (ft.sub fun R hR => by
+    exact metac.frame (slot_s hp (o := 0) (by omega_using [pos])) (ft.sub fun R hR => by
       simp only [List.mem_singleton] at hR; subst R
       exact ⟨slotR (sc s₀), by simp, fun _ h => h⟩)
 

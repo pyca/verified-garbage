@@ -25,13 +25,13 @@ private theorem shift_mask (v : BitVec 16) (hb : v.toNat < 256)
     rfl
   have hs : (v - 1).msb = false := by
     rw [BitVec.msb_eq_false_iff_two_mul_lt, hv]
-    omega
+    omega_using [hb]
   rw [BitVec.sshiftRight_eq_of_msb_false hs]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, hv]
   rw [Nat.shiftRight_eq_div_pow, show (0 : BitVec 16).toNat = 0 by decide]
   change (v.toNat - 1) / 32768 = 0
-  omega
+  omega_using [hb]
 
 theorem mask_eq (x y : VG.Byte) :
     ((x.setWidth 16 ^^^ y.setWidth 16) - 1).sshiftRight 15 =
@@ -40,7 +40,7 @@ theorem mask_eq (x y : VG.Byte) :
     rw [← BitVec.setWidth_xor]
     simp only [BitVec.toNat_setWidth]
     have h := (x ^^^ y).isLt
-    omega
+    omega_using []
   by_cases h : x = y
   · subst y
     rw [BitVec.xor_self, ite_eq_left rfl]
@@ -171,13 +171,13 @@ theorem broadcast_word (x : Byte) (i : Nat) (hi : i < 8) :
       simp (disch := omega) only [ite_eq_left, ite_eq_right, BitVec.getLsbD_extractLsb',
         Nat.zero_add, decide_eq_true, Bool.true_and]
     all_goals rw [BitVec.getLsbD_append]
-    all_goals simp (disch := omega) only [ite_eq_left, BitVec.getLsbD_setWidth,
+    all_goals simp (disch := omega_arith) only [ite_eq_left, BitVec.getLsbD_setWidth,
       decide_eq_true, Bool.true_and]
   rw [shufDwords]
   change word (ofDwords
     (dword _ 0) (dword _ 0) (dword _ 0) (dword _ 0)) i = _
   rw [hd]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     rw [word_eq_dword _ hi] <;>
     simp (disch := decide) only [Nat.reduceDiv, Nat.reduceMod,
@@ -205,7 +205,7 @@ theorem indices_next (n : Nat) :
   change BitVec.ofNat 16 (8 * n + j) + BitVec.ofNat 16 8 = _
   rw [← BitVec.ofNat_add]
   congr 1
-  omega
+  omega_using []
 
 theorem acc_step (f : Nat → BitVec 16) (x : Byte) (n : Nat) (hn : n < 32)
     (v : BitVec 128) (hv : ∀ j < 8, word v j = f (8 * n + j)) :
@@ -219,18 +219,18 @@ theorem acc_step (f : Nat → BitVec 16) (x : Byte) (n : Nat) (hn : n < 32)
       rw [Impl.Rc2.X86_64.Sse2.indices, word_ofWords _ hj]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      omega)]
+      omega_using [hn, hj])]
   simp only [acc, word_ofWords _ hj, hv j hj]
   have he : (x = BitVec.ofNat 8 (8 * n + j)) ↔ x.toNat = 8 * n + j := by
-    rw [← BitVec.toNat_inj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [← BitVec.toNat_inj, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hj])]
   by_cases h : x.toNat = 8 * n + j
-  · rw [ite_eq_left (he.mpr h), ite_eq_right (by omega), ite_eq_left (by omega), h]
+  · rw [ite_eq_left (he.mpr h), ite_eq_right (by omega_using [h]), ite_eq_left (by omega_using [hj, h]), h]
     exact BitVec.zero_or
   · rw [ite_eq_right (mt he.mp h)]
     change (if x.toNat < 8 * n ∧ x.toNat % 8 = j then f x.toNat else 0#16) ||| 0#16 = _
     rw [BitVec.or_zero]
     have heq : (x.toNat < 8 * n ∧ x.toNat % 8 = j) ↔
-        (x.toNat < 8 * (n + 1) ∧ x.toNat % 8 = j) := by omega
+        (x.toNat < 8 * (n + 1) ∧ x.toNat % 8 = j) := by omega_using [h]
     simp only [heq]
 
 def reduceValue (v : BitVec 128) : BitVec 128 :=
@@ -258,7 +258,7 @@ theorem reduce_acc (f : Nat → BitVec 16) (x n : Nat) :
     word_ofWords _ (by decide : 6 < 8), word_ofWords _ (by decide : 7 < 8)]
   by_cases h : x < 8 * n
   · rw [ite_eq_left h]
-    rcases (by omega : x % 8 = 0 ∨ x % 8 = 1 ∨ x % 8 = 2 ∨ x % 8 = 3 ∨
+    rcases (by omega_using [] : x % 8 = 0 ∨ x % 8 = 1 ∨ x % 8 = 2 ∨ x % 8 = 3 ∨
       x % 8 = 4 ∨ x % 8 = 5 ∨ x % 8 = 6 ∨ x % 8 = 7) with
       hm | hm | hm | hm | hm | hm | hm | hm <;>
       simp only [h, hm, Nat.reduceEqDiff, ite_true, ite_false, true_and, and_false,

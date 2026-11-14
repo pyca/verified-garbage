@@ -52,7 +52,7 @@ theorem p192_nBits : Spec.Ecdsa.nBits p192.C = 192 := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h2 : Spec.P192.curve.n.log2 < 192 :=
     (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h1, h2]
 
 /-- No bit of a hash of `24` bytes is dropped. -/
 theorem p192_sh : p192.sh = 0 := by

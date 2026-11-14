@@ -37,7 +37,7 @@ theorem tailMask_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
       exact absurd he (by decide))
     refine WP.mono (copyMask_phase_ok (copyChk_ok hp) hA hc) fun u ⟨hu,hy⟩=>?_
     have cf : positiveFinishChk p (p.ℓ-1+1) (p.ℓ-1)=true := by rcases hp with rfl|rfl <;> decide
-    have hf := WP.mono (positiveFinish_ok (by omega) cf hu hy) fun _ hh=>hh.1
+    have hf := WP.mono (positiveFinish_ok (by omega_using []) cf hu hy) fun _ hh=>hh.1
     simpa only [hlen] using hf
   · have cf : positiveMaskChk p (p.ℓ-1)=true := by rcases hp with rfl|rfl <;> decide
     have hf := positiveMaskR_ok hP cf hA

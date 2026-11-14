@@ -77,17 +77,17 @@ theorem descentPrefix_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {j : Nat} {s : S
   have h2 := sl_le c h7 (i := T2) (by decide)
   unfold descentPrefix
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok (2 * c.n) hs (by omega)
-    (by have := sl_le c h7 (i := T0) (by decide); omega)
-    (by have := sl_apart c (i := T3) (j := T0) (by decide); omega)) fun s₁ ⟨_, K₁, O₁⟩ => ?_
-  rw [show 4 * (2 * c.n) = 8 * c.n by omega] at O₁
+  refine WP.mono (copy_ok (2 * c.n) hs (by omega_using [h3])
+    (by have := sl_le c h7 (i := T0) (by decide); omega_using [this])
+    (by have := sl_apart c (i := T3) (j := T0) (by decide); omega_using [this])) fun s₁ ⟨_, K₁, O₁⟩ => ?_
+  rw [show 4 * (2 * c.n) = 8 * c.n by omega_using []] at O₁
   have hs₁ := hs.of_rest K₁ (by decide)
-  refine wp_ldr (hs₁.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.read (by omega : c.sl T2 + 4 ≤ size))
+  refine wp_ldr (hs₁.off_lt (by omega_using [h0, h2])) (hs₁.ea (by omega_using [h0, h2])) (hs₁.read (by omega_using [h0, h2] : c.sl T2 + 4 ≤ size))
     fun s₂ U₂ => ?_
   have hb₂ : s₂.gpr .r11 = BitVec.ofNat 32 j := by
     rw [U₂.gpr, BitVec.eq_of_toNat_eq (O₁.w32
-      (by have := sl_apart c (i := T2) (j := T3) (by decide); omega)
-      (by have := hs.nowrap; omega)), hw]
+      (by have := sl_apart c (i := T2) (j := T3) (by decide); omega_using [h0, this])
+      (by have := hs.nowrap; omega_using [h2, this])), hw]
   refine wp_decCounter hj hb₂ fun t U₃ => WP.block_nil
     ⟨U₃.gpr, (K₁.mono (by decide)).trans
       ((U₂.rest (by simp [powClob])).trans (U₃.rest (by simp [powClob])))⟩
@@ -159,7 +159,7 @@ theorem descentLoop_rel {c : Cfg} (hc : CfgOk c) {count : Nat}
         intro hz
         rw [VG.Proof.X25519.Arm.eval_ne, R.zf, decide_eq_true hz] at he
         cases he
-      exact ⟨j - 1, by omega, by omega, by omega, base, I.step hc R, J.step hc S,
+      exact ⟨j - 1, by omega_using [hj], by omega_using [hn], by omega_using [hj'], base, I.step hc R, J.step hc S,
         hpub.keep R.keep S.keep⟩
   exact (RelCT.loop (fun j s t => 1 ≤ j ∧ j < 2 ^ 31 ∧ LoopPair c j s t) H count).mono
     (fun _ _ hp => ⟨hcount, hcount', hp⟩) (fun _ _ h => h)
@@ -280,7 +280,7 @@ theorem decompress_tonelli_ct {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 ≠ 3)
       have pre {u : State} (h : (decompressContract c.C root).pre u) : InputPre c (1 + c.C.len) u := by
         obtain ⟨hrd, hwr, _, hd, _, _, hpk, hws⟩ := h
         exact ⟨by rw [hrd]; simp [Nat.add_comm], by rw [hwr]; simp,
-          by simpa only [Nat.add_comm] using hd, by omega, hws⟩
+          by simpa only [Nat.add_comm] using hd, by omega_using [hpk], hws⟩
       exact ⟨conversionFront_ok hc (pre hs), conversionFront_ok hc (pre ht)⟩)
   have Hroot := rootCandidate_rel hc hp hprepare hprefix hsquare hrest
   have Hfront' : RelCT isa P (conversionFront c) (RootPair c) := Hfront.mono

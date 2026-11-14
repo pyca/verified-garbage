@@ -29,23 +29,23 @@ abbrev ba (p : Addr) (k q : Nat) : Addr := p + BitVec.ofNat 64 (32 * (q / 8) + 8
 theorem lane_ext {v w : BitVec 64} (h : ∀ j < 8, v.extractLsb' (8 * j) 8 = w.extractLsb' (8 * j) 8) :
     v = w := by
   apply BitVec.eq_of_getLsbD_eq; intro b hb
-  have := congrArg (·.getLsbD (b % 8)) (h (b / 8) (by omega))
-  simp only [BitVec.getLsbD_extractLsb', show b % 8 < 8 by omega, decide_true, Bool.true_and] at this
-  rwa [show 8 * (b / 8) + b % 8 = b by omega] at this
+  have := congrArg (·.getLsbD (b % 8)) (h (b / 8) (by omega_using [hb]))
+  simp only [BitVec.getLsbD_extractLsb', show b % 8 < 8 by omega_using [], decide_true, Bool.true_and] at this
+  rwa [show 8 * (b / 8) + b % 8 = b by omega_using []] at this
 
 theorem la_byte (p : Addr) {i k j : Nat} (hj : j < 8) :
     la p i k + BitVec.ofNat 64 j = ba p k (8 * i + j) := by
-  rw [la, BitVec.add_assoc, ← BitVec.ofNat_add, ba, show (8 * i + j) / 8 = i by omega,
-    show (8 * i + j) % 8 = j by omega]
+  rw [la, BitVec.add_assoc, ← BitVec.ofNat_add, ba, show (8 * i + j) / 8 = i by omega_using [hj],
+    show (8 * i + j) % 8 = j by omega_using [hj]]
 
 theorem lanes4_of_bytes {m : Mem} {p : Addr} {A : Nat → KState}
     (h : ∀ k < 4, ∀ q < 200, m (ba p k q) = byteOf (A k) q) : Lanes4 m p A := fun i hi k hk =>
   lane_ext fun j hj => by
-    rw [byte_readW _ _ (by omega), la_byte _ hj, h k hk _ (by omega), byteOf_eq _ hi hj, getElem!_eq _ hi]
+    rw [byte_readW _ _ (by omega_using [hj]), la_byte _ hj, h k hk _ (by omega_using [hi, hj]), byteOf_eq _ hi hj, getElem!_eq _ hi]
 
 theorem byte_of_lanes4 {m : Mem} {p : Addr} {A : Nat → KState} (h : Lanes4 m p A) {k q : Nat} (hk : k < 4)
     (hq : q < 200) : m (ba p k q) = byteOf (A k) q := by
-  rw [byteOf, ← h (q / 8) (by omega) k hk, byte_readW _ _ (by omega), la_byte _ (by omega),
-    show 8 * (q / 8) + q % 8 = q by omega]
+  rw [byteOf, ← h (q / 8) (by omega_using [hq]) k hk, byte_readW _ _ (by omega_using []), la_byte _ (by omega_using []),
+    show 8 * (q / 8) + q % 8 = q by omega_using []]
 
 end VG.Proof.Sha3.X86_64.X4

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # GCM: what one pass over a buffer of eight blocks needs
@@ -63,8 +64,8 @@ theorem block_ext {x y : Block} (h₁ : x.extractLsb' 32 96 = y.extractLsb' 32 9
   · have := congrArg (·.getLsbD i) h₂
     simpa [BitVec.getLsbD_extractLsb', hl, ← BitVec.getLsbD_eq_getElem] using this
   · have := congrArg (·.getLsbD (i - 32)) h₁
-    simp only [BitVec.getLsbD_extractLsb', show i - 32 < 96 by omega, decide_true, Bool.true_and,
-      show 32 + (i - 32) = i by omega] at this
+    simp only [BitVec.getLsbD_extractLsb', show i - 32 < 96 by omega_using [hi], decide_true, Bool.true_and,
+      show 32 + (i - 32) = i by omega_using [hl]] at this
     simpa [← BitVec.getLsbD_eq_getElem] using this
 
 /-- `inc₃₂` repeated `2³² + i` times is `inc₃₂` repeated `i` times. -/
@@ -86,14 +87,14 @@ theorem repeat_inc32_pred (J : Block) : Nat.repeat inc32 (2 ^ 32 - 1) (inc32 J) 
 theorem ksByte_wrap (ciph : Block → Block) (icb : Block) (i : Nat) :
     ksByte ciph icb (16 * 2 ^ 32 + i) = ksByte ciph icb i := by
   unfold ksByte
-  rw [show (16 * 2 ^ 32 + i) / 16 = 2 ^ 32 + i / 16 by omega, show (16 * 2 ^ 32 + i) % 16 = i % 16 by omega,
+  rw [show (16 * 2 ^ 32 + i) / 16 = 2 ^ 32 + i / 16 by omega_using [], show (16 * 2 ^ 32 + i) % 16 = i % 16 by omega_using [],
     repeat_inc32_add]
 
 /-- Block `2³² − 1` of the keystream from `inc₃₂(J)` is `CIPH(J)`. -/
 theorem ksByte_pred (ciph : Block → Block) (J : Block) {t : Nat} (ht : t < 16) :
     ksByte ciph (inc32 J) (16 * (2 ^ 32 - 1) + t) = (toBytes (ciph J)).getD t 0 := by
   unfold ksByte
-  rw [show (16 * (2 ^ 32 - 1) + t) / 16 = 2 ^ 32 - 1 by omega, show (16 * (2 ^ 32 - 1) + t) % 16 = t by omega,
+  rw [show (16 * (2 ^ 32 - 1) + t) / 16 = 2 ^ 32 - 1 by omega_using [ht], show (16 * (2 ^ 32 - 1) + t) % 16 = t by omega_using [ht],
     repeat_inc32_pred]
 
 theorem ofBytes_zeros16 : ofBytes (zeros 16) = 0 := by decide
@@ -131,15 +132,15 @@ theorem ghash_lead (h : Block) (lead : Nat) {a c : List Byte} (ha : a.length ≤
           length_zeros, show padLen 0 = 0 from rfl, Nat.zero_add, zz, show zeros 0 = [] from rfl, List.append_assoc]
     · have hl : 0 < a.length := List.length_pos_iff.mpr ha0
       refine ⟨lead, ?_⟩
-      have p₁ : padLen a.length = 16 - a.length := by simp only [padLen]; omega
+      have p₁ : padLen a.length = 16 - a.length := by simp only [padLen]; omega_using [ha, hl]
       by_cases hc : c = []
       · subst hc
         simp only [padded, Spec.Gcm.ghashInput, ↓reduceIte, List.length_nil, List.append_nil, p₁,
           List.append_assoc, show padLen 0 = 0 from rfl, show zeros 0 = [] from rfl, List.length_append,
-          length_zeros, show a.length + (16 - a.length) = 16 by omega, show padLen 16 = 0 from rfl]
+          length_zeros, show a.length + (16 - a.length) = 16 by omega_using [ha], show padLen 16 = 0 from rfl]
       · rw [padded, ghashInput_of_ne hc]
         have p₂ : padLen (a.length + (16 - a.length + c.length)) = padLen c.length := by
-          simp only [padLen]; omega
+          simp only [padLen]; omega_using [ha]
         simp only [List.length_append, length_zeros, p₁, List.append_assoc, p₂]
   obtain ⟨k, hk⟩ := e
   rw [hk, List.append_assoc, blocks_append (by simp [length_zeros]), blocks_zeros,

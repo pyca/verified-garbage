@@ -135,17 +135,17 @@ theorem powLoop_rel :
         rcases hr with rfl | rfl
         · rw [h.1.1, h.2.1]
         · rw [h.1.2.2.1, h.2.2.2.1]) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (fun _ h => powEndRegs_ok (by omega) h) (fun _ h => powEndRegs_ok (by omega) h)
+    (fun _ _ h => h) (fun _ h => powEndRegs_ok (by omega_using [hj]) h) (fun _ h => powEndRegs_ok (by omega_using [hj]) h)
   obtain ⟨htr, -, ⟨g₁, he₁⟩, ⟨g₂, he₂⟩⟩ :=
     RelCT.seq (powStep_rel v L pC₁ pW₁ pC₂ pW₂ hj) hend t₁ t₂ tr ur u₁ u₂ h e₁ e₂
   refine ⟨htr, by rw [he₁, he₂], fun hf => ?_, fun ht => ?_⟩
   · rw [he₁] at hf
-    have hl : j + 1 = 47 := by simp at hf; omega
+    have hl : j + 1 = 47 := by simp at hf; omega_using [hf]
     rw [hl] at g₁ g₂
     exact ⟨g₁, g₂⟩
   · rw [he₁] at ht
-    have hl : j + 1 < 47 := by simp at ht; omega
-    exact ⟨47 - (j + 1), by omega, j + 1, hl, rfl, g₁, g₂⟩
+    have hl : j + 1 < 47 := by simp at ht; omega_using [hj, ht]
+    exact ⟨47 - (j + 1), by omega_using [hj, hm], j + 1, hl, rfl, g₁, g₂⟩
 
 end
 

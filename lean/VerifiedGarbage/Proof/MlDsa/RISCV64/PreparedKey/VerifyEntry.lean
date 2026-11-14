@@ -42,7 +42,7 @@ theorem vefacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
   rcases h with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide⟩
 
 theorem pkBytes_le (p : Params) (hF : VEFacts p) (q : Bool) : p.pkLen ≤ pkBytes p q := by
-  cases q <;> simp only [pkBytes, hF.pb] <;> omega
+  cases q <;> simp only [pkBytes, hF.pb] <;> omega_using []
 
 /-- `verifyEK`'s precondition, by register. -/
 structure VEPre (p : Params) (q : Bool) (STK : Nat) (s : State) : Prop where
@@ -113,7 +113,7 @@ abbrev vkRd (p : Params) (q : Bool) (s : State) : List Region :=
 theorem vkey_sub {p : Params} (hF : VEFacts p) (q : Bool) (s : State) :
     Region.Sub ⟨s.gpr .a0, p.pkLen⟩ ⟨s.gpr .a0, pkBytes p q⟩ := by
   have := pkBytes_le p hF q
-  have e := Offset.sub_base (s.gpr .a0) (d := 0) (n := p.pkLen) (k := pkBytes p q) (by omega)
+  have e := Offset.sub_base (s.gpr .a0) (d := 0) (n := p.pkLen) (k := pkBytes p q) (by omega_using [this])
   rwa [BitVec.add_zero] at e
 
 theorem vcache_sub {p : Params} (hF : VEFacts p) (q : Bool) (s : State) :
@@ -124,19 +124,19 @@ theorem vcache_sub {p : Params} (hF : VEFacts p) (q : Bool) (s : State) :
   · refine .inr ?_
     have := hF.c
     simp only [cpVal, clVal, pkBytes, hF.pb, BitVec.toNat_ofNat]
-    exact Offset.sub_base _ (by rw [Nat.mod_eq_of_lt (by omega)])
+    exact Offset.sub_base _ (by rw [Nat.mod_eq_of_lt (by omega_using [this])])
 
 theorem vcache_fit {p : Params} (hF : VEFacts p) {q : Bool} {s : State}
     (hk : (s.gpr .a0).toNat + pkBytes p q ≤ 2 ^ 64) :
     (cpVal s p.pkLen q).toNat + (clVal (vCacheBytes p) q).toNat ≤ 2 ^ 64 := by
   have := hF.c; have := hF.pk
   cases q
-  · simp only [cpVal, clVal, pkBytes] at hk ⊢; rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega
+  · simp only [cpVal, clVal, pkBytes] at hk ⊢; rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega_using []
   · simp only [cpVal, clVal, pkBytes, hF.pb] at hk ⊢
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.pkLen) (by omega),
-      Nat.mod_eq_of_lt (a := vCacheBytes p) (by omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.pkLen) (by omega_using [this]),
+      Nat.mod_eq_of_lt (a := vCacheBytes p) (by omega_arith)]
     have := Nat.mod_le ((s.gpr .a0).toNat + p.pkLen) (2 ^ 64)
-    omega
+    omega_using [hk]
 
 theorem vcache_off {p : Params} (hF : VEFacts p) (q : Bool) (s : State) :
     ∃ off, cpVal s p.pkLen q = s.gpr .a0 + BitVec.ofNat 64 off ∧
@@ -146,7 +146,7 @@ theorem vcache_off {p : Params} (hF : VEFacts p) (q : Bool) (s : State) :
   · exact ⟨0, by simp [cpVal], by simp [clVal]⟩
   · refine ⟨p.pkLen, rfl, ?_⟩
     simp only [clVal, pkBytes, hF.pb, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt (by omega_using [this])]
 
 /-- The cache's polynomials, after the push. -/
 theorem vcached_pushed {p : Params} (hF : VEFacts p) {S : Nat} {s : State} (h : VEPre p true (S + 16) s) :
@@ -158,7 +158,7 @@ theorem vcached_pushed {p : Params} (hF : VEFacts p) {S : Nat} {s : State} (h : 
   have hfk := h.f_p
   simp only [pkBytes, hF.pb] at hfk
   have kb : bytesAt (pushed .ra s).mem (s.gpr .a0) p.pkLen = bytesAt s.mem (s.gpr .a0) p.pkLen :=
-    bytes_pushed (R := ⟨s.gpr .a0, p.pkLen⟩) (by omega) (by simp only; omega)
+    bytes_pushed (R := ⟨s.gpr .a0, p.pkLen⟩) (by omega_using []) (by simp only; omega_using [hfk])
       (h.b_p.sub_right (vkey_sub hF true s))
   intro i hi
   rw [kb]
@@ -169,9 +169,9 @@ theorem vcached_pushed {p : Params} (hF : VEFacts p) {S : Nat} {s : State} (h : 
   refine Proof.MlDsa.PreparedKey.polyIs_of_copy ?_ (hk i hi)
   have hsub : Region.Sub ⟨s.gpr .a0 + BitVec.ofNat 64 (p.pkLen + 4 * n * i), 1024⟩
       ⟨s.gpr .a0, pkBytes p true⟩ :=
-    Offset.sub_base _ (by simp only [pkBytes, hF.pb, vCacheBytes, n] at *; omega)
-  exact bytes_pushed (R := ⟨s.gpr .a0 + BitVec.ofNat 64 (p.pkLen + 4 * n * i), 1024⟩) (by omega)
-    (by simp only; omega) (h.b_p.sub_right hsub)
+    Offset.sub_base _ (by simp only [pkBytes, hF.pb, vCacheBytes, n] at *; omega_using [hi])
+  exact bytes_pushed (R := ⟨s.gpr .a0 + BitVec.ofNat 64 (p.pkLen + 4 * n * i), 1024⟩) (by omega_using [])
+    (by simp only; omega_using []) (h.b_p.sub_right hsub)
 
 section
 variable {p : Params} (hF : VEFacts p) {q : Bool} {S : Nat} {K : Prog isa}
@@ -188,7 +188,7 @@ theorem vkernel_call {s u : State} (h : VEPre p q (S + 16) s)
   have hspl := s.sp.isLt
   have hpk := hF.pk; have hc := hF.c
   have spm : (s.sp - 16).toNat = s.sp.toNat - 16 := by
-    rw [BitVec.toNat_sub, show (16 : BitVec 64).toNat = 16 from rfl]; omega
+    rw [BitVec.toNat_sub, show (16 : BitVec 64).toNat = 16 from rfl]; omega_using [hstk]
   have gu : ∀ r, r ≠ .a4 → r ≠ .a5 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
   have g4 : u.gpr .a4 = cpVal s p.pkLen q := by rw [hu.vcp]; cases q <;> rfl
   have g5 : u.gpr .a5 = clVal (vCacheBytes p) q := hu.vcl
@@ -205,8 +205,8 @@ theorem vkernel_call {s u : State} (h : VEPre p q (S + 16) s)
       (by rw [gx _ (by simp), gu _ (by decide) (by decide)]) (by rw [gx _ (by simp), gu _ (by decide) (by decide)])
       (by rw [gx _ (by simp), gu _ (by decide) (by decide)]) (by rw [gx _ (by simp), gu _ (by decide) (by decide)])
       (by rw [gx _ (by simp), g4]) (by rw [gx _ (by simp), g5]) rfl (by rw [State.withRegions_wr]; exact h.wr)
-      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; omega)
-      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; have := h.al; omega) h.al_c
+      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; omega_using [hstk])
+      (by simp only [State.withRegions_sp, State.callEntry_sp, usp, spm]; have := h.al; omega_using [this]) h.al_c
       (h.d_pc.sub_left ksub) h.d_mc h.d_sc (disj_of_sub csub h.d_pc).symm ?_ ?_ ?_ ?_ ?_
       (Nat.le_trans (Nat.add_le_add_left (pkBytes_le p hF q) _) h.f_p) h.f_m h.f_s h.f_c (vcache_fit hF h.f_p) ?_
     all_goals try simp only [State.withRegions_sp, State.callEntry_sp, usp]
@@ -219,7 +219,7 @@ theorem vkernel_call {s u : State} (h : VEPre p q (S + 16) s)
       cases q
       · exact .inl rfl
       · refine .inr ⟨?_, vcached_pushed hF h⟩
-        simp only [clVal, BitVec.toNat_ofNat, n, vCacheBytes] at hc ⊢; omega
+        simp only [clVal, BitVec.toNat_ofNat, n, vCacheBytes] at hc ⊢; omega_using [hc]
   have hcov : Covers (vkRd p q s ++ s.wr) (u.rd ++ u.wr) := by
     rw [hu.rd, hu.wr]
     refine cov_of fun r hr => ?_
@@ -249,13 +249,13 @@ theorem verifyEntry_wp (name : String) {s : State} (h : VEPre p q (S + 16) s) :
   have hspl := s.sp.isLt
   have hpk := hF.pk; have hc := hF.c
   unfold verifyEntry entry
-  refine WP.frame (by omega) ?_
+  refine WP.frame (by omega_using [hstk]) ?_
   refine WP.seq (WP.mono (cacheArgs_ok (by decide) (by decide) hF.pk hF.c q _) fun u hu => ?_)
   obtain ⟨hpre, hcov, hcw⟩ := vkernel_call hF h hu
   have gu : ∀ r, r ≠ .a4 → r ≠ .a5 → u.gpr r = s.gpr r := fun r h1 h2 => hu.other r h1 h2
   have usp : u.sp = s.sp - 16 := hu.sp
   have ksub := vkey_sub hF q s
-  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' => ?_) (by omega)
+  refine WP.callAny hk.1 hpre hcov hcw (fun s' rd' wr' sp' fr' cs' post' => ?_) (by omega_using [hd, hstk])
   have sp₂ : s'.sp = s.sp - 16 := sp'.trans usp
   have hslot : s'.mem.read (s'.sp + 8) 8 = s.gpr .ra := by
     rw [sp₂, show (8 : Addr) = BitVec.ofNat 64 8 from rfl]
@@ -263,12 +263,12 @@ theorem verifyEntry_wp (name : String) {s : State} (h : VEPre p q (S + 16) s) :
       (by decide), hu.mem]
     · exact slot_read .ra s
     · have fs : Region.Sub ⟨s.sp - 16 + BitVec.ofNat 64 8, 8⟩ (below s.sp (S + 16)) :=
-        fun x hx => frame_sub (s := s) (N := S + 16) (by omega) x (Offset.sub_base (s.sp - 16) (d := 8) (n := 8)
-          (k := 16) (by omega) x hx)
+        fun x hx => frame_sub (s := s) (N := S + 16) (by omega_using []) x (Offset.sub_base (s.sp - 16) (d := 8) (n := 8)
+          (k := 16) (by omega_using []) x hx)
       simp only [List.mem_append, h.wr, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact h.b_c.sub_left fs
-      · rw [usp]; exact Offset.disjoint_below _ (by omega)
+      · rw [usp]; exact Offset.disjoint_below _ (by omega_using [hd, hstk])
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · show (s'.write .ra _).gpr r = _
     rw [gpr_write_of_ne _ _ (fun e => by subst e; revert hr; decide), cs' r hr,
@@ -280,9 +280,9 @@ theorem verifyEntry_wp (name : String) {s : State} (h : VEPre p q (S + 16) s) :
   · sig_post [verifyWithCacheContract, verifyWithCacheSig, verifySig, RISCV64.abi, RISCV64.argRegs] at post'
     simp only [hu.mem] at post'
     rw [gu .a0 (by decide) (by decide), gu .a1 (by decide) (by decide), gu .a2 (by decide) (by decide)] at post'
-    rw [bytes_pushed (R := ⟨s.gpr .a0, p.pkLen⟩) (by omega) (by simp only; omega) ((h.b_p.sub_right ksub)),
-      bytes_pushed (R := ⟨s.gpr .a1, 64⟩) (by omega) (by simp only; omega) h.b_m,
-      bytes_pushed (R := ⟨s.gpr .a2, p.sigLen⟩) (by omega) (by simp only; have := h.f_s; omega) h.b_s] at post'
+    rw [bytes_pushed (R := ⟨s.gpr .a0, p.pkLen⟩) (by omega_using []) (by simp only; omega_using [hpk]) ((h.b_p.sub_right ksub)),
+      bytes_pushed (R := ⟨s.gpr .a1, 64⟩) (by omega_using []) (by simp only; omega_using []) h.b_m,
+      bytes_pushed (R := ⟨s.gpr .a2, p.sigLen⟩) (by omega_using []) (by simp only; have := h.f_s; omega_using [this]) h.b_s] at post'
     show _ ∨ _
     simp only [popped, gpr_write_of_ne _ _ (show Reg.a0 ≠ Reg.ra by decide)]
     exact post'
@@ -355,16 +355,16 @@ theorem verifyEntry_ct (name : String) :
     intro σ' u N hp hN hu
     have := hF.pk
     have := hp.f_s
-    rw [hu.mem, bytes_pushed (R := ⟨σ'.gpr .a0, p.pkLen⟩) hN (by simp only; omega)
+    rw [hu.mem, bytes_pushed (R := ⟨σ'.gpr .a0, p.pkLen⟩) hN (by simp only; omega_arith)
       (hp.b_p.sub_right (vkey_sub hF q σ')),
-      bytes_pushed (R := ⟨σ'.gpr .a1, 64⟩) hN (by simp only; omega) hp.b_m,
-      bytes_pushed (R := ⟨σ'.gpr .a2, p.sigLen⟩) hN (by simp only; omega) hp.b_s]
+      bytes_pushed (R := ⟨σ'.gpr .a1, 64⟩) hN (by simp only; omega_using []) hp.b_m,
+      bytes_pushed (R := ⟨σ'.gpr .a2, p.sigLen⟩) hN (by simp only; omega_using [this]) hp.b_s]
   sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, RISCV64.abi, RISCV64.argRegs]
   refine ⟨by simp only [a₁.sp, a₂.sp, pushed, psp], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [gu a₁ .a0 (by simp), gu a₁ .a1 (by simp), gu a₁ .a2 (by simp), gu a₂ .a0 (by simp), gu a₂ .a1 (by simp),
       gu a₂ .a2 (by simp)]
     simp only [reduceCtorEq, ↓reduceIte]
-    rw [hb p₁ (by omega) a₁, hb p₂ (by omega) a₂]
+    rw [hb p₁ (by omega_using []) a₁, hb p₂ (by omega_using []) a₂]
     exact pl
   all_goals rw [gu a₁ _ (by simp), gu a₂ _ (by simp)]
   all_goals simp only [reduceCtorEq, ↓reduceIte, cpVal, q0, q1, q2, q3]

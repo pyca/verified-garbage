@@ -101,7 +101,7 @@ theorem setB_ok {sl : Nat} (h₃ : 128 ≤ sl) (h₄ : sl + 4 ≤ 240) {s : Stat
       s'.wr = s.wr := by
   have L := G.L
   have hl : sl < 2560 := by omega
-  have r₂ := he.wIn' (d := sl) (n := 4) (by omega)
+  have r₂ := he.wIn' (d := sl) (n := 4) (by omega_using [h₄])
   have hand := and15 (s.mem.readW (w64 (p.2 7) + BitVec.ofNat 64 sl) 32)
   refine ⟨_, by xrun [he.ebp, L.aW hl, L.aW, he.wIn, r₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · mems [slotv_eq]; rw [hand]
@@ -147,10 +147,10 @@ theorem st_absFrame {d : Nat} (hd : d + 16 ≤ 16 ∨ (48 ≤ d ∧ d + 16 ≤ 8
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact G.L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (G.L.lay.stk_st (by omega)).symm
+  · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact G.L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact (G.L.lay.stk_st (by omega_using [hd])).symm
 
 theorem st_tFrame {d : Nat} (hd : d + 16 ≤ 16 ∨ (32 ≤ d ∧ d + 16 ≤ 80)) :
     ∀ r ∈ tFrame (stOf (p.2 7)) (p.2 7) p.1 28 16,
@@ -158,16 +158,16 @@ theorem st_tFrame {d : Nat} (hd : d + 16 ≤ 16 ∨ (32 ≤ d ∧ d + 16 ≤ 80)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Lay.st_st (by omega) (by omega) (by decide)
-  · exact G.L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact G.L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-  · exact (G.L.lay.stk_st (by omega)).symm
+  · exact Lay.st_st (by omega_using [hd]) (by omega_using [hd]) (by decide)
+  · exact G.L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact G.L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
+  · exact (G.L.lay.stk_st (by omega_using [hd])).symm
 
 theorem st_pslot {d : Nat} (hd : d + 16 ≤ 80) :
     ∀ r ∈ [pslotR (p.2 7)], (⟨w64 (stOf (p.2 7)) + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact G.L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+  exact G.L.st_w (by omega_using [hd]) (.inr ⟨by decide, by decide⟩)
 
 theorem oneAad_pc :
     Pc (fun (b : State × State) s => OEnt p b.1 s ∧ s = b.2) (oneAad vg.callees)
@@ -235,7 +235,7 @@ theorem oneAad_pc :
         have e := blockAt_frame f (st_pslot G (d := 0) (by decide)); rw [BitVec.add_zero] at e; rw [e]; exact h.j,
         by rw [blockAt_frame f (st_pslot G (by decide))]; exact h.cb⟩,
       ha.congr (blockAt_frame f (st_pslot G (by decide))) (bytesAt_frame f (fun r hr =>
-        (st_pslot G (d := 32) (by decide) r hr).sub_left (Region.sub_prefix (by omega))) (by omega)),
+        (st_pslot G (d := 32) (by decide) r hr).sub_left (Region.sub_prefix (by omega_using []))) (by omega_using [])),
       by rw [bz, h.o.alO]⟩
   -- Padded.
   refine Pc.mono (Pc.lift (flush_pc L.lay (yo := 16) (.inr rfl) (b := (p.2 4).toNat % 16) (Nat.mod_lt _ (by decide)))

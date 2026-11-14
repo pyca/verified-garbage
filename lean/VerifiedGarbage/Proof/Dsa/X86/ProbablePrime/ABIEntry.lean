@@ -52,20 +52,20 @@ private theorem disjoint_bounds {a b : Addr} {n k : Nat}
     (_an : a.toNat + n ≤ 2 ^ 64) (_bk : b.toNat + k ≤ 2 ^ 64) (np : 0 < n) (kp : 0 < k)
     (D : (⟨a, n⟩ : Region).Disjoint ⟨b, k⟩) : a.toNat + n ≤ b.toNat ∨ b.toNat + k ≤ a.toNat := by
   by_contra bad
-  have overlap : a.toNat < b.toNat + k ∧ b.toNat < a.toNat + n := by omega
+  have overlap : a.toNat < b.toNat + k ∧ b.toNat < a.toNat + n := by omega_using [bad]
   by_cases order : a.toNat ≤ b.toNat
   · apply D b
     · change (b - a).toNat + 1 ≤ n
       rw [BitVec.toNat_sub]
-      omega
+      omega_using [bad, order]
     · change (b - b).toNat + 1 ≤ k
-      rw [BitVec.sub_self]; change 0 + 1 ≤ k; omega
+      rw [BitVec.sub_self]; change 0 + 1 ≤ k; omega_using [kp]
   · apply D a
     · change (a - a).toNat + 1 ≤ n
-      rw [BitVec.sub_self]; change 0 + 1 ≤ n; omega
+      rw [BitVec.sub_self]; change 0 + 1 ≤ n; omega_using [np]
     · change (a - b).toNat + 1 ≤ k
       rw [BitVec.toNat_sub]
-      omega
+      omega_using [bad, order]
 
 theorem CallFacts.reserved {bits : Nat} {s : State} (F : CallFacts bits s) :
     reservedRegion s = below (s.gpr .esp) 152 := by
@@ -73,7 +73,7 @@ theorem CallFacts.reserved {bits : Nat} {s : State} (F : CallFacts bits s) :
   rw [Taint.sub_setWidth F.low]
 
 theorem CallFacts.pNat {bits : Nat} {s : State} (F : CallFacts bits s) :
-    (callEnvironment bits s).p.toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := F.low; omega)
+    (callEnvironment bits s).p.toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by have := F.low; omega_using [this])
 
 theorem CallFacts.workspaceRegion {bits : Nat} {s : State} (_ : CallFacts bits s) :
     (callEnvironment bits s).workspaceRegion = ⟨(arg s 0).setWidth 64, (arg s 1).toNat * 8⟩ := by
@@ -116,13 +116,13 @@ theorem CallFacts.valid {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
   have workspaceNat : (callEnvironment bits s).base.toNat = (arg s 0).toNat := by
     change ((arg s 0).setWidth 64).toNat = _
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 0).isLt (by decide))]
-  refine ⟨b, ?_, ?_, F.randFit, (arg s 3).isLt, F.usedFit, ?_, by omega, by have := F.argsFit; omega, ?_,
+  refine ⟨b, ?_, ?_, F.randFit, (arg s 3).isLt, F.usedFit, ?_, by omega_using [low, pNat], by have := F.argsFit; omega_using [pNat, this], ?_,
     ?_, ?_, F.randUsed, ?_, ?_, F.table.2.1 _ (by rw [F.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self), ?_, ?_⟩
   · have := F.room
     change scratchBytes (width bits) + bits / 8 ≤ 8 * (arg s 1).toNat
     exact this
   · change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ 2 ^ 32
-    omega
+    omega_using [wsFit]
   · have fit := F.table.1
     change ((s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64).toNat + 8192 ≤ 2 ^ 32 at fit
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (s.syms _).isLt (by decide))] at fit
@@ -131,23 +131,23 @@ theorem CallFacts.valid {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
       have := F.room
       change 0 < 8 * (arg s 1).toNat
       unfold scratchBytes VG.Impl.Bignum.X86.PublicContext.slot VG.Impl.Bignum.hdrBytes at this
-      omega
+      omega_using [this]
     have far := F.stackAll _ List.mem_cons_self
     have rn : (reservedRegion s).base.toNat = (s.gpr .esp).toNat - 152 := by
       rw [F.reserved]
       change ((s.gpr .esp - BitVec.ofNat 32 152).setWidth 64).toNat = _
-      rw [BitVec.toNat_setWidth, sub_toNat low, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+      rw [BitVec.toNat_setWidth, sub_toNat low, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
     have bounds := disjoint_bounds (a := (callEnvironment bits s).base) (n := (callEnvironment bits s).size)
       (b := (reservedRegion s).base) (k := 152)
-      (by rw [workspaceNat]; change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ 2 ^ 64; omega)
-      (by rw [rn]; have := (s.gpr .esp).isLt; omega) nonempty (by decide) far
+      (by rw [workspaceNat]; change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ 2 ^ 64; omega_using [])
+      (by rw [rn]; have := (s.gpr .esp).isLt; omega_using []) nonempty (by decide) far
     rw [rn, workspaceNat] at bounds
     rw [pNat, workspaceNat]
     change (arg s 0).toNat + 8 * (arg s 1).toNat ≤ (s.gpr .esp).toNat - 152 ∨
       (s.gpr .esp).toNat - 152 + 152 ≤ (arg s 0).toNat at bounds
     change (s.gpr .esp).toNat - 16 ≤ (arg s 0).toNat ∨ (arg s 0).toNat + 8 * (arg s 1).toNat + 136 ≤
       (s.gpr .esp).toNat - 16
-    omega
+    omega_using [low, bounds]
   · rw [call_args_address, F.workspaceRegion]; exact F.wsArgs.symm
   · rw [F.workspaceRegion]; exact F.wsRand.symm
   · rw [F.workspaceRegion]; exact F.wsUsed.symm
@@ -159,22 +159,22 @@ theorem CallFacts.valid {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
 
 theorem CallFacts.pushedArgument {bits : Nat} {s : State} (F : CallFacts bits s) {i : Nat} (index : i < 5) :
     readSrc (Compact.entered s) (.mem (VG.Impl.Mont.X86.Compact.arg i)) = some (arg s i) := by
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := F.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := F.low; omega_using [this]
   have argsFit := F.argsFit
   have P := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
   have offset : argAddr s i = off (argAddr s 0) (4 * i) := by
     change addr (s.gpr .esp) (4 + 4 * i) = off (addr (s.gpr .esp) 4) (4 * i)
-    rw [addr_eq (by omega), addr_eq (by omega)]
+    rw [addr_eq (by omega_using [index, argsFit]), addr_eq (by omega_using [argsFit])]
     exact (Offset.add_add _ _ _).symm
   have separate : (⟨argAddr s 0, 20⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
     change (⟨addr (s.gpr .esp) 4, 20⟩ : Region).Disjoint (below (s.gpr .esp) 16)
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_using [argsFit])]
     unfold below
     rw [Taint.sub_setWidth fit]
     exact Offset.disjoint_below _ (by decide)
   have contains : (⟨argAddr s 0, 20⟩ : Region).Contains (argAddr s i) 4 := by
     rw [offset]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [index]) (by omega_using [index])
   have word := P.readW (w := 32) contains (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact separate)
     (by decide)
   change (Compact.entered s).load32 ((Compact.entered s).ea (VG.Impl.Mont.X86.Compact.arg i)) = _
@@ -191,7 +191,7 @@ theorem CallFacts.entry {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
     EntryInput (callEnvironment bits s) ((callEnvironment bits s).candidate s.mem) (callEntropy s)
       (Compact.entered s) := by
   have v := F.valid b
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := F.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := F.low; omega_using [this]
   have P : Frame [⟨(callEnvironment bits s).p.setWidth 64, 16⟩] s.mem (Compact.entered s).mem :=
     pushed_frame (rs := Compact.savedRegisters) (by decide) fit
   have far (r : Region) (mem : r ∈ [(callEnvironment bits s).workspaceRegion, (callEnvironment bits s).randRegion,
@@ -206,7 +206,7 @@ theorem CallFacts.entry {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
   · rw [Compact.entered, pushed_esp]; rfl
   · intro i index
     rw [F.pushedArgument index]
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [index]
     rcases cases with rfl | rfl | rfl | rfl | rfl <;>
       simp only [Environment.argument, callEnvironment, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · refine ⟨List.mem_cons_of_mem _ ?_, ?_⟩
@@ -214,13 +214,13 @@ theorem CallFacts.entry {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
     · have := F.usedFit
       change ((arg s 4).setWidth 64).toNat + 8 ≤ _
       rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 4).isLt (by decide))]
-      omega
+      omega_using [this]
   · refine ⟨(callEnvironment bits s).randRegion, ?_, Region.contains_self _ _⟩
     change _ ∈ s.rd ++ (below (s.gpr .esp) 16 :: s.wr)
     rw [F.rd]; exact List.mem_append_left _ List.mem_cons_self
   · change Spec.Rsa.bytesAt (Compact.entered s).mem _ _ = Spec.Rsa.bytesAt s.mem _ _
     exact VG.Proof.RsaKeyGen.frame_bytesAt P (far _ (List.mem_cons_of_mem _ List.mem_cons_self))
-      (by have := (arg s 3).isLt; change (arg s 3).toNat ≤ 2 ^ 64; omega)
+      (by have := (arg s 3).isLt; change (arg s 3).toNat ≤ 2 ^ 64; omega_using [])
   · refine ⟨(callEnvironment bits s).tableRegion, ?_, Region.contains_self _ _⟩
     change _ ∈ s.rd ++ (below (s.gpr .esp) 16 :: s.wr)
     rw [F.rd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self)
@@ -229,7 +229,7 @@ theorem CallFacts.entry {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
         (callEnvironment bits s).randRegion, (callEnvironment bits s).usedRegion, (callEnvironment bits s).tableRegion] :=
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
     rw [P.readW (r := (callEnvironment bits s).tableRegion)
-      (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega) (by omega)) (far _ member) (by decide)]
+      (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega_using [index]) (by omega_using [index])) (far _ member) (by decide)]
     exact F.tableWords i index
   · unfold Environment.candidate
     have room := v.room
@@ -238,6 +238,6 @@ theorem CallFacts.entry {bits : Nat} {s : State} (F : CallFacts bits s) (b : Bit
         (callEnvironment bits s).bits / 8⟩ : Region).Sub
         (callEnvironment bits s).workspaceRegion := Offset.sub_base (callEnvironment bits s).base room
     rw [VG.Proof.RsaKeyGen.frame_bytesAt P (fun R member => (far _ List.mem_cons_self R member).sub_left inner)
-      (by omega)]
+      (by omega_using [room, wsFit])]
 
 end VG.Proof.Dsa.X86.ProbablePrime

@@ -118,7 +118,7 @@ theorem loadR_val {R n : Nat} {s : State} (d : Nat)
 
 theorem region_ok {s : State} (hc : Ctx s) (d : Nat) (h₁ : 56 ≤ d) (h₂ : d + 24 ≤ 120) :
     ∀ i < 3, InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) (d + 8 * i)) 8 := fun i hi =>
-  hc.mb _ (by omega) (by omega)
+  hc.mb _ (by omega_using [h₁]) (by omega_using [h₂, hi])
 
 /-- Step 1: quadword `2 j` becomes `H_(2j) R⁴ + H_(2j+1)`. -/
 theorem step1_ok {R : Nat} {s : State} (hE : EndCtx R s) (hb : ∀ k < 8, ∀ i < 3, hv s k i ≤ 2 ^ 45) :
@@ -133,8 +133,8 @@ theorem step1_ok {R : Nat} {s : State} (hE : EndCtx R s) (hb : ∀ k < 8, ∀ i 
   refine WP.block_append (WP.mono (setMul_ok (setY1_ok E₁.ctx E₁.consts) E₁.ctx E₁.consts
     (fun k hk => by rw [VKeep.hv k₁]; exact hb k hk) lb) fun s₂ ⟨G₂, b₂, e₂⟩ => ?_)
   refine WP.mono (fold1_ok b₂) fun s₃ ⟨F, f⟩ => ⟨G₁.trans (G₂.trans (GK.of_vec F.vec)), F.hb, fun j hj => ?_⟩
-  have a := e₂ (2 * j) (by omega)
-  have b := e₂ (2 * j + 1) (by omega)
+  have a := e₂ (2 * j) (by omega_using [hj])
+  have b := e₂ (2 * j + 1) (by omega_using [hj])
   rw [ite_eq_left (by simp)] at a
   rw [ite_eq_right (by simp)] at b
   simp only [hval, VKeep.hv k₁] at a b ⊢
@@ -162,12 +162,12 @@ theorem step2_ok {R : Nat} {s : State} (hE : EndCtx R s) (hb : ∀ k < 8, ∀ i 
   refine WP.block_append (WP.mono (setMul_ok (setY2_ok E₁.ctx E₁.consts) E₁.ctx E₁.consts
     (fun k hk => by rw [VKeep.hv k₁]; exact hb k hk) lb) fun s₂ ⟨G₂, b₂, e₂⟩ => ?_)
   refine WP.mono (fold2_ok b₂) fun s₃ ⟨F, f⟩ => ⟨G₁.trans (G₂.trans (GK.of_vec F.vec)), F.hb, fun j hj => ?_⟩
-  have a := e₂ (4 * j) (by omega)
-  have b := e₂ (4 * j + 2) (by omega)
+  have a := e₂ (4 * j) (by omega_using [hj])
+  have b := e₂ (4 * j + 2) (by omega_using [hj])
   have c₀ : ((fun k => k / 2 % 2 == 0) (4 * j)) = true := by
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
   have c₂ : ¬((fun k => k / 2 % 2 == 0) (4 * j + 2)) = true := by
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> decide
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> decide
   rw [ite_eq_left c₀, lv] at a
   rw [ite_eq_right c₂] at b
   simp only [hval, VKeep.hv k₁] at a b ⊢

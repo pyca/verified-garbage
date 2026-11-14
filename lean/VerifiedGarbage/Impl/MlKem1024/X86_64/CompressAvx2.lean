@@ -124,6 +124,79 @@ def ce5V : Prog isa :=
         [.vop (.vshift .pslldq .l128 .xmm1 .xmm1 6), .vop (.vbin .vpor .l128 .xmm1 .xmm1 .xmm5),
           .alu .sub .r8 (.imm 6), .vmovdquStore .l128 (at_ .r8 0) .xmm1, .vop .vzeroupper])))
 
+/-! ### Compression with multiplications
+
+`cm11` and `cm5` are `compressEncode1024Avx2` for `d = 11` and `d = 5`, as
+`cm10` and `cm4` are `compressEncodeAvx2` (`Impl/MlKem/X86_64/CompressAvx2.lean`),
+for a function that runs them in an MXCSR region.
+
+* `d = 11`: `vpsllvd` by 10 of the even doublewords puts four values in the
+  44 bits from bit 10 of each quadword; `vpsrlvq` by 10 and 30, and the high
+  quadword moved down (`vpsrldq`) and shifted left by 34 (`vpsllq`) and added,
+  put the eight values of a lane in its low 88 bits. The second lane's low
+  five bytes complete the first's eleven (`vpslldq`, `vpor`), stored as
+  sixteen, and its other six are stored from `rax`, four and two.
+* `d = 5`: 32 coefficients an iteration. The pairs of each sixteen, ten bits
+  to a doubleword, are packed to words (`vpackssdw`), and `vpmaddwd` by
+  `1, 2¹⁰`, `vpsllvd` and `vpsrlq` by 12 put eight values in the low 40 bits of
+  each quadword: of the coefficients 0 to 7 and 16 to 23 in the first lane,
+  8 to 15 and 24 to 31 in the second. `vpshufb` of each lane and `vpor`
+  gather the first sixteen bytes, and the other four are bytes 9 to 12 of
+  the second lane (`vpsrldq`).
+-/
+
+/-- The 22 bytes of the sixteen values of eleven bits whose pairs are the
+doublewords of `ymm0`, to `r8`: with `10, 0` in the doublewords of each
+quadword of `ymm14` and `10, 30` in the quadwords of each lane of `ymm7`;
+through `xmm1`, `xmm2` and `rax`. -/
+def cmPack11 : List Instr :=
+  [.vop (.vvar .vpsllvd .l256 .xmm0 .xmm0 .xmm14), .vop (.vshift .psrldq .l256 .xmm1 .xmm0 8),
+    .vop (.vvar .vpsrlvq .l256 .xmm0 .xmm0 .xmm7), .vop (.vshift .psllq .l256 .xmm1 .xmm1 34),
+    yb .vpaddq .xmm0 .xmm0 .xmm1, .vop (.vextracti128 .xmm1 .xmm0 1),
+    .vop (.vshift .pslldq .l128 .xmm2 .xmm1 11), .vop (.vbin .vpor .l128 .xmm0 .xmm0 .xmm2),
+    .vmovdquStore .l128 (at_ .r8 0) .xmm0, .vop (.vshift .psrldq .l128 .xmm1 .xmm1 5), .movqR .rax .xmm1,
+    .store32 (at_ .r8 16) .rax, .shift .shr .rax 32, .store16 (at_ .r8 20) .rax]
+
+/-- The twenty bytes of the 32 values of five bits whose pairs are the
+doublewords of `ymm4` (the first sixteen) and `ymm0`, to `r8`: with
+`1, 2¹⁰` in the words of each doubleword of `ymm8`, `12, 0` in the
+doublewords of each quadword of `ymm14`, and the masks of `vpshufb` in
+`xmm7` and `xmm9`; through `xmm1`, `xmm2` and `rax`. -/
+def cmPack5 : List Instr :=
+  [yb .vpackssdw .xmm0 .xmm4 .xmm0, yb .vpmaddwd .xmm0 .xmm0 .xmm8,
+    .vop (.vvar .vpsllvd .l256 .xmm0 .xmm0 .xmm14), .vop (.vshift .psrlq .l256 .xmm0 .xmm0 12),
+    .vop (.vextracti128 .xmm1 .xmm0 1), .vop (.vbin .vpshufb .l128 .xmm0 .xmm0 .xmm7),
+    .vop (.vbin .vpshufb .l128 .xmm2 .xmm1 .xmm9), .vop (.vbin .vpor .l128 .xmm0 .xmm0 .xmm2),
+    .vmovdquStore .l128 (at_ .r8 0) .xmm0, .vop (.vshift .psrldq .l128 .xmm1 .xmm1 9), .movqR .rax .xmm1,
+    .store32 (at_ .r8 16) .rax]
+
+/-- The constants of `cmHi` for `d = 11`, and those of `cmPack11`. -/
+def cm11Consts : List Instr :=
+  yconst .xmm8 0x75F875F8 ++ yconst .xmm9 0x00240024 ++ yconst .xmm10 0x4EBF4EBF ++ yconst .xmm11 0x20002000 ++
+    yconst .xmm12 0x07FF07FF ++ yconst .xmm13 0x08000001 ++ yconst4 .xmm14 10 10 10 10 ++ yconst4 .xmm7 10 30 10 30
+
+/-- The constants of `cmLo` for `d = 5`, and those of `cmPack5`. -/
+def cm5Consts : List Instr :=
+  yconst .xmm10 0x4EBF4EBF ++ yconst .xmm11 0x04000400 ++ yconst .xmm12 0x001F001F ++ yconst .xmm13 0x00200001 ++
+    yconst .xmm8 0x04000001 ++ yconst4 .xmm14 12 12 12 12 ++
+    yconst4 .xmm7 0x8080800403020100 0x800c0b0a09088080 0x8080800403020100 0x800c0b0a09088080 ++
+    yconst4 .xmm9 0x0201008080808080 0x0880808080800403 0x0201008080808080 0x0880808080800403
+
+/-- `compressEncode1024Avx2` for `d = 11`, in an MXCSR region: sixteen
+iterations of sixteen coefficients, 22 bytes each. -/
+def cm11 : Prog isa :=
+  .seq (.block (.mov .r8 (.reg .rdx) :: cm11Consts))
+    (.seq (rcxLoop 16 (cmLd 0 ++ toY cmHi ++ cmPack11 ++ [.alu .add .rdi (.imm 64), .alu .add .r8 (.imm 22)]))
+      (.block [.vop .vzeroupper]))
+
+/-- `compressEncode1024Avx2` for `d = 5`, in an MXCSR region: eight iterations
+of 32 coefficients, twenty bytes each. -/
+def cm5 : Prog isa :=
+  .seq (.block (.mov .r8 (.reg .rdx) :: cm5Consts))
+    (.seq (rcxLoop 8 (cmLd 0 ++ toY cmLo ++ [.vop (.vmovdqa .l256 .xmm4 .xmm0)] ++ cmLd 64 ++ toY cmLo ++ cmPack5 ++
+        [.alu .add .rdi (.imm 128), .alu .add .r8 (.imm 20)]))
+      (.block [.vop .vzeroupper]))
+
 def compressEncode1024Avx2 : Prog isa :=
   .seq (.block [.mov32 .rsi (.reg .rsi), .mov .r8 (.reg .rdx), .alu32 .cmp .rsi (.imm 5)])
     (.ite .e ce5V ce11V)

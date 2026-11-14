@@ -29,9 +29,9 @@ def dclob : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
 theorem dval_two (m : Mem) (base : Addr) (d j : Nat) :
     dval m base d (2 * j + 2) = dval m base d (2 * j) + w32 m base (d + 8 * j) * 2 ^ (32 * j) +
       w32 m base (d + 8 * j + 4) * (2 ^ 16 * 2 ^ (32 * j)) := by
-  rw [show 2 * j + 2 = 2 * j + 1 + 1 by omega, dval, dval, show d + 4 * (2 * j) = d + 8 * j by omega,
-    show d + 4 * (2 * j + 1) = d + 8 * j + 4 by omega, show 16 * (2 * j) = 32 * j by omega,
-    show 16 * (2 * j + 1) = 16 + 32 * j by omega, Nat.pow_add]
+  rw [show 2 * j + 2 = 2 * j + 1 + 1 by omega_using [], dval, dval, show d + 4 * (2 * j) = d + 8 * j by omega_using [],
+    show d + 4 * (2 * j + 1) = d + 8 * j + 4 by omega_using [], show 16 * (2 * j) = 32 * j by omega_using [],
+    show 16 * (2 * j + 1) = 16 + 32 * j by omega_using [], Nat.pow_add]
 
 /-- An iteration of the addition, as numbers. -/
 theorem add_step {D c A B P X Y x0 x1 y0 y1 : Nat} (h : D + c * P = A + B) (hX : X = x0 + x1 * 2 ^ 16)
@@ -53,12 +53,12 @@ theorem pair_writes {m : Mem} {base : Addr} {Q : Nat} (hQ : base.toNat + Q + 8 �
     w32 ((m.writeW (off base Q) v0).writeW (off base (Q + 4)) v1) base Q = v0.toNat ∧
     w32 ((m.writeW (off base Q) v0).writeW (off base (Q + 4)) v1) base (Q + 4) = v1.toNat ∧
     Outside base Q 8 m ((m.writeW (off base Q) v0).writeW (off base (Q + 4)) v1) :=
-  ⟨by rw [w32_write_lt (by omega) (by omega), w32_write_self], w32_write_self _ _ _ _,
-    ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))⟩
+  ⟨by rw [w32_write_lt (by omega_using [hQ]) (by omega_using []), w32_write_self], w32_write_self _ _ _ _,
+    ((writeW32_outside _ _ _ (by omega_using [hQ])).mono (by omega_using []) (by omega_using [])).trans
+      ((writeW32_outside _ _ _ (by omega_using [hQ])).mono (by omega_using []) (by omega_using []))⟩
 
 theorem toNat_ofNat_mod16 (v : Nat) : (BitVec.ofNat 32 (v % 2 ^ 16)).toNat = v % 2 ^ 16 := by
-  rw [BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_ofNat]; omega_using []
 
 /-- The digits at `[acc]` after an iteration that stored two more. -/
 theorem digs_two {m m' : Mem} {base : Addr} {acc j : Nat} (hb : base.toNat + acc + 8 * j + 8 ≤ 2 ^ 32)
@@ -67,10 +67,10 @@ theorem digs_two {m m' : Mem} {base : Addr} {acc j : Nat} (hb : base.toNat + acc
     Digs m' base acc (2 * j + 2) := by
   intro i hi
   rcases Nat.lt_or_ge i (2 * j) with h | h
-  · rw [O.w32 (by omega) (by omega)]; exact hd i h
-  · rcases (by omega : i = 2 * j ∨ i = 2 * j + 1) with rfl | rfl
-    · rw [show acc + 4 * (2 * j) = acc + 8 * j by omega]; exact h0
-    · rw [show acc + 4 * (2 * j + 1) = acc + 8 * j + 4 by omega]; exact h1
+  · rw [O.w32 (by omega_using [h]) (by omega_using [hb, hi])]; exact hd i h
+  · rcases (by omega_using [hi, h] : i = 2 * j ∨ i = 2 * j + 1) with rfl | rfl
+    · rw [show acc + 4 * (2 * j) = acc + 8 * j by omega_using []]; exact h0
+    · rw [show acc + 4 * (2 * j + 1) = acc + 8 * j + 4 by omega_using []]; exact h1
 
 /-- The loop's invariant after `j` words of `[a] + [b]`. -/
 structure AddInv (s : State) (base : Addr) (size acc a b : Nat) (j : Nat) (u : State) : Prop where

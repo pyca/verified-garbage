@@ -104,7 +104,7 @@ theorem ins_ok (d a b : XReg) (s : State) :
   · simp [VOp.exec, State.setV, State.lane]
   · simp [VOp.exec, State.setV, State.lane]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr, VOp.exec, State.setV, State.lane]
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr, VOp.exec, State.setV, State.lane]
 
 /-! ## The plan -/
 
@@ -283,8 +283,8 @@ theorem op_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : Lis
     have hin : ∀ k < [r].length, InRegions t.wr (t.gpr .rdi + BitVec.ofInt 64 ((32 * (8 + j + k) : Nat) : Int)) 32 :=
       fun k hk => by
         simp only [List.length_singleton] at hk
-        rw [hi.rdi]; exact in_sub_int hi.wr (by have := hi.n24; omega)
-    refine WP.mono (storesK_ok .rdi [r] (8 + j) t hin (by rw [hi.rdi]; simp only [List.length_singleton]; have := hi.wrap; have := hi.n24; omega))
+        rw [hi.rdi]; exact in_sub_int hi.wr (by have := hi.n24; omega_using [hj, hk, this])
+    refine WP.mono (storesK_ok .rdi [r] (8 + j) t hin (by rw [hi.rdi]; simp only [List.length_singleton]; have := hi.wrap; have := hi.n24; omega_arith))
       fun t' ⟨sv, sf, g, rd, wr, ln⟩ => ⟨env, hm, ⟨fun l hl => by rw [ln]; exact hi.h1 l hl,
         fun q e0 e1 hq => ?_, fun k hk => ?_, ?_, by rw [g]; exact hi.rdi, by rw [wr]; exact hi.wr, hi.wrap,
         hi.n24⟩,
@@ -298,10 +298,10 @@ theorem op_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : Lis
       · subst hkj
         refine ⟨hj, fun l hl => ?_⟩
         have e := sv 0 (by simp) l hl
-        rw [show 32 * (8 + k + 0) + 16 * l = 256 + 32 * k + 16 * l by omega] at e
+        rw [show 32 * (8 + k + 0) + 16 * l = 256 + 32 * k + 16 * l by omega_using []] at e
         rw [e]
         simp only [List.getElem_cons_zero]
-        rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+        rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
         · exact eq_prepared (p0 _ rfl)
         · exact eq_prepared (p1 _ rfl)
       · obtain ⟨hk8, hs⟩ := hi.st k (hk.resolve_left hkj)
@@ -309,13 +309,13 @@ theorem op_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : Env} {S : Lis
         rw [← hs l hl]
         exact sf.readW (Region.contains_self _ _) (fun r' hr' => by
           simp only [List.mem_singleton] at hr'; subst hr'
-          exact Offset.disjoint C (by have := hi.n24; omega) (by have := hi.n24; omega)
-            (by have := hi.wrap; have := hi.n24; omega)) (by decide)
+          exact Offset.disjoint C (by have := hi.n24; omega_using [hkj, hl]) (by have := hi.n24; omega_using [hk8, hl, this])
+            (by have := hi.wrap; have := hi.n24; omega_using [hj, this])) (by decide)
     · rw [hi.rdi] at sf
       simp only [List.length_singleton, Nat.mul_one] at sf
       exact hi.fr.trans (sf.sub fun r' hr' => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr'; subst hr'
-        exact Offset.sub C (by omega) (by have := hi.n24; omega)⟩)
+        exact Offset.sub C (by omega_using []) (by have := hi.n24; omega_using [hj])⟩)
 
 /-- The steps, one after the other. -/
 theorem plan_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} :
@@ -366,7 +366,7 @@ theorem setup_ok {N : Nat} (hN : N ≤ 24) (t : State) (hw : InRegions t.wr (t.g
       by rw [k.mem, o₁₄.mem]; exact Frame.refl _ _, by rw [k.gpr, o₁₄.gpr _ (by decide)],
       by rw [k.wr, o₁₄.wr]; exact hw, hwrap, hN⟩,
       fun q hq => by rw [k.gpr, o₁₄.gpr q hq], by rw [k.rd, o₁₄.rd], by rw [k.wr, o₁₄.wr]⟩
-  · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+  · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · rw [e0]; exact p₁
     · rw [e1]; exact p₁
   · rw [lookup_cons] at hr
@@ -410,13 +410,13 @@ theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
   have keep : Spec.Aes.bytesAt s.mem (s₀.gpr .rdi) 256 = Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) 256 :=
     bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
-      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+      exact Offset.base_disjoint _ (by decide) (by omega_using [])) (by decide)
   have hH : Spec.Gcm.ctxH s.mem (s₀.gpr .rdi) = Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi) := by
     simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
     rw [bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 256) (.inl (by decide)) (by decide)
-        (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
+        (by omega_using [])).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
   refine ⟨⟨fun r hr => g r (by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, keep, fun k hk => ?_⟩
@@ -427,7 +427,7 @@ theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
     have p0 := pw k hk 0 (by decide)
     have p1 := pw k hk 1 (by decide)
     rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
-    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
+    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega_using [], show 2 * k + 2 - 1 = 2 * k + 1 by omega_using []] at p1
     exact ⟨p0, p1⟩
 
 theorem prepare16_correct (s : State) (hs : prepare16X86_64.pre s) :

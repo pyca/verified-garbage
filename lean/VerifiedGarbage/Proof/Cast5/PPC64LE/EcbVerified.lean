@@ -187,9 +187,9 @@ theorem ecbSatMem_held : ∀ i < s1234.length,
     apply Mem.readW_congr
     intro j hj
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
-      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
     unfold ecbSatMem
-    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega)]
+    rw [e, ite_eq_left (show 8 * i + j < 4096 by omega_using [hi, hj])]
   exact hm.trans (constMem_held 0x100000 s1234 (by rw [hl]; decide) i (by rw [hl]; exact hi))
 
 /-- A state satisfying the precondition with the table. -/

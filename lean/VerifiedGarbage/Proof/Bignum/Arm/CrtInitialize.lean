@@ -48,6 +48,6 @@ theorem crt_initialize_ok (s : State) {base np : BitVec 32} {size w k : Nat} {nb
   exact ⟨⟨h.workspace.congr rest.wr, h.context.congr rest.wr, ready, main, p, q, source,
     by rw [rest.wr, rest.sp]; exact h.stackWrite,
     by rw [rest.sp]; exact h.stackSeparate, h.storageFits,
-    by have := h.lengthValid.1; omega, bytesFit⟩, frame, rest⟩
+    by have := h.lengthValid.1; omega_using [this], bytesFit⟩, frame, rest⟩
 
 end VG.Proof.Bignum.Arm

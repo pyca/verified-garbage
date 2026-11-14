@@ -40,8 +40,8 @@ theorem ecb_sdepth : sdepth (Impl.TripleDes.RISCV64.Ecb.ecb .encrypt) = 944 := b
 
 theorem toNat_add_lt (p : Addr) {d k : Nat} (h : p.toNat + k ≤ 2 ^ 64) (hd : d < k) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64)]
-  exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hd] : d < 2 ^ 64)]
+  exact Nat.mod_eq_of_lt (by omega_using [h, hd])
 
 /-! ## The key expansion -/
 
@@ -68,7 +68,7 @@ structure KPost (s : State) (K S : Addr) (KL : Nat) (s' : State) : Prop where
 
 theorem KArgs.toNat {s : State} {K S : Addr} {KL : Nat} (h : KArgs s K S KL) :
     (BitVec.ofNat 64 KL).toNat = KL := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.valid with h | h <;> omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.valid with h | h <;> omega_using [h])
 
 theorem KArgs.pre {s : State} {K S : Addr} {KL : Nat} (h : KArgs s K S KL) :
     Proof.TripleDes.RISCV64.Key.contract.pre (s.callEntry.withRegions [⟨K, KL⟩] [⟨S, 384⟩]) := by
@@ -151,9 +151,9 @@ theorem EArgs.pre {s : State} {S : Addr} {off : Nat} (h : EArgs s S off) :
     State.callEntry_gpr s (by decide : Reg.a0 ∉ linkRegs),
     State.callEntry_gpr s (by decide : Reg.a1 ∉ linkRegs), State.callEntry_gpr s (by decide : Reg.a2 ∉ linkRegs),
     h.a0, h.a1, h.a2, show (BitVec.ofInt 64 1).toNat = 1 from rfl, Nat.mul_one]
-  refine ⟨trivial, trivial, Offset.base_disjoint _ (by omega) (by omega), ?_, h.al, h.sp,
-    h.stk.sub_right (Region.sub_prefix (by decide)), h.stk.sub_right (Offset.sub_base _ (by omega))⟩
-  rw [toNat_add_lt S hf (show off < 416 by omega)]; omega
+  refine ⟨trivial, trivial, Offset.base_disjoint _ (by omega_using [hl]) (by omega_using [hh]), ?_, h.al, h.sp,
+    h.stk.sub_right (Region.sub_prefix (by decide)), h.stk.sub_right (Offset.sub_base _ (by omega_using [hh]))⟩
+  rw [toNat_add_lt S hf (show off < 416 by omega_using [hh])]; omega_using [hh, hf]
 
 theorem EArgs.covers {s : State} {S : Addr} {off : Nat} (h : EArgs s S off) :
     Covers ([⟨S, 384⟩] ++ [⟨S + BitVec.ofNat 64 off, 8⟩]) (s.rd ++ s.wr) ∧
@@ -163,10 +163,10 @@ theorem EArgs.covers {s : State} {S : Addr} {off : Nat} (h : EArgs s S off) :
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_append_right _ h.writes, 0, by simp, by show 0 + 384 ≤ 416; decide⟩
-    · exact ⟨_, List.mem_append_right _ h.writes, off, rfl, by show off + 8 ≤ 416; omega⟩
+    · exact ⟨_, List.mem_append_right _ h.writes, off, rfl, by show off + 8 ≤ 416; omega_using [hh]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    exact ⟨_, h.writes, off, rfl, by show off + 8 ≤ 416; omega⟩
+    exact ⟨_, h.writes, off, rfl, by show off + 8 ≤ 416; omega_using [hh]⟩
 
 theorem ecb_call {s : State} {S : Addr} {off : Nat} (h : EArgs s S off) :
     WP isa Impl.CmacTripleDes.Stream.RISCV64.ecbCall s (EPost s S off) := by

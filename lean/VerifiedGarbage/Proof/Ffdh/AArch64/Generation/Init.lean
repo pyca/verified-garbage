@@ -65,7 +65,7 @@ theorem initWritten_words (m : Mem) (B : Addr) (a b c d : BitVec 64) :
 theorem imm64 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn]
 
 /-- Whether `init` accepts `bits` and the generator. -/
 def initValid (bits g : Nat) : Prop := 512 ≤ bits ∧ bits ≤ 8192 ∧ (g = 2 ∨ g = 5)
@@ -94,17 +94,17 @@ theorem validate_ok (s : State) :
     imm64 (show 5 < 65536 by decide), imm64 (show 6 < 65536 by decide),
     imm64 (show 0 < 65536 by decide), imm64 (show 1 < 65536 by decide),
     subs_ge hl (show 512 < 2 ^ 64 by decide), subs_ge hl (show 8193 < 2 ^ 64 by decide),
-    subs_ge (show g < 2 ^ 64 by omega) (show 2 < 2 ^ 64 by decide),
-    subs_ge (show g < 2 ^ 64 by omega) (show 3 < 2 ^ 64 by decide),
-    subs_ge (show g < 2 ^ 64 by omega) (show 5 < 2 ^ 64 by decide),
-    subs_ge (show g < 2 ^ 64 by omega) (show 6 < 2 ^ 64 by decide)]
+    subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 2 < 2 ^ 64 by decide),
+    subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 3 < 2 ^ 64 by decide),
+    subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 5 < 2 ^ 64 by decide),
+    subs_ge (show g < 2 ^ 64 by omega_using [hg]) (show 6 < 2 ^ 64 by decide)]
   by_cases hv : initValid n g
   · rw [ite_eq_left hv]
     obtain ⟨h1, h2, h3⟩ := hv
-    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega)
+    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega_arith)
   · rw [ite_eq_right hv]
     simp only [initValid, not_and, not_or] at hv
-    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega)
+    split_ifs <;> simp only [decide_eq_true_eq] at * <;> first | rfl | (exfalso; omega_arith)
 
 theorem clear_ok {s : State} {B : Addr} (scr : Scr s B 128) (h0 : s.gpr .x0 = B) :
     WP isa (.block clear) s fun t => t.gpr .x0 = 0 ∧ t.mem = initWritten s.mem B 0 0 0 0 := by
@@ -128,7 +128,7 @@ theorem initialize_ok {s : State} {B : Addr} {bits : Nat} (scr : Scr s B 128) (h
   have hw : (BitVec.ofNat 64 bits + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [hhi]
   have hm : (BitVec.ofNat 64 bits * BitVec.ofNat 64 bits) <<< 6 = BitVec.ofNat 64 (bits * bits * 64) := by
     rw [← BitVec.ofNat_mul, shift_ofNat]
   have hc : BitVec.ofNat 64 ((bits + 7) / 8) <<< 15 + BitVec.ofNat 64 ((bits + 7) / 8) =
@@ -136,12 +136,12 @@ theorem initialize_ok {s : State} {B : Addr} {bits : Nat} (scr : Scr s B 128) (h
     rw [shift_ofNat, ← BitVec.ofNat_add]
     congr 1
     simp only [Nat.reducePow]
-    omega
+    omega_using []
   have hr : BitVec.ofNat 64 ((bits + 7) / 8) <<< 9 = BitVec.ofNat 64 (512 * ((bits + 7) / 8)) := by
     rw [shift_ofNat]
     congr 1
     simp only [Nat.reducePow]
-    omega
+    omega_using []
   unfold initializeState initWritten Spec.Ffdh.parameterAttempts Spec.Ffdh.parameterEntropy
   brun [h0, h1, imm64 (show 1 < 65536 by decide), h00, scr.st (d := 8) (by decide), scr.st (d := 16) (by decide),
     scr.st (d := 24) (by decide), hw, hm, hc, hr]

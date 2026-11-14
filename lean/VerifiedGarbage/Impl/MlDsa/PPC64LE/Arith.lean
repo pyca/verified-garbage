@@ -18,17 +18,8 @@ subtraction of `q` and a `fixup` (`Impl/MlKem/PPC64LE/Poly.lean`).
 are the model's only multiplications, and their timing does not depend on
 their operands (see `TCB/PPC64LE/Isa.lean`).
 
-* `vg_mldsa_ntt(f = r3, scratch = r4)`: the eight layers of Algorithm 41 as
-  ML-KEM's seven, with the table of the 256 zetas `ζ^BitRev8(m) mod q`
-  (`zetaTab`) stored in `scratch` (`table`, through `r12`) and read from
-  `m = 1` up.
-* `vg_mldsa_inv_ntt(f = r3, scratch = r4)`: the eight layers of Algorithm
-  42, with the table of the negated zetas `-ζ^BitRev8(m) mod q`
-  (`negZetaTab`, the `z` of Algorithm 42) read from `m = 255` down, and the
-  inverse butterflies; then every coefficient times `8347681 = 256⁻¹ mod q`.
-
-The scratch space holds the table, and nothing more: the butterflies' `r14`
-and `r15` are saved in a frame each on the stack (`saving`), 96 bytes.
+`vg_mldsa_ntt` and `vg_mldsa_inv_ntt` are vector code (`VNtt.lean`,
+`VNttInv.lean`); `saving` saves `r14` and `r15` for the callers' frames.
 
 * `vg_mldsa_multiply_ntt(h = r3, f = r4, g = r5)`: `h[i] = f[i] · g[i]`,
   reduced, counted by `r6`; `vg_mldsa_multiply_add_ntt` adds `h[i]` to the
@@ -46,12 +37,6 @@ namespace VG.Impl.MlDsa.PPC64LE.Arith
 
 open VG.PPC64LE
 open VG.Impl.MlKem.PPC64LE (fixup addBody subBody)
-
-/-- `ζ^BitRev8(m) mod q`. -/
-def zetaTab (m : Nat) : Nat := 1753 ^ Spec.MlDsa.bitRev8 m % 8380417
-
-/-- `-ζ^BitRev8(m) mod q`. -/
-def negZetaTab (m : Nat) : Nat := (8380417 - zetaTab m) % 8380417
 
 /-- `r ← v` for `v < 2³¹`: its high and low halves, by `lis` and `ori`. -/
 def loadImm (r : Reg) (v : Nat) : List Instr :=
@@ -79,66 +64,6 @@ def table (T : Nat → Nat) (b : Reg) : List Instr := (List.range 256).flatMap (
 /-- `body`, with `r14` and `r15` saved in a frame each around it. -/
 def saving (body : Prog isa) : Prog isa :=
   .frame (.push .r14) (.frame (.push .r15) body (.pop .r15)) (.pop .r14)
-
-/-! ## `ntt` -/
-
-/-- The butterfly on `[r5]` and `[r6]` with the zeta `r7`: `t = ζ·f[j + len]`
-in `r0`, then `f[j + len] = f[j] - t` and `f[j] = f[j] + t`. -/
-def bflyBody : List Instr :=
-  [.load .w .r12 .r5 0, .load .w .r0 .r6 0, .mul .r0 .r7 .r0] ++ reduce .r0 .r14 ++
-  [.sub .r14 .r12 .r0] ++ fixup .r14 .r15 .r9 ++ [.store .w .r14 .r6 0, .add .r12 .r12 .r0,
-    .sub .r12 .r12 .r9] ++ fixup .r12 .r15 .r9 ++
-  [.store .w .r12 .r5 0, .addi .r5 .r5 4, .addi .r6 .r6 4, .subi .r11 .r11 1]
-
-/-- A block: its zeta, then `len` butterflies. -/
-def nttBlockCode : Prog isa :=
-  .seq (.block [.load .w .r7 .r4 0, .addi .r4 .r4 4, .add .r6 .r5 .r10, .lsr .d .r11 .r10 2])
-    (.seq (.loop (.block bflyBody) (.nonzero .d .r11))
-      (.block [.addi .r5 .r6 0, .sub .r0 .r5 .r3]))
-
-/-- A layer: its blocks. -/
-def nttLayerCode : Prog isa :=
-  .seq (.block [.subi .r5 .r3 1024])
-    (.seq (.loop nttBlockCode (.nonzero .d .r0)) (.block [.lsr .d .r10 .r10 1, .subi .r0 .r10 2]))
-
-def ntt : Prog isa :=
-  saving (.seq (.block (table zetaTab .r4 ++ consts ++
-      ([.addi .r3 .r3 1024, .addi .r4 .r4 4, .li .r10 512] : List Instr)))
-    (.loop nttLayerCode (.nonzero .d .r0)))
-
-/-! ## `nttInv` -/
-
-/-- The inverse butterfly on `[r5]` and `[r6]` with the zeta `r7`:
-`f[j] = f[j] + f[j + len]`, then `f[j + len] = z·(f[j] - f[j + len])`. -/
-def ibflyBody : List Instr :=
-  [.load .w .r12 .r5 0, .load .w .r0 .r6 0, .add .r14 .r12 .r0, .sub .r14 .r14 .r9] ++
-  fixup .r14 .r15 .r9 ++ [.store .w .r14 .r5 0, .sub .r0 .r12 .r0] ++ fixup .r0 .r15 .r9 ++
-  [.mul .r0 .r7 .r0] ++ reduce .r0 .r14 ++
-  [.store .w .r0 .r6 0, .addi .r5 .r5 4, .addi .r6 .r6 4, .subi .r11 .r11 1]
-
-/-- A block: its zeta, then `len` inverse butterflies. -/
-def nttInvBlockCode : Prog isa :=
-  .seq (.block [.load .w .r7 .r4 0, .subi .r4 .r4 4, .add .r6 .r5 .r10, .lsr .d .r11 .r10 2])
-    (.seq (.loop (.block ibflyBody) (.nonzero .d .r11))
-      (.block [.addi .r5 .r6 0, .sub .r0 .r5 .r3]))
-
-/-- A layer: its blocks. -/
-def nttInvLayerCode : Prog isa :=
-  .seq (.block [.subi .r5 .r3 1024])
-    (.seq (.loop nttInvBlockCode (.nonzero .d .r0))
-      (.block [.lsl .r10 .r10 1, .subi .r0 .r10 1024]))
-
-/-- `[r5] ← [r5] · r7 mod q`, and on to the next coefficient. -/
-def scaleBody : List Instr :=
-  [.load .w .r12 .r5 0, .mul .r12 .r12 .r7] ++ reduce .r12 .r14 ++
-  [.store .w .r12 .r5 0, .addi .r5 .r5 4, .subi .r11 .r11 1]
-
-def nttInv : Prog isa :=
-  saving (.seq (.block (table negZetaTab .r4 ++ consts ++
-      ([.addi .r3 .r3 1024, .addi .r4 .r4 1020, .li .r10 4] : List Instr)))
-    (.seq (.loop nttInvLayerCode (.nonzero .d .r0))
-    (.seq (.block (loadImm .r7 8347681 ++ ([.subi .r5 .r3 1024, .li .r11 256] : List Instr)))
-      (.loop (.block scaleBody) (.nonzero .d .r11)))))
 
 /-! ## `multiplyNTT` and `multiplyAddNTT` -/
 

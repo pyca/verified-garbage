@@ -32,7 +32,7 @@ theorem KeyReady.small {s : State} {B : Addr} {Z n e p q : Nat} {m' : Mem}
       intro a ha
       have H : ∀ a ∈ [aT1, aT2], a < 15 := by decide
       have Ha := H a ha
-      omega) (by simp) (h.fit64 bound)
+      omega_using [persistent, Ha]) (by simp) (h.fit64 bound)
   have E : val32 m' B kEv 2 = val32 s.mem B kEv 2 := by
     apply O.val32 _ (by decide)
     intro r hr

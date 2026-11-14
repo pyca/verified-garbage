@@ -21,6 +21,8 @@ vg_sm3_init:
 	mov DWORD PTR [rdi+24], eax
 	mov eax, -1325724082
 	mov DWORD PTR [rdi+28], eax
+	xor eax, eax
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -56,7 +58,10 @@ vg_sm3_update:
 	jb 25f
 27:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+32], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+32], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -69,7 +74,10 @@ vg_sm3_update:
 	je 28f
 210:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -104,7 +112,10 @@ vg_sm3_update:
 	jb 217f
 219:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+32], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+32], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -117,7 +128,10 @@ vg_sm3_update:
 	je 220f
 222:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -167,6 +181,25 @@ vg_sm3_update:
 	mov r14, QWORD PTR [r15+144]
 	mov r15, QWORD PTR [r15+152]
 	lea rsp, [rsp+168]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-176]
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+176]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -198,7 +231,10 @@ vg_sm3_finalize:
 	mov rax, r13
 	and rax, 15
 	je 23f
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add r13, 1
 	mov eax, 64
 	test r14, r14
@@ -212,7 +248,10 @@ vg_sm3_finalize:
 	cmp rax, 8
 	jb 27f
 29:
-	mov QWORD PTR [rbx+r13*1+32], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+32], r9
 	add r13, 8
 	sub rax, 8
 	cmp rax, 8
@@ -223,7 +262,10 @@ vg_sm3_finalize:
 	test rax, rax
 	je 210f
 212:
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add r13, 1
 	sub rax, 1
 	jne 212b
@@ -247,7 +289,10 @@ vg_sm3_finalize:
 	cmp r13, 48
 	jae 215f
 217:
-	movdqu XMMWORD PTR [rbx+r13*1+32], xmm0
+	mov r10d, 48
+	cmp r13, r10
+	cmovb r10, r13
+	movdqu XMMWORD PTR [rbx+r10*1+32], xmm0
 	pxor xmm0, xmm0
 	add r13, 16
 	cmp r13, 48
@@ -313,5 +358,38 @@ vg_sm3_finalize:
 	mov r14, QWORD PTR [r15+144]
 	mov r15, QWORD PTR [r15+152]
 	lea rsp, [rsp+168]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-176]
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+176]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

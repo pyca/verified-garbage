@@ -43,8 +43,8 @@ theorem packWords_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) (h14 : s0.gpr .r1
     n (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩
   have hcs : Ctx b s := hc.of_rest h.rest (by decide)
   unfold packStep
-  refine lw0_ok hcs (d := a + 4 * k) (by omega) fun t1 v1 => ?_
-  refine wp_sw (a := q + BitVec.ofNat 64 (4 * k)) (by decide) (by omega)
+  refine lw0_ok hcs (d := a + 4 * k) (by omega_using [ha, hk]) fun t1 v1 => ?_
+  refine wp_sw (a := q + BitVec.ofNat 64 (4 * k)) (by decide) (by omega_using [ha, hk])
     (by rw [v1.other _ (by decide), h.rest.gpr _ (by decide), h14])
     (by rw [v1.wr, h.rest.wr]; exact hw k hk) fun t2 v2 => WP.block_nil ?_
   have em : t2.mem = s.mem.writeW (q + BitVec.ofNat 64 (4 * k)) ((t1.gpr .r7).setWidth 32) := by
@@ -53,17 +53,17 @@ theorem packWords_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) (h14 : s0.gpr .r1
     refine wd_frame h.frame fun r hr => ?_
     rw [List.mem_singleton.mp hr]
     refine fun x hx hx' => hd x ?_ ?_
-    · exact Region.sub_prefix (by omega) x hx'
-    · exact Offset.sub b (d := a + 4 * k) (n := 4) (e := a) (k := 4 * n) (by omega) (by omega) x hx
+    · exact Region.sub_prefix (by omega_using [hk]) x hx'
+    · exact Offset.sub b (d := a + 4 * k) (n := 4) (e := a) (k := 4 * n) (by omega_using []) (by omega_using [hk]) x hx
   refine ⟨h.rest.trans ((v1.rest (by decide)).trans (v2.rest _)), ?_, fun j hj => ?_⟩
   · rw [em]
     refine (h.frame.sub fun r hmem => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [ha, hk]))
     rw [List.mem_singleton.mp hmem]
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · rw [em]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [ha, hk])]
       exact h.outs j hj
     · rw [wd_write_self, toNat_lo32, v1.gpr, toNat_ext32, Nat.mod_eq_of_lt (BitVec.isLt _)]
       exact hsrc
@@ -85,8 +85,8 @@ theorem packScalar_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) (h14 : s0.gpr .r
       Rest [.r7] s0 t ∧ Frame [⟨q, 57⟩] s0.mem t.mem ∧
       Spec.Ed448.bytesAt t.mem q 57 = Spec.Ed448.encodeLE 57 (V s0.mem b a) := by
   unfold packScalar
-  refine WP.append (packWords_ok hc h14 (n := 14) (by omega) (by decide)
-    (fun k hk => in_base hw (by omega) (by omega))
+  refine WP.append (packWords_ok hc h14 (n := 14) (by omega_using [ha]) (by decide)
+    (fun k hk => in_base hw (by omega_using [hk]) (by omega_using [hk]))
     (hd.sub_left (Region.sub_prefix (by decide)))) fun s1 h1 => ?_
   refine wp_li (by decide) fun s2 u2 => ?_
   refine wp_stb (a := q + BitVec.ofNat 64 56) (by decide) (by decide)
@@ -110,7 +110,7 @@ theorem packScalar_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) (h14 : s0.gpr .r
       have e : ∀ j < 14, wd s3.mem q (4 * j) = limb s0.mem b a j := fun j hj => by
         rw [wd_frame f3 fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact Offset.disjoint q (d := 4 * j) (n := 4) (e := 56) (k := 1) (.inl (by omega)) (by omega) (by omega)]
+          exact Offset.disjoint q (d := 4 * j) (n := 4) (e := 56) (k := 1) (.inl (by omega_using [hj])) (by omega_using [hj]) (by omega_using [])]
         exact h1.outs j hj
       exact bytesAt_words14 _ _ e
     · show [s3.mem (q + BitVec.ofNat 64 56 + BitVec.ofNat 64 0)] = [0]

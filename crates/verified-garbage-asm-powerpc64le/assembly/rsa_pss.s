@@ -184,7 +184,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -206,7 +206,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 223b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -714,7 +714,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -736,7 +736,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 255b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1245,7 +1245,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1267,7 +1267,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 287b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1776,7 +1776,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1798,7 +1798,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2119b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2307,7 +2307,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2329,7 +2329,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2151b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2835,7 +2835,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2857,7 +2857,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2183b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3363,7 +3363,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3385,7 +3385,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2215b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3891,7 +3891,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3913,7 +3913,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2247b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -4265,7 +4265,7 @@ vg_rsa_pss_verify_precomputed:
 	addi %r1, %r1, 256
 	blr
 
-vg_rsa_pss_sign:
+vg_rsa_pss_sign_precomputed:
 	stdu %r1, -256(%r1)
 	addi %r11, %r1, 0
 	ld %r11, 464(%r11)
@@ -4514,7 +4514,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -4536,7 +4536,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 231b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -4563,32 +4563,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -4597,8 +4601,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 219f
 218:
 	or %r4, %r16, %r16
@@ -4882,7 +4886,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -4904,7 +4908,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 252b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -4931,32 +4935,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -4965,8 +4973,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 240f
 239:
 	or %r4, %r16, %r16
@@ -5251,7 +5259,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -5273,7 +5281,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 273b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -5300,32 +5308,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -5334,8 +5346,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 261f
 260:
 	or %r4, %r16, %r16
@@ -5620,7 +5632,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -5642,7 +5654,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 294b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -5669,32 +5681,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -5703,8 +5719,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 282f
 281:
 	or %r4, %r16, %r16
@@ -5989,7 +6005,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -6011,7 +6027,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2115b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -6038,32 +6054,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -6072,8 +6092,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 2103f
 2102:
 	or %r4, %r16, %r16
@@ -6358,7 +6378,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -6380,7 +6400,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2136b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -6407,32 +6427,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -6441,8 +6465,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 2124f
 2123:
 	or %r4, %r16, %r16
@@ -6727,7 +6751,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -6749,7 +6773,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2157b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -6776,32 +6800,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -6810,8 +6838,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 2145f
 2144:
 	or %r4, %r16, %r16
@@ -7096,7 +7124,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -7118,7 +7146,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2178b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -7145,32 +7173,36 @@ vg_rsa_pss_sign:
 	lbz %r5, 0(%r4)
 	and %r5, %r5, %r10
 	stb %r5, 0(%r4)
-	stdu %r1, -192(%r1)
+	stdu %r1, -208(%r1)
 	addi %r12, %r1, 0
 	std %r17, 96(%r12)
 	std %r18, 104(%r12)
-	ld %r0, 544(%r12)
-	std %r0, 112(%r12)
-	ld %r0, 552(%r12)
-	std %r0, 120(%r12)
 	ld %r0, 560(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 568(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 576(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 584(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 592(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 600(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 608(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 616(%r12)
 	std %r0, 168(%r12)
 	li %r0, 8192
 	add %r0, %r14, %r0
 	std %r0, 176(%r12)
-	ld %r11, 648(%r12)
+	ld %r11, 664(%r12)
 	addi %r11, %r11, -1024
 	std %r11, 184(%r12)
+	ld %r0, 688(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 696(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r16, %r16
 	or %r4, %r15, %r15
 	or %r5, %r20, %r20
@@ -7179,8 +7211,8 @@ vg_rsa_pss_sign:
 	or %r8, %r22, %r22
 	addi %r9, %r14, 0
 	or %r10, %r15, %r15
-	bl {vg_rsa_private_checked}
-	addi %r1, %r1, 192
+	bl {vg_rsa_private_checked_precomputed}
+	addi %r1, %r1, 208
 	b 2166f
 2165:
 	or %r4, %r16, %r16

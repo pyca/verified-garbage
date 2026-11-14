@@ -47,7 +47,7 @@ def ebV (k x : Nat) : Nat := 8 * (k - 1) + Nat.log2 x
 theorem shr3_ofNat {m : Nat} (hm : m < 2 ^ 64) : BitVec.ofNat 64 m >>> 3 = BitVec.ofNat 64 (m / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hm])]
 
 theorem emBitsB_ok {u : State} {k x : Nat} (hk1 : 1 ≤ k) (hk2 : k ≤ 1024) (hx : x < 256) (h0 : x ≠ 0)
     (h10 : u.gpr .x10 = BitVec.ofNat 64 x) (h23 : u.gpr .x23 = BitVec.ofNat 64 k) :
@@ -55,18 +55,18 @@ theorem emBitsB_ok {u : State} {k x : Nat} (hk1 : 1 ≤ k) (hk2 : k ≤ 1024) (h
       u'.gpr .x24 = BitVec.ofNat 64 (ebV k x) ∧
       u'.gpr .x25 = BitVec.ofNat 64 (Spec.RsaPss.emLength (ebV k x)) ∧
       u'.gpr .x26 = BitVec.ofNat 64 (k - Spec.RsaPss.emLength (ebV k x)) := by
-  have hl8 : Nat.log2 x < 8 := (Nat.log2_lt h0).mpr (by omega)
-  have hel : Spec.RsaPss.emLength (ebV k x) ≤ k := by unfold Spec.RsaPss.emLength ebV; omega
+  have hl8 : Nat.log2 x < 8 := (Nat.log2_lt h0).mpr (by omega_using [hx])
+  have hel : Spec.RsaPss.emLength (ebV k x) ≤ k := by unfold Spec.RsaPss.emLength ebV; omega_using [hk1, hl8]
   unfold emBitsB
   refine wp_clz fun u₁ o₁ e₁ => wp_lsl (by decide) fun u₂ o₂ e₂ => wp_addImm (by decide) fun u₃ o₃ e₃ =>
     wp_sub fun u₄ o₄ e₄ => wp_addImm (by decide) fun u₅ o₅ e₅ => wp_lsr (by decide) fun u₆ o₆ e₆ =>
     wp_sub fun u₇ o₇ e₇ => ?_
   have h24 : u₄.gpr .x24 = BitVec.ofNat 64 (ebV k x) := by
     rw [e₄, e₃, e₂, o₁.get .x23, h23, o₃.get .x9, o₂.get .x9, e₁, h10, clz_val hx h0,
-      VG.Proof.RsaPss.AArch64.shl3_ofNat (by omega), BitVec.ofNat_add_ofNat, VG.Offset.ofNat_sub_ofNat (by omega)]
-    unfold ebV; congr 1; omega
+      VG.Proof.RsaPss.AArch64.shl3_ofNat (by omega_using [hk2]), BitVec.ofNat_add_ofNat, VG.Offset.ofNat_sub_ofNat (by omega_using [hk1])]
+    unfold ebV; congr 1; omega_using [hk1, hl8]
   have h25 : u₆.gpr .x25 = BitVec.ofNat 64 (Spec.RsaPss.emLength (ebV k x)) := by
-    rw [e₆, e₅, h24, BitVec.ofNat_add_ofNat, shr3_ofNat (by unfold ebV; omega)]; rfl
+    rw [e₆, e₅, h24, BitVec.ofNat_add_ofNat, shr3_ofNat (by unfold ebV; omega_using [hk2, hl8])]; rfl
   refine wp_nil ⟨(o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans o₇)))))).mono, ?_, ?_, ?_⟩
   · rw [o₇.get .x24, o₆.get .x24, o₅.get .x24, h24]
   · rw [o₇.get .x25, h25]

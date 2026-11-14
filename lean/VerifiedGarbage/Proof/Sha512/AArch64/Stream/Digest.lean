@@ -34,8 +34,8 @@ theorem out64_take {n : Nat} (hn : n ≤ 8) (s : State) (hin : InRegions (s.rd +
     WP isa (.block (out64 n)) s fun s' => (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = writeBytes s.mem (s.gpr .x21) ((md.digest (md.stateAt s.mem (s.gpr .x19))).take (8 * n)) :=
-  (out64_ok (n := n) (by omega) (inRegions_prefix hin (by omega)) hout
-    (hd.sub_left (Region.sub_prefix (by omega)))).mono
+  (out64_ok (n := n) (by omega_using [hn]) (inRegions_prefix hin (by omega_using [hn])) hout
+    (hd.sub_left (Region.sub_prefix (by omega_using [hn])))).mono
     fun _ ⟨g, rd, wr, sp, m⟩ => ⟨g, rd, wr, sp, by rw [m, digest_take _ _ hn]⟩
 
 /-- `out64 3 ++ outHi 3` writes the first 28 bytes of the digest. -/

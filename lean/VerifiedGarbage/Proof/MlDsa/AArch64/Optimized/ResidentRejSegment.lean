@@ -45,14 +45,14 @@ theorem setup_ok (n : Nat) (hn : n<65536) {s : State} {b p c : Addr} {L : List Z
     exact hc
   have he6 : e.gpr .x6=256 := by rw [ee]; rfl
   have hf6 : (f.gpr .x6).toNat=L.length := by
-    rw [ef,toNat_sub_n (by rw [he6,he.get .x4,hcount]; change 256-L.length≤256; omega),he6,
+    rw [ef,toNat_sub_n (by rw [he6,he.get .x4,hcount]; change 256-L.length≤256; omega_using []),he6,
       he.get .x4,hcount]
     change 256-(256-L.length)=L.length
-    omega
+    omega_using [hL]
   have hg6 : g.gpr .x6=BitVec.ofNat 64 (4*L.length) := by
     apply BitVec.eq_of_toNat_eq
-    rw [eg,toNat_lsl_n (by rw [hf6]; omega),hf6,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [eg,toNat_lsl_n (by rw [hf6]; omega_using [hL]),hf6,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hL])]
+    omega_using []
   refine ⟨(((((((((ha.trans hb).trans hd).trans he).trans hf).trans hg).trans hh).trans hi).trans hj).trans ht).mono (by decide),?_,?_,?_,?_,?_⟩
   · rw [ht.get .x2,hj.get .x2,hi.get .x2,hh.get .x2,hg.get .x2,hf.get .x2,
       he.get .x2,hd.get .x2,hb.get .x2,ea,h24]
@@ -62,7 +62,7 @@ theorem setup_ok (n : Nat) (hn : n<65536) {s : State} {b p c : Addr} {L : List Z
     exact hcount
   · rw [ht.get .x5,hj.get .x5,ei]
     simp only [BitVec.toNat_setWidth,BitVec.natCast_eq_ofNat,BitVec.toNat_ofNat]
-    omega
+    omega_using [hn]
   · rw [ht.get .x9]; exact ej
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

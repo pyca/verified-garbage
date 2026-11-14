@@ -16,8 +16,8 @@ namespace VG.Proof.Bignum.CrtWindowFive
 /-- A partial final window selects a valid table entry without appending
 zero bits to the exponent. -/
 theorem pending_index {v b : Nat} (hv : v < 2 ^ b) (hb : b < 5) : v < 32 := by
-  have hpow : 2 ^ b ≤ 2 ^ 4 := Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+  have hpow : 2 ^ b ≤ 2 ^ 4 := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
+  omega_using [hv, hpow]
 
 /-- Reconstruct the low `n + 1` base-32 digits after consuming the high one. -/
 theorem group_reconstruct (E V n : Nat) :

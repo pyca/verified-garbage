@@ -38,7 +38,7 @@ theorem mgfW_slot (hg : Geo L scr) {dOff dl d : Nat} (hfd : dOff + dl ≤ oBuf) 
     ∀ r ∈ mgfW g L scr dOff dl, (slotR L d).Disjoint r := by
   have := g.S_le; have := g.Wb_le; have := g.F_le
   obtain ⟨σ', ok⟩ := hg.ok
-  have hF : d + 4 ≤ L.F + 16 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega
+  have hF : d + 4 ≤ L.F + 16 := by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd]
   intro r hr
   simp only [mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -46,12 +46,12 @@ theorem mgfW_slot (hg : Geo L scr) {dOff dl d : Nat} (hfd : dOff + dl ≤ oBuf) 
   · exact hg.slot ok (by oomega) hF
   · exact hg.slot ok (by oomega) hF
   · exact hg.slot ok (by oomega) hF
-  · exact Lay.fr_low (by unfold frameBytes at hd; omega) (by have := ok.BC; have := L.B.isLt; omega)
+  · exact Lay.fr_low (by unfold frameBytes at hd; omega_using [hd]) (by have := ok.BC; have := L.B.isLt; omega_arith)
   · exact hg.slot ok (by oomega) hF
-  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega)
-  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega)
-  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega)
-  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega)
+  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega_using [h₁])
+  · exact slotSep hd (by decide) (by unfold sCtr sDone at *; omega_using [h₁])
+  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega_using [h₂])
+  · exact slotSep hd (by decide) (by unfold sTab sHl at *; omega_using [h₂])
 
 /-- A byte of `EM`'s place, outside `dst`, misses what `mgfXor` writes. -/
 theorem mgfW_byte (hg : Geo L scr) {dOff dl o : Nat} (hfd : dOff + dl ≤ oBuf) (ho0 : oEm ≤ o) (ho : o < oRsa)
@@ -86,7 +86,7 @@ theorem mpOf (hg : Geo L scr) {so sl dOff dl : Nat} (sl0 : 0 < sl) (dl0 : 0 < dl
     {seed : State → List Byte} (sd : ∀ σ, (seed σ).length = sl) {X : State → Mem → Prop}
     (hX : ∀ σ m m', X σ m → Frame (mgfW g L scr dOff dl) m m' → X σ m') {f : Fns} {j : Nat}
     {ai au af : BitVec 32} (hj : j < L.argv.length)
-    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr (L.argv.getD j 0) o) 4)
+    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr (L.argv.getD j 0) o) 4)
     (cA : TaintOk [.esp, .ebp] (.block [Impl.RsaPss.X86.ld .eax (Impl.RsaPss.X86.arg j), Impl.RsaPss.X86.st .eax sTab]))
     (tab : ∀ σ m, X σ m → TabFacts g.H f (L.argv.getD j 0) ai au af σ) (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
     MP g L scr so sl dOff dl seed (fun σ m => X σ m ∧ Sl L scr so sl dOff dl m) f j ai au af :=

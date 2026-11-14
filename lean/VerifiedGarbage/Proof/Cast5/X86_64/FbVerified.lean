@@ -36,8 +36,8 @@ S-boxes. `ofb_verified`, …: each is correct and constant time, by the taint
 analysis: the pointers, `rounds`, `n`, the stack pointer and the table's
 address are public, and so is everything the code computes from them; the
 subkeys, the IV and the data are secret. `ofb_framed`, … run them with their
-working space on the stack, zeroed on return: 240 bytes, the 29 words of the
-scratch buffer and 8 more.
+working space on the stack: 240 bytes, the 29 words of the scratch buffer and
+8 more, which the scrub after them zeroes (`Proof.Cast5.X86_64.Scrub`).
 -/
 
 @[expose] public section
@@ -189,8 +189,8 @@ theorem movq_lo {v : BitVec 128} (h : v.extractLsb' 64 64 = 0) : (0 : BitVec 64)
   by_cases h64 : i < 64
   · simp [h64, hi]
   · simp only [h64, decide_false, Bool.false_and, ite_false]
-    simp only [Bool.true_and, show i - 64 < 64 by omega, decide_true]
-    congr 1; omega
+    simp only [Bool.true_and, show i - 64 < 64 by omega_using [hi], decide_true]
+    congr 1; omega_using [h64]
 
 /-- `crypt` keeps `xmm15`, its upper half zero, which it puts back from `rcx`. -/
 theorem crypt_keepsIv : Modes.X86_64.KeepsIv (dirCore true).crypt := by
@@ -289,9 +289,9 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : FPre len s) : Taint.W
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hs.wr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 8 ≤ 8; omega) (List.Forall₂.cons
-        (by change 0 ≤ len s; omega)
-        (List.Forall₂.cons (by change 8 * 29 ≤ 232; omega) List.Forall₂.nil))
+    · exact List.Forall₂.cons (by change 8 ≤ 8; omega_using []) (List.Forall₂.cons
+        (by change 0 ≤ len s; omega_using [])
+        (List.Forall₂.cons (by change 8 * 29 ≤ 232; omega_using []) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -302,10 +302,10 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : FPre len s) : Taint.W
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change 8 ≤ 2 ^ 64; omega
+      · change 8 ≤ 2 ^ 64; omega_using []
       · change len s ≤ 2 ^ 64
-        have := hs.fD; omega
-      · change 232 ≤ 2 ^ 64; omega
+        have := hs.fD; omega_using [this]
+      · change 232 ≤ 2 ^ 64; omega_using []
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
     subst p
@@ -473,7 +473,7 @@ theorem fbFrame_sat (post : Spec.Cast5.ofbSig.Post X86_64.abi.ptrBits) :
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 ofb)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 ofb)
       (Proof.Cast5.ofbRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.ofbPre X86_64.abi.ptrBits)
@@ -483,7 +483,7 @@ theorem ofb_framed :
 
 /-- CFB64 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cfbEncrypt)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cfbEncrypt)
       (Proof.Cast5.cfbEncryptRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbPre X86_64.abi.ptrBits)
@@ -493,7 +493,7 @@ theorem cfbEncrypt_framed :
 
 /-- CFB64 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cfbDecrypt)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cfbDecrypt)
       (Proof.Cast5.cfbDecryptRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbPre X86_64.abi.ptrBits)

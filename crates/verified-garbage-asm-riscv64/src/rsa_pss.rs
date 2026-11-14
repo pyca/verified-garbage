@@ -5,7 +5,7 @@
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+/// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
 /// # Safety
 ///
@@ -16,7 +16,7 @@
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes, and aligned for `u64`.
 /// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -30,9 +30,9 @@
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -197,7 +197,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -218,7 +218,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 223b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -716,7 +716,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -737,7 +737,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 255b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1236,7 +1236,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1257,7 +1257,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 287b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1756,7 +1756,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1777,7 +1777,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 2119b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2276,7 +2276,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2297,7 +2297,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 2151b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2796,7 +2796,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2817,7 +2817,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 2183b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3316,7 +3316,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3337,7 +3337,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 2215b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3836,7 +3836,7 @@ call {vg_rsa_public_precomputed_checked}
 .insn 4, 0x000300e7
 .insn 4, 0x0b810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3857,7 +3857,7 @@ call {vg_rsa_public_precomputed_checked}
 bnez a6, 2247b
 .insn 4, 0x0b810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -4215,9 +4215,9 @@ j 2239f
     )
 }
 
-/// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the `digest_len`-byte digest `digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - digest_len - 2`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
+/// `vg_rsa_pss_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pss_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPss.signTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
+/// Contract: `VG.Spec.RsaPss.signPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the digest or the salt.
 ///
 /// # Safety
 ///
@@ -4233,7 +4233,8 @@ j 2239f
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
 /// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes, and aligned for `u64`.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -4242,14 +4243,16 @@ j 2239f
 /// * `digest_len` must be the digest length of the hash function `hash` names.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash` and `mgf1` may overlap the 3472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3488 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -4514,7 +4517,7 @@ bnez a5, 230b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -4535,7 +4538,7 @@ bnez a5, 230b
 bnez a6, 232b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -4546,9 +4549,9 @@ bnez t1, 231b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -4584,8 +4587,12 @@ bnez t1, 231b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 219f
 218:
 .insn 2, 0x85ca
@@ -4883,7 +4890,7 @@ bnez a5, 252b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -4904,7 +4911,7 @@ bnez a5, 252b
 bnez a6, 254b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -4915,9 +4922,9 @@ bnez t1, 253b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -4953,8 +4960,12 @@ bnez t1, 253b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 241f
 240:
 .insn 2, 0x85ca
@@ -5253,7 +5264,7 @@ bnez a5, 274b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -5274,7 +5285,7 @@ bnez a5, 274b
 bnez a6, 276b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -5285,9 +5296,9 @@ bnez t1, 275b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -5323,8 +5334,12 @@ bnez t1, 275b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 263f
 262:
 .insn 2, 0x85ca
@@ -5623,7 +5638,7 @@ bnez a5, 296b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -5644,7 +5659,7 @@ bnez a5, 296b
 bnez a6, 298b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -5655,9 +5670,9 @@ bnez t1, 297b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -5693,8 +5708,12 @@ bnez t1, 297b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 285f
 284:
 .insn 2, 0x85ca
@@ -5993,7 +6012,7 @@ bnez a5, 2118b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -6014,7 +6033,7 @@ bnez a5, 2118b
 bnez a6, 2120b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -6025,9 +6044,9 @@ bnez t1, 2119b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -6063,8 +6082,12 @@ bnez t1, 2119b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 2107f
 2106:
 .insn 2, 0x85ca
@@ -6363,7 +6386,7 @@ bnez a5, 2140b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -6384,7 +6407,7 @@ bnez a5, 2140b
 bnez a6, 2142b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -6395,9 +6418,9 @@ bnez t1, 2141b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -6433,8 +6456,12 @@ bnez t1, 2141b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 2129f
 2128:
 .insn 2, 0x85ca
@@ -6733,7 +6760,7 @@ bnez a5, 2162b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -6754,7 +6781,7 @@ bnez a5, 2162b
 bnez a6, 2164b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -6765,9 +6792,9 @@ bnez t1, 2163b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -6803,8 +6830,12 @@ bnez t1, 2163b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 2151f
 2150:
 .insn 2, 0x85ca
@@ -7102,7 +7133,7 @@ bnez a5, 2184b
 .insn 4, 0x000300e7
 .insn 4, 0x0f810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -7123,7 +7154,7 @@ bnez a5, 2184b
 bnez a6, 2186b
 .insn 4, 0x0f810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -7134,9 +7165,9 @@ bnez t1, 2185b
 .insn 4, 0x0005c603
 .insn 4, 0x00767633
 .insn 4, 0x00c58023
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x56043303
 .insn 4, 0x0062b023
 .insn 4, 0x56843303
@@ -7172,8 +7203,12 @@ bnez t1, 2185b
 .insn 4, 0x55843783
 .insn 2, 0x8822
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x080fb303
+.insn 4, 0x0662b023
+.insn 4, 0x088fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 j 2173f
 2172:
 .insn 2, 0x85ca
@@ -7228,6 +7263,6 @@ bnez t5, 2189b
 21:
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

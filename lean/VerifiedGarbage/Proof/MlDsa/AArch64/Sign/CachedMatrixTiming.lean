@@ -173,8 +173,8 @@ theorem tail_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) :
   rw [show 4*(mlDsa65.k*mlDsa65.ℓ/4)=28 by decide]
   refine RelCT.seq (RelCT.mono (seqR_tr
     (Q:=fun j=>RR mlDsa65 D (AS mlDsa65 D · 28 j) fun x y=>x.gpr .x24=y.gpr .x24) 2 0
-    (fun j _ hj=>slot4_tr (by omega)
-      (slotChk_ok mlDsa65 (by simp) 28 (by decide) j (by omega)))) ?_ (fun _ _ h=>by simpa using h))
+    (fun j _ hj=>slot4_tr (by omega_using [hj])
+      (slotChk_ok mlDsa65 (by simp) 28 (by decide) j (by omega_using [hj])))) ?_ (fun _ _ h=>by simpa using h))
     (twoBatch_tr hP (show twoChk mlDsa65 28=true by decide))
   exact fun x y h=>h.mono (fun _ _ h=>⟨h,fun _ h=>False.elim (Nat.not_lt_zero _ h)⟩) (fun h=>h)
 
@@ -201,8 +201,8 @@ theorem expandA65_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) (hc : aChk mlDsa65
   · have hB : RelCT isa (RA mlDsa65 D 0) (seqR (sample4 P mlDsa65) 0 7) (RA mlDsa65 D 28) := by
       simpa only [Nat.zero_add,Nat.mul_zero] using
         (seqR_tr (Q:=fun g=>RA mlDsa65 D (4*g)) 7 0 (fun g _ hg=>
-          sample4_tr hP (batchChk_ok mlDsa65 hp g (by change g<7; omega))
-            (fun j hj=>slotChk_ok mlDsa65 hp (4*g) (by change 4*g<30; omega) j hj)))
+          sample4_tr hP (batchChk_ok mlDsa65 hp g (by change g<7; omega_using [hg]))
+            (fun j hj=>slotChk_ok mlDsa65 hp (4*g) (by change 4*g<30; omega_using [hg]) j hj)))
     exact RelCT.seq hB (tail_tr hP)
 
 theorem expandA_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params}

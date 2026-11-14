@@ -114,10 +114,10 @@ theorem FinS.frame {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP aL t
     intro d h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact (La.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact La.w_w (.inr (by omega)) (by omega) (by decide)
-    · exact La.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (La.stk_w (by omega)).symm
+    · exact (La.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [h₂]⟩)).symm
+    · exact La.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
+    · exact La.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+    · exact (La.stk_w (by omega_using [h₂])).symm
   refine ⟨he, ?_, ?_⟩
   · rw [hf.readW (r := ⟨W + BitVec.ofNat 64 184, 8⟩) (Region.contains_self _ _) (dT 184 (by decide) (by decide))
       (by decide), h.2.1]

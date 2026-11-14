@@ -33,7 +33,7 @@ theorem inp_q {L : RL} (hL : L.Ok) (m : Mem) :
       Spec.Dsa.decodeBE (qbOf L m) := by
   have := hL.ql
   simp only [Spec.Dsa.privateKeyBytes, Spec.Dsa.publicKeyBytes]
-  rw [VG.Proof.Dsa.bytesAt_slice m L.key (by simp only [RL.kl]; omega)]
+  rw [VG.Proof.Dsa.bytesAt_slice m L.key (by simp only [RL.kl]; omega_using [])]
 
 theorem draw_eq {L : RL} (hL : L.Ok) (m : Mem) (u : Nat) :
     randomSignDraw (inpOf L m) u = Spec.Dsa.Random.sample (Spec.Dsa.decodeBE (qbOf L m)) 128 ((randOf L m).drop u) := by
@@ -64,11 +64,11 @@ theorem nonce_eq {F : Addr} {m : Mem} {ql W k : Nat} (hW : W ≤ ql)
       exact hz j h₁
   have e2 : Spec.Rsa.bytesAt m (off F oNonce) ql = List.replicate (ql - W) 0 ++
       Spec.Rsa.bytesAt m (off F (oNonce + (ql - W))) W := by
-    rw [show ql = (ql - W) + W by omega, bytesAt_add', e1, Nat.add_sub_cancel]
+    rw [show ql = (ql - W) + W by omega_using [hW], bytesAt_add', e1, Nat.add_sub_cancel]
     simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
   rw [e2, ← hk, ← Dsa.decode_padding _ (ql - W)]
   have hl : (List.replicate (ql - W) 0 ++ Spec.Rsa.bytesAt m (off F (oNonce + (ql - W))) W).length = ql := by
-    simp [VG.Proof.Bignum.bytesAt_length]; omega
+    simp [VG.Proof.Bignum.bytesAt_length]; omega_using [hW]
   have := Dsa.encodeBE_decodeBE (List.replicate (ql - W) 0 ++ Spec.Rsa.bytesAt m (off F (oNonce + (ql - W))) W)
   rw [hl] at this
   exact this.symm

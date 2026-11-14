@@ -33,7 +33,7 @@ theorem frameR_contains {L : RL} {s₀ : State} (hL : L.Ok) (hsp : s₀.sp = L.s
     (h : d + n ≤ frameBytes) : (frameR s₀).Contains (off L.F d) n := by
   have hF := hL.fnw
   simp only [frameR, hsp]
-  exact VG.Offset.contains_base _ h (by simp only [frameBytes] at h; omega)
+  exact VG.Offset.contains_base _ h (by simp only [frameBytes] at h; omega_using [h])
 
 /-- The frame's offsets past it are the stack pointer's. -/
 theorem F_add (L : RL) (d : Nat) : off L.F (frameBytes + d) = L.sp + BitVec.ofNat 64 d := by
@@ -46,7 +46,7 @@ theorem bytes_outside {L : RL} {m m' : Mem} (ho : Outside L.F 0 frameBytes m m')
   simp only [Spec.Rsa.bytesAt, List.map_inj_left, List.mem_range]
   intro i hi
   refine ho _ (.inr ?_)
-  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega) (by omega)
+  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega_using [hi]) (by omega_using [hk, hi])
   by_contra hcon
   exact hd _ (show L.frR.Contains (A + BitVec.ofNat 64 i) 1 by
     simp only [Region.Contains, frameBytes, ofs] at hcon ⊢; omega) hc
@@ -55,7 +55,7 @@ theorem bytes_outside {L : RL} {m m' : Mem} (ho : Outside L.F 0 frameBytes m m')
 theorem readW_outside {L : RL} {m m' : Mem} (ho : Outside L.F 0 frameBytes m m') {A : Addr} {k : Nat}
     (hd : L.frR.Disjoint ⟨A, k⟩) (hk : 8 ≤ k) (hk' : k ≤ 2 ^ 64) : m'.readW A 64 = m.readW A 64 := by
   refine Mem.readW_congr fun i hi => ho _ (.inr ?_)
-  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega) (by omega)
+  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega) (by omega_using [hi])
   by_contra hcon
   exact hd _ (show L.frR.Contains (A + BitVec.ofNat 64 i) 1 by
     simp only [Region.Contains, frameBytes, ofs] at hcon ⊢; omega) hc
@@ -71,10 +71,10 @@ theorem scr_nonce {L : RL} {s₀ t : State} (hL : L.Ok) (hsp : s₀.sp = L.sp)
   · simp only [hsp]
   · rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oNonce) (by decide)]
     simp only [oNonce]
-    omega
+    omega_using [hF]
   · rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oNonce) (by decide)]
     simp only [oNonce]
-    omega
+    omega_using [ha]
 
 /-- A word of the frame is writable and aligned. -/
 theorem frame_word {L : RL} {s₀ t : State} (hL : L.Ok) (hsp : s₀.sp = L.sp)
@@ -83,17 +83,17 @@ theorem frame_word {L : RL} {s₀ t : State} (hL : L.Ok) (hsp : s₀.sp = L.sp)
   have hF := hL.fnw
   have ha := hL.fal
   refine ⟨⟨_, by rw [hw]; exact List.mem_cons_self .., frameR_contains hL hsp hd⟩, ?_⟩
-  rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by simp only [frameBytes] at hd; omega)]
+  rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by simp only [frameBytes] at hd; omega_using [hd])]
   simp only [frameBytes] at hF hd
-  omega
+  omega_using [h8, ha]
 
 /-- The lengths in `s2`. -/
 theorem lens_entry (pl ql : BitVec 64) (hq : ql.toNat < 65536) :
     ql <<< 16 + pl = lens pl.toNat ql.toNat := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show ql.toNat * 2 ^ 16 < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show ql.toNat * 2 ^ 16 < 2 ^ 64 by omega_using [hq])]
+  omega_using []
 
 /-- A word of the frame past a write elsewhere in it. -/
 theorem word_wW (m : Mem) (F : Addr) {d d' : Nat} (v : BitVec 64) (hd : d + 8 ≤ d' ∨ d' + 8 ≤ d)
@@ -121,7 +121,7 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
   have hE : (allocd frameBytes s₀).sp = L.F := by simp only [allocd, hsp]
   have hwA : (allocd frameBytes s₀).wr = frameR s₀ :: s₀.wr := rfl
   have hsw : SaveW (allocd frameBytes s₀) L.F := fun i hi =>
-    frame_word hL hsp hwA (by simp only [oSave, frameBytes]; omega) (by simp only [oSave]; omega)
+    frame_word hL hsp hwA (by simp only [oSave, frameBytes]; omega_using [hi]) (by simp only [oSave]; omega_using [])
   rw [entry, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (saveRegs_ok _ hF hE hsw) fun t₁ h₁ => ?_
   -- The call's data.
@@ -130,7 +130,7 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
   have ek : s₀.gpr .a3 = L.key := by rw [← hLd]; rfl
   have ed : s₀.gpr .a7 = L.dig := by rw [← hLd]; rfl
   have el : s₀.gpr .a6 <<< 16 + s₀.gpr .a5 = lens L.pl L.ql := by
-    rw [lens_entry _ _ (by have := hL.ql; rw [← hLd] at this; simp only [rlOf] at this; omega)]
+    rw [lens_entry _ _ (by have := hL.ql; rw [← hLd] at this; simp only [rlOf] at this; omega_using [this])]
     rw [← hLd]; rfl
   have a0 : stackArg s₀ 0 = BitVec.ofNat 64 L.dl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
   have a1 : stackArg s₀ 1 = L.rand := by rw [← hLd]; rfl
@@ -139,7 +139,7 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
   have a4 : stackArg s₀ 4 = BitVec.ofNat 64 L.sl := by rw [← hLd]; exact (VG.Proof.Bignum.ofNat_toNat64 _).symm
   have hr : ∀ r, r ≠ .t0 → t₁.gpr r = s₀.gpr r := fun r h0 => h₁.others r h0
   have o₁ : Outside L.F 0 frameBytes s₀.mem t₁.mem :=
-    h₁.out.mono (by omega) (by simp only [oSave, frameBytes]; omega)
+    h₁.out.mono (by omega_using []) (by simp only [oSave, frameBytes]; omega_using [])
   -- The frame's words of `out`, `used` and the digest.
   have fw := fun (d : Nat) (hd : d + 8 ≤ frameBytes) (h8 : d % 8 = 0) => frame_word hL hsp (t := t₁)
     (by rw [h₁.wr]; rfl) hd h8
@@ -180,12 +180,12 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
     intro i hi
     rw [show 192 + 8 * i = frameBytes + 8 * i from rfl, F_add]
     have hsub : Region.Sub ⟨L.sp + BitVec.ofNat 64 (8 * i), 8⟩ (rsStackArgs s₀) := by
-      simp only [rsStackArgs, hsa0]; exact VG.Offset.sub_base _ (by omega)
+      simp only [rsStackArgs, hsa0]; exact VG.Offset.sub_base _ (by omega_using [hi])
     refine ⟨?_, ⟨_, List.mem_append_left _ (by rw [k₂.2.1, h₁.rd]; exact hrd'), ?_⟩, ?_⟩
-    · rw [readW_outside o₂ (hstk'.sub_right hsub) (by omega) (by omega)]
+    · rw [readW_outside o₂ (hstk'.sub_right hsub) (by omega_using []) (by omega_using [])]
       simp only [stackArg, stackArgAddr, hsp]
-    · simp only [rsStackArgs, hsa0]; exact VG.Offset.contains_base _ (by omega) (by omega)
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega)]; omega
+    · simp only [rsStackArgs, hsa0]; exact VG.Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega_using [hi])]; omega_using [hsp16]
   obtain ⟨r0, i0, al0⟩ := sw 0 (by decide)
   obtain ⟨r1, i1, al1⟩ := sw 1 (by decide)
   obtain ⟨r2, i2, al2⟩ := sw 2 (by decide)
@@ -223,15 +223,15 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
         ((writeW_outside _ _ _ (by decide)).mono (by decide) (by decide)))
   have o₁₄ : Outside L.F 0 88 t₁.mem t₄.mem :=
     (o₂'.mono (Nat.zero_le _) (by decide)).trans ((o₃.mono (Nat.zero_le _) (by decide)).trans
-      (o₄.mono (Nat.zero_le _) (by simp only [oNonce]; omega)))
+      (o₄.mono (Nat.zero_le _) (by simp only [oNonce]; omega_using [])))
   have o₀₄ : Outside L.F 0 frameBytes s₀.mem t₄.mem :=
     o₂.trans (((o₃.mono (Nat.zero_le _) (by decide)).trans
-      (o₄.mono (Nat.zero_le _) (by simp only [oNonce, frameBytes]; omega))))
+      (o₄.mono (Nat.zero_le _) (by simp only [oNonce, frameBytes]; omega_using []))))
   have w₃ : ∀ d, d + 8 ≤ 32 → t₄.mem.readW (off L.F d) 64 = t₃.mem.readW (off L.F d) 64 := fun d hd =>
-    o₄.word (by simp only [oNonce]; omega) (by omega)
+    o₄.word (by simp only [oNonce]; omega_using [hd]) (by omega_using [hd])
   have w₄ : ∀ d, 64 ≤ d → d + 8 ≤ 88 → t₄.mem.readW (off L.F d) 64 = t₂.mem.readW (off L.F d) 64 :=
-    fun d hd hd' => (o₄.word (by simp only [oNonce]; omega) (by omega)).trans
-      (o₃.word (by omega) (by omega))
+    fun d hd hd' => (o₄.word (by simp only [oNonce]; omega_using [hd]) (by omega_using [hd'])).trans
+      (o₃.word (by omega_using [hd]) (by omega_using [hd']))
   have gk : ∀ r, r ∉ [Reg.t6, .s3, .s4, .t1, .t2, .t3, .s5, .s6] → r ∉ [Reg.t0, .t1] →
       t₄.gpr r = t₃.gpr r := fun r _ h => k₄.1 r h
   have g2 : ∀ r, r ∉ [Reg.t6, .s3, .s4, .t1, .t2, .t3, .s5, .s6] → r ∉ [Reg.t0, .t1] →
@@ -240,8 +240,8 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
     by rw [k₄.2.2, wr₃], by rw [g2 _ (by decide) (by decide), b1], by rw [g2 _ (by decide) (by decide), b2],
     by rw [k₄.1 _ (by decide), c3], by rw [k₄.1 _ (by decide), c4], fun i hi => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩, by rw [k₄.1 _ (by decide), c5], by rw [k₄.1 _ (by decide), c6], nz⟩
-  · exact (o₁₄.word (by simp only [oSave]; omega) (by simp only [oSave]; omega)).trans (h₁.saved i hi)
-  · exact (o₁₄.word (by simp only [oSave]; omega) (by simp only [oSave]; omega)).trans h₁.savedRa
+  · exact (o₁₄.word (by simp only [oSave]; omega_using []) (by simp only [oSave]; omega_using [hi])).trans (h₁.saved i hi)
+  · exact (o₁₄.word (by simp only [oSave]; omega_using []) (by simp only [oSave]; omega_using [])).trans h₁.savedRa
   · rw [w₃ 0 (by decide), cm, word_wW _ _ _ (by decide) (by decide) (by decide),
       word_wW _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
   · rw [w₃ 8 (by decide), cm, word_wW _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
@@ -251,8 +251,8 @@ theorem entry_ok {s₀ : State} (h : rsContract.pre s₀) :
   · rw [w₄ oUsed (by decide) (by decide), bm, word_wW _ _ _ (by decide) (by decide) (by decide),
       Mem.readW_writeW_self64]
   · rw [w₄ oDig (by decide) (by decide), bm, Mem.readW_writeW_self64]
-  · exact bytes_outside o₀₄ hL.dFK (by have := hL.nwKey; omega)
-  · exact bytes_outside o₀₄ hL.dFD (by have := hL.nwDig; omega)
-  · exact bytes_outside o₀₄ hL.dFR (by have := hL.nwRand; omega)
+  · exact bytes_outside o₀₄ hL.dFK (by have := hL.nwKey; omega_using [this])
+  · exact bytes_outside o₀₄ hL.dFD (by have := hL.nwDig; omega_using [this])
+  · exact bytes_outside o₀₄ hL.dFR (by have := hL.nwRand; omega_using [this])
 
 end VG.Proof.Dsa.RISCV64.RS

@@ -29,17 +29,17 @@ theorem domHead_ok {s : State} {B : Addr} {Z k : Nat} {dp : Addr} {pb : List Byt
       Frm B [(8 * sG, 8), (8 * sQ, 8)] s.mem t.mem ∧ t.gpr .rdi = B ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have eq2 : dp + BitVec.ofNat 64 k + BitVec.ofNat 64 k = dp + BitVec.ofNat 64 (2 * k) := by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show k + k = 2 * k by omega]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show k + k = 2 * k by omega_using []]
   unfold domHead
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.rdx, .rcx, .rax] (Q := fun t => t.gpr .rdx = dp ∧
       t.gpr .rcx = BitVec.ofNat 64 k ∧ t.mem =
       (s.mem.writeW (off B (8 * sG)) (dp + BitVec.ofNat 64 k)).writeW
         (off B (8 * sQ)) (dp + BitVec.ofNat 64 (2 * k)))
-    (by xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sDom) (by change 136 ≤ Z; omega),
-      hs.ld (d := 8 * sK) (by change 152 ≤ Z; omega),
-      hs.st (d := 8 * sG) (by change 224 ≤ Z; omega),
-      hs.st (d := 8 * sQ) (by change 232 ≤ Z; omega), hD, hK, eq2]) rfl)
+    (by xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sDom) (by change 136 ≤ Z; omega_using [hZ]),
+      hs.ld (d := 8 * sK) (by change 152 ≤ Z; omega_using [hZ]),
+      hs.st (d := 8 * sG) (by change 224 ≤ Z; omega_using [hZ]),
+      hs.st (d := 8 * sQ) (by change 232 ≤ Z; omega_using [hZ]), hD, hK, eq2]) rfl)
     fun s₁ ⟨⟨hdx, hcx, hm⟩, k₁⟩ => ?_
   have o1 := writeW_outside s.mem B (d := 8 * sG) (dp + BitVec.ofNat 64 k) (by decide)
   have o2 := writeW_outside (s.mem.writeW (off B (8 * sG)) (dp + BitVec.ofNat 64 k)) B
@@ -50,10 +50,10 @@ theorem domHead_ok {s : State} {B : Addr} {Z k : Nat} {dp : Addr} {pb : List Byt
   have hsrc₁ := hsrc.congrK (InScr.of_frm f (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · change 224 ≤ Z; omega
-    · change 232 ≤ Z; omega)) k₁
+    · change 224 ≤ Z; omega_using [hZ]
+    · change 232 ≤ Z; omega_using [hZ])) k₁
   refine WP.mono (invalid_ok hdx hcx hk1 hk2 hl
-    (fun i hi => hsrc₁.rd i (by omega)) (fun i hi => hsrc₁.val i (by omega)))
+    (fun i hi => hsrc₁.rd i (by omega_using [hl, hi])) (fun i hi => hsrc₁.val i (by omega_using [hl, hi])))
     fun t ⟨hz, hm', k₂⟩ => ?_
   have K := (k₁.trans k₂).mono (show ∀ r ∈ [.rdx, .rcx, .rax] ++ [.rax, .rbp, .rsi], r ∈ mmRegs by decide)
   refine ⟨hz, ?_, ?_, by rw [hm']; exact f, (K.gpr (by decide)).trans hdi, K⟩

@@ -49,9 +49,9 @@ theorem fixedLookup_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : 
  let a := (FastNaf.magnitude 7 u j+1)/2
  have hmag := FastNaf.magnitude_le (w:=7) (Or.inr rfl) u j
  have hodd := (FastNaf.magnitude_odd_or_zero 7 u j).resolve_left hm0
- have ha : 1≤a := by dsimp [a]; omega
- have ha32 : a≤32 := by dsimp [a]; change FastNaf.magnitude 7 u j≤63 at hmag; omega
- have he : 2*a-1=FastNaf.magnitude 7 u j := by dsimp [a]; omega
+ have ha : 1≤a := by dsimp [a]; omega_using [hm0]
+ have ha32 : a≤32 := by dsimp [a]; change FastNaf.magnitude 7 u j≤63 at hmag; omega_using [hmag]
+ have he : 2*a-1=FastNaf.magnitude 7 u j := by dsimp [a]; omega_using [hodd]
  have es : ∀x∈fixedCoords,x∈winSlots P521Joint.K := by decide
  rw [fixedLoad_eq]
  rw [WP.block_append_iff]
@@ -77,9 +77,9 @@ theorem fixedLookup_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : 
        right
        change x+8*P521Joint.K.M.n≤P521Joint.KG.bits+j
        change x+8*P521Joint.K.M.n≤3304+j
-       omega
-     · rw [List.mem_singleton.mp hw]; change 3304+j+1≤3952 ∨ _; omega)
-     (by change 3304+j<2^64; omega),kb.mem,hbytes]
+       omega_using [this]
+     · rw [List.mem_singleton.mp hw]; change 3304+j+1≤3952 ∨ _; omega_using [hj])
+     (by change 3304+j<2^64; omega_using [hj]),kb.mem,hbytes]
  rw [he] at jd
  exact ⟨(kp.mono (by simp)).trans kd,id,jd,zd,dj,db⟩
 
@@ -103,9 +103,9 @@ theorem fixedEntry_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : P
  let a := (FastNaf.magnitude 7 u j+1)/2
  have hmag := FastNaf.magnitude_le (w:=7) (Or.inr rfl) u j
  have hodd := (FastNaf.magnitude_odd_or_zero 7 u j).resolve_left hm0
- have ha : 1≤a := by dsimp [a]; omega
- have ha32 : a≤32 := by dsimp [a]; change FastNaf.magnitude 7 u j≤63 at hmag; omega
- have he : 2*a-1=FastNaf.magnitude 7 u j := by dsimp [a]; omega
+ have ha : 1≤a := by dsimp [a]; omega_using [hm0]
+ have ha32 : a≤32 := by dsimp [a]; change FastNaf.magnitude 7 u j≤63 at hmag; omega_using [hmag]
+ have he : 2*a-1=FastNaf.magnitude 7 u j := by dsimp [a]; omega_using [hodd]
  have es : ∀x∈fixedCoords,x∈winSlots P521Joint.K := by decide
  rw [P521Joint.fixedEntry,fixedLoad_eq]
  apply WP.seq
@@ -132,9 +132,9 @@ theorem fixedEntry_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : P
        right
        change x+8*P521Joint.K.M.n≤P521Joint.KG.bits+j
        change x+8*P521Joint.K.M.n≤3304+j
-       omega
-     · rw [List.mem_singleton.mp hw]; change 3304+j+1≤3952 ∨ _; omega)
-     (by change 3304+j<2^64; omega),kb.mem,hbytes]
+       omega_using [this]
+     · rw [List.mem_singleton.mp hw]; change 3304+j+1≤3952 ∨ _; omega_using [hj])
+     (by change 3304+j<2^64; omega_using [hj]),kb.mem,hbytes]
  have vz : tmv C P521Joint.K.M.n base d P521Joint.K.zero=0 := by
    unfold tmv
    rw [kd.slot hL.win.lay ib.scr es (by decide) (by decide),ib.val _ (hV _ (by simp)),hzero]
@@ -148,7 +148,7 @@ theorem fixedEntry_ok {s : State} {base T : Addr} {u j : Nat} {C : Curve} {G : P
  change WP isa (Impl.Weierstrass.AArch64.Joint.signEntry fixedCfg) d _
  refine WP.mono (jointSignEntry_ok fixedCfg (by decide) hL.win.lay hL.al.al (by
    simpa only [fixedCfg] using hm) id vv
-   (by decide) (by decide) vz (by decide) (by change 3304+j<8192; omega) dj db jd zd) fun t ⟨Et,kt,it,jt,zt⟩ => ?_
+   (by decide) (by decide) vz (by decide) (by change 3304+j<8192; omega_using [hj]) dj db jd zd) fun t ⟨Et,kt,it,jt,zt⟩ => ?_
  refine ⟨Et,(kp.mono (by simp)).trans (kd.trans (kt.mono (by simp [fixedCfg]))),it,?_,zt⟩
  simpa only [fixedCfg,he,nafNegative,FastNaf.byte_negative 7 u j,FastNaf.point] using jt
 end VG.Proof.Ecdsa.Verify.AArch64.P521.Joint

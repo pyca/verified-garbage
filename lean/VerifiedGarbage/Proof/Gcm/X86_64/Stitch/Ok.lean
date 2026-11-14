@@ -259,9 +259,9 @@ theorem stored {H : Block} {C : Addr} {s s' : State} {j d : Nat} (hd : d = 2 * (
       Spec.Gcm.preparedPower (hpow H (2 * (j - 8 + i) + 2 - l)) := fun i hi l hl => by
   have h := sv i (by rw [pregs_rev_length]; exact hi) l hl
   rw [pregs_rev i (by rw [pregs_rev_length]; exact hi),
-    show 32 * (j + i) + 16 * l = 256 + 32 * (j - 8 + i) + 16 * l by omega] at h
+    show 32 * (j + i) + 16 * l = 256 + 32 * (j - 8 + i) + 16 * l by omega_using [hj]] at h
   rw [h]
-  exact eq_prepared (by rw [pw (7 - i) (by omega) l hl]; congr 1; omega)
+  exact eq_prepared (by rw [pw (7 - i) (by omega_using []) l hl]; congr 1; omega_using [hd, hi, hl])
 
 /-- `vzeroupper` keeps all but the vector registers. -/
 theorem vzu_ok (s : State) :

@@ -60,14 +60,14 @@ theorem body_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
   refine WP.ite (decide ((V .r23).toNat=0))
     (eval_zero (by simpa only [BitVec.ofNat_toNat,BitVec.setWidth_eq] using he.fr .r23 (by decide)) (V .r23).isLt) (fun hz => ?_) (fun hn => ?_)
   · have hz : (V .r23).toNat=0 := by simpa using hz
-    have hc : count=0 := by have := lay.bound; omega
+    have hc : count=0 := by have := lay.bound; omega_using [hz, this]
     refine WP.mono (smallBody_ok L he hd hR hv ha hab) fun t ht => ?_
     change BodyOutWith _ _ _ _ _ _ _ _ at ht
     simp only [hc,Spec.Aes.bytesAt,List.range_zero,List.map_nil,List.nil_append,List.drop_zero] at ht ⊢
     exact ⟨ht.env,ht.ciphertext,ht.tag,ht.frame.mono (fun _ hr => List.mem_append_left _ hr)⟩
   · have hn : 0<(V .r23).toNat := by
       have hh : (V .r23).toNat≠0 := by simpa using hn
-      omega
+      omega_using [hh]
     refine WP.seq (WP.mono (source_ok he) fun u hu => ?_)
     subst u
     exact partial_ok L (source_env he) (hd.of_eq rfl rfl) lay hR hv ha hn hab

@@ -25,14 +25,14 @@ theorem sel_ok {s : State} {B : Addr} {Z n eA eT eo : Nat} (hs : Scr s B Z)
   unfold VG.Impl.Bignum.AArch64.FastFinish.sel
   refine WP.seq (WP.mono (WP.keep [.x14, .x16] (Q := fun t => t.gpr .x16 = off B eA ∧
     t.gpr .x14 = BitVec.ofNat 64 n ∧ t.c = s.c ∧ t.mem = s.mem) (by
-      brun [h8, h12, Square.shr2_ofNat (show 4*n < 2 ^ 64 by omega)]
+      brun [h8, h12, Square.shr2_ofNat (show 4*n < 2 ^ 64 by omega_using [hw'])]
       congr 1
-      omega)
+      omega_using [])
     (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h16, h14, hc₁, hm₁⟩, k₁⟩ => ?_)
   have h0 : SelInv s₁ B Z eA eT eo lt 0 s₁ :=
     ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [k₁.gpr .x6 (by decide), h6]; rfl,
       by rw [k₁.gpr .x5 (by decide), h5]; rfl, hc₁.trans hc, Outside.refl _ _ _ _, by cases lt <;> rfl⟩
-  refine WP.mono (wp_countdown (N := n) (by omega) (by omega) (fun j => SelInv s₁ B Z eA eT eo lt (4*j))
+  refine WP.mono (wp_countdown (N := n) (by omega_using [hw']) (by omega_using [hw]) (fun j => SelInv s₁ B Z eA eT eo lt (4*j))
       (fun j hj _ hI _ => selTile_ok hA hT ho sA sT hj hI) h0 h14)
     fun t hI => ⟨by rw [hI.val, hm₁], by rw [← hm₁]; exact hI.out, (k₁.trans hI.keep).mono (by decide)⟩
 

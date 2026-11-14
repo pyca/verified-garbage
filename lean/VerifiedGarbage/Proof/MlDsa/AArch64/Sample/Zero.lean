@@ -40,19 +40,19 @@ theorem zero_step {aP : Addr} {s₁ : State} (hw : ∀ i < 256, InRegions s₁.w
     fun u₁ h₁ => wp_addImm (by decide) fun u₂ h₂ e₂ => wp_subImm (by decide) fun u₃ h₃ e₃ => wp_nil ?_
   have c4 : (u₂.gpr .x4).toNat = 256 - k := by rw [h₂.get .x4, h₁.gpr, h.x4]
   have v4 : (u₃.gpr .x4).toNat = 256 - (k + 1) := by
-    rw [e₃, toNat_sub_n (by rw [c4]; simp; omega), c4]
+    rw [e₃, toNat_sub_n (by rw [c4]; simp; omega_using [hk]), c4]
     simp
-    omega
+    omega_using []
   have m₃ : u₃.mem = u.mem.writeW (coeffAddr aP k) ((u.gpr .x9).setWidth 32) := by
     rw [h₃.mem, h₂.mem, h₁.mem]
   have z : (u.gpr .x9).setWidth 32 = 0 := by rw [h.keep.get .x9, h9]; rfl
   refine ⟨⟨(h.keep.trans ((h₁.keep.trans h₂.keep).trans h₃.keep)).mono, ?_, v4, fun i hi => ?_, ?_⟩,
-    by rw [v4]; omega⟩
+    by rw [v4]; omega_using [hk]⟩
   · rw [h₃.get .x3, e₂, h₁.gpr, h.x3, coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_succ]
-  · rw [m₃, z, coeffAt_writeW _ _ (by omega) hk]
+  · rw [m₃, z, coeffAt_writeW _ _ (by omega_using [hk, hi]) hk]
     split
     · rfl
-    · exact h.zero i (by omega)
+    · exact h.zero i (by omega_arith)
   · rw [m₃]
     exact h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ hk)
 

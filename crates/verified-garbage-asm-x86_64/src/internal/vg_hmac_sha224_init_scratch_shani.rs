@@ -11,25 +11,33 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha224_init_scratch_shani() {
     core::arch::naked_asm!(
-        r#".base64 "SYmYYAIAAEmJqGgCAABNiaBwAgAATYmoeAIAAE2JsIACAABNibiIAgAASIn7SYn0TYnHSInVSYnNSInf"
-call {vg_sha224_init}
+        r#".base64 "SYlYMEmJaDhNiWBATYloSE2JcFBNiXhYSIn7SYn0TYnHSInVSYnNSInf"
+call {vg_sha224_init_core}
 .base64 "TInn"
-call {vg_sha224_init}
-.base64 "uDY2NjaJQyCJQySJQyiJQyyJQzCJQzSJQziJQzyJQ0CJQ0SJQ0iJQ0yJQ1CJQ1SJQ1iJQ1xBvgAAAABNhe0="
+call {vg_sha224_init_core}
+.base64 "SLg2NjY2NjY2NmZID27AZg9swPMPf0Mg8w9/QzDzD39DQPMPf0NQQb4AAAAATInpSMHpBEiFyQ=="
 je 20f
 22:
-.base64 "Qg+2RDUAg/A2QohEMyBJg8YBTTnu"
+.base64 "80IPb0w1AGYP78hNifJJg+Iw80IPf0wTIEmDxhBIg+kB"
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0MgNWpqampBiUQkIItDJDVqampqQYlEJCSLQyg1ampqakGJRCQoi0MsNWpqampBiUQkLItDMDVqampqQYlEJDCLQzQ1ampqakGJRCQ0i0M4NWpqampBiUQkOItDPDVqampqQYlEJDyLQ0A1ampqakGJRCRAi0NENWpqampBiUQkRItDSDVqampqQYlEJEiLQ0w1ampqakGJRCRMi0NQNWpqampBiUQkUItDVDVqampqQYlEJFSLQ1g1ampqakGJRCRYi0NcNWpqampBiUQkXEiJ3kiDxiBIid+6AQAAAEyJ+Q=="
+.base64 "TTnu"
+je 23f
+25:
+.base64 "Qg+2RDUAg/A2TYnySYPiP0KIRBMgSYPGAU057g=="
+jne 25b
+jmp 24f
+23:
+24:
+.base64 "SLhqampqampqamZID27IZg9syfMPb1MgZg/v0fNBD39UJCDzD29TMGYP79HzQQ9/VCQw8w9vU0BmD+/R80EPf1QkQPMPb1NQZg/v0fNBD39UJFBIid5Ig8YgSInfugEAAABMifk="
 call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPTInjTInmSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPSYufYAIAAEmLr2gCAABNi6dwAgAATYuveAIAAE2Lt4ACAABNi7+IAgAAww=="
+.base64 "SIn7SYnPSYtfMEmLbzhNi2dATYtvSE2Ld1BNi39Yww=="
 .p2align 6"#,
-        vg_sha224_init = sym crate::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym crate::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
 }

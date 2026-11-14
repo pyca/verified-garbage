@@ -18,7 +18,7 @@ theorem Memory.after_control {p : Inputs} {sp : BitVec 32} {s t : State} {d : Na
     Memory p sp t ∧ WorkspaceEq (State.addr p.base) (8*p.len) s.mem t.mem := by
   have choices : d = 36 ∨ d = 40 ∨ d = 68 := by
     simpa only [List.mem_cons,List.not_mem_nil,or_false] using hd
-  have fit : d+4 ≤ 72 := by omega
+  have fit : d+4 ≤ 72 := by omega_using [choices]
   have sub := Offset.sub_base (State.addr s.sp) (d := d) (n := 4) (k := 72) fit
   have workspaceSep : ∀ r ∈ [⟨off (State.addr s.sp) d,4⟩],
       (⟨State.addr p.base,8*p.len⟩ : Region).Disjoint r := by
@@ -31,11 +31,11 @@ theorem Memory.after_control {p : Inputs} {sp : BitVec 32} {s t : State} {d : Na
     intro r hr
     have eq := List.mem_singleton.mp hr
     subst r
-    exact Offset.base_disjoint (State.addr s.sp) (by omega) (by omega)
+    exact Offset.base_disjoint (State.addr s.sp) (by omega_using [choices]) (by omega_using [choices])
   obtain ⟨ready,workspace⟩ := h.ready.after_external frame workspaceSep baseSep rest ptr
   have context := h.context.after_local fit frame rest ptr
-    (by intro e he; simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at he; omega)
-    (by intro e he; simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at he; omega)
+    (by intro e he; simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at he; omega_using [he])
+    (by intro e he; simp only [slots,List.mem_cons,List.not_mem_nil,or_false] at he; omega_using [choices, he])
   refine ⟨⟨context,ready,h.calls.after rest,rest.sp.trans h.fixed,h.output.after rest,
     h.workspaceSeparate,h.domainSeparate,h.localSeparate,h.callSeparate,?_,?_⟩,workspace⟩
   · have word := frame.readW (w := 32) (r := ⟨off (State.addr s.sp) 16,4⟩) (Region.contains_self _ _)
@@ -44,7 +44,7 @@ theorem Memory.after_control {p : Inputs} {sp : BitVec 32} {s t : State} {d : Na
         have eq := List.mem_singleton.mp hr
         subst r
         exact Offset.disjoint (State.addr s.sp) (d := 16) (n := 4) (e := d) (k := 4)
-          (Or.inl (by omega)) (by decide) (by omega)) (by decide)
+          (Or.inl (by omega_using [choices])) (by decide) (by omega_using [choices])) (by decide)
     rw [h.fixed] at word
     exact word.trans h.bitsSaved
   · have word := frame.readW (w := 32) (r := ⟨off (State.addr s.sp) 44,4⟩) (Region.contains_self _ _)
@@ -53,7 +53,7 @@ theorem Memory.after_control {p : Inputs} {sp : BitVec 32} {s t : State} {d : Na
         have eq := List.mem_singleton.mp hr
         subst r
         exact Offset.disjoint (State.addr s.sp) (d := 44) (n := 4) (e := d) (k := 4)
-          (by omega) (by decide) (by omega)) (by decide)
+          (by omega_using [choices]) (by decide) (by omega_using [choices])) (by decide)
     rw [h.fixed] at word
     exact word.trans h.rowsSaved
 

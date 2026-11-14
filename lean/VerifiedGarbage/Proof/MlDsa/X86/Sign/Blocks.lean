@@ -48,7 +48,7 @@ theorem wp_ldsc {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {
 theorem ctx_write {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {o n w : Nat} (hc : (Y p).okW (sc o n) = true)
     (hw : w / 8 ≤ n) (v : BitVec w) : Ctx (Y p) s₀ { s with mem := s.mem.writeW (Buf.addr s₀ (sc o n)) v } := by
   obtain ⟨hc₁, hc₂⟩ := Lay.okW_iff.mp hc
-  obtain ⟨r, hr, hcr⟩ := Buf.contains hp hc₁ hc₂ (o := 0) (n := w / 8) (by show 0 + w / 8 ≤ n; omega)
+  obtain ⟨r, hr, hcr⟩ := Buf.contains hp hc₁ hc₂ (o := 0) (n := w / 8) (by show 0 + w / 8 ≤ n; omega_using [hw])
   rw [BitVec.add_zero] at hcr
   exact ⟨h.esp, h.rd, h.wr, h.esi, h.frame.writeW hr _ hcr⟩
 
@@ -120,9 +120,9 @@ theorem seqR_piece {f : Nat → Prog isa} {I : Nat → State → State → Prop}
     ∀ (a n : Nat), (∀ i, a ≤ i → i < a + n → SP p (I i) (I (i + 1)) (f i)) → SP p (I a) (I (a + n)) (seqR f a n)
   | a, 0, _ => nil_piece fun _ _ _ h => h
   | a, n + 1, h => by
-    refine Piece.seq (h a (Nat.le_refl _) (by omega)) ?_
-    have := seqR_piece (I := I) (a + 1) n fun i hi hi' => h i (by omega) (by omega)
-    rwa [show a + 1 + n = a + (n + 1) by omega] at this
+    refine Piece.seq (h a (Nat.le_refl _) (by omega_using [])) ?_
+    have := seqR_piece (I := I) (a + 1) n fun i hi hi' => h i (by omega_using [hi]) (by omega_using [hi'])
+    rwa [show a + 1 + n = a + (n + 1) by omega_using []] at this
 
 /-- The branch on `OK`, which is 1 or 0 as `b` of the initial state says. -/
 theorem okIte_piece (hc : (Y p).ok (sc oOK 4) = true) {t e : Prog isa} (b : State → Bool)

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
@@ -53,7 +54,7 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem1024.X86_64
 /-! ## The stack the functions use -/
 
 theorem xdLe_s4 (v : Sample4Impl) {k : Nat} (hk : 24 ≤ k) : xdLe k v.callee.code = true :=
-  xdLe_of_le (by rw [x86_64Depth_noSp v.nosp]; have := v.depth_le; omega)
+  xdLe_of_le (by rw [x86_64Depth_noSp v.nosp]; have := v.depth_le; omega_using [hk, this])
 
 theorem Codecs.ce_xd {k : Nat} (cs : Codecs) : xdLe k cs.ce = true :=
   xdLe_of_le (by rw [x86_64Depth_zero (Codecs.ceI cs).nosp (Codecs.ceI cs).depth]; exact Nat.zero_le _)
@@ -237,13 +238,13 @@ theorem bytesAt_agree {m₁ m₂ : Mem} {p : Addr} {k : Nat}
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
   rw [Offset.add_add]
-  exact h _ (Offset.contains_base _ (by omega) (by omega))
+  exact h _ (Offset.contains_base _ (by omega_using [hn, hi]) (by omega_using [hk, hn, hi]))
 
 /-- `bytesAt_agree` at offset 0. -/
 theorem bytesAt_agree0 {m₁ m₂ : Mem} {p : Addr} {k : Nat}
     (h : ∀ a, Region.Contains ⟨p, k⟩ a 1 → m₁ a = m₂ a) (hk : k < 2 ^ 64) {n : Nat} (hn : n ≤ k) :
     Spec.Sha3.bytesAt m₁ p n = Spec.Sha3.bytesAt m₂ p n := by
-  have := bytesAt_agree h hk (o := 0) (n := n) (by omega)
+  have := bytesAt_agree h hk (o := 0) (n := n) (by omega_using [hn])
   rwa [show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
 
 theorem vs4 {vs : List (BitVec 64)} (h : vs.length = 4) : ∃ a b c d, vs = [a, b, c, d] :=
@@ -258,7 +259,7 @@ theorem vs6 {vs : List (BitVec 64)} (h : vs.length = 6) : ∃ a b c d e f, vs = 
 /-- Two buffers of a contract, one of them writable, lie apart. -/
 theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || b.2) = true → a.1.Disjoint b.1))
     {i j : Nat} (hij : i < j) (hj : j < l.length) (hw : (l[i].2 || l[j].2) = true) : l[i].1.Disjoint l[j].1 :=
-  List.pairwise_iff_getElem.mp h i j (by omega) hj hij hw
+  List.pairwise_iff_getElem.mp h i j (by omega_using [hij, hj]) hj hij hw
 
 /-! ## Wiping only what the code writes
 
@@ -373,7 +374,7 @@ theorem tail_local {m₁ m₂ m' : Mem} {p : Addr} {w len : Nat} (hlen : len < 2
     ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m₂ (p + BitVec.ofNat 64 i) := by
   intro i h1 h2
   rw [h i h1 h2]
-  exact hb _ (Offset.contains_base _ (by omega) (by omega))
+  exact hb _ (Offset.contains_base _ (by omega_using [h2]) (by omega_using [hlen, h2]))
 
 theorem tail4_local {P : Post4} {w len : Nat} (params : List (String × Param))
     (hbuf : ∀ a b c d, ((⟨d, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d]) (hlen : len < 2 ^ 64)
@@ -425,10 +426,10 @@ theorem tail_out {m m₁ m₂ : Mem} {p : Addr} {w len : Nat} (hlen : len < 2 ^ 
     ∀ i, w ≤ i → i < len → m₂ (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) := by
   intro i h1 h2
   rw [← h i h1 h2]
-  refine (hb _ (Offset.contains_base _ (by omega) (by omega)) fun hc => ?_).symm
+  refine (hb _ (Offset.contains_base _ (by omega_using [h2]) (by omega_using [hlen, h2])) fun hc => ?_).symm
   simp only [Region.Contains] at hc
-  rw [Mem.sub_ofNat_toNat p (by omega)] at hc
-  omega
+  rw [Mem.sub_ofNat_toNat p (by omega_using [hlen, h2])] at hc
+  omega_using [h1, hc]
 
 theorem tail4_out {P : Post4} {w len : Nat} (params : List (String × Param))
     (hbuf : ∀ a b c d, ((⟨d, len⟩ : Region), true) ∈ Sig.bufs params [a, b, c, d]) (hwl : w ≤ len)
@@ -1059,5 +1060,134 @@ def Wipe.suffix (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) : Strin
 /-- The CPU features the functions need: those of `v` and `z`. -/
 def Wipe.features (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) : List String :=
   v.features ++ z.features.filter (!v.features.contains ·)
+
+/-! ## Without secret residue
+
+The postconditions of the functions read the memory on return only within
+their buffers (`X86_64.Scrub.PostOut`), so that each returns with its whole
+stack, 56 bytes, wiped (`X86_64.Scrub.withScrubAll`). -/
+
+/-- A buffer scrubbed in one memory on return is in another that agrees on it. -/
+theorem scrubbed_congr {m m₁ m₂ : Mem} {p : Addr} {len : Nat}
+    (hb : ∀ a, Region.Contains ⟨p, len⟩ a 1 → m₁ a = m₂ a) (h : Spec.Zeroize.scrubbed m m₁ p len) :
+    Spec.Zeroize.scrubbed m m₂ p len := fun a ha => hb a ha ▸ h a ha
+
+theorem keyGenOut (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem.keyGenContract X86_64.abi stack) (Spec.MlKem.keyGenSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+    simp only [Spec.MlKem.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.1 (by decide) (n := 1184) (by decide),
+      ← bytesAt_agree0 hb.2.2.1 (by decide) (n := 2400) (by decide)]
+    exact h1
+
+theorem encapsHOut (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem.encapsHContract X86_64.abi stack) (Spec.MlKem.encapsHSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
+    simp only [Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 32) (by decide),
+      ← bytesAt_agree0 hb.2.2.2.2.1 (by decide) (n := 1088) (by decide)]
+    exact h1
+
+theorem encapsOut (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem.encapsContract X86_64.abi stack) (Spec.MlKem.encapsSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
+    simp only [Spec.MlKem.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide),
+      ← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 1088) (by decide)]
+    exact h1
+
+theorem decapsOut (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem.decapsContract X86_64.abi stack) (Spec.MlKem.decapsSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+    simp only [Spec.MlKem.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide)]
+    exact h1
+
+theorem keyGen1024Out (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem1024.keyGenContract X86_64.abi stack) (Spec.MlKem1024.keyGenSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+    simp only [Spec.MlKem1024.keyGenSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.1 (by decide) (n := 1568) (by decide),
+      ← bytesAt_agree0 hb.2.2.1 (by decide) (n := 3168) (by decide)]
+    exact h1
+
+theorem encapsH1024Out (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem1024.encapsHContract X86_64.abi stack) (Spec.MlKem1024.encapsHSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
+    simp only [Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 32) (by decide),
+      ← bytesAt_agree0 hb.2.2.2.2.1 (by decide) (n := 1568) (by decide)]
+    exact h1
+
+theorem encaps1024Out (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem1024.encapsContract X86_64.abi stack) (Spec.MlKem1024.encapsSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, rfl⟩ := vs5 hlen
+    simp only [Spec.MlKem1024.encapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide),
+      ← bytesAt_agree0 hb.2.2.2.1 (by decide) (n := 1568) (by decide)]
+    exact h1
+
+theorem decaps1024Out (stack : Nat) :
+    Scrub.PostOut (Spec.MlKem1024.decapsContract X86_64.abi stack) (Spec.MlKem1024.decapsSig.retBits 64) :=
+  Scrub.postOut_of_local Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, rfl⟩ := vs4 hlen
+    simp only [Spec.MlKem1024.decapsSig, Sig.bufs_array, Sig.bufs_nil, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.reduceMul] at hb
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₁ x at h
+    change Curry.apply (α := Mem → Mem → BitVec 32 → Prop) [.addr, .addr, .addr, .addr] _ _ m m₂ x
+    dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
+    obtain ⟨h1, h2⟩ := h
+    refine ⟨?_, scrubbed_congr hb.2.2.2 h2⟩
+    rw [← bytesAt_agree0 hb.2.2.1 (by decide) (n := 32) (by decide)]
+    exact h1
 
 end VG.Proof.MlKem.X86_64

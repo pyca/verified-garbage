@@ -4,13 +4,103 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.Data
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
 public import VerifiedGarbage.Proof.Mont.Words32
-
 import VerifiedGarbage.Proof.MillerRabin.X86.DataSlots
 import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
 import VerifiedGarbage.Proof.MillerRabin.X86.FlagMath
 import VerifiedGarbage.Proof.MillerRabin.X86.MaskMath
-import VerifiedGarbage.Proof.MillerRabin.X86.AdvanceWindow
+public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
+import VerifiedGarbage.Proof.MillerRabin.X86.Counter
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
+
+/-! ### `MillerRabin.X86.AdvanceWindow`, which only this module used -/
+
+section
+
+/-! # Advance the exponent word and count down its eight public windows -/
+
+-- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/ShiftWindow.lean`, which only this module imported.
+section
+
+/-! # Four native-word doublings advance one fixed-width secret window -/
+
+section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86
+
+theorem doubleFour_ok (s : State) :
+    WP isa (.block [.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+      .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax)]) s fun t =>
+      t.gpr .eax = s.gpr .eax <<< 4 ∧ t.mem = s.mem ∧ Keeps [.eax] s t := by
+  refine wp_addS rfl fun a A _ => wp_addS rfl fun b B _ =>
+    wp_addS rfl fun c C _ => wp_addS rfl fun t T _ => WP.block_nil ?_
+  refine ⟨?_, T.mem.trans (C.mem.trans (B.mem.trans A.mem)),
+    ((A.keeps.trans B.keeps).trans C.keeps).trans T.keeps⟩
+  rw [T.gpr, C.gpr, B.gpr, A.gpr]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
+  omega
+
+end VG.Proof.MillerRabin.X86
+end
+
+end
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.MillerRabin.X86
+open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
+
+def advanceWindow : List Instr :=
+  [.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .store (slot sValue) .eax, .mov .eax (.mem (slot sWindows)),
+    .alu .sub .eax (.imm 1), .store (slot sWindows) .eax]
+
+theorem advanceWindow_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
+    (q : Nat) (positive : 0 < q) (bound : q < 2 ^ 32)
+    (count : s.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 q) :
+    WP isa (.block advanceWindow) s fun t =>
+      t.mem.readW (off g.W sValue) 32 = s.gpr .eax <<< 4 ∧
+      w32 t.mem g.W sWindows = q - 1 ∧ t.zf = some (decide (q = 1)) ∧
+      Outs g.W [(sValue, 4), (sWindows, 4)] s.mem t.mem ∧ Keeps [.eax] s t ∧ Context g t := by
+  have header := v.headerFit
+  have fitV : sValue + 4 ≤ g.L := by unfold sValue; omega_using [header]
+  change WP isa (.block ([.alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax)] ++
+    [.store (slot sValue) .eax, .mov .eax (.mem (slot sWindows)),
+      .alu .sub .eax (.imm 1), .store (slot sWindows) .eax])) s _
+  refine WP.block_append (WP.mono (doubleFour_ok s) fun a ⟨AX, Ma, Ka⟩ => ?_)
+  have Ca := C.keepMem Ka (by decide) Ma
+  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sValue) (by omega_using [fitV]))
+    (ws_write Ca.ws (y := 0 + sValue) (n := 4) (by omega_using [fitV])) fun b B => ?_
+  have Ov : Outside g.W sValue 4 a.mem b.mem := by
+    rw [B.mem, Nat.zero_add]
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [fitV, this])
+  have Cb := Ca.keepScalar (B.keeps []) (by decide) Ov (by unfold scratchWord sValue; simp)
+  have oldCount : b.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 q := by
+    have unchanged := BitVec.eq_of_toNat_eq (Ov.w32 (d := sWindows)
+      (by unfold sValue sWindows; omega_using []) (by unfold sWindows; decide))
+    rw [unchanged, Ma, count]
+  refine WP.mono (counterDown_ok v Cb sWindows q (by unfold scratchWord sWindows; simp)
+    positive bound oldCount) fun t ⟨Count, Z, Ow, Kw, Ct⟩ => ?_
+  have O₁ : Outs g.W [(sValue, 4), (sWindows, 4)] s.mem b.mem := by
+    rw [Ma] at Ov
+    exact Outs.of_outside Ov (by simp)
+  refine ⟨?_, Count, Z, O₁.trans (Outs.of_outside Ow (by simp)),
+    (Ka.widen (B.keeps [])).trans Kw, Ct⟩
+  have unchanged := BitVec.eq_of_toNat_eq (Ow.w32 (d := sValue)
+    (by unfold sValue sWindows; omega_using []) (by unfold sValue; decide))
+  rw [unchanged, B.mem, Nat.zero_add, Mem.readW_writeW_self32, AX]
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
 /-! # One exponent-window update retains exact known values -/
 
 -- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/WindowBits.lean`, which only this module imported.
@@ -98,20 +188,20 @@ theorem windowEnd_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
       w32 t.mem g.W sWindows = q - 1 ∧ t.zf = some (decide (q = 1)) ∧
       Outs g.W windowWrites s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx] s t ∧ Context g t := by
   have header := v.headerFit
-  have fitF : sFlag + 4 ≤ g.L := by unfold sFlag; omega
+  have fitF : sFlag + 4 ≤ g.L := by unfold sFlag; omega_using [header]
   change WP isa (.block (windowEnd.take 12 ++ .store (slot sFlag) .ecx :: advanceWindow)) s _
   refine WP.block_append (WP.mono (windowBits_ok v C E1 E2 F eq1 eq2 flag)
     fun a ⟨AX, Flag, Ma, Ka⟩ => ?_)
   have Ca := C.keepMem Ka (by decide) Ma
-  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sFlag) (by omega))
-    (ws_write Ca.ws (y := 0 + sFlag) (n := 4) (by omega)) fun b B => ?_
+  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := sFlag) (by omega_using [fitF]))
+    (ws_write Ca.ws (y := 0 + sFlag) (n := 4) (by omega_using [fitF])) fun b B => ?_
   have Of : Outside g.W sFlag 4 a.mem b.mem := by
     rw [B.mem, Nat.zero_add]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [fitF, this])
   have Cb := Ca.keepScalar (B.keeps []) (by decide) Of (by unfold scratchWord sFlag; simp)
   have oldCount : b.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 q := by
     have unchanged := BitVec.eq_of_toNat_eq (Of.w32 (d := sWindows)
-      (by unfold sFlag sWindows; omega) (by unfold sWindows; decide))
+      (by unfold sFlag sWindows; omega_using []) (by unfold sWindows; decide))
     rw [unchanged, Ma, count]
   refine WP.mono (advanceWindow_ok v Cb q positive bound oldCount)
     fun t ⟨Value, Count, Z, Ot, Kt, Ct⟩ => ?_
@@ -171,7 +261,7 @@ theorem Data.windowEnd {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List
   have countWord : t.mem.readW (off g.W sWindows) 32 = BitVec.ofNat 32 (q - 1) := by
     apply BitVec.eq_of_toNat_eq
     change w32 t.mem g.W sWindows = _
-    rw [Count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]
   refine ⟨D.afterSlots v C [sFlag, sValue, sWindows] ?_ ?_ O, Z, O, K⟩
   · intro d mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

@@ -52,7 +52,7 @@ theorem pfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
 abbrev scrLen (p : Params) : Nat := scratchWords p * 8
 
 theorem scr_eq (p : Params) : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) := by
-  simp only [scrLen, scratchWords]; omega
+  simp only [scrLen, scratchWords]; omega_using []
 
 theorem PFacts.scr {p : Params} (_ : PFacts p) : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) :=
   scr_eq p
@@ -60,8 +60,8 @@ theorem PFacts.scr {p : Params} (_ : PFacts p) : scrLen p = 1024 * (p.k * p.ℓ 
 theorem PFacts.small {p : Params} (hF : PFacts p) : scrLen p < 2 ^ 32 ∧ p.pkLen < 2 ^ 32 ∧ p.skLen < 2 ^ 32 := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   have hls : lenS p * (p.ℓ + p.k) ≤ 128 * 15 := by
-    rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e] <;> exact Nat.mul_le_mul (by omega) (by omega)
-  refine ⟨by rw [scr_eq]; omega, by rw [hF.pk]; omega, by rw [hF.sk, oT0]; omega⟩
+    rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e] <;> exact Nat.mul_le_mul (by omega_using []) (by omega_using [hk, hl])
+  refine ⟨by rw [scr_eq]; omega_using [hk, hl, hkl], by rw [hF.pk]; omega_using [hk], by rw [hF.sk, oT0]; omega_using [hk, hls]⟩
 
 /-! ## The layout -/
 
@@ -71,7 +71,7 @@ abbrev kgR : List (Reg × Nat) := [(.x25, 32)]
 abbrev kgW (p : Params) : List (Reg × Nat) := [(.x28, scrLen p), (.x26, p.pkLen), (.x27, p.skLen)]
 
 theorem le_of_wfP {S sp : Nat} (h : wfP S sp) : S ≤ sp := by
-  unfold wfP at h; split at h <;> omega
+  unfold wfP at h; split at h <;> omega_arith
 
 /-- The stack below the stack pointer is apart from the regions, from the
 contract's evaluated precondition. -/

@@ -34,16 +34,16 @@ theorem packedCount_exact {mask : Nat} (hm : mask < 256) :
 theorem packedCount_mask {mask : Nat} (hm : mask < 256) :
     packedCount mask % 256 = mask := by
   rw [packedCount_exact hm]
-  omega
+  omega_using [hm]
 
 theorem packedCount_count {mask : Nat} (hm : mask < 256) :
     packedCount mask / 256 = (acceptedLanes mask).length := by
   rw [packedCount_exact hm]
-  omega
+  omega_using [hm]
 
 theorem packedCount_bound {mask : Nat} (hm : mask < 256) : packedCount mask < 2304 := by
   rw [packedCount_exact hm]
   have := accepted_length mask
-  omega
+  omega_using [hm, this]
 
 end VG.Proof.MlKem.AArch64.Rej8

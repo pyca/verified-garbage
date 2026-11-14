@@ -64,8 +64,8 @@ theorem signCopy_ok {s t : State} (hp : SignPre 64 s) (h : SignInv s t) :
   rw [← List.append_nil (copyIn .s1 .s11 128 64)]
   refine copyIn_ok (P := s.gpr .a1) (F := s.gpr .a6) (o := 128) (n := 64) (by decide) (by decide)
     (h.regs _ (by decide)) (h.regs _ (by decide)) (by decide)
-    (fun i hi => in_base (List.mem_append_left _ hS) (by omega) (by omega))
-    (fun i hi => in_base (sign_Fw hp h) (by omega) (by omega))
+    (fun i hi => in_base (List.mem_append_left _ hS) (by omega_using [hi]) (by omega_using [hi]))
+    (fun i hi => in_base (sign_Fw hp h) (by omega_using [hi]) (by omega_using [hi]))
     (hp.sF.sub_right (Offset.sub_base _ (by decide))) fun u hu hfu hb => WP.block_nil ?_
   refine ⟨signStep hp h hu.rd hu.wr hu.sp (fun r hr => hu.gpr r (by revert hr; cases r <;> decide)) hfu
       fun r hr => by

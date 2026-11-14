@@ -102,7 +102,7 @@ def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
   pre_of _ s h := by
     obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, -⟩ := h
     sig_pre [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-    exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD⟩
+    exact ⟨stk, by have := s.sp.isLt; omega_using [], rd, wr, kd, bk, bd, fK, fD⟩
   post_of _ s s' _ h := by
     sig_post [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Spec.Sm4.ecbPost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h

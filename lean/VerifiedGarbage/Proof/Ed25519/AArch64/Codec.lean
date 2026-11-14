@@ -23,7 +23,7 @@ theorem bytesAt_st4 (m : Mem) (q : Addr) (w0 w1 w2 w3 : BitVec 64) :
   have := ((st4 m q 0 w0 w1 w2 w3).readW (q + 8) 64).isLt
   have := ((st4 m q 0 w0 w1 w2 w3).readW (q + 16) 64).isLt
   have := ((st4 m q 0 w0 w1 w2 w3).readW (q + 24) 64).isLt
-  exact bytesAt_leBytes_words64 _ _ _ (by omega) (by omega) (by omega) (by omega)
+  exact bytesAt_leBytes_words64 _ _ _ (by omega_using [e]) (by omega_using [e]) (by omega_using [e]) (by omega_using [e])
 
 theorem scalarSave_frame {base : Addr} {m m' : Mem} (h : Outside base 0 48 m m') :
     Frame [⟨base, 8192⟩] m m' := by
@@ -33,7 +33,7 @@ theorem scalarSave_frame {base : Addr} {m m' : Mem} (h : Outside base 0 48 m m')
   have hn := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hn
   simp only [ofs]
-  omega
+  omega_using [hn]
 
 theorem bytesAt_frame {m m' : Mem} {p base : Addr} (hf : Frame [⟨base, 8192⟩] m m')
     (hd : (⟨p, 64⟩ : Region).Disjoint ⟨base, 8192⟩) :

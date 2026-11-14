@@ -25,9 +25,9 @@ theorem GeneratorSearchPlan.count_done (p : GeneratorSearchPlan) {used : Nat}
 theorem GeneratorSearchPlan.count_step (p : GeneratorSearchPlan) {used : Nat}
     (room : used + p.core.len ≤ p.tape.length) :
     p.count used = if (p.chunk used room).accepts then 1 else p.count (used + p.core.len) + 1 := by
-  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega
+  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   rw [count, VG.Proof.Dsa.Generation.generatorCount_chunks_step hw (by
-    simp only [List.length_drop]; omega)]
+    simp only [List.length_drop]; omega_using [room])]
   simp only [GeneratorPlan.accepts, GeneratorPlan.value, chunk, p.exponentValue,
     count, List.drop_drop]
 
@@ -76,7 +76,7 @@ theorem generator_frame_write {p : GeneratorSearchPlan} {m m' : Mem}
   have hn := ha ⟨p.core.F, frameBytes⟩ (by simp [GeneratorPlan.changed])
   change ¬ ofs p.core.F a < frameBytes at hn
   unfold frameBytes at hn
-  omega
+  omega_using [hn]
 
 theorem generator_done {p : GeneratorSearchPlan} {expected : Option Nat} {final : Nat} {initial : State}
     {used : Nat} {s t : State} {V : Nat → Byte} {W : Nat → BitVec 64}

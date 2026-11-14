@@ -54,7 +54,7 @@ theorem stageMask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {k v : Nat}
     gregs [hb]
     rw [← this]; rfl
   · have := bit_bottom32 hv k
-    have ck : 1 ≤ k ∧ k ≤ 31 := ⟨by omega, by omega⟩
+    have ck : 1 ≤ k ∧ k ≤ 31 := ⟨by omega_using [hk0], by omega_using [hk]⟩
     refine ⟨_, by grun [stageMask, hk0, ck, E.ebp, L.aW, E.perm.wR, hb], ?_, fun r h₁ h₂ => by gregs [h₁, h₂],
       by gmems [], by gmems [], by gmems []⟩
     gregs [hb]
@@ -71,7 +71,7 @@ theorem stageW_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {a j : Nat} {b
         (selW' b (slotv t.mem p.W (240 + 4 * j)) (shlW a (slotv t.mem p.W (240 + 4 * j))
           (slotv t.mem p.W (240 + 4 * j + 4)))) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have c1 : 1 ≤ 32 - a ∧ 32 - a ≤ 31 := ⟨by omega, by omega⟩
+  have c1 : 1 ≤ 32 - a ∧ 32 - a ≤ 31 := ⟨by omega_using [ha'], by omega_using [ha]⟩
   refine ⟨_, by grun [stageW, shlEcx, selW, c1, E.ebp, L.aW, E.perm.wR, E.perm.wW], ?_,
     fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems []⟩
   gmems [hbx, ror_mask32 _ ha ha', sel_mask32, slotv_eq]
@@ -83,7 +83,7 @@ theorem stageL_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {a : Nat} {b :
       t'.mem = t.mem.writeW (w64 p.W + BitVec.ofNat 64 260)
         (selW' b (slotv t.mem p.W 260) (slotv t.mem p.W 260 <<< a)) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have c1 : 1 ≤ 32 - a ∧ 32 - a ≤ 31 := ⟨by omega, by omega⟩
+  have c1 : 1 ≤ 32 - a ∧ 32 - a ≤ 31 := ⟨by omega_using [ha'], by omega_using [ha]⟩
   refine ⟨_, by grun [shlEcx, selW, c1, E.ebp, L.aW, E.perm.wR, E.perm.wW], ?_,
     fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems []⟩
   gmems [hbx, ror_mask32 _ ha ha', sel_mask32, slotv_eq]
@@ -114,7 +114,7 @@ theorem frame_st {p : Prm} {m m' : Mem} (hf : Frame [⟨w64 p.W + BitVec.ofNat 6
     (h₁ : 240 ≤ d) (h₂ : d + 4 ≤ 264) (v : BitVec 32) :
     Frame [⟨w64 p.W + BitVec.ofNat 64 stO, 24⟩] m (m'.writeW (w64 p.W + BitVec.ofNat 64 d) v) :=
   hf.writeW (List.mem_singleton_self _) v
-    (Offset.contains (w64 p.W) (e := 240) (k := 24) (d := d) (n := 4) (by omega) (by omega) (by decide))
+    (Offset.contains (w64 p.W) (e := 240) (k := 24) (d := d) (n := 4) (by omega_using [h₁]) (by omega_using [h₂]) (by decide))
 
 /-- A word of `W` after a word written: the value written, or the word before. -/
 theorem slot_upd {m m' : Mem} {W : BitVec 32} {d : Nat} {v : BitVec 32}
@@ -124,7 +124,7 @@ theorem slot_upd {m m' : Mem} {W : BitVec 32} {d : Nat} {v : BitVec 32}
   rw [slotv_eq, slotv_eq]
   rcases hs with rfl | hs
   · simp only [↓reduceIte, Mem.readW_writeW_self32]
-  · rw [ite_eq_right_of_eq_false _ _ (by simp only [eq_iff_iff, iff_false]; omega)]; exact readW_writeW_off _ _ _ hs ho hd
+  · rw [ite_eq_right_of_eq_false _ _ (by simp only [eq_iff_iff, iff_false]; omega_using [hs])]; exact readW_writeW_off _ _ _ hs ho hd
 
 /-- What a stage leaves. -/
 structure StagePost (p : Prm) (b : Bool) (f : BitVec 192 → BitVec 192) (s s' : State) : Prop where
@@ -361,7 +361,7 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
     rw [P₇.val, P₆.val, P₅.val, P₄.val, P₃.val, P₂.val, v₁, ← Proof.Ocb.shl_stages _ hv]; rfl
   have hO : (stv s₇.mem p.W).extractLsb' 64 128 =
       (stretchV (blockAtMem s.mem (w64 p.W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := by
-    rw [hw, Proof.Ocb.offset_shl _ (by omega)]
+    rw [hw, Proof.Ocb.offset_shl _ (by omega_using [hv])]
   obtain ⟨s₈, run₈, m₈, g₈, rd₈, wr₈⟩ : ∃ s₈, runBlock isa ([0, 1, 2, 3].flatMap (fun j =>
       [.mov .eax (slot (stO + 4 * j)), .bswap .eax, .store (at_ .ebp (ofsO + 4 * j)) .eax,
         .store (at_ .ebp (o0O + 4 * j)) .eax])) s₇ = some s₈ ∧
@@ -399,7 +399,7 @@ theorem offset0_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
   · rw [m₈]
     have c : ∀ e d, (e = 16 ∨ e = 224) → e ≤ d → d + 4 ≤ e + 16 →
         (⟨w64 p.W + BitVec.ofNat 64 e, 16⟩ : Region).Contains (w64 p.W + BitVec.ofNat 64 d) (32 / 8) :=
-      fun e d he h₁ h₂ => Offset.contains (w64 p.W) (by omega) (by rcases he with rfl | rfl <;> omega) (by omega)
+      fun e d he h₁ h₂ => Offset.contains (w64 p.W) (by omega_using [h₁]) (by rcases he with rfl | rfl <;> omega_using [h₂]) (by omega_using [he])
     have m0 : (⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩ : Region) ∈ [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩,
         ⟨w64 p.W + BitVec.ofNat 64 o0O, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 stO, 24⟩] := by simp
     have m1 : (⟨w64 p.W + BitVec.ofNat 64 o0O, 16⟩ : Region) ∈ [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩,

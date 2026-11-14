@@ -86,11 +86,11 @@ theorem X_length : (X σ).length = 1008 := G_length _ _
 omit hp in
 theorem take_add_three (L : List Byte) {i : Nat} (h : i + 3 ≤ L.length) :
     L.take (i + 3) = L.take i ++ [L.getD i 0, L.getD (i + 1) 0, L.getD (i + 2) 0] := by
-  rw [List.take_add, List.drop_eq_getElem_cons (by omega), List.drop_eq_getElem_cons (by omega),
-    List.drop_eq_getElem_cons (by omega)]
+  rw [List.take_add, List.drop_eq_getElem_cons (by omega_using [h]), List.drop_eq_getElem_cons (by omega_using [h]),
+    List.drop_eq_getElem_cons (by omega_using [h])]
   simp only [List.take_succ_cons, List.take_zero, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show i < L.length by omega), List.getElem?_eq_getElem (show i + 1 < L.length by omega),
-    List.getElem?_eq_getElem (show i + 2 < L.length by omega), Option.getD_some]
+    List.getElem?_eq_getElem (show i < L.length by omega_using [h]), List.getElem?_eq_getElem (show i + 1 < L.length by omega_using [h]),
+    List.getElem?_eq_getElem (show i + 2 < L.length by omega_using [h]), Option.getD_some]
 
 omit hp in
 theorem out_byte {t : Nat} {s : State} (h : LAt σ t s) {k : Nat} (hk : 3 * t + k < 1008) :
@@ -101,7 +101,7 @@ theorem out_byte {t : Nat} {s : State} (h : LAt σ t s) {k : Nat} (hk : 3 * t + 
 
 theorem lat_regions {t : Nat} {s : State} (h : LAt σ t s) {k : Nat} (hk : 3 * t + k < 1008) :
     InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 k) 1 := by
-  rw [h.rsi, at_add, at_add]; exact inScrRd (spOk hp) h.env (by omega)
+  rw [h.rsi, at_add, at_add]; exact inScrRd (spOk hp) h.env (by omega_using [hk])
 
 omit hp in
 theorem Lt_length_le (t : Nat) : (Lt σ t).length ≤ 256 := rnFold_length_le (by simp) _
@@ -111,16 +111,16 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 336) (h : LAt σ t s) :
     WP isa rnBody s fun s' => LAt σ (t + 1) s' ∧ s'.zf = some (BitVec.ofNat 64 (336 - t) - 1 == 0) := by
   have hw : pR (σ.gpr .rsi) ∈ s.wr := by rw [h.env.wr, hp.2.1]; simp
   refine WP.mono (rnBody_ok s (aP := σ.gpr .rsi) h.env.rbp h.rdi (Lt_length_le t) (.of_mem hw) h.stored
-    (by simpa using lat_regions hp h (k := 0) (by omega)) (lat_regions hp h (by omega))
-    (lat_regions hp h (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
-  have e0 := out_byte h (k := 0) (by omega)
+    (by simpa using lat_regions hp h (k := 0) (by omega_using [ht])) (lat_regions hp h (by omega_using [ht]))
+    (lat_regions hp h (by omega_using [ht]))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
+  have e0 := out_byte h (k := 0) (by omega_using [ht])
   rw [add_ofNat_zero, Nat.add_zero] at e0
   have ht3 : Lt σ (t + 1) = rnStep (Lt σ t) ((X σ).getD (3 * t) 0) ((X σ).getD (3 * t + 1) 0)
       ((X σ).getD (3 * t + 2) 0) := by
     simp only [Lt]
-    rw [show 3 * (t + 1) = 3 * t + 3 by omega, take_add_three _ (by rw [X_length]; omega),
-      rnFold_snoc _ (by rw [List.length_take, X_length]; omega)]
-  rw [e0, out_byte h (k := 1) (by omega), out_byte h (k := 2) (by omega), ← ht3] at hdi hst
+    rw [show 3 * (t + 1) = 3 * t + 3 by omega_using [], take_add_three _ (by rw [X_length]; omega_using [ht]),
+      rnFold_snoc _ (by rw [List.length_take, X_length]; omega_using [])]
+  rw [e0, out_byte h (k := 1) (by omega_using [ht]), out_byte h (k := 2) (by omega_using [ht]), ← ht3] at hdi hst
   have hp' := spOk hp
   have hk' : Keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] s s' := hk.mono (by simp)
   have hsv : ∀ k, 2024 ≤ k → k + 8 ≤ 2048 →
@@ -130,12 +130,12 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 336) (h : LAt σ t s) :
     by rw [hk'.gpr (by decide), h.env.rbp], by rw [hk'.gpr (by decide), h.env.r12],
     by rw [hk'.gpr (by decide), h.env.rsp],
     fun r hr => by rw [hk'.gpr (r13_not hr), h.env.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_using []) (by omega_using []), hsv 2032 (by omega_using []) (by omega_using []), hsv 2040 (by omega_using []) (by omega_using [])];
         exact h.env.saved), h.env.frame.trans (hf.mono (by simp))⟩,
-    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 1008) (by omega)).symm)
-      (by omega)]; exact h.out,
-    by rw [hsi, h.rsi, offAdd, show 3 * (t + 1) = 3 * t + 3 by omega],
-    hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega) (by omega)]; rfl, hst⟩, by rw [hz, h.rcx]⟩
+    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 1008) (by omega_using [])).symm)
+      (by omega_using [])]; exact h.out,
+    by rw [hsi, h.rsi, offAdd, show 3 * (t + 1) = 3 * t + 3 by omega_using []],
+    hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega_using [ht]) (by omega_using [])]; rfl, hst⟩, by rw [hz, h.rcx]⟩
 
 /-- The end: the postcondition and the calling convention. -/
 theorem end_ok {s : State} (h : LAt σ 336 s) :

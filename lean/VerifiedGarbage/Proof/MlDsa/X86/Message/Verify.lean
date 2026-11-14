@@ -56,8 +56,8 @@ theorem verify_hW {na : Nat} {T : State → List Region} :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨h₀.kScr.sub_left fr, h₀.rScr⟩
-  · exact ⟨Proof.MlKem.X86.Top.below_adj (sp := s₀.gpr .esp) (a := 16) (b := 172 - 16) (by omega),
-      (Proof.MlKem.X86.Top.ret_below hsp).sub_right (below_inner (a := 172 - 16) (k := 16) (by omega) hsp)⟩
+  · exact ⟨Proof.MlKem.X86.Top.below_adj (sp := s₀.gpr .esp) (a := 16) (b := 172 - 16) (by omega_using [hsp]),
+      (Proof.MlKem.X86.Top.ret_below hsp).sub_right (below_inner (a := 172 - 16) (k := 16) (by omega_using []) hsp)⟩
 
 /-- `μ` from the cached `tr`, then the call of the verification function on it. -/
 theorem cachedRest_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : VerifyFn p K f) :
@@ -77,17 +77,17 @@ theorem cachedRest_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : V
     rw [hc.ctx.bytesAt_eq h₀.scrTr (hk h₀ hL h₀.kTr) (by decide), p0_bytes (by decide) h₀.sp h₀.kTr (by decide)]
     exact h₀.tr
   · have hst : Region.Sub ⟨(vlay p K 8 s₀).ST, 200⟩ (vlay p K 8 s₀).SC := by
-      have := hL.sub_sc (e := 0) (k := 200) (by omega)
+      have := hL.sub_sc (e := 0) (k := 200) (by omega_using [])
       simpa only [x0] using this
     exact ⟨h₀.nTr, ⟨aR s₀ 7 64, List.mem_append_left _ (by show _ ∈ s₀.rd; rw [h₀.rd]; simp), within_self _⟩,
-      h₀.scrTr.symm.sub_right hst, h₀.scrTr.symm.sub_right (hL.sub_sc (by omega : 200 + 640 ≤ 1024)),
+      h₀.scrTr.symm.sub_right hst, h₀.scrTr.symm.sub_right (hL.sub_sc (by omega_using [] : 200 + 640 ≤ 1024)),
       hk h₀ hL h₀.kTr⟩
   · rw [hm]
     simp only [ctxB, msgB]
     rw [p0_bytes (a := (vlay p K 8 s₀).ctx.setWidth 64) (n := (vlay p K 8 s₀).ctxLen.toNat) (by decide) h₀.sp h₀.kCtx
-        (by have := (arg s₀ 4).isLt; show (arg s₀ 4).toNat ≤ _; omega),
+        (by have := (arg s₀ 4).isLt; show (arg s₀ 4).toNat ≤ _; omega_using []),
       p0_bytes (a := (vlay p K 8 s₀).msg.setWidth 64) (n := (vlay p K 8 s₀).len.toNat) (by decide) h₀.sp h₀.kMsg
-        (by have := (arg s₀ 2).isLt; show (arg s₀ 2).toNat ≤ _; omega)]
+        (by have := (arg s₀ 2).isLt; show (arg s₀ 2).toNat ≤ _; omega_using [])]
     rfl
 
 /-- `verify_message_cached`, in its leaf. -/
@@ -118,16 +118,16 @@ theorem satMemC_digest {p : Params} (hp : p.pkLen < 0x8000) :
     bytesAt (satMemC p) 0x8000 64 = pkTr (bytesAt (satMemC p) 0 p.pkLen) := by
   have hk : bytesAt (satMemC p) 0 p.pkLen = bytesAt satMemC0 0 p.pkLen := Proof.MlKem.bytesAt_congr fun i hi => by
     have he : ((0 : Addr) + BitVec.ofNat 64 i).toNat = i := by
-      simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega
-    simp only [satMemC, he, show ¬(0x8000 ≤ i ∧ i < 0x8040) by omega, ↓reduceIte]
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega_using [hp, hi]
+    simp only [satMemC, he, show ¬(0x8000 ≤ i ∧ i < 0x8040) by omega_using [hp, hi], ↓reduceIte]
   rw [hk]
   apply Proof.MlKem.bytesAt_eq (H_length _ _)
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega
-  simp only [satMemC, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, and_self, ↓reduceIte,
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega_using [hi]
+  simp only [satMemC, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], and_self, ↓reduceIte,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [pkTr, H_length]; omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [pkTr, H_length]; omega_using [hi]), Option.getD_some]
   rfl
 
 /-- A state satisfying the precondition of `verify_message_cached`. -/
@@ -141,9 +141,9 @@ theorem cachedSat_arg {p : Params} (i : Nat) (hi : i < 8) :
   Mem.readW_congr fun j hj => by
     have he : (argAddr (cachedSat p) i + BitVec.ofNat 64 j).toNat = 0x5004 + 4 * i + j := by
       show (((0x5000 : BitVec 32) + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64 + BitVec.ofNat 64 j).toNat = _
-      simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega
+      simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.reduceToNat]; omega_using [hi, hj]
     show satMemC p _ = _
-    simp only [satMemC, he, show ¬(0x8000 ≤ 0x5004 + 4 * i + j ∧ 0x5004 + 4 * i + j < 0x8040) by omega, ↓reduceIte]
+    simp only [satMemC, he, show ¬(0x8000 ≤ 0x5004 + 4 * i + j ∧ 0x5004 + 4 * i + j < 0x8040) by omega_using [hi, hj], ↓reduceIte]
 
 theorem verifyMessageCached_verified (hK : K.Ok p.pkLen) {VP : Mem → Addr → Addr → Prop}
     (hV : ∀ {m pk tr}, VP m pk tr → K.pre m pk ∧ bytesAt m tr 64 = pkTr (bytesAt m pk p.pkLen))

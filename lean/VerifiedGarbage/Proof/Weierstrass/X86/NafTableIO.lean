@@ -20,8 +20,8 @@ theorem nafTable_ea {s : State} {base : Addr} {size a d : Nat}
   have hn := hs.nowrap
   have ht : (off base a).toNat=base.toNat+a := by
     simp only [off,BitVec.toNat_add,BitVec.toNat_ofNat]
-    omega
-  rw [ea_tblAt hx (by rw [ht]; omega),off,Offset.add_add]
+    omega_using [hd, hn]
+  rw [ea_tblAt hx (by rw [ht]; omega_using [hd, hn]),off,Offset.add_add]
 
 theorem nafPublicEntry_ok {K : WinCfg} {s : State} {base : Addr} {size a : Nat}
     (hs : Scr s base size) (ha : 1≤a) (ha' : a≤15) (h8 : s.gpr .ebx=BitVec.ofNat 32 a)
@@ -31,17 +31,17 @@ theorem nafPublicEntry_ok {K : WinCfg} {s : State} {base : Addr} {size a : Nat}
       (∀ j<3,wordsVal t.mem base (K.E.x+32*j) 4=
         wordsVal s.mem base (K.tbl+96*((a-1)/2)+32*j) 4) ∧
       KeepRegs [.eax,.ecx,.edx] s t ∧ Outside base K.E.x 96 s.mem t.mem := by
-  have hi : (a-1)/2<8 := by omega
+  have hi : (a-1)/2<8 := by omega_using [ha']
   rw [Naf.publicEntry,List.append_assoc,WP.block_append_iff]
   refine WP.mono (nafIndex_ok s ha ha' h8) fun u ⟨iu,ku⟩ => ?_
   have su := hs.of_keeps ku.keeps (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (nafAddress_ok su iu (by omega)) fun v ⟨av,kv⟩ => ?_
+  refine WP.mono (nafAddress_ok su iu (by omega_using [ha', hT])) fun v ⟨av,kv⟩ => ?_
   have sv := su.of_keeps kv.keeps (by decide)
   refine WP.mono (nafCopyPieces_ok (a:=K.tbl+96*((a-1)/2)) (o:=K.E.x) 6 v sv
-    (by omega) (by omega) (by omega)
-    (fun i hi => nafTable_ea sv av (by omega))
-    (fun i hi => sv.ea (by omega))) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
+    (by omega_using [ha', hT]) (by omega_using [hE]) (by omega_using [ha', hSep])
+    (fun i hi => nafTable_ea sv av (by omega_using [ha', hT, hi]))
+    (fun i hi => sv.ea (by omega_using [hE, hi]))) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun j hj => ?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),
     wt.trans (kv.2.2.2.trans ku.2.2.2)⟩,?_⟩
   · rw [nafCopy_coord et hj,kv.2.1,ku.2.1]
@@ -67,12 +67,12 @@ theorem nafTableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
     simp only [RegUpd.gpr_setReg,hr,ite_false]) fun u ⟨iu,ku⟩ => ?_
   have su := hs.of_keeps ku.keeps (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (nafAddress_ok su iu (by omega)) fun v ⟨av,kv⟩ => ?_
+  refine WP.mono (nafAddress_ok su iu (by omega_using [hj, hT])) fun v ⟨av,kv⟩ => ?_
   have sv := su.of_keeps kv.keeps (by decide)
   refine WP.mono (nafCopyPieces_ok (a:=K.R.x) (o:=K.tbl+96*j) 6 v sv
-    (by omega) (by omega) (by omega)
-    (fun i hi => sv.ea (by omega))
-    (fun i hi => nafTable_ea sv av (by omega))) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
+    (by omega_using [hR]) (by omega_using [hj, hT]) (by omega_using [hj, hSep])
+    (fun i hi => sv.ea (by omega_using [hR, hi]))
+    (fun i hi => nafTable_ea sv av (by omega_using [hj, hT, hi]))) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun i hi => ?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),
     wt.trans (kv.2.2.2.trans ku.2.2.2)⟩,?_⟩
   · rw [nafCopy_coord et hi,kv.2.1,ku.2.1]

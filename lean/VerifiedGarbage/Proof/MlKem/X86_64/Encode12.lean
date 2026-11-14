@@ -35,8 +35,8 @@ abbrev b8 (x : BitVec 32) : Byte := BitVec.setWidth 8 (BitVec.setWidth 64 x)
 /-- The 24-bit number of a pair of 12-bit values. -/
 theorem pair_val {A B : BitVec 32} (ha : A.toNat < 4096) (hb : B.toNat < 4096) :
     (A + B.rotateRight 20).toNat = A.toNat + 4096 * B.toNat := by
-  rw [BitVec.toNat_add, rotr_toNat B (by decide) (by omega)]
-  omega
+  rw [BitVec.toNat_add, rotr_toNat B (by decide) (by omega_using [hb])]
+  omega_using [ha, hb]
 
 theorem encode12Body_ok (s : State) (h1 : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 4)
     (h2 : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 4) 4)
@@ -85,53 +85,53 @@ theorem step {i : Nat} (hi : i < 128) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block encode12Body) s fun s' => Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have a1 : s.gpr .rdi = coeffAddr (fP s₀) (2 * i) := by
-    rw [hI.rdi]; congr 2; omega
+    rw [hI.rdi]; congr 2; omega_using []
   have a2 : s.gpr .rdi + BitVec.ofNat 64 4 = coeffAddr (fP s₀) (2 * i + 1) := by
     rw [a1, coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2
   have hrd : s.rd ++ s.wr = [pR (fP s₀), ⟨oP s₀, 384⟩] := by rw [hI.rd, hI.wr, hp.1, hp.2.1]; rfl
   have hwr : s.wr = [⟨oP s₀, 384⟩] := by rw [hI.wr, hp.2.1]
   have ho : ∀ j < 3, InRegions s.wr (s.gpr .rsi + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [hwr, hI.rsi, BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact ⟨_, List.mem_singleton_self _, contains_offset' (by omega) (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, contains_offset' (by omega_using [hi, hj]) (by omega_using [])⟩
   have hin : ∀ k < 256, InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) k) 4 := fun k hk => by
     rw [hrd]; exact ⟨_, by simp, coeff_contains _ hk⟩
-  have hb := encode12Body_ok s (by rw [a1]; exact hin _ (by omega)) (by rw [a2]; exact hin _ (by omega))
-    (by simpa using ho 0 (by omega)) (ho 1 (by omega)) (ho 2 (by omega))
+  have hb := encode12Body_ok s (by rw [a1]; exact hin _ (by omega_using [hi])) (by rw [a2]; exact hin _ (by omega_using [hi]))
+    (by simpa using ho 0 (by omega_using [])) (ho 1 (by omega_using [])) (ho 2 (by omega_using []))
   refine WP.mono hb fun s' ⟨⟨hm, hdi, hsi, hcx, hz⟩, hk⟩ => ⟨?_, hcx, hz⟩
   -- The pair and its 24-bit number.
   have hr : Reduced s₀.mem (fP s₀) := hp.2.2.2.2.2
   have eA : s.mem.readW (s.gpr .rdi) 32 = coeffAt s₀.mem (fP s₀) (2 * i) := by
-    rw [a1, ← coeffAt_eq, coeff hp hI.frame (show 2 * i < 256 by omega)]
+    rw [a1, ← coeffAt_eq, coeff hp hI.frame (show 2 * i < 256 by omega_using [hi])]
   have eB : s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 4) 32 = coeffAt s₀.mem (fP s₀) (2 * i + 1) := by
-    rw [a2, ← coeffAt_eq, coeff hp hI.frame (show 2 * i + 1 < 256 by omega)]
-  have hA : (coeffAt s₀.mem (fP s₀) (2 * i)).toNat < 3329 := hr (2 * i) (show 2 * i < 256 by omega)
+    rw [a2, ← coeffAt_eq, coeff hp hI.frame (show 2 * i + 1 < 256 by omega_using [hi])]
+  have hA : (coeffAt s₀.mem (fP s₀) (2 * i)).toNat < 3329 := hr (2 * i) (show 2 * i < 256 by omega_using [hi])
   have hB : (coeffAt s₀.mem (fP s₀) (2 * i + 1)).toNat < 3329 :=
-    hr (2 * i + 1) (show 2 * i + 1 < 256 by omega)
+    hr (2 * i + 1) (show 2 * i + 1 < 256 by omega_using [hi])
   have hW := pair_val (A := coeffAt s₀.mem (fP s₀) (2 * i)) (B := coeffAt s₀.mem (fP s₀) (2 * i + 1))
-    (by omega) (by omega)
+    (by omega_using [hA]) (by omega_using [hB])
   rw [eA, eB] at hm
   generalize coeffAt s₀.mem (fP s₀) (2 * i) + (coeffAt s₀.mem (fP s₀) (2 * i + 1)).rotateRight 20 = W at hm hW
   have hX : (coeffAt s₀.mem (fP s₀) (2 * i)).toNat + 4096 * (coeffAt s₀.mem (fP s₀) (2 * i + 1)).toNat =
       ((F s₀)[2 * i]!).val + 4096 * ((F s₀)[2 * i + 1]!).val := by
-    rw [polyAt_val hr (show 2 * i < 256 by omega), polyAt_val hr (show 2 * i + 1 < 256 by omega)]
+    rw [polyAt_val hr (show 2 * i < 256 by omega_using [hi]), polyAt_val hr (show 2 * i + 1 < 256 by omega_using [hi])]
   -- The three bytes.
   have hw : Written s.mem s'.mem (oP s₀ + BitVec.ofNat 64 (3 * i)) 3
       fun j => (encode12 (F s₀))[3 * i + j]! := by
     rw [hm, hI.rsi]
     refine (((Written.first _ _ _).snoc (by decide) _).snoc (by decide) _).congr fun j hj => ?_
     rw [encode12_group _ hi hj, ← hX, ← hW]
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
       simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceAdd, ↓reduceIte, b8_eq, shr_toNat, Nat.div_div_eq_div_mul,
         Nat.reduceMul, Nat.reducePow, Nat.div_one]
-  obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hw (by omega) (by decide)
-  refine ⟨?_, ?_, hk.2.1.trans hI.rd, hk.2.2.trans hI.wr, hf', fun k hk' => hd' k (by omega)⟩
+  obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hw (by omega_using [hi]) (by decide)
+  refine ⟨?_, ?_, hk.2.1.trans hI.rd, hk.2.2.trans hI.wr, hf', fun k hk' => hd' k (by omega_using [hk'])⟩
   · rw [hdi, hI.rdi]; exact ptr_step _ i 8
   · rw [hsi, hI.rsi]; exact ptr_step _ i 3
 
 omit hp in
 theorem init {s : State} (hm : s.mem = s₀.mem) (hk : Keep [.rcx] s₀ s) : Inv s₀ 0 s :=
   ⟨by rw [hk.gpr (by decide)]; simp, by rw [hk.gpr (by decide)]; simp, hk.2.1, hk.2.2,
-    by rw [hm]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩
+    by rw [hm]; exact Frame.refl _ _, fun k hk => absurd hk (by omega_using [])⟩
 
 theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.encode12 s₀ t s' ∧ abiPreserved s₀ s' ∧
     encode12K.post s₀ s' := by
@@ -140,7 +140,7 @@ theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.encode12 s₀ t s' ∧ ab
       fun i hi s hI => step hp hi hI) (by decide)
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hI.frame
     (by simpa using hp.2.2.2.2.1)), ?_⟩
-  exact bytesAt_eq! (encode12_length _) fun k hk => hI.done k (by omega)
+  exact bytesAt_eq! (encode12_length _) fun k hk => hI.done k (by omega_using [hk])
 
 end
 

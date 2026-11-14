@@ -58,7 +58,7 @@ theorem CwsFits.size {k : Nat} (h : CwsFits k) :
       encodable (BitVec.ofNat 32 (allocSize k)) = true) ∧ 4 * k ≤ allocSize k := by
   obtain ⟨h0, h1, h2⟩ := h
   have e : allocSize k = 8 * ((k + 1) / 2) := rfl
-  exact ⟨⟨by omega, by omega, by omega, h2⟩, by omega⟩
+  exact ⟨⟨by omega_using [h0, e], by omega_using [h1], by omega_using [e], h2⟩, by omega_using [e]⟩
 
 /-- The state the inner frame's body starts in. -/
 def cwsU (a : Nat) (s : State) : State := allocated a (cwPush s)
@@ -136,24 +136,24 @@ theorem copyArgs_run {k off : Nat} {s : State} (hk : CwsFits k) (hoff : off + 4 
   have hW : ∀ d, d + 4 ≤ allocSize k →
       (belowA (s.sp - BitVec.ofNat 32 16) (allocSize k)).Contains (sa (cwsU (allocSize k) s).sp d) 4 :=
     fun d hd => by
-      rw [sa_eq (by omega)]
-      exact Offset.contains_base _ hd (by omega)
+      rw [sa_eq (by omega_using [hsb, hU, hd])]
+      exact Offset.contains_base _ hd (by omega_using [hsb, hd])
   have hc := copies_run (bytes := allocSize k + 16)
     (w := (cwsU (allocSize k) s).setReg .r12 (cwsU (allocSize k) s).sp)
-    (by rw [RegUpd.gpr_setReg_self, RegUpd.sp_setReg]) k (by omega)
+    (by rw [RegUpd.gpr_setReg_self, RegUpd.sp_setReg]) k (by omega_using [hb])
     (fun j hj => by
       rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.sp_setReg, hsrc', cwsU_rd]
       obtain ⟨r, hr, hcn⟩ := hsrc j hj
       exact ⟨r, List.mem_append_left _ hr, hcn⟩)
     (fun j hj => by
       rw [RegUpd.wr_setReg, RegUpd.sp_setReg, cwsU_wr]
-      exact ⟨_, List.mem_cons_self .., hW _ (by omega)⟩)
+      exact ⟨_, List.mem_cons_self .., hW _ (by omega_using [h4, hj])⟩)
   have hin : InRegions ((cwsW k s).rd ++ (cwsW k s).wr) (State.addr ((cwsW k s).sp + BitVec.ofNat 32 off)) 4 := by
     rw [cwsW_wr, cwsW_sp, cwsU_wr]
-    exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), hW _ (by omega)⟩
+    exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), hW _ (by omega_using [hoff, h4])⟩
   have hl : execBlock isa [.ldrSp .r4 off] (cwsW k s) =
       some (cwsV k off s, [.addr (sa (cwsW k s).sp off)]) := by
-    simp only [execBlock, isa, exec, show off < 4096 by omega, ite_true, State.load32, hin,
+    simp only [execBlock, isa, exec, show off < 4096 by omega_using [hoff, hb], ite_true, State.load32, hin,
       Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil]
     rfl
   rw [copyArgs, execBlock_append, execBlock_append, addSp0_run]
@@ -182,36 +182,36 @@ theorem cwsV_facts {k off : Nat} {s : State} (hk : CwsFits k) (hsb : allocSize k
   obtain ⟨-, h4⟩ := hk.size
   have hU := cwsU_toNat hsb
   have hlt := s.sp.isLt
-  have f0 : Frame [belowA s.sp 16] s.mem (cwPush s).mem := cwPush_frame s (by omega)
+  have f0 : Frame [belowA s.sp 16] s.mem (cwPush s).mem := cwPush_frame s (by omega_using [hsb])
   obtain ⟨f1, hv⟩ := copiedState_mem (bytes := allocSize k + 16)
     (w := (cwsU (allocSize k) s).setReg .r12 (cwsU (allocSize k) s).sp) k
-    (by rw [RegUpd.sp_setReg]; omega) (by omega)
+    (by rw [RegUpd.sp_setReg]; omega_using [hsb, hfit, hU]) (by omega_using [h4])
   rw [RegUpd.sp_setReg, RegUpd.mem_setReg, cwsU_mem] at f1
   simp only [RegUpd.sp_setReg, RegUpd.mem_setReg, cwsU_mem, cwsU_sa] at hv
   have f1' : Frame [⟨State.addr (cwsU (allocSize k) s).sp, 4 * k⟩] (cwPush s).mem (cwsV k off s).mem := by
     rw [cwsV_mem]; exact f1
   refine ⟨Frame.trans (Frame.sub f0 fun r hr => ?_) (Frame.sub f1' fun r hr => ?_), f1', fun j hj => ?_⟩
   · simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, belowA_sub (by omega) hsb⟩
+    exact ⟨_, List.mem_singleton_self _, belowA_sub (by omega_using []) hsb⟩
   · simp only [List.mem_singleton] at hr; subst hr
     refine ⟨_, List.mem_singleton_self _, ?_⟩
     rw [cwsU_sp']
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [h4])
   · rw [cwsV_mem]
     refine (hv j hj).trans ?_
     refine f0.readW (r := ⟨sa s.sp (4 * j), 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     show Region.Disjoint _ ⟨State.addr (s.sp - BitVec.ofNat 32 16), 16⟩
-    rw [sa_eq (by omega), addr_sub' (by omega)]
-    exact Offset.disjoint_below _ (by omega)
+    rw [sa_eq (by omega_using [hfit, hj]), addr_sub' (by omega_using [hsb])]
+    exact Offset.disjoint_below _ (by omega_using [hfit, hj])
 
 /-- The stack arguments of the caller's that `copyArgs` loads into `r4`. -/
 theorem cwsV_r4_eq {k off : Nat} {s : State} (hk : CwsFits k) (hsb : allocSize k + 16 ≤ s.sp.toNat)
     (hfit : s.sp.toNat + 4 * k ≤ 2 ^ 32) (h4 : off % 4 = 0) (hoff : off + 4 ≤ 4 * k) :
     (cwsV k off s).gpr .r4 = stackArg s (off / 4) := by
-  obtain ⟨j, rfl⟩ : ∃ j, off = 4 * j := ⟨off / 4, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, off = 4 * j := ⟨off / 4, by omega_using [h4]⟩
   rw [cwsV_r4, ← cwsV_mem k (4 * j), Nat.mul_div_cancel_left _ (by decide)]
-  exact (cwsV_facts hk hsb hfit).2.2 j (by omega)
+  exact (cwsV_facts hk hsb hfit).2.2 j (by omega_using [hoff])
 
 /-! ## The caller's contract -/
 
@@ -223,7 +223,7 @@ variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post 
 words. -/
 theorem allRegions_stack {k : Nat} (hN : nsaa sig = 4 * k) (hk : 0 < k) (s : State) :
     allRegions sig s = Sig.bufs sig.params (armArgs sig s) ++ [(⟨State.addr s.sp, 4 * k⟩, false)] := by
-  have h0 : 4 * k ≠ 0 := by omega
+  have h0 : 4 * k ≠ 0 := by omega_using [hk]
   simp [allRegions, argArea, h0, hN, stackArgAddr]
 
 /-- What the caller's contract gives of the stack. -/
@@ -232,7 +232,7 @@ theorem cws_sp {T : Nat} (hT : 0 < T) (hl : Sig.noLists sig.params = true) {s : 
     T ≤ s.sp.toNat ∧ s.sp.toNat + nsaa sig ≤ 2 ^ 32 := by
   rw [pre_arm hl] at hs
   rcases hs.1.1 with h | h
-  · omega
+  · omega_using [hT, h]
   · exact ⟨h, hs.1.2⟩
 
 /-- The stack below the stack pointer that the caller's contract reserves
@@ -243,7 +243,7 @@ theorem cws_res {T : Nat} (hT : 0 < T) (hl : Sig.noLists sig.params = true) {s :
   have hsb := (cws_sp hT hl hs).1
   rw [pre_arm hl] at hs
   obtain ⟨-, -, -, -, hres, -, -⟩ := hs
-  obtain ⟨T', rfl⟩ : ∃ T', T = T' + 1 := ⟨T - 1, by omega⟩
+  obtain ⟨T', rfl⟩ : ∃ T', T = T' + 1 := ⟨T - 1, by omega_using [hT]⟩
   have hm : belowA s.sp (T' + 1) ∈ stackBelow (State.addr s.sp) (T' + 1) := by
     show _ ∈ [(⟨State.addr s.sp - BitVec.ofNat 64 (T' + 1), T' + 1⟩ : Region)]
     rw [belowA, addr_sub' hsb]; exact List.mem_singleton_self _
@@ -272,7 +272,7 @@ theorem cws_src {T k : Nat} (hN : nsaa sig = 4 * k) (hk : 0 < k) (hl : Sig.noLis
   · rw [hrd]
     exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨List.mem_append_right _ (List.mem_singleton_self _),
       rfl⟩, rfl⟩
-  · rw [sa_eq (by omega)]; exact Offset.contains_base _ (by omega) (by omega)
+  · rw [sa_eq (by omega_using [hN, hfit, hj])]; exact Offset.contains_base _ (by omega_using [hj]) (by omega)
 
 /-- Each region of the caller's is readable or writable, as it says. -/
 theorem cws_mem {T : Nat} (hl : Sig.noLists sig.params = true) {s : State}
@@ -333,10 +333,10 @@ the caller's contract reserves. -/
 theorem cws_argSub {k T : Nat} {s : State} (hsb : T ≤ s.sp.toNat) (hT : allocSize k + 16 ≤ T)
     (h4 : 4 * k ≤ allocSize k) :
     Region.Sub ⟨State.addr (cwsU (allocSize k) s).sp, 4 * k⟩ (belowA s.sp T) := by
-  rw [cwsU_sp', addr_sub' (by omega)]
+  rw [cwsU_sp', addr_sub' (by omega_using [hsb, hT])]
   show Region.Sub _ ⟨State.addr (s.sp - BitVec.ofNat 32 T), T⟩
   rw [addr_sub' hsb]
-  exact Offset.sub_below _ hT (by omega)
+  exact Offset.sub_below _ hT (by omega_using [hT, h4])
 
 /-- The entry's memory is the caller's in the buffers. -/
 theorem cws_agree {k off : Nat} (hN : nsaa sig = 4 * k) (hk : CwsFits k)
@@ -344,12 +344,12 @@ theorem cws_agree {k off : Nat} (hN : nsaa sig = 4 * k) (hk : CwsFits k)
     (hs : (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).pre s) :
     ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 →
       (cwsEntry sig k off s).mem x = s.mem x := by
-  obtain ⟨hsb, hfit⟩ := cws_sp (by omega) hl hs
-  have hres := cws_res (by omega) hl hs
+  obtain ⟨hsb, hfit⟩ := cws_sp (by omega_using []) hl hs
+  have hres := cws_res (by omega_using []) hl hs
   intro b hb x hx
-  exact (cwsV_facts (off := off) hk (by omega) (by omega)).1 x fun R hR hc => by
+  exact (cwsV_facts (off := off) hk (by omega_using [hsb]) (by omega_using [hN, hfit])).1 x fun R hR hc => by
     simp only [List.mem_singleton] at hR; subst hR
-    exact hres b (List.mem_append_left _ hb) x (belowA_sub (by omega) hsb x hc) hx
+    exact hres b (List.mem_append_left _ hb) x (belowA_sub (by omega_using []) hsb x hc) hx
 
 /-- The caller's precondition gives the function's at its entry. -/
 theorem cws_bodyPre {k off : Nat} (hN : nsaa sig = 4 * k) (hk : CwsFits k)
@@ -359,35 +359,35 @@ theorem cws_bodyPre {k off : Nat} (hN : nsaa sig = 4 * k) (hk : CwsFits k)
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
     {s : State} (hs : (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).pre s) :
     (sig.contract abi pre post wa stack leak).pre (cwsEntry sig k off s) := by
-  obtain ⟨hsb, hfit⟩ := cws_sp (by omega) hl hs
-  have hres := cws_res (by omega) hl hs
+  obtain ⟨hsb, hfit⟩ := cws_sp (by omega_using []) hl hs
+  have hres := cws_res (by omega_using []) hl hs
   have hag := cws_agree (off := off) hN hk hl hs
   obtain ⟨-, h4⟩ := hk.size
-  have hU := cwsU_toNat (a := allocSize k) (s := s) (by omega)
+  have hU := cwsU_toNat (a := allocSize k) (s := s) (by omega_using [hsb])
   have hlt := s.sp.isLt
   rw [pre_arm hl, allRegions_stack hN hk.1] at hs
   obtain ⟨-, -, -, hpw, -, hnw, hpr⟩ := hs
   refine (pre_arm hl).mpr ?_
-  rw [cwsEntry_allRegions hN hk hloc (by omega) (by omega), cwsEntry_armArgs hk hloc (by omega) (by omega),
+  rw [cwsEntry_allRegions hN hk hloc (by omega_using [hsb]) (by omega_using [hN, hfit]), cwsEntry_armArgs hk hloc (by omega_using [hsb]) (by omega_using [hN, hfit]),
     cwsEntry_sp, hN]
-  refine ⟨⟨.inr (by omega), by omega⟩, rfl, rfl, ?_, ?_, hnw, ?_⟩
+  refine ⟨⟨.inr (by omega_using [hsb, hU]), by omega_using [hsb, h4, hU]⟩, rfl, rfl, ?_, ?_, hnw, ?_⟩
   · -- The buffers, and the stack arguments apart from them.
     refine List.pairwise_append.mpr ⟨(List.pairwise_append.mp hpw).1, List.pairwise_singleton _ _,
       fun a ha b hb _ => ?_⟩
     simp only [List.mem_singleton] at hb; subst hb
     exact (Region.Disjoint.symm (hres a (List.mem_append_left _ ha))).sub_right
-      (cws_argSub hsb (by omega) h4)
+      (cws_argSub hsb (by omega_using []) h4)
   · -- The reserved stack, below the inner frame.
     intro r hr x hx
-    rw [stackBelow_belowA (by omega) r hr]
+    rw [stackBelow_belowA (by omega_using [hsb, hU]) r hr]
     rcases List.mem_append.mp hx with hx | hx
     · refine (hres x (List.mem_append_left _ hx)).sub_left ?_
       rw [cwsU_sp']
-      exact belowA_inner (by omega) hsb
+      exact belowA_inner (by omega_using []) hsb
     · simp only [List.mem_singleton] at hx; subst hx
       show Region.Disjoint ⟨State.addr ((cwsU (allocSize k) s).sp - BitVec.ofNat 32 stack), stack⟩ _
-      rw [addr_sub' (by omega)]
-      exact Region.Disjoint.symm (Offset.base_disjoint_below _ (by omega))
+      rw [addr_sub' (by omega_using [hsb, hU])]
+      exact Region.Disjoint.symm (Offset.base_disjoint_below _ (by omega_using [hsb, h4]))
   · exact hpre _ _ _ (armArgs_length sig s) (fun b hb x hx => (hag b hb x hx).symm) hpr
 
 /-- The caller's public data is the function's at its entry. -/
@@ -398,11 +398,11 @@ theorem cws_bodyPub {k off : Nat} (hN : nsaa sig = 4 * k) (hk : CwsFits k)
     (hp : (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).pub s₁ s₂)
     (hleak : Sig.LeakLocal abi.ptrBits sig leak) :
     (sig.contract abi pre post wa stack leak).pub (cwsEntry sig k off s₁) (cwsEntry sig k off s₂) := by
-  obtain ⟨hsb₁, hfit₁⟩ := cws_sp (by omega) hl h₁
-  obtain ⟨hsb₂, hfit₂⟩ := cws_sp (by omega) hl h₂
+  obtain ⟨hsb₁, hfit₁⟩ := cws_sp (by omega_using []) hl h₁
+  obtain ⟨hsb₂, hfit₂⟩ := cws_sp (by omega_using []) hl h₂
   rw [pubL_arm hl] at hp ⊢
   obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
-  rw [cwsEntry_armArgs hk hloc (by omega) (by omega), cwsEntry_armArgs hk hloc (by omega) (by omega),
+  rw [cwsEntry_armArgs hk hloc (by omega_using [hsb₁]) (by omega_using [hN, hfit₁]), cwsEntry_armArgs hk hloc (by omega_using [hsb₂]) (by omega_using [hN, hfit₂]),
     cwsEntry_sp, cwsEntry_sp, cwsU_sp, cwsU_sp, hsp]
   refine ⟨⟨rfl, ?_⟩, hpa⟩
   cases leak with
@@ -479,23 +479,23 @@ theorem cws_body_wp {name : String} {body : Prog isa} {k off : Nat} {A : BitVec 
     (hA : (cwsV k off s).gpr .r4 = A) :
     WP isa (.frame (.alloc (allocSize k)) (.seq (.block (copyArgs k off)) (.call name body))
       (.free (allocSize k))) (cwPush s) (AfterBodyS sig post A (stack + allocSize k) s) := by
-  obtain ⟨hsb, hfit⟩ := cws_sp (by omega) hl hs
+  obtain ⟨hsb, hfit⟩ := cws_sp (by omega_using []) hl hs
   obtain ⟨hsz, h4⟩ := hk.size
-  have hU := cwsU_toNat (a := allocSize k) (s := s) (by omega)
+  have hU := cwsU_toNat (a := allocSize k) (s := s) (by omega_using [hsb])
   have hag := cws_agree (off := off) hN hk hl hs
-  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega)
-  obtain ⟨-, f1, -⟩ := cwsV_facts (off := off) (s := s) hk (by omega) (by omega)
+  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_using [hsb])
+  obtain ⟨-, f1, -⟩ := cwsV_facts (off := off) (s := s) hk (by omega_using [hsb]) (by omega_using [hN, hfit])
   obtain ⟨hcov, hcovW⟩ := cws_bodyCovers (off := off) hN hk hl hs
   have hm := cws_mem hl hs
   rw [allRegions_stack hN hk.1] at hm
-  refine WP.alloc hsz (by rw [cwPush_sp, h16]; omega) ?_
-  refine WP.seq (WP.block ⟨_, copyArgs_run hk hoff (by omega) (cws_src hN hk.1 hl hs), ?_⟩)
+  refine WP.alloc hsz (by rw [cwPush_sp, h16]; omega_using [hsb]) ?_
+  refine WP.seq (WP.block ⟨_, copyArgs_run hk hoff (by omega_using [hsb]) (cws_src hN hk.1 hl hs), ?_⟩)
   refine WP.callF (k := sig.contract abi pre post wa stack leak) h.1 (cws_bodyPre hN hk hloc hl hpre hs)
-    hcov hcovW (by rw [cwsV_sp, hU]; omega) ?_
+    hcov hcovW (by rw [cwsV_sp, hU]; omega_using [hd, hsb]) ?_
   intro c hrd hwr hsp hfr hcs hq
   have hsub : Region.Sub (belowA (s.sp - BitVec.ofNat 32 16) (allocSize k))
       (belowA (s.sp - BitVec.ofNat 32 16) (stack + allocSize k)) :=
-    belowA_sub (by omega) (by rw [h16]; omega)
+    belowA_sub (by omega_using []) (by rw [h16]; omega_using [hsb])
   refine ⟨by show c.rd = s.rd; rw [hrd, cwsV_rd], by show c.wr.tail = _; rw [hwr, cwsV_wr, cwsU_wr]; rfl,
     by show c.sp + _ = _; rw [hsp, cwsV_sp, cwsU_sp, BitVec.sub_add_cancel],
     by show c.gpr .r4 = A; rw [hcs .r4 (by decide) (by decide), hA], fun q hq hlr h4 => ?_, ?_, ?_⟩
@@ -516,11 +516,11 @@ theorem cws_body_wp {name : String} {body : Prog isa} {k off : Nat} {A : BitVec 
       · simp only [List.mem_singleton] at hr; subst hr
         refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
         rw [cwsV_sp, cwsU_sp]
-        exact belowA_inner (by omega) (by rw [h16]; omega)
+        exact belowA_inner (by omega_using [hd]) (by rw [h16]; omega_using [hsb])
   · -- The postcondition, which reads the memory on entry only within the buffers.
     rw [post_arm, show (cwsV k off s).callEntry.withRegions (((cwsRegions sig k s).filter (!·.2)).map (·.1))
         (((cwsRegions sig k s).filter (·.2)).map (·.1)) = cwsEntry sig k off s from rfl,
-      cwsEntry_armArgs hk hloc (by omega) (by omega), State.withRegions_mem, State.withRegions_gpr] at hq
+      cwsEntry_armArgs hk hloc (by omega_using [hsb]) (by omega_using [hN, hfit]), State.withRegions_mem, State.withRegions_gpr] at hq
     exact hpost _ _ _ _ _ (armArgs_length sig s) hag hq
 
 end
@@ -550,15 +550,15 @@ theorem cws_zeroPre {A : BitVec 32} {K n zst st T : Nat} {s c : State} (hsb : T 
     (Spec.Zeroize.zeroizeContract abi zst).pre
       ((cwZero n c).callEntry.withRegions [] [⟨A.setWidth 64, n⟩]) := by
   have hsubA : Region.Sub ⟨A.setWidth 64, n⟩ ⟨A.setWidth 64, K⟩ := Region.sub_prefix hn
-  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega)
+  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_using [hsb, hT])
   obtain ⟨hdi, hsi, hsp⟩ := cwsZeroEntry_gpr hc n ⟨A.setWidth 64, n⟩
   refine zeroize_pre_of (n := n) (by rw [hsi]; exact toNat_ofNat32 hn32) (.inr ?_) rfl
-    (by rw [hdi]; rfl) ?_ (by rw [hdi]; omega)
-  · rw [hsp, h16]; omega
+    (by rw [hdi]; rfl) ?_ (by rw [hdi]; omega_using [hnw, hn])
+  · rw [hsp, h16]; omega_using [hsb, hT, hzs]
   · rw [hsp, hdi]
     intro x hx
-    rw [stackBelow_belowA (by rw [h16]; omega) x hx]
-    exact (hA.sub_left (belowA_inner (by omega) hsb)).sub_right hsubA
+    rw [stackBelow_belowA (by rw [h16]; omega_using [hsb, hT, hzs]) x hx]
+    exact (hA.sub_left (belowA_inner (by omega_using [hT, hzs]) hsb)).sub_right hsubA
 
 /-- The zeroize function's public data, at its entry, if the array's
 address is public. -/
@@ -598,18 +598,18 @@ theorem cws_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
     (hA : (belowA s.sp T).Disjoint ⟨A.setWidth 64, K⟩) (hnw : (A.setWidth 64).toNat + K ≤ 2 ^ 32)
     (hn : n ≤ K) (hn32 : n < 2 ^ 32) (hc : AfterBodyS sig post A st s c) :
     WP isa (.call zname zcode) (cwZero n c) (AfterZeroS sig post A st n s) := by
-  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega)
+  have h16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_using [hsb, hT])
   have hsubA : Region.Sub ⟨A.setWidth 64, n⟩ ⟨A.setWidth 64, K⟩ := Region.sub_prefix hn
   obtain ⟨hrdc, hwrc, hspc, -, hcsc, hfc, -⟩ := id hc
   have hcw := cws_zeroCovers hAw hn hc
   refine WP.callF (k := Spec.Zeroize.zeroizeContract abi zst) hz.1
     (cws_zeroPre hsb hT hA hnw hn hn32 hzs hc) (Covers.right hcw) hcw
-    (by rw [cwZero_sp, hspc, h16]; omega) ?_
+    (by rw [cwZero_sp, hspc, h16]; omega_using [hzd, hzs, hsb, hT]) ?_
   intro g hrd hwr hsp hfr hcs hq
   rw [cwZero_sp, hspc, cwZero_mem] at hfr
   have hbz : Region.Sub (belowA (s.sp - BitVec.ofNat 32 16) (armStack zcode))
       (belowA (s.sp - BitVec.ofNat 32 16) st) :=
-    belowA_sub (by omega) (by rw [h16]; omega)
+    belowA_sub (by omega_using [hzd, hzs]) (by rw [h16]; omega_using [hsb, hT])
   refine ⟨c, hc, by rw [hrd, cwZero_rd, hrdc], by rw [hwr, cwZero_wr, hwrc], by rw [hsp, cwZero_sp, hspc],
     by rw [hcs .r5 (by decide) (by decide), cwZero_r5], by rw [hcs .r6 (by decide) (by decide), cwZero_r6],
     fun q hq hlr h4 h5 h6 => ?_, ?_, ?_, ?_⟩
@@ -646,8 +646,8 @@ theorem cws_slots {T st : Nat} {s : State} (hsb : T ≤ s.sp.toNat) (hT : st + 1
     ∀ x ∈ s.wr ++ [belowA (s.sp - BitVec.ofNat 32 16) st], Region.Disjoint (belowA s.sp 16) x := by
   intro x hx
   rcases List.mem_append.mp hx with hx | hx
-  · exact (hresW x hx).sub_left (belowA_sub (by omega) hsb)
-  · simp only [List.mem_singleton] at hx; subst hx; exact frame_disj_below s.sp (by omega)
+  · exact (hresW x hx).sub_left (belowA_sub (by omega_using [hT]) hsb)
+  · simp only [List.mem_singleton] at hx; subst hx; exact frame_disj_below s.sp (by omega_using [hsb, hT])
 
 /-- A run of `callWipeStack` from the caller's state `s`: it keeps what the
 calling convention requires, its postcondition is the function's if that
@@ -677,20 +677,20 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
     WP isa (callWipeStack k off n name body zname zcode) s fun G =>
       abiPreserved s G ∧ (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).post s G ∧
         Spec.Zeroize.bytesAt G.mem (A.setWidth 64) n = Spec.Zeroize.zeros n := by
-  obtain ⟨hsb, -⟩ := cws_sp (by omega) hl hs
-  have hres := cws_res (by omega) hl hs
-  have hresW := cws_resW (by omega) hl hs
-  have hslots := cws_slots (st := stack + allocSize k) hsb (by omega) hresW
+  obtain ⟨hsb, -⟩ := cws_sp (by omega_using []) hl hs
+  have hres := cws_res (by omega_using []) hl hs
+  have hresW := cws_resW (by omega_using []) hl hs
+  have hslots := cws_slots (st := stack + allocSize k) hsb (by omega_using []) hresW
   have hAw := (cws_mem hl hs _ (List.mem_append_left _ harr)).2 rfl
   have hnw : (A.setWidth 64).toNat + kk * e.size ≤ 2 ^ 32 := by
     have hs' := hs
     rw [pre_arm hl] at hs'
     exact hs'.2.2.2.2.2.1 _ harr
-  have h16 : 16 ≤ s.sp.toNat := by omega
+  have h16 : 16 ≤ s.sp.toNat := by omega_using [hsb]
   refine WP.frame (by decide) (by show 16 ≤ s.sp.toNat; exact h16) (by decide) ?_
   refine WP.seq (WP.mono (cws_body_wp h hN hloc hl hk hoff hd hpre hpost hs hA4) fun c hc => ?_)
   refine WP.seq (WP.block ⟨_, zeroArgs_run hn32 c, ?_⟩)
-  refine WP.seq (WP.mono (cws_zero_wp hz hzd hzs hsb (by omega) hAw
+  refine WP.seq (WP.mono (cws_zero_wp hz hzd hzs hsb (by omega_using []) hAw
     (hres _ (List.mem_append_left _ harr)) hnw hn hn32 hc) fun g hg => ?_)
   obtain ⟨c', hc', -, hwrg, hspg, h5g, h6g, hcsg, hfs, hfc, hz0⟩ := hg
   obtain ⟨r4s, r5s, r6s, lrs⟩ := cwPush_read s h16
@@ -703,9 +703,9 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
     have := @hrd 0 (by decide); rwa [BitVec.add_zero] at this
   have hin : ∀ k ∈ [4, 12, 8], InRegions (g.rd ++ g.wr) (State.addr (g.sp + BitVec.ofNat 32 k)) 4 := by
     intro k hk
-    have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     refine ⟨_, List.mem_append_right _ (by rw [hwrg]; exact List.mem_cons_self ..), ?_⟩
-    rw [hspg, frame_addr h16 (by omega)]; exact frame_contains _ hk'
+    rw [hspg, frame_addr h16 (by omega_using [hk'])]; exact frame_contains _ hk'
   refine WP.block ⟨_, restoreRet_run hin, ?_⟩
   show abiPreserved s (cwFinal g) ∧
     (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).post s (cwFinal g) ∧
@@ -730,7 +730,7 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
     rcases List.mem_cons.mp hR with rfl | hR
     · exact hbA x hx (Region.sub_prefix hn x hc)
     · simp only [List.mem_singleton] at hR; subst hR
-      exact hres b (List.mem_append_left _ hb) x (belowA_inner (by omega) hsb x hc) hx
+      exact hres b (List.mem_append_left _ hb) x (belowA_inner (by omega_using []) hsb x hc) hx
   · rw [cwFinal_mem]; exact hz0
 
 end
@@ -824,9 +824,9 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
     show (sig.params.flatMap fun p => p.2.words 32).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   have hiL : (ps₁.flatMap fun p => p.2.words 32).length < (locs sig).length := by
-    rw [locs, classify_length, widths, List.length_map, hL]; omega
+    rw [locs, classify_length, widths, List.length_map, hL]; omega_using []
   have hli : (locs sig)[(ps₁.flatMap fun p => p.2.words 32).length] = .stack off 32 := by
     rw [← hr, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hiL, Option.getD_some]
   -- The array's address is the stack argument at `off`, a whole slot among the first `4k` bytes.
@@ -845,7 +845,7 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
     intro s
     rw [← hget s, hps]
     exact Sig.bufs_mem_array (pb := 32) ps₂ ps₁ (armArgs sig s)
-      (by rw [armArgs_length]; show _ < (sig.words abi.ptrBits).length; rw [hL]; omega)
+      (by rw [armArgs_length]; show _ < (sig.words abi.ptrBits).length; rw [hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).pub s₁ s₂ →
       stackArg s₁ (off / 4) = stackArg s₂ (off / 4) := by
@@ -859,8 +859,8 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
     have l₁ := (stackArg s₁ (off / 4)).isLt
     have l₂ := (stackArg s₂ (off / 4)).isLt
     rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, hW, hget, hget, BitVec.toNat_setWidth,
-      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (a := (stackArg s₁ (off / 4)).toNat) (by omega),
-      Nat.mod_eq_of_lt (a := (stackArg s₂ (off / 4)).toNat) (by omega),
+      BitVec.toNat_setWidth, Nat.mod_eq_of_lt (a := (stackArg s₁ (off / 4)).toNat) (by omega_using []),
+      Nat.mod_eq_of_lt (a := (stackArg s₂ (off / 4)).toNat) (by omega_using []),
       Nat.mod_eq_of_lt l₁, Nat.mod_eq_of_lt l₂] at h2
     exact BitVec.eq_of_toNat_eq h2
   -- The postcondition reads the memory on return only within the buffers apart from the array.
@@ -877,8 +877,8 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
   -- `copyArgs` loads it into `r4`.
   have hA4 : ∀ s, (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).pre s →
       (cwsV k off s).gpr .r4 = stackArg s (off / 4) := fun s hs => by
-    obtain ⟨hsb, hfit⟩ := cws_sp (by omega) hl hs
-    exact cwsV_r4_eq hk (by omega) (by omega) hoff4 hoff
+    obtain ⟨hsb, hfit⟩ := cws_sp (by omega_using []) hl hs
+    exact cwsV_r4_eq hk (by omega_using [hsb]) (by omega_using [hN, hfit]) hoff4 hoff
   refine ⟨fun s hs => ?_, ?_, hsat⟩
   · obtain ⟨t, g, he, habi, hq, hz0⟩ := cws_wp h hz hN hloc hl hk hoff hd hzd hzs hpre hpost hn hn32 hs
       (hA4 s hs) (harr s) (hout s hs)
@@ -903,10 +903,10 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
     have hp' : (sig.contract abi pre post wa (stack + 16 + allocSize k) leak).pub σ₁ σ₂ := hp
     have hsp12 : σ₁.sp = σ₂.sp := ((pubL_arm hl).mp hp').1.1
     have hpp := hpubA _ _ hp'
-    obtain ⟨hs₁, hAw₁, hAd₁, hnw₁⟩ := cws_array (by omega) hl h₁' (harr σ₁)
-    obtain ⟨hs₂, hAw₂, hAd₂, hnw₂⟩ := cws_array (by omega) hl h₂' (harr σ₂)
-    have hs₁' : 16 ≤ σ₁.sp.toNat := by omega
-    have hs₂' : 16 ≤ σ₂.sp.toNat := by omega
+    obtain ⟨hs₁, hAw₁, hAd₁, hnw₁⟩ := cws_array (by omega_using []) hl h₁' (harr σ₁)
+    obtain ⟨hs₂, hAw₂, hAd₂, hnw₂⟩ := cws_array (by omega_using []) hl h₂' (harr σ₂)
+    have hs₁' : 16 ≤ σ₁.sp.toNat := by omega_using [hs₁]
+    have hs₂' : 16 ≤ σ₂.sp.toNat := by omega_using [hs₂]
     refine RelCT.mono (P := fun a b => a = σ₁ ∧ b = σ₂) ?_ (fun a b hab => hab.2) (fun _ _ h => h)
     refine RelCT.frame (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact hsp12) ?_
     refine RelCT.mono (P := fun a b => a = cwPush σ₁ ∧ b = cwPush σ₂) ?_ (fun a b hab => ?_)
@@ -929,8 +929,8 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
         refine RelCT.seq (R := fun a b => a = cwsV k off σ₁ ∧ b = cwsV k off σ₂)
           (RelCT.block_of fun a b hab => ?_) ?_
         · obtain ⟨rfl, rfl⟩ := hab
-          refine ⟨_, _, _, copyArgs_run hk hoff (by omega) (cws_src hN hk.1 hl h₁'), ?_, rfl, rfl⟩
-          rw [copyArgs_run hk hoff (by omega) (cws_src hN hk.1 hl h₂'), cwsU_sp, cwsU_sp, hsp12]
+          refine ⟨_, _, _, copyArgs_run hk hoff (by omega_using [hs₁]) (cws_src hN hk.1 hl h₁'), ?_, rfl, rfl⟩
+          rw [copyArgs_run hk hoff (by omega_using [hs₂]) (cws_src hN hk.1 hl h₂'), cwsU_sp, cwsU_sp, hsp12]
         · refine RelCT.callEx h.1 h.2.1 fun a b hab => ?_
           obtain ⟨rfl, rfl⟩ := hab
           obtain ⟨c₁, w₁⟩ := cws_bodyCovers (off := off) hN hk hl h₁'
@@ -956,14 +956,14 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
         (RelCT.callEx hz.1 hz.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
       · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
         exact ⟨[], [⟨(stackArg σ₁ (off / 4)).setWidth 64, n⟩], [], [⟨(stackArg σ₂ (off / 4)).setWidth 64, n⟩],
-          cws_zeroPre hs₁ (by omega) hAd₁ hnw₁ hn hn32 hzs hc₁,
-          cws_zeroPre hs₂ (by omega) hAd₂ hnw₂ hn hn32 hzs hc₂,
+          cws_zeroPre hs₁ (by omega_using []) hAd₁ hnw₁ hn hn32 hzs hc₁,
+          cws_zeroPre hs₂ (by omega_using []) hAd₂ hnw₂ hn hn32 hzs hc₂,
           cws_zeroPub hsp12 hpp hc₁ hc₂,
           Covers.right (cws_zeroCovers hAw₁ hn hc₁), cws_zeroCovers hAw₁ hn hc₁,
           Covers.right (cws_zeroCovers hAw₂ hn hc₂), cws_zeroCovers hAw₂ hn hc₂⟩
       · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
-        exact ⟨cws_zero_wp hz hzd hzs hs₁ (by omega) hAw₁ hAd₁ hnw₁ hn hn32 hc₁,
-          cws_zero_wp hz hzd hzs hs₂ (by omega) hAw₂ hAd₂ hnw₂ hn hn32 hc₂⟩
+        exact ⟨cws_zero_wp hz hzd hzs hs₁ (by omega_using []) hAw₁ hAd₁ hnw₁ hn hn32 hc₁,
+          cws_zero_wp hz hzd hzs hs₂ (by omega_using []) hAw₂ hAd₂ hnw₂ hn hn32 hc₂⟩
     -- The result and the saved registers are restored.
     · refine RelCT.block_of fun g₁ g₂ hg => ?_
       obtain ⟨⟨_, _, _, hw₁, e₁, _⟩, ⟨_, _, _, hw₂, e₂, _⟩⟩ := hg
@@ -971,9 +971,9 @@ theorem Verified.callWipeStack' {post' : sig.Post abi.ptrBits} {name zname : Str
           g.wr = ⟨State.addr (σ.sp - BitVec.ofNat 32 16), 16⟩ :: σ.wr → g.sp = σ.sp - BitVec.ofNat 32 16 →
           ∀ k ∈ [4, 12, 8], InRegions (g.rd ++ g.wr) (State.addr (g.sp + BitVec.ofNat 32 k)) 4 := by
         intro g σ h16 hw he k hk
-        have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+        have hk' : k + 4 ≤ 16 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
         refine ⟨_, List.mem_append_right _ (by rw [hw]; exact List.mem_cons_self ..), ?_⟩
-        rw [he, frame_addr h16 (by omega)]; exact frame_contains _ hk'
+        rw [he, frame_addr h16 (by omega_using [hk'])]; exact frame_contains _ hk'
       refine ⟨_, cwRestore g₂, _, restoreRet_run (hin g₁ σ₁ hs₁' hw₁ e₁), ?_, trivial⟩
       rw [restoreRet_run (hin g₂ σ₂ hs₂' hw₂ e₂), e₁, e₂, hsp12]
 

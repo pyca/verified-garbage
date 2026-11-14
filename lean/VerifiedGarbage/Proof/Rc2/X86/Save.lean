@@ -58,8 +58,8 @@ theorem saveMem_read (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) (hn 
     rw [saveMem_succ]
     by_cases he : i = n
     · subst i; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)]
-      exact ih (by omega) (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_using [he]) (by omega_using [hn, hi]) (by omega_using [hn])) (by decide)]
+      exact ih (by omega_using [hn]) (by omega_using [hi, he])
 
 theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) (hn : n ≤ 64) :
     Frame [⟨p, 4 * n⟩] m (saveMem m p v n) := by
@@ -68,7 +68,7 @@ theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) (hn
   | succ n ih =>
     rw [saveMem_succ]
     have prev : Frame [⟨p, 4 * (n + 1)⟩] m (saveMem m p v n) := by
-      apply (ih (by omega)).sub
+      apply (ih (by omega_using [hn])).sub
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
@@ -76,8 +76,8 @@ theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) (hn
       intro x hx
       change (x - p).toNat + 1 ≤ 4 * n at hx
       change (x - p).toNat + 1 ≤ 4 * (n + 1)
-      omega
-    exact prev.writeW List.mem_cons_self _ (Offset.contains_base p (by omega) (by omega))
+      omega_using [hx]
+    exact prev.writeW List.mem_cons_self _ (Offset.contains_base p (by omega_using []) (by omega_using [hn]))
 
 def saveCode (base : Reg) (regs : Nat → Reg) (n : Nat) : List Instr :=
   (List.range n).map fun i => .store (memOp base (4 * i)) (regs i)
@@ -94,14 +94,14 @@ theorem saveCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (n : Nat) (hn 
     exact ⟨rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [saveCode, List.range_succ, List.map_append, List.map_cons, List.map_nil, WP.block_append_iff]
-    apply WP.mono (ih (by omega) (fun i hi => writable i (by omega)))
+    apply WP.mono (ih (by omega_using [hn]) (fun i hi => writable i (by omega_using [hi])))
     intro s₁ h₁
-    have valid := writable n (by omega)
+    have valid := writable n (by omega_using [])
     have valid₁ : InRegions s₁.wr (addr32 (s₁.gpr base) + BitVec.ofNat 64 (4 * n)) 4 := by
       rw [h₁.1, h₁.2.2.1]; exact valid
     have fit₁ : (s₁.gpr base).toNat + 256 ≤ 2 ^ 32 := by rw [h₁.1]; exact fit
     refine WP.of_runBlock ⟨{s₁ with mem := s₁.mem.writeW (addr32 (s₁.gpr base) + BitVec.ofNat 64 (4 * n)) (s₁.gpr (regs n))}, ?_, ?_⟩
-    · simp only [runBlock_cons, exec_store _ _ _ (4 * n) (by omega) valid₁,
+    · simp only [runBlock_cons, exec_store _ _ _ (4 * n) (by omega_using [hn, fit₁]) valid₁,
         runStep_some, runBlock_nil]
     · exact ⟨h₁.1, h₁.2.1, h₁.2.2.1, by rw [h₁.2.2.2, h₁.1, saveMem_succ]⟩
 
@@ -126,7 +126,7 @@ theorem restoreCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (is : List 
     have hi : i ∈ i :: is := List.mem_cons_self
     refine WP.of_runBlock ⟨s₁, ?_, ?_⟩
     · have bound := bounds i hi
-      simp only [runBlock_cons, exec_load _ _ _ (4 * i) (by omega) (readable i hi),
+      simp only [runBlock_cons, exec_load _ _ _ (4 * i) (by omega_using [fit, bound]) (readable i hi),
         runStep_some, runBlock_nil, stored i hi]
       rfl
     have keep₁ : Keep [regs i] s s₁ := by
@@ -166,7 +166,7 @@ theorem restoreCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (is : List 
 theorem saveMem_frame_le (m : Mem) (p : Addr) (v : Nat → BitVec 32)
     (n capacity : Nat) (hn : n ≤ capacity) (hc : capacity ≤ 64) :
     Frame [⟨p, 4 * capacity⟩] m (saveMem m p v n) := by
-  apply (saveMem_frame m p v n (by omega)).sub
+  apply (saveMem_frame m p v n (by omega_using [hn, hc])).sub
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
@@ -174,6 +174,6 @@ theorem saveMem_frame_le (m : Mem) (p : Addr) (v : Nat → BitVec 32)
   intro x hx
   change (x - p).toNat + 1 ≤ 4 * n at hx
   change (x - p).toNat + 1 ≤ 4 * capacity
-  omega
+  omega_using [hn, hx]
 
 end VG.Proof.Rc2.X86

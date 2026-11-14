@@ -40,7 +40,7 @@ def offset : Nat := 16*((32^52-1)/31)
 theorem offset_eq : offset=16*Window5.geom 52 := by
   have h := Window5.geom_mul 52
   unfold offset
-  omega
+  omega_using [h]
 
 theorem layout : Lay M 8192 Sl where
   le := by decide +kernel

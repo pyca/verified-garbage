@@ -56,10 +56,10 @@ theorem ctr_tailK {m m₁ : Mem} {cb ks k : Addr} {ciph : Block → Block} {icb 
     (h : Ctr m cb ks ciph icb n) (h0 : n % 16 = 0) (hk : blockAt m₁ k = ciph (blockAt m cb))
     {d : List Byte} (hd : d.length < 16) :
     List.zipWith (· ^^^ ·) d (bytesAt m₁ k d.length) = xorKs ciph icb n d := by
-  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega
+  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
   refine Proof.Gcm.zipWith_eq_xorKs (Cmac.bytesAt_length _ _ _) fun j hj => ?_
-  rw [Proof.Gcm.getD_bytesAt' _ _ hj, Proof.Gcm.bytes_toBytes_blockAt m₁ k (k := j) (by omega), hk, hcb,
-    Proof.Gcm.ksByte, show (n + j) / 16 = n / 16 by omega, show (n + j) % 16 = j by omega]
+  rw [Proof.Gcm.getD_bytesAt' _ _ hj, Proof.Gcm.bytes_toBytes_blockAt m₁ k (k := j) (by omega_using [hd, hj]), hk, hcb,
+    Proof.Gcm.ksByte, show (n + j) / 16 = n / 16 by omega_using [h0, hd, hj], show (n + j) % 16 = j by omega_using [h0, hd, hj]]
 
 /-- `tailK`: the bytes left decrypted with `K[1]`. -/
 theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
@@ -71,7 +71,7 @@ theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
     refine ⟨_, by xrun [he.r15, q₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [gpr_setReg, hlen]
     · simp only [zf_arithFlags, hlen]
-      exact congrArg some (and_self_beq (by omega))
+      exact congrArg some (and_self_beq (by omega_using [hn]))
     · intro r a; simp [gpr_setReg, a]
     all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -99,9 +99,9 @@ theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
     have hlt := hd.ok.lt
     have lp : LoopPre s₂ (W + BitVec.ofNat 64 1040) D n :=
-      ⟨hsi₂, hdi₂, hcx₂, by omega, by omega,
-        by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact covers_left (he.perm.wC (by omega)),
-        by rw [hwr₂, hwr₁]; exact hd.wr, (hd.ok.w.sub_right (Lay.wSub (by omega))).symm⟩
+      ⟨hsi₂, hdi₂, hcx₂, by omega_using [h0'], by omega_using [hn],
+        by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact covers_left (he.perm.wC (by omega_using [hn])),
+        by rw [hwr₂, hwr₁]; exact hd.wr, (hd.ok.w.sub_right (Lay.wSub (by omega_using [hn]))).symm⟩
     refine WP.mono (xorLoop_ok s₂ lp) fun s₃ ⟨hm₃, hg₃, hrd₃, hwr₃⟩ => ?_
     rw [hm₂, hm₁] at hm₃
     have hxl := length_xorBytes s.mem D (W + BitVec.ofNat 64 1040) n
@@ -117,9 +117,9 @@ theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
     have e : W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16 = W + BitVec.ofNat 64 1040 := by rw [add_ofNat_assoc]
     unfold KOk at hK
     rw [e] at hK
-    have t := ctr_tailK hc hP hK (d := bytesAt s.mem D n) (by rw [length_bytesAt]; omega)
+    have t := ctr_tailK hc hP hK (d := bytesAt s.mem D n) (by rw [length_bytesAt]; omega_using [hn])
     rw [length_bytesAt] at t
-    have hb := bytesAt_writeBytes_self s.mem D (xorBytes s.mem D (W + BitVec.ofNat 64 1040) n) (by rw [hxl]; omega)
+    have hb := bytesAt_writeBytes_self s.mem D (xorBytes s.mem D (W + BitVec.ofNat 64 1040) n) (by rw [hxl]; omega_using [hn])
     rw [hxl] at hb
     rw [hm₃, hb, xorBytes, t]
 

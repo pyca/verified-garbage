@@ -71,8 +71,8 @@ theorem mapM_range {β : Type} {f : Nat → Option β} {g : Nat → β} :
     ∀ {k : Nat}, (∀ i < k, f i = some (g i)) → (List.range k).mapM f = some ((List.range k).map g)
   | 0, _ => rfl
   | k + 1, h => by
-    rw [List.range_succ, List.mapM_append, mapM_range fun i hi => h i (by omega), List.mapM_cons,
-      h k (by omega), List.map_append]
+    rw [List.range_succ, List.mapM_append, mapM_range fun i hi => h i (by omega_using [hi]), List.mapM_cons,
+      h k (by omega_using []), List.map_append]
     rfl
 
 theorem add_zero_left (f : Poly) : add zero f = f := by

@@ -62,7 +62,7 @@ structure ABI (full : Bool) (s : State) : Prop extends Layout full s, Sizes full
 private theorem all_seven {P : Nat → Prop} (h0 : P 0) (h1 : P 1) (h2 : P 2) (h3 : P 3)
     (h4 : P 4) (h5 : P 5) (h6 : P 6) : ∀ i, i < 7 → P i := by
   intro i hi
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 := by omega_using [hi]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 private theorem all_eight {P : Nat → Prop} (h0 : P 0) (h1 : P 1) (h2 : P 2) (h3 : P 3)
@@ -70,7 +70,7 @@ private theorem all_eight {P : Nat → Prop} (h0 : P 0) (h1 : P 1) (h2 : P 2) (h
   intro i hi
   by_cases e : i = 7
   · subst i; exact h7
-  · exact all_seven h0 h1 h2 h3 h4 h5 h6 i (by omega)
+  · exact all_seven h0 h1 h2 h3 h4 h5 h6 i (by omega_using [hi, e])
 
 theorem abi_crt_layout {s : State} (h : (contract false).pre s) : Layout false s := by
   simp only [contract, Bool.false_eq_true, ite_false] at h
@@ -191,10 +191,10 @@ theorem ABI.inputLengths {full : Bool} {s : State} (a : ABI full s) :
   · apply all_seven
     all_goals simp only [Bool.false_eq_true, ite_false] at hp hq hp' hq' hdp hdq hqi
     all_goals simp only [Nat.reduceAdd, Nat.reduceMul]
-    all_goals constructor <;> omega
+    all_goals constructor <;> omega_arith
   · apply all_eight
     all_goals simp only [ite_true] at hd hd' hp hq hp' hq' hdp hdq hqi
     all_goals simp only [Nat.reduceAdd, Nat.reduceMul]
-    all_goals constructor <;> omega
+    all_goals constructor <;> omega_arith
 
 end VG.Proof.Rsa.X86.KeyCheck

@@ -30,9 +30,9 @@ theorem loop_full_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
       t.mem.readW (off (g.sp.setWidth 64) 0) 32 = g.candidate := by
     refine WP.loop (M := isa) Inv ?_ g.limit s initial
     rintro q t ⟨i, index, rfl, T, clearPrefix, O, K⟩
-    have positive : 0 < g.limit - i := by omega
-    have bound : g.limit - i < 2 ^ 32 := by have := v.limitBound; omega
-    refine WP.mono (T.step v (by have := v.limitBound; omega) positive bound)
+    have positive : 0 < g.limit - i := by omega_using [index]
+    have bound : g.limit - i < 2 ^ 32 := by have := v.limitBound; omega_using [this]
+    refine WP.mono (T.step v (by have := v.limitBound; omega_using [index, this]) positive bound)
       fun u ⟨U, hit, Z, Ou, Ku⟩ => ?_
     have nextBound : nextCount (g.limit - i) (dividesAt c i) < 2 ^ 32 :=
       Nat.lt_trans (nextCount_lt positive _) bound
@@ -58,17 +58,17 @@ theorem loop_full_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State}
         rw [missed]
         unfold nextCount
         change g.limit - i - 1 = g.limit - (i + 1)
-        omega
+        omega_using []
       by_cases done : i + 1 = g.limit
-      · have countZero : nextCount (g.limit - i) (dividesAt c i) = 0 := by rw [count, done]; omega
+      · have countZero : nextCount (g.limit - i) (dividesAt c i) = 0 := by rw [count, done]; omega_using []
         refine Or.inl ⟨by rw [ev, countZero]; rfl, U.context, ?_, combinedO, combinedK, U.candidate⟩
         rw [done] at nextPrefix
         rw [nextPrefix]
         rw [missed] at hit
         exact hit
-      · have still : 0 < g.limit - (i + 1) := by omega
-        refine Or.inr ⟨?_, g.limit - (i + 1), by omega, i + 1, by omega, rfl, ?_, nextPrefix, combinedO, combinedK⟩
-        · rw [ev, count, decide_eq_false (by omega : ¬ g.limit - (i + 1) = 0)]
+      · have still : 0 < g.limit - (i + 1) := by omega_using [index, done]
+        refine Or.inr ⟨?_, g.limit - (i + 1), by omega_using [index], i + 1, by omega_using [index, done], rfl, ?_, nextPrefix, combinedO, combinedK⟩
+        · rw [ev, count, decide_eq_false (by omega_using [index, done] : ¬ g.limit - (i + 1) = 0)]
           rfl
         · rw [count] at U
           exact U

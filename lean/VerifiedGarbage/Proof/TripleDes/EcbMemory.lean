@@ -22,7 +22,7 @@ theorem blocksAt_cons (m : Mem) (p : Addr) (n : Nat) :
   intro i _
   apply congrArg (Spec.TripleDes.blockAt m)
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact congrArg (fun j => p + BitVec.ofNat 64 j) (by omega)
+  exact congrArg (fun j => p + BitVec.ofNat 64 j) (by omega_using [])
 
 theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') (p : Addr) (n : Nat)
     (hd : ∀ r ∈ rs, (Region.mk p (8 * n)).Disjoint r) :
@@ -34,6 +34,6 @@ theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') (p :
   intro r hr
   exact (hd r hr).sub_left (Offset.sub_base p (by
     have h := List.mem_range.mp hi
-    omega))
+    omega_using [h]))
 
 end VG.Proof.TripleDes

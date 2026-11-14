@@ -12,13 +12,13 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem status_pcCall {g : PrivGeometry} (h : g.Valid) {d : Nat} (fit : d + 4 ≤ 96) :
     ∀ r ∈ pcWr g ++ [g.calleeRegion], (innerSlice g d 4).Disjoint r := by
-  have ex := innerSlice_external h (d := d) (n := 4) (by simp only [frameBytes]; omega)
+  have ex := innerSlice_external h (d := d) (n := 4) (by simp only [frameBytes]; omega_using [fit])
   intro r hr
   simp only [pcWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · rw [precomputation_region h]
-    exact Offset.disjoint _ (Or.inl (by simp only [oPre]; omega)) (by omega)
-      (by have := h.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega)
+    exact Offset.disjoint _ (Or.inl (by simp only [oPre]; omega_using [fit])) (by omega_using [fit])
+      (by have := h.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega_using [this])
   · exact ex.2.1
   · exact ex.2.2
 
@@ -37,10 +37,10 @@ theorem status_frame {g : PrivGeometry} {d : Nat} {regions : List Region} {m m' 
 
 theorem precomputation_pdPrefix {g : PrivGeometry} (h : g.Valid) :
     ∀ r ∈ pdPrefixWrites g, (⟨State.addr g.precomputation, 8 * (2 * Spec.Rsa.modulusWords g.length)⟩ : Region).Disjoint r := by
-  rw [show 8 * (2 * Spec.Rsa.modulusWords g.length) = 16 * Spec.Rsa.modulusWords g.length by omega,
+  rw [show 8 * (2 * Spec.Rsa.modulusWords g.length) = 16 * Spec.Rsa.modulusWords g.length by omega_using [],
     precomputation_region h]
   exact innerSlice_pdPrefix (by decide : 96 ≤ oPre)
-    (by have := h.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega)
+    (by have := h.maxLength; simp only [oPre, frameBytes, Spec.Rsa.modulusWords]; omega_using [this])
 
 theorem wordsAt_frame {regions : List Region} {m m' : Mem} {p : Addr} {n : Nat}
     (frame : Frame regions m m') (fit : 8 * n < 2 ^ 64)

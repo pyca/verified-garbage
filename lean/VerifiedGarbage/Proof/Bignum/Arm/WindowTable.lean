@@ -30,28 +30,28 @@ the layout may write. -/
 theorem keeps_table_num {m m' : Mem} {base : Addr} {len w o j : Nat}
     (keep : Keeps base len w o m m') (fits : arrAt w 16 ≤ 8 * len) (ho : o < 8) (hj : j < 8) :
     numAt m' base w (8 + j) = numAt m base w (8 + j) := by
-  have bound := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega)) fits
+  have bound := Nat.le_trans (array_end_le (w := w) (show 8 + j < 16 by omega_using [hj])) fits
   unfold numAt
   apply congrArg BitVec.toNat
   apply Mem.read_congr
   intro i hi
   rw [Offset.add_add]
-  apply keep (arrAt w (8 + j) + i) (by omega)
+  apply keep (arrAt w (8 + j) + i) (by omega_using [bound, hi])
   intro a ha
   have below : a < 8 + j := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
     rcases ha with rfl | rfl | rfl
-    · simp only [Proof.Rsa.Mont.aAcc]; omega
-    · simp only [Proof.Rsa.Mont.aTmp]; omega
-    · omega
+    · simp only [Proof.Rsa.Mont.aAcc]; omega_using []
+    · simp only [Proof.Rsa.Mont.aTmp]; omega_using []
+    · omega_using [ho]
   have := array_end_le (w := w) below
-  omega
+  omega_using [this]
 
 theorem TableHolds.of_keeps {m m' : Mem} {base : BitVec 32} {len w M x k o : Nat}
     (h : TableHolds m base w M x k) (keep : Keeps (State.addr base) len w o m m')
     (fits : arrAt w 16 ≤ 8 * len) (ho : o < 8) (hk : k ≤ 8) : TableHolds m' base w M x k := by
   intro j hj
-  rw [keeps_table_num keep fits ho (by omega)]
+  rw [keeps_table_num keep fits ho (by omega_using [hk, hj])]
   exact h j hj
 
 /-- A Montgomery product of `x^E R` and `x^d R` is `x^(E + d) R`. -/

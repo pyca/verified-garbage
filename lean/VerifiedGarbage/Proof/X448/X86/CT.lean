@@ -160,12 +160,12 @@ theorem byte_same {σ s : State} (hp : Pre σ) (h : AF σ s) {k : Nat} (h4 : 4 �
     s.mem (VG.X86.Taint.argByte s k) = σ.mem (VG.X86.Taint.argByte σ k) := by
   have hs := hp.sp_fit
   have e : VG.X86.Taint.argByte s k = argAddr σ 0 + BitVec.ofNat 64 (k - 4) := by
-    rw [argAddr_eq, addr_eq (by omega)]
+    rw [argAddr_eq, addr_eq (by omega_using [hs])]
     simp only [VG.X86.Taint.argByte, h.2.1]
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
+    congr 2; omega_using [h4]
   have hc : (argsR σ).Contains (VG.X86.Taint.argByte s k) 1 := by
-    rw [e]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [e]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   rw [h.2.2.2 _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) hr
@@ -182,8 +182,8 @@ theorem wfF {σ s : State} (hp : Pre σ) (h : AF σ s) : VG.X86.Taint.Wf τf s :
   rw [h.2.2.1, hp.wr, h.2.1]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_out hp.args_out
-  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_sc hp.args_sc
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [hs]) hp.ret_out hp.args_out
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_using [hs]) hp.ret_sc hp.args_sc
 
 theorem agreeF {σ₁ σ₂ s₁ s₂ : State} (hP : P₀ σ₁ σ₂) (h₁ : AF σ₁ s₁) (h₂ : AF σ₂ s₂) :
     VG.X86.Taint.Agree τf s₁ s₂ := by
@@ -214,14 +214,14 @@ theorem stepHead_fin {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
       FInv base t ∧ t.gpr .esp = s.gpr .esp ∧ t.gpr .esi = BitVec.ofNat 32 n := by
   have hs := hi.scr
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
-      (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
-      (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [hn])
+      (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS]; omega_using [])
+      (by rw [ofs_off' base (by simp only [BITS]; omega_using [hn])]; simp only [BITS, ACC]; omega_using [hn])]
     exact hbits n hn
   rw [show stepHead = stepPre ++ (cswap X2 X3 ++ cswap Z2 Z3) by
       simp only [stepHead, stepPre, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (stepPre_ok hs hn hi.esi (by have := bit_le k n; omega)
-    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega); omega) bitval hi.swap)
+  refine WP.mono (stepPre_ok hs hn hi.esi (by have := bit_le k n; omega_using [this])
+    (by have := ladderAfter_swap_le k u (n := n + 1) (by omega_using [hn]); omega_using [this]) bitval hi.swap)
     fun s₁ ⟨b₁, c₁, g₁, rd₁, wr₁, m₁⟩ => ?_
   have hs₁ : Scr s₁ base := ⟨by rw [g₁ _ (by decide)]; exact hs.edi,
     wr₁ ▸ hs.wr, by rw [g₁ _ (by decide)]; exact hs.nowrap⟩
@@ -229,7 +229,7 @@ theorem stepHead_fin {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     rw [m₁]; exact writeW_outside _ _ _ (by decide)
   have bb₁ : BoundedEnv s₁.mem base := by
     intro i j hj
-    rw [out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega))
+    rw [out₁.limbs (Or.inr (by simp only [slot, SWAP]; omega_using []))
       (Nat.le_trans (slot_bound i) (by decide)) hj]
     exact hi.bounded i j hj
   refine WP.mono (swaps_ok hs₁ bb₁ c₁) fun s₂ ⟨k₂, bb₂, _⟩ => ?_
@@ -283,8 +283,8 @@ theorem loop_rel : ∀ n, RelCT isa (W (LadI n)) (.loop step .ne) (W fun σ s =>
     · have hn0 : n ≠ 0 := fun h0 => by simp [h0] at hz
       obtain ⟨hn, a₁, m₁, L₁, f₁⟩ := l₁
       obtain ⟨-, a₂, m₂, L₂, f₂⟩ := l₂
-      have e : n - 1 + 1 = n := by omega
-      exact ⟨n - 1, by omega, σ₁, σ₂, hP, ⟨by omega, a₁, m₁, e ▸ L₁, f₁⟩, ⟨by omega, a₂, m₂, e ▸ L₂, f₂⟩⟩
+      have e : n - 1 + 1 = n := by omega_using [hn0]
+      exact ⟨n - 1, by omega_using [hn0], σ₁, σ₂, hP, ⟨by omega_using [hn], a₁, m₁, e ▸ L₁, f₁⟩, ⟨by omega_using [hn], a₂, m₂, e ▸ L₂, f₂⟩⟩
 
 theorem ladder_rel : RelCT isa (W Mid) ladder (W fun σ s => ∃ s₂, Lad σ s₂ s 0) := by
   refine RelCT.seq (W.step (G := LadI 447) (RelCT.taint (A := taint) (τr [])

@@ -15,7 +15,7 @@ use crate::arch::dispatch::idea::{vg_idea_expand_key_auto, vg_idea_invert_key_au
 use crate::arch::dispatch::idea_cbc::{
     vg_idea_cbc_decrypt_chained_auto, vg_idea_cbc_encrypt_chained_auto,
 };
-use crate::error::{IncompleteBlock, InvalidKeyLength};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An IDEA-CBC encryption of one message, without padding.
@@ -34,12 +34,12 @@ pub struct IdeaCbcEncryptor {
 
 impl IdeaCbcEncryptor {
     /// Expands a 16-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
         crate::dit::enter!(dit);
-        Ok(Self {
-            schedule: expand(dit, key)?,
+        Self {
+            schedule: expand(dit, key),
             iv: *iv,
-        })
+        }
     }
 
     /// Encrypts whole 8-byte blocks in place, continuing the message.
@@ -89,15 +89,15 @@ pub struct IdeaCbcDecryptor {
 
 impl IdeaCbcDecryptor {
     /// Expands a 16-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
         crate::dit::enter!(dit);
-        let mut encrypt = expand(dit, key)?;
+        let mut encrypt = expand(dit, key);
         let mut schedule = CacheAligned([0; 104]);
         // SAFETY: both schedules are separate valid buffers of the required
         // sizes.
         unsafe { vg_idea_invert_key_auto(dit, &encrypt.0, &mut schedule.0) };
         zeroize(&mut encrypt.0);
-        Ok(Self { schedule, iv: *iv })
+        Self { schedule, iv: *iv }
     }
 
     /// Decrypts whole 8-byte blocks in place, continuing the message.
@@ -129,14 +129,10 @@ impl Drop for IdeaCbcDecryptor {
 }
 
 /// The encryption subkeys of a 16-byte key.
-fn expand(
-    dit: crate::dit::Dit<'_>,
-    key: &[u8],
-) -> Result<CacheAligned<[u8; 104]>, InvalidKeyLength> {
-    let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
+fn expand(dit: crate::dit::Dit<'_>, key: &[u8; 16]) -> CacheAligned<[u8; 104]> {
     let mut schedule = CacheAligned([0; 104]);
     // SAFETY: the key and the schedule are separate valid buffers of the
     // required sizes.
     unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
-    Ok(schedule)
+    schedule
 }

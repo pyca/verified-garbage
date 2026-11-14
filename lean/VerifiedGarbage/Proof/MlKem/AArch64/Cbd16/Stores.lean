@@ -51,7 +51,7 @@ theorem store {s0 s : State} {p : Addr} {G : Nat → BitVec 32} {n off : Nat}
     WP isa (.block (out off part ++ rest)) s Q := by
   have hin : InRegions s.wr (coeffAddr p n) 16 := by
     rw [hw]
-    exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
+    exact in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hn]) (by decide))
   refine out_ok ho hp hin h.q h.c hx hf fun t x hc hp' hv hm hx' => ?_
   refine k t ⟨h.keep.trans hc, hp'.trans h.gpr, ?_, ?_, ?_, ?_, ?_⟩ hv
   · rw [hm]
@@ -81,21 +81,21 @@ theorem words_ok {s0 s : State} {p : Addr} {G : Nat → BitVec 32} {n off : Nat}
     intro e he; rw [h1.v,h.zero]; exact hx e he
   have hz : ∀ e < 8, vhalf (s1.v .v22) e = 0 := by
     intro e _; rw [hs1.zero]; simp [vhalf]
-  refine store hs1 (by omega) ⟨ho.1,by omega⟩
+  refine store hs1 (by omega_using [hn]) ⟨ho.1,by omega_using [ho]⟩
     (by rw [h1.gpr]; exact hp) (by rw [h1.wr]; exact hw)
-    (fun e he => ((VG.Proof.MlKem.AArch64.Ntt16.vword_zip_zero hz he).1).trans (hl e (by omega)))
-    (fun e he => hf e (by omega)) (fun e he => hg e (by omega)) fun s2 hs2 hv2 => ?_
+    (fun e he => ((VG.Proof.MlKem.AArch64.Ntt16.vword_zip_zero hz he).1).trans (hl e (by omega_using [he])))
+    (fun e he => hf e (by omega_using [he])) (fun e he => hg e (by omega_using [he])) fun s2 hs2 hv2 => ?_
   have hl2 : ∀ e < 8, (vhalf (s2.v .v5) e).toNat = f e := by
     intro e he; rw [hv2 .v5 (by decide) (by decide)]; exact hl e he
   have hz2 : ∀ e < 8, vhalf (s2.v .v22) e = 0 := by
     intro e _; rw [hs2.zero]; simp [vhalf]
-  refine store hs2 (by omega) ⟨by omega,ho.2⟩ ?_ ?_
-    (fun e he => ((VG.Proof.MlKem.AArch64.Ntt16.vword_zip_zero hz2 he).2).trans (hl2 (4+e) (by omega)))
-    (fun e he => hf (4+e) (by omega)) ?_ fun t ht hv3 => ?_
+  refine store hs2 (by omega_using [hn]) ⟨by omega_using [ho],ho.2⟩ ?_ ?_
+    (fun e he => ((VG.Proof.MlKem.AArch64.Ntt16.vword_zip_zero hz2 he).2).trans (hl2 (4+e) (by omega_using [he])))
+    (fun e he => hf (4+e) (by omega_using [he])) ?_ fun t ht hv3 => ?_
   · rw [hs2.gpr,← h.gpr, BitVec.ofNat_add,← BitVec.add_assoc,hp]
     exact coeffAddr_step p n
   · rw [hs2.keep.wr,← h.keep.wr]; exact hw
-  · intro e he; simpa only [Nat.add_assoc] using hg (4+e) (by omega)
+  · intro e he; simpa only [Nat.add_assoc] using hg (4+e) (by omega_using [he])
   · refine k t (by simpa only [Nat.add_assoc] using ht) ?_
     intro r h5 h6 h7
     rw [hv3 r h6 h7,hv2 r h6 h7,h1.get r h5]
@@ -118,19 +118,19 @@ theorem half_ok {s0 s : State} {p : Addr} {G : Nat → BitVec 32} {n off : Nat}
   have hs1 := h.vchg h1.chg
   have hl : ∀ e < 16, (vbyte (s1.v .v4) e).toNat = f e := by
     intro e he; rw [h1.v]; exact hx e he
-  refine words_ok hs1 (by omega) ⟨ho.1,by omega⟩
+  refine words_ok hs1 (by omega_using [hn]) ⟨ho.1,by omega_using [ho]⟩
     (by rw [h1.gpr]; exact hp) (by rw [h1.wr]; exact hw)
-    (fun e he => ((half_zip_zero (s1.v .v4) he).1).trans (hl e (by omega)))
-    (fun e he => hf e (by omega)) (fun e he => hg e (by omega)) fun s2 hs2 hv2 => ?_
+    (fun e he => ((half_zip_zero (s1.v .v4) he).1).trans (hl e (by omega_using [he])))
+    (fun e he => hf e (by omega_using [he])) (fun e he => hg e (by omega_using [he])) fun s2 hs2 hv2 => ?_
   have hl2 : ∀ e < 16, (vbyte (s2.v .v4) e).toNat = f e := by
     intro e he; rw [hv2 .v4 (by decide) (by decide) (by decide)]; exact hl e he
-  refine words_ok hs2 (by omega) ⟨by omega,by omega⟩ ?_ ?_
-    (fun e he => ((half_zip_zero (s2.v .v4) he).2).trans (hl2 (8+e) (by omega)))
-    (fun e he => hf (8+e) (by omega)) ?_ fun t ht hv3 => ?_
+  refine words_ok hs2 (by omega_using [hn]) ⟨by omega_using [ho],by omega_using [ho]⟩ ?_ ?_
+    (fun e he => ((half_zip_zero (s2.v .v4) he).2).trans (hl2 (8+e) (by omega_using [he])))
+    (fun e he => hf (8+e) (by omega_using [he])) ?_ fun t ht hv3 => ?_
   · rw [hs2.gpr,← h.gpr, BitVec.ofNat_add,← BitVec.add_assoc,hp]
     exact coeffAddr_off p n 8
   · rw [hs2.keep.wr,← h.keep.wr]; exact hw
-  · intro e he; simpa only [Nat.add_assoc] using hg (8+e) (by omega)
+  · intro e he; simpa only [Nat.add_assoc] using hg (8+e) (by omega_using [he])
   · refine k t (by simpa only [Nat.add_assoc] using ht) ?_
     intro r h4 h5 h6 h7
     rw [hv3 r h5 h6 h7,hv2 r h5 h6 h7,h1.get r h4]

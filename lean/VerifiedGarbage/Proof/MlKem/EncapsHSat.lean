@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlKem
 import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: memory satisfying the precondition of `vg_mlkem*_encaps_h`
@@ -35,13 +36,13 @@ theorem hMem_h {n : Nat} (hk : n ≤ 0x1000) : bytesAt (hMem n) 0x2000 32 = H (b
     simp only [hMem]
     rw [ite_eq_right_iff.mpr fun h => absurd h ?_]
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (4096 : BitVec 64).toNat = 4096 from rfl]
-    omega
+    omega_using [hk, hi]
   rw [ek]
   refine List.ext_getElem (by rw [H_length]; simp [bytesAt]) fun i h₁ h₂ => ?_
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, hMem]
   have e : (0x2000 + BitVec.ofNat 64 i : BitVec 64).toNat = 0x2000 + i := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (8192 : BitVec 64).toNat = 8192 from rfl]; omega
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (8192 : BitVec 64).toNat = 8192 from rfl]; omega_using [h₁]
   simp only [e]
   split
   · rw [Nat.add_sub_cancel_left]; simp [List.getD_eq_getElem?_getD, h₂]
@@ -57,13 +58,13 @@ theorem hMem_h_of {n : Nat} (hk : n ≤ 0x1000) {m : Mem} (hm : ∀ a : Addr, a.
     refine List.map_congr_left fun i hi => hm _ ?_
     simp only [List.mem_range] at hi
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (8192 : BitVec 64).toNat = 8192 from rfl]
-    omega
+    omega_using [hi]
   have e₂ : bytesAt m 0x1000 n = bytesAt (hMem n) 0x1000 n := by
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => hm _ ?_
     simp only [List.mem_range] at hi
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (4096 : BitVec 64).toNat = 4096 from rfl]
-    omega
+    omega_using [hk, hi]
   rw [e₁, e₂]; exact hMem_h hk
 
 end VG.Proof.MlKem

@@ -1,12 +1,109 @@
 module
 public import VerifiedGarbage.Proof.Cast5.X86.Round
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-
-import VerifiedGarbage.Proof.Cast5.X86.KeyHalf
+public import VerifiedGarbage.Proof.Cast5.X86.KeyGroup
 import VerifiedGarbage.Proof.Cast5.X86.Ecb
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+
+/-! ### `Cast5.X86.KeyHalf`, which only this module used -/
+
+section
+
+/-!
+# CAST5 key expansion on 32-bit x86: a half
+
+`half` runs the eight groups of lines of §2.4 (`halfImpl`), writing sixteen
+subkeys from `edi`, then moves `edi` on and counts the half (`half_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Cast5.X86
+
+open VG VG.X86 VG.X86.RegUpd VG.Impl.Cast5 VG.Impl.Cast5.X86
+open VG.Proof.Cast5 (XZ GroupOk keys4 runQ_z runQ_x halfImpl runZ runX)
+
+theorem gZ : GroupOk (some .z) zLines := by unfold GroupOk; decide
+theorem gX : GroupOk (some .x) xLines := by unfold GroupOk; decide
+theorem gA : GroupOk none aLines := by unfold GroupOk; decide
+theorem gB : GroupOk none bLines := by unfold GroupOk; decide
+theorem gC : GroupOk none cLines := by unfold GroupOk; decide
+theorem gD : GroupOk none dLines := by unfold GroupOk; decide
+
+theorem storeKey_zero : (fun k => storeKey (0 + k)) = storeKey := funext fun k => by rw [Nat.zero_add]
+
+/-- The registers key expansion's halves write. -/
+def keyRegs : List Reg := [.eax, .ecx, .edx, .ebp, .edi, .ebx]
+
+theorem half_ok {m0 : Mem} {S : BitVec 32} {K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 S K s st ws) {hh : Nat} {K32 : BitVec 32} (hK : K = K32.setWidth 64)
+    (hfitK : K32.toNat + 128 ≤ 2 ^ 32) (hdi : s.gpr .edi = K32 + BitVec.ofNat 32 (64 * hh))
+    (hlen : ws.length = 16 * hh) (hle : hh < 2) :
+    WP isa half s fun u =>
+      KS m0 S K u (halfImpl st).2 (ws ++ (halfImpl st).1) ∧
+      u.gpr .edi = K32 + BitVec.ofNat 32 (64 * (hh + 1)) ∧ u.gpr .ebx = s.gpr .ebx - 1 ∧
+      u.zf = some (s.gpr .ebx - 1 == 0) ∧ u.syms = s.syms ∧ Keep keyRegs s u := by
+  have kd {u v : State} (k : Keep lineRegs u v) : v.gpr .edi = u.gpr .edi := k.gpr _ (by decide)
+  have l4 (ls : List Impl.Cast5.Line) (t : XZ) : (keys4 ls t).length = 4 := rfl
+  have hE : ∀ k < 16, addr (K32 + BitVec.ofNat 32 (64 * hh)) (4 * k) = K + BitVec.ofNat 64 (64 * hh + 4 * k) := by
+    intro k hk
+    rw [hK, show addr (K32 + BitVec.ofNat 32 (64 * hh)) (4 * k) = addr K32 (64 * hh + 4 * k) by
+      simp only [addr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
+    exact addr_eq (by omega_using [hfitK, hle, hk])
+  unfold half
+  refine WP.seq (WP.mono (groupQ_ok h .z gZ) fun u1 ⟨h1, s1, k1⟩ => ?_)
+  rw [runQ_z] at h1
+  have g2 := groupK_ok h1 gA (b := 0) (hh := hh) (by rw [kd k1, hdi]) hE (by rw [hlen]; rfl) (by omega_using [hlen, hle]) (by omega_using [])
+  rw [storeKey_zero] at g2
+  refine WP.seq (WP.mono g2 fun u2 ⟨h2, s2, k2⟩ => ?_)
+  refine WP.seq (WP.mono (groupQ_ok h2 .x gX) fun u3 ⟨h3, s3, k3⟩ => ?_)
+  rw [runQ_x] at h3
+  have g4 := groupK_ok h3 gB (b := 4) (hh := hh) (by rw [kd k3, kd k2, kd k1, hdi]) hE
+    (by rw [List.length_append, hlen, l4]) (by rw [List.length_append, hlen, l4]; omega_using [hle]) (by omega_using [])
+  refine WP.seq (WP.mono g4 fun u4 ⟨h4, s4, k4⟩ => ?_)
+  refine WP.seq (WP.mono (groupQ_ok h4 .z gZ) fun u5 ⟨h5, s5, k5⟩ => ?_)
+  rw [runQ_z] at h5
+  have g6 := groupK_ok h5 gC (b := 8) (hh := hh) (by rw [kd k5, kd k4, kd k3, kd k2, kd k1, hdi]) hE
+    (by rw [List.length_append, List.length_append, hlen, l4, l4])
+    (by rw [List.length_append, List.length_append, hlen, l4, l4]; omega_using [hle]) (by omega_using [])
+  refine WP.seq (WP.mono g6 fun u6 ⟨h6, s6, k6⟩ => ?_)
+  refine WP.seq (WP.mono (groupQ_ok h6 .x gX) fun u7 ⟨h7, s7, k7⟩ => ?_)
+  rw [runQ_x] at h7
+  have g8 := groupK_ok h7 gD (b := 12) (hh := hh)
+    (by rw [kd k7, kd k6, kd k5, kd k4, kd k3, kd k2, kd k1, hdi]) hE
+    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4])
+    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4]; omega_using [hle]) (by omega_using [])
+  refine WP.seq (WP.mono g8 fun u8 ⟨h8, s8, k8⟩ => ?_)
+  have k18 := (((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8)
+  have hdi8 : u8.gpr .edi = K32 + BitVec.ofNat 32 (64 * hh) := by rw [k18.gpr _ (by decide), hdi]
+  have hbx8 : u8.gpr .ebx = s.gpr .ebx := k18.gpr _ (by decide)
+  crun [hdi8, hbx8]
+  have hst : (halfImpl st).2 = runX xLines (runZ zLines (runX xLines (runZ zLines st))) := rfl
+  have hks : ws ++ (halfImpl st).1 = ws ++ keys4 aLines (runZ zLines st) ++
+      keys4 bLines (runX xLines (runZ zLines st)) ++ keys4 cLines (runZ zLines (runX xLines (runZ zLines st))) ++
+      keys4 dLines (runX xLines (runZ zLines (runX xLines (runZ zLines st)))) := by
+    simp only [halfImpl, List.append_assoc]
+  rw [hst, hks]
+  refine ⟨h8.update rfl rfl h8.mem h8.len rfl rfl rfl, ?_, ?_, rfl, by rw [s8, s7, s6, s5, s4, s3, s2, s1],
+    fun r hr => ?_, k18.rd, k18.wr⟩
+  · rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.mul_succ]
+  · rfl
+  · have hr' := hr
+    simp only [keyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
+    have hl : r ∉ lineRegs := by
+      simp only [lineRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨hr'.1, hr'.2.1, hr'.2.2.1, hr'.2.2.2.1⟩
+    simp only [gpr_setReg, gpr_arithFlags, hr'.2.2.2.2.1, hr'.2.2.2.2.2, ite_false]
+    exact k18.gpr r hl
+
+end VG.Proof.Cast5.X86
+
+end
+
+end
+
 
 /-!
 # CAST5 key expansion on 32-bit x86
@@ -51,13 +148,13 @@ theorem zeroMem_cinv (m : Mem) {S : BitVec 32} (hfit : S.toNat + 256 ≤ 2 ^ 32)
   simp only [zeroMem, xOff]
   rw [e 16 (by decide), e 20 (by decide), e 24 (by decide), e 28 (by decide)]
   refine ⟨fun i hi => ?_, fun i hi => ?_, ?_⟩
-  · rw [zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega),
-      zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega)]
+  · rw [zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi]),
+      zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi])]
     repeat' split
     all_goals first | rfl | omega
-  · rw [zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega),
-      zero_byte32 _ _ (by decide) (by omega), zero_byte32 _ _ (by decide) (by omega), ite_eq_right (by omega),
-      ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+  · rw [zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi]),
+      zero_byte32 _ _ (by decide) (by omega_using [hi]), zero_byte32 _ _ (by decide) (by omega_using [hi]), ite_eq_right (by omega_using []),
+      ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   · exact ((((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
@@ -78,19 +175,19 @@ theorem copyStep_ok (u : State) {m0 : Mem} {key c : Addr} {k32 x32 : BitVec 32} 
   crun [hdi, hax, ek, ex, hr, hw, hk]
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, rfl, rfl, rfl, rfl, fun r h1 h2 h3 h4 => ?_⟩
   · simp only [Mem.writeW]
-    rw [byte_write (d := 16 + j) (e := 16 + i) (n := 1) _ _ _ (by omega) (by omega)]
+    rw [byte_write (d := 16 + j) (e := 16 + i) (n := 1) _ _ _ (by omega_using [hj]) (by omega_using [hi])]
     split
-    · have hij : i = j := by omega
+    · have hij : i = j := by omega_arith
       subst hij
-      rw [Nat.sub_self, ite_eq_left (show i < i + 1 by omega), ite_eq_left (show Reg8.cl.reg = Reg.ecx from rfl)]
+      rw [Nat.sub_self, ite_eq_left (show i < i + 1 by omega_using []), ite_eq_left (show Reg8.cl.reg = Reg.ecx from rfl)]
       apply BitVec.eq_of_getLsbD_eq; intro k hk
       simp [hk]
     · rw [hI.x i hi]
       split <;> split <;> first | rfl | omega
   · simp only [Mem.writeW]
-    rw [byte_write (d := 16 + j) (e := 32 + i) (n := 1) _ _ _ (by omega) (by omega), ite_eq_right (by omega)]
+    rw [byte_write (d := 16 + j) (e := 32 + i) (n := 1) _ _ _ (by omega_using [hj]) (by omega_using [hi]), ite_eq_right (by omega_using [hj])]
     exact hI.z i hi
-  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   · simp only [h1, h2, h3, h4, ite_false]
 
 /-- The facts of key expansion's precondition on this target (the shared
@@ -154,10 +251,10 @@ theorem argK_in {s : State} (h : KPre s) {i : Nat} (hi : i < 4) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) (4 + 4 * i)) 4 := by
   have hA : InRegions (s.rd ++ s.wr) (argAddr s 0) 16 := by
     rw [h.rdEq]; exact ⟨_, by simp, Region.contains_self _ _⟩
-  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := h.spfit; omega)
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := h.spfit; omega_using [this])
   rw [e0] at hA
-  rw [addr_eq (by have := h.spfit; omega), ← Offset.add_add]
-  exact CallLay.inRegions_sub hA (by omega) (by decide)
+  rw [addr_eq (by have := h.spfit; omega_using [hi, this]), ← Offset.add_add]
+  exact CallLay.inRegions_sub hA (by omega_using [hi]) (by decide)
 
 theorem one32 : (1 : BitVec 32) = BitVec.ofNat 32 1 := rfl
 

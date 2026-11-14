@@ -48,19 +48,19 @@ theorem doubleLoop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
     ?_ steps s ⟨0, rfl, hk, init⟩
   rintro n t ⟨i, rfl, hi, I⟩
   have ht := hs.of_keeps I.keeps (by decide)
-  refine WP.mono (doubleStep_ok ht I.modulus hl ho I.lt (by omega) (by omega) I.counter)
+  refine WP.mono (doubleStep_ok ht I.modulus hl ho I.lt (by omega_using [hi]) (by omega_using [hk32]) I.counter)
     fun u ⟨count, zf, val, modU, memU, keepU⟩ => ?_
   have next : DoubleInv M base size m acc out steps (i + 1) s u := by
     refine ⟨?_, modU, ?_, ?_, I.mem.trans memU, I.keeps.trans keepU⟩
-    · rw [count, show steps - i - 1 = steps - (i + 1) by omega]
-    · rw [val]; exact Nat.mod_lt _ (by omega)
+    · rw [count, show steps - i - 1 = steps - (i + 1) by omega_using []]
+    · rw [val]; exact Nat.mod_lt _ (by omega_using [hv])
     · rw [val, I.value, double_residue]
   by_cases hdone : i + 1 = steps
   · refine .inl ⟨?_, hdone ▸ next⟩
-    have eq : steps - i = 1 := by omega
+    have eq : steps - i = 1 := by omega_using [hdone]
     simp only [eval, zf, eq, decide_true, Option.map_some, Bool.not_true]
-  · refine .inr ⟨?_, steps - (i + 1), by omega, i + 1, rfl, by omega, next⟩
-    have ne : steps - i ≠ 1 := by omega
+  · refine .inr ⟨?_, steps - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hdone], next⟩
+    have ne : steps - i ≠ 1 := by omega_using [hdone]
     simp only [eval, zf, decide_eq_false ne, Option.map_some, Bool.not_false]
 
 end VG.Proof.Mont.X86.Dynamic

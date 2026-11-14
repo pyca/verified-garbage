@@ -48,10 +48,10 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
   unfold oRsa at fit hd hs
   let I : Nat → State → State → Prop := fun k σ s => k ≤ n ∧ Ctx L scr σ s ∧
     ∃ m₀, X σ m₀ ∧ XI scr od os n m₀ (n - k) s
-  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, di, si, cx⟩ => ⟨by omega, hc,
-    s.mem, hx, ⟨by rw [di, show n - (n - 1 + 1) = 0 by omega]; rfl, by rw [si, show n - (n - 1 + 1) = 0 by omega]; rfl,
-      by rw [cx, show n - (n - (n - 1 + 1)) = n by omega], Frame.refl _ _, fun i _ => by
-        rw [ite_eq_right (by omega)]⟩⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, di, si, cx⟩ => ⟨by omega_using [hn], hc,
+    s.mem, hx, ⟨by rw [di, show n - (n - 1 + 1) = 0 by omega_using []]; rfl, by rw [si, show n - (n - 1 + 1) = 0 by omega_using []]; rfl,
+      by rw [cx, show n - (n - (n - 1 + 1)) = n by omega_using []], Frame.refl _ _, fun i _ => by
+        rw [ite_eq_right (by omega_using [])]⟩⟩) fun _ _ h => h
   refine VP.taint _ xorBody_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hk, hc, m₀, hx, hp⟩ => ?_
   · obtain ⟨-, -, _, -, p₁⟩ := h₁
     obtain ⟨-, -, _, -, p₂⟩ := h₂
@@ -61,18 +61,18 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
     · rw [p₁.edi, p₂.edi]
     · rw [p₁.ecx, p₂.ecx]
   generalize hj : n - (k + 1) = j at hp
-  have hjn : j < n := by omega
+  have hjn : j < n := by omega_using [hn, hj]
   have aD : VG.X86.addr (scr + BitVec.ofNat 32 (od + j)) 0 = sa scr (od + j) := by
-    rw [hg.addrD (by unfold oRsa; omega), Nat.add_zero]
+    rw [hg.addrD (by unfold oRsa; omega_using [hd, hjn]), Nat.add_zero]
   have aS : VG.X86.addr (scr + BitVec.ofNat 32 (os + j)) 0 = sa scr (os + j) := by
-    rw [hg.addrD (by unfold oRsa; omega), Nat.add_zero]
-  have rS : InRegions (s.rd ++ s.wr) (sa scr (os + j)) 1 := hg.rd hc.st (by unfold oRsa; omega)
-  have rD : InRegions (s.rd ++ s.wr) (sa scr (od + j)) 1 := hg.rd hc.st (by unfold oRsa; omega)
-  have wD : InRegions s.wr (sa scr (od + j)) 1 := hg.wr hc.st (by unfold oRsa; omega)
+    rw [hg.addrD (by unfold oRsa; omega_using [hs, hjn]), Nat.add_zero]
+  have rS : InRegions (s.rd ++ s.wr) (sa scr (os + j)) 1 := hg.rd hc.st (by unfold oRsa; omega_using [hs, hjn])
+  have rD : InRegions (s.rd ++ s.wr) (sa scr (od + j)) 1 := hg.rd hc.st (by unfold oRsa; omega_using [hd, hjn])
+  have wD : InRegions s.wr (sa scr (od + j)) 1 := hg.wr hc.st (by unfold oRsa; omega_using [hd, hjn])
   have stj : s.mem (sa scr (os + j)) = m₀ (sa scr (os + j)) :=
     hp.fr _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Geo.sep (scr := scr) (o := os + j) (n := 1) (by omega) (by unfold oRsa; omega) (by unfold oRsa; omega) _
+      exact Geo.sep (scr := scr) (o := os + j) (n := 1) (by omega_using [hsep, hj]) (by unfold oRsa; omega_using [hs, hjn]) (by unfold oRsa; omega_using [hd]) _
         (Region.contains_self _ _)
   have dj : s.mem (sa scr (od + j)) = m₀ (sa scr (od + j)) := by
     rw [hp.x j hjn, ite_eq_right (Nat.lt_irrefl _)]
@@ -91,9 +91,9 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
   have cx6 : t6.gpr .ecx = BitVec.ofNat 32 (n - j) := by
     simp (disch := decide) only [u6.other, u5.other, u4.gpr, u3.other, u2.other, u1.other, hp.ecx]
   have fr1 : Frame [sR scr od n] s.mem t7.mem := by
-    rw [m7]; exact frame_byte scr _ _ (by omega) (by omega) (by omega)
+    rw [m7]; exact frame_byte scr _ _ (by omega_using []) (by omega_using [hn, hj]) (by omega_using [hd])
   have hc' : Ctx L scr σ t7 := hc.write fr1 (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by unfold oRsa; omega))
+      simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by unfold oRsa; omega_using [hd]))
     (by rw [u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd])
     (by rw [u7.wr, u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])
     (by simp (disch := decide) only [u7.other, u6.other, u5.other, u4.gpr, u3.other, u2.other, u1.other])
@@ -104,21 +104,21 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]
     · simp (disch := decide) only [u7.other, u6.gpr, u5.other, u4.gpr, u3.other, u2.other, u1.other, hp.esi]
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]
-    · rw [u7.gpr, cx6, ofNat_pred (by omega), Nat.sub_sub]
-    · rw [m7, sa_write scr _ _ (by omega) (by omega)]
+    · rw [u7.gpr, cx6, ofNat_pred (by omega_using [hn, hj]), Nat.sub_sub]
+    · rw [m7, sa_write scr _ _ (by omega_using [hd, hj]) (by omega_using [hd, hi])]
       by_cases e : i = j
       · subst e
         rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self _)]
-      · rw [ite_eq_right (show ¬ (od + i = od + j) by omega), hp.x i hi]
+      · rw [ite_eq_right (show ¬ (od + i = od + j) by omega_using [e]), hp.x i hi]
         by_cases e' : i < j
-        · rw [ite_eq_left e', ite_eq_left (by omega)]
-        · rw [ite_eq_right e', ite_eq_right (by omega)]
-  rw [cx6, ofNat_pred (by omega), Nat.sub_sub, ofNat_beq_zero (by omega), show n - (j + 1) = k by omega] at z7
-  refine ⟨?_, fun h0 => ⟨hc', m₀, hx, sk.fr, fun i hi => ?_⟩, fun hpos => ⟨by omega, hc', m₀, hx, ?_⟩⟩
+        · rw [ite_eq_left e', ite_eq_left (by omega_using [e'])]
+        · rw [ite_eq_right e', ite_eq_right (by omega_using [e, e'])]
+  rw [cx6, ofNat_pred (by omega_using [hn, hj]), Nat.sub_sub, ofNat_beq_zero (by omega_using [hd]), show n - (j + 1) = k by omega_using [hk, hj]] at z7
+  refine ⟨?_, fun h0 => ⟨hc', m₀, hx, sk.fr, fun i hi => ?_⟩, fun hpos => ⟨by omega_using [hk], hc', m₀, hx, ?_⟩⟩
   · show eval .ne t7 = _
     simp only [eval, z7]
-    by_cases h0 : k = 0 <;> simp [h0] <;> omega
-  · rw [sk.x i hi, ite_eq_left (by omega)]
-  · rw [show n - k = j + 1 by omega]; exact sk
+    by_cases h0 : k = 0 <;> simp [h0] <;> omega_using [h0]
+  · rw [sk.x i hi, ite_eq_left (by omega_using [hj, h0, hi])]
+  · rw [show n - k = j + 1 by omega_using [hk, hj]]; exact sk
 
 end VG.Proof.RsaPss.X86

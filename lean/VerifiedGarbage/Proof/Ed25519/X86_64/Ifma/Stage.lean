@@ -31,7 +31,7 @@ def loadS : Sym := symOf vload
 theorem loadS_regs (E : Env) : ∀ j < 5, ∀ l < 4, (loadS.reg j).nat E l =
     limbNat (fun k => E.m (64 + 32 * l) k) (E.g .rax) j := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The term `vload` stores at `d`. -/
@@ -89,7 +89,7 @@ def dblOp2 (E : Env) (j : Nat) : Nat → Nat
 theorem dblBS_nat (E : Env) : ∀ j < 5, ∀ l < 4,
     (dblBS.reg j).nat E l = dblOp1 E j l ∧ (dblBS.reg (5 + j)).nat E l = dblOp2 E j l := by
   intro j hj l hl
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;>
     rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> exact ⟨rfl, rfl⟩
 
 /-- The first product's limbs are below this. -/

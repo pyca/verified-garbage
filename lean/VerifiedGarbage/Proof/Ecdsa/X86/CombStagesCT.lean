@@ -60,7 +60,7 @@ theorem Keep.arg {c : Cfg} {s₀ s : State} {extra : List Region}
   rw [he]
   exact hp.frame_readW h.whole (hp.args_out.sub_left (arg_sub hp.sp_fit hj))
     (hp.args_sc.sub_left (arg_sub hp.sp_fit hj))
-    ((below_disjoint_args hp.sp_lo (k := 20) (by have := hp.sp_fit; omega) (by decide)).symm.sub_left
+    ((below_disjoint_args hp.sp_lo (k := 20) (by have := hp.sp_fit; omega_using [this]) (by decide)).symm.sub_left
       (arg_sub hp.sp_fit hj))
 
 /-- The public argument area is disjoint from every writable buffer. -/
@@ -82,8 +82,8 @@ theorem argWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
     refine ⟨hp.sp_fit, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := hp.sp_fit; omega) hp.ret_out hp.args_out
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := hp.sp_fit; omega) hp.ret_sc hp.args_sc
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := hp.sp_fit; omega_using [this]) hp.ret_out hp.args_out
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by have := hp.sp_fit; omega_using [this]) hp.ret_sc hp.args_sc
   · intro p h; cases h
 
 /-- Equal pointers and stack arguments establish a taint agreement. -/
@@ -95,18 +95,18 @@ theorem argAgree {rs : List Reg} {n room : Nat} {s t : State}
     fun h => by cases h⟩, fun h => False.elim (h rfl), ws, wt,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => he, ?_⟩
   intro k hlo hhi
-  have hs := (ws.args (show 0 < 4 + 4 * n by omega)).1
-  have ht := (wt.args (show 0 < 4 + 4 * n by omega)).1
+  have hs := (ws.args (show 0 < 4 + 4 * n by omega_using [])).1
+  have ht := (wt.args (show 0 < 4 + 4 * n by omega_using [])).1
   change 4 ≤ k at hlo
   change k < 4 + 4 * n at hhi
   rw [show VG.X86.Taint.depth (argτ rs n room).stk = 0 from rfl, Nat.zero_add]
   change (s.gpr .esp).toNat + 0 + (4 + 4 * n) ≤ 2 ^ 32 at hs
   change (t.gpr .esp).toNat + 0 + (4 + 4 * n) ≤ 2 ^ 32 at ht
-  rw [VG.X86.Taint.argByte_eq (by omega) hlo hhi,
-    VG.X86.Taint.argByte_eq (by omega) hlo hhi,
+  rw [VG.X86.Taint.argByte_eq (by omega_using [hs]) hlo hhi,
+    VG.X86.Taint.argByte_eq (by omega_using [ht]) hlo hhi,
     Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),
     Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-  exact congrArg _ (ha ((k - 4) / 4) (by omega))
+  exact congrArg _ (ha ((k - 4) / 4) (by omega_using [hlo, hhi]))
 
 theorem scratchArgWf {n : Nat} {second : Bool} {s : State}
     (a : VG.X86.Taint.Wf (argτ [.esp, .edi] n) s) (b : VG.X86.Taint.Wf (combτAt second) s) :

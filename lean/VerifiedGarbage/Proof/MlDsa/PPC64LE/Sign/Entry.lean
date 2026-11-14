@@ -143,9 +143,9 @@ variable {p : Params} {L K off len : Nat} {X : State → Prop} {σ : State}
     Proof.MlDsa.CachedSecretPolys p σ.mem (sSk σ + BitVec.ofNat 64 off) (skOf p σ)))
 include h
 
-theorem EPre.fit : K + 1 + 48 < 2 ^ 64 := by have := h.stk; have := σ.sp.isLt; omega
+theorem EPre.fit : K + 1 + 48 < 2 ^ 64 := by have := h.stk; have := σ.sp.isLt; omega_arith
 
-theorem EPre.b48 : Region.Sub (below σ.sp 48) (below σ.sp (K + 1 + 48)) := below_sub (by omega) h.fit
+theorem EPre.b48 : Region.Sub (below σ.sp 48) (below σ.sp (K + 1 + 48)) := below_sub (by omega_using []) h.fit
 
 theorem EPre.bK : Region.Sub (below (σ.sp - 48) (K + 1)) (below σ.sp (K + 1 + 48)) := by
   intro x hx
@@ -163,7 +163,7 @@ theorem EPre.bytes {a : Addr} {l : Nat} (hd : (below σ.sp (K + 1 + 48)).Disjoin
 omit h in
 include hL in
 theorem EPre.subK : Region.Sub (reg (sSk σ) p.skLen) (reg (sSk σ) L) := by
-  have := Offset.sub_base (sSk σ) (d := 0) (n := p.skLen) (k := L) (by omega)
+  have := Offset.sub_base (sSk σ) (d := 0) (n := p.skLen) (k := L) (by omega_using [hL])
   rwa [BitVec.add_zero] at this
 
 omit h in
@@ -176,7 +176,7 @@ theorem EPre.inputs : skOf p (cs p off len σ) = skOf p σ ∧ muOf (cs p off le
   simp only [skOf, muOf, rndOf, sSk, sMu, sRnd, cs_gpr σ (r := .r3) (by decide) (by decide) (by decide) (by decide)
     (by decide), cs_gpr σ (r := .r4) (by decide) (by decide) (by decide) (by decide) (by decide),
     cs_gpr σ (r := .r5) (by decide) (by decide) (by decide) (by decide) (by decide)]
-  exact ⟨h.bytes (h.b_k.sub_right (EPre.subK hL)) (by have := h.f_k; simp only [sSk] at this; omega),
+  exact ⟨h.bytes (h.b_k.sub_right (EPre.subK hL)) (by have := h.f_k; simp only [sSk] at this; omega_using [hL, this]),
     h.bytes h.b_m (by decide),
     h.bytes h.b_r (by decide)⟩
 
@@ -220,14 +220,14 @@ theorem cs_kpre : KPre p (K + 1) (cs p off len σ) := by
   · exact h.b_g.sub_left bK
   · exact h.b_c.sub_left bK
   · exact (h.b_k.sub_left bK).sub_right sX
-  · omega
+  · omega_using [hL, fk]
   · exact h.f_m
   · exact h.f_r
   · exact h.f_g
   · exact h.f_c
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt hO]
-    exact Nat.le_trans (Nat.add_le_add_right (Nat.mod_le _ _) _) (by omega)
+    exact Nat.le_trans (Nat.add_le_add_right (Nat.mod_le _ _) _) (by omega_using [hoff, fk])
   · rw [cs_r9]
     rcases hc with h0 | ⟨hl, hcc⟩
     · subst h0; exact .inl rfl
@@ -235,7 +235,7 @@ theorem cs_kpre : KPre p (K + 1) (cs p off len σ) := by
       rw [(h.inputs hL).1]
       have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r3 + BitVec.ofNat 64 off +
           BitVec.ofNat 64 (4 * n * i))) (reg (σ.gpr .r3 + BitVec.ofNat 64 off) len) :=
-        Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega)
+        Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi])
       exact Proof.MlDsa.Verify.polyIs_frame (cs_mem σ) (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
         exact ((h.b_k.sub_left h.b48).sub_right sX).symm.sub_left hsub) (hcc i hi)
@@ -291,9 +291,9 @@ theorem entryS_wp {σ : State} (h : EPre p L (K + 1 + 48) X σ) :
         (bytesAt s'.mem (sSig σ) p.sigLen) := by
   obtain ⟨cv, cw⟩ := h.covers hL hoff
   refine entry_wp (name := name) (F := eF off len) (R := fun m r => Outcome (fun b => signMu p b (skOf p σ) (muOf σ)
-    (rndOf σ)) (r.setWidth 32) (bytesAt m (sSig σ) p.sigLen)) hv.1 (by omega) (eMv_ok ho hl) (eF_ok off len)
-    (by have := h.stk; omega) h.hd96
-    (kpre_to (cs_kpre h hL hoff (by omega) (by omega) (hc σ h))) cv cw fun s' hq => ?_
+    (rndOf σ)) (r.setWidth 32) (bytesAt m (sSig σ) p.sigLen)) hv.1 (by omega_using [hd, hK]) (eMv_ok ho hl) (eF_ok off len)
+    (by have := h.stk; omega_using [this]) h.hd96
+    (kpre_to (cs_kpre h hL hoff (by omega_using [hl]) (by omega_using [ho]) (hc σ h))) cv cw fun s' hq => ?_
   have q := hq
   generalize hτ : cs p off len σ = τ at q
   sig_post [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, PPC64LE.abi,
@@ -315,14 +315,14 @@ theorem entryS_tr {P : State → State → Prop}
       (∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], x.gpr r = y.gpr r) ∧
       signLeak p (skOf p x) (muOf x) (rndOf x) = signLeak p (skOf p y) (muOf y) (rndOf y)) :
     RelCT isa P (entryCode (eMv off len) name code) fun _ _ => True := by
-  refine entry_tr (name := name) (F := eF off len) (rd := rdC p off len) (wr := wrC p) hv.1 (by omega) (eMv_ok ho hl) (eF_ok off len)
+  refine entry_tr (name := name) (F := eF off len) (rd := rdC p off len) (wr := wrC p) hv.1 (by omega_using [hd, hK]) (eMv_ok ho hl) (eF_ok off len)
     hv.2.1 rfl (fun x y h => (hP x y h).2.2.1) (fun x ⟨y, hxy⟩ => ?_) (fun x y hxy => ?_)
   · have hx : EPre p L (K + 1 + 48) X x := by
       rcases hxy with h | h
       exacts [(hP x y h).1, (hP y x h).2.1]
     obtain ⟨cv, cw⟩ := hx.covers hL hoff
-    exact ⟨by have := hx.stk; omega, hx.hd96,
-      kpre_to (cs_kpre hx hL hoff (by omega) (by omega) (hc x hx)), cv, cw⟩
+    exact ⟨by have := hx.stk; omega_using [this], hx.hd96,
+      kpre_to (cs_kpre hx hL hoff (by omega_using [hl]) (by omega_using [ho]) (hc x hx)), cv, cw⟩
   · obtain ⟨hx, hy, hsp, hreg, hlk⟩ := hP x y hxy
     have g : ∀ {r : Reg}, r ∈ [Reg.r3, .r4, .r5, .r6, .r7] →
         (cs p off len x).gpr r = (cs p off len y).gpr r := fun {r} hr => by
@@ -377,11 +377,11 @@ theorem sign_entry_verified (hsat : ∃ s, (signContract p PPC64LE.abi (K + 1 + 
   have hE (σ : State) (h : (signContract p PPC64LE.abi (K + 1 + 48)).pre σ) :
       EPre p p.skLen (K + 1 + 48) (fun _ => True) σ := epre_sign (k := K + 48) h
   refine ⟨fun σ hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
-  · refine WP.mono (entryS_wp (name := name) hv hd hK (Nat.le_refl _) (off := 0) (len := 0) (by omega) (by decide)
+  · refine WP.mono (entryS_wp (name := name) hv hd hK (Nat.le_refl _) (off := 0) (len := 0) (by omega_using []) (by decide)
       (by decide) (fun _ _ => .inl rfl) (hE σ hs)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
     sig_post [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs]
     exact hq
-  · refine (entryS_tr (name := name) (X := fun _ => True) hv hd hK (Nat.le_refl _) (off := 0) (len := 0) (by omega)
+  · refine (entryS_tr (name := name) (X := fun _ => True) hv hd hK (Nat.le_refl _) (off := 0) (len := 0) (by omega_using [])
       (by decide) (by decide) (fun _ _ => .inl rfl) (P := fun x y => (signContract p PPC64LE.abi (K + 1 + 48)).pre x ∧
         (signContract p PPC64LE.abi (K + 1 + 48)).pre y ∧ (signContract p PPC64LE.abi (K + 1 + 48)).pub x y)
       (fun x y ⟨a, b, c⟩ => ?_) s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hpub⟩ e₁ e₂).1
@@ -407,15 +407,15 @@ theorem prepared_entry_verified (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa
   have hE (σ : State) (h : (Proof.MlDsa.preparedSignContract p PPC64LE.abi (K + 1 + 48)).pre σ) :
       EPre p (preparedSecretKeyBytes p) (K + 1 + 48) (fun σ => PreparedSecretKey p σ.mem (sSk σ)) σ :=
     epre_prepared (k := K + 48) h
-  have hL : p.skLen ≤ preparedSecretKeyBytes p := by simp only [preparedSecretKeyBytes]; omega
+  have hL : p.skLen ≤ preparedSecretKeyBytes p := by simp only [preparedSecretKeyBytes]; omega_using []
   have hoff : p.skLen + 1024 * (p.ℓ + 2 * p.k) ≤ preparedSecretKeyBytes p := by
-    simp only [preparedSecretKeyBytes]; show _ ≤ _ + 4 * 256 * _; omega
+    simp only [preparedSecretKeyBytes]; show _ ≤ _ + 4 * 256 * _; omega_using []
   have ho : p.skLen < 2 ^ 15 := by rcases hp3 with rfl | rfl | rfl <;> decide
   have hl : 1024 * (p.ℓ + 2 * p.k) < 2 ^ 15 := by rcases hp3 with rfl | rfl | rfl <;> decide
   have hc : ∀ σ, EPre p (preparedSecretKeyBytes p) (K + 1 + 48) (fun σ => PreparedSecretKey p σ.mem (sSk σ)) σ →
       1024 * (p.ℓ + 2 * p.k) = 0 ∨ (1024 * (p.ℓ + 2 * p.k) = 4 * n * (p.ℓ + 2 * p.k) ∧
         Proof.MlDsa.CachedSecretPolys p σ.mem (sSk σ + BitVec.ofNat 64 p.skLen) (skOf p σ)) :=
-    fun σ h => .inr ⟨by show _ = 4 * 256 * _; omega, prepared_cache h.x⟩
+    fun σ h => .inr ⟨by show _ = 4 * 256 * _; omega_using [], prepared_cache h.x⟩
   refine ⟨fun σ hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, hsat⟩
   · refine WP.mono (entryS_wp (name := name) hv hd hK hL hoff ho hl hc (hE σ hs)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
     sig_post [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, PPC64LE.abi, PPC64LE.argRegs]

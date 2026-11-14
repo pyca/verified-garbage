@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RSA: the working space of the public-key functions
 
@@ -19,6 +20,6 @@ theorem publicScratch_le {k z : Nat} (hk : Spec.Rsa.lenValid k) (h : Spec.Rsa.sc
   unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords
   unfold Spec.Rsa.scratchWords at h
   have := hk.1
-  omega
+  omega_using [h, this]
 
 end VG.Proof.Rsa

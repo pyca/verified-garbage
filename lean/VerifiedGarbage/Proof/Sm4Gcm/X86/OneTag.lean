@@ -132,7 +132,7 @@ theorem oneCrypt_pc (icb : State → Block) :
   · have := hco.out (by rw [h₁.ciph]; exact hc)
     rwa [h₁.ciph, bytesAt_frame f (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact G.d_w.sub_right (Lay.wSub (by decide))) (by have := G.fd; omega)] at this
+      exact G.d_w.sub_right (Lay.wSub (by decide))) (by have := G.fd; omega_using [])] at this
   · exact (f.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨wsR (p.2 7), by simp, pslot_ws _⟩).trans hco.frame
 
@@ -171,10 +171,10 @@ theorem OTIn.pslot {s₀ s s' : State} (h : OTIn p s₀ s) (f : Frame [pslotR (p
 
 theorem st_sub_oT {o d k : Nat} (h : d + k ≤ 48) :
     ∃ r' ∈ oT p o, Region.Sub ⟨w64 (stOf (p.2 7)) + BitVec.ofNat 64 d, k⟩ r' := by
-  rw [st_eq G]; exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega) (by omega)⟩
+  rw [st_eq G]; exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega_using []) (by omega_using [h])⟩
 
 theorem st0_sub_oT {o k : Nat} (h : k ≤ 48) : ∃ r' ∈ oT p o, Region.Sub ⟨w64 (stOf (p.2 7)), k⟩ r' := by
-  rw [stOf_w64 G.L.fw]; exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega) (by omega)⟩
+  rw [stOf_w64 G.L.fw]; exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega_using []) (by omega_using [h])⟩
 
 omit G in
 theorem pslot_oT {o : Nat} {m m' : Mem} (f : Frame [pslotR (p.2 7)] m m') : Frame (oT p o) m m' :=
@@ -280,7 +280,7 @@ theorem oneTag_pc {o : Nat} (ho : o = 0 ∨ o = 112) :
   · have := ho.abs (xA p b.1) (hl b.1) (by rw [h₁.o.hk]; exact h₁.y)
     rwa [h₁.o.hk, bytesAt_frame f (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact G.d_w.sub_right (Lay.wSub (by decide))) (by have := G.fd; omega)] at this
+      exact G.d_w.sub_right (Lay.wSub (by decide))) (by have := G.fd; omega_using [])] at this
   -- `bO`.
   refine Pc.seq (Q := fun b s₃ => OEnv p b.1 s₃ ∧
       blockAt s₃.mem (w64 (stOf (p.2 7))) = jOf p b.1 ∧
@@ -295,7 +295,7 @@ theorem oneTag_pc {o : Nat} (ho : o = 0 ∨ o = 112) :
       Nat.mod_lt _ (by decide)
     refine ⟨h₂.frame G (Frame.oD (pslot_oF f')) bp si sp rd wr, ?_,
       ha.congr (blockAt_frame f' (st_pslot G (by decide))) (bytesAt_frame f' (fun r hr =>
-        (st_pslot G (d := 32) (by decide) r hr).sub_left (Region.sub_prefix (by omega))) (by omega)),
+        (st_pslot G (d := 32) (by decide) r hr).sub_left (Region.sub_prefix (by omega_using []))) (by omega_using [])),
       f.trans (pslot_oT f'), by rw [bz, h₂.lenO]⟩
     have e := blockAt_frame f' (st_pslot G (d := 0) (by decide)); rw [BitVec.add_zero] at e; rw [e]; exact hj
   -- Padded.
@@ -313,7 +313,7 @@ theorem oneTag_pc {o : Nat} (ho : o = 0 ∨ o = 112) :
     simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this
     rw [this]; exact hj
   · have hx : (xA p b.1 ++ bytesAt b.2.mem (w64 (p.2 5)) (p.2 6).toNat).length % 16 = (p.2 6).toNat % 16 := by
-      rw [List.length_append, length_bytesAt]; have := hl b.1; omega
+      rw [List.length_append, length_bytesAt]; have := hl b.1; omega_using [this]
     have := ho.abs _ hx (by rw [h₃.hk]; exact ha)
     rwa [h₃.hk] at this
   -- The tag.

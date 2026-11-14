@@ -26,8 +26,8 @@ with `Impl.AesCbc.PPC64LE.batched`), in vector registers: the eight tweaks
 computed in `r9` and `r10` and saved in slots 0–7 at the start of the
 scratch buffer, and the next one stored at `r16`; the eight blocks read into
 `v0`–`v7`, each XORed with its slot, enciphered (or deciphered) together by
-the rounds of `Impl.Aes.PPC64LE.Crypto.aes`, XORed with its slot again and
-stored in place.
+the rounds of `aesRes`, with round keys 1–9 in `v10`–`v18` (`preload`,
+before the first group), XORed with its slot again and stored in place.
 
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
@@ -77,6 +77,61 @@ def tweaks8 : List Instr :=
   [.load .d .r9 .r16 0, .load .d .r10 .r16 8] ++ (List.range 8).flatMap tweakReg ++
     [.store .d .r9 .r16 0, .store .d .r10 .r16 8]
 
+/-! ## Round keys 1–9 in registers
+
+`kreg 1` … `kreg 9` (`v10`–`v18`) hold round keys 1–9 while the groups run:
+`preload` loads them once, before the first group, and `aesRes` runs the
+rounds of eight blocks with them, loading only the others (key 0, keys 10 to
+`Nr - 1` and key `Nr`) per group. Decryption uses keys 9 to 1 for its last
+nine middle rounds, so the same nine serve both directions. -/
+
+/-- The register of round key `i` (1–9). -/
+def kreg : Nat → VReg
+  | 1 => .v10 | 2 => .v11 | 3 => .v12 | 4 => .v13 | 5 => .v14
+  | 6 => .v15 | 7 => .v16 | 8 => .v17 | _ => .v18
+
+open VG.Impl.Aes.PPC64LE.Crypto (load) in
+/-- The byte-order mask set up, and round keys 1–9 of the schedule at `r14`
+loaded into `kreg 1` … `kreg 9`. -/
+def preload : List Instr :=
+  Impl.Aes.PPC64LE.Crypto.setup ++
+    (List.range 9).flatMap fun i => .addi .r9 .r14 (16 * (i + 1)) :: load (kreg (i + 1)) .r9
+
+open VG.Impl.Aes.PPC64LE.Crypto (round) in
+/-- A middle round with round key `i`, loaded from `r3 + 16 i`. -/
+def streamed (inverse : Bool) (rs : List VReg) (i : Nat) : List Instr :=
+  .addi .r9 .r3 (16 * i) :: round inverse false rs
+
+/-- The nine middle rounds with the keys in registers: keys 1 to 9, or 9 to
+1 when deciphering. -/
+def residents (inverse : Bool) (rs : List VReg) : List Instr :=
+  (List.range 9).flatMap fun t =>
+    Impl.Aes.PPC64LE.Crypto.cipherRegs inverse false (kreg (if inverse then 9 - t else t + 1)) rs
+
+/-- The middle rounds with keys 10 to `Nr - 1` (none for AES-128; 10 and 11
+for AES-192; 10 to 13 for AES-256), by `Nr` in `r4`, in the direction's
+order. -/
+def extra (inverse : Bool) (rs : List VReg) : Prog isa :=
+  .seq (.block [.subi .r12 .r4 10]) (.ite (.zero .d .r12) (.block [])
+    (if inverse then
+      .seq (.seq (.block [.subi .r12 .r4 12])
+          (.ite (.zero .d .r12) (.block []) (.block (streamed true rs 13 ++ streamed true rs 12))))
+        (.block (streamed true rs 11 ++ streamed true rs 10))
+    else
+      .seq (.block (streamed false rs 10 ++ streamed false rs 11))
+        (.seq (.block [.subi .r12 .r4 12])
+          (.ite (.zero .d .r12) (.block []) (.block (streamed false rs 12 ++ streamed false rs 13))))))
+
+open VG.Impl.Aes.PPC64LE.Crypto (initialBody keyStart round) in
+/-- AES on the state registers `rs`, as `Impl.Aes.PPC64LE.Crypto.aes`, with
+round keys 1–9 in `kreg 1` … `kreg 9`: key 0 (key `Nr` when deciphering) and
+the first round, the middle rounds, and the last round with key `Nr` (key 0). -/
+def aesRes (inverse : Bool) (rs : List VReg) : Prog isa :=
+  .seq (.block (initialBody inverse rs))
+    (.seq (if inverse then .seq (extra true rs) (.block (residents true rs))
+        else .seq (.block (residents false rs)) (extra false rs))
+      (.block (keyStart (!inverse) ++ round inverse true rs)))
+
 /-- The eight blocks at `r17` read, XORed with their tweaks, enciphered
 (`inverse = false`) or deciphered, XORed with their tweaks again and stored
 in place. -/
@@ -84,12 +139,12 @@ def vgroup (inverse : Bool) : Prog isa :=
   .seq (.block (tweaks8 ++ vsetup ++
       (Impl.Aes.PPC64LE.Crypto.batchRegs 8).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock false) ++
       [.subi .r6 .r6 128] ++ xorSlots))
-    (.seq (Impl.Aes.PPC64LE.Crypto.aes inverse (Impl.Aes.PPC64LE.Crypto.batchRegs 8))
+    (.seq (aesRes inverse (Impl.Aes.PPC64LE.Crypto.batchRegs 8))
       (.block (xorSlots ++ (Impl.Aes.PPC64LE.Crypto.batchRegs 8).flatMap
         (fun v => Impl.Aes.PPC64LE.Crypto.storeAdvance v) ++ advance8)))
 
-def encrypt : Prog isa := batched (vgroup false) encBody
+def encrypt : Prog isa := batched (vgroup false) encBody preload
 
-def decrypt : Prog isa := batched (vgroup true) decBody
+def decrypt : Prog isa := batched (vgroup true) decBody preload
 
 end VG.Impl.AesXts.PPC64LE

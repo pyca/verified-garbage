@@ -50,19 +50,19 @@ theorem DReg.w {p : Prm} (L : Lay p) {s : State} (E : Env p s) {d n : Nat} (h : 
     (hm : d + 16 * n ≤ 128 ∨ 144 ≤ d ∧ d + 16 * n ≤ 176 ∨ 216 ≤ d ∧ d + 16 * n ≤ 384 ∨ 384 ≤ d) :
     DReg p s (p.W + BitVec.ofNat 32 d) n := by
   simp only [scrO] at h
-  have a := L.aW (o := d) (by omega)
+  have a := L.aW (o := d) (by omega_using [h])
   refine ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
-  · rw [L.nW (by omega)]; have := L.ww; omega
-  · rw [a]; exact (L.k_w' (by omega)).sub_left (Region.sub_prefix (by decide))
-  · rw [a]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · rw [a]; exact L.bw' (by omega)
-  · rw [a]; exact E.perm.wC (by omega)
+  · rw [L.nW (by omega_using [h])]; have := L.ww; omega_using [h, this]
+  · rw [a]; exact (L.k_w' (by omega_using [h])).sub_left (Region.sub_prefix (by decide))
+  · rw [a]; exact Lay.w_w (.inl (by omega)) (by omega_using [h]) (by decide)
+  · rw [a]; exact L.bw' (by omega_using [h])
+  · rw [a]; exact E.perm.wC (by omega_using [h])
   simp only [List.mem_singleton] at hr; subst hr; rw [a]
   rcases hm with hm | hm | hm | hm
   · exact inMut_w p (.inl hm)
   · exact inMut_w p (.inr (.inl hm))
   · exact inMut_w p (.inr (.inr (.inl hm)))
-  · exact inMut_w p (.inr (.inr (.inr ⟨hm, by omega⟩)))
+  · exact inMut_w p (.inr (.inr (.inr ⟨hm, by omega_using [h]⟩)))
 
 /-- What `callBlocks` leaves: the blocks through `f`. -/
 structure CallPost (p : Prm) (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (D : BitVec 32) (n : Nat)
@@ -102,7 +102,7 @@ theorem callArgs_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {D : BitVec 
     ks := by rw [aS]; exact (L.k_w' (by decide)).sub_left (Region.sub_prefix (by decide)),
     ds := by rw [aS]; exact hD.ds, bk := by rw [hsp₁]; exact L.bk.sub_right (Region.sub_prefix (by decide)),
     bd := by rw [hsp₁]; exact hD.bd, bs := by rw [hsp₁, aS]; exact L.bw' (by decide),
-    fK := by have := L.kw; omega, fD := hD.fD, fS := by rw [L.nW (by decide)]; have := L.ww; omega,
+    fK := by have := L.kw; omega_using [this], fD := hD.fD, fS := by rw [L.nW (by decide)]; have := L.ww; omega,
     reads := by rw [rd₁, wr₁]; exact covers_prefix E.perm.k (by decide),
     writes := by
       rw [wr₁, aS]

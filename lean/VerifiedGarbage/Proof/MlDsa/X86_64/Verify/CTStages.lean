@@ -125,7 +125,7 @@ theorem zOne_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {i 
 
 theorem zs_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
     RelCT isa (RV p (Iz p 0)) (seqR (zOne P p) 0 p.ℓ) (RV p (Iz p p.ℓ)) := by
-  have := seqR_tr (R := fun i => RV p (Iz p i)) p.ℓ 0 fun i _ hi => zOne_tr C hp (by omega)
+  have := seqR_tr (R := fun i => RV p (Iz p i)) p.ℓ 0 fun i _ hi => zOne_tr C hp (by omega_using [hi])
   rwa [Nat.zero_add] at this
 
 end VG.Proof.MlDsa.X86_64.Verify

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Idea.RISCV64.Lit
 
-/-! # IDEA artifacts on baseline RISC-V -/
+/-! # IDEA on RISC-V -/
 
 @[expose] public section
 

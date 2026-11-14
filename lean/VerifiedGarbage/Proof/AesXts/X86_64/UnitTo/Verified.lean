@@ -207,8 +207,8 @@ theorem encrypt_rel (v : UnitImpl) :
   have a := taint_rel pinned argsAll_taint (P := fun a b => TwPost s₀ a ∧ TwPost s₀' b)
     (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := BlocksReady s₀ (M s₀)) (F₂ := BlocksReady s₀' (M s₀'))
     fun a b h => ⟨argsAll_wp hp h.1, argsAll_wp hp' h.2⟩
-  have c := blocksTo_rel hp hp' hq true v.encToOk v.encToCt v.encToNosp v.encToDepth (by rw [len_eq s₀]; omega)
-    (by rw [len_eq s₀']; omega) hM (n := v.encTo.name)
+  have c := blocksTo_rel hp hp' hq true v.encToOk v.encToCt v.encToNosp v.encToDepth (by rw [len_eq s₀]; omega_using [])
+    (by rw [len_eq s₀']; omega_using []) hM (n := v.encTo.name)
   have cp := taint_rel pinned copyAll_taint
     (P := fun a b => AllPost true s₀ (M s₀) a ∧ AllPost true s₀' (M s₀') b)
     (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := Copied true s₀ (M s₀)) (F₂ := Copied true s₀' (M s₀'))
@@ -274,7 +274,7 @@ theorem decrypt_rel (v : UnitImpl) :
         (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := BlocksReady s₀ (M s₀))
         (F₂ := BlocksReady s₀' (M s₀')) fun a b h => ⟨argsAll_wp hp h.1, argsAll_wp hp' h.2⟩
       have c := blocksTo_rel hp hp' hq false v.decToOk v.decToCt v.decToNosp v.decToDepth
-        (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) hM (n := v.decTo.name)
+        (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) hM (n := v.decTo.name)
       exact a.seq (c.mono (fun _ _ h => h) fun _ _ h => ⟨allPost_fin hp h.1 hb, allPost_fin hp' h.2 hb'⟩)
     · refine (RelCT.exists_ (P := fun (_ : B s₀ ≠ 0) a b => TwPost s₀ a ∧ TwPost s₀' b) fun hB => ?_).mono
         (fun a b h => ⟨by have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this; simpa using this,
@@ -284,7 +284,7 @@ theorem decrypt_rel (v : UnitImpl) :
         (fun a b h => Inv.agree hq h.1.inv h.2.inv) (F₁ := BlocksReady s₀ (M s₀ - 1))
         (F₂ := BlocksReady s₀' (M s₀' - 1)) fun a b h => ⟨argsHead_wp hp h.1, argsHead_wp hp' h.2⟩
       have c₁ := blocksTo_rel hp hp' hq false v.decToOk v.decToCt v.decToNosp v.decToDepth (N := M s₀ - 1)
-        (N' := M s₀' - 1) (by rw [len_eq s₀]; omega) (by rw [len_eq s₀']; omega) (by rw [hM])
+        (N' := M s₀' - 1) (by rw [len_eq s₀]; omega_using []) (by rw [len_eq s₀']; omega_using []) (by rw [hM])
         (n := v.decTo.name)
       have cp := taint_rel pinned copyHead_taint
         (P := fun a b => AllPost false s₀ (M s₀ - 1) a ∧ AllPost false s₀' (M s₀' - 1) b)

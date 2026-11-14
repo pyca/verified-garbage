@@ -172,7 +172,7 @@ theorem same_hash {w w' : HVar} (hw : WOk w) (hw' : WOk w')
     have h₁ := index_lt w; have h₂ := index_lt w'
     have h8 : Spec.Mgf1.hashes.length < 2 ^ 32 := by decide
     have := congrArg BitVec.toNat h
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h₂, h8]), Nat.mod_eq_of_lt (by omega_using [h₁, h8])] at this
     exact this
   have hG : w'.G = w.G := Option.some.inj (w'.idx.symm.trans (e ▸ w.idx))
   refine ⟨hG, ?_⟩

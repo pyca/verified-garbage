@@ -39,11 +39,11 @@ theorem out_mem : outR s₀ ∈ (entry s₀).wr := wr_mem s₀ (by rw [hp.wr]; s
 
 /-- The 32 bytes below the locals that H′'s macros use are within the stack below them. -/
 theorem stk32_call : Region.Sub (stkR (E s₀) 32) (callR s₀) :=
-  VG.Proof.Argon2.Arm.stkR_sub (by decide) (by rw [E_nat hp]; have := hp.sp_lo; omega)
+  VG.Proof.Argon2.Arm.stkR_sub (by decide) (by rw [E_nat hp]; have := hp.sp_lo; omega_using [this])
 
 theorem ctx {s : State} (h : Inv s₀ s) (hb : s.gpr .r4 = scrP s₀) : Ctx (scrP s₀) (E s₀) s := by
   have := hp.scr_fits
-  refine ⟨hb, h.sp, by omega, by rw [E_nat hp]; have := hp.sp_lo; omega, ?_, ?_⟩
+  refine ⟨hb, h.sp, by omega_using [this], by rw [E_nat hp]; have := hp.sp_lo; omega_using [this], ?_, ?_⟩
   · rw [h.wr]
     exact (Covers.of_sub (rs' := [scrR s₀]) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr

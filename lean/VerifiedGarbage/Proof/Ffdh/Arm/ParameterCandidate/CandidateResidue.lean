@@ -16,10 +16,10 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 
 theorem CandidateParams.candidate_odd (p : CandidateParams) : p.candidate % 2 = 1 :=
-  (VG.Proof.Ffdh.ParameterCandidate.candidate_shape (by have := p.minBits; omega) _).1
+  (VG.Proof.Ffdh.ParameterCandidate.candidate_shape (by have := p.minBits; omega_using [this]) _).1
 
 theorem CandidateParams.candidate_bits (p : CandidateParams) : Spec.RsaKeyGen.bitLength p.candidate = p.bits :=
-  (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by have := p.minBits; omega) _).1
+  (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (by have := p.minBits; omega_using [this]) _).1
 
 private theorem generationResidue (p : CandidateParams) :
     Spec.Ffdh.generationShape p.bits p.generator p.candidate =

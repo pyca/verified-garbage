@@ -15,12 +15,9 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PlainSimp
 /-! # Clearing an extended result array leaks only its public layout -/
 
--- Formerly `VerifiedGarbage/Proof/Bignum/Arm/ClearOperandBufferCT.lean`, which only this module imported.
-section
+/-! ## Clearing an extended operand buffer reveals only its public pointer and width -/
 
-/-! # Clearing an extended operand buffer reveals only its public pointer and width -/
-
-section
+@[expose] public section
 
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
@@ -58,7 +55,6 @@ theorem clearOperandBuffer_ct {base dst : BitVec 32} {size slot w : Nat}
   exact ((body.seq (loadStack_ct .r0 0)).assoc).mono (fun _ _ h => h) (fun _ _ _ => trivial)
 
 end VG.Proof.Bignum.Arm
-end
 
 end
 
@@ -77,7 +73,7 @@ theorem clearArrayWide_ct {base : BitVec 32} {len w o : Nat} (ho : o < 8) (fit :
     rw [h.width] at header
     exact ⟨h.workspace, h.ptr, header.count, header.array o ho⟩
   exact (clearOperandBuffer_ct (base := base) (dst := base + BitVec.ofNat 32 (arrAt w o))
-    (size := 8 * len) (slot := 64 + 8 * o) (w := w) (by omega) (by omega) (by omega)).mono
+    (size := 8 * len) (slot := 64 + 8 * o) (w := w) (by omega_using [fit]) (by omega_using [ho, fit]) (by omega_using [ho])).mono
     (fun s t h => ⟨input s h.1, input t h.2.1, h.2.2⟩) (fun _ _ _ => trivial)
 
 end VG.Proof.Bignum.Arm

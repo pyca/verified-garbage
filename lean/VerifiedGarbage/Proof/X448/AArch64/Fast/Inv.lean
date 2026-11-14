@@ -91,7 +91,7 @@ theorem invEnv_keep (e : Env) (i : Index) (hi : i.val < 12) : invEnv e i = e i :
   have h12 : i ≠ 12 := fun h => absurd hi (by rw [h]; decide)
   have h21 : i ≠ 21 := fun h => absurd hi (by rw [h]; decide)
   rw [invEnv_eq]
-  simp only [opMul, opSqn, opCopy, Function.update_of_ne h21, rootEnv_keep _ i (by omega),
+  simp only [opMul, opSqn, opCopy, Function.update_of_ne h21, rootEnv_keep _ i (by omega_using [hi]),
     Function.update_of_ne h12]
 
 theorem invEnv_x2 (e : Env) : invEnv e 1 = e 1 := invEnv_keep e 1 (by decide)

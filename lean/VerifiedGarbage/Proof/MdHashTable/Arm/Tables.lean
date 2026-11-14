@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512_224
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512_256
 public import VerifiedGarbage.Proof.HashTable.Basic
-import VerifiedGarbage.Proof.HashTable.Arm
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 public import VerifiedGarbage.Spec.MdHashTable
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -129,8 +128,8 @@ theorem held_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 44 ≤ 2 ^ 32) {s
       m.readW (tA p 16) 32 = s.syms (digName w) ∧ m.readW (tA p 20) 32 = BitVec.ofNat 32 (idx w) := by
   rw [words_tableOf] at h
   have a : ∀ i, i < 11 → tA p (4 * i) = State.addr p + BitVec.ofNat 64 (32 / 8 * i) := fun i hi => by
-    rw [tA, VG.Arm.addr_add (by omega)]
-  have e : ∀ i (hi : i < 11), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega)
+    rw [tA, VG.Arm.addr_add (by omega_using [hp, hi])]
+  have e : ∀ i (hi : i < 11), m.readW (tA p (4 * i)) 32 = _ := fun i hi => (a i hi).symm ▸ h i (by simp; omega_using [hi])
   refine ⟨?_, ?_, ?_, ?_⟩
   · have := e 0 (by decide); simp only [Nat.mul_zero] at this; rw [this]; simp
   · have := e 3 (by decide); rw [show 4 * 3 = 12 by rfl] at this; rw [this]; simp
@@ -142,11 +141,11 @@ theorem hashAt_tableOf {m : Mem} {p : BitVec 32} (hp : p.toNat + 44 ≤ 2 ^ 32) 
     (h : m.readW (tA p 20) 32 = BitVec.ofNat 32 (idx w)) :
     Spec.MdHashTable.hashAt 32 m (State.addr p) = some w.h.G := by
   simp only [Spec.MdHashTable.hashAt, Spec.MdHashTable.fns]
-  rw [show State.addr p + BitVec.ofNat 64 (32 / 8 * 5) = tA p 20 by rw [tA, VG.Arm.addr_add (by omega)], h,
+  rw [show State.addr p + BitVec.ofNat 64 (32 / 8 * 5) = tA p 20 by rw [tA, VG.Arm.addr_add (by omega_using [hp])], h,
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
       have := List.findIdx_le_length (p := fun G => G.rust == w.h.G.rust) (xs := Spec.Mgf1.hashes)
       simp only [idx, Spec.HashTable.index, Spec.Mgf1.hashes, List.length_cons, List.length_nil] at this ⊢
-      omega)]
+      omega_using [this])]
   exact w.idx
 
 section
@@ -155,7 +154,14 @@ variable {F A C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : Stat
 /-- A word of a buffer only read, after the entry, as before it. -/
 theorem entered_roW (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 + F ≤ s.sp.toNat)
     {R : Region} (hR : R ∈ ro) {a : Addr} (hc : R.Contains a 4) :
-    (entered F s).mem.readW a 32 = s.mem.readW a 32 := Proof.HashTable.Arm.entered_roW h hsp hR hc
+    (entered F s).mem.readW a 32 = s.mem.readW a 32 := by
+  have hpush : Frame [VG.Arm.FrameStack.belowA s.sp 56] s.mem (entered F s).mem :=
+    VG.Arm.FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_using [hsp])
+  refine hpush.readW hc (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  show Region.Disjoint _ ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+  rw [← Proof.RsaPkcs1Sig.Arm.layOf_PUSH (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hsp]
+  exact ((h.stk R (List.mem_append_left _ hR)).sub_left (Proof.RsaPkcs1Sig.Arm.Lay.sub_stk (Nat.le_refl _))).symm
 
 /-- What `ctHash` needs of the table of `w` at `p`, one of the buffers only
 read, after the entry. -/
@@ -170,8 +176,8 @@ theorem htab_entered (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56
   have e : ∀ o, o + 4 ≤ 44 → (entered F s).mem.readW (tA p o) 32 = s.mem.readW (tA p o) 32 :=
     fun o ho => entered_roW h hsp hR (by
       show (⟨State.addr p, 11 * (32 / 8)⟩ : Region).Contains (State.addr (p + BitVec.ofNat 32 o)) 4
-      rw [VG.Arm.addr_add (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega))
+      rw [VG.Arm.addr_add (by omega_using [hp, ho])]
+      exact Offset.contains_base _ (by omega_using [ho]) (by omega_using [ho]))
   obtain ⟨m0, m3, m4, m5⟩ := held_tableOf hp hh
   have hn := mem_names hw
   have fn : ∀ {β : Type} {ts : List (String × β)} {n : String} {c : β}, (n, c) ∈ ts → (∀ q ∈ ts, q.1 ∈ names vs) →

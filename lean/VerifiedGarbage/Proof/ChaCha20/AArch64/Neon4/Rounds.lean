@@ -90,7 +90,7 @@ theorem op_ok (op : Op) {vs : Nat → CState} {s : State} (h : Holds vs s) (ht :
       · exact h k j hj
     have hn : n.val < 32 := n.isLt
     have hsh : VShiftOp.ushr.ok VArr.s4.esize (32 - n.val) = true := by
-      simp only [VShiftOp.ok, VArr.esize, Bool.and_eq_true, decide_eq_true_eq]; omega
+      simp only [VShiftOp.ok, VArr.esize, Bool.and_eq_true, decide_eq_true_eq]; omega_using []
     have hsl : VShiftOp.sli.ok VArr.s4.esize n.val = true := by
       simp only [VShiftOp.ok, VArr.esize, decide_eq_true_eq]; exact hn
     apply WP.of_runBlock

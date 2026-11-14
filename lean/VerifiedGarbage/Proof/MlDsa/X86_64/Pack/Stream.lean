@@ -215,11 +215,11 @@ theorem read_slice (m : Mem) (a : Addr) (H : Nat) : ∀ (n o : Nat),
     (m.read (a + BitVec.ofNat 64 o) n).toNat = H / 2 ^ (8 * o) % 2 ^ (8 * n)
   | 0, o, _ => by simp only [Mem.read, Nat.mul_zero, Nat.pow_zero, Nat.mod_one]; rfl
   | n + 1, o, h => by
-    have h0 : (m (a + BitVec.ofNat 64 o)).toNat = H / 2 ^ (8 * o) % 2 ^ 8 := by simpa using h 0 (by omega)
+    have h0 : (m (a + BitVec.ofNat 64 o)).toNat = H / 2 ^ (8 * o) % 2 ^ 8 := by simpa using h 0 (by omega_using [])
     rw [Proof.Mont.read_toNat_succ, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
-      read_slice m a H n (o + 1) (fun u hu => by rw [show o + 1 + u = o + (u + 1) by omega]; exact h (u + 1) (by omega)),
-      show 8 * (n + 1) = 8 + 8 * n by omega, mod_two_pow_add, Nat.div_div_eq_div_mul, ← Nat.pow_add,
-      show 8 * o + 8 = 8 * (o + 1) by omega, h0]
+      read_slice m a H n (o + 1) (fun u hu => by rw [show o + 1 + u = o + (u + 1) by omega_using []]; exact h (u + 1) (by omega_using [hu])),
+      show 8 * (n + 1) = 8 + 8 * n by omega_using [], mod_two_pow_add, Nat.div_div_eq_div_mul, ← Nat.pow_add,
+      show 8 * o + 8 = 8 * (o + 1) by omega_using [], h0]
 
 /-- `fin j` stores the coefficient `W x` of the field `x < 2ᵈ` in `rax` to
 `rsi + 4j`, and writes only `rax` and `r11`. -/
@@ -243,7 +243,7 @@ theorem ldLoad_ok {d nb j : Nat} (s : State)
     xrun [ea_at', hin]
     have := (s.mem.read (s.gpr .rdi + BitVec.ofNat 64 (ldOff d nb j)) 4).isLt
     simp only [Mem.readW, BitVec.toNat_setWidth]
-    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega_using [])]
   · have hw : ldW nb = 2 := ifn h 4 2
     rw [hw] at hin ⊢
     simp only [h, ite_false]
@@ -251,7 +251,7 @@ theorem ldLoad_ok {d nb j : Nat} (s : State)
     xrun [ea_at', hin, State.load16]
     have := (s.mem.read (s.gpr .rdi + BitVec.ofNat 64 (ldOff d nb j)) 2).isLt
     simp only [Mem.readW, BitVec.toNat_setWidth]
-    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- The field from the loaded bytes: shifted right by `sh` and masked to `d`
 bits. -/
@@ -280,7 +280,7 @@ after the load, and ends within it. -/
 theorem ldOff_fit {d nb j : Nat} (hd : d ≤ 20) (hnb : 2 ≤ nb) (hsm : nb < 4 → d ≤ 9) (hj : d * j + d ≤ 8 * nb) :
     8 * ldOff d nb j ≤ d * j ∧ d * j - 8 * ldOff d nb j + d ≤ 8 * ldW nb ∧ ldOff d nb j + ldW nb ≤ nb := by
   unfold ldOff ldW
-  split <;> omega
+  split <;> omega_arith
 
 /-- Field `j`: its value, digit `j` of `H`, stored by `fin`. -/
 theorem unpackCoef_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 32} (hfin : FinOk fin d W)
@@ -292,7 +292,7 @@ theorem unpackCoef_ok {fin : Nat → List Instr} {d : Nat} {W : Nat → BitVec 3
       s'.mem = s.mem.writeW (s.gpr .rsi + BitVec.ofNat 64 (4 * j)) (W (H / 2 ^ (d * j) % 2 ^ d)) ∧
         Keep [.rax, .r11] s s' := by
   obtain ⟨ho, hsh, hon⟩ := ldOff_fit hd hnb hsm hj
-  have hw4 : ldW nb ≤ 4 := by unfold ldW; split <;> omega
+  have hw4 : ldW nb ≤ 4 := by unfold ldW; split <;> omega_using []
   unfold unpackCoef ldField
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (ldLoad_ok s hin) fun s₁ ⟨⟨ax₁, m₁⟩, k₁⟩ => ?_

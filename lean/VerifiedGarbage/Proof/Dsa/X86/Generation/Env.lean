@@ -131,19 +131,19 @@ theorem hsSub : E.hsRegion.Sub E.witRegion := Offset.sub_base _ v.hsIn
 
 theorem seedsNat : E.seeds.toNat = E.wit.toNat + E.seedsOff := by
   have := v.witFit; have := v.seedsIn
-  rw [Env.seeds, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := E.seedsOff) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [Env.seeds, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := E.seedsOff) (by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem hsNat : E.hs.toNat = E.wit.toNat + E.hsOff := by
   have := v.witFit; have := v.hsIn
-  rw [Env.hs, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := E.hsOff) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [Env.hs, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := E.hsOff) (by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem seedsFit : E.seeds.toNat + E.seedsLen ≤ 2 ^ 32 := by
-  rw [v.seedsNat]; have := v.witFit; have := v.seedsIn; omega
+  rw [v.seedsNat]; have := v.witFit; have := v.seedsIn; omega_arith
 
 theorem hsFit : E.hs.toNat + E.hsLen ≤ 2 ^ 32 := by
-  rw [v.hsNat]; have := v.witFit; have := v.hsIn; omega
+  rw [v.hsNat]; have := v.witFit; have := v.hsIn; omega_arith
 
 theorem tapesFar : ∀ r ∈ [E.seedsRegion, E.hsRegion, E.witRegion],
     r.Disjoint E.scratchRegion ∧ r.Disjoint E.outRegion ∧ r.Disjoint E.stackRegion := by
@@ -158,10 +158,10 @@ theorem tapesFar : ∀ r ∈ [E.seedsRegion, E.hsRegion, E.witRegion],
 end Env.Valid
 
 theorem Env.Valid.pLen_ge {E : Env} (v : E.Valid) : 128 ≤ E.pLen := by
-  rcases v.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+  rcases v.lengths with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega_using [h]
 
 theorem Env.Valid.size_ge {E : Env} (v : E.Valid) : 73728 ≤ E.size := by
-  have := v.pLen_ge; have := v.room; omega
+  have := v.pLen_ge; have := v.room; omega_arith
 
 theorem toNat_wide (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans x.isLt (by decide))]
@@ -191,7 +191,7 @@ theorem Base.part {E : Env} {s : State} (B : Base E s) {o n : Nat} (h : o + n �
     Spec.Rsa.bytesAt s.mem (E.wit + BitVec.ofNat 64 o) n = (E.witT.drop o).take n := by
   rw [← B.wit]
   simp only [Spec.Rsa.bytesAt]
-  apply List.ext_getElem (by simp; omega)
+  apply List.ext_getElem (by simp; omega_using [h])
   intro i h₁ h₂
   simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
   rw [VG.Offset.add_add]

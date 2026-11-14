@@ -22,7 +22,7 @@ theorem field_write_frame (mem : Mem) (B : Addr) (v : BitVec 64) (f : Field) :
   have hb := VG.Proof.Dsa.field_bounds f
   exact (writeW_outside mem B v (Nat.le_trans hb.2 (by decide))).mono hb.1 (by
     have : 256 ≤ pWorkspace := by decide
-    omega)
+    omega_using [hb])
 
 theorem signFieldMem_fields (mem : Mem) (B out key plen nonce qlen digest digestLen : Addr) :
     word (signFieldMem mem B out key plen nonce qlen digest digestLen) B Field.out.offset = out ∧

@@ -139,8 +139,8 @@ theorem ctTailArgs_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
   have hk := he₂.rsp
   refine ⟨he₂, ?_, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r12],
     by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h.rbp]⟩
-  refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := L.lay.cw; omega,
-    by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega,
+  refine ⟨hdi, hsi, hdx, hcx, by rw [hk]; exact L.sp, by have := L.lay.cw; omega_using [this],
+    by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [this],
     by have := L.lay.sw; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_arith,
     (L.lay.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
     (L.lay.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide)),
@@ -161,7 +161,7 @@ theorem cryptTail_rel {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : 
       cryptTail fun _ _ => True := by
   have hT : ∀ {icb : Block} {P : Nat} {m : Mem} (s : State), CrMid Ctx St W SP icb P D n m j s →
       WP isa (.block [.alu .test .rbp (.reg .rbp)]) s (CrMid Ctx St W SP icb P D n m j) := fun s h => by
-    obtain ⟨s₁, run₁, -, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp (by have := h.data.dw.ok.lt; omega)
+    obtain ⟨s₁, run₁, -, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp (by have := h.data.dw.ok.lt; omega_using [this])
     refine WP.of_runBlock ⟨s₁, run₁, h.env.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁, h.le, by rw [hg₁]; exact h.r12,
       by rw [hg₁]; exact h.rbp, h.data.of_eq hrd₁ hwr₁, fun hc => by rw [hm₁]; exact h.ctr hc,
       fun hc => by rw [hm₁]; exact h.done hc, by rw [hm₁]; exact h.rest, h.whole, by rw [hm₁]; exact h.frame⟩
@@ -242,8 +242,8 @@ theorem crypt_rel {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat}
       (CrIn Ctx St W SP icb₁ P₁ D n s₁ ∧ s₁.zf = some (decide (n = 0))) ∧
       CrIn Ctx St W SP icb₂ P₂ D n s₂ ∧ s₂.zf = some (decide (n = 0))) ∧ s₁.zf = some false)
       absRegs [] true (fun _ _ h => hag _ _ ⟨h.1.2.1.1, h.1.2.2.1⟩) ⟨_, by taint_decide⟩)
-    (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun s h => hT (r := .rbx) s h h.rbx (by omega))
-    (fun s h => hT (r := .rbx) s h h.rbx (by omega))
+    (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun s h => hT (r := .rbx) s h h.rbx (by omega_using []))
+    (fun s h => hT (r := .rbx) s h h.rbx (by omega_using []))
   have i₂ : RelCT isa (fun s₁ s₂ => ((∀ r ∈ ([] : List Reg), s₁.gpr r = s₂.gpr r) ∧
         (true = true → s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf ∧ s₁.sf = s₂.sf ∧ s₁.of = s₂.of)) ∧
         (CrIn Ctx St W SP icb₁ P₁ D n s₁ ∧ s₁.zf = some (decide (P₁ % 16 = 0))) ∧
@@ -254,7 +254,7 @@ theorem crypt_rel {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat}
     · by_cases ho : P₁ % 16 = 0
       swap
       · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [ho] at this
-      refine RelCT.block_nil fun s₁ s₂ h => ⟨0, s₁.mem, s₂.mem, h.1.2.1.1.mid ho, h.1.2.2.1.mid (by omega)⟩
+      refine RelCT.block_nil fun s₁ s₂ h => ⟨0, s₁.mem, s₂.mem, h.1.2.1.1.mid ho, h.1.2.2.1.mid (by omega_using [hP, ho])⟩
     · by_cases ho : P₁ % 16 = 0
       · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [ho] at this
       refine (rel_wp ((rel_taint absRegs (P := fun s₁ s₂ => CrIn Ctx St W SP icb₁ P₁ D n s₁ ∧
@@ -262,7 +262,7 @@ theorem crypt_rel {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat}
         (G₁ := fun s => ∃ m, CrMid Ctx St W SP icb₁ P₁ D n m (min (16 - P₁ % 16) n) s)
         (G₂ := fun s => ∃ m, CrMid Ctx St W SP icb₂ P₂ D n m (min (16 - P₂ % 16) n) s)
         (fun s h => WP.mono (cryptHead_ok h hn0 ho) fun _ h => ⟨_, h⟩)
-        (fun s h => WP.mono (cryptHead_ok h hn0 (by omega)) fun _ h => ⟨_, h⟩)).mono (fun _ _ h => h)
+        (fun s h => WP.mono (cryptHead_ok h hn0 (by omega_using [hP, ho])) fun _ h => ⟨_, h⟩)).mono (fun _ _ h => h)
         fun _ _ ⟨_, ⟨m₁, h₁⟩, ⟨m₂, h₂⟩⟩ => ⟨_, m₁, m₂, h₁, by rw [hP]; exact h₂⟩
       · exact fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩
       · exact fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩

@@ -33,7 +33,7 @@ theorem high_or_self (x : BitVec 64) (h : 2 ^ 63 ≤ x.toNat) : x ||| BitVec.ofN
     simp only [ht, decide_true, Bool.or_true]
   · simp only [hi, decide_false, Bool.or_false]
 
-theorem normalize_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) (hW : 4 ≤ W) :
+theorem normalize_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) (hW : 6 ≤ W) :
     WP isa (.block normalize) s fun t =>
       t.mem = s.mem.writeW (off B (slot W aM + 8 * (W / 2 - 1)))
         (word s.mem B (slot W aM + 8 * (W / 2 - 1)) ||| BitVec.ofNat 64 (2 ^ 63)) ∧ Keep mmRegs s t := by
@@ -51,10 +51,10 @@ theorem normalize_ok {s : State} {B : Addr} {Z W : Nat} (h : Ws s B Z W) (hW : 4
   refine WP.mono (WP.keep [.r12, .rax, .rdx] (Q := fun t =>
     t.mem = s₂.mem.writeW (off B (slot W aM + 8 * (W / 2 - 1)))
       (word s₂.mem B (slot W aM + 8 * (W / 2 - 1)) ||| BitVec.ofNat 64 (2 ^ 63))) (by
-    xrun [(k₂.gpr (by decide) : s₂.gpr .r12 = _), h12, shr1_ofNat W (by omega),
-      State.ea, ix, addrm8 h10 (rfl : BitVec.ofNat 64 (W / 2) = _) (by omega),
-      hs.ld (d := slot W aM + 8 * (W / 2 - 1)) (by omega),
-      hs.st (d := slot W aM + 8 * (W / 2 - 1)) (by omega)]
+    xrun [(k₂.gpr (by decide) : s₂.gpr .r12 = _), h12, shr1_ofNat W (by omega_using [hw]),
+      State.ea, ix, addrm8 h10 (rfl : BitVec.ofNat 64 (W / 2) = _) (by omega_using [hW]),
+      hs.ld (d := slot W aM + 8 * (W / 2 - 1)) (by omega_using [hM]),
+      hs.st (d := slot W aM + 8 * (W / 2 - 1)) (by omega_using [hM])]
     rfl) rfl) fun t ⟨m₃, k₃⟩ => ?_
   exact ⟨by rw [m₃, m₂, m₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 

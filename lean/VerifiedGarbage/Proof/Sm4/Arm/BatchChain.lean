@@ -57,8 +57,8 @@ theorem counterIn_wp {s : State} {B I : BitVec 32} (h : ChainPre s B I) :
   have wc := workspace_part h.hw (4 * BatchCtr.counterSlot) 16 (by decide)
   apply copyBlock_wp
   exact ⟨by rw [h.base], by rw [h.iv, BitVec.add_zero],
-    by rw [h.base]; have := h.fitB; rw [total_eq, counter_eq] at *; omega,
-    by rw [h.iv]; have := h.fitI; omega,
+    by rw [h.base]; have := h.fitB; rw [total_eq, counter_eq] at *; omega_using [this],
+    by rw [h.iv]; have := h.fitI; omega_using [this],
     by decide, by decide, by decide, by decide, by decide, by decide,
     wc, Covers.right h.hi, h.sep.symm.sub_left h.counterSub⟩
 
@@ -67,8 +67,8 @@ theorem counterOut_wp {s : State} {B I : BitVec 32} (h : ChainPre s B I) :
   have wc := workspace_part h.hw (4 * BatchCtr.counterSlot) 16 (by decide)
   apply copyBlock_wp
   exact ⟨by rw [h.iv, BitVec.add_zero], by rw [h.base],
-    by rw [h.iv]; have := h.fitI; omega,
-    by rw [h.base]; have := h.fitB; rw [total_eq, counter_eq] at *; omega,
+    by rw [h.iv]; have := h.fitI; omega_using [this],
+    by rw [h.base]; have := h.fitB; rw [total_eq, counter_eq] at *; omega_using [this],
     by decide, by decide, by decide, by decide, by decide, by decide,
     h.hi, Covers.right wc, h.sep.sub_right h.counterSub⟩
 

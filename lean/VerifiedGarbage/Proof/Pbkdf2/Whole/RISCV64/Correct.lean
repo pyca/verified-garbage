@@ -65,7 +65,7 @@ theorem main_ok : WP isa F.main s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = 
     (by decide) restorable
     (fun q hq => in_fr' hp h₄.kr.wr (by
       simp only [Fns.restList, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by omega))
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using [hl]) (by omega_using [hfr]))
     (h₄.kr.saved.sub (by decide))) fun s₅ hr => ⟨fun r hr' => ?_, ?_, by rw [hr.sp, h₄.kr.sp],
       by rw [hr.wr, h₄.kr.wr], ?_⟩
   · refine hr.gpr_of ?_
@@ -92,14 +92,14 @@ theorem pre_alloc (hF : FnsOK F) {s : State} (hp : (pbkR hF.hH.SH (F.itB + F.frB
   have hsp : (allocd F.frB (allocd F.itB s)).sp = s.sp - BitVec.ofNat 64 (F.itB + F.frB) := by
     simp only [allocd]; rw [BitVec.ofNat_add, Offset.sub_add_eq]
   have hspN : (s.sp - BitVec.ofNat 64 (F.itB + F.frB)).toNat = s.sp.toNat - (F.itB + F.frB) :=
-    VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by omega) (by omega)
+    VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by omega_using [h6]) (by omega_using [hfr, hib])
   have hit : s.sp - BitVec.ofNat 64 F.itB =
       s.sp - BitVec.ofNat 64 (F.itB + F.frB) + BitVec.ofNat 64 F.frB := by
-    rw [Offset.sub_ofNat_eq s.sp (a := F.itB) (b := F.itB + F.frB) (by omega), Nat.add_sub_cancel_left]
+    rw [Offset.sub_ofNat_eq s.sp (a := F.itB) (b := F.itB + F.frB) (by omega_using []), Nat.add_sub_cancel_left]
   have subF : Region.Sub ⟨s.sp - BitVec.ofNat 64 (F.itB + F.frB), F.frB⟩ (below s.sp (F.itB + F.frB + F.X)) :=
-    Offset.sub_below s.sp (by omega) (by omega)
+    Offset.sub_below s.sp (by omega_using []) (by omega_using [])
   have subI : Region.Sub ⟨s.sp - BitVec.ofNat 64 F.itB, F.itB⟩ (below s.sp (F.itB + F.frB + F.X)) :=
-    Offset.sub_below s.sp (by omega) (by omega)
+    Offset.sub_below s.sp (by omega_using []) (by omega_using [])
   have subS : Region.Sub (below (s.sp - BitVec.ofNat 64 (F.itB + F.frB)) F.X) (below s.sp (F.itB + F.frB + F.X)) := by
     have := below_body' s.sp (F.itB + F.frB) F.X
     rwa [Nat.add_comm F.X] at this
@@ -118,9 +118,9 @@ theorem pre_alloc (hF : FnsOK F) {s : State} (hp : (pbkR hF.hH.SH (F.itB + F.frB
   · show (⟨(allocd F.frB (allocd F.itB s)).sp, F.frB⟩ : Region) :: ⟨s.sp - BitVec.ofNat 64 F.itB, F.itB⟩ ::
       s.wr = _
     rw [h2, hit, ← hsp]; rfl
-  · rw [hsp, hspN]; omega
-  · rw [hsp, hspN]; omega
-  · rw [hsp, hspN]; have := s.sp.isLt; omega
+  · rw [hsp, hspN]; omega_using [hl, h5]
+  · rw [hsp, hspN]; omega_using [h6]
+  · rw [hsp, hspN]; have := s.sp.isLt; omega_using [hfr, hib]
 
 variable (hF : FnsOK F)
 
@@ -131,11 +131,11 @@ theorem correct {s : State} (hp : (pbkR hF.hH.SH (F.itB + F.frB + F.X)).pre s) :
   have hsp : F.itB + F.frB + F.X ≤ s.sp.toNat := hp.2.2.2.2.2.1
   have hal : s.sp.toNat % 16 = 0 := hp.2.2.2.2.1
   have hspN : (allocd F.itB s).sp.toNat = s.sp.toNat - F.itB :=
-    VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by omega) (by omega)
+    VG.Proof.Hmac.Stream.RISCV64.toNat_sub (by omega_using [hsp]) (by omega_using [hib])
   have p := pre_alloc hF hp
   unfold Fns.pbkdf2
-  refine WP.alloc ⟨by have := hF.itW0; omega, hib, hl.2.2.2.2.2.2.2.2.2.2⟩ (by omega)
-    (WP.alloc ⟨by omega, hfr, hl.2.2.2.2.2.2.2.2.1⟩ (by rw [hspN]; omega)
+  refine WP.alloc ⟨by have := hF.itW0; omega_using [hl, this], hib, hl.2.2.2.2.2.2.2.2.2.2⟩ (by omega_using [hsp])
+    (WP.alloc ⟨by omega_using [hl], hfr, hl.2.2.2.2.2.2.2.2.1⟩ (by rw [hspN]; omega_using [hsp])
       (WP.mono (main_ok (hF := hF) p) fun s' ⟨hk, hra, hsp', hwr, hb⟩ => ?_))
   rw [freed_eq hwr hsp']
   rw [freed_eq (s₂ := { s' with sp := (allocd F.itB s).sp, wr := (allocd F.itB s).wr }) rfl rfl]

@@ -16,7 +16,7 @@ open VG VG.AArch64 VG.Proof.X448.AArch64
 theorem pair_low64 (lo hi : BitVec 64) (h : pair lo hi < 2 ^ 64) :
     hi.toNat = 0 ∧ lo.toNat = pair lo hi := by
   simp only [pair] at h ⊢
-  omega
+  omega_using [h]
 
 theorem tailRegs_ok (s : State) (hm : s.gpr .x9 = BitVec.ofNat 64 (2 ^ 56 - 1))
     (hb : (s.gpr .x4).toNat + (s.gpr .x6).toNat < 2 ^ 64) :

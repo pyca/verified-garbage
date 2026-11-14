@@ -47,7 +47,7 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
       OneEntry s₀ Ctx W SP A D n s₂ ∧ CondKeep s₁ s₂ := by
   have hlt := C.data.ok.lt
   refine WP.mono (cond_ok (condS_of E hnl hal) (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _)
-    (by omega)) fun s₂ ⟨hz, K⟩ => ⟨hz, ?_, K⟩
+    (by omega_using [hlt])) fun s₂ ⟨hz, K⟩ => ⟨hz, ?_, K⟩
   exact E.keep C.lay (fun r hr => K.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide) (by
@@ -97,7 +97,7 @@ theorem sealRunW_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {M : Gcm.X
   have hc₂ : ciphOf s₂.mem Ctx R = ctxCiph s₀.mem Ctx R :=
     ciph_frame M.frame (fun r hr => dM _ _ L.cw' L.kc r hr) hR'
   have hp₂ : bytesAt s₂.mem D n = bytesAt s₀.mem D n :=
-    bytesAt_frame M.frame (dM _ _ C.dE C.data.ok.stk) (by have := C.data.ok.lt; omega)
+    bytesAt_frame M.frame (dM _ _ C.dE C.data.ok.stk) (by have := C.data.ok.lt; omega_using [this])
   rw [M.j0, hc₂] at hT₄
   refine ⟨he₄, hrd₄.trans M.rd, hwr₄.trans M.wr, M.saved.frame f₄ (saved_oneFrameB L C.dE C.t_w), ?_,
     by rw [hC, hc₂, hp₂, Proof.Gcm.gctr_eq], hT₄⟩
@@ -211,7 +211,7 @@ theorem openMW_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
   have h' := Decidable.not_not.mp (of_decide_eq_false h)
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
-    omega
+    omega_using [hok]
   refine WP.mono (openShort_ok hF C (hpw X).choose_spec E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 htl hb.1 hb.2 hTa hTar hTr oT oA)
     fun s' ⟨he, hsv, f, hax, hD⟩ => ⟨he, hsv, ?_, ?_⟩
   · rw [ret_kept f fun r hr => ?_]

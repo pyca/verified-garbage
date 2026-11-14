@@ -131,8 +131,8 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   ok := w.ok
   C := w.C
   K := w.K
-  satI := by rw [w.hSH, w.hW]; exact w.hmacInit.2.2
-  satF := by rw [w.hSH, w.hW]; exact w.hmacFin.2.2
+  satI := by rw [w.hSH]; exact w.hmacInit.2.2
+  satF := by rw [w.hSH]; exact w.hmacFin.2.2
   f := fnsOf vs
   ecdsa := hC.ecdsa
   hash := rfl
@@ -140,7 +140,7 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   tries_pos := hC.tries_pos
   tries_lt := hC.tries_lt
   hDB := hw.2.1
-  hS := by have := w.ok.N_le; have := w.ok.B_le; show _ + _ ≤ 192; omega
+  hS := by have := w.ok.N_le; have := w.ok.B_le; show _ + _ ≤ 192; omega_arith
   hW := hw.2.2.1
   hWb := hw.2.2.2
 
@@ -220,7 +220,7 @@ theorem same_hash {w w' : MdHash} (hw : WOk w) (hw' : WOk w')
   have e : Spec.HashTable.index w'.mgf.G = Spec.HashTable.index w.mgf.G := by
     have h₁ := index_lt w.mgf.mem; have h₂ := index_lt w'.mgf.mem
     have := congrArg BitVec.toNat h
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h₂]), Nat.mod_eq_of_lt (by omega_using [h₁])] at this
     exact this
   have hG := index_inj w'.mgf.mem w.mgf.mem e
   refine ⟨hG, ?_⟩
@@ -243,7 +243,7 @@ theorem entry_ok {w : MdHash} {s : State} (h : PreW R T vs w s) : WP isa (.block
       rw [show s.rd = (entryOf w s).rd from rfl, hrd]
       exact List.mem_append_left _ (List.mem_append_left _
         (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))),
-      Offset.contains_base _ ho (by have : (entryOf w s).gpr .r9 = s.gpr .r9 := rfl; omega)⟩
+      Offset.contains_base _ ho (by have : (entryOf w s).gpr .r9 = s.gpr .r9 := rfl; omega_using [ho])⟩
   have h32 := hin 32 (by decide)
   have h40 := hin 40 (by decide)
   apply WP.of_runBlock
@@ -383,8 +383,8 @@ theorem signT_ct (hC : CurveT R T) :
 theorem fnsOk_of (vs : List MdHash) : FnsOk (fnsOf vs).init ∧ FnsOk (fnsOf vs).upd ∧ FnsOk (fnsOf vs).fin := by
   refine ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩ <;> obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
   · exact VG.Proof.RsaOaep.X86_64.okI_all_of
-      (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.cNs w.K.iNs w.C.hinitNs))
-      (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.cMx w.K.iMx w.C.hinitMx)
+      (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.iNs w.K.b.bNs w.C.hinitNs))
+      (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.iMx w.K.b.bMx w.C.hinitMx)
   · exact (Proof.RsaOaep.X86_64.HGood.of w.ok w.K).upd
   · exact VG.Proof.RsaOaep.X86_64.okI_all_of
       (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacFin w.K.cNs w.C.hfinNs))

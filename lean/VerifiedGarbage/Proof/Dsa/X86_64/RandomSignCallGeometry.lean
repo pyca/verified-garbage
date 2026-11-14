@@ -43,7 +43,7 @@ theorem randomStackBase_toNat {extra : Nat} {s : State} (h : RandomSignABI extra
   have hl := h.stackLower
   have hb := (s.gpr .rsp).isLt
   simp only [randomStackBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using [hl]
 
 theorem randomStack_offset_toNat {extra : Nat} {s : State} (h : RandomSignABI extra s)
     {d : Nat} (hd : d ≤ extra + 256) :
@@ -52,6 +52,6 @@ theorem randomStack_offset_toNat {extra : Nat} {s : State} (h : RandomSignABI ex
   have hb := (s.gpr .rsp).isLt
   have hk := randomStackBase_toNat h
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hd, hl, hk]
 
 end VG.Proof.Dsa.X86_64

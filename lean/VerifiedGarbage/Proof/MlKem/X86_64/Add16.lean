@@ -247,11 +247,11 @@ theorem fn_ok (hc : writesOnly [.rax, .rdi, .rsi, .rcx] add16Y = true)
           rw [show u.lane .xmm15 l = w.lane .xmm15 l by simp only [State.lane]; rw [o.xmm, hy]]; exact lq l hl,
         fun l hl => by
           rw [show u.lane .xmm14 l = w.lane .xmm14 l by simp only [State.lane]; rw [o.xmm, hy]]; exact lz l hl,
-        by rw [o.mem, m1]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, ifn (by omega)]⟩)
+        by rw [o.mem, m1]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, ifn (by omega_using [])]⟩)
       fun i hi u hI => step hp hi hI) fun u hI => ?_)
     refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem) (by vrunm; rfl) fun u' hm' => ?_
     rw [hm']
-    exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega)]⟩
+    exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega_using [hk])]⟩
   obtain ⟨tr, s', he, ⟨hf, hco⟩, hk⟩ := WP.keep _ hW hc
   refine ⟨tr, s', he, abiPreserved_of_exec hm he (gprPreserved_of hk (by decide) hf ?_),
     polyIs_of_toNat fun k hk => ?_⟩
@@ -260,9 +260,9 @@ theorem fn_ok (hc : writesOnly [.rax, .rdi, .rsi, .rcx] add16Y = true)
     have hG : PolyIsW 16 s₀.mem (s₀.gpr .rsi) (polyAtW 16 s₀.mem (s₀.gpr .rsi)) := ⟨hp.2.2.2.2.2.2, rfl⟩
     have hb := hp.2.2.2.2.2.2 k (by rw [n_eq]; exact hk)
     rw [hco k hk, V, add_lane (hp.2.2.2.2.2.1 k (by rw [n_eq]; exact hk))
-        (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]; exact hb),
+        (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [])]; exact hb),
       add_get _ _ (by rw [n_eq]; exact hk), val_add, polyAt_val hp.2.2.2.2.2.1 (by rw [n_eq]; exact hk),
-      ← polyIsW_toNat hG (by rw [n_eq]; exact hk), BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]
+      ← polyIsW_toNat hG (by rw [n_eq]; exact hk), BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega_using [])]
 
 end
 

@@ -24,7 +24,7 @@ abbrev Bits (base : Addr) (u v : Nat) (s : State) : Prop :=
 def digitPair (u v j : Nat) : Nat := (u >>> (2*j)) % 4 + 4*((v >>> (2*j)) % 4)
 
 theorem digitPair_lt (u v j : Nat) : digitPair u v j < 16 := by
-  unfold digitPair; omega
+  unfold digitPair; omega_using []
 
 theorem Changes.bits {base : Addr} {u v : Nat} {s t : State}
     (h : Changes base arithmeticWork s t) (hb : Bits base u v s) : Bits base u v t := by
@@ -32,13 +32,13 @@ theorem Changes.bits {base : Addr} {u v : Nat} {s t : State}
       b+j+1 ≤ w.1 ∨ w.1+w.2 ≤ b+j := by
     intro b h j hj w hw
     have hd : ∀ b ∈ [bitsU,bitsV],∀ w ∈ arithmeticWork,b+384 ≤ w.1 ∨ w.1+w.2 ≤ b := by decide
-    have := hd b h w hw; omega
+    have := hd b h w hw; omega_using [hj, this]
   constructor
   · intro j hj
-    rw [h.mem.byte (apart bitsU (by simp) j hj) (by change 2944+j < 2^64; omega)]
+    rw [h.mem.byte (apart bitsU (by simp) j hj) (by change 2944+j < 2^64; omega_using [hj])]
     exact hb.1 j hj
   · intro j hj
-    rw [h.mem.byte (apart bitsV (by simp) j hj) (by change 3328+j < 2^64; omega)]
+    rw [h.mem.byte (apart bitsV (by simp) j hj) (by change 3328+j < 2^64; omega_using [hj])]
     exact hb.2 j hj
 
 theorem index2_ok {s : State} {base : Addr} (hs : Scr s base 8192) {j : Nat}
@@ -67,16 +67,16 @@ theorem read2_ok {base : Addr} {s : State} (hs : Scr s base 8192) {bits k j : Na
     fun t ⟨v,h⟩ => ⟨?_,h⟩
   · have e : s.gpr .x16+BitVec.ofNat 64 (bits+i) = off base (bits+(2*j+i)) := by
       rw [h16,off,off,BitVec.add_assoc,←BitVec.ofNat_add]
-      exact congrArg (base+·) (congrArg _ (by omega))
+      exact congrArg (base+·) (congrArg _ (by omega_using []))
     refine ⟨?_,?_⟩
-    · rw [e]; exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
-    · rw [e,hb _ (by omega),show bits+i-bits=i by omega]
+    · rw [e]; exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hbits, hj, hi]) (by decide)⟩
+    · rw [e,hb _ (by omega_using [hj, hi]),show bits+i-bits=i by omega_using []]
       cases k.testBit (2*j+i) <;> rfl
   · have he : hornerVal (fun i => (k.testBit (2*j+(i-bits))).toNat) bits 2 = combWin 2 k j := by
       have hh := hornerVal_eq k 2 j 2 (Nat.le_refl _)
       rw [Nat.sub_self,Nat.add_zero] at hh
       rw [combWin,←hh]
-      exact hornerVal_congr fun i _ => by simp only [show bits+i-bits=i by omega]
+      exact hornerVal_congr fun i _ => by simp only [show bits+i-bits=i by omega_using []]
     rw [v,he,combWin,Nat.shiftRight_eq_div_pow]
 
 theorem save_digit_ok (s : State) :
@@ -101,7 +101,7 @@ theorem combine_ok (s : State) {a b : Nat}
   · rw [BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 64 b*BitVec.ofNat 64 4+BitVec.ofNat 64 a=BitVec.ofNat 64 (a+4*b)
     rw [←BitVec.ofNat_mul,←BitVec.ofNat_add]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_write,hr,ite_false]
 

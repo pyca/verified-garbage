@@ -54,13 +54,13 @@ theorem save_ok {s : State} {b : Reg} (hw : Covers [⟨s.gpr b, 2560⟩] s.wr) (
       Keeps' s s' ∧ SavedAt s'.mem (s.gpr b) s ∧ Frame [savedR (s.gpr b)] s.mem s'.mem := by
   rw [save_eq]
   refine Spill.save_ok hal saved_ok
-    (fun p hp => in_off hw (by have := saved_bound p hp; omega) (by decide)) ?_
+    (fun p hp => in_off hw (by have := saved_bound p hp; omega_using [this]) (by decide)) ?_
   refine Steps.wp_mv fun s' u => WP.block_nil ?_
   refine ⟨fun r hr => u.other r hr, u.gpr, ⟨u.rd, u.wr, u.sp⟩, ?_, ?_⟩
   · rw [SavedAt, u.mem]
     exact Spill.saveMem_saved saved_fits s.mem (s.gpr b) s.gpr
   · rw [u.mem]
-    exact Spill.saveMem_frame (lo := 128) (n := 104) (fun p hp => by have := saved_bound p hp; omega)
+    exact Spill.saveMem_frame (lo := 128) (n := 104) (fun p hp => by have := saved_bound p hp; omega_using [this])
       (by decide) _ _ _
 
 /-- The saved slots stay as they are, outside a frame. -/
@@ -68,7 +68,7 @@ theorem SavedAt.frame {m m' : Mem} {w : Addr} {s₀ : State} (h : SavedAt m w s�
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (savedR w).Disjoint r) : SavedAt m' w s₀ :=
   Spill.Saved.frame h hf fun p hp r hr => (hd r hr).sub_left (by
     have := saved_bound p hp
-    exact Offset.sub _ (by omega) (by omega))
+    exact Offset.sub _ (by omega_using [this]) (by omega_using [this]))
 
 /-- The end of every function: our caller's registers and return address
 restored, from `W` in `s0`. -/
@@ -79,7 +79,7 @@ theorem restore_ok {s s₀ : State} {w : Addr} (h31 : s.gpr .s0 = w) (hal : w.to
   rw [restore_eq]
   refine Steps.wp_mv fun s₁ u₁ => ?_
   refine WP.mono (Spill.restore_wp hal (by rw [u₁.gpr, h31]) saved_ok (by decide) (fun p hp => by
-      rw [u₁.rd, u₁.wr]; exact in_off hr (by have := saved_bound p hp; omega) (by decide))
+      rw [u₁.rd, u₁.wr]; exact in_off hr (by have := saved_bound p hp; omega_using [this]) (by decide))
     (u₁.mem ▸ hs)) fun s' h => ?_
   refine ⟨⟨fun r hr => h.gpr_of (.inl (by revert hr; revert r; decide)), by rw [h.sp, u₁.sp, hsp],
     h.gpr_of (.inl (by decide))⟩, by rw [h.mem, u₁.mem], ?_, by rw [h.rd, u₁.rd], by rw [h.wr, u₁.wr]⟩
@@ -126,7 +126,7 @@ include L
 omit L in
 theorem saved_w {d k : Nat} (hd : d + k ≤ 2560) (ho : d + k ≤ 128 ∨ 232 ≤ d) :
     (savedR w).Disjoint ⟨w + BitVec.ofNat 64 d, k⟩ :=
-  Lay.w_w (by omega) (by decide) hd
+  Lay.w_w (by omega_using [ho]) (by decide) hd
 
 omit L in
 theorem saved_below {sp : Addr} (hk : StkOk c st w sp) : (savedR w).Disjoint (below sp 2048) :=
@@ -140,7 +140,7 @@ theorem saved_absFrame {yo : Nat} {sp : Addr} (hyo : yo = 0 ∨ yo = 16) (hk : S
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact L.saved_st (by omega)
+  · exact L.saved_st (by omega_using [hyo])
   · exact L.saved_st (by decide)
   · exact saved_w (by decide) (.inr (by decide))
   · exact saved_below hk

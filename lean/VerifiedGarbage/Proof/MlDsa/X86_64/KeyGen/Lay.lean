@@ -99,11 +99,11 @@ theorem kgLay {p : Params} (hF : PFacts p) {σ s : State} (hp : (kgK p).pre σ) 
   have mem : ∀ r ∈ σ.rd ++ σ.wr, InRegions (s.rd ++ s.wr) r.base r.len := fun r hr =>
     ⟨r, by rw [h.rd, h.wr]; exact hr, Region.contains_self _ _⟩
   have hs : scrLen p < 2 ^ 32 := by
-    have := hF.k; have := hF.l; have := hF.kl; simp only [scrLen, scratchWords]; omega
-  have hpk : p.pkLen < 2 ^ 32 := by rw [hF.pk]; have := hF.k; omega
+    have := hF.k; have := hF.l; have := hF.kl; simp only [scrLen, scratchWords]; omega_arith
+  have hpk : p.pkLen < 2 ^ 32 := by rw [hF.pk]; have := hF.k; omega_using [this]
   have hsk : p.skLen < 2 ^ 32 := by
     rw [hF.sk]; have := hF.k; have := hF.l
-    rcases hF.eta with ⟨_, he⟩ | ⟨_, he⟩ <;> simp only [oT0, he] <;> omega
+    rcases hF.eta with ⟨_, he⟩ | ⟨_, he⟩ <;> simp only [oT0, he] <;> omega_arith
   refine Lay.of (fa4 (by decide) hs hpk hsk) (pw4 ?_ ?_ ?_ ?_ ?_ ?_) (fa4 ?_ ?_ ?_ ?_) (fa4 ?_ ?_ ?_ ?_)
     (fa4 ?_ ?_ ?_ ?_) (fa3 ?_ ?_ ?_) (fa4 ?_ ?_ ?_ ?_) <;> simp only [e1, e2, e3, e4, h.rsp, retR]
   · exact fun _ => d3

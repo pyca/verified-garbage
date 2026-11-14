@@ -69,9 +69,9 @@ theorem and_acc {a b : BitVec 64} {p q : Prop} [Decidable p] [Decidable q]
 theorem allOk_succ {s₀ : State} {k : Nat} :
     allOk P s₀ (k + 1) ↔ allOk P s₀ k ∧ (sampleNTT 280 (matSeed (rhoK P s₀) (k / P.k) (k % P.k))).isSome := by
   constructor
-  · intro h; exact ⟨fun e he => h e (by omega), h k (by omega)⟩
+  · intro h; exact ⟨fun e he => h e (by omega_using [he]), h k (by omega_using [])⟩
   · rintro ⟨h, hk⟩ e he
-    rcases (by omega : e < k ∨ e = k) with he | rfl
+    rcases (by omega_using [he] : e < k ∨ e = k) with he | rfl
     · exact h e he
     · exact hk
 
@@ -128,14 +128,14 @@ theorem setup_ok {s₀ : State} (hp : Pre P s₀) {i j : Nat} (hi : i < P.k) (hj
     exact f₇ _ fun r hr hc => by
       rw [List.mem_singleton.mp hr] at hc
       exact hp.args.rdisj (b₁ := 3) (o₁ := SB + o) (l₁ := 1) (by decide) (by decide)
-        (by simp only [kL]; lom) (f (by decide)) (by simp only [SB]; omega) _
+        (by simp only [kL]; lom) (f (by decide)) (by simp only [SB]; omega_using [ho]) _
         (Region.contains_self _ _) hc
   have ae : ∀ {e : Nat}, e < P.k * i + j →
       ∀ r ∈ [R (kA s₀) 3 (SB + 32) 2], (polyRegion (kA s₀ 3 + BitVec.ofNat 64 (AH + 1024 * e))).Disjoint r :=
     fun he r hr => by
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (by simp only [kL]; lom) (f (by decide))
-        (by simp only [AH, SB]; omega)
+        (by simp only [AH, SB]; omega_using [])
   refine ⟨⟨kb₇, by rw [bytesAt_congr sd]; exact h.rho, ?_, by rw [k₇.get .x24]; exact h.acc,
     fun e he => reduced_frame f₇ (ae he) (h.red e he), fun e he => ?_⟩, ?_, ?_, ?_, ?_⟩
   · rw [bytesAt_frame f₇ (fun r hr => by
@@ -197,8 +197,8 @@ theorem call_ok {s₀ : State} (hp : Pre P s₀) {i j : Nat} (hi : i < P.k) (hj 
       ∀ r ∈ [R (kA s₀) 3 (aOff P i j) 1024, R (kA s₀) 3 SS 2048, below s₀.sp 16],
         (R (kA s₀) 3 o l).Disjoint r := fun fo h2 h3 r hr => by
     rcases mem3 hr with rfl | rfl | rfl
-    · exact hp.args.rdisj (by decide) (by decide) fo fa (by omega)
-    · exact hp.args.rdisj (by decide) (by decide) fo (f (by decide)) (by omega)
+    · exact hp.args.rdisj (by decide) (by decide) fo fa (by omega_using [h2])
+    · exact hp.args.rdisj (by decide) (by decide) fo (f (by decide)) (by omega_using [h3])
     · exact below_R hp (by decide) fo
   have hke := ij_div (i := i) hj
   have ae : ∀ {e : Nat}, e < P.k * i + j →
@@ -228,10 +228,10 @@ theorem call_ok {s₀ : State} (hp : Pre P s₀) {i j : Nat} (hi : i < P.k) (hj 
     · have hA' : ¬ (allOk P s₀ (P.k * i + j) ∧ (sampleNTT 280 (matSeed (rhoK P s₀) i j)).isSome) := fun h' =>
         hA (allOk_succ.mpr (by rw [hke.1, hke.2]; exact h'))
       rw [ite_eq_right hA', ite_eq_right hA]
-  · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
+  · rcases (by omega_using [he] : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
     · exact reduced_frame fr (ae he) (h.b.red e he)
     · rw [h₉.mem]; show Reduced _ _; simpa only [aOff] using r₈
-  · rcases (by omega : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
+  · rcases (by omega_using [he] : e < P.k * i + j ∨ e = P.k * i + j) with he | rfl
     · rw [aAtW, polyAtW_frame fr (ae he)]; exact h.b.res e he
     · rw [hke.1, hke.2, aAtW, h₉.mem]
       rcases o₈ with ⟨-, h2⟩ | ⟨-, h2⟩

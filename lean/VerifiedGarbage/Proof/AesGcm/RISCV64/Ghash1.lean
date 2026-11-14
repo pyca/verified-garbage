@@ -68,11 +68,11 @@ theorem ghCall_mk {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .s2) (V .s1) (
       (V .s0 + BitVec.ofNat 64 512) n := by
   have hk := he.stk
   refine ⟨h3, h4, h5, h6, h7, hn, hpy, (hk.c.sub_left (Lay.ctxSub (by decide))).symm,
-    (hk.st.sub_left (Lay.stSub (by omega))).symm, hpk.symm, ?_, hpf, hk.al, hk.ge, ?_, ?_⟩
-  · have := L.sw; rw [Offset.toNat_add_ofNat]; omega
+    (hk.st.sub_left (Lay.stSub (by omega_using [hyo]))).symm, hpk.symm, ?_, hpf, hk.al, hk.ge, ?_, ?_⟩
+  · have := L.sw; rw [Offset.toNat_add_ofNat]; omega_using [hyo, this]
   · exact Covers.cons (he.perm.ctxC (by decide)) (Covers.cons hpr
-      (Covers.cons (covers_left (he.perm.stC (by omega))) (covers_left (he.perm.wC (by decide)))))
-  · exact Covers.cons (he.perm.stC (by omega)) (he.perm.wC (by decide))
+      (Covers.cons (covers_left (he.perm.stC (by omega_using [hyo]))) (covers_left (he.perm.wC (by decide)))))
+  · exact Covers.cons (he.perm.stC (by omega_using [hyo])) (he.perm.wC (by decide))
 
 /-- The call itself, from a state whose registers are its arguments, for `n`
 blocks at `P`. -/
@@ -99,7 +99,7 @@ theorem ghArgs_ok {V : Reg → BitVec 64} {sp : Addr} {yo : Nat}
         s₁.gpr .a4 = V .s0 + BitVec.ofNat 64 512 ∧
         (∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → r ≠ .a4 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁) := by
   have h29 := he.s2; have h30 := he.s1; have h31 := he.s0
-  refine Steps.wp_addi (by decide) fun s₁ u₁ => Steps.wp_addi (by omega) fun s₂ u₂ =>
+  refine Steps.wp_addi (by decide) fun s₁ u₁ => Steps.wp_addi (by omega_using [hyo]) fun s₂ u₂ =>
     Steps.wp_addi ho fun s₃ u₃ => Steps.wp_li (by decide) fun s₄ u₄ =>
     Steps.wp_addi (by decide) fun s₅ u₅ => WP.block_nil ?_
   have hb' : b ≠ .a0 ∧ b ≠ .a1 := by rcases hb with rfl | rfl <;> decide

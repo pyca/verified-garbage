@@ -31,7 +31,7 @@ open VG.Impl.Ffdh.AArch64.Cached.Search
 theorem imm64 {n : Nat} (hn : n < 65536) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hn]
 
 def entryValues (s : State) : List (Nat × BitVec 64) :=
   [(4, s.gpr .x19), (5, s.gpr .x0), (6, s.gpr .x2), (7, s.gpr .x5), (8, s.gpr .x6),

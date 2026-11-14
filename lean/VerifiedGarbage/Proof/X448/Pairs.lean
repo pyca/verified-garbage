@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.X448.Bytes
 public import VerifiedGarbage.Proof.X448.Limbs
 public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Spec.X448.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: seven-byte chunks and limb pairs
@@ -31,11 +32,11 @@ theorem chunk_lt (m : Mem) (p : Addr) (i : Nat) : chunk m p i < radix * radix :=
   exact h
 
 theorem decoded_even (m : Mem) (p : Addr) (i : Nat) : decoded m p (2 * i) = chunk m p i % radix := by
-  rw [decoded, show 2 * i % 2 = 0 by omega, ite_eq_left rfl, show 2 * i / 2 = i by omega]
+  rw [decoded, show 2 * i % 2 = 0 by omega_using [], ite_eq_left rfl, show 2 * i / 2 = i by omega_using []]
 
 theorem decoded_odd (m : Mem) (p : Addr) (i : Nat) : decoded m p (2 * i + 1) = chunk m p i / radix := by
-  have hd : (2 * i + 1) / 2 = i := by omega
-  have hm : (2 * i + 1) % 2 = 1 := by omega
+  have hd : (2 * i + 1) / 2 = i := by omega_using []
+  have hm : (2 * i + 1) % 2 = 1 := by omega_using []
   rw [decoded, hd, hm, ite_eq_right (by decide)]
 
 theorem decoded_bound (m : Mem) (p : Addr) (i : Nat) : decoded m p i < radix := by
@@ -54,9 +55,9 @@ theorem decoded_val (m : Mem) (p : Addr) (n : Nat) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [show 2 * (n + 1) = (2 * n + 1) + 1 by omega, valN, valN, ih, decoded_even, decoded_odd,
+    rw [show 2 * (n + 1) = (2 * n + 1) + 1 by omega_using [], valN, valN, ih, decoded_even, decoded_odd,
       Nat.pow_succ, Nat.mul_assoc, Nat.add_assoc, ← Nat.mul_add, Nat.mod_add_div]
-    rw [show 7 * (n + 1) = 7 * n + 7 by omega, bytesAt_add, leNum_append, length_bytesAt, byte_power]
+    rw [show 7 * (n + 1) = 7 * n + 7 by omega_using [], bytesAt_add, leNum_append, length_bytesAt, byte_power]
 
 /-- Accumulating a seven-byte chunk from its highest byte downwards. -/
 def suffix (m : Mem) (p : Addr) (i n : Nat) : Nat :=
@@ -78,7 +79,7 @@ theorem suffix_succ (m : Mem) (p : Addr) (i : Nat) {n : Nat} (hn : n < 7) :
     change p + BitVec.ofNat 64 (7 * i + (7 - (n + 1))) + BitVec.ofNat 64 1 = _
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     congr 2
-    omega
-  rw [he, show 7 - (n + 1) = 6 - n by omega, Nat.add_comm]
+    omega_using [hn]
+  rw [he, show 7 - (n + 1) = 6 - n by omega_using [], Nat.add_comm]
 
 end VG.Proof.X448

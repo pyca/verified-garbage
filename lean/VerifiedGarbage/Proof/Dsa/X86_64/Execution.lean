@@ -48,11 +48,11 @@ theorem Ready.afterP {L : ExecutionLayout} {s t : State} {d k : Nat}
   have hqa : qWorkspace ≤ activeBytes := by decide
   have hau : activeBytes ≤ usedBytes := by decide
   have hn := h.scratch.nowrap
-  have hlf := callFrame_local hf (by omega) (by omega)
+  have hlf := callFrame_local hf (by omega_using [hd, hend, hpHi, hqHi, hn]) (by omega_using [hend, hn])
   refine ⟨hp, h.scratch.congr hk.2.2, ?_, hc, ?_⟩
   · intro f hm
     exact (localCall_field hlf (Nat.le_refl _) (Nat.le_trans (by decide) hd) f).trans (h.fields f hm)
-  · exact localCall_ready hlf h.qChild (by decide) (by omega) (Or.inr hpHi) (Or.inl (by omega))
+  · exact localCall_ready hlf h.qChild (by decide) (by omega_using [hd, hend, hqHi, hn]) (Or.inr hpHi) (Or.inl (by omega_using [hd, hqHi]))
 
 theorem Ready.afterQ {L : ExecutionLayout} {s t : State} {d k : Nat}
     (h : Ready L s) (hp : Good t L.base activeBytes outerWords 0)
@@ -65,23 +65,23 @@ theorem Ready.afterQ {L : ExecutionLayout} {s t : State} {d k : Nat}
   have hqa : qWorkspace ≤ activeBytes := by decide
   have hau : activeBytes ≤ usedBytes := by decide
   have hn := h.scratch.nowrap
-  have hlf := callFrame_local hf (by omega) (by omega)
+  have hlf := callFrame_local hf (by omega_using [hd, hend, hqHi, hn]) (by omega_using [hend, hn])
   refine ⟨hp, h.scratch.congr hk.2.2, ?_, ?_, hc⟩
   · intro f hm
     exact (localCall_field hlf (by decide) (Nat.le_trans (by decide) hd) f).trans (h.fields f hm)
-  · exact localCall_ready hlf h.pChild (by decide) (by omega) (Or.inl (by omega)) (Or.inl (by omega))
+  · exact localCall_ready hlf h.pChild (by decide) (by omega_using [hd, hend, hpHi, hqHi, hn]) (Or.inl (by omega_using [hpHi])) (Or.inl (by omega_using [hd, hpHi, hqHi]))
 
 theorem Ready.local_write {L : ExecutionLayout} {s : State} {d k : Nat} (h : Ready L s)
     (hend : d + k ≤ usedBytes) : ∀ i < k, InRegions s.wr (off L.base d + BitVec.ofNat 64 i) 1 := by
   intro i hi
   rw [show off L.base d + BitVec.ofNat 64 i = off L.base (d + i) by simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-  exact h.scratch.st8 (by omega)
+  exact h.scratch.st8 (by omega_using [hend, hi])
 
 theorem Ready.local_out {L : ExecutionLayout} {s : State} {d k : Nat} (h : Ready L s)
     (hd : activeBytes ≤ d) (hend : d + k ≤ usedBytes) :
     ∀ i < k, activeBytes ≤ ofs L.base (off L.base d + BitVec.ofNat 64 i) := by
   intro i hi
-  rw [ofs_off L.base (by have := h.scratch.nowrap; omega)]
-  omega
+  rw [ofs_off L.base (by have := h.scratch.nowrap; omega_using [hend, hi, this])]
+  omega_using [hd]
 
 end VG.Proof.Dsa.X86_64

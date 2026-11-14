@@ -23,18 +23,18 @@ theorem Data.frame64 {m₀ m : Mem} {p : Addr} {out : Nat → BitVec 128} {done 
   have hn : ¬ (x - p).toNat < 64 := by
     have hh := hx ⟨p,64⟩ (by simp)
     simp only [Region.Contains] at hh
-    omega
+    omega_using [hh]
   rw [h x,ite_eq_right]
   rintro ⟨hslot,hlt⟩
   have hs := hd _ hslot
-  omega
+  omega_using [hn, hs]
 
 theorem loadLast_ok (s : State) (r : Fin 4)
     (hi : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (16 * r)) 16) :
     WP isa (.block [.ldrq (vreg (rowWord r 0)) .x3 (16 * r)]) s fun u =>
       u.v (vreg (rowWord r 0)) = s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * r)) 16 ∧
       Same s u := by
-  have ha : (16 * r.val) % 16 = 0 ∧ 16 * r.val < 4096 * 16 := by omega
+  have ha : (16 * r.val) % 16 = 0 ∧ 16 * r.val < 4096 * 16 := by omega_using []
   apply WP.of_runBlock
   simp only [↓reduceIte, Nat.reduceMul, runBlock_cons,runBlock_nil,exec,addr,ha,and_self,
     State.load,hi,Option.bind_some,Option.map_some,isa,runStep_some,Option.some.injEq,
@@ -85,8 +85,8 @@ theorem xorLastRows_ok (rs : List (Fin 4)) (hn : rs.Nodup)
     have hbu : ∀ q : Fin 4, u.mem.read (b + BitVec.ofNat 64 (16 * q)) 16 =
         output (fun _ => v) q := by
       intro q
-      rw [hf.read (r := ⟨b,64⟩) (Offset.contains_base _ (by omega) (by omega))
-        (by intro z hz; simpa using (List.mem_singleton.mp hz ▸ hsep)) (by decide), ← hf₀.read (r := ⟨b,64⟩) (Offset.contains_base _ (by omega) (by omega))
+      rw [hf.read (r := ⟨b,64⟩) (Offset.contains_base _ (by omega_using []) (by omega_using []))
+        (by intro z hz; simpa using (List.mem_singleton.mp hz ▸ hsep)) (by decide), ← hf₀.read (r := ⟨b,64⟩) (Offset.contains_base _ (by omega_using []) (by omega_using []))
         (by intro z hz; simpa using (List.mem_singleton.mp hz ▸ hsep)) (by decide),hbuf q]
     have hpu : u.gpr .x1 = p := by rw [hsu.gpr,hp]
     have hpb : u.gpr .x3 = b := by rw [hsu.gpr,hb]
@@ -126,9 +126,9 @@ theorem xorLast_ok (s : State) (v : CState)
   · intro k hk
     have hm : k / 16 ∈ (List.finRange 4).map Fin.val ++ ([] : List Nat) := by
       apply List.mem_append_left
-      exact List.mem_map.mpr ⟨⟨k / 16,by omega⟩,List.mem_finRange _,rfl⟩
-    rw [hd _,Mem.sub_ofNat_toNat _ (by omega : k < 2 ^ 64),ite_eq_left ⟨hm,by omega⟩,
-      output_byte (fun _ => v) (by omega),Nat.mod_eq_of_lt hk]
+      exact List.mem_map.mpr ⟨⟨k / 16,by omega_using [hk]⟩,List.mem_finRange _,rfl⟩
+    rw [hd _,Mem.sub_ofNat_toNat _ (by omega_using [hk] : k < 2 ^ 64),ite_eq_left ⟨hm,by omega_using [hk]⟩,
+      output_byte (fun _ => v) (by omega_using [hk]),Nat.mod_eq_of_lt hk]
   · apply Data.frame64 hd
     intro k hk
     simp only [List.append_nil,List.mem_map] at hk

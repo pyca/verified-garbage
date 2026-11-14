@@ -46,7 +46,7 @@ theorem cmpAdc (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ : BitVec 32) :
     have hne : ((a₀ ^^^ b₀) ||| (a₁ ^^^ b₁) ||| (a₂ ^^^ b₂) ||| (a₃ ^^^ b₃)).toNat ≠ 0 := fun h' =>
       h0 (BitVec.eq_of_toNat_eq (by simpa using h'))
     have hlt : ¬ ((a₀ ^^^ b₀) ||| (a₁ ^^^ b₁) ||| (a₂ ^^^ b₂) ||| (a₃ ^^^ b₃)).toNat < (1#32).toNat := by
-      rw [BitVec.toNat_ofNat]; omega
+      rw [BitVec.toNat_ofNat]; omega_using [hne]
     simp only [h, ↓reduceIte, decide_eq_false hlt]
     rfl
 
@@ -179,19 +179,19 @@ theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
       rw [m₂]; cases c <;> simp [Spec.Aes.bytesAt, Spec.GcmSiv.zeros, writeBytes_nil], fun r _ _ _ => rfl, rd₂, wr₂⟩
   rintro k t ⟨j, rfl, hj, di, cx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', di', cx', zf', g', rd', wr'⟩ := maskStep_ok t (P := p.D) (i := j) (n := p.n) (c := c) di cx
-    (by rw [g _ (by decide) (by decide) (by decide), g₂ _ (by decide), bx₁]) (w64_add (by omega))
-    (by rw [rd, wr]; exact in_of_covers (covers_left E.perm.d) hj (by omega))
-    (by rw [wr]; exact in_of_covers E.perm.d hj (by omega))
+    (by rw [g _ (by decide) (by decide) (by decide), g₂ _ (by decide), bx₁]) (w64_add (by omega_using [hfD, hj]))
+    (by rw [rd, wr]; exact in_of_covers (covers_left E.perm.d) hj (by omega_using [hn32]))
+    (by rw [wr]; exact in_of_covers E.perm.d hj (by omega_using [hn32]))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have fr : Frame [⟨w64 p.D, j⟩] s.mem t.mem := by
     rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
   have hq : t.mem (w64 p.D + BitVec.ofNat 64 j) = s.mem (w64 p.D + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 p.D) (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 p.D) (show j < 2 ^ 64 by omega_using [hn32, hj])] at hcon; omega_using [hok, hn32, bx₁, cx₁, ax₁, hn0, di₂, bp₁, sp₁, hfD, hj, di, cx, di', cx', hcon]
   have hmem : t'.mem = writeBytes s.mem (w64 p.D)
       (if c then bytesAt s.mem (w64 p.D) (j + 1) else Spec.GcmSiv.zeros (j + 1)) := by
-    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega), length_mask]
+    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_using [hn32, hj]), length_mask]
   have hz : t'.zf = some (decide (j + 1 = p.n)) := by rw [zf', pred_beq hj hn32]
   have gg : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t'.gpr r = s₂.gpr r := fun r h₁ h₂ h₃ => by
     rw [g' r h₁ h₂ h₃, g r h₁ h₂ h₃]
@@ -202,7 +202,7 @@ theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
       writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
     exact frame_toMut f0 fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
-      exact ⟨⟨w64 p.D, p.n⟩, by simp, Region.sub_prefix (by omega)⟩
+      exact ⟨⟨w64 p.D, p.n⟩, by simp, Region.sub_prefix (by omega_using [hj])⟩
   have E' : Env p t' := E.mut L (by rw [gg _ (by decide) (by decide) (by decide), g₂ _ (by decide), bp₁])
     (by rw [gg _ (by decide) (by decide) (by decide), g₂ _ (by decide), sp₁]) (by rw [rd', rd]) (by rw [wr', wr]) fm
   have ax' : t'.gpr .eax = s.gpr .eax := by
@@ -211,7 +211,7 @@ theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
   · left
     exact ⟨by simp [eval, hz, he], E', by rw [rd', rd], by rw [wr', wr], ax', by rw [hmem, he]⟩
   · right
-    refine ⟨by simp [eval, hz, he], p.n - (j + 1), by omega, j + 1, rfl, by omega, di',
+    refine ⟨by simp [eval, hz, he], p.n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], di',
       by rw [cx', pred_count hj hn32], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 end VG.Proof.AesGcmSiv.X86

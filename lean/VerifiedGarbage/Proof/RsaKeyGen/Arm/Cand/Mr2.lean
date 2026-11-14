@@ -55,15 +55,15 @@ theorem mrInit_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ EM P �
     have b1 := VG.Proof.Rsa.b2n_le (decide (P.W < 120)); have b2 := VG.Proof.Rsa.b2n_le (decide (P.W < 46))
     have b3 := VG.Proof.Rsa.b2n_le (decide (P.W < 18)); have b4 := VG.Proof.Rsa.b2n_le (decide (P.W < 16))
     have b5 := VG.Proof.Rsa.b2n_le (decide (P.W < 14))
-    refine ltAdd_ok (x := 3) q5 (by omega) (by decide) (by rw [u5.gpr]; rfl) (by decide) fun s6 k6 m6 v6 => ?_
+    refine ltAdd_ok (x := 3) q5 (by omega_using [wl]) (by decide) (by rw [u5.gpr]; rfl) (by decide) fun s6 k6 m6 v6 => ?_
     have q6 : s6.gpr .r9 = BitVec.ofNat 32 P.W := by rw [k6.gpr _ (by decide), q5]
-    refine ltAdd_ok q6 (by omega) (by decide) v6 (by omega) fun s7 k7 m7 v7 => ?_
+    refine ltAdd_ok q6 (by omega_using [wl]) (by decide) v6 (by omega_using [b1]) fun s7 k7 m7 v7 => ?_
     have q7 : s7.gpr .r9 = BitVec.ofNat 32 P.W := by rw [k7.gpr _ (by decide), q6]
-    refine ltAdd_ok q7 (by omega) (by decide) v7 (by omega) fun s8 k8 m8 v8 => ?_
+    refine ltAdd_ok q7 (by omega_using [wl]) (by decide) v7 (by omega_using [b1, b2]) fun s8 k8 m8 v8 => ?_
     have q8 : s8.gpr .r9 = BitVec.ofNat 32 P.W := by rw [k8.gpr _ (by decide), q7]
-    refine ltAdd_ok q8 (by omega) (by decide) v8 (by omega) fun s9 k9 m9 v9 => ?_
+    refine ltAdd_ok q8 (by omega_using [wl]) (by decide) v8 (by omega_using [b1, b2, b3]) fun s9 k9 m9 v9 => ?_
     have q9 : s9.gpr .r9 = BitVec.ofNat 32 P.W := by rw [k9.gpr _ (by decide), q8]
-    refine ltAdd_ok q9 (by omega) (by decide) v9 (by omega) fun s10 k10 m10 v10 => ?_
+    refine ltAdd_ok q9 (by omega_using [wl]) (by decide) v9 (by omega_using [b1, b2, b3, b4]) fun s10 k10 m10 v10 => ?_
     have q10 : s10.gpr .r9 = BitVec.ofNat 32 P.W := by rw [k10.gpr _ (by decide), q9]
     have k10' : Rest [.r1, .r2] s5 s10 := k6.trans (k7.trans (k8.trans (k9.trans k10)))
     refine wp_dp (op2_imm (by decide)) fun s11 u11 => wp_mov (op2_lsr (by decide)) fun s12 u12 =>
@@ -74,7 +74,7 @@ theorem mrInit_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ EM P �
     have mm15 : s15.mem = s4.mem := by rw [u15.mem, u14.mem, u13.mem, u12.mem, u11.mem, m10, m9, m8, m7, m6, u5.mem]
     have b12 : (s12.gpr .r2).toNat = b2n (decide (P.W < 12)) := by
       rw [u12.gpr, u11.gpr, dpVal, q10]
-      exact lt_bit (by omega) (by decide)
+      exact lt_bit (by omega_using [wl]) (by decide)
     have v15 : s15.gpr .r1 = BitVec.ofNat 32 (checksW P.w) := by
       rw [u15.gpr, dpVal, u14.other _ (by decide), u13.other _ (by decide), u12.other _ (by decide),
         u11.other _ (by decide), v10, u14.gpr, u13.gpr, u13.other _ (by decide)]
@@ -83,21 +83,21 @@ theorem mrInit_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ EM P �
       rw [BitVec.toNat_add, BitVec.toNat_mul, b12, ofNat_toNat_lt (by
         have := VG.Proof.Rsa.b2n_le (decide (P.W < 120)); have := VG.Proof.Rsa.b2n_le (decide (P.W < 46))
         have := VG.Proof.Rsa.b2n_le (decide (P.W < 18)); have := VG.Proof.Rsa.b2n_le (decide (P.W < 16))
-        have := VG.Proof.Rsa.b2n_le (decide (P.W < 14)); omega)]
-      have := checks_cmp P.w (by have := pre.w4; omega)
+        have := VG.Proof.Rsa.b2n_le (decide (P.W < 14)); omega_using [b1, b2, b3, b4, b5])]
+      have := checks_cmp P.w (by have := pre.w4; omega_using [this])
       rw [← hW] at this
-      rw [ofNat_toNat_lt (by have := VG.Proof.RsaKeyGen.checksW_le P.w; omega)]
+      rw [ofNat_toNat_lt (by have := VG.Proof.RsaKeyGen.checksW_le P.w; omega_using [this])]
       have := VG.Proof.RsaKeyGen.checksW_le P.w
       simp only [show (19 : BitVec 32).toNat = 19 from rfl]
-      omega
+      omega_arith
     refine (h4.of_rest k15 mm15).strM (m4.of_rest k15 mm15) (hw4.rest k15) (d := sChk) (by decide)
-      fun t ht hwt mt _ => WP.block_nil ⟨by omega, Nat.le_refl _, ?_, ⟨e, ?_, hwt⟩, mt⟩
+      fun t ht hwt mt _ => WP.block_nil ⟨by omega_using [], Nat.le_refl _, ?_, ⟨e, ?_, hwt⟩, mt⟩
     · rw [Nat.sub_self, Nat.add_sub_cancel]
       have z := VG.Proof.RsaKeyGen.mrAt_zero (c := cv P σ) (ch := chP P) (a := taP P σ) (m := tmP P σ) fl fw
-        (by have := pre.k1; omega) (by rw [rB_length]; exact (hE σ e).2.1)
+        (by have := pre.k1; omega_using [this]) (by rw [rB_length]; exact (hE σ e).2.1)
       rw [rB_length, ← resP, ← fs] at z
       exact z
-    · rw [v15, ofNat_toNat_lt (by have := VG.Proof.RsaKeyGen.checksW_le P.w; omega)] at ht
+    · rw [v15, ofNat_toNat_lt (by have := VG.Proof.RsaKeyGen.checksW_le P.w; omega_using [this])] at ht
       refine ht.mono (fun j hj => ⟨hj, rfl⟩) fun j hj => ⟨by mem_sub, ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       have v1 : (s1.gpr .r1).toNat = 1 := by rw [u1.gpr]; rfl
@@ -105,7 +105,7 @@ theorem mrInit_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ EM P �
       rcases hj with rfl | rfl | rfl | rfl
       · simp (config := {decide := true}) only [upd, ↓reduceIte, VI, v3, Nat.sub_self, VG.Proof.RsaKeyGen.mrS]
       · simp (config := {decide := true}) only [upd, ↓reduceIte, VI, v1, Nat.sub_self, VG.Proof.RsaKeyGen.mrS]
-      · simp (config := {decide := true}) only [upd, ↓reduceIte, VI, V3, V2, V1, V0, Nat.sub_self]; omega
+      · simp (config := {decide := true}) only [upd, ↓reduceIte, VI, V3, V2, V1, V0, Nat.sub_self]; omega_using []
       · simp (config := {decide := true}) only [upd, ↓reduceIte, VI]
 
 end

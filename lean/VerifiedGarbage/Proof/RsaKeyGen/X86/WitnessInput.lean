@@ -28,7 +28,7 @@ theorem destination_pointer {g : Geometry} (v : g.Valid) {s : State} (S : Scr s 
     have a := v.arrayFit (j := 6) (by decide)
     have := v.minWidth
     unfold Geometry.words at a
-    omega
+    omega_arith
   apply BitVec.eq_of_toNat_eq
   simp only [geometryAt, BitVec.toNat_ofNat, BitVec.toNat_add, S.edi_toNat, Nat.mod_eq_of_lt arrBound]
 
@@ -40,7 +40,7 @@ theorem destination_address {g : Geometry} (v : g.Valid) {s : State} (S : Scr s 
     have a := v.arrayFit (j := 6) (by decide)
     have := v.minWidth
     unfold Geometry.words at a
-    omega
+    omega_using [a, this]
   exact S.ea fit
 
 theorem context_okAt {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L)
@@ -49,7 +49,7 @@ theorem context_okAt {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L
     (readable : InRegions (s.rd ++ s.wr) (rand.setWidth 64) length)
     (separate : (⟨rand.setWidth 64, length⟩ : Region).Disjoint ⟨g.W, g.L⟩) :
     Import.Context (geometryAt g rand used count) s := by
-  have sourceFit : rand.toNat + used < 2 ^ 32 := by omega
+  have sourceFit : rand.toNat + used < 2 ^ 32 := by omega_using [noWrap, positive, enough]
   have sourceAddr := source_address sourceFit
   have destAddr := destination_address v S (rand := rand) (used := used) (count := count)
   have destPtr := destination_pointer v S (rand := rand) (used := used) (count := count)
@@ -58,27 +58,27 @@ theorem context_okAt {g : Geometry} (v : g.Valid) {s : State} (S : Scr s g.W g.L
   · exact positive
   · change (rand + BitVec.ofNat 32 used).toNat + 4 * count ≤ 2 ^ 32
     rw [BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (a := used) (by omega), Nat.mod_eq_of_lt sourceFit]
-    omega
+      Nat.mod_eq_of_lt (a := used) (by omega_using [sourceFit]), Nat.mod_eq_of_lt sourceFit]
+    omega_using [noWrap, enough]
   · change (geometryAt g rand used count).dst.toNat + 4 * count ≤ 2 ^ 32
     rw [destPtr, BitVec.toNat_add, S.edi_toNat, BitVec.toNat_ofNat]
     have bound : g.W.toNat + g.array 6 < 2 ^ 32 := by
-      have := S.nowrap; have := v.arrayFit (j := 6) (by decide); have := v.minWidth; omega
-    rw [Nat.mod_eq_of_lt (a := g.array 6) (by omega), Nat.mod_eq_of_lt bound]
+      have := S.nowrap; have := v.arrayFit (j := 6) (by decide); have := v.minWidth; omega_arith
+    rw [Nat.mod_eq_of_lt (a := g.array 6) (by omega_using [bound]), Nat.mod_eq_of_lt bound]
     have := S.nowrap
     have := v.arrayFit (j := 6) (by decide)
-    omega
+    omega_arith
   · change InRegions (s.rd ++ s.wr) ((rand + BitVec.ofNat 32 used).setWidth 64) (4 * count)
     rw [sourceAddr]
     obtain ⟨r, member, access⟩ := readable
     exact ⟨r, member, Import.contains_offset access enough⟩
   · change InRegions s.wr ((geometryAt g rand used count).dst.setWidth 64) (4 * count)
     rw [destAddr]
-    exact S.write (by have := v.arrayFit (j := 6) (by decide); omega)
+    exact S.write (by have := v.arrayFit (j := 6) (by decide); omega_using [wide, this])
   · change (⟨(rand + BitVec.ofNat 32 used).setWidth 64, 4 * count⟩ : Region).Disjoint
       ⟨(geometryAt g rand used count).dst.setWidth 64, 4 * count⟩
     rw [sourceAddr, destAddr]
     exact (separate.sub_left (Offset.sub_base _ enough)).sub_right
-      (Offset.sub_base _ (by have := v.arrayFit (j := 6) (by decide); omega))
+      (Offset.sub_base _ (by have := v.arrayFit (j := 6) (by decide); omega_using [wide, this]))
 
 end VG.Proof.RsaKeyGen.X86.WitnessInput

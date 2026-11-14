@@ -84,12 +84,12 @@ theorem one_signExtend : (1 : BitVec 32).signExtend 64 = 1 := by decide
 
 theorem writeByte_frame (m : Mem) (A : Addr) (b : Byte) : Frame [⟨A, 1⟩] m (m.writeW A b) := fun x hx => by
   rw [writeW8_apply, ite_eq_right (fun h => hx _ List.mem_cons_self (by
-    subst h; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega))]
+    subst h; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []))]
 
 /-- One fewer byte left, as a bit vector. -/
 theorem ofNat_sub_one {r j : Nat} (hj : j < r) :
     BitVec.ofNat 64 (r - j) - 1 = BitVec.ofNat 64 (r - (j + 1)) := by
-  rw [show r - j = (r - (j + 1)) + 1 by omega, BitVec.ofNat_add]
+  rw [show r - j = (r - (j + 1)) + 1 by omega_using [hj], BitVec.ofNat_add]
   exact BitVec.add_sub_cancel _ 1#64
 
 theorem xorByte_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPre s₀ K R r Rd Rl) {j : Nat} {s : State}
@@ -141,10 +141,10 @@ theorem xorByte_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPr
       (s.mem (R + BitVec.ofNat 64 j) ^^^ s.mem (K + BitVec.ofNat 64 j)) := by
     rw [m₇, m₆, m₅, m₄, g₃, o₃ Rd hp.dRcx.1, g₂, o₂ .r10 (by decide), g₁, o₂ Rd hp.dRcx.1, o₁ Rd hp.dR10.1, m₃, m₂,
       m₁, hi.dat, hi.rax, BitVec.add_zero, BitVec.add_zero, setWidth_xor_byte]
-  have hRj : Region.Sub ⟨R + BitVec.ofNat 64 j, 1⟩ ⟨R, r⟩ := VG.Offset.sub_base R (by omega)
+  have hRj : Region.Sub ⟨R + BitVec.ofNat 64 j, 1⟩ ⟨R, r⟩ := VG.Offset.sub_base R (by omega_using [hj])
   have hK : ∀ q < r, s.mem (K + BitVec.ofNat 64 q) = s₀.mem (K + BitVec.ofNat 64 q) := fun q hq =>
     hi.frame.bytes (R := ⟨K, r⟩) (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact hp.disj)
-      (show r ≤ 2 ^ 64 by omega) hq
+      (show r ≤ 2 ^ 64 by omega_using [hr]) hq
   have data₇ : ∀ q < r, s₇.mem (R + BitVec.ofNat 64 q) =
       if q < j + 1 then s₀.mem (R + BitVec.ofNat 64 q) ^^^ s₀.mem (K + BitVec.ofNat 64 q)
       else s₀.mem (R + BitVec.ofNat 64 q) := fun q hq => by
@@ -155,11 +155,11 @@ theorem xorByte_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPr
     · have hne : R + BitVec.ofNat 64 q ≠ R + BitVec.ofNat 64 j := fun h => hqj (by
         have := congrArg BitVec.toNat ((BitVec.add_right_inj R).mp h)
         simp only [BitVec.toNat_ofNat] at this
-        rwa [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this)
+        rwa [Nat.mod_eq_of_lt (by omega_using [hr, hq]), Nat.mod_eq_of_lt (by omega_using [hj, hr])] at this)
       rw [ite_eq_right hne, hi.data q hq]
       by_cases h1 : q < j
-      · rw [ite_eq_left h1, ite_eq_left (by omega)]
-      · rw [ite_eq_right h1, ite_eq_right (by omega)]
+      · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1])]
+      · rw [ite_eq_right h1, ite_eq_right (by omega_using [hqj, h1])]
   have fr₇ : Frame [⟨R, r⟩] s₀.mem s₇.mem := by
     rw [mem₇]
     exact hi.frame.trans ((writeByte_frame _ _ _).sub fun x hx => ⟨⟨R, r⟩, List.mem_singleton_self _, by
@@ -177,15 +177,15 @@ theorem xorByte_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPr
     · intro h
       have := congrArg BitVec.toNat h
       simp only [BitVec.toNat_ofNat] at this
-      rw [Nat.mod_eq_of_lt (by omega : r - (j + 1) < 2 ^ 64)] at this
+      rw [Nat.mod_eq_of_lt (by omega_using [hr] : r - (j + 1) < 2 ^ 64)] at this
       have h0 : (0 : BitVec 64).toNat = 0 := rfl
       omega
     · intro h
-      rw [show r - (j + 1) = 0 by omega]; rfl
+      rw [show r - (j + 1) = 0 by omega_using [h]]; rfl
   by_cases hdone : j + 1 = r
   · refine .inl ⟨by rw [hz, decide_eq_true hdone], fun q hq => ?_, fr₇, rd₇, wr₇, gpr₇⟩
-    rw [data₇ q hq, ite_eq_left (by omega)]
-  · exact .inr ⟨by rw [hz, decide_eq_false hdone], rax₇, dat₇, left₇, by omega, data₇, fr₇, rd₇, wr₇, gpr₇⟩
+    rw [data₇ q hq, ite_eq_left (by omega_using [hdone, hq])]
+  · exact .inr ⟨by rw [hz, decide_eq_false hdone], rax₇, dat₇, left₇, by omega_using [hj, hdone], data₇, fr₇, rd₇, wr₇, gpr₇⟩
 
 /-- The XOR loop, from its first byte. -/
 theorem xorLoop_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPre s₀ K R r Rd Rl)
@@ -197,7 +197,7 @@ theorem xorLoop_wp {s₀ : State} {K R : Addr} {r : Nat} {Rd Rl : Reg} (hp : XPr
   refine WP.mono (xorByte_wp hp hj) fun s' h => ?_
   rcases h with d | ⟨z, d⟩
   · exact .inl ⟨by simp [X86_64.eval, d.zf], d⟩
-  · exact .inr ⟨by simp [X86_64.eval, z], r - (j + 1), by have := d.lt; have := hj.lt; omega, j + 1, rfl, d⟩
+  · exact .inr ⟨by simp [X86_64.eval, z], r - (j + 1), by have := d.lt; have := hj.lt; omega_arith, j + 1, rfl, d⟩
 
 end VG.Proof.Modes.X86_64
 
@@ -547,7 +547,7 @@ theorem fbFinalLoop_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : M
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨by simp [X86_64.eval, z], d⟩
   · exact .inr ⟨by simp [X86_64.eval, z], len - 8 * c.bw * (j + 1), by
-      have := d.lt; have := hj.lt; rw [Nat.mul_succ]; omega, j + 1, rfl, d⟩
+      have := d.lt; have := hj.lt; rw [Nat.mul_succ]; omega_using [hbw0, this], j + 1, rfl, d⟩
 
 end VG.Proof.Modes.X86_64
 

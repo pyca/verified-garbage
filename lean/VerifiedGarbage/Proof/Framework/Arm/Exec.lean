@@ -38,10 +38,10 @@ theorem movw_movt (x : BitVec 32) :
   have e : ∀ a b : BitVec 16, (a ++ b : BitVec (16 + 16)).getLsbD i =
       if i < 16 then b.getLsbD i else a.getLsbD (i - 16) := fun a b => BitVec.getLsbD_append
   rw [e]
-  rcases (by omega : i < 16 ∨ 16 ≤ i) with h | h <;>
+  rcases (by omega_using [] : i < 16 ∨ 16 ≤ i) with h | h <;>
   simp (disch := omega) only [ite_eq_left, ite_eq_right, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
     decide_eq_true, Bool.true_and] <;>
-  exact congrArg _ (by omega)
+  exact congrArg _ (by omega_arith)
 
 theorem rev_readW (m : Mem) (a : Addr) :
     rev (m.readW a 32) = (m a ++ m (a + 1) ++ m (a + 1 + 1) ++ m (a + 1 + 1 + 1) : BitVec 32) :=
@@ -117,9 +117,9 @@ theorem addr_add {a : BitVec 32} {k : Nat} (h : a.toNat + k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := a.isLt
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := a.toNat + k) h,
-    Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := a.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := a.toNat + k) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := a.toNat + k) h,
+    Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := a.toNat) (by omega_using []),
+    Nat.mod_eq_of_lt (a := a.toNat + k) (by omega_using [h])]
 
 end VG.Arm
 

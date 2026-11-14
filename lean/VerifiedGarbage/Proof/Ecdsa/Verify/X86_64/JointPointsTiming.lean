@@ -43,7 +43,7 @@ structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   seed : ScratchCT (.block (Jacobian.infinity j.K j.K.R))
   counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top j)))])
   prepG : JointPrepGChecks j (c.sl U)
-  prepQ : FastPrepChecks j.K.M.n (c.sl V) j.K.bits 5
+  prepQ : JointPrepQChecks j (c.sl V)
 
 theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog isa}
     (hc : BaseCfgOk c) (hC : Law c.C) (hd : JDblOk c.C j.dbl) {J : Nat} (hG : JointGTable c j d J)

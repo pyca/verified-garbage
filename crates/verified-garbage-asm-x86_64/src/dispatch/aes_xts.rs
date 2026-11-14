@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_xts_encrypt_unit_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_encrypt_unit_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_vaes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES`); `vg_aes_xts_encrypt_unit_aesni` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES`); or else `vg_aes_xts_encrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -82,6 +84,8 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_xts_decrypt_unit_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_decrypt_unit_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_vaes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES`); `vg_aes_xts_decrypt_unit_aesni` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES`); or else `vg_aes_xts_decrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -155,6 +159,8 @@ pub unsafe fn vg_aes_xts_decrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// Contract: `VG.Spec.Xts.aesEncryptUnitToContract`. Constant time: only the pointers, `rounds`, `len` and `dst_len` may affect timing, not the key schedules, the tweak value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_xts_encrypt_unit_to_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_encrypt_unit_to_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_to_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_encrypt_unit_to_vaes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_VAES_FEATURES`); `vg_aes_xts_encrypt_unit_to_aesni` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_TO_AESNI_FEATURES`); or else `vg_aes_xts_encrypt_unit_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -231,6 +237,8 @@ pub unsafe fn vg_aes_xts_encrypt_unit_to_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Contract: `VG.Spec.Xts.aesDecryptUnitToContract`. Constant time: only the pointers, `rounds`, `len` and `dst_len` may affect timing, not the key schedules, the tweak value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_xts_decrypt_unit_to_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_xts_decrypt_unit_to_vaes_vpclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_VPCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_to_aesni_pclmul` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_PCLMUL_FEATURES`); `vg_aes_xts_decrypt_unit_to_vaes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_VAES_FEATURES`); `vg_aes_xts_decrypt_unit_to_aesni` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_TO_AESNI_FEATURES`); or else `vg_aes_xts_decrypt_unit_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

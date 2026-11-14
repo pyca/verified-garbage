@@ -38,8 +38,8 @@ theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} {n : Nat} (hn : 1056 ≤
     EcbPre s := by
   obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
   have sub : Region.Sub ⟨s.gpr .rcx, 8 * Impl.Seed.X86_64.scratchSlots⟩ ⟨s.gpr .rcx, n⟩ :=
-    Region.sub_prefix (by unfold Impl.Seed.X86_64.scratchSlots; omega)
-  exact { scratch := ⟨n, by unfold Impl.Seed.X86_64.scratchSlots; omega, by
+    Region.sub_prefix (by unfold Impl.Seed.X86_64.scratchSlots; omega_using [hn])
+  exact { scratch := ⟨n, by unfold Impl.Seed.X86_64.scratchSlots; omega_using [hn], by
             rw [wr]; exact List.mem_cons_of_mem _ List.mem_cons_self⟩
           dataIn := by rw [wr]; exact List.mem_cons_self
           keyIn := by rw [rd]; exact List.mem_cons_self
@@ -48,7 +48,7 @@ theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} {n : Nat} (hn : 1056 ≤
           dataBuf := db.sub_right sub
           retData := rdt
           retBuf := rb.sub_right sub
-          fit := by omega }
+          fit := by omega_using [fit] }
 
 theorem ecbTaint_wf (d : Spec.Seed.Direction) {n : Nat} (hn : 1056 ≤ n) (hn' : n ≤ 2 ^ 64) (s : State)
     (hs : (contract d n).pre s) : Taint.Wf ecbTaint s := by
@@ -57,8 +57,8 @@ theorem ecbTaint_wf (d : Spec.Seed.Direction) {n : Nat} (hn : 1056 ≤ n) (hn' :
   · intro _
     rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .rdx).toNat; omega)
-        (List.Forall₂.cons (by change 8 * Impl.Seed.X86_64.scratchSlots ≤ n; unfold Impl.Seed.X86_64.scratchSlots; omega)
+    · exact List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .rdx).toNat; omega_using [])
+        (List.Forall₂.cons (by change 8 * Impl.Seed.X86_64.scratchSlots ≤ n; unfold Impl.Seed.X86_64.scratchSlots; omega_using [hn])
           List.Forall₂.nil)
     · exact List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dataSep)
@@ -66,7 +66,7 @@ theorem ecbTaint_wf (d : Spec.Seed.Direction) {n : Nat} (hn : 1056 ≤ n) (hn' :
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · change 16 * (s.gpr .rdx).toNat ≤ 2 ^ 64; omega
+      · change 16 * (s.gpr .rdx).toNat ≤ 2 ^ 64; omega_using [fit]
       · exact hn'
   · intro p hp
     simp only [ecbTaint, List.mem_singleton] at hp

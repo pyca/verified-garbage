@@ -141,8 +141,8 @@ theorem srcA {s₀ : State} (hp : APre e s₀) : Src s₀ (arg s₀ 2) (arg s₀
 theorem srcD {s₀ : State} (hp : APre e s₀) : Src s₀ (arg s₀ 4) (arg s₀ 5).toNat :=
   ⟨hp.fit_d, hp.c_d, hp.stk_d, hp.d_in⟩
 
-theorem hAL (s₀ : State) : AL s₀ < 2 ^ 64 := by have := (ALN s₀).isLt; simp only [AL]; omega
-theorem hL (s₀ : State) : L s₀ ≤ 2 ^ 64 := by have := (LN s₀).isLt; simp only [L]; omega
+theorem hAL (s₀ : State) : AL s₀ < 2 ^ 64 := by have := (ALN s₀).isLt; simp only [AL]; omega_using []
+theorem hL (s₀ : State) : L s₀ ≤ 2 ^ 64 := by have := (LN s₀).isLt; simp only [L]; omega_using []
 
 /-- The return address is unchanged. -/
 theorem ret_kept {s₀ : State} (hp : APre e s₀) {m₆ m' : Mem} (hi : Frame [workR s₀, oR s₀, stkR s₀] s₀.mem m₆)
@@ -175,7 +175,7 @@ theorem sealBody_correct (v : XorImpl) {s₀ : State} (hp : APre true s₀) :
   have C₄ := ct₄ st₃
   rw [D₃, hp.op_eq] at C₄
   refine WP.seq (WP.mono (macPad_ok hp (i := 4) (by lit_omega) (srcD hp) i₄) fun s₅ ⟨i₅, f₅, r₅⟩ => ?_)
-  refine WP.seq (WP.mono (absorbOne_ok hp i₅ (k := 32) (.inl (by omega)))
+  refine WP.seq (WP.mono (absorbOne_ok hp i₅ (k := 32) (.inl (by omega_using [])))
     fun s₆ ⟨i₆, f₆, r₆⟩ => ?_)
   refine WP.seq (WP.mono (finalizeWith_ok hp i₆ (outOk_tag hp) (out_tag hp i₆)) fun s₇ ⟨h₇, f₇, tag₇⟩ => ?_)
   refine WP.mono (restore_ok hp h₇) fun s₈ ⟨cs₈, _, m₈⟩ => ?_
@@ -228,7 +228,7 @@ theorem addr_off {x : BitVec 32} {j : Nat} (h : x.toNat + j < 2 ^ 32) :
     addr (x + BitVec.ofNat 32 j) 0 = x.setWidth 64 + BitVec.ofNat 64 j := by
   apply BitVec.eq_of_toNat_eq
   simp only [addr, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem ofNat32_sub_one {n : Nat} (h : 0 < n) (hn : n < 2 ^ 32) :
     BitVec.ofNat 32 n - 1 = BitVec.ofNat 32 (n - 1) := by
@@ -258,11 +258,11 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {s u : State} (hu : ZK
         u'.gpr .edx = u.gpr .edx - 1 ∧ u'.zf = some (u.gpr .edx - 1 == 0) ∧
         Proof.Zeroize.Prefix u'.mem (op s₀) (j + 1) := by
   have hfit := hp.fit_o
-  have ha : addr (OP s₀ + BitVec.ofNat 32 j) 0 = op s₀ + BitVec.ofNat 64 j := addr_off (by omega)
+  have ha : addr (OP s₀ + BitVec.ofNat 32 j) 0 = op s₀ + BitVec.ofNat 64 j := addr_off (by omega_using [hj, hfit])
   have hd : (op s₀).toNat = (OP s₀).toNat := by
-    simp only [op, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (OP s₀).isLt; omega)
+    simp only [op, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (OP s₀).isLt; omega_using [])
   have hc : (oR s₀).Contains (op s₀ + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj, hfit])
   refine wp_stb h1 (by rw [ha]; exact ⟨oR s₀, by rw [hu.fin.at_.wr]; exact hp.o_wr, hc⟩) fun u₁ m₁ => ?_
   refine Wp.wp_addi fun u₂ v₂ => Wp.wp_subi fun u₃ v₃ _ z₃ => WP.block_nil ?_
   have f₃ : Frame [oR s₀] u.mem u₃.mem := by
@@ -277,7 +277,7 @@ theorem zeroStep_ok {s₀ : State} (hp : APre false s₀) {s u : State} (hu : ZK
     by rw [v₃.gpr, v₂.other _ (by decide), m₁.gpr], by rw [z₃, v₂.other _ (by decide), m₁.gpr], ?_⟩
   · rw [v₃.other _ (by decide), v₂.gpr, m₁.gpr, h1, BitVec.add_assoc, BitVec.ofNat_add]; rfl
   · rw [v₃.mem, v₂.mem, m₁.mem, ha, hu.eax, show BitVec.setWidth 8 (0 : BitVec 32) = 0 by decide]
-    exact Proof.Zeroize.prefix_writeW hz (by omega)
+    exact Proof.Zeroize.prefix_writeW hz (by omega_using [hj, hfit])
 
 /-- `zeroData`'s arguments: the destination into `ecx`, `len` into `edx`, and `ZF`
 whether `len` is zero. -/
@@ -318,18 +318,18 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Fin s
   · refine WP.ite true (by show u₃.zf = some true; rw [z₃', hz]; rfl)
       (fun _ => WP.block_nil ⟨k₃, ?_⟩) (by simp)
     rw [hz]; rfl
-  · have hne := ofNat32_ne_zero (n := L s₀) (by omega) hL
+  · have hne := ofNat32_ne_zero (n := L s₀) (by omega_using [hz]) hL
     refine WP.ite false (by show u₃.zf = some false; rw [z₃', beq_false_of_ne hne]) (by simp) fun _ => ?_
     unfold zeroLoop
     refine WP.loop (M := isa) (fun rem u => ∃ j, j < L s₀ ∧ rem = L s₀ - j ∧ ZK s₀ s u ∧
       u.gpr .ecx = OP s₀ + BitVec.ofNat 32 j ∧ u.gpr .edx = BitVec.ofNat 32 (L s₀ - j) ∧
       Proof.Zeroize.Prefix u.mem (op s₀) j) ?_ (L s₀) u₃
-      ⟨0, by omega, by omega, k₃, by rw [c₃]; exact (BitVec.add_zero _).symm, by rw [d₃, Nat.sub_zero],
+      ⟨0, by omega_using [hz], by omega_using [], k₃, by rw [c₃]; exact (BitVec.add_zero _).symm, by rw [d₃, Nat.sub_zero],
         fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     intro rem u ⟨j, hj, hr, hu, e1, e2, hpz⟩
     refine WP.mono (zeroStep_ok hp hu hj e1 hpz) fun u' ⟨k', c', d', z', p'⟩ => ?_
     have hsub : BitVec.ofNat 32 (L s₀ - j) - 1 = BitVec.ofNat 32 (L s₀ - (j + 1)) := by
-      rw [ofNat32_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [ofNat32_sub_one (by omega_using [hj]) (by omega_using [hL]), Nat.sub_sub]
     rw [e2, hsub] at d' z'
     by_cases he : j + 1 = L s₀
     · left
@@ -337,9 +337,9 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Fin s
       rw [he] at p'
       exact Proof.Zeroize.prefix_spec p'
     · right
-      have hne := ofNat32_ne_zero (n := L s₀ - (j + 1)) (by omega) (by omega)
+      have hne := ofNat32_ne_zero (n := L s₀ - (j + 1)) (by omega_using [hj, he]) (by omega_using [hL])
       refine ⟨by show u'.zf.map (!·) = some true; rw [z', beq_false_of_ne hne]; rfl,
-        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, k', c', d', p'⟩
+        L s₀ - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, k', c', d', p'⟩
 
 /-- What holds after `openMain`: `eax` is whether the tag is right, `ZF`
 whether it is not, the plaintext is at the destination, and the return address
@@ -364,7 +364,7 @@ theorem body_ok (v : XorImpl) {s₀ : State} (hp : APre false s₀) :
     rw [bytesAt_frame f₂ (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
   refine WP.seq (WP.mono (macPad_ok hp (i := 4) (by lit_omega) (srcD hp) i₂) fun s₃ ⟨i₃, f₃, r₃⟩ => ?_)
   refine WP.seq (WP.mono (lengths_ok hp i₃) fun s₄ ⟨i₄, f₄, len₄⟩ => ?_)
-  refine WP.seq (WP.mono (absorbOne_ok hp i₄ (k := 32) (.inl (by omega)))
+  refine WP.seq (WP.mono (absorbOne_ok hp i₄ (k := 32) (.inl (by omega_using [])))
     fun s₅ ⟨i₅, f₅, r₅⟩ => ?_)
   have st₅ : stateAt s₅.mem (cx s₀ + BitVec.ofNat 64 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [VG.Proof.ChaCha20.X86.Xor.stateAt_frame f₅ (by rdisj_all),
@@ -1045,7 +1045,7 @@ theorem prologue_rel :
 
 theorem absorbOne_rel {k : Nat} (hk : k = 48 ∨ k = 32) :
     RelCT isa (fun x y => Inv a x ∧ Inv b y) (absorbOne k) fun _ _ => True := by
-  have hk' : k + 16 ≤ 448 ∨ (576 ≤ k ∧ k + 16 ≤ 704) := by omega
+  have hk' : k + 16 ≤ 448 ∨ (576 ≤ k ∧ k + 16 ≤ 704) := by omega_using [hk]
   rw [absorbOne_eq]
   refine RelCT.seq (R := fun x y => OneA a k x ∧ OneA b k y)
     (RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨WP.mono (oneA_ok hx k) fun _ h => h.1,
@@ -1096,7 +1096,7 @@ theorem padTail_rel {i : Nat} (hsa : Src a (arg a i) (arg a (i + 1)).toNat)
 theorem macPad_rel {i : Nat} (hi : i = 2 ∨ i = 4) (hsa : Src a (arg a i) (arg a (i + 1)).toNat)
     (hsb : Src b (arg b i) (arg b (i + 1)).toNat) :
     RelCT isa (fun x y => Inv a x ∧ Inv b y) (macPad (4 + 4 * i) (8 + 4 * i)) fun _ _ => True := by
-  have hi' : i + 1 < 8 := by omega
+  have hi' : i + 1 < 8 := by omega_using [hi]
   have ei' : arg b (i + 1) = arg a (i + 1) := hq.args (i + 1) hi'
   rw [macPad_eq]
   refine RelCT.seq (R := fun x y => MA a i x ∧ MA b i y)
@@ -1170,7 +1170,7 @@ theorem sealBody_rel {a b : State} (ha : APre true a) (hb : APre true b) (hq : P
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inr rfl) (srcD ha) (srcD hb))
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcD hp) h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (absorbOne_rel ha hb hq (.inr rfl))
-    (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inl (by omega))) fun _ h => h.1)) ?_
+    (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inl (by omega_using []))) fun _ h => h.1)) ?_
   refine RelCT.seq (R := fun x y => Fin a x ∧ Fin b y) (RelCT.post (finalizeWith_rel ha hb hq (O := TP)
     (outOk_tag ha) (outOk_tag hb) hq.tp
     (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide)) (fun _ h => out_tag ha h) (fun _ h => out_tag hb h))
@@ -1189,7 +1189,7 @@ theorem body_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub
   refine RelCT.seq (inv_rel ha hb (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
     (fun s₀ _ hp h => WP.mono (lengths_ok hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (absorbOne_rel ha hb hq (.inr rfl))
-    (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inl (by omega))) fun _ h => h.1)) ?_
+    (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inl (by omega_using []))) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (crypt_rel ha hb hq v) (fun s₀ _ hp h => WP.mono (crypt_ok v hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (R := fun (x y : State) => (Fin a x ∧ x.mem.readW (argAddr a 6) 32 = TP a) ∧
       (Fin b y ∧ y.mem.readW (argAddr b 6) 32 = TP b))
@@ -1347,7 +1347,7 @@ theorem InPost.pub {s₁ s₂ b₁ b₂ : State} (h₁ : InPost s₁ b₁) (h₂
     fun i hi => ?_⟩
   by_cases h7 : i = 7
   · subst h7; rw [a7₁, a7₂]; exact (hp.2 4 (by decide)).symm
-  · rw [ha₁ i (by omega), ha₂ i (by omega)]; exact (hp.2 i hi).symm
+  · rw [ha₁ i (by omega_using [hi, h7]), ha₂ i (by omega_using [hi, h7])]; exact (hp.2 i hi).symm
 
 theorem ToPost.pub {s₁ s₂ b₁ b₂ : State} (h₁ : ToPost s₁ b₁) (h₂ : ToPost s₂ b₂) (hp : pubToX86 s₁ s₂) :
     Pub b₁ b₂ := by
@@ -1359,7 +1359,7 @@ theorem ToPost.pub {s₁ s₂ b₁ b₂ : State} (h₁ : ToPost s₁ b₁) (h₂
   · subst h7; rw [a7₁, a7₂]; exact (hp.2 6 (by decide)).symm
   · by_cases h6 : i = 6
     · subst h6; rw [a6₁, a6₂]; exact (hp.2 8 (by decide)).symm
-    · rw [ha₁ i (by omega), ha₂ i (by omega)]; exact (hp.2 i (by omega)).symm
+    · rw [ha₁ i (by omega_using [hi, h7, h6]), ha₂ i (by omega_using [hi, h7, h6])]; exact (hp.2 i (by omega_using [hi])).symm
 
 /-- `open`'s leak, from the body's entry state, as `open_to`'s from its entry. -/
 theorem ToPost.leak {s b : State} (h : ToPost s b) (hp : APre false b) : openLeakX86 b = openToLeakX86 s := by

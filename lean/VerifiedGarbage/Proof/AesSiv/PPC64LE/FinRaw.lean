@@ -50,7 +50,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawPPC64LE.pre s₀) :
   generalize hS : s₀.gpr .r8 = S at hp
   generalize hL : (s₀.gpr .r7).toNat = L at hp
   generalize hR : (s₀.gpr .r4).toNat = R at hp
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have sw := hp.scr_wrap
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (blk_call (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
@@ -59,12 +59,12 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawPPC64LE.pre s₀) :
       Region.Disjoint ⟨S + BitVec.ofNat 64 p.2, 8⟩ r := by
     intro p hp' r hr
     have hb := fin_bound p hp'
-    have hsub : Region.Sub ⟨S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 2176⟩ := Offset.sub_base _ (by omega)
+    have hsub : Region.Sub ⟨S + BitVec.ofNat 64 p.2, 8⟩ ⟨S, 2176⟩ := Offset.sub_base _ (by omega_using [hb])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint S (by omega) (by omega) (by omega)
+    · exact Offset.disjoint S (by omega_using [hb]) (by omega_using [hb]) (by omega_using [])
     · exact hp.st_scr.symm.sub_left hsub
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact Offset.disjoint_base _ (by omega_using [hb]) (by omega_using [hb])
   have hsv : Spill.Saved S (s₀.write .r0 s₀.lr).gpr finSaved s₂.mem :=
     ((Spill.saveMem_saved (by decide) s₀.mem S _).frame h₁.frame fun p hp' r hr =>
       slotD p hp' r (by
@@ -83,7 +83,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawPPC64LE.pre s₀) :
   refine Spill.restore_ok (b := .r14) (l := finSaved) (by decide) r14₂ (by decide) (by decide)
     (fun p hp' => ?_) hsv fun s₃ r₃ => WP.cons exec_mtlr (wp_nil ⟨fun r hr => ?_, ?_, ?_⟩)
   · have := fin_bound p hp'
-    rw [rdwr₂]; exact wr_in (hp.inScr (by omega))
+    rw [rdwr₂]; exact wr_in (hp.inScr (by omega_using [this]))
   · show s₃.gpr r = _
     have h0 : (s₀.write .r0 s₀.lr).gpr r = s₀.gpr r := by simp [State.write, (preserved_ne r hr).1]
     rw [r₃.gpr_of (r := r) ?_, h0]
@@ -98,11 +98,11 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finRawPPC64LE.pre s₀) :
       rw [Proof.Cmac.bytesAt_frame h₁.frame (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by decide))
-          · exact hp.key_st.sub_left (Region.sub_prefix (by omega))) (by omega)]
+          · exact (hp.key_scr.sub_left (Region.sub_prefix (by omega_using [hRb]))).sub_right (Offset.sub_base _ (by decide))
+          · exact hp.key_st.sub_left (Region.sub_prefix (by omega_using [hRb]))) (by omega_using [hRb])]
       exact Proof.Cmac.bytesAt_frame (finMem_frame s₀ S) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (hp.key_scr.sub_left (Region.sub_prefix (by omega))).sub_right (slots_scr S)) (by omega)
+        exact (hp.key_scr.sub_left (Region.sub_prefix (by omega_using [hRb]))).sub_right (slots_scr S)) (by omega_using [hRb])
     rw [r₃.mem, c.out, cipher_bytes, sch, h₁.st]
 
 theorem finalize_raw_correct (s : State) (hs : finRawPPC64LE.pre s) :
@@ -122,7 +122,7 @@ structure FRPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop w
 theorem fin_call_raw {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
     WP isa Impl.CmacAes.Stream.PPC64LE.finCall s (FRPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL := Proof.CmacAes.Stream.PPC64LE.toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := Proof.CmacAes.Stream.PPC64LE.toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.call (k := finRawPPC64LE) finalize_raw_correct h.pre h.reads h.writes ?_ finalize_noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost
   refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩

@@ -443,7 +443,7 @@ theorem add_ofNat_inj {d : BitVec 32} {a b L : Nat} (ha : a ≤ L) (hb : b ≤ L
   have := congrArg BitVec.toNat h
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at this
   have := d.isLt
-  omega
+  omega_arith
 
 theorem Pos.whole {s₀ s : State} {F : Nat → Nat} (h : (∃ c, Cons s₀ F c s) ∨ Done s₀ F s) :
     ∃ c, c ≤ dl s₀ ∧ s.gpr .esi = dp s₀ + BitVec.ofNat 32 c := by

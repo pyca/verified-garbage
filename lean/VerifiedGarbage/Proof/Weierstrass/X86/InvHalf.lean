@@ -59,15 +59,15 @@ theorem copyPad_ok {s : State} {base : Addr} {size dst src : Nat}
       Keeps [.eax] s z ∧ Outside base dst 36 s.mem z.mem := by
   have hn := hs.nowrap
   unfold copyPad
-  refine WP.block_append (WP.mono (copy_ok 8 hs (by omega) ha sep) fun s₁ ⟨V₁, K₁, O₁⟩ => ?_)
-  refine WP.mono (zeros_ok (hs.of_keeps K₁ (by decide)) (acc := dst + 32) (k := 1) (by omega))
+  refine WP.block_append (WP.mono (copy_ok 8 hs (by omega_using [hd]) ha sep) fun s₁ ⟨V₁, K₁, O₁⟩ => ?_)
+  refine WP.mono (zeros_ok (hs.of_keeps K₁ (by decide)) (acc := dst + 32) (k := 1) (by omega_using [hd]))
     fun z ⟨O₂, V₂, K₂⟩ => ⟨?_, K₁.trans K₂, ?_⟩
   · simp only [val32, Nat.mul_zero, Nat.add_zero] at V₂
-    rw [val32_succ, O₂.val32 (by omega) (by omega), V₁]
+    rw [val32_succ, O₂.val32 (by omega_using []) (by omega_using [hd, hn]), V₁]
     change _ + 2 ^ (32 * 8) * w32 z.mem base (dst + 32) = _
     rw [V₂, Nat.mul_zero, Nat.add_zero]
   · intro x hx
-    rw [O₂ x (by omega), O₁ x (by omega)]
+    rw [O₂ x (by omega_using [hx]), O₁ x (by omega_using [hx])]
 
 theorem one8_ok {s : State} {base : Addr} {size dst : Nat}
     (hs : Scr s base size) (hd : dst + 32 ≤ size) :
@@ -76,16 +76,16 @@ theorem one8_ok {s : State} {base : Addr} {size dst : Nat}
   have hn := hs.nowrap
   unfold one8
   refine WP.block_append (WP.mono (zeros_ok hs hd) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  refine WP.mono (setWord_ok 1 (hs.of_keeps K₁ (by decide)) (by omega))
+  refine WP.mono (setWord_ok 1 (hs.of_keeps K₁ (by decide)) (by omega_using [hd]))
     fun z ⟨V₂, K₂, O₂⟩ => ⟨?_, K₁.trans K₂, ?_⟩
   · have Vtail : val32 s₁.mem base (dst + 4) 7 = 0 := by
       change w32 s₁.mem base dst + 2 ^ 32 * val32 s₁.mem base (dst + 4) 7 = 0 at V₁
-      omega
+      omega_using [V₁]
     change w32 z.mem base dst + 2 ^ 32 * val32 z.mem base (dst + 4) 7 = 1
-    rw [V₂, O₂.val32 (by omega) (by omega), Vtail]
+    rw [V₂, O₂.val32 (by omega_using []) (by omega_using [hd, hn]), Vtail]
     rfl
   · intro x hx
-    rw [O₂ x (by omega), O₁ x hx]
+    rw [O₂ x (by omega_using [hx]), O₁ x hx]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -112,7 +112,7 @@ theorem shrSigned_ok {s : State} {base : Addr} {size dst src n : Nat}
         z % ((2 ^ (32 * n) : Nat) : Int) ∧
       Keeps [.eax, .ebx, .ecx] s u ∧ Outside base dst (4 * n) s.mem u.mem := by
   refine WP.mono (shr30_ok hs hn ha hd sep) fun u ⟨V, K, O⟩ => ⟨?_, K, O⟩
-  obtain ⟨j, rfl⟩ : ∃ j, n = j + 1 := ⟨n - 1, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, n = j + 1 := ⟨n - 1, by omega_using [hn]⟩
   simp only [Nat.add_sub_cancel] at hy1 hy2 ⊢
   have Q : 2 ^ (32 * (j + 1)) = 2 * (2 ^ (32 * j) * 2 ^ 31) := by
     rw [pow32_succ, show (2 : Nat) ^ 32 = 2 * 2 ^ 31 from rfl]
@@ -158,9 +158,9 @@ theorem fHalf_ok {s : State} {base : Addr} {size u v acc a b tmp dst k p : Nat} 
   obtain ⟨lo, hi⟩ := Divstep.W32.comb_range huv hfb hgb hp
   have ha := L.acc_bound
   have hs₁ := hs.of_keeps K₁ (by decide)
-  refine WP.mono (shrSigned_ok hs₁ (dst := dst) (src := acc) (by omega) (by omega) hd sep
-    (by exact_mod_cast V₁) (by simpa only [show k + 2 - 1 = k + 1 by omega] using lo)
-    (by simpa only [show k + 2 - 1 = k + 1 by omega] using hi) (Int.mul_ediv_cancel' hdiv).symm)
+  refine WP.mono (shrSigned_ok hs₁ (dst := dst) (src := acc) (by omega_using []) (by omega_using [ha]) hd sep
+    (by exact_mod_cast V₁) (by simpa only [show k + 2 - 1 = k + 1 by omega_using []] using lo)
+    (by simpa only [show k + 2 - 1 = k + 1 by omega_using []] using hi) (Int.mul_ediv_cancel' hdiv).symm)
     fun z ⟨V, K, O⟩ => ⟨?_, K₁.trans (K.mono (by decide)), ?_⟩
   · exact_mod_cast V
   · intro x hx

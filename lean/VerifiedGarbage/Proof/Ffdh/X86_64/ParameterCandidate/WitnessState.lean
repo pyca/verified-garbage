@@ -42,7 +42,7 @@ theorem WitnessParams.width_bounds (p : WitnessParams) :
   have hb2 := p.bits2
   have hw := p.width
   unfold WitnessParams.len
-  omega
+  omega_using [hb1, hb2, hw]
 
 theorem WitnessParams.dims (p : WitnessParams) : MrDims p.I p.IZ p.w := by
   have hr : 256 + (256 + 28 * (8 * (p.w + 2))) ≤ p.Z := p.room
@@ -66,7 +66,7 @@ theorem inner_header {p : WitnessParams} {m m' : Mem} {rs : List (Nat × Nat)}
     (hf : Frm p.I rs m m') (hrs : ∀ r ∈ rs, r.1 + r.2 ≤ p.IZ) (hz : p.Z ≤ 2 ^ 64) :
     ∀ j < 32, word m' p.O (8 * j) = word m p.O (8 * j) := by
   intro j hj
-  exact hf.word_below hrs (by omega_using [p.space_bounds.2.2, hz]) (by decide) (by omega)
+  exact hf.word_below hrs (by omega_using [p.space_bounds.2.2, hz]) (by decide) (by omega_using [hj])
 
 theorem inner_link {p : WitnessParams} {m m' : Mem} {rs : List (Nat × Nat)}
     (hf : Frm p.I rs m m') (hrs : ∀ r ∈ rs, 136 ≤ r.1) :
@@ -110,15 +110,15 @@ theorem DrawFrame.of_inner {p : WitnessParams} {m m' : Mem} {rs : List (Nat × N
     (h : Frm p.I rs m m') (hrs : ∀ r ∈ rs, r.1 + r.2 ≤ p.IZ) (hz : p.Z ≤ 2 ^ 64) :
     DrawFrame p m m' := by
   have hshift : Frm p.O (shiftRanges 256 rs) m m' :=
-    h.rebase (by decide) (fun r hr => by have := hrs r hr; unfold WitnessParams.IZ at this; omega)
+    h.rebase (by decide) (fun r hr => by have := hrs r hr; unfold WitnessParams.IZ at this; omega_using [hz, this])
   apply DrawFrame.of_scr (InScr.of_frm hshift ?_)
   intro r hr
   obtain ⟨r', hr', rfl⟩ := List.mem_map.mp hr
   have hfit := hrs r' hr'
-  have hsize : 256 ≤ p.Z := by have := p.room; omega
+  have hsize : 256 ≤ p.Z := by have := p.room; omega_using [this]
   dsimp only
   unfold WitnessParams.IZ at hfit
-  omega
+  omega_using [hfit, hsize]
 
 theorem output_inner {p : WitnessParams} {s : State} (h : OutOk s p.O p.Z p.op p.len)
     (hz : p.Z ≤ 2 ^ 64) : OutOk s p.I p.IZ p.op p.len := by
@@ -220,7 +220,7 @@ theorem DrawState.outer_frame {p : WitnessParams} {rp : Addr} {used : Nat} {bs :
   have hw := outer_words (Z := p.IZ) hf hhi (by omega_using [p.space_bounds.2.2, hz64])
   have hh : ∀ j < 17, word t.mem p.O (8 * j) = word s.mem p.O (8 * j) := by
     intro j hj
-    exact hf.word_eq (fun r hr => Or.inl (by have := hlo r hr; omega_using [this, hj])) (by omega)
+    exact hf.word_eq (fun r hr => Or.inl (by have := hlo r hr; omega_using [this, hj])) (by omega_using [hj])
   have hframe : DrawFrame p s.mem t.mem := DrawFrame.of_scr
     (InScr.of_frm hf (fun r hr => Nat.le_trans (hhi r hr) p.space_bounds.1))
   exact ⟨h.scr.congr k.2.2, h.ready.of_words p.dims hw k.2.2 hdi,
@@ -250,7 +250,7 @@ theorem DrawState.after_sample {p : WitnessParams} {rp : Addr} {used : Nat} {bs 
       subst hr'
       change 8 * j + 8 ≤ 96 ∨ 120 ≤ 8 * j
       omega_using [h12, h13, h14]
-    · omega
+    · omega_using [hj]
   refine ⟨h.scr.congr k.2.2, hr, hl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ⟨fun i hi => by rw [k.2.2]; exact h.out.wr i hi, h.out.sep⟩, ?_⟩
   · rw [hh oOut (by decide) (by decide), hstatic oOut (by decide) (by decide) (by decide) (by decide)]

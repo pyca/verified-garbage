@@ -29,9 +29,9 @@ def bc (b : BitVec 8) : BitVec 128 := ofVBytes fun _ => b
 theorem vbyte_ext {x y : BitVec 128} (h : ∀ e < 16, vbyte x e = vbyte y e) : x = y := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  have e := congrArg (fun z => z.getLsbD (i % 8)) (h (i / 8) (by omega))
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true,
-    Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega] at e
+  have e := congrArg (fun z => z.getLsbD (i % 8)) (h (i / 8) (by omega_using [hi]))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega_using [], decide_true,
+    Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega_using []] at e
   exact e
 
 theorem vbyte_bc (b : BitVec 8) {e : Nat} (he : e < 16) : vbyte (bc b) e = b :=
@@ -83,17 +83,17 @@ theorem vbyte_setLane (x : BitVec 128) (v : BitVec 8) {i e : Nat} (hi : i < 16) 
   apply BitVec.eq_of_getLsbD_eq; intro k hk
   simp only [setLane, vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_and,
     BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
-    hk, decide_true, Bool.true_and, show 8 * e + k < 128 by omega]
+    hk, decide_true, Bool.true_and, show 8 * e + k < 128 by omega_using [he, hk]]
   by_cases h : e = i
   · subst h
-    simp [show ¬ 8 * e + k < 8 * e by omega, show 8 * e + k - 8 * e = k by omega, hk,
-      show k < 128 by omega]
+    simp [show ¬ 8 * e + k < 8 * e by omega_using [], show 8 * e + k - 8 * e = k by omega_using [], hk,
+      show k < 128 by omega_using [hk]]
   · simp only [h, ite_false]
-    rcases (by omega : e < i ∨ i < e) with h' | h'
-    · simp [show 8 * e + k < 8 * i by omega]
-      intro; omega
-    · simp [show ¬ 8 * e + k < 8 * i by omega, show ¬ 8 * e + k - 8 * i < 8 by omega,
-        BitVec.getLsbD_of_ge v (8 * e + k - 8 * i) (by omega), hk]
+    rcases (by omega_using [h] : e < i ∨ i < e) with h' | h'
+    · simp [show 8 * e + k < 8 * i by omega_using [hk, h']]
+      intro; omega_using [hk]
+    · simp [show ¬ 8 * e + k < 8 * i by omega_using [h'], show ¬ 8 * e + k - 8 * i < 8 by omega_using [h'],
+        BitVec.getLsbD_of_ge v (8 * e + k - 8 * i) (by omega_using [h']), hk]
 
 theorem ite_iff {α : Type} {p q : Prop} [Decidable p] [Decidable q] (h : p ↔ q) (a b : α) :
     (if p then a else b) = if q then a else b := by

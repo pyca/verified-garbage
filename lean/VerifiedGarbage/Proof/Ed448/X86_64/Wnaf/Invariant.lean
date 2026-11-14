@@ -39,21 +39,21 @@ theorem RecInv.advance {base : Addr} {dst k n : Nat} {s₀ s u : State}
   refine ⟨⟨(g.gpr _ (by decide)).trans h.scr.rdi, g.wr ▸ h.scr.wr, h.scr.nowrap⟩,
     g.rbx, g.carry, fun r hr => (g.gpr r hr).trans (h.gpr r hr), g.rd.trans h.rd, g.wr.trans h.wr, ?_, ?_⟩
   · intro p hp
-    rw [g.mem, writeW8_outside _ base _ (by omega) (by rcases hp with hp | hp <;> omega)]
+    rw [g.mem, writeW8_outside _ base _ (by omega_using [hn, hbound]) (by rcases hp with hp | hp <;> omega_arith)]
     exact h.mem p hp
   · intro i hi
     rw [g.mem, writeW8_apply]
-    simp only [off_eq_iff base (d := dst + i) (e := dst + n) (by omega) (by omega)]
+    simp only [off_eq_iff base (d := dst + i) (e := dst + n) (by omega_using [hn, hbound, hi]) (by omega_using [hn, hbound])]
     by_cases he : i = n
     · subst i; simp only [ite_true]
-    · rw [ite_eq_right (by omega)]
-      exact h.digits i (by omega)
+    · rw [ite_eq_right (by omega_using [he])]
+      exact h.digits i (by omega_using [hi, he])
 
 theorem RecInv.bits {base : Addr} {dst k n src : Nat} {s₀ s : State}
     (h : RecInv base dst k s₀ n s) (hsrc : 1 ≤ src) (hsep : src + 460 ≤ dst) (hb : dst + 461 ≤ 8192)
     (bs : Window.Bits base src k s₀) : Window.Bits base src k s := by
   intro t ht
-  rw [h.mem _ (Or.inl (by rw [ofs_off' base (by omega)]; omega))]
+  rw [h.mem _ (Or.inl (by rw [ofs_off' base (by omega_using [hsep, hb, ht])]; omega_using [hsrc, hsep, ht]))]
   exact bs t ht
 
 theorem RecInv.keeps {base : Addr} {dst k n : Nat} {s₀ s u : State}

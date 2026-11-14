@@ -50,10 +50,10 @@ theorem ltBit {a b : Nat} (ha : a < 2 ^ 31) (hb : b < 2 ^ 31) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 b) >>> 31 = if a < b then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := b) (by omega)]
+    Nat.mod_eq_of_lt (a := a) (by omega_using [ha]), Nat.mod_eq_of_lt (a := b) (by omega_using [hb])]
   split
-  · show _ = 1; omega
-  · show _ = 0; omega
+  · show _ = 1; omega_arith
+  · show _ = 0; omega_arith
 
 /-- A byte of a word shifted right. -/
 theorem shrByte {c : Nat} (hc : c < 2 ^ 32) (k : Nat) :
@@ -93,10 +93,10 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
   obtain ⟨σ', ok⟩ := hg.ok
   let I : Nat → State → State → Prop := fun k σ s => k ≤ n ∧ Ctx L scr σ s ∧
     ∃ m₀, X σ m₀ ∧ XI scr od os n m₀ (n - k) s
-  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, r0, r1, lr⟩ => ⟨by omega, hc,
-    s.mem, hx, ⟨by rw [r0, show n - (n - 1 + 1) = 0 by omega]; rfl, by rw [r1, show n - (n - 1 + 1) = 0 by omega]; rfl,
-      by rw [lr, show n - (n - (n - 1 + 1)) = n by omega], Frame.refl _ _, fun i _ => by
-        rw [ite_eq_right (by omega)]⟩⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun k => ?_) (n - 1)).mono (fun σ s ⟨hc, hx, r0, r1, lr⟩ => ⟨by omega_using [hn], hc,
+    s.mem, hx, ⟨by rw [r0, show n - (n - 1 + 1) = 0 by omega_using []]; rfl, by rw [r1, show n - (n - 1 + 1) = 0 by omega_using []]; rfl,
+      by rw [lr, show n - (n - (n - 1 + 1)) = n by omega_using []], Frame.refl _ _, fun i _ => by
+        rw [ite_eq_right (by omega_using [])]⟩⟩) fun _ _ h => h
   refine VP.taint _ xorBody_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hk, hc, m₀, hx, hp⟩ => ?_
   · obtain ⟨-, -, _, -, p₁⟩ := h₁
     obtain ⟨-, -, _, -, p₂⟩ := h₂
@@ -106,20 +106,20 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
     · rw [p₁.r1, p₂.r1]
     · rw [p₁.lr, p₂.lr]
   generalize hj : n - (k + 1) = j at hp
-  have hjn : j < n := by omega
-  have aD : State.addr (scr + BitVec.ofNat 32 (od + j)) = sa scr (od + j) := hg.addr (by omega)
-  have aS : State.addr (scr + BitVec.ofNat 32 (os + j)) = sa scr (os + j) := hg.addr (by omega)
-  have rS : InRegions (s.rd ++ s.wr) (sa scr (os + j)) 1 := hg.rd hc.st (by omega)
-  have rD : InRegions (s.rd ++ s.wr) (sa scr (od + j)) 1 := hg.rd hc.st (by omega)
-  have wD : InRegions s.wr (sa scr (od + j)) 1 := hg.wr hc.st (by omega)
+  have hjn : j < n := by omega_using [hn, hj]
+  have aD : State.addr (scr + BitVec.ofNat 32 (od + j)) = sa scr (od + j) := hg.addr (by omega_using [hd, hjn])
+  have aS : State.addr (scr + BitVec.ofNat 32 (os + j)) = sa scr (os + j) := hg.addr (by omega_using [hs, hjn])
+  have rS : InRegions (s.rd ++ s.wr) (sa scr (os + j)) 1 := hg.rd hc.st (by omega_using [hs, hjn])
+  have rD : InRegions (s.rd ++ s.wr) (sa scr (od + j)) 1 := hg.rd hc.st (by omega_using [hd, hjn])
+  have wD : InRegions s.wr (sa scr (od + j)) 1 := hg.wr hc.st (by omega_using [hd, hjn])
   have stj : s.mem (sa scr (os + j)) = m₀ (sa scr (os + j)) :=
     hp.fr _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Geo.sep (scr := scr) (o := os + j) (n := 1) (by omega) (by omega) (by omega) _ (Region.contains_self _ _)
+      exact Geo.sep (scr := scr) (o := os + j) (n := 1) (by omega_using [hsep, hj]) (by omega_using [hs, hjn]) (by omega_using [hd]) _ (Region.contains_self _ _)
   have dj : s.mem (sa scr (od + j)) = m₀ (sa scr (od + j)) := by
     rw [hp.x j hjn, ite_eq_right (Nat.lt_irrefl _)]
   have lr1 : BitVec.ofNat 32 (n - j) - 1 = BitVec.ofNat 32 (n - (j + 1)) := by
-    rw [show n - j = (n - (j + 1)) + 1 by omega]; exact sub_one_ofNat (by unfold oRsa at hd; omega)
+    rw [show n - j = (n - (j + 1)) + 1 by omega_using [hn, hj]]; exact sub_one_ofNat (by unfold oRsa at hd; omega_using [hd])
   have hw : WP isa (.block xorBody) s fun t => t.mem = s.mem.writeW (sa scr (od + j))
       (m₀ (sa scr (od + j)) ^^^ m₀ (sa scr (os + j))) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 (od + (j + 1)) ∧
@@ -129,10 +129,10 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
     refine ⟨?_, ?_, ?_⟩
     · rw [BitVec.add_assoc, VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, Nat.add_assoc]
     · rw [BitVec.add_assoc, VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, Nat.add_assoc]
-    · rw [VG.Proof.X25519.Arm.ofNat_beq_zero (by unfold oRsa at hd; omega)]
+    · rw [VG.Proof.X25519.Arm.ofNat_beq_zero (by unfold oRsa at hd; omega_using [hd])]
   refine WP.mono hw fun t ⟨m, rd, wr, sp, r0, r1, lr, z⟩ => ?_
   have fr1 : Frame [sR scr od n] s.mem t.mem := by
-    rw [m]; exact frame_byte scr _ _ (by omega) (by omega) (by unfold oRsa at hd; omega)
+    rw [m]; exact frame_byte scr _ _ (by omega_using []) (by omega_using [hn, hj]) (by unfold oRsa at hd; omega_using [hd])
   have hc' : Ctx L scr σ t := hc.write fr1 (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.inW hd)
     (fun r hr => by
@@ -140,17 +140,17 @@ theorem xor_vp (hg : Geo L scr) {od os n : Nat} (hn : 0 < n) (hd : od + n ≤ oR
     rd wr sp
   have sk : XI scr od os n m₀ (j + 1) t := by
     refine ⟨r0, r1, lr, hp.fr.trans fr1, fun i hi => ?_⟩
-    rw [m, sa_write scr _ _ (by unfold oRsa at hd; omega) (by unfold oRsa at hd; omega)]
+    rw [m, sa_write scr _ _ (by unfold oRsa at hd; omega_using [hd, hj]) (by unfold oRsa at hd; omega_using [hd, hi])]
     by_cases e : i = j
     · subst e
       rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self _)]
-    · rw [ite_eq_right (show ¬ (od + i = od + j) by omega), hp.x i hi]
+    · rw [ite_eq_right (show ¬ (od + i = od + j) by omega_using [e]), hp.x i hi]
       by_cases e' : i < j
-      · rw [ite_eq_left e', ite_eq_left (by omega)]
-      · rw [ite_eq_right e', ite_eq_right (by omega)]
-  refine ⟨by rw [VG.Proof.X25519.Arm.eval_ne, z, show n - (j + 1) = k by omega]; cases k <;> simp,
-    fun h0 => ⟨hc', m₀, hx, sk.fr, fun i hi => ?_⟩, fun hpos => ⟨by omega, hc', m₀, hx, ?_⟩⟩
-  · rw [sk.x i hi, ite_eq_left (by omega)]
-  · rw [show n - k = j + 1 by omega]; exact sk
+      · rw [ite_eq_left e', ite_eq_left (by omega_using [e'])]
+      · rw [ite_eq_right e', ite_eq_right (by omega_using [e, e'])]
+  refine ⟨by rw [VG.Proof.X25519.Arm.eval_ne, z, show n - (j + 1) = k by omega_using [hk, hj]]; cases k <;> simp,
+    fun h0 => ⟨hc', m₀, hx, sk.fr, fun i hi => ?_⟩, fun hpos => ⟨by omega_using [hk], hc', m₀, hx, ?_⟩⟩
+  · rw [sk.x i hi, ite_eq_left (by omega_using [hj, h0, hi])]
+  · rw [show n - k = j + 1 by omega_using [hk, hj]]; exact sk
 
 end VG.Proof.RsaPss.Arm

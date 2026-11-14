@@ -85,10 +85,10 @@ theorem k13_pre (p : KpP) (xb : List Byte) (t : State) (h : K13 p xb t) : PS0 sG
   have hk2 : p.k ≤ 1024 := hb.k2
   have := hM.ps0 (bp := sG) (bl := sK) (ep := sX) (el := sXl) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sG) (v := (p.D xb).dp + BitVec.ofNat 64 (p.D xb).k) (by simp))
-    (by rw [hb.glen]; exact hs.get (i := sK) (by simp)) hb.gsrc (by rw [hb.glen]; simp; omega)
+    (by rw [hb.glen]; exact hs.get (i := sK) (by simp)) hb.gsrc (by rw [hb.glen]; simp; omega_using [hk1])
     (by rw [hb.glen]) (hs.get (i := sX) (v := p.xp) (by simp [KpP.D]))
     (by rw [ho.1]; exact hs.get (i := sXl) (by simp [KpP.D])) hx (by rw [ho.1]; exact ho.2.1)
-    (by rw [ho.1]; have := ho.2.2.1; omega)
+    (by rw [ho.1]; have := ho.2.2.1; omega_using [hk2, this])
   rw [hb.glen, ho.1] at this
   exact this
 
@@ -116,7 +116,7 @@ theorem tail_ct (W : Window) (M : Mont) (S : Selector) :
       have ew := hb.ew
       have := hb.k1
       obtain ⟨hodd, -⟩ := valid_facts hI₁.2.2.2.2.2 hb.k1
-      obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega) hodd hI₁.2.2.1 hI₂.2.2.1
+      obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega_using [ew, this]) hodd hI₁.2.2.1 hI₂.2.2.1
       exact ⟨_, hI₁.r2pre, hI₂.r2pre⟩) h) fun _ _ h => h) fun p xb s h he => k9_k10 M p xb s h he) ?_)
   refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K11)) (ex_post (two_taint [.x0]
     (pins_x0B KpP.g fun (p : KpP) s (h : Ex K10 p s) => by

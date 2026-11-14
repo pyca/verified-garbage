@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # RSAES-OAEP decryption on PPC64LE: the precondition
 
 Untrusted: everything here is checked by Lean. `PreD s`: the contract's
-precondition (`Spec.RsaOaep.decryptTablesContract`, with the stack of the
+precondition (`Spec.RsaOaep.decryptMdTablesContract`, with the stack of the
 frames and of `vg_rsa_private_checked`, `stackBytes`), by name (`preD_of`),
 and what it says of the tables (`spec_tabD`); the working space `Sd s` and the values the decoding keeps in
 `r15`–`r23` (`vD s rc`, with the private operation's result `rc` in `r20`),
@@ -36,7 +36,7 @@ theorem stackArgs_seventeen (s : State) :
 operation's (`privBytes`) and that function's own. -/
 def stackBytes : Nat := frameBytes + privBytes + Impl.Rsa.PPC64LE.Priv.frameBytes
 
-theorem stackBytes_eq : stackBytes = 3776 := rfl
+theorem stackBytes_eq : stackBytes = 3792 := rfl
 
 /-! ## The buffers -/
 
@@ -52,17 +52,26 @@ abbrev qiR (s : State) : Region := ⟨stackArg s 7, (stackArg s 8).toNat⟩
 abbrev lR (s : State) : Region := ⟨stackArg s 9, (stackArg s 10).toNat⟩
 abbrev ctR (s : State) : Region := ⟨stackArg s 11, (stackArg s 12).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩
-abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 5
-abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 16) 5
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 136⟩
+abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 11
+abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 16) 11
+/-- Our stack arguments: seventeen, or with `pc` nineteen. -/
+abbrev aR (pc : Bool) (s : State) : Region := ⟨stackArgAddr s 0, if pc then 152 else 136⟩
+/-- With `pc`, the key's precomputed values, `pre_len` words. -/
+abbrev preR (s : State) : Region := ⟨stackArg s 17, (stackArg s 18).toNat * 8⟩
 /-- The stack the function uses. -/
 abbrev kD (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
 
-/-- What the code needs of `decryptTablesContract.pre`, by name. -/
-structure PreD (s : State) : Prop where
+/-- The buffers the function reads. -/
+abbrev rdL (pc : Bool) (s : State) : List Region :=
+  [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, lR s, ctR s] ++ (if pc then [preR s] else []) ++
+    [tLR s, tR s, aR pc s]
+
+/-- What the code needs of `decryptMdTablesContract.pre`, or with `pc` of
+`decryptPrecomputedMdTablesContract.pre`, by name. -/
+structure PreD (pc : Bool) (s : State) : Prop where
   sp1 : stackBytes ≤ s.sp.toNat
-  sp2 : s.sp.toNat + 224 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, lR s, ctR s, tLR s, tR s, aR s]
+  sp2 : s.sp.toNat + (if pc then 240 else 224) ≤ 2 ^ 64
+  hrd : s.rd = rdL pc s
   hwr : s.wr = [oR s, mlR s, scR s]
   oml : (oR s).Disjoint (mlR s)
   on : (oR s).Disjoint (nR s)
@@ -77,7 +86,7 @@ structure PreD (s : State) : Prop where
   os : (oR s).Disjoint (scR s)
   otl : (oR s).Disjoint (tLR s)
   ot : (oR s).Disjoint (tR s)
-  oa : (oR s).Disjoint (aR s)
+  oa : (oR s).Disjoint (aR pc s)
   mln : (mlR s).Disjoint (nR s)
   mle : (mlR s).Disjoint (eR s)
   mlp : (mlR s).Disjoint (pR s)
@@ -90,7 +99,7 @@ structure PreD (s : State) : Prop where
   mls : (mlR s).Disjoint (scR s)
   mltl : (mlR s).Disjoint (tLR s)
   mlt : (mlR s).Disjoint (tR s)
-  mla : (mlR s).Disjoint (aR s)
+  mla : (mlR s).Disjoint (aR pc s)
   ns : (nR s).Disjoint (scR s)
   es : (eR s).Disjoint (scR s)
   ps : (pR s).Disjoint (scR s)
@@ -102,7 +111,7 @@ structure PreD (s : State) : Prop where
   cts : (ctR s).Disjoint (scR s)
   stl : (scR s).Disjoint (tLR s)
   st : (scR s).Disjoint (tR s)
-  sa : (scR s).Disjoint (aR s)
+  sa : (scR s).Disjoint (aR pc s)
   ko : (kD s).Disjoint (oR s)
   kml : (kD s).Disjoint (mlR s)
   kn : (kD s).Disjoint (nR s)
@@ -117,7 +126,7 @@ structure PreD (s : State) : Prop where
   ks : (kD s).Disjoint (scR s)
   ktl : (kD s).Disjoint (tLR s)
   kt : (kD s).Disjoint (tR s)
-  ka : (kD s).Disjoint (aR s)
+  ka : (kD s).Disjoint (aR pc s)
   wo : (s.gpr .r3).toNat + (s.gpr .r4).toNat ≤ 2 ^ 64
   wml : (s.gpr .r5).toNat + 8 ≤ 2 ^ 64
   wn : (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64
@@ -130,8 +139,8 @@ structure PreD (s : State) : Prop where
   wl : (stackArg s 9).toNat + (stackArg s 10).toNat ≤ 2 ^ 64
   wct : (stackArg s 11).toNat + (stackArg s 12).toNat ≤ 2 ^ 64
   wsc : (stackArg s 13).toNat + (stackArg s 14).toNat * 8 ≤ 2 ^ 64
-  wtl : (stackArg s 15).toNat + 40 ≤ 2 ^ 64
-  wt : (stackArg s 16).toNat + 40 ≤ 2 ^ 64
+  wtl : (stackArg s 15).toNat + 88 ≤ 2 ^ 64
+  wt : (stackArg s 16).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .r7).toNat
   k2 : (s.gpr .r7).toNat ≤ 1024
   ok : (s.gpr .r4).toNat = (s.gpr .r7).toNat
@@ -150,32 +159,50 @@ structure PreD (s : State) : Prop where
 /-- The contract, with both hash functions each one of the tables `ts`, and
 the stack of the frames and of `vg_rsa_private_checked`. -/
 abbrev decSpec (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.decryptTablesContract (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)])
+  Spec.RsaOaep.decryptMdTablesContract (abi.withTables Spec.RsaOaep.decryptMdTablesSig [("hash", ts), ("mgf1", ts)])
     stackBytes
 
 /-- Unfolds the precondition at `h`. -/
 macro "dec_pre" " at " h:ident : tactic => `(tactic| (
-  have e : stackBytes = 3775 + 1 := rfl
+  have e : stackBytes = 3791 + 1 := rfl
   unfold decSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_seventeen, List.append_eq, List.range, List.range.loop] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_seventeen, List.append_eq, List.range, List.range.loop] at $h:ident
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', Sig.pairFacts, List.filterMap_cons, List.filterMap_nil,
     Bool.cond_true, Bool.cond_false, Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj,
     List.append_nil] at $h:ident))
 
-theorem preD_of {ts : List FnTable} {s : State} (h : (decSpec ts).pre s) : PreD s := by
+/-- With `pc`, `pre` holds the key's precomputed values. -/
+abbrev HypS (s : State) : Prop :=
+  Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .r6) (s.gpr .r7).toNat)
+      (Spec.Rsa.bytesAt s.mem (s.gpr .r10) (stackArg s 0).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat) =
+    some (Spec.Rsa.wordsAt s.mem (stackArg s 17) (stackArg s 18).toNat)
+
+/-- What `vg_rsa_oaep_decrypt_precomputed`'s precondition adds: `pre`'s facts. -/
+structure PreXD (s : State) : Prop where
+  oP : (oR s).Disjoint (preR s)
+  mlP : (mlR s).Disjoint (preR s)
+  sP : (scR s).Disjoint (preR s)
+  kP : (kD s).Disjoint (preR s)
+  wP : (stackArg s 17).toNat + (stackArg s 18).toNat * 8 ≤ 2 ^ 64
+  pl : (stackArg s 18).toNat =
+    Spec.Rsa.privatePrecomputedWords (s.gpr .r7).toNat (stackArg s 0).toNat (stackArg s 2).toNat
+  hyp : HypS s
+
+theorem preD_of {ts : List FnTable} {s : State} (h : (decSpec ts).pre s) : PreD false s := by
   dec_pre at h
   obtain ⟨sp1, sp2, -, -, -, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp,
     mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko,
     kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc,
     wtl, wt, ⟨k1, k2⟩, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs⟩ := h
-  exact ⟨sp1, by omega, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp, mlq,
+  exact ⟨sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp, mlq,
     mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko, kml, kn,
     ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wtl, wt,
     k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs⟩
@@ -220,11 +247,11 @@ abbrev SD (s : State) : State → Addr := fun _ => Sd s
 abbrev VD (s : State) (rc : Nat) : State → Reg → BitVec 64 := fun _ => vD s rc
 
 section
-variable {s : State} (P : PreD s)
+variable {pc : Bool} {s : State} (P : PreD pc s)
 include P
 
 theorem scLen : oRsa ≤ (stackArg s 14).toNat * 8 := by
-  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega
+  have := P.hs; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; unfold oRsa; omega_using [this]
 
 theorem sc_sub : Region.Sub (SC (SD s) s) (scR s) := Region.sub_prefix (scLen P)
 
@@ -233,13 +260,13 @@ theorem kR_sub : Region.Sub (kR s) (kD s) := below_sub (by rw [stackBytes_eq]; d
 
 /-- `Fits` for any state with the entry's stack pointer and regions. -/
 theorem fits {s' : State} (hsp : s'.sp = s.sp) (hwr : s'.wr = s.wr) : Fits (SD s) s' where
-  sp1 := by rw [hsp]; have := P.sp1; rw [stackBytes_eq] at this; omega
+  sp1 := by rw [hsp]; have := P.sp1; rw [stackBytes_eq] at this; omega_using [this]
   sc := ⟨scR s, by rw [hwr, P.hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
     rfl, scLen P⟩
   ksc := by
     have e : kR s' = kR s := by simp only [kR, hsp]
     rw [e]; exact (P.ks.sub_left kR_sub).sub_right (sc_sub P)
-  wS := by show (stackArg s 13).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega
+  wS := by show (stackArg s 13).toNat + oRsa ≤ 2 ^ 64; have := P.wsc; have := scLen P; omega_arith
 
 end
 

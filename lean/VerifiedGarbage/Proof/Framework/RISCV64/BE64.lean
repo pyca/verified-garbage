@@ -34,11 +34,11 @@ theorem beBytes_eq (x : BitVec 64) : ByteLoad.beBytes 8 x = Proof.Cmac.le8 (byte
   have hj8 : j < 8 := List.mem_range.mp hj
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', byteRev64_getLsbD _ (by omega),
+  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', byteRev64_getLsbD _ (by omega_using [hj8, hi]),
     BitVec.getLsbD_ushiftRight]
   simp only [hi, decide_true, Bool.true_and]
   congr 1
-  omega
+  omega_using [hi]
 
 /-- What `storeBE 8` writes is the byte-reversed word. -/
 theorem writeBytes_beBytes (m : Mem) (a : Addr) (x : BitVec 64) :

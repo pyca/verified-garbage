@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.RsaOaep.AArch64.Mgf1.Table
 `decrypt` (here) and `encrypt` (`Impl/RsaOaep/AArch64/Precomputed.lean`),
 for a hash function `H` (the label's), an `Impl.Pbkdf2.Md.AArch64.Hash` (its
 streaming functions), with MGF1 over the hash function of a table of the
-interface `Hash` (`Spec/HashTable.lean`) that is the last argument (`mgfT`,
+interface `MdHash` (`Spec/MdHashTable.lean`) that is the last argument (`mgfT`,
 `Impl/RsaOaep/AArch64/Mgf1/Table.lean`), calling those functions, MGF1 and
 the RSA operation: the public-key operation within BoringSSL's limits
 (`vg_rsa_public_precomputed_checked`) when encrypting, the private-key
@@ -55,6 +55,12 @@ one of its first 1024 bytes `2^j` bytes under the mask of bit `j` of
 and `acc = 0`, `out` receives the buffer's first `k` bytes ANDed with `ok`,
 `*msg_len` receives `(t - idx - 1) ∧ ok`, and the result is
 `(ok ∧ 1) ∨ (r = 2 ? 2 : 0)`.
+
+`decryptP`, given the key's precomputed values `pre` and `pre_len` (two more
+stack arguments, after `mgf1`), calls `vg_rsa_private_checked_precomputed`
+instead: they are its stack arguments 12 and 13, the frame's words 12 and 13
+(MGF1's slots of `scratch` and of its source) until the call returns, when
+`scratch` goes back to its slot. The rest is `decrypt`'s.
 
 The masks are computed from the borrow of a subtraction (`subs`, then `sbc`
 of a register from itself): `x - 1` borrows exactly when `x = 0`.
@@ -167,9 +173,9 @@ def hashLabelT (o : Nat) : Prog isa :=
 (through `x16`, which keeps `x0`). -/
 def tabSlot (j : Nat) : List Instr := [.ldrSp .x16 (arg j), .addSp .x9 0, .str .x .x16 .x9 sTab]
 
-/-- The digest length of the table whose address is in `sTab` (its word 4),
+/-- The digest length of the table whose address is in `sTab` (its word 6),
 to `x16`. -/
-def lenLoad : List Instr := [.ldrSp .x16 sTab, .ldr .x .x16 .x16 32]
+def lenLoad : List Instr := [.ldrSp .x16 sTab, .ldr .x .x16 .x16 48]
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
@@ -439,5 +445,26 @@ its stack argument 15 (`hash`, after the 23 words of `decryptSig`) and
 MGF1's the table that is its stack argument 16 (`mgf1`). -/
 def decrypt : Prog isa :=
   .frame (.push .x30) (.frame (.alloc frameBytes) (decBody f privN privC) (.free frameBytes)) (.pop .x30)
+
+/-! ## Decryption, given the key's precomputed values -/
+
+/-- `vg_rsa_private_checked_precomputed`'s last stack arguments, `pre` and
+`pre_len` (our stack arguments 17 and 18), to the frame's words 12 and 13
+(through `x9 = sp`): MGF1's slots, which nothing reads before the call. -/
+def preArgs : List Instr := [.addSp .x9 0] ++ mvArg 17 96 ++ mvArg 18 104
+
+/-- `scratch` back to its slot over `pre`, after the call. -/
+def fixScr : List Instr := .addSp .x9 0 :: mvArg 13 sScr
+
+/-- `decBody`, calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def decBodyP : Prog isa :=
+  seqs [.block (decPrologue ++ privArgs ++ preArgs), .call privN privC, .block fixScr, .block (tabSlot 15),
+    .block lenLoad, byLen (fun d => decTail (ofLen d) f) lens]
+
+/-- `vg_rsa_oaep_decrypt_precomputed`: `decrypt`, with the key's precomputed
+values `pre` and `pre_len` (stack arguments 17 and 18, after `mgf1`), which
+it passes to `vg_rsa_private_checked_precomputed`. -/
+def decryptP : Prog isa :=
+  .frame (.push .x30) (.frame (.alloc frameBytes) (decBodyP f privN privC) (.free frameBytes)) (.pop .x30)
 
 end VG.Impl.RsaOaep.AArch64

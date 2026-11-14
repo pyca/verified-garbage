@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: streaming `d`-bit fields through an accumulator, for every target
@@ -37,7 +38,7 @@ theorem digits_range_get {d c j : Nat} {V : Nat → Nat} (hV : ∀ j < c, V j < 
     obtain ⟨u, hu, rfl⟩ := List.mem_map.mp ha; exact hV u (List.mem_range.mp hu)
   have h := digits_chunk hL j 1
   rw [Nat.mul_one] at h
-  rw [h, take_drop_eq _ 0 (by rw [List.length_map, List.length_range]; omega)]
+  rw [h, take_drop_eq _ 0 (by rw [List.length_map, List.length_range]; omega_using [hj])]
   simp only [List.range_one, List.map_cons, List.map_nil, digits_cons, digits_nil, Nat.mul_zero, Nat.add_zero,
     Nat.add_zero, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj, Option.map_some,
     Option.getD_some]
@@ -49,7 +50,7 @@ theorem digits_range_lt {d c : Nat} {V : Nat → Nat} (hV : ∀ j < c, V j < 2 ^
   rwa [List.length_map, List.length_range] at this
 
 theorem two_pow_split {a b : Nat} (h : b ≤ a) : 2 ^ a = 2 ^ b * 2 ^ (a - b) := by
-  rw [← Nat.pow_add]; congr 1; omega
+  rw [← Nat.pow_add]; congr 1; omega_using [h]
 
 /-- `X mod 2^(a + b) = X mod 2^a + 2^a · (⌊X / 2^a⌋ mod 2^b)`. -/
 theorem mod_two_pow_add (X a b : Nat) : X % 2 ^ (a + b) = X % 2 ^ a + 2 ^ a * (X / 2 ^ a % 2 ^ b) := by
@@ -58,7 +59,7 @@ theorem mod_two_pow_add (X a b : Nat) : X % 2 ^ (a + b) = X % 2 ^ a + 2 ^ a * (X
 /-- `(X mod 2^a) / 2^b < 2^(a - b)`. -/
 theorem mod_div_lt (X a b : Nat) : X % 2 ^ a / 2 ^ b < 2 ^ (a - b) := by
   rcases Nat.le_total b a with h | h
-  · rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos b), ← Nat.pow_add, show a - b + b = a by omega]
+  · rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos b), ← Nat.pow_add, show a - b + b = a by omega_using [h]]
     exact Nat.mod_lt _ (Nat.two_pow_pos a)
   · rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos a))
       (Nat.pow_le_pow_right (by decide) h))]
@@ -68,15 +69,15 @@ theorem mod_div_lt (X a b : Nat) : X % 2 ^ a / 2 ^ b < 2 ^ (a - b) := by
 
 theorem pack_acc_lt (G d j : Nat) : G % 2 ^ (d * j) / 2 ^ (8 * (d * j / 8)) < 2 ^ (d * j % 8) := by
   have := mod_div_lt G (d * j) (8 * (d * j / 8))
-  rwa [show d * j - 8 * (d * j / 8) = d * j % 8 by omega] at this
+  rwa [show d * j - 8 * (d * j / 8) = d * j % 8 by omega_using []] at this
 
 /-- Adding field `j`, `⌊G / 2^(dj)⌋ mod 2ᵈ`, above the `dj mod 8` bits of
 the accumulator. -/
 theorem pack_add (G d j : Nat) :
     G % 2 ^ (d * j) / 2 ^ (8 * (d * j / 8)) + G / 2 ^ (d * j) % 2 ^ d * 2 ^ (d * j % 8) =
       G % 2 ^ (d * (j + 1)) / 2 ^ (8 * (d * j / 8)) := by
-  rw [Nat.mul_succ, mod_two_pow_add, two_pow_split (show 8 * (d * j / 8) ≤ d * j by omega),
-    show d * j - 8 * (d * j / 8) = d * j % 8 by omega, Nat.mul_assoc,
+  rw [Nat.mul_succ, mod_two_pow_add, two_pow_split (show 8 * (d * j / 8) ≤ d * j by omega_using []),
+    show d * j - 8 * (d * j / 8) = d * j % 8 by omega_using [], Nat.mul_assoc,
     Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.mul_comm (2 ^ (d * j % 8))]
 
 /-- The low byte of the accumulator after `u` bytes shifted out of the one

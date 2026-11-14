@@ -34,8 +34,8 @@ theorem blk_of_words {m : Mem} {B : BitVec 32} {o : Nat} {f : Nat → BitVec 32}
   apply Vector.ext
   intro j hj
   simp only [blk, ofWords, Vector.getElem_ofFn, rd64]
-  rw [show o + 8 * j + 4 = o + 4 * (2 * j + 1) by omega, show o + 8 * j = o + 4 * (2 * j) by omega,
-    h _ (by omega), h _ (by omega)]
+  rw [show o + 8 * j + 4 = o + 4 * (2 * j + 1) by omega_using [], show o + 8 * j = o + 4 * (2 * j) by omega_using [],
+    h _ (by omega_using [hj]), h _ (by omega_using [hj])]
 
 theorem working_eq (m : Mem) (B : BitVec 32) : working m B = blk m B 1024 := by
   apply Vector.ext
@@ -47,7 +47,7 @@ theorem blockAt_eq {m : Mem} {B : BitVec 32} (hfit : B.toNat + 1024 ≤ 2 ^ 32) 
   apply Vector.ext
   intro j hj
   simp only [blockAt, blk, Vector.getElem_ofFn, Nat.zero_add, rd64]
-  rw [A_eq (by omega), A_eq (by omega), ← Offset.add_ofNat_add_ofNat _ _ 4,
+  rw [A_eq (by omega_using [hfit, hj]), A_eq (by omega_using [hfit, hj]), ← Offset.add_ofNat_add_ofNat _ _ 4,
     show BitVec.ofNat 64 4 = (4 : Addr) from rfl, ← readW64]
   simp only [Mem.readW, BitVec.setWidth_eq]
 

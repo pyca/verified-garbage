@@ -75,7 +75,7 @@ theorem invEntry_arg {B : Addr} {L len words : Nat} {s : State}
     (A : InvArguments B len words s) (fit : 16 ≤ (s.gpr .esp).toNat) {i : Nat} (index : i < 3) :
     arg (invEntry B L s) i = BitVec.ofNat 32 (if i = 0 then B.toNat else if i = 1 then words else len) := by
   rw [invEntry, arg_withRegions, callEntry_arg (rs := invArgs) (s := s) fit (by decide : Reg.esp ∉ invArgs) index]
-  have casesI : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  have casesI : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [index]
   rcases casesI with rfl | rfl | rfl <;>
     simp only [invArgs, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceSub,
       List.getElem_cons_zero, List.getElem_cons_succ, ↓reduceIte, A.base, A.wsLen, A.length] <;> rfl
@@ -95,7 +95,7 @@ theorem frame_num {m m' : Mem} {B : Addr} {Z w j : Nat} {r : Region}
   congr 1
   apply F.readW (r := ⟨B, Z⟩) _ (by intro r' hr; obtain rfl := List.mem_singleton.mp hr; exact far) (by decide)
   unfold VG.Proof.Rsa.X86.Keys.S at fit
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [fit, hi]) (by omega_using [nowrap, fit, hi])
 
 theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
     (A : InvArguments B a words s) (nowrap : B.toNat + Z ≤ 2 ^ 32)
@@ -108,12 +108,12 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
     (negated : num s.mem B (kw a) aNM + num s.mem B (kw a) aM = 2 ^ (32 * kw a))
     (zero : num s.mem B (kw a) aZero = 0) :
     VG.Proof.RsaKeyGen.X86.Inverse.contract.pre (invEntry B (8 * words) s) := by
-  have sa := fun {i} (hi : i < 3) => invEntry_arg (L := 8 * words) A (by omega) hi
+  have sa := fun {i} (hi : i < 3) => invEntry_arg (L := 8 * words) A (by omega_using [fit]) hi
   have ptrBound : B.toNat < 2 ^ 32 := by
-    have : 0 < Z := by unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at fits; omega
-    omega
-  have wordsBound : words < 2 ^ 32 := by omega
-  have aBound : a < 2 ^ 32 := by omega
+    have : 0 < Z := by unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at fits; omega_using [fits]
+    omega_using [nowrap, this]
+  have wordsBound : words < 2 ^ 32 := by omega_using [lenHigh, wordsEq]
+  have aBound : a < 2 ^ 32 := by omega_using [lenHigh]
   have sp : (invEntry B (8 * words) s).gpr .esp = s.gpr .esp - 16#32 := by
     change (pushed invArgs s).callEntry.gpr .esp = _
     exact callEntry_esp' invArgs s
@@ -130,32 +130,32 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ptrBound]
     exact Nat.mod_eq_of_lt B.isLt
-  have F := invEntry_frame (B := B) (L := 8 * words) (s := s) (by omega)
+  have F := invEntry_frame (B := B) (L := 8 * words) (s := s) (by omega_using [fit])
   generalize eu : invEntry B (8 * words) s = u at *
   sig_pre [VG.Proof.RsaKeyGen.X86.Inverse.contract, VG.Proof.RsaKeyGen.X86.Inverse.inverseStack,
     Proof.RsaKeyGen.inverseContract, Proof.RsaKeyGen.inverseSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa0, sa1, sa2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt wordsBound, Nat.mod_eq_of_lt ptrBound,
     Nat.mod_eq_of_lt aBound, ptr, rd, wr, sp, ar]
   have espBound := (s.gpr .esp).isLt
-  have e16 : (s.gpr .esp - 16#32).toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by omega)
+  have e16 : (s.gpr .esp - 16#32).toNat = (s.gpr .esp).toNat - 16 := sub_toNat (by omega_using [fit])
   have nat12 : ((s.gpr .esp - 12#32).setWidth 64).toNat = (s.gpr .esp).toNat - 12 := by
-    rw [BitVec.toNat_setWidth, sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_setWidth, sub_toNat (by omega_using [fit])]
+    exact Nat.mod_eq_of_lt (by omega_using [])
   have nat16 : ((s.gpr .esp - 16#32).setWidth 64).toNat = (s.gpr .esp).toNat - 16 := by
     rw [BitVec.toNat_setWidth, e16]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [])
   have reserved : (s.gpr .esp - 16#32).setWidth 64 - 36#64 = (s.gpr .esp - 52#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [e16]; omega : 36 ≤ (s.gpr .esp - 16#32).toNat)]
+    rw [← Taint.sub_setWidth (by rw [e16]; omega_using [fit] : 36 ≤ (s.gpr .esp - 16#32).toNat)]
     congr 1
     rw [BitVec.sub_sub]
     rfl
   have nat52 : ((s.gpr .esp - 52#32).setWidth 64).toNat = (s.gpr .esp).toNat - 52 := by
     rw [BitVec.toNat_setWidth, sub_toNat fit]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [])
   have size : words * 8 ≤ Z := by
     unfold VG.Proof.Rsa.X86.Keys.arr VG.Proof.Rsa.X86.Keys.S VG.Impl.Rsa.X86.Keys.hdr at fits
     simp only [kw, Spec.Rsa.modulusWords] at fits
-    omega
+    omega_using [wordsEq, fits]
   have wsSub : (⟨B, words * 8⟩ : Region).Sub ⟨B, Z⟩ := Region.sub_prefix size
   have argSub : (⟨(s.gpr .esp - 12#32).setWidth 64, 12⟩ : Region).Sub (below (s.gpr .esp) 52) :=
     below_sub (by decide) fit
@@ -172,13 +172,13 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
   have value {j : Nat} (hj : j < 15) : Proof.RsaKeyGen.inverseNum u.mem B a j = num s.mem B (kw a) j := by
     rw [VG.Proof.RsaKeyGen.X86.Inverse.inverseNum_num]
     exact frame_num F frameFar nowrap (arrFit hj)
-  refine ⟨by rw [e16]; omega, by rw [e16]; omega, trivial, by rw [Nat.mul_comm], ws.sub_right argSub,
+  refine ⟨by rw [e16]; omega_using [fit], by rw [e16]; omega_using [], trivial, by rw [Nat.mul_comm], ws.sub_right argSub,
     (ws.sub_right retSub).symm,
-    Offset.disjoint_of_le (by simp only [nat16, nat12]; omega) (by simp only [nat12]; omega),
+    Offset.disjoint_of_le (by simp only [nat16, nat12]; omega_using [fit]) (by simp only [nat12]; omega_using []),
     (ws.sub_right resSub).symm,
-    by rw [reserved]; exact Offset.disjoint_of_le (by simp only [nat52, nat12]; omega) (by simp only [nat12]; omega),
-    by omega, lenLow, lenHigh, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · unfold Proof.RsaKeyGen.inverseBytes; omega
+    by rw [reserved]; exact Offset.disjoint_of_le (by simp only [nat52, nat12]; omega_using [fit]) (by simp only [nat12]; omega_using []),
+    by omega_using [nowrap, size], lenLow, lenHigh, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · unfold Proof.RsaKeyGen.inverseBytes; omega_using [wordsEq]
   · rw [value (by decide)]; exact odd
   · rw [value (by decide)]; exact large
   · rw [value (by decide), value (by decide)]; exact v
@@ -188,7 +188,7 @@ theorem invEntry_pre {s : State} {B : Addr} {Z a words : Nat}
     unfold aNM aM at negated
     rw [negated]
     simp only [kw, Spec.Rsa.modulusWords, Proof.RsaKeyGen.inverseBytes]
-    congr 1; omega
+    congr 1; omega_using []
   · rw [value (by decide)]; exact zero
 
 /-- The arguments' block: `eax` the length argument, `ecx` the words of working space the callee
@@ -205,32 +205,32 @@ theorem callSetup_ok {s : State} {L : VG.Impl.Rsa.X86.KeyRt.Lay} {a : Nat} {Q : 
     wp_shr ⟨by decide, by decide⟩ fun u₄ U₄ _ => wp_movS rfl fun u₅ U₅ _ => wp_addS rfl fun u₆ U₆ _ =>
     wp_addS rfl fun u₇ U₇ _ => wp_addS rfl fun u₈ U₈ _ => wp_addS rfl fun u₉ U₉ _ =>
     wp_subS rfl fun u₁₀ U₁₀ _ => wp_addS rfl fun u₁₁ U₁₁ _ => WP.block_nil ?_
-  have aBound : a < 2 ^ 32 := by omega
+  have aBound : a < 2 ^ 32 := by omega_using [ha]
   have e₂ : (u₂.gpr .ecx).toNat = a := by
     rw [U₂.gpr, U₁.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt aBound]
   have e₃ : (u₃.gpr .ecx).toNat = a + 7 := by
     rw [U₃.gpr, BitVec.toNat_add, e₂]
-    exact Nat.mod_eq_of_lt (by change a + 7 < 2 ^ 32; omega)
+    exact Nat.mod_eq_of_lt (by change a + 7 < 2 ^ 32; omega_using [ha])
   have e₄ : (u₄.gpr .ecx).toNat = (a + 7) / 8 := by
     rw [U₄.gpr, BitVec.toNat_ushiftRight, e₃, Nat.shiftRight_eq_div_pow]
   have d₅ : (u₅.gpr .edx).toNat = (a + 7) / 8 := by rw [U₅.gpr]; exact e₄
   have e₅ : (u₅.gpr .ecx).toNat = (a + 7) / 8 := by rw [U₅.other _ (by decide)]; exact e₄
   have e₆ : (u₆.gpr .ecx).toNat = 2 * ((a + 7) / 8) := by
-    rw [U₆.gpr, BitVec.toNat_add, e₅]; omega
+    rw [U₆.gpr, BitVec.toNat_add, e₅]; omega_using [ha]
   have e₇ : (u₇.gpr .ecx).toNat = 4 * ((a + 7) / 8) := by
-    rw [U₇.gpr, BitVec.toNat_add, e₆]; omega
+    rw [U₇.gpr, BitVec.toNat_add, e₆]; omega_using [ha]
   have e₈ : (u₈.gpr .ecx).toNat = 8 * ((a + 7) / 8) := by
-    rw [U₈.gpr, BitVec.toNat_add, e₇]; omega
+    rw [U₈.gpr, BitVec.toNat_add, e₇]; omega_using [ha]
   have e₉ : (u₉.gpr .ecx).toNat = 16 * ((a + 7) / 8) := by
-    rw [U₉.gpr, BitVec.toNat_add, e₈]; omega
+    rw [U₉.gpr, BitVec.toNat_add, e₈]; omega_using [ha]
   have d₉ : (u₉.gpr .edx).toNat = (a + 7) / 8 := by
     rw [U₉.other _ (by decide), U₈.other _ (by decide), U₇.other _ (by decide), U₆.other _ (by decide)]
     exact d₅
   have e₁₀ : (u₁₀.gpr .ecx).toNat = 15 * ((a + 7) / 8) := by
-    rw [U₁₀.gpr, BitVec.toNat_sub, e₉, d₉]; omega
+    rw [U₁₀.gpr, BitVec.toNat_sub, e₉, d₉]; omega_using [ha]
   have e₁₁ : (u₁₁.gpr .ecx).toNat = 35 + 15 * ((a + 7) / 8) := by
     rw [U₁₁.gpr, BitVec.toNat_add, e₁₀]
-    exact (Nat.mod_eq_of_lt (by change 15 * ((a + 7) / 8) + 35 < 2 ^ 32; omega)).trans (Nat.add_comm _ _)
+    exact (Nat.mod_eq_of_lt (by change 15 * ((a + 7) / 8) + 35 < 2 ^ 32; omega_using [ha, aBound, e₂, e₃, e₄, d₅, e₅, e₆, e₇, e₈, e₉, d₉, e₁₀])).trans (Nat.add_comm _ _)
   have K : Keeps [.eax, .ecx, .edx] s u₁₁ :=
     (U₁.keeps.mono (by decide)).trans ((U₂.keeps.mono (by decide)).trans ((U₃.keeps.mono (by decide)).trans
       ((U₄.keeps.mono (by decide)).trans ((U₅.keeps.mono (by decide)).trans ((U₆.keeps.mono (by decide)).trans
@@ -242,7 +242,7 @@ theorem callSetup_ok {s : State} {L : VG.Impl.Rsa.X86.KeyRt.Lay} {a : Nat} {Q : 
       U₇.other _ (by decide), U₆.other _ (by decide), U₅.other _ (by decide), U₄.other _ (by decide),
       U₃.other _ (by decide), U₂.other _ (by decide), U₁.gpr]
   · apply BitVec.eq_of_toNat_eq
-    rw [e₁₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [e₁₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ha, aBound, e₂, e₃, e₄, d₅, e₅, e₆, e₇, e₈, e₉, d₉, e₁₀, e₁₁])]
 
 theorem code_noSp : NoSp VG.Impl.RsaKeyGen.X86.Inverse.code := by
   intro i hi
@@ -269,10 +269,10 @@ theorem writes_ranges {a W i : Nat} (hka : kw a = W) (hw : Proof.RsaKeyGen.inver
   simp only [kw, Spec.Rsa.modulusWords] at hka
   unfold Proof.RsaKeyGen.inverseWrites Proof.RsaKeyGen.inverseBytes at hw
   rcases hw with ⟨lo, hi⟩ | ⟨j, hj, lo, hi⟩
-  · omega
-  · have le := Nat.mul_le_mul_right (8 * ((a + 7) / 8) + 8) (show j + 1 ≤ 15 by omega)
+  · omega_using [out, lo, hi]
+  · have le := Nat.mul_le_mul_right (8 * ((a + 7) / 8) + 8) (show j + 1 ≤ 15 by omega_using [hj])
     have := out.1
-    omega
+    omega_using [hka, out, lo, hi, le]
 
 /-- What a call of the inverse needs of the state it is made from. -/
 structure InvReady (B : Addr) (Z n N : Nat) (w : Width) (s : State) : Prop where
@@ -328,14 +328,14 @@ theorem CallAt.size {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Na
   unfold VG.Proof.Rsa.X86.Keys.arr VG.Proof.Rsa.X86.Keys.S VG.Impl.Rsa.X86.Keys.hdr at fits
   simp only [kw, Spec.Rsa.modulusWords] at fits
   unfold invWords
-  omega
+  omega_using [fits]
 
 theorem CallAt.ptrBound {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {u : State}
     (C : CallAt B Z n N w p a u) : B.toNat < 2 ^ 32 := by
   have := C.fits
   have := C.ready.ws.old.workspace.nowrap
   unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at *
-  omega
+  omega_arith
 
 theorem CallAt.lenLow {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {u : State}
     (C : CallAt B Z n N w p a u) : 1 ≤ a := by
@@ -376,7 +376,7 @@ theorem CallAt.callPre {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a :
     (by rw [C.words]; exact R.zero)
   have size := C.size
   have wsIn : InRegions u.wr B (8 * invWords a) :=
-    ⟨_, R.ws.old.workspace.wr, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+    ⟨_, R.ws.old.workspace.wr, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [size]⟩
   refine ⟨by rw [C.entry_eq]; exact pre, ?_, ?_⟩
   · apply Covers.append_left
     · apply Covers.of_mem
@@ -416,13 +416,13 @@ theorem call_ok {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {
     rwa [kw_words h.width] at this
   have A := C.args
   refine WP.callWith VG.Proof.RsaKeyGen.X86.Inverse.verified.1 code_noSp (by decide : invArgs ≠ [])
-    (by decide : Reg.esp ∉ invArgs) (by rw [code_stack]; change 32 ≤ _; omega) C.callPre ?_
+    (by decide : Reg.esp ∉ invArgs) (by rw [code_stack]; change 32 ≤ _; omega_using [lowSp]) C.callPre ?_
   intro t rdT wrT saved frame post
   obtain ⟨e₂, mem₂, post⟩ := post
   rw [C.entry_eq] at post
   obtain ⟨inside, gcd, bezout, lt⟩ := VG.Proof.RsaKeyGen.X86.Inverse.post_of post
-  have fit16 : 16 ≤ (u.gpr .esp).toNat := by omega
-  have wordsBound : invWords a < 2 ^ 32 := by have := C.len; omega
+  have fit16 : 16 ≤ (u.gpr .esp).toNat := by omega_using [lowSp]
+  have wordsBound : invWords a < 2 ^ 32 := by have := C.len; omega_using [nowrap, size]
   have arg0 := invEntry_arg (L := 8 * invWords a) A fit16 (i := 0) (by decide)
   have arg1 := invEntry_arg (L := 8 * invWords a) A fit16 (i := 1) (by decide)
   have arg2 := invEntry_arg (L := 8 * invWords a) A fit16 (i := 2) (by decide)
@@ -438,7 +438,7 @@ theorem call_ok {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {
     rw [arg1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt wordsBound]
   have lenE : VG.Proof.RsaKeyGen.X86.Inverse.len (invEntry B (8 * invWords a) u) = a := by
     unfold VG.Proof.RsaKeyGen.X86.Inverse.len
-    rw [arg2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := C.len; omega)]
+    rw [arg2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := C.len; omega_using [this])]
   simp only [baseE, sizeE, lenE, hka, mem₂] at inside gcd bezout lt
   have FE := invEntry_frame (B := B) (L := 8 * invWords a) fit16
   have farU : (⟨B, Z⟩ : Region).Disjoint (below (u.gpr .esp) 16) :=
@@ -467,7 +467,7 @@ theorem call_ok {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat} {
   · have hi : ofs B x < 8 * invWords a := by
       simp only [Region.Contains] at hin
       unfold ofs
-      omega
+      omega_using [hin]
     have changed := inside (ofs B x) hi fun c => writes_ranges hka c hx
     have back : B + BitVec.ofNat 64 (ofs B x) = x := by
       unfold ofs

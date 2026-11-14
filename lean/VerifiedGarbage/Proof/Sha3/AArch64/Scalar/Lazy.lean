@@ -1,9 +1,53 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lazy
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.RotateExpr
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Reflect
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Sha3.AArch64.Scalar.RotateExpr`, which only this module used -/
+
+section
+
+@[expose] public section
+namespace VG.Proof.Sha3.AArch64.Scalar
+open VG VG.AArch64 VG.Impl.Sha3.AArch64.Scalar
+
+/-- Push rotations to leaves. Deferred rotations can then be checked without
+expanding an entire 24-round permutation into one expression tree. -/
+def Expr.rotateNormal : Expr → Nat → Expr
+  | .reg r, n => .ror (.reg r) (n % 64)
+  | .slot k, n => .ror (.slot k) (n % 64)
+  | .xor a b, n => .xor (a.rotateNormal n) (b.rotateNormal n)
+  | .bic a b, n => .bic (a.rotateNormal n) (b.rotateNormal n)
+  | .ror a k, n => a.rotateNormal ((k + n) % 64)
+
+theorem rotateRight_not (x : Lane) (n : Nat) :
+    (~~~x).rotateRight n = ~~~(x.rotateRight n) := by
+  ext i hi
+  simp only [BitVec.getElem_rotateRight, BitVec.getElem_not]
+  split <;> rfl
+
+theorem Expr.rotateNormal_eval (e : Expr) (f : File) (n : Nat) :
+    (e.rotateNormal n).eval f = (e.eval f).rotateRight n := by
+  induction e generalizing n with
+  | reg r => exact BitVec.rotateRight_mod_eq_rotateRight
+  | slot k => exact BitVec.rotateRight_mod_eq_rotateRight
+  | xor a b ha hb =>
+    simp only [rotateNormal, Expr.eval, ha, hb, VG.Bitslice.Anf.rotateRight_xor]
+  | bic a b ha hb =>
+    simp only [rotateNormal, Expr.eval, ha, hb, VG.Bitslice.Anf.rotateRight_and,
+      rotateRight_not]
+  | ror a k ha =>
+    simp only [rotateNormal, Expr.eval, ha, VG.Bitslice.Anf.rotateRight_rotateRight]
+
+end VG.Proof.Sha3.AArch64.Scalar
+
+end
+
+end
+
 
 @[expose] public section
 namespace VG.Proof.Sha3.AArch64.Scalar.Lazy
@@ -39,8 +83,8 @@ theorem physicalInitial_compatible (logical physical : File) :
   · intro r; exact (environment_reg logical physical r).symm
   · intro k
     simp only [physicalInitial, Expr.eval, environment]
-    rw [show 2 * k % 2 = 0 by omega, ite_eq_left rfl,
-      show 2 * k / 2 = k by omega]
+    rw [show 2 * k % 2 = 0 by omega_using [], ite_eq_left rfl,
+      show 2 * k / 2 = k by omega_using []]
 
 /-- Every listed lane has its declared physical orientation. -/
 def LayoutHolds (layout : Layout) (logical physical : File) : Prop :=
@@ -91,7 +135,7 @@ theorem plan_math (p : Plan)
 theorem rotateRight_undo (x : Lane) (offset : Nat) (ho : offset < 64) :
     (x.rotateRight ((64-offset)%64)).rotateRight offset = x := by
   rw [VG.Bitslice.Anf.rotateRight_rotateRight]
-  have hm : (((64-offset)%64)+offset)%64 = 0 := by omega
+  have hm : (((64-offset)%64)+offset)%64 = 0 := by omega_using [ho]
   rw [hm, VG.Bitslice.Anf.rotateRight_zero]
 
 theorem plan_layout (p : Plan)
@@ -104,7 +148,7 @@ theorem plan_layout (p : Plan)
   have hget := List.mk_mem_zipIdx_iff_getElem?.mp he
   have hi : i < 25 := by
     have hlt := (List.getElem?_eq_some_iff.mp hget).1
-    omega
+    omega_using [hlen, hlt]
   have hd : p.output.getD i (.x0, 0) = entry := by
     simp only [List.getD_eq_getElem?_getD, hget, Option.getD_some]
   have hm := plan_math p cert logical physical h i hi

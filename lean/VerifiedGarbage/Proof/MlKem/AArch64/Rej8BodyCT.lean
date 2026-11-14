@@ -72,7 +72,7 @@ theorem stop_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byt
       have hz' : (s.gpr .x4).toNat=0 := by simpa only [Option.some.injEq,eq_zero_iff,decide_eq_true_eq] using hz
       rw [hp.1.1.acc.x4] at hz'
       have := hp.1.1.acc.len
-      omega
+      omega_using [hz', this]
     have ct : ConstantTime isa (fun _ => True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
         (.block [.movz .x .x5 0 0]) :=
       VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
@@ -100,7 +100,7 @@ theorem body_relCT {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → Byt
     have hr := hp.1.2.2.mp hz
     rw [hp.1.1.1.acc.x4] at hr
     have hlen := hp.1.1.1.acc.len
-    obtain ⟨he,hp'⟩ := vectorStep_relCT ps pu hsp htab ht (by omega) s u tr ur s' u' hp.1.1 es eu
+    obtain ⟨he,hp'⟩ := vectorStep_relCT ps pu hsp htab ht (by omega_using [hr]) s u tr ur s' u' hp.1.1 es eu
     exact ⟨he,Or.inl hp'⟩
   · exact RelCT.mono (RelCT.seq (scalarFour_relCT ps pu hsp ht) (stop_relCT hsp ht))
       (fun _ _ h => h.1.1) (fun _ _ h => h)

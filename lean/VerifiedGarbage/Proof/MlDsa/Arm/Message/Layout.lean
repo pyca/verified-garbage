@@ -118,17 +118,17 @@ variable {L : Lay}
 
 theorem x32_lt (h : L.Ok) : L.X32.toNat + 1024 ≤ 2 ^ 32 := by
   have := h.nScr; have := h.hE
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := L.E) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := L.E) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- `X` in `scratch`. -/
 theorem x_eq (h : L.Ok) : L.X = State.addr L.scr + BitVec.ofNat 64 L.E :=
-  addr_add (by have := h.nScr; have := h.hE; omega)
+  addr_add (by have := h.nScr; have := h.hE; omega_arith)
 
 /-- An address in the 1 KiB, as an instruction computes it from `r7`. -/
 theorem xo (h : L.Ok) {o : Nat} (ho : o < 1024) :
     State.addr (L.X32 + BitVec.ofNat 32 o) = L.X + BitVec.ofNat 64 o :=
-  addr_add (by have := h.x32_lt; omega)
+  addr_add (by have := h.x32_lt; omega_using [ho, this])
 
 theorem x_toNat (h : L.Ok) : L.X.toNat + 1024 ≤ 2 ^ 32 := by
   rw [Proof.MlKem.Arm.addr_toNat]; exact h.x32_lt
@@ -155,7 +155,7 @@ theorem inW (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) : InRegions L.wr (L.X
   refine ⟨L.SC, h.inSC, ?_⟩
   rw [h.x_eq, add_add]
   have := h.hE; have := h.nScr
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- What lies within the first 904 bytes of `X`, or in `STK`, is apart from the saves. -/
 theorem sv_disj (h : L.Ok) {r : Region} (hr : Within r L.W ∨ Region.Sub r L.STK) {d n : Nat} (hd : d + n ≤ 120) :
@@ -165,8 +165,8 @@ theorem sv_disj (h : L.Ok) {r : Region} (hr : Within r L.W ∨ Region.Sub r L.ST
     obtain ⟨b, k⟩ := r
     simp only at hb hl
     subst hb
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact (h.kX.symm.sub_left (h.sub_sc (by omega))).sub_right hr
+    exact Offset.disjoint _ (.inr (by omega_using [hl])) (by omega_using [hd]) (by omega_using [hl])
+  · exact (h.kX.symm.sub_left (h.sub_sc (by omega_using [hd]))).sub_right hr
 
 end Lay.Ok
 
@@ -212,7 +212,7 @@ theorem keep (hc : Ctx L g m₀ t) (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hg .r7 (by decide) (by decide)).trans hc.r7,
     fun r hr h7 hl => (hg r hr hl).trans (hc.cs r hr h7 hl),
     (keep 0 (by decide)).trans hc.s7, (keep 4 (by decide)).trans hc.sLR,
-    fun j hj => (keep _ (by omega)).trans (hc.slot j hj), khdr.trans hc.hdr,
+    fun j hj => (keep _ (by omega_using [hj])).trans (hc.slot j hj), khdr.trans hc.hdr,
     hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
   rcases hrs r hr with h | h
   · exact ⟨L.SC, by simp, (h.trans ((within_base L.X (by decide : 904 ≤ 1024)).trans hL.xs_sc)).sub⟩

@@ -73,30 +73,30 @@ theorem prefix_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {nset : Lis
     exact wp_yBase h.s0 fun t₁ o₁ e₁ => hns fun t₂ o₂ e₂ => wp_li (imm := 0) (by decide) fun t₃ o₃ e₃ =>
       wp_nil ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .a1, o₂.get .a1, e₁], by rw [o₃.get .t5, e₂], e₃⟩
   refine WP.seq (WP.seq (WP.mono hB fun t₃ ⟨k₃, a₃, n₃, z₃⟩ => ?_))
-  refine WP.mono (fill_ok (p := off (Sp s) oY) (n := n) (b := 0) (by omega) (by omega) a₃ n₃
-    (by rw [z₃]; rfl) (sc_w F (by rw [k₃.wr, h.wr]) (d := oY) (by omega))) fun t₄ ⟨hk₄, hm₄⟩ => ?_
+  refine WP.mono (fill_ok (p := off (Sp s) oY) (n := n) (b := 0) (by omega_using [hn]) (by omega_using [hn']) a₃ n₃
+    (by rw [z₃]; rfl) (sc_w F (by rw [k₃.wr, h.wr]) (d := oY) (by omega_using [hn', hY, hR]))) fun t₄ ⟨hk₄, hm₄⟩ => ?_
   have K₄ : Kept mpR t t₄ := (k₃.keep.trans hk₄).mono
   have m₄ : t₄.mem = writeBytes t.mem (off (Sp s) oY) (List.replicate n 0) := by rw [hm₄, k₃.mem]
-  have b₄ : Base Sp (vP D) s t₄ := h.wb F K₄ (by rw [List.length_replicate]; omega) m₄
+  have b₄ : Base Sp (vP D) s t₄ := h.wb F K₄ (by rw [List.length_replicate]; omega_using [hn', hY, hR]) m₄
   refine WP.seq (wp_mov fun t₅ o₅ e₅ => ?_)
   refine wp_yBase (by rw [o₅.get .s0, b₄.s0]) fun t₆ o₆ e₆ => wp_addi (imm := 8) fun t₇ o₇ e₇ =>
-    wp_li (imm := H.D) (by rw [hD]; omega) fun t₈ o₈ e₈ => wp_nil ?_
+    wp_li (imm := H.D) (by rw [hD]; omega_using [hD64]) fun t₈ o₈ e₈ => wp_nil ?_
   have k₈ : Only [.a4, .a1, .a5] t₄ t₈ := (o₅.trans (o₆.trans (o₇.trans o₈))).mono
   have hdg : ∀ j < D, ∀ i < D, s.gpr .a4 + BitVec.ofNat 64 j ≠ off (Sp s) (oY + 8) + BitVec.ofNat 64 i :=
-    fun j hj i hi => ne_of_dis L.dsc (Offset.contains_base _ (by omega) (by have := L.wd; omega))
+    fun j hj i hi => ne_of_dis L.dsc (Offset.contains_base _ (by omega_using [hj]) (by have := L.wd; omega_using [hD64, hj]))
       (by show (SC Sp s).Contains (off (off (Sp s) (oY + 8)) i) 1
-          rw [off_off]; exact sc_in (o := oY + 8 + i) (n := 1) (by omega) _ (Region.contains_self _ _))
-  refine WP.mono (copy_ok (q := s.gpr .a4) (p := off (Sp s) (oY + 8)) (n := D) hD0 (by omega)
+          rw [off_off]; exact sc_in (o := oY + 8 + i) (n := 1) (by omega_using [hD64, hY, hR, hi]) _ (Region.contains_self _ _))
+  refine WP.mono (copy_ok (q := s.gpr .a4) (p := off (Sp s) (oY + 8)) (n := D) hD0 (by omega_using [hD64])
     (by rw [o₈.get .a1, e₇, e₆]; exact off_off _ _ _) (by rw [o₈.get .a4, o₇.get .a4, o₆.get .a4, e₅, b₄.pdig])
     (by rw [e₈, hD]) (rd_in (by rw [k₈.rd, b₄.rd]) L.dr (by have := L.wd; omega) (Nat.le_refl _))
-    (sc_w F (by rw [k₈.wr, b₄.wr]) (d := oY + 8) (by omega)) hdg) fun t' ⟨hk, hm⟩ => ?_
+    (sc_w F (by rw [k₈.wr, b₄.wr]) (d := oY + 8) (by omega_using [hD64, hY, hR])) hdg) fun t' ⟨hk, hm⟩ => ?_
   have K : Kept mpR t₄ t' := (k₈.keep.trans hk).mono
   have hb : Spec.Rsa.bytesAt t₈.mem (s.gpr .a4) D = mh D s := by
-    rw [k₈.mem]; exact bytes_entry b₄.mem L.dk L.dsc.symm (by omega)
+    rw [k₈.mem]; exact bytes_entry b₄.mem L.dk L.dsc.symm (by omega_using [hD64])
   have m' : t'.mem = writeBytes t₄.mem (off (Sp s) (oY + 8)) (mh D s) := by rw [hm, hb, k₈.mem]
-  refine ⟨b₄.wb F K (by rw [bytesAt_length]; omega) m', (K₄.trans K).mono, fun o ho => ?_⟩
-  rw [m', view_wb _ _ (by rw [bytesAt_length]; omega) ho, bytesAt_length, m₄,
-    view_wb _ _ (by rw [List.length_replicate]; omega) ho, List.length_replicate]
+  refine ⟨b₄.wb F K (by rw [bytesAt_length]; omega_using [hD64, hY, hR]) m', (K₄.trans K).mono, fun o ho => ?_⟩
+  rw [m', view_wb _ _ (by rw [bytesAt_length]; omega_using [hD64, hY, hR]) ho, bytesAt_length, m₄,
+    view_wb _ _ (by rw [List.length_replicate]; omega_using [hn', hY, hR]) ho, List.length_replicate]
   by_cases e₁ : oY + 8 ≤ o ∧ o < oY + 8 + D
   · rw [ifp e₁, ifp e₁]
   · rw [ifn e₁, ifn e₁]
@@ -114,20 +114,20 @@ theorem copyIn_ok {t : State} (h : Base Sp (vP D) s t) {a b n : Nat} (hn : 0 < n
         if b ≤ o ∧ o < b + n then view t.mem (Sp s) (a + (o - b)) else view t.mem (Sp s) o := by
   have F := L.F
   have hR : oRsa = 8192 := rfl
-  refine WP.mono (copy_ok (q := off (Sp s) a) (p := off (Sp s) b) (n := n) hn (by omega) h1 h4 h5
+  refine WP.mono (copy_ok (q := off (Sp s) a) (p := off (Sp s) b) (n := n) hn (by omega_using [ha, hR]) h1 h4 h5
     (fun j hj => by
       show InRegions _ (off (off (Sp s) a) j) 1
-      rw [off_off, h.wr]; exact sc_inR F (by omega) _)
+      rw [off_off, h.wr]; exact sc_inR F (by omega_using [ha, hj]) _)
     (sc_w F h.wr (d := b) hb)
     (fun j hj i hi => by
       show off (off (Sp s) a) j ≠ off (off (Sp s) b) i
-      rw [off_off, off_off]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))) fun t' ⟨hk, hm⟩ => ?_
-  refine ⟨h.wb F hk (by rw [bytesAt_length]; omega) hm, hk, fun o ho => ?_⟩
-  rw [hm, view_wb _ _ (by rw [bytesAt_length]; omega) ho, bytesAt_length]
+      rw [off_off, off_off]; exact Offset.add_ofNat_ne _ (by omega_using [ha, hR, hj]) (by omega_using [hb, hR, hi]) (by omega_using [hab, hj, hi]))) fun t' ⟨hk, hm⟩ => ?_
+  refine ⟨h.wb F hk (by rw [bytesAt_length]; omega_using [hb]) hm, hk, fun o ho => ?_⟩
+  rw [hm, view_wb _ _ (by rw [bytesAt_length]; omega_using [hb]) ho, bytesAt_length]
   by_cases e : b ≤ o ∧ o < b + n
   · rw [ifp e, ifp e]
     simp only [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-      List.getElem?_range (show o - b < n by omega), Option.map_some, Option.getD_some, view]
+      List.getElem?_range (show o - b < n by omega_using [e]), Option.map_some, Option.getD_some, view]
     exact congrArg t.mem (off_off (Sp s) a (o - b))
   · rw [ifn e, ifn e]
 
@@ -144,7 +144,7 @@ theorem salt_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (
   generalize hS : (stackArg s 0).toNat = sl at hsl
   refine WP.seq (wp_add fun t₁ o₁ e₁ => wp_add fun t₂ o₂ e₂ => wp_sub fun t₃ o₃ e₃ => ?_)
   refine wp_yBase (by rw [o₃.get .s0, o₂.get .s0, o₁.get .s0, h.s0]) fun t₄ o₄ e₄ =>
-    wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega) fun t₅ o₅ e₅ => wp_mov fun t₆ o₆ e₆ => wp_nil ?_
+    wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega_using [hD64]) fun t₅ o₅ e₅ => wp_mov fun t₆ o₆ e₆ => wp_nil ?_
   have k₆ : Only [.a4, .a1, .a5] t t₆ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆))))).mono
   have b₆ := h.only F k₆
   have g5 : t₆.gpr .a5 = BitVec.ofNat 64 sl := by
@@ -152,20 +152,20 @@ theorem salt_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (
   have g4 : t₆.gpr .a4 = off (Sp s) (lN + dN - sl) := by
     rw [o₆.get .a4, o₅.get .a4, o₄.get .a4, e₃, e₂, e₁, o₂.get .s6, o₁.get .s6, x.s6, o₁.get .s4, h.pdb, L.hdb,
       h.s0, h.plo, L.hlo, ← ofNat_toNat (stackArg s 0), hS]
-    exact (congrArg (· - BitVec.ofNat 64 sl) (off_off (Sp s) lN dN)).trans (off_sub _ (by omega) (by omega))
+    exact (congrArg (· - BitVec.ofNat 64 sl) (off_off (Sp s) lN dN)).trans (off_sub _ (by omega_using [hsl]) (by omega_using [hk]))
   have g1 : t₆.gpr .a1 = off (Sp s) (oY + 8 + D) := by
     rw [o₆.get .a1, e₅, e₄, hD]; exact (off_off _ _ _).trans (congrArg _ (Nat.add_assoc _ _ _).symm)
   refine WP.ite _ (eval_nonzero _ _) (fun hc => ?_) (fun hc => ?_)
   · have hs0 : sl ≠ 0 := by intro h0; rw [g5, ne_zero_iff, h0] at hc; simp at hc
-    refine WP.mono (copyIn_ok L b₆ (a := lN + dN - sl) (b := oY + 8 + D) (n := sl) (by omega) (by omega)
-      (by omega) (.inl (by omega)) g4 g1 g5) fun t' ⟨b', hk', v'⟩ =>
+    refine WP.mono (copyIn_ok L b₆ (a := lN + dN - sl) (b := oY + 8 + D) (n := sl) (by omega_using [hs0]) (by omega_using [hk, hk2, hR, hsl])
+      (by omega_using [hk, hk2, hR, hY, hsl]) (.inl (by omega_using [hk, hk2, hY, hsl])) g4 g1 g5) fun t' ⟨b', hk', v'⟩ =>
         ⟨b', (k₆.keep.trans hk').mono, fun o ho => ?_⟩
     rw [v' o ho, k₆.mem]
   · have hs0 : sl = 0 := by
       rw [g5, ne_zero_iff] at hc
-      simp only [BitVec.toNat_ofNat, ne_eq, decide_eq_false_iff_not, Decidable.not_not] at hc; omega
+      simp only [BitVec.toNat_ofNat, ne_eq, decide_eq_false_iff_not, Decidable.not_not] at hc; omega_using [hS, hc]
     refine wp_nil ⟨b₆, k₆.keep.mono, fun o ho => ?_⟩
-    rw [ifn (by omega), k₆.mem]
+    rw [ifn (by omega_using [hs0]), k₆.mem]
 
 /-- `copyDb`: `DB` after `mHash`. -/
 theorem copyDb_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State} (h : Base Sp (vP D) s t) :
@@ -178,10 +178,10 @@ theorem copyDb_ok {H : Impl.Hmac.Stream.RISCV64.Hash} (hD : H.D = D) {t : State}
   have hY : oY = 2048 := rfl
   refine WP.seq (wp_add fun t₁ o₁ e₁ => ?_)
   refine wp_yBase (by rw [o₁.get .s0, h.s0]) fun t₂ o₂ e₂ =>
-    wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega) fun t₃ o₃ e₃ => wp_mov fun t₄ o₄ e₄ => wp_nil ?_
+    wp_addi (imm := 8 + H.D) (h := by rw [hD]; omega_using [hD64]) fun t₃ o₃ e₃ => wp_mov fun t₄ o₄ e₄ => wp_nil ?_
   have k₄ : Only [.a4, .a1, .a5] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine WP.mono (copyIn_ok L (h.only F k₄) (a := lN) (b := oY + 8 + D) (n := dN) (by omega) (by omega)
-    (by omega) (.inl (by omega)) (by rw [o₄.get .a4, o₃.get .a4, o₂.get .a4, e₁, h.s0, h.plo, L.hlo])
+  refine WP.mono (copyIn_ok L (h.only F k₄) (a := lN) (b := oY + 8 + D) (n := dN) (by omega_using [hd1]) (by omega_using [hk, hk2, hR])
+    (by omega_using [hk, hk2, hR, hY]) (.inl (by omega_using [hk, hk2, hY])) (by rw [o₄.get .a4, o₃.get .a4, o₂.get .a4, e₁, h.s0, h.plo, L.hlo])
     (by rw [o₄.get .a1, e₃, e₂, hD]; exact (off_off _ _ _).trans (congrArg _ (Nat.add_assoc _ _ _).symm))
     (by rw [e₄, o₃.get .s4, o₂.get .s4, o₁.get .s4, h.pdb, L.hdb]))
     fun t' ⟨b', hk', v'⟩ => ⟨b', (k₄.keep.trans hk').mono, fun o ho => ?_⟩

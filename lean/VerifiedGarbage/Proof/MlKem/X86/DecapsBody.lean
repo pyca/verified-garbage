@@ -119,13 +119,13 @@ theorem start_piece [CeOK L] [DecOK L] [DecapsOK L] (hk : 0 < L.p.k) {Q : State 
       ⟨⟨h', by rw [keepBytes hp (N := 0) (by rdecide) DecapsOK.aEM (fr1 fr)]; exact h.m⟩, ?_⟩) ?_
   · show bytesAt s'.mem (Buf.addr s₀ ⟨3, L.eEK, L.p.ekLen⟩) L.p.ekLen = _
     rw [post, ekD_eq]
-    exact dk_slice hp h.ctx (by unfold Params.ekLen Params.dkLen; omega) g₅
+    exact dk_slice hp h.ctx (by unfold Params.ekLen Params.dkLen; omega_using []) g₅
   refine Piece.seq (hash2_piece (Y := Y L) L.eST L.eWK 72 6 (Enc.bM L (Y L).sc) ⟨0, 768 * L.p.k + 32, 32⟩
     (Enc.bKR L (Y L).sc) rate72 DecapsOK.g (by rdecide) (by rdecide) (by rdecide) (by rdecide) (by taint_rfl) (by yd_taint)
     (by yd_taint) (by yd_taint) (by yd_taint) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr out =>
       ⟨h', by rw [keepBytes hp (by rdecide) g₁ fr]; exact h.ekc,
         by rw [keepBytes hp (by rdecide) g₂ fr]; exact h.m, ?_⟩) hc
-  rw [out, dk_slice hp h.ctx (by unfold Params.dkLen; omega) g₃, show (BitVec.ofNat 32 6).setWidth 8 = sha3Suffix from
+  rw [out, dk_slice hp h.ctx (by unfold Params.dkLen; omega_using []) g₃, show (BitVec.ofNat 32 6).setWidth 8 = sha3Suffix from
     sha3Suffix32, ← padded, ← sha3_512_eq]
   show _ = krD L s₀
   rw [krD_eq, ← h.m]
@@ -180,7 +180,7 @@ theorem fin_piece [DecOK L] [CmpOK L] [DecapsOK L] :
     ⟨1, 0, L.p.ctLen⟩ (bKB L) rate136 DecapsOK.j (by rdecide) (by rdecide) hN (by rdecide) (by taint_rfl) (by yd_taint)
     (by yd_taint) (by yd_taint) (by yd_taint) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr out =>
       ⟨done_keep hp (by rdecide) d₁ d₂ fr h h', ?_⟩) ?_
-  · rw [out, dk_slice hp h.ctx (by unfold Params.dkLen; omega) g₄, ct_slice hp h.ctx (by omega) DecOK.ct.1,
+  · rw [out, dk_slice hp h.ctx (by unfold Params.dkLen; omega_using []) g₄, ct_slice hp h.ctx (by omega_using []) DecOK.ct.1,
       List.drop_zero, List.take_of_length_le (l := ct L s₀) (by rw [ct_eq, bytesAt_length]),
       show (BitVec.ofNat 32 0x1f).setWidth 8 = shakeSuffix from shakeSuffix32, ← padded, ← J_eq]
     show _ = J (KPke.dkZ L.p (dk L s₀) ++ ct L s₀)
@@ -228,7 +228,7 @@ theorem post [Enc.VOK L] (hη : L.p.η₁ = 2 ∧ L.p.η₂ = 2) {s₀ s : State
     show ekRho L.p (ekD L s₀) = _; rw [ekD_eq]
   rcases h.acc with e | e
   · obtain ⟨k, hk, hn⟩ := h.fail e
-    have hk0 : 0 < L.p.k := Nat.pos_of_ne_zero fun h0 => by rw [h0] at hk; omega
+    have hk0 : 0 < L.p.k := Nat.pos_of_ne_zero fun h0 => by rw [h0] at hk; omega_using [hk]
     refine .inr ⟨e, ?_⟩
     show decapsInternal L.p minIterations (dk L s₀) (ct L s₀) = none
     rw [Enc.mSE, ek] at hn

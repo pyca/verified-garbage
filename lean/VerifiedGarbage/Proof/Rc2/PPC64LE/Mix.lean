@@ -48,15 +48,15 @@ theorem word16_bytes (x : BitVec 32) (k : Nat) :
   by_cases h8 : i < 8
   · simp [h8, Nat.add_comm]
   · simp only [h8, decide_false, Bool.false_and, Bool.false_or, Bool.not_false, Bool.true_and,
-      decide_true, show i - 8 < 8 by omega, show i - 8 < 16 by omega]
-    rw [show 8 * k + i = 8 * (k + 1) + (i - 8) by omega]
+      decide_true, show i - 8 < 8 by omega_using [hi], show i - 8 < 16 by omega_using [hi]]
+    rw [show 8 * k + i = 8 * (k + 1) + (i - 8) by omega_using [h8]]
 
 theorem key_word (m : Mem) (T : Addr) {o k j : Nat} (hk : k ≤ 2) (hj : j < 64) (ho : o + k = 2 * j) :
     ((m.readW (T + BitVec.ofNat 64 o) 32) >>> (8 * k)).setWidth 16 = (Spec.Rc2.scheduleAt m T).getD j 0 := by
-  rw [word16_bytes, ← Mem.readW_byte m _ (by omega), ← Mem.readW_byte m _ (by omega), Offset.add_add,
+  rw [word16_bytes, ← Mem.readW_byte m _ (by omega_using [hk]), ← Mem.readW_byte m _ (by omega_using [hk]), Offset.add_add,
     Offset.add_add, Spec.Rc2.scheduleAt, Proof.Rc2.getD_ofFn _ _ hj]
   simp only
-  rw [show o + k = 2 * j from ho, show o + (k + 1) = 2 * j + 1 by omega]
+  rw [show o + k = 2 * j from ho, show o + (k + 1) = 2 * j + 1 by omega_using [ho]]
 
 theorem lo16_add (x y : BitVec 64) : (x + y).setWidth 16 = x.setWidth 16 + y.setWidth 16 := by
   apply BitVec.eq_of_toNat_eq
@@ -67,7 +67,7 @@ theorem lo16_sub (x y : BitVec 64) : (x - y).setWidth 16 = x.setWidth 16 - y.set
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub]
   rw [Nat.mod_mod_of_dvd _ (by decide)]
-  omega
+  omega_using []
 
 theorem lo16_ext (x : BitVec 16) : (x.setWidth 64).setWidth 16 = x :=
   BitVec.setWidth_setWidth_of_le _ (by decide) |>.trans (BitVec.setWidth_eq x)
@@ -87,7 +87,7 @@ theorem mask16 (x : BitVec 64) : (x <<< 48) >>> 48 = (x.setWidth 16).setWidth 64
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
   by_cases h : i < 16
-  · simp [h, hi]; intro _; omega
+  · simp [h, hi]; intro _; omega_using [h]
   · simp [h]; intro _; omega
 
 theorem rot16 (y : BitVec 16) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
@@ -117,11 +117,11 @@ theorem loadKey_run (u : State) {T : Addr} (E : KeyEnv T u) {j : Nat} (hj : j < 
     fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   unfold loadKey
   split
-  · rrun [E.r3, E.rd (2 * j) 4 (by omega), show 2 * j < 32768 by omega]
+  · rrun [E.r3, E.rd (2 * j) 4 (by omega_arith), show 2 * j < 32768 by omega_using [hj]]
     rw [BitVec.setWidth_setWidth_of_le _ (by decide)]
-    have := key_word u.mem T (o := 2 * j) (k := 0) (j := j) (by decide) hj (by omega)
+    have := key_word u.mem T (o := 2 * j) (k := 0) (j := j) (by decide) hj (by omega_using [])
     rwa [Nat.mul_zero, BitVec.ushiftRight_zero] at this
-  · have : j = 63 := by omega
+  · have : j = 63 := by omega_arith
     subst this
     rrun [E.r3, E.rd 124 4 (by decide)]
     rw [BitVec.setWidth_setWidth_of_le _ (by decide), lo32_ext]

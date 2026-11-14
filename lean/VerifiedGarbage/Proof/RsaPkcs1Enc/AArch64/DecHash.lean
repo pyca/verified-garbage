@@ -82,16 +82,16 @@ theorem preserved_cases {P : Reg → Prop} (h19 : P .x19) (h20 : P .x20) (h21 : 
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- The frame's slots are readable. -/
-abbrev Slots (t : State) (Q : Addr) : Prop := ∀ d, d + 8 ≤ 208 → InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 d) 8
+abbrev Slots (t : State) (Q : Addr) : Prop := ∀ d, d + 8 ≤ 224 → InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 d) 8
 
 theorem shaInitArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block shaInitArgs) t fun u => Same t u ∧
       u.gpr .x0 = t.mem.readW (Q + BitVec.ofNat 64 oScr) 64 + BitVec.ofNat 64 sSt := by
-  have h168 := h 168 (by decide)
+  have h184 := h 184 (by decide)
   apply WP.of_runBlock
   simp only [shaInitArgs, scr, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, Size.bits,
     BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, hsp, oScr, sSt, Option.map_some,
-    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, h168]
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, h184]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl⟩
 
 /-- A word of the frame. -/
@@ -101,13 +101,13 @@ theorem shaUpdArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block shaUpdArgs) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = 0 ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 sD ∧ u.gpr .x3 = slot t Q oK ∧
       u.gpr .x4 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
-  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [shaUpdArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oK, sSt, sD, sWork, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write,
-    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h120]
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl,
     rfl, rfl⟩
 
@@ -115,13 +115,13 @@ theorem shaFinArgs_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
     WP isa (.block shaFinArgs) t fun u => Same t u ∧ u.gpr .x0 = slot t Q oScr + BitVec.ofNat 64 sSt ∧
       u.gpr .x1 = slot t Q oK ∧ u.gpr .x2 = slot t Q oScr + BitVec.ofNat 64 sDH ∧
       u.gpr .x3 = slot t Q oScr + BitVec.ofNat 64 sWork := by
-  have h168 := h 168 (by decide)
-  have h120 := h 120 (by decide)
+  have h184 := h 184 (by decide)
+  have h136 := h 136 (by decide)
   apply WP.of_runBlock
   simp only [shaFinArgs, scr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.read, State.load, Size.bits, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self,
     ite_true, hsp, oScr, oK, sSt, sDH, sWork, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write,
-    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h168, h120]
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, h184, h136]
   exact ⟨⟨rfl, rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl, rfl, rfl⟩
 
 /-! ## The hash of `D` -/
@@ -135,10 +135,10 @@ section
 variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {R : BitVec 64} {EM : List Byte}
 
 theorem Post.slots {t : State} (hc : Post L g vv m₀ R EM t) : Slots t L.Q := fun _ hd =>
-  hc.ctx.inFrR (by unfold frameBytes; omega)
+  hc.ctx.inFrR (by unfold frameBytes; omega_using [hd])
 
 theorem Post.sp16 (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R EM t) : 16 ≤ t.sp.toNat := by
-  rw [hc.ctx.sp]; have := hL.pQ; omega
+  rw [hc.ctx.sp]; have := hL.pQ; omega_using [hP, this]
 
 /-- The 16 bytes below the stack pointer, from `Post`, miss a range of `scratch`. -/
 theorem Post.stk (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R EM t) {a m : Nat}
@@ -152,7 +152,7 @@ theorem Post.keep (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L g vv
   bytes_keep h.frame (fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact hd r hr
-    · rw [List.mem_singleton.mp hr]; exact (hc.stk hL hP ha).symm) (by unfold scrBytes at ha; omega)
+    · rw [List.mem_singleton.mp hr]; exact (hc.stk hL hP ha).symm) (by unfold scrBytes at ha; omega_using [ha])
 
 end
 
@@ -176,8 +176,8 @@ theorem hashD_ok {L : Lay} (hL : L.Ok) (hP : 16 ≤ L.P) {g : Reg → BitVec 64}
     (scCov hL hc₁.ctx (a := sSt) (n := 96) (Nat.le_of_ble_eq_true rfl)) fun t₂ a₂ hr₂ => ?_)
   have hc₂ := hc₁.after hL hP a₂ fun r hr => by rw [List.mem_singleton.mp hr]; exact scSub (Nat.le_of_ble_eq_true rfl)
   have hD₂ : Spec.Rsa.bytesAt t₂.mem (scA L sD) L.k.toNat = Spec.Rsa.bytesAt t.mem (scA L sD) L.k.toNat := by
-    rw [hc₁.keep hL hP a₂ (by unfold sD scrBytes; omega) fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact scD hL (.inr (Nat.le_of_ble_eq_true rfl)) (by unfold sD scrBytes; omega) (Nat.le_of_ble_eq_true rfl),
+    rw [hc₁.keep hL hP a₂ (by unfold sD scrBytes; omega_using [hk]) fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact scD hL (.inr (Nat.le_of_ble_eq_true rfl)) (by unfold sD scrBytes; omega_using [hk]) (Nat.le_of_ble_eq_true rfl),
       S₁.mem]
   -- `update`
   refine WP.seq (WP.mono (shaUpdArgs_ok hc₂.ctx.sp hc₂.slots) fun t₃ ⟨S₃, x0₃, x1₃, x2₃, x3₃, x4₃⟩ => ?_)
@@ -185,15 +185,15 @@ theorem hashD_ok {L : Lay} (hL : L.Ok) (hP : 16 ≤ L.P) {g : Reg → BitVec 64}
   simp only [slot, hc₂.ctx.kept.scr, hc₂.ctx.kept.k] at x0₃ x2₃ x3₃ x4₃
   refine WP.seq (Proof.Pbkdf2.Md.AArch64.Calls.upd_call (OK v).stream (len := L.k.toNat)
     { x0 := x0₃, x2 := x2₃, x3 := by rw [x3₃], x4 := x4₃
-      cd := Covers.right (scCov hL hc₃.ctx (by unfold sD scrBytes; omega))
+      cd := Covers.right (scCov hL hc₃.ctx (by unfold sD scrBytes; omega_using [hk]))
       cw := Covers.pair (scCov hL hc₃.ctx (a := sSt) (n := 96) (Nat.le_of_ble_eq_true rfl))
         (scCov hL hc₃.ctx (a := sWork) (n := 160) (Nat.le_of_ble_eq_true rfl))
       st_sc := scD hL (.inl (Nat.le_of_ble_eq_true rfl)) (Nat.le_of_ble_eq_true rfl) (Nat.le_of_ble_eq_true rfl)
-      d_st := scD hL (.inr (Nat.le_of_ble_eq_true rfl)) (by unfold sD scrBytes; omega) (Nat.le_of_ble_eq_true rfl)
-      d_sc := scD hL (.inr (Nat.le_of_ble_eq_true rfl)) (by unfold sD scrBytes; omega) (Nat.le_of_ble_eq_true rfl)
+      d_st := scD hL (.inr (Nat.le_of_ble_eq_true rfl)) (by unfold sD scrBytes; omega_using [hk]) (Nat.le_of_ble_eq_true rfl)
+      d_sc := scD hL (.inr (Nat.le_of_ble_eq_true rfl)) (by unfold sD scrBytes; omega_using [hk]) (Nat.le_of_ble_eq_true rfl)
       sp16 := hc₃.sp16 hL hP
       stk_st := hc₃.stk hL hP (Nat.le_of_ble_eq_true rfl)
-      stk_d := hc₃.stk hL hP (by unfold sD scrBytes; omega)
+      stk_d := hc₃.stk hL hP (by unfold sD scrBytes; omega_using [hk])
       stk_sc := hc₃.stk hL hP (Nat.le_of_ble_eq_true rfl) } fun t₄ a₄ hu₄ => ?_)
   have hc₄ := hc₃.after hL hP a₄ fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -224,7 +224,7 @@ theorem hashD_ok {L : Lay} (hL : L.Ok) (hP : 16 ≤ L.P) {g : Reg → BitVec 64}
     · exact scSub (Nat.le_of_ble_eq_true rfl)
     · exact scSub (Nat.le_of_ble_eq_true rfl)
   refine ⟨hc₆, ?_⟩
-  have := hf₆ _ (by rw [S₅.mem]; exact hr₄) (by simp [Spec.Sha256.bytesAt]; omega)
+  have := hf₆ _ (by rw [S₅.mem]; exact hr₄) (by simp [Spec.Sha256.bytesAt]; omega_using [])
     (by rw [x1₅]; simp [Spec.Sha256.bytesAt])
   obtain ⟨-, -, -, -, -, hF, hD, -⟩ := sizes v
   rw [hF, hD, List.take_of_length_le (by simp [Spec.Sha256.bytesAt])] at this

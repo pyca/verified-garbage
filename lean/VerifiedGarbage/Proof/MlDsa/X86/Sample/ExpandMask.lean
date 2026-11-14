@@ -174,26 +174,26 @@ theorem body_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g : Na
   rw [emBody, show (List.range 4).flatMap (emCoef c) =
       emCoef c 0 ++ (emCoef c 1 ++ (emCoef c 2 ++ (emCoef c 3 ++ []))) from rfl, List.append_nil,
     List.append_assoc, WP.block_append_iff]
-  refine (coef_ok hc hp hg (by omega) h).mono fun s1 h1 => ?_
+  refine (coef_ok hc hp hg (by omega_using []) h).mono fun s1 h1 => ?_
   rw [List.append_assoc, WP.block_append_iff]
-  refine (coef_ok hc hp hg (by omega) h1).mono fun s2 h2 => ?_
+  refine (coef_ok hc hp hg (by omega_using []) h1).mono fun s2 h2 => ?_
   rw [List.append_assoc, WP.block_append_iff]
-  refine (coef_ok hc hp hg (by omega) h2).mono fun s3 h3 => ?_
+  refine (coef_ok hc hp hg (by omega_using []) h2).mono fun s3 h3 => ?_
   rw [WP.block_append_iff]
-  refine (coef_ok hc hp hg (by omega) h3).mono fun h4s h4 => ?_
+  refine (coef_ok hc hp hg (by omega_using []) h3).mono fun h4s h4 => ?_
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', ↓reduceIte]
   refine ⟨⟨⟨by simp [h4.esp], h4.rd, h4.wr, h4.frame⟩, h4.out, ?_, ?_, ?_,
-    fun i (hi : i < 4 * (g + 1) + 0) => h4.coef i (by omega), h4.cγ⟩, ?_⟩
+    fun i (hi : i < 4 * (g + 1) + 0) => h4.coef i (by omega_using [hi]), h4.cγ⟩, ?_⟩
   · simp (config := {decide := true}) only [↓reduceIte, h4.esi]
-    rw [add_ofNat_add, show 840 + c / 2 * g + c / 2 = 840 + c / 2 * (g + 1) by rw [Nat.mul_succ]; omega]
+    rw [add_ofNat_add, show 840 + c / 2 * g + c / 2 = 840 + c / 2 * (g + 1) by rw [Nat.mul_succ]; omega_using []]
   · simp (config := {decide := true}) only [↓reduceIte, h4.edi]
     rw [show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, add_ofNat_add]; congr 2
   · simp (config := {decide := true}) only [↓reduceIte, h4.ecx]
     exact cnt_next hg
   · simp only [eval, h4.ecx]
-    exact cnt_ne hg (by omega)
+    exact cnt_ne hg (by omega_using [])
 
 theorem loop_piece {c : Nat} (hc : emOk c)
     (ht : TaintOk [.esi, .edi] (.block (emBody c))) :
@@ -244,7 +244,7 @@ theorem init_piece (c : Nat) (b : Bool) (hb : ∀ s₀, decide (γ s₀ = 2 ^ 17
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, Option.some.injEq,
     exists_eq_left']
   exact ⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [hdi], by simp,
-    fun i hi => absurd hi (by omega), hb s₀ e⟩
+    fun i hi => absurd hi (by omega_using []), hb s₀ e⟩
 
 /-- The end: the polynomial of `ExpandMask` at `a`. -/
 def Fin (s₀ s : State) : Prop :=
@@ -255,7 +255,7 @@ def Fin (s₀ s : State) : Prop :=
 theorem fin_of {c : Nat} {s₀ s : State} (hγ : γ s₀ = 2 ^ 17 ∨ γ s₀ = 2 ^ 19) (hc : c = emC (γ s₀))
     (h : GInv c s₀ 64 0 s) : Fin s₀ s := by
   refine ⟨h.toBase, polyIs_of_coeffAt fun i hi => ?_⟩
-  rw [expandMask_getElem _ hγ hi, h.coef i (by simp only [n] at hi; omega), emV, ← hc, (emC_eq hγ).2.2]
+  rw [expandMask_getElem _ hγ hi, h.coef i (by simp only [n] at hi; omega_using [hi]), emV, ← hc, (emC_eq hγ).2.2]
   have : X s₀ = H (L.Msg s₀) 640 := (H_eq _ _).symm
   rw [this, show 2 ^ (emC (γ s₀) - 1) = 2 ^ (c - 1) by rw [hc]]
 
@@ -290,7 +290,7 @@ theorem main_piece : Piece EPre (PubP L) (fun s₀ s => s = P0 s₀) Fin
 theorem piece : Piece EPre (PubP L) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlDsa.X86.Sample.expandMask :=
   Piece.leaf L.W (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨by have := hp.1.sp; omega, by have := hp.1.sp'; omega⟩)
+    (fun _ hp => ⟨by have := hp.1.sp; omega_using [this], by have := hp.1.sp'; omega_using [this]⟩)
     (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1)
     (main_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h⟩)
 

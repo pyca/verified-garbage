@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Zeroize.PPC64LE
 public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.Registration
 
+/-! # Zeroization on PPC64LE -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Zeroize.PPC64LE

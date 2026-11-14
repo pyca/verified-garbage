@@ -29,7 +29,7 @@ theorem setup_shape (s : State) : WP isa (.block setup) s fun t =>
   · rw [h7.get .x22,h6.get .x22,h5.get .x22,h4.get .x22,h3.get .x22,h2.get .x22,e1]
   · rw [h7.get .x23,h6.get .x23,h5.get .x23,h4.get .x23,h3.get .x23,e2,h1.get .x19]
   · intro k hk
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl
     · change t.gpr .x24 = _
       rw [h7.get .x24,h6.get .x24,h5.get .x24,h4.get .x24,e3,h2.get .x19,h1.get .x19]
     · change t.gpr .x25 = _
@@ -62,7 +62,7 @@ theorem setup_ok {σ s : State} (he : Env σ s)
   · rw [e28]; rfl
   · intro p hp
     rw [ht.mem]
-    rcases (show p = 0 ∨ p = 1 by omega) with rfl | rfl
+    rcases (show p = 0 ∨ p = 1 by omega_using [hp]) with rfl | rfl
     · exact hp0
     · exact hp1
   · intro k _ j hj

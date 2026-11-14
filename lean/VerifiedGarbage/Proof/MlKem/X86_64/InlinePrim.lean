@@ -141,12 +141,12 @@ theorem ceIn_ok {n : String} {c : Prog isa} {ws : List Nat} (I : CEImpl n c ws) 
     (wr := [⟨pa s out, 32 * d⟩])
     (fun s1 hv hm k => by
       simp only [compressEncodeWK, dArg, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-        State.withRegions_mem, hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega),
-        sw32_64' d (by omega), hm]
+        State.withRegions_mem, hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]),
+        sw32_64' d (by omega_using [hd]), hm]
       exact ⟨trivial, trivial, h.dj, retR_keep k h.rF _ _, retR_keep k h.rO _ _, h.dw, trivial, h.red⟩) h.c h.w)
     fun s' ⟨hpost, s1, hV, hm, _, hq⟩ => ⟨hpost, ?_⟩
   simp only [compressEncodeWK, dArg, State.withRegions_gpr, State.withRegions_mem, hV.1, hV.2.1, hV.2.2.1,
-    hV.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega), hm] at hq
+    hV.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd]), hm] at hq
   exact hq
 
 /-- What inline code decompressing the `32d` bytes at `b` to `f`, with `d` in `ws`, needs. -/
@@ -170,11 +170,11 @@ theorem ddIn_ok {n : String} {c : Prog isa} {ws : List Nat} (I : DDImpl n c ws) 
     (wr := [pR (pa s f)])
     (fun s1 hv _ k => by
       simp only [decodeDecompressWK, dArg, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-        hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega)]
+        hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd])]
       exact ⟨trivial, trivial, h.dj, retR_keep k h.rB _ _, retR_keep k h.rF _ _, h.dw, trivial⟩) h.c h.w)
     fun s' ⟨hpost, s1, hV, hm, _, hq⟩ => ⟨hpost, ?_⟩
   simp only [decodeDecompressWK, dArg, State.withRegions_gpr, State.withRegions_mem, hV.1, hV.2.1, hV.2.2.1,
-    hV.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega), sw32_64' d (by omega), hm] at hq
+    hV.2.2.2, ofNat_toNat' (show 32 * d < 2 ^ 64 by omega_using [hd]), sw32_64' d (by omega_using [hd]), hm] at hq
   exact hq
 
 end VG.Proof.MlKem.X86_64

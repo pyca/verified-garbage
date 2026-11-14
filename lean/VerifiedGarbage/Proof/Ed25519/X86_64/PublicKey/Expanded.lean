@@ -38,7 +38,7 @@ theorem seed_contains (hL : L.Ok) (h64 : L.seedLen = 64) {i : Nat} (hi : i < 8) 
   have hn := hL.ns
   show Region.Contains ⟨L.seed, L.seedLen⟩ _ 8
   rw [h64] at hn ⊢
-  have := Offset.contains L.seed (d := 8 * i) (n := 8) (e := 0) (k := 64) (by omega) (by omega) (by decide)
+  have := Offset.contains L.seed (d := 8 * i) (n := 8) (e := 0) (k := 64) (by omega_using []) (by omega_using [hi]) (by decide)
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
 
 /-- The words of the digest are those of the caller's memory. -/
@@ -62,11 +62,11 @@ theorem Ctx.storeScr (hL : L.Ok) {t t' : State} (hc : Ctx L g mx m₀ t) {e : Na
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hL.stk_scr (d := d) (n := 8) (by omega) he) (by decide)
+      exact hL.stk_scr (d := d) (n := 8) (by omega_using [h₂]) he) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
-    (keep 48 (by omega) (by omega)).trans hc.pScr, (keep 56 (by omega) (by omega)).trans hc.pSeed,
-    (keep 64 (by omega) (by omega)).trans hc.pOut,
+    (keep 48 (by omega_using []) (by omega_using [])).trans hc.pScr, (keep 56 (by omega_using []) (by omega_using [])).trans hc.pSeed,
+    (keep 64 (by omega_using []) (by omega_using [])).trans hc.pOut,
     hc.frame.trans (Frame.sub hf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨L.SCR, by simp, Offset.sub_base _ he⟩), by rw [hsy]; exact hc.sym, hc.held⟩
@@ -74,8 +74,8 @@ theorem Ctx.storeScr (hL : L.Ok) {t t' : State} (hc : Ctx L g mx m₀ t) {e : Na
 /-- The pointers of the copy, from the frame. -/
 theorem copyPtrs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block pkCopyPtrs) t fun t' => Ctx L g mx m₀ t' ∧ t'.gpr .rax = L.seed ∧ t'.gpr .rcx = L.scr := by
-  have h56 := hc.inFr (d := 56) (by omega) (by omega)
-  have h48 := hc.inFr (d := 48) (by omega) (by omega)
+  have h56 := hc.inFr (d := 56) (by omega_using []) (by omega_using [])
+  have h48 := hc.inFr (d := 48) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [pkCopyPtrs, fSeed, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     State.load64, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
@@ -94,7 +94,7 @@ theorem copy_word (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g m
   have hl : InRegions (t.rd ++ t.wr) (L.seed + BitVec.ofNat 64 (8 * i)) 8 :=
     ⟨L.SEED, by rw [hc.rd]; simp, seed_contains hL h64 hi⟩
   have hw : InRegions t.wr (L.scr + BitVec.ofNat 64 (1568 + 8 * i)) 8 :=
-    ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ (by omega) (by have := hL.nc; omega)⟩
+    ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ (by omega_using [hi]) (by have := hL.nc; omega_using [hi])⟩
   have hf : Frame [⟨L.scr + BitVec.ofNat 64 (1568 + 8 * i), 8⟩] t.mem
       (t.mem.writeW (L.scr + BitVec.ofNat 64 (1568 + 8 * i)) (m₀.readW (L.seed + BitVec.ofNat 64 (8 * i)) 64)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -104,7 +104,7 @@ theorem copy_word (hL : L.Ok) (h64 : L.seedLen = 64) {t : State} (hc : Ctx L g m
     RegUpd.wr_setReg, RegUpd.mem_setReg, Option.map_some, reduceCtorEq, ite_false,
     Option.some.injEq, exists_eq_left']
   rw [seed_word hL h64 hc hi]
-  exact ⟨hc.storeScr hL (e := 1568 + 8 * i) (by omega) rfl rfl rfl rfl (by cs_tac) hf, trivial, trivial, rfl⟩
+  exact ⟨hc.storeScr hL (e := 1568 + 8 * i) (by omega_using [hi]) rfl rfl rfl rfl (by cs_tac) hf, trivial, trivial, rfl⟩
 
 /-- The digest's first `k` words copied. -/
 theorem copy_prefix (hL : L.Ok) (h64 : L.seedLen = 64) (k : Nat) (hk : k ≤ 8) {t : State}
@@ -119,14 +119,14 @@ theorem copy_prefix (hL : L.Ok) (h64 : L.seedLen = 64) (k : Nat) (hk : k ≤ 8) 
   | zero => exact WP.of_runBlock ⟨t, rfl, hc, ha, hs, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun u ⟨hu, hua, hus, hw⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun u ⟨hu, hua, hus, hw⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (copy_word hL h64 hu hua hus k (by omega)) fun w ⟨hw', hwa, hws, hm⟩ =>
+    refine WP.mono (copy_word hL h64 hu hua hus k (by omega_using [hk])) fun w ⟨hw', hwa, hws, hm⟩ =>
       ⟨hw', hwa, hws, fun j hj => ?_⟩
     rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · rw [Mem.readW_writeW_sep (Offset.sep L.scr (d := 1568 + 8 * j) (n := 8) (e := 1568 + 8 * k) (k := 8)
-        (by omega) (by omega) (by omega)) (by decide)]
+        (by omega_using [hj]) (by omega_arith) (by omega_using [hk])) (by decide)]
       exact hw j hj
     · exact Mem.readW_writeW_self64 _ _ _
 
@@ -161,7 +161,7 @@ theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
   have hL := lay_ok h (by decide)
   have hc := push_ctx h
   obtain ⟨seed, -, hE⟩ := expanded_seed h
-  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega)
+  refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 7 ≤ _; have := h.1; omega_using [this])
     (WP.mono (bodyFrom_ok hL (copy_ok hL rfl hc) hE)
       fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
@@ -178,7 +178,7 @@ theorem publicKeyExpanded_ok {s : State} (h : pkLocalE.pre s) :
         rcases hr with rfl | rfl | rfl
         · exact hL.ro
         · exact hL.rc
-        · exact Offset.disjoint_base _ (by omega) (by omega)
+        · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
   · intro seed' _ hE'
     show Spec.Ed25519.bytesAt (popped .rax pushRs.length u).mem (lay 64 s).out 32 = _
     rw [popped_mem, ho]
@@ -215,7 +215,7 @@ theorem satMemPE_held : ∀ i < combWordCount,
     satMemPE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   intro i hi
   rw [← constMem_held (0x100000 : Addr) combWords
-    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [combWordCount]; omega) i
+    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [combWordCount]; omega_using []) i
     (by rw [Proof.Ed25519.X86_64.combWords_length]; exact hi)]
   refine Mem.readW_congr fun b hb => ?_
   unfold satMemPE
@@ -223,7 +223,7 @@ theorem satMemPE_held : ∀ i < combWordCount,
   rw [show (0x100000 : Addr) = BitVec.ofNat 64 0x100000 from rfl, Offset.add_add, ← BitVec.ofNat_add,
     BitVec.toNat_ofNat]
   simp only [combWordCount] at hi
-  omega
+  omega_using [hi, hb]
 
 /-- No instruction writes `rsp` but the frame's push and pop. -/
 theorem publicKeyExpanded_spSafe :

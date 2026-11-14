@@ -71,13 +71,13 @@ private theorem sub_tape {r : Addr} {n used len : Nat}
 
 private theorem nowrap_tape {r : Addr} {n used len : Nat} (hn : r.toNat + n ≤ 2 ^ 64)
     (hu : used + len ≤ n) : (r + BitVec.ofNat 64 used).toNat + len ≤ 2 ^ 64 := by
-  have hul : used < 2 ^ 64 ∨ len = 0 := by omega
+  have hul : used < 2 ^ 64 ∨ len = 0 := by omega_using [hn, hu]
   rcases hul with hul | hz
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hul]
     have := Nat.mod_le (r.toNat + used) (2 ^ 64)
     by_cases hz : r.toNat + used < 2 ^ 64
-    · rw [Nat.mod_eq_of_lt hz]; omega
-    · omega
+    · rw [Nat.mod_eq_of_lt hz]; omega_using [hn, hu]
+    · omega_using [hn, hu]
   · subst hz; simp only [Nat.add_zero]; exact Nat.le_of_lt (BitVec.isLt _)
 
 private theorem sp_64 (sp : Addr) : sp - 56 - 8 = sp - BitVec.ofNat 64 64 := by

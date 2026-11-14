@@ -112,15 +112,15 @@ theorem peerLoad_ok {s : State} {base : Addr} {q : Reg} (hw : WsReg s base) (hq 
   rw [show brainpoolp512r1.n = 8 from rfl, show 1 + 8 * 8 = 65 from rfl]
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (loadNum_ok 8 hw (o := brainpoolp512r1.sl CX) (p := q) (off := 1) (by simp [hq.1, hq.2.1])
-    (by decide) (by decide) (by decide) (fun j hj => in_rd8 hrd (by omega))
-    (fun i hi => out_of_disj hdis hfit (by omega)))
+    (by decide) (by decide) (by decide) (fun j hj => in_rd8 hrd (by omega_using [hj]))
+    (fun i hi => out_of_disj hdis hfit (by omega_using [hi])))
     fun s₃ ⟨r₃, O₃, e₃⟩ => ?_)
   have hw₃ := hw.of_rest r₃
   have q₃ : s₃.gpr q = s.gpr q := r₃.gpr _ (by simp [hq.1, hq.2.1])
   refine WP.block_append (WP.mono (loadNum_ok 8 hw₃ (o := brainpoolp512r1.sl CY) (p := q) (off := 65)
     (by simp [hq.1, hq.2.1]) (by decide) (by decide) (by decide) (fun j hj => by
-      rw [q₃, r₃.rd, r₃.wr]; exact in_rd8 hrd (by omega))
-    (fun i hi => by rw [q₃]; exact out_of_disj hdis hfit (by omega)))
+      rw [q₃, r₃.rd, r₃.wr]; exact in_rd8 hrd (by omega_using [hj]))
+    (fun i hi => by rw [q₃]; exact out_of_disj hdis hfit (by omega_using [hi])))
     fun s₄ ⟨r₄, O₄, e₄⟩ => ?_)
   have hw₄ := hw₃.of_rest r₄
   have r₃₄ := r₃.trans r₄
@@ -150,10 +150,10 @@ theorem peerLoad_ok {s : State} {base : Addr} {q : Reg} (hw : WsReg s base) (hq 
     rw [sv_unch U₃₇ CX (by decide), e₃]
   · show wordsVal _ _ _ _ = _
     rw [sv_unch U₄₇ CY (by decide), e₄, q₃,
-      bytesAt_unch O₃.unch (by decide) (sep_at' hdis hfit (off := 65) (k := 64) (by omega))]
+      bytesAt_unch O₃.unch (by decide) (sep_at' hdis hfit (off := 65) (k := 64) (by omega_using []))]
   · rw [U₇.word (by decide) (by decide), u₆.mem, sl_FLAG, word_writeW_self, g₅, q₄]
     have h1 := bytesAt_unch (O₃.unch.trans O₄.unch) (q := s.gpr q) (n := 1) (by decide)
-      (by simpa using sep_at' hdis hfit (off := 0) (k := 1) (by omega))
+      (by simpa using sep_at' hdis hfit (off := 0) (k := 1) (by omega_using []))
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
     simp only [BitVec.add_zero] at h1
     rw [h1]
@@ -176,8 +176,8 @@ theorem setup_ok {s : State} (hs : EPre s) :
   -- `d`.
   rw [show brainpoolp512r1.n = 8 from rfl]
   refine WP.block_append (WP.mono (loadNum_ok 8 hw₁ (o := brainpoolp512r1.sl K) (p := .a1) (off := 0) (by decide) (by decide)
-    (by decide) (by decide) (fun j hj => by rw [a1]; exact in_rd8 rd1 (by omega))
-    (fun i hi => by rw [a1]; exact out_of_disj (hb ▸ hs.d) hs.fd (by omega)))
+    (by decide) (by decide) (fun j hj => by rw [a1]; exact in_rd8 rd1 (by omega_using [hj]))
+    (fun i hi => by rw [a1]; exact out_of_disj (hb ▸ hs.d) hs.fd (by omega_using [hi])))
     fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
   have a2' : s₂.gpr .a2 = s.gpr .a2 := by rw [r₂.gpr _ (by decide), a2]
@@ -207,12 +207,12 @@ theorem setup_ok {s : State} (hs : EPre s) :
   · rw [U₁₇.word (by decide) (by decide)]; exact w4
   · show wordsVal _ _ _ _ = _
     rw [sv_unch U₂₇ K (by decide), e₂, a1',
-      bytesAt_unch U₁ (by decide) (by simpa using sep_at' hs.d hs.fd (off := 0) (k := 64) (by omega))]
-  · rw [x₇, a2', bytesAt_unch m₂₁ (by decide) (sep_at' hs.peer hs.fp (off := 1) (k := 64) (by omega))]
-  · rw [y₇, a2', bytesAt_unch m₂₁ (by decide) (sep_at' hs.peer hs.fp (off := 65) (k := 64) (by omega))]
+      bytesAt_unch U₁ (by decide) (by simpa using sep_at' hs.d hs.fd (off := 0) (k := 64) (by omega_using []))]
+  · rw [x₇, a2', bytesAt_unch m₂₁ (by decide) (sep_at' hs.peer hs.fp (off := 1) (k := 64) (by omega_using []))]
+  · rw [y₇, a2', bytesAt_unch m₂₁ (by decide) (sep_at' hs.peer hs.fp (off := 65) (k := 64) (by omega_using []))]
   · rw [f₇, a2']
     have h1 := bytesAt_unch m₂₁ (q := s.gpr .a2) (n := 1) (by decide)
-      (by simpa using sep_at' hs.peer hs.fp (off := 0) (k := 1) (by omega))
+      (by simpa using sep_at' hs.peer hs.fp (off := 0) (k := 1) (by omega_using []))
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
     simp only [BitVec.add_zero] at h1
     rw [h1]
@@ -297,7 +297,7 @@ theorem fin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s2
       rw [q₃, BitVec.add_zero]
       exact hsep i (by simpa [VG.Proof.Weierstrass.length_toBytes] using hi)
   have wd : ∀ d, d + 8 ≤ 2048 → d + 8 ≤ FL ∨ FL + 8 ≤ d → word s₄.mem base d = word s.mem base d := fun d hd h => by
-    rw [U₄.word (by simp; omega) (by omega), u₃.mem, O₂.word h (by omega)]
+    rw [U₄.word (by simp; omega_using [hd]) (by omega_using [hd]), u₃.mem, O₂.word h (by omega_using [hd])]
     show word (s₁.write _ _).mem _ _ = _
     simp only [State.write]; rw [m₁]
   -- The return value and the restores.
@@ -351,7 +351,7 @@ theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
       bytesAt m (p + BitVec.ofNat 64 (1 + L)) L) := by
   have h1 : bytesAt m p 1 = [m p] := by
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, BitVec.add_zero]
-  rw [show 1 + 2 * L = 1 + (L + L) by omega, VG.Proof.Weierstrass.bytesAt_add,
+  rw [show 1 + 2 * L = 1 + (L + L) by omega_using [], VG.Proof.Weierstrass.bytesAt_add,
     VG.Proof.Weierstrass.bytesAt_add, h1, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   rfl
 
@@ -447,10 +447,10 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
     rw [sv_unch U₁₄ K (by decide)]; exact Sk
   refine WP.mono (fin_ok hw₅ h2 (fun i hi => by
       rw [wr₅, hs.wr]
-      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 64) (by omega)
-        (by omega)⟩)
+      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 64) (by omega_using [hi])
+        (by omega_using [hi])⟩)
     (fun i hi => by
-      have := out_of_disj (hb ▸ hs.out) hs.fo (off := 0) (i := i) (by omega); rwa [Nat.zero_add] at this)
+      have := out_of_disj (hb ▸ hs.out) hs.fo (off := 0) (i := i) (by omega_using [hi]); rwa [Nat.zero_add] at this)
     (c := (((decide (s.mem (s.gpr .a2) = 4) && decide (CC.Valid x y)) &&
       decide (ofBytes (bytesAt s.mem (s.gpr .a1) 64) < W.n)) && !decide (ofBytes (bytesAt s.mem (s.gpr .a1) 64) = 0)))
     (by rw [f₅, fl₄, f₂, Sflag, mask_eq, k₄, maskOf_and, maskOf_and, maskOf_and]))
@@ -504,8 +504,8 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
       rw [ne_eq, toM_eq_zero_iff unit rzlt, valid_iff]
       unfold VG.Proof.Ecdh.Valid
       constructor
-      · rintro ⟨⟨⟨⟨h4, hv⟩, hn⟩, hz⟩, hr⟩; exact ⟨⟨by omega, hn⟩, ⟨h4, hv⟩, hr⟩
-      · rintro ⟨⟨h1, hn⟩, ⟨h4, hv⟩, hr⟩; exact ⟨⟨⟨⟨h4, hv⟩, hn⟩, by omega⟩, hr⟩
+      · rintro ⟨⟨⟨⟨h4, hv⟩, hn⟩, hz⟩, hr⟩; exact ⟨⟨by omega_using [hd], hn⟩, ⟨h4, hv⟩, hr⟩
+      · rintro ⟨⟨h1, hn⟩, ⟨h4, hv⟩, hr⟩; exact ⟨⟨⟨⟨h4, hv⟩, hn⟩, by omega_using [hd]⟩, hr⟩
     by_cases hc : (1 ≤ D ∧ D < W.n) ∧ VG.Proof.Ecdh.Valid W b0 x y ∧ toM W.p (2 ^ 512) (sv base s₅ RZ) ≠ 0
     · have hb := key.mpr hc
       rw [ite_eq_left hc]
@@ -524,7 +524,7 @@ theorem ecdh_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : EPre s) :
     have hb : ((((decide (b0 = 4) && decide (CC.Valid x y)) && decide (D < W.n)) && !decide (D = 0)) &&
         !decide (sv base s₅ RZ = 0)) = false := by
       by_cases hn : D < W.n
-      · have : D = 0 := by omega
+      · have : D = 0 := by omega_using [hd, hn]
         simp [this]
       · simp [hn]
     rw [hb] at a0' bytes'

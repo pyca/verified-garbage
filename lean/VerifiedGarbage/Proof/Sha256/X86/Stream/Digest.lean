@@ -33,7 +33,7 @@ theorem shape224 : ShapeD (P := params224) md 28 where
   le := by decide
   len := shape.len
   out s hbx hax hin hout hd := by
-    refine (out32_ok (n := 7) true (by decide) (by have : params224.N = 32 := rfl; omega) hax (inRegions_prefix hin (by decide)) hout
+    refine (out32_ok (n := 7) true (by decide) (by have : params224.N = 32 := rfl; omega_using [hbx, this]) hax (inRegions_prefix hin (by decide)) hout
       (hd.sub_left (Region.sub_prefix (by decide)))).mono fun s' ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, ?_⟩
     rw [m, digest_take _ _ (n := 7) (by decide)]
 

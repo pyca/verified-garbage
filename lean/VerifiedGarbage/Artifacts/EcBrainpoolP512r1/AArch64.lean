@@ -23,8 +23,11 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.BrainpoolP512r1.AArch64.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
-/-! # brainpoolP512r1 on AArch64, generic over its proven group law and inversions -/
+/-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
 @[expose] public section
 
@@ -35,6 +38,12 @@ open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.publicKeyBrainpoolP512r1
-    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv }]
+    verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified hasLaw.law hasLaw.inv },
+  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.code
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1.verified hasLaw.inv },
+  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP512r1Decompress.verified hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcBrainpoolP512r1.AArch64

@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.RsaPss.EncodingContract
 `encK T Hs Gs` is the contract of `encode` (an internal function of
 signing): EMSA-PSS-ENCODE with the hash function `Hs` and MGF1's `Gs`, those
 of the tables `hash` and `mgf1` it takes (`TabsAt`: the table of `MdHash` of
-`T.H` and the table of `Hash` of `T.G`), with the stack the frame and the
+`T.H` and the table of `MdHash` of `T.G`), with the stack the frame and the
 calls use, `encStack`.
 -/
 
@@ -39,8 +39,8 @@ def encK : Contract isa where
     let dg : Region := ⟨s.gpr .rdx, T.H.D⟩
     let sa : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
     let scr : Region := ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
-    let tH : Region := ⟨stackArg s 2, 40⟩
-    let tG : Region := ⟨stackArg s 3, 40⟩
+    let tH : Region := ⟨stackArg s 2, 56⟩
+    let tG : Region := ⟨stackArg s 3, 56⟩
     let args : Region := ⟨stackArgAddr s 0, 32⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 encStack, encStack⟩
@@ -57,7 +57,7 @@ def encK : Contract isa where
       (s.gpr .rsi).toNat = Spec.RsaPss.emLength (s.gpr .r9).toNat ∧
       Proof.RsaPss.encodingScratchWords ≤ (stackArg s 1).toNat ∧
       em.Disjoint tH ∧ em.Disjoint tG ∧ scr.Disjoint tH ∧ scr.Disjoint tG ∧ ret.Disjoint tH ∧ ret.Disjoint tG ∧
-      stk.Disjoint tH ∧ stk.Disjoint tG ∧ (stackArg s 2).toNat + 40 ≤ 2 ^ 64 ∧ (stackArg s 3).toNat + 40 ≤ 2 ^ 64 ∧
+      stk.Disjoint tH ∧ stk.Disjoint tG ∧ (stackArg s 2).toNat + 56 ≤ 2 ^ 64 ∧ (stackArg s 3).toNat + 56 ≤ 2 ^ 64 ∧
       TabsAt T.H T.dn T.f T.G T.g (stackArg s 2) (stackArg s 3) s
   post s s' :=
     match Spec.RsaPss.encode Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) T.H.D)

@@ -20,7 +20,7 @@ open VG.Proof.Ffdh.AArch64.ParameterCandidate
 theorem primeConstants_exponent (M : Mont) {p : PrimeParams} {s : State} (h : PrimeR2Ready p s) :
     WP isa (seqs (Impl.Dsa.AArch64.Generation.primeConstants M.mm)) s (ExponentBefore p) := by
   obtain ⟨hw, hi, hn, hone, hr2⟩ := h
-  refine WP.mono (primeConstants_ok M hw hn p.odd (by have := p.n3; omega) hi hone hr2)
+  refine WP.mono (primeConstants_ok M hw hn p.odd (by have := p.n3; omega_using [this]) hi hone hr2)
     fun t ⟨ht, _, _, _, _, hf, _⟩ => ?_
   obtain ⟨_, _, hN⟩ := mp_fix hf hw.scr.nowrap hw.hZ
   exact ⟨ht, hN.trans hn⟩

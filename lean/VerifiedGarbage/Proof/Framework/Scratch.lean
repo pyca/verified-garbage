@@ -81,9 +81,9 @@ theorem Curry.apply_withScratch {α : Type} (pb : Nat) (nm : String) (e : Elem) 
   | p :: ps, f, vs, x, h => by
     rw [List.flatMap_cons, List.length_append] at h
     have hl : (vs.take (p.2.words pb).length).length = (p.2.words pb).length := by
-      rw [List.length_take]; omega
+      rw [List.length_take]; omega_using [h]
     have hr : (vs.drop (p.2.words pb).length).length = (ps.flatMap fun p => p.2.words pb).length := by
-      rw [List.length_drop]; omega
+      rw [List.length_drop]; omega_using [h]
     rw [← List.take_append_drop (p.2.words pb).length vs, List.append_assoc]
     show Curry.apply (p.2.words pb ++ _) (Curry.app _ (p.2.words pb) f) _ =
       Curry.apply (p.2.words pb ++ _) f _
@@ -127,27 +127,27 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    rw [Sig.bufs_append_array pb nm e n x ps vs (by omega)]
+    rw [Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])]
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    rw [Sig.bufs_append_array pb nm e n x ps vs (by omega)]
+    rw [Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])]
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.bufs_append_array pb nm e n x ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -170,29 +170,29 @@ theorem Sig.alignedBufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Na
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .array _ e' _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])]
     split <;> rfl
   | (_, .slice _ e' _) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])]
     split <;> rfl
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.alignedBufs]
-    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega)]
+    rw [Sig.alignedBufs_append_array pb nm e n x ps vs (by omega_using [h])]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -213,27 +213,27 @@ theorem Sig.lists_append_array (pb : Nat) (m : Mem) (nm : String) (e : Elem) (n 
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    exact Sig.lists_append_array pb m nm e n x ps vs (by omega)
+    exact Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    exact Sig.lists_append_array pb m nm e n x ps vs (by omega)
+    exact Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    exact Sig.lists_append_array pb m nm e n x ps vs (by omega)
+    exact Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    rw [Sig.lists_append_array pb m nm e n x ps vs (by omega)]
+    rw [Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])]
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.lists]
-    rw [Sig.lists_append_array pb m nm e n x ps vs (by omega)]
+    rw [Sig.lists_append_array pb m nm e n x ps vs (by omega_using [h])]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -254,27 +254,27 @@ theorem Sig.descs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x 
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    rw [Sig.descs_append_array pb nm e n x ps vs (by omega)]
+    rw [Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])]
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.descs]
-    exact Sig.descs_append_array pb nm e n x ps vs (by omega)
+    exact Sig.descs_append_array pb nm e n x ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -295,7 +295,7 @@ theorem Region.contains_ofNat (p : Addr) {d k : Nat} (h : d < k) :
   simp only [Region.Contains]
   rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
   have := Nat.mod_le d (2 ^ 64)
-  omega
+  omega_using [h]
 
 /-- The slices the descriptors list depend only on the descriptors. -/
 theorem Sig.listed_congr (pb : Nat) {m₁ m₂ : Mem} (e : Elem) (p : Addr) (n : Nat)
@@ -313,9 +313,9 @@ theorem Sig.listed_congr (pb : Nat) {m₁ m₂ : Mem} (e : Elem) (p : Addr) (n :
     refine Mem.read_congr fun j hj => ?_
     rw [Offset.add_add]
     refine h _ (Region.contains_ofNat p ?_)
-    exact Nat.lt_of_lt_of_le (by omega) (Nat.le_trans hd hw)
-  have e₁ := hrd (i * (2 * (pb / 8))) (by omega)
-  have e₂ := hrd (i * (2 * (pb / 8)) + pb / 8) (by omega)
+    exact Nat.lt_of_lt_of_le (by omega_using [hj]) (Nat.le_trans hd hw)
+  have e₁ := hrd (i * (2 * (pb / 8))) (by omega_using [hs])
+  have e₂ := hrd (i * (2 * (pb / 8)) + pb / 8) (by omega_using [hs])
   rw [← Offset.add_add] at e₂
   simp only [e₁, e₂]
 

@@ -91,8 +91,8 @@ theorem validateEntry_of {s : State} (hsp : s.sp.toNat + 8 ≤ 2 ^ 32)
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
   have hs16 : 16384 ≤ (arg s 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
-  have h84 : 80 + 4 ≤ (arg s 1).toNat * 8 := by omega
-  have h92 : 88 + 4 ≤ (arg s 1).toNat * 8 := by omega
+  have h84 : 80 + 4 ≤ (arg s 1).toNat * 8 := by omega_using [hs16]
+  have h92 : 88 + 4 ≤ (arg s 1).toNat * 8 := by omega_using [hs16]
   show WP isa (.block (Generate.checkEntry ++ [.ldr .r4 .r12 80, .str .r4 .r12 88])) s _
   refine VG.Proof.X25519.Arm.WP.append (l := Generate.checkEntry) (checkEntry_of hsp hrd hwr hsb hv hsw)
     fun u I => ?_

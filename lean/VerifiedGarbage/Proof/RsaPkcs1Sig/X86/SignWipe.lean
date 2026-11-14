@@ -24,14 +24,14 @@ theorem wipe_ok {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
   refine WP.seq (WP.mono (wipeArgs_ok h) ?_)
   rintro u ⟨hu, M, K, status, zero, src, cnt⟩
   refine WP.seq (WP.mono (VG.Proof.Dsa.X86.failureLoop_ok
-    (by have := h.valid.minLength; omega) (by have := h.valid.maxLength; omega)
+    (by have := h.valid.minLength; omega_using [this]) (by have := h.valid.maxLength; omega_using [this])
     h.valid.temporaryFit src cnt zero ?_) ?_)
   · intro i hi
-    exact CallLay.inRegions_sub (off := i) hu.temporaryWrite (by omega) (by have := h.valid.maxLength; omega)
+    exact CallLay.inRegions_sub (off := i) hu.temporaryWrite (by omega_using [hi]) (by have := h.valid.maxLength; omega_using [this])
   · rintro v ⟨V, Z, O, T⟩
     have F : Frame [g.innerRegion] s.mem v.mem := by
       rw [M] at O
-      have raw := outside_frame O (by have := h.valid.maxLength; omega)
+      have raw := outside_frame O (by have := h.valid.maxLength; omega_using [this])
       apply raw.sub
       intro r hr; obtain rfl := List.mem_singleton.mp hr
       refine ⟨_, List.mem_singleton_self _, ?_⟩

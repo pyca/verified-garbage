@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.ICall
 # RSAES-OAEP (RFC 8017 §7.1) on ARMv7
 
 `encryptPrecomputed` and `decrypt`, with the label's hash function `H` and
-MGF1's those of two tables of the interface `Hash` (`Spec/HashTable.lean`),
+MGF1's those of two tables of the interface `MdHash` (`Spec/MdHashTable.lean`),
 the last two arguments, each a streaming hash function's `init`, `update`
 and `finalize` (`Impl.Pbkdf2.Stream.Arm.Hash`), and, for the code that
 depends on it, branching on `H`'s digest length (`byLen`, among `lens`),
@@ -36,7 +36,7 @@ frame.
 that is our argument `j`, the addresses and lengths in the slots `sSrc`,
 `sSrcLen`, `sDst`, `sDstLen`, as on AArch64
 (`Impl/RsaOaep/AArch64/Mgf1/Table.lean`). The table's address is copied to
-the slot `sTab`, and its digest length `hLen` (its word 4) to `sHl`; the
+the slot `sTab`, and its digest length `hLen` (its word 6) to `sHl`; the
 hash function's `init`, `update` and `finalize` are the table's functions
 0, 1 and 2, which it calls indirectly (`tcall`: their address, the table's
 word `j`, into `r4`, then `blx r4`, in the frame of their stack arguments,
@@ -222,8 +222,8 @@ def mgfRound : Prog isa :=
     .block xorSet, countLoop Impl.RsaPss.Arm.xorBody, .block mgfNext]
 
 /-- The table that is our argument `j` to `sTab`, and its digest length (its
-word 4) to `sHl`. -/
-def tabArgs (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab, .ldr .r0 .r0 16, st .r0 sHl]
+word 6) to `sHl`. -/
+def tabArgs (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab, .ldr .r0 .r0 24, st .r0 sHl]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of
 the table that is our argument `j`. -/
@@ -272,9 +272,9 @@ end Common
 /-- The table that is our argument `j` to `sTab`. -/
 def tabSlot (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab]
 
-/-- The digest length of the table that is our argument `j` (its word 4),
+/-- The digest length of the table that is our argument `j` (its word 6),
 to `r1` (which keeps `r0`). -/
-def lenLoad (j : Nat) : List Instr := [ld .r1 (arg j), .ldr .r1 .r1 16]
+def lenLoad (j : Nat) : List Instr := [ld .r1 (arg j), .ldr .r1 .r1 24]
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,
@@ -493,6 +493,26 @@ def decBody : Prog isa :=
 with the label's hash function the table that is its argument 23 (`hash`)
 and MGF1's the table that is its argument 24 (`mgf1`). -/
 def decrypt : Prog isa := wrap frameBytes (decBody f privN privC)
+
+/-- The arguments of `vg_rsa_private_checked_precomputed`: those of
+`vg_rsa_private_checked`, then `pre` and `pre_len` (our arguments 25 and 26)
+as its stack arguments 16 and 17, the slots `sS` and `sSrc`, which nothing
+reads before `fixScr`. -/
+def privArgsP : List Instr := privArgs ++ [sp0, ld .r4 (arg 25), st .r4 64, ld .r4 (arg 26), st .r4 68]
+
+/-- `scratch` back to its slot after the call (through `r4`, keeping the
+result in `r0`). -/
+def fixScr : List Instr := [sp0, ld .r4 (arg 21), st .r4 sS]
+
+/-- `decBody`, calling `vg_rsa_private_checked_precomputed` with `pre`. -/
+def decBodyP : Prog isa :=
+  seqs [.block decStart, .block privArgsP, .call privN privC, .block fixScr, .block (lenLoad 23),
+    byLen (fun d => decTail (ofLen d) f) lens]
+
+/-- `vg_rsa_oaep_decrypt_precomputed`: `decrypt`, with the key's precomputed
+values `pre` and `pre_len` (after `mgf1`), which it passes to
+`vg_rsa_private_checked_precomputed`. -/
+def decryptP : Prog isa := wrap frameBytes (decBodyP f privN privC)
 
 end Dec
 

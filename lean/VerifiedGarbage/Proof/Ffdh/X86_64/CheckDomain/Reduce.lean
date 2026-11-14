@@ -25,24 +25,24 @@ theorem reduce_order (M : Mont) {p : CdP} {mi : BitVec 64} {s : State}
     WP isa (seqs (redc M.mm aX)) s (StepPost p s (Residue p)) := by
   have hk := h.base.k1
   have hk' := h.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have h2 : 2 ≤ p.wq := Nat.le_max_left _ _
-  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega
-  refine WP.mono (redc_ok M h.ctx h.xv h2 hwq (by omega) hq (show aX < 8 by decide))
+  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega_using [hk, ew]
+  refine WP.mono (redc_ok M h.ctx h.xv h2 hwq (by omega_using [hk', ew]) hq (show aX < 8 by decide))
     fun t ⟨hc, hv, hlt, he, hf, k⟩ => ?_
   rw [h.x] at he
   have hr := fun r he => (redcRanges_ok p.wq r he).2
-  have hL : inner p.w + slot p.wq 8 ≤ p.Z := by have := h.ctx.hi; omega
+  have hL : inner p.w + slot p.wq 8 ≤ p.Z := by have := h.ctx.hi; omega_using [this]
   obtain ⟨hb, hi, hh⟩ := h.base.child h.ctx hL hf hr k
-  have h256 : 256 ≤ slot p.wq 8 := by unfold slot hdrBytes; omega
+  have h256 : 256 ≤ slot p.wq 8 := by unfold slot hdrBytes; omega_using []
   have hn := h.ctx.scr.nowrap
   have hX := slot_le (w := p.w) (show aX < 8 by decide)
   have hInner : slot p.w 8 ≤ inner p.w := Nat.le_refl _
   have hx : wv t.mem p.B (slot p.w aX) p.w = p.P - 1 :=
-    (hf.wv_below hr (by omega) (by omega) (by omega)).trans h.x
+    (hf.wv_below hr (by omega_using [hL, hn]) (by omega_using [hL, h256, hn]) (by omega_using [hX, hInner])).trans h.x
   exact ⟨⟨mi, ⟨hb, hc, hv, (hh _ (by decide)).trans h.ep, (hh _ (by decide)).trans h.el,
     (hh _ (by decide)).trans h.g, (hh _ (by decide)).trans h.q, hx⟩, redc_zero ho hlt he⟩,
-    hi, fun i hi => hh i (by omega), k.mono (by decide)⟩
+    hi, fun i hi => hh i (by omega_using [hi]), k.mono (by decide)⟩
 
 theorem QWork.keep {p : CdP} {mi : BitVec 64} {s t : State} {rs : List Reg}
     (h : QWork p mi s) (hm : t.mem = s.mem) (k : Keep rs s t) (hd : t.gpr .rdi = s.gpr .rdi) : QWork p mi t :=
@@ -58,15 +58,15 @@ theorem residue_test {p : CdP} {s : State} (h : Residue p s) :
   obtain ⟨mi, hw, hz⟩ := h
   have hk := hw.base.k1
   have hk' := hw.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have h2 : 2 ≤ p.wq := Nat.le_max_left _ _
-  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega
+  have hwq : p.wq ≤ p.w := by unfold CdP.wq CdP.nq wsWords; omega_using [hk, ew]
   refine wp_seqs_append (a := isZero aXc) (by simp [isZero, ltArr, cmpArr]) (by simp)
-    (WP.mono (ltArr_ok hw.ctx.good (Nat.le_refl _) (by omega) (by omega)
+    (WP.mono (ltArr_ok hw.ctx.good (Nat.le_refl _) (by omega_using [h2]) (by omega_using [hk', ew, hwq])
       (show aXc < 8 by decide) (show aOne < 8 by decide)) fun u ⟨ha, hm, k⟩ => ?_)
   rw [hw.xv.one] at ha
   have he : (wv s.mem (off p.B (inner p.w)) (slot p.wq aXc) p.wq < 1) = ((p.P - 1) % p.Q = 0) :=
-    propext (by omega)
+    propext (by omega_using [hz])
   have ha' : u.gpr .rax = bit ((p.P - 1) % p.Q = 0) := by simpa only [bit, he] using ha
   simp only [seqs]
   refine WP.mono (test_bit_ok ha') fun t ⟨hz', hm', kk⟩ => ?_

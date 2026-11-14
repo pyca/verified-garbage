@@ -25,15 +25,15 @@ open VG VG.X86_64
 
 theorem bswap64_bit (a : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (bswap64 a).getLsbD (56 - 8 * i + j) = a.getLsbD (8 * i + j) :=
-  (VG.byteRev64_getLsbD a (by omega)).trans (congrArg a.getLsbD (by omega))
+  (VG.byteRev64_getLsbD a (by omega_using [hj])).trans (congrArg a.getLsbD (by omega_using [hi, hj]))
 
 /-- `bswap` of such a word is the half. -/
 theorem bswap_of_wordOf {w h : BitVec 64} (hw : WordOf w h) : bswap64 w = h := by
   apply BitVec.eq_of_getLsbD_eq
   intro t ht
-  have h1 := bswap64_bit w (i := (63 - t) / 8) (j := t % 8) (by omega) (by omega)
-  rw [show 56 - 8 * ((63 - t) / 8) + t % 8 = t by omega] at h1
-  rw [h1, hw _ (by omega) _ (by omega), Camellia.getLsbD_byteOf _ (by omega) (by omega)]
-  congr 1; omega
+  have h1 := bswap64_bit w (i := (63 - t) / 8) (j := t % 8) (by omega_using []) (by omega_using [])
+  rw [show 56 - 8 * ((63 - t) / 8) + t % 8 = t by omega_using [ht]] at h1
+  rw [h1, hw _ (by omega_using []) _ (by omega_using []), Camellia.getLsbD_byteOf _ (by omega_using []) (by omega_using [])]
+  congr 1; omega_using [ht]
 
 end VG.Proof.Camellia.X86_64

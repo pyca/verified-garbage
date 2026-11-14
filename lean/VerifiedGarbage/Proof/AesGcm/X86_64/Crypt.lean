@@ -43,13 +43,13 @@ theorem DataW.of_eq {Ctx St W SP : Addr} {s s' : State} {D : Addr} {n : Nat} (h 
 
 theorem DataW.drop {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
     {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) :=
-  ⟨h.ok.drop hk, covers_off h.wr (by omega) h.ok.lt, h.ctx.sub_right (Offset.sub_base D (by omega))⟩
+  ⟨h.ok.drop hk, covers_off h.wr (by omega_using [hk]) h.ok.lt, h.ctx.sub_right (Offset.sub_base D (by omega_using [hk]))⟩
 
 theorem DataW.take {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
     {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s D k :=
   ⟨h.ok.take hk, fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.wr a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩,
+    exact h.wr a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩,
    h.ctx.sub_right (Region.sub_prefix hk)⟩
 
 /-- The cipher of the key schedule in the context, for `R` rounds. -/
@@ -142,7 +142,7 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') (hd : �
     {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : ciphOf m' Ctx R = ciphOf m Ctx R := by
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   simp only [ciphOf]
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 omit L in
 theorem rounds_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')

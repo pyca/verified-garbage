@@ -29,14 +29,14 @@ theorem imm64_val (v : BitVec 64) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_signExtend,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
   by_cases h1 : i < 16
-  · simp [h1, show i < 32 by omega]
+  · simp [h1, show i < 32 by omega_using [h1]]
   by_cases h2 : i < 32
-  · simp [h1, h2, show i - 16 < 16 by omega, show 16 + (i - 16) = i by omega, show i - 16 < 64 by omega]
+  · simp [h1, h2, show i - 16 < 16 by omega_using [h2], show 16 + (i - 16) = i by omega_using [h1], show i - 16 < 64 by omega_using [hi]]
   by_cases h3 : i < 48
-  · simp [h1, h2, show i - 32 < 16 by omega, show 32 + (i - 32) = i by omega, show ¬ i - 16 < 16 by omega,
-      show i - 32 < 32 by omega, show i - 32 < 64 by omega]
-  · simp [h1, h2, show ¬ i - 32 < 16 by omega, show i - 32 < 64 by omega, show i - 32 - 16 < 16 by omega,
-      show 48 + (i - 32 - 16) = i by omega, show ¬ i - 16 < 16 by omega, show i - 32 < 32 by omega]
+  · simp [h1, h2, show i - 32 < 16 by omega_using [h3], show 32 + (i - 32) = i by omega_using [h2], show ¬ i - 16 < 16 by omega_using [h2],
+      show i - 32 < 32 by omega_using [hi], show i - 32 < 64 by omega_using [hi]]
+  · simp [h1, h2, show ¬ i - 32 < 16 by omega_using [h3], show i - 32 < 64 by omega_using [hi], show i - 32 - 16 < 16 by omega_using [hi],
+      show 48 + (i - 32 - 16) = i by omega_using [h3], show ¬ i - 16 < 16 by omega_using [h2], show i - 32 < 32 by omega_using [hi]]
 
 theorem gpr_write_self (s : State) (d : Reg) (v : BitVec 64) : (s.write d v).gpr d = v := (Upd.write s d v).gpr
 

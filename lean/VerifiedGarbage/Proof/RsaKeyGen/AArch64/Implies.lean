@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate for an RSA prime on AArch64: the shared contract implies `candContract`
@@ -52,7 +53,7 @@ theorem cand_implies : candContract.Implies (Proof.RsaKeyGen.candidateContract a
     refine ⟨?_, hsp, fun i hi => ?_, hl⟩
     · simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       exact ⟨r0, r1, r2, r3, r4, r5, r6, r7⟩
-    · rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+    · rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
       · exact a0
       · exact a1
       · exact a2

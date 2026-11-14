@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_keygen_avx512` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX512_FEATURES`); `vg_mldsa87_keygen_avx2` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa87_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 32 bytes.
@@ -65,6 +67,8 @@ pub unsafe fn vg_mldsa87_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: 
 ///
 /// It runs `vg_mldsa87_pk_tr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 2592 bytes.
@@ -85,6 +89,8 @@ pub unsafe fn vg_mldsa87_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_prepare_verifying_key_avx2` if the CPU supports its features (`VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES`); or else `vg_mldsa87_prepare_verifying_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -136,6 +142,8 @@ pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(_dit: verified_garbage_cpu::
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_prepare_signing_key_avx2` if the CPU supports its features (`VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES`); or else `vg_mldsa87_prepare_signing_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `sk` must be valid for reads of 4896 bytes.
@@ -186,6 +194,8 @@ pub unsafe fn vg_mldsa87_prepare_signing_key_auto(_dit: verified_garbage_cpu::Di
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_sign_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_AVX512_FEATURES`); `vg_mldsa87_sign_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_AVX2_FEATURES`); or else `vg_mldsa87_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -240,11 +250,75 @@ pub unsafe fn vg_mldsa87_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *con
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
+/// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_sign_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES`); `vg_mldsa87_sign_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_sign_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 28448 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `sk` must have been written by `vg_mldsa87_prepare_signing_key` from a private key written by `vg_mldsa87_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa87_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_PREPARED_AVX512_FEATURES)
+        {
+            return crate::mldsa87::vg_mldsa87_sign_prepared_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_SIGN_PREPARED_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_PREPARED_AVX2_FEATURES)
+        {
+            return crate::mldsa87::vg_mldsa87_sign_prepared_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_sign_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, mu, rnd, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
+}
+
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_sign_message_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES`); `vg_mldsa87_sign_message_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES`); or else `vg_mldsa87_sign_message`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -305,6 +379,8 @@ pub unsafe fn vg_mldsa87_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_sign_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa87_sign_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_sign_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -367,6 +443,8 @@ pub unsafe fn vg_mldsa87_sign_message_prepared_auto(_dit: verified_garbage_cpu::
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_verify_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_AVX512_FEATURES`); `vg_mldsa87_verify_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_AVX2_FEATURES`); or else `vg_mldsa87_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 2592 bytes.
@@ -417,11 +495,72 @@ pub unsafe fn vg_mldsa87_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *c
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, mu, sig, scratch) }
 }
 
+/// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_verify_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES`); `vg_mldsa87_verify_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_verify_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 10784 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `pk` must have been written by `vg_mldsa87_prepare_verifying_key`, and not changed since.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mldsa87_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_PREPARED_AVX512_FEATURES)
+        {
+            return crate::mldsa87::vg_mldsa87_verify_prepared_avx512;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_VERIFY_PREPARED_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_PREPARED_AVX2_FEATURES)
+        {
+            return crate::mldsa87::vg_mldsa87_verify_prepared_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_verify_prepared
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, mu, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, mu, sig, scratch) }
+}
+
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_verify_message_cached_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES`); `vg_mldsa87_verify_message_cached_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES`); or else `vg_mldsa87_verify_message_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -481,6 +620,8 @@ pub unsafe fn vg_mldsa87_verify_message_cached_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa87_verify_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa87_verify_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_verify_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

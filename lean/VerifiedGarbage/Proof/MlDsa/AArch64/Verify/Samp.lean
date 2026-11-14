@@ -170,7 +170,7 @@ theorem copyRho_vpiece {p : Params} (hF : VFacts p) {S : Nat} :
     refine WP.mono (copyP_ok L hc) fun s' ⟨hP', k', hb⟩ => ?_
     refine ⟨h.1.1.keep hF hp hP' (by vzchk hF), h.2, ?_, fun _ h => absurd h (Nat.not_lt_zero _), true, ?_,
       fun _ _ h => absurd h (Nat.not_lt_zero _), fun h => absurd h (by decide)⟩
-    · rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide), hb, h.1.1.vc.pkSlice (by rw [hF.pk]; omega), List.drop_zero]
+    · rw [hP'.pa (show Reg.x28 ∈ keptRegs by decide), hb, h.1.1.vc.pkSlice (by rw [hF.pk]; omega_using []), List.drop_zero]
     · rw [k'.get .x24, h.1.2]; exact flag_congr (iff_of_true h.2 rfl)
   · have T := vc_two hF p₁ p₂ pub h₁.1.1.vc h₂.1.1.vc
     refine ⟨T.same.2, fun r hr => T.same.1 r ?_⟩
@@ -197,7 +197,7 @@ theorem vsetTwo_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay 
       PPostB S s s' [(sc o, 1), (sc (o + 1), 1)] ∧ Keep [.x9] s s' ∧
       bytesAt s'.mem (pa s (sc o)) 2 = [BitVec.ofNat 8 a, BitVec.ofNat 8 b] := by
   rw [WP.block_append_iff]
-  refine WP.mono (setB_ok L (p := sc o) (v := a) (by simp only; omega) h1 (show Reg.x28 ∈ keptRegs by decide))
+  refine WP.mono (setB_ok L (p := sc o) (v := a) (by simp only; omega_using [ho]) h1 (show Reg.x28 ∈ keptRegs by decide))
     fun s₁ ⟨hP₁, k₁, m₁⟩ => WP.mono (setB_ok (L.post hP₁) (p := sc (o + 1)) (v := b) ho h2
       (show Reg.x28 ∈ keptRegs by decide))
       fun s₂ ⟨hP₂, k₂, m₂⟩ => ⟨PPostB.app hP₁ hP₂ (sc_bases _ (by simp)), (k₁.trans k₂).mono (by simp), ?_⟩
@@ -220,9 +220,9 @@ theorem seed_vpiece : VPiece p S (VA p · e) (VA1 p e)
     (.block (setB (sc (oSA + 32)) (e % p.ℓ) ++ setB (sc (oSA + 33)) (e / p.ℓ))) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := hF.scr
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
-  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
+  have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega_using [hl])
   refine ⟨fun σ s hp h => ?_, taintRel [.x28] (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
-    (vc_two hF p₁ p₂ pub h₁.vz.vc h₂.vz.vc).x28) (setIJ_taint _ (by omega) _ (by omega))⟩
+    (vc_two hF p₁ p₂ pub h₁.vz.vc h₂.vz.vc).x28) (setIJ_taint _ (by omega_using [hl, hr]) _ (by omega_using [hk, hq]))⟩
   have L := h.vz.vc.lay hF hp
   refine WP.mono (vsetTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by vlayd) (by vlayd))
     fun s' ⟨hP', k', hb⟩ => ⟨h.keep hF hp hP' (by vachk hF) (k'.get .x24), ?_⟩
@@ -252,7 +252,7 @@ omit hP in
 theorem tail_vpiece : VPiece p S (VA2 p e) (VA p · (e + 1)) (.seq (.block and24) (mask (aP e))) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := hF.scr
   refine ⟨fun σ s hp h => ?_, taintRel [.x28] (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
-    (vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc).x28) (vtail_taint e (by omega))⟩
+    (vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc).x28) (vtail_taint e (by omega_using [he, hkl]))⟩
   have L := h.1.vz.vc.lay hF hp
   obtain ⟨hv, hred, hout⟩ := h
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
@@ -265,7 +265,7 @@ theorem tail_vpiece : VPiece p S (VA2 p e) (VA p · (e + 1)) (.seq (.block and24
     L.keepPolyAt hP' (by vlay)
   refine ⟨hvz, hv.nok, by rw [L.keepBytes hP' (by vlayd)]; exact hv.rho, fun e'' he'' => ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' e'' he'' => ?_,
     fun hq' => ?_⟩
-  · rcases (by omega : e'' < e ∨ e'' = e) with he'' | rfl
+  · rcases (by omega_using [he''] : e'' < e ∨ e'' = e) with he'' | rfl
     · exact L.keepRed hP' (by vlay) (hv.red e'' he'')
     · rw [e']
       by_cases h1 : (s.gpr .x0).setWidth 32 = 1
@@ -274,7 +274,7 @@ theorem tail_vpiece : VPiece p S (VA2 p e) (VA p · (e + 1)) (.seq (.block and24
   · rw [x', and_flag _ (Q := (s.gpr .x0).setWidth 32 = 1) (by rcases hr01 with h | h <;> rw [h] <;> decide)]
     exact flag_congr (by simp)
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq'
-    rcases (by omega : e'' < e ∨ e'' = e) with he'' | rfl
+    rcases (by omega_using [he''] : e'' < e ∨ e'' = e) with he'' | rfl
     · obtain ⟨b, hb⟩ := h1 hq'.1 e'' he''
       exact ⟨b, by rw [hb, hA e'' he'']⟩
     · rcases hout with ⟨_, b, hb⟩ | ⟨h0', _⟩
@@ -282,12 +282,12 @@ theorem tail_vpiece : VPiece p S (VA2 p e) (VA p · (e + 1)) (.seq (.block and24
       · rw [hq'.2] at h0'; exact absurd h0' (by decide)
   · cases hqq : q
     · obtain ⟨e'', he'', hn⟩ := h0 hqq
-      exact ⟨e'', by omega, hn⟩
+      exact ⟨e'', by omega_using [he''], hn⟩
     · rw [hqq] at hq'
       simp only [Bool.true_and, beq_eq_false_iff_ne, ne_eq] at hq'
       rcases hout with ⟨h1', _⟩ | ⟨_, hn⟩
       · exact absurd h1' hq'
-      · exact ⟨e, by omega, hn⟩
+      · exact ⟨e, by omega_using [], hn⟩
 
 theorem expA_vpiece : VPiece p S (VA p · e) (VA p · (e + 1)) (expA P p e) := by
   unfold expA sampled
@@ -327,7 +327,7 @@ theorem ball_chk : ballChk (vR p) (vW p) (.x27, 0) p.ctildeLen (cP p) (sc oSS) =
 omit hP in
 theorem ctOf_eq {σ s : State} (h : VC p σ s) : bytesAt s.mem (pa s (.x27, 0)) p.ctildeLen = ctOf p σ := by
   have := hF.sig
-  rw [h.slice (by omega), List.drop_zero]; rfl
+  rw [h.slice (by omega_using [this]), List.drop_zero]; rfl
 
 theorem ballCall_vpiece : VPiece p S (VA p · (p.k * p.ℓ)) (VB1 p)
     (ballAt P (sc oSS) (.x27, 0) p.ctildeLen p.τ (cP p)) := by
@@ -347,7 +347,7 @@ omit hP in
 theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (mask (cP p))) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := hF.scr
   refine ⟨fun σ s hp h => ?_, taintRel [.x28] (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
-    (vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc).x28) (vtail_taint _ (by omega))⟩
+    (vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc).x28) (vtail_taint _ (by omega_using [hkl, hl, hk]))⟩
   have L := h.1.vz.vc.lay hF hp
   obtain ⟨hv, hred, hout⟩ := h
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout

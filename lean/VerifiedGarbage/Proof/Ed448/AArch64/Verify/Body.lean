@@ -230,7 +230,7 @@ theorem args_apart (hL : L.Ok) : ∀ r ∈ L.env.outs ++ [FR L.E, CK L.E], (ARGS
 theorem arg_word (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) {j : Nat} (hj : j < 6) :
     t.mem.read (L.E + BitVec.ofNat 64 (256 + 8 * j)) 8 = L.arg j := by
   rw [← readW_eq_read, ← ha.1 j hj]
-  exact hc.frame.readW (r := ARGS L.E) (Offset.contains _ (e := 256) (k := 48) (by omega) (by omega)
+  exact hc.frame.readW (r := ARGS L.E) (Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using [hj])
     (by decide)) (args_apart hL) (by decide)
 
 theorem arg_src (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) {j : Nat} (hj : j < 6)
@@ -244,7 +244,7 @@ theorem in_bytes (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) {R : Region} (hR : R ∈
     Spec.Sha3.bytesAt t.mem R.base n = Spec.Sha3.bytesAt m₀ R.base n := by
   unfold Spec.Sha3.bytesAt
   refine List.map_congr_left fun i hi => hc.frame.bytes (R := R) ?_ hl (by
-    have := List.mem_range.mp hi; omega)
+    have := List.mem_range.mp hi; omega_using [hn, this])
   simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hR
   simp only [Lay.env, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl) <;> rcases hR with rfl | rfl | rfl | rfl | rfl
@@ -265,7 +265,7 @@ theorem entry_ok (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 :
   refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.hdr_ok (d := fHdr) (j := 2) (by decide) (by decide) hfa (by
     rw [ka.rd, ka.wr, ka.sp, hc.rd, hc.wr, hc.sp]
     exact ⟨ARGS L.E, List.mem_append_left _ (by simp [Lay.env]),
-      Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide)⟩)) fun u ⟨ku, um⟩ su => ?_
+      Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using []) (by decide)⟩)) fun u ⟨ku, um⟩ su => ?_
   rw [RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x15), h6, hc.sp] at am
   rw [ka.sp, hc.sp] at um
   have hread : a.mem.read (L.E + BitVec.ofNat 64 (256 + 8 * 2)) 8 = L.ctxLen := by

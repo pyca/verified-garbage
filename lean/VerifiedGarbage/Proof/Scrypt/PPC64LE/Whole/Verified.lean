@@ -195,18 +195,18 @@ theorem body_ct (n : Nat) :
       RomixArgs L (blkAt L (L.pp - n)) t) (.call "vg_scrypt_romix" Impl.Scrypt.PPC64LE.roMix)
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) :=
     two_call RoMix.roMix_correct RoMix.roMix_ct (fun _ => []) (fun L => romixWr L (L.pp - n))
-      (fun _ _ _ _ _ hL hc ⟨h0, hn, _, ha⟩ => romix_pre hL hc (by omega) ha)
+      (fun _ _ _ _ _ hL hc ⟨h0, hn, _, ha⟩ => romix_pre hL hc (by omega_using [h0, hn]) ha)
       (fun _ _ _ _ _ _ _ _ _ _ hk c₁ c₂ ⟨h0, hn, b₁, a₁⟩ ⟨_, _, b₂, a₂⟩ =>
-        romix_pub_two hk c₁ c₂ (by omega) b₁ b₂ a₁ a₂)
-      (fun _ _ _ hL ⟨h0, hn, _⟩ => romix_sub hL (by omega))
-      (fun _ _ _ hL ⟨h0, hn, _⟩ => romix_wsub hL (by omega))
+        romix_pub_two hk c₁ c₂ (by omega_using [h0, hn]) b₁ b₂ a₁ a₂)
+      (fun _ _ _ hL ⟨h0, hn, _⟩ => romix_sub hL (by omega_using [h0, hn]))
+      (fun _ _ _ hL ⟨h0, hn, _⟩ => romix_wsub hL (by omega_using [h0, hn]))
       (fun _ _ _ _ _ hL hc ⟨h0, hn, hb, ha⟩ =>
-        WP.mono (call_step hL (by omega) hc hb ha) fun _ ⟨hc', hm⟩ => ⟨hc', h0, hn, hm⟩)
+        WP.mono (call_step hL (by omega_using [h0, hn]) hc hb ha) fun _ ⟨hc', hm⟩ => ⟨hc', h0, hn, hm⟩)
   have c : RelCT isa (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) (.block nextBlock)
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n + 1) t ∧
         (t.gpr .r5 != 0) = decide (L.pp - n + 1 ≠ L.pp)) :=
     two_blk (by taint_decide) fun _ _ _ _ _ hL hc ⟨h0, hn, hm⟩ =>
-      WP.mono (next_step hL (by omega) hc hm) fun _ ⟨hc', hb, hz⟩ => ⟨hc', h0, hn, hb, hz⟩
+      WP.mono (next_step hL (by omega_using [h0, hn]) hc hm) fun _ ⟨hc', hb, hz⟩ => ⟨hc', h0, hn, hb, hz⟩
   exact a.seq (b.seq c)
 
 theorem loop_ct :
@@ -223,9 +223,9 @@ theorem loop_ct :
         exact ⟨e, hL, hk, c₁, c₂, show InvB e.L _ e.L.pp a from hl ▸ b₁,
           show InvB e.L _ e.L.pp b from hl ▸ b₂⟩
       · have hl : e.L.pp - n + 1 ≠ e.L.pp := by simpa using ht
-        have e₁ : e.L.pp - (n - 1) = e.L.pp - n + 1 := by omega
-        exact ⟨n - 1, by omega, e, hL, hk, c₁, c₂, ⟨by omega, by omega, e₁ ▸ b₁⟩,
-          ⟨by omega, by omega, e₁ ▸ b₂⟩⟩) n
+        have e₁ : e.L.pp - (n - 1) = e.L.pp - n + 1 := by omega_using [h0, hn]
+        exact ⟨n - 1, by omega_using [h0], e, hL, hk, c₁, c₂, ⟨by omega_using [h0, hn, hl], by omega_using [hn], e₁ ▸ b₁⟩,
+          ⟨by omega_using [h0, hn, hl], by omega_using [hn], e₁ ▸ b₂⟩⟩) n
   refine (RelCT.exists_ h).mono (fun a b ⟨e, hL, hk, c₁, c₂, b₁, b₂⟩ => ⟨e.L.pp, e, hL, hk, c₁, c₂,
     ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₁⟩,
     ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₂⟩⟩) fun _ _ h => h
@@ -330,7 +330,7 @@ theorem pbk_sdepth : sdepth pbkCode ≤ 1008 := by
   have h := Proof.Pbkdf2.Whole.PPC64LE.sdepth_main Proof.Pbkdf2.Whole.PPC64LE.Sha256.okF
   have hX : Proof.Pbkdf2.Whole.PPC64LE.Sha256.okF.X + 144 = 1008 := by decide
   simp only [pbkCode, Impl.Pbkdf2.Whole.PPC64LE.Fns.pbkdf2, sdepth, Instr.frameBytes, Nat.max_le] at h ⊢
-  omega
+  omega_using [h, hX]
 
 /-- `vg_scrypt` calling `vg_pbkdf2_hmac_sha256_scratch`. -/
 theorem scrypt_verified :

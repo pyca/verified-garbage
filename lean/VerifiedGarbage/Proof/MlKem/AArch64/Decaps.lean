@@ -52,8 +52,8 @@ theorem ekT_eq (s₀ : State) : ∀ j < P.k,
       ekT (KPke.dkEk P.params (dkD P s₀)) j := fun j hj => by
   have := mul_succ_le (a := 384) hj
   rw [ekT, KPke.dkEk, drop_take_slice _ (show 384 * j + 384 ≤ 384 * P.params.k + 32 by
-      show _ ≤ 384 * P.k + 32; omega), show 384 * P.params.k = 384 * P.k from rfl,
-    bytesAt_slice _ _ (show 384 * P.k + 384 * j + 384 ≤ P.dkLen by simp only [KemLay.dkLen]; omega)]
+      show _ ≤ 384 * P.k + 32; omega_using [hj]), show 384 * P.params.k = 384 * P.k from rfl,
+    bytesAt_slice _ _ (show 384 * P.k + 384 * j + 384 ≤ P.dkLen by simp only [KemLay.dkLen]; omega_using [hj])]
   rfl
 
 /-- `c'`. -/
@@ -77,8 +77,8 @@ theorem far_encW {s₀ : State} (hp : Pre P (deL P) s₀) {o l : Nat} (h1 : 840 
   have f : o + l ≤ SV P + 48 := by lom
   intro r hr
   rcases mem5 hr with rfl | rfl | rfl | rfl | rfl
-  · exact sdisj hp f (by lom) (.inr (by omega))
-  · exact sdisj hp f (by lom) (by simp only [RB] at h2 ⊢; omega)
+  · exact sdisj hp f (by lom) (.inr (by omega_using [h1]))
+  · exact sdisj hp f (by lom) (by simp only [RB] at h2 ⊢; omega_using [h2])
   · exact sdisj hp f (by lom) (.inl h3)
   · exact below_R hp hp.scb (hp.fs f)
   · exact sdisj hp f (by lom) (.inl (by lom))
@@ -151,8 +151,8 @@ theorem c_ok {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) {uA sB : St
       bytesAt s₂.mem (sA (deL P) s₀ o) l = bytesAt s₁.mem (sA (deL P) s₀ o) l := fun f h1 h2 => by
     refine bytesAt_frame k₂'.frame (fun r hr => ?_) (by lom)
     rcases mem4 hr with rfl | rfl | rfl | rfl
-    · exact sdisj hp f (by lom) (.inr (by simp only [KEM.ST]; omega))
-    · exact sdisj hp f (by lom) (.inr (by simp only [KEM.WK]; omega))
+    · exact sdisj hp f (by lom) (.inr (by simp only [KEM.ST]; omega_using [h1]))
+    · exact sdisj hp f (by lom) (.inr (by simp only [KEM.WK]; omega_using [h1]))
     · exact below_R hp hp.scb (hp.fs f)
     · exact sdisj hp f (by lom) h2
   have c₂ : bytesAt s₂.mem (sA (deL P) s₀ (CB P)) P.ctLen = cpr P s₀ sB.mem := by

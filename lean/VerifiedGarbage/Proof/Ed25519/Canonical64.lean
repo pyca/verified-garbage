@@ -49,8 +49,8 @@ theorem fold_top (a0 a1 a2 a3 a3' m : Word) (hm : m.toNat = 19 * (a3.toNat / 2 ^
   simp only [val4, hz, Bool.toNat_false, Nat.add_zero, Nat.mul_zero] at e
   have hv : val4 a0 a1 a2 a3 = v + P * (a3.toNat / 2 ^ 63) := by
     simp only [val4, P]
-    omega
-  exact ⟨by rw [hv, Nat.add_mul_mod_self_left], by omega⟩
+    omega_using [hm, hl, e]
+  exact ⟨by rw [hv, Nat.add_mul_mod_self_left], by omega_using [hm, hl, e]⟩
 
 theorem add19_top (a0 a1 a2 a3 : Word) (hx : val4 a0 a1 a2 a3 < 2 ^ 255 + 19) :
     let c0 := carryOut a0 19 false
@@ -75,14 +75,14 @@ theorem add19_top (a0 a1 a2 a3 : Word) (hx : val4 a0 a1 a2 a3 < 2 ^ 255 + 19) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have hl := and_low63 w3
   by_cases h : P ≤ a0.toNat + 2 ^ 64 * a1.toNat + 2 ^ 128 * a2.toNat + 2 ^ 192 * a3.toNat
-  · have h1' : w3.toNat / 2 ^ 63 = 1 := by simp only [P] at h; omega
+  · have h1' : w3.toNat / 2 ^ 63 = 1 := by simp only [P] at h; omega_using [hx, e, h]
     rw [BitVec.eq_of_toNat_eq (show (w3 >>> 63).toNat = (1 : Word).toNat by rw [ht, h1']; rfl),
       decide_eq_true h]
     refine ⟨by decide, fun _ => ?_⟩
     rw [hl]
     simp only [P] at h ⊢
-    omega
-  · have h0' : w3.toNat / 2 ^ 63 = 0 := by simp only [P] at h; omega
+    omega_using [hx, e, h]
+  · have h0' : w3.toNat / 2 ^ 63 = 0 := by simp only [P] at h; omega_using [e, h]
     rw [BitVec.eq_of_toNat_eq (show (w3 >>> 63).toNat = (0 : Word).toNat by rw [ht, h0']; rfl),
       decide_eq_false h]
     exact ⟨by decide, fun h' => absurd h' h⟩

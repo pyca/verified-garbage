@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Powers of a checked FFDH generator remain in its subgroup -/
 
@@ -41,7 +42,7 @@ theorem publicValid_power {a : Parameters} (h : parametersValid a = true) (x : N
   · exact And.left
   · intro hr
     refine ⟨hr, fun q hq => ?_⟩
-    have hp : 1 < a.p := by have := hg.1; omega
+    have hp : 1 < a.p := by have := hg.1; omega_using [hr]
     rw [power_subgroup (hg.2 q hq), Nat.mod_eq_of_lt hp]
 
 end VG.Proof.Ffdh

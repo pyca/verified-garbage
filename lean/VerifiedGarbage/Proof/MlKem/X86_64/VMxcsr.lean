@@ -26,7 +26,7 @@ abbrev mxR (sP : Addr) : Region := ⟨sP + BitVec.ofNat 64 768, 8⟩
 
 theorem mx_in {sP : Addr} {rs : List Region} (hw : pR sP ∈ rs) (d : Nat) (hd : 768 ≤ d ∧ d ≤ 772) :
     InRegions rs (sP + BitVec.ofNat 64 d) 4 :=
-  ⟨_, hw, Offset.contains_base sP (by omega) (by omega)⟩
+  ⟨_, hw, Offset.contains_base sP (by omega_using [hd]) (by omega_using [hd])⟩
 
 theorem mx_sub (sP : Addr) : Region.Sub (mxR sP) (pR sP) := Offset.sub_base sP (by decide)
 

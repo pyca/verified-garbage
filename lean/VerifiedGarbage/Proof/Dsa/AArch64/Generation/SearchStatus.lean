@@ -26,7 +26,7 @@ theorem searchStatus_ok {s : State} {B : Addr} {counter stride status : Nat}
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
+    omega_using [hv]) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
   have ho : Outside B 16 8 s.mem t.mem := by
     rw [hm]; exact writeW_outside _ _ _ (by decide)
   refine ⟨⟨h.scr.congr hk.wr, (hk.gpr _ (by decide)).trans h.x0, ?_, ?_⟩,
@@ -50,7 +50,7 @@ theorem searchStatusCmp_ok {s : State} {B : Addr} {counter stride status : Nat}
     · intro he
       have hn := congrArg BitVec.toNat he
       change status % 2 ^ 64 = 3 at hn
-      rwa [Nat.mod_eq_of_lt (by omega : status < 2 ^ 64)] at hn
+      rwa [Nat.mod_eq_of_lt (by omega_using [hv] : status < 2 ^ 64)] at hn
     · intro he; subst status; rfl) rfl rfl rfl) fun t ⟨⟨hz, hm⟩, hk⟩ => ⟨hz, hm, hk⟩
 
 end VG.Proof.Dsa.AArch64.Generation

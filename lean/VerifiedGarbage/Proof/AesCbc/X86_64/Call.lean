@@ -79,7 +79,7 @@ theorem callEntry_frame (s : State) : Frame [below (s.gpr .rsp) 8] s.mem s.callE
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hR])
 
 theorem one_toNat : (1 : BitVec 64).toNat = 1 := rfl
 
@@ -144,7 +144,7 @@ theorem blk_call {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (h.stkW.sub_right (Region.sub_prefix hRb)).symm)
-    (by omega)
+    (by omega_using [hRb])
   have eD := bytesAt_frame fE (p := D) (n := 16)
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.stkD.symm) (by decide)
   rw [← hm₂, bytesAt_of_statesAt hpost, eW, ← ofFn_bytesAt, eD, ofFn_bytesAt]

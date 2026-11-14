@@ -101,7 +101,7 @@ theorem privateEntry_ok {s0 : State} {B : Addr} (hs : Scr s0 B usedBytes) (h8 : 
     cases f <;> first | exact absurd rfl h1 | exact absurd rfl h2 |
       (simp only [checkFieldMem, keyPointerMem, word_fieldWrite, reduceCtorEq, reduceIte, privateFieldValues]; try rfl)
   · intro x hx
-    have hx' : ofs B x < 256 ∨ pWorkspace ≤ ofs B x := by omega
+    have hx' : ofs B x < 256 ∨ pWorkspace ≤ ofs B x := by omega_using [hx]
     rw [hmem5, hmem4, hmem3]
     simp only [checkFieldMem, keyPointerMem, field_write_frame _ B _ _ x hx']
     rw [hmem1]
@@ -119,14 +119,14 @@ namespace PrivateInput
 variable (p : PrivateInput)
 
 def components : PackedComponents p.pLen p.qLen :=
-  packedComponents p.pLen p.qLen p.key (by rw [p.keyLength]; omega)
+  packedComponents p.pLen p.qLen p.key (by rw [p.keyLength]; omega_using [])
 
-theorem xLength : p.components.x.length = p.qLen := component_length (by rw [p.keyLength]; omega)
+theorem xLength : p.components.x.length = p.qLen := component_length (by rw [p.keyLength]; omega_using [])
 
 theorem pPositive : 0 < p.components.p.length := by
-  rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 theorem qPositive : 0 < p.components.q.length := by
-  rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 abbrev accepted : Bool := shapeAccepted p.components.p p.components.q p.pPositive p.qPositive
 
@@ -175,15 +175,15 @@ theorem PrivatePre.sources {p : PrivateInput} {original s : State} (h : PrivateP
   have hsrc := h.keySource.congrK hm hk
   refine ⟨source_take hsrc, ?_, ?_, ?_, ?_⟩
   · rw [h.pLength]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add, Offset.add_add,
-      show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+      show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega_using []]
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add, Offset.add_add, Offset.add_add,
-      show p.pLen + (p.qLen + (p.pLen + p.pLen)) = 3 * p.pLen + p.qLen by omega]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+      show p.pLen + (p.qLen + (p.pLen + p.pLen)) = 3 * p.pLen + p.qLen by omega_using []]
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
 
 structure PrivateShapePost (p : PrivateInput) (original : State)
     (hp : original.gpr .x2 = BitVec.ofNat 64 p.pLen)
@@ -202,9 +202,9 @@ theorem privateShape_ok {p : PrivateInput} {s0 : State} (h : PrivatePre p s0) :
   have hinside : InScr p.base usedBytes s0.mem s1.mem := InScr.of_outside he.frame (by decide)
   obtain ⟨hps, hqs, _⟩ := h.sources hinside (he.keep.mono (by decide))
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.wr) he.base (by decide)
     (he.fields .p (by decide) (by decide)) (he.fields .q (by decide) (by decide))
     ((he.fields .pLen (by decide) (by decide)).trans (by rw [p.components.pLength]; exact h.pLength))

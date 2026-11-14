@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.VectorCrypto -- shake: keep (re-ex
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Shared vector AES values implement FIPS 197 -/
 
@@ -43,10 +44,10 @@ theorem vbyte_ofVBytes (f : Nat → BitVec 8) {i : Nat} (hi : i < 16) : vbyte (o
 
 theorem ext_vbyte {a b : BitVec 128} (h : ∀ i < 16, vbyte a i = vbyte b i) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  have := congrArg (BitVec.getLsbD · (j % 8)) (h (j / 8) (by omega))
-  simp only [vbyte, BitVec.getLsbD_extractLsb', decide_eq_true (Nat.mod_lt j (by omega : 8 > 0)),
+  have := congrArg (BitVec.getLsbD · (j % 8)) (h (j / 8) (by omega_using [hj]))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', decide_eq_true (Nat.mod_lt j (by omega_using [] : 8 > 0)),
     Bool.true_and] at this
-  rwa [show 8 * (j / 8) + j % 8 = j by omega] at this
+  rwa [show 8 * (j / 8) + j % 8 = j by omega_using []] at this
 
 theorem vbyte_readW (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
     vbyte (m.readW p 128) i = m (p + BitVec.ofNat 64 i) := by
@@ -128,7 +129,7 @@ theorem eor_st {v k : BitVec 128} {rk : List Byte} (hk : KeyIs k rk) :
 theorem aese_st {v k : BitVec 128} {rk : List Byte} (hk : KeyIs k rk) :
     st (aesMapBytes aesSbox (aesShiftRows (v ^^^ k))) = shiftRows (subBytes (addRoundKey (st v) rk)) := by
   apply st_ext; intro i hi
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
+  have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega_using []
   rw [getD_st _ hi, getD_shiftRows _ hi, getD_subBytes _ (hs _), getD_addRoundKey _ _ (hs _),
     getD_st _ (hs _), ← hk _ (hs _), vbyte_mapBytes _ _ hi, vbyte_shiftRows _ hi, vbyte_xor, sbox_eq]
 
@@ -137,14 +138,14 @@ theorem subShift_st (v : BitVec 128) :
     st (aesShiftRows (aesMapBytes aesSbox v)) = shiftRows (subBytes (st v)) := by
   apply st_ext
   intro i hi
-  have hs : i % 4 + 4*((i/4+i%4)%4) < 16 := by omega
+  have hs : i % 4 + 4*((i/4+i%4)%4) < 16 := by omega_using []
   rw [getD_st _ hi, getD_shiftRows _ hi, getD_subBytes _ hs, getD_st _ hs,
     vbyte_shiftRows _ hi, vbyte_mapBytes _ _ hs, sbox_eq]
 
 /-- `aesmc` is `MixColumns`. -/
 theorem aesmc_st (v : BitVec 128) : st (aesMixColumns v) = mixColumns (st v) := by
   apply st_ext; intro i hi
-  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
+  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega_using [hi]
   rw [getD_st _ hi, getD_mixColumns _ hi, vbyte_mixColumns _ hi]
   simp only [getD_st _ (hr _), mul_eq, mul_one']
 
@@ -187,7 +188,7 @@ theorem keyIs_readW (m : Mem) (p : Addr) {L j : Nat} (hj : 16 * j + 16 ≤ L) :
     KeyIs (m.readW (p + BitVec.ofNat 64 (16 * j)) 128) (roundKey (bytesAt m p L) j) := by
   intro i hi
   rw [vbyte_readW _ _ hi, BitVec.add_assoc, ← BitVec.ofNat_add]
-  simp [roundKey, bytesAt, List.getD, hi, show 16 * j + i < L by omega]
+  simp [roundKey, bytesAt, List.getD, hi, show 16 * j + i < L by omega_using [hj, hi]]
 
 
 open VG.Spec.Aes (invSubBytes invShiftRows invMixColumns invSbox invCipher)
@@ -228,7 +229,7 @@ theorem vbyte_invMixColumns (x : BitVec 128) {i : Nat} (h : i < 16) :
 /-- `aesimc` is `InvMixColumns`. -/
 theorem st_aesimc (k : BitVec 128) : st (aesInvMixColumns k) = invMixColumns (st k) := by
   apply st_ext; intro i hi
-  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
+  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega_using [hi]
   rw [getD_st _ hi, vbyte_invMixColumns _ hi, getD_invMixColumns _ hi]
   simp only [getD_st _ (hr _), mul_eq]
 
@@ -236,7 +237,7 @@ theorem st_aesimc (k : BitVec 128) : st (aesInvMixColumns k) = invMixColumns (st
 theorem st_invSub (v : BitVec 128) :
     st (aesMapBytes aesInvSbox (aesInvShiftRows v)) = invSubBytes (invShiftRows (st v)) := by
   apply st_ext; intro i hi
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + 4 - j % 4) % 4) < 16 := fun j => by omega
+  have hs : ∀ j, j % 4 + 4 * ((j / 4 + 4 - j % 4) % 4) < 16 := fun j => by omega_using []
   rw [getD_st _ hi, vbyte_mapBytes _ _ hi, vbyte_invShiftRows _ hi, getD_invSubBytes _ hi,
     getD_invShiftRows _ hi, getD_st _ (hs _), invSbox_eq]
 

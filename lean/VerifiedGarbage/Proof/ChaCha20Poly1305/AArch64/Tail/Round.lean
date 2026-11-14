@@ -72,11 +72,11 @@ theorem absorb_next {R a : Nat} {W : Addr} {n : Nat} (hn : 16 * n + 16 ≤ 512) 
       u.gpr .x20 = W + BitVec.ofNat 64 (16 * (n + 1)) ∧ Keeps Poly.regs s u := by
   have hb (d : Nat) (hd : d + 8 ≤ 16) :
       InRegions (s.rd ++ s.wr) (s.gpr .x20 + BitVec.ofNat 64 d) 8 := by
-    rw [hp, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hr.blk _ (by omega)
+    rw [hp, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hr.blk _ (by omega_using [hn, hd])
   refine (Poly.block_absorb s ha (hb 0 (by decide)) (hb 8 (by decide)) hr.k0 hr.k1).mono
     fun u ⟨hu, hx, hk⟩ => ⟨?_, ?_, hk⟩
   · have hl : (bytesAt s.mem W (16 * n)).length % 16 = 0 := by
-      rw [Poly1305.length_bytesAt]; omega
+      rw [Poly1305.length_bytesAt]; omega_using []
     rw [bytesAt_succ, Poly1305.absorbAll_append hl, ← hp]
     exact hu
   · rw [hx, hp, BitVec.add_assoc]
@@ -94,13 +94,13 @@ theorem absorbN_ok {R a : Nat} {W : Addr} (k : Nat) {n : Nat} (hn : 16 * n + 16 
   | zero => exact WP.block_nil ⟨ha, hp, fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ k ih =>
     rw [List.replicate_succ, List.flatten_cons]
-    refine WP.block_append ((absorb_next (by omega) ha hp hr).mono fun s₁ ⟨a₁, p₁, k₁⟩ => ?_)
+    refine WP.block_append ((absorb_next (by omega_using [hn]) ha hp hr).mono fun s₁ ⟨a₁, p₁, k₁⟩ => ?_)
     have hm₁ : s₁.mem = s.mem := k₁.2.1
     rw [← hm₁] at a₁
-    refine (ih (n := n + 1) (by omega) a₁ p₁
+    refine (ih (n := n + 1) (by omega_using [hn]) a₁ p₁
       (hr.of k₁.2.2.1 k₁.2.2.2 (k₁.gpr' (r := .x0)))).mono fun u ⟨a, p, k'⟩ => ?_
-    rw [hm₁, show n + 1 + k = n + (k + 1) by omega] at a
-    rw [show n + 1 + k = n + (k + 1) by omega] at p
+    rw [hm₁, show n + 1 + k = n + (k + 1) by omega_using []] at a
+    rw [show n + 1 + k = n + (k + 1) by omega_using []] at p
     exact ⟨a, p, (k₁.trans k').mono (by
       intro r h; simp only [List.mem_append] at h; rcases h with h | h <;> exact h)⟩
 
@@ -138,7 +138,7 @@ theorem iter_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ 
   apply WP.block_append
   rw [absorb3_eq]
   refine (VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors hv
-    (absorbN_ok 3 (n := 2 + 3 * i) (by omega) hbacc hbp hbr)).mono
+    (absorbN_ok 3 (n := 2 + 3 * i) (by omega_using [hi]) hbacc hbp hbr)).mono
     fun c ⟨⟨hca, hcp, hck⟩, hcv, hcsp, hcr, hcw⟩ => ?_
   apply WP.block_cons_iff.mpr
   refine ⟨c.write .x .x4 (c.gpr .x4 - BitVec.ofNat 64 1), ?_, WP.block_nil ?_⟩
@@ -155,13 +155,13 @@ theorem iter_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ 
   · intro r h4 hp
     rw [RegUpd.gpr_write_of_ne c .x _ h4, hck.gpr' (r := r) hp, hsb.gpr]
     exact h.keep r h4 hp
-  · rw [RegUpd.gpr_write_of_ne c .x _ (by decide), hcp, show 2 + 3 * i + 3 = 2 + 3 * (i + 1) by omega]
-  · have e : 16 * (2 + 3 * i + 3) = 16 * (2 + 3 * (i + 1)) := by omega
+  · rw [RegUpd.gpr_write_of_ne c .x _ (by decide), hcp, show 2 + 3 * i + 3 = 2 + 3 * (i + 1) by omega_using []]
+  · have e : 16 * (2 + 3 * i + 3) = 16 * (2 + 3 * (i + 1)) := by omega_using []
     rw [hsb.mem, h.mem, e] at hca
     exact hca.of (fun r hr' => RegUpd.gpr_write_of_ne c .x _ (by
       intro he; rw [he] at hr'; exact absurd hr' (by decide))) rfl
   · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hx4, hsb.gpr, h.cnt,
-      Offset.ofNat_sub_ofNat (by omega : 1 ≤ 10 - i)]
+      Offset.ofNat_sub_ofNat (by omega_using [hi] : 1 ≤ 10 - i)]
     simp only [Nat.sub_sub]
 
 /-- The loop: ten iterations. -/
@@ -181,10 +181,10 @@ theorem rounds_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {s�
     · have hn0 : BitVec.ofNat 64 (10 - (i + 1)) ≠ 0 := by
         intro hz
         have hz' := congrArg BitVec.toNat hz
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 10 - (i + 1) < 2 ^ 64)] at hz'
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 10 - (i + 1) < 2 ^ 64)] at hz'
         change 10 - (i + 1) = 0 at hz'
-        omega
-      exact .inr ⟨by rw [he]; simpa using hn0, 10 - (i + 1), by omega, i + 1, by omega, rfl, hw⟩
+        omega_using [hi, hl, hz']
+      exact .inr ⟨by rw [he]; simpa using hn0, 10 - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, hl], rfl, hw⟩
   exact WP.loop (M := isa) Inv hstep 10 s ⟨0, by decide, rfl, h⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Tail

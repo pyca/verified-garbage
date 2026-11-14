@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import Aesop.BuiltinRules
@@ -91,5 +92,35 @@ def chkContract : Contract isa where
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rdx) (s₂.gpr .rcx).toNat ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r8) (s₂.gpr .r9).toNat
+
+/-- `vg_rsa_private_checked_precomputed`: `vg_rsa_private_checked`'s
+arguments, then the key's precomputed values `pre = [rsp + 120]`
+(`pre_len = [rsp + 128]` words), which it requires to be
+`privatePrecompute`'s for `n`, `p` and `q`: `chkContract`, with `pre`
+read-only, and public but for its words after the modulus' values. -/
+def chkContractP : Contract isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let scr : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
+    let pr : Region := ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
+    let args : Region := ⟨stackArgAddr s 0, 112⟩
+    let args2 : Region := ⟨stackArgAddr s 14, 16⟩
+    let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 stackBytes, stackBytes⟩
+    chkContract.pre { s with rd := s.rd.take 9 } ∧ s.rd.drop 9 = [args2, pr] ∧
+      (s.gpr .rsp).toNat + 136 ≤ 2 ^ 64 ∧
+      out.Disjoint args2 ∧ out.Disjoint pr ∧ scr.Disjoint args2 ∧ scr.Disjoint pr ∧ stk.Disjoint args2 ∧
+      stk.Disjoint pr ∧ args.Disjoint args2 ∧
+      (stackArg s 14).toNat + (stackArg s 15).toNat * 8 ≤ 2 ^ 64 ∧
+      (stackArg s 15).toNat = Spec.Rsa.privatePrecomputedWords (s.gpr .rcx).toNat (stackArg s 3).toNat
+        (stackArg s 5).toNat ∧
+      Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 5).toNat) =
+        some (Spec.Rsa.wordsAt s.mem (stackArg s 14) (stackArg s 15).toNat)
+  post := chkContract.post
+  pub s₁ s₂ :=
+    chkContract.pub s₁ s₂ ∧ stackArg s₁ 14 = stackArg s₂ 14 ∧ stackArg s₁ 15 = stackArg s₂ 15 ∧
+      Spec.Rsa.privatePrecomputedLeak s₁.mem (stackArg s₁ 14) (s₁.gpr .rcx).toNat =
+        Spec.Rsa.privatePrecomputedLeak s₂.mem (stackArg s₂ 14) (s₂.gpr .rcx).toNat
 
 end VG.Proof.Rsa.X86_64

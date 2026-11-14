@@ -116,9 +116,9 @@ theorem signRejectTag_ne_one (p : Params) (b : Bounds) (Â : List (List Poly)) (
   split
   · decide
   · split
-    · omega
+    · omega_using []
     · split
-      · omega
+      · omega_using []
       · split <;> decide
 
 /-- `signLeakT` from the contract's `signLeak`, for `iters` iterations: after

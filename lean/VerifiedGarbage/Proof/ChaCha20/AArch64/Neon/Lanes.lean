@@ -35,9 +35,9 @@ theorem vword_ext (x : BitVec 128) (k e : Nat) (hk : k < 4) (he : e < 4) :
   intro i hi
   simp only [vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ushiftRight,
     hi, decide_true, Bool.true_and, Nat.zero_add,
-    show 32 * e + i < 128 by omega, BitVec.getLsbD_append]
+    show 32 * e + i < 128 by omega_using [he, hi], BitVec.getLsbD_append]
   split
-  · exact congrArg x.getLsbD (by omega)
-  · exact congrArg x.getLsbD (by omega)
+  · exact congrArg x.getLsbD (by omega_arith)
+  · exact congrArg x.getLsbD (by omega_arith)
 
 end VG.Proof.ChaCha20.AArch64.Neon

@@ -56,14 +56,14 @@ abbrev XOk (s : State) : Prop :=
 theorem setWidth_ofNat16 {v : Nat} (h : v < 65536) : (BitVec.ofNat 16 v).setWidth 32 = BitVec.ofNat 32 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem Arg.mov_ok (d : Reg) (hd : d ≠ .r7) (a : Arg) (ha : a.ok = true) (s : State) (hx : XOk s) :
     WP isa (.block (a.mov d)) s fun s1 => s1.gpr d = a.val s ∧ Only [d] s s1 := by
   cases a with
   | slot f =>
     simp only [Arg.ok, decide_eq_true_eq] at ha
-    exact wp_ldr (by omega) (hx f ha) fun s1 o1 e1 => wp_nil ⟨e1, o1⟩
+    exact wp_ldr (by omega_using [ha]) (hx f ha) fun s1 o1 e1 => wp_nil ⟨e1, o1⟩
   | slotOff f o =>
     simp only [Arg.ok, Bool.and_eq_true, decide_eq_true_eq] at ha
     refine wp_ldr (by omega) (hx f ha.1) fun s1 o1 e1 => ?_
@@ -129,7 +129,7 @@ section
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
 theorem Ctx.xOk (hc : Ctx L g m₀ t) (hL : L.Ok) : XOk t := fun f hf => by
-  rw [hc.r7, hL.xo (by omega)]; exact hc.inX hL hf
+  rw [hc.r7, hL.xo (by omega_using [hf])]; exact hc.inX hL hf
 
 theorem Ctx.off (hc : Ctx L g m₀ t) (o : Nat) : (Arg.off o).val t = L.X32 + BitVec.ofNat 32 o := by
   simp only [Arg.val, hc.r7]
@@ -140,7 +140,7 @@ theorem Ctx.slotV (hc : Ctx L g m₀ t) (hL : L.Ok) {f j : Nat} (hf : f = 912 + 
   subst hf
   have := hc.slot j hj
   simp only [Arg.val, hc.r7]
-  rw [hL.xo (by omega), ← this, show 904 + (8 + 4 * j) = 912 + 4 * j by omega]
+  rw [hL.xo (by omega_using [hj]), ← this, show 904 + (8 + 4 * j) = 912 + 4 * j by omega_using []]
 
 end
 

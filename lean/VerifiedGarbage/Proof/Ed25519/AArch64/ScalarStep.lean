@@ -39,8 +39,8 @@ theorem subtract_chain (a b c d : Word) :
   clear_value v c3 c2 c1 c0
   refine ⟨?_, e⟩
   cases c3 <;> simp only [Bool.toNat_false, Bool.toNat_true] at e
-  · exact (decide_eq_false (by omega)).symm
-  · exact (decide_eq_true (by omega)).symm
+  · exact (decide_eq_false (by omega_using [hv, e])).symm
+  · exact (decide_eq_true (by omega_using [e])).symm
 
 theorem scalarSubtract_ok (s : State) (hz : s.gpr .x10 = 0) :
     WP isa (.block scalarSubtract) s fun t =>
@@ -98,8 +98,8 @@ theorem select_remainder (x y : Nat) (hx : x < 2 * L)
     (if L ≤ x then y else x) = x % L := by
   by_cases h : L ≤ x
   · simp only [h, decide_true, Bool.toNat_true, Nat.sub_self, Nat.mul_zero, Nat.add_zero] at he
-    rw [ite_eq_left h, Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
-    omega
-  · rw [ite_eq_right h, Nat.mod_eq_of_lt (by omega)]
+    rw [ite_eq_left h, Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega_using [hx])]
+    omega_using [he]
+  · rw [ite_eq_right h, Nat.mod_eq_of_lt (by omega_using [h])]
 
 end VG.Proof.Ed25519.AArch64

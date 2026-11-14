@@ -373,17 +373,17 @@ theorem lenP_ok {c dp : Addr} {L o N n : Nat} {R0 R1 : BitVec 64} {X : Nat} {sp 
   rw [e1, e256, Proof.Poly1305.X86_64.toNat_ofNat_lt (by decide)]
   congr 1
   apply propext
-  rw [BitVec.toNat_sub, Proof.Poly1305.X86_64.toNat_ofNat_lt (by omega), show (1 : BitVec 64).toNat = 1 from rfl]
+  rw [BitVec.toNat_sub, Proof.Poly1305.X86_64.toNat_ofNat_lt (by omega_using [hL, hn]), show (1 : BitVec 64).toNat = 1 from rfl]
   constructor
   · intro hc
     by_cases h0 : n = 0
     · rw [h0] at hc; simp at hc
-    · rw [show 2 ^ 64 - 1 + n = 2 ^ 64 + (n - 1) by omega, Nat.add_mod_left,
-        Nat.mod_eq_of_lt (by omega)] at hc
-      omega
+    · rw [show 2 ^ 64 - 1 + n = 2 ^ 64 + (n - 1) by omega_using [hc], Nat.add_mod_left,
+        Nat.mod_eq_of_lt (by omega_using [hL, hn])] at hc
+      omega_using [hc, h0]
   · intro ⟨h1, h2⟩
-    rw [show 2 ^ 64 - 1 + n = 2 ^ 64 + (n - 1) by omega, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show 2 ^ 64 - 1 + n = 2 ^ 64 + (n - 1) by omega_using [h1], Nat.add_mod_left, Nat.mod_eq_of_lt (by omega_using [h2])]
+    omega_using [h2]
 
 /-- With 1 to 256 bytes left (`rdx` one less), the comparison with 128. -/
 theorem cmpP128_ok {n : Nat} (hlo : 1 ≤ n) (hhi : n ≤ 256) {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 n - 1) :
@@ -396,11 +396,11 @@ theorem cmpP128_ok {n : Nat} (hlo : 1 ≤ n) (hhi : n ≤ 256) {s : State} (hrdx
   have e128 : BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 128 := by decide
   rw [hrdx, e128, Proof.Poly1305.X86_64.toNat_ofNat_lt (by decide),
     show BitVec.ofNat 64 n - 1 = BitVec.ofNat 64 (n - 1) by
-      rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)],
-    Proof.Poly1305.X86_64.toNat_ofNat_lt (by omega)]
+      rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hlo])],
+    Proof.Poly1305.X86_64.toNat_ofNat_lt (by omega_using [hhi])]
   congr 1
   apply propext
-  constructor <;> intro <;> omega
+  constructor <;> intro <;> omega_arith
 
 /-- No whole chunks after the 448 bytes: the rest (1 to 512 bytes) encrypted
 while the 448 bytes are absorbed, by `tailS` with one set of blocks (up to

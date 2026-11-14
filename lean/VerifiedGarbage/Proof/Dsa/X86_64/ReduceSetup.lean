@@ -30,7 +30,7 @@ theorem clear_mod_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64
       SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
       wv t.mem (off B o) (slot wx j) wx = 0 ∧
       Arrays (off B o) wx [j] s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega) hw' hj)
+  refine WP.mono (zeroArr_ok hc.good (Nat.le_refl _) (by omega_using [hw]) hw' hj)
     fun t ⟨hv, hf, hk⟩ => ?_
   have ha : Arrays (off B o) wx [j] s.mem t.mem :=
     Arrays.of_outside (List.mem_singleton_self j) hf (Nat.le_refl _) (Nat.le_refl _)
@@ -38,8 +38,8 @@ theorem clear_mod_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv : BitVec 64
   have hnZ := hc.good.scr.nowrap
   have hnot : aN ∉ [j] := by simpa using Ne.symm hjn
   refine ⟨ht, ⟨ht.good, (ha.wv_of_not_mem (by decide) hnot hnZ).trans hm.modulus, ?_⟩, (wv_eq_zero_iff _ _ _ _).mpr (fun i hi =>
-      (wv_eq_zero_iff _ _ _ _).mp hv i (by omega)), ha, hk⟩
-  rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega)]
+      (wv_eq_zero_iff _ _ _ _).mp hv i (by omega_using [hi])), ha, hk⟩
+  rw [ha.word0_of_not_mem (by decide) hnot hnZ (by omega_using [hw])]
   exact hm.inverse
 
 /-- A public number of doublings retains the modulus and workspace. -/
@@ -72,8 +72,8 @@ theorem double_mod_ok {s : State} {B : Addr} {Z o w wx m c : Nat} {minv : BitVec
   intro r hr
   have hb := constantRanges_work wx r hr
   have h := hx (136, slot wx 8 + tabBytes wx - 136) (List.mem_singleton_self _)
-  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  omega
+  have : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  omega_using [hb, h]
 
 /-- Reduction starts with ordinary zero and multiplier 256R, even for
 composite moduli with zero high limbs. -/
@@ -88,7 +88,7 @@ theorem reduceSetup_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
       wv t.mem (off B o) (slot wx aY) wx = 0 ∧
       wv t.mem (off B o) (slot wx aX) wx = 0 ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hw' : wx < 2 ^ 31 := by omega
+  have hw' : wx < 2 ^ 31 := by omega_using [hw48]
   have hz := hc.good.scr.nowrap
   unfold Arithmetic.reduceSetup seqs
   refine WP.seq (WP.mono (prepare_ok M hc hw hw48 hm hodd hn hinv)
@@ -96,7 +96,7 @@ theorem reduceSetup_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   refine WP.seq (WP.mono (mont_step M hmu (Nat.le_refl _) hw hw'
     (by unfold MmUse; decide) (by rw [huone]; exact hm))
     fun v ⟨hmv, hlt, hv, hfv, hkv⟩ => ?_)
-  rw [huone, Nat.mul_one, hur2, show 128 * wx = 64 * wx + 64 * wx by omega, Nat.pow_add, Nat.mod_mod] at hv
+  rw [huone, Nat.mul_one, hur2, show 128 * wx = 64 * wx + 64 * wx by omega_using [], Nat.pow_add, Nat.mod_mod] at hv
   have hvR : wv v.mem (off B o) (slot wx aR2) wx = 2 ^ (64 * wx) % m := by
     have e := VG.Proof.Bignum.mont_cancel (coprime_pow2 hodd (64 * wx)) hv
     simpa only [Nat.mod_eq_of_lt hlt] using e

@@ -34,14 +34,14 @@ theorem GkP.bounded_cut {p : GkP} {rb : List Byte} (hb : p.Bounded) (hk : 64 ≤
     os2ip (p.cut rb) = Spec.Ffdh.scalarOfOctets p.params rb := by
   have hh := valid_facts hm hk
   have hbl : p.bb.length = p.k := KeyScalar.bnd_length hd
-  have hn : p.bb ≠ [] := by intro he; rw [he] at hbl; simp at hbl; omega
+  have hn : p.bb ≠ [] := by intro he; rw [he] at hbl; simp at hbl; omega_using [hk, hbl]
   have hbc : p.bc = p.bb[lead p.bb]'(lead_lt hn) := by
     simp only [GkP.bc, hb.1, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (lead_lt hn), Option.getD_some]
   have hmv : (p.msk.setWidth 8).toNat = 2 ^ Spec.RsaKeyGen.bitLength p.bc.toNat - 1 := by
     rw [hb.2, BitVec.toNat_setWidth, smear64_value,
       Nat.mod_eq_of_lt (KeyScalar.smearN_lt _ p.bc.isLt), KeyScalar.smearN_eq _ p.bc.isLt]
   rw [show p.cut rb = KeyScalar.cut rb (lead p.bb) (p.msk.setWidth 8) by simp only [GkP.cut, hb.1]]
-  exact KeyScalar.cut_eq (by omega) hd (fun _ => ⟨hh.1, hh.2.1⟩) hl (by rw [hmv, hbc])
+  exact KeyScalar.cut_eq (by omega_using [hk]) hd (fun _ => ⟨hh.1, hh.2.1⟩) hl (by rw [hmv, hbc])
 
 /-- The full-width cut is the canonical encoding of the sampled scalar. -/
 theorem Base.cut_i2osp {p : GkP} {rb : List Byte} {s : X86_64.State} (h : Base p rb s)

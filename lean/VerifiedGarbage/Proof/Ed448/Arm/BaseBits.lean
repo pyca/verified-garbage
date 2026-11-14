@@ -40,10 +40,10 @@ theorem baseBitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u hu => ?_
   have ea : State.addr (u.gpr .r7 + BitVec.ofNat 32 (BITS + j)) = off base (BITS + (8 * i + j)) := by
     rw [hu.other .r7 (by decide), ht.other .r7 (by decide), hp,
-      BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [BITS]; omega)]
-    congr 1; omega
-  have wr := hs.write (d := BITS + (8 * i + j)) (n := 1) (by simp only [BITS]; omega)
-  refine VG.Proof.X25519.Arm.wp_strb (by simp only [BITS]; omega) ea
+      BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [BITS]; omega_using [hi, hj])]
+    congr 1; omega_using []
+  have wr := hs.write (d := BITS + (8 * i + j)) (n := 1) (by simp only [BITS]; omega_using [hi, hj])
+  refine VG.Proof.X25519.Arm.wp_strb (by simp only [BITS]; omega_using [hj]) ea
     (by rw [hu.wr, ht.wr]; exact wr) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, hu.mem, ht.mem, hu.gpr]
     change s.mem.writeW _ ((t.gpr .r2 &&& (1 : BitVec 32)).setWidth 8) = _
@@ -69,14 +69,14 @@ theorem baseByteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (h
     · intro j hj
       rw [um, writeW8_apply]
       have eq : off base (BITS + (8 * i + j)) = off base (BITS + (8 * i + n)) ↔ j = n := by
-        rw [off_eq_iff base (by simp only [BITS]; omega) (by simp only [BITS]; omega)]
-        omega
+        rw [off_eq_iff base (by simp only [BITS]; omega_using [hi, hn, hj]) (by simp only [BITS]; omega_using [hi, hn])]
+        omega_using []
       by_cases he : j = n
       · rw [ite_eq_left (eq.mpr he), he]
-      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
     · intro x hx
       rw [um]
-      exact writeW8_outside _ _ _ (by simp only [BITS]; omega) (by omega)
+      exact writeW8_outside _ _ _ (by simp only [BITS]; omega_using [hi, hn]) (by omega_using [hn, hx])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
@@ -98,7 +98,7 @@ theorem baseBitHead_ok {s : State} {k : Addr} (hk : State.addr (s.gpr .r1) = k)
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun t ht => ?_
   have ea : State.addr (t.gpr .r7 + BitVec.ofNat 32 0) = off k i := by
     rw [ht.gpr]; change State.addr (s.gpr .r1 + s.gpr .r11 + BitVec.ofNat 32 0) = _
-    rw [BitVec.add_zero, hb, addr_add (by omega), hk]
+    rw [BitVec.add_zero, hb, addr_add (by omega_using [hfit, hi]), hk]
   refine VG.Proof.X25519.Arm.wp_ldrb (by decide) ea (by rw [ht.rd, ht.wr]; exact hkr) fun u hu => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_lsl (by decide)) fun v hv =>
     WP.block_nil ⟨?_, ?_, ?_, ?_⟩
@@ -109,7 +109,7 @@ theorem baseBitHead_ok {s : State} {k : Addr} (hk : State.addr (s.gpr .r1) = k)
     apply congrArg (u.gpr .r0 + ·)
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_using []
   · exact hv.mem.trans (hu.mem.trans ht.mem)
   · exact rest_keeps ((ht.rest (by decide)).trans ((hu.rest (by decide)).trans (hv.rest (by decide))))
 
@@ -183,23 +183,23 @@ theorem baseBitsLoop_ok {s₀ : State} {base k : Addr}
     fun s' ⟨b', z', keep', bits', o'⟩ => ?_
   obtain ⟨g', rd', wr'⟩ := keep'
   have hbyte : s.mem (k + BitVec.ofNat 64 i) = s₀.mem (k + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega)
+    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega_using [this])
   have inv : BitsInv base k s₀ s' (i + 1) := by
     refine ⟨hb.scr.of_keeps ⟨g', rd', wr'⟩ (by decide),
       (by rw [g' _ (by decide)]; exact hb.r1),
       (by rw [g' _ (by decide)]; exact hb.fit), b', fun r hr => (g' r hr).trans (hb.gpr r hr),
-      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega) (by omega)),
+      rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega_using []) (by omega_using [hi])),
       fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
-    · rw [o' _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; omega), hb.bits t h]
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbyte] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
+    · rw [o' _ (by rw [ofs_off' base (by simp only [BITS]; omega_using [hi, ht])]; omega_using [h]), hb.bits t h]
+    · have e := bits' (t - 8 * i) (by omega_using [ht])
+      rw [show 8 * i + (t - 8 * i) = t by omega_using [h], hbyte] at e
+      rw [e, show t / 8 = i by omega_using [ht, h], show t % 8 = t - 8 * i by omega_using [ht, h]]
   simp only [eval, z']
   rcases Nat.lt_or_ge (i + 1) 57 with h | h
-  · exact .inr ⟨by simp only [decide_eq_false (by omega : ¬i + 1 = 57), Bool.not_false],
-      57 - (i + 1), by omega, i + 1, rfl, h, inv⟩
-  · obtain rfl : i = 56 := by omega
+  · exact .inr ⟨by simp only [decide_eq_false (by omega_using [h] : ¬i + 1 = 57), Bool.not_false],
+      57 - (i + 1), by omega_using [hi], i + 1, rfl, h, inv⟩
+  · obtain rfl : i = 56 := by omega_using [hi, h]
     exact .inl ⟨rfl, inv⟩
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
@@ -211,7 +211,7 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 theorem scalar_bit (m : Mem) (p : Addr) {t : Nat} (ht : t < 456) :
     ((m (p + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1 =
       (decodeLE (bytesAt m p 57) >>> t) &&& 1 := by
-  rw [Proof.Ed448.decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega)]
+  rw [Proof.Ed448.decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega_using [ht])]
 
 /-- `baseBits`: byte `t` of `BITS` is bit `t` of the scalar, for `t < 456`. -/
 theorem baseBits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : State.addr (s.gpr .r1) = k)
@@ -232,8 +232,8 @@ theorem baseBits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : State.ad
     exact ⟨hs.of_keeps keep (by decide), by rw [ht.other .r1 (by decide)]; exact hk,
       by rw [ht.other .r1 (by decide)]; exact hfit, ht.gpr, keep.1, keep.2.1, keep.2.2,
       ht.mem ▸ Outside.refl _ _ _ _, fun _ hi => by omega⟩) fun s₁ h₁ => ?_)
-  refine WP.mono (baseBitsLoop_ok hkr hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_
+  refine WP.mono (baseBitsLoop_ok hkr hkd 0 s₁ (by omega_using []) h₁) fun s₂ h₂ => ?_
   refine ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.mem, fun t ht => ?_⟩
-  rw [h₂.bits t (by omega), scalar_bit _ _ ht]
+  rw [h₂.bits t (by omega_using [ht]), scalar_bit _ _ ht]
 
 end VG.Proof.Ed448.Arm

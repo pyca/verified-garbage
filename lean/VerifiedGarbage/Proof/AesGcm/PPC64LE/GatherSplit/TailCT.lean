@@ -21,10 +21,10 @@ theorem first_agree {a b : State} {S D : Addr} {count total : Nat}
     (ha : GatherPre a S D count total) (hb : GatherPre b S D count total) (hc : 0<count) :
     a.mem.readW S 64=b.mem.readW S 64 ∧ firstLen a=firstLen b := by
   constructor
-  · have hh := desc_word hd (d := 0) (by omega)
+  · have hh := desc_word hd (d := 0) (by omega_using [hc])
     simpa only [BitVec.add_zero] using hh
   · rw [firstLen,firstLen,ha.r7,hb.r7]
-    exact desc_word hd (d := 8) (by omega)
+    exact desc_word hd (d := 8) (by omega_using [hc])
 
 
 theorem tail_rel {a b : State} {S D : Addr} {count total : Nat}
@@ -43,6 +43,6 @@ theorem tail_rel {a b : State} {S D : Addr} {count total : Nat}
   intro j hj
   change a.mem (S+16#64+BitVec.ofNat 64 j)=b.mem (S+16#64+BitVec.ofNat 64 j)
   rw [Offset.add_add]
-  exact hd (16+j) (by omega)
+  exact hd (16+j) (by omega_using [hj])
 
 end VG.Proof.AesGcm.PPC64LE.GatherSplit

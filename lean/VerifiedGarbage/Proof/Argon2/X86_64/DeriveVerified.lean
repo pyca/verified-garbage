@@ -258,7 +258,7 @@ theorem params_variant_code (kind passes memory lanes tagLen : Nat) (bound : kin
   · subst kind; rfl
   · by_cases one : kind = 1
     · subst kind; rfl
-    · have two : kind = 2 := by omega
+    · have two : kind = 2 := by omega_using [bound, zero, one]
       subst kind; rfl
 
 structure DeriveWords (s t : State) : Prop where
@@ -605,7 +605,7 @@ theorem private_memory_space {s t : State} (h : AbiEnvironment s)
   · rw [scratch]; exact private_stack_disjoint h prepared (abiWork s, true) workMember 24 (by decide)
   · have blocks := Proof.Argon2.blocks_le_memory (abiParams s)
     have memoryBound := h.valid.2.2.2.2.2.1
-    omega
+    omega_using [blocks, memoryBound]
 
 end VG.Proof.Argon2.X86_64.Derive
 end
@@ -718,7 +718,7 @@ theorem private_final_layout {s t : State} (h : AbiEnvironment s)
   have blocks := Proof.Argon2.lastIndex_bounds (abiParams s) parameters.lanesPositive
     parameters.segment_bound.1 0 parameters.lanesPositive
   have minimum : 1024 ≤ (abiParams s).blocks * 1024 := by
-    have positive : 1 ≤ (abiParams s).blocks := by omega
+    have positive : 1 ≤ (abiParams s).blocks := by omega_using [blocks]
     simpa only [Nat.one_mul] using Nat.mul_le_mul_right 1024 positive
   have matrix := private_matrix_region h prepared
   have work : FinalOutput.work t = (abiWork s).base := words.work
@@ -740,7 +740,7 @@ theorem private_final_layout {s t : State} (h : AbiEnvironment s)
     apply Region.Disjoint.sub_right
       (private_stack_disjoint h prepared (abiMatrix s, true) matrixMember 24 (by decide))
     rw [← matrix]; exact Region.sub_prefix minimum
-  refine ⟨by have tag := h.valid.2.2.2.2.2.2.1; omega, h.valid.2.2.2.2.2.2.2.1,
+  refine ⟨by have tag := h.valid.2.2.2.2.2.2.1; omega_using [tag], h.valid.2.2.2.2.2.2.2.1,
     ?_, words.tagLength, ?_, private_output_cover h prepared, ?_, matrixWork, ?_, stackMatrix, ?_, ?_⟩
   · intro d hd
     have bounds : ∀ d ∈ [232, 256, 264, 248], d + 8 ≤ 272 := by decide
@@ -828,7 +828,7 @@ theorem private_prepare_frame {s t : State} (prepared : PrivatePrepared (prologu
 theorem private_prologue_frame {s t : State} (h : AbiEnvironment s)
     (prepared : PrivatePrepared (prologueState s) t) : Frame [below (s.gpr .rsp) 320] s.mem t.mem := by
   have prologue := frameStart_frame s Impl.Argon2.X86_64.Derive.saved (by decide) (by
-    have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega)
+    have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space])
   apply prologue.trans
   have preparation := private_prepare_frame prepared
   rw [prologue_sp] at preparation
@@ -852,7 +852,7 @@ theorem private_input_bytes {s t : State} (h : AbiEnvironment s)
   apply Proof.Blake2.bytesAt_congr
   intro i hi'
   apply (private_prologue_frame h prepared).bytes (R := Initial.inputRegion t input.1 input.2)
-    _ (by omega) hi'
+    _ (by omega_using [length]) hi'
   intro r hr
   simp only [List.mem_singleton] at hr; subst r
   exact (disjoint.sub_left (below_sub (by decide) (by decide))).symm
@@ -878,7 +878,7 @@ theorem frameEnd_sp (s : State) (rs : List Reg) :
     rw [frameEnd, popped_rsp, ih, BitVec.add_assoc,
       ← BitVec.ofNat_add]
     exact congrArg (fun n => s.gpr .rsp + BitVec.ofNat 64 n)
-      (by simp only [List.length_cons]; omega)
+      (by simp only [List.length_cons]; omega_using [])
 
 theorem popped_one_reg (s : State) (r : Reg) (notSp : r ≠ .rsp) :
     (popped r 1 s).gpr r = s.mem.readW (s.gpr .rsp) 64 := by
@@ -898,10 +898,10 @@ theorem frameEnd_restore (s : State) (rs : List Reg) (values : Reg → Addr)
     have innerWords : ∀ j (hj : j < rs.length),
         s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 (272 + 8 * rs.length - 8 * (j + 1))) 64 = values rs[j] := by
       intro j hj
-      have word := words (j + 1) (by simp only [List.length_cons]; omega)
+      have word := words (j + 1) (by simp only [List.length_cons]; omega_using [hj])
       have offset : 272 + 8 * (r :: rs).length - 8 * (j + 1 + 1) =
           272 + 8 * rs.length - 8 * (j + 1) := by
-        simp only [List.length_cons]; omega
+        simp only [List.length_cons]; omega_using []
       rw [offset] at word
       exact word
     have inner := ih notSp.2 nodup.2 innerWords
@@ -911,7 +911,7 @@ theorem frameEnd_restore (s : State) (rs : List Reg) (values : Reg → Addr)
     · rw [frameEnd, popped_one_reg _ _ (Ne.symm notSp.1), frameEnd_mem, frameEnd_sp]
       have word := words 0 (by simp)
       have offset : 272 + 8 * (x :: rs).length - 8 * (0 + 1) = 272 + 8 * rs.length := by
-        simp only [List.length_cons]; omega
+        simp only [List.length_cons]; omega_using []
       rw [offset] at word
       exact word
     · rw [frameEnd, popped_gpr r 1 (frameEnd s rs) (r' := x) (fun h => notSp.2 (h ▸ hx))
@@ -927,7 +927,7 @@ theorem frame_restored (s t : State) (rs : List Reg) (notSp : .rsp ∉ rs)
     ∀ r ∈ rs, (frameEnd t rs).gpr r = s.gpr r := by
   apply frameEnd_restore t rs s.gpr notSp distinct
   intro j hj
-  have offsetBound : 8 * (j + 1) ≤ 272 + 8 * rs.length := by omega
+  have offsetBound : 8 * (j + 1) ≤ 272 + 8 * rs.length := by omega_using [hj]
   rw [sp, frameStart_sp, ← Offset.ofNat_sub_ofNat offsetBound, Offset.sub_add_sub_cancel,
     unchanged j hj]
   exact frameStart_word s rs notSp space j hj
@@ -1046,12 +1046,12 @@ def savedSlot (s : State) (j : Nat) : Region :=
 
 theorem saved_slot_sub (s : State) (j : Nat) (bound : j < 6) :
     Region.Sub (savedSlot s j) (below (s.gpr .rsp) 344) :=
-  Offset.sub_below _ (by omega) (by omega)
+  Offset.sub_below _ (by omega_using [bound]) (by omega_using [])
 
 theorem saved_slot_address (s : State) (j : Nat) (bound : j < 6) :
     (savedSlot s j).base = (prologueState s).gpr .rsp + BitVec.ofNat 64 (320 - 8 * (j + 1)) := by
   rw [prologue_sp]
-  exact Offset.sub_ofNat_eq _ (by omega)
+  exact Offset.sub_ofNat_eq _ (by omega_using [bound])
 
 theorem saved_slot_buffers {s : State} (h : AbiEnvironment s) (j : Nat) (bound : j < 6)
     (buffer : Region × Bool) (member : buffer ∈ abiBuffers s ++ [(abiArguments s, false)]) :
@@ -1072,10 +1072,10 @@ theorem saved_slot_writes {s : State} (h : AbiEnvironment s) (j : Nat) (bound : 
     simp only [abiBuffers, List.mem_append, List.mem_cons, true_or, or_true]
   · change (⟨(savedSlot s j).base, 8⟩ : Region).Disjoint _
     rw [saved_slot_address s j bound]
-    exact Offset.disjoint_base _ (by omega) (by omega)
+    exact Offset.disjoint_base _ (by omega_using [bound]) (by omega_using [])
   · change (⟨(savedSlot s j).base, 8⟩ : Region).Disjoint _
     rw [saved_slot_address s j bound]
-    exact Offset.disjoint_below _ (by omega)
+    exact Offset.disjoint_below _ (by omega_using [])
 
 theorem BodyDone.saved {s t : State} (h : AbiEnvironment s) (done : BodyDone s t) (j : Nat) (bound : j < 6) :
     t.mem.readW (s.gpr .rsp - BitVec.ofNat 64 (8 * (j + 1))) 64 =
@@ -1096,7 +1096,7 @@ def wholeWrites (s : State) : List Region := [abiMatrix s, abiWork s, abiOutput 
 theorem BodyDone.whole_frame {s t : State} (h : AbiEnvironment s) (done : BodyDone s t) :
     Frame (wholeWrites s) s.mem t.mem := by
   have prologue := frameStart_frame s Impl.Argon2.X86_64.Derive.saved (by decide) (by
-    have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega)
+    have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space])
   apply (prologue.sub ?_).trans (done.frame.sub ?_)
   · intro r hr
     simp only [List.mem_singleton] at hr; subst r
@@ -1133,12 +1133,12 @@ theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
   have h := abi_environment s pre
   unfold Impl.Argon2.X86_64.Derive.code
   apply frame_ok s Impl.Argon2.X86_64.Derive.saved _ _ (by decide)
-    (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega)
+    (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space])
   refine (body_ok v name s h).mono ?_
   intro t done
   refine ⟨done.sp, done.wr, return_post done, ?_, ?_⟩
   · have restored := frame_restored s t Impl.Argon2.X86_64.Derive.saved (by decide) (by decide)
-      (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega) done.sp
+      (by have space := h.stack; change 320 ≤ (s.gpr .rsp).toNat; omega_using [space]) done.sp
       (fun j hj => done.saved h j hj)
     have stack := (frameEnd_metadata s t Impl.Argon2.X86_64.Derive.saved done.sp done.wr).1
     intro r hr

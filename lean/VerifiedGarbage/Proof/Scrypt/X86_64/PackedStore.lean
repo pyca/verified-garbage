@@ -72,7 +72,7 @@ theorem store_row_other (m : Mem) (p : Addr) {r k q : Nat}
  (hr : r<4) (hk : k<4) (hq : q<4) (h : r≠k) (v : BitVec 128) :
  (m.writeW (plus p (16*r)) v).readW (plus p (16*k+4*q)) 32 =
  m.readW (plus p (16*k+4*q)) 32 :=
- Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+ Mem.readW_writeW_sep (Offset.sep p (by omega_using [hq, h]) (by omega_using [hk, hq]) (by omega_using [hr])) (by decide)
 
 theorem storeMem_read (m : Mem) (p : Addr) (s : State) {r q : Nat} (hr : r<4) (hq : q<4) :
  (storeMem m p s).readW (plus p (16*r+4*q)) 32 = dw s (outputReg r) q := by
@@ -90,12 +90,12 @@ theorem storeMem_words {v : Vector Spec.Scrypt.Word 16} {s : State}
  (h : Natural outputReg v s) (m : Mem) (p : Addr) : memWords (storeMem m p s) p = v := by
  apply Vector.ext
  intro j hj
- have eqj : 16*(j/4)+4*(j%4)=4*j := by omega
- have hr : j/4<4 := by omega
+ have eqj : 16*(j/4)+4*(j%4)=4*j := by omega_using []
+ have hr : j/4<4 := by omega_using [hj]
  have hq : j%4<4 := Nat.mod_lt _ (by decide)
  have ee := storeMem_read m p s hr hq
  rw [eqj,h _ hr _ hq] at ee
- have ej : 4*(j/4)+j%4=j := by omega
+ have ej : 4*(j/4)+j%4=j := by omega_using []
  simpa only [memWords,Vector.getElem_ofFn,bufAt,ofInt_natCast,ej] using ee
 
 theorem wp_store128 {s : State} {r : XReg} {m : MemOp} {p : Addr} {is : List Instr} {Q : State → Prop}
@@ -123,7 +123,7 @@ theorem storeMem_frame (m : Mem) (p : Addr) (s : State) :
  Frame [VG.Proof.Scrypt.X86_64.bR p] m (storeMem m p s) := by
  unfold storeMem
  have part (k : Nat) (hk : k<4) : (VG.Proof.Scrypt.X86_64.bR p).Contains (plus p (16*k)) 16 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_using [hk]) (by omega_using [hk])
  exact ((((Frame.refl _ _).writeW (by simp) _ (part 0 (by decide))).writeW
   (by simp) _ (part 1 (by decide))).writeW (by simp) _ (part 2 (by decide))).writeW
   (by simp) _ (part 3 (by decide))

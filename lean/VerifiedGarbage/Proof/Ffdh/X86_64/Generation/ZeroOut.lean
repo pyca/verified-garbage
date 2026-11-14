@@ -25,14 +25,14 @@ theorem controller_zero_out {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h
       (∀ i < len, t.mem (op + BitVec.ofNat 64 i) = 0) ∧
       (∀ x, (∀ j < len, x ≠ op + BitVec.ofNat 64 j) → t.mem x = s.mem x) ∧ Keep [.rsi, .rcx, .rax] s t := by
   have hn := hs.nowrap
-  have hl : ∀ i < 16, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 16, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold zeroOut
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t => t.gpr .rsi = op ∧
       t.gpr .rcx = BitVec.ofNat 64 len ∧ t.gpr .rax = 0 ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hdi, hdrOff, hl sPtr hP, hl sLen hL, hO, hK]) rfl) fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (wp_upto (a := 0) (N := len) (by omega) (FailInv s₁ op len) ?_ (fun t h => h)
+  refine WP.mono (wp_upto (a := 0) (N := len) (by omega_using [hk1]) (FailInv s₁ op len) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun t hI => ?_
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t hI => ?_
   · intro j _ hj t hI
     have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
       rw [hI.keep.2.2, k₁.2.2]; exact o.wr j hj
@@ -42,19 +42,19 @@ theorem controller_zero_out {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (h
         t'.gpr .rsi = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .rcx = BitVec.ofNat 64 (len - (j + 1)) ∧
         t'.zf = some (decide (j + 1 = len))) (by
       xrun [State.ea, at0, hI.rsi, hI.rcx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hst, hax',
-        ofNat64_pred (show 1 ≤ len - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-        ofNat64_beq_zero (show len - j - 1 < 2 ^ 64 by omega)]
-      exact ⟨by rw [show len - j - 1 = len - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩) rfl)
+        ofNat64_pred (show 1 ≤ len - j by omega_using [hj]) (by omega_using [hk']), BitVec.add_assoc, ofNat_add_one,
+        ofNat64_beq_zero (show len - j - 1 < 2 ^ 64 by omega_using [hk'])]
+      exact ⟨by rw [show len - j - 1 = len - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩) rfl)
       fun t' ⟨⟨hm, hsi', hcx', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩
     · intro i hi
       rw [hm, writeW8_apply]
       by_cases hij : i = j
       · subst hij; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact hI.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hk', hj, hi]) (by omega_using [hk', hj]) hij))]
+        exact hI.bytes i (by omega_using [hi, hij])
     · intro x hx
-      rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact hI.frame x fun i hi => hx i (by omega)
+      rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+      exact hI.frame x fun i hi => hx i (by omega_using [hi])
   exact ⟨hI.bytes, fun x hx => by rw [hI.frame x hx, hm₁], (k₁.trans hI.keep).mono (by decide)⟩
 
 end VG.Proof.Ffdh.X86_64.Generation

@@ -63,19 +63,19 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   rw [WinCfg.addConst, List.append_assoc, WP.block_append_iff]
   refine WP.mono (setConst_ok hs (n := n + 1) (o := dst) (x := c) hdst hc) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have vs₁ : wordsVal s₁.mem base src n = wordsVal s.mem base src n := O₁.wordsVal (by omega) (by omega)
+  have vs₁ : wordsVal s₁.mem base src n = wordsVal s.mem base src n := O₁.wordsVal (by omega_using [hsep]) (by omega_using [hsrc, hn])
   rw [WP.block_append_iff]
   refine WP.mono (chainWAdd_ok n (op := .add) (c := false) (t := dst) (a := dst) (b := src) hs₁
-    (Or.inl ⟨rfl, rfl⟩) (Or.inl h0) (by omega) (by omega) (by omega) (Or.inl rfl)
-    (by unfold Near; omega)) fun s₂ ⟨c', hc₂, e₂, k₂, O₂⟩ => ?_
+    (Or.inl ⟨rfl, rfl⟩) (Or.inl h0) (by omega_using [hdst]) (by omega_using [hdst]) (by omega_using [hsrc]) (Or.inl rfl)
+    (by unfold Near; omega_using [hsep])) fun s₂ ⟨c', hc₂, e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  refine WP.mono (adcTop_ok hs₂ (d := dst + 8 * n) (by omega) hc₂) fun t ⟨mt, kt⟩ => ?_
+  refine WP.mono (adcTop_ok hs₂ (d := dst + 8 * n) (by omega_using [hdst]) hc₂) fun t ⟨mt, kt⟩ => ?_
   -- The words of `c`, and the top word.
   have hc₁ := e₁
   rw [wordsVal_succ_top] at hc₁
-  have htop₂ : word s₂.mem base (dst + 8 * n) = word s₁.mem base (dst + 8 * n) := O₂.word (by omega) (by omega)
+  have htop₂ : word s₂.mem base (dst + 8 * n) = word s₁.mem base (dst + 8 * n) := O₂.word (by omega_using []) (by omega_using [hdst, hn])
   have hlow : wordsVal t.mem base dst n = wordsVal s₂.mem base dst n := by
-    rw [mt]; exact (writeW_outside _ _ _ (by omega)).wordsVal (by omega) (by omega)
+    rw [mt]; exact (writeW_outside _ _ _ (by omega_using [hdst, hn])).wordsVal (by omega_using []) (by omega_using [hdst, hn])
   rw [vs₁] at e₂
   simp only [Bool.toNat_false, Nat.add_zero] at e₂
   have hb : (BitVec.ofBool c').setWidth 64 = BitVec.ofNat 64 c'.toNat := by cases c' <;> rfl
@@ -85,7 +85,7 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   generalize hXd : 2 ^ (64 * n) = X at hc₁ e₂ hpow
   have hfit : T + c'.toNat < 2 ^ 64 := by
     have h1 : X * (T + c'.toNat) ≤ wordsVal s.mem base src n + c := by
-      rw [Nat.mul_add]; omega
+      rw [Nat.mul_add]; omega_using [hc₁, e₂]
     rw [hpow] at hsum
     exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt h1 hsum)
   have htop : (word t.mem base (dst + 8 * n)).toNat = T + c'.toNat := by
@@ -93,9 +93,9 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       Nat.mod_eq_of_lt (show c'.toNat < 2 ^ 64 by cases c' <;> decide), hT, Nat.mod_eq_of_lt hfit]
   refine ⟨?_, ?_, ?_⟩
   · rw [wordsVal_succ_top, hlow, htop, hXd, Nat.mul_add]
-    omega
+    omega_using [hc₁, e₂]
   · exact ((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans (kt.mono (by decide))
-  · have O₃ : Outside base (dst + 8 * n) 8 s₂.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by omega)
-    exact (O₁.trans ((O₂.mono (Nat.le_refl _) (by omega)).trans (O₃.mono (by omega) (by omega))))
+  · have O₃ : Outside base (dst + 8 * n) 8 s₂.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by omega_using [hdst, hn])
+    exact (O₁.trans ((O₂.mono (Nat.le_refl _) (by omega_using [])).trans (O₃.mono (by omega_using []) (by omega_using []))))
 
 end VG.Proof.Weierstrass.X86_64

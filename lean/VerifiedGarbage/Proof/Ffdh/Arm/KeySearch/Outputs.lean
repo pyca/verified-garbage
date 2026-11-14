@@ -49,8 +49,8 @@ theorem KeyLive.zero_outputs {p : KeyPublic sampling} {original s : State} {used
       Spec.Rsa.bytesAt t.mem (State.addr p.xp) p.len = List.replicate p.len 0 ∧
       Spec.Rsa.bytesAt t.mem (State.addr p.yp) p.len = List.replicate p.len 0 ∧
       Frame [rX p, rY p] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .lr] s t := by
-  have positive : 0 < p.len := by have := h.input.bounds.minLength; omega
-  have fits : p.len < 2 ^ 32 := by have := h.input.bounds.maxLength; omega
+  have positive : 0 < p.len := by have := h.input.bounds.minLength; omega_using [this]
+  have fits : p.len < 2 ^ 32 := by have := h.input.bounds.maxLength; omega_using [this]
   rw [VG.Impl.Ffdh.Arm.KeySearch.zeroOutputs, WP.seq_iff]
   refine WP.mono_syms (zeroOutput_ok s h.controller (by decide : 5 < 16) positive fits
     (h.header (by simp [KeyPublic.headers])) (h.header (by simp [KeyPublic.headers])) h.x_buffer) ?_
@@ -68,17 +68,17 @@ theorem KeyLive.zero_outputs {p : KeyPublic sampling} {original s : State} {used
     (xframe.mono (by simp)).trans (yframe.mono (by simp)), xrest.trans yrest⟩
   exact (bytesAt_frame (r := rX p) yframe
     (by simpa using h.input.output_regions_disjoint.1)
-    (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega)).trans xzero
+    (by change p.len ≤ 2 ^ 64; have := h.input.bounds.maxLength; omega_using [fits])).trans xzero
 
 theorem KeyOutput.control_frame {p : KeyPublic sampling} {original : State} {result : Spec.Ffdh.KeySearchResult}
     {m m' : Mem} (h : KeyInput p original) (before : KeyOutput p result m)
     (frame : Frame [rControl p] m m') : KeyOutput p result m' := by
   have xeq := bytesAt_frame (r := rX p) frame
     (by simpa using h.output_regions_disjoint.2.2.2.1.symm)
-    (by change p.len ≤ 2 ^ 64; have := h.bounds.maxLength; omega)
+    (by change p.len ≤ 2 ^ 64; have := h.bounds.maxLength; omega_using [this])
   have yeq := bytesAt_frame (r := rY p) frame
     (by simpa using h.output_regions_disjoint.2.2.2.2.1.symm)
-    (by change p.len ≤ 2 ^ 64; have := h.bounds.maxLength; omega)
+    (by change p.len ≤ 2 ^ 64; have := h.bounds.maxLength; omega_using [this])
   cases outcome : result.outcome <;> simp only [KeyOutput, outcome] at before ⊢ <;>
     exact ⟨xeq.trans before.1, yeq.trans before.2⟩
 

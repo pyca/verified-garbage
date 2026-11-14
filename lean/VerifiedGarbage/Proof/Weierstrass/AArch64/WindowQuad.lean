@@ -117,11 +117,11 @@ theorem dblCnt_ok (s : State) {j c : Nat} (hj : j < 2 ^ 32) (hc : c < 2)
   have e : BitVec.ofNat 64 (j + 2 ^ 32 * (c + 1)) - BitVec.ofNat 64 (2 ^ 32) =
       BitVec.ofNat 64 (j + 2 ^ 32 * c) := by
     rw [Nat.mul_succ, ← Nat.add_assoc, ← BitVec.ofNat_add_ofNat, BitVec.add_sub_cancel]
-  have hlt : j + 2 ^ 32 * c < 2 ^ 64 := by omega
+  have hlt : j + 2 ^ 32 * c < 2 ^ 64 := by omega_using [hj, hc]
   have l : BitVec.ofNat 64 (j + 2 ^ 32 * c) >>> 32 = BitVec.ofNat 64 c := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt,
-      Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow, Nat.add_mul_div_left _ _ (by decide),
+      Nat.mod_eq_of_lt (by omega_using [hc]), Nat.shiftRight_eq_div_pow, Nat.add_mul_div_left _ _ (by decide),
       Nat.div_eq_of_lt hj, Nat.zero_add]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, show 16 * 2 < 64 by decide,

@@ -23,8 +23,8 @@ structure CdCtx (s : State) : Prop where
 theorem cdCtx_of {s : State} (h : cdPre s) : CdCtx s := by
   obtain ⟨hrd, hwr, dds, wD, wS, _, _, ⟨hk1, hk2⟩, hdl, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
-  exact ⟨hk1, hk2, hdl, by omega, Scr.of_mem (by rw [hwr]; simp) wS,
-    src_of_region (by rw [hrd]; simp) (by omega) dds⟩
+  exact ⟨hk1, hk2, hdl, by omega_using [hsl], Scr.of_mem (by rw [hwr]; simp) wS,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dds⟩
 
 def cdOf (s : State) : CdP :=
   ⟨s.gpr .rcx, (s.gpr .r8).toNat * 8, (s.gpr .rdx).toNat, (s.gpr .rsi).toNat,

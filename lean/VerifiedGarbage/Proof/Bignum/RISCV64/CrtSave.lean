@@ -280,6 +280,46 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 88 ≤ Z
   iterate 11 refine out_wr S ?_ (by decide) _
   exact Mont.Outside.refl _ _ _ _
 
+/-- `ArgsHdr` after writes past the header's first 88 bytes. -/
+theorem ArgsHdr.mono {m m' : Mem} {S : Addr} {s : State} {o n : Nat} (A : ArgsHdr m S s)
+    (h : Mont.Outside S o n m m') (ho : 88 ≤ o) : ArgsHdr m' S s where
+  out := (h.word (Or.inl (by unfold oOut; omega_arith)) (by unfold oOut; omega_arith)).trans A.out
+  n := (h.word (Or.inl (by unfold oN; omega_arith)) (by unfold oN; omega_arith)).trans A.n
+  nLen := (h.word (Or.inl (by unfold oNLen; omega_arith)) (by unfold oNLen; omega_arith)).trans A.nLen
+  inp := (h.word (Or.inl (by unfold oIn; omega_arith)) (by unfold oIn; omega_arith)).trans A.inp
+  p := (h.word (Or.inl (by unfold oP; omega_arith)) (by unfold oP; omega_arith)).trans A.p
+  pLen := (h.word (Or.inl (by unfold oPLen; omega_arith)) (by unfold oPLen; omega_arith)).trans A.pLen
+  q := (h.word (Or.inl (by unfold oQ; omega_arith)) (by unfold oQ; omega_arith)).trans A.q
+  qLen := (h.word (Or.inl (by unfold oQLen; omega_arith)) (by unfold oQLen; omega_arith)).trans A.qLen
+  dp := (h.word (Or.inl (by unfold oDP; omega_arith)) (by unfold oDP; omega_arith)).trans A.dp
+  dq := (h.word (Or.inl (by unfold oDQ; omega_arith)) (by unfold oDQ; omega_arith)).trans A.dq
+  qinv := (h.word (Or.inl (by unfold oQInv; omega_arith)) (by unfold oQInv; omega_arith)).trans A.qinv
+
+/-- `argsG pc`: `args`, and with `pc` the cached values' address (`s1`)
+into the header's `oR2`. -/
+theorem argsG_ok {pc : Bool} {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 224 ≤ Z)
+    (h6 : s.gpr .s6 = Mont.off S 0) (hsp : s.sp.toNat % 8 = 0)
+    (hstk : ∀ j < 7, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8)
+    (hsep : ∀ j < 56, ∀ d < 88, Mem.Sep (s.sp + BitVec.ofNat 64 j) 8 (Mont.off S d) 8) :
+    WP isa (.block (argsG pc)) s fun t =>
+      (ArgsHdr t.mem S s ∧ (∃ m₁, Mont.Outside S 0 88 s.mem m₁ ∧ Mont.Outside S 216 8 m₁ t.mem) ∧
+        (pc = true → Mont.word t.mem S oR2 = s.gpr .s1)) ∧ Keep [.t2, .t3] s t := by
+  have hnw := hs.nowrap
+  cases pc
+  · exact WP.mono (args_ok hs (by omega_arith) h6 hsp hstk hsep) fun t ⟨⟨A, O⟩, k⟩ =>
+      ⟨⟨A, ⟨t.mem, O, Mont.Outside.refl _ _ _ _⟩, nofun⟩, k⟩
+  show WP isa (.block (args ++ [.store .d .s1 .s6 oR2])) s _
+  rw [WP.block_append_iff]
+  refine WP.mono (args_ok hs (by omega_arith) h6 hsp hstk hsep) fun t ⟨⟨A, O⟩, k⟩ => ?_
+  have ht := hs.congr k.2.2
+  refine WP.mono (WP.keep [] (Q := fun u => u.mem = t.mem.writeW (Mont.off S 216) (t.gpr .s1))
+    (by brun [(k.gpr (by decide)).trans h6, oR2, add_ofNat_zero, ht.st (show 216 + 8 ≤ Z by omega_arith),
+      ht.al8 (show 216 + 8 ≤ Z by omega_arith) (by decide)]) (by rfl) (by rfl)) fun u ⟨um, ku⟩ => ?_
+  have W := Mont.writeW_outside t.mem S (d := 216) (t.gpr .s1) (by omega_arith)
+  rw [← um] at W
+  refine ⟨⟨A.mono W (by decide), ⟨t.mem, O, W⟩, fun _ => ?_⟩, (k.trans ku).mono (by decide)⟩
+  rw [um, show oR2 = 216 from rfl, Mont.word_writeW_self, k.gpr (by decide)]
+
 /-! ## The working spaces' registers -/
 
 theorem ofNat_shr3 (x : Nat) (h : x < 2 ^ 64) : BitVec.ofNat 64 x >>> 3 = BitVec.ofNat 64 (x / 8) := by
@@ -365,5 +405,28 @@ theorem setupP_ok {s : State} {S Bp : Addr} {Z l oB oLen : Nat} (hs : Scr s S Z)
   have e0 : slot (wordsOf l) 0 = 256 := by simp [slot, hdrBytes]
   refine ⟨by rw [e0], by rw [e0], congrArg _ ?_, rfl⟩
   unfold wordsOf; split <;> omega_arith
+
+/-- `r2Src q`: the address of the cached `R² mod p` into `t6`, the header's
+`oR2`, or with `q`, after `p`'s `wordsOf pL` words (`pL` at `oPLen`). -/
+theorem r2Src_ok {q : Bool} {s : State} {S : Addr} {Z pL : Nat} (hs : Scr s S Z) (h6 : s.gpr .s6 = Mont.off S 0)
+    (hZ : 256 ≤ Z) (hpl : q = true → Mont.word s.mem S oPLen = BitVec.ofNat 64 pL) (hp1 : 1 ≤ pL)
+    (hp : pL ≤ 1024) :
+    WP isa (.block (r2Src q)) s fun t =>
+      (t.gpr .t6 = Mont.word s.mem S oR2 + BitVec.ofNat 64 (if q then 8 * wordsOf pL else 0) ∧ t.mem = s.mem) ∧
+      Keep [.t2, .t3, .t6] s t := by
+  have hR : s.mem.readW (Mont.off S 216) 64 = Mont.word s.mem S oR2 := rfl
+  cases q
+  · refine WP.keep _ ?_ (by rfl) (by rfl)
+    simp only [r2Src, Bool.false_eq_true, ↓reduceIte, BitVec.add_zero]
+    brun [h6, oR2, hs.ld (show 216 + 8 ≤ Z by omega_arith), hs.al8 (show 216 + 8 ≤ Z by omega_arith) (by decide), hR]
+  · have wv := words_val (x := (pL + 7) / 8) (by omega_arith) (by omega_arith)
+    have hL : s.mem.readW (Mont.off S 40) 64 = BitVec.ofNat 64 pL := hpl rfl
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    simp only [r2Src, words, ↓reduceIte]
+    brun [h6, oR2, oPLen, BitVec.ofNat_add_ofNat, ofNat_shr3 (pL + 7) (by omega_arith),
+      ofNat_shl _ _ (show 3 < 64 by decide), Nat.reducePow, hs.ld (show 216 + 8 ≤ Z by omega_arith),
+      hs.al8 (show 216 + 8 ≤ Z by omega_arith) (by decide), hs.ld (show 40 + 8 ≤ Z by omega_arith),
+      hs.al8 (show 40 + 8 ≤ Z by omega_arith) (by decide), hR, hL, wv, Nat.zero_add]
+    unfold wordsOf; split <;> rfl
 
 end VG.Proof.Bignum.RISCV64.Crt

@@ -38,16 +38,16 @@ theorem sub_stk (sp : Addr) : Region.Sub ⟨sp - 8 - 8, 8⟩ (below sp 16) := by
   intro x hx
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 16) = x - (sp - 8 - 8) by bv_omega]
-  omega
+  omega_using [hx]
 
-theorem sub_b8 (sp : Addr) : Region.Sub (below sp 8) (below sp 16) := below_sub (by omega) (by omega)
+theorem sub_b8 (sp : Addr) : Region.Sub (below sp 8) (below sp 16) := below_sub (by omega_using []) (by omega_using [])
 
 /-- A region apart from the 16 bytes below `rsp` reads the same on entry to a callee. -/
 theorem callEntry_bytes (s : State) {R : Region} (hd : (below (s.gpr .rsp) 16).Disjoint R)
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     s.callEntry.mem (R.base + BitVec.ofNat 64 i) = s.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (s.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (by simpa using (hd.sub_left (sub_b8 _)).symm) hR hi
 
 theorem callEntry_stateAt (s : State) {p : Addr} (hd : (below (s.gpr .rsp) 16).Disjoint ⟨p, 200⟩) :
@@ -56,7 +56,7 @@ theorem callEntry_stateAt (s : State) {p : Addr} (hd : (below (s.gpr .rsp) 16).D
 
 theorem callEntry_bytesAt (s : State) {p : Addr} {n : Nat} (hn : n < 2 ^ 64)
     (hd : (below (s.gpr .rsp) 16).Disjoint ⟨p, n⟩) : bytesAt s.callEntry.mem p n = bytesAt s.mem p n :=
-  bytesAt_congr fun _ hi => callEntry_bytes s (R := ⟨p, n⟩) hd (by simp; omega) hi
+  bytesAt_congr fun _ hi => callEntry_bytes s (R := ⟨p, n⟩) hd (by simp; omega_using [hn]) hi
 
 theorem callEntry_repr (s : State) {p : Addr} (hd : (below (s.gpr .rsp) 16).Disjoint ⟨p, 200⟩)
     {rate : Nat} {msg : List Byte} : Spec.Sha3.Repr s.callEntry.mem p rate msg ↔ Spec.Sha3.Repr s.mem p rate msg := by
@@ -109,7 +109,7 @@ structure AbsorbArgs (s : State) (st dp scr : Addr) (rate pos len : Nat) : Prop 
   k_scr : (below (s.gpr .rsp) 16).Disjoint ⟨scr, 640⟩
 
 theorem rate_lt {rate : Nat} (h : rate ∈ rates) : rate < 2 ^ 64 := by
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at h; omega_using [h]
 
 theorem ofNat_toNat' {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]

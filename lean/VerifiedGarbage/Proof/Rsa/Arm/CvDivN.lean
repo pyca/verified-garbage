@@ -52,7 +52,7 @@ theorem divHdr_ok {s : State} {B : BitVec 32} {Z w N q r d t : Nat} (h : Ws s B 
     rw [← m7]; exact k8
   have rd : ∀ (m : Mem) (o : Nat) (v : BitVec 32) (e : Nat), (e + 4 ≤ o ∨ o + 4 ≤ e) ∧ e < 100 ∧ o < 100 →
       (m.writeW (off (State.addr B) o) v).readW (off (State.addr B) e) 32 = m.readW (off (State.addr B) e) 32 :=
-    fun m o v e he => Mem.readW_writeW_sep (Offset.sep _ he.1 (by omega) (by omega)) (by decide)
+    fun m o v e he => Mem.readW_writeW_sep (Offset.sep _ he.1 (by omega_using [he]) (by omega_using [he])) (by decide)
   refine k u (h7.of_mupd u8) K ⟨?_, ?_, ?_, ?_, ?_⟩ ((r1.mono (by simp)).trans ((u2.rest _).trans
     ((r3.mono (by simp)).trans ((u4.rest _).trans ((r5.mono (by simp)).trans ((u6.rest _).trans
       ((r7.mono (by simp)).trans (u8.rest _))))))))
@@ -85,12 +85,12 @@ structure StC (s0 s : State) : Prop where
 /-- The word `w` of an array that is zero. -/
 theorem top_of_full {m : Mem} {B : BitVec 32} {w j : Nat}
     (h : val32 m (State.addr B) (arr w j) (w + 2) = 0) : w32 m (State.addr B) (arr w j + 4 * w) = 0 := by
-  have := val32_zero_part h (a := w) (c := 1) (by omega)
+  have := val32_zero_part h (a := w) (c := 1) (by omega_using [])
   simpa [val32] using this
 
 theorem num_of_zero {m : Mem} {B : BitVec 32} {w j : Nat}
     (h : val32 m (State.addr B) (arr w j) (w + 2) = 0) : num m B w j = 0 := by
-  have := val32_zero_part h (a := 0) (c := w) (by omega)
+  have := val32_zero_part h (a := 0) (c := w) (by omega_using [])
   simpa using this
 
 /-- The geometry of the division of `n` by `p`. -/

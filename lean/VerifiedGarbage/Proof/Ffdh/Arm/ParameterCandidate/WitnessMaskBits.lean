@@ -24,8 +24,8 @@ theorem witnessMaskBits_ok {s : State} {bits : Nat} (bound : bits ≤ 32)
   rw [WP.seq_iff]
   refine WP.mono (VG.Proof.Bignum.Arm.TwoPower.code_ok u) ?_
   rintro v ⟨value, memV, restV⟩
-  rw [move.gpr, count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : bits < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : bits < 64)] at value
+  rw [move.gpr, count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : bits < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [bound] : bits < 64)] at value
   have low : v.gpr .r2 = BitVec.ofNat 32 (2 ^ bits) := by
     apply BitVec.eq_of_toNat_eq
     have reduced := congrArg (fun n => n % 2 ^ 32) value

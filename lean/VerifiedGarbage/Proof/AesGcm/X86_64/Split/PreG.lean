@@ -82,17 +82,17 @@ theorem pp_wG {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {D :
     (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (kw : (below SP 56).Disjoint ⟨W, 2560⟩)
     (h : d + k ≤ 32 ∨ (128 ≤ d ∧ d + k ≤ 200) ∨ (224 ≤ d ∧ d + k ≤ 448)) :
     ∀ r ∈ ppListG W D SP n, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
-  have hs : Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ ⟨W, 2560⟩ := Lay.wSub (by omega)
+  have hs : Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ ⟨W, 2560⟩ := Lay.wSub (by omega_using [h])
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · show Region.Disjoint _ ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩
-    rw [add_ofNat_assoc]; exact L.w_w (by omega) (by omega) (by decide)
+    rw [add_ofNat_assoc]; exact L.w_w (by omega_using [h]) (by omega_using [h]) (by decide)
   · show Region.Disjoint _ ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16, 16⟩
-    rw [add_ofNat_assoc]; exact L.w_w (by omega) (by omega) (by decide)
+    rw [add_ofNat_assoc]; exact L.w_w (by omega_using [h]) (by omega_using [h]) (by decide)
   · exact (hD.sub_right hs).symm
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact L.w_w (by omega) (by omega) (by decide)
+  · exact L.w_w (.inl (by omega_using [h])) (by omega_using [h]) (by decide)
+  · exact L.w_w (by omega_using [h]) (by omega_using [h]) (by decide)
   · exact (kw.sub_right hs).symm
 
 theorem bytesAt_take' (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : (bytesAt m p n).take k = bytesAt m p k := by
@@ -100,7 +100,7 @@ theorem bytesAt_take' (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) : (bytesAt 
 
 theorem bytesAt_drop' (m : Mem) (p : Addr) {k n : Nat} (h : k ≤ n) :
     (bytesAt m p n).drop k = bytesAt m (p + BitVec.ofNat 64 k) (n - k) := by
-  rw [show n = k + (n - k) by omega, bytesAt_add, Nat.add_sub_cancel_left,
+  rw [show n = k + (n - k) by omega_using [h], bytesAt_add, Nat.add_sub_cancel_left,
     List.drop_left' (length_bytesAt _ _ _)]
 
 section
@@ -118,16 +118,16 @@ theorem PPost.toG {s' : State} (Q : PPost Ctx W SP D S R n sl s s') : PPostG Ctx
       bytesAt s.mem (S + BitVec.ofNat 64 (16 * (sl / 16))) (sl % 16) ++
         bytesAt s.mem (D + BitVec.ofNat 64 sl) (n - sl) := by
     rw [List.drop_append_of_le_length (by rw [length_bytesAt]; exact hq), bytesAt_drop' _ _ hq,
-      bytesAt_drop' _ _ hsl, show sl - 16 * (sl / 16) = sl % 16 by omega]
-  have hqr : 16 * (sl / 16) + sl % 16 = sl := by omega
-  refine ⟨Q.env, Q.rd, Q.wr, by omega, Q.frame.sub fun r hr => ?_, ?_, Q.ctr, Q.y, ?_, Q.dat, Q.len, Q.aux⟩
+      bytesAt_drop' _ _ hsl, show sl - 16 * (sl / 16) = sl % 16 by omega_using []]
+  have hqr : 16 * (sl / 16) + sl % 16 = sl := by omega_using []
+  refine ⟨Q.env, Q.rd, Q.wr, by omega_using [hsl], Q.frame.sub fun r hr => ?_, ?_, Q.ctr, Q.y, ?_, Q.dat, Q.len, Q.aux⟩
   · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega)⟩
+    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega_using [hsl])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega)⟩
+    · exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_using [hsl])⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   · rw [pt₁]
@@ -136,8 +136,8 @@ theorem PPost.toG {s' : State} (Q : PPost Ctx W SP D S R n sl s s') : PPostG Ctx
       ⟨rfl, fun h => (h rfl).elim⟩ rfl Q.blocks Q.ctr).1
   · have eD' : D + BitVec.ofNat 64 (16 * (sl / 16)) + BitVec.ofNat 64 (sl % 16) = D + BitVec.ofNat 64 sl := by
       rw [add_ofNat_assoc, hqr]
-    have sR : Region.Sub ⟨D + BitVec.ofNat 64 sl, n - sl⟩ ⟨D, n⟩ := Offset.sub_base D (by omega)
-    rw [show n - 16 * (sl / 16) = sl % 16 + (n - sl) by omega, bytesAt_add, eD', Q.tail, pt₂]
+    have sR : Region.Sub ⟨D + BitVec.ofNat 64 sl, n - sl⟩ ⟨D, n⟩ := Offset.sub_base D (by omega_using [hsl])
+    rw [show n - 16 * (sl / 16) = sl % 16 + (n - sl) by omega_using [hsl], bytesAt_add, eD', Q.tail, pt₂]
     congr 1
     have dw := h.data.ok.w.sub_left sR
     exact bytesAt_frame Q.frame (fun r hr => by
@@ -145,11 +145,11 @@ theorem PPost.toG {s' : State} (Q : PPost Ctx W SP D S R n sl s s') : PPostG Ctx
       rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl
       · exact dw.sub_right (fun a hc => st_w a (cb_sub a hc))
       · exact dw.sub_right (fun a hc => st_w a (y_sub a hc))
-      · exact Offset.disjoint_base D (by omega) (by omega)
+      · exact Offset.disjoint_base D (by omega_using []) (by omega_using [hsl, hn])
       · exact dw.sub_right sc_w
-      · exact Offset.disjoint D (.inr (by omega)) (by omega) (by omega)
+      · exact Offset.disjoint D (.inr (by omega_using [])) (by omega_using [hsl, hn]) (by omega_using [hsl, hn])
       · exact dw.sub_right (Lay.wSub (by decide))
-      · exact (h.kd.sub_right sR).symm) (by omega)
+      · exact (h.kd.sub_right sR).symm) (by omega_using [hn])
 
 end
 

@@ -53,7 +53,7 @@ theorem nttInv_run (s₀ : State) (hi : InN s₀) :
   have hm : ∀ k < 1024, s₁.mem (s₀.gpr .x0 + BitVec.ofNat 64 k) = s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 k) :=
     fun k hk => h₁.frame _ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact fun h => hi.disj _ (Offset.contains_base _ (show k + 1 ≤ 1024 by omega) (by omega)) h)
+      exact fun h => hi.disj _ (Offset.contains_base _ (show k + 1 ≤ 1024 by omega_using [hk]) (by omega_using [hk])) h)
   have hp : ∀ i < n, coeffAt s₁.mem (s₀.gpr .x0) i = coeffAt s₀.mem (s₀.gpr .x0) i :=
     fun i hi' => coeffAt_congr hm hi'
   have hpoly : polyAt s₁.mem (s₀.gpr .x0) = polyAt s₀.mem (s₀.gpr .x0) :=

@@ -22,7 +22,7 @@ theorem outputFrame_body {g : CallGeometry} {m m' : Mem} (i : Fin 3)
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> simp [bodyWrites, e]
 
 theorem clear_input_ok {g : CallGeometry} {s : State} (h : Inputs g s) (i : Fin 3) :
@@ -31,28 +31,28 @@ theorem clear_input_ok {g : CallGeometry} {s : State} (h : Inputs g s) (i : Fin 
         List.replicate (g.buffer (2 * i.val)).len 0 ∧
       t.gpr .eax = 0 ∧ Frame [g.buffer (2 * i.val)] s.mem t.mem ∧
       Keeps [.esi, .ecx, .eax] s t := by
-  have arg := h.arguments (2 * i.val) (by omega)
-  have len := h.arguments (2 * i.val + 1) (by omega)
+  have arg := h.arguments (2 * i.val) (by omega_using [])
+  have len := h.arguments (2 * i.val + 1) (by omega_using [])
   have bound : (g.buffer (2 * i.val)).len < 2 ^ 32 := by
-    have := h.outputBound i; have := h.upper; omega
+    have := h.outputBound i; have := h.upper; omega_arith
   refine WP.mono (clear_ok (2 * i.val) (h.outputPositive i) bound (h.outputFit i)
     arg.readSrc (by simpa only [CallGeometry.buffer, BitVec.ofNat_toNat, BitVec.setWidth_eq] using len.readSrc)
     (h.outputWrite i)) fun t ⟨v, z, o, k⟩ => ?_
   have f : Frame [g.buffer (2 * i.val)] s.mem t.mem := by
-    simpa only [CallGeometry.buffer, byteAddr, off, BitVec.add_zero] using outside_frame o (by omega)
+    simpa only [CallGeometry.buffer, byteAddr, off, BitVec.add_zero] using outside_frame o (by omega_using [bound])
   refine ⟨h.after k (by decide) (by decide) ?_, v, z, f, k⟩
   apply f.mono
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> simp [CallGeometry.writes, e]
 
 theorem clear_other {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s)
     (i k : Fin 3) (ne : k ≠ i) (f : Frame [g.buffer (2 * i.val)] m m') :
     Spec.Rsa.bytesAt m' (g.buffer (2 * k.val)).base (g.buffer (2 * k.val)).len =
       Spec.Rsa.bytesAt m (g.buffer (2 * k.val)).base (g.buffer (2 * k.val)).len := by
-  apply VG.Proof.Rsa.rsa_bytes_frame f (by have := h.outputBound k; have := h.upper; omega)
+  apply VG.Proof.Rsa.rsa_bytes_frame f (by have := h.outputBound k; have := h.upper; omega_arith)
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r

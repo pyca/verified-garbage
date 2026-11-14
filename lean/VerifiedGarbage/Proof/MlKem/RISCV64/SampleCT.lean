@@ -144,7 +144,7 @@ theorem loop_ct {N : Nat} (h0 : 0 < N) :
       · have : t + 1 ≠ N := by
           have e' : (a.gpr .a3 != 0) = true := by rw [Steps.eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨N - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨N - (t + 1), by omega_using [ht, hn], t + 1, by omega_using [ht, this], rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
@@ -220,7 +220,7 @@ theorem squeezePhase_ct {len : Nat} (hl' : len = 504 ∨ len = 840) :
       (SEnv s₂ b ∧ stateAt b.mem (S s₂) = VG.Proof.MlKem.padded 168 Spec.Sha3.shakeSuffix (B s₂)))
       (.seq (.block (squeezeArgs len)) (.call "vg_keccak_squeeze" Impl.Sha3.RISCV64.Stream.squeeze))
       fun _ _ => True := by
-  have hl : len ≤ 840 := by omega
+  have hl : len ≤ 840 := by omega_using [hl']
   have hw : ∀ s₀ s, Pre s₀ → SEnv s₀ s → WP isa (.block (squeezeArgs len)) s (FS len s₀) := fun s₀ s hp hs =>
     WP.mono (squeezeArgs_ok hp hl hs) fun _ ⟨ht, _, ha⟩ => ⟨ht, ha⟩
   refine RelCT.seq (R := fun a b => FS len s₁ a ∧ FS len s₂ b) (relct_wp ?_ fun a b hab =>
@@ -233,7 +233,7 @@ theorem squeezePhase_ct {len : Nat} (hl' : len = 504 ∨ len = 840) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact lowS
-    · exact ⟨840, len, by omega, rfl⟩
+    · exact ⟨840, len, by omega_using [hl'], rfl⟩
   refine squeezeCall_ct (st := S s₁) (pa := S s₁ + BitVec.ofNat 64 840) (rate := 168) (pos := 0) (pl := len)
     fun a b ⟨⟨ea, aa⟩, ⟨eb, ab⟩⟩ => ?_
   have ca := call_covers h.hp₁ ea (rd := []) (wr := [⟨S s₁, 200⟩, ⟨S s₁ + BitVec.ofNat 64 840, len⟩])
@@ -258,8 +258,8 @@ theorem try_ct {N : Nat} (hN' : N = 168 ∨ N = 280) :
     RelCT isa (fun a b => SEnv s₁ a ∧ SEnv s₂ b) (sampleTry N) fun a b => Inv N s₁ N a ∧ Inv N s₂ N b := by
   have hp₁ := h.hp₁
   have hp₂ := h.hp₂
-  have hN : N ≤ 280 := by omega
-  have h0 : 0 < N := by omega
+  have hN : N ≤ 280 := by omega_using [hN']
+  have h0 : 0 < N := by omega_using [hN']
   refine RelCT.seq (R := fun a b => E1 s₁ a ∧ E1 s₂ b) (relct_wp ?_ fun a b hab =>
     ⟨zero_ok hp₁ hab.1, zero_ok hp₂ hab.2⟩) ?_
   · exact taint_block [.s9] (fun a b hab => env_sp h hab.1 hab.2) (fun a b hab r hr => by
@@ -269,8 +269,8 @@ theorem try_ct {N : Nat} (hN' : N = 168 ∨ N = 280) :
   refine RelCT.seq (R := fun a b => E3 s₁ a ∧ E3 s₂ b) (relct_wp (padPhase_ct h) fun a b hab =>
     ⟨pad_phase hp₁ hab.1.1 hab.1.2.1 hab.1.2.2, pad_phase hp₂ hab.2.1 hab.2.2.1 hab.2.2.2⟩) ?_
   refine RelCT.seq (R := fun a b => E4 (3 * N) s₁ a ∧ E4 (3 * N) s₂ b)
-    (relct_wp (squeezePhase_ct h (by omega)) fun a b hab =>
-      ⟨squeeze_phase hp₁ (by omega) hab.1.1 hab.1.2, squeeze_phase hp₂ (by omega) hab.2.1 hab.2.2⟩) ?_
+    (relct_wp (squeezePhase_ct h (by omega_using [hN'])) fun a b hab =>
+      ⟨squeeze_phase hp₁ (by omega_using [hN']) hab.1.1 hab.1.2, squeeze_phase hp₂ (by omega_using [hN']) hab.2.1 hab.2.2⟩) ?_
   refine RelCT.seq (R := fun a b => Inv N s₁ 0 a ∧ Inv N s₂ 0 b) (relct_wp ?_ fun a b hab =>
     ⟨init_ok hp₁ hN hab.1.1 hab.1.2, init_ok hp₂ hN hab.2.1 hab.2.2⟩) (loop_ct h h0)
   rcases hN' with rfl | rfl <;>

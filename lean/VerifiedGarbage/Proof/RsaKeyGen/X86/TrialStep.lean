@@ -76,7 +76,7 @@ theorem redc32_ok (s : State)
     primeLow primeHigh accBound inverse
   have bound : (s.gpr .eax).toNat + (s.gpr .ebp).toNat < (s.gpr .ebx).toNat * 2 ^ 32 := by
     have := (s.gpr .eax).isLt
-    omega
+    omega_using [primeLow]
   have math := VG.Proof.RsaKeyGen.redc32_math inverse bound
   rw [value, result]
   exact ⟨M, K, math.2⟩

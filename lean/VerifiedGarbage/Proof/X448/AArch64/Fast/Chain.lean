@@ -98,7 +98,7 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     EV u.mem base = Function.update (EV s.mem base) o (Proof.X448.sqn (EV s.mem base o) (n - m))
   refine WP.loop (M := isa) inv ?_ n t ?_
   · intro m u ⟨hm, hm', ku, bu, cu, eu⟩
-    obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hm]⟩
     rw [WP.block_append_iff]
     have hsq : Impl.Curve448.AArch64.Fast.sqr (slot o.val) (slot o.val) =
         Impl.X448.AArch64.Fast.fmul (slot o.val) (slot o.val) (slot o.val) := by
@@ -106,20 +106,20 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     rw [hsq]
     refine WP.mono (fmulE (ku.scr hs) bu o o o (Or.inl rfl)) fun v ⟨kv, bv, _, _, ev⟩ => ?_
     have cv : v.gpr .x19 = BitVec.ofNat 64 (m + 1) := (kv.regs.1 _ (by decide)).trans cu
-    refine WP.mono (decCounter_ok (by omega) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
+    refine WP.mono (decCounter_ok (by omega_using [hn', hm']) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
     have kw : IKeep base s w := ku.trans (kv.ikeep.trans (counter_keep wg wm wr ww))
     have bw : BEnv w.mem base := wm ▸ bv
     have ew : EV w.mem base = Function.update (EV s.mem base) o (Proof.X448.sqn (EV s.mem base o) (n - m)) := by
       rw [wm, ev, eu]
       simp only [VG.Proof.X448.AArch64.opMul, Function.update_self, Function.update_idem]
       rw [← Proof.X448.sqn]
-      rw [show (n - (m + 1)).succ = n - m by omega]
+      rw [show (n - (m + 1)).succ = n - m by omega_using [hm']]
     simp only [eval, State.read, BitVec.setWidth_eq, bne, wz]
     rcases Nat.eq_zero_or_pos m with rfl | hm
     · exact Or.inl ⟨rfl, kw, bw, ew⟩
-    · refine Or.inr ⟨?_, m, by omega, hm, by omega, kw, bw, cw, ew⟩
-      rw [decide_eq_false (by omega : ¬m = 0)]; rfl
-  · refine ⟨hn, by omega, kt, tm ▸ hb, tc, ?_⟩
+    · refine Or.inr ⟨?_, m, by omega_using [], hm, by omega_using [hm'], kw, bw, cw, ew⟩
+      rw [decide_eq_false (by omega_using [hm] : ¬m = 0)]; rfl
+  · refine ⟨hn, by omega_using [], kt, tm ▸ hb, tc, ?_⟩
     rw [tm, Nat.sub_self, Proof.X448.sqn, Function.update_eq_self]
 
 theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
@@ -142,7 +142,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
     have ey := VG.Proof.X448.AArch64.Weak.slot_sep hi.2
     have hi' := VG.Proof.X448.AArch64.Weak.slot_bound i
     change (word t.mem base (slot i.val + 8 * j)).toNat = _
-    rw [tm.word (by omega) (by omega) (by change slot i.val + 128 ≤ 3584 at hi'; omega)]
+    rw [tm.word (by omega_using [hj, ex]) (by omega_using [hj, ey]) (by change slot i.val + 128 ≤ 3584 at hi'; omega_using [hj, hi'])]
   have fx : EV t.mem base x = if sw then EV s.mem base y else EV s.mem base x := by
     cases sw <;> apply congrArg VG.Proof.X448.toFe <;> apply VG.Proof.X448.Wide.valN_congr <;> exact tx
   have fy : EV t.mem base y = if sw then EV s.mem base x else EV s.mem base y := by
@@ -154,7 +154,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
   · intro p hp _
     have hx := x.isLt
     have hy := y.isLt
-    apply tm p <;> simp only [slot] <;> omega
+    apply tm p <;> simp only [slot] <;> omega_using [hp]
   · by_cases hix : i = x
     · subst i; intro j hj; rw [tx j hj]; cases sw <;> exact hb _ j hj
     · by_cases hiy : i = y

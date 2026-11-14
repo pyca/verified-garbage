@@ -28,9 +28,9 @@ theorem constant_ok {s : State} {B : Addr} {Z n N j : Nat}
   simp only [offset_array, Width.words] at O V
   have bound : val32 t.mem B (arr n j) (n + 2) < 2 ^ (32 * n) := by
     rw [V]
-    exact Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by have := h.wpos; omega))
+    exact Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by have := h.wpos; omega_using [this]))
   exact ⟨ht, Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using O)
-      (by simp only [S]; omega) (by simp),
-    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : n ≤ n + 2) bound).trans V, K⟩
+      (by simp only [S]; omega_using []) (by simp),
+    (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : n ≤ n + 2) bound).trans V, K⟩
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

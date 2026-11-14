@@ -78,7 +78,7 @@ private theorem sharedCode_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa}
     have hn := c.hs.nowrap
     have hZ := c.hZ
     have hk1 := c.k1
-    have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+    have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ, hk1, hi])
     have hh : WP isa (.block ([.mov .r11 (.mem { base := .rsp, disp := 32 })] ++ kEntry.drop 1)) s
         (EntryPost s · (arg s 3)) := by
       rw [← kEntry_split]; exact kEntry_ok rfl hhw c.ha c.hsep

@@ -144,7 +144,7 @@ theorem validatePrivate_correct (s : State) (h : vpkContract.pre s) :
   have hL := vpkContract_lay h
   have hZ := hL.z256
   obtain ⟨hrd, hwr, dKS, -, nw, hv, hkl, -⟩ := h
-  have hplq : 3 * (playOf s).pl + 2 * (playOf s).ql = (s.gpr .r4).toNat := by simp only [playOf]; omega
+  have hplq : 3 * (playOf s).pl + 2 * (playOf s).ql = (s.gpr .r4).toNat := by simp only [playOf]; omega_using [hkl]
   have hspec : vpkRes s = decide (PrivOk s.mem (playOf s) (s.gpr .r3)) := by
     show Spec.Dsa.validatePrivateKeyBytes (playOf s).pl (playOf s).ql _ = _
     rw [← hplq]; exact validatePrivate_spec hv
@@ -154,16 +154,16 @@ theorem validatePrivate_correct (s : State) (h : vpkContract.pre s) :
   unfold PrevalidatedSign.validate
   refine WP.seq (WP.mono (pfront_ok_of hL hwr nw) fun s₁ ⟨⟨hr₁, scr₁, r2₁, sav₁, out₁⟩, k₁⟩ => ?_)
   have hwr' : ∀ u : State, ScrL u (playOf s) → ∀ i < 19, InRegions u.wr (off (savW (s.gpr .r7)) (8 * i)) 8 :=
-    fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [playOf] at hZ ⊢; omega)
+    fun u hu i hi => by rw [← saveOff_eq]; exact hu.st (d := 104 + 8 * i) (by simp only [playOf] at hZ ⊢; omega_using [hZ, hi])
   have Out₁ : Outside (playOf s).S 0 (playOf s).Z s.mem s₁.mem :=
-    out₁.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega)
+    out₁.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
   have hPs : PrivOk s₁.mem (playOf s) (s.gpr .r3) ↔ PrivOk s.mem (playOf s) (s.gpr .r3) := by
-    obtain ⟨ep, eq, eg, ey⟩ := key_kept ((src rfl rfl).take (by omega)) Out₁
+    obtain ⟨ep, eq, eg, ey⟩ := key_kept ((src rfl rfl).take (by omega_using [])) Out₁
     have ex : xOf s₁.mem (playOf s) (s.gpr .r3) = xOf s.mem (playOf s) (s.gpr .r3) := by
       simp only [xOf]
-      rw [((src rfl rfl).sub (o := 3 * (playOf s).pl + (playOf s).ql) (k := (playOf s).ql) (by omega)).kept Out₁]
+      rw [((src rfl rfl).sub (o := 3 * (playOf s).pl + (playOf s).ql) (k := (playOf s).ql) (by omega_using [])).kept Out₁]
     simp only [PrivOk, KeyOk, ep, eq, eg, ey, ex]
-  refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by decide) ((src k₁.rd k₁.wr).take (by omega))
+  refine WP.seq (checkKey_ok hL scr₁ hr₁ r2₁ (by decide) ((src k₁.rd k₁.wr).take (by omega_using []))
     (fun t hK hc hb kc => ?_) (fun t hn hb hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     refine WP.mono (privateChecks_ok hL hK hc hb (src kt.rd kt.wr)) fun u ⟨⟨u3, Ku, h21u, scru⟩, ku⟩ => ?_

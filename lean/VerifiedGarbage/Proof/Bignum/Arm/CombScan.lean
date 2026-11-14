@@ -50,7 +50,7 @@ theorem loop_ok (s : State) {base table : BitVec 32} {len w M g N d : Nat}
   refine WP.loop (M:=isa) I ?_ 32 s ⟨0,rfl,by decide,h,HeaderKeeps.refl _ _,ArrayKeeps.refl _ _ _,Frame.refl _ _,Rest.refl _ _⟩
   intro k t current
   obtain ⟨j,total,positive,inv,headers,arrays,frame,rest⟩ := current
-  refine WP.mono (body_ok t inv (by omega)) ?_
+  refine WP.mono (body_ok t inv (by omega_using [total, positive])) ?_
   rintro u ⟨next,zero,headersU,arraysU,frameU,restU⟩
   by_cases last : j+1=32
   · left
@@ -58,7 +58,7 @@ theorem loop_ok (s : State) {base table : BitVec 32} {len w M g N d : Nat}
     change some (!u.z)=some false
     simp only [zero,last,decide_true,Bool.not_true]
   · right
-    refine ⟨?_,k-1,by omega,j+1,by omega,by omega,next,
+    refine ⟨?_,k-1,by omega_using [positive],j+1,by omega_using [total, positive],by omega_using [total, positive, last],next,
       headers.trans headersU,arrays.trans arraysU,frame.trans frameU,rest.trans restU⟩
     change some (!u.z)=some true
     simp only [zero,decide_eq_false last,Bool.not_false]

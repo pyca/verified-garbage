@@ -32,8 +32,8 @@ theorem xorScalarRowFrom_ok (s : State) (r : Reg) (k : Fin 8)
       u.mem = s.mem.write (s.gpr .x1 + BitVec.ofNat 64 (384 + 16 * k.val)) 16
         (s.mem.read (s.gpr r + BitVec.ofNat 64 (384 + 16 * k.val)) 16 ^^^
           s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * k.val)) 16) ∧ Same s u := by
-  have ha : (16 * k.val) % 16 = 0 ∧ 16 * k.val < 4096 * 16 := by omega
-  have hb : (384 + 16 * k.val) % 16 = 0 ∧ 384 + 16 * k.val < 4096 * 16 := by omega
+  have ha : (16 * k.val) % 16 = 0 ∧ 16 * k.val < 4096 * 16 := by omega_using []
+  have hb : (384 + 16 * k.val) % 16 = 0 ∧ 384 + 16 * k.val < 4096 * 16 := by omega_using []
   apply WP.of_runBlock
   simp (config := {decide := true}) only [xorScalarRowFrom,runBlock_cons,runBlock_nil,exec,addr,
     ha,hb,and_self,ite_true,State.load,hin,hsrc,State.setV,reduceVOpEval,State.store,hout,
@@ -72,13 +72,13 @@ theorem xorScalarListFrom_ok (r : Reg) (ks : List (Fin 8)) (hn : ks.Nodup)
     have hr : s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * k.val)) 16 =
         m₀.read (b + BitVec.ofNat 64 (16 * k.val)) 16 := by
       rw [hbp]
-      exact (data_frame128 h).read (r := ⟨b,128⟩) (Offset.contains_base _ (by omega) (by omega))
+      exact (data_frame128 h).read (r := ⟨b,128⟩) (Offset.contains_base _ (by omega_using []) (by omega_using []))
         (by intro r hr; have he := List.mem_singleton.mp hr; subst r; exact hdis) (by decide)
     have ha : DataTo m₀ a.mem q p 128 (fun k => m₀.read (b + BitVec.ofNat 64 (16 * k)) 16)
         (k.val :: done) := by
       rw [hm,he,hes,hr]
-      exact h.store (by omega) (by decide)
-        (h.src halias (by omega) (by decide) (hf k (List.mem_cons_self ..)))
+      exact h.store (by omega_using []) (by decide)
+        (h.src halias (by omega_using []) (by decide) (hf k (List.mem_cons_self ..)))
     have hf' : ∀ l ∈ ks, l.val ∉ k.val :: done := by
       intro l hl
       simp only [List.mem_cons,not_or]

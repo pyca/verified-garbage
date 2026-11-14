@@ -45,7 +45,7 @@ theorem ofNat_sub_one {k : Nat} (hk : 1 ≤ k) : BitVec.ofNat 32 k - 1 = BitVec.
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
   rw [show (1 : BitVec 32).toNat = 1 from rfl]
-  omega
+  omega_using [hk]
 
 theorem byte_beq_zero (b : Byte) : (b.setWidth 32 == 0) = decide (b = 0) := by
   by_cases hb0 : b = 0
@@ -93,7 +93,7 @@ theorem significantByte_ok {s : State} {p : BitVec 32} {b : Byte} {rest : List B
     have R₃ : Rest scanRegs s s₃ := R.trans ((u₂.rest (by decide)).trans (u₃.rest (by decide)))
     have hm₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, hm]
     have hcx : s₃.gpr .r2 = BitVec.ofNat 32 rest.length := by
-      rw [u₃.gpr, u₂.other _ (by decide), e2, ofNat_sub_one (by omega), Nat.add_sub_cancel]
+      rw [u₃.gpr, u₂.other _ (by decide), e2, ofNat_sub_one (by omega_using []), Nat.add_sub_cancel]
     have hbnd : (scanNext found (rest.length + 1) b).1 < 2 ^ 32 ∧
         ((scanNext found (rest.length + 1) b).1 = 0 → (scanNext found (rest.length + 1) b).2 = 0) := by
       unfold scanNext
@@ -106,7 +106,7 @@ theorem significantByte_ok {s : State} {p : BitVec 32} {b : Byte} {rest : List B
     · have := (h.bytes.drop 1 (by simp)).congr hm₃ (by rw [R₃.rd]) (by rw [R₃.wr])
       rw [List.drop_one, List.tail_cons] at this
       exact this
-    · rw [z₃, u₂.other _ (by decide), e2, ofNat_sub_one (by omega), Nat.add_sub_cancel, ofNat_beq_zero (by omega)]
+    · rw [z₃, u₂.other _ (by decide), e2, ofNat_sub_one (by omega_using []), Nat.add_sub_cancel, ofNat_beq_zero (by omega_using [hl])]
   have R₁ : Rest scanRegs s s₁ := u₁.rest (by decide)
   have e1 : s₁.gpr .r1 = p := by rw [u₁.other _ (by decide), h.r1]
   have e2 : s₁.gpr .r2 = BitVec.ofNat 32 (rest.length + 1) := by rw [u₁.other _ (by decide), h.r2]; rfl
@@ -170,8 +170,8 @@ theorem significant_ok {s : State} {p : BitVec 32} {bs : List Byte}
     | cons b rest => exact ⟨b, rest, rfl⟩
   rw [hbr] at ht htarget hlen
   have hrl : rest.length + 1 = bs.length - j := by
-    have := congrArg List.length hbr; simp only [List.length_drop, List.length_cons] at this; omega
-  refine WP.mono (significantByte_ok ht (by omega)) fun u ⟨hu, hz, hum, hku⟩ => ?_
+    have := congrArg List.length hbr; simp only [List.length_drop, List.length_cons] at this; omega_using [this]
+  refine WP.mono (significantByte_ok ht (by omega_using [h32, hrl])) fun u ⟨hu, hz, hum, hku⟩ => ?_
   have hrest : bs.drop (j + 1) = rest := by
     rw [← List.drop_drop, hbr, List.drop_one, List.tail_cons]
   have hu' : ScanState u (p + BitVec.ofNat 32 (j + 1)) (bs.drop (j + 1))
@@ -186,7 +186,7 @@ theorem significant_ok {s : State} {p : BitVec 32} {bs : List Byte}
     · rw [hu.r3, ← hnil.symm.trans htarget']
     · rw [hu.r4, ← hnil.symm.trans htarget']
   · right
-    refine ⟨by rw [eval_ne, hz]; simp [he], rest.length, by simp only [List.length_cons] at hlen; omega,
-      j + 1, _, by rw [hrest], by omega, hu', by rw [hrest]; exact htarget', hum.trans htm, hk⟩
+    refine ⟨by rw [eval_ne, hz]; simp [he], rest.length, by simp only [List.length_cons] at hlen; omega_using [hlen],
+      j + 1, _, by rw [hrest], by omega_using [he], hu', by rw [hrest]; exact htarget', hum.trans htm, hk⟩
 
 end VG.Proof.Dsa.Arm.Key

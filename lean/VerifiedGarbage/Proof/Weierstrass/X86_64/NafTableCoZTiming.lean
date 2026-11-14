@@ -91,7 +91,7 @@ theorem nafTableCoZ_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : 
     have hx := hL.tbl K.R.x (List.mem_append_right _ (coZ_R_other K _ (by simp [jacCoords])))
     have hz := hL.tbl K.R.z (List.mem_append_right _ (coZ_R_other K _ (by simp [jacCoords])))
     rw [hL.rxz] at hz
-    omega
+    omega_using [hz]
   have hv : ∀ i∈[0,1,8,9,10],Naf.coZσ K i∈coZLive K m := by
     intro i hi
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
@@ -105,7 +105,7 @@ theorem nafTableCoZ_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : 
     CoZTable.zaddu_out CoZTable.zaddu_reads hv hc.zaddu)
   apply RelCT.block_append
   apply RelCT.seq (nafTableStore_relCT (base:=base) (j:=m) hL.lay hL.n hL.rxy hL.rxz hm8 ht
-    (by have := hL.table_le; omega) (nafTblPt_mem K (by omega) (by omega))
+    (by have := hL.table_le; omega_using [this]) (nafTblPt_mem K (by omega_using []) (by omega_using [hm8]))
     (fun x hx => (mem_validAfter _ _).mpr (Or.inl (coZLive_R K m x hx))) sep hc.store)
   have adv := keepsField_relCT (M:=K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈nafSlots K))
@@ -135,7 +135,7 @@ theorem nafTableCoZ_twice_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : N
   have tS := nafTblPt_mem K (a:=9) (by decide) (by decide)
   have tn := coZ_tbl_other hL (a:=9) (by decide) (by decide)
   have hN : (jacCoords (Naf.twice K)).Nodup := by
-    have := hL.n; simp only [Naf.twice]; simp [jacCoords,WinCfg.tblPt] <;> omega
+    have := hL.n; simp only [Naf.twice]; simp [jacCoords,WinCfg.tblPt] <;> omega_using [this]
   have hqa : ∀ x∈jacCoords (Naf.coZD K),∀ y∈jacCoords (Naf.twice K),x≠y :=
     fun x hx y hy he => tn y hy (he ▸ coZ_D_other K x hx)
   let F := fun u : State => u.gpr .rbx=BitVec.ofNat 64 8
@@ -162,19 +162,19 @@ theorem nafTableCoZ_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro j
     by_cases hj : 1≤j
     · by_cases hj7 : j≤7
-      · refine (nafTableCoZ_step_relCT hL hJ hm ht (m:=8-j) (by omega) hc).mono
+      · refine (nafTableCoZ_step_relCT hL hJ hm ht (m:=8-j) (by omega_using [hj]) hc).mono
           (P':=I j) (fun _ _ h => h.2.2) ?_
         intro s t ⟨hp,cs,ct⟩
         refine ⟨cs.trans ct.symm,fun he => ?_,fun he => ?_⟩
         · change s.cf=some false at he
           have hn := of_decide_eq_false (Option.some.inj (cs.symm.trans he))
-          have hj1 : j=1 := by omega
+          have hj1 : j=1 := by omega_using [hj, hn]
           subst j
           exact hp
         · change s.cf=some true at he
           have hy := of_decide_eq_true (Option.some.inj (cs.symm.trans he))
-          refine ⟨j-1,by omega,by omega,by omega,?_⟩
-          rw [show 8-(j-1)=8-j+1 from by omega]
+          refine ⟨j-1,by omega_using [hj],by omega_using [hy],by omega_using [hj7],?_⟩
+          rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
           exact hp
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)

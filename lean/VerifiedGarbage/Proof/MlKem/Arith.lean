@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlKem
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: arithmetic modulo `q`, for every target
@@ -106,7 +107,7 @@ def condSub (t : Nat) : Nat := if q ≤ t then t - q else t
 
 /-- One conditional subtraction reduces a value less than `2q`. -/
 theorem condSub_eq {t : Nat} (h : t < 2 * q) : condSub t = t % q := by
-  unfold condSub; rw [q_eq] at *; split <;> omega
+  unfold condSub; rw [q_eq] at *; split <;> omega_arith
 
 /-- `(a - b) mod q`, for reduced `a` and `b`, as `a + q - b` reduced with one
 conditional subtraction; that is `a - b` if `b ≤ a`, and `a + q - b`
@@ -115,14 +116,14 @@ theorem sub_mod_q {a b : Nat} (ha : a < q) (hb : b < q) :
     (a + q - b) % q = condSub (a + q - b) ∧
       condSub (a + q - b) = if b ≤ a then a - b else a + q - b := by
   refine ⟨(condSub_eq (by omega)).symm, ?_⟩
-  unfold condSub; rw [q_eq] at *; split <;> split <;> omega
+  unfold condSub; rw [q_eq] at *; split <;> split <;> omega_arith
 
 theorem val_add (a b : Zq) : (a + b).val = condSub (a.val + b.val) := by
-  rw [val_add', condSub_eq (by have := a.isLt; have := b.isLt; omega)]
+  rw [val_add', condSub_eq (by have := a.isLt; have := b.isLt; omega_using [])]
 
 theorem val_sub (a b : Zq) : (a - b).val = condSub (a.val + q - b.val) := by
   have := a.isLt; have := b.isLt
-  rw [val_sub', condSub_eq (by omega), show a.val + (q - b.val) = a.val + q - b.val by omega]
+  rw [val_sub', condSub_eq (by omega_using []), show a.val + (q - b.val) = a.val + q - b.val by omega_using []]
 
 theorem val_sub_eq (a b : Zq) : (a - b).val = if b.val ≤ a.val then a.val - b.val else a.val + q - b.val := by
   rw [val_sub]; exact (sub_mod_q a.isLt b.isLt).2
@@ -144,12 +145,12 @@ theorem barrett32_bounds {x : Nat} (hx : x < 2 ^ 25) :
     x / 2048 * 161270 < 2 ^ 32 ∧ barrett32Quot x * q ≤ x := by
   unfold barrett32Quot
   rw [q_eq]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem barrett32_lt {x : Nat} (hx : x < 2 ^ 25) : barrett32 x < 2 * q := by
   unfold barrett32 barrett32Quot
   rw [q_eq]
-  omega
+  omega_using [hx]
 
 theorem barrett32_mod {x : Nat} (hx : x < 2 ^ 25) : barrett32 x % q = x % q := by
   have h := (barrett32_bounds hx).2
@@ -157,7 +158,7 @@ theorem barrett32_mod {x : Nat} (hx : x < 2 ^ 25) : barrett32 x % q = x % q := b
   generalize barrett32Quot x = e at h
   have := Nat.mul_mod_left e q
   rw [q_eq] at *
-  omega
+  omega_using [h]
 
 /-- Reduction modulo `q` of `x < 2²⁵` with 32-bit arithmetic. -/
 theorem reduce32 {x : Nat} (hx : x < 2 ^ 25) : condSub (barrett32 x) = x % q := by
@@ -178,12 +179,12 @@ theorem barrett64_bounds {x : Nat} (hx : x < 2 ^ 32) :
     x * 1290167 < 2 ^ 64 ∧ barrett64Quot x * q ≤ x := by
   unfold barrett64Quot
   rw [q_eq]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem barrett64_lt {x : Nat} (hx : x < 2 ^ 32) : barrett64 x < 2 * q := by
   unfold barrett64 barrett64Quot
   rw [q_eq]
-  omega
+  omega_using [hx]
 
 theorem barrett64_mod {x : Nat} (hx : x < 2 ^ 32) : barrett64 x % q = x % q := by
   have h := (barrett64_bounds hx).2
@@ -191,7 +192,7 @@ theorem barrett64_mod {x : Nat} (hx : x < 2 ^ 32) : barrett64 x % q = x % q := b
   generalize barrett64Quot x = e at h
   have := Nat.mul_mod_left e q
   rw [q_eq] at *
-  omega
+  omega_using [h]
 
 /-! ## Products of reduced values -/
 

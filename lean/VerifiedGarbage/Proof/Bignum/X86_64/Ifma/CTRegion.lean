@@ -81,7 +81,7 @@ structure RegT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   rl : TOk [.r8, .r9, .rcx] (.loop (.block (recodeBody l)) .ne)
 
 theorem regT (hl : AmmOk l) : RegT l := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;>
+  rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -317,7 +317,7 @@ theorem recBlk_ok (hl : AmmOk l) (hw : l.w ≠ 4) {p sp sl : Nat} {q : RegPub} {
   obtain ⟨d1, d2⟩ := lay_oD l hw
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hDp : l.D * p ≤ l.D ∧ l.D * p + l.D ≤ l.nl * l.D ∧ l.nl * l.D ≤ 2 * l.D := ⟨D_le hl hp, lane_end hl hp, (nlD_le hl).2⟩
-  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+  have hG : l.P / l.w < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   refine WP.mono (WP.keep [.rcx, .r8, .r9] (Q := fun t =>
     t.gpr .r8 = off (off q.B q.a) (l.D * p + l.oE) ∧ t.gpr .r9 = off (off q.B q.a) (l.D * p + l.oD) ∧
       t.gpr .rcx = BitVec.ofNat 64 (l.P / l.w)) (by
@@ -383,7 +383,7 @@ theorem k1_chain (hl : AmmOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : Re
   have lT := slot_le (w := l.W) (show aT < 8 by decide)
   have lN := slot_le (w := l.W) (show Public.aN < 8 by decide)
   have sTN := slot_sep (w := l.W) (show aT ≠ Public.aN by decide)
-  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
+  have hdb : 1 ≤ l.dbls ∧ l.dbls < 2 ^ 31 := by rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl <;> decide
   have hk1 : ∀ r ∈ k1Ranges l.W, r.1 + r.2 ≤ slot l.W 8 := by
     have := slot_le (w := l.W) (show Public.aAcc < 8 by decide)
     have := slot_le (w := l.W) (show Public.aTmp < 8 by decide)
@@ -533,13 +533,13 @@ theorem arrLoop_ct (hl : AmmOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
   refine WP.mono (subR8_ok v) fun x ⟨x8, xz, kx, xm, _⟩ => ?_
   have hx := hv.of_frm (rs := []) (by rw [xm]; exact Frm.refl _ _ _) (by simp) kx
   have hv8 : v.gpr .r8 - 1 = BitVec.ofNat 64 (5 - (i + 1)) := by
-    rw [k.gpr (by decide), h8, h.2, ofNat64_pred (by omega) (by omega), Nat.sub_sub]
+    rw [k.gpr (by decide), h8, h.2, ofNat64_pred (by omega_using [hi]) (by omega_using []), Nat.sub_sub]
   refine ⟨?_, fun _ => ⟨hx, by rw [x8, hv8]⟩, fun _ => ⟨hx, by rw [kx.gpr (by decide)]; exact h12⟩⟩
-  simp only [eval, xz, hv8, ofNat64_beq_zero (show 5 - (i + 1) < 2 ^ 64 by omega), Option.map_some,
+  simp only [eval, xz, hv8, ofNat64_beq_zero (show 5 - (i + 1) < 2 ^ 64 by omega_using []), Option.map_some,
     Option.some.injEq]
   apply Bool.eq_iff_iff.mpr
   simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, decide_eq_true_eq]
-  omega
+  omega_using []
 
 
 /-- `p`'s region is constant time. -/

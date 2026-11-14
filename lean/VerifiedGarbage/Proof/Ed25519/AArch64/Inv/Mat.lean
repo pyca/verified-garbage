@@ -49,7 +49,7 @@ theorem absN_word (m : Word) : ((m ^^^ maskN m) - maskN m).toNat = absN m := by
     have hl := m.isLt
     rw [BitVec.toNat_sub, BitVec.toNat_xor, show (0 : Word).toNat = 0 from rfl, Nat.xor_zero, h1,
       Int.natAbs_natCast]
-    omega
+    omega_using []
   · simp only [↓reduceIte]
     have h1 : m.toInt = (m.toNat : Int) - 2 ^ 64 := by
       have := BitVec.toInt_eq_msb_cond m
@@ -60,9 +60,9 @@ theorem absN_word (m : Word) : ((m ^^^ maskN m) - maskN m).toNat = absN m := by
       simpa using hm
     have hl := m.isLt
     rw [BitVec.xor_allOnes, BitVec.toNat_sub, BitVec.toNat_not, BitVec.toNat_allOnes, h1,
-      show ((m.toNat : Int) - 2 ^ 64) = -((2 ^ 64 - m.toNat : Nat) : Int) by omega,
+      show ((m.toNat : Int) - 2 ^ 64) = -((2 ^ 64 - m.toNat : Nat) : Int) by omega_using [],
       Int.natAbs_neg, Int.natAbs_natCast]
-    omega
+    omega_using [h2]
 
 /-- The magnitude of a word as the code computes it. -/
 abbrev absW (m : Word) : Word := (m ^^^ maskN m) - maskN m

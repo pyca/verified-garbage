@@ -40,6 +40,6 @@ theorem decCounter_ok {s : State} {k : Nat} (hk : k < 2 ^ 16)
     rw [hb, BitVec.ofNat_add, BitVec.add_sub_cancel]
   refine wp_subs (op2_imm (by decide)) fun t ht hz => WP.block_nil
     ⟨ht.gpr.trans he, ht.other, ht.mem, ht.rd, ht.wr, ?_⟩
-  rw [hz, he, ofNat_beq_zero (by omega)]
+  rw [hz, he, ofNat_beq_zero (by omega_using [hk])]
 
 end VG.Proof.X448.Arm

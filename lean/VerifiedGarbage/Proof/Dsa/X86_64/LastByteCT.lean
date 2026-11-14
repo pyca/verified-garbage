@@ -66,7 +66,7 @@ theorem oddCheck_ct : RelCT isa (Two ShapeContext) (.block oddCheck) (fun _ _ =>
         .movzx8 .rax { base := .rsi, index := some .rcx, disp := -1 }]) (Two ShapeContext) := by
     refine two_post hp ?_
     intro p s h
-    have hi : p.pBytes.length - 1 < p.pBytes.length := by have := p.pPositive; omega
+    have hi : p.pBytes.length - 1 < p.pBytes.length := by have := p.pPositive; omega_using [this]
     exact WP.mono (lastByte_ok h.scr h.rdi p.extentBound .p .pLen .rax h.pPointer h.pLength
       p.pPositive p.pBound (h.pSource.rd _ hi) (h.pSource.val _ hi))
       fun t ⟨_, hm, hk⟩ => h.sameMem hm hk (by decide)
@@ -76,7 +76,7 @@ theorem oddCheck_ct : RelCT isa (Two ShapeContext) (.block oddCheck) (fun _ _ =>
     refine two_post (Ψ := fun p s => BasePublic p.base s) hq ?_ |>.mono
       (fun _ _ h => h) (fun _ _ h => ?_)
     · intro p s h
-      have hi : p.qBytes.length - 1 < p.qBytes.length := by have := p.qPositive; omega
+      have hi : p.qBytes.length - 1 < p.qBytes.length := by have := p.qPositive; omega_using [this]
       exact WP.mono (lastByte_ok h.scr h.rdi p.extentBound .q .qLen .rdx h.qPointer h.qLength
         p.qPositive p.qBound (h.qSource.rd _ hi) (h.qSource.val _ hi))
         fun t ⟨_, _, hk⟩ => (hk.gpr (by decide)).trans h.rdi

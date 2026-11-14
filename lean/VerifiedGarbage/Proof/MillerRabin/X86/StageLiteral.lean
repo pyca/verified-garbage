@@ -22,11 +22,11 @@ theorem Stage.literal {g : Geometry} (v : g.Valid) {capacity c : Nat} {p : BitVe
   have fit : d + 4 ≤ g.L := Nat.le_trans (scratch_fit scratch) v.headerFit
   refine wp_movS rfl fun a A₁ _ => ?_
   have Ca := S.data.context.keepMem A₁.keeps (by decide) A₁.mem
-  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := d) (by omega))
-    (ws_write Ca.ws (y := 0 + d) (n := 4) (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (ea_ptr Ca.ws Ca.base (d := d) (by omega_using [fit]))
+    (ws_write Ca.ws (y := 0 + d) (n := 4) (by omega_using [fit])) fun t T => WP.block_nil ?_
   have O : Outside g.W d 4 s.mem t.mem := by
     rw [T.mem, Nat.zero_add, A₁.mem]
-    exact writeW32_outside _ _ _ (by have := S.data.context.ws.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := S.data.context.ws.nowrap; omega_using [fit, this])
   have K : Keeps [.eax] s t := A₁.keeps.widen (T.keeps [])
   have C := S.data.context.keepScalar K (by decide) O scratch
   have stored : t.mem.readW (off g.W d) 32 = value := by

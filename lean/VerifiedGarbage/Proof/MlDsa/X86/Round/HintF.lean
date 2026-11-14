@@ -51,7 +51,7 @@ theorem HPre.of_uh {s₀ : State} (h : (useHintContract X86.abi 16).pre s₀) : 
 theorem uh_piece : Piece (HPre false) HPub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => HInv (uhV (arg s₀ 2).toNat) false s₀ 256 s) s₀ s') useHint :=
   Piece.leaf (fun s₀ => [pR (pA s₀ 3), aR s₀ 4]) (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩) (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩) (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     ((Piece.seq (hintInit_piece false) (hint_ite (fun g hg => uhCore_spec hg) (by native_taint_decide)
       (by native_taint_decide))).mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -61,7 +61,7 @@ theorem uhV_lt {g : Nat} (hg : g ∈ gamma2s) (a b : Nat) : uhV g a b < 2 ^ 32 :
   have : VG.Proof.MlDsa.Round.hbM g ≤ 44 := by
     rcases VG.Proof.MlDsa.Round.mem_gamma2s hg with e | e <;> rw [e] <;> decide
   unfold uhV
-  exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hm) (by omega)
+  exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hm) (by omega_using [this])
 
 theorem uh_post {s₀ s : State} (hp : HPre false s₀) (h : HInv (uhV (arg s₀ 2).toNat) false s₀ 256 s) :
     NatPolyIs s.mem (pA s₀ 3) (Vector.zipWith (fun hj rj => (VG.Spec.MlDsa.useHint (arg s₀ 2).toNat hj rj).toNat)
@@ -87,10 +87,10 @@ def hintSatMem : Mem := fun a =>
 
 theorem hintSat_zero (a : Addr) (ha : a.toNat < 0x5000) : hintSatMem a = 0 := by
   simp only [hintSatMem]
-  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]
+  rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+    ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])]
 
 theorem useHint_verified : Verified X86.target useHint (useHintContract X86.abi 16) := by
   refine Piece.verified ((uh_piece.pre_mono (fun _ h => HPre.of_uh h) fun s s' _ _ h => by
@@ -123,7 +123,7 @@ def MhEnd (s₀ s : State) : Prop :=
 theorem mh_piece : Piece (HPre true) HPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (MhEnd s₀) s₀ s')
     makeHint :=
   Piece.leaf (fun s₀ => [pR (pA s₀ 3), aR s₀ 4]) (NoSp.of_all (by decide +kernel))
-    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩) (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
+    (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩) (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     ((Piece.seq (hintInit_piece true) (Piece.seq (hint_ite (fun g hg => mhCore_spec hg) (by native_taint_decide)
       (by native_taint_decide)) (Piece.taint [] (fun s₀ s hp h => wp_mov fun s₁ u₁ => WP.block_nil_iff.mpr
         ⟨⟨by rw [u₁.other _ (by decide), h.esp], by rw [u₁.rd, h.rd], by rw [u₁.wr, h.wr],
@@ -134,11 +134,11 @@ theorem mh_piece : Piece (HPre true) HPub (fun s₀ s => s = s₀) (fun s₀ s' 
         (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)))).mono (fun _ _ _ h => h)
       fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h⟩)
 
-theorem mhV_le {g a b : Nat} : mhV g a b ≤ 1 := by unfold mhV; split <;> omega
+theorem mhV_le {g a b : Nat} : mhV g a b ≤ 1 := by unfold mhV; split <;> omega_using []
 
 theorem sumV_le {g : Nat} {s₀ : State} : ∀ k, sumV (mhV g) s₀ k ≤ k
   | 0 => Nat.le_refl _
-  | k + 1 => by have := sumV_le (g := g) (s₀ := s₀) k; have := @mhV_le g (cA s₀ k) (cB s₀ k); simp only [sumV]; omega
+  | k + 1 => by have := sumV_le (g := g) (s₀ := s₀) k; have := @mhV_le g (cA s₀ k) (cB s₀ k); simp only [sumV]; omega_arith
 
 /-- The hint of `makeHint`, coefficient by coefficient. -/
 theorem mh_get {s₀ : State} (hp : HPre true s₀) {i : Nat} (hi : i < 256) :
@@ -161,9 +161,9 @@ theorem sumV_ones {s₀ : State} (hp : HPre true s₀) :
         (polyAt s₀.mem (pA s₀ 1))) 0
   | 0, _ => Nat.zero_add _
   | k + 1, hk => by
-    rw [← sumV_ones hp k (by omega), onesFrom_step _ (show k < VG.Spec.MlDsa.n by rw [n_eq]; omega), mh_get hp (by omega)]
+    rw [← sumV_ones hp k (by omega_using [hk]), onesFrom_step _ (show k < VG.Spec.MlDsa.n by rw [n_eq]; omega_using [hk]), mh_get hp (by omega_using [hk])]
     simp only [sumV]
-    omega
+    omega_using []
 
 theorem mh_post {s₀ s : State} (hp : HPre true s₀) (h : MhEnd s₀ s) :
     HintIs s.mem (pA s₀ 3) 1 [Vector.zipWith (VG.Spec.MlDsa.makeHint (arg s₀ 2).toNat) (polyAt s₀.mem (pA s₀ 0))
@@ -173,7 +173,7 @@ theorem mh_post {s₀ s : State} (hp : HPre true s₀) (h : MhEnd s₀ s) :
   refine ⟨hintIs_of_toNat fun j hj => ?_, ?_⟩
   · rw [h.1.out j hj]
     exact congrArg (BitVec.ofNat 32) (mh_get hp hj).symm
-  · rw [h.2, toNat_ofNat32 (by have := sumV_le (g := (arg s₀ 2).toNat) (s₀ := s₀) 256; omega), hintOnes_single,
+  · rw [h.2, toNat_ofNat32 (by have := sumV_le (g := (arg s₀ 2).toNat) (s₀ := s₀) 256; omega_using [this]), hintOnes_single,
       ← sumV_ones hp 256 (Nat.le_refl _), show (256 : Nat) = VG.Spec.MlDsa.n from rfl, onesFrom_n, Nat.add_zero]
 
 theorem makeHint_verified : Verified X86.target makeHint (makeHintContract X86.abi 16) := by

@@ -104,7 +104,7 @@ replaced. -/
 theorem set_prefix {α : Type} (ys xs : List α) (x : α) {k : Nat} (hy : ys.length = k) (hk : k < xs.length) :
     (ys ++ xs.drop k).set k x = (ys ++ [x]) ++ xs.drop (k + 1) := by
   subst hy
-  rw [List.set_append_right _ _ (by omega), Nat.sub_self, List.append_assoc]
+  rw [List.set_append_right _ _ (by omega_using []), Nat.sub_self, List.append_assoc]
   congr 1
   rw [List.drop_eq_getElem_cons hk, List.set_cons_zero]
   rfl

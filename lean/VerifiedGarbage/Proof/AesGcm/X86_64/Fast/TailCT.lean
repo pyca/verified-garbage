@@ -83,7 +83,7 @@ theorem fbody_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) (B : BlkFn (C
     refine StreamTo.RelCT.of_imp (n ≤ 16 ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ n < 2 ^ 64) (fun _ _ h => by
       have e := h.1.1.1.symm.trans h.2
       simp only [Option.some.injEq, decide_eq_true_eq] at e
-      exact ⟨by omega, h.1.1.2.1.rounds.2, h.1.1.2.1.dD.ok.lt⟩) fun ⟨_, hR, hn⟩ => ?_
+      exact ⟨by omega_using [e], h.1.1.2.1.rounds.2, h.1.1.2.1.dD.ok.lt⟩) fun ⟨_, hR, hn⟩ => ?_
     unfold Impl.AesGcm.X86_64.Fast.tail
     have fx := step [.r15] fixTlen_check
       (P := fun s₁ s₂ => ((s₁.cf = some (decide (n < 17)) ∧ G s₁) ∧ s₂.cf = some (decide (n < 17)) ∧ G s₂) ∧

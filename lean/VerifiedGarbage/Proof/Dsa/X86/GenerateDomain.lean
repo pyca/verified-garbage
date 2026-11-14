@@ -28,28 +28,28 @@ theorem generateDomain_ok {base : Addr} {size pLen qLen p q g : Nat} {s0 : State
           mask32 ((p - 1) % q = 0) ∧ Execution base s0 sf := by
   have L := M.lengths
   have A := M.aligned
-  have np : (pLen + 7) / 8 ≤ 48 := by omega
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have qp : 0 < q := by have := M.qLarge; omega
+  have np : (pLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have qp : 0 < q := by have := M.qLarge; omega_using [this]
   unfold Generate.domain Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono
-    (stageRange_ok M (by omega) (by omega) (by omega) M.pReady (G.ready (M.context np)) true)
+    (stageRange_ok M (by omega_using [L]) (by omega_using [L]) (by omega_using [A]) M.pReady (G.ready (M.context np)) true)
     fun s1 ⟨M1, F1, R1⟩ => ?_)
   have E1 := R1.execution (.inr ⟨rfl, rfl⟩)
-  refine WP.seq (WP.mono (stageMinusP_ok M1 (by have := M.pLarge; omega)
+  refine WP.seq (WP.mono (stageMinusP_ok M1 (by have := M.pLarge; omega_using [this])
     (by decide) (M1.wideFit (by decide))) fun s2 ⟨M2, R2⟩ => ?_)
   have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.wideFit (by decide)⟩)
   have T2 : operandValue s2 base (.local VG.Impl.Dsa.Layout.t) pLen = p - 1 :=
     R2.wide_value M1 (by decide) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) M.valueBounds.1)
-  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M2 (M2.wideStream (by decide) nq) (M2.wideStack (by decide)) (by omega)
+  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M2 (M2.wideStream (by decide) nq) (M2.wideStack (by decide)) (by omega_using [L])
     (by decide) (M2.scalarFit (by decide))) fun s3 ⟨M3, R3⟩ => ?_)
   have E3 := R3.toStageFrame.execution (.inl ⟨by decide, M2.scalarFit (by decide)⟩)
   have U3 : operandValue s3 base (.local u) qLen = (p - 1) % q := by
     have V := R3.scalar_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)
     rw [T2] at V
     exact V
-  refine WP.seq (WP.mono (stageZero_ok M3 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (stageZero_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     (M3.scalarReady (by decide) nq) false) fun sf ⟨Mf, F4, R4⟩ => ?_)
   refine WP.block_nil ⟨Mf, ?_, ((E1.trans E2).trans E3).trans
     (R4.execution (.inr ⟨rfl, rfl⟩))⟩

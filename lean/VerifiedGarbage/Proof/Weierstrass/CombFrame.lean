@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombLay
 public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The fixed-base comb: what its steps leave unchanged
@@ -66,7 +67,7 @@ theorem wordsVal_entryX (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Ad
   have hxs : x ∈ combWs K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> comb_mem
-  refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega)
+  refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega_using [hsz, this])
   rcases List.mem_append.mp hw with hw | hw
   · simp only [combEntryW, List.mem_cons, List.not_mem_nil, or_false] at hw hx
     rcases hw with rfl | rfl | rfl | rfl | rfl
@@ -94,7 +95,7 @@ theorem wordsVal_addX (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr
   have hxs : x ∈ combWs K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> comb_mem
-  refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega)
+  refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega_using [hsz, this])
   rcases List.mem_append.mp hw with hw | hw
   · rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
@@ -121,7 +122,7 @@ theorem wordsVal_selD (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr
   have hxs : x ∈ combWs K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> comb_mem
-  refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega)
+  refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega_using [hsz, this])
   have hxR : x ∈ rcbR K.S K.A K.E :=
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
   simp only [combSelW, List.mem_cons, List.not_mem_nil, or_false] at hw

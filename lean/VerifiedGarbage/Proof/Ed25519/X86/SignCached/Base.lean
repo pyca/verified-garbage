@@ -58,7 +58,7 @@ theorem base_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) (hy : s.s
   have out : Region.Sub (baseOut L) L.OUT := Region.sub_prefix (by decide)
   have be := hL.below
   have stk : Region.Sub (below (L.E - BitVec.ofNat 32 4) 8) L.STK := Whole.inner_sub_stack be
-  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega
+  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega_using [this]
   have tb : L.TB ∈ L.inputs := by simp [Lay.inputs]
   have tw : TblWords (L.T.setWidth 64) s.callEntry.mem :=
     ht.frame (Whole.callEntry_frame s) fun r hr => by
@@ -73,16 +73,16 @@ theorem base_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) (hy : s.s
   refine ⟨⟨rfl, rfl, hL.oc.sub_left out, hL.kc.sub_left (field_sub hL (by decide)),
     (hL.ko.sub_left args).sub_right out, hL.kc.sub_left args,
     (hL.ko.sub_left ret).sub_right out, hL.kc.sub_left ret,
-    by have := hL.no; omega, field_fit hL (by decide), hL.nc, ?_, ?_,
+    by have := hL.no; omega_using [this], field_fit hL (by decide), hL.nc, ?_, ?_,
     Whole.inner_frame be hf (d := 96) (n := 32) (by decide) (by decide), hL.kc.sub_left stk,
     (hL.ko.sub_left stk).sub_right out⟩,
     (hL.ko.sub_left stk).sub_right out, tw, hL.nt, ?_⟩
   · change (L.E - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
-    rw [sub_toNat (k := 4) (by omega)]
-    have := hL.top; omega
+    rw [sub_toNat (k := 4) (by omega_using [be])]
+    have := hL.top; omega_using [hf]
   · change 8 ≤ (L.E - BitVec.ofNat 32 4).toNat
-    rw [sub_toNat (k := 4) (by omega)]
-    omega
+    rw [sub_toNat (k := 4) (by omega_using [be])]
+    omega_using [be]
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact (hL.os _ tb).symm.sub_right out

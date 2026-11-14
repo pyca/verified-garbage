@@ -154,7 +154,7 @@ theorem call_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallPPC6
           have hsch := Proof.Seed.scheduleAt_frame hfr (p := s₀.gpr .r3) fun r hr => by
             rw [List.mem_singleton] at hr; subst hr; exact sK.symm
           have hblk := Proof.Seed.blocksAt_frame hfr (p := s₀.gpr .r4) (n := (s₀.gpr .r5).toNat) (fun r hr => by
-            rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega)
+            rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega_using [fitD])
           rw [hpost, show F.mem = (s₁.mem.write (s₁.sp - 48) 8 s₁.sp).write (s₁.sp - 48 + 32) 8 (s₁.gpr .r0) from rfl,
             hsch, hblk]
           rfl

@@ -73,8 +73,8 @@ theorem hdr_store {is : List Instr} {Q : State → Prop} (h : In Ex base bytes l
       rw [cb1] at f
       have := lo_wide len j
       have ce := bc_eq_cwc len .wide
-      exact O.val32 (.inr (by omega)) (by omega)
-    · exact O.w32 (by simp only [List.mem_singleton] at hn; omega) (by omega)
+      exact O.val32 (.inr (by omega)) (by omega_using [bl, f, ce])
+    · exact O.w32 (by simp only [List.mem_singleton] at hn; omega) (by omega_using [nb, he'])
 
 /-! ## The lowest word of a number -/
 

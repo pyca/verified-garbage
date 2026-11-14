@@ -43,7 +43,7 @@ theorem loadLE64W_ok {s : State} {w : Bool} {d tmp hi n : Reg} {off : Nat} (hdn 
   | false =>
     exact Bytes.loadLE64_ok hdn htn hhn hdt hdh hth ho (Words64.in_lo h8) (Words64.in_hi h8)
   | true =>
-    exact wp_ld (by omega) rfl (hal rfl) h8 fun s' u =>
+    exact wp_ld (by omega_using [ho]) rfl (hal rfl) h8 fun s' u =>
       WP.block_nil ⟨u.gpr, fun r h₁ _ _ => u.other r h₁, u.mem, u.rd, u.wr, u.sp⟩
 
 open VG.Impl.Words.RISCV64 (loadLE64W storeLE64W) in
@@ -60,7 +60,7 @@ theorem storeLE64W_ok {s : State} {w : Bool} {v tmp hi n : Reg} {off : Nat} (htv
   | false =>
     exact Bytes.storeLE64_ok htv htn hhn hth ho (Words64.in_lo h8) (Words64.in_hi h8)
   | true =>
-    exact wp_sd (by omega) rfl (hal rfl) h8 fun s' u =>
+    exact wp_sd (by omega_using [ho]) rfl (hal rfl) h8 fun s' u =>
       WP.block_nil ⟨by rw [u.mem, ← Offset.add_add, Words64.writeW64_split], fun r _ _ => by rw [u.gpr],
         u.rd, u.wr, u.sp⟩
 
@@ -69,7 +69,7 @@ theorem and7 (x : BitVec 64) : x &&& BitVec.ofInt 64 7 = BitVec.ofNat 64 (x.toNa
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 7).toNat = 2 ^ 3 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- An access at an offset of a region. -/
 theorem in_off {rs : List Region} {b : Addr} {len : Nat} (hr : (⟨b, len⟩ : Region) ∈ rs)
@@ -99,7 +99,7 @@ theorem off_add64 (D : Addr) (g : Nat) :
 theorem ofNat_shr2 {a : Nat} (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 2 = BitVec.ofNat 64 (a / 4) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [h])]
 
 /-- The branch on `t0 := a4 >>> 2`: four blocks or more left. -/
 theorem shr2_wp {s : State} {k : Nat} (hk : k < 2 ^ 64) (h7 : s.gpr .a4 = BitVec.ofNat 64 k)
@@ -110,8 +110,8 @@ theorem shr2_wp {s : State} {k : Nat} (hk : k < 2 ^ 64) (h7 : s.gpr .a4 = BitVec
   refine WP.seq (wp_srl (by decide) fun s' u => WP.block_nil ?_)
   rw [h7, ofNat_shr2 hk] at u
   refine h s' u ?_
-  rw [Steps.eval_nonzero_ofNat s' t0 (by omega) u.gpr]
-  congr 1; exact decide_eq_decide.mpr (by omega)
+  rw [Steps.eval_nonzero_ofNat s' t0 (by omega_using [hk]) u.gpr]
+  congr 1; exact decide_eq_decide.mpr (by omega_using [])
 
 /-! ## What a group keeps -/
 
@@ -141,11 +141,11 @@ theorem scr_part (X : Addr) {d n : Nat} (h : d + n + 7 ≤ 2048) :
     Region.Sub ⟨X + BitVec.ofNat 64 (pad X) + BitVec.ofNat 64 d, n⟩ ⟨X, 2048⟩ := by
   rw [Offset.add_add]
   have := pad_lt X
-  exact Offset.sub_base X (by omega)
+  exact Offset.sub_base X (by omega_using [h, this])
 
 theorem scr_base (X : Addr) {n : Nat} (h : n + 7 ≤ 2048) :
     Region.Sub ⟨X + BitVec.ofNat 64 (pad X), n⟩ ⟨X, 2048⟩ := by
   have := pad_lt X
-  exact Offset.sub_base X (by omega)
+  exact Offset.sub_base X (by omega_using [h, this])
 
 end VG.Proof.Aes.RISCV64

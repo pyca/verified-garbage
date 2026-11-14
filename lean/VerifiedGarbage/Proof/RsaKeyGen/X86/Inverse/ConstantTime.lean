@@ -35,8 +35,8 @@ theorem inner_checked : (VG.Taint.check sseTaint frameTaint inner (VG.Taint.hint
 theorem Entry.saved_sp_nat {s : State} (A : Entry s) :
     ((Compact.entered s).gpr .esp).toNat + 16 = (s.gpr .esp).toNat := by
   have := A.low
-  rw [Compact.entered, pushed_esp, show 4 * Compact.savedRegisters.length = 16 from rfl, sub_toNat (by omega)]
-  omega
+  rw [Compact.entered, pushed_esp, show 4 * Compact.savedRegisters.length = 16 from rfl, sub_toNat (by omega_using [this])]
+  omega_using [this]
 
 theorem Entry.saved_argByte {s : State} (A : Entry s) (k : Nat) :
     VG.X86.Taint.argByte (Compact.entered s) (16 + k) = VG.X86.Taint.argByte s k := by
@@ -53,7 +53,7 @@ theorem Entry.pushed_arg {s : State} (A : Entry s) {i : Nat} (hi : i < 3) :
 theorem Entry.frame_wf {s : State} (A : Entry s) : VG.X86.Taint.Wf frameTaint (Compact.entered s) := by
   have top := A.argsFit
   have position := A.saved_sp_nat
-  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega_using [position]
   have addrBase : VG.X86.Taint.argByte (Compact.entered s) 16 = (s.gpr .esp).setWidth 64 := by
     have H := A.saved_argByte 0
     simpa only [Nat.add_zero, VG.X86.Taint.argByte, BitVec.add_zero] using H
@@ -65,7 +65,7 @@ theorem Entry.frame_wf {s : State} (A : Entry s) : VG.X86.Taint.Wf frameTaint (C
     fun _ h => (List.not_mem_nil h).elim, ?_, fun _ h => (List.not_mem_nil h).elim,
     ?_, ?_, fun h => absurd h (Nat.lt_irrefl 0)⟩
   · intro _
-    refine ⟨by change ((Compact.entered s).gpr .esp).toNat + 16 + 16 ≤ 2 ^ 32; omega, ?_⟩
+    refine ⟨by change ((Compact.entered s).gpr .esp).toNat + 16 + 16 ≤ 2 ^ 32; omega_using [top, position], ?_⟩
     intro r member
     change (⟨VG.X86.Taint.argByte (Compact.entered s) 16, 16⟩ : Region).Disjoint r
     rw [addrBase]
@@ -76,7 +76,7 @@ theorem Entry.frame_wf {s : State} (A : Entry s) : VG.X86.Taint.Wf frameTaint (C
       unfold below
       rw [Taint.sub_setWidth fit]
       exact Offset.base_disjoint_below _ (by decide)
-    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega) A.returnWs A.wsArgs.symm
+    · exact VG.X86.Taint.frame_disjoint (n := 12) (by omega_using [top]) A.returnWs A.wsArgs.symm
   · change ((Compact.entered s).gpr .esp).toNat + 16 < 2 ^ 32
     rw [position]
     exact (s.gpr .esp).isLt
@@ -102,11 +102,11 @@ theorem entered_agree {s t : State} (A : Entry s) (B : Entry t)
     change (Compact.entered s).mem (VG.X86.Taint.argByte (Compact.entered s) (16 + k)) =
       (Compact.entered t).mem (VG.X86.Taint.argByte (Compact.entered t) (16 + k))
     have bound : k < 16 := high
-    rw [A.saved_argByte, B.saved_argByte, VG.X86.Taint.argByte_eq (by have := A.argsFit; omega) low bound,
-      VG.X86.Taint.argByte_eq (by have := B.argsFit; omega) low bound,
+    rw [A.saved_argByte, B.saved_argByte, VG.X86.Taint.argByte_eq (by have := A.argsFit; omega_using [this]) low bound,
+      VG.X86.Taint.argByte_eq (by have := B.argsFit; omega_using [this]) low bound,
       Mem.readW_byte (Compact.entered s).mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte (Compact.entered t).mem _ (Nat.mod_lt _ (by decide)),
-      A.pushed_arg (by omega), B.pushed_arg (by omega), args _ (by omega)]
+      A.pushed_arg (by omega_using [bound]), B.pushed_arg (by omega_using [bound]), args _ (by omega_using [bound])]
 
 theorem frame_trace : RelCT isa (fun s t => contract.pre s ∧ contract.pre t ∧ contract.pub s t)
     VG.Impl.RsaKeyGen.X86.Inverse.code (fun _ _ => True) := by
@@ -123,7 +123,7 @@ theorem frame_trace : RelCT isa (fun s t => contract.pre s ∧ contract.pre t �
   obtain ⟨out, checked⟩ := Option.isSome_iff_exists.mp inner_checked
   have agree := entered_agree (entry HS) (entry HT) sp (by
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact a0
     · exact a1
     · exact a2)

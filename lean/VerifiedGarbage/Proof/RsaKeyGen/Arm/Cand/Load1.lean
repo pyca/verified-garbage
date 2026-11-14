@@ -149,7 +149,7 @@ theorem candBits_vp {E : State → Prop} :
     refine VP.kv usedL_taint (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, r1⟩ => ?_
     refine h.str hw (by decide) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
     have pre := h.pre
-    rw [r1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := pre.k2; omega)] at ht
+    rw [r1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := pre.k2; omega_using [this])] at ht
     exact ht
   refine VP.block_append hu ?_
   have gT : ∀ σ, (fun _ => True) σ → In P σ → AL P σ aC % 2 ^ (32 * (P.W - 3)) +
@@ -158,9 +158,9 @@ theorem candBits_vp {E : State → Prop} :
         xv P σ % 2 ^ (8 * P.L - 2) + 3 * 2 ^ (8 * P.L - 2) := fun σ _ pre => by
     have wE := pre.W_eq; have lE := pre.L_eq; have w4 := pre.w4
     have hx : xv P σ < 2 ^ (32 * (P.W - 3) + 32) := by
-      have := xv_lt P σ; rwa [show 32 * (P.W - 3) + 32 = 8 * P.L by omega]
+      have := xv_lt P σ; rwa [show 32 * (P.W - 3) + 32 = 8 * P.L by omega_using [wE, lE, w4]]
     simp only [AL, upd_self]
-    rw [topBits_val hx, show 32 * (P.W - 3) + 30 = 8 * P.L - 2 by omega]
+    rw [topBits_val hx, show 32 * (P.W - 3) + 30 = 8 * P.L - 2 by omega_using [wE, lE, w4]]
   have ht : VP (St P E (AL P) [aTwo, aOne, aC, aZero, aBnd] (fun _ => V0 P) [sUsed]) (.block topBits)
       (St P E (fun σ => upd (AL P σ) aC (xv P σ % 2 ^ (8 * P.L - 2) + 3 * 2 ^ (8 * P.L - 2)))
         [aC, aTwo, aOne, aC, aZero, aBnd] (fun _ => V0 P) [sUsed]) := by
@@ -168,7 +168,7 @@ theorem candBits_vp {E : State → Prop} :
     exact (St.phiOp (i := fun P => P.W - 3) (f := fun x => x ||| 0xC0000000#32)
       (g := fun σ => xv P σ % 2 ^ (8 * P.L - 2) + 3 * 2 ^ (8 * P.L - 2))
       (by rw [← topBits_eq]; exact topBits_taint) (by simp) (by decide)
-      (fun σ _ pre => by have := pre.wge; omega)
+      (fun σ _ pre => by have := pre.wge; omega_using [this])
       (fun u R k' => wp_dp (op2_imm (by decide)) fun u' up => WP.block_nil (k' u' up))
       (fun σ _ pre => gT σ trivial pre))
   refine VP.block_append ht ?_
@@ -183,7 +183,7 @@ theorem candBits_vp {E : State → Prop} :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl <;>
     simp (config := {decide := true}) only [A0, AL, upd, ↓reduceIte, Nat.zero_add]
-  rw [cv, candidate_eq (by omega) (xv_lt P σ)]
+  rw [cv, candidate_eq (by omega_using [lE, w4]) (xv_lt P σ)]
 
 /-- The working space, the candidate, the constants and `used`. -/
 theorem loadC_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤ P.rl) :
@@ -191,14 +191,14 @@ theorem loadC_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤
   simp only [loadC, seqs]
   refine setupC_vp.seq (zero_vp.seq (VP.assoc ?_))
   refine (loadArg_vp (o1 := aoR) (o2 := foL) (A := fun _ _ => 0) (src := fun P => P.nP) (k := fun P => P.L)
-    loadC_taint (by decide) (by decide) (by decide) fun σ e h => ⟨h.aR, h.wL, ?_, ?_, ?_, by have := h.k1; omega,
+    loadC_taint (by decide) (by decide) (by decide) fun σ e h => ⟨h.aR, h.wL, ?_, ?_, ?_, by have := h.k1; omega_using [this],
       Nat.le_refl _⟩).seq ?_
   · have := (hE σ e).2
-    exact CallLay.inRegions_sub (off := 0) (l := P.L) h.rdR (by omega) (by have := h.rlt; omega) |> fun r => by
+    exact CallLay.inRegions_sub (off := 0) (l := P.L) h.rdR (by omega_using [this]) (by have := h.rlt; omega_using [this]) |> fun r => by
       simpa only [BitVec.add_zero] using r
   · have := (hE σ e).2
     have sub : Region.Sub ⟨State.addr P.nP, P.L⟩ P.rR := by
-      have := Offset.sub_base (State.addr P.nP) (d := 0) (n := P.L) (k := P.rl) (by omega)
+      have := Offset.sub_base (State.addr P.nP) (d := 0) (n := P.L) (k := P.rl) (by omega_using [this])
       simpa only [BitVec.add_zero] using this
     intro r hr
     simp only [CP.chg, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -209,16 +209,16 @@ theorem loadC_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤
     · exact h.rC.sub_left sub
     · exact (h.rF.sub_right (Offset.sub_base _ (d := 0) (n := 4) (k := 56) (by decide) |> fun s => by
         simpa only [BitVec.add_zero] using s)).sub_left sub
-  · have := (hE σ e).2; have := h.fR; omega
+  · have := (hE σ e).2; have := h.fR; omega_arith
   refine candBits_vp.mono (fun σ s ⟨e, h⟩ => h.st e fun j hj => ⟨?_, ?_⟩) (fun _ _ h => h)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide
   · have pre := h.bk.pre
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     have := xv_lt P σ
-    have : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega)
+    have : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega_using [])
     rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) only [AL, upd, ↓reduceIte] <;>
-      first | exact Nat.two_pow_pos _ | omega
+      first | exact Nat.two_pow_pos _ | omega_arith
 
 end
 

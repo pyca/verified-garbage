@@ -58,9 +58,9 @@ theorem ipAtW_ok {t : Poly → Poly} {n : String} {c : Prog isa}
     WP isa (callR n c [.ptr f, .ptr w]) s fun s' => PPostB D s s' [(f, 1024), (w, 1024)] ∧
       CS s s' ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) := by
   obtain ⟨w1, w2, i1, _, _, ok⟩ := ipChkW_spec hc
-  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega) ok L.sp
+  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega_arith) ok L.sp
     (rd := []) (wr := [pR (pa s f), pR (pa s w)])
-    (fun s1 hA k => ipPreW (ent_R L k (by have := C.hS; omega) _ _) hc
+    (fun s1 hA k => ipPreW (ent_R L k (by have := C.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hA).2) rfl rfl hr)
     (Covers.append_left Covers.nil (Covers.right (Covers.cons (L.cW w1) (L.cW w2)))) (Covers.cons (L.cW w1) (L.cW w2)))
     fun s' ⟨hpost, hcs, s1, hA, k, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -74,7 +74,7 @@ theorem ipAtW_tr {t : Poly → Poly} {n : String} {c : Prog isa}
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
       (callR n c [.ptr f, .ptr w]) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, _, ok⟩ := ipChkW_spec hc
-  have hS : C.S ≤ D := by have := C.hS; omega
+  have hS : C.S ≤ D := by have := C.hS; omega_using [this]
   refine callR_tr C.ver.1 C.ver.2.1 ok fun x y x1 y1 ⟨R, rx, ry⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, ipPreW (ent_R R.lx kx hS [] [pR (pa x f), pR (pa x w)]) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hAx).1) (by rw [vR _ _ _ nl1]; exact (argsIn2 hAx).2) rfl rfl rx,
@@ -153,9 +153,9 @@ theorem mulAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
     WP isa (mulAt P h f g) s fun s' => PPostB D s s' [(h, 1024)] ∧ CS s s' ∧
       PolyIs s'.mem (pa s h) (multiplyNTT (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  refine WP.mono (callR_ok hP.mul.ver.1 (by have := hP.mul.su; have := hP.mul.hS; omega) ok L.sp
+  refine WP.mono (callR_ok hP.mul.ver.1 (by have := hP.mul.su; have := hP.mul.hS; omega_arith) ok L.sp
     (rd := [pR (pa s f), pR (pa s g)]) (wr := [pR (pa s h)])
-    (fun s1 hA k => mulPre (ent_R L k (by have := hP.mul.hS; omega) _ _) hc
+    (fun s1 hA k => mulPre (ent_R L k (by have := hP.mul.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn3 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn3 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn3 hA).2.2) rfl rfl rf rg)
     (Covers.append_left (Covers.cons (L.cR i2) (L.cR i3)) (Covers.right (L.cW w1))) (L.cW w1))
@@ -172,9 +172,9 @@ theorem mulAddAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
       PolyIs s'.mem (pa s h)
         (add (polyAt s.mem (pa s h)) (multiplyNTT (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g)))) := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  refine WP.mono (callR_ok hP.mulAdd.ver.1 (by have := hP.mulAdd.su; have := hP.mulAdd.hS; omega) ok L.sp
+  refine WP.mono (callR_ok hP.mulAdd.ver.1 (by have := hP.mulAdd.su; have := hP.mulAdd.hS; omega_arith) ok L.sp
     (rd := [pR (pa s f), pR (pa s g)]) (wr := [pR (pa s h)])
-    (fun s1 hA k => mulAddPre (ent_R L k (by have := hP.mulAdd.hS; omega) _ _) hc
+    (fun s1 hA k => mulAddPre (ent_R L k (by have := hP.mulAdd.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn3 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn3 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn3 hA).2.2) rfl rfl rh rf rg)
     (Covers.append_left (Covers.cons (L.cR i2) (L.cR i3)) (Covers.right (L.cW w1))) (L.cW w1))
@@ -188,7 +188,7 @@ theorem mulAt_tr {P : Prims} (hP : PrimsOk P D) {h f g : Ptr} (hc : mulChk (rbs 
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAt P h f g) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  have hS : hP.mul.S ≤ D := by have := hP.mul.hS; omega
+  have hS : hP.mul.S ≤ D := by have := hP.mul.hS; omega_using [this]
   refine callR_tr hP.mul.ver.1 hP.mul.ver.2.1 ok
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, mulPre (ent_R R.lx kx hS [pR (pa x f), pR (pa x g)] [pR (pa x h)]) hc
@@ -212,7 +212,7 @@ theorem mulAddAt_tr {P : Prims} (hP : PrimsOk P D) {h f g : Ptr} (hc : mulChk (r
       (Reduced y.mem (pa y h) ∧ Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAddAt P h f g)
       fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  have hS : hP.mulAdd.S ≤ D := by have := hP.mulAdd.hS; omega
+  have hS : hP.mulAdd.S ≤ D := by have := hP.mulAdd.hS; omega_using [this]
   refine callR_tr hP.mulAdd.ver.1 hP.mulAdd.ver.2.1 ok
     fun x y x1 y1 ⟨R, ⟨rhx, rfx, rgx⟩, ⟨rhy, rfy, rgy⟩⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, mulAddPre (ent_R R.lx kx hS [pR (pa x f), pR (pa x g)] [pR (pa x h)]) hc

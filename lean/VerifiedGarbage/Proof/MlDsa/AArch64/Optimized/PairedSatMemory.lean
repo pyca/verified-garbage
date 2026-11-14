@@ -33,7 +33,7 @@ theorem pairedSat_coeff_zero {p : Nat} (hp : p≤32768) {i : Nat} (hi : i<n) :
       have hi' : i<256 := hi
       simp only [BitVec.toNat_sub,BitVec.toNat_add,BitVec.toNat_ofNat,
         show (65536:BitVec 64).toNat=65536 by decide]
-      omega
+      omega_using [hp, hj, hi']
     simp only [constMem,ha,ite_false]
     simp
 

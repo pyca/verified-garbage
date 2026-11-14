@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.Arm.Top
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on 32-bit ARM: what the proofs need of a parameter set
@@ -82,11 +83,11 @@ theorem enc_poly : ∀ j < 21, encodable (BitVec.ofNat 32 (oPoly j)) = true := b
 
 theorem _root_.VG.Impl.MlKem.Arm.KemLay.WF.enc {K : KemLay} (hK : K.WF) {j : Nat} (hj : j ≤ 3 * K.k + 8) :
     encodable (BitVec.ofNat 32 (oPoly j)) = true :=
-  enc_poly j (by have := hK.k4; omega)
+  enc_poly j (by have := hK.k4; omega_using [hj, this])
 
 theorem _root_.VG.Impl.MlKem.Arm.KemLay.WF.ct_pos {K : KemLay} (hK : K.WF) : 0 < K.ctLen := by
-  have h1 : 0 < K.uLen := by simp only [KemLay.uLen]; have := hK.du1; omega
+  have h1 : 0 < K.uLen := by simp only [KemLay.uLen]; have := hK.du1; omega_using [this]
   have h2 : K.uLen ≤ K.uLen * K.k := Nat.le_mul_of_pos_right _ hK.k1
-  simp only [KemLay.ctLen]; omega
+  simp only [KemLay.ctLen]; omega_using [h1, h2]
 
 end VG.Proof.MlKem.Arm

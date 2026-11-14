@@ -79,9 +79,9 @@ theorem firstPass_finalBank_field {m : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
   · intro j e he
     simp only [Vector.getElem_ofFn]
     have hv := (fiveValues_field j.isLt hf hg).2 ⟨u,hu⟩ e he
-    have hi : 32*j.val+4*u+e<n := by change 32*j.val+4*u+e<256; omega
+    have hi : 32*j.val+4*u+e<n := by change 32*j.val+4*u+e<256; omega_using [hu, he]
     rw [Inverse.local_coordinate _ hi]
-    have hd : (32*j.val+4*u+e)/32=j.val := by omega
+    have hd : (32*j.val+4*u+e)/32=j.val := by omega_using [hu, he]
     rw [hd]
     exact hv
 
@@ -112,8 +112,8 @@ theorem rawFinal_field {m : Mem} {p a b : Addr} {u : Nat} (hu : u<8)
     (InverseTraversal.run InverseTraversal.localSchedule (Representation.product true f g)) hu hbank.1
     (fun j e he => by simpa only [Traversal.loc,Nat.add_comm,Nat.add_left_comm,Nat.add_assoc] using hbank.2 j e he) i he
   refine ⟨hv.1,hv.2.1,hv.2.2.trans ?_⟩
-  have hk : 4*u+32*i.val+e<n := by change 4*u+32*i.val+e<256; omega
-  have hu' : (4*u+32*i.val+e)%32/4=u := by omega
+  have hk : 4*u+32*i.val+e<n := by change 4*u+32*i.val+e<256; omega_using [hu, he]
+  have hu' : (4*u+32*i.val+e)%32/4=u := by omega_using [hu, he]
   have hcoord := InverseTraversal.strided_coordinate
     (InverseTraversal.run InverseTraversal.localSchedule (Representation.product true f g)) hk
   rw [hu'] at hcoord

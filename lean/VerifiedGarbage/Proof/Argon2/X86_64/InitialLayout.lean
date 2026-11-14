@@ -70,7 +70,7 @@ theorem Space.word_keeps {s t : State} (h : Space s) (k : Keeps s t)
   unfold wordAt
   rw [k.rbp]
   apply k.frame.readW (r := ⟨s.gpr .rbp, 272⟩)
-    (Offset.contains_base _ hd (by omega)) ?_ (by decide)
+    (Offset.contains_base _ hd (by omega_using [hd])) ?_ (by decide)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -79,7 +79,7 @@ theorem Space.word_keeps {s t : State} (h : Space s) (k : Keeps s t)
 
 theorem Space.write {s : State} (h : Space s) (d n : Nat) (hd : d + n ≤ 16384) :
     InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 d) n :=
-  ⟨_, h.work, Offset.contains_base _ hd (by omega)⟩
+  ⟨_, h.work, Offset.contains_base _ hd (by omega_using [hd])⟩
 
 theorem Space.input_keeps {s t : State} (h : Space s) (k : Keeps s t)
     (po lo : Nat) (hp : po + 8 ≤ 272) (hl : lo + 8 ≤ 272) :

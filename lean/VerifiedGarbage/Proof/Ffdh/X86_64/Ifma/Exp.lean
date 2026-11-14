@@ -479,7 +479,7 @@ theorem expW_chain (hl : PubOk l) {s : State} {B : Addr} {Z o w : Nat} {minv : B
       LimbsAt l s₃.mem (off B (o + oArea l)) c (fun _ => v) := fun h p hp => by
     obtain rfl := h0 p hp; rw [me₃]; exact h
   have hT16 : l.T = 16 := by simp only [Lay.T, hw4]
-  refine WP.mono (vec_ok hla (x := fun _ => x) (e := fun _ => Spec.Rsa.os2ip eb) (Q := Q)
+  refine WP.mono (vec_ok hla hl.z (x := fun _ => x) (e := fun _ => Spec.Rsa.os2ip eb) (Q := Q)
     (M := fun _ => X) (K1 := fun _ => 2 ^ l.dbls * wv s₁.mem (off B o) (slot l.W Public.aY) l.W % X)
     (Xc := fun _ => wv s₁.mem (off B o) (slot l.W Crt.aXc) l.W)
     (Y := fun _ => wv s₁.mem (off B o) (slot l.W Public.aY) l.W)

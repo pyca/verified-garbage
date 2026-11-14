@@ -25,18 +25,18 @@ theorem tailCursor_ok {s : State} {k len : Nat} (hk : k<4) (hl : len≤256)
     WP isa (.block (tailCursor k)) s fun t => Only [.x3,.x6] s t ∧
       t.gpr .x3=coeffAddr (s.gpr .x21+BitVec.ofNat 64 (1024*k)) len := by
   unfold tailCursor
-  refine wp_addImm (by omega) fun a ha ea => wp_movz fun b hb eb =>
+  refine wp_addImm (by omega_using [hk]) fun a ha ea => wp_movz fun b hb eb =>
     wp_sub fun c hc' ec => wp_lsl (by decide) fun d hd ed => wp_add fun t ht et => wp_nil ?_
   have hb6 : b.gpr .x6=256 := by rw [eb]; rfl
   have hc6 : (c.gpr .x6).toNat=len := by
-    rw [ec,toNat_sub_n (by rw [hb6,hb.get .x4,ha.get .x4,hc]; change 256-len≤256; omega),
+    rw [ec,toNat_sub_n (by rw [hb6,hb.get .x4,ha.get .x4,hc]; change 256-len≤256; omega_using []),
       hb6,hb.get .x4,ha.get .x4,hc]
     change 256-(256-len)=len
-    omega
+    omega_using [hl]
   have hd6 : d.gpr .x6=BitVec.ofNat 64 (4*len) := by
     apply BitVec.eq_of_toNat_eq
-    rw [ed,toNat_lsl_n (by rw [hc6]; omega),hc6,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [ed,toNat_lsl_n (by rw [hc6]; omega_using [hl]),hc6,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hl])]
+    omega_using []
   refine ⟨((((ha.trans hb).trans hc').trans hd).trans ht).mono (by decide),?_⟩
   rw [et,hd.get .x3,hc'.get .x3,hb.get .x3,ea,hd6]
 
@@ -50,7 +50,7 @@ theorem tailRead_ok {s : State} {k : Nat} (hk : k<4)
     WP isa (.block (tailRead k)) s (Only [.x6,.x7] s) := by
   unfold tailRead
   simp only [List.cons_append,List.nil_append]
-  refine wp_addImm (by omega) fun a ha ea => wp_addImm (by decide) fun b hb eb =>
+  refine wp_addImm (by omega_using [hk]) fun a ha ea => wp_addImm (by decide) fun b hb eb =>
     wp_ldrw (a := s.gpr .x19+BitVec.ofNat 64 (840+1008*k+1005)) (by decide)
       (by rw [ptr_zero,eb,ea,Offset.add_add])
       (by rw [hb.rd,hb.wr,ha.rd,ha.wr]; exact hr) fun c hc ec =>

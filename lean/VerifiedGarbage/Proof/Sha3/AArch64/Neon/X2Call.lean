@@ -87,11 +87,11 @@ theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
     · exact (hpq.sub_right hslotS).symm
     · exact Offset.disjoint_base q (d := 128) (n := 8) (k := 128) (by decide) (by decide)
   unfold Impl.Sha3.AArch64.Neon.X2.call
-  refine WP.seq (VG.Proof.MlKem.AArch64.wp_addImm (by omega) fun s₁ o₁ e₁ =>
-    VG.Proof.MlKem.AArch64.wp_addImm (by omega) fun s₂ o₂ e₂ => ?_)
+  refine WP.seq (VG.Proof.MlKem.AArch64.wp_addImm (by omega_using [hoff]) fun s₁ o₁ e₁ =>
+    VG.Proof.MlKem.AArch64.wp_addImm (by omega_using [hoff]) fun s₂ o₂ e₂ => ?_)
   have h1 : s₂.gpr .x1 = q := by
     rw [e₂, e₁, ← hq, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show off / 2 + (off - off / 2) = off by omega]
+      show off / 2 + (off - off / 2) = off by omega_using []]
   refine wp_str ⟨by decide, by decide⟩ (by rw [h1]) (by rw [o₂.wr, o₁.wr]; exact hslot)
     fun s₃ m₃ => VG.Proof.MlKem.AArch64.wp_addImm (by decide) fun s₄ o₄ e₄ => WP.block_nil ?_
   have h0 : s₄.gpr .x0 = p := by
@@ -171,7 +171,7 @@ theorem word1 {m : Mem} {p : Addr} {A B : Spec.Sha3.State} (h : PairAt m p A B) 
   exact this
 
 theorem out_contains (a : Addr) {n i : Nat} (hi : i < n) (hn : n ≤ 25) :
-    (outN a n).Contains (outAddr a i) 8 := Offset.contains_base a (by omega) (by omega)
+    (outN a n).Contains (outAddr a i) 8 := Offset.contains_base a (by omega_using [hi]) (by omega_using [hi, hn])
 
 theorem contains_halves {r : Region} {a : Addr} (h : r.Contains a 16) :
     r.Contains a 8 ∧ r.Contains (a + BitVec.ofNat 64 8) 8 := by
@@ -181,7 +181,7 @@ theorem contains_halves {r : Region} {a : Addr} (h : r.Contains a 16) :
   have hm := Nat.mod_le ((a - r.base).toNat + (BitVec.ofNat 64 8).toNat) (2 ^ 64)
   rw [e, BitVec.toNat_add]
   simp only [BitVec.toNat_ofNat] at hm ⊢
-  omega
+  omega_using [h]
 
 theorem squeeze_step {s : State} {p a b : Addr} {rp ra rb : Reg} {i : Nat} (hi : i < 25)
     (hp : s.gpr rp = p) (ha : s.gpr ra = a) (hb : s.gpr rb = b)
@@ -199,12 +199,12 @@ theorem squeeze_step {s : State} {p a b : Addr} {rp ra rb : Reg} {i : Nat} (hi :
     refine ⟨R, hR, ?_⟩
     have := (contains_halves hc).2
     rwa [wordAddr, BitVec.add_assoc, ← BitVec.ofNat_add] at this
-  refine wp_ldr ⟨by omega, by omega⟩ (by rw [hp]) hin0 fun s₁ h₁ => ?_
-  refine wp_ldr ⟨by omega, by omega⟩ (by rw [h₁.other rp hp6, hp])
+  refine wp_ldr ⟨by omega_using [], by omega_using [hi]⟩ (by rw [hp]) hin0 fun s₁ h₁ => ?_
+  refine wp_ldr ⟨by omega_using [], by omega_using [hi]⟩ (by rw [h₁.other rp hp6, hp])
     (by rw [h₁.rd, h₁.wr]; exact hin1) fun s₂ h₂ => ?_
-  refine wp_str ⟨by omega, by omega⟩ (by rw [h₂.other ra ha7, h₁.other ra ha6, ha])
+  refine wp_str ⟨by omega_using [], by omega_using [hi]⟩ (by rw [h₂.other ra ha7, h₁.other ra ha6, ha])
     (by rw [h₂.wr, h₁.wr]; exact hwa) fun s₃ h₃ => ?_
-  refine wp_str ⟨by omega, by omega⟩ (by rw [h₃.gpr, h₂.other rb hb7, h₁.other rb hb6, hb])
+  refine wp_str ⟨by omega_using [], by omega_using [hi]⟩ (by rw [h₃.gpr, h₂.other rb hb7, h₁.other rb hb6, hb])
     (by rw [h₃.wr, h₂.wr, h₁.wr]; exact hwb) fun s₄ h₄ => WP.block_nil_iff.mpr ⟨?_, ?_⟩
   · exact ((OutKeep.upd h₁ (Or.inl rfl)).trans (OutKeep.upd h₂ (Or.inr rfl))).trans
       ((OutKeep.mem h₃).trans (OutKeep.mem h₄))
@@ -236,31 +236,31 @@ theorem squeeze_ok {n : Nat} (hn : n ≤ 25) {s : State} {p a b : Addr} {rp ra r
       fun _ h => absurd h (Nat.not_lt_zero _)⟩
   have hpt : PairAt t.mem p A B := fun i hi => by
     rw [hf.read (pair_contains p hi) (by simp [hpa, hpb]) (by decide)]; exact hpair i hi
-  refine WP.mono (squeeze_step (by omega) ((ht.gpr rp hp6 hp7).trans hp)
+  refine WP.mono (squeeze_step (by omega_using [hn, hk]) ((ht.gpr rp hp6 hp7).trans hp)
     ((ht.gpr ra ha6 ha7).trans ha) ((ht.gpr rb hb6 hb7).trans hb) hp6 ha6 ha7 hb6 hb7
-    (by rw [ht.rd, ht.wr]; exact hin k (by omega))
+    (by rw [ht.rd, ht.wr]; exact hin k (by omega_using [hn, hk]))
     (by rw [ht.wr]; exact hwa k hk) (by rw [ht.wr]; exact hwb k hk))
     fun u ⟨hu, hm⟩ => ⟨ht.trans hu, ?_, ?_, ?_⟩
   · rw [hm]
     exact (hf.writeW (by simp) _ (out_contains a hk hn)).writeW (by simp) _ (out_contains b hk hn)
   · intro i hi
-    rw [hm, Mem.readW_writeW_sep (hd.sep (out_contains a (by omega) hn) (out_contains b hk hn))
+    rw [hm, Mem.readW_writeW_sep (hd.sep (out_contains a (by omega_using [hk, hi]) hn) (out_contains b hk hn))
       (by decide)]
     by_cases he : i = k
     · subst i
-      rw [Mem.readW_writeW_self64, word0 hpt (by omega)]
+      rw [Mem.readW_writeW_self64, word0 hpt (by omega_using [hn, hk])]
     · rw [Mem.readW_writeW_sep (Offset.sep a (d := 8*i) (n := 8) (e := 8*k) (k := 8)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact hva i (by omega)
+        (by omega_using [he]) (by omega_using [hn, hk, hi]) (by omega_using [hn, hk])) (by decide)]
+      exact hva i (by omega_using [hi, he])
   · intro i hi
     rw [hm]
     by_cases he : i = k
     · subst i
-      rw [Mem.readW_writeW_self64, word1 hpt (by omega)]
+      rw [Mem.readW_writeW_self64, word1 hpt (by omega_using [hn, hk])]
     · rw [Mem.readW_writeW_sep (Offset.sep b (d := 8*i) (n := 8) (e := 8*k) (k := 8)
-        (by omega) (by omega) (by omega)) (by decide),
-        Mem.readW_writeW_sep (hd.symm.sep (out_contains b (by omega) hn) (out_contains a hk hn))
+        (by omega_using [he]) (by omega_using [hn, hk, hi]) (by omega_using [hn, hk])) (by decide),
+        Mem.readW_writeW_sep (hd.symm.sep (out_contains b (by omega_using [hk, hi]) hn) (out_contains a hk hn))
           (by decide)]
-      exact hvb i (by omega)
+      exact hvb i (by omega_using [hi, he])
 
 end VG.Proof.Sha3.AArch64.Neon.X2

@@ -73,18 +73,18 @@ theorem copyLoop_ok (s₀ : State) (src dst : Addr) (k : Nat)
     (hsep : Region.Disjoint ⟨src, k⟩ ⟨dst, k⟩) :
     WP isa (.loop (.block copyByte) (.nonzero .a6)) s₀ (CopyI s₀ src dst k k) := by
   refine WP.loop (M := isa) (fun n s => ∃ j, n = k - j ∧ j < k ∧ CopyI s₀ src dst k j s)
-    ?_ k s₀ ⟨0, by omega, hk, by omega, by simpa using hs, by simpa using hd,
+    ?_ k s₀ ⟨0, by omega_using [], hk, by omega_using [], by simpa using hs, by simpa using hd,
       by simpa using hn, fun _ _ _ _ _ => rfl, rfl, rfl, by rw [List.take_zero, writeBytes_nil]⟩
   rintro n s ⟨j, rfl, hj, h⟩
   have hlen : (bytesAt s₀.mem src k).length = k := by simp [bytesAt]
   have htake : ((bytesAt s₀.mem src k).take j).length = j := by
-    rw [List.length_take, hlen, Nat.min_eq_left (by omega)]
+    rw [List.length_take, hlen, Nat.min_eq_left (by omega_using [hj])]
   have hb : s.mem (src + BitVec.ofNat 64 j) = s₀.mem (src + BitVec.ofNat 64 j) := by
     rw [h.mem]
     apply (writeBytes_frame s₀.mem dst _ (R := ⟨dst, k⟩)
       (by simpa only [BitVec.add_zero, htake] using
-        (Offset.contains_base dst (k := k) (d := 0) (n := j) (by omega) (by decide)))).bytes
-        (R := ⟨src, k⟩) _ (show k ≤ 2 ^ 64 by omega) hj
+        (Offset.contains_base dst (k := k) (d := 0) (n := j) (by omega_using [hj]) (by decide)))).bytes
+        (R := ⟨src, k⟩) _ (show k ≤ 2 ^ 64 by omega_using [hk']) hj
     simpa using hsep
   have hr' : InRegions (s.rd ++ s.wr) (s.gpr .a2) 1 := by
     rw [h.rd, h.wr, h.source]; exact hr j hj
@@ -94,18 +94,18 @@ theorem copyLoop_ok (s₀ : State) (src dst : Addr) (k : Nat)
   rintro t ⟨hm, hs', hd', hn', ho, hrd, hwr, -⟩
   have hc : BitVec.ofNat 64 (k - j) - 1 = BitVec.ofNat 64 (k - (j + 1)) := by
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega : 1 ≤ k - j)]
+      Offset.ofNat_sub_ofNat (by omega_using [hj] : 1 ≤ k - j)]
     congr 1
   have hi : CopyI s₀ src dst k (j + 1) t := by
-    refine ⟨by omega, ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_, hrd.trans h.rd, hwr.trans h.wr, ?_⟩
+    refine ⟨by omega_using [hj], ?_, ?_, ?_, fun r h1 h2 h3 h4 => ?_, hrd.trans h.rd, hwr.trans h.wr, ?_⟩
     · rw [hs', h.source, BitVec.ofNat_add, BitVec.add_assoc]; rfl
     · rw [hd', h.destination, BitVec.ofNat_add, BitVec.add_assoc]; rfl
     · rw [hn', h.count, hc]
     · exact (ho r h1 h2 h3 h4).trans (h.other r h1 h2 h3 h4)
-    · have hj' : j < (bytesAt s₀.mem src k).length := by omega
+    · have hj' : j < (bytesAt s₀.mem src k).length := by omega_using [hj, hlen]
       rw [hm, h.source, h.destination, hb, h.mem, List.take_add_one,
         List.getElem?_eq_getElem hj', Option.toList_some,
-        writeBytes_snoc _ _ _ _ (by rw [htake]; omega), htake]
+        writeBytes_snoc _ _ _ _ (by rw [htake]; omega_using [hk', hj]), htake]
       refine congrArg (fun b => (writeBytes s₀.mem dst ((bytesAt s₀.mem src k).take j)).writeW
         (dst + BitVec.ofNat 64 j) b) ?_
       simp only [bytesAt, List.getElem_map, List.getElem_range]
@@ -115,14 +115,14 @@ theorem copyLoop_ok (s₀ : State) (src dst : Addr) (k : Nat)
     constructor
     · intro he
       have ht := congrArg BitVec.toNat he
-      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : k - (j + 1) < 2 ^ 64),
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk'] : k - (j + 1) < 2 ^ 64),
         show (0 : BitVec 64).toNat = 0 from rfl] using ht
     · intro he; rw [he]; rfl
   by_cases he : j + 1 = k
   · refine .inl ⟨?_, he ▸ hi⟩
-    simp only [VG.RISCV64.eval, bne, hz', show k - (j + 1) = 0 by omega, decide_true, Bool.not_true]
-  · refine .inr ⟨?_, k - (j + 1), by omega, j + 1, rfl, by omega, hi⟩
-    simp only [VG.RISCV64.eval, bne, hz', show k - (j + 1) ≠ 0 by omega, decide_false, Bool.not_false]
+    simp only [VG.RISCV64.eval, bne, hz', show k - (j + 1) = 0 by omega_using [he], decide_true, Bool.not_true]
+  · refine .inr ⟨?_, k - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], hi⟩
+    simp only [VG.RISCV64.eval, bne, hz', show k - (j + 1) ≠ 0 by omega_using [hj, he], decide_false, Bool.not_false]
 
 end VG.Proof.Argon2.RISCV64.HPrime
 
@@ -138,7 +138,7 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (xs : List Byte) (hn : xs.length
   apply List.ext_getElem (by simp only [bytesAt, List.length_map, List.length_range])
   intro i _ hi
   simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes,
-    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64),
+    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hi] : i < 2 ^ 64),
     hi, ite_true, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some]
 
 theorem bytesAt_take (m : Mem) (p : Addr) (n k : Nat) (hn : n ≤ k) :
@@ -172,8 +172,8 @@ theorem copy_ok (s : State) (k : Nat) (lo : 1 ≤ k) (hi : k ≤ 64)
     rw [rd, wr, BitVec.add_assoc,
       show (768 : Addr) = BitVec.ofNat 64 768 from rfl, ← BitVec.ofNat_add]
     exact ⟨_, List.mem_append_right _ work,
-      Offset.contains_base _ (by omega : 768 + i + 1 ≤ 16384) (by omega)⟩
-  have loop := copyLoop_ok u _ _ k lo (by omega) src (other .s2 (by decide))
+      Offset.contains_base _ (by omega_using [hi, hi'] : 768 + i + 1 ≤ 16384) (by omega_using [hi, hi'])⟩
+  have loop := copyLoop_ok u _ _ k lo (by omega_using [hi]) src (other .s2 (by decide))
     ((other .a6 (by decide)).trans count) read
     (by intro i hi'; rw [wr]; exact out i hi') sep
   obtain ⟨tr, t, he, ht⟩ := loop
@@ -188,7 +188,7 @@ theorem Copied.frame {s t : State} {k : Nat} (h : Copied s k t) :
   rw [h.mem]
   apply writeBytes_frame
   simpa only [bytesAt, List.length_map, List.length_range, BitVec.add_zero] using
-    Offset.contains_base (s.gpr .s2) (d := 0) (n := k) (k := k) (by omega) (by decide)
+    Offset.contains_base (s.gpr .s2) (d := 0) (n := k) (k := k) (by omega_using []) (by decide)
 
 structure Emitted (s t : State) : Prop where
   output : t.gpr .s2 = s.gpr .s2 + 32

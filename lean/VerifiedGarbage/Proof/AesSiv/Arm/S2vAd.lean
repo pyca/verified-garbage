@@ -69,8 +69,8 @@ theorem adStep_ok {s : State} (he : Env c w sp R s) {a : BitVec 32} {k : Nat} (h
       he.r11]
   rw [xor4_eq]
   refine xorBlk_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [h11₂]; simp only [dOff]; omega)
-    (by rw [h11₂]; simp only [stOff]; omega) (by rw [h11₂]; simp only [dOff]; omega)
+    (by decide) (by decide) (by decide) (by rw [h11₂]; simp only [dOff]; omega_using [ww])
+    (by rw [h11₂]; simp only [stOff]; omega_using [ww]) (by rw [h11₂]; simp only [dOff]; omega_using [ww])
     (by rw [h11₂, rd₂, wr₂, u₁.rd, u₁.wr]; exact covers_left (he.perm.wC (by decide)))
     (by rw [h11₂, rd₂, wr₂, u₁.rd, u₁.wr]; exact covers_left (he.perm.wC (by decide)))
     (by rw [h11₂, wr₂, u₁.wr]; exact he.perm.wC (by decide)) fun s₃ g₃ => ?_
@@ -80,7 +80,7 @@ theorem adStep_ok {s : State} (he : Env c w sp R s) {a : BitVec 32} {k : Nat} (h
   have h8₃ : s₃.gpr .r8 = a := by
     rw [g₃.gpr _ (by decide) (by decide), g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), u₁.other _ (by decide), h8]
-  have e1 : BitVec.ofNat 32 k - BitVec.ofNat 32 1 = BitVec.ofNat 32 (k - 1) := ofNat_sub32 (by omega) hk32
+  have e1 : BitVec.ofNat 32 k - BitVec.ofNat 32 1 = BitVec.ofNat 32 (k - 1) := ofNat_sub32 (by omega_using [hk]) hk32
   refine WP.of_runBlock ⟨_, by arun [h7₃, h8₃], ?_⟩
   have dD : (⟨State.addr w + BitVec.ofNat 64 dOff, 16⟩ : Region).Disjoint
       ⟨State.addr w + BitVec.ofNat 64 stOff, 16⟩ := L.w_w (.inr (by decide)) (by decide) (by decide)
@@ -96,7 +96,7 @@ theorem adStep_ok {s : State} (he : Env c w sp R s) {a : BitVec 32} {k : Nat} (h
     rw [g₃.gpr r a12 alr, g₂ r a0 a1 a2 a3 a4 a12, u₁.other r a6]
   · simp only [z_setReg, z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, h7₃]
     rw [z_cmp hk32 (by decide)]
-    simp only [decide_eq_decide]; omega
+    simp only [decide_eq_decide]; omega_using [hk]
   · simp only [mem_setReg, mem_subFlags, g₃.mem, m₂, u₁.mem, h11₂]
     exact (dblMem_frame _ _ _ _).trans (Proof.Cmac.xor4Mem_frame _ _ _ _)
   · simp only [mem_setReg, mem_subFlags, g₃.mem, m₂, u₁.mem, h11₂]

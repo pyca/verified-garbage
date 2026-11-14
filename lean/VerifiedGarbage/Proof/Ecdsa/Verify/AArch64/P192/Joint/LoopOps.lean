@@ -41,7 +41,7 @@ theorem zero_test {s : State} {d : Nat} (hd : d < 16) (h2 : s.gpr .x2=BitVec.ofN
   · have hn : BitVec.ofNat 64 d ≠ 0 := by
       intro he
       have h := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)] at h
+      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hd])] at h
       exact hz h
     rw [decide_eq_false hz,beq_eq_false_iff_ne.mpr hn]
 
@@ -55,7 +55,7 @@ theorem addDigit_ok {base : Addr} {P Q A : Point C} {u v j : Nat} {s : State}
       PointAt base t resultPt (add (pair P Q ((u >>> (2*j))%4) ((v >>> (2*j))%4)) A) ∧
       t.gpr .x19=s.gpr .x19 := by
   rw [addDigit, digitTail]
-  refine WP.seq (WP.mono (digit_ok hi.scr hb (by omega) h19) fun s₁ ⟨d₁,k₁⟩ => ?_)
+  refine WP.seq (WP.mono (digit_ok hi.scr hb (by omega_using [hj]) h19) fun s₁ ⟨d₁,k₁⟩ => ?_)
   have W₁ : Changes base loopWork s s₁ := Changes.of_keeps k₁ (by decide)
   have I₁ := hi.unch (W₁.mono loopWork_sub)
   have B₁ := (W₁.mono loopWork_sub).bits hb
@@ -63,18 +63,18 @@ theorem addDigit_ok {base : Addr} {P Q A : Point C} {u v j : Nat} {s : State}
   have R₁ := hp.of_mem k₁.mem
   let d := digitPair u v j
   have hd : d < 16 := digitPair_lt u v j
-  have hda : d%4=(u >>> (2*j))%4 := by dsimp only [d,digitPair]; omega
-  have hdb : d/4=(v >>> (2*j))%4 := by dsimp only [d,digitPair]; omega
+  have hda : d%4=(u >>> (2*j))%4 := by dsimp only [d,digitPair]; omega_using []
+  have hdb : d/4=(v >>> (2*j))%4 := by dsimp only [d,digitPair]; omega_using []
   refine WP.ite (decide (d=0)) (zero_test hd d₁) (fun hz => ?_) (fun hn => ?_)
   · have hz' : d=0 := of_decide_eq_true hz
-    have ha0 : (u >>> (2*j))%4=0 := by rw [hz'] at hda; omega
-    have hb0 : (v >>> (2*j))%4=0 := by rw [hz'] at hdb; omega
+    have ha0 : (u >>> (2*j))%4=0 := by rw [hz'] at hda; omega_using [hda]
+    have hb0 : (v >>> (2*j))%4=0 := by rw [hz'] at hdb; omega_using [hdb]
     have ep : pair P Q ((u >>> (2*j))%4) ((v >>> (2*j))%4)=.infinity := by
       rw [ha0,hb0]; exact pair_zero P Q
     rw [ep]
     exact WP.block_nil ⟨W₁,I₁,B₁,T₁,R₁,k₁.gpr _ (by decide)⟩
   · have hn' : d≠0 := of_decide_eq_false hn
-    refine WP.seq (WP.mono (fetch_ok I₁.scr (by omega) (by omega) d₁ (T₁ d (by omega) (by omega)))
+    refine WP.seq (WP.mono (fetch_ok I₁.scr (by omega) (by omega) d₁ (T₁ d (by omega_using [hn']) (by omega_using [hd])))
       fun s₂ ⟨k₂,E₂,c₂⟩ => ?_)
     have W₂ := W₁.trans (k₂.mono entryWork_sub)
     have I₂ := hi.unch (W₂.mono loopWork_sub)

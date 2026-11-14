@@ -17,7 +17,7 @@ theorem CallReady.arithmeticP {L : CallLayout} {s : State} {a b : Pointer} {bl :
     (R : CallReady L s) (A : CallOperand L a L.pLen) (B : CallOperand L b bl) (hb : 0 < bl) :
     ArithmeticPre L.base L.size L.pLen bl .p a b s := by
   have W := L.lengths
-  refine ⟨R.moduli.scr, R.moduli.pReady, R.operand A (by omega) (by omega), R.operand B hb (by omega), ?_, ?_⟩
+  refine ⟨R.moduli.scr, R.moduli.pReady, R.operand A (by omega_using [W]) (by omega_using [W]), R.operand B hb (by omega_using [W]), ?_, ?_⟩
   · change 1 < operandValue s L.base (.input .p) L.pLen
     rw [R.moduli.pValue]; exact R.moduli.pLarge
   · change operandValue s L.base (.input .p) L.pLen % 2 = 1
@@ -27,9 +27,9 @@ theorem CallReady.arithmeticQ {L : CallLayout} {s : State} {a b : Pointer}
     (R : CallReady L s) (A : CallOperand L a L.qLen) (B : CallOperand L b L.qLen) :
     ArithmeticPre L.base L.size L.qLen L.qLen .q a b s := by
   have W := L.lengths
-  refine ⟨R.moduli.scr, R.moduli.qReady, R.operand A (by omega) (by omega), R.operand B (by omega) (by omega), ?_, ?_⟩
+  refine ⟨R.moduli.scr, R.moduli.qReady, R.operand A (by omega_using [W]) (by omega_using [W]), R.operand B (by omega_using [W]) (by omega_using [W]), ?_, ?_⟩
   · change 1 < operandValue s L.base (.input .q) L.qLen
-    rw [R.moduli.qValue]; have := R.moduli.qLarge; omega
+    rw [R.moduli.qValue]; have := R.moduli.qLarge; omega_using [this]
   · change operandValue s L.base (.input .q) L.qLen % 2 = 1
     rw [R.moduli.qValue]; exact R.moduli.qOdd
 
@@ -40,13 +40,13 @@ theorem callPowerP_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
   have W := L.lengths
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
   · apply (corePower_relCT L.base L.size L.pLen L.qLen output .p a b L.saved L.extent
-    (by omega) (by omega) L.aligned.1 (by omega) (by omega) L.aligned.2).mono ?_ (fun _ _ h => h)
+    (by omega_using [W]) (by omega_using [W]) L.aligned.1 (by omega_using [W]) (by omega_using [W]) L.aligned.2).mono ?_ (fun _ _ h => h)
     intro s t H
-    exact ⟨⟨H.1.arithmeticP A B (by omega), H.2.arithmeticP A B (by omega), H.pointer P, H.pointer A, H.pointer B⟩,
+    exact ⟨⟨H.1.arithmeticP A B (by omega_using [W]), H.2.arithmeticP A B (by omega_using [W]), H.pointer P, H.pointer A, H.pointer B⟩,
       H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩
   · intro s R
-    exact WP.mono (stagePowerP_ok R.moduli (R.operand A (by omega) (by omega))
-      (R.operand B (by omega) (by omega)) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
+    exact WP.mono (stagePowerP_ok R.moduli (R.operand A (by omega_using [W]) (by omega_using [W]))
+      (R.operand B (by omega_using [W]) (by omega_using [W])) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
 
 theorem callPowerQ_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
     (Q : CallOperand L (.input .q) L.qLen) (A : CallOperand L a L.qLen) (B : CallOperand L b L.qLen)
@@ -55,12 +55,12 @@ theorem callPowerQ_relCT (L : CallLayout) (a b : Pointer) (output : Nat)
   have W := L.lengths
   refine call_stage (Q := VG.X86.Taint.Agree (workspaceTaint true)) ?_ ?_
   · apply (corePower_relCT L.base L.size L.qLen L.qLen output .q a b L.saved L.extent
-    (by omega) (by omega) L.aligned.2 (by omega) (by omega) L.aligned.2).mono ?_ (fun _ _ h => h)
+    (by omega_using [W]) (by omega_using [W]) L.aligned.2 (by omega_using [W]) (by omega_using []) L.aligned.2).mono ?_ (fun _ _ h => h)
     intro s t H
     exact ⟨⟨H.1.arithmeticQ A B, H.2.arithmeticQ A B, H.pointer Q, H.pointer A, H.pointer B⟩,
       H.1.moduli.room, H.2.moduli.room, H.1.sp.trans H.2.sp.symm⟩
   · intro s R
-    exact WP.mono (stagePowerQ_ok R.moduli (R.operand A (by omega) (by omega))
-      (R.operand B (by omega) (by omega)) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
+    exact WP.mono (stagePowerQ_ok R.moduli (R.operand A (by omega_using [W]) (by omega_using [W]))
+      (R.operand B (by omega_using [W]) (by omega_using [W])) ho hb) fun _ H => H.2.toStageFrame.execution (.inl ⟨ho, hb⟩)
 
 end VG.Proof.Dsa.X86

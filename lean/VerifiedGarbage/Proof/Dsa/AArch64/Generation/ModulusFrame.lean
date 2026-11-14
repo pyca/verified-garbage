@@ -30,16 +30,16 @@ theorem ModulusReady.of_frm {s t : State} {B : Addr} {Z w N : Nat}
       simp only [modulusArrays, List.mem_cons, List.not_mem_nil, or_false] at hm
       rcases hm with rfl | rfl | rfl | rfl | rfl <;> decide
     have hb := h.ws.sl ha16
-    exact hf.wv_eq (ha a hm) (by omega)
+    exact hf.wv_eq (ha a hm) (by omega_using [hz, hb])
   refine ⟨h.ws.congr' hf hm k h0, ?_, (fixed aN (by simp [modulusArrays])).trans h.modulus,
     (fixed aOne (by simp [modulusArrays])).trans h.one,
     (fixed aR2 (by simp [modulusArrays])).trans h.r2,
     (fixed aR1 (by simp [modulusArrays])).trans h.r1,
     (fixed aRm1 (by simp [modulusArrays])).trans h.rm1,
-    h.exponent.of_frm hf he (by omega)⟩
-  rw [hf.word_eq (fun r hr => by have := ha aN (by simp [modulusArrays]) r hr; omega)
-      (by have := h.ws.sl (show aN < 16 by decide); omega),
-    hf.word_eq hi (by have := h.ws.h256; simp only [sMinv]; omega)]
+    h.exponent.of_frm hf he (by omega_using [hEZ, hz])⟩
+  rw [hf.word_eq (fun r hr => by have := ha aN (by simp [modulusArrays]) r hr; omega_using [hw, this])
+      (by have := h.ws.sl (show aN < 16 by decide); omega_using [hz, this]),
+    hf.word_eq hi (by have := h.ws.h256; simp only [sMinv]; omega_using [])]
   exact h.inverse
 
 end VG.Proof.Dsa.AArch64.Generation

@@ -2,13 +2,123 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Finish
-import VerifiedGarbage.Proof.Dsa.X86.Generation.Frame
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Mont.X86.Compact
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Base
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Flags
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Words
+
+/-! ### `Dsa.X86.Generation.Frame`, which only this module used -/
+
+section
+
+/-! # The callee-saved registers' frame around the generator
+
+`Compact.frame_ok`'s frame, around any body that keeps the saved registers'
+slots and the return address. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Generation
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Mont.X86.Compact (savedRegisters entered popped_four_value)
+
+theorem frameWith_ok {inner : Prog isa} (hns : NoSp (.seq inner (.block Compact.restoreRegs))) {s : State}
+    {Q : Mem → BitVec 32 → Prop} (stackFit : 16 ≤ (s.gpr .esp).toNat) (stackTop : (s.gpr .esp).toNat + 4 ≤ 2 ^ 32)
+    (core : WP isa inner (entered s) fun t =>
+      (∀ x, (⟨((entered s).gpr .esp).setWidth 64, 20⟩ : Region).Contains x 1 → t.mem x = (entered s).mem x) ∧
+      Q t.mem (t.gpr .eax) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] (entered s) t) :
+    WP isa (.frame (.push [.ebx, .ebp, .esi, .edi]) (.seq inner (.block Compact.restoreRegs)) (.pop .ebx 4)) s
+      fun t => abiPreserved s t ∧ Q t.mem (t.gpr .eax) := by
+  refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit hns ?_
+  refine WP.seq (WP.mono core fun t ⟨O, Qt, K⟩ => ?_)
+  have sp : t.gpr .esp = (entered s).gpr .esp := K.1 .esp (by decide)
+  have eNat : ((entered s).gpr .esp).toNat = (s.gpr .esp).toNat - 16 := by
+    rw [entered, pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
+  have fit : ((entered s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
+    have := (s.gpr .esp).isLt
+    omega
+  have keepAt : ∀ (k : Nat), k + 4 ≤ 20 → t.mem.readW (addr ((entered s).gpr .esp) k) 32 =
+      (entered s).mem.readW (addr ((entered s).gpr .esp) k) 32 := fun k hk => by
+    have address : addr ((entered s).gpr .esp) k = ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 k :=
+      addr_eq (by omega_using [eNat, hk])
+    rw [address]
+    exact Mem.readW_congr fun j hj => O _ (by
+      rw [show ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 k + BitVec.ofNat 64 j =
+          ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 (k + j) by
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
+      exact Offset.contains_base _ (by omega_using [hk, hj]) (by omega_using [hk, hj]))
+  have read (i : Nat) (hi : i < 4) :
+      readSrc t (.mem (at_ .esp (4 * i))) = some (s.gpr (savedRegisters[3 - i]'(by
+        change 3 - i < 4; omega_using []))) := by
+    have access : InRegions (t.rd ++ t.wr) (addr (t.gpr .esp) (4 * i)) 4 := by
+      rw [K.2.1, K.2.2, sp]
+      refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ (List.mem_cons_self), ?_⟩
+      change (below (s.gpr .esp) 16).Contains _ 4
+      have region : below (s.gpr .esp) 16 = ⟨((entered s).gpr .esp).setWidth 64, 16⟩ := by
+        unfold entered savedRegisters below
+        rw [pushed_esp]
+        rfl
+      rw [region]
+      have address : addr ((entered s).gpr .esp) (4 * i) =
+          ((entered s).gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 * i) := addr_eq (by omega_using [eNat, hi])
+      rw [address]
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
+    have value : t.mem.readW (addr (t.gpr .esp) (4 * i)) 32 =
+        (entered s).mem.readW (addr ((entered s).gpr .esp) (4 * i)) 32 := by
+      rw [sp]; exact keepAt _ (by omega_using [hi])
+    change t.load32 (addr (t.gpr .esp) (4 * i)) = _
+    rw [State.load32, ite_eq_left access, value]
+    exact congrArg some (pushed_word (rs := savedRegisters) (by decide) stackFit hi)
+  refine WP.mono (VG.Proof.Mont.X86.Compact.restore_ok (read 0 (by decide)) (read 1 (by decide))
+    (read 2 (by decide))) ?_
+  rintro t' ⟨edi, esi, ebp, M, K'⟩
+  have sp' : t'.gpr .esp = (entered s).gpr .esp := (K'.1 .esp (by decide)).trans sp
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [show savedRegisters.length = 4 from rfl, popped_four_value, sp', M]
+      have word := pushed_word (s := s) (rs := savedRegisters) (by decide) stackFit (i := 3) (by decide)
+      have e12 : (((entered s).gpr .esp) + 12).setWidth 64 = addr ((entered s).gpr .esp) 12 := rfl
+      rw [e12, keepAt 12 (by decide)]
+      exact word
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]; exact esi
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]; exact edi
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]; exact ebp
+    · rw [popped_esp, sp', entered, pushed_esp]; exact BitVec.sub_add_cancel _ _
+  · rw [popped_mem, M]
+    have ret : (s.gpr .esp).setWidth 64 = addr ((entered s).gpr .esp) 16 := by
+      unfold addr entered savedRegisters
+      rw [pushed_esp]
+      congr 1
+      exact (BitVec.sub_add_cancel _ _).symm
+    rw [ret, keepAt 16 (by decide), ← ret]
+    have saved := pushed_frame (rs := savedRegisters) (s := s) (by decide) stackFit
+    have separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
+      unfold below
+      rw [Taint.sub_setWidth stackFit]
+      exact Offset.base_disjoint_below _ (by decide)
+    exact saved.readW (Region.contains_self _ _) (by
+      intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide)
+  · rw [popped_mem, M, popped_gpr _ _ _ (by decide) (by decide), K'.1 .eax (by decide)]
+    exact Qt
+
+end VG.Proof.Dsa.X86.Generation
+
+end
+
+end
+
 
 /-! # Parameter generation meets its contract on i686 -/
 
@@ -70,8 +180,8 @@ theorem generate_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen
     Frame.readW K.chg (r := ⟨E.stP + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (Env.far_all ((v.stFar _ List.mem_cons_self).sub_left (Offset.sub_base _ hd))
         ((v.stFar _ (by simp)).sub_left (Offset.sub_base _ hd)) fun o ho => (ap o ho).1) (by decide)
-  refine ⟨?_, by rw [P.out, outBytes_eq E, e], by rw [P.st0, e], by rw [P.st1, stK 8 (by omega)],
-    by rw [P.st2, stK 16 (by omega)], by rw [P.st3, e], by rw [P.used, e], by rw [P.eax, e],
+  refine ⟨?_, by rw [P.out, outBytes_eq E, e], by rw [P.st0, e], by rw [P.st1, stK 8 (by omega_using [])],
+    by rw [P.st2, stK 16 (by omega_using [])], by rw [P.st3, e], by rw [P.used, e], by rw [P.eax, e],
     P.esp.trans (K.base.sp.trans B.sp.symm), P.rd.trans K.rd, P.wr.trans K.wr⟩
   refine Frame.trans (Frame.sub K.chg fun r hr => ?_) (Frame.mono P.frame fun r hr => ?_)
   · simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
@@ -127,7 +237,7 @@ theorem dRead_ok {s t t₁ : State} (F : CallFacts s) (P : EPost s t) (D : DPtr 
   have W₀ := stWord F D.inv (d := 0) (by decide)
   have hs₁ := Scr.of_eq P.base.scr D.edi D.esp D.wr
   refine wp_ldm (B := arg s 7) D.ebx W₀.1 fun t₂ u₂ => st_ok (Scr.of_eq hs₁ (u₂.other _ (by decide))
-    (u₂.other _ (by decide)) u₂.wr) (d := fSeedLeft) (by simp only [fSeedLeft, hdr]; omega) fun t₃ M₃ => ?_
+    (u₂.other _ (by decide)) u₂.wr) (d := fSeedLeft) (by simp only [fSeedLeft, hdr]; omega_using [sz]) fun t₃ M₃ => ?_
   have e0 : (arg s 7).setWidth 64 + BitVec.ofNat 64 0 = (arg s 7).setWidth 64 := by simp
   have low : t₂.gpr .eax = BitVec.ofNat 32 (callEnv s).k0 := by rw [u₂.gpr, W₀.2, e0]; rfl
   have m₃ : t₃.mem = t.mem.writeW (off (callEnv s).base fSeedLeft) (BitVec.ofNat 32 (callEnv s).k0) := by
@@ -150,17 +260,17 @@ theorem dRead_ok {s t t₁ : State} (F : CallFacts s) (P : EPost s t) (D : DPtr 
   have sy₅ : t₅.syms = t.syms := by rw [f₅.syms, u₄.syms, M₃.syms, u₂.syms, D.syms]
   have wd : ∀ d, d + 4 ≤ sState → (d + 4 ≤ fSeedLeft ∨ fSeedLeft + 4 ≤ d) →
       t₅.mem.readW (off (callEnv s).base d) 32 = t.mem.readW (off (callEnv s).base d) 32 := fun d h₁ h₂ => by
-    rw [mem₅, m₃]; exact word_store_other v _ (by simp only [sState] at h₁; omega)
-      (by simp only [fSeedLeft, hdr]; omega) h₂ _
+    rw [mem₅, m₃]; exact word_store_other v _ (by simp only [sState] at h₁; omega_using [sz, h₁])
+      (by simp only [fSeedLeft, hdr]; omega_using [sz]) h₂ _
   have p32 : pLenOf s < 2 ^ 32 := by rcases pl with h | h | h <;> rw [h] <;> decide
   have cur : t₅.mem.readW (off (callEnv s).base fC) 32 = BitVec.ofNat 32 0 := by
-    rw [wd _ (by simp only [fC, sState, hdr]; omega) (.inr (by simp only [fC, fSeedLeft, hdr]; omega))]
+    rw [wd _ (by simp only [fC, sState, hdr]; omega_using []) (.inr (by simp only [fC, fSeedLeft, hdr]; omega_using []))]
     exact P.cur
   have st : t₅.mem.readW (off (callEnv s).base fStatus) 32 = BitVec.ofNat 32 0 := by
-    rw [wd _ (by simp only [fStatus, sState, hdr]; omega) (.inr (by simp only [fStatus, fSeedLeft, hdr]; omega))]
+    rw [wd _ (by simp only [fStatus, sState, hdr]; omega_using []) (.inr (by simp only [fStatus, fSeedLeft, hdr]; omega_using []))]
     exact P.status
   have B₅ := P.base.keep v C (fun o ho => by
-    simp only [List.mem_singleton] at ho; subst ho; simp only [fSeedLeft, fOut, fUsedP, fWitLen, hdr]; omega)
+    simp only [List.mem_singleton] at ho; subst ho; simp only [fSeedLeft, fOut, fUsedP, fWitLen, hdr]; omega_using [sz])
     edi₅ esp₅ rd₅ wr₅ sy₅
   refine ⟨B₅, by rw [mem₅, m₃, Mem.readW_writeW_self32], cur, st, eax, ?_, C, esp₅, rd₅, wr₅⟩
   show t₅.zf = _
@@ -186,7 +296,7 @@ theorem dispatch_ok {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk
     Frame.readW C (r := ⟨(callEnv s).stP + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (Env.far_all ((v.stFar _ List.mem_cons_self).sub_left (Offset.sub_base _ hd))
         ((v.stFar _ (by simp)).sub_left (Offset.sub_base _ hd)) fun o ho => by
-          simp only [List.mem_singleton] at ho; subst ho; simp only [fSeedLeft, hdr]; omega) (by decide)
+          simp only [List.mem_singleton] at ho; subst ho; simp only [fSeedLeft, hdr]; omega_using [sz]) (by decide)
   have run {t' : State} {g : Geo} (G : GeoOk g) (hp : (callEnv s).pLen = g.pLen) (hm : t'.mem = t₅.mem)
       (edi : t'.gpr .edi = t₅.gpr .edi) (esp : t'.gpr .esp = t₅.gpr .esp) (rd : t'.rd = t₅.rd)
       (wr : t'.wr = t₅.wr) (sy : t'.syms = t₅.syms) :
@@ -205,10 +315,10 @@ theorem dispatch_ok {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk
       exact Frame.sub C fun r hr => by
         simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
         rcases hr with ⟨o, ho, rfl⟩ | rfl
-        · exact ⟨_, List.mem_cons_self, Env.range_sub (o := o) (by subst ho; simp only [fSeedLeft, hdr]; omega)⟩
+        · exact ⟨_, List.mem_cons_self, Env.range_sub (o := o) (by subst ho; simp only [fSeedLeft, hdr]; omega_using [sz])⟩
         · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
-    · rw [Q.st1, hm]; exact stC 8 (by omega)
-    · rw [Q.st2, hm]; exact stC 16 (by omega)
+    · rw [Q.st1, hm]; exact stC 8 (by omega_using [])
+    · rw [Q.st2, hm]; exact stC 16 (by omega_using [])
   have p32 : pLenOf s < 2 ^ 32 := by rcases pl with h | h | h <;> rw [h] <;> decide
   refine WP.ite _ R.zf (fun h => run G1 (by rw [h1]; exact of_decide_eq_true h) rfl rfl rfl rfl rfl rfl)
     (fun h => ?_)
@@ -221,7 +331,7 @@ theorem dispatch_ok {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk
   refine WP.ite _ z256 (fun h => run G2 (by rw [h2]; exact of_decide_eq_true h) f₆.mem (by rw [f₆.gpr])
     (by rw [f₆.gpr]) f₆.rd f₆.wr f₆.syms) (fun h => ?_)
   have n256 : pLenOf s ≠ 256 := of_decide_eq_false h
-  exact run G3 (by rw [h3]; change pLenOf s = 384; omega) f₆.mem (by rw [f₆.gpr]) (by rw [f₆.gpr]) f₆.rd f₆.wr
+  exact run G3 (by rw [h3]; change pLenOf s = 384; omega_using [pl, n128, n256]) f₆.mem (by rw [f₆.gpr]) (by rw [f₆.gpr]) f₆.rd f₆.wr
     f₆.syms
 
 theorem contains_nat {a x : Addr} {n : Nat} (fit : a.toNat + n ≤ 2 ^ 64) (h : (⟨a, n⟩ : Region).Contains x 1) :
@@ -231,11 +341,11 @@ theorem contains_nat {a x : Addr} {n : Nat} (fit : a.toNat + n ≤ 2 ^ 64) (h : 
   have := x.isLt
   have := a.isLt
   by_cases o : a.toNat ≤ x.toNat
-  · rw [show 2 ^ 64 - a.toNat + x.toNat = (x.toNat - a.toNat) + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)] at h
-    omega
-  · rw [Nat.mod_eq_of_lt (by omega)] at h
-    omega
+  · rw [show 2 ^ 64 - a.toNat + x.toNat = (x.toNat - a.toNat) + 2 ^ 64 by omega_using [fit, h], Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_using [])] at h
+    omega_using [h, o]
+  · rw [Nat.mod_eq_of_lt (by omega_using [o])] at h
+    omega_using [fit, h]
 
 /-- What the contract's postcondition asks of the result, `out`, `used` and `state`. -/
 def genQ (s : State) (m : Mem) (e : BitVec 32) : Prop :=
@@ -268,7 +378,7 @@ theorem genQ_of {s : State} (F : CallFacts s) {g : Geo} (hp : (callEnv s).pLen =
     (used : m.readW ((callEnv s).usedP + BitVec.ofNat 64 0) 64 = BitVec.ofNat 64 (sW (callEnv s)).used)
     (eax : e = BitVec.ofNat 32 (sW (callEnv s)).status) : genQ s m e := by
   have pl := F.pLens
-  have hpos : 0 < pLenOf s := by omega
+  have hpos : 0 < pLenOf s := by omega_using [pl]
   have lenOut : (arg s 1).toNat = 2 * g.pLen + g.qLen := by rw [F.outLen, ← hp, ← hq]; rfl
   refine ⟨?_, ?_, ?_, requested (pLenOf s) (sW (callEnv s)), ?_, requested_requests hpos _ _⟩
   · rw [eax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
@@ -331,40 +441,40 @@ theorem body_ok {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk g3)
     have low := F.low
     have esp := (s.gpr .esp).isLt
     have argsFit := F.argsFit
-    have xr := contains_nat (by rw [toNat_wide]; omega) hx
+    have xr := contains_nat (by rw [toNat_wide]; omega_using []) hx
     rw [toNat_wide, spNat] at xr
     refine fr x fun r hr c => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · have fit := F.scrFit
       have := contains_nat (a := (arg s 5).setWidth 64) (n := (arg s 6).toNat * 8)
-        (by rw [toNat_wide]; omega) c
+        (by rw [toNat_wide]; omega_using []) c
       change ((arg s 5).setWidth 64).toNat ≤ _ ∧ _ < ((arg s 5).setWidth 64).toNat + (arg s 6).toNat * 8 at this
       rw [toNat_wide] at this
       have := F.scratchNat
-      omega
+      omega_arith
     · have sb : ((callEnv s).sp - BitVec.ofNat 32 200).toNat = (callEnv s).sp.toNat - 200 :=
-        sub_toNat (by omega)
+        sub_toNat (by omega_using [spNat, low])
       have := contains_nat (a := ((callEnv s).sp - BitVec.ofNat 32 200).setWidth 64) (n := 200)
-        (by rw [toNat_wide]; omega) c
+        (by rw [toNat_wide]; omega_using []) c
       rw [toNat_wide, sb, spNat] at this
-      omega
+      omega_using [low, xr, this]
     · rw [F.outRegion] at c
       have fit := F.outFit
-      have := contains_nat (by rw [toNat_wide]; omega) c
+      have := contains_nat (by rw [toNat_wide]; omega_using []) c
       rw [toNat_wide] at this
       have := F.outNat
-      omega
+      omega_arith
     · have fit := F.stFit
-      have := contains_nat (a := (arg s 7).setWidth 64) (n := 32) (by rw [toNat_wide]; omega) c
+      have := contains_nat (a := (arg s 7).setWidth 64) (n := 32) (by rw [toNat_wide]; omega_using []) c
       rw [toNat_wide] at this
       have := F.stNat
-      omega
+      omega_arith
     · have fit := F.usedFit
-      have := contains_nat (a := (arg s 2).setWidth 64) (n := 8) (by rw [toNat_wide]; omega) c
+      have := contains_nat (a := (arg s 2).setWidth 64) (n := 8) (by rw [toNat_wide]; omega_using []) c
       rw [toNat_wide] at this
       have := F.usedNat
-      omega
+      omega_arith
   · intro r hr
     cases r <;> simp at hr
     rw [Q.esp, P.inv.esp, I₀.esp]
@@ -377,8 +487,8 @@ theorem correct {g1 g2 g3 : Geo} (G1 : GeoOk g1) (G2 : GeoOk g2) (G3 : GeoOk g3)
     (s : State) (h : genContract.pre s) :
     ∃ trace t, Exec isa (code g1 g2 g3) s trace t ∧ abiPreserved s t ∧ genContract.post s t := by
   have F := call_facts h
-  obtain ⟨trace, t, run, preserved, Q⟩ := frameWith_ok (Q := genQ s) hns (by have := F.low; omega)
-    (by have := F.argsFit; omega) (body_ok G1 G2 G3 h1 h2 h3 F)
+  obtain ⟨trace, t, run, preserved, Q⟩ := frameWith_ok (Q := genQ s) hns (by have := F.low; omega_using [this])
+    (by have := F.argsFit; omega_using [this]) (body_ok G1 G2 G3 h1 h2 h3 F)
   refine ⟨trace, t, run, preserved, ?_⟩
   sig_post [genContract, Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig,
     abi, argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]

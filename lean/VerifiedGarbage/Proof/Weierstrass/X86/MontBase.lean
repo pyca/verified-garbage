@@ -49,7 +49,7 @@ theorem Bx.ebp_toNat (hb : Bx s base size) : (s.gpr .ebp).toNat = base.toNat := 
 /-- `[ebp + d]`. -/
 theorem Bx.ea (hb : Bx s base size) {d : Nat} (hd : d < size) : s.ea (bp d) = off base d := by
   change addr (s.gpr .ebp) d = _
-  rw [addr_eq (by have := hb.nowrap; have := hb.ebp_toNat; omega), hb.ebp]
+  rw [addr_eq (by have := hb.nowrap; have := hb.ebp_toNat; omega_arith), hb.ebp]
 
 /-- `[r + d]`, for `r` pointing `p` bytes into the working space. -/
 theorem Bx.ea_ptr (hb : Bx s base size) {r : Reg} {p d : Nat} (hp : Ptr s r p) (hd : p + d < size) :
@@ -78,13 +78,13 @@ theorem Ptr.of_keeps {rs : List Reg} {s' : State} {r : Reg} {p : Nat} (hp : Ptr 
 theorem readSrc_bp (hb : Bx s base size) {d : Nat} (hd : d + 4 ≤ size) :
     readSrc s (.mem (bp d)) = some (s.mem.readW (off base d) 32) := by
   show s.load32 (s.ea (bp d)) = _
-  rw [hb.ea (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hb.read hd) h]
+  rw [hb.ea (by omega_using [hd]), State.load32, ite_eq_left_iff.mpr fun h => absurd (hb.read hd) h]
 
 /-- A load of the working space through a pointer. -/
 theorem readSrc_ptr (hb : Bx s base size) {r : Reg} {p d : Nat} (hp : Ptr s r p) (hd : p + d + 4 ≤ size) :
     readSrc s (.mem (at_ r d)) = some (s.mem.readW (off base (p + d)) 32) := by
   show s.load32 (s.ea (at_ r d)) = _
-  rw [hb.ea_ptr hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hb.read (by omega)) h]
+  rw [hb.ea_ptr hp (by omega_using [hd]), State.load32, ite_eq_left_iff.mpr fun h => absurd (hb.read (by omega_using [hd])) h]
 
 /-! ## Steps of a row -/
 
@@ -109,7 +109,7 @@ theorem stepG_ok (hb : Bx s base size) {ys : Src} {y : BitVec 32} (hy : readSrc 
   refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
   have k₆ : Keeps [.eax, .edx] s s₆ := (k₄.widen u₅.keeps).widen u₆.keeps
   have hb₆ := hb.of_keeps k₆ (by decide)
-  refine wp_storeS (hb₆.ea (d := acc + 4 * j) (by omega)) (hb₆.write ht) fun s₇ m₇ => ?_
+  refine wp_storeS (hb₆.ea (d := acc + 4 * j) (by omega_using [ht])) (hb₆.write ht) fun s₇ m₇ => ?_
   refine wp_movS rfl fun s₈ u₈ _ => WP.block_nil ?_
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, m₂.mem, u₁.mem]
   have m₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, m₄]
@@ -157,7 +157,7 @@ theorem step0_regs (A C T : BitVec 32) (c : Bool)
   rw [Nat.mul_comm C.toNat]
   have he2 : (BitVec.ofNat 32 (A.toNat * C.toNat)).toNat = A.toNat * C.toNat % 2 ^ 32 := BitVec.toNat_ofNat _ _
   have hd2 : (BitVec.ofNat 32 (A.toNat * C.toNat / 2 ^ 32)).toNat = A.toNat * C.toNat / 2 ^ 32 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]
   have h0 : ∀ x : BitVec 32, x + 0 = x := BitVec.add_zero
   rw [h0, BitVec.toNat_add, BitVec.toNat_add, ofBool_toNat, he2, hd2]
   rw [he2] at hc
@@ -165,7 +165,7 @@ theorem step0_regs (A C T : BitVec 32) (c : Bool)
   generalize A.toNat * C.toNat = P at *
   by_cases h1 : 2 ^ 32 ≤ P % 2 ^ 32 + T.toNat <;>
     simp only [h1, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
-    constructor <;> omega
+    constructor <;> omega_arith
 
 /-- The first step of a row: `[ebp + acc] += ecx · y`, the carry word to `ebx`. -/
 theorem step0G_ok (hb : Bx s base size) {ys : Src} {y : BitVec 32} (hy : readSrc s ys = some y) {acc : Nat}
@@ -183,7 +183,7 @@ theorem step0G_ok (hb : Bx s base size) {ys : Src} {y : BitVec 32} (hy : readSrc
   refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
   have k₄ : Keeps [.eax, .edx] s s₄ := (k₂.widen u₃.keeps).widen u₄.keeps
   have hb₄ := hb.of_keeps k₄ (by decide)
-  refine wp_storeS (hb₄.ea (d := acc) (by omega)) (hb₄.write ht) fun s₅ m₅ => ?_
+  refine wp_storeS (hb₄.ea (d := acc) (by omega_using [ht])) (hb₄.write ht) fun s₅ m₅ => ?_
   refine wp_movS rfl fun s₆ u₆ _ => WP.block_nil ?_
   have m₂' : s₂.mem = s.mem := by rw [m₂.mem, u₁.mem]
   have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, m₂']

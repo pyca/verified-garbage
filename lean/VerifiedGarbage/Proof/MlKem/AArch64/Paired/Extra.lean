@@ -49,8 +49,8 @@ theorem extra_ok {w16 : Bool} (s : State)
     exact hp.transfer ha.mem ha.rd ha.wr (ha.get .x16)
   refine WP.ite (a.gpr .x4 == 0) (eval_zero _ _) (fun hz => ?_) (fun _ => ?_)
   · rw [eq_zero_iff,decide_eq_true_eq,a4] at hz
-    have full : L.length=256 := by omega
-    have eqL : sampleAfter L B 56=L := sampleAfter_full (t := 0) full 56 (by omega)
+    have full : L.length=256 := by omega_using [hl, hz]
+    have eqL : sampleAfter L B 56=L := sampleAfter_full (t := 0) full 56 (by omega_using [])
     refine wp_movz fun u hu eu => wp_nil ?_
     refine ⟨(ha.keep.trans hu.keep).mono (by simp),?_,?_,?_,?_,?_,?_⟩
     · rw [hu.mem,ha.mem]; exact Frame.refl _ _

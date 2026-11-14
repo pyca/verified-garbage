@@ -118,7 +118,7 @@ theorem VerifyPublic.inBytes {m : Mem} {b pk sig challenge : BitVec 32} {s : Sta
     (h : VerifyPublic m b pk sig challenge s) {j : Nat} (hj : j < 2) :
     Spec.Ed25519.bytesAt s.mem (State.addr (inPtr pk sig j)) 32 =
       Spec.Ed25519.bytesAt m (State.addr (inPtr pk sig j)) 32 := by
-  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
   · exact h.pkBytes
   · exact h.rBytes
 
@@ -249,9 +249,9 @@ theorem decodeLoop_ct (m : Mem) (b pk sig challenge : BitVec 32) :
     (fun x y (h : DecCT m b pk sig challenge k x ∧ DecCT m b pk sig challenge k y) => ⟨h.1.body hk, h.2.body hk⟩)
     (fun _ _ h => h)).wp fun x y h => ⟨decodeBody_dec hk h.1, decodeBody_dec hk h.2⟩
   rcases n with _ | _ | _ | n
-  · exact RelCT.of_false fun _ _ ⟨k, hkn, hk, _⟩ => by omega
+  · exact RelCT.of_false fun _ _ ⟨k, hkn, hk, _⟩ => by omega_using [hkn, hk]
   · refine ((step 1 (by decide)).mono (fun x y ⟨k, hkn, _, hx, hy⟩ => by
-      obtain rfl : k = 1 := by omega
+      obtain rfl : k = 1 := by omega_using [hkn]
       exact ⟨hx, hy⟩) (fun _ _ h => h)).mono (fun _ _ h => h) ?_
     intro x y ⟨_, ⟨hx, zx⟩, ⟨hy, zy⟩⟩
     refine ⟨?_, fun _ => ⟨hx, hy⟩, fun he => ?_⟩
@@ -261,16 +261,16 @@ theorem decodeLoop_ct (m : Mem) (b pk sig challenge : BitVec 32) :
       rw [zx] at e
       cases e
   · refine ((step 0 (by decide)).mono (fun x y ⟨k, hkn, _, hx, hy⟩ => by
-      obtain rfl : k = 0 := by omega
+      obtain rfl : k = 0 := by omega_using [hkn]
       exact ⟨hx, hy⟩) (fun _ _ h => h)).mono (fun _ _ h => h) ?_
     intro x y ⟨_, ⟨hx, zx⟩, ⟨hy, zy⟩⟩
-    refine ⟨?_, fun he => ?_, fun _ => ⟨1, by omega, 1, rfl, by decide, hx, hy⟩⟩
+    refine ⟨?_, fun he => ?_, fun _ => ⟨1, by omega_using [], 1, rfl, by decide, hx, hy⟩⟩
     · show some (!x.z) = some (!y.z)
       rw [zx, zy]
     · have e : some (!x.z) = some false := he
       rw [zx] at e
       cases e
-  · exact RelCT.of_false fun _ _ ⟨k, hkn, hk, _⟩ => by omega
+  · exact RelCT.of_false fun _ _ ⟨k, hkn, hk, _⟩ => by omega_using [hkn]
 
 /-- After the test of `DOK`: the branch, and the decoded points. -/
 def TestedCT (m : Mem) (b pk sig challenge : BitVec 32) (s : State) : Prop :=
@@ -468,7 +468,7 @@ theorem verifySetup_ct (m : Mem) (b pk sig challenge : BitVec 32) :
         Spec.Ed25519.bytesAt t.mem (State.addr p) n = Spec.Ed25519.bytesAt s.mem (State.addr p) n := by
       unfold Spec.Ed25519.bytesAt
       refine List.map_congr_left fun i hi => tf.bytes (R := ⟨State.addr p, n⟩)
-        (fun r hr => ?_) (by omega : n ≤ 2 ^ 64) (List.mem_range.mp hi)
+        (fun r hr => ?_) (by omega_using [hn] : n ≤ 2 ^ 64) (List.mem_range.mp hi)
       rw [List.mem_singleton.mp hr, h.r3]
       exact hd
     exact ⟨tc', (bytes pk 32 (by decide) tc'.pkInput.separate).trans h.pkBytes,

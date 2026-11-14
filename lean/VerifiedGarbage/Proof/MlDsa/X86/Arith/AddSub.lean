@@ -60,8 +60,8 @@ theorem addOp_spec : OpSpec addOp fun a b => (a + b) % q := by
     (s.gpr .eax + s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32))
     (by simp only [exec, execAlu, readSrc, State.ea, at_, State.load32, hin', ite_true, Option.bind_some]) ?_
   have e : (s.gpr .eax + s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32).toNat = a + b := by
-    rw [BitVec.toNat_add, h₁, h₂', Nat.mod_eq_of_lt (by rw [q_eq] at ha hb; omega)]
-  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; omega)
+    rw [BitVec.toNat_add, h₁, h₂', Nat.mod_eq_of_lt (by rw [q_eq] at ha hb; omega_using [ha, hb])]
+  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; omega_using [ha, hb])
     fun s' o v => k s' ⟨fun r hr => ?_, o.mem, o.rd, o.wr⟩ ?_
   · rw [o.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact hr)]
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -88,10 +88,10 @@ theorem subOp_spec : OpSpec subOp fun a b => (a + q - b) % q := by
     (by simp only [exec, execAlu, readSrc, State.ea, at_, State.load32, State.setReg, arithFlags, State.setFlags,
       hin', ite_true, ite_false, Option.bind_some, reduceCtorEq]; rfl) ?_
   have hA' : A.toNat = a + q := by
-    rw [hA, BitVec.toNat_add, h₁, qImm_toNat, Nat.mod_eq_of_lt (by rw [q_eq] at ha ⊢; omega)]
+    rw [hA, BitVec.toNat_add, h₁, qImm_toNat, Nat.mod_eq_of_lt (by rw [q_eq] at ha ⊢; omega_using [ha])]
   have e : (A - B).toNat = a + q - b := by
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hA', h₂']; omega), hA', h₂']
-  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; omega)
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hA', h₂']; omega_using [hb]), hA', h₂']
+  refine csubQ_spec (by decide) is _ P (by simp only [State.setReg, ite_true]; rw [e]; omega_using [ha])
     fun s' o v => k s' ⟨fun r hr => ?_, o.mem, o.rd, o.wr⟩ ?_
   · rw [o.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact hr)]
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -189,11 +189,11 @@ theorem f_P0 {i : Nat} (hi : i < 256) : coeffAt (P0 s₀).mem (fA s₀) i = coef
 
 theorem ea_f (k : Nat) (hk : k < 256) :
     (fP s₀ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (fA s₀) k := by
-  rw [ea_add (by have := hp.f_fit; omega), Nat.add_zero]
+  rw [ea_add (by have := hp.f_fit; omega_using [hk, this]), Nat.add_zero]
 
 theorem ea_g (k : Nat) (hk : k < 256) :
     (gP s₀ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (gA s₀) k := by
-  rw [ea_add (by have := hp.g_fit; omega), Nat.add_zero]
+  rw [ea_add (by have := hp.g_fit; omega_using [hk, this]), Nat.add_zero]
 
 end AccPre
 
@@ -246,8 +246,8 @@ theorem map_step {op : List Instr} {F : Nat → Nat → Nat} (hop : OpSpec op F)
     · subst e; simp
     · rw [ite_eq_right e]
       by_cases hik : i < k
-      · rw [ite_eq_left hik, ite_eq_left (by omega)]
-      · rw [ite_eq_right hik, ite_eq_right (by omega)]
+      · rw [ite_eq_left hik, ite_eq_left (by omega_using [hik])]
+      · rw [ite_eq_right hik, ite_eq_right (by omega_using [e, hik])]
   · simp only [eval, ecx₂]
     exact cnt_ne hk (by decide)
 
@@ -274,8 +274,8 @@ theorem init_piece (F : Nat → Nat → Nat) :
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_)
     (by native_taint_decide)
   · subst e
-    obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega)
-    obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega)
+    obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega_using [])
+    obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, mapInit, at_, runBlock_cons, runStep_some, runBlock_nil,
@@ -307,7 +307,7 @@ theorem map_piece {op : List Instr} {F : Nat → Nat → Nat} (hop : OpSpec op F
     (ht : (VG.X86.taint.check (τr [.esp, .esi, .edi, .ecx]) (.block (mapBody op)) hc).isSome = true) :
     Piece AccPre AccPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (MapInv F s₀ 256) s₀ s')
       (leaf (mapLoop op)) :=
-  Piece.leaf (fun s₀ => [polyRegion (fA s₀)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf (fun s₀ => [polyRegion (fA s₀)]) hsp (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
@@ -324,7 +324,7 @@ theorem map_post {F : Nat → Nat → Nat} {G : Zq → Zq → Zq} (hG : ∀ x y 
   have hlt := val_lt (G (polyAt s₀.mem (fA s₀))[i]! (polyAt s₀.mem (gA s₀))[i]!)
   rw [hG, polyAt_val hp.f_red hi, polyAt_val hp.g_red hi] at hlt
   rw [h.f i hi, ite_eq_left hi, getElem!_eq _ hi, Vector.getElem_zipWith, ← getElem!_eq _ hi,
-    ← getElem!_eq _ hi, hG, polyAt_val hp.f_red hi, polyAt_val hp.g_red hi, newC, toNat_ofNat32 (by omega)]
+    ← getElem!_eq _ hi, hG, polyAt_val hp.f_red hi, polyAt_val hp.g_red hi, newC, toNat_ofNat32 (by omega_using [hlt])]
 
 /-- Memory whose argument words (at `0x5004`) hold `0` and `0x400`. -/
 def accSatMem : Mem := fun a => if a = 0x5009 then 4 else 0
@@ -344,7 +344,7 @@ def accSat : State where
 theorem accSat_red (p : Nat) (hp : p + 1024 ≤ 0x5000) : Reduced accSatMem (BitVec.ofNat 64 p) :=
   reduced_below (fun a ha => by
     simp only [accSatMem]
-    rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]) p hp
+    rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])]) p hp
 
 theorem add_verified : Verified X86.target add (addContract X86.abi 16) := by
   refine Piece.verified (((map_piece addOp_spec (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono

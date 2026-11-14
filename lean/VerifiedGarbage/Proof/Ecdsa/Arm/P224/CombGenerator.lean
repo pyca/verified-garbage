@@ -67,6 +67,6 @@ theorem comb_generator_stage (hC : Law Spec.P224.curve) {u : Bool} {s₀ s : Sta
     (hd.sub_right (Region.sub_prefix (by decide)))
     (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _)
       (VG.Proof.Weierstrass.ofBytes_bytesAt_lt _ _ Spec.P224.curve.len))
-    fun i hi => S.t₀ i (by change i < 64 * 4; omega)
+    fun i hi => S.t₀ i (by change i < 64 * 4; omega_using [hi])
 
 end VG.Proof.Ecdsa.Arm.P224

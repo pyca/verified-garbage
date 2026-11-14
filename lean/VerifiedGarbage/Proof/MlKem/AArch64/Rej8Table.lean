@@ -46,18 +46,18 @@ theorem compact_half (x : BitVec 128) {mask e : Nat} (hm : mask < 256) (he : e <
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   rw [getLsbD_vhalf _ _ hi]
-  rw [show 16*e+i = 8*(2*e+i/8)+i%8 by omega]
-  rw [compactValue, getLsbD_ofVBytes _ (by omega) (by omega), tableVec_byte hm (by omega)]
-  have hdiv : (2*e+i/8)/2=e := by omega
-  have hmod : (2*e+i/8)%2=i/8 := by omega
+  rw [show 16*e+i = 8*(2*e+i/8)+i%8 by omega_using []]
+  rw [compactValue, getLsbD_ofVBytes _ (by omega_using [he, hi]) (by omega_using []), tableVec_byte hm (by omega_using [he, hi])]
+  have hdiv : (2*e+i/8)/2=e := by omega_using [hi]
+  have hmod : (2*e+i/8)%2=i/8 := by omega_using [hi]
   rw [hdiv,hmod]
   by_cases ha : e < (acceptedLanes mask).length
   · rw [ite_eq_left ha,ite_eq_left ha]
     have hk := accepted_get_bound ha
-    rw [ite_eq_left (by omega)]
-    simp only [vbyte, BitVec.getLsbD_extractLsb', show i%8<8 by omega,
+    rw [ite_eq_left (by omega_using [hi, hk])]
+    simp only [vbyte, BitVec.getLsbD_extractLsb', show i%8<8 by omega_using [],
       decide_true, Bool.true_and, getLsbD_vhalf _ _ hi]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
   · rw [ite_eq_right ha,ite_eq_right ha,ite_eq_right (by decide)]
     simp
 

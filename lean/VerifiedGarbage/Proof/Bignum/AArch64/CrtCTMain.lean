@@ -68,6 +68,18 @@ theorem stage_step {R R' : StageRel} {c : Prog isa} (hct : RelCT isa (Two (Stage
   two_post hct fun p t ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr⟩ =>
     WP.mono (hw p σ xb pb qb dpb dqb qib t h hv hr) fun _ h' => ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, h'⟩
 
+/-- `R`, for a key whose modulus and factors satisfy `G`. -/
+def RG (G : Nat → Nat → Nat → Prop) (R : StageRel) : StageRel := fun p σ xb pb qb dpb dqb qib t =>
+  G p.N (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) ∧ R p σ xb pb qb dpb dqb qib t
+
+theorem stage_forget {G : Nat → Nat → Nat → Prop} {R : StageRel} {p : CrtPub} {t : State}
+    (h : Stage (RG G R) p t) : Stage R p t :=
+  let ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, _, hr⟩ := h; ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr⟩
+
+theorem stage_true {R : StageRel} {p : CrtPub} {t : State} (h : Stage R p t) :
+    Stage (RG (fun _ _ _ => True) R) p t :=
+  let ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr⟩ := h; ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, trivial, hr⟩
+
 /-! ## The stages -/
 
 def R0 : StageRel := fun _ σ _ _ _ _ _ _ t => t = σ
@@ -121,10 +133,11 @@ theorem two_stage {R : StageRel} {α : Type} {Φ : α → State → Prop} (f : C
   exact ⟨_, φ₁, φ₂, hsp⟩
 
 /-- The primes' setup leaks the same in runs that agree on the public data. -/
-theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup) (Two (Stage R2)) := by
+theorem setupS_ct (G : Nat → Nat → Nat → Prop) (hS : SetupCT) :
+    RelCT isa (Two (Stage (RG G R1))) (seqs primesSetup) (Two (Stage (RG G R2))) := by
   refine stage_step (hS.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.pl, p.ql, p.pp, p.qp,
-    p.qip⟩ : SetupPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, hr⟩ => ?_) h) fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, hr⟩ => WP.mono (setupPart_ok h hr) fun _ h' => ⟨minv, h'⟩
+    p.qip⟩ : SetupPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨_, minv, hr⟩ => ?_) h) fun _ _ h => h)
+    fun p σ xb pb qb dpb dqb qib t h hv ⟨hg, minv, hr⟩ => WP.mono (setupPart_ok h hr) fun _ h' => ⟨hg, minv, h'⟩
   have hk1 := h.k1
   have hk2 := h.k2
   have hZq := h.z
@@ -137,13 +150,14 @@ theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup)
   · have := h.pl2; simp only [CrtPub.w]; omega_arith
   · have := h.ql2; simp only [CrtPub.w]; omega_arith
 
-/-- The checks leak the same in runs that agree on the public data. -/
-theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) := by
+/-- The checks `C` leak the same in runs that agree on the public data. -/
+theorem checksS_ct {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksCTOf C) (hok : ChecksOk C G) :
+    RelCT isa (Two (Stage (RG G R2))) (seqs C) (Two (Stage R3)) := by
   refine stage_step (hC.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
-    offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ =>
+    offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨_, minv, mp, mq, hr⟩ =>
       ?_) h) fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr) fun _ ⟨mp', mq', h'⟩ =>
-      ⟨minv, mp', mq', h'⟩
+    fun p σ xb pb qb dpb dqb qib t h hv ⟨hg, minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr hok hg)
+      fun _ ⟨mp', mq', h'⟩ => ⟨minv, mp', mq', h'⟩
   obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
   have hk1 := h.k1
   have hk2 := h.k2
@@ -224,18 +238,19 @@ theorem pS_ct (M : Mont) (hP : PPhaseCT M) : RelCT isa (Two (Stage R4)) (seqs (p
 
 /-- `main` leaks the same in runs that agree on the public data, given that
 its parts do. -/
-theorem crtMain_ct (M : Mont) (hN : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True)
-    (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem crtMain_ct (M : Mont) {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop}
+    (hN : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True)
+    (hS : SetupCT) (hC : ChecksCTOf C) (hok : ChecksOk C G) (hQ : QPhaseCT M) (hP : PPhaseCT M)
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two (Stage R0)) (Crt.main M.mm) fun _ _ => True := by
+    RelCT isa (Two (Stage (RG G R0))) (Crt.mainWith C M.mm) fun _ _ => True := by
   rw [crtMain_eq]
   refine RelCT.seqs_append (by simp [nSetup]) (by simp [qPhase]) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
-  · refine RelCT.seqs_append (by simp [nSetup]) (by simp [checks])
-      (RelCT.seq (R := Two (Stage R2)) ?_ (checksS_ct hC))
+  · refine RelCT.seqs_append (by simp [nSetup]) hok.ne
+      (RelCT.seq (R := Two (Stage (RG G R2))) ?_ (checksS_ct hC hok))
     refine RelCT.seqs_append (by simp [nSetup]) (by simp [primesSetup])
-      (RelCT.seq (R := Two (Stage R1)) ?_ (setupS_ct hS))
-    exact stage_step hN fun p σ xb _ _ _ _ _ t h hv ht => by
-      subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
+      (RelCT.seq (R := Two (Stage (RG G R1))) ?_ (setupS_ct G hS))
+    exact stage_step (two_map id (fun _ _ h => stage_forget h) hN) fun p σ xb _ _ _ _ _ t h hv ⟨hg, ht⟩ => by
+      subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨hg, minv, hr⟩
   rw [List.append_assoc]
   refine RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M hQ) ?_)
   exact RelCT.seqs_append (by simp [pPhase]) (by simp [finish]) (RelCT.seq (pS_ct M hP) hF)

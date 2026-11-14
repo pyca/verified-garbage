@@ -30,10 +30,10 @@ theorem zero_mask64 (x : BitVec 64) (hx : x.toNat < 2 ^ 63) :
   · have hb : x.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq e)
     have e2 : (x - BitVec.ofNat 64 1) >>> 63 = 0 := by
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega),
+      rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hb]),
         BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       show _ = 0
-      omega
+      omega_using [hx]
     rw [e2]
     simp only [bm, h, decide_false, Bool.false_eq_true, ite_false]; rfl
 
@@ -41,8 +41,8 @@ theorem ten_mask {sep : Nat} (h : sep < 2 ^ 63) :
     (0 : BitVec 64) - ((BitVec.ofNat 64 sep - BitVec.ofNat 64 10) >>> 63) = bm (decide (sep < 10)) := by
   rw [borrow _ _ h (by decide)]
   by_cases hs : sep < 10
-  · simp only [show ¬ 10 ≤ sep by omega, ↓reduceIte, bm, hs, decide_true]; decide
-  · simp only [show 10 ≤ sep by omega, ↓reduceIte, bm, hs, decide_false, Bool.false_eq_true]; decide
+  · simp only [show ¬ 10 ≤ sep by omega_using [hs], ↓reduceIte, bm, hs, decide_true]; decide
+  · simp only [show 10 ≤ sep by omega_using [hs], ↓reduceIte, bm, hs, decide_false, Bool.false_eq_true]; decide
 
 theorem bm_and (a b : Bool) : bm a &&& bm b = bm (a && b) := by
   cases a <;> cases b <;> rfl
@@ -87,8 +87,8 @@ theorem vOf_bm (a b : Byte) (f : Bool) (sep : Nat) :
     bm f &&& (bm (decide (a = 0)) &&& bm (decide (b = 2))) &&& bm (!decide (sep < 10)) = bm (vOf a b f sep) := by
   have e : (!decide (sep < 10)) = decide (10 ≤ sep) := by
     by_cases hs : sep < 10
-    · simp only [hs, decide_true, Bool.not_true, show ¬ 10 ≤ sep by omega, decide_false]
-    · simp only [hs, decide_false, Bool.not_false, show 10 ≤ sep by omega, decide_true]
+    · simp only [hs, decide_true, Bool.not_true, show ¬ 10 ≤ sep by omega_using [hs], decide_false]
+    · simp only [hs, decide_false, Bool.not_false, show 10 ≤ sep by omega_using [hs], decide_true]
   rw [bm_and, bm_and, bm_and, e]
   congr 1
   unfold vOf

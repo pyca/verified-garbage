@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
-
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSat
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableState
@@ -18,17 +17,26 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInput
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInput
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePrefix
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMontgomeryOut
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTable
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCore
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasis
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeInitialStore
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeTableInit
+import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeBasisStore
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeData
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePost
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePre
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEnvironment
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import Init.Core
 import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeCTState
@@ -39,12 +47,219 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEntry
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsEnvironment
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputePre
+
+/-! ### `Ffdh.Arm.CombPrecomputeTable`, which only this module used -/
+
+section
+
+/-! Four runtime basis rounds produce all thirty-two canonical table entries. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.CombBuilder
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+theorem table_loop_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32}
+    (h : Core p sp s)
+    (positive : 0<Spec.Rsa.FixedBaseComb.rows (bits p))
+    (fits : Spec.Rsa.FixedBaseComb.rows (bits p)<2^32)
+    (power : Power5 p 1 s) (table : TablePrefix p 2 s.mem)
+    (saved : s.mem.readW (off (State.addr sp) 36) 32=2) :
+    WP isa (.loop (VG.Impl.Ffdh.Arm.CombPrecompute.basis
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) .ne) s fun t =>
+      Core p sp t ∧ TablePrefix p 32 t.mem ∧
+      WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
+      Frame (productWrites p sp) s.mem t.mem ∧ Rest roundClobbers s t := by
+  let I := fun k t => 0<k ∧ k≤4 ∧ Core p sp t ∧
+    Power5 p (2^((4-k)*Spec.Rsa.FixedBaseComb.rows (bits p))) t ∧
+    TablePrefix p (2^(5-k)) t.mem ∧
+    t.mem.readW (off (State.addr sp) 36) 32=BitVec.ofNat 32 (2^(5-k)) ∧
+    WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
+    Frame (productWrites p sp) s.mem t.mem ∧ Rest roundClobbers s t
+  refine WP.loop (M:=isa) I ?_ 4 s ?_
+  · intro k u hu
+    obtain ⟨hk,bound,core,pow,tab,counter,header,frame,rest⟩ := hu
+    have prev : 5-k-1=4-k := by omega_using []
+    have pow' : Power5 p (2^((5-k-1)*Spec.Rsa.FixedBaseComb.rows (bits p))) u := by rw [prev];exact pow
+    refine WP.mono (basis_ok backend u core (by omega_using [hk]) (by omega_using [bound]) positive fits pow' tab counter) ?_
+    rintro t ⟨coreT,powT,tableT,countT,zero,headerT,frameT,restT⟩
+    have headerAll : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
+      refine ⟨?_⟩
+      intro d n hd
+      exact (headerT.read d n hd).trans (header.read d n hd)
+    by_cases last : k=1
+    · left
+      refine ⟨?_,coreT,?_,headerAll,frame.trans frameT,rest.trans restT⟩
+      · change some (!t.z)=some false
+        simp only [zero,last,decide_true,Bool.not_true]
+      · simpa only [last] using tableT
+    · right
+      have ne : 5-k≠4 := by omega_using [last]
+      refine ⟨?_,k-1,by omega_using [hk],by omega_using [hk, last],by omega_using [bound],coreT,?_,?_,?_,headerAll,frame.trans frameT,rest.trans restT⟩
+      · change some (!t.z)=some true
+        simp only [zero,ne,decide_false,Bool.not_false]
+      · simpa only [show 4-(k-1)=5-k by omega_using [hk]] using powT
+      · simpa only [show 5-(k-1)=5-k+1 by omega_using [hk, bound]] using tableT
+      · simpa only [show 5-(k-1)=5-k+1 by omega_using [hk, bound]] using countT
+  · refine ⟨by decide,by decide,h,?_,?_,?_,⟨fun _ _ _ => rfl⟩,Frame.refl _ _,Rest.refl _ _⟩
+    · simpa only [Nat.sub_self,Nat.zero_mul,Nat.pow_zero] using power
+    · exact table
+    · exact saved
+
+
+theorem table_ok (backend : MontBackend) (s : State) {p : Inputs} {sp : BitVec 32}
+    (h : Memory p sp s)
+    (modulus : Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 0=p.P)
+    (r2 : Proof.Rsa.Mont.numAt s.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P)
+    (odd : p.P%2=1) (positive : 0<Spec.Rsa.FixedBaseComb.rows (bits p))
+    (fits : Spec.Rsa.FixedBaseComb.rows (bits p)<2^32) :
+    WP isa (VG.Impl.Ffdh.Arm.CombPrecompute.table
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      Core p sp t ∧ TablePrefix p 32 t.mem ∧
+      WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem ∧
+      Frame (productWrites p sp) s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [VG.Impl.Ffdh.Arm.CombPrecompute.table,WP.seq_iff]
+  refine WP.mono (initial_ok backend s h modulus r2 odd) ?_
+  rintro u ⟨memory,tab,value,one,modulusU,r2U,headerU,frameU,restU⟩
+  have coreU : Core p sp u := ⟨memory,modulusU,odd,r2U,one⟩
+  have power : Power5 p 1 u := by
+    change _ = _
+    rw [value,entryValue]
+    have e := VG.Proof.Rsa.FixedBaseComb.exponent_tooth (bits p) 0 (by decide)
+    simpa only [Nat.pow_zero,Nat.zero_mul] using congrArg
+      (fun E => Spec.Rsa.powMod p.G E p.P * 2^(64*p.w)%p.P) e
+  rw [WP.seq_iff]
+  refine WP.mono (tableInit_state u coreU power) ?_
+  rintro v ⟨coreV,powerV,savedV,frameV,restV⟩
+  have ctxV := coreU.memory.controlContextEq (by decide) frameV
+  have tableV : TablePrefix p 2 v.mem := by
+    intro digit hd
+    rw [ctxV.read (entryOffset p digit) (8*p.w) (entry_bound p (by omega_using [hd]))]
+    exact tab digit hd
+  refine WP.mono (table_loop_ok backend v coreV positive fits powerV tableV savedV) ?_
+  rintro t ⟨coreT,tableT,headerT,frameT,restT⟩
+  have header : WorkspaceEq (State.addr p.output) (24+16*p.w) s.mem t.mem := by
+    refine ⟨?_⟩
+    intro d n hd
+    exact (headerT.read d n hd).trans ((ctxV.read d n (by have := bytes_eq p;omega_using [hd, this])).trans (headerU.read d n hd))
+  have wholeU : Frame (productWrites p sp) s.mem u.mem := frameU.mono (by
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl <;> simp [productWrites])
+  have wholeV : Frame (productWrites p sp) u.mem v.mem := frameV.sub (by
+    intro r hr
+    have eq := List.mem_singleton.mp hr
+    subst r
+    exact ⟨⟨State.addr sp,72⟩,by simp [productWrites],Offset.sub_base _ (by decide)⟩)
+  exact ⟨coreT,tableT,header,wholeU.trans (wholeV.trans frameT),restU.trans (restV.trans restT)⟩
+
+end VG.Proof.Ffdh.Arm.CombBuilder
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CombPrecomputeData`, which only this module used -/
+
+section
+
+/-! Package the reviewed public ABI arguments for the native writer. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts)
+
+theorem combPrecompute_data (s : State)
+    (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre s) :
+    ∃ p : Inputs, stackArg s 1 = p.base ∧ s.gpr .r0 = p.output ∧
+      s.gpr .r2 = p.domain ∧ (stackArg s 0).toNat = p.k ∧
+      (stackArg s 2).toNat = p.len ∧
+      Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r3).toNat = p.dom ∧
+      (s.gpr .r1).toNat = Spec.Ffdh.generationPrecomputedWords p.k ∧
+      p.privateValue=p.output ∧ p.publicValue=p.output ∧ p.entropy=p.output ∧
+      CombPrecomputeFnInput p s := by
+  have original := pre
+  have plain := (pre_consts.mp pre).1
+  sig_pre [Spec.Ffdh.generationPrecomputeContract,Spec.Ffdh.generationPrecomputeSig,
+    abi,argRegs,reduceClassify,Loc.val,State.addr] at plain
+  obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,bounds,domainLen,ctxLen,space,_⟩ := plain
+  change Spec.Ffdh.pLenValid (stackArg s 0).toNat at bounds
+  change Spec.Ffdh.domainLenValid (stackArg s 0).toNat (s.gpr .r3).toNat at domainLen
+  change Spec.Rsa.scratchWords (stackArg s 0).toNat ≤ (stackArg s 2).toNat at space
+  change (s.gpr .r1).toNat = Spec.Ffdh.generationPrecomputedWords (stackArg s 0).toNat at ctxLen
+  let dom := Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
+  have domLength : dom.length = (s.gpr .r3).toNat := VG.Proof.Bignum.bytesAt_length _ _ _
+  let p : Inputs := {
+    base := stackArg s 1
+    domain := s.gpr .r2
+    publicValue := s.gpr .r0
+    privateValue := s.gpr .r0
+    output := s.gpr .r0
+    entropy := s.gpr .r0
+    len := (stackArg s 2).toNat
+    k := (stackArg s 0).toNat
+    privateLength := (stackArg s 0).toNat
+    hasQ := decide ((s.gpr .r3).toNat = 3*(stackArg s 0).toNat)
+    dom := dom
+    minLength := bounds.1
+    maxLength := bounds.2
+    space := space
+    domainLength := by
+      rw [domLength]
+      simp only [decide_eq_true_eq]
+      split
+      · assumption
+      · rename_i different
+        rcases domainLen with h | h
+        · exact h
+        · exact False.elim (different h) }
+  have environment := combPrecompute_environment s original (p:=p) rfl rfl rfl rfl rfl rfl
+  exact ⟨p,rfl,rfl,rfl,rfl,rfl,rfl,ctxLen,rfl,rfl,rfl,
+    combPrecompute_input s original rfl rfl rfl rfl rfl rfl rfl rfl rfl environment⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
+/-! ### `Ffdh.Arm.CombPrecomputePost`, which only this module used -/
+
+section
+
+/-! The canonical native result has the reviewed public-precomputation postcondition. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+
+theorem combPrecompute_post (s t : State) {p : Inputs}
+    (output : s.gpr .r0=p.output) (domain : s.gpr .r2=p.domain)
+    (count : (stackArg s 0).toNat=p.k)
+    (domainBytes : Spec.Rsa.bytesAt s.mem (State.addr p.domain) (s.gpr .r3).toNat=p.dom)
+    (ctxLen : (s.gpr .r1).toNat=Spec.Ffdh.generationPrecomputedWords p.k)
+    (status : t.gpr .r0=1)
+    (result : Spec.Ffdh.generationPrecompute p.k p.dom=some
+      (Spec.Rsa.wordsAt t.mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k))) :
+    (Spec.Ffdh.generationPrecomputeContract abi 176).post s t := by
+  sig_post [Spec.Ffdh.generationPrecomputeContract,Spec.Ffdh.generationPrecomputeSig,
+    abi,argRegs,reduceClassify,Loc.val,State.addr]
+  rw [BitVec.setWidth_append_eq_right]
+  change t.gpr .r0=1 ∧ Spec.Ffdh.generationPrecompute (stackArg s 0).toNat
+    (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)=
+      some (Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat)
+  rw [status,count,domain,domainBytes,output,ctxLen]
+  exact ⟨rfl,result⟩
+
+end VG.Proof.Ffdh.Arm
+
+end
+
+end
+
 /-! The complete public comb initializer meets its separately reviewed contract. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CombPrecomputeSerialization.lean`, which only this module imported.

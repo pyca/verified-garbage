@@ -130,7 +130,7 @@ theorem b8_eq (x : BitVec 32) : BitVec.setWidth 8 x = BitVec.ofNat 8 x.toNat := 
 
 /-- A byte, zero-extended. -/
 theorem toNat_setWidth32_8 (x : BitVec 8) : (BitVec.setWidth 32 x).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; omega
+  simp only [BitVec.toNat_setWidth]; omega_using []
 
 /-- A 32-bit pointer plus `d`, where nothing wraps around, as an address. -/
 theorem addr_of_fit {x : BitVec 32} {d : Nat} (h : x.toNat + d < 2 ^ 32) :

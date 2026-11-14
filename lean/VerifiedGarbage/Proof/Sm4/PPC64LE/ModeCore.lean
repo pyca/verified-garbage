@@ -76,7 +76,7 @@ theorem table_off {r : Nat × Nat} (hr : r ∈ layout.table) {i : Nat} (hi : i <
   rw [layout_table] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rw [slots_eq, tailSlot_eq]
-  rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega
+  rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]
 
 /-- The table survives what a mode writes: outside the core's slots or within its buffer. -/
 theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
@@ -90,8 +90,8 @@ theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {s
   · exact hq'.sub_left (VG.Offset.sub_base B (by rw [core_slots]; exact h1))
   · refine Region.Disjoint.sub_right ?_ hq'
     show Region.Disjoint ⟨B + BitVec.ofNat 64 (r.1 + i), 1⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 16⟩
-    exact VG.Offset.disjoint B (by rw [tailSlot_eq] at h2 ⊢; omega) (by rw [slots_eq] at h1; omega)
-      (by rw [tailSlot_eq]; omega)
+    exact VG.Offset.disjoint B (by rw [tailSlot_eq] at h2 ⊢; omega_using [h2]) (by rw [slots_eq] at h1; omega_using [h1])
+      (by rw [tailSlot_eq]; omega_using [])
 
 /-- The table survives what a batch keeps. -/
 theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
@@ -101,10 +101,10 @@ theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spe
   have hr' := hr
   rw [layout_table] at hr'
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega) (by
+  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]) (by
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     rw [evenSlot_eq, grpSlot_eq, tableSlot_eq, savedSlot_eq, slots_eq]
-    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega)]
+    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi])]
   exact h r hr i hi
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} (h : KeyArgs s rs k)
@@ -114,7 +114,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
   refine ⟨p, by rw [e, hp], ?_, by rw [hrd]; exact hin, hfit, hdis⟩
   rw [hk]
   exact (Proof.Sm4.scheduleAt_congr fun i hi =>
-    hf.bytes (R := ⟨p, 128⟩) hdis (by show 128 ≤ 2 ^ 64; omega) hi).symm
+    hf.bytes (R := ⟨p, 128⟩) hdis (by show 128 ≤ 2 ^ 64; omega_using []) hi).symm
 
 /-! ## Around the calls -/
 
@@ -124,7 +124,7 @@ theorem ws_covers {s : State} {B : Addr} {d : Dir} (hs : ScrIn s B (dirCore d).t
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨_, hs.wr, 0, by rw [BitVec.add_zero], by
     show 0 + 8 * slots ≤ 8 * (slots + 6)
-    omega⟩
+    omega_using []⟩
 
 /-- `vg_sm4_prepare_keys` writes neither `r5` nor `r7`. -/
 theorem prep_keeps : ∀ i ∈ instrs prepareKeys, dstOf i ≠ some .r5 ∧ dstOf i ≠ some .r7 := by
@@ -175,7 +175,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
   have hfB : B.toNat + 8 * (dirCore d).total ≤ 2 ^ 64 := hs.fit
   have hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 8 * slots⟩ :=
-    (hdis _ hR).sub_right (Region.sub_prefix (by have := core_total d; omega))
+    (hdis _ hR).sub_right (Region.sub_prefix (by have := core_total d; omega_using [this]))
   show WP isa (prepareCall d) s _
   refine WP.seq (wp_mr fun s₁ u₁ => wp_li (by cases d <;> decide) fun s₂ u₂ =>
     wp_li slots_lt fun s₃ u₃ => wp_nil ?_)
@@ -210,7 +210,7 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
     · rw [State.withRegions_wr, c5, c6, Nat.mul_comm]
     · rw [c3, c5, c6, Nat.mul_comm]; exact hsep
     · rw [c3]; exact hfit
-    · rw [c5, c6]; have := core_total d; omega
+    · rw [c5, c6]; have := core_total d; omega_using [hfB, this]
     · rw [c4]; cases d <;> decide
     · rw [c6, size_eq]
   · obtain ⟨hH, -⟩ := hpost
@@ -267,7 +267,7 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
     (by lit_decide))
   · refine ⟨rfl, ?_, ?_, ?_, ?_⟩
     · rw [State.withRegions_wr, c3, c4, Nat.mul_comm]
-    · rw [c3, c4]; have := core_total d; omega
+    · rw [c3, c4]; have := core_total d; omega_using [hfB, this]
     · rw [c4, size_eq]
     · rw [c3, hm₀]; exact ⟨k, specDirA d, hr⟩
   · obtain ⟨hE, hK⟩ := hpost

@@ -42,14 +42,14 @@ abbrev Cn : Nat := 0x389cb27e0bc8d220a7e5f24db74f58851313e695333ad68d
 /-- P-384's order. -/
 abbrev N : Nat := 2 ^ 384 - Cn
 
-theorem N_add_Cn : N + Cn = 2 ^ 384 := by unfold N Cn; omega
+theorem N_add_Cn : N + Cn = 2 ^ 384 := by unfold N Cn; omega_using []
 
 /-! ## The rounds' blocks -/
 
 /-- `q = w n' mod 2⁶⁴` has `q c ≡ w (mod 2⁶⁴)`. -/
 theorem quot_low (w : Nat) (hw : w < 2 ^ 64) : w * 0x6ed46089e88fdc45 % 2 ^ 64 * Cn % 2 ^ 64 = w := by
   rw [Nat.mod_mul_mod, show w * 0x6ed46089e88fdc45 * Cn =
-      w + 2 ^ 64 * (w * 0x18824bcf3baaa877832b8caedc269632fbcd05f35fc4f751) by unfold Cn; omega,
+      w + 2 ^ 64 * (w * 0x18824bcf3baaa877832b8caedc269632fbcd05f35fc4f751) by unfold Cn; omega_using [],
     Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hw]
 
 /-- `quotN r`: the quotient word of `r`, in place. -/
@@ -76,7 +76,7 @@ theorem qc_arith {H0 P1 P2 L1 H1 S1 c1 Y L2 H2 S2 c2 Z : Nat}
     (F4 : L2 + 2 ^ 64 * H2 = P2) (hP2 : P2 < 2 ^ 64 * 0x389cb27e0bc8d220)
     (F5 : S2 + 2 ^ 64 * c2 = Y + L2) (F6 : Z = c2 + H2) (hc2 : c2 ≤ 1) :
     S1 + 2 ^ 64 * S2 + 2 ^ 128 * Z = H0 + (P1 + 2 ^ 64 * P2) ∧ Z < 2 ^ 62 := by
-  omega
+  omega_using [F1, F2, F3, F4, hP2, F5, F6, hc2]
 
 /-- `qc r`: `a4 + 2⁶⁴ a5 + 2¹²⁸ a6 = q c / 2⁶⁴` for `q` in `r`. -/
 theorem qc_ok {s : State} {r : Reg} (h0 : r ≠ .t0) (ha : r ≠ .a0) (h4 : r ≠ .a4) (h5 : r ≠ .a5)
@@ -131,17 +131,17 @@ theorem qc_ok {s : State} {r : Reg} (h0 : r ≠ .t0) (ha : r ≠ .a0) (h4 : r �
   have bq := (s.gpr r).isLt
   have c1 := carry (s5.gpr .a4) (s5.gpr .a5)
   rw [← hc1, ← hS1, a4_5, a5_5, hA4, ofNat_lt (Nat.div_lt_of_lt_mul (by
-    rw [show C0.toNat = 0x1313e695333ad68d from rfl]; omega)),
+    rw [show C0.toNat = 0x1313e695333ad68d from rfl]; omega_using [])),
     show C0.toNat = 0x1313e695333ad68d from rfl] at c1
   have m1 := mul_words (s.gpr r) C1
   rw [← hL1, ← hH1] at m1
   have bH1 : (s5.gpr .a6).toNat + 1 < 2 ^ 64 := by
     have := (s4.gpr .a5).isLt
     have : (s.gpr r).toNat * C1.toNat < 2 ^ 64 * (2 ^ 64 - 2) := by
-      rw [show C1.toNat = 0xa7e5f24db74f5885 from rfl]; omega
-    omega
+      rw [show C1.toNat = 0xa7e5f24db74f5885 from rfl]; omega_using []
+    omega_using [m1, this]
   have eY : (s8.gpr .a6).toNat = (s5.gpr .a6).toNat + (s7.gpr .a5).toNat := by
-    rw [hY, a6_7]; exact add_toNat (by have := carry_le (s5.gpr .a4 + s5.gpr .a5 < s5.gpr .a5); rw [← hc1] at this; omega)
+    rw [hY, a6_7]; exact add_toNat (by have := carry_le (s5.gpr .a4 + s5.gpr .a5 < s5.gpr .a5); rw [← hc1] at this; omega_using [c1, bH1])
   have m2 := mul_words (s.gpr r) C2
   rw [← hL2, ← hH2] at m2
   have c2 := carry (s11.gpr .a6) (s11.gpr .a7)
@@ -149,11 +149,11 @@ theorem qc_ok {s : State} {r : Reg} (h0 : r ≠ .t0) (ha : r ≠ .a0) (h4 : r �
   have bH2 : (s11.gpr .a0).toNat + 1 < 2 ^ 64 := by
     have := (s10.gpr .a7).isLt
     have : (s.gpr r).toNat * C2.toNat < 2 ^ 64 * (2 ^ 64 - 2) := by
-      rw [show C2.toNat = 0x389cb27e0bc8d220 from rfl]; omega
-    omega
+      rw [show C2.toNat = 0x389cb27e0bc8d220 from rfl]; omega_using []
+    omega_using [m2, this]
   have lc2 : (s13.gpr .a6).toNat ≤ 1 := by rw [hc2]; exact carry_le _
   have eZ : (s14.gpr .a6).toNat = (s13.gpr .a6).toNat + (s11.gpr .a0).toNat := by
-    rw [hZ, a0_13]; exact add_toNat (by omega)
+    rw [hZ, a0_13]; exact add_toNat (by omega_using [c2, bH2])
   rw [show C1.toNat = 0xa7e5f24db74f5885 from rfl] at m1
   rw [show C2.toNat = 0x389cb27e0bc8d220 from rfl] at m2
   obtain ⟨v, l⟩ := qc_arith m1 c1 eY m2 (Nat.mul_lt_mul_of_pos_right bq (by decide)) c2 eZ lc2
@@ -188,11 +188,11 @@ theorem NN_lt (j : Nat) : NN j < 2 ^ 64 := by
 theorem NN_val : colsV NN 6 + N = 2 ^ 384 := by
   simp only [colsV, NN, List.getD_cons_zero, List.getD_cons_succ]
   unfold N Cn
-  omega
+  omega_using []
 
 theorem kN_ok : ∀ j < 6, KOk (sumNKs.getD j []) j NN := by
   intro j hj s h
-  obtain rfl | rfl | rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+  obtain rfl | rfl | rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_using [hj]
   · show WP isa (.block (li64 .t0 .a6 C0)) s _
     rw [← List.append_nil (li64 .t0 .a6 C0)]
     exact wp_li64 (by decide) C0 fun s1 e1 k1 => WP.block_nil ⟨by rw [e1]; rfl, k1⟩
@@ -221,7 +221,7 @@ theorem PWn_lt (j : Nat) : PWn j < 2 ^ 64 := by
 theorem PWn_val : colsV PWn 6 = N := by
   simp only [colsV, PWn, List.getD_cons_zero, List.getD_cons_succ]
   unfold N Cn
-  omega
+  omega_using []
 
 /-- `li64 a6 a0 w` and `a6 ∧ t0`, for a mask in `t0`. -/
 theorem kmW (w : BitVec 64) {s : State} (hm : IsMask (s.gpr .t0)) :
@@ -238,7 +238,7 @@ theorem kmW (w : BitVec 64) {s : State} (hm : IsMask (s.gpr .t0)) :
 
 theorem kmN_ok : ∀ j < 6, KMOk (subNKs.getD j []) j PWn := by
   intro j hj s hm
-  obtain rfl | rfl | rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+  obtain rfl | rfl | rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega_using [hj]
   · exact kmW N0 hm
   · exact kmW N1 hm
   · exact kmW N2 hm
@@ -247,7 +247,7 @@ theorem kmN_ok : ∀ j < 6, KMOk (subNKs.getD j []) j PWn := by
 
 /-! ## The operations -/
 
-theorem N_pos : 0 < N := by unfold N Cn; omega
+theorem N_pos : 0 < N := by unfold N Cn; omega_using []
 
 /-- Montgomery's product modulo `n`. -/
 abbrev mulRes (A B r : Nat) : Prop := r < N ∧ r * 2 ^ 384 % N = A * B % N

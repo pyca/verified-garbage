@@ -42,7 +42,7 @@ theorem montBody_ok (s : State) {base : BitVec 32} {size out tmp a b mod acc n :
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact sepA
-      · exact sepT) (by omega)
+      · exact sepT) (by omega_using [nowrap, fits])
   have oldM := old mod ctx.mFits ctx.accM.symm ctx.tmpM.symm
   have oldA := old a ctx.aFits ctx.accA.symm ctx.tmpA.symm
   have oldB := old b ctx.bFits ctx.accB.symm ctx.tmpB.symm

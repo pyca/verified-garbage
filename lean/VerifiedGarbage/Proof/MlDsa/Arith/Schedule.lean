@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Reordering schedules of commuting operations
@@ -209,8 +210,8 @@ theorem bflyMask_disjoint {j len k step : Nat} (h : (bflyMask j len &&& bflyMask
     · exact hi j (Or.inl rfl) (Or.inr he.symm)
     · exact hi (j+len) (Or.inr rfl) (Or.inl he.symm)
     · exact hi (j+len) (Or.inr rfl) (Or.inr he.symm)
-  · exact (hi j (Or.inl rfl) (by omega)).elim
-  · exact (hi k (by omega) (Or.inl rfl)).elim
-  · exact (hi 0 (by omega) (by omega)).elim
+  · exact (hi j (Or.inl rfl) (by omega_using [ha])).elim
+  · exact (hi k (by omega_using [hb]) (Or.inl rfl)).elim
+  · exact (hi 0 (by omega_using []) (by omega_using [])).elim
 
 end VG.Proof.MlDsa.Schedule

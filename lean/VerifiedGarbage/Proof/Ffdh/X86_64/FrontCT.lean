@@ -39,8 +39,8 @@ private theorem domPtrs_ok (a : DPub) (s : State) (h : DHP a s) :
   exact WP.mono (WP.keep [.rax, .rdx, .rcx]
     (Q := fun t => t.gpr .rdx = a.dp ∧ t.gpr .rcx = BitVec.ofNat 64 a.k)
     (by unfold domPtrs; xrun [State.ea, hdr, hdi, hdrOff,
-      hs.ld (d := 8 * sDom) (by change 136 ≤ a.Z; omega), hs.ld (d := 8 * sK) (by change 152 ≤ a.Z; omega),
-      hs.st (d := 8 * sG) (by change 224 ≤ a.Z; omega), hs.st (d := 8 * sQ) (by change 232 ≤ a.Z; omega), hD, hK]) rfl)
+      hs.ld (d := 8 * sDom) (by change 136 ≤ a.Z; omega_using [hZ]), hs.ld (d := 8 * sK) (by change 152 ≤ a.Z; omega_using [hZ]),
+      hs.st (d := 8 * sG) (by change 224 ≤ a.Z; omega_using [hZ]), hs.st (d := 8 * sQ) (by change 232 ≤ a.Z; omega_using [hZ]), hD, hK]) rfl)
     fun _ h => h.1
 
 theorem domHead_ct : RelCT isa (Two DHP) (.block domHead) fun _ _ => True := by

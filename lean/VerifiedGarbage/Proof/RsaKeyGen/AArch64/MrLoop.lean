@@ -55,7 +55,7 @@ theorem expRanges_low (w : Nat) : ∀ r ∈ expRanges w, r.1 + r.2 ≤ slot w aT
   rcases List.mem_append.mp hr with hr | hr
   · exact winRanges_low w r hr
   · simp only [List.mem_singleton] at hr; subst hr
-    simp only [slot, hdrBytes, aT0, kWords, kT1, sFn]; omega
+    simp only [slot, hdrBytes, aT0, kWords, kT1, sFn]; omega_using []
 
 theorem expRanges_mut (w : Nat) : ∀ r ∈ expRanges w, KMut r := by
   unfold expRanges winRanges; simp only [List.cons_append, List.nil_append]; w_mut
@@ -209,7 +209,7 @@ theorem wordEnd_ok {B : Addr} {Z w c bm b : Nat} {W : BitVec 64} {s₀ s : State
   have h256 := h.h256
   have hw2 := h.w2
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 (w - j - 1) ∧ t.mem = s.mem) (by
-    brun [h.x0, hdr_enc (show kWords < 32 by decide), h.scr.ld (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega),
+    brun [h.x0, hdr_enc (show kWords < 32 by decide), h.scr.ld (d := 8 * kWords) (by simp only [kWords, kT1, sFn]; omega_using [h256]),
       hB.words]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ => ⟨?_, ?_⟩
   · have e : 16 * (w - (w - j)) + 16 = 16 * (j + 1) := by omega_arith
     refine ⟨hB.ctx.of_exp (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide),

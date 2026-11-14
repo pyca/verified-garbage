@@ -38,8 +38,8 @@ theorem two_writes (m : Mem) (base : BitVec 32) {d e : Nat} (v u : BitVec 32)
       ((m.writeW (off (State.addr base) d) v).writeW (off (State.addr base) e) u).readW
         (off (State.addr base) e) 32 = u := by
   have outside := writeW32_outside (m.writeW (off (State.addr base) d) v) (State.addr base) (d := e) u
-    (by omega)
-  exact ⟨by rw [outside_read32 outside (d := d) (by omega) (by omega), Mem.readW_writeW_self32],
+    (by omega_using [fe])
+  exact ⟨by rw [outside_read32 outside (d := d) (by omega_using [sep]) (by omega_using [fd]), Mem.readW_writeW_self32],
     Mem.readW_writeW_self32 _ _ _⟩
 
 theorem windowSquare_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
@@ -49,11 +49,11 @@ theorem windowSquare_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
       u.mem.readW (off (State.addr base) 200) 32 = BitVec.ofNat 32 V ∧
       KeepsExp base s.mem u.mem ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem u.mem ∧ Rest roundClobbers s u := by
   have fits := h.fits
-  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) fits
+  have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) fits
   refine WP.mono (exp_square_ok s h.power) ?_
   rintro u ⟨powerU, keepsU, frameU, restU⟩
   have hdrU (d : Nat) (hd : d + 4 ≤ 256) :=
-    keeps_header_readW keepsU size (d := d) (bits := 32) (by omega)
+    keeps_header_readW keepsU size (d := d) (bits := 32) (by omega_using [hd])
   exact ⟨⟨powerU, h.table.of_keeps keepsU fits (by decide) (by decide), fits,
     (hdrU 196 (by decide)).trans h.digit, (hdrU 204 (by decide)).trans h.pending, h.bound, h.short⟩,
     (hdrU 200 (by decide)).trans byte, KeepsExp.of_keeps keepsU size, frameU, restU⟩
@@ -81,7 +81,7 @@ theorem windowJoin_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
     (BitVec.ofNat 32 (2 * p + V / 128 % 2)) (BitVec.ofNat 32 (q + 1)) (by decide) (by decide) (by decide)
   rw [← memV] at digitV pendingV
   have bit : V / 128 % 2 < 2 := Nat.mod_lt _ (by decide)
-  refine ⟨powerV, h.table.after_ctl ctl fits nowrap (by decide), by rw [Nat.pow_succ]; omega, digitV, pendingV, zV,
+  refine ⟨powerV, h.table.after_ctl ctl fits nowrap (by decide), by rw [Nat.pow_succ]; omega_using [hp], digitV, pendingV, zV,
     by rw [memV]; exact KeepsExp.of_writes _ _ _ _ (Or.inr rfl) (by decide) (Or.inl (by decide)) (by decide),
     frameV, rest_round restV⟩
 
@@ -110,11 +110,11 @@ theorem windowBit_ok (s : State) {base : BitVec 32} {len w M x A p q V : Nat}
     refine ⟨⟨_, 0, ⟨powerT, tableT, fits, digitT, by rw [full]; exact pendingT, by rw [full]; decide,
       by rw [full]; decide⟩, ?_⟩, keepsU.trans (keepsV.trans keepsT), frameU.trans (frameV.trans frameT),
       restU.trans (restV.trans restT)⟩
-    omega
+    omega_using []
   · refine WP.ite false (by simp [eval, zV, full]) (by simp) (fun _ => WP.block_nil ?_)
-    have mod : (q + 1) % 3 = q + 1 := Nat.mod_eq_of_lt (by omega)
+    have mod : (q + 1) % 3 = q + 1 := Nat.mod_eq_of_lt (by omega_using [hq, full])
     refine ⟨⟨_, _, ⟨powerV, tableV, fits, digitV, by rw [mod]; exact pendingV, by rw [mod]; exact boundV,
-      by omega⟩, ?_⟩, keepsU.trans keepsV, frameU.trans frameV, restU.trans restV⟩
-    omega
+      by omega_using []⟩, ?_⟩, keepsU.trans keepsV, frameU.trans frameV, restU.trans restV⟩
+    omega_using []
 
 end VG.Proof.Bignum.Arm

@@ -167,7 +167,7 @@ theorem inv_step {g : Nat} {k4 k7 : BitVec 64} {out : Nat → BitVec 32} {s₀ :
     rw [m, show O s₀ + BitVec.ofNat 64 (4 * i) = coeffAddr (O s₀) i from rfl, coeffAt_writeW _ _ hj hi]
     by_cases e : i = j
     · subst e; rw [ite_eq_left rfl, er, hv]
-    · rw [ite_eq_right e]; exact h.coeff j hj (by omega)
+    · rw [ite_eq_right e]; exact h.coeff j hj (by omega_using [hji, e])
   · rw [r6, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hi]; exact count_nz hi (by decide)
 
 /-- The loop, from the state after its constants are loaded. -/
@@ -191,7 +191,7 @@ theorem g_cases' (x : BitVec 64) : (selV x == 0) = decide ((x.setWidth 32).toNat
     rw [BitVec.toNat_eq, BitVec.toNat_sub, show (261888 : BitVec 32).toNat = 261888 from rfl,
       show (0 : BitVec 32).toNat = 0 from rfl, g32]
     have := (x.setWidth 32).isLt
-    omega
+    omega_using []
   unfold selV
   rw [sext32_beq_zero]
   by_cases hc : (x.setWidth 32).toNat = g32
@@ -311,7 +311,7 @@ theorem consts_ok {g : Nat} {rest : List Instr} {s : State} {Q : State → Prop}
   obtain ⟨b1, b2, b3⟩ := dMul_lt g
   simp only [hbConsts, loadImm, List.cons_append, List.nil_append]
   refine Steps.WP.cons exec_lui (Steps.WP.cons (exec_addi (loadImm_imm _)) (Steps.WP.cons exec_lui
-    (Steps.WP.cons (exec_addi (loadImm_imm _)) (Steps.WP.cons (exec_li (by unfold imm12; omega)) ?_))))
+    (Steps.WP.cons (exec_addi (loadImm_imm _)) (Steps.WP.cons (exec_li (by unfold imm12; omega_using [b3])) ?_))))
   refine (congrArg (fun t => WP isa (.block rest) t Q) ?_).mp hx
   cases s
   simp only [State.write, State.mk.injEq, and_true]

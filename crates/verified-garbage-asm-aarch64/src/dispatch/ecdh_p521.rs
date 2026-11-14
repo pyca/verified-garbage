@@ -16,7 +16,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the 3456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdh_p521_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {

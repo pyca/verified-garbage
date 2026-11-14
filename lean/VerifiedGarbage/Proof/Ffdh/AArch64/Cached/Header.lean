@@ -15,7 +15,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 theorem header_read {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
  (good : Good s B Z w mi) (room : slot w 8≤Z) (hi : i<32) :
  InRegions (s.rd++s.wr) (off B (8*i)) 8 :=
- good.scr.ld (by have := hdr_lt_slot w 8 hi;omega)
+ good.scr.ld (by have := hdr_lt_slot w 8 hi;omega_using [room, this])
 
 theorem good_after_header {s t : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64} {rs : List Reg}
  (good : Good s B Z w mi) (lower : 16≤i) (upper : i<32)
@@ -23,14 +23,14 @@ theorem good_after_header {s t : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64
  Good t B Z w mi := by
  refine ⟨good.scr.congr rest.wr,base,?_,?_,?_⟩
  · exact (frame.word (Or.inl (by unfold sW;omega)) (by unfold sW;decide)).trans good.hdr.hw
- · exact (frame.word (Or.inl (by unfold sMinv;omega)) (by unfold sMinv;decide)).trans good.hdr.hminv
+ · exact (frame.word (Or.inl (by unfold sMinv;omega_using [lower])) (by unfold sMinv;decide)).trans good.hdr.hminv
  · intro j hj
-   exact (frame.word (Or.inl (by unfold sArr;omega)) (by unfold sArr;omega)).trans (good.hdr.harr j hj)
+   exact (frame.word (Or.inl (by unfold sArr;omega_using [lower, hj])) (by unfold sArr;omega_using [hj])).trans (good.hdr.harr j hj)
 
 theorem header_other {B : Addr} {i j : Nat} {m m' : Mem}
  (frame : Outside B (8*i) 8 m m') (_hi : i<32) (hj : j<32) (different : j≠i) :
  word m' B (8*j)=word m B (8*j) :=
- frame.word (by omega) (by omega)
+ frame.word (by omega_using [different]) (by omega_using [hj])
 
 theorem store_control_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
  (good : Good s B Z w mi) (room : slot w 8≤Z) (lower : 16≤i) (upper : i<32) (r : Reg) :
@@ -39,11 +39,11 @@ theorem store_control_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
  Outside B (8*i) 8 s.mem t.mem ∧ Keep [] s t := by
  refine WP.mono (WP.keep [] (Q:=fun t =>t.mem=s.mem.writeW (off B (8*i)) (s.gpr r))
   ?_ rfl rfl rfl) ?_
- · brun [good.x0,hdr_enc upper,good.scr.st (d:=8*i) (by have := hdr_lt_slot w 8 upper;omega)]
+ · brun [good.x0,hdr_enc upper,good.scr.st (d:=8*i) (by have := hdr_lt_slot w 8 upper;omega_using [room, this])]
  · rintro t ⟨mem,rest⟩
    have frame : Outside B (8*i) 8 s.mem t.mem := by
     rw [mem]
-    exact writeW_outside _ _ _ (by omega)
+    exact writeW_outside _ _ _ (by omega_using [upper])
    exact ⟨good_after_header good lower upper frame rest ((rest.gpr .x0 (by simp)).trans good.x0),mem,frame,rest⟩
 
 

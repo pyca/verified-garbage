@@ -38,7 +38,7 @@ theorem primeSetup_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
       ModulusReady t B Z w N ∧ Frm B (modulusRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hnw := h.scr.nowrap
   have hZ := h.hZ
-  have hz64 : Z ≤ 2 ^ 64 := by omega
+  have hz64 : Z ≤ 2 ^ 64 := by omega_using [hnw]
   unfold Impl.Dsa.AArch64.Generation.primeSetup
   refine WP.seq (WP.mono (primeR2_ok M h hw48 hn hodd hN1)
     fun u ⟨hu, hinv, hnu, hone, hr2, fu, ku⟩ => ?_)
@@ -52,17 +52,17 @@ theorem primeSetup_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
   refine WP.mono (expSetup_ok hv hEZ (hnv.trans hnu) hodd hN1)
     fun t ⟨he, fe, ht, kt⟩ => ?_
   have fixed (a : Nat) (ha : a < 16) : wv t.mem B (slot w a) w = wv v.mem B (slot w a) w := by
-    have hh : slot w a + 8 * (w + 2) ≤ slot w aE := VG.Proof.Rsa.slot_lt (by unfold aE; omega)
-    exact fe.wv_eq (by simp only [List.mem_singleton]; rintro r rfl; left; omega)
-      (by omega)
+    have hh : slot w a + 8 * (w + 2) ≤ slot w aE := VG.Proof.Rsa.slot_lt (by unfold aE; omega_using [ha])
+    exact fe.wv_eq (by simp only [List.mem_singleton]; rintro r rfl; left; omega_using [hh])
+      (by omega_using [hEZ, hnw, hh])
   have fixedWord (d : Nat) (hd : d + 8 ≤ slot w aE) : word t.mem B d = word v.mem B d :=
-    fe.word_eq (by simp only [List.mem_singleton]; rintro r rfl; exact Or.inl hd) (by omega)
+    fe.word_eq (by simp only [List.mem_singleton]; rintro r rfl; exact Or.inl hd) (by omega_using [hEZ, hnw, hd])
   refine ⟨⟨ht, ?_, (fixed aN (by decide)).trans (hnv.trans hnu),
       (fixed aOne (by decide)).trans honev, (fixed aR2 (by decide)).trans hr2v,
       (fixed aR1 (by decide)).trans hr1, (fixed aRm1 (by decide)).trans hrm1, he⟩,
     ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
-  · rw [fixedWord (slot w aN) (by simp only [slot, hdrBytes, aN, aE]; omega),
-      fixedWord (8 * sMinv) (by simp only [slot, hdrBytes, aE, sMinv]; omega)]
+  · rw [fixedWord (slot w aN) (by simp only [slot, hdrBytes, aN, aE]; omega_using []),
+      fixedWord (8 * sMinv) (by simp only [slot, hdrBytes, aE, sMinv]; omega_using [])]
     exact hinvv
   · exact ((fu.trans (fv.mono fun r hr => List.mem_cons_of_mem _ hr)).mono
       fun r hr => List.mem_append_left _ hr).trans

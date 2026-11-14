@@ -21,17 +21,17 @@ def halfValue (x : Nat) : Nat := (x + Spec.P256.p * (x % 2)) / 2
 
 theorem halfValue_lt {x : Nat} (hx : x < Spec.P256.p) : halfValue x < Spec.P256.p := by
   dsimp only [halfValue, Spec.P256.p] at hx ⊢
-  omega
+  omega_using [hx]
 
 theorem halfValue_twice {x : Nat} (hx : x < Spec.P256.p) :
     (2 * halfValue x) % Spec.P256.p = x := by
   dsimp only [halfValue, Spec.P256.p] at hx ⊢
-  omega
+  omega_using [hx]
 
 theorem half_lowbit (a b c d : BitVec 64) :
     val4 a b c d % 2 = a.toNat % 2 := by
   dsimp only [val4]
-  omega
+  omega_using []
 
 theorem half_mask_value (a : BitVec 64) :
     val4 (0#64-(a&&&1)) ((0#64-(a&&&1))>>>32) 0
@@ -40,8 +40,8 @@ theorem half_mask_value (a : BitVec 64) :
     apply BitVec.eq_of_toNat_eq
     change a.toNat &&& 1 = (a.toNat%2)%2^64
     rw [Nat.and_one_is_mod]
-    omega
-  have hm : a.toNat%2=0 ∨ a.toNat%2=1 := by omega
+    omega_using []
+  have hm : a.toNat%2=0 ∨ a.toNat%2=1 := by omega_using []
   rcases hm with hm | hm <;> rw [h,hm] <;> decide +revert
 
 theorem half_shift_value (a b c d e : BitVec 64) (he : e.toNat < 2) :
@@ -50,7 +50,7 @@ theorem half_shift_value (a b c d e : BitVec 64) (he : e.toNat < 2) :
   have h := nafShift5_value a b c d e
   have hz : (e>>>1).toNat=0 := by
     simp only [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [he]
   simpa only [nafVal5,val4,hz,Nat.mul_zero,Nat.add_zero] using h
 
 theorem half_mask_ok (s : State) :

@@ -26,10 +26,10 @@ theorem count_pair (x : BitVec 32) (n : Nat) (hn : n < 2 ^ 32) :
   by_cases h : 2 ^ 32 ≤ x.toNat + n
   · simp only [h, decide_true, BitVec.ofBool_true]
     change 1 * 2 ^ 32 + (x.toNat + n) % 2 ^ 32 = (x.toNat + n) % 2 ^ 64
-    omega
+    omega_using [hn, h]
   · simp only [h, decide_false, BitVec.ofBool_false]
     change 0 * 2 ^ 32 + (x.toNat + n) % 2 ^ 32 = (x.toNat + n) % 2 ^ 64
-    omega
+    omega_using [h]
 
 theorem countArgs_run {s : State} {E : BitVec 32} {index n : Nat}
     (he : s.gpr .esp = E)

@@ -52,11 +52,11 @@ private theorem outOrStep_ok {base : Addr} {size v y i : Nat} {s : State}
   refine WP.mono (andMask_ok a) fun b ⟨b1,kb⟩ => ?_
   rw [←List.singleton_append,WP.block_append_iff]
   refine WP.mono (ld_ok ((hs.of_keeps ka (by decide)).of_keeps kb (by decide))
-    (d:=y+8*i) (by omega) (by omega) .x2) fun c ⟨c2,kc,_⟩ => ?_
+    (d:=y+8*i) (by omega_using [hy]) (by omega_using [hy8]) .x2) fun c ⟨c2,kc,_⟩ => ?_
   rw [←List.singleton_append,WP.block_append_iff]
   refine WP.mono (orWord_ok c) fun d ⟨d1,kd⟩ => ?_
   refine WP.mono (st_out ((((hs.of_keeps ka (by decide)).of_keeps kb (by decide)).of_keeps kc (by decide)).of_keeps kd (by decide))
-    (o:=y+8*i) (by omega) (by omega) .x1) fun t ⟨mt,kt,_⟩ => ⟨?_,?_⟩
+    (o:=y+8*i) (by omega_using [hy]) (by omega_using [hy8]) .x1) fun t ⟨mt,kt,_⟩ => ⟨?_,?_⟩
   · rw [mt,d1,kc.gpr _ (by decide),b1,a1,ka.gpr _ (by decide),c2,kd.mem,kc.mem,kb.mem,ka.mem]
   · exact ((((Keeps.regs ka).mono (by simp)).trans ((Keeps.regs kb).mono (by simp))).trans
       ((Keeps.regs kc).mono (by simp))).trans (((Keeps.regs kd).mono (by simp)).trans (kt.mono (by simp)))
@@ -71,18 +71,18 @@ private theorem outOrSteps_ok {base : Addr} {size v y : Nat} {M : BitVec 64}
   | k+1,s,hs,hmask,hk => by
     have hn := hs.nowrap
     rw [List.range_succ,List.flatMap_append,List.flatMap_singleton,WP.block_append_iff]
-    refine WP.mono (outOrSteps_ok hy8 k s hs hmask (by omega)) fun a ⟨ea,ka,oa⟩ => ?_
+    refine WP.mono (outOrSteps_ok hy8 k s hs hmask (by omega_using [hk])) fun a ⟨ea,ka,oa⟩ => ?_
     refine WP.mono (outOrStep_ok (v:=v) (i:=k) (hs.of_keepRegs ka (by decide)) hk hy8)
       fun t ⟨mt,kt⟩ => ?_
     rw [ka.gpr _ (by decide),hmask] at mt
     have ot : Outside base (y+8*k) 8 a.mem t.mem := by
-      rw [mt]; exact writeW_outside _ _ _ (by omega)
+      rw [mt]; exact writeW_outside _ _ _ (by omega_using [hk, hn])
     refine ⟨fun i hi => ?_,ka.trans kt,
-      (oa.mono (Nat.le_refl _) (by omega)).trans (ot.mono (by omega) (by omega))⟩
+      (oa.mono (Nat.le_refl _) (by omega_using [])).trans (ot.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge i k with h | h
-    · rw [ot.word (by omega) (by omega),ea i h]
-    · obtain rfl : i=k := by omega
-      rw [mt,word_writeW_self,oa.word (by omega) (by omega)]
+    · rw [ot.word (by omega_using [h]) (by omega_using [hk, hn, hi]),ea i h]
+    · obtain rfl : i=k := by omega_using [hi, h]
+      rw [mt,word_writeW_self,oa.word (by omega_using []) (by omega_using [hn, hk])]
 
 private theorem outNotMask_ok (s : State) (h7 : s.gpr .x7=0) :
     WP isa (.block [.subImm .x .x4 .x7 1,.logic .eor .x .x3 .x3 .x4]) s fun t =>
@@ -110,7 +110,7 @@ theorem outFix_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
   rw [WP.block_append_iff]
   refine WP.mono (sel_ok (decide (wordsVal s.mem base K.A.z K.M.n≠0)) K.M.n
     (hs.of_keeps ka (by decide)) (by simpa only [mask,decide_eq_true_eq] using a3)
-    hy hzero hy hy8 hzero8 hy8 (by omega) (Or.inl (Nat.le_refl _))) fun b ⟨eb,kb,ob⟩ => ?_
+    hy hzero hy hy8 hzero8 hy8 (by omega_using [hy0]) (Or.inl (Nat.le_refl _))) fun b ⟨eb,kb,ob⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (outNotMask_ok b (by rw [kb.gpr _ (by decide),a7])) fun c ⟨c3,kc⟩ => ?_
   change WP isa (.block ((List.range K.M.n).flatMap (outOrStep K.one K.A.y))) c _

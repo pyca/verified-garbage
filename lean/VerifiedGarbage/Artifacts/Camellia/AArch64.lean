@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
+/-! # Camellia on AArch64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Camellia.AArch64

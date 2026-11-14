@@ -39,7 +39,7 @@ theorem inc32_words (a b c d : BitVec 32) : inc32 (a ++ b ++ c ++ d) = a ++ b ++
   have h₁ : (a ++ b ++ c ++ d).extractLsb' 32 96 = a ++ b ++ c := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-    simp only [show ¬ (32 + i < 32) by omega, ite_false, show 32 + i - 32 = i by omega]
+    simp only [show ¬ (32 + i < 32) by omega_using [], ite_false, show 32 + i - 32 = i by omega_using []]
   have h₂ : (a ++ b ++ c ++ d).extractLsb' 0 32 = d := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]; simp [hi]
@@ -286,7 +286,7 @@ theorem j0zero_ok {H : Block} {Np : BitVec 32} {n : Nat} {s : State} (h : J0In c
     exact hd.st.sub_right (Region.sub_prefix (by decide))
   refine ⟨⟨he₁, by rw [hg₁ _ (by decide) (by decide) (by decide), h.r4],
     by rw [hg₁ _ (by decide) (by decide) (by decide), h.r5], h6, hd.of_eq hrd₁ hwr₁, ?_⟩, ?_,
-    bytesAt_frame f₁ dD (by have := hd.lt; omega), f₁⟩
+    bytesAt_frame f₁ dD (by have := hd.lt; omega_using [this]), f₁⟩
   · rw [blockAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       simpa using L.ctx_st (a := 240) (n := 16) (d := 0) (k := 16) (by decide) (by decide)), h.hH]

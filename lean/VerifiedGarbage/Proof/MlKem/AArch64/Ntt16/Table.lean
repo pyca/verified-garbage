@@ -31,7 +31,7 @@ theorem wp_movk {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4)
       s'.gpr d = (s.gpr d &&& ~~~((0xFFFF : BitVec 64) <<< (16 * hw)) ||| imm.setWidth 64 <<< (16 * hw)) →
       WP isa (.block is) s' Q) :
     WP isa (.block (.movk .x d imm hw :: is)) s Q :=
-  wp_x (by simp only [exec, State.read, Size.bits, BitVec.setWidth_eq, show 16 * hw < 64 by omega,
+  wp_x (by simp only [exec, State.read, Size.bits, BitVec.setWidth_eq, show 16 * hw < 64 by omega_using [h],
     ite_true]) k
 
 end
@@ -49,7 +49,7 @@ theorem pack4 (a b c d : BitVec 16) :
     BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
   have ge : ∀ (x : BitVec 16) (j : Nat), 16 ≤ j → x.getLsbD j = false := fun x j h =>
     BitVec.getLsbD_of_ge x j h
-  rcases (by omega : i < 16 ∨ (16 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 48) ∨ 48 ≤ i) with h | h | h | h <;>
+  rcases (by omega_using [] : i < 16 ∨ (16 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 48) ∨ 48 ≤ i) with h | h | h | h <;>
     simp (disch := omega) only [decide_eq_true, decide_eq_false, ge, Bool.and_true, Bool.true_and,
       Bool.and_false, Bool.false_and, Bool.or_false, Bool.false_or, Bool.not_true, Bool.not_false,
       ite_eq_left, ite_eq_right, Nat.sub_sub] <;>
@@ -73,13 +73,13 @@ theorem halves_ok (H : List Nat) {r : Reg} (hr : r ≠ .x9) {off : Nat}
   refine wp_range_flatMap (M := isa) (HInv H r off s₀) (fun g s hg h => ?_) _ (Nat.le_refl _) s₀
     ⟨Keep.refl _ _, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have hrk : s.gpr r = s₀.gpr r := h.keep.get r (not_mem_one hr)
-  have ha : off + 8 * g + 8 ≤ 1024 := by omega
+  have ha : off + 8 * g + 8 ≤ 1024 := by omega_using [hoff, hg]
   refine wp_movz fun s₁ h₁ e₁ => wp_movk (by decide) fun s₂ h₂ e₂ => wp_movk (by decide) fun s₃ h₃ e₃ =>
     wp_movk (by decide) fun s₄ h₄ e₄ => wp_strx (a := s₀.gpr r + BitVec.ofNat 64 (off + 8 * g))
-      ⟨by omega, by omega⟩ (by rw [h₄.gpr _ (not_mem_one hr), h₃.gpr _ (not_mem_one hr),
+      ⟨by omega_using [ho], by omega_using [hoff, hg]⟩ (by rw [h₄.gpr _ (not_mem_one hr), h₃.gpr _ (not_mem_one hr),
         h₂.gpr _ (not_mem_one hr), h₁.gpr _ (not_mem_one hr), hrk])
       (by rw [h₄.wr, h₃.wr, h₂.wr, h₁.wr, h.keep.wr]
-          exact in_regions hreg (contains_off (by omega) (by decide))) fun s₅ h₅ => wp_nil ?_
+          exact in_regions hreg (contains_off (by omega_using [hoff, hg]) (by decide))) fun s₅ h₅ => wp_nil ?_
   have v : s₄.gpr .x9 = hw4 H g := by
     rw [e₄, h₃.gpr .x9 |> fun _ => e₃, e₂, e₁]
     exact pack4 _ _ _ _
@@ -87,25 +87,25 @@ theorem halves_ok (H : List Nat) {r : Reg} (hr : r ≠ .x9) {off : Nat}
   refine ⟨(h.keep.trans ((((h₁.keep.trans h₂.keep).trans h₃.keep).trans h₄.keep).trans h₅.keep)).mono,
     ?_, fun j hj => ?_⟩
   · rw [h₅.mem, m₄]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega) (by decide))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (contains_off (by omega_using [hoff, hg]) (by decide))
   · rw [h₅.mem, m₄, v]
     by_cases e : j = g
     · subst e; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (sep_off _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab j (by omega)
+    · rw [Mem.readW_writeW_sep (sep_off _ (by omega_using [e]) (by omega_using [ha, hj]) (by omega_using [hoff, hg])) (by decide)]
+      exact h.tab j (by omega_using [hj, e])
 
 /-- A 16-byte load as two doublewords. -/
 theorem read16_dw (m : Mem) (a : Addr) :
     m.read a 16 = ofVDwords (m.readW a 64) (m.readW (a + BitVec.ofNat 64 8) 64) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [getLsbD_read m 16 a i (by omega)]
+  rw [getLsbD_read m 16 a i (by omega_using [hi])]
   simp only [ofVDwords, BitVec.getLsbD_append, Mem.readW, BitVec.getLsbD_setWidth]
   by_cases h : i < 64
-  · rw [ite_eq_left h, getLsbD_read m 8 a i (by omega)]; simp [h]
-  · rw [ite_eq_right h, getLsbD_read m 8 _ (i - 64) (by omega)]
-    simp only [show i - 64 < 64 by omega, decide_true, Bool.true_and]
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 + (i - 64) / 8 = i / 8 by omega,
-      show (i - 64) % 8 = i % 8 by omega]
+  · rw [ite_eq_left h, getLsbD_read m 8 a i (by omega_using [h])]; simp [h]
+  · rw [ite_eq_right h, getLsbD_read m 8 _ (i - 64) (by omega_using [hi])]
+    simp only [show i - 64 < 64 by omega_using [hi], decide_true, Bool.true_and]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 8 + (i - 64) / 8 = i / 8 by omega_using [h],
+      show (i - 64) % 8 = i % 8 by omega_using [h]]
 
 theorem hw4_half (H : List Nat) (j : Nat) {h : Nat} (hh : h < 4) :
     (hw4 H j).extractLsb' (16 * h) 16 = BitVec.ofNat 16 (H.getD (4 * j + h) 0) := by
@@ -114,7 +114,7 @@ theorem hw4_half (H : List Nat) (j : Nat) {h : Nat} (hh : h < 4) :
   match h, hh with
   | 0, _ | 1, _ | 2, _ | 3, _ =>
     simp (disch := omega) only [ite_eq_left, ite_eq_right, Nat.add_zero]
-    all_goals exact congrArg _ (by omega)
+    all_goals exact congrArg _ (by omega_using [])
 
 /-- Lane `e` of the vector `i` of a table of halfwords. -/
 theorem vhalf_table {m : Mem} {p : Addr} {off N : Nat} {H : List Nat}
@@ -122,13 +122,13 @@ theorem vhalf_table {m : Mem} {p : Addr} {off N : Nat} {H : List Nat}
     (hi : 2 * i + 1 < N) {e : Nat} (he : e < 8) :
     vhalf (m.read (p + BitVec.ofNat 64 (off + 16 * i)) 16) e = BitVec.ofNat 16 (H.getD (8 * i + e) 0) := by
   rw [read16_dw, BitVec.add_assoc, ← BitVec.ofNat_add,
-    show off + 16 * i + 8 = off + 8 * (2 * i + 1) by omega,
-    show off + 16 * i = off + 8 * (2 * i) by omega, htab _ (by omega), htab _ hi,
+    show off + 16 * i + 8 = off + 8 * (2 * i + 1) by omega_using [],
+    show off + 16 * i = off + 8 * (2 * i) by omega_using [], htab _ (by omega_using [hi]), htab _ hi,
     vhalf_ofVDwords _ _ he]
   by_cases h : e < 4
-  · rw [ite_eq_left h, hw4_half _ _ (by omega)]
-    exact congrArg (BitVec.ofNat 16) (congrArg (fun k => H.getD k 0) (by omega))
-  · rw [ite_eq_right h, hw4_half _ _ (by omega)]
-    exact congrArg (BitVec.ofNat 16) (congrArg (fun k => H.getD k 0) (by omega))
+  · rw [ite_eq_left h, hw4_half _ _ (by omega_using [])]
+    exact congrArg (BitVec.ofNat 16) (congrArg (fun k => H.getD k 0) (by omega_using [h]))
+  · rw [ite_eq_right h, hw4_half _ _ (by omega_using [])]
+    exact congrArg (BitVec.ofNat 16) (congrArg (fun k => H.getD k 0) (by omega_using [he, h]))
 
 end VG.Proof.MlKem.AArch64.Ntt16

@@ -40,13 +40,13 @@ theorem inner_wr (s : State) : (inner s).wr =
 theorem frameBase_eq (s : State) : frameBase s = s.sp - BitVec.ofNat 64 4176 := by
   apply BitVec.eq_of_toNat_eq
   simp only [frameBase, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem frameBase_al (s : State) (hal : s.sp.toNat % 16 = 0) (h : 4176 ≤ s.sp.toNat) :
     (frameBase s).toNat % 16 = 0 := by
-  rw [frameBase_eq s, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega),
+  rw [frameBase_eq s, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [h]),
     BitVec.toNat_ofNat]
-  omega
+  omega_using [hal]
 
 /-- The body of `inFrame` runs from `inner s`; if it keeps the permissions
 and the stack pointer, the frame ends with those of `s`. -/
@@ -54,15 +54,15 @@ theorem inFrame_wp {body : Prog isa} {s : State} {Q : State → Prop} (hsp : 417
     (hb : WP isa body (inner s) fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) :
     WP isa (inFrame body) s Q := by
   unfold inFrame
-  refine WP.alloc (by decide) (by omega) ?_
+  refine WP.alloc (by decide) (by omega_using [hsp]) ?_
   refine WP.alloc (by decide) (by
     show 2032 ≤ (s.sp - BitVec.ofNat 64 2032).toNat
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]
-    omega) ?_
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
+    omega_using [hsp]) ?_
   refine WP.alloc (by decide) (by
     show 112 ≤ (s.sp - BitVec.ofNat 64 2032 - BitVec.ofNat 64 2032).toNat
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega) ?_
+    omega_using [hsp]) ?_
   refine WP.mono (WP.rdwr hb) fun s₂ ⟨h, _, hwr, hsp₂⟩ => ?_
   have e : freed 2032 (freed 2032 (freed 112 s₂)) = { s₂ with sp := s.sp, wr := s.wr } := by
     simp only [freed, hwr, hsp₂, allocd, List.tail_cons, BitVec.sub_add_cancel]
@@ -88,19 +88,19 @@ theorem frame_in (s : State) {o n : Nat} (ho : o + n ≤ 4176)
   have e3 : s.sp - BitVec.ofNat 64 2032 = frameBase s + BitVec.ofNat 64 2144 := by
     apply BitVec.eq_of_toNat_eq
     simp only [frameBase, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   rw [inner_wr]
   by_cases h1 : o + n ≤ 112
-  · exact ⟨_, List.mem_cons_self, Offset.contains_base _ h1 (by omega)⟩
+  · exact ⟨_, List.mem_cons_self, Offset.contains_base _ h1 (by omega_using [ho])⟩
   · by_cases h2 : o + n ≤ 2144
     · refine ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩
       rw [e2]
-      exact Offset.contains _ (by omega) (by omega) (by omega)
+      exact Offset.contains _ (by omega_using [hc, h1]) (by omega_using [h2]) (by omega_using [])
     · refine ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), ?_⟩
       rw [e3]
-      exact Offset.contains _ (by omega) (by omega) (by omega)
+      exact Offset.contains _ (by omega_using [hc, h2]) (by omega_using [ho]) (by omega_using [])
 
 theorem frame_writable (s : State) : Writable (inner s).wr (frameBase s) :=
-  fun _ _ ho hc => frame_in s (by omega) hc
+  fun _ _ ho hc => frame_in s (by omega_using [ho]) hc
 
 end VG.Proof.Blowfish.RISCV64

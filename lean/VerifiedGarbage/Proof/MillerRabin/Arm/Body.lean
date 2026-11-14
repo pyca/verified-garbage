@@ -102,7 +102,7 @@ theorem winInit_vp : VP (TS P 0) (seqs winInit) (WO P (2 * P.w)) := by
   refine St.pwinCnt.mono (fun _ _ h => h) fun σ s h => ⟨Nat.le_refl _, h.mono (fun i hi => ⟨?_, ?_⟩)
     (fun d hd => ⟨?_, ?_⟩)⟩
   · exact (by decide : ∀ i ∈ LW, i ∈ aY :: aM1 :: LT) i hi
-  · rw [show 16 * P.w - 8 * (2 * P.w) = 0 by omega]
+  · rw [show 16 * P.w - 8 * (2 * P.w) = 0 by omega_using []]
     rcases List.mem_cons.mp hi with rfl | hi
     · rfl
     rcases List.mem_cons.mp hi with rfl | hi
@@ -112,16 +112,16 @@ theorem winInit_vp : VP (TS P 0) (seqs winInit) (WO P (2 * P.w)) := by
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢; rcases hd with rfl | rfl <;> simp
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl
-    · rw [upd_self, upd_self]; omega
+    · rw [upd_self, upd_self]; omega_using []
     · rw [upd_ne _ _ (by decide), upd_self, upd_ne _ _ (by decide), upd_self,
-        show 16 * P.w - 8 * (2 * P.w) = 0 by omega]
+        show 16 * P.w - 8 * (2 * P.w) = 0 by omega_using []]
       rfl
 
 /-- The threshold from the word `2^(t mod 64)`. -/
 theorem rEnd_eq {σ : State} (pre : In P σ) :
     (foldR (BitVec.ofNat 32 (ew P σ (2 * P.w))) (BitVec.ofNat 32 (ew P σ (2 * P.w + 1)))).toNat = rEnd P σ := by
   obtain ⟨e1, e2⟩ := pre.ew_low
-  rw [e1, e2, foldR_eq _ (Nat.mod_lt _ (by decide)), ofNat_toNat32 (by omega)]
+  rw [e1, e2, foldR_eq _ (Nat.mod_lt _ (by decide)), ofNat_toNat32 (by omega_using [])]
 
 theorem body_vp (fios : Bool := false) : VP (Start P) (body (fios := fios)) (Done P) := by
   simp only [body, seqs]
@@ -146,7 +146,7 @@ theorem body_vp (fios : Bool := false) : VP (Start P) (body (fios := fios)) (Don
       · simp only [V', upd, show sF ≠ sQ by decide, show sF ≠ sR by decide, ↓reduceIte]; rfl
   refine VP.seq (sq_loop (fios := fios) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (fun σ _ => rfl) (fun σ _ => upd_self _ _ _)
-    (fun σ _ => by show 4 - sigOf (tOf P σ % 64) < 2 ^ 31; omega) (by decide) (fun σ e => wst_lt e _) 2) ?_
+    (fun σ _ => by show 4 - sigOf (tOf P σ % 64) < 2 ^ 31; omega_using []) (by decide) (fun σ e => wst_lt e _) 2) ?_
   refine VP.kv ret_taint (fun _ _ h => h.2.2.2) fun σ s ⟨_, e, h, hw⟩ => ?_
   refine h.ldr hw (d := sF) (by decide) (r := .r0) (by decide) fun t ht _ u => WP.block_nil ⟨⟨_, _, _, _, ht⟩, ?_⟩
   rw [u.gpr]

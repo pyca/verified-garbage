@@ -68,9 +68,9 @@ theorem mulP_ok {b : Addr} {s : State} (hc : Ctx b s) (o x y : Slot) (ho : 14 �
   have h2 := slot_range x
   have h3 := slot_range y
   refine WP.mono (R64.mulAt_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-    (by omega_arith) (by simp only [offset]; omega) (by simp only [offset]; omega) (by simp only [offset]; omega) hc)
+    (by omega_arith) (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using []) hc)
     fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_PR ho hf, ?_⟩
-  rw [field_update o (by omega) (by omega) hf]
+  rw [field_update o (by omega_using [hA]) (by omega_using [hA]) hf]
   exact congrArg _ (Proof.X25519.toFe_mul hv)
 
 theorem mulPS (b : Addr) (o x y : Slot) (ho : 14 ≤ o.val) : PSpec b (mulP o x y) (opMul o x y) :=
@@ -163,7 +163,7 @@ theorem pow250Fn_ok {b : Addr} {s : State} (h3 : s.gpr .a0 = b) (hal : b.toNat %
       Rest (.a3 :: .t1 :: clob64) s t ∧ Frame [PR b] s.mem t.mem ∧ env t.mem b = power250Env (env s.mem b) := by
   refine WP.seq (wp_mv fun s1 u1 => WP.block_nil ?_)
   have hc : Ctx b s1 := ⟨by rw [u1.gpr, h3], hal, fun d n hd => by
-    rw [u1.wr]; exact in_base hw (by omega) (by omega)⟩
+    rw [u1.wr]; exact in_base hw (by omega_using [hd]) (by omega_using [hd])⟩
   refine WP.mono (chain250S b s1 hc) fun t ⟨hr, hf, he⟩ => ⟨?_, by rw [u1.mem] at hf; exact hf, by rw [he, u1.mem]⟩
   exact (u1.rest (by decide)).trans (hr.mono (by decide))
 

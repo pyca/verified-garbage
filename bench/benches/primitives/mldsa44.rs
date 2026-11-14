@@ -16,6 +16,12 @@
 //! groups sign and verify with keys prepared once (`prepare`), whose cost
 //! `mldsa44_prepare` measures (with the key generation, for a signing
 //! key).
+//!
+//! The external-`mu` groups cycle through the same 256 message representatives
+//! and reproducible randomness inputs for ordinary and prepared keys. Hashing,
+//! key preparation, and the signatures used by verification are computed before
+//! timing; each benchmark starts at the beginning of the same corpus. Signing
+//! therefore averages over rejection-loop behavior rather than one input's luck.
 
 use criterion::Criterion;
 
@@ -47,6 +53,7 @@ pub fn bench(c: &mut Criterion) {
         KeyPair, ML_DSA_44, ML_DSA_44_SIGNING, ParsedPublicKey, PqdsaKeyPair,
     };
     use criterion::BenchmarkId;
+    use verified_garbage::hashes::sha3::Shake256;
     use verified_garbage::mldsa44::{SigningKey44, VerifyingKey44};
 
     use crate::{AWS_LC, BenchDyn, VG};
@@ -238,21 +245,80 @@ pub fn bench(c: &mut Criterion) {
         b.iter(|| ParsedPublicKey::new(&ML_DSA_44, black_box(&pk)).unwrap())
     });
     g.finish();
-    // Precomputed message representatives exclude hashing from the timing.
-    let mu = [0x5a; 64];
-    let rnd = [0x42; 32];
-    let mu_sig = key.sign_mu(&mu, &rnd).unwrap();
+    // Pure ML-DSA representatives of the message corpus, with an empty context.
+    // All setup stays outside the timed loops, and both key types use the same
+    // inputs in the same order. The randomness corpus is reproducible benchmark
+    // data, not a source of entropy for production signing.
+    let mut tr = [0; 64];
+    Shake256::digest(key.verifying_key().as_bytes(), &mut tr);
+    let mus: [[u8; 64]; MESSAGES] = core::array::from_fn(|i| {
+        let mut h = Shake256::new();
+        h.update(&tr);
+        h.update(&[0, 0]);
+        h.update(&msgs[i]);
+        let mut mu = [0; 64];
+        h.finalize(&mut mu);
+        mu
+    });
+    let rnds: [[u8; 32]; MESSAGES] = core::array::from_fn(|i| {
+        let mut rnd = [0; 32];
+        Shake256::digest(&msgs[i], &mut rnd);
+        rnd
+    });
+    // Keep the signature corpus on the heap: ML-DSA-87's is over a MiB.
+    let mu_sigs: Vec<_> = mus
+        .iter()
+        .zip(&rnds)
+        .map(|(mu, rnd)| key.sign_mu(mu, rnd).unwrap())
+        .collect();
+    for ((mu, rnd), sig) in mus.iter().zip(&rnds).zip(&mu_sigs) {
+        assert_eq!(prepared.sign_mu(mu, rnd).unwrap(), *sig);
+        key.verifying_key().verify_mu(mu, sig).unwrap();
+        prepared_public.verify_mu(mu, sig).unwrap();
+    }
     let mut g = c.benchmark_group("mldsa44_sign_mu");
-    g.bench(BenchmarkId::new(VG, mu_sig.len()), |b| {
-        b.iter(|| key.sign_mu(black_box(&mu), black_box(&rnd)).unwrap())
+    g.bench(BenchmarkId::new(VG, mu_sigs[0].len()), |b| {
+        let mut i = 0;
+        b.iter(|| {
+            let sig = key
+                .sign_mu(black_box(&mus[i]), black_box(&rnds[i]))
+                .unwrap();
+            i = (i + 1) % MESSAGES;
+            sig
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa44_sign_mu_prepared");
+    g.bench(BenchmarkId::new(VG, mu_sigs[0].len()), |b| {
+        let mut i = 0;
+        b.iter(|| {
+            let sig = prepared
+                .sign_mu(black_box(&mus[i]), black_box(&rnds[i]))
+                .unwrap();
+            i = (i + 1) % MESSAGES;
+            sig
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa44_verify_mu_prepared");
+    g.bench(BenchmarkId::new(VG, 64), |b| {
+        let mut i = 0;
+        b.iter(|| {
+            prepared_public
+                .verify_mu(black_box(&mus[i]), black_box(&mu_sigs[i]))
+                .unwrap();
+            i = (i + 1) % MESSAGES;
+        })
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa44_verify_mu");
     g.bench(BenchmarkId::new(VG, 64), |b| {
+        let mut i = 0;
         b.iter(|| {
             key.verifying_key()
-                .verify_mu(black_box(&mu), black_box(&mu_sig))
-                .unwrap()
+                .verify_mu(black_box(&mus[i]), black_box(&mu_sigs[i]))
+                .unwrap();
+            i = (i + 1) % MESSAGES;
         })
     });
     g.finish();

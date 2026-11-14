@@ -37,10 +37,10 @@ theorem Work.child {p : CdP} {mi : BitVec 64} {s t : State}
   have hw := room_k hk hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hw
   have hn := hc.good.scr.nowrap
-  have hwl : 1 ≤ p.w := by unfold CdP.w; omega
-  obtain ⟨hb, hi, hs⟩ := h.base.child hc (L := slot p.w 8) (by omega) hf (fun r hr' => (hr r hr').2) k
+  have hwl : 1 ≤ p.w := by unfold CdP.w; omega_using [hk]
+  obtain ⟨hb, hi, hs⟩ := h.base.child hc (L := slot p.w 8) (by omega_using [hw]) hf (fun r hr' => (hr r hr').2) k
   refine ⟨⟨hb, h.mem.of_child hf hr k.2.2, h.xv.of_frmA hn hwl hf (fun r hr' => ⟨hN r hr', hOne r hr'⟩),
-    (hs _ (by decide)).trans h.ws, (hs _ (by decide)).trans h.g, (hs _ (by decide)).trans h.q⟩, hi, fun i hi => hs i (by omega)⟩
+    (hs _ (by decide)).trans h.ws, (hs _ (by decide)).trans h.g, (hs _ (by decide)).trans h.q⟩, hi, fun i hi => hs i (by omega_using [hi])⟩
 
 theorem Work.enter {p : CdP} {mi : BitVec 64} {s : State} (h : Work p mi s)
     (hd : s.gpr .rdi = p.B) : WP isa (.block [enter]) s fun t =>
@@ -49,8 +49,8 @@ theorem Work.enter {p : CdP} {mi : BitVec 64} {s : State} (h : Work p mi s)
   have hw := room_k hb.k1 hb.hZ
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  refine WP.mono (enter_ok (Outer.of_mem h.mem hd hw (by omega) (by omega)) h.ws)
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  refine WP.mono (enter_ok (Outer.of_mem h.mem hd hw (by omega_using [hk, ew]) (by omega_using [hk', ew])) h.ws)
     fun t ⟨hdi, hm, k⟩ => ⟨h.keep hm k, hdi, hm, k⟩
 
 end VG.Proof.Ffdh.X86_64.CheckDomain

@@ -29,13 +29,13 @@ theorem decode57 (m : Mem) (p : Addr) :
       ((m.readW (p + BitVec.ofNat 64 40) 64).toNat + 2 ^ 64 *
       ((m.readW (p + BitVec.ofNat 64 48) 64).toNat + 2 ^ 64 *
       Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m (p + BitVec.ofNat 64 56) 1))))))) := by
-  have e0 := words_step m p 57 0 (by omega)
-  have e1 := words_step m p 57 1 (by omega)
-  have e2 := words_step m p 57 2 (by omega)
-  have e3 := words_step m p 57 3 (by omega)
-  have e4 := words_step m p 57 4 (by omega)
-  have e5 := words_step m p 57 5 (by omega)
-  have e6 := words_step m p 57 6 (by omega)
+  have e0 := words_step m p 57 0 (by omega_using [])
+  have e1 := words_step m p 57 1 (by omega_using [])
+  have e2 := words_step m p 57 2 (by omega_using [])
+  have e3 := words_step m p 57 3 (by omega_using [])
+  have e4 := words_step m p 57 4 (by omega_using [])
+  have e5 := words_step m p 57 5 (by omega_using [])
+  have e6 := words_step m p 57 6 (by omega_using [])
   simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, Nat.mul_zero, Nat.sub_zero] at e0 e1 e2 e3 e4 e5 e6
   rw [BitVec.add_zero] at e0
   rw [e0, e1, e2, e3, e4, e5, e6]
@@ -49,7 +49,7 @@ theorem byte_of_zero (m : Mem) (p : Addr) (h : m.readW p 64 = 0) :
   have hw : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m p 8) = 0 := by
     rw [Proof.Ed448.decodeLE_eq, Proof.Ed448.bytesAt_eq, Proof.X25519.leNum_bytesAt_64, h]; rfl
   rw [show (8 : Nat) = 1 + 7 from rfl, hs, Proof.Ed448.decodeLE_append] at hw
-  omega
+  omega_using [hw]
 
 theorem take57 (m : Mem) (p : Addr) :
     (Spec.Sha3.bytesAt m p 114).take 57 = Spec.Ed448.bytesAt m p 57 := by

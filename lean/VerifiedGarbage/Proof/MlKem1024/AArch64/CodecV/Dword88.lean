@@ -28,7 +28,7 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem1024.AArch64 VG.Proof.MlKe
 theorem vdword_ext8 (y : BitVec 128) {l : Nat} (hl : l < 2) :
     vdword (((y ++ y) >>> (8 * 8)).extractLsb' 0 128) l = vdword y (1 - l) := by
   rw [← Tbl.ofVDwords_halves y, ext8_pair]
-  rcases (show l = 0 ∨ l = 1 by omega) with rfl | rfl
+  rcases (show l = 0 ∨ l = 1 by omega_using [hl]) with rfl | rfl
   · rw [vdword_ofVDwords_0, vdword_ofVDwords_1]
   · rw [vdword_ofVDwords_1, vdword_ofVDwords_0]
 
@@ -43,7 +43,7 @@ theorem bytes88 {g0 g1 : Nat} (h0 : g0 < 2 ^ 44) {j : Nat} (hj : j < 11) :
     (if j < 8 then (g0 + g1 % 2 ^ 20 * 2 ^ 44) / 2 ^ (8 * j) % 2 ^ 8
       else g1 / 2 ^ 20 / 2 ^ (8 * (j - 8)) % 2 ^ 8) = (g0 + g1 * 2 ^ 44) / 2 ^ (8 * j) % 2 ^ 8 := by
   rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 by
-    omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega
+    omega_using [hj]) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega_arith
 
 theorem merge88_ok {s : State} {v : VReg} (h19 : v ≠ .v19) (h23 : v ≠ .v23) {g : Nat → Nat}
     (hg : DLanes (s.v v) g) (hg0 : g 0 < 2 ^ 44) :
@@ -84,8 +84,8 @@ theorem merge88_ok {s : State} {v : VReg} (h19 : v ≠ .v19) (h23 : v ≠ .v23) 
   · have e := toNat_vbyte_dword (t.v v) (l := 0) h8
     simp only [Nat.mul_zero, Nat.zero_add] at e
     rw [ite_eq_left h8, e, dt0]
-  · have e := toNat_vbyte_dword (t.v v) (l := 1) (b := j - 8) (by omega)
-    rw [show 8 * 1 + (j - 8) = j by omega] at e
+  · have e := toNat_vbyte_dword (t.v v) (l := 1) (b := j - 8) (by omega_using [hj])
+    rw [show 8 * 1 + (j - 8) = j by omega_using [h8]] at e
     rw [ite_eq_right h8, e, dt1]
 
 /-- TBL of `len` registers from `n`, at an index in the table. -/
@@ -100,7 +100,7 @@ theorem vbyte_tblN_out {s : State} {n m d : VReg} {len i k : Nat} (hi : i < 16)
     (hk : (vbyte (s.v m) i).toNat = k) (hk' : 16 * len ≤ k) :
     vbyte (ofVBytes fun i => if (vbyte (s.v m) i).toNat < 16 * len then tableByte s.v n (vbyte (s.v m) i).toNat
       else if false then vbyte (s.v d) i else 0) i = 0 := by
-  rw [vbyte_ofVBytes _ hi, hk, ite_eq_right (by omega)]; rfl
+  rw [vbyte_ofVBytes _ hi, hk, ite_eq_right (by omega_using [hk'])]; rfl
 
 /-- ZIP1 of doublewords: the low doublewords of `x` and `y`. -/
 theorem eval_zip1_d2 (x y : BitVec 128) : VPermOp.eval .zip1 .d2 x y = ofVDwords (vdword x 0) (vdword y 0) := by

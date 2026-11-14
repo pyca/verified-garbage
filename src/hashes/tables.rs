@@ -28,25 +28,9 @@ pub(crate) enum TableHash {
 }
 
 impl TableHash {
-    /// Its table of `Hash`, as the verified functions take it: the words of
-    /// the best table this CPU runs (its dispatcher's,
+    /// Its table of `MdHash`, as the verified functions take it: the words
+    /// of the best table this CPU runs (its dispatcher's,
     /// `crate::arch::dispatch::fn_tables`).
-    #[cfg(feature = "alloc")]
-    pub(crate) fn hash_table(self) -> *const [usize; 5] {
-        let t: &'static fn_tables::Hash = match self {
-            Self::Md5 => auto::vg_hash_md5_auto(),
-            Self::Sha1 => auto::vg_hash_sha1_auto(),
-            Self::Sha224 => auto::vg_hash_sha224_auto(),
-            Self::Sha256 => auto::vg_hash_sha256_auto(),
-            Self::Sha384 => auto::vg_hash_sha384_auto(),
-            Self::Sha512 => auto::vg_hash_sha512_auto(),
-            Self::Sha512_224 => auto::vg_hash_sha512_224_auto(),
-            Self::Sha512_256 => auto::vg_hash_sha512_256_auto(),
-        };
-        t.as_ptr()
-    }
-
-    /// Its table of `MdHash`, as the verified functions take it.
     #[cfg(feature = "alloc")]
     pub(crate) fn md_hash_table(self) -> *const [usize; 11] {
         let t: &'static fn_tables::MdHash = match self {
@@ -82,10 +66,9 @@ impl TableHash {
 mod tests {
     use super::TableHash;
 
-    /// A table of `Hash` holds the hash function's index and digest length
-    /// (its words 3 and 4), as its table of `MdHash` does (words 5 and 6),
-    /// and its table of `Hmac` holds them and HMAC's block size (words 3, 4
-    /// and 5); and the indices are those of `VG.Spec.Mgf1.hashes`, in this
+    /// A table of `MdHash` holds the hash function's index and digest length
+    /// (its words 5 and 6), and its table of `Hmac` holds them and HMAC's
+    /// block size (words 3, 4 and 5); and the indices are those of `VG.Spec.Mgf1.hashes`, in this
     /// order: for the tables this CPU runs.
     #[test]
     fn table_words() {
@@ -102,11 +85,10 @@ mod tests {
         for (i, (h, len, block)) in all.into_iter().enumerate() {
             #[cfg(feature = "alloc")]
             {
-                // SAFETY: `as_ptr` points to the tables' words, of
-                // immutable `'static` `repr(C)` values of 5 and 11
-                // pointer-sized words.
-                let (g, md) = unsafe { (*h.hash_table(), *h.md_hash_table()) };
-                assert_eq!((g[3], g[4]), (i, len), "{h:?}");
+                // SAFETY: `as_ptr` points to the table's words, of an
+                // immutable `'static` `repr(C)` value of 11 pointer-sized
+                // words.
+                let md = unsafe { *h.md_hash_table() };
                 assert_eq!((md[5], md[6]), (i, len), "{h:?}");
             }
             // SAFETY: `as_ptr` points to the table's words, of an

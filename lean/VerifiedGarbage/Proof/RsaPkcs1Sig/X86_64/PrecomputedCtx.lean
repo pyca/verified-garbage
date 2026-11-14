@@ -39,7 +39,7 @@ theorem pre_of {s : State}
   obtain ⟨sp1, sp2, hrd, hwr, dns, des, dds, dgs, dsp, dsa, -, -, -, -, dRs, -, -,
     dKn, dKe, dKd, dKg, dKs, dKp, dKa, wN, wE, wD, wG, wS, wP, ⟨k1, k2⟩, L1, L2, hsl, pl⟩ := h
   have ha : Region.Sub ⟨stackArgAddr s 0, 40⟩ ⟨stackArgAddr s 0, 56⟩ := Region.sub_prefix (by decide)
-  refine ⟨⟨sp1, by omega, ?_, hwr, dns, des, dds, dgs, dsa.sub_right ha, dRs,
+  refine ⟨⟨sp1, by omega_using [sp2], ?_, hwr, dns, des, dds, dgs, dsa.sub_right ha, dRs,
     dKn, dKe, dKd, dKg, dKs, dKa.sub_right ha, wN, wE, wD, wG, wS, k1, k2, L1, L2, hsl⟩,
     ?_, dsa.symm, dKa.symm, ?_, dsp.symm, dKp.symm, wP, pl⟩
   · rw [hrd]

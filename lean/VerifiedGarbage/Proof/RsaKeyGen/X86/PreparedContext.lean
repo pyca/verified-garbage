@@ -23,7 +23,7 @@ theorem layout {g : Geometry} (v : g.Valid) :
   apply VG.Proof.Bignum.X86.PublicContext.operation_layout
   · have fit := v.arraysFit
     simp only [size, slot, stride, Proof.Rsa.Mont.arrAt, VG.Impl.Bignum.hdrBytes, Proof.Rsa.Mont.hdrBytes] at *
-    omega
+    omega_using [fit]
   all_goals first | (unfold operand; decide) | decide
 
 theorem dynamicModulus {g : Geometry} (v : g.Valid) {c : Nat} {m : Mem} (M : Modulus g c m) :
@@ -32,14 +32,14 @@ theorem dynamicModulus {g : Geometry} (v : g.Valid) {c : Nat} {m : Mem} (M : Mod
   have b := v.arrayFit (j := 1) (by decide)
   have sep := g.arrayBefore (i := 0) (j := 1) (by decide)
   simp only [Geometry.words] at a b sep
-  refine ⟨by change 0 < g.w; have := v.minWidth; omega, ?_, ?_, ?_, ?_⟩
+  refine ⟨by change 0 < g.w; have := v.minWidth; omega_using [this], ?_, ?_, ?_, ?_⟩
   · change slot g.w 0 + 8 * g.w ≤ g.L
-    rw [slot_eq]; omega
+    rw [slot_eq]; omega_using [a]
   · change slot g.w 1 + 8 * g.w ≤ g.L
-    rw [slot_eq]; omega
+    rw [slot_eq]; omega_using [b]
   · left
     change slot g.w 0 + 8 * g.w ≤ slot g.w 1
-    rw [slot_eq, slot_eq]; omega
+    rw [slot_eq, slot_eq]; omega_using [sep]
   · change wordsVal m g.W (slot g.w 0) g.w = c
     rw [slot_eq, wordsVal_eq_val32]; exact M.candidate
 
@@ -56,6 +56,6 @@ theorem keepRanges {g : Geometry} (v : g.Valid) {s t : State} (C : Context g s)
   · rw [read (by decide)]; exact C.width
   · rw [read (by decide)]; exact C.stride
   · intro j index
-    rw [read (by omega)]; exact C.pointers j index
+    rw [read (by omega_using [index])]; exact C.pointers j index
 
 end VG.Proof.RsaKeyGen.X86.Prepared

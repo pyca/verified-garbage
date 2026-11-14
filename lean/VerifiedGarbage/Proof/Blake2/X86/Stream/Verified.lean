@@ -59,8 +59,8 @@ theorem argMem_eq {s₁ s₂ : State} {n : Nat} (f₁ : (s₁.gpr .esp).toNat + 
       s₂.mem (VG.X86.Taint.argByte s₂ (VG.X86.Taint.depth ([] : List (Option Nat)) + k)) := by
   rw [show VG.X86.Taint.depth ([] : List (Option Nat)) = 0 from rfl, Nat.zero_add,
     VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
-    Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-  exact congrArg _ (ha _ (by omega))
+    Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+  exact congrArg _ (ha _ (by omega_using [h4, hk]))
 
 /-! ## `init` -/
 
@@ -71,7 +71,7 @@ theorem init_wf (hP : Ok P) {s : State} (h : (initX86 P).pre s) : VG.X86.Taint.W
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨by simp only [τInit]; omega, ?_⟩, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl; simp only [BitVec.toNat_setWidth]; omega
+    rintro r rfl; simp only [BitVec.toNat_setWidth]; omega_using [hst]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl
     exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_st hp.a_st
@@ -87,11 +87,11 @@ theorem init_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (initX86 P).pre s₁)
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, init_wf hP h₁, init_wf hP h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => argMem_eq (n := 20) (by have := hp₁.sp_fit; omega) (by have := hp₂.sp_fit; omega)
-      (fun i hi => ha i (by omega)) h4 hk⟩
+      (fun i hi => ha i (by omega_using [hi])) h4 hk⟩
   · simp only [τInit, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
-    simp only [Init.stR, Init.stA, Init.st, ha 0 (by omega)]
+    simp only [Init.stR, Init.stA, Init.st, ha 0 (by omega_using [])]
 
 /-! ## `update` -/
 
@@ -107,7 +107,7 @@ theorem update_wf (hP : Ok P) {s : State} (h : (updateX86 P).pre s) : VG.X86.Tai
       List.Pairwise.nil, and_true]
     exact ⟨hp.st_scr, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega) hp.ret_st hp.a_st
@@ -126,12 +126,12 @@ theorem update_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (updateX86 P).pre s
   have hp₁ := Update.pre_of h₁; have hp₂ := Update.pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, update_wf hP h₁, update_wf hP h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
-    fun k h4 hk => argMem_eq (n := 28) hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega)) h4 hk⟩
+    fun k h4 hk => argMem_eq (n := 28) hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega_using [hi])) h4 hk⟩
   · simp only [τUpdate, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
-    simp only [Update.stR, Update.scR, Update.stA, Update.scA, Update.st, Update.scr, ha 0 (by omega),
-      ha 5 (by omega)]
+    simp only [Update.stR, Update.scR, Update.stA, Update.scA, Update.st, Update.scr, ha 0 (by omega_using []),
+      ha 5 (by omega_using [])]
 
 /-! ## `finalize` -/
 
@@ -148,7 +148,7 @@ theorem finalize_wf (hP : Ok P) {s : State} (h : (finalizeX86 P).pre s) :
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨⟨hp.st_out, hp.st_scr⟩, hp.out_scr, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.ret_st hp.a_st
@@ -169,12 +169,12 @@ theorem finalize_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (finalizeX86 P).p
   have hp₁ := Finalize.pre_of h₁; have hp₂ := Finalize.pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, finalize_wf hP h₁, finalize_wf hP h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
-    fun k h4 hk => argMem_eq (n := 24) hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega)) h4 hk⟩
+    fun k h4 hk => argMem_eq (n := 24) hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega_using [hi])) h4 hk⟩
   · simp only [τFinalize, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
     simp only [Finalize.stR, Finalize.outR, Finalize.scR, Finalize.stA, Finalize.opA, Finalize.scA,
-      Finalize.st, Finalize.op, Finalize.scr, ha 0 (by omega), ha 3 (by omega), ha 4 (by omega)]
+      Finalize.st, Finalize.op, Finalize.scr, ha 0 (by omega_using []), ha 3 (by omega_using []), ha 4 (by omega_using [])]
 
 /-! ## `Verified` -/
 

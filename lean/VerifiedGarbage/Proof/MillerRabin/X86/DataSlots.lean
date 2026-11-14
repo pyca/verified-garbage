@@ -34,7 +34,7 @@ theorem Data.afterSlots {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : Lis
     · have old : d ∈ Ds := (List.mem_append.mp known).resolve_left changedD
       obtain ⟨scratch, read⟩ := D.slotValues d old
       refine ⟨scratch, ?_⟩
-      rw [W.read32 (by have := scratch_fit scratch; have := v.headerFit; omega) (by
+      rw [W.read32 (by have := scratch_fit scratch; have := v.headerFit; omega_arith) (by
         intro r mem
         obtain ⟨e, knownE, rfl⟩ := List.mem_map.mp mem
         exact scratch_apart scratch (stored e knownE).1 (fun eq => changedD (eq ▸ knownE))),

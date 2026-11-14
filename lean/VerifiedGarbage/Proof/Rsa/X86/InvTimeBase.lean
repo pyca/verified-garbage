@@ -50,6 +50,6 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
     rw [show VG.X86.Taint.depth τ.stk=0 from rfl,Nat.zero_add,
       VG.X86.Taint.argByte_eq ps.argsOk.1 h4 hk,VG.X86.Taint.argByte_eq pt.argsOk.1 h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)),Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ ((ps.arguments _ (by omega)).value.trans (pt.arguments _ (by omega)).value.symm)
+    exact congrArg _ ((ps.arguments _ (by omega_using [hk])).value.trans (pt.arguments _ (by omega_using [hk])).value.symm)
 
 end VG.Proof.Rsa.X86.InvTiming

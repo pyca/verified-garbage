@@ -52,14 +52,14 @@ theorem initArgs_ok {s : State} (h : Inv s₀ s) {l c : Nat} (hl : l < lanesN s�
       t.gpr .r5 = memP s₀ + BitVec.ofNat 64 ((l * (prm s₀).laneLen + c) * 1024) ∧
       t.gpr .r6 = BitVec.ofNat 64 1024 := by
   have hlt := hp.lanes_lt
-  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega
+  have L2 : 2 ≤ (prm s₀).laneLen := by rw [hp.laneLen_eq]; have := hp.segLen_two; omega_using [this]
   have hcell : l * (prm s₀).laneLen + c < blocksN s₀ := by
     rw [hp.blocks_eq]
-    have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega)
+    have := Nat.mul_le_mul_right (prm s₀).laneLen (show l + 1 ≤ lanesN s₀ by omega_using [hl])
     rw [Nat.succ_mul] at this
-    omega
+    omega_using [hc, L2, this]
   unfold initArgs Impl.Argon2.PPC64LE.HPrime.mov
-  refine wp_li (by omega) fun s₁ u₁ => ?_
+  refine wp_li (by omega_using [hc]) fun s₁ u₁ => ?_
   have i₁ := h.upd u₁
   refine wp_stlocw i₁ (d := 96) (by decide) fun s₂ i₂ _ g₂ => ?_
   refine wp_stlocw i₂ (d := 100) (by decide) fun s₃ i₃ _ g₃ => ?_
@@ -82,8 +82,8 @@ theorem initArgs_ok {s : State} (h : Inv s₀ s) {l c : Nat} (hl : l < lanesN s�
     rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), g₃, g₂, i₁.r31]
     simp
-  have hcell' : (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
-  refine ⟨⟨i₈, r7₈, ⟨inR s₀, by simp, 0, by rw [r3₈, E_add]; simp, by rw [r4₈]; show 0 + 72 ≤ 72; omega⟩,
+  have hcell' : (l * (prm s₀).laneLen + c) * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_using [hcell]
+  refine ⟨⟨i₈, r7₈, ⟨inR s₀, by simp, 0, by rw [r3₈, E_add]; simp, by rw [r4₈]; show 0 + 72 ≤ 72; omega_using []⟩,
     ⟨memR s₀, by simp, (l * (prm s₀).laneLen + c) * 1024, by rw [r5₈], by rw [r6₈]; exact hcell'⟩,
     by rw [r4₈]; decide, by rw [r6₈]; decide⟩, r3₈, r4₈, r5₈, r6₈⟩
 
@@ -172,7 +172,7 @@ theorem initLanes_rel {h0₁ h0₂ : List Byte} :
   refine (RelCT.loop (Q := fun _ _ => True)
     (fun n s₁ s₂ => ∃ l, n = lanesN s₀₁ - l ∧ l < lanesN s₀₁ ∧ LI s₀₁ h0₁ l s₁ ∧ LI s₀₂ h0₂ l s₂)
     (fun n => RelCT.exists_ fun l => ?_) (lanesN s₀₁)).mono
-    (fun s₁ s₂ h => ⟨0, by omega, hl1, h.1, h.2⟩) fun _ _ h => h
+    (fun s₁ s₂ h => ⟨0, by omega_using [], hl1, h.1, h.2⟩) fun _ _ h => h
   by_cases hn : l < lanesN s₀₁ ∧ n = lanesN s₀₁ - l
   · obtain ⟨hl, rfl⟩ := hn
     have hl₂ : l < lanesN s₀₂ := by rw [← T.pb.lanesN_eq]; exact hl
@@ -186,7 +186,7 @@ theorem initLanes_rel {h0₁ h0₂ : List Byte} :
     · exact c₁.trans (c₂.trans (by rw [T.pb.lanesN_eq])).symm
     · have e₀ : some (!decide (l + 1 = lanesN s₀₁)) = some true := c₁.symm.trans hc
       have e : ¬(l + 1 = lanesN s₀₁) := by simpa using e₀
-      exact ⟨lanesN s₀₁ - (l + 1), by omega, l + 1, rfl, by omega, li₁, li₂⟩
+      exact ⟨lanesN s₀₁ - (l + 1), by omega_using [hl], l + 1, rfl, by omega_using [hl, e], li₁, li₂⟩
   · exact RelCT.of_false fun s₁ s₂ h => hn ⟨h.2.1, h.1⟩
 
 /-- The memory's initialization leaks the same trace in two runs. -/

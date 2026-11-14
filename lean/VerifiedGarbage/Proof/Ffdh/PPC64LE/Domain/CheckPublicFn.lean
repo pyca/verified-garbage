@@ -75,7 +75,7 @@ theorem setup_ok {s : State} {S D Y : Addr} {k L : Nat} (h3 : s.gpr .r3 = D)
       Keep setupRegs s t := by
   refine WP.keep _ ?_ (by decide)
   unfold setup
-  prun [h3, h4, h5, h6, h23, BitVec.add_zero, Pub.ofNat_add7_shr3 k (by omega), Pub.ofNat_shl3, Pub.ofNat_shl1,
+  prun [h3, h4, h5, h6, h23, BitVec.add_zero, Pub.ofNat_add7_shr3 k (by omega_using [hk]), Pub.ofNat_shl3, Pub.ofNat_shl1,
     hdrBytes]
   refine ⟨?_, by simp [off, slot, hdrBytes]⟩
   rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.ofNat_add_ofNat]
@@ -86,14 +86,14 @@ theorem sep_of_disjoint {D S : Addr} {L Z : Nat} (h : (⟨D, L⟩ : Region).Disj
     ∀ i < L, ∀ x, ofs S x < Z → off D i ≠ x := by
   intro i hi x hx e
   subst e
-  refine h _ (Offset.contains_base _ (show i + 1 ≤ L by omega) (by omega)) ?_
+  refine h _ (Offset.contains_base _ (show i + 1 ≤ L by omega_using [hi]) (by omega_using [hL, hi])) ?_
   show (off D i - S).toNat + 1 ≤ Z
   exact Nat.succ_le_of_lt hx
 
 /-- A buffer's bytes are readable. -/
 theorem rd_of_mem {s : State} {D : Addr} {L : Nat} (h : (⟨D, L⟩ : Region) ∈ s.rd) (hL : L ≤ 2 ^ 64) :
     ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1 :=
-  fun i hi => ⟨_, List.mem_append_left _ h, Offset.contains_base _ (by omega) (by omega)⟩
+  fun i hi => ⟨_, List.mem_append_left _ h, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hL, hi])⟩
 
 /-- Bytes apart from the scratch buffer are kept by a write to its saved words. -/
 theorem bytes_frame {m m' : Mem} {D S : Addr} {L Z : Nat} (hf : Frame [savR S] m m')
@@ -104,8 +104,8 @@ theorem bytes_frame {m m' : Mem} {D S : Addr} {L Z : Nat} (hf : Frame [savR S] m
   rw [List.mem_singleton] at hr
   subst hr
   have hi := List.mem_range.mp hi
-  exact h (D + BitVec.ofNat 64 i) (Offset.contains_base _ (show i + 1 ≤ L by omega) (by omega))
-    ((Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega)) _ hc)
+  exact h (D + BitVec.ofNat 64 i) (Offset.contains_base _ (show i + 1 ≤ L by omega_using [hi]) (by omega_using [hL, hi]))
+    ((Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega_using [hZ])) _ hc)
 
 theorem pres_not_written : ∀ r ∈ preserved, (∀ i < 18, r ≠ Impl.Ffdh.PPC64LE.Domain.saved i) →
     r ∉ ([.r23] : List Reg) ++ setupRegs ++ ([.r0, .r6, .r12, .r14, .r15, .r16, .r17, .r18] : List Reg) ++
@@ -133,19 +133,19 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
   generalize hZd : (s.gpr .r9).toNat * 8 = Z at hwr dDS dYS nwS
   rw [hyl] at hrd dYS nwY
   have hLk : 2 * k ≤ L ∧ L ≤ 3 * k := by
-    simp only [Spec.Ffdh.domainLenValid] at hL; omega
-  have hZ256 : 256 ≤ Z := by omega
+    simp only [Spec.Ffdh.domainLenValid] at hL; omega_using [hL]
+  have hZ256 : 256 ≤ Z := by omega_using [hsl, hZd]
   generalize hwd : (k + 7) / 8 = w
-  have hw4 : 4 ≤ w := by omega
-  have hw' : w ≤ 128 := by omega
+  have hw4 : 4 ≤ w := by omega_using [hk, hwd]
+  have hw' : w ≤ 128 := by omega_using [hk', hwd]
   have hZw : slot w 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hwd, hk', hk]
   have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
   have hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
-    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega) (by omega)⟩
-  have sepD := sep_of_disjoint dDS (by omega)
-  have sepY := sep_of_disjoint dYS (by omega)
-  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega)
-  have rdY := rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega)
+    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega_using [hZ256, hi]) (by omega_using [hi])⟩
+  have sepD := sep_of_disjoint dDS (by omega_using [hLd])
+  have sepY := sep_of_disjoint dYS (by omega_using [hkd])
+  have rdD := rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega_using [hLd])
+  have rdY := rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega_using [hkd])
   unfold checkPublic
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
@@ -160,15 +160,15 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
   have k12 := k1.trans k2
   have e2 : Env s₂ S Z w := ⟨hs.congr k12.wr, a10, a29, a11, a31, hw4, hw', hZw⟩
   have hbD : ∀ n ≤ L, Spec.Rsa.bytesAt s₂.mem D n = Spec.Rsa.bytesAt s.mem D n := fun n hn => by
-    rw [m2]; exact bytes_frame hfr₁ (fun x h1 h2 => dDS x (by simp only [Region.Contains] at h1 ⊢; omega) h2)
-      (by omega) hZ256
+    rw [m2]; exact bytes_frame hfr₁ (fun x h1 h2 => dDS x (by simp only [Region.Contains] at h1 ⊢; omega_using [hn, h1]) h2)
+      (by omega_using [hLd, hn]) hZ256
   have hbY : Spec.Rsa.bytesAt s₂.mem Y k = Spec.Rsa.bytesAt s.mem Y k := by
-    rw [m2]; exact bytes_frame hfr₁ dYS (by omega) hZ256
+    rw [m2]; exact bytes_frame hfr₁ dYS (by omega_using [hkd]) hZ256
   have g23 : s₂.gpr .r23 = S := (k2.gpr .r23 (by decide)).trans h23₁
   refine WP.seq (WP.mono (loadP_ok e2 a21 a28 hwd.symm hk hk' (fun i hi => by
-      rw [k12.rd, k12.wr]; exact rdD i (by omega)) (fun i hi => sepD i (by omega)))
+      rw [k12.rd, k12.wr]; exact rdD i (by omega_using [hLk, hi])) (fun i hi => sepD i (by omega_using [hLk, hi])))
     fun s₃ ⟨⟨p3, c3, b3⟩, k3⟩ => ?_)
-  rw [hbD k (by omega)] at p3 c3
+  rw [hbD k (by omega_using [hLk])] at p3 c3
   generalize hp : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D k) = p at p3 c3
   have e3 : Env s₃ S Z w := e2.keep k3 (by decide)
   have k13 := k12.trans k3
@@ -177,14 +177,14 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
   have hbQ₃ : L = 3 * k → Spec.Rsa.bytesAt s₃.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k :=
       fun h3k => by
     have sq : ∀ i < k, ∀ x, ofs S x < Z → off (off D (2 * k)) i ≠ x := fun i hi => by
-      rw [off_off']; exact sepD _ (by omega)
+      rw [off_off']; exact sepD _ (by omega_using [h3k, hi])
     rw [b3.bytesAt hZw sq]
-    have := hbD (3 * k) (by omega)
+    have := hbD (3 * k) (by omega_using [h3k])
     simp only [Spec.Rsa.bytesAt] at this ⊢
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
     have e := congrArg (fun l => l[2 * k + i]?) this
-    simp only [List.getElem?_map, List.getElem?_range (show 2 * k + i < 3 * k by omega), Option.map_some,
+    simp only [List.getElem?_map, List.getElem?_range (show 2 * k + i < 3 * k by omega_using [hi]), Option.map_some,
       Option.some.injEq] at e
     simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact e
@@ -202,11 +202,11 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
       refine WP.mono (checkY_ok (D := D) (Y := Y) (L := L) e3 ((k3.gpr .r23 (by decide)).trans g23)
         ((k3.gpr .r21 (by decide)).trans a21) ((k3.gpr .r26 (by decide)).trans a26)
         ((k3.gpr .r27 (by decide)).trans a27) ((k3.gpr .r28 (by decide)).trans a28) hwd.symm hk hk' hLk.2
-        (by rw [p3]; omega) (by rw [p3]; exact hv'.1.1.1)
-        (by rw [p3]; exact top_of_valid hv (by omega) (by omega))
+        (by rw [p3]; omega_using [hv']) (by rw [p3]; exact hv'.1.1.1)
+        (by rw [p3]; exact top_of_valid hv (by omega_using [hwd]) (by omega_using [hw4]))
         (fun i hi => by rw [k13.rd, k13.wr]; exact rdY i hi) sepY
-        (fun _ i hi => by rw [k13.rd, k13.wr, off_off']; exact rdD _ (by omega))
-        (fun _ i hi => by rw [off_off']; exact sepD _ (by omega)))
+        (fun _ i hi => by rw [k13.rd, k13.wr, off_off']; exact rdD _ (by omega_arith))
+        (fun _ i hi => by rw [off_off']; exact sepD _ (by omega_arith)))
         fun t ⟨⟨t3, bt⟩, kt⟩ => ⟨fun _ => ?_, bt, kt.mono (by decide)⟩
       rw [t3, hbY₃, p3]
       congr 1
@@ -221,10 +221,10 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
   have hsav : ∀ i < 18, t₄.mem.readW (off (savW S) (8 * i)) 64 = s.gpr (Impl.Ffdh.PPC64LE.Domain.saved i) :=
       fun i hi => by
     have ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
-    have e0 : slot w 0 = 256 := by rw [slot_eq]; omega
+    have e0 : slot w 0 = 256 := by rw [slot_eq]; omega_using []
     rw [← hS.saved i hi, hSd, ea]
     show Mont.word t₄.mem S (112 + 8 * i) = Mont.word s₁.mem S (112 + 8 * i)
-    rw [Outside.word b4 (by omega) (by omega), Outside.word b3 (by omega) (by omega), m2]
+    rw [Outside.word b4 (by omega_using [hi, e0]) (by omega_using [hi]), Outside.word b3 (by omega_using [hi, e0]) (by omega_using [hi]), m2]
   refine WP.mono (restore_ok t₄ ((k4.gpr .r23 (by decide)).trans ((k3.gpr .r23 (by decide)).trans g23))
     (by rw [k14.wr]; exact hin) hsav) fun u ⟨urs, uot, um, _, _, usp, ulr⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [usp, k14.sp], by rw [ulr, k14.lr]⟩, fun hdv => ?_⟩
@@ -242,7 +242,7 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
     refine and_congr Iff.rfl ?_
     simp only [Spec.Ffdh.domainLenValid] at hL
     rcases hL with rfl | rfl
-    · rw [Proof.Ffdh.domainOf_q2 _ _ (by omega)]
+    · rw [Proof.Ffdh.domainOf_q2 _ _ (by omega_using [hk])]
       simp only [reduceCtorEq, false_imp_iff, imp_true_iff, iff_true]
       intro h; omega
     · rw [Proof.Ffdh.domainOf_q3]

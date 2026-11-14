@@ -54,8 +54,8 @@ theorem candidateFirst_state {p : CandidatePublic} {s : State} (h : CandidateInp
   have hdr (d : Nat) (hd : d + 8 ≤ 256) : word t.mem p.B d = word s.mem p.B d := by
     apply f.word_eq
     · simp only [List.mem_singleton]; rintro r rfl
-      left; simp only [slot, hdrBytes]; omega
-    · have := h.x.ws.h256; have := h.x.ws.scr.nowrap; omega
+      left; simp only [slot, hdrBytes]; omega_using [hd]
+    · have := h.x.ws.h256; have := h.x.ws.scr.nowrap; omega_using [hd]
   refine ⟨⟨ht, (hdr 144 (by decide)).trans h.q.pointer, (hdr 152 (by decide)).trans h.q.length,
     h.q.source.congrK ?_ hk, h.q.positive, h.q.fits⟩, hx, h.qPositive, h.qFits⟩
   intro a ha
@@ -74,8 +74,8 @@ theorem candidateSecond_state {p : CandidatePublic} {s : State} (h : CandidateFi
   refine ⟨ht, ?_, hq, h.qPositive, h.qFits⟩
   rw [f.wv_eq (by
     simp only [List.mem_singleton]; rintro r rfl
-    left; simp only [slot, hdrBytes]; omega)
-    (by have := hw.sl (by decide : 0 < 16); have := hw.scr.nowrap; omega)]
+    left; simp only [slot, hdrBytes]; omega_using [])
+    (by have := hw.sl (by decide : 0 < 16); have := hw.scr.nowrap; omega_arith)]
   exact h.x
 
 theorem candidateDouble_state {p : CandidatePublic} {s : State} (h : CandidateLoaded p s) :
@@ -83,15 +83,15 @@ theorem candidateDouble_state {p : CandidatePublic} {s : State} (h : CandidateLo
   refine WP.mono (doubleArray_ok h.ws (by decide : 2 < 16) (by rw [h.q]; exact h.qFits))
     fun t ⟨hq, ho, hk⟩ => ?_
   have f : Frm p.B [ar p.w 2] s.mem t.mem :=
-    Frm.of_outside (ho.mono (n' := 8 * (p.w + 2)) (Nat.le_refl _) (by omega)) (by simp [ar])
+    Frm.of_outside (ho.mono (n' := 8 * (p.w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [ar])
   have ht := h.ws.congr f (fun r hr => by
     rcases List.mem_singleton.mp hr with rfl; exact Mut.ofSlot _ _ _) hk (by decide)
   refine ⟨ht, ?_, ?_, h.qPositive⟩
   · change wv t.mem p.B (slot p.w 0) p.w = Spec.Rsa.os2ip p.xb
     rw [f.wv_eq (by
       simp only [List.mem_singleton]; rintro r rfl
-      left; simp only [slot, hdrBytes]; omega)
-      (by have := h.ws.sl (by decide : 0 < 16); have := h.ws.scr.nowrap; omega)]
+      left; simp only [slot, hdrBytes]; omega_using [])
+      (by have := h.ws.sl (by decide : 0 < 16); have := h.ws.scr.nowrap; omega_arith)]
     exact h.x
   · change wv t.mem p.B (slot p.w 2) p.w = 2 * Spec.Rsa.os2ip p.qb
     rw [hq, h.q]

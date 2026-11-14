@@ -105,7 +105,7 @@ theorem parameterInit_ok (s : State) {base : BitVec 32}
   rintro u ⟨⟨low, _⟩, restU⟩
   by_cases lower : (s.gpr .r1).toNat < 512
   · exact WP.ite true (by simp only [eval, low, show (512 : BitVec 16).toNat = 512 from rfl,
-      lower, decide_true]) (fun _ => clear u restU (by omega)) (by intro h; cases h)
+      lower, decide_true]) (fun _ => clear u restU (by omega_using [lower])) (by intro h; cases h)
   · refine WP.ite false (by simp only [eval, low, show (512 : BitVec 16).toNat = 512 from rfl,
       lower, decide_false]) (by intro h; cases h) (fun _ => ?_)
     rw [WP.seq_iff]
@@ -116,13 +116,13 @@ theorem parameterInit_ok (s : State) {base : BitVec 32}
     by_cases upper : (s.gpr .r1).toNat < 8193
     · refine WP.ite false (by simp only [eval, high, show (8193 : BitVec 16).toNat = 8193 from rfl,
         upper, decide_true, Bool.not_true]) (by intro h; cases h) (fun _ => ?_)
-      have lowV : 512 ≤ (v.gpr .r1).toNat := by rw [rest.gpr .r1 (by simp)]; omega
-      have highV : (v.gpr .r1).toNat ≤ 8192 := by rw [rest.gpr .r1 (by simp)]; omega
+      have lowV : 512 ≤ (v.gpr .r1).toNat := by rw [rest.gpr .r1 (by simp)]; omega_using [lower]
+      have highV : (v.gpr .r1).toNat ≤ 8192 := by rw [rest.gpr .r1 (by simp)]; omega_using [upper]
       have done := parameterGenerator_ok v (h.congr rest.wr)
         ((rest.gpr .r0 (by simp)).trans ptr) lowV highV
       rw [rest.gpr .r1 (by simp), rest.gpr .r2 (by simp)] at done
       exact done
     · exact WP.ite true (by simp only [eval, high, show (8193 : BitVec 16).toNat = 8193 from rfl,
-        upper, decide_false, Bool.not_false]) (fun _ => clear v rest (by omega)) (by intro h; cases h)
+        upper, decide_false, Bool.not_false]) (fun _ => clear v rest (by omega_using [upper])) (by intro h; cases h)
 
 end VG.Proof.Ffdh.Arm

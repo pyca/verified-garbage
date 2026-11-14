@@ -30,7 +30,7 @@ def sha384 : PssHash where
   H := ⟨Proof.Pbkdf2.Md.Arm.sha384Md, Impl.Sha512.Arm.Stream.params.len⟩
   ok := Proof.Pbkdf2.Md.Arm.sha384MdOK
   len := Proof.Sha512.Arm.Stream.Finalize.shape.len
-  lenAll _ hn := show _ < 2 ^ 64 by omega
+  lenAll _ hn := show _ < 2 ^ 64 by omega_using [hn]
   G := Spec.Mgf1.sha384
   hash _ := rfl
   glen := rfl

@@ -45,11 +45,11 @@ abbrev Xf (D : Nat) (P : EP) (σ : State) (m : Mem) : Prop :=
 
 theorem out_slot {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     (slotR P.lay d).Disjoint P.OUT :=
-  hi.ok.stk_fr (R := P.OUT) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 56; unfold frameBytes at hd ⊢; omega)
+  hi.ok.stk_fr (R := P.OUT) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 56; unfold frameBytes at hd ⊢; omega_using [hd])
 
 theorem ml_slot {P : EP} {σ : State} (hi : In P σ) {d : Nat} (hd : d + 4 ≤ frameBytes) :
     (slotR P.lay d).Disjoint P.ML :=
-  hi.ok.stk_fr (R := P.ML) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 56; unfold frameBytes at hd ⊢; omega)
+  hi.ok.stk_fr (R := P.ML) (.inr (by simp)) (d := d) (n := 4) (by show d + 4 ≤ frameBytes + 56; unfold frameBytes at hd ⊢; omega_using [hd])
 
 theorem out_ml {P : EP} {σ : State} (hi : In P σ) : P.OUT.Disjoint P.ML := by
   have := hi.ok.wrw
@@ -101,7 +101,7 @@ theorem fail_vp (h g : OHash) (P : EP) :
       prun [sp0, ld, mw, hc.st.sp, a0, r0, v0, a4, r4, v4, arg_lt]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, t0, t2, tl⟩ =>
       ⟨⟨hc.regs rd wr sp m, hi, nf, m ▸ hr, hk⟩, t0, t2, tl⟩
-  refine VP.seq ((zero_vp hb (by omega) (Inv := Xf h.H.D P)
+  refine VP.seq ((zero_vp hb (by omega_using [hK]) (Inv := Xf h.H.D P)
     fun σ m m' hm hf => ⟨hm.1, hm.2.1, slot_keep hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact out_slot hm.1 (by decide)) hm.2.2.1, hm.2.2.2⟩).mono
     (fun σ s ⟨⟨hc, hm⟩, r0, r2, lr⟩ => ⟨hc, hm, r0, r2, lr⟩) fun _ _ h => h) ?_
@@ -137,6 +137,6 @@ theorem fail_vp (h g : OHash) (P : EP) :
   rw [m, r0]
   have ec : (ctB P σ).length = P.nB.length := by rw [ctB_length, nB_length hi]
   rw [Res, Proof.RsaOaep.decrypt_eq ec, rV]
-  exact decOut_fail hk (by rw [h.glen]; omega) (Proof.RsaOaep.out_zero hz) hml
+  exact decOut_fail hk (by rw [h.glen]; omega_using [nf]) (Proof.RsaOaep.out_zero hz) hml
 
 end VG.Proof.RsaOaep.Arm.Dec

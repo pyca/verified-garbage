@@ -167,7 +167,7 @@ theorem nonce_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     WP isa (nonceCode bs fs v) t fun t' => Ctx L g mx m₀ t' ∧ NonceReady L E m₀ t' := by
   have hm : Spec.Ed25519.bytesAt t.mem L.msg L.len.toNat = Spec.Ed25519.bytesAt m₀ L.msg L.len.toNat :=
     hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (Nat.le_of_lt L.len.isLt)
-  refine WP.seq (WP.mono (hashNonce_ok v hL hc (by omega)) fun u ⟨hu, hd, hf⟩ => ?_)
+  refine WP.seq (WP.mono (hashNonce_ok v hL hc (by omega_using [hlen])) fun u ⟨hu, hd, hf⟩ => ?_)
   rw [hs.prefixBytes, hm] at hd
   have hsu : Spec.Ed25519.bytesAt u.mem (L.B + BitVec.ofNat 64 16) 32 = scalar E :=
     (hash_stk_bytes hL hf (d := 16) (n := 32) (by decide) (by decide)).trans hs.scalar
@@ -295,20 +295,20 @@ theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 64 :=
   have nm := h.nm
   have nc := h.nc
   by_cases hz : L.len.toNat = 0
-  · omega
+  · omega_using [hz]
   by_cases hp : L.msg ≤ L.scr
   · have hn : ¬ L.MSG.Contains L.scr 1 := fun hx => hd _ hx (by simp [Region.Contains])
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp] at hn
     have hp' : L.msg.toNat ≤ L.scr.toNat := hp
-    omega
+    omega_using [nc, hn]
   · have hp' : L.scr ≤ L.msg := by
       change L.scr.toNat ≤ L.msg.toNat
       change ¬ L.msg.toNat ≤ L.scr.toNat at hp
-      omega
-    have hn : ¬ L.SCR.Contains L.msg 1 := fun hx => hd _ (by simp [Region.Contains]; omega) hx
+      omega_using [hp]
+    have hn : ¬ L.SCR.Contains L.msg 1 := fun hx => hd _ (by simp [Region.Contains]; omega_using [hz]) hx
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp'] at hn
     have hp'' : L.scr.toNat ≤ L.msg.toNat := hp'
-    omega
+    omega_using [nm, hn]
 
 /-- Complete signing's local contract, reading `n` bytes at `rsi` (the seed, or its digest),
 with the condition `key` on the cached values and the postcondition `post`. -/
@@ -403,18 +403,18 @@ theorem push_base (sp : Addr) :
 
 theorem push_slot (sp : Addr) (j : Nat) (hj : j < 6) :
     sp - BitVec.ofNat 64 (8 * (j + 1)) = sp - BitVec.ofNat 64 264 + BitVec.ofNat 64 (256 - 8 * j) := by
-  have : 8 * (j + 1) < 2 ^ 64 := by omega
+  have : 8 * (j + 1) < 2 ^ 64 := by omega_using [hj]
   bv_omega
 
 theorem push_ctx {s : State} (h : (signLocalWith n key post).pre s) :
     Ctx (lay n s) s.gpr s.mxcsr s.mem (pushed pushRs s) := by
-  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 31 ≤ _; have := h.1; omega
+  have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 31 ≤ _; have := h.1; omega_using [this]
   obtain ⟨hf, hw⟩ := pushRegs_mem s pushRs (by decide) hn
   have hw' : ∀ j (hj : j < 6), (pushed pushRs s).mem.readW
-      ((lay n s).B + BitVec.ofNat 64 (256 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 31; omega)) := fun j hj => by
-    rw [← hw j (by show j < 31; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
+      ((lay n s).B + BitVec.ofNat 64 (256 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 31; omega_using [hj])) := fun j hj => by
+    rw [← hw j (by show j < 31; omega_using [hj])]; simp only [lay]; rw [push_slot _ j hj]; rfl
   refine ⟨by rw [pushed_rd, h.2.1]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr, by rw [pushed_mxcsr],
-    hw' 5 (by omega), hw' 4 (by omega), hw' 3 (by omega), hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_,
+    hw' 5 (by omega_using []), hw' 4 (by omega_using []), hw' 3 (by omega_using []), hw' 2 (by omega_using []), hw' 1 (by omega_using []), hw' 0 (by omega_using []), ?_,
     congrFun (PublicKey.pushed_syms_eq s pushRs) _, h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   · rw [pushed_wr, h.2.2.1]; simp only [show pushRs.length = 31 from rfl, lay]; rw [push_base]
   · rw [pushed_rsp]; simp only [show pushRs.length = 31 from rfl, lay]; rw [push_base]
@@ -423,7 +423,7 @@ theorem push_ctx {s : State} (h : (signLocalWith n key post).pre s) :
     refine ⟨(lay n s).STK, by simp, ?_⟩
     simp only [show pushRs.length = 31 from rfl]
     rw [push_base]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [])
 
 end VG.Proof.Ed25519.X86_64.SignCached
 end
@@ -536,10 +536,10 @@ theorem init_access (L : Lay) (_hL : L.Ok) : Access L initRd (initWr L) := by
   constructor
   · intro r hr
     simp only [initRd, initWr, List.nil_append, List.mem_singleton] at hr; subst hr
-    exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
   · intro r hr
     simp only [initWr, List.mem_singleton] at hr; subst hr
-    exact .inr (.inr (within_base _ (by omega)))
+    exact .inr (.inr (within_base _ (by omega_using [])))
 
 theorem upd_access (L : Lay) (p : Addr) (n : BitVec 64) (hi : Input L ⟨p, n.toNat⟩) :
     Access L [⟨p, n.toNat⟩] (updWr L) := by
@@ -548,28 +548,28 @@ theorem upd_access (L : Lay) (p : Addr) (n : BitVec 64) (hi : Input L ⟨p, n.to
     simp only [updWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hi.cover
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
+    · exact ⟨L.SCR, by simp, within_off _ (by omega_using [])⟩
   · intro r hr
     simp only [updWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inr (.inr (within_base _ (by omega)))
-    · exact .inr (.inr (within_off _ (by omega)))
+    · exact .inr (.inr (within_base _ (by omega_using [])))
+    · exact .inr (.inr (within_off _ (by omega_using [])))
 
 theorem fin_access (L : Lay) (_hL : L.Ok) : Access L [] (finWr L) := by
   constructor
   · intro r hr
     simp only [finWr, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
     · exact ⟨L.FR, by simp, 128, by rw [add_add], by show 128 + 64 ≤ 248; decide⟩
-    · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_off _ (by omega_using [])⟩
   · intro r hr
     simp only [finWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inr (.inr (within_base _ (by omega)))
+    · exact .inr (.inr (within_base _ (by omega_using [])))
     · exact .inl ⟨128, by rw [add_add], by show 128 + 64 ≤ 192; decide⟩
-    · exact .inr (.inr (within_off _ (by omega)))
+    · exact .inr (.inr (within_off _ (by omega_using [])))
 
 theorem reduce_access (out : Nat) (ho : out + 32 ≤ 128) (L : Lay) (_hL : L.Ok) :
     Access L (reduceRd L) (reduceWr L out) := by
@@ -578,13 +578,13 @@ theorem reduce_access (out : Nat) (ho : out + 32 ≤ 128) (L : Lay) (_hL : L.Ok)
     simp only [reduceRd, reduceWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨L.FR, by simp, 128, by rw [add_add], by show 128 + 64 ≤ 248; decide⟩
-    · exact ⟨L.FR, by simp, out, by rw [add_add], by change out + 32 ≤ 248; omega⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.FR, by simp, out, by rw [add_add], by change out + 32 ≤ 248; omega_using [ho]⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
   · intro r hr
     simp only [reduceWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inl ⟨out, by rw [add_add], by change out + 32 ≤ 192; omega⟩
-    · exact .inr (.inr (within_base _ (by omega)))
+    · exact .inl ⟨out, by rw [add_add], by change out + 32 ≤ 192; omega_using [ho]⟩
+    · exact .inr (.inr (within_base _ (by omega_using [])))
 
 theorem base_access (L : Lay) (_hL : L.Ok) : Access L (baseRd L) (baseWr L) := ⟨base_sub, base_wsub⟩
 
@@ -595,14 +595,14 @@ theorem mul_access (L : Lay) (_hL : L.Ok) : Access L (mulRd L) (mulWr L) := by
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨L.FR, by simp, 64, by rw [add_add], by show 64 + 32 ≤ 248; decide⟩
     · exact ⟨L.FR, by simp, 96, by rw [add_add], by show 96 + 32 ≤ 248; decide⟩
-    · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.OUT, by simp, within_off _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.FR, by simp, within_base _ (by omega_using [])⟩
+    · exact ⟨L.OUT, by simp, within_off _ (by omega_using [])⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
   · intro r hr
     simp only [mulWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inr (.inl (within_off _ (by omega)))
-    · exact .inr (.inr (within_base _ (by omega)))
+    · exact .inr (.inl (within_off _ (by omega_using [])))
+    · exact .inr (.inr (within_base _ (by omega_using [])))
 
 end VG.Proof.Ed25519.X86_64.SignCached
 end
@@ -620,12 +620,12 @@ open VG.Proof.Ed25519.X86_64.PublicKey
 open VG.Proof.Sha512.X86_64 (Compress)
 
 theorem init_ct : RelCT isa (Two fun _ _ _ => True)
-    (Impl.Ed25519.X86_64.callWith initArgs Spec.Sha512.init512Api.name
+    (Impl.Ed25519.X86_64.callWith initArgs "vg_sha512_init_core"
       (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block initArgs) (Two fun L _ => InitArgs L) :=
     two_blk (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (initArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have c := two_callP (n := Spec.Sha512.init512Api.name) (Φ := fun L _ => InitArgs L)
+  have c := two_callP (n := "vg_sha512_init_core") (Φ := fun L _ => InitArgs L)
     (Proof.Sha512.X86_64.Stream.init_verified _).1 (Proof.Sha512.X86_64.Stream.init_verified _).2.1
     (nosp_init _) (by decide) (fun _ => initRd) initWr (fun _ _ _ _ _ hL hc ha => init_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ _ _ _ a₁ a₂ =>
@@ -636,7 +636,7 @@ theorem init_ct : RelCT isa (Two fun _ _ _ => True)
 theorem upd_ct (v : Compress) (count : Lay → BitVec 64) (p : Lay → Addr) (n : Lay → BitVec 64)
     (hi : ∀ L, L.Ok → Input L ⟨p L, (n L).toNat⟩) :
     RelCT isa (Two fun L _ => UpdArgs L (count L) (p L) (n L))
-      (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee))
+      (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.updateOwn v.callee))
       (Two fun _ _ _ => True) := by
   exact two_callP (upd_verified v).1 (upd_verified v).2.1 (upd_nosp v) (upd_depth v)
     (fun L => [⟨p L, (n L).toNat⟩]) updWr
@@ -652,7 +652,7 @@ theorem finalize_ct (v : Compress) (prefixLen : Nat) (hp : prefixLen < 2 ^ 31) (
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rsp]) (.block (finalizeArgs prefixLen withMessage)) hint).isSome = true) : RelCT isa (Two fun _ _ _ => True)
     (Impl.Ed25519.X86_64.callWith (finalizeArgs prefixLen withMessage) ("vg_sha512_finalize_scratch" ++ v.suffix)
-      (Impl.Sha512.X86_64.Stream.finalize v.callee)) (Two fun _ _ _ => True) := by
+      (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee)) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block (finalizeArgs prefixLen withMessage)) (Two fun L _ => FinArgs L (if withMessage then L.len + BitVec.ofNat 64 prefixLen else BitVec.ofNat 64 prefixLen)) :=
     two_blk ht fun _ _ _ _ _ _ hc _ =>
       WP.mono (finalizeArgs_ok hc prefixLen hp withMessage) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩

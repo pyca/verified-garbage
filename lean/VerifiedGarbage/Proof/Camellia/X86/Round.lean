@@ -1,9 +1,102 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Linear
-public import VerifiedGarbage.Proof.Camellia.X86.Sbox
+public import VerifiedGarbage.Impl.Camellia.X86.Sbox
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Camellia.Bitsliced
+
+/-! ### `Camellia.X86.Sbox`, which only this module used -/
+
+section
+
+/-!
+# The bitsliced Camellia S-box on x86 (32-bit)
+
+As on ARMv7 (`Proof/Camellia/Arm/Sbox.lean`), with the planes in slots: the
+kernel evaluates `sboxCode` once on truth tables of the 256 inputs
+(`Bitslice.table`) and compares the result with the specification's
+`SBOX1`. `sbox_ok` then gives, at every bit position `p`, `SBOX1` of the
+byte formed by bit `p` of the planes in slots `0 … 7`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.X86
+
+open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.Camellia.X86
+open VG.Impl.Aes.X86 (sb tmpRegs)
+open VG.Proof.Camellia
+open VG.Proof.Camellia.W32 (bsByte getLsbD_bsByte)
+
+/-- The S-box's memory: its planes and spill slots, at `edi`. -/
+def sboxCfg : Cfg := { base := sb, slots := 32, ext := sb, exts := 0 }
+
+/-- Slot `j` of the scratch buffer. -/
+abbrev slotW (s : State) (j : Nat) : BitVec 32 := s.mem.readW (wordAddr (s.gpr sb) j) 32
+
+def sboxEnv : Env Nat :=
+  { reg := fun _ => none, slot := fun k => if k < 8 then some (inT k) else none }
+
+def sboxPost (e : Env Nat) : Bool :=
+  (List.range 8).all fun j => e.slot j == some (sbox1T j)
+
+theorem sbox_check :
+    check (table 32 256) sboxCfg (fun _ => none) sboxCode sboxEnv sboxPost = true := by
+  lit_decide
+
+/-- The registers the layers may write. -/
+theorem not_tmp (r : Reg) (hr : r ∉ tmpRegs) : r ∈ [Reg.esp, .esi, .edi] := by
+  revert hr; cases r <;> decide
+
+/-- `SBOX1`, at every bit position of the planes in slots `0 … 7`. -/
+theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa sboxCode s = some s' ∧
+      (∀ j < 8, ∀ p < 32,
+        (slotW s' j).getLsbD p = (Spec.Camellia.sbox1 (bsByte (slotW s) p)).getLsbD j) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion sboxCfg s] s.mem s'.mem := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
+  have hout : ∀ j < 8, e'.slot j = some (sbox1T j) := by
+    intro j hj
+    have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
+    simpa using this
+  have key : ∀ p < 32, ∃ s', runBlock isa sboxCode s = some s' ∧
+      Post (TableRel p (bsByte (slotW s) p).toNat) sboxCfg (fun _ => none) e' s s'
+        (fun r => (sboxCode.all fun i => i.dst != some r) = false) := by
+    intro p hp
+    have hc := (bsByte (slotW s) p).isLt
+    refine run (table_sound hp hc) hok ⟨(fun r a h => by cases h), fun k a _ h => ?_,
+      (fun _ _ _ h => by cases h)⟩ he
+    simp only [sboxEnv] at h
+    split at h
+    · rename_i hk8
+      cases h
+      simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
+        BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8, slotW, sboxCfg]
+    · cases h
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
+  refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r hr => p₀.other r ?_, p₀.frame⟩
+  · obtain ⟨s'', hs'', p₁⟩ := key p hp
+    obtain rfl := run_unique hs'' hs'
+    have hc := (bsByte (slotW s) p).isLt
+    have := p₁.rel.slot j _ (by simp [sboxCfg]; omega_using [hj]) (hout j hj)
+    have hb : s''.gpr sb = s.gpr sb := p₁.base
+    simp only [TableRel, sboxCfg, hb] at this
+    rw [slotW, hb, ← this, testBit_sbox1T hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · have h : ([Reg.esp, .esi, .edi].all fun r => sboxCode.all fun i => i.dst != some r) = true := by
+      decide +kernel
+    simp [List.all_eq_true.mp h r (not_tmp r hr)]
+
+end VG.Proof.Camellia.X86
+
+end
+
+end
+
 
 /-!
 # A round of bitsliced Camellia on x86 (32-bit)
@@ -38,9 +131,9 @@ theorem keep_word {W : Nat → BitVec 32} {i : Nat} {v v' : BitVec 32} (hW : W i
     rw [h p hp, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp, hW]
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tailSlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tailSlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
-  fit := by have := h.fit; simp [sboxCfg, layerCfg, tailSlot] at this ⊢; omega
+  fit := by have := h.fit; simp [sboxCfg, layerCfg, tailSlot] at this ⊢; omega_using [this]
   sep k _ j hj := by simp [sboxCfg] at hj
 
 theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
@@ -63,13 +156,13 @@ theorem runBlock_app (a b : List Instr) (s : State) :
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨b.setWidth 64, 4 * n⟩] m m')
     (hk : n ≤ k) (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega)
+  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_using [hfit])
   rw [e]
   exact hf.readW (r := ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have : (b.setWidth 64).toNat = b.toNat := by
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
-      exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide)
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
+      exact VG.Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hfit])) (by decide)
 
 /-- A frame of the slots keeps the external words. -/
 theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [slotRegion c s] s.mem m')
@@ -81,13 +174,13 @@ theorem frame_ext {c : Cfg} {s : State} {m' : Mem} (hok : Ok c s) (hf : Frame [s
   have hfit := hok.fit
   simp only [slotRegion, Region.Contains] at hc
   have hb : ((s.gpr c.base).setWidth 64).toNat = (s.gpr c.base).toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr c.base).isLt; omega)]
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := (s.gpr c.base).isLt; omega_using [])]
   have hi' : i < 4 := by simpa using hi
   generalize hx : wordAddr (s.gpr c.ext) j + BitVec.ofNat 64 i = x at hc
-  have hk : (x - (s.gpr c.base).setWidth 64).toNat / 4 < c.slots := by omega
+  have hk : (x - (s.gpr c.base).setWidth 64).toNat / 4 < c.slots := by omega_using [hc]
   have hsep := hok.sep _ hk j hj x
-  rw [wordAddr, addr_eq (by omega)] at hsep
-  refine hsep ?_ (by rw [← hx, Mem.sub_ofNat_toNat _ (by omega)]; exact hi')
+  rw [wordAddr, addr_eq (by omega_using [hfit, hc])] at hsep
+  refine hsep ?_ (by rw [← hx, Mem.sub_ofNat_toNat _ (by omega_using [hi])]; exact hi')
   generalize (s.gpr c.base).setWidth 64 = B at *
   bv_omega_arith
 
@@ -104,8 +197,8 @@ theorem xorBits_sel (W YL SR : Nat → BitVec 32) (hS : ∀ i < 8, W i = SR i) (
     congr 1
     simp only [selG, W32.ySel]
     split
-    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hY j hj]
-    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hS _ (W32.outSrc_lt hj)]
+    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_arith), hY j hj]
+    · rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ (W32.outSrc_lt hj)]
 
 /-- The two rounds of a pair: `D2 ^= F(D1, k)` with the first entry at
 `kp`, `D1 ^= F(D2, k)` with the second. -/

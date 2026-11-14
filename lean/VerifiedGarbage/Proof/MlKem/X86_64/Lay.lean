@@ -85,9 +85,9 @@ theorem inRegions_sub {X : List Region} {a : Addr} {n off l : Nat} (h : InRegion
   refine ⟨r, hr, ?_⟩
   simp only [Region.Contains] at hc ⊢
   rw [show a + BitVec.ofNat 64 off - r.base = (a - r.base) + BitVec.ofNat 64 off by bv_omega, BitVec.toNat_add,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [hl, hn])]
   have := Nat.mod_le ((a - r.base).toNat + off) (2 ^ 64)
-  omega
+  omega_using [hl, hc]
 
 theorem covers_one {X : List Region} {a : Addr} {l : Nat} (h : InRegions X a l) : Covers [⟨a, l⟩] X := by
   intro a' n' ⟨r0, hr0, hc⟩
@@ -98,7 +98,7 @@ theorem covers_one {X : List Region} {a : Addr} {l : Nat} (h : InRegions X a l) 
   simp only [Region.Contains] at hc hc' ⊢
   rw [show a' - r.base = (a' - a) + (a - r.base) by bv_omega, BitVec.toNat_add]
   have := Nat.mod_le ((a' - a).toNat + (a - r.base).toNat) (2 ^ 64)
-  omega
+  omega_using [hc, hc']
 
 theorem covers_nil {X : List Region} : Covers [] X := fun _ _ ⟨_, h, _⟩ => absurd h List.not_mem_nil
 
@@ -147,7 +147,7 @@ theorem Lay.disj {p q : Ptr} {l k : Nat} (h : sepB (rbs ++ wbs) p l q k = true) 
   have sn := L.small _ hn
   have sm := L.small _ hm
   rcases hs with ⟨e, hw⟩ | ⟨e, hs⟩
-  · exact ((L.dj _ hn _ hm e hw).sub_left (sub_offset' hl (by omega))).sub_right (sub_offset' hk (by omega))
+  · exact ((L.dj _ hn _ hm e hw).sub_left (sub_offset' hl (by omega_using [sn]))).sub_right (sub_offset' hk (by omega_using [sm]))
   · show Region.Disjoint ⟨s.gpr p.1 + _, l⟩ ⟨s.gpr q.1 + _, k⟩
     rw [← e]
     rcases hs with h1 | h2
@@ -164,17 +164,17 @@ theorem Lay.nwp {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : (pa s p)
   have h1 := L.nw _ hn
   have h2 := L.small _ hn
   simp only at h1 h2
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.2) (by omega_using [hl, h2])]
   have := Nat.mod_le ((s.gpr p.1).toNat + p.2) (2 ^ 64)
-  omega
+  omega_using [hl, h1]
 
 theorem Lay.cR {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) : Covers [⟨pa s p, l⟩] (s.rd ++ s.wr) := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  exact covers_one (inRegions_sub (L.rd (p.1, n) hn) hl (by have := L.small _ hn; omega))
+  exact covers_one (inRegions_sub (L.rd (p.1, n) hn) hl (by have := L.small _ hn; omega_using [this]))
 
 theorem Lay.cW {p : Ptr} {l : Nat} (h : inB wbs p l = true) : Covers [⟨pa s p, l⟩] s.wr := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  exact covers_one (inRegions_sub (L.wr (p.1, n) hn) hl (by have := L.small _ (List.mem_append_right _ hn); omega))
+  exact covers_one (inRegions_sub (L.wr (p.1, n) hn) hl (by have := L.small _ (List.mem_append_right _ hn); omega_using [this]))
 
 end
 

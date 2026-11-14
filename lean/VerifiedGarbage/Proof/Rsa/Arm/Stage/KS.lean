@@ -94,7 +94,7 @@ theorem KS.core {js ds : List Nat} {v : Nat} (h : KS P σ A live AW liveW V ls s
   refine ⟨h.bs.of_frame (k.frameS hjs (fun d hd => (hds d hd).1) (hdr_Z sz)) sp rd wr, r8, ?_, ha, haW,
     hsl, hl, hlW, hls⟩
   refine (BitVec.eq_of_toNat_eq ?_).trans h.cnt
-  exact k.slot (e := 16) (by decide) fun d hd => by have := (hds d hd).2.1; omega
+  exact k.slot (e := 16) (by decide) fun d hd => by have := (hds d hd).2.1; omega_using [this]
 
 /-- The arrays read with `w` that a step with `w` words does not write. -/
 theorem KS.arrs_w {js ds : List Nat} (h : KS P σ A live AW liveW V ls s) (k : Keep P.B P.w js ds s.mem t.mem)
@@ -116,7 +116,7 @@ theorem KS.arrs_W {js ds : List Nat} (h : KS P σ A live AW liveW V ls s) (k : K
       simp only [List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hi
       obtain ⟨i', hi', e⟩ := hi
       have := hl j hj i' hi'
-      rcases e with rfl | rfl <;> omega) (fun d hd => (hds d hd).1) fun j hj => fit_w h.sizes (h.live_lt j hj)
+      rcases e with rfl | rfl <;> omega_using [this]) (fun d hd => (hds d hd).1) fun j hj => fit_w h.sizes (h.live_lt j hj)
 
 /-- The header words a step does not write. -/
 theorem KS.sl_keep {js ds : List Nat} {v : Nat} (h : KS P σ A live AW liveW V ls s)

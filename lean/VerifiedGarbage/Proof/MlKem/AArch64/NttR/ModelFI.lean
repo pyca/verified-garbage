@@ -58,7 +58,7 @@ theorem Lfi_succ (W : Nat → BitVec 16) {st : Nat} (hs : 1 ≤ st) (p : Nat) : 
     if p % (2 * fLen st) < fLen st then
       if fRed st p = true then n1W (Lfi W st p + Lfi W st (p + fLen st)) else Lfi W st p + Lfi W st (p + fLen st)
     else mmW (Lfi W st (p - fLen st) - Lfi W st p) (zf st p) (twN (zf st p)) := by
-  obtain ⟨k, rfl⟩ : ∃ k, st = k + 1 := ⟨st - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, st = k + 1 := ⟨st - 1, by omega_using [hs]⟩
   rfl
 
 theorem fPair_iff {st p p' : Nat} (h : fPair st p p' = true) :
@@ -89,9 +89,9 @@ theorem modelFI (W : Nat → BitVec 16) : Model (Lfi W) (Ofi W) fastInvRules := 
     unfold zf
     generalize fLen st = len at hpos hm ⊢
     have h1 : (p + len) % (2 * len) = p % (2 * len) + len := by
-      rw [Nat.add_mod, Nat.mod_eq_of_lt (show len < 2 * len by omega)]
-      exact Nat.mod_eq_of_lt (by omega)
-    rw [ite_eq_right (by omega), Nat.add_sub_cancel]
+      rw [Nat.add_mod, Nat.mod_eq_of_lt (show len < 2 * len by omega_using [hpos])]
+      exact Nat.mod_eq_of_lt (by omega_using [hm])
+    rw [ite_eq_right (by omega_using [h1]), Nat.add_sub_cancel]
 
 /-! ## Tight bounds of the products -/
 
@@ -113,17 +113,17 @@ theorem core_tight {A : Int} {z M : Nat} (hA : -(M : Int) < A) (hA' : A < M) :
   generalize hd : (z : Int) * 65536 - 6658 * C = d at hdz
   have hn : (A * d).natAbs ≤ (M - 1) * dz z := by
     rw [Int.natAbs_mul]
-    exact Nat.mul_le_mul (by omega) (by omega)
+    exact Nat.mul_le_mul (by omega_using [hA, hA']) (by omega_using [hdz])
   generalize hE : (M - 1) * dz z = E at hn ⊢
-  have hQ1 : A * d ≤ E := by omega
-  have hQ2 : -(E : Int) ≤ A * d := by omega
+  have hQ1 : A * d ≤ E := by omega_using [hn]
+  have hQ2 : -(E : Int) ≤ A * d := by omega_using [hn]
   have hX : A * z * 65536 = 6658 * (A * C) + A * d := by rw [← hd]; grind
   have h2 : 2 * A * C = 2 * (A * C) := by grind
   rw [h2]
   generalize A * C = P at hX
   generalize A * d = Q at hQ1 hQ2 hX
   generalize A * (z : Int) = X at hX ⊢
-  omega
+  omega_using [hQ1, hQ2, hX]
 
 /-- `mm_ok` with the bound of the factor: `r = a · z - t · q` is less than
 `mmB M z` in absolute value for `|a| < M`. -/
@@ -176,11 +176,11 @@ theorem mmW_tight {a : BitVec 16} {X : Zq} {M z : Nat} (h : LRep a X M) (hM : M 
   rw [e]
   generalize a * BitVec.ofNat 16 z - T * BitVec.ofNat 16 3329 = r at b1 b2 b3 ⊢
   obtain ⟨k, hk⟩ := Int.dvd_of_emod_eq_zero a3
-  have : a.toInt * z = X.val * z + 3329 * (k * z) := by rw [show a.toInt = X.val + 3329 * k by omega]; grind
+  have : a.toInt * z = X.val * z + 3329 * (k * z) := by rw [show a.toInt = X.val + 3329 * k by omega_using [hk]]; grind
   rw [this] at b3
   generalize a.toInt * z = A at b3
   generalize k * (z : Int) = K at b3
-  omega
+  omega_using [b3]
 
 /-- A lane reduced, with the bound of the lane. -/
 theorem n1W_tight {a : BitVec 16} {X : Zq} {M : Nat} (h : LRep a X M) (hM : M ≤ 32768) :
@@ -256,11 +256,11 @@ theorem Lfi_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) 
     rw [vFi_succ]
     exact (mmW_tight (h p hp) (by decide) (by decide)).mono (bF_ends p hp).2.1
   | st + 2, hs, p, hp => by
-    have ih := Lfi_rep W F h (st + 1) (by omega)
-    rw [Lfi_succ W (by omega), vFi_succ, nttInvL_succ_get F (show st < 7 by omega) hp, ← fLen_eq st (by omega)]
+    have ih := Lfi_rep W F h (st + 1) (by omega_using [hs])
+    rw [Lfi_succ W (by omega_using []), vFi_succ, nttInvL_succ_get F (show st < 7 by omega_using [hs]) hp, ← fLen_eq st (by omega_using [hs])]
     simp only [vFi_succ] at ih
     by_cases hm : p % (2 * fLen (st + 1)) < fLen (st + 1)
-    · obtain ⟨hp', hB, hn⟩ := bF_sum st (by omega) p hp hm
+    · obtain ⟨hp', hB, hn⟩ := bF_sum st (by omega_using [hs]) p hp hm
       rw [ite_eq_left hm, ite_eq_left hm]
       obtain ⟨_, _, l1, -⟩ := gs_lane (z := 0) (ih p hp) (ih _ hp') (by decide) hB
       have e : ((nttInvL st F)[p]! + (nttInvL st F)[p + fLen (st + 1)]!) * 3303 =
@@ -271,10 +271,10 @@ theorem Lfi_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) 
         exact (n1W_tight l1 hB).mono hn
       · rw [ite_eq_right hr] at hn ⊢
         exact l1.mono hn
-    · obtain ⟨hl, hB, hn, hk, hz0, hz⟩ := bF_dif st (by omega) p hp hm
+    · obtain ⟨hl, hB, hn, hk, hz0, hz⟩ := bF_dif st (by omega_using [hs]) p hp hm
       rw [ite_eq_right hm, ite_eq_right hm]
-      obtain ⟨T, hT, -, l2⟩ := gs_lane (z := zf (st + 1) p) (ih p hp) (ih (p - fLen (st + 1)) (by omega))
-        (by unfold zf qN; omega) hB
+      obtain ⟨T, hT, -, l2⟩ := gs_lane (z := zf (st + 1) p) (ih p hp) (ih (p - fLen (st + 1)) (by omega_using [hp]))
+        (by unfold zf qN; omega_using [hz0]) hB
       rw [mmW_eq hT]
       have e : zeta (256 / fLen (st + 1) - 1 - p / (2 * fLen (st + 1))) *
           ((nttInvL st F)[p]! - (nttInvL st F)[p - fLen (st + 1)]!) * 3303 =

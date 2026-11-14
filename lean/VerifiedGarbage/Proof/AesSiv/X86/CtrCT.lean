@@ -119,7 +119,7 @@ theorem ctr_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat}
     CT (fun s => CtrPre C W SP R D n s ∧ Spec.Siv.beNat (bytesAt s.mem (w64 W + BitVec.ofNat 64 cbOff) 16) % 2 ^ 32 <
       2 ^ 31) (ctr v.callee) :=
   CT.seq (J := CtrPre C W SP R D n) ((ctrWhole_ct v L hR).mono fun _ h => h.1)
-    (fun s ⟨h, hlow⟩ => WP.mono (ctrWhole_ok v L hR h.env h.dat h.n32 h.ctx h.rounds h.data h.len rfl (by have := h.n32; omega))
+    (fun s ⟨h, hlow⟩ => WP.mono (ctrWhole_ok v L hR h.env h.dat h.n32 h.ctx h.rounds h.data h.len rfl (by have := h.n32; omega_using [hlow, this]))
       fun s₄ ⟨E₄, rd₄, wr₄, f₄, _⟩ =>
         have sl := fun {o : Nat} (h₁ : 112 ≤ o) (h₂ : o + 4 ≤ 256) => ctrR_slot L h.dat f₄ h₁ h₂
         ⟨E₄, h.dat.of_eq rd₄ wr₄, h.n32, by rw [sl (by decide) (by decide)]; exact h.ctx,

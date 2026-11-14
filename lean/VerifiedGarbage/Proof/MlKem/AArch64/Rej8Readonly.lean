@@ -33,12 +33,12 @@ theorem flatMap_range_getD {α : Type} (f : Nat → List α) {k : Nat} (hf : ∀
     simp only [List.getD_eq_getElem?_getD, List.getElem?_append, hl]
     by_cases h : b < n
     · have : k * b + i < k * n := by
-        have := Nat.mul_le_mul_left k (show b + 1 ≤ n by omega); rw [Nat.mul_succ] at this; omega
+        have := Nat.mul_le_mul_left k (show b + 1 ≤ n by omega_using [h]); rw [Nat.mul_succ] at this; omega_using [hi, this]
       rw [ite_eq_left this, ← List.getD_eq_getElem?_getD, ← List.getD_eq_getElem?_getD]
       exact ih b i h hi
-    · have : b = n := by omega
+    · have : b = n := by omega_using [hb, h]
       subst this
-      rw [ite_eq_right (by omega), show k * b + i - k * b = i by omega]
+      rw [ite_eq_right (by omega_using []), show k * b + i - k * b = i by omega_using []]
 
 /-- An entry of the table, from its blocks of two words: by the list's shape,
 not by evaluating all 512 entries. -/
@@ -56,12 +56,12 @@ theorem TableArtifact.vector {m : Mem} {p : Addr} (h : TableArtifact m p)
     {mask : Nat} (hm : mask<256) :
     m.read (p+BitVec.ofNat 64 (16*mask)) 16=tableVec mask := by
   rw [VG.Proof.MlKem.AArch64.Ntt16.read16_dw]
-  have h0 := h (2*mask) (by omega)
-  have h1 := h (2*mask+1) (by omega)
-  rw [show 8*(2*mask)=16*mask by omega,←Nat.add_zero (2*mask),tableWords_entry mask hm 0 (by decide)] at h0
+  have h0 := h (2*mask) (by omega_using [hm])
+  have h1 := h (2*mask+1) (by omega_using [hm])
+  rw [show 8*(2*mask)=16*mask by omega_using [],←Nat.add_zero (2*mask),tableWords_entry mask hm 0 (by decide)] at h0
   rw [tableWords_entry mask hm 1 (by decide)] at h1
   rw [h0,BitVec.add_assoc,←BitVec.ofNat_add,
-    show 16*mask+8=8*(2*mask+1) by omega,h1]
+    show 16*mask+8=8*(2*mask+1) by omega_using [],h1]
   rfl
 
 structure TableReady (s : State) (a : Addr) : Prop where
@@ -71,13 +71,13 @@ structure TableReady (s : State) (a : Addr) : Prop where
 
 theorem table_sub (p : Addr) {mask : Nat} (hm : mask<256) :
     Region.Sub ⟨p+BitVec.ofNat 64 (16*mask),16⟩ ⟨p,4096⟩ :=
-  Offset.sub_base p (by omega)
+  Offset.sub_base p (by omega_using [hm])
 
 theorem TableReady.read {s : State} {a : Addr} (h : TableReady s a)
     {mask : Nat} (hm : mask<256) :
     InRegions (s.rd++s.wr) (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16 := by
   apply h.readable
-  exact ⟨⟨s.gpr .x16,4096⟩,List.mem_singleton_self _,Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨⟨s.gpr .x16,4096⟩,List.mem_singleton_self _,Offset.contains_base _ (by omega_using [hm]) (by omega_using [hm])⟩
 
 theorem TableReady.disjoint {s : State} {a : Addr} (h : TableReady s a)
     {mask : Nat} (hm : mask<256) :
@@ -88,7 +88,7 @@ theorem TableArtifact.frame {m m' : Mem} {p : Addr} {rs : List Region}
     (h : TableArtifact m p) (hf : Frame rs m m')
     (hd : ∀r∈rs,(Region.mk p 4096).Disjoint r) : TableArtifact m' p := by
   intro i hi
-  rw [hf.readW (Offset.contains_base p (by omega : 8*i+8≤4096) (by omega)) hd (by decide)]
+  rw [hf.readW (Offset.contains_base p (by omega_using [hi] : 8*i+8≤4096) (by omega_using [hi])) hd (by decide)]
   exact h i hi
 
 end VG.Proof.MlKem.AArch64.Rej8

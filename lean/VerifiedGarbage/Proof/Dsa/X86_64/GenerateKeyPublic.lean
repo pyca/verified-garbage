@@ -51,7 +51,7 @@ theorem keygen_public_related {extra : Nat} {s t : State}
     exacts [hdi, hsi, hdx, hcx, h8, h9]
   have hargs : ∀ i < 5, stackArg s i = stackArg t i := by
     intro i hi
-    have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
     rcases hc with rfl | rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3, a4]
   change ((keygenInput s).params.map (·.toNat) ++ [(keygenResult s).status, (keygenResult s).used] ++

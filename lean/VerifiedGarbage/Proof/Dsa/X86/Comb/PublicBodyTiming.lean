@@ -111,7 +111,7 @@ theorem publicBody_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m g x : 
     refine ⟨⟨C,?_⟩,?_,?_⟩
     · exact (O.wordsVal (.inr bounds.1) bounds.2.1).trans U.modulus
     · exact (O.wordsVal (.inr bounds.2.2.1) bounds.2.2.2.1).trans U.generator
-    · exact (O.val32 (by have := bounds.2.2.2.2.1; omega) bounds.2.2.2.2.2).trans U.exponent
+    · exact (O.val32 (by have := bounds.2.2.2.2.1; omega_using [bounds]) bounds.2.2.2.2.2).trans U.exponent
   exact ⟨(save_relCT _ _ _ _ _ _ A Es Et).1,step S Es,step T Et⟩
 
 end VG.Proof.Dsa.X86.Comb

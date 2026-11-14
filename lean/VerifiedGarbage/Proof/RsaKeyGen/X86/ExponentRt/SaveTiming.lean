@@ -113,15 +113,15 @@ theorem copy_trace {workspace p : BitVec 32} {size w src dst : Nat}
   have nowrap := S.space.scratch.nowrap
   have hws : Ws s (workspace.setWidth 64) size := ⟨S.space.scratch.wr, nowrap⟩
   have edi : s.gpr .edi = workspace := S.space.workspace
-  refine WP.mono (copyLoop_ok hws (x := dst) (y := src) (N := 2 * w) (by have := S.space.width; omega) (by omega)
-    (by omega) (by omega)
+  refine WP.mono (copyLoop_ok hws (x := dst) (y := src) (N := 2 * w) (by have := S.space.width; omega_using [this]) (by omega_using [dstFit])
+    (by omega_using [fit]) (by omega_using [apart])
     (ptrAt_edi S.space.scratch (by rw [S.regs .ebx (by simp), edi]; rfl))
     (ptrAt_edi S.space.scratch (by rw [S.regs .ebp (by simp), edi]; rfl))
     (by rw [S.regs .esi (by simp)]; change (BitVec.ofNat 32 (2 * w)).toNat = 2 * w
-        rw [BitVec.toNat_ofNat]; have := S.space.widthBound; omega)
+        rw [BitVec.toNat_ofNat]; have := S.space.widthBound; omega_using [this])
     (S.regs .ecx (by simp))) fun u ⟨O, _, K⟩ => ?_
   exact S.space.keep K (by decide) (by decide)
-    (BitVec.eq_of_toNat_eq (O.w32 (d := 4) (Or.inl (by omega)) (by omega)))
+    (BitVec.eq_of_toNat_eq (O.w32 (d := 4) (Or.inl (by omega_using [headerApart])) (by omega_using [])))
 
 theorem save_trace {workspace p : BitVec 32} {size w : Nat} :
     RelCT isa (fun s t => Space workspace p size w s ∧ Space workspace p size w t) save
@@ -138,7 +138,7 @@ theorem save_trace {workspace p : BitVec 32} {size w : Nat} :
     setupRaw (fun s S => ?_)
   rotate_left
   · have header := S.header
-    refine WP.mono (saveSetup_ok S.scratch S.widthBound (by omega) S.len) fun d ⟨K, M, ebp, ebx, esi, ecx⟩ => ?_
+    refine WP.mono (saveSetup_ok S.scratch S.widthBound (by omega_using [header]) S.len) fun d ⟨K, M, ebp, ebx, esi, ecx⟩ => ?_
     have Sd : Space workspace p size w d := S.keep K (by decide) (by decide) (by rw [M])
     have regs : ∀ r ∈ [Reg.esp, .edi, .ebp, .ebx, .esi, .ecx], d.gpr r = copyRegs workspace p w 256 (slot w 5) r := by
       intro r mem
@@ -149,11 +149,11 @@ theorem save_trace {workspace p : BitVec 32} {size w : Nat} :
       · rw [ebp, S.workspace]; rfl
       · rw [ebx, S.workspace]; rfl
       · apply BitVec.eq_of_toNat_eq; rw [esi]; change 2 * w = (BitVec.ofNat 32 (2 * w)).toNat
-        rw [BitVec.toNat_ofNat]; have := S.widthBound; omega
+        rw [BitVec.toNat_ofNat]; have := S.widthBound; omega_using [esi]
       · exact ecx
     exact ⟨⟨Sd, regs⟩, regs⟩
   have loop := copy_trace (workspace := workspace) (p := p) (size := size) (w := w) (src := 256) (dst := slot w 5)
-    fun h => by have := slot5_ge w; exact ⟨by omega, h, Or.inr (by omega), by omega⟩
+    fun h => by have := slot5_ge w; exact ⟨by omega_using [h, this], h, Or.inr (by omega_using [this]), by omega_using [this]⟩
   have ptrRaw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (savedPtr .ebx .edx)) (fun _ _ => True) :=
     (erased_relCT _ _ (.block []) rfl rfl rfl (by decide +kernel) :
       RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) _ (VG.X86.Taint.Agree (τr [.esp, .edi]))).mono
@@ -161,7 +161,7 @@ theorem save_trace {workspace p : BitVec 32} {size w : Nat} :
   have ptr := publish (X := Space workspace p size w) (Y := fun _ => True) [.esp, .edi, .ebx]
     (copyRegs workspace p w 256 (slot w 5)) (fun _ _ S T => S.agree T) ptrRaw (fun s S => ?_)
   rotate_left
-  · refine WP.mono (savedPtr_block_ok S.scratch (by have := S.header; omega) S.len (by decide) (by decide)
+  · refine WP.mono (savedPtr_block_ok S.scratch (by have := S.header; omega_using [this]) S.len (by decide) (by decide)
       (by decide)) fun d ⟨K, _, ebx⟩ => ⟨trivial, ?_⟩
     intro r mem
     simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

@@ -35,7 +35,7 @@ private theorem correct (sub : Bool) (op : Spec.MlDsa.Poly → Spec.MlDsa.Poly �
   · cases sub <;> decide +kernel
   · cases sub <;> decide +kernel
   · have hlt : i < 256 := hit
-    rw [hi.coeff i hlt,ite_eq_left (by omega)]
+    rw [hi.coeff i hlt,ite_eq_left (by omega_using [hlt])]
     exact hval s hp i hlt
 
 theorem add_correct (s : State) (hp : (accK Spec.MlDsa.add).pre s) :
@@ -56,7 +56,7 @@ theorem sub_correct (s : State) (hp : (accK Spec.MlDsa.sub).pre s) :
   · simp only [result, ↓reduceIte,polyAt_val ha.2.2.2.1 hi,polyAt_val ha.2.2.2.2 hi]
   · have := (polyAt a.mem (a.gpr .x0))[i]!.isLt
     have := (polyAt a.mem (a.gpr .x1))[i]!.isLt
-    omega
+    omega_using []
 
 theorem add_verified : Verified target (VG.Impl.MlDsa.AArch64.Optimized.AddSub.code false)
     (Proof.MlDsa.addContract abi) :=

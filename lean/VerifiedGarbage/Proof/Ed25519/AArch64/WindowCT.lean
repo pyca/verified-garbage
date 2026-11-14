@@ -291,7 +291,7 @@ theorem nibStepAB_ct {base : Addr} {A : EPoint dZ} {K S i : Nat} (hi : i < 64) :
         WinPre base K S A C (digitAt 768) kv a ∧ DigitSpec base a (digitAt 896) sv ∧ sv < 16 := by
     obtain ⟨s₀, h⟩ := h
     exact WP.mono (nibBegin_ok h) fun a ⟨actx, ad, av, ac⟩ =>
-      ⟨⟨actx, ad, av, ac, digitK actx (by omega) ac, Nat.mod_lt _ (by decide)⟩, digitS actx hi ac,
+      ⟨⟨actx, ad, av, ac, digitK actx (by omega_using [hi]) ac, Nat.mod_lt _ (by decide)⟩, digitS actx hi ac,
         Nat.mod_lt _ (by decide)⟩
   have w2 (x : State) (h : WinPre base K S A C (digitAt 768) kv x ∧
       DigitSpec base x (digitAt 896) sv ∧ sv < 16) :
@@ -327,7 +327,7 @@ theorem loopA_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S : Na
           LoopRun R₀ base A K S (64 + j) u := by
       obtain ⟨s₀, r₀, h⟩ := h
       exact WP.mono (stepA_ok hj h) fun u ⟨uz, hu⟩ => ⟨uz, s₀, r₀, hu⟩
-    refine (CT.wp ((nibStepA_ct (i := 64 + j) (by omega)).mono
+    refine (CT.wp ((nibStepA_ct (i := 64 + j) (by omega_using [hj])).mono
       (fun x y h => ⟨by obtain ⟨s₀, _, hx⟩ := h.1.1; exact ⟨s₀, hx⟩,
         by obtain ⟨s₀, _, hy⟩ := h.1.2; exact ⟨s₀, hy⟩⟩) (fun _ _ h => h))
       fun x y h => ⟨hw x h.1.1, hw y h.1.2⟩).mono (fun _ _ h => h) ?_
@@ -343,7 +343,7 @@ theorem loopA_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S : Na
         intro hz
         rw [xz, hz] at he
         cases he
-      exact ⟨j, by omega, ⟨hx, hy⟩, by omega, by omega⟩
+      exact ⟨j, by omega_using [], ⟨hx, hy⟩, by omega_using [this], by omega_using [hj]⟩
   · exact CT.of_false fun _ _ h => hj (by omega)
 
 theorem windowsA_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S c : Nat}
@@ -359,12 +359,12 @@ theorem windowsA_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S c
   refine CT.seq ((CT.wp (x0_ct (fun x h => by obtain ⟨_, _, h⟩ := h; exact h.ctx.scratch.x0)
     aboveLow_ct) fun x y h => ⟨hw x h.1, hw y h.2⟩).mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_
   refine CT.ite (fun x y h => h.1.1.trans h.2.1.symm) ?_ ?_
-  · obtain ⟨n, rfl⟩ : ∃ n, c = 64 + n := ⟨c - 64, by omega⟩
+  · obtain ⟨n, rfl⟩ : ∃ n, c = 64 + n := ⟨c - 64, by omega_using [hc64]⟩
     by_cases hn : n = 0
     · subst hn
       exact CT.of_false fun x y h => by
         have := h.2; rw [h.1.1.1] at this; cases this
-    · exact (loopA_ct n (by omega) (by omega)).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩)
+    · exact (loopA_ct n (by omega_using [hn]) (by omega_using [hc128])).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩)
         (fun _ _ h => h)
   · refine VG.RelCT.block_nil fun x y h => ⟨h.1, ?_⟩
     have hc : c = 64 := by
@@ -405,7 +405,7 @@ theorem loopB_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S : Na
         intro hz
         rw [xz, hz] at he
         cases he
-      exact ⟨j, by omega, ⟨hx, hy⟩, by omega, by omega⟩
+      exact ⟨j, by omega_using [], ⟨hx, hy⟩, by omega_using [this], by omega_using [hj]⟩
   · exact CT.of_false fun _ _ h => hj (by omega)
 
 /-! ## Skipping the leading zero nibbles of `k` -/
@@ -459,9 +459,9 @@ theorem skipBody_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S j
   have hw (x : State) (h : P x) : WP isa (.block skipLoad) x fun u => u.gpr .x0 = base ∧
       u.gpr .x19 = BitVec.ofNat 64 (K / 16 ^ (64 + j) % 16) := by
     obtain ⟨_, _, hl, _, _, hn⟩ := h
-    refine WP.mono (skipLoad_ok hl.ctx.scratch (64 + j) (by omega) (by rw [hl.counter]; rfl))
+    refine WP.mono (skipLoad_ok hl.ctx.scratch (64 + j) (by omega_using [hn]) (by rw [hl.counter]; rfl))
       fun u ⟨_, uv, ku⟩ => ⟨(ku.gpr _ (by decide)).trans hl.ctx.scratch.x0,
-        by rw [uv, hl.ctx.kNib _ (by omega)]⟩
+        by rw [uv, hl.ctx.kNib _ (by omega_using [hn])]⟩
   rw [skipBody]
   refine CT.seq ((CT.wp hload fun x y h => ⟨hw x h.1, hw y h.2⟩).mono (fun _ _ h => h)
     (fun _ _ h => h.2)) ?_
@@ -493,8 +493,8 @@ theorem skipZero_ct {R₀ : State → Prop} {base : Addr} {A : EPoint dZ} {K S :
     · have hs : skipOn K j = false := Option.some.inj (xz.symm.trans he)
       exact ⟨skipEnd K j, (skipEnd_range K j hj).1, (skipEnd_range K j hj).2, xf hs, yf hs⟩
     · have hs : skipOn K j = true := Option.some.inj (xz.symm.trans he)
-      exact ⟨j, by omega, xt hs, yt hs⟩
-  · exact CT.of_false fun _ _ h => by obtain ⟨_, _, _, _, _, h⟩ := h.1; exact hj (by omega)
+      exact ⟨j, by omega_using [], xt hs, yt hs⟩
+  · exact CT.of_false fun _ _ h => by obtain ⟨_, _, _, _, _, h⟩ := h.1; exact hj (by omega_using [h])
 
 /-! ## The nibbles -/
 

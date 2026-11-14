@@ -44,7 +44,7 @@ theorem nafResidual_low {s t : State} {base : Addr} {work : Nat}
   change w32 s.mem base work<2^32 at hs
   change w32 t.mem base work<2^32 at ht
   change w32 s.mem base work=w32 t.mem base work
-  omega
+  omega_using [h, hs, ht]
 
 theorem NafPrepPair.agree {base : Addr} {size bits work k j : Nat} {s t : State}
     (h : NafPrepPair base size bits work k j s t) (hw : work+4≤8192) :
@@ -67,9 +67,9 @@ theorem NafPrepPair.agree {base : Addr} {size bits work k j : Nat} {s t : State}
     change i<work+4 at hhi
     simp only [VG.X86.Taint.byteAddr,nafRegion_base h.left.scr h.pub.wf₁,
       nafRegion_base h.right.scr h.pub.wf₂]
-    have hi : i=work+(i-work) := by omega
+    have hi : i=work+(i-work) := by omega_using [hlo]
     rw [hi,←Offset.add_add]
-    have hb : i-work<4 := by omega
+    have hb : i-work<4 := by omega_using [hhi]
     rw [Mem.readW_byte s.mem (off base work) hb,Mem.readW_byte t.mem (off base work) hb,lo]
 
 end VG.Proof.Weierstrass.X86
@@ -107,10 +107,10 @@ theorem nafPrepLoop_relCT {bits src work : Nat} (hc : NafPrepChecks bits src wor
       (eval .b s=some true → ∃ n<m,I n s t)) := by
     intro m
     by_cases hm : 1≤m ∧ m≤257
-    · have hv := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega)
+    · have hv := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega_using [hm])
       have hv' : Naf5.residual k (257-m)≤2^256 := Nat.le_trans hv
-        (Nat.pow_le_pow_right (by decide) (by omega))
-      refine (nafPrepStep_relCT hc hb hw hw8 hsep (j:=257-m) (by omega) hv').mono
+        (Nat.pow_le_pow_right (by decide) (by omega_using []))
+      refine (nafPrepStep_relCT hc hb hw hw8 hsep (j:=257-m) (by omega_using [hm]) hv').mono
         (P':=I m) (fun _ _ h => h.2.2) ?_
       intro s t ⟨hp,fs,ft⟩
       refine ⟨fs.trans ft.symm,fun _ => trivial,fun he => ?_⟩
@@ -118,8 +118,8 @@ theorem nafPrepLoop_relCT {bits src work : Nat} (hc : NafPrepChecks bits src wor
         change s.cf=some true at he
         rw [fs] at he
         exact of_decide_eq_true (Option.some.inj he)
-      refine ⟨m-1,by omega,by omega,by omega,?_⟩
-      rw [show 257-(m-1)=257-m+1 from by omega]
+      refine ⟨m-1,by omega_using [hm],by omega_using [hn],by omega_using [hm],?_⟩
+      rw [show 257-(m-1)=257-m+1 from by omega_using [hm]]
       exact hp
     · exact RelCT.of_false (fun _ _ h => hm ⟨h.1,h.2.1⟩)
   exact (RelCT.loop I step 257).mono (fun _ _ h => ⟨by decide,by decide,h⟩) (fun _ _ h => h)

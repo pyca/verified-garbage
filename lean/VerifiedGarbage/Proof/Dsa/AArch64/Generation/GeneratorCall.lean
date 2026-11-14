@@ -163,7 +163,7 @@ theorem generatorCall_entry {p : GenerationContext} {W : Nat → BitVec 64} {s u
     · exact hw.2
     · rw [pv]; exact domain.odd
     · rw [pv]
-      exact (VG.Proof.Dsa.bitLength_iff_bounds (by rcases domain.width with h | h | h <;> omega)).mpr
+      exact (VG.Proof.Dsa.bitLength_iff_bounds (by rcases domain.width with h | h | h <;> omega_using [h])).mpr
         ⟨domain.lower, domain.upper⟩
     · rw [qv]; exact qpos
     · rw [pv, qv, hm]; exact be
@@ -190,7 +190,7 @@ theorem generatorCall_call_ok (G : GeneratorStage) {p : GenerationContext} {W : 
   have qv := E.qv
   have tapeV := E.tape
   refine WP.callF (G.verified p.geo.pLen hb).1 E.pre E.reads E.writes ?_
-    (by have := hd; omega)
+    (by have := hd; omega_using [hd])
   intro t hrd' hwr' hsp' hf _ hpost
   sig_post [Generator.contract, Proof.Dsa.GeneratorStage.contract, Proof.Dsa.GeneratorStage.sig, abi, argRegs]
     at hpost
@@ -216,6 +216,6 @@ theorem generatorCall_call_ok (G : GeneratorStage) {p : GenerationContext} {W : 
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · rw [hsp]
-      exact ⟨below p.geo.F 272, by simp, below_sub (by omega) (by decide)⟩
+      exact ⟨below p.geo.F 272, by simp, below_sub (by omega_using [hd]) (by decide)⟩
 
 end VG.Proof.Dsa.AArch64.Generation

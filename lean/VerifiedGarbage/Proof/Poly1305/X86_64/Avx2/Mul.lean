@@ -80,7 +80,7 @@ theorem MulPre.env {s : State} (hp : MulPre s) : EnvOK s mulB := by
     simp only [mulB]
     split
     · subst g; rw [hp.r8]; decide
-    · omega
+    · omega_using []
 
 /-- What `mul` leaves: `H` times the low doublewords of `Y`, carried, and the
 rest but the products and `tP` as they were. -/
@@ -108,8 +108,8 @@ theorem hv_mod {s : State} (hp : MulPre s) {k : Nat} (hk : k < 4) :
   rw [envOf_v]
   by_cases hi : i < 5
   · exact Nat.mod_eq_of_lt (Nat.lt_trans (hp.h k hk i hi) (by decide))
-  · rw [hreg_ge (by omega)]
-    rw [hv_ge s k (by omega)]
+  · rw [hreg_ge (by omega_using [hi])]
+    rw [hv_ge s k (by omega_using [hi])]
     exact Nat.mod_eq_of_lt (Nat.lt_trans (hp.h k hk 4 (by decide)) (by decide))
 
 theorem yl_eq (s : State) (k : Nat) : (fun i => (envOf s).v (xi (yreg i)) k % 2 ^ 32) = yl s k := by

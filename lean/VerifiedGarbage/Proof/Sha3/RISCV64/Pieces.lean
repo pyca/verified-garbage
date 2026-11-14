@@ -248,7 +248,7 @@ theorem cov_st {N : Nat} {ws : List Region} {sc : Addr} (hN : 200 ≤ N) (hw : C
     Covers [⟨sc, 200⟩] ws :=
   fun a n h => hw a n (Covers.of_sub (fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_cons_self, 0, by simp, by simp; omega⟩) a n h)
+    exact ⟨_, List.mem_cons_self, 0, by simp, by simp; omega_using [hN]⟩) a n h)
 
 theorem cov_app {xs ys ws : List Region} (h₁ : Covers xs ws) (h₂ : Covers ys ws) :
     Covers (xs ++ ys) ws := by
@@ -276,7 +276,7 @@ theorem bytes_keep {W : List Region} {m m' : Mem} (hf : Frame W m m') {p : Addr}
   simp only [Spec.Sha3.bytesAt]
   refine List.map_congr_left fun i hi => hf _ fun r hr hc => ?_
   have hi' := List.mem_range.mp hi
-  exact hd r hr _ (Offset.contains_base p (by omega) (by omega)) hc
+  exact hd r hr _ (Offset.contains_base p (by omega_using [hi']) (by omega_using [hn, hi'])) hc
 
 /-- A piece's bytes while a hash runs. -/
 theorem PieceOk.bytes {N : Nat} {sc : Addr} {s₀ s : State} {p : Piece} (hp : PieceOk N sc s₀ p)
@@ -363,7 +363,7 @@ theorem zeroState_ok {N : Nat} {sc : Reg} {scA : Addr} (hsc : sc ∈ preserved) 
     WP isa (.block (Impl.Sha3.RISCV64.zeroState sc)) s fun s' =>
       Kept (kW N scA s.sp) s s' ∧ stateAt s'.mem scA = Spec.Sha3.zero := by
   refine WP.mono (Proof.Sha3.RISCV64.Stream.zeroState_ok (pres_ne hsc).1 (by rw [hs]; exact he.al)
-    fun k hk => by rw [hs]; exact cov_st he.big he.w _ _ ⟨_, List.mem_cons_self, Offset.contains_base scA (by omega) (by omega)⟩) fun s' ⟨hg, hrd, hwr, hsp, hf, hz⟩ => ?_
+    fun k hk => by rw [hs]; exact cov_st he.big he.w _ _ ⟨_, List.mem_cons_self, Offset.contains_base scA (by omega_using [hk]) (by omega_using [hk])⟩) fun s' ⟨hg, hrd, hwr, hsp, hf, hz⟩ => ?_
   rw [hs] at hf hz
   refine ⟨⟨hrd, hwr, hsp, fun r hr => hg r (pres_ne hr).1, ?_⟩, hz⟩
   exact hf.sub fun r hr => by
@@ -410,7 +410,7 @@ theorem hash_ok {N n : Nat} {sc f : Reg} {scA out : Addr} (hsc : sc ∈ preserve
   rw [hk₄.cs _ hf, hout] at h3
   have dsp₅ : (below s₅.sp 1168).Disjoint ⟨out, n⟩ := by rw [hk₅.sp]; exact dsp
   have hS : SqueezeArgs s₅ scA out 136 0 n :=
-    ⟨h0, h1, h2, h3, h4, rate136, by decide, by omega, e₅.spal, e₅.sp, dsc.symm.sub_left (st_sub scA he.big),
+    ⟨h0, h1, h2, h3, h4, rate136, by decide, by omega_using [hn], e₅.spal, e₅.sp, dsc.symm.sub_left (st_sub scA he.big),
       e₅.d.sub_right (st_sub scA he.big), dsp₅⟩
   have cw₅ : Covers [⟨scA, 200⟩, ⟨out, n⟩] s₅.wr := by
     rw [hk₅.wr]

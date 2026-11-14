@@ -31,7 +31,7 @@ private theorem copy27_ok (p : ExponentCountData) (s : State) (h : ExponentCount
     · intro r hr
       rw [List.mem_singleton] at hr
       subst r
-      rw [VG.Arm.addr_add (by have := h.stack.nowrap; omega)]
+      rw [VG.Arm.addr_add (by have := h.stack.nowrap; omega_using [this])]
       exact h.separate.sub_left (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
   exact ⟨h.workspace.congr rest.wr, ready,
     (h.data.after_key_keep h.workspace h.ready (by simp) (by simp) keep).1,

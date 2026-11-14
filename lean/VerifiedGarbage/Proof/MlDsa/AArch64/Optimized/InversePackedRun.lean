@@ -53,13 +53,13 @@ theorem packedGroup_ok (g : Fin 4) (len : Nat) (hl : len=1 ∨ len=2)
     {v : Vector (BitVec 128) 8} {z : Nat → Nat → Nat → Int}
     (hb : Bank s (regs 0) v) (hr : PackedRoots s z)
     (k : ∀ t, VChg packedRegs s t → PackedRoots t z →
-      Bank t (regs 0) (packedValues v ⟨2*g.val,by omega⟩ ⟨2*g.val+1,by omega⟩ len (z g.val len)) →
+      Bank t (regs 0) (packedValues v ⟨2*g.val,by omega_using []⟩ ⟨2*g.val+1,by omega_using []⟩ len (z g.val len)) →
       WP isa (.block rest) t Q) :
     WP isa (.block (packedGroupCode g len ++ rest)) s Q := by
   have ho : packedOffset g len%16=0 ∧ packedOffset g len+16<65536 := by
-    rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega
-  let i : Fin 8 := ⟨2*g.val,by omega⟩
-  let j : Fin 8 := ⟨2*g.val+1,by omega⟩
+    rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega_using []
+  let i : Fin 8 := ⟨2*g.val,by omega_using []⟩
+  let j : Fin 8 := ⟨2*g.val+1,by omega_using []⟩
   simp only [packedGroupCode,List.append_assoc]
   refine rootLoads_ok _ ho.1 ho.2 ?_ (hr.read g.val g.isLt len hl 16 (Or.inr rfl)) fun s₁ hc₁ hz₁ hbr₁ => ?_
   · simpa only [Nat.add_zero] using hr.read g.val g.isLt len hl 0 (Or.inl rfl)
@@ -67,7 +67,7 @@ theorem packedGroup_ok (g : Fin 4) (len : Nat) (hl : len=1 ∨ len=2)
       intro a
       rw [hc₁.get _ (initial_apart a)]
       exact hb a
-    refine packedBank_ok (regs 0) i j len (by intro h; have := congrArg Fin.val h; simp only [i,j] at this; omega)
+    refine packedBank_ok (regs 0) i j len (by intro h; have := congrArg Fin.val h; simp only [i,j] at this; omega_using [this])
       initial_inj initial_small hbank (hr.range g.val g.isLt len hl) ?_ ?_ ?_
       fun t hc₂ hbt => ?_
     · rw [hz₁]
@@ -92,7 +92,7 @@ def packedRunValues (v : Vector (BitVec 128) 8) (z : Nat → Nat → Nat → Int
     List (Fin 4 × Nat) → Vector (BitVec 128) 8
   | [] => v
   | (g,len)::ps => packedRunValues
-      (packedValues v ⟨2*g.val,by omega⟩ ⟨2*g.val+1,by omega⟩ len (z g.val len)) z ps
+      (packedValues v ⟨2*g.val,by omega_using []⟩ ⟨2*g.val+1,by omega_using []⟩ len (z g.val len)) z ps
 
 theorem packedRun_ok (ps : List (Fin 4 × Nat)) (hl : ∀ p∈ps, p.2=1 ∨ p.2=2)
     {s : State} {rest : List Instr} {Q : State → Prop}

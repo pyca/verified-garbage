@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.RsaPkcs1Sig
 
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery by encoding
@@ -39,7 +40,7 @@ theorem drop_of_encode {h : Hash} {H em : List Byte} {k : Nat} (he : encode h H 
     simp [padded, digestInfo]] at hk ⊢
   rw [List.drop_left']
   rw [List.length_append] at hk
-  omega
+  omega_using [hH, hk]
 
 theorem recover_eq_recoverEnc (nB eB : List Byte) (h : Hash) (sig : List Byte) :
     recover nB eB h sig = recoverEnc nB eB h sig := by

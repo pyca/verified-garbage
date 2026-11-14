@@ -28,7 +28,7 @@ theorem wrapABI {s : State} (A : CheckDomainABI s) : WrapABI Impl.Ffdh.X86.Check
   below := ⟨(fun _ h => by cases h), by decide, by decide, by decide, (fun _ h => by cases h),
     (fun _ h => by cases h), by decide, (fun _ h => by cases h)⟩
   stackLow := A.stackLow
-  stackBound := by have := A.stackBound; omega
+  stackBound := by have := A.stackBound; omega_using [this]
   argsIn := by rw [A.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
   wsIn := by rw [A.wr]; exact List.mem_cons_self ..
   scratchArgs := A.scratchArgs
@@ -63,15 +63,15 @@ theorem frame_geo {s : State} (A : CheckDomainABI s) {sp : BitVec 32}
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by omega)
-  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega)
+    VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
+  have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   have ofn : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine ⟨⟨(ofn _).symm, (ofn _).symm, (ofn _).symm, rfl, rfl, (ofn _).symm, A.dLen, A.domBound, hrd, A.domScratch,
     A.pLen.1, A.pLen.2⟩, ?_⟩
   refine (A.belowDom.sub_left ?_).symm
   simp only [below]
-  rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega), espf,
+  rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
     show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
     ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
   exact Region.sub_prefix (by decide)
@@ -85,7 +85,7 @@ theorem frame_dom {s : State} (A : CheckDomainABI s) {m : Mem}
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have frameDom : Region.Disjoint ⟨argumentPointer s 0, (arg s 1).toNat⟩ ⟨frameAt s, argsFrame⟩ := by
     refine (A.belowDom.sub_left ?_).symm
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
@@ -93,7 +93,7 @@ theorem frame_dom {s : State} (A : CheckDomainABI s) {m : Mem}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact A.domScratch
-    · exact frameDom) (by have := A.domBound; omega)
+    · exact frameDom) (by have := A.domBound; omega_using [])
 
 /-- The body, from the frame's state. -/
 theorem frame_ok {s : State} (A : CheckDomainABI s) (f : State)

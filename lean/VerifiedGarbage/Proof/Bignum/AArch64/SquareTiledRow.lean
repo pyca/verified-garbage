@@ -27,7 +27,7 @@ theorem blocks_guard_ok {s₀ t : State} {B : Addr} {Z w eA eb q : Nat}
     refine WP.ite false (by rw [eval_nonzero, h14]; rfl) (by simp)
       (fun _ => WP.block_nil ?_)
     simpa only [Nat.mul_zero] using h0
-  · refine WP.ite true ?_ (fun _ => blocks4_ok h7 hA hb hsep (by omega) hq64 hqn h0 h14) (by simp)
+  · refine WP.ite true ?_ (fun _ => blocks4_ok h7 hA hb hsep (by omega_using [hq]) hq64 hqn h0 h14) (by simp)
     rw [eval_nonzero, h14, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hq64]
     rw [decide_eq_true hq]
 
@@ -43,7 +43,7 @@ theorem remainder_guard_ok {s₀ t : State} {B : Addr} {Z w eA eb j r : Nat}
     refine WP.ite false (by rw [eval_nonzero, h14]; rfl) (by simp)
       (fun _ => WP.block_nil ?_)
     simpa only [Nat.add_zero] using h0
-  · refine WP.ite true ?_ (fun _ => remainder_ok h7 hA hb hsep (by omega) hr64 hjr h0 h14) (by simp)
+  · refine WP.ite true ?_ (fun _ => remainder_ok h7 hA hb hsep (by omega_using [hr]) hr64 hjr h0 h14) (by simp)
     rw [eval_nonzero, h14, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr64]
     rw [decide_eq_true hr]
 
@@ -60,13 +60,13 @@ theorem tiledRow_ok {s₀ s : State} {B : Addr} {Z n eA eb : Nat} {count : Reg}
   unfold VG.Impl.Bignum.AArch64.Square.tiledRow
   refine WP.seq (WP.mono (shift_count_ok s count hcount hn) fun t ⟨⟨hm, hc, h14⟩, k⟩ => ?_)
   have hI := rowInv_counter h0 hm hc (k.mono (by decide))
-  refine WP.seq (WP.mono (blocks_guard_ok h7 hA hb hsep (by omega) (by omega) hI h14)
+  refine WP.seq (WP.mono (blocks_guard_ok h7 hA hb hsep (by omega_using [hn]) (by omega_using []) hI h14)
     fun u hu => ?_)
   have ucount := (hu.keep.gpr count hkeep).trans (h0.keep.gpr count hkeep).symm
   have un : u.gpr count = BitVec.ofNat 64 n := ucount.trans hcount
   refine WP.seq (WP.mono (mask_count_ok u count un hn hC) fun v ⟨⟨hmv, hcv, hv14⟩, kv⟩ => ?_)
   have hv := rowInv_counter hu hmv hcv kv
-  have heq : 4*(n/4) + n%4 = n := by omega
-  simpa only [heq] using (remainder_guard_ok h7 hA hb hsep (by omega) (by omega) hv hv14)
+  have heq : 4*(n/4) + n%4 = n := by omega_using []
+  simpa only [heq] using (remainder_guard_ok h7 hA hb hsep (by omega_using []) (by omega_using []) hv hv14)
 
 end VG.Proof.Bignum.AArch64.Square

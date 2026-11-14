@@ -192,7 +192,7 @@ theorem mask_word (v : BitVec 64) (P : Prop) [Decidable P] :
 theorem shr3_ofNat {n : Nat} (h : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem shl3_ofNat (n : Nat) : BitVec.ofNat 64 (n / 8) <<< 3 = BitVec.ofNat 64 (8 * (n / 8)) := by
   apply BitVec.eq_of_toNat_eq
@@ -209,7 +209,7 @@ theorem maskWords_wp {c : Cx} (L : Lay c) {s t : State} (E : Env c s) {P : Prop}
       u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (8 * (c.n / 8))).map fun b => if P then b else 0) := by
   have hn := L.n_lt
   let f : Byte → Byte := fun b => if P then b else 0
-  refine WP.ite (decide (c.n / 8 = 0)) (eval_zero r4 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (c.n / 8 = 0)) (eval_zero r4 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_)
   · have h0 : c.n / 8 = 0 := of_decide_eq_true ht
     refine WP.block_nil ⟨pk, by rw [r3, h0]; exact (BitVec.add_zero _).symm, fun _ _ _ _ => rfl, ?_⟩
     rw [m, h0]
@@ -220,11 +220,11 @@ theorem maskWords_wp {c : Cx} (L : Lay c) {s t : State} (E : Env c s) {P : Prop}
         u.gpr .r3 = c.D + BitVec.ofNat 64 (8 * k) ∧ u.gpr .r4 = BitVec.ofNat 64 (c.n / 8 - k) ∧
         (∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → u.gpr r = t.gpr r) ∧
         u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (8 * k)).map f) ∧ PK s u) ?_ (c.n / 8 - 0) _
-      ⟨0, rfl, by omega, by rw [r3]; exact (BitVec.add_zero _).symm, by rw [r4, Nat.sub_zero],
+      ⟨0, rfl, by omega_using [h0], by rw [r3]; exact (BitVec.add_zero _).symm, by rw [r4, Nat.sub_zero],
         fun _ _ _ _ => rfl, by rw [m]; simp [bytesAt, writeBytes_nil], pk⟩
     rintro w u ⟨k, rfl, hk, r3u, r4u, oth, mem, pku⟩
     have Eu := E.of_pk pku
-    have hin : 8 * k + 8 ≤ c.n := by omega
+    have hin : 8 * k + 8 ≤ c.n := by omega_using [hk]
     have hD : Covers [⟨c.D, c.n⟩] u.wr := Eu.perm.d
     unfold maskD
     refine wp_ld (a := c.D + BitVec.ofNat 64 (8 * k)) (by decide) (by decide)
@@ -240,30 +240,30 @@ theorem maskWords_wp {c : Cx} (L : Lay c) {s t : State} (E : Env c s) {P : Prop}
       ((PK.ofUpd u₄).trans (PK.ofUpd u₅)))))
     have hlen : ((bytesAt s.mem c.D (8 * k)).map f).length = 8 * k := by rw [List.length_map, length_bytesAt]
     have past := bytesAt_writeBytes_past s.mem c.D ((bytesAt s.mem c.D (8 * k)).map f) 8
-      (by rw [hlen]; omega)
+      (by rw [hlen]; omega_using [hn, hk])
     have app := writeBytes_append s.mem c.D ((bytesAt s.mem c.D (8 * k)).map f)
       ((bytesAt s.mem (c.D + BitVec.ofNat 64 (8 * k)) 8).map f)
-      (by rw [hlen, List.length_map, length_bytesAt]; omega)
+      (by rw [hlen, List.length_map, length_bytesAt]; omega_using [hn, hk])
     rw [hlen] at past app
     have r9u : u.gpr .r9 = maskOf P := by rw [oth _ (by decide) (by decide) (by decide), r9]
     have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (8 * (k + 1))).map f) := by
       rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .r9 (by decide), r9u, u₂.mem, u₁.mem,
         VG.Proof.AesCcm.writeW64_eq, mask_word, Proof.Cmac.le8_readW, mem, past, app,
-        show 8 * (k + 1) = 8 * k + 8 by omega, Proof.Cmac.Stream.bytesAt_append, List.map_append]
+        show 8 * (k + 1) = 8 * k + 8 by omega_using [], Proof.Cmac.Stream.bytesAt_append, List.map_append]
     have r3' : t₅.gpr .r3 = c.D + BitVec.ofNat 64 (8 * (k + 1)) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3u,
-        BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega]
+        BitVec.add_assoc, ← BitVec.ofNat_add, show 8 * k + 8 = 8 * (k + 1) by omega_using []]
     have r4' : t₅.gpr .r4 = BitVec.ofNat 64 (c.n / 8 - (k + 1)) := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4u,
-        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega), Nat.sub_sub]
+        VG.Proof.Gather.PPC64LE.ofNat_sub_one (by omega_using [hk]), Nat.sub_sub]
     have oth' : ∀ r, r ≠ .r0 → r ≠ .r3 → r ≠ .r4 → t₅.gpr r = t.gpr r := fun r h0 h3 h4 => by
       rw [u₅.other _ h4, u₄.other _ h3, u₃.gpr, u₂.other _ h0, u₁.other _ h0, oth r h0 h3 h4]
-    have ev := eval_nonzero (r := .r4) (a := c.n / 8 - (k + 1)) r4' (by omega)
+    have ev := eval_nonzero (r := .r4) (a := c.n / 8 - (k + 1)) r4' (by omega_using [hn])
     by_cases he : k + 1 = c.n / 8
     · left
       exact ⟨by rw [ev]; simp [he], pk₅, by rw [r3', he], oth', by rw [hmem, he]⟩
     · right
-      exact ⟨by rw [ev]; simp; omega, c.n / 8 - (k + 1), by omega, k + 1, rfl, by omega, r3', r4', oth',
+      exact ⟨by rw [ev]; simp; omega_using [hk, he], c.n / 8 - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, he], r3', r4', oth',
         hmem, pk₅⟩
 
 /-- The bytes of the data from `i₀`, from `r3` there and `r5` their number. -/
@@ -276,15 +276,15 @@ theorem maskBytes_wp {c : Cx} (L : Lay c) {s t : State} (E : Env c s) {P : Prop}
       u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D c.n).map fun b => if P then b else 0) := by
   have hn := L.n_lt
   let f : Byte → Byte := fun b => if P then b else 0
-  refine WP.ite (decide (c.n - i₀ = 0)) (eval_zero r5 (by omega)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : i₀ = c.n := by have := of_decide_eq_true ht; omega
+  refine WP.ite (decide (c.n - i₀ = 0)) (eval_zero r5 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : i₀ = c.n := by have := of_decide_eq_true ht; omega_using [hi₀, this]
     refine WP.block_nil ⟨pk, rfl, by rw [mem, h0]⟩
   · have h0 : c.n - i₀ ≠ 0 := by simpa using hf
     refine WP.loop (M := isa)
       (fun (w : Nat) (u : State) => ∃ i, w = c.n - i ∧ i < c.n ∧ u.gpr .r3 = c.D + BitVec.ofNat 64 i ∧
         u.gpr .r5 = BitVec.ofNat 64 (c.n - i) ∧ u.gpr .r9 = maskOf P ∧ u.gpr .r25 = t.gpr .r25 ∧
         u.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i).map f) ∧ PK s u) ?_ (c.n - i₀) _
-      ⟨i₀, rfl, by omega, r3, r5, r9, rfl, mem, pk⟩
+      ⟨i₀, rfl, by omega_using [h0], r3, r5, r9, rfl, mem, pk⟩
     rintro w u ⟨i, rfl, hi, r3u, r5u, r9u, r25u, memu, pku⟩
     have Eu := E.of_pk pku
     have hin : i + 1 ≤ c.n := by omega_arith
@@ -360,9 +360,9 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
     rw [u₆.other _ (by decide), u₅.other _ (by decide), r4₄]
   have r5₆ : s₆.gpr .r5 = BitVec.ofNat 64 (c.n - 8 * (c.n / 8)) := by
     rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), r21₃, u₅.gpr, r4₄, shl3_ofNat c.n,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [])]
   refine WP.seq (WP.mono (maskWords_wp L E pk₆ r3₆ r4₆ r9₆ m₆) fun s₇ ⟨pk₇, r3₇, oth₇, m₇⟩ => ?_)
-  refine WP.mono (maskBytes_wp L E (i₀ := 8 * (c.n / 8)) (by omega) pk₇ r3₇
+  refine WP.mono (maskBytes_wp L E (i₀ := 8 * (c.n / 8)) (by omega_using []) pk₇ r3₇
     (by rw [oth₇ _ (by decide) (by decide) (by decide), r5₆])
     (by rw [oth₇ _ (by decide) (by decide) (by decide), r9₆]) m₇) fun s₈ ⟨pk₈, r25₈, m₈⟩ => ⟨pk₈, ?_, m₈⟩
   rw [r25₈, oth₇ _ (by decide) (by decide) (by decide), r25₆]

@@ -35,8 +35,12 @@ def publicJoint : Joint.Cfg :=
     gBits := 6000, tsym := "VG_P256_GTAB", cache := 4000, selected := 5408, peel := true,
     coZ := true, gw := 9 }
 
+/-- `publicJoint` with BMI2 and ADX, and the scalars' digits made without branches on their bits
+(`recodeB`). -/
 def publicJointAdx : Joint.Cfg :=
-  {publicJoint with K := p256vx.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}
+  { publicJoint with
+    K := p256vx.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
+    recodeB := true }
 
 /-- The joint loop's doubler: in place, with a modular halving. -/
 def jointDouble (K : WinCfg) : Prog isa := doubleHalfPublic K.M K.S K.R

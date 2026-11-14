@@ -50,7 +50,7 @@ theorem macR_wR {c : Cx} {st : Nat} (h : 240 ≤ st) (h' : st + 16 ≤ 384) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h (by omega)⟩
+  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h (by omega_using [h'])⟩
   · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
 
 theorem w16_wR {c : Cx} {d : Nat} (h : 240 ≤ d ∨ (16 ≤ d ∧ d + 16 ≤ 128)) (h' : d + 16 ≤ 2576) :
@@ -58,8 +58,8 @@ theorem w16_wR {c : Cx} {d : Nat} (h : 240 ≤ d ∨ (16 ≤ d ∧ d + 16 ≤ 12
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   rcases h with h | ⟨h₁, h₂⟩
-  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h (by omega)⟩
-  · exact ⟨⟨c.W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h (by omega_using [h'])⟩
+  · exact ⟨⟨c.W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 /-- A region apart from `W` is apart from `wR`. -/
 theorem dis_wR {c : Cx} {r : Region} (hw : r.Disjoint ⟨c.W, 2576⟩) : ∀ r' ∈ wR c, r.Disjoint r' := by
@@ -129,8 +129,8 @@ theorem start_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     fun hd => dis_wR (L.c_w.sub_left (Lay.cSub hd))
   have cK {d k : Nat} (hd : d + k ≤ 512) :
       bytesAt s₁.mem (c.C + BitVec.ofNat 64 d) k = bytesAt s.mem (c.C + BitVec.ofNat 64 d) k :=
-    Proof.Cmac.bytesAt_frame f₁ (dC hd) (by omega)
-  have sch := cK (d := 0) (k := 16 * (c.R + 1)) (by omega)
+    Proof.Cmac.bytesAt_frame f₁ (dC hd) (by omega_using [hd])
+  have sch := cK (d := 0) (k := 16 * (c.R + 1)) (by omega_using [hRb])
   rw [BitVec.add_zero] at sch
   have hz : bytesAt s₁.mem (c.W + BitVec.ofNat 64 zO) 16 = Spec.Cmac.zeros 16 := by
     have fz : Frame [⟨c.W + BitVec.ofNat 64 dO, 16⟩] (Proof.Cmac.zero2 s.mem (c.W + BitVec.ofNat 64 zO))
@@ -155,7 +155,7 @@ theorem in_off_le {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p,
     (hk : k ≤ 2 ^ 64) (hn : 0 < n) : InRegions rs (p + BitVec.ofNat 64 d) n :=
   h _ _ ⟨_, List.mem_singleton_self _, by
     simp only [Region.Contains]
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd, hk, hn])]
     exact hd⟩
 
 /-- Word `j` (0: the address, 1: the length) of descriptor `i` at `A`, in `m`. -/
@@ -167,8 +167,8 @@ theorem components_getElem (m : Mem) (A : Addr) {N i : Nat} (hi : i < N) :
       bytesAt m (descW m A i 0) (descW m A i 1).toNat := by
   simp only [Spec.Siv.components, Sig.listed, List.getElem_map, List.getElem_range, Elem.size, Nat.mul_one,
     descW, BitVec.setWidth_eq]
-  rw [show i * (2 * (64 / 8)) = 16 * i + 8 * 0 by omega, show (64 / 8 : Nat) = 8 from rfl, Offset.add_add,
-    show 16 * i + 8 * 0 + 8 = 16 * i + 8 * 1 by omega]
+  rw [show i * (2 * (64 / 8)) = 16 * i + 8 * 0 by omega_using [], show (64 / 8 : Nat) = 8 from rfl, Offset.add_add,
+    show 16 * i + 8 * 0 + 8 = 16 * i + 8 * 1 by omega_using []]
 
 theorem length_components (m : Mem) (p : Addr) (N : Nat) : (Spec.Siv.components 64 m p N).length = N := by
   simp [Spec.Siv.components, Sig.listed]
@@ -216,19 +216,19 @@ theorem adNext_wp {c : Cx} (L : Lay c) {σ s : State} {i : Nat} (h : AInv c σ i
   have dA : ∀ {d : Nat}, d + 8 ≤ 16 * c.N → ∀ r ∈ wR c, (⟨c.A + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
     fun hd => dis_wR (L.a_w.sub_left (Offset.sub_base _ hd))
   have a₀ : s.gpr .r17 + BitVec.ofNat 64 0 = c.A + BitVec.ofNat 64 (16 * i + 8 * 0) := by
-    rw [h.r17, Offset.add_add, show 16 * i + 0 = 16 * i + 8 * 0 by omega]
+    rw [h.r17, Offset.add_add, show 16 * i + 0 = 16 * i + 8 * 0 by omega_using []]
   have a₁ : s.gpr .r17 + BitVec.ofNat 64 8 = c.A + BitVec.ofNat 64 (16 * i + 8 * 1) := by
-    rw [h.r17, Offset.add_add, show 16 * i + 8 = 16 * i + 8 * 1 by omega]
+    rw [h.r17, Offset.add_add, show 16 * i + 8 = 16 * i + 8 * 1 by omega_using []]
   have i₀ : InRegions (s.rd ++ s.wr) (c.A + BitVec.ofNat 64 (16 * i + 8 * 0)) 8 :=
-    in_off_le h.env.perm.a (by omega) (by omega) (by decide)
+    in_off_le h.env.perm.a (by omega_using [hi]) (by omega_using [aw]) (by decide)
   have i₁ : InRegions (s.rd ++ s.wr) (c.A + BitVec.ofNat 64 (16 * i + 8 * 1)) 8 :=
-    in_off_le h.env.perm.a (by omega) (by omega) (by decide)
+    in_off_le h.env.perm.a (by omega_using [hi]) (by omega_using [aw]) (by decide)
   have v₀ : s.mem.readW (c.A + BitVec.ofNat 64 (16 * i + 8 * 0)) 64 = descW σ.mem c.A i 0 :=
     (h.frame.readW (r := ⟨c.A + BitVec.ofNat 64 (16 * i + 8 * 0), 8⟩) (Region.contains_self _ _)
-      (dA (by omega)) (by decide))
+      (dA (by omega_using [hi])) (by decide))
   have v₁ : s.mem.readW (c.A + BitVec.ofNat 64 (16 * i + 8 * 1)) 64 = descW σ.mem c.A i 1 :=
     (h.frame.readW (r := ⟨c.A + BitVec.ofNat 64 (16 * i + 8 * 1), 8⟩) (Region.contains_self _ _)
-      (dA (by omega)) (by decide))
+      (dA (by omega_using [hi])) (by decide))
   unfold adNext
   refine wp_ld (a := c.A + BitVec.ofNat 64 (16 * i + 8 * 0)) (by decide) (by decide) a₀ i₀ fun s₁ u₁ => ?_
   refine wp_ld (a := c.A + BitVec.ofNat 64 (16 * i + 8 * 1)) (by decide) (by decide)
@@ -243,7 +243,7 @@ theorem ctxMac_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : A
     (hd : ∀ r ∈ rs, (⟨C, 512⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.Siv.ctxMac m' C R = Spec.Siv.ctxMac m C R := by
   unfold Spec.Siv.ctxMac Spec.Siv.schedCiph
-  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega))) (by omega),
+  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by omega_using [hR]))) (by omega_using [hR]),
     Proof.Cmac.bytesAt_frame hf (p := C + 240)
       (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 240) (n := 16) (by decide))) (by decide),
     Proof.Cmac.bytesAt_frame hf (p := C + 256)
@@ -254,7 +254,7 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : 
     Spec.Siv.ctxCiph m' C R = Spec.Siv.ctxCiph m C R := by
   unfold Spec.Siv.ctxCiph Spec.Siv.schedCiph
   rw [Proof.Cmac.bytesAt_frame hf (p := C + 272)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega))) (by omega)]
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base C (d := 272) (n := 16 * (R + 1)) (by omega_using [hR]))) (by omega_using [hR])]
 
 /-! ## A step of the loop -/
 
@@ -341,7 +341,7 @@ theorem aStep_wp {c : Cx} (L : Lay c) {σ s : State} {i : Nat} (h : AInv c σ i 
   have E₂ := E₁.of_pk K₂.pk
   have h17₂ : s₂.gpr .r17 = c.A + BitVec.ofNat 64 (16 * i) := by rw [K₂.r17, k₁.r17, h.r17]
   have h18₂ : s₂.gpr .r18 = BitVec.ofNat 64 (c.N - i) := by rw [K₂.r18, k₁.r18, h.r18]
-  refine WP.mono (adStep_wp E₂ (i := i) (k := c.N - i) (by omega) (by omega) h17₂ h18₂)
+  refine WP.mono (adStep_wp E₂ (i := i) (k := c.N - i) (by omega_using [hi]) (by omega_using [aw]) h17₂ h18₂)
     fun s₃ ⟨pk₃, h17₃, h18₃, m₃⟩ => ?_
   -- The memory.
   have f₀₂ : Frame (wR c) σ.mem s₂.mem := h.frame.trans (by rw [← k₁.mem]; exact f₂.sub (macR_wR (by decide)
@@ -353,7 +353,7 @@ theorem aStep_wp {c : Cx} (L : Lay c) {σ s : State} {i : Nat} (h : AInv c σ i 
     rw [k₁.mem]; exact ctxMac_frame h.frame dc hRb
   have comp₁ : bytesAt s₁.mem (descW σ.mem c.A i 0) (descW σ.mem c.A i 1).toNat =
       bytesAt σ.mem (descW σ.mem c.A i 0) (descW σ.mem c.A i 1).toNat := by
-    rw [k₁.mem]; exact Proof.Cmac.bytesAt_frame h.frame (dis_wR (h.ads i hi).w) (by have := (h.ads i hi).lt; omega)
+    rw [k₁.mem]; exact Proof.Cmac.bytesAt_frame h.frame (dis_wR (h.ads i hi).w) (by have := (h.ads i hi).lt; omega_using [])
   have dD₂ : bytesAt s₂.mem (c.W + BitVec.ofNat 64 dO) 16 = bytesAt s₁.mem (c.W + BitVec.ofNat 64 dO) 16 := by
     refine Proof.Cmac.bytesAt_frame f₂ (fun r hr => ?_) (by decide)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -365,7 +365,7 @@ theorem aStep_wp {c : Cx} (L : Lay c) {σ s : State} {i : Nat} (h : AInv c σ i 
     h.ads.of_eq (by rw [pk₃.rd, K₂.pk.rd, k₁.pk.rd]) (by rw [pk₃.wr, K₂.pk.wr, k₁.pk.wr]), h17₃, ?_,
     f₀₂.trans f₂₃, ?_⟩
   · rw [h18₃, Nat.sub_sub]
-  · rw [m₃, stepMem_bytes L, out₂, dD₂, mac₁, comp₁, k₁.mem, h.acc, List.take_succ_eq_append_getElem (by omega),
+  · rw [m₃, stepMem_bytes L, out₂, dD₂, mac₁, comp₁, k₁.mem, h.acc, List.take_succ_eq_append_getElem (by omega_using [hi, hl]),
       s2vAcc_snoc, components_getElem σ.mem c.A hi]
     rfl
 
@@ -373,7 +373,7 @@ theorem aStep_wp {c : Cx} (L : Lay c) {σ s : State} {i : Nat} (h : AInv c σ i 
 theorem s2vAds_wp {c : Cx} (L : Lay c) {σ s : State} (h : AInv c σ 0 s) :
     WP isa s2vAds s (AInv c σ c.N) := by
   have aw := L.aw
-  have hN : c.N < 2 ^ 64 := by omega
+  have hN : c.N < 2 ^ 64 := by omega_using [aw]
   have h18 : s.gpr .r18 = BitVec.ofNat 64 c.N := by rw [h.r18, Nat.sub_zero]
   unfold s2vAds
   refine WP.ite (decide (c.N = 0)) (VG.Proof.Gather.PPC64LE.eval_zero h18 hN) (fun ht => ?_) (fun hf => ?_)
@@ -381,16 +381,16 @@ theorem s2vAds_wp {c : Cx} (L : Lay c) {σ s : State} (h : AInv c σ 0 s) :
     exact WP.block_nil (by rw [h0]; exact h)
   · have h0 : c.N ≠ 0 := by simpa using hf
     refine WP.loop (M := isa) (fun (n : Nat) (t : State) => ∃ j, n = c.N - j ∧ j < c.N ∧ AInv c σ j t)
-      ?_ (c.N - 0) s ⟨0, rfl, by omega, h⟩
+      ?_ (c.N - 0) s ⟨0, rfl, by omega_using [h0], h⟩
     rintro n t ⟨j, rfl, hj, hI⟩
     refine WP.mono (aStep_wp L hI hj) fun t' hI' => ?_
-    have ev := VG.Proof.Gather.PPC64LE.eval_nonzero hI'.r18 (by omega)
+    have ev := VG.Proof.Gather.PPC64LE.eval_nonzero hI'.r18 (by omega_using [aw])
     by_cases hz : c.N - (j + 1) = 0
     · left
       refine ⟨by rw [ev]; simp [hz], ?_⟩
-      have e : j + 1 = c.N := by omega
+      have e : j + 1 = c.N := by omega_using [hj, hz]
       rw [e] at hI'; exact hI'
     · right
-      exact ⟨by rw [ev]; simp [hz], c.N - (j + 1), by omega, j + 1, rfl, by omega, hI'⟩
+      exact ⟨by rw [ev]; simp [hz], c.N - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hz], hI'⟩
 
 end VG.Proof.AesSiv.PPC64LE

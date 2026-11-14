@@ -30,7 +30,7 @@ theorem frameR_contains {L : GL} {s₀ : State} (hL : L.Ok) (hsp : s₀.sp = L.s
   have hF := hL.fnw
   simp only [frameR, hsp, frameBytes] at hF h₂ ⊢
   rw [show L.sp - BitVec.ofNat 64 304 + 32 = off L.F 32 from rfl]
-  exact VG.Offset.contains L.F h₁ (by omega) (by omega)
+  exact VG.Offset.contains L.F h₁ (by omega_using [h₂]) (by omega_using [])
 
 /-- The frame's offsets past it are the stack pointer's. -/
 theorem F_add (L : GL) (d : Nat) : off L.F (frameBytes + d) = L.sp + BitVec.ofNat 64 d := by
@@ -43,7 +43,7 @@ theorem bytes_outside {L : GL} {m m' : Mem} (ho : Outside L.F 0 frameBytes m m')
   simp only [Spec.Rsa.bytesAt, List.map_inj_left, List.mem_range]
   intro i hi
   refine ho _ (.inr ?_)
-  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega) (by omega)
+  have hc : (⟨A, k⟩ : Region).Contains (A + BitVec.ofNat 64 i) 1 := VG.Offset.contains_base A (by omega_using [hi]) (by omega_using [hk, hi])
   by_contra hcon
   exact hd _ (show L.frR.Contains (A + BitVec.ofNat 64 i) 1 by
     simp only [Region.Contains, frameBytes, ofs] at hcon ⊢; omega) hc
@@ -62,7 +62,7 @@ theorem scr_nonce {L : GL} {s₀ t : State} (hL : L.Ok) (hsp : s₀.sp = L.sp)
     rfl
   · rw [off, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oNonce) (by decide)]
     simp only [oNonce]
-    omega
+    omega_using [hF]
 
 /-- What `entry` leaves. -/
 structure Entered (L : GL) (s₀ : State) (t : State) : Prop where
@@ -80,8 +80,8 @@ theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
   simp only [frameBytes] at hF'
   have hE : (allocated frameBytes s₀).sp = L.F := by simp only [allocated, hsp]
   have hin : ∀ i < 19, InRegions (allocated frameBytes s₀).wr (off L.F (oSave + 8 * i)) 8 := fun i hi =>
-    ⟨_, List.mem_cons_self .., frameR_contains hL hsp (by simp only [oSave]; omega)
-      (by simp only [oSave, frameBytes]; omega)⟩
+    ⟨_, List.mem_cons_self .., frameR_contains hL hsp (by simp only [oSave]; omega_using [])
+      (by simp only [oSave, frameBytes]; omega_using [hi])⟩
   rw [entry, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (saveRegs_ok _ hF hE hin) fun t₁ h₁ => ?_
   -- The call's data.
@@ -100,35 +100,35 @@ theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
     simp only [allocated, hsp, ofs] at hx ⊢
     apply Mem.write_apply
     show ¬ (x - L.F).toNat < 8
-    omega
+    omega_using [hx]
   have o₁ : Outside L.F 0 frameBytes s₀.mem t₁.mem :=
-    (o₀.mono (by omega) (by simp only [frameBytes]; omega)).trans (h₁.out.mono (by omega)
-      (by simp only [oSave, frameBytes]; omega))
+    (o₀.mono (by omega_using []) (by simp only [frameBytes]; omega_using [])).trans (h₁.out.mono (by omega_using [])
+      (by simp only [oSave, frameBytes]; omega_using []))
   -- The arguments on the stack.
   obtain ⟨-, -, hrd, -⟩ := h
   have hargs : ∀ i < 3, InRegions (t₁.rd ++ t₁.wr) (L.F + BitVec.ofNat 64 (argOff i)) 8 ∧
       t₁.mem.readW (L.F + BitVec.ofNat 64 (argOff i)) 64 = stackArg s₀ i := fun i hi => by
     have e : L.F + BitVec.ofNat 64 (argOff i) = stackArgAddr s₀ 0 + BitVec.ofNat 64 (8 * i) := by
       rw [show L.F + BitVec.ofNat 64 (argOff i) = off L.F (frameBytes + (96 + 8 * i)) by
-        simp only [argOff, frameBytes]; rw [show 304 + 96 + 8 * i = 304 + (96 + 8 * i) by omega], F_add,
+        simp only [argOff, frameBytes]; rw [show 304 + 96 + 8 * i = 304 + (96 + 8 * i) by omega_using []], F_add,
         stackArgAddr, hsp, show 32 + 8 * (8 + 0) = 96 by rfl, BitVec.add_assoc, BitVec.ofNat_add]
     refine ⟨?_, ?_⟩
     · rw [h₁.rd, e]
       exact ⟨gkStackArgs s₀, List.mem_append_left _ (show gkStackArgs s₀ ∈ s₀.rd by rw [hrd]; simp),
-        VG.Offset.contains_base _ (by omega) (by omega)⟩
+        VG.Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
     · rw [show L.F + BitVec.ofNat 64 (argOff i) = off L.F (argOff i) from rfl,
         show t₁.mem.readW (off L.F (argOff i)) 64 = word t₁.mem L.F (argOff i) from rfl,
-        o₁.word (.inr (by simp only [argOff, frameBytes]; omega)) (by simp only [argOff, frameBytes]; omega)]
+        o₁.word (.inr (by simp only [argOff, frameBytes]; omega_using [])) (by simp only [argOff, frameBytes]; omega_using [hi])]
       show s₀.mem.readW (L.F + BitVec.ofNat 64 (argOff i)) 64 = _
       rw [e]
       simp only [stackArg, stackArgAddr]
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 32 + 8 * (8 + 0) + 8 * i = 32 + 8 * (8 + i) by omega]
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 32 + 8 * (8 + 0) + 8 * i = 32 + 8 * (8 + i) by omega_using []]
   obtain ⟨l0, v0⟩ := hargs 0 (by decide)
   obtain ⟨l1, v1⟩ := hargs 1 (by decide)
   obtain ⟨l2, v2⟩ := hargs 2 (by decide)
   simp only [argOff, frameBytes, Nat.reduceAdd, Nat.reduceMul] at l0 v0 l1 v1 l2 v2
   have st : InRegions t₁.wr (L.F + BitVec.ofNat 64 96) 8 := by
-    rw [h₁.wr]; exact ⟨_, List.mem_cons_self .., frameR_contains hL hsp (by omega) (by simp only [frameBytes]; omega)⟩
+    rw [h₁.wr]; exact ⟨_, List.mem_cons_self .., frameR_contains hL hsp (by omega_using []) (by simp only [frameBytes]; omega_using [])⟩
   have hr : ∀ r, r ≠ .r0 → r ≠ .r12 → t₁.gpr r = s₀.gpr r := fun r h0 h12 => h₁.others r h0 h12
   simp only [argOff, oArgs, frameBytes, Nat.reduceAdd, Nat.reduceMul]
   refine WP.mono (WP.keep [.r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r30] (Q := fun t =>
@@ -147,14 +147,14 @@ theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
   -- Memory on exit, from `t₁`'s.
   have o₂ : Outside L.F oArgs 8 t₁.mem t₂.mem := by
     rw [bm]
-    exact (writeW_outside _ L.F (d := 96) _ (by omega)).mono (by simp only [oArgs]; omega) (by simp only [oArgs]; omega)
+    exact (writeW_outside _ L.F (d := 96) _ (by omega_using [])).mono (by simp only [oArgs]; omega_using []) (by simp only [oArgs]; omega_using [])
   have o₃ : Outside L.F 0 frameBytes s₀.mem t.mem :=
-    (o₁.trans (o₂.mono (by omega) (by simp only [oArgs, frameBytes]; omega))).trans
-      (tou.mono (by omega) (by simp only [oNonce, frameBytes]; omega))
+    (o₁.trans (o₂.mono (by omega_using []) (by simp only [oArgs, frameBytes]; omega_using []))).trans
+      (tou.mono (by omega_using []) (by simp only [oNonce, frameBytes]; omega_using []))
   have w₃ : ∀ d, (d + 8 ≤ oArgs ∨ oNonce + 32 ≤ d) → d + 8 ≤ frameBytes →
       t.mem.readW (off L.F d) 64 = t₁.mem.readW (off L.F d) 64 := fun d hd hd' => by
-    have e1 := tou.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega) (by simp only [frameBytes] at hd'; omega)
-    have e2 := o₂.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega) (by simp only [frameBytes] at hd'; omega)
+    have e1 := tou.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega_using [hd]) (by simp only [frameBytes] at hd'; omega_using [hd'])
+    have e2 := o₂.word (d := d) (by simp only [oNonce, oArgs] at hd ⊢; omega_using [hd]) (by simp only [frameBytes] at hd'; omega_using [hd'])
     exact e1.trans e2
   have g₃ : ∀ r, r ≠ .r0 → r ≠ .r12 → r ∉ ([.r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26,
       .r30] : List Reg) → t.gpr r = s₀.gpr r := fun r h0 h12 hr =>
@@ -164,14 +164,14 @@ theorem entry_ok {s₀ : State} (h : gkContract.pre s₀) :
     (k₃.gpr _ (by decide)).trans b21, (k₃.gpr _ (by decide)).trans b22, (k₃.gpr _ (by decide)).trans b23,
     (k₃.gpr _ (by decide)).trans b24, (k₃.gpr _ (by decide)).trans b26, (k₃.gpr _ (by decide)).trans b30,
     fun i hi => ?_, ?_, ?_,
-    bytes_outside o₃ hL.dFK (by have := hL.nwPar; omega), bytes_outside o₃ hL.dFR (Nat.le_of_lt hL.rl)⟩,
+    bytes_outside o₃ hL.dFK (by have := hL.nwPar; omega_using [this]), bytes_outside o₃ hL.dFR (Nat.le_of_lt hL.rl)⟩,
     (k₃.gpr _ (by decide)).trans b25, tz⟩
-  · rw [w₃ _ (.inr (by simp only [oSave, oNonce]; omega)) (by simp only [oSave, frameBytes]; omega)]
+  · rw [w₃ _ (.inr (by simp only [oSave, oNonce]; omega_using [])) (by simp only [oSave, frameBytes]; omega_using [hi])]
     exact h₁.saved i hi
   · rw [w₃ _ (.inr (by decide)) (by decide)]
     exact h₁.savedLr
   · rw [show t.mem.readW (off L.F oArgs) 64 = t₂.mem.readW (off L.F oArgs) 64 from
-      tou.word (by simp only [oNonce, oArgs]; omega) (by simp only [oArgs]; omega), bm]
+      tou.word (by simp only [oNonce, oArgs]; omega_using []) (by simp only [oArgs]; omega_using []), bm]
     simp only [off, oArgs]
     rw [Mem.readW_writeW_self64]
 

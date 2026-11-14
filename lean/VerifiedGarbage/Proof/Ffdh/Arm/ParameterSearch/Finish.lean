@@ -87,7 +87,7 @@ theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.Pa
   have fit : u.sp.toNat + 24 ≤ 2 ^ 32 := by
     rw [rest.sp, h.sp, FrameStack.sub_toNat' h.stackFits]
     have := original.sp.isLt
-    omega
+    omega_using []
   refine WP.mono (restoreSlots_ok finishRestoreSlots u original.gpr (by decide) fit read
     (by intro e he
         simp only [finishRestoreSlots, List.mem_cons, List.not_mem_nil, or_false] at he
@@ -125,7 +125,7 @@ theorem finish_ok {p : SearchParams} {original s : State} {result : Spec.Ffdh.Pa
   · rw [popped_mem, memT]
     exact h.toSearchDone.output_after_used frame
   · rw [popped_mem, memT, mem]
-    exact usedMem_words _ _ _ (by have := h.usedBound; have := p.c.tapeCount; omega)
+    exact usedMem_words _ _ _ (by have := h.usedBound; have := p.c.tapeCount; omega_arith)
   · rw [popped_mem, memT]
     exact h.toSearchDone.policy_after_used frame
 

@@ -36,15 +36,15 @@ abbrev argsR (SP : BitVec 32) (n : Nat) : Region := ⟨w64 (SP + BitVec.ofNat 32
 theorem argA_eq {SP : BitVec 32} {n i : Nat} (hi : i < n) (hf : SP.toNat + 4 + 4 * n ≤ 2 ^ 32) :
     argA SP i = w64 (SP + BitVec.ofNat 32 4) + BitVec.ofNat 64 (4 * i) := by
   rw [argA, ← add_ofNat_assoc32]
-  exact w64_add (by rw [toNat_add32 (by omega)]; omega)
+  exact w64_add (by rw [toNat_add32 (by omega_using [hi, hf])]; omega_using [hi, hf])
 
 theorem argA_sub {SP : BitVec 32} {n i : Nat} (hi : i < n) (hf : SP.toNat + 4 + 4 * n ≤ 2 ^ 32) :
     Region.Sub ⟨argA SP i, 4⟩ (argsR SP n) := by
-  rw [argA_eq hi hf]; exact Offset.sub_base _ (by omega)
+  rw [argA_eq hi hf]; exact Offset.sub_base _ (by omega_using [hi])
 
 theorem argA_contains {SP : BitVec 32} {n i : Nat} (hi : i < n) (hf : SP.toNat + 4 + 4 * n ≤ 2 ^ 32) :
     (argsR SP n).Contains (argA SP i) 4 := by
-  rw [argA_eq hi hf]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [argA_eq hi hf]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, hf])
 
 /-- Where `saveAt` puts our caller's registers. -/
 def SavedAt (m : Mem) (W : BitVec 32) (s₀ : State) : Prop :=
@@ -57,7 +57,7 @@ abbrev savedR (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 128, 16⟩
 theorem SavedAt.frame {m m' : Mem} {W : BitVec 32} {s₀ : State} (h : SavedAt m W s₀) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (savedR W).Disjoint r) : SavedAt m' W s₀ := by
   have k : ∀ {o}, 128 ≤ o → o + 4 ≤ 144 → slotv m' W o = slotv m W o := fun h₁ h₂ =>
-    slot_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega))
+    slot_frame hf fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using [h₁]) (by omega_using [h₂]))
   exact ⟨by rw [k (by decide) (by decide)]; exact h.1, by rw [k (by decide) (by decide)]; exact h.2.1,
     by rw [k (by decide) (by decide)]; exact h.2.2.1, by rw [k (by decide) (by decide)]; exact h.2.2.2⟩
 
@@ -72,7 +72,7 @@ theorem save_ok (s : State) {W : BitVec 32} (ha : s.gpr .eax = W) (hw : Covers [
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ SavedAt s'.mem W s ∧
       Frame [⟨w64 W + BitVec.ofNat 64 128, 16⟩] s.mem s'.mem := by
   have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-    fun ho => w64_add (by omega)
+    fun ho => w64_add (by omega_using [fw, ho])
   have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 :=
     fun ho => in_off hw ho (by decide)
   refine ⟨_, by xrun [saveAt, ha, aW, wIn], ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -83,7 +83,7 @@ theorem save_ok (s : State) {W : BitVec 32} (ha : s.gpr .eax = W) (hw : Covers [
   · refine ⟨?_, ?_, ?_, ?_⟩ <;> (simp only [slotv_eq]; mems [])
   · have c : ∀ d, 128 ≤ d → d + 4 ≤ 144 →
         (⟨w64 W + BitVec.ofNat 64 128, 16⟩ : Region).Contains (w64 W + BitVec.ofNat 64 d) 4 :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     simp only [mem_setMem, gpr_setMem, mem_setReg]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 128 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 132 (by decide) (by decide))).writeW
@@ -119,7 +119,7 @@ theorem keep_ok {W SP : BitVec 32} {n : Nat} {s : State} (h : KeepEnv W SP n s) 
     ∃ s', runBlock isa (keep i o) s = some s' ∧
       s'.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 o) (s.mem.readW (argA SP i) 32) ∧
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have := h.fw; omega)
+  have aW : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := w64_add (by have := h.fw; omega_using [ho, this])
   have wIn : InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := in_off h.wW ho (by decide)
   have rIn := h.argIn hi
   refine ⟨_, by xrun [keep, h.esp, h.ebp, aW, wIn, rIn], ?_, ?_, ?_, ?_⟩
@@ -162,7 +162,7 @@ theorem keeps_ok {W SP : BitVec 32} {n : Nat} (ps : List (Nat × Nat))
         obtain ⟨q', hq', rfl⟩ := hr
         have ne : q'.2 ≠ q.2 := fun e => hnd'.1 (List.mem_map.mpr ⟨q', hq', e⟩)
         have := hps q' (List.mem_cons_of_mem _ hq')
-        exact Lay.w_w (by omega) (by omega) (by omega)
+        exact Lay.w_w (by omega_using [hp4, ne, this]) (by omega_using [hp2]) (by omega_using [this])
       · rw [sl q hq, argS q hq]
     · exact (fw.mono (by simp)).trans (fr.mono (fun r hr => List.mem_cons_of_mem _ hr))
 
@@ -173,7 +173,7 @@ theorem exit_ok {s s₀ : State} {W : BitVec 32} (hbp : s.gpr .ebp = W) (hsp : s
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .eax = s.gpr .eax ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-    fun ho => w64_add (by omega)
+    fun ho => w64_add (by omega_using [fw, ho])
   have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 :=
     fun ho => in_off hr ho (by decide)
   obtain ⟨e₁, e₂, e₃, e₄⟩ := hs
@@ -255,7 +255,7 @@ theorem entry_gen {s : State} {w nA : Nat} (pre : List Instr) (ps : List (Nat ×
     · simp only [List.mem_map] at hr
       obtain ⟨p, hp, rfl⟩ := hr
       have := hps p hp
-      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega) (by omega)⟩
+      exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_using [this]) (by omega_using [this])⟩
   have hargs : ∀ i < nA, s₃.mem.readW (argA SP i) 32 = arg s i := fun i hi =>
     (f₃'.readW (r := ⟨argA SP i, 4⟩) (Region.contains_self _ _) (argW hi) (by decide)).trans (by
       rw [arg, argAddr, hSP])
@@ -264,7 +264,7 @@ theorem entry_gen {s : State} {w nA : Nat} (pre : List Instr) (ps : List (Nat ×
       simp only [List.mem_map] at hr
       obtain ⟨p, hp, rfl⟩ := hr
       have := hps p hp
-      exact Lay.w_w (.inl (by omega)) (by decide) (by omega)
+      exact Lay.w_w (.inl (by omega_using [this])) (by decide) (by omega_using [this])
     obtain ⟨a, b, c, d⟩ := this
     refine ⟨a.trans ?_, b.trans ?_, c.trans ?_, d.trans ?_⟩ <;>
       simp only [hs₀, gpr_setReg_of_ne _ _ (by decide : Reg.ebx ≠ .eax), gpr_setReg_of_ne _ _ (by decide : Reg.esi ≠ .eax),

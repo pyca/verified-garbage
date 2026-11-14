@@ -140,6 +140,76 @@ theorem exec_shaped {s s' : State} {t : List Leak} (h : Exec isa (.seq body (.bl
   simp only [List.append_assoc] at e ⊢
   exact e
 
+/-- `post`'s arithmetic, through the last inverse (`crtPart`'s), and the rest:
+the inverse's passes borrow the body's registers (keeping them in the
+working space), so the analysis takes them as secret after it, and
+correctness pins them again for the rest. -/
+def postA : Prog isa := seqs [smallPart, qinvPart, crtPart]
+
+def postB : Prog isa := .seq (seqs [nPart, maskPart, stores]) (.block restore)
+
+/-- Everything through `dPar`. -/
+def front1 : Prog isa := .seq pre (.seq ldX3 (.ite (.nonzero .t5) (copy aD aS) dEven))
+
+/-- Everything through `crtPart`. -/
+def front' : Prog isa := .seq front1 postA
+
+theorem exec_split {s s' : State} {t : List Leak} (h : Exec isa shaped s t s') :
+    Exec isa (.seq front' postB) s t s' := by
+  simp only [shaped, post, seqs] at h
+  simp only [front', front1, postA, seqs]
+  obtain ⟨_, _, _, hp, g1, rfl⟩ := seq_inv h
+  obtain ⟨_, _, _, hl, g2, rfl⟩ := seq_inv g1
+  obtain ⟨_, _, _, hi, g3, rfl⟩ := seq_inv g2
+  obtain ⟨_, _, _, g4, hR, rfl⟩ := seq_inv g3
+  obtain ⟨_, _, _, h1, g5, rfl⟩ := seq_inv g4
+  obtain ⟨_, _, _, h2, g6, rfl⟩ := seq_inv g5
+  obtain ⟨_, _, _, h3, g7, rfl⟩ := seq_inv g6
+  have e := Exec.seq (Exec.seq (Exec.seq hp (Exec.seq hl hi)) (Exec.seq h1 (Exec.seq h2 h3))) (Exec.seq g7 hR)
+  simp only [List.append_assoc] at e ⊢
+  exact e
+
+/-- The body through `crtPart`, as `front'`. -/
+theorem exec_front {s s' : State} {t : List Leak}
+    (h : Exec isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart, dPart, smallPart, qinvPart, crtPart])))
+      s t s') : Exec isa front' s t s' := by
+  simp only [consts, dPart, dPar, List.cons_append, List.nil_append, seqs] at h
+  obtain ⟨_, _, _, h1, g1, rfl⟩ := seq_inv h
+  obtain ⟨_, _, _, h2, g2, rfl⟩ := seq_inv g1
+  obtain ⟨_, _, _, h3, g3, rfl⟩ := seq_inv g2
+  obtain ⟨_, _, _, h4, g4, rfl⟩ := seq_inv g3
+  obtain ⟨_, _, _, h5, g5, rfl⟩ := seq_inv g4
+  obtain ⟨_, _, _, h6, g6, rfl⟩ := seq_inv g5
+  obtain ⟨_, _, _, gD, gP, rfl⟩ := seq_inv g6
+  obtain ⟨_, _, _, h7, g7, rfl⟩ := seq_inv gD
+  obtain ⟨_, _, _, h8, g8, rfl⟩ := seq_inv g7
+  obtain ⟨_, _, _, h9, g9, rfl⟩ := seq_inv g8
+  obtain ⟨_, _, _, hl, hi, rfl⟩ := seq_inv g9
+  have e := Exec.seq (Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
+    (Exec.seq h7 (Exec.seq h8 h9))))))) (Exec.seq hl hi)) gP
+  simp only [front', front1, postA, seqs, List.append_assoc] at e ⊢
+  exact e
+
+/-- The body through `dPar`, as `front1`. -/
+theorem exec_front1 {s s' : State} {t : List Leak}
+    (h : Exec isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart, dPart]))) s t s') :
+    Exec isa front1 s t s' := by
+  simp only [consts, dPart, dPar, List.cons_append, List.nil_append, seqs] at h
+  obtain ⟨_, _, _, h1, g1, rfl⟩ := seq_inv h
+  obtain ⟨_, _, _, h2, g2, rfl⟩ := seq_inv g1
+  obtain ⟨_, _, _, h3, g3, rfl⟩ := seq_inv g2
+  obtain ⟨_, _, _, h4, g4, rfl⟩ := seq_inv g3
+  obtain ⟨_, _, _, h5, g5, rfl⟩ := seq_inv g4
+  obtain ⟨_, _, _, h6, gD, rfl⟩ := seq_inv g5
+  obtain ⟨_, _, _, h7, g7, rfl⟩ := seq_inv gD
+  obtain ⟨_, _, _, h8, g8, rfl⟩ := seq_inv g7
+  obtain ⟨_, _, _, h9, g9, rfl⟩ := seq_inv g8
+  obtain ⟨_, _, _, hl, hi, rfl⟩ := seq_inv g9
+  have e := Exec.seq (Exec.seq h1 (Exec.seq h2 (Exec.seq (Exec.seq h3 h4) (Exec.seq h5 (Exec.seq h6
+    (Exec.seq h7 (Exec.seq h8 h9))))))) (Exec.seq hl hi)
+  simp only [front1, List.append_assoc] at e ⊢
+  exact e
+
 /-- What two runs of a program agreeing on `c`'s runs agree on. -/
 theorem RelCT.of_exec {P Q : State → State → Prop} {c c' : Prog isa}
     (hc : ∀ s t s', Exec isa c' s t s' → Exec isa c s t s') (h : RelCT isa P c Q) : RelCT isa P c' Q :=
@@ -227,6 +297,12 @@ theorem pins_S3 : Pins S3 bodyPins := fun _ _ _ ⟨_x, hx, _, _, ex, _⟩ ⟨_y,
 theorem pins_S4 : Pins S4 bodyPins := fun _ _ _ ⟨_x, hx, _, _, ex, _⟩ ⟨_y, hy, _, _, ey, _⟩ =>
   St.pins (hx.same hy) ex.st ey.st
 
+/-- After `crtPart`. -/
+def S5 (d : Dt) (t : State) : Prop := ∃ s0, C0 d s0 ∧ ∃ V F, KE s0 V F t
+
+theorem pins_S5 : Pins S5 bodyPins := fun _ _ _ ⟨_x, hx, _, _, ex⟩ ⟨_y, hy, _, _, ey⟩ =>
+  St.pins (hx.same hy) ex.st ey.st
+
 /-! ## Everything before the branch, by correctness -/
 
 theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : CB s0 s0.mem v)
@@ -235,7 +311,7 @@ theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : C
   have hpw : Spec.Rsa.os2ip (pB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
   have hqw : Spec.Rsa.os2ip (qB s0) < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
   have hew : Spec.Rsa.os2ip (eB s0) < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega))
+    Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega_using [this]))
   unfold pre
   simp only [seqs]
   refine WP.seq (WP.mono (setup_ok h c ha7) fun t1 ⟨c1, a71⟩ => ?_)
@@ -254,10 +330,10 @@ theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : C
     have hq0 : nm s0 t3.mem aQ0 = Spec.Rsa.os2ip (qB s0) := (o3 aQ0 (by decide) (by decide)).trans q2
     rw [p4, q4, hp0, hq0]
     constructor <;> split <;> with_reducible assumption
-  have hpm : nm s0 t4.mem aPm < 2 ^ (8 * pLen s0) := by rw [pm4]; have := pq4.1; omega
-  have hqm : nm s0 t4.mem aQm < 2 ^ (8 * pLen s0) := by rw [qm4]; have := pq4.2; omega
+  have hpm : nm s0 t4.mem aPm < 2 ^ (8 * pLen s0) := by rw [pm4]; have := pq4.1; omega_using [pq4]
+  have hqm : nm s0 t4.mem aQm < 2 ^ (8 * pLen s0) := by rw [qm4]; have := pq4.2; omega_using [pq4]
   have hdv : word t4.mem (bOf s0) (arr (wOf s0) aDv + 8 * wOf s0) = 0 :=
-    c4.word_zero (j := aDv) (by decide) (by decide) (by omega)
+    c4.word_zero (j := aDv) (by decide) (by decide) (by omega_using [])
   refine WP.seq (WP.mono (lcmPart_ok h c4 one4 two4 three4 zero4 hpm hqm hdv) fun t5 ⟨c5, o5, _, dv5⟩ => ?_)
   have e5 := KE.of_st c5 dv5
   have v5 : ∀ j, j < nArr → j ∉ lcmArrs → j ∉ primesArrs → j ∉ constArrs →
@@ -281,8 +357,8 @@ theorem pre_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 v : State} (h : PreC s0) (c : C
     fun t7 ⟨V7, F7, e7, o7, p7, _, _, _, _, x6⟩ => ?_)
   have one7 : V7 aOne = 1 := by rw [o7 _ (by decide) (by decide), o6 _ (by decide)]; exact one5
   have b4 : F7 X4 ≤ 1 := by
-    rw [p7 X4 (by decide) (by decide) (by decide) (by decide), x4]; split <;> omega
-  have b6 : F7 X6 ≤ 1 := by rw [x6]; split <;> omega
+    rw [p7 X4 (by decide) (by decide) (by decide) (by decide), x4]; split <;> omega_using []
+  have b6 : F7 X6 ≤ 1 := by rw [x6]; split <;> omega_using []
   refine WP.mono (dOne_ok e7 one7 b4 b6) fun t ⟨V8, F8, e8, _, p8, _, _⟩ => ⟨V8, F8, e8, ?_⟩
   rw [p8 X3 (by decide) (by decide) (by decide), p7 X3 (by decide) (by decide) (by decide) (by decide), x3]
   exact congrArg (· % 2) ve5
@@ -297,22 +373,30 @@ theorem ld_rel : RelCT isa (Two S3) ldX3 (Two S4) :=
   two_post (two_taint bodyPins pins_S3 (by taint_decide)) fun _ _ ⟨s0, c0, V, F, e, x3⟩ =>
     WP.mono (ldX3_ok e) fun _ ⟨e', t5⟩ => ⟨s0, c0, V, F, e', t5.trans x3⟩
 
-theorem shaped_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two S2) shaped fun _ _ => True := by
-  refine RelCT.seq (R := Two S3) pre_rel (RelCT.seq (R := Two S4) ld_rel (RelCT.ite_seq' (RelCT.ite ?_ ?_ ?_)))
-  · rintro s₁ s₂ ⟨a, ⟨x, hx, -, -, -, x5⟩, ⟨y, hy, -, -, -, y5⟩, -⟩
-    rw [Steps.eval_nonzero, Steps.eval_nonzero, BitVec.eq_of_toNat_eq (x5.trans (by rw [(hx.same hy).e, y5]))]
-  · exact RelCT.mono (two_taint (Φ := S4) bodyPins pins_S4 (by taint_decide)) (fun _ _ h => h.1)
-      fun _ _ h => h
-  · exact RelCT.mono (two_taint (Φ := S4) bodyPins pins_S4 (by taint_decide)) (fun _ _ h => h.1)
-      fun _ _ h => h
+theorem shaped_rel [VG.Proof.Rsa.RISCV64.InvLaw] (hF1 : ∀ d s, S2 d s → WP isa front1 s (S5 d))
+    (hF : ∀ d s, S2 d s → WP isa front' s (S5 d)) :
+    RelCT isa (Two S2) (.seq front' postB) fun _ _ => True := by
+  have hA : RelCT isa (Two S2) front1 fun _ _ => True := by
+    refine RelCT.seq (R := Two S3) pre_rel (RelCT.seq (R := Two S4) ld_rel (RelCT.ite ?_ ?_ ?_))
+    · rintro s₁ s₂ ⟨a, ⟨x, hx, -, -, -, x5⟩, ⟨y, hy, -, -, -, y5⟩, -⟩
+      rw [Steps.eval_nonzero, Steps.eval_nonzero, BitVec.eq_of_toNat_eq (x5.trans (by rw [(hx.same hy).e, y5]))]
+    · exact RelCT.mono (two_taint (Φ := S4) bodyPins pins_S4 (by taint_decide)) (fun _ _ h => h.1)
+        fun _ _ h => h
+    · exact RelCT.mono (two_taint (Φ := S4) bodyPins pins_S4 (by taint_decide)) (fun _ _ h => h.1)
+        fun _ _ h => h
+  have hB : RelCT isa (Two S5) postA fun _ _ => True := two_taint bodyPins pins_S5 (by taint_decide)
+  have hfront : RelCT isa (Two S2) front' (Two S5) := two_post (RelCT.seq (two_post hA hF1) hB) hF
+  exact RelCT.seq hfront (two_taint bodyPins pins_S5 (by taint_decide))
 
 theorem argRegs_ne_t0 : ∀ r ∈ argRegs, r ∉ ([.t0] : List Reg) := by decide
 
-theorem key_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two C0) code fun _ _ => True := by
+theorem key_rel [VG.Proof.Rsa.RISCV64.InvLaw] (hF1 : ∀ d s, S2 d s → WP isa front1 s (S5 d))
+    (hF : ∀ d s, S2 d s → WP isa front' s (S5 d)) :
+    RelCT isa (Two C0) code fun _ _ => True := by
   unfold code
   rw [entry_eq, save_eq]
   refine RelCT.seq (R := Two S2) (RelCT.block_append (RelCT.seq (R := Two S1) ?_ ?_))
-    (RelCT.of_exec (fun _ _ _ => exec_shaped) shaped_rel)
+    (RelCT.of_exec (fun _ _ _ e => exec_split (exec_shaped e)) (shaped_rel hF1 hF))
   · -- `save`'s first part.
     refine two_post (two_taint [] (fun _ _ _ _ _ r hr => absurd hr List.not_mem_nil) (by taint_decide))
       fun a s c0 => ?_
@@ -332,9 +416,11 @@ theorem key_rel [VG.Proof.Rsa.RISCV64.InvLaw] : RelCT isa (Two C0) code fun _ _ 
     exact WP.mono (save2_ok s0 h.scr (by omega_arith) ht) fun u hu => WP.mono (moves_ok h hu) fun v ⟨c, a7⟩ =>
       ⟨s0, c0, c, a7⟩
 
-theorem key_ct [VG.Proof.Rsa.RISCV64.InvLaw] : ConstantTime isa (Proof.RsaKeyGen.keyContract RISCV64.abi).pre
+theorem key_ct [VG.Proof.Rsa.RISCV64.InvLaw] (hF1 : ∀ d s, S2 d s → WP isa front1 s (S5 d))
+    (hF : ∀ d s, S2 d s → WP isa front' s (S5 d)) :
+    ConstantTime isa (Proof.RsaKeyGen.keyContract RISCV64.abi).pre
     (Proof.RsaKeyGen.keyContract RISCV64.abi).pub code :=
-  RelCT.constantTime (key_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
+  RelCT.constantTime ((key_rel hF1 hF).mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨dataOf s, ⟨hs, rfl⟩, ⟨ht, (pub_data hp).symm⟩, (same_of (pub_data hp)).sp⟩) fun _ _ h => h)
 
 end VG.Proof.RsaKeyGen.RISCV64.Key

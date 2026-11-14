@@ -25,16 +25,16 @@ theorem finishArgs_ok (s : State) {base : BitVec 32} {size tmp out acc mod n : N
       t.mem = s.mem ∧ Rest [.r7, .r9, .r10, .r11, .r12, .lr] s t := by
   unfold finishArgs
   refine wp_ldr (a := off (State.addr base) tmp) (by decide)
-    (ws.ea ptr (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+    (ws.ea ptr (by omega_using [ht])) (ws.read (by omega_using [ht])) fun s1 u1 => ?_
   have p1 := (u1.other .r0 (by decide)).trans ptr
   have w1 := ws.congr u1.wr
-  refine wp_ldr (by decide) (w1.ea p1 (by omega)) (w1.read (by omega)) fun s2 u2 => ?_
+  refine wp_ldr (by decide) (w1.ea p1 (by omega_using [ht])) (w1.read (by omega_using [ht])) fun s2 u2 => ?_
   have p2 := (u2.other .r0 (by decide)).trans p1
   have w2 := w1.congr u2.wr
-  refine wp_ldr (by decide) (w2.ea p2 (by omega)) (w2.read (by omega)) fun s3 u3 => ?_
+  refine wp_ldr (by decide) (w2.ea p2 (by omega_using [ht])) (w2.read (by omega_using [ht])) fun s3 u3 => ?_
   have p3 := (u3.other .r0 (by decide)).trans p2
   have w3 := w2.congr u3.wr
-  refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
+  refine wp_ldr (by decide) (w3.ea p3 (by omega_using [ht])) (w3.read (by omega_using [ht])) fun s4 u4 => ?_
   refine wp_mov (op2_reg _ _) fun s5 u5 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u6 => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, u6.gpr, ?_, ?_⟩

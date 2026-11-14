@@ -38,15 +38,15 @@ theorem subtractRemainder_ok {s : State} {B : Addr} {Z w dst x rem : Nat}
   have k := (k₁.trans k₂).trans k₃
   refine WP.mono (sub_ok (h.scr.congr k.2.2) h8 h10 hsi
       (((k₂.trans k₃).gpr (by decide)).trans h12)
-      ((k₃.gpr (by decide)).trans hbp) (by have := h.w1; omega)
-      (by have := h.w2; omega) (by omega) (by omega) (by omega)
-      (by have := slot_sep (w := w) hdx; omega)
-      (by have := slot_sep (w := w) hdr; omega)) fun t ⟨c, _, hv, ho, kt⟩ => ?_
+      ((k₃.gpr (by decide)).trans hbp) (by have := h.w1; omega_using [this])
+      (by have := h.w2; omega_using [this]) (by omega_using [sx]) (by omega_using [sr]) (by omega_using [sd])
+      (by have := slot_sep (w := w) hdx; omega_using [this])
+      (by have := slot_sep (w := w) hdr; omega_using [this])) fun t ⟨c, _, hv, ho, kt⟩ => ?_
   rw [hm₃, hm₂, hm] at hv ho
   have ht := wv_lt t.mem B (slot w dst) w
   have hn := wv_lt s.mem B (slot w rem) w
   refine ⟨?_, ho, (k.trans kt).mono (by decide)⟩
   cases c <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one,
-      Nat.add_zero] at hv <;> omega
+      Nat.add_zero] at hv <;> omega_arith
 
 end VG.Proof.Dsa.X86_64.Generation

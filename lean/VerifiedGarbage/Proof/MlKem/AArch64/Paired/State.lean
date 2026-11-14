@@ -83,7 +83,7 @@ theorem tail_pair {m input : Mem} {p seed : Addr} {a b k : Nat}
   rw [Noise.read_write_word _ _ _ hi (by decide),Noise.read_write_word _ _ _ hi (by decide),h i hi,
     seedState_get input seed a k hi,seedState_get input seed b k hi]
   by_cases h4 : i<4
-  · simp only [ite_eq_left h4,ite_eq_right (by omega : ¬i=20),ite_eq_right (by omega : ¬i=4)]
+  · simp only [ite_eq_left h4,ite_eq_right (by omega_using [h4] : ¬i=20),ite_eq_right (by omega_using [h4] : ¬i=4)]
   · by_cases he4 : i=4
     · subst i; simp
     · by_cases he20 : i=20

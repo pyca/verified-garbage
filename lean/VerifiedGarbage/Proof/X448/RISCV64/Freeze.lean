@@ -101,7 +101,7 @@ theorem out_ok {s0 : State} (hc : Ctx b s0) {o : Addr} (h3 : s0.gpr .a0 = o)
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [hk]))
   · rw [hm6]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega_using [hk, hi]) (by omega_using [hk])]; exact h.words i hi
+    · rw [wd_write_other _ _ _ (by omega_using [hi]) (by omega_using [hk, hi]) (by omega_using [hk])]; exact h.words i hi
     · rw [wd_write_self, ev]
 
 theorem freeze_ok {s : State} (hc : Ctx b s) {o : Addr}

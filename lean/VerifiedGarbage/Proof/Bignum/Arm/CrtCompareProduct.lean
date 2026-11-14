@@ -216,7 +216,7 @@ theorem crt_compareProduct_ok (s : State) {base : BitVec 32} {size o a b w : Nat
     ⟨h.subtraction.nowrap, h.subtraction.outFits, h.subtraction.aFits, h.subtraction.bFits,
       h.subtraction.sepA, h.subtraction.sepB, by rw [restU.wr]; exact h.subtraction.writable⟩
   rw [WP.seq_iff]
-  refine WP.mono (equalBuffers_ok u ctx (by omega) ptrU aU bU countU) ?_
+  refine WP.mono (equalBuffers_ok u ctx (by omega_using []) ptrU aU bU countU) ?_
   rintro v ⟨value, outside, restV⟩
   rw [memU] at value outside
   have frame := outside_workspace outside h.subtraction.outFits

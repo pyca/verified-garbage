@@ -59,14 +59,14 @@ theorem copyN_ok {src dst : Reg} {S D : BitVec 32} {SA DA : Addr} {so d K : Nat}
   | 0, _, u, _, _, _, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _, rfl⟩
   | k + 1, hk, u, hs, hd, hr, hw => by
     rw [Cfg.copyN, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyN_ok hdr hsr hSA hDA hsep hK k (by omega) u hs hd hr hw)
+    refine WP.mono (copyN_ok hdr hsr hSA hDA hsep hK k (by omega_using [hk]) u hs hd hr hw)
       fun u₁ ⟨hrd₁, hwr₁, hg₁, hf₁, hb₁⟩ => ?_
     refine WP.mono (copyW_ok (u := u₁) (so := so + 4 * k) (d := d + 4 * k) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd)
-      (by rw [hSA k (by omega), hrd₁, hwr₁]; exact hr k (by omega))
-      (by rw [hDA k (by omega), hwr₁]; exact hw k (by omega)) hdr) fun u₂ ⟨hrd₂, hwr₂, hg₂, hm₂⟩ => ?_
-    rw [hSA k (by omega), hDA k (by omega)] at hm₂
+      (by rw [hSA k (by omega_using [hk]), hrd₁, hwr₁]; exact hr k (by omega_using [hk]))
+      (by rw [hDA k (by omega_using [hk]), hwr₁]; exact hw k (by omega_using [hk])) hdr) fun u₂ ⟨hrd₂, hwr₂, hg₂, hm₂⟩ => ?_
+    rw [hSA k (by omega_using [hk]), hDA k (by omega_using [hk])] at hm₂
     -- The word written, within the destination.
-    have hsub : Region.Sub ⟨DA + BitVec.ofNat 64 (4 * k), 4⟩ ⟨DA, 4 * K⟩ := Offset.sub_base _ (by omega)
+    have hsub : Region.Sub ⟨DA + BitVec.ofNat 64 (4 * k), 4⟩ ⟨DA, 4 * K⟩ := Offset.sub_base _ (by omega_using [hk])
     have hf₂ : Frame [⟨DA + BitVec.ofNat 64 (4 * k), 4⟩] u₁.mem u₂.mem := by
       rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     -- The word read, unchanged by the earlier words.
@@ -74,23 +74,23 @@ theorem copyN_ok {src dst : Reg} {S D : BitVec 32} {SA DA : Addr} {so d K : Nat}
         Spec.Sha256.bytesAt u.mem (SA + BitVec.ofNat 64 (4 * k)) 4 :=
       bytesAt_frame hf₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hsep.sub_left (Offset.sub_base _ (by omega))) (by omega)
+        exact hsep.sub_left (Offset.sub_base _ (by omega_using [hk]))) (by omega_using [])
     refine ⟨hrd₂.trans hrd₁, hwr₂.trans hwr₁, fun r hr => (hg₂ r hr).trans (hg₁ r hr),
       hf₁.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩), ?_⟩
-    rw [show 4 * (k + 1) = 4 * k + 4 by omega, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add,
+    rw [show 4 * (k + 1) = 4 * k + 4 by omega_using [], Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add,
       ← hsrc]
     congr 1
     · rw [← hb₁]
       exact bytesAt_frame hf₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint _ (by omega) (by omega)) (by omega)
+        exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hK, hk])) (by omega_using [hK, hk])
     · rw [hm₂]; exact bytesAt_copied _ _ _
 
 /-- The first `n` of `k` bytes. -/
 theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
     Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
-  rw [show k = n + (k - n) by omega, Proof.Hmac.Common.bytesAt_add, List.take_left']
+  rw [show k = n + (k - n) by omega_using [h], Proof.Hmac.Common.bytesAt_add, List.take_left']
   simp [Spec.Sha256.bytesAt]
 
 theorem copyBytes_ok {src dst : Reg} {S D : BitVec 32} {SA DA : Addr} {so d Q : Nat} (hdr : dst ≠ .eax)
@@ -106,43 +106,43 @@ theorem copyBytes_ok {src dst : Reg} {S D : BitVec 32} {SA DA : Addr} {so d Q : 
   rw [Cfg.copyBytes, WP.block_append_iff]
   have hK : 4 * (Q / 4) ≤ Q := Nat.mul_div_le Q 4
   refine WP.mono (copyN_ok (S := S) (D := D) (SA := SA) (DA := DA) (so := so) (d := d) (K := Q / 4) hdr hsr
-      (fun j hj => hSA (4 * j) (by omega)) (fun j hj => hDA (4 * j) (by omega))
-      ((hsep.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega))) (by omega)
+      (fun j hj => hSA (4 * j) (by omega_using [hj])) (fun j hj => hDA (4 * j) (by omega_using [hj]))
+      ((hsep.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Region.sub_prefix (by omega_using []))) (by omega_using [hQ])
       (Q / 4) (Nat.le_refl _) u hs hd
-      (fun j hj => hr (4 * j) (by omega)) fun j hj => hw (4 * j) (by omega))
+      (fun j hj => hr (4 * j) (by omega_using [hj])) fun j hj => hw (4 * j) (by omega_using [hj]))
     fun u₁ ⟨hrd₁, hwr₁, hg₁, hf₁, hb₁⟩ => ?_
   have hf₁' : Frame [⟨DA, Q⟩] u.mem u₁.mem :=
     hf₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_using [])⟩
   by_cases hm : Q % 4 = 0
   · simp only [hm, ite_true]
-    have e : 4 * (Q / 4) = Q := by omega
+    have e : 4 * (Q / 4) = Q := by omega_using [hm]
     rw [e] at hb₁
     exact WP.block_nil ⟨hrd₁, hwr₁, hg₁, hf₁', hb₁⟩
   · simp only [hm, ite_false]
     have eS : addr S (so + Q - 4) = SA + BitVec.ofNat 64 (Q - 4) := by
-      rw [show so + Q - 4 = so + (Q - 4) by omega]; exact hSA (Q - 4) (by omega)
+      rw [show so + Q - 4 = so + (Q - 4) by omega_using [h4]]; exact hSA (Q - 4) (by omega_using [h4])
     have eD : addr D (d + Q - 4) = DA + BitVec.ofNat 64 (Q - 4) := by
-      rw [show d + Q - 4 = d + (Q - 4) by omega]; exact hDA (Q - 4) (by omega)
+      rw [show d + Q - 4 = d + (Q - 4) by omega_using [h4]]; exact hDA (Q - 4) (by omega_using [h4])
     refine WP.mono (copyW_ok (u := u₁) (so := so + Q - 4) (d := d + Q - 4) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd)
-      (by rw [eS, hrd₁, hwr₁]; exact hr (Q - 4) (by omega)) (by rw [eD, hwr₁]; exact hw (Q - 4) (by omega)) hdr)
+      (by rw [eS, hrd₁, hwr₁]; exact hr (Q - 4) (by omega_using [h4])) (by rw [eD, hwr₁]; exact hw (Q - 4) (by omega_using [h4])) hdr)
       fun u₂ ⟨hrd₂, hwr₂, hg₂, hm₂⟩ => ?_
     rw [eS, eD] at hm₂
     have hf₂ : Frame [⟨DA + BitVec.ofNat 64 (Q - 4), 4⟩] u₁.mem u₂.mem := by
       rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     refine ⟨hrd₂.trans hrd₁, hwr₂.trans hwr₁, fun r hr => (hg₂ r hr).trans (hg₁ r hr),
       hf₁'.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega)⟩), ?_⟩
-    rw [show Q = (Q - 4) + 4 by omega, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add]
+        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega_using [h4])⟩), ?_⟩
+    rw [show Q = (Q - 4) + 4 by omega_using [h4], Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add]
     congr 1
     · rw [bytesAt_frame hf₂ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.base_disjoint _ (by omega) (by omega)) (by omega),
-        bytesAt_take _ _ (k := 4 * (Q / 4)) (by omega), hb₁, ← bytesAt_take _ _ (by omega)]
+          exact Offset.base_disjoint _ (by omega_using []) (by omega_using [hQ])) (by omega_using [hQ]),
+        bytesAt_take _ _ (k := 4 * (Q / 4)) (by omega_using []), hb₁, ← bytesAt_take _ _ (by omega_using [])]
     · rw [hm₂, bytesAt_copied]
       exact bytesAt_frame hf₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (hsep.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix (by omega)))
-        (by omega)
+        exact (hsep.sub_left (Offset.sub_base _ (by omega_using [h4]))).sub_right (Region.sub_prefix (by omega_using [])))
+        (by omega_using [])
 
 end VG.Proof.Ecdsa.Rfc6979.X86

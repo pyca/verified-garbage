@@ -134,7 +134,7 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i+1<p.k) (roots : PairedRoots S s) (h : PositiveIR p S σ t i s) :
     WP isa (Impl.MlDsa.AArch64.Sign.Optimized.r0Pair p i) s fun u =>
       PositiveIR p S σ t (i+2) u ∧ PairedRoots S u := by
-  have checks := pairedR0Chk_ok hp i (by omega) hi
+  have checks := pairedR0Chk_ok hp i (by omega_using [hi]) hi
   simp only [pairedR0Chk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at checks
   obtain ⟨⟨⟨⟨⟨⟨cl,hgb⟩,rr⟩,wr⟩,re⟩,we⟩,hws⟩ := checks
   simp only [pairedLowChk,Bool.and_eq_true] at cl
@@ -143,11 +143,11 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   have hdata : ∀j<2,PolyIs s.mem (pairPolyPtr (pa s (wP p i)) j) (Wv p σ (p.ℓ*t) (i+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.w j (by omega)
+    simpa only [Nat.add_assoc] using h.w j (by omega_using [hi, hj])
   have hsecret : ∀j<2,PosPolyIs s.mem (pairPolyPtr (pa s (s2P p i)) j) (S2v p σ (i+j)) := by
     intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using h.b.l.k.d.s2 (i+j) (by omega)
+    simpa only [Nat.add_assoc] using h.b.l.k.d.s2 (i+j) (by omega_using [hi, hj])
   have hprod : pairedProductsReduced s.mem (pa s cP) (pa s (s2P p i)) :=
     ⟨h.b.c.bound,fun j hj => (hsecret j hj).bound⟩
   have hdiff : ∀j<2,pairedDifference s.mem (pa s cP) (pa s (s2P p i)) (pa s (wP p i)) j=
@@ -195,7 +195,7 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     simpa only [Nat.add_zero,Nat.add_assoc] using
       (lowold.snoc (by simpa only [Nat.add_zero] using hlow 0 (by decide))).snoc (hlow 1 (by decide))
   have wshift : Fam s (wBase p+(i+2)) (p.k-(i+2)) (fun j=>Wv p σ (p.ℓ*t) (i+2+j)) := by
-    simpa only [show i+1+1=i+2 by omega] using ((h.w.shift (by omega)).shift (by omega))
+    simpa only [show i+1+1=i+2 by omega_using []] using ((h.w.shift (by omega_using [hi])).shift (by omega_using [hi]))
   have ha : PositiveIRb p S σ t (i+2) a :=
     ⟨h.b.step hpa hsa rr.1.1.1.1 hws,h.z.keep h.b.l.st.lay hpa rr.1.1.1.2,
       highall,lowall,wshift.keep h.b.l.st.lay hpa wr,(h.b.l.st.lay.keepW hpa rr.2).trans h.ones⟩

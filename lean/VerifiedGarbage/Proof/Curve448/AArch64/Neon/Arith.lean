@@ -19,7 +19,7 @@ open VG VG.AArch64
 
 theorem lane_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) {e : Nat} (he : e < 2) :
     vdword (VArr.d2.map2 f x y) e = f 64 (vdword x e) (vdword y e) := by
-  rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
+  rcases (show e = 0 ∨ e = 1 by omega_using [he]) with rfl | rfl
   · exact map2_0 f x y
   · exact map2_1 f x y
 
@@ -37,7 +37,7 @@ theorem lane_sub (x y : BitVec 128) {e : Nat} (he : e < 2) :
   have h64 : ((2 ^ 64 : Nat) : Int) = 2 ^ 64 := rfl
   rw [Int.natCast_emod, Int.natCast_add, Int.ofNat_sub (Nat.le_of_lt this), h64,
     Int.emod_emod_of_dvd _ (Int.dvd_refl _)]
-  omega
+  omega_using []
 
 theorem lane_ushr (y x : BitVec 128) (sh : Nat) {e : Nat} (he : e < 2) :
     (vdword (VArr.d2.map2 (fun w a b => VShiftOp.eval .ushr sh w a b) y x) e).toNat = (vdword x e).toNat / 2 ^ sh := by

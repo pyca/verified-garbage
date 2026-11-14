@@ -100,15 +100,15 @@ theorem absorbFixed_ok {B SP : BitVec 32} {s : State} (c : Ctx B SP s) {offset s
   have eD : s₄.gpr .r9 = B + BitVec.ofNat 32 offset := by
     rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), c.r4]
   have eDw : State.addr (B + BitVec.ofNat 32 offset) = State.addr B + BitVec.ofNat 64 offset :=
-    addr_add (by omega)
+    addr_add (by omega_using [ho, hpos])
   have dTo : (B + BitVec.ofNat 32 offset).toNat = B.toNat + offset := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := offset) (by omega)]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := offset) (by omega_using [ho, hpos])]; omega_using [ho, hpos]
   have hL : (s₄.gpr .r10).toNat = size := by
     rw [u₄.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hs]
   have hDc : Covers [⟨State.addr (B + BitVec.ofNat 32 offset), size⟩] (s₄.rd ++ s₄.wr) := by
     rw [eDw, show s₄.wr = s.wr by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]]; exact Covers.right hcov
   have hDs : Region.Disjoint ⟨State.addr (B + BitVec.ofNat 32 offset), size⟩ ⟨State.addr B, 768⟩ := by
-    rw [eDw]; exact Offset.disjoint_base _ hlo (by omega)
+    rw [eDw]; exact Offset.disjoint_base _ hlo (by omega_using [ho])
   have hDk : (stkR SP 32).Disjoint ⟨State.addr (B + BitVec.ofNat 32 offset), size⟩ := by
     rw [eDw]; exact hstk
   have hcount : s₄.gpr .r3 ++ s₄.gpr .r2 = BitVec.ofNat 64 ([] : List Byte).length := by
@@ -116,8 +116,8 @@ theorem absorbFixed_ok {B SP : BitVec 32} {s : State} (c : Ctx B SP s) {offset s
     have e2 : s₄.gpr .r2 = 0 := by
       rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]
     rw [e1, e2]; rfl
-  refine (update_ok c₄ eD hL (by rw [dTo]; omega) hDc hDs hDk (by rw [m]; exact repr) hcount
-    (by simp only [List.length_nil]; omega)).mono ?_
+  refine (update_ok c₄ eD hL (by rw [dTo]; omega_using [ho]) hDc hDs hDk (by rw [m]; exact repr) hcount
+    (by simp only [List.length_nil]; omega_using [ho])).mono ?_
   rintro t ⟨r, cs, rd, wr, sp, f⟩
   refine ⟨by rw [m, eDw, List.nil_append] at r; exact r, ?_⟩
   refine (Keeps.same (B := B) (SP := SP) (fun q hq => o q (kept_ne q hq).2.2.1
@@ -149,7 +149,7 @@ theorem next_ok {B SP : BitVec 32} {s : State} (c : Ctx B SP s) {n : Nat}
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint_base _ (by decide) (by decide)
-  refine WP.seq ((absorbFixed_ok (k₁.ctx c) (offset := 768) (size := 64) (by decide) (by decide) (by omega)
+  refine WP.seq ((absorbFixed_ok (k₁.ctx c) (offset := 768) (size := 64) (by decide) (by decide) (by omega_using [hfit])
     (by decide) (by decide) (by decide) ((k₁.ctx c).cov (by decide)) (c.stk_sub (by decide)) r₁).mono
     fun s₂ ⟨r₂, k₂⟩ => ?_)
   rw [show BitVec.ofNat 64 768 = (768 : Addr) from rfl, dg] at r₂

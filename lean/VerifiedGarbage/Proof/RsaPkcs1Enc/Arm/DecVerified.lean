@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBase
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecFns
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPriv
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
@@ -34,7 +35,7 @@ theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
 
 /-- The code, calling `vg_rsa_private_checked` over `v`. -/
 abbrev decryptCode (v : Proof.Rsa.Arm.CrtImpl) : Prog isa :=
-  code decFns (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)
+  code decFns false (privN false v) (privC false v)
 
 theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
     WP isa (decryptCode v) s fun t => abiPreserved s t ∧ spec.post s t := by
@@ -86,7 +87,7 @@ theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ 
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17,
     a18⟩ := hp
   obtain ⟨hn, he⟩ := List.append_inj (map_toNat_inj hl) (by simp [bytesAt_length, a0])
-  simp only [ep]
+  simp only [ep, Bool.false_eq_true, ↓reduceIte]
   rw [hsp, h0, h2, h3, a0, a1, a2, a3, a4, a5, a7, a8, a9, a10, a11, a13, a15, a17, a18]
   rw [h3, a0] at hn
   rw [a1, a2] at he

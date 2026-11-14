@@ -32,15 +32,15 @@ theorem descentCounter_ok {c : Cfg} {base : Addr} {s : State} {j : Nat}
       Outside base (c.sl T2) 4 s.mem t.mem := by
   unfold Impl.EcKey.Compressed.X86.descentCounter
   refine wp_movS (show readSrc s (.mem (Impl.Mont.X86.sc (c.sl T2))) = some (s.mem.readW (off base (c.sl T2)) 32) by
-    simp only [readSrc, State.load32, hs.ea (d := c.sl T2) (by omega), hs.read hd, ite_true]) fun s₁ u₁ _ => ?_
+    simp only [readSrc, State.load32, hs.ea (d := c.sl T2) (by omega_using [hd]), hs.read hd, ite_true]) fun s₁ u₁ _ => ?_
   refine wp_decCounter hj (by rw [u₁.gpr, hw]) fun s₂ hb₂ k₂ m₂ => ?_
   have K : Keeps [.esi] s s₂ := u₁.keeps.trans k₂
   have hs₂ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write hd) fun s₃ m₃ => ?_
-  refine wp_testCounter (j := j - 1) (by omega) (by rw [m₃.gpr, hb₂]) fun t f hz => WP.block_nil ?_
+  refine wp_storeS (hs₂.ea (by omega_using [hd])) (hs₂.write hd) fun s₃ m₃ => ?_
+  refine wp_testCounter (j := j - 1) (by omega_using [hj']) (by rw [m₃.gpr, hb₂]) fun t f hz => WP.block_nil ?_
   refine ⟨?_, hz, K.trans ((m₃.keeps _).trans ⟨fun r _ => congrFun f.gpr r, f.rd, f.wr⟩), ?_⟩
   · rw [f.mem, m₃.mem, Mem.readW_writeW_self32, hb₂]
   · rw [f.mem, m₃.mem, m₂, u₁.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hd, this])
 
 end VG.Proof.EcKey.Compressed.X86

@@ -76,7 +76,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_addi {d n : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_addi (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_addi (by unfold imm12; omega_using [h])) ?_
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
 theorem wp_mov {d n : Reg} (k : ∀ s', Upd s s' d (s.gpr n) → WP isa (.block is) s' Q) :
@@ -86,13 +86,13 @@ theorem wp_mov {d n : Reg} (k : ∀ s', Upd s s' d (s.gpr n) → WP isa (.block 
 theorem wp_subi {d n : Reg} {imm : Nat} (h : imm ≤ 2048)
     (k : ∀ s', Upd s s' d (s.gpr n - BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (-(imm : Int)) :: is)) s Q := by
-  refine WP.cons (exec_addi (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_addi (by unfold imm12; omega_using [h])) ?_
   rw [add_ofInt_neg]; exact k _ (Upd.write _ _ _)
 
 theorem wp_li {d : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.li d (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_li (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_li (by unfold imm12; omega_using [h])) ?_
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
 theorem wp_add {d n m : Reg}
@@ -110,7 +110,7 @@ theorem and127 (x : BitVec 64) : x &&& BitVec.ofInt 64 127 = BitVec.ofNat 64 (x.
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, show (BitVec.ofInt 64 127).toNat = 2 ^ 7 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem wp_andi127 {d n : Reg}
     (k : ∀ s', Upd s s' d (BitVec.ofNat 64 ((s.gpr n).toNat % 128)) → WP isa (.block is) s' Q) :
@@ -245,7 +245,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega_using [h], BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
@@ -259,13 +259,13 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 /-- `x >>> 7`, of a number below 2⁶⁴. -/
 theorem ofNat_shr7 {a : Nat} (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 7 = BitVec.ofNat 64 (a / 128) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem bytesAt_getD {m : Mem} {p : Addr} {n : Nat} {l : List Byte} (h : bytesAt m p n = l) {k : Nat}
     (hk : k < n) : m (p + BitVec.ofNat 64 k) = l.getD k 0 := by
@@ -284,7 +284,7 @@ theorem readW_writeW_save (m : Mem) (b : Addr) (v : BitVec 64) {d e : Nat} (hd :
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
     (m.writeW (b + BitVec.ofNat 64 e) v).readW (b + BitVec.ofNat 64 d) 64 =
       m.readW (b + BitVec.ofNat 64 d) 64 :=
-  Mem.readW_writeW_sep (Offset.sep b h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep b h (by omega_using [hd]) (by omega_using [he])) (by decide)
 
 theorem saveMem_saved (m : Mem) (b : Addr) (g : Reg → BitVec 64) :
     ∀ p ∈ saved, (saveMem m b g).readW (b + BitVec.ofNat 64 p.2) 64 = g p.1 := by
@@ -297,13 +297,13 @@ theorem saveMem_saved (m : Mem) (b : Addr) (g : Reg → BitVec 64) :
 theorem saveMem_frame (m : Mem) (b : Addr) (g : Reg → BitVec 64) :
     Frame [⟨b, frameBytes⟩] m (saveMem m b g) := by
   have c : ∀ d : Nat, d + 8 ≤ 208 → (⟨b, frameBytes⟩ : Region).Contains (b + BitVec.ofNat 64 d) (64 / 8) :=
-    fun d hd => Offset.contains_base b (by simp only [frameBytes]; omega) (by omega)
+    fun d hd => Offset.contains_base b (by simp only [frameBytes]; omega_using [hd]) (by omega_using [hd])
   simp only [saveMem]
-  exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 144 (by omega))).writeW
-    (List.mem_singleton_self _) _ (c 152 (by omega))).writeW (List.mem_singleton_self _) _
-    (c 160 (by omega))).writeW (List.mem_singleton_self _) _ (c 168 (by omega))).writeW
-    (List.mem_singleton_self _) _ (c 176 (by omega))).writeW (List.mem_singleton_self _) _
-    (c 184 (by omega)) |>.writeW (List.mem_singleton_self _) _ (c 192 (by omega))
+  exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 144 (by omega_using []))).writeW
+    (List.mem_singleton_self _) _ (c 152 (by omega_using []))).writeW (List.mem_singleton_self _) _
+    (c 160 (by omega_using []))).writeW (List.mem_singleton_self _) _ (c 168 (by omega_using []))).writeW
+    (List.mem_singleton_self _) _ (c 176 (by omega_using []))).writeW (List.mem_singleton_self _) _
+    (c 184 (by omega_using [])) |>.writeW (List.mem_singleton_self _) _ (c 192 (by omega_using []))
 
 theorem save_eq : save = [.addSp .t0 0, .store .d .ra .t0 144, .store .d .s1 .t0 152,
     .store .d .s2 .t0 160, .store .d .s3 .t0 168, .store .d .s4 .t0 176, .store .d .s5 .t0 184,
@@ -312,9 +312,9 @@ theorem save_eq : save = [.addSp .t0 0, .store .d .ra .t0 144, .store .d .s1 .t0
 /-- An 8-byte aligned offset of a 16-byte aligned frame. -/
 theorem frame_al {b : Addr} (hb : b.toNat % 16 = 0) {d : Nat} (hd : d % 8 = 0) (hd' : d < 2 ^ 32) :
     (b + BitVec.ofNat 64 d).toNat % 8 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd'])]
   have := b.isLt
-  omega
+  omega_using [hb, hd]
 
 /-- Saving `ra` and `s1`–`s6` in the frame at the stack pointer, whose
 address is left in `t0`. -/
@@ -330,30 +330,30 @@ theorem save_ok {rest : List Instr} {s : State} {Q : State → Prop} (hal : s.sp
   have st : ∀ d, d % 8 = 0 → 144 ≤ d → d + 8 ≤ 208 → ∀ s' : State, s'.gpr .t0 = s.sp → s'.wr = s.wr →
       s'.gpr .t0 + BitVec.ofNat 64 d = s.sp + BitVec.ofNat 64 d ∧
       (s.sp + BitVec.ofNat 64 d).toNat % 8 = 0 ∧ InRegions s'.wr (s.sp + BitVec.ofNat 64 d) 8 :=
-    fun d hd h₁ h₂ s' h₀ hw => ⟨by rw [h₀], frame_al hal hd (by omega), by rw [hw]; exact hin d h₁ h₂⟩
+    fun d hd h₁ h₂ s' h₀ hw => ⟨by rw [h₀], frame_al hal hd (by omega_using [h₂]), by rw [hw]; exact hin d h₁ h₂⟩
   have w0 : s₀.wr = s.wr := u₀.wr
-  obtain ⟨a1, l1, i1⟩ := st 144 (by decide) (by omega) (by omega) s₀ g0 w0
+  obtain ⟨a1, l1, i1⟩ := st 144 (by decide) (by omega_using []) (by omega_using []) s₀ g0 w0
   refine wp_sd (by decide) a1 l1 i1 fun s₁ g₁ => ?_
   have t1 : s₁.gpr .t0 = s.sp := by rw [g₁.gpr, g0]
-  obtain ⟨a2, l2, i2⟩ := st 152 (by decide) (by omega) (by omega) s₁ t1 (by rw [g₁.wr, w0])
+  obtain ⟨a2, l2, i2⟩ := st 152 (by decide) (by omega_using []) (by omega_using []) s₁ t1 (by rw [g₁.wr, w0])
   refine wp_sd (by decide) a2 l2 i2 fun s₂ g₂ => ?_
   have t2 : s₂.gpr .t0 = s.sp := by rw [g₂.gpr, t1]
-  obtain ⟨a3, l3, i3⟩ := st 160 (by decide) (by omega) (by omega) s₂ t2 (by rw [g₂.wr, g₁.wr, w0])
+  obtain ⟨a3, l3, i3⟩ := st 160 (by decide) (by omega_using []) (by omega_using []) s₂ t2 (by rw [g₂.wr, g₁.wr, w0])
   refine wp_sd (by decide) a3 l3 i3 fun s₃ g₃ => ?_
   have t3 : s₃.gpr .t0 = s.sp := by rw [g₃.gpr, t2]
-  obtain ⟨a4, l4, i4⟩ := st 168 (by decide) (by omega) (by omega) s₃ t3
+  obtain ⟨a4, l4, i4⟩ := st 168 (by decide) (by omega_using []) (by omega_using []) s₃ t3
     (by rw [g₃.wr, g₂.wr, g₁.wr, w0])
   refine wp_sd (by decide) a4 l4 i4 fun s₄ g₄ => ?_
   have t4 : s₄.gpr .t0 = s.sp := by rw [g₄.gpr, t3]
-  obtain ⟨a5, l5, i5⟩ := st 176 (by decide) (by omega) (by omega) s₄ t4
+  obtain ⟨a5, l5, i5⟩ := st 176 (by decide) (by omega_using []) (by omega_using []) s₄ t4
     (by rw [g₄.wr, g₃.wr, g₂.wr, g₁.wr, w0])
   refine wp_sd (by decide) a5 l5 i5 fun s₅ g₅ => ?_
   have t5 : s₅.gpr .t0 = s.sp := by rw [g₅.gpr, t4]
-  obtain ⟨a6, l6, i6⟩ := st 184 (by decide) (by omega) (by omega) s₅ t5
+  obtain ⟨a6, l6, i6⟩ := st 184 (by decide) (by omega_using []) (by omega_using []) s₅ t5
     (by rw [g₅.wr, g₄.wr, g₃.wr, g₂.wr, g₁.wr, w0])
   refine wp_sd (by decide) a6 l6 i6 fun s₆ g₆ => ?_
   have t6 : s₆.gpr .t0 = s.sp := by rw [g₆.gpr, t5]
-  obtain ⟨a7, l7, i7⟩ := st 192 (by decide) (by omega) (by omega) s₆ t6
+  obtain ⟨a7, l7, i7⟩ := st 192 (by decide) (by omega_using []) (by omega_using []) s₆ t6
     (by rw [g₆.wr, g₅.wr, g₄.wr, g₃.wr, g₂.wr, g₁.wr, w0])
   refine wp_sd (by decide) a7 l7 i7 fun s₇ g₇ => ?_
   have gg : s₇.gpr = s₀.gpr := by rw [g₇.gpr, g₆.gpr, g₅.gpr, g₄.gpr, g₃.gpr, g₂.gpr, g₁.gpr]
@@ -384,37 +384,37 @@ theorem restore_ok {s : State} {scr : Addr} (h2 : s.gpr .s2 = scr) (hal : scr.to
   have al : ∀ d, d % 8 = 0 → d < 2 ^ 32 → (scr + BitVec.ofNat 64 d).toNat % 8 = 0 :=
     fun d hd hd' => frame_al hal hd hd'
   rw [restore_eq]
-  refine wp_ld (by decide) (by rw [h2]) (al 144 (by decide) (by decide)) (hin 144 (by omega) (by omega))
+  refine wp_ld (by decide) (by rw [h2]) (al 144 (by decide) (by decide)) (hin 144 (by omega_using []) (by omega_using []))
     fun s₁ u₁ => ?_
   refine wp_ld (by decide) (by rw [u₁.other _ (by decide), h2]) (al 152 (by decide) (by decide))
-    (by rw [u₁.rd, u₁.wr]; exact hin 152 (by omega) (by omega)) fun s₂ u₂ => ?_
+    (by rw [u₁.rd, u₁.wr]; exact hin 152 (by omega_using []) (by omega_using [])) fun s₂ u₂ => ?_
   refine wp_ld (by decide) (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h2])
     (al 168 (by decide) (by decide))
-    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 168 (by omega) (by omega)) fun s₃ u₃ => ?_
+    (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 168 (by omega_using []) (by omega_using [])) fun s₃ u₃ => ?_
   refine wp_ld (by decide)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h2])
     (al 176 (by decide) (by decide))
-    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 176 (by omega) (by omega))
+    (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 176 (by omega_using []) (by omega_using []))
     fun s₄ u₄ => ?_
   refine wp_ld (by decide)
     (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), h2])
     (al 184 (by decide) (by decide))
-    (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 184 (by omega) (by omega))
+    (by rw [u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact hin 184 (by omega_using []) (by omega_using []))
     fun s₅ u₅ => ?_
   refine wp_ld (by decide)
     (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), h2])
     (al 192 (by decide) (by decide))
     (by rw [u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-        exact hin 192 (by omega) (by omega))
+        exact hin 192 (by omega_using []) (by omega_using []))
     fun s₆ u₆ => ?_
   refine wp_ld (by decide)
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
       u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h2])
     (al 160 (by decide) (by decide))
     (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-        exact hin 160 (by omega) (by omega))
+        exact hin 160 (by omega_using []) (by omega_using []))
     fun s₇ u₇ => WP.block_nil ?_
   have m6 : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine k s₇ (fun p hp => ?_) (fun r hr => ?_) (by rw [u₇.mem, m6])
@@ -501,7 +501,7 @@ theorem allocd_gpr (n : Nat) (s : State) : (allocd n s).gpr = s.gpr := rfl
 /-- The frame is 16-byte aligned. -/
 theorem frame_aligned {sp : Addr} (h : sp.toNat % 16 = 0) (h' : 208 ≤ sp.toNat) :
     (sp - BitVec.ofNat 64 208).toNat % 16 = 0 := by
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]
-  omega
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [h']), BitVec.toNat_ofNat]
+  omega_using [h]
 
 end VG.Proof.Sha512.RISCV64.Stream

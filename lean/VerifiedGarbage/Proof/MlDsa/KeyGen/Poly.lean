@@ -32,14 +32,14 @@ theorem ofInt_val (x : Int) : ((ofInt x).val : Int) = x % 8380417 := by
   have hq : ((q : Nat) : Int) = 8380417 := rfl
   simp only [ofInt, Fin.val_ofNat]
   rw [Int.natCast_emod, hq, Int.toNat_of_nonneg (by rw [← hq]; exact h1)]
-  omega
+  omega_using []
 
 theorem modPm_q (m : Int) : modPm m q = if m % 8380417 > 4190208 then m % 8380417 - 8380417 else m % 8380417 := rfl
 
 /-- `mod± q` of a small integer cast to `ℤ_q` is the integer. -/
 theorem modPm_ofInt {x : Int} (h₁ : -4190208 ≤ x) (h₂ : x ≤ 4190208) : modPm (ofInt x).val q = x := by
   rw [modPm_q, ofInt_val]
-  split <;> omega
+  split <;> omega_arith
 
 theorem modPm_toRq {f : IPoly} (h : ∀ c ∈ f.toList, -4190208 ≤ c ∧ c ≤ 4190208) :
     (toRq f).map (fun c => modPm c.val q) = f := by
@@ -54,9 +54,9 @@ theorem coeffFromHalfByte_range {η b : Nat} {v : Int} (h : coeffFromHalfByte η
     -(η : Int) ≤ v ∧ v ≤ η := by
   unfold coeffFromHalfByte at h
   split at h
-  · rename_i hc; cases h; obtain ⟨rfl, _⟩ := hc; omega
+  · rename_i hc; cases h; obtain ⟨rfl, _⟩ := hc; omega_using []
   · split at h
-    · rename_i hc; cases h; obtain ⟨rfl, _⟩ := hc; omega
+    · rename_i hc; cases h; obtain ⟨rfl, _⟩ := hc; omega_arith
     · cases h
 
 theorem rejBoundedLoop_range {η : Nat} : ∀ {a : List Int} {l : List Byte} {r : List Int},
@@ -113,12 +113,12 @@ theorem power2Round_fst (c : Zq) : 0 ≤ (power2Round c).1 ∧ (power2Round c).1
   have hc : c.val < 8380417 := c.isLt
   have h2 : ((2 ^ 13 : Nat) : Int) = 8192 := rfl
   simp only [power2Round, modPm, d, h2]
-  split <;> omega
+  split <;> omega_arith
 
 theorem power2Round_snd (c : Zq) : -4095 ≤ (power2Round c).2 ∧ (power2Round c).2 ≤ 4096 := by
   have h2 : ((2 ^ 13 : Nat) : Int) = 8192 := rfl
   simp only [power2Round, modPm, d, h2]
-  split <;> omega
+  split <;> omega_arith
 
 /-! ## Polynomials -/
 
@@ -132,7 +132,7 @@ theorem coeffAt_congr {m m' : Mem} {p : Addr}
     coeffAt m' p i = coeffAt m p i := by
   refine Mem.readW_congr fun k hk => ?_
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by change i < 256 at hi; omega)
+  exact h _ (by change i < 256 at hi; omega_using [hk, hi])
 
 theorem polyAt_congr {m m' : Mem} {p : Addr}
     (h : ∀ k < 1024, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) :

@@ -42,7 +42,7 @@ theorem montCallWithFn_ct (arithmetic : Prog isa) (law : CallArithmeticLaw arith
       have fit : arrAt w 8 ≤ 8 * len := hs.width ▸ hs.layout.2.2.1
       have tmpFits : arrAt w 3 + 32 ≤ 8 * len := by
         have := array_end_le (w := w) (j := 3) (k := 8) (by decide)
-        omega
+        omega_using [hw, fit, this]
       have body := relCT_keep_sp (law.ct (base := base) ho ha hb tmpFits) (fun _ _ h => h.2.2)
       obtain ⟨tailTrace, _⟩ := body.seq montCallRestore_ct _ _ _ _ _ _
         ⟨callBodyReady_of_entry s0 hs _ ready1 mem1 rest1,

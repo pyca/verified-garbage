@@ -88,7 +88,7 @@ theorem djtWf1024 : DjF16.DjTWf (narrowK kem1024w scr16) where
   zT := ⟨_, by taint_decide⟩
   jT := by
     intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega_using [hi]
     rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   kT := ⟨_, by taint_decide⟩
   ij := by decide +kernel
@@ -99,7 +99,7 @@ theorem ekt16Wf1024 : EkF16.EkT16Wf (narrowK kem1024w scr16) where
   zT := ⟨_, by taint_decide⟩
   hT := by
     intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega_using [hi]
     rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   hcT := ⟨_, by taint_decide⟩
   ij := by decide +kernel

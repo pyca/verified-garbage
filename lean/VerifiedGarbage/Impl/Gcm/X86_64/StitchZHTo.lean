@@ -32,14 +32,19 @@ abbrev bigPTo : Prog isa := StitchZH.bigP true
 `rdx + r8` (`r8` is `src - dst`). -/
 def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 
+/-- `StitchZH.rest`, the data read at `rdx + r8`. -/
+def restTo : Prog isa :=
+  .seq firstTo
+    (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
+      (.seq (.ite .b (.block []) bigPTo)
+        (.seq (.block [.alu .cmp .r9 (.imm 32)])
+          (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo)))))
+
 /-- `StitchZH.encR`, the data read at `rdx + r8`. -/
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
-    (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
-        (.seq (.ite .b (.block []) bigPTo)
-          (.seq (.block [.alu .cmp .r9 (.imm 32)])
-            (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo))))))
+    (.seq (.block StitchZH.midTest)
+      (.ite .b (.seq (.block StitchZH.midUndo) (StitchZH.midC true)) (.seq (.block StitchZH.midUndo) restTo)))
 
 /-! ## In one pass over a source and then in place
 
@@ -55,8 +60,8 @@ group's hash. -/
 def phase1 : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
-        (.seq (.ite .b (.block []) bigPTo)
+      (.seq (.block [.alu .cmp .r9 (.imm StitchZC.bigMinC)])
+        (.seq (.ite .b (.block []) (StitchZH.bigS true))
           (.seq (.block [.alu .cmp .r9 (.imm 32)]) (.ite .b (.block []) (.loop bodyTo .ae))))))
 
 /-- `phase1`, then the `rbp` blocks at `dst` after `src`'s, in place. -/

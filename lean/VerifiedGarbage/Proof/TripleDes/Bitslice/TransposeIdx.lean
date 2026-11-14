@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 /-!
@@ -26,9 +27,9 @@ theorem stB_stA_idx : ∀ j < 64, ∀ p < 64,
     ((p &&& 56) ||| (j % 8)) < 64 := by
   intro j hj p hp
   obtain ⟨p1, p2⟩ := low_high_bits p hp
-  obtain ⟨c1, c2, c3, -⟩ := byte_bits (p / 8) (by omega) (j % 8) (Nat.mod_lt _ (by decide))
-  obtain ⟨-, -, -, c4⟩ := byte_bits (j / 8) (by omega) (j % 8) (Nat.mod_lt _ (by decide))
-  rw [p1, p2, c1, c2, c3, show (8 * (j / 8) + p % 8) / 8 = j / 8 by omega, c4]
-  omega
+  obtain ⟨c1, c2, c3, -⟩ := byte_bits (p / 8) (by omega_using [hp]) (j % 8) (Nat.mod_lt _ (by decide))
+  obtain ⟨-, -, -, c4⟩ := byte_bits (j / 8) (by omega_using [hj]) (j % 8) (Nat.mod_lt _ (by decide))
+  rw [p1, p2, c1, c2, c3, show (8 * (j / 8) + p % 8) / 8 = j / 8 by omega_using [], c4]
+  omega_using [hp]
 
 end VG.Proof.TripleDes.Bitslice

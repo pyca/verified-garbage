@@ -42,17 +42,17 @@ theorem write_eight (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.wri
 /-- `li` of a numeral below 2048. -/
 theorem exec_li_nat {s : State} {d : Reg} {n : Nat} (h : n < 2048) :
     exec (.li d (n : Int)) s = some (s.write d (BitVec.ofNat 64 n)) := by
-  rw [exec_li (by unfold imm12; omega), BitVec.ofInt_natCast]
+  rw [exec_li (by unfold imm12; omega_using [h]), BitVec.ofInt_natCast]
 
 /-- `addi` of a numeral below 2048. -/
 theorem exec_addi_nat {s : State} {d n : Reg} {m : Nat} (h : m < 2048) :
     exec (.addi d n (m : Int)) s = some (s.write d (s.gpr n + BitVec.ofNat 64 m)) := by
-  rw [exec_addi (by unfold imm12; omega), BitVec.ofInt_natCast]
+  rw [exec_addi (by unfold imm12; omega_using [h]), BitVec.ofInt_natCast]
 
 /-- `addi` of a negated numeral up to 2048. -/
 theorem exec_addi_neg_nat {s : State} {d n : Reg} {m : Nat} (h : m ≤ 2048) :
     exec (.addi d n (-(m : Int))) s = some (s.write d (s.gpr n - BitVec.ofNat 64 m)) := by
-  rw [exec_addi (by unfold imm12; omega), BitVec.ofInt_neg, BitVec.ofInt_natCast,
+  rw [exec_addi (by unfold imm12; omega_using [h]), BitVec.ofInt_neg, BitVec.ofInt_natCast,
     ← BitVec.sub_eq_add_neg]
 
 end VG.RISCV64

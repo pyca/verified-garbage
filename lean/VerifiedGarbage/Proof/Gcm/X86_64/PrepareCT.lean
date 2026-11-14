@@ -106,13 +106,13 @@ theorem correct {c : Prog isa}
   have keep : Spec.Aes.bytesAt s.mem (s₀.gpr .rdi) 256 = Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) 256 :=
     bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
-      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+      exact Offset.base_disjoint _ (by decide) (by omega_using [])) (by decide)
   have hH : Spec.Gcm.ctxH s.mem (s₀.gpr .rdi) = Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi) := by
     simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
     rw [bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide)) (by decide)
-        (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
+        (by omega_using [])).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
   refine ⟨⟨fun r hr => by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide), ?_⟩, keep,
@@ -124,7 +124,7 @@ theorem correct {c : Prog isa}
     have p0 := pw k hk 0 (by decide)
     have p1 := pw k hk 1 (by decide)
     rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
-    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
+    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega_using [], show 2 * k + 2 - 1 = 2 * k + 1 by omega_using []] at p1
     exact ⟨p0, p1⟩
 
 theorem prepare_correct {c : Prog isa}
@@ -214,13 +214,13 @@ theorem correctW {c : Prog isa}
   have keep : Spec.Aes.bytesAt s.mem (s₀.gpr .rdi) 256 = Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) 256 :=
     bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
-      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+      exact Offset.base_disjoint _ (by decide) (by omega_using [])) (by decide)
   have hH : Spec.Gcm.ctxH s.mem (s₀.gpr .rdi) = Spec.Gcm.ctxH s₀.mem (s₀.gpr .rdi) := by
     simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
     rw [bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide)) (by decide)
-        (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
+        (by omega_using [])).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
   refine ⟨⟨fun r hr => g r (by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩, keep, fun k hk => ?_⟩
@@ -231,7 +231,7 @@ theorem correctW {c : Prog isa}
     have p0 := pw k hk 0 (by decide)
     have p1 := pw k hk 1 (by decide)
     rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
-    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
+    rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega_using [], show 2 * k + 2 - 1 = 2 * k + 1 by omega_using []] at p1
     exact ⟨p0, p1⟩
 
 /-- `Verified` for code that writes the first 16 prepared powers and nothing
@@ -275,8 +275,8 @@ theorem written16 {c : Prog isa}
   refine hf _ fun r hr hc => ?_
   rw [List.mem_singleton] at hr
   subst hr
-  exact Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := 256) (k := 256) (.inr (by omega)) (by omega)
-    (by omega) _ (Region.contains_self _ _) hc
+  exact Offset.disjoint (s.gpr .rdi) (d := i) (n := 1) (e := 256) (k := 256) (.inr (by omega_using [h1])) (by omega_using [h2'])
+    (by omega_using []) _ (Region.contains_self _ _) hc
 
 end VG.Proof.Gcm.X86_64.Prepare16
 
@@ -374,7 +374,7 @@ theorem absent_correct (s₀ : State) (hp : flaggedX86_64.pre s₀) :
     (flagged_gpr hp hm hg (d := 1024) (k := 8) (by decide) (Frame.refl _ _) fun _ _ _ => rfl), ?_, ?_⟩
   · exact bytesAt_frame fr (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
-      exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+      exact Offset.base_disjoint _ (by decide) (by omega_using [])) (by decide)
   · have hc : Spec.Gcm.powerCount s'.mem (s₀.gpr .rdi) = 0 := by
       simp only [Spec.Gcm.powerCount]
       rw [show (s₀.gpr .rdi + 1024 : Addr) = s₀.gpr .rdi + BitVec.ofNat 64 1024 from rfl, hm,
@@ -404,32 +404,32 @@ theorem flagged_correct {n : Nat} (hn : n = 16 ∨ n = 48) {c : Prog isa}
     have hw : InRegions s₁.wr (s₁.gpr .rdi) 1024 := by
       rw [hwr₁, hrdi, hwr]
       exact ⟨_, List.mem_singleton_self _, by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
-    refine WP.mono (hok s₁ hw (by rw [hrdi]; omega)) fun s ⟨pw, fr, g, _, _⟩ => ?_
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩
+    refine WP.mono (hok s₁ hw (by rw [hrdi]; omega_using [hwrap])) fun s ⟨pw, fr, g, _, _⟩ => ?_
     rw [hrdi] at pw fr
     have fr₀ : Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 1024, 8⟩] s₀.mem s₁.mem := by
       rw [hm₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     have keep₁ : Spec.Aes.bytesAt s₁.mem (s₀.gpr .rdi) 256 = Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdi) 256 :=
       bytesAt_frame fr₀ (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr
-        exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+        exact Offset.base_disjoint _ (by decide) (by omega_using [])) (by decide)
     have keep : Spec.Aes.bytesAt s.mem (s₀.gpr .rdi) 256 = Spec.Aes.bytesAt s₁.mem (s₀.gpr .rdi) 256 :=
       bytesAt_frame fr (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr
-        exact Offset.base_disjoint _ (by decide) (by omega)) (by decide)
+        exact Offset.base_disjoint _ (by decide) (by omega_using [])) (by decide)
     have hH : Spec.Gcm.ctxH s.mem (s₀.gpr .rdi) = Spec.Gcm.ctxH s₁.mem (s₀.gpr .rdi) := by
       simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt]
       rw [bytesAt_frame fr (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr
         exact (Offset.disjoint (s₀.gpr .rdi) (d := 240) (n := 16) (e := 256) (k := 768) (.inl (by decide))
-          (by decide) (by omega)).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
+          (by decide) (by omega_using [])).sub_left (Region.sub_prefix (Nat.le_refl _))) (by decide)]
     have hc : Spec.Gcm.powerCount s.mem (s₀.gpr .rdi) = n := by
       simp only [Spec.Gcm.powerCount]
       rw [show (s₀.gpr .rdi + 1024 : Addr) = s₀.gpr .rdi + BitVec.ofNat 64 1024 from rfl,
         fr.readW (r := ⟨s₀.gpr .rdi + BitVec.ofNat 64 1024, 8⟩) (Region.contains_self _ _) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr
           exact Offset.disjoint (s₀.gpr .rdi) (d := 1024) (n := 8) (e := 256) (k := 768) (.inr (by decide))
-            (by decide) (by omega)) (by decide), hm₁, Mem.readW_writeW_self64]
+            (by decide) (by omega_using [])) (by decide), hm₁, Mem.readW_writeW_self64]
       rcases hn with rfl | rfl <;> rfl
     have pairs (q : Nat) (hq : q ≤ n / 2) : ∀ k < q,
         s.mem.readW (s₀.gpr .rdi + BitVec.ofNat 64 (256 + 32 * k)) 128 =
@@ -438,14 +438,14 @@ theorem flagged_correct {n : Nat} (hn : n = 16 ∨ n = 48) {c : Prog isa}
           Spec.Gcm.preparedPower (Spec.Gcm.hpow (Spec.Gcm.ctxH s.mem (s₀.gpr .rdi)) (2 * k + 1)) := by
       intro k hk
       rw [hH]
-      have p0 := pw k (by omega) 0 (by decide)
-      have p1 := pw k (by omega) 1 (by decide)
+      have p0 := pw k (by omega_using [hq, hk]) 0 (by decide)
+      have p1 := pw k (by omega_using [hq, hk]) 1 (by decide)
       rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero] at p0
-      rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at p1
+      rw [show 256 + 32 * k + 16 * 1 = 272 + 32 * k by omega_using [], show 2 * k + 2 - 1 = 2 * k + 1 by omega_using []] at p1
       exact ⟨p0, p1⟩
     refine ⟨flagged_gpr hp hm₁ hg₁ (by decide) fr g, keep.trans keep₁, fun h => pairs 8 ?_, fun h => pairs 24 ?_⟩
-    · rw [hc] at h; omega
-    · rw [hc] at h; omega
+    · rw [hc] at h; omega_using [hn]
+    · rw [hc] at h; omega_using [h]
   obtain ⟨t, s', he, hg, hpost⟩ := hW
   exact ⟨t, s', he, abiPreserved_of_exec hx' he hg, hpost⟩
 
@@ -522,28 +522,28 @@ theorem zeroStores_ok (avx : Bool) (n : Nat) : ∀ (k : Nat) (s₀ s : State),
     (∀ j < n, InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * (k + j))) (storeBytes avx)) →
     ZOk s₀ (storeBytes avx * k) s →
     WP isa (.block (zeroStores avx k n)) s (ZOk s₀ (storeBytes avx * (k + n))) := by
-  have hb : 8 * storeBytes avx / 8 = storeBytes avx := by omega
+  have hb : 8 * storeBytes avx / 8 = storeBytes avx := by omega_using []
   induction n with
   | zero => intro k s₀ s _ _ _ h; exact WP.block_nil (by simpa using h)
   | succ n ih =>
     intro k s₀ s hx hn hw h
     obtain ⟨hg, hrd, hwr, hxm, hyh, hmx, hz, hf⟩ := h
-    have hs := hw 0 (by omega)
+    have hs := hw 0 (by omega_using [])
     rw [Nat.add_zero] at hs
     have hd : s.gpr .rdi = s₀.gpr .rdi := by rw [hg]
     let s' : State :=
       { s with mem := s.mem.writeW (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * k)) (0 : BitVec (8 * storeBytes avx)) }
-    rw [show k + (n + 1) = k + 1 + n by omega] at hn ⊢
-    have hle : storeBytes avx * (k + 1) ≤ storeBytes avx * (k + 1 + n) := Nat.mul_le_mul_left _ (by omega)
+    rw [show k + (n + 1) = k + 1 + n by omega_using []] at hn ⊢
+    have hle : storeBytes avx * (k + 1) ≤ storeBytes avx * (k + 1 + n) := Nat.mul_le_mul_left _ (by omega_using [])
     rw [Nat.mul_succ] at hle
     refine WP.block_cons_iff.mpr ⟨s', ?_, ih (k + 1) s₀ s' hx hn
       (fun j hj => by
-        have := hw (j + 1) (by omega); rwa [show k + (j + 1) = k + 1 + j by omega] at this) ?_⟩
+        have := hw (j + 1) (by omega_using [hj]); rwa [show k + (j + 1) = k + 1 + j by omega_using []] at this) ?_⟩
     · have := zeroStore_run avx s (storeBytes avx * k) hx (by rw [hd, hwr]; exact hs)
       rw [hd] at this
       exact this
     · obtain ⟨r, hr, hc⟩ := hs
-      have hp := prefix_writeW (w := 8 * storeBytes avx) hz (by rw [hb]; omega)
+      have hp := prefix_writeW (w := 8 * storeBytes avx) hz (by rw [hb]; omega_using [hn, hle])
       rw [hb, ← Nat.mul_succ] at hp
       exact ⟨hg, hrd, hwr, hxm, hyh, hmx, hp, hf.writeW hr _ (by rw [hb]; exact hc)⟩
 
@@ -565,7 +565,7 @@ theorem zeroBlocks_ok (avx : Bool) (n : Nat) (s₀ : State) (hn : storeBytes avx
         Frame s₀.wr s₀.mem t.mem := by
   obtain ⟨s₁, he, hx, hg, hm, hrd, hwr, hmx⟩ := zero_run avx s₀
   have h0 : ZOk s₁ (storeBytes avx * 0) s₁ :=
-    ⟨rfl, rfl, rfl, rfl, rfl, rfl, fun j hj => absurd hj (by omega), Frame.refl _ _⟩
+    ⟨rfl, rfl, rfl, rfl, rfl, rfl, fun j hj => absurd hj (by omega_using []), Frame.refl _ _⟩
   have hst := zeroStores_ok avx n 0 s₁ s₁ hx (by rw [Nat.zero_add]; exact hn)
     (fun j hj => by rw [hg, hwr, Nat.zero_add]; exact hw j hj) h0
   have fin (t : State) (h : ZOk s₁ (storeBytes avx * (0 + n)) t) :
@@ -605,8 +605,8 @@ theorem zeroBlocks_correct (avx : Bool) {F : Nat → Prop} (bytes : Nat) (hb : b
       InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (storeBytes avx * j)) (storeBytes avx) := fun j hj => by
     have : storeBytes avx * (j + 1) ≤ storeBytes avx * (bytes / storeBytes avx) := Nat.mul_le_mul_left _ hj
     rw [Nat.mul_succ, he] at this
-    exact ⟨_, by rw [hwr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
-  have hz := zeroBlocks_ok avx (bytes / storeBytes avx) s₀ (by rw [he]; omega) hw
+    exact ⟨_, by rw [hwr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hb, this]) (by omega_using [hb, this])⟩
+  have hz := zeroBlocks_ok avx (bytes / storeBytes avx) s₀ (by rw [he]; omega_using [hb]) hw
   rw [he] at hz
   obtain ⟨t, s', hx, hg, hmx, hz, fr⟩ := hz
   refine ⟨t, s', hx, ⟨fun r _ => by rw [hg], ?_, by rw [hmx]⟩, ?_⟩

@@ -43,7 +43,7 @@ theorem bodyWith_ok (core : Core) {s : State} {a b : Addr} {ra rb : Reg} {n : Na
       t.gpr .x28 = s.gpr .x28-1 ∧
       (∀ r, r ≠ ra → r ≠ rb → r ≠ .x28 → r ≠ .x6 → r ≠ .x7 → r ≠ .x16 →
         t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  rw [show 8*(2*n+1)=16*n+8 by omega]
+  rw [show 8*(2*n+1)=16*n+8 by omega_using []]
   apply WP.seq
   refine WP.mono (core.correct hp htab) ?_
   intro u hu
@@ -54,7 +54,7 @@ theorem bodyWith_ok (core : Core) {s : State} {a b : Addr} {ra rb : Reg} {n : Na
     (by simpa only [hu.1.wr] using hwa) (by simpa only [hu.1.wr] using hwb)
     (by simpa only [hu.1.wr] using hwal) (by simpa only [hu.1.wr] using hwbl)) ?_
   intro v hv
-  refine WP.mono (advance_ok (rate := 16*n+8) (by omega) hab ha28 hb28) ?_
+  refine WP.mono (advance_ok (rate := 16*n+8) (by omega_using [hn]) hab ha28 hb28) ?_
   intro t ht
   refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · intro i hi
@@ -137,10 +137,10 @@ theorem streamStepWith_ok (core : Core) {s₀ s : State} {T a b : Addr} {n block
     (by simpa only [h.wr] using hwal j hj) (by simpa only [h.wr] using hwbl j hj)
     (by rw [h.ptrT]; exact h.tbl)) ?_
   intro t ht
-  have hout := StreamOutput.append hn hj (by omega) hd h.outA h.outB ht.2.1 ht.2.2.1 ht.2.2.2.1
+  have hout := StreamOutput.append hn hj (by omega_using [hblocks]) hd h.outA h.outB ht.2.1 ht.2.2.1 ht.2.2.2.1
   have h15 : t.gpr .x15 = s.gpr .x15 :=
     ht.2.2.2.2.2.2.2.1 .x15 ha15.symm hb15.symm (by decide) (by decide) (by decide) (by decide)
-  refine ⟨by omega,ht.1,hout.1,hout.2,?_,?_,?_,?_,?_,ht.2.2.2.2.2.2.2.2.1.trans h.rd,
+  refine ⟨by omega_using [hj],ht.1,hout.1,hout.2,?_,?_,?_,?_,?_,ht.2.2.2.2.2.2.2.2.1.trans h.rd,
     ht.2.2.2.2.2.2.2.2.2.1.trans h.wr,ht.2.2.2.2.2.2.2.2.2.2.trans h.sp,h15.trans h.ptrT,
     h.tbl.frame ht.2.2.2.1 (fun r hr => by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -157,7 +157,7 @@ theorem streamStepWith_ok (core : Core) {s₀ s : State} {T a b : Addr} {n block
   · simpa only [BitVec.add_assoc,BitVec.ofNat_add_ofNat,Nat.mul_add,Nat.mul_one] using ht.2.2.2.2.1
   · simpa only [BitVec.add_assoc,BitVec.ofNat_add_ofNat,Nat.mul_add,Nat.mul_one] using ht.2.2.2.2.2.1
   · rw [ht.2.2.2.2.2.2.1,h.count]
-    have he : blocks-j = blocks-(j+1)+1 := by omega
+    have he : blocks-j = blocks-(j+1)+1 := by omega_using [hj]
     rw [he,BitVec.ofNat_add]
     exact BitVec.add_sub_cancel _ (1 : BitVec 64)
   · intro r hra hrb hr28 hr6 hr7 hr16 hr15
@@ -201,14 +201,14 @@ theorem streamLoopWith_ok (core : Core) {s₀ s : State} {T a b : Addr} {n block
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count,hend,Nat.sub_self]
     rfl
   · right
-    refine ⟨?_,blocks-(j+1),by omega,j+1,by omega,rfl,hu⟩
+    refine ⟨?_,blocks-(j+1),by omega_using [hj, hl],j+1,by omega_using [hj, hend],rfl,hu⟩
     have hv : BitVec.ofNat 64 (blocks-(j+1)) ≠ 0 := by
       intro he
       have he' := congrArg BitVec.toNat he
       change (blocks-(j+1)) % 2^64 = 0 at he'
-      have hb : blocks-(j+1) < 2^64 := by omega
+      have hb : blocks-(j+1) < 2^64 := by omega_using [hblocks]
       rw [Nat.mod_eq_of_lt hb] at he'
-      omega
+      omega_using [hj, hend, he']
     simp only [eval,State.read,Size.bits,BitVec.setWidth_eq,hu.count]
     simp only [Option.some.injEq,bne_iff_ne]
     exact hv
@@ -240,7 +240,7 @@ theorem streamWith_ok (core : Core) {s : State} {T a b : Addr} {n blocks : Nat} 
     WP isa (Impl.MlDsa.AArch64.Optimized.Resident.streamWith core.code (2*n+1) blocks ra rb base) s
       (StreamState s T a b n blocks ra rb A B blocks) := by
   unfold Impl.MlDsa.AArch64.Optimized.Resident.streamWith
-  rw [ite_eq_right (by omega)]
+  rw [ite_eq_right (by omega_using [hpos])]
   apply WP.seq
   let t := s.write .x .x28 (BitVec.ofNat 64 blocks)
   have he : isa.exec (.movz .x .x28 (BitVec.ofNat 16 blocks) 0) s = some t := by

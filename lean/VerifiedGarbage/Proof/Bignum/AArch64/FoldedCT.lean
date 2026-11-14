@@ -33,14 +33,14 @@ def Ready (p : PublicData) (s : State) : Prop :=
 theorem start_fw (p : PublicData) (s : State) (h : Pre p s) :
     WP isa Precomputed.start s (Ready p) := by
   obtain ⟨X,x,hc,hf,hlt,hx⟩ := h
-  exact WP.mono (start_ok hc hf.1 (by have := hf.2.1; omega) hf.2.2.1)
+  exact WP.mono (start_ok hc hf.1 (by have := hf.2.1; omega_using [this]) hf.2.2.1)
     fun t ⟨ct,yt,_,_,_⟩ => ⟨X,x,ct,hf,by rw [yt]; exact hlt,by rw [yt]; exact hx⟩
 
 theorem init_fw (p : PublicData) (s : State) (h : Ready p s) :
     WP isa (.block [movi .x3 16, sth .x3 sI]) s (Inv p 0) := by
   obtain ⟨X,x,hc,hf,hlt,hx⟩ := h
   have hb : p.L.B.toNat + slot p.L.w 8 ≤ 2^64 := by
-    have := hc.good.scr.nowrap; have := hf.1; omega
+    have := hc.good.scr.nowrap; have := hf.1; omega_arith
   refine WP.mono (init_ok hc.good hf.1) fun t ⟨mt,kt⟩ => ?_
   have ct := ExpCtx.store hc hf.1 (i := sI) (by decide) (by decide) mt kt.wr
     ((kt.gpr .x0 (by decide)).trans hc.good.x0)

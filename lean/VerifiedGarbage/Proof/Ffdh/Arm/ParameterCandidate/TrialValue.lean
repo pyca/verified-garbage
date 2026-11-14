@@ -24,8 +24,8 @@ theorem trialValue_step (m : Mem) (endPtr : BitVec 32) {n : Nat} (positive : 0 <
     cases n with
     | zero => simp [trialValue]
     | succ n =>
-      rw [Nat.min_eq_left (by omega : 2 ≤ n + 1 + 1)]
-      simp only [show n + 1 + 1 - 2 = n by omega]
+      rw [Nat.min_eq_left (by omega_using [] : 2 ≤ n + 1 + 1)]
+      simp only [show n + 1 + 1 - 2 = n by omega_using []]
       rfl
 
 /-- Readability of the n bytes immediately preceding a native end pointer. -/

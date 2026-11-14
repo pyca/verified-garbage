@@ -35,12 +35,12 @@ theorem runFrame_field {s t : State} {base : Addr}
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
       · change Layout.field f + 4 ≤ 0 ∨ 7048 ≤ Layout.field f
-        omega
+        omega_using [lo]
       · change Layout.field f + 4 ≤ 8244 ∨ 8248 ≤ Layout.field f
-        omega
+        omega_using [hi]
       · change Layout.field f + 4 ≤ 14720 ∨ 15712 ≤ Layout.field f
-        omega
-    · change _ ≤ 15712; omega
+        omega_using [hi]
+    · change _ ≤ 15712; omega_using [hi]
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem runFrame_pointer {s t : State} {base : Addr} {rs : List Reg} {p : Pointer}

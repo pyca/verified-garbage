@@ -48,7 +48,7 @@ theorem bStep_le {τ : Nat} {h : Array Bool} {st : IPoly × Nat} (hs : st.2 ≤ 
 
 theorem bStep_full {τ : Nat} {h : Array Bool} {st : IPoly × Nat} (hs : st.2 = n) (j : Byte) :
     bStep τ h st j = st := by
-  unfold bStep; rw [ifF (by omega)]
+  unfold bStep; rw [ifF (by omega_using [hs])]
 
 theorem bFold_full {τ : Nat} {h : Array Bool} {st : IPoly × Nat} (hs : st.2 = n) : ∀ L, bFold τ h st L = st
   | j :: L => by rw [bFold, bStep_full hs, bFold_full hs L]
@@ -73,19 +73,19 @@ theorem ballLoop_eq (τ : Nat) (h : Array Bool) {c : IPoly} {i : Nat} (hi : i �
   | j :: L => by
     rw [ballLoop, bFold]
     by_cases hn : i ≥ n
-    · rw [ifT hn, bStep_full (by simp only; omega), bFold_full (by simp only; omega), ifT (by simp only; omega)]
+    · rw [ifT hn, bStep_full (by simp only; omega_using [hi, hn]), bFold_full (by simp only; omega_using [hi, hn]), ifT (by simp only; omega_using [hi, hn])]
     · rw [ifF hn]
       unfold bStep
       dsimp only
-      rw [ifT (show i < n by omega)]
+      rw [ifT (show i < n by omega_using [hn])]
       by_cases hj : j.toNat > i
       · rw [ifT hj, ifT hj]; exact ballLoop_eq τ h hi L
-      · rw [ifF hj, ifF hj]; exact ballLoop_eq τ h (by omega) L
+      · rw [ifF hj, ifF hj]; exact ballLoop_eq τ h (by omega_using [hn]) L
   | [] => by
     show (if i ≥ n then some c else none) = if i = n then some c else none
     by_cases hn : i = n
-    · rw [ifT (by omega), ifT hn]
-    · rw [ifF (by omega), ifF hn]
+    · rw [ifT (by omega_using [hn]), ifT hn]
+    · rw [ifF (by omega_using [hi, hn]), ifF hn]
 
 /-- The sign bits of the output `out`. -/
 abbrev signs (out : List Byte) : Array Bool := bytesToBits (out.take 8)
@@ -98,7 +98,7 @@ theorem sampleInBall_eq (τ : Nat) {ρ : List Byte} {B : Nat} (hB : 8 ≤ B) :
     sampleInBall τ B ρ =
       if (ballFold τ (H ρ B)).2 = n then some (ballFold τ (H ρ B)).1 else none := by
   rw [sampleInBall]
-  rw [ifF (by rw [H_length]; omega), ballLoop_eq τ _ (Nat.sub_le _ _)]
+  rw [ifF (by rw [H_length]; omega_using [hB]), ballLoop_eq τ _ (Nat.sub_le _ _)]
 
 /-- `SampleInBall(ρ)` when `i` reaches 256 in the loop over the `B` bytes of
 output. -/
@@ -112,9 +112,9 @@ theorem sampleInBall_none (τ : Nat) {ρ : List Byte} {B B' : Nat} (h8 : 8 ≤ B
     (h : (ballFold τ (H ρ B)).2 ≠ 256) : sampleInBall τ B' ρ = none := by
   rw [sampleInBall_eq τ h8]
   have e : H ρ B = H ρ B' ++ (H ρ B).drop B' := by rw [← H_take ρ hB, List.take_append_drop]
-  have et : (H ρ B).take 8 = (H ρ B').take 8 := by rw [e, List.take_append_of_le_length (by rw [H_length]; omega)]
+  have et : (H ρ B).take 8 = (H ρ B').take 8 := by rw [e, List.take_append_of_le_length (by rw [H_length]; omega_using [h8])]
   have ed : (H ρ B).drop 8 = (H ρ B').drop 8 ++ (H ρ B).drop B' := by
-    rw [e, List.drop_append_of_le_length (by rw [H_length]; omega), ← e]
+    rw [e, List.drop_append_of_le_length (by rw [H_length]; omega_using [h8]), ← e]
   simp only [ballFold, signs, et, ed, bFold_append] at h
   by_cases hf : (ballFold τ (H ρ B')).2 = n
   · simp only [ballFold, signs] at hf
@@ -136,12 +136,12 @@ theorem flatBits_getD (z : List Byte) {k : Nat} (hk : k < 8 * z.length) :
   | cons c z ih =>
     rw [List.flatMap_cons, List.getD_eq_getElem?_getD]
     by_cases h8 : k < 8
-    · rw [List.getElem?_append_left (by simp; omega), List.getElem?_map, List.getElem?_range h8]
+    · rw [List.getElem?_append_left (by simp; omega_using [h8]), List.getElem?_map, List.getElem?_range h8]
       simp only [Option.map_some, Option.getD_some, Nat.div_eq_of_lt h8, List.getD_cons_zero,
         Nat.mod_eq_of_lt h8, BitVec.getLsbD, testBit_eq]
-    · rw [List.getElem?_append_right (by simp; omega), List.length_map, List.length_range,
-        ← List.getD_eq_getElem?_getD, ih (by simp at hk; omega), show k / 8 = (k - 8) / 8 + 1 by omega,
-        List.getD_cons_succ, show k % 8 = (k - 8) % 8 by omega]
+    · rw [List.getElem?_append_right (by simp; omega_using [h8]), List.length_map, List.length_range,
+        ← List.getD_eq_getElem?_getD, ih (by simp at hk; omega_using [hk, h8]), show k / 8 = (k - 8) / 8 + 1 by omega_using [h8],
+        List.getD_cons_succ, show k % 8 = (k - 8) % 8 by omega_using [h8]]
 
 /-- Bit `k` of the bytes `z` (for `k < 8 |z|`). -/
 theorem bytesToBits_getD (z : List Byte) {k : Nat} (hk : k < 8 * z.length) :

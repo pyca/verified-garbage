@@ -32,7 +32,7 @@ theorem sub3_toNat (a b : BitVec 32) (c : Bool) :
       (a.toNat + 2 ^ 32 * 2 - b.toNat - c.toNat) % 2 ^ 32 := by
   have ha := a.isLt
   have hb := b.isLt
-  cases c <;> simp only [BitVec.toNat_sub, Bool.toNat_false, Bool.toNat_true] <;> simp <;> omega
+  cases c <;> simp only [BitVec.toNat_sub, Bool.toNat_false, Bool.toNat_true] <;> simp <;> omega_using []
 
 /-- The words of a product. -/
 theorem mul_words (a b : BitVec 32) :
@@ -41,13 +41,13 @@ theorem mul_words (a b : BitVec 32) :
     a.toNat * b.toNat / 2 ^ 32 < 2 ^ 32 - 1 := by
   have ha := a.isLt
   have hb := b.isLt
-  have h : a.toNat * b.toNat ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have h : a.toNat * b.toNat ≤ (2 ^ 32 - 1) * (2 ^ 32 - 1) := Nat.mul_le_mul (by omega_using []) (by omega_using [])
   have hq : a.toNat * b.toNat / 2 ^ 32 < 2 ^ 32 - 1 := by
-    rw [Nat.div_lt_iff_lt_mul (by decide)]; omega
+    rw [Nat.div_lt_iff_lt_mul (by decide)]; omega_using [h]
   simp only [BitVec.toNat_ofNat]
   refine ⟨?_, hq⟩
-  rw [Nat.mod_eq_of_lt (a := _ / 2 ^ 32) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := _ / 2 ^ 32) (by omega_using [h])]
+  omega_using []
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -143,14 +143,14 @@ end
 theorem readSrc_sc {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 4 ≤ size) : readSrc s (.mem (sc d)) = some (s.mem.readW (off base d) 32) := by
   show s.load32 (s.ea (sc d)) = _
-  rw [hs.ea (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
+  rw [hs.ea (by omega_using [hd]), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
 
 /-- A load of the working space through `ebp`, at `4i` bytes into it. -/
 theorem readSrc_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i d : Nat}
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i)) (hd : 4 * i + d + 4 ≤ size) :
     readSrc s (.mem (at_ .ebp d)) = some (s.mem.readW (off base (4 * i + d)) 32) := by
   show s.load32 (s.ea (at_ .ebp d)) = _
-  rw [hs.ea_at hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
+  rw [hs.ea_at hp (by omega_using [hd]), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
 
 theorem _root_.VG.X86.Wp.Upd.keeps {s t : State} {d : Reg} {v : BitVec 32} (h : Upd s t d v) : Keeps [d] s t :=
   ⟨fun r hr => h.other r (by simpa using hr), h.rd, h.wr⟩

@@ -28,11 +28,11 @@ theorem core_words_ok {s : State}
       Frame [outputRegion (s.gpr .x0)] s.mem t.mem ∧ t.mem=inverseMem s.mem (s.gpr .x0) := by
   refine WP.mono (core_ok ht hsep ?_ ?_ ?_) fun t ⟨hk,hp,hm⟩ => ?_
   · intro off ho
-    exact ⟨_,htr,VG.Offset.contains_base _ ho (by omega)⟩
+    exact ⟨_,htr,VG.Offset.contains_base _ ho (by omega_using [ho])⟩
   · intro off ho
-    exact ⟨_,List.mem_append_right _ hw,VG.Offset.contains_base _ ho (by omega)⟩
+    exact ⟨_,List.mem_append_right _ hw,VG.Offset.contains_base _ ho (by omega_using [ho])⟩
   · intro off ho
-    exact ⟨_,hw,VG.Offset.contains_base _ ho (by omega)⟩
+    exact ⟨_,hw,VG.Offset.contains_base _ ho (by omega_using [ho])⟩
   · exact ⟨hk,hp,by rw [hm]; exact inverseMem_frame _ _,hm⟩
 
 theorem staticInit_ok (s : State) :

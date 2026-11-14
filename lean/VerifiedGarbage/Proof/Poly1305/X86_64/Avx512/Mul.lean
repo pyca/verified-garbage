@@ -93,7 +93,7 @@ theorem MulPre.env {s : State} (hp : MulPre s) : EnvOK s mulB := by
     simp only [mulB]
     split
     · subst g; rw [hp.r8]; decide
-    · omega
+    · omega_using []
 
 /-- What `mul` leaves: `H` times the low doublewords of `Y`, carried, and the
 rest but the products and `tP` as they were. -/
@@ -115,8 +115,8 @@ theorem hv_mod {s : State} (hh : ∀ k < 8, ∀ i < 5, hv s k i < 2 ^ 28) {k : N
   rw [envOf_v]
   by_cases hi : i < 5
   · exact Nat.mod_eq_of_lt (Nat.lt_trans (hh k hk i hi) (by decide))
-  · rw [hreg_ge (by omega)]
-    rw [hv_ge s k (by omega)]
+  · rw [hreg_ge (by omega_using [hi])]
+    rw [hv_ge s k (by omega_using [hi])]
     exact Nat.mod_eq_of_lt (Nat.lt_trans (hh k hk 4 (by decide)) (by decide))
 
 theorem yl_eq (s : State) (k : Nat) : (fun i => (envOf s).v (xi (yreg i)) k % 2 ^ 32) = yl s k := by
@@ -229,12 +229,12 @@ theorem MulMPre.env {s : State} (hp : MulMPre s) : EnvOK s mulMB := by
       | exact Nat.le_sub_one_of_lt (hp.h k hk 3 (by decide))
       | exact Nat.le_sub_one_of_lt (hp.h k hk 4 (by decide))
   · have := Nat.mod_lt (qz s r k).toNat (show 2 ^ 32 > 0 by decide)
-    simp only [mulMB]; omega
+    simp only [mulMB]; omega_using []
   · have := BitVec.isLt (s.mem.readW (s.gpr .rdi + BitVec.ofInt 64 (d : Int)) 64)
     simp only [mulMB]
     split
     · subst d; have := hp.mem.mask; simp only [envOf] at this; rw [this]; decide
-    · omega
+    · omega_using []
   · have := Nat.mod_lt (s.mem.readW (s.gpr .rdi + BitVec.ofInt 64 (d : Int)) 64).toNat
       (show 2 ^ 32 > 0 by decide)
     have r := hp.mem.r
@@ -252,11 +252,11 @@ theorem MulMPre.env {s : State} (hp : MulMPre s) : EnvOK s mulMB := by
     · split
       · rename_i h
         rcases h with rfl | rfl | rfl | rfl
-        · rw [f 1 (by decide) (by decide)]; have := r 1 (by decide); omega
-        · rw [f 2 (by decide) (by decide)]; have := r 2 (by decide); omega
-        · rw [f 3 (by decide) (by decide)]; have := r 3 (by decide); omega
-        · rw [f 4 (by decide) (by decide)]; have := r 4 (by decide); omega
-      · omega
+        · rw [f 1 (by decide) (by decide)]; have := r 1 (by decide); omega_using [this]
+        · rw [f 2 (by decide) (by decide)]; have := r 2 (by decide); omega_using [this]
+        · rw [f 3 (by decide) (by decide)]; have := r 3 (by decide); omega_using [this]
+        · rw [f 4 (by decide) (by decide)]; have := r 4 (by decide); omega_using [this]
+      · omega_using []
 
 /-- What `mulM` leaves: `H` times the multiplier in the state, carried, and
 the rest but the products and `tP` as they were. -/

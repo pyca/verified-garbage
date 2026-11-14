@@ -68,7 +68,7 @@ theorem minLen_ok (s : State) {o n : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 o)
     refine ⟨_, by arun [], ?_, ?_, ?_, ?_⟩
     · simp [gpr_setReg, h6, ofNat_sub32 ho (by decide)]
     · simp only [z_subFlags, c_subFlags, gpr_setReg, z_setReg, c_setReg, ite_true, ite_false, reduceCtorEq,
-        h5, h6, ofNat_sub32 ho (by decide), toNat32 hn, toNat32 (show 16 - o < 2 ^ 32 by omega)]
+        h5, h6, ofNat_sub32 ho (by decide), toNat32 hn, toNat32 (show 16 - o < 2 ^ 32 by omega_using [])]
       cases decide (16 - o ≤ n) <;> rfl
     · intro r h₁ h₂; simp [gpr_setReg, h₁, h₂]
     · exact ⟨rfl, rfl, rfl, rfl⟩
@@ -79,9 +79,9 @@ theorem minLen_ok (s : State) {o n : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 o)
     subst hs'
     refine ⟨?_, fun r h₁ h₂ => ?_, hk.trans ⟨rfl, rfl, rfl, rfl⟩⟩
     · rw [gpr_setReg_self, hg .r5 (by decide) (by decide), h5]
-      simp at ht; rw [Nat.min_eq_right (by omega)]
+      simp at ht; rw [Nat.min_eq_right (by omega_using [ht])]
     · simp only [gpr_setReg, h₁, ite_false]; exact hg r h₁ h₂
   · refine WP.block_nil ⟨?_, hg, hk⟩
-    simp at hf; rw [hr3, Nat.min_eq_left (by omega)]
+    simp at hf; rw [hr3, Nat.min_eq_left (by omega_using [hf])]
 
 end VG.Proof.AesGcm.Arm

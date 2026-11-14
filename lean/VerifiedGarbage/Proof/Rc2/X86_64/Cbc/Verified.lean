@@ -140,11 +140,11 @@ theorem StepPre.writeIv {s : State} (hp : StepPre s) : InRegions s.wr (s.gpr .rb
 
 theorem StepPre.readBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 i) 8 :=
-  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
 
 theorem StepPre.writeBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 i) 8 :=
-  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
 
 end VG.Proof.Rc2.X86_64.Cbc
 
@@ -242,7 +242,7 @@ theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : StepPre s) (h :
   apply blockAt_frame h.mem
   have sep : (stashR s).Disjoint ⟨s.gpr .rdx, 256⟩ := by
     have h := Offset.disjoint (s.gpr .rdx) (d := 256) (n := 8) (e := 0) (k := 256)
-      (by omega) (by decide) (by decide)
+      (by omega_using []) (by decide) (by decide)
     simpa using h
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.dataBuf.sub_right (stash_sub s)).symm) (And.intro sep
@@ -343,7 +343,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
   have sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨s'.gpr .rsi, 8 * m⟩ ⟨s.gpr .rsi, 8 * n⟩
     rw [ptr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [bound])
   constructor
   · have hc : Covers [keyR s', ivR s', dataR s' m, bufR s'] [keyR s, ivR s, dataR s n, bufR s] := by
       apply Covers.of_sub
@@ -352,7 +352,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨keyR s, by simp, 0, by simp [key], by simp⟩
       · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega_using [bound]⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [rd, wr]
     exact fun a k h => hp.reads a k (hc a k h)
@@ -362,7 +362,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega_using [bound]⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [wr]
     exact fun a k h => hp.writes a k (hc a k h)
@@ -477,11 +477,11 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
   refine ⟨by rw [ptr₂, h₁.reg .rsi (by decide)], count₂.trans count', ?_, ?_, ?_,
     keep₂.rd.trans h₁.rd, keep₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
   · rw [flag₂, count']
-    have eqZero := counter_eq (n - 1) 0 (by omega) (by decide)
+    have eqZero := counter_eq (n - 1) 0 (by omega_using [bound]) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 64 (n - 1) == 0#64) = _
     rw [eqZero]
-    have he : n - 1 = 0 ↔ n = 1 := by omega
+    have he : n - 1 = 0 ↔ n = 1 := by omega_using [hn]
     simp only [he]
   · intro r hr hs hb
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.reg r hr)
@@ -496,7 +496,7 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
 
 theorem BodyPost.tail {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) : StepPre s' n :=
-  hp.slice (i := 1) (by omega) h.rd h.wr
+  hp.slice (i := 1) (by omega_using []) h.rd h.wr
     (h.reg .rdi (by decide) (by decide) (by decide))
     (h.reg .rbx (by decide) (by decide) (by decide))
     (h.reg .rdx (by decide) (by decide) (by decide))
@@ -529,7 +529,7 @@ theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
   · refine ⟨dataR s n, by simp [loopWrites], ?_⟩
     change Region.Sub ⟨s'.gpr .rsi, 8 * m⟩ ⟨s.gpr .rsi, 8 * n⟩
     rw [ptr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_using [bound])
   · refine ⟨⟨s.gpr .rdx, 264⟩, by simp [loopWrites], ?_⟩
     rw [buf]; exact fun _ h => h
   · refine ⟨stackR s, by simp [loopWrites], ?_⟩
@@ -552,9 +552,9 @@ theorem BodyPost.tailData {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.Rc2.blocksAt s'.mem (s.gpr .rsi + 8) n = Spec.Rc2.blocksAt s.mem (s.gpr .rsi + 8) n := by
   have sub : Region.Sub ⟨s.gpr .rsi + 8, 8 * n⟩ (dataR s (n + 1)) :=
-    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega)
+    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega_using [])
   have sep : (Region.mk (s.gpr .rsi + 8) (8 * n)).Disjoint (dataR s) :=
-    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply blocksAt_frame h.mem
   simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivData.sub_right sub).symm) (And.intro sep (And.intro
@@ -565,9 +565,9 @@ theorem firstBlock_frame {d : Spec.Rc2.Direction} {s s' : State} {n : Nat} {m : 
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
     (frame : Frame (loopWrites s' n) s'.mem m) :
     Spec.Rc2.blockAt m (s.gpr .rsi) = Spec.Rc2.blockAt s'.mem (s.gpr .rsi) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega)
+  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_using [])
   have sep : (dataR s).Disjoint ⟨s.gpr .rsi + 8, 8 * n⟩ :=
-    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega_using [bound])
   apply blockAt_frame frame
   have iv := h.reg .rbx (by decide) (by decide) (by decide)
   have buf := h.reg .rdx (by decide) (by decide) (by decide)
@@ -610,7 +610,7 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
   | zero => intro s hn; omega
   | succ n ih =>
     intro s hn bound hp count
-    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega) count (hp.head hn)
+    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega_using [bound]) count (hp.head hn)
     by_cases hz : n = 0
     · subst n
       refine ⟨_, s₁, Exec.loopExit exec₁ ?_, ?_⟩
@@ -623,9 +623,9 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
           simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Proof.Rc2.cbcBlocks]
           exact h₁.iv
     · have hp₁ := h₁.tail hp
-      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega) (by omega) hp₁ (by simpa using h₁.count)
+      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega_using [hz]) (by omega_using [bound]) hp₁ (by simpa using h₁.count)
       refine ⟨_, s₂, Exec.loopNext exec₁ ?_ exec₂, ?_⟩
-      · have he : n + 1 ≠ 1 := by omega
+      · have he : n + 1 ≠ 1 := by omega_using [hz]
         simp only [eval, h₁.flag, he, decide_false, Option.map_some, Bool.not_false]
       · have key := h₁.schedule (hp.head hn)
         have tail := h₁.tailData hp bound
@@ -642,12 +642,12 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
           exact congrArg (s.gpr .rsi + ·) (by
             change BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * n) = _
             rw [← BitVec.ofNat_add]
-            exact congrArg (BitVec.ofNat 64) (by omega))
+            exact congrArg (BitVec.ofNat 64) (by omega_using []))
         · intro r hr hs hb
           exact (h₂.reg r hr hs hb).trans (h₁.reg r hr hs hb)
         · intro r hr hb
           exact (h₂.callee r hr hb).trans (h₁.callee r hr hb)
-        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega) vi bi sp h₁.ptr)
+        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega_using []) vi bi sp h₁.ptr)
         · have first := firstBlock_frame h₁ hp bound h₂.mem
           rw [blocksAt_cons, first, h₁.data, data, blocksAt_cons]
           rfl
@@ -658,7 +658,7 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
     (hp : StepPre s n) (count : s.gpr .rbp = BitVec.ofNat 64 n)
     (flag : s.zf = some (s.gpr .rbp == 0)) :
     WP isa (.ite .e (.block []) (.loop (Impl.Rc2.X86_64.Cbc.body d) .ne)) s (LoopPost d s n) := by
-  have eqZero := counter_eq n 0 (by omega) (by decide)
+  have eqZero := counter_eq n 0 (by omega_using [bound]) (by decide)
   simp only [BitVec.sub_zero] at eqZero
   have flag' : s.zf = some (decide (n = 0)) := by
     rw [flag, count]
@@ -675,14 +675,14 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
   · apply WP.ite false (by simp only [eval, flag', hz, decide_false])
     · simp
     · intro _
-      exact loop_ok d n s (by omega) bound hp count
+      exact loop_ok d n s (by omega_using [hz]) bound hp count
 
 theorem LoopPost.scratchRead {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : LoopPost d s n s') (hp : StepPre s n) (i : Nat) (lo : 264 ≤ i) (hi : i + 8 ≤ 512) :
     s'.mem.readW (s.gpr .rdx + BitVec.ofNat 64 i) 64 = s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 i) 64 := by
   have sub : Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩ (bufR s) := Offset.sub_base _ hi
   have sep : (Region.mk (s.gpr .rdx + BitVec.ofNat 64 i) 8).Disjoint ⟨s.gpr .rdx, 264⟩ :=
-    Offset.disjoint_base _ lo (by omega)
+    Offset.disjoint_base _ lo (by omega_using [hi])
   apply h.mem.readW (r := ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩) (Region.contains_self _ _)
     (hn := by decide)
   simpa only [loopWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
@@ -821,7 +821,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     retIv, retData, retBuf, stackKey, stackIv, stackData, stackBuf, fit⟩ := hs
   have writes (i : Nat) (hi : i + 8 ≤ 512) : InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 i) 8 := by
     rw [hwr]
-    exact ⟨⟨s.gpr .r8, 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨s.gpr .r8, 512⟩, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
   rw [Impl.Rc2.X86_64.Cbc.cbc]
   apply WP.seq
   rw [WP.block_append_iff]
@@ -858,7 +858,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · simpa only [stackR, dataR, sp₂, data₂] using stackData
     · simpa only [stackR, bufR, sp₂, buf₂] using stackBuf
   apply WP.seq
-  apply WP.mono (maybeLoop_ok d s₂ (s.gpr .rcx).toNat (by omega) hp₂
+  apply WP.mono (maybeLoop_ok d s₂ (s.gpr .rcx).toNat (by omega_using [fit]) hp₂
     (by simpa using count₂) (by rw [count₂]; exact flag₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂

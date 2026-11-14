@@ -37,7 +37,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 theorem prevalidatedCompute_ct (M : Mont) : RelCT isa (Two (ScheduleState verifyComputeInputs))
     (Prevalidated.compute M.mm) (Two (ScheduleState verifyComputeInputs)) := by
   have h1 := scheduleMinus_ct verifyComputeInputs verifyComputeInputs_stable .q 2 qMinusTwo (by decide)
-    (by intro p; have := p.qGreater; change 2 ≤ p.layout.subgroup; omega)
+    (by intro p; have := p.qGreater; change 2 ≤ p.layout.subgroup; omega_using [this])
     (by decide) (by decide) (scalar_space (by decide)) (by taint_decide) (by taint_decide)
   have h2 := scheduleRange_ct verifyComputeInputs verifyComputeInputs_stable .q Core.signatureR
     (fun p => p.layout.qLen) false (by trivial) (by simp [stablePointer, Core.signatureR])
@@ -50,7 +50,7 @@ theorem prevalidatedCompute_ct (M : Mont) : RelCT isa (Two (ScheduleState verify
   have h5 := scheduleEqual_ct verifyComputeInputs verifyComputeInputs_stable (Core.scalar u) Core.signatureR
     (fun p => p.layout.qLen) false (by change u < 2 ^ 16; decide) (by trivial) (by trivial)
     (by simp [stablePointer, Core.signatureR]) (by decide)
-    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega) (by taint_decide)
+    (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega_using [this]) (by taint_decide)
   unfold Prevalidated.compute seqs
   refine RelCT.seq h1 (RelCT.seq (R := Two (ScheduleState verifyComputeInputs)) ?_
     (RelCT.seq (R := Two (ScheduleState verifyComputeInputs)) ?_ (RelCT.seq h4 ?_)))

@@ -129,13 +129,13 @@ theorem input_agree {s t : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : N
   · intro k h4 hk
     change k < 76 at hk
     change s.mem (VG.X86.Taint.argByte s (16 + k)) = t.mem (VG.X86.Taint.argByte t (16 + k))
-    rw [VG.X86.Taint.argByte_eq fitS (by omega) (by omega),
-      VG.X86.Taint.argByte_eq fitT (by omega) (by omega),
+    rw [VG.X86.Taint.argByte_eq fitS (by omega_using []) (by omega_using [hk]),
+      VG.X86.Taint.argByte_eq fitT (by omega_using []) (by omega_using [hk]),
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide : 0 < 4)),
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide : 0 < 4))]
-    have index : (16 + k - 4) / 4 = (k - 4) / 4 + 4 := by omega
-    have same := (context_argument S (i := (k - 4) / 4) (by omega)).value.trans
-      (context_argument T (i := (k - 4) / 4) (by omega)).value.symm
+    have index : (16 + k - 4) / 4 = (k - 4) / 4 + 4 := by omega_using [h4]
+    have same := (context_argument S (i := (k - 4) / 4) (by omega_using [hk])).value.trans
+      (context_argument T (i := (k - 4) / 4) (by omega_using [hk])).value.symm
     change arg s ((k - 4) / 4 + 4) = arg t ((k - 4) / 4 + 4) at same
     rw [index]
     exact congrArg _ same
@@ -149,7 +149,7 @@ theorem readonly_inputs {E : Environment} {s : State} (h : VG.Proof.RsaKeyGen.X8
     exact ⟨r, List.mem_append_left _ hr, contains⟩
   refine loadInputs_runs h.valid H.readonly (context_readonly C) ?_ (widen h.exponentRead)
   intro i hi
-  obtain ⟨r, hr, contains⟩ := h.outWrite i (by omega)
+  obtain ⟨r, hr, contains⟩ := h.outWrite i (by omega_using [hi])
   exact widen ⟨r, List.mem_append_right _ hr, contains⟩
 
 theorem loaded_core {E : Environment} {m : Mem} {s : State} {e p q : Nat} (L : Loaded E m s)

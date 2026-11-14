@@ -93,7 +93,7 @@ theorem winL_winW {a : EPub × Nat} {j : Nat} {s : State} (h : WinL a j s) :
     WinW ⟨a.1.p, a.1.i, a.1.u, a.2, 16 - j⟩ s := by
   have hp := winL_hp h
   obtain ⟨mi, c, bm, b, W, s₀, ⟨hk, _, _, hd⟩, hI, hodd, hc1, -⟩ := h
-  exact ⟨hk, hp, hd, mi, c, b, bm, hI.ctx, hI.tab, hodd, hc1, by rw [hI.y]; exact Nat.mod_lt _ (by omega)⟩
+  exact ⟨hk, hp, hd, mi, c, b, bm, hI.ctx, hI.tab, hodd, hc1, by rw [hI.y]; exact Nat.mod_lt _ (by omega_using [hodd])⟩
 
 /-- The windows of a word leak the same in runs that agree on the public data. -/
 theorem wins_ct (M : Mont) :
@@ -105,7 +105,7 @@ theorem wins_ct (M : Mont) :
   rintro a j s hj ⟨mi, c, bm, b, W, s₀, hE, hI, hodd, hc1, hk, hkw, hWc⟩
   refine WP.mono (mrWinStep_ok M hE.2.2.2 hodd hc1 hk hkw hWc hj hI) fun t ⟨hz, hI'⟩ => ⟨?_, fun _ => ?_, fun _ => ?_⟩
   · simp only [eval, hz, Option.map_some, Option.some.injEq]
-    by_cases h : j + 1 = 16 <;> simp [h]; omega
+    by_cases h : j + 1 = 16 <;> simp [h]; omega_using [hj, h]
   · exact ⟨mi, c, bm, b, W, s₀, hE, hI', hodd, hc1, hk, hkw, hWc⟩
   · rename_i e; rw [← e]; exact ⟨mi, c, bm, b, W, s₀, hE, hI', hodd, hc1, hk, hkw, hWc⟩
 
@@ -160,8 +160,8 @@ theorem words_ct (M : Mont) :
         have := aE_fits hd; have := hd.z; omega_arith)
       have hj' : j < q.p.w := hj
       refine WP.mono (wordStart_ok hd hj' hI) fun t hB => ⟨by decide, mi, c, bm, b, _, s₀, hE, hB, hodd, hc1,
-        (show 1 ≤ q.p.w - j by omega), (show q.p.w - j ≤ q.p.w by omega), ?_⟩
-      rw [← hxs.e]; exact word_of_wv s.mem q.p.B (slot q.p.w aE) q.p.w (show q.p.w - j - 1 < q.p.w by omega)
+        (show 1 ≤ q.p.w - j by omega_using [hj]), (show q.p.w - j ≤ q.p.w by omega_using []), ?_⟩
+      rw [← hxs.e]; exact word_of_wv s.mem q.p.B (slot q.p.w aE) q.p.w (show q.p.w - j - 1 < q.p.w by omega_using [hj])
     · exact kt_ct (fun a : EPub × Nat => a.1.p.B) (fun a => a.1.p.wr) (mrS ++ [kWords, kBits])
         (fun a => a.1.p.vs a.1.i a.1.u ++
           [(kWords, BitVec.ofNat 64 (a.2 - 1)), (kBits, BitVec.ofNat 64 (16 - 16))]) [] (by decide)
@@ -173,7 +173,7 @@ theorem words_ct (M : Mont) :
     refine WP.mono (mrWord_ok M hd (hx.of_low hI.frm (expRanges_low _) (by
       have := aE_fits hd; have := hd.z; omega_arith)) hodd hc1 hj hI) fun t ⟨hz, hI'⟩ => ⟨?_, fun _ => ?_, fun _ => ?_⟩
     · simp only [eval, hz, Option.map_some, Option.some.injEq]
-      by_cases h : j + 1 = q.p.w <;> simp [h]; omega
+      by_cases h : j + 1 = q.p.w <;> simp [h]; omega_using [hj, h]
     · exact ⟨mi, c, bm, b, s₀, hE, hx, hI', hodd, hc1⟩
     · rename_i e; rw [← e]; exact ⟨mi, c, bm, b, s₀, hE, hx, hI', hodd, hc1⟩
 
@@ -285,7 +285,7 @@ theorem mrExpLoop_ct (M : Mont) : RelCT isa (Two ExpPre) (seqs (mrExpLoop M.mm))
       ((words_ct M).mono (fun _ _ h => h) fun _ _ h => two_mono (fun _ _ h => wordL_lastW h) h)
     rintro q s ⟨hk, hp, hd, mi, c, bm, b, hc, hT, hE, hodd, hc1, hY⟩
     exact WP.mono (expStart_ok hd hc hT hY) fun t hI =>
-      ⟨by have := hd.w4; omega, mi, c, bm, b, s, ⟨hk, hp.hdr, hp.wr, hd⟩, hE, hI, hodd, hc1⟩
+      ⟨by have := hd.w4; omega_using [this], mi, c, bm, b, s, ⟨hk, hp.hdr, hp.wr, hd⟩, hE, hI, hodd, hc1⟩
   · refine RelCT.seqs_app (by simp [mrLast]) (by simp [mrLast]) (RelCT.seq (mrLast_ct M (Or.inl rfl)) ?_)
     refine RelCT.seqs_app (by simp [mrLast]) (by simp [mrLast]) (RelCT.seq (mrLast_ct M (Or.inr (Or.inl rfl))) ?_)
     exact (mrLast_ct M (Or.inr (Or.inr rfl))).mono (fun _ _ h => h) fun _ _ _ => trivial

@@ -90,8 +90,8 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         BigUint::from_be_bytes(n),
         BigUint::from_be_bytes(e),
         BigUint::from_be_bytes(d),
-    )
-    .unwrap_or_else(|err| panic!("{name}: {err}"));
+    );
+    let key = key.unwrap_or_else(|err| panic!("{name}: {err}"));
     assert_eq!(key.modulus_len(), n.len(), "{name}");
     // A signature that verifies; RSASSA-PKCS1-v1_5 is deterministic.
     let digest = [0x5a; 32];
@@ -124,8 +124,8 @@ fn check_key(name: &str, k: &RsaAnyPrivateKey) -> bool {
         BigUint::from_be_bytes(d),
         BigUint::from_be_bytes(&p.0),
         BigUint::from_be_bytes(&q.0),
-    )
-    .unwrap_or_else(|err| panic!("{name}: {err}"));
+    );
+    let key = key.unwrap_or_else(|err| panic!("{name}: {err}"));
     check(&key, "from_primes");
     let key = PrivateKey::from_crt(
         BigUint::from_be_bytes(n),

@@ -22,7 +22,7 @@ theorem basis_product (M : Mont) {p : Parameters} {s : State} {E F : Nat} (h : B
  WP isa (M.mm 6 5 1) s fun t =>
  Power p (E+F) t ∧ Basis p E t ∧ Arrays p.B p.w [2,3,6] s.mem t.mem ∧ Keep mmRegs s t := by
  have bound1 : wv s.mem p.B (slot p.w 1) p.w<p.P := by
-  rw [selected];exact Nat.mod_lt _ (by have := p.modulusPositive;omega)
+  rw [selected];exact Nat.mod_lt _ (by have := p.modulusPositive;omega_using [this])
  refine WP.mono (crtMmN_ok M h.good p.room p.positive p.width (by decide : 6<8)
   (by decide : 5<8) (by decide : 1<8) (by decide) (by decide) (by decide) (by decide) (by decide)
   h.modulus h.inverse bound1) ?_
@@ -55,9 +55,9 @@ structure ProductState (p : Parameters) (b j : Nat) (s : State) : Prop where
  rows : word s.mem p.B (8*sRows)=BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.N)
 
 theorem ProductState.limit {p : Parameters} {b j : Nat} {s : State} (h : ProductState p b j s) : 2^b+j≤32 := by
- have bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (show b≤4 by have := h.tooth;omega)
+ have bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (show b≤4 by have := h.tooth;omega_using [this])
  have := h.position
- omega
+ omega_using [bound, this]
 
 theorem ProductState.after_arrays {p : Parameters} {b j : Nat} {s t : State} {js : List Nat}
  (h : ProductState p b j s) (basis : Basis p (2^(b*Spec.Rsa.FixedBaseComb.rows p.N)) t)

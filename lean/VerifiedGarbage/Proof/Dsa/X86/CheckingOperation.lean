@@ -78,11 +78,11 @@ theorem checkingOperationWith_spec (sized : Nat → Nat → Prog isa) (Invariant
       sf.rd = s.rd ∧ sf.wr = s.wr ∧
       (Spec.Dsa.checkParametersBytes (arg s 2).toNat (arg s 3).toNat
         (Spec.Rsa.bytesAt s.mem (argumentPointer s 0) (arg s 1).toNat)=true → Invariant s sf.mem) := by
-  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 5).toNat * 8 := by have H : 15712 ≤ (arg s 5).toNat * 8 := A.used; omega_using [H]
   unfold Generate.checkParametersWith Core.sequence
   dsimp only [List.foldr]
   refine WP.seq (WP.mono (checkingEntry_ok A) fun t I => ?_)
-  refine WP.seq (generationDispatch_ok sized _ I.scr (by change 8256 ≤ _; omega)
+  refine WP.seq (generationDispatch_ok sized _ I.scr (by change 8256 ≤ _; omega_using [sz])
     (supportedWidths_member A.lengths) (by decide)
     (congrArg BitVec.toNat (I.arguments (2, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.arguments (3, .qLen) (by decide))) ?_)
@@ -111,7 +111,7 @@ theorem checkingOperation_spec {s : State} (A : CheckingABI s) :
   refine WP.mono (checkingOperationWith_spec Generate.checkSized (fun _ _ => True) ?_ A) ?_
   · intro s t A I
     exact WP.mono (checkingInstalled_spec A I) fun sf ⟨V,K,O,S⟩ =>
-      ⟨V,K,(fun a ha hs => O a (by have := A.used; omega) hs), (fun _ => trivial), S⟩
+      ⟨V,K,(fun a ha hs => O a (by have := A.used; omega_using [ha, this]) hs), (fun _ => trivial), S⟩
   · intro t ⟨V,K,O,R,W,_⟩
     exact ⟨V,K,O,R,W⟩
 

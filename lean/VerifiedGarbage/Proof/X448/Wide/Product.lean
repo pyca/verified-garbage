@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
 public import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: row multiplication and coefficient reduction
@@ -34,7 +35,7 @@ theorem addRow_val (f g : Nat → Nat) (a : Nat) {i n : Nat} (h : i + n ≤ 16) 
   induction n with
   | zero => simp only [addRow, valN, Nat.mul_zero, Nat.add_zero]
   | succ n ih =>
-    rw [addRow, addAt_val _ (by omega), ih (by omega), valN_succ g n, Nat.pow_add]
+    rw [addRow, addAt_val _ (by omega_using [h]), ih (by omega_using [h]), valN_succ g n, Nat.pow_add]
     generalize radix ^ i = A
     generalize radix ^ n = B
     grind
@@ -42,16 +43,16 @@ theorem addRow_val (f g : Nat → Nat) (a : Nat) {i n : Nat} (h : i + n ≤ 16) 
 theorem addRow_at (f g : Nat → Nat) (a i n k : Nat) :
     addRow f a g i n k = f k + if i ≤ k ∧ k < i + n then a * g (k - i) else 0 := by
   induction n with
-  | zero => simp only [addRow, Nat.add_zero, show ¬ (i ≤ k ∧ k < i) by omega,
+  | zero => simp only [addRow, Nat.add_zero, show ¬ (i ≤ k ∧ k < i) by omega_using [],
       ite_false, Nat.add_zero]
   | succ n ih =>
     simp only [addRow, addAt]
     by_cases hk : k = i + n
     · subst k
-      rw [ite_eq_left rfl, ih, ite_eq_right (by omega), Nat.add_zero,
-        ite_eq_left (by omega), Nat.add_sub_cancel_left]
+      rw [ite_eq_left rfl, ih, ite_eq_right (by omega_using []), Nat.add_zero,
+        ite_eq_left (by omega_using []), Nat.add_sub_cancel_left]
     · rw [ite_eq_right hk, ih]
-      have he : (i ≤ k ∧ k < i + n) ↔ (i ≤ k ∧ k < i + (n + 1)) := by omega
+      have he : (i ≤ k ∧ k < i + n) ↔ (i ≤ k ∧ k < i + (n + 1)) := by omega_using [hk]
       simp only [he]
 
 /-- The first `n` rows of the product of two eight-limb operands. -/
@@ -64,7 +65,7 @@ theorem rows_val (f g : Nat → Nat) {n : Nat} (hn : n ≤ 8) :
   induction n with
   | zero => simp only [rows, valN, Nat.mul_zero, Nat.zero_add, Nat.zero_mul]
   | succ n ih =>
-    rw [rows, addRow_val _ _ _ (by omega), ih (by omega), valN_succ f n, Nat.add_mul]
+    rw [rows, addRow_val _ _ _ (by omega_using [hn]), ih (by omega_using [hn]), valN_succ f n, Nat.add_mul]
 
 /-- Coefficients of degree 8–11 fold once; 12–15 fold twice. -/
 def reduced (f : Nat → Nat) (k : Nat) : Nat :=
@@ -85,10 +86,10 @@ theorem reduced_val (f : Nat → Nat) :
     rw [← valN_add, ← valN_add, ← valN_add]
     apply valN_congr
     intro i _
-    simp only [reduced, ite_eq_right (by omega : ¬ 4 + i < 4)]
-    rw [show 4 + i + 8 = 12 + i by omega, show 4 + i + 4 = 8 + i by omega]
+    simp only [reduced, ite_eq_right (by omega_using [] : ¬ 4 + i < 4)]
+    rw [show 4 + i + 8 = 12 + i by omega_using [], show 4 + i + 4 = 8 + i by omega_using []]
     simp only [Nat.reduceAdd]
-    omega
+    omega_using []
 
 theorem reduced_mod (f : Nat → Nat) : valN (reduced f) 8 % P = valN f 16 % P := by
   have hp : P = full - half - 1 := by decide +kernel
@@ -98,18 +99,18 @@ theorem reduced_mod (f : Nat → Nat) : valN (reduced f) 8 % P = valN f 16 % P :
       show 8 = 4 + 4 from rfl, valN_split, valN_split]
     simp only [← Nat.add_assoc, Nat.reduceAdd]
     simp only [hp, full, half, radix, Nat.reducePow]
-    omega
+    omega_using []
   rw [he, Nat.add_mul_mod_self_left]
 
 theorem reduced_bound {f : Nat → Nat} (h : ∀ i < 16, f i < 2 ^ 116) :
     ∀ i < 8, reduced f i < 2 ^ 118 := by
   intro i hi
-  have h0 := h i (by omega)
-  have h1 := h (i + 8) (by omega)
+  have h0 := h i (by omega_using [hi])
+  have h1 := h (i + 8) (by omega_using [hi])
   simp only [reduced]
   split
-  · have h2 := h (i + 12) (by omega); omega
-  · have h2 := h (i + 4) (by omega); omega
+  · have h2 := h (i + 12) (by omega_arith); omega_using [h0, h1, h2]
+  · have h2 := h (i + 4) (by omega_using [hi]); omega_using [h0, h1, h2]
 
 /-- A product coefficient accumulated along its diagonal. -/
 def colSum (f g : Nat → Nat) (k : Nat) : Nat → Nat
@@ -129,10 +130,10 @@ theorem rows_congr {f g f' g' : Nat → Nat} (hf : ∀ i < 8, f i = f' i)
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [colSum, colSum, ih (by omega)]
+    rw [colSum, colSum, ih (by omega_using [hn])]
     split
     · rename_i h
-      rw [hf n (by omega), hg (k - n) (by omega)]
+      rw [hf n (by omega_using [hn]), hg (k - n) (by omega_using [h])]
     · rfl
 
 end VG.Proof.X448.Wide

@@ -49,17 +49,17 @@ theorem lenQ_eq {pl ql : Nat} (hp : pl < 65536) (hq : ql < 65536) :
     lens pl ql >>> 16 = BitVec.ofNat 64 ql := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (show pl + 65536 * ql < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show ql < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show pl + 65536 * ql < 2 ^ 64 by omega_using [hp, hq]), Nat.mod_eq_of_lt (show ql < 2 ^ 64 by omega_using [hq])]
+  omega_using [hp]
 
 theorem lenP_eq {pl ql : Nat} (hp : pl < 65536) (hq : ql < 65536) :
     lens pl ql <<< 48 >>> 48 = BitVec.ofNat 64 pl := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (show pl + 65536 * ql < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show pl < 2 ^ 64 by omega)]
+  rw [Nat.mod_eq_of_lt (show pl + 65536 * ql < 2 ^ 64 by omega_using [hp, hq]), Nat.mod_eq_of_lt (show pl < 2 ^ 64 by omega_using [hp])]
   simp only [Nat.reducePow]
-  omega
+  omega_using [hp]
 
 /-- The sampler's public data. -/
 structure SE where
@@ -121,10 +121,10 @@ theorem outside_of_disj {E : SE} (hE : E.Ok) {r : Region} (hd : r.Disjoint E.NR)
   by_contra hc
   apply hd x hx
   simp only [Region.Contains, SE.N, off]
-  rw [VG.Offset.toNat_sub_add x E.F (by simp only [oNonce]; omega)]
+  rw [VG.Offset.toNat_sub_add x E.F (by simp only [oNonce]; omega_using [])]
   simp only [ofs, oNonce, frameBytes] at hc hf ⊢
   rw [show 2 ^ 64 - 32 + (x - E.F).toNat = (x - E.F).toNat - 32 + 2 ^ 64 by omega, Nat.add_mod_right,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [])]
   omega
 
 /-- The octets of a region apart from the nonce are kept by a change in it. -/
@@ -134,7 +134,7 @@ theorem bytes_kept {E : SE} (hE : E.Ok) {A : Addr} {k : Nat} (hd : (⟨A, k⟩ :
   simp only [Spec.Rsa.bytesAt, List.map_inj_left, List.mem_range]
   intro i hi
   refine ho _ (outside_of_disj hE hd ?_ hon)
-  exact VG.Offset.contains_base A (by omega) (by omega)
+  exact VG.Offset.contains_base A (by omega_using [hi]) (by omega_using [hnw, hi])
 
 /-- `SEnv` after code that keeps its registers and the stack pointer and
 changes memory in the nonce only. -/
@@ -159,7 +159,7 @@ theorem SEnv.step {E : SE} {R : List Byte} {s t : State} {rs : List Reg} (hE : E
 theorem SEnv.stepM {E : SE} {R : List Byte} {s t : State} {rs : List Reg} (hE : E.Ok) (h : SEnv E R s)
     (k : Keep rs s t) (hsp : t.sp = s.sp) (hm : t.mem = s.mem)
     (hr : ∀ r ∈ envRegs, r ∉ rs := by decide) : SEnv E R t :=
-  h.step hE k hsp (o := 0) (n := 0) (by omega) (by rw [hm]; exact Outside.refl _ _ _ _) hr
+  h.step hE k hsp (o := 0) (n := 0) (by omega_using []) (by rw [hm]; exact Outside.refl _ _ _ _) hr
 
 /-- The tape's octet `i`. -/
 theorem SEnv.byte {E : SE} {R : List Byte} {s : State} (h : SEnv E R s) {i : Nat} (hi : i < E.rl) :
@@ -178,7 +178,7 @@ theorem SEnv.R_length {E : SE} {R : List Byte} {s : State} (h : SEnv E R s) : R.
 
 theorem SEnv.lenQ {E : SE} {R : List Byte} {s : State} (hE : E.Ok) (h : SEnv E R s) :
     s.gpr .s2 >>> 16 = BitVec.ofNat 64 E.ql := by
-  rw [h.s2]; exact lenQ_eq hE.pl (by have := hE.ql; omega)
+  rw [h.s2]; exact lenQ_eq hE.pl (by have := hE.ql; omega_using [this])
 
 /-! ## The data of q -/
 
@@ -207,7 +207,7 @@ theorem SE.Q.qs_val {E : SE} {qb : List Byte} (h : E.Q qb) :
 
 theorem SE.Q.W_pos {E : SE} {qb : List Byte} (h : E.Q qb) : 0 < E.W := by
   have := (Dsa.random_valid_scan qb).mp h.gt
-  rw [h.W]; omega
+  rw [h.W]; omega_using [this]
 
 /-- The draw as the nonce gets it. -/
 abbrev cpyList (bs : List Byte) (M W : Nat) : List Byte := (List.range W).map (cpy bs M)
@@ -231,7 +231,7 @@ theorem cpyList_cons (b : Byte) (bs : List Byte) (M : Nat) :
     | succ i =>
       simp only [Nat.add_one_ne_zero, ite_false, List.getElem_cons_succ]
       simp only [List.length_cons] at h₂
-      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega)]
+      simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < bs.length by omega_using [h₂])]
 
 /-- The copied draw decodes to the candidate. -/
 theorem SE.Q.cand {E : SE} {qb : List Byte} (h : E.Q qb) {bs : List Byte} (hl : E.W ≤ bs.length) :
@@ -246,7 +246,7 @@ theorem SE.Q.cand {E : SE} {qb : List Byte} (h : E.Q qb) {bs : List Byte} (hl : 
     | cons b rest => exact ⟨b, rest, rfl⟩
   have hrl : rest.length + 1 = E.W := by
     have := congrArg List.length he
-    rw [List.length_take, List.length_cons, Nat.min_eq_left hl] at this; omega
+    rw [List.length_take, List.length_cons, Nat.min_eq_left hl] at this; omega_using [this]
   rw [he, ← hrl, cpyList_cons, Dsa.random_candidate_mask qb b rest (by rw [hrl, h.W]), h.M]
 
 end VG.Proof.Dsa.RISCV64.Rnd

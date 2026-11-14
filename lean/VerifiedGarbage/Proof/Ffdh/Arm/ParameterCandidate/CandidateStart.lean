@@ -34,7 +34,7 @@ theorem CandidateStart.after_entry {s t : State} {p : CandidateParams} {rs : Lis
   · rw [rest.wr]; exact h.outputWrite
   · rw [rest.wr]; exact h.usedWrite
   · rw [rest.rd, rest.wr]; exact h.tapeRead
-  · refine (rsa_bytes_frame changed (by have := p.tapeCount; omega) ?_).trans h.tapeBytes
+  · refine (rsa_bytes_frame changed (by have := p.tapeCount; omega_using [this]) ?_).trans h.tapeBytes
     intro r hr
     rw [List.mem_singleton] at hr
     subst r

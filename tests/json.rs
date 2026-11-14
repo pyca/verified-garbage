@@ -55,14 +55,14 @@ fn value(name: &str, json: &str) -> Value {
 
 /// `v`, the value of `key`, as an object.
 pub fn object<'a>(v: &'a Value, key: &str) -> &'a Map<String, Value> {
-    v.as_object()
-        .unwrap_or_else(|| panic!("{key}: expected an object, found {v}"))
+    let o = v.as_object();
+    o.unwrap_or_else(|| panic!("{key}: expected an object, found {v}"))
 }
 
 /// `v`, the value of `key`, as an array.
 fn array<'a>(v: &'a Value, key: &str) -> &'a [Value] {
-    v.as_array()
-        .unwrap_or_else(|| panic!("{key}: expected an array, found {v}"))
+    let a = v.as_array();
+    a.unwrap_or_else(|| panic!("{key}: expected an array, found {v}"))
 }
 
 /// The field `key` of the object `o`.
@@ -85,8 +85,8 @@ impl FromJson for String {
 
 impl FromJson for u64 {
     fn from_json(v: &Value, key: &str) -> Self {
-        v.as_u64()
-            .unwrap_or_else(|| panic!("{key}: expected an unsigned integer, found {v}"))
+        let n = v.as_u64();
+        n.unwrap_or_else(|| panic!("{key}: expected an unsigned integer, found {v}"))
     }
 }
 
@@ -122,8 +122,8 @@ impl FromJson for u32 {
 ))]
 impl FromJson for bool {
     fn from_json(v: &Value, key: &str) -> Self {
-        v.as_bool()
-            .unwrap_or_else(|| panic!("{key}: expected a boolean, found {v}"))
+        let b = v.as_bool();
+        b.unwrap_or_else(|| panic!("{key}: expected a boolean, found {v}"))
     }
 }
 

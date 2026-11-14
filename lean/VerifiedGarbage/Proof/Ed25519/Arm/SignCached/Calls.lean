@@ -58,13 +58,13 @@ theorem field_scr (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 248) :
 
 theorem frame_addr (hL : L.Ok) {d : Nat} (hd : d < 272) :
     State.addr (L.E + BitVec.ofNat 32 d) = State.addr L.E + BitVec.ofNat 64 d :=
-  addr_add (by have := hL.top; omega)
+  addr_add (by have := hL.top; omega_using [hd, this])
 
 theorem frame_fit (hL : L.Ok) {d n : Nat} (hd : d + n ≤ 248) :
     (L.E + BitVec.ofNat 32 d).toNat + n ≤ 2 ^ 32 := by
   have ht := hL.top
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : L.E.toNat + d < 2 ^ 32)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd] : d < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_using [hd, ht] : L.E.toNat + d < 2 ^ 32)]
+  omega_using [hd, ht]
 
 end VG.Proof.Ed25519.Arm.SignCached

@@ -35,6 +35,6 @@ theorem nibble_value (x : BitVec 32) : (x >>> 28).toNat = x.toNat / 2 ^ 28 := by
 theorem nibble_bound (x : BitVec 32) : (x >>> 28).toNat < 16 := by
   rw [nibble_value]
   have := x.isLt
-  omega
+  omega_using []
 
 end VG.Proof.RsaKeyGen.X86.Near

@@ -140,9 +140,9 @@ theorem correct (s : State) (hs : compressEncodeAArch64.pre s) :
     simp only [BitVec.toNat_ofNat]
     congr 1
     apply decide_eq_decide.mpr
-    rcases hd' with h | h <;> rw [h] at hlen <;> omega
+    rcases hd' with h | h <;> rw [h] at hlen <;> omega_using []
   refine WP.ite _ z₂ (fun hb => ?_) (fun hb => ?_)
-  · have e : ((s.gpr .x1).setWidth 32).toNat = 5 := by simp at hb; omega
+  · have e : ((s.gpr .x1).setWidth 32).toNat = 5 := by simp at hb; omega_using [hlen, hb]
     exact width_ok (w := width5) hs e k₂ m₂ fun _ hp => loop5_ok hp
   · have e : ((s.gpr .x1).setWidth 32).toNat = 11 := by
       simp at hb

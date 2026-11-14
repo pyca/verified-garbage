@@ -21,7 +21,7 @@ variable {p : KeyPublic sampling} {s : State} {m m' : Mem}
 
 theorem outputs_low_frame (h : KeyInput p s) (frame : Frame [rX p, rY p] m m')
     (j : Nat) (bound : j < 16) : lowWord m' p.control j = lowWord m p.control j :=
-  frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
+  frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
     h.outputs_control (by decide)
 
 theorem outputs_policy_frame (h : KeyInput p s) (frame : Frame [rX p, rY p] m m') :
@@ -30,7 +30,7 @@ theorem outputs_policy_frame (h : KeyInput p s) (frame : Frame [rX p, rY p] m m'
   apply List.map_congr_left
   intro j hj
   have bound : j < 4 := List.mem_range.mp hj
-  exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
+  exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound]))
     h.outputs_control (by decide)
 
 end KeyInput
@@ -58,7 +58,7 @@ theorem KeyLive.request {p : KeyPublic sampling} {original s : State} {used keys
   rw [VG.Impl.Ffdh.Arm.KeySearch.request, WP.seq_iff]
   refine WP.mono h.request_block ?_
   rintro t ⟨live, status, request, high⟩
-  have sampling := live.policy (request := p.len) (by have := h.input.bounds.maxLength; omega) request high
+  have sampling := live.policy (request := p.len) (by have := h.input.bounds.maxLength; omega_using [this]) request high
   refine WP.mono live.zero_outputs ?_
   rintro q ⟨done, xzero, yzero, frame, _⟩
   apply done.done (result := requestResult used keys scalars) rfl

@@ -23,9 +23,9 @@ theorem pair_bounds {a b z bound : Int} (hq : 8380417 ≤ bound)
     (ha : -bound ≤ a ∧ a ≤ bound) (hb : -bound ≤ b ∧ b ≤ bound) :
     (-2*bound ≤ (pair a b z).1 ∧ (pair a b z).1 ≤ 2*bound) ∧
     (-2*bound ≤ (pair a b z).2 ∧ (pair a b z).2 ≤ 2*bound) := by
-  have hm := fastMul_bounds (x := a-b) (z := z) (by omega) (by omega)
+  have hm := fastMul_bounds (x := a-b) (z := z) (by omega_using [hsafe, ha, hb]) (by omega_using [hsafe, ha, hb])
   dsimp only [pair]
-  omega
+  omega_using [hq, ha, hb, hm]
 
 theorem pair_word (a b : BitVec 32) (z : Int) {bound : Int}
     (hq : 8380417 ≤ bound) (hsafe : 2*bound < 2147483648)
@@ -35,8 +35,8 @@ theorem pair_word (a b : BitVec 32) (z : Int) {bound : Int}
     (fastMulWord (a-b) z).toInt = (pair a.toInt b.toInt z).2 := by
   dsimp only [pair]
   constructor
-  · exact addWord_int a b (by omega) (by omega)
-  · rw [fastMulWord_int,subWord_int a b (by omega) (by omega)]
+  · exact addWord_int a b (by omega) (by omega_using [hsafe, ha, hb])
+  · rw [fastMulWord_int,subWord_int a b (by omega_using [hsafe, ha, hb]) (by omega_using [hsafe, ha, hb])]
 
 /-- The selected final multiplier always leaves its result in (-q,2q),
 so sign correction followed by one subtraction is sufficient. -/
@@ -47,11 +47,11 @@ def canonical (x : Int) : Int :=
 theorem canonical_bounds {x : Int} (hl : -8380417<x) (hh : x<2*8380417) :
     0≤canonical x ∧ canonical x<8380417 := by
   unfold canonical
-  split <;> dsimp only <;> split <;> omega
+  split <;> dsimp only <;> split <;> omega_arith
 
 theorem canonical_mod (x : Int) : canonical x % 8380417 = x % 8380417 := by
   unfold canonical
-  split <;> dsimp only <;> split <;> omega
+  split <;> dsimp only <;> split <;> omega_using []
 
 theorem canonical_field (x : Int) : ofInt (canonical x) = ofInt x := by
   unfold ofInt

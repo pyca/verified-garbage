@@ -36,7 +36,7 @@ theorem msg_nodup (n : Nat) :
   have key : ∀ c < 4, [msg c, msg (c + 1), msg (c + 2), msg (c + 3), .xmm0, .xmm1, .xmm2, .xmm7].Nodup := by
     decide
   have e : ∀ k, msg (n + k) = msg (n % 4 + k) := fun k => by
-    simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega]
+    simp only [msg]; rw [show (n % 4 + k) % 4 = (n + k) % 4 by omega_using []]
   rw [show msg n = msg (n % 4) by simp only [msg, Nat.mod_mod], e 1, e 2, e 3]
   exact key _ (Nat.mod_lt _ (by decide))
 
@@ -52,7 +52,7 @@ theorem msg_other (n : Nat) (r : XReg)
 theorem msg_ne (n k : Nat) (h₁ : k < n) (h₂ : n ≤ k + 3) : msg k ≠ msg n := by
   have hd := msg_nodup k
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  rcases (by omega : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
+  rcases (by omega_using [h₁, h₂] : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
   · exact hd.1.1
   · exact hd.1.2.1
   · exact hd.1.2.2.1
@@ -91,7 +91,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   have hd := msg_nodup n
   have hd'' := VG.nodup_reverse hd
   apply WP.of_runBlock
-  simp only [schedule, show ¬ n < 4 by omega, ite_false]
+  simp only [schedule, show ¬ n < 4 by omega_using [hn], ite_false]
   generalize msg n = x₀ at *
   generalize msg (n + 1) = x₁ at *
   generalize msg (n + 2) = x₂ at *
@@ -144,10 +144,10 @@ theorem rounds_four (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) :
     Spec.Sha1.rounds H M (4 * (n + 1)) =
       hw4 (n / 5) (Spec.Sha1.rounds H M (4 * n)) (W M (4 * n)) (W M (4 * n + 1)) (W M (4 * n + 2))
         (W M (4 * n + 3)) := by
-  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega, rounds_succ, rounds_succ, rounds_succ, rounds_succ,
-    round_hw _ _ (by omega), round_hw _ _ (by omega), round_hw _ _ (by omega), round_hw _ _ (by omega),
-    show (4 * n) / 20 = n / 5 by omega, show (4 * n + 1) / 20 = n / 5 by omega,
-    show (4 * n + 2) / 20 = n / 5 by omega, show (4 * n + 3) / 20 = n / 5 by omega]
+  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega_using [], rounds_succ, rounds_succ, rounds_succ, rounds_succ,
+    round_hw _ _ (by omega_using [hn]), round_hw _ _ (by omega_using [hn]), round_hw _ _ (by omega_using [hn]), round_hw _ _ (by omega_using [hn]),
+    show (4 * n) / 20 = n / 5 by omega_using [], show (4 * n + 1) / 20 = n / 5 by omega_using [],
+    show (4 * n + 2) / 20 = n / 5 by omega_using [], show (4 * n + 3) / 20 = n / 5 by omega_using []]
   rfl
 
 theorem rounds4_step (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) (s : State)
@@ -159,7 +159,7 @@ theorem rounds4_step (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) (s : St
       (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine WP.mono (rounds4_ok n s _ _ _ h0 rfl hq) fun s' ⟨e0, e1, hx, hg, hm, hrd, hwr⟩ => ?_
-  rw [wk_eq M n _ _ h1, rnds4_eq _ (by omega)] at e0
+  rw [wk_eq M n _ _ h1, rnds4_eq _ (by omega_using [hn])] at e0
   refine ⟨by rw [e0, rounds_four H M hn], ?_, hx, hg, hm, hrd, hwr⟩
   simp only [ECarry, Nat.add_one_ne_zero, ite_false, e1, abcd, dword_ofDwords_3]
   rw [rounds_four H M hn, hw4_e]
@@ -169,7 +169,7 @@ theorem rounds4_step (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) (s : St
 theorem getLsbD_bswap_block' (x : BitVec 32) {j r : Nat} (hj : j < 4) (hr : r < 8) :
     (bswap x).getLsbD (8 * j + r) = x.getLsbD (8 * (3 - j) + r) := by
   rw [getLsbD_bswap_block x hj hr]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with h | h | h | h <;> subst h <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with h | h | h | h <;> subst h <;>
   simp only [↓reduceIte, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, Nat.zero_add] <;>
   exact congrArg _ (by omega)
 
@@ -184,16 +184,16 @@ theorem pshufb_rev (a : BitVec 128) :
   rw [hb]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   obtain ⟨k, r, hk, hr, rfl⟩ : ∃ k r, k < 16 ∧ r < 8 ∧ i = 8 * k + r :=
-    ⟨i / 8, i % 8, by omega, by omega, by omega⟩
-  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega,
-    getLsbD_ofDwords_block _ _ _ _ (by omega) (by omega)]
+    ⟨i / 8, i % 8, by omega_using [hi], by omega_using [], by omega_using []⟩
+  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega_using [],
+    getLsbD_ofDwords_block _ _ _ _ (by omega_using [hk]) (by omega_using [hr])]
   have hm := Nat.mod_lt k (by decide : 4 > 0)
-  rcases (by omega : k / 4 = 0 ∨ k / 4 = 1 ∨ k / 4 = 2 ∨ k / 4 = 3) with h | h | h | h <;>
+  rcases (by omega_using [hk] : k / 4 = 0 ∨ k / 4 = 1 ∨ k / 4 = 2 ∨ k / 4 = 3) with h | h | h | h <;>
   simp only [h, ↓reduceIte, Nat.reduceEqDiff] <;>
   rw [getLsbD_bswap_block' _ hm hr] <;>
   simp only [byte, dword, BitVec.getLsbD_extractLsb', decide_eq_true hr,
-    decide_eq_true (show 8 * (3 - k % 4) + r < 32 by omega), Bool.true_and] <;>
-  exact congrArg a.getLsbD (by omega)
+    decide_eq_true (show 8 * (3 - k % 4) + r < 32 by omega_using [hr]), Bool.true_and] <;>
+  exact congrArg a.getLsbD (by omega_using [h])
 
 /-- Four message words, loaded and made big-endian. -/
 theorem load_quad (M : Block) (m : Mem) (bp : BitVec 32) (hfit : bp.toNat + 64 ≤ 2 ^ 32)
@@ -203,11 +203,11 @@ theorem load_quad (M : Block) (m : Mem) (bp : BitVec 32) (hfit : bp.toNat + 64 �
   rw [pshufb_rev]
   have e : ∀ j, j < 4 → bswap (dword (m.readW (addr bp (16 * n)) 128) j) = W M (4 * n + j) := by
     intro j hj
-    rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega)]
+    rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega_using [hn, hj])]
     refine congrArg (fun a => bswap (m.readW a 32)) ?_
-    rw [addr_eq (by omega), addr_eq (by omega), Offset.add_ofNat_add_ofNat,
-      show 16 * n + 4 * j = 4 * (4 * n + j) by omega]
-  rw [e 0 (by omega), e 1 (by omega), e 2 (by omega), e 3 (by omega)]
+    rw [addr_eq (by omega_using [hfit, hn]), addr_eq (by omega_using [hfit, hn, hj]), Offset.add_ofNat_add_ofNat,
+      show 16 * n + 4 * j = 4 * (4 * n + j) by omega_using []]
+  rw [e 0 (by omega_using []), e 1 (by omega_using []), e 2 (by omega_using []), e 3 (by omega_using [])]
   rfl
 
 /-! ## The rounds -/
@@ -233,9 +233,9 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : BitVec 32) (sB : State)
   induction n with
   | zero =>
     exact WP.block_nil (M := isa) ⟨h0, by simp only [ECarry, ite_true]; exact h1,
-      fun _ h => absurd h (by omega), rfl, rfl, rfl, rfl, rfl⟩
+      fun _ h => absurd h (by omega_using []), rfl, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
-    refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [hn])) fun s hs => ?_)
     rw [WP.block_append_iff]
     have hs_ecx : s.gpr .ecx = bp := by rw [hs.gpr, hecx]
     -- The schedule: `msg n` gets `quad M n`; nothing else changes.
@@ -247,19 +247,19 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : BitVec 32) (sB : State)
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
         rw [e, hs_ecx, hs.mem, hs.x7, hmask]
         exact load_quad M sB.mem bp hfit hlo hblk
-      · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega⟩
-        refine WP.mono (schedule_hi (i + 4) (by omega) s (quad M i) (quad M (i + 1)) (quad M (i + 2))
+      · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega_using [hlo]⟩
+        refine WP.mono (schedule_hi (i + 4) (by omega_using []) s (quad M i) (quad M (i + 1)) (quad M (i + 2))
           (quad M (i + 3)) ?_ ?_ ?_ ?_) fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
-        · rw [msg_add4]; exact hs.msgs i (by omega) (by omega)
-        · rw [show i + 4 + 1 = i + 1 + 4 by omega, msg_add4]; exact hs.msgs (i + 1) (by omega) (by omega)
-        · rw [show i + 4 + 2 = i + 2 + 4 by omega, msg_add4]; exact hs.msgs (i + 2) (by omega) (by omega)
-        · rw [show i + 4 + 3 = i + 3 + 4 by omega, msg_add4]; exact hs.msgs (i + 3) (by omega) (by omega)
+        · rw [msg_add4]; exact hs.msgs i (by omega_using []) (by omega_using [])
+        · rw [show i + 4 + 1 = i + 1 + 4 by omega_using [], msg_add4]; exact hs.msgs (i + 1) (by omega_using []) (by omega_using [])
+        · rw [show i + 4 + 2 = i + 2 + 4 by omega_using [], msg_add4]; exact hs.msgs (i + 2) (by omega_using []) (by omega_using [])
+        · rw [show i + 4 + 3 = i + 3 + 4 by omega_using [], msg_add4]; exact hs.msgs (i + 3) (by omega_using []) (by omega_using [])
         · rw [e]; exact schedule_eq M i
     refine WP.mono hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_
     have o0 := msg_other n .xmm0 (.inl rfl)
     have o1 := msg_other n .xmm1 (.inr (.inl rfl))
     have o7 := msg_other n .xmm7 (.inr (.inr (.inr rfl)))
-    refine WP.mono (rounds4_step H M (n := n) (by omega) s₁ (by rw [hx₁ _ (Ne.symm o0)]; exact hs.x0)
+    refine WP.mono (rounds4_step H M (n := n) (by omega_using [hn]) s₁ (by rw [hx₁ _ (Ne.symm o0)]; exact hs.x0)
       (by rw [hx₁ _ (Ne.symm o1)]; exact hs.x1) hq)
       fun s₂ ⟨e0, e1, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_
     refine ⟨e0, e1, fun k hk hk' => ?_, ?_, by rw [hg₂, hg₁, hs.gpr], by rw [hm₂, hm₁, hs.mem],
@@ -268,8 +268,8 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : BitVec 32) (sB : State)
         (msg_other k _ (.inr (.inr (.inl rfl))))]
       by_cases hkn : k = n
       · subst hkn; exact hq
-      · rw [hx₁ _ (msg_ne n k (by omega) (by omega))]
-        exact hs.msgs k (by omega) (by omega)
+      · rw [hx₁ _ (msg_ne n k (by omega_using [hk, hkn]) (by omega_using [hk']))]
+        exact hs.msgs k (by omega_using [hk, hkn]) (by omega_using [hk'])
     · rw [hx₂ _ (by decide) (by decide) (by decide), hx₁ _ (Ne.symm o7)]
       exact hs.x7
 

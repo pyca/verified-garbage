@@ -20,7 +20,7 @@ structure Input (E : Environment) (s : State) : Prop where
   exponentRead : InRegions (s.rd ++ s.wr) E.exponentRegion.base E.exponentRegion.len
 
 theorem Input.outputs {E : Environment} {s : State} (h : Input E s) : OutputInput E.outputs s := by
-  refine ⟨h.ws, h.valid.outputs, fun i hi => h.arguments i (by omega), ?_⟩
+  refine ⟨h.ws, h.valid.outputs, fun i hi => h.arguments i (by omega_using [hi]), ?_⟩
   intro i hi
   rw [h.valid.outputRegion hi]
   exact h.outWrite i hi
@@ -30,7 +30,7 @@ theorem Input.keep {E : Environment} {s t : State} {rs : List Reg} (h : Input E 
     (header : ∀ d, d + 4 ≤ 72 → t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32) : Input E t := by
   refine ⟨h.valid, ws, ?_, ?_, ?_⟩
   · intro i hi
-    rw [header (4 * i) (by omega)]
+    rw [header (4 * i) (by omega_using [hi])]
     exact h.arguments i hi
   · intro i hi
     rw [K.2.2]
@@ -45,7 +45,7 @@ theorem Input.afterOuts {E : Environment} {s t : State} {regs : List Reg} {rs : 
   intro d hd
   apply BitVec.eq_of_toNat_eq
   have H : val32 t.mem E.base d 1 = val32 s.mem E.base d 1 :=
-    O.val32 (d := d) (k := 1) (fun r hr => Or.inl (Nat.le_trans hd (lower r hr))) (by omega)
+    O.val32 (d := d) (k := 1) (fun r hr => Or.inl (Nat.le_trans hd (lower r hr))) (by omega_using [hd])
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem Input.afterStage {E : Environment} {s t : State} {regs : List Reg} {js : List Nat}
@@ -55,7 +55,7 @@ theorem Input.afterStage {E : Environment} {s t : State} {regs : List Reg} {js :
   intro d hd
   apply BitVec.eq_of_toNat_eq
   have H := stage_preserves_header (n := E.n) (d := d) (count := 1)
-    (by change d + 4 ≤ VG.Impl.RsaKeyGen.X86.Key.kOk; unfold VG.Impl.RsaKeyGen.X86.Key.kOk; omega) O
+    (by change d + 4 ≤ VG.Impl.RsaKeyGen.X86.Key.kOk; unfold VG.Impl.RsaKeyGen.X86.Key.kOk; omega_using [hd]) O
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 end VG.Proof.RsaKeyGen.X86.Key

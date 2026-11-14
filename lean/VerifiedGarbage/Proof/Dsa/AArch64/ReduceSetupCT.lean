@@ -42,7 +42,7 @@ theorem reduceSetup_ct (M : Mont) : RelCT isa (Two ReduceSetupPre)
       (fun p s h => ⟨h.1.2, h.2, p.greater, p.odd⟩) (constants_ct M)) ?_) ?_
   · intro p s ⟨⟨hc, hm⟩, hw⟩
     exact WP.mono (prepare_ok M hc p.lower hw p.greater p.odd hm.modulus hm.inverse)
-      fun t ⟨hct, hmt, _, hr, _⟩ => ⟨⟨hct, hmt⟩, hr ▸ Nat.mod_lt _ (by have := p.greater; omega)⟩
+      fun t ⟨hct, hmt, _, hr, _⟩ => ⟨⟨hct, hmt⟩, hr ▸ Nat.mod_lt _ (by have := p.greater; omega_using [this])⟩
   refine RelCT.seq (two_post (Ψ := fun p s => ReduceContext p s ∧
     wv s.mem (off p.bytes.x.B p.bytes.x.o) (slot p.bytes.x.wx aR2) p.bytes.x.wx < p.modulus)
     (two_map (fun p : ReducePublic => p.toPowerPublic.product.layout)
@@ -50,12 +50,12 @@ theorem reduceSetup_ct (M : Mont) : RelCT isa (Two ReduceSetupPre)
       (small256_ct (by decide) (by taint_decide))) ?_) ?_
   · intro p s ⟨⟨hc, hm⟩, hr⟩
     refine WP.mono (small_ok hc.good (Nat.le_refl _) p.lower
-      (by have := p.fits; have := p.upper; omega) (by decide) (value := 256) (by decide))
+      (by have := p.fits; have := p.upper; omega_arith) (by decide) (value := 256) (by decide))
       fun t ⟨hg, _, hf, hk⟩ => ?_
     have ht := arrays_context hc hf (by decide) hk
     have hz := hc.good.scr.nowrap
     refine ⟨⟨ht, ⟨hg, (hf.wv_of_not_mem (by decide) (by decide) hz).trans hm.modulus, ?_⟩⟩, ?_⟩
-    · rw [hf.word0_of_not_mem (by decide) (by decide) hz (by have := p.lower; omega)]
+    · rw [hf.word0_of_not_mem (by decide) (by decide) hz (by have := p.lower; omega_using [this])]
       exact hm.inverse
     · rw [hf.wv_of_not_mem (by decide) (by decide) hz]
       exact hr
@@ -64,14 +64,14 @@ theorem reduceSetup_ct (M : Mont) : RelCT isa (Two ReduceSetupPre)
       (fun _ _ h => ⟨_, h.1.1.good, Nat.le_refl _⟩) (M.ct (by unfold MmUse; decide))) ?_) ?_
   · intro p s ⟨⟨hc, hm⟩, hr⟩
     exact WP.mono (mont_step M hm (Nat.le_refl _) p.lower
-      (by have := p.fits; have := p.upper; omega) (by unfold MmUse; decide) hr)
+      (by have := p.fits; have := p.upper; omega_arith) (by unfold MmUse; decide) hr)
       fun t ⟨ht, _, _, hf, hk⟩ => ⟨arrays_context hc hf (by decide) hk, ht⟩
   refine RelCT.seq (two_post (Ψ := ReduceContext)
     (two_map (fun p : ReducePublic => p.bytes.x.ws)
       (fun _ _ h => ⟨_, h.1.good, Nat.le_refl _⟩)
       (zeroArr_ct (by decide) (by taint_decide))) ?_) ?_
   · intro p s ⟨hc, hm⟩
-    exact WP.mono (clear_mod_ok hc hm p.lower (by have := p.fits; have := p.upper; omega)
+    exact WP.mono (clear_mod_ok hc hm p.lower (by have := p.fits; have := p.upper; omega_arith)
       (by decide) (by decide)) fun t ⟨hct, hmt, _⟩ => ⟨hct, hmt⟩
   exact two_map (fun p : ReducePublic => p.bytes.x.ws)
     (fun _ _ h => ⟨_, h.1.good, Nat.le_refl _⟩)

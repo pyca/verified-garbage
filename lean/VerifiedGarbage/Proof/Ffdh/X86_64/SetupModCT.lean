@@ -52,7 +52,7 @@ private theorem setOne_ct : RelCT isa (Two SWPre) (setWord aOne .rcx) fun _ _ =>
   obtain ⟨⟨mi, hg, hZ⟩, h12, hcx⟩ := h
   have hH := hdr_lt_slot L.w 8 (show sArr aOne < 32 by decide)
   exact WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = off L.B (slot L.w aOne))
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sArr aOne) (by omega), hg.hdr.harr aOne (by decide)]) rfl)
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * sArr aOne) (by omega_using [hZ, hH]), hg.hdr.harr aOne (by decide)]) rfl)
     fun t ⟨h8, k⟩ => ⟨h8, (k.gpr (by decide)).trans h12, (k.gpr (by decide)).trans hcx⟩
 
 abbrev minvRest : List Instr :=

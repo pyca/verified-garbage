@@ -47,15 +47,15 @@ theorem extract_setLane (x : BitVec 128) (v : BitVec 64) {i j : Nat} (hi : i < 2
     (setLane x 64 i v).extractLsb' (64 * j) 64 = if i = j then v else x.extractLsb' (64 * j) 64 := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;>
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;>
     simp only [setLane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_and,
       BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
       hk, decide_true, Bool.true_and, ite_true, ite_false, Nat.mul_zero, Nat.mul_one,
       Nat.sub_zero, reduceCtorEq] <;>
-    (have h1 : k < 128 := by omega
-     have h2 : 64 + k < 128 := by omega
-     have h3 : ¬ 64 + k < 64 := by omega
+    (have h1 : k < 128 := by omega_using [hk]
+     have h2 : 64 + k < 128 := by omega_using [hk]
+     have h3 : ¬ 64 + k < 64 := by omega_using []
      simp [h1, h2, h3, hk])
 
 private theorem both_set {q : Part} {s t : State} (h : AgreeV q s t) (d : VReg) {p : Bool}
@@ -89,11 +89,11 @@ private theorem ins_set {q : Part} {s t : State} (h : AgreeV q s t) (d : VReg) {
        simp_all [put, get, setV, VectorTaint.setV, RegSet.mem_erase]
    · simp only [kb,ite_false]
      apply h b d
-     rcases (by omega : k=0 ∨ k=1) with rfl | rfl <;> cases b <;>
+     rcases (by omega_using [hk] : k=0 ∨ k=1) with rfl | rfl <;> cases b <;>
        first | contradiction | exact hv
  · simp only [RegUpd.v_setV,vd,ite_false]
    apply h b v
-   rcases (by omega : k=0 ∨ k=1) with rfl | rfl <;> cases b
+   rcases (by omega_using [hk] : k=0 ∨ k=1) with rfl | rfl <;> cases b
    all_goals
      first
      | exact hv
@@ -149,11 +149,11 @@ theorem step_sound {q q' : T} {i : Instr} {s t s' t' : State}
      split at hs <;> [skip; cases hs]
      rename_i hk
      cases hs
-     simp only [reduceExec,Size.bits,show k*64<128 by omega,ite_true,Option.some.injEq] at es et
+     simp only [reduceExec,Size.bits,show k*64<128 by omega_using [hk],ite_true,Option.some.injEq] at es et
      subst es; subst et
      refine ⟨rfl,h.1.write .x d (fun hp=>?_),h.2⟩
      have hh := h.2 (k==1) n hp
-     rcases (by omega : k=0 ∨ k=1) with rfl | rfl <;> exact hh
+     rcases (by omega_using [hk] : k=0 ∨ k=1) with rfl | rfl <;> exact hh
  | ldrqTbl d n off name ws =>
    simp only [step,Option.some.injEq] at hs; subst hs
    simp only [reduceExec] at es et

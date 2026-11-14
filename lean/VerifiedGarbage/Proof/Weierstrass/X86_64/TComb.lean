@@ -1,6 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombPublic
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
+public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -8,10 +12,9 @@ public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.Weierstrass.CombFrame
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
 public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
 public import VerifiedGarbage.Proof.Mont.X86_64.MulF
@@ -21,13 +24,10 @@ public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.BitByte
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
@@ -35,7 +35,6 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.Masked
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
@@ -43,44 +42,253 @@ public import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Mont.X86_64.Blocks
 public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-public import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Mont.X86_64.Round
 public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
 public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Round
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+
+/-! ### `Weierstrass.X86_64.TCombPublic`, which only this module used -/
+
+section
+
+/-! Direct table lookup when the comb scalar is public. -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
+
+theorem publicAddress_ok (K : TCombCfg) (s : State) {j a : Nat} {T : Addr}
+    (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h8 : s.gpr .r8 = BitVec.ofNat 64 a)
+    (hT : s.syms K.tsym = T) (hH : K.H < 2 ^ 31) (hn : K.M.n ≤ 14) (ha : a ≤ K.H) :
+    WP isa (.block K.publicAddress) s fun t =>
+      t.gpr .rdx = T + BitVec.ofNat 64 (j * K.tblBytes + 16 * K.M.n * (a - 1)) ∧
+      Keeps [.rax, .rcx, .rdx] s t ∧ t.xmm = s.xmm ∧ t.syms = s.syms := by
+  have hn' : 16 * K.M.n < 2 ^ 31 := by omega_arith
+  subst hT
+  crun [TCombCfg.publicAddress, hb, h8, imm32_eq hH, imm32_eq hn', RegUpd.cf_setReg, RegUpd.cf_setFlags]
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl, rfl⟩
+  · congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ofNat, BitVec.toNat_add, BitVec.toNat_sub]
+    rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show K.H < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show 16 * K.M.n < 2 ^ 64 by omega_arith)]
+    simp only [TCombCfg.tblBytes]
+    simp only [show (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 from rfl,
+      show (BitVec.signExtend 64 (0 : BitVec 32)).toNat = 0 from rfl, Nat.add_zero, Nat.mod_mod]
+    have sat : ((2 ^ 64 - 1 + a) % 2 ^ 64 +
+        (BitVec.setWidth 64 (BitVec.ofBool (decide (a < 1)))).toNat) % 2 ^ 64 = a - 1 := by
+      by_cases h : a = 0
+      · subst a; decide
+      · have h' : ¬ a < 1 := by omega_arith
+        simp only [decide_eq_false h']
+        change ((2 ^ 64 - 1 + a) % 2 ^ 64 + 0) % 2 ^ 64 = a - 1
+        omega_arith
+    rw [sat]
+    have he : (j * K.H + (a - 1)) * (16 * K.M.n) =
+        j * (16 * K.M.n * K.H) + 16 * K.M.n * (a - 1) := by grind
+    rw [← he]
+    simp only [Nat.add_mod, Nat.mul_mod, Nat.mod_mod]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+      hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- Read one coordinate pair and mask a zero digit. -/
+theorem publicLoadStep_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {c : Nat} (hc : c < 14)
+    (hr : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * c)) 16) :
+    WP isa (.block [.movdquLoad (selAcc c) (tblAt (16 * c)),
+      .xop (.bin .pand (selAcc c) .xmm15)]) s fun t =>
+      t.xmm (selAcc c) = s.mem.readW (X + BitVec.ofNat 64 (16 * c)) 128 &&& s.xmm .xmm15 ∧
+      XKeep [] (· = selAcc c) s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_tblAt, hx, State.load128, hr,
+    ite_true, Option.map_some, XOp.exec, XBinOp.eval, RegUpd.xmm_setXmm_self,
+    RegUpd.xmm_setXmm_of_ne _ _ (Ne.symm (selAcc_ne c hc).2), Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, fun _ _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  rw [RegUpd.xmm_setXmm_of_ne _ _ hr, RegUpd.xmm_setXmm_of_ne _ _ hr]
+
+/-- Load all pairs before writing any scratch memory. -/
+theorem publicLoadSteps_ok {n : Nat} (hn : n ≤ 14) {X : Addr} :
+    ∀ k ≤ n, ∀ (s : State), s.gpr .rdx = X →
+    (∀ c < n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * c)) 16) →
+    WP isa (.block ((List.range k).flatMap fun c =>
+      [.movdquLoad (selAcc c) (tblAt (16 * c)), .xop (.bin .pand (selAcc c) .xmm15)])) s fun t =>
+      (∀ c < 14, t.xmm (selAcc c) = if c < k then
+        s.mem.readW (X + BitVec.ofNat 64 (16 * c)) 128 &&& s.xmm .xmm15 else s.xmm (selAcc c)) ∧
+      XKeep [] (fun r => ∃ c < n, r = selAcc c) s t
+  | 0, _, s, _, _ => WP.block_nil ⟨fun _ _ => by simp, XKeep.refl _ _ _⟩
+  | k + 1, hk, s, hx, hr => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (publicLoadSteps_ok hn k (by omega_arith) s hx hr) fun s₁ ⟨a₁,k₁⟩ => ?_
+    have h15 : s₁.xmm .xmm15 = s.xmm .xmm15 := k₁.xmm _ (by
+      rintro ⟨c,hc,h⟩; exact (selAcc_ne c (by omega_arith)).2 h.symm)
+    refine WP.mono (publicLoadStep_ok s₁ ((k₁.gpr _ List.not_mem_nil).trans hx) (c := k) (by omega_arith)
+      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega_arith))) fun t ⟨a₂,k₂⟩ => ⟨fun c hc => ?_, ?_⟩
+    · by_cases hck : c = k
+      · subst hck
+        rw [a₂, h15, k₁.mem, ite_eq_left (Nat.lt_succ_self _)]
+      · rw [k₂.xmm _ (fun h => hck (selAcc_inj c hc k (by omega_arith) h)), a₁ c hc]
+        by_cases hlt : c < k
+        · simp only [hlt, show c < k + 1 by omega_arith, ↓reduceIte]
+        · simp only [hlt, show ¬ c < k + 1 by omega_arith, ↓reduceIte]
+    · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => ⟨k, by omega_arith, h⟩)
+
+theorem publicLoad_ok (K : TCombCfg) {s : State} {base X : Addr} {size : Nat}
+    (hs : Scr s base size) (hn : K.M.n ≤ 14) (hx : s.gpr .rdx = X)
+    (hr : ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * c)) 16)
+    (hE : K.E.x + 16 * K.M.n ≤ size) :
+    WP isa (.block K.publicLoad) s fun t =>
+      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 =
+        s.mem.readW (X + BitVec.ofNat 64 (16 * c)) 128 &&& s.xmm .xmm15) ∧
+      Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [] s t := by
+  rw [TCombCfg.publicLoad, WP.block_append_iff]
+  refine WP.mono (publicLoadSteps_ok hn K.M.n (Nat.le_refl _) s hx hr) fun s₁ ⟨a₁,k₁⟩ => ?_
+  refine WP.mono (storeAcc_ok (o := K.E.x) K.M.n s₁ (hs.of_keepRegs
+    ⟨k₁.gpr,k₁.rd,k₁.wr⟩ (by decide)) hE) fun t ⟨a₂,O₂,g₂,r₂,w₂,_⟩ => ?_
+  exact ⟨fun c hc => by rw [a₂ c hc, a₁ c (by omega_arith), ite_eq_left hc],
+    by rw [← k₁.mem]; exact O₂,
+    ⟨fun r hr => by rw [g₂, k₁.gpr r hr], by rw [r₂,k₁.rd], by rw [w₂,k₁.wr]⟩⟩
+
+theorem publicMask_ok {s : State} {a : Nat} (ha : a < 2 ^ 31)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
+    WP isa (.block TCombCfg.publicMask) s fun t =>
+      t.xmm .xmm15 = bmask128 (!(decide (a = 0))) ∧ Keeps [.rcx] s t := by
+  rw [TCombCfg.publicMask, WP.block_append_iff]
+  refine WP.mono (eqMask_ok s (v := 0) (by decide) ha h8) fun s₁ ⟨m₁,k₁,_⟩ => ?_
+  rw [show ([.alu .xor .rcx (.imm (-1)), .xop (.movq .xmm15 .rcx),
+    .xop (.bin .punpcklqdq .xmm15 .xmm15)] : List Instr) =
+    [.alu .xor .rcx (.imm (-1))] ++
+      [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] from rfl,
+    WP.block_append_iff]
+  refine WP.mono (notMask_ok s₁ m₁) fun s₂ ⟨m₂,k₂,_⟩ => ?_
+  refine WP.mono (dupMask_ok s₂ m₂) fun t ⟨m₃,k₃⟩ => ?_
+  exact ⟨m₃, (k₁.trans k₂).trans ⟨fun r _ => k₃.gpr r List.not_mem_nil,k₃.mem,k₃.rd,k₃.wr⟩⟩
+
+/-- The direct lookup produces the same coordinate pairs as the full scan. -/
+theorem publicPrefix_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat}
+    (hs : Scr s base size) (hn : K.M.n ≤ 14) (hH : K.H < 2 ^ 31)
+    {j a : Nat} {T : Addr} (hb : s.gpr .rbx = BitVec.ofNat 64 j)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (ha : a ≤ K.H) (hT : s.syms K.tsym = T)
+    (hreg : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (j * K.tblBytes)) K.tblBytes)
+    (hE : K.E.x + 16 * K.M.n ≤ size) :
+    WP isa (.block (K.publicAddress ++ TCombCfg.publicMask ++ K.publicLoad)) s fun t =>
+      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 =
+        accVal s.mem (T + BitVec.ofNat 64 (j * K.tblBytes)) (16 * K.M.n) (16 * ·) a K.H c) ∧
+      Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.rax,.rcx,.rdx] s t := by
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (publicAddress_ok K s hb h8 hT hH hn ha) fun s₁ ⟨x₁,k₁,_,_⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (publicMask_ok (by omega_arith) ((k₁.1 _ (by decide)).trans h8)) fun s₂ ⟨m₂,k₂⟩ => ?_
+  have hx₂ := (k₂.1 .rdx (by decide)).trans x₁
+  have h0 : 0 < K.H := Nat.two_pow_pos _
+  have ha' : a - 1 < K.H := by omega_arith
+  have htb : K.tblBytes ≤ 224 * 2 ^ 31 :=
+    Nat.mul_le_mul (show 16 * K.M.n ≤ 224 by omega_arith) (Nat.le_of_lt hH)
+  have hr : ∀ c < K.M.n, InRegions (s₂.rd ++ s₂.wr)
+      (T + BitVec.ofNat 64 (j * K.tblBytes + 16 * K.M.n * (a - 1)) + BitVec.ofNat 64 (16 * c)) 16 := by
+    intro c hc
+    rw [k₂.2.2.1,k₂.2.2.2,k₁.2.2.1,k₁.2.2.2,
+      BitVec.ofNat_add, BitVec.add_assoc, Offset.add_add, ← BitVec.add_assoc]
+    refine VG.CallLay.inRegions_sub hreg ?_ (by omega_arith)
+    have := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ K.H by omega_arith)
+    simp only [Nat.mul_add, Nat.mul_one] at this
+    change _ ≤ 16 * K.M.n * K.H
+    omega_arith
+  refine WP.mono (publicLoad_ok K ((hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)) hn hx₂ hr hE)
+    fun t ⟨v₃,O₃,k₃⟩ => ?_
+  refine ⟨fun c hc => ?_, ?_, ((Keeps.regs k₁).trans ((Keeps.regs k₂).mono (by decide))).trans
+    (k₃.mono (by decide))⟩
+  · rw [v₃ c hc,m₂,k₂.2.1,k₁.2.1]
+    by_cases hz : a = 0
+    · subst a; simp [bmask128,accVal]
+    · have h1 : 1 ≤ a := by omega_arith
+      simp only [hz, decide_false, Bool.not_false, bmask128, ite_true, BitVec.and_allOnes,
+        accVal, h1, ha, and_self]
+      rw [BitVec.ofNat_add, BitVec.add_assoc, Offset.add_add, BitVec.add_assoc]
+  · rw [← k₁.2.1, ← k₂.2.1]; exact O₃
+
+theorem selectPublic_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 14) (hH : K.H < 2 ^ 31)
+    (hexy : K.E.y = K.E.x + 8 * K.M.n) (hy : K.E.y + 8 * K.M.n ≤ size) (hz : K.E.z + 8 * K.M.n ≤ size)
+    (hxz : K.E.x + 16 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x) (hone : K.one < 2 ^ (64 * K.M.n))
+    {j a : Nat} {T : Addr} (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h8 : s.gpr .r8 = BitVec.ofNat 64 a)
+    (ha : a ≤ K.H) (hT : s.syms K.tsym = T)
+    (hreg : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (j * K.tblBytes)) K.tblBytes) :
+    WP isa (.block K.selectPublic) s (SelPost K base s a (T + BitVec.ofNat 64 (j * K.tblBytes))) := by
+  have hnw := hs.nowrap
+  rw [TCombCfg.selectPublic, WP.block_append_iff]
+  refine WP.mono (publicPrefix_ok K hs hn.2 hH hb h8 ha hT hreg (by omega_arith))
+    fun s₂ ⟨a₂,O₂,k₂⟩ => ?_
+  have hs₂ := hs.of_keepRegs k₂ (by decide)
+  have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [k₂.gpr _ (by decide), h8]
+  refine WP.mono (selOne_ok K hs₂ (by omega_arith) h8₂ hy hz (by omega_arith)) fun t ⟨ey, ez, k₃, U₃, _⟩ => ?_
+  have W := accVal_word a₂
+  have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s₂.mem base (K.E.x + 8 * i) := fun i hi =>
+    U₃.word (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact wordsVal_congr₂ _ _ _ fun i hi => by
+        rw [hxw i hi, W i (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact wordsVal_zeros fun i hi => by
+        rw [hxw i hi, W i (by omega_arith), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
+  · have hyw : ∀ i < K.M.n, word s₂.mem base (K.E.y + 8 * i) =
+        if 1 ≤ a ∧ a ≤ K.H then word s.mem (T + BitVec.ofNat 64 (j * K.tblBytes))
+          (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i) else 0 := fun i hi => by
+      rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega_arith, W _ (by omega_arith),
+        show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) = 16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega_arith]
+    by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact wordsVal_congr₂ _ _ _ fun i hi => by
+        rw [ey i hi, hyw i hi, ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩),
+          decide_eq_false (show ¬ a = 0 by omega_arith), bv_and_or_false]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact wordsVal_wordOf hone fun i hi => by
+        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
+          decide_eq_true (show a = 0 by omega_arith), bv_and_or_true, bv_or_zero]
+  · by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact wordsVal_wordOf hone fun i hi => by
+        rw [ez i hi, decide_eq_false (show ¬ a = 0 by omega_arith), Bool.not_false, bv_and_true]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
+      exact wordsVal_zeros fun i hi => by
+        rw [ez i hi, decide_eq_true (show a = 0 by omega_arith), Bool.not_true, bv_and_false]
+  · exact k₂.trans (k₃.mono (by decide))
+  · have U₂ : Unch base [(K.E.x, 8 * K.M.n), (K.E.x + 8 * K.M.n, 8 * K.M.n)] s.mem s₂.mem := by
+      exact Unch.split (by rw [show 2 * (8 * K.M.n) = 16 * K.M.n by omega_arith]; exact O₂.unch)
+    rw [← hexy] at U₂
+    exact (U₂.trans U₃).mono fun w hw => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      rcases hw with h | h | h | h <;> simp [h]
+
+theorem selectChoice_ok (publicLookup : Bool) (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 14) (hH : K.H < 2 ^ 31) (htb : K.tblBytes < 2 ^ 31)
+    (hexy : K.E.y = K.E.x + 8 * K.M.n) (hy : K.E.y + 8 * K.M.n ≤ size) (hz : K.E.z + 8 * K.M.n ≤ size)
+    (hxz : K.E.x + 16 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x) (hone : K.one < 2 ^ (64 * K.M.n))
+    {j a : Nat} {T : Addr} (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h8 : s.gpr .r8 = BitVec.ofNat 64 a)
+    (ha : a ≤ K.H) (hT : s.syms K.tsym = T)
+    (hreg : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (j * K.tblBytes)) K.tblBytes) :
+    WP isa (.block (if publicLookup then K.selectPublic else K.select)) s (SelPost K base s a (T + BitVec.ofNat 64 (j * K.tblBytes))) := by
+  cases publicLookup
+  · exact select_ok K hs hn hH htb hexy hy hz hxz hone hb h8 ha hT hreg
+  · exact selectPublic_ok K hs hn hH hexy hy hz hxz hone hb h8 ha hT hreg
+
+end VG.Proof.Weierstrass.X86_64
+
+end
+
+end
+
 
 /-!
 # The fixed-base comb from tables in memory on x86-64
@@ -220,7 +428,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     omega_using [h2]
   refine WP.mono (selectChoice_ok publicLookup K hs₁ hnn (by omega_using [hHle]) hL.tbl hexy hEy hEz (by
       have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
-      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega)
+      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_arith)
     (Nat.lt_trans hV.one_lt hpn) hx₁ m₁ hmag (by rw [sy₁]; exact hT) hreg) fun s₂ S₂ => ?_
   obtain ⟨ex₂, ey₂, ez₂, k₂, U₂⟩ := S₂
   rw [k₁.2.1] at ex₂ ey₂ U₂
@@ -456,7 +664,7 @@ theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
 theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} (ht : t < K.w * K.J) :
     ∀ w ∈ combW K.toComb, K.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ K.bits + t := by
   have : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
-  intro w hw; have := hL.bits_w w hw; omega
+  intro w hw; have := hL.bits_w w hw; omega_arith
 
 /-- `o = a`, a point, for `o`'s slots apart from each other and from `a`'s. -/
 theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size) {o a : Pt}
@@ -622,7 +830,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       (tmv C K.M.n base s₃ K.A.z) (mul (combEW K.w k K.J (j - 1)) (G C)) := fun h0 => by
     have hw : combWin K.w k (j - 1) = 2 ^ (K.w - 1) := by
       have e : K.H = 2 ^ (K.w - 1) := rfl
-      unfold magH at ha; rw [e] at ha; split at ha <;> omega
+      unfold magH at ha; rw [e] at ha; split at ha <;> omega_arith
     rw [← hadd, hw]
     simp only [Nat.le_refl, ↓reduceIte, Nat.sub_self]
     rw [show combPtW C K.w (j - 1) 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul], add_infinity]

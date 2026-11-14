@@ -56,14 +56,14 @@ theorem entry_ok (s : State) (h : pcPre s) :
   have hn : stackArg s 0 = BitVec.ofNat 64 (stackArg s 0).toNat := (ofNat_toNat _).symm
   have h8n : 160 ≤ 8 * (stackArg s 0).toNat := by omega
   have hscr : Scr s (s.gpr .r10) (8 * (stackArg s 0).toNat) :=
-    Scr.of_mem (by rw [hwr, Nat.mul_comm]; simp) (by omega)
+    Scr.of_mem (by rw [hwr, Nat.mul_comm]; simp) (by omega_using [nwS])
   have hargs : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8 :=
     ⟨⟨stackArgAddr s 0, 8⟩, by rw [hrd]; simp, by simp [Region.Contains]⟩
   simp only [entry]
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (entryA_ok rfl hn hargs h8n (hscr.st (by omega))) fun tA ⟨⟨a11, _, _⟩, ka⟩ => ?_
-  refine WP.mono (saves_ok (s₀ := tA) a11 h8n (by omega) fun i hi => by
-    rw [ka.wr]; exact hscr.st (by omega)) fun tS hS => ?_
+  refine WP.mono (entryA_ok rfl hn hargs h8n (hscr.st (by omega_using [h8n]))) fun tA ⟨⟨a11, _, _⟩, ka⟩ => ?_
+  refine WP.mono (saves_ok (s₀ := tA) a11 h8n (by omega_using [nwS]) fun i hi => by
+    rw [ka.wr]; exact hscr.st (by omega_using [h8n, hi])) fun tS hS => ?_
   have hS10 : tS.gpr .r10 = s.gpr .r10 := by rw [hS.gpr, ka.gpr _ (by decide)]
   refine WP.mono (header_ok (s := tS) hS10 fun d hd => by
     rw [hS.wr, ka.wr]; exact hscr.st (d := d) (by omega)) fun t₁ ⟨⟨c31, _, cm⟩, kc⟩ => ?_
@@ -124,7 +124,7 @@ theorem zeroOut_ct : RelCT isa (Two Z0) zeroOut fun _ _ => True := by
     (Ψ := Z1) fun q s ⟨Z, hs, hZ, h31, hO, hL⟩ => ?_) (two_taint _ pins_Z1 (by taint_decide))
   exact WP.mono (WP.keep [.r0, .r4, .r5] (Q := fun s₂ => s₂.gpr .r4 = q.op ∧ s₂.gpr .r5 = BitVec.ofNat 64 q.L)
     (by simp only [ldh, hOut, hLen]
-        prun [h31, hO, hL, hs.ld (d := 16) (n := 8) (by omega), hs.ld (d := 24) (n := 8) (by omega)])
+        prun [h31, hO, hL, hs.ld (d := 16) (n := 8) (by omega_using [hZ]), hs.ld (d := 24) (n := 8) (by omega_using [hZ])])
     (by decide)) fun _ ⟨h, _⟩ => h
 
 /-- After the front. -/
@@ -173,7 +173,7 @@ theorem body_ct (R : RoundImpl) : RelCT isa (Two BI) (.seq (.block (([ldh .r3 hR
     (fun _ _ h => h.1) ?_ ?_)) fun _ _ ⟨sv, toc, h, hU, ht⟩ => WP.mono (body_ok R h ht hU) fun _ h' => ⟨sv, toc, h'.1⟩
   · exact two_map Prod.fst (fun _ _ ⟨⟨_, _, _, h, _⟩, _⟩ => h.fs) (finish_ct (.inl rfl))
   · refine two_mono (fun (a : PP × Addr) _ ⟨⟨_, sv, toc, h, hU, ht⟩, hb⟩ => ⟨sv, toc, h, ht, hU, ?_⟩) (main_ct R)
-    by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega)])
+    by_contra hc; simp only [decide_eq_false_iff_not] at hb; exact hb (by rw [ite_eq_right (by omega_using [hc])])
 
 /-- With the save area's word count loaded. -/
 def X1 (q : PP) (t : State) : Prop := t.gpr .r11 = BitVec.ofNat 64 q.n ∧ t.gpr .r31 = q.B
@@ -190,7 +190,7 @@ theorem exit_ct : RelCT isa (Two XE) (.block exit) fun _ _ => True := by
   refine RelCT.block_append (RelCT.seq (two_post (two_taint _ (pins_r31 PP.B fun _ _ ⟨_, _, h⟩ => h.r31)
     (by taint_decide)) (Ψ := X1) fun q t ⟨sv, toc, h⟩ => ?_) (two_taint _ pins_X1 (by taint_decide)))
   have l0 : InRegions (t.rd ++ t.wr) ((q.with sv toc).B + BitVec.ofNat 64 0) 8 := h.scr.ld (d := 0) (by
-    have := h.dims.n; simp only [PP.Z]; omega)
+    have := h.dims.n; simp only [PP.Z]; omega_using [this])
   exact WP.mono (WP.keep [.r11] (Q := fun u => u.gpr .r11 = BitVec.ofNat 64 (q.with sv toc).n)
     (by simp only [ldh, hWsLen]; prun [h.r31, l0, show t.mem.readW ((q.with sv toc).B + BitVec.ofNat 64 0) 64 =
       BitVec.ofNat 64 (q.with sv toc).n from h.len]) (by decide)) fun _ ⟨u11, k⟩ =>

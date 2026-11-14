@@ -56,7 +56,7 @@ theorem finish_ok {E : Environment} {c : Nat} {entropy : List Byte} {s : State} 
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt tagBound]
     exact status
   unfold finish
-  refine WP.seq (wp_movS (readSrc_sc I.scratch (d := 168) (by omega)) fun a A _ =>
+  refine WP.seq (wp_movS (readSrc_sc I.scratch (d := 168) (by omega_using [header])) fun a A _ =>
     wp_cmpS rfl fun b B Z => WP.block_nil ?_)
   have M : b.mem = s.mem := B.mem.trans A.mem
   have K : Keeps [.eax] s b := A.keeps.widen (B.keeps [])
@@ -70,7 +70,7 @@ theorem finish_ok {E : Environment} {c : Nat} {entropy : List Byte} {s : State} 
       WP isa (VG.Impl.RsaKeyGen.X86.CandidateFinish.used n) q fun t =>
         Outputs E res t ∧ Frame [E.usedRegion] s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
     refine WP.mono (VG.Proof.RsaKeyGen.X86.CandidateFinish.used_ok (I.scratch.of_keeps Kq (by decide))
-      (by omega) (I.memory.usedWrite.of_keeps Kq) (by rw [Mq]; exact I.usedPtr) rfl)
+      (by omega_using [header]) (I.memory.usedWrite.of_keeps Kq) (by rw [Mq]; exact I.usedPtr) rfl)
       fun t ⟨eax, mem, O, Kt⟩ => ?_
     refine ⟨⟨?_, ?_⟩, by rw [← Mq]; exact used_frame O, (Kq.mono (by decide)).trans Kt⟩
     · have small : n < 2 ^ 32 := by
@@ -99,7 +99,7 @@ theorem finish_ok {E : Environment} {c : Nat} {entropy : List Byte} {s : State} 
     refine WP.ite true condition0 (fun _ => ?_) (fun bad => nomatch bad)
     have Kd : Keeps [.eax] s d := K.widen (D.keeps [])
     refine WP.mono (VG.Proof.RsaKeyGen.X86.CandidateFinish.none_ok (Sb.of_keeps (D.keeps []) (by decide))
-      (by omega) (Wb.of_keeps (D.keeps [])) (by rw [D.mem]; exact pointer)) fun t ⟨eax, _, O, Kt⟩ => ?_
+      (by omega_using [header]) (Wb.of_keeps (D.keeps [])) (by rw [D.mem]; exact pointer)) fun t ⟨eax, _, O, Kt⟩ => ?_
     refine ⟨⟨by rw [eax]; rfl, fun _ _ bad => nomatch bad⟩, by rw [← M, ← D.mem]; exact used_frame O,
       (Kd.mono (by decide)).trans Kt⟩
   | some r =>

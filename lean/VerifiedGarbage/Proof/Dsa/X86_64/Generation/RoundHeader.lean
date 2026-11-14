@@ -18,6 +18,6 @@ theorem round_header_ranges {w k : Nat} (hk : k < 32)
     List.map_cons, List.map_nil, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
     Caller.pad, slot, hdrBytes, aAcc, aTmp, aXm, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
-  and_intros <;> omega
+  and_intros <;> omega_arith
 
 end VG.Proof.Dsa.X86_64.Generation

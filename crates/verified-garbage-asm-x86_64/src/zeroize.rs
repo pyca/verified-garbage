@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `len` bytes.
@@ -38,7 +40,7 @@ jne 28b
 jmp 27f
 26:
 27:
-.base64 "ww=="
+.base64 "McAx0jH/ww=="
 .p2align 6"#,
     )
 }
@@ -49,6 +51,8 @@ pub const VG_ZEROIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_gar
 /// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
 ///
 /// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -82,7 +86,15 @@ jne 28b
 jmp 27f
 26:
 27:
-.base64 "xfh3ww=="
+.base64 "xfh3xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//McAx0jH/ww=="
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_zeroize_avx_core.rs"]
+pub(crate) mod vg_zeroize_avx_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_zeroize_core.rs"]
+pub(crate) mod vg_zeroize_core;

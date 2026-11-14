@@ -1,17 +1,376 @@
 module
 
-import VerifiedGarbage.Proof.Rc4.RISCV64.ApplyLoop
-import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
-import VerifiedGarbage.Proof.Framework.RISCV64.Wp
-import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.RISCV64.Replace
 import VerifiedGarbage.Proof.Rc4.Memory
-import VerifiedGarbage.Proof.Rc4.Table
-import VerifiedGarbage.Proof.Rc4.Stream
-public import VerifiedGarbage.Proof.Rc4.RISCV64.Frame
-public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 public import VerifiedGarbage.Proof.Rc4.RISCV64.Lookup
 public import VerifiedGarbage.Spec.Rc4
+public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
+public import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
+import VerifiedGarbage.Proof.Framework.RISCV64.Wp
+public import VerifiedGarbage.Proof.Rc4.RISCV64.Frame
+public import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
+
+/-! ### `Rc4.RISCV64.ApplyLoop`, which only this module used -/
+
+section
+
+/-! ### `Rc4.RISCV64.ApplyStep`, which only this module used -/
+
+section
+
+/-! # RC4 on RISC-V: one PRGA step, on the table in the frame -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc4.RISCV64
+open VG VG.RISCV64 VG.Impl.Rc4.RISCV64 VG.Spec.Rc4 VG.Proof.Rc4 VG.Proof.Rc4.Scan64
+
+/-- `i += 1`, then `j += S[i]`, copied to the index of the replacement. -/
+def applyBefore : List Instr :=
+  ([.addi .a3 .a3 1, .shift .sll .d .a3 .a3 56, .shift .srl .d .a3 .a3 56] : List Instr) ++ loadI ++
+    ([.add .t4 .t4 .t0, .shift .sll .d .t4 .t4 56, .shift .srl .d .t4 .t4 56, .logic .or .a4 .t4 .t4] :
+      List Instr)
+
+/-- `S[i] := S[j]` (in `a5`), and the index `S[i] + S[j]` of the keystream byte. -/
+def applyMiddle : List Instr :=
+  loadI ++ ([.store .b .a5 .t2 0, .add .a4 .a5 .t0, .shift .sll .d .a4 .a4 56,
+    .shift .srl .d .a4 .a4 56] : List Instr)
+
+/-- The keystream byte XORed into the data. -/
+def applyAfter : List Instr :=
+  [.load .b .t0 .a1 0, .logic .xor .t0 .t0 .a5, .store .b .t0 .a1 0, .addi .a1 .a1 1,
+    .addi .a2 .a2 (-1)]
+
+theorem applyStep_eq :
+    applyStep = applyBefore ++ (replace ++ (applyMiddle ++ (lookup ++ applyAfter))) := by
+  simp only [applyStep, applyBefore, applyMiddle, applyAfter, List.append_assoc]
+
+theorem apply_before (s : State) (i j : Byte)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
+    (hp : InRegions (s.rd ++ s.wr) (s.gpr .a7) 256) :
+    WP isa (.block applyBefore) s fun t =>
+      t.gpr .a3 = (i + 1#8).setWidth 64 ∧
+      t.gpr .t4 = (j + s.mem (s.gpr .a7 + BitVec.ofNat 64 (i + 1#8).toNat)).setWidth 64 ∧
+      t.gpr .a4 = (j + s.mem (s.gpr .a7 + BitVec.ofNat 64 (i + 1#8).toNat)).setWidth 64 ∧
+      Keep [.t0, .a3, .t4, .a4, .t2] s t ∧ t.mem = s.mem := by
+  have hi : InRegions (s.rd ++ s.wr) (s.gpr .a7 + (i + 1#8).setWidth 64) 1 := by
+    rw [byte_addr (i + 1#8)]
+    exact region_offset _ _ _ _ _ (by have := (i + 1#8).isLt; omega_using [])
+      (by have := (i + 1#8).isLt; omega_using []) hp
+  refine WP.mono (WP.keep (Q := fun t => t.gpr .a3 = (i + 1#8).setWidth 64 ∧
+      t.gpr .t4 = (j + s.mem (s.gpr .a7 + BitVec.ofNat 64 (i + 1#8).toNat)).setWidth 64 ∧
+      t.gpr .a4 = (j + s.mem (s.gpr .a7 + BitVec.ofNat 64 (i + 1#8).toNat)).setWidth 64 ∧
+      t.mem = s.mem) [.t0, .a3, .t4, .a4, .t2] ?_ (by decide +kernel))
+    fun t ⟨h, hk⟩ => ⟨h.1, h.2.1, h.2.2.1, hk, h.2.2.2⟩
+  unfold applyBefore loadI
+  rrun [hcx, h7, byte_inc, hi, BitVec.or_self]
+  rw [byte_addr (i + 1#8), byte_add]
+
+theorem apply_middle (s : State) (ii b : Byte)
+    (hcx : s.gpr .a3 = ii.setWidth 64) (hax : s.gpr .a5 = b.setWidth 64)
+    (hw : InRegions s.wr (s.gpr .a7 + BitVec.ofNat 64 ii.toNat) 1) :
+    WP isa (.block applyMiddle) s fun t =>
+      t.mem = s.mem.write (s.gpr .a7 + BitVec.ofNat 64 ii.toNat) 1 b ∧
+      t.gpr .a4 = (b + s.mem (s.gpr .a7 + BitVec.ofNat 64 ii.toNat)).setWidth 64 ∧
+      Keep [.t0, .a4, .t2] s t := by
+  have hw' : InRegions s.wr (s.gpr .a7 + ii.setWidth 64) 1 := by rw [byte_addr ii]; exact hw
+  have hr : InRegions (s.rd ++ s.wr) (s.gpr .a7 + ii.setWidth 64) 1 := by
+    obtain ⟨r, hr, hc⟩ := hw'
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  refine WP.mono (WP.keep (Q := fun t =>
+      t.mem = s.mem.write (s.gpr .a7 + BitVec.ofNat 64 ii.toNat) 1 b ∧
+      t.gpr .a4 = (b + s.mem (s.gpr .a7 + BitVec.ofNat 64 ii.toNat)).setWidth 64)
+      [.t0, .a4, .t2] ?_ (by decide +kernel)) fun t ⟨h, hk⟩ => ⟨h.1, h.2, hk⟩
+  unfold applyMiddle loadI
+  rrun [hcx, hax, hw', hr, low_byte, byte_add]
+  rw [byte_addr ii]
+  exact ⟨rfl, rfl⟩
+
+theorem apply_after (s : State) (k : Byte) (hax : s.gpr .a5 = k.setWidth 64)
+    (hd : InRegions s.wr (s.gpr .a1) 1) :
+    WP isa (.block applyAfter) s fun t =>
+      t.mem = s.mem.write (s.gpr .a1) 1 (s.mem (s.gpr .a1) ^^^ k) ∧
+      t.gpr .a1 = s.gpr .a1 + 1#64 ∧ t.gpr .a2 = s.gpr .a2 - 1#64 ∧
+      Keep [.t0, .a1, .a2] s t := by
+  have hr : InRegions (s.rd ++ s.wr) (s.gpr .a1) 1 := by
+    obtain ⟨r, hr, hc⟩ := hd
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  refine WP.mono (WP.keep (Q := fun t =>
+      t.mem = s.mem.write (s.gpr .a1) 1 (s.mem (s.gpr .a1) ^^^ k) ∧
+      t.gpr .a1 = s.gpr .a1 + 1#64 ∧ t.gpr .a2 = s.gpr .a2 - 1#64) [.t0, .a1, .a2] ?_
+      (by decide +kernel)) fun t ⟨h, hk⟩ => ⟨h.1, h.2.1, h.2.2, hk⟩
+  unfold applyAfter
+  rrun [hax, hd, hr, low_xor]
+
+/-- One iteration, with the writes expressed against the original memory.
+Both swap operands are read before either write, including for a self-swap. -/
+theorem apply_step (s : State) (i j : Byte)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
+    (hal : (s.gpr .a7).toNat % 8 = 0)
+    (hp : InRegions s.wr (s.gpr .a7) 256) (hd : InRegions s.wr (s.gpr .a1) 1) :
+    let ii := i + 1#8
+    let a := s.mem (s.gpr .a7 + BitVec.ofNat 64 ii.toNat)
+    let jj := j + a
+    let b := s.mem (s.gpr .a7 + BitVec.ofNat 64 jj.toNat)
+    let swapped := (s.mem.write (s.gpr .a7 + BitVec.ofNat 64 jj.toNat) 1 a).write
+      (s.gpr .a7 + BitVec.ofNat 64 ii.toNat) 1 b
+    let k := swapped (s.gpr .a7 + BitVec.ofNat 64 (a + b).toNat)
+    WP isa (.block applyStep) s fun t =>
+      t.mem = swapped.write (s.gpr .a1) 1 (swapped (s.gpr .a1) ^^^ k) ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .a7 = s.gpr .a7 ∧ t.gpr .t6 = s.gpr .t6 ∧
+      t.gpr .a0 = s.gpr .a0 ∧
+      t.gpr .a1 = s.gpr .a1 + 1#64 ∧ t.gpr .a2 = s.gpr .a2 - 1#64 ∧
+      t.gpr .a3 = ii.setWidth 64 ∧ t.gpr .t4 = jj.setWidth 64 := by
+  intro ii a jj b swapped k
+  have hr : InRegions (s.rd ++ s.wr) (s.gpr .a7) 256 := by
+    obtain ⟨r, hr, hc⟩ := hp
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
+  rw [applyStep_eq, WP.block_append_iff]
+  refine WP.mono (apply_before s i j hcx h7 hr) fun t ⟨tcx, t7, t9, tk, tm⟩ => ?_
+  have tp : t.gpr .a7 = s.gpr .a7 := tk.gpr (by decide)
+  have t0' : t.gpr .a0 = s.gpr .a0 := tk.gpr (by decide)
+  have t1 : t.gpr .a1 = s.gpr .a1 := tk.gpr (by decide)
+  have t2 : t.gpr .a2 = s.gpr .a2 := tk.gpr (by decide)
+  have t6 : t.gpr .t6 = s.gpr .t6 := tk.gpr (by decide)
+  have htp : InRegions t.wr (t.gpr .a7) 256 := by rw [tk.2.2, tp]; exact hp
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2, .t5]
+    (replace_core t jj ii t9 tcx (by rw [tp]; exact hal) htp)
+    (by decide +kernel)) fun u ⟨⟨uax, um⟩, uk⟩ => ?_
+  rw [tm, tp] at uax um
+  have ucx : u.gpr .a3 = ii.setWidth 64 := (uk.gpr (by decide)).trans tcx
+  have u7 : u.gpr .t4 = jj.setWidth 64 := (uk.gpr (by decide)).trans t7
+  have up : u.gpr .a7 = s.gpr .a7 := (uk.gpr (by decide)).trans tp
+  have u0 : u.gpr .a0 = s.gpr .a0 := (uk.gpr (by decide)).trans t0'
+  have u1 : u.gpr .a1 = s.gpr .a1 := (uk.gpr (by decide)).trans t1
+  have u2 : u.gpr .a2 = s.gpr .a2 := (uk.gpr (by decide)).trans t2
+  have u6 : u.gpr .t6 = s.gpr .t6 := (uk.gpr (by decide)).trans t6
+  have urd : u.rd = s.rd := uk.2.1.trans tk.2.1
+  have uwr : u.wr = s.wr := uk.2.2.trans tk.2.2
+  have hw : InRegions u.wr (u.gpr .a7 + BitVec.ofNat 64 ii.toNat) 1 := by
+    rw [uwr, up]
+    exact region_offset _ _ _ _ _ (by have := ii.isLt; omega_using []) (by have := ii.isLt; omega_using []) hp
+  rw [WP.block_append_iff]
+  refine WP.mono (apply_middle u ii b ucx uax hw) fun v ⟨vm, v9, vk⟩ => ?_
+  have ha : u.mem (u.gpr .a7 + BitVec.ofNat 64 ii.toNat) = a := by
+    rw [um, up, write_byte]
+    split <;> rfl
+  rw [ha] at v9
+  rw [up, um] at vm
+  have hvm : v.mem = swapped := vm
+  have v9' : v.gpr .a4 = (a + b).setWidth 64 := by rw [v9, BitVec.add_comm]
+  have vp : v.gpr .a7 = s.gpr .a7 := (vk.gpr (by decide)).trans up
+  have v6 : v.gpr .t6 = s.gpr .t6 := (vk.gpr (by decide)).trans u6
+  have vrd : v.rd = s.rd := vk.2.1.trans urd
+  have vwr : v.wr = s.wr := vk.2.2.trans uwr
+  have hvp : InRegions (v.rd ++ v.wr) (v.gpr .a7) 256 := by rw [vrd, vwr, vp]; exact hr
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2, .t5]
+    (lookup_core v (a + b) v9' (by rw [vp]; exact hal) hvp)
+    (by decide +kernel)) fun w ⟨⟨wax, _, wm⟩, wk⟩ => ?_
+  rw [hvm, vp] at wax
+  have w0 : w.gpr .a0 = s.gpr .a0 := (wk.gpr (by decide)).trans ((vk.gpr (by decide)).trans u0)
+  have w1 : w.gpr .a1 = s.gpr .a1 := (wk.gpr (by decide)).trans ((vk.gpr (by decide)).trans u1)
+  have w2 : w.gpr .a2 = s.gpr .a2 := (wk.gpr (by decide)).trans ((vk.gpr (by decide)).trans u2)
+  have wp : w.gpr .a7 = s.gpr .a7 := (wk.gpr (by decide)).trans vp
+  have w6 : w.gpr .t6 = s.gpr .t6 := (wk.gpr (by decide)).trans v6
+  have wrd : w.rd = s.rd := wk.2.1.trans vrd
+  have wwr : w.wr = s.wr := wk.2.2.trans vwr
+  have hwd : InRegions w.wr (w.gpr .a1) 1 := by rw [wwr, w1]; exact hd
+  refine WP.mono (apply_after w k wax hwd) fun z ⟨zm, z1, z2, zk⟩ => ?_
+  refine ⟨?_, zk.2.1.trans wrd, zk.2.2.trans wwr, (zk.gpr (by decide)).trans wp,
+    (zk.gpr (by decide)).trans w6, (zk.gpr (by decide)).trans w0, ?_, ?_, ?_, ?_⟩
+  · rw [zm, wm, hvm, w1]
+  · rw [z1, w1]
+  · rw [z2, w2]
+  · rw [zk.gpr (by decide), wk.gpr (by decide), vk.gpr (by decide), ucx]
+  · rw [zk.gpr (by decide), wk.gpr (by decide), vk.gpr (by decide), u7]
+
+end VG.Proof.Rc4.RISCV64
+
+end
+
+end
+
+
+/-! # RC4 on RISC-V: the stream loop, on the table in the frame -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc4.RISCV64
+open VG VG.RISCV64 VG.Impl.Rc4.RISCV64 VG.Spec.Rc4 VG.Proof.Rc4 VG.Proof.Rc4.Scan64
+
+/-- The concrete stream iteration realizes the abstract PRGA transition. -/
+theorem apply_step_table (s : State) (i j : Byte)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
+    (hal : (s.gpr .a7).toNat % 8 = 0)
+    (hp : InRegions s.wr (s.gpr .a7) 256) (hd : InRegions s.wr (s.gpr .a1) 1)
+    (hs : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) 1) :
+    let next := step { table := (contextAt s.mem (s.gpr .a7)).table, i, j }
+    WP isa (.block applyStep) s fun t =>
+      (contextAt t.mem (s.gpr .a7)).table = next.1.table ∧
+      t.gpr .a3 = next.1.i.setWidth 64 ∧ t.gpr .t4 = next.1.j.setWidth 64 ∧
+      t.mem (s.gpr .a1) = s.mem (s.gpr .a1) ^^^ next.2 ∧
+      StreamFrame (s.gpr .a7) (s.gpr .a1) 1 s.mem t.mem ∧
+      t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .a7 = s.gpr .a7 ∧ t.gpr .t6 = s.gpr .t6 ∧
+      t.gpr .a0 = s.gpr .a0 ∧
+      t.gpr .a1 = s.gpr .a1 + 1#64 ∧ t.gpr .a2 = s.gpr .a2 - 1#64 := by
+  dsimp only
+  rw [step_eq]
+  dsimp only
+  simp only [table_get]
+  have hone : (1 : Byte) = 1#8 := rfl
+  simp only [hone]
+  refine WP.mono (apply_step s i j hcx h7 hal hp hd) fun t ht => ?_
+  obtain ⟨hmem, hrd, hwr, h0, h6', ha0, h1, h2, hi, hj⟩ := ht
+  refine ⟨?_, hi, hj, ?_, ?_, hrd, hwr, h0, h6', ha0, h1, h2⟩
+  · rw [hmem, table_write_sep _ _ _ _ hs, table_swap]
+  · rw [hmem, write_byte, ite_eq_left rfl]
+    have hne (idx : Byte) : s.gpr .a1 ≠ s.gpr .a7 + BitVec.ofNat 64 idx.toNat := by
+      intro he
+      have hn := hs (s.gpr .a1) (by rw [he, Mem.sub_ofNat_toNat _ (by omega_using [])]; exact idx.isLt)
+      exact hn (by simp [BitVec.sub_self])
+    rw [write_byte, ite_eq_right (hne _), write_byte, ite_eq_right (hne _)]
+    have ht := table_swap s.mem (s.gpr .a7) (i + 1#8)
+      (j + s.mem (s.gpr .a7 + BitVec.ofNat 64 (i + 1#8).toNat))
+    rw [← ht, table_get]
+  · rw [hmem]
+    exact stream_frame_step _ _ _ _ _ _
+
+/-- The unconsumed data remains unchanged by a stream iteration. -/
+theorem apply_step_tail (s : State) (i j : Byte) (n : Nat)
+    (hn : n + 1 < 2 ^ 64)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
+    (hal : (s.gpr .a7).toNat % 8 = 0)
+    (hp : InRegions s.wr (s.gpr .a7) 256) (hd : InRegions s.wr (s.gpr .a1) 1)
+    (hs : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) (n + 1)) :
+    WP isa (.block applyStep) s fun t =>
+      bytesAt t.mem (s.gpr .a1 + 1#64) n = bytesAt s.mem (s.gpr .a1 + 1#64) n := by
+  refine WP.mono (apply_step s i j hcx h7 hal hp hd) fun t ht => ?_
+  rw [ht.1]
+  rw [bytes_write_sep _ _ _ _ _ (by omega_using [hn])
+    (sep_symm (Offset.sep_base (s.gpr .a1) (by decide) (by omega_using [hn])))]
+  exact bytes_table_frame _ _ _ _ _ (by omega_using [hn]) (swap_frame _ _ _ _)
+    (sep_symm (sep_tail hn hs))
+
+structure LoopPost (s : State) (ctx : Context) (n : Nat) (t : State) : Prop where
+  table : (contextAt t.mem (s.gpr .a7)).table =
+    (update ctx (bytesAt s.mem (s.gpr .a1) n)).1.table
+  i : t.gpr .a3 = (update ctx (bytesAt s.mem (s.gpr .a1) n)).1.i.setWidth 64
+  j : t.gpr .t4 = (update ctx (bytesAt s.mem (s.gpr .a1) n)).1.j.setWidth 64
+  data : bytesAt t.mem (s.gpr .a1) n = (update ctx (bytesAt s.mem (s.gpr .a1) n)).2
+  frame : StreamFrame (s.gpr .a7) (s.gpr .a1) n s.mem t.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  p : t.gpr .a7 = s.gpr .a7
+  zero : t.gpr .t6 = s.gpr .t6
+  ctx : t.gpr .a0 = s.gpr .a0
+
+/-- Streaming correctness by induction on the public byte count. -/
+theorem apply_loop (n : Nat) (s : State) (ctx : Context)
+    (hn : n + 1 < 2 ^ 64)
+    (htable : (contextAt s.mem (s.gpr .a7)).table = ctx.table)
+    (hcx : s.gpr .a3 = ctx.i.setWidth 64) (h7 : s.gpr .t4 = ctx.j.setWidth 64)
+    (h6 : s.gpr .t6 = 0#64) (hal : (s.gpr .a7).toNat % 8 = 0)
+    (hlen : s.gpr .a2 = BitVec.ofNat 64 (n + 1))
+    (hp : InRegions s.wr (s.gpr .a7) 256)
+    (hd : InRegions s.wr (s.gpr .a1) (n + 1))
+    (hs : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) (n + 1)) :
+    WP isa (.loop (.block applyStep) (.nonzero .a2)) s (LoopPost s ctx (n + 1)) := by
+  induction n generalizing s ctx with
+  | zero =>
+    have hd1 : InRegions s.wr (s.gpr .a1) 1 := hd
+    have hctx : ({ table := (contextAt s.mem (s.gpr .a7)).table, i := ctx.i, j := ctx.j } :
+        Context) = ctx := context_ext htable rfl rfl
+    have hstep := apply_step_table s ctx.i ctx.j hcx h7 hal hp hd1 hs
+    rw [hctx] at hstep
+    obtain ⟨tr, t, he, ht⟩ := hstep
+    obtain ⟨htab, hti, htj, hbyte, hf, hrd, hwr, hp0, h60, ha0, _, hcount⟩ := ht
+    have hbytes (m : Mem) : bytesAt m (s.gpr .a1) 1 = [m (s.gpr .a1)] := by
+      simp [bytesAt]
+    refine ⟨_, t, .loopExit he ?_, ?_⟩
+    · rw [Steps.eval_nonzero, hcount, hlen]
+      rfl
+    · constructor
+      · simpa only [Nat.zero_add, hbytes, update] using htab
+      · simpa only [Nat.zero_add, hbytes, update] using hti
+      · simpa only [Nat.zero_add, hbytes, update] using htj
+      · simp only [Nat.zero_add, hbytes, update, hbyte]
+      · exact hf
+      · exact hrd
+      · exact hwr
+      · exact hp0
+      · exact h60
+      · exact ha0
+  | succ n ih =>
+    have hd1 : InRegions s.wr (s.gpr .a1) 1 := by
+      have hh := region_offset _ _ _ 0 1 (by decide) (by omega_using []) hd
+      simpa only [BitVec.add_zero] using hh
+    have hs1 : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) 1 := fun x hx hy => hs x hx (by omega_using [hy])
+    have hctx : ({ table := (contextAt s.mem (s.gpr .a7)).table, i := ctx.i, j := ctx.j } :
+        Context) = ctx := context_ext htable rfl rfl
+    have hstep := apply_step_table s ctx.i ctx.j hcx h7 hal hp hd1 hs1
+    rw [hctx] at hstep
+    obtain ⟨tr, t, he, ht⟩ := hstep
+    obtain ⟨htab, hti, htj, hbyte, hf, hrd, hwr, hp0, ht6, ha0, hdptr, hcount⟩ := ht
+    have htail : bytesAt t.mem (s.gpr .a1 + 1#64) (n + 1) =
+        bytesAt s.mem (s.gpr .a1 + 1#64) (n + 1) := by
+      obtain ⟨_, u, he', hh⟩ := apply_step_tail s ctx.i ctx.j (n + 1) hn hcx h7 hal hp hd1 hs
+      obtain ⟨_, rfl⟩ := Exec.det he' he
+      exact hh
+    have htlen : t.gpr .a2 = BitVec.ofNat 64 (n + 1) := by
+      rw [hcount, hlen]
+      exact Offset.ofNat_sub_ofNat (by omega_using [])
+    have hpt : InRegions t.wr (t.gpr .a7) 256 := by rw [hwr, hp0]; exact hp
+    have hdt : InRegions t.wr (t.gpr .a1) (n + 1) := by
+      rw [hwr, hdptr]
+      exact region_offset _ _ _ 1 (n + 1) (by decide) (by omega_using []) hd
+    have hst : Mem.Sep (t.gpr .a7) 256 (t.gpr .a1) (n + 1) := by
+      rw [hp0, hdptr]
+      exact sep_tail hn hs
+    have htab' : (contextAt t.mem (t.gpr .a7)).table = (step ctx).1.table := by
+      rw [hp0]; exact htab
+    obtain ⟨tr', u, he', hu⟩ := ih t (step ctx).1 (by omega_using [hn]) htab' hti htj (ht6.trans h6)
+      (by rw [hp0]; exact hal) htlen hpt hdt hst
+    refine ⟨_, u, .loopNext he ?_ he', ?_⟩
+    · rw [Steps.eval_nonzero, hcount, hlen, bne, len_ne n hn]
+      rfl
+    · have hresult : update ctx (bytesAt s.mem (s.gpr .a1) (n + 1 + 1)) =
+          ((update (step ctx).1 (bytesAt t.mem (t.gpr .a1) (n + 1))).1,
+            (s.mem (s.gpr .a1) ^^^ (step ctx).2) ::
+              (update (step ctx).1 (bytesAt t.mem (t.gpr .a1) (n + 1))).2) := by
+        rw [bytes_cons, hdptr, htail]
+        rfl
+      constructor
+      · rw [hresult, ← hp0]; exact hu.table
+      · rw [hresult]; exact hu.i
+      · rw [hresult]; exact hu.j
+      · rw [bytes_cons, hresult]
+        have hh : u.mem (s.gpr .a1) = t.mem (s.gpr .a1) := by
+          have hf' := hu.frame
+          rw [hp0, hdptr] at hf'
+          exact stream_head _ _ _ _ _ hn hf' hs
+        rw [hh, hbyte, ← hdptr, hu.data]
+      · have hf' := hu.frame
+        rw [hp0, hdptr] at hf'
+        exact stream_frame_trans_tail hf hf'
+      · exact hu.rd.trans hrd
+      · exact hu.wr.trans hwr
+      · exact hu.p.trans hp0
+      · exact hu.zero.trans ht6
+      · exact hu.ctx.trans ha0
+
+end VG.Proof.Rc4.RISCV64
+
+end
+
+end
+
 
 /-! # RC4 on RISC-V: the stream function
 
@@ -37,7 +396,7 @@ theorem frame_byte {R : Region} {m m' : Mem} (hf : Frame [R] m m') {x : Addr}
   hf x fun r hr hc => by
     simp only [List.mem_singleton] at hr
     subst hr
-    exact hx (by simp only [Region.Contains] at hc; omega)
+    exact hx (by simp only [Region.Contains] at hc; omega_using [hc])
 
 /-- Copying 256 bytes, from `src` to `dst`, separate. -/
 theorem copy256_ok (s : State) {src dst : Reg} (hs : Reg.t0 ≠ src) (hd : Reg.t0 ≠ dst)
@@ -48,11 +407,11 @@ theorem copy256_ok (s : State) {src dst : Reg} (hs : Reg.t0 ≠ src) (hd : Reg.t
       Frame [⟨s.gpr dst, 256⟩] s.mem t.mem ∧ (∀ r, r ≠ .t0 → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   refine WP.mono (Bytes.copyBytes_ok hs hd (by decide) (by decide)
-    (fun i hi => by rw [Nat.zero_add]; exact region_offset _ _ _ _ _ (by omega) (by omega) hr)
-    (fun i hi => by rw [Nat.zero_add]; exact region_offset _ _ _ _ _ (by omega) (by omega) hw)
+    (fun i hi => by rw [Nat.zero_add]; exact region_offset _ _ _ _ _ (by omega_using [hi]) (by omega_using [hi]) hr)
+    (fun i hi => by rw [Nat.zero_add]; exact region_offset _ _ _ _ _ (by omega_using [hi]) (by omega_using [hi]) hw)
     (fun i hi hc => ?_)) fun t ht => ?_
   · simp only [Region.Contains, Nat.zero_add, BitVec.add_zero] at hc
-    exact hsep (s.gpr src + BitVec.ofNat 64 i) (by omega) (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi)
+    exact hsep (s.gpr src + BitVec.ofNat 64 i) (by omega_using [hc]) (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hi])]; exact hi)
   · refine ⟨fun k hk => by simpa only [Nat.zero_add] using ht.copied k hk, ?_, ht.gpr, ht.rd,
       ht.wr, ht.sp⟩
     have hf := ht.frame
@@ -85,7 +444,7 @@ theorem apply_end (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
     exact ⟨region, List.mem_append_right _ h, hc⟩
   have hw : InRegions s.wr (s.gpr .a0) 256 := by
     simpa only [BitVec.add_zero] using region_offset _ _ _ 0 256 (by decide) (by decide) hp
-  have hsep : Mem.Sep (s.gpr .a0) 256 (s.gpr .a7) 256 := fun x hx hy => hFc x hy (by omega)
+  have hsep : Mem.Sep (s.gpr .a0) 256 (s.gpr .a7) 256 := fun x hx hy => hFc x hy (by omega_using [hx])
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (copy256_ok s (by decide) (by decide) hr hw hsep) fun u ⟨uc, uf, ug, urd, uwr, usp⟩ => ?_
   have u0 : u.gpr .a0 = s.gpr .a0 := ug _ (by decide)
@@ -106,11 +465,11 @@ theorem apply_end (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
   rw [v7] at tf
   have hne (k : Nat) (hk : k < 256) (e : Nat) (he : 256 ≤ e) (he' : e < 258) :
       s.gpr .a0 + BitVec.ofNat 64 k ≠ s.gpr .a0 + BitVec.ofNat 64 e :=
-    Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)
+    Offset.add_ofNat_ne _ (by omega_using [hk]) (by omega_using [he']) (by omega_using [hk, he])
   have hout (k : Nat) (hk : k < 258) : ¬ (s.gpr .a0 + BitVec.ofNat 64 k - s.gpr .a7).toNat < 256 :=
-    fun h => hFc _ h (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hk)
+    fun h => hFc _ h (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hk])]; exact hk)
   refine ⟨fun k hk => ?_, ?_, ?_, fun x hx hx' => ?_⟩
-  · rw [frame_byte tf (hout k (by omega)), vm, write_byte, ite_eq_right (hne k hk 257 (by decide) (by decide)),
+  · rw [frame_byte tf (hout k (by omega_using [hk])), vm, write_byte, ite_eq_right (hne k hk 257 (by decide) (by decide)),
       write_byte, ite_eq_right (hne k hk 256 (by decide) (by decide)), uc k hk]
   · rw [frame_byte tf (hout 256 (by decide)), vm, write_byte,
       ite_eq_right (Offset.add_ofNat_ne _ (by decide) (by decide) (by decide)), write_byte, ite_eq_left rfl]
@@ -120,7 +479,7 @@ theorem apply_end (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
     have h2 : x ≠ s.gpr .a0 + 257#64 := by
       intro he; apply hx; rw [he, Mem.sub_ofNat_toNat _ (by decide)]; decide
     rw [frame_byte tf hx', vm, write_byte, ite_eq_right h2, write_byte, ite_eq_right h1,
-      frame_byte uf (by simp only; omega)]
+      frame_byte uf (by simp only; omega_using [hx])]
 
 /-- `applyMain`, with its frame at the stack pointer, from the PRGA indices
 loaded. -/
@@ -149,7 +508,7 @@ theorem apply_main (s : State) (n : Nat) (hbound : n + 1 < 2 ^ 64)
     simpa only [BitVec.add_zero] using region_offset _ _ _ 0 256 (by decide) (by decide) hpRead
   refine WP.mono (copy256_ok b (src := .a0) (dst := .a7) (by decide) (by decide) hbr
     (by rw [hb.wr, b7]; exact hF)
-    (by rw [b7, b0]; exact fun x hx hy => hFc x hx (by omega)))
+    (by rw [b7, b0]; exact fun x hx hy => hFc x hx (by omega_using [hy])))
     fun c ⟨cc, cf, cg, crd, cwr, csp⟩ => ?_
   rw [b7, b0, hb.mem] at cc
   rw [b7, hb.mem] at cf
@@ -163,7 +522,7 @@ theorem apply_main (s : State) (n : Nat) (hbound : n + 1 < 2 ^ 64)
   have cw : c.wr = s.wr := by rw [cwr, hb.wr]
   have hdata : bytesAt c.mem (s.gpr .a1) (n + 1) = bytesAt s.mem (s.gpr .a1) (n + 1) :=
     bytes_congr fun i hi => frame_byte cf fun h =>
-      hFd _ h (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi)
+      hFd _ h (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hbound, hi])]; exact hi)
   let ctx := contextAt s.mem (s.gpr .a0)
   refine WP.seq (WP.mono (apply_loop n c ctx hbound
     (by rw [c7]; exact table_copy cc) (c3.trans h3) (c4.trans h4) (c6.trans h6)
@@ -188,8 +547,8 @@ theorem apply_main (s : State) (n : Nat) (hbound : n + 1 < 2 ^ 64)
     (by rw [tj, hj, low_byte]), ?_⟩
   rw [← hdat]
   exact bytes_congr fun i hi => tout _
-    (fun h => hs _ h (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi))
-    (fun h => hFd _ h (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hi))
+    (fun h => hs _ h (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hbound, hi])]; exact hi))
+    (fun h => hFd _ h (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hbound, hi])]; exact hi))
 
 /-- The stream function, in its frame of 256 bytes below the stack pointer. -/
 theorem apply_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toNat)
@@ -222,7 +581,7 @@ theorem apply_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toN
     rw [hnEq]
     rw [hnEq] at hd hs hFd
     have hF : (s.sp - 256#64).toNat = s.sp.toNat - 256 := by
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega)]; rfl
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp])]; rfl
     refine WP.alloc (n := frameBytes) (by decide) (by rw [hasp]; exact hsp) ?_
     have hsp' : (allocd frameBytes a).sp = s.sp - 256#64 := by
       show a.sp - BitVec.ofNat 64 256 = _
@@ -237,7 +596,7 @@ theorem apply_ok (s : State) (hal : s.sp.toNat % 16 = 0) (hsp : 256 ≤ s.sp.toN
     refine WP.mono (apply_main (allocd frameBytes a) n hbound
       (by rw [hg, ha2, ← hnEq, BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (by rw [hg, hm, ha3, ha0, ham]) (by rw [hg, hm, ha4, ha0, ham]) (by rw [hg, ha6])
-      (by rw [hsp', hF]; omega)
+      (by rw [hsp', hF]; omega_using [hal])
       ⟨⟨s.sp - 256#64, 256⟩, by rw [hw]; exact List.mem_cons_self,
         by rw [hsp']; exact Region.contains_self _ _⟩
       (by obtain ⟨r, hr, hc⟩ := hp; exact ⟨r, hwr r hr, by rw [hg, ha0]; exact hc⟩)

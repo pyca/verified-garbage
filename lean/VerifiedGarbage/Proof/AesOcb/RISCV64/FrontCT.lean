@@ -223,7 +223,7 @@ theorem front_rel (enc : Bool) {d : Nat} (hd : d = tagO ∨ d = t2O) {k : Prog i
   have L₂' : Lay (τ₂.gpr .s2) (τ₂.gpr .s0) := hV.lay L
   have hn1 := A₁.n1
   have hn15 := A₁.n15
-  have ht : tl < 2 ^ 64 := by have := A₁.t16; omega
+  have ht : tl < 2 ^ 64 := by have := A₁.t16; omega_using [this]
   -- `nonce` and `HASH`
   refine RelCT.assoc (rel_seq (rel_seq (nonce_rel L hV A₁.rounds hs3 E₁ E₂ (by rw [P₁.s4, P₂.s4, h2₁, h2₂])
       (by rw [P₁.s5, P₂.s5, h3₁, h3₂]))

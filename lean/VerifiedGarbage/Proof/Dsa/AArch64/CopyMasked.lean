@@ -47,7 +47,7 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
       Keep [.x3, .x1, .x2, .x9] s t := by
   refine WP.mono (wp_countdown (N := n) h64 h1 (fun j t => CopyMaskedInv s src out n j valid t)
     ?_ ⟨Keep.refl _ _, by simpa using hsi, by simpa using hdx, by simpa using hcx,
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩ hcx)
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩ hcx)
     fun t ht => ⟨ht.bytes, ht.frame, ht.keep⟩
   intro j hj t ht hcount
   have hrd : InRegions (t.rd ++ t.wr) (src + BitVec.ofNat 64 j) 1 := by
@@ -55,7 +55,7 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
   have hwr : InRegions t.wr (out + BitVec.ofNat 64 j) 1 := by
     rw [ht.keep.wr]; exact hw j hj
   have ht8 := (ht.keep.gpr .x8 (by decide)).trans h8
-  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega))
+  have hval := ht.frame (src + BitVec.ofNat 64 j) (fun i hi => hsep j hj i (by omega_using [hj, hi]))
   refine WP.mono (WP.keep [.x3, .x1, .x2, .x9] (Q := fun u =>
     u.mem = t.mem.writeW (out + BitVec.ofNat 64 j) (if valid then s.mem (src + BitVec.ofNat 64 j) else (0 : Byte)) ∧
     u.gpr .x1 = src + BitVec.ofNat 64 (j + 1) ∧ u.gpr .x2 = out + BitVec.ofNat 64 (j + 1) ∧
@@ -67,11 +67,11 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.zeroExtend]
       have := (s.mem (src + BitVec.ofNat 64 j)).isLt
-      omega
+      omega_using []
     have hp : BitVec.ofNat 64 (n - j) - (1#64) = BitVec.ofNat 64 (n - (j + 1)) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_using [hj]
     brun [ht.rsi, ht.rdx, ht.rcx, ht8, hrd, hwr, read_one, hb, hval, masked_byte,
       hp, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     rfl
@@ -80,15 +80,15 @@ theorem copyMasked_ok {s : State} {src out : Addr} {n : Nat} {valid : Bool}
       rw [hum, writeW8_apply]
       by_cases hij : i = j
       · subst i; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact ht.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [h64, hj, hi]) (by omega_using [h64, hj]) hij))]
+        exact ht.bytes i (by omega_using [hi, hij])
     · intro x hx
-      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact ht.frame x fun i hi => hx i (by omega)
+      rw [hum, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+      exact ht.frame x fun i hi => hx i (by omega_using [hi])
 
     · rw [hucx, hcount]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_using [hj]
 
 end VG.Proof.Dsa.AArch64

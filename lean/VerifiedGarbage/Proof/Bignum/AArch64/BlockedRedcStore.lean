@@ -32,22 +32,22 @@ theorem storeStep_ok {s t : State} {B : Addr} {Z eT k : Nat}
   have hptr := (hI.keep.gpr .x16 (by decide)).trans h16
   have hr := (hI.keep.gpr VG.Impl.Bignum.AArch64.BlockedRedc.aa[k]!
     (by simp)).trans (accumulator_reg s hk).symm
-  have enc : (8 * k) % 8 = 0 ∧ 8 * k < 32768 := ⟨by omega, by omega⟩
+  have enc : (8 * k) % 8 = 0 ∧ 8 * k < 32768 := ⟨by omega_using [], by omega_using [hk]⟩
   refine WP.mono (WP.keep [] (Q := fun u =>
       u.mem = t.mem.writeW (off B (eT + 8 * k)) (accumulator s k) ∧ u.c = t.c)
-    (by brun [hptr, hr, enc, (hs.congr hI.keep.wr).st (show eT + 8 * k + 8 ≤ Z by omega)])
+    (by brun [hptr, hr, enc, (hs.congr hI.keep.wr).st (show eT + 8 * k + 8 ≤ Z by omega_using [hT, hk])])
     rfl rfl rfl) fun u ⟨⟨hm, hc⟩, ku⟩ => ?_
-  have ho := writeW_outside t.mem B (accumulator s k) (d := eT + 8 * k) (by omega)
+  have ho := writeW_outside t.mem B (accumulator s k) (d := eT + 8 * k) (by omega_using [hT, hk, hn])
   refine ⟨?_, ?_, (hI.keep.trans ku).mono (by decide), hc.trans hI.carry⟩
   · intro i hi
     have hw := congrArg (fun m : Mem => word m B (eT + 8 * i)) hm
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · exact hw.trans ((ho.word (by omega) (by omega)).trans (hI.done i hi))
+    · exact hw.trans ((ho.word (by omega_using [hi]) (by omega_arith)).trans (hI.done i hi))
     · exact hw.trans (word_writeW_self _ _ _ _)
   · have hf : Outside B (eT + 8 * k) 8 t.mem u.mem := by
       intro a ha
       exact (congrArg (fun m : Mem => m a) hm).trans (ho a ha)
-    exact (hI.frame.mono (by omega) (by omega)).trans (hf.mono (by omega) (by omega))
+    exact (hI.frame.mono (by omega_using []) (by omega_using [])).trans (hf.mono (by omega_using []) (by omega_using []))
 
 theorem storePrefix_ok {s : State} {B : Addr} {Z eT k : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B eT) (hT : eT + 64 ≤ Z)
@@ -60,7 +60,7 @@ theorem storePrefix_ok {s : State} {B : Addr} {Z eT k : Nat}
     rewrite [storePrefix, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    exact WP.mono (ih (by omega)) fun t hI => storeStep_ok hs h16 hT (by omega) hI
+    exact WP.mono (ih (by omega_using [hk])) fun t hI => storeStep_ok hs h16 hT (by omega_using [hk]) hI
 
 theorem asStore_ok {s : State} {B : Addr} {Z eT : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B eT) (hT : eT + 64 ≤ Z) :

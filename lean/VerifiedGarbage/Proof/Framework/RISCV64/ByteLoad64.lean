@@ -66,7 +66,7 @@ theorem li64_val (v : BitVec 64) :
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_toNat,
     show BitVec.toNat (1 : BitVec 32) = 1 from rfl, Nat.and_one_is_mod, Nat.reducePow, Nat.reduceSub,
     decide_eq_true_eq, ge_iff_le]
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-! ## Memory -/
 
@@ -75,7 +75,7 @@ theorem contains_byte' {r : Region} {p : Addr} {off n : Nat} (h : r.Contains (p 
     {k : Nat} (hk : k < n) : r.Contains (p + BitVec.ofNat 64 (off + k)) 1 := by
   refine h.byte ?_
   rw [BitVec.ofNat_add, ← BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  omega
+  omega_using [hk]
 
 /-- Every byte of an `n`-byte access within the regions. -/
 theorem in_byte' {rs : List Region} {p : Addr} {off n : Nat}
@@ -99,16 +99,16 @@ theorem loadBE64_ok {d tmp n : Reg} {off : Nat} (hdn : d ≠ n) (htn : tmp ≠ n
   rw [Nat.add_zero] at h0
   apply WP.of_runBlock
   simp only [loadBE64, runBlock_cons, runStep_some, runBlock_nil,
-    exec_load_b (show off < 2048 by omega), exec_load_b (show off + 1 < 2048 by omega),
-    exec_load_b (show off + 2 < 2048 by omega), exec_load_b (show off + 3 < 2048 by omega),
-    exec_load_b (show off + 4 < 2048 by omega), exec_load_b (show off + 5 < 2048 by omega),
-    exec_load_b (show off + 6 < 2048 by omega), exec_load_b (show off + 7 < 2048 by omega),
+    exec_load_b (show off < 2048 by omega_using [ho]), exec_load_b (show off + 1 < 2048 by omega_using [ho]),
+    exec_load_b (show off + 2 < 2048 by omega_using [ho]), exec_load_b (show off + 3 < 2048 by omega_using [ho]),
+    exec_load_b (show off + 4 < 2048 by omega_using [ho]), exec_load_b (show off + 5 < 2048 by omega_using [ho]),
+    exec_load_b (show off + 6 < 2048 by omega_using [ho]), exec_load_b (show off + 7 < 2048 by omega_using [ho]),
     exec_shift_d (show 8 < 64 by decide), exec_logic, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, h0, hb 1 (by decide), hb 2 (by decide), hb 3 (by decide),
     hb 4 (by decide), hb 5 (by decide), hb 6 (by decide), hb 7 (by decide), hdt,
     Ne.symm hdt, Ne.symm hdn, Ne.symm htn, ite_true, ite_false, Option.some.injEq,
     exists_eq_left', read_one]
-  simp (disch := omega) only [append_byte]
+  simp (disch := omega_using []) only [append_byte]
   simp only [State.write, State.mk.injEq, and_true]
   funext r
   by_cases hr : r = d

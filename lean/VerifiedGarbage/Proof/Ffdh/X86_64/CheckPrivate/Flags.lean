@@ -28,12 +28,12 @@ theorem nonzero_ok {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State} (h : 
       t.mem = s.mem ∧ Keep mmRegs s t := by
   have hk := h.base.k1
   have hk' := h.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  refine WP.mono (geArr_ok (h.mem.ctx hd).good (Nat.le_refl _) (by omega) (by omega)
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  refine WP.mono (geArr_ok (h.mem.ctx hd).good (Nat.le_refl _) (by omega_using [hk, ew]) (by omega_using [hk', ew])
     (show aXm < 8 by decide) (show aOne < 8 by decide)) fun t ⟨ha, hm, k⟩ => ?_
   rw [h.x, h.xv.one] at ha
   refine ⟨?_, hm, k⟩
-  have he : (¬Spec.Rsa.os2ip xb < 1) = (0 < Spec.Rsa.os2ip xb) := propext (by omega)
+  have he : (¬Spec.Rsa.os2ip xb < 1) = (0 < Spec.Rsa.os2ip xb) := propext (by omega_using [])
   simpa only [bit, he] using ha
 
 /-- Store a flag in the inner header. -/
@@ -49,7 +49,7 @@ theorem storeF_ok {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State} (h : W
     (by xrun [State.ea, hdr, hdrOff, hd, hc.good.scr.st hF]) rfl) fun t ⟨hm, k⟩ => ?_
   have hf : Frm (off p.B (inner p.w)) [(8 * sF, 8)] s.mem t.mem := by
     rw [hm]
-    exact Frm.of_outside (writeW_outside _ _ _ (by omega)) (by simp)
+    exact Frm.of_outside (writeW_outside _ _ _ (by omega_using [hn, hF])) (by simp)
   have hr : ∀ r ∈ [(8 * sF, 8)], 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot p.w 8 := by
     simp only [List.mem_singleton]
     rintro r rfl

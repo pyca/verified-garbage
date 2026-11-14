@@ -53,7 +53,7 @@ theorem Restored.domain {s t : State} (h : Restored s t) (g : Geometry s) :
   unfold CheckDomain.cdDom
   rw [h.args.1, h.args.2.1, h.mem]
   exact VG.Proof.Rsa.rsa_bytes_frame (entryMem_frame g)
-    (by have := (s.gpr .rsi).isLt; omega)
+    (by have := (s.gpr .rsi).isLt; omega_using [])
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact g.separate)
 
 theorem Restored.abi {s t : State} (h : Restored s t) (g : Geometry s) : abiPreserved s t := by

@@ -23,7 +23,7 @@ theorem brainpoolp256r1_nBits : Spec.Ecdsa.nBits brainpoolp256r1.C = 256 := by
   have h₁ : 255 ≤ Spec.BrainpoolP256r1.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.BrainpoolP256r1.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-- No bit of a hash of `32` bytes is dropped. -/
 theorem brainpoolp256r1_sh : brainpoolp256r1.sh = 0 := by
@@ -53,5 +53,7 @@ theorem brainpoolp256r1_ok : CfgOk brainpoolp256r1 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ h => nomatch h
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE

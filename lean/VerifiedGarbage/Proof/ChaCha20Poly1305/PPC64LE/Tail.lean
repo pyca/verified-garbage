@@ -53,7 +53,7 @@ theorem stateAt_writeW_counter (m : Mem) (p : Addr) (v : BitVec 32) :
     simp only [ite_true]
     exact Mem.readW_writeW_self32 _ _ _
   · simp only [h, ite_false]
-    exact readW_writeW_off m p v (d := 4 * i) (by omega) (by decide) (by omega)
+    exact readW_writeW_off m p v (d := 4 * i) (by omega_using [hi]) (by decide) (by omega_using [h])
 
 theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
     WP isa (.block [.li .r12 1, .store .w .r12 .r24 (stOff + 48), .addi .r3 .r24 stOff, mov .r4 .r27,
@@ -85,7 +85,7 @@ theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
         u₄.other _ (ne_of_pres hr), u₃.other _ (ne_of_pres hr), u₂.gpr, u₁.other _ (ne_of_pres hr)]
     · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (contains_sub s₀ (w := 32 / 8) (by omega) (by omega) (by decide))
+        (contains_sub s₀ (w := 32 / 8) (by omega_using []) (by omega_using []) (by decide))
 
 theorem length_encrypt (key nonce m : List Byte) : (Spec.ChaCha20.encrypt key 1 nonce m).length = m.length := by
   rw [encrypt_eq, List.length_zipWith, VG.Proof.ChaCha20.length_keystream, Nat.min_self]
@@ -186,8 +186,8 @@ theorem lengthsA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ 
       by rw [u₄.sp, u₃.sp, g₂.sp, g₁.sp], by rw [u₄.rd, u₃.rd, g₂.rd, g₁.rd], by rw [u₄.wr, u₃.wr, g₂.wr, g₁.wr], ?_⟩
     rw [u₄.mem, u₃.mem, g₂.mem, g₁.mem]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (contains_sub s₀ (w := 64 / 8) (by omega) (by omega) (by decide))).writeW (List.mem_singleton_self _) _
-      (contains_sub s₀ (w := 64 / 8) (by omega) (by omega) (by decide))
+      (contains_sub s₀ (w := 64 / 8) (by omega_using []) (by omega_using []) (by decide))).writeW (List.mem_singleton_self _) _
+      (contains_sub s₀ (w := 64 / 8) (by omega_using []) (by omega_using []) (by decide))
   · rw [u₄.mem, u₃.mem, g₂.mem, g₁.mem, g₁.gpr, show (16 : Nat) = 8 + 8 from rfl, VG.Proof.Poly1305.bytesAt_add,
       VG.Proof.Poly1305.bytesAt_leBytes_64, VG.Proof.Poly1305.bytesAt_leBytes_64, off_add,
       readW_writeW_off _ _ _ (d := lenOff) (e := lenOff + 8) (by decide) (by decide) (by decide),
@@ -203,7 +203,7 @@ theorem lengths_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
   have hdj : (sub s₀ 0 128).Disjoint ⟨off (cx s₀) lenOff, 16 * 1⟩ := sub_disj s₀ (by decide) (by decide) (by decide)
   have hbp : (belR s₀).Disjoint ⟨off (cx s₀) lenOff, 16 * 1⟩ := hp.b_c.sub_right (sub_ctx s₀ (by decide))
   have hfit : (off (cx s₀) lenOff).toNat + 16 * 1 ≤ 2 ^ 64 := by
-    have := hp.fit_c; rw [off_toNat _ (by rw [lenOff_eq]; omega), lenOff_eq]; omega
+    have := hp.fit_c; rw [off_toNat _ (by rw [lenOff_eq]; omega_using [this]), lenOff_eq]; omega_using [this]
   have hc : Covers [(⟨off (cx s₀) lenOff, 16 * 1⟩ : Region)] (s₀.rd ++ s₀.wr) :=
     covers_right (covers1 hp rfl (a := lenOff) (n := 16 * 1) (by decide))
   refine WP.mono (absorb_ok hp i₁ (n := 1) h4 h5 (by decide) hdj hbp hfit hc)
@@ -236,7 +236,7 @@ theorem ceil16_ok {d t n : Reg} {rest : List Instr} {s : State} {Q : State → P
   · rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
 
 theorem shl4_mod (x : BitVec 64) : (x <<< 4).toNat % 16 = 0 := by
-  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega
+  rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega_using []
 
 /-- The arguments of `vg_poly1305_finalize_scratch`, with `out` set to `O`
 by the instruction `out`. -/
@@ -354,12 +354,12 @@ structure RI (s₀ sB : State) (n : Nat) (s : State) : Prop where
 theorem restore_step {s₀ sB : State} (hp : APre e s₀) (hrd : sB.rd = s₀.rd) (hwr : sB.wr = s₀.wr)
     (hsv : Saved s₀ sB.mem) {n : Nat} (hn : n < 7) {s : State} (h : RI s₀ sB n s) :
     WP isa (.block [.load .d (saved n) .r12 (savOff + 8 * n)]) s (RI s₀ sB (n + 1)) := by
-  refine wp_ld (a := off (cx s₀) (savOff + 8 * n)) (by decide) (by rw [savOff_eq]; omega) (by rw [h.r12])
-    (by rw [h.rd, h.wr, hrd, hwr]; exact hp.in_ctx' (by rw [savOff_eq]; omega)) fun s' u => WP.block_nil ?_
+  refine wp_ld (a := off (cx s₀) (savOff + 8 * n)) (by decide) (by rw [savOff_eq]; omega_using [hn]) (by rw [h.r12])
+    (by rw [h.rd, h.wr, hrd, hwr]; exact hp.in_ctx' (by rw [savOff_eq]; omega_using [hn])) fun s' u => WP.block_nil ?_
   refine ⟨by rw [u.other _ (r12_ne_saved n hn), h.r12], fun i hi => ?_, fun r hr => ?_, by rw [u.mem, h.mem],
     by rw [u.rd, h.rd], by rw [u.wr, h.wr], by rw [u.sp, h.sp], by rw [u.lr, h.lr]⟩
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [u.other _ (fun e => absurd (saved_inj i (by omega) n hn e) (by omega)), h.restored i hi]
+    · rw [u.other _ (fun e => absurd (saved_inj i (by omega_arith) n hn e) (by omega_using [hi])), h.restored i hi]
     · rw [u.gpr, h.mem, hsv.1 i hn]
   · rw [u.other r (hr n hn), h.others r hr]
 
@@ -397,16 +397,16 @@ theorem nz_bit (x : BitVec 64) : (x ||| (BitVec.ofNat 64 0 - x)) >>> 63 = if x =
     have hx : x.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
     have hlt := x.isLt
     have hneg : (BitVec.ofNat 64 0 - x).toNat = 2 ^ 64 - x.toNat := by
-      rw [BitVec.toNat_sub, show (BitVec.ofNat 64 0).toNat = 0 from rfl]; omega
+      rw [BitVec.toNat_sub, show (BitVec.ofNat 64 0).toNat = 0 from rfl]; omega_using [hx]
     have h1 : 2 ^ 63 ≤ (x ||| (BitVec.ofNat 64 0 - x)).toNat := by
       rw [BitVec.toNat_or]
       rcases Nat.lt_or_ge x.toNat (2 ^ 63) with h2 | h2
-      · exact Nat.le_trans (by omega) (Nat.right_le_or (n := x.toNat))
+      · exact Nat.le_trans (by omega_using [hneg, h2]) (Nat.right_le_or (n := x.toNat))
       · exact Nat.le_trans h2 Nat.left_le_or
     have h2 := (x ||| (BitVec.ofNat 64 0 - x)).isLt
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_using [h1]
 
 theorem sel_eq {x : BitVec 64} {p : Prop} [Decidable p] (h : x = 0 ↔ p) :
     (BitVec.ofNat 64 1 - if x = 0 then 0 else 1) = if p then 1 else 0 := by
@@ -445,8 +445,8 @@ theorem tag_eq (m : Mem) (c t : Addr) :
         Option.map_some, Option.getD_some] at this
       rwa [off_add] at this
     refine ⟨readW64_eq_of_bytes fun i hi => ?_, readW64_eq_of_bytes fun i hi => ?_⟩
-    · rw [off_add, off_add, Nat.zero_add]; exact hb i (by omega)
-    · rw [off_add, off_add, Nat.add_assoc]; exact hb (8 + i) (by omega)
+    · rw [off_add, off_add, Nat.zero_add]; exact hb i (by omega_using [hi])
+    · rw [off_add, off_add, Nat.add_assoc]; exact hb (8 + i) (by omega_using [hi])
 
 /-- The tags compared: the one computed, at `ctx + tagOff`, and `tag`. -/
 theorem compare_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s₀ s) {rest : List Instr}
@@ -462,7 +462,7 @@ theorem compare_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s�
   have ic : ∀ d, d + 8 ≤ 656 → InRegions (s.rd ++ s.wr) (off (cx s₀) d) 8 := fun d hd => by
     rw [h.rd, h.wr]; exact hp.in_ctx' hd
   have it : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (off (tp s₀) d) 8 := fun d hd =>
-    ⟨tR s₀, by rw [h.rd]; exact List.mem_append_left _ hp.t_rd, Offset.contains_base _ hd (by omega)⟩
+    ⟨tR s₀, by rw [h.rd]; exact List.mem_append_left _ hp.t_rd, Offset.contains_base _ hd (by omega_using [hd])⟩
   refine wp_ld (a := off (cx s₀) tagOff) (by decide) (by decide) (by rw [h14]) (ic _ (by decide))
     fun s₁ u₁ => ?_
   refine wp_ld (a := off (tp s₀) 0) (by decide) (by decide) (by rw [u₁.other _ (by decide), h19])

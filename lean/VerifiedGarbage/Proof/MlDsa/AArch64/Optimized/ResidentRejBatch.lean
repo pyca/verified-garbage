@@ -43,7 +43,7 @@ private theorem ofNat_bne_zero {k : Nat} (h : k<2^64) :
   by_cases hk : k=0
   · subst hk; rfl
   · have : BitVec.ofNat 64 k≠0 := by
-      intro e; have := congrArg BitVec.toNat e; simp at this; omega
+      intro e; have := congrArg BitVec.toNat e; simp at this; omega_using [h, hk, this]
     rw [show (BitVec.ofNat 64 k != 0)=true from bne_iff_ne.mpr this]
     simp [hk]
 
@@ -56,9 +56,9 @@ def SegAt (v blocks off n : Nat) (σ ρ : State) (L : Nat → List Zq) (k : Nat)
 theorem segAt_init {v blocks off count : Nat} {σ ρ s : State} {L : Nat → List Zq}
     (n : Nat) (hp : Pre v σ) (h : Rows v blocks σ L s) (hv : count=v) (ho : off≤1008) :
     WP isa (.block (segmentsInit off count)) s (SegAt v blocks off n σ ρ L 0) := by
-  have hv4 : v≤4 := by have:=hp.streams; omega
+  have hv4 : v≤4 := by have:=hp.streams; omega_using [this]
   unfold segmentsInit
-  refine wp_addImm (by omega) fun a ha ea => wp_mov fun b hb' eb =>
+  refine wp_addImm (by omega_using [ho]) fun a ha ea => wp_mov fun b hb' eb =>
     wp_addImm (by decide) fun c hc ec => wp_addImm (by decide) fun d hd ed =>
     wp_movz fun e he ee => wp_nil ?_
   have hO : Only [.x24,.x25,.x26,.x27] s e :=
@@ -75,11 +75,11 @@ theorem segAt_init {v blocks off count : Nat} {σ ρ s : State} {L : Nat → Lis
   · rw [he.get .x26,ed,ec,hb'.get .x19,ha.get .x19,h19,Offset.add_add]
     change _=scr σ+BitVec.ofNat 64 (Impl.MlDsa.AArch64.Optimized.ResidentRej.counts+8*0)
     exact congrArg (fun d => scr σ+BitVec.ofNat 64 d)
-      (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)
+      (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_using [])
   · rw [ee]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth,BitVec.natCast_eq_ofNat,BitVec.toNat_ofNat]
-    omega
+    omega_using [hv, hv4]
 
 /-- One stream's segment, with `ρ`'s results equal to `σ`'s. -/
 theorem segAt_step {v blocks off n k : Nat} {σ ρ s : State} {L : Nat → List Zq}
@@ -94,9 +94,9 @@ theorem segAt_step {v blocks off n k : Nat} {σ ρ s : State} {L : Nat → List 
     by_cases hj : j=k
     · subst hj; simp [hr j hk]
     · by_cases hjk : j<k
-      · simp [hj,hjk,show j<k+1 by omega]
-      · simp [hj,hjk,show ¬j<k+1 by omega]
-  · rw [h27,h.2.2,show v-k=(v-(k+1))+1 by omega,BitVec.ofNat_add]
+      · simp [hj,hjk,show j<k+1 by omega_using [hjk]]
+      · simp [hj,hjk,show ¬j<k+1 by omega_using [hj, hjk]]
+  · rw [h27,h.2.2,show v-k=(v-(k+1))+1 by omega_using [hk],BitVec.ofNat_add]
     exact BitVec.add_sub_cancel _ _
 
 theorem segAt_eval {v blocks off n k : Nat} {σ ρ s : State} {L : Nat → List Zq}
@@ -118,21 +118,21 @@ theorem segments_ok {v blocks off n count : Nat} {σ s : State} {L : Nat → Lis
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (variant : Nat) :
     WP isa (segments variant off n count) s
       (Rows v blocks σ (fun k => rowResult σ k off n (L k))) := by
-  have hv4 : v≤4 := by have:=hp.streams; omega
+  have hv4 : v≤4 := by have:=hp.streams; omega_using [this]
   have hb := h.blockBound
   unfold segments
-  refine WP.seq (WP.mono (segAt_init (ρ := σ) n hp h hv (by omega)) fun e he => ?_)
+  refine WP.seq (WP.mono (segAt_init (ρ := σ) n hp h hv (by omega_using [hn, hb])) fun e he => ?_)
   refine WP.loop (M := isa) (fun m t => ∃ k, k<v ∧ m=v-k ∧ SegAt v blocks off n σ σ L k t)
-    (fun m t ⟨k,hk,hm,ht⟩ => ?_) v e ⟨0,by have:=hp.streams; omega,by omega,he⟩
+    (fun m t ⟨k,hk,hm,ht⟩ => ?_) v e ⟨0,by have:=hp.streams; omega_using [this],by omega_using [],he⟩
   subst hm
   refine WP.mono (segAt_step hp (fun _ _ _ => rfl) hk hn hmod variant ht) fun t' ht' => ?_
-  rw [segAt_eval ht' (by omega) hv4]
+  rw [segAt_eval ht' (by omega_using [hk]) hv4]
   by_cases hl : k+1=v
   · left
     subst hl
     exact ⟨by simp,ht'.last⟩
   · right
-    exact ⟨by simp; omega,v-(k+1),by omega,k+1,by omega,rfl,ht'⟩
+    exact ⟨by simp; omega_using [hk, hl],v-(k+1),by omega_using [hk],k+1,by omega_using [hk, hl],rfl,ht'⟩
 
 theorem batchFour_ok {blocks off n : Nat} {σ s : State} {L : Nat → List Zq}
     (hp : Pre 4 σ) (h : Rows 4 blocks σ L s)

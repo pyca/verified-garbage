@@ -75,7 +75,7 @@ theorem bad_eq {a : BitVec 32} (ha : a.toNat < q) (b : BitVec 32) :
     simp only [h1, h2, ite_true, ite_false] <;>
     first
     | (rw [ite_eq_right (by omega)]; decide)
-    | (rw [ite_eq_left (by omega)]; decide)
+    | (rw [ite_eq_left (by omega_arith)]; decide)
 
 /-- The accumulator after the first `i` coefficients of `m` at `F`. -/
 def acc (m : Mem) (F : Addr) (b : BitVec 32) (i : Nat) : BitVec 32 :=
@@ -84,7 +84,7 @@ def acc (m : Mem) (F : Addr) (b : BitVec 32) (i : Nat) : BitVec 32 :=
 theorem acc_succ (m : Mem) (F : Addr) (b : BitVec 32) (i : Nat) :
     acc m F b i ||| (if Ok (coeffAt m F i) b then 0 else 1) = acc m F b (i + 1) := by
   have H : (∀ k < i + 1, Ok (coeffAt m F k) b) ↔ (∀ k < i, Ok (coeffAt m F k) b) ∧ Ok (coeffAt m F i) b :=
-    ⟨fun h => ⟨fun k hk => h k (by omega), h i (by omega)⟩, fun ⟨h, h'⟩ k hk => by
+    ⟨fun h => ⟨fun k hk => h k (by omega_using [hk]), h i (by omega_using [])⟩, fun ⟨h, h'⟩ k hk => by
       rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk | rfl
       exacts [h k hk, h']⟩
   unfold acc

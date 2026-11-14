@@ -178,23 +178,23 @@ variable {L : GL} (hL : L.Ok)
 include hL
 
 theorem ql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by
-  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega
+  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega_using [this]
 
 theorem pl : L.pl = 128 ∨ L.pl = 256 ∨ L.pl = 384 := by
-  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega
+  have := hL.lv; simp only [Spec.Dsa.lengthsValid] at this; omega_using [this]
 
 theorem F_toNat : L.F.toNat = L.sp.toNat - frameBytes := by
   have h1 := hL.spF
   have h2 := L.sp.isLt
   simp only [GL.F, frameBytes] at h1 ⊢
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using [h1]
 
 theorem fnw : L.F.toNat + frameBytes ≤ 2 ^ 64 := by
-  have := hL.F_toNat; have := hL.spF; have := hL.spTop; omega
+  have := hL.F_toNat; have := hL.spF; have := hL.spTop; omega_arith
 
 theorem fal : L.F.toNat % 8 = 0 := by
-  have := hL.F_toNat; have := hL.spF; have := hL.sp16; simp only [frameBytes] at *; omega
+  have := hL.F_toNat; have := hL.spF; have := hL.sp16; simp only [frameBytes] at *; omega_arith
 
 omit hL in
 /-- A range of the frame is apart from a region apart from the frame. -/
@@ -239,17 +239,17 @@ theorem Ctx.step {L : GL} {s₀ t t' : State} (hL : L.Ok) (h : Ctx L s₀ t) (hs
       rcases hr with rfl | rfl | rfl
       · exact GL.Ok.frame_disj hL.dFO hd
       · exact GL.Ok.frame_disj hL.dFS hd
-      · exact VG.Offset.disjoint L.F (by simp only [oNonce] at hn ⊢; omega) (by simp only [frameBytes] at hd; omega)
-          (by simp only [oNonce]; omega)) (by decide)
+      · exact VG.Offset.disjoint L.F (by simp only [oNonce] at hn ⊢; omega_using [hn]) (by simp only [frameBytes] at hd; omega_using [hd])
+          (by simp only [oNonce]; omega_using [])) (by decide)
   have nr : ∀ {A : Addr} {k : Nat}, L.frR.Disjoint ⟨A, k⟩ → (⟨A, k⟩ : Region).Disjoint L.nR := fun hd =>
     (GL.Ok.frame_disj hd (d := oNonce) (n := 32) (by decide)).symm
   refine ⟨hsp.trans h.sp, hrd.trans h.rd, hwr.trans h.wr, (hg _ (by decide)).trans h.s1,
     (hg _ (by decide)).trans h.s2, (hg _ (by decide)).trans h.s3, (hg _ (by decide)).trans h.s4,
     (hg _ (by decide)).trans h.s6,
-    fun i hi => (fw _ (by simp only [oSave, frameBytes]; omega) (by simp only [oSave, oNonce]; omega)).trans (h.sav i hi),
+    fun i hi => (fw _ (by simp only [oSave, frameBytes]; omega_using [hi]) (by simp only [oSave, oNonce]; omega_using [])).trans (h.sav i hi),
     (fw _ (by decide) (by decide)).trans h.ra, (fw _ (by decide) (by decide)).trans h.a0,
     (fw _ (by decide) (by decide)).trans h.out, (fw _ (by decide) (by decide)).trans h.used, ?_, ?_⟩
-  · refine (bytes_frame hf (fun r hr => ?_) (by have := hL.nwPar; omega)).trans h.par
+  · refine (bytes_frame hf (fun r hr => ?_) (by have := hL.nwPar; omega_using [this])).trans h.par
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hL.dOK.symm

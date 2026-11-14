@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
 import VerifiedGarbage.Proof.Sm4.AArch64.FbFinalLit
 
-/-! # SM4-OFB artifacts on baseline AArch64 -/
+/-! # SM4-OFB on AArch64 -/
 
 @[expose] public section
 

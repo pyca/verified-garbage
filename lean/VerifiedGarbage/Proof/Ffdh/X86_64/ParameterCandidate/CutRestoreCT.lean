@@ -58,7 +58,7 @@ private theorem cut_after (d : DrawPublic) (s : State) (h : CutBefore d s) :
   have hframe : ∀ a, (∀ i < d.p.len, a ≠ off d.p.op i) → t.mem a = s.mem a := by simpa only [hlen] using hf
   have hw := words_outside_bytes (show d.p.IZ ≤ 2 ^ 64 by
     have hz64 := Nat.le_trans (Nat.le_add_left _ _) h.scr.nowrap
-    unfold WitnessParams.IZ; omega) hframe hfi.sep
+    unfold WitnessParams.IZ; omega_using [hz64]) hframe hfi.sep
   exact ⟨(k.gpr (by decide)).trans h.rbp,
     (hw _ d.p.space_bounds.2.1).trans h.link, k.2.2.trans h.wr, h.kw⟩
 

@@ -79,7 +79,7 @@ theorem rcPre_ok {d : RcD} {s : State} (h : RC d s) :
 theorem rcPre_ct : RelCT isa (Two RC)
     (.seq (.seq (.block minv32) (PublicChecked.montOp 5 4 1)) (.block [.addi .r3 .r31 0, ldh .r4 hWsLen]))
     (Two RCm) :=
-  two_post (two_taint _ pins_RC (by taint_decide)) fun _ _ h => rcPre_ok h
+  two_post (two_taintR _ pins_RC (by taint_decide_rel)) fun _ _ h => rcPre_ok h
 
 /-- The round's precondition on its entry, from `RCm`. -/
 theorem rc_pre {d : RcD} {s : State} (h : RCm d s) :

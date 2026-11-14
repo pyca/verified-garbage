@@ -28,28 +28,28 @@ theorem Context.digestRead {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   rw [h.valid.digestAddr]
   exact CallLay.inRegions_sub (off := g.length - g.outputLength) read
-    (by have := h.valid.outputFits; omega) (by have := h.valid.maxLength; omega)
+    (by have := h.valid.outputFits; omega_using [this]) (by have := h.valid.maxLength; omega_using [this])
 
 theorem encoding_pre {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) (dst : s.gpr .edi = g.em2)
     (len : s.gpr .ecx = BitVec.ofNat 32 g.length) (hash : s.gpr .edx = g.hash)
     (src : s.gpr .esi = g.digest) (count : s.gpr .ebp = BitVec.ofNat 32 g.outputLength) :
     EPre s g.hash g.length := by
-  have out32 : g.outputLength < 2 ^ 32 := by have := h.valid.outputBound; omega
+  have out32 : g.outputLength < 2 ^ 32 := by have := h.valid.outputBound; omega_using [this]
   refine ⟨hash, len, h.valid.maxLength, ⟨by rw [dst]; exact h.em2Fit, ?_⟩, ?_⟩
   · intro i hi
-    rw [dst, byteAddr_add (by have := h.em2Fit; omega)]
-    exact CallLay.inRegions_sub (off := i) h.em2Write (by omega) (by have := h.valid.maxLength; omega)
+    rw [dst, byteAddr_add (by have := h.em2Fit; omega_using [hi, this])]
+    exact CallLay.inRegions_sub (off := i) h.em2Write (by omega_using [hi]) (by have := h.valid.maxLength; omega_using [this])
   · rw [count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt out32]
     refine ⟨by rw [src]; exact h.valid.digestFit, ?_, ?_⟩
     · intro i hi
-      rw [src, byteAddr_add (by have := h.valid.digestFit; omega)]
-      exact CallLay.inRegions_sub (off := i) h.digestRead (by omega) (by have := h.valid.outputBound; omega)
+      rw [src, byteAddr_add (by have := h.valid.digestFit; omega_using [hi, this])]
+      exact CallLay.inRegions_sub (off := i) h.digestRead (by omega_using [hi]) (by have := h.valid.outputBound; omega_using [out32])
     · intro i hi j hj
-      rw [src, byteAddr_add (by have := h.valid.digestFit; omega), dst, byteAddr_add (by have := h.em2Fit; omega)]
+      rw [src, byteAddr_add (by have := h.valid.digestFit; omega_using [hi, this]), dst, byteAddr_add (by have := h.em2Fit; omega_using [hj, this])]
       exact VG.Proof.RsaPkcs1Sig.ne_of_disjoint
         (h.encodingsSeparate.sub_left h.valid.digestSub)
-        (by have := h.valid.outputBound; omega) (by have := h.valid.maxLength; omega) hi hj
+        (by have := h.valid.outputBound; omega_using [out32]) (by have := h.valid.maxLength; omega_using [this]) hi hj
 
 def Encoded (g : Geometry) (s : State) : Prop :=
   match encodeId g.hash (digestBytes g s) g.length with
@@ -64,7 +64,7 @@ theorem encoding_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
       Frame [⟨byteAddr g.em2, g.length⟩] s.mem t.mem ∧ Keeps clob s t ∧ Encoded g t := by
   refine WP.mono (encode_ok (encoding_pre h dst len hash src count)) ?_
   rintro t ⟨K, out⟩
-  have out32 : g.outputLength < 2 ^ 32 := by have := h.valid.outputBound; omega
+  have out32 : g.outputLength < 2 ^ 32 := by have := h.valid.outputBound; omega_using [this]
   rw [src, count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt out32] at out
   change EOut s t (encodeId g.hash (digestBytes g s) g.length) at out
   have frame : Frame [⟨byteAddr g.em2, g.length⟩] s.mem t.mem := by
@@ -80,7 +80,7 @@ theorem encoding_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
       rw [out.2, dst]
       exact writeBytes_frame _ _ _ (by rw [length]; exact Region.contains_self _ _)
   have bytes : digestBytes g t = digestBytes g s :=
-    VG.Proof.Rsa.rsa_bytes_frame frame (by have := h.valid.outputBound; omega)
+    VG.Proof.Rsa.rsa_bytes_frame frame (by have := h.valid.outputBound; omega_using [out32])
       (by intro r hr; obtain rfl := List.mem_singleton.mp hr
           exact h.encodingsSeparate.sub_left h.valid.digestSub)
   refine ⟨h.after (frame.sub ?_) K (K.1 .esp (by decide)), frame, K, ?_⟩
@@ -100,6 +100,6 @@ theorem encoding_ok {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
         | none => simp [id] at e
         | some hv => simp only [id, Option.bind_some] at e; exact encode_length e
       rw [← length]
-      exact bytesAt_writeBytes _ _ _ (by rw [length]; have := h.valid.maxLength; omega)
+      exact bytesAt_writeBytes _ _ _ (by rw [length]; have := h.valid.maxLength; omega_using [this])
 
 end VG.Proof.RsaPkcs1Sig.X86.Rcv

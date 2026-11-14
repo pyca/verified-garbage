@@ -62,7 +62,7 @@ theorem ReducePre.of {s : State} (h : scalarReduceLocal.pre s) : ReducePre s := 
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
 theorem ReducePre.args {s : State} (h : ReducePre s) : Args s 3 2 :=
-  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega, by decide, by rw [h.wr]; simp, h.sc_fit,
+  ⟨by rw [h.rd]; simp, by have := h.sp_fit; omega_using [this], by decide, by rw [h.wr]; simp, h.sc_fit,
     h.args_sc, h.ret_sc⟩
 
 theorem RA_buf : Buf RA := ⟨by decide, by decide⟩
@@ -93,7 +93,7 @@ theorem scalarReduce_correct {s₀ : State} (h : ReducePre s₀) :
   unfold scalarReduce
   refine WP.seq (WP.block_append (WP.mono (save_ok hA) fun s1 ⟨hs1, sv1, o1, k1⟩ => ?_))
   rw [hbase] at hs1 sv1 o1
-  have o1' : Outside base 0 8192 s₀.mem s1.mem := o1.mono (by omega) (by omega)
+  have o1' : Outside base 0 8192 s₀.mem s1.mem := o1.mono (by omega_using []) (by omega_using [])
   refine hA.load (i := 1) (k1.1 _ (by decide)) k1.2.1 k1.2.2 (hbase ▸ o1') (by decide)
     fun s2 u2 => WP.block_nil ?_
   have hs2 := hs1.of_upd u2 (by decide)

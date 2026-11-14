@@ -62,10 +62,10 @@ in every memory that differs from `u`'s only within `mgfRs`. -/
 structure Tab (G : Stream) (f : Fns) (F S p : Addr) (sArg : Nat) (u : State) : Prop where
   ok : TabOK G f u.syms
   rd : ∀ j < 3, InRegions (u.rd ++ u.wr) (off p (8 * j)) 8
-  rdD : InRegions (u.rd ++ u.wr) (off p 32) 8
+  rdD : InRegions (u.rd ++ u.wr) (off p 48) 8
   rdA : InRegions (u.rd ++ u.wr) (off F sArg) 8
   mem : ∀ m, Frame (mgfRs F S) u.mem m → TabMem G u.syms p m ∧
-    m.readW (off p 32) 64 = BitVec.ofNat 64 G.D ∧ m.readW (off F sArg) 64 = p
+    m.readW (off p 48) 64 = BitVec.ofNat 64 G.D ∧ m.readW (off F sArg) 64 = p
 
 /-- The table, from a later state of the same frame. -/
 theorem Tab.step {G : Stream} {f : Fns} {F S p : Addr} {sArg : Nat} {u v : State} (T : Tab G f F S p sArg u)
@@ -99,7 +99,7 @@ theorem tcall_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W 
     WP isa (tcall sTab j ts) t Q := by
   have h256 : InRegions (t.rd ++ t.wr) (F + BitVec.ofNat 64 256) 8 := L.ld (d := 256) (by decide)
   have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) hp
-  have hj' : 8 * j < 32768 := by omega
+  have hj' : 8 * j < 32768 := by omega_using [hj]
   refine WP.seq (WP.mono (Q := fun (t' : State) => Step F S [] t t' ∧ t'.mem = t.mem ∧ t'.syms = t.syms ∧
       t'.gpr .x0 = t.gpr .x0 ∧ t'.gpr .x1 = t.gpr .x1 ∧ t'.gpr .x2 = t.gpr .x2 ∧ t'.gpr .x3 = t.gpr .x3 ∧
       t'.gpr .x4 = t.gpr .x4 ∧ t'.gpr .x16 = t.syms n) ?_
@@ -423,8 +423,8 @@ omit hG in
 /-- The table's digest length to its slot, and the counter and `done` set
 to 0: the loop's invariant for counter 0. -/
 theorem tabHead_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (h10 : u.gpr .x10 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 32) 8)
-    (hD : u.mem.readW (off p 32) 64 = BitVec.ofNat 64 G.D) (mk : List Byte) (dst dstLen : Nat) :
+    (R : Rep u.mem F S V W) (h10 : u.gpr .x10 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 48) 8)
+    (hD : u.mem.readW (off p 48) 64 = BitVec.ofNat 64 G.D) (mk : List Byte) (dst dstLen : Nat) :
     WP isa (.block (tabHead lay sD)) u
       (MgfI u F S V (upd W 33 (BitVec.ofNat 64 G.D)) mk dst dstLen G.D 0) := by
   have G' := L.geo
@@ -434,7 +434,7 @@ theorem tabHead_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte}
   have w264 : InRegions u.wr (F + BitVec.ofNat 64 264) 8 := L.st (d := 264) (by decide)
   have w136 : InRegions u.wr (F + BitVec.ofNat 64 136) 8 := L.st (d := 136) (by decide)
   have w144 : InRegions u.wr (F + BitVec.ofNat 64 144) 8 := L.st (d := 144) (by decide)
-  have hD' : u.mem.read (p + BitVec.ofNat 64 32) 8 = BitVec.ofNat 64 G.D := by simpa [Mem.readW] using hD
+  have hD' : u.mem.read (p + BitVec.ofNat 64 48) 8 = BitVec.ofNat 64 G.D := by simpa [Mem.readW] using hD
   refine WP.mono (Q := fun (v : State) => v.mem = ((u.mem.write (off F 264) 8 (BitVec.ofNat 64 G.D)).write
       (off F 136) 8 (0 : BitVec 64)).write (off F 144) 8 (0 : BitVec 64) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧
       v.sp = u.sp ∧ v.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → v.gpr r = u.gpr r)) ?_
@@ -471,7 +471,7 @@ theorem mgfXorT_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash 
   have I0' : MgfI u F S V (upd (upd W 32 p) 33 (BitVec.ofNat 64 G.D)) (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen)
       dst dstLen G.D 0 v := ⟨I0.L, S1.trans I0.st, I0.rep⟩
   have A' : MArgs (upd (upd W 32 p) 33 (BitVec.ofNat 64 G.D)) S src srcLen dst dstLen :=
-    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega), ifn (by omega)]
+    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega_using [h2]), ifn (by omega_using [h2])]
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfI u F S V (upd (upd W 32 p) 33 (BitVec.ofNat 64 G.D)) (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) dst
         dstLen G.D c w ∧ w.syms = u.syms)

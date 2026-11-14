@@ -40,14 +40,14 @@ structure Inv (to : Bool) (s₀ : State) (c p : Nat) (s : State) : Prop where
 /-- A subrange of the encrypted run lies in the public destination region. -/
 theorem run_in {to : Bool} {s₀ : State} {c n : Nat} (hn : c + n ≤ nBlk s₀) :
     Region.Sub ⟨tAddr s₀ to c, 16 * n⟩ (dstR to s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hn])
 
 /-- A destination block outside the encrypted run cannot overlap that run. -/
 theorem run_sep {to : Bool} {s₀ : State} (hp : GPre to s₀) {c n k : Nat} (hk : k < nBlk s₀)
     (hn : c + n ≤ nBlk s₀) (hout : ¬ (c ≤ k ∧ k < c + n)) :
     Region.Disjoint ⟨tAddr s₀ to k, 16⟩ ⟨tAddr s₀ to c, 16 * n⟩ := by
   have hw := hp.fD
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_using [hout]) (by omega_using [hk, hw]) (by omega_using [hn, hw])
 
 /-- The source blocks not yet read are as they were: they are the
 destination's in place, and apart from everything written out of place. -/
@@ -56,10 +56,10 @@ theorem Inv.src {to : Bool} {s₀ s : State} (hp : GPre to s₀) {c p : Nat} (hI
   rcases hp.sd with he | hdis
   · have e : bAddr s₀ k = tAddr s₀ to k := by simp only [bAddr, tAddr, he]
     have hb := hI.blocks k hk
-    rw [ite_eq_right (show ¬ k < c by omega)] at hb
+    rw [ite_eq_right (show ¬ k < c by omega_using [hc])] at hb
     rw [e, hb, ← e]
   · exact blockAt_frame hI.frame fun r hr => by
-      have hs : Region.Sub ⟨bAddr s₀ k, 16⟩ (srcR s₀) := Offset.sub_base _ (by omega)
+      have hs : Region.Sub ⟨bAddr s₀ k, 16⟩ (srcR s₀) := Offset.sub_base _ (by omega_using [hk])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hdis.sub_left hs
@@ -83,6 +83,6 @@ theorem Inv.of_start {to : Bool} {s₀ s₁ s : State} (hp : GPre to s₀) (hs :
     exact blockAt_frame hs.frame (fun r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
-      exact hp.dDB.sub_left (run_in (s₀ := s₀) (c := k) (n := 1) (by omega)))
+      exact hp.dDB.sub_left (run_in (s₀ := s₀) (c := k) (n := 1) (by omega_using [hk])))
 
 end VG.Proof.Aes.X86.AesNi

@@ -90,8 +90,8 @@ theorem pro_ok : WP isa (.block (pro .rcx .rdx (.reg .rsi) (.imm 66))) σ (J0 (s
         ((spOf σ).at' 2040) (σ.gpr .r12) ∧ s.gpr .rbx = σ.gpr .rcx ∧ s.gpr .rbp = σ.gpr .rdx ∧
         s.gpr .r12 = BitVec.setWidth 64 ((σ.gpr .rsi).setWidth 32) ∧
         s.gpr .rcx = σ.gpr .rdi ∧ s.gpr .r8 = BitVec.ofNat 64 66)
-    (by unfold pro; xrun [inScrσ (spOk hp) (a := 2024) (n := 8) (by omega),
-      inScrσ (spOk hp) (a := 2032) (n := 8) (by omega), inScrσ (spOk hp) (a := 2040) (n := 8) (by omega),
+    (by unfold pro; xrun [inScrσ (spOk hp) (a := 2024) (n := 8) (by omega_using []),
+      inScrσ (spOk hp) (a := 2032) (n := 8) (by omega_using []), inScrσ (spOk hp) (a := 2040) (n := 8) (by omega_using []),
       RejBounded.sx66])
     (by decide)) fun s ⟨⟨hm, hbx, hbp, h12, hcx, h8⟩, k⟩ => pro_J0 hm hbx hbp h12 hcx h8 k
 
@@ -114,9 +114,9 @@ theorem gpre {c g : Nat} (hg : g < 64) {s : State} (h : EAt σ c g s) :
   · have := congrArg (fun L => L.getD j 0) h.out
     rw [MlKem.bytesAt_getD _ _ hj] at this
     exact this
-  · rw [at_add]; exact inScrRd hp' h.env (by omega)
+  · rw [at_add]; exact inScrRd hp' h.env (by omega_using [hj])
   · rw [at_add] at hc
-    exact a_scr' hp' (a := 840 + j) (n := 1) (by omega) _ hc (Region.contains_self _ _)
+    exact a_scr' hp' (a := 840 + j) (n := 1) (by omega_using [hj]) _ hc (Region.contains_self _ _)
 
 /-- An iteration, from `EAt`. -/
 theorem eat_step {c g : Nat} (hc : emOk c) (hg : g < 64) {s : State} (h : EAt σ c g s) :
@@ -132,15 +132,15 @@ theorem eat_step {c g : Nat} (hc : emOk c) (hg : g < 64) {s : State} (h : EAt σ
     by rw [hk'.gpr (by decide), h.env.rbp], by rw [hk'.gpr (by decide), h.env.r12],
     by rw [hk'.gpr (by decide), h.env.rsp],
     fun r hr => by rw [hk'.gpr (r13_not hr), h.env.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_using []) (by omega_using []), hsv 2032 (by omega_using []) (by omega_using []), hsv 2040 (by omega_using []) (by omega_using [])];
         exact h.env.saved), h.env.frame.trans (hf.mono (by simp))⟩,
-    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 640) (by omega)).symm)
-      (by omega)]; exact h.out, hsi, hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega) (by omega)]; rfl,
+    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 640) (by omega_using [])).symm)
+      (by omega_using [])]; exact h.out, hsi, hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega_using [hg]) (by omega_using [])]; rfl,
     fun i hi => ?_⟩, by rw [hz, h.rcx]⟩
   by_cases hlo : i < 4 * g
-  · rw [hsame i (by omega) (.inl hlo)]; exact h.st i hlo
-  · have := hst (i - 4 * g) (by omega)
-    rwa [show 4 * g + (i - 4 * g) = i by omega] at this
+  · rw [hsame i (by omega_using [hg, hi]) (.inl hlo)]; exact h.st i hlo
+  · have := hst (i - 4 * g) (by omega_using [hi])
+    rwa [show 4 * g + (i - 4 * g) = i by omega_using [hlo]] at this
 
 /-- The loop for `c`, from the sponge's output. -/
 theorem loop_ok {c : Nat} (hc : emOk c) {s : State} (h : J6 136 640 (spOf σ) σ s) :
@@ -155,8 +155,8 @@ theorem loop_ok {c : Nat} (hc : emOk c) {s : State} (h : J6 136 640 (spOf σ) σ
     WP.mono (eat_step hp hc hg hI) fun s' ⟨hI', hz⟩ => ⟨hI', ?_, by rw [hz, hI.rcx]⟩) (fun _ h => h)
     ⟨he1.keep hm2 (k2.mono (by decide)), by rw [hm2, hm1, h.out]; exact (H_eq _ _).symm,
       by rw [k2.gpr (by decide), hsi1]; simp, by rw [k2.gpr (by decide), hdi1]; simp, hcx,
-      fun i hi => absurd hi (by omega)⟩ hcx
-  rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega) (by omega)]; rfl
+      fun i hi => absurd hi (by omega_using [])⟩ hcx
+  rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega_using [hg]) (by omega_using [])]; rfl
 
 /-- The branch on `γ₁`, and the loop for it. -/
 theorem sel_ok {s : State} (h : J6 136 640 (spOf σ) σ s) :

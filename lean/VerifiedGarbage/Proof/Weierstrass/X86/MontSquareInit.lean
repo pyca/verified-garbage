@@ -62,26 +62,26 @@ theorem square_columns_ok {W : Nat} {c : Bool} {x : BitVec 32} {s : State}
       Keep s u ∧ Frame [sub x o 64] s.mem u.mem ∧
       num (fun k => wv u.mem x (o + 4 * k)) 16 = fe s.mem x a * fe s.mem x a ∧ acc u = 0 := by
   refine WP.block_append (WP.mono zeroAcc_ok fun t ⟨K, M, Z⟩ => ?_)
-  refine WP.mono (cols_ok (K.ctx hc) (sqrTerms a) 16 (by omega) ?_
+  refine WP.mono (cols_ok (K.ctx hc) (sqrTerms a) 16 (by omega_using [ha, hoa]) ?_
     (fun k hk => square_col_bound t x a k hk) (by rw [Z]; decide)) fun u ⟨K', F, E, _⟩ => ?_
   · intro k hk term ht d hd
     simp only [sqrTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
       Bool.and_eq_true, decide_eq_true_eq] at ht
     rcases ht with ⟨i, ⟨hi, -, hki⟩, rfl⟩ | ht
     · simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl <;> constructor <;> omega
+      rcases hd with rfl | rfl <;> constructor <;> omega_arith
     · split at ht
       · simp only [List.mem_singleton] at ht
         subst term
         simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-        rcases hd with rfl | rfl <;> constructor <;> omega
+        rcases hd with rfl | rfl <;> constructor <;> omega_arith
       · exact absurd ht List.not_mem_nil
   · rw [Z, Nat.zero_add, square_col_sum, M] at E
     have hA := fe_lt s.mem x a
     have hAA := Nat.mul_lt_mul_of_lt_of_lt hA hA
     have hpow : (2 ^ 32 : Nat) ^ 16 = 2 ^ 256 * 2 ^ 256 := by decide
     rw [hpow] at E
-    have hz : acc u = 0 := by omega
+    have hz : acc u = 0 := by omega_using [E, hAA]
     refine ⟨K.trans K', ?_, ?_, hz⟩
     · simpa only [M] using F
     · simpa only [hz, Nat.mul_zero, Nat.add_zero] using E
@@ -106,33 +106,33 @@ theorem squareCopy_ok (hb : Bx s base 8192) {a : Nat} (hp : Ptr s .esi a)
     WP isa (.block (squareCopy j)) s fun u =>
       Outside base (tmpAt 4) (4 * j) s.mem u.mem ∧ Keeps [.eax] s u ∧
       ∀ i < j, w32 u.mem base (tmpAt 4 + 4 * i) = w32 s.mem base (a + 4 * i)
-  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, Keeps.refl _ _, by omega⟩
+  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, Keeps.refl _ _, by omega_using []⟩
   | j + 1, hj => by
     have hn := hb.nowrap
     have htmp : tmpAt 4 = 3908 := rfl
     have hown : own 4 = 3840 := rfl
     rw [squareCopy]
-    refine WP.block_append (WP.mono (squareCopy_ok hb hp ha j (by omega)) fun t ⟨O, K, V⟩ => ?_)
+    refine WP.block_append (WP.mono (squareCopy_ok hb hp ha j (by omega_using [hj])) fun t ⟨O, K, V⟩ => ?_)
     have hbt := hb.of_keeps K (by decide)
     have hpt := hp.of_keeps K (by decide) (by decide)
-    refine wp_movS (readSrc_ptr hbt hpt (d := 4 * j) (by omega)) fun v R _ => ?_
+    refine wp_movS (readSrc_ptr hbt hpt (d := 4 * j) (by omega_using [ha, hj, hown])) fun v R _ => ?_
     have hbv := hbt.of_keeps R.keeps (by decide)
-    refine wp_storeS (hbv.ea (d := tmpAt 4 + 4 * j) (by omega)) (hbv.write (n := 4) (by omega))
+    refine wp_storeS (hbv.ea (d := tmpAt 4 + 4 * j) (by omega_using [hj, htmp])) (hbv.write (n := 4) (by omega_using [hj, htmp]))
       fun u M => WP.block_nil ?_
     have hm : u.mem = t.mem.writeW (off base (tmpAt 4 + 4 * j))
         (t.mem.readW (off base (a + 4 * j)) 32) := by rw [M.mem, R.mem, R.gpr]
     have U := writeW32_outside t.mem base (d := tmpAt 4 + 4 * j)
-      (t.mem.readW (off base (a + 4 * j)) 32) (by omega)
+      (t.mem.readW (off base (a + 4 * j)) 32) (by omega_using [hj, htmp])
     rw [← hm] at U
-    refine ⟨(O.mono (Nat.le_refl _) (by omega)).trans (U.mono (by omega) (by omega)),
+    refine ⟨(O.mono (Nat.le_refl _) (by omega_using [])).trans (U.mono (by omega_using []) (by omega_using [])),
       (K.trans R.keeps).trans (M.keeps _), ?_⟩
     intro i hi
     by_cases hij : i = j
     · subst i
       rw [hm, w32_write_self]
-      exact O.w32 (by omega) (by omega)
-    · rw [U.w32 (by omega) (by omega)]
-      exact V i (by omega)
+      exact O.w32 (by omega_using [ha, hj, htmp, hown]) (by omega_using [ha, hj, hown])
+    · rw [U.w32 (by omega_using [hij]) (by omega_using [hj, htmp, hi])]
+      exact V i (by omega_using [hi, hij])
 
 end VG.Proof.Weierstrass.X86.Mont
 
@@ -156,8 +156,8 @@ theorem square_num_eq (m : Mem) {x : BitVec 32} {o : Nat} : ∀ n,
     VG.Proof.X25519.X86.num (fun j => VG.Proof.X25519.X86.wv m x (o + 4 * j)) n = val32 m (x.setWidth 64) o n
   | 0, _ => rfl
   | n + 1, hn => by
-    rw [VG.Proof.X25519.X86.num_succ, square_num_eq m n (by omega), val32_succ,
-      square_wv_eq m (by omega), ← Nat.pow_mul]
+    rw [VG.Proof.X25519.X86.num_succ, square_num_eq m n (by omega_using [hn]), val32_succ,
+      square_wv_eq m (by omega_using [hn]), ← Nat.pow_mul]
 
 theorem square_frame_outside {m m' : Mem} {x : BitVec 32} {o n : Nat}
     (hx : x.toNat + o + n ≤ 2 ^ 32) (hn : 0 < n)
@@ -166,13 +166,13 @@ theorem square_frame_outside {m m' : Mem} {x : BitVec 32} {o n : Nat}
   apply F y
   intro r hr
   rw [List.mem_singleton.mp hr]
-  simp only [VG.Proof.X25519.X86.sub, addr_eq (by omega : x.toNat + o < 2 ^ 32)]
+  simp only [VG.Proof.X25519.X86.sub, addr_eq (by omega_using [hx, hn] : x.toNat + o < 2 ^ 32)]
   change ¬ ((y - (x.setWidth 64 + BitVec.ofNat 64 o)).toNat + 1 ≤ n)
-  have h := (Offset.lt_iff y (x.setWidth 64) (d := o) (n := n) (by omega)).mp
+  have h := (Offset.lt_iff y (x.setWidth 64) (d := o) (n := n) (by omega_using [hx])).mp
   simp only [ofs] at hy
   intro h'
-  have := h (by omega)
-  omega
+  have := h (by omega_using [h'])
+  omega_using [hy, h, h']
 
 /-- The copied input is squared exactly; the saved registers and input
 buffer remain outside the written product. `ebp` is restored to the base. -/
@@ -196,17 +196,17 @@ theorem squareProduct_ok {s : State} {x : BitVec 32} (hc : VG.Proof.X25519.X86.C
     ⟨(R.other _ (by decide)).trans K.esi, (R.other _ (by decide)).trans K.edi,
       (R.other _ (by decide)).trans K.esp, R.rd.trans K.rd, W⟩, ?_, ?_, ?_⟩
   · rw [R.mem]
-    exact square_frame_outside (by change x.toNat + 3840 + 64 ≤ 2 ^ 32; omega) (by decide) F
+    exact square_frame_outside (by change x.toNat + 3840 + 64 ≤ 2 ^ 32; omega_using [hx]) (by decide) F
   · rw [R.mem]
     simp only [VG.Proof.X25519.X86.fe] at V
-    rw [square_num_eq _ 16 (by change x.toNat + 3840 + 4 * 16 ≤ 2 ^ 32; omega),
-      square_num_eq _ 8 (by change x.toNat + 3908 + 4 * 8 ≤ 2 ^ 32; omega)] at V
+    rw [square_num_eq _ 16 (by change x.toNat + 3840 + 4 * 16 ≤ 2 ^ 32; omega_using [hx]),
+      square_num_eq _ 8 (by change x.toNat + 3908 + 4 * 8 ≤ 2 ^ 32; omega_using [hx])] at V
     exact V
   · rw [R.other _ (by decide)]
     apply BitVec.eq_of_toNat_eq
     change (t.gpr .ebx).toNat = 0
     simp only [VG.Proof.X25519.X86.acc, VG.Proof.X25519.X86.v] at Z
-    omega
+    omega_using [Z]
 
 end VG.Proof.Weierstrass.X86.Mont
 
@@ -227,7 +227,7 @@ theorem square_val_congr {m m' : Mem} {base : Addr} {d d' : Nat} : ∀ n,
     val32 m' base d' n = val32 m base d n
   | 0, _ => rfl
   | n + 1, h => by
-    rw [val32_succ, val32_succ, square_val_congr n (fun i hi => h i (by omega)), h n (by omega)]
+    rw [val32_succ, val32_succ, square_val_congr n (fun i hi => h i (by omega_using [hi])), h n (by omega_using [])]
 
 theorem square_zero_top {mem : Mem} {base : Addr} {o n : Nat}
     (hz : w32 mem base (o + 4 * n) = 0) : val32 mem base o (n + 1) = val32 mem base o n := by
@@ -255,15 +255,15 @@ theorem squareInit_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
   refine WP.block_append (WP.mono (squareProduct_ok hc) fun w ⟨hbw, K', O', V'', Z⟩ => ?_)
   rw [hb.ebp] at hbw O' V''
   rw [hv, V'] at V''
-  refine wp_storeS (hbw.ea (d := own 4 + 64) (by omega)) (hbw.write (n := 4) (by omega))
+  refine wp_storeS (hbw.ea (d := own 4 + 64) (by omega_using [hown])) (hbw.write (n := 4) (by omega_using [hown]))
     fun u M => WP.block_nil ?_
   have hm : u.mem = w.mem.writeW (off base (own 4 + 64)) (0 : BitVec 32) := by rw [M.mem, Z]
-  have O'' := writeW32_outside w.mem base (d := own 4 + 64) (0 : BitVec 32) (by omega)
+  have O'' := writeW32_outside w.mem base (d := own 4 + 64) (0 : BitVec 32) (by omega_using [hown])
   rw [← hm] at O''
   refine ⟨?_, ⟨?_, ?_, ?_⟩, ?_⟩
   · rw [hv] at O'
-    exact ((O.mono (by omega) (by omega)).trans (O'.mono (by omega) (by omega))).trans
-      (O''.mono (by omega) (by omega))
+    exact ((O.mono (by omega_using [hown, htmp]) (by omega_using [hown, htmp])).trans (O'.mono (by omega_using []) (by omega_using []))).trans
+      (O''.mono (by omega_using []) (by omega_using []))
   · intro r hr
     have hwE : w.gpr .ebp = s.gpr .ebp := by
       apply BitVec.eq_of_toNat_eq
@@ -275,7 +275,7 @@ theorem squareInit_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
   · rw [M.rd, K'.rd, R.rd, K.2.1]
   · rw [M.wr, K'.wr, R.wr, K.2.2]
   · have hz : w32 u.mem base (own 4 + 4 * 16) = 0 := by rw [hm, w32_write_self]; rfl
-    rw [square_zero_top hz, O''.val32 (by omega) (by omega)]
+    rw [square_zero_top hz, O''.val32 (by omega_using []) (by omega_using [hown])]
     exact V''
 
 

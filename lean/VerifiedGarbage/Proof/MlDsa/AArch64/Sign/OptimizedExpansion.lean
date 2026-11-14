@@ -24,13 +24,13 @@ open VG.Proof.MlDsa.AArch64.Message
 
 theorem expandA_depth {P : Prims} {S : Nat} (hp : PrimsOk P S) (p : Params) :
     16*(Impl.MlDsa.AArch64.Sign.expandA P p).aarch64Depth≤S := by
-  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega⟩
+  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this]⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this]⟩
   have hd : DLe (S/16) (Impl.MlDsa.AArch64.Sign.expandA P p) := by
     unfold Impl.MlDsa.AArch64.Sign.expandA
     dle_tac
   have := hd.le
-  omega
+  omega_using [this]
 
 /-- Matrix expansion retains the immutable root tables without changing
 its sampled values, public failure behavior, or instruction sequence. -/

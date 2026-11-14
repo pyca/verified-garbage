@@ -70,7 +70,7 @@ theorem tbl_of_consts' {st : Nat} {s : State} {ws : List (BitVec 64)} (hl : ws.l
       ∀ r ∈ RISCV64.abi.reserved st s, Region.Disjoint ⟨s.syms combSym, 8 * ws.length⟩ r :=
     (h.2.2.1 _ List.mem_cons_self).2
   rw [hl] at hrd hfit hd
-  refine ⟨hrd, by omega, hfit, fun q hq => ?_, hd.1, hd.2⟩
+  refine ⟨hrd, by omega_using [hal], hfit, fun q hq => ?_, hd.1, hd.2⟩
   rw [h.held1 q (by rw [hl]; exact hq), hg q hq]
 
 /-- What `abi.withConsts combConsts` says of the comb's table. -/

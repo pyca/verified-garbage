@@ -96,8 +96,8 @@ theorem callPre8S {s₀ : State} (hp : UPre s₀) {s : State}
   rounds := hp.rounds
   wd := hp.sch_scr.sub_right (Region.sub_prefix (by decide))
   ws := hp.sch_scr.sub_right (UPre.scr_sub (by decide))
-  ds := (Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)).symm
-  wrap := by have := hp.scr_wrap; omega
+  ds := (Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])).symm
+  wrap := by have := hp.scr_wrap; omega_using [this]
   reads := by
     rw [hrd, hwr, hp.rd, hp.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -121,7 +121,7 @@ theorem decA8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
       CallPre8 s₂ (W s₀) (S s₀) (S s₀ + BitVec.ofNat 64 128) (R s₀) ∧ (∀ r ∈ preserved, s₂.gpr r = s.gpr r) ∧
       s₂.rd = s.rd ∧ s₂.wr = s.wr ∧ Frame [⟨S s₀, 144⟩] s.mem s₂.mem ∧
       ∀ j < 8, bytesAt s₂.mem (sl s₀ j) 16 = chainK (cfbMode false) s₀ (k + j) :=
-  saveSlots_wp hp (m := 7) (by decide) (by omega) h fun s₁ g₁ rd₁ wr₁ f₁ e₀ e₁ =>
+  saveSlots_wp hp (m := 7) (by decide) (by omega_using [hk]) h fun s₁ g₁ rd₁ wr₁ f₁ e₀ e₁ =>
     callArgs8_wp fun s₂ r3₂ r4₂ r5₂ r6₂ r7₂ o₂ mem₂ rd₂ wr₂ => by
       refine ⟨callPre8S hp (by rw [r3₂, g₁ _ (by decide), h.r14]) (by rw [r4₂, g₁ _ (by decide), h.r15])
         (by rw [r5₂, g₁ _ (by decide), h.r19]) r6₂ (by rw [r7₂, g₁ _ (by decide), h.r19])
@@ -132,8 +132,8 @@ theorem decA8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
       · rw [mem₂]
         rcases Nat.eq_zero_or_pos j with rfl | hj0
         · exact e₀
-        · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
-          rw [e₁ i (by omega), ← Nat.add_assoc, cfbDec_chain s₀ (by omega)]
+        · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_using [hj0]⟩
+          rw [e₁ i (by omega_using [hj]), ← Nat.add_assoc, cfbDec_chain s₀ (by omega_using [hk, hj])]
 
 theorem decGroup_ok : GroupOk (cfbMode false) decGroup := by
   intro s₀ hp k hk s h
@@ -147,11 +147,11 @@ theorem decGroup_ok : GroupOk (cfbMode false) decGroup := by
     (UPre.big_of h.frame).trans (f₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
   have cS (j : Nat) (hj : j < 8) : (⟨blk s₀ (k + j), 16⟩ : Region).Disjoint ⟨S s₀, 128⟩ :=
-    (hp.dBG (by omega)).sub_right (Region.sub_prefix (by decide))
+    (hp.dBG (by omega_using [hk, hj])).sub_right (Region.sub_prefix (by decide))
   -- The blocks and the enciphered slots after the call.
   have blk₃ (j : Nat) (hj : j < 8) : bytesAt s₃.mem (blk s₀ (k + j)) 16 = blkOf s₀ (k + j) := by
     rw [bytesAt_frame c.frame (one_disj (cS j hj)) (by decide),
-      bytesAt_frame f₂ (one_disj (hp.dBG (by omega))) (by decide), h.blockAt (by omega) (by omega)]
+      bytesAt_frame f₂ (one_disj (hp.dBG (by omega_using [hk, hj]))) (by decide), h.blockAt (by omega_using []) (by omega_using [hk, hj])]
   have slot₃ (j : Nat) (hj : j < 8) : bytesAt s₃.mem (sl s₀ j) 16 =
       Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK (cfbMode false) s₀ (k + j)) := by
     have := c.out j hj
@@ -162,8 +162,8 @@ theorem decGroup_ok : GroupOk (cfbMode false) decGroup := by
   refine copy_wp (P := Iv s₀) (Q := blk s₀ (k + 7)) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [g₃ _ (by decide), h.r16, ofNat_zero_add]) (by rw [g₃ _ (by decide), h.r16])
     (by rw [g₃ _ (by decide), h.r17, blk_add]) (by rw [g₃ _ (by decide), h.r17, blk_add8])
-    (by rw [hR₃]; exact in_rw (by simp) (hp.cBlk0 (k := k + 7) (by omega)))
-    (by rw [hR₃]; exact in_rw (by simp) (hp.cBlk8 (k := k + 7) (by omega)))
+    (by rw [hR₃]; exact in_rw (by simp) (hp.cBlk0 (k := k + 7) (by omega_using [hk])))
+    (by rw [hR₃]; exact in_rw (by simp) (hp.cBlk8 (k := k + 7) (by omega_using [hk])))
     (by rw [hW₃]; exact in_rw (by simp) cIv0) (by rw [hW₃]; exact in_rw (by simp) cIv8)
     fun s₄ g₄ mem₄ rd₄ wr₄ => ?_
   have g₄' (r : Reg) (hr : r ∈ preserved) : s₄.gpr r = s.gpr r := by
@@ -197,10 +197,10 @@ theorem decGroup_ok : GroupOk (cfbMode false) decGroup := by
       Frame [⟨blk s₀ k, 128⟩, ivR s₀, ⟨S s₀, 2064⟩] s₃.mem s₄.mem).trans ?_
     exact f₅.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
-  · rw [mem₆, e₅ j hj, mem₄, copyMem_other _ (hp.blk_iv (by omega)), copyMem_other _ (hp.dIS (by omega)).symm,
+  · rw [mem₆, e₅ j hj, mem₄, copyMem_other _ (hp.blk_iv (by omega_using [hk, hj])), copyMem_other _ (hp.dIS (by omega_using [hj])).symm,
       blk₃ j hj, slot₃ j hj]
   · rw [mem₆, bytesAt_frame f₅ (one_disj (hp.dIB hk)) (by decide), mem₄,
-      copyMem_bytes _ (hp.blk_iv (by omega)).symm, blk₃ 7 (by decide), cfbDec_chain s₀ (by omega)]
+      copyMem_bytes _ (hp.blk_iv (by omega_using [hk])).symm, blk₃ 7 (by decide), cfbDec_chain s₀ (by omega_using [hk])]
 
 theorem decGroupPre_taint : ∃ h, (taint.check (Taint.ofRegs vars)
     (.block (saveSlots 7 ++ callArgs8)) h).isSome = true := ⟨_, by taint_decide⟩

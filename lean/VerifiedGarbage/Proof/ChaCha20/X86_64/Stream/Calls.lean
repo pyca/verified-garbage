@@ -80,7 +80,7 @@ theorem xor_pre (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} {
   have hk' : Region.Sub ⟨s.gpr .rsp - 8 - BitVec.ofNat 64 v.stack, v.stack⟩ (below (s.gpr .rsp) 24) := by
     rw [show s.gpr .rsp - 8 - BitVec.ofNat 64 v.stack = s.gpr .rsp - BitVec.ofNat 64 (8 + v.stack) by
       rw [BitVec.sub_sub, BitVec.ofNat_add]; rfl]
-    exact Offset.sub_below _ (by omega) (by omega)
+    exact Offset.sub_below _ (by omega_using [hk]) (by omega_using [hk])
   simp only [Proof.ChaCha20.xorStack, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
     callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp),
@@ -102,14 +102,17 @@ theorem xor_call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} 
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem →
       bytesAt s'.mem D n = List.zipWith (· ^^^ ·) (bytesAt s.mem D n) (keystream (stateAt s.mem S) n) →
-      Q s') :
+      s'.gpr .rsi = B → Q s') :
     WP isa v.callee.inPlace s Q := by
   have hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
   have hd := v.depth_le
   have h8 := below8_24 s
   refine v.wpIn (xor_pre v hrdi hrsi hrdx hrcx hn hSD hSB hDB hwrap hsS hsD hsB) hc hw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost, _⟩
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost, hrsi₂⟩
+  have hB : s'.gpr .rsi = B := by
+    rw [← hg₂ .rsi (by decide), hrsi₂]
+    simp only [State.withRegions_gpr, callEntry_gpr' s (by decide : Reg.rcx ≠ .rsp), hrcx]
   have hf' : Frame [⟨S, 64⟩, ⟨D, n⟩, ⟨B, 320⟩, below (s.gpr .rsp) 24] s.mem s'.mem := by
     refine hf.sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -117,13 +120,13 @@ theorem xor_call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} 
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below (s.gpr .rsp) 24, by simp, below_sub (by omega) (by omega)⟩
-  refine hQ s' hrd hwr hcs hf' ?_
+    · exact ⟨below (s.gpr .rsp) 24, by simp, below_sub (by omega) (by omega_using [])⟩
+  refine hQ s' hrd hwr hcs hf' ?_ hB
   simp only [Proof.ChaCha20.xorX86_64, State.withRegions_gpr, State.withRegions_mem,
     callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
     callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx, hn', hm₂] at hpost
   rw [hpost, bytesAt_frame (callEntry_frame s) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (hsD.sub_left h8).symm) (by omega),
+      simp only [List.mem_singleton] at hr; subst hr; exact (hsD.sub_left h8).symm) (by omega_using [hn]),
     stateAt_frame (callEntry_frame s) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (hsS.sub_left h8).symm)]
 

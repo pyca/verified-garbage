@@ -97,7 +97,7 @@ theorem KS.str {d : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nArr
     WP isa (.block (.str r .r8 d :: rest)) s Q :=
   wp_strSlot hw hd.1 fun t m => by
     have kt : Keep P.B P.W [] [d] s.mem t.mem := by
-      rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega)
+      rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_using [this])
     exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) m
 
 /-- `str r, [r8, #d]`, keeping the Z flag. -/
@@ -107,10 +107,10 @@ theorem KS.strz {d : Nat} (h : KS P σ A live V ls s) (hw : Ws s P.B P.Z P.W nAr
       WP isa (.block rest) t Q) :
     WP isa (.block (.str r .r8 d :: rest)) s Q := by
   have := hw.hdr_le
-  refine wp_str_z (by have := hd.1; simp only [hdr] at this; omega) (slot_addr hw (by have := hd.1; omega))
-    (hw.write (by have := hd.1; omega)) fun t m z => ?_
+  refine wp_str_z (by have := hd.1; simp only [hdr] at this; omega_using [this]) (slot_addr hw (by have := hd.1; omega_arith))
+    (hw.write (by have := hd.1; omega_arith)) fun t m z => ?_
   have kt : Keep P.B P.W [] [d] s.mem t.mem := by
-    rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega)
+    rw [m.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_using [this])
   exact k t (h.slot1 kt hd m.sp m.rd m.wr (by rw [m.mem, slot_write_self])) (hw.of_mupd m) z
 
 /-- `ldr r, [r8, #d]` of a header word the stage holds. -/

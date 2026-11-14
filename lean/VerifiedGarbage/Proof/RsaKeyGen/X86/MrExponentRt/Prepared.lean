@@ -43,27 +43,27 @@ theorem head_ok {mont : Prog isa} {name : String}
     rw [Oa.val32 (fun r mem => by
       simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       have := v.arrayHeader 5
-      rcases mem with (rfl | rfl | rfl) | rfl <;> right <;> omega)
-      (by have := I.scratch.nowrap; have := v.arrayFit (j := 5) (by decide); omega)]
+      rcases mem with (rfl | rfl | rfl) | rfl <;> right <;> omega_using [this])
+      (by have := I.scratch.nowrap; have := v.arrayFit (j := 5) (by decide); omega_arith)]
     exact I.minusOne
   refine WP.seq (WP.mono (PrepareRt.r2_ok verified noSp stack v length A I.odd I.top)
     fun b ⟨B, r2B, Fb, Kb, Wb⟩ => ?_)
   have strideB : word b.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change b.mem.readW (off g.W 224) 64 = _
-    rw [Wb.read64 (by have := v.headerFit; omega) (fun r mem => by
+    rw [Wb.read64 (by have := v.headerFit; omega_using [this]) (fun r mem => by
       simp only [PreparedR2.ranges, PreparedR2.coreRanges, PreparedR2.phaseRanges, montWrites, List.mem_append,
         List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with ((rfl | rfl | rfl) | (rfl | rfl | rfl)) | rfl <;>
-        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
+        exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))]
     exact strideA
   have minusB := (PreparedR2.preserve v Wb (j := 5) (Or.inl rfl)).trans minusA
-  refine WP.mono (PrepareRt.constants_ok verified noSp stack v length B I.odd (by have := I.large; omega) r2B)
+  refine WP.mono (PrepareRt.constants_ok verified noSp stack v length B I.odd (by have := I.large; omega_using [this]) r2B)
     fun d ⟨D, oneD, minusD, Wd, Fd, Kd⟩ => ?_
   have strideD : word d.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change d.mem.readW (off g.W 224) 64 = _
-    rw [Wd.read64 (by have := v.headerFit; omega) (fun r mem => by
+    rw [Wd.read64 (by have := v.headerFit; omega_using [this]) (fun r mem => by
       simp only [Constants.ranges, montWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
-      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega))]
+      rcases mem with (rfl | rfl | rfl) | (rfl | rfl) <;> exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))]
     exact strideB
   have minusSaved := (Constants.preserve v Wd (j := 5) (Or.inr (Or.inl rfl))).trans minusB
   have r2D := (Constants.preserve v Wd (j := 4) (Or.inl rfl)).trans r2B
@@ -71,7 +71,7 @@ theorem head_ok {mont : Prog isa} {name : String}
     (workspaceGlobalFrame Oa (fun r mem => by
       simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
       have := v.headerFit
-      rcases mem with (rfl | rfl | rfl) | rfl <;> omega)).mono (fun r mem => List.mem_append_left _ mem)
+      rcases mem with (rfl | rfl | rfl) | rfl <;> omega_using [this])).mono (fun r mem => List.mem_append_left _ mem)
   have Wa : WorkspaceFrame g PrepareHeader.ranges s.mem a.mem := WorkspaceFrame.of_outs I.scratch.nowrap Oa
   refine ⟨D, r2D, oneD, minusD, minusSaved, strideD, (Fa.trans Fb).trans Fd,
     ((Ka.mono (by unfold Prepare.clob PrepareHeader.clob; decide)).widen Kb).widen Kd, ?_⟩
@@ -100,19 +100,19 @@ theorem prepared_ok {mont : Prog isa} {name : String}
     fun h ⟨H, Oh, Kh, strideH⟩ => ?_)
   refine WP.seq (WP.mono (head_ok verified noSp stack G v.length Ip H Oh Kh strideH)
     fun d ⟨D, r2D, oneD, minusD, savedD, strideD, Fd, Kd, Wd⟩ => ?_)
-  refine WP.mono (MrExponentRt.code_ok G D savedD Ip.odd (by have := Ip.large; omega))
+  refine WP.mono (MrExponentRt.code_ok G D savedD Ip.odd (by have := Ip.large; omega_using [this]))
     fun t ⟨T, exponentT, markerT, Wt, Ft, Kt⟩ => ?_
   have preserve {j : Nat} (index : j = 4 ∨ j = 9 ∨ j = 10) :
       val32 t.mem P.g.W (P.g.array j) P.g.words = val32 d.mem P.g.W (P.g.array j) P.g.words := by
-    apply Wt.val32 (G.arrayFit (by omega))
+    apply Wt.val32 (G.arrayFit (by omega_using [index]))
     intro r mem
     simp only [Exponent.preparedRanges, Exponent.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases index with rfl | rfl | rfl <;> rcases mem with rfl | rfl | rfl <;>
       simp only [Geometry.array, Geometry.words, Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes,
-        VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega
+        VG.Impl.RsaKeyGen.X86.Exponent.markerOffset] <;> omega_using []
   have strideT : word t.mem P.g.W 224 = BitVec.ofNat 64 (8 * (P.g.w + 2)) := by
     change t.mem.readW (off P.g.W 224) 64 = _
-    rw [Wt.read64 (by have := G.headerFit; omega) (fun r mem => by
+    rw [Wt.read64 (by have := G.headerFit; omega_using [this]) (fun r mem => by
       simp only [Exponent.preparedRanges, Exponent.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
       rcases mem with rfl | rfl | rfl
       · right; decide
@@ -132,13 +132,13 @@ theorem prepared_ok {mont : Prog isa} {name : String}
       simp only [List.mem_append, List.mem_singleton] at mem
       rcases mem with rfl | rfl
       · exact v.randSeparate
-      · exact v.randStackFar.sub_right (below_sub (by decide) v.low)) (by have := v.randLenFit; omega)]
+      · exact v.randStackFar.sub_right (below_sub (by decide) v.low)) (by have := v.randLenFit; omega_using [this])]
     exact I.entropy
-  · rw [Prepare.metadata32 G W (d := 28) (by unfold Prepare.protectedHeader; omega)]
+  · rw [Prepare.metadata32 G W (d := 28) (by unfold Prepare.protectedHeader; omega_using [])]
     exact I.randPtr
-  · rw [w32, Prepare.metadata32 G W (d := 32) (by unfold Prepare.protectedHeader; omega)]
+  · rw [w32, Prepare.metadata32 G W (d := 32) (by unfold Prepare.protectedHeader; omega_using [])]
     exact I.randLength
-  · rw [w32, Prepare.metadata32 G W (d := 152) (by unfold Prepare.protectedHeader; omega)]
+  · rw [w32, Prepare.metadata32 G W (d := 152) (by unfold Prepare.protectedHeader; omega_using [])]
     exact I.used
 
 end VG.Proof.RsaKeyGen.X86.MrExponentRt

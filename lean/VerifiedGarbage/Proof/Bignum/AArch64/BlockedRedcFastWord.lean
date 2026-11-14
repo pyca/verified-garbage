@@ -50,7 +50,7 @@ theorem lowChain_ok {s : State} {B : Addr} {Z eN : Nat}
       Nat.reduceAdd, Nat.reduceSub]
     rw [canceled_flag]
   · intro i hi0 hi
-    rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rcases (by omega_using [hi0, hi] : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [chainCarry, accumulator, lowProduct, BlockedRedc.lowProduct, operand,
       List.getD_eq_getElem?_getD, List.getElem?_cons_zero, List.getElem?_cons_succ,
@@ -61,7 +61,7 @@ theorem lowChain_ok {s : State} {B : Addr} {Z eN : Nat}
       Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod]
     all_goals rw [canceled_flag]
   · intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     all_goals rfl
 
 /-- The omitted output word is represented only in the proof. -/
@@ -95,10 +95,10 @@ theorem zeroLow_chain_value {s t : State} {n0 : Word}
     · subst i
       exact (canceled_sum (s.gpr .x19)).symm
     · have hr : VG.Impl.Bignum.AArch64.BlockedRedc.aa[i]! ≠ .x19 := by
-        rcases (by omega : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+        rcases (by omega_using [hi, hi0] : i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
           rfl | rfl | rfl | rfl | rfl | rfl | rfl
         all_goals decide
-      simpa only [zeroLow, VG.AArch64.RegUpd.gpr_write, hr, ↓reduceIte] using hv i (by omega) hi
+      simpa only [zeroLow, VG.AArch64.RegUpd.gpr_write, hr, ↓reduceIte] using hv i (by omega_using [hi0]) hi
   have h := chain_result_value (t := zeroLow t) hc hz
   exact h.trans (Nat.add_zero _)
 

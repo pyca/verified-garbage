@@ -67,7 +67,7 @@ theorem arithmeticHead_relCT (base : Addr) (size len bl : Nat) (modulus : Field)
     RelCT isa (ArithmeticAgree base size len bl modulus a b) (arithmeticHead len bl modulus a b)
       (VG.X86.Taint.Agree (workspaceTaint true)) := by
   intro s t tr ur sf tf ⟨P, Q, Mod, Left, Right⟩ E F
-  have hn : (len + 7) / 8 ≤ 48 := by omega
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
   have Hn : contextBytes ((len + 7) / 8) ≤ 8192 :=
     Nat.le_trans (VG.Proof.Dsa.X86.Layout.context_bound hn) (by decide)
   cases E with
@@ -85,7 +85,7 @@ theorem arithmeticHead_relCT (base : Addr) (size len bl : Nat) (modulus : Field)
         (Left.trans (pointerValue_keep K₂ (by decide) O₂ Hn a).symm)
       have PR := (pointerValue_keep K₁ (by decide) O₁ Hn b).trans
         (Right.trans (pointerValue_keep K₂ (by decide) O₂ Hn b).symm)
-      obtain ⟨Trace₁, Agree⟩ := coreInputs_relCT ((len + 7) / 8) len bl a b base size hz hn h4 (by omega) hw4
+      obtain ⟨Trace₁, Agree⟩ := coreInputs_relCT ((len + 7) / 8) len bl a b base size hz hn h4 (by omega_using []) hw4
         _ _ _ _ _ _ ⟨_, _, C₁, C₂, A₁, A₂, PL, PR⟩ E₁ F₁
       exact ⟨by rw [Trace₀, Trace₁], Agree⟩
 

@@ -123,12 +123,12 @@ abbrev CrtOut (L : Lay) (m m' : Mem) (r : BitVec 64) : Prop :=
       (Spec.Rsa.bytesAt m L.dp L.pl.toNat) (Spec.Rsa.bytesAt m L.dq L.ql.toNat)
       (Spec.Rsa.bytesAt m L.qi L.pl.toNat))
 
-/-- The call of the CRT. -/
-theorem crt_call (v : CrtImpl) (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t.mem)
-    (ha : CrtArgs L t) :
-    WP isa (.call v.name v.code) t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧
+/-- The call of the CRT `C`, for a call state with `C.K`. -/
+theorem crt_call (C : CrtCallee) (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t.mem)
+    (ha : CrtArgs L t) (hK : C.K (t.callEntry.withRegions (crtRd L) (crtWr L))) :
+    WP isa (.call C.name C.code) t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧
       Frame (crtWr L) t.mem t'.mem ∧ CrtOut L t.mem t'.mem (t'.gpr .x0) := by
-  refine call_ok hL v.crt_ok v.noFrames hc hs (crtCall_pre hL hc ha) (crt_sub hL) (crt_wsub hL)
+  refine call_ok hL C.ok C.noFrames hc hs ⟨crtCall_pre hL hc ha, hK⟩ (crt_sub hL) (crt_wsub hL)
     fun s' hc' hs' hf hpost => ⟨hc', hs', hf, ?_⟩
   have sa : ∀ i < 10, stackArg (t.callEntry.withRegions (crtRd L) (crtWr L)) i = L.argv (i + 2) := by
     intro i hi
@@ -136,7 +136,7 @@ theorem crt_call (v : CrtImpl) (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) 
       State.callEntry_sp, hc.sp]
     exact ha.stk i hi
   have h := hpost
-  simp only [crtA, State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr,
+  simp only [crtKA, crtA, State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr,
     gpr_ce _ _ _ (by decide : Reg.x0 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x2 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x3 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x4 ∉ linkRegs),
     gpr_ce _ _ _ (by decide : Reg.x6 ∉ linkRegs), gpr_ce _ _ _ (by decide : Reg.x7 ∉ linkRegs),

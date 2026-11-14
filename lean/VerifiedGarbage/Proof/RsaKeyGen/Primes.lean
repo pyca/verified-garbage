@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The sieve finds the specification's small primes
@@ -52,8 +53,8 @@ theorem testBit_multMask (d n : Nat) :
   simp only [Nat.zero_testBit, Bool.false_eq_true, List.mem_range, decide_eq_true_eq,
     Nat.testBit_two_pow, false_or]
   constructor
-  · rintro ⟨k, hk, h2, h⟩; exact ⟨k, h2, by omega, h⟩
-  · rintro ⟨k, h2, hk, h⟩; exact ⟨k, by omega, h2, h⟩
+  · rintro ⟨k, hk, h2, h⟩; exact ⟨k, h2, by omega_using [hk], h⟩
+  · rintro ⟨k, h2, hk, h⟩; exact ⟨k, by omega_using [hk], h2, h⟩
 
 theorem testBit_compMask (n : Nat) :
     compMask.testBit n = true ↔ ∃ d k, 2 ≤ d ∧ d < 91 ∧ 2 ≤ k ∧ k ≤ 8162 / d ∧ d * k = n := by
@@ -77,8 +78,8 @@ theorem smallPrime_eq {n : Nat} (hn : n < 8162) :
     · rintro h ⟨d, k, hd2, -, hk2, -, rfl⟩
       rcases h d (by
         have : d * 2 ≤ d * k := Nat.mul_le_mul_left d hk2
-        omega) with h | h
-      · omega
+        omega_using [hd2, this]) with h | h
+      · omega_using [hd2, h]
       · exact h (Nat.mul_mod_right d k)
     · intro h d hd
       by_cases hd2 : d < 2
@@ -86,20 +87,20 @@ theorem smallPrime_eq {n : Nat} (hn : n < 8162) :
       refine .inr fun hm => h ?_
       have hdk : d * (n / d) = n := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hm)
       generalize n / d = k at hdk
-      rcases (show k = 0 ∨ k = 1 ∨ 2 ≤ k by omega) with rfl | rfl | hk2
+      rcases (show k = 0 ∨ k = 1 ∨ 2 ≤ k by omega_using []) with rfl | rfl | hk2
       · rw [Nat.mul_zero] at hdk; omega
       · rw [Nat.mul_one] at hdk; omega
       have hle : ∀ a b, a * b = n → b ≤ 8162 / a := fun a b hab =>
-        (Nat.le_div_iff_mul_le (Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.zero_mul] at hab; omega)).mpr
-          (by rw [Nat.mul_comm]; omega)
+        (Nat.le_div_iff_mul_le (Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.zero_mul] at hab; omega_using [h2, hab])).mpr
+          (by rw [Nat.mul_comm]; omega_using [hn, hab])
       rcases Nat.lt_or_ge d 91 with hd91 | hd91
-      · exact ⟨d, k, by omega, hd91, hk2, hle d k hdk, hdk⟩
+      · exact ⟨d, k, by omega_using [hd2], hd91, hk2, hle d k hdk, hdk⟩
       · have hk91 : k < 91 := by
           rcases Nat.lt_or_ge k 91 with h | h
           · exact h
           · have : 91 * 91 ≤ d * k := Nat.mul_le_mul hd91 h
-            omega
-        exact ⟨k, d, hk2, hk91, by omega, hle k d (by rw [Nat.mul_comm]; exact hdk),
+            omega_using [hn, hdk, this]
+        exact ⟨k, d, hk2, hk91, by omega_using [hd2], hle k d (by rw [Nat.mul_comm]; exact hdk),
           by rw [Nat.mul_comm]; exact hdk⟩
   · simp [h2]
 

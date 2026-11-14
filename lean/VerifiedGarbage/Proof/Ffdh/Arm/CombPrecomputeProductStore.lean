@@ -21,8 +21,8 @@ theorem productStoreArgs_ok (s : State) {base : BitVec 32} {len high low : Nat}
     (lowSaved : s.mem.readW (off (State.addr s.sp) 40) 32 = BitVec.ofNat 32 low) :
     WP isa (.block [.ldrSp .r3 36,.ldrSp .r2 40,.dp .add .r3 .r3 (.reg .r2)]) s fun t =>
       (t.gpr .r3 = BitVec.ofNat 32 (high+low) ∧ t.mem=s.mem ∧ t.gpr .r0=s.gpr .r0) ∧ Rest roundClobbers s t := by
-  have a36 : State.addr (s.sp+BitVec.ofNat 32 36)=off (State.addr s.sp) 36 := addr_add (by have := locals.space.nowrap; omega)
-  have a40 : State.addr (s.sp+BitVec.ofNat 32 40)=off (State.addr s.sp) 40 := addr_add (by have := locals.space.nowrap; omega)
+  have a36 : State.addr (s.sp+BitVec.ofNat 32 36)=off (State.addr s.sp) 36 := addr_add (by have := locals.space.nowrap; omega_using [this])
+  have a40 : State.addr (s.sp+BitVec.ofNat 32 40)=off (State.addr s.sp) 40 := addr_add (by have := locals.space.nowrap; omega_using [this])
   have r36 := locals.read (d:=36) (by decide)
   have r40 := locals.read (d:=40) (by decide)
   apply withAllRest

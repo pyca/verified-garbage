@@ -63,11 +63,11 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
 
 /-- The scalar's byte width fits the stored table. -/
 theorem scalarBits_le (hc : CfgOk c) : 8 * c.C.len ≤ 64 * c.n := by
-  have := hc.len_hi; omega
+  have := hc.len_hi; omega_using [this]
 
 /-- The encoded scalar width is an ARM immediate. -/
 theorem scalarBits_enc (hc : CfgOk c) : encodable (BitVec.ofNat 32 (8 * c.C.len)) = true := by
-  have h : c.C.len < 73 := by have := hc.len_hi; have := hc.n10; omega
+  have h : c.C.len < 73 := by have := hc.len_hi; have := hc.n10; omega_arith
   exact (by decide : ∀ len < 73, encodable (BitVec.ofNat 32 (8 * len)) = true) _ h
 
 theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
@@ -89,7 +89,7 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     · exact sl_apart c hi.2.1
     · exact sl_apart c hi.2.2
   refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
-    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
+    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega_using [hn], show 64 * c.n < 2 ^ 16 by omega_using [h7]⟩,
     sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho),
     hw base hb, ?_,
     hw jm hjm⟩

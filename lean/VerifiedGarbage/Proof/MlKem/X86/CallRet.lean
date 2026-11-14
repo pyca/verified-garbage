@@ -27,11 +27,11 @@ theorem WP.callRet {rs : List Reg} {n : String} {c : Prog isa} {k : Contract isa
       (∃ s₂ : State, s₂.mem = s'.mem ∧ s₂.gpr .eax = s'.gpr .eax ∧
         k.post ((pushed rs s).callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa (callRet rs n c) s Q := by
-  have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega
+  have hn : 4 * rs.length ≤ (s.gpr .esp).toNat := by omega_using [hd]
   have e : ((pushed rs s).gpr .esp).toNat = (s.gpr .esp).toNat - 4 * rs.length := by
     rw [pushed_esp, sub_toNat hn]
   refine WP.frame hne hrs (by decide) hn (fun i hi => hsp i hi) ?_
-  refine WP.call hv hsp (by rw [e]; omega) hk.pre (by rw [pushed_rd, pushed_wr]; exact hk.cov)
+  refine WP.call hv hsp (by rw [e]; omega_using [hd]) hk.pre (by rw [pushed_rd, pushed_wr]; exact hk.cov)
     (by rw [pushed_wr]; exact hk.covw) fun s₂ rd₂ wr₂ cs₂ f₂ _ ⟨s₃, m₃, g₃, post₃⟩ => ?_
   refine hQ _ (by rw [popped_rd, rd₂, pushed_rd]) (by rw [popped_wr, wr₂, pushed_wr]; rfl) (fun r hr => ?_) ?_
     ⟨s₃, by rw [m₃, popped_mem], by rw [popped_gpr _ _ _ (by decide) (by decide), g₃ _ (by decide)], post₃⟩
@@ -44,13 +44,13 @@ theorem WP.callRet {rs : List Reg} {n : String} {c : Prog isa} {k : Contract isa
   · rw [popped_mem]
     refine ((pushed_frame hrs hn).sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega) hd⟩
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using []) hd⟩
     · rcases List.mem_append.mp hr with hr | hr
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · simp only [List.mem_singleton] at hr; subst hr
         refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
         rw [pushed_esp]
-        exact below_inner (by omega) hd
+        exact below_inner (by omega_using []) hd
 
 theorem RelCT.callRet {rs : List Reg} {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')

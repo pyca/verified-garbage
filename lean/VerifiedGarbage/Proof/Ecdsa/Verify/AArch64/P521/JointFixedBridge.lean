@@ -27,7 +27,7 @@ theorem fixedStep_of_source {C : Curve} {base T : Addr} {P G : Point C} {s₀ : 
   rw [h.st.unch.byte (by
     intro w hw
     have ha:=generator_apart w (List.mem_append_left _ hw)
-    omega) (by change 3304+j<2^64; omega)]
+    omega_using [hj, ha]) (by change 3304+j<2^64; omega_using [hj])]
   exact bytes j hj
  have ho : tmv C P521Joint.K.M.n base s (p521.sl ONEP)=1 := by
   unfold tmv
@@ -60,7 +60,7 @@ theorem window_source_ok {C : Curve} {base T : Addr} {u v : Nat} (hL : NafLay P5
    rw [ua.byte (by
      intro w hw
      have he := generator_apart w hw
-     omega) (by change 3304+j<2^64; omega)]
+     omega_using [hj, he]) (by change 3304+j<2^64; omega_using [hj])]
    exact bytes j hj
  · unfold tmv
    rw [ua.wordsVal (by decide) (by decide)]

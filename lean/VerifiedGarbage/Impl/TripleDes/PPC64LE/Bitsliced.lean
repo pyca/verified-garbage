@@ -5,8 +5,6 @@ public import VerifiedGarbage.Impl.Gather.PPC64LE
 public import VerifiedGarbage.Impl.TripleDes.PPC64LE.Common
 public import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
-import VerifiedGarbage.Impl.TripleDes.PPC64LE.BitsliceAlloc
-meta import VerifiedGarbage.Impl.TripleDes.PPC64LE.BitsliceAlloc
 
 /-!
 # Bitsliced Triple DES ECB on PPC64LE
@@ -31,7 +29,7 @@ holds the 64 state words (`stOff`), the transposition's masks
 * A round loads its key into `r9`, complements it and steps the key pointer
   `r3`. S-box `j`'s input `i` is key bit `inBit j i` as a mask (the
   complemented bit, shifted to the bottom, minus one), XORed with the state
-  word of `E`. Each S-box's circuit then runs in registers (`BitsliceAlloc`),
+  word of `E`. Each S-box's circuit then runs in registers,
   and its four outputs are XORed into the state words of `L` that P sends
   them to. Rounds alternate between reading the words of `R` (`.ba`) and of
   `L` (`.ab`), so no word moves; a pass of sixteen rounds, eight times both
@@ -88,13 +86,10 @@ def saved : List (Reg × Nat) :=
 /-! ## S-boxes -/
 
 def inRegs : List Reg := [.r12, .r14, .r15, .r16, .r17, .r18]
-def freeRegs : List Reg :=
-  [.r6, .r2, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 def inReg (i : Nat) : Reg := inRegs.getD i .r12
 
-/-! The code of the S-boxes, as `compile` allocates it for their circuits. It is written
-out (and `#guard` checks that it is what `compile` produces) so that the kernel, which
-evaluates the code in the proofs, does not have to run the allocator. -/
+/-! The code of the S-boxes' circuits, written out with their registers. The proofs
+check it against the S-boxes (`Proof/TripleDes/PPC64LE/Bitsliced/Sbox.lean`). -/
 
 /-- The code of S-box 1. -/
 def sboxCode0 : List Instr := [
@@ -274,10 +269,6 @@ def sboxCompiled : Nat → List Instr × List Reg
   | 6 => (sboxCode6, [.r27, .r23, .r25, .r12])
   | _ => (sboxCode7, [.r18, .r19, .r16, .r17])
 
-#guard (List.range 8).all fun j =>
-  let c := compile (box j) inRegs (outputs j) freeRegs ones
-  c.2.2 && (c.1, c.2.1) == sboxCompiled j
-
 def sboxCode (j : Nat) : List Instr := (sboxCompiled j).1
 
 /-- The registers of each S-box's outputs. -/
@@ -420,5 +411,25 @@ def ecb (d : Direction) : Prog isa :=
 
 def encrypt : Prog isa := ecb .encrypt
 def decrypt : Prog isa := ecb .decrypt
+
+/-! ## Exactly 64 blocks -/
+
+/-- Copy the 64 words at `src` to the 64 at `dst`, through `r0`. -/
+def copy64 (src dst : Reg) : List Instr :=
+  (List.range 64).flatMap fun j => [.load .d tmp src (8 * j), .store .d tmp dst (8 * j)]
+
+/-- The 64 blocks at `r4` into the state words, and back. -/
+def copyIn64 : List Instr := copy64 .r4 base
+def copyOut64 : List Instr := copy64 base .r4
+
+/-- ECB on exactly 64 blocks (at `r4`, with the schedule at `r3` and the
+working space at `r6`), as one batch, with the copies unrolled: every store
+is at a fixed offset from the working space or the blocks, which lets the
+modes' analysis of constant time (`SlotTaint`) see that the saved registers
+come back as they were. `r5` is ignored; `r10` and `r7` are left holding the
+working space's and the schedule's addresses, as by `ecb`. -/
+def ecb64 (d : Direction) : Prog isa :=
+  .seq (.block setup) (.seq (.block (copyIn64 ++ transpose))
+    (.seq (passes d) (.block (transpose ++ copyOut64 ++ finish))))
 
 end VG.Impl.TripleDes.PPC64LE.Bitslice

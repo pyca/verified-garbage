@@ -127,7 +127,7 @@ theorem ce_bytes {a : Addr} {len : Nat} (hd : (below (σ.gpr .rsp) 40).Disjoint 
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine Proof.MlKem.bytesAt_frame hf (fun r hr => ?_) hl
   rw [List.mem_singleton] at hr; subst hr
-  exact (hd.sub_left (below_sub (by omega) (by omega))).symm
+  exact (hd.sub_left (below_sub (by omega_using []) (by omega_using []))).symm
 
 theorem kpre0 : VPre p s.callEntry := by
   have h8 : s.callEntry.gpr .r8 = 0 := by rw [State.callEntry_gpr _ (by decide), hs.r9]
@@ -138,12 +138,12 @@ theorem kpre0 : VPre p s.callEntry := by
   have e4 := ce_gpr hs (r := .rcx) (by decide) (by decide)
   have er := ce_rsp hs
   have hret : Region.Sub ⟨s.callEntry.gpr .rsp, 8⟩ (below (σ.gpr .rsp) 40) := by
-    rw [er]; exact below_sub (sp := σ.gpr .rsp) (a := 8) (by omega) (by omega)
+    rw [er]; exact below_sub (sp := σ.gpr .rsp) (a := 8) (by omega_using []) (by omega_using [])
   have hbel : Region.Sub (below (s.callEntry.gpr .rsp) 32) (below (σ.gpr .rsp) 40) := by
     rw [er]; exact below_callee _ 32
   have hsp' : 32 ≤ (s.callEntry.gpr .rsp).toNat := by
     rw [er, BitVec.toNat_sub]; have := (σ.gpr .rsp).isLt; have := hp.sp
-    simp only [show (8 : BitVec 64).toNat = 8 from rfl]; omega
+    simp only [show (8 : BitVec 64).toNat = 8 from rfl]; omega_using [this]
   refine ⟨hsp', ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [hL, e1, e2, e3, e4, State.callEntry_rd, State.callEntry_wr, hs.rd, hs.wr]
   · exact hp.rd
@@ -168,11 +168,11 @@ theorem kpre0 : VPre p s.callEntry := by
 theorem kpost0 {s' s₂ : State} (hax : s₂.gpr .rax = s'.gpr .rax)
     (h : (verifyK p).post s.callEntry s₂) : (verifyK0 p).post σ s' := by
   have hpk : vPk p s.callEntry = vPk p σ := by
-    rw [vPk, ce_gpr hs (r := .rdi) (by decide) (by decide), ce_bytes hs hp.k1 (by have := hp.n1; omega)]
+    rw [vPk, ce_gpr hs (r := .rdi) (by decide) (by decide), ce_bytes hs hp.k1 (by have := hp.n1; omega_using [this])]
   have hmu : vMu s.callEntry = vMu σ := by
-    rw [vMu, ce_gpr hs (r := .rsi) (by decide) (by decide), ce_bytes hs hp.k2 (by omega)]
+    rw [vMu, ce_gpr hs (r := .rsi) (by decide) (by decide), ce_bytes hs hp.k2 (by omega_using [])]
   have hsig : vSig p s.callEntry = vSig p σ := by
-    rw [vSig, ce_gpr hs (r := .rdx) (by decide) (by decide), ce_bytes hs hp.k3 (by have := hp.n3; omega)]
+    rw [vSig, ce_gpr hs (r := .rdx) (by decide) (by decide), ce_bytes hs hp.k3 (by have := hp.n3; omega_using [this])]
   have hres : res s₂ = res s' := by simp only [res, hax]
   show _ ∨ _
   have h' : _ ∨ _ := h
@@ -197,7 +197,7 @@ theorem entry0_correct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p
     unfold entry
     refine WP.seq (WP.mono (flag_ok .r8 0 σ) fun s hs => ?_)
     have hs' : Moved .r8 0 σ s := hs
-    refine WP.call_mx hK.ok hK.nosp (by omega) (rd := s.rd) (wr := s.wr)
+    refine WP.call_mx hK.ok hK.nosp (by omega_using [hdep]) (rd := s.rd) (wr := s.wr)
       (by rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl]; exact kpre0 hpre hs')
       (fun _ _ h => h) (fun _ _ h => h) fun s' _ _ hcs hf _ hpost hmx => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
     · rw [hcs r hr, hs'.gpr r (by
@@ -210,7 +210,7 @@ theorem entry0_correct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact hpre.r4
       · rw [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint_below _ (by omega)
+        exact Offset.base_disjoint_below _ (by omega_using [hdep])
     · rw [hmx, hs'.mx]
     · obtain ⟨s₂, -, hg₂, hq⟩ := hpost
       exact kpost0 hpre hs' (hg₂ _ (by decide)) hq
@@ -229,11 +229,11 @@ theorem entry0_ct {p : Params} {n : String} {c : Prog isa} (hK : KernelFn p c) :
     fun _ _ h => h, fun _ _ h => h, by rw [h₁.gpr .rsp (by decide), h₂.gpr .rsp (by decide), hpub.2.2.2.2.1]⟩
   obtain ⟨e1, e2, e3, e4, e5, e6, e7, e8⟩ := hpub
   have hpk : ∀ {σ s}, VPre0 p σ → Moved .r8 0 σ s → vPk p s.callEntry = vPk p σ := fun hp hs => by
-    rw [vPk, ce_gpr hs (r := .rdi) (by decide) (by decide), ce_bytes hs hp.k1 (by have := hp.n1; omega)]
+    rw [vPk, ce_gpr hs (r := .rdi) (by decide) (by decide), ce_bytes hs hp.k1 (by have := hp.n1; omega_using [this])]
   have hmu : ∀ {σ s}, VPre0 p σ → Moved .r8 0 σ s → vMu s.callEntry = vMu σ := fun hp hs => by
-    rw [vMu, ce_gpr hs (r := .rsi) (by decide) (by decide), ce_bytes hs hp.k2 (by omega)]
+    rw [vMu, ce_gpr hs (r := .rsi) (by decide) (by decide), ce_bytes hs hp.k2 (by omega_using [])]
   have hsig : ∀ {σ s}, VPre0 p σ → Moved .r8 0 σ s → vSig p s.callEntry = vSig p σ := fun hp hs => by
-    rw [vSig, ce_gpr hs (r := .rdx) (by decide) (by decide), ce_bytes hs hp.k3 (by have := hp.n3; omega)]
+    rw [vSig, ce_gpr hs (r := .rdx) (by decide) (by decide), ce_bytes hs hp.k3 (by have := hp.n3; omega_using [this])]
   show _ ∧ _
   simp only [State.withRegions_gpr]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩

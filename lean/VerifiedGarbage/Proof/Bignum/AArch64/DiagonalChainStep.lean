@@ -35,8 +35,8 @@ theorem diagonalHead_ok {s : State} {B : Addr} {Z e ea i : Nat}
       Keep [.x1, .x2, .x3, .x4] s t := by
   refine WP.keep [.x1, .x2, .x3, .x4] ?_ rfl rfl rfl
   unfold diagonalHead
-  have enc : (8*i) % 8 = 0 ∧ 8*i < 32768 ∧ (16*i) % 8 = 0 ∧ 16*i < 32768 ∧ (16*i+8) % 8 = 0 ∧ 16*i+8 < 32768 := by omega
-  brun [h16, h11, enc, hs.ld ha, hs.ld (show e+16*i+8 ≤ Z by omega), hs.ld (show e+(16*i+8)+8 ≤ Z by omega), Nat.add_assoc]
+  have enc : (8*i) % 8 = 0 ∧ 8*i < 32768 ∧ (16*i) % 8 = 0 ∧ 16*i < 32768 ∧ (16*i+8) % 8 = 0 ∧ 16*i+8 < 32768 := by omega_using [hi]
+  brun [h16, h11, enc, hs.ld ha, hs.ld (show e+16*i+8 ≤ Z by omega_using [he]), hs.ld (show e+(16*i+8)+8 ≤ Z by omega_using [he]), Nat.add_assoc]
 
 theorem diagonalTail_ok {s : State} {B : Addr} {Z e i : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B e)
@@ -45,8 +45,8 @@ theorem diagonalTail_ok {s : State} {B : Addr} {Z e i : Nat}
       (t.mem = (s.mem.writeW (off B (e+16*i)) (s.gpr .x3)).writeW (off B (e+16*i+8)) (s.gpr .x6) ∧ t.c = s.c) ∧ Keep [] s t := by
   refine WP.keep [] ?_ rfl rfl rfl
   unfold diagonalTail
-  have enc : (16*i) % 8 = 0 ∧ 16*i < 32768 ∧ (16*i+8) % 8 = 0 ∧ 16*i+8 < 32768 := by omega
-  brun [h16, enc, hs.st (show e+16*i+8 ≤ Z by omega), hs.st (show e+(16*i+8)+8 ≤ Z by omega), Nat.add_assoc]
+  have enc : (16*i) % 8 = 0 ∧ 16*i < 32768 ∧ (16*i+8) % 8 = 0 ∧ 16*i+8 < 32768 := by omega_using [hi]
+  brun [h16, enc, hs.st (show e+16*i+8 ≤ Z by omega_using [he]), hs.st (show e+(16*i+8)+8 ≤ Z by omega_using [he]), Nat.add_assoc]
 
 theorem diagonalStep_ok {s : State} {B : Addr} {Z e ea i : Nat}
     (hs : Scr s B Z) (h16 : s.gpr .x16 = off B e)
@@ -77,6 +77,6 @@ theorem diagonalStep_ok {s : State} {B : Addr} {Z e ea i : Nat}
     rw [h1, h2, h3, h4, uc] at hv
     have hp := square_halves (word s.mem B (ea+8*i))
     omega_arith
-  · rw [tc]; have h := carry_bound v; omega
+  · rw [tc]; have h := carry_bound v; omega_using [h]
 
 end VG.Proof.Bignum.AArch64.DiagonalChain

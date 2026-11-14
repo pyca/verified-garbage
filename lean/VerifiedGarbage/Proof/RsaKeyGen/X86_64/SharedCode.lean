@@ -49,9 +49,9 @@ private theorem sharedCandEnd_post {s t₃ t : State} (c : KCtx s)
       · exact (hk.saved 3 (by decide)).trans (hsv 3 (by decide))
       · exact (hk.saved 4 (by decide)).trans (hsv 4 (by decide))
       · exact (hk.saved 5 (by decide)).trans (hsv 5 (by decide))
-    · obtain ⟨hZx, hnu, hno⟩ := c.hret b (by omega)
-      rw [hk.frame _ (hext b (by omega)) hZx hnu hno, hret b (by omega)]
-    · rw [hk.rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    · obtain ⟨hZx, hnu, hno⟩ := c.hret b (by omega_using [hb])
+      rw [hk.frame _ (hext b (by omega_using [hb])) hZx hnu hno, hret b (by omega_using [hb])]
+    · rw [hk.rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hst]
     · show outBytes t.mem _ _ = _
       have := hk.out
       cases outv
@@ -82,15 +82,15 @@ theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (h
   have hext : ∀ b < 8, ¬(below (s.gpr .rsp) 128).Contains (s.gpr .rsp + BitVec.ofNat 64 b) 1 := by
     intro b hb
     exact Offset.base_disjoint_below (s.gpr .rsp) (n := 128) (k := 8) (by decide) _
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [hb]) (by omega_using [hb]))
   have hs := c.hs
   have hn := hs.nowrap
   have hZ := c.hZ
   have hk1 := c.k1
   have hk2 := c.k2
   have hk8 := c.k8
-  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .rsi).toNat = 8 * w := ⟨(s.gpr .rsi).toNat / 8, by omega⟩
-  have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => hs.st (by omega)
+  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .rsi).toNat = 8 * w := ⟨(s.gpr .rsi).toNat / 8, by omega_using [hk8]⟩
+  have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => hs.st (by omega_using [hZ, hk1, hi])
   unfold VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith
   simp only [seqs]
   refine WP.seq (WP.mono (kEntry_ok rfl hhw c.ha c.hsep) fun t₁ he => ?_)
@@ -101,16 +101,16 @@ theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (h
   have hdi₃ : t₃.gpr .rdi = arg s 3 := (hf.keep.gpr (by decide)).trans he.rdi
   have hw₃ : ∀ i < 32, word t₃.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi => hf.word c hi
   have hsv : ∀ i < 6, word t₃.mem (arg s 3) (8 * i) = s.gpr (saved.getD i .rax) := fun i hi =>
-    (hw₃ i (by omega)).trans (he.saved i hi)
+    (hw₃ i (by omega_using [hi])).trans (he.saved i hi)
   have hhi : ∀ x, 8 * 32 ≤ ofs (arg s 3) x → (∀ j < (s.gpr .rsi).toNat, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       t₃.mem x = s.mem x := fun x hx hx' => by
     rw [hf.frame x hx', he.frame x (Or.inr (by omega))]
   have hret : ∀ b < 8, t₃.mem (s.gpr .rsp + BitVec.ofNat 64 b) = s.mem (s.gpr .rsp + BitVec.ofNat 64 b) :=
-    fun b hb => hhi _ (by have := (c.hret b hb).1; omega) (c.hret b hb).2.2
+    fun b hb => hhi _ (by have := (c.hret b hb).1; omega_using [hZ, hk1, this]) (c.hret b hb).2.2
   have hsp : t₃.gpr .rsp = s.gpr .rsp := k13.gpr (by decide)
   have ho₃ : OutUp t₃ (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat :=
     c.ou.congr k13.2.2
-  have h8 : 8 * 32 ≤ (arg s 4).toNat * 8 := by omega
+  have h8 : 8 * 32 ≤ (arg s 4).toNat * 8 := by omega_using [hZ, hk1]
   refine WP.ite (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) (by simp [eval, hf.cf]) (fun hlt => ?_) (fun hlt => ?_)
   · -- Too few octets.
     simp only [decide_eq_true_eq] at hlt
@@ -118,7 +118,7 @@ theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (h
       fun t ht => sharedCandEnd_post c hsv hf.zero hret hsp hext ?_
     have hnone : candRes s = none := by
       unfold candRes Spec.RsaKeyGen.candidateOp
-      rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), ite_f (by rw [bytesAt_length]; omega)]
+      rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hk1]), ite_f (by rw [bytesAt_length]; omega_using [hlt])]
     rw [hnone]; exact (KEnd.of_fin ho₃ ht).shared
   · -- `kMainWith`.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hlt
@@ -131,8 +131,8 @@ theorem sharedCode_correct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (h
           (Spec.Rsa.os2ip ((Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat).take (8 * w))))
         ((Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat).drop (8 * w)) := by
       unfold candRes Spec.RsaKeyGen.candidateOp
-      rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), ite_t (by rw [bytesAt_length]; omega),
-        seg_zero, show 8 * (8 * w) = 64 * w by omega]
+      rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hk1, hw]), ite_t (by rw [bytesAt_length]; omega_using [hw, hlt]),
+        seg_zero, show 8 * (8 * w) = 64 * w by omega_using []]
     rw [hres, ← hw]
     rw [← hw] at ht
     exact ht

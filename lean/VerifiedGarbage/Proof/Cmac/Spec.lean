@@ -34,7 +34,7 @@ theorem length_zeros (n : Nat) : (zeros n).length = n := by simp [zeros]
 theorem getD_xor {x y : List Byte} (h : x.length = y.length) {k : Nat} (hk : k < x.length) :
     (Spec.Cmac.xor x y).getD k 0 = x.getD k 0 ^^^ y.getD k 0 := by
   simp only [Spec.Cmac.xor, List.getD_eq_getElem?_getD, List.getElem?_zipWith,
-    List.getElem?_eq_getElem hk, List.getElem?_eq_getElem (show k < y.length by omega)]
+    List.getElem?_eq_getElem hk, List.getElem?_eq_getElem (show k < y.length by omega_using [h, hk])]
   rfl
 
 /-- Lists of 16 bytes are equal if their bytes are. -/
@@ -42,7 +42,7 @@ theorem ext16 {x y : List Byte} (hx : x.length = 16) (hy : y.length = 16)
     (h : ∀ k < 16, x.getD k 0 = y.getD k 0) : x = y := by
   apply List.ext_getElem (by rw [hx, hy])
   intro k h₁ h₂
-  have := h k (by omega)
+  have := h k (by omega_using [hx, h₁])
   simpa [List.getD_eq_getElem?_getD, h₁, h₂] using this
 
 /-! ## Splitting the MAC -/
@@ -60,7 +60,7 @@ theorem blocks_eq {msg : List Byte} (hm : msg.length % 16 = 0) (last : List Byte
   apply List.map_congr_left
   intro i hi
   rw [List.mem_range] at hi
-  rw [List.drop_append_of_le_length (by omega), List.take_append_of_le_length (by simp; omega)]
+  rw [List.drop_append_of_le_length (by omega), List.take_append_of_le_length (by simp; omega_using [hq, hi])]
 
 /-- §6.2 steps 3–6 with the subkeys `k1` and `k2`, for a message of whole
 blocks `msg` followed by `last`. -/
@@ -68,19 +68,19 @@ theorem macWith_split (ciph : Cipher) (k1 k2 : List Byte) {msg last : List Byte}
     (hm : msg.length % 16 = 0) (hl : last.length ≤ 16) (hne : msg = [] ∨ 0 < last.length) :
     macWith ciph 16 k1 k2 (msg ++ last) =
       ciph (xor (chain ciph (zeros 16) (blocks 16 msg)) (lastBlock 16 k1 k2 last)) := by
-  obtain ⟨q, hq⟩ : ∃ q, msg.length = 16 * q := ⟨msg.length / 16, by omega⟩
+  obtain ⟨q, hq⟩ : ∃ q, msg.length = 16 * q := ⟨msg.length / 16, by omega_using [hm]⟩
   have hn : (if (msg ++ last).length = 0 then 1 else ((msg ++ last).length + 16 - 1) / 16) = q + 1 := by
     rw [List.length_append]
     split
     · omega
     · have hl0 : 0 < last.length := by
         rcases hne with h | h
-        · subst h; simp only [List.length_nil] at *; omega
+        · subst h; simp only [List.length_nil] at *; omega_arith
         · exact h
-      omega
+      omega_using [hl, hq, hl0]
   simp only [macWith, hn, Nat.add_sub_cancel]
   rw [blocks_eq hm last q hq, chain_append, chain_single,
-    List.drop_append_of_le_length (by omega), List.drop_eq_nil_of_le (by omega), List.nil_append]
+    List.drop_append_of_le_length (by omega_using [hq]), List.drop_eq_nil_of_le (by omega_using [hq]), List.nil_append]
 
 /-- §6.2 steps 3–6, for a message of whole blocks `msg` followed by `last`. -/
 theorem macFull_split (ciph : Cipher) {msg last : List Byte} (hm : msg.length % 16 = 0)

@@ -141,7 +141,9 @@ Modelling choices:
   No SSE, AVX or AVX-512 instruction has a memory operand except the
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
   `vbroadcasti128`/`vbroadcasti32x4`, the `vmovdqu64` loads and stores
-  (`evLoad`, `evStore`), the quadword source of the
+  (`evLoad`, `evStore`), the quadword source of `evBroadcastLoad` (`m64`),
+  the 256-bit source of `e5InsertLoad` and destination of `e5ExtractStore`
+  (`m256`), the quadword source of the
   embedded-broadcast forms `zbcst` (`m64bcst`), the doubleword source of
   `vpbroadcastdZ` (`m32`) and of the embedded-broadcast forms `zbcstd`
   (`m32bcst`), the second source of
@@ -363,6 +365,21 @@ inductive Instr
   /r`), or with `hi` `vpmadd52huq` (`EVEX.256.66.0F38.W1 B5 /r`): as
   `vpmadd52Load`, of any of `ymm0`–`ymm31`. -/
   | evMadd52Load (hi : Bool) (dst src1 : VReg) (src2 : MemOp)
+  /-- An `EVEX.512` instruction, of any of `zmm0`–`zmm31`, that writes only
+  a vector register (`Evex.lean`). -/
+  | e5op (op : E5Op)
+  /-- `vpbroadcastq ymm1, QWORD PTR [src]` (`EVEX.256.66.0F38.W1 59 /r`),
+  AVX512F and AVX512VL, of any of `ymm0`–`ymm31`: the quadword at `src` in
+  every quadword of `dst`. -/
+  | evBroadcastLoad (dst : VReg) (src : MemOp)
+  /-- `vinserti64x4 zmm1, zmm2, YMMWORD PTR [src2], imm8`
+  (`EVEX.512.66.0F3A.W1 3A /r ib`), AVX512F: the form of
+  `E5Op.vinserti64x4` whose second source is the 32 bytes at `src2`. -/
+  | e5InsertLoad (dst src1 : VReg) (src2 : MemOp) (imm : BitVec 8)
+  /-- `vextracti64x4 YMMWORD PTR [dst], zmm1, imm8` (`EVEX.512.66.0F3A.W1
+  3B /r ib`), AVX512F: the low (`imm8[0] = 0`) or high 256 bits of `src`
+  to the 32 bytes at `dst`. -/
+  | e5ExtractStore (dst : MemOp) (src : VReg) (imm : BitVec 8)
   /-- `kmovw k1, r32` (`VEX.L0.0F.W0 92 /r`), then `vmovdqu64 zmm1 {k1}{z},
   ZMMWORD PTR [src]` (`EVEX.512.F3.0F.W1 6F /r`), with zeroing-masking: the
   quadwords of the 64 bytes at `src` that bits 7:0 of `mask` enable, the
@@ -596,7 +613,9 @@ def Instr.requires : Instr → List String
   | .vop (.vprold ..) | .vop (.vpternlogd ..) | .vop (.vprorq ..) => ["avx512f", "avx512vl"]
   | .eop (.vpmadd52 ..) | .evMadd52Load .. => ["avx512ifma", "avx512vl"]
   | .eop (.vmovq ..) | .eop (.vmovqx ..) => ["avx512f"]
-  | .eop _ | .evLoad .. | .evStore .. => ["avx512f", "avx512vl"]
+  | .eop _ | .evLoad .. | .evStore .. | .evBroadcastLoad .. => ["avx512f", "avx512vl"]
+  | .e5op (.vpmadd52 ..) => ["avx512ifma", "avx512f"]
+  | .e5op _ | .e5InsertLoad .. | .e5ExtractStore .. => ["avx512f"]
   | _ => []
 
 /-- The mask `vpcmpltuw` moves to `dst`: bit `j`, for `j` from 0 to 31,
@@ -786,6 +805,26 @@ def exec : Instr → State → Option State
     let av := s.vy a
     s.setVy d (madd52 hi (lane256 dv 1) (lane256 av 1) (lane256 v 1) ++
       madd52 hi (lane256 dv 0) (lane256 av 0) (lane256 v 0))
+  | .e5op op, s => some (op.exec s)
+  -- SDM Vol. 2, "VPBROADCAST—Load Integer and Broadcast", "VPBROADCASTQ
+  -- (EVEX Encoded Versions)" with `(KL, VL) = (4, 256)`, no write mask and a
+  -- memory source (`xmm2/m64`): `DEST[i+63:i] := SRC[63:0]` for each
+  -- quadword, with `SRC` the 8 bytes at the address, in little-endian byte
+  -- order, and `DEST[MAXVL-1:256] := 0` (`setVy`).
+  | .evBroadcastLoad d m, s => (s.load64 (s.ea m)).map fun q => s.setVy d (q ++ q ++ q ++ q)
+  -- `insert64x4`, with `SRC2` the 32 bytes at the address, in little-endian
+  -- byte order (bits 127:0 the lower lane); no alignment is required.
+  | .e5InsertLoad d a m n, s => (s.load256 (s.ea m)).map fun v =>
+    let f := insert64x4 (s.vz a) v n
+    s.setVz d (f 0) (f 1) (f 2) (f 3)
+  -- SDM Vol. 2, "VEXTRACTI128/VEXTRACTI32x4/VEXTRACTI64x2/VEXTRACTI32x8/
+  -- VEXTRACTI64x4—Extract Packed Integer Values", "VEXTRACTI64x4 (EVEX.512
+  -- Encoded Version) When Destination is Memory", no write mask: `CASE
+  -- (imm8[0]) OF 0: TMP_DEST[255:0] := SRC1[255:0]; 1: TMP_DEST[255:0] :=
+  -- SRC1[511:256]; ESAC`, and the 32 bytes of `TMP_DEST` are stored, in
+  -- little-endian byte order; no alignment is required.
+  | .e5ExtractStore m r n, s =>
+    s.store256 (s.ea m) (if n.getLsbD 0 then s.vz r 3 ++ s.vz r 2 else s.vz r 1 ++ s.vz r 0)
   -- SDM Vol. 2, "KMOVW—Move From and to Mask Registers" (`KMOVW k1, r32`):
   -- `DEST := ZeroExtension(SRC[15:0])`, so `k1[j]` is bit `j` of `mask`;
   -- "Flags Affected: None". Then "MOVDQU,VMOVDQU8/16/32/64", VMOVDQU64
@@ -899,6 +938,10 @@ def addrs : Instr → State → List Addr
   | .evLoad _ m, s => [s.ea m]
   | .evStore m _, s => [s.ea m]
   | .evMadd52Load _ _ _ m, s => [s.ea m]
+  | .e5op _, _ => []
+  | .evBroadcastLoad _ m, s => [s.ea m]
+  | .e5InsertLoad _ _ m _, s => [s.ea m]
+  | .e5ExtractStore m _ _, s => [s.ea m]
   -- Not only an address: the second observation is the mask (see the
   -- opmask registers above), as a number, so that every run of an
   -- instruction makes the same number of observations.
@@ -1020,6 +1063,7 @@ def Instr.dst : Instr → Option Reg
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
+  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call

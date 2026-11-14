@@ -85,14 +85,14 @@ theorem finish_ok {P : InvCfg} {s : State} {base : Addr} {size p : Nat}
     fun s₁ ⟨C₁, K₁, O₁⟩ => ?_)
   have hs₁ : Scr s₁ base 8192 := hsz ▸ hs.of_keeps K₁ (by decide)
   refine WP.mono (Mont.mulCall_ok hOk.fn hs₁ (o := P.out) (a := P.sA) (b := P.sNF)
-    (by rw [hk]; exact hoo) (by rw [hk]; simp only [InvCfg.sA]; omega)
-    (by rw [hk]; simp only [InvCfg.sNF]; omega) (by
+    (by rw [hk]; exact hoo) (by rw [hk]; simp only [InvCfg.sA]; omega_using [hto])
+    (by rw [hk]; simp only [InvCfg.sNF]; omega_using [hto]) (by
       rw [hk, hfm, wordsVal_eq_val32, C₁]
-      split <;> omega)) fun z ⟨K₂, V₂, E₂⟩ => ⟨?_, ?_, ?_, ?_⟩
+      split <;> omega_arith)) fun z ⟨K₂, V₂, E₂⟩ => ⟨?_, ?_, ?_, ?_⟩
   · simpa only [hk, hfm, wordsVal_eq_val32] using V₂
   · simp only [hk, hfm, wordsVal_eq_val32] at E₂
-    rw [C₁, O₁.val32 (by simp only [InvCfg.sA, InvCfg.sNF]; omega)
-      (by simp only [InvCfg.sA]; omega)] at E₂
+    rw [C₁, O₁.val32 (by simp only [InvCfg.sA, InvCfg.sNF]; omega_using [])
+      (by simp only [InvCfg.sA]; omega_using [hn, ht])] at E₂
     exact E₂
   · exact K₁.trans ⟨fun r hr => K₂.gpr r fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
@@ -105,7 +105,7 @@ theorem finish_ok {P : InvCfg} {s : State} {base : Addr} {size p : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       exact ⟨hx (P.out, 32) (by simp [invW]), hx (Mont.own 4, 256) (by simp [invW]),
         hx Mont.outW (by simp [invW])⟩),
-      O₁ x (by simp only [InvCfg.sNF]; omega)]
+      O₁ x (by simp only [InvCfg.sNF]; omega_using [ht'])]
 
 end VG.Proof.Weierstrass.X86.Inv
 

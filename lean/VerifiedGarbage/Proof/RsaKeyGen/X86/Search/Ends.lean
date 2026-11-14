@@ -41,8 +41,8 @@ theorem frame_apart {p : SearchPublic} {o : State} (h : SearchInput p o) {r : Re
     rw [hS]
     have e : (o.gpr .esp - BitVec.ofNat 32 16 + BitVec.ofNat 32 (4 * k)).setWidth 64 =
         (o.gpr .esp - BitVec.ofNat 32 16).setWidth 64 + BitVec.ofNat 64 (4 * k) :=
-      VG.Proof.MlKem.X86.ea_off (by rw [sub_toNat (by have := A.stackLow; simp only [stack] at this; omega)]; have := A.stackBound; omega)
-    rw [e]; exact Offset.contains_base _ (by omega) (by omega)
+      VG.Proof.MlKem.X86.ea_off (by rw [sub_toNat (by have := A.stackLow; simp only [stack] at this; omega_using [this])]; have := A.stackBound; omega_using [hk])
+    rw [e]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   have keep (k : Nat) (hk : k < 4) := hf.readW (w := 32) (wd k hk) (fun r' hr' => by
     obtain rfl := List.mem_singleton.mp hr'; exact fun x h₁ h₂ => hd x (sub x h₁) h₂) (by decide)
   obtain ⟨h0, h1, h2, h3⟩ := hs
@@ -118,19 +118,19 @@ theorem request_ok {p : SearchPublic} {o s : State} {left : Nat} (h : SearchBase
   simp only [request, param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd]
   xrun [State.ea, at_, h.arg_ea (i := 1) (d := 24) rfl, h.arg_in (i := 1) (by decide),
     h.arg_val (i := 1) (by decide), hL, hax, hbp, double32, select_mask]
-  have e16 : 2 * (2 * (2 * (2 * p.len))) = 16 * p.len := by omega
-  rw [e16, toNat_small32 (show left < 2 ^ 32 by omega), toNat_small32 (show 16 * p.len < 2 ^ 32 by omega),
-    toNat_small32 (show 32769 * p.len < 2 ^ 32 by omega)]
+  have e16 : 2 * (2 * (2 * (2 * p.len))) = 16 * p.len := by omega_using []
+  rw [e16, toNat_small32 (show left < 2 ^ 32 by omega_using [hleft, hv]), toNat_small32 (show 16 * p.len < 2 ^ 32 by omega_using [hv]),
+    toNat_small32 (show 32769 * p.len < 2 ^ 32 by omega_using [hv])]
   have hm : (if decide (left < 16 * p.len) = true then BitVec.ofNat 32 (16 * p.len) else BitVec.ofNat 32 left) =
       BitVec.ofNat 32 (max left (16 * p.len)) := by
     by_cases hl : left < 16 * p.len
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (decide_eq_true hl))]; congr 1; omega
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by simpa using hl))]; congr 1; omega
-  rw [hm, double32, toNat_small32 (show 2 * max left (16 * p.len) < 2 ^ 32 by omega)]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (decide_eq_true hl))]; congr 1; omega_using [hl]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by simpa using hl))]; congr 1; omega_using [hl]
+  rw [hm, double32, toNat_small32 (show 2 * max left (16 * p.len) < 2 ^ 32 by omega_using [hleft, hv])]
   unfold primeRequest Entropy.request primeEntropy
   by_cases hc : 32769 * p.len < 2 * max left (16 * p.len)
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true (decide_eq_true hc))]; congr 1; omega
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by simpa using hc))]; congr 1; omega
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true (decide_eq_true hc))]; congr 1; omega_using [hc]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by simpa using hc))]; congr 1; omega_using [hc]
 
 theorem sub_eq_beq {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 c == 0) = decide (a = c) := by
@@ -175,18 +175,18 @@ theorem short_ok {p : SearchPublic} {o s : State} {used k : Nat} (h : SearchBase
     xrun [State.ea, at_, h.arg_ea (i := 1) (d := 24) rfl, h.arg_ea (i := 8) (d := 52) rfl,
       h.arg_in (i := 1) (by decide), h.arg_in (i := 8) (by decide), h.arg_val (i := 1) (by decide),
       h.arg_val (i := 8) (by decide), hi.len_arg, hi.randLen_arg, hsi, execMul,
-      show (32769 : BitVec 32).toNat = 32769 from rfl, toNat_small32 (show p.len < 2 ^ 32 by omega),
-      BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega) hu]
-    rw [sub_eq_beq (by omega) (by omega), Nat.mul_comm]
+      show (32769 : BitVec 32).toNat = 32769 from rfl, toNat_small32 (show p.len < 2 ^ 32 by omega_using [hv]),
+      BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega_using [hu, hv, rl]) hu]
+    rw [sub_eq_beq (by omega_using [hv, rl]) (by omega_using [hv]), Nat.mul_comm]
   have hu' := h.step k' (by decide) sy hm
   have hsi' : u.gpr .esi = BitVec.ofNat 32 used := (k'.gpr (by decide)).trans hsi
   refine WP.ite _ he (fun hz => ?_) (fun hz => ?_)
   · have hz := of_decide_eq_true hz
-    rw [ite_eq_left_of_eq_true _ _ (by unfold primeEntropy; exact eq_true (by omega))]
+    rw [ite_eq_left_of_eq_true _ _ (by unfold primeEntropy; exact eq_true (by omega_using [hz]))]
     exact exhausted_ok hu' hsi' hu tr
   · have hz := of_decide_eq_false hz
-    rw [ite_eq_right_of_eq_false _ _ (by unfold primeEntropy; exact eq_false (by omega))]
-    refine WP.mono (request_ok hu' (by omega) h0 h1)
+    rw [ite_eq_right_of_eq_false _ _ (by unfold primeEntropy; exact eq_false (by omega_using [rl, hz]))]
+    refine WP.mono (request_ok hu' (by omega_using [rl]) h0 h1)
       fun t ⟨⟨h10, h11, hmt⟩, kt, syt⟩ => ⟨hu'.step kt (by decide) syt hmt, (kt.gpr (by decide)).trans hsi',
         (kt.gpr (by decide)).trans ((k'.gpr (by decide)).trans hdi), h10, h11,
         by rw [hmt, hm]; exact hout, hu, hk, by

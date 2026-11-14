@@ -27,7 +27,7 @@ theorem sharedCode_correct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) 
     exact ⟨t, s', he, hg, hp⟩
   have hk1 := c.k1
   have hk8 := c.k8
-  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega⟩
+  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega_using [hk8]⟩
   unfold codeWith
   simp only [seqs]
   refine WP.seq (WP.mono (entry_ok c) fun t₁ he => ?_)
@@ -40,7 +40,7 @@ theorem sharedCode_correct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) 
     exact front_none c hf hlt
   · simp only [Bool.not_eq_false', decide_eq_true_eq] at hlt
     refine WP.mono (sharedKMain_ok M R (mainCtx_of c hf hw hlt)) fun t ht => candEnd_post hf.zero hf.keep ?_
-    rw [candRes_main hw (by omega) hlt, hw]
+    rw [candRes_main hw (by omega_using [hk1, hw]) hlt, hw]
     exact ht
 
 end VG.Proof.RsaKeyGen.AArch64

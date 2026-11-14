@@ -42,12 +42,12 @@ theorem writeHead_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
     WP isa (.block [.ldr .r3 .r12 (Layout.field .mask), .ldr .r10 .r12 (Layout.field .out),
       .ldr .r1 .r12 (Layout.field .p), .ldr .r4 .r12 (Layout.field .nonce)]) s fun t =>
       t.gpr .r10 = hdr base s 96 ∧ t.gpr .r1 = hdr base s 64 ∧ t.gpr .r4 = hdr base s 88 ∧ Ws t base size := by
-  refine wp_ldr12 hs (d := 116) (by decide) (by omega) fun u₁ v₁ => ?_
-  refine wp_ldr12 (hs.of_upd v₁ (by decide)) (d := 96) (by decide) (by omega) fun u₂ v₂ => ?_
-  refine wp_ldr12 ((hs.of_upd v₁ (by decide)).of_upd v₂ (by decide)) (d := 64) (by decide) (by omega)
+  refine wp_ldr12 hs (d := 116) (by decide) (by omega_using [hz]) fun u₁ v₁ => ?_
+  refine wp_ldr12 (hs.of_upd v₁ (by decide)) (d := 96) (by decide) (by omega_using [hz]) fun u₂ v₂ => ?_
+  refine wp_ldr12 ((hs.of_upd v₁ (by decide)).of_upd v₂ (by decide)) (d := 64) (by decide) (by omega_using [hz])
     fun u₃ v₃ => ?_
   refine wp_ldr12 (((hs.of_upd v₁ (by decide)).of_upd v₂ (by decide)).of_upd v₃ (by decide)) (d := 88) (by decide)
-    (by omega) fun u₄ v₄ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
+    (by omega_using [hz]) fun u₄ v₄ => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
   · rw [v₄.other _ (by decide), v₃.other _ (by decide), v₂.gpr]; simp only [hdr, v₁.mem]
   · rw [v₄.other _ (by decide), v₃.gpr]; simp only [hdr, v₂.mem, v₁.mem]
   · rw [v₄.gpr]; simp only [hdr, v₃.mem, v₂.mem, v₁.mem]
@@ -82,7 +82,7 @@ theorem deriveFailureHead_ok {s : State} {base : Addr} {size L : Nat} (hs : Ws s
     WP isa (.block [.ldr .r11 .r12 (Layout.field .out), .movw .r4 (BitVec.ofNat 16 L),
       .dp .add .lr .r11 (.reg .r4), .mov .r4 (.imm 0)]) s fun t =>
       t.gpr .r11 = hdr base s 96 ∧ t.gpr .lr = hdr base s 96 + BitVec.ofNat 32 L ∧ Ws t base size := by
-  refine wp_ldr12 hs (d := 96) (by decide) (by omega) fun u₁ v₁ => ?_
+  refine wp_ldr12 hs (d := 96) (by decide) (by omega_using [hz]) fun u₁ v₁ => ?_
   refine VG.Proof.X25519.Arm.wp_movw fun u₂ v₂ =>
     VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u₃ v₃ =>
     VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u₄ v₄ => WP.block_nil ⟨?_, ?_, ?_⟩
@@ -130,7 +130,7 @@ theorem deriveCtx {s t : State} {base : Addr} {size : Nat} (h : derivePre s)
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega
+  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
   obtain ⟨Ip, Iq, Ig, Ix⟩ := deriveIn h hb hsz E
   refine ⟨⟨E.ws, big, wp, wq, qp, q32⟩, fun i hi => ?_⟩
   simp only [deriveIns, List.mem_cons, List.not_mem_nil, or_false] at hi

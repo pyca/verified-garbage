@@ -80,7 +80,7 @@ theorem key_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) : WP isa code s fun t 
         obtain ⟨i, hi, rfl⟩ := this
         exact (pre.oF i hi).symm.sub_left (Offset.sub_base _ (by decide)))
   have fit : (v.withRegions s.rd (pcPushed s).wr).sp.toNat + 56 ≤ 2 ^ 32 := by
-    show v.sp.toNat + 56 ≤ _; rw [vsp, spN]; omega
+    show v.sp.toNat + 56 ≤ _; rw [vsp, spN]; omega_using []
   have read : InRegions ((v.withRegions s.rd (pcPushed s).wr).rd ++ (v.withRegions s.rd (pcPushed s).wr).wr)
       (State.addr (v.withRegions s.rd (pcPushed s).wr).sp) 56 := by
     have m : (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region) ∈ (v.withRegions s.rd (pcPushed s).wr).wr := by

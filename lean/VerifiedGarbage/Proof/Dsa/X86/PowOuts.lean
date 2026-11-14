@@ -60,24 +60,24 @@ theorem val32 {m m' : Mem} {size : Nat} (h : OutsS base sp rs m m') (R : CallRoo
     (hs : d + 4 * k ≤ size) : VG.Proof.Mont.val32 m' base d k = VG.Proof.Mont.val32 m base d k :=
   val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ (fun r hr => by
     have := hd r hr
-    rw [ofs_off base (by omega)]; omega) fun hz => by
+    rw [ofs_off base (by omega_using [hn, hs, hj, hi])]; omega_using [hj, hi, this]) fun hz => by
       have := zone_ofs R hz
-      rw [ofs_off base (by omega)] at this; omega)
+      rw [ofs_off base (by omega_using [hn, hs, hj, hi])] at this; omega_using [hs, hj, hi, this])
 
 theorem wordsVal {m m' : Mem} {size : Nat} (h : OutsS base sp rs m m') (R : CallRoom sp base size)
     (hn : base.toNat + size ≤ 2 ^ 32) {d k : Nat} (hd : ∀ r ∈ rs, d + 8 * k ≤ r.1 ∨ r.1 + r.2 ≤ d)
     (hs : d + 8 * k ≤ size) : VG.Proof.Mont.wordsVal m' base d k = VG.Proof.Mont.wordsVal m base d k := by
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
-  exact h.val32 R hn (fun r hr => by have := hd r hr; omega) (by omega)
+  exact h.val32 R hn (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hs])
 
 theorem readW32 {m m' : Mem} {size : Nat} (h : OutsS base sp rs m m') (R : CallRoom sp base size)
     (hn : base.toNat + size ≤ 2 ^ 32) {d : Nat} (hd : ∀ r ∈ rs, d + 4 ≤ r.1 ∨ r.1 + r.2 ≤ d)
     (hs : d + 4 ≤ size) : m'.readW (off base d) 32 = m.readW (off base d) 32 :=
   Mem.readW_congr fun i hi => h _ (fun r hr => by
     have := hd r hr
-    rw [ofs_off base (by omega)]; omega) fun hz => by
+    rw [ofs_off base (by omega_using [hn, hs, hi])]; omega_using [hi, this]) fun hz => by
       have := zone_ofs R hz
-      rw [ofs_off base (by omega)] at this; omega
+      rw [ofs_off base (by omega_using [hn, hs, hi])] at this; omega_using [hs, hi, this]
 
 end OutsS
 
@@ -93,11 +93,11 @@ theorem Context.outsS_keep {n size m : Nat} {base : Addr} {s t : State}
   refine ⟨h.scr.of_keeps K hdi hsp, h.size_le, ?_, h.gt_one, ?_⟩
   · refine ⟨h.modulus.n0, h.modulus.mo, h.modulus.tmp, h.modulus.sep, ?_⟩
     change VG.Proof.Mont.wordsVal t.mem base (slot n 0) n = m
-    rw [O.wordsVal R nw (fun r hr => by have := hm r hr; omega)
-      (by have := h.modulus.mo; change slot n 0 + 8 * n ≤ size at this; omega)]
+    rw [O.wordsVal R nw (fun r hr => by have := hm r hr; omega_using [this])
+      (by have := h.modulus.mo; change slot n 0 + 8 * n ≤ size at this; omega_using [this])]
     exact h.modulus.val
-  · have same := O.val32 R nw (d := 0) (k := 1) (fun r hr => Or.inl (by have := hi r hr; omega))
-      (by have := h.size_le; have := slot_header n 9; simp only [contextBytes] at *; omega)
+  · have same := O.val32 R nw (d := 0) (k := 1) (fun r hr => Or.inl (by have := hi r hr; omega_using [this]))
+      (by have := h.size_le; have := slot_header n 9; simp only [contextBytes] at *; omega_arith)
     have word : w32 t.mem base 0 = w32 s.mem base 0 := by
       simpa only [VG.Proof.Mont.val32, Nat.mul_zero, Nat.add_zero] using same
     rw [word]; exact h.inverse

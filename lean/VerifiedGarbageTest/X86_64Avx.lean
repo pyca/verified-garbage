@@ -190,6 +190,33 @@ def rorq (n : BitVec 8) : BitVec 256 := ((EOp.vprorq (.hi .xmm20) (.hi .xmm16) n
   ternq 0xca
 #guard ((EOp.vprorq (.lo .xmm5) (.hi .xmm16) 13).exec sH).ymm .xmm5 == rorq 13
 
+/-! `vpsubq`, `vpsraq` and `vmovdqa64` on `ymm0`–`ymm31` (`EOp`; the printed
+strings run on an Emerald Rapids Xeon): `A - B` quadword by quadword, the
+arithmetic shifts of `A`'s quadwords right by 0, 1, 13, 63, 64 and 200 (63 or
+more leave each quadword's sign bit in all its bits), and a copy, with
+operands in `ymm16`–`ymm31`. -/
+
+#guard ((EOp.bin .vpsubq (.hi .xmm20) (.hi .xmm16) (.hi .xmm17)).exec sH).vy (.hi .xmm20) ==
+  0x0dfae7d4c1ae9b89a8e8e6c4f8d4273289abcdef812345677edcba99641fdb98#256
+
+/-- `ymm20` after `vpsraq ymm20, ymm16, n`. -/
+def sraq (n : BitVec 8) : BitVec 256 := ((EOp.vpsraq (.hi .xmm20) (.hi .xmm16) n).exec sH).vy (.hi .xmm20)
+
+#guard sraq 0 == A
+#guard sraq 1 == 0x078f169e25ad34bcc3cb52da61e970f8c4d5e6f78091a2b3ff6e5d4c3b2a1908#256
+#guard sraq 13 == 0x000078f169e25ad3fffc3cb52da61e97fffc4d5e6f78091afffff6e5d4c3b2a1#256
+#guard sraq 63 == 0x0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff#256
+#guard sraq 64 == sraq 63
+#guard sraq 200 == sraq 63
+#guard ((EOp.vmovdqa64 (.hi .xmm20) (.hi .xmm16)).exec sH).vy (.hi .xmm20) == A
+-- Between the two register files, and the other registers left as they were.
+#guard ((EOp.bin .vpsubq (.lo .xmm5) (.hi .xmm16) (.hi .xmm17)).exec sH).ymm .xmm5 ==
+  0x0dfae7d4c1ae9b89a8e8e6c4f8d4273289abcdef812345677edcba99641fdb98#256
+#guard ((EOp.vpsraq (.lo .xmm5) (.hi .xmm16) 13).exec sH).ymm .xmm5 == sraq 13
+#guard ((EOp.vmovdqa64 (.lo .xmm5) (.hi .xmm17)).exec sH).ymm .xmm5 == B
+#guard ((EOp.vmovdqa64 (.hi .xmm20) (.hi .xmm17)).exec sH).vy (.hi .xmm16) == A
+#guard ((EOp.vpsraq (.hi .xmm20) (.hi .xmm16) 13).exec sH).vy (.hi .xmm17) == B
+
 /-- `ymm5` after `op ymm5, ymm0, n`. -/
 def shift (op : XShiftOp) (n : BitVec 8) : BitVec 256 := run (.vshift op .l256 .xmm5 .xmm0 n)
 
@@ -367,6 +394,25 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard Instr.asm (.eop (.vpternlogq (.hi .xmm16) (.lo .xmm1) (.hi .xmm31) 150)) ==
   ["vpternlogq ymm16, ymm1, ymm31, 150"]
 #guard Instr.asm (.eop (.vprorq (.hi .xmm20) (.lo .xmm15) 63)) == ["vprorq ymm20, ymm15, 63"]
+#guard Instr.asm (.eop (.bin .vpsubq (.hi .xmm20) (.hi .xmm16) (.lo .xmm1))) == ["vpsubq ymm20, ymm16, ymm1"]
+#guard Instr.asm (.eop (.vpsraq (.hi .xmm20) (.lo .xmm15) 52)) == ["vpsraq ymm20, ymm15, 52"]
+#guard Instr.asm (.eop (.vmovdqa64 (.hi .xmm25) (.lo .xmm3))) == ["vmovdqa64 ymm25, ymm3"]
+-- Their bytes, as GNU `as` assembles the strings: `vpsubq` with VEX when every
+-- register is one of `ymm0`–`ymm15`, the other two always with EVEX.
+#guard Instr.encode (.eop (.bin .vpsubq (.hi .xmm20) (.hi .xmm16) (.hi .xmm17))) ==
+  some [[0x62, 0xa1, 0xfd, 0x20, 0xfb, 0xe1]]
+#guard Instr.encode (.eop (.bin .vpsubq (.lo .xmm1) (.lo .xmm2) (.lo .xmm3))) == some [[0xc5, 0xed, 0xfb, 0xcb]]
+#guard Instr.encode (.eop (.bin .vpsubq (.lo .xmm9) (.lo .xmm2) (.lo .xmm11))) ==
+  some [[0xc4, 0x41, 0x6d, 0xfb, 0xcb]]
+#guard Instr.encode (.eop (.bin .vpsubq (.lo .xmm5) (.hi .xmm16) (.lo .xmm1))) ==
+  some [[0x62, 0xf1, 0xfd, 0x20, 0xfb, 0xe9]]
+#guard Instr.encode (.eop (.vpsraq (.hi .xmm20) (.hi .xmm16) 52)) == some [[0x62, 0xb1, 0xdd, 0x20, 0x72, 0xe0, 0x34]]
+#guard Instr.encode (.eop (.vpsraq (.lo .xmm1) (.lo .xmm2) 48)) == some [[0x62, 0xf1, 0xf5, 0x28, 0x72, 0xe2, 0x30]]
+#guard Instr.encode (.eop (.vpsraq (.lo .xmm9) (.hi .xmm31) 1)) == some [[0x62, 0x91, 0xb5, 0x28, 0x72, 0xe7, 0x01]]
+#guard Instr.encode (.eop (.vmovdqa64 (.hi .xmm20) (.hi .xmm16))) == some [[0x62, 0xa1, 0xfd, 0x28, 0x6f, 0xe0]]
+#guard Instr.encode (.eop (.vmovdqa64 (.lo .xmm1) (.lo .xmm2))) == some [[0x62, 0xf1, 0xfd, 0x28, 0x6f, 0xca]]
+#guard Instr.encode (.eop (.vmovdqa64 (.lo .xmm9) (.hi .xmm31))) == some [[0x62, 0x11, 0xfd, 0x28, 0x6f, 0xcf]]
+#guard Instr.encode (.eop (.vmovdqa64 (.hi .xmm25) (.lo .xmm3))) == some [[0x62, 0x61, 0xfd, 0x28, 0x6f, 0xcb]]
 #guard Instr.asm (.vop (.vshift .psrlq .l256 .xmm6 .xmm7 13)) == ["vpsrlq ymm6, ymm7, 13"]
 #guard Instr.asm (.vop (.vshift .pslldq .l128 .xmm6 .xmm7 4)) == ["vpslldq xmm6, xmm7, 4"]
 #guard Instr.asm (.vop (.vshift .psraw .l256 .xmm6 .xmm7 15)) == ["vpsraw ymm6, ymm7, 15"]
@@ -461,6 +507,9 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard isa.requires (.vop (.vpternlogd .l256 .xmm0 .xmm1 .xmm2 0)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.eop (.vpternlogq (.hi .xmm16) (.lo .xmm1) (.hi .xmm31) 0)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.eop (.vprorq (.hi .xmm16) (.lo .xmm1) 1)) == ["avx512f", "avx512vl"]
+#guard isa.requires (.eop (.bin .vpsubq (.hi .xmm16) (.lo .xmm1) (.lo .xmm2))) == ["avx512f", "avx512vl"]
+#guard isa.requires (.eop (.vpsraq (.hi .xmm16) (.lo .xmm1) 52)) == ["avx512f", "avx512vl"]
+#guard isa.requires (.eop (.vmovdqa64 (.hi .xmm16) (.lo .xmm1))) == ["avx512f", "avx512vl"]
 #guard isa.requires (.vop (.vshift .psraw .l256 .xmm0 .xmm1 1)) == ["avx2"]
 #guard isa.requires (.vop (.vpshufd .l256 .xmm0 .xmm1 1)) == ["avx2"]
 #guard isa.requires (.vop (.vpalignr .l128 .xmm0 .xmm1 .xmm2 1)) == ["avx"]

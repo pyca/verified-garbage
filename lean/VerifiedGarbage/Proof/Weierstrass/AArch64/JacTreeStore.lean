@@ -27,7 +27,7 @@ theorem ProgKeep.slot {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     {s t : State} {W : List Nat} (hL : Lay M size Sl) (hs : Scr s base size)
     (hk : ProgKeep M base W s t) (hW : ∀ x∈W, Sl x) {x : Nat}
     (hx : Sl x) (hn : x∉W) : wordsVal t.mem base x M.n=wordsVal s.mem base x M.n := by
-  apply hk.unch.wordsVal _ (by have := hL.le x hx; have := hs.nowrap; omega)
+  apply hk.unch.wordsVal _ (by have := hL.le x hx; have := hs.nowrap; omega_arith)
   intro w hw
   simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw
   rcases hw with ⟨y,hy,rfl⟩ | rfl

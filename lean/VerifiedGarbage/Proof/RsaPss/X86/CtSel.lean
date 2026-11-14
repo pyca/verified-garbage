@@ -61,16 +61,16 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
   have _ : frameBytes = 144 := rfl
 
   have hN := h.N_le
-  have hN0 : 0 < h.N := by have := h.D_pos; have := h.D_le; omega
+  have hN0 : 0 < h.N := by have := h.D_pos; have := h.D_le; omega_arith
   have fit := hg.fit
   unfold oRsa at fit
   let I : Nat → State → State → Prop := fun n σ s => n ≤ h.N ∧ Ctx L scr σ s ∧
     ∃ m₀, X σ m₀ ∧ SI h scr (c σ) m₀ (h.N - n) s
-  refine (VP.loop (I := I) (fun n => ?_) (h.N - 1)).mono (fun σ s ⟨hc, hx, si, di, cx, dx⟩ => ⟨by omega, hc,
-    s.mem, hx, ⟨by rw [si, show h.N - (h.N - 1 + 1) = 0 by omega]; rfl,
-      by rw [di, show h.N - (h.N - 1 + 1) = 0 by omega]; rfl,
-      by rw [cx, show h.N - (h.N - (h.N - 1 + 1)) = h.N by omega], dx, Frame.refl _ _, fun i _ => by
-        rw [ite_eq_right (by omega)]⟩⟩) fun _ _ h => h
+  refine (VP.loop (I := I) (fun n => ?_) (h.N - 1)).mono (fun σ s ⟨hc, hx, si, di, cx, dx⟩ => ⟨by omega_using [hN0], hc,
+    s.mem, hx, ⟨by rw [si, show h.N - (h.N - 1 + 1) = 0 by omega_using []]; rfl,
+      by rw [di, show h.N - (h.N - 1 + 1) = 0 by omega_using []]; rfl,
+      by rw [cx, show h.N - (h.N - (h.N - 1 + 1)) = h.N by omega_using []], dx, Frame.refl _ _, fun i _ => by
+        rw [ite_eq_right (by omega_using [])]⟩⟩) fun _ _ h => h
   refine VP.taint _ selBody_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s ⟨hn, hc, m₀, hx, hp⟩ => ?_
   · obtain ⟨-, -, _, -, p₁⟩ := h₁
     obtain ⟨-, -, _, -, p₂⟩ := h₂
@@ -80,7 +80,7 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
     · rw [p₁.edi, p₂.edi]
     · rw [p₁.ecx, p₂.ecx]
   generalize hj : h.N - (n + 1) = j at hp
-  have hjN : j < h.N := by omega
+  have hjN : j < h.N := by omega_using [hN0, hj]
   have aS : VG.X86.addr (scr + BitVec.ofNat 32 (oSt + j)) 0 = sa scr (oSt + j) := by
     rw [hg.addrD (by omega_arith), Nat.add_zero]
   have aE : VG.X86.addr (scr + BitVec.ofNat 32 (oSel + j)) 0 = sa scr (oSel + j) := by
@@ -109,7 +109,7 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
   have cx8 : t8.gpr .ecx = BitVec.ofNat 32 (h.N - j) := by
     simp (disch := decide) only [u8.other, u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other, u1.other, hp.ecx]
   have fr1 : Frame [sR scr oSel h.N] s.mem t9.mem := by
-    rw [m9]; exact frame_byte scr _ _ (by omega) (by omega) (by omega_arith)
+    rw [m9]; exact frame_byte scr _ _ (by omega_using []) (by omega_using [hN0, hj]) (by omega_arith)
   have hc' : Ctx L scr σ t9 := hc.write fr1 (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hg.inW (by omega_arith))
     (by rw [u9.rd, u8.rd, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd])
@@ -126,7 +126,7 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
     · simp (disch := decide) only [u9.other, u8.gpr, u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other,
         u1.other, hp.edi]
       rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_assoc]
-    · rw [u9.gpr, cx8, ofNat_pred (by omega), Nat.sub_sub]
+    · rw [u9.gpr, cx8, ofNat_pred (by omega_using [hN0, hj]), Nat.sub_sub]
     · simp (disch := decide) only [u9.other, u8.other, u7.other, u6.gpr, u5.other, u4.other, u3.other, u2.other,
         u1.other, hp.edx]
     · rw [m9, sa_write scr _ _ (by omega_arith) (by omega_arith)]
@@ -136,19 +136,19 @@ theorem sel_vp (hg : Geo L scr) {c : State → Prop} [∀ σ, Decidable (c σ)] 
         by_cases hc' : c σ
         · rw [ite_eq_left hc', ite_eq_left ⟨Nat.lt_succ_self _, hc'⟩]
         · rw [ite_eq_right hc', ite_eq_right (fun h => hc' h.2)]
-      · rw [ite_eq_right (show ¬ (oSel + i = oSel + j) by omega), hp.sel i hi]
+      · rw [ite_eq_right (show ¬ (oSel + i = oSel + j) by omega_using [e]), hp.sel i hi]
         by_cases e' : i < j
-        · simp only [e', show i < j + 1 by omega, true_and]
-        · simp only [e', show ¬ i < j + 1 by omega, false_and, ite_false]
-  rw [cx8, ofNat_pred (by omega), Nat.sub_sub, ofNat_beq_zero (by omega), show h.N - (j + 1) = n by omega] at z9
-  refine ⟨?_, fun h0 => ⟨hc', m₀, hx, sk.fr, fun i hi => ?_⟩, fun hpos => ⟨by omega, hc', m₀, hx, ?_⟩⟩
+        · simp only [e', show i < j + 1 by omega_using [e'], true_and]
+        · simp only [e', show ¬ i < j + 1 by omega_using [e, e'], false_and, ite_false]
+  rw [cx8, ofNat_pred (by omega_using [hN0, hj]), Nat.sub_sub, ofNat_beq_zero (by omega_using [hN]), show h.N - (j + 1) = n by omega_using [hn, hj]] at z9
+  refine ⟨?_, fun h0 => ⟨hc', m₀, hx, sk.fr, fun i hi => ?_⟩, fun hpos => ⟨by omega_using [hn], hc', m₀, hx, ?_⟩⟩
   · show eval .ne t9 = _
     simp only [eval, z9]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega
+    by_cases h0 : n = 0 <;> simp [h0] <;> omega_using [h0]
   · rw [sk.sel i hi]
     by_cases hc'' : c σ
-    · rw [ite_eq_left hc'', ite_eq_left ⟨by omega, hc''⟩]
+    · rw [ite_eq_left hc'', ite_eq_left ⟨by omega_using [hj, h0, hi], hc''⟩]
     · rw [ite_eq_right hc'', ite_eq_right (fun h => hc'' h.2)]
-  · rw [show h.N - n = j + 1 by omega]; exact sk
+  · rw [show h.N - n = j + 1 by omega_using [hn, hj]]; exact sk
 
 end VG.Proof.RsaPss.X86

@@ -66,7 +66,7 @@ theorem digest_take28 (mem : Mem) (p : Addr) :
   have ht : (md.digest (md.stateAt mem p)).take 28 = ((md.digest (md.stateAt mem p)).take (8 * 4)).take 28 := by
     rw [List.take_take]; rfl
   rw [ht, h4, List.range_succ, List.flatMap_append, List.flatMap_singleton, List.take_append, hl,
-    List.take_of_length_le (by omega), e3, List.take_append_of_le_length (by simp [bytes32]),
+    List.take_of_length_le (by omega_using [hl]), e3, List.take_append_of_le_length (by simp [bytes32]),
     List.take_of_length_le (by simp [bytes32])]
 
 /-! ## In 32-bit halves
@@ -119,6 +119,17 @@ def finalizeDigestScratchContract {M : ISA} (A : Abi M) (iv : Spec.Sha512.HashVa
   (finalizeDigestScratchSig D).contract A (post := fun state count out _scratch =>
     Spec.Sha512.finalizeDigestPost iv D digest A.ptrBits state count out) (stack := stack)
 
+/-- `finalizeDigestScratchSig` with `w` words of working space. -/
+def finalizeDigestScratchSigW (w D : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 D), ("scratch", .array true .u64 w)]
+
+/-- `finalizeDigestScratchContract`, with `w` words of working space. -/
+def finalizeDigestScratchContractW (w : Nat) {M : ISA} (A : Abi M) (iv : Spec.Sha512.HashValue) (D : Nat)
+    (digest : List Byte → List Byte) (stack : Nat) : Contract M :=
+  (finalizeDigestScratchSigW w D).contract A (post := fun state count out _scratch =>
+    Spec.Sha512.finalizeDigestPost iv D digest A.ptrBits state count out) (stack := stack)
+
 /-- `finalizeDigestPost` reads the memory on entry only within the streaming
 state (see `finalizePost_local`). -/
 theorem finalizeDigestPost_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte)
@@ -139,7 +150,7 @@ theorem finalizeDigestPost_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest 
   simp only [Spec.Sha512.finalizeDigestSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq] at hb
   have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro msg hr hl hc
   exact h msg (Stream.repr_congr (fun i hi => (hs i hi).symm) hr) hl hc
 

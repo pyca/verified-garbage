@@ -93,7 +93,7 @@ theorem mask_ok {s y : State} (hp : PreV s) {st : BitVec 64} (b : Bool) (hm : VM
   refine wp_ld (a := fb s + BitVec.ofNat 64 oSt) (by rw [e₁]) (fb_al8 hp.spal hp.sp1 (by decide))
     (by rw [o₁.rd, o₁.wr, hm.wr]; exact in_fr' s _ _ (by decide)) fun y₂ o₂ e₂ =>
     wp_and fun y₃ o₃ e₃ => wp_nil ?_
-  refine WP.mono (restore_ok (hm.only (o₁.trans (o₂.trans o₃))).saves (by omega)) fun w ⟨habi, h3, _⟩ =>
+  refine WP.mono (restore_ok (hm.only (o₁.trans (o₂.trans o₃))).saves (by omega_using [hfa])) fun w ⟨habi, h3, _⟩ =>
     ⟨habi, ?_⟩
   rw [h3, e₃, o₂.get .a0, o₁.get .a0, hr, e₂, o₁.mem, hst]
 

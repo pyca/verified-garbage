@@ -69,7 +69,7 @@ theorem zhead_ok {v : VD} {s : State} (B : Base v s) (ho : v.out = some (oOf v))
   refine WP.mono (WP.keep [.t2, .t5, .s0] (Q := fun u => u.gpr .t5 = BitVec.ofNat 64 (3 * v.L.pl + 2 * v.L.ql))
     (by
       brun [kx.gpr (r := .t5) (by decide), b5, b2, exec_li_zero]
-      simp only [BitVec.ofNat_add_ofNat]; congr 1; omega) (by decide) (by rfl)) fun t ⟨a5, kt⟩ => ?_
+      simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_using []) (by decide) (by rfl)) fun t ⟨a5, kt⟩ => ?_
   exact ⟨(kt.gpr (r := .s6) (by decide)).trans Bx.regs.s6,
     (kt.gpr (r := .t4) (by decide)).trans ((kx.gpr (r := .t4) (by decide)).trans ((kw.gpr (r := .t4) (by decide)).trans a4)),
     a5, trivial⟩
@@ -121,8 +121,8 @@ theorem frontD : ∀ v s, C0d v s → WP isa (.block Derive.entry) s (P0 v) := b
   have hK : Src t (dlayOf s) (s.gpr .a2) (s.gpr .a3).toNat :=
     dsrc (by rw [hrd]; simp) dPS (s.gpr .a3).isLt (Nat.le_refl _) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, dsrc (by rw [hrd]; simp) dXS (s.gpr .a6).isLt (Nat.le_refl _) k.2.1 k.2.2,
-    src_nil (Nat.zero_min _), hK.bytes F.out (by simp only [dlayOf] at hZ ⊢; omega),
-    (by simp only [vdD, dlayOf]; omega), (fun h => nomatch h), fun o ho => by cases ho; exact F.outw⟩,
+    src_nil (Nat.zero_min _), hK.bytes F.out (by simp only [dlayOf] at hZ ⊢; omega_using [hZ]),
+    (by simp only [vdD, dlayOf]; omega_using [hkl]), (fun h => nomatch h), fun o ho => by cases ho; exact F.outw⟩,
     F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem outD : ∀ v s, C0d v s → v.out = some (oOf v) := by

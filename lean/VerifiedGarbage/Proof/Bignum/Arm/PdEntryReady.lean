@@ -38,7 +38,7 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
   have baseArg : (pcPushed s).mem.readW (off (State.addr (pcPushed s).sp) 72) 32 = base := by
     rw [public_push_argOffset h.stackFit 16, argEq.word (d := 16) (bits := 32) (by decide)]
     exact h.workspaceArg
-  refine WP.mono (pdEntry_ok (pcPushed s) (by rw [spNat]; have := h.argFit; omega)
+  refine WP.mono (pdEntry_ok (pcPushed s) (by rw [spNat]; have := h.argFit; omega_using [this])
     (List.mem_cons_self) readBase baseArg) ?_
   rintro t ⟨ptr, mem, rest⟩
   obtain ⟨savedBase, savedOutput, savedSource, savedCount, outside, frameEntry⟩ := pdEntry_memory mem
@@ -53,7 +53,7 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
     refine ⟨bytes.fits, ?_, ?_⟩
     · rw [rest.rd, rest.wr]
       exact InRegions_append_cons.mpr (Or.inr bytes.read)
-    · exact (rsa_bytes_frame frame (by have := bytes.fits; omega)
+    · exact (rsa_bytes_frame frame (by have := bytes.fits; omega_using [this])
         (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep.symm)).trans bytes.bytes
   refine ⟨⟨?_, ?_, ptr, h.sourceFit, ?_, h.modulusSeparate.symm, ?_, ?_, ?_⟩, frame, ?_, rest.mono (by decide)⟩
   · refine ⟨⟨h.workspace.nowrap, ?_⟩, h.minLength, h.maxLength, h.space, h.exponentPositive, h.exponentFits,
@@ -67,7 +67,7 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
     · rw [rest.sp]; exact h.stackInput.symm
     · rw [rest.sp]; exact h.stackOutput.symm
   · refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [rest.sp, spNat]; have := h.argFit; omega
+    · rw [rest.sp, spNat]; have := h.argFit; omega_using [this]
     · rw [rest.wr, rest.sp]; exact List.mem_cons_self
     · rw [rest.rd, rest.wr, rest.sp]; exact argRead
     · rw [rest.sp]; exact pd_push_separate h
@@ -93,14 +93,14 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
   · rw [rest.rd, rest.wr]
     exact InRegions_append_cons.mpr (Or.inr h.preRead)
   · rw [rest.sp]; exact h.stackModulus.symm
-  · have eq : WorkspaceEq (State.addr np) (16 * Spec.Rsa.modulusWords k) s.mem t.mem := WorkspaceEq.of_frame (by have := h.sourceFit; omega) frame
+  · have eq : WorkspaceEq (State.addr np) (16 * Spec.Rsa.modulusWords k) s.mem t.mem := WorkspaceEq.of_frame (by have := h.sourceFit; omega_using [this]) frame
       (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact h.stackModulus.symm)
-    have read := eq.read (d := 0) (8 * Spec.Rsa.modulusWords k) (by omega)
+    have read := eq.read (d := 0) (8 * Spec.Rsa.modulusWords k) (by omega_using [])
     simp only [BitVec.add_zero] at read
     rw [read]; exact h.modulus
-  · have eq : WorkspaceEq (State.addr np) (16 * Spec.Rsa.modulusWords k) s.mem t.mem := WorkspaceEq.of_frame (by have := h.sourceFit; omega) frame
+  · have eq : WorkspaceEq (State.addr np) (16 * Spec.Rsa.modulusWords k) s.mem t.mem := WorkspaceEq.of_frame (by have := h.sourceFit; omega_using [this]) frame
       (fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact h.stackModulus.symm)
-    rw [eq.read (d := 8 * Spec.Rsa.modulusWords k) (8 * Spec.Rsa.modulusWords k) (by omega)]
+    rw [eq.read (d := 8 * Spec.Rsa.modulusWords k) (8 * Spec.Rsa.modulusWords k) (by omega_using [])]
     exact h.r2
   · rw [rest.sp]; exact savedCallee
 

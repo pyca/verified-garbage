@@ -34,7 +34,7 @@ theorem stored_block (m : Mem) (q : Addr) (x : BitVec 64) :
   apply Vector.ext
   intro i hi
   simp only [blockAt, encodeBlock, Vector.getElem_ofFn, writeBytes, Offset.add_sub_cancel_left,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), List.getD_eq_getElem?_getD,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hi]), List.getD_eq_getElem?_getD,
     beBytes, List.getElem?_map, List.getElem?_range hi, Option.map_some, Option.getD_some,
     List.length_map, List.length_range, hi, ite_true, Nat.reduceSub]
 
@@ -49,7 +49,7 @@ theorem upperHalf_extend (x : BitVec 64) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
   by_cases h : j < 32
   · simp only [h, hj, decide_true, Bool.true_and]
-  · have hz : x.getLsbD (32 + j) = false := BitVec.getLsbD_of_ge _ _ (by omega)
+  · have hz : x.getLsbD (32 + j) = false := BitVec.getLsbD_of_ge _ _ (by omega_using [h])
     simp only [h, hj, decide_false, decide_true, Bool.false_and, Bool.true_and, hz]
 
 theorem lowerHalf_extend (x : BitVec 64) :
@@ -58,9 +58,9 @@ theorem lowerHalf_extend (x : BitVec 64) :
   intro j hj
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
   by_cases h : j < 32
-  · simp (disch := omega) only [h, hj, decide_true, Bool.true_and, show 32 + j < 64 by omega,
-      show ¬ 32 + j < 32 by omega, decide_false, Bool.not_false, show 32 + j - 32 = j by omega]
-  · simp only [h, decide_false, Bool.false_and, show ¬ 32 + j < 64 by omega, Bool.and_false]
+  · simp (disch := omega) only [h, hj, decide_true, Bool.true_and, show 32 + j < 64 by omega_using [h],
+      show ¬ 32 + j < 32 by omega_using [], decide_false, Bool.not_false, show 32 + j - 32 = j by omega_using []]
+  · simp only [h, decide_false, Bool.false_and, show ¬ 32 + j < 64 by omega_using [h], Bool.and_false]
 
 theorem join_halves (x : BitVec 64) :
     (((x >>> 32).setWidth 32).setWidth 64 <<< 32) ^^^ (x.setWidth 32).setWidth 64 = x := by
@@ -70,7 +70,7 @@ theorem join_halves (x : BitVec 64) :
     BitVec.getLsbD_ushiftRight, hj, decide_true, Bool.true_and]
   by_cases h : j < 32
   · simp [h]
-  · simp (disch := omega) [h, show j - 32 < 32 by omega, show 32 + (j - 32) = j by omega,
-      show j - 32 < 64 by omega]
+  · simp (disch := omega) [h, show j - 32 < 32 by omega_using [hj], show 32 + (j - 32) = j by omega_using [h],
+      show j - 32 < 64 by omega_using [hj]]
 
 end VG.Proof.TripleDes.RISCV64

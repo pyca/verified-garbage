@@ -76,8 +76,8 @@ theorem entryLd_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
       s'.gpr .t1 = c.W ∧ s'.gpr .t0 = s.sp ∧ s'.sp = s.sp := by
   refine wp_addSp (by decide) fun s₁ u₁ => ?_
   have t0₁ : s₁.gpr .t0 = s.sp := by rw [u₁.gpr, BitVec.add_zero]
-  refine wp_ld (a := stackArgAddr s 2) (by decide) (by rw [t0₁]; rfl) (Spill.al8 Ar.spal (by omega))
-    (by rw [u₁.rd, u₁.wr, stackArgAddr_succ]; exact in_off Ar.argsC (by omega) (by decide))
+  refine wp_ld (a := stackArgAddr s 2) (by decide) (by rw [t0₁]; rfl) (Spill.al8 Ar.spal (by omega_using []))
+    (by rw [u₁.rd, u₁.wr, stackArgAddr_succ]; exact in_off Ar.argsC (by omega_using []) (by decide))
     fun s₂ u₂ => WP.block_nil ⟨by rw [u₂.gpr, u₁.mem, ← Ar.w]; rfl, by rw [u₂.other _ (by decide), t0₁],
       by rw [u₂.sp, u₁.sp]⟩
 

@@ -36,8 +36,8 @@ def HI (X : State → State → Prop) (K h off count n : Nat) (s₁ s₂ : State
 theorem hbpre {σ : State} (hp : Pre σ) {s₀ : State} {K h off count t : Nat} (hK : K < 4) (hspan : off + count ≤ 168) (ht : t < count) {s : State}
     (hI : HAt σ s₀ K h off count t s) : BPre s (Proof.MlKem.poly4 (aP σ) K) (Lt σ K (168 * h + off + t)) :=
   ⟨hI.rbp, hI.rdi, Lt_length_le σ K _, coeffsWr hp hK hI.env, hI.stored,
-    by simpa using hat_regions hp hK hspan hI (j := 0) (by omega), hat_regions hp hK hspan hI (by omega),
-    hat_regions hp hK hspan hI (by omega)⟩
+    by simpa using hat_regions hp hK hspan hI (j := 0) (by omega_using [ht]), hat_regions hp hK hspan hI (by omega_using [ht]),
+    hat_regions hp hK hspan hI (by omega_using [ht])⟩
 
 theorem hi_brel {X : State → State → Prop} {K h off count n : Nat} (hK : K < 4) (hh : h < 2) (hspan : off + count ≤ 168) {s₁ s₂ : State}
     (H : HI X K h off count n s₁ s₂) : BRel s₁ s₂ := by
@@ -45,7 +45,7 @@ theorem hi_brel {X : State → State → Prop} {K h off count n : Nat} (hK : K <
   refine ⟨Proof.MlKem.poly4 (aP σ₁) K, Lt σ₁ K (168 * h + off + t), hbpre (pre_of p₁) hK hspan ht l₁,
     by rw [pub_aP hq, pub_Lt4 hq hK]; exact hbpre (pre_of p₂) hK hspan ht l₂,
     by rw [l₁.rsi, l₂.rsi, at', at', pub_scr hq], by rw [l₁.rcx, l₂.rcx], fun k hk => ?_⟩
-  rw [hat_byte hh hspan l₁ (by omega), hat_byte hh hspan l₂ (by omega)]
+  rw [hat_byte hh hspan l₁ (by omega_using [ht, hk]), hat_byte hh hspan l₂ (by omega_using [ht, hk])]
   simp only [Xb, pub_B hq hK]
 
 /-- The loop of a half. -/
@@ -63,8 +63,8 @@ theorem hloop_ct {X : State → State → Prop} {K h off count : Nat} (hK : K < 
     obtain ⟨l₁', z₁⟩ := f₁ (σ₁, s₀₁, t) ⟨p₁, ht, l₁⟩
     obtain ⟨l₂', z₂⟩ := f₂ (σ₂, s₀₂, t) ⟨p₂, ht, l₂⟩
     have ez : (BitVec.ofNat 64 (count - t) - 1 == 0) = decide (t + 1 = count) := by
-      rw [ofNat64_pred (by omega) (by omega), ofNat64_beq_zero (by omega)]
-      exact decide_eq_decide.mpr (by omega)
+      rw [ofNat64_pred (by omega_using [ht]) (by omega_using [hspan]), ofNat64_beq_zero (by omega_using [hspan])]
+      exact decide_eq_decide.mpr (by omega_using [ht])
     rw [ez] at z₁ z₂
     refine ⟨by show x'.zf.map _ = y'.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht' => ?_⟩
     · have : t + 1 = count := by
@@ -75,7 +75,7 @@ theorem hloop_ct {X : State → State → Prop} {K h off count : Nat} (hK : K < 
     · have : t + 1 ≠ count := by
         have : x'.zf.map (!·) = some true := ht'
         rw [z₁] at this; simpa using this
-      exact ⟨count - (t + 1), by omega, σ₁, σ₂, s₀₁, s₀₂, t + 1, p₁, p₂, hq, rfl, by omega, x₁, x₂, l₁', l₂'⟩
+      exact ⟨count - (t + 1), by omega_using [hn, ht], σ₁, σ₂, s₀₁, s₀₂, t + 1, p₁, p₂, hq, rfl, by omega_using [ht, this], x₁, x₂, l₁', l₂'⟩
 
 /-! ## Groups of eight candidates -/
 
@@ -176,7 +176,7 @@ theorem sca_ct {X : State → State → Prop} {K h off count t : Nat} {c : BitVe
       (taintRel [] nil_regs (by taint_decide))
   have h₂ : RelCT isa (HI (SX X K h off count t c) K h (off + t) 8 8) (.loop rnBody .ne)
       (R4 fun σ s => ∃ s₀, SX X K h off count t c σ s₀ ∧ HAt σ s₀ K h (off + t) 8 8 s) :=
-    hloop_ct hK hh (by omega) 8
+    hloop_ct hK hh (by omega_using [hspan, ht]) 8
   show RelCT isa _ (.seq (.block [.mov32 .rcx (.imm 8)]) (.loop rnBody .ne)) _
   refine RelCT.seq (RelCT.mono h₁ (fun _ _ h => h) fun x y hxy => ?_) (RelCT.mono h₂ (fun _ _ h => h) fun x y hxy => ?_)
   · obtain ⟨σ₁, σ₂, p₁, p₂, hq, x₁, x₂⟩ := hxy
@@ -202,7 +202,7 @@ theorem vgrp_ct {X : State → State → Prop} {K h off count t : Nat} {c : BitV
         have hlen := Lt_length_le σ K (168 * h + off + t)
         refine WP.mono_syms (cmp249_ok s) fun s' ⟨hcf, hm, hg, hrd, hwr, hl⟩ sy => ?_
         exact ⟨⟨h'.1.same hg hm hrd hwr sy hl, by rw [hg]; exact h'.2⟩,
-          by rw [hcf, h'.1.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]⟩)
+          by rw [hcf, h'.1.rdi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlen])]⟩)
       (taintRel [.rdi] (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.rdi, h₂.1.rdi, pub_Lt4 hq hK])
         (by taint_decide))
@@ -217,14 +217,14 @@ theorem vgrp_ct {X : State → State → Prop} {K h off count t : Nat} {c : BitV
         have : x.cf = some true := hb
         rw [f₁] at this; simpa using this
       have hb₂ : (Lt σ₂ K (168 * h + off + t)).length < 249 := by rw [← pub_Lt4 hq hK]; exact hb₁
-      exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega, d₁⟩, ⟨s₀₂, x₂, l₂, by omega, d₂⟩⟩
+      exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega_using [hb₁], d₁⟩, ⟨s₀₂, x₂, l₂, by omega_using [hb₂], d₂⟩⟩
     · refine RelCT.mono (sca_ct hK hh hspan ht) ?_ fun _ _ h => h
       rintro x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, ⟨l₁, d₁⟩, f₁⟩, ⟨s₀₂, x₂, ⟨l₂, d₂⟩, f₂⟩⟩, hb⟩
       have hb₁ : ¬ (Lt σ₁ K (168 * h + off + t)).length < 249 := by
         have : x.cf = some false := hb
         rw [f₁] at this; simpa using this
       have hb₂ : ¬ (Lt σ₂ K (168 * h + off + t)).length < 249 := by rw [← pub_Lt4 hq hK]; exact hb₁
-      exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega, d₁⟩, ⟨s₀₂, x₂, l₂, by omega, d₂⟩⟩
+      exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega_using [hb₁], d₁⟩, ⟨s₀₂, x₂, l₂, by omega_using [hb₂], d₂⟩⟩
   have hsub : RelCT isa (RG X K h off count (t + 8) c) (.block [.alu .sub .r10 (.imm 1)])
       (RX X fun σ s₀ s => GB σ s₀ K h off count (t + 8) s ∧ s.gpr .r10 = c - 1 ∧ s.zf = some (c - 1 == 0)) :=
     relInvX (fun σ s₀ s _ _ h' => WP.mono_syms (sub10_ok s) fun s' ⟨⟨hm, h10, hz, hl⟩, k⟩ sy =>
@@ -252,21 +252,21 @@ theorem loop_ct {X : State → State → Prop} {K h off count : Nat} (hK : K < 4
   by_cases hi : i < count / 8 ∧ n = count / 8 - i
   · obtain ⟨hi, hn⟩ := hi
     refine RelCT.mono (P := RG X K h off count (8 * i) (BitVec.ofNat 64 (count / 8 - i)))
-      (vgrp_ct hK hh hspan (by omega))
+      (vgrp_ct hK hh hspan (by omega_using [hi]))
       (fun _ _ h => h.2.2) fun x y ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, d₁, z₁⟩, ⟨s₀₂, x₂, l₂, d₂, z₂⟩⟩ => ?_
-    rw [ofNat64_pred (by omega) (by omega)] at d₁ d₂ z₁ z₂
-    rw [ofNat64_beq_zero (by omega)] at z₁ z₂
-    rw [show 8 * i + 8 = 8 * (i + 1) by omega] at l₁ l₂
+    rw [ofNat64_pred (by omega_using [hi]) (by omega_using [hspan])] at d₁ d₂ z₁ z₂
+    rw [ofNat64_beq_zero (by omega_using [hspan])] at z₁ z₂
+    rw [show 8 * i + 8 = 8 * (i + 1) by omega_using []] at l₁ l₂
     refine ⟨by show x.zf.map _ = y.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht => ?_⟩
     · have : count / 8 - i - 1 = 0 := by
         have : x.zf.map (!·) = some false := hf
         rw [z₁] at this; simpa using this
-      rw [show 8 * (i + 1) = count by omega] at l₁ l₂
+      rw [show 8 * (i + 1) = count by omega_using [h8, hi, this]] at l₁ l₂
       exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁⟩, ⟨s₀₂, x₂, l₂⟩⟩
     · have : count / 8 - i - 1 ≠ 0 := by
         have : x.zf.map (!·) = some true := ht
         rw [z₁] at this; simpa using this
-      exact ⟨count / 8 - (i + 1), by omega, i + 1, rfl, by omega, σ₁, σ₂, p₁, p₂, hq,
+      exact ⟨count / 8 - (i + 1), by omega_using [hi, hn], i + 1, rfl, by omega_using [this], σ₁, σ₂, p₁, p₂, hq,
         ⟨s₀₁, x₁, l₁, by rw [d₁]; congr 1⟩, ⟨s₀₂, x₂, l₂, by rw [d₂]; congr 1⟩⟩
   · exact RelCT.of_false fun _ _ h => hi ⟨h.2.1, h.1⟩
 
@@ -288,7 +288,7 @@ theorem parse_ct {X : State → State → Prop} {K h off count : Nat} (hK : K < 
         · exact env_rbx hq e₁ e₂
         · rw [e₁.r13, e₂.r13, pub_aP hq]) c)) (fun _ _ h => h)
       (Q' := LI X K h off count (count / 8) (count / 8)) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁⟩, ⟨s₀₂, x₂, l₂⟩⟩ =>
-        ⟨0, by omega, by omega, σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁.1, by rw [l₁.2]; rfl⟩,
+        ⟨0, by omega_using [], by omega_using [hpos, h8], σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁.1, by rw [l₁.2]; rfl⟩,
           ⟨s₀₂, x₂, l₂.1, by rw [l₂.2]; rfl⟩⟩)
     (RelCT.mono (loop_ct hK hh hspan h8 (count / 8)) (fun _ _ h => h) fun _ _ h => h)
 

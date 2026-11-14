@@ -31,8 +31,8 @@ theorem sampleTest_state {len : Nat} {p : SamplePublic} {s : State} (h : SampleS
     WP isa Impl.Dsa.X86_64.Generation.testWitness s (SampleTested len p) := by
   obtain ⟨⟨mi, hs⟩, hl⟩ := h
   refine WP.mono (testWitness_ok hs p.prime.dims p.prime.odd
-    (by rw [p.length]; have := p.prime.len2; omega)
-    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega)
+    (by rw [p.length]; have := p.prime.len2; omega_using [this])
+    (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega_arith)
     (by rw [p.length]; exact p.prime.lenWords)) fun t ht => ?_
   exact ⟨⟨⟨mi, ht.1⟩, hl⟩, ht.2.2.2.1⟩
 

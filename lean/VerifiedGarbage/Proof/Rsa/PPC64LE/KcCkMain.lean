@@ -98,7 +98,7 @@ theorem ck_correct (s0 : State) (h : ckP.pre s0) :
   show WP isa VG.Impl.Rsa.PPC64LE.CheckKey.code s0 fun t => abiPreserved s0 t ∧ ckP.post s0 t
   have hp := ck_kpre h
   obtain ⟨-, hrd, -, dn, de, -, -, -, -, -, -, -, wn, -, -, -, -, -, -, -, -, ⟨hk, hk'⟩, e1, e2, -⟩ := id h
-  have hk1 : (s0.gpr .r6).toNat ≤ 1024 := by omega
+  have hk1 : (s0.gpr .r6).toNat ≤ 1024 := by omega_using [hk', e2]
   unfold VG.Impl.Rsa.PPC64LE.CheckKey.code fn
   refine WP.seq (WP.mono (entry_ok hp (by decide) ck_moves (by decide) rfl (CrtValues.ofNat_toNat64 _) e1
     hk1 (by rw [hrd]; simp) de) fun t1 ⟨u, v, ku, ⟨m14, m15, m16, m17, m18, m19⟩, kv, b1, h24, h26, k1⟩ => ?_)
@@ -136,7 +136,7 @@ theorem ck_correct (s0 : State) (h : ckP.pre s0) :
       have b3 := b2.of_regs k3 m3
       have wn' : (s0.gpr .r3).toNat + kK s0 ≤ 2 ^ 64 := wn
       have hc : ∀ i < kK s0, (⟨s0.gpr .r3, kK s0⟩ : Region).Contains (off (s0.gpr .r3) i) 1 := fun i hi =>
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
       refine WP.mono (CrtValues.check_ok (N := s0.gpr .r3) (k := kK s0)
         (nb := Spec.Rsa.bytesAt s0.mem (s0.gpr .r3) (kK s0))
         (by rw [u9, R.r14]; simp [off]) (by rw [u10, R.r15]; exact CrtValues.ofNat_toNat64 _) hk hk'
@@ -162,7 +162,7 @@ theorem ck_correct (s0 : State) (h : ckP.pre s0) :
         refine WP.mono (ret0_ok t4) fun t ⟨⟨t3', tm⟩, kt⟩ => ⟨b4.of_regs kt tm, by rw [t3', ckOk_of_n hmv]; rfl,
           ((((k1.trans k2).trans k3).trans k4).trans kt).mono⟩
   · -- The restore.
-    refine WP.mono (restore_ok bt hp.wr hp.nowrap (by have := hp.zk; omega)) fun u' ⟨⟨u14, u15, u16, u17, u18,
+    refine WP.mono (restore_ok bt hp.wr hp.nowrap (by have := hp.zk; omega_using [this])) fun u' ⟨⟨u14, u15, u16, u17, u18,
       u19, u20, u21, u22, u23, u24, u26, u29, u30, u31, um⟩, ku'⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
     · have K := kt.trans ku'
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr

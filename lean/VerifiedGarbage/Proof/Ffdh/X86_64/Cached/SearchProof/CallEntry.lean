@@ -52,9 +52,9 @@ theorem call_attempt_pre {p : KeyPublic} {used : Nat} {s u : State} (hf : CallFa
   have hdl : (BitVec.ofNat 64 p.dlen).toNat = p.dlen := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hf.dlen64]
   have hzw : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.ns; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.ns; omega_using [this])]
   have hcw : (BitVec.ofNat 64 p.ctxLen).toNat = p.ctxLen := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.nc; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hf.nc; omega_using [this])]
   have hargs : stackArgAddr (callState p used u) 0 = p.sp - 56 := call_argAddr hu
   have hrsp : (callState p used u).gpr .rsp = p.sp - 56 - 8 := call_rsp hu
   have hret := hf.ret
@@ -76,10 +76,10 @@ theorem call_attempt_pre {p : KeyPublic} {used : Nat} {s u : State} (hf : CallFa
       change (BitVec.ofNat 64 64).toNat ≤ p.sp.toNat
       have := hf.room
       simp only [BitVec.toNat_ofNat]
-      omega)]
+      omega_using [this])]
     have := p.sp.isLt
     simp only [BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · show Clear (hole ((callState p used u).gpr .rsp)) (callState p used u)
     rw [hrsp]
     intro r hr

@@ -38,11 +38,11 @@ theorem ArithmeticReady.after_array {s t : State} {base : BitVec 32} {len w o : 
     ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have kl := keeps_layout h.layout (by rw [h.width]; exact keeps)
   have oldM := keeps_array_num keeps fits op0 (Ne.symm ho)
-  have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits op0 (Ne.symm ho) (by omega)
+  have oldLow := keeps_array_word (d := 0) (bits := 64) keeps fits op0 (Ne.symm ho) (by omega_using [])
   simp only [Nat.add_zero] at oldLow
   refine ⟨⟨h.workspace.congr rest.wr, kl.2, kl.1.trans h.width, ptr, ?_, ?_, ?_, ?_, ?_⟩, oldM⟩
   · change ((t.mem.readW (off (State.addr base) (arrAt w 0)) 64).toNat *
@@ -67,7 +67,7 @@ theorem ArithmeticReady.setSmall (s : State) {base : BitVec 32} {len w o : Nat}
   refine WP.mono body ?_
   rintro t ⟨value, low, outside, frame, rest, ptr⟩
   have nowrap := h.workspace.nowrap
-  have keeps := outside_array_keeps outside (len := len) (by omega)
+  have keeps := outside_array_keeps outside (len := len) (by omega_using [nowrap])
   exact ⟨(h.after_array ho0 keeps frame rest ptr).1, value, low, keeps, frame, rest⟩
 
 end VG.Proof.Bignum.Arm

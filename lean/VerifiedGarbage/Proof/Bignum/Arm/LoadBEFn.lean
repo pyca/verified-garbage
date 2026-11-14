@@ -38,13 +38,13 @@ theorem loadBEFnBody_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
   have bound := Nat.le_trans (array_end_le ho) fits
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   let dst := base + BitVec.ofNat 32 (arrAt w o)
-  have dstAddr : State.addr dst = off (State.addr base) (arrAt w o) := addr_add (by omega)
+  have dstAddr : State.addr dst = off (State.addr base) (arrAt w o) := addr_add (by omega_using [nowrap, bound])
   have dstNat : dst.toNat = base.toNat + arrAt w o := by
     simp only [dst, BitVec.toNat_add, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega : arrAt w o < 2 ^ 32),
-      Nat.mod_eq_of_lt (by omega : base.toNat + arrAt w o < 2 ^ 32)]
+      Nat.mod_eq_of_lt (by omega_using [nowrap, bound] : arrAt w o < 2 ^ 32),
+      Nat.mod_eq_of_lt (by omega_using [nowrap, bound] : base.toNat + arrAt w o < 2 ^ 32)]
   have header := nativeHeader_of_layout s.mem base nowrap (Nat.le_refl _) layout
   rw [width] at header
   rw [loadBEFnBody, WP.seq_iff]
@@ -52,25 +52,25 @@ theorem loadBEFnBody_ok (s : State) {base src : BitVec 32} {len w o k : Nat}
   rintro u ⟨p0, p5, limbs, zero, mem, rest⟩
   have write : InRegions u.wr (State.addr dst) (4 * (2 * w)) := by
     rw [rest.wr, dstAddr]
-    exact ⟨_, ws.writable, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, ws.writable, Offset.contains_base _ (by omega_using [bound]) (by omega_using [dstNat])⟩
   have readU : InRegions (u.rd ++ u.wr) (State.addr src) k := by rw [rest.rd, rest.wr]; exact read
   have sepDst : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr dst, 4 * (2 * w)⟩ := by
     apply sep.sub_right
     intro a ha
     rw [dstAddr] at ha
     change (a - off (State.addr base) (arrAt w o)).toNat + 1 ≤ 4 * (2 * w) at ha
-    have hi : (a - off (State.addr base) (arrAt w o)).toNat < 4 * (2 * w) := by omega
-    rw [Offset.lt_iff a (State.addr base) (by omega)] at hi
+    have hi : (a - off (State.addr base) (arrAt w o)).toNat < 4 * (2 * w) := by omega_using [ha]
+    rw [Offset.lt_iff a (State.addr base) (by omega_using [nowrap, bound])] at hi
     change (a - State.addr base).toNat + 1 ≤ 8 * len
-    omega
-  refine WP.mono (loadBE_ok u hk (by omega) (by omega) srcFit (by rw [dstNat]; omega)
+    omega_using [bound, hi]
+  refine WP.mono (loadBE_ok u hk (by omega_using [fit]) (by omega_using [fit, nowrap, bound]) srcFit (by rw [dstNat]; omega_using [nowrap, bound])
     readU write sepDst p0 ((rest.gpr .r4 (by decide)).trans source) p5
     ((rest.gpr .r6 (by decide)).trans count) limbs zero) ?_
   rintro t ⟨value, frame, keep⟩
-  rw [native_array_num t.mem (by omega), mem] at value
-  rw [dstAddr, mem, show 4 * (2 * w) = 8 * w by omega] at frame
-  have outside := frame_array_outside (by omega) frame
-  exact ⟨value, outside, outside_workspace outside (by omega),
+  rw [native_array_num t.mem (by omega_using [nowrap, bound]), mem] at value
+  rw [dstAddr, mem, show 4 * (2 * w) = 8 * w by omega_using []] at frame
+  have outside := frame_array_outside (by omega_using [nowrap, bound]) frame
+  exact ⟨value, outside, outside_workspace outside (by omega_using [bound]),
     (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 theorem loadBEFn_ok (s : State) {base src : BitVec 32} {len w o k : Nat}

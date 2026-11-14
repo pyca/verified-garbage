@@ -24,7 +24,7 @@ theorem seedState_frame {m m' : Mem} {seed : Addr} {rs : List Region}
   apply Vector.ext; intro i hi
   simp only [seedState,Vector.getElem_ofFn]
   split
-  · rw [hf.readW (r := ⟨seed,32⟩) (Offset.contains_base seed (by omega) (by omega)) hd (by decide)]
+  · rw [hf.readW (r := ⟨seed,32⟩) (Offset.contains_base seed (by omega_arith) (by omega_using [hi])) hd (by decide)]
   · rfl
 
 def initRegs : List Reg := [.x2,.x19,.x20,.x21,.x22,.x6,.x7]
@@ -52,7 +52,7 @@ theorem init_ok {s : State} {p seed : Addr} {ss sb a b k : Nat}
   refine WP.mono (saves_ok (p := p) (by rw [eu]; exact hp)
     (fun j hj => by rw [hu.wr]; exact hsv j hj)) fun v ⟨kv,sv,fv⟩ => ?_
   have sv' : Saved p s v.mem := fun j hj => by
-    rw [sv j hj,hu.get _ (by rcases (by omega : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5) with rfl|rfl|rfl|rfl|rfl|rfl <;> decide)]
+    rw [sv j hj,hu.get _ (by rcases (by omega_using [hj] : j=0 ∨ j=1 ∨ j=2 ∨ j=3 ∨ j=4 ∨ j=5) with rfl|rfl|rfl|rfl|rfl|rfl <;> decide)]
   have fv' : Frame [savedR p] s.mem v.mem := by rw [hu.mem] at fv; exact fv
   refine wp_mov fun w hw ew => ?_
   change WP isa (.block (Impl.MlKem.AArch64.Paired.initCore sb a b k ++

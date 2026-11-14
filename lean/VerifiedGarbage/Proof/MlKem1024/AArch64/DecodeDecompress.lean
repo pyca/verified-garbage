@@ -122,7 +122,7 @@ theorem loop11_ok {s₀ : State} (hp : Pre width11 s₀) :
               v2 .v18 (by decide)]; exact l1,
             by rw [v6 .v19 (by decide), v5 .v19 (by decide), v4 .v19 (by decide), v3 .v19 (by decide)]; exact l2,
             fun g hg => by
-              rcases (show g = 0 ∨ g = 1 ∨ g = 2 ∨ g = 3 by omega) with rfl | rfl | rfl | rfl
+              rcases (show g = 0 ∨ g = 1 ∨ g = 2 ∨ g = 3 by omega_using [hg]) with rfl | rfl | rfl | rfl
               · show s6.v .v20 = _
                 rw [v6 .v20 (by decide), v5 .v20 (by decide), v4 .v20 (by decide), e3, dd11idx 0 (by decide)]
               · show s6.v .v21 = _
@@ -153,9 +153,9 @@ theorem correct (s : State) (hs : decodeDecompressAArch64.pre s) :
     simp only [BitVec.toNat_ofNat]
     congr 1
     apply decide_eq_decide.mpr
-    rcases hd' with h | h <;> rw [h] at hlen <;> omega
+    rcases hd' with h | h <;> rw [h] at hlen <;> omega_using []
   refine WP.ite _ z₂ (fun hb => ?_) (fun hb => ?_)
-  · have e : ((s.gpr .x2).setWidth 32).toNat = 5 := by simp at hb; omega
+  · have e : ((s.gpr .x2).setWidth 32).toNat = 5 := by simp at hb; omega_using [hlen, hb]
     exact width_ok (w := width5) hs e k₂ m₂ fun _ hp => loop5_ok hp
   · have e : ((s.gpr .x2).setWidth 32).toNat = 11 := by
       simp at hb

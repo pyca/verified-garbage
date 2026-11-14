@@ -30,19 +30,19 @@ theorem movs_run (s : State) {n : Nat} (hn : n ≤ 15) :
   induction n with
   | zero => exact ⟨s, runBlock_nil, fun r _ => by simp, Only.refl _ _⟩
   | succ n ih =>
-    obtain ⟨t, run, v, o⟩ := ih (by omega)
+    obtain ⟨t, run, v, o⟩ := ih (by omega_using [hn])
     let t' := t.setV (treg n) (t.v (treg (n + 1)))
     refine ⟨t', ?_, fun r hr => ?_, o.trans (Only.setV _ (by
       simp only [List.mem_cons, List.mem_map, List.mem_range]
-      exact .inr ⟨n, by omega, rfl⟩) _)⟩
+      exact .inr ⟨n, by omega_using [hn], rfl⟩) _)⟩
     · rw [movs_succ]
       exact runBlock_cat_some run (by rw [runBlock_cons]; exact rfl)
     · by_cases h : r = n
       · subst h
-        simp only [t', v_setV_self, v (r + 1) (by omega), show ¬ r + 1 < r by omega, ite_false,
-          show r < r + 1 by omega, ite_true]
-      · rw [v_setV_of_ne _ _ (fun e => h (treg_inj _ hr _ (by omega) e)), v r hr]
-        exact ite_iff ⟨fun h' => by omega, fun h' => by omega⟩ _ _
+        simp only [t', v_setV_self, v (r + 1) (by omega_using [hn]), show ¬ r + 1 < r by omega_using [], ite_false,
+          show r < r + 1 by omega_using [], ite_true]
+      · rw [v_setV_of_ne _ _ (fun e => h (treg_inj _ hr _ (by omega_using [hn]) e)), v r hr]
+        exact ite_iff ⟨fun h' => by omega_using [h'], fun h' => by omega_using [h, h']⟩ _ _
 
 theorem lanes_diff : VArr.b16.map2 (fun _ x y => x - y) (laneNums 1) (laneNums 0) = bc 16 :=
   vbyte_ext fun e he => by
@@ -50,7 +50,7 @@ theorem lanes_diff : VArr.b16.map2 (fun _ x y => x - y) (laneNums 1) (laneNums 0
       vbyte_bc _ he]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (16 : BitVec 8).toNat = 16 from rfl]
-    omega
+    omega_using []
 
 theorem rotate_eq (prga : Bool) : rotate prga =
     ([.vop (.sub .b16 .v7 (lanes 1) (lanes 0)), .vop (.sub .b16 (dq 0) (dq 0) .v7)] : List Instr) ++
@@ -134,11 +134,11 @@ theorem rotate_ok (prga : Bool) {s : State} (hk : Consts s) {J NB : BitVec 8}
     by_cases h15 : k / 16 = 15
     · rw [h15, show s₆.v (treg 15) = s₅.v .v7 from v_setV_self _ _ _,
         keep₅ _ (by decide), v_setV_self, tab₃ 0 (by decide),
-        show (k + 16) % 256 / 16 = 0 by omega, show (k + 16) % 256 % 16 = k % 16 by omega]
-    · rw [v_setV_of_ne _ _ (fun e => h15 (treg_inj _ (by omega) _ (by decide) e)),
-        v₅ _ (by omega), ite_eq_left (show k / 16 < 15 by omega),
-        v_setV_of_ne _ _ ((show NotTable .v7 by decide).ne _), tab₃ _ (by omega),
-        show (k + 16) % 256 / 16 = k / 16 + 1 by omega, show (k + 16) % 256 % 16 = k % 16 by omega]
+        show (k + 16) % 256 / 16 = 0 by omega_using [h15], show (k + 16) % 256 % 16 = k % 16 by omega_using []]
+    · rw [v_setV_of_ne _ _ (fun e => h15 (treg_inj _ (by omega_using [hk]) _ (by decide) e)),
+        v₅ _ (by omega_using [hk]), ite_eq_left (show k / 16 < 15 by omega_using [hk, h15]),
+        v_setV_of_ne _ _ ((show NotTable .v7 by decide).ne _), tab₃ _ (by omega_using [hk, h15]),
+        show (k + 16) % 256 / 16 = k / 16 + 1 by omega_using [hk, h15], show (k + 16) % 256 % 16 = k % 16 by omega_using []]
   · rw [v₇, v_setV_of_ne _ _ ((show NotTable (dq 0) by decide).ne _ |>.symm),
       keep₅ _ (by decide), v_setV_of_ne _ _ (by decide), o₃.2 _ (by decide), j₂]
   · rw [v₇, v_setV_of_ne _ _ ((show NotTable negBase by decide).ne _ |>.symm),
@@ -150,7 +150,7 @@ theorem rotate_ok (prga : Bool) {s : State} (hk : Consts s) {J NB : BitVec 8}
   · simp only [rotRegs, List.mem_cons, List.mem_map, List.mem_range, not_or, not_exists,
       not_and] at hr
     obtain ⟨h7, hd, hn, ht⟩ := hr
-    rw [v₇, v_setV_of_ne _ _ (fun e => ht 15 (by decide) e.symm), keep₅ r (fun a ha e => ht a (by omega) e),
+    rw [v₇, v_setV_of_ne _ _ (fun e => ht 15 (by decide) e.symm), keep₅ r (fun a ha e => ht a (by omega_using [ha]) e),
       v_setV_of_ne _ _ h7, o₃.2 r (by simp [hn]), v_setV_of_ne _ _ hd, v_setV_of_ne _ _ h7]
 
 end VG.Proof.Rc4.AArch64

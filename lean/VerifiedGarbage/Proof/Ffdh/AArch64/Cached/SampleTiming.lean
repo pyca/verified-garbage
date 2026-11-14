@@ -46,11 +46,11 @@ theorem sample_ct : RelCT isa (Two SampleReady) Generate.sample (fun _ _ =>True)
  unfold Generate.sample
  refine RelCT.seq (two_post (Ψ:=SampleMasked) ?_ ?_) ?_
  · exact two_map (fun p =>(⟨p.workspace.B,p.workspace.Z,p.N,by
-    have := p.room;dsimp only [slot,hdrBytes] at this;omega,p.positive,p.bound⟩ : MaskPublic))
+    have := p.room;dsimp only [slot,hdrBytes] at this;omega_using [this],p.positive,p.bound⟩ : MaskPublic))
     (fun _ _ h =>by rcases h.good with ⟨mi,good,_⟩;exact ⟨good.scr,good.x0,h.bits⟩) sampleMask_ct
  · intro p s h
    obtain ⟨mi,good,room⟩ := h.good
-   have room256 : 256≤p.workspace.Z := by dsimp only [slot,hdrBytes] at room;omega
+   have room256 : 256≤p.workspace.Z := by dsimp only [slot,hdrBytes] at room;omega_using [room]
    refine WP.mono (sampleMask_ok good.scr room256 good.x0 p.positive p.bound h.bits) ?_
    rintro t ⟨mask,_,_,frame,rest⟩
    have goodT := good_after_header good (by decide) (by decide) frame rest ((rest.gpr .x0 (by decide)).trans good.x0)

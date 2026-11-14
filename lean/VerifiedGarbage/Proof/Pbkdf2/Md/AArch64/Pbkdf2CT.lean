@@ -94,7 +94,7 @@ theorem keySub_ok {s : State} (h : KE (H := H) s₀ s) :
       KE (H := H) s₀ t ∧ isa.eval (.zero .x .x9) t = some (decide (pwl s₀ = H.P.B)) := by
   have hB := hz.B_le
   unfold Hash.keySub
-  exact wp_subImm (by omega) fun s₂ u₂ => WP.block_nil ⟨h.upd u₂ (by decide), key_sub h u₂ (by omega)⟩
+  exact wp_subImm (by omega_using [hB]) fun s₂ u₂ => WP.block_nil ⟨h.upd u₂ (by decide), key_sub h u₂ (by omega_using [hB])⟩
 
 end
 
@@ -179,7 +179,7 @@ theorem hashKey_rel : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) 
   have ini : ∀ {σ₀ s : State}, Pre (H := H) σ₀ → KE (H := H) σ₀ s →
       Covers [⟨A σ₀ H.stWO, H.stream.S⟩] s.wr :=
     fun hp h => Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega_using [hl, he, hSS])
   have c₂ := rel_wp (VG.Proof.Pbkdf2.Md.AArch64.Calls.init_rel hH.stream (st := A s₀ H.stWO)
       (P := fun s s' => (KE (H := H) s₀ s ∧ s.gpr .x0 = A s₀ H.stWO) ∧
         (KE (H := H) s₀' s' ∧ s'.gpr .x0 = A s₀' H.stWO))
@@ -303,7 +303,7 @@ end
 theorem inv_mid {hH : HashOK H} {s₀ : State} (hz : PSizes H) {k : Nat} (hk : k < nb H s₀) {s : State}
     (h : Inv hH s₀ k s) : Mid hH s₀ k s := by
   have hkD : k * H.D < ol s₀ := (lt_nb hz.z.D0).1 hk
-  have hd : done H s₀ k = k * H.D := by show min _ _ = _; omega
+  have hd : done H s₀ k = k * H.D := by show min _ _ = _; omega_using [hkD]
   have hb := h.outB
   rw [hd, List.take_of_length_le (Nat.le_of_eq h.glen)] at hb
   exact ⟨h.kr, h.st, h.x19, h.x20, by rw [h.x21, hd], by rw [h.x22, hd], hb⟩
@@ -386,7 +386,7 @@ theorem step_rel (n : Nat) :
       (isa.eval (.nonzero .x .x21) s = some false → Inv hH s₀ (nb H s₀) s ∧ Inv hH s₀' (nb H s₀') s') ∧
       (isa.eval (.nonzero .x .x21) s = some true → ∃ m < n, LI hH s₀ s₀' m s s') := by
   by_cases hn : n ≤ nb H s₀ ∧ 0 < n
-  · have hk : nb H s₀ - n < nb H s₀ := by omega
+  · have hk : nb H s₀ - n < nb H s₀ := by omega_using [hn]
     refine ((block_rel hH hp hp' hz hq hc hF hFd hI hId hk).mono (P' := LI hH s₀ s₀' n)
       (fun _ _ h => ⟨h.2.2.1, h.2.2.2⟩) fun _ _ h => h).mono (fun _ _ h => h) fun t t' h => ?_
     obtain ⟨⟨i, z⟩, ⟨i', z'⟩⟩ := h
@@ -397,8 +397,8 @@ theorem step_rel (n : Nat) :
       rw [hl] at i i'
       exact ⟨i, i'⟩
     · have hl : nb H s₀ - n + 1 ≠ nb H s₀ := by simpa using ht
-      have e' : nb H s₀ - (n - 1) = nb H s₀ - n + 1 := by omega
-      exact ⟨n - 1, by omega, by omega, by omega, e' ▸ i, e' ▸ i'⟩
+      have e' : nb H s₀ - (n - 1) = nb H s₀ - n + 1 := by omega_using [hn]
+      exact ⟨n - 1, by omega_using [hn], by omega_using [hn], by omega_using [hn, hl], e' ▸ i, e' ▸ i'⟩
   · intro _ _ _ _ _ _ h
     exact absurd ⟨h.1, h.2.1⟩ hn
 

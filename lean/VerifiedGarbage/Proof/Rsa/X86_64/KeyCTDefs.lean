@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
@@ -45,6 +46,10 @@ structure KPub where
   dl : Nat
   pl : Nat
   ql : Nat
+  /-- `n`'s length and bytes, which the word-level checks' guard reads. -/
+  k : Nat
+  np : Addr
+  nb : List Byte
 
 /-- What the checks read of the entry state `s`: the private values'
 pointers and lengths in the header, and their bytes. -/
@@ -70,9 +75,14 @@ structure KS (p : KPub) (s : State) : Prop where
   pl2 : p.pl ≤ 8 * p.w
   ql1 : 1 ≤ p.ql
   ql2 : p.ql ≤ 8 * p.w
-  word_w1 : 4 ≤ p.w
+  word_w1 : 6 ≤ p.w
   word_w2 : p.w < 2 ^ 24
   word_room : slot p.w 8 + slot p.w 17 ≤ p.Z
+  hS : word s.mem p.B (8 * Impl.Rsa.X86_64.Keys.sStride) = BitVec.ofNat 64 (8 * (p.w + 2))
+  hK : word s.mem p.B (8 * Impl.Bignum.X86_64.Public.sK) = BitVec.ofNat 64 p.k
+  hN : word s.mem p.B (8 * Impl.Bignum.X86_64.Public.sN) = p.np
+  srN : Src s p.B p.Z p.np p.nb
+  nl : 0 < p.nb.length
 
 /-- In the checks' context, from some entry state. -/
 def KK (p : KPub) (t : State) : Prop := ∃ s minv N, KCtx s t p.B p.Z p.w minv N ∧ KS p s
@@ -91,7 +101,7 @@ theorem KK.hl {p : KPub} {t : State} (h : KK p t) : ∀ i < 32, InRegions (t.rd 
   have hn := c.good.scr.nowrap
   have hZ := c.hZ
   intro i hi
-  exact c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
+  exact c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_using [hZ, this])
 
 /-- `KK` with the same memory and `rdi`. -/
 theorem KK.keep {p : KPub} {t t' : State} (h : KK p t) (hm : t'.mem = t.mem) (k : Keep mmRegs t t') : KK p t' := by
@@ -143,13 +153,13 @@ theorem zeroArrK_ok {p : KPub} {s : State} (h : KK p s) {j : Nat} (hj : j < 8) (
   have := c.w1
   have := c.w2
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
-    c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega)
+    c.good.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_using [hZ, this])
   unfold VG.Impl.Rsa.X86_64.Crt.zeroArr
   refine WP.seq (WP.mono (WP.keep [.r8, .r12] (Q := fun t => t.gpr .r8 = off p.B (slot p.w j) ∧
       t.gpr .r12 = BitVec.ofNat 64 p.w ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, c.good.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sW (by decide),
+    (by xrun [State.ea, hdr, c.good.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega_using [hj]), hl sW (by decide),
       c.good.hdr.harr j hj, c.good.hdr.hw]) rfl) fun s₁ ⟨⟨h8, h12, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (zeroAccLoop_ok (c.good.scr.congr k₁.2.2) h8 h12 (by omega) (by omega)
+  refine WP.mono (zeroAccLoop_ok (c.good.scr.congr k₁.2.2) h8 h12 (by omega_arith) (by omega_using [this])
     (Nat.le_trans (slot_le hj) hZ)) fun t ⟨_, ho, k⟩ => ⟨⟨s₀, minv, N, c.arr
       (Arrays.of_outside (List.mem_singleton_self j) (by rw [hm₁] at ho; exact ho) (Nat.le_refl _) (Nat.le_refl _))
       (by simpa using hj) (by simpa using Ne.symm hjN) (by simpa using Ne.symm hj1) ((k₁.trans k).mono (by decide)),

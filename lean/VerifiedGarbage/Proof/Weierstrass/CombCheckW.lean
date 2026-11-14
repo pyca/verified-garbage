@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Checking a `w`-bit comb's tables against the group law
@@ -36,14 +37,14 @@ theorem rowW_mul (hC : Law C) (hG : onCurve C (G C) = true) {H : Nat}
   | zero => rw [Nat.zero_add, Nat.one_mul]; exact h0
   | succ m ih =>
     rw [show (m + 1 + 1) * b = (m + 1) * b + b by rw [Nat.add_mul, Nat.one_mul],
-      ← hC.add_mul_mul hG, ih (by omega), h0]
+      ← hC.add_mul_mul hG, ih (by omega_using [hm]), h0]
     cases m with
     | zero =>
       rw [Nat.zero_add] at *
-      exact hC.tangent (hlt 1 hm).1 (ht (by omega))
+      exact hC.tangent (hlt 1 hm).1 (ht (by omega_using [hm]))
     | succ m =>
-      exact hC.chord (hlt _ (by omega)).1 (hlt 0 (by omega)).1 (hlt _ (by omega)).2
-        (hlt _ (by omega)).1 (hc m (by omega))
+      exact hC.chord (hlt _ (by omega_using [hm])).1 (hlt 0 (by omega_using [hm])).1 (hlt _ (by omega_using [hm])).2
+        (hlt _ (by omega_using [hm])).1 (hc m (by omega_using [hm]))
 
 
 /-- The checks of a comb's `J` tables of `H` entries and of its start, through
@@ -77,7 +78,7 @@ theorem combOkW_of_check (hC : Law C)
     decide_eq_true_eq, Bool.or_eq_true] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hlen, hJ⟩, hH⟩, hrows⟩, hg⟩, hchk⟩, hs0⟩, hsums⟩, hlast⟩ := h
   have hHw : 2 ^ w = 2 ^ (w - 1) + 2 ^ (w - 1) := by
-    rw [show w = w - 1 + 1 by omega, Nat.pow_succ, Nat.add_sub_cancel]; omega
+    rw [show w = w - 1 + 1 by omega_using [hw], Nat.pow_succ, Nat.add_sub_cancel]; omega_using []
   have hlt : ∀ j < J, ∀ m < 2 ^ (w - 1), (combAt tbl j m).1 < C.p ∧ (combAt tbl j m).2 < C.p :=
     fun j hj m hm => (hrows j hj).2 m hm
   have entries : ∀ j < J, ∀ m < 2 ^ (w - 1),
@@ -95,7 +96,7 @@ theorem combOkW_of_check (hC : Law C)
       intro hj
       refine rowW_mul hC hG (row := tbl.getD (j + 1) []) ?_ (hlt _ hj)
         (fun _ => (hchk _ hj).1.2) (hchk _ hj).2
-      have h7 := ih (by omega) (2 ^ (w - 1) - 1) (by omega)
+      have h7 := ih (by omega_using [hj]) (2 ^ (w - 1) - 1) (by omega_using [hH])
       have ht := (hchk (j + 1) hj).1.1
       simp only [Nat.add_one_ne_zero, Nat.add_sub_cancel] at ht
       replace ht := ht.resolve_left id
@@ -105,7 +106,7 @@ theorem combOkW_of_check (hC : Law C)
       exact hC.tangent (hlt (j + 1) hj 0 (Nat.two_pow_pos _)).1 ht
   have hlast' : ∀ j < J, mul (2 ^ (w - 1) * 2 ^ (w * j)) (G C) =
       ptN C (combAt tbl j (2 ^ (w - 1) - 1)) := fun j hj => by
-    have := entries j hj (2 ^ (w - 1) - 1) (by omega)
+    have := entries j hj (2 ^ (w - 1) - 1) (by omega_using [hH])
     rwa [Nat.sub_add_cancel (Nat.two_pow_pos _)] at this
   have hsum : ∀ j < J, mul (2 ^ (w - 1) * geomW w (j + 1)) (G C) = ptN C (sums.getD j (0, 0)) ∧
       (sums.getD j (0, 0)).1 < C.p ∧ (sums.getD j (0, 0)).2 < C.p := by
@@ -114,20 +115,20 @@ theorem combOkW_of_check (hC : Law C)
     | zero =>
       intro hj
       rw [hs0]
-      refine ⟨?_, hlt 0 hj _ (by omega)⟩
+      refine ⟨?_, hlt 0 hj _ (by omega_using [hH])⟩
       have := hlast' 0 hj
       simp only [Nat.mul_zero, Nat.pow_zero, Nat.mul_one] at this
       rw [show 2 ^ (w - 1) * geomW w (0 + 1) = 2 ^ (w - 1) by simp [geomW]]
       exact this
     | succ j ih =>
       intro hj
-      obtain ⟨hm, hl1, hl2⟩ := ih (by omega)
-      obtain ⟨⟨hc, hb1⟩, hb2⟩ := hsums j (by omega)
+      obtain ⟨hm, hl1, hl2⟩ := ih (by omega_using [hj])
+      obtain ⟨⟨hc, hb1⟩, hb2⟩ := hsums j (by omega_using [hj])
       refine ⟨?_, hb1, hb2⟩
       rw [show geomW w (j + 1 + 1) = geomW w (j + 1) + 2 ^ (w * (j + 1)) from rfl, Nat.mul_add,
         ← hC.add_mul_mul hG, hm, hlast' (j + 1) hj]
-      exact hC.chord hl1 (hlt (j + 1) hj _ (by omega)).1 hl2 hb1 hc
-  have hst := hsum (J - 1) (by omega)
+      exact hC.chord hl1 (hlt (j + 1) hj _ (by omega_using [hH])).1 hl2 hb1 hc
+  have hst := hsum (J - 1) (by omega_using [hJ])
   rw [Nat.sub_add_cancel hJ, hlast] at hst
   exact ⟨hlen, fun j hj => (hrows j hj).1, hlt, entries, ⟨hst.2.1, hst.2.2⟩, hst.1⟩
 

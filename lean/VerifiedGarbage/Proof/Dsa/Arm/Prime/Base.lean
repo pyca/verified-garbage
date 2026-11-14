@@ -143,22 +143,22 @@ structure In (P : CP) (σ : State) : Prop where
 section
 variable {P : CP} {σ : State}
 
-theorem In.W_eq (h : In P σ) : P.W = 2 * P.w + 2 := by have := h.k8; simp only [CP.W, CP.w]; omega
+theorem In.W_eq (h : In P σ) : P.W = 2 * P.w + 2 := by have := h.k8; simp only [CP.W, CP.w]; omega_using [this]
 
-theorem In.L_eq (h : In P σ) : P.L = 8 * P.w := by have := h.k8; simp only [CP.w]; omega
+theorem In.L_eq (h : In P σ) : P.L = 8 * P.w := by have := h.k8; simp only [CP.w]; omega_using [this]
 
-theorem In.wle (h : In P σ) : P.W ≤ 130 := by have := h.k2; simp only [CP.W]; omega
+theorem In.wle (h : In P σ) : P.W ≤ 130 := by have := h.k2; simp only [CP.W]; omega_using [this]
 
-theorem In.wge (h : In P σ) : 10 ≤ P.W := by have := h.k1; simp only [CP.W]; omega
+theorem In.wge (h : In P σ) : 10 ≤ P.W := by have := h.k1; simp only [CP.W]; omega_using [this]
 
-theorem In.w4 (h : In P σ) : 4 ≤ P.w ∧ P.w ≤ 64 := by have := h.k1; have := h.k2; simp only [CP.w]; omega
+theorem In.w4 (h : In P σ) : 4 ≤ P.w ∧ P.w ≤ 64 := by have := h.k1; have := h.k2; simp only [CP.w]; omega_arith
 
 theorem In.fits (h : In P σ) : arr P.W nArr ≤ P.Z := by
   have := h.scr; have := h.k1; have := h.k2
   simp only [Spec.Rsa.scratchWords] at *
-  simp only [arr, S, hdr, nArr, CP.W, CP.Z]; omega
+  simp only [arr, S, hdr, nArr, CP.W, CP.Z]; omega_arith
 
-theorem In.Z_le (h : In P σ) : P.Z ≤ 2 ^ 32 := by have := h.fS; omega
+theorem In.Z_le (h : In P σ) : P.Z ≤ 2 ^ 32 := by have := h.fS; omega_using [this]
 
 theorem In.hdr_Z (h : In P σ) : hdr ≤ P.Z := Nat.le_trans (Nat.le_add_right _ _) h.fits
 
@@ -166,27 +166,27 @@ theorem In.fitZ (h : In P σ) {j : Nat} (hj : j < nArr) : arr P.W j + S P.W ≤ 
   Nat.le_trans (arr_end hj) h.fits
 
 theorem In.fit (h : In P σ) {j : Nat} (hj : j < nArr) : arr P.W j + S P.W ≤ 2 ^ 64 := by
-  have := h.fitZ hj; have := h.Z_le; omega
+  have := h.fitZ hj; have := h.Z_le; omega_arith
 
 theorem In.rS_mem (h : In P σ) : P.rS ∈ σ.wr := by rw [h.wr]; simp
 
 /-- Montgomery multiplication's working space: 256 bytes before the key array
 `mBase`, its arrays within the working space. -/
 theorem In.oM_eq (h : In P σ) : P.oM + 256 = arr P.W mBase := by
-  have := h.W_eq; simp only [arr, S, hdr, mBase, CP.oM]; omega
+  have := h.W_eq; simp only [arr, S, hdr, mBase, CP.oM]; omega_using [this]
 
 theorem In.endM (h : In P σ) : P.oM + 8 * P.lenM = arr P.W (mBase + 8) := by
-  have := h.W_eq; simp only [arr, S, hdr, mBase, CP.oM, CP.lenM]; omega
+  have := h.W_eq; simp only [arr, S, hdr, mBase, CP.oM, CP.lenM]; omega_using [this]
 
 theorem In.lenR_fit (h : In P σ) : P.oM + 8 * P.lenR = P.Z := by
   have := h.scr; have := h.w4; have := h.L_eq
   simp only [Spec.Rsa.scratchWords] at *
-  simp only [CP.oM, CP.lenR, CP.Z]; omega
+  simp only [CP.oM, CP.lenR, CP.Z]; omega_arith
 
 theorem In.lenR_ge (h : In P σ) : 49 * P.w + 118 ≤ P.lenR := by
   have := h.scr; have := h.w4; have := h.L_eq
   simp only [Spec.Rsa.scratchWords] at *
-  simp only [CP.lenR]; omega
+  simp only [CP.lenR]; omega_arith
 
 end
 
@@ -220,8 +220,8 @@ variable {P : CP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {V : Nat 
 /-- The working space's context. -/
 theorem KS.ws (h : KS P σ A live V ls s) (r7 : s.gpr .r7 = BitVec.ofNat 32 (S P.W)) (r8 : s.gpr .r8 = P.B)
     (r9 : s.gpr .r9 = BitVec.ofNat 32 P.W) : Ws s P.B P.Z P.W nArr :=
-  ⟨h.pre.fS, by rw [h.wr]; exact h.pre.rS_mem, h.pre.fits, by have := h.pre.wge; omega,
-    by have := h.pre.wle; omega, r7, r8, r9⟩
+  ⟨h.pre.fS, by rw [h.wr]; exact h.pre.rS_mem, h.pre.fits, by have := h.pre.wge; omega_using [this],
+    by have := h.pre.wle; omega_using [this], r7, r8, r9⟩
 
 /-- The same memory, other registers. -/
 theorem KS.of_rest (h : KS P σ A live V ls s) {rs : List Reg} (r : Rest rs s t) (m : t.mem = s.mem) :
@@ -243,7 +243,7 @@ theorem keep_frameC {v : Nat} {js ds : List Nat} {m m' : Mem}
   intro x hx
   have hz' : ¬ P.rS.Contains x 1 := hx _ (List.mem_cons_self)
   simp only [Region.Contains] at hz'
-  exact k.out (Z := P.Z) hj (fun d hd' => Nat.le_trans (hd d hd') hz) (by simp only [ofs]; omega)
+  exact k.out (Z := P.Z) hj (fun d hd' => Nat.le_trans (hd d hd') hz) (by simp only [ofs]; omega_using [hz'])
 
 /-- A step that writes the arrays `js` and the header words `ds`. -/
 theorem KS.core {js ds : List Nat} (h : KS P σ A live V ls s) (k : Keep P.B P.W js ds s.mem t.mem)
@@ -256,7 +256,7 @@ theorem KS.core {js ds : List Nat} (h : KS P σ A live V ls s) (k : Keep P.B P.W
   refine ⟨pre, sp.trans h.sp, rd.trans h.rd, wr.trans h.wr,
     h.frame.trans (keep_frameC k (fun j hj => pre.fitZ (hjs j hj)) (fun d hd => (hds d hd).1) pre.hdr_Z), ?_,
     ha, hsl, hl, hls⟩
-  rw [k.slot (e := 16) (by decide) fun d hd => by have := (hds d hd).2.1; omega]
+  rw [k.slot (e := 16) (by decide) fun d hd => by have := (hds d hd).2.1; omega_using [this]]
   exact h.cnt
 
 /-- The arrays a step does not write. -/

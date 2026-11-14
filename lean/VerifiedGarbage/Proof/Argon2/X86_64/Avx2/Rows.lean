@@ -54,13 +54,13 @@ theorem vrun_vkeep (os : List VOp) (s : State) : VKeep s (vrun os s) :=
 
 theorem qword256_readW (m : Mem) (a : Addr) {k : Nat} (hk : k < 4) :
     qword256 (m.readW a 256) k = m.readW (a + BitVec.ofNat 64 (8 * k)) 64 := by
-  rw [qword256, show 64 * k = 8 * (8 * k) by omega]
-  exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega)
+  rw [qword256, show 64 * k = 8 * (8 * k) by omega_using []]
+  exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega_using [hk])
 
 theorem qword_readW128 (m : Mem) (a : Addr) {k : Nat} (hk : k < 2) :
     qword (m.readW a 128) k = m.readW (a + BitVec.ofNat 64 (8 * k)) 64 := by
-  rw [qword, show 64 * k = 8 * (8 * k) by omega]
-  exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega)
+  rw [qword, show 64 * k = 8 * (8 * k) by omega_using []]
+  exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega_using [hk])
 
 theorem qw_set256 (s : State) (d r : XReg) (v : BitVec 256) {k : Nat} (hk : k < 4) :
     qw (s.setV .l256 d (v.extractLsb' 0 128) (v.extractLsb' 128 128)) r k =
@@ -79,11 +79,11 @@ theorem working_write256 (m : Mem) (p : Addr) {c : Nat} (hc : c < 32) (v : BitVe
   split
   · rename_i h
     have e : off p (1024 + 8 * i.val) = off p (1024 + 32 * c) + BitVec.ofNat 64 (8 * (i.val % 4)) :=
-      (Offset.add_add_eq p (by omega)).symm
+      (Offset.add_add_eq p (by omega_using [h])).symm
     rw [word, e]
-    refine (readW_writeW_inside _ _ v (k := 8 * (i.val % 4)) (n := 8) (by omega) (by decide)).trans ?_
-    rw [qword256, show 8 * (8 * (i.val % 4)) = 64 * (i.val % 4) by omega]
-  · exact readW_writeW_off m p v (n := 8) (by omega) (by omega) (by omega)
+    refine (readW_writeW_inside _ _ v (k := 8 * (i.val % 4)) (n := 8) (by omega_using []) (by decide)).trans ?_
+    rw [qword256, show 8 * (8 * (i.val % 4)) = 64 * (i.val % 4) by omega_using []]
+  · exact readW_writeW_off m p v (n := 8) (by omega_using []) (by omega_using [hc]) (by omega_arith)
 
 /-- A word of `working` after a 16-byte write to it. -/
 theorem working_write128 (m : Mem) (p : Addr) {c : Nat} (hc : c < 64) (v : BitVec 128) (i : Fin 128) :
@@ -93,11 +93,11 @@ theorem working_write128 (m : Mem) (p : Addr) {c : Nat} (hc : c < 64) (v : BitVe
   split
   · rename_i h
     have e : off p (1024 + 8 * i.val) = off p (1024 + 16 * c) + BitVec.ofNat 64 (8 * (i.val % 2)) :=
-      (Offset.add_add_eq p (by omega)).symm
+      (Offset.add_add_eq p (by omega_using [h])).symm
     rw [word, e]
-    refine (readW_writeW_inside _ _ v (k := 8 * (i.val % 2)) (n := 8) (by omega) (by decide)).trans ?_
-    rw [qword, show 8 * (8 * (i.val % 2)) = 64 * (i.val % 2) by omega]
-  · exact readW_writeW_off m p v (n := 8) (by omega) (by omega) (by omega)
+    refine (readW_writeW_inside _ _ v (k := 8 * (i.val % 2)) (n := 8) (by omega_using []) (by decide)).trans ?_
+    rw [qword, show 8 * (8 * (i.val % 2)) = 64 * (i.val % 2) by omega_using []]
+  · exact readW_writeW_off m p v (n := 8) (by omega_using []) (by omega_using [hc]) (by omega_arith)
 
 /-- A row or column is permuted if its words are P of what they were and the
 others are unchanged. -/
@@ -136,7 +136,7 @@ theorem storeRow_eq (i : Nat) : storeRow i =
 theorem loadRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch s p) (hm : Masks s) :
     WP isa (.block (loadRow i)) s fun t =>
       words t = gather (rowIndex ⟨i, hi⟩) (working s.mem p) ∧ t.mem = s.mem ∧ VKeep s t ∧ Masks t := by
-  have r (k : Nat) (hk : k < 4) := hs.read (d := rowOff i k) (n := 32) (by unfold rowOff; omega)
+  have r (k : Nat) (hk : k < 4) := hs.read (d := rowOff i k) (n := 32) (by unfold rowOff; omega_using [hi, hk])
   apply WP.of_runBlock
   simp only [loadRow_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.load256, ea_at,
     State.setV_rd, State.setV_wr, State.setV_gpr, State.setV_mem, hs.reg, r 0 (by decide),
@@ -153,7 +153,7 @@ theorem loadRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch s
       (working s.mem p)[rowIndex ⟨i, hi⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩, working_get]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
     simp only [vreg, qw_set256 _ _ _ _ hk, ↓reduceIte, reduceCtorEq, qword256_readW _ _ hk] <;>
-    exact congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ (by simp only [rowIndex, rowOff]; omega))
+    exact congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ (by simp only [rowIndex, rowOff]; omega_using [e]))
 
 
 theorem ymm_setMem (s : State) (m : Mem) (r : XReg) : (s.setMem m).ymm r = s.ymm r := by
@@ -171,7 +171,7 @@ theorem qw_setMem (s : State) (m : Mem) (r : XReg) (k : Nat) : qw (s.setMem m) r
 /-- The region of `working` contains a write at `1024 + d`. -/
 theorem working_contains (p : Addr) {d n : Nat} (h : d + n ≤ 1024) :
     (⟨off p 1024, 1024⟩ : Region).Contains (off p (1024 + d)) n :=
-  Offset.contains p (by omega) (by omega) (by omega)
+  Offset.contains p (by omega_using []) (by omega_using [h]) (by omega_using [])
 
 theorem storeRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block (storeRow i)) s fun t =>
@@ -241,15 +241,15 @@ theorem row_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch s p) 
   apply permuteAt_of _ (rowIndex_injective _)
   · intro j
     have hj := j.isLt
-    rw [hw, ite_eq_left_of_eq_true _ _ (eq_true (by simp only [rowIndex]; omega)), ← hw1]
+    rw [hw, ite_eq_left_of_eq_true _ _ (eq_true (by simp only [rowIndex]; omega_using [])), ← hw1]
     have e := congrArg (fun v : Vector Word 16 => v[j.val]) hr
     simp only [words_get _ _ hj] at e
-    simp only [rowIndex, show (16 * i + j.val) % 16 = j.val by omega,
-      show (16 * i + j.val) % 4 = j.val % 4 by omega, e]
+    simp only [rowIndex, show (16 * i + j.val) % 16 = j.val by omega_using [],
+      show (16 * i + j.val) % 4 = j.val % 4 by omega_using [], e]
     rfl
   · intro k hk
     rw [hw, ite_eq_right_of_eq_false _ _ (eq_false fun h =>
-      hk ⟨k.val % 16, by omega⟩ (Fin.ext (by simp only [rowIndex]; omega)))]
+      hk ⟨k.val % 16, by omega_using []⟩ (Fin.ext (by simp only [rowIndex]; omega_using [h])))]
 
 
 /-! ## Columns -/
@@ -284,13 +284,13 @@ theorem vextracti128_1 (s : State) (d a : XReg) :
 
 theorem colOff_eq (j k : Nat) (hi : Bool) :
     colOff j k hi = 1024 + 16 * (16 * k + j + if hi then 8 else 0) := by
-  unfold colOff; cases hi <;> simp <;> omega
+  unfold colOff; cases hi <;> simp <;> omega_using []
 
 theorem loadCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch s p) (hm : Masks s) :
     WP isa (.block (loadCol c)) s fun t =>
       words t = gather (colIndex ⟨c, hc⟩) (working s.mem p) ∧ t.mem = s.mem ∧ VKeep s t ∧ Masks t := by
   have r (k : Nat) (hk : k < 4) (hi : Bool) :=
-    hs.read (d := colOff c k hi) (n := 16) (by rw [colOff_eq]; cases hi <;> simp <;> omega)
+    hs.read (d := colOff c k hi) (n := 16) (by rw [colOff_eq]; cases hi <;> simp <;> omega_using [hc, hk])
   apply WP.of_runBlock
   simp only [loadCol_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.load128, ea_at,
     State.setV_rd, State.setV_wr, State.setV_gpr, State.setV_mem, hs.reg, r 0 (by decide), r 1 (by decide), r 2 (by decide),
@@ -302,12 +302,12 @@ theorem loadCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch s
     have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
     rw [words_get _ _ hj, show (gather (colIndex ⟨c, hc⟩) (working s.mem p))[j] =
         (working s.mem p)[colIndex ⟨c, hc⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩, working_get]
-    have h2 : j % 4 / 2 = 0 ∨ j % 4 / 2 = 1 := by omega
+    have h2 : j % 4 / 2 = 0 ∨ j % 4 / 2 = 1 := by omega_using []
     rcases cases_div4 hj with e | e | e | e <;> rw [e] <;> rcases h2 with h | h <;>
       simp only [vreg, qw, State.lane_setV256, State.lane_setV128, xmm_eq_lane, h, ↓reduceIte,
         reduceCtorEq, qword_readW128 _ _ (Nat.mod_lt _ (by decide) : j % 4 % 2 < 2)]
     all_goals exact congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ (by
-      simp only [colIndex, colOff, Bool.false_eq_true, ite_true, ite_false]; omega))
+      simp only [colIndex, colOff, Bool.false_eq_true, ite_true, ite_false]; omega_using [e, h]))
   · exact (((((((((((hm.setV (by decide) (by decide)).setV (by decide) (by decide)).setV (by decide)
       (by decide)).setV (by decide) (by decide)).setV (by decide) (by decide)).setV (by decide)
       (by decide)).setV (by decide) (by decide)).setV (by decide) (by decide)).setV (by decide)
@@ -322,17 +322,17 @@ theorem vreg_ne4 (i : Nat) : vreg i ≠ .xmm4 := by
 
 theorem qw_col (s : State) {k b x : Nat} (h1 : x / 32 = k) (h2 : x / 16 % 2 = b) :
     qword (s.lane (vreg k) b) (x % 2) = qw s (vreg (x / 32)) (2 * (x / 16 % 2) + x % 2) := by
-  rw [h1, h2, qw, show (2 * b + x % 2) / 2 = b by omega, show (2 * b + x % 2) % 2 = x % 2 by omega]
+  rw [h1, h2, qw, show (2 * b + x % 2) / 2 = b by omega_using [], show (2 * b + x % 2) % 2 = x % 2 by omega_using []]
 
 /-- Whether word `8 q + r` of the block is in row `2 k` of column `c`. -/
 theorem col_cond (q r k c : Nat) (hr : r < 8) (hc : c < 8) :
     (8 * q + r = 16 * k + c) = (q = 2 * k ∧ r = c) := by
-  apply propext; omega
+  apply propext; omega_using [hr, hc]
 
 /-- Whether word `8 q + r` of the block is in row `2 k + 1` of column `c`. -/
 theorem col_cond8 (q r k c : Nat) (hr : r < 8) (hc : c < 8) :
     (8 * q + r = 16 * k + c + 8) = (q = 2 * k + 1 ∧ r = c) := by
-  apply propext; omega
+  apply propext; omega_using [hr, hc]
 
 theorem storeCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block (storeCol c)) s fun t =>
@@ -342,7 +342,7 @@ theorem storeCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch 
       Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ VKeep s t ∧ words t = words s ∧
       (Masks s → Masks t) := by
   have w (k : Nat) (hk : k < 4) (hi : Bool) :=
-    hs.write (d := colOff c k hi) (n := 16) (by rw [colOff_eq]; cases hi <;> simp <;> omega)
+    hs.write (d := colOff c k hi) (n := 16) (by rw [colOff_eq]; cases hi <;> simp <;> omega_using [hc, hk])
   apply WP.of_runBlock
   simp only [storeCol_eq, runBlock_cons, runStep_some, runBlock_nil, exec, State.store128_eq, ea_at,
     State.setMem_wr, State.setMem_gpr, State.setMem_mem, State.setV_wr, State.setV_gpr,
@@ -352,31 +352,31 @@ theorem storeCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch 
     State.setMem_lane, State.lane_setV128, ↓reduceIte, reduceCtorEq]
   refine ⟨fun x => ?_, ?_, ?_, ?_, fun h => ?_⟩
   · have hx := x.isLt
-    rw [working_write128 _ p (show 16 * 3 + c + 8 < 64 by omega),
-      working_write128 _ p (show 16 * 3 + c < 64 by omega),
-      working_write128 _ p (show 16 * 2 + c + 8 < 64 by omega),
-      working_write128 _ p (show 16 * 2 + c < 64 by omega),
-      working_write128 _ p (show 16 * 1 + c + 8 < 64 by omega),
-      working_write128 _ p (show 16 * 1 + c < 64 by omega),
-      working_write128 _ p (show 16 * 0 + c + 8 < 64 by omega),
-      working_write128 _ p (show 16 * 0 + c < 64 by omega)]
+    rw [working_write128 _ p (show 16 * 3 + c + 8 < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 3 + c < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 2 + c + 8 < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 2 + c < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 1 + c + 8 < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 1 + c < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 0 + c + 8 < 64 by omega_using [hc]),
+      working_write128 _ p (show 16 * 0 + c < 64 by omega_using [hc])]
     obtain ⟨q, hq16⟩ : ∃ q, x.val / 16 = q := ⟨_, rfl⟩
-    have hr : x.val % 16 / 2 < 8 := by omega
-    rw [show x.val / 2 = 8 * q + x.val % 16 / 2 by omega]
+    have hr : x.val % 16 / 2 < 8 := by omega_using []
+    rw [show x.val / 2 = 8 * q + x.val % 16 / 2 by omega_using [hq16]]
     simp only [col_cond _ _ _ _ hr hc, col_cond8 _ _ _ _ hr hc]
     by_cases h : x.val % 16 / 2 = c
     · simp only [h, and_true, ↓reduceIte]
-      rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) with
+      rcases (by omega_using [hq16] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceEqDiff, ↓reduceIte]
-      · exact qw_col s (k := 0) (b := 0) (by omega) (by omega)
-      · exact qw_col s (k := 0) (b := 1) (by omega) (by omega)
-      · exact qw_col s (k := 1) (b := 0) (by omega) (by omega)
-      · exact qw_col s (k := 1) (b := 1) (by omega) (by omega)
-      · exact qw_col s (k := 2) (b := 0) (by omega) (by omega)
-      · exact qw_col s (k := 2) (b := 1) (by omega) (by omega)
-      · exact qw_col s (k := 3) (b := 0) (by omega) (by omega)
-      · exact qw_col s (k := 3) (b := 1) (by omega) (by omega)
+      · exact qw_col s (k := 0) (b := 0) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 0) (b := 1) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 1) (b := 0) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 1) (b := 1) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 2) (b := 0) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 2) (b := 1) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 3) (b := 0) (by omega_using [hq16]) (by omega_using [hq16])
+      · exact qw_col s (k := 3) (b := 1) (by omega_using [hq16]) (by omega_using [hq16])
     · simp only [h, and_false, ↓reduceIte]
   · repeat (first
       | refine Frame.writeW ?_ (List.mem_singleton_self _) _ (working_contains p (by omega))
@@ -405,16 +405,16 @@ theorem col_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch s p) 
   apply permuteAt_of _ (colIndex_injective _)
   · intro j
     have hj := j.isLt
-    rw [hw, ite_eq_left_of_eq_true _ _ (eq_true (by simp only [colIndex]; omega)), ← hw1]
+    rw [hw, ite_eq_left_of_eq_true _ _ (eq_true (by simp only [colIndex]; omega_using [hc])), ← hw1]
     have e := congrArg (fun v : Vector Word 16 => v[j.val]) hr
     simp only [words_get _ _ hj] at e
-    simp only [colIndex, show (16 * (j.val / 2) + 2 * c + j.val % 2) / 32 = j.val / 4 by omega,
+    simp only [colIndex, show (16 * (j.val / 2) + 2 * c + j.val % 2) / 32 = j.val / 4 by omega_using [hc],
       show 2 * ((16 * (j.val / 2) + 2 * c + j.val % 2) / 16 % 2) + (16 * (j.val / 2) + 2 * c +
-        j.val % 2) % 2 = j.val % 4 by omega, e]
+        j.val % 2) % 2 = j.val % 4 by omega_using [hc], e]
     rfl
   · intro k hk
     rw [hw, ite_eq_right_of_eq_false _ _ (eq_false fun h =>
-      hk ⟨4 * (k.val / 32) + 2 * (k.val / 16 % 2) + k.val % 2, by omega⟩
-        (Fin.ext (by simp only [colIndex]; omega)))]
+      hk ⟨4 * (k.val / 32) + 2 * (k.val / 16 % 2) + k.val % 2, by omega_using []⟩
+        (Fin.ext (by simp only [colIndex]; omega_using [h])))]
 
 end VG.Proof.Argon2.X86_64.Avx2

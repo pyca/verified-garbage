@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
@@ -68,11 +69,11 @@ theorem streamEncryptToPrepared16Pre_local : ∀ vs m₁ m₂,
   dsimp only [Curry.apply, streamEncryptToPrepared16Pre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, h.2.1, preparedPowers16Repr_congr hc h.2.2⟩
 
-theorem sealGatherPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.sealGatherPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs Spec.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    (∀ r ∈ Sig.lists pb m₁ Spec.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Gcm.sealGatherPrecomputedSig.words pb) (Proof.Gcm.sealGatherPrepared16Pre pb) vs m₁ →
-      Curry.apply (Spec.Gcm.sealGatherPrecomputedSig.words pb) (Proof.Gcm.sealGatherPrepared16Pre pb) vs m₂ := by
+theorem sealGatherPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.sealGatherPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    (∀ r ∈ Sig.lists pb m₁ Proof.Gcm.sealGatherPrecomputedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.sealGatherPrecomputedSig.words pb) (Proof.Gcm.sealGatherPrepared16Pre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.sealGatherPrecomputedSig.words pb) (Proof.Gcm.sealGatherPrepared16Pre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb hl h
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
   replace hlen := Nat.succ.inj hlen
@@ -87,9 +88,9 @@ theorem sealGatherPrepared16Pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Gcm.
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [Spec.Gcm.sealGatherPrecomputedSig, sealGatherPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.sealGatherPrecomputedSig, Proof.Gcm.sealGatherPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  simp only [Spec.Gcm.sealGatherPrecomputedSig, sealGatherPrecomputedSig, Sig.lists, List.append_nil] at hl
+  simp only [Proof.Gcm.sealGatherPrecomputedSig, Proof.Gcm.sealGatherPrecomputedSig, Sig.lists, List.append_nil] at hl
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]

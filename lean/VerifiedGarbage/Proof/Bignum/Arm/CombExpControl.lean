@@ -36,8 +36,8 @@ theorem next_ok {base source table : BitVec 32} {len w bytes N M g E i : Nat}
   have size : 256≤8*len := by
     have arrayFits := h.ready.width ▸ h.ready.layout.2.2.1
     simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at arrayFits
-    omega
-  refine WP.mono (expDecrement_ok s h.ready.workspace (by omega) h.ready.ptr (by omega) fits counter) ?_
+    omega_using [arrayFits]
+  refine WP.mono (expDecrement_ok s h.ready.workspace (by omega_using [size]) h.ready.ptr (by omega_using []) fits counter) ?_
   rintro t ⟨mem,flag,rest⟩
   have r : Rest roundClobbers s t := rest.mono (by decide)
   obtain ⟨powerT,frame⟩ := h.after_header (d:=192) (by decide) (by decide) mem rest
@@ -48,7 +48,7 @@ theorem next_ok {base source table : BitVec 32} {len w bytes N M g E i : Nat}
     rw [mem,Mem.readW_writeW_self32]
     congr 1
   · rw [flag]
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_using [])
 
 theorem round_ok {base source table : BitVec 32} {len w bytes N M g x i : Nat}
     {P : State→Prop} {regions : List Region}

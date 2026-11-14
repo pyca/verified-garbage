@@ -25,17 +25,17 @@ theorem newton64_val (a x : BitVec 64) :
   generalize a.toNat = A at *
   -- `D = 2 - A X + 2⁶⁴ j`.
   have hDj : (D : Int) = 2 - (A * X : Nat) + 2 ^ 64 * (((D : Int) - 2 + (A * X : Nat)) / 2 ^ 64) := by
-    have : ((A * X : Nat) : Int) % 2 ^ 64 = ((A * X % 2 ^ 64 : Nat) : Int) := by omega
-    omega
+    have : ((A * X : Nat) : Int) % 2 ^ 64 = ((A * X % 2 ^ 64 : Nat) : Int) := by omega_using []
+    omega_using [hD]
   generalize (((D : Int) - 2 + (A * X : Nat)) / 2 ^ 64) = j at hDj
   have hXD : ((X * D : Nat) : Int) = 2 * X - (X : Int) * (A * X : Nat) + 2 ^ 64 * (X * j) := by
     rw [Int.natCast_mul, hDj, Int.mul_add, Int.mul_sub, Int.mul_left_comm (X : Int) (2 ^ 64) j]
-    omega
+    omega_using []
   have e : (X : Int) * (2 - (A : Int) * X) = 2 * X - (X : Int) * (A * X : Nat) := by
     rw [Int.mul_sub, Int.natCast_mul, Int.mul_comm (X : Int) 2]
   rw [e]
-  have : ((X * D % 2 ^ 64 : Nat) : Int) = ((X * D : Nat) : Int) % 2 ^ 64 := by omega
+  have : ((X * D % 2 ^ 64 : Nat) : Int) = ((X * D : Nat) : Int) % 2 ^ 64 := by omega_using []
   rw [hR, this, hXD]
-  omega
+  omega_using []
 
 end VG.Proof.Bignum.Arm

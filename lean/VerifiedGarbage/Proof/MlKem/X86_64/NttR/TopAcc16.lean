@@ -40,10 +40,10 @@ theorem inW16_get (m : Mem) (p : Addr) {i : Nat} (hi : i < 256) : (inW16 m p)[i]
 theorem coeffAtW16_word (m : Mem) (p : Addr) (i : Nat) : coeffAtW 16 m p i = wordAt m p i := rfl
 
 theorem inTerms16_get {j : Nat} (hj : j < 256) : Y.get (inTerms16.getD (j / 16) []) (j % 16) = .lv 0 j := by
-  rw [inTerms16, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega), Option.map_some,
+  rw [inTerms16, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega_using [hj]), Option.map_some,
     Option.getD_some, Y.get, List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_range (Nat.mod_lt _ (by decide)), Option.map_some, Option.getD_some,
-    show 16 * (j / 16) + j % 16 = j by omega]
+    show 16 * (j / 16) + j % 16 = j by omega_using []]
 
 theorem initA16_reg (r : XReg) :
     initA16.reg r = if r = .xmm15 then List.replicate 16 (.c qN) else List.replicate 16 .junk := by
@@ -60,7 +60,7 @@ theorem initA16_rel {L : Nat → Nat → BitVec 16} {O : Nat → BitVec 16} {s�
       rw [get_replicate _ he, hq e he]; exact Hd.of_eq rfl
     · rw [get_replicate _ he]; exact Hd.junk _
   · simp only [rsA16, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · left
       rw [show initA16.mem.getD 0 [] = junks 16 by simp only [initA16, List.getD_cons_zero], junks_get]; rfl
     · have hj' : j < 256 := hj
@@ -85,23 +85,23 @@ theorem ctx16 {s : State} (hS : pR (s.gpr .rsi) ∈ s.wr) (hX : sR (s.gpr .rdi) 
     intro x h1 h2
     rw [Offset.lt_iff x _ (by decide)] at h1
     rw [Offset.lt_iff x _ (by decide)] at h2
-    exact hD x (by show (x - s.gpr .rdi).toNat + 1 ≤ 512; omega)
-      (by show (x - s.gpr .rsi).toNat + 1 ≤ 1024; simp only [oS] at h1; omega)
+    exact hD x (by show (x - s.gpr .rdi).toNat + 1 ≤ 512; omega_using [h2])
+      (by show (x - s.gpr .rsi).toNat + 1 ≤ 1024; simp only [oS] at h1; omega_using [h1])
   refine ⟨fun k hk => ?_, fun k hk hw => ?_, fun k k' hk hk' hne => ?_, fun k hk => ?_, h8⟩
   · simp only [rsA16, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · exact ⟨_, List.mem_append_right _ hS, cS⟩
     · exact ⟨_, hX, cX⟩
   · simp only [rsA16, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · exact ⟨_, hS, cS⟩
     · cases hw
   · simp only [rsA16, List.length_cons, List.length_nil] at hk hk'
-    rcases (by omega : k = 0 ∧ k' = 1 ∨ k = 1 ∧ k' = 0) with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    rcases (by omega_using [hk, hk', hne] : k = 0 ∧ k' = 1 ∨ k = 1 ∧ k' = 0) with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · exact sep
     · exact fun x h1 h2 => sep x h2 h1
   · simp only [rsA16, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> simp [rlen, rsA16, oS]
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl <;> simp [rlen, rsA16, oS]
 
 /-- `nttR16 pb` leaves `NTT` of the polynomial of `u16`s at `rdi` in the
 accumulator at `d`, if `checkAcc pb d`. -/
@@ -149,7 +149,7 @@ theorem nttRAcc16_ok {pb : List Instr} {d : Reg} (hc : checkAcc pb d = true) (hd
   refine WP.block_cons_iff.2 ⟨_, rfl, WP.block_nil ⟨?_, ?_, ?_⟩⟩
   · have hb : rbase (rsBA d) s1 1 = s.gpr d := by simp [rbase, rsBA, gd]
     intro w hw
-    have h0 := hr3.mem 1 w (by simp [rsBA]) (by simp [rlen, rsBA]; omega)
+    have h0 := hr3.mem 1 w (by simp [rsBA]) (by simp [rlen, rsBA]; omega_using [hw])
     rw [outAccOk_get hc hw, hb] at h0
     have e0 := h0.eq rfl
     show (wordAt s3.mem (s.gpr d) w).toNat = _
@@ -160,17 +160,17 @@ theorem nttRAcc16_ok {pb : List Instr} {d : Reg} (hc : checkAcc pb d = true) (hd
     rw [← hm1]
     refine hr3.fr x fun k hk hw hlt => ?_
     simp only [rsBA, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · refine hx (pR (s.gpr .rsi)) (by simp) ?_
       simp only [rbase, rlen, rsBA, List.getD_cons_zero, gsi] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr .rsi).toNat + 1 ≤ 1024
-      simp only [oS] at hlt; omega
+      simp only [oS] at hlt; omega_using [hlt]
     · refine hx (sR (s.gpr d)) (by simp) ?_
       simp only [rbase, rlen, rsBA, List.getD_cons_succ, List.getD_cons_zero, gd] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr d).toNat + 1 ≤ 512
-      omega
+      omega_using [hlt]
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · show s3.gpr r = s.gpr r
       rw [hr3.gpr]; exact k1.1 r hr
@@ -231,11 +231,11 @@ theorem nttR16_ok {pb : List Instr} {d : Reg} (hc : check pb d = true) (hd : d =
   · have hb : rbase (rsB d) s1 1 = s.gpr d := by simp [rbase, rsB, gd]
     refine VG.Proof.MlKem.polyIs_of_toNat fun p hp => ?_
     rw [n_eq] at hp
-    have h0 := hr3.mem 1 (2 * p) (by simp [rsB]) (by simp [rlen, rsB]; omega)
-    have h1 := hr3.mem 1 (2 * p + 1) (by simp [rsB]) (by simp [rlen, rsB]; omega)
-    rw [outOk_get hc (by omega), hb] at h0 h1
-    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), show 2 * p / 2 = p by omega] at h0
-    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))] at h1
+    have h0 := hr3.mem 1 (2 * p) (by simp [rsB]) (by simp [rlen, rsB]; omega_using [hp])
+    have h1 := hr3.mem 1 (2 * p + 1) (by simp [rsB]) (by simp [rlen, rsB]; omega_using [hp])
+    rw [outOk_get hc (by omega_using [hp]), hb] at h0 h1
+    rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_using [])), show 2 * p / 2 = p by omega_using []] at h0
+    rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))] at h1
     have e0 := h0.eq rfl
     have e1 := h1.eq rfl
     show (coeffAt s3.mem (s.gpr d) p).toNat = _
@@ -249,17 +249,17 @@ theorem nttR16_ok {pb : List Instr} {d : Reg} (hc : check pb d = true) (hd : d =
     rw [← hm1]
     refine hr3.fr x fun k hk hw hlt => ?_
     simp only [rsB, List.length_cons, List.length_nil] at hk
-    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+    rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
     · refine hx (pR (s.gpr .rsi)) (by simp) ?_
       simp only [rbase, rlen, rsB, List.getD_cons_zero, gsi] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr .rsi).toNat + 1 ≤ 1024
-      simp only [oS] at hlt; omega
+      simp only [oS] at hlt; omega_using [hlt]
     · refine hx (pR (s.gpr d)) (by simp) ?_
       simp only [rbase, rlen, rsB, List.getD_cons_succ, List.getD_cons_zero, gd] at hlt
       rw [Offset.lt_iff x _ (by decide)] at hlt
       show (x - s.gpr d).toNat + 1 ≤ 1024
-      omega
+      omega_using [hlt]
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · show s3.gpr r = s.gpr r
       rw [hr3.gpr]; exact k1.1 r hr

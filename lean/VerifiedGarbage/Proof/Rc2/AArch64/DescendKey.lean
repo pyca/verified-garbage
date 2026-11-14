@@ -31,14 +31,14 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     simp only [I, Nat.sub_self]
     rfl
   rw [← finish]
-  apply forwardLoop (.block descendKey) I (128 - t8) _ 0 (by omega) s
+  apply forwardLoop (.block descendKey) I (128 - t8) _ 0 (by omega_using [ht']) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
   have outPtr := frame₁.reg .x21 (by decide)
   have len₁ := (frame₁.reg .x24 (by decide)).trans len
   have indexNew : s₁.gpr .x23 - 1#64 = BitVec.ofNat 64 (127 - t8 - j) := by
-    rw [index₁, Offset.ofNat_sub_ofNat (show 1 ≤ 128 - t8 - j by omega)]
-    congr 1; omega
+    rw [index₁, Offset.ofNat_sub_ofNat (show 1 ≤ 128 - t8 - j by omega_using [hj])]
+    congr 1; omega_using []
   have loAddr : s₁.gpr .x21 + (s₁.gpr .x23 - 1#64) + 1#64 =
       s.gpr .x21 + BitVec.ofNat 64 (127 - t8 - j + 1) := by
     rw [outPtr, indexNew, BitVec.add_assoc]
@@ -53,11 +53,11 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have write₁ : InRegions s₁.wr (s₁.gpr .x21 + (s₁.gpr .x23 - 1#64)) 1 := by
     rw [frame₁.wr, outPtr, indexNew]
-    exact writable _ (by omega)
+    exact writable _ (by omega_using [])
   have readLo : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x21 + (s₁.gpr .x23 - 1#64) + 1#64) 1 := by
-    rw [loAddr]; exact read₁ _ (by omega)
+    rw [loAddr]; exact read₁ _ (by omega_using [ht])
   have readHi : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x21 + (s₁.gpr .x23 - 1#64 + s₁.gpr .x24)) 1 := by
-    rw [hiAddr]; exact read₁ _ (by omega)
+    rw [hiAddr]; exact read₁ _ (by omega_using [ht'])
   apply WP.mono (descendKey_ok s₁ readLo readHi write₁)
   intro s₂ h₂
   let b := Spec.Rc2.pi ((descend l t8 j).getD (127 - t8 - j + 1) 0 ^^^
@@ -65,21 +65,21 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
   have keep₂ : Keep keyTemps {s₁ with
       mem := s₁.mem.writeW (s.gpr .x21 + BitVec.ofNat 64 (127 - t8 - j)) b} s₂ := by
     have h := h₂.2.2
-    rw [loAddr, hiAddr, prefix₁ _ (by omega), prefix₁ _ (by omega), outPtr, indexNew] at h
+    rw [loAddr, hiAddr, prefix₁ _ (by omega_using [ht]), prefix₁ _ (by omega_using [ht']), outPtr, indexNew] at h
     exact h
   constructor
-  · refine ⟨?_, frame₁.step (127 - t8 - j) (by omega) b keep₂, ?_⟩
+  · refine ⟨?_, frame₁.step (127 - t8 - j) (by omega_using []) b keep₂, ?_⟩
     · rw [h₂.1]
       change s₁.gpr .x23 - 1#64 = _
       rw [indexNew]
-      congr 1; omega
+      congr 1; omega_using []
     · rw [keep₂.mem, descend_succ]
-      exact prefix₁.write (by decide) (by omega) b
+      exact prefix₁.write (by decide) (by omega_using []) b
   · rw [h₂.2.1]
     change some ((s₁.gpr .x23 - 1#64) == 0#64) = _
     rw [indexNew]
-    have he : 127 - t8 - j = 0 ↔ j + 1 = 128 - t8 := by omega
-    have eqZero := counter_eq (127 - t8 - j) 0 (by omega) (by decide)
+    have he : 127 - t8 - j = 0 ↔ j + 1 = 128 - t8 := by omega_using [hj]
+    have eqZero := counter_eq (127 - t8 - j) 0 (by omega_using []) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     rw [eqZero]
     simp only [he]

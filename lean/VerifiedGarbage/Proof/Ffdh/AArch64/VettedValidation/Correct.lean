@@ -42,10 +42,10 @@ theorem restore_ok {s t : State} (g : Geometry s) (h : Result s t) :
   · unfold VG.Impl.Ffdh.AArch64.VettedValidation.restore
     brun [h.base,hdr_enc (show sDom<32 by decide),hdr_enc (show sDL<32 by decide),
       hdr_enc (show sLen<32 by decide),hdr_enc (show sCtx<32 by decide),
-      (g.scratch.congr h.keep.wr).ld (d:=8*sDom) (by unfold sDom;have :=g.room;omega),
-      (g.scratch.congr h.keep.wr).ld (d:=8*sDL) (by unfold sDL;have :=g.room;omega),
-      (g.scratch.congr h.keep.wr).ld (d:=8*sLen) (by unfold sLen;have :=g.room;omega),
-      (g.scratch.congr h.keep.wr).ld (d:=8*sCtx) (by unfold sCtx;have :=g.room;omega),
+      (g.scratch.congr h.keep.wr).ld (d:=8*sDom) (by unfold sDom;have :=g.room;omega_using [this]),
+      (g.scratch.congr h.keep.wr).ld (d:=8*sDL) (by unfold sDL;have :=g.room;omega_using [this]),
+      (g.scratch.congr h.keep.wr).ld (d:=8*sLen) (by unfold sLen;have :=g.room;omega_using [this]),
+      (g.scratch.congr h.keep.wr).ld (d:=8*sCtx) (by unfold sCtx;have :=g.room;omega_using [this]),
       h.savedDomain,h.savedLength,h.savedKeyLength,h.savedWords]
   · rintro u ⟨⟨args,mem⟩,rest⟩
     refine ⟨args,?_,(h.keep.trans rest).mono (by
@@ -164,7 +164,7 @@ theorem result_eval {s t : State} (h : Result s t) :
     isa.eval (.nonzero .x .x10) t=some (decide (width s≠4095)) := by
   rw [eval_nonzero,h.test]
   change some (!(BitVec.ofNat 64 (width s)-BitVec.ofNat 64 4095==0#64))=_
-  rw [Cached.sub_zero_iff (by have :=width_le s;omega) (by decide)]
+  rw [Cached.sub_zero_iff (by have :=width_le s;omega_using [this]) (by decide)]
   simp
 
 theorem correct (W : Window) (M : Mont) (S : Selector) {s : State} (hs : pre s) :

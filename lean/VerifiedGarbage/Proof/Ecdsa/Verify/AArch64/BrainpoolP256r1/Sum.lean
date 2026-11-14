@@ -112,7 +112,7 @@ theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s bas
     by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.n10, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red, hM₁.call⟩
-    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
+    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega_using [hn, this])]
     · exact hM.val
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have ne : ∀ i ∈ sumW, MP ≠ i := by decide

@@ -195,7 +195,7 @@ def ComputesB (M : Mode) (L Lb : Nat) (ciph : Cipher) (F : StepFn) : Prop :=
 
 theorem getD_xor {x y : List Byte} {i : Nat} (hx : i < x.length) (hy : i < y.length) :
     (xor x y).getD i 0 = x.getD i 0 ^^^ y.getD i 0 := by
-  have h : i < (xor x y).length := by simp [Spec.Cbc.xor]; omega
+  have h : i < (xor x y).length := by simp [Spec.Cbc.xor]; omega_using [hx, hy]
   rw [← List.getElem_eq_getD (h := h), ← List.getElem_eq_getD (h := hx), ← List.getElem_eq_getD (h := hy)]
   simp [Spec.Cbc.xor]
 
@@ -302,9 +302,9 @@ theorem tail_snoc_getD {c : List Byte} {n : Nat} (hc : c.length = n) (y : Byte) 
     (c.tail ++ [y]).getD i 0 = if i < n - 1 then c.getD (i + 1) 0 else y := by
   simp only [List.getD_eq_getElem?_getD]
   split
-  · rw [List.getElem?_append_left (by simp [hc]; omega), List.getElem?_tail]
-  · rw [List.getElem?_append_right (by simp [hc]; omega)]
-    simp [hc, show i - (n - 1) = 0 by omega]
+  · rw [List.getElem?_append_left (by simp [hc]; omega_arith), List.getElem?_tail]
+  · rw [List.getElem?_append_right (by simp [hc]; omega_arith)]
+    simp [hc, show i - (n - 1) = 0 by omega_using [hi]]
 
 /-- CFB8's byte XOR: `dat[0] := dat[0] ⊕ buf[0]`. -/
 def xorByte : Op := { wide := false, dst := .dat, dOff := 0, src := .dat, sOff := 0, xr := some (.buf, 0) }
@@ -345,38 +345,38 @@ theorem cfb8Enc_computes : Computes (Mode.cfb8Enc bw) (4 * bw) ciph (cfb8EncF ci
   have e : Mode.cfb8Enc bw = ⟨copyBlk bw .buf .chn, xorByte :: Mode.shiftIn bw, 1, true⟩ := rfl
   rw [e]
   simp only [stepA, cfb8EncF, applyOps_cons]
-  refine ⟨rd_eq rfl fun i hi => ?_, rd_eq (by simp [rd_length]; omega) fun i hi => ?_⟩
-  · have : i = 0 := by omega
+  refine ⟨rd_eq rfl fun i hi => ?_, rd_eq (by simp [rd_length]; omega_using [hbw]) fun i hi => ?_⟩
+  · have : i = 0 := by omega_using [hi]
     subst this
     rw [shiftIn_apply, ite_eq_right (fun h => nomatch h.1), ite_eq_right (fun h => nomatch h.1), hy,
       ite_eq_left ⟨rfl, rfl⟩]
-    rw [List.getD_cons_zero, headD_eq_getD, headD_eq_getD, getD_rd (show 0 < 1 by omega)]
+    rw [List.getD_cons_zero, headD_eq_getD, headD_eq_getD, getD_rd (show 0 < 1 by omega_using [])]
   · rw [shiftIn_apply, tail_snoc_getD (rd_length _ _ _) _ hi]
     by_cases h : i < 4 * bw - 1
     · rw [ite_eq_left ⟨rfl, h⟩, ite_eq_left h, hy, ite_eq_right (fun h => nomatch h.1), ite_eq_right (by simp),
-        getD_rd (by omega)]
-    · rw [ite_eq_right (fun h' => h h'.2), ite_eq_right h, ite_eq_left ⟨rfl, by omega⟩, hy, ite_eq_left ⟨rfl, rfl⟩]
-      rw [headD_eq_getD, headD_eq_getD, getD_rd (show 0 < 1 by omega)]
+        getD_rd (by omega_using [h])]
+    · rw [ite_eq_right (fun h' => h h'.2), ite_eq_right h, ite_eq_left ⟨rfl, by omega_using [hi, h]⟩, hy, ite_eq_left ⟨rfl, rfl⟩]
+      rw [headD_eq_getD, headD_eq_getD, getD_rd (show 0 < 1 by omega_using [])]
 
 theorem cfb8Dec_computes : Computes (Mode.cfb8Dec bw) (4 * bw) ciph (cfb8DecF ciph) := by
   intro a
   have e : Mode.cfb8Dec bw = ⟨copyBlk bw .buf .chn, Mode.shiftIn bw ++ [xorByte], 1, true⟩ := rfl
   rw [e]
   simp only [stepA, cfb8DecF, applyOps_snoc]
-  refine ⟨rd_eq rfl fun i hi => ?_, rd_eq (by simp [rd_length]; omega) fun i hi => ?_⟩
-  · have : i = 0 := by omega
+  refine ⟨rd_eq rfl fun i hi => ?_, rd_eq (by simp [rd_length]; omega_using [hbw]) fun i hi => ?_⟩
+  · have : i = 0 := by omega_using [hi]
     subst this
     rw [xorByte_apply, ite_eq_left ⟨rfl, rfl⟩, shiftIn_apply, ite_eq_right (fun h => nomatch h.1),
       ite_eq_right (fun h => nomatch h.1), shiftIn_apply, ite_eq_right (fun h => nomatch h.1),
       ite_eq_right (fun h => nomatch h.1), cfb8_crypt, cfb8_crypt, ite_eq_right (by simp),
       ite_eq_left rfl]
-    rw [List.getD_cons_zero, headD_eq_getD, headD_eq_getD, getD_rd (show 0 < 1 by omega)]
+    rw [List.getD_cons_zero, headD_eq_getD, headD_eq_getD, getD_rd (show 0 < 1 by omega_using [])]
   · rw [xorByte_apply, ite_eq_right (fun h => nomatch h.1), shiftIn_apply, tail_snoc_getD (rd_length _ _ _) _ hi]
     by_cases h : i < 4 * bw - 1
-    · rw [ite_eq_left ⟨rfl, h⟩, ite_eq_left h, cfb8_crypt, ite_eq_right (by simp), getD_rd (by omega)]
-    · rw [ite_eq_right (fun h' => h h'.2), ite_eq_right h, ite_eq_left ⟨rfl, by omega⟩, cfb8_crypt,
+    · rw [ite_eq_left ⟨rfl, h⟩, ite_eq_left h, cfb8_crypt, ite_eq_right (by simp), getD_rd (by omega_using [h])]
+    · rw [ite_eq_right (fun h' => h h'.2), ite_eq_right h, ite_eq_left ⟨rfl, by omega_using [hi, h]⟩, cfb8_crypt,
         ite_eq_right (by simp)]
-      rw [headD_eq_getD, getD_rd (show 0 < 1 by omega)]
+      rw [headD_eq_getD, getD_rd (show 0 < 1 by omega_using [])]
 
 end
 
@@ -405,21 +405,21 @@ theorem chunksAt_set {m m' : Mem} {D : Addr} {L n j : Nat}
     have hu := List.mem_range.mp hu
     have h3 : L * q + L ≤ L * n := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hq
     rw [VG.Offset.add_add]
-    refine h _ (by omega) ?_
+    refine h _ (by omega_using [hu, h3]) ?_
     rcases Nat.lt_or_gt_of_ne (Ne.symm hne) with hlt | hlt
     · left; have : L * q + L ≤ L * j := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hlt
-      omega
+      omega_using [hu, this]
     · right; have : L * j + L ≤ L * q := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hlt
-      omega
+      omega_using [this]
 
 /-- The outputs of the first `j` steps followed by the remaining inputs, after
 step `j`. -/
 theorem run_set (F : StepFn) (c : List Byte) {xs : List (List Byte)} {j : Nat} (hj : j < xs.length) :
     ((run F c (xs.take j)).1 ++ xs.drop j).set j (F (run F c (xs.take j)).2 xs[j]).1 =
       (run F c (xs.take (j + 1))).1 ++ xs.drop (j + 1) := by
-  have hl : (run F c (xs.take j)).1.length = j := by rw [run_length, List.length_take]; omega
+  have hl : (run F c (xs.take j)).1.length = j := by rw [run_length, List.length_take]; omega_using [hj]
   rw [List.take_add_one, List.getElem?_eq_getElem hj, Option.toList_some, run_snoc,
-    List.set_append_right _ _ (by omega), hl, Nat.sub_self, List.drop_eq_getElem_cons hj, List.set_cons_zero,
+    List.set_append_right _ _ (by omega_using [hl]), hl, Nat.sub_self, List.drop_eq_getElem_cons hj, List.set_cons_zero,
     List.append_assoc, List.singleton_append]
 
 end VG.Proof.Modes

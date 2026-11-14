@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.RsaKeyGen.Bits32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The reviewed fallback witness from two native word updates -/
 
@@ -25,15 +26,15 @@ theorem val32_witness_fallback {m m' : Mem} {p : Addr} {d n : Nat} (positive : 2
   · rw [testBit_val32 m' p d n i index, testBit_val32 m p d n i index]
     by_cases first : i / 32 = 0
     · rw [first, Nat.mul_zero, Nat.add_zero, low, Nat.testBit_or, testBit_two,
-        show i % 32 = i by omega]
-      simp only [show i < 32 * n - 1 by omega, decide_true, Bool.true_and]
+        show i % 32 = i by omega_using [first]]
+      simp only [show i < 32 * n - 1 by omega_using [positive, first], decide_true, Bool.true_and]
     · by_cases last : i / 32 = n - 1
-      · rw [last, top, Nat.testBit_mod_two_pow, decide_eq_false (by omega : i ≠ 1), Bool.or_false]
-        rw [show decide (i % 32 < 31) = decide (i < 32 * n - 1) from decide_eq_decide.mpr (by omega)]
-      · rw [middle (i / 32) (by omega) (by omega)]
-        simp only [show i < 32 * n - 1 by omega, decide_true, Bool.true_and,
-          decide_eq_false (by omega : i ≠ 1), Bool.or_false]
+      · rw [last, top, Nat.testBit_mod_two_pow, decide_eq_false (by omega_using [first] : i ≠ 1), Bool.or_false]
+        rw [show decide (i % 32 < 31) = decide (i < 32 * n - 1) from decide_eq_decide.mpr (by omega_using [positive, last])]
+      · rw [middle (i / 32) (by omega_using [first]) (by omega_using [index, last])]
+        simp only [show i < 32 * n - 1 by omega_using [index, last], decide_true, Bool.true_and,
+          decide_eq_false (by omega_using [first] : i ≠ 1), Bool.or_false]
   · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (val32_lt m' p d n)
-      (Nat.pow_le_pow_right (by decide) (by omega))), decide_eq_false (by omega : ¬ i < 32 * n - 1), Bool.false_and]
+      (Nat.pow_le_pow_right (by decide) (by omega_using [index]))), decide_eq_false (by omega_using [index] : ¬ i < 32 * n - 1), Bool.false_and]
 
 end VG.Proof.RsaKeyGen

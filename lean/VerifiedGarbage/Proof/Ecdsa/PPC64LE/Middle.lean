@@ -130,7 +130,7 @@ structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (F : BitVec 64
 theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : BitVec 64} {P : Point c.C} {s : State}
     (S : St₂ c A s₀ base F P s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', St₃ c A s₀ base F P s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq (pow c.powN c.SN) rest)) s Q := by
+    WP isa (.seq c.middle (.seq c.invN rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := S.ws.nowrap
@@ -164,30 +164,27 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
     rw [tbl_unch O₇.unch h7 hj ht (tbl_apart_flag h7 h0 _ t), tbl_unch O₆.unch h7 hj ht (tbl_apart_flag h7 h0 _ t),
       tbl_unch O₅.unch h7 hj ht (tbl_apart_flag h7 h0 _ t)]
   -- `k^(n-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc) rfl
-    (powLayN hc) hnR K₇.ws (show sv c base s₇ KM < c.C.n by rw [e₇ (i := KM) (by decide) (by decide)]; exact Mp.km_lt) K₇.fixed.onen
-    (fun t ht => by
-      show s₇.mem (off base (bitsAt c.n 2 + t)) = _
-      rw [t₇ (j := 2) (by decide) t ht, Mp.tbl (j := 2) (by decide) t ht]
-      exact S.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega_arith)) fun s₈ ⟨k₈, U₈, lt₈, v₈⟩ => h s₈ ?_)
-  rw [powWxN_eq] at U₈
-  have K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
-  have e₈ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₈ i = sv c base s₇ i := fun hi hr =>
-    sv_unch U₈ h7 hn hi (apart_powWx h7 hi hr)
+  refine WP.seq (WP.mono (chainPow_ok (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
+    (chainLayN hc) hnR K₇.ws (show sv c base s₇ KM < c.C.n by rw [e₇ (i := KM) (by decide) (by decide)]; exact Mp.km_lt)
+    hc.chainN) fun s₈ ⟨k₈, U₈, lt₈, v₈⟩ => h s₈ ?_)
+  rw [chainWN_eq] at U₈
+  have K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  have e₈ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₈ i = sv c base s₇ i := fun hi hr ht =>
+    sv_unch U₈ h7 hn hi (apart_chainW h7 hi hr ht)
   -- What reaches `s₈` from before the middle.
-  have b₈ : ∀ {i}, i < 45 → i ∉ [ACC, PT, XM, X, RR, KM, FLAG] → sv c base s₈ i = sv c base s i := fun hi hl => by
+  have b₈ : ∀ {i}, i < 45 → i ∉ [ACC, PT, XM, X, RR, KM, FLAG] → (i < DX ∨ T2 < i) →
+      sv c base s₈ i = sv c base s i := fun hi hl ht => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
-    rw [e₈ hi (by simp [hl.1, hl.2.1]), e₇ hi hl.2.2.2.2.2.2, Mp.same hi (by simp [hl.2.2.1, hl.2.2.2.1,
+    rw [e₈ hi hl.1 ht, e₇ hi hl.2.2.2.2.2.2, Mp.same hi (by simp [hl.2.2.1, hl.2.2.2.1,
       hl.2.2.2.2.1, hl.2.2.2.2.2.1])]
   have m₈ : ∀ {i}, i ∈ [X, RR] → sv c base s₈ i = sv c base s₄ i := fun hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl <;> rw [e₈ (by decide) (by decide), e₇ (by decide) (by decide)]
+    rcases hi with rfl | rfl <;> rw [e₈ (by decide) (by decide) (by decide), e₇ (by decide) (by decide)]
   have tR : ∀ i ∈ [RX, RY, RZ], tmv c.C c.n base s₈ (c.sl i) = tmv c.C c.n base s (c.sl i) := by
     intro i hi
     show toM _ _ (sv c base s₈ i) = toM _ _ (sv c base s i)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl <;> rw [b₈ (by decide) (by decide)]
+    rcases hi with rfl | rfl | rfl <;> rw [b₈ (by decide) (by decide) (by decide)]
   have hMN : wordsVal s₄.mem base (c.sl MN) c.n = c.C.n := Mp.fixed.mn
   have hMN₅ : wordsVal s₅.mem base (c.sl MN) c.n = c.C.n :=
     (sv_unch O₅.unch h7 hn (i := MN) (by decide) (apart_flag h0 (by decide))).trans hMN
@@ -198,15 +195,15 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
   have rr₆ : wordsVal s₆.mem base (c.sl RR) c.n = sv c base s₄ X % c.C.n :=
     ((sv_unch O₆.unch h7 hn (i := RR) (by decide) (apart_flag h0 (by decide))).trans
       (sv_unch O₅.unch h7 hn (i := RR) (by decide) (apart_flag h0 (by decide)))).trans Mp.rr
-  refine ⟨K₈, by rw [b₈ (by decide) (by decide)]; exact S.d, by rw [b₈ (by decide) (by decide)]; exact S.e,
+  refine ⟨K₈, by rw [b₈ (by decide) (by decide) (by decide)]; exact S.d, by rw [b₈ (by decide) (by decide) (by decide)]; exact S.e,
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact S.rep,
     by rw [m₈ (by simp)]; exact Mp.x_lt,
     by rw [m₈ (by simp), Mp.x, tR RZ (by simp), tR RX (by simp), S.acc],
     by rw [m₈ (by simp), m₈ (by simp)]; exact Mp.rr, ?_, ?_⟩
   · have fl₈ : flagW c base s₈ = flagW c base s₇ := by
-      have apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
+      have apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
           c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
-        rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
+        rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
         · exact Or.inl (by omega_arith)
         · exact Or.inr h
       simp only [flagW]; exact U₈.word apF (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)

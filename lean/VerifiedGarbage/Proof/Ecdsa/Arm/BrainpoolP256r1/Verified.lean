@@ -57,7 +57,7 @@ theorem brainpoolp256r1_nBits : Spec.Ecdsa.nBits brainpoolp256r1.C = 256 := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h2 : Spec.BrainpoolP256r1.curve.n.log2 < 256 :=
     (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h1, h2]
 
 /-- No bit of a hash of `32` bytes is dropped. -/
 theorem brainpoolp256r1_sh : brainpoolp256r1.sh = 0 := by

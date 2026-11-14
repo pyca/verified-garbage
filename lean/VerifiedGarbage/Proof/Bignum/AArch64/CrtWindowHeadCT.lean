@@ -41,7 +41,7 @@ theorem expInit_tpre {sp sl : Nat} {a : BPub} {s : State} (h : EPreWide sp sl a 
   obtain ⟨h,hwide⟩ := h
   obtain ⟨minv, X, x, y, eb, hc, hw2, hwx, hw30, hn, hinv, hodd, hxl, -, hyl, -, hsp, hsl, hep, hel, -⟩ := h
   have hT : Scr s (off a.x.B a.x.o) (slot a.x.wx 8 + CrtWindowFive.tabBytes32 a.x.wx) :=
-    hc.scr.sub (by omega) (by unfold slot hdrBytes; omega)
+    hc.scr.sub (by omega_using [hwide]) (by unfold slot hdrBytes; omega_using [])
   have hPn := hT.nowrap
   have hY0 := slot_le (w := a.x.wx) (show aY < 8 by decide)
   have hY1 := hdr_lt_slot a.x.wx aY (show 31 < 32 by decide)

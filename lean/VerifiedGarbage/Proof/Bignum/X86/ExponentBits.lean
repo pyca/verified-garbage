@@ -48,16 +48,16 @@ theorem exponentLeft_ok {s : State} {base : Addr} {bytes : Nat} (hs : Scr s base
     WP isa (.block exponentLeft) s fun t =>
       t.mem = s.mem ∧ Keeps [.eax] s t ∧ t.zf = some (decide (val32 s.mem base 128 2 = 0)) := by
   unfold exponentLeft exponentOffset
-  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_using [hb])) fun s₁ u₁ _ => ?_
   have hs₁ := hs.of_keeps u₁.keeps (by decide)
-  refine wp_orS (readSrc_sc hs₁ (by omega)) fun s₂ u₂ => ?_
+  refine wp_orS (readSrc_sc hs₁ (by omega_using [hb])) fun s₂ u₂ => ?_
   refine wp_cmpS rfl fun t ft zt => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [ft.mem, u₂.mem, u₁.mem]
   · exact ((u₁.keeps.trans (u₂.keeps)).trans (ft.keeps _))
   · rw [zt, u₂.gpr, u₁.gpr, u₁.mem, sub0]
     congr 1
     have hv : val32 s.mem base 128 2 = w32 s.mem base 128 + 2 ^ 32 * w32 s.mem base (128 + 4) := by
-      simp only [val32]; omega
+      simp only [val32]; omega_using []
     rw [hv]
     have key : (s.mem.readW (off base 128) 32 ||| s.mem.readW (off base (128 + 4)) 32) = 0 ↔
         w32 s.mem base 128 + 2 ^ 32 * w32 s.mem base (128 + 4) = 0 := by
@@ -66,8 +66,8 @@ theorem exponentLeft_ok {s : State} {base : Addr} {bytes : Nat} (hs : Scr s base
       · rintro ⟨h₁, h₂⟩
         simp only [w32, h₁, h₂, BitVec.toNat_zero]
       · intro z
-        exact ⟨BitVec.eq_of_toNat_eq (by change w32 s.mem base 128 = 0; omega),
-          BitVec.eq_of_toNat_eq (by change w32 s.mem base (128 + 4) = 0; omega)⟩
+        exact ⟨BitVec.eq_of_toNat_eq (by change w32 s.mem base 128 = 0; omega_using [z]),
+          BitVec.eq_of_toNat_eq (by change w32 s.mem base (128 + 4) = 0; omega_using [z])⟩
     exact Bool.eq_iff_iff.mpr (by rw [beq_iff_eq, decide_eq_true_iff]; exact key)
 
 end VG.Proof.Bignum.X86.PublicContext

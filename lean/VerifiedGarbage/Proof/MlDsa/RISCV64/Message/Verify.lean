@@ -86,26 +86,26 @@ theorem v_e {t : State} (h : VInvG p STK s rs V t) : t.gpr .s8 = eAt p (s.gpr .a
 
 include hL in
 theorem vslot_len : oSV + 8 * (rs.length + 1) ≤ oHdr := by
-  have := hL.len; simp only [oSV, oHdr]; omega
+  have := hL.len; simp only [oSV, oHdr]; omega_using [this]
 
 include hL in
 theorem vslot_sub : Region.Sub (slotArea (eAt p (s.gpr .a6)) oSV rs) (vscrR p s) :=
-  e_sub (by have := vslot_len hL; simp only [oHdr] at this; omega)
+  e_sub (by have := vslot_len hL; simp only [oHdr] at this; omega_using [this])
 
 include hL in
 theorem vslot_e {d n : Nat} (h : d + n ≤ oSV ∨ oSV + 80 ≤ d) (h₁ : d + n ≤ 1024) :
     (slotArea (eAt p (s.gpr .a6)) oSV rs).Disjoint ⟨eAt p (s.gpr .a6) + BitVec.ofNat 64 d, n⟩ :=
-  e_e (h.symm.imp (fun h' => by have := hL.len; omega) id) (by have := vslot_len hL; simp only [oHdr] at this; omega)
+  e_e (h.symm.imp (fun h' => by have := hL.len; omega_using [h', this]) id) (by have := vslot_len hL; simp only [oHdr] at this; omega_using [this])
     h₁
 
 include hL in
 theorem vslot_e0 {n : Nat} (h : n ≤ oSV) :
     (slotArea (eAt p (s.gpr .a6)) oSV rs).Disjoint ⟨eAt p (s.gpr .a6), n⟩ :=
-  (e_e0 h (by have := vslot_len hL; simp only [oHdr] at this; omega)).symm
+  (e_e0 h (by have := vslot_len hL; simp only [oHdr] at this; omega_using [this])).symm
 
 include hL hF in
 theorem vslot_w : (slotArea (eAt p (s.gpr .a6)) oSV rs).Disjoint ⟨s.gpr .a6, scratchWords p * 8⟩ :=
-  (e_w hF (by have := vslot_len hL; simp only [oHdr] at this; omega)).symm
+  (e_w hF (by have := vslot_len hL; simp only [oHdr] at this; omega_using [this])).symm
 
 include hp h48 in
 theorem vbelow48 : Region.Sub (below s.sp 1168) (below s.sp STK) := below_sub h48 (by have := hp.stk; omega_arith)

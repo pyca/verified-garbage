@@ -33,7 +33,7 @@ theorem wp_upto {body : Prog isa} {a N : Nat} (haN : a < N) (Inv : Nat → State
   refine WP.mono (hbody j hj hjN s hI) fun s' ⟨hz, hI'⟩ => ?_
   by_cases he : j + 1 = N
   · exact .inl ⟨by simp [eval, hz, he], hQ s' (he ▸ hI')⟩
-  · exact .inr ⟨by simp [eval, hz, he], N - (j + 1), by omega, j + 1, rfl, by omega, by omega, hI'⟩
+  · exact .inr ⟨by simp [eval, hz, he], N - (j + 1), by omega_using [hjN], j + 1, rfl, by omega_using [hj], by omega_using [hjN, he], hI'⟩
 
 theorem ofNat_add_one (j : Nat) : BitVec.ofNat 64 j + 1 = BitVec.ofNat 64 (j + 1) := by
   rw [BitVec.ofNat_add]; rfl
@@ -86,7 +86,7 @@ theorem wordLoop_ok {start N : Nat} {body : List Instr} (hst : start < N) (hN : 
     WP isa (wordLoop start body) s (Inv N) := by
   unfold wordLoop
   refine WP.seq (WP.mono (WP.keep [.r14] (Q := fun t => t.gpr .r14 = BitVec.ofNat 64 start ∧
-    t.mem = s.mem ∧ t.cf = s.cf) (by xrun [sx_ofNat (show start < 2 ^ 31 by omega)]) rfl)
+    t.mem = s.mem ∧ t.cf = s.cf) (by xrun [sx_ofNat (show start < 2 ^ 31 by omega_using [hst, hN])]) rfl)
     fun t ⟨⟨h14, hm, hc⟩, k⟩ => ?_)
   exact wp_upto hst Inv hstep (fun _ h => h) (h0 t h14 hm k hc)
 

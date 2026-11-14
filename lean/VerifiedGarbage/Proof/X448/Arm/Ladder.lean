@@ -28,13 +28,13 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
     (Q := fun s' => LInv base k u s₀ s' 0)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 448 ∧ LInv base k u s₀ s m) ?_ n s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩
-  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (step_ok (by omega) hbits hi) fun s' ⟨hi', hz⟩ => ?_
+  obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
+  refine WP.mono (step_ok (by omega_using [h2]) hbits hi) fun s' ⟨hi', hz⟩ => ?_
   simp only [eval, hz]
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · exact .inl ⟨rfl, hi'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (by omega : ¬m = 0), Bool.not_false], m, by omega,
-      by omega, by omega, hi'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (by omega_using [hm] : ¬m = 0), Bool.not_false], m, by omega_using [],
+      by omega_using [hm], by omega_using [h2], hi'⟩
 
 /-- The ladder: the counter set to 448, then the loop. -/
 theorem ladder_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
@@ -43,6 +43,6 @@ theorem ladder_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}
       s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → LInv base k u s₀ s' 448) :
     WP isa ladder s fun s' => LInv base k u s₀ s' 0 := by
   refine WP.seq (WP.mono (setCounter_ok s 448 (by decide))
-    fun s' ⟨h1, h2, h3, h4, h5⟩ => loop_ok hbits 448 s' (by omega) (by omega) (hi s' h1 h2 h3 h4 h5))
+    fun s' ⟨h1, h2, h3, h4, h5⟩ => loop_ok hbits 448 s' (by omega_using []) (by omega_using []) (hi s' h1 h2 h3 h4 h5))
 
 end VG.Proof.X448.Arm

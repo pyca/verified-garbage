@@ -33,11 +33,11 @@ theorem fail_rel {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s)
       simp only [List.mem_singleton] at hr
       subst hr
       rw [(h v _ h₁).regs.r21, (h v _ h₂).regs.r21])
-    (by taint_decide)) (fun v s hs => (h v s hs).regs.r21) (by decide) (by decide)
+    (by taint_decide)) (fun v s hs => (h v s hs).regs.r21) (by decide)
 
 theorem body_rel : RelCT isa (Two K9) Verify.body (Two End) :=
-  rel_end (two_taint _ (pins_fixL _ _ fun _ => rfl) (by taint_decide)) (fun _ _ h => h.1.regs.r21)
-    (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
+  rel_end (two_taintR _ (pins_fixL _ _ fun _ => rfl) (by taint_decide_rel)) (fun _ _ h => h.1.regs.r21)
+    (by rw [← Code.allInstrs_eq]; decide +kernel)
 
 /-- The check of the key, then `rest`, or 0. -/
 theorem checkKey_rel {rest : Prog isa} (hrest : RelCT isa (Two K9) rest (Two End)) :
@@ -52,7 +52,7 @@ theorem vdOf_eq {s t : State} (hs : vContract.pre s) (hp : vContract.pub s t) : 
   obtain ⟨e, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at e
   have e := map_toNat_inj e
-  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega)] at e
+  rw [← h3, ← h4, ← h5, ← h6, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vdOf, layOf, ← h3, ← h5, ← h6, ← h7, ← h9, ← h10, ← a0, ← a1, e]
 
 end VG.Proof.Dsa.PPC64LE

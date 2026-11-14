@@ -37,6 +37,6 @@ theorem GenerationContext.status_frame {p : GenerationContext} {m m' : Mem}
   have hn := ha ⟨p.geo.F, frameBytes⟩ (by simp)
   change ¬ ofs p.geo.F a < frameBytes at hn
   unfold frameBytes at hn
-  omega
+  omega_using [hn]
 
 end VG.Proof.Dsa.X86_64.Generation

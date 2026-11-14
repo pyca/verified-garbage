@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The masked 512-bit moves
@@ -26,7 +27,7 @@ theorem Mem.eq_write_read {m m' : Mem} {a : Addr} {n : Nat}
   · rename_i hx
     rw [Mem.extractLsb'_read _ _ hx, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm,
       BitVec.sub_add_cancel]
-  · exact h x (by omega)
+  · exact h x (by omega_arith)
 
 /-- Writes of quadwords `j < 8` of the 64 bytes at `a` change no byte
 outside them. -/
@@ -44,9 +45,9 @@ theorem foldl_qwrites {a : Addr} (f : Nat → BitVec 64) :
       have e : x - a = (x - State.qAddr a j) + BitVec.ofNat 64 (8 * j) := by
         simp only [State.qAddr]; bv_omega
       rw [e, BitVec.toNat_add, BitVec.toNat_ofNat] at hx
-      have : 8 * j % 2 ^ 64 = 8 * j := Nat.mod_eq_of_lt (by omega)
-      rw [this, Nat.mod_eq_of_lt (by omega)] at hx
-      omega
+      have : 8 * j % 2 ^ 64 = 8 * j := Nat.mod_eq_of_lt (by omega_using [hj])
+      rw [this, Nat.mod_eq_of_lt (by omega_using [hx, hj])] at hx
+      omega_using [hx, hj, h]
     · simp only [h, ↓reduceIte]
 
 theorem qOn_lt (k : BitVec 64) : ∀ j ∈ State.qOn k, j < 8 := fun _ h =>
@@ -121,9 +122,9 @@ theorem foldl_bwrites {a : Addr} (f : Nat → BitVec 8) :
     · exfalso
       have e : x - a = (x - (a + BitVec.ofNat 64 j)) + BitVec.ofNat 64 j := by bv_omega
       rw [e, BitVec.toNat_add, BitVec.toNat_ofNat] at hx
-      have : j % 2 ^ 64 = j := Nat.mod_eq_of_lt (by omega)
-      rw [this, Nat.mod_eq_of_lt (by omega)] at hx
-      omega
+      have : j % 2 ^ 64 = j := Nat.mod_eq_of_lt (by omega_using [hj])
+      rw [this, Nat.mod_eq_of_lt (by omega_using [hx, hj])] at hx
+      omega_using [hx, hj, h]
     · simp only [h, ↓reduceIte]
 
 theorem bOn_lt (k : BitVec 64) : ∀ j ∈ State.bOn k, j < 64 := fun _ h =>

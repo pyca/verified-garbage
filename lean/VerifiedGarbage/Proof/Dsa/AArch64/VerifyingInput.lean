@@ -35,8 +35,8 @@ abbrev VerifyingInput.prefixLength (p : VerifyingInput) : Nat :=
 
 abbrev VerifyingInput.accepted (p : VerifyingInput) : Bool :=
   shapeAccepted p.components.p p.components.q
-    (by rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega)
-    (by rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega)
+    (by rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this])
+    (by rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this])
 
 def VerifyingInput.values (p : VerifyingInput) : VerifyValues :=
   ⟨p.components.g, p.components.y, p.signature.take p.qLen, p.signature.drop p.qLen,

@@ -24,14 +24,14 @@ theorem test_zero (a b c : Byte) :
   simp only [BitVec.or_eq_zero_iff, BitVec.sub_eq_iff_eq_add, BitVec.zero_add]
   simp only [← BitVec.toNat_inj, byteWord, byte_toNat, BitVec.toNat_ofNat]
   simp only [Spec.Rsa.os2ip, List.foldl_cons, List.foldl_nil]
-  omega
+  omega_using []
 
 theorem lengthTest_ok {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
     (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hn : n < 2^31)
     (hc : word s.mem B (8*sElen) = BitVec.ofNat 64 n) :
     WP isa (.block Folded.lengthTest) s fun t =>
       isa.eval (.zero .x .x3) t = some (decide (n = 3)) ∧ t.mem = s.mem ∧ Keep [.x3] s t := by
-  have bound : 8*sElen+8 ≤ Z := by have := hdr_lt_slot w 8 (show sElen < 32 by decide); omega
+  have bound : 8*sElen+8 ≤ Z := by have := hdr_lt_slot w 8 (show sElen < 32 by decide); omega_using [hZ, this]
   refine WP.mono (WP.keep [.x3] (Q := fun t =>
     t.gpr .x3 = BitVec.ofNat 64 n - 3#64 ∧ t.mem = s.mem) ?_ rfl rfl rfl)
     fun t ⟨⟨hr,hm⟩,hk⟩ => ?_
@@ -43,7 +43,7 @@ theorem lengthTest_ok {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
   apply decide_eq_decide.mpr
   change (BitVec.ofNat 64 n - 3#64 = 0#64) ↔ n = 3
   rw [BitVec.sub_eq_iff_eq_add, BitVec.zero_add, ← BitVec.toNat_inj,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   rfl
 
 theorem bytesTest_ok {s : State} {B ep : Addr} {Z w : Nat} {mi : BitVec 64}
@@ -54,7 +54,7 @@ theorem bytesTest_ok {s : State} {B ep : Addr} {Z w : Nat} {mi : BitVec 64}
     WP isa (.block Folded.bytesTest) s fun t =>
       isa.eval (.zero .x .x3) t = some (decide (Spec.Rsa.os2ip [a,b,c] = 65537)) ∧
       t.mem = s.mem ∧ Keep [.x3,.x4,.x8] s t := by
-  have bound : 8*sE+8 ≤ Z := by have := hdr_lt_slot w 8 (show sE < 32 by decide); omega
+  have bound : 8*sE+8 ≤ Z := by have := hdr_lt_slot w 8 (show sE < 32 by decide); omega_using [hZ, this]
   refine WP.mono (WP.keep [.x3,.x4,.x8] (Q := fun t =>
     t.gpr .x3 = ((byteWord a - 1#64) ||| byteWord b ||| (byteWord c - 1#64)) ∧ t.mem = s.mem)
     ?_ rfl rfl rfl) fun t ⟨⟨hr,hm⟩,hk⟩ => ?_

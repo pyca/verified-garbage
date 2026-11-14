@@ -171,7 +171,7 @@ theorem push_kE {q : Ptr} {l : Nat} (pq : PtrIn L q l) {n : Nat} (hn : 4 + n ≤
 theorem push_aE {q : Ptr} {l : Nat} (pq : PtrIn L q l) :
     (L.R (ix q.1) q.2 l).Disjoint ⟨stackArgAddr (view (pushed [.r12] s1) rd wr) 0, 4⟩ := by
   rw [push_argAddr s1 e1 rd wr]
-  refine (hs.stkD pq.2 (n := 4) (by have := hs.s8; omega)).sub_right ?_
+  refine (hs.stkD pq.2 (n := 4) (by have := hs.s8; omega_using [this])).sub_right ?_
   intro x hx
   have := addr_toNat' s.sp
   have := addr_toNat' (s.sp - BitVec.ofNat 32 4)
@@ -191,7 +191,7 @@ theorem push_kA {n : Nat} (hn : 4 + n ≤ STK) :
 
 /-- The memory of the frame: the pushed word below the stack pointer. -/
 theorem push_frame (hm : s1.mem = s.mem) : Frame [below s 4] s.mem (view (pushed [.r12] s1) rd wr).mem := by
-  have h4 : 4 ≤ s1.sp.toNat := by rw [e1]; have := hs.s8; have := hs.spk; omega
+  have h4 : 4 ≤ s1.sp.toNat := by rw [e1]; have := hs.s8; have := hs.spk; omega_arith
   have := pushed12_frame s1 h4
   simp only [below, e1, hm] at this
   exact this
@@ -200,17 +200,17 @@ theorem push_frame (hm : s1.mem = s.mem) : Frame [below s 4] s.mem (view (pushed
 theorem push_bytes (hm : s1.mem = s.mem) {q : Ptr} {l : Nat} (pq : PtrIn L q l) (hl : l ≤ 2 ^ 64) :
     ∀ k < l, (view (pushed [.r12] s1) rd wr).mem (lpa L q + BitVec.ofNat 64 k) = s.mem (lpa L q + BitVec.ofNat 64 k) :=
   Proof.MlKem.bytes_frame (push_frame hs s1 e1 rd wr hm) (fun r hr => by
-    rw [List.mem_singleton] at hr; subst hr; exact hs.stkD pq.2 (by have := hs.s8; omega)) hl
+    rw [List.mem_singleton] at hr; subst hr; exact hs.stkD pq.2 (by have := hs.s8; omega_using [this])) hl
 
 omit hs e1 in
 theorem push_fit (h4 : 4 ≤ s.sp.toNat) (e1 : s1.sp = s.sp) :
     (view (pushed [.r12] s1) rd wr).sp.toNat + 4 ≤ 2 ^ 32 := by
-  rw [push_spN s1 e1 rd wr h4]; have := s.sp.isLt; omega
+  rw [push_spN s1 e1 rd wr h4]; have := s.sp.isLt; omega_using []
 
 end
 
 theorem sp4 {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site L Wb STK s) : 4 ≤ s.sp.toNat := by
-  have := hs.s8; have := hs.spk; omega
+  have := hs.s8; have := hs.spk; omega_arith
 
 /-- A polynomial of a buffer in the frame. -/
 theorem push_reduced {L : Lay} {Wb : List Nat} {STK : Nat} {s s1 : State} (hs : Site L Wb STK s) (e1 : s1.sp = s.sp)
@@ -271,7 +271,7 @@ theorem ip_ok {c : Prog isa} (hc : Callee c (fun stk => inPlaceContract Arm.abi 
   have hn : ((ipArgs f w).map Prod.fst).Nodup := by simp only [List.map_cons, List.map_nil]; decide
   have cw : Covers (ipWr L f w) s.wr := covers_cons' (hs.cwE pf wf) (covers_cons' (hs.cwE pw ww) covers_nil')
   refine callV hver.1 hg (ip_preS hs (Nat.le_trans hstk hS) pf pw wf hd hr) (Covers.right cw) cw
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.kept_stk (W := [tri f 1024, tri w 1024]) (fun r hr => ?_) (Nat.le_trans hc.stack hS) hk) ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

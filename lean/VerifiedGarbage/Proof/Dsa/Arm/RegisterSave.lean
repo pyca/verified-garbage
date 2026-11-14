@@ -40,7 +40,7 @@ theorem stores_ok {base : Addr} {size : Nat} :
   | (r, o) :: l, s, hs, hf, ha => by
     have nw := hs.nowrap
     obtain ⟨ho, ho'⟩ := hf _ (List.mem_cons_self ..)
-    refine wp_str ho (hs.ea12 (by omega)) (hs.write ho') fun s₁ m₁ => ?_
+    refine wp_str ho (hs.ea12 (by omega_using [ho'])) (hs.write ho') fun s₁ m₁ => ?_
     have ha' := List.pairwise_cons.mp ha
     refine WP.mono (stores_ok l (hs.of_mupd m₁) (fun x hx => hf x (List.mem_cons_of_mem _ hx)) ha'.2)
       fun t ⟨V, O, R⟩ => ⟨fun x hx => ?_, ?_, (m₁.rest _).trans R⟩
@@ -68,7 +68,7 @@ theorem loads_ok {base : Addr} {size : Nat} :
   | (r, o) :: l, s, hs, hf, h12, hd => by
     have nw := hs.nowrap
     obtain ⟨ho, ho'⟩ := hf _ (List.mem_cons_self ..)
-    refine wp_ldr ho (hs.ea12 (by omega)) (hs.read ho') fun s₁ v₁ => ?_
+    refine wp_ldr ho (hs.ea12 (by omega_using [ho'])) (hs.read ho') fun s₁ v₁ => ?_
     have hd' := List.nodup_cons.mp hd
     refine WP.mono (loads_ok l (hs.of_upd v₁ (h12 _ (List.mem_cons_self ..)))
       (fun x hx => hf x (List.mem_cons_of_mem _ hx)) (fun x hx => h12 x (List.mem_cons_of_mem _ hx)) hd'.2)
@@ -84,7 +84,7 @@ theorem slots_eq : slots =
 theorem slots_fit {size : Nat} (hz : 44 ≤ size) : Fit size slots := by
   intro x hx
   simp only [slots_eq, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by omega⟩
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, by omega_using [hz]⟩
 
 theorem slots_apart : Apart slots := by unfold Apart; decide
 
@@ -104,7 +104,7 @@ theorem outs_within {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (O :
   fun x hx => O x fun r hr => by
     obtain ⟨r', hr', h₁, h₂⟩ := h r hr
     have := hx r' hr'
-    omega
+    omega_using [h₁, h₂, this]
 
 /-- A word apart from every range that changed. -/
 theorem outs_readW {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs base rs m m') {d : Nat}
@@ -112,7 +112,7 @@ theorem outs_readW {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs
     m'.readW (off base d) 32 = m.readW (off base d) 32 :=
   Mem.readW_congr fun i hi => O _ fun r hr => by
     have := hd r hr
-    rw [ofs_off base (by omega)]; omega
+    rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hi, this]
 
 /-- The function's working space on entry: `r0` holds its base. -/
 structure Entry (s : State) (base : Addr) (size : Nat) : Prop where
@@ -121,15 +121,15 @@ structure Entry (s : State) (base : Addr) (size : Nat) : Prop where
   nowrap : base.toNat + size ≤ 2 ^ 32
 
 theorem contextBytes_bounds {n : Nat} (hn : n ≤ 48) : 44 ≤ contextBytes n ∧ contextBytes n ≤ 4960 := by
-  simp only [contextBytes, slot, stride]; omega
+  simp only [contextBytes, slot, stride]; omega_using [hn]
 
 /-- Ranges in the header's first 64 bytes or past the modulus's slot are the
 function's own. -/
 theorem within_scratch {n : Nat} {rs : List (Nat × Nat)}
     (h : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ (slot n 1 ≤ r.1 ∧ r.1 + r.2 ≤ contextBytes n)) :
     ∀ r ∈ rs, ∃ r' ∈ scratch n, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 := fun r hr =>
-  (h r hr).elim (fun h => ⟨(0, 64), List.mem_cons_self .., by simp only; omega⟩)
-    fun h => ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega⟩
+  (h r hr).elim (fun h => ⟨(0, 64), List.mem_cons_self .., by simp only; omega_using [h]⟩)
+    fun h => ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega_using [h]⟩
 
 theorem setup_scratch {n : Nat} (hn : 0 < n) :
     ∀ r ∈ Impl.Dsa.Arm.Context.scratch n, ∃ r' ∈ scratch n, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 :=
@@ -137,11 +137,11 @@ theorem setup_scratch {n : Nat} (hn : 0 < n) :
     simp only [Impl.Dsa.Arm.Context.scratch, resS, oneS, rrS, tmpS, accS,
       List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true,
       contextBytes, slot, stride]
-    omega)
+    omega_using [hn])
 
 theorem words_scratch (n : Nat) :
     ∀ r ∈ words slots, ∃ r' ∈ scratch n, r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2 :=
-  fun r hr => ⟨(0, 64), List.mem_cons_self .., by have := slots_words r hr; omega⟩
+  fun r hr => ⟨(0, 64), List.mem_cons_self .., by have := slots_words r hr; omega_using [this]⟩
 
 
 /-- The `4k` bytes at `base + d` are its `k` 32-bit words. -/
@@ -164,16 +164,16 @@ theorem numAt_eq4 (m : Mem) (base : Addr) (d e : Nat) : numAt m base d (4 * e) =
 /-- The context's bytes, in words: the function's `ws_len`. -/
 theorem words_eq {n : Nat} (hn48 : n ≤ 48) :
     ((BitVec.ofNat 16 (contextBytes n / 8)).setWidth 32).toNat * 8 = contextBytes n := by
-  have h : contextBytes n / 8 < 2 ^ 16 := by simp only [contextBytes, slot, stride]; omega
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  have h : contextBytes n / 8 < 2 ^ 16 := by simp only [contextBytes, slot, stride]; omega_using [hn48]
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [h])]
   simp only [contextBytes, slot, stride]
-  omega
+  omega_using []
 
 
 /-- The context's region, within the working space's. -/
 theorem covers_ctx {s : State} {base : Addr} {size n : Nat} (hs : Ws s base size) (hz : contextBytes n ≤ size) :
     Covers [⟨base, contextBytes n⟩] s.wr := by
-  have h := hs.write (d := 0) (n := contextBytes n) (by omega)
+  have h := hs.write (d := 0) (n := contextBytes n) (by omega_using [hz])
   rw [show off base 0 = base from BitVec.add_zero _] at h
   exact Covers.one h
 

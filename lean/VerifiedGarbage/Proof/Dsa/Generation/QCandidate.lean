@@ -24,18 +24,18 @@ open VG.Proof.Ffdh.ParameterCandidate
 theorem or_one_value (x : Nat) : x ||| 1 = x + 1 - x % 2 := by
   have hd : (x ||| 1) / 2 = x / 2 := by rw [Nat.or_div_two]; simp
   have hm : (x ||| 1) % 2 = 1 := Nat.or_mod_two_eq_one.mpr (Or.inr rfl)
-  omega
+  omega_using [hd, hm]
 
 /-- DSA's arithmetic definition and the shared byte shaper agree. -/
 theorem qCandidate_eq_shaped {n : Nat} (hn : 2 ≤ n) (seed : List Byte) :
     Spec.Dsa.qCandidate n seed = Spec.Ffdh.candidateOf n (Spec.Dsa.decodeBE (Spec.Dsa.seedHash n seed)) := by
-  rw [candidate_low_high (by omega), or_one_value]
+  rw [candidate_low_high (by omega_using [hn]), or_one_value]
   have he : 2 ^ (n - 1) % 2 = 0 := by
-    rw [show n - 1 = n - 2 + 1 by omega, Nat.pow_succ, Nat.mul_mod]
+    rw [show n - 1 = n - 2 + 1 by omega_using [hn], Nat.pow_succ, Nat.mul_mod]
     simp
   unfold Spec.Dsa.qCandidate
   simp only [Nat.add_mod, he, Nat.add_zero, Nat.mod_mod]
-  omega
+  omega_using []
 
 theorem qCandidate_shape {n : Nat} (hn : 2 ≤ n) (seed : List Byte) :
     (Spec.Dsa.qCandidate n seed) % 2 = 1 ∧
@@ -45,7 +45,7 @@ theorem qCandidate_shape {n : Nat} (hn : 2 ≤ n) (seed : List Byte) :
 
 theorem qCandidate_bitLength {n : Nat} (hn : 2 ≤ n) (seed : List Byte) :
     Spec.Dsa.bitLength (Spec.Dsa.qCandidate n seed) = n :=
-  (bitLength_iff_bounds (by omega)).mpr (qCandidate_shape hn seed).2
+  (bitLength_iff_bounds (by omega_using [hn])).mpr (qCandidate_shape hn seed).2
 
 /-- The concrete digest bytes after the two endpoint writes. -/
 theorem qCandidate_octets {n : Nat} (hn : 2 ≤ n) (seed : List Byte)
@@ -55,9 +55,9 @@ theorem qCandidate_octets {n : Nat} (hn : 2 ≤ n) (seed : List Byte)
     intro he
     rw [he] at hlen
     simp only [List.length_nil, Nat.mul_zero] at hlen
-    omega
+    omega_using [hn, hlen]
   rw [decodeBE_os2ip, shapedOctets_value hne (by decide) (show n = _ by
     have := List.length_pos_iff.mpr hne
-    omega), qCandidate_eq_shaped hn, decodeBE_os2ip]
+    omega_using [hn, hlen]), qCandidate_eq_shaped hn, decodeBE_os2ip]
 
 end VG.Proof.Dsa.Generation

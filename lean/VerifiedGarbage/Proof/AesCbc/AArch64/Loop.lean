@@ -109,12 +109,12 @@ theorem UPre.scr_sub {d n : Nat} (h : d + n ≤ 2176) : Region.Sub ⟨S s₀ + B
   Offset.sub_base _ h
 
 theorem UPre.data_sub {k : Nat} (hk : k < N s₀) : Region.Sub ⟨blk s₀ k, 16⟩ (dataR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hk])
 
 theorem UPre.blk_disjoint (hp : UPre s₀) {j k : Nat} (hj : j < N s₀) (hk : k < N s₀) (hjk : j ≠ k) :
     (⟨blk s₀ j, 16⟩ : Region).Disjoint ⟨blk s₀ k, 16⟩ := by
   have := hp.data_wrap
-  exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  exact Offset.disjoint _ (by omega_using [hjk]) (by omega_using [hj, this]) (by omega_using [hk, this])
 
 end
 
@@ -130,8 +130,8 @@ include hp
 
 theorem UPre.sched_bytes {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
     bytesAt m (W s₀) (16 * (R s₀ + 1)) = bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) := by
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hR])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.sch_iv.sub_left (Region.sub_prefix hR)
@@ -170,11 +170,11 @@ omit hp in
 theorem LInv.block {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hk : k < N s₀) :
     bytesAt s.mem (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
   have hl : (outK M s₀ k).length = k := by
-    rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have := congrArg (·[k]?) h.data
   simp only [List.getElem?_eq_getElem (show k < (Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀)).length by
       rw [length_blocksAt]; exact hk),
-    List.getElem?_append_right (show (outK M s₀ k).length ≤ k by omega), hl, Nat.sub_self,
+    List.getElem?_append_right (show (outK M s₀ k).length ≤ k by omega_using [hl]), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero,
     List.getElem?_eq_getElem (show k < (blks s₀).length by simp [Spec.Cbc.blocksAt]; exact hk)] at this
   show bytesAt s.mem (Dp s₀ + BitVec.ofNat 64 (16 * k)) 16 = _
@@ -228,9 +228,9 @@ theorem advance_regs {s₀ : State} {k : Nat} (hk : k < N s₀) {s : State}
   obtain ⟨s', run, x22', x23', keep, sp', mem', rd', wr'⟩ := advance_ok s
   have hN := (s₀.gpr .x4).isLt
   have dec : BitVec.ofNat 64 (N s₀ - k) - 1 = BitVec.ofNat 64 (N s₀ - (k + 1)) := by
-    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
+    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hk])]; rfl
   refine ⟨s', run, ?_, ?_, keep, sp', mem', rd', wr'⟩
-  · rw [x22', h22, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega)]
+  · rw [x22', h22, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_using [])]
   · rw [x23', h23, dec]
 
 /-! ## The loop -/
@@ -249,13 +249,13 @@ theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State}
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (hb hp hk h) fun s' h' => ?_
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  have ev := eval_x23 (x := N s₀ - (k + 1)) (by omega) h'.x23
+  have ev := eval_x23 (x := N s₀ - (k + 1)) (by omega_using [hN]) h'.x23
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_using [hk, hz]]
   · right
-    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz], h'⟩
 
 /-! ## Saving and restoring the registers -/
 
@@ -263,7 +263,7 @@ theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
     WP isa (.block (save ++ setup)) s₀ (LInv M s₀ 0) := by
   obtain ⟨s₁, run₁, x19₁, x20₁, x21₁, x22₁, x23₁, x24₁, keep₁, sp₁, mem₁, rd₁, wr₁⟩ :=
     prologue_ok s₀ fun d _ h₂ => by
-      rw [hp.wr]; exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega))
+      rw [hp.wr]; exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂]))
   have f₀ := savedMem_frame s₀
   have disj : ∀ (r : Region), r ∈ [ivR s₀, dataR s₀] → ∀ r' ∈ [⟨s₀.gpr .x5 + BitVec.ofNat 64 2064, 56⟩],
       r.Disjoint r' := by
@@ -305,7 +305,7 @@ theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact hm (by omega)
+    exact hm (by omega_using [hn])
 
 theorem slots_disj {s₀ : State} (hp : UPre s₀) :
     ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩], (⟨S s₀ + BitVec.ofNat 64 2064, 56⟩ : Region).Disjoint r := by
@@ -314,7 +314,7 @@ theorem slots_disj {s₀ : State} (hp : UPre s₀) :
   rcases hr with rfl | rfl | rfl
   · exact hp.iv_scr.symm.sub_left (UPre.scr_sub (by decide))
   · exact hp.data_scr.symm.sub_left (UPre.scr_sub (by decide))
-  · exact Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)
+  · exact Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])
 
 theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) m) {d : Nat} (h₁ : 2064 ≤ d)
@@ -328,7 +328,7 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s₂ : State} (h
   obtain ⟨s₃, run₃, slot₃, keep₃, sp₃, mem₃⟩ :=
     restore_ok s₂ h₂.x24 fun d _ h₂' => by
       rw [rdwr, hp.rd, hp.wr]
-      exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by have := hp.scr_wrap; omega))
+      exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_using [h₂']) (by have := hp.scr_wrap; omega_using [h₂']))
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have sl {r : Reg} {d : Nat} (h : (r, d) ∈ saved) : s₃.gpr r = s₀.gpr r := by
     have hd : 2064 ≤ d ∧ d + 8 ≤ 2120 := by

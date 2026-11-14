@@ -84,8 +84,8 @@ theorem jointPair_counter {c : Joint.Cfg} {C : Curve} {base : Addr} {size j : Na
     RelCT isa (JointPair c C base size Core A (j+1)) (.block [.alu .sub .rbx (.imm 1)])
       (JointPair c C base size Core A j) := by
   intro s t ts tt s' t' ⟨⟨E,hp⟩,cs,ct,ps,pt⟩ es et
-  obtain ⟨_,_,xs,sb,ks⟩ := decRbx_ok s (by omega) (by omega) ps
-  obtain ⟨_,_,xt,tb,kt⟩ := decRbx_ok t (by omega) (by omega) pt
+  obtain ⟨_,_,xs,sb,ks⟩ := decRbx_ok s (by omega_using []) (by omega_using [hj]) ps
+  obtain ⟨_,_,xt,tb,kt⟩ := decRbx_ok t (by omega_using []) (by omega_using [hj]) pt
   obtain ⟨_,rfl⟩ := Exec.det es xs
   obtain ⟨_,rfl⟩ := Exec.det et xt
   have he : ts=tt := jointCounterCT _ _ _ _ _ _ trivial trivial
@@ -106,8 +106,8 @@ theorem jointPair_test {c : Joint.Cfg} {C : Curve} {base : Addr} {size j : Nat}
       (fun s t => JointPair c C base size Core A j s t ∧
         s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0))) := by
   intro s t ts tt s' t' ⟨⟨E,hp⟩,cs,ct,ps,pt⟩ es et
-  obtain ⟨_,_,xs,sz,ks⟩ := testRbx_ok s (by omega) ps
-  obtain ⟨_,_,xt,tz,kt⟩ := testRbx_ok t (by omega) pt
+  obtain ⟨_,_,xs,sz,ks⟩ := testRbx_ok s (by omega_using [hj]) ps
+  obtain ⟨_,_,xt,tz,kt⟩ := testRbx_ok t (by omega_using [hj]) pt
   obtain ⟨_,rfl⟩ := Exec.det es xs
   obtain ⟨_,rfl⟩ := Exec.det et xt
   have he : ts=tt := jointTestCT _ _ _ _ _ _ trivial trivial
@@ -195,7 +195,7 @@ theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<
   · exact (jointPair_stage (fun s hs _ => hdouble _ s hA hs) (ht.double _ j)).mono
       (fun _ _ h => h) (fun _ _ h => h)
   simp only [Code.inline]
-  apply RelCT.seq (jointPair_cmp (k:=64*c.K.M.n) (hk [] (by simp)) (by omega) (by omega))
+  apply RelCT.seq (jointPair_cmp (k:=64*c.K.M.n) (hk [] (by simp)) (by omega_arith) (by omega_arith))
   refine RelCT.ite (fun s t h => by show s.zf=t.zf; rw [h.2.1,h.2.2]) ?_ ?_
   · refine relCT_nil fun s t ⟨⟨p,zs,_⟩,he⟩ => ?_
     have hz : s.zf=some true := he
@@ -215,14 +215,14 @@ theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat}
   have hA := jointPoint_curve hC hG hQ u v (j+1) c.gw
   have := hL.lookup.layout.n
   have := joint_top_le c
-  apply RelCT.seq (jointPair_counter (hk [.rbx] (by decide)) (by omega))
+  apply RelCT.seq (jointPair_counter (hk [.rbx] (by decide)) (by omega_arith))
   apply RelCT.seq (jointPair_guard hL ht hdouble hA hj
     (fun h => by rw [h, jointPoint_topB G Q hu hv c.gw]; rfl))
   apply RelCT.seq
   · simpa only [jointPoint_step hC hG hQ (gw:=c.gw)] using
       jointPair_digits hL hm hC hd hOne hOneVal hG hQ ht (hC.onCurve_add hA hA)
-        (by omega : j<64*c.K.M.n+1)
-  · exact jointPair_test (j:=j) (hk [] (by simp)) (by omega)
+        (by omega_using [hj, this] : j<64*c.K.M.n+1)
+  · exact jointPair_test (j:=j) (hk [] (by simp)) (by omega_arith)
 
 theorem jointPair_run (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
@@ -233,13 +233,13 @@ theorem jointPair_run (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
   rw [jointPoint_topB G Q hu hv c.gw] at he
   change add (add .infinity (FastNaf.point C Q 5 v (64*c.K.M.n)))
     (FastNaf.point C G c.gw u (64*c.K.M.n))=jointPoint G Q u v (64*c.K.M.n) c.gw at he
-  have out := jointRun_relCT (c:=c) (double:=double) (by omega)
+  have out := jointRun_relCT (c:=c) (double:=double) (by omega_using [this])
     (Pre:=JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
       .infinity (Joint.top c))
     (fun j => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j c.gw) j)
     (fun hp => by
       have seed := jointPair_digits (base:=base) (T:=T) (u:=u) (v:=v) (row:=row) (j:=64*c.K.M.n)
-        (A:=.infinity) hL hm hC hd hOne hOneVal hG hQ ht rfl (by omega)
+        (A:=.infinity) hL hm hC hd hOne hOneVal hG hQ ht rfl (by omega_using [])
       rw [he] at seed
       simpa only [joint_top_peel hp] using seed)
     (fun hp s t h => by

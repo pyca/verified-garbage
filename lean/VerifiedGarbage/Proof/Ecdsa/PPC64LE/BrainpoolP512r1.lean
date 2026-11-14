@@ -22,7 +22,7 @@ theorem brainpoolp512r1_nBits : 512 ≤ Spec.Ecdsa.nBits brainpoolp512r1.C := by
   show 512 ≤ Spec.BrainpoolP512r1.curve.n.log2 + 1
   have : 511 ≤ Spec.BrainpoolP512r1.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 /-- No bit of a hash of `64` bytes is dropped. -/
 theorem brainpoolp512r1_sh : brainpoolp512r1.sh = 0 :=
@@ -51,5 +51,7 @@ theorem brainpoolp512r1_ok : CfgOk brainpoolp512r1 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ h => nomatch h
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE

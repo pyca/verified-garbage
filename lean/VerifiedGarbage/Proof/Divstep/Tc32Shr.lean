@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Signed 32-bit words: the arithmetic shift by 30
 
@@ -22,15 +23,15 @@ theorem tc_eq {H x W : Int} (_hH : 0 < H) (hx1 : -H ≤ x) (hx2 : x < H) (hW0 : 
     (hc : W % (2 * H) = x % (2 * H)) : W = x + if x < 0 then 2 * H else 0 := by
   rw [Int.emod_eq_of_lt hW0 hW1] at hc
   split
-  · rw [← Int.add_emod_right, Int.emod_eq_of_lt (by omega) (by omega)] at hc
+  · rw [← Int.add_emod_right, Int.emod_eq_of_lt (by omega_using [_hH, hx1]) (by omega_arith)] at hc
     exact hc
-  · rw [Int.emod_eq_of_lt (by omega) (by omega)] at hc
-    omega
+  · rw [Int.emod_eq_of_lt (by omega_arith) (by omega_using [_hH, hx2])] at hc
+    omega_using [hc]
 
 /-- The sign of such a word: its top half. -/
 theorem tc_neg {H x W : Int} (hx1 : -H ≤ x) (hx2 : x < H)
     (h : W = x + if x < 0 then 2 * H else 0) : (H ≤ W ↔ x < 0) := by
-  split at h <;> constructor <;> intro <;> omega
+  split at h <;> constructor <;> intro <;> omega_arith
 
 /-- `mred_words` on natural numbers, as words hold them. -/
 theorem ite_natCast_le {a b : Nat} {x y : Int} : (if (a : Int) ≤ b then x else y) = if a ≤ b then x else y := by
@@ -51,7 +52,7 @@ theorem shr_words {H V y z D c B : Int} (hc : c = 2 ^ 30) (hB : B = 2 ^ 32) (hH 
   have e : V + 2 * H * (if H ≤ V then 2 ^ 32 - 1 else 0) = 2 ^ 30 * (z + (if y < 0 then 2 * H * 2 ^ 2 else 0)) := by
     have hc : (if H ≤ V then (2 : Int) ^ 32 - 1 else 0) = if y < 0 then 2 ^ 32 - 1 else 0 := by simp only [sV]
     rw [hc, eV, hz]
-    split <;> omega
+    split <;> omega_using []
   rw [hD, e, Int.mul_ediv_cancel_left _ (by decide), Int.emod_emod_of_dvd _ (dvd_refl _)]
   split
   · rw [Int.add_mul_emod_self_left]
@@ -72,6 +73,6 @@ theorem shr_nat {H V D c B : Nat} {y z : Int} (hc : 2 ^ 30 = c) (hB : 2 ^ 32 = B
     · rw [ite_eq_left h, ite_eq_left (Int.ofNat_le.mpr h), Int.ofNat_sub hB1]; rfl
     · rw [ite_eq_right h, ite_eq_right (fun h' => h (Int.ofNat_le.mp h'))]; rfl
   push_cast [e] at hD' hVy ⊢
-  exact shr_words hc' hB' (by exact_mod_cast hH) (by omega) (by exact_mod_cast hV1) hVy hy1 hy2 hz' hD'
+  exact shr_words hc' hB' (by exact_mod_cast hH) (by omega_using []) (by exact_mod_cast hV1) hVy hy1 hy2 hz' hD'
 
 end VG.Proof.Divstep.W32

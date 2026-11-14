@@ -10,6 +10,7 @@ import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Data.Finset.Attr
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inversion by batches of divsteps: words in two's complement
@@ -34,10 +35,10 @@ theorem divstep_le {M : Int} {t : Int × Int × Int} (hf : t.2.1 % 2 = 1) (h1 : 
   split
   · rename_i h
     simp only at h ⊢
-    refine ⟨abs_le.mpr h2, abs_le.mpr ⟨?_, ?_⟩⟩ <;> omega
+    refine ⟨abs_le.mpr h2, abs_le.mpr ⟨?_, ?_⟩⟩ <;> omega_using [h1, h2]
   · simp only
     refine ⟨abs_le.mpr h1, abs_le.mpr ⟨?_, ?_⟩⟩ <;>
-    · rcases Int.emod_two_eq_zero_or_one g with hg | hg <;> rw [hg] <;> omega
+    · rcases Int.emod_two_eq_zero_or_one g with hg | hg <;> rw [hg] <;> omega_arith
 
 theorem divsteps_le {M d f g : Int} (hd : d % 2 = 1) (hf : f % 2 = 1) (h1 : |f| ≤ M) (h2 : |g| ≤ M) :
     ∀ n, |(divsteps n (d, f, g)).2.1| ≤ M ∧ |(divsteps n (d, f, g)).2.2| ≤ M
@@ -73,7 +74,7 @@ theorem invRun_bounds {N : Nat} (hN : N ≤ 30) {p m x : Int} (hp : p % 2 = 1) (
   have e2 : (invRun N p m x B).f = (divsteps (N * B) (1, p, x)).2.1 := by rw [← hd]
   have e3 : (invRun N p m x B).g = (divsteps (N * B) (1, p, x)).2.2 := by rw [← hd]
   obtain ⟨lf, lg⟩ := divsteps_le (M := p) (d := 1) (f := p) (g := x) (by decide) hp
-    (by rw [abs_of_pos (by omega)]) (by rw [abs_of_nonneg hx0]; omega) (N * B)
+    (by rw [abs_of_pos (by omega_using [hp1])]) (by rw [abs_of_nonneg hx0]; omega_using [hxp]) (N * B)
   have ld := divsteps_d (1, p, x) (N * B)
   refine ⟨?_, hodd, by rw [e2]; exact lf, by rw [e3]; exact lg, a0, a1, b0, b1⟩
   rw [e1]; simpa using ld
@@ -103,6 +104,6 @@ theorem invRun_zero {N : Nat} {p m : Int} (hp : 0 < p) :
     subst hg ha
     rw [MSt.init, msteps_g0]
     simp only [mul_zero, add_zero, zero_add, mul_one]
-    simp [mred, mredRaw, norm, show ¬ p ≤ 0 by omega]
+    simp [mred, mredRaw, norm, show ¬ p ≤ 0 by omega_using [hp]]
 
 end VG.Proof.Divstep.W32

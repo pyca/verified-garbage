@@ -251,7 +251,7 @@ def CoreSpec.toBlock {c : Core} (cs : CoreSpec c) (h : c.bw = 2) : BlockSpec c w
   KeyArgs := cs.KeyArgs
   Ready := cs.Ready
   cipher_len k b := by rw [h, cs.cipher_len]
-  layout := ⟨cs.layout.G_pos, by omega, by omega, by have := cs.layout.buf_le; rw [h]; omega, cs.layout.room,
+  layout := ⟨cs.layout.G_pos, by omega_using [h], by omega_using [h], by have := cs.layout.buf_le; rw [h]; omega_using [this], cs.layout.room,
     cs.layout.small⟩
   keyRegs_ok := cs.keyRegs_ok
   regs_ok := cs.regs_ok

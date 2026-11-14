@@ -32,12 +32,12 @@ theorem storeEntryHead_ok {s : State} {p : Parameters} {j a : Nat}
  rw [WP.block_append_iff]
  refine WP.mono (entryPtr_ok h.good p.room h.context h.digit) ?_
  rintro u ⟨⟨pointer,count,mem⟩,rest⟩
- have arrHdr : sArr a<32 := by unfold sArr;omega
+ have arrHdr : sArr a<32 := by unfold sArr;omega_using [array]
  have good : Good s p.B p.Z p.w p.mi := h.good
  change u.gpr .x17=off p.ctx (entryOffset p.w j) at pointer
  change u.gpr .x12=BitVec.ofNat 64 p.w at count
  brun [rest.rd,rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,
-  hdr_enc arrHdr,good.scr.ld (d:=8*sArr a) (by have := hdr_lt_slot p.w 8 arrHdr;have := p.room;omega),
+  hdr_enc arrHdr,good.scr.ld (d:=8*sArr a) (by have := hdr_lt_slot p.w 8 arrHdr;have := p.room;omega_arith),
   mem,good.hdr.harr a array,pointer,count]
 
 theorem storeEntry_ct (a : Nat) (array : a<8) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
@@ -68,12 +68,12 @@ theorem loadEntryHead_ok {s : State} {p : Parameters} {j a : Nat}
  rw [WP.block_append_iff]
  refine WP.mono (entryPtr_ok h.good p.room h.context h.digit) ?_
  rintro u ⟨⟨pointer,count,mem⟩,rest⟩
- have arrHdr : sArr a<32 := by unfold sArr;omega
+ have arrHdr : sArr a<32 := by unfold sArr;omega_using [array]
  have good : Good s p.B p.Z p.w p.mi := h.good
  change u.gpr .x17=off p.ctx (entryOffset p.w j) at pointer
  change u.gpr .x12=BitVec.ofNat 64 p.w at count
  brun [rest.rd,rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,
-  hdr_enc arrHdr,good.scr.ld (d:=8*sArr a) (by have := hdr_lt_slot p.w 8 arrHdr;have := p.room;omega),
+  hdr_enc arrHdr,good.scr.ld (d:=8*sArr a) (by have := hdr_lt_slot p.w 8 arrHdr;have := p.room;omega_arith),
   mem,good.hdr.harr a array,pointer,count]
 
 theorem loadEntry_ct (a : Nat) (array : a<8) {hc : VG.Taint.Hint VG.AArch64.Taint.T}

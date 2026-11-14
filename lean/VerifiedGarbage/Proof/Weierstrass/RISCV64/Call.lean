@@ -92,7 +92,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 
 theorem ofNat_2047_add {v : Nat} (h : 2047 ≤ v) :
     BitVec.ofNat 64 2047 + BitVec.ofNat 64 (v - 2047) = BitVec.ofNat 64 v := by
-  rw [BitVec.ofNat_add_ofNat, show 2047 + (v - 2047) = v by omega]
+  rw [BitVec.ofNat_add_ofNat, show 2047 + (v - 2047) = v by omega_using [h]]
 
 theorem add_2047_add (x : BitVec 64) {v : Nat} (h : 2047 ≤ v) :
     x + BitVec.ofNat 64 2047 + BitVec.ofNat 64 (v - 2047) = x + BitVec.ofNat 64 v := by
@@ -110,10 +110,10 @@ theorem wp_liAt {d : Reg} {v : Nat} (h : v < 4095)
     WP isa (.block (liAt d v ++ is)) s Q := by
   unfold liAt
   split
-  · exact wp_li (by omega) k
-  · refine wp_li (imm := 2047) (by decide) fun s₁ u₁ => wp_addi (by omega) fun s₂ u₂ => k s₂ ?_
+  · exact wp_li (by omega_arith) k
+  · refine wp_li (imm := 2047) (by decide) fun s₁ u₁ => wp_addi (by omega_using [h]) fun s₂ u₂ => k s₂ ?_
     have u := u₁.twice u₂
-    rwa [u₁.gpr, ofNat_2047_add (by omega)] at u
+    rwa [u₁.gpr, ofNat_2047_add (by omega_arith)] at u
 
 /-- `ldAt` below 2048 is the load itself. -/
 theorem ldAt_lo {rd base : Reg} {off : Nat} (h : off < 2048) : ldAt rd base off = [.load .d rd base off] := by
@@ -131,9 +131,9 @@ theorem wp_ldAt {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4095)
     WP isa (.block (ldAt t n off ++ is)) s Q := by
   unfold ldAt
   split
-  · exact wp_ld (by omega) ha hal hin k
+  · exact wp_ld (by omega_arith) ha hal hin k
   · refine wp_addi (imm := 2047) (by decide) fun s₁ u₁ => ?_
-    refine wp_ld (by omega) (by rw [u₁.gpr, add_2047_add _ (by omega), ha]) hal
+    refine wp_ld (by omega_using [ho]) (by rw [u₁.gpr, add_2047_add _ (by omega_arith), ha]) hal
       (by rw [u₁.rd, u₁.wr]; exact hin) fun s₂ u₂ => k s₂ ?_
     rw [u₁.mem] at u₂
     exact u₁.twice u₂
@@ -145,9 +145,9 @@ theorem wp_sdAt {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4095) (htn : t �
     WP isa (.block (sdAt t n off ++ is)) s Q := by
   unfold sdAt
   split
-  · exact wp_sd (by omega) ha hal hout k
+  · exact wp_sd (by omega_arith) ha hal hout k
   · refine wp_addi (imm := 2047) (by decide) fun s₁ u₁ => ?_
-    refine wp_sd (by omega) (by rw [u₁.gpr, add_2047_add _ (by omega), ha]) hal
+    refine wp_sd (by omega_using [ho]) (by rw [u₁.gpr, add_2047_add _ (by omega_arith), ha]) hal
       (by rw [u₁.wr]; exact hout) fun s₂ u₂ => ?_
     refine wp_subi (imm := 2047) (by decide) fun s₃ u₃ => k s₃ ⟨funext fun r => ?_, ?_, ?_, ?_, ?_⟩
     · by_cases hr : r = n
@@ -185,11 +185,11 @@ theorem outs_of_keeps {k : Nat} {base : Addr} {o : Nat} (ho : o < 2 ^ 32)
     rw [e]
     refine hk _ hi ?_ ?_
     · omega
-    · rw [toNat_lo ho]; omega
+    · rw [toNat_lo ho]; omega_using [h1]
   · refine hf x fun r hr => ?_
     rw [List.mem_singleton] at hr; subst hr
     show ¬ ((x - base).toNat + 1 ≤ 8192)
-    simp only [ofs] at hi; omega
+    simp only [ofs] at hi; omega_using [hi]
 
 /-- A call of `body`, which meets the contract `K` by register, from the
 working space in `s0` and the offsets `o`, `a`, `b`, as `callOp` sets them. -/
@@ -234,7 +234,7 @@ theorem call_ok {S : Modulus} {f : String} {body : Prog isa} (hn : body.noFrames
   have fit : ∀ x, x + 8 * S.k ≤ own S.k → Impl.Weierstrass.Mont.Fits S.k ((BitVec.ofNat 64 x).setWidth 32) (rvOwn S.k) :=
     fun x hx => by
       simp only [Impl.Weierstrass.Mont.Fits]
-      rw [toNat_lo (by have := rvOwn_cases S.k; simp only [own] at hx; omega)]
+      rw [toNat_lo (by have := rvOwn_cases S.k; simp only [own] at hx; omega_using [hx, this])]
       exact hx
   have hpe : rvPre S e := ⟨rfl, by simp only [e, State.withRegions_wr, e0], by rw [e0]; exact hw.nowrap,
     ⟨by rw [e1]; exact fit o ho, by rw [e2]; exact fit a ha, by rw [e3]; exact fit b hb⟩,
@@ -272,11 +272,11 @@ theorem callOp_ok {S : Modulus} {f : String} {body bodyA : Prog isa} (hn : body.
       fun r hr => ?_⟩) hQ
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have l : ∀ x, x < 4095 → (BitVec.ofNat 64 x).toNat = x := fun x hx => by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hx])]
     rcases hr with rfl | rfl | rfl
-    · rw [h1, l o ho']; omega
-    · rw [h2, l a ha']; omega
-    · rw [h3, l b hb']; omega
+    · rw [h1, l o ho']; omega_using [ho', hal]
+    · rw [h2, l a ha']; omega_using [ha', hal]
+    · rw [h3, l b hb']; omega_using [hb', hal]
   · rw [ite_eq_right hal]
     exact call_ok (S := S) hn hK hw ho ha hb ho' ha' hb' hpre' hQ
 
@@ -289,9 +289,9 @@ theorem mulCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
       wordsVal s'.mem base o F.S.k < F.S.m ∧
       wordsVal s'.mem base o F.S.k * 2 ^ (64 * F.S.k) % F.S.m =
         wordsVal s.mem base a F.S.k * wordsVal s.mem base b F.S.k % F.S.m := by
-  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
+  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega_using [ho, this]
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
-    have := rvOwn_cases F.S.k; simp only [own] at hx; omega
+    have := rvOwn_cases F.S.k; simp only [own] at hx; omega_using [hx, this]
   refine callOp_ok (S := F.S) hF.nmul hF.nmulA hF.mul hF.mulA hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by simp only [arg]; rw [h3, h0, hm, numAt_ofNat _ _ (h32 b hb)]; exact hB⟩)
     fun s' K Fr t h0 h1 h2 h3 hm ⟨v1, v2, v3⟩ => ?_
@@ -306,9 +306,9 @@ theorem addCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
     (hAB : wordsVal s.mem base a F.S.k + wordsVal s.mem base b F.S.k < 2 * F.S.m) :
     WP isa (addCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k = (wordsVal s.mem base a F.S.k + wordsVal s.mem base b F.S.k) % F.S.m := by
-  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
+  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega_using [ho, this]
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
-    have := rvOwn_cases F.S.k; simp only [own] at hx; omega
+    have := rvOwn_cases F.S.k; simp only [own] at hx; omega_using [hx, this]
   refine callOp_ok (S := F.S) hF.nadd hF.naddA hF.add hF.addA hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by
       simp only [arg]; rw [h2, h3, h0, hm, numAt_ofNat _ _ (h32 a ha), numAt_ofNat _ _ (h32 b hb)]; exact hAB⟩)
@@ -324,9 +324,9 @@ theorem subCall_ok {F : Field} (hF : FieldOk F) {s : State} {base : Addr} (hw : 
     (hA : wordsVal s.mem base a F.S.k < F.S.m) (hB : wordsVal s.mem base b F.S.k < F.S.m) :
     WP isa (subCall F o a b) s fun s' => CallKeep F.S.k base o s s' ∧
       wordsVal s'.mem base o F.S.k = (wordsVal s.mem base a F.S.k + F.S.m - wordsVal s.mem base b F.S.k) % F.S.m := by
-  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega
+  have hk : 64 * F.S.k ≤ 8192 := by have := rvOwn_cases F.S.k; simp only [own] at ho; omega_using [ho, this]
   have h32 : ∀ x, x + 8 * F.S.k ≤ own F.S.k → x < 2 ^ 32 := fun x hx => by
-    have := rvOwn_cases F.S.k; simp only [own] at hx; omega
+    have := rvOwn_cases F.S.k; simp only [own] at hx; omega_using [hx, this]
   refine callOp_ok (S := F.S) hF.nsub hF.nsubA hF.sub hF.subA hw ho ha hb ho' ha' hb'
     (fun t ht h0 h1 h2 h3 hm => ⟨ht, by simp only [arg]; rw [h2, h0, hm, numAt_ofNat _ _ (h32 a ha)]; exact hA,
       by simp only [arg]; rw [h3, h0, hm, numAt_ofNat _ _ (h32 b hb)]; exact hB⟩)

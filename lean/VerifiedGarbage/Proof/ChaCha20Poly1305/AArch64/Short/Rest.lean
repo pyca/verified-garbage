@@ -1,16 +1,152 @@
 module
 
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Stash
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.ShortRest
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.ChaCha20.Stream
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Prologue
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.XorKs
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
+
+/-! ### `ChaCha20Poly1305.AArch64.Short.Stash`, which only this module used -/
+
+section
+
+/-!
+# ChaCha20-Poly1305 on AArch64, 257 to 511 bytes: the state copied
+
+`ShortRest.stash`: the ChaCha20 state at `ctx[0, 64)` copied to
+`ctx[64, 128)` a word at a time, with its counter (word 12) set to 5.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.ChaCha20Poly1305.AArch64.ShortRest
+
+open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64 VG.Impl.ChaCha20Poly1305.AArch64.ShortRest
+open VG.Proof.ChaCha20.AArch64.Xor (Upd Mupd wp_ldr32 wp_str32)
+open VG.Spec.ChaCha20 (stateAt initState)
+
+variable {e : Bool}
+
+/-- The word `stashW k` stores: 5 for the counter, else the source's word. -/
+abbrev stashVal (m : Mem) (c : Addr) (k : Nat) : BitVec 32 :=
+  if k = 12 then 5 else m.readW (off c (4 * k)) 32
+
+theorem five32 : ((((5 : BitVec 16).setWidth 32).setWidth 64).setWidth 32 : BitVec 32) = 5 := rfl
+
+/-- One word copied. -/
+theorem stashW_ok {s₀ s : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) (hx21 : s.gpr .x21 = cx s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (.block (stashW k)) s fun s' =>
+      s'.mem = s.mem.writeW (off (cx s₀) (64 + 4 * k)) (stashVal s.mem (cx s₀) k) ∧
+      (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have o : InRegions s.wr (off (cx s₀) (64 + 4 * k)) 4 := by
+    rw [hwr]; exact hp.in_ctx (by omega_using [hk])
+  unfold stashW stashVal
+  split
+  · next h12 =>
+    subst h12
+    refine wp_movz32 fun s₁ u₁ => ?_
+    refine wp_str32 (a := off (cx s₀) (64 + 4 * 12)) (by decide) (by rw [u₁.other _ (by decide), hx21])
+      (by rw [u₁.wr]; exact o) fun s₂ g₂ => WP.block_nil ⟨?_, fun r hr => ?_, ?_, ?_⟩
+    · rw [g₂.mem, u₁.gpr, u₁.mem, five32]
+    · rw [g₂.gpr, u₁.other r hr]
+    · rw [g₂.rd, u₁.rd]
+    · rw [g₂.wr, u₁.wr]
+  · next h12 =>
+    have i : InRegions (s.rd ++ s.wr) (off (cx s₀) (4 * k)) 4 := by
+      rw [hrd, hwr]; exact hp.in_ctx' (by omega_using [hk])
+    refine wp_ldr32 (a := off (cx s₀) (4 * k)) ⟨by omega_using [], by omega_using [hk]⟩ (by rw [hx21]) i fun s₁ u₁ => ?_
+    refine wp_str32 (a := off (cx s₀) (64 + 4 * k)) ⟨by omega_using [], by omega_using [hk]⟩
+      (by rw [u₁.other _ (by decide), hx21]) (by rw [u₁.wr]; exact o) fun s₂ g₂ =>
+        WP.block_nil ⟨?_, fun r hr => ?_, ?_, ?_⟩
+    · rw [g₂.mem, u₁.gpr, u₁.mem, BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+    · rw [g₂.gpr, u₁.other r hr]
+    · rw [g₂.rd, u₁.rd]
+    · rw [g₂.wr, u₁.wr]
+
+/-- The first `n` words of the copy. -/
+def stashN (n : Nat) : List Instr := (List.range n).flatMap stashW
+
+theorem stashN_succ (n : Nat) : stashN (n + 1) = stashN n ++ stashW n := by
+  simp only [stashN, List.range_succ, List.flatMap_append, List.flatMap_singleton]
+
+/-- Words `j` and `k` of `ctx`, for `j ≠ k < 32`, do not overlap. -/
+theorem word_sep (c : Addr) {j k : Nat} (hj : j < 32) (hk : k < 32) (h : j ≠ k) :
+    Mem.Sep (off c (4 * j)) 4 (off c (4 * k)) 4 := Offset.sep c (by omega_using [h]) (by omega_using [hj]) (by omega_using [hk])
+
+/-- After the first `n` words. -/
+structure Copied (s₀ s : State) (n : Nat) (s' : State) : Prop where
+  word : ∀ j < n, s'.mem.readW (off (cx s₀) (64 + 4 * j)) 32 = stashVal s.mem (cx s₀) j
+  frame : Frame [sub s₀ 64 64] s.mem s'.mem
+  gpr : ∀ r, r ≠ .x9 → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem stashN_ok {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀) (hrd : s.rd = s₀.rd)
+    (hwr : s.wr = s₀.wr) : ∀ n ≤ 16, WP isa (.block (stashN n)) s (Copied s₀ s n)
+  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
+  | n + 1, hn => by
+    rw [stashN_succ]
+    refine WP.block_append ((stashN_ok hp hx21 hrd hwr n (by omega_using [hn])).mono fun s₁ h₁ => ?_)
+    refine (stashW_ok hp (k := n) (by omega_using [hn]) (by rw [h₁.gpr _ (by decide), hx21])
+      (by rw [h₁.rd, hrd]) (by rw [h₁.wr, hwr])).mono fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
+    -- The source word `n` is outside the copy written so far.
+    have src : stashVal s₁.mem (cx s₀) n = stashVal s.mem (cx s₀) n := by
+      unfold stashVal
+      split
+      · rfl
+      · refine h₁.frame.readW (r := sub s₀ (4 * n) 4) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+        simp only [List.mem_singleton] at hr; subst hr
+        exact sub_disj s₀ (by omega_using [hn]) (by omega_using [hn]) (by omega_using [])
+    refine ⟨fun j hj => ?_, ?_, fun r hr => by rw [g₂ r hr, h₁.gpr r hr], by rw [rd₂, h₁.rd],
+      by rw [wr₂, h₁.wr]⟩
+    · rw [m₂, src]
+      by_cases hjn : j = n
+      · subst hjn; exact Mem.readW_writeW_self32 _ _ _
+      · rw [Mem.readW_writeW_sep (by
+            rw [show off (cx s₀) (64 + 4 * j) = off (cx s₀) (4 * (16 + j)) by congr 1; omega_using [],
+              show off (cx s₀) (64 + 4 * n) = off (cx s₀) (4 * (16 + n)) by congr 1; omega_using []]
+            exact word_sep _ (by omega_using [hn, hj]) (by omega_using [hn]) (by omega_using [hjn])) (by decide)]
+        exact h₁.word j (by omega_using [hj, hjn])
+    · rw [m₂]
+      exact h₁.frame.writeW (List.mem_singleton_self _) _ (by
+        show (sub s₀ 64 64).Contains (off (cx s₀) (64 + 4 * n)) 4
+        exact Offset.contains _ (e := 64) (k := 64) (by omega_using []) (by omega_using [hn]) (by omega_using []))
+
+theorem stash_eq : stash = stashN 16 := rfl
+
+/-- The state copied, with counter 5. -/
+theorem stateAt_copy {s₀ s s' : State} (h : Copied s₀ s 16 s')
+    (hst : stateAt s.mem (off (cx s₀) 0) = initState (K s₀) 0 (N s₀)) :
+    stateAt s'.mem (off (cx s₀) 64) = initState (K s₀) 5 (N s₀) := by
+  apply Vector.ext
+  intro j hj
+  have w := h.word j hj
+  simp only [stateAt, Vector.getElem_ofFn] at hst ⊢
+  rw [show off (cx s₀) 64 + BitVec.ofNat 64 (4 * j) = off (cx s₀) (64 + 4 * j) from off_off _ _ _, w]
+  unfold stashVal
+  have hs := congrArg (·[j]) hst
+  simp only [Vector.getElem_ofFn, off_off, Nat.zero_add] at hs
+  split
+  · next h12 => subst h12; simp [Spec.ChaCha20.initState]
+  · next h12 =>
+    rw [hs]
+    simp only [Spec.ChaCha20.initState, Vector.getElem_ofFn]
+    split <;> simp_all
+
+end VG.Proof.ChaCha20Poly1305.AArch64.ShortRest
+
+end
+
+end
+
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 257 to 511 bytes: the parts
@@ -39,13 +175,13 @@ variable {e : Bool}
 abbrev restR (s₀ : State) : Region := ⟨dp s₀ + BitVec.ofNat 64 256, L s₀ - 256⟩
 
 theorem restR_sub {s₀ : State} (hL : 256 ≤ L s₀) : Region.Sub (restR s₀) (dR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hL])
 
 /-- The output after its first 256 bytes, at `Q`. -/
 abbrev restQ (s₀ : State) (Q : Addr) : Region := ⟨Q + BitVec.ofNat 64 256, L s₀ - 256⟩
 
 theorem restQ_sub {s₀ : State} {Q : Addr} (hL : 256 ≤ L s₀) : Region.Sub (restQ s₀ Q) ⟨Q, L s₀⟩ :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hL])
 
 /-- The regions the stream writes, into the output at `Q`. -/
 abbrev streamR (s₀ : State) (Q : Addr) : List Region := [sub s₀ 64 64, restQ s₀ Q, sub s₀ 128 320]
@@ -67,9 +203,9 @@ theorem streamR_ctx {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) (hL : 256 ≤ L
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact sub_disj s₀ (by omega) ha (by lit_omega)
+  · exact sub_disj s₀ (by omega_using [h1]) ha (by lit_omega)
   · exact (hq.ctx.sub_left (sub_ctx s₀ ha)).sub_right (restQ_sub hL)
-  · exact sub_disj s₀ (by omega) ha (by lit_omega)
+  · exact sub_disj s₀ (by omega_using [h2]) ha (by lit_omega)
 
 theorem streamR_saved {s₀ : State} (hp : APre e s₀) (hL : 256 ≤ L s₀) :
     ∀ r ∈ streamR s₀ (op e s₀), (sub s₀ 576 56).Disjoint r :=
@@ -108,7 +244,7 @@ theorem first_ok {s₀ s : State} (hp : APre e s₀) (h : Inv e s₀ s) (hL : 25
         by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
   refine WP.seq ((WP.withSp hstart).mono fun s₁ h₁ => ?_)
   obtain ⟨⟨x14₁, x23₁, g₁, m₁, rd₁, wr₁⟩, sp₁⟩ := h₁
-  refine WP.seq ((Short.xorKsDst_ok hp hp.o (!e) (o := 0) (n := 256) (by decide) (by omega)
+  refine WP.seq ((Short.xorKsDst_ok hp hp.o (!e) (o := 0) (n := 256) (by decide) (by omega_using [hL])
     (by rw [g₁ _ (by decide) (by decide), h.x21]) (by rw [g₁ _ (by decide) (by decide), h.x22, BitVec.add_zero])
     (cond_out s₀ (by rw [g₁ _ (by decide) (by decide), h.un .x28 (by decide)]) 0)
     x23₁ (by rw [rd₁, h.rd]) (by rw [wr₁, h.wr])).mono fun s₂ ⟨k₂, x₂, f₂, g₂⟩ => ?_)
@@ -171,7 +307,7 @@ theorem rest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s : State} (hp : APre
   refine WP.seq (WP.mono (WP.preservedV (restArgs_ok h hL) (by lit_decide))
     fun s₁ ⟨⟨x0₁, x1₁, x2₁, x3₁, k₁, m₁⟩, v₁⟩ => ?_)
   refine xor_callOut v hp (by rw [k₁.rd, h.rd]) (by rw [k₁.wr, h.wr])
-    (by rw [k₁.cs _ (by decide) (by decide), h.un .x28 (by decide)]) x0₁ x1₁ x2₁ x3₁ (by omega)
+    (by rw [k₁.cs _ (by decide) (by decide), h.un .x28 (by decide)]) x0₁ x1₁ x2₁ x3₁ (by omega_using [hL])
     fun s₂ v₂ k₂ data₂ => ?_
   have k : Kept (streamR s₀ (op e s₀)) s s₂ := (k₁.sub fun r hr => absurd hr List.not_mem_nil).trans k₂
   refine ⟨fun r hr => (v₂ r hr).trans (v₁ r hr), h.step k (streamR_work hL) (streamR_saved hp hL), k, ?_⟩
@@ -183,8 +319,8 @@ theorem rest_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s : State} (hp : APre
 theorem dR_byte {s₀ : State} (hp : APre e s₀) {i : Nat} (hi : i < L s₀) :
     (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 i) 1 := by
   have := hp.wrap_d
-  have h := Offset.contains (dp s₀) (d := i) (n := 1) (e := 0) (k := L s₀) (by omega) (by omega)
-    (by simp only [L, dp] at this hi ⊢; omega)
+  have h := Offset.contains (dp s₀) (d := i) (n := 1) (e := 0) (k := L s₀) (by omega_using []) (by omega_using [hi])
+    (by simp only [L, dp] at this hi ⊢; omega_using [])
   simpa only [BitVec.add_zero] using h
 
 /-- Byte `i < 256` of the output is outside what the stream writes. -/
@@ -192,13 +328,13 @@ theorem first_out {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) (hL : 256 ≤ L s
     ∀ r ∈ streamR s₀ Q, ¬ r.Contains (Q + BitVec.ofNat 64 i) 1 := by
   have wq := hq.wrap
   have hb : (⟨Q, L s₀⟩ : Region).Contains (Q + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hL, hi]) (by omega_using [hi])
   intro r hr hc
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (hq.ctx.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega))) _ hc hb
-  · have hd := Offset.base_disjoint Q (e := 256) (n := L s₀ - 256) (k := 256) (Nat.le_refl _) (by omega)
-    have h1 := Offset.contains Q (d := i) (n := 1) (e := 0) (k := 256) (by omega) (by omega) (by omega)
+  · have hd := Offset.base_disjoint Q (e := 256) (n := L s₀ - 256) (k := 256) (Nat.le_refl _) (by omega_using [wq])
+    have h1 := Offset.contains Q (d := i) (n := 1) (e := 0) (k := 256) (by omega_using []) (by omega_using [hi]) (by omega_using [])
     rw [BitVec.add_zero] at h1
     exact hd _ h1 hc
   · exact (hq.ctx.sub_left (sub_ctx s₀ (k := 128) (n := 320) (by lit_omega))) _ hc hb
@@ -208,7 +344,7 @@ theorem rest_out {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {i : Nat} (h₁ : 
     ∀ r ∈ [(⟨Q, 256⟩ : Region)], ¬ r.Contains (dp s₀ + BitVec.ofNat 64 i) 1 := by
   intro r hr hc
   simp only [List.mem_singleton] at hr; subst hr
-  have hd := hq.sep (a := 0) (n := 256) (c := i) (m := 1) (by omega) (by omega)
+  have hd := hq.sep (a := 0) (n := 256) (c := i) (m := 1) (by omega_using [h₁]) (by omega_using [h₂])
   rw [BitVec.add_zero] at hd
   exact hd _ hc (Region.contains_self _ _)
 
@@ -216,11 +352,11 @@ theorem rest_out {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) {i : Nat} (h₁ : 
 theorem ks_rest (key nonce : List Byte) {n i : Nat} (h₁ : 256 ≤ i) (h₂ : i < n) :
     (keystream (initState key 5 nonce) (n - 256)).getD (i - 256) 0 =
       (keystream (initState key 1 nonce) n).getD i 0 := by
-  rw [VG.Proof.ChaCha20.keystream_getD _ (by omega), VG.Proof.ChaCha20.keystream_getD _ h₂,
+  rw [VG.Proof.ChaCha20.keystream_getD _ (by omega_using [h₁, h₂]), VG.Proof.ChaCha20.keystream_getD _ h₂,
     VG.Proof.ChaCha20Poly1305.ctr_initState, VG.Proof.ChaCha20Poly1305.ctr_initState,
-    show (i - 256) % 64 = i % 64 by omega]
+    show (i - 256) % 64 = i % 64 by omega_using [h₁]]
   congr 4
-  rw [show i / 64 = (i - 256) / 64 + 4 by omega, BitVec.ofNat_add]
+  rw [show i / 64 = (i - 256) / 64 + 4 by omega_using [h₁], BitVec.ofNat_add]
   bv_omega
 
 /-- `ChaCha20.xor_getD`, from the source at `p` to the destination at `q`. -/
@@ -266,9 +402,9 @@ theorem ct_rest {s₀ : State} {Q : Addr} (hq : DstR s₀ Q) (hL : 256 ≤ L s�
     rw [List.getElem_zipWith, e1, e2, e3]
     by_cases hi : i < 256
     · rw [hf₅ _ (first_out hq hL hi), hx i hi, hk i hi, ks5_eq s₀ (n := L s₀) hiL]
-    · have hi' : 256 ≤ i := by omega
+    · have hi' : 256 ≤ i := by omega_using [hi]
       have x := xor_getD2 (VG.Proof.ChaCha20.length_keystream _ _) hr (j := i - 256)
-        (by omega)
+        (by omega_using [hiL, hi])
       have sh : ∀ X : Addr, X + BitVec.ofNat 64 256 + BitVec.ofNat 64 (i - 256) = X + BitVec.ofNat 64 i :=
         fun X => by rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' hi']
       rw [sh, sh] at x
@@ -375,7 +511,7 @@ theorem openAfter_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ s₁ : State} (h
     rw [stateAt_frame k₇.frame (by rdisj_all), st₆]
   refine WP.seq (WP.mono (rest_ok v hp i₇ hL₁ st₇) fun s₈ ⟨v₈, i₈, k₈, r₈⟩ => ?_)
   have pt₈ := ct_rest hp.o hL₁ D₆ K₆ x₇ f₇ r₈ k₈.frame
-  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₈ (out := 48) (by omega)) (by lit_decide))
+  refine WP.mono (WP.preservedV (finalizeTo_ok hp i₈ (out := 48) (by omega_using [])) (by lit_decide))
     fun s₉ ⟨⟨k₉, tag₉⟩, v₉⟩ => ?_
   have hd8 := streamR_ctx hp.o hL₁ (a := 448) (n := 128) (by lit_omega) (by lit_omega) (by lit_omega)
   have R₂ : Repr s₂.mem (off (cx s₀) 448) (otk s₀) [] := Repr.frame k₂.frame (by rdisj_all) h₁.poly
@@ -439,7 +575,7 @@ theorem splitVal_eq {L : Nat} (h : L < 2 ^ 64) :
   apply propext
   simp only [splitVal, BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [h]
 
 /-- The branch: to `Short.lean`'s code iff `1 ≤ len ≤ 256`. -/
 theorem split_eval {s₀ s₁ s₂ : State} (h₁ : Short.PostP e s₀ s₁) (h : s₂.gpr .x9 = splitVal (s₁.gpr .x23)) :
@@ -461,7 +597,7 @@ theorem sealMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     fun r hr => (ag.v r hr).trans (v₁ r hr)
   refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (split_eval h₁ x9) (fun h => ?_) (fun h => ?_)
   · exact Short.sealAfter_ok hp (of_decide_eq_true h).2 h₂ v₂
-  · exact sealAfter_ok v hp (by have := of_decide_eq_false h; omega) h₂ v₂
+  · exact sealAfter_ok v hp (by have := of_decide_eq_false h; omega_using [hlo, this]) h₂ v₂
 
 theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀)
     (hlo : 1 ≤ L s₀) : WP isa (ShortRest.openMain v.callee) s₀ (MainO s₀) := by
@@ -474,6 +610,6 @@ theorem openMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : AP
     fun r hr => (ag.v r hr).trans (v₁ r hr)
   refine WP.ite (decide (1 ≤ L s₀ ∧ L s₀ ≤ 256)) (split_eval h₁ x9) (fun h => ?_) (fun h => ?_)
   · exact Short.openAfter_ok hp (of_decide_eq_true h).2 h₂ v₂
-  · exact openAfter_ok v hp (by have := of_decide_eq_false h; omega) h₂ v₂
+  · exact openAfter_ok v hp (by have := of_decide_eq_false h; omega_using [hlo, this]) h₂ v₂
 
 end VG.Proof.ChaCha20Poly1305.AArch64.ShortRest

@@ -37,7 +37,7 @@ theorem cachedAddress_ok {s : State} {base : Addr} {a : Nat}
       simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
       rw [Nat.mul_mod,Nat.mod_mod,←Nat.mul_mod]
       congr 1
-      omega
+      omega_using []
     rw [sh]
     simp only [show (6000 : BitVec 16).setWidth 64=BitVec.ofNat 64 6000 by decide,off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
@@ -54,14 +54,14 @@ theorem cachedLoad_ok {s : State} {base : Addr} {size a : Nat}
   rw [CachedJac.load,WP.block_append_iff]
   refine WP.mono (cachedAddress_ok hs.x0 h2 ha) fun b ⟨b16,kb⟩ => ?_
   refine WP.mono (jacWords_ok (n:=8) (hs.of_keeps kb (by decide)) b16
-    (by omega) (by decide) (by omega) (by omega) 8 (by decide)) fun t ⟨hv,kt,ot⟩ => ?_
+    (by omega_using [hsize]) (by decide) (by omega_using [ha8, hsize]) (by omega_using []) 8 (by decide)) fun t ⟨hv,kt,ot⟩ => ?_
   refine ⟨?_,?_,((Keeps.regs kb).mono (by sub_regs)).trans (kt.mono (by sub_regs)),?_⟩
   · refine wordsVal_of_words₂ _ _ _ fun i hi => ?_
-    simpa only [kb.mem] using hv i (by omega)
+    simpa only [kb.mem] using hv i (by omega_using [hi])
   · refine wordsVal_of_words₂ _ _ _ fun i hi => ?_
-    have e := hv (4+i) (by omega)
-    rw [show 5400+8*(4+i)=5432+8*i by omega,
-      show 6000+64*(a-1)+8*(4+i)=6032+64*(a-1)+8*i by omega,kb.mem] at e
+    have e := hv (4+i) (by omega_using [hi])
+    rw [show 5400+8*(4+i)=5432+8*i by omega_using [],
+      show 6000+64*(a-1)+8*(4+i)=6032+64*(a-1)+8*i by omega_using [],kb.mem] at e
     exact e
   · simpa only [kb.mem] using ot
 
@@ -86,7 +86,7 @@ theorem cachedLoadField_ok {M : Mod} {base : Addr} {size a : Nat} {C : Spec.Weie
     · have h0 := hx 5400 (by simp)
       have h1 := hx 5432 (by simp)
       rw [hn] at h0 h1
-      omega
+      omega_using [h0, h1]
   refine ⟨kp,hI.of_progKeep hL kp hD ?_,?_,?_,kt.gpr _ (by decide)⟩
   · intro x hx
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx

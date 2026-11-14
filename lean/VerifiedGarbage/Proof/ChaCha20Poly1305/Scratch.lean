@@ -73,10 +73,10 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 /-- The `len`-byte buffer at `p`, for a length argument `l`. -/
 theorem bytesAt_congr_len {pb : Nat} {m₁ m₂ : Mem} {p l : BitVec 64}
@@ -84,7 +84,7 @@ theorem bytesAt_congr_len {pb : Nat} {m₁ m₂ : Mem} {p l : BitVec 64}
     Spec.Poly1305.bytesAt m₂ p (l.setWidth pb).toNat = Spec.Poly1305.bytesAt m₁ p (l.setWidth pb).toNat :=
   bytesAt_congr fun i hi => h i (by
     have := Nat.mod_le l.toNat (2 ^ pb)
-    rw [BitVec.toNat_setWidth] at hi; omega)
+    rw [BitVec.toNat_setWidth] at hi; omega_using [hi, this])
 
 variable (pb : Nat)
 

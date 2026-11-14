@@ -125,7 +125,7 @@ theorem rotl1_or (x : Word) : x <<< 1 ||| x >>> 31 = x.rotateLeft 1 := by
     BitVec.getLsbD_rotateLeft, decide_eq_true hi, Bool.true_and]
   rcases (by omega_arith : i < 1 ∨ 1 ≤ i) with h | h
   · simp only [h, decide_true, Bool.not_true, Bool.false_and, Bool.false_or, ite_true]
-  · simp only [show ¬ i < 1 by omega, decide_false, Bool.not_false, Bool.true_and, ite_false,
+  · simp only [show ¬ i < 1 by omega_using [h], decide_false, Bool.not_false, Bool.true_and, ite_false,
       BitVec.getLsbD_of_ge x (31 + i) (by omega_arith), Bool.or_false]
 
 theorem xor_rotl1 (x y : Word) : x ^^^ y >>> 31 ^^^ y <<< 1 = x ^^^ y.rotateLeft 1 := by
@@ -136,7 +136,7 @@ theorem xor_rotl1 (x y : Word) : x ^^^ y >>> 31 ^^^ y <<< 1 = x ^^^ y.rotateLeft
     decide_eq_true hi, Bool.true_and]
   rcases (by omega_arith : i < 1 ∨ 1 ≤ i) with h | h
   · simp [h]
-  · simp [show ¬ i < 1 by omega, BitVec.getLsbD_of_ge y (31 + i) (by omega_arith)]
+  · simp [show ¬ i < 1 by omega_using [h], BitVec.getLsbD_of_ge y (31 + i) (by omega_arith)]
 
 theorem rotl1_xor (x y : Word) : (x ^^^ y).rotateLeft 1 = x.rotateLeft 1 ^^^ y.rotateLeft 1 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -642,7 +642,7 @@ open VG.Impl.Sha1.X86_64 (at_ save restore load update advance saved)
 open VG.Spec.Sha1 (HashValue Word Block K W stateAt blockAt compressBlocks compress)
 open VG.Proof.Sha1.X86_64 (Vars pubRegs Pre pre_of st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
   compressBlocks_succ contains_offset contains_offset' ofInt_natCast stateAt_get stateAt_eq writeState
-  stateAt_writeState frame_writeState winRegion win_sub Saved saveMem saveMem_saved saveMem_frame restore_ok
+  stateAt_writeState frame_writeState winRegion win_sub Saved saveMem saveMem_saved saveMem_frame
   saved_frame saved_bound vars0 load_eq update_eq Common LInv)
 
 /-! ## Loading the block -/
@@ -804,7 +804,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     exact blk_word i t ht
   have hin : ∀ n : Nat, n < 4 →
       InRegions (s.rd ++ s.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 :=
-    fun n hn => by rw [hL.rd, hL.wr]; exact Proof.Sha1.X86_64.ShaNi.Pre.in_blk16 hp hi hn
+    fun n hn => by rw [hL.rd, hL.wr]; exact Proof.Sha1.X86_64.ShaNi.in_blk16_of hp.rd hp.nb_lt hi hn
   have hrsi : s.gpr .rsi = blkAddr s₀ i := hL.rsi
   have hrcx : s.gpr .rcx = scr s₀ := hL.rcx
   -- Load the block and the hash value.
@@ -912,6 +912,24 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
   simp only [reduceCtorEq, ↓reduceIte, Consts, kreg_0, kreg_1, kreg_2, kreg_3, mBswap, VBinOp.sse, movq_const, and_self]
 
 /-! ## The whole function -/
+
+/-- The callee-saved registers restored, then `vzeroupper`. -/
+theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
+    WP isa (.block (restore ++ ([.vop .vzeroupper] : List Instr))) s fun s' =>
+      gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by
+  have hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 :=
+    hc.frame.readW (Region.contains_self _ _) (by simpa using ⟨hp.ret_st, hp.ret_scr⟩) (by decide)
+  refine Spill.restore_then .rcx saved s₀.gpr (by decide) (fun p hp' => ?_)
+    (by rw [hc.rcx]; exact hc.saved) ?_
+  · have := saved_bound p hp'
+    rw [hc.rcx, hc.rd, hc.wr]
+    exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  have hm := (Spill.restoreState_mem s₀.gpr s saved).1
+  have hg := Spill.restoreState_calleeSaved (l := saved) (by decide) hc.rsp
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, Option.some.injEq,
+    exists_eq_left']
+  exact ⟨⟨hg, by rw [hm]; exact hret⟩, by show stateAt _ _ = _; rw [hm]; exact hc.state⟩
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by

@@ -1,11 +1,49 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Header
-public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Layout
+public import VerifiedGarbage.Impl.Ed448.Arm.Verify
 import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Sponge
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Ed448.Arm.Verify.Header`, which only this module used -/
+
+section
+
+/-!
+# Ed448 verification on ARMv7: the header of `dom4`
+
+`hdr_ok`: the block `hdr` leaves `"SigEd448" ‖ 0 ‖ ctxlen`, the first ten
+bytes of `dom4(0, context)`, in the frame at `HDR` (`Shake.Kit.hdr_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.Arm.Verify
+
+open VG VG.Arm VG.Impl.Ed448.Arm.Verify VG.Impl.Ed25519.Arm.Whole
+
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
+
+/-- `"SigEd448" ‖ 0 ‖ ctxlen`, the first ten bytes of `dom4(0, context)`. -/
+abbrev hdrBytes (L : Lay) : List Byte :=
+  "SigEd448".toList.map (fun c => BitVec.ofNat 8 c.toNat) ++ [BitVec.ofNat 8 0, BitVec.ofNat 8 L.ctxLen.toNat]
+
+theorem hdr_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    WP isa (.block hdr) t fun u => Ctx L g m₀ u ∧
+      Spec.Ed448.bytesAt u.mem (State.addr L.E + BitVec.ofNat 64 HDR) 10 = hdrBytes L :=
+  WP.mono (hL.kit.hdr_ok hc ha (j := 2) (by decide) hL.cl (by decide)) fun _ ⟨hu, _, hb⟩ => ⟨hu, hb⟩
+
+end VG.Proof.Ed448.Arm.Verify
+
+end
+
+end
+
 
 /-!
 # Ed448 verification on ARMv7: the hash
@@ -80,13 +118,13 @@ theorem hash_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (hk.nextAt hc2 ha (scr_at L) (src := .caller 1 0) (len := .caller 2 0) (P := L.ctx)
     (N := L.ctxLen.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cx dx ax hL.nx hr2 hp2') fun t3 ⟨hc3, _, hr3, hp3⟩ => ?_)
-  have ex := hk.input_bytes hc2 rx (whole _) (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega)
+  have ex := hk.input_bytes hc2 rx (whole _) (by change L.ctxLen.toNat ≤ 2 ^ 64; have := L.ctxLen.isLt; omega_using [])
   simp only at ex
   rw [ex] at hr3 hp3
   -- `R`.
   refine WP.seq (WP.mono (hk.nextAt hc3 ha (scr_at L) (src := .caller 5 0) (len := .const 57) (P := L.sig)
     (N := 57) ⟨by decide, by decide⟩ (valid_const (by decide)) (by simp [argVal, Lay.value]) rfl cs ds as
-    (by have := hL.ns; omega) hr3 hp3) fun t4 ⟨hc4, _, hr4, hp4⟩ => ?_)
+    (by have := hL.ns; omega_using [this]) hr3 hp3) fun t4 ⟨hc4, _, hr4, hp4⟩ => ?_)
   have es := hk.input_bytes hc3 rs ws (by change 57 ≤ 2 ^ 64; decide)
   simp only at es
   rw [es] at hr4 hp4
@@ -101,7 +139,7 @@ theorem hash_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
   refine WP.seq (WP.mono (hk.nextAt hc5 ha (scr_at L) (src := .caller 3 0) (len := .caller 4 0) (P := L.msg)
     (N := L.len.toNat) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by simp [argVal, Lay.value])
     (by simp [argVal, Lay.value]) cm dm am hL.nm hr5 hp5) fun t6 ⟨hc6, _, hr6, hp6⟩ => ?_)
-  have em := hk.input_bytes hc5 rm (whole _) (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega)
+  have em := hk.input_bytes hc5 rm (whole _) (by change L.len.toNat ≤ 2 ^ 64; have := L.len.isLt; omega_using [])
   simp only at em
   rw [em] at hr6 hp6
   -- Pad and squeeze.

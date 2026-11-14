@@ -48,13 +48,13 @@ theorem repeatSquaresWith_ok (square : Prog isa) (P : State → Prop) (num : Sta
     have mem : w.mem=v.mem := aw.mem.trans va.mem
     have keep : Keeps [.esi] v w := va.keeps.trans (aw.keeps [.esi])
     refine ⟨⟨stable v w Pv mem keep,?_,?_,?_⟩,?_⟩
-    · rw [aw.gpr,va.gpr,cnt,counter_sub (by omega : count-i<2^32) (by omega)]
+    · rw [aw.gpr,va.gpr,cnt,counter_sub (by omega_using [small] : count-i<2^32) (by omega_using [hi])]
       congr 1
     · rw [number v w mem];exact lt
     · rw [number v w mem]
       simpa only [Nat.pow_succ,Nat.mul_assoc,Nat.mul_comm,Nat.mul_left_comm] using val
-    · rw [zw,va.gpr,cnt,counter_sub (by omega : count-i<2^32) (by omega),counter_zero (by omega) (by omega)]
-      simp only [show (count-i=1)↔i+1=count by omega]
+    · rw [zw,va.gpr,cnt,counter_sub (by omega_using [small] : count-i<2^32) (by omega_using [hi]),counter_zero (by omega_using [small]) (by omega_using [hi])]
+      simp only [show (count-i=1)↔i+1=count by omega_using []]
   have loop : WP isa (.loop (squareStepWith square) .ne) u
       (SquaresInv P num m R E count count) := by
     refine WP.loop (M := isa)
@@ -65,7 +65,7 @@ theorem repeatSquaresWith_ok (square : Prog isa) (P : State → Prop) (num : Sta
     by_cases done : i+1=count
     · refine .inl ⟨?_,done ▸ next⟩
       simp only [eval,zf,done,decide_true,Option.map_some,Bool.not_true]
-    · refine .inr ⟨?_,count-(i+1),by omega,i+1,rfl,by omega,next⟩
+    · refine .inr ⟨?_,count-(i+1),by omega_using [hi],i+1,rfl,by omega_using [hi, done],next⟩
       simp only [eval,zf,decide_eq_false done,Option.map_some,Bool.not_false]
   exact WP.mono loop fun t I => ⟨I.state,I.bound,I.value⟩
 

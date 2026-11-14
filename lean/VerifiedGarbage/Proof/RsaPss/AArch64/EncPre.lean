@@ -32,11 +32,11 @@ abbrev dgR (D : Nat) (s : State) : Region := ⟨s.gpr .x2, D⟩
 abbrev saR (s : State) : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
 abbrev sR (s : State) : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 0) 11
-abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 1) 5
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 1) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
 
 /-- What the code needs at the entry, for the tables
-`tsH` of `MdHash` and `tsG` of `Hash`. -/
+`tsH` of `MdHash` and `tsG` of `MdHash`. -/
 structure PreE (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   sp1 : encStack ≤ s.sp.toNat
   sp2 : s.sp.toNat + 16 ≤ 2 ^ 64
@@ -68,7 +68,7 @@ structure PreE (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   wsa : (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64
   ws : (s.gpr .x6).toNat + (s.gpr .x7).toNat * 8 ≤ 2 ^ 64
   wtH : (stackArg s 0).toNat + 88 ≤ 2 ^ 64
-  wtG : (stackArg s 1).toNat + 40 ≤ 2 ^ 64
+  wtG : (stackArg s 1).toNat + 88 ≤ 2 ^ 64
   b1 : 1 ≤ (s.gpr .x5).toNat
   b2 : (s.gpr .x5).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .x1).toNat = Spec.RsaPss.emLength (s.gpr .x5).toNat
@@ -77,18 +77,18 @@ structure PreE (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
 variable {D : Nat} {tsH tsG : List FnTable} {s : State}
 
 theorem PreE.k1 (hp : PreE D tsH tsG s) : 1 ≤ (s.gpr .x1).toNat := by
-  have := hp.hel; have := hp.b1; unfold Spec.RsaPss.emLength at *; omega
+  have := hp.hel; have := hp.b1; unfold Spec.RsaPss.emLength at *; omega_arith
 
 theorem PreE.k2 (hp : PreE D tsH tsG s) : (s.gpr .x1).toNat ≤ 1024 := by
-  have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
+  have := hp.hel; have := hp.b2; unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega_arith
 
 /-- `z = 8 emLen - emBits`, the bits of `em` above `emBits`, is below 8. -/
 theorem PreE.z (hp : PreE D tsH tsG s) : (s.gpr .x5).toNat ≤ 8 * (s.gpr .x1).toNat ∧
     8 * (s.gpr .x1).toNat - (s.gpr .x5).toNat < 8 := by
-  have := hp.hel; unfold Spec.RsaPss.emLength at *; omega
+  have := hp.hel; unfold Spec.RsaPss.emLength at *; omega_using [this]
 
 theorem fb_toNat (hp : PreE D tsH tsG s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := hp.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack stk at this; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold encStack stk at this; omega_using [this]
 
 end VG.Proof.RsaPss.AArch64.Enc

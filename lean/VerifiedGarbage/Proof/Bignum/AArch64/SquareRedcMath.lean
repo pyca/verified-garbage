@@ -20,7 +20,7 @@ theorem wv_low (m : Mem) (B : Addr) (d n : Nat) :
 
 theorem wv_mod_word (m : Mem) (B : Addr) (e : Nat) {w : Nat} (hw : 1 ≤ w) :
     wv m B e w % 2 ^ 64 = (word m B e).toNat := by
-  rw [show w = (w - 1) + 1 by omega, wv_low]
+  rw [show w = (w - 1) + 1 by omega_using [hw], wv_low]
   simp only [Nat.add_mod, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod, Nat.add_zero,
     Nat.mod_eq_of_lt (word m B e).isLt]
 
@@ -28,7 +28,7 @@ theorem wv_mod_word (m : Mem) (B : Addr) (e : Nat) {w : Nat} (hw : 1 ≤ w) :
 theorem wv_at_word (m : Mem) (B : Addr) (e w n : Nat) (hw : w < n) :
     wv m B e n = wv m B e w + 2 ^ (64 * w) *
       ((word m B (e + 8 * w)).toNat + 2 ^ 64 * wv m B (e + 8 * w + 8) (n - (w + 1))) := by
-  have hn : n = w + ((n - (w + 1)) + 1) := by omega
+  have hn : n = w + ((n - (w + 1)) + 1) := by omega_using [hw]
   have h := wv_add m B e w ((n - (w + 1)) + 1)
   rw [← hn, wv_low] at h
   exact h
@@ -39,7 +39,7 @@ theorem redc_low {s t : State} {B : Addr} {e eN w C : Nat} {minv : BitVec 64} (h
     (hv : wv t.mem B e w + 2 ^ (64 * w) * C = wv s.mem B e w +
       (redcU (word s.mem B e) minv).toNat * wv s.mem B eN w) : word t.mem B e = 0 := by
   have hR : 2 ^ (64 * w) % 2 ^ 64 = 0 := by
-    rw [show 64 * w = 64 + 64 * (w - 1) by omega, Nat.pow_add]
+    rw [show 64 * w = 64 + 64 * (w - 1) by omega_using [hw], Nat.pow_add]
     simp only [Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod]
   apply BitVec.eq_of_toNat_eq
   change (word t.mem B e).toNat = 0

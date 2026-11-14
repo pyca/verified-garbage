@@ -96,13 +96,13 @@ theorem mixRound_runsTo {T : Addr} {m : Mem} (d : Spec.Rc2.Direction) {j : Nat} 
     refine (RunsTo.flatMap (fun i => mix (4 * j + i) i)
       (fun i => Spec.Rc2.mix (Spec.Rc2.scheduleAt m T) (4 * j + i) i) (List.range 4) fun i hi => ?_).of_eq fun _ => rfl
     have := List.mem_range.1 hi
-    exact mix_runsTo (by omega) this
+    exact mix_runsTo (by omega_using [hj, this]) this
   | decrypt =>
     refine (RunsTo.flatMap (fun i => reverseMix (4 * (15 - j) + i) i)
       (fun i => Spec.Rc2.reverseMix (Spec.Rc2.scheduleAt m T) (4 * (15 - j) + i) i) [3, 2, 1, 0]
       fun i hi => ?_).of_eq fun _ => rfl
-    have : i < 4 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hi; omega
-    exact reverseMix_runsTo (by omega) this
+    have : i < 4 := by simp only [List.mem_cons, List.not_mem_nil, or_false] at hi; omega_using [hi]
+    exact reverseMix_runsTo (by omega_using [this]) this
 
 theorem order_lt (d : Spec.Rc2.Direction) : ∀ i ∈ order d, i < 4 := by cases d <;> decide
 

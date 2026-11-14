@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.ListSnoc
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Blocks as bytes, and the counter blocks of `inc₃₂`
@@ -30,7 +31,7 @@ theorem beVal_lt (bs : List Byte) : beVal bs < 256 ^ bs.length := by
   | append_singleton bs x ih =>
     rw [beVal_append, List.length_append, List.length_singleton, Nat.pow_succ]
     have := x.isLt
-    omega
+    omega_using [ih]
 
 /-- Byte `k` (from the left) of big-endian bytes. -/
 theorem beVal_digit (bs : List Byte) {k : Nat} (hk : k < bs.length) :
@@ -44,10 +45,10 @@ theorem beVal_digit (bs : List Byte) {k : Nat} (hk : k < bs.length) :
     · subst h
       simp only [Nat.add_sub_cancel, Nat.sub_self, Nat.pow_zero, Nat.div_one]
       rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (Nat.le_refl _)]
-      simp; have := x.isLt; omega
-    · have hk' : k < bs.length := by omega
+      simp; have := x.isLt; omega_using []
+    · have hk' : k < bs.length := by omega_using [hk, h]
       rw [List.getD_eq_getElem?_getD, List.getElem?_append_left hk', ← List.getD_eq_getElem?_getD,
-        ← ih hk', show bs.length + 1 - 1 - k = (bs.length - 1 - k) + 1 by omega, Nat.pow_succ',
+        ← ih hk', show bs.length + 1 - 1 - k = (bs.length - 1 - k) + 1 by omega_using [hk, h], Nat.pow_succ',
         ← Nat.div_div_eq_div_mul, Nat.mul_add_div (by decide), Nat.div_eq_of_lt x.isLt, Nat.add_zero]
 
 theorem toBytes_getD (x : Block) {k : Nat} (hk : k < 16) :
@@ -67,8 +68,8 @@ theorem toBytes_ofBytes {bs : List Byte} (h : bs.length = 16) {k : Nat} (hk : k 
   rw [Nat.mod_eq_of_lt (a := beVal bs) (b := 2 ^ 128) (by simpa using hlt), Nat.shiftRight_eq_div_pow,
     show 2 ^ (8 * (15 - k)) = 256 ^ (15 - k) by rw [Nat.pow_mul],
     show (2 : Nat) ^ 8 = 256 from rfl]
-  have := beVal_digit bs (k := k) (by omega)
-  rw [h, show 16 - 1 - k = 15 - k by omega] at this
+  have := beVal_digit bs (k := k) (by omega_using [h, hk])
+  rw [h, show 16 - 1 - k = 15 - k by omega_using []] at this
   exact this
 
 theorem toBytes_xor (x y : Block) {k : Nat} (hk : k < 16) :
@@ -81,7 +82,7 @@ theorem inc32_hi (x : Block) : (inc32 x).extractLsb' 32 96 = x.extractLsb' 32 96
   ext t ht
   simp only [inc32, BitVec.getElem_extractLsb']
   rw [BitVec.getLsbD_append]
-  simp [show ¬ 32 + t < 32 by omega, ht]
+  simp [show ¬ 32 + t < 32 by omega_using [], ht]
 
 theorem inc32_lo (x : Block) : (inc32 x).extractLsb' 0 32 = x.extractLsb' 0 32 + 1 := by
   ext t ht
@@ -117,21 +118,21 @@ theorem ctrBlock_byte (x : Block) (i : Nat) {k : Nat} (hk : k < 16) :
     have h2 := congrArg (fun v => v[t]) this
     simp only [BitVec.getElem_extractLsb'] at h2 ⊢
     simp only [BitVec.getLsbD_extractLsb'] at h2
-    rw [show 32 + (8 * (15 - k) - 32 + t) = 8 * (15 - k) + t by omega] at h2
-    simpa [show 8 * (15 - k) - 32 + t < 96 by omega] using h2
+    rw [show 32 + (8 * (15 - k) - 32 + t) = 8 * (15 - k) + t by omega_arith] at h2
+    simpa [show 8 * (15 - k) - 32 + t < 96 by omega_using [ht]] using h2
   · rw [← repeat_inc32_lo]
     ext t ht
     simp only [BitVec.getElem_extractLsb']
-    simp [show 8 * (15 - k) + t < 32 by omega]
+    simp [show 8 * (15 - k) + t < 32 by omega_arith]
 
 /-- Blocks are equal if their bytes are. -/
 theorem block_ext {x y : Block} (h : ∀ k < 16, (toBytes x).getD k 0 = (toBytes y).getD k 0) : x = y := by
   apply BitVec.eq_of_getLsbD_eq
   intro t ht
-  have := congrArg (fun v : Byte => v.getLsbD (t % 8)) (h (15 - t / 8) (by omega))
-  simp only [toBytes_getD _ (show 15 - t / 8 < 16 by omega), BitVec.getLsbD_extractLsb',
-    show t % 8 < 8 by omega, decide_true, Bool.true_and] at this
-  rwa [show 8 * (15 - (15 - t / 8)) + t % 8 = t by omega] at this
+  have := congrArg (fun v : Byte => v.getLsbD (t % 8)) (h (15 - t / 8) (by omega_using []))
+  simp only [toBytes_getD _ (show 15 - t / 8 < 16 by omega_using []), BitVec.getLsbD_extractLsb',
+    show t % 8 < 8 by omega_using [], decide_true, Bool.true_and] at this
+  rwa [show 8 * (15 - (15 - t / 8)) + t % 8 = t by omega_using [ht]] at this
 
 theorem toBytes_blockAt (m : Mem) (p : Addr) {k : Nat} (hk : k < 16) :
     (toBytes (blockAt m p)).getD k 0 = m (p + BitVec.ofNat 64 k) := by

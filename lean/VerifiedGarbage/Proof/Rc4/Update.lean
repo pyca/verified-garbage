@@ -33,7 +33,7 @@ theorem table_write_sep' (m : Mem) (p q : Addr) {n : Nat} (v : BitVec (8 * n))
   intro k hk
   simp only [contextAt, Vector.getElem_ofFn]
   apply Mem.write_apply
-  exact h _ (by rw [Mem.sub_ofNat_toNat p (by omega)]; exact hk)
+  exact h _ (by rw [Mem.sub_ofNat_toNat p (by omega_using [hk])]; exact hk)
 
 theorem bytes_frame (m m' : Mem) (d : Addr) (n : Nat)
     (h : ∀ k < n, m' (d + BitVec.ofNat 64 k) = m (d + BitVec.ofNat 64 k)) :

@@ -66,7 +66,7 @@ theorem astep_ok (S : Signer) (name : String) {a : AttPub} {s₀ t : State} (A :
     (e : pubOf s₀ = a.pub) (L : AttAt S a s₀ t) :
     WP isa (.seq (attempt name S.code) attTest) t (AStep S a s₀) := by
   obtain ⟨Fa, T⟩ := L
-  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := Fa.pos; omega⟩
+  obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := Fa.pos; omega_using [this]⟩
   have hf8 : f + 1 ≤ 8 := hf ▸ Fa.le
   rw [hf] at T
   refine WP.seq (WP.mono (attempt_ok S name A T hf8 Fa.q Fa.valid) fun v hv => ?_)
@@ -80,11 +80,11 @@ theorem astep_ok (S : Signer) (name : String) {a : AttPub} {s₀ t : State} (A :
   rcases hv with ⟨st, h1f, T', hs⟩ | ⟨st, D, hh⟩
   · have hc : a.cont = true := by
       simp only [AttPub.cont, ← htr, hs, List.head?_cons, beq_self_eq_true, Bool.true_and, decide_eq_true_eq]
-      omega
+      omega_using [hf, h1f]
     refine ⟨hv₂, by rw [zv₂, st, hc]; rfl, fun _ => ?_, fun h => Bool.noConfusion (hc.symm.trans h)⟩
     have hu : a.pub.width * (randomSamplingTrace a.tr).countP (· ≤ 1) = (spl s₀ 128 a.used).used := by
       rw [(VG.Proof.Dsa.Random.sample_trace_result _ _ _).1, Fa.spl_trace, pub_width e, rWidth_eq]
-    refine ⟨⟨Fa.q, by show 1 ≤ a.fuel - 1; omega, by show a.fuel - 1 ≤ 8; omega, Fa.leak, ?_, Fa.valid⟩, ?_⟩
+    refine ⟨⟨Fa.q, by show 1 ≤ a.fuel - 1; omega_using [hf, h1f], by show a.fuel - 1 ≤ 8; omega_using [hf, hf8], Fa.leak, ?_, Fa.valid⟩, ?_⟩
     · show (randomSignRemaining (rInput s₀) (a.used + a.pub.width * _) (a.fuel - 1)).trace =
         (randomSigningTrace a.tr).tail
       rw [hu, hf, Nat.add_sub_cancel, ← htr, hs]; rfl
@@ -114,7 +114,7 @@ theorem attemptLoop_ct (S : Signer) (name : String) (n : Nat) :
     refine RelCT.seq (two_post (Ψ := fun a => At (fun s₀ t => RReady s₀ t) a.pub)
       (two_map id (fun a t ⟨_, s₀, A, e, L, _⟩ => ⟨s₀, A, e, L⟩) (attempt_ct S name))
       (fun a t ⟨_, s₀, A, e, ⟨Fa, T⟩, _⟩ => ?_)) ?_
-    · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := Fa.pos; omega⟩
+    · obtain ⟨f, hf⟩ : ∃ f, a.fuel = f + 1 := ⟨a.fuel - 1, by have := Fa.pos; omega_using [this]⟩
       have hf8 : f + 1 ≤ 8 := hf ▸ Fa.le
       rw [hf] at T
       exact WP.mono (attempt_ok S name A T hf8 Fa.q Fa.valid) fun u h => ⟨s₀, A, e, h.ready⟩
@@ -131,8 +131,8 @@ theorem attemptLoop_ct (S : Signer) (name : String) (n : Nat) :
   · have hc' : a.cont = true := by rw [eval_eq, z₁, Option.some.injEq] at hc; exact hc
     have h2 : 2 ≤ a.fuel := by
       simp only [AttPub.cont, Bool.and_eq_true, decide_eq_true_eq] at hc'; exact hc'.2
-    exact ⟨n - 1, by omega, a.next, ⟨by show a.fuel - 1 = n - 1; omega, s₁, A₁, e₁, c₁ hc', st₁⟩,
-      ⟨by show a.fuel - 1 = n - 1; omega, s₂, A₂, e₂, c₂ hc', st₂⟩⟩
+    exact ⟨n - 1, by omega, a.next, ⟨by show a.fuel - 1 = n - 1; omega_using [hn], s₁, A₁, e₁, c₁ hc', st₁⟩,
+      ⟨by show a.fuel - 1 = n - 1; omega_using [hn], s₂, A₂, e₂, c₂ hc', st₂⟩⟩
 
 /-! ## The end -/
 
@@ -142,7 +142,7 @@ theorem finTest_ok {s₀ t : State} (A : RandomABI s₀) (F : RFin s₀ t) :
       RReady s₀ u ∧ Saved s₀ u.mem ∧ u.z = decide ((rResult s₀).status = 1) := by
   have hR := rResult_status_le A
   refine wp_ld F.ready (by decide) fun t₁ u₁ => wp_cmp (op2_imm (by decide)) fun t₂ f₂ z₂ => WP.block_nil ?_
-  rw [u₁.gpr, F.status, one_beq (by omega)] at z₂
+  rw [u₁.gpr, F.status, one_beq (by omega_using [hR])] at z₂
   exact ⟨(F.ready.upd u₁).fupd f₂, by rw [f₂.mem, u₁.mem]; exact F.saved, z₂⟩
 
 /-- Ready, with public data `p.1`. -/
@@ -299,7 +299,7 @@ theorem prepped_ok {b : BodyPub} {s₀ t : State} (A : RandomABI s₀) (E : Ente
   obtain ⟨Fb, h₁, sv₁, us₁, at₁⟩ := E
   refine WP.mono (prepare_ok A h₁ sv₁.2.2.2.2) fun t₂ ⟨ax₂, P₂, h₂, o₂, _⟩ => ?_
   have lo₂ : ∀ d, d + 4 ≤ oQ → slot t₂.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
-    outs_low o₂ (by decide) hd (by unfold oQ at hd; omega)
+    outs_low o₂ (by decide) hd (by unfold oQ at hd; omega_using [hd])
   exact ⟨Fb, h₂, ax₂, P₂, sv₁.of_outs o₂ (by decide), by rw [lo₂ _ (by decide)]; exact us₁,
     by rw [lo₂ _ (by decide)]; exact at₁⟩
 
@@ -316,7 +316,7 @@ theorem small_fin {b : BodyPub} {s₀ t : State} (A : RandomABI s₀) (C : Check
   refine wp_st Pp.ready (by decide) fun t₄ m₄ h₄ => WP.block_nil ?_
   rw [r0] at m₄
   refine ⟨⟨h₄, ?_, by rw [m₄.mem, slot_write_self], fun e => by rw [hR] at e; exact absurd e (by decide),
-    Pp.saved.of_slots fun d hd _ => by rw [m₄.mem, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega)
+    Pp.saved.of_slots fun d hd _ => by rw [m₄.mem, slot_write_ne _ _ _ (by unfold oStatus; omega_using [hd]) (by omega_arith)
       (by decide)]⟩, Pp.facts.status⟩
   rw [m₄.mem, slot_write_ne _ _ _ (by decide) (by decide) (by decide), Pp.used, hR]; rfl
 
@@ -352,7 +352,7 @@ theorem body_ct (S : Signer) (name : String) :
     refine ⟨⟨hq, (by decide : 1 ≤ 8), (by decide : 8 ≤ 8), Pp.facts.leak, by
       show (randomSignRemaining (rInput s₀) 0 8).trace = b.tr; rw [er]; exact Pp.facts.tr, Pp.facts.valid⟩, ?_⟩
     refine ⟨⟨(slot t.mem (rBase s₀) oDraws).toNat, ⟨Pp.ready, P.q, P.width, P.mask, Pp.used,
-      by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq], fun i hi => P.nonce i (by omega), Nat.zero_le _⟩⟩,
+      by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq], fun i hi => P.nonce i (by omega_using [hql, hi]), Nat.zero_le _⟩⟩,
       Pp.attempts, Pp.saved, ?_⟩
     exact ⟨by rw [er], by rw [er], by rw [er]⟩
 

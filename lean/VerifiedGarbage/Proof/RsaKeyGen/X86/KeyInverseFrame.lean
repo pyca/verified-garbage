@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A compact frame for inversions at any native word width
 
@@ -27,10 +28,10 @@ theorem inverse_frame {m m' : Mem} {B : Addr} {n : Nat} {js ds : List Nat}
   · have outside := hx (hdr, 4 * (15 * (n + 2))) (List.mem_cons_self ..)
     have lower : hdr ≤ arr n j := Nat.le_add_right ..
     have upper := arr_end (w := n) (indices j hj)
-    have endEq : arr n 15 = hdr + 4 * (15 * (n + 2)) := by unfold arr S; omega
+    have endEq : arr n 15 = hdr + 4 * (15 * (n + 2)) := by unfold arr S; omega_using []
     rw [endEq] at upper
     simp only at outside ⊢
-    omega
+    omega_using [outside, lower, upper]
   · exact hx _ (List.mem_cons_of_mem _ (List.mem_map.mpr ⟨d, hd, rfl⟩))
 
 theorem inverse_frame_slots {m m' : Mem} {B : Addr} {n : Nat} {js ds : List Nat}

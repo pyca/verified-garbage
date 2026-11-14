@@ -174,10 +174,13 @@ def primeFix : List (Prog isa) :=
       .logic .orr .x .x3 .x3 .x5, st .x3 .x16] ++ minv ++ [sth .x15 sMinv, ldh .x12 sW, movi .x9 1, movi .x13 0]),
     setWord aOne]
 
+/-- The checks but `p q = n`, and the fixes: for a key whose factors' product
+is known to be the modulus (`vg_rsa_private_crt_precomputed`). -/
+def checksGiven : List (Prog isa) :=
+  [.block [enterP]] ++ qinvCheck ++ primeFix ++ [.block [leave, enterQ]] ++ primeFix ++ [.block [leave]]
+
 /-- The checks and the fixes. -/
-def checks : List (Prog isa) :=
-  pqProduct ++ eqCheck ++ [.block [enterP]] ++ qinvCheck ++ primeFix ++ [.block [leave, enterQ]] ++ primeFix ++
-  [.block [leave]]
+def checks : List (Prog isa) := pqProduct ++ eqCheck ++ checksGiven
 
 /-! ## Arithmetic modulo a prime -/
 
@@ -366,8 +369,11 @@ def finish : List (Prog isa) := zeroAccs ++ [
   storeBE,
   .block [ldh .x0 sMask, movi .x3 1, .logic .and .x .x0 .x0 .x3]]
 
-/-- The computation, once `n` is known valid. -/
-def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (nSetup mul ++ primesSetup ++ checks ++ qPhase mul ++ pPhase mul ++ finish)
+/-- The computation, once `n` is known valid, with the key checks `chk`. -/
+def mainWith (chk : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs (nSetup mul ++ primesSetup ++ chk ++ qPhase mul ++ pPhase mul ++ finish)
+
+/-- The computation, with the checks `checks`. -/
+abbrev main (mul : Nat → Nat → Nat → Prog isa) : Prog isa := mainWith checks mul
 
 end VG.Impl.Rsa.AArch64.Crt

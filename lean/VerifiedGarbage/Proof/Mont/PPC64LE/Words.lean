@@ -40,19 +40,19 @@ abbrev At (s : State) (base : Addr) (r : Reg) (K : Nat) : Prop := s.gpr r = off 
 
 theorem Ws.nowrap {s : State} {base : Addr} {size : Nat} (h : Ws s base size) :
     base.toNat + size ≤ 2 ^ 64 := by
-  obtain ⟨len, hl, -, hn⟩ := h.wr; omega
+  obtain ⟨len, hl, -, hn⟩ := h.wr; omega_using [hl, hn]
 
 theorem Ws.read {s : State} {base : Addr} {size : Nat} (h : Ws s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
   have ⟨_, hl, hR, hn⟩ := h.wr
   have := h.small
-  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega) (by omega)⟩
+  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega_using [hd, hl]) (by omega_using [hd, this])⟩
 
 theorem Ws.wrIn {s : State} {base : Addr} {size : Nat} (h : Ws s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions s.wr (off base d) n :=
   have ⟨_, hl, hR, hn⟩ := h.wr
   have := h.small
-  ⟨_, hR, Offset.contains_base base (by omega) (by omega)⟩
+  ⟨_, hR, Offset.contains_base base (by omega_using [hd, hl]) (by omega_using [hd, this])⟩
 
 theorem Ws.of_wr {s s' : State} {base : Addr} {size : Nat} (h : Ws s base size) (hw : s'.wr = s.wr) :
     Ws s' base size := ⟨hw ▸ h.wr, h.small⟩
@@ -141,7 +141,7 @@ theorem lwz_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r
     (hr : At s base r K) (hr0 : r ≠ .r0) (hd : K + d + 4 ≤ size) :
     exec (.load .w t r d) s = some (s.write t (BitVec.ofNat 64 (w32 s.mem base (K + d)))) := by
   have hs15 := hs.small
-  rw [exec_load_w hr0 (by omega) (by rw [hr, off_add]; exact hs.read hd), hr, off_add]
+  rw [exec_load_w hr0 (by omega_using [hd, hs15]) (by rw [hr, off_add]; exact hs.read hd), hr, off_add]
   congr 2
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans (BitVec.isLt _) (by decide))]
@@ -152,7 +152,7 @@ theorem stw_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r
     exec (.store .w t r d) s =
       some { s with mem := s.mem.writeW (off base (K + d)) (BitVec.ofNat 32 (s.gpr t).toNat) } := by
   have hs15 := hs.small
-  rw [exec_store_w hr0 (by omega) (by rw [hr, off_add]; exact hs.wrIn hd), hr, off_add]
+  rw [exec_store_w hr0 (by omega_using [hd, hs15]) (by rw [hr, off_add]; exact hs.wrIn hd), hr, off_add]
   congr 3
 
 /-- `ld t, d(r)` with `r` at `K` bytes into the working space. -/
@@ -160,14 +160,14 @@ theorem ld_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r 
     (hr : At s base r K) (hr0 : r ≠ .r0) (hd4 : d % 4 = 0) (hd : K + d + 8 ≤ size) :
     exec (.load .d t r d) s = some (s.write t (word s.mem base (K + d))) := by
   have hs15 := hs.small
-  rw [exec_load_d hr0 ⟨by omega, hd4⟩ (by rw [hr, off_add]; exact hs.read hd), hr, off_add]
+  rw [exec_load_d hr0 ⟨by omega_using [hd, hs15], hd4⟩ (by rw [hr, off_add]; exact hs.read hd), hr, off_add]
 
 /-- `std t, d(r)` with `r` at `K` bytes into the working space. -/
 theorem std_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r : Reg} {K d : Nat}
     (hr : At s base r K) (hr0 : r ≠ .r0) (hd4 : d % 4 = 0) (hd : K + d + 8 ≤ size) :
     exec (.store .d t r d) s = some { s with mem := s.mem.writeW (off base (K + d)) (s.gpr t) } := by
   have hs15 := hs.small
-  rw [exec_store_d hr0 ⟨by omega, hd4⟩ (by rw [hr, off_add]; exact hs.wrIn hd), hr, off_add]
+  rw [exec_store_d hr0 ⟨by omega_using [hd, hs15], hd4⟩ (by rw [hr, off_add]; exact hs.wrIn hd), hr, off_add]
 
 theorem rotr0 (x : BitVec 32) : x.rotateRight 0 = x := by
   simp [BitVec.rotateRight, BitVec.rotateRightAux]
@@ -175,18 +175,18 @@ theorem rotr0 (x : BitVec 32) : x.rotateRight 0 = x := by
 theorem lwz0_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r : Reg} {d : Nat}
     (hr : At s base r 0) (hr0 : r ≠ .r0) (hd : d + 4 ≤ size) :
     exec (.load .w t r d) s = some (s.write t (BitVec.ofNat 64 (w32 s.mem base d))) := by
-  rw [lwz_ok hs hr hr0 (by omega), Nat.zero_add]
+  rw [lwz_ok hs hr hr0 (by omega_using [hd]), Nat.zero_add]
 
 theorem stw0_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r : Reg} {d : Nat}
     (hr : At s base r 0) (hr0 : r ≠ .r0) (hd : d + 4 ≤ size) :
     exec (.store .w t r d) s =
       some { s with mem := s.mem.writeW (off base d) (BitVec.ofNat 32 (s.gpr t).toNat) } := by
-  rw [stw_ok hs hr hr0 (by omega), Nat.zero_add]
+  rw [stw_ok hs hr hr0 (by omega_using [hd]), Nat.zero_add]
 
 theorem ld0_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {t r : Reg} {d : Nat}
     (hr : At s base r 0) (hr0 : r ≠ .r0) (hd4 : d % 4 = 0) (hd : d + 8 ≤ size) :
     exec (.load .d t r d) s = some (s.write t (word s.mem base d)) := by
-  rw [ld_ok hs hr hr0 hd4 (by omega), Nat.zero_add]
+  rw [ld_ok hs hr hr0 hd4 (by omega_using [hd]), Nat.zero_add]
 
 /-! ## Words in memory, on a 64-bit address space -/
 
@@ -195,6 +195,6 @@ theorem w32_write_ne {m : Mem} {base : Addr} {size o d : Nat} (hn : base.toNat +
     (ho : o + 4 ≤ size) (hd : d + 4 ≤ size) (hsep : d + 4 ≤ o ∨ o + 4 ≤ d) (v : BitVec 32) :
     w32 (m.writeW (off base o) v) base d = w32 m base d := by
   have := base.isLt
-  rw [w32, Mem.readW_writeW_sep (Offset.sep base hsep (by omega) (by omega)) (by decide)]
+  rw [w32, Mem.readW_writeW_sep (Offset.sep base hsep (by omega_using [hn, hd]) (by omega_using [hn, ho])) (by decide)]
 
 end VG.Proof.Mont.PPC64LE

@@ -49,11 +49,11 @@ theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Pr
     have pushedBound : ((pushed [r] s).gpr .rsp).toNat = (s.gpr .rsp).toNat - 8 := by
       rw [pushed_rsp]
       simp only [List.length_singleton, Nat.mul_one]
-      exact toNat_sub_ofNat (by simp only [List.length_cons] at space; omega)
+      exact toNat_sub_ofNat (by simp only [List.length_cons] at space; omega_using [space])
     have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
-      rw [pushedBound]; simp only [List.length_cons] at space; omega
+      rw [pushedBound]; simp only [List.length_cons] at space; omega_using [space]
     apply WP.frame (by simp) (by simpa using notSp.1) (Ne.symm notSp.1)
-      (by simp only [List.length_cons] at space; simp only [List.length_singleton, Nat.mul_one]; omega)
+      (by simp only [List.length_cons] at space; simp only [List.length_singleton, Nat.mul_one]; omega_using [space])
     apply ih (pushed [r] s) (fun t => t.gpr .rsp = (pushed [r] s).gpr .rsp ∧
       t.wr = (pushed [r] s).wr ∧ Q (popped r 1 t)) notSp.2 innerSpace
     apply run.mono

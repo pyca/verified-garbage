@@ -37,7 +37,7 @@ theorem budget_guard {p : KeyPublic} {original s : State} {used keys scalars : N
       fun _ ⟨⟨he, hm⟩, k⟩ => ⟨h.keep k hm, he⟩
     prun [ldf, h.r31, hw, a.ld 0 (by decide), a.ld 8 (by decide), a.ld0, BitVec.add_zero]
     refine (eval_zero _ _).trans ?_
-    rw [RegUpd.gpr_write_self, ofNat_beq_zero (show n < 2 ^ 64 by omega)]
+    rw [RegUpd.gpr_write_self, ofNat_beq_zero (show n < 2 ^ 64 by omega_using [hn])]
 
 theorem keys_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) :
@@ -61,24 +61,24 @@ theorem room_bit {a l : Nat} (ha : a < 2 ^ 64) (hl : l < 2 ^ 63) :
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       simp only [BitVec.toNat_ofNat]
-      omega
+      omega_using [h]
     rw [ht, sign_sub h hl, BitVec.zero_and, BitVec.xor_zero]
   · have ht : BitVec.ofNat 64 a >>> 63 = 1#64 := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
       simp only [BitVec.toNat_ofNat]
-      omega
+      omega_using [ha, h]
     have hd : (BitVec.ofNat 64 a - BitVec.ofNat 64 l) >>> 63 = 0#64 ∨
         (BitVec.ofNat 64 a - BitVec.ofNat 64 l) >>> 63 = 1#64 := by
       have : ((BitVec.ofNat 64 a - BitVec.ofNat 64 l) >>> 63).toNat < 2 := by
         rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
         have := (BitVec.ofNat 64 a - BitVec.ofNat 64 l).isLt
-        omega
-      rcases (by omega : ((BitVec.ofNat 64 a - BitVec.ofNat 64 l) >>> 63).toNat = 0 ∨
+        omega_using []
+      rcases (by omega_using [this] : ((BitVec.ofNat 64 a - BitVec.ofNat 64 l) >>> 63).toNat = 0 ∨
           ((BitVec.ofNat 64 a - BitVec.ofNat 64 l) >>> 63).toNat = 1) with h0 | h1
       · exact .inl (BitVec.eq_of_toNat_eq (by rw [h0]; rfl))
       · exact .inr (BitVec.eq_of_toNat_eq (by rw [h1]; rfl))
-    have hn : ¬a < l := by omega
+    have hn : ¬a < l := by omega_using [hl, h]
     simp only [ht, hn, ↓reduceIte]
     rcases hd with hd | hd <;> rw [hd] <;> decide
 
@@ -93,8 +93,8 @@ theorem room_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat
   have hv10 := h.header (j := 10) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [KeyPublic.headers])
   simp only [Bignum.word, off, Nat.reduceMul] at hv2 hv10
   have hr : p.randLen < 2 ^ 64 := by rw [← h.input.2]; exact BitVec.isLt _
-  have hk : p.len < 2 ^ 63 := by have := h.input.len_lt; omega
-  have hb := room_bit (a := p.randLen - used) (show p.randLen - used < 2 ^ 64 by omega) hk
+  have hk : p.len < 2 ^ 63 := by have := h.input.len_lt; omega_using [this]
+  have hb := room_bit (a := p.randLen - used) (show p.randLen - used < 2 ^ 64 by omega_using [hr]) hk
   refine WP.mono (WP.keep [.r9, .r10, .r11, .r12] (Q := fun t =>
     isa.eval (.zero .d .r12) t = some (decide (p.len ≤ p.randLen - used)) ∧ t.mem = s.mem) ?_
     (by decide)) fun _ ⟨⟨he, hm⟩, k⟩ => ⟨h.keep k hm, he⟩
@@ -103,9 +103,9 @@ theorem room_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat
   refine (eval_zero _ _).trans ?_
   rw [RegUpd.gpr_write_self]
   by_cases hs : p.randLen - used < p.len
-  · simp only [hs, ↓reduceIte, show ¬p.len ≤ p.randLen - used by omega, decide_false]
+  · simp only [hs, ↓reduceIte, show ¬p.len ≤ p.randLen - used by omega_using [hs], decide_false]
     decide
-  · simp only [hs, ↓reduceIte, show p.len ≤ p.randLen - used by omega, decide_true]
+  · simp only [hs, ↓reduceIte, show p.len ≤ p.randLen - used by omega_using [hs], decide_true]
     decide
 
 theorem key_status_lt (r : Spec.Ffdh.KeySearchResult) : r.status < 5 := by

@@ -33,8 +33,8 @@ theorem close_ok (s : State) {c o : Bool} (hc : s.cf = some c)
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_add, Nat.add_zero] at et
   have bc := Bool.toNat_le c
   have bo := Bool.toNat_le o
-  have ec : ct = false := Bool.toNat_eq_zero.mp (by omega)
-  have eo : ot = false := Bool.toNat_eq_zero.mp (by omega)
+  have ec : ct = false := Bool.toNat_eq_zero.mp (by omega_using [et, bc, bo])
+  have eo : ot = false := Bool.toNat_eq_zero.mp (by omega_using [et, bc, bo])
   subst ct; subst ot
   simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at et
   exact ⟨et,hct,hot,(ka.trans kt).mono (by simp)⟩

@@ -70,22 +70,22 @@ theorem sqnI (base : Addr) (o : Index) {n : Nat} (hn : 1 ≤ n) (hn' : n < 2 ^ 1
     E u.mem base = Function.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m))
   refine WP.loop (M := isa) inv ?_ n t ?_
   · intro m u ⟨hm, hm', ku, bu, cu, eu⟩
-    obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [hm]⟩
     rw [WP.seq_iff]
     refine WP.mono (mulE (ku.scr hs) bu o o o) fun v ⟨kv, bv, ev⟩ => ?_
     have cv : v.gpr .r11 = BitVec.ofNat 32 (m + 1) := (kv.regs.1 _ (by decide)).trans cu
-    refine WP.mono (decCounter_ok (by omega) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
+    refine WP.mono (decCounter_ok (by omega_using [hn', hm']) cv) fun w ⟨cw, wg, wm, wr, ww, wz⟩ => ?_
     have kw : IKeep base s w := ku.trans (kv.ikeep.trans (counter_keep wg wm wr ww))
     have bw : BoundedEnv w.mem base := wm ▸ bv
     have ew : E w.mem base = Function.update (E s.mem base) o (Proof.X448.sqn (E s.mem base o) (n - m)) := by
       rw [wm, ev, eu, opMul_update, ← Proof.X448.sqn]
-      rw [show (n - (m + 1)).succ = n - m by omega]
+      rw [show (n - (m + 1)).succ = n - m by omega_using [hm']]
     simp only [eval, wz]
     rcases Nat.eq_zero_or_pos m with rfl | hm
     · exact Or.inl ⟨rfl, kw, bw, ew⟩
-    · refine Or.inr ⟨?_, m, by omega, hm, by omega, kw, bw, cw, ew⟩
-      rw [decide_eq_false (by omega : ¬m = 0)]; rfl
-  · refine ⟨hn, by omega, kt, tm ▸ hb, tc, ?_⟩
+    · refine Or.inr ⟨?_, m, by omega_using [], hm, by omega_using [hm'], kw, bw, cw, ew⟩
+      rw [decide_eq_false (by omega_using [hm] : ¬m = 0)]; rfl
+  · refine ⟨hn, by omega_using [], kt, tm ▸ hb, tc, ?_⟩
     rw [tm, Nat.sub_self, Proof.X448.sqn, Function.update_eq_self]
 
 end VG.Proof.X448.Arm

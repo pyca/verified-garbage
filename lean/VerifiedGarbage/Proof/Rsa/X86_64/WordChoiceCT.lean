@@ -22,7 +22,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 theorem GA.wordFrame {p : CvP} {s t : State} (h : GA p s)
     (ff : Frm p.B (WordDivide.normRanges (wk p.k)) s.mem t.mem) (kk : Keep mmRegs s t) : GA p t := by
   obtain ⟨I, m₀, c, rfl, h, L, O, hm⟩ := h
-  have hw : 4 ≤ wk I.k := by have := L.k1; unfold wk; omega_using [this]
+  have hw : 6 ≤ wk I.k := by have := L.k1; unfold wk; omega_using [this]
   have hZ : slot (wk I.k) 17 ≤ I.Z := by
     have hk := L.k1
     have hz := L.z
@@ -57,7 +57,7 @@ theorem wordFast_ct : RelCT isa (Two GA) (.seq (.block VG.Impl.Rsa.X86_64.WordDi
     refine ⟨h.ws, ?_, ?_⟩
     · change slot (wk I.k) 17 ≤ I.Z
       simp only [slot, Impl.Bignum.hdrBytes, wk]; omega_using [hk, hz]
-    · change 4 ≤ wk I.k
+    · change 6 ≤ wk I.k
       unfold wk; omega_using [hk]
   · intro p s h
     obtain ⟨I, m₀, c, rfl, hs, L, O, hm⟩ := h

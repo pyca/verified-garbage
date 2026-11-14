@@ -52,7 +52,7 @@ theorem stage_ok (s : State) {k a v : Nat} (hk6 : k < 64) (ha : 0 < a) (ha' : a 
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hm : 0#64 - ((BitVec.ofNat 64 v >>> k) &&& BitVec.signExtend 64 (1 : BitVec 32)) =
       0#64 - (if v.testBit k then 1 else 0) := by rw [bit_bottom hv]
-  have c1 : 1 ≤ 64 - a ∧ 64 - a ≤ 63 := ⟨by omega, by omega⟩
+  have c1 : 1 ≤ 64 - a ∧ 64 - a ≤ 63 := ⟨by omega_using [ha'], by omega_using [ha]⟩
   -- The mask's source, `rbx >>> k`, the only part that depends on whether `k = 0`; the rest of
   -- the stage is run once.
   obtain ⟨s₁, r₁, h9, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
@@ -65,7 +65,7 @@ theorem stage_ok (s : State) {k a v : Nat} (hk6 : k < 64) (ha : 0 < a) (ha' : a 
       · simp only [gpr_setReg, ite_true, hbx, BitVec.ushiftRight_zero]
       · simp only [gpr_setReg, hr, ite_false]
       all_goals rfl
-    · have ck : 1 ≤ k ∧ k ≤ 63 := ⟨by omega, by omega⟩
+    · have ck : 1 ≤ k ∧ k ≤ 63 := ⟨by omega_using [hk], by omega_using [hk6]⟩
       refine ⟨_, by orun [hbx, hk, ck], ?_, fun r hr => ?_, ?_, ?_, ?_⟩
       · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, hbx]
       · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, hr, ite_false]
@@ -94,7 +94,7 @@ theorem top2 (x y z : BitVec 64) : (x ++ y ++ z).extractLsb' 64 128 = x ++ y := 
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬ 64 + i < 64 by omega, ↓reduceIte, show 64 + i - 64 = i by omega]
+    show ¬ 64 + i < 64 by omega_using [], ↓reduceIte, show 64 + i - 64 = i by omega_using []]
 
 /-- `Stretch` shifted left by `bottom`: its top 128 bits are `Offset_0`. -/
 def stretch (ktop : Block) : BitVec 192 := ktop ++ (ktop.extractLsb' 64 64 ^^^ ktop.extractLsb' 56 64)
@@ -162,7 +162,7 @@ theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
     rw [w₇, w₆, w₅, w₄, w₃, w₂, w₁, Proof.Ocb.shl_stages _ hv]
   have hO : s₇.gpr .rax ++ s₇.gpr .rdx =
       (stretch (blockAtMem s.mem (W + BitVec.ofNat 64 tmpO))).extractLsb' (64 - v) 128 := by
-    rw [← top2 _ _ (s₇.gpr .rcx), hw, Proof.Ocb.offset_shl _ (by omega)]
+    rw [← top2 _ _ (s₇.gpr .rcx), hw, Proof.Ocb.offset_shl _ (by omega_using [hv])]
   -- the stores
   have hm₇ : s₇.mem = s.mem := by rw [m₇, m₆, m₅, m₄, m₃, m₂, m₁]
   have hrd₇ : s₇.rd = s.rd := by rw [rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁]

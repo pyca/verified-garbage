@@ -30,7 +30,7 @@ pub fn bench(c: &mut Criterion) {
     // for the other algorithms benchmarked by this process.
     let _legacy = Provider::try_load(None, "legacy", true).unwrap();
     let cipher = Cipher::from_nid(Nid::SEED_OFB128).unwrap();
-    let key: Vec<_> = (0..16).map(|i| (17 * i + 3) as u8).collect();
+    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let iv = [0x3c; 16];
     let mut group = c.benchmark_group("seed-ofb");
     for size in SIZES {
@@ -39,7 +39,7 @@ pub fn bench(c: &mut Criterion) {
         let mut buffer = crate::InPlace::new(size, &data);
         group.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
-                let ctx = SeedOfb::new(black_box(&key), &black_box(iv)).unwrap();
+                let ctx = SeedOfb::new(black_box(&key), &black_box(iv));
                 buffer.copy_from_slice(black_box(&data));
                 ctx.apply_keystream_final(black_box(&mut buffer));
                 black_box(&buffer);

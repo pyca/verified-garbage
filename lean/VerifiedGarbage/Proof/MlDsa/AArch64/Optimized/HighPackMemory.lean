@@ -21,7 +21,7 @@ def storePacked (width : Nat) (m : Mem) (a : Addr) (x : BitVec 128) : Mem :=
 /-- Both packing formats write only the exact eight- or twelve-byte block. -/
 theorem storePacked_frame (m : Mem) (a : Addr) (x : BitVec 128) {width : Nat}
     (hw : width=4 ∨ width=6) : Frame [⟨a,2*width⟩] m (storePacked width m a x) := by
-  have h8 : 8≤2*width := by omega
+  have h8 : 8≤2*width := by omega_using [hw]
   have h0 : (Region.mk a (2*width)).Contains a 8 := by
     simpa only [BitVec.add_zero] using
       (Offset.contains_base a (d := 0) h8 (by decide))
@@ -35,16 +35,16 @@ private theorem storeSlice_byte (m : Mem) (a : Addr) (x : BitVec 128)
     {start count i : Nat} (hi : i<count) (hc : count<2^64) :
     m.writeW a (x.extractLsb' start (8*count)) (a+BitVec.ofNat 64 i)=
       x.extractLsb' (start+8*i) 8 := by
-  simp only [Mem.writeW,show 8*count/8=count by omega,Mem.write,
+  simp only [Mem.writeW,show 8*count/8=count by omega_using [],Mem.write,
     Mem.sub_ofNat_toNat a (Nat.lt_trans hi hc),hi,ite_true]
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [BitVec.getLsbD_extractLsb',hb,decide_true,Bool.true_and]
-  have hb' : 8*i+b<8*count := by omega
+  have hb' : 8*i+b<8*count := by omega_using [hi, hb]
   simp only [BitVec.getLsbD_setWidth,BitVec.getLsbD_extractLsb',
-    show 8*i+b<8*(8*count/8) by omega,hb',decide_true,Bool.true_and]
+    show 8*i+b<8*(8*count/8) by omega_using [hi, hb],hb',decide_true,Bool.true_and]
   congr 1
-  omega
+  omega_using []
 
 /-- The stored bytes are exactly the low bytes of the vector, including
 unaligned output addresses and modular address arithmetic. -/
@@ -65,9 +65,9 @@ theorem storePacked_byte (m : Mem) (a : Addr) (x : BitVec 128) {width i : Nat}
     · have ha : a+BitVec.ofNat 64 i=(a+8)+BitVec.ofNat 64 (i-8) := by bv_omega
       unfold storePacked
       simp only [show ¬(6:Nat)=4 by decide,ite_false]
-      rw [ha,storeSlice_byte _ _ x (start := 64) (count := 4) (by omega) (by decide)]
+      rw [ha,storeSlice_byte _ _ x (start := 64) (count := 4) (by omega_using [hi]) (by decide)]
       change x.extractLsb' (64+8*(i-8)) 8=x.extractLsb' (8*i) 8
       congr 1
-      omega
+      omega_using [h8]
 
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

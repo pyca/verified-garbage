@@ -44,7 +44,7 @@ private theorem first_ready (q : KeyPoint sampling) (s : State) (h : KeyAttempte
   have disclosed := attempt_status live statuses keys scalars room
   have small : q.status < 4 := by
     rw [← disclosed]
-    rcases currentStatus_cases q.inputs original q.used with eq | eq | eq <;> omega
+    rcases currentStatus_cases q.inputs original q.used with eq | eq | eq <;> omega_using [eq]
   refine WP.mono (classify_head live room post) ?_
   rintro t ⟨ready, flag, value, _⟩
   refine ⟨⟨original, _, _, _, ready⟩, ?_, ?_, small⟩

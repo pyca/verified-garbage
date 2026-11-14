@@ -48,6 +48,16 @@ theorem Stg.congr' {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
     (h : Stg g s0 A live c s) {A' : Nat → Nat} (e : ∀ j ∈ live, A j = A' j) : Stg g s0 A' live c s :=
   { h with arrs := fun j hj => (h.arrs j hj).trans (e j hj) }
 
+/-- A step from `Stg` that writes no memory and only the registers `rs`. -/
+theorem Stg.regs {g : Geo} {s0 s t : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
+    (h : Stg g s0 A live c s) {rs : List Reg} (K : Keeps rs s t) (mem : t.mem = s.mem)
+    (hrs : ∀ x ∈ rs, x ∈ bodyRegs) : Stg g s0 A live c t := by
+  have k : Keep g.B g.w [] [] s.mem t.mem := by rw [mem]; exact Keep.refl _ _ _ _ _
+  exact h.next (h.ws.keep K (by intro e; have := hrs _ e; simp [bodyRegs] at this)
+      (by intro e; have := hrs _ e; simp [bodyRegs] at this) (by rw [mem]; exact fun _ _ => rfl))
+    k (by simp) (by simp) K hrs (h.arrs_keep k (by simp) (by simp)) h.live_lt
+    (h.vd_keep k (by simp) (by simp)) (h.mask_keep k (by simp))
+
 /-- `copy o a`, `o` then tracked. -/
 theorem Stg.copy_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {o a : Nat} (ho : o < nArr) (ha : a ∈ live) (hoa : o ≠ a) :
@@ -113,9 +123,9 @@ theorem Stg.ltA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
   have hb' := borrow_iff (P := 2 ^ (32 * g.w)) v1 (val32_lt _ _ _ _) b1
   rw [h.arrs.get ha, h.arrs.get hb] at hb'
   by_cases hlt : A a < A b
-  · have : (t1.gpr .ebx).toNat = 1 := by have := hb'.not.mpr (by omega); omega
+  · have : (t1.gpr .ebx).toNat = 1 := by have := hb'.not.mpr (by omega_using [hlt]); omega_using [b1, this]
     simp [hlt, this]
-  · have : (t1.gpr .ebx).toNat = 0 := hb'.mpr (by omega)
+  · have : (t1.gpr .ebx).toNat = 0 := hb'.mpr (by omega_using [hlt])
     simp [hlt, this]
 
 /-- `eqA a b`: the mask and'ed with `[a] = [b]`. -/

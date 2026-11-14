@@ -43,7 +43,7 @@ theorem Supported.pos {pLen : Nat} (hb : Supported pLen) : 0 < 8 * pLen := by
 
 theorem used_small (hb : Supported pLen) {d n : Nat} (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) :
     d + n ≤ usedBytes pLen := by
-  rcases hb with rfl | rfl | rfl <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega
+  rcases hb with rfl | rfl | rfl <;> unfold usedBytes domainCheck arithmeticBytes at * <;> omega_using [hd, hn]
 
 theorem used_parent (hb : Supported pLen) : 0 + Impl.Dsa.Layout.activeBytes ≤ usedBytes pLen := by
   rcases hb with rfl | rfl | rfl <;> decide
@@ -90,8 +90,8 @@ def plan (hb : Supported pLen) (A : StageABI pLen s) : GeneratorSearchPlan where
       simp only [off, BitVec.add_zero] at h
       exact A.wsTape.symm.sub_right h
     · exact A.wsTape.symm.sub_right (A.part_sub (used_small hb (d := VG.Impl.Dsa.Generation.Layout.g) (n := pLen)
-        (by decide) (by unfold arithmeticBytes; omega)))
-    · exact A.stackTape.symm.sub_right (frame_sub0 s (by unfold frameBytes; omega))
+        (by decide) (by unfold arithmeticBytes; omega_using [pn])))
+    · exact A.stackTape.symm.sub_right (frame_sub0 s (by unfold frameBytes; omega_using []))
   q := qOf pLen s.mem (s.gpr .x0)
   exponentValue := A.exponentValue hb
 
@@ -111,10 +111,10 @@ abbrev frameWords (s u : State) (k : Nat) : BitVec 64 := word u.mem (frameBase s
 
 theorem StageABI.scr (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
     Scr u (s.gpr .x0) (usedBytes pLen) := by
-  refine ⟨⟨s.gpr .x0, 0, (s.gpr .x1).toNat * 8, ?_, by simp [off], by have := A.size; omega, ?_⟩, ?_⟩
+  refine ⟨⟨s.gpr .x0, 0, (s.gpr .x1).toNat * 8, ?_, by simp [off], by have := A.size; omega_using [this], ?_⟩, ?_⟩
   · rw [E.wr, A.wr]; simp
-  · have := A.wsBound; omega
-  · have := A.wsBound; have := A.size; omega
+  · have := A.wsBound; omega_using [this]
+  · have := A.wsBound; have := A.size; omega_arith
 
 theorem spill_used (hb : Supported pLen) :
     Impl.Dsa.AArch64.Generator.spill + Impl.Dsa.AArch64.Generator.spillBytes ≤ usedBytes pLen := by
@@ -128,15 +128,15 @@ theorem StageABI.ws_frame (hb : Supported pLen) (A : StageABI pLen s) {d n : Nat
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact (A.stackWs.sub_left (frame_sub0 s (Nat.le_refl _))).symm.sub_left (A.part_sub (by omega))
-  · exact (arena hb A).parts_disjoint (d := d) (n := n) (show d + n ≤ usedBytes pLen by omega) hs (Or.inl h)
+  · exact (A.stackWs.sub_left (frame_sub0 s (Nat.le_refl _))).symm.sub_left (A.part_sub (by omega_using [h, hs]))
+  · exact (arena hb A).parts_disjoint (d := d) (n := n) (show d + n ≤ usedBytes pLen by omega_using [h, hs]) hs (Or.inl h)
 
 /-- Bytes of the working space below the saved registers are as they were. -/
 theorem StageABI.bytes_entered (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u)
     {d n : Nat} (h : d + n ≤ Impl.Dsa.AArch64.Generator.spill) :
     Spec.Rsa.bytesAt u.mem (off (s.gpr .x0) d) n = Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) d) n :=
   VG.Proof.Dsa.Generation.frame_bytesAt E.frame (A.ws_frame hb h)
-    (by have := spill_used hb; have := A.wsBound; have := A.size; omega)
+    (by have := spill_used hb; have := A.wsBound; have := A.size; omega_arith)
 
 theorem StageABI.arenaSrc (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u)
     {d n : Nat} (h : d + n ≤ Impl.Dsa.AArch64.Generator.spill) {work : Addr} {Z : Nat}
@@ -144,8 +144,8 @@ theorem StageABI.arenaSrc (hb : Supported pLen) (A : StageABI pLen s) {u : State
     Src u work Z (off (s.gpr .x0) d) (Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) d) n) := by
   have hl := bytesAt_length s.mem (off (s.gpr .x0) d) n
   have hs := spill_used hb
-  apply VG.Proof.Dsa.AArch64.Generation.arena_source (A.scr E) (by rw [hl]; omega)
-    (by rw [hl]; have := used_lt hb; omega)
+  apply VG.Proof.Dsa.AArch64.Generation.arena_source (A.scr E) (by rw [hl]; omega_using [h, hs])
+    (by rw [hl]; have := used_lt hb; omega_using [h, hs, this])
   · rw [hl, A.bytes_entered hb E h]
   · rw [hl]; exact sep
 
@@ -162,12 +162,12 @@ theorem StageABI.tapeSrc (hb : Supported pLen) (A : StageABI pLen s) {u : State}
   refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [hl] at hi
     exact ⟨_, List.mem_append_left _ (by rw [E.rd, A.rd]; exact List.mem_singleton_self _),
-      contains_byte _ hi (by have := A.tapeBound; omega)⟩
+      contains_byte _ hi (by have := A.tapeBound; omega_using [])⟩
   · have hi' : i < (s.gpr .x3).toNat := by rw [hl] at hi; exact hi
-    rw [E.frame.bytes tf (R := tapeRegion s) (by change (s.gpr .x3).toNat ≤ 2 ^ 64; have := A.tapeBound; omega) hi']
+    rw [E.frame.bytes tf (R := tapeRegion s) (by change (s.gpr .x3).toNat ≤ 2 ^ 64; have := A.tapeBound; omega_using []) hi']
     simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
   · rw [hl] at hi
-    exact out_scr sep (contains_byte _ hi (by have := A.tapeBound; omega))
+    exact out_scr sep (contains_byte _ hi (by have := A.tapeBound; omega_using []))
 
 /-- The search's memory, once the entry has filled the frame. -/
 theorem prepared (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : Entered pLen s u) :
@@ -175,9 +175,9 @@ theorem prepared (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : En
   have pn : pLen ≤ 384 := by rcases hb with rfl | rfl | rfl <;> decide
   have ha := used_small hb (d := arithmetic) (n := arithmeticBytes) (by decide) (by rfl)
   have hp : VG.Impl.Dsa.Generation.Layout.p + pLen ≤ Impl.Dsa.AArch64.Generator.spill := by
-    unfold VG.Impl.Dsa.Generation.Layout.p Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control; omega
+    unfold VG.Impl.Dsa.Generation.Layout.p Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control; omega_using [pn]
   have he : VG.Impl.Dsa.Generation.Layout.exponent + pLen ≤ Impl.Dsa.AArch64.Generator.spill := by
-    unfold VG.Impl.Dsa.Generation.Layout.exponent Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control; omega
+    unfold VG.Impl.Dsa.Generation.Layout.exponent Impl.Dsa.AArch64.Generator.spill VG.Impl.Dsa.Generation.Layout.control; omega_using [pn]
   have ps := (plan hb A).core.pSeparate
   have es := (plan hb A).core.eSeparate
   have ts := (plan hb A).tapeSeparate
@@ -204,8 +204,8 @@ theorem prepared (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : En
     eParent := A.arenaSrc hb E he (es _ (List.mem_cons_of_mem _ List.mem_cons_self))
     gWrite := fun i hi => by
       rw [off_off]
-      have hg := used_small hb (d := VG.Impl.Dsa.Generation.Layout.g) (n := pLen) (by decide) (by unfold arithmeticBytes; omega)
-      exact (A.scr E).region (by change i < pLen at hi; omega) (by decide) }
+      have hg := used_small hb (d := VG.Impl.Dsa.Generation.Layout.g) (n := pLen) (by decide) (by unfold arithmeticBytes; omega_using [pn])
+      exact (A.scr E).region (by change i < pLen at hi; omega_using [hg, hi]) (by decide) }
   · rw [E.wr]
     exact Covers.of_sub fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
@@ -216,7 +216,7 @@ theorem prepared (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : En
     obtain rfl := List.mem_singleton.mp hr
     refine ⟨wsRegion s, by rw [A.wr]; exact List.mem_singleton_self _, Impl.Dsa.Generation.Layout.hash, rfl, ?_⟩
     have := A.size; have := used_small hb (d := Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-    simp only; omega
+    simp only; omega_arith
   · exact w 12 (by decide)
   · change frameWords s u 13 = BitVec.ofNat 64 (tape s).length
     rw [bytesAt_length, ofNat_toNat64]; exact w 13 (by decide)
@@ -224,6 +224,6 @@ theorem prepared (hb : Supported pLen) (A : StageABI pLen s) {u : State} (E : En
     apply w k
     simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
     simp only [Impl.Dsa.AArch64.Generator.zeroSlots, List.mem_cons, List.not_mem_nil, or_false]
-    omega
+    omega_using [hk]
 
 end VG.Proof.Dsa.AArch64.Generator

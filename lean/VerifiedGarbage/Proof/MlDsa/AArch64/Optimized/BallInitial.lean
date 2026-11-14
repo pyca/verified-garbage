@@ -52,21 +52,21 @@ theorem call3Resume_ok (v : Proof.Sha3.AArch64.Permutation) {rate outlen : Nat} 
     cov_scr hp h.env.wr fun r hr => by
       rcases mem3 hr with rfl | rfl | rfl
       · exact ⟨0, (at_zero).symm, by simp⟩
-      · exact ⟨840, rfl, by simp; omega⟩
+      · exact ⟨840, rfl, by simp; omega_using [ho]⟩
       · exact ⟨200, rfl, by simp⟩
   refine squeeze_callWith v (st := P.scr) (out := P.at' 840) (sc := P.at' 200) h.x0 h.x1 h.x2 h.x3 h.x4 h.x5 hr
     (Nat.zero_le _)
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega)) (by omega) (by omega))
-    (disj_scr (.inr (by omega)) (by omega) (by omega))
-    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega)))
-    (by rw [stk, hsp]; exact stk_scr' hp (by omega)) (by rw [stk, hsp]; exact stk_scr' hp (by omega))
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_using [])) (by omega_using []) (by omega_using [ho]))
+    (by rw [← at_zero (P := P)]; exact disj_scr (.inl (by omega_using [])) (by omega_using []) (by omega_using []))
+    (disj_scr (.inr (by omega_using [])) (by omega_using [ho]) (by omega_using []))
+    (by rw [hsp]; exact hp.sp16) (by rw [stk, hsp]; exact hp.stk_scr.sub_right (sub_scr0 (by omega_using [])))
+    (by rw [stk, hsp]; exact stk_scr' hp (by omega_using [ho])) (by rw [stk, hsp]; exact stk_scr' hp (by omega_using []))
     (cov_rd cw) cw fun s' hk hout hpos hresume => ⟨⟨Env.call hp h.env hk ?_, ?_⟩, hpos, ?_⟩
   · intro r hr
     rcases mem4 hr with rfl | rfl | rfl | rfl
-    · exact .inl ⟨0, 200, by rw [at_zero], by omega⟩
+    · exact .inl ⟨0, 200, by rw [at_zero], by omega_using []⟩
     · exact .inl ⟨840, outlen, rfl, ho⟩
-    · exact .inl ⟨200, 640, rfl, by omega⟩
+    · exact .inl ⟨200, 640, rfl, by omega_using []⟩
     · exact .inr rfl
   · rw [hout, h.st]
   · intro d
@@ -78,7 +78,7 @@ theorem spongeResume_ok (v : Proof.Sha3.AArch64.Permutation) {rate outlen : Nat}
   WP.seq (WP.mono (blk1_ok hp (rate_lt hr) h) fun _ h1 =>
     WP.seq (WP.mono ((call1With_ok (v := v)) hp hr h1) fun _ h2 => WP.seq (WP.mono (blk2_ok hr h2) fun _ h3 =>
       WP.seq (WP.mono ((call2With_ok (v := v)) hp hr h3) fun _ h4 =>
-        WP.seq (WP.mono (blk3_ok hr (by omega) h4) fun _ h5 => (call3Resume_ok (v := v)) hp hr ho h5)))))
+        WP.seq (WP.mono (blk3_ok hr (by omega_using [ho]) h4) fun _ h5 => (call3Resume_ok (v := v)) hp hr ho h5)))))
 
 
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
@@ -114,21 +114,21 @@ theorem zeroWide_ok {s : State} {p : Addr} (hp : s.gpr .x26 = p)
     ⟨RegKeep.vupd hz,hz.v,by rw [hz.mem]; exact Frame.refl _ _,
       fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
     fun t ⟨ht,_,hf,hvals⟩ => ⟨ht,hf,hvals⟩
-  refine wp_strq (a := wordAddr p k) (by omega)
+  refine wp_strq (a := wordAddr p k) (by omega_using [hk])
     (by rw [ht.gpr .x26 (by simp),hp]; rfl)
     (by rw [ht.wr]; exact hw k hk) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_,?_⟩
   · exact (ht.trans (RegKeep.vmem hu)).mono (by simp)
   · rw [hu.v]; exact hv
   · rw [hu.mem]
-    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega) (by omega))
+    exact hf.write (List.mem_singleton_self _) _ (Offset.contains_base p (by omega_using [hk]) (by omega_using [hk]))
   · intro i hi
     rw [hu.mem,hv]
     by_cases he : i = k
     · subst i; rw [read_write16]
     · have hsep : Mem.Sep (wordAddr p i) 16 (wordAddr p k) 16 :=
-        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+        Offset.sep p (d := 16*i) (e := 16*k) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])
       rw [Mem.read_write_sep hsep (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 
 /-- The SIMD clear preserves the complete calling-convention frame. -/
 theorem zeroWide_coeffs {s : State} {p : Addr} (hp : s.gpr .x26 = p)
@@ -139,19 +139,19 @@ theorem zeroWide_coeffs {s : State} {p : Addr} (hp : s.gpr .x26 = p)
   refine WP.mono (WP.preservedV (zeroWide_ok hp hw) (hc := by lit_decide))
     fun t ⟨⟨hk,hf,hz⟩,hv⟩ => ?_
   refine ⟨⟨hk.gpr,hk.rd,hk.wr,hk.sp,hv⟩,hf,fun i hi => ?_⟩
-  have hword := hz (i/4) (by omega)
+  have hword := hz (i/4) (by omega_using [hi])
   have hread : t.mem.read (p+BitVec.ofNat 64 (4*i)) 4 = 0 := by
     apply Mem.read_eq_of_bytes
     intro j hj
     have hbyte := Mem.extractLsb'_read t.mem (wordAddr p (i/4))
-      (n := 16) (j := 4*(i%4)+j) (by omega)
+      (n := 16) (j := 4*(i%4)+j) (by omega_using [hj])
     rw [hword] at hbyte
     have ha : wordAddr p (i/4)+BitVec.ofNat 64 (4*(i%4)+j) =
         p+BitVec.ofNat 64 (4*i)+BitVec.ofNat 64 j := by
       simp only [wordAddr,BitVec.add_assoc,← BitVec.ofNat_add]
       congr 2
       have := Nat.mod_add_div i 4
-      omega
+      omega_using []
     rw [ha] at hbyte
     simpa [BitVec.extractLsb'] using hbyte.symm
   simp only [VG.Proof.MlDsa.coeffAt,Mem.readW,hread]
@@ -192,7 +192,7 @@ structure Initial (σ s : State) : Prop where
   have hl : (firstBytes σ).length=136 := H_length _ _
   refine WP.seq (WP.mono (zeroWide_coeffs h.first.env.x26 (fun i hi => ?_)) fun t ⟨kt,ft,hz⟩ => ?_)
   · rw [h.first.env.wr,ps.wr]
-    exact in_regions (List.mem_cons_self ..) (Offset.contains_base _ (by omega) (by omega))
+    exact in_regions (List.mem_cons_self ..) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   have et := h.first.env.keepA ps kt ft
   have ot : bytesAt t.mem ((spOf σ).at' 840) 136=firstBytes σ := by
     rw [MlKem.bytesAt_frame ft (fun r hr => by
@@ -201,9 +201,9 @@ structure Initial (σ s : State) : Prop where
   have st : stateAt t.mem (spOf σ).scr=stateAt s.mem (spOf σ).scr :=
     state_frame ft (fun r hr => by rw [List.mem_singleton.mp hr]; exact ps.a_scr.symm.sub_left (sub_scr0 (by decide)))
   refine WP.mono (first_ok (τ := tauOf σ) (b := (spOf σ).at' 840) hl (by rw [et.x25]) et.x26
-    (by rw [et.x27]; simp [tauOf]; omega) (by have := (Sample.Ball.params hp).2.2; omega)
+    (by rw [et.x27]; simp [tauOf]; omega_using []) (by have := (Sample.Ball.params hp).2.2; omega_using [this])
     (inScrRd ps et.rd et.wr (by decide))
-    (fun j hj => by rw [at_add]; exact inScrRd ps et.rd et.wr (by omega))
+    (fun j hj => by rw [at_add]; exact inScrRd ps et.rd et.wr (by omega_using [hj]))
     (fun j hj => by rw [← ot,MlKem.bytesAt_getD _ _ hj])
     (fun j hj => inA ps et.wr hj) (a_scr' ps (by decide)).symm hz) fun u hu => ?_
   have eqfold : St (firstBytes σ) (tauOf σ) 128=ballFold (tauOf σ) (firstBytes σ) := by

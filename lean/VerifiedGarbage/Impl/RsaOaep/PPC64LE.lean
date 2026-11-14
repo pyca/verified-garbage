@@ -11,10 +11,10 @@ public import VerifiedGarbage.Impl.ICall
 n_len = r6, e = r7, e_len = r8, label = r9, label_len = r10, msg, msg_len,
 seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`, the last
 ten on the stack, with the label's hash function that of the table `hash`
-and MGF1 over that of the table `mgf1`, both of the interface `Hash`
-(`Spec/HashTable.lean`), which it calls, with
+and MGF1 over that of the table `mgf1`, both of the interface `MdHash`
+(`Spec/MdHashTable.lean`), which it calls, with
 `vg_rsa_public_precomputed_checked`. The steps are those of AArch64
-(`Impl/RsaOaep/AArch64.lean`): the digest length of `hash` (its word 4)
+(`Impl/RsaOaep/AArch64.lean`): the digest length of `hash` (its word 6)
 selects the code for that length (`byLen`, among `lens`), which is all that
 code uses of the hash function's shape (`ofLen`), and every call of a hash
 function is through its table (`tcall`).
@@ -164,7 +164,7 @@ first `min(hLen, dstLen - done)` bytes are XORed into `dst + done`. The hash
 function's `init`, `update` and `finalize` are the table's functions 0, 1
 and 2, which it calls indirectly (`tcall`: their address, the table's word,
 into `r12`, then `bctrl`, of whichever of the functions `Fns` lists is at
-that address); `hLen` is the table's word 4. -/
+that address); `hLen` is the table's word 6. -/
 
 /-- The functions an indirect call of each of a table's functions may
 reach: for each of `init`, `update` and `finalize`, that function of every
@@ -192,10 +192,10 @@ def updCtrArgs : List Instr :=
     .addi .r7 .r14 oW]
 
 /-- The digest in `r11`, `dst + done` in `r12`, and in `r9`
-`min(hLen, dstLen - done)`: `hLen` (the table's word 4) `+ ((rem - hLen) ∧
+`min(hLen, dstLen - done)`: `hLen` (the table's word 6) `+ ((rem - hLen) ∧
 -(rem < hLen))` for `rem = dstLen - done`. -/
 def xorHeadT : List Instr :=
-  tword .r9 j 4 ++ [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29, .sub .r10 .r8 .r9,
+  tword .r9 j 6 ++ [.addi .r11 .r14 oDig, .add .r12 .r26 .r29, .sub .r8 .r27 .r29, .sub .r10 .r8 .r9,
     .lsr .d .r6 .r10 63, .li .r7 0, .sub .r6 .r7 .r6, .logic .and .r10 .r10 .r6, .add .r9 .r9 .r10]
 
 /-- A byte of the digest XORed into `dst`. -/
@@ -210,7 +210,7 @@ def xorOutT : Prog isa := .seq (.block (xorHeadT j)) (.loop (.block xorBody) (.n
 /-- The next counter and `done`, and in `r12` 1 while `done < dstLen`, 0
 after. -/
 def nextCtrT : List Instr :=
-  tword .r12 j 4 ++ [.addi .r28 .r28 1, .add .r29 .r29 .r12, .sub .r12 .r29 .r27, .lsr .d .r12 .r12 63]
+  tword .r12 j 6 ++ [.addi .r28 .r28 1, .add .r29 .r29 .r12, .sub .r12 .r29 .r27, .lsr .d .r12 .r12 63]
 
 /-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`. -/
 def roundT : Prog isa :=
@@ -236,7 +236,7 @@ def hashLabelT (lab len : Reg) : Prog isa :=
 
 /-- The digest length of the table that is our stack argument `j` (its word
 4), to `r3`. -/
-def lenLoad : List Instr := tword .r3 j 4
+def lenLoad : List Instr := tword .r3 j 6
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,

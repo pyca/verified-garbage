@@ -31,20 +31,20 @@ abbrev nativeShape (n e p q : Nat) : Prop :=
 theorem qModP_eq_safePrime (p : Nat) : VG.Proof.RsaKeyGen.qModP p = safePrime p := by
   unfold VG.Proof.RsaKeyGen.qModP safePrime
   by_cases H : p < 3
-  · have G : ¬3 ≤ p := by omega
+  · have G : ¬3 ≤ p := by omega_using [H]
     simp [H, G]
-  · have G : 3 ≤ p := by omega
+  · have G : 3 ≤ p := by omega_using [H]
     simp [H, G]
 
 theorem sorted_left (p q : Nat) : (if p < q then q else p) = max p q := by
   by_cases H : p < q
   · simp only [H, ite_true, Nat.max_eq_right (Nat.le_of_lt H)]
-  · simp only [H, ite_false, Nat.max_eq_left (show q ≤ p by omega)]
+  · simp only [H, ite_false, Nat.max_eq_left (show q ≤ p by omega_using [H])]
 
 theorem sorted_right (p q : Nat) : (if p < q then p else q) = min p q := by
   by_cases H : p < q
   · simp only [H, ite_true, Nat.min_eq_left (Nat.le_of_lt H)]
-  · simp only [H, ite_false, Nat.min_eq_right (show q ≤ p by omega)]
+  · simp only [H, ite_false, Nat.min_eq_right (show q ≤ p by omega_using [H])]
 
 theorem keyFromPrimes_native {n e p q x : Nat} (lower : 16 ≤ n) (upper : n ≤ 256)
     (boundP : p < 2 ^ (16 * n)) (boundQ : q < 2 ^ (16 * n)) (boundE : e < 2 ^ 64)
@@ -58,10 +58,10 @@ theorem keyFromPrimes_native {n e p q x : Nat} (lower : 16 ≤ n) (upper : n ≤
           .inl (.ok ⟨max p q * min p q, e, d, max p q, min p q,
             d % (max p q - 1), d % (min p q - 1), x⟩)
         else .inl (.error .internal) := by
-  have exponent : 8 * (2 * n) = 16 * n := by omega
-  have modulus : 16 * (2 * n) = 32 * n := by omega
+  have exponent : 8 * (2 * n) = 16 * n := by omega_using []
+  have modulus : 16 * (2 * n) = 32 * n := by omega_using []
   have raw := VG.Proof.RsaKeyGen.keyFromPrimes_code (pLen := 2 * n) (e := e) (P₀ := p) (Q₀ := q) (x := x)
-    (by omega) (by omega) (by rw [exponent]; exact boundP) (by rw [exponent]; exact boundQ) boundE
+    (by omega_using [lower]) (by omega_using [upper]) (by rw [exponent]; exact boundP) (by rw [exponent]; exact boundQ) boundE
     (by simpa only [sorted_left, sorted_right, qModP_eq_safePrime] using congruence)
     (by simpa only [sorted_left, qModP_eq_safePrime] using boundX)
   simp only [modulus, exponent, sorted_left, sorted_right, qModP_eq_safePrime,
@@ -80,12 +80,12 @@ theorem keyFromPrimes_retry {n e p q d : Nat}
   have order : (if p < q then (q, p) else (p, q)) = (max p q, min p q) := by
     by_cases H : p < q
     · simp only [H, ite_true, Nat.max_eq_right (Nat.le_of_lt H), Nat.min_eq_left (Nat.le_of_lt H)]
-    · simp only [H, ite_false, Nat.max_eq_left (show q ≤ p by omega), Nat.min_eq_right (show q ≤ p by omega)]
+    · simp only [H, ite_false, Nat.max_eq_left (show q ≤ p by omega_using [H]), Nat.min_eq_right (show q ≤ p by omega_using [H])]
   unfold Spec.RsaKeyGen.keyFromPrimes
   rw [order]
   dsimp only
   rw [inverse]
   dsimp only
-  rw [show 32 * n / 2 = 16 * n by omega, ite_eq_left small]
+  rw [show 32 * n / 2 = 16 * n by omega_using [], ite_eq_left small]
 
 end VG.Proof.RsaKeyGen.X86.Key

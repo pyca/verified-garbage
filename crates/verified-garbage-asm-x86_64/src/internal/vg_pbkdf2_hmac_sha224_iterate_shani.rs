@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_iterate_shani() {
     core::arch::naked_asm!(
-        r#".base64 "SYmYMAIAAEmJqDgCAABNiaBAAgAATYmoSAIAAE2JsFACAABNibhYAgAATYnHSYn8SYnNQYnWTInDSIHDYAIAAEyJxUiBxYACAACLBolFAItGBIlFBItGCIlFCItGDIlFDItGEIlFEItGFIlFFItGGIlFGLiAAAAAiUUcuAAAAACJRSCJRSSJRSiJRSyJRTCJRTRBvFwAAABMieBIAcBIAcBIAcBID8hIiUNYSYn8TYX2"
+        r#".base64 "SYkYSYloCE2JYBBNiWgYTYlwIE2JeChNicdJifxJic1BidZMicNIg8MwTInFSIPFUIsGiUUAi0YEiUUEi0YIiUUIi0YMiUUMi0YQiUUQi0YUiUUUi0YYiUUYuIAAAACJRRy4AAAAAIlFIIlFJIlFKIlFLIlFMIlFNEG8XAAAAEyJ4EgBwEgBwEgBwEgPyEiJQ1hJifxNhfY="
 je 20f
 22:
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMQYtEJBCJQxBBi0QkFIlDFEGLRCQYiUMYQYtEJByJQxxIie5Iid+6AQAAAEyJ+Q=="
@@ -23,7 +23,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAAww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyjD"
 .p2align 6"#,
         vg_sha256_compress_shani = sym crate::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )

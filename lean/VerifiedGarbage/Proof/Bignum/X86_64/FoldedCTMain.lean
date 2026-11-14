@@ -61,7 +61,7 @@ theorem exp_ct (M : Mont) : RelCT isa (Two DB) (Folded.exp M.mm) (Two DC) := by
     obtain ⟨xb,σ,g,_⟩ := h'
     have hs := g.1.e.congrK g.inScr g.2.2.1
     exact WP.mono (is65537Check_ok h8 h9 hs g.1.el hL1
-      (by have := g.1.L2; have := g.1.k2; show q.1.len < 2^31; omega)) fun a ⟨za,ma,ka⟩ =>
+      (by have := g.1.L2; have := g.1.k2; show q.1.len < 2^31; omega_arith)) fun a ⟨za,ma,ka⟩ =>
         ⟨db_is65537 h ma (ka.mono (by decide)),za⟩
   refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval,h₁.2,h₂.2]) ?_ ?_
   · refine two_post ((two_map publicData (fun _ _ h => db_pre h.1.1) (exp65536_ct M)).mono
@@ -74,8 +74,8 @@ theorem exp_ct (M : Mont) : RelCT isa (Two DB) (Folded.exp M.mm) (Two DC) := by
     refine WP.mono (exp65536_ok M hc hf.1 hf.2.1 hf.2.2.1 hf.2.2.2.1 hf.2.2.2.2.1 hf.2.2.2.2.2)
       fun t ⟨ct,lt,vt,ft,kt⟩ => ⟨xb,σ,X,x,g.step (ft.mono (pExpRanges_pdAll _)) kt
         (ft.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-          (by unfold sMask sFn; omega)),ct,lt,?_⟩
-    rw [← show Spec.Rsa.os2ip (evenLast q.1.eb) = 65536 by omega] at vt; exact vt
+          (by unfold sMask sFn; omega_using [])),ct,lt,?_⟩
+    rw [← show Spec.Rsa.os2ip (evenLast q.1.eb) = 65536 by omega_using [h65, hE]] at vt; exact vt
   · exact two_map id (fun _ _ h => h.1.1) pdExp_ct
 
 /-- The computation leaks the same in runs with the same public data, given

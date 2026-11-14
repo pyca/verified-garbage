@@ -26,10 +26,10 @@ theorem Execution.saved {s t : State} {base : Addr} {g : Reg → BitVec 32}
     · intro pair hr
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change p.2 + 4 ≤ 0 ∨ 7048 ≤ p.2; omega
-      · change p.2 + 4 ≤ 8244 ∨ 8248 ≤ p.2; omega
-      · change p.2 + 4 ≤ 14720 ∨ 15712 ≤ p.2; omega
-    · change p.2 + 4 * 1 ≤ 15712; omega
+      · change p.2 + 4 ≤ 0 ∨ 7048 ≤ p.2; omega_using [B]
+      · change p.2 + 4 ≤ 8244 ∨ 8248 ≤ p.2; omega_using [B]
+      · change p.2 + 4 ≤ 14720 ∨ 15712 ≤ p.2; omega_using [B]
+    · change p.2 + 4 * 1 ≤ 15712; omega_using [B]
   have V : t.mem.readW (off base p.2) 32 = s.mem.readW (off base p.2) 32 := by
     apply BitVec.eq_of_toNat_eq
     simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
@@ -42,6 +42,6 @@ theorem OutputFrame.saved {base out : Addr} {prefixSize len size : Nat} {m m' : 
     (S : Saved m (off base) g Entry.savedRegisters) : Saved m' (off base) g Entry.savedRegisters := by
   intro p hp
   have B := saved_bounds hp
-  exact (F.scratch_word A (by omega) (by omega) hbound).trans (S p hp)
+  exact (F.scratch_word A (by omega_using [hpre, B]) (by omega_using [hs, B]) hbound).trans (S p hp)
 
 end VG.Proof.Dsa.X86

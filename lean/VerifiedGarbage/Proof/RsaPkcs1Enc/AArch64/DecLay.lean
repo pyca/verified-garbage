@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.Framework.Taint
 The function's buffers and its stack, from the inner frame's base `Q`
 (`Lay`): below it the `P` bytes the calls use (`LOW`), from it the inner
 frame (`FR`: the private-key operation's stack arguments, then the slots),
-the frame holding our return address (`LR`, from `Q + 208`) and our stack
-arguments (`ARGS`, from `Q + 224`). `lay_ok` reads what the shared contract
+the frame holding our return address (`LR`, from `Q + 224`) and our stack
+arguments (`ARGS`, from `Q + 240`). `lay_ok` reads what the shared contract
 says of them (`Lay.Ok`). `Ctx` is what holds between the frames' pushes and
 pops once the slots are written, and `Kept` the words in the frames that
 no step changes.
@@ -57,6 +57,14 @@ structure Lay where
   sl : BitVec 64
   Q : Addr
   P : Nat
+  /-- Further regions the function may read: none for
+  `vg_rsa_pkcs1_decrypt`; for `vg_rsa_pkcs1_decrypt_precomputed`, its last
+  stack arguments and `pre`. -/
+  X : List Region
+  /-- `vg_rsa_pkcs1_decrypt_precomputed`'s `pre` and `pre_len`, our stack
+  arguments 15 and 16. -/
+  pre : Addr
+  prl : BitVec 64
 
 namespace Lay
 
@@ -75,10 +83,10 @@ abbrev DQ : Region := ⟨L.dq, L.ql.toNat⟩
 abbrev QI : Region := ⟨L.qi, L.pl.toNat⟩
 abbrev SCR : Region := ⟨L.scr, L.sl.toNat * 8⟩
 abbrev FR : Region := ⟨L.Q, frameBytes⟩
-abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 208, 16⟩
-abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 224, 120⟩
+abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 224, 16⟩
+abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 240, 120⟩
 abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
-abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 224⟩
+abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 240⟩
 
 /-- The buffers the function only reads. -/
 def ro : List Region := [L.N, L.E, L.D, L.INP, L.PP, L.QQ, L.DP, L.DQ, L.QI]
@@ -106,7 +114,7 @@ structure Ok : Prop where
   bM : L.ml.toNat + 8 ≤ 2 ^ 64
   bS : L.scr.toNat + L.sl.toNat * 8 ≤ 2 ^ 64
   bR : ∀ R ∈ L.ro, R.base.toNat + R.len ≤ 2 ^ 64
-  nQ : L.Q.toNat + 344 ≤ 2 ^ 64
+  nQ : L.Q.toNat + 360 ≤ 2 ^ 64
   pQ : L.P ≤ L.Q.toNat
   /-- The lengths. -/
   kv : Spec.Rsa.lenValid L.k.toNat
@@ -143,27 +151,27 @@ theorem k1024 : L.k.toNat ≤ 1024 := h.kv.2
 
 /-- `scratch` holds 8192 bytes at least. -/
 theorem s8192 : 8192 ≤ L.sl.toNat * 8 := by
-  have := h.slk; have := h.k64; unfold Spec.Rsa.scratchWords at *; omega
+  have := h.slk; have := h.k64; unfold Spec.Rsa.scratchWords at *; omega_arith
 
 omit h in
 /-- A range in our stack is in `STK`. -/
-theorem sub_stk {d n : Nat} (hd : d + n ≤ 224) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by
-  rw [Enc.q_add L.Q L.P d]; exact Offset.sub_base _ (by omega)
+theorem sub_stk {d n : Nat} (hd : d + n ≤ 240) : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.STK := by
+  rw [Enc.q_add L.Q L.P d]; exact Offset.sub_base _ (by omega_using [hd])
 
 omit h in
-theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
+theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega_using [])
 
 /-- A range in our frames misses the stack the calls use. -/
-theorem fr_low {d n : Nat} (hd : d + n ≤ 344) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
-  Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega)
+theorem fr_low {d n : Nat} (hd : d + n ≤ 360) : Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.LOW :=
+  Offset.disjoint_below _ (by have := h.nQ; have := h.pQ; omega_arith)
 
 /-- Two ranges in our frames and arguments, apart. -/
-theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 344) (h₂ : d' + n' ≤ 344) :
+theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 360) (h₂ : d' + n' ≤ 360) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ ⟨L.Q + BitVec.ofNat 64 d', n'⟩ :=
-  Offset.disjoint _ hs (by have := h.nQ; omega) (by have := h.nQ; omega)
+  Offset.disjoint _ hs (by have := h.nQ; omega_using [h₁]) (by have := h.nQ; omega_using [h₂])
 
 /-- A range in our frames misses the writable buffers. -/
-theorem stk_buf {d n : Nat} (hd : d + n ≤ 224) {R : Region} (hR : InW L R) :
+theorem stk_buf {d n : Nat} (hd : d + n ≤ 240) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
   have hs := Lay.Ok.sub_stk (L := L) hd
   rcases hR with hR | hR | hR
@@ -172,9 +180,9 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 224) {R : Region} (hR : InW L R) :
   · exact (h.kS.sub_left hs).sub_right hR
 
 /-- A range in our stack arguments misses the writable buffers. -/
-theorem args_buf {d n : Nat} (h₁ : 224 ≤ d) (h₂ : d + n ≤ 344) {R : Region} (hR : InW L R) :
+theorem args_buf {d n : Nat} (h₁ : 240 ≤ d) (h₂ : d + n ≤ 360) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
-  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega_using [h₂])
   rcases hR with hR | hR | hR
   · exact (h.oA.symm.sub_left hs).sub_right hR
   · exact (h.mA.symm.sub_left hs).sub_right hR
@@ -205,11 +213,12 @@ structure Kept (L : Lay) (lr : BitVec 64) (m : Mem) : Prop where
   dl : m.readW (L.Q + BitVec.ofNat 64 oDl) 64 = L.dl
   inp : m.readW (L.Q + BitVec.ofNat 64 oIn) 64 = L.inp
   scr : m.readW (L.Q + BitVec.ofNat 64 oScr) 64 = L.scr
-  lr : m.readW (L.Q + BitVec.ofNat 64 208) 64 = lr
-  args : ∀ j < 15, m.readW (L.Q + BitVec.ofNat 64 (224 + 8 * j)) 64 = ourArg L j
+  lr : m.readW (L.Q + BitVec.ofNat 64 224) 64 = lr
+  args : ∀ j < 15, m.readW (L.Q + BitVec.ofNat 64 (240 + 8 * j)) 64 = ourArg L j
 
 /-- The offsets of the kept words. -/
-def keptOff (d : Nat) : Prop := (d + 8 ≤ 176) ∨ (208 ≤ d ∧ d + 8 ≤ 224) ∨ (224 ≤ d ∧ d + 8 ≤ 344)
+def keptOff (d : Nat) : Prop :=
+  (d + 8 ≤ 96) ∨ (112 ≤ d ∧ d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) ∨ (240 ≤ d ∧ d + 8 ≤ 360)
 
 /-- The kept words survive changes to memory that miss them. -/
 theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (hk : Kept L lr m)
@@ -218,22 +227,23 @@ theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (h
   have k : ∀ d, keptOff d →
       m'.readW (L.Q + BitVec.ofNat 64 d) 64 = m.readW (L.Q + BitVec.ofNat 64 d) 64 :=
     fun d hdd => hf.readW (Region.contains_self _ _) (hd d hdd) (by decide)
-  refine ⟨fun j hj => (k _ (by unfold keptOff; omega)).trans (hk.call j hj), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, (k 208 (by unfold keptOff; omega)).trans hk.lr,
-    fun j hj => (k _ (by unfold keptOff; omega)).trans (hk.args j hj)⟩
-  exacts [(k oOut (by unfold keptOff oOut; omega)).trans hk.out, (k oML (by unfold keptOff oML; omega)).trans hk.ml,
-    (k oN (by unfold keptOff oN; omega)).trans hk.n, (k oK (by unfold keptOff oK; omega)).trans hk.k,
-    (k oE (by unfold keptOff oE; omega)).trans hk.e, (k oEl (by unfold keptOff oEl; omega)).trans hk.el,
-    (k oD (by unfold keptOff oD; omega)).trans hk.d, (k oDl (by unfold keptOff oDl; omega)).trans hk.dl,
-    (k oIn (by unfold keptOff oIn; omega)).trans hk.inp, (k oScr (by unfold keptOff oScr; omega)).trans hk.scr]
+  refine ⟨fun j hj => (k _ (by unfold keptOff; omega_using [hj])).trans (hk.call j hj), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, (k 224 (by unfold keptOff; omega_using [])).trans hk.lr,
+    fun j hj => (k _ (by unfold keptOff; omega_using [hj])).trans (hk.args j hj)⟩
+  exacts [(k oOut (by unfold keptOff oOut; omega_using [])).trans hk.out, (k oML (by unfold keptOff oML; omega_using [])).trans hk.ml,
+    (k oN (by unfold keptOff oN; omega_using [])).trans hk.n, (k oK (by unfold keptOff oK; omega_using [])).trans hk.k,
+    (k oE (by unfold keptOff oE; omega_using [])).trans hk.e, (k oEl (by unfold keptOff oEl; omega_using [])).trans hk.el,
+    (k oD (by unfold keptOff oD; omega_using [])).trans hk.d, (k oDl (by unfold keptOff oDl; omega_using [])).trans hk.dl,
+    (k oIn (by unfold keptOff oIn; omega_using [])).trans hk.inp, (k oScr (by unfold keptOff oScr; omega_using [])).trans hk.scr]
 
 /-- A kept word misses a range in a writable buffer. -/
 theorem Lay.Ok.kept_buf {L : Lay} (h : L.Ok) {d : Nat} (hd : keptOff d) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := by
   unfold keptOff at hd
-  rcases hd with hd | hd | hd
-  · exact h.stk_buf (by omega) hR
-  · exact h.stk_buf (by omega) hR
+  rcases hd with hd | hd | hd | hd
+  · exact h.stk_buf (by omega_using [hd]) hR
+  · exact h.stk_buf (by omega_using [hd]) hR
+  · exact h.stk_buf (by omega_using [hd]) hR
   · exact h.args_buf hd.1 hd.2 hR
 
 /-! ## Between the frames' pushes and pops -/
@@ -242,7 +252,7 @@ theorem Lay.Ok.kept_buf {L : Lay} (h : L.Ok) {d : Nat} (hd : keptOff d) {R : Reg
 are the registers on entry, `m₀` the memory. -/
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
-  rd : t.rd = [L.N, L.E, L.D, L.INP, L.PP, L.QQ, L.DP, L.DQ, L.QI, L.ARGS]
+  rd : t.rd = [L.N, L.E, L.D, L.INP, L.PP, L.QQ, L.DP, L.DQ, L.QI, L.ARGS] ++ L.X
   wr : t.wr = [L.FR, L.LR, L.OUT, L.ML, L.SCR]
   sp : t.sp = L.Q
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
@@ -280,7 +290,7 @@ theorem store (hL : L.Ok) {rs : List Region} (hrd : t'.rd = t.rd) (hwr : t'.wr =
     · obtain ⟨b, n⟩ := R
       simp only at hb h₂; subst hb
       unfold keptOff at hd; unfold oR at h₁; unfold frameBytes at h₂
-      exact hL.fr_sep (by omega) (by omega) (by omega)
+      exact hL.fr_sep (by omega_using [hd, h₁, h₂]) (by omega_using [hd]) (by omega_using [h₂])
   · rcases hin r hr with (hw | hw | hw) | ⟨d', h₁, h₂, hb⟩
     · exact ⟨L.OUT, by simp, hw⟩
     · exact ⟨L.ML, by simp, hw⟩
@@ -288,13 +298,13 @@ theorem store (hL : L.Ok) {rs : List Region} (hrd : t'.rd = t.rd) (hwr : t'.wr =
     · obtain ⟨b, n⟩ := r
       simp only at hb h₂; subst hb
       unfold frameBytes at h₂
-      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega)⟩
+      exact ⟨L.STK, by simp, Lay.Ok.sub_stk (by omega_using [h₂])⟩
 
 theorem inFr {d n : Nat} (hd : d + n ≤ frameBytes) : InRegions t.wr (L.Q + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])⟩
 
 theorem inFrR {d n : Nat} (hd : d + n ≤ frameBytes) : InRegions (t.rd ++ t.wr) (L.Q + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ hd (by unfold frameBytes at hd; omega_using [hd])⟩
 
 end Ctx
 

@@ -1,14 +1,145 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRed
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-import VerifiedGarbage.Proof.Divstep.Tc32Words
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Divstep.Red32
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.BitVec
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
+import VerifiedGarbage.Proof.Divstep.Tc32Words
+
+/-! ### `Weierstrass.X86.InvRed`, which only this module used -/
+
+section
+
+/-! # Reduction of a signed divstep coefficient row -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.X86.Inv
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Inv
+  VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass VG.Impl.Mont
+
+structure RedLay (M : Mod) (size acc tmp out n : Nat) : Prop where
+  width : words M = n
+  positive : 0 < n
+  acc_bound : acc + 4 * (n + 2) ≤ size
+  tmp_bound : tmp + 4 * (n + 1) ≤ size
+  out_bound : out + 4 * n ≤ size
+  mod_bound : M.mo + 4 * n ≤ size
+  sub_bound : M.tmp + 4 * n ≤ size
+  ta : tmp + 4 * (n + 1) ≤ acc ∨ acc + 4 * (n + 2) ≤ tmp
+  am : acc + 4 * (n + 2) ≤ M.mo ∨ M.mo + 4 * n ≤ acc
+  tm : tmp + 4 * (n + 1) ≤ M.mo ∨ M.mo + 4 * n ≤ tmp
+  sa : M.tmp + 4 * n ≤ acc ∨ acc + 4 * (n + 2) ≤ M.tmp
+  sm : M.tmp + 4 * n ≤ M.mo ∨ M.mo + 4 * n ≤ M.tmp
+  oa : out + 4 * n ≤ acc ∨ acc + 4 * (n + 2) ≤ out
+  os : out + 4 * n ≤ M.tmp ∨ M.tmp + 4 * n ≤ out
+
+theorem reduce_ok {s : State} {base : Addr} {size acc tmp out n p : Nat} {M : Mod} {t : Int}
+    (hs : Scr s base size) (L : RedLay M size acc tmp out n)
+    (hp : 0 < p) (hm : val32 s.mem base M.mo n = p)
+    (hinv : (p * (minv32 M).toNat + 1) % 2 ^ 32 = 0)
+    (ht : |t| ≤ 2 ^ 31 * p)
+    (hval : (val32 s.mem base acc (n + 1) : Int) % 2 ^ (32 * (n + 1)) = t % 2 ^ (32 * (n + 1))) :
+    WP isa (.block (reduce M acc tmp out)) s fun z =>
+      Unch base [(acc, 4 * (n + 2)), (tmp, 4 * (n + 1)), (M.tmp, 4 * n), (out, 4 * n)] s.mem z.mem ∧
+      Keeps wordClob s z ∧ (val32 z.mem base out n : Int) = Divstep.W32.mred p (minv32 M).toNat t := by
+  have hn := hs.nowrap
+  have ha := L.acc_bound; have htmp := L.tmp_bound; have hout := L.out_bound
+  have hmod := L.mod_bound; have hsub := L.sub_bound
+  have hta := L.ta; have ham := L.am; have htm := L.tm
+  have hsa := L.sa; have hoa := L.oa
+  unfold reduce
+  rw [L.width]
+  refine WP.block_append (WP.block_append (WP.mono
+    (redSum_ok (minv32 M) hs ha hmod (by omega_arith) (by omega_arith) ham (by omega_arith))
+    fun s₁ ⟨O₁, K₁, V₁⟩ => ?_))
+  have hs₁ := hs.of_keeps K₁ (by decide)
+  have M₁ : val32 s₁.mem base M.mo n = p := by
+    rw [Outs.val32 O₁ (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith), hm]
+  refine WP.mono (addIfNeg_ok hs₁ (acc := acc + 4) (modulus := M.mo) (tmp := tmp) (n := n)
+    (by omega_arith) hmod htmp (by omega_arith) htm) fun s₂ ⟨O₂, K₂, V₂⟩ => ?_
+  have hs₂ := hs₁.of_keeps K₂ (by decide)
+  have M₂ : val32 s₂.mem base M.mo n = p := by
+    rw [Outs.val32 O₂ (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith) (by omega_arith), M₁]
+  have P : 2 ^ (32 * (n + 1)) = 2 ^ (32 * n) * 2 ^ 32 := by
+    rw [pow32_succ, Nat.mul_comm]
+  have E : val32 s₁.mem base acc (n + 2) =
+      (val32 s.mem base acc (n + 1) + 2 ^ (32 * n) * 2 ^ 32 *
+        (if 2 ^ (32 * n) * 2 ^ 31 ≤ val32 s.mem base acc (n + 1) then 2 ^ 32 - 1 else 0) +
+        (w32 s.mem base acc * (minv32 M).toNat % 2 ^ 32) * p) %
+        (2 ^ (32 * n) * 2 ^ 32 * 2 ^ 32) := by
+    rw [V₁, hm]
+    simp only [sign32]
+    have P' : 2 ^ (32 * (n + 2)) = (2 ^ (32 * n) * 2 ^ 32) * 2 ^ 32 := by
+      rw [show n + 2 = (n + 1) + 1 by omega_arith, pow32_succ, pow32_succ]
+      ring
+    rw [P', P]
+    rw [Nat.add_right_comm]
+  have F : val32 s₂.mem base (acc + 4) (n + 1) =
+      (val32 s₁.mem base (acc + 4) (n + 1) +
+        if 2 ^ (32 * n) * 2 ^ 31 ≤ val32 s₁.mem base (acc + 4) (n + 1) then p else 0) %
+        (2 ^ (32 * n) * 2 ^ 32) := by
+    rw [V₂, M₁]
+    simp only [sign32, P]
+  have H := Divstep.W32.mred_first_nat
+    (A := 2 ^ (32 * n)) (B := 2 ^ 32) (H := 2 ^ 31) (p := p) (m := (minv32 M).toNat)
+    (W := val32 s.mem base acc (n + 1))
+    (k := w32 s.mem base acc * (minv32 M).toNat % 2 ^ 32)
+    (E := val32 s₁.mem base acc (n + 2)) (R := val32 s₁.mem base (acc + 4) (n + 1))
+    (R₁ := val32 s₂.mem base (acc + 4) (n + 1)) (t := t)
+    rfl rfl (Nat.two_pow_pos _) hp (by rw [← hm]; exact val32_lt _ _ _ _) hinv ht
+    (by rw [← P]; exact val32_lt _ _ _ _)
+    (by simpa only [← P, Nat.cast_pow, Nat.cast_ofNat] using hval)
+    (by rw [← low32]) E (high32 _ _ _ _) F
+  rcases H with ⟨bound, result⟩
+  refine WP.mono (csub_ok hs₂ L.width L.positive (by omega_arith) hout hsub hmod
+    (by omega_arith) L.sm (by omega_arith) L.os M₂ bound) fun z ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
+  · intro x hx
+    have hac := hx (acc, 4 * (n + 2)) (by simp)
+    have htc := hx (tmp, 4 * (n + 1)) (by simp)
+    rw [O₃ x (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> exact hx _ (by simp)),
+      O₂ x (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith),
+      O₁ x (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith)]
+  · exact (K₁.trans (K₂.mono (by decide))).trans (K₃.mono (by decide))
+  · rw [V₃]
+    exact result
+
+end VG.Proof.Weierstrass.X86.Inv
+
+end
+
+end
+
 
 /-! ## `InvCoeff` -/
 
@@ -45,11 +176,11 @@ theorem abHalf_ok {s : State} {base : Addr} {size u v acc a b tmp out k p : Nat}
     rw [Outs.val32 O₁ (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> simp only <;> omega) (by omega), hm]
+      rcases hw with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [hn, hmod]), hm]
   have bound : |cu * x + cv * y| ≤ 2 ^ 31 * p := by
     have H := Divstep.W32.comb_le huv hxb hyb
     have hp' : (0 : Int) ≤ p := Int.natCast_nonneg _
-    omega
+    omega_using [H]
   refine WP.mono (reduce_ok (hs.of_keeps K₁ (by decide)) R hp hm₁ hinv bound V₁)
     fun z ⟨O₂, K₂, V₂⟩ => ⟨V₂, (K₁.mono (by decide)).trans K₂, ?_⟩
   intro q hq
@@ -61,7 +192,7 @@ theorem abHalf_ok {s : State} {base : Addr} {size u v acc a b tmp out k p : Nat}
   · exact hq (acc, 4 * (k + 1 + 2)) (by simp)
   · have := hq (tmp, 4 * (k + 1 + 1)) (by simp)
     simp only
-    omega
+    omega_using [this]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -79,12 +210,12 @@ open VG VG.Impl.Weierstrass.X86 VG.Proof.Mont VG.Proof.Weierstrass
 theorem fgLayout {P : InvCfg} {size row : Nat} (ht : P.tbl + 320 ≤ size) (hr : row ≤ 1) :
     LinearLay size (P.sW + 12 + 8 * row) (P.sW + 16 + 8 * row)
       P.sT P.sF P.sG P.sU 9 7 := by
-  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sF, InvCfg.sG, InvCfg.sU]) <;> omega
+  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sF, InvCfg.sG, InvCfg.sU]) <;> omega_arith
 
 theorem abLayout {P : InvCfg} {size row : Nat} (ht : P.tbl + 320 ≤ size) (hr : row ≤ 1) :
     LinearLay size (P.sW + 12 + 8 * row) (P.sW + 16 + 8 * row)
       P.sT P.sA P.sB P.sU 8 7 := by
-  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sA, InvCfg.sB, InvCfg.sU]) <;> omega
+  constructor <;> (try dsimp only [InvCfg.sW, InvCfg.sT, InvCfg.sA, InvCfg.sB, InvCfg.sU]) <;> omega_arith
 
 theorem redLayout {P : InvCfg} {size out : Nat} (L : WorkLay P size) (ho : out = P.sNF ∨ out = P.sB) :
     RedLay P.M size P.sT P.sU out 8 := by
@@ -94,7 +225,7 @@ theorem redLayout {P : InvCfg} {size out : Nat} (L : WorkLay P size) (ho : out =
   · simp only [VG.Impl.Mont.X86.words, L.n4]
   · decide
   all_goals rcases ho with rfl | rfl <;>
-    (try dsimp only [InvCfg.sT, InvCfg.sU, InvCfg.sNF, InvCfg.sB]) <;> omega
+    (try dsimp only [InvCfg.sT, InvCfg.sU, InvCfg.sNF, InvCfg.sB]) <;> omega_arith
 
 end VG.Proof.Weierstrass.X86.Inv
 

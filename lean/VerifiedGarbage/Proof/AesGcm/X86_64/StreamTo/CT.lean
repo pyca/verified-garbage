@@ -206,7 +206,7 @@ theorem b4_wp {o : Nat} {st : State} (h : B0 s o st ∧ st.gpr .rax = BitVec.ofN
       st'.cf = some (decide (2 ^ 64 ≤ (TL s).toNat + o + 16 * ((L s - o) / 16))) := by
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have h16 : (BitVec.ofNat 64 (16 * ((L s - o) / 16))).toNat = 16 * ((L s - o) / 16) := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hL])
   exact WP.mono (len_ok h.2 h.1.2.2) fun _ ⟨r9, ax, cf, g, m, rd, wr⟩ =>
     ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1 (notCs hr).2.2.2.2.2.2.1 (notCs hr).2.1) rd wr,
       by rw [g _ (by decide) (by decide) (by decide), h.1.2.1], by rw [g _ (by decide) (by decide) (by decide), h.1.2.2]⟩,
@@ -253,15 +253,15 @@ theorem r2_wp {o : Nat} {st : State}
 theorem r3_wp {o : Nat} (ho : o < L s) {st : State} (h : R2 s o st) : WP isa copyLoop st (Mid s o) := by
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   obtain ⟨M₂, si, di, cx⟩ := h
-  have ds := dq_sub (s := s) (o := o) (n := L s - o) (by omega)
-  have ss : Region.Sub ⟨Src s + BitVec.ofNat 64 o, L s - o⟩ (srcR s) := Offset.sub_base _ (by omega)
+  have ds := dq_sub (s := s) (o := o) (n := L s - o) (by omega_using [ho])
+  have ss : Region.Sub ⟨Src s + BitVec.ofNat 64 o, L s - o⟩ (srcR s) := Offset.sub_base _ (by omega_using [ho])
   have cp : CopyPre st (Src s + BitVec.ofNat 64 o) (Dst s + BitVec.ofNat 64 o) (L s - o) :=
-    ⟨si, di, cx, by omega, by omega,
-      covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.rd, M₂.wr, hp.rd]; simp) (by omega) (by omega),
-      covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.wr, hp.wr]; simp) (by omega) (by omega),
+    ⟨si, di, cx, by omega_using [ho], by omega_using [hL],
+      covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.rd, M₂.wr, hp.rd]; simp) (by omega_using [ho]) (by omega_using [ho, hL]),
+      covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.wr, hp.wr]; simp) (by omega_using [ho]) (by omega_using [ho, hL]),
       (hp.r_d.sub_left ss).sub_right ds⟩
   exact WP.mono (copyLoopL_ok st cp) fun _ ⟨m₃, g₃, rd₃, wr₃⟩ =>
-    M₂.copy hp (n := L s - o) (by omega) (by rw [m₃]; exact writeBytes_frame' _ (length_bytesAt _ _ _))
+    M₂.copy hp (n := L s - o) (by omega_using [ho]) (by rw [m₃]; exact writeBytes_frame' _ (length_bytesAt _ _ _))
       (fun r hr => g₃ r (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) rd₃ wr₃
 
 theorem r4_wp {o : Nat} {st : State} (h : Mid s o st) : WP isa (.block restArgs) st (R4 s o (L s - o)) :=
@@ -443,7 +443,7 @@ theorem head_rel (E : EncFn M) :
       (fun _ _ h => mid_hW hp hp' pb h.1.1 h.2.1) hargs_check)
     (fun _ _ h => h) (fun _ => ha_wp hp) (fun _ => ha_wp hp')).mono (fun _ _ h => h) fun _ _ h => h.2) ?_
   refine RelCT.seq ((rel_wp ((encCall_rel hp hp' pb E (o := 0) (n := Hd s₀)
-      (by have : Hd s₀ ≤ L s₀ := Nat.min_le_right _ _; omega)).mono
+      (by have : Hd s₀ ≤ L s₀ := Nat.min_le_right _ _; omega_using [this])).mono
       (fun _ _ h => ⟨⟨h.1.1.1, h.1.2.1, h.1.2.2.1, h.1.2.2.2.1, h.1.2.2.2.2.1, h.1.2.2.2.2.2.1,
         h.1.2.2.2.2.2.2.1, h.1.2.2.2.2.2.2.2⟩, ⟨h.2.1.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1,
         h.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.1, by rw [h.2.2.2.2.2.2.2.2, eHd]⟩⟩) fun _ _ h => h)
@@ -514,7 +514,7 @@ theorem blocks_rel (T : BlkToFn M) {o : Nat} :
     have e := h.2; simp only [eval, h.1.1.2, Option.map_some, Option.some.injEq, Bool.not_eq_false',
       beq_iff_eq] at e
     have := congrArg BitVec.toNat e
-    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this) fun hsel => ?_
+    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])] at this) fun hsel => ?_
   obtain ⟨ht16, ht0⟩ := sel_mod hsel
   refine RelCT.seq (step [.r11] bcount_check (fun _ _ h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.1.2.1, h.1.2.1.2.1, pb.w])
@@ -532,7 +532,7 @@ theorem blocks_rel (T : BlkToFn M) {o : Nat} :
   refine RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2.2, h.2.2.2.2, pb.tl, pb.eL])
     (none fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) ?_
   refine RelCT.of_imp ((TL s₀).toNat + (o + 16 * ((L s₀ - o) / 16)) < 2 ^ 64) (fun _ _ h => by
-    have e := h.2; simp only [eval, h.1.1.2.2.2] at e; simp at e; omega) fun htl => ?_
+    have e := h.2; simp only [eval, h.1.1.2.2.2] at e; simp at e; omega_using [e]) fun htl => ?_
   refine RelCT.of_imp (o ≤ L s₀ ∧ (TL s₀).toNat + o < 2 ^ 64) (fun _ _ h => ⟨h.1.1.1.1.o_le, h.1.1.1.1.tl⟩)
     fun ⟨ho, hto⟩ => ?_
   rw [tl_add hto] at ht16
@@ -544,7 +544,7 @@ theorem blocks_rel (T : BlkToFn M) {o : Nat} :
     (fun _ _ h => ⟨⟨h.1.1.1, h.1.1.2.1, h.1.1.2.2.1⟩, ⟨h.1.2.1, by rw [h.1.2.2.1, pb.eL],
       by rw [h.1.2.2.2.1, pb.eL]⟩⟩)
     (fun _ => b5_wp hp (q := (L s₀ - o) / 16)) (fun _ => b5_wp hp' (q := (L s₀ - o) / 16))) ?_
-  have hq : o + 16 * ((L s₀ - o) / 16) ≤ L s₀ := by omega
+  have hq : o + 16 * ((L s₀ - o) / 16) ≤ L s₀ := by omega_using [hq0]
   refine (rel_wp (blkCall_rel hp hp' pb T hq) (fun _ _ h => h)
     (fun _ => b6_wp hp T hq0 hq htl ht0 ht16) (fun _ => b6_wp hp' T hq0
       (by rw [pb.eL]; exact hq) (by rw [pb.tl]; exact htl) (by rw [pb.tl, pb.al]; exact ht0)
@@ -565,7 +565,7 @@ theorem rest_rel (E : EncFn M) {o : Nat} :
     (skip_rel fun _ _ _ => trivial) ?_
   refine RelCT.of_imp (o < L s₀) (fun _ _ h => by
     have e := h.2; simp only [eval, h.1.1.2.2.2.2] at e
-    have := h.1.1.1.o_le; simp at e; omega) fun ho => ?_
+    have := h.1.1.1.o_le; simp at e; omega_using [e]) fun ho => ?_
   refine RelCT.seq (step [.r11, .rax] ptrs_check (fun _ _ h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -584,7 +584,7 @@ theorem rest_rel (E : EncFn M) {o : Nat} :
       (fun _ _ h r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.1.rsp, h.2.rsp, pb.sp])
       (fun _ _ h => mid_hW hp hp' pb h.1 h.2) rargs_check)
     (fun _ _ h => h) (fun _ => r4_wp hp) (fun _ => r4_wp hp')).mono (fun _ _ h => h) fun _ _ h => h.2) ?_
-  exact (encCall_rel hp hp' pb E (o := o) (n := L s₀ - o) (by omega)).mono
+  exact (encCall_rel hp hp' pb E (o := o) (n := L s₀ - o) (by omega_using [ho])).mono
     (fun _ _ h => ⟨h.1, by rw [← pb.eL]; exact h.2⟩) fun _ _ h => h
 
 end

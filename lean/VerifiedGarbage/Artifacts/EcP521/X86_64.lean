@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Impl.EcKey.P521.X86_64
@@ -62,34 +64,61 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P521.X86_64.Law
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.P521
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P521
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P521Decompress
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
 
+-- Standalone P521 public-point compression on x86-64
+namespace VG.Artifacts.EcP521.X86_64.Compressed
+
+open VG.Proof.P521.X86_64 (hasLaw)
+
+def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P521.scrubReg hasLaw.inv false),
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P521Decompress.scrubReg hasLaw.law hasLaw.inv false),
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P521.scrubReg hasLaw.inv true),
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P521Decompress.scrubReg hasLaw.law hasLaw.inv true)]
+
+end VG.Artifacts.EcP521.X86_64.Compressed
+
+-- Standalone P521 public-key validation on x86-64
+namespace VG.Artifacts.EcP521.X86_64.Validate
+
+open VG.Proof.P521.X86_64 (hasLaw)
+
+def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P521.scrubReg hasLaw.inv false),
+  Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P521.scrubReg hasLaw.inv true)]
+
+end VG.Artifacts.EcP521.X86_64.Validate
+
 namespace VG.Artifacts.EcP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-/-- The function of `Spec.EcKey.P521.publicKeyApi`, multiplying modulo `p` with
-BMI2 and ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
-instruction writing `rsp` (`hsp`). -/
-def publicKey (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
+def artifacts : List Artifact :=
+  Compressed.artifacts ++ [
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    code := Impl.EcKey.X86_64.publicKeyP521
     stack := 8
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
-
-def artifacts : List Artifact := [
-  publicKey false Impl.EcKey.X86_64.publicKeyP521
-    (Proof.EcKey.X86_64.P521.pk_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv),
-  publicKey true Impl.EcKey.X86_64.publicKeyP521Adx
-    (Proof.EcKey.X86_64.P521.pk_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)]
+    verified := Proof.EcKey.X86_64.P521.pk_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 8 Impl.Ecdsa.X86_64.p521.combConsts)),
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    suffix := "_adx"
+    code := Impl.EcKey.X86_64.publicKeyP521Adx
+    stack := 8
+    verified := Proof.EcKey.X86_64.P521.pk_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 8 Impl.Ecdsa.X86_64.p521.combConsts))] ++
+  Validate.artifacts
 
 end VG.Artifacts.EcP521.X86_64

@@ -14,11 +14,11 @@ theorem Environment.Valid.readFit {E : Environment} (v : E.Valid) {r : Region} (
   simp only [Environment.readRegions, List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl | rfl | rfl
   · change E.exponentLength ≤ 2 ^ 64
-    have := v.exponentFit; omega
+    have := v.exponentFit; omega_using [this]
   · change E.otherLength ≤ 2 ^ 64
-    have := v.otherFit; omega
+    have := v.otherFit; omega_using [this]
   · change E.randLength ≤ 2 ^ 64
-    have := v.randLengthFit; omega
+    have := v.randLengthFit; omega_using [this]
   · change 8192 ≤ 2 ^ 64
     decide
 
@@ -58,7 +58,7 @@ theorem MemoryFacts.keepMutable {E : Environment} (v : E.Valid) {eBytes pBytes e
     have tableMem : E.tableRegion ∈ E.readRegions :=
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
     rw [F.readW (r := E.tableRegion)
-      (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega) (by omega)) (v.readMutableFar tableMem) (by decide)]
+      (Offset.contains_base _ (by change 8 * i + 8 ≤ 8192; omega_using [index]) (by omega_using [index])) (v.readMutableFar tableMem) (by decide)]
     exact M.table i index
 
 theorem MemoryFacts.keep {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s t : State}
@@ -94,6 +94,6 @@ theorem WorkFrame.output {E : Environment} (v : E.Valid) {m m' : Mem} (F : WorkF
     rcases mem with rfl | rfl
     · exact v.outWorkspace
     · exact v.stackFar E.outRegion (List.mem_append_left _ List.mem_cons_self)
-  · have := v.outFit; omega
+  · have := v.outFit; omega_using [this]
 
 end VG.Proof.RsaKeyGen.X86.Candidate

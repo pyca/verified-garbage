@@ -71,16 +71,16 @@ theorem LInv.bpre {s u : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Cast
   · rw [hu.rd, hu.wr, hu.x0, h.rd]
     exact ⟨_, List.mem_append_left _ List.mem_cons_self, Region.contains_self _ _⟩
   · rw [hu.x0, scheduleAt_getD _ _ hj, hu.frame.readW (r := ⟨s.gpr .x0, 128⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (one_disj h.dKD) (by decide)]
+      (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) (one_disj h.dKD) (by decide)]
   · unfold Readable; rw [hu.rd, hu.wr, hu.syms, h.rd]
     exact ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self), Region.contains_self _ _⟩
   · rw [s1234_length] at hi
     rw [hu.syms, hu.frame.readW (r := ⟨s.syms s1234Sym, 4096⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (one_disj h.dTD) (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (one_disj h.dTD) (by decide)]
     exact h.held i hi
   · rw [hu.x1, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [hu.wr, hu.x2, h.wr]
-    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega) (by have := h.fD; omega)⟩
+    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_using [hb]) (by have := h.fD; omega_using [hb, this])⟩
 
 /-- The loop's step: a block function run on block `b`. -/
 theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Cast5.Block} {b : Nat}
@@ -89,7 +89,7 @@ theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Ca
   obtain ⟨vout, vf, vdx, _, vrd, vwr, vsy, vg⟩ := hv
   have hN := h.fD
   have sD : Region.Sub ⟨u.gpr .x2, 8⟩ ⟨s.gpr .x2, (s.gpr .x3).toNat * 8⟩ := by
-    rw [hu.x2]; exact Offset.sub_base _ (by omega)
+    rw [hu.x2]; exact Offset.sub_base _ (by omega_using [hb])
   refine ⟨(vg .x0 (by decide) (by decide) (by decide)).trans hu.x0,
     (vg .x1 (by decide) (by decide) (by decide)).trans hu.x1, ?_, vrd.trans hu.rd,
     vwr.trans hu.wr, vsy.trans hu.syms, ?_, fun j hj => ?_⟩
@@ -103,11 +103,11 @@ theorem LInv.step {s u v : State} (h : EPre s) {f : Spec.Cast5.Block → Spec.Ca
       have hd := hu.data j hj
       rw [ite_eq_right (Nat.lt_irrefl _)] at hd
       rw [ite_eq_left (Nat.lt_succ_self _), ← hd, ← hu.x2, vout]
-    · rw [blockAt_frame vf _ (one_disj (by rw [hu.x2]; exact Offset.disjoint _ (by omega) (by omega) (by omega))),
+    · rw [blockAt_frame vf _ (one_disj (by rw [hu.x2]; exact Offset.disjoint _ (by omega_using [hjb]) (by omega_using [hN, hj]) (by omega_using [hb, hN]))),
         hu.data j hj]
       by_cases hjl : j < b
-      · rw [ite_eq_left hjl, ite_eq_left (by omega)]
-      · rw [ite_eq_right hjl, ite_eq_right (by omega)]
+      · rw [ite_eq_left hjl, ite_eq_left (by omega_using [hjl])]
+      · rw [ite_eq_right hjl, ite_eq_right (by omega_using [hjb, hjl])]
 
 theorem toNat_eq_zero_of_beq {x : BitVec 64} (h : (x == 0) = true) : x.toNat = 0 := by
   rw [beq_iff_eq] at h; rw [h]; rfl

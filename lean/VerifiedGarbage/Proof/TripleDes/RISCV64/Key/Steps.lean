@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.TripleDes.RISCV64.Key.Words
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Bytes
 import VerifiedGarbage.Proof.TripleDes.RISCV64.Permutation
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
@@ -11,6 +12,63 @@ import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+
+/-! ### `TripleDes.RISCV64.Key.Words`, which only this module used -/
+
+section
+
+/-! # The key schedule's halves, with shifts -/
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.RISCV64.Key
+
+/-- Two shifts keep the low `n` bits. -/
+theorem mask_shift (y : BitVec 64) (n : Nat) (hn : n ≤ 64) :
+    (y <<< (64 - n)) >>> (64 - n) = (y.setWidth n).setWidth 64 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, hj,
+    decide_true, Bool.true_and]
+  by_cases h : j < n
+  · simp (disch := omega) only [h, decide_true, show 64 - n + j < 64 by omega_using [hn, h],
+      show ¬ 64 - n + j < 64 - n by omega_using [], decide_false, Bool.not_false, Bool.true_and,
+      show 64 - n + j - (64 - n) = j by omega_using []]
+  · simp only [h, decide_false, show ¬ 64 - n + j < 64 by omega_using [h], Bool.false_and]
+
+/-- A rotation of a 28-bit half, as the code computes it. -/
+theorem rot28_word (x : BitVec 28) (n : Nat) (hn : 1 ≤ n) (hn' : n < 28) :
+    ((x.setWidth 64 <<< n ^^^ x.setWidth 64 >>> (28 - n)) <<< 36) >>> 36 =
+      (x.rotateLeft n).setWidth 64 := by
+  rw [show (36 : Nat) = 64 - 28 from rfl, mask_shift _ 28 (by decide)]
+  apply congrArg (BitVec.setWidth 64)
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_ushiftRight, BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hn']
+  by_cases h : j < n
+  · simp (disch := omega) [h, hj, show j < 64 by omega_using [hj], show 28 - n + j < 64 by omega_using [hj]]
+  · simp (disch := omega) [h, hj, show j < 64 by omega_using [hj], show j - n < 64 by omega_using [hj],
+      BitVec.getLsbD_of_ge]
+
+/-- C and D joined, as the code computes it. -/
+theorem pack28_word (c d : BitVec 28) :
+    ((c.setWidth 64 <<< 28 ^^^ d.setWidth 64).setWidth 56) = c ++ d := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_append, hj, decide_true, Bool.true_and]
+  by_cases h : j < 28
+  · simp (disch := omega_arith) [h, show j < 64 by omega_using [hj]]
+  · simp (disch := omega) [h, show j < 64 by omega_using [hj], show j - 28 < 64 by omega_using [hj],
+      BitVec.getLsbD_of_ge]
+
+end VG.Proof.TripleDes.RISCV64.Key
+
+end
+
+end
+
 
 /-!
 # The steps of key expansion
@@ -51,7 +109,7 @@ theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (loadBE64_ok (d := .t0) (tmp := .t1) (n := .a0) (by decide) (by decide)
-    (by decide) (by omega) hr) fun u₁ e₁ => ?_
+    (by decide) (by omega_using [ho]) hr) fun u₁ e₁ => ?_
   subst e₁
   rw [WP.block_append_iff]
   have hcode : permuteCode Spec.TripleDes.pc1 64 .t2 .t0 .t3 = instrs keyPermutation1.lit :=
@@ -75,7 +133,7 @@ theorem load_ok (s : State) (offset component : Nat) (hc : component < 3)
   simp only [List.cons_append, List.nil_append, mask]
   refine wp_srl (by decide) fun u₃ h₃ => wp_mv fun u₄ h₄ => wp_sll (by decide) fun u₅ h₅ =>
     wp_srl (by decide) fun u₆ h₆ => wp_li (imm := 0) (by decide) fun u₇ h₇ =>
-    wp_addi (by omega) fun u₈ h₈ => WP.block_nil ?_
+    wp_addi (by omega_using [hc]) fun u₈ h₈ => WP.block_nil ?_
   have g : ∀ r, r ≠ .a3 → r ≠ .a4 → r ≠ .a6 → r ≠ .a5 → u₈.gpr r = u₂.gpr r := fun r a b c d => by
     rw [h₈.other r d, h₇.other r c, h₆.other r b, h₅.other r b, h₄.other r b, h₃.other r a]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
@@ -109,7 +167,7 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .t0)
     WP isa (.block (Impl.TripleDes.RISCV64.Key.rotate28 r n)) s fun s' =>
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧ Only [r, .t0] s s' := by
   simp only [Impl.TripleDes.RISCV64.Key.rotate28, mask, List.cons_append, List.nil_append]
-  refine wp_srl (by omega) fun u₁ h₁ => wp_sll (by omega) fun u₂ h₂ => wp_xor fun u₃ h₃ =>
+  refine wp_srl (by omega_using []) fun u₁ h₁ => wp_sll (by omega_using [hn']) fun u₂ h₂ => wp_xor fun u₃ h₃ =>
     wp_sll (by decide) fun u₄ h₄ => wp_srl (by decide) fun u₅ h₅ => WP.block_nil ?_
   refine ⟨?_, ⟨fun r' hr' => ?_, ?_, ?_, ?_, ?_⟩⟩
   · rw [h₅.gpr, h₄.gpr, h₃.gpr, h₂.gpr, h₂.other _ (Ne.symm hr), h₁.gpr, h₁.other _ hr, hx]
@@ -168,7 +226,7 @@ theorem rotation_ok (s : State) (c d : BitVec 28) (j : Nat) (hj : j < 16)
         WP isa rest u' P) :
       WP isa (.seq (.block [.addi .t0 .a6 (-(k : Int))]) rest) u P := by
     apply WP.seq
-    refine wp_subi (by omega) fun u' h' => WP.block_nil (hrest u' ?_ ?_)
+    refine wp_subi (by omega_using [hk]) fun u' h' => WP.block_nil (hrest u' ?_ ?_)
     · exact ⟨fun r hr => (h'.other r (by simpa using hr)).trans (hu.reg r hr),
         h'.mem.trans hu.mem, h'.rd.trans hu.rd, h'.wr.trans hu.wr, h'.sp.trans hu.sp⟩
     · rw [eval_zero, h'.gpr, hu.reg .a6 (by simp), hjreg]

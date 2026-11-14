@@ -37,7 +37,7 @@ theorem privateStatus_dom {m : Mem} {D : Addr} {k L : Nat} (hk : 0 < k) (hL : L 
     unfold domainValid at hv
     simp only [Bool.and_eq_true] at hv
     exact hv.1
-  have h2k : 2 * k ≤ L := by omega
+  have h2k : 2 * k ≤ L := by omega_using [hL]
   have hmod := Proof.Ffdh.domainValid_mod hv
   have hp2 : 2 ≤ (domainOf k (bytesAt m D L)).p := (Proof.Ffdh.PPC64LE.Domain.modulus_facts hmod).1
   rw [Proof.Ffdh.privateStatus_eq hpv, Proof.Ffdh.PPC64LE.Derive.privateValid_dom hk hL]
@@ -48,13 +48,13 @@ theorem privateStatus_dom {m : Mem} {D : Addr} {k L : Nat} (hk : 0 < k) (hL : L 
         good (os2ip (bytesAt m (off D k) k) ^ x % os2ip (bytesAt m D k)) (os2ip (bytesAt m D k)) y := by
       rw [← Proof.Ffdh.domainOf_p m D h2k, show os2ip (bytesAt m (off D k) k) = (domainOf k (bytesAt m D L)).g by
         rw [Proof.Ffdh.domainOf_g m D h2k]]
-      have hz := Nat.mod_lt ((domainOf k (bytesAt m D L)).g ^ x) (show 0 < (domainOf k (bytesAt m D L)).p by omega)
+      have hz := Nat.mod_lt ((domainOf k (bytesAt m D L)).g ^ x) (show 0 < (domainOf k (bytesAt m D L)).p by omega_using [hp2])
       constructor
       · rintro ⟨hy, rfl⟩
         have := (Proof.Ffdh.publicValid_power hpv x).mp hy
-        exact ⟨by omega, rfl⟩
+        exact ⟨by omega_using [this], rfl⟩
       · rintro ⟨hr, rfl⟩
-        exact ⟨(Proof.Ffdh.publicValid_power hpv x).mpr (by omega), rfl⟩
+        exact ⟨(Proof.Ffdh.publicValid_power hpv x).mpr (by omega_using [hz, hr]), rfl⟩
     by_cases hg : good (os2ip (bytesAt m (off D k) k) ^ x % os2ip (bytesAt m D k)) (os2ip (bytesAt m D k)) y
     · rw [ite_eq_left (hc.mpr hg), ite_eq_left hg]
     · rw [ite_eq_right (fun h' => hg (hc.mp h')), ite_eq_right hg]

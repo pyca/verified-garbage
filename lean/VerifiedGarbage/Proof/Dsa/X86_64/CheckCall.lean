@@ -41,7 +41,7 @@ theorem checkCall_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv 
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hg hZ a ha (by decide) (by decide) (by decide) (by decide) (by decide))
     fun u ⟨hgu, hua, hul, hfields, hfu, hku⟩ => ?_
-  have hchild := call_ready child hfu (by decide) (by decide) (by omega) (by omega)
+  have hchild := call_ready child hfu (by decide) (by decide) (by omega_using [hfield]) (by omega_using [hhi, hn])
   refine WP.mono (enter_ok hgu hchild.header hlo hhi ho) fun v ⟨hcv, hvm, hkv⟩ => ?_
   have hmv : ModCtx v (off B o) (slot wx 8) wx minv m :=
     ⟨hcv.good, by rw [hvm]; exact hchild.modulus, by rw [hvm]; exact hchild.inverse⟩
@@ -53,14 +53,14 @@ theorem checkCall_ok {s : State} {B : Addr} {Z o w wx m : Nat} {minv parentMinv 
   have hpm : word f.mem B (8 * sMinv) = parentMinv :=
     (work_parent hcv hff (by decide)).trans (by rw [hvm]; exact hgu.hdr.hminv)
   have hmaskf : word f.mem B Field.mask.offset = mask valid := by
-    rw [hff.word_below (fun r hr => (workRanges_ok wx r hr).2) (by omega) (by omega)
+    rw [hff.word_below (fun r hr => (workRanges_ok wx r hr).2) (by omega_using [hhi, hn]) (by omega_using [ho])
       (show Field.mask.offset + 8 ≤ o from hfield), hvm, hfields .mask]
     exact hmask
   refine WP.mono (leave_ok hcf hpm) fun l ⟨hgl, hlm, hkl⟩ => ?_
   have hcl : ChildReady l.mem B o wx m minv :=
     ⟨by rw [hlm]; exact ⟨hcf.hdr, hcf.link⟩, by rw [hlm]; exact hmf.modulus,
       by rw [hlm]; exact hmf.inverse⟩
-  refine WP.mono (accumulate_context (b := valid) hgl hcl hZ hfield (by omega)
+  refine WP.mono (accumulate_context (b := valid) hgl hcl hZ hfield (by omega_using [hhi])
     ((hkl.gpr (by decide)).trans hfmask) (by rw [hlm]; exact hmaskf))
     fun t ⟨hgt, hct, htmask, hft, hkt⟩ => ?_
   refine ⟨hgt, hct, htmask, ?_, ((((hku.trans hkv).trans hkf).trans hkl).trans hkt).mono (by decide)⟩

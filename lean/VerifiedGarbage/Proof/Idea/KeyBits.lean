@@ -34,22 +34,22 @@ theorem foldl_bytes_getLsbD (l : List (BitVec 8)) (acc : BitVec 128) (i : Nat) (
     rw [List.foldl_cons, ih]
     simp only [List.length_cons]
     by_cases h1 : i < 8 * xs.length
-    · rw [ite_eq_left h1, ite_eq_left (by omega)]
+    · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1])]
       congr 1
-      rw [show xs.length + 1 - 1 - i / 8 = (xs.length - 1 - i / 8) + 1 by omega]
+      rw [show xs.length + 1 - 1 - i / 8 = (xs.length - 1 - i / 8) + 1 by omega_using [h1]]
       simp
     · rw [ite_eq_right h1]
       simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
       by_cases h2 : i < 8 * (xs.length + 1)
-      · rw [ite_eq_left h2, show xs.length + 1 - 1 - i / 8 = 0 by omega]
+      · rw [ite_eq_left h2, show xs.length + 1 - 1 - i / 8 = 0 by omega_using [h1]]
         simp only [List.getD_cons_zero]
-        have : i - 8 * xs.length < 8 := by omega
-        simp [this, show i - 8 * xs.length < 128 by omega, show i % 8 = i - 8 * xs.length by omega]
+        have : i - 8 * xs.length < 8 := by omega_using [h2]
+        simp [this, show i - 8 * xs.length < 128 by omega_using [hi], show i % 8 = i - 8 * xs.length by omega_using [h1, h2]]
       · rw [ite_eq_right h2]
-        simp [show ¬ (i - 8 * xs.length < 8) by omega, show i - 8 * xs.length < 128 by omega,
-          show i - 8 * xs.length - 8 = i - 8 * (xs.length + 1) by omega]
+        simp [show ¬ (i - 8 * xs.length < 8) by omega_using [h2], show i - 8 * xs.length < 128 by omega_using [hi],
+          show i - 8 * xs.length - 8 = i - 8 * (xs.length + 1) by omega_using []]
         intro h
-        rw [BitVec.getLsbD_of_ge x _ (by omega)] at h
+        rw [BitVec.getLsbD_of_ge x _ (by omega_using [h2])] at h
         cases h
 
 theorem keyValue_getLsbD (key : Vector Byte 16) {i : Nat} (hi : i < 128) :
@@ -57,7 +57,7 @@ theorem keyValue_getLsbD (key : Vector Byte 16) {i : Nat} (hi : i < 128) :
   unfold Spec.Idea.keyValue
   rw [foldl_bytes_getLsbD _ _ _ hi]
   simp only [Vector.length_toList, show i < 8 * 16 from hi, ↓reduceIte]
-  simp [Vector.getD, show 15 - i / 8 < 16 by omega]
+  simp [Vector.getD, show 15 - i / 8 < 16 by omega_using []]
 
 theorem getD_lt {α : Type} {n : Nat} (v : Vector α n) (d : α) {i : Nat} (hi : i < n) :
     v.getD i d = v[i] := by
@@ -70,14 +70,14 @@ theorem expandKey_getLsbD (key : Vector Byte 16) {n b : Nat} (hn : n < 52) (hb :
   simp only [Spec.Idea.expandKey, Vector.getElem_ofFn,
     BitVec.getLsbD_setWidth, hb, decide_true, Bool.true_and, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_rotateLeft, Impl.Idea.keyBit]
-  have h128 : 16 * (7 - n % 8) + b < 128 := by omega
+  have h128 : 16 * (7 - n % 8) + b < 128 := by omega_using [hb]
   split
-  · congr 1; omega
+  · congr 1; omega_arith
   · rw [decide_eq_true h128, Bool.true_and]
-    congr 1; omega
+    congr 1; omega_arith
 
 theorem keyBit_lt (n b : Nat) : Impl.Idea.keyBit n b < 128 := by
-  unfold Impl.Idea.keyBit; omega
+  unfold Impl.Idea.keyBit; omega_using []
 
 theorem keyLoc_spec {i : Nat} (hi : i < 128) :
     (Impl.Idea.keyLoc i).1 < 2 ∧ (Impl.Idea.keyLoc i).2 < 64 ∧
@@ -89,10 +89,10 @@ theorem keyLoc_spec {i : Nat} (hi : i < 128) :
 /-- Bit `t` of a little-endian quadword in memory. -/
 theorem readW_getLsbD (m : Mem) (a : Addr) {t : Nat} (ht : t < 64) :
     (m.readW a 64).getLsbD t = (m (a + BitVec.ofNat 64 (t / 8))).getLsbD (t % 8) := by
-  rw [← Mem.extractLsb'_read m a (n := 8) (j := t / 8) (by omega), BitVec.getLsbD_extractLsb']
+  rw [← Mem.extractLsb'_read m a (n := 8) (j := t / 8) (by omega_using [ht]), BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, Nat.reduceDiv, BitVec.setWidth_eq, show t % 8 < 8 from Nat.mod_lt _ (by decide),
     decide_true, Bool.true_and]
-  congr 1; omega
+  congr 1; omega_using []
 
 theorem keyAt_getD (m : Mem) (p : Addr) {k : Nat} (hk : k < 16) :
     (Spec.Idea.keyAt m p).getD k 0 = m (p + BitVec.ofNat 64 k) := by
@@ -102,14 +102,14 @@ theorem keyAt_getD (m : Mem) (p : Addr) {k : Nat} (hk : k < 16) :
 theorem scheduleAt_getLsbD (m : Mem) (p : Addr) {n b : Nat} (hn : n < 52) (hb : b < 16) :
     ((Spec.Idea.scheduleAt m p).getD n 0).getLsbD b =
       (m.readW (p + BitVec.ofNat 64 (8 * (n / 4))) 64).getLsbD (16 * (n % 4) + b) := by
-  rw [scheduleAt_getD m p hn, readW_getLsbD _ _ (by omega), Offset.add_ofNat_add_ofNat,
+  rw [scheduleAt_getD m p hn, readW_getLsbD _ _ (by omega_using [hb]), Offset.add_ofNat_add_ofNat,
     BitVec.getLsbD_append]
   by_cases h : b < 8
   · simp only [h, ↓reduceIte]
-    rw [show 8 * (n / 4) + (16 * (n % 4) + b) / 8 = 2 * n by omega,
-      show (16 * (n % 4) + b) % 8 = b by omega]
+    rw [show 8 * (n / 4) + (16 * (n % 4) + b) / 8 = 2 * n by omega_using [h],
+      show (16 * (n % 4) + b) % 8 = b by omega_using [h]]
   · simp only [h, ↓reduceIte]
-    rw [show 8 * (n / 4) + (16 * (n % 4) + b) / 8 = 2 * n + 1 by omega,
-      show (16 * (n % 4) + b) % 8 = b - 8 by omega]
+    rw [show 8 * (n / 4) + (16 * (n % 4) + b) / 8 = 2 * n + 1 by omega_using [hb, h],
+      show (16 * (n % 4) + b) % 8 = b - 8 by omega_using [hb, h]]
 
 end VG.Proof.Idea

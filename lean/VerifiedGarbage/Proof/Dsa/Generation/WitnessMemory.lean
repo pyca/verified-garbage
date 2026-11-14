@@ -42,14 +42,14 @@ theorem forcedWitness_memory (m : Mem) (p : Addr) {len : Nat}
     rw [hget]
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range,
       List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hil,
-      Option.map_some, Option.getD_some, List.getElem?_range (show 0 < len by omega)]
+      Option.map_some, Option.getD_some, List.getElem?_range (show 0 < len by omega_using [hlen])]
     change ((m.writeW p (m p &&& (127 : Byte))).writeW
       (off p (len - 1)) (m (off p (len - 1)) ||| (2 : Byte))) (off p i) = _
     rw [WriteBytes.writeW8_apply, WriteBytes.writeW8_apply]
-    have hlast := off_eq_iff (p := p) (i := i) (j := len - 1) (by omega) (by omega)
+    have hlast := off_eq_iff (p := p) (i := i) (j := len - 1) (by omega_using [hmax, hil]) (by omega_using [hmax])
     have hzero : off p i = p ↔ i = 0 := by
       simpa only [off, BitVec.add_zero] using
-        (off_eq_iff (p := p) (i := i) (j := 0) (by omega) (by decide))
+        (off_eq_iff (p := p) (i := i) (j := 0) (by omega_using [hmax, hil]) (by decide))
     simp only [hlast, hzero, List.length_map, List.length_range]
     by_cases he : i = len - 1
     · subst i; simp

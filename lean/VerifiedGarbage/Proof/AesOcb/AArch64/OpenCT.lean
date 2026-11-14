@@ -85,7 +85,7 @@ theorem recv_slots {K W D : Addr} {n : Nat} (L : Lay K W) (hDW : (⟨D, n⟩ : R
     (S : Slots W N A nl al tl m) : Slots W N A nl al tl (writeBytes m W xs) :=
   Slots.of_mut L hDW ((writeBytes_frame _ _ _ (by rw [hx]; exact Region.contains_self _ _)).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega)⟩) S
+    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega_using [h16])⟩) S
 
 theorem open_ct (v : BlocksImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» (callees v)) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_

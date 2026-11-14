@@ -59,8 +59,8 @@ theorem cOp_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (is : Lis
     have hm : cmul1024 d < 2 ^ 32 := by
       rcases mem_compressWidths1024 hd with rfl | rfl <;> decide
     rw [Nat.mod_eq_of_lt hm, show (261888 : BitVec 32).toNat = compressAdd1024 from rfl, cmul_eq,
-      Nat.mod_eq_of_lt (a := a * compressMul1024 d) (by unfold compressAdd1024 at hl; omega),
-      Nat.mod_eq_of_lt (a := a * compressMul1024 d + compressAdd1024) (by omega)]
+      Nat.mod_eq_of_lt (a := a * compressMul1024 d) (by unfold compressAdd1024 at hl; omega_using [hl]),
+      Nat.mod_eq_of_lt (a := a * compressMul1024 d + compressAdd1024) (by omega_using [hl])]
     rfl
 
 /-- `mov eax, [esi + 4j]`, then `cOp d`. -/
@@ -86,7 +86,7 @@ theorem accS_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (o j : N
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, 
-    Option.some.injEq, exists_eq_left', show 1 ≤ 32 - d by omega, show 32 - d ≤ 31 by omega, and_self]
+    Option.some.injEq, exists_eq_left', show 1 ≤ 32 - d by omega_using [hd'], show 32 - d ≤ 31 by omega_using [hd'], and_self]
   refine k _ ⟨fun r hr => ?_, o₁.mem, o₁.rd, o₁.wr⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.2.2, ite_false]
@@ -95,10 +95,10 @@ theorem accS_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (o j : N
     have hb : (s₁.gpr .ebx).toNat = A := by rw [o₁.gpr _ (by decide), hA]
     have hc' := cf_lt d a
     have hp : A * 2 ^ d + 2 ^ d ≤ 2 ^ 32 := by
-      have := Nat.mul_le_mul_right (2 ^ d) (show A + 1 ≤ 2 ^ (32 - d) by omega)
-      rw [Nat.add_mul, Nat.one_mul, ← Nat.pow_add, Nat.sub_add_cancel (by omega)] at this
+      have := Nat.mul_le_mul_right (2 ^ d) (show A + 1 ≤ 2 ^ (32 - d) by omega_using [hAl])
+      rw [Nat.add_mul, Nat.one_mul, ← Nat.pow_add, Nat.sub_add_cancel (by omega_using [hd'])] at this
       exact this
-    rw [BitVec.toNat_add, ror_shl hd'.1 hd'.2 _ hb hAl, v₁, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, ror_shl hd'.1 hd'.2 _ hb hAl, v₁, Nat.mod_eq_of_lt (by omega_using [hc', hp])]
 
 theorem accSs_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (o : Nat) (a : Nat → Nat) :
     ∀ (j : Nat) (is : List Instr) (s : State) (P : State → Prop) (A : Nat),
@@ -114,23 +114,23 @@ theorem accSs_spec {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) (o : Na
       rw [← Nat.pow_add]; congr 1; rw [Nat.mul_succ, Nat.add_comm]
     have hAl : A < 2 ^ (32 - d) := by
       have h1 : (A + 1) * 2 ^ d ≤ 2 ^ (32 - d) * 2 ^ d := by
-        rw [← Nat.pow_add, Nat.sub_add_cancel (by omega)]
+        rw [← Nat.pow_add, Nat.sub_add_cancel (by omega_using [hd'])]
         refine Nat.le_trans ?_ hb
         rw [hsplit, ← Nat.mul_assoc]
         exact Nat.le_mul_of_pos_right _ hpj
       have := Nat.le_of_mul_le_mul_right h1 (Nat.two_pow_pos d)
-      omega
+      omega_using [this]
     rw [accSs, List.append_assoc]
-    refine accS_spec hd o j _ s P (hc j (by omega)) hA hAl fun s₁ o₁ v₁ => ?_
-    refine accSs_spec hd o a j is s₁ P _ (fun i hi => (hc i (by omega)).of_only o₁ (by decide)) v₁ ?_
+    refine accS_spec hd o j _ s P (hc j (by omega_using [])) hA hAl fun s₁ o₁ v₁ => ?_
+    refine accSs_spec hd o a j is s₁ P _ (fun i hi => (hc i (by omega_using [hi])).of_only o₁ (by decide)) v₁ ?_
       fun s₂ o₂ v₂ => k s₂ ((o₁.trans o₂).mono fun r hr => by
         rcases List.mem_append.mp hr with h | h <;> exact h) ?_
     · have hc' := cf_lt d (a j)
-      have : A * 2 ^ d + cf d (a j) + 1 ≤ (A + 1) * 2 ^ d := by rw [Nat.add_mul]; omega
+      have : A * 2 ^ d + cf d (a j) + 1 ≤ (A + 1) * 2 ^ d := by rw [Nat.add_mul]; omega_using [hc']
       refine Nat.le_trans (Nat.mul_le_mul_right _ this) ?_
       rw [Nat.mul_assoc, ← hsplit]; exact hb
     · rw [v₂, pk, hsplit, Nat.add_mul, Nat.mul_assoc]
-      omega
+      omega_using []
 
 /-! ## Single instructions -/
 

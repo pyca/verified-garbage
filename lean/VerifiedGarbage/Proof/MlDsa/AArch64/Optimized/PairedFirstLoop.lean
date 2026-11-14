@@ -2,11 +2,97 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `MlDsa.AArch64.Optimized.PairedFirstRoots`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+theorem local_words {m : Mem} {p : Addr} (h : PairedTable.Words m p)
+    {u : Nat} (hu : u<8) (i : Fin 7) {e : Nat} (he : e<4) :
+    vword (m.read (p+BitVec.ofNat 64 (480*u+localOffset i.val)) 16) e=BitVec.ofInt 32 (localRoot u i.val e) ∧
+    vword (m.read (p+BitVec.ofNat 64 (480*u+localOffset i.val+16)) 16) e=
+      BitVec.ofInt 32 (reciprocal (localRoot u i.val e)) := by
+  by_cases hi : i.val<4
+  · simp only [localOffset,localRoot,localIndex,hi,ite_true,← Nat.add_assoc]
+    exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (63-4*u-i.val)) (h.layer4 (u := u) (g := i.val) (e := e) hu hi he)
+  · by_cases hj : i.val<6
+    · simp only [localOffset,localRoot,localIndex,hi,hj,ite_false,ite_true,← Nat.add_assoc]
+      exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (31-2*u-(i.val-4))) (h.layer8 (u := u) (g := i.val-4) (e := e) hu (by omega_using [hj]) he)
+    · simp only [localOffset,localRoot,localIndex,hi,hj,ite_false]
+      exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (15-u)) (h.layer16 (u := u) (e := e) hu he)
+
+
+theorem packed_words {m : Mem} {p : Addr} (h : PairedTable.Words m p)
+    {u g len e : Nat} (hu : u<8) (hg : g<4) (hl : len=1 ∨ len=2) (he : e<4) :
+    vword (m.read (p+BitVec.ofNat 64 (480*u+packedOffset g len)) 16) e=BitVec.ofInt 32 (packedRoot u g len e) ∧
+    vword (m.read (p+BitVec.ofNat 64 (480*u+packedOffset g len+16)) 16) e=
+      BitVec.ofInt 32 (reciprocal (packedRoot u g len e)) := by
+  rcases hl with rfl | rfl
+  · simp only [packedRoot,packedOffset,ite_true,← Nat.add_assoc]
+    exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (255-16*u-4*g-e))
+      (h.layer1 (u := u) (g := g) (e := e) hu hg he)
+  · simp only [packedRoot,packedOffset,show ¬(2=1) by decide,ite_false,← Nat.add_assoc]
+    exact nat_row (n := VG.Impl.MlDsa.AArch64.Optimized.Inverse.z (127-8*u-2*g-e/2))
+      (h.layer2 (u := u) (g := g) (e := e) hu hg he)
+
+theorem packed_tableRoots {s : State} {p : Addr} {u : Nat} (hu : u<8)
+    (h : PairedTable.Words s.mem p)
+    (hr : ∀ off, off+16≤4096 → InRegions (s.rd++s.wr) (p+BitVec.ofNat 64 off) 16)
+    (hx : s.gpr .x1=p+BitVec.ofNat 64 (480*u))
+    (hq : ∀ e<4, vword (s.v .v31) e=8380417#32) : PackedRoots s (packedRoot u) := by
+  refine ⟨hq,fun g _ len _ e _ => packedRoot_range u g len e,?_,?_,?_⟩
+  · intro g hg len hl b hb
+    rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    have ho : packedOffset g len≤224 := by
+      rcases hl with rfl | rfl <;> simp [packedOffset] <;> omega_using [hg]
+    exact hr _ (by rcases hb with rfl | rfl <;> omega_using [hu, ho])
+  · intro g hg len hl e he
+    rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    exact (packed_words h hu hg hl he).1
+  · intro g hg len hl e he
+    rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    simpa only [Nat.add_assoc] using (packed_words h hu hg hl he).2
+
+theorem local_tableReady {s : State} {p : Addr} {u : Nat} (hu : u<8)
+    (h : PairedTable.Words s.mem p)
+    (hr : ∀off,off+16≤4096 → InRegions (s.rd++s.wr) (p+BitVec.ofNat 64 off) 16)
+    (hx : s.gpr .x1=p+BitVec.ofNat 64 (480*u)) (i : Fin 7) :
+    RootReady s (localOffset i.val) (localRoot u i.val) := by
+  have hb := localOffset_bound i
+  refine ⟨hb.2,by omega_using [hb],?_,?_,fun e _ => localRoot_range u i e,?_,?_⟩
+  · rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    exact hr _ (by omega_using [hu, hb])
+  · rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    exact hr _ (by omega_using [hu, hb])
+  · intro e he
+    rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    exact (local_words h hu i he).1
+  · intro e he
+    rw [hx,BitVec.add_assoc,← BitVec.ofNat_add]
+    simpa only [Nat.add_assoc] using (local_words h hu i he).2
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
 
 /-! ## From `PairedAdvance.lean` -/
 
@@ -45,7 +131,7 @@ theorem tableWords_frame {m m' : Mem} {p : Addr} {rs : List Region}
     (h : PairedTable.Words m p) (hf : Frame rs m m')
     (hd : ∀r∈rs,(⟨p,4096⟩:Region).Disjoint r) : PairedTable.Words m' p := by
   intro k hk
-  rw [hf.readW (r:=⟨p,4096⟩) (by exact Offset.contains_base p (by omega) (by omega)) hd (by decide)]
+  rw [hf.readW (r:=⟨p,4096⟩) (by exact Offset.contains_base p (by omega_using [hk]) (by omega_using [hk])) hd (by decide)]
   exact h k hk
 
 theorem firstLoop_ok {s : State}
@@ -73,7 +159,7 @@ theorem firstLoop_ok {s : State}
   · intro u hu t hi _
     rcases hi with ⟨hk,hqt,hp0,hp1,hp13,hp14,hm⟩
     have hf : Frame [(⟨s.gpr .x0,2048⟩ : Region)] s.mem t.mem := by
-      rw [hm]; exact firstPass_frame (by omega)
+      rw [hm]; exact firstPass_frame (by omega_using [hu])
     have ht' : PairedTable.Words t.mem (s.gpr .x1) :=
       tableWords_frame ht hf (by simpa only [List.mem_singleton,forall_eq,Region] using hd)
     have hrt' : ∀ off, off+16≤4096 → InRegions (t.rd++t.wr) (s.gpr .x1+BitVec.ofNat 64 off) 16 := by
@@ -81,7 +167,7 @@ theorem firstLoop_ok {s : State}
     have hqword : ∀ e<4, vword (t.v .v31) e=8380417#32 := by
       intro e he
       rw [hqt.qv,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-      have heq : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+      have heq : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
       rcases heq with rfl | rfl | rfl | rfl <;> rfl
     refine first_ok u hqt (packed_tableRoots hu ht' hrt' hp1 hqword)
       (local_tableReady hu ht' hrt' hp1) ?_ ?_ fun t₁ ⟨v,hv,hv₁⟩ => ?_
@@ -98,13 +184,13 @@ theorem firstLoop_ok {s : State}
       · exact ⟨by rw [hvec₂,hv₁.v,hv.get .v31 (by decide)]; exact hqt.qv,
           by rw [hvec₂,hv₁.v,hv.get .v30 (by decide)]; exact hqt.qiv⟩
       · rw [hp₂,hk₁.get .x0,hp0]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₃,hk₁.get .x1,hp1]
-        rw [show 480*(u+1)=480*u+480 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 480*(u+1)=480*u+480 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₄,hk₁.get .x13,hp13]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hp₅,hk₁.get .x14,hp14]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]; rfl
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]; rfl
       · rw [hm₂,hv₁.mem]
         simp only [inputValues_eq,hm,hp0,hp13,hp14,firstPassMem]
       · rw [hc₂,hk₁.get .x11]; rfl

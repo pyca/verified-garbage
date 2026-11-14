@@ -768,7 +768,7 @@ theorem pub_of {D : Nat} {hash : List Byte → List Byte} {n : Nat} {s₁ s₂ :
   simp only [argVal32] at h
   obtain ⟨e, a0, a1, a2, a3⟩ := h
   refine ⟨e, fun i hi => ?_⟩
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · rwa [setWidth32_64, setWidth32_64] at a0
   · rwa [setWidth32_64, setWidth32_64] at a1
   · rwa [setWidth32_64, setWidth32_64] at a2
@@ -789,7 +789,7 @@ theorem digestMain_stack (hH : HashOK H) : stackUse (digestMain H) ≤ 48 := by
   have := hH.initSU; have := hH.updSU; have := hH.finSU
   simp only [digestMain, Impl.Pbkdf2.Stream.X86.copy, Hash.callInit, stackUse, frameBytes, List.length_cons,
     List.length_nil, Nat.max_le] at *
-  omega
+  omega_arith
 
 /-- `digestMain`'s instructions all satisfy `p` if those of the functions it
 calls do and those of its own pieces do (`shapeOf`, decided for each hash
@@ -819,9 +819,9 @@ theorem framed (hH : HashOK H) (h : Verified X86.target (digestMain H) (digestSc
     (words := dbytes H / 4) h
     (by
       change 8 + 4 * 3 + nw H * 8 ≤ dframe H ∧ dframe H < 4096 ∧ dframe H % 4 = 0
-      simp only [nw, dframe, dbytes, Hash.buf] at *; omega)
+      simp only [nw, dframe, dbytes, Hash.buf] at *; omega_arith)
     hsp (digestMain_stack hH)
-    (by simp only [nw, dbytes, Elem.size]; omega)
+    (by simp only [nw, dbytes, Elem.size]; omega_using [])
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (MdStream.Digest.digestPost_local _ _ _)
     (MdStream.Digest.digestPostOut_local _ _ _) hsat (hl := rfl)
 

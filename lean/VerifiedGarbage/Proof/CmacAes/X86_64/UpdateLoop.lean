@@ -55,7 +55,7 @@ theorem callEntry_frame (s : State) : Frame [below (s.gpr .rsp) 8] s.mem s.callE
 theorem ofBytes_zeros : Spec.Gcm.ofBytes (Spec.Cmac.zeros 16) = 0 := by decide
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hR])
 
 theorem one_toNat : (1 : BitVec 64).toNat = 1 := rfl
 
@@ -127,7 +127,7 @@ theorem ctr_call (v : Ctr32Impl) {s : State} {W C D S : Addr} {R : Nat} (h : Cal
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (h.stkW.sub_right (Region.sub_prefix hRb)).symm)
-      (by omega)
+      (by omega_using [hRb])
     have eC := bytesAt_frame fE (p := C) (n := 16)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.stkC.symm) (by decide)
     have eD := bytesAt_frame fE (p := D) (n := 16)
@@ -157,6 +157,100 @@ theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
     State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## Without a scratch buffer -/
+
+/-- `CallPre` for an implementation that needs no scratch buffer
+(`Aes.X86_64.Ctr32Free`): none is given, `r9` any public value. -/
+structure CallPreF (s : State) (W C D S : Addr) (R : Nat) : Prop where
+  rdi : s.gpr .rdi = W
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = C
+  rcx : s.gpr .rcx = D
+  r8 : s.gpr .r8 = 1
+  r9 : s.gpr .r9 = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  wc : (⟨W, 240⟩ : Region).Disjoint ⟨C, 16⟩
+  wd : (⟨W, 240⟩ : Region).Disjoint ⟨D, 16⟩
+  cd : (⟨C, 16⟩ : Region).Disjoint ⟨D, 16⟩
+  stkW : (below (s.gpr .rsp) 8).Disjoint ⟨W, 240⟩
+  stkC : (below (s.gpr .rsp) 8).Disjoint ⟨C, 16⟩
+  stkD : (below (s.gpr .rsp) 8).Disjoint ⟨D, 16⟩
+  wrap : D.toNat + 16 ≤ 2 ^ 64
+  reads : Covers ([⟨W, 240⟩] ++ [⟨C, 16⟩, ⟨D, 16⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨D, 16⟩] s.wr
+  zero : Spec.Aes.bytesAt s.mem D 16 = Spec.Cmac.zeros 16
+
+/-- What a call of `vg_aes_ctr32` on one block, without a scratch buffer, leaves. -/
+structure CallPostF (s : State) (W C D : Addr) (R : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨C, 16⟩, ⟨D, 16⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  out : Spec.Aes.bytesAt s'.mem D 16 =
+    Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1))) (Spec.Aes.bytesAt s.mem C 16)
+
+theorem CallPreF.ctr_pre {s : State} {W C D S : Addr} {R : Nat} (h : CallPreF s W C D S R) :
+    Proof.Aes.X86_64.AesNi.ctr32X86_64F.pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨C, 16⟩, ⟨D, 16⟩]) := by
+  have hR := toNat_rounds h.rounds
+  simp only [Proof.Aes.X86_64.AesNi.ctr32X86_64F, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, one_toNat, Nat.mul_one]
+  exact ⟨trivial, trivial, h.wc, by simpa using h.wd, by simpa using h.cd, h.stkC, by simpa using h.stkD,
+    by simpa using h.wrap, h.rounds⟩
+
+theorem ctr_callF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s : State} {W C D S : Addr}
+    {R : Nat} (h : CallPreF s W C D S R) :
+    WP isa (.call v.callee.name v.callee.code) s (CallPostF s W C D R) := by
+  have hR := toNat_rounds h.rounds
+  refine WP.call (k := Proof.Aes.X86_64.AesNi.ctr32X86_64F) f.ok v.nosp (by rw [v.depth]; decide)
+    (rd := [⟨W, 240⟩]) (wr := [⟨C, 16⟩, ⟨D, 16⟩]) h.ctr_pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [v.depth] at hf
+  refine ⟨hrd, hwr, hcs, ?_, ?_⟩
+  · simpa using hf
+  · obtain ⟨hdata, -⟩ := hpost
+    simp only [State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+      State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+      State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR,
+      one_toNat] at hdata
+    have fE := callEntry_frame s
+    have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with rfl | rfl | rfl <;> decide
+    have eW := bytesAt_frame fE (p := W) (n := 16 * (R + 1))
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (h.stkW.sub_right (Region.sub_prefix hRb)).symm)
+      (by omega_using [hRb])
+    have eC := bytesAt_frame fE (p := C) (n := 16)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.stkC.symm) (by decide)
+    have eD := bytesAt_frame fE (p := D) (n := 16)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.stkD.symm) (by decide)
+    have one : ∀ m : Mem, Spec.Gcm.blocksAt m D 1 = [Spec.Gcm.blockAt m D] := fun m => by
+      simp [Spec.Gcm.blocksAt]
+    have bD : Spec.Gcm.blockAt s.callEntry.mem D = 0 := by
+      rw [Spec.Gcm.blockAt, eD, h.zero, ofBytes_zeros]
+    have bC : Spec.Gcm.blockAt s.callEntry.mem C = Spec.Gcm.ofBytes (Spec.Aes.bytesAt s.mem C 16) := by
+      rw [Spec.Gcm.blockAt, eC]
+    rw [one, one, bD, bC, eW, Proof.Cmac.ctr32_one, List.cons.injEq] at hdata
+    rw [← hm₂, Proof.Cmac.bytesAt_blockAt, hdata.1,
+      Proof.Cmac.aesWith_bytes _ _ (Proof.Cmac.bytesAt_length _ _ _)]
+
+theorem ctr_relF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W C D S : Addr, ∃ R : Nat,
+      CallPreF s₁ W C D S R ∧ CallPreF s₂ W C D S R ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True := by
+  refine RelCT.callEx f.ok f.ct fun s₁ s₂ hp => ?_
+  obtain ⟨W, C, D, S, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.ctr_pre, h₂.ctr_pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [Proof.Aes.X86_64.AesNi.ctr32X86_64F, Proof.Aes.X86_64.AesNi.ctr32X86_64, State.withRegions_gpr,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
+    h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
 end VG.Proof.CmacAes.X86_64
 
@@ -255,6 +349,28 @@ def finalizeX86_64 : Contract isa where
       s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
       s₁.gpr .rsp = s₂.gpr .rsp
 
+
+/-- `finalizeX86_64` when `vg_aes_ctr32` needs no working space
+(`Aes.X86_64.Ctr32Free`): of `scratch`, only the counter block at
+`scratch + 2048` is written, so its caller need give no more. -/
+def finalizeX86_64F : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .rdi, 272⟩
+    let state : Region := ⟨s.gpr .rdx, 16⟩
+    let last : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
+    let cb : Region := ⟨s.gpr .r9 + BitVec.ofNat 64 2048, 16⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack := below (s.gpr .rsp) 8
+    s.rd = [key, last] ∧ s.wr = [state, cb] ∧
+      key.Disjoint state ∧ key.Disjoint cb ∧ last.Disjoint state ∧ last.Disjoint cb ∧
+      state.Disjoint cb ∧ ret.Disjoint state ∧ ret.Disjoint cb ∧
+      stack.Disjoint key ∧ stack.Disjoint last ∧ stack.Disjoint state ∧ stack.Disjoint cb ∧
+      (s.gpr .rdi).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧
+      (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9 + BitVec.ofNat 64 2048).toNat + 16 ≤ 2 ^ 64 ∧
+      ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14) ∧
+      (s.gpr .r8).toNat ≤ 16
+  post := finalizeX86_64.post
+  pub := finalizeX86_64.pub
 end VG.Proof.CmacAes.X86_64
 
 end
@@ -471,15 +587,15 @@ theorem UPre.scr_sub {d n : Nat} (h : d + n ≤ 2176) : Region.Sub ⟨S s₀ + B
 
 theorem UPre.data_sub {k : Nat} (hk : k < N s₀) :
     Region.Sub ⟨Dp s₀ + BitVec.ofNat 64 (16 * k), 16⟩ (dataR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hk])
 
 end
 
 theorem slot_contains (b : Addr) {d : Nat} (h₁ : 2064 ≤ d) (h₂ : d + 8 ≤ 2112) :
     (⟨b + BitVec.ofNat 64 2064, 48⟩ : Region).Contains (b + BitVec.ofNat 64 d) 8 := by
   rw [show b + BitVec.ofNat 64 d = (b + BitVec.ofNat 64 2064) + BitVec.ofNat 64 (d - 2064) from
-    (Offset.add_add_eq b (by omega)).symm]
-  exact Offset.contains_base _ (by omega) (by omega)
+    (Offset.add_add_eq b (by omega_using [h₁])).symm]
+  exact Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
 
 /-- Saving the registers changes only their slots. -/
 theorem savedMem_frame (s : State) : Frame [⟨s.gpr .r9 + BitVec.ofNat 64 2064, 48⟩] s.mem (savedMem s) :=
@@ -506,7 +622,7 @@ theorem rsi_ofNat (s₀ : State) : s₀.gpr .rsi = BitVec.ofNat 64 (R s₀) := b
 theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
     (blks s₀).take (k + 1) =
       (blks s₀).take k ++ [Spec.Aes.bytesAt s₀.mem (Dp s₀ + BitVec.ofNat 64 (16 * k)) 16] := by
-  rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cmac.blocksAt]; omega)]
+  rw [List.take_add_one, List.getElem?_eq_getElem (by simp [Spec.Cmac.blocksAt]; omega_using [hk])]
   simp [Spec.Cmac.blocksAt]
 
 theorem in_rw {rs : List Region} {r : Region} (hr : r ∈ rs) {a : Addr} {n : Nat} (hc : r.Contains a n) :
@@ -523,8 +639,8 @@ include hp
 
 theorem UPre.sched_bytes {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
     Spec.Aes.bytesAt m (W s₀) (16 * (R s₀ + 1)) = Spec.Aes.bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)) := by
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
+  refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hR])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.sch_st.sub_left (Region.sub_prefix hR)
@@ -571,15 +687,15 @@ theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s 
     WP isa (.block (chainIn ++ updArgs)) s (BodyA s₀ k s) := by
   have hRegs : s.rd ++ s.wr = [schR s₀, dataR s₀, stR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have hW : s.wr = [stR s₀, scrR s₀] := by rw [h.wr, hp.wr]
-  have h16k : 16 * k + 16 ≤ 16 * N s₀ := by omega
+  have h16k : 16 * k + 16 ≤ 16 * N s₀ := by omega_using [hk]
   have hdw := hp.data_wrap
   have cSt0 : (stR s₀).Contains (St s₀) 8 := by
     simpa using Offset.contains_base (St s₀) (d := 0) (n := 8) (k := 16) (by decide) (by decide)
   have cSt8 : (stR s₀).Contains (St s₀ + BitVec.ofNat 64 8) 8 := Offset.contains_base _ (by decide) (by decide)
   have cQ0 : (dataR s₀).Contains (Dp s₀ + BitVec.ofNat 64 (16 * k)) 8 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, hdw])
   have cQ8 : (dataR s₀).Contains (Dp s₀ + BitVec.ofNat 64 (16 * k) + BitVec.ofNat 64 8) 8 := by
-    rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, hdw])
   have cC0 : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 2048) 8 := Offset.contains_base _ (by decide) (by decide)
   have cC8 : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 2048 + BitVec.ofNat 64 8) 8 := by
     rw [Offset.add_add]; exact Offset.contains_base _ (by decide) (by decide)
@@ -592,9 +708,9 @@ theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s 
       (by rw [hW]; exact in_rw (by simp) cSt0) (by rw [hW]; exact in_rw (by simp) cSt8)
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [cs₁ .rsp (by simp [calleeSaved]), h.rsp]
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   have cDis : (⟨S s₀ + BitVec.ofNat 64 2048, 16⟩ : Region).Disjoint ⟨S s₀, 2048⟩ :=
-    Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)
+    Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])
   have pre : CallPre s₁ (W s₀) (S s₀ + BitVec.ofNat 64 2048) (St s₀) (S s₀) (R s₀) :=
     { rdi := by rw [rdi₁, h.rbx]
       rsi := by rw [rsi₁, h.rbp, rsi_ofNat]
@@ -637,7 +753,7 @@ theorem bodyA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s 
 theorem body_ok (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : LInv s₀ k s) :
     WP isa (body v.callee) s fun s' => LInv s₀ (k + 1) s' ∧ s'.zf = some (decide (N s₀ - (k + 1) = 0)) := by
-  have h16k : 16 * k + 16 ≤ 16 * N s₀ := by omega
+  have h16k : 16 * k + 16 ≤ 16 * N s₀ := by omega_using [hk]
   have hdw := hp.data_wrap
   refine WP.seq (WP.mono (bodyA_wp hp hk h) fun s₁ ⟨pre, cs₁, mem₁, rd₁, wr₁⟩ => ?_)
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [cs₁ .rsp (by simp [calleeSaved]), h.rsp]
@@ -652,7 +768,7 @@ theorem body_ok (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : 
     rw [h₂.saved .r14 (by simp [calleeSaved]), cs₁ .r14 (by simp [calleeSaved]), h.r14]
   have hN := (s₀.gpr .r8).isLt
   have dec : BitVec.ofNat 64 (N s₀ - k) - 1 = BitVec.ofNat 64 (N s₀ - (k + 1)) := by
-    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
+    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hk])]; rfl
   -- Memory.
   have bigS := UPre.big_of h.frame
   have f₁ : Frame [⟨S s₀ + BitVec.ofNat 64 2048, 16⟩, ⟨St s₀, 16⟩] s.mem s₁.mem := by
@@ -673,7 +789,7 @@ theorem body_ok (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : 
   · rw [g .rbx (by simp [calleeSaved]) (by decide) (by decide), h.rbx]
   · rw [g .rbp (by simp [calleeSaved]) (by decide) (by decide), h.rbp]
   · rw [g .r12 (by simp [calleeSaved]) (by decide) (by decide), h.r12]
-  · rw [r13₃, r13₂, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega)]
+  · rw [r13₃, r13₂, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_using [])]
   · rw [r14₃, r14₂, dec]
   · rw [g .r15 (by simp [calleeSaved]) (by decide) (by decide), h.r15]
   · rw [g .rsp (by simp [calleeSaved]) (by decide) (by decide), h.rsp]
@@ -698,7 +814,7 @@ theorem body_ok (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : 
     constructor
     · intro he
       have := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdw])] at this
       simpa using this
     · intro he; rw [he]; rfl
 

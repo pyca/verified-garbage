@@ -95,8 +95,8 @@ theorem head_ct (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
   subst ea eb
   obtain ⟨hL₁, hT₁, hd₁⟩ := spec_tab h₁
   obtain ⟨hL₂, hT₂, hd₂⟩ := spec_tab h₂
-  sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at hp
@@ -122,7 +122,7 @@ theorem head_ct (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
     ⟨⟨hT₁, hd₁⟩, ⟨by rw [show (lay (S + 1) s₁).tab = stackArg s₂ 16 from a16]; exact hT₂, hd₂⟩, hsy',
       fun T hT => htab _ _ rfl a16.symm T hT⟩
   refine ⟨ht, ⟨lay (S + 1) s₁, s₁.gpr, s₂.gpr, s₁.v, s₂.v, s₁.mem, s₂.mem⟩, lay_ok h₁, rfl,
-    ⟨⟨?_, ?_⟩, htaL.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl),
+    ⟨⟨?_, ?_, rfl⟩, htaL.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl),
       hta.congr (by rw [Exec.syms e₁]; rfl) (by rw [Exec.syms e₂]; rfl)⟩, y₁, e ▸ y₂⟩
   · show Spec.Rsa.bytesAt s₁.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat = Spec.Rsa.bytesAt s₂.mem (s₁.gpr .x3) (s₁.gpr .x4).toNat
     rw [hn, h3, h4]
@@ -160,7 +160,7 @@ theorem priv_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v�
     hb.2.1.x2, hb.2.1.x3, hb.2.1.x4, hb.2.1.x5, hb.2.1.x6, hb.2.1.x7, ha.1.sp, hb.1.sp, true_and]
   refine ⟨fun i hi => (aa i hi).trans (ab i hi).symm, ?_, ?_⟩
   · rw [ha.1.bytes_ro hL (ro_N L), hb.1.bytes_ro hL (ro_N L)]; exact hk.1
-  · rw [ha.1.bytes_ro hL (ro_E L), hb.1.bytes_ro hL (ro_E L)]; exact hk.2
+  · rw [ha.1.bytes_ro hL (ro_E L), hb.1.bytes_ro hL (ro_E L)]; exact hk.2.1
 
 /-- After the call. -/
 abbrev CalledI : Inv := fun L g vv m₀ t => ∃ W, Called L g vv m₀ W t ∧ Slots L W
@@ -211,7 +211,7 @@ theorem lenLoad_ct {S : Nat} (hS : 15 ≤ S) :
     RelCT isa (Two S (tables vs) (WithL (tables vs) (tableOf w₁) SlotI)) (.block lenLoad)
       (Two S (tables vs) (WithL (tables vs) (tableOf w₁) (LenI w₁.H.D))) := by
   refine two_wp (fun e => ?_) fun L g vv m₀ t hL hP h => ?_
-  · show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 32])) _
+  · show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 48])) _
     refine (RelCT.block_append (pw_seq_tr (X := fun W _ => W 32 = e.L.tabL) [.x16] (fun _ => e.L.tabL)
       (by taint_decide) (by taint_decide) fun g vv m₀ t V W hL hP hc R hS h32 => ?_)).mono
       (fun _ _ ⟨hL, hP, _, f₁, f₂⟩ => ⟨hL, hP, f₁.1, f₂.1⟩) fun _ _ h => h

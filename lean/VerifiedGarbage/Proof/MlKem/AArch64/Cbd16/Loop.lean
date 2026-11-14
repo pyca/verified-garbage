@@ -46,7 +46,7 @@ theorem read_input {s0 s : State} (hp : Cbd2.Pre s0) {k : Nat} (hk : k < 8)
     vbyte (s.mem.read (s.gpr .x0) 16) e = BitVec.ofNat 8 (Cbd2.byte s0 (16*k+e)) := by
   rw [VG.Proof.Rc4.AArch64.vbyte_read _ _ he,h.x0,ptr_add]
   apply BitVec.eq_of_toNat_eq
-  rw [hp.byte_eq h.frame (by omega),BitVec.toNat_ofNat,
+  rw [hp.byte_eq h.frame (by omega_using [hk, he]),BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (byte_lt _)]
 
 
@@ -57,7 +57,7 @@ theorem step {s0 : State} (hp : Cbd2.Pre s0) {k : Nat} (hk : k < 8)
   simp only [List.cons_append,List.nil_append,List.append_assoc]
   refine wp_ldrq (a := s.gpr .x0) (by decide) (by simp) ?_ fun s1 h1 => ?_
   · rw [h.rd,h.wr,hp.rd,hp.wr,h.x0]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hk]) (by decide)))
   rw [WP.block_append_iff]
   refine WP.mono (prepare_ok s1
     (by rw [h1.get .v18]; exact h.consts.c18)
@@ -87,28 +87,28 @@ theorem step {s0 : State} (hp : Cbd2.Pre s0) {k : Nat} (hk : k < 8)
   have nb : ∀ e < 32, nib e ≤ 4 := by
     intro e _; exact (nibble_values _ (byte_lt _) _).1
   have ng : ∀ e < 32, (Cbd2.G s0 (32*k+e)).toNat = (nib e+3327)%3329 := by
-    intro e he; rw [G_nibble _ (by omega)]
-    simp only [show (32*k+e)/2 = 16*k+e/2 by omega,
-      show (32*k+e)%2 = e%2 by omega,nib]
+    intro e he; rw [G_nibble _ (by omega_using [hk, he])]
+    simp only [show (32*k+e)/2 = 16*k+e/2 by omega_using [],
+      show (32*k+e)%2 = e%2 by omega_using [],nib]
   have nl : ∀ e < 16,
       (vbyte (VPermOp.eval .zip1 .b16 (s2.v .v2) (s2.v .v3)) e).toNat = nib e ∧
       (vbyte (VPermOp.eval .zip2 .b16 (s2.v .v2) (s2.v .v3)) e).toNat = nib (16+e) := by
     intro e he
     rw [v2,v3,h1.v,(byte_zip_nibbles _ he).1,(byte_zip_nibbles _ he).2,
-      read_input hp hk h (by omega),read_input hp hk h (by omega)]
-    simp only [nib,show (16+e)/2 = 8+e/2 by omega,
-      show (16+e)%2 = e%2 by omega,and_self]
-  refine half_ok hs2 (by omega) (by decide)
+      read_input hp hk h (by omega_using [he]),read_input hp hk h (by omega_using [he])]
+    simp only [nib,show (16+e)/2 = 8+e/2 by omega_using [],
+      show (16+e)%2 = e%2 by omega_using [],and_self]
+  refine half_ok hs2 (by omega_using [hk]) (by decide)
     (by rw [gpr2,h.x1,ptr_zero])
     (by rw [wr2,h1.wr,h.wr,hp.wr]) (fun e he => (nl e he).1)
-    (fun e he => nb e (by omega)) (fun e he => ng e (by omega)) fun s3 hs3 hv3 => ?_
-  refine half_ok hs3 (by omega) (by decide) ?_ ?_
+    (fun e he => nb e (by omega_using [he])) (fun e he => ng e (by omega_using [he])) fun s3 hs3 hv3 => ?_
+  refine half_ok hs3 (by omega_using [hk]) (by decide) ?_ ?_
     (fun e he => by rw [hv3 .v2 (by decide) (by decide) (by decide) (by decide),
       hv3 .v3 (by decide) (by decide) (by decide) (by decide)]; exact (nl e he).2)
-    (fun e he => nb (16+e) (by omega)) ?_ fun s4 hs4 hv4 => ?_
+    (fun e he => nb (16+e) (by omega_using [he])) ?_ fun s4 hs4 hv4 => ?_
   · rw [hs3.gpr,gpr2,h.x1]; exact coeffAddr_off _ _ 16
   · rw [hs3.keep.wr,wr2,h1.wr,h.wr,hp.wr]
-  · intro e he; simpa only [Nat.add_assoc] using ng (16+e) (by omega)
+  · intro e he; simpa only [Nat.add_assoc] using ng (16+e) (by omega_using [he])
   have gp4 : s4.gpr = s.gpr := hs4.gpr.trans gpr2
   have scalar : WP isa (.block [.addImm .x .x0 .x0 16,.addImm .x .x1 .x1 128,
       .subImm .x .x10 .x10 1]) s4 fun t =>
@@ -120,16 +120,16 @@ theorem step {s0 : State} (hp : Cbd2.Pre s0) {k : Nat} (hk : k < 8)
     refine ⟨((h5.trans h6).trans h7).mono (by decide),?_,?_,?_⟩
     · rw [h7.get .x0,h6.get .x0,e5]; rfl
     · rw [h7.get .x1,e6,h5.get .x1]; rfl
-    · rw [e7,toNat_sub_n (by rw [h6.get .x10,h5.get .x10,gp4,h.count]; simp; omega),
+    · rw [e7,toNat_sub_n (by rw [h6.get .x10,h5.get .x10,gp4,h.count]; simp; omega_using [hk]),
         h6.get .x10,h5.get .x10,gp4,h.count]
-      simp; omega
+      simp; omega_using []
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro s7 ⟨⟨kept,xx0,xx1,cnt⟩,vv⟩
   have mm : s7.mem = s4.mem := kept.mem
   have vconst (r : VReg) (h4 : r ≠ .v4) (h5' : r ≠ .v5) (h6' : r ≠ .v6) (h7' : r ≠ .v7) :
       s7.v r = s2.v r := by
     rw [vv,hv4 r h4 h5' h6' h7',hv3 r h4 h5' h6' h7']
-  refine ⟨⟨?_,?_,?_,?_,?_,cnt,?_,?_,?_⟩,by rw [cnt]; omega⟩
+  refine ⟨⟨?_,?_,?_,?_,?_,cnt,?_,?_,?_⟩,by rw [cnt]; omega_using [hk]⟩
   · rw [kept.rd,hs4.keep.rd,rd2,h1.rd,h.rd]
   · rw [kept.wr,hs4.keep.wr,wr2,h1.wr,h.wr]
   · rw [kept.sp,hs4.keep.sp,sp2,h1.sp,h.sp]
@@ -148,8 +148,8 @@ theorem step {s0 : State} (hp : Cbd2.Pre s0) {k : Nat} (hk : k < 8)
     dsimp only
     rw [h.out i hi]
     by_cases hh : i < 32*k+16+16
-    · rw [ite_eq_left hh,ite_eq_left (by omega)]
-    · rw [ite_eq_right hh,ite_eq_right (by omega),ite_eq_right (by omega)]
+    · rw [ite_eq_left hh,ite_eq_left (by omega_using [hh])]
+    · rw [ite_eq_right hh,ite_eq_right (by omega_using [hh]),ite_eq_right (by omega_using [hh])]
   · rw [mm]; exact h.frame.trans (by simpa only [mem2] using hs4.frame)
 
 

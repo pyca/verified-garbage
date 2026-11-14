@@ -58,7 +58,7 @@ theorem readyPublicPow_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Read
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 16
     have : usedBytes < 2 ^ 16 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (corePublicPow_ok M h.parent (h.child side) (by decide) hlo hhi ho
     hw2 hw48 hw48 (by decide) hm hodd a b ⟨.local d, side.lengthField⟩ ha hb hdp
     has hbs ha1 haw hb1 hb2 (h.length side) hk1 hk31 rfl

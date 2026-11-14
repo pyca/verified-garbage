@@ -49,7 +49,7 @@ theorem ldx_ok {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (k : ∀ s', Upd s s' .eax ((s.mem (off base d)).setWidth 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.movzx8 .eax (at_ .edx 0) :: is)) s Q := by
   have e : VG.X86.addr (s.gpr .edx) 0 = off base d := by
-    simp only [VG.X86.addr, he, BitVec.add_zero]; exact Scr.wide hs (by omega)
+    simp only [VG.X86.addr, he, BitVec.add_zero]; exact Scr.wide hs (by omega_using [hd])
   refine cons (s' := s.setReg .eax ((s.mem (off base d)).setWidth 32)) ?_ (k _ (Upd.setReg _ _ _))
   have hin := hs.read (d := d) (n := 1) hd
   simp only [exec, State.load8, at_, ea_mk, e, hin, ↓reduceIte, Option.map_some]
@@ -60,7 +60,7 @@ theorem stx_ok {d : Nat} (hs : Scr s base size) (hd : d + 1 ≤ size)
     (k : ∀ s', Mupd s s' (s.mem.writeW (off base d) ((s.gpr .eax).setWidth 8)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 (at_ .edx 0) .al :: is)) s Q := by
   have e : VG.X86.addr (s.gpr .edx) 0 = off base d := by
-    simp only [VG.X86.addr, he, BitVec.add_zero]; exact Scr.wide hs (by omega)
+    simp only [VG.X86.addr, he, BitVec.add_zero]; exact Scr.wide hs (by omega_using [hd])
   refine cons (s' := { s with mem := s.mem.writeW (off base d) ((s.gpr .eax).setWidth 8) }) ?_
     (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   have hout := hs.write (d := d) (n := 1) hd
@@ -214,14 +214,14 @@ theorem addBE_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (fun m t I => WP.mono (addStep_ok hs ho I) fun t' ⟨hz, hf, hk⟩ => ?_) (n - 1) s₀ ?_
   · by_cases h0 : m = 0
     · exact .inl ⟨by simp [X86.eval, hz, h0], hf h0⟩
-    · exact .inr ⟨by simp [X86.eval, hz, h0], m - 1, by omega, hk (m - 1) (by omega)⟩
+    · exact .inr ⟨by simp [X86.eval, hz, h0], m - 1, by omega_using [h0], hk (m - 1) (by omega_using [h0])⟩
   · have hBl := VG.Proof.Bignum.bytesAt_length s.mem (off base o) n
-    refine ⟨by omega, ?_, ?_, ⟨c, ?_, hc, ?_⟩, fun i _ => by rw [u₀.mem], fun i hi hi' => by omega,
+    refine ⟨by omega_using [hn], ?_, ?_, ⟨c, ?_, hc, ?_⟩, fun i _ => by rw [u₀.mem], fun i hi hi' => by omega,
       fun x _ => by rw [u₀.mem], ⟨fun r hr => u₀.other r fun h => hr (by simp [h]), u₀.rd, u₀.wr⟩, u₀.syms⟩
     · rw [u₀.gpr, Nat.sub_add_cancel hn]
     · rw [u₀.other _ (by decide), u₀.other _ (by decide), hedx, Nat.add_sub_assoc hn]
     · rw [u₀.other _ (by decide), hecx]
     · rw [Nat.sub_add_cancel hn, List.take_of_length_le (by rw [encodeBE_length]),
-        List.take_of_length_le (by omega)]
+        List.take_of_length_le (by omega_using [hBl])]
 
 end VG.Proof.Dsa.X86.Generation

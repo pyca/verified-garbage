@@ -174,7 +174,7 @@ theorem roundRanges_lt (w : Nat) : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ slot w
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [slot, hdrBytes, aX, aAcc, aTmp, aY, aXm, aB, aT0, aE, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2,
-      kWords, kT1, kUsed, kU, kI, kElen, kUni, kP, kStat, sFn] <;> omega
+      kWords, kT1, kUsed, kU, kI, kElen, kUni, kP, kStat, sFn] <;> omega_using []
 
 /-- The witness of a round, and whether it passes. -/
 abbrev wtOf (c w used : Nat) (r : List Byte) : Nat × Bool :=

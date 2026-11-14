@@ -53,6 +53,7 @@ def pclmul : GhashImpl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_pclmul"
   features := ["pclmulqdq", "ssse3"]
+  free := some ⟨Proof.Gcm.X86_64.Pclmul.ghash_correctF, Proof.Gcm.X86_64.Pclmul.ghash_ctF⟩
 
 /-- `vg_ghash_vpclmul`. -/
 def vpclmul : GhashImpl where
@@ -65,6 +66,7 @@ def vpclmul : GhashImpl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_vpclmul"
   features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]
+  free := some ⟨Proof.Gcm.X86_64.Vpclmul.ghash_correctF, Proof.Gcm.X86_64.Vpclmul.ghash_ctF⟩
 
 end GhashImpl
 

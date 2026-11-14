@@ -33,6 +33,6 @@ theorem PowersKeep.of_rbx {base : Addr} {o n : Nat} {s t : State} (h : RbxKeep b
 
 theorem header_env {base : Addr} {m m' : Mem} (h : Outside base 56 8 m m') : env m' base = env m base := by
   funext i
-  exact Outside_F h (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega))
+  exact Outside_F h (by simp only [offset]; omega_using []) (Or.inr (by simp only [offset]; omega_using []))
 
 end VG.Proof.Ed25519.X86_64

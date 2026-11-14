@@ -65,7 +65,7 @@ theorem writeW_xorRep (m m' : Mem) (d a : Addr) (c : Byte) :
   simp only [Function.comp, Mem.readW, BitVec.setWidth_eq]
   rw [BitVec.extractLsb'_xor, extractLsb'_read _ _ hj]
   congr 1
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := decide) only [Nat.mul_zero, Nat.reduceMul, VG.extractLsb'_append_byte_lo,
       VG.extractLsb'_append_byte_hi, Nat.reduceSub, BitVec.extractLsb'_eq_self]
 
@@ -88,13 +88,13 @@ theorem writeBytes_set (m : Mem) (q : Addr) (xs : List Byte) {i : Nat} (hi : i <
   simp only [writeBytes, List.length_set]
   by_cases ha : a = q + BitVec.ofNat 64 i
   · subst ha
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hl])]
     simp [hi, List.getD_eq_getElem?_getD]
   · have hne : (a - q).toNat ≠ i := by
       intro h'
       apply ha
       have : a - q = BitVec.ofNat 64 i :=
-        BitVec.eq_of_toNat_eq (by rw [h', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)])
+        BitVec.eq_of_toNat_eq (by rw [h', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h'])])
       rw [← BitVec.sub_add_cancel a q, this, BitVec.add_comm]
     simp only [ha, ↓reduceIte]
     split
@@ -106,13 +106,13 @@ theorem bytes_over {m : Mem} {q : Addr} {xs : List Byte} {n : Nat} {b : Byte} (h
     (hm : bytesAt m q n = List.replicate n b) :
     bytesAt (writeBytes m q xs) q n = xs ++ List.replicate (n - xs.length) b := by
   have hs : Mem.Sep (q + BitVec.ofNat 64 xs.length) (n - xs.length) q xs.length := by
-    have := Offset.sep q (d := xs.length) (n := n - xs.length) (e := 0) (k := xs.length) (.inr (by omega))
-      (by omega) (by omega)
+    have := Offset.sep q (d := xs.length) (n := n - xs.length) (e := 0) (k := xs.length) (.inr (by omega_using []))
+      (by omega_using [hl, hn]) (by omega_using [hl, hn])
     rwa [BitVec.add_zero] at this
   have e := bytesAt_add (writeBytes m q xs) q xs.length (n - xs.length)
   have e' := bytesAt_add m q xs.length (n - xs.length)
-  rw [show xs.length + (n - xs.length) = n by omega] at e e'
-  rw [e, bytesAt_writeBytes_self _ _ _ (by omega), bytesAt_writeBytes_sep _ _ hs (by omega)]
+  rw [show xs.length + (n - xs.length) = n by omega_using [hl]] at e e'
+  rw [e, bytesAt_writeBytes_self _ _ _ (by omega_using [hl, hn]), bytesAt_writeBytes_sep _ _ hs (by omega_using [hn])]
   rw [hm] at e'
   rw [show bytesAt m (q + BitVec.ofNat 64 xs.length) (n - xs.length) = (List.replicate n b).drop xs.length by
     rw [e', List.drop_left' (bytesAt_length _ _ _)], List.drop_replicate]
@@ -126,7 +126,7 @@ theorem fill_mem (m : Mem) (q : Addr) (n : Nat) (h : 4 * n + 4 < 2 ^ 64) :
   have e : ∀ m' : Mem, m'.writeW (q + BitVec.ofNat 64 (4 * n)) (0x36363636 : BitVec 32) =
       writeBytes m' (q + BitVec.ofNat 64 (4 * n)) [ipad, ipad, ipad, ipad] := fun m' => by
     rw [Mem.writeW, write_eq_writeBytes]; rfl
-  have a := writeBytes_append m q (List.replicate (4 * n) ipad) [ipad, ipad, ipad, ipad] (by simp; omega)
+  have a := writeBytes_append m q (List.replicate (4 * n) ipad) [ipad, ipad, ipad, ipad] (by simp; omega_using [h])
   rw [List.length_replicate] at a
   rw [e, a, show [ipad, ipad, ipad, ipad] = List.replicate 4 ipad from rfl, List.replicate_append_replicate]
 
@@ -153,8 +153,8 @@ theorem ipadBlk_succ (m : Mem) (K : Addr) {B j : Nat} :
   by_cases hij : j = i
   · subst hij; simp
   · by_cases hi : i < j
-    · simp only [hij, hi, show i < j + 1 by omega, ↓reduceIte]
-    · simp only [hij, hi, show ¬ i < j + 1 by omega, ↓reduceIte]
+    · simp only [hij, hi, show i < j + 1 by omega_using [hi], ↓reduceIte]
+    · simp only [hij, hi, show ¬ i < j + 1 by omega_using [hij, hi], ↓reduceIte]
 
 /-- After the whole key: `K₀ ⊕ ipad`. -/
 theorem ipadBlk_eq (m : Mem) (K : Addr) {kl B : Nat} (h : kl ≤ B) :
@@ -169,7 +169,7 @@ theorem ipadBlk_eq (m : Mem) (K : Addr) {kl B : Nat} (h : kl ≤ B) :
 /-- A key of at most a block, padded with zeros. -/
 theorem blockKey_short (H : Spec.Hmac.HashFunction) {key : List Byte} (h : key.length ≤ H.blockSize) :
     blockKey H key = key ++ List.replicate (H.blockSize - key.length) 0 := by
-  simp only [blockKey, show ¬ (H.blockSize < key.length) by omega, ↓reduceIte]
+  simp only [blockKey, show ¬ (H.blockSize < key.length) by omega_using [h], ↓reduceIte]
 
 /-- The bytes of `K₀ ⊕ ipad`, for a key of `kl ≤ B` bytes: the key's
 bytes XORed with `ipad`, then `ipad`. -/
@@ -193,18 +193,18 @@ theorem xorOpad_mem (m : Mem) (A Q : Addr) (n : Nat) (hsep : Mem.Sep A (4 * n + 
   rw [c6a, writeW_xorRep, bytesAt_writeBytes_sep]
   · rw [bytesAt_add, List.map_append]
     have := writeBytes_append m Q ((bytesAt m A (4 * n)).map (· ^^^ (0x6a : Byte)))
-      ((bytesAt m (A + BitVec.ofNat 64 (4 * n)) 4).map (· ^^^ 0x6a)) (by simp [bytesAt]; omega)
+      ((bytesAt m (A + BitVec.ofNat 64 (4 * n)) 4).map (· ^^^ 0x6a)) (by simp [bytesAt]; omega_using [hlt])
     rw [hl] at this
     exact this
   · intro x hx hy
     rw [hl] at hy
-    apply hsep x _ (by omega)
+    apply hsep x _ (by omega_using [hy])
     rw [show x - A = (x - (A + BitVec.ofNat 64 (4 * n))) + BitVec.ofNat 64 (4 * n) by
         rw [← BitVec.sub_sub, BitVec.sub_add_cancel],
-      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * n) (by omega)]
+      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * n) (by omega_using [hlt])]
     have := Nat.mod_le ((x - (A + BitVec.ofNat 64 (4 * n))).toNat + 4 * n) (2 ^ 64)
-    omega
-  · omega
+    omega_using [hx]
+  · omega_using []
 
 /-- `K₀ ⊕ ipad` XORed with `ipad ⊕ opad = 0x6a` is `K₀ ⊕ opad`. -/
 theorem xorOpad_ipad (k : List Byte) : (xorPad k ipad).map (· ^^^ 0x6a) = xorPad k opad := by

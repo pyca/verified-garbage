@@ -29,7 +29,7 @@ theorem absorbBody_ok {s : State} {p a b : Addr}
       Frame [pairR p] s.mem t.mem ∧ PairAt t.mem p (seedState s.mem a) (seedState s.mem b) := by
   unfold absorbBody
   rw [WP.block_append_iff]
-  refine WP.mono (seedWords_ok hp ha hb hina hinb (fun j hj => hw j (by omega)) hda hdb hz)
+  refine WP.mono (seedWords_ok hp ha hb hina hinb (fun j hj => hw j (by omega_using [hj])) hda hdb hz)
     fun s1 ⟨h1,hf1,hpart⟩ => ?_
   refine WP.mono (seedTail_ok ((h1.gpr .x2 (by decide)).trans hp) ((h1.gpr .x3 (by decide)).trans ha)
     ((h1.gpr .x4 (by decide)).trans hb)

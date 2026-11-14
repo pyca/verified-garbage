@@ -42,10 +42,10 @@ private theorem body_ok {base : Addr} {src dst k n : Nat} {s₀ s : State}
       RecInv base dst k s₀ (n + 1) u ∧ u.zf = some (decide (n + 1 = 456)) := by
   obtain ⟨c, hc, hr, he⟩ := h.carry
   rw [recodeStep, WP.block_append_iff]
-  refine WP.mono (step_ok h.scr (by omega) h.rbx hc hr he
-    (loadBits_bits_ok h.scr (by omega) hsrc hn h.rbx (h.bits hsrc hsep hb bs))) fun a ha => ?_
-  have ia := h.advance (by omega) hb ha
-  refine WP.mono (cmp456_ok (by omega) ia.rbx) fun u ⟨hz, hu⟩ => ⟨ia.keeps hu, hz⟩
+  refine WP.mono (step_ok h.scr (by omega_using [hn, hb]) h.rbx hc hr he
+    (loadBits_bits_ok h.scr (by omega_using [hsep, hb]) hsrc hn h.rbx (h.bits hsrc hsep hb bs))) fun a ha => ?_
+  have ia := h.advance (by omega_using [hn]) hb ha
+  refine WP.mono (cmp456_ok (by omega_using [hn]) ia.rbx) fun u ⟨hz, hu⟩ => ⟨ia.keeps hu, hz⟩
 
 private theorem loop_ok {base : Addr} {src dst k : Nat} {s₀ s : State}
     (h : RecInv base dst k s₀ 0 s) (hsrc : 1 ≤ src) (hsep : src + 460 ≤ dst) (hb : dst + 461 ≤ 8192)
@@ -60,7 +60,7 @@ private theorem loop_ok {base : Addr} {src dst k : Nat} {s₀ s : State}
   by_cases hn' : n + 1 = 456
   · refine .inl ⟨?_, hn' ▸ hv⟩
     rw [he, hn']; rfl
-  · refine .inr ⟨?_, 456 - (n + 1), by omega, n + 1, by omega, rfl, hv⟩
+  · refine .inr ⟨?_, 456 - (n + 1), by omega_using [hn], n + 1, by omega_using [hn, hn'], rfl, hv⟩
     rw [he, decide_eq_false hn']; rfl
 
 private theorem zero_ok {s : State} :
@@ -85,9 +85,9 @@ private theorem tail_ok {base : Addr} {dst k : Nat} {s₀ : State} (hk : k < 2 ^
         u.gpr .rax = BitVec.ofNat 64 (k / 2 ^ n % 32) ∧
         u.gpr .rdx = BitVec.ofNat 64 (k / 2 ^ n % 2) ∧ Keeps [.rax, .rdx] s u := by
       rw [hq]; exact zero_ok
-    refine WP.seq (WP.mono (step_ok h.scr (by omega) h.rbx hc hr he hp) fun u hu => ?_)
-    have hnext := ih (n + 1) (by omega) (by omega) u (h.advance (by omega) hb hu)
-    rw [show n + 1 + m = n + (m + 1) by omega] at hnext
+    refine WP.seq (WP.mono (step_ok h.scr (by omega_using [hb, hnm]) h.rbx hc hr he hp) fun u hu => ?_)
+    have hnext := ih (n + 1) (by omega_using [hn]) (by omega_using [hnm]) u (h.advance (by omega_using [hnm]) hb hu)
+    rw [show n + 1 + m = n + (m + 1) by omega_using []] at hnext
     exact hnext
 
 theorem recode_ok {s : State} {base : Addr} (hs : Scr s base) {src dst k : Nat}

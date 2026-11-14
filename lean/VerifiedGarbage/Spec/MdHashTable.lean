@@ -24,20 +24,19 @@ which the function calls indirectly (`Code.icall`):
 4. the digest, from the hash value;
 
 then `dataWords` words of data: the index of the hash function in
-`Mgf1.hashes` (`hashAt`, as for `Hash`), its digest length, its block size,
+`Mgf1.hashes` (`hashAt`, `HashTable.index`), its digest length, its block size,
 the size of its length field, the size of its streaming state, and 1 if its
 length field and words are big-endian (0 if little-endian).
 
-As for `Hash` (`Spec/HashTable.lean`), a contract says what a function
-computes with the hash function its table names (`hashAt`). It does not say
-what the table's functions do, or what the data after the first two words
-hold: the proof of each function taking one runs the code of the functions
-of every table of the interface (each table its registration lists, which
-the emitter checks is every table of `MdHash`), with each table's own data,
-so that it holds only if each table's functions and data compute the hash
-function its first word of data names. Which table is passed is public
-(`Abi.withTables`): the Rust caller chooses it by the hash function and the
-CPU's features.
+A contract says what a function computes with the hash function its table
+names (`hashAt`). It does not say what the table's functions do, or what the
+data after the first two words hold: the proof of each function taking one
+runs the code of the functions of every table of the interface (each table
+its registration lists, which the emitter checks is every table of
+`MdHash`), with each table's own data, so that it holds only if each table's
+functions and data compute the hash function its first word of data names.
+Which table is passed is public (`Abi.withTables`): the Rust caller chooses
+it by the hash function and the CPU's features.
 -/
 
 @[expose] public section
@@ -68,8 +67,8 @@ its first word of data (its word `fns`, `ptrBits` bits wide, as
 def hashAt (ptrBits : Nat) (m : Mem) (p : Addr) : Option Hash :=
   Mgf1.hashes[(m.readW (p + BitVec.ofNat 64 (ptrBits / 8 * fns)) ptrBits).toNat]?
 
-/-- The first two words of data of a table of `G`, as for `Hash`: its index
-in `Mgf1.hashes`, and its digest length. -/
+/-- The first two words of data of a table of `G` (`HashTable.dataOf`): its
+index in `Mgf1.hashes`, and its digest length. -/
 def dataOf (G : Hash) : List (BitVec 64) := HashTable.dataOf G
 
 end VG.Spec.MdHashTable

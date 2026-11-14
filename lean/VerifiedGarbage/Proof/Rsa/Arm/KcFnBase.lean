@@ -89,14 +89,14 @@ theorem FnPre.kb {s : State} (h : FnPre nA iS ins s) : 64 ≤ fK s ∧ fK s ≤ 
 theorem FnPre.w16 {s : State} (h : FnPre nA iS ins s) : 16 ≤ (geo iS s).w ∧ (geo iS s).w ≤ 256 := by
   have := h.valid; simp only [Spec.Rsa.lenValid] at this
   simp only [Geo.w]
-  omega
+  omega_using [this]
 
 /-- The working space is large enough for the arrays. -/
 theorem FnPre.fits {s : State} (h : FnPre nA iS ins s) : arr (geo iS s).w nArr ≤ (geo iS s).Z := by
   have := h.valid; have := h.scr
   simp only [Spec.Rsa.lenValid, Spec.Rsa.scratchWords, fK] at *
   simp only [arr, S, hdr, nArr, Geo.w, fK]
-  omega
+  omega_arith
 
 theorem FnBase.of_rest {σ s t : State} (h : FnBase nA iS ins σ s) {ws : List Reg} (r : Rest ws s t)
     (m : t.mem = s.mem) : FnBase nA iS ins σ t :=
@@ -107,7 +107,7 @@ theorem out_of_ofs {σ : State} {x : Addr} (hx : ¬ (rS iS σ).Contains x 1) :
     (geo iS σ).Z ≤ ofs (State.addr (geo iS σ).B) x := by
   simp only [Region.Contains] at hx
   simp only [ofs]
-  omega
+  omega_using [hx]
 
 theorem FnBase.keep {σ s t : State} (h : FnBase nA iS ins σ s) {js ds : List Nat}
     (k : Keep (geo iS σ).B (geo iS σ).w js ds s.mem t.mem) (hjs : ∀ j ∈ js, j < nArr)
@@ -119,7 +119,7 @@ theorem FnBase.keep {σ s t : State} (h : FnBase nA iS ins σ s) {js ds : List N
       (out_of_ofs (by simpa using hx))
     · exact Nat.le_trans (arr_end (hjs j hj)) fits
     · exact Nat.le_trans (hdh d hd) (Nat.le_trans (Nat.le_add_right _ _) fits)
-  · rw [k.slot (by simp only [hdr]; omega) (fun d hd => by rcases hds d hd with e | e <;> omega)]
+  · rw [k.slot (by simp only [hdr]; omega_using [hi]) (fun d hd => by rcases hds d hd with e | e <;> omega_arith)]
     exact h.saved i hi
 
 /-- A store outside the header's saved words. -/
@@ -131,7 +131,7 @@ theorem FnBase.outside {σ s t : State} (h : FnBase nA iS ins σ s) {o n : Nat}
   refine ⟨h.pre, sp.trans h.sp, rd.trans h.rd, wr.trans h.wr, h.frame.trans fun x hx => ?_, fun i hi => ?_⟩
   · exact hf x (.inr (Nat.le_trans hn (out_of_ofs (by simpa using hx))))
   · rw [← h.saved i hi]
-    exact hf.w32 (d := 20 + 4 * i) (by omega) (by omega)
+    exact hf.w32 (d := 20 + 4 * i) (by omega_using [ho, hi]) (by omega_using [hi])
 
 /-- A stack argument. -/
 theorem FnBase.arg {σ s : State} (h : FnBase nA iS ins σ s) {i : Nat} (hi : i < nA) :
@@ -142,9 +142,9 @@ theorem FnBase.arg {σ s : State} (h : FnBase nA iS ins σ s) {i : Nat} (hi : i 
   rw [ea]
   refine h.frame.readW (r := rA nA σ) ?_ (fun r hr => ?_) (by decide)
   · simp only [Region.Contains, stackArgAddr]
-    rw [addr_add (by omega), addr_add (by omega), Nat.mul_zero, BitVec.add_zero, Offset.add_sub_cancel_left,
+    rw [addr_add (by omega_using [hi, sp]), addr_add (by omega_using []), Nat.mul_zero, BitVec.add_zero, Offset.add_sub_cancel_left,
       BitVec.toNat_ofNat]
-    omega
+    omega_using [hi]
   · simp only [List.mem_singleton] at hr; subst hr; exact h.pre.sA.symm
 
 theorem FnBase.rA_mem {σ s : State} (h : FnBase nA iS ins σ s) : rA nA s ∈ s.rd := by
@@ -159,9 +159,9 @@ theorem wp_ldrSpA {s : State} (hrd : rA nA s ∈ s.rd) (sp : s.sp.toNat + 4 * nA
   have hin : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * i))) 4 := by
     refine ⟨rA nA s, List.mem_append_left _ hrd, ?_⟩
     simp only [Region.Contains, stackArgAddr]
-    rw [addr_add (by omega), addr_add (by omega), Nat.mul_zero, BitVec.add_zero,
+    rw [addr_add (by omega_using [sp, hi]), addr_add (by omega_using []), Nat.mul_zero, BitVec.add_zero,
       Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    omega
+    omega_using [hi]
   simp only [exec, h4, ↓reduceIte, State.load32, hin, Option.map_some]
   rfl
 

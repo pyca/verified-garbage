@@ -107,6 +107,12 @@ macro_rules! mldsa_tests {
                     // Every valid vector gives `μ`; some (`Internal`) give no message.
                     let mu: [u8; 64] = c.mu.as_ref().unwrap().0[..].try_into().unwrap();
                     assert_eq!(key.sign_mu(&mu, &rnd), Ok(sig), "tcId {id}");
+                    let prepared = $SigningKey::from_seed(&seed).unwrap().prepare();
+                    assert_eq!(prepared.sign_mu(&mu, &rnd), Ok(sig), "tcId {id}");
+                    assert_eq!(
+                        key.verifying_key().clone().prepare().verify_mu(&mu, &sig),
+                        Ok(())
+                    );
                     assert_eq!(key.verifying_key().verify_mu(&mu, &sig), Ok(()));
                     if let Some(msg) = &c.msg {
                         if c.rnd.is_none() {

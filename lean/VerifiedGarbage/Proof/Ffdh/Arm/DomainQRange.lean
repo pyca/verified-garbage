@@ -39,7 +39,7 @@ theorem qRange_ok (s : State) {p : Inputs} {slots : List Nat}
   have qLength := p.qLength hasQ
   rw [VG.Impl.Ffdh.Arm.Domain.CheckDomain.qRange, WP.seq_iff]
   refine WP.mono (importAt_ok s 1 60 32 h stable h60 h32 ready (by decide) (by decide) (h.qBytes hasQ)
-    (by rw [qLength]; have := p.minLength; omega) (by rw [qLength]; exact p.width.2.2.2.1)
+    (by rw [qLength]; have := p.minLength; omega_using [this]) (by rw [qLength]; exact p.width.2.2.2.1)
     (by change BitVec.ofNat 32 p.k = _; rw [qLength])) ?_
   rintro u ⟨_, readyU, q, keepsU, frameU, restU⟩
   have fits : arrAt p.w 8 ≤ 8 * p.len := readyU.width ▸ readyU.layout.2.2.1
@@ -67,12 +67,12 @@ theorem qRange_ok (s : State) {p : Inputs} {slots : List Nat}
   refine ⟨h.after_workspace frame rest readyT.ptr (fun d hd => (stableSlots_at stable hd).1), readyT, ?_, ?_, ?_, frame, rest⟩
   · rw [flag, parity, memX, saved, range]
     change BitVec.ofNat 32 (p.Q % 2) &&& (if 1 < p.Q ∧ p.Q < p.P - 1 then 1 else 0) = qRangeFlag p
-    have small : p.Q % 2 = 0 ∨ p.Q % 2 = 1 := by omega
+    have small : p.Q % 2 = 0 ∨ p.Q % 2 = 1 := by omega_using []
     rcases small with even | oddQ
     · simp [even, qRangeFlag]
     · rw [oddQ]
       by_cases lower : 1 < p.Q <;> by_cases upper : p.Q < p.P - 1 <;>
-        simp [qRangeFlag, lower, upper, oddQ, show (2 < p.Q ↔ 1 < p.Q) by omega]
+        simp [qRangeFlag, lower, upper, oddQ, show (2 < p.Q ↔ 1 < p.Q) by omega_using [oddQ]]
   · rw [memT, memX, arraysW 0 (by decide), arraysV 0 op0 (by decide)]
     exact modU
   · rw [memT, memX, arraysW 4 (by decide), arraysV 4 op4 (by decide)]

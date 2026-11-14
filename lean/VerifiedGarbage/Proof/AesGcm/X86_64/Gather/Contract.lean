@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
@@ -58,11 +59,11 @@ def sealGatherPrecomputedScratchSig : Sig where
     ("src", .slices .u8 "src_count"), ("dst", .slice true .u8 "len"),
     ("tag", .array true .u8 16), ("scratch", .array true .u64 23)]
 
-/-- `sealGatherPrecomputedContract`, whatever `scratch` is. -/
+/-- `Proof.Gcm.sealGatherPrecomputedContract`, whatever `scratch` is. -/
 def sealGatherPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealGatherPrecomputedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
-      Spec.Gcm.sealGatherPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
+      Proof.Gcm.sealGatherPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag _scratch =>
       Proof.AesGcm.sealGatherRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcCount dst len tag)
     (writeArgs := true) (stack := stack)

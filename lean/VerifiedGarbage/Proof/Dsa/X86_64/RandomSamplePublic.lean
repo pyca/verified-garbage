@@ -34,7 +34,7 @@ theorem RandomSampleTracePre.decision {p : RandomSamplePublic} {s : State} (h : 
     rw [hwidth, List.length_drop, hlen]
     exact Nat.le_sub_of_add_le' hfull
   have hp := p.draw.drawsPos
-  obtain ⟨fuel, he⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : p.draw.draws ≠ 0)
+  obtain ⟨fuel, he⟩ := Nat.exists_eq_succ_of_ne_zero (by omega_using [hp] : p.draw.draws ≠ 0)
   change p.draw.draws = fuel + 1 at he
   have hh := VG.Proof.Dsa.Random.sample_trace_head _ fuel _ p.valid hlen'
   rw [← he, ht, hwidth] at hh
@@ -52,8 +52,8 @@ def RandomSamplePublic.next (p : RandomSamplePublic)
     used := p.draw.used + p.draw.width
     draws := p.draw.draws - 1
     usedBound := hfull
-    drawsPos := by omega
-    drawsBound := by have := p.draw.drawsBound; omega }
+    drawsPos := by omega_using [hf]
+    drawsBound := by have := p.draw.drawsBound; omega_using [this] }
   trace := p.trace.tail
   valid := p.valid
 
@@ -68,7 +68,7 @@ theorem random_sample_trace_next {p : RandomSamplePublic} {rand : List Byte}
   have hlen' : Spec.Dsa.Random.drawBytes (Spec.Dsa.decodeBE p.draw.qBytes) ≤ (rand.drop p.draw.used).length := by
     rw [hw, List.length_drop, hlen]
     exact Nat.le_sub_of_add_le' hfull
-  have he : p.draw.draws - 1 + 1 = p.draw.draws := by omega
+  have he : p.draw.draws - 1 + 1 = p.draw.draws := by omega_using [hf]
   have hh := VG.Proof.Dsa.Random.sample_trace_retry _ (p.draw.draws - 1) _ p.valid hlen'
     (by rw [he, ht]; exact ha)
   rw [he, ht, hw, List.drop_drop] at hh

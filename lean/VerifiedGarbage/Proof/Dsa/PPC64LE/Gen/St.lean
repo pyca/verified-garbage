@@ -85,23 +85,23 @@ theorem GI.wBig (h : GI G STK σ V LS s) : wB G.pLen + 8 * wWords G.pLen ≤ G.s
   have := h.scrBig
   rcases h.lens3 with e | e | e <;> rw [e] at this ⊢
   · have : wB 128 + 8 * wWords 128 ≤ 8 * (64 * 128 + 1024) := by decide
-    omega
+    omega_arith
   · have : wB 256 + 8 * wWords 256 ≤ 8 * (64 * 256 + 1024) := by decide
-    omega
+    omega_arith
   · have : wB 384 + 8 * wWords 384 ≤ 8 * (64 * 384 + 1024) := by decide
-    omega
+    omega_arith
 
 theorem GI.kBig (h : GI G STK σ V LS s) : kB G.pLen + kz G.pLen ≤ wB G.pLen := by
   rcases h.lens3 with e | e | e <;> rw [e] <;> decide
 
 theorem GI.kSub (h : GI G STK σ V LS s) : Region.Sub G.rK G.rScr :=
-  sw G (by have := h.wBig; have := h.kBig; omega)
+  sw G (by have := h.wBig; have := h.kBig; omega_arith)
 
 /-- The key working space is apart from the ranges of `scratch` apart from it. -/
 theorem GI.kdisj (h : GI G STK σ V LS s) {o n : Nat} (ho : o + n ≤ kB G.pLen ∨ wB G.pLen ≤ o)
     (hon : o + n ≤ G.scrLen * 8) : G.rK.Disjoint (G.rs o n) := by
   have := h.wBig; have := h.kBig
-  exact h.sdisj (by omega) (by omega) hon
+  exact h.sdisj (by omega_using [ho, this]) (by omega_arith) hon
 
 end
 
@@ -130,7 +130,7 @@ theorem w32_frame {B : Addr} {Z : Nat} {m m' : Mem} {rs : List Region} (f : Fram
     (hd : ∀ r ∈ rs, (⟨B, Z⟩ : Region).Disjoint r) (hZ : Z ≤ 2 ^ 64) {d : Nat} (h : d + 4 ≤ Z) :
     w32 m' B d = w32 m B d := by
   simp only [w32]
-  rw [f.readW (r := ⟨B, Z⟩) (Offset.contains_base _ h (by omega)) hd (by decide)]
+  rw [f.readW (r := ⟨B, Z⟩) (Offset.contains_base _ h (by omega_using [hZ, h])) hd (by decide)]
 
 theorem kz_eq {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) : kz L ≤ 2 ^ 64 := by
   rcases hL with rfl | rfl | rfl <;> decide
@@ -140,18 +140,18 @@ theorem arrs_fit {L j : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) (hj : j < nA
     arr (L / 4) j + 4 * (L / 4 + 2) ≤ kz L := by
   have := arr_end (w := L / 4) hj
   simp only [arr, S, hdr, nArrs, kz] at *
-  rcases hL with rfl | rfl | rfl <;> omega
+  rcases hL with rfl | rfl | rfl <;> omega_using [hj]
 
 theorem num_frame {B : Addr} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
     {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨B, kz L⟩ : Region).Disjoint r)
     {j : Nat} (hj : j < nArrs) : num m' B (L / 4) j = num m B (L / 4) j := by
   have := arrs_fit hL hj
-  exact val32_congr fun i hi => w32_frame f hd (kz_eq hL) (by omega)
+  exact val32_congr fun i hi => w32_frame f hd (kz_eq hL) (by omega_using [this, hi])
 
 theorem slot_frame {B : Addr} {L : Nat} (hL : L = 128 ∨ L = 256 ∨ L = 384) {m m' : Mem}
     {rs : List Region} (f : Frame rs m m') (hd : ∀ r ∈ rs, (⟨B, kz L⟩ : Region).Disjoint r)
     {d : Nat} (hdk : KlsOk d) : slot m' B d = slot m B d :=
-  w32_frame f hd (kz_eq hL) (by obtain ⟨h1, _⟩ := hdk; simp only [kz, hdr] at h1 ⊢; omega)
+  w32_frame f hd (kz_eq hL) (by obtain ⟨h1, _⟩ := hdk; simp only [kz, hdr] at h1 ⊢; omega_using [h1])
 
 /-! ## Steps that keep a state of the search -/
 
@@ -210,19 +210,19 @@ theorem SS.of_scrs {ws : List Reg} (h : SS G STK σ c s) (r : Keep ws s t) (sp :
   have kd : ∀ r' ∈ G.rss os ++ [rBelow σ STK], (⟨G.KB, kz G.pLen⟩ : Region).Disjoint r' := fun r' hr' => by
     rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
     · obtain ⟨_, a, b⟩ := hon' p hp; exact gi.kdisj a b
-    · exact gi.scr_below (by omega)
+    · exact gi.scr_below (by omega_using [big, kb])
   -- The header: a step past it.
   have gi' : GI G STK σ c.V c.LS t := by
     have hd : ∀ q, q + 8 ≤ hEnd → ∀ r' ∈ G.rss os ++ [rBelow σ STK], (G.rs q 8).Disjoint r' := fun q hq r' hr' => by
       rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
-      · obtain ⟨a, _, b⟩ := hon' p hp; exact gi.sdisj (.inl (by omega)) (by omega) b
-      · exact gi.scr_below (by omega)
+      · obtain ⟨a, _, b⟩ := hon' p hp; exact gi.sdisj (.inl (by omega_using [hq, a])) (by omega_using [hE, hq]) b
+      · exact gi.scr_below (by omega_using [hE, hq])
     refine ⟨gi.pre, gi.hG, sp.trans gi.sp, r.2.1.trans gi.rd, r.2.2.trans gi.wr, (r.gpr h28).trans gi.r28,
       fun i hi => ?_, ?_, fun p hp => ?_, fun p hp => ?_, gi.ls, gi.frame.trans (f.sub fun x hx => ?_)⟩
-    · rw [fw_frame f (hd _ (by simp only [hEnd]; omega))]; exact gi.saved i hi
+    · rw [fw_frame f (hd _ (by simp only [hEnd]; omega_using [hi]))]; exact gi.saved i hi
     · rw [fw_frame f (hd _ (by decide))]; exact gi.lr
-    · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega))]; exact gi.fixed p hp
-    · rw [fw_frame f (hd _ (by have := (gi.ls p hp).1; simp only [hEnd]; omega))]; exact gi.slots p hp
+    · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega_using [this]))]; exact gi.fixed p hp
+    · rw [fw_frame f (hd _ (by have := (gi.ls p hp).1; simp only [hEnd]; omega_using [this]))]; exact gi.slots p hp
     · rcases mem x hx with ⟨p, hp, rfl⟩ | rfl
       · exact ⟨G.rScr, List.mem_cons_self, sw G (hon' p hp).2.2⟩
       · exact ⟨rBelow σ STK, by simp, fun _ h => h⟩
@@ -232,7 +232,7 @@ theorem SS.of_scrs {ws : List Reg} (h : SS G STK σ c s) (r : Keep ws s t) (sp :
       rw [VG.Proof.Dsa.Generation.frame_bytesAt f (fun r' hr' => by
         rcases mem r' hr' with ⟨p, hp, rfl⟩ | rfl
         · exact gi.sdisj (ha p hp) xb (hon' p hp).2.2
-        · exact gi.scr_below xb) (by omega)]
+        · exact gi.scr_below xb) (by omega_using [fit, xb])]
       exact h.sb x hm
     · exact e
   · rcases hcl x hx with ⟨hm, _⟩ | ⟨_, b⟩
@@ -278,36 +278,36 @@ theorem SS.of_hdrScrs {ws : List Reg} (h : SS G STK σ c s) (r : Keep ws s t) (s
     rcases mem r' hr' with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
     · obtain ⟨_, a, b⟩ := hon' p hp; exact gi.kdisj a b
     · have := hw' o ho
-      exact gi.kdisj (.inl (by simp only [kB, pB, fSave] at this ⊢; omega)) (by simp only [hEnd] at hE; omega)
-    · exact gi.scr_below (by omega)
+      exact gi.kdisj (.inl (by simp only [kB, pB, fSave] at this ⊢; omega_using [this])) (by simp only [hEnd] at hE; omega_using [hE, this])
+    · exact gi.scr_below (by omega_using [big, kb])
   -- The header word at `q`, apart from those written.
   have hd : ∀ q, q + 8 ≤ hEnd → (∀ o ∈ hw, o + 8 ≤ q ∨ q + 8 ≤ o) →
       ∀ r' ∈ G.rss os ++ hw.map (fun o => G.rs o 8) ++ [rBelow σ STK], (G.rs q 8).Disjoint r' :=
     fun q hq hq' r' hr' => by
       rcases mem r' hr' with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
-      · obtain ⟨a, _, b⟩ := hon' p hp; exact gi.sdisj (.inl (by omega)) (by omega) b
+      · obtain ⟨a, _, b⟩ := hon' p hp; exact gi.sdisj (.inl (by omega_using [hq, a])) (by omega_using [hE, hq]) b
       · have := hw' o ho
-        exact gi.sdisj (hq' o ho).symm (by omega) (by simp only [hEnd] at hE; omega)
-      · exact gi.scr_below (by omega)
+        exact gi.sdisj (hq' o ho).symm (by omega_using [hE, hq]) (by simp only [hEnd] at hE; omega_using [hE, this])
+      · exact gi.scr_below (by omega_using [hE, hq])
   have fixedFar : ∀ p ∈ fixedWords G, ∀ o ∈ hw, o + 8 ≤ p.1 ∨ p.1 + 8 ≤ o := fun p hp o ho => by
     obtain ⟨_, a8, _, af⟩ := (hhw o ho).1
     obtain ⟨b, b8⟩ := fixed_ok G p hp
-    have := af p hp; omega
+    have := af p hp; omega_using [a8, b8, this]
   have gi' : GI G STK σ c.V c.LS t := by
     refine ⟨gi.pre, gi.hG, sp.trans gi.sp, r.2.1.trans gi.rd, r.2.2.trans gi.wr, (r.gpr h28).trans gi.r28,
       fun i hi => ?_, ?_, fun p hp => ?_, fun p hp => ?_, gi.ls, gi.frame.trans (f.sub fun x hx => ?_)⟩
-    · rw [fw_frame f (hd _ (by simp only [hEnd]; omega) fun o ho => by have := hw' o ho; simp only [fSave] at *; omega)]
+    · rw [fw_frame f (hd _ (by simp only [hEnd]; omega_using [hi]) fun o ho => by have := hw' o ho; simp only [fSave] at *; omega_using [this])]
       exact gi.saved i hi
     · rw [fw_frame f (hd _ (by decide) fun o ho => by
-        obtain ⟨_, a8, aL, _⟩ := (hhw o ho).1; simp only [fLR] at aL ⊢; omega)]
+        obtain ⟨_, a8, aL, _⟩ := (hhw o ho).1; simp only [fLR] at aL ⊢; omega_using [a8, aL])]
       exact gi.lr
-    · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega) (fixedFar p hp))]
+    · rw [fw_frame f (hd _ (by have := (fixed_ok G p hp).1; simp only [hEnd]; omega_using [this]) (fixedFar p hp))]
       exact gi.fixed p hp
-    · rw [fw_frame f (hd _ (by have := (gi.ls p hp).1; simp only [hEnd]; omega) fun o ho => (hhw o ho).2 p hp)]
+    · rw [fw_frame f (hd _ (by have := (gi.ls p hp).1; simp only [hEnd]; omega_using [this]) fun o ho => (hhw o ho).2 p hp)]
       exact gi.slots p hp
     · rcases mem x hx with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
       · exact ⟨G.rScr, List.mem_cons_self, sw G (hon' p hp).2.2⟩
-      · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hw' o ho; simp only [hEnd] at hE; omega)⟩
+      · exact ⟨G.rScr, List.mem_cons_self, sw G (by have := hw' o ho; simp only [hEnd] at hE; omega_using [hE, this])⟩
       · exact ⟨rBelow σ STK, by simp, fun _ h => h⟩
   refine ⟨gi', fun x hx => ?_, fun x hx => h.clOk x (hcl x hx).1, fun j hj => ?_, h.liveOk, fun d hd' => ?_,
     h.kslOk⟩
@@ -317,8 +317,8 @@ theorem SS.of_hdrScrs {ws : List Reg} (h : SS G STK σ c s) (r : Keep ws s t) (s
       rcases mem r' hr' with ⟨p, hp, rfl⟩ | ⟨o, ho, rfl⟩ | rfl
       · exact gi.sdisj (ha p hp) xb (hon' p hp).2.2
       · have := hw' o ho
-        exact gi.sdisj (.inr (by simp only [hEnd] at xE; omega)) xb (by simp only [hEnd] at hE; omega)
-      · exact gi.scr_below xb) (by omega)]
+        exact gi.sdisj (.inr (by simp only [hEnd] at xE; omega_using [xE, this])) xb (by simp only [hEnd] at hE; omega_using [hE, this])
+      · exact gi.scr_below xb) (by omega_using [fit, xb])]
     exact h.sb x hm
   · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
   · rw [slot_frame h.lens f kd (h.kslOk d hd')]; exact h.ksl d hd'
@@ -342,14 +342,14 @@ theorem SS.stF (h : SS G STK σ c s) {o : Nat} (hv : VarOk G o) {r : Reg}
   have f : Frame [G.rs o 8] s.mem t.mem := by
     rw [m.mem]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
   have hd : (G.rs o 8).Disjoint (⟨G.KB, kz G.pLen⟩ : Region) :=
-    (gi₀.kdisj (o := o) (n := 8) (.inl (by simp only [kB, fSave] at oS ⊢; omega))
-      (by simp only [hEnd] at hE; omega)).symm
+    (gi₀.kdisj (o := o) (n := 8) (.inl (by simp only [kB, fSave] at oS ⊢; omega_using [oS]))
+      (by simp only [hEnd] at hE; omega_using [hE, oS])).symm
   refine ⟨gi, h.sb.frame f (fun x hx r' hr' => ?_) (fun x hx => ?_), h.clOk, fun j hj => ?_, h.liveOk,
     fun d hd' => ?_, h.kslOk⟩
   · simp only [List.mem_singleton] at hr'; subst hr'
     obtain ⟨a, _, b⟩ := h.clOk x hx
-    exact gi₀.sdisj (.inr (by simp only [hEnd] at a; omega)) b (by simp only [hEnd] at hE; omega)
-  · have := (h.clOk x hx).2.2; have := gi₀.scrFit; omega
+    exact gi₀.sdisj (.inr (by simp only [hEnd] at a; omega_using [oS, a])) b (by simp only [hEnd] at hE; omega_using [hE, oS])
+  · have := (h.clOk x hx).2.2; have := gi₀.scrFit; omega_arith
   · rw [num_frame h.lens f (fun r' hr' => by simp only [List.mem_singleton] at hr'; subst hr'; exact hd.symm)
       (h.liveOk j hj)]
     exact h.arrs j hj

@@ -42,16 +42,16 @@ theorem ctxCiph_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨K, 25
     ctxCiph m' K R = ctxCiph m K R := by
   unfold ctxCiph
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
-  rw [bytesAt_frame h (fun r hr => (k_mut L hD r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+  rw [bytesAt_frame h (fun r hr => (k_mut L hD r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
 
 theorem sub_wA {W : Addr} {d k : Nat} (h : d + k ≤ 160) : Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wA W) := by
-  simpa using Offset.sub W (d := d) (n := k) (e := 0) (k := 160) (by omega) (by omega)
+  simpa using Offset.sub W (d := d) (n := k) (e := 0) (k := 160) (by omega_using []) (by omega_using [h])
 
 theorem sub_wB {W : Addr} {d k : Nat} (h₁ : 248 ≤ d) (h : d + k ≤ 288) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wB W) := Offset.sub W (by omega) (by omega)
+    Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wB W) := Offset.sub W (by omega_using [h₁]) (by omega_using [h])
 
 theorem sub_wC {W : Addr} {d k : Nat} (h₁ : 384 ≤ d) (h : d + k ≤ 2560) :
-    Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wC W) := Offset.sub W (by omega) (by omega)
+    Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wC W) := Offset.sub W (by omega_using [h₁]) (by omega_using [h])
 
 /-- A word of `W` that the pieces do not write. -/
 theorem kept_read {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩)
@@ -173,16 +173,16 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
         rcases hr with rfl | rfl <;> exact L.w_w (by decide) (by decide) (by decide))]
   · rw [blockAtMem_frame P₃.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [ofsO, o0O]; omega) (by omega) (by decide)),
+        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [ofsO, o0O]; omega_arith) (by omega_using [h₂]) (by decide)),
       blockAtMem_frame P₂.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · exact L.w_w (by simp only [tmpO]; omega) (by omega) (by decide)
-        · exact L.w_w (by omega) (by omega) (by decide)
-        · rw [E₁.rsp]; exact (L.stk_w' (by omega)).symm),
+        · exact L.w_w (by simp only [tmpO]; omega_using [h₂]) (by omega_using [h₂]) (by decide)
+        · exact L.w_w (by omega_using [h₂]) (by omega_using [h₂]) (by decide)
+        · rw [E₁.rsp]; exact (L.stk_w' (by omega_using [h₂])).symm),
       blockAtMem_frame P₁.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [tmpO, botO]; omega) (by omega) (by decide))]
+        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [tmpO, botO]; omega_using [h₂]) (by omega_using [h₂]) (by decide))]
 
 
 end VG.Proof.AesOcb.X86_64

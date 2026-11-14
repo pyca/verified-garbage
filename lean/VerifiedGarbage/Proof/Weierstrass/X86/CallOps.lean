@@ -30,19 +30,19 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Proof.Mo
 theorem stkOk_of {sp : BitVec 32} {base : Addr} {size z : Nat} (hz : 20 ≤ z) (hsp : z ≤ sp.toNat)
     (hn : base.toNat + size ≤ 2 ^ 32) (hs : 0 < size)
     (hd : Region.Disjoint ⟨sp.setWidth 64 - BitVec.ofNat 64 z, z⟩ ⟨base, size⟩) : StkOk sp base size := by
-  refine ⟨by omega, ?_⟩
+  refine ⟨by omega_using [hz, hsp], ?_⟩
   by_contra h
   simp only [not_or, Nat.not_le] at h
   have hb := sp.isLt
   by_cases hc : base.toNat + z ≤ sp.toNat
   · refine hd (sp.setWidth 64 - BitVec.ofNat 64 z) ?_ ?_
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hz]
     · simp only [Region.Contains]
       bv_omega
   · refine hd base ?_ ?_
     · simp only [Region.Contains]
       bv_omega
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hs]
 
 /-- The functions of `F` compute modulo `m` on numbers of `M.n` words, in a
 working space of 8192 bytes, with their own working space at `wk`. -/
@@ -147,7 +147,7 @@ theorem WP.withFrame {c : Prog isa} {s : State} {Q : State → Prop} {n : Nat} (
     (hn : stackUse c ≤ n) (hd : n ≤ (s.gpr .esp).toNat) (h : WP isa c s Q) :
     WP isa c s fun s' => Q s' ∧ Frame (s.wr ++ [below (s.gpr .esp) n]) s.mem s'.mem := by
   obtain ⟨t, s', he, hq⟩ := h
-  exact ⟨t, s', he, hq, Frame.below_mono (Exec.frameSp he hsp (by omega)) hn hd⟩
+  exact ⟨t, s', he, hq, Frame.below_mono (Exec.frameSp he hsp (by omega_using [hn, hd])) hn hd⟩
 
 /-- Code that never writes `esp`, whose calls and frames use at most `n` bytes
 of stack. -/
@@ -179,7 +179,7 @@ theorem WP.spFrame {c : Prog isa} {s : State} {Q : State → Prop} {n : Nat} (hs
 /-- The `a` bytes below `sp` are among its `b` bytes below it. -/
 theorem below_le_sub {sp : BitVec 32} {a b : Nat} (hab : a ≤ b) (hb : b ≤ sp.toNat) :
     Region.Sub (below sp a) (below sp b) := by
-  have := below_inner (sp := sp) (k := 0) (a := a) (b := b) (by omega) hb
+  have := below_inner (sp := sp) (k := 0) (a := a) (b := b) (by omega_using [hab]) hb
   simpa only [BitVec.ofNat_eq_ofNat, BitVec.sub_zero] using this
 
 /-- `WP.spFrame`, for a postcondition that takes the frame. -/

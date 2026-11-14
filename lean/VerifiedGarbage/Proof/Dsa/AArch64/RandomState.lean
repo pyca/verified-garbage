@@ -70,7 +70,7 @@ theorem RandomReady.after_draw {C : RandomContext} {used draws : Nat} {s t : Sta
     RandomReady C (used + (VG.Proof.Dsa.significant C.qBytes).1)
       (if accept then draws else draws - 1) t := by
   have hnfit := VG.Proof.Dsa.significant_fits C.qBytes
-  have hcopyCoarse : Outside C.B 200 32 s.mem m := hcopy.mono (by omega) (by have := C.qlen; omega)
+  have hcopyCoarse : Outside C.B 200 32 s.mem m := hcopy.mono (by omega_using [hnfit]) (by have := C.qlen; omega_using [hnfit, this])
   let m' := m.writeW (off C.B Random.oUsed) (BitVec.ofNat 64 (used + (VG.Proof.Dsa.significant C.qBytes).1))
   have hused : Outside C.B Random.oUsed 8 m m' := writeW_outside _ _ _ (by decide)
   have hfinish := random_drawFinish_outside m' C.B accept draws
@@ -81,8 +81,8 @@ theorem RandomReady.after_draw {C : RandomContext} {used draws : Nat} {s t : Sta
   have hw (d : Nat) (hd : d + 8 ≤ 200)
       (hu : d + 8 ≤ 144 ∨ 152 ≤ d) (hdraw : d + 8 ≤ 160 ∨ 168 ≤ d)
       (hstatus : d + 8 ≤ 192 ∨ 200 ≤ d) : word t.mem C.B d = word s.mem C.B d := by
-    rw [hm, random_drawFinish_word _ _ _ _ d (by omega) hdraw hstatus,
-      hused.word hu (by omega), hcopyCoarse.word (Or.inl hd) (by omega)]
+    rw [hm, random_drawFinish_word _ _ _ _ d (by omega_using [hd]) hdraw hstatus,
+      hused.word hu (by omega_using [hd]), hcopyCoarse.word (Or.inl hd) (by omega_using [hd])]
   refine ⟨h.scr.congr hk.wr, hk.sp.trans h.sp,
     (hw _ (by decide) (by decide) (by decide) (by decide)).trans h.rand,
     (hw _ (by decide) (by decide) (by decide) (by decide)).trans h.randLen, ?_,
@@ -107,10 +107,10 @@ theorem RandomReady.after_draw {C : RandomContext} {used draws : Nat} {s t : Sta
   · intro i hi
     have ho : ofs C.B (off C.B (200 + i)) = 200 + i := by
       have he : off C.B (200 + i) + BitVec.ofNat 64 0 = off C.B (200 + i) := BitVec.add_zero _
-      simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega)
-    rw [hm, hfinish _ (by rw [ho]; right; omega),
-      hused _ (by rw [ho]; right; unfold Random.oUsed; omega),
-      hcopy _ (by rw [ho]; left; omega)]
+      simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega_using [hi, this])
+    rw [hm, hfinish _ (by rw [ho]; right; omega_using []),
+      hused _ (by rw [ho]; right; unfold Random.oUsed; omega_using []),
+      hcopy _ (by rw [ho]; left; omega_using [hi])]
     exact h.padding i hi
 
 theorem RandomReady.after_status {C : RandomContext} {used draws : Nat} {s t : State} {rs : List Reg} {status : BitVec 64}
@@ -121,7 +121,7 @@ theorem RandomReady.after_status {C : RandomContext} {used draws : Nat} {s t : S
     rw [hm]; exact writeW_outside _ _ _ (by decide)
   have hi := InScr.of_outside hf (show Random.oStatus + 8 ≤ Random.frameBytes by decide)
   have hw (d : Nat) (hd : d + 8 ≤ 192) : word t.mem C.B d = word s.mem C.B d :=
-    hf.word (Or.inl hd) (by omega)
+    hf.word (Or.inl hd) (by omega_using [hd])
   refine ⟨h.scr.congr hk.wr, hk.sp.trans h.sp,
     (hw _ (by decide)).trans h.rand, (hw _ (by decide)).trans h.randLen,
     (hw _ (by decide)).trans h.usedWord, (hw _ (by decide)).trans h.width,
@@ -133,8 +133,8 @@ theorem RandomReady.after_status {C : RandomContext} {used draws : Nat} {s t : S
   intro i hi'
   have ho : ofs C.B (off C.B (200 + i)) = 200 + i := by
     have he : off C.B (200 + i) + BitVec.ofNat 64 0 = off C.B (200 + i) := BitVec.add_zero _
-    simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega)
-  rw [hf _ (by rw [ho]; right; unfold Random.oStatus; omega)]
+    simpa only [he, Nat.add_zero] using ofs_off C.B (d := 200 + i) (i := 0) (by have := C.qlen; omega_using [hi', this])
+  rw [hf _ (by rw [ho]; right; unfold Random.oStatus; omega_using [])]
   exact h.padding i hi'
 
 end VG.Proof.Dsa.AArch64

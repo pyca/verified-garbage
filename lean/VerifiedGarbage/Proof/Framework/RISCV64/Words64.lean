@@ -38,11 +38,11 @@ theorem join_byte (x y : BitVec 32) {i : Nat} (hi : i < 8) :
     BitVec.getLsbD_setWidth]
   split
   · simp only [BitVec.getElem_extractLsb']
-    simp (disch := omega) [show 8 * i + j < 32 by omega, show 8 * i + j < 64 by omega]
+    simp (disch := omega_arith) [show 8 * i + j < 32 by omega_arith, show 8 * i + j < 64 by omega_using [hi, hj]]
   · simp only [BitVec.getElem_extractLsb']
-    simp (disch := omega) [show ¬ 8 * i + j < 32 by omega, show 8 * i + j < 64 by omega,
-      show 8 * i + j - 32 = 8 * (i - 4) + j by omega]
-    intro; omega
+    simp (disch := omega) [show ¬ 8 * i + j < 32 by omega_arith, show 8 * i + j < 64 by omega_using [hi, hj],
+      show 8 * i + j - 32 = 8 * (i - 4) + j by omega_arith]
+    intro; omega_using [hi, hj]
 
 /-- A 64-bit constant from the sign-extended words `li32` leaves. -/
 theorem movImm64_val (v : BitVec 64) :
@@ -52,9 +52,9 @@ theorem movImm64_val (v : BitVec 64) :
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_signExtend, BitVec.getLsbD_extractLsb']
   by_cases h : i < 32
-  · simp (disch := omega) [h, hi, show 32 + i < 64 by omega]
-  · simp (disch := omega) [h, hi, show ¬ 32 + i < 64 by omega, show i - 32 < 64 by omega]
-    intro; omega
+  · simp (disch := omega) [h, hi, show 32 + i < 64 by omega_using [h]]
+  · simp (disch := omega) [h, hi, show ¬ 32 + i < 64 by omega_using [h], show i - 32 < 64 by omega_using [hi]]
+    intro; omega_using [hi]
 
 /-! ## Memory -/
 
@@ -67,8 +67,8 @@ theorem readW64_split (m : Mem) (a : Addr) :
   rw [join_byte _ _ hi]
   split
   · exact Mem.readW_byte m a ‹_›
-  · rw [← Mem.readW_byte m _ (by omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    congr 3; omega
+  · rw [← Mem.readW_byte m _ (by omega_using [hi]), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    congr 3; omega_arith
 
 theorem toNat_sub_add4 (x a : Addr) :
     (x - (a + BitVec.ofNat 64 4)).toNat = ((x - a).toNat + (2 ^ 64 - 4)) % 2 ^ 64 := by
@@ -84,18 +84,18 @@ theorem writeW64_split (m : Mem) (a : Addr) (v : BitVec 64) :
   have ht := (x - a).isLt
   generalize (x - a).toNat = t at *
   by_cases h4 : t < 4
-  · simp only [show ¬ (t + (2 ^ 64 - 4)) % 2 ^ 64 < 4 by omega, h4, show t < 8 by omega, ↓reduceIte]
+  · simp only [show ¬ (t + (2 ^ 64 - 4)) % 2 ^ 64 < 4 by omega_using [h4], h4, show t < 8 by omega_using [h4], ↓reduceIte]
     ext j hj
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
-    simp only [show 8 * t + j < 32 by omega, decide_true, Bool.true_and]
+    simp only [show 8 * t + j < 32 by omega_using [h4, hj], decide_true, Bool.true_and]
   · by_cases h8 : t < 8
-    · simp only [show (t + (2 ^ 64 - 4)) % 2 ^ 64 = t - 4 by omega, show t - 4 < 4 by omega, h8,
+    · simp only [show (t + (2 ^ 64 - 4)) % 2 ^ 64 = t - 4 by omega_using [ht, h4], show t - 4 < 4 by omega_using [h8], h8,
         ↓reduceIte]
       ext j hj
       simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
-        show 8 * (t - 4) + j < 32 by omega, decide_true, Bool.true_and,
-        show 32 + (8 * (t - 4) + j) = 8 * t + j by omega]
-    · simp only [show ¬ (t + (2 ^ 64 - 4)) % 2 ^ 64 < 4 by omega, h4, h8, ↓reduceIte]
+        show 8 * (t - 4) + j < 32 by omega_using [h8, hj], decide_true, Bool.true_and,
+        show 32 + (8 * (t - 4) + j) = 8 * t + j by omega_using [h4]]
+    · simp only [show ¬ (t + (2 ^ 64 - 4)) % 2 ^ 64 < 4 by omega_using [ht, h8], h4, h8, ↓reduceIte]
 
 /-- The second word of a doubleword access. -/
 theorem in_hi {rs : List Region} {p : Addr} {off : Nat} (h : InRegions rs (p + BitVec.ofNat 64 off) 8) :
@@ -108,12 +108,12 @@ theorem in_hi {rs : List Region} {p : Addr} {off : Nat} (h : InRegions rs (p + B
       (p + BitVec.ofNat 64 off - r.base) + BitVec.ofNat 64 4 by bv_omega,
     BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((p + BitVec.ofNat 64 off - r.base).toNat + 4 % 2 ^ 64) (2 ^ 64)
-  omega
+  omega_using [hc]
 
 /-- The first word of a doubleword access. -/
 theorem in_lo {rs : List Region} {a : Addr} (h : InRegions rs a 8) : InRegions rs a 4 := by
   obtain ⟨r, hr, hc⟩ := h
-  exact ⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact ⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega_using [hc]⟩
 
 /-! ## The sequences -/
 
@@ -135,12 +135,12 @@ theorem loadLE64_ok {d tmp tmp2 n : Reg} {off : Nat} (hdn : d ≠ n) (htn : tmp 
       Upd3 s s' d tmp tmp2 (s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 64) := by
   unfold loadLE64
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (ByteLoad.loadLE32_ok hdn htn hdt (by omega) (in_lo h)) fun s₁ e₁ => ?_
+  refine WP.mono (ByteLoad.loadLE32_ok hdn htn hdt (by omega_using [ho]) (in_lo h)) fun s₁ e₁ => ?_
   subst e₁
   have hn₁ : ((s.write tmp ((s.mem (s.gpr n + BitVec.ofNat 64 (off + 3))).setWidth 64 <<< 24)).write d
       ((s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 32).setWidth 64)).gpr n = s.gpr n := by
     simp only [RegUpd.gpr_write, Ne.symm hdn, Ne.symm htn, ite_false]
-  refine WP.mono (ByteLoad.loadLE32_ok h2n htn h2t (by omega) (by
+  refine WP.mono (ByteLoad.loadLE32_ok h2n htn h2t (by omega_using [ho]) (by
     rw [hn₁, RegUpd.rd_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.wr_write]; exact in_hi h))
     fun s₂ e₂ => ?_
   subst e₂
@@ -162,12 +162,12 @@ theorem storeLE64_ok {v tmp tmp2 n : Reg} {off : Nat} (htv : tmp ≠ v) (htn : t
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   unfold storeLE64
   rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (ByteLoad.storeLE32_ok htv htn (by omega) (in_lo h)) fun s₁ e₁ => ?_
+  refine WP.mono (ByteLoad.storeLE32_ok htv htn (by omega_using [ho]) (in_lo h)) fun s₁ e₁ => ?_
   subst e₁
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_shift_d (show 32 < 64 by decide),
     RegUpd.gpr_write, Ne.symm htv, ite_false, RegUpd.write_write, Option.some.injEq, exists_eq_left']
-  refine WP.mono (ByteLoad.storeLE32_ok (v := tmp) h2t h2n (by omega) (by
+  refine WP.mono (ByteLoad.storeLE32_ok (v := tmp) h2t h2n (by omega_using [ho]) (by
     simp only [RegUpd.gpr_write, Ne.symm htn, ite_false, RegUpd.wr_write]; exact in_hi h))
     fun s₂ e₂ => ?_
   subst e₂

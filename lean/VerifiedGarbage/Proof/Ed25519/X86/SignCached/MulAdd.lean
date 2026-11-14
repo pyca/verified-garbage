@@ -32,7 +32,7 @@ theorem mul_stack : stackUse scalarMulAdd = 0 := by lit_decide
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem half_addr (hL : L.Ok) : (L.out + 32).setWidth 64 = L.out.setWidth 64 + 32 :=
-  addr_eq (x := L.out) (k := 32) (by have := hL.no; omega)
+  addr_eq (x := L.out) (k := 32) (by have := hL.no; omega_using [this])
 
 theorem halfWithin (hL : L.Ok) : Whole.Within (half L) L.OUT :=
   ⟨32, half_addr hL, by change 32 + 32 ≤ 64; decide⟩
@@ -59,13 +59,13 @@ theorem mul_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     (hL.ko.sub_left ret).sub_right out, hL.kc.sub_left ret, ?_,
     field_fit hL (by decide), field_fit hL (by decide), field_fit hL (by decide), hL.nc, ?_⟩
   · have h := hL.no
-    rw [BitVec.toNat_add, show (32 : BitVec 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega)]
-    omega
-  · have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega)
+    rw [BitVec.toNat_add, show (32 : BitVec 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega_using [h])]
+    omega_using [h]
+  · have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega_using [this])
     have := hL.top; have := hL.below
-    refine ⟨by rw [e]; omega, by rw [e]; omega, ?_⟩
+    refine ⟨by rw [e]; omega_arith, by rw [e]; omega_using [this], ?_⟩
     simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]
-    have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by omega
+    have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by omega_arith
     exact ⟨hL.kc.sub_left (Whole.inner_sub_stack hL.below),
       Whole.inner_frame hL.below hf (d := 96) (n := 32) (by decide) (by decide),
       Whole.inner_frame hL.below hf (d := 128) (n := 32) (by decide) (by decide),

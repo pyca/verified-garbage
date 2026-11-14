@@ -77,7 +77,7 @@ theorem init1_ok {s : State} {K Ctx W : Addr} {L : Nat} (Ar : IArgs s K Ctx W L)
   have pW := Ar.pW
   have pC := Ar.pC
   have hin : ∀ p ∈ saved, InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 p.2) 8 := fun p hp => by
-    rw [h3]; exact in_off pW (by have := saved_in p hp; omega) (by decide)
+    rw [h3]; exact in_off pW (by have := saved_in p hp; omega_using [this]) (by decide)
   rw [save_eq]
   refine WP.block_append_iff.mpr (WP.mono (Spill.save_wp saved_fits.1 hin) fun s₁ St => ?_)
   rw [h3] at St
@@ -151,8 +151,8 @@ theorem init2_ok {s : State} {K Ctx W : Addr} {L : Nat} (Ar : IArgs s K Ctx W L)
   refine WP.of_runBlock ⟨s₄, run₄,
     { x0 := x0₄, x1 := x1₄, x2 := x2₄, x3 := x3₄, x4 := x4₄, rounds := hR
       wrap := by
-        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); have := Ar.wc; omega
-      kd := Offset.base_disjoint Ctx (by decide) (by have := Ar.wc; omega)
+        rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); have := Ar.wc; omega_using [this]
+      kd := Offset.base_disjoint Ctx (by decide) (by have := Ar.wc; omega_using [])
       ks := (Ar.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
       ds := (Ar.cs.sub_left (Lay.kSub (by decide))).sub_right (Lay.wSub (by decide))
       reads := by
@@ -169,7 +169,7 @@ theorem init_wp' (v : BlocksImpl) {s : State} {K Ctx W : Addr} {L : Nat} (Ar : I
     (h0 : s.gpr .x0 = K) (h1 : s.gpr .x1 = BitVec.ofNat 64 L) (h2 : s.gpr .x2 = Ctx) (h3 : s.gpr .x3 = W) :
     WP isa (init (callees v)) s fun s' => GprAbi s s' ∧ Spec.Ocb.KeyRepr s'.mem Ctx (bytesAt s.mem K L) := by
   have pW := Ar.pW
-  have hKL : L < 2 ^ 64 := by rcases Ar.len with h | h | h <;> omega
+  have hKL : L < 2 ^ 64 := by rcases Ar.len with h | h | h <;> omega_using [h]
   unfold init
   refine WP.seq (WP.mono (init1_ok Ar h0 h1 h2 h3) fun s₂ ⟨x19₂, x20₂, x22₂, kc, sp₂, rd₂, wr₂, sv₂, f₂⟩ => ?_)
   generalize hRd : Spec.Aes.rounds (L / 4) = R at x22₂
@@ -191,7 +191,7 @@ theorem init_wp' (v : BlocksImpl) {s : State} {K Ctx W : Addr} {L : Nat} (Ar : I
     fun h => (Ar.cs.sub_left (Offset.sub_base _ h)).sub_right (Lay.wSub (by decide)) |>.symm
   have dSv' : ∀ {d k : Nat}, 512 ≤ d → d + k ≤ 2560 →
       (⟨W + BitVec.ofNat 64 160, 88⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-    fun h₁ h₂ => Offset.disjoint W (.inl (by omega)) (by omega) (by have := Ar.ws; omega)
+    fun h₁ h₂ => Offset.disjoint W (.inl (by omega_using [h₁])) (by omega_using []) (by have := Ar.ws; omega_using [h₂])
   have f₄ : Frame [⟨Ctx + BitVec.ofNat 64 240, 16⟩] s₃.mem s₄.mem := by
     rw [m₄]; exact Proof.Cmac.frame_store2 _ _ _
   have sv₅ : Spill.Saved W s.gpr saved s₅.mem := by
@@ -213,28 +213,28 @@ theorem init_wp' (v : BlocksImpl) {s : State} {K Ctx W : Addr} {L : Nat} (Ar : I
   rw [restore_eq]
   refine WP.mono (Spill.restore_wp c19 saved_fits.1 (by decide) (fun p hp => by
     rw [P₅.rd, P₅.wr, rd₄', wr₄']; exact covers_left pW _ _ ⟨_, List.mem_singleton_self _,
-      Offset.contains_base W (by have := saved_in p hp; omega) (by have := saved_in p hp; have := Ar.ws; omega)⟩)
+      Offset.contains_base W (by have := saved_in p hp; omega_using [this]) (by have := saved_in p hp; have := Ar.ws; omega_arith)⟩)
       sv₅) fun s₆ Rs => ⟨restore_abi Rs sp₅, ?_⟩
   -- The key context.
   have k₃ : bytesAt s₃.mem Ctx (16 * (R + 1)) = Spec.Aes.expandKey (bytesAt s.mem K L) := by
     rw [← hRd, g.out, Proof.Cmac.bytesAt_frame f₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Ar.ks.sub_right (Lay.wSub (by decide)))
-        (by omega)]
+        (by omega_using [hKL])]
   have k₅ : bytesAt s₅.mem Ctx (16 * (R + 1)) = Spec.Aes.expandKey (bytesAt s.mem K L) := by
     rw [Proof.Cmac.bytesAt_frame P₅.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact dK0.sub_left (Region.sub_prefix hRb)
-        · exact (Ar.cs.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))) (by omega),
+        · exact (Ar.cs.sub_left (Region.sub_prefix (by omega_using [hR']))).sub_right (Lay.wSub (by decide))) (by omega_using [hR']),
       Proof.Cmac.bytesAt_frame f₄ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact dK0.sub_left (Region.sub_prefix hRb)) (by omega), k₃]
+        simp only [List.mem_singleton] at hr; subst hr; exact dK0.sub_left (Region.sub_prefix hRb)) (by omega_using [hR']), k₃]
   refine ⟨?_, ?_⟩
   · rw [length_bytesAt, hRd, Rs.mem]; exact k₅
   · show blockAtMem s₆.mem (Ctx + BitVec.ofNat 64 240) = _
     have hz : blockAtMem s₄.mem (Ctx + BitVec.ofNat 64 240) = 0 := by
       rw [m₄, blockAtMem_store2, Proof.Cmac.le8_zero]; rfl
     rw [Rs.mem, P₅.enc0, hz, Proof.Cmac.bytesAt_frame f₄ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact dK0.sub_left (Region.sub_prefix hRb)) (by omega), k₃,
+        simp only [List.mem_singleton] at hr; subst hr; exact dK0.sub_left (Region.sub_prefix hRb)) (by omega_using [hR']), k₃,
       Spec.Ocb.aes, length_bytesAt, hRd]
 
 /-- `vg_aes_ocb_init`. -/

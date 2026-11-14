@@ -42,19 +42,19 @@ theorem Valid.innerSaved {g : PrivGeometry} (_h : g.Valid) : g.innerRegion.Disjo
 
 theorem Valid.offsetAddr {g : PrivGeometry} (h : g.Valid) {d : Nat} (fit : d < VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 80) :
     byteAddr (g.stack + BitVec.ofNat 32 d) = byteAddr g.stack + BitVec.ofNat 64 d :=
-  byteAddr_add (by have := h.stackHigh; omega)
+  byteAddr_add (by have := h.stackHigh; omega_using [fit, this])
 
 theorem Valid.offsetNat {g : PrivGeometry} (h : g.Valid) {d : Nat} (fit : d < VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 80) :
     (g.stack + BitVec.ofNat 32 d).toNat = g.stack.toNat + d := by
-  have sum : g.stack.toNat + d < 2 ^ 32 := by have := h.stackHigh; omega
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt sum]
+  have sum : g.stack.toNat + d < 2 ^ 32 := by have := h.stackHigh; omega_using [fit, this]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [sum] : d < 2 ^ 32), Nat.mod_eq_of_lt sum]
 
 theorem Valid.temporaryFit {g : PrivGeometry} (h : g.Valid) : g.temporary.toNat + g.length ≤ 2 ^ 32 := by
   rw [temporary, h.offsetNat (by decide)]
   have := h.stackHigh
   have := h.maxLength
   simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes] at *
-  omega
+  omega_arith
 
 theorem Valid.precomputationFit {g : PrivGeometry} (h : g.Valid) :
     g.precomputation.toNat + 16 * Spec.Rsa.modulusWords g.length ≤ 2 ^ 32 := by
@@ -62,6 +62,6 @@ theorem Valid.precomputationFit {g : PrivGeometry} (h : g.Valid) :
   have := h.stackHigh
   have := h.maxLength
   simp only [precomputeOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes, Spec.Rsa.modulusWords] at *
-  omega
+  omega_arith
 end PrivGeometry
 end VG.Proof.Rsa.X86.PrivChecked

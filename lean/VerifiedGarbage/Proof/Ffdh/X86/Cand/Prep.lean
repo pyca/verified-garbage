@@ -117,7 +117,7 @@ theorem Ready.hdr {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {
   refine ⟨R.ctx.keepF2 K di sp (ws := [(d, 4)]) (frameR_of_outside O (by omega_arith) (List.mem_singleton_self _))
     (by simp; omega_arith) (by simp; rcases hd.1 with e | e <;> omega_arith), ?_, ?_⟩
   · rw [← R.one]; exact O.val32 (.inr (by omega)) (by omega)
-  · rw [← R.r2]; exact O.val32 (.inr (by omega)) (by omega)
+  · rw [← R.r2]; exact O.val32 (.inr (by omega)) (by omega_using [bl, f4, bw])
 
 theorem Ready.regs {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} {rs : List Reg}
     (K : Keeps rs s t) (di : .edi ∉ rs) (sp : .esp ∉ rs) (m : t.mem = s.mem) : Ready Ex base bytes len args w t :=

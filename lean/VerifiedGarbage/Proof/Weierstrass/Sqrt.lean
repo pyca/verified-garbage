@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.Compressed.Root
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Square roots from the existing curve-law interface
 
@@ -25,7 +26,7 @@ theorem root_fermat (hL : Law C) (hp : 2 < C.p) (y : Fe C) (hy : y ≠ 0) :
     y ^ (C.p - 1) = 1 := by
   have hrep : Rep C y y y (.affine 1 1) := ⟨hy, by grind, by grind⟩
   have h := hL.x_eq hrep
-  rw [show C.p - 1 = (C.p - 2) + 1 by omega, Lean.Grind.Semiring.pow_succ]
+  rw [show C.p - 1 = (C.p - 2) + 1 by omega_using [hp], Lean.Grind.Semiring.pow_succ]
   grind
 
 theorem root_pow_card (hL : Law C) (hp : 2 < C.p) (y : Fe C) : y ^ C.p = y := by
@@ -33,10 +34,10 @@ theorem root_pow_card (hL : Law C) (hp : 2 < C.p) (y : Fe C) : y ^ C.p = y := by
   · rw [hy]
     calc
       (0 : Fe C) ^ C.p = (0 : Fe C) ^ ((C.p - 1) + 1) :=
-        congrArg (fun n : Nat => (0 : Fe C) ^ n) (by omega)
+        congrArg (fun n : Nat => (0 : Fe C) ^ n) (by omega_using [hp])
       _ = 0 := by rw [Lean.Grind.Semiring.pow_succ]; grind
   · calc
-      y ^ C.p = y ^ ((C.p - 1) + 1) := congrArg (fun n : Nat => y ^ n) (by omega)
+      y ^ C.p = y ^ ((C.p - 1) + 1) := congrArg (fun n : Nat => y ^ n) (by omega_using [hp])
       _ = y := by rw [Lean.Grind.Semiring.pow_succ, root_fermat hL hp y hy,
         Lean.Grind.Semiring.one_mul]
 
@@ -55,8 +56,8 @@ theorem square_roots_eq_or_neg (hL : Law C) {x y : Fe C} (h : x * x = y * y) :
 theorem sqrt_three_mod_four (hL : Law C) (hp : C.p % 4 = 3) (y : Fe C) :
     ((y * y) ^ ((C.p + 1) / 4)) ^ 2 = y * y := by
   rw [← Lean.Grind.Semiring.pow_two, pow_mul_exponents, pow_mul_exponents,
-    show 2 * (((C.p + 1) / 4) * 2) = C.p + 1 by omega,
-    Lean.Grind.Semiring.pow_succ, root_pow_card hL (by omega), Lean.Grind.Semiring.pow_two]
+    show 2 * (((C.p + 1) / 4) * 2) = C.p + 1 by omega_using [hp],
+    Lean.Grind.Semiring.pow_succ, root_pow_card hL (by omega_using [hp]), Lean.Grind.Semiring.pow_two]
 
 theorem sqrt_three_mod_four_iff (hL : Law C) (hp : C.p % 4 = 3) (a : Fe C) :
     (a ^ ((C.p + 1) / 4)) ^ 2 = a ↔ ∃ y : Fe C, y * y = a := by

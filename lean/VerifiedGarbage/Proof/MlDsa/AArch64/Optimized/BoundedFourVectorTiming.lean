@@ -21,7 +21,7 @@ open VG VG.Spec.MlDsa VG.Proof.MlDsa.Sample
 theorem accept_decide_congr {η a b : Nat} (hη : η=2∨η=4)
     (h : halfByteOk η a=halfByteOk η b) : decide (a<rbB η)=decide (b<rbB η) := by
   rw [halfByteOk_eq hη,halfByteOk_eq hη] at h
-  by_cases ha : a<rbB η <;> by_cases hb : b<rbB η <;> simp_all <;> omega
+  by_cases ha : a<rbB η <;> by_cases hb : b<rbB η <;> simp_all <;> omega_using [ha, hb]
 
 def bytePairMask (η : Nat) (a b : Byte) : Nat :=
  nibbleMask η (a.toNat%16) (a.toNat/16) (b.toNat%16) (b.toNat/16)

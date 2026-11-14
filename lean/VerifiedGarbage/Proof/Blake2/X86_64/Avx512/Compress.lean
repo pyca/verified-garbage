@@ -153,7 +153,7 @@ theorem init_ok {s : State} {st : Addr} {T : Nat} {f : Bool} (hdi : s.gpr .rdi =
       ifp rfl, VG.Proof.Argon2.X86_64.Avx2.qword256_readW _ _ hq, Offset.add_add, Nat.zero_add]
   · rw [(initOps_qw _ hq).2.1, VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifp rfl,
       VG.Proof.Argon2.X86_64.Avx2.qword256_readW _ _ hq, Offset.add_add,
-      show 32 + 8 * q = 8 * (4 + q) by omega]
+      show 32 + 8 * q = 8 * (4 + q) by omega_using []]
   · rw [(initOps_qw _ hq).2.2.1, VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifn (by decide), VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq,
       ifn (by decide)]
     exact hc.iv0 q hq
@@ -230,8 +230,8 @@ theorem body_ok {s₀ : State} (hp : Pre 64 s₀) {i : Nat} (hi : i < nb s₀) {
   have mem2 : t2.mem = s.mem := f2.mem.trans f1.mem
   refine ⟨⟨?_, dx, ?_, ?_, ?_, fun r h1 h2 h3 h4 h5 => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [si4, gs, hc.rsi]; exact Proof.Blake2.X86_64.blkAddr_succ (w := 64) s₀ i
-  · rw [cx4, hb]; congr 1; omega
-  · rw [ax4, hb, show t₀ s₀ + i * 128 + 128 = t₀ s₀ + (i + 1) * 128 by omega]
+  · rw [cx4, hb]; congr 1; omega_using []
+  · rw [ax4, hb, show t₀ s₀ + i * 128 + 128 = t₀ s₀ + (i + 1) * 128 by omega_using []]
   · rw [g4 _ (by decide) (by decide) (by decide) (by decide), gs]; exact hc.r8
   · rw [g4 _ h1 h2 h3 h4, gs]; exact hc.keep r h1 h2 h3 h4 h5
   · rw [gf4.rd, rd3, f2.rd, f1.rd, hc.rd]
@@ -296,8 +296,8 @@ theorem correct {s₀ : State} (hp : Pre 64 s₀) :
           refine ⟨?_, hlast ▸ hc'⟩
           simp only [eval, hz, ← hlast, Nat.sub_self, Option.map_some]; rfl
         · right
-          have hne : nb s₀ - (i + 1) ≠ 0 := by omega
-          refine ⟨?_, nb s₀ - (i + 1), by omega, i + 1, rfl, by omega, hc'⟩
+          have hne : nb s₀ - (i + 1) ≠ 0 := by omega_using [hi, hlast]
+          refine ⟨?_, nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hlast], hc'⟩
           have h0 : (BitVec.ofNat 64 (nb s₀ - (i + 1)) == 0) = false := by
             rw [beq_eq_false_iff_ne]
             intro h'

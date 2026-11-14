@@ -36,7 +36,7 @@ theorem vslot_ok {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre 
   have L1 := h1.vz.vc.lay hF hp
   unfold setSR
   refine WP.mono (vsetTwo_ok L1 (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
-    (by dsimp only [oSA4]; omega) (by vlayd) (by vlayd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
+    (by dsimp only [oSA4]; omega_using [hj]) (by vlayd) (by vlayd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
   refine ⟨h1.keep hF hp hP2 (by vachk hF) (hk2.get .x24),fun k hk => ?_⟩
   by_cases heq : k = j
   · subst k
@@ -44,7 +44,7 @@ theorem vslot_ok {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre 
       sc_add,← sc_pa hP1,hb2,seedOf,Proof.MlDsa.Verify.aSeed,integerToBytes_one,integerToBytes_one,List.append_assoc]
     rfl
   · rw [L1.keepBytes hP2 (by vlayd),L.keepBytes hP1 (by vlayd)]
-    exact h.done k (by omega)
+    exact h.done k (by omega_using [hk, heq])
 
 theorem vslot_piece {p : Params} (hF : VFacts p) {S e j : Nat} (he : e+4 ≤ p.k*p.ℓ) (hj : j < 4) :
     VPiece p S (VS p · e j) (VS p · e (j+1)) (seedSlot4 p e j) :=
@@ -90,7 +90,7 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   rw [h20.get .x0,e20,e2,h20.mem] at hco
   have hco4 : ∀ k < 4,∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (4*g))) k) i =
       if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (4*g))) k) i else 0 :=
-    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega)
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
   have e3 : ∀ k,pa s3 (aP (4*g+k)) = poly4 (pa s (aP (4*g))) k := fun k => by rw [pa_poly4,sc_pa hP13]
   obtain ⟨q,hq,h1,h0⟩ := h.va.ok
   have hA : ∀ e' < 4*g,polyAt s3.mem (pa s3 (aP e')) = polyAt s.mem (pa s (aP e')) := fun e' he' => L.keepPolyAt hP13 (by vlay)
@@ -98,11 +98,11 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
     fun e' he' => ?_,q && ((s2.gpr .x0).setWidth 32 == 1),?_,fun hq' e' he' => ?_,fun hq' => ?_⟩
   · by_cases hlt : e' < 4*g
     · exact L.keepRed hP13 (by vlay) (h.va.red e' hlt)
-    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
+    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
       rw [e3]
       by_cases hret : (s2.gpr .x0).setWidth 32 = 1
-      · exact (masked_one hret (hco4 k (by omega))).2 (hred hret k (by omega))
-      · exact (masked_zero hret (hco4 k (by omega))).1
+      · exact (masked_one hret (hco4 k (by omega_using [he']))).2 (hred hret k (by omega_using [he']))
+      · exact (masked_zero hret (hco4 k (by omega_using [he']))).1
   · rw [k3.get .x24,e24,h24,hq,and_flag _ (Q := (s2.gpr .x0).setWidth 32 = 1)
       (by rcases hr01 with h | h <;> rw [h] <;> decide)]
     exact flag_congr (by simp)
@@ -110,18 +110,18 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
     by_cases hlt : e' < 4*g
     · obtain ⟨b,hb⟩ := h1 hq'.1 e' hlt
       exact ⟨b,by rw [hb,hA e' hlt]⟩
-    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
+    · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
       rcases hout with ⟨_,hb⟩ | ⟨hret,_⟩
-      · obtain ⟨b,hb⟩ := hb k (by omega)
-        exact ⟨b,by rw [e3,(masked_one hq'.2 (hco4 k (by omega))).1,← vseed4_eq h (by omega)]; exact hb⟩
+      · obtain ⟨b,hb⟩ := hb k (by omega_using [he'])
+        exact ⟨b,by rw [e3,(masked_one hq'.2 (hco4 k (by omega_using [he']))).1,← vseed4_eq h (by omega_using [he'])]; exact hb⟩
       · rw [hq'.2] at hret; exact absurd hret (by decide)
   · cases hqq : q
-    · obtain ⟨e',he',hn⟩ := h0 hqq; exact ⟨e',by omega,hn⟩
+    · obtain ⟨e',he',hn⟩ := h0 hqq; exact ⟨e',by omega_using [he'],hn⟩
     · rw [hqq] at hq'
       simp only [Bool.true_and,beq_eq_false_iff_ne,ne_eq] at hq'
       rcases hout with ⟨hret,_⟩ | ⟨_,k,hk,hn⟩
       · exact absurd hret hq'
-      · exact ⟨4*g+k,by omega,by rw [← vseed4_eq h hk]; exact hn⟩
+      · exact ⟨4*g+k,by omega_using [hk],by rw [← vseed4_eq h hk]; exact hn⟩
 
 end VG.Proof.MlDsa.AArch64.Verify
 
@@ -155,7 +155,7 @@ theorem vcall4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF :
   have tail : RelCT isa (VTwo p S) (.seq (.block and24) (mask4 (aP (4*g)))) fun _ _ => True := by
     refine RelCT.seq (VTwo.step (fun _ _ h => h) (block_nomem_tr fun i hi _ => by
       simp only [and24,List.mem_singleton] at hi; subst hi; rfl) ?_)
-      (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (mask4_taint (4*g) (by omega)))
+      (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (mask4_taint (4*g) (by omega_using [hg, hkl])))
     have f := fun z => WP.mono (and24_ok z) fun z' ⟨o,_⟩ =>
       (⟨[],postB_of_keep o.keep (by decide) (by rw [o.mem]; exact Frame.refl _ _)⟩ : ∃ W,PostB S z z' W)
     exact fun x y _ => ⟨f x,f y⟩
@@ -175,7 +175,7 @@ theorem expA4_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF :
     {g : Nat} (hg : 4*g+4 ≤ p.k*p.ℓ) : VPiece p S (VA p · (4*g)) (VA p · (4*g+4)) (expA4 P p g) := by
   unfold expA4
   refine VPiece.seq (VPiece.mono
-    (VPiece.seqR (I := fun j σ s => VS p σ (4*g) j s) 4 0 (fun j _ hj => vslot_piece hF hg (by omega)))
+    (VPiece.seqR (I := fun j σ s => VS p σ (4*g) j s) 4 0 (fun j _ hj => vslot_piece hF hg (by omega_using [hj])))
       (fun _ _ _ h => ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
       (fun _ _ _ h => by simpa using h)) (vcall4_piece hP hF hg)
 
@@ -184,11 +184,11 @@ theorem expAll_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF 
   unfold expAll
   have hB : VPiece p S (VA p · 0) (VA p · (4*(p.k*p.ℓ/4))) (seqR (expA4 P p) 0 (p.k*p.ℓ/4)) := by
     simpa only [Nat.zero_add,Nat.mul_zero] using
-      (VPiece.seqR (I := fun g σ s => VA p σ (4*g) s) (p.k*p.ℓ/4) 0 (fun g _ hg => expA4_vpiece hP hF (by omega)))
+      (VPiece.seqR (I := fun g σ s => VA p σ (4*g) s) (p.k*p.ℓ/4) 0 (fun g _ hg => expA4_vpiece hP hF (by omega_using [hg])))
   refine VPiece.mono (VPiece.seq hB
     (VPiece.seqR (I := fun e σ s => VA p σ e s) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
-      (fun e _ he => expA_vpiece hP hF (by omega)))) (fun _ _ _ h => h) (fun _ _ _ h => ?_)
-  have he : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega
+      (fun e _ he => expA_vpiece hP hF (by omega_using [he])))) (fun _ _ _ h => h) (fun _ _ _ h => ?_)
+  have he : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
   simpa only [he] using h
 
 theorem samples_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :

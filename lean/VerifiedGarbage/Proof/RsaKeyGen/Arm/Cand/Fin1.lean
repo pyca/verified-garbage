@@ -82,7 +82,7 @@ theorem zeroO_vp {Y : State → State → Prop}
     have hL := pre.k2
     have hwr : InRegions s.wr (State.addr P.oP) P.L :=
       ⟨_, by rw [h.wr]; exact pre.oW, Region.contains_self _ _⟩
-    refine WP.mono (maskBuffer_ok s (by have := pre.k1; omega) (by omega) pre.fO hwr p0 plr)
+    refine WP.mono (maskBuffer_ok s (by have := pre.k1; omega_using [this]) (by omega_using [hL]) pre.fO hwr p0 plr)
       fun t ⟨b, f, r⟩ => ⟨⟨e, h.of_frame (f.mono fun r' hr => by
         simp only [List.mem_singleton] at hr; subst hr; simp) r.sp r.rd r.wr, hY σ s t y h f (r.mono (by simp))⟩, ?_⟩
     rw [b, p2, VG.Proof.Rsa.Arm.CrtValues.zero_mask_bytes, VG.Proof.Rsa.Arm.CrtValues.bytesAt_length]
@@ -115,7 +115,7 @@ theorem finish_vp {r : Nat} {O : State → List Byte} {u : State → Nat}
     refine wp_str (a := State.addr P.uP) (by decide) (by rw [p2, BitVec.add_zero]) wa fun s1 m1 => ?_
     refine wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
     refine wp_str (a := State.addr P.uP + BitVec.ofNat 64 4) (by decide)
-      (by rw [u2.other _ (by decide), m1.gpr, p2]; exact addr_add (by omega)) (by rw [u2.wr, m1.wr]; exact wb)
+      (by rw [u2.other _ (by decide), m1.gpr, p2]; exact addr_add (by omega_using [fU])) (by rw [u2.wr, m1.wr]; exact wb)
       fun s3 m3 => ?_
     refine wp_mov (op2_imm henc) fun t u4 => WP.block_nil ?_
     have mt : t.mem = s.mem.writeW (State.addr P.uP) (0#32 ++ BitVec.ofNat 32 (u σ)) := by
@@ -129,7 +129,7 @@ theorem finish_vp {r : Nat} {O : State → List Byte} {u : State → Nat}
       rt.sp rt.rd rt.wr, ?_, ?_, ?_⟩
     · rw [u4.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr]
     · rw [VG.Proof.Rsa.Arm.CrtValues.bytes_frame fr (fun r' hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact pre.oU) (by have := pre.fO; omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact pre.oU) (by have := pre.fO; omega_using [this])]
       exact o
     · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero]
       rw [mt, Mem.readW_writeW_self64]
@@ -137,7 +137,7 @@ theorem finish_vp {r : Nat} {O : State → List Byte} {u : State → Nat}
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hu]
       simp
-      omega
+      omega_using [hu]
 
 end
 

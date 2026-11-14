@@ -70,7 +70,7 @@ theorem outs_wordsVal {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : O
     {d k : Nat} (hd : ∀ r ∈ rs, d + 8 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) :
     wordsVal m' base d k = wordsVal m base d k := by
   rw [wordsVal_eq_val32, wordsVal_eq_val32]
-  exact h.val32 (fun r hr => by have := hd r hr; omega) (by omega)
+  exact h.val32 (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hd'])
 
 /-- Slots `liAt` reaches. -/
 abbrev Short (Sl : Nat → Prop) : Prop := ∀ x, Sl x → x < 4095
@@ -96,13 +96,13 @@ theorem Inv.update {M : Mod} {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Pr
     (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
     Inv M.n base m Sl (o :: V) (Function.update E o v) s' := by
-  have hown : own M.n ≤ 8192 := by have := rvOwn_cases M.n; simp only [own]; omega
+  have hown : own M.n ≤ 8192 := by have := rvOwn_cases M.n; simp only [own]; omega_using [this]
   have heq : ∀ x ∈ V, x ≠ o → wordsVal s'.mem base x M.n = wordsVal s.mem base x M.n := by
     intro x hx hxo
     have hxS := hI.sl x hx
     have h1 := hL.le x hxS
     have h2 := hL.apart x o hxS ho hxo
-    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega)
+    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega_using [hown, h1])
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -156,7 +156,7 @@ theorem fop_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk 
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addCall_ok hF hI.ws (hle o hS.1) (hle a hS.2.1) (hle b hS.2.2)
-        (hS2 o hS.1) (hS2 a hS.2.1) (hS2 b hS.2.2) (by rw [hk]; omega))
+        (hS2 o hS.1) (hS2 a hS.2.1) (hS2 b hS.2.2) (by rw [hk]; omega_using [hA, hB]))
       fun s' ⟨K, heq⟩ => ?_
     rw [hk] at K heq
     refine ⟨.of_call K, hI.update hL hS.1 (.of_call K) ?_ ?_⟩
@@ -173,7 +173,7 @@ theorem fop_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk 
     rw [hk] at K heq
     refine ⟨.of_call K, hI.update hL hS.1 (.of_call K) ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne _))
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 /-- A field program. -/
 theorem fprog_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk F) (hk : F.S.k = M.n)

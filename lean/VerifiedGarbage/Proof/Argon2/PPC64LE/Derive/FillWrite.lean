@@ -47,7 +47,7 @@ theorem md_store (m : Mem) {a b : Nat} (ha : a + 8 ≤ blocksN s₀ * 1024) (hb 
   by_cases e : a = b
   · subst e; rw [ite_eq_left rfl]; exact Mem.readW_writeW_self64 _ _ _
   · rw [ite_eq_right e]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [h, e]) (by omega_using [hb, this]) (by omega_using [ha, this])) (by decide)
 
 /-- The doublewords of the current block, `n` of them written. -/
 theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < blocksN s₀) (xo : Bool)
@@ -62,22 +62,22 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
         (if xo then s.mem.readW (P + BitVec.ofNat 64 (8 * i)) 64 ^^^ md s₀ s.mem (cur * 1024 + 8 * i)
           else s.mem.readW (P + BitVec.ofNat 64 (8 * i)) 64)
         else md s₀ s.mem (cur * 1024 + 8 * i)
-  | 0, _ => WP.block_nil ⟨h, fun _ _ _ => rfl, Frame.refl _ _, fun i _ => by rw [ite_eq_right (by omega)]⟩
+  | 0, _ => WP.block_nil ⟨h, fun _ _ _ => rfl, Frame.refl _ _, fun i _ => by rw [ite_eq_right (by omega_using [])]⟩
   | n + 1, hn => by
     have hs := hp.scr_fits
     have hm := hp.mem_fits
-    have hc' : cur * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
+    have hc' : cur * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_using [hc]
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append ((writeWords_ok h hc xo h4 hPw hPC h6 n (by omega)).mono
+    refine WP.block_append ((writeWords_ok h hc xo h4 hPw hPC h6 n (by omega_using [hn])).mono
       fun t ⟨it, gt, ft, wt⟩ => ?_)
     have cell : matrixCell (memP s₀) cur = memP s₀ + BitVec.ofNat 64 (cur * 1024) := rfl
-    have b1 : cur * 1024 + 8 * n + 8 ≤ blocksN s₀ * 1024 := by omega
+    have b1 : cur * 1024 + 8 * n + 8 ≤ blocksN s₀ * 1024 := by omega_using [hc, hn]
     -- The source doubleword is kept: only the current block has been written.
     have sw_t : t.mem.readW (P + BitVec.ofNat 64 (8 * n)) 64 = s.mem.readW (P + BitVec.ofNat 64 (8 * n)) 64 := by
       refine ft.readW (r := ⟨P + BitVec.ofNat 64 (8 * n), 8⟩) (Region.contains_self _ _)
         (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      exact hPC.sub_left (Offset.sub_base _ (by omega))
+      exact hPC.sub_left (Offset.sub_base _ (by omega_using [hn]))
     have ea : t.gpr .r4 + BitVec.ofNat 64 (8 * n) = P + BitVec.ofNat 64 (8 * n) := by
       rw [gt _ (by decide) (by decide), h4]
     have eb : t.gpr .r6 + BitVec.ofNat 64 (8 * n) = memP s₀ + BitVec.ofNat 64 (cur * 1024 + 8 * n) := by
@@ -91,9 +91,9 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
         · exact ⟨scr_mem hp, by show 16384 ≤ 2 ^ 64; decide⟩
         · exact ⟨mem_mem hp, Nat.le_trans (Nat.le_add_left _ _) hm⟩
       rw [bR, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨R, List.mem_append_right _ RW.1, Offset.contains_base _ (by omega) (by have := RW.2; omega)⟩
+      exact ⟨R, List.mem_append_right _ RW.1, Offset.contains_base _ (by omega_using [hn, lR]) (by have := RW.2; omega_using [hn, lR, this])⟩
     have inMc : (memR s₀).Contains (memP s₀ + BitVec.ofNat 64 (cur * 1024 + 8 * n)) 8 :=
-      Offset.contains_base _ b1 (by omega)
+      Offset.contains_base _ b1 (by omega_using [hc, hn, hm])
     have inC : (⟨matrixCell (memP s₀) cur, 1024⟩ : Region).Contains
         (memP s₀ + BitVec.ofNat 64 (cur * 1024 + 8 * n)) 8 := by
       have bl := blocks_lt' hp
@@ -102,7 +102,7 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
         (Nat.le_add_right _ _) (by omega_using [hn]) (by omega_using [hc, bl])
     have inM : ∀ u : State, Inv s₀ u → InRegions u.wr (memP s₀ + BitVec.ofNat 64 (cur * 1024 + 8 * n)) 8 :=
       fun u iu => ⟨memR s₀, by rw [iu.wr]; exact mem_mem hp, inMc⟩
-    have o8 : 8 * n < 2 ^ 15 ∧ 8 * n % 4 = 0 := ⟨by omega, by omega⟩
+    have o8 : 8 * n < 2 ^ 15 ∧ 8 * n % 4 = 0 := ⟨by omega_using [hn], by omega_using []⟩
     -- The doubleword.
     have fin : ∀ (v : BitVec 64) (u : State), u.mem = t.mem.writeW (memP s₀ + BitVec.ofNat 64 (cur * 1024 + 8 * n)) v →
         u.rd = t.rd → u.wr = t.wr → u.sp = t.sp → (∀ r, r ≠ .r3 → r ≠ .r5 → u.gpr r = s.gpr r) →
@@ -123,14 +123,14 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
             gt r (by revert hr; revert r; decide) (by revert hr; revert r; decide)])
         hrd hwr (by rw [hmu]; exact (Frame.refl _ _).writeW (r := memR s₀) (by simp) v inMc)
       refine ⟨iu, gu, fu, fun i hi => ?_⟩
-      rw [hmu, md_store hp _ b1 (by omega) (by omega), wt i hi]
+      rw [hmu, md_store hp _ b1 (by omega_using [hc, hi]) (by omega_using []), wt i hi]
       by_cases e : i = n
       · subst e
-        rw [ite_eq_left rfl, ite_eq_left (show i < i + 1 by omega), ev]
-      · rw [ite_eq_right (show ¬cur * 1024 + 8 * n = cur * 1024 + 8 * i by omega)]
+        rw [ite_eq_left rfl, ite_eq_left (show i < i + 1 by omega_using []), ev]
+      · rw [ite_eq_right (show ¬cur * 1024 + 8 * n = cur * 1024 + 8 * i by omega_using [e])]
         by_cases c : i < n
-        · rw [ite_eq_left c, ite_eq_left (show i < n + 1 by omega)]
-        · rw [ite_eq_right c, ite_eq_right (show ¬i < n + 1 by omega)]
+        · rw [ite_eq_left c, ite_eq_left (show i < n + 1 by omega_using [c])]
+        · rw [ite_eq_right c, ite_eq_right (show ¬i < n + 1 by omega_using [e, c])]
     cases xo
     · simp only [writeWord, Bool.false_eq_true, ite_false, List.nil_append]
       refine wp_ld o8 ea inS fun u₁ v₁ => ?_
@@ -153,8 +153,8 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
       simp only [ite_true]
       rw [v₂.other .r3 (by decide), v₁.gpr, v₂.gpr, v₁.mem]
       change t.mem.readW (P + BitVec.ofNat 64 (8 * n)) 64 ^^^ md s₀ t.mem (cur * 1024 + 8 * n) = _
-      rw [sw_t, wt n (by omega),
-        ite_eq_right (show ¬n < n by omega)]
+      rw [sw_t, wt n (by omega_using [hn]),
+        ite_eq_right (show ¬n < n by omega_using [])]
 
 end
 

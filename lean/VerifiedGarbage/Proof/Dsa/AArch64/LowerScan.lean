@@ -30,7 +30,7 @@ theorem lowerScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (by brun [hg.x0, hdr_enc (show sW < 32 by decide), hdr_enc (show sArr aX < 32 by decide),
       hg.hdr.hw, hg.hdr.harr aX (by decide), hg.ld hZ (show sW < 32 by decide), hg.ld hZ (show sArr aX < 32 by decide)])
     rfl rfl rfl) fun u ⟨⟨hu12, hu16, hum⟩, hku⟩ => ?_)
-  refine WP.seq (WP.mono (rangeLow_ok (hg.scr.congr hku.wr) hu16 (by omega) aboveOne)
+  refine WP.seq (WP.mono (rangeLow_ok (hg.scr.congr hku.wr) hu16 (by omega_using [hx]) aboveOne)
     fun v ⟨hv15, hvm, hkv⟩ => ?_)
   have hv12 := (hkv.gpr .x12 (by decide)).trans hu12
   have hv16 := (hkv.gpr .x16 (by decide)).trans hu16
@@ -38,14 +38,14 @@ theorem lowerScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     simp only [Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide)]
-    omega
+    omega_using [hw]
   refine WP.seq (WP.mono (WP.keep [.x16, .x14] (Q := fun z =>
     z.gpr .x16 = off B (slot w aX + 8) ∧ z.gpr .x14 = BitVec.ofNat 64 (w - 1) ∧ z.mem = v.mem)
     (by brun [hv16, hv12, hsub]) rfl rfl rfl) fun z ⟨⟨hz16, hz14, hzm⟩, hkz⟩ => ?_)
   have hk : Keep mmRegs s z := ((hku.trans hkv).trans hkz).mono (by decide)
   have hz15 : z.gpr .x15 = 0 ↔ rangeLow aboveOne (word s.mem B (slot w aX)) = 0 := by
     rw [hkz.gpr .x15 (by decide), hv15, hum]
-  refine WP.mono (orWords_ok (hg.scr.congr hk.wr) hz16 hz14 hz15 (by omega) (by omega) (by omega))
+  refine WP.mono (orWords_ok (hg.scr.congr hk.wr) hz16 hz14 hz15 (by omega_using [hw]) (by omega_using [hw']) (by omega_using [hx]))
     fun t ⟨ht, htm, hkt⟩ => ?_
   have hm : z.mem = s.mem := hzm.trans (hvm.trans hum)
   rw [hm] at ht
@@ -53,12 +53,12 @@ theorem lowerScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       ∀ i, 1 ≤ i → i < w → word s.mem B (slot w aX + 8 * i) = 0 := by
     constructor
     · intro h i hi hiw
-      have hh := h (i - 1) (by omega)
-      convert hh using 2 <;> omega
+      have hh := h (i - 1) (by omega_using [hw, hiw])
+      convert hh using 2 <;> omega_using [hi]
     · intro h i hi
-      have hh := h (i + 1) (by omega) (by omega)
-      convert hh using 2 <;> omega
-  rw [he, rangeLow_words (by omega) aboveOne] at ht
+      have hh := h (i + 1) (by omega_using []) (by omega_using [hi])
+      convert hh using 2 <;> omega_using []
+  rw [he, rangeLow_words (by omega_using [hw]) aboveOne] at ht
   exact ⟨ht, htm.trans hm, (hk.trans hkt).mono (by decide)⟩
 
 end VG.Proof.Dsa.AArch64

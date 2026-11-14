@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # FFDH and RSA use the same Miller–Rabin round
@@ -26,21 +27,21 @@ open VG.Proof.RsaKeyGen
 /-- The exponent of two in p-1 fits in an odd candidate's bit length. -/
 private theorem split_bounds {p : Nat} (hp : 3 ≤ p) (hodd : p % 2 = 1) :
     1 ≤ (splitTwos (p - 1)).1 ∧ (splitTwos (p - 1)).1 ≤ bitLength p - 1 := by
-  obtain ⟨hN, hm2⟩ := splitTwos_spec (p - 1) (by omega)
-  have hm : 0 < (splitTwos (p - 1)).2 := by omega
+  obtain ⟨hN, hm2⟩ := splitTwos_spec (p - 1) (by omega_using [hp])
+  have hm : 0 < (splitTwos (p - 1)).2 := by omega_using [hm2]
   constructor
   · refine Classical.byContradiction fun h => ?_
-    have h0 : (splitTwos (p - 1)).1 = 0 := by omega
+    have h0 : (splitTwos (p - 1)).1 = 0 := by omega_using [h]
     rw [h0, Nat.pow_zero, Nat.mul_one] at hN
-    omega
+    omega_using [hodd, hN, hm2]
   · have hlt : p < 2 ^ bitLength p := bitLength_lt rfl
     have hpow : 2 ^ (splitTwos (p - 1)).1 ≤ p - 1 := by
       exact Nat.le_trans (Nat.le_mul_of_pos_left _ hm) (Nat.le_of_eq hN.symm)
     have hbound : (splitTwos (p - 1)).1 < bitLength p := by
       refine Classical.byContradiction fun h => ?_
-      have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show bitLength p ≤ (splitTwos (p - 1)).1 by omega)
-      omega
-    omega
+      have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show bitLength p ≤ (splitTwos (p - 1)).1 by omega_using [h])
+      omega_using [hlt, hpow, this]
+    omega_using [hbound]
 
 /-- RSA's bounded test and FFDH's explicit-square test agree. -/
 theorem rsa_round_eq {p : Nat} (a : Nat) (hp : 3 ≤ p) (hodd : p % 2 = 1) :
@@ -53,7 +54,7 @@ theorem rsa_round_eq {p : Nat} (a : Nat) (hp : 3 ≤ p) (hodd : p % 2 = 1) :
   have hz : z < p := by
     dsimp [z]
     rw [VG.Proof.Bignum.powMod_eq]
-    exact Nat.mod_lt _ (by omega)
+    exact Nat.mod_lt _ (by omega_using [hp])
   have he : ∀ j, powMod z (2 ^ j) p = sqIter p z j := by
     intro j
     have h := powMod_pow2 z 1 p (by decide) j

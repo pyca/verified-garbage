@@ -91,9 +91,9 @@ sampling trace from there starts with an acceptance. -/
 theorem acc_iff {E : SE} {qb R : List Byte} {u d : Nat} (hQ : E.Q qb) (hR : R.length = E.rl)
     (hs : u + E.W ≤ E.rl) (hd : 1 ≤ d) :
     acc qb R u E.W ↔ (sample (Spec.Dsa.decodeBE qb) d (R.drop u)).trace.head? = some 1 := by
-  obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+  obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega_using [hd]⟩
   have hs' : drawBytes (Spec.Dsa.decodeBE qb) ≤ (R.drop u).length := by
-    rw [List.length_drop, hR, hQ.draw]; omega
+    rw [List.length_drop, hR, hQ.draw]; omega_using [hs]
   by_cases ha : acc qb R u E.W
   · have hS := Dsa.Random.sample_accept _ d' _ hQ.gt hs' (by rw [hQ.draw]; exact ha)
     rw [hS]
@@ -116,8 +116,8 @@ theorem draw_st {E : SE} {qb R₁ R₂ : List Byte} {s₁ s₂ : State} {u d : N
   refine SameTrace.seq (st_taint [.r24, .r25, .r28] hsp ⟨h₁.r24.trans h₂.r24.symm, a25.trans b25.symm,
       h₁.r28.trans h₂.r28.symm⟩ (by taint_decide)) (shortTest_ok hE h₁ a25 hu) (shortTest_ok hE h₂ b25 hu)
     fun t₁ t₂ ⟨⟨c3, m1⟩, k1⟩ ⟨⟨d3, m2⟩, k2⟩ => ?_
-  have g1 : SEnv E R₁ t₁ := h₁.step hE k1 (o := 0) (n := 0) (by omega) (by rw [m1]; exact Outside.refl _ _ _ _)
-  have g2 : SEnv E R₂ t₂ := h₂.step hE k2 (o := 0) (n := 0) (by omega) (by rw [m2]; exact Outside.refl _ _ _ _)
+  have g1 : SEnv E R₁ t₁ := h₁.step hE k1 (o := 0) (n := 0) (by omega_using []) (by rw [m1]; exact Outside.refl _ _ _ _)
+  have g2 : SEnv E R₂ t₂ := h₂.step hE k2 (o := 0) (n := 0) (by omega_using []) (by rw [m2]; exact Outside.refl _ _ _ _)
   have tsp : t₁.sp = t₂.sp := g1.sp.trans g2.sp.symm
   refine SameTrace.ite (by rw [VG.PPC64LE.eval_nonzero, VG.PPC64LE.eval_nonzero, c3, d3])
     (fun _ => by exact st_taint [] tsp trivial (by taint_decide)) (fun hs => ?_)
@@ -128,10 +128,10 @@ theorem draw_st {E : SE} {qb R₁ R₂ : List Byte} {s₁ s₂ : State} {u d : N
   have u25 : t₂.gpr .r25 = BitVec.ofNat 64 u := (k2.gpr .r25 (by decide)).trans b25
   refine SameTrace.seq (st_taint [.r21, .r23, .r25, .r27, .r28] tsp ⟨g1.r21.trans g2.r21.symm,
       g1.r23.trans g2.r23.symm, t25.trans u25.symm, g1.r27.trans g2.r27.symm, g1.r28.trans g2.r28.symm⟩
-      (by taint_decide)) (copyRange_ok hE hQ g1 t25 (by omega)) (copyRange_ok hE hQ g2 u25 (by omega))
+      (by taint_decide)) (copyRange_ok hE hQ g1 t25 (by omega_using [hu, hs'])) (copyRange_ok hE hQ g2 u25 (by omega_using [hu, hs']))
     fun x₁ x₂ ⟨⟨e1, _, _, x6, _⟩, kx1⟩ ⟨⟨e2, _, _, y6, _⟩, kx2⟩ => ?_
   have hacc : acc qb R₁ u E.W ↔ acc qb R₂ u E.W := by
-    rw [acc_iff hQ h₁.R_length (by omega) hd, acc_iff hQ h₂.R_length (by omega) hd, ht]
+    rw [acc_iff hQ h₁.R_length (by omega_using [hu, hs']) hd, acc_iff hQ h₂.R_length (by omega_using [hu, hs']) hd, ht]
   have xsp : x₁.sp = x₂.sp := e1.sp.trans e2.sp.symm
   have e17 : EqRegs x₁ x₂ [.r17] := ((kx1.gpr .r17 (by decide)).trans ((k1.gpr .r17 (by decide)).trans a17)).trans
     ((kx2.gpr .r17 (by decide)).trans ((k2.gpr .r17 (by decide)).trans b17)).symm
@@ -156,14 +156,14 @@ theorem step_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
   refine WP.seq (WP.mono (draw_ok hE hQ h h25 hu h17 hd hd' h31) fun t₁ ⟨h1, _, _, hc⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun t₂ => t₂.mem = t₁.mem ∧
     t₂.gpr .r3 = t₁.gpr .r31 - BitVec.ofNat 64 4) (by prun) (by decide)) fun t₂ ⟨⟨m2, a3⟩, k2⟩ => ?_
-  have h2 : SEnv E R t₂ := h1.step hE k2 (o := 0) (n := 0) (by omega) (by rw [m2]; exact Outside.refl _ _ _ _)
+  have h2 : SEnv E R t₂ := h1.step hE k2 (o := 0) (n := 0) (by omega_using []) (by rw [m2]; exact Outside.refl _ _ _ _)
   refine ⟨h2, ?_⟩
   rcases hc with ⟨b31, h2d, b17, b25, hu', hrej⟩ | ⟨b31, -, -, hh⟩
   · refine .inl ⟨?_, (k2.gpr .r17 (by decide)).trans b17, (k2.gpr .r25 (by decide)).trans b25,
       (k2.gpr .r31 (by decide)).trans b31, h2d, hu', hrej⟩
     rw [VG.PPC64LE.eval_zero, a3, b31]; rfl
   · refine .inr ⟨?_, hh⟩
-    rw [VG.PPC64LE.eval_zero, a3, b31, status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) d (R.drop u)); omega)]
+    rw [VG.PPC64LE.eval_zero, a3, b31, status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) d (R.drop u)); omega_using [this])]
 
 /-- The sampling loop's two runs, with `d` draws left. -/
 def DI (E : SE) (qb R₁ R₂ : List Byte) (d : Nat) (s₁ s₂ : State) : Prop :=
@@ -183,7 +183,7 @@ theorem sampleLoop_st {E : SE} {qb R₁ R₂ : List Byte} (hE : E.Ok) (hQ : E.Q 
     fun t₁ t₂ ⟨e₁, c₁⟩ ⟨e₂, c₂⟩ => ?_⟩
   rcases c₁ with ⟨v₁, x17, x25, x31, hn, hu', hr₁⟩ | ⟨v₁, hh₁⟩ <;>
     rcases c₂ with ⟨v₂, y17, y25, y31, hn₂, -, hr₂⟩ | ⟨v₂, hh₂⟩
-  · refine ⟨v₁.trans v₂.symm, fun _ => ⟨n - 1, by omega, u + E.W, by omega, by omega, e₁, e₂, x25, y25, hu',
+  · refine ⟨v₁.trans v₂.symm, fun _ => ⟨n - 1, by omega_using [hd], u + E.W, by omega_using [hn], by omega_using [hd'], e₁, e₂, x25, y25, hu',
       x17, y17, x31, y31, ?_⟩⟩
     rw [hr₁, hr₂] at ht
     exact (List.cons.inj ht).2
@@ -208,8 +208,8 @@ theorem sample_st {E : SE} {qb R₁ R₂ : List Byte} {s₁ s₂ : State} {u : N
   unfold Impl.Dsa.PPC64LE.Random.sample
   refine SameTrace.seq (st_taint [] (h₁.sp.trans h₂.sp.symm) trivial (by taint_decide)) W W
     fun t₁ t₂ ⟨⟨m1, a17, a31⟩, k1⟩ ⟨⟨m2, b17, b31⟩, k2⟩ => sampleLoop_st hE hQ ⟨u, by decide, by decide,
-      h₁.step hE k1 (o := 0) (n := 0) (by omega) (by rw [m1]; exact Outside.refl _ _ _ _),
-      h₂.step hE k2 (o := 0) (n := 0) (by omega) (by rw [m2]; exact Outside.refl _ _ _ _),
+      h₁.step hE k1 (o := 0) (n := 0) (by omega_using []) (by rw [m1]; exact Outside.refl _ _ _ _),
+      h₂.step hE k2 (o := 0) (n := 0) (by omega_using []) (by rw [m2]; exact Outside.refl _ _ _ _),
       (k1.gpr _ (by decide)).trans a25, (k2.gpr _ (by decide)).trans b25, hu, a17, b17, a31, b31, ht⟩
 
 end VG.Proof.Dsa.PPC64LE.Rnd

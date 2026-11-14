@@ -28,14 +28,14 @@ open VG.Spec.Ed448 (L)
 
 theorem cLimb_high {k : Nat} (h : 14 ≤ k) : cLimb k = 0 := by
   rw [cLimb, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by
-    simp only [cLimbs, List.length_cons, List.length_nil]; omega)]
+    simp only [cLimbs, List.length_cons, List.length_nil]; omega_using [h])]
   rfl
 
 theorem cLimb_lt (k : Nat) : cLimb k < 65536 := by
   by_cases h : k < 14
   · have : ∀ k < 14, cLimb k < 65536 := by decide
     exact this k h
-  · rw [cLimb_high (by omega)]; decide
+  · rw [cLimb_high (by omega_using [h])]; decide
 
 theorem kLimb_lt (k : Nat) : kLimb k < 65536 := by
   unfold kLimb; split
@@ -74,8 +74,8 @@ theorem foldL_lt {r : Nat → Nat} (hr : ∀ k < 28, r k < 65536) {w : Nat} (hw 
   split
   · exact hw
   · split
-    · exact hr _ (by omega)
-    · omega
+    · exact hr _ (by omega_using [hk])
+    · omega_using []
 
 /-- `w + 2^16 r = l + 2^446 h`. -/
 theorem foldL_val (r : Nat → Nat) (w : Nat) :
@@ -86,13 +86,13 @@ theorem foldL_val (r : Nat → Nat) (w : Nat) :
         val16 (fun k => if k < 26 then r k else r 26 % 16384) 27 :=
       val16_congr fun k hk => by
         unfold foldL
-        rw [ite_eq_right (by omega)]
+        rw [ite_eq_right (by omega_using [])]
         by_cases h : k < 26
-        · rw [ite_eq_left (by omega), ite_eq_left h, show 1 + k - 1 = k by omega]
-        · rw [ite_eq_right (by omega), ite_eq_right h]
+        · rw [ite_eq_left (by omega_using [h]), ite_eq_left h, show 1 + k - 1 = k by omega_using []]
+        · rw [ite_eq_right (by omega_using [h]), ite_eq_right h]
     have hs2 : val16 (fun k => if k < 26 then r k else r 26 % 16384) 27 =
         val16 r 26 + 2 ^ 416 * (r 26 % 16384) := by
-      rw [val16_succ, ite_eq_right (by omega), val16_congr (g := r) (n := 26) fun k hk => ite_eq_left hk,
+      rw [val16_succ, ite_eq_right (by omega_using []), val16_congr (g := r) (n := 26) fun k hk => ite_eq_left hk,
         show 16 * 26 = 416 from rfl]
     have h1 : val16 (foldL r w) 1 = w := by
       simp only [val16, foldL, ite_true, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add]
@@ -132,15 +132,15 @@ theorem fold_facts {r : Nat → Nat} (hr : ∀ k < 28, r k < 65536) (hv : val16 
       omega
   have hH : foldH r < 65536 := by
     unfold foldH
-    have := hr 26 (by omega)
-    omega
+    have := hr 26 (by omega_using [])
+    omega_using [h27, this]
   have hl := foldL_lt hr hw
   refine ⟨h27, hH, fun k hk => ?_, ?_⟩
   · have hm : foldH r * cLimb k ≤ 65535 * 65535 :=
-      Nat.mul_le_mul (by omega) (by have := cLimb_lt k; omega)
+      Nat.mul_le_mul (by omega_using [hH]) (by have := cLimb_lt k; omega_using [this])
     have := hl k hk
     unfold foldC
-    omega
+    omega_using [hm, this]
   have eC : val16 (foldC r w) 28 = val16 (foldL r w) 28 + foldH r * cL := by
     unfold foldC
     rw [val16_add, val16_cmul, val16_cLimb]
@@ -148,10 +148,10 @@ theorem fold_facts {r : Nat → Nat} (hr : ∀ k < 28, r k < 65536) (hv : val16 
     have e : val16 (foldL r w) 28 = val16 (foldL r w) 27 + 2 ^ 432 * (r 26 % 16384) := by
       rw [val16_succ, show 16 * 27 = 432 from rfl, show foldL r w 27 = r 26 % 16384 from rfl]
     have h1 : val16 (foldL r w) 27 < 2 ^ 432 := by
-      have := val16_lt (f := foldL r w) (n := 27) fun k hk => hl k (by omega)
+      have := val16_lt (f := foldL r w) (n := 27) fun k hk => hl k (by omega_using [hk])
       rwa [show 16 * 27 = 432 from rfl] at this
-    have h2 := Nat.mul_le_mul_left (2 ^ 432) (by omega : r 26 % 16384 ≤ 16383)
-    omega
+    have h2 := Nat.mul_le_mul_left (2 ^ 432) (by omega_using [] : r 26 % 16384 ≤ 16383)
+    omega_using [e, h1]
   have hval := foldL_val r w
   have hP : (2 : Nat) ^ 446 = 2 ^ 432 * 2 ^ 14 := by
     exact pow2_split 432 14 446 rfl
@@ -161,11 +161,11 @@ theorem fold_facts {r : Nat → Nat} (hr : ∀ k < 28, r k < 65536) (hv : val16 
   rw [← hP, hP'] at hL28
   have hHc : foldH r * cL < 65536 * cL := Nat.mul_lt_mul_of_pos_right hH (by rw [hcL]; decide)
   refine ⟨?_, ?_⟩
-  · rw [eC]; rw [hL, hcL] at *; omega
+  · rw [eC]; rw [hL, hcL] at *; omega_using [hH, hL28, hP']
   · rw [eC, ← hval]
     have e : val16 (foldL r w) 28 + (L + cL) * foldH r =
         val16 (foldL r w) 28 + foldH r * cL + foldH r * L := by
-      rw [Nat.add_mul, Nat.mul_comm L, Nat.mul_comm cL]; omega
+      rw [Nat.add_mul, Nat.mul_comm L, Nat.mul_comm cL]; omega_using []
     rw [e, Nat.add_mul_mod_self_right]
 
 /-! ## The conditional subtraction -/
@@ -177,19 +177,19 @@ theorem csub_facts {M x y c : Nat} (hLM : 2 * L ≤ M) (hx : x < 2 * L) (hy : y 
     c ≤ 1 ∧ (if c = 1 then y else x) = x % L := by
   have hc : c ≤ 1 := by
     rcases Nat.lt_or_ge c 2 with h | h
-    · omega
+    · omega_using [h]
     · have : M * 2 ≤ M * c := Nat.mul_le_mul_left _ h
-      omega
+      omega_using [hLM, hx, he, this]
   refine ⟨hc, ?_⟩
   have := csub_nat (M := M) (x := x) (y := y) (c := decide (c = 1)) hLM hx hy
-    (by rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> simpa using he)
+    (by rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl <;> simpa using he)
   rw [← this]
-  rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl <;> rfl
 
 /-- `2L` fits in 448 bits. -/
 theorem two_L_le : 2 * L ≤ 2 ^ (16 * 28 : Nat) := by
   have h := pow2_split 446 2 (16 * 28) rfl
   have := L_lt
-  omega
+  omega_using [this]
 
 end VG.Proof.Ed448.Arm

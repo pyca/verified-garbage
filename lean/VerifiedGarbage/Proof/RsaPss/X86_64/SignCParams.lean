@@ -74,9 +74,9 @@ theorem emBitsB_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       Rep u'.mem F S V (upd (upd (upd W 27 (BitVec.ofNat 64 (ebV k x))) 28
         (BitVec.ofNat 64 (Spec.RsaPss.emLength (ebV k x)))) 26 (BitVec.ofNat 64 (k - Spec.RsaPss.emLength (ebV k x)))) := by
   have G := L.geo
-  have hl8 : Nat.log2 x < 8 := (Nat.log2_lt h0).mpr (by omega)
-  have heb : ebV k x ≤ 8 * k - 1 := by unfold ebV; omega
-  have hel : Spec.RsaPss.emLength (ebV k x) ≤ k := by unfold Spec.RsaPss.emLength; omega
+  have hl8 : Nat.log2 x < 8 := (Nat.log2_lt h0).mpr (by omega_using [hx])
+  have heb : ebV k x ≤ 8 * k - 1 := by unfold ebV; omega_using [hk1, hl8]
+  have hel : Spec.RsaPss.emLength (ebV k x) ≤ k := by unfold Spec.RsaPss.emLength; omega_using [heb]
   rw [emBitsB_eq, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.rdx] (Q := fun v => v.mem = u.mem ∧ v.gpr .rdx = BitVec.ofNat 64 (8 * k - 1)) ?_ rfl)
     fun v ⟨⟨hm, hd⟩, kv⟩ => ?_
@@ -85,14 +85,14 @@ theorem emBitsB_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_twoPow]
     rw [show BitVec.toNat (1 : BitVec 64) = 1 from rfl]
-    omega
+    omega_using [hk1]
   refine WP.mono (sbbChain_ok v (BitVec.ofNat 64 x) _ (by rw [kv.gpr (by decide)]; exact hax) hd)
     fun w ⟨kw, hmw, hdw⟩ => ?_
   have hdw' : w.gpr .rdx = BitVec.ofNat 64 (ebV k x) := by
     rw [hdw, cbSum_eq hx h0]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    unfold ebV; omega
+    unfold ebV; omega_using [hk1, hl8]
   have Lw : Lay w F S := L.congr ((kw.gpr (by decide)).trans (kv.gpr (by decide))) (kw.2.2.trans kv.2.2)
     (by rw [hmw, hm])
   have Rw : Rep w.mem F S V W := by rw [hmw, hm]; exact R
@@ -110,7 +110,7 @@ theorem emBitsB_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       (off F sLo) (BitVec.ofNat 64 (k - Spec.RsaPss.emLength (ebV k x)))) ?_ rfl) fun y ⟨hmy, ky⟩ => ?_
   · have h7 : (BitVec.ofNat 64 (ebV k x) + BitVec.signExtend 64 (7 : BitVec 32)) >>> 3 =
         BitVec.ofNat 64 (Spec.RsaPss.emLength (ebV k x)) := by
-      have hb : ebV k x < 8192 := by unfold ebV at *; omega
+      have hb : ebV k x < 8192 := by unfold ebV at *; omega_using [hk2, hl8]
       generalize ebV k x = e at hb ⊢
       rw [show BitVec.signExtend 64 (7 : BitVec 32) = BitVec.ofNat 64 7 from rfl]
       unfold Spec.RsaPss.emLength

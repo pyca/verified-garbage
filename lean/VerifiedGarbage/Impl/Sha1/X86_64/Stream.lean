@@ -38,14 +38,17 @@ open VG.X86_64
 open VG.Impl.Sha1.X86_64 (at_ compress)
 open VG.Impl.MdStream.X86_64 (Params len64 out32)
 
-/-- A compression function to call: its symbol and its code. -/
+/-- A compression function to call: its symbol, its code, and the bytes of
+scratch space it uses (`so`), which the functions that call it by name give
+it. -/
 structure Callee where
   name : String
   code : Prog isa
+  so : Nat
 
-def Callee.scalar : Callee := ⟨"vg_sha1_compress", compress⟩
-def Callee.shani : Callee := ⟨"vg_sha1_compress_shani", ShaNi.compress⟩
-def Callee.avxBmi : Callee := ⟨"vg_sha1_compress_avx_bmi", AvxBmi.compress⟩
+def Callee.scalar : Callee := ⟨"vg_sha1_compress", compress, 112⟩
+def Callee.shani : Callee := ⟨"vg_sha1_compress_shani", ShaNi.compress, 0⟩
+def Callee.avxBmi : Callee := ⟨"vg_sha1_compress_avx_bmi", AvxBmi.compress, 112⟩
 
 def init : Prog isa :=
   .block ((List.range 5).flatMap fun k =>

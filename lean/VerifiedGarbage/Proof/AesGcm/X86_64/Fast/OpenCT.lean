@@ -76,7 +76,7 @@ theorem incJ_finI {Ctx W SP D : Addr} {R r : Nat} (s : State) (h : FinI Ctx W SP
       t.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => f.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
-      rw [e28]; exact Offset.disjoint W (.inr (by omega)) (by omega) (by decide)) (by decide)
+      rw [e28]; exact Offset.disjoint W (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)) (by decide)
   refine WP.of_runBlock ⟨t, run, h.env.keep (fun g' hg => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
       rcases hg with rfl | rfl | rfl | rfl <;> exact g _ (by decide)) rd wr,
@@ -89,7 +89,7 @@ theorem finI_keepG {Ctx W SP D : Addr} {R r : Nat} {s s' : State} (h : FinI Ctx 
     (hf : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s'.mem) : FinI Ctx W SP D R r s' := by
   have kp : ∀ d, d + 8 ≤ 512 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d hd => hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact Offset.disjoint W (.inl (by omega)) (by omega) (by decide))
+      simp only [List.mem_singleton] at hq; subst hq; exact Offset.disjoint W (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide))
       (by decide)
   exact ⟨h.env.keep hg hrd hwr, by rw [kp 176 (by decide)]; exact h.rounds, by rw [kp 200 (by decide)]; exact h.dat,
     by rw [kp 208 (by decide)]; exact h.len⟩
@@ -117,7 +117,7 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
   have wTest : ∀ {F : State → Prop}, (∀ {s s' : State}, F s → FinI Ctx W SP D R r s' → s'.rd = s.rd → s'.wr = s.wr →
       F s') → (∀ s, F s → FinI Ctx W SP D R r s) → ∀ s, F s → WP isa (.block lenTest) s fun t =>
         t.zf = some (decide (r = 0)) ∧ F t := fun hF hI s h =>
-    WP.mono (finTest_ok (by omega) s (hI s h).env (hI s h).len) fun _ ⟨z, g, m, rd, wr, _⟩ => ⟨z, hF h
+    WP.mono (finTest_ok (by omega_using [hr]) s (hI s h).env (hI s h).len) fun _ ⟨z, g, m, rd, wr, _⟩ => ⟨z, hF h
       ((hI s h).keep (fun g' hg => g _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> decide)) rd wr (by rw [m]; exact Frame.refl _ _)) rd wr⟩
@@ -150,8 +150,8 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
     obtain ⟨s₁, run₁, m₁, di₁, si₁, -, cx₁, g₁, rd₁, wr₁, -⟩ := finTextArgs_ok s he h.1.dat h.1.len
     refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
     have lp : LoopPre s₁ D (W + BitVec.ofNat 64 512) r :=
-      ⟨si₁, di₁, cx₁, by omega, by omega, by rw [rd₁, wr₁]; exact h.2, by rw [wr₁]; exact he.perm.wC (by omega),
-        hDW.sub_right (Lay.wSub (by omega))⟩
+      ⟨si₁, di₁, cx₁, by omega_using [h0], by omega_using [hr], by rw [rd₁, wr₁]; exact h.2, by rw [wr₁]; exact he.perm.wC (by omega_using [hr]),
+        hDW.sub_right (Lay.wSub (by omega_using [hr]))⟩
     refine WP.seq (WP.mono (copyLoopX_ok s₁ lp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, _⟩ => ?_)
     have f₁ : Frame [⟨W + BitVec.ofNat 64 512, 16⟩] s.mem s₁.mem := by
       rw [m₁]; exact writeBytes_frame' _ (List.length_replicate ..)
@@ -160,7 +160,7 @@ theorem tagP_rel {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : 
     have F₂ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₂.mem := by
       refine (f₁.sub fun q hq => ?_).trans (f₂.sub fun q hq => ?_) <;>
         simp only [List.mem_singleton] at hq <;> subst hq <;>
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩
     have I₂ : FinI Ctx W SP D R r s₂ := finI_keepG h.1 (fun g hg => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
       rcases hg with rfl | rfl | rfl | rfl <;>
@@ -233,7 +233,7 @@ theorem crRel_tailK : CrRel Impl.AesGcm.X86_64.FastOpen.tailK := by
         s₁.gpr .rcx = BitVec.ofNat 64 n ∧ (∀ r, r ≠ .rcx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
         s₁.rd = s.rd ∧ s₁.wr = s.wr := by
       refine ⟨_, by xrun [h.env.r15, q₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · simp only [zf_arithFlags, h.len]; exact congrArg some (and_self_beq (by omega))
+      · simp only [zf_arithFlags, h.len]; exact congrArg some (and_self_beq (by omega_using [hn]))
       · simp [gpr_setReg, h.len]
       · intro r a; simp [gpr_setReg, a]
       all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
@@ -299,7 +299,7 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.prepared
       ⟨z, E, by rw [K.gpr _ (by decide) (by decide) (by decide), h.2.1], by rw [K.mem]; exact h.2.2⟩
   have c := rel_next (Fast.cond_rel (F₁ := OpenIn s₀ Ctx W SP A D n t) (F₂ := OpenIn s₀' Ctx W SP A D n t)
       (fun _ h => condS_of h.1 hnl hal) (fun _ h => condS_of h.1 hnl' hal')
-      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega))
+      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_using [hlt]))
     (hw C hnl hal) (hw C' hnl' hal')
   refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     ((ho C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
@@ -309,11 +309,11 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.prepared
     subst h12
     have L := C.lay
     exact (openOkW_rel v B (tagRel_tagP hks hkr) (tagP_ok hF hks) crRel_tailK C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
-      hres hok ((Fast.aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
+      hres hok ((Fast.aad_rel L C.dE (M := (CtxMode.preparedN np hpn)) (R := R) (Np := Np) (A := A) (al := al) (by omega_using [h17])).mono
         (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
         (fun _ _ g => ⟨g.1.1.aadPre C X hNp hnl hal hR, g.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)
-      (fun _ h => Fast.aad_mid hF C X h.1 hNp hnl hal (by omega))
-      (fun _ h => Fast.aad_mid hF C' X' h.1 hNp' hnl' hal' (by omega))).mono
+      (fun _ h => Fast.aad_mid hF C X h.1 hNp hnl hal (by omega_using [h17]))
+      (fun _ h => Fast.aad_mid hF C' X' h.1 hNp' hnl' hal' (by omega_using [h17]))).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 

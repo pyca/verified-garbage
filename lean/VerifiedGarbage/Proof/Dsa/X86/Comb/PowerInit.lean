@@ -85,7 +85,7 @@ theorem powerInit_ok {n e m g : Nat} {base : Addr} {s : State}
   have O2 : Outs base (powerRanges n e) u.mem v.mem := VG.Proof.Mont.X86.Comb.widen
     (Outs.of_outside Ov (by simp : (slot n 8+4*e,4*(expWords e-e)) ∈ [(slot n 8+4*e,4*(expWords e-e))])) (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
-      exact ⟨(slot n 8,4*expWords e),by simp [powerRanges],by omega,by have := shape.2.2.2.2; omega⟩)
+      exact ⟨(slot n 8,4*expWords e),by simp [powerRanges],by omega_using [],by have := shape.2.2.2.2; omega⟩)
   have Av : wordsVal v.mem base (slot n 6) n=2^(64*n)%m := by
     rw [Ov.wordsVal (by
       rcases h with ⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩|⟨rfl,rfl⟩ <;> decide) (by

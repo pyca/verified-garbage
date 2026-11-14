@@ -24,7 +24,7 @@ theorem montEncode_ok (s : State) {base : BitVec 32} {len w o a M : Nat}
       numAt t.mem (State.addr base) w o = numAt s.mem (State.addr base) w a * 2 ^ (64 * w) % M ∧
       Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have positive : 0 < M := by have := h.modulus; rw [modulus] at this; omega
+  have positive : 0 < M := by have := h.modulus; rw [modulus] at this; omega_using [odd]
   refine WP.mono (montOp_ok s h ho ha
     (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) ho0
     (by rw [modulus, r2]; exact Nat.mod_lt _ positive)) ?_
@@ -33,7 +33,7 @@ theorem montEncode_ok (s : State) {base : BitVec 32} {len w o a M : Nat}
   have encoded : numAt t.mem (State.addr base) w o % M = numAt s.mem (State.addr base) w a * 2 ^ (64 * w) % M := by
     apply mont_cancel (coprime_pow2 odd (64 * w))
     rw [value, r2, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod,
-      show 128 * w = 64 * w + 64 * w by omega, Nat.pow_add, Nat.mul_assoc]
+      show 128 * w = 64 * w + 64 * w by omega_using [], Nat.pow_add, Nat.mul_assoc]
   rw [Nat.mod_eq_of_lt bound] at encoded
   exact ⟨ready, modT, encoded, keeps, frame, rest⟩
 

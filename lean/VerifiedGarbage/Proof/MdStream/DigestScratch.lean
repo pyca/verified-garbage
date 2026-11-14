@@ -33,10 +33,10 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 variable (D : Nat) (digest : List Byte → List Byte) (pb : Nat)
 
@@ -53,7 +53,7 @@ theorem digestPost_local : ∀ vs m₁ m₂ m' r, vs.length = ((digestSig D).wor
     dsimp only [Curry.apply, digestPost, ArgWord.ofRaw] at h ⊢
     have := Nat.mod_le len.toNat (2 ^ pb)
     rw [Proof.Sha256.Stream.bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi =>
-      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
     exact h
 
 theorem digestPostOut_local : ∀ vs m m₁ m₂ r, vs.length = ((digestSig D).words pb).length →

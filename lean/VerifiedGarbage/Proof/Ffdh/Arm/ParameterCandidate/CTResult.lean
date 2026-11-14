@@ -22,7 +22,7 @@ private def ResultCompared (compare : Nat) (p : ResultData × Nat) (s : State) :
 private theorem resultCompare_ct (compare : Nat) (bound : compare ≤ 4) : RelCT isa (Two ResultState)
     (.block [.cmp .r3 (.imm (BitVec.ofNat 32 compare))]) (Two (ResultCompared compare)) :=
   two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h => by
-    refine WP.mono (cmpStatus_ok p.2 compare (by have := h.2.1; omega) bound h.2.2) ?_
+    refine WP.mono (cmpStatus_ok p.2 compare (by have := h.2.1; omega_using [this]) bound h.2.2) ?_
     rintro t ⟨⟨zero, memory⟩, rest⟩
     exact ⟨⟨h.1.after_memory memory rest, h.2.1, (rest.gpr .r3 (by simp)).trans h.2.2⟩, zero⟩)
 

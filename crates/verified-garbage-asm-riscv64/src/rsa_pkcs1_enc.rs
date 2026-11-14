@@ -3,9 +3,9 @@
 //! `assembly/rsa_pkcs1_enc.s`.
 #![allow(dead_code)]
 
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+/// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// # Safety
 ///
@@ -21,6 +21,7 @@
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes, and aligned for `u64`.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -28,27 +29,29 @@
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3440 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x7131
+.insn 2, 0x7155
 .insn 2, 0x828a
-.insn 4, 0x0682b023
-.insn 4, 0x0692b423
-.insn 4, 0x0722b823
-.insn 4, 0x0732bc23
-.insn 4, 0x0942b023
-.insn 4, 0x0952b423
-.insn 4, 0x0962b823
-.insn 4, 0x0972bc23
-.insn 4, 0x0b82b023
-.insn 4, 0x0b92b423
-.insn 4, 0x0a12b823
-.insn 4, 0x0c010f93
+.insn 4, 0x0682b823
+.insn 4, 0x0692bc23
+.insn 4, 0x0922b023
+.insn 4, 0x0932b423
+.insn 4, 0x0942b823
+.insn 4, 0x0952bc23
+.insn 4, 0x0b62b023
+.insn 4, 0x0b72b423
+.insn 4, 0x0b82b823
+.insn 4, 0x0b92bc23
+.insn 4, 0x0c12b023
+.insn 4, 0x0d010f93
 .insn 2, 0x84ba
 .insn 2, 0x892a
 .insn 2, 0x89b2
@@ -80,6 +83,10 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usiz
 .insn 4, 0x0462b823
 .insn 4, 0x070fb303
 .insn 4, 0x0462bc23
+.insn 4, 0x078fb303
+.insn 4, 0x0662b023
+.insn 4, 0x080fb303
+.insn 4, 0x0662b423
 .insn 2, 0x85a6
 .insn 2, 0x8636
 .insn 2, 0x86a6
@@ -87,7 +94,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usiz
 .insn 2, 0x87c2
 .insn 2, 0x885a
 .insn 2, 0x88a6
-call {vg_rsa_private_checked}
+call {vg_rsa_private_checked_precomputed}
 .insn 4, 0x02051b93
 .insn 4, 0x020bdb93
 .insn 4, 0x61040593
@@ -330,21 +337,21 @@ bnez t2, 26b
 bnez t2, 27b
 .insn 2, 0x855e
 .insn 2, 0x828a
-.insn 4, 0x0602b403
-.insn 4, 0x0682b483
-.insn 4, 0x0702b903
-.insn 4, 0x0782b983
-.insn 4, 0x0802ba03
-.insn 4, 0x0882ba83
-.insn 4, 0x0902bb03
-.insn 4, 0x0982bb83
-.insn 4, 0x0a02bc03
-.insn 4, 0x0a82bc83
-.insn 4, 0x0b02b083
-.insn 2, 0x6129
+.insn 4, 0x0702b403
+.insn 4, 0x0782b483
+.insn 4, 0x0802b903
+.insn 4, 0x0882b983
+.insn 4, 0x0902ba03
+.insn 4, 0x0982ba83
+.insn 4, 0x0a02bb03
+.insn 4, 0x0a82bb83
+.insn 4, 0x0b02bc03
+.insn 4, 0x0b82bc83
+.insn 4, 0x0c02b083
+.insn 2, 0x6169
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,

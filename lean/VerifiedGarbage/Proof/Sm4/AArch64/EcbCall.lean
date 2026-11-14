@@ -89,7 +89,7 @@ theorem movz_sp_ok (s : State) (d : Reg) {v : Nat} (hv : v < 65536) :
   · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
     apply BitVec.eq_of_toNat_eq
     simp only [Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hv]
 
 theorem ecbCall_depth (dir : Dir) :
     16 * (Code.seq (.block [.movz .x .x3 (BitVec.ofNat 16 (dirFlag dir)) 0])
@@ -109,13 +109,13 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
   have spSub : s₀.sp - BitVec.ofNat 64 16 - BitVec.ofNat 64 3168 = s₀.sp - BitVec.ofNat 64 3184 := by
     rw [← Offset.sub_add_eq, BitVec.ofNat_add_ofNat]
   rw [ecbCall_eq]
-  refine (WP.frameReg (r := .x30) (s₀ := s₀) (by omega) (fun R hR => ?_) ?_ (ecbCall_depth dir)).elim
+  refine (WP.frameReg (r := .x30) (s₀ := s₀) (by omega_using [hsp]) (fun R hR => ?_) ?_ (ecbCall_depth dir)).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   · rw [hwr, List.mem_singleton] at hR; subst hR
     exact dSD.sub_left frameSub
   obtain ⟨σ, e₂, x3₂, o₂, m₂, rd₂, wr₂, sp₂, v₂⟩ := movz_sp_ok
     { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) } .x3 (v := dirFlag dir)
-    (by omega)
+    (by omega_using [hk])
   refine WP.seq (WP.of_runBlock ⟨σ, e₂, ?_⟩)
   have g₂ : ∀ r, r ≠ .x3 → σ.gpr r = s₀.gpr r := fun r h => o₂ r h
   have hsp₂ : σ.sp = s₀.sp - BitVec.ofNat 64 16 := sp₂
@@ -128,8 +128,8 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
     simp only [e0, e1, e2, x3₂, hsp₂, spSub]
     refine ⟨?_, hrd, hwr, dKD, dSK.sub_left (Region.sub_prefix (by decide)),
       dSD.sub_left (Region.sub_prefix (by decide)), fitK, fitD, ?_⟩
-    · rw [Offset.toNat_sub_ofNat]; omega
-    · rw [BitVec.toNat_ofNat]; omega
+    · rw [Offset.toNat_sub_ofNat]; omega_using [hsp]
+    · rw [BitVec.toNat_ofNat]; omega_using [hk]
   · intro s' rd' wr' sp' hf hg hv hpost
     sig_reduce [Proof.Sm4.ecbDirContract, Proof.Sm4.ecbDirSig, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs] at hpost
     have e0 : σ.gpr .x0 = s₀.gpr .x0 := g₂ _ (by decide)
@@ -144,7 +144,7 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
     have hblk : Spec.Sm4.blocksAt σ.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat =
         Spec.Sm4.blocksAt s₀.mem (s₀.gpr .x1) (s₀.gpr .x2).toNat :=
       Proof.Sm4.blocksAt_frame hfr (fun r hr => by
-        rw [List.mem_singleton] at hr; subst hr; exact (dSD.sub_left slotSub).symm) (by omega)
+        rw [List.mem_singleton] at hr; subst hr; exact (dSD.sub_left slotSub).symm) (by omega_using [fitD])
     refine ⟨⟨fun r hr => ?_, rfl, fun r hr => (hv r hr).trans (by rw [v₂])⟩, ?_⟩
     · show (s'.write .x .x30 (s₀.gpr .x30)).gpr r = s₀.gpr r
       by_cases h : r = .x30

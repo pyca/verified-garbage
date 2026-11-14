@@ -49,9 +49,9 @@ theorem slot_crFrame (hb : Big V sp) {s : State} {D : Addr} {n : Nat}
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact (hd.ok.w.sub_right (Lay.wSub (by omega))).symm
-  · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact (hb.w.sub_right (Lay.wSub (by omega))).symm
+  · exact (hd.ok.w.sub_right (Lay.wSub (by omega_using [hdd]))).symm
+  · exact (L.st_w (by decide) (.inr ⟨by omega_using [hdd], by omega_using [hdd]⟩)).symm
+  · exact (hb.w.sub_right (Lay.wSub (by omega_using [hdd]))).symm
 
 end
 
@@ -149,7 +149,7 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] (hb : Big V sp) {o : Nat} (ho 
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact L.cs.sub_right (Region.sub_prefix (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by omega))
+    · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact hb.c.symm
   have dJ : ∀ r ∈ absFrame (V .s1) (V .s0) 16 sp ++ tFrame (V .s1) (V .s0) 16 sp,
@@ -180,7 +180,7 @@ theorem oneTag_ok [VG.Proof.Gcm.RISCV64.GhashLaw] (hb : Big V sp) {o : Nat} (ho 
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl) hk)]; exact hH
   let ct := bytesAt s.mem D (V .s11).toNat
   have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (V .s11).toNat % 16 := by
-    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega
+    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega_using [hx]
   refine WP.seq (WP.mono (flush_ok L (yo := 16) (.inr rfl) (x := (a ++ zeros (padLen a.length)) ++ ct) (H := H)
     ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [a26', hlx])) fun s₄ fl => ?_)
   rw [k₃.mem] at fl

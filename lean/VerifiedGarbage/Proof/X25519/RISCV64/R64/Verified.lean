@@ -3,15 +3,14 @@ module
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Ladder
 public import VerifiedGarbage.Proof.X25519.RISCV64.Invert
-public import VerifiedGarbage.Proof.X25519.RISCV64.Main
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Proof.X25519.RISCV64.Setup
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X25519.RISCV64.Mul
 import VerifiedGarbage.Proof.X25519.RISCV64.Bits
 import VerifiedGarbage.Proof.X25519.RISCV64.Freeze
-public import VerifiedGarbage.Proof.X25519.RISCV64.Setup
-import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.X25519.RISCV64.R64
-public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.X25519.RISCV64.R64.CT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -19,6 +18,75 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+
+/-! ### `X25519.RISCV64.Main`, which only this module used -/
+
+section
+
+/-!
+# X25519 on RISCV64: the whole function's contract
+
+`vg_x25519`'s contract on this target (`x25519RISCV64`), and facts about the
+slots and the output that its proof (`Proof/X25519/RISCV64/R64/Verified.lean`)
+uses.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.X25519.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.X25519.RISCV64
+open VG.Spec.X25519 (P Fe bytesAt)
+open VG.Proof.X25519 (leBytes toFe ladderAfter ladderAfter_swap_le)
+
+/-- `vg_x25519(out = r3, scalar = r4, point = r5, scratch = r6)`. -/
+def x25519RISCV64 : Contract RISCV64.isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .a0, 32⟩
+    let sc : Region := ⟨s.gpr .a1, 32⟩
+    let pt : Region := ⟨s.gpr .a2, 32⟩
+    let ws : Region := ⟨s.gpr .a3, 4096⟩
+    s.rd = [sc, pt] ∧ s.wr = [out, ws] ∧ out.Disjoint sc ∧ out.Disjoint pt ∧ out.Disjoint ws ∧
+      sc.Disjoint ws ∧ pt.Disjoint ws
+  post s s' := bytesAt s'.mem (s.gpr .a0) 32 =
+    VG.Spec.X25519.x25519 (bytesAt s.mem (s.gpr .a1) 32) (bytesAt s.mem (s.gpr .a2) 32)
+  pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+    s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
+
+theorem XPre.of {s : State} (h : x25519RISCV64.pre s) : XPre s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+
+section
+variable {b : Addr}
+
+/-- The slots stay through a write of `BITS`. -/
+theorem SlotsOk.bits {m m' : Mem} {qs : List Nat} {v : Nat → Fe} (hS : SlotsOk m b qs v)
+    (hq : (qs.all fun q => q + 32 ≤ BITS) = true)
+    (hf : Frame [⟨b + BitVec.ofNat 64 BITS, 256⟩] m m') : SlotsOk m' b qs v := by
+  intro q hq'
+  have h := List.all_eq_true.mp hq q hq'
+  simp only [decide_eq_true_eq] at h
+  have hB : BITS = 608 := rfl
+  have e := limb_frame (o := q) hf fun r hr k hk => by
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [h, hk])) (by omega_using [h, hB, hk]) (by omega_using [hB])
+  rw [FS, V, val32_congr e]; exact hS q hq'
+
+end
+
+theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 32⟩ r) : bytesAt m' p 32 = bytesAt m p 32 := by
+  simp only [bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  have hi := List.mem_range.mp hi
+  exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hc
+
+end VG.Proof.X25519.RISCV64
+
+end
+
+end
+
 
 /-!
 # X25519 on RISC-V, 64-bit limbs: verified
@@ -70,9 +138,9 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
     (h : Cur b s0 a c qs v s) : WP isa (Impl.X25519.RISCV64.R64.sqn o x n) s fun s' => ∃ c', Cur b s0 a c' qs' w s' := by
   unfold Impl.X25519.RISCV64.R64.sqn
   refine WP.seq (WP.mono (opMul hq ho hx hx h) fun s1 h1 => ?_)
-  refine WP.seq (wp_li (imm := n - 1) (by omega) fun s2 u2 => WP.block_nil ?_)
+  refine WP.seq (wp_li (imm := n - 1) (by omega_using [hn']) fun s2 u2 => WP.block_nil ?_)
   have h2 : Cur b s0 a (BitVec.ofNat 64 (n - 1)) (o :: qs) (upd v o (VG.Proof.X25519.sqn (v x) (n - (n - 1)))) s2 := by
-    rw [show n - (n - 1) = 1 by omega]
+    rw [show n - (n - 1) = 1 by omega_using [hn]]
     exact ⟨h1.ctx.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide),
       h1.stp.trans (Stp.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide) u2.mem),
       by rw [u2.other _ (by decide), h1.t2], u2.gpr, by rw [u2.mem]; exact h1.slots⟩
@@ -80,7 +148,7 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
       (upd v o (VG.Proof.X25519.sqn (v x) n)) t) (WP.loop (M := isa)
     (fun m t => 1 ≤ m ∧ m ≤ n - 1 ∧
       Cur b s0 a (BitVec.ofNat 64 m) (o :: qs) (upd v o (VG.Proof.X25519.sqn (v x) (n - m))) t) ?_
-    (n - 1) s2 ⟨by omega, Nat.le_refl _, h2⟩) fun t ht => ⟨_, ht.congr hqs hw⟩
+    (n - 1) s2 ⟨by omega_using [hn], Nat.le_refl _, h2⟩) fun t ht => ⟨_, ht.congr hqs hw⟩
   rintro m t ⟨hm1, hm, ht⟩
   refine WP.seq (WP.mono (opMul (o := o) (x := o) (y := o) hq' ho List.mem_cons_self List.mem_cons_self ht)
     fun t1 h1 => ?_)
@@ -90,23 +158,23 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
     by_cases hqo : q = o
     · subst hqo
       simp only [upd_self]
-      rw [show n - (m - 1) = (n - m) + 1 by omega]
+      rw [show n - (m - 1) = (n - m) + 1 by omega_using [hm1, hm]]
       rfl
     · rw [upd_of_ne _ _ hqo, upd_of_ne _ _ hqo, upd_of_ne _ _ hqo]
   refine wp_subi (by decide) fun t2 u2 => WP.block_nil ?_
   have e1 : t2.gpr .t1 = BitVec.ofNat 64 (m - 1) := by
-    rw [u2.gpr, h1'.t1, ofNat_sub_one hm1 (by omega)]
+    rw [u2.gpr, h1'.t1, ofNat_sub_one hm1 (by omega_using [hn', hm])]
   have h2' : Cur b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs)
       (upd v o (VG.Proof.X25519.sqn (v x) (n - (m - 1)))) t2 :=
     ⟨h1'.ctx.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide),
       h1'.stp.trans (Stp.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide) u2.mem),
       by rw [u2.other _ (by decide), h1'.t2], e1, by rw [u2.mem]; exact h1'.slots⟩
-  rw [eval_nonzero_ofNat t2 .t1 (by omega) e1]
+  rw [eval_nonzero_ofNat t2 .t1 (by omega_using [hn', hm]) e1]
   by_cases hm0 : m - 1 = 0
   · refine .inl ⟨by simp [hm0], ?_⟩
-    rw [show n - (m - 1) = n by omega, hm0] at h2'
+    rw [show n - (m - 1) = n by omega_using [hm0], hm0] at h2'
     exact h2'
-  · exact .inr ⟨by simp [hm0], m - 1, by omega, by omega, by omega, h2'⟩
+  · exact .inr ⟨by simp [hm0], m - 1, by omega_using [hm1], by omega_using [hm0], by omega_using [hm], h2'⟩
 
 /-- The chain's slots: `z` at `Z2`, `x2` at `X2` and `t0`–`t3` at `A`–`D`. -/
 def cv (z x2 t0 t1 t2 t3 : Fe) (q : Nat) : Fe :=

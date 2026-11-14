@@ -15,7 +15,9 @@ qinv_len, scratch, scratch_len)`, the last seventeen on the stack. RFC 8017
 1. `encode` writes the encoding of `digest` to a buffer `EM` in the frame;
    if that fails (which depends only on `hash`, `digest_len` and `n_len`),
    it writes zeros to `out` and returns 0;
-2. `vg_rsa_private_checked` (or a variant: `priv`, by its name `privName`)
+2. `vg_rsa_private_checked` (or a variant: `priv`, by its name `privName`;
+   for `vg_rsa_pkcs1_sign_precomputed`, `vg_rsa_private_checked_precomputed`,
+   given the key's precomputed values `pre`, our arguments 21 and 22)
    computes the signature of `EM` into `out`, checked against `e`, and
    its result is returned;
 3. `EM` is overwritten with zeros.
@@ -24,8 +26,9 @@ Only the public key, the lengths and `hash` decide a branch or an address:
 the hash value is only copied into `EM`, which only the private operation
 reads.
 
-The frame (`Impl/RsaPkcs1Sig/Arm/Wrap.lean`) holds the call's sixteen stack
-arguments from its base and `EM` (up to 1024 bytes) at `oEM`.
+The frame (`Impl/RsaPkcs1Sig/Arm/Wrap.lean`) holds the call's sixteen (or
+eighteen) stack arguments from its base and `EM` (up to 1024 bytes) at
+`oEM`.
 -/
 
 @[expose] public section
@@ -36,10 +39,10 @@ open VG VG.Arm
 open VG.Impl.RsaPkcs1Sig.Arm (wrap argOff encode)
 
 /-- The size of the inner frame. -/
-def frameBytes : Nat := 1088
+def frameBytes : Nat := 1120
 
 /-- `EM`. -/
-def oEM : Nat := 64
+def oEM : Nat := 72
 
 /-- Argument `j` (from 0). -/
 def arg (j : Nat) : Nat := argOff frameBytes j
@@ -58,14 +61,23 @@ def ret0 : List Instr := [.mov .r0 (.imm 0)]
 /-- Argument `j` to the call's stack argument `i`. -/
 def copyArg (j i : Nat) : List Instr := [.ldrSp .r0 (arg j), .str .r0 .r12 (4 * i)]
 
-/-- The call's stack arguments (`e`, `e_len`, `EM`, `n_len`, then `p` …
-`scratch_len`), then its registers: `out`, `n_len`, `n`, `n_len`. -/
-def callArgs : List Instr :=
+/-- The call's first sixteen stack arguments (`e`, `e_len`, `EM`, `n_len`,
+then `p` … `scratch_len`). -/
+def callStack : List Instr :=
   [.addSp .r12 0] ++ copyArg 4 0 ++ copyArg 5 1 ++
     ([.dp .add .r0 .r12 (.imm (BitVec.ofNat 32 oEM)), .str .r0 .r12 8] : List Instr) ++ copyArg 3 3 ++
     copyArg 9 4 ++ copyArg 10 5 ++ copyArg 11 6 ++ copyArg 12 7 ++ copyArg 13 8 ++ copyArg 14 9 ++
-    copyArg 15 10 ++ copyArg 16 11 ++ copyArg 17 12 ++ copyArg 18 13 ++ copyArg 19 14 ++ copyArg 20 15 ++
-    ([.ldrSp .r0 (arg 0), .ldrSp .r1 (arg 3), .ldrSp .r2 (arg 2), .ldrSp .r3 (arg 3)] : List Instr)
+    copyArg 15 10 ++ copyArg 16 11 ++ copyArg 17 12 ++ copyArg 18 13 ++ copyArg 19 14 ++ copyArg 20 15
+
+/-- With `pc`, `pre` and `pre_len` (our arguments 21 and 22) too. -/
+def callPre (pc : Bool) : List Instr := if pc then copyArg 21 16 ++ copyArg 22 17 else []
+
+/-- The call's registers: `out`, `n_len`, `n`, `n_len`. -/
+def callRegs : List Instr := [.ldrSp .r0 (arg 0), .ldrSp .r1 (arg 3), .ldrSp .r2 (arg 2), .ldrSp .r3 (arg 3)]
+
+/-- The call's arguments: sixteen stack arguments, or with `pc`
+(`vg_rsa_private_checked_precomputed`) eighteen, then its registers. -/
+def callArgs (pc : Bool) : List Instr := callStack ++ callPre pc ++ callRegs
 
 /-- The result kept in `r3`, and `EM`, `n_len` and the zero mask for
 `maskBytes`. -/
@@ -74,17 +86,18 @@ def wipeArgs : List Instr :=
     .mov .r2 (.imm 0)]
 
 /-- Once the encoding succeeded. -/
-def rest (privName : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block callArgs) (.seq (.call privName priv) (.seq (.block wipeArgs) (.seq Bignum.Arm.maskBytes
+def rest (pc : Bool) (privName : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block (callArgs pc)) (.seq (.call privName priv) (.seq (.block wipeArgs) (.seq Bignum.Arm.maskBytes
     (.block [.mov .r0 (.reg .r3)]))))
 
 /-- The inner frame's body. -/
-def body (privName : String) (priv : Prog isa) : Prog isa :=
+def body (pc : Bool) (privName : String) (priv : Prog isa) : Prog isa :=
   .seq (.block encArgs) (.seq encode (.seq (.block [.cmp .r3 (.imm 0)])
-    (.ite .eq (.seq (.block zeroArgs) (.seq Bignum.Arm.maskBytes (.block ret0))) (rest privName priv))))
+    (.ite .eq (.seq (.block zeroArgs) (.seq Bignum.Arm.maskBytes (.block ret0))) (rest pc privName priv))))
 
 /-- `vg_rsa_pkcs1_sign`, calling a checked private operation (`priv`) by its
-name. -/
-def code (privName : String) (priv : Prog isa) : Prog isa := wrap frameBytes (body privName priv)
+name; with `pc`, `vg_rsa_pkcs1_sign_precomputed`, calling
+`vg_rsa_private_checked_precomputed` with `pre` and `pre_len` too. -/
+def code (pc : Bool) (privName : String) (priv : Prog isa) : Prog isa := wrap frameBytes (body pc privName priv)
 
 end VG.Impl.RsaPkcs1Sig.Arm.Sign

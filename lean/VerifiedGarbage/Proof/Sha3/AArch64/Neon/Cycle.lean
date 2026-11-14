@@ -35,12 +35,12 @@ theorem cycle_word (A : Spec.Sha3.State) {k : Nat} (hk : k < 24) :
     (Spec.Sha3.pi (Spec.Sha3.rho A))[dest k]! = (A[source k]!).rotateLeft (rotation k) := by
   obtain ⟨hd,hs,_,_,_,_,hp,hr⟩ := cycle_facts k hk
   have hpi := VG.Proof.Sha3.pi_get (Spec.Sha3.rho A)
-    (x := dest k%5) (y := dest k/5) (by omega) (by omega)
+    (x := dest k%5) (y := dest k/5) (by omega_using []) (by omega_using [hd])
   have hpiBang : (Spec.Sha3.pi (Spec.Sha3.rho A))[dest k%5+5*(dest k/5)]! =
       (Spec.Sha3.rho A)[piSrc (dest k%5) (dest k/5)]! := by
-    rw [VG.Proof.Sha3.getElem!_eq _ (by omega),VG.Proof.Sha3.getElem!_eq _ (by simp only [piSrc]; omega)]
+    rw [VG.Proof.Sha3.getElem!_eq _ (by omega_using [hd]),VG.Proof.Sha3.getElem!_eq _ (by simp only [piSrc]; omega_using [])]
     exact hpi
-  rw [show dest k%5+5*(dest k/5) = dest k by omega,hp] at hpiBang
+  rw [show dest k%5+5*(dest k/5) = dest k by omega_using [],hp] at hpiBang
   rw [hpiBang,VG.Proof.Sha3.getElem!_eq _ hs,VG.Proof.Sha3.rho_get A hs,
     hr,VG.Proof.Sha3.getElem!_eq A hs]
 

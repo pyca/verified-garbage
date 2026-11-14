@@ -23,7 +23,7 @@ theorem flag_lanes_zero (v : BitVec 128) :
   · intro h
     exact ⟨h 0 (by decide),h 1 (by decide),h 2 (by decide),h 3 (by decide)⟩
   · rintro ⟨h0,h1,h2,h3⟩ e he
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
       with_reducible assumption
 
 /-- Exact success-bit reduction for the four SIMD rejection-mask lanes. -/

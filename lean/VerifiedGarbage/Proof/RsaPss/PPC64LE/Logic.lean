@@ -96,20 +96,20 @@ theorem mR_eq (hmh : mh.length = Gs.len) {any saltLen : BitVec 64}
     fun j hj => by rw [← hdb, ← wR_eq hGv hc hE hfE hV hj]; rfl
   have hd : ∀ j < E - Gs.len - 1 - lz db - 1, (db.drop (lz db + 1)).getD j 0 =
       dbV Gm (v1 V lN c (lN + E)) lN (E - Gs.len - 1) Gs.len c (lN + (j + (lz db + 1))) := fun j hj => by
-    rw [hw _ (by omega)]
+    rw [hw _ (by omega_using [hj])]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]
-    congr 2; omega
-  have hdd : (db.drop (lz db + 1)).length = E - Gs.len - 1 - lz db - 1 := by rw [List.length_drop, hdl]; omega
+    congr 2; omega_using []
+  have hdd : (db.drop (lz db + 1)).length = E - Gs.len - 1 - lz db - 1 := by rw [List.length_drop, hdl]; omega_using []
   rw [mR]
   split
   · rename_i h0
     have h1 := hsl h0
-    rw [mFix, h1, show E - Gs.len - 1 - 1 - lz db = E - Gs.len - 1 - lz db - 1 by omega]
+    rw [mFix, h1, show E - Gs.len - 1 - 1 - lz db = E - Gs.len - 1 - lz db - 1 by omega_using []]
     refine congrArg (List.replicate 8 0 ++ mh ++ ·) (eq_range_map hdd fun j hj => ?_).symm
-    rw [hd j (by omega)]; congr 1; omega
+    rw [hd j (by omega_using [hj])]; congr 1; omega_using [hlz]
   · rw [mAny, hp, slR, hp]
     refine congrArg (List.replicate 8 0 ++ mh ++ ·) (eq_range_map hdd fun j hj => ?_).symm
-    rw [hd j (by omega), ifp (by omega)]
+    rw [hd j (by omega_using [hj]), ifp (by omega_using [hj])]
 
 end
 

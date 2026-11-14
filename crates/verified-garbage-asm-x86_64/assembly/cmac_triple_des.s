@@ -5,7 +5,7 @@
 // gives.
 
 vg_cmac_triple_des_stream_init:
-	lea rsp, [rsp-648]
+	lea rsp, [rsp-128]
 	mov rcx, rsp
 	add rcx, 8
 	mov eax, 0
@@ -3919,19 +3919,40 @@ vg_cmac_triple_des_stream_init:
 	mov r13, QWORD PTR [r15+72]
 	mov r14, QWORD PTR [r15+80]
 	mov r15, QWORD PTR [r15+88]
-	lea rsp, [rsp+648]
+	lea rsp, [rsp+128]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-128]
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+128]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_cmac_triple_des_absorb:
-	lea rsp, [rsp-696]
+	lea rsp, [rsp-168]
 	mov r8, rsp
 	add r8, 8
-	mov QWORD PTR [r8+640], rbx
-	mov QWORD PTR [r8+648], r12
-	mov QWORD PTR [r8+656], r13
-	mov QWORD PTR [r8+664], r14
-	mov QWORD PTR [r8+672], r15
+	mov QWORD PTR [r8+120], rbx
+	mov QWORD PTR [r8+128], r12
+	mov QWORD PTR [r8+136], r13
+	mov QWORD PTR [r8+144], r14
+	mov QWORD PTR [r8+152], r15
 	mov rbx, rdi
 	mov r13, rdx
 	mov r14, rcx
@@ -5970,17 +5991,41 @@ vg_cmac_triple_des_absorb:
 	jmp 222f
 221:
 222:
-	mov rbx, QWORD PTR [r15+640]
-	mov r12, QWORD PTR [r15+648]
-	mov r13, QWORD PTR [r15+656]
-	mov r14, QWORD PTR [r15+664]
-	mov r15, QWORD PTR [r15+672]
-	lea rsp, [rsp+696]
+	mov rbx, QWORD PTR [r15+120]
+	mov r12, QWORD PTR [r15+128]
+	mov r13, QWORD PTR [r15+136]
+	mov r14, QWORD PTR [r15+144]
+	mov r15, QWORD PTR [r15+152]
+	lea rsp, [rsp+168]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-168]
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+168]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_cmac_triple_des_finish:
-	lea rsp, [rsp-648]
+	lea rsp, [rsp-128]
 	mov rcx, rsp
 	add rcx, 8
 	mov rax, QWORD PTR [rdi+400]
@@ -6982,6 +7027,27 @@ vg_cmac_triple_des_finish:
 	mov r13, QWORD PTR [r15+72]
 	mov r14, QWORD PTR [r15+80]
 	mov r15, QWORD PTR [r15+88]
-	lea rsp, [rsp+648]
+	lea rsp, [rsp+128]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-128]
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+128]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

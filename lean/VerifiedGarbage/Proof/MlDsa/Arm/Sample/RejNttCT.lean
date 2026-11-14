@@ -123,7 +123,7 @@ theorem loop_ct :
       · have : t + 1 ≠ 336 := by
           have e' : (!a.z) = true := Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨336 - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨336 - (t + 1), by omega_using [ht, hn], t + 1, by omega_using [ht, this], rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 

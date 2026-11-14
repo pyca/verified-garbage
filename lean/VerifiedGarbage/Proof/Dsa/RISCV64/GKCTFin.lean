@@ -46,12 +46,12 @@ theorem zblk_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀)
   obtain ⟨i64, l64⟩ := hc.word hL rfl (d := 64) (by decide) (by decide)
   have o64 := hc.out
   simp only [oOut] at o64
-  have e1 := lenP_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega) (by omega)
-  have e2 := lenQ_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega) (by omega)
+  have e1 := lenP_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
+  have e2 := lenQ_eq (pl := (glOf s₀).pl) (ql := (glOf s₀).ql) (by omega_using [hp]) (by omega_using [hq])
   refine wp_sp (WP.keep [.t3, .t4, .t5, .a0, .t2, .t1] ?_ (by decide) (by rfl))
   brun [outLen, lenP, lenQ, hc.sp, hc.s2, e1, e2, exec_addSp (show 0 < 2048 by decide), BitVec.add_zero, oOut,
     i64, l64, o64, exec_li_zero, ← BitVec.ofNat_add]
-  simp only [GL.ol]; congr 1; omega
+  simp only [GL.ol]; congr 1; omega_using []
 
 /-- `zeroOut`, keeping `Ctx`. -/
 theorem zeroOut_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s₀) s₀ t) :
@@ -64,8 +64,8 @@ theorem zeroOut_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s�
   refine WP.seq (WP.mono (zblk_ok h hc) fun t₂ ⟨⟨⟨b0, b4, b5, m2⟩, k2⟩, sp2⟩ => ?_)
   have ho : ∀ i < (glOf s₀).ol, InRegions t₂.wr (off (glOf s₀).out i) 1 := fun i hi =>
     ⟨(glOf s₀).outR, by rw [k2.2.2, hc.wr, hwr]; simp,
-      VG.Offset.contains_base _ (by omega) (by have := hL.nwOut; simp only [GL.ol] at hi this ⊢; omega)⟩
-  refine WP.mono (wp_sp (zeroLoopA_ok (by simp only [GL.ol]; omega) (by simp only [GL.ol]; omega) ho hL.nwOut
+      VG.Offset.contains_base _ (by omega_using [hi]) (by have := hL.nwOut; simp only [GL.ol] at hi this ⊢; omega_using [hq, hp, hi])⟩
+  refine WP.mono (wp_sp (zeroLoopA_ok (by simp only [GL.ol]; omega_using [hq]) (by simp only [GL.ol]; omega_using [hq, hp]) ho hL.nwOut
     b0 b4 b5)) fun t₃ ⟨⟨⟨_, o3⟩, k3⟩, sp3⟩ => ?_
   have k23 := k2.trans k3
   refine hc.step hL (sp3.trans sp2) k23.2.1 k23.2.2 (fun r hr => k23.1 r (by revert r hr; decide)) ?_
@@ -73,7 +73,7 @@ theorem zeroOut_ok {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s�
   intro x hx
   refine o3 x ?_
   by_contra hc'
-  exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega)
+  exact hx _ (List.mem_cons_self ..) (by simp only [Region.Contains, ofs] at hc' ⊢; omega_using [hc'])
 
 theorem zeroOut_st {s₁ s₂ t₁ t₂ : State} (h₁ : gkContract.pre s₁) (h₂ : gkContract.pre s₂)
     (eL : glOf s₁ = glOf s₂) (c₁ : Ctx (glOf s₁) s₁ t₁) (c₂ : Ctx (glOf s₂) s₂ t₂) :

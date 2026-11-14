@@ -141,8 +141,8 @@ theorem uS_piece [CeOK L] (j : Nat) (hj : j < L.p.k) {Q : State → State → Pr
   refine Piece.seq (dec12C_piece (Y := Y L) 0 (384 * j) 3 L.eT o₄ (by rdecide) (by yd_taint)
     (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post => ⟨⟨h.keep hp (by rdecide) k₄ fr h',
       polyIs_congr (Top.keep hp (by rdecide) (b := bA L) k₅ fr) h.u⟩, ?_⟩) hc
-  rw [dk_slice hp h.ctx (by unfold Params.dkLen; omega) o₂] at post
-  rw [dS, dcS, KPke.dkPke, slice_take _ (show 384 * j + 384 ≤ 384 * L.p.k by omega)]
+  rw [dk_slice hp h.ctx (by unfold Params.dkLen; omega_using [hj]) o₂] at post
+  rw [dS, dcS, KPke.dkPke, slice_take _ (show 384 * j + 384 ≤ 384 * L.p.k by omega_using [hj])]
   exact post
 
 /-- Term 0: `w ← ŝ[0] ×_T NTT(u'[0])`. -/

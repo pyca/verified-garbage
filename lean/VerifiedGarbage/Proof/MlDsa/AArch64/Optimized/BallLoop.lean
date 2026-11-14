@@ -58,7 +58,7 @@ theorem chunk_ok {τ i : Nat} {h : Array Bool} {a b : Addr} {c : IPoly} {w : Bit
       simp only [Fold,List.take_length]; exact bFold_full hd _
     refine ⟨Keep.refl _ _,Frame.refl _ _,?_⟩
     simpa only [he,Nat.sub_self,BitVec.ushiftRight_zero] using hparser
-  refine WP.ite false (by rw [eval_zero,eq_zero_iff,hparser.x11]; simp; omega)
+  refine WP.ite false (by rw [eval_zero,eq_zero_iff,hparser.x11]; simp; omega_using [hi, hd])
     (fun hh => nomatch hh) (fun _ => ?_)
   let I : Nat → State → Prop := fun m s => ∃ t, m=L.length-t ∧ t<L.length ∧
     (Fold τ h c i L t).2<256 ∧ ChunkAt τ h a b c i w L s₀ t s
@@ -72,11 +72,11 @@ theorem chunk_ok {τ i : Nat} {h : Array Bool} {a b : Addr} {c : IPoly} {w : Bit
       rw [hs.x2,← hbuf t ht]
       exact hs.frame _ fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact hsep _ (Offset.contains_base _ (by omega) (by omega))
+        exact hsep _ (Offset.contains_base _ (by omega_using [ht]) (by omega_using [hmax, ht]))
     have hp : Parser a (Fold τ h c i L t).1 (Fold τ h c i L t).2 (s.gpr .x9) s := by
       rw [hs.parser.x9]; exact hs.parser
     refine WP.mono (body_ok (τ := τ) (signs := h) (a := a) (c := (Fold τ h c i L t).1)
-      (i := (Fold τ h c i L t).2) (b := L.length-t) (j := L.getD t 0) hit (by omega) (by omega) hp
+      (i := (Fold τ h c i L t).2) (b := L.length-t) (j := L.getD t 0) hit (by omega_using [ht]) (by omega_using [hmax]) hp
       (by rw [hs.parser.x9]; exact hsign _ ge hit) hs.x5
       (by rw [hs.keep.rd,hs.keep.wr,hs.x2]; exact hin t ht) hmem
       (by rw [hs.keep.wr]; exact hw)) fun u ⟨ku,fu,u2,u5,up⟩ => ?_
@@ -87,7 +87,7 @@ theorem chunk_ok {τ i : Nat} {h : Array Bool} {a b : Addr} {c : IPoly} {w : Bit
         (w >>> ((Fold τ h c i L (t+1)).2-i)) u := by
       rw [hs.parser.x9,← BitVec.shiftRight_add,
         show (Fold τ h c i L t).2-i+((Fold τ h c i L (t+1)).2-(Fold τ h c i L t).2) =
-          (Fold τ h c i L (t+1)).2-i from by omega] at up
+          (Fold τ h c i L (t+1)).2-i from by omega_using [ge, gn]] at up
       exact up
     have kk : Keep chunkRegs s₀ u := (hs.keep.trans ku).mono (by decide)
     have ff := hs.frame.trans fu
@@ -96,16 +96,16 @@ theorem chunk_ok {τ i : Nat} {h : Array Bool} {a b : Addr} {c : IPoly} {w : Bit
       rw [fold_end hf]; exact un
     · rw [ifF hf] at u5
       by_cases he : t+1=L.length
-      · refine .inl ⟨by rw [eval_nonzero,ne_zero_iff,u5]; simp; omega,kk,ff,?_⟩
+      · refine .inl ⟨by rw [eval_nonzero,ne_zero_iff,u5]; simp; omega_using [he],kk,ff,?_⟩
         rwa [he] at un
-      · refine .inr ⟨by rw [eval_nonzero,ne_zero_iff,u5]; simp; omega,L.length-(t+1),by omega,
-          t+1,rfl,by omega,?_,kk,ff,?_,?_,un⟩
+      · refine .inr ⟨by rw [eval_nonzero,ne_zero_iff,u5]; simp; omega_using [ht, he],L.length-(t+1),by omega_using [ht],
+          t+1,rfl,by omega_using [ht, he],?_,kk,ff,?_,?_,un⟩
         · have := bFold_le (τ := τ) (h := h) (st := (c,i)) hi (L.take (t+1))
           change (Fold τ h c i L (t+1)).2≤256 at this
-          omega
+          omega_using [hf, this]
         · rw [u2,hs.x2,BitVec.add_assoc,BitVec.ofNat_add]; rfl
-        · rw [u5]; omega
-  · refine ⟨0,by omega,hlen,?_,Keep.refl _ _,Frame.refl _ _,?_,?_,?_⟩
+        · rw [u5]; omega_using []
+  · refine ⟨0,by omega_using [],hlen,?_,Keep.refl _ _,Frame.refl _ _,?_,?_,?_⟩
     · simpa only [Fold,List.take_zero,bFold] using Nat.lt_of_le_of_ne hi hd
     · simpa using h2
     · simpa using h5

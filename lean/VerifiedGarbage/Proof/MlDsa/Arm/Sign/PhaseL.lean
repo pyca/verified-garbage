@@ -167,16 +167,16 @@ theorem dec_end {D : Nat} {p : Params} (hp : ParamsOk p) (hc : lChk p = true) {�
       fun h0 => absurd (h0.symm.trans (e15.trans h.r11)) (by decide)⟩
   · -- rejected
     have hr : RejT p σ (t + 1) := Rej.succ _ _ _ _ _ _ _ h.rej (by rw [Nat.zero_add]; exact iter_rej hp h.some h.fail)
-    rw [h.cnt, ofNat32_sub_one (by have := h.t_lt; omega) (by have := h.t_lt; omega),
-      ofNat32_beq_zero (by have := h.t_lt; omega)] at hz
+    rw [h.cnt, ofNat32_sub_one (by have := h.t_lt; omega_using [this]) (by have := h.t_lt; omega_using []),
+      ofNat32_beq_zero (by have := h.t_lt; omega_using [])] at hz
     by_cases ht : t = 813
     · subst ht
       refine .inr ⟨by rw [hz]; rfl, K, .inl (e15.trans h.r11),
         fun h1 => absurd (h1.symm.trans (e15.trans h.r11)) (by decide), fun _ => loop_none_exh hr⟩
-    · have hne : decide (814 - t - 1 = 0) = false := by have := h.t_lt; simp only [decide_eq_false_iff_not]; omega
-      refine .inl ⟨by rw [hz, hne], K, by rw [L.keepW hP k2, h.kap], ?_, by have := h.t_lt; omega, hr⟩
+    · have hne : decide (814 - t - 1 = 0) = false := by have := h.t_lt; simp only [decide_eq_false_iff_not]; omega_using [ht, this]
+      refine .inl ⟨by rw [hz, hne], K, by rw [L.keepW hP k2, h.kap], ?_, by have := h.t_lt; omega_using [ht, this], hr⟩
       rw [hP.pa (by decide), hm, Mem.readW_writeW_self32, h.cnt,
-        ofNat32_sub_one (by have := h.t_lt; omega) (by have := h.t_lt; omega), Nat.sub_sub]
+        ofNat32_sub_one (by have := h.t_lt; omega_using [this]) (by have := h.t_lt; omega_using []), Nat.sub_sub]
   · -- `SampleInBall` failed
     rw [h.cnt] at hz
     exact .inr ⟨by rw [hz]; rfl, K, .inl (e15.trans h.r11),
@@ -283,7 +283,7 @@ theorem signLoop_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : 
   refine WP.mono (iter_ok hP hp hc1 hc2 hc3 hc4 hs) fun s' h' => ?_
   have hev : ∀ s : State, isa.eval .ne s = some (!s.z) := fun _ => rfl
   rcases h' with ⟨hz, hI⟩ | ⟨hz, hX⟩
-  · exact .inr ⟨by rw [hev, hz]; rfl, 814 - (t + 1), by have := hs.t_lt; omega, t + 1, rfl, hI⟩
+  · exact .inr ⟨by rw [hev, hz]; rfl, 814 - (t + 1), by have := hs.t_lt; omega_using [hn, this], t + 1, rfl, hI⟩
   · exact .inl ⟨by rw [hev, hz]; rfl, hX⟩
 
 end VG.Proof.MlDsa.Arm.Sign

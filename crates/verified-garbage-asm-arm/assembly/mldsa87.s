@@ -4260,6 +4260,20 @@ vg_mldsa87_sign:
 	ldr r4, [sp], #8
 	bx lr
 
+vg_mldsa87_sign_prepared:
+	push {r4, lr}
+	ldr r12, [sp, #8]
+	mov r4, lr
+	movw lr, #4896
+	movt lr, #0
+	add lr, r0, lr
+	push {r12, lr}
+	bl {vg_mldsa87_sign_with_cache}
+	ldr r12, [sp], #8
+	mov lr, r4
+	ldr r4, [sp], #8
+	bx lr
+
 vg_mldsa87_sign_message:
 	ldr r12, [sp, #0]
 	lsr r12, r12, #8
@@ -4593,6 +4607,19 @@ vg_mldsa87_verify:
 	mov r4, lr
 	movw r12, #0
 	movt r12, #0
+	push {r12, lr}
+	bl {vg_mldsa87_verify_with_cache}
+	ldr r12, [sp], #8
+	mov lr, r4
+	ldr r4, [sp], #8
+	bx lr
+
+vg_mldsa87_verify_prepared:
+	push {r4, lr}
+	mov r4, lr
+	movw r12, #2592
+	movt r12, #0
+	add r12, r0, r12
 	push {r12, lr}
 	bl {vg_mldsa87_verify_with_cache}
 	ldr r12, [sp], #8

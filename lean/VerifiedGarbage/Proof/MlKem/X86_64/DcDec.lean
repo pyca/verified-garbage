@@ -63,7 +63,7 @@ theorem uSlice_le (L : Kem) {i : Nat} (hi : i < L.k) : 32 * L.du * i + 32 * L.du
   simp only [Kem.ctLen, Params.ctLen, Kem.du, Kem.k] at this ⊢
   rw [Nat.mul_succ] at this
   rw [Nat.mul_add, ← Nat.mul_assoc]
-  omega
+  omega_using [this]
 
 /-! ## `u'` -/
 
@@ -78,7 +78,7 @@ theorem u_ok (A : Arith) {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls
   refine WP.mono (ddCall_okL (K.dd A.codecs) L₀ (d := L.du) rbx_na hdd K.du.2) fun s₁ ⟨hP₁, hp₁⟩ => ?_
   have hk := h.keep W hp hP₁ hrc
   refine ⟨hk.dc, hk.r15, fun k hk' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  rcases (by omega : k < i ∨ k = i) with hk' | rfl
+  rcases (by omega_using [hk'] : k < i ∨ k = i) with hk' | rfl
   · exact hk.u k hk'
   · rw [← hP₁.pa rbx_cs, slice_of h.dc.c (uSlice_le L hi)] at hp₁
     exact hp₁
@@ -100,12 +100,12 @@ theorem s_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {σ : State} (h
   refine WP.mono (dec12At_okL hA L₀ rbx_na hc.1) fun s' ⟨hP, hq⟩ => ?_
   have hk := h.keep W hp hP hc.2
   refine ⟨hk.dc, hk.r15, hk.u, fun k hk' => ?_⟩
-  rcases (by omega : k < i ∨ k = i) with hk' | rfl
+  rcases (by omega_using [hk'] : k < i ∨ k = i) with hk' | rfl
   · exact hk.sh k hk'
   · rw [hP.pa rbx_cs]
-    rw [slice_of h.dc.dk (show 384 * k + 384 ≤ L.dkLen by simp only [Kem.dkLen, Params.dkLen, Kem.k] at hi ⊢; omega)]
+    rw [slice_of h.dc.dk (show 384 * k + 384 ≤ L.dkLen by simp only [Kem.dkLen, Params.dkLen, Kem.k] at hi ⊢; omega_using [hi])]
       at hq
-    rw [dcS, KPke.dkPke, slice_take _ (show 384 * k + 384 ≤ 384 * L.p.k by simp only [Kem.k] at hi; omega)]
+    rw [dcS, KPke.dkPke, slice_take _ (show 384 * k + 384 ≤ 384 * L.p.k by simp only [Kem.k] at hi; omega_using [hi])]
     exact hq
 
 theorem s_tr {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {i : Nat} (hi : i < L.k) :

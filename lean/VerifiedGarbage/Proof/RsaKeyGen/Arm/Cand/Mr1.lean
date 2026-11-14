@@ -67,11 +67,11 @@ theorem mr_facts {σ : State} (pre : In P σ) (hm : EM P σ) :
   have hw := pre.w4
   have hL := pre.L_eq
   have sh : VG.Proof.RsaKeyGen.PrimeShape (64 * P.w) (cv P σ) := by
-    have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega] at this
+    have := cv_shape (σ := σ) pre; rwa [show 8 * P.L = 64 * P.w by omega_using [hL]] at this
   have ec : Spec.RsaKeyGen.candidate (8 * P.L) (Spec.Rsa.os2ip ((rB P σ).take P.L)) = cv P σ := by
     rw [take_rB hLr]; rfl
-  refine ⟨?_, by rw [(VG.Proof.RsaKeyGen.cand_bits (by omega) sh).2.2]; omega,
-    VG.Proof.RsaKeyGen.primalityTest_cand (by omega) sh _, VG.Proof.RsaKeyGen.checksW_eq _ (by omega) (by omega)⟩
+  refine ⟨?_, by rw [(VG.Proof.RsaKeyGen.cand_bits (by omega_using [hw]) sh).2.2]; omega_using [hL],
+    VG.Proof.RsaKeyGen.primalityTest_cand (by omega_using [hw]) sh _, VG.Proof.RsaKeyGen.checksW_eq _ (by omega_using [hw]) (by omega_using [hw])⟩
   rw [← pre.sch hLr, VG.Proof.RsaKeyGen.sched_mr (by rw [ec]; exact hcl) (by rw [ec]; exact hco)
     (by rw [ec]; unfold gv at hg; simp [hg]), ec]
   rfl
@@ -85,9 +85,9 @@ theorem checks_cmp : ∀ w < 65, 3 + VG.Proof.Rsa.b2n (decide (2 * w + 2 < 120))
 theorem lt_bit {x k : Nat} (hx : x < 2 ^ 31) (hk : k < 2 ^ 31) :
     ((BitVec.ofNat 32 x - BitVec.ofNat 32 k) >>> 31).toNat = VG.Proof.Rsa.b2n (decide (x < k)) := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := x) (by omega), Nat.mod_eq_of_lt (a := k) (by omega)]
+    Nat.mod_eq_of_lt (a := x) (by omega_using [hx]), Nat.mod_eq_of_lt (a := k) (by omega_using [hk])]
   unfold VG.Proof.Rsa.b2n
-  by_cases h : x < k <;> simp [h] <;> omega
+  by_cases h : x < k <;> simp [h] <;> omega_arith
 
 /-- `ltAdd k`: `r1 +=` whether `W < k`. -/
 theorem ltAdd_ok {u : State} {W x k : Nat} (r9 : u.gpr .r9 = BitVec.ofNat 32 W) (hW : W < 2 ^ 31) (hk : k < 256)
@@ -104,8 +104,8 @@ theorem ltAdd_ok {u : State} {W x k : Nat} (r9 : u.gpr .r9 = BitVec.ofNat 32 W) 
   rw [v3.gpr, dpVal, x2, b2]
   apply BitVec.eq_of_toNat_eq
   have hb := VG.Proof.Rsa.b2n_le (decide (W < k))
-  rw [BitVec.toNat_add, lt_bit hW (by omega), ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, lt_bit hW (by omega_using [hk]), ofNat_toNat_lt (by omega_using [hx]), ofNat_toNat_lt (by omega_using [hx, hb]),
+    Nat.mod_eq_of_lt (by omega_using [hx, hb])]
 
 /-- `str r, [r8, #d]` of a header word, keeping `MS`. -/
 theorem KS.strM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
@@ -115,8 +115,8 @@ theorem KS.strM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → 
       t.gpr = s.gpr → WP isa (.block rest) t Q) :
     WP isa (.block (.str r .r8 d :: rest)) s Q :=
   h.str hw hd fun t ht hwt mt => k t ht hwt (m.of_keep h.pre (js := []) (ds := [d])
-    (by rw [mt.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega))
-    (by simp) (by simp; have := hd.1; omega) mt.sp mt.rd mt.wr (h.sp.trans h.pre.sp)) mt.gpr
+    (by rw [mt.mem]; exact keep_write _ _ (by simp) (by have := hd.1; simp only [hdr] at this; omega_using [this]))
+    (by simp) (by simp; have := hd.1; omega_using [this]) mt.sp mt.rd mt.wr (h.sp.trans h.pre.sp)) mt.gpr
 
 /-- `KS.ldr` with `MS`. -/
 theorem KS.ldrM {σ s : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}

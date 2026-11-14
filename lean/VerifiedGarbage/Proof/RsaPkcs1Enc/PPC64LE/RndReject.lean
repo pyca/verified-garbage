@@ -43,7 +43,7 @@ theorem shift_ne {d : Nat} (hd : d < 2 ^ 63) :
     Nat.shiftRight_eq_div_pow]
   simp only [Nat.reducePow]
   by_cases h : d < 129 <;> simp only [h, decide_true, decide_false, decide_eq_true_eq, decide_eq_false_iff_not,
-    Decidable.not_not] <;> omega
+    Decidable.not_not] <;> omega_arith
 
 theorem slK (s : State) : Region.Sub (slR s) (kR s) := frame_sub s (by decide)
 
@@ -56,23 +56,23 @@ theorem zero_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {i : Nat} {u :
   have hk2 := hp.k2
   have wO := hp.wO
   have hok := hp.hok
-  have hMu : Mm s u.mem := by rw [hI.mem]; exact hM.buf _ (by have := hp.ps; have := hI.hc; omega)
+  have hMu : Mm s u.mem := by rw [hI.mem]; exact hM.buf _ (by have := hp.ps; have := hI.hc; omega_arith)
   unfold zeroArgs
   refine WP.seq (wp_mov fun z₀ o₀ e₀ => wp_mov fun z₁ o₁ e₁ => wp_mov fun z₂ o₂ e₂ =>
     wp_li (by decide) fun z o₃ e₃ => wp_nil ?_)
   have k : Keep [.r10, .r4, .r11, .r0] u z := (o₀.keep.trans (o₁.keep.trans (o₂.keep.trans o₃.keep))).mono
-  refine WP.mono (fill_ok (n := kOf s) (p := s.gpr .r3) (b := 0) (by unfold kOf; omega) (by unfold kOf; omega)
+  refine WP.mono (fill_ok (n := kOf s) (p := s.gpr .r3) (b := 0) (by unfold kOf; omega_using [hk]) (by unfold kOf; omega_using [])
     (by rw [o₃.get .r4, o₂.get .r4, e₁, o₀.get .r31, hI.r31])
     (by rw [o₃.get .r11, e₂, o₁.get .r29, o₀.get .r29, hI.r29, r7_bv])
     (by rw [e₃]; rfl) fun j hj => ?_) fun x ⟨kx, mx⟩ => ?_
   · rw [k.wr, hI.wr, hp.hwr]
-    exact ⟨outR s, by simp, Offset.contains_base _ (by unfold kOf at hj; omega) (by unfold kOf at hj; omega)⟩
+    exact ⟨outR s, by simp, Offset.contains_base _ (by unfold kOf at hj; omega_using [hok, hj]) (by unfold kOf at hj; omega_using [hj])⟩
   · have K : Keep rjRegs u x := (k.trans kx).mono
     have zm : z.mem = u.mem := by rw [o₃.mem, o₂.mem, o₁.mem, o₀.mem]
     have hf : Frame [outR s] u.mem x.mem := by
       rw [mx, zm]
       exact writeBytes_frame _ _ _ (by
-        rw [List.length_replicate]; exact Region.contains_self' (by unfold kOf; omega))
+        rw [List.length_replicate]; exact Region.contains_self' (by unfold kOf; omega_using [hok]))
     refine ⟨⟨hI.toFx.fy.keep K, K, (hMu.fr.mono (by simp)).trans (hf.mono (by simp)),
       hMu.sv.frame hf fun p hp' r hr => by
         rw [List.mem_singleton.mp hr]; exact (hp.dKo.sub_left (slK s)).sub_left (slot_sub s hp'),
@@ -93,20 +93,20 @@ theorem wipe_ok {s : State} {u v : State} {c : Nat} (hc : c ≤ 1021) (R : Rj s 
   have z11 : z.gpr .r11 = BitVec.ofNat 64 c := by rw [e₃, o₂.get .r5, o₁.get .r5, h5]
   have Rz : Rj s u c z := ⟨R.toFy.keep k, (R.keep.trans k).mono, zm ▸ R.fr, zm ▸ R.sv, zm ▸ R.ls⟩
   have ev : isa.eval (.nonzero .d .r11) z = some (decide (c ≠ 0)) := by
-    rw [eval_nonzero, z11, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [eval_nonzero, z11, ne_zero_iff, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc])]
   by_cases h : c = 0
-  · refine WP.ite false (by rw [ev, decide_eq_false (by omega)]) (fun h => absurd h (by decide))
+  · refine WP.ite false (by rw [ev, decide_eq_false (by omega_using [h])]) (fun h => absurd h (by decide))
       fun _ => wp_nil ⟨Rz, by rw [zm]; exact Frame.refl _ _, k.get .r10⟩
   · refine WP.ite true (by rw [ev, decide_eq_true h]) (fun _ => ?_) (fun h => absurd h (by decide))
     have zw : z.wr = fr s :: s.wr := k.wr.trans R.wr
-    refine WP.mono (fill_ok (n := c) (p := pb s) (b := 0) (by omega) (by omega)
+    refine WP.mono (fill_ok (n := c) (p := pb s) (b := 0) (by omega_using [h]) (by omega_using [hc])
       (by rw [o₃.get .r4, e₂, e₁, BitVec.add_zero, R.sp]) z11 (by rw [k.get .r0, h0]; rfl)
-      (in_ps s z zw (by omega))) fun x ⟨kx, mx⟩ => ?_
+      (in_ps s z zw (by omega_using [hc]))) fun x ⟨kx, mx⟩ => ?_
     have hf : Frame [⟨pb s, c⟩] z.mem x.mem := by rw [mx]; exact wipe_frame s _ _
-    have slD : (slR s).Disjoint ⟨pb s, c⟩ := slR_buf s (by omega)
+    have slD : (slR s).Disjoint ⟨pb s, c⟩ := slR_buf s (by omega_using [hc])
     refine ⟨⟨Rz.toFy.keep kx, (Rz.keep.trans kx).mono,
       Rz.fr.trans (hf.sub fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact ⟨kR s, by simp, buf_sub s (by omega)⟩),
+        rw [List.mem_singleton.mp hr]; exact ⟨kR s, by simp, buf_sub s (by omega_using [hc])⟩),
       Rz.sv.frame hf fun p hp' r hr => by rw [List.mem_singleton.mp hr]; exact slD.sub_left (slot_sub s hp'),
       by rw [hf.readW (Region.contains_self _ _) (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact slD.sub_left (lr_sub s)) (by decide)]; exact Rz.ls⟩, by rw [← zm]; exact hf,
@@ -145,7 +145,7 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
   have w5 : w.gpr .r5 = BitVec.ofNat 64 c := by rw [kw.get .r5, h5]
   have Rw : Rj s u c w := ⟨R.toFy.keep kw, (R.keep.trans kw).mono, wm ▸ R.fr, wm ▸ R.sv, wm ▸ R.ls⟩
   have ev : isa.eval (.zero .d .r0) w = some (decide (psLen s + 128 = rl s)) := by
-    rw [eval_zero, w0, sub_beq (by omega) (by have := rl_lt s; omega)]
+    rw [eval_zero, w0, sub_beq (by omega_using [hP]) (by have := rl_lt s; omega_using [this])]
   have ww : w.wr = fr s :: s.wr := Rw.wr
   have T0 := in_tape hp w ww (tape_c0 s)
   have T1 := in_tape hp w ww (tape_c8 s)
@@ -178,9 +178,9 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
       rw [o₄'.mem, m₃.mem, e₂', o₂'.mem, m₁.mem, w11]
     obtain ⟨Rx, fx⟩ := tapeRj kx (by decide) (by rw [xm]; exact tf _ _ _)
     refine ⟨Rx, fx, fun _ => ⟨by rw [xm, rd_t80, Mem.readW_writeW_self64], by rw [xm, Mem.readW_writeW_self64],
-      by rw [e₄']; rfl⟩, fun h => absurd h (by rw [hcap]; omega)⟩
+      by rw [e₄']; rfl⟩, fun h => absurd h (by rw [hcap]; omega_using [hex])⟩
   · refine WP.ite false (by rw [ev, decide_eq_false hex]) (fun h => absurd h (by decide)) fun _ => ?_
-    have hlt : rl s < psLen s + 128 := by omega
+    have hlt : rl s < psLen s + 128 := by omega_using [hrl, hex]
     unfold request reqHead
     refine WP.seq (wp_li (by decide) fun x₁ o₁' e₁' => wp_std (a := s.gpr .r5) (by rw [o₁'.get .r30, w30,
       BitVec.add_zero]) (by rw [o₁'.wr]; exact T0) fun x₂ m₂ => wp_sub fun x₃ o₃' e₃' => wp_subi
@@ -188,7 +188,7 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
     have ky : Keep [.r0, .r4] w y := (o₁'.keep.trans (m₂.keep.trans (o₃'.keep.trans (o₄'.keep.trans o₅'.keep)))).mono
     have ym : y.mem = w.mem.writeW (s.gpr .r5) (BitVec.ofNat 64 0) := by
       rw [o₅'.mem, o₄'.mem, o₃'.mem, m₂.mem, e₁', o₁'.mem]
-    have hd : rl s - c < 2 ^ 63 := by omega
+    have hd : rl s - c < 2 ^ 63 := by omega_using [hP, hrl]
     have y4 : y.gpr .r4 = (BitVec.ofNat 64 (rl s - c) - BitVec.ofNat 64 129) >>> 63 := by
       rw [e₅', e₄', e₃', m₂.gpr, o₁'.get .r10, o₁'.get .r5, w11, w5, sub_ofNat hcl (rl_lt s)]
     have ev' : isa.eval (.nonzero .d .r4) y = some (decide (rl s - c < 129)) := by
@@ -209,19 +209,19 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
       have xm : x.mem = (w.mem.writeW (s.gpr .r5) (BitVec.ofNat 64 0)).writeW (s.gpr .r5 + BitVec.ofNat 64 8)
           (BitVec.ofNat 64 req) := by rw [o₂.mem, m₁.mem, z0, zm, ym]
       obtain ⟨Rx, fx⟩ := tapeRj kx (by decide) (by rw [xm]; exact tf _ _ _)
-      exact ⟨Rx, fx, fun h => absurd h (by rw [hcap]; omega), fun _ => ⟨req,
+      exact ⟨Rx, fx, fun h => absurd h (by rw [hcap]; omega_using [hrl, hex]), fun _ => ⟨req,
         by rw [xm, rd_t80, Mem.readW_writeW_self64], by rw [xm, Mem.readW_writeW_self64], h1, h2,
         by rw [e₂]; rfl⟩⟩
     by_cases hs : rl s - c < 129
     · refine WP.seq (WP.ite true (by rw [ev', decide_eq_true hs]) (fun _ => wp_add fun z₁ o₁'' e₁'' =>
         wp_sub fun z o₂'' e₂'' => wp_nil ?_) (fun h => absurd h (by decide)))
       refine tail z (psLen s + rl s - c) (o₁''.keep.trans o₂''.keep).mono (by rw [o₂''.mem, o₁''.mem]) ?_
-        (by omega) (by omega)
+        (by omega_using [hc]) (by omega_using [hs])
       rw [e₂'', o₁''.get .r5, e₁'', ky.get .r28, ky.get .r10, ky.get .r5, Rw.r28, w11, w5,
-        BitVec.ofNat_add_ofNat, sub_ofNat (by omega) (by omega)]
+        BitVec.ofNat_add_ofNat, sub_ofNat (by omega_using [hc]) (by omega_using [hP, hrl])]
     · refine WP.seq (WP.ite false (by rw [ev', decide_eq_false hs]) (fun h => absurd h (by decide))
         fun _ => wp_mov fun z o₁'' e₁'' => wp_nil ?_)
-      exact tail z (psLen s + 128) o₁''.keep (by rw [o₁''.mem]) (by rw [e₁'', ky.get .r12, w12]) hlt (by omega)
+      exact tail z (psLen s + 128) o₁''.keep (by rw [o₁''.mem]) (by rw [e₁'', ky.get .r12, w12]) hlt (by omega_using [])
 
 theorem reject_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {u : State} (hI : At s M (rl s) u)
     (hc : (kept s (rl s)).length < psLen s) : WP isa reject u (Fin s) := by
@@ -230,22 +230,22 @@ theorem reject_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {u : State} 
   have hcl := hI.hc
   have hcr : (kept s (rl s)).length ≤ rl s := by
     have := VG.Proof.RsaPkcs1Enc.nz_length_le ((randB s).take (rl s))
-    simp only [List.length_take, randB_length] at this; simp only [kept]; omega
+    simp only [List.length_take, randB_length] at this; simp only [kept]; omega_using [this]
   unfold reject
   refine seq_assoc (WP.seq (WP.mono (zero_ok hp hM hI) fun v ⟨R, hm, h0, h10⟩ => ?_))
   have h5 : v.gpr .r5 = BitVec.ofNat 64 (kept s (rl s)).length := by rw [R.keep.get .r5, hI.r5]
-  refine seq_assoc (WP.seq (WP.mono (wipe_ok (by omega) R h5 h0) fun w ⟨R', hf', h10'⟩ => ?_))
+  refine seq_assoc (WP.seq (WP.mono (wipe_ok (by omega_using [hc, hP]) R h5 h0) fun w ⟨R', hf', h10'⟩ => ?_))
   refine WP.mono (budget_ok hp hc hcr R' (by rw [R'.keep.get .r5, hI.r5]) (by rw [R'.keep.get .r30, hI.r30])
     (by rw [h10', h10]))
     fun x ⟨Rx, fx, hex, hen⟩ => ⟨⟨Rx.sp, Rx.wr, Rx.hi, Rx.sv, Rx.ls⟩, Rx.rd, ?_⟩
   -- `out`
-  have bs := buf_sub s (n := (kept s (rl s)).length) (by omega)
+  have bs := buf_sub s (n := (kept s (rl s)).length) (by omega_using [hc, hP])
   have outZ : Spec.Rsa.bytesAt x.mem (s.gpr .r3) (kOf s) = List.replicate (kOf s) 0 := by
     have e : (⟨s.gpr .r3, kOf s⟩ : Region) = outR s := by simp only [outR, kOf, hp.hok]
-    rw [bytes_frame fx (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dOt) (by unfold kOf; omega),
+    rw [bytes_frame fx (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dOt) (by unfold kOf; omega_using []),
       bytes_frame hf' (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dKo.symm.sub_right bs)
-        (by unfold kOf; omega), hm]
-    have := bytesAt_writeBytes u.mem (s.gpr .r3) (List.replicate (kOf s) 0) (by simp; unfold kOf; omega)
+        (by unfold kOf; omega_using []), hm]
+    have := bytesAt_writeBytes u.mem (s.gpr .r3) (List.replicate (kOf s) 0) (by simp; unfold kOf; omega_using [])
     rwa [List.length_replicate] at this
   have hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all]; exact hc
   show (∃ req, _ ∧ _ ∧ _) ∧ _
@@ -255,8 +255,8 @@ theorem reject_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {u : State} 
     obtain ⟨h0, h1, hr⟩ := hex hge
     rw [ho, hu, randB_length]
     exact ⟨⟨0, h0, h1, rfl⟩, hr, outZ⟩
-  · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega)
-    obtain ⟨req, h0, h1, hr1, hr2, hr⟩ := hen (by omega)
+  · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega_using [hge])
+    obtain ⟨req, h0, h1, hr1, hr2, hr⟩ := hen (by omega_using [hge])
     rw [ho, hu]
     exact ⟨⟨req, h0, h1, by rw [randB_length]; exact ⟨hr1, hr2⟩⟩, hr, outZ⟩
 

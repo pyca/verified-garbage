@@ -82,7 +82,7 @@ theorem djtWf768 : DjF16.DjTWf kem768w where
   zT := ⟨_, by taint_decide⟩
   jT := by
     intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768w.L = 3 by decide] at hi; omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768w.L = 3 by decide] at hi; omega_using [hi]
     rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   kT := ⟨_, by taint_decide⟩
   ij := by decide +kernel
@@ -93,7 +93,7 @@ theorem ekt16Wf768 : EkF16.EkT16Wf kem768w where
   zT := ⟨_, by taint_decide⟩
   hT := by
     intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768w.L = 3 by decide] at hi; omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768w.L = 3 by decide] at hi; omega_using [hi]
     rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   hcT := ⟨_, by taint_decide⟩
   ij := by decide +kernel
@@ -157,7 +157,7 @@ theorem kgH16T768 : KeyGenH.KgH16T kem768w where
   cT := by
     intro i hi h0
     have : i = 1 ∨ i = 2 := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+      rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
       · exact absurd rfl h0
       · exact .inl rfl
       · exact .inr rfl

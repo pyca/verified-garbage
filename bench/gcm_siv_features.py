@@ -20,10 +20,6 @@ PROFILES = {
     "aesni_avx2": "aes,ssse3,avx,avx2",
     "pclmul_avx2": "pclmulqdq,ssse3,avx,avx2",
     "aesni_pclmul_avx": "aes,pclmulqdq,ssse3,avx,avx2",
-    "vaes": "aes,ssse3,avx,avx2,vaes",
-    "vpclmul": "pclmulqdq,ssse3,avx,avx2,vpclmulqdq",
-    "vaes_pclmul": "aes,pclmulqdq,ssse3,avx,avx2,vaes",
-    "aesni_vpclmul": "aes,pclmulqdq,ssse3,avx,avx2,vpclmulqdq",
     "vaes_vpclmul": "aes,pclmulqdq,ssse3,avx,avx2,vaes,vpclmulqdq",
     "avx512": "aes,pclmulqdq,ssse3,avx,avx2,vaes,vpclmulqdq,avx512f,avx512bw,avx512vl",
 }

@@ -41,7 +41,7 @@ theorem sharedPhaseInit_ready (s : State) {M x : Nat} {eb : List Byte}
   · rw [rest.rd, rest.wr]; exact h.read
   · intro i hi
     rw [frame.bytes (R := ⟨State.addr ep, eb.length⟩) separate
-      (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega) hi]
+      (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega_using [this]) hi]
     exact h.bytes i hi
 
 theorem sharedPhaseTable_ok (s : State) {M x : Nat} {eb : List Byte}
@@ -59,7 +59,7 @@ theorem sharedPhaseTable_ok (s : State) {M x : Nat} {eb : List Byte}
   · rw [keeps 132 (by simp), ready.count, Nat.sub_zero]
   · intro i hi
     rw [frame.bytes (R := ⟨State.addr ep, eb.length⟩) separate
-      (by change eb.length ≤ 2 ^ 64; have := ready.countFit; omega) hi]
+      (by change eb.length ≤ 2 ^ 64; have := ready.countFit; omega_using [this]) hi]
     exact ready.bytes i hi
 
 theorem sharedWindowExpPhase_ok (s : State) {M x : Nat} {eb : List Byte}

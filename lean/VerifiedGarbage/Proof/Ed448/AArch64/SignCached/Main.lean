@@ -176,13 +176,13 @@ theorem entry_args {s p : State} (h : scLocal.pre s)
     (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) : Args (lay s) p.mem := by
   refine ⟨fun j hj => ?_, fun i hi => ?_⟩
   · have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
       rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
   · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
     have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
     rw [← held i hi]
     refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms combSym))
-      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, fit])) (fun r hr => ?_) (by decide)
     rw [List.mem_singleton.mp hr]
     exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
 
@@ -222,7 +222,7 @@ theorem body_depth (v : Proof.Sha3.AArch64.Permutation) : (body v.callee).aarch6
   simp only [body, seedHash, nonceHash, chalHash, Impl.Ed448.AArch64.Whole.zeroSt,
     Impl.Ed448.AArch64.Whole.kabs, Impl.Ed448.AArch64.Whole.kpad, Impl.Ed448.AArch64.Whole.ksqz,
     Impl.Ed448.AArch64.Whole.callS, Code.aarch64Depth, Nat.max_le, ha, hp, hs, hr, hb, hm]
-  omega
+  omega_using []
 
 theorem entry_pk {s p : State} (h : scLocal.pre s)
     (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :

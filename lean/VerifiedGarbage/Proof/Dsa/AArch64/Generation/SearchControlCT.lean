@@ -71,9 +71,9 @@ theorem searchAdvanceHead_ct (limit stride : Nat) (hl : limit ≤ 12288) (hs : s
     exact WP.mono (searchAdvanceHead_ok ctrl h.2.1 hl hs) fun t ⟨hc, hf, _, _⟩ => ⟨hc, by
       by_cases he : p.counter + 1 < limit
       · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hf,
-          ite_eq_right (show ¬ limit ≤ p.counter + 1 by omega), decide_eq_true he]; rfl
+          ite_eq_right (show ¬ limit ≤ p.counter + 1 by omega_using [he]), decide_eq_true he]; rfl
       · simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hf,
-          ite_eq_left (show limit ≤ p.counter + 1 by omega), decide_eq_false he]; rfl⟩
+          ite_eq_left (show limit ≤ p.counter + 1 by omega_using [he]), decide_eq_false he]; rfl⟩
 
 theorem searchAdvance_ct (limit stride : Nat) (hl : limit ≤ 12288) (hs : stride ≤ 12)
     {hc : VG.Taint.Hint VG.AArch64.Taint.T}

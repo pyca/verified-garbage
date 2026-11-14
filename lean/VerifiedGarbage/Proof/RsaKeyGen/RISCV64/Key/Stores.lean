@@ -189,12 +189,12 @@ theorem stores_ok {s0 s : State} (hp : PreC s0) (h : Fr s0 s.mem s) {a b : Bool}
   have hqi := hp.hqi
   have p512 := hp.p512; have p32 := hp.p32
   have w4 := hp.wOf_eq
-  have lN : 2 * pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega
-  have lP : pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega
-  have oN : 1 ≤ 2 * pLen s0 := by simp only [pLen]; omega
-  have oP : 1 ≤ pLen s0 := by simp only [pLen]; omega
-  have bN : 2 * pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega
-  have bP : pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega
+  have lN : 2 * pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega_using [w4]
+  have lP : pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega_using [w4]
+  have oN : 1 ≤ 2 * pLen s0 := by simp only [pLen]; omega_using [p32]
+  have oP : 1 ≤ pLen s0 := by simp only [pLen]; omega_using [p32]
+  have bN : 2 * pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega_using [hn]
+  have bP : pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega_using []
   have wN := hp.wn; have wD := hp.wd; have wP := hp.wp; have wQ := hp.wq
   have wDp := hp.wdp; have wDq := hp.wdq; have wQi := hp.wqi
   have mN : (⟨s0.gpr .a0, 2 * pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [nR, hn]

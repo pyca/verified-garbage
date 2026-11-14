@@ -15,7 +15,7 @@ theorem times16_toNat (x : BitVec 32) :
     ((((x + x) + (x + x)) + ((x + x) + (x + x))) + (((x + x) + (x + x)) + ((x + x) + (x + x)))).toNat =
       x.toNat * 16 % 2 ^ 32 := by
   simp only [BitVec.toNat_add]
-  omega
+  omega_using []
 
 theorem shr28_toNat (x : BitVec 32) : (x >>> 28).toNat = x.toNat / 2 ^ 28 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -38,20 +38,20 @@ theorem shift_top_scale {V P w c : Nat} (hc : 0<c) (divides : c ∣ 2^32) (hP : 
     have hm : (q + w * c) % 2 ^ 32 + 1 ≤ 2 ^ 32 := Nat.mod_lt _ (by decide)
     have := Nat.mul_le_mul_left P hm
     rw [Nat.mul_add, Nat.mul_one] at this
-    omega
+    omega_using [hx, this]
   rw [e, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt lt]
   congr 2
   obtain ⟨k,hk⟩ := divides
   have kp : 0<k := by
     by_contra hn
-    have : k=0 := by omega
+    have : k=0 := by omega_using [hn]
     simp [this] at hk
   have rem : w*c%2^32 = c*(w%k) := by rw [hk,Nat.mul_comm w c,Nat.mul_mod_mul_left]
   have limit : w*c%2^32+q < 2^32 := by
     have h := Nat.mul_le_mul_left c (show w%k+1 ≤ k from Nat.mod_lt w kp)
     rw [Nat.mul_add,Nat.mul_one,←hk] at h
-    rw [rem]; omega
-  rw [Nat.add_mod,Nat.mod_eq_of_lt (show q<2^32 by omega),Nat.add_comm q,Nat.mod_eq_of_lt limit]
+    rw [rem]; omega_using [hq, h]
+  rw [Nat.add_mod,Nat.mod_eq_of_lt (show q<2^32 by omega_using [limit]),Nat.add_comm q,Nat.mod_eq_of_lt limit]
 
 theorem shift_top {V P w : Nat} (hP : 0 < P) (hV : V < P) :
     (V + P * w) * 16 % (P * 2 ^ 32) = V * 16 % P + P * (w * 16 % 2 ^ 32 + V * 16 / P) :=
@@ -61,11 +61,11 @@ theorem val32_top_bits (m : Mem) (base : Addr) (d j : Nat) :
     val32 m base d (j + 1) * 16 / 2 ^ (32 * (j + 1)) = w32 m base (d + 4 * j) / 2 ^ 28 := by
   have hP : 0 < 2 ^ (32 * j) := Nat.two_pow_pos _
   have hV := val32_lt m base d j
-  have hq : val32 m base d j * 16 / 2 ^ (32 * j) < 16 := (Nat.div_lt_iff_lt_mul hP).2 (by omega)
+  have hq : val32 m base d j * 16 / 2 ^ (32 * j) < 16 := (Nat.div_lt_iff_lt_mul hP).2 (by omega_using [hV])
   rw [val32_succ, pow32_succ, Nat.mul_comm (2 ^ 32), ← Nat.div_div_eq_div_mul, Nat.add_mul,
     Nat.mul_assoc, Nat.add_mul_div_left _ _ hP]
   generalize val32 m base d j * 16 / 2 ^ (32 * j) = q at hq
-  omega
+  omega_using [hq]
 
 /-- The exponent's next window, from its top bits. -/
 theorem window_exponent (X P : Nat) (hP : 0 < P) : X * 16 / P = 16 * (X / P) + X % P * 16 / P := by
@@ -81,7 +81,7 @@ theorem window_power (b c w : Nat) : (b ^ c) ^ 16 * b ^ w = b ^ (16 * c + w) := 
 /-- `8k` windows cover the exponent. -/
 theorem window_all (E k : Nat) : E * 16 ^ (8 * k) / 2 ^ (32 * k) = E := by
   rw [show (16 : Nat) ^ (8 * k) = 2 ^ (32 * k) by
-    rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega]
+    rw [show (16 : Nat) = 2 ^ 4 from rfl, ← Nat.pow_mul]; congr 1; omega_using []]
   exact Nat.mul_div_cancel _ (Nat.two_pow_pos _)
 
 end VG.Proof.Mont.X86.Dynamic

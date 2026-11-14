@@ -162,21 +162,25 @@ open VG.Proof.Sha512.X86_64 (st bp nb scr stR blR retR H₀ blkAddr blk blk_word
 
 abbrev scrR (s₀ : State) : Region := ⟨scr s₀, 1328⟩
 
-structure Pre (s₀ : State) : Prop where
+/-- The precondition, with `n` bytes of scratch space
+(`compressWideX86_64S n`): this code uses 1328, the scalar one 192. -/
+structure PreN (n : Nat) (s₀ : State) : Prop where
   rd : s₀.rd = [blR s₀]
-  wr : s₀.wr = [stR s₀, scrR s₀]
-  st_scr : (stR s₀).Disjoint (scrR s₀)
+  wr : s₀.wr = [stR s₀, ⟨scr s₀, n⟩]
+  st_scr : (stR s₀).Disjoint ⟨scr s₀, n⟩
   blk_st : (blR s₀).Disjoint (stR s₀)
-  blk_scr : (blR s₀).Disjoint (scrR s₀)
+  blk_scr : (blR s₀).Disjoint ⟨scr s₀, n⟩
   ret_st : (retR s₀).Disjoint (stR s₀)
-  ret_scr : (retR s₀).Disjoint (scrR s₀)
+  ret_scr : (retR s₀).Disjoint ⟨scr s₀, n⟩
 
-theorem pre_of (s₀ : State) (h : Proof.Sha512.compressWideX86_64.pre s₀) : Pre s₀ := by
+theorem preN_of (n : Nat) (s₀ : State) (h : (Proof.Sha512.compressWideX86_64S n).pre s₀) : PreN n s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
-namespace Pre
-variable {s₀ : State} (h : Pre s₀)
+theorem pre_of (s₀ : State) (h : Proof.Sha512.compressWideX86_64.pre s₀) : PreN 1328 s₀ := preN_of 1328 s₀ h
+
+namespace PreN
+variable {n : Nat} {s₀ : State} (h : PreN n s₀)
 include h
 
 /-- The blocks fit in the address space (or they could not be disjoint from the state). -/
@@ -210,7 +214,7 @@ theorem in_blk16 {i n : Nat} (hi : i < nb s₀) (hn : n < 8) :
     bp s₀ + BitVec.ofNat 64 (128 * i + 16 * n) from Offset.add_ofNat_add_ofNat _ _ _]
   exact contains_offset (by omega_arith) (by omega_arith)
 
-end Pre
+end PreN
 
 /-! ## Loading the blocks -/
 
@@ -334,7 +338,7 @@ theorem addState_eq : addState = [
 theorem initCarry_eq : initCarry = [.mov .r13 (.reg .rbx), .alu .xor .r13 (.reg .rbp)] := rfl
 
 set_option simprocs false in
-theorem loadState_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
+theorem loadState_ok {s₀ : State} (hp : PreN 1328 s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     WP isa (.block loadState) s fun s₁ => Vars8 s₁ (stateAt s.mem (st s₀)) ∧ Keeps s s₁ := by
   have hin : ∀ k : Nat, k < 8 →
@@ -377,7 +381,7 @@ theorem initCarry_ok {s : State} {v : HashValue} (hv : Vars8 s v) :
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 set_option simprocs false in
-theorem addState_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (hv : Vars8 s V)
+theorem addState_ok {s₀ : State} (hp : PreN 1328 s₀) {s : State} (V H : HashValue) (hv : Vars8 s V)
     (hrdi : s.gpr .rdi = st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hH : ∀ k : Nat, (hk : k < 8) →
       s.mem.readW (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 64 = H[k]) :
@@ -519,7 +523,7 @@ theorem slot_sub (p : Addr) {d n : Nat} (hd : d + n ≤ 1328) :
     Region.Sub ⟨p + BitVec.ofInt 64 (d : Int), n⟩ ⟨p, 1328⟩ := by
   rw [ofInt_natCast]; exact sub_offset (by omega_arith) (by omega_arith)
 
-theorem state_frame_w {s₀ : State} (hp : Pre s₀) {m m' : Mem} (hf : Frame [wRegion (scr s₀)] m m') :
+theorem state_frame_w {s₀ : State} (hp : PreN 1328 s₀) {m m' : Mem} (hf : Frame [wRegion (scr s₀)] m m') :
     stateAt m' (st s₀) = stateAt m (st s₀) := by
   apply stateAt_eq
   intro k hk
@@ -531,7 +535,7 @@ theorem state_frame_w {s₀ : State} (hp : Pre s₀) {m m' : Mem} (hf : Frame [w
 /-- The block in lane 1: the next one if there is one, else block `i` again. -/
 abbrev nxt (s₀ : State) (i : Nat) : Nat := if nb s₀ - i = 1 then i else i + 1
 
-theorem sub_one_eq {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) :
+theorem sub_one_eq {s₀ : State} (hp : PreN 1328 s₀) {i : Nat} (hi : i < nb s₀) :
     (BitVec.ofNat 64 (nb s₀ - i) - 1 == 0) = (nb s₀ - i == 1) := by
   have := hp.nb_lt
   have hn : nb s₀ - i < 2 ^ 64 := by omega_arith
@@ -547,7 +551,7 @@ theorem sub_one_eq {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) :
       exact h (by have h2 : n - 1 = 0 := this; omega_arith)
     rw [beq_eq_false_iff_ne.mpr h', beq_eq_false_iff_ne.mpr h]
 
-theorem blk_read {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {m m' : Mem}
+theorem blk_read {s₀ : State} (hp : PreN 1328 s₀) {i : Nat} (hi : i < nb s₀) {m m' : Mem}
     (hf : Frame [stR s₀, scrR s₀] s₀.mem m) (hf' : Frame [wRegion (scr s₀)] m m') :
     ∀ t : Nat, t < 16 → bswap64 (m'.readW (blkAddr s₀ i + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) =
       W (blk s₀ i) t := by

@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
@@ -74,38 +78,63 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P384.X86_64.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384Adx
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # ECDSA over P-384 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
 
+-- Deterministic ECDSA (RFC 6979) over P-384 on x86-64, with HMAC as a table
+namespace VG.Artifacts.EcdsaP384.X86_64.Rfc6979
+
+open VG.Proof.P384.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p384Of p384T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+open VG.Proof.Variants.MdHash.X86_64 (variants)
+
+def artifacts : List Artifact :=
+  if hv : OK variants ∧ "VG_P384_COMB" ∉ names variants then [
+    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      tables := [("hmac", tables variants)]
+      code := signCodeT (p384Of false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv)
+        Spec.Ecdsa.Rfc6979.Curves.p384.tries variants
+      stack := stackT
+      verified := p384T_verified false hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants hv
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p384.combConsts _ _)),
+    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      suffix := "_adx"
+      tables := [("hmac", tables variants)]
+      code := signCodeT (p384Of true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv)
+        Spec.Ecdsa.Rfc6979.Curves.p384.tries variants
+      stack := stackT
+      verified := p384T_verified true hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv variants hv
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p384.combConsts _ _))]
+  else []
+
+end VG.Artifacts.EcdsaP384.X86_64.Rfc6979
+
 namespace VG.Artifacts.EcdsaP384.X86_64
 
 open VG.Proof.P384.X86_64 (hasLaw)
 
-/-- The function of `Spec.Ecdsa.P384.verifyHashApi`, multiplying with BMI2 and ADX
-(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
-`rsp` (`hsp`). -/
-def verify (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P384.inst.verifyHashContract (X86_64.abi.withConsts Impl.P384.X86_64.p384v.combConsts) 96))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
-    stack := 96
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
-
 def artifacts : List Artifact := [
-  verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
-    Impl.Ecdsa.Verify.X86_64.jointVerifyP384)
-    (Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime),
-  verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
-    Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx)
-    (Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified_adx hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime)]
+  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP384
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P384.inst Impl.P384.X86_64.p384v.combConsts)),
+  Spec.Ecdsa.P384.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    suffix := "_adx"
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified_adx hasLaw.law (Proof.P384.gtabOk9 hasLaw.law)
+      hasLaw.inv
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P384.inst Impl.P384.X86_64.p384v.combConsts))] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP384.X86_64

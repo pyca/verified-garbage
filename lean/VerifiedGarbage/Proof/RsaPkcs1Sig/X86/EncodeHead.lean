@@ -25,7 +25,7 @@ theorem head_ok {s0 s : State} {k n : Nat} (buf : Buf s0 k) (hk : k ≤ 1024)
     WP isa (.block head) s fun t => W s0 [0x00, 0x01] t ∧ t.gpr .eax = 0xff ∧
       t.gpr .ebx = BitVec.ofNat 32 (k - n - 3) ∧ Keeps [.eax, .edi, .ebx] s t := by
   unfold head
-  refine WP.block_append (WP.mono (putBytes_ok buf [0x00, 0x01] (by simp; omega) h)
+  refine WP.block_append (WP.mono (putBytes_ok buf [0x00, 0x01] (by simp; omega_using [bound]) h)
     fun u ⟨hu, ku⟩ => ?_)
   unfold headTail
   refine wp_movS rfl fun v V _ => ?_

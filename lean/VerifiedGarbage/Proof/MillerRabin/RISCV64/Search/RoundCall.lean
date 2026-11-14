@@ -298,7 +298,7 @@ theorem scr_covers {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) {x : Addr} 
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := Nat.mod_le ((x - (B₀ + BitVec.ofNat 64 o)).toNat + o % 2 ^ 64) (2 ^ 64)
   have := Nat.mod_le o (2 ^ 64)
-  omega
+  omega_using [hoL, hc]
 
 theorem scr_covers' {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) :
     Covers ([] ++ [⟨B, Z⟩]) (s.rd ++ s.wr) := fun x n hx => by

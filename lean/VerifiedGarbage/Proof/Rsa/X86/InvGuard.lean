@@ -72,7 +72,7 @@ theorem guard_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {
         rw [W₃.gpr, W₂.gpr, W₁.gpr, BitVec.toNat_add, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
         have := (args 7).isLt
         simp only [Nat.pow_one, show BitVec.toNat (1 : BitVec 32) = 1 from rfl]
-        omega
+        omega_using []
       refine wp_movS h₃.gate.pArg.readSrc fun w₄ W₄ _ => cmpBoth rfl fun w₅ W₅ _ c₅ => WP.block_nil ?_
       have K₅ : Keeps [.ecx] w₃ w₅ := W₄.keeps.trans (W₅.keeps _)
       have m₅ : w₅.mem = w₃.mem := W₅.mem.trans W₄.mem
@@ -108,7 +108,7 @@ theorem guard_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {
         by rw [mz, mv, m], ?_⟩
       rw [cz]
       simp only [Bool.not_eq_false', decide_eq_true_eq] at small
-      simp only [Eligible, show ¬ 128 ≤ (args 7).toNat by omega, false_and, and_false, decide_false]
+      simp only [Eligible, show ¬ 128 ≤ (args 7).toNat by omega_using [small], false_and, and_false, decide_false]
   · intro no
     refine WP.mono (reject_ok hu) fun z ⟨hz, kz, mz, cz⟩ => ?_
     refine ⟨hz, (K.mono (by decide)).trans (kz.mono (by decide)), by rw [mz, m], ?_⟩

@@ -43,7 +43,7 @@ theorem shr3_width {w : Nat} (hw : w < 2 ^ 64) :
     BitVec.ofNat 64 w >>> 3 = BitVec.ofNat 64 (w / 8) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega_using [hw])]
 
 theorem guard_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hw : w < 2 ^ 30) :
@@ -52,8 +52,8 @@ theorem guard_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc : Nat}
         t.gpr .x4 = BitVec.ofNat 64 (w % 8)) ∧ Keep [.x12,.x3,.x4] s t := by
   refine WP.keep _ ?_ rfl rfl rfl
   brun [guard, hc.good.x0, hdr_enc (show sW < 32 by decide), hc.ld (i := sW) (by decide),
-    hc.good.hdr.hw, shr3_width (show w < 2 ^ 64 by omega)]
-  exact BlockedRedc.mask7_ofNat (by omega)
+    hc.good.hdr.hw, shr3_width (show w < 2 ^ 64 by omega_using [hw])]
+  exact BlockedRedc.mask7_ofNat (by omega_using [hw])
 
 theorem selected_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hv : v < 32)
@@ -73,15 +73,15 @@ theorem selected_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : 
     ⟨ct,hm ▸ hy,hm ▸ hf,(ku.trans kt).mono (by decide)⟩
   by_cases fast : 8 ≤ w
   · refine WP.ite true (by rw [eval_nonzero,h3,ne_zero_iff,BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega),decide_eq_true (show w / 8 ≠ 0 by omega)])
+      Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega_using [hw']),decide_eq_true (show w / 8 ≠ 0 by omega_using [fast])])
       (fun _ => ?_) (by simp)
     by_cases hd : w % 8 = 0
     · refine WP.ite true (by rw [eval_zero,h4,hd]; rfl) (fun _ => ?_) (by simp)
       exact WP.mono (blocked_ok ctx fast hw' hd hv tab nib) fun t ⟨ct,hy,hf,kt⟩ =>
         ⟨ct,hm ▸ hy,hm ▸ hf,(ku.trans kt).mono (by decide)⟩
     · exact WP.ite false (by rw [eval_zero,h4,eq_zero_iff,BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show w % 8 < 2 ^ 64 by omega),decide_eq_false hd]) (by simp) (fun _ => slow)
-  · exact WP.ite false (by rw [eval_nonzero,h3,show w / 8 = 0 by omega]; rfl) (by simp) (fun _ => slow)
+        Nat.mod_eq_of_lt (show w % 8 < 2 ^ 64 by omega_using []),decide_eq_false hd]) (by simp) (fun _ => slow)
+  · exact WP.ite false (by rw [eval_nonzero,h3,show w / 8 = 0 by omega_using [fast]]; rfl) (by simp) (fun _ => slow)
 
 structure GuardCtx (p : XPub) (s : State) : Prop where
   sel : VG.Proof.Bignum.AArch64.WindowFive.SelP p s
@@ -99,9 +99,9 @@ theorem guard_width {p : XPub} {s : State} (h : GuardCtx p s)
     (ht : isa.eval (.nonzero .x .x3) s = some true) : 8 ≤ p.wx := by
   obtain ⟨_,_,_,_,_,_,hw',_⟩ := h.sel
   rw [eval_nonzero,h.width,ne_zero_iff,BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show p.wx / 8 < 2 ^ 64 by omega)] at ht
+    Nat.mod_eq_of_lt (show p.wx / 8 < 2 ^ 64 by omega_using [hw'])] at ht
   have := of_decide_eq_true (Option.some.inj ht)
-  omega
+  omega_using [this]
 
 theorem selected_ct : RelCT isa (Two VG.Proof.Bignum.AArch64.WindowFive.SelP)
     selected (fun _ _ => True) := by

@@ -54,14 +54,14 @@ theorem fr_out (hL : L.Ok) {d n : Nat} (h : d + n ≤ 336) :
 
 /-- A region of the locals apart from the kept words. -/
 theorem fr_apart {d n : Nat} (h₁ : 16 ≤ d) (h₂ : d + n ≤ 200) : Apart L.env ⟨L.E + BitVec.ofNat 64 d, n⟩ :=
-  ⟨⟨d, rfl, by show d + n ≤ 256; omega⟩, fun p hp => by
+  ⟨⟨d, rfl, by show d + n ≤ 256; omega_using [h₂]⟩, fun p hp => by
     simp only [Lay.env, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;>
-      exact Offset.disjoint _ (by simp [fLen, fScr, fHdr]; omega) (by simp [fLen, fScr, fHdr]) (by omega)⟩
+      exact Offset.disjoint _ (by simp [fLen, fScr, fHdr]; omega_arith) (by simp [fLen, fScr, fHdr]) (by omega_using [h₂])⟩
 
 theorem out_sep (hL : L.Ok) : Region.Disjoint ⟨L.out, 57⟩ ⟨L.out + BitVec.ofNat 64 57, 57⟩ := by
-  have h := Offset.disjoint (L.out) (d := 0) (n := 57) (e := 57) (k := 57) (by omega) (by omega)
-    (by have := hL.no; omega)
+  have h := Offset.disjoint (L.out) (d := 0) (n := 57) (e := 57) (k := 57) (by omega_using []) (by omega_using [])
+    (by have := hL.no; omega_using [])
   rwa [BitVec.add_zero] at h
 
 /-- The word of `out` at 57. -/

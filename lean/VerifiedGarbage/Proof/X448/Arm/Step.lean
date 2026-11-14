@@ -35,14 +35,14 @@ theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg}
       Keeps [.r3, .r5, .r4] s s' := by
   intro v
   unfold carryBlock ld
-  refine wp_ldr (a := off base (a + 4 * i)) (by omega) (hs.ea (by omega))
-    (hs.read (by omega)) fun t ht => ?_
+  refine wp_ldr (a := off base (a + 4 * i)) (by omega_using [ha]) (hs.ea (by omega_using [ha]))
+    (hs.read (by omega_using [ha])) fun t ht => ?_
   have h5 : t.gpr .r5 = s.gpr .r5 := ht.other _ (by decide)
   have h3 : (t.gpr .r3).toNat = (word s.mem base (a + 4 * i)).toNat := by rw [ht.gpr]
   refine WP.mono (VG.Proof.X25519.Arm.carryStep_ok
     (a := off base (q + 4 * i)) hrb ho
     (by rw [ht.other rb hrb.1]; exact hea)
-    (by rw [ht.wr]; exact hs.write (by omega))
+    (by rw [ht.wr]; exact hs.write (by omega_using [hq]))
     (by rw [ht.other .r6 (by decide)]; exact hs.mask)
     (by rw [h3, h5]; exact hb)) fun u ⟨hc, ⟨w, hw, hm⟩, hk⟩ => ?_
   rw [h3, h5] at hc hw

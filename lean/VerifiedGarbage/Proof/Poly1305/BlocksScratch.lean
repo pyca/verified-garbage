@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_poly1305_blocks` with its working space as an argument
@@ -51,10 +52,10 @@ theorem repr_congr {m₁ m₂ : Mem} {p : Addr} {key msg : List Byte}
   obtain ⟨h0, h1, h2⟩ := hr
   refine ⟨h0, ?_, ?_⟩
   · have e : bytesAt m₂ (p + BitVec.ofNat 64 24) 32 = bytesAt m₁ (p + BitVec.ofNat 64 24) 32 :=
-      bytesAt_congr' fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+      bytesAt_congr' fun i hi => by rw [Offset.add_add]; exact h _ (by omega_using [hi])
     rw [show p + 24 = p + BitVec.ofNat 64 24 from rfl, e]
     exact h1
-  · rw [bytesAt_congr' fun i hi => h i (by omega)]; exact h2
+  · rw [bytesAt_congr' fun i hi => h i (by omega_using [hi])]; exact h2
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
@@ -64,10 +65,10 @@ theorem agree_of' {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 theorem blocksPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (blocksSig.words pb).length →
     (∀ b ∈ Sig.bufs blocksSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -93,7 +94,7 @@ theorem blocksPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (blocks
     have := Nat.mod_le n.toNat (2 ^ pb)
     simp only [BitVec.toNat_setWidth] at hi
     simp only [Elem.size]
-    omega)]
-  exact h key msg (repr_congr (fun i hi => (hs i (by simp only [Elem.size]; omega)).symm) hrep)
+    omega_using [this, hi])]
+  exact h key msg (repr_congr (fun i hi => (hs i (by simp only [Elem.size]; omega_using [hi])).symm) hrep)
 
 end VG.Proof.Poly1305

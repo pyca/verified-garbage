@@ -40,15 +40,15 @@ theorem TableMem.unch {s t : State} {T : Addr} {ws : List (BitVec 64)}
     (hm : ∀ i < ws.length, ∀ b < 8, t.mem (T+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 b) =
       s.mem (T+BitVec.ofNat 64 (8*i)+BitVec.ofNat 64 b)) : TableMem t T ws :=
   ⟨h.fit, hr ▸ h.readable, fun i hi => by
-    rw [← h.words i hi]; exact Mem.readW_congr fun b hb => hm i hi b (by omega)⟩
+    rw [← h.words i hi]; exact Mem.readW_congr fun b hb => hm i hi b (by omega_using [hb])⟩
 
 theorem TableMem.of_frame {s t : State} {T : Addr} {ws : List (BitVec 64)} {L : List Region}
     (h : TableMem s T ws) (hr : t.rd ++ t.wr = s.rd ++ s.wr) (hf : Frame L s.mem t.mem)
     (hd : ∀ r ∈ L, Region.Disjoint ⟨T,8*ws.length⟩ r) : TableMem t T ws :=
   h.unch hr fun i hi b hb => by
     rw [Offset.add_add]
-    exact hf.bytes (R := ⟨T,8*ws.length⟩) hd (by have := h.fit; dsimp only; omega)
-      (by dsimp only; omega)
+    exact hf.bytes (R := ⟨T,8*ws.length⟩) hd (by have := h.fit; dsimp only; omega_using [this])
+      (by dsimp only; omega_using [hi, hb])
 
 theorem TableMem.entry {s : State} {T : Addr} {n R p H J : Nat} {tbl : List (List (Nat × Nat))}
     (hT : TableMem s T (tcombWords n R p tbl)) (hJ : tbl.length=J)
@@ -68,10 +68,10 @@ theorem TableMem.row {s : State} {T base : Addr} {ws : List (BitVec 64)}
     rw [total,← Nat.mul_succ]
     exact Nat.mul_le_mul_left _ hj
   have fit := hT.fit
-  refine ⟨?_,CallLay.inRegions_sub hT.readable span (by omega),hd.sub_left (Offset.sub_base T span)⟩
+  refine ⟨?_,CallLay.inRegions_sub hT.readable span (by omega_using [fit]),hd.sub_left (Offset.sub_base T span)⟩
   dsimp only [off]
-  rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : bytes*j<2^64),
-    Nat.mod_eq_of_lt (by omega : T.toNat+bytes*j<2^64)]
-  omega
+  rw [BitVec.toNat_add,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [span, fit] : bytes*j<2^64),
+    Nat.mod_eq_of_lt (by omega_using [span, fit] : T.toNat+bytes*j<2^64)]
+  omega_using [span, fit]
 
 end VG.Proof.Weierstrass.Arm.TComb

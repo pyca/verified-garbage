@@ -47,7 +47,7 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X25519.x25519Co
     all_goals first
       | with_reducible assumption
       | trivial
-      | omega
+      | omega_using []
       | exact Region.Disjoint.symm ‹_›
   post s s' h := by
     sig_post [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,

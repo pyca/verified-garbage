@@ -21,7 +21,7 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp wp_movw 
 theorem val32_zeros {m : Mem} {base : Addr} {d : Nat} :
     ∀ {k : Nat}, (∀ j < k, w32 m base (d + 4 * j) = 0) → val32 m base d k = 0
   | 0, _ => rfl
-  | k + 1, h => by rw [val32_succ, val32_zeros fun j hj => h j (by omega), h k (by omega), Nat.mul_zero]
+  | k + 1, h => by rw [val32_succ, val32_zeros fun j hj => h j (by omega_using [hj]), h k (by omega_using []), Nat.mul_zero]
 
 /-- `[out] = 1`, `2n` words. -/
 theorem one_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n out : Nat} (hn : 0 < n)
@@ -30,21 +30,21 @@ theorem one_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n o
       Outside base out (8 * n) s.mem t.mem ∧ Rest [.r4, .r7, .r9, .r10] s t := by
   have hnw := hs.nowrap
   unfold one
-  refine WP.seq (WP.mono (zeros_ok hs (o := out) (k := 2 * n) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (zeros_ok hs (o := out) (k := 2 * n) (by omega_using [hn]) (by omega_using [hout]) (by omega_using [h16]))
     fun t₀ ⟨w₀, Z₀, O₀, R₀⟩ => ?_)
-  refine wp_ptr (d := .r10) (by decide) (by omega) fun t₁ u₁ => wp_mov (op2_imm (by decide)) fun t₂ u₂ => ?_
+  refine wp_ptr (d := .r10) (by decide) (by omega_using [h16]) fun t₁ u₁ => wp_mov (op2_imm (by decide)) fun t₂ u₂ => ?_
   have w₂ := (w₀.of_upd u₁ (by decide)).of_upd u₂ (by decide)
   refine wp_str (by decide) (w₂.ea (d := 0) (K := out)
-    (by simp only [u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]) (by omega))
-    (w₂.write (d := out + 0) (n := 4) (by omega)) fun t m => WP.block_nil ⟨w₂.of_mupd m, ?_, ?_, ?_⟩
-  · rw [m.mem, u₂.mem, u₁.mem, Nat.add_zero, show 2 * n = 1 + (2 * n - 1) by omega, val32_append, val32, val32,
+    (by simp only [u₂.get, u₁.get, reduceCtorEq, ↓reduceIte]) (by omega_using [hn, hout]))
+    (w₂.write (d := out + 0) (n := 4) (by omega_using [hn, hout])) fun t m => WP.block_nil ⟨w₂.of_mupd m, ?_, ?_, ?_⟩
+  · rw [m.mem, u₂.mem, u₁.mem, Nat.add_zero, show 2 * n = 1 + (2 * n - 1) by omega_using [hn], val32_append, val32, val32,
       w32_write_self, val32_zeros (k := 2 * n - 1) fun j hj => ?_]
     · simp only [u₂.gpr]; rfl
-    · rw [w32_write_ne (size := size) hnw (by omega) (by omega) (by omega),
-        show out + 4 * 1 + 4 * j = out + 4 * (1 + j) by omega, Z₀ (1 + j) (by omega)]
+    · rw [w32_write_ne (size := size) hnw (by omega_using [hn, hout]) (by omega_using [hout, hj]) (by omega_using []),
+        show out + 4 * 1 + 4 * j = out + 4 * (1 + j) by omega_using [], Z₀ (1 + j) (by omega_using [hj])]
   · rw [m.mem, u₂.mem, u₁.mem, Nat.add_zero]
-    rw [show 4 * (2 * n) = 8 * n by omega] at O₀
-    exact O₀.trans ((writeW32_outside _ _ (d := out) _ (by omega)).mono (by omega) (by omega))
+    rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₀
+    exact O₀.trans ((writeW32_outside _ _ (d := out) _ (by omega_using [h16])).mono (by omega_using []) (by omega_using [hn]))
   · exact (R₀.mono (by decide)).trans ((((u₁.rest (by decide)).trans (u₂.rest (by decide)))).trans (m.rest _))
 
 /-- A count down by one. -/
@@ -74,10 +74,10 @@ theorem powerTwo_ok {n m size o bits : Nat} {base : Addr} {s : State} (h : Conte
   have hm1 := h.gt_one
   unfold powerTwo
   refine WP.seq (WP.mono (one_ok h.ws (n := (contextMod n).n) (out := slot n o) h.n0
-    (by simp only [contextMod, stride] at *; omega) (by simp only [contextMod, stride] at *; omega))
+    (by simp only [contextMod, stride] at *; omega_using [bo, sz]) (by simp only [contextMod, stride] at *; omega_using [bo, sm]))
     fun t₀ ⟨w₀, V₀, O₀, R₀⟩ => ?_)
   have K₀ : OpKeep n base o s t₀ := ⟨R₀.mono (by decide), Outs.of_outside O₀ (by simp [contextMod])⟩
-  have c₀ := h.keep (by omega) w₀ K₀
+  have c₀ := h.keep (by omega_using [ho]) w₀ K₀
   refine WP.seq (wp_movw fun t₁ u₁ => WP.block_nil ?_)
   have I0 : PowInv n m base size o bits s 0 t₁ := by
     refine ⟨⟨w₀.of_upd u₁ (by decide), c₀.size_le, c₀.small, c₀.n0, by rw [u₁.mem]; exact c₀.modulus, c₀.gt_one,
@@ -89,7 +89,7 @@ theorem powerTwo_ok {n m size o bits : Nat} {base : Addr} {s : State} (h : Conte
   refine WP.loop (M := isa) (fun r u => ∃ j, r = bits - j ∧ j < bits ∧ PowInv n m base size o bits s j u) ?_ bits t₁
     ⟨0, rfl, hb, I0⟩
   rintro r u ⟨j, rfl, hj, I⟩
-  have hv : val32 u.mem base (slot n o) (2 * n) < m := by rw [I.val]; exact Nat.mod_lt _ (by omega)
+  have hv : val32 u.mem base (slot n o) (2 * n) < m := by rw [I.val]; exact Nat.mod_lt _ (by omega_using [hm1])
   refine WP.seq (WP.mono (context_add_ok I.ctx ho ho ho hv hv) fun u₁ ⟨c₁, K₁, V₁⟩ => ?_)
   refine wp_subs (VG.Proof.X25519.Arm.op2_imm (encodable_lt (n := 1) (by decide))) fun u₂ v₂ z₂ => WP.block_nil ?_
   have I' : PowInv n m base size o bits s (j + 1) u₂ := by
@@ -98,17 +98,17 @@ theorem powerTwo_ok {n m size o bits : Nat} {base : Addr} {s : State} (h : Conte
     · rw [v₂.mem, V₁, I.val, ← Nat.add_mod, Nat.pow_succ, Nat.mul_two]
     · rw [v₂.mem]; exact I.mem.trans K₁.mem
     · exact (I.rest.trans (K₁.rest.mono (by decide))).trans (v₂.rest (by decide))
-    · rw [v₂.gpr, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega) (by omega)]
+    · rw [v₂.gpr, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega_using [hj]) (by omega_using [hb16])]
       congr 1
   have hz : u₂.z = decide (j + 1 = bits) := by
-    rw [z₂, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega) (by omega),
-      VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+    rw [z₂, K₁.rest.gpr .lr (by decide), I.lr, ofNat_sub_one (by omega_using [hj]) (by omega_using [hb16]),
+      VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_using [hb16])]
     simp only [decide_eq_decide]
-    omega
+    omega_using [hj]
   by_cases hj1 : j + 1 = bits
   · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hj1]; rfl,
       I'.ctx, by rw [I'.val, hj1], I'.mem, I'.rest⟩
-  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hj1]; rfl, bits - (j + 1), by omega,
-      j + 1, rfl, by omega, I'⟩
+  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hj1]; rfl, bits - (j + 1), by omega_using [hj],
+      j + 1, rfl, by omega_using [hj, hj1], I'⟩
 
 end VG.Proof.Mont.Arm.Dyn

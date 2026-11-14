@@ -31,12 +31,12 @@ theorem redDigit_ok {s : State} {base : Addr} {size i acc inv mult : Nat}
   have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
   refine wp_mul fun s₃ m₃ => ?_
   have hs₃ := hs₂.of_keeps m₃.keeps (by decide)
-  refine wp_storeS (hs₃.ea (d := mult) (by omega)) (hs₃.write (d := mult) (n := 4) (by omega))
+  refine wp_storeS (hs₃.ea (d := mult) (by omega_using [hm])) (hs₃.write (d := mult) (n := 4) (by omega_using [hm]))
     fun s₄ m₄ => WP.block_nil ⟨?_, ?_, ?_⟩
   · rw [m₄.mem, w32_write_self, m₃.eax, u₂.other .eax (by decide), u₁.gpr, u₂.gpr, u₁.mem,
       BitVec.toNat_ofNat]
   · exact ((u₁.keeps.mono (by decide) |>.widen u₂.keeps).widen m₃.keeps).widen (m₄.keeps [])
-  · rw [m₄.mem, m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+  · rw [m₄.mem, m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_using [hm, hn])
 
 /-- A word apart from both ranges that changed. -/
 theorem outs2_w32 {base : Addr} {o₁ n₁ o₂ n₂ : Nat} {m m' : Mem}

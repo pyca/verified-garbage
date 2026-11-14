@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Sig
 import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: every target's `Proof/Framework/<ISA>/CallWipe.lean` imports it (x86-64's so far).
 
@@ -31,32 +32,32 @@ theorem Sig.bufs_mem_array {pb : Nat} {w : Bool} {e : Elem} {k : Nat} {nm : Stri
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words pb).length =
-      (ps.flatMap fun p => p.2.words pb).length + 1 by omega, List.getD_cons_succ]
-    exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega)
+      (ps.flatMap fun p => p.2.words pb).length + 1 by omega_using [], List.getD_cons_succ]
+    exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words pb).length =
-      (ps.flatMap fun p => p.2.words pb).length + 1 by omega, List.getD_cons_succ]
-    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega))
+      (ps.flatMap fun p => p.2.words pb).length + 1 by omega_using [], List.getD_cons_succ]
+    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega_using [h]))
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + (ps.flatMap fun p => p.2.words pb).length =
-      (ps.flatMap fun p => p.2.words pb).length + 1 + 1 by omega, List.getD_cons_succ]
-    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega))
+      (ps.flatMap fun p => p.2.words pb).length + 1 + 1 by omega_using [], List.getD_cons_succ]
+    exact List.mem_cons_of_mem _ (Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega_using [h]))
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + 1 + (ps.flatMap fun p => p.2.words pb).length =
-      (ps.flatMap fun p => p.2.words pb).length + 1 + 1 by omega, List.getD_cons_succ]
-    exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega)
+      (ps.flatMap fun p => p.2.words pb).length + 1 + 1 by omega_using [], List.getD_cons_succ]
+    exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h ⊢
     simp only [List.cons_append, Sig.bufs, show 0 + 1 + (ps.flatMap fun p => p.2.words pb).length =
-      (ps.flatMap fun p => p.2.words pb).length + 1 by omega, List.getD_cons_succ]
-    exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega)
+      (ps.flatMap fun p => p.2.words pb).length + 1 by omega_using [], List.getD_cons_succ]
+    exact Sig.bufs_mem_array (pb := pb) ps₂ ps vs (by omega_using [h])
   | [], [], h => by simp at h
   | (_, .int ..) :: _, [], h => by simp at h
   | (_, .array ..) :: _, [], h => by simp at h

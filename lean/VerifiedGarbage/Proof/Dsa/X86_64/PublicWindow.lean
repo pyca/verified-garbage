@@ -24,7 +24,7 @@ theorem test_ok {s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v : N
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem ∧ t.zf = some (decide (v = 0))) ?_ rfl)
     fun t ⟨⟨hm, hz⟩, hk⟩ => ⟨hm, hz, hk⟩
   xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := Crt.sNib) (by decide), hn,
-    BitVec.and_self, ofNat64_beq_zero (show v < 2 ^ 64 by omega)]
+    BitVec.and_self, ofNat64_beq_zero (show v < 2 ^ 64 by omega_using [hv])]
 
 /-- A zero digit leaves the accumulator unchanged; other digits multiply
 by their table entry. This identity holds for every odd modulus. -/
@@ -55,9 +55,9 @@ theorem applyWindow_ok (M : Mont) (Sq : MontS) {s : State} {P : Addr} {wx : Nat}
     have hgt := slot_le (w := wx) (show Crt.aT < 8 by decide)
     have htsep := slot_sep (w := wx) (show aY ≠ Crt.aT by decide)
     have hsz := hc.scrT.nowrap
-    have hyEq : wv t.mem P (slot wx aY) wx = wv u.mem P (slot wx aY) wx := hout.wv (by omega) (by have := slot_le (w := wx) (show aY < 8 by decide); omega)
+    have hyEq : wv t.mem P (slot wx aY) wx = wv u.mem P (slot wx aY) wx := hout.wv (by omega_using [htsep]) (by have := slot_le (w := wx) (show aY < 8 by decide); omega_using [hsz, this])
     have htframe : Frm P (crtWinRanges wx) u.mem t.mem :=
-      Frm.of_outside (hout.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (by omega) (by omega))
+      Frm.of_outside (hout.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (by omega_using []) (by omega_using []))
         (by simp [crtWinRanges])
     refine WP.mono (crtMulT_ok M (Q := Q) (x := x) (E := E) (v := v) ht hw hw' hR
       (by rw [htval, hm]; exact htab.lt _ hv)
@@ -66,8 +66,8 @@ theorem applyWindow_ok (M : Mont) (Sq : MontS) {s : State} {P : Addr} {wx : Nat}
       fun z ⟨hzctx, hzlt, hzval, hzhdr, hzf, hzk⟩ => ?_
     have hXR : X ≤ 2 ^ (64 * wx) := by rw [← hc.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
     exact ⟨hzctx, Nat.lt_of_lt_of_le hzlt (Sq.le hXR), hzval, fun k hki => by
-      rw [hzhdr k hki, hout.word (by have := hdr_lt_slot wx Crt.aT hki; omega)
-        (by have := hdr_lt_slot wx 8 hki; omega), hm],
+      rw [hzhdr k hki, hout.word (by have := hdr_lt_slot wx Crt.aT hki; omega_using [this])
+        (by have := hdr_lt_slot wx 8 hki; omega_using [hki]), hm],
       (hf.trans htframe).trans hzf, ((hk.trans hkt).trans hzk).mono (by decide)⟩
 
 theorem crtWin_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat} {Q : Prop}

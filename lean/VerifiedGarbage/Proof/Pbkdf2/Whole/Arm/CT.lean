@@ -88,7 +88,7 @@ variable {s₀ s₀' : State} (hq : PubEq s₀ s₀')
 include hq
 
 theorem PubEq.a {i : Nat} (hi : i < 4) : stackArg s₀ i = stackArg s₀' i := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · exact hq.a0
   · exact hq.a1
   · exact hq.a2
@@ -221,7 +221,7 @@ theorem hashKey_rel :
   have r2 : RelCT isa (fun s s' => Hk2a F s₀ s ∧ Hk2a F s₀' s') (.call F.H.initN F.H.initC)
       fun s s' => Hk2 hF.hH s₀ s ∧ Hk2 hF.hH s₀' s' :=
     rel_wp (init_rel hF.hH (st := dO s₀ F.stWO) fun s s' ⟨⟨⟨k, _, a⟩, _⟩, ⟨⟨k', _, a'⟩, _⟩⟩ =>
-        ⟨a, by rw [a', dO, dO, hq.scrEq], by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega, cw hp k.kr,
+        ⟨a, by rw [a', dO, dO, hq.scrEq], by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega_using [hl, he, this], cw hp k.kr,
           by have := cw hp' k'.kr; rw [dO, hq.scrEq] at this; exact this⟩)
       (fun s ⟨⟨k, d, a⟩, l⟩ => WP.mono (hk2b_ok hp hz hF.hH k d a) fun t h => ⟨h, l⟩)
       (fun s ⟨⟨k, d, a⟩, l⟩ => WP.mono (hk2b_ok hp' hz hF.hH k d a) fun t h => ⟨h, l⟩)
@@ -260,7 +260,7 @@ theorem hashKey_rel :
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ hz.hkO_lt, m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ hz.hkO_lt, m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega_using [hlt])
         (hash_len hF.hH b)])
   exact (r1.seq ((r2a.seq r2).seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))).mono (fun _ _ h => h) fun _ _ h => h
 
@@ -290,7 +290,7 @@ theorem key_rel :
       exact ⟨⟨h.1.1, this⟩, h.1.2, by rw [hq.pwlEq]; exact this⟩
   · refine (hashKey_rel hp hp' hq hc).mono (fun s s' h => ?_) fun _ _ h => h
     have := of_decide_eq_false ((ev h.1.1).symm.trans h.2 |> Option.some.inj)
-    exact ⟨⟨h.1.1.1, by omega⟩, h.1.2.1, by show F.H.B + 1 ≤ pwl s₀'; rw [hq.pwlEq]; omega⟩
+    exact ⟨⟨h.1.1.1, by omega⟩, h.1.2.1, by show F.H.B + 1 ≤ pwl s₀'; rw [hq.pwlEq]; omega_using [this]⟩
 
 end
 
@@ -487,7 +487,7 @@ theorem step_rel (n : Nat) :
   · have hl : k + 1 = nbk F s₀ := by simpa using hf
     exact ⟨hl ▸ j, by rw [hq.nbkEq, ← hl]; exact j'⟩
   · have hl : k + 1 ≠ nbk F s₀ := by simpa using ht
-    exact ⟨nbk F s₀ - (k + 1), by omega, k + 1, rfl, by omega, j, j'⟩
+    exact ⟨nbk F s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hl], j, j'⟩
 
 theorem loop_rel :
     RelCT isa (fun s s' => (Inv hF s₀ 0 s ∧ s.z = decide (ol s₀ = 0)) ∧
@@ -518,7 +518,7 @@ theorem loop_rel :
     rw [ev h.1.1.2] at z
     have e : ol s₀ ≠ 0 := by simpa using z
     have : nbk F s₀ ≠ 0 := fun h => e (e0.1 h)
-    exact ⟨0, rfl, by omega, h.1.1.1, h.1.2.1⟩
+    exact ⟨0, rfl, by omega_using [this], h.1.1.1, h.1.2.1⟩
 
 include hF in
 /-- `pbkdf2` in two runs with the same public arguments. -/

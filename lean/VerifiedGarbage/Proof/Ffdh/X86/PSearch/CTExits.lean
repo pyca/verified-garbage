@@ -112,8 +112,8 @@ theorem request_ct : RelCT isa (Two LiveAt) request fun _ _ => True := by
   have el : (ofState o).len = (arg o 1).toNat := rfl
   refine WP.mono (S.requestWords liveDs_aligned (by decide) (by decide) (by decide) (a := (ofState o).randLen - used)
     (L := (ofState o).len) (c := (ofState o).cap) (by simp [liveF, leftOff]) (by simp [liveF, widthOff])
-    (by simp [liveF, capOff]) (by rw [ec] at hc; have : (ofState o).randLen = (arg o 6).toNat := rfl; omega)
-    (by omega) (by omega)) fun t Sx => ⟨o, _, _, rfl, Sx, by decide, by decide, by decide, ?_, ?_⟩
+    (by simp [liveF, capOff]) (by rw [ec] at hc; have : (ofState o).randLen = (arg o 6).toNat := rfl; omega_using [hc, hr, this])
+    (by omega_using [hL, el]) (by omega_using [hc])) fun t Sx => ⟨o, _, _, rfl, Sx, by decide, by decide, by decide, ?_, ?_⟩
   all_goals simp [upd, liveF, ofState, outOff, widthOff, statusOff, requestOff]
 
 end VG.Proof.Ffdh.X86.PSearch

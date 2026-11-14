@@ -226,8 +226,8 @@ theorem taints768 : KgTaints lay768 keccak :=
     intro i hi j hj
     change i < 3 at hi
     change j < 3 at hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;>
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
     exact ⟨_, by taint_decide⟩⟩
 
 /-- A state satisfying the precondition. -/

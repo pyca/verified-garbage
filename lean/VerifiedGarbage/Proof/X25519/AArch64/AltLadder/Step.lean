@@ -32,12 +32,12 @@ theorem altClob_sub : ∀ r ∈ altClob, r ∈ clob := by decide
 theorem AltOp.lk {base : Addr} {o : VG.Impl.Ed25519.AArch64.Slot} {s t : State} (h : AltOp base (offset o) s t)
     (h1 : 1 ≤ o.val) : LoopKeep base s t :=
   ⟨fun r hr _ => h.gpr r (fun hm => hr (altClob_sub r hm)), h.rd, h.wr, h.sp,
-    h.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega)⟩
+    h.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega_using [])⟩
 
 /-- A slot the operation does not write. -/
 theorem fr {base : Addr} {o : VG.Impl.Ed25519.AArch64.Slot} {s t : State} (h : AltOp base (offset o) s t) (i : VG.Impl.Ed25519.AArch64.Slot)
     (hi : i ≠ o) : fe t.mem base (offset i) = fe s.mem base (offset i) :=
-  h.mem.fe (apart i o hi) (by simp only [offset]; omega)
+  h.mem.fe (apart i o hi) (by simp only [offset]; omega_using [])
 
 theorem x17_ok (s : State) :
     WP isa (.block [.movz .x .x17 0 0]) s fun t => t.gpr .x17 = 0 ∧ Keeps [.x17] s t := by
@@ -92,13 +92,13 @@ theorem cmaddA24_ok {base : Addr} {s : State} (hs : Scratch s base) (hz : s.gpr 
       rw [k1 r e1, hb.gpr r (fun hm => hr (altClob_sub r hm)),
         ka.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨r20, e1⟩)]
   · rw [kt.mem, ← ka.mem]
-    exact hb.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega)
+    exact hb.mem.mono (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [])
   · rw [k1 _ (by decide), hb.gpr _ (by decide), ka.gpr _ (by decide), hz]
   · rw [k1 _ (by decide), hb.gpr _ (by decide), ka.gpr _ (by decide)]
 
 theorem AltOp.w768 {base : Addr} {o : VG.Impl.Ed25519.AArch64.Slot} {s t : State} (h : AltOp base (offset o) s t) :
     word t.mem base 768 = word s.mem base 768 :=
-  h.mem.word (Or.inr (by simp only [offset]; omega)) (by decide)
+  h.mem.word (Or.inr (by simp only [offset]; omega_using [])) (by decide)
 
 theorem S14_cases : ∀ i : VG.Impl.Ed25519.AArch64.Slot, S14 i = true → i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by decide
 
@@ -160,7 +160,7 @@ theorem body_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i :
   have lkF := lk5.trans lkf
   have zF : f.gpr .x17 = 0 := (gf _ (by decide) (by decide) (by decide) (by decide)).trans z5
   have ofe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, fe f.mem base (offset j) = fe b5.mem base (offset j) := fun j =>
-    of.fe (Or.inl (by simp only [offset]; omega)) (by simp only [offset]; omega)
+    of.fe (Or.inl (by simp only [offset]; omega_using [])) (by simp only [offset]; omega_using [])
   -- the point to double
   rw [WP.block_append_iff]
   refine WP.mono (muxE (lkF.scratch hs) 8 6 2 (by decide) (by decide) (by decide))
@@ -235,7 +235,7 @@ theorem body_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i :
     fun t ⟨h19, l19, e19⟩ => ?_
   have lk19 := lk18.trans (AltOp.lk h19 (by decide))
   have o16fe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, j ≠ 2 → fe c16.mem base (offset j) = fe c15.mem base (offset j) :=
-    fun j hj => o16.fe (apart j 2 hj) (by simp only [offset]; omega)
+    fun j hj => o16.fe (apart j 2 hj) (by simp only [offset]; omega_using [])
   refine ⟨lk19, ?_, ?_, ?_, ?_⟩
   · have henv : env t.mem base = altEnv (env s.mem base) (st.swap == bit k i) := by
       have g1 : env b1.mem base = gDm (env a.mem base) := e1

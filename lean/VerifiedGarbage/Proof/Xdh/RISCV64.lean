@@ -118,27 +118,27 @@ variable {n w : Nat} {s : State}
 theorem sp_eq (h : ExPre n w s) : (s.sp - 16).toNat + 16 = s.sp.toNat := by
   have := h.2.2.2.2.2
   rw [BitVec.toNat_sub, show (16 : Addr).toNat = 16 from rfl]
-  omega
+  omega_using [this]
 
 theorem fr_al (h : ExPre n w s) : (s.sp - 16).toNat % 16 = 0 := by
   have e := sp_eq h
   have := h.1.2.2.2.2.2.2.2.2.2.2.2.2
-  omega
+  omega_using [e, this]
 
 /-- The 8 bytes at `B + d`, for `d` 0 or 8, are the frame's. -/
 theorem fr_contains {d : Nat} (hd : d ≤ 8) :
     (frR s).Contains (s.sp - 16 + BitVec.ofNat 64 d) 8 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])
 
 theorem slot_sep (h : ExPre n w s) :
     (⟨s.sp - 16, 8⟩ : Region).Disjoint ⟨s.sp - 16 + 8, 8⟩ := by
   have e := sp_eq h
-  exact Offset.base_disjoint _ (k := 8) (e := 8) (by omega) (by omega)
+  exact Offset.base_disjoint _ (k := 8) (e := 8) (by omega_using []) (by omega_using [])
 
 /-- A part of the frame is apart from a region apart from the frame. -/
 theorem fr_part {r : Region} (hr : (frR s).Disjoint r) {d : Nat} (hd : d ≤ 8) :
     (⟨s.sp - 16 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
-  hr.sub_left (Offset.sub_base _ (by omega))
+  hr.sub_left (Offset.sub_base _ (by omega_using [hd]))
 
 end
 
@@ -157,7 +157,7 @@ theorem saved_wp {n w : Nat} {s : State} (h : ExPre n w s) :
     WP isa (.block save) (pushed .ra s) (Saved n w s) := by
   unfold save
   refine wp_addSp (imm := 0) (by decide) fun u₁ v₁ => ?_
-  refine wp_sd (a := s.sp - 16) (by decide) (by rw [v₁.gpr]; simp [pushed]) (by have := fr_al h; omega)
+  refine wp_sd (a := s.sp - 16) (by decide) (by rw [v₁.gpr]; simp [pushed]) (by have := fr_al h; omega_using [this])
     ⟨frR s, by rw [v₁.wr]; exact List.mem_cons_self .., by
       simpa using fr_contains (s := s) (d := 0) (by decide)⟩ fun u₂ v₂ => WP.block_nil ?_
   refine ⟨?_, fun r hr => ?_, ?_, ?_, ?_⟩
@@ -235,13 +235,13 @@ theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : P
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    exact hk1 _ (Offset.contains_base _ (by omega) (by omega))
+    exact hk1 _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [b0, hi]))
   have kpt : bytesAt ((s.mem.write (s.sp - 16 + 8) 8 (s.gpr .ra)).writeW (s.sp - 16) (s.gpr .a0))
       (s.gpr .a2) n = bytesAt s.mem (s.gpr .a2) n := by
     simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    exact hk2 _ (Offset.contains_base _ (by omega) (by omega))
+    exact hk2 _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [b0, hi]))
   rw [ksc, kpt] at hpost
   -- The frame, which the callee does not write.
   have hfr : ∀ {d : Nat}, d ≤ 8 → ∀ r ∈ s.wr, (⟨s.sp - 16 + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
@@ -280,7 +280,7 @@ theorem restored_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s z
     (hz : Called n w f s z) : WP isa (.block restore) z (Restored n w f s) := by
   unfold restore
   refine wp_addSp (imm := 0) (by decide) fun u₁ v₁ => ?_
-  refine wp_ld (a := s.sp - 16) (by decide) (by rw [v₁.gpr, hz.sp]; simp) (by have := fr_al h; omega)
+  refine wp_ld (a := s.sp - 16) (by decide) (by rw [v₁.gpr, hz.sp]; simp) (by have := fr_al h; omega_using [this])
     ⟨frR s, by rw [v₁.rd, v₁.wr, hz.wr]; simp, by simpa using fr_contains (s := s) (d := 0) (by decide)⟩
     fun u₂ v₂ => WP.block_nil ?_
   refine ⟨⟨?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -310,9 +310,9 @@ theorem orBytes_wp (a : Addr) (m : Mem) : ∀ (i : Nat), i < 2048 → ∀ (u : S
   | succ i ih =>
     intro hi u is Q ht hm hin k
     rw [orBytes, List.append_assoc]
-    refine ih (by omega) u _ Q ht hm (fun j hj => hin j (by omega)) fun u' g1 g0 gm grd gwr gsp go => ?_
-    refine wp_lbu (a := a + BitVec.ofNat 64 i) (by omega) (by rw [g0])
-      (by rw [grd, gwr]; exact hin i (by omega)) fun u₁ v₁ => ?_
+    refine ih (by omega_using [hi]) u _ Q ht hm (fun j hj => hin j (by omega_using [hj])) fun u' g1 g0 gm grd gwr gsp go => ?_
+    refine wp_lbu (a := a + BitVec.ofNat 64 i) (by omega_using [hi]) (by rw [g0])
+      (by rw [grd, gwr]; exact hin i (by omega_using [])) fun u₁ v₁ => ?_
     refine wp_or fun u₂ v₂ => ?_
     refine k u₂ ?_ ?_ ?_ ?_ ?_ ?_ fun r h1 h2 => ?_
     · rw [v₂.gpr, v₁.other _ (by decide), v₁.gpr, g1, gm, orAll, BitVec.setWidth_or, BitVec.or_assoc]
@@ -335,7 +335,7 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
   refine wp_li (imm := 0) (by decide) fun u₁ v₁ => ?_
   refine orBytes_wp (s.gpr .a0) u.mem n hn u₁ _ _ (by rw [v₁.other _ (by decide), hu.t0]) v₁.mem
     (fun j hj => ⟨outR n s, by rw [v₁.rd, v₁.wr, hu.called.rd, hu.called.wr, wr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩) fun u' g1 _ gm grd gwr gsp go => ?_
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn, hj])⟩) fun u' g1 _ gm grd gwr gsp go => ?_
   refine wp_li (imm := 0) (by decide) fun u₂ v₂ => wp_sltu fun u₃ v₃ => WP.block_nil ?_
   have hm : u₃.mem = u.mem := by rw [v₃.mem, v₂.mem, gm]
   refine ⟨⟨?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩

@@ -50,7 +50,7 @@ theorem loadTail_ok (s : State) (component : Nat) (hc : component < 3) (x : BitV
       s'.gpr .x22 = s.gpr .x2 + BitVec.ofNat 64 (128 * component) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ∉ [Reg.x19, .x20, .x21, .x22] → s'.gpr r = s.gpr r) := by
-  have hb : 128 * component < 4096 := by omega
+  have hb : 128 * component < 4096 := by omega_using [hc]
   refine ⟨_, by
     simp only [loadTail, rr, imm, mask, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, hb,

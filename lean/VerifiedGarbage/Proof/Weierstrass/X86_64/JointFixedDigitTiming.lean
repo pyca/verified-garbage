@@ -77,7 +77,7 @@ theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size 
       (fun a ha hb ho => (hs.external a ha hb ho).of_keeps hk st))
   intro hz
   have hmag : FastNaf.magnitude c.gw u j≠0 := of_decide_eq_false hz
-  have ha : 1≤FastNaf.magnitude c.gw u j := by omega
+  have ha : 1≤FastNaf.magnitude c.gw u j := by omega_using [hmag]
   have hbound : FastNaf.magnitude c.gw u j≤jointGTop c := by
     unfold jointGTop
     rcases hL.lookup.layout.gw with h|h

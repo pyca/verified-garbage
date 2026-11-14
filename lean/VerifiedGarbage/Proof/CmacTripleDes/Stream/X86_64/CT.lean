@@ -36,7 +36,7 @@ def τInit : X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]
 /-- `absorb`: the arguments are public; `rdi` and `r8` point at the state
 and the scratch buffer. -/
 def τAbsorb : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .rsp], flags := false, lens := [416, 688],
+  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .rsp], flags := false, lens := [416, 160],
     bases := [(.rdi, 0, 0), (.r8, 1, 0)] }
 
 /-- `finish`: the arguments are public; as for `stream_init`, nothing of the
@@ -84,7 +84,7 @@ theorem init_ct :
 /-- What the second part of `absorb` starts from: the registers the first
 part leaves, pinned to the arguments by its correctness proof. -/
 def τAbsorb₂ : X86_64.Taint.T :=
-  { regs := .ofList [.rbx, .r13, .r14, .r15, .rsp], flags := false, lens := [416, 688],
+  { regs := .ofList [.rbx, .r13, .r14, .r15, .rsp], flags := false, lens := [416, 160],
     bases := [(.rbx, 0, 0), (.r15, 1, 0)] }
 
 theorem absorb₁_taint :

@@ -42,7 +42,7 @@ theorem OutputInput.after {g : OutputGeometry} {s t : State} {rs : List Reg}
   refine ⟨ws, h.valid, ?_, ?_⟩
   · intro i hi
     apply BitVec.eq_of_toNat_eq
-    exact (header (4 * i) (by unfold hdr; omega)).trans (congrArg BitVec.toNat (h.arguments i hi))
+    exact (header (4 * i) (by unfold hdr; omega_using [hi])).trans (congrArg BitVec.toNat (h.arguments i hi))
   · intro i hi
     rw [K.2.2]
     exact h.writable i hi

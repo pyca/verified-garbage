@@ -20,7 +20,7 @@ theorem setV128_zhi (s : State) (d r : XReg) (lo hi : BitVec 128) {l : Nat} (hl1
     (hz : s.zlane r l = 0) : (s.setV .l128 d lo hi).zlane r l = 0 := by
   rw [State.zlane_setV128 _ _ _ _ _ hl4]
   split
-  · rw [ite_eq_right_iff.2 (fun h => absurd h (by omega))]
+  · rw [ite_eq_right_iff.2 (fun h => absurd h (by omega_using [hl1]))]
   · exact hz
 
 /-- An instruction of `lane0V` writes its destination as `VEX.128`. -/

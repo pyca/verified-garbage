@@ -58,10 +58,10 @@ theorem releaseBody_ok {s0 s : State} {src dst : BitVec 32} {n i : Nat}
   rintro t ⟨mem, dest, source, count, zero, rest⟩
   have original : s.mem (byteAddr (src + BitVec.ofNat 32 i)) =
       s0.mem (byteAddr (src + BitVec.ofNat 32 i)) :=
-    inv.outside _ (fun j hj => ctx.separate i hi j (by omega))
-      (fun j hj he => by have := ctx.sourceDistinct i hi j (by omega) he; omega)
+    inv.outside _ (fun j hj => ctx.separate i hi j (by omega_using [hi, hj]))
+      (fun j hj he => by have := ctx.sourceDistinct i hi j (by omega_using [hi, hj]) he; omega_using [hj, this])
   have mask := inv.rest.1 .edx (by simp)
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, inv.rest.trans (rest.mono (by decide))⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, ?_, ?_, inv.rest.trans (rest.mono (by decide))⟩, ?_⟩
   · rw [source, inv.source, BitVec.add_assoc]
     change src + (BitVec.ofNat 32 i + BitVec.ofNat 32 1) = _
     rw [← BitVec.ofNat_add]
@@ -70,33 +70,33 @@ theorem releaseBody_ok {s0 s : State} {src dst : BitVec 32} {n i : Nat}
     rw [← BitVec.ofNat_add]
   · rw [count, inv.count]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
   · intro j hj
     rw [mem, VG.WriteBytes.writeW8_apply,
-      ite_eq_right (Ne.symm (ctx.separate i hi j (by omega))), VG.WriteBytes.writeW8_apply]
+      ite_eq_right (Ne.symm (ctx.separate i hi j (by omega_using [hi, hj]))), VG.WriteBytes.writeW8_apply]
     by_cases he : j = i
     · subst j; simp only [ite_true, original, mask]
     · have ne : byteAddr (dst + BitVec.ofNat 32 j) ≠ byteAddr (dst + BitVec.ofNat 32 i) :=
-        fun h => he (ctx.distinct j (by omega) i hi h)
+        fun h => he (ctx.distinct j (by omega_using [hi, hj]) i hi h)
       rw [ite_eq_right ne]
-      exact inv.copied j (by omega)
+      exact inv.copied j (by omega_using [hj, he])
   · intro j hj
     rw [mem, VG.WriteBytes.writeW8_apply]
     by_cases he : j = i
     · subst j; simp only [ite_true]
     · have ne : byteAddr (src + BitVec.ofNat 32 j) ≠ byteAddr (src + BitVec.ofNat 32 i) :=
-        fun h => he (ctx.sourceDistinct j (by omega) i hi h)
-      rw [ite_eq_right ne, VG.WriteBytes.writeW8_apply, ite_eq_right (ctx.separate j (by omega) i hi)]
-      exact inv.cleared j (by omega)
+        fun h => he (ctx.sourceDistinct j (by omega_using [hi, hj]) i hi h)
+      rw [ite_eq_right ne, VG.WriteBytes.writeW8_apply, ite_eq_right (ctx.separate j (by omega_using [hi, hj]) i hi)]
+      exact inv.cleared j (by omega_using [hj, he])
   · intro a ha hb
-    rw [mem, VG.WriteBytes.writeW8_apply, ite_eq_right (hb i (by omega)),
-      VG.WriteBytes.writeW8_apply, ite_eq_right (ha i (by omega))]
-    exact inv.outside a (fun j hj => ha j (by omega)) (fun j hj => hb j (by omega))
+    rw [mem, VG.WriteBytes.writeW8_apply, ite_eq_right (hb i (by omega_using [])),
+      VG.WriteBytes.writeW8_apply, ite_eq_right (ha i (by omega_using []))]
+    exact inv.outside a (fun j hj => ha j (by omega_using [hj])) (fun j hj => hb j (by omega_using [hj]))
   · rw [zero, inv.count]
     change some (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by have := ctx.countFits; omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by have := ctx.countFits; omega_using [this])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 /-- Copy a nonempty byte range without touching any other memory. -/
 theorem release_ok (s : State) {src dst : BitVec 32} {n : Nat}
@@ -109,7 +109,7 @@ theorem release_ok (s : State) {src dst : BitVec 32} {n : Nat}
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (releaseBody_ok ctx hi (by omega)) ?_
+    refine WP.mono (releaseBody_ok ctx hi (by omega_using [hik, hk])) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -117,11 +117,11 @@ theorem release_ok (s : State) {src dst : BitVec 32} {n : Nat}
       change u.zf.map not = some false
       simp only [hz, he, decide_true, Option.map_some, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, he], hu⟩
       change u.zf.map not = some true
       simp only [hz, he, decide_false, Option.map_some, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_⟩
-    exact ⟨by omega, by simpa using hs, by simpa using hd,
+  · refine ⟨0, by omega_using [], hn, ?_⟩
+    exact ⟨by omega_using [], by simpa using hs, by simpa using hd,
       by simpa using hc, by intro j hj; omega, by intro j hj; omega, by intros; rfl, Keeps.refl _ _⟩
 
 end VG.Proof.Rsa.X86.PrivChecked

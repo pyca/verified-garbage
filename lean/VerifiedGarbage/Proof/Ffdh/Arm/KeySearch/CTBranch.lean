@@ -46,7 +46,7 @@ theorem nextKeyPoint_inputs (q : KeyPoint sampling) : (nextKeyPoint q).inputs = 
 theorem nextKeyPoint_measure {q : KeyPoint sampling} (h : keyContinues q) :
     128 * (nextKeyPoint q).keys + (nextKeyPoint q).scalars < 128 * q.keys + q.scalars := by
   obtain ⟨keys, scalars, _, _⟩ := h
-  unfold nextKeyPoint; split <;> dsimp only <;> omega
+  unfold nextKeyPoint; split <;> dsimp only <;> omega_arith
 
 def KeyBranchResult (q : KeyPoint sampling) (s : State) : Prop :=
   if keyContinues q then KeyCTL (nextKeyPoint q) s ∧ lowWord s.mem q.inputs.control 14 = 4
@@ -104,7 +104,7 @@ theorem attempt_of_room {q : KeyPoint sampling} {s : State}
     (h : RoomGuard q s ∧ isa.eval .eq s = some false) : KeyReady q s := by
   obtain ⟨⟨⟨original, live, statuses⟩, keys, scalars, flag⟩, enough⟩ := h
   have room := of_decide_eq_false (Option.some.inj (flag.symm.trans enough))
-  exact ⟨⟨original, live, statuses⟩, keys, scalars, by have := live.used_le; omega⟩
+  exact ⟨⟨original, live, statuses⟩, keys, scalars, by have := live.used_le; omega_using [room, this]⟩
 
 theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyPoint sampling) (s : State) (h : KeysGuard q s) :
     WP isa ((VG.Impl.Ffdh.Arm.KeySearch.branchFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) s (KeyBranchResult q) := by
@@ -129,21 +129,21 @@ theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyP
   refine WP.ite _ (by change some u.z = _; rw [flag3]) ?_ ?_
   · intro short
     have less := of_decide_eq_true short
-    exact WP.mono live3.request fun t finished => done t _ (fun c => by have := c.2.2.1; omega) finished
+    exact WP.mono live3.request fun t finished => done t _ (fun c => by have := c.2.2.1; omega_using [less, this]) finished
   intro enough
   have room : q.used + q.inputs.len ≤ q.inputs.randLen := by
-    have := of_decide_eq_false enough; have := live.used_le; omega
+    have := of_decide_eq_false enough; have := live.used_le; omega_arith
   refine WP.seq (WP.mono (attemptRun_ok backend q.inputs original u q.used q.keys q.scalars live3 room)
     fun t ⟨ready, post⟩ => ?_)
   refine WP.mono (classify ready room (Nat.pos_of_ne_zero keys) (Nat.pos_of_ne_zero scalars) post)
     fun t classified => ?_
   have status := attempt_status live statuses keys scalars room
-  have remaining : q.inputs.len ≤ (keyRand q.inputs original).length - q.used := by rw [live.rand_length]; omega
+  have remaining : q.inputs.len ≤ (keyRand q.inputs original).length - q.used := by rw [live.rand_length]; omega_using [room]
   rcases currentStatus_cases q.inputs original q.used with h1 | h2 | h3
   · simp only [KeyClassified, h1, ite_true] at classified
     exact done t _ (fun c => c.2.2.2 (by rw [← status, h1])) classified
   · simp only [KeyClassified, h2, Nat.reduceEqDiff, ite_true, ite_false] at classified
-    have continues : keyContinues q := ⟨keys, scalars, by omega, by rw [← status, h2]; decide⟩
+    have continues : keyContinues q := ⟨keys, scalars, by omega_using [room], by rw [← status, h2]; decide⟩
     have next : nextKeyPoint q = ⟨q.inputs, q.used + q.inputs.len, q.keys, q.scalars - 1, q.statuses.tail⟩ := by
       simp only [nextKeyPoint, ← status, h2, ite_true]
     simp only [KeyBranchResult, continues, ite_true, next]
@@ -151,7 +151,7 @@ theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyP
     rw [← statuses]
     simp only [KeyPublic.tail, keyTail_scalar keys scalars remaining h2, List.tail_cons]
   · simp only [KeyClassified, h3, Nat.reduceEqDiff, ite_false] at classified
-    have continues : keyContinues q := ⟨keys, scalars, by omega, by rw [← status, h3]; decide⟩
+    have continues : keyContinues q := ⟨keys, scalars, by omega_using [room], by rw [← status, h3]; decide⟩
     have next : nextKeyPoint q = ⟨q.inputs, q.used + q.inputs.len, q.keys - 1, 128, q.statuses.tail⟩ := by
       simp only [nextKeyPoint, ← status, h3, Nat.reduceEqDiff, ite_false]
     simp only [KeyBranchResult, continues, ite_true, next]

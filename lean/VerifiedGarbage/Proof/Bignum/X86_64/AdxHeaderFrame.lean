@@ -29,7 +29,7 @@ theorem clearHigh_ok {s : State} {B : Addr} {Z e : Nat}
     WP.block_append_iff]
   refine WP.mono (movZero_ok s .rax) fun a ⟨za,_,_,ka⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (storeAt_ok (hs.congr ka.2.2.2) ((ka.gpr (by decide)).trans hp) (by omega : e+0+8 ≤ Z))
+  refine WP.mono (storeAt_ok (hs.congr ka.2.2.2) ((ka.gpr (by decide)).trans hp) (by omega_using [he] : e+0+8 ≤ Z))
     fun b ⟨vb,ob,kb⟩ => ?_
   have kab := ka.keep.trans kb
   refine WP.mono (storeAt_ok (hs.congr kab.2.2) ((kab.gpr (by decide)).trans hp) he)
@@ -38,12 +38,12 @@ theorem clearHigh_ok {s : State} {B : Addr} {Z e : Nat}
   rw [za] at vb
   rw [kb.gpr (r := .rax) (by simp),za] at vt
   rw [ka.2.1] at ob
-  refine ⟨?_,(ob.mono (o' := e) (n' := 16) (by omega) (by omega)).trans
-    (ot.mono (o' := e) (n' := 16) (by omega) (by omega)),(kab.trans kt).mono (by simp)⟩
+  refine ⟨?_,(ob.mono (o' := e) (n' := 16) (by omega_using []) (by omega_using [])).trans
+    (ot.mono (o' := e) (n' := 16) (by omega_using []) (by omega_using [])),(kab.trans kt).mono (by simp)⟩
   intro q hq
-  rcases (show q=0 ∨ q=1 by omega) with rfl | rfl
+  rcases (show q=0 ∨ q=1 by omega_using [hq]) with rfl | rfl
   · simp only [Nat.mul_zero,Nat.add_zero]
-    rw [ot.word (by omega) (by omega)]; exact vb
+    rw [ot.word (by omega_using []) (by omega_using [he, nowrap])]; exact vb
   · simpa only [Nat.mul_one] using vt
 
 theorem restore_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
@@ -55,36 +55,36 @@ theorem restore_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
       Frm B [(8*sFn 12,32),(highPad w,16)] s.mem t.mem ∧ Keep [.rax,.r8,.r9] s t := by
   have nowrap := hs.nowrap
   have pads := pads_bound hZ
-  have head : hdrBytes ≤ slot w aAcc := by unfold slot; omega
+  have head : hdrBytes ≤ slot w aAcc := by unfold slot; omega_using []
   unfold AdxHeader.restore
   refine WP.seq (WP.mono (bases_ok hs hd hh hZ) fun a ⟨lo,hi,ma,ka⟩ => ?_)
   have da : a.gpr .rdi = off B 0 := by
     rw [show off B 0 = B from BitVec.add_zero B]
     exact (ka.gpr (by decide)).trans hd
   refine WP.seq (WP.mono (copyPair_ok (hs.congr ka.2.2) lo da (by decide) (by decide)
-    (by omega) (by unfold sFn hdrBytes at *; omega) (by unfold sFn hdrBytes at *; omega))
+    (by omega_using [pads]) (by unfold sFn hdrBytes at *; omega_using [pads, head]) (by unfold sFn hdrBytes at *; omega_using [head]))
     fun b ⟨vb,ob,kb⟩ => ?_)
   have kab := ka.trans kb
   refine WP.seq (WP.mono (copyPair_ok (hs.congr kab.2.2) ((kb.gpr (by decide)).trans hi)
     ((kb.gpr (by decide)).trans da) (by decide) (by decide)
-    (by omega) (by unfold sFn hdrBytes at *; omega) (by unfold sFn hdrBytes at *; omega))
+    (by omega_using [pads]) (by unfold sFn hdrBytes at *; omega_using [pads, head]) (by unfold sFn hdrBytes at *; omega_using [pads, head]))
     fun c ⟨vc,oc,kc⟩ => ?_)
   have kabc := kab.trans kc
   refine WP.mono (clearHigh_ok (hs.congr kabc.2.2) (((kb.trans kc).gpr (by simp)).trans hi) pads.2)
     fun t ⟨zt,ot,kt⟩ => ?_
   simp only [Nat.add_zero,Nat.zero_add] at vb ob vc oc
   rw [ma] at vb ob
-  have ob' := ob.mono (o' := 8*sFn 12) (n' := 32) (by omega) (by omega)
-  have oc' := oc.mono (o' := 8*sFn 12) (n' := 32) (by unfold sFn; omega) (by unfold sFn; omega)
+  have ob' := ob.mono (o' := 8*sFn 12) (n' := 32) (by omega_using []) (by omega_using [])
+  have oc' := oc.mono (o' := 8*sFn 12) (n' := 32) (by unfold sFn; omega_using []) (by unfold sFn; omega_using [])
   refine ⟨?_,?_,zt,((Frm.of_outside ob' (by simp)).trans (Frm.of_outside oc' (by simp))).trans
     (Frm.of_outside ot (by simp)),(kabc.trans kt).mono (by simp)⟩
   · intro q hq
-    rw [ot.word (by unfold sFn hdrBytes at *; omega) (by unfold sFn; omega),
-      oc.word (by unfold sFn; omega) (by unfold sFn; omega)]
+    rw [ot.word (by unfold sFn hdrBytes at *; omega_using [pads, head, hq]) (by unfold sFn; omega_using [hq]),
+      oc.word (by unfold sFn; omega_using [hq]) (by unfold sFn; omega_using [hq])]
     exact vb q hq
   · intro q hq
-    rw [ot.word (by unfold sFn hdrBytes at *; omega) (by unfold sFn; omega),vc q hq,
-      ob.word (by unfold sFn hdrBytes at *; omega) (by omega)]
+    rw [ot.word (by unfold sFn hdrBytes at *; omega_using [pads, head, hq]) (by unfold sFn; omega_using [hq]),vc q hq,
+      ob.word (by unfold sFn hdrBytes at *; omega_using [pads, head]) (by omega_using [nowrap, pads, hq])]
 
 end VG.Proof.Bignum.X86_64.AdxHeader
 
@@ -104,7 +104,7 @@ theorem byte_of_word_eq {m m' : Mem} {B x : Addr} {d : Nat}
   have hk : k < 8 := by omega
   have addr : off B d+BitVec.ofNat 64 k = x := by
     change off (off B d) k = x
-    rw [off_off,show d+k=ofs B x by omega]
+    rw [off_off,show d+k=ofs B x by omega_using [lo]]
     simp only [off,ofs,BitVec.ofNat_toNat,BitVec.setWidth_eq]
     rw [BitVec.add_comm,BitVec.sub_add_cancel]
   have hv := congrArg (fun v : BitVec 64 => v.extractLsb' (8*k) 8) h
@@ -117,7 +117,7 @@ theorem bytes_of_header_words {m m' : Mem} {B x : Addr} {H : Nat}
     (lo : H ≤ ofs B x) (hi : ofs B x < H+32) : m' x = m x := by
   let q := (ofs B x-H)/8
   have hq : q < 4 := by omega
-  exact byte_of_word_eq (h q hq) (by omega) (by omega)
+  exact byte_of_word_eq (h q hq) (by omega_using [lo]) (by omega_using [])
 
 /-- Save, a body restricted to its product and borrowed header, and restore
 change only the two Montgomery scratch arrays. -/
@@ -138,32 +138,32 @@ theorem restored_frame {m₀ m₁ m₂ m₃ : Mem} {B : Addr} {w : Nat}
         intro r hr
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl <;> simp only [] <;>
-          simp only [slot,aAcc,hdrBytes,sFn] <;> omega) (by unfold highPad at hZ; omega)]
+          simp only [slot,aAcc,hdrBytes,sFn] <;> omega_arith) (by unfold highPad at hZ; omega_using [hZ, hq])]
       exact saveLo q low
-    · have qh : q-2 < 2 := by omega
-      have eq : 8*sFn 12+8*q = 8*sFn 14+8*(q-2) := by unfold sFn; omega
+    · have qh : q-2 < 2 := by omega_using [hq]
+      have eq : 8*sFn 12+8*q = 8*sFn 14+8*(q-2) := by unfold sFn; omega_using [low]
       rw [eq,restoreHi (q-2) qh,bodyFrame.word_eq (by
         intro r hr
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl <;> simp only [] <;>
-          simp only [highPad,slot,aAcc,hdrBytes,sFn] <;> omega) (by omega)]
+          simp only [highPad,slot,aAcc,hdrBytes,sFn] <;> omega_using []) (by omega_using [hZ, hq])]
       exact saveHi (q-2) qh
   intro x hx
   by_cases inside : 8*sFn 12 ≤ ofs B x ∧ ofs B x < 8*sFn 12+32
   · exact bytes_of_header_words header inside.1 inside.2
-  · have outH : ofs B x < 8*sFn 12 ∨ 8*sFn 12+32 ≤ ofs B x := by omega
+  · have outH : ofs B x < 8*sFn 12 ∨ 8*sFn 12+32 ≤ ofs B x := by omega_using [inside]
     have r3 : m₃ x = m₂ x := restoreFrame x (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega)
+      rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega_arith)
     have r2 : m₂ x = m₁ x := bodyFrame x (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> omega)
+      rcases hr with rfl | rfl <;> simp only [] <;> omega_arith)
     have r1 : m₁ x = m₀ x := saveFrame x (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega)
+      rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega_using [hx])
     exact (r3.trans r2).trans r1
 
 end VG.Proof.Bignum.X86_64.AdxHeader
@@ -197,21 +197,21 @@ theorem frm_split {B : Addr} {a n b k : Nat} {m m' : Mem} (h : Frm B [(a,n),(b,k
   refine ⟨fun x => if b ≤ ofs B x ∧ ofs B x < b+k then m' x else m x, fun x hx => ?_, fun x hx => ?_⟩
   · simp only []
     split
-    · rename_i hc; exact absurd hc (by omega)
+    · rename_i hc; exact absurd hc (by omega_using [hx])
     · rfl
   · simp only []
     split
     · rfl
     · exact h x fun r hr => by
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-        rcases hr with rfl | rfl <;> simp only [] <;> omega
+        rcases hr with rfl | rfl <;> simp only [] <;> omega_arith
 
 /-- The header, after changes from `sFn 0` on. -/
 theorem _root_.VG.Proof.Bignum.Hdr.of_outside_fn {m m' : Mem} {B : Addr} {w : Nat} {minv : BitVec 64}
     (hH : Hdr m B w minv) {o n : Nat} (h : Outside B o n m m') (ho : 8 * sFn 0 ≤ o) : Hdr m' B w minv :=
-  ⟨(h.word (Or.inl (by unfold sW sFn at *; omega)) (by unfold sW; omega)).trans hH.hw,
-    (h.word (Or.inl (by unfold sMinv sFn at *; omega)) (by unfold sMinv; omega)).trans hH.hminv,
-    fun j hj => (h.word (Or.inl (by unfold sArr sFn at *; omega)) (by unfold sArr; omega)).trans (hH.harr j hj)⟩
+  ⟨(h.word (Or.inl (by unfold sW sFn at *; omega_using [ho])) (by unfold sW; omega_using [])).trans hH.hw,
+    (h.word (Or.inl (by unfold sMinv sFn at *; omega_using [ho])) (by unfold sMinv; omega_using [])).trans hH.hminv,
+    fun j hj => (h.word (Or.inl (by unfold sArr sFn at *; omega_using [ho, hj])) (by unfold sArr; omega_using [hj])).trans (hH.harr j hj)⟩
 
 end VG.Proof.Bignum.X86_64.AdxHeader
 

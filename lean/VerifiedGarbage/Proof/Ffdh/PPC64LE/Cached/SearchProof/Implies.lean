@@ -23,7 +23,7 @@ private theorem args_nowrap {s : State} (h : s.sp.toNat + 32 + 8 * 15 ≤ 2 ^ 64
     (stackArgAddr s 0).toNat + 56 ≤ 2 ^ 64 := by
   simp only [stackArgAddr, Nat.reduceMul, Nat.reduceAdd]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem key_implies_pre (s : State) (h : (cachedKeySearchContract abi stackUse).pre s) : keyContract.pre s := by
   sig_pre [cachedKeySearchContract, cachedKeySearchSig, keySearchSig, Spec.Ffdh.generationContextAt, abi, argRegs, stackBelow, keyContract, keyPre,

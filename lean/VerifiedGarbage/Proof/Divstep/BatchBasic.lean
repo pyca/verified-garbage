@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Divstep.Steps
 public import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Divstep matrices and their scalar state -/
 
@@ -63,7 +64,7 @@ theorem mstep_d (t : MSt) : |(mstep t).d| ≤ |t.d| + 2 := by
   have := le_abs_self t.d
   have := neg_abs_le t.d
   unfold mstep; split <;> simp only <;> rw [abs_le'] <;> constructor <;>
-    omega
+    omega_arith
 
 theorem msteps_d (t : MSt) : ∀ n, |(msteps n t).d| ≤ |t.d| + 2 * n
   | 0 => by simp [msteps]
@@ -72,7 +73,7 @@ theorem msteps_d (t : MSt) : ∀ n, |(msteps n t).d| ≤ |t.d| + 2 * n
     have := mstep_d (msteps n t)
     have := msteps_d t n
     push_cast
-    omega
+    omega_arith
 
 /-- Halving congruent even numbers. -/
 theorem half_cong {a a' : Int} {k : Nat} (h : a % 2 ^ (k + 1) = a' % 2 ^ (k + 1)) (ha : a % 2 = 0)

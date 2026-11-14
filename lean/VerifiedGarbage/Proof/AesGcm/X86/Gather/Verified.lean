@@ -98,7 +98,7 @@ theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContrac
   obtain ⟨ods, ol⟩ := ot
   exact ⟨hrd, hwr, kd, kt, karg, nd, nt, narg, ad, at_, aarg, dt, dds, dls, darg, tds, tls, targ, dsarg, lsarg,
     ek, en, ea, ed, et, eds, els, earg, bk, bn, ba, bd, bt, bds, bls, barg, fl, ok, on, oa, od, ods, ol, w₁,
-    by omega, hR, h⟩
+    by omega_using [w₂], hR, h⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
     (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).post s s' := by
@@ -114,7 +114,7 @@ theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsCon
     Nat.reduceMul, sw32, toNat_w64] at hp
   obtain ⟨qsp, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, hd⟩ := hp
   refine ⟨qsp, fun i hi => ?_, hd⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 by omega) with
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 by omega_using [hi]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10]
 

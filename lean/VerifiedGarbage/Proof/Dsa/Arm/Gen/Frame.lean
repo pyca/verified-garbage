@@ -36,7 +36,7 @@ theorem SS.of_frame {t : State} (h : SS G σ c s) {V : Nat → BitVec 32} {LS : 
   have gi₀ := h.gi
   have big := gi₀.scrBig
   have fit := gi₀.scrFit
-  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega
+  have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_using []
   have kd : ∀ r' ∈ [G.rFrame], G.rK.Disjoint r' := fun r' hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'
     show Region.Disjoint ⟨State.addr G.KB, _⟩ _
@@ -45,8 +45,8 @@ theorem SS.of_frame {t : State} (h : SS G σ c s) {V : Nat → BitVec 32} {LS : 
     (r.gpr _ (by decide)).trans h.r9, h.sb.frame f (fun x hx r' hr' => ?_) (fun x hx => ?_), h.clOk,
     fun j hj => ?_, h.liveOk, fun d hd => ?_, h.kslOk⟩
   · simp only [List.mem_singleton] at hr'; subst hr'
-    have := h.clOk x hx; exact gi₀.scr_frame (by omega)
-  · have := h.clOk x hx; omega
+    have := h.clOk x hx; exact gi₀.scr_frame (by omega_using [big, this])
+  · have := h.clOk x hx; omega_using [big, fit, this]
   · rw [num_frame h.lens f kd (h.liveOk j hj)]; exact h.arrs j hj
   · rw [slot_frame h.lens f kd (h.kslOk d hd)]; exact h.ksl d hd
 
@@ -122,9 +122,9 @@ theorem less_ok (s : State) :
   refine VG.Proof.Ffdh.Arm.withRest_all [.r12] ?_ (by rfl) (by rfl)
   unfold less
   by_cases ge : (s.gpr .r1).toNat ≤ (s.gpr .r0).toNat
-  · have lt : ¬ (s.gpr .r0).toNat < (s.gpr .r1).toNat := by omega
+  · have lt : ¬ (s.gpr .r0).toNat < (s.gpr .r1).toNat := by omega_using [ge]
     ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
-  · have lt : (s.gpr .r0).toNat < (s.gpr .r1).toNat := by omega
+  · have lt : (s.gpr .r0).toNat < (s.gpr .r1).toNat := by omega_using [ge]
     ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
 
 /-- `less` as a piece: `Z` iff `r0 < r1`, which both runs know. -/
@@ -143,7 +143,7 @@ theorem less_vp {P Q : State → State → Prop} {x y : BitVec 32} (hx : ∀ σ 
 theorem setWidth_ofNat16 {n : Nat} (h : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 32 = BitVec.ofNat 32 n := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [h])]
 
 section
 variable {G : GP}
@@ -167,7 +167,7 @@ theorem ltF_vp {P Q : State → State → Prop} {c : State → Cfg} (hF : ∀ σ
   refine less_vp (x := x) (y := BitVec.ofNat 32 v) (fun σ s ⟨_, _, _, _, h0, _⟩ => h0)
     (fun σ s ⟨_, _, _, _, _, h1⟩ => h1) fun σ s t ⟨s₀, hs₀, R, m, _, _⟩ R' m' e => k σ s₀ t hs₀
       ((R.mono (by simp)).trans (R'.mono (by simp))) (m'.trans m) ?_
-  rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv])]
 
 end
 

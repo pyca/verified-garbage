@@ -18,7 +18,7 @@ theorem roundFrame_keeps {g : Geometry} {capacity : Nat} {m m' : Mem}
     (length : g.L = 8 * capacity) (F : WorkspaceFrame g (roundWrites g) m m') :
     Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact g.W capacity g.w m m' := by
   intro i index header arrays table
-  apply F i (by omega)
+  apply F i (by omega_using [length, index])
   intro r mem
   simp only [roundWrites, List.mem_cons, List.not_mem_nil, or_false] at mem
   have h1 := header 1 (by decide)
@@ -39,15 +39,15 @@ theorem roundFrame_keeps {g : Geometry} {capacity : Nat} {m m' : Mem}
   · exact h30
   · dsimp only
     unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes at *
-    omega
+    omega_using [a2, a3]
   · dsimp only
     unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes at *
-    omega
+    omega_using [a5, a6]
   · exact a8
   · change i < g.array 11 ∨ g.array 11 + 128 * (g.w + 2) ≤ i
     have endOffset : g.array 11 + 128 * (g.w + 2) = g.array 27 := by
       unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes
-      omega
+      omega_using []
     rw [endOffset]
     exact table
 

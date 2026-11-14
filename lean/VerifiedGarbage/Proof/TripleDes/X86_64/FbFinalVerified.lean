@@ -181,8 +181,8 @@ theorem cfbEncryptFinal_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     cfbEncFinalX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cfbEncryptFinal_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := finalLen s)
-    (by rw [hwr]; simp) (by omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by omega_using [fitD])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   exact ⟨by rw [aesBytesAt_congr (patch_mem hbD)]; exact h₁, by rw [aesBytesAt_congr (patch_mem hbI)]; exact h₂⟩
 
@@ -221,8 +221,8 @@ theorem cfbDecryptFinal_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     cfbDecFinalX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := cfbDecryptFinal_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := finalLen s)
-    (by rw [hwr]; simp) (by omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by omega_using [fitD])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   exact ⟨by rw [aesBytesAt_congr (patch_mem hbD)]; exact h₁, by rw [aesBytesAt_congr (patch_mem hbI)]; exact h₂⟩
 
@@ -298,8 +298,8 @@ theorem ofbFinal_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     ofbFinalX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, fitI, fitD, -⟩ := ofbFinal_implies8.pre s hs
   have hbD := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdx) (n := finalLen s)
-    (by rw [hwr]; simp) (by omega)
-  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega)
+    (by rw [hwr]; simp) (by omega_using [fitD])
+  have hbI := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rsi) (n := 8) (by rw [hwr]; simp) (by omega_using [])
   obtain ⟨h₁, h₂⟩ := hp
   exact ⟨by rw [aesBytesAt_congr (patch_mem hbD)]; exact h₁, by rw [aesBytesAt_congr (patch_mem hbI)]; exact h₂⟩
 

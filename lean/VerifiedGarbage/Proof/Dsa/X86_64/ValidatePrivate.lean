@@ -126,14 +126,14 @@ namespace PrivateInput
 variable (p : PrivateInput)
 
 def components : PackedComponents p.pLen p.qLen :=
-  packedComponents p.pLen p.qLen p.key (by rw [p.keyLength]; omega)
+  packedComponents p.pLen p.qLen p.key (by rw [p.keyLength]; omega_using [])
 
-theorem xLength : p.components.x.length = p.qLen := component_length (by rw [p.keyLength]; omega)
+theorem xLength : p.components.x.length = p.qLen := component_length (by rw [p.keyLength]; omega_using [])
 
 theorem pPositive : 0 < p.components.p.length := by
-  rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 theorem qPositive : 0 < p.components.q.length := by
-  rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+  rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
 
 abbrev accepted : Bool := shapeAccepted p.components.p p.components.q p.pPositive p.qPositive
 
@@ -182,15 +182,15 @@ theorem PrivatePre.sources {p : PrivateInput} {original s : State} (h : PrivateP
   have hsrc := h.keySource.congrK hm hk
   refine ⟨source_take hsrc, ?_, ?_, ?_, ?_⟩
   · rw [h.pLength]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add, Offset.add_add,
-      show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+      show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega_using []]
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
   · rw [h.pLength, h.qLength, Offset.add_add, Offset.add_add, Offset.add_add,
-      show p.pLen + (p.qLen + (p.pLen + p.pLen)) = 3 * p.pLen + p.qLen by omega]
-    exact source_slice hsrc (by rw [p.keyLength]; omega)
+      show p.pLen + (p.qLen + (p.pLen + p.pLen)) = 3 * p.pLen + p.qLen by omega_using []]
+    exact source_slice hsrc (by rw [p.keyLength]; omega_using [])
 
 structure PrivateShapePost (p : PrivateInput) (original : State)
     (hp : original.gpr .rdx = BitVec.ofNat 64 p.pLen)
@@ -210,9 +210,9 @@ theorem privateShape_ok {p : PrivateInput} {s0 : State} (h : PrivatePre p s0) :
   have hinside : InScr p.base usedBytes s0.mem s1.mem := InScr.of_outside he.frame (by decide)
   obtain ⟨hps, hqs, _⟩ := h.sources hinside (he.keep.mono (by decide))
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (n := 0) (h.scratch.congr he.keep.2.2) he.base (by decide)
     (he.fields .p (by decide) (by decide)) (he.fields .q (by decide) (by decide))
     ((he.fields .pLen (by decide) (by decide)).trans (by rw [p.components.pLength]; exact h.pLength))
@@ -295,7 +295,7 @@ theorem privateInitialize_ok {p : PrivateInput} {original st : State} (h : Priva
     hr'.inputOperand .x .qLen (by decide) (by decide) hxs' (hql _ p.xLength),
     hr'.inputOperand .nonce .qLen (by decide) (by decide) hxs' (hql _ p.xLength)⟩,
     hm.trans ((hs.fields .mask).trans (congrArg mask ha)),
-    fun i hi => (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi),
+    fun i hi => (hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hs.saved i hi),
     hframe, hkeep.mono (by decide)⟩
 
 theorem and_redundant {a b c : Bool} (h : b = true → c = true) : (a && b && c) = (a && b) := by
@@ -349,7 +349,7 @@ theorem privateSuccess_ok (M : Mont) (Sq : MontS) {p : PrivateInput} {original s
     hmw.trans (congrArg mask ((privateAccepted_signingKey L p.values p.components.y true hp1 hpf).trans
       (p.validate_eq ha)))
   refine WP.mono (result_ok hw.scratch hw.parent.rdi (by decide) hmv) fun v ⟨hret, hsave, hmem, hkv⟩ => ?_
-  refine ⟨?_, fun i hi => ((hsave i hi).trans ((hfu.trans hfw).word (Or.inl (by omega)) (by omega))).trans (hsv i hi),
+  refine ⟨?_, fun i hi => ((hsave i hi).trans ((hfu.trans hfw).word (Or.inl (by omega_using [hi])) (by omega_using [hi]))).trans (hsv i hi),
     ?_, (((hkeep.trans hku).trans hkw).trans hkv).mono (by decide)⟩
   · rw [hret]; exact toNat_ofNat_if _
   · rw [hmem]; exact hframe.trans (InScr.of_outside (hfu.trans hfw) (by decide))

@@ -65,7 +65,7 @@ theorem validateCtx {s t : State} {base : Addr} {size : Nat} (h : validatePre s)
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega
+  have big : 15712 < size := by rw [← hsz]; unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw, p128]
   obtain ⟨Ip, Iq, Ig, Iy⟩ := validateIn h hb hsz E
   refine ⟨⟨E.ws, big, wp, wq, qp, q32⟩, fun i hi => ?_⟩
   simp only [validateIns, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -101,7 +101,7 @@ theorem validate_bytes {s₁ s₂ : State} (h₁ : validatePre s₁) (hl : valid
   rw [← hr0, ← hr1, ← hr2, ← hr3] at hl
   have E := List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h) |>.mp hl
   rw [← VG.Proof.Dsa.bytesAt_prefix, ← VG.Proof.Dsa.bytesAt_prefix,
-    show min (s₁.gpr .r1).toNat (3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) = (s₁.gpr .r1).toNat by omega] at E
+    show min (s₁.gpr .r1).toNat (3 * (s₁.gpr .r2).toNat + (s₁.gpr .r3).toNat) = (s₁.gpr .r1).toNat by omega_using [r1]] at E
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ hol, ← VG.Proof.Dsa.bytesAt_slice _ _ hol, E]
 
 theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub Prevalidated.validate := by
@@ -113,12 +113,12 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
   obtain ⟨sp₂, rd₂, wr₂, _, dSA₂, _, sb₂, hv₂, _, hsw₂⟩ := id h₂
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega
+  have hs16 : 128 * (s₁.gpr .r2).toNat ≤ (arg s₁ 1).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_using [hsw]
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   have hb₂ : State.addr (arg s₂ 0) = State.addr (arg s₁ 0) := by rw [a0]
   have hz₂ : (arg s₂ 1).toNat * 8 = (arg s₁ 1).toNat * 8 := by rw [a1]
   simp only [Prevalidated.validate, Core.sequence, List.foldr]
-  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 8 _ rfl) (agree_args (n := 2) hsp (by omega) ha
+  refine SameTrace.seq (SameTrace.of_relCT (entry_relCT 8 _ rfl) (agree_args (n := 2) hsp (by omega_using [sp₁]) ha
       (fun r hr => by
         rw [wr₁] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -127,12 +127,12 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
         rw [wr₂] at hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact dSA₂.symm)))
-    (WP.mono (checkEntry_of sp₁ (by rw [rd₁]; simp) wr₁ sb₁ hv hsw) fun u I => Env.of_installed I (by omega))
+    (WP.mono (checkEntry_of sp₁ (by rw [rd₁]; simp) wr₁ sb₁ hv hsw) fun u I => Env.of_installed I (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]))
     (WP.mono (checkEntry_of sp₂ (by rw [rd₂]; simp) wr₂ sb₂ hv₂ hsw₂) fun u I => by
-      have E := Env.of_installed I (by rw [hz₂]; omega)
+      have E := Env.of_installed I (by rw [hz₂]; omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂])
       rwa [hb₂, hz₂] at E)
     fun u₁ u₂ E₁ E₂ => ?_
-  refine genDispatch_trace Prevalidated.validateSized _ E₁.ws E₂.ws (by omega) (by omega) (genWidths_mem hv)
+  refine genDispatch_trace Prevalidated.validateSized _ E₁.ws E₂.ws (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]) (genWidths_mem hv)
     (by decide) (by rw [E₁.field (d := 100) (v := s₁.gpr .r2) (by simp)])
     (by rw [E₁.field (d := 104) (v := s₁.gpr .r3) (by simp)])
     (by rw [E₂.field (d := 100) (v := s₂.gpr .r2) (by simp), hr2])
@@ -140,7 +140,7 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
     fun t₁ t₂ R₁ M₁ R₂ M₂ => ?_
   have F₁ := E₁.of_mem R₁ (by decide) M₁
   have F₂ := E₂.of_mem R₂ (by decide) M₂
-  have hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega
+  have hz : 4960 ≤ (arg s₁ 1).toNat * 8 := by omega_using [hr2, a0, a1, sb₁, hpl, hsw, sb₂, hsw₂, v, hs16, qp, p128, hz₂]
   have C₁ := validateCtx h₁ rfl rfl F₁
   have C₂ := validateCtx h₂ hb₂ hz₂ F₂
   rw [← hr2, ← hr3] at C₂
@@ -155,11 +155,11 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
   have key := fun {o l : Nat} (h : o + l ≤ (s₁.gpr .r1).toNat) =>
     validate_bytes h₁ hl hr0 hr1 hr2 hr3 (o := o) (l := l) h
   have Vp : validateVal s₂ (.input .p) = validateVal s₁ (.input .p) := by
-    have k := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega)
+    have k := key (o := 0) (l := (s₁.gpr .r2).toNat) (by omega_using [hpl])
     rw [BitVec.add_zero] at k
     simp only [validateVal]; rw [← hr0, ← hr2, k]
   have Vq : validateVal s₂ (.input .q) = validateVal s₁ (.input .q) := by
-    simp only [validateVal]; rw [← hr0, ← hr2, ← hr3, key (by omega)]
+    simp only [validateVal]; rw [← hr0, ← hr2, ← hr3, key (by omega_using [hpl])]
   have mp : (.input .p, (s₁.gpr .r2).toNat) ∈ validateIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
     simp [validateIns]
   have mq : (.input .q, (s₁.gpr .r3).toNat) ∈ validateIns (s₁.gpr .r2).toNat (s₁.gpr .r3).toNat := by
@@ -183,7 +183,7 @@ theorem validate_constantTime : ConstantTime isa validateArm.pre validateArm.pub
   have kee : ∀ r ∈ shapeRanges, r.1 + r.2 ≤ (arg s₁ 1).toNat * 8 ∧
       (r.1 + r.2 ≤ 64 ∨ 164 ≤ r.1 ∨ (112 ≤ r.1 ∧ r.1 + r.2 ≤ 128)) := fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp only <;> omega
+    rcases hr with rfl | rfl | rfl <;> simp only <;> omega_using [hz]
   have G₁ := F₁.keep (checkFields_ok s₁) S₁ (by decide) O₁ kee
   have G₂ := F₂.keep (checkFields_ok s₂) S₂ (by decide) O₂ kee
   refine SameTrace.seq_ite (by rw [eval_eq, eval_eq, Z₁, Z₂, Pe, Qe]) (fun _ => ?_) (fun hf => ?_)
@@ -228,7 +228,7 @@ theorem prevBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega
+  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   have Q₁ := operand_lt_of (X.C₁.inp mq)
   have Q₂ := operand_lt_of (X.C₂.inp mq)
   have hQ₁ := D₁.hQ
@@ -236,21 +236,21 @@ theorem prevBody_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {
   unfold Prevalidated.body Prevalidated.compute Core.sequence
   dsimp only [List.foldr]
   refine SameTrace.assoc_left (SameTrace.seq (minus_trace (amount := 2) (output := Impl.Dsa.Layout.qMinusTwo)
-      (X.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo) (X.E _ mq))
-    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega) X.C₁.S.wq (X.C₁.inp mq).toReady
-      (X.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by decide) (by decide) (by omega) (by decide))
-    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega) X.C₁.S.wq (X.C₂.inp mq).toReady
-      (X.C₂.inp mq).value (by omega) D₂.hQo (by omega) (by decide) (by decide) (by omega) (by decide))
+      (X.C₁.opPre mq X.C₁.S.wq (by omega_using [hQ₁]) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega_using [hQ₂]) D₂.hQo) (X.E _ mq))
+    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega_using [b₁]) X.C₁.S.wq (X.C₁.inp mq).toReady
+      (X.C₁.inp mq).value (by omega_using [hQ₁]) D₁.hQo (by omega_using [hQ₁]) (by decide) (by decide) (by omega_using [q32, b₁, L2]) (by decide))
+    (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_using [b₂]) X.C₁.S.wq (X.C₂.inp mq).toReady
+      (X.C₂.inp mq).value (by omega_using [hQ₂]) D₂.hQo (by omega_using [hQ₂]) (by decide) (by decide) (by omega_using [q32, b₂, L2]) (by decide))
     fun u₁ u₂ ⟨B₁, St₁⟩ ⟨B₂, St₂⟩ => ?_)
   have X₁ := X.run (St₁.run (.inr ho)) (St₂.run (.inr ho))
   exact SameTrace.seq (verifyTail_trace X₁ mp mq mg my mr ms md
-      ((countValue_stage St₁ (by omega)).trans hc₁) ((countValue_stage St₂ (by omega)).trans hc₂)
-      (localVal_of_bytes B₁ (by omega)) (localVal_of_bytes B₂ (by omega)) D₁ D₂)
+      ((countValue_stage St₁ (by omega_using [L2])).trans hc₁) ((countValue_stage St₂ (by omega_using [L2])).trans hc₂)
+      (localVal_of_bytes B₁ (by omega_using [Q₁])) (localVal_of_bytes B₂ (by omega_using [Q₂])) D₁ D₂)
     (verifyTail_ok X₁.C₁.S (X₁.C₁.inp mp) (X₁.C₁.inp mq) (X₁.C₁.inp mg) (X₁.C₁.inp my) (X₁.C₁.inp mr)
-      (X₁.C₁.inp ms) (X₁.C₁.inp md) ((countValue_stage St₁ (by omega)).trans hc₁) (localVal_of_bytes B₁ (by omega))
+      (X₁.C₁.inp ms) (X₁.C₁.inp md) ((countValue_stage St₁ (by omega_using [L2])).trans hc₁) (localVal_of_bytes B₁ (by omega_using [Q₁]))
       D₁.hP D₁.hPo D₁.hQ D₁.hQo)
     (verifyTail_ok X₁.C₂.S (X₁.C₂.inp mp) (X₁.C₂.inp mq) (X₁.C₂.inp mg) (X₁.C₂.inp my) (X₁.C₂.inp mr)
-      (X₁.C₂.inp ms) (X₁.C₂.inp md) ((countValue_stage St₂ (by omega)).trans hc₂) (localVal_of_bytes B₂ (by omega))
+      (X₁.C₂.inp ms) (X₁.C₂.inp md) ((countValue_stage St₂ (by omega_using [L2])).trans hc₂) (localVal_of_bytes B₂ (by omega_using [Q₂]))
       D₂.hP D₂.hPo D₂.hQ D₂.hQo)
     fun _ _ ⟨_, A₁⟩ ⟨_, A₂⟩ => SameTrace.of_relCT result_relCT (agree0 (A₁.ws X₁.C₁.S.ws) (A₂.ws X₁.C₂.S.ws))
 

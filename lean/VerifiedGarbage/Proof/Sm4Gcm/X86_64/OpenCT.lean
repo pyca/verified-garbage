@@ -181,7 +181,7 @@ theorem openPre_ok (v : GcmImpl) {s s₁ : State} {Ctx W SP Np A D Tp : Addr} {n
   have hS := (E.aadPre C hNp hnl hal).1
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
-    omega
+    omega_using [hok]
   have hlt := C.data.dw.ok.lt
   refine WP.seq (WP.mono (oneMid_ok v C E hNp hnl hal) fun s₃ Mi => ?_)
   have hal₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
@@ -220,12 +220,12 @@ theorem openPre_ok (v : GcmImpl) {s s₁ : State} {Ctx W SP Np A D Tp : Addr} {n
     · exact h₂.symm
   have hc₃ : ciphOf s₃.mem Ctx = ctxCiph s.mem Ctx := ciph_frame Mi.frame (fun r hr => dM _ _ La.cw' L.kc r hr)
   have hp₃ : bytesAt s₃.mem D n = bytesAt s.mem D n :=
-    bytesAt_frame Mi.frame (dM _ _ C.dE C.data.stk) (by omega)
+    bytesAt_frame Mi.frame (dM _ _ C.dE C.data.stk) (by omega_using [hlt])
   have hw₃ : bytesAt s₃.mem Tp t = bytesAt s.mem Tp t := bytesAt_frame Mi.frame (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact oT _ (.inl fun _ h => h)
-    · exact oT _ (.inr (.inr fun _ h => h))) (by omega)
+    · exact oT _ (.inr (.inr fun _ h => h))) (by omega_using [hb])
   have hz := O.zf
   rw [padded_eq, hc₃, hp₃, hw₃] at hz
   rw [hz]

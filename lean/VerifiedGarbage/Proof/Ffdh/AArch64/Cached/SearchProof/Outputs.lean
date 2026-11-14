@@ -22,8 +22,8 @@ open VG.Impl.Ffdh.AArch64.KeyGeneration.Search (ldf stf terminal zeroOut zeroOut
 open VG.Impl.Ffdh.AArch64.Cached.Search
 
 private theorem not_self_disjoint {r : Region} (h : r.Disjoint r) (hl : 0 < r.len) : False :=
-  h r.base (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
+  h r.base (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hl])
+    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hl])
 
 namespace KeyInput
 
@@ -107,7 +107,7 @@ theorem key_zero_out {p : KeyPublic} {original s : State} {used keys scalars j :
   have hv := h.header hj
   have hv2 := h.header (j := 2) (v := BitVec.ofNat 64 p.len) (by simp [KeyPublic.headers])
   simp only [Bignum.word, off] at hv hv2
-  have hl : InRegions (s.rd ++ s.wr) (p.control + BitVec.ofNat 64 (8 * j)) 8 := scr.ld (by omega)
+  have hl : InRegions (s.rd ++ s.wr) (p.control + BitVec.ofNat 64 (8 * j)) 8 := scr.ld (by omega_using [hj56])
   rcases hj56 with rfl | rfl <;> simp only [Nat.reduceMul] at hv hv2 hl <;>
   · have hl2 : InRegions (s.rd ++ s.wr) (p.control + BitVec.ofNat 64 16) 8 := scr.ld (by decide)
     have hout : ∀ i < p.len, InRegions s.wr (o + BitVec.ofNat 64 i) 1 := fun i hi =>
@@ -118,8 +118,8 @@ theorem key_zero_out {p : KeyPublic} {original s : State} {used keys scalars j :
         t.gpr .x2 = BitVec.ofNat 64 p.len ∧ t.gpr .x3 = 0 ∧ t.mem = s.mem) (by
       brun [ldf, h.x19, imm64 (show 0 < 65536 by decide), hl, hl2, hv, hv2]) (by decide) (by decide)
         (by decide +kernel)) fun s₁ ⟨⟨h1, h2, h3, hm₁⟩, k₁⟩ => ?_)
-    refine WP.mono (wp_countdown (N := p.len) (by omega) (by omega) (BInv s₁ o)
-      (fun i hi t hI _ => bStep_ok (by omega) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hi hI)
+    refine WP.mono (wp_countdown (N := p.len) (by omega_using [hk]) (by omega_using [hk]) (BInv s₁ o)
+      (fun i hi t hI _ => bStep_ok (by omega_using [hk]) h3 (fun i hi => by rw [k₁.wr]; exact hout i hi) hi hI)
       ⟨Keep.refl _ _, h1, fun i hi => absurd hi (Nat.not_lt_zero _), fun _ _ => rfl⟩ h2) fun t hI => ?_
     have hf : ∀ x, (∀ i < p.len, x ≠ o + BitVec.ofNat 64 i) → t.mem x = s.mem x :=
       fun x hx => by rw [hI.frame x hx, hm₁]
@@ -146,14 +146,14 @@ theorem key_zero_outputs {p : KeyPublic} {original s : State} {used keys scalars
   refine WP.mono (key_zero_out hv (j := 6) (.inr rfl) (by simp [KeyPublic.headers]) hyw hyc)
     fun t ⟨ht, hbt, hft⟩ => ?_
   have hxy := h.input.xy_disjoint
-  have hk64 : p.len < 2 ^ 64 := by omega
+  have hk64 : p.len < 2 ^ 64 := by omega_using [hk]
   refine ⟨ht, ?_, ?_, ?_⟩
   · refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
     intro b hb
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hb
     have hi' := List.mem_range.mp hi
-    rw [hft _ (fun j hj he => hxy _ (Offset.contains_base _ (d := i) (n := 1) (by omega) (by omega)) (by
-      rw [he]; exact Offset.contains_base _ (d := j) (n := 1) (by omega) (by omega)))]
+    rw [hft _ (fun j hj he => hxy _ (Offset.contains_base _ (d := i) (n := 1) (by omega_using [hi']) (by omega_using [hk, hi'])) (by
+      rw [he]; exact Offset.contains_base _ (d := j) (n := 1) (by omega_using [hj]) (by omega_using [hk, hj])))]
     exact hbv i hi'
   · refine List.eq_replicate_iff.mpr ⟨by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range], ?_⟩
     intro b hb

@@ -64,9 +64,9 @@ theorem subgroup_ct (W : Window) (M : Mont) (S : Selector) :
     (two_post ((r2_ct M).mono (fun _ _ h => two_bind (fun p s₁ s₂ ⟨mi₁, hI₁, hm, _⟩ ⟨mi₂, hI₂, _⟩ => by
       have c := hI₁.1.ctx
       obtain ⟨hodd, -⟩ := valid_facts hm c.k1
-      have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega
+      have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CpP.w; omega_using []
       have := c.k1
-      obtain rfl := xvals_minv (show 1 ≤ p.w by omega) hodd hI₁.2.2.1 hI₂.2.2.1
+      obtain rfl := xvals_minv (show 1 ≤ p.w by omega_using [ew, this]) hodd hI₁.2.2.1 hI₂.2.2.1
       exact ⟨_, c6_r2 hI₁ hm, c6_r2 hI₂ hm⟩) h) fun _ _ h => h) (c6_c7 M)) ?_)
   refine RelCT.seqs_append (by simp [pow]) (by simp [isOne, eqArr]) (RelCT.seq (R := Two C8)
     (two_post (two_map CpP.pw c7_ps0 (pow_ct W M S (loadArr_ct (by decide) (by taint_decide) (by taint_decide))

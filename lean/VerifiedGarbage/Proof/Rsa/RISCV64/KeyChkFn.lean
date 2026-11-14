@@ -36,15 +36,15 @@ theorem KPre.arg_rd {s0 : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K
   have hs := h.sp
   refine ⟨_, List.mem_append_left _ h.args, ?_⟩
   rw [stackArgAddr_eq s0 i]
-  exact Offset.contains_base (d := 8 * i) (n := 8) (k := 8 * na) (stackArgAddr s0 0) (by omega) (by omega)
+  exact Offset.contains_base (d := 8 * i) (n := 8) (k := 8 * na) (stackArgAddr s0 0) (by omega_using [hi]) (by omega_using [hi, hs])
 
 theorem KPre.arg_al {s0 : State} {B : Addr} {Z K oS na : Nat} (h : KPre s0 B Z K oS na) {i : Nat}
     (hi : i < na) : (stackArgAddr s0 i).toNat % 8 = 0 := by
   have hs := h.sp
   have h16 := h.sp16
   have e : (stackArgAddr s0 i).toNat = s0.sp.toNat + 8 * i := by
-    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  rw [e]; omega
+    simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hi, hs]
+  rw [e]; omega_using [h16]
 
 /-- A stack argument loaded through `t0 = sp`. -/
 theorem ldSp_ok {u : State} (h0 : u.gpr .t0 = u.sp) {r : Reg} {i o : Nat} (ho : o = 8 * i) (hi : 8 * i < 2048)
@@ -60,7 +60,7 @@ theorem ldSp_ok {u : State} (h0 : u.gpr .t0 = u.sp) {r : Reg} {i o : Nat} (ho : 
 /-- `save`'s state, as `KBase`. -/
 theorem KBase.of_saved {s0 u : State} {B : Addr} {Z : Nat} (h : Saved s0 B u) (hZ : 96 ≤ Z) :
     KBase B Z s0 u :=
-  ⟨h.keep.2.1, h.keep.2.2, fun x hx => h.out x (Or.inr (by omega)), h.saved, h.s11⟩
+  ⟨h.keep.2.1, h.keep.2.2, fun x hx => h.out x (Or.inr (by omega_using [hZ, hx])), h.saved, h.s11⟩
 
 /-- The registers the code may change, but `ra`. -/
 abbrev fnRegs : List Reg := [.t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7,
@@ -85,7 +85,7 @@ theorem fn_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K oS n
         KBase B Z s0 u ∧ u.gpr .a0 = BitVec.ofNat 64 (if ok then 1 else 0)) :
     WP isa (fn (8 * oS) moves loads body) s0 fun t =>
       (∀ i < 12, t.gpr (saved i) = s0.gpr (saved i)) ∧ t.gpr .a0 = BitVec.ofNat 64 (if ok then 1 else 0) := by
-  have hZ : 96 ≤ Z := by have := hp.zk; omega
+  have hZ : 96 ≤ Z := by have := hp.zk; omega_using [this]
   have hs : Scr s0 (stackArg s0 oS) Z := by rw [hp.base]; exact Scr.of_mem hp.wr hp.nowrap hp.al
   unfold fn
   rw [entry_eq]
@@ -99,7 +99,7 @@ theorem fn_ok {s0 : State} {B : Addr} {Z K oS na : Nat} (hp : KPre s0 B Z K oS n
     fun i hi => by rw [vm]; exact bu.hdr i hi, v11.trans bu.s11⟩
   have rdv : ∀ {P : Addr} {M : Nat}, (⟨P, M⟩ : Region) ∈ s0.rd → P.toNat + M ≤ 2 ^ 64 → ∀ i < M,
       InRegions (v.rd ++ v.wr) (off P i) 1 := fun hP wP i hi =>
-    ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hP), Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hP), Offset.contains_base _ (by omega_using [hi]) (by omega_using [wP, hi])⟩
   refine WP.mono (tail_ok v4 v5 hL hL' (rdv hE wE) v1 v2 hp.k64 hp.k1024 (rdv hN wN))
     fun t ⟨t0, t4, tm, kt⟩ => ?_
   rw [bytes_frame bv dE wE, bytes_frame bv dN wN] at t0
@@ -146,9 +146,9 @@ theorem ret_ok {g : Geo} {sS t : State} {A : Nat → Nat} {live : List Nat} {c :
     exact h.mask
   have ea : t.gpr .s11 + BitVec.ofNat 64 sMask = off g.B sMask := by rw [h.ws.s11]
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .s11 + BitVec.ofNat 64 sMask) 8 := by
-    rw [ea]; exact hs.ld (d := sMask) (n := 8) (by simp only [hdr_eq] at hz; unfold sMask; omega)
+    rw [ea]; exact hs.ld (d := sMask) (n := 8) (by simp only [hdr_eq] at hz; unfold sMask; omega_using [hz])
   have hal : (t.gpr .s11 + BitVec.ofNat 64 sMask).toNat % 8 = 0 := by
-    rw [ea]; exact hs.al8 (d := sMask) (by simp only [hdr_eq] at hz; unfold sMask; omega) (by decide)
+    rw [ea]; exact hs.al8 (d := sMask) (by simp only [hdr_eq] at hz; unfold sMask; omega_using [hz]) (by decide)
   refine WP.keep _ ?_ (by rfl) (by rfl)
   refine WP.block_cons_iff.mpr ⟨_, exec_load_d (by decide) hal hin, WP.block_nil ?_⟩
   rw [ea]

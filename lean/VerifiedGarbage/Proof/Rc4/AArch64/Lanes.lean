@@ -72,7 +72,7 @@ theorem eval_nonzero' (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNa
   · subst h0; rfl
   · have hne : BitVec.ofNat 64 m ≠ 0 := by
       intro e; have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this; simp at this; omega
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this; simp at this; omega_using [h0, this]
     change (BitVec.ofNat 64 m != (0 : BitVec 64)) = (m != 0)
     simp only [bne, beq_eq_false_iff_ne.mpr hne, beq_eq_false_iff_ne.mpr h0]
 
@@ -85,7 +85,7 @@ theorem eval_zero' (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNat 6
   · subst h0; rfl
   · have hne : BitVec.ofNat 64 m ≠ 0 := by
       intro e; have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this; simp at this; omega
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm] at this; simp at this; omega_using [h0, this]
     change (BitVec.ofNat 64 m == (0 : BitVec 64)) = (m == 0)
     simp only [beq_eq_false_iff_ne.mpr hne, beq_eq_false_iff_ne.mpr h0]
 
@@ -99,24 +99,24 @@ structure DataOk (g : Glob) : Prop where
 
 theorem DataOk.byte {g : Glob} (h : DataOk g) {s : State} (hk : Kept g s) {p : Nat} (hp : p < g.N) :
     InRegions s.wr (g.D + BitVec.ofNat 64 p) 1 :=
-  ⟨_, hk.wr ▸ h.wr, Offset.contains_base _ (by omega) (by have := h.fit; omega)⟩
+  ⟨_, hk.wr ▸ h.wr, Offset.contains_base _ (by omega_using [hp]) (by have := h.fit; omega_using [hp, this])⟩
 
 theorem lane_ok (g : Glob) (hg : DataOk g) {B p₀ sk n : Nat} (hsk : sk ≤ 15) (hn : n < 16) {s : State}
     (h : LaneInv g B p₀ sk n s) : WP isa (lane n) s (LaneInv g B p₀ sk (n + 1)) := by
   have hfit := hg.fit
   unfold lane
-  apply WP.ite _ (eval_nonzero' s .x5 h.x5 (by omega))
+  apply WP.ite _ (eval_nonzero' s .x5 h.x5 (by omega_using [hsk]))
   · intro hz
-    have hlt : n < sk := by simp at hz; omega
+    have hlt : n < sk := by simp at hz; omega_using [hz]
     let t := s.write .x .x5 (s.read .x .x5 - BitVec.ofNat _ 1)
     refine WP.of_runBlock ⟨t, by rw [runBlock_cons, exec_subImm_x (by decide), runStep_some,
       runBlock_nil], ?_⟩
-    have hd : doneAt g p₀ sk (n + 1) = doneAt g p₀ sk n := by simp only [doneAt]; omega
-    have hm : max (n + 1) sk = max n sk := by omega
+    have hd : doneAt g p₀ sk (n + 1) = doneAt g p₀ sk n := by simp only [doneAt]; omega_using [hlt]
+    have hm : max (n + 1) sk = max n sk := by omega_using [hlt]
     have g5 : ∀ r, r ≠ .x5 → t.gpr r = s.gpr r := fun r hr => by simp [t, State.write, hr]
     have x5 : t.gpr .x5 = BitVec.ofNat 64 (sk - (n + 1)) := by
       simp only [t, State.write, State.read, BitVec.setWidth_eq, ite_true, h.x5]
-      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hlt])]
       congr 1
     exact {
       prga := by
@@ -134,29 +134,29 @@ theorem lane_ok (g : Glob) (hg : DataOk g) {B p₀ sk n : Nat} (hsk : sk ≤ 15)
         h.kept.sp⟩
       vkept := h.vkept }
   · intro hnz
-    have hge : sk ≤ n := by simp at hnz; omega
+    have hge : sk ≤ n := by simp at hnz; omega_using [hnz]
     let p := doneAt g p₀ sk n
     have hp := h.data.le
-    apply WP.ite _ (eval_zero' s .x2 h.data.x2 (by omega))
+    apply WP.ite _ (eval_zero' s .x2 h.data.x2 (by omega_using [hfit]))
     · intro hz
-      have hpN : p = g.N := by simp at hz; omega
+      have hpN : p = g.N := by simp at hz; omega_using [hp, hz]
       apply WP.block_nil
-      have hd : doneAt g p₀ sk (n + 1) = p := by simp only [doneAt, p] at hpN ⊢; omega
+      have hd : doneAt g p₀ sk (n + 1) = p := by simp only [doneAt, p] at hpN ⊢; omega_using [hpN]
       exact {
         prga := by rw [hd]; exact h.prga
         data := by rw [hd]; exact h.data
-        x5 := by rw [h.x5]; congr 1; omega
+        x5 := by rw [h.x5]; congr 1; omega_using [hge]
         x8 := h.x8
-        next := fun hlt => absurd hlt (by omega)
+        next := fun hlt => absurd hlt (by omega_using [hpN, hd])
         kept := h.kept
         vkept := h.vkept }
     · intro hnz2
-      have hpN : p < g.N := by simp at hnz2; omega
+      have hpN : p < g.N := by simp at hnz2; omega_using [hnz2]
       obtain ⟨hi, hsi⟩ := h.next hpN
-      rw [show max n sk = n by omega] at hi hsi
+      rw [show max n sk = n by omega_using [hge]] at hi hsi
       have hd : InRegions s.wr (s.gpr .x1) 1 := by rw [h.data.x1]; exact hg.byte h.kept hpN
       refine WP.mono (byte_ok hn h.prga hi hsi hd) fun t ⟨pr, tsi, m, x1, x2, gg, vv, rd, wr, sp⟩ => ?_
-      have hd1 : doneAt g p₀ sk (n + 1) = p + 1 := by simp only [doneAt, p] at hpN ⊢; omega
+      have hd1 : doneAt g p₀ sk (n + 1) = p + 1 := by simp only [doneAt, p] at hpN ⊢; omega_using [hge, hpN]
       have bytes : ∀ k < g.N, t.mem (g.D + BitVec.ofNat 64 k) =
           if k < p + 1 then g.M₀ (g.D + BitVec.ofNat 64 k) ^^^ ks g.c₀ k
           else g.M₀ (g.D + BitVec.ofNat 64 k) := by
@@ -166,39 +166,39 @@ theorem lane_ok (g : Glob) (hg : DataOk g) {B p₀ sk n : Nat} (hsk : sk ≤ 15)
           constructor
           · intro e; have := congrArg (fun x => (x - g.D).toNat) e
             simp only [Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at this
-            rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this; exact this
+            rw [Nat.mod_eq_of_lt (by omega_using [hfit, hk]), Nat.mod_eq_of_lt (by omega_using [hfit, hp])] at this; exact this
           · intro e; rw [e]
         by_cases hkp : k = p
         · subst hkp
-          rw [ite_eq_left rfl, h.data.bytes _ hk, ite_eq_right (by omega), ite_eq_left (by omega)]
+          rw [ite_eq_left rfl, h.data.bytes _ hk, ite_eq_right (by omega_using []), ite_eq_left (by omega_using [])]
           rfl
         · rw [ite_eq_right (fun e => hkp (hne.mp e)), h.data.bytes k hk]
-          exact ite_iff ⟨fun h' => by omega, fun h' => by omega⟩ _ _
+          exact ite_iff ⟨fun h' => by omega_using [h'], fun h' => by omega_using [hkp, h']⟩ _ _
       have nexti : (stepN g.c₀ (p + 1)).i + 1 = BitVec.ofNat 8 (B + max (n + 1) sk) := by
-        rw [show stepN g.c₀ (p + 1) = (step (stepN g.c₀ p)).1 from rfl, show max (n + 1) sk = n + 1 by omega]
+        rw [show stepN g.c₀ (p + 1) = (step (stepN g.c₀ p)).1 from rfl, show max (n + 1) sk = n + 1 by omega_using [hge]]
         simp only [step]
         rw [hi]
         apply BitVec.eq_of_toNat_eq
         simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 8).toNat = 1 from rfl]
-        omega
+        omega_using []
       exact {
         prga := by rw [hd1]; exact pr
         data := by
           rw [hd1]
-          refine ⟨by omega, ?_, ?_, bytes, ?_⟩
+          refine ⟨by omega_using [hpN], ?_, ?_, bytes, ?_⟩
           · rw [x1, h.data.x1, BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
               BitVec.ofNat_add_ofNat]
           · rw [x2, h.data.x2, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-              BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
+              BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hpN])]
             congr 1
           · rw [m, h.data.x1]
-            exact h.data.frame.write List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+            exact h.data.frame.write List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hpN]) (by omega_using [hfit, hp]))
         x5 := by
-          rw [gg _ (by decide) (by decide) (by decide) (by decide), h.x5]; congr 1; omega
+          rw [gg _ (by decide) (by decide) (by decide) (by decide), h.x5]; congr 1; omega_using [hge]
         x8 := by rw [gg _ (by decide) (by decide) (by decide) (by decide), h.x8]
         next := by
           rw [hd1]
-          exact fun _ => ⟨nexti, by rw [tsi, show max (n + 1) sk = n + 1 by omega]⟩
+          exact fun _ => ⟨nexti, by rw [tsi, show max (n + 1) sk = n + 1 by omega_using [hge]]⟩
         kept := ⟨fun r a b c d e f => by rw [gg r a b d e, h.kept.gpr r a b c d e f],
           rd.trans h.kept.rd, wr.trans h.kept.wr, sp.trans h.kept.sp⟩
         vkept := fun r hr hn => by rw [vv r hr, h.vkept r hr hn] }

@@ -191,6 +191,48 @@ theorem eq_masks (x y : Nat) :
   · subst h; simp only [Nat.lt_irrefl, ↓reduceIte]; decide
   · simp only [h, ↓reduceIte, Nat.lt_asymm h, Nat.ne_of_gt h]; decide
 
+/-- The registers `pqEq` writes. -/
+def pqEqRegs : List Reg := [.t2, .s7, .s9] ++ cmpRegs
+
+/-- `pqEq`, with array 6's and `n`'s (array 1's) words `w` zero: `s9 &=` all
+ones if array 6 equals `n`, changing only array 3. -/
+theorem pqEq_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw1 : 1 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h7 : s.gpr .a7 = Mont.off B (slot w 0)) (hra : s.gpr .ra = Mont.off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (h0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (h6top : Mont.word s.mem B (slot w 6 + 8 * w) = 0) (h1top : Mont.word s.mem B (slot w 1 + 8 * w) = 0) :
+    WP isa pqEq s fun t =>
+      (t.gpr .s9 = s.gpr .s9 &&& (if wordsVal s.mem B (slot w 6) w = wordsVal s.mem B (slot w 1) w
+          then BitVec.allOnes 64 else 0) ∧
+        Mont.Outside B (slot w 3) (8 * w) s.mem t.mem ∧ t.gpr .a7 = Mont.off B (slot w 0)) ∧ Keep pqEqRegs s t := by
+  have hnw := hs.nowrap
+  have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
+  have e0 := e 0; have e1 := e 1; have e3 := e 3; have e6 := e 6; have e8 := e 8
+  have hh : hdrBytes = 256 := rfl
+  unfold pqEq
+  -- `p q < n`?
+  refine WP.seq (WP.mono (cmpLt_ok (a := 6) (m := 1) hs (by decide) (by decide) (by decide)
+    (by decide) hw1 hw' hZ h7 hra h5 h0 h6top) fun s₅ ⟨⟨a4, o5, a7⟩, k5⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keep [.s7] (Q := fun t => t.gpr .s7 = s₅.gpr .s4 ∧ t.mem = s₅.mem)
+    (by brun [BitVec.add_zero]) (by rfl) (by rfl)) fun s₆ ⟨⟨a7', m6⟩, k6⟩ => ?_)
+  have k56 := k5.trans k6
+  -- `n < p q`?
+  refine WP.seq (WP.mono (cmpLt_ok (a := 1) (m := 6) (hs.congr k56.2.2) (by decide) (by decide) (by decide)
+    (by decide) hw1 hw' hZ (by rw [k6.gpr (r := .a7) (by decide)]; exact a7)
+    ((k56.gpr (by decide)).trans hra) ((k56.gpr (by decide)).trans h5) ((k56.gpr (by decide)).trans h0)
+    (by rw [m6, o5.word (by omega_arith) (by omega_arith)]; exact h1top))
+    fun s₇ ⟨⟨b4, o7, b7⟩, k7⟩ => ?_)
+  rw [m6, Mont.Outside.wordsVal o5 (by omega_arith) (by omega_arith),
+    Mont.Outside.wordsVal o5 (by omega_arith) (by omega_arith)] at b4
+  refine WP.mono (WP.keep [.t2, .s9] (Q := fun t => t.gpr .s9 = s₇.gpr .s9 &&&
+    ((s₇.gpr .s7 ||| s₇.gpr .s4) ^^^ BitVec.allOnes 64) ∧ t.mem = s₇.mem)
+    (by brun; rw [BitVec.neg_one_eq_allOnes]) (by rfl) (by rfl))
+    fun t ⟨⟨t9, tm⟩, k8⟩ => ⟨⟨?_, ?_, by rw [k8.gpr (r := .a7) (by decide)]; exact b7⟩, ?_⟩
+  · rw [t9, b4, k7.gpr (r := .s7) (by decide), a7', a4, eq_masks, k7.gpr (r := .s9) (by decide),
+      k6.gpr (r := .s9) (by decide), k5.gpr (r := .s9) (by decide)]
+  · rw [tm]
+    exact o5.trans (by rw [← m6]; exact o7)
+  · exact (k56.trans (k7.trans k8)).mono (by decide)
+
 /-- The registers `checkPQ` writes. -/
 def pqRegs : List Reg := [.t1, .t2, .s7, .s9] ++ Pub.montRegs ++ cmpRegs
 
@@ -263,38 +305,19 @@ theorem checkPQ_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (hw2 : 2 
   have t46 : Mont.word s₄.mem B (slot w 6 + 8 * w) = 0 := by rw [m4]; exact Mont.word_writeW_self _ _ _ _
   have t41 : Mont.word s₄.mem B (slot w 1 + 8 * w) = 0 := by
     rw [m4, ow.word (by omega_arith) (by omega_arith), w21]; exact h1top
-  -- `p q < n`?
-  refine WP.seq (WP.mono (cmpLt_ok (a := 6) (m := 1) (hs.congr k14.2.2) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith) hw' hZ ((k14.gpr (by decide)).trans h7) ((k14.gpr (by decide)).trans hra)
-    ((k14.gpr (by decide)).trans h5) ((k14.gpr (by decide)).trans h0) t46)
-    fun s₅ ⟨⟨a4, o5, a7⟩, k5⟩ => ?_)
-  rw [v46, v41] at a4
-  refine WP.seq (WP.mono (WP.keep [.s7] (Q := fun t => t.gpr .s7 = s₅.gpr .s4 ∧ t.mem = s₅.mem)
-    (by brun [BitVec.add_zero]) (by rfl) (by rfl)) fun s₆ ⟨⟨a7', m6⟩, k6⟩ => ?_)
-  have k16 := (k14.trans k5).trans k6
-  -- `n < p q`?
-  refine WP.seq (WP.mono (cmpLt_ok (a := 1) (m := 6) (hs.congr k16.2.2) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith) hw' hZ (by rw [k6.gpr (r := .a7) (by decide)]; exact a7)
-    ((k16.gpr (by decide)).trans hra) ((k16.gpr (by decide)).trans h5) ((k16.gpr (by decide)).trans h0)
-    (by rw [m6, o5.word (by omega_arith) (by omega_arith)]; exact t41))
-    fun s₇ ⟨⟨b4, o7, b7⟩, k7⟩ => ?_)
-  rw [m6, Mont.Outside.wordsVal o5 (by omega_arith) (by omega_arith),
-    Mont.Outside.wordsVal o5 (by omega_arith) (by omega_arith), v46, v41] at b4
-  refine WP.mono (WP.keep [.t2, .s9] (Q := fun t => t.gpr .s9 = s₇.gpr .s9 &&&
-    ((s₇.gpr .s7 ||| s₇.gpr .s4) ^^^ BitVec.allOnes 64) ∧ t.mem = s₇.mem)
-    (by brun; rw [BitVec.neg_one_eq_allOnes]) (by rfl) (by rfl))
-    fun t ⟨⟨t9, tm⟩, k8⟩ => ⟨⟨?_, ?_, by rw [k8.gpr (r := .a7) (by decide)]; exact b7⟩, ?_⟩
-  · rw [t9, b4, k7.gpr (r := .s7) (by decide), a7', a4, eq_masks, k7.gpr (r := .s9) (by decide),
-      k6.gpr (r := .s9) (by decide), k5.gpr (r := .s9) (by decide), k14.gpr (r := .s9) (by decide)]
+  -- `p q = n`?
+  refine WP.mono (pqEq_ok (hs.congr k14.2.2) (by omega_arith) hw' hZ ((k14.gpr (by decide)).trans h7)
+    ((k14.gpr (by decide)).trans hra) ((k14.gpr (by decide)).trans h5) ((k14.gpr (by decide)).trans h0) t46 t41)
+    fun t ⟨⟨t9, o5, b7⟩, k5⟩ => ⟨⟨?_, ?_, b7⟩, ?_⟩
+  · rw [t9, v46, v41, k14.gpr (r := .s9) (by decide)]
   · intro x hx
-    rw [tm]
     have hx3 : ofs B x < slot w 3 ∨ slot w 3 + 8 * w ≤ ofs B x := by
       have := hx 3 (by simp); omega_arith
     have hx6 : ofs B x < slot w 6 + 8 * w ∨ slot w 6 + 8 * w + 8 ≤ ofs B x := by
       have := hx 6 (by simp); omega_arith
-    rw [o7 x hx3, m6, o5 x hx3, m4, ow x hx6]
+    rw [o5 x hx3, m4, ow x hx6]
     exact o2 x hx
-  · exact (k16.trans (k7.trans k8)).mono (by decide)
+  · exact (k14.trans k5).mono (by decide)
 
 /-! ## Masking the key -/
 

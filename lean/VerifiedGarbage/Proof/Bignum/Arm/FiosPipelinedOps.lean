@@ -29,7 +29,7 @@ theorem productAt_ok (s : State) (dst : Reg) (hdst : dst=.r6 ∨ dst=.r10)
       t.mem=s.mem ∧ Rest [.r3,dst,.r7] s t := by
   rw [VG.Impl.Bignum.Arm.FiosPipelined.productAt,WP.seq_iff]
   refine WP.mono (loadsA_ok s dst (by rcases hdst with rfl|rfl <;> decide) ws
-    (by omega) hk fa (by omega) pa pd) ?_
+    (by omega_using [hk]) hk fa (by omega_using [fd]) pa pd) ?_
   rintro u ⟨a,t,mem,rest⟩
   simp only [←Nat.add_assoc] at t
   refine WP.mono (umaal_ok u dst .r7 .r3 .r1 (by rcases hdst with rfl|rfl <;> decide)) ?_
@@ -60,7 +60,7 @@ theorem cancelAt_ok (s : State) (dst : Reg) (hdst : dst=.r6 ∨ dst=.r10)
     (rest.mono (by simp)).trans ((framed frame).mono (by simp))
   have mv : v.mem=s.mem := frame.mem.trans mem
   refine wp_str (a:=off (State.addr base) (d+k)) hk
-    ((ws.congr rv.wr).ea ((rv.gpr .r0 (by rcases hdst with rfl|rfl <;> decide)).trans pd) (by omega))
+    ((ws.congr rv.wr).ea ((rv.gpr .r0 (by rcases hdst with rfl|rfl <;> decide)).trans pd) (by omega_using [fd]))
     (by rw [rv.wr];exact ws.write fd) fun t ht => WP.block_nil ?_
   exact ⟨by simpa only [ht.gpr,w32,Nat.add_assoc,Nat.add_comm,Nat.add_left_comm] using value,
     by rw [ht.mem,mv,ht.gpr],rv.trans (ht.rest _)⟩

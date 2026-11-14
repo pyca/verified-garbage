@@ -52,7 +52,7 @@ theorem tailBlock_ok {s : State} {B : Addr} {Z eQ eT eN : Nat}
   refine WP.mono (tailTile_ok (hs.congr kad.wr)
     ((kad.gpr .x8 (by decide)).trans h8) ((kad.gpr .x16 (by decide)).trans h16)
     ((kad.gpr .x17 (by decide)).trans h17) ((kad.gpr .x7 (by decide)).trans h7)
-    hQ hT (by omega) hQT (by omega) hdval (blockValue_lt _) hx)
+    hQ hT (by omega_using [hN]) hQT (by omega_using [hNT]) hdval (blockValue_lt _) hx)
     fun t ⟨hI, hc⟩ => ?_
   have n0 := congrArg (fun m : Mem => word m B eN) hdm
   have hn : blockValue (operand d (word d.mem B eN)) = wv s.mem B eN 8 :=

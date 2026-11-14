@@ -17,8 +17,8 @@ open VG.Proof.MlDsa.AArch64.Optimized
 private theorem joined_left (F I : List (BitVec 64)) (hf : F.length=488) (hi : I.length=488)
     {j : Nat} (hj : j<488) :
     (constMem 1048576 (F++I)).readW (1048576+BitVec.ofNat 64 (8*j)) 64=F.getD j 0 := by
-  rw [constMem_held _ _ (by rw [List.length_append,hf,hi]; decide) j (by rw [List.length_append,hf,hi]; omega)]
-  simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left (by omega : j<F.length)]
+  rw [constMem_held _ _ (by rw [List.length_append,hf,hi]; decide) j (by rw [List.length_append,hf,hi]; omega_using [hj])]
+  simp only [List.getD_eq_getElem?_getD,List.getElem?_append_left (by omega_using [hf, hj] : j<F.length)]
 
 private theorem joined_right (F I : List (BitVec 64)) (hf : F.length=488) (hi : I.length=488)
     {j : Nat} (hj : j<488) :
@@ -27,8 +27,8 @@ private theorem joined_right (F I : List (BitVec 64)) (hf : F.length=488) (hi : 
     rw [Nat.mul_add,BitVec.ofNat_add,← BitVec.add_assoc]
     rfl
   rw [ha,constMem_held _ _ (by rw [List.length_append,hf,hi]; decide) (488+j)
-    (by rw [List.length_append,hf,hi]; omega)]
-  simp only [List.getD_eq_getElem?_getD,List.getElem?_append_right (by omega : F.length≤488+j),hf,Nat.add_sub_cancel_left]
+    (by rw [List.length_append,hf,hi]; omega_using [hj])]
+  simp only [List.getD_eq_getElem?_getD,List.getElem?_append_right (by omega_using [hf] : F.length≤488+j),hf,Nat.add_sub_cancel_left]
 
 def optimizedSignSatWith (p : Params) (m : Mem) : State :=
   { signSat p with

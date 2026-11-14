@@ -24,11 +24,11 @@ theorem pair_far {s₀ : State} (hp : Pre P s₀) {e : Nat} (he : e+1<P.k*P.k)
   intro r hr
   simp only [pairWrites,Paired.stepWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl
-  · exact hp.args.rdisj hb (by decide) hf (by kl) (by rcases hs with hs|hs <;> omega)
+  · exact hp.args.rdisj hb (by decide) hf (by kl) (by rcases hs with hs|hs <;> omega_using [hs])
   · exact hp.args.rdisj hb (by decide) hf (by simp only [kL]; lom)
-      (by rcases hs with hs|hs <;> omega)
+      (by rcases hs with hs|hs <;> omega_using [hs])
   · exact hp.args.rdisj hb (by decide) hf (by simp only [kL]; lom)
-      (by rcases hs with hs|hs <;> omega)
+      (by rcases hs with hs|hs <;> omega_using [hs])
 
 def lastWrites (s₀ : State) (e : Nat) : List Region :=
   Paired.fullWrites (kA s₀ 3+BitVec.ofNat 64 SS)
@@ -43,9 +43,9 @@ theorem last_far {s₀ : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
   intro r hr
   simp only [lastWrites,Paired.fullWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl
-  · exact hp.args.rdisj hb (by decide) hf (by kl) (by rcases hs with hs|hs <;> omega)
+  · exact hp.args.rdisj hb (by decide) hf (by kl) (by rcases hs with hs|hs <;> omega_using [hs])
   · exact hp.args.rdisj hb (by decide) hf (by simp only [kL]; lom)
-      (by rcases hs with hs|hs <;> omega)
+      (by rcases hs with hs|hs <;> omega_using [hs])
 
 theorem last_kb {s₀ s t : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
     (h : KB P s₀ s) (hk : Keep Paired.pairRegs s t) (hf : Frame (lastWrites s₀ e) s.mem t.mem) :

@@ -67,8 +67,8 @@ theorem applyWindow_ct (M : Mont) : RelCT isa (Two SelectPre) (applyWindow M.mm)
     exact ⟨⟨minv, X, Xc, hc.of_win (hm ▸ Frm.refl _ _ _) hk.wr (hk.gpr .x0 (by decide)),
       hw, hw', hv, hm ▸ ht, hm ▸ hn⟩, h3⟩
   refine two_ite (fun p s t hs ht => by
-    rw [eval_zero_x3 hs.2 (by have := hs.1; obtain ⟨_, _, _, _, _, _, hv, _⟩ := this; omega),
-      eval_zero_x3 ht.2 (by have := ht.1; obtain ⟨_, _, _, _, _, _, hv, _⟩ := this; omega)]) ?_ ?_
+    rw [eval_zero_x3 hs.2 (by have := hs.1; obtain ⟨_, _, _, _, _, _, hv, _⟩ := this; omega_using [hv]),
+      eval_zero_x3 ht.2 (by have := ht.1; obtain ⟨_, _, _, _, _, _, hv, _⟩ := this; omega_using [hv])]) ?_ ?_
   · exact two_taint [] (by intro p s t hs ht r hr; cases hr) (by taint_decide)
   · refine (RelCT.seq (two_post (Ψ := fun p s => GoodW p.1.ws s)
       (two_map (fun p : XPub × Nat => p) (fun _ _ h => h.1.1) select_ct) ?_)
@@ -99,7 +99,7 @@ def MidPost (p : XPub × Nat) (s : State) : Prop :=
 
 theorem mid_post {p : XPub × Nat} {s : State} (h : WindowPre p s) : WP isa (.block winMid) s (MidPost p) := by
   obtain ⟨minv, X, Xc, hc, ht, _, hv, hv', hw, hw', _⟩ := h
-  refine WP.mono (winMid_ok hc hv (by omega)) fun t ⟨hm, hk⟩ => ?_
+  refine WP.mono (winMid_ok hc hv (by omega_using [hv'])) fun t ⟨hm, hk⟩ => ?_
   have hf : Frm (off p.1.B p.1.o) (crtWinRanges p.1.wx) s.mem t.mem := by
     rw [hm]
     exact (Frm.of_outside (writeW_outside _ _ _ (d := 8 * Crt.sV) (by decide)) (by simp [crtWinRanges])).trans
@@ -126,12 +126,12 @@ theorem window_ct (M : Mont) : RelCT isa (Two WindowPre) (seqs (window M.mm)) (f
     unfold applyWindow
     refine WP.seq (WP.mono (test_ok hc hn) fun t ⟨⟨h3, hm⟩, hk⟩ => ?_)
     have hc' := hc.of_win (hm ▸ Frm.refl _ _ _) hk.wr (hk.gpr .x0 (by decide))
-    have hz := eval_zero_x3 h3 (show p.2 / 16 % 16 < 2 ^ 64 by omega)
+    have hz := eval_zero_x3 h3 (show p.2 / 16 % 16 < 2 ^ 64 by omega_using [])
     by_cases he : p.2 / 16 % 16 = 0
     · exact WP.ite true (by rw [hz]; simp [he]) (fun _ => WP.block_nil hc'.good.x0) (by simp)
     · refine WP.ite false (by rw [hz]; simp [he]) (by simp) (fun _ => ?_)
       refine WP.seq (WP.mono (select_ok hc' hw hw' hv (hm ▸ ht) (hm ▸ hn)) fun u hu => ?_)
-      exact WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hu.1.good (Nat.le_refl _) hw (by omega)
+      exact WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hu.1.good (Nat.le_refl _) hw (by omega_using [hw'])
         (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hu.1.inv
         (by rw [hu.1.n, hu.2.1, hm, ← heq]; exact htab.lt _ hv)) (fun _ h => h.1.x0)
   · exact x0_ct (fun p : XPub × Nat => off p.1.B p.1.o) (fun _ _ h => h) (by taint_decide)

@@ -58,9 +58,9 @@ theorem red_spec {r : Reg} (h1 : r ≠ .eax) (h2 : r ≠ .edx) (is : List Instr)
   · simp only [ite_true]
     have hb := barrett64_bounds hx
     have hq1 : (BitVec.ofNat 32 (x * 1290167 / 2 ^ 32)).toNat = barrett64Quot x := by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold barrett64Quot at *; omega)]; rfl
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by unfold barrett64Quot at *; omega_using [ha])]; rfl
     have hm : (BitVec.ofNat 32 (3329 * barrett64Quot x)).toNat = barrett64Quot x * q := by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [q_eq] at hb; omega), q_eq, Nat.mul_comm]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [q_eq] at hb; omega_using [ha, hb]), q_eq, Nat.mul_comm]
     have e : (s.gpr r - BitVec.ofNat 32 ((3329 : BitVec 32).toNat *
         (BitVec.ofNat 32 ((s.gpr .eax).toNat * (1290167 : BitVec 32).toNat / 2 ^ 32)).toNat)).toNat =
         barrett64 x := by
@@ -69,6 +69,6 @@ theorem red_spec {r : Reg} (h1 : r ≠ .eax) (h2 : r ≠ .edx) (is : List Instr)
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hm, hr]; exact hb.2), hm, hr]
       rfl
     rw [csub_eq _ _ (by rw [e]; exact barrett64_lt hx), e, toNat_ofNat32 (by
-      have := barrett64_lt hx; rw [q_eq] at this ⊢; omega), barrett64_mod hx]
+      have := barrett64_lt hx; rw [q_eq] at this ⊢; omega_using []), barrett64_mod hx]
 
 end VG.Proof.MlKem.X86

@@ -150,7 +150,7 @@ theorem verifyCheck_rel {t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVe
     WP.mono (recv_ok h.1 hbx h1 h16 hsi hTr (dTW.sub_right (Lay.wSub (by decide)))) fun s' ⟨he', _, f, _⟩ => by
       have d : ∀ d, 176 ≤ d → d + 8 ≤ 256 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)],
           (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact La.w_w (.inl (by omega)) (by omega) (by decide)
+        simp only [List.mem_singleton] at hr; subst hr; exact La.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
       exact ⟨⟨he',
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 184 (by decide) (by decide)) (by decide), h.2.1],
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 192 (by decide) (by decide)) (by decide), h.2.2]⟩,
@@ -271,7 +271,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
     · exact RelCT.of_false fun _ _ h => by have := h.1.2.1.2.symm.trans h.2; simp [hok] at this
     have hb : 1 ≤ t ∧ t ≤ 16 := by
       simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at hok
-      omega
+      omega_using [hok]
     have hc : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) (s₀.gpr .rdx) (s₀.gpr .rcx) t Tp s →
         WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s
           (Env Ctx St W SP) := fun s ⟨⟨h, hm⟩, hbx, hsi, hTr⟩ =>

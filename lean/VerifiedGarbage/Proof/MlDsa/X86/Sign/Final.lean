@@ -59,7 +59,7 @@ variable {s₀ : State}
 theorem signMu_min_A (h : ∃ e < p.k * p.ℓ, rejNTTPoly minBounds.rejNTT (seedE p s₀ e) = none) :
     signMu p minBounds (skOf p s₀) (muOf s₀) (rndOf s₀) = none := by
   obtain ⟨e, he, hn⟩ := h
-  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega
+  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega_using [he]
   exact signMu_none_A (expandA_none ⟨e / p.ℓ, (Nat.div_lt_iff_lt_mul hl).mpr he, e % p.ℓ, Nat.mod_lt _ hl, hn⟩)
 
 theorem signMu_min_L (hA : expandA p maxBounds (rhoV (skOf p s₀)) = some (amat p (Av (skOf p s₀))))
@@ -102,7 +102,7 @@ theorem lastB_eq {F : PrimsOk P} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s
   unfold lastB
   by_cases h : Good p F s₀
   · have h' := (good_iff ps hq).mp h
-    have hr : Run p F (NI p F s₀ - 1) s₀ := ⟨h, by have := NI_pos (p := p) F s₀; omega⟩
+    have hr : Run p F (NI p F s₀ - 1) s₀ := ⟨h, by have := NI_pos (p := p) F s₀; omega_using [this]⟩
     obtain ⟨ect, hb⟩ := run_at ps hq hr
     rw [← NI_eq ps hq, ← ect, decide_eq_true h, decide_eq_true h']
     cases e : F.ballF p.τ (CTv p s₀ (p.ℓ * (NI p F s₀ - 1)))
@@ -161,19 +161,19 @@ theorem rest_outcome {F : PrimsOk P} (ps : PS p) {s₀ s : State} (h : RD p F s�
   · by_cases hq : passS p (NI p F s₀ - 1) s₀
     · refine .inl ⟨by rw [h.ok, hs, decide_eq_true hq]; rfl, maxBounds, ?_⟩
       rw [h.sig hs hq, ← sigOf_eq]
-      exact signMu_some hA (loopV_pass ps.hok F.ballMax (by show _ < 1000; omega) hc hs hq)
+      exact signMu_some hA (loopV_pass ps.hok F.ballMax (by show _ < 1000; omega_using [hlt]) hc hs hq)
     · refine .inr ⟨by rw [h.ok, hs, decide_eq_false hq]; rfl, signMu_min_L hA ?_⟩
       have hcu : contS p F (NI p F s₀ - 1) s₀ = true := by
         simp only [contS, contV, Bool.and_eq_true, Bool.not_eq_true', decide_eq_false_iff_not]
         exact ⟨hs, hq⟩
       have hn : NI p F s₀ - 1 + 1 < NI p F s₀ ↔ contS p F (NI p F s₀ - 1) s₀ = true ∧ NI p F s₀ - 1 + 1 < 814 := by
-        rw [hNI]; exact nIt_next _ (by have : NI p F s₀ - 1 < NI p F s₀ := by omega
+        rw [hNI]; exact nIt_next _ (by have : NI p F s₀ - 1 < NI p F s₀ := by omega_using [hpos]
                                        rw [hNI] at this; exact this)
       have hu : NI p F s₀ - 1 = 813 := by
         by_contra hne
-        exact absurd (hn.mpr ⟨hcu, by omega⟩) (by omega)
+        exact absurd (hn.mpr ⟨hcu, by omega_using [hlt, hne]⟩) (by omega_using [])
       refine loopV_none_exh ps.hok F.ballMax fun j hj => ?_
-      rcases (by omega : j < NI p F s₀ - 1 ∨ j = NI p F s₀ - 1) with hj' | rfl
+      rcases (by omega_using [hu, hj] : j < NI p F s₀ - 1 ∨ j = NI p F s₀ - 1) with hj' | rfl
       · exact hc j hj'
       · exact hcu
 
@@ -208,7 +208,7 @@ theorem p0_keep {s₀ : State} (hp : TPre (Y p) s₀) {b : Buf} (hb : (Y p).ok b
   exact VG.Proof.MlKem.bytes_frame (VG.Proof.MlKem.X86.P0_mem hp.E0_big) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
       exact (((hp.stk_a _ h₁).sub_left hp.frame_sub).sub_right (Buf.sub hp hb)).symm)
-    (by have := Buf.fit hp hb; omega)
+    (by have := Buf.fit hp hb; omega_using [this])
 
 /-- `KEYS` is 0, or `scratch` holds the private key's polynomials on entry. -/
 def KeysPre (p : Params) (s₀ : State) : Prop := keysW s₀ = 0 ∨ DKs p p.ℓ p.k p.k s₀ s₀.mem
@@ -216,7 +216,7 @@ def KeysPre (p : Params) (s₀ : State) : Prop := keysW s₀ = 0 ∨ DKs p p.ℓ
 theorem dks_p0 {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) (h : DKs p p.ℓ p.k p.k s₀ s₀.mem) :
     DKs p p.ℓ p.k p.k s₀ (P0 s₀).mem := by
   have fam : ∀ {b n : Nat} {f : Nat → Poly}, b + n ≤ nS p → Fam s₀ s₀.mem b n f → Fam s₀ (P0 s₀).mem b n f :=
-    fun hb hf j hj => VG.Proof.MlDsa.Sign.polyIs_congr (p0_keep hp (slot_ok' ps (by omega))) (hf j hj)
+    fun hb hf j hj => VG.Proof.MlDsa.Sign.polyIs_congr (p0_keep hp (slot_ok' ps (by omega_using [hb, hj]))) (hf j hj)
   exact ⟨fam (by simp only [nS, s1B]; omega_arith) h.f1, fam (by simp only [nS, s2B]; omega_arith) h.f2,
     fam (by simp only [nS, t0B]; omega_arith) h.f0⟩
 

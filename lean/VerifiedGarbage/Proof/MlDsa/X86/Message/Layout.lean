@@ -121,20 +121,20 @@ variable {L : Lay}
 
 theorem x32_lt (h : L.Ok) : L.X32.toNat + 1024 ≤ 2 ^ 32 := by
   have := h.nScr; have := h.hE
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := L.E) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := L.E) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- `X` in `scratch`. -/
 theorem x_eq (h : L.Ok) : L.X = L.scr.setWidth 64 + BitVec.ofNat 64 L.E :=
-  Proof.MlKem.X86.ea_off (by have := h.nScr; have := h.hE; omega)
+  Proof.MlKem.X86.ea_off (by have := h.nScr; have := h.hE; omega_arith)
 
 /-- An address in the 1 KiB, as an instruction computes it from `esi`. -/
 theorem xo (h : L.Ok) {o : Nat} (ho : o < 1024) : addr L.X32 o = L.X + BitVec.ofNat 64 o :=
-  Proof.MlKem.X86.ea_off (by have := h.x32_lt; omega)
+  Proof.MlKem.X86.ea_off (by have := h.x32_lt; omega_using [ho, this])
 
 theorem x32_toNat (h : L.Ok) {o : Nat} (ho : o < 1024) : (L.X32 + BitVec.ofNat 32 o).toNat = L.X32.toNat + o := by
   have := h.x32_lt
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho]), Nat.mod_eq_of_lt (by omega_using [ho, this])]
 
 theorem xs_sc (h : L.Ok) : Within ⟨L.X, 1024⟩ L.SC := ⟨L.E, h.x_eq, h.hE⟩
 
@@ -145,7 +145,7 @@ theorem sub_sc (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) : Region.Sub ⟨L.
 theorem stk_sub (h : L.Ok) : Region.Sub L.STK (below L.SP L.N) := by
   have := h.nSP; have := h.hN
   rw [Lay.STK, Lay.E1]
-  exact below_inner (by omega) (by omega)
+  exact below_inner (by omega_using [this]) (by omega_arith)
 
 theorem kSC (h : L.Ok) : L.STK.Disjoint L.SC := (h.kAll _ (by simp)).sub_left h.stk_sub
 theorem kKey (h : L.Ok) : L.STK.Disjoint L.KEY := (h.kAll _ (by simp)).sub_left h.stk_sub
@@ -170,7 +170,7 @@ theorem inW (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) : InRegions L.wr (L.X
   refine ⟨L.SC, h.inSC, ?_⟩
   rw [h.x_eq, add_add]
   have := h.hE; have := h.nScr
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- What lies within the first 904 bytes of `X`, or in `STK`, is apart from the two bytes. -/
 theorem hdr_disj (h : L.Ok) {r : Region} (hr : Within r L.W ∨ Region.Sub r L.STK) :
@@ -180,24 +180,24 @@ theorem hdr_disj (h : L.Ok) {r : Region} (hr : Within r L.W ∨ Region.Sub r L.S
     obtain ⟨b, k⟩ := r
     simp only at hb hl
     subst hb
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact (h.kSC.symm.sub_left (h.sub_sc (by omega))).sub_right hr
+    exact Offset.disjoint _ (.inr (by omega_using [hl])) (by omega_using []) (by omega_using [hl])
+  · exact (h.kSC.symm.sub_left (h.sub_sc (by omega_using []))).sub_right hr
 
 /-- Argument `i`, as an instruction in the body addresses it. -/
 theorem argAt_eq (L : Lay) (i : Nat) :
     addr L.E1 (20 + 4 * i) = (L.SP + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64 := by
   simp only [addr, Lay.E1]
   congr 1
-  rw [show (20 + 4 * i : Nat) = 16 + (4 + 4 * i) by omega, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
+  rw [show (20 + 4 * i : Nat) = 16 + (4 + 4 * i) by omega_using [], ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
     BitVec.sub_add_cancel]
 
 /-- Argument `i` lies in the arguments. -/
 theorem argIn (h : L.Ok) {i : Nat} (hi : i < L.nA) :
     L.ARGS.Contains ((L.SP + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64) 4 := by
   have := h.fArgs
-  rw [Lay.ARGS, Proof.MlKem.X86.ea_off (x := L.SP) (d := 4) (by omega),
-    Proof.MlKem.X86.ea_off (x := L.SP) (d := 4 + 4 * i) (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [Lay.ARGS, Proof.MlKem.X86.ea_off (x := L.SP) (d := 4) (by omega_using [hi, this]),
+    Proof.MlKem.X86.ea_off (x := L.SP) (d := 4 + 4 * i) (by omega_using [hi, this])]
+  exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [this])
 
 end Lay.Ok
 

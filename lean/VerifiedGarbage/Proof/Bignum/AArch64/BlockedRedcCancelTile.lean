@@ -30,7 +30,7 @@ theorem cancelStep_ok {s t : State} {B : Addr} {Z eQ eN j : Nat}
     WP isa (.block (VG.Impl.Bignum.AArch64.BlockedRedc.cancel j)) t
       fun u => CancelInv s B eQ eN (j + 1) u := by
   have hnw := hs.nowrap
-  have hn := hI.frame.word (d := eN) (by omega) (by omega)
+  have hn := hI.frame.word (d := eN) (by omega_using [hQN, hj]) (by omega_using [hN, hnw])
   have hop := (keep_operand hI.keep (by decide) (word t.mem B eN)).trans
     (congrArg (operand s) hn)
   have hopV := congrArg blockValue hop
@@ -38,9 +38,9 @@ theorem cancelStep_ok {s t : State} {B : Addr} {Z eQ eN j : Nat}
     ((hI.keep.gpr .x8 (by decide)).trans h8)
     ((hI.keep.gpr .x17 (by decide)).trans h17)
     ((hI.keep.gpr .x7 (by decide)).trans h7)
-    (by omega) hN hj (by omega)) fun u ⟨hv, hm, ku⟩ => ?_
+    (by omega_using [hQ, hj]) hN hj (by omega_using [hQN, hj])) fun u ⟨hv, hm, ku⟩ => ?_
   have hmem := (congrArg (fun m : Mem => wv m B eQ (j + 1)) hm).trans
-    (wv_writeW_top t.mem B eQ j (t.gpr .x19 * t.gpr .x15) (by omega))
+    (wv_writeW_top t.mem B eQ j (t.gpr .x19 * t.gpr .x15) (by omega_using [hQ, hj, hnw]))
   refine ⟨?_, ?_, (hI.keep.trans ku).mono (by decide)⟩
   · intro hinv
     have hinv' : ((word t.mem B eN).toNat * (t.gpr .x15).toNat + 1) % 2 ^ 64 = 0 := by
@@ -66,11 +66,11 @@ theorem cancelStep_ok {s t : State} {B : Addr} {Z eQ eN j : Nat}
       (hstep.trans (congrArg (fun q => blockValue (accumulator s) +
         q * blockValue (operand s (word s.mem B eN))) hmem.symm))
   · have ho := writeW_outside t.mem B (t.gpr .x19 * t.gpr .x15)
-      (d := eQ + 8 * j) (by omega)
+      (d := eQ + 8 * j) (by omega_using [hQ, hj, hnw])
     have hm' : Outside B (eQ + 8 * j) 8 t.mem u.mem := by
       intro x hx
       exact (congrArg (fun m : Mem => m x) hm).trans (ho x hx)
-    exact (hI.frame.mono (by omega) (by omega)).trans (hm'.mono (by omega) (by omega))
+    exact (hI.frame.mono (by omega_using []) (by omega_using [])).trans (hm'.mono (by omega_using []) (by omega_using []))
 
 
 theorem cancelPrefix_ok {s : State} {B : Addr} {Z eQ eN k : Nat}
@@ -93,7 +93,7 @@ theorem cancelPrefix_ok {s : State} {B : Addr} {Z eQ eN k : Nat}
     rewrite [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    exact WP.mono (ih (by omega)) fun t hI =>
-      cancelStep_ok hs h8 h17 h7 hQ hN hQN (by omega) hI
+    exact WP.mono (ih (by omega_using [hk])) fun t hI =>
+      cancelStep_ok hs h8 h17 h7 hQ hN hQN (by omega_using [hk]) hI
 
 end VG.Proof.Bignum.AArch64.BlockedRedc

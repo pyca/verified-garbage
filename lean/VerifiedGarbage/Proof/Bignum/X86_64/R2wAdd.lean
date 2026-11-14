@@ -125,16 +125,16 @@ theorem abStep_ok {s₀ : State} {B : Addr} {Z w em et : Nat} {n : Bool}
     rw [pow64_succ]
     cases n <;> simp only [ite_true, ite_false, Bool.false_eq_true, Nat.add_zero] at hval hv₁ ⊢ <;> grind
 
-/-- `t := t + m` (both from `s`) if the top bit of `t`'s word `w` is set,
-modulo `2^(64 (w + 1))`, for `t` at `r8` and `m` at `r10`. -/
-theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
+/-- `addBack_ok`, with the mask of the correction left in `r11`. -/
+theorem addBack_ok' {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
     (h10 : s.gpr .r10 = off B em) (h8 : s.gpr .r8 = off B et) (h12 : s.gpr .r12 = BitVec.ofNat 64 w)
     (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hM : em + 8 * w ≤ Z) (hT : et + 8 * (w + 1) ≤ Z)
     (sM : et + 8 * (w + 1) ≤ em ∨ em + 8 * w ≤ et) :
     WP isa addBack s fun t => ∃ c : Bool,
       wv t.mem B et (w + 1) + 2 ^ (64 * (w + 1)) * c.toNat = wv s.mem B et (w + 1) +
         (if 2 ^ 63 ≤ (word s.mem B (et + 8 * w)).toNat then wv s.mem B em w else 0) ∧
-      Outside B et (8 * (w + 1)) s.mem t.mem ∧ Keep [.rax, .r11, .rbp, .r14] s t := by
+      Outside B et (8 * (w + 1)) s.mem t.mem ∧ Keep [.rax, .r11, .rbp, .r14] s t ∧
+      t.gpr .r11 = mask (decide (2 ^ 63 ≤ (word s.mem B (et + 8 * w)).toNat)) := by
   have hn := hs.nowrap
   unfold addBack
   refine WP.seq (WP.mono (addHead_ok s (addr0 h8 h12) (hs.ld (by omega_arith))) fun t₁ ⟨h11, hbp₁, hm₁, k₁⟩ => ?_)
@@ -152,7 +152,8 @@ theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
   have t₂8 : t₂.gpr .r8 = off B et := (hI.keep.gpr (by decide)).trans t₁8
   have t₂12 : t₂.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans t₁12
   refine WP.mono (addTop_ok t₂ (addr0 t₂8 t₂12) (hI.scr.ld (by omega_arith)) (hI.scr.st (by omega_arith)) hbp₂)
-    fun t ⟨v, c', hm, hv, k⟩ => ⟨c', ?_, ?_, ((k₁.trans hI.keep).trans k).mono (by decide)⟩
+    fun t ⟨v, c', hm, hv, k⟩ => ⟨c', ?_, ?_, ((k₁.trans hI.keep).trans k).mono (by decide),
+      ((hI.keep.trans k).gpr (by decide)).trans (h11.trans (by rw [← hN]))⟩
   · have hx : t₂.mem.readW (off B (et + 8 * w)) 64 = word s.mem B (et + 8 * w) := by
       show word t₂.mem B (et + 8 * w) = _
       rw [hI.out.word (Or.inr (Nat.le_refl _)) (by omega_arith), hm₁]
@@ -169,5 +170,17 @@ theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
     intro x hx
     rw [writeW_outside t₂.mem B v (by omega_arith) x (by omega_arith)]
     rw [hI.out x (by omega_arith), hm₁]
+
+/-- `t := t + m` (both from `s`) if the top bit of `t`'s word `w` is set,
+modulo `2^(64 (w + 1))`, for `t` at `r8` and `m` at `r10`. -/
+theorem addBack_ok {s : State} {B : Addr} {Z w em et : Nat} (hs : Scr s B Z)
+    (h10 : s.gpr .r10 = off B em) (h8 : s.gpr .r8 = off B et) (h12 : s.gpr .r12 = BitVec.ofNat 64 w)
+    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hM : em + 8 * w ≤ Z) (hT : et + 8 * (w + 1) ≤ Z)
+    (sM : et + 8 * (w + 1) ≤ em ∨ em + 8 * w ≤ et) :
+    WP isa addBack s fun t => ∃ c : Bool,
+      wv t.mem B et (w + 1) + 2 ^ (64 * (w + 1)) * c.toNat = wv s.mem B et (w + 1) +
+        (if 2 ^ 63 ≤ (word s.mem B (et + 8 * w)).toNat then wv s.mem B em w else 0) ∧
+      Outside B et (8 * (w + 1)) s.mem t.mem ∧ Keep [.rax, .r11, .rbp, .r14] s t :=
+  WP.mono (addBack_ok' hs h10 h8 h12 hw hw' hM hT sM) fun _ ⟨c, h1, h2, h3, _⟩ => ⟨c, h1, h2, h3⟩
 
 end VG.Proof.Bignum.X86_64.R2w

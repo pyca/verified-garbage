@@ -24,9 +24,9 @@ theorem decodeWord_byte (blk : Block) (o : Nat) {b : Nat} (hb : b < 4) :
     (decodeWord blk o).extractLsb' (8 * b) 8 = blk.getD (o + (3 - b)) 0 := by
   simp only [decodeWord, List.range, List.range.loop, List.foldl_cons, List.foldl_nil, Nat.add_zero]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) [hi, decide_eq_false, BitVec.getLsbD_of_ge,
-      show 16 + i - 8 - 8 = i by omega, show 24 + i - 8 - 8 - 8 = i by omega]
+      show 16 + i - 8 - 8 = i by omega_using [], show 24 + i - 8 - 8 - 8 = i by omega_using []]
 
 theorem blockAt_getD (m : Mem) (q : Addr) {i : Nat} (hi : i < 8) :
     (blockAt m q).getD i 0 = m (q + BitVec.ofNat 64 i) := by

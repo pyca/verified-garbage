@@ -49,7 +49,7 @@ theorem write1_apply (m : Mem) (a x : Addr) (v : BitVec 8) :
   simp only [Mem.writeW, Mem.write]
   split
   · rename_i h
-    rw [show (x - a).toNat = 0 by omega]
+    rw [show (x - a).toNat = 0 by omega_using [h]]
     simp
   · rfl
 

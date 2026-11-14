@@ -98,12 +98,12 @@ structure NPost (s₀ : State) (N : Nat) (s : State) : Prop where
 theorem nMem_frame (s₀ : State) : Frame [oR s₀] s₀.mem (nMem s₀) := fun x hx => by
   have h := hx (oR s₀) List.mem_cons_self
   simp only [Region.Contains] at h
-  simp only [nMem, show ¬ (x - op s₀).toNat < 16 * nb s₀ by omega, ite_false]
+  simp only [nMem, show ¬ (x - op s₀).toNat < 16 * nb s₀ by omega_using [h], ite_false]
 
 theorem toNat_oAddr_sub {s₀ : State} (hw : (op s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64) {k i : Nat} (hk : k < nb s₀)
     (hi : i < 16) : (oAddr s₀ k + BitVec.ofNat 64 i - op s₀).toNat = 16 * k + i := by
   rw [BitVec.add_assoc, Offset.add_sub_cancel_left, ← BitVec.ofNat_add, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [hw, hk, hi])]
 
 /-- The first `nb` blocks at `dst` in `nMem s₀` are the plaintext's. -/
 theorem blockAt_nMem_lo {s₀ : State} (hw : (op s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64) {k : Nat} (hk : k < nb s₀) :
@@ -112,7 +112,7 @@ theorem blockAt_nMem_lo {s₀ : State} (hw : (op s₀).toNat + 16 * nb s₀ ≤ 
   congr 1
   refine List.map_congr_left fun i hi => ?_
   have hi' : i < 16 := List.mem_range.mp hi
-  simp only [nMem, toNat_oAddr_sub hw hk hi', show 16 * k + i < 16 * nb s₀ by omega, ite_true]
+  simp only [nMem, toNat_oAddr_sub hw hk hi', show 16 * k + i < 16 * nb s₀ by omega_using [hk, hi'], ite_true]
   rw [BitVec.add_assoc, Offset.add_sub_cancel_left, ← BitVec.add_assoc]
 
 /-- The blocks at `dst` after them are `s₀`'s. -/
@@ -120,33 +120,33 @@ theorem blockAt_nMem_hi {s₀ : State} {N : Nat} (hwN : (op s₀).toNat + 16 * N
     (hk : nb s₀ ≤ k) (hkN : k < N) : blockAt (nMem s₀) (oAddr s₀ k) = blockAt s₀.mem (oAddr s₀ k) :=
   VG.Proof.Aes.X86_64.AesNi.blockAt_frame (nMem_frame s₀) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact Offset.disjoint_base _ (by omega) (by omega)
+    exact Offset.disjoint_base _ (by omega_using [hk]) (by omega_using [hwN, hkN])
 
 /-- The `16 N` bytes at `dst` in `nMem s₀`: the plaintext at `src`, then
 `s₀`'s at `dst` after its first `nb` blocks. -/
 theorem bytesAt_nMem {s₀ : State} {N : Nat} (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) (hle : nb s₀ ≤ N) :
     Spec.Aes.bytesAt (nMem s₀) (op s₀) (16 * N) = Spec.Aes.bytesAt s₀.mem (sp s₀) (16 * nb s₀) ++
       Spec.Aes.bytesAt s₀.mem (oAddr s₀ (nb s₀)) (16 * (N - nb s₀)) := by
-  rw [show 16 * N = 16 * nb s₀ + 16 * (N - nb s₀) by omega]
+  rw [show 16 * N = 16 * nb s₀ + 16 * (N - nb s₀) by omega_using [hle]]
   simp only [Spec.Aes.bytesAt, List.range_add, List.map_append, List.map_map]
   have hsub : ∀ i, i < 16 * N → (op s₀ + BitVec.ofNat 64 i - op s₀).toNat = i := fun i hi => by
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hwN, hi])]
   congr 1
   · refine List.map_congr_left fun i hi => ?_
     have hi' := List.mem_range.mp hi
-    have e : (BitVec.ofNat 64 i).toNat = i := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    have e : (BitVec.ofNat 64 i).toNat = i := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hwN, hle, hi'])]
     simp only [nMem, Offset.add_sub_cancel_left, e, hi', ↓reduceIte]
   · refine List.map_congr_left fun i hi => ?_
     have hi' := List.mem_range.mp hi
-    have e := hsub (16 * nb s₀ + i) (by omega)
+    have e := hsub (16 * nb s₀ + i) (by omega_using [hi'])
     simp only [Function.comp_apply, nMem, oAddr, BitVec.add_assoc, ← BitVec.ofNat_add, e,
-      show ¬ 16 * nb s₀ + i < 16 * nb s₀ by omega, ↓reduceIte]
+      show ¬ 16 * nb s₀ + i < 16 * nb s₀ by omega_using [], ↓reduceIte]
 
 /-- The `N` blocks at `dst` in `nMem s₀`. -/
 theorem blocksAt_nMem {s₀ : State} {N : Nat} (hw : (op s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64)
     (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) (hle : nb s₀ ≤ N) : blocksAt (nMem s₀) (op s₀) N =
       blocksAt s₀.mem (sp s₀) (nb s₀) ++ blocksAt s₀.mem (oAddr s₀ (nb s₀)) (N - nb s₀) := by
-  rw [show N = nb s₀ + (N - nb s₀) by omega, Proof.Gcm.blocksAt_add, Nat.add_sub_cancel_left]
+  rw [show N = nb s₀ + (N - nb s₀) by omega_using [hle], Proof.Gcm.blocksAt_add, Nat.add_sub_cancel_left]
   congr 1
   · simp only [blocksAt]
     exact List.map_congr_left fun i hi => blockAt_nMem_lo hw (List.mem_range.mp hi)
@@ -155,7 +155,7 @@ theorem blocksAt_nMem {s₀ : State} {N : Nat} (hw : (op s₀).toNat + 16 * nb s
     have hi' := List.mem_range.mp hi
     rw [show oAddr s₀ (nb s₀) + BitVec.ofNat 64 (16 * i) = oAddr s₀ (nb s₀ + i) by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add, ← Nat.mul_add]]
-    exact blockAt_nMem_hi hwN (by omega) (by omega)
+    exact blockAt_nMem_hi hwN (by omega_using []) (by omega_using [hi'])
 
 /-! ## The in-place view -/
 
@@ -216,8 +216,8 @@ theorem blk_nState (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) {k : Nat} (hk : k
     blk (nState s₀ N) k = if k < nb s₀ then pblk s₀ k else blockAt s₀.mem (oAddr s₀ k) := by
   simp only [blk, bAddr, dp, nState_r8, nState_mem]
   split
-  · exact blockAt_nMem_lo hp.wrap_o (by omega)
-  · exact blockAt_nMem_hi hwN (by omega) hk
+  · exact blockAt_nMem_lo hp.wrap_o (by omega_arith)
+  · exact blockAt_nMem_hi hwN (by omega_arith) hk
 
 theorem ctb_nState (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) {k : Nat} (hk : k < nb s₀) (hkN : k < N) :
     ctb (nState s₀ N) k = ctbT s₀ k := by
@@ -226,7 +226,7 @@ theorem ctb_nState (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) {k : Nat} (hk : k
 /-- The in-place loop's start. -/
 theorem NPre.sPre (hn : NPre M s₀ N) : SPre (nState s₀ N) := by
   have d := hp.toD
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
   have g : ∀ r, r ≠ .r8 → r ≠ .r9 → (nState s₀ N).gpr r = (dst s₀).gpr r := fun r h8 h9 => by
     rw [nState_gpr h8 h9, StitchZTo.dst_gpr_ne s₀ h8]
   have hk : kp (nState s₀ N) = kp (dst s₀) := g .rdi (by decide) (by decide)
@@ -239,7 +239,7 @@ theorem NPre.sPre (hn : NPre M s₀ N) : SPre (nState s₀ N) := by
   have kD : (nR s₀ N).Disjoint (kR (dst s₀)) := hn.k_o.symm.sub_right (Region.sub_prefix hge)
   exact {
     rounds := by simp only [nr, hr]; exact d.rounds
-    nb16 := by rw [nb_nState hN]; have := hp.nb16; have := hn.le; omega
+    nb16 := by rw [nb_nState hN]; have := hp.nb16; have := hn.le; omega_arith
     k_in := by rw [nState_rd, nState_wr, hk]; exact d.k_in
     c_in := by rw [nState_wr, hc]; exact d.c_in
     y_in := by rw [nState_wr, hy]; exact d.y_in
@@ -266,7 +266,7 @@ theorem NPre.eInv (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
     (hI : EInvTo s₀ P e s) {t : State} (g8 : t.gpr .r8 = s.gpr .rbx) (g9 : t.gpr .r9 = s.gpr .r9 + s.gpr .rbp)
     (g : ∀ r, r ≠ .r8 → r ≠ .r9 → t.gpr r = s.gpr r) (hm : t.mem = s.mem) (hx : t.xmm = s.xmm)
     (hy : t.ymmHi = s.ymmHi) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : EInv (nState s₀ N) P e t := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
   have hw := hp.wrap_o
   have hwN := hn.wrap
   have hle := hn.le
@@ -281,27 +281,27 @@ theorem NPre.eInv (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
     rw [hm, nState_mem, hA.frame x (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · simp only [Region.Contains]; omega
+      · simp only [Region.Contains]; omega_using [hle, h₁]
       · simp only [Region.Contains]; exact h₂), nMem_frame s₀ x (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; simp only [Region.Contains]; omega)]
+      simp only [List.mem_singleton] at hr; subst hr; simp only [Region.Contains]; omega_using [hle, h₁])]
   have bl : ∀ k < nb (nState s₀ N), blockAt t.mem (bAddr (nState s₀ N) k) =
       if k < 16 * e then ctb (nState s₀ N) k else blk (nState s₀ N) k := fun k hk => by
     rw [nb_nState hN] at hk
     rw [show bAddr (nState s₀ N) k = oAddr s₀ k by simp only [bAddr, dp, nState_r8], hm]
     by_cases hlo : k < 16 * e
-    · simp only [hlo, ↓reduceIte, ctb_nState hp hwN (by omega) hk]
-      exact hA.blocks k (by omega)
-    · simp only [hlo, ↓reduceIte, blk_nState hp hwN hk, show ¬ k < nb s₀ by omega]
+    · simp only [hlo, ↓reduceIte, ctb_nState hp hwN (by omega_using [he, hlo]) hk]
+      exact hA.blocks k (by omega_using [hlo])
+    · simp only [hlo, ↓reduceIte, blk_nState hp hwN hk, show ¬ k < nb s₀ by omega_using [he, hlo]]
       refine VG.Proof.Aes.X86_64.AesNi.blockAt_frame hA.frame fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base _ (by omega) (by omega)
-      · exact hn.o_p.sub_left (Offset.sub_base _ (by omega))
+      · exact Offset.disjoint_base _ (by omega_using [he, hlo]) (by omega_using [hwN, hk])
+      · exact hn.o_p.sub_left (Offset.sub_base _ (by omega_using [hk]))
   have rbp : s.gpr .rbp = BitVec.ofNat 64 (N - nb s₀) := by
     rw [hI.gpr .rbp (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hn.rbp
   exact {
     a := {
-      le := by rw [nb_nState hN]; omega
+      le := by rw [nb_nState hN]; omega_using [he, hle]
       ctr := fun l hl' => by rw [hl, cb_nState hp]; exact hA.ctr l hl'
       msk := fun l hl' => by rw [hl]; exact hA.msk l hl'
       inc := fun l hl' => by rw [hl]; exact hA.inc l hl'
@@ -318,7 +318,7 @@ theorem NPre.eInv (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
     rdx := by rw [g .rdx (by decide) (by decide), hI.rdx, dp, nState_r8]
     r9 := by
       rw [g9, hI.r9, rbp, nb_nState hN, ← BitVec.ofNat_add]
-      congr 1; omega
+      congr 1; omega_using [he, hle]
     rax := by rw [g .rax (by decide) (by decide), hI.rax]; exact (hg .rdx (by decide) (by decide)).symm
     gpr := fun r ha hd h9 h10 => by
       by_cases h8 : r = .r8
@@ -333,7 +333,7 @@ theorem NPre.eInv (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
       congr 1
       refine List.map_congr_left fun k hk => ?_
       have := List.mem_range.mp hk
-      exact (ctb_nState hp hwN (by omega) (by omega)).symm
+      exact (ctb_nState hp hwN (by omega_using [he, this]) (by omega_using [he, hle, this])).symm
     y1 := by rw [hl]; exact hI.y1 }
 
 /-- `r8 ← rbx`, `r9 += rbp` and `cmp r9, 32` after the out-of-place loop. -/
@@ -354,7 +354,7 @@ theorem switch_ok (hn : NPre M s₀ N) {P : Nat → Nat → Block} {e : Nat} (he
 /-- What the in-place loop leaves from `nState s₀ N` is the contract for
 `s₀`. -/
 theorem NPost.of_ePost (hn : NPre M s₀ N) {s : State} (h : EPost (nState s₀ N) s) : NPost s₀ N s := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
   have hw := hp.wrap_o
   have hwN := hn.wrap
   have hle := hn.le
@@ -380,7 +380,7 @@ theorem NPost.of_ePost (hn : NPre M s₀ N) {s : State} (h : EPost (nState s₀ 
         · rw [yR, hy]; exact hx _ (List.mem_cons_of_mem _ List.mem_cons_self)
         · simp only [hd, nb_nState hN, Region.Contains]; exact h₃
         · rw [pR, hpp]; exact hx _ (by simp)), nState_mem, nMem_frame s₀ x (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; simp only [Region.Contains]; omega)]
+          simp only [List.mem_singleton] at hr; subst hr; simp only [Region.Contains]; omega_using [hle, h₃])]
     gpr := fun r ha hd' h8 h9 h10 => by rw [h.gpr r ha hd' h9 h10, hg r h8 h9]
     rd := h.rd
     wr := h.wr }
@@ -407,7 +407,7 @@ end
 theorem encN_ok {np : Nat} {hnp : 8 ≤ np ∧ np ≤ 24} (hS : SetupFin np hnp) {s₀ : State}
     (hp : SPreTo (CtxMode.preparedN np hnp) s₀) (hm : nb s₀ % 16 = 0) {N : Nat}
     (hn : NPre (CtxMode.preparedN np hnp) s₀ N) : WP isa Impl.Gcm.X86_64.StitchR.encN s₀ (NPost s₀ N) := by
-  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega
+  have hN : N < 2 ^ 64 := by have := hn.wrap; have := hp.nb16; have := hn.le; omega_arith
   have hp' := hn.sPre hp
   refine WP.seq (WP.mono (hS hp) fun s₁ ⟨P, hR, hf⟩ => ?_)
   refine WP.seq (WP.mono (StitchTo.firstTo_ok hp hR) fun s₂ hI₂ => ?_)

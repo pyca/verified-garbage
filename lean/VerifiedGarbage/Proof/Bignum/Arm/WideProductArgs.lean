@@ -25,25 +25,25 @@ theorem wideProductArgs_ok (s : State) {base : BitVec 32} {size a b o n : Nat}
       t.gpr .lr = BitVec.ofNat 32 n ∧ t.gpr .r1 = s.mem.readW (off (State.addr base) a) 32 ∧
       t.gpr .r11 = 0 ∧ t.mem = s.mem ∧ Rest [.r0, .r1, .r11, .r12, .lr] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ size) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [ptr]; exact addr_add (by have := ws.nowrap; omega)
+    rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [hd, this])
   unfold wideProductArgs wideProductArgsHead wideProductArgsTail
   simp only [List.cons_append, List.nil_append]
-  refine wp_ldr (a := off (State.addr base) 132) (by decide) (addr 132 (by omega))
-    (ws.read (by omega)) fun u h => ?_
+  refine wp_ldr (a := off (State.addr base) 132) (by decide) (addr 132 (by omega_using [fit]))
+    (ws.read (by omega_using [fit])) fun u h => ?_
   refine wp_ldr (a := off (State.addr base) 144) (by decide)
-    (by rw [h.other .r0 (by decide)]; exact addr 144 (by omega))
-    (by rw [h.rd, h.wr]; exact ws.read (by omega)) fun v j => ?_
+    (by rw [h.other .r0 (by decide)]; exact addr 144 (by omega_using [fit]))
+    (by rw [h.rd, h.wr]; exact ws.read (by omega_using [fit])) fun v j => ?_
   refine wp_ldr (a := off (State.addr base) 128) (by decide)
-    (by rw [j.other .r0 (by decide), h.other .r0 (by decide)]; exact addr 128 (by omega))
-    (by rw [j.rd, j.wr, h.rd, h.wr]; exact ws.read (by omega)) fun z l => ?_
+    (by rw [j.other .r0 (by decide), h.other .r0 (by decide)]; exact addr 128 (by omega_using [fit]))
+    (by rw [j.rd, j.wr, h.rd, h.wr]; exact ws.read (by omega_using [fit])) fun z l => ?_
   refine wp_ldr (a := off (State.addr base) a) (by decide)
-    (by rw [l.gpr, j.mem, h.mem, aPtr, BitVec.add_zero]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [l.gpr, j.mem, h.mem, aPtr, BitVec.add_zero]; exact addr_add (by have := ws.nowrap; omega_using [aFit, this]))
     (by rw [l.rd, l.wr, j.rd, j.wr, h.rd, h.wr]; exact ws.read aFit) fun q c => ?_
   refine wp_mov (op2_imm (by decide)) fun p d => ?_
   refine wp_ldr (a := off (State.addr base) 136) (by decide)
     (by rw [d.other .r0 (by decide), c.other .r0 (by decide), l.other .r0 (by decide),
-      j.other .r0 (by decide), h.other .r0 (by decide)]; exact addr 136 (by omega))
-    (by rw [d.rd, d.wr, c.rd, c.wr, l.rd, l.wr, j.rd, j.wr, h.rd, h.wr]; exact ws.read (by omega)) fun t e => WP.block_nil ?_
+      j.other .r0 (by decide), h.other .r0 (by decide)]; exact addr 136 (by omega_using [fit]))
+    (by rw [d.rd, d.wr, c.rd, c.wr, l.rd, l.wr, j.rd, j.wr, h.rd, h.wr]; exact ws.read (by omega_using [fit])) fun t e => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, ?_, ?_, e.mem.trans (d.mem.trans (c.mem.trans (l.mem.trans (j.mem.trans h.mem)))),
     (h.rest (by decide)).trans ((j.rest (by decide)).trans ((l.rest (by decide)).trans
       ((c.rest (by decide)).trans ((d.rest (by decide)).trans (e.rest (by decide))))))⟩

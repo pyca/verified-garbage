@@ -1,10 +1,65 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinish
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+
+/-! ### `MlDsa.AArch64.Optimized.PairedFinish`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+open VG.Proof.MlDsa.AArch64.Optimized.Response (finishValue hintFinishValue exec_umov_word)
+
+def returnCode (kind : Kind) : List Instr :=
+ [.umov .w .x0 .v30 0,.umov .w .x9 .v30 1,.logic .orr .w .x0 .x0 .x9,
+ .umov .w .x9 .v30 2,.logic .orr .w .x0 .x0 .x9,.umov .w .x9 .v30 3,
+ .logic .orr .w .x0 .x0 .x9,.addImm .w .x0 .x0 1] ++
+ (if kind==.h then [.lsl .x .x0 .x0 32,
+ .umov .w .x9 .v14 0,.umov .w .x10 .v14 1,.add .w .x9 .x9 .x10,
+ .umov .w .x10 .v14 2,.add .w .x9 .x9 .x10,.umov .w .x10 .v14 3,
+ .add .w .x9 .x9 .x10,.logic .orr .x .x0 .x0 .x9] else [])
+def restoreCode : List Instr := saved.zipIdx.map (fun (r,i) => .ldrq r .x2 (1920+16*i))
+
+theorem finish_split (kind : Kind) : finish kind=returnCode kind++restoreCode := by
+  cases kind <;> rfl
+
+def returnValue (kind : Kind) (s : State) : BitVec 64 :=
+  if kind==.h then hintFinishValue (s.v .v14) (s.v .v30) else finishValue (s.v .v30)
+
+/-- Both polynomial norm flags are accumulated before returning. The hint
+kernel returns the combined count in low32 and success in bit32. -/
+theorem return_ok (kind : Kind) (s : State) :
+    WP isa (.block (returnCode kind)) s fun t =>
+      ((t.gpr .x0=returnValue kind s ∧ t.mem=s.mem) ∧ Keep [.x0,.x9,.x10] s t) ∧ t.v=s.v := by
+  cases kind <;>
+    apply VG.Proof.MlKem.AArch64.WP.keepV (by rfl) <;>
+    refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl) <;>
+    unfold returnCode returnValue hintFinishValue finishValue <;>
+    arun [exec_umov_word (i := 0) (hi := by decide),exec_umov_word (i := 1) (hi := by decide),
+      exec_umov_word (i := 2) (hi := by decide),exec_umov_word (i := 3) (hi := by decide)]
+  · rfl
+  · rfl
+  · exact BitVec.or_comm _ _
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+
+end
+
+end
+
 
 /-! ## From `PairedExtra.lean` -/
 
@@ -134,14 +189,14 @@ theorem saved_after (m : Mem) (work : Addr) (v : VReg → BitVec 128) :
     have he' : i=j := Fin.ext he
     subst j
     exact hne rfl
-  exact Offset.sep work (by omega) (by omega) (by omega)
+  exact Offset.sep work (by omega) (by omega_using []) (by omega_using [])
 
 theorem saved_frame (m : Mem) (work : Addr) (v : VReg → BitVec 128) :
     Frame [⟨work+BitVec.ofNat 64 2048,128⟩] m (writeSlice (extraSlots 2048) work v m) := by
   refine writeSlice_frame _ _ _ _ _ ?_
   intro p hp
   obtain ⟨i,rfl⟩ := (extraSlots_mem _ _).mp hp
-  exact Offset.contains work (e := 2048) (by omega) (by omega) (by decide)
+  exact Offset.contains work (e := 2048) (by omega_using []) (by omega_using []) (by decide)
 
 theorem Saved.frame {m m' : Mem} {work : Addr} {v : VReg → BitVec 128}
     {rs : List Region} (h : Saved m work v) (hf : Frame rs m m')
@@ -149,7 +204,7 @@ theorem Saved.frame {m m' : Mem} {work : Addr} {v : VReg → BitVec 128}
   intro i
   have hc : (⟨work+BitVec.ofNat 64 2048,128⟩ : Region).Contains
       (work+BitVec.ofNat 64 (2048+16*i.val)) (128/8) :=
-    Offset.contains work (e := 2048) (by omega) (by omega) (by decide)
+    Offset.contains work (e := 2048) (by omega_using []) (by omega_using []) (by decide)
   have he := hf.readW hc hd (by decide : 128/8<2^64)
   have hr : m'.read (work+BitVec.ofNat 64 (2048+16*i.val)) 16 =
       m.read (work+BitVec.ofNat 64 (2048+16*i.val)) 16 := by
@@ -183,7 +238,7 @@ theorem restore_saved {s : State} {work : Addr} {v : VReg → BitVec 128}
   obtain ⟨i,rfl⟩ := hex
   have hh := hv (savedReg i,1920+16*i.val) ((extraSlots_mem _ _).mpr ⟨i,rfl⟩)
   rw [hx,BitVec.add_assoc,← BitVec.ofNat_add] at hh
-  have he : 128+(1920+16*i.val)=2048+16*i.val := by omega
+  have he : 128+(1920+16*i.val)=2048+16*i.val := by omega_using []
   simpa only [he,hs i] using hh
 
 theorem save_saved {s : State}

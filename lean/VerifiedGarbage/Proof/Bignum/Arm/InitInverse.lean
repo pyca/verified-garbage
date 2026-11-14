@@ -33,19 +33,19 @@ theorem initInverse_ok (s : State) {base : BitVec 32} {size d : Nat}
   rw [next] at pair
   rw [initInverse, WP.seq_iff]
   refine WP.mono (minv64_ok s (off (State.addr base) d) (off (State.addr base) (d + 4))
-    (by simpa using ws.ea (imm := 0) ptr (by omega))
-    (ws.ea ptr (by omega)) (ws.read (by omega)) (ws.read (by omega)) (pair ▸ odd)) ?_
+    (by simpa using ws.ea (imm := 0) ptr (by omega_using [modFit]))
+    (ws.ea ptr (by omega_using [modFit])) (ws.read (by omega_using [modFit])) (ws.read (by omega_using [modFit])) (pair ▸ odd)) ?_
   rintro u ⟨inverse, mem, rest⟩
   have savedU : u.gpr .r12 = base := (rest.gpr .r12 (by decide)).trans saved
   have wsU := ws.congr rest.wr
   rw [WP.seq_iff]
   refine WP.mono (store64_ok u .r2 .r11 .r12 56 (off (State.addr base) 56) (by decide)
-    (wsU.ea (off := 0) (by simpa using savedU) (by omega))
+    (wsU.ea (off := 0) (by simpa using savedU) (by omega_using [header]))
     (by rw [show off (State.addr base) 56 + BitVec.ofNat 64 4 = off (State.addr base) 60 from Offset.add_add _ _ _]
-        exact wsU.ea (off := 0) (by simpa using savedU) (by omega))
-    (wsU.write (by omega))
+        exact wsU.ea (off := 0) (by simpa using savedU) (by omega_using [header]))
+    (wsU.write (by omega_using [header]))
     (by rw [show off (State.addr base) 56 + BitVec.ofNat 64 4 = off (State.addr base) 60 from Offset.add_add _ _ _]
-        exact wsU.write (by omega))) ?_
+        exact wsU.write (by omega_using [header]))) ?_
   rintro v ⟨stored, keep⟩
   refine wp_mov (op2_reg _ _) fun t moved => WP.block_nil ?_
   refine ⟨u.gpr .r11 ++ u.gpr .r2, ?_, ?_, ?_, ?_⟩

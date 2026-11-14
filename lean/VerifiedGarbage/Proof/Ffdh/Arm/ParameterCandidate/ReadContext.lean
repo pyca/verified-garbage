@@ -44,6 +44,6 @@ theorem ReadContext.lastAddress {dst : BitVec 32} {n : Nat} {s : State}
   have add : dst + BitVec.ofNat 32 n - 1 = dst + (BitVec.ofNat 32 n - BitVec.ofNat 32 1) := by
     change dst + BitVec.ofNat 32 n - 1#32 = _
     simp only [BitVec.sub_eq_add_neg, BitVec.add_assoc]
-  rw [add, subtract, VG.Arm.addr_add (by have := h.bufferFits; have := h.positive; omega)]
+  rw [add, subtract, VG.Arm.addr_add (by have := h.bufferFits; have := h.positive; omega_arith)]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

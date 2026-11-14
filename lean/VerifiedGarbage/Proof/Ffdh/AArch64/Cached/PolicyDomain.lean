@@ -23,11 +23,11 @@ theorem checked_bound_bits {k : Nat} {dom : List Byte} (positive : 0<k)
  8*((bnd k dom).length-lead (bnd k dom)-1)+
  Spec.RsaKeyGen.bitLength ((bnd k dom).getD (lead (bnd k dom)) 0).toNat := by
  have length := VG.Proof.Ffdh.KeyScalar.bnd_length shape
- have nonempty : bnd k dom≠[] := by intro h;rw [h] at length;simp at length;omega
+ have nonempty : bnd k dom≠[] := by intro h;rw [h] at length;simp at length;omega_using [positive, length]
  have modulus := VG.Proof.Ffdh.domainValid_mod valid
  simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at modulus
  dsimp only [Spec.Ffdh.domainOf] at modulus
- have bound := VG.Proof.Ffdh.KeyScalar.bound_bits (by omega : 1≤k) shape (fun _ => ⟨modulus.1.1.1,by omega⟩)
+ have bound := VG.Proof.Ffdh.KeyScalar.bound_bits (by omega_using [positive] : 1≤k) shape (fun _ => ⟨modulus.1.1.1,by omega_using [modulus]⟩)
  rw [length,List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (lead_lt nonempty),Option.getD_some]
  exact bound
 
@@ -37,7 +37,7 @@ theorem checked_bound_lead {k : Nat} {dom : List Byte} (positive : 0<k)
  lead bs<bs.length ∧ (∀ i<lead bs,bs.getD i 0=0#8) ∧ bs.getD (lead bs) 0≠0#8 := by
  dsimp only
  have length := VG.Proof.Ffdh.KeyScalar.bnd_length shape
- have nonempty : bnd k dom≠[] := by intro h;rw [h] at length;simp at length;omega
+ have nonempty : bnd k dom≠[] := by intro h;rw [h] at length;simp at length;omega_using [positive, length]
  have inside := lead_lt nonempty
  refine ⟨inside,?_,?_⟩
  · intro i hi
@@ -56,21 +56,21 @@ theorem checked_bound_lead {k : Nat} {dom : List Byte} (positive : 0<k)
    have pos := scalarBound_positive valid
    have lengthPos : 0<Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)) := by
     unfold Spec.RsaKeyGen.bitLength
-    rw [ite_eq_right (by omega : Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)≠0)]
-    omega
-   have tail : (bnd k dom).length-lead (bnd k dom)-1=0 := by omega
+    rw [ite_eq_right (by omega_using [pos] : Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom)≠0)]
+    omega_using []
+   have tail : (bnd k dom).length-lead (bnd k dom)-1=0 := by omega_using [last]
    rw [tail] at bits
    change Spec.RsaKeyGen.bitLength (Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom))=0 at bits
-   omega
+   omega_using [lengthPos, bits]
 
 theorem Source.bound {s : State} {domPtr : Addr} {dom : List Byte} {k dl : Nat}
  (source : Source domPtr dom s) (positive : 0<k) (length : dom.length=dl) (shape : dl=2*k ∨ dl=3*k) :
  Source (if dl=2*k then domPtr else off domPtr (2*k)) (bnd k dom) s := by
  unfold bnd
  by_cases three : dl=3*k
- · rw [ite_eq_left (by omega : dom.length=3*k),ite_eq_right (by omega : ¬dl=2*k)]
+ · rw [ite_eq_left (by omega_using [length, three] : dom.length=3*k),ite_eq_right (by omega_using [positive, three] : ¬dl=2*k)]
    exact (source.drop (2*k)).take k
- · rw [ite_eq_right (by omega : ¬dom.length=3*k),ite_eq_left (by omega : dl=2*k)]
+ · rw [ite_eq_right (by omega_using [length, three] : ¬dom.length=3*k),ite_eq_left (by omega_using [shape, three] : dl=2*k)]
    exact source.take k
 
 theorem policyDomain_ok {s : State} {B domPtr : Addr} {Z k dl : Nat} {dom : List Byte}
@@ -85,10 +85,10 @@ theorem policyDomain_ok {s : State} {B domPtr : Addr} {Z k dl : Nat} {dom : List
  WP isa Policy.recognize s fun t =>
  word t.mem B (8*sBits)=BitVec.ofNat 64 (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)) ∧
  Outside B (8*sBits) 8 s.mem t.mem ∧ Keep recordClobbers s t := by
- have shapeDom : dom.length=2*k ∨ dom.length=3*k := by omega
+ have shapeDom : dom.length=2*k ∨ dom.length=3*k := by omega_using [shape, domLength]
  have leadFacts := checked_bound_lead positive shapeDom valid
  have bits := checked_bound_bits positive shapeDom valid
- refine WP.mono (policyRecognize_ok scratch room base positive (by omega) shape domLength pointer length domainLength
+ refine WP.mono (policyRecognize_ok scratch room base positive (by omega_using [size]) shape domLength pointer length domainLength
   source outside (source.bound positive domLength shape) (VG.Proof.Ffdh.KeyScalar.bnd_length shapeDom)
   leadFacts.1 leadFacts.2.1 leadFacts.2.2 records) ?_
  rintro t ⟨width,frame,rest⟩

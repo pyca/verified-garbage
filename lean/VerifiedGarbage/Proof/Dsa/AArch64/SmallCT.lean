@@ -44,7 +44,7 @@ theorem smallHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
         u.gpr .x13 = BitVec.ofNat 64 0 ∧ u.mem = s.mem) ∧ Keep [.x9, .x12, .x13] s u := by
   refine WP.keep [.x9, .x12, .x13] ?_ (by decide) (by decide) (by decide +kernel)
   brun [hg.x0, hdr_enc (show sW < 32 by decide), hg.hdr.hw,
-    hg.scr.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega)]
+    hg.scr.ld (show 8 * sW + 8 ≤ Z by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega_using [hZ, this])]
 
 /-- Clearing an array and setting its low word has no value-dependent trace. -/
 theorem smallW_ct {a : Nat} (ha : a < 8)

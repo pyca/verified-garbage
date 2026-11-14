@@ -104,14 +104,14 @@ theorem drawBody_ok {p : WitnessParams} {rp : Addr} {used : Nat} {bs : List Byte
     fun u ⟨hcf, hm, k⟩ => ?_)
   have hu := h.same_mem hm k ((k.gpr (by decide)).trans h.ready.good.rdi)
   by_cases havail : p.len ≤ bs.length
-  · refine WP.ite false (by simp [eval, hcf, show ¬bs.length < p.len by omega]) (by simp) (fun _ => ?_)
+  · refine WP.ite false (by simp [eval, hcf, show ¬bs.length < p.len by omega_using [havail]]) (by simp) (fun _ => ?_)
     refine WP.mono (drawSample_ok hu havail) fun t ⟨ht, hx, hz, hs, hh, hf, kt⟩ => ?_
     simp only [DrawStep, ite_eq_left havail]
     refine ⟨⟨ht, hx, hz, hs⟩, ?_, ?_, (k.trans kt).mono (by decide)⟩
     · intro j hj h12 h13 h14 h19
       rw [hh j hj h19, advanceMem_saved _ _ _ _ _ _ j hj h12 h13 h14, hm]
     · rw [← hm]; exact hf
-  · have hshort : bs.length < p.len := by omega
+  · have hshort : bs.length < p.len := by omega_using [havail]
     refine WP.ite true (by simp [eval, hcf, hshort]) (fun _ => ?_) (by simp)
     have houteru : Scr u p.O 256 := houter.congr k.2.2
     refine WP.mono (drawShort_ok hu.ready.good.scr p.space_bounds.2.1 houteru hu.ready.good.rdi hu.link)

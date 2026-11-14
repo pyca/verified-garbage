@@ -27,10 +27,10 @@ theorem readW_lo32 {m : Mem} {a : Addr} {v : BitVec 64} (h : m.readW a 64 = v) :
   show (m.read a 4).setWidth 32 = _
   rw [read_eq_of_bytes (n := 4) (v := v.setWidth 32) fun j hj => ?_]
   · exact BitVec.setWidth_eq _
-  · rw [byte_of_readW64 h (by omega)]
+  · rw [byte_of_readW64 h (by omega_using [hj])]
     ext i hi
     simp only [BitVec.getElem_extractLsb']
-    rw [BitVec.getLsbD_setWidth, decide_eq_true (by omega : 8 * j + i < 32), Bool.true_and]
+    rw [BitVec.getLsbD_setWidth, decide_eq_true (by omega_using [hj, hi] : 8 * j + i < 32), Bool.true_and]
 
 /-- The high half of a 64-bit word. -/
 theorem readW_hi32 {m : Mem} {a : Addr} {v : BitVec 64} (h : m.readW a 64 = v) :
@@ -38,11 +38,11 @@ theorem readW_hi32 {m : Mem} {a : Addr} {v : BitVec 64} (h : m.readW a 64 = v) :
   show (m.read (a + BitVec.ofNat 64 4) 4).setWidth 32 = _
   rw [read_eq_of_bytes (n := 4) (v := v.extractLsb' 32 32) fun j hj => ?_]
   · exact BitVec.setWidth_eq _
-  · rw [Offset.add_add, byte_of_readW64 h (by omega)]
+  · rw [Offset.add_add, byte_of_readW64 h (by omega_using [hj])]
     ext i hi
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb']
-    rw [decide_eq_true (by omega : 8 * j + i < 32), Bool.true_and]
+    rw [decide_eq_true (by omega_using [hj, hi] : 8 * j + i < 32), Bool.true_and]
     congr 1
-    omega
+    omega_using []
 
 end VG.Mem

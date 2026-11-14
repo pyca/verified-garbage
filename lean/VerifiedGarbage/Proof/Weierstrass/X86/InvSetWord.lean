@@ -19,10 +19,10 @@ theorem setWord_ok {s : State} {base : Addr} {size dst : Nat} (x : BitVec 32)
   unfold setWord
   refine wp_movS rfl fun s₁ U₁ _ => ?_
   have hs₁ := hs.of_keeps U₁.keeps (by decide)
-  refine wp_storeS (hs₁.ea (by omega)) (hs₁.write hd) fun u U₂ => WP.block_nil ?_
+  refine wp_storeS (hs₁.ea (by omega_using [hd])) (hs₁.write hd) fun u U₂ => WP.block_nil ?_
   refine ⟨?_, U₁.keeps.trans (U₂.keeps _), ?_⟩
   · rw [U₂.mem, w32_write_self, U₁.gpr]
   · rw [U₂.mem, U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [hd, hn])
 
 end VG.Proof.Weierstrass.X86.Inv

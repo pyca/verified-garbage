@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519: the inversion `z^(p-2)` as an addition chain
@@ -79,11 +80,11 @@ theorem pow_pw (a : Fe) (e : Nat) : pow a e = pw a e := by
     · rw [ite_eq_left h0, h0]
       exact Fin.ext (by simp only [pw, Fin.val_ofNat, Nat.pow_zero]; rfl)
     · simp only [h0, ite_false]
-      rw [ih (e / 2) (by omega), pw_sq]
+      rw [ih (e / 2) (by omega_using [h0]), pw_sq]
       by_cases h : e % 2 = 0
-      · rw [ite_eq_left h]; exact congrArg (pw a) (by omega)
+      · rw [ite_eq_left h]; exact congrArg (pw a) (by omega_using [h])
       · rw [ite_eq_right h, ← congrArg (· * _) (pw_one a), pw_mul]
-        exact congrArg (pw a) (by omega)
+        exact congrArg (pw a) (by omega_using [h])
 
 theorem invert_eq (z : Fe) : invert z = pow z (P - 2) := by
   rw [pow_pw, ← congrArg invert (pw_one z)]

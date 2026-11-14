@@ -50,12 +50,12 @@ theorem lcm_stage_frame {m m' : Mem} {B : Addr} {n k : Nat} (width : k ≤ n)
           exact stage_cover_header (by decide) (by decide)
     · simp only [lcmDivisionRanges, arrayDivisionRanges, List.mem_cons, List.not_mem_nil, or_false] at division
       rcases division with rfl | rfl | rfl | rfl | rfl
-      · exact stage_cover_temp (Nat.le_refl _) (by unfold S; omega)
+      · exact stage_cover_temp (Nat.le_refl _) (by unfold S; omega_using [])
       · exact stage_cover_header (by decide) (by decide)
       · exact stage_cover_header (by decide) (by decide)
-      · exact stage_cover_array (by decide) (by unfold S; omega)
+      · exact stage_cover_array (by decide) (by unfold S; omega_using [])
       · have last := arr_end (w := n) (show aT1 < 15 by decide)
         change arr n aT1 + S n ≤ hdr + 15 * S n at last
-        exact stage_cover_temp (Nat.le_add_right ..) (by unfold S at last ⊢; omega)
+        exact stage_cover_temp (Nat.le_add_right ..) (by unfold S at last ⊢; omega_using [last])
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

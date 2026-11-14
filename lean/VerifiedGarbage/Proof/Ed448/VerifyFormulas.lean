@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Formulas
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448 verification's equation: its field programs, evaluated
@@ -38,7 +39,7 @@ theorem doubleAt_keep0 (e : Fin 22 → Spec.X448.Fe) (i : Fin 22) (hi : 3 ≤ i.
   evalOps_keep _ _ _ fun op hop => by
     have : ∀ op ∈ doubleAt 0 1 2, fopDest op < 3 ∨ (12 ≤ fopDest op ∧ fopDest op < 20) := by decide
     have := this op hop
-    omega
+    omega_using [hi, this]
 
 theorem doubleAt_keep8 (e : Fin 22 → Spec.X448.Fe) (i : Fin 22)
     (hi : i.val < 8 ∨ i.val = 11 ∨ i.val = 20 ∨ i.val = 21) :
@@ -47,7 +48,7 @@ theorem doubleAt_keep8 (e : Fin 22 → Spec.X448.Fe) (i : Fin 22)
     have : ∀ op ∈ doubleAt 8 9 10, (8 ≤ fopDest op ∧ fopDest op < 11) ∨
         (12 ≤ fopDest op ∧ fopDest op < 20) := by decide
     have := this op hop
-    omega
+    omega_using [hi, this]
 
 theorem addAt_keep (x y : Nat) (e : Fin 22 → Spec.X448.Fe) (i : Fin 22)
     (hi : i.val < 3 ∨ (6 ≤ i.val ∧ i.val < 12) ∨ i.val = 21) :
@@ -60,7 +61,7 @@ theorem addAt_keep (x y : Nat) (e : Fin 22 → Spec.X448.Fe) (i : Fin 22)
       rcases hop with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl | rfl | rfl | rfl | rfl <;> simp [fopDest]
     have := this x y op hop
-    omega
+    omega_using [hi, this]
 
 theorem idx_val (i : Fin 22) : idx i.val = i := Fin.ext (Nat.mod_eq_of_lt i.isLt)
 
@@ -97,7 +98,7 @@ theorem decodeUV_eval (xo yo : Fin 22) (h : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ 
       have : i.val ≠ 12 := fun h => h12 (Fin.ext h)
       have : i.val ≠ 13 := fun h => h13 (Fin.ext h)
       have := Fin.val_ne_of_ne hx
-      omega
+      omega_arith
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · exact ⟨rfl, rfl, rfl, rfl, hk⟩
   · exact ⟨rfl, rfl, rfl, rfl, hk⟩
@@ -113,7 +114,7 @@ theorem decodeXOps_eval (xo : Fin 22) (h : xo = 6 ∨ xo = 8) (e : (Fin 22 → S
       have := Fin.val_ne_of_ne hx
       have : i.val ≠ 12 := fun h => h12 (Fin.ext h)
       have := xo.isLt
-      rcases hop with rfl | rfl | rfl <;> simp only [fopDest] <;> omega
+      rcases hop with rfl | rfl | rfl <;> simp only [fopDest] <;> omega_arith
   rcases h with rfl | rfl
   · exact ⟨rfl, rfl, rfl, hk⟩
   · exact ⟨rfl, rfl, rfl, hk⟩

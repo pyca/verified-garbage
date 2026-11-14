@@ -19,15 +19,15 @@ namespace VG.Impl.Rsa.X86_64.PubIfma
 open VG VG.X86_64 VG.Impl.Bignum VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64.CrtIfma
 
 /-- 1024-bit moduli: 16 words, numbers of 20 limbs. -/
-def pay1024 : Lay := ⟨5, 16, 20, 4, 1⟩
+def pay1024 : Lay := ⟨5, 16, 20, 4, 1, false⟩
 /-- 1536-bit moduli: 24 words, numbers of 32 limbs. -/
-def pay1536 : Lay := ⟨8, 24, 32, 4, 1⟩
+def pay1536 : Lay := ⟨8, 24, 32, 4, 1, false⟩
 /-- 2048-bit moduli: 32 words, numbers of 40 limbs. -/
-def pay2048 : Lay := ⟨10, 32, 40, 4, 1⟩
+def pay2048 : Lay := ⟨10, 32, 40, 4, 1, false⟩
 /-- 3072-bit moduli: 48 words, numbers of 60 limbs. -/
-def pay3072 : Lay := ⟨15, 48, 60, 4, 1⟩
+def pay3072 : Lay := ⟨15, 48, 60, 4, 1, false⟩
 /-- 4096-bit moduli: 64 words, numbers of 80 limbs. -/
-def pay4096 : Lay := ⟨20, 64, 80, 4, 1⟩
+def pay4096 : Lay := ⟨20, 64, 80, 4, 1, false⟩
 
 /-! ## The area
 

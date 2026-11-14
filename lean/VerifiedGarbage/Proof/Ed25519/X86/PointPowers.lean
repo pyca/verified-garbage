@@ -33,7 +33,7 @@ theorem tableAddr_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (off j : Nat)
     change v s₃ .eax = _
     rw [h₃.eax]
     simp only [v, h₂.other .eax (by decide), h₁.gpr, hb, h₂.gpr, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (show j < 2 ^ 32 by omega)]
+    rw [Nat.mod_eq_of_lt (show j < 2 ^ 32 by omega_using [hj])]
     exact congrArg (fun n => n % 2 ^ 32) (Nat.mul_comm j 128)
   refine ⟨hk, by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_⟩
   rw [h₆.gpr, h₅.gpr, h₄.gpr, hv, h₃.other .edi (by decide) (by decide),
@@ -69,7 +69,7 @@ theorem PowersKeep.of_ikeep {x : BitVec 32} {s t : State} (h : IKeep x s t) (o n
 theorem workspace_table {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
     (o : Nat) (hlo : 1024 ≤ o) (ho : o + 128 ≤ 8192) :
     tablePoint t.mem x o = tablePoint s.mem x o :=
-  table_point_of_words fun k hk => wd_frame1s hc h.frame (by decide) (by omega) (Or.inr (by omega))
+  table_point_of_words fun k hk => wd_frame1s hc h.frame (by decide) (by omega_using [ho, hk]) (Or.inr (by omega_using [hlo]))
 
 end VG.Proof.Ed25519.X86
 end

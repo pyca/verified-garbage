@@ -273,8 +273,11 @@ def ChecksPre (p : ChecksPub) (s : State) : Prop :=
     wv s.mem (off p.B p.oq) (slot p.wq Public.aN) p.wq = Q ∧
     wv s.mem (off p.B p.op) (slot p.wp aChunk) p.wp = QI ∧ p.N % 2 = 1
 
+/-- The key checks `c` are constant time. -/
+def ChecksCTOf (c : List (Prog isa)) : Prop := RelCT isa (Two ChecksPre) (seqs c) fun _ _ => True
+
 /-- `checks` is constant time. -/
-def ChecksCT : Prop := RelCT isa (Two ChecksPre) (seqs checks) fun _ _ => True
+def ChecksCT : Prop := ChecksCTOf checks
 
 /-- The public data of the phases' parts: `n`'s workspace, `-n⁻¹`, `n`, the
 prime's workspace (its base in slot `sl`). -/

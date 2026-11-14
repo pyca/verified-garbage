@@ -9,6 +9,9 @@ public import VerifiedGarbage.Spec.EcKey.Secp256k1
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.EcdhLit
 public import VerifiedGarbage.Proof.Secp256k1.RISCV64.Law
+public import VerifiedGarbage.Impl.EcKey.Compressed.Secp256k1.RISCV64
+public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.Secp256k1.Verified
+import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.Secp256k1.Lit
 
 /-! # secp256k1 public keys (FIPS 186-5 §A.2) on RISC-V -/
 
@@ -19,6 +22,12 @@ namespace VG.Artifacts.EcSecp256k1.RISCV64
 open VG.Proof.Secp256k1.RISCV64 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact RISCV64.target {
+    code := Impl.EcKey.Compressed.RISCV64.compressSecp256k1
+    verified := Proof.EcKey.Compressed.RISCV64.Secp256k1.compress_verified },
+  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact RISCV64.target {
+    code := Impl.EcKey.Compressed.RISCV64.decompressSecp256k1
+    verified := Proof.EcKey.Compressed.RISCV64.Secp256k1.decompress_verified hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.publicKeySecp256k1
     verified := Proof.Ecdh.RISCV64.Secp256k1.pk_verified hasLaw.law }]

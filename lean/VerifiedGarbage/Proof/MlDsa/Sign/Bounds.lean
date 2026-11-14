@@ -32,9 +32,9 @@ theorem ifn {α : Sort _} {p : Prop} [Decidable p] (h : ¬ p) (a b : α) : (if p
 /-- The first `d` bytes of a longer output. -/
 theorem squeeze_take {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S : Spec.Sha3.State) {d d' : Nat}
     (h : d ≤ d') : (squeeze rate S d').take d = squeeze rate S d := by
-  refine List.ext_getElem (by simp [length_squeeze hr hr']; omega) fun i h₁ h₂ => ?_
+  refine List.ext_getElem (by simp [length_squeeze hr hr']; omega_using [h]) fun i h₁ h₂ => ?_
   rw [length_squeeze hr hr'] at h₂
-  rw [List.getElem_take, squeeze_getElem hr hr' _ h₂, squeeze_getElem hr hr' _ (by omega)]
+  rw [List.getElem_take, squeeze_getElem hr hr' _ h₂, squeeze_getElem hr hr' _ (by omega_using [h, h₂])]
 
 theorem H_length (s : List Byte) (d : Nat) : (H s d).length = d := length_squeeze (by decide) (by decide) _ _
 
@@ -112,9 +112,9 @@ theorem sampleInBall_mono {τ b b' : Nat} (hb : b ≤ b') {ρ : List Byte} {x : 
   unfold sampleInBall at h ⊢
   have hl : ¬ (H ρ b).length < 8 := fun hl => by rw [ifp hl] at h; cases h
   rw [ifn hl] at h
-  have hl' : ¬ (H ρ b').length < 8 := by rw [H_length] at hl ⊢; omega
-  rw [ifn hl', H_extend ρ hb, List.take_append_of_le_length (by omega),
-    List.drop_append_of_le_length (by omega)]
+  have hl' : ¬ (H ρ b').length < 8 := by rw [H_length] at hl ⊢; omega_using [hb, hl]
+  rw [ifn hl', H_extend ρ hb, List.take_append_of_le_length (by omega_using [hl]),
+    List.drop_append_of_le_length (by omega_using [hl])]
   exact ballLoop_append τ _ _ _ _ _ _ h
 
 /-! ## `ExpandA` -/

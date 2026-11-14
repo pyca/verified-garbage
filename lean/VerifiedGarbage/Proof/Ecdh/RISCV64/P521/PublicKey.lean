@@ -59,7 +59,7 @@ theorem sep_at {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint �
     {off k : Nat} (hk : off + k ≤ n) :
     ∀ i < k, ¬ (⟨base, 8192⟩ : Region).Contains (p + BitVec.ofNat 64 off + BitVec.ofNat 64 i) 1 := fun i hi => by
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact out_of_disj hd hn (by omega)
+  exact out_of_disj hd hn (by omega_using [hk, hi])
 
 theorem byte_eq (b : Bool) : (BitVec.ofNat 64 4 &&& maskOf b).setWidth 8 = if b then 4 else 0 := by
   cases b <;> decide
@@ -80,11 +80,11 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
       s'.gpr .s0 = word s.mem base 0 ∧ s'.gpr .s1 = word s.mem base 8 ∧ s'.gpr .s2 = word s.mem base 16 ∧
       s'.gpr .ra = word s.mem base 24 ∧ s'.gpr .s3 = word s.mem base 32 ∧
       (∀ r ∈ preserved, r ≠ .s0 → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
-  have sl8 : ∀ i, p521.sl i % 8 = 0 := fun i => by rw [sl_eq]; omega
-  have sl32 : ∀ {i}, i < 41 → p521.sl i + 8 * ((66 + 7) / 8) ≤ 4096 := fun hi => by rw [sl_eq]; omega
+  have sl8 : ∀ i, p521.sl i % 8 = 0 := fun i => by rw [sl_eq]; omega_using []
+  have sl32 : ∀ {i}, i < 41 → p521.sl i + 8 * ((66 + 7) / 8) ≤ 4096 := fun hi => by rw [sl_eq]; omega_using [hi]
   have ap : ∀ {i}, i < 44 → ∀ w ∈ [((8192 : Nat), (2 ^ 64 : Nat))], p521.sl i + 8 * 9 ≤ w.1 ∨ w.1 + w.2 ≤ p521.sl i :=
-    fun hi w hw => by simp only [List.mem_singleton] at hw; subst hw; left; rw [sl_eq]; omega
-  have fit : ∀ {i}, i < 44 → p521.sl i + 8 * 9 ≤ 2 ^ 64 := fun hi => by rw [sl_eq]; omega
+    fun hi w hw => by simp only [List.mem_singleton] at hw; subst hw; left; rw [sl_eq]; omega_using [hi]
+  have fit : ∀ {i}, i < 44 → p521.sl i + 8 * 9 ≤ 2 ^ 64 := fun hi => by rw [sl_eq]; omega_using [hi]
   -- `04` under the mask.
   rw [pointOut, retCode, restoreCode, show p521.C.len = 66 from rfl, show 1 + 66 = 67 from rfl]
   simp only [List.append_assoc]
@@ -112,8 +112,8 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
   -- `x` and `y` under the mask.
   refine WP.block_append (WP.mono (storeLen_ok _ 66 hw₆ a₆ (q := .s2) (a := p521.sl xo) (off := 1) (by decide)
     (sl8 xo) (sl32 hxo') (by decide)
-    (fun i hi => by rw [q₆, wr₆]; exact hout (1 + i) (by omega))
-    (fun i hi => by rw [q₆]; exact out_of_disj hdis hfit (by omega))) fun s₇ ⟨r₇, m₇⟩ => ?_)
+    (fun i hi => by rw [q₆, wr₆]; exact hout (1 + i) (by omega_using [hi]))
+    (fun i hi => by rw [q₆]; exact out_of_disj hdis hfit (by omega_using [hi]))) fun s₇ ⟨r₇, m₇⟩ => ?_)
   have hw₇ := hw₆.of_rest r₇
   have q₇ : s₇.gpr .s2 = out := by rw [r₇.gpr _ (by decide), q₆]
   have a₇ : s₇.gpr .a7 = maskOf B := by rw [r₇.gpr _ (by decide), a₆]
@@ -125,8 +125,8 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
       (by simpa [VG.Proof.Weierstrass.length_toBytes] using hi)
   refine WP.block_append (WP.mono (storeLen_ok _ 66 hw₇ a₇ (q := .s2) (a := p521.sl yo) (off := 67) (by decide)
     (sl8 yo) (sl32 hyo') (by decide)
-    (fun i hi => by rw [q₇, r₇.wr, wr₆]; exact hout (67 + i) (by omega))
-    (fun i hi => by rw [q₇]; exact out_of_disj hdis hfit (by omega))) fun s₈ ⟨r₈, m₈⟩ => ?_)
+    (fun i hi => by rw [q₇, r₇.wr, wr₆]; exact hout (67 + i) (by omega_using [hi]))
+    (fun i hi => by rw [q₇]; exact out_of_disj hdis hfit (by omega_using [hi]))) fun s₈ ⟨r₈, m₈⟩ => ?_)
   have hw₈ := hw₇.of_rest r₈
   have yo₇ : wordsVal s₇.mem base (p521.sl yo) 9 = sv base s yo := by
     rw [U₇.wordsVal (ap hyo) (fit hyo)]; exact U₆.wordsVal (ap hyo) (fit hyo)
@@ -137,7 +137,7 @@ theorem pointOut_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gp
       (by simpa [VG.Proof.Weierstrass.length_toBytes] using hi)
   have U₃₈ := (U₆.trans U₇).trans U₈
   have wd : ∀ d, d + 8 ≤ 4096 → word s₈.mem base d = word s.mem base d := fun d hd =>
-    U₃₈.word (by simp; omega) (by omega)
+    U₃₈.word (by simp; omega_using [hd]) (by omega_using [hd])
   have fl₈ : word s₈.mem base FL = maskOf B := by rw [wd FL (by decide), hfl]
   -- The bytes.
   have hX := VG.Proof.Weierstrass.length_toBytes 66 (if B = true then sv base s xo else 0)
@@ -233,7 +233,7 @@ theorem finPk_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .
     rw [m₁, hF, g₁, not_mask, maskOf_and]
   have a₃ : s₃.gpr .a7 = maskOf B := by rw [u₃.gpr, sl_FLAG]; exact hb
   have wv₃ : ∀ i, i < 44 → i ≠ FLAG → wordsVal s₃.mem base (p521.sl i) 9 = sv base s i := fun i hi hf => by
-    rw [u₃.mem, O₂.wordsVal (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega)]
+    rw [u₃.mem, O₂.wordsVal (by rw [sl_eq, FL]; omega_using [hi]) (by rw [sl_eq]; omega_using [hi])]
     show wordsVal (s₁.write _ _).mem _ _ _ = _
     simp only [State.write]; rw [m₁]
   have q₃ : s₃.gpr .s2 = out := by
@@ -243,7 +243,7 @@ theorem finPk_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .
     (xo := XO) (yo := YO) (by decide) (by decide) (by decide) (by decide))
     fun s' ⟨a0', b', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
   have w₃ : ∀ d, d + 8 ≤ FL ∨ FL + 8 ≤ d → d + 8 ≤ 2048 → word s₃.mem base d = word s.mem base d := fun d h hd => by
-    rw [u₃.mem, O₂.word h (by omega)]
+    rw [u₃.mem, O₂.word h (by omega_using [hd])]
     show word (s₁.write _ _).mem _ _ = _
     simp only [State.write]; rw [m₁]
   have ex : sv base s₃ XO = sv base s XO := wv₃ XO (by decide) (by decide)
@@ -280,7 +280,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
   rw [show p521.C.len = 66 from rfl]
   refine WP.block_append (WP.mono (loadLen_ok 66 hw₁ (o := p521.sl K) (p := .a1) (off := 0) (L := 66) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [a1]; exact rd1)
-    (fun i hi => by rw [a1]; exact out_of_disj hdd hfd (by omega)))
+    (fun i hi => by rw [a1]; exact out_of_disj hdd hfd (by omega_using [hi])))
     fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
   simp only [Nat.reduceAdd, Nat.reduceDiv] at O₂ e₂
   have hw₂ := hw₁.of_rest r₂
@@ -348,14 +348,14 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
   have k₆ : sv base s₆ K = ofBytes (bytesAt s.mem (s.gpr .a1) 66) := by
     show wordsVal _ _ _ _ = _
     rw [sv_unch (O₃.trans U₄₆) K (by decide), e₂, a1, BitVec.add_zero,
-      bytesAt_unch U₁ (by decide) (by simpa using sep_at hdd hfd (off := 0) (k := 66) (by omega))]
+      bytesAt_unch U₁ (by decide) (by simpa using sep_at hdd hfd (off := 0) (k := 66) (by omega_using []))]
   have fl₈ : word s₈.mem base FL = maskOf ((true && decide (ofBytes (bytesAt s.mem (s.gpr .a1) 66) < W.n)) &&
       !decide (ofBytes (bytesAt s.mem (s.gpr .a1) 66) = 0)) := by
     rw [U₈.word (by decide) (by decide), f₇, U₄₆.word (by decide) (by decide), fl₃, k₆, maskOf_and, maskOf_and]
   refine WP.mono (finPk_ok hw₈ h2₈ hfo (fun i hi => by
       rw [wr₈, hwr]
-      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 133) (by omega)
-        (by omega)⟩) hod fl₈)
+      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 133) (by omega_using [hi])
+        (by omega_using [hi])⟩) hod fl₈)
     fun s' ⟨a0', bytes', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
   -- The registers.
   refine ⟨⟨fun r hr => ?_, by rw [sp', K₈.sp, Kc₇.sp, r₆.sp, r₅.sp, r₄.sp, u₃.sp, u₂b.sp, u₂a.sp, r₂.sp, sp₁],
@@ -389,7 +389,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
       rw [rx₆, ry₆, toM_mont unit, toM_mont unit]; rfl
     rw [eG] at hR
     have hn : decide (D < W.n) = true := decide_eq_true hd.2
-    have h0 : decide (D = 0) = false := decide_eq_false (by omega)
+    have h0 : decide (D = 0) = false := decide_eq_false (by omega_using [hd])
     rw [hn, h0] at a0' bytes'
     have hpk' := VG.Proof.EcKey.publicKey_eq hL hR xolt xoeq lt₈ v₈
     rw [ite_eq_left hd] at hpk'
@@ -405,7 +405,7 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
   · rw [publicKey_none hd]
     have hb : ((true && decide (D < W.n)) && !decide (D = 0)) = false := by
       by_cases hn : D < W.n
-      · have : D = 0 := by omega
+      · have : D = 0 := by omega_using [hd, hn]
         simp [this]
       · simp [hn]
     rw [hb] at a0' bytes'

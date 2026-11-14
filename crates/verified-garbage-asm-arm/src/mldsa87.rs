@@ -4367,6 +4367,42 @@ bx lr",
     )
 }
 
+/// ML-DSA-87 signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_mldsa87_sign` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignContract`.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 28448 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `sk` must have been written by `vg_mldsa87_prepare_signing_key` from a private key written by `vg_mldsa87_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu`, `rnd` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the 44 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa87_sign_prepared(sk: *const [u8; 28448], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, lr}}
+ldr r12, [sp, #8]
+mov r4, lr
+movw lr, #4896
+movt lr, #0
+add lr, r0, lr
+push {{r12, lr}}
+bl {vg_mldsa87_sign_with_cache}
+ldr r12, [sp], #8
+mov lr, r4
+ldr r4, [sp], #8
+bx lr",
+        vg_mldsa87_sign_with_cache = sym super::mldsa87::vg_mldsa87_sign_with_cache::vg_mldsa87_sign_with_cache,
+    )
+}
+
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
@@ -4742,7 +4778,7 @@ bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa87_sign_prepared = sym super::mldsa87::vg_mldsa87_sign_prepared::vg_mldsa87_sign_prepared,
+        vg_mldsa87_sign_prepared = sym super::mldsa87::vg_mldsa87_sign_prepared,
     )
 }
 
@@ -4766,6 +4802,38 @@ pub(crate) unsafe extern "C" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *co
 mov r4, lr
 movw r12, #0
 movt r12, #0
+push {{r12, lr}}
+bl {vg_mldsa87_verify_with_cache}
+ldr r12, [sp], #8
+mov lr, r4
+ldr r4, [sp], #8
+bx lr",
+        vg_mldsa87_verify_with_cache = sym super::mldsa87::vg_mldsa87_verify_with_cache::vg_mldsa87_verify_with_cache,
+    )
+}
+
+/// ML-DSA-87 verification of an external 64-byte message representative `*mu` with a prepared public key: `vg_mldsa87_verify` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 10784 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 4627 bytes.
+/// * `scratch` must be valid for reads and writes of 144384 bytes.
+/// * `pk` must have been written by `vg_mldsa87_prepare_verifying_key`, and not changed since.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the 52 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa87_verify_prepared(pk: *const [u8; 10784], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, lr}}
+mov r4, lr
+movw r12, #2592
+movt r12, #0
+add r12, r0, r12
 push {{r12, lr}}
 bl {vg_mldsa87_verify_with_cache}
 ldr r12, [sp], #8
@@ -5141,21 +5209,13 @@ bx lr",
         vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa87_verify_prepared = sym super::mldsa87::vg_mldsa87_verify_prepared::vg_mldsa87_verify_prepared,
+        vg_mldsa87_verify_prepared = sym super::mldsa87::vg_mldsa87_verify_prepared,
     )
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_mldsa87_sign_prepared.rs"]
-pub(crate) mod vg_mldsa87_sign_prepared;
-
-#[rustfmt::skip]
 #[path = "internal/vg_mldsa87_sign_with_cache.rs"]
 pub(crate) mod vg_mldsa87_sign_with_cache;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mldsa87_verify_prepared.rs"]
-pub(crate) mod vg_mldsa87_verify_prepared;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa87_verify_with_cache.rs"]

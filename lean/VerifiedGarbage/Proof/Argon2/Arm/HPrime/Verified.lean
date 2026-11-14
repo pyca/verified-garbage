@@ -52,14 +52,14 @@ theorem agreeS {s₁ s₂ : State} (hp₁ : Pre s₁) (hp₂ : Pre s₂) (q : Sa
     rcases hr with rfl | rfl
     · exact hp₂.arg_out
     · exact hp₂.arg_scr
-  · have : i = 0 := by omega
+  · have : i = 0 := by omega_using [hi]
     subst this; exact q.scr.symm
 
 theorem setup_F0 {s₀ : State} (hp : Pre s₀) : WP isa (.block setup) s₀ (F0 s₀) := by
   have hif := hp.in_fits
   refine (setup_ok hp).mono fun t ⟨b, o, f⟩ => ⟨b, o, ?_⟩
   exact Proof.Blake2.bytesAt_congr fun i hi => f.bytes (R := inR s₀) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega) hi
+    simp only [List.mem_singleton] at hr; subst hr; exact hp.in_scr) (by simp; omega_using [hif]) hi
 
 theorem setup_rel {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (q : Same s₀ s₀') :
     RelCT isa (fun t₁ t₂ => t₁ = s₀ ∧ t₂ = s₀') (.block setup) fun t₁ t₂ => F0 s₀ t₁ ∧ F0 s₀' t₂ :=
@@ -161,7 +161,7 @@ theorem first_ct : RelCT isa (fun t₁ t₂ => F0 s₀ t₁ ∧ F0 s₀' t₂) f
           exact ⟨c, by rw [e₂, nE]⟩⟩) fun _ _ h => h)
     (fun _ h => first_init hp h) (fun _ h => first_init hp' h)) ?_
   refine RelCT.seq (rel_wp ((absorbFixed_rel (B := scr s₀) (SP := sp₀ s₀) (offset := 832) (size := 4)
-      (by decide) (by decide) (by omega) (by decide) (by decide)
+      (by decide) (by decide) (by omega_using [hs]) (by decide) (by decide)
       (hp.stk_scr.sub_right (Offset.sub_base _ (by decide))) fixed_check_832).mono
       (fun _ _ ⟨⟨f₁, _⟩, ⟨f₂, _⟩⟩ =>
         ⟨⟨f₁.body.ctx hp, pfx_cov hp f₁.body⟩, by

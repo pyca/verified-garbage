@@ -42,15 +42,15 @@ theorem keyLoad_ok {s : State} {sc : Addr} {off : Nat} (hr : (⟨sc, 240⟩ : Re
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
       (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) := by
   have hin : ∀ d, d + 4 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .a0 + BitVec.ofNat 64 d) 4 :=
-    fun d hd => ⟨_, hr, by rw [hb, Offset.add_add]; exact Offset.contains_base sc (by omega) (by omega)⟩
+    fun d hd => ⟨_, hr, by rw [hb, Offset.add_add]; exact Offset.contains_base sc (by omega_using [hoff, hd]) (by omega_using [hoff, hd])⟩
   simp only [keyLoad]
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (Bytes.loadLE64_ok (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (hin 0 (by omega)) (hin 4 (by omega))) fun s₁ ⟨h0, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
+    (by decide) (by decide) (hin 0 (by omega_using [])) (hin 4 (by omega_using []))) fun s₁ ⟨h0, g₁, m₁, rd₁, wr₁, sp₁⟩ => ?_
   have a₁ : s₁.gpr .a0 = s.gpr .a0 := g₁ _ (by decide) (by decide) (by decide)
   refine WP.mono (Bytes.loadLE64_ok (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [a₁, rd₁, wr₁]; exact hin 8 (by omega))
-    (by rw [a₁, rd₁, wr₁]; exact hin 12 (by omega))) fun s₂ ⟨h4, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
+    (by decide) (by decide) (by rw [a₁, rd₁, wr₁]; exact hin 8 (by omega_using []))
+    (by rw [a₁, rd₁, wr₁]; exact hin 12 (by omega_using []))) fun s₂ ⟨h4, g₂, m₂, rd₂, wr₂, sp₂⟩ => ?_
   have q0 : s₂.gpr (q 0) = s.mem.readW (wordAddr (s.gpr .a0) 0) 64 := by
     rw [g₂ _ (by decide) (by decide) (by decide), h0]
   have q4 : s₂.gpr (q 4) = s.mem.readW (wordAddr (s.gpr .a0) 1) 64 := by
@@ -67,7 +67,7 @@ theorem keyLoad_ok {s : State} {sc : Addr} {off : Nat} (hr : (⟨sc, 240⟩ : Re
   refine ⟨fun b hb => ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
   · have e4' : s₅.gpr (q 4) = s₂.gpr (q 4) := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide)]
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
     · exact ⟨k0.trans q0, k4.trans q4⟩
     · refine ⟨?_, ?_⟩
       · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
@@ -121,7 +121,7 @@ theorem keyStore_ok {s : State} {X : Addr} (hs : Scr s X 2048) {off : Nat}
     { slotIn := fun k hk => ⟨_, hs.wr, by
         show (⟨X, 2048⟩ : Region).Contains (wordAddr (s.gpr .a2) k) 8
         rw [wordAddr, hb, Offset.add_add]
-        exact hs.contains (by simp only [storeCfg] at hk; omega) (by decide)⟩
+        exact hs.contains (by simp only [storeCfg] at hk; omega_using [hoff, hk]) (by decide)⟩
       extIn := fun k hk => by simp [storeCfg] at hk
       baseAl := fun _ => hal
       extAl := fun _ => hal
@@ -235,8 +235,8 @@ theorem frame_regions {s₀ : State} {X b : Addr} (hs : Scr s₀ X 2048) (hb : s
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   have := pad_lt X
   rcases hr with rfl | rfl
-  · rw [← hb, hs.base]; exact Offset.sub_base X (by omega)
-  · rw [← hb]; exact hs.sub (by omega)
+  · rw [← hb, hs.base]; exact Offset.sub_base X (by omega_using [this])
+  · rw [← hb]; exact hs.sub (by omega_using [])
 
 theorem wordAddr_off (b : Addr) (x k : Nat) : wordAddr (b + BitVec.ofNat 64 x) k = b + BitVec.ofNat 64 (x + 8 * k) := by
   rw [wordAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -272,7 +272,7 @@ theorem masks_kept {m₀ m : Mem} {b : Addr} (hf : Frame (kRegions b) m₀ m) (h
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact Offset.disjoint_base b (by omega) (by omega)
-  · exact Offset.disjoint b (by omega) (by omega) (by omega)
+  · exact Offset.disjoint b (by omega) (by omega) (by omega_using [])
 
 /-- The round key as a state. -/
 def rkv (w : List Byte) (j : Nat) : Spec.Aes.State := Vector.ofFn fun i => (roundKey w j).getD i 0

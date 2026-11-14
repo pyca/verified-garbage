@@ -41,13 +41,13 @@ theorem countLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State
     · rw [decide_eq_true hj, bne_iff_ne, ne_eq]
       intro he
       have := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn64, h2])] at this
       exact hj this
   by_cases hj : j - 1 = 0
   · refine Or.inl ⟨?_, hQ s' (by rw [hj] at hi'; exact hi')⟩
     show some (s'.read .x .x19 != 0) = some false
     rw [hx, hj]; rfl
-  · refine Or.inr ⟨?_, j - 1, by omega, by omega, by omega, hi'⟩
+  · refine Or.inr ⟨?_, j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
     show some (s'.read .x .x19 != 0) = some true
     rw [hx, decide_eq_true hj]
 
@@ -63,8 +63,8 @@ theorem decCounter_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   · apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)]
-    omega
+    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega_using [hj'] : j - 1 < 2 ^ 64)]
+    omega_using [hj, hj']
   · simp only [List.mem_singleton] at hr
     exact RegUpd.gpr_write_of_ne _ _ _ hr
 
@@ -79,7 +79,7 @@ theorem setCounter_ok (s : State) {j : Nat} (hj : j < 2 ^ 16) :
   · apply BitVec.eq_of_toNat_eq
     simp only [Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.setWidth_eq, BitVec.toNat_setWidth,
       BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   · simp only [List.mem_singleton] at hr
     exact RegUpd.gpr_write_of_ne _ _ _ hr
 

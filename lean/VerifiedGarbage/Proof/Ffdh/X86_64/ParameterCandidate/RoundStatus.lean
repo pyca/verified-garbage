@@ -35,11 +35,11 @@ theorem roundPass_ok {s : State} {B O : Addr} {Z i checks : Nat}
     (hi32 : i < 2 ^ 31) (hc32 : checks < 2 ^ 31) :
     WP isa (.block roundPass) s fun t => t.mem = passMem s.mem O i checks ∧
       Keep [.r9, .rcx, .rax, .rdx] s t := by
-  have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off O (8 * j)) 8 := fun j hj => ho.ld (by omega)
-  have hwr : ∀ j < 32, InRegions s.wr (off O (8 * j)) 8 := fun j hj => ho.st (by omega)
+  have hrd : ∀ j < 32, InRegions (s.rd ++ s.wr) (off O (8 * j)) 8 := fun j hj => ho.ld (by omega_using [hj])
+  have hwr : ∀ j < 32, InRegions s.wr (off O (8 * j)) 8 := fun j hj => ho.st (by omega_using [hj])
   have hcf : decide ((BitVec.ofNat 64 (i + 1)).toNat < (BitVec.ofNat 64 checks).toNat) = decide (i + 1 < checks) := by
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i + 1 < 2 ^ 64),
-      Nat.mod_eq_of_lt (by omega : checks < 2 ^ 64)]
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi32] : i + 1 < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega_using [hc32] : checks < 2 ^ 64)]
   have hstatus : (if !decide (i + 1 < checks) then (1#32).setWidth 64 else (4#32).setWidth 64) =
       BitVec.ofNat 64 (passStatus i checks) := by
     by_cases h : i + 1 < checks <;> simp [passStatus, h]

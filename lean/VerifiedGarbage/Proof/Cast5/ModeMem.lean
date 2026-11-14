@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Cast5.Tables
 public import VerifiedGarbage.Spec.Cast5
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CAST5's subkeys and table under writes elsewhere, on any target
@@ -26,7 +27,7 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
   intro i hi
   simp only [Spec.Cast5.scheduleAt, Vector.getElem_ofFn]
   have hb := fun j (hj : j < 128) => hf.bytes (R := ⟨p, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) hj
-  rw [hb _ (by omega), hb _ (by omega), hb _ (by omega), hb _ (by omega)]
+  rw [hb _ (by omega_using [hi]), hb _ (by omega_using [hi]), hb _ (by omega_using [hi]), hb _ (by omega_using [hi])]
 
 theorem s1234_length : Impl.Cast5.s1234.length = 512 := table_length _ _ _ _
 
@@ -35,6 +36,6 @@ theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} (h : Held m T Impl
   intro i hi
   rw [s1234_length] at hi
   rw [← h i (by rw [s1234_length]; exact hi)]
-  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)
 
 end VG.Proof.Cast5

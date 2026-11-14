@@ -29,8 +29,8 @@ theorem generatorLoadPair_ok {s : State} {B pp hp : Addr} {Z w : Nat} {pb hb : L
     (by decide : 17 < 32) hptr hlen sp hp1 hpw) fun u ⟨hu, up, fu, ku⟩ => ?_)
   have uh : ∀ d, d + 8 ≤ 256 → word u.mem B d = word s.mem B d := by
     intro d hd
-    exact fu.word_eq (by simp only [List.mem_singleton]; rintro r rfl; simp [slot, hdrBytes]; omega)
-      (by have := h.scr.nowrap; have := h.h256; omega)
+    exact fu.word_eq (by simp only [List.mem_singleton]; rintro r rfl; simp [slot, hdrBytes]; omega_using [hd])
+      (by have := h.scr.nowrap; have := h.h256; omega_using [hd])
   have sxu := sx.congrK (InScr.of_frm fu (by
     intro r hr; rcases List.mem_singleton.mp hr with rfl; exact h.sl (by decide))) ku
   refine WP.mono (loadCandidateArray_ok hu (by decide : 1 < 16) (by decide : 18 < 32)
@@ -38,8 +38,8 @@ theorem generatorLoadPair_ok {s : State} {B pp hp : Addr} {Z w : Nat} {pb hb : L
     (by rw [uh 152 (by decide)]; exact xlen) sxu hx1 hxw) fun v ⟨hv, vx, fv, kv⟩ => ?_
   have vp : wv v.mem B (slot w 0) w = Spec.Rsa.os2ip pb := by
     rw [fv.wv_eq (by
-      simp only [List.mem_singleton]; rintro r rfl; left; simp only [slot, hdrBytes]; omega)
-      (by have := h.sl (by decide : 0 < 16); have := h.scr.nowrap; omega), up]
+      simp only [List.mem_singleton]; rintro r rfl; left; simp only [slot, hdrBytes]; omega_using [])
+      (by have := h.sl (by decide : 0 < 16); have := h.scr.nowrap; omega_arith), up]
   exact ⟨hv, vp, vx, (fu.mono (by simp)).trans (fv.mono (by simp)), (ku.trans kv).mono (by decide)⟩
 
 

@@ -1,15 +1,113 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Contract
+public import VerifiedGarbage.Proof.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Loop
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc2.AArch64.Lit
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
+
+/-! ### `Rc2.AArch64.Cbc.Contract`, which only this module used -/
+
+section
+
+/-! # CBC's function-level contract -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc2.AArch64.Cbc
+
+open VG VG.AArch64
+
+def contract (d : Spec.Rc2.Direction) : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .x0, 128⟩
+    let iv : Region := ⟨s.gpr .x1, 8⟩
+    let data : Region := ⟨s.gpr .x2, 8 * (s.gpr .x3).toNat⟩
+    let buf : Region := ⟨s.gpr .x4, 512⟩
+    s.rd = [key] ∧ s.wr = [iv, data, buf] ∧ key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint buf ∧
+      iv.Disjoint data ∧ iv.Disjoint buf ∧ data.Disjoint buf ∧
+      (s.gpr .x2).toNat + 8 * (s.gpr .x3).toNat ≤ 2 ^ 64
+  post s s' :=
+    let out := Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) d
+      (Spec.Rc2.blockAt s.mem (s.gpr .x1)) (Spec.Rc2.blocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
+    Spec.Rc2.blocksAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat = out.1 ∧
+      Spec.Rc2.blockAt s'.mem (s.gpr .x1) = out.2
+  pub := PublicRegs [.x0, .x1, .x2, .x3, .x4]
+
+end VG.Proof.Rc2.AArch64.Cbc
+
+end
+
+end
+
+/-! ### `Rc2.AArch64.Cbc.IO`, which only this module used -/
+
+section
+
+/-! # CBC register saves, setup, and restoration -/
+
+@[expose] public section
+
+namespace VG.Proof.Rc2.AArch64.Cbc
+
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc2.AArch64
+
+/-- The registers the code saves in `buf`, and where. -/
+abbrev saved : List (Reg × Nat) := [(.x23, 264), (.x24, 272), (.x30, 280)]
+
+/-- The memory after the saves. -/
+abbrev savedMem (s : State) : Mem := Spill.saveMem s.mem (s.gpr .x4) s.gpr saved
+
+theorem save_eq : Impl.Rc2.AArch64.Cbc.save = Spill.saveCode .x4 saved := rfl
+
+theorem restore_eq : Impl.Rc2.AArch64.Cbc.restore = Spill.restoreCode .x2 saved := rfl
+
+theorem savedMem_frame (s : State) : Frame [⟨s.gpr .x4, 512⟩] s.mem (savedMem s) :=
+  Spill.saveMem_frame_base (by decide) (by decide) _ _ _
+
+theorem setup_ok (s : State) :
+    ∃ s', runBlock isa Impl.Rc2.AArch64.Cbc.setup s = some s' ∧
+      s'.gpr .x23 = s.gpr .x1 ∧ s'.gpr .x24 = s.gpr .x3 ∧
+      s'.gpr .x1 = s.gpr .x2 ∧ s'.gpr .x2 = s.gpr .x4 ∧
+      zeroCount s' = some (s.gpr .x3 == 0) ∧ Keep [.x23, .x24, .x1, .x2] s s' := by
+  refine ⟨_, by
+    simp only [Impl.Rc2.AArch64.Cbc.setup, rr, runBlock_cons, exec]
+    rfl, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp [gpr_write, State.read, BitVec.add_zero, BitVec.setWidth_eq]
+  · simp [gpr_write, State.read, BitVec.add_zero, BitVec.setWidth_eq]
+  · simp [gpr_write, State.read, BitVec.add_zero, BitVec.setWidth_eq]
+  · simp [gpr_write, State.read, BitVec.add_zero, BitVec.setWidth_eq]
+  · unfold zeroCount
+    simp [gpr_write, State.read, BitVec.add_zero, BitVec.setWidth_eq]
+  · constructor
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [gpr_write, BitVec.setWidth_eq, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+    · simp only [mem_write]
+    · simp only [rd_write]
+    · simp only [wr_write]
+
+end VG.Proof.Rc2.AArch64.Cbc
+
+end
+
+end
+
 
 /-! # Verified RC2-CBC encryption and decryption -/
 
@@ -31,7 +129,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
     fit⟩ := hs
   have writes (i : Nat) (hi : i + 8 ≤ 512) : InRegions s.wr (s.gpr .x4 + BitVec.ofNat 64 i) 8 := by
     rw [hwr]
-    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ hi (by omega_using [hi])⟩
   apply WP.seq
   rw [save_eq]
   refine Spill.save_ok (by decide) (fun p hp => writes p.2 (by revert p; decide)) ?_
@@ -59,7 +157,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
     · simpa only [ivR, bufR, iv₂, buf₂] using ivBuf
     · simpa only [dataR, bufR, data₂, buf₂] using dataBuf
   apply WP.seq
-  apply WP.mono (hmid s₂ (s.gpr .x3).toNat (by omega) hp₂ (by simpa using count₂))
+  apply WP.mono (hmid s₂ (s.gpr .x3).toNat (by omega_using [fit]) hp₂ (by simpa using count₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂
   have wr₃ := h₃.wr.trans wr₂

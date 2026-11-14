@@ -55,7 +55,7 @@ theorem applyWindow_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitV
   refine WP.seq (WP.mono (test_ok hc hn) fun u ⟨⟨h3, hm⟩, hk⟩ => ?_)
   have hf : Frm P (crtWinRanges wx) s.mem u.mem := hm ▸ Frm.refl _ _ _
   have hu := hc.of_win hf hk.wr (hk.gpr .x0 (by decide))
-  have hz := eval_zero_x3 h3 (show v < 2 ^ 64 by omega)
+  have hz := eval_zero_x3 h3 (show v < 2 ^ 64 by omega_using [hv])
   by_cases hzero : v = 0
   · subst v
     refine WP.ite true (by rw [hz]; rfl) (fun _ => WP.block_nil ?_) (by simp)
@@ -68,9 +68,9 @@ theorem applyWindow_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitV
     have htsep := slot_sep (w := wx) (show aY ≠ Crt.aT by decide)
     have hsz := hc.scrT.nowrap
     have hyEq : wv t.mem P (slot wx aY) wx = wv u.mem P (slot wx aY) wx :=
-      hout.wv (by omega) (by have := slot_le (w := wx) (show aY < 8 by decide); omega)
+      hout.wv (by omega_using [htsep]) (by have := slot_le (w := wx) (show aY < 8 by decide); omega_using [hsz, this])
     have htframe : Frm P (crtWinRanges wx) u.mem t.mem :=
-      Frm.of_outside (hout.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (by omega) (by omega))
+      Frm.of_outside (hout.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (by omega_using []) (by omega_using []))
         (by simp [crtWinRanges])
     refine WP.mono (crtMulT_ok M (Q := Q) (x := x) (E := E) (v := v) ht hw hw' hR
       (by rw [htval, hm]; exact htab.lt _ hv)
@@ -78,8 +78,8 @@ theorem applyWindow_ok (M : Mont) {s : State} {P : Addr} {wx : Nat} {minv : BitV
       (fun hq => by rw [htval, hm]; exact htab.val hq _ hv))
       fun z ⟨hzctx, hzlt, hzval, hzhdr, hzf, hzk⟩ => ?_
     exact ⟨hzctx, hzlt, hzval, fun k hki => by
-      rw [hzhdr k hki, hout.word (by have := hdr_lt_slot wx Crt.aT hki; omega)
-        (by have := hdr_lt_slot wx 8 hki; omega), hm],
+      rw [hzhdr k hki, hout.word (by have := hdr_lt_slot wx Crt.aT hki; omega_using [this])
+        (by have := hdr_lt_slot wx 8 hki; omega_using [hki]), hm],
       (hf.trans htframe).trans hzf, ((hk.trans hkt).trans hzk).mono (by decide)⟩
 
 theorem window_eq (mul : Nat → Nat → Nat → Prog isa) : window mul =
@@ -135,7 +135,7 @@ theorem pubWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
   have hv16 : V / 16 % 16 < 16 := Nat.mod_lt _ (by decide)
   refine WP.seq (WP.mono (applyWindow_ok M (E := 16 * E) hc₅ htab₅ hw hw' hv16 hR
     (hY₅ ▸ hY₄)
-    (fun hq => by rw [hY₅, hYv₄ hq, show 2 * (2 * (2 * (2 * E))) = 16 * E by omega])
+    (fun hq => by rw [hY₅, hYv₄ hq, show 2 * (2 * (2 * (2 * E))) = 16 * E by omega_using []])
     (by rw [hm₅, word_writeW_self])) fun t₇ ⟨hc₇, hY₇, hYv₇, hh₇, f₇, k₇⟩ => ?_)
   -- The count.
   refine WP.mono (crtBitEnd_ok hc₇ (by

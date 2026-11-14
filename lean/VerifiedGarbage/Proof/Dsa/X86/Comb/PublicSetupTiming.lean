@@ -63,8 +63,8 @@ theorem publicSetup_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m : Nat
     · intro s t ⟨S,T⟩
       refine ⟨S.scr,T.scr,?_⟩
       change w32 s.mem base (slot n 0+4*(2*n-1))=w32 t.mem base (slot n 0+4*(2*n-1))
-      rw [←VG.Proof.Mont.X86.Comb.val32_word (by omega : 2*n-1<2*n),
-        ←VG.Proof.Mont.X86.Comb.val32_word (by omega : 2*n-1<2*n),
+      rw [←VG.Proof.Mont.X86.Comb.val32_word (by omega_using [shape] : 2*n-1<2*n),
+        ←VG.Proof.Mont.X86.Comb.val32_word (by omega_using [shape] : 2*n-1<2*n),
         ←wordsVal_eq_val32,←wordsVal_eq_val32,
         show wordsVal s.mem base (slot n 0) n=m from S.modulus.val,
         show wordsVal t.mem base (slot n 0) n=m from T.modulus.val]

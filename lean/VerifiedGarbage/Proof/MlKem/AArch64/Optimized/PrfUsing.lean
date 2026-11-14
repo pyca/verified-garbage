@@ -46,7 +46,7 @@ theorem prfCbd_using_ok (hash : Prog isa) (valid : PrfHashValid hash) {s₀ : St
         rw [List.mem_singleton.mp hr]
         exact sdisj hp (by kom) (by kom) (by decide)) (by decide), hr]
     refine congrArg (rv ++ ·) (bytesAt_eq rfl fun k hk' => ?_)
-    have : k = 0 := by omega
+    have : k = 0 := by omega_using [hk']
     subst this
     rw [ptr_zero, ptr_add, m₂, writeW8_apply, ite_eq_left rfl, e₁]
     exact sfx8 hN

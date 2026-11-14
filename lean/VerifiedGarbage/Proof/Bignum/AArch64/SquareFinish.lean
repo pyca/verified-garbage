@@ -23,8 +23,8 @@ theorem finishBases_ok {s : State} {B : Addr} {Z w o : Nat} {minv : BitVec 64}
       (t.gpr .x5 = off B (slot w o) ∧ t.gpr .x6 = off B (slot w aAcc) ∧ t.mem = s.mem) ∧
       Keep [.x5, .x6] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8*i)) 8 :=
-    fun i hi => hs.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have so : sArr o < 32 := by unfold sArr; omega
+    fun i hi => hs.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
+  have so : sArr o < 32 := by unfold sArr; omega_using [ho]
   refine WP.keep [.x5, .x6] ?_ rfl rfl rfl
   unfold VG.Impl.Bignum.AArch64.Square.finishBases
   brun [h0, hdr_enc so, hl _ so, hl _ (show sArr aAcc < 32 by decide),
@@ -43,23 +43,23 @@ theorem finish_ok {s : State} {B : Addr} {Z w o : Nat}
       Arrays B w [aAcc, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have sl : ∀ j < 8, slot w j+8*(w+2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
-  have sepAT : slot w aAcc+8*(w+2) = slot w aTmp := by unfold slot aAcc aTmp; omega
-  have sepN : slot w aN+8*(w+2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
+  have sepAT : slot w aAcc+8*(w+2) = slot w aTmp := by unfold slot aAcc aTmp; omega_using []
+  have sepN : slot w aN+8*(w+2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
   have soA := slot_sep (w := w) ho1
   have soT := slot_sep (w := w) ho2
   refine WP.seq (WP.mono (subMod_ok hs h8 h10 h6 h12 h7 hw hw'
-    (by have := sl aTmp (by decide); omega) (by have := sl aN (by decide); omega)
-    (by have := sl aAcc (by decide); omega) (by omega) (by omega))
+    (by have := sl aTmp (by decide); omega_using [this]) (by have := sl aN (by decide); omega_using [this])
+    (by have := sl aAcc (by decide); omega_using [this]) (by omega_using [sepAT]) (by omega_using [sepN]))
     fun u ⟨c, hcu, hD, hou, ku⟩ => ?_)
   have u8 := (ku.gpr .x8 (by decide)).trans h8
   have u6 := (ku.gpr .x6 (by decide)).trans h6
   have u5 := (ku.gpr .x5 (by decide)).trans h5
   have u12 := (ku.gpr .x12 (by decide)).trans h12
   refine WP.mono (selectAcc_ok (hs.congr ku.wr) u8 u6 u5 u12 hcu hw hw'
-    (by have := sl aTmp (by decide); omega) (by have := sl aAcc (by decide); omega)
-    (by have := sl o ho; omega) (by omega) (by omega)) fun t ⟨hv, hot, kt⟩ => ?_
+    (by have := sl aTmp (by decide); omega_using [this]) (by have := sl aAcc (by decide); omega_using [this])
+    (by have := sl o ho; omega_using [this]) (by omega_using [soT]) (by omega_using [soA])) fun t ⟨hv, hot, kt⟩ => ?_
   have accU : wv u.mem B (slot w aTmp) w = wv s.mem B (slot w aTmp) w :=
-    hou.wv (by omega) (by have := sl aTmp (by decide); omega)
+    hou.wv (by omega_using [sepAT]) (by have := sl aTmp (by decide); omega_using [hn, this])
   have hres : wv t.mem B (slot w o) w =
       wv s.mem B (slot w aTmp) (w+2) % wv s.mem B (slot w aN) w := by
     rw [hv, accU, wv_top2]
@@ -68,15 +68,15 @@ theorem finish_ok {s : State} {B : Addr} {Z w o : Nat}
       (Tw1 := (word s.mem B (slot w aTmp+8*w+8)).toNat)
       (D := wv u.mem B (slot w aAcc) w) (m := wv s.mem B (slot w aN) w)
       (R := 2 ^ (64*w)) (c := c.toNat)
-      (by have := wv_lt s.mem B (slot w aN) w; omega) (wv_lt _ _ _ _)
+      (by have := wv_lt s.mem B (slot w aN) w; omega_using [this]) (wv_lt _ _ _ _)
       (Bool.toNat_le c) (wv_lt _ _ _ _) (by rw [← wv_top2]; exact hTlt) hD
     rw [← eq]
     by_cases h : (word s.mem B (slot w aTmp+8*w)).toNat < c.toNat <;> simp [h]
   refine ⟨hres, ?_, (ku.trans kt).mono (by decide)⟩
   have au : Arrays B w [aAcc, o] s.mem u.mem :=
-    Arrays.of_outside (j := aAcc) (by simp) hou (Nat.le_refl _) (by omega)
+    Arrays.of_outside (j := aAcc) (by simp) hou (Nat.le_refl _) (by omega_using [])
   have aFinal : Arrays B w [aAcc, o] u.mem t.mem :=
-    Arrays.of_outside (j := o) (by simp) hot (Nat.le_refl _) (by omega)
+    Arrays.of_outside (j := o) (by simp) hot (Nat.le_refl _) (by omega_using [])
   exact au.trans aFinal
 
 end VG.Proof.Bignum.AArch64.Square

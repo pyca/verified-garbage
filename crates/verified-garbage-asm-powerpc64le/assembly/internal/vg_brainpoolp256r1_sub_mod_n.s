@@ -11,86 +11,49 @@ vg_brainpoolp256r1_sub_mod_n:
 	add %r4, %r3, %r4
 	add %r5, %r3, %r5
 	add %r6, %r3, %r6
-	lis %r11, -26808
-	ori %r11, %r11, 22183
-	stw %r11, 3944(%r3)
-	lis %r11, -28642
-	ori %r11, %r11, 3714
-	stw %r11, 3948(%r3)
-	lis %r11, -19103
-	ori %r11, %r11, 42743
-	stw %r11, 3952(%r3)
-	lis %r11, -29639
-	ori %r11, %r11, 31395
-	stw %r11, 3956(%r3)
-	lis %r11, -25213
-	ori %r11, %r11, 36209
-	stw %r11, 3960(%r3)
-	lis %r11, 15974
-	ori %r11, %r11, 2704
-	stw %r11, 3964(%r3)
-	lis %r11, -24082
-	ori %r11, %r11, 43452
-	stw %r11, 3968(%r3)
-	lis %r11, -22021
-	ori %r11, %r11, 22491
-	stw %r11, 3972(%r3)
-	addi %r7, %r3, 3944
 	ld %r11, 0(%r5)
 	ld %r12, 0(%r6)
-	subfc %r11, %r12, %r11
-	std %r11, 3840(%r3)
+	subfc %r7, %r12, %r11
 	ld %r11, 8(%r5)
 	ld %r12, 8(%r6)
-	subfe %r11, %r12, %r11
-	std %r11, 3848(%r3)
+	subfe %r8, %r12, %r11
 	ld %r11, 16(%r5)
 	ld %r12, 16(%r6)
-	subfe %r11, %r12, %r11
-	std %r11, 3856(%r3)
+	subfe %r9, %r12, %r11
 	ld %r11, 24(%r5)
 	ld %r12, 24(%r6)
-	subfe %r11, %r12, %r11
-	std %r11, 3864(%r3)
-	subfe %r10, %r10, %r10
-	ld %r11, 3840(%r3)
-	ld %r12, 0(%r7)
-	addc %r11, %r11, %r12
-	std %r11, 3912(%r3)
-	ld %r11, 3848(%r3)
-	ld %r12, 8(%r7)
-	adde %r11, %r11, %r12
-	std %r11, 3920(%r3)
-	ld %r11, 3856(%r3)
-	ld %r12, 16(%r7)
-	adde %r11, %r11, %r12
-	std %r11, 3928(%r3)
-	ld %r11, 3864(%r3)
-	ld %r12, 24(%r7)
-	adde %r11, %r11, %r12
-	std %r11, 3936(%r3)
-	ld %r11, 3840(%r3)
-	ld %r12, 3912(%r3)
-	xor %r12, %r12, %r11
-	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
-	std %r11, 0(%r4)
-	ld %r11, 3848(%r3)
-	ld %r12, 3920(%r3)
-	xor %r12, %r12, %r11
-	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
-	std %r11, 8(%r4)
-	ld %r11, 3856(%r3)
-	ld %r12, 3928(%r3)
-	xor %r12, %r12, %r11
-	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
-	std %r11, 16(%r4)
-	ld %r11, 3864(%r3)
-	ld %r12, 3936(%r3)
-	xor %r12, %r12, %r11
-	and %r12, %r12, %r10
-	xor %r11, %r11, %r12
-	std %r11, 24(%r4)
+	subfe %r10, %r12, %r11
+	subfe %r11, %r11, %r11
+	lis %r12, -28642
+	ori %r12, %r12, 3714
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 38728
+	ori %r12, %r12, 22183
+	and %r12, %r12, %r11
+	addc %r7, %r7, %r12
+	std %r7, 0(%r4)
+	lis %r12, -29639
+	ori %r12, %r12, 31395
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 46433
+	ori %r12, %r12, 42743
+	and %r12, %r12, %r11
+	adde %r8, %r8, %r12
+	std %r8, 8(%r4)
+	lis %r12, 15974
+	ori %r12, %r12, 2704
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 40323
+	ori %r12, %r12, 36209
+	and %r12, %r12, %r11
+	adde %r9, %r9, %r12
+	std %r9, 16(%r4)
+	lis %r12, -22021
+	ori %r12, %r12, 22491
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 41454
+	ori %r12, %r12, 43452
+	and %r12, %r12, %r11
+	adde %r10, %r10, %r12
+	std %r10, 24(%r4)
 	blr

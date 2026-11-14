@@ -30,7 +30,7 @@ theorem const_ct (a n : Nat) (ha : a<8)
    refine WP.mono (WP.keep [.x9,.x12,.x13] (Q:=fun t =>
     t.gpr .x12=BitVec.ofNat 64 L.w ∧ t.gpr .x13=0#64 ∧ t.mem=s.mem) ?_ rfl rfl rfl) ?_
    · brun [good.x0,hdr_enc (show sW<32 by decide),good.scr.ld (d:=8*sW)
-      (by have := hdr_lt_slot L.w 8 (show sW<32 by decide);omega),good.hdr.hw]
+      (by have := hdr_lt_slot L.w 8 (show sW<32 by decide);omega_using [room, this]),good.hdr.hw]
    · rintro t ⟨⟨count,index,mem⟩,rest⟩
      exact ⟨⟨mi,⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,mem ▸ good.hdr⟩,room⟩,count,index⟩
  · exact two_map (fun L => (L,0)) (fun _ _ h => h) (setWord_ct ha tail)

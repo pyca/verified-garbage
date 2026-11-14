@@ -39,7 +39,7 @@ theorem Inputs.unch {base : Addr} {P Q : Point C} {s t : State} (h : Inputs base
   have hn8 : cfg.n = 6 := rfl
   have en (o : Nat) (hl : o+48 ≤ 8192)
       (hap : ∀ w ∈ arithmeticWork,o+48 ≤ w.1 ∨ w.1+w.2 ≤ o) : num base t o = num base s o :=
-    k.mem.wordsVal hap (by have := h.scr.nowrap; omega)
+    k.mem.wordsVal hap (by have := h.scr.nowrap; omega_using [hn8, hl])
   have ea := en (cfg.sl AP) (by decide) (by decide)
   have eb := en (cfg.sl EXPP) (by decide) (by decide)
   refine ⟨k.scr h.scr,h.mod.unch k.mem (by decide) h.scr.nowrap,?_,?_,?_,?_,?_,?_⟩

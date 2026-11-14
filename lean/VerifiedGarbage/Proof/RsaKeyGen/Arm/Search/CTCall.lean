@@ -60,7 +60,7 @@ theorem call_inputs {p : SearchPublic} {o s a u : State} {used k : Nat} (h : Sea
   · change Spec.Rsa.bytesAt u.mem (State.addr p.pp) p.plen = _
     rw [hi.p_frame hfu, ← hi.2]; rfl
   · change Spec.Rsa.bytesAt u.mem (State.addr (p.rp + BitVec.ofNat 32 used)) (p.randLen - used) = _
-    rw [VG.Arm.addr_add (by have := f.nR; omega), bytesAt_drop, hi.random_frame hfu, ← hi.2]; rfl
+    rw [VG.Arm.addr_add (by have := f.nR; omega_using [hroom, this]), bytesAt_drop, hi.random_frame hfu, ← hi.2]; rfl
 
 /-- A state about to call the candidate, at the point `q`. -/
 def CallCT (p : SearchPublic) (T : List Nat) (q : Pt) (u : State) : Prop :=
@@ -79,16 +79,16 @@ theorem call_pub {p : SearchPublic} {T : List Nat} {q : Pt} {u₁ u₂ : State}
   have e1 := l₁.input.facts.e8
   have rl := l₁.input.facts.randLen
   unfold Spec.RsaKeyGen.primeEntropy at rl
-  obtain ⟨eB₁, pB₁, rB₁⟩ := call_inputs l₁ rfl d₁ (by omega)
-  obtain ⟨eB₂, pB₂, rB₂⟩ := call_inputs l₂ rfl d₂ (by omega)
+  obtain ⟨eB₁, pB₁, rB₁⟩ := call_inputs l₁ rfl d₁ (by omega_using [hroom, hl])
+  obtain ⟨eB₂, pB₂, rB₂⟩ := call_inputs l₂ rfl d₂ (by omega_using [hroom, hl])
   have lk₁ := leak_of T₁ f₁ hk
   have lk₂ := leak_of T₂ f₂ hk
   sig_pub [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val]
   simp only [d₁.sa0, d₁.sa1, d₁.sa2, d₁.sa3, d₁.sa4, d₁.sa5, d₁.sa6, d₂.sa0, d₂.sa1, d₂.sa2, d₂.sa3, d₂.sa4,
     d₂.sa5, d₂.sa6, d₁.2.1, d₁.2.2.1, d₁.2.2.2.1, d₁.2.2.2.2, d₂.2.1, d₂.2.2.1, d₂.2.2.2.1, d₂.2.2.2.2,
-    toNat_small (n := p.len) (by omega), toNat_small (n := p.elen) (by omega),
-    toNat_small (n := p.plen) (by rcases l₁.input.facts.plen with e | e <;> omega),
-    toNat_diff (a := p.randLen) (b := q.1) (by omega) (by omega), eB₁, pB₁, rB₁, eB₂, pB₂, rB₂, ← lk₁, ← lk₂]
+    toNat_small (n := p.len) (by omega_using [hl]), toNat_small (n := p.elen) (by omega_using [e1]),
+    toNat_small (n := p.plen) (by rcases l₁.input.facts.plen with e | e <;> omega_arith),
+    toNat_diff (a := p.randLen) (b := q.1) (by omega_using [hroom]) (by omega_using [hl, rl]), eB₁, pB₁, rB₁, eB₂, pB₂, rB₂, ← lk₁, ← lk₂]
   exact ⟨sp, by simp only [and_self]⟩
 
 /-- A state before the candidate, at the point `q`. -/
@@ -129,10 +129,10 @@ theorem argWord_ct (p : SearchPublic) (T : List Nat) {j : Nat} (hj : j < 7) {adj
   change RelCT isa _ (.block ([arg .r12 32 j] ++ (adjust ++ [.str .r12 .lr (4 * j)]))) _
   refine RelCT.block_append (RelCT.seq (ldrSp_ct (Ψ := ArgCT p T j) fun q u ⟨o, s, hT, hl, hf, hk, hr, c, r⟩ => ?_)
     (two_taint _ (arg_pins p T j) htaint))
-  have c1 : pushBytes + 32 + 4 * j < 4096 := by unfold pushBytes; omega
+  have c1 : pushBytes + 32 + 4 * j < 4096 := by unfold pushBytes; omega_using [hj]
   refine WP.mono (withRest_all [.r12] (Q := fun t => t.mem = u.mem) ?_ (by rfl) (by rfl))
     fun t ⟨hm, k⟩ => ⟨o, s, hT, hl, hf, hk, hr, c.keep k hm, r.keep k⟩
-  ffrun [c.arg_addr j, c.arg_read (j := j) (by omega), c1]
+  ffrun [c.arg_addr j, c.arg_read (j := j) (by omega_using [hj]), c1]
 
 theorem args_ct (p : SearchPublic) (T : List Nat) :
     RelCT isa (Two (AllocCT p T)) (.block arguments) (Two (ArgCT p T 7)) := by
@@ -169,8 +169,8 @@ theorem call_ct (c : Cand) (p : SearchPublic) (T : List Nat) :
     obtain ⟨ob, sb, _, lb, _, _, hrb, db, rb⟩ := hb
     have hla := la.input.facts.valid
     unfold Spec.RsaKeyGen.primeLenValid at hla
-    obtain ⟨cova, covWa⟩ := call_covers la rfl ⟨da, ra⟩ (by omega)
-    obtain ⟨covb, covWb⟩ := call_covers lb rfl ⟨db, rb⟩ (by omega)
+    obtain ⟨cova, covWa⟩ := call_covers la rfl ⟨da, ra⟩ (by omega_using [hra, hla])
+    obtain ⟨covb, covWb⟩ := call_covers lb rfl ⟨db, rb⟩ (by omega_using [hra, hla])
     exact ⟨call_pre ⟨da, ra⟩ la.used_le, call_pre ⟨db, rb⟩ lb.used_le,
       call_pub (ready ⟨oa, sa, by assumption, la, by assumption, by assumption, hra, da, ra⟩)
         (ready ⟨ob, sb, by assumption, lb, by assumption, by assumption, hrb, db, rb⟩) (spA.trans spB.symm),

@@ -29,30 +29,30 @@ open VG.Spec.Rsa (bytesAt os2ip)
 
 theorem take_bytesAt (m : Mem) (dp : Addr) {k dl : Nat} (h : k ≤ dl) :
     (bytesAt m dp dl).take k = bytesAt m dp k := by
-  have := VG.Proof.Dsa.bytesAt_slice m dp (offset := 0) (len := k) (by omega : 0 + k ≤ dl)
+  have := VG.Proof.Dsa.bytesAt_slice m dp (offset := 0) (len := k) (by omega_using [h] : 0 + k ≤ dl)
   simpa using this
 
 theorem domainOf_p (m : Mem) (dp : Addr) {k dl : Nat} (h : 2 * k ≤ dl) :
     (domainOf k (bytesAt m dp dl)).p = os2ip (bytesAt m dp k) := by
-  simp only [domainOf, take_bytesAt m dp (by omega : k ≤ dl)]
+  simp only [domainOf, take_bytesAt m dp (by omega_using [h] : k ≤ dl)]
 
 theorem domainOf_g (m : Mem) (dp : Addr) {k dl : Nat} (h : 2 * k ≤ dl) :
     (domainOf k (bytesAt m dp dl)).g = os2ip (bytesAt m (dp + BitVec.ofNat 64 k) k) := by
-  simp only [domainOf, VG.Proof.Dsa.bytesAt_slice m dp (by omega : k + k ≤ dl)]
+  simp only [domainOf, VG.Proof.Dsa.bytesAt_slice m dp (by omega_using [h] : k + k ≤ dl)]
 
 theorem domainOf_q2 (m : Mem) (dp : Addr) {k : Nat} (hk : 0 < k) :
     (domainOf k (bytesAt m dp (2 * k))).q = none := by
   simp only [domainOf, VG.Proof.Bignum.bytesAt_length]
-  rw [ite_eq_right (show ¬ (2 * k = 3 * k) by omega)]
+  rw [ite_eq_right (show ¬ (2 * k = 3 * k) by omega_using [hk])]
 
 theorem domainOf_q3 (m : Mem) (dp : Addr) (k : Nat) :
     (domainOf k (bytesAt m dp (3 * k))).q = some (os2ip (bytesAt m (dp + BitVec.ofNat 64 (2 * k)) k)) := by
   simp only [domainOf, VG.Proof.Bignum.bytesAt_length, ↓reduceIte,
-    VG.Proof.Dsa.bytesAt_slice m dp (by omega : 2 * k + k ≤ 3 * k)]
+    VG.Proof.Dsa.bytesAt_slice m dp (by omega_using [] : 2 * k + k ≤ 3 * k)]
 
 /-- For an odd `p`: `x < p − 1` iff `x` with its low bit set is below `p`. -/
 theorem lt_pm1 {p : Nat} (hp : p % 2 = 1) (x : Nat) : 2 * (x / 2) + 1 < p ↔ x < p - 1 := by
-  omega
+  omega_using [hp]
 
 /-- A valid domain's p, of `k` octets, is a valid modulus of `k` octets. -/
 theorem domainValid_mod {k : Nat} {dom : List Byte} (hv : domainValid k dom = true) :
@@ -65,16 +65,16 @@ theorem domainValid_mod {k : Nat} {dom : List Byte} (hv : domainValid k dom = tr
   obtain ⟨hv, -⟩ := hv
   obtain ⟨hv, -⟩ := hv
   obtain ⟨⟨h1, h2⟩, h3⟩ := hv
-  have hpos : (domainOf k dom).p ≠ 0 := by omega
+  have hpos : (domainOf k dom).p ≠ 0 := by omega_using [h3]
   unfold Spec.RsaKeyGen.bitLength at h1 h2
   rw [ite_eq_right hpos] at h1 h2
   refine ⟨⟨⟨h3, ?_⟩, ?_⟩, h4⟩
-  · have := (Nat.le_log2 (show (domainOf k dom).p ≠ 0 from hpos)).mp (by omega : 511 ≤ Nat.log2 _)
+  · have := (Nat.le_log2 (show (domainOf k dom).p ≠ 0 from hpos)).mp (by omega_using [h1] : 511 ≤ Nat.log2 _)
     exact this
   · have h5 := (fun B (hB : Nat.log2 (domainOf k dom).p + 1 ≤ B) => Nat.pow_le_pow_right (n := 2) (by decide) hB)
-      8192 (by omega)
+      8192 (by omega_using [h2])
     have h6 := Nat.lt_log2_self (n := (domainOf k dom).p)
-    omega
+    omega_using [h5, h6]
 
 theorem bitLength_range {p : Nat} : (512 ≤ Spec.RsaKeyGen.bitLength p ∧ Spec.RsaKeyGen.bitLength p ≤ 8192) ↔
     (2 ^ 511 ≤ p ∧ p < 2 ^ 8192) := by
@@ -83,13 +83,13 @@ theorem bitLength_range {p : Nat} : (512 ≤ Spec.RsaKeyGen.bitLength p ∧ Spec
   · subst hp
     rw [ite_eq_left rfl]
     have := Nat.two_pow_pos 511
-    omega
+    omega_using []
   · rw [ite_eq_right hp]
     have h1 : 511 ≤ p.log2 ↔ 2 ^ 511 ≤ p := Nat.le_log2 hp
     have h2 : p.log2 < 8192 ↔ p < 2 ^ 8192 := Nat.log2_lt hp
     constructor
-    · rintro ⟨a, b⟩; exact ⟨h1.mp (by omega), h2.mp (by omega)⟩
-    · rintro ⟨a, b⟩; have := h1.mpr a; have := h2.mpr b; omega
+    · rintro ⟨a, b⟩; exact ⟨h1.mp (by omega_using [a]), h2.mp (by omega_using [b])⟩
+    · rintro ⟨a, b⟩; have := h1.mpr a; have := h2.mpr b; omega_arith
 
 /-- `domainValid`, as the code checks it: p a valid modulus, `1 < g < p − 1`,
 and with q, q odd, `1 < q < p − 1`, `q ∣ p − 1` and `g^q mod p = 1`. -/
@@ -118,9 +118,9 @@ theorem domainValid_iff (k : Nat) (dom : List Byte) :
     rw [hb]
     constructor
     · rintro ⟨⟨⟨⟨⟨⟨a, b⟩, c⟩, d⟩, e⟩, ⟨⟨⟨q2, qo⟩, ql⟩, qd⟩, qg⟩, f⟩
-      exact ⟨⟨⟨⟨c, a⟩, b⟩, f⟩, ⟨d, e⟩, ⟨qo, by omega, ql⟩, qd, qg⟩
+      exact ⟨⟨⟨⟨c, a⟩, b⟩, f⟩, ⟨d, e⟩, ⟨qo, by omega_using [q2], ql⟩, qd, qg⟩
     · rintro ⟨⟨⟨⟨c, a⟩, b⟩, f⟩, ⟨d, e⟩, ⟨qo, q1, ql⟩, qd, qg⟩
-      exact ⟨⟨⟨⟨⟨⟨a, b⟩, c⟩, d⟩, e⟩, ⟨⟨⟨by omega, qo⟩, ql⟩, qd⟩, qg⟩, f⟩
+      exact ⟨⟨⟨⟨⟨⟨a, b⟩, c⟩, d⟩, e⟩, ⟨⟨⟨by omega_using [qo, q1], qo⟩, ql⟩, qd⟩, qg⟩, f⟩
 
 /-- A Montgomery reduction modulo an odd `Q` is zero iff `Q` divides its input. -/
 theorem redc_zero {r Q X n : Nat} (hQ : Q % 2 = 1) (hr : r < Q) (h : r * 2 ^ n % Q = X % Q) :
@@ -155,10 +155,10 @@ theorem exchangeOp_eq {a : Parameters} {X Y k : Nat} (hv : publicValid ⟨a, Y�
   simp only [bne_self_eq_false, hv, Bool.not_true, Bool.or_false, Bool.false_eq_true, ↓reduceIte,
     VG.Proof.Bignum.powMod_eq, hk]
   by_cases h : 1 < Y ^ X % a.p ∧ Y ^ X % a.p < a.p - 1
-  · have h1 : ¬ (Y ^ X % a.p ≤ 1 ∨ Y ^ X % a.p = a.p - 1) := by omega
+  · have h1 : ¬ (Y ^ X % a.p ≤ 1 ∨ Y ^ X % a.p = a.p - 1) := by omega_using [h]
     simp only [Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq, h1, ↓reduceIte, h, and_self]
   · have := Nat.mod_lt (Y ^ X) hp
-    have h1 : Y ^ X % a.p ≤ 1 ∨ Y ^ X % a.p = a.p - 1 := by omega
+    have h1 : Y ^ X % a.p ≤ 1 ∨ Y ^ X % a.p = a.p - 1 := by omega_using [h, this]
     simp only [Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq, h1, ↓reduceIte, h]
 
 /-- `privateStatus` for valid parameters. -/

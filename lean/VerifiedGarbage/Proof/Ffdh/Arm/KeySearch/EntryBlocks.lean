@@ -22,13 +22,13 @@ theorem entryHead_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p 
       VG.Impl.Ffdh.Arm.KeySearch.stf .r2 6]) s fun t =>
       (t.gpr .r4 = p.control ∧ t.mem = writeLow s.mem p.control [(5, p.xp), (6, p.yp)]) ∧ Rest [.r4] s t := by
   refine withRest_all [.r4] ?_ (by rfl) (by rfl)
-  have arg := h.incoming 8 (by have := entryWords_min sampling; omega)
+  have arg := h.incoming 8 (by have := entryWords_min sampling; omega_using [this])
   have addr56 : State.addr (s.sp + 56#32) = off (State.addr s.sp) 56 :=
-    VG.Arm.addr_add (by have := arg.fits; omega)
+    VG.Arm.addr_add (by have := arg.fits; omega_using [this])
   have addr40 : State.addr (p.control + 40#32) = off (State.addr p.control) 40 :=
-    VG.Arm.addr_add (by have := space.nowrap; omega)
+    VG.Arm.addr_add (by have := space.nowrap; omega_using [this])
   have addr48 : State.addr (p.control + 48#32) = off (State.addr p.control) 48 :=
-    VG.Arm.addr_add (by have := space.nowrap; omega)
+    VG.Arm.addr_add (by have := space.nowrap; omega_using [this])
   unfold VG.Impl.Ffdh.Arm.KeySearch.stf writeLow
   simp only [List.foldl_cons, List.foldl_nil]
   ffrun [addr56, arg.readable, arg.word, incomingValue, addr40, addr48,

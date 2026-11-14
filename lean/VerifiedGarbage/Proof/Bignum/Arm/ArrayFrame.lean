@@ -27,10 +27,10 @@ theorem frame_array_outside {m m' : Mem} {base : Addr} {d n : Nat}
   simp only [List.mem_singleton] at hr
   subst r
   change (a - off base d).toNat + 1 ≤ n at hc
-  have inside : (a - off base d).toNat < n := by omega
-  rw [Offset.lt_iff a base (by omega)] at inside
+  have inside : (a - off base d).toNat < n := by omega_using [hc]
+  rw [Offset.lt_iff a base (by omega_using [fit])] at inside
   simp only [ofs] at ha
-  omega
+  omega_using [ha, inside]
 
 theorem native_array_num (mem : Mem) {base : BitVec 32} {w o : Nat}
     (fit : base.toNat + arrAt w o < 2 ^ 32) :
@@ -38,6 +38,6 @@ theorem native_array_num (mem : Mem) {base : BitVec 32} {w o : Nat}
       numAt mem (State.addr base) w o := by
   rw [← read_eq_val32, addr_add fit]
   simp only [off, BitVec.add_zero, numAt]
-  rw [show 4 * (2 * w) = 8 * w by omega]
+  rw [show 4 * (2 * w) = 8 * w by omega_using []]
 
 end VG.Proof.Bignum.Arm

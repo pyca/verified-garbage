@@ -49,7 +49,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.BrainpoolP512r1.X86_64.Law
 
-/-! # brainpoolP512r1 on x86-64, generic over its proven group law and inversions -/
+/-! # ECDH over brainpoolP512r1 (SP 800-56A) on x86-64 -/
 
 @[expose] public section
 
@@ -58,9 +58,7 @@ namespace VG.Artifacts.EcdhBrainpoolP512r1.X86_64
 open VG.Proof.BrainpoolP512r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact X86_64.target {
-    code := Impl.Ecdh.X86_64.exchangeBrainpoolP512r1
-    stack := 8
-    verified := Proof.Ecdh.X86_64.BrainpoolP512r1.ecdh_verified hasLaw.law hasLaw.inv }]
+  Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact X86_64.target
+    (Proof.Ecdh.X86_64.BrainpoolP512r1.scrubReg hasLaw.law hasLaw.inv)]
 
 end VG.Artifacts.EcdhBrainpoolP512r1.X86_64

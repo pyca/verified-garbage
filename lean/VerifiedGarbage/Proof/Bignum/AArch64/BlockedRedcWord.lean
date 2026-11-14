@@ -44,10 +44,10 @@ theorem lowChain_ok {s : State} {B : Addr} {Z eN : Nat}
   refine ⟨?_, ?_, ?_⟩
   · rfl
   · intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals rfl
   · intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     all_goals rfl
 
 
@@ -81,7 +81,7 @@ theorem highChain_ok (s : State) :
   refine ⟨?_, ?_⟩
   · rfl
   · intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals
       simp only [shifted, highTerms, highProduct, operand, chainCarry, addCarry, VG.Proof.Ed25519.Word64.carryOut,
         List.getD_eq_getElem?_getD, List.getElem?_cons_zero, List.getElem?_cons_succ,
@@ -96,7 +96,7 @@ def blockValue (f : Nat → Word) : Nat :=
 
 theorem accumulator_reg (s : State) {i : Nat} (hi : i < 8) :
     accumulator s i = s.gpr VG.Impl.Bignum.AArch64.BlockedRedc.aa[i]! := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals rfl
 
 theorem blockValue_congr {a b : Nat → Word} (h : ∀ i < 8, a i = b i) :
@@ -145,7 +145,7 @@ theorem shifted_value (s : State) :
       VG.Proof.Bignum.Square.value (2 ^ 64) (fun i => (accumulator s (i + 1)).toNat) 7 := by
     apply value_congr
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals rfl
   have hs := value_shift (2 ^ 64) (fun i => (accumulator s i).toNat) 7
   have hp : 2 ^ 64 * (2 ^ 64) ^ 7 = (2 ^ 64) ^ 8 := by
@@ -178,7 +178,7 @@ theorem highTerms_value {s t : State} (n0 : Word)
     blockValue (highTerms t) = blockValue (highProduct s n0) := by
   apply blockValue_congr
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
     simp only [highTerms, List.getD_eq_getElem?_getD, List.getElem?_cons_zero,
       List.getElem?_cons_succ, Option.getD_some, h13, h14, h28, h30,
@@ -227,7 +227,7 @@ theorem wv_radix_add (m : Mem) (B : Addr) (e n k : Nat) :
     (congrArg (fun r => wv m B e n + r * wv m B (e + 8 * n) k) (Nat.pow_mul 2 64 n))
 
 theorem word_flag (v : Word) (hv : v.toNat ≤ 1) : ∃ p : Bool, v = BitVec.ofNat 64 p.toNat := by
-  rcases (by omega : v.toNat = 0 ∨ v.toNat = 1) with h | h
+  rcases (by omega_using [hv] : v.toNat = 0 ∨ v.toNat = 1) with h | h
   · exact ⟨false, BitVec.eq_of_toNat_eq h⟩
   · exact ⟨true, BitVec.eq_of_toNat_eq h⟩
 

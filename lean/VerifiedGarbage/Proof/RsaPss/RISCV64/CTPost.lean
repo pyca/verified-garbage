@@ -56,7 +56,7 @@ abbrev Sv (a t : State) : Prop :=
 theorem readV {m m' : Mem} {S : Addr} (h : ∀ i < 24, view m' S (oV + i) = view m S (oV + i)) {d : Nat}
     (hd : d + 8 ≤ 24) : m'.readW (off S (oV + d)) 64 = m.readW (off S (oV + d)) 64 :=
   Mem.readW_congr fun i hi => by
-    have e := h (d + i) (by omega)
+    have e := h (d + i) (by omega_using [hd, hi])
     simp only [view] at e
     show m' (off (off S (oV + d)) i) = m (off (off S (oV + d)) i)
     rw [off_off, Nat.add_assoc]; exact e
@@ -111,7 +111,7 @@ theorem qM_fit {a t : State} (h : BL D W a t) :
     MFit (qM D a).1 (qM D a).2.1 (qM D a).2.2.1 (qM D a).2.2.2 := by
   have := h.dn
   show MFit ((lo a).toNat + (dbLen D a).toNat) D (lo a).toNat (dbLen D a).toNat
-  exact ⟨by omega, by omega, .inr (by omega), by omega⟩
+  exact ⟨by omega_using [this], by omega_using [this], .inr (by omega_using []), by omega_using [this]⟩
 
 /-- MGF1's arguments, in a run. -/
 abbrev MA (D : Nat) (W : VT) (a t : State) : Prop :=
@@ -142,8 +142,8 @@ theorem mgf_wp {a t : State} (h : MA D W a t) (v : Sv a t) :
   have hfd := hf.fd
   refine WP.mono (mgfXorT_ok P.1.F hG hFG P.2.2 hGh hGl hGv hf b y (by rw [h6, hS]) h7 (by rw [h8, hS]) h9)
     fun t' ⟨⟨b', v'⟩, y'⟩ => ⟨⟨s, P, g, b', y'⟩, v.keep fun i hi => ?_⟩
-  have e := v' (oV + i) ⟨by unfold oV oRsa; omega, .inr (by unfold oV oCtr; omega)⟩
-  rw [mixV, ifn (by show ¬((qM D a).2.2.1 ≤ oV + i ∧ _); unfold oV; omega)] at e
+  have e := v' (oV + i) ⟨by unfold oV oRsa; omega_using [hi], .inr (by unfold oV oCtr; omega_using [])⟩
+  rw [mixV, ifn (by show ¬((qM D a).2.2.1 ≤ oV + i ∧ _); unfold oV; omega_using [hfd])] at e
   rw [← hS]; exact e
 
 theorem reload_wp {a t : State} (h : BL D W a t) (v : Sv a t) :
@@ -168,7 +168,7 @@ theorem scan_wp {a t : State} (h : BL D W a t) (x : Xa a t) :
     have hd1 := L.d1
     exact WP.mono (scan_ok L b (w := fun j => view t.mem (Sp s) ((lo a).toNat + j)) fun _ _ => rfl)
       fun t' ⟨b', _, o', x5, _⟩ => ⟨b', x.of fun r hr => o'.gpr r (by revert r; decide), _,
-        by split <;> omega, x5⟩
+        by split <;> omega_arith, x5⟩
 
 /-- Some position in `DB` in `s8`, and the length of the salt after it in `s11`. -/
 abbrev Pos11 (D : Nat) (a t : State) : Prop :=
@@ -207,7 +207,7 @@ theorem hashFixed_wp {a t : State} (h : BL D W a t) (h6 : t.gpr .s6 = stackArg a
     (hsl : (stackArg a 0).toNat + 8 + D ≤ 1880) : WP isa (hashFixed W.H W.M.be W.f 6) t (BL D W a) := by
   obtain ⟨s, P, g, b, y⟩ := h
   exact WP.mono (hashFixedG_ok P.1.F hF P.2.1 P.1.al hD (sl := (stackArg a 0).toNat) (by rw [h6, ofNat_toNat]) b y
-    (by omega)) fun t' ⟨⟨b', _⟩, y'⟩ => ⟨s, P, g, b', y'⟩
+    (by omega_using [hsl])) fun t' ⟨⟨b', _⟩, y'⟩ => ⟨s, P, g, b', y'⟩
 
 include hD in
 theorem copyDb_wp {a t : State} (h : BL D W a t) :
@@ -276,7 +276,7 @@ theorem post_ct : RelCT isa (Two fun a t => BL D W a t ∧ Xa a t ∧ Fit D a)
       (fun a t h => WP.mono (salt_wp hD h.1.1 h.1.2 h.2) fun t' ⟨b, k⟩ =>
         ⟨⟨b, h.1.2.of fun r hr => k.gpr r (by revert r; decide)⟩, h.2⟩) ?_
     have hb : ∀ {a t : State}, F0 a t → (stackArg a 0).toNat + 8 + D ≤ 1880 := fun h => by
-      have := h.1.1.dn; have := h.2; omega
+      have := h.1.1.dn; have := h.2; omega_arith
     refine two_seq (Ψ := BL D W) ((hashFixed_ct cH hF hD).mono (fun _ _ ⟨a, h₁, h₂⟩ =>
         ⟨a, ⟨h₁.1.1, h₁.1.2.s6, hb h₁⟩, ⟨h₂.1.1, h₂.1.2.s6, hb h₂⟩⟩) fun _ _ h => h)
       (fun a t h => hashFixed_wp hF hD h.1.1 h.1.2.s6 (hb h)) ?_
@@ -292,11 +292,11 @@ theorem post_ct : RelCT isa (Two fun a t => BL D W a t ∧ Xa a t ∧ Fit D a)
       (fun a t h => ?_) ?_
     · obtain ⟨pos, hp, x8, x11⟩ := h.2
       exact WP.mono (shift_wp hD h.1 hp x8) fun t' ⟨b, g⟩ =>
-        ⟨b, (dbLen D a).toNat - pos - 1, by omega, by rw [g, x11]⟩
+        ⟨b, (dbLen D a).toNat - pos - 1, by omega_using [hp], by rw [g, x11]⟩
     have hs : ∀ {a t : State}, A1 a t → S11 t := fun h => by
       obtain ⟨sl, hsl, x11⟩ := h.2
       have := h.1.dn
-      exact ⟨sl, x11, by omega⟩
+      exact ⟨sl, x11, by omega_using [hsl, this]⟩
     refine two_seq (Ψ := BL D W) ((hashAny_ct cH hF hD).mono (fun _ _ ⟨a, h₁, h₂⟩ =>
         ⟨a, ⟨h₁.1, hs h₁⟩, ⟨h₂.1, hs h₂⟩⟩) fun _ _ h => h)
       (fun a t h => let ⟨_, hsl, x11⟩ := h.2; hashAny_wp hF hD h.1 hsl x11) ?_

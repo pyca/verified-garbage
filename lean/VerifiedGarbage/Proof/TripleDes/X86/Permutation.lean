@@ -67,21 +67,21 @@ theorem permutationBits_ok {m n : Nat} (positions : Vector Nat m)
     (((Spec.TripleDes.permute positions (packedInput n split lo hi) >>> start).setWidth width).setWidth 32).getLsbD p := by
   simp only [BitVec.getLsbD_setWidth, hp, decide_true, Bool.true_and, BitVec.getLsbD_ushiftRight]
   by_cases hw' : p < width
-  · have hm : start + p < m := by omega
+  · have hm : start + p < m := by omega_using [hw, hw']
     simp only [hw', decide_true, Bool.true_and]
-    have hk : m - 1 - (start + p) < m := by omega
+    have hk : m - 1 - (start + p) < m := by omega_using [hw, hw']
     obtain ⟨hb, ht⟩ := bounds _ hk
-    have hn' : n - positions.getD (m - 1 - (start + p)) 1 < n := by omega
+    have hn' : n - positions.getD (m - 1 - (start + p)) 1 < n := by omega_using [hn, hb]
     rw [VG.Proof.TripleDes.permute_bit positions _ hn _ hm, packedInput_bit _ _ _ _ _ hn' hs]
     simp only [permutationBits, hw', hm, and_self, ite_true, xorBits_cons, xorBits_nil, Bool.xor_false]
     let k := n - positions.getD (m - 1 - (start + p)) 1
     change bitOf (fun i => if i = 0 then lo else hi) (if k < split then k else 32 + k - split) =
       if k < split then lo.getLsbD k else hi.getLsbD (k - split)
     by_cases h : k < split
-    · have h32 : k < 32 := by omega
+    · have h32 : k < 32 := by omega_using [hlo, h]
       simp only [h, ite_true, bitOf, Nat.div_eq_of_lt h32, Nat.mod_eq_of_lt h32]
-    · have h32 : k - split < 32 := by change n - positions.getD (m - 1 - (start + p)) 1 < n at hn'; dsimp [k]; omega
-      have he : 32 + k - split = 32 * 1 + (k - split) := by omega
+    · have h32 : k - split < 32 := by change n - positions.getD (m - 1 - (start + p)) 1 < n at hn'; dsimp [k]; omega_using [hhi, hb]
+      have he : 32 + k - split = 32 * 1 + (k - split) := by omega_using [h]
       simp only [h, ite_false, he, bitOf_word _ _ _ h32]
       rfl
   · simp only [hw', decide_false, Bool.false_and, permutationBits, false_and, ite_false, xorBits_nil]
@@ -92,7 +92,7 @@ theorem permutationCfg_ok (s : State) : Ok permutationCfg s := by
   · intro k hk; simp [permutationCfg] at hk
   · change (s.gpr .ebp).toNat + 4 * 0 ≤ 2 ^ 32
     have h := (s.gpr .ebp).isLt
-    omega
+    omega_using []
   · intro k hk; simp [permutationCfg] at hk
 
 theorem fixedPermutation_ok {m n : Nat} (positions : Vector Nat m)
@@ -124,7 +124,7 @@ theorem fixedPermutation_ok {m n : Nat} (positions : Vector Nat m)
     intro p hp
     have h := out dstLo (permutationBits positions n split dstSplit 0) (by simp [permutationOutputs]) p hp
     rw [h]
-    have hbits := permutationBits_ok positions hn split dstSplit 0 hs hlo hhi (by omega) bounds (s.gpr srcLo) (s.gpr srcHi) p hp
+    have hbits := permutationBits_ok positions hn split dstSplit 0 hs hlo hhi (by omega_using [hd]) bounds (s.gpr srcLo) (s.gpr srcHi) p hp
     simpa only [BitVec.ushiftRight_zero] using hbits
   · apply BitVec.eq_of_getLsbD_eq
     intro p hp
@@ -132,7 +132,7 @@ theorem fixedPermutation_ok {m n : Nat} (positions : Vector Nat m)
       (by simp [permutationOutputs]) p hp
     rw [h]
     exact permutationBits_ok positions hn split (m - dstSplit) dstSplit hs hlo hhi
-      (by omega) bounds _ _ p hp
+      (by omega_using [hd]) bounds _ _ p hp
   · exact keep .esp hsp
   · funext a
     apply frame a

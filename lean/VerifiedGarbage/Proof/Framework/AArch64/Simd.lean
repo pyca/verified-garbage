@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Basic lane identities for AArch64 SIMD proofs. -/
 
@@ -12,28 +13,28 @@ theorem vword_ofVWords (w0 w1 w2 w3 : BitVec 32) {e : Nat} (he : e < 4) :
     vword (ofVWords w0 w1 w2 w3) e = [w0, w1, w2, w3][e] := by
   ext i hi
   simp only [vword, ofVWords, BitVec.getElem_extractLsb', BitVec.getLsbD_append]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;>
     simp +arith [hi]
 
 /-- Two vectors with the same lanes are the same. -/
 theorem vec_ext {x y : BitVec 128} (h : ∀ e < 4, vword x e = vword y e) : x = y := by
   ext i hi
-  have := congrArg (fun w : BitVec 32 => w.getLsbD (i % 32)) (h (i / 32) (by omega))
-  simp only [vword, BitVec.getLsbD_extractLsb', show i % 32 < 32 by omega, decide_true,
-    Bool.true_and, show 32 * (i / 32) + i % 32 = i by omega] at this
+  have := congrArg (fun w : BitVec 32 => w.getLsbD (i % 32)) (h (i / 32) (by omega_using [hi]))
+  simp only [vword, BitVec.getLsbD_extractLsb', show i % 32 < 32 by omega_using [], decide_true,
+    Bool.true_and, show 32 * (i / 32) + i % 32 = i by omega_using []] at this
   simpa [BitVec.getElem_eq_testBit_toNat, BitVec.getLsbD] using this
 
 theorem ofVWords_vword (x : BitVec 128) : ofVWords (vword x 0) (vword x 1) (vword x 2) (vword x 3) = x :=
   vec_ext fun e he => by
     rw [vword_ofVWords _ _ _ _ he]
-    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The lanes of the result of an operation on the lanes of two vectors. -/
 theorem vword_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) {e : Nat}
     (he : e < 4) : vword (VArr.s4.map2 f x y) e = f 32 (vword x e) (vword y e) := by
   simp only [VArr.map2]
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 
 theorem vword_ofVWords_0 (a b c d : BitVec 32) : vword (ofVWords a b c d) 0 = a :=
@@ -55,13 +56,13 @@ theorem setLane_four (v : BitVec 128) (a b c d : BitVec 32) :
   by_cases h0 : j < 32
   · simp (disch := omega) [h0, decide_eq_true]
   by_cases h1 : j < 64
-  · simp (disch := omega) [h0, h1, decide_eq_true, show j - 32 < 32 by omega]
+  · simp (disch := omega) [h0, h1, decide_eq_true, show j - 32 < 32 by omega_using [h1]]
   by_cases h2 : j < 96
   · simp (disch := omega) [h0, h1, h2, decide_eq_true,
-      show ¬ j - 32 < 32 by omega, show j - 32 - 32 = j - 64 by omega, show j - 64 < 32 by omega]
+      show ¬ j - 32 < 32 by omega_using [h1], show j - 32 - 32 = j - 64 by omega_using [], show j - 64 < 32 by omega_using [h2]]
   · simp (disch := omega) [h0, h1, h2, decide_eq_true, decide_eq_false,
-      show ¬ j - 32 < 32 by omega, show ¬ j - 32 - 32 < 32 by omega,
-      show j - 32 - 32 - 32 = j - 96 by omega]
+      show ¬ j - 32 < 32 by omega_using [h1], show ¬ j - 32 - 32 < 32 by omega_using [h2],
+      show j - 32 - 32 - 32 = j - 96 by omega_using []]
 
 /-- Bit `r` of block `k` of `x ++ y`, blocks being `n` bits wide. -/
 theorem getLsbD_append_block {w n : Nat} (x : BitVec w) (y : BitVec n) (k : Nat) {r : Nat} (hr : r < n) :
@@ -69,8 +70,8 @@ theorem getLsbD_append_block {w n : Nat} (x : BitVec w) (y : BitVec n) (k : Nat)
   rw [BitVec.getLsbD_append]
   by_cases hk : k = 0
   · subst hk; simp [hr]
-  · have h : n ≤ n * k := Nat.le_mul_of_pos_right n (by omega)
-    simp only [hk, show ¬ n * k + r < n by omega, ↓reduceIte]
+  · have h : n ≤ n * k := Nat.le_mul_of_pos_right n (by omega_using [hk])
+    simp only [hk, show ¬ n * k + r < n by omega_using [h], ↓reduceIte]
     exact congrArg _ (by rw [Nat.mul_sub_one, Nat.sub_add_comm h])
 
 theorem getLsbD_ofVBytes (f : Nat → BitVec 8) {k r : Nat} (hk : k < 16) (hr : r < 8) :
@@ -93,7 +94,7 @@ theorem getLsbD_ofVBytes (f : Nat → BitVec 8) {k r : Nat} (hk : k < 16) (hr : 
   | 13, _ => ?_
   | 14, _ => ?_
   | 15, _ => ?_
-  | _ + 16, h => exact absurd h (by omega)
+  | _ + 16, h => exact absurd h (by omega_using [])
   all_goals
     simp only [↓reduceIte, Nat.reduceSub, Nat.reduceEqDiff, Nat.mul_zero, Nat.zero_add]
 

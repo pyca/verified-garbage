@@ -63,7 +63,7 @@ theorem regArgs_congr (sig : Sig) {s s' : State} (h : ∀ q, q ≠ .rsp → s'.g
 
 theorem regArgs_getD (g : Reg → BitVec 64) {L i : Nat} (hL : L ≤ 6) (hi : i < L) :
     ((argRegs.take L).map g).getD i 0 = g (argRegs.getD i .rax) := by
-  have hi6 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega
+  have hi6 : i < argRegs.length := by simp only [argRegs, List.length_cons, List.length_nil]; omega_using [hL, hi]
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_take, hi, ite_true,
     List.getElem?_eq_getElem hi6, Option.map_some, Option.getD_some]
 
@@ -706,9 +706,9 @@ theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : Stri
     show (sig.params.flatMap fun p => p.2.words 64).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   have hiL : (ps₁.flatMap fun p => p.2.words 64).length < (sig.words abi.ptrBits).length := by
-    rw [hL]; omega
+    rw [hL]; omega_using []
   have hr : argRegs.getD (ps₁.flatMap fun p => p.2.words 64).length .rax ≠ .rsp :=
     (argRegs_scratch _ (by omega_using [hiL, hk])).1
   generalize hr' : argRegs.getD (ps₁.flatMap fun p => p.2.words 64).length .rax = r at hr ⊢
@@ -718,7 +718,7 @@ theorem Verified.callWipeTail' {post' : sig.Post abi.ptrBits} {name zname : Stri
   have harr : ∀ s : State, (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s) := by
     intro s
     rw [← hget s, hps]
-    exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega)
+    exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega_using [])
   -- Its address is public.
   have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 24) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
     intro s₁ s₂ hp

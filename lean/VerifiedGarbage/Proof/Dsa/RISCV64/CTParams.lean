@@ -103,7 +103,7 @@ include hΦ
 
 theorem midR0 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR0.take 1)) s (MR0 v) :=
   WP.of_flat (c := .block (ptrP ++ odd)) rfl
-    (odd_P1 (by have := (hΦ _ _ h).1.pl; omega) (by have := (hΦ _ _ h).1.kn; omega) (ptrP_P1 (hΦ _ _ h)))
+    (odd_P1 (by have := (hΦ _ _ h).1.pl; omega_using [this]) (by have := (hΦ _ _ h).1.kn; omega_using [this]) (ptrP_P1 (hΦ _ _ h)))
 
 theorem zeroR0 : ∀ v s₁ s₂, At Φ FR0 1 v s₁ → At Φ FR0 1 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
   zero_at (fun v => v.p % 2 = 1) fun _ _ h => (midR0 hΦ h).mono fun _ h => h.2
@@ -136,7 +136,7 @@ include hΦ
 
 theorem midR1 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR1.take 1)) s (MR1 v) :=
   WP.of_flat (c := .block (ptrQ ++ odd)) rfl
-    ((odd_P1 (by have := (hΦ _ _ h).1.1.ql; omega) (by have := (hΦ _ _ h).1.1.kn; omega) (ptrQ_P1 (hΦ _ _ h).1)).mono
+    ((odd_P1 (by have := (hΦ _ _ h).1.1.ql; omega_using [this]) (by have := (hΦ _ _ h).1.1.kn; omega_using [this]) (ptrQ_P1 (hΦ _ _ h).1)).mono
       fun _ ⟨h', a0⟩ => ⟨h', (hΦ _ _ h).2, a0⟩)
 
 theorem zeroR1 : ∀ v s₁ s₂, At Φ FR1 1 v s₁ → At Φ FR1 1 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
@@ -183,7 +183,7 @@ theorem pinsR2_10 : Pins (At Φ FR2 10) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s1
     (fun _ => rfl) fun v _ h => by
     have B := (hΦ _ _ h).1.1
     refine WP.of_flat (c := .seq setupQ (.block ([.addi .s9 .s11 0] ++ getP .s10))) rfl
-      (WP.seq (WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega))) fun t ⟨⟨iq, _, _, qb⟩, k⟩ => ?_))
+      (WP.seq (WP.mono (setupQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega_using [this]))) fun t ⟨⟨iq, _, _, qb⟩, k⟩ => ?_))
     have B1 := B.body k (qb.body B.ok)
     refine WP.block_append (WP.mono (WP.keep [.s9] (Q := fun u => u.gpr .s9 = v.key ∧ u.mem = t.mem)
       (by brun [B1.regs.s11, BitVec.add_zero]) (by decide) (by rfl)) fun _ ⟨⟨a9, m⟩, k'⟩ => ?_)
@@ -209,8 +209,8 @@ include hΦ
 theorem midR2 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR2.take 23)) s (MR2 v) := by
   obtain ⟨⟨B, l, hsz⟩, hp, hq⟩ := hΦ _ _ h
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  refine WP.of_flat (c := pModQ) rfl (WP.mono (pModQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega))
-    (by rw [B.q]; omega)) fun t ⟨⟨_, q0, qtop, a0, qb⟩, k⟩ => ?_)
+  refine WP.of_flat (c := pModQ) rfl (WP.mono (pModQ_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega_using [this]))
+    (by rw [B.q]; omega_using [hq])) fun t ⟨⟨_, q0, qtop, a0, qb⟩, k⟩ => ?_)
   have hb := qb.body B.ok
   exact ⟨⟨⟨B.body k hb, by rw [Lens, hb.word (by decide)]; exact l, hsz⟩, hp, hq⟩, ⟨by rw [q0, B.q], qtop⟩,
     by rw [a0, B.p, B.q]⟩
@@ -266,7 +266,7 @@ theorem setupP_SR3 {v : VD} {s : State} (h : SR3 v s) :
     WP isa setupP s fun t => CK v t ∧ Keep setupPRegs s t := by
   obtain ⟨⟨⟨B, l, hsz⟩, hp, _⟩, _, q0, qtop⟩ := h
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega)) (by rw [B.p]; omega) (by rw [B.p]; exact hp))
+  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take (by have := B.kn; omega_using [this])) (by rw [B.p]; omega_using [bd]) (by rw [B.p]; exact hp))
     fun t ⟨⟨ip, p0, ptop, inv, _, p24, pb⟩, k⟩ => ⟨?_, k⟩
   have hb := pb.body B.ok
   exact ⟨B.body k hb, ip, by rw [p0, B.p], ptop, inv, by rw [p24, B.p], by rw [pb.arrQ B.ok]; exact q0,
@@ -332,20 +332,20 @@ theorem range_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (ho : o + v.L.pl �
     WP isa (.seq (loadArr 4) elemRange) s (ME v o) := by
   have hL := h.base.ok
   have hbuf := hL.buf_end
-  have hqZ : v.L.qOff ≤ v.L.Z := by simp only [Lay.bOff] at hbuf; omega
+  have hqZ : v.L.qOff ≤ v.L.Z := by simp only [Lay.bOff] at hbuf; omega_using [hbuf]
   have e0 := Lay.slot_eq v.L.wp 0; have e1 := Lay.slot_eq v.L.wp 1; have e4 := Lay.slot_eq v.L.wp 4
   have hw := hL.wp_ge
   have hnw := hL.nowrap
   have en := h.inp.env
   have he := h.base.hk.sub ho
   refine WP.seq (WP.mono (loadArr_ok en (j := 4) (N := off v.key o) (by decide)
-    (by rw [h7]; exact (BitVec.add_zero _).symm) h8 (by have := h.base.pl; omega) (by have := hL.wp_eq; omega)
+    (by rw [h7]; exact (BitVec.add_zero _).symm) h8 (by have := h.base.pl; omega_using [this]) (by have := hL.wp_eq; omega_using [this])
     he.rd (fun i hi x hx => he.sep i hi x (Nat.lt_of_lt_of_le hx hqZ))) fun s₁ ⟨⟨v4, top4, o1, a7⟩, k1⟩ => ?_)
   have e1' : Env s₁ v.L.S v.L.qOff v.L.wp :=
     ⟨en.hs.congr k1.2.2, a7, (k1.gpr (by decide)).trans en.s5, (k1.gpr (by decide)).trans en.t0, en.w2, en.w48,
       en.hZ⟩
   have A0 : wordsVal s₁.mem v.L.S (slot v.L.wp 0) v.L.wp = v.p := by
-    rw [o1.wordsVal (by omega) (by omega_arith)]; exact h.p0
+    rw [o1.wordsVal (by omega_using [e0, e4]) (by omega_arith)]; exact h.p0
   refine WP.mono (elemRange_ok e1' top4) fun t ⟨⟨r0, _, o2, e2⟩, k2⟩ => ?_
   rw [v4, A0, h.base.bytes ho] at r0
   have k12 := k1.trans k2
@@ -357,8 +357,8 @@ theorem elem_CK {v : VD} {s : State} {o : Nat} (h : CK v s) (hsz : SzOk v) (hpo 
     (h7 : s.gpr .s7 = off v.key o) (h8 : s.gpr .s8 = BitVec.ofNat 64 v.L.pl) :
     WP isa checkElem s fun t => CK v t ∧ (t.gpr .a0 = 0 ↔ EOk v o) := by
   have bd := VG.Proof.Dsa.supported_bounds hsz
-  refine WP.mono (checkElem_ok h.base.ok h.base.scr h.base.regs h.inp (h.base.hk.take (by have := h.base.kn; omega))
-    (h.base.hk.sub ho) h7 h8 h.p0 (by omega) hpo h.inv h.p24) fun t ⟨⟨ip, a0, o', t1⟩, k⟩ =>
+  refine WP.mono (checkElem_ok h.base.ok h.base.scr h.base.regs h.inp (h.base.hk.take (by have := h.base.kn; omega_using [this]))
+    (h.base.hk.sub ho) h7 h8 h.p0 (by omega_using [bd]) hpo h.inv h.p24) fun t ⟨⟨ip, a0, o', t1⟩, k⟩ =>
       ⟨h.elem k (by decide) t1 ip o', ?_⟩
   rw [a0, h.base.bytes ho, h.base.q, EOk, ERange, and_assoc]
 
@@ -372,7 +372,7 @@ theorem midEg {v : VD} {s : State} (h : Φ v s) :
     WP isa (Code.seqL (FR3.take 45)) s (ME v (v.L.pl + v.L.ql)) :=
   WP.of_flat (c := .seq setupP (.seq (.block ptrG) (.seq (loadArr 4) elemRange))) rfl
     (WP.seq (WP.mono (setupP_SR3 (hΦ _ _ h)) fun _ ⟨c, _⟩ => WP.seq ((ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono
-      fun _ ⟨⟨c', a7, a8⟩, _⟩ => range_CK c' (by have := c'.base.kn; omega) a7 a8)))
+      fun _ ⟨⟨c', a7, a8⟩, _⟩ => range_CK c' (by have := c'.base.kn; omega_using [this]) a7 a8)))
 
 theorem zeroEg : ∀ v s₁ s₂, At Φ FR3 45 v s₁ → At Φ FR3 45 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
   zero_at (fun v => ERange v (v.L.pl + v.L.ql)) fun _ _ h => (midEg hΦ h).mono fun _ h => h.2.2
@@ -398,7 +398,7 @@ theorem midR3 {v : VD} {s : State} (h : Φ v s) : WP isa (Code.seqL (FR3.take 46
   obtain ⟨⟨⟨B, l, hsz⟩, hp, hq⟩, pm, qf⟩ := hΦ _ _ h
   exact WP.of_flat (c := .seq setupP (.seq (.block ptrG) checkElem)) rfl
     (WP.seq (WP.mono (setupP_SR3 (hΦ _ _ h)) fun _ ⟨c, _⟩ => WP.seq ((ptr_CK c (ptrG_ok c.base.scr c.base.ok c.base.regs)).mono
-      fun _ ⟨⟨c', a7, a8⟩, _⟩ => (elem_CK c' hsz hp (by have := c'.base.kn; omega) a7 a8).mono fun _ ⟨c'', a0⟩ =>
+      fun _ ⟨⟨c', a7, a8⟩, _⟩ => (elem_CK c' hsz hp (by have := c'.base.kn; omega_using [this]) a7 a8).mono fun _ ⟨c'', a0⟩ =>
         ⟨c'', ⟨hsz, hp, hq, pm⟩, a0⟩)))
 
 theorem zeroR3 : ∀ v s₁ s₂, At Φ FR3 46 v s₁ → At Φ FR3 46 v s₂ → (s₁.gpr .a0 == 0) = (s₂.gpr .a0 == 0) :=
@@ -504,7 +504,7 @@ theorem pinsE_3 {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → Base v u
     refine WP.of_flat (c := .seq (copy 1 24) (.block (ptrQ ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))) rfl
       (WP.seq (WP.mono (copy_ok ip.env (o := 1) (a := 24) (by decide) (by decide) (by decide))
         fun _ ⟨⟨_, o1⟩, k1⟩ => ?_))
-    have B1 := B.body k1 (Body.ofP hL o1 (by omega) (by simp only [Lay.qOff]; omega))
+    have B1 := B.body k1 (Body.ofP hL o1 (by omega_using [e1]) (by simp only [Lay.qOff]; omega_using [e1, e28]))
     refine WP.block_append (WP.mono (ptrQ_ok B1.scr hL B1.regs) fun t ⟨⟨a7, a8, m2⟩, k2⟩ =>
       WP.mono (WP.keep [.s9, .s10] (Q := fun u => u.gpr .s9 = off (off v.key v.L.pl) 0 ∧
         u.gpr .s10 = BitVec.ofNat 64 v.L.ql ∧ u.mem = t.mem) (by brun [a7, a8, BitVec.add_zero]) (by decide) (by rfl))

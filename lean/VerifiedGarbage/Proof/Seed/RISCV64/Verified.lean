@@ -61,7 +61,7 @@ theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} (hs : (contract d).pre s
           keyData := kd
           keyBuf := kb
           dataBuf := db
-          fit := by omega }
+          fit := by omega_using [fit] }
 
 theorem ecb_correct (d : Spec.Seed.Direction) (s : State) (hs : (contract d).pre s) :
     ∃ t s', Exec isa (Impl.Seed.RISCV64.ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d).post s s' := by

@@ -28,21 +28,21 @@ theorem rest_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params}
   unfold Impl.MlDsa.AArch64.KeyGen.Optimized.restWith
   apply WP.seq
   refine WP.mono (roots.phase (show 16*(Code.block copies).aarch64Depth≤S' from by
-    change 0≤S'; omega) hP.s64 (copies_ok hF hp h)) fun a ⟨⟨A,T,R,ha⟩,ra⟩ => ?_
+    change 0≤S'; omega_using []) hP.s64 (copies_ok hF hp h)) fun a ⟨⟨A,T,R,ha⟩,ra⟩ => ?_
   apply WP.seq
   refine WP.mono (seqR_ok (I := fun j t => KR p σ A T R j 0 0 t ∧ Sign.StaticRoots S' t)
     (p.ℓ+p.k) 0 (fun j _ hj t ⟨ht,rt⟩ =>
-      rt.phase (hdpack j (by omega)) hP.s64 (packSecret_ok hP hF hp (by omega) ht)) a ⟨ha,ra⟩)
+      rt.phase (hdpack j (by omega_using [hj])) hP.s64 (packSecret_ok hP hF hp (by omega_using [hj]) ht)) a ⟨ha,ra⟩)
     fun b ⟨hb,rb⟩ => ?_
   simp only [Nat.zero_add] at hb
   apply WP.seq
   refine WP.mono (seqR_ok (I := fun j t => PositiveKR p σ A T R (p.ℓ+p.k) j 0 t ∧ Sign.StaticRoots S' t)
-    p.ℓ 0 (fun j _ hj t ⟨ht,rt⟩ => nttSecret_ok hF hp (by omega) ht rt)
+    p.ℓ 0 (fun j _ hj t ⟨ht,rt⟩ => nttSecret_ok hF hp (by omega_using [hj]) ht rt)
     b ⟨PositiveKR.of_canonical hb,rb⟩) fun c ⟨hc,rc⟩ => ?_
   simp only [Nat.zero_add] at hc
   apply WP.seq
   refine WP.mono (seqR_ok (I := fun i t => PositiveKR p σ A T R (p.ℓ+p.k) p.ℓ i t ∧ Sign.StaticRoots S' t)
-    p.k 0 (fun i _ hi t ⟨ht,rt⟩ => row_ok hP hF hp (by omega) ht rt (hdrow i (by omega)))
+    p.k 0 (fun i _ hi t ⟨ht,rt⟩ => row_ok hP hF hp (by omega_using [hi]) ht rt (hdrow i (by omega_using [hi])))
     c ⟨hc,rc⟩) fun d ⟨hd,_⟩ => ?_
   simp only [Nat.zero_add] at hd
   exact (trHash_piece hF hP.s16 hP.s64).ok σ d hp ⟨A,T,R,hd⟩

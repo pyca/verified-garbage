@@ -3,17 +3,205 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillFinish
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillAttempt
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySpill
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedAbi
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryRestore
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryLink
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Dispatch
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Words
+
+/-! ### `Dsa.AArch64.Generation.EntrySavedAbi`, which only this module used -/
+
+section
+
+/-! The generation phases preserve the saved AAPCS64 registers. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Impl.Dsa.AArch64.Generation
+
+theorem link_gprs (s : State) : Spill.Saved (Refill.refillBase s) s.gpr abiGprs (linkState s).mem := by
+  have g := Spill.saveMem_saved (l := abiGprs) (by decide) s.mem (Refill.refillBase s) s.gpr
+  have vf := Spill.saveMem_frame (l := vectorSlots) (lo := 384) (n := 64) (by decide) (by decide)
+    (Spill.saveMem s.mem (Refill.refillBase s) s.gpr abiGprs) (Refill.refillBase s) (vectorValues s)
+  have gv := g.frame_in (lo := 304) (n := 80) (by decide) vf (by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact Offset.disjoint (Refill.refillBase s) (by decide) (by decide) (by decide))
+  have lf : Frame [⟨off (Refill.refillBase s) 296, 8⟩] (savedAbiMem s) (linkState s).mem :=
+    by
+      change Frame [⟨off (Refill.refillBase s) 296, 8⟩] (savedAbiMem s)
+        ((savedAbiMem s).writeW (off (Refill.refillBase s) 296) (s.gpr .x30))
+      exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
+  exact gv.frame_in (lo := 304) (n := 80) (by decide) lf (by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact Offset.disjoint (Refill.refillBase s) (by decide) (by decide) (by decide))
+
+theorem link_vectors (s : State) :
+    Spill.Saved (Refill.refillBase s) (vectorValues s) vectorSlots (linkState s).mem := by
+  have v := Spill.saveMem_saved (l := vectorSlots) (by decide)
+    (Spill.saveMem s.mem (Refill.refillBase s) s.gpr abiGprs) (Refill.refillBase s) (vectorValues s)
+  have lf : Frame [⟨off (Refill.refillBase s) 296, 8⟩] (savedAbiMem s) (linkState s).mem :=
+    by
+      change Frame [⟨off (Refill.refillBase s) 296, 8⟩] (savedAbiMem s)
+        ((savedAbiMem s).writeW (off (Refill.refillBase s) 296) (s.gpr .x30))
+      exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
+  exact v.frame_in (lo := 384) (n := 64) (by decide) lf (by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact Offset.disjoint (Refill.refillBase s) (by decide) (by decide) (by decide))
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.EntryRestore`, which only this module used -/
+
+section
+
+/-! Restore every AAPCS64 preserved register from its protected slot. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum.AArch64
+open VG.Impl.Dsa.AArch64.Generation
+
+structure RestoredEntry (s t u : State) : Prop where
+  gprs : ∀ r ∈ preserved, u.gpr r = s.gpr r
+  vectors : ∀ v ∈ preservedV, (u.v v).extractLsb' 0 64 = (s.v v).extractLsb' 0 64
+  memory : u.mem = t.mem
+  stack : u.sp = t.sp
+  read : u.rd = t.rd
+  write : u.wr = t.wr
+  result : u.gpr .x0 = t.gpr .x0
+
+theorem entryRestore_ok {s t : State}
+    (sp : t.sp = Refill.refillBase s)
+    (read : ∀ d, d + 8 ≤ 480 → InRegions (t.rd ++ t.wr) (Refill.refillBase s + BitVec.ofNat 64 d) 8)
+    (g : Spill.Saved (Refill.refillBase s) s.gpr abiGprs t.mem)
+    (v : Spill.Saved (Refill.refillBase s) (vectorValues s) vectorSlots t.mem)
+    (lr : t.mem.readW (Refill.refillBase s + BitVec.ofNat 64 296) 64 = s.gpr .x30) :
+    WP isa (.block entryRestore) t (RestoredEntry s t) := by
+  simp only [entryRestore, abiGprs, abiVectors, List.map_cons, List.map_nil,
+    List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append]
+  brun [exec_ldrSp (off := 304) (by decide),
+    exec_ldrSp (off := 312) (by decide),
+    exec_ldrSp (off := 320) (by decide),
+    exec_ldrSp (off := 328) (by decide),
+    exec_ldrSp (off := 336) (by decide),
+    exec_ldrSp (off := 344) (by decide),
+    exec_ldrSp (off := 352) (by decide),
+    exec_ldrSp (off := 360) (by decide),
+    exec_ldrSp (off := 368) (by decide),
+    exec_ldrSp (off := 376) (by decide),
+    exec_ldrSp (off := 384) (by decide),
+    exec_ldrSp (off := 392) (by decide),
+    exec_ldrSp (off := 400) (by decide),
+    exec_ldrSp (off := 408) (by decide),
+    exec_ldrSp (off := 416) (by decide),
+    exec_ldrSp (off := 424) (by decide),
+    exec_ldrSp (off := 432) (by decide),
+    exec_ldrSp (off := 440) (by decide),
+    exec_ldrSp (off := 296) (by decide),
+    exec_ins (by decide : 0 < 2),
+    sp,
+    read 304 (by decide),
+    read 312 (by decide),
+    read 320 (by decide),
+    read 328 (by decide),
+    read 336 (by decide),
+    read 344 (by decide),
+    read 352 (by decide),
+    read 360 (by decide),
+    read 368 (by decide),
+    read 376 (by decide),
+    read 384 (by decide),
+    read 392 (by decide),
+    read 400 (by decide),
+    read 408 (by decide),
+    read 416 (by decide),
+    read 424 (by decide),
+    read 432 (by decide),
+    read 440 (by decide),
+    read 296 (by decide),
+    g ⟨.x19, 304⟩ (by decide),
+    g ⟨.x20, 312⟩ (by decide),
+    g ⟨.x21, 320⟩ (by decide),
+    g ⟨.x22, 328⟩ (by decide),
+    g ⟨.x23, 336⟩ (by decide),
+    g ⟨.x24, 344⟩ (by decide),
+    g ⟨.x25, 352⟩ (by decide),
+    g ⟨.x26, 360⟩ (by decide),
+    g ⟨.x27, 368⟩ (by decide),
+    g ⟨.x28, 376⟩ (by decide),
+    v ⟨.x0, 384⟩ (by decide),
+    v ⟨.x1, 392⟩ (by decide),
+    v ⟨.x2, 400⟩ (by decide),
+    v ⟨.x3, 408⟩ (by decide),
+    v ⟨.x4, 416⟩ (by decide),
+    v ⟨.x5, 424⟩ (by decide),
+    v ⟨.x6, 432⟩ (by decide),
+    v ⟨.x7, 440⟩ (by decide),
+    lr,
+    vectorValues,
+    laneOf,
+    State.write,
+    State.setV]
+  refine ⟨?_, ?_, rfl, sp.symm, rfl, rfl, rfl⟩
+  · intro r hr
+    simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+  · intro r hr
+    simp only [preservedV, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+    all_goals exact extract_setLane64 _ _ (i := 0) (j := 0) (by decide) (by decide)
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.Generation.EntryLink`, which only this module used -/
+
+section
+
+/-! Save the incoming link register outside the persistent generation words. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
+
+theorem link_frame (s : State) : Frame [linkRegion s] s.mem (linkState s).mem := by
+  have gp := Spill.saveMem_frame (l := Impl.Dsa.AArch64.Generation.abiGprs) (lo := 296) (n := 152)
+    (by decide) (by decide) s.mem (Refill.refillBase s) s.gpr
+  have vp := Spill.saveMem_frame (l := vectorSlots) (lo := 296) (n := 152)
+    (by decide) (by decide)
+    (Spill.saveMem s.mem (Refill.refillBase s) s.gpr Impl.Dsa.AArch64.Generation.abiGprs)
+    (Refill.refillBase s) (vectorValues s)
+  have ff : Frame [linkRegion s] s.mem (savedAbiMem s) := gp.trans vp
+  have hc : (linkRegion s).Contains (linkRegion s).base 8 := by
+    have hc := Offset.contains_base (off (Refill.refillBase s) 296) (d := 0) (n := 8) (k := 152)
+      (by decide) (by decide)
+    simpa only [linkRegion, off, BitVec.add_zero] using hc
+  exact ff.writeW (r := linkRegion s) (by simp) (s.gpr .x30) hc
+
+end VG.Proof.Dsa.AArch64.Generation
+
+end
+
+end
+
 
 /-! # The refillable-tape search on AArch64 meets its contract's functional part
 
@@ -46,9 +234,9 @@ theorem written_state (m : Mem) {St U : Addr} (hd : (⟨U, 8⟩ : Region).Disjoi
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact Offset.disjoint_base St h₁ (by omega)
-      · exact Offset.disjoint St (d := d) (e := 24) (by omega) (by omega) (by omega)
-      · exact (hd.symm.sub_left (Offset.sub_base St (by omega))) ) (by decide)
+      · exact Offset.disjoint_base St h₁ (by omega_using [h₂])
+      · exact Offset.disjoint St (d := d) (e := 24) (by omega_using [h₂]) (by omega_using [h₂]) (by omega_using [])
+      · exact (hd.symm.sub_left (Offset.sub_base St (by omega_using [h₂]))) ) (by decide)
   have uSt : Mem.Sep St 8 U 8 := hd.symm.sep (contains_head _ (by decide)) (contains_head _ (by decide))
   have uSt24 : Mem.Sep (off St 24) 8 U 8 := hd.symm.sep (Offset.contains_base _ (by decide) (by decide))
     (contains_head _ (by decide))
@@ -74,7 +262,7 @@ theorem wordsAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   unfold Spec.Rsa.wordsAt
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (Offset.contains_base p (d := 8 * i) (n := 8) (k := 8 * n) (by omega) (by omega)) hd (by decide)
+  exact hf.readW (Offset.contains_base p (d := 8 * i) (n := 8) (k := 8 * n) (by omega_using [hi]) (by omega_using [hn, hi])) hd (by decide)
 
 section
 variable {pBytes : Nat} {s₀ : State} (h : RefillABI pBytes s₀)
@@ -93,11 +281,11 @@ theorem saved_body : ∀ r ∈ bodyRegions h, (savedRegion (s₀ := s₀)).Disjo
   have st : ∀ {q : Region}, (q = inOut s₀ ∨ q = inUsed s₀ ∨ q = inRand s₀ ∨ q = inScr s₀ ∨ q = inState s₀) →
       (savedRegion (s₀ := s₀)).Disjoint q := fun hq => (h.frame_disjoint hq (by decide)).symm
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Offset.disjoint_base (refillBase s₀) (by decide) (by have := refillBase_bound h; omega)
-  · exact Offset.disjoint (refillBase s₀) (d := 296) (e := 448) (by omega) (by omega) (by omega)
+  · exact Offset.disjoint_base (refillBase s₀) (by decide) (by have := refillBase_bound h; omega_using [])
+  · exact Offset.disjoint (refillBase s₀) (d := 296) (e := 448) (by omega_using []) (by omega_using []) (by omega_using [])
   · exact (st (by simp)).sub_right h.arena_sub
-  · exact Offset.disjoint_base (refillBase s₀) (by decide) (by have := refillBase_bound h; omega)
-  · exact Offset.disjoint_below (refillBase s₀) (by omega)
+  · exact Offset.disjoint_base (refillBase s₀) (by decide) (by have := refillBase_bound h; omega_using [])
+  · exact Offset.disjoint_below (refillBase s₀) (by omega_using [])
   · exact st (by simp)
   · exact st (by simp)
   · exact st (by simp)
@@ -172,7 +360,7 @@ theorem search_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) {W
     exact (a.trans b).trans c
   have stateM : ∀ d, d + 8 ≤ 32 → m₁.readW (s₀.gpr .x7 + BitVec.ofNat 64 d) 64 =
       s₀.mem.readW (s₀.gpr .x7 + BitVec.ofNat 64 d) 64 := fun d hd8 =>
-    fs₁.readW (r := inState s₀) (Offset.contains_base _ (d := d) (n := 8) (k := 32) hd8 (by omega))
+    fs₁.readW (r := inState s₀) (Offset.contains_base _ (d := d) (n := 8) (k := 32) hd8 (by omega_using [hd8]))
       (buffer_prior h (by simp)) (by decide)
   have finalD : ∀ {q : Region}, (q = inUsed s₀ ∨ q = inState s₀) →
       ∀ r ∈ [(⟨refillBase s₀, frameBytes⟩ : Region), inOut s₀], q.Disjoint r := by
@@ -264,7 +452,7 @@ def BodyPost (t : State) : Prop :=
 theorem body_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) :
     WP isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 G.run T.run) (allocState 480 s₀) (BodyPost h) := by
   have hp3 : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
-    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
   unfold Impl.Dsa.AArch64.Generation.entryBody
   refine WP.seq (WP.mono (entrySave_ok s₀) fun u hu => ?_)
   subst hu
@@ -301,7 +489,7 @@ theorem body_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) :
   have perm (d : Nat) (hd : d + 8 ≤ 480) : InRegions (t₁.rd ++ t₁.wr) (refillBase s₀ + BitVec.ofNat 64 d) 8 := by
     rw [wr₁']
     exact ⟨⟨refillBase s₀, 480⟩, List.mem_append_right _ (List.mem_cons_self ..),
-      Offset.contains_base _ hd (by omega)⟩
+      Offset.contains_base _ hd (by omega_using [hd])⟩
   refine WP.mono (entryRestore_ok sp₁' perm g vv lr) fun t₂ hv => ?_
   refine ⟨hv.result.trans x0, hv.memory ▸ bytes, hv.memory ▸ used, hv.memory ▸ words, hv.gprs, hv.vectors,
     hv.stack.trans sp₁', hv.read.trans (rd₁.trans (hk.rd.trans E.rd)), hv.write.trans wr₁'⟩
@@ -328,7 +516,7 @@ theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTes
         (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
         (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧ t.sp = s.sp := by
     unfold Impl.Dsa.AArch64.Generation.code
-    apply alloc_frame_ok (bytes := 480) (by decide) (by have := h.stackLower; unfold refillStack at this; omega)
+    apply alloc_frame_ok (bytes := 480) (by decide) (by have := h.stackLower; unfold refillStack at this; omega_using [this])
     refine WP.mono (body_ok h H G T) ?_
     intro t ⟨x0, bytes, used, words, gp, vp, sp, _, wr⟩
     refine ⟨by simp only [allocState]; exact sp, by simp only [allocState]; exact wr, ?_⟩
@@ -345,7 +533,7 @@ theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTes
   have w16 : s.mem.readW (s.gpr .x7 + BitVec.ofNat 64 16) 64 =
       BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (refillPLen s)) := h.budget
   have hp : 0 < refillPLen s := by
-    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
   change (BitVec.setWidth 32 (t.gpr .x0)).toNat = (total h).status ∧
     (Spec.Rsa.bytesAt t.mem (s.gpr .x0) (s.gpr .x1).toNat = match (total h).outcome with
       | .accepted a => Spec.Dsa.encodeParams (refillPLen s) (Spec.Dsa.generationQLen (refillPLen s)) a
@@ -358,7 +546,7 @@ theorem refill_correct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTes
     VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
   · have hs : (total h).status < 4 := by
       unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
-    rw [x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs]), Nat.mod_eq_of_lt (by omega_using [hs])]
   · rw [bytes]
     unfold expectedOf
     generalize (total h).outcome = o

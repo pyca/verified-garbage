@@ -41,10 +41,10 @@ theorem loadTailByte_ok {s : State} {P ep : Addr} {w i b K : Nat}
     intro k hk he
     rw [hm,hdrStore_hdr _ _ _ (by decide) hk (Ne.symm he)]
   have ey : wv t.mem P (slot w aY) w = wv s.mem P (slot w aY) w :=
-    out.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega) (by
+    out.wv (by have := hdr_lt_slot w aY (show Crt.sV < 32 by decide); omega_using [this]) (by
       have := hc.good.scr.nowrap
       have := slot_le (w := w) (show aY < 8 by decide)
-      omega)
+      omega_arith)
   refine ⟨hc.of_win ft kt.wr (kt.gpr .x0 (by decide)),ht.of_win ft hc.scrT.nowrap,?_,?_,ft,kt,hh⟩
   · obtain ⟨E,d,hb,hd,hK,hy,hyv,hn,bc⟩ := hp
     exact ⟨E,d,hb,hd,hK,ey.symm ▸ hy,by simpa only [ey] using hyv,

@@ -20,9 +20,9 @@ theorem less_ok (s : State) :
   refine withRest_all [.r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.less
   by_cases ge : (s.gpr .r10).toNat ≤ (s.gpr .r9).toNat
-  · have lt : ¬ (s.gpr .r9).toNat < (s.gpr .r10).toNat := by omega
+  · have lt : ¬ (s.gpr .r9).toNat < (s.gpr .r10).toNat := by omega_using [ge]
     ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
-  · have lt : (s.gpr .r9).toNat < (s.gpr .r10).toNat := by omega
+  · have lt : (s.gpr .r9).toNat < (s.gpr .r10).toNat := by omega_using [ge]
     ffrun [ge, lt, show (0 : BitVec 32) = 0#32 from rfl, BitVec.zero_add]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

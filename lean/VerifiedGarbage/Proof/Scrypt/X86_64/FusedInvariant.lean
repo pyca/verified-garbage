@@ -57,8 +57,8 @@ theorem x_s {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k ≤ rr s₀) :
     Region.Disjoint ⟨xP s₀ k, 64⟩ ⟨sc s₀, 64⟩ := by
   cases k with
   | zero =>
-    exact (hp.b_s.sub_left (b_sub hp (by have := hp.pos; omega))).sub_right (Region.sub_prefix (by decide))
-  | succ k => exact slot_s hp (by omega)
+    exact (hp.b_s.sub_left (b_sub hp (by have := hp.pos; omega_using [this]))).sub_right (Region.sub_prefix (by decide))
+  | succ k => exact slot_s hp (by omega_using [hk])
 
 theorem Logical.scratch {s₀ s t : State} (hp : Pre s₀) {k : Nat} (h : Logical s₀ k s)
     (hf : Frame [⟨sc s₀, 64⟩] s.mem t.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr)
@@ -67,10 +67,10 @@ theorem Logical.scratch {s₀ s t : State} (hp : Pre s₀) {k : Nat} (h : Logica
     fun a hd => Memory.frame_bytesAt hf (fun R hR => by
       simp only [List.mem_singleton] at hR; subst R; exact hd) (by decide)
   refine ⟨h.le, rd.trans h.rd, wr.trans h.wr, sp.trans h.rsp,
-    h.frame.trans (scratch_frame hf), saved_keep hp (by have := hp.pos; omega) (scratch_oldframe hf) h.saved,
+    h.frame.trans (scratch_frame hf), saved_keep hp (by have := hp.pos; omega_using [this]) (scratch_oldframe hf) h.saved,
     fun i hi => ?_, ?_⟩
-  · rw [keep (yE s₀ i) (slot_s hp (by have := h.le; omega)),
-      keep (yO s₀ i) (slot_s hp (by have := h.le; omega))]
+  · rw [keep (yE s₀ i) (slot_s hp (by have := h.le; omega_using [hi, this])),
+      keep (yO s₀ i) (slot_s hp (by have := h.le; omega_using [hi, this]))]
     exact h.done i hi
   · rw [keep (xP s₀ k) (x_s hp h.le), h.x]
 end VG.Proof.Scrypt.X86_64.BlockMix.Fused

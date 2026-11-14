@@ -24,7 +24,7 @@ theorem ofNat_succ (k : Nat) : BitVec.ofNat 64 (k + 1) = BitVec.ofNat 64 k + 1 :
   rw [BitVec.ofNat_add]; rfl
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [h], ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
@@ -51,7 +51,7 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 /-! ## Bytes in memory -/
 
@@ -79,25 +79,25 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : 
   · apply List.map_congr_left
     intro i hi
     have hi := List.mem_range.mp hi
-    exact writeBytes_before m p xs hi (by omega)
+    exact writeBytes_before m p xs hi (by omega_using [h])
   · apply List.ext_getElem (by simp)
     intro j h₁ h₂
     simp only [List.getElem_map, List.getElem_range, Function.comp, writeBytes]
     have hj : j < xs.length := by simpa using h₁
     rw [show p + BitVec.ofNat 64 (r + j) - (p + BitVec.ofNat 64 r) = BitVec.ofNat 64 j from
-      Offset.add_ofNat_add_sub p r j, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      Offset.add_ofNat_add_sub p r j, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, h₂])]
     simp [hj, List.getD_eq_getElem?_getD]
 
 /-! ## Whole blocks and the rest -/
 
 theorem take_whole {a b : List Byte} (ha : a.length % 16 = 0) (hb : b.length < 16) :
     (a ++ b).take (16 * ((a ++ b).length / 16)) = a := by
-  rw [show 16 * ((a ++ b).length / 16) = a.length by simp only [List.length_append]; omega,
+  rw [show 16 * ((a ++ b).length / 16) = a.length by simp only [List.length_append]; omega_using [ha, hb],
     List.take_left' rfl]
 
 theorem drop_whole {a b : List Byte} (ha : a.length % 16 = 0) (hb : b.length < 16) :
     (a ++ b).drop (16 * ((a ++ b).length / 16)) = b := by
-  rw [show 16 * ((a ++ b).length / 16) = a.length by simp only [List.length_append]; omega,
+  rw [show 16 * ((a ++ b).length / 16) = a.length by simp only [List.length_append]; omega_using [ha, hb],
     List.drop_left' rfl]
 
 /-- A message with its last bytes buffered: its whole blocks, which the
@@ -105,13 +105,13 @@ state represents as `Repr` does, and the buffered bytes. -/
 theorem Buffered.split {m : Mem} {st : Addr} {key msg : List Byte} (h : Buffered m st key msg) :
     ∃ w b, msg = w ++ b ∧ Repr m st key w ∧ b.length = msg.length % 16 ∧
       bytesAt m (st + 56) (msg.length % 16) = b :=
-  ⟨_, _, (List.take_append_drop _ _).symm, h.1, by simp only [List.length_drop]; omega, h.2⟩
+  ⟨_, _, (List.take_append_drop _ _).symm, h.1, by simp only [List.length_drop]; omega_using [], h.2⟩
 
 theorem Buffered.of {m : Mem} {st : Addr} {key w b : List Byte} (hr : Repr m st key w) (hb : b.length < 16)
     (hbuf : bytesAt m (st + 56) b.length = b) : Buffered m st key (w ++ b) := by
   have hw := hr.1
   refine ⟨by rw [take_whole hw hb]; exact hr, ?_⟩
-  rw [drop_whole hw hb, show (w ++ b).length % 16 = b.length by simp only [List.length_append]; omega]
+  rw [drop_whole hw hb, show (w ++ b).length % 16 = b.length by simp only [List.length_append]; omega_using [hb, hw]]
   exact hbuf
 
 /-- A message of whole blocks, with nothing buffered. -/

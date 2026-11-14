@@ -19,17 +19,17 @@ open VG VG.Proof.Mont VG.Impl.Mont.X86
 theorem square_round_room {i t : Nat} (hi : i < 8)
     (ht : t < 2 ^ (32 * (16 - i)) + p256Prime) :
     t + (2 ^ 32 - 1) * p256Prime < 2 ^ (32 * (17 - i)) := by
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceSub, Nat.reduceMul, p256Prime] at ht ⊢ <;> omega
+    simp only [Nat.reduceSub, Nat.reduceMul, p256Prime] at ht ⊢ <;> omega_using [ht]
 
 /-- Dividing the cancelled low word tightens the same bound for the next round. -/
 theorem square_round_bound {i t t' q : Nat} (hi : i < 8) (hq : q < 2 ^ 32)
     (ht : t < 2 ^ (32 * (16 - i)) + p256Prime) (he : 2 ^ 32 * t' = t + q * p256Prime) :
     t' < 2 ^ (32 * (16 - (i + 1))) + p256Prime := by
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, p256Prime] at ht he ⊢ <;> omega
+    simp only [Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, p256Prime] at ht he ⊢ <;> omega_using [hq, he, ht]
 
 /-- Append a reduction digit to the accumulated multiple. -/
 theorem square_round_multiple {i t t' q U T : Nat} (hq : q < 2 ^ 32)
@@ -37,13 +37,13 @@ theorem square_round_multiple {i t t' q U T : Nat} (hq : q < 2 ^ 32)
     (he : 2 ^ 32 * t' = t + q * p256Prime) :
     ∃ U', U' < 2 ^ (32 * (i + 1)) ∧ 2 ^ (32 * (i + 1)) * t' = T + U' * p256Prime := by
   refine ⟨U + 2 ^ (32 * i) * q, ?_, ?_⟩
-  · have hq' := Nat.mul_le_mul_left (2 ^ (32 * i)) (show q ≤ 2 ^ 32 - 1 by omega)
+  · have hq' := Nat.mul_le_mul_left (2 ^ (32 * i)) (show q ≤ 2 ^ 32 - 1 by omega_using [hq])
     rw [pow32_succ]
     have hp : 2 ^ (32 * i) * (2 ^ 32 - 1) + 2 ^ (32 * i) = 2 ^ 32 * 2 ^ (32 * i) := by
       rw [Nat.mul_sub_one, Nat.mul_comm]
       have := Nat.le_mul_of_pos_left (2 ^ (32 * i)) (by decide : 0 < (2 ^ 32 : Nat))
-      omega
-    omega
+      omega_using []
+    omega_using [hU, hq']
   · rw [pow32_succ, Nat.mul_assoc, Nat.mul_left_comm (2 ^ 32), he, Nat.mul_add, hT]
     simp only [Nat.add_mul, Nat.mul_assoc, Nat.add_assoc]
 
@@ -53,6 +53,6 @@ theorem square_final_bound {a t U : Nat} (ha : a < p256Prime) (hU : U < 2 ^ 256)
   have hp : p256Prime < 2 ^ 256 := by decide
   have haa := Nat.mul_lt_mul_of_lt_of_lt ha (Nat.lt_trans ha hp)
   simp only [p256Prime] at ha hU he hp haa ⊢
-  omega
+  omega_using [hU, he, haa]
 
 end VG.Proof.Weierstrass.X86.Mont

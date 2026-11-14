@@ -79,10 +79,10 @@ theorem common_bound {P : Nat → Nat → Prop} (hm : ∀ i n n', n ≤ n' → P
     ∀ K, (∀ i < K, ∃ n, P i n) → ∃ n, ∀ i < K, P i n
   | 0, _ => ⟨0, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | K + 1, h => by
-    obtain ⟨n, hn⟩ := common_bound hm K fun i hi => h i (by omega)
-    obtain ⟨n', hn'⟩ := h K (by omega)
+    obtain ⟨n, hn⟩ := common_bound hm K fun i hi => h i (by omega_using [hi])
+    obtain ⟨n', hn'⟩ := h K (by omega_using [])
     refine ⟨max n n', fun i hi => ?_⟩
-    rcases (by omega : i < K ∨ i = K) with hi | rfl
+    rcases (by omega_using [hi] : i < K ∨ i = K) with hi | rfl
     · exact hm i _ _ (Nat.le_max_left _ _) (hn i hi)
     · exact hm i _ _ (Nat.le_max_right _ _) hn'
 

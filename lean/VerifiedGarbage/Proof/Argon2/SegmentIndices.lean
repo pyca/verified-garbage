@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Segment
 public import VerifiedGarbage.Proof.Argon2.FillStep
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The reference log exposes exactly one coordinate per dependent active cell. -/
 
@@ -18,7 +19,7 @@ theorem segment_indices_drop (p : Params) (pass lane slice start count : Nat) (s
   | zero => rfl
   | succ n ih =>
     rw [segment_succ]
-    have next : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ start + 1 := by omega
+    have next : pass ≠ 0 ∨ slice ≠ 0 ∨ 2 ≤ start + 1 := by omega_using [active]
     rw [← List.drop_drop, ih (start + 1) (fillBlock p pass slice lane start state) next]
     rw [FillStep.indices p pass lane slice start state active]
     simp only [dependent, Bool.false_eq_true, ite_false, List.drop_succ_cons, List.drop_zero]
@@ -32,8 +33,8 @@ theorem segment_first_reference (p : Params) (pass lane slice start count : Nat)
       reference p pass lane slice start (FillStep.random p pass lane slice start rightState.memory) := by
   have dropped := congrArg (List.drop count) indices
   rw [segment_succ, segment_succ,
-    segment_indices_drop p pass lane slice (start + 1) count _ (by omega) dependent,
-    segment_indices_drop p pass lane slice (start + 1) count _ (by omega) dependent,
+    segment_indices_drop p pass lane slice (start + 1) count _ (by omega_using [active]) dependent,
+    segment_indices_drop p pass lane slice (start + 1) count _ (by omega_using [active]) dependent,
     FillStep.indices p pass lane slice start leftState active,
     FillStep.indices p pass lane slice start rightState active] at dropped
   simp only [dependent, Bool.false_eq_true, ite_false] at dropped

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
@@ -19,14 +20,14 @@ namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem cachedKeyGenerate_environment (s : State)
-    (pre : (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre s) {p : Inputs}
+    (pre : (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre s) {p : Inputs}
     (base : stackArg s 5=p.base) (privateValue : s.gpr .r0=p.privateValue)
     (publicValue : s.gpr .r2=p.publicValue) (domain : stackArg s 0=p.domain)
     (count : (stackArg s 2).toNat=p.k) (capacity : (stackArg s 6).toNat=p.len)
     (cache : stackArg s 7=p.cachedContext) (cacheWords : (stackArg s 8).toNat=p.cachedWords)
     (domainBytes : Spec.Rsa.bytesAt s.mem (State.addr p.domain) (stackArg s 1).toNat=p.dom) :
     CachedGenerationContext p (entered s) ∧ Spec.Ffdh.domainValid p.k p.dom=true := by
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract,Spec.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
     abi,argRegs,reduceClassify,Loc.val,State.addr] at pre
   obtain ⟨stackFit,argFit,rd,wr,_xY,_xDom,_xRand,xS,xCtx,_xArgs,_yDom,_yRand,yS,yCtx,_yArgs,
     _domS,_randS,sCtx,_sArgs,_stackX,_stackY,_stackDom,_stackRand,stackS,stackCtx,_stackArgs,

@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 `# Safety` items, the salt length verification expects
 (`expectedSaltLen`), and the `# Safety` items of verification but for what
 the signature gives (`verifySafety`), which the contracts of
-`Spec/RsaPss/Table.lean` (and those of RSAES-OAEP) share.
+`Spec/RsaPss/MdTable.lean` (and those of RSAES-OAEP) share.
 -/
 
 @[expose] public section

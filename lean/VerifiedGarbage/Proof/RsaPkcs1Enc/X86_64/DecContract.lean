@@ -94,17 +94,6 @@ def privK : Contract isa where
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r8) (s₁.gpr .r9).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r8) (s₂.gpr .r9).toNat
 
-/-- An implementation of `vg_rsa_private_checked`: its symbol and code,
-correct and constant time under `privK`, writing `rsp` only by its own
-frames, which with its calls use at most `privStack` bytes of stack. -/
-structure PrivImpl where
-  name : String
-  code : Prog isa
-  ok : ∀ s, privK.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ privK.post s s'
-  ct : ConstantTime isa privK.pre privK.pub code
-  spSafe : code.all (fun i => !isa.writesSp i) = true
-  depth : code.x86_64Depth ≤ privStack
-
 /-! ## Decryption -/
 
 /-- The stack below the stack pointer the function uses: its frame, the
@@ -190,54 +179,5 @@ def decK : Contract isa where
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .rcx) (s₂.gpr .r8).toNat ∧
       Spec.Rsa.bytesAt s₁.mem (s₁.gpr .r9) (stackArg s₁ 0).toNat =
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r9) (stackArg s₂ 0).toNat
-
-/-- A state meeting `decK.pre`: a 512-bit modulus, one-byte `e`, `d`, primes,
-exponents and `qInv`, and the stack arguments at `0x10008`. -/
-def decSatState : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 64 | .rdx => 0x1800 | .rcx => 0x2000 | .r8 => 64 | .r9 => 0x3000
-    | .rsp => 0x10000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := bif Nat.beq a.toNat 0x10088 then 0x20
-    else bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x40
-    else bif Nat.beq a.toNat 0x10018 then 1 else bif Nat.beq a.toNat 0x10021 then 0x41
-    else bif Nat.beq a.toNat 0x10028 then 64 else bif Nat.beq a.toNat 0x10031 then 0x42
-    else bif Nat.beq a.toNat 0x10038 then 1 else bif Nat.beq a.toNat 0x10041 then 0x43
-    else bif Nat.beq a.toNat 0x10048 then 1 else bif Nat.beq a.toNat 0x10051 then 0x44
-    else bif Nat.beq a.toNat 0x10058 then 1 else bif Nat.beq a.toNat 0x10061 then 0x45
-    else bif Nat.beq a.toNat 0x10068 then 1 else bif Nat.beq a.toNat 0x10071 then 0x46
-    else bif Nat.beq a.toNat 0x10078 then 1 else bif Nat.beq a.toNat 0x10082 then 0x02
-    else bif Nat.beq a.toNat 0x10089 then 0x04 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x4100, 64⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
-    ⟨0x4500, 1⟩, ⟨0x4600, 1⟩, ⟨0x10008, 136⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 8448⟩]
-
-theorem decrypt_implies : decK.Implies (Spec.RsaPkcs1Enc.decryptContract abi decStack) where
-  pre := by
-    intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq] at h
-    sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16⟩ := h
-    obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl
-    refine ⟨?_, by simp only [stackArgs_seventeen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16], hn, he⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq] [decSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using decSatState
 
 end VG.Proof.RsaPkcs1Enc.X86_64

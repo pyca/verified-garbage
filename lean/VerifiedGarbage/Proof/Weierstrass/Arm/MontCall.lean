@@ -65,7 +65,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {n :
   have g3 : s₅.gpr .r3 = (BitVec.ofNat 16 b).setWidth 32 := u₅.gpr
   have hf₅ : Far s₅ base 8192 := hf.of_rest k₅
   have hcov : Covers [⟨base, 8192⟩] s₅.wr := by
-    have h := hf₅.write (d := 0) (n := 8192) (by omega)
+    have h := hf₅.write (d := 0) (n := 8192) (by omega_using [])
     simp only [off, BitVec.add_zero] at h
     exact Covers.one h
   refine WP.seq (WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
@@ -112,11 +112,11 @@ theorem pre_of_call {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size
   have hown := own_le n hM.n9
   have := hM.n3
   have e : ∀ x, x < 4096 → ((BitVec.ofNat 16 x).setWidth 32).toNat = x := fun x hx => by
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hx]
   have hr0 : State.addr (t.gpr .r0) = base := by rw [h3]; exact hs.wb
-  have ho' := e o (by omega)
-  have ha' := e a (by omega)
-  have hb' := e b (by omega)
+  have ho' := e o (by omega_using [ho, hown, this])
+  have ha' := e a (by omega_using [ha, hown, this])
+  have hb' := e b (by omega_using [hb, hown, this])
   refine ⟨⟨h1, by rw [h2, hr0], ?_, by rw [h4, ho']; exact ho, by rw [h5, ha']; exact ha,
     by rw [h6, hb']; exact hb⟩, hr0, by rw [h4, ho'], by rw [h5, ha'], by rw [h6, hb']⟩
   rw [h3, hs.wb_toNat]; exact hf.nowrap

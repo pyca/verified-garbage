@@ -27,21 +27,21 @@ theorem sub_ok {s : State} {B : Addr} {Z n eA eN eT : Nat} (hs : Scr s B Z)
   refine WP.seq (WP.mono (WP.keep [.x3, .x13, .x14, .x16, .x17] (Q := fun t => t.gpr .x16 = off B eA ∧
     t.gpr .x17 = off B eN ∧ t.gpr .x13 = off B eT ∧ t.gpr .x14 = BitVec.ofNat 64 n ∧ t.c = true ∧
     t.mem = s.mem) (by
-      brun [h8, h10, h6, h12, h7, Square.shr2_ofNat (show 4*n < 2 ^ 64 by omega)]
+      brun [h8, h10, h6, h12, h7, Square.shr2_ofNat (show 4*n < 2 ^ 64 by omega_using [hw'])]
       congr 1
-      omega) (by decide) (by decide) (by decide +kernel))
+      omega_using []) (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨h16, h17, h13, h14, hc₁, hm₁⟩, k₁⟩ => ?_)
   have h0 : SubInv s₁ B Z eA eN eT 0 s₁ :=
     ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, by rw [h13]; rfl,
       Outside.refl _ _ _ _, by rw [hc₁]; rfl⟩
-  refine WP.seq (WP.mono (wp_countdown (N := n) (by omega) (by omega) (fun j => SubInv s₁ B Z eA eN eT (4*j))
-    (fun j hj t hI _ => subTile_ok (by omega) hN hT (by omega) sN hj hI) h0 h14) fun t hI => ?_)
+  refine WP.seq (WP.mono (wp_countdown (N := n) (by omega_using [hw']) (by omega_using [hw]) (fun j => SubInv s₁ B Z eA eN eT (4*j))
+    (fun j hj t hI _ => subTile_ok (by omega_using [hA]) hN hT (by omega_using [sA]) sN hj hI) h0 h14) fun t hI => ?_)
   have t7 : t.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans ((k₁.gpr .x7 (by decide)).trans h7)
   have hX : word t.mem B (eA + 8 * (4*n)) = word s.mem B (eA + 8 * (4*n)) := by
-    rw [hI.out.word (by omega) (by omega), hm₁]
+    rw [hI.out.word (by omega_using [sA]) (by omega_using [hA, hn]), hm₁]
   refine WP.mono (WP.keep [.x3] (Q := fun t' => t'.mem = t.mem ∧
       t'.c = decide (2 ^ 64 ≤ (word t.mem B (eA + 8 * (4*n))).toNat + (~~~(0 : BitVec 64)).toNat + t.c.toNat))
-    (by brun [hI.x16, t7, hI.scr.ld (show eA + 8 * (4*n) + 8 ≤ Z by omega)])
+    (by brun [hI.x16, t7, hI.scr.ld (show eA + 8 * (4*n) + 8 ≤ Z by omega_using [hA])])
     (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨hm', hc'⟩, k'⟩ => ?_
   refine ⟨!t.c, ?_, ?_, ?_, ((k₁.trans hI.keep).trans k').mono (by decide)⟩
   · rw [hc', top_borrow, hX]

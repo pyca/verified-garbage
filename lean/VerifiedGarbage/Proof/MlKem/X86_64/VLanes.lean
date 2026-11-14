@@ -68,11 +68,11 @@ def qV : BitVec 128 := 0x0D010D010D010D010D010D010D010D01#128
 def qinvV : BitVec 128 := 0xF301F301F301F301F301F301F301F301#128
 
 theorem word_qV {i : Nat} (hi : i < 8) : word qV i = qW := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem word_qinvV {i : Nat} (hi : i < 8) : word qinvV i = qinvW := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- The constants of the vector code are in place. -/

@@ -27,16 +27,16 @@ theorem addrStep_wp {s : State} {B : Addr} {n a : Nat}
     WP isa (.block [.addi .t6 .t6 ((8 * n : Int) - a)]) s fun u =>
       Upd s u .t6 (B + BitVec.ofNat 64 (8 * n)) := by
   by_cases hn : a ≤ 8 * n
-  · rw [show (8 * n : Int) - a = (8 * n - a : Nat) by omega]
-    refine wp_addi (by omega) fun u hu => WP.block_nil ?_
+  · rw [show (8 * n : Int) - a = (8 * n - a : Nat) by omega_using [hn]]
+    refine wp_addi (by omega_using [h]) fun u hu => WP.block_nil ?_
     have e : s.gpr .t6 + BitVec.ofNat 64 (8 * n - a) = B + BitVec.ofNat 64 (8 * n) := by
-      rw [hB, Offset.add_add]; congr 2; omega
+      rw [hB, Offset.add_add]; congr 2; omega_using [hn]
     exact e ▸ hu
-  · rw [show (8 * n : Int) - a = -((a - 8 * n : Nat) : Int) by omega]
-    refine wp_subi (by omega) fun u hu => WP.block_nil ?_
+  · rw [show (8 * n : Int) - a = -((a - 8 * n : Nat) : Int) by omega_using [hn]]
+    refine wp_subi (by omega_using [h]) fun u hu => WP.block_nil ?_
     have e : s.gpr .t6 - BitVec.ofNat 64 (a - 8 * n) = B + BitVec.ofNat 64 (8 * n) := by
       rw [hB, show BitVec.ofNat 64 a = BitVec.ofNat 64 (8 * n) + BitVec.ofNat 64 (a - 8 * n) by
-        rw [← BitVec.ofNat_add]; congr 1; omega, ← BitVec.add_assoc, BitVec.add_sub_cancel]
+        rw [← BitVec.ofNat_add]; congr 1; omega_using [hn], ← BitVec.add_assoc, BitVec.add_sub_cancel]
     exact e ▸ hu
 
 theorem returnAddr_wp {s : State} {B : Addr} {n : Nat} (hB : s.gpr sb = B) (hn : n ≤ 761) :
@@ -44,7 +44,7 @@ theorem returnAddr_wp {s : State} {B : Addr} {n : Nat} (hB : s.gpr sb = B) (hn :
   unfold returnAddr
   split
   · rename_i h
-    refine wp_addi (by decide) fun a ha => WP.mono (addrStep_wp (n := n) (a := 2032) (ha.gpr.trans (by rw [hB])) (by omega)) ?_
+    refine wp_addi (by decide) fun a ha => WP.mono (addrStep_wp (n := n) (a := 2032) (ha.gpr.trans (by rw [hB])) (by omega_using [h])) ?_
     intro u hu
     exact ⟨hu.gpr, fun r hr => by rw [hu.other r hr, ha.other r hr],
       hu.mem.trans ha.mem, hu.rd.trans ha.rd, hu.wr.trans ha.wr, hu.sp.trans ha.sp⟩
@@ -52,7 +52,7 @@ theorem returnAddr_wp {s : State} {B : Addr} {n : Nat} (hB : s.gpr sb = B) (hn :
     refine wp_addi (by decide) fun a ha => wp_addi (by decide) fun b hb => ?_
     have eb : b.gpr .t6 = B + BitVec.ofNat 64 4064 := by
       rw [hb.gpr, ha.gpr, hB, Offset.add_add]
-    refine WP.mono (addrStep_wp (n := n) (a := 4064) eb (by omega)) fun u hu => ?_
+    refine WP.mono (addrStep_wp (n := n) (a := 4064) eb (by omega_using [hn, h])) fun u hu => ?_
     exact ⟨hu.gpr, fun r hr => by rw [hu.other r hr, hb.other r hr, ha.other r hr],
       by rw [hu.mem, hb.mem, ha.mem], by rw [hu.rd, hb.rd, ha.rd],
       by rw [hu.wr, hb.wr, ha.wr], by rw [hu.sp, hb.sp, ha.sp]⟩
@@ -84,15 +84,15 @@ theorem sharedCall_wp {c : Core} (hc : Layout c) (hn : c.total ≤ 761)
     WP isa (sharedCall name body c.total) s fun v =>
       ∃ t u, SharedInput s t B c.total ∧ (∀ r ∈ kept, u.gpr r = t.gpr r) ∧
         Frame [coreRegion c B] t.mem u.mem ∧ u.rd = t.rd ∧ u.wr = t.wr ∧ P t u ∧ SharedOutput s u v := by
-  have hn' : 8 * c.total + 8 ≤ 8 * (c.total + 2) := by omega
+  have hn' : 8 * c.total + 8 ≤ 8 * (c.total + 2) := by omega_using []
   have hal : (slotA B c.total).toNat % 8 = 0 :=
-    Spill.al8 (by have := hS.al; omega) (by omega)
+    Spill.al8 (by have := hS.al; omega_using [this]) (by omega_using [])
   have hin : InRegions s.wr (slotA B c.total) 8 :=
-    hS.wr _ _ (by decide) hn' (by have := hc.even; omega)
+    hS.wr _ _ (by decide) hn' (by have := hc.even; omega_using [])
   have hcore : Region.Sub (coreRegion c B) ⟨B, 8 * c.total⟩ :=
-    Offset.sub_base B (by have := hc.buf_ge; have := hc.buf_le; omega)
+    Offset.sub_base B (by have := hc.buf_ge; have := hc.buf_le; omega_arith)
   have hdis : Region.Disjoint ⟨slotA B c.total, 8⟩ (coreRegion c B) :=
-    (Offset.disjoint_base B (by omega) (by omega)).sub_right hcore
+    (Offset.disjoint_base B (by omega_using []) (by omega_using [hn])).sub_right hcore
   unfold sharedCall
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -145,27 +145,27 @@ theorem original_scr {c : Core} {s : State} {B : Addr}
     (hn : c.total ≤ 506 ∨ 508 < c.total) (hS : ScrIn s B (c.total + 2)) :
     ScrIn (originalState c s B) B c.total := by
   have low : ∀ o w, o + w ≤ min (8 * c.total) 2032 → InRegions s.wr (B + BitVec.ofNat 64 o) w :=
-    fun o w h => hS.low o w (by omega)
-  refine ⟨hS.al, by have := hS.fit; omega, fun o w h => ?_, fun h => ?_, fun o w hp hq hr => ?_⟩
+    fun o w h => hS.low o w (by omega_using [h])
+  refine ⟨hS.al, by have := hS.fit; omega_using [this], fun o w h => ?_, fun h => ?_, fun o w hp hq hr => ?_⟩
   · unfold originalState originalWr; split
     · obtain ⟨r, hr, hc⟩ := low o w h; exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
     · exact low o w h
-  · have hsmall : c.total ≤ 506 := by omega
+  · have hsmall : c.total ≤ 506 := by omega_using [hn, h]
     simp only [originalState, State.withRegions_wr, originalWr, ite_eq_left hsmall]
     exact List.mem_cons_self
   · unfold originalState originalWr; split
-    · obtain ⟨r, hr', hc⟩ := hS.wr o w hp (by omega) hr
+    · obtain ⟨r, hr', hc⟩ := hS.wr o w hp (by omega_using [hq]) hr
       exact ⟨r, List.mem_cons_of_mem _ hr', hc⟩
-    · exact hS.wr o w hp (by omega) hr
+    · exact hS.wr o w hp (by omega_using [hq]) hr
 
 theorem original_covers {c : Core} {s : State} {B : Addr} (hS : ScrIn s B (c.total + 2)) :
     Covers (originalWr c B s.wr) s.wr := by
   unfold originalWr; split
   · rename_i h
     refine Covers.cons ?_ (Covers.refl _)
-    exact Covers.one ⟨_, hS.whole (by omega), by
+    exact Covers.one ⟨_, hS.whole (by omega_using [h]), by
       simpa only [BitVec.add_zero] using Offset.contains_base B (d := 0) (n := 8 * c.total)
-        (k := 8 * (c.total + 2)) (by omega) (by decide)⟩
+        (k := 8 * (c.total + 2)) (by omega_using []) (by decide)⟩
   · exact Covers.refl _
 
 theorem original_extra (c : Core) (s : State) (B : Addr) :
@@ -183,13 +183,13 @@ def SharedReady {c : Core} (cs : CoreSpec c) (s : State) (B : Addr) (ws : List R
 /-- The two additional slots are after the original core's slots. -/
 theorem shared_core_sub {c : Core} (B : Addr) (pn cn) :
     Region.Sub (coreRegion c B) (coreRegion (c.shared pn cn) B) := by
-  exact Region.sub_prefix (by simp only [Core.shared]; omega)
+  exact Region.sub_prefix (by simp only [Core.shared]; omega_using [])
 
 theorem shared_layout {c : Core} (hc : Layout c) (hn : c.total ≤ 761) (pn cn) : Layout (c.shared pn cn) :=
-  ⟨hc.G_pos, hc.bw, hc.buf_ge, by have := hc.buf_le; simpa only [Core.shared] using (by omega :
+  ⟨hc.G_pos, hc.bw, hc.buf_ge, by have := hc.buf_le; simpa only [Core.shared] using (by omega_using [this] :
       8 * c.buf + 4 * c.bw * c.G ≤ 8 * (c.total + 2)),
-    hc.disp, by have := hc.even; dsimp only [Core.shared]; omega,
-    by simp only [Core.shared]; omega⟩
+    hc.disp, by have := hc.even; dsimp only [Core.shared]; omega_using [this],
+    by simp only [Core.shared]; omega_using [hn]⟩
 
 /-- The key's arguments depend on the key pointer and memory, and can be
 restricted to subregions of the caller's writable regions. -/
@@ -210,7 +210,7 @@ theorem SharedInput.frame {s t B n} (hi : SharedInput s t B n) :
 
 theorem saved_sub (c : Core) (hc : Layout c) (B : Addr) (pn cn) :
     Region.Sub ⟨slotA B c.total, 8⟩ (coreRegion (c.shared pn cn) B) := by
-  exact Offset.sub B (by have := hc.buf_ge; have := hc.buf_le; omega) (by simp only [Core.shared]; omega)
+  exact Offset.sub B (by have := hc.buf_ge; have := hc.buf_le; omega_arith) (by simp only [Core.shared]; omega_using [])
 
 theorem SharedOutput.kept {s t u v B n} (hi : SharedInput s t B n)
     (hu : ∀ r ∈ kept, u.gpr r = t.gpr r) (hv : SharedOutput s u v) :
@@ -255,10 +255,10 @@ theorem shared_prepare {s : State} {B : Addr} {rs : List Region} {k : cs.Key}
         (by obtain ⟨extra, he⟩ := original_extra c t B; exact ⟨extra, he.trans (by rw [hi.wr])⟩)
         (hi.frame.sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact ⟨_, hm, Offset.sub_base B (by omega)⟩)
+          exact ⟨_, hm, Offset.sub_base B (by omega_using [])⟩)
         (fun r hr => by
           rcases List.mem_cons.mp hr with he | hr
-          · subst he; exact ⟨_, hm, Region.sub_prefix (by omega)⟩
+          · subst he; exact ⟨_, hm, Region.sub_prefix (by omega_using [])⟩
           · exact ⟨_, hr, fun _ h => h⟩)
     have htB : (originalState c t B).gpr sb = B := (hi.regs _ (by decide) (by decide)).trans hB
     have raw := cs.prepare_wp htB (original_scr hg hsT) List.mem_cons_self hK
@@ -305,12 +305,12 @@ theorem shared_crypt {s : State} {B : Addr} {ws : List Region} {k : cs.Key}
           simp only [List.mem_singleton] at h; subst h
           obtain ⟨r', hr', sub⟩ := hrs _ List.mem_cons_self
           exact ⟨r', hr', fun x hx => sub x ((Offset.sub_base B (d := 8 * c.total)
-            (n := 8) (k := 8 * (c.total + 2)) (by omega)) x hx)⟩)
+            (n := 8) (k := 8 * (c.total + 2)) (by omega_using [])) x hx)⟩)
         (fun r h => by
           simp only [List.mem_singleton] at h; subst h
           exact .inl ((Offset.disjoint_base B (d := 8 * c.total) (n := 8) (k := 8 * c.total)
-            (by omega) (by omega)).symm.sub_left
-            (Offset.sub_base B (by have := cs.layout.buf_ge; have := cs.layout.buf_le; omega))))
+            (by omega_using []) (by omega_using [hn])).symm.sub_left
+            (Offset.sub_base B (by have := cs.layout.buf_ge; have := cs.layout.buf_le; omega_arith))))
     have htB : (originalState c t B).gpr sb = B := (hi.regs _ (by decide) (by decide)).trans hB
     have raw := cs.crypt_wp htB (original_scr hg hsT) hrT
     refine WP.narrow raw (Covers.append (Covers.refl _) (original_covers hsT)) (original_covers hsT)
@@ -340,12 +340,12 @@ theorem shared_crypt {s : State} {B : Addr} {ws : List Region} {k : cs.Key}
         have hi' : i < 4 * c.bw := by simpa only [Spec.Aes.bytesAt, List.length_map, List.length_range] using hil
         simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range]
         refine hi.frame.bytes (R := ⟨blkAddr c B j, 4 * c.bw⟩) (fun r h => ?_)
-          (by change 4 * c.bw ≤ 2 ^ 64; have := cs.layout.disp; omega) hi'
+          (by change 4 * c.bw ≤ 2 ^ 64; have := cs.layout.disp; omega_using [hjlen, this]) hi'
         simp only [List.mem_singleton] at h; subst h
         unfold blkAddr slotA
         rw [Offset.add_add]
-        exact Offset.disjoint B (.inl (by have := cs.layout.buf_le; omega))
-          (by have := cs.layout.disp; omega) (by omega)
+        exact Offset.disjoint B (.inl (by have := cs.layout.buf_le; omega_using [hjlen, this]))
+          (by have := cs.layout.disp; omega_using [hjlen, this]) (by omega_using [hn])
 
 include hn hg hkey hready hpn hcn in
 /-- Share any core whose key and readiness obey the stronger congruences

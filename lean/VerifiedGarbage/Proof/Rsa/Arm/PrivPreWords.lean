@@ -20,12 +20,12 @@ theorem preWords_ok (r : Reg) (s : State) {g : PrivGeometry} {bs : Fin 8 → Lis
       t.mem = s.mem ∧ Rest [r] s t := by
   have count : s.mem.readW (off (State.addr g.stack) oK) 32 = BitVec.ofNat 32 g.length := slots 2 (by decide)
   have kn : (BitVec.ofNat 32 g.length).toNat = g.length := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.valid.maxLength; omega)]
-  have words := modulus_words_word (BitVec.ofNat 32 g.length) (by rw [kn]; have := h.valid.maxLength; omega)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.valid.maxLength; omega_using [this])]
+  have words := modulus_words_word (BitVec.ofNat 32 g.length) (by rw [kn]; have := h.valid.maxLength; omega_using [this])
   rw [kn] at words
   unfold preWords
   refine wp_loadStack (a := off (State.addr g.stack) oK) (by decide)
-    (by rw [h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oK, frameBytes] at *; omega))
+    (by rw [h.sp]; exact addr_add (by have := h.valid.stackHigh; simp only [oK, frameBytes] at *; omega_using [this]))
     (h.inner.read (by decide)) fun u a => ?_
   refine wp_dp (op2_imm (by decide)) fun v b => ?_
   refine wp_mov (op2_lsr (by decide)) fun z c => ?_

@@ -63,11 +63,11 @@ theorem loadKey_run (z : Spec.Idea.Schedule) (r : Reg) {k : Nat} (hk : k < 52) (
   · rename_i h
     have k₁ := hz.low 48 (by decide)
     simp only [Nat.reduceMul] at k₁
-    have l := hz.last (k - 48) (by omega)
-    rw [show 48 + (k - 48) = k by omega] at l
+    have l := hz.last (k - 48) (by omega_using [hk])
+    rw [show 48 + (k - 48) = k by omega_using [h]] at l
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execShift, readSrc, State.load64, isa,
-      k₁.1, ↓reduceIte, Option.map_some, RegUpd.gpr_setReg_self, show 1 ≤ 16 * (k - 48) by omega,
-      show 16 * (k - 48) ≤ 63 by omega, and_self,
+      k₁.1, ↓reduceIte, Option.map_some, RegUpd.gpr_setReg_self, show 1 ≤ 16 * (k - 48) by omega_using [h],
+      show 16 * (k - 48) ≤ 63 by omega_using [hk], and_self,
       Option.some.injEq, exists_eq_left', l, true_and]
     refine keep_reg_of (fun q hq => ?_) rfl rfl rfl
     simp only [List.mem_singleton] at hq
@@ -143,7 +143,7 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-    omega
+    omega_arith
   have keep' : Keep [.rax, .rcx, .rdx, .r9] t₀ t' := hi.keep.trans e'
   by_cases hlast : c = 1
   · subst hlast
@@ -153,17 +153,17 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
     · rw [hv, show 15 - 1 + 1 = 15 from rfl, chain_inv]
   · right
     have := hi.pos; have := hi.le
-    refine ⟨?_, c - 1, by omega, by omega, by omega, rcx'.trans hc, ?_, ?_, keep'⟩
+    refine ⟨?_, c - 1, by omega_arith, by omega_arith, by omega_using [this], rcx'.trans hc, ?_, ?_, keep'⟩
     · simp only [eval, zf', hc, Option.map_some, Option.some.injEq]
       have h : (BitVec.ofNat 64 (c - 1) == 0) = false := by
         simp only [beq_eq_false_iff_ne, ne_eq]
         intro h
         have := congrArg BitVec.toNat h
         simp only [BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl] at this
-        omega
+        omega_arith
       rw [h]; rfl
     · rw [e'.reg .r8 (by decide)]; exact hi.r8
-    · rw [hv, setWidth_setWidth16, show 15 - c + 1 = 15 - (c - 1) by omega]
+    · rw [hv, setWidth_setWidth16, show 15 - c + 1 = 15 - (c - 1) by omega_arith]
 
 theorem invWord_ok (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) (t : State) (hz : KeyOk z t) :
     WP isa (invWord n) t (fun t' =>
@@ -235,7 +235,7 @@ theorem invPlace_run (z : Spec.Idea.Schedule) (q i : Nat) (hi : i < 4) (t : Stat
   unfold invPlace
   split
   · rename_i h
-    have hi0 : i = 0 := by omega
+    have hi0 : i = 0 := by omega_using [hi, h]
     subst hi0
     refine ⟨t.setReg .r10 (t.gpr .rdx), by
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, isa, Option.map_some], ?_, ?_⟩
@@ -243,30 +243,30 @@ theorem invPlace_run (z : Spec.Idea.Schedule) (q i : Nat) (hi : i < 4) (t : Stat
       rw [RegUpd.gpr_setReg_self, hrdx, BitVec.getLsbD_setWidth, decide_eq_true hp, Bool.true_and,
         Nat.add_zero]
       by_cases hp16 : p < 16
-      · rw [ite_eq_left (by omega), Nat.div_eq_of_lt hp16, Nat.mod_eq_of_lt hp16, Nat.add_zero]
-      · rw [ite_eq_right (by omega)]; exact BitVec.getLsbD_of_ge _ _ (by omega)
+      · rw [ite_eq_left (by omega_using [hp16]), Nat.div_eq_of_lt hp16, Nat.mod_eq_of_lt hp16, Nat.add_zero]
+      · rw [ite_eq_right (by omega_using [hp16])]; exact BitVec.getLsbD_of_ge _ _ (by omega_using [hp16])
     · refine keep_reg_of (fun r hr => ?_) rfl rfl rfl
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       exact RegUpd.gpr_setReg_of_ne _ _ hr.2
   · rename_i h
-    have hi0 : i ≠ 0 := by omega
+    have hi0 : i ≠ 0 := by omega_using [h]
     have hacc' := hacc.resolve_left hi0
-    have hm : (4 * q + i) % 4 = i := by omega
+    have hm : (4 * q + i) % 4 = i := by omega_using [hi]
     rw [hm]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc, isa,
-      Option.bind_some, show 1 ≤ 16 * i by omega, show 16 * i ≤ 63 by omega, and_self, ↓reduceIte,
+      Option.bind_some, show 1 ≤ 16 * i by omega_using [h], show 16 * i ≤ 63 by omega_using [hi], and_self, ↓reduceIte,
       RegUpd.gpr_setReg, RegUpd.gpr_setFlags, reduceCtorEq,
       Option.some.injEq, exists_eq_left']
     refine ⟨fun p hp => ?_, keep_reg_of (fun r hr => ?_) rfl rfl rfl⟩
     · rw [RegUpd.gpr_setReg_self, BitVec.getLsbD_or, hacc' p hp, hrdx, BitVec.getLsbD_shiftLeft,
         BitVec.getLsbD_setWidth]
       by_cases h1 : p < 16 * i
-      · simp [h1, show p < 16 * (i + 1) by omega]
+      · simp [h1, show p < 16 * (i + 1) by omega_using [h1]]
       · by_cases h2 : p < 16 * (i + 1)
-        · simp [h1, h2, hp, show p - 16 * i < 64 by omega, show 4 * q + p / 16 = 4 * q + i by omega,
-            show p % 16 = p - 16 * i by omega]
+        · simp [h1, h2, hp, show p - 16 * i < 64 by omega_using [hp], show 4 * q + p / 16 = 4 * q + i by omega_using [h1, h2],
+            show p % 16 = p - 16 * i by omega_using [h1, h2]]
         · simp only [h1, h2, ↓reduceIte, Bool.false_or]
-          rw [BitVec.getLsbD_of_ge (dk z (4 * q + i)) _ (by omega)]
+          rw [BitVec.getLsbD_of_ge (dk z (4 * q + i)) _ (by omega_using [h2])]
           simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
@@ -279,7 +279,7 @@ theorem quadWord_ok (z : Spec.Idea.Schedule) (q i : Nat) (hq : q < 13) (hi : i <
     (hrest : ∀ t', Acc z q (i + 1) t' → Keep quadWrites t t' → WP isa rest t' Q) :
     WP isa (.seq (invWord (4 * q + i)) (.seq (.block (invPlace (4 * q + i))) rest)) t Q := by
   apply WP.seq
-  refine WP.mono (invWord_ok z (by omega) t hz) fun t₁ ⟨v₁, e₁⟩ => ?_
+  refine WP.mono (invWord_ok z (by omega_using [hq, hi]) t hz) fun t₁ ⟨v₁, e₁⟩ => ?_
   apply WP.seq
   have hacc₁ : i = 0 ∨ Acc z q i t₁ := by
     rcases hacc with h | h
@@ -312,11 +312,11 @@ theorem QInv.keyOk {s₀ t : State} {q : Nat} (hp : InvPre s₀) (hi : QInv s₀
   have h := keyOk_of t (by rw [hi.rdi, hi.rd, hi.wr]; exact hp.sched)
   rwa [hi.rdi, scheduleAt_congr (frame_bytes hi.frame (by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
-    exact hp.sep.sub_right (Region.sub_prefix (by omega))) (by decide))] at h
+    exact hp.sep.sub_right (Region.sub_prefix (by omega_using [hq]))) (by decide))] at h
 
 theorem invQuad_ok (s₀ : State) (hp : InvPre s₀) (q : Nat) (hq : q < 13) (t : State)
     (hi : QInv s₀ q t) : WP isa (invQuad q) t (QInv s₀ (q + 1)) := by
-  have hz := hi.keyOk hp (by omega)
+  have hz := hi.keyOk hp (by omega_using [hq])
   simp only [invQuad, show List.range 4 = [0, 1, 2, 3] from rfl, List.foldr_cons, List.foldr_nil]
   refine quadWord_ok _ q 0 hq (by decide) t hz (Or.inl rfl) fun t₁ a₁ e₁ => ?_
   refine quadWord_ok _ q 1 hq (by decide) t₁ (hz.keep e₁ (by decide)) (Or.inr a₁) fun t₂ a₂ e₂ => ?_
@@ -328,7 +328,7 @@ theorem invQuad_ok (s₀ : State) (hp : InvPre s₀) (q : Nat) (hq : q < 13) (t 
   have e := e₁.trans (e₂.trans (e₃.trans e₄))
   have hw : InRegions t₄.wr (t₄.ea (at_ .rsi (8 * q))) 8 := by
     rw [ea_at, e.reg .rsi (by decide), e.wr, hi.wr, hi.rsi]
-    exact ⟨_, hp.out, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hp.out, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   have ea₄ : t₄.ea (at_ .rsi (8 * q)) = s₀.gpr .rsi + BitVec.ofNat 64 (8 * q) := by
     rw [ea_at, e.reg .rsi (by decide), hi.rsi]
   refine WP.of_runBlock ⟨{ t₄ with mem := t₄.mem.writeW (t₄.ea (at_ .rsi (8 * q))) (t₄.gpr .r10) },
@@ -340,17 +340,17 @@ theorem invQuad_ok (s₀ : State) (hp : InvPre s₀) (q : Nat) (hq : q < 13) (t 
   · show Frame _ s₀.mem (t₄.mem.writeW _ _)
     rw [e.mem, ea₄]
     refine (hi.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [hq]))
     simp only [List.mem_singleton] at hr; subst hr
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · intro i hiq p hp64
     show ((t₄.mem.writeW _ _).readW _ 64).getLsbD p = _
     rw [e.mem, ea₄]
     by_cases he : i = q
     · subst he
-      rw [Mem.readW_writeW_self64, a₄ p hp64, ite_eq_left (by omega)]
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact hi.words i (by omega) p hp64
+      rw [Mem.readW_writeW_self64, a₄ p hp64, ite_eq_left (by omega_using [hp64])]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [he]) (by omega_using [hq, hiq]) (by omega_using [hq])) (by decide)]
+      exact hi.words i (by omega_using [hiq, he]) p hp64
 
 /-- Quadwords `q … q + n - 1`. -/
 def quads (q n : Nat) : Prog isa :=
@@ -364,8 +364,8 @@ theorem quads_ok (s₀ : State) (hp : InvPre s₀) :
   | n + 1, q, h, t, hi => by
     simp only [quads, List.range'_succ, List.foldr_cons]
     apply WP.seq
-    exact WP.mono (invQuad_ok s₀ hp q (by omega) t hi) fun t₁ h₁ =>
-      quads_ok s₀ hp n (q + 1) (by omega) t₁ h₁
+    exact WP.mono (invQuad_ok s₀ hp q (by omega_using [h]) t hi) fun t₁ h₁ =>
+      quads_ok s₀ hp n (q + 1) (by omega_using [h]) t₁ h₁
 
 theorem invertKey_eq : invertKey = quads 0 13 := rfl
 
@@ -385,7 +385,7 @@ theorem invert_correct (s : State) (hs : invertContract.pre s) :
   obtain ⟨hrd, hwr, hsep, hret⟩ := hs
   have hp : InvPre s := ⟨by rw [hrd]; simp, by rw [hwr]; simp, hsep⟩
   obtain ⟨tr, s', he, hi⟩ := quads_ok s hp 13 0 rfl s ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl,
-    Frame.refl _ _, fun i hi => absurd hi (by omega)⟩
+    Frame.refl _ _, fun i hi => absurd hi (by omega_using [])⟩
   rw [← invertKey_eq] at he
   refine ⟨tr, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -398,9 +398,9 @@ theorem invert_correct (s : State) (hs : invertContract.pre s) :
     rw [← getD_lt _ 0 hn, ← getD_lt _ 0 hn]
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
-    rw [scheduleAt_getLsbD _ _ hn hb, hi.words (n / 4) (by omega) _ (by omega),
-      show 4 * (n / 4) + (16 * (n % 4) + b) / 16 = n by omega,
-      show (16 * (n % 4) + b) % 16 = b by omega]
+    rw [scheduleAt_getLsbD _ _ hn hb, hi.words (n / 4) (by omega_using [hn]) _ (by omega_using [hb]),
+      show 4 * (n / 4) + (16 * (n % 4) + b) / 16 = n by omega_using [hb],
+      show (16 * (n % 4) + b) % 16 = b by omega_using [hb]]
 
 def invertSat : State where
   gpr r := match r with

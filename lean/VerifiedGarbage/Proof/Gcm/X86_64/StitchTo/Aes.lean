@@ -63,10 +63,10 @@ theorem AInvTo.yframe {s₀ : State} {c : Nat} {s s' : State} {rs : List XReg} (
 
 theorem AInvTo.keys {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s) :
     Keys (nr s₀) (sch s₀) s :=
-  ⟨by rw [hI.rdi]; exact (sch_frame hp.toD hI.frame).symm, by rcases hp.rounds with h | h | h <;> omega,
+  ⟨by rw [hI.rdi]; exact (sch_frame hp.toD hI.frame).symm, by rcases hp.rounds with h | h | h <;> omega_using [h],
     fun j hj => by
       rw [hI.rd, hI.wr, hI.rdi]
-      exact Stitch.in_sub_int hp.toD.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      exact Stitch.in_sub_int hp.toD.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
 /-- The plaintext is kept. -/
 theorem AInvTo.src {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (hI : AInvTo s₀ c s)
@@ -75,8 +75,8 @@ theorem AInvTo.src {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {
   exact blockAt_frame hI.frame fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hp.s_o.sub_left (Offset.sub_base _ (by omega))
-    · exact hp.s_p.sub_left (Offset.sub_base _ (by omega))
+    · exact hp.s_o.sub_left (Offset.sub_base _ (by omega_using [hk]))
+    · exact hp.s_p.sub_left (Offset.sub_base _ (by omega_using [hk]))
 
 /-- The same, as `Stitch.AInvM` with the output at `r10`. -/
 theorem AInvTo.toM {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {s : State} (h : AInvTo s₀ c s) :

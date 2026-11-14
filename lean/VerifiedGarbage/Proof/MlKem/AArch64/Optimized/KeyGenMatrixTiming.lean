@@ -29,7 +29,7 @@ theorem pair_input {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e+1<P.k*P.
     hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=SS) (l₂:=2048) (by decide) (by decide) (by kl) (by kl) (by decide),pair_context hp he h tb,rfl⟩
   intro j hj
   rw [ptr_add]
-  exact in_R (cov_r hp h (b:=3) (o:=SB) (l:=32) (by decide) (by kl)) (k:=8*j) (by omega) (by omega)
+  exact in_R (cov_r hp h (b:=3) (o:=SB) (l:=32) (by decide) (by kl)) (k:=8*j) (by omega_using [hj]) (by omega_using [])
 
 theorem last_input {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
     (h : KB P s₀ s) (tb : MatrixTable P s₀ s) :
@@ -40,6 +40,6 @@ theorem last_input {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
     hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=SS) (l₂:=2048) (by decide) (by decide) (by kl) (by kl) (by decide),singleton_context hp he h tb,rfl⟩
   intro j hj
   rw [ptr_add]
-  exact in_R (cov_r hp h (b:=3) (o:=SB) (l:=32) (by decide) (by kl)) (k:=8*j) (by omega) (by omega)
+  exact in_R (cov_r hp h (b:=3) (o:=SB) (l:=32) (by decide) (by kl)) (k:=8*j) (by omega_using [hj]) (by omega_using [])
 
 end VG.Proof.MlKem.AArch64.KeyGen

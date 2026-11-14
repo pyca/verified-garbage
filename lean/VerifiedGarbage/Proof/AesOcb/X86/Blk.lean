@@ -110,8 +110,8 @@ theorem readW_XW {p : Prm} (L : Lay p) {B : Addr} {k : Nat} (hB : B.toNat + k �
     (hd : (⟨B, k⟩ : Region).Disjoint ⟨w64 p.W, 2560⟩) (m : Mem) (v : BitVec 32) {a b : Nat} (ha : a + 4 ≤ k)
     (hb : b + 4 ≤ 2560) :
     (m.writeW (w64 p.W + BitVec.ofNat 64 b) v).readW (B + BitVec.ofNat 64 a) 32 = m.readW (B + BitVec.ofNat 64 a) 32 :=
-  Mem.readW_writeW_sep (hd.sep (Offset.contains_base _ ha (by omega))
-    (Offset.contains_base _ hb (by have := L.ww; omega))) (by decide)
+  Mem.readW_writeW_sep (hd.sep (Offset.contains_base _ ha (by omega_using [hB, ha]))
+    (Offset.contains_base _ hb (by have := L.ww; omega_using [hb]))) (by decide)
 
 /-- `xor16 b s d`, reading the block at `b + s` of a buffer `⟨w64 X, k⟩`
 apart from `W`. -/
@@ -122,9 +122,9 @@ theorem xor16R_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {b : Reg} (hb 
     ∃ t', runBlock isa (xor16 b s d) t = some t' ∧ t'.mem = xorMem16 t.mem (w64 X) s (w64 p.W) d ∧
       (∀ r, r ≠ .eax → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have aX : ∀ {o : Nat}, o < k → w64 (X + BitVec.ofNat 32 o) = w64 X + BitVec.ofNat 64 o := fun ho =>
-    w64_add (by omega)
+    w64_add (by omega_using [hk, ho])
   have rX : ∀ {o : Nat}, o + 4 ≤ k → InRegions (t.rd ++ t.wr) (w64 X + BitVec.ofNat 64 o) 4 := fun ho =>
-    in_off hR ho (by omega)
+    in_off hR ho (by omega_using [hk])
   have hXk : (w64 X).toNat + k ≤ 2 ^ 32 := by rw [Proof.AesGcm.X86.toNat_w64]; exact hk
   refine ⟨_, by grun [xor16, xorW, E.ebp, hX, L.aW, aX, rX, E.perm.wR, E.perm.wW, (readW_XW L hXk hdis)],
     ?_, fun r h₁ => by gregs [h₁], by gmems [], by gmems []⟩
@@ -140,7 +140,7 @@ theorem xor16P_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {b : Reg} (hb 
     ∃ t', runBlock isa (xor16 b 0 d) t = some t' ∧ t'.mem = xorMem16 t.mem (w64 p.W) e (w64 p.W) d ∧
       (∀ r, r ≠ .eax → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have aE : ∀ {k : Nat}, k < 16 → w64 (p.W + BitVec.ofNat 32 e + BitVec.ofNat 32 k) = w64 p.W + BitVec.ofNat 64 (e + k) :=
-    fun hk => by rw [Proof.AesGcm.X86.add_ofNat_assoc32]; exact L.aW (by omega)
+    fun hk => by rw [Proof.AesGcm.X86.add_ofNat_assoc32]; exact L.aW (by omega_using [he, hk])
   refine ⟨_, by grun [xor16, xorW, E.ebp, hbv, aE, L.aW, E.perm.wR, E.perm.wW], ?_, fun r h₁ => by gregs [h₁],
     by gmems [], by gmems []⟩
   gmems []

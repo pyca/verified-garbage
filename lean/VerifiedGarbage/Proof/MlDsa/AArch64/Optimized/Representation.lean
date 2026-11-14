@@ -29,12 +29,12 @@ theorem PosPolyIs.of_canonical {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f
   refine ⟨fun i hi => ?_, h.2⟩
   have hq : 0 < q := by decide
   have := h.1 i hi
-  omega
+  omega_using [this]
 
 theorem SignedPolyIs.mono {m : Mem} {p : Addr} {f : Poly} {lo hi lo' hi' : Int}
     (h : SignedPolyIs m p f lo hi) (hl : lo' ≤ lo) (hh : hi ≤ hi') :
     SignedPolyIs m p f lo' hi' :=
-  ⟨fun i hn => by have := h.bound i hn; omega, h.value⟩
+  ⟨fun i hn => by have := h.bound i hn; omega_using [hl, hh, this], h.value⟩
 
 theorem SignedPolyIs.congr {m m' : Mem} {p p' : Addr} {f : Poly} {lo hi : Int}
     (h : SignedPolyIs m p f lo hi)

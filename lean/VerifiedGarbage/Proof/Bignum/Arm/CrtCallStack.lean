@@ -34,14 +34,14 @@ theorem CrtCallStack.read {g : CrtGeometry} {s : State} (h : CrtCallStack g s) {
     (fit : d + 4 ≤ 112) (side : d + 4 ≤ 56 ∨ 56 ≤ d := by omega) :
     InRegions (s.rd ++ s.wr) (off (State.addr s.sp) d) 4 := by
   rcases side with low | high
-  · exact ⟨_, List.mem_append_right _ h.writable, Offset.contains_base _ low (by omega)⟩
-  · have read := CallLay.inRegions_sub (off := d - 56) h.readable (l := 4) (by omega) (by decide)
-    rw [Offset.add_add, show 56 + (d - 56) = d by omega] at read
+  · exact ⟨_, List.mem_append_right _ h.writable, Offset.contains_base _ low (by omega_using [fit])⟩
+  · have read := CallLay.inRegions_sub (off := d - 56) h.readable (l := 4) (by omega_using [fit]) (by decide)
+    rw [Offset.add_add, show 56 + (d - 56) = d by omega_using [high]] at read
     exact read
 
 theorem CrtCallStack.write {g : CrtGeometry} {s : State} (h : CrtCallStack g s) {d : Nat}
     (fit : d + 4 ≤ 56) : InRegions s.wr (off (State.addr s.sp) d) 4 :=
-  ⟨_, h.writable, Offset.contains_base _ fit (by omega)⟩
+  ⟨_, h.writable, Offset.contains_base _ fit (by omega_using [fit])⟩
 
 theorem CrtCallStack.word_kept {g : CrtGeometry} {s t : State} {d : Nat}
     (h : CrtCallStack g s) (frame : Frame (crtMutable g s.sp) s.mem t.mem)
@@ -52,9 +52,9 @@ theorem CrtCallStack.word_kept {g : CrtGeometry} {s t : State} {d : Nat}
   simp only [crtMutable, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact h.separate.sub_left (Offset.sub_base _ fit)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
-  · exact Offset.disjoint _ (by omega) (by omega) (by decide)
-  · exact Offset.disjoint _ (by omega) (by omega) (by decide)
+  · exact Offset.disjoint_base _ (by omega_using [safe]) (by omega_using [fit])
+  · exact Offset.disjoint _ (by omega_using [safe]) (by omega_using [fit]) (by decide)
+  · exact Offset.disjoint _ (by omega_using [safe]) (by omega_using [fit]) (by decide)
 
 theorem CrtCallStack.after_frame {g : CrtGeometry} {s t : State} {rs : List Reg}
     (h : CrtCallStack g s) (frame : Frame (crtMutable g s.sp) s.mem t.mem) (rest : Rest rs s t) :
@@ -66,10 +66,10 @@ theorem CrtCallStack.after_frame {g : CrtGeometry} {s t : State} {rs : List Reg}
   · rw [rest.sp, h.word_kept frame (d := 4) (by decide) (by simp)]; exact h.output
   · rw [rest.sp, h.word_kept frame (d := 12) (by decide) (by simp)]; exact h.count
   · intro i
-    rw [rest.sp, h.word_kept frame (d := 56 + 8 * i.val) (by have := i.isLt; omega) (by omega)]
+    rw [rest.sp, h.word_kept frame (d := 56 + 8 * i.val) (by have := i.isLt; omega_using []) (by omega_using [])]
     exact h.pointer i
   · intro i
-    rw [rest.sp, h.word_kept frame (d := 60 + 8 * i.val) (by have := i.isLt; omega) (by omega)]
+    rw [rest.sp, h.word_kept frame (d := 60 + 8 * i.val) (by have := i.isLt; omega_using []) (by omega_using [])]
     exact h.length i
 
 end VG.Proof.Bignum.Arm

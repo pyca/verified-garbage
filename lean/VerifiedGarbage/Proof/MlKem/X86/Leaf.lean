@@ -37,7 +37,7 @@ theorem popReg_last (d : Reg) (hd : d ≠ .esp) :
     congr 2
     rw [BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add]
     congr 2
-    omega
+    omega_using []
 
 section
 variable (s₀ : State)
@@ -67,7 +67,7 @@ theorem P0_wr (s₀ : State) : (P0 s₀).wr = frameR s₀ :: s₀.wr := by
 /-- Word `i` of the frame holds the register pushed `i`-th from the end. -/
 theorem frame_word (s₀ : State) (hE : 16 ≤ (E0 s₀).toNat) {i : Nat} (hi : i < 4) :
     (P0 s₀).mem.readW (((P0 s₀).gpr .esp + BitVec.ofNat 32 (4 * i)).setWidth 64) 32 =
-      s₀.gpr (saveRegs[3 - i]'(by simp [saveRegs]; omega)) :=
+      s₀.gpr (saveRegs[3 - i]'(by simp [saveRegs]; omega_using [])) :=
   pushed_word (rs := saveRegs) (s := s₀) (by decide) hE hi
 
 /-- A word of the frame, at `esp + 4i` after the push, is within it. -/
@@ -96,9 +96,9 @@ def leafFinal (s : State) : State :=
 theorem restore_run (s : State)
     (h : ∀ i < 3, InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 (4 * i)).setWidth 64) 4) :
     WP isa (.block restore) s fun s' => popped .ebx 4 s' = leafFinal s := by
-  have h8 := h 2 (by omega)
-  have h4 := h 1 (by omega)
-  have h0 := h 0 (by omega)
+  have h8 := h 2 (by omega_using [])
+  have h4 := h 1 (by omega_using [])
+  have h0 := h 0 (by omega_using [])
   simp only [Nat.reduceMul] at h8 h4 h0
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, restore, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -116,7 +116,7 @@ theorem leafFinal_ok {s₀ s : State} {W : List Region} {B : State → Prop}
     (hW : ∀ r ∈ W, (frameR s₀).Disjoint r ∧ (retR s₀).Disjoint r) (h : LeafEnd s₀ W s) (hb : B s) :
     LeafPost B s₀ (leafFinal s) := by
   have hwf : ∀ i (hi : i < 4), s.mem.readW ((s.gpr .esp + BitVec.ofNat 32 (4 * i)).setWidth 64) 32 =
-      s₀.gpr (saveRegs[3 - i]'(by simp [saveRegs]; omega)) := fun i hi => by
+      s₀.gpr (saveRegs[3 - i]'(by simp [saveRegs]; omega_using [])) := fun i hi => by
     rw [h.esp, h.frame.readW (frame_contains s₀ hE hi) (fun r hr => (hW r hr).1) (by decide),
       frame_word s₀ hE hi]
   have hm : (leafFinal s).mem = s.mem := by simp [leafFinal, State.setReg]
@@ -126,17 +126,17 @@ theorem leafFinal_ok {s₀ s : State} {W : List Region} {B : State → Prop}
     · rw [leafFinal, popped, popReg_last _ (by decide) 3]
       simp only [State.setReg, show Reg.esp ≠ Reg.ebp by decide, show Reg.esp ≠ Reg.edi by decide,
         show Reg.esp ≠ Reg.esi by decide, ite_false]
-      exact hwf 3 (by omega)
+      exact hwf 3 (by omega_using [])
     · rw [leafFinal, popped_gpr _ _ _ (by decide) (by decide)]
       simp only [State.setReg, show Reg.esi ≠ Reg.ebp by decide, show Reg.esi ≠ Reg.edi by decide,
         ite_false, ite_true]
-      exact hwf 2 (by omega)
+      exact hwf 2 (by omega_using [])
     · rw [leafFinal, popped_gpr _ _ _ (by decide) (by decide)]
       simp only [State.setReg, show Reg.edi ≠ Reg.ebp by decide, ite_false, ite_true]
-      exact hwf 1 (by omega)
+      exact hwf 1 (by omega_using [])
     · rw [leafFinal, popped_gpr _ _ _ (by decide) (by decide)]
       simp only [State.setReg, ite_true]
-      exact hwf 0 (by omega)
+      exact hwf 0 (by omega_using [])
     · rw [leafFinal, popped_esp]
       simp only [State.setReg, show Reg.esp ≠ Reg.ebp by decide, show Reg.esp ≠ Reg.edi by decide,
         show Reg.esp ≠ Reg.esi by decide, ite_false, h.esp, P0_esp]
@@ -184,7 +184,7 @@ theorem leaf {body : Prog isa} {B : State → State → Prop} (W : State → Lis
     refine (restore_run s fun i hi => ?_).mono fun s' e => ?_
     · rw [he.rd, he.wr, he.esp, P0_wr]
       exact ⟨frameR s₀, List.mem_append_right _ (List.mem_cons_self ..),
-        frame_contains s₀ hE'.1 (by omega)⟩
+        frame_contains s₀ hE'.1 (by omega_using [hi])⟩
     · rw [show saveRegs.length = 4 from rfl, e]; exact leafFinal_ok hE'.1 (hW s₀ h₀) he hb'
   · intro s₀ s₀' s s' h₀ h₀' hp ⟨e, _⟩ ⟨e', _⟩ r hr
     simp only [List.mem_singleton] at hr

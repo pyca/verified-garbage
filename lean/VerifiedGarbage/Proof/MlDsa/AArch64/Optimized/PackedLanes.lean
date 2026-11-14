@@ -26,7 +26,7 @@ theorem packedResult_word (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
       let x := pairWord a b (packedLow len i)
       let y := fastMulWord (pairWord a b (packedLow len i+len)) (z (packedLane len i))
       if i%(2*len)<len then x+y else x-y := by
-  have he' : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+  have he' : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
   rcases hl with rfl | rfl <;> cases second <;>
     rcases he' with rfl | rfl | rfl | rfl <;>
     simp (disch := decide) [packedResult,gatherWord,scatterWord,show ¬ (1:Nat)=2 by decide,
@@ -38,7 +38,7 @@ theorem packedResult_word (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
 
 theorem packed_indices {len i : Nat} (hl : len=1 ∨ len=2) (hi : i<8) :
     packedLow len i<8 ∧ packedLow len i+len<8 ∧ packedLane len i<4 := by
-  rcases hl with rfl | rfl <;> unfold packedLow packedLane <;> omega
+  rcases hl with rfl | rfl <;> unfold packedLow packedLane <;> omega_using [hi]
 
 theorem packedResult_int (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
     (second : Bool) (z : Nat → Int) {e : Nat} (he : e<4) {bound : Int}
@@ -69,7 +69,7 @@ theorem packedResult_bound (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
       (vword (packedResult len second a b z) e).toInt≤bound+16760834 := by
   rw [packedResult_int a b hl second z he hb hs hv]
   have hi : (if second then 4 else 0)+e<8 := by
-    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega
+    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega_using [he]
   have hd := packed_indices hl hi
   have hx := hv _ hd.1
   have hy := fastMul_bounds (z := z (packedLane len ((if second then 4 else 0)+e)))
@@ -77,7 +77,7 @@ theorem packedResult_bound (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
     (BitVec.toInt_lt (x := pairWord a b (packedLow len ((if second then 4 else 0)+e)+len)))
   dsimp only
   by_cases hc : ((if second then 4 else 0)+e)%(2*len)<len
-  · rw [ite_eq_left hc]; omega
-  · rw [ite_eq_right hc]; omega
+  · rw [ite_eq_left hc]; omega_using [hx, hy]
+  · rw [ite_eq_right hc]; omega_using [hx, hy]
 
 end VG.Proof.MlDsa.AArch64.Optimized

@@ -28,7 +28,7 @@ open VG.Proof.MlKem.X86_64
 
 /-- A header slot's address, as `xrun` leaves it. -/
 theorem hdrOff (B : Addr) (i : Nat) : B + BitVec.ofInt 64 (8 * (i : Int)) = off B (8 * i) := by
-  rw [show (8 * (i : Int)) = ((8 * i : Nat) : Int) by omega, BitVec.ofInt_natCast]
+  rw [show (8 * (i : Int)) = ((8 * i : Nat) : Int) by omega_using [], BitVec.ofInt_natCast]
 
 /-- `bases o a b mo acc tmp`: the bases from the header, and `w` and `-m⁻¹`. -/
 theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
@@ -40,7 +40,7 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .r15 = minv ∧ t.gpr .rsi = off B (slot w tmp) ∧ t.mem = s.mem ∧
       Keep [.rbx, .r11, .r9, .r10, .r8, .r12, .r15, .rsi] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   refine WP.mono (WP.keep [.rbx, .r11, .r9, .r10, .r8, .r12, .r15, .rsi] (c := .block (bases o a b mo acc tmp))
     (Q := fun t => t.gpr .rbx = off B (slot w o) ∧ t.gpr .r11 = off B (slot w a) ∧
       t.gpr .r9 = off B (slot w b) ∧ t.gpr .r10 = off B (slot w mo) ∧ t.gpr .r8 = off B (slot w acc) ∧
@@ -48,9 +48,9 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
       h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2, k⟩
   unfold bases
-  xrun [State.ea, hdr, hdi, hdrOff, hl (sArr o) (by unfold sArr; omega), hl (sArr a) (by unfold sArr; omega),
-    hl (sArr b) (by unfold sArr; omega), hl (sArr mo) (by unfold sArr; omega),
-    hl (sArr acc) (by unfold sArr; omega), hl (sArr tmp) (by unfold sArr; omega), hl sW (by decide),
+  xrun [State.ea, hdr, hdi, hdrOff, hl (sArr o) (by unfold sArr; omega_using [ho]), hl (sArr a) (by unfold sArr; omega_using [ha]),
+    hl (sArr b) (by unfold sArr; omega_using [hb]), hl (sArr mo) (by unfold sArr; omega_using [hmo]),
+    hl (sArr acc) (by unfold sArr; omega_using [hacc]), hl (sArr tmp) (by unfold sArr; omega_using [htmp]), hl sW (by decide),
     hl sMinv (by decide), hH.harr o ho, hH.harr a ha, hH.harr b hb, hH.harr mo hmo, hH.harr acc hacc,
     hH.harr tmp htmp, hH.hw, hH.hminv]
 

@@ -107,7 +107,7 @@ theorem loop_relCT {base : Addr} {F : Nat → Fe C} :
     swap
     · exact RelCT.of_false fun _ _ h => hn h.1
     let k := 6-n
-    have hk : k≤6 := by omega
+    have hk : k≤6 := by omega_using []
     let A1 (s : State) : Prop :=
       Inv M base 8192 C.p Sl (Vl k) (loopEnv k F) s ∧ s.gpr .x19=BitVec.ofNat 64 (k+2)
     let A2 (s : State) : Prop :=
@@ -119,7 +119,7 @@ theorem loop_relCT {base : Addr} {F : Nat → Fe C} :
     have r1 : RelCT isa (fun s t => Ph n s ∧ Ph n t ∧ s.sp=t.sp) (.block [.addImm .x .x19 .x19 1])
         (fun s t => A1 s ∧ A1 t ∧ s.sp=t.sp) := by
       refine phase_relCT inc_ct (fun s ⟨is,cs⟩ => ?_) (fun s t a b sp => agree0 a.1.scr b.1.scr sp)
-      refine WP.mono (Proof.P256.EcdhJac.buildIncrement_ok s (m:=k+1) (by rw [cs]; congr 1; omega))
+      refine WP.mono (Proof.P256.EcdhJac.buildIncrement_ok s (m:=k+1) (by rw [cs]; congr 1; omega_using [hn]))
         fun t ⟨ct,kt⟩ => ⟨⟨is.of_keeps kt (by decide),ct⟩,kt.sp⟩
     have r2 : RelCT isa (fun s t => A1 s ∧ A1 t ∧ s.sp=t.sp) (Impl.P256.EcdhTable.program false)
         (fun s t => A2 s ∧ A2 t ∧ s.sp=t.sp) := by
@@ -149,8 +149,8 @@ theorem loop_relCT {base : Addr} {F : Nat → Fe C} :
         have hh : BitVec.ofNat 64 (k+2) = (8 : BitVec 64) := by bv_omega_arith
         have he' := congrArg BitVec.toNat hh
         simp only [BitVec.toNat_ofNat,show (8 : BitVec 64).toNat=8 from rfl,
-          Nat.mod_eq_of_lt (show k+2<2^64 by omega)] at he'
-        omega
+          Nat.mod_eq_of_lt (show k+2<2^64 by omega_using [])] at he'
+        omega_using [h, he']
     have e7 : loopEnv (k+1) F=stepEnv (k+2) (loopEnv k F) := rfl
     refine ⟨by rw [hz s xs,hz t xt],fun hf => ?_,fun ht => ?_⟩
     · rw [hz s xs] at hf
@@ -162,11 +162,11 @@ theorem loop_relCT {base : Addr} {F : Nat → Fe C} :
     · rw [hz s xs] at ht
       have h0 : n≠0 := by
         intro h; rw [decide_eq_false (not_not.mpr h)] at ht; cases ht
-      refine ⟨n-1,by omega,by omega,⟨?_,?_⟩,⟨?_,?_⟩,sp⟩
-      · rw [show 6-(n-1)=k+1 by omega,e7]; exact is
-      · rw [cs,show 7-(n-1)=k+2 by omega]
-      · rw [show 6-(n-1)=k+1 by omega,e7]; exact it
-      · rw [ct,show 7-(n-1)=k+2 by omega]
+      refine ⟨n-1,by omega_using [h0],by omega_using [hn],⟨?_,?_⟩,⟨?_,?_⟩,sp⟩
+      · rw [show 6-(n-1)=k+1 by omega_using [hn, h0],e7]; exact is
+      · rw [cs,show 7-(n-1)=k+2 by omega_using [hn, h0]]
+      · rw [show 6-(n-1)=k+1 by omega_using [hn, h0],e7]; exact it
+      · rw [ct,show 7-(n-1)=k+2 by omega_using [hn, h0]]
   exact (RelCT.loop I step 6).mono (fun s t ⟨⟨is,cs⟩,⟨it,ct⟩,sp⟩ =>
     ⟨by decide,⟨is,cs⟩,⟨it,ct⟩,sp⟩) fun _ _ h => h
 

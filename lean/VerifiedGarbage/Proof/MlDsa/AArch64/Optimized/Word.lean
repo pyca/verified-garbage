@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -35,7 +36,7 @@ theorem positiveWord_int (x : BitVec 32) :
     (positiveWord x).toInt = positive x.toInt := by
   rw [positiveWord_eq]
   have h := positive_bounds (BitVec.le_toInt x) (BitVec.toInt_lt (x := x))
-  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega
+  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega_using [h]
 
 theorem positiveWord_nat (x : BitVec 32) :
     (positiveWord x).toNat = (positive x.toInt).toNat := by
@@ -47,7 +48,7 @@ theorem positiveWord_nat (x : BitVec 32) :
 theorem reciprocal_word_int {z : Int} (hz : 0 ≤ z) (hz' : z < 8380417) :
     (BitVec.ofInt 32 (reciprocal z)).toInt = reciprocal z := by
   have h := reciprocal_bounds hz hz'
-  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega
+  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega_using [h]
 
 /-- SQDMULH cannot saturate for an exact nonnegative twiddle reciprocal. -/
 theorem sqdmulh_reciprocal (x : BitVec 32) {z : Int} (hz : 0 ≤ z) (hz' : z < 8380417) :
@@ -60,14 +61,14 @@ theorem sqdmulh_reciprocal (x : BitVec 32) {z : Int} (hz : 0 ≤ z) (hz' : z < 8
     have he := congrArg BitVec.toInt h
     rw [hi] at he
     change reciprocal z = -2147483648 at he
-    omega
+    omega_using [hr, he]
   simp only [sqdmulhLane, hn, and_false, ite_false]
   rw [hi, Int.shiftRight_eq_div_pow]
   congr 2
   change 2 * x.toInt * reciprocal z / 4294967296 = x.toInt * reciprocal z / 2147483648
   have he : 2 * x.toInt * reciprocal z = 2 * (x.toInt * reciprocal z) := Int.mul_assoc _ _ _
   rw [he]
-  omega
+  omega_using []
 
 /-- Low-word MUL and MLS after SQDMULH; intermediate products may wrap. -/
 def fastMulWord (x : BitVec 32) (z : Int) : BitVec 32 :=
@@ -88,7 +89,7 @@ theorem fastMulWord_int (x : BitVec 32) (z : Int) :
     (fastMulWord x z).toInt = fastMul x.toInt z := by
   rw [fastMulWord_eq]
   have h := fastMul_bounds (z := z) (BitVec.le_toInt x) (BitVec.toInt_lt (x := x))
-  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega
+  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega_using [h]
 
 /-- The existing exact seven-instruction REDC is valid when both factors are
 positive lazy, rather than requiring a canonical twiddle. -/

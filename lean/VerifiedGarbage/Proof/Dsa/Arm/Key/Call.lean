@@ -51,32 +51,32 @@ theorem storeWords_read : ∀ (vs : List (BitVec 32)) (m : Mem) (a : BitVec 32),
   | v :: vs, m, a, h, 0, _ => by
     simp only [List.length_cons] at h
     simp only [storeWords]
-    have h4 : a.toNat + 4 < 2 ^ 32 ∨ vs.length = 0 := by omega
+    have h4 : a.toNat + 4 < 2 ^ 32 ∨ vs.length = 0 := by omega_using [h]
     have hd : ∀ r ∈ [(⟨State.addr (a + 4), 4 * vs.length⟩ : Region)], Region.Disjoint ⟨State.addr a, 4⟩ r := by
       intro r hr
       simp only [List.mem_singleton] at hr; subst hr
       rcases h4 with h4 | h4
       · rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.Arm.addr_add h4]
-        exact (Offset.disjoint_base _ (Nat.le_refl 4) (by have := VG.Proof.X25519.Arm.addr_toNat a; omega)).symm
-      · rw [h4]; intro x _ h2; simp only [Region.Contains] at h2; omega
+        exact (Offset.disjoint_base _ (Nat.le_refl 4) (by have := VG.Proof.X25519.Arm.addr_toNat a; omega_using [h])).symm
+      · rw [h4]; intro x _ h2; simp only [Region.Contains] at h2; omega_using [h2]
     rw [show 4 * 0 = 0 from rfl, BitVec.add_zero,
       (FrameStack.storeWords_frame vs (m.writeW (State.addr a) v) (a + 4) (by
         rcases h4 with h4 | h4
         · rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.toNat_add, BitVec.toNat_ofNat,
-            Nat.mod_eq_of_lt (a := 4) (by omega), Nat.mod_eq_of_lt h4]; omega
+            Nat.mod_eq_of_lt (a := 4) (by omega_using []), Nat.mod_eq_of_lt h4]; omega_using [h]
         · rw [h4]; exact Nat.le_of_lt (BitVec.isLt _))).readW (r := ⟨State.addr a, 4⟩)
         (Region.contains_self _ _) hd (by decide), Mem.readW_writeW_self32]
     rfl
   | v :: vs, m, a, h, j + 1, hi => by
     simp only [List.length_cons] at h hi
     simp only [storeWords]
-    have h4 : a.toNat + 4 < 2 ^ 32 := by omega
+    have h4 : a.toNat + 4 < 2 ^ 32 := by omega_using [h, hi]
     have ha : (a + 4).toNat = a.toNat + 4 := by
       rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.toNat_add, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (a := 4) (by omega), Nat.mod_eq_of_lt h4]
+        Nat.mod_eq_of_lt (a := 4) (by omega_using []), Nat.mod_eq_of_lt h4]
     rw [show a + BitVec.ofNat 32 (4 * (j + 1)) = a + 4 + BitVec.ofNat 32 (4 * j) by
-      rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
-    exact storeWords_read vs _ (a + 4) (by omega) j (by omega)
+      rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []]
+    exact storeWords_read vs _ (a + 4) (by omega_using [h, ha]) j (by omega_using [hi])
 
 section
 variable {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u)
@@ -86,7 +86,7 @@ theorem call_sp_toNat : (u.sp - BitVec.ofNat 32 32).toNat = s₀.sp.toNat - 144 
   have := A.stackLow
   rw [h.sp, BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   have := s₀.sp.isLt
-  unfold frameBytes; omega
+  unfold frameBytes; omega_arith
 
 theorem call_sp : State.addr (u.sp - BitVec.ofNat 32 32) = rLow s₀ := by
   apply BitVec.eq_of_toNat_eq
@@ -97,7 +97,7 @@ theorem callEntry_arg {rd wr : List Region} {i : Nat} (hi : i < 8) : stackArg (c
   have hs := call_sp_toNat A h
   have hb := A.stackBound
   have := storeWords_read (callPush.map u.gpr) u.mem (u.sp - BitVec.ofNat 32 32)
-    (by rw [List.length_map]; show (u.sp - BitVec.ofNat 32 32).toNat + 4 * 8 ≤ 2 ^ 32; omega) i
+    (by rw [List.length_map]; show (u.sp - BitVec.ofNat 32 32).toNat + 4 * 8 ≤ 2 ^ 32; omega_using [hs]) i
     (by rw [List.length_map]; exact hi)
   simpa only [List.getElem_map, stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_sp,
     State.callEntry_mem, State.callEntry_sp, pushed, List.length_cons, List.length_nil] using this
@@ -108,7 +108,7 @@ theorem call_sp_le : 4 * callPush.length ≤ u.sp.toNat := by
   have := A.stackLow
   rw [h.sp, BitVec.toNat_sub, BitVec.toNat_ofNat]
   simp only [callPush, List.length_cons, List.length_nil]
-  unfold frameBytes; omega
+  unfold frameBytes; omega_using [this]
 
 theorem call_push_frame : Frame [⟨rLow s₀, 32⟩] u.mem (pushed callPush u).mem := by
   have := FrameStack.pushed_frameA (rs := callPush) (s := u) (call_sp_le A h)
@@ -118,7 +118,7 @@ theorem call_push_frame : Frame [⟨rLow s₀, 32⟩] u.mem (pushed callPush u).
 end
 
 theorem low_sub (s₀ : State) {n : Nat} (hn : n ≤ 144) : Region.Sub (⟨rLow s₀, n⟩ : Region) (rStack s₀) := by
-  have := Offset.sub_base (rLow s₀) (d := 0) (n := n) (k := 144) (by omega)
+  have := Offset.sub_base (rLow s₀) (d := 0) (n := n) (k := 144) (by omega_using [hn])
   rwa [BitVec.add_zero] at this
 
 
@@ -191,10 +191,10 @@ theorem check_call_pre : checkPre (callEntryOf (checkRd s₀) (checkWr s₀) u) 
   unfold checkPre
   simp only [State.withRegions_rd, State.withRegions_wr, cc_r0 C, cc_r1 C, cc_r2 C, cc_r3 C,
     cc_a0 A h C, cc_a1 A h C, hsp, hspn]
-  refine ⟨by have := A.stackLow; omega, rfl, rfl, A.keyScratch,
+  refine ⟨by have := A.stackLow; omega_using [], rfl, rfl, A.keyScratch,
     A.stackScratch.symm.sub_right (low_sub s₀ (by decide)), A.keyBound, A.scratchBound, A.lengths, A.keyLength, ?_⟩
   have := A.scratchLength
-  unfold Spec.Dsa.generationScratchWords at this; unfold Spec.Dsa.scratchWords; omega
+  unfold Spec.Dsa.generationScratchWords at this; unfold Spec.Dsa.scratchWords; omega_using [this]
 
 /-- The bytes the check reads are those of `u`, which the push leaves. -/
 theorem checkRes_call : checkRes (callEntryOf (checkRd s₀) (checkWr s₀) u) = checkResult s₀ u := by
@@ -203,7 +203,7 @@ theorem checkRes_call : checkRes (callEntryOf (checkRd s₀) (checkWr s₀) u) =
   simp only [State.withRegions_mem, State.callEntry_mem, cc_r0 C, cc_r1 C, cc_r2 C, cc_r3 C]
   rw [rBytes_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
-    (by have := (stackArg s₀ 0).isLt; omega)]
+    (by have := (stackArg s₀ 0).isLt; omega_using [])]
 
 omit C in
 theorem check_covers :
@@ -386,16 +386,16 @@ theorem derive_call_pre : derivePre (callEntryOf (deriveRd s₀) (deriveWr s₀)
   unfold derivePre
   simp only [State.withRegions_rd, State.withRegions_wr, dc_r0 C, dc_r1 C, dc_r2 C, dc_r3 C,
     dc_a0 A h C, dc_a1 A h C, dc_a2 A h C, dc_a3 A h C, dc_a4 A h C, hsp, hspn]
-  refine ⟨by have := A.stackLow; omega, rfl, rfl, A.outKey, A.stackOut.symm.sub_right (nonce_sub A),
+  refine ⟨by have := A.stackLow; omega_using [], rfl, rfl, A.outKey, A.stackOut.symm.sub_right (nonce_sub A),
     A.outScratch, A.stackOut.symm.sub_right (low_sub s₀ (by decide)), A.keyScratch,
     A.stackScratch.sub_left (nonce_sub A), A.stackScratch.symm.sub_right (low_sub s₀ (by decide)),
     A.outBound, A.keyBound, ?_, A.scratchBound, A.lengths, A.outLength, A.keyLength, ?_⟩
   · show (stackArg (callEntryOf (deriveRd s₀) (deriveWr s₀) u) 1).toNat + _ ≤ _
-    rw [← VG.Proof.X25519.Arm.addr_toNat, dc_a1 A h C, rBase_off, off_rLow_toNat A (by unfold oNonce; omega),
+    rw [← VG.Proof.X25519.Arm.addr_toNat, dc_a1 A h C, rBase_off, off_rLow_toNat A (by unfold oNonce; omega_using []),
       rLow_toNat A]
     have := A.stackLow; have := A.stackBound; unfold oNonce; omega
   · have := A.scratchLength
-    unfold Spec.Dsa.generationScratchWords at this; unfold Spec.Dsa.scratchWords; omega
+    unfold Spec.Dsa.generationScratchWords at this; unfold Spec.Dsa.scratchWords; omega_using [this]
 
 /-- The domain, in `u`, has passed its check: so it has at the call. -/
 theorem derive_call_checked
@@ -408,7 +408,7 @@ theorem derive_call_checked
   simp only [State.withRegions_mem, State.callEntry_mem, dc_r2 C, dc_r3 C, dc_a0 A h C, dc_a2 A h C]
   rw [rBytes_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
-    (by have := (stackArg s₀ 0).isLt; omega)]
+    (by have := (stackArg s₀ 0).isLt; omega_using [])]
   exact hc
 
 /-- The bytes the derivation reads are those of `u`, which the push leaves. -/
@@ -421,13 +421,13 @@ theorem deriveRes_call : deriveRes (callEntryOf (deriveRd s₀) (deriveWr s₀) 
     dc_a2 A h C]
   have en : Spec.Rsa.bytesAt (pushed callPush u).mem (off (rBase s₀) oNonce) (stackArg s₀ 2).toNat =
       Spec.Rsa.bytesAt u.mem (off (rBase s₀) oNonce) (stackArg s₀ 2).toNat := by
-    refine rBytes_frame hf (fun r hr => ?_) (by have := (stackArg s₀ 2).isLt; omega)
+    refine rBytes_frame hf (fun r hr => ?_) (by have := (stackArg s₀ 2).isLt; omega_using [])
     simp only [List.mem_singleton] at hr; subst hr
     rw [rBase_off]
-    exact Offset.disjoint_base _ (by unfold oNonce; omega) (by unfold oNonce; omega)
+    exact Offset.disjoint_base _ (by unfold oNonce; omega_using []) (by unfold oNonce; omega_using [])
   rw [rBytes_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
-    (by have := (stackArg s₀ 0).isLt; omega), en]
+    (by have := (stackArg s₀ 0).isLt; omega_using []), en]
 
 omit C in
 theorem derive_covers :
@@ -512,6 +512,6 @@ theorem callDerive_ok {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (C 
       exact (popped_gpr (by decide) _ _).trans (hpu _ (by decide) (by decide))
   · rw [popped_gpr (by decide)]
     apply BitVec.eq_of_toNat_eq
-    rw [hr, toNat_imm (by have := status_lt (deriveResult s₀ u); omega)]
+    rw [hr, toNat_imm (by have := status_lt (deriveResult s₀ u); omega_using [hr])]
 
 end VG.Proof.Dsa.Arm.Key

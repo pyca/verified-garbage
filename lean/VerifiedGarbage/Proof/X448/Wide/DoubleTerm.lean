@@ -30,8 +30,8 @@ theorem termFromDouble_ok (s : State) (a b : Reg) (hb : b ≠ .x10) (hb11 : b �
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, rfl, (fun r hr => ?_), rfl, rfl⟩
   · have doubled : (s.gpr a + s.gpr a).toNat = 2 * (s.gpr a).toNat := by
-      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_using [ha])]
+      omega_using []
     have cap : (s.gpr a + s.gpr a).toNat * (s.gpr b).toNat +
         pair (s.gpr .x4) (s.gpr .x5) < 2 ^ 128 := by
       rw [doubled, Nat.mul_assoc]; exact h

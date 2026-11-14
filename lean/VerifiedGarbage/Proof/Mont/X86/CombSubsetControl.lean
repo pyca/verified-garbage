@@ -30,11 +30,11 @@ theorem subsetIndices_ok {s : State} {base : Addr} {size a : Nat}
   have low : u₃.gpr .eax = ((0#32-BitVec.ofNat 32 a) &&& BitVec.ofNat 32 a) := by
     rw [U₃.gpr, U₂.gpr, U₁.gpr, U₂.other _ (by decide), U₁.other _ (by decide), count]
     rfl
-  refine wp_storeS (H3.ea (d := 28) (by omega)) (H3.write (d := 28) (n := 4) hz) fun u₄ M₄ => ?_
+  refine wp_storeS (H3.ea (d := 28) (by omega_using [hz])) (H3.write (d := 28) (n := 4) hz) fun u₄ M₄ => ?_
   refine wp_movS rfl fun u₅ U₅ _ => wp_subS rfl fun u₆ U₆ _ => ?_
   have K6 : Keeps [.eax,.edx] s u₆ := ((K3.trans (M₄.keeps _)).widen U₅.keeps).widen U₆.keeps
   have H6 := hs.of_keeps K6 (by decide)
-  refine wp_storeS (H6.ea (d := 4) (by omega)) (H6.write (d := 4) (n := 4) (by omega)) fun t M₇ => WP.block_nil ?_
+  refine wp_storeS (H6.ea (d := 4) (by omega_using [hz])) (H6.write (d := 4) (n := 4) (by omega_using [hz])) fun t M₇ => WP.block_nil ?_
   have mem : u₆.mem = u₃.mem.writeW (off base 28) (u₃.gpr .eax) := by rw [U₆.mem,U₅.mem,M₄.mem]
   have initial : u₃.mem = s.mem := U₃.mem.trans (U₂.mem.trans U₁.mem)
   have O28 : Outside base 28 4 s.mem u₆.mem := by rw [mem,initial]; exact writeW32_outside _ _ _ (by decide)
@@ -53,7 +53,7 @@ theorem subsetLow_ok {s : State} {base : Addr} {size : Nat}
   unfold VG.Impl.Mont.X86.Comb.subsetLow VG.Impl.Mont.X86.Dynamic.windowOffset
   refine wp_movS (readSrc_sc hs hz) fun u U _ => ?_
   have hu := hs.of_keeps U.keeps (by decide)
-  refine wp_storeS (hu.ea (d := 4) (by omega)) (hu.write (d := 4) (n := 4) (by omega)) fun t M => WP.block_nil ?_
+  refine wp_storeS (hu.ea (d := 4) (by omega_using [hz])) (hu.write (d := 4) (n := 4) (by omega_using [hz])) fun t M => WP.block_nil ?_
   refine ⟨?_, ?_, U.keeps.trans (M.keeps _)⟩
   · rw [M.mem,U.mem]; exact writeW32_outside _ _ _ (by decide)
   · rw [M.mem,w32_write_self,U.gpr]

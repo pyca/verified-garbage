@@ -38,7 +38,7 @@ theorem rangeMask_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       hgu.ld hZ (show sArr aX < 32 by decide), hgu.ld hZ (show sArr aN < 32 by decide), hgu.ld hZ (show sW < 32 by decide)])
     rfl rfl rfl) fun v ⟨⟨hv16, hv17, hv14, hvc, hvm⟩, hkv⟩ => ?_)
   have hk : Keep mmRegs s v := (hku.trans hkv).mono (by decide)
-  refine WP.seq (WP.mono (cmpLoop_ok (hg.scr.congr hk.wr) hv16 hv17 hv14 hvc (by omega) hw' (by omega) (by omega))
+  refine WP.seq (WP.mono (cmpLoop_ok (hg.scr.congr hk.wr) hv16 hv17 hv14 hvc (by omega_using [hw]) hw' (by omega_using [hx]) (by omega_using [hn]))
     fun z ⟨hzc, hzm, hkz⟩ => ?_)
   rw [hvm, hum] at hzc
   refine WP.seq (WP.mono (WP.keep [.x3, .x4, .x5] (Q := fun f =>
@@ -57,7 +57,7 @@ theorem rangeMask_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have he : (!decide (f.gpr .x15 = 0) && decide (wv s.mem B (slot w aX) w < wv s.mem B (slot w aN) w)) =
       decide ((if aboveOne then 1 else 0) < wv s.mem B (slot w aX) w ∧ wv s.mem B (slot w aX) w < wv s.mem B (slot w aN) w) := by
     rw [decide_eq_decide.mpr hf15, ← decide_not, ← Bool.decide_and]
-    exact decide_eq_decide.mpr (by omega)
+    exact decide_eq_decide.mpr (by omega_using [])
   refine WP.mono (WP.keep [.x3] (Q := fun t =>
     t.gpr .x3 = mask (decide ((if aboveOne then 1 else 0) < wv s.mem B (slot w aX) w ∧
       wv s.mem B (slot w aX) w < wv s.mem B (slot w aN) w)) ∧ t.mem = l.mem)

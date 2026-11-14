@@ -38,7 +38,7 @@ theorem contains_off {base : Addr} {len d n : Nat} (h : d + n ≤ len) (hd : d <
 theorem readW_writeW_off (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
     (m.writeW (off p e) v).readW (off p d) 64 = m.readW (off p d) 64 :=
-  Mem.readW_writeW_sep (Offset.sep p h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep p h (by omega_using [hd]) (by omega_using [he])) (by decide)
 
 /-! ## The regions of the state -/
 
@@ -76,12 +76,12 @@ theorem key_frame {st : Addr} {m m' : Mem} (hf : Frame [hR st, wR st] m m') :
 theorem key_word {st : Addr} {m m' : Mem} (hf : Frame [hR st, wR st] m m') {d : Nat}
     (h₁ : 24 ≤ d) (h₂ : d + 8 ≤ 56) : m'.readW (off st d) 64 = m.readW (off st d) 64 := by
   refine hf.readW (r := ⟨off st d, 8⟩) (a := off st d) (w := 64) (Region.contains_self _ _) ?_
-    (by omega)
+    (by omega_using [])
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint_base st (n := 8) (k := 24) (by omega) (by omega)
-  · exact Offset.disjoint st (n := 8) (e := 56) (k := 72) (by omega) (by omega) (by omega)
+  · exact Offset.disjoint_base st (n := 8) (k := 24) (by omega_using [h₁]) (by omega_using [h₂])
+  · exact Offset.disjoint st (n := 8) (e := 56) (k := 72) (by omega_using [h₂]) (by omega_using [h₂]) (by omega_using [])
 
 /-! ## The accumulator and the key as numbers -/
 
@@ -165,7 +165,7 @@ def storeHm (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) : Mem :=
 theorem storeHm_frame {st : Addr} {r : Region} {m m' : Mem} (hf : Frame [hR st, r] m m')
     (w0 w1 w2 : BitVec 64) : Frame [hR st, r] m (storeHm m' st w0 w1 w2) := by
   have c : ∀ d, d + 8 ≤ 24 → (hR st).Contains (off st d) (64 / 8) := fun d hd =>
-    contains_off hd (by omega)
+    contains_off hd (by omega_using [hd])
   exact ((hf.writeW List.mem_cons_self _ (c 0 (by decide))).writeW List.mem_cons_self _
     (c 8 (by decide))).writeW List.mem_cons_self _ (c 16 (by decide))
 
@@ -182,18 +182,18 @@ theorem storeHm_acc (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) :
 
 theorem in_st {s : State} {p : Addr} (hw : sR p ∈ s.wr) {d n : Nat} (h : d + n ≤ 128) :
     InRegions s.wr (p + BitVec.ofNat 64 d) n :=
-  ⟨_, hw, contains_off h (by omega)⟩
+  ⟨_, hw, contains_off h (by omega_using [h])⟩
 
 theorem in_st' {s : State} {p : Addr} (hw : sR p ∈ s.rd ++ s.wr) {d n : Nat} (h : d + n ≤ 128) :
     InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 d) n :=
-  ⟨_, hw, contains_off h (by omega)⟩
+  ⟨_, hw, contains_off h (by omega_using [h])⟩
 
 /-- The state plus a multiple of 8 is 8-byte aligned. -/
 theorem st_al8 {p : Addr} (ha : p.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
     (p + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   have := p.isLt
-  omega
+  omega_using [ha, hd]
 
 theorem storeH_ok (s : State) (hw : sR (s.gpr .a0) ∈ s.wr) (ha : (s.gpr .a0).toNat % 8 = 0) :
     WP isa (.block storeH) s fun s' =>
@@ -218,7 +218,7 @@ theorem ldSt_ok (s : State) (d : Reg) {off : Nat} (ho : off + 8 ≤ 128) (hw : s
     (ha : (s.gpr .a0).toNat % 8 = 0) (h8 : off % 8 = 0 := by decide) :
     WP isa (.block [.load .d d .a0 off]) s fun s' =>
       Words64.Upd3 s s' d T1 T2 (s.mem.readW (s.gpr .a0 + BitVec.ofNat 64 off) 64) :=
-  VG.RISCV64.Steps.wp_ld (by omega) rfl (st_al8 ha h8) (in_st' hw ho) fun s' u =>
+  VG.RISCV64.Steps.wp_ld (by omega_using [ho]) rfl (st_al8 ha h8) (in_st' hw ho) fun s' u =>
     WP.block_nil ⟨u.gpr, fun r h _ _ => u.other r h, u.mem, u.rd, u.wr, u.sp⟩
 
 theorem upd3_regs {s s' : State} {d t₁ t₂ : Reg} {v : BitVec 64} (h : Words64.Upd3 s s' d t₁ t₂ v) :

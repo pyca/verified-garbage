@@ -16,9 +16,10 @@ call them, are a `Stream` (`Hash.stream`).
 
 * HMAC's `init(inner = rdi, outer = rsi, key = rdx, key_len = rcx,
   scratch = r8)` sets each state's hash value with the streaming `init`,
-  writes `K₀ ⊕ ipad` into the inner state's buffer (`ipad` a 32-bit word at
-  a time, then the key's bytes XORed in) and `K₀ ⊕ opad` into the outer
-  one's (from the inner one, a word at a time, XORed with `ipad ⊕ opad`), and
+  writes `K₀ ⊕ ipad` into the inner state's buffer (`ipad` sixteen bytes at
+  a time, then the key XORed in, its whole 16-byte words and then its other
+  bytes) and `K₀ ⊕ opad` into the outer one's (from the inner one, sixteen
+  bytes at a time, XORed with `ipad ⊕ opad`), and
   compresses each buffer into its state's hash value: each state then
   represents its block, as after `update` with it.
 * Its `finalize(inner = rdi, outer = rsi, count = rdx, out = rcx,
@@ -125,6 +126,30 @@ def finPrologue : List Instr :=
 
 end Stream
 
+/-- The outer state's hash value and block, for the compression function:
+`r12` is the outer state, of `N` bytes of hash value and then its buffer. -/
+def outerArgs (N : Nat) : List Instr :=
+  [.mov .rbx (.reg .r12), .mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 N))]
+
+/-- HMAC's `init` compressing its two padded keys with the compression
+function `compC`, one after the other: the inner state's (`rbx`, its block
+at `rsi`), then the outer's (`r12`). -/
+def compTwice (N : Nat) (compN : String) (compC : Prog isa) : Prog isa :=
+  .seq (compressAt compN compC) (.seq (.block (outerArgs N)) (compressAt compN compC))
+
+/-- The arguments of a function that compresses two blocks into two hash
+values at once, `code (state₀ = rdi, block₀ = rsi, state₁ = rdx, block₁ =
+rcx, scratch = r8)`, from the inner state at `rbx` with its block at `rsi`
+and the outer state at `r12`. -/
+def pairArgs (N : Nat) : List Instr :=
+  [.mov .rdi (.reg .rbx), .mov .rdx (.reg .r12), .mov .rcx (.reg .r12),
+    .alu .add .rcx (.imm (BitVec.ofNat 32 N)), .mov .r8 (.reg .r15)]
+
+/-- HMAC's `init` compressing its two padded keys with one call of such a
+function: the two blocks do not depend on each other. -/
+def compPair (N : Nat) (name : String) (code : Prog isa) : Prog isa :=
+  .seq (.block (pairArgs N)) (.call name code)
+
 /-- A Merkle–Damgård hash function's x86-64 functions, as HMAC and PBKDF2
 call them. -/
 structure Hash where
@@ -149,6 +174,9 @@ structure Hash where
   hmacInitN : String
   hmacFinN : String
   iterN : String
+  /-- HMAC's `init` compressing the blocks of its two states (`compTwice`,
+  or `compPair` with a function that compresses both at once). -/
+  compBoth : Prog isa := compTwice P.N compN compC
 
 namespace Hash
 
@@ -156,6 +184,16 @@ variable (H : Hash)
 
 /-- The size of the streaming state. -/
 abbrev S : Nat := H.P.N + H.P.B
+
+/-- `H` with `so` bytes of working space for the compression function
+(`Params.so`) and `W` words for our functions: its code made for an
+implementation of the compression function that uses another amount. -/
+def withWs (so W : Nat) : Hash := { H with P := { H.P with so := so }, W := W }
+
+/-- The words of working space our functions need with the parameters `P`
+(`iterate`'s, the most: the streaming functions' `so + 48` bytes, then a
+streaming state), the working space each variant's functions get. -/
+def wOf (P : Params) : Nat := (P.so + 48 + P.N + P.B + 7) / 8
 
 /-- The streaming `update` and `finalize`. -/
 def updC : Prog isa := MdStream.X86_64.update H.P H.compN H.compC
@@ -193,58 +231,76 @@ def copyW (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List In
 /-! ## HMAC's `init`
 
 Registers: `rbx` = `inner`, `r12` = `outer`, `r15` = `scratch`, `rbp` =
-`key`, `r13` = `key_len`, `r14` = the byte index. Each state's buffer
+`key`, `r13` = `key_len`, `r14` = the byte index; `rax`, `rcx`, `r10` and
+`xmm0`–`xmm2` are scratch for the padded keys. Each state's buffer
 receives its padded key, `K₀ ⊕ ipad` at `rbx + N` and `K₀ ⊕ opad` at
 `r12 + N`, after `init` has set its hash value; then one compression each
-makes the state represent that block. -/
+makes the state represent that block (`compBoth`). -/
 
 /-- Saving our caller's registers, and setting up ours. -/
 def initPrologue : List Instr :=
   H.stream.save ++ ([.mov .rbx (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r15 (.reg .r8),
     .mov .rbp (.reg .rdx), .mov .r13 (.reg .rcx)] : List Instr)
 
-/-- `ipad` into every byte of the inner buffer, a word at a time; then the
-byte index for the key, and whether there is a key byte at all. -/
-def ipadFill : List Instr :=
-  .mov32 .rax (.imm 0x36363636) ::
-    (List.range (H.P.B / 4)).map (fun k => .store32 (at_ .rbx (H.P.N + 4 * k)) .rax) ++
-    ([.mov32 .r14 (.imm 0), .alu .test .r13 (.reg .r13)] : List Instr)
+/-- The byte of which `c` is eight in every byte of `x`, through `rax`. -/
+def padConst (x : XReg) (c : BitVec 64) : List Instr :=
+  [.movImm64 .rax c, .xop (.movq x .rax), .xop (.bin .punpcklqdq x x)]
 
-/-- The key bytes, XORed with `ipad`, over the first `key_len` bytes of the
-inner buffer. -/
+/-- `ipad` into every byte of the inner buffer, sixteen bytes at a time, from
+`xmm0`; then the byte index for the key, and the number of whole 16-byte
+words of the key, in `rcx`, whose flags say whether there is one. -/
+def ipadFill : List Instr :=
+  padConst .xmm0 0x3636363636363636 ++
+    (List.range (H.P.B / 16)).map (fun k => .movdquStore (at_ .rbx (H.P.N + 16 * k)) .xmm0) ++
+    ([.mov32 .r14 (.imm 0), .mov .rcx (.reg .r13), .shift .shr .rcx 4, .alu .test .rcx (.reg .rcx)] : List Instr)
+
+/-- Where the key loops store: `[rbx + r10 + N]`, with `r10` the index
+`r14` under a mask that leaves it as it is. The residue analysis cannot
+bound `r14`, which a loop counts up, and can bound `r10`. -/
+def keyAt : MemOp := { base := .rbx, index := some .r10, scale := 1, disp := H.P.N }
+
+/-- The key's whole 16-byte words, XORed with `ipad` (`xmm0`), over the
+inner buffer, `rcx` counting them down: what the compression function loads
+of the block is then what one store wrote, which a core forwards. -/
+def keyLoop16 : Prog isa :=
+  .loop (.block [.movdquLoad .xmm1 (byteAt .rbp 0), .xop (.bin .pxor .xmm1 .xmm0),
+    .mov .r10 (.reg .r14), .alu .and .r10 (.imm (BitVec.ofNat 32 (H.P.B - 16))),
+    .movdquStore H.keyAt .xmm1, .alu .add .r14 (.imm 16), .alu .sub .rcx (.imm 1)]) .ne
+
+/-- The key's other bytes, XORed with `ipad`, over the inner buffer, up to
+`key_len`. -/
 def keyLoop : Prog isa :=
   .loop (.block [.movzx8 .rax (byteAt .rbp 0), .alu32 .xor .rax (.imm 0x36),
-    .store8 (byteAt .rbx H.P.N) .rax, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r13)]) .ne
+    .mov .r10 (.reg .r14), .alu .and .r10 (.imm (BitVec.ofNat 32 (H.P.B - 1))),
+    .store8 H.keyAt .rax, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r13)]) .ne
 
-/-- Word `k` of the outer buffer: word `k` of the inner one, `K₀ ⊕ ipad`,
-XORed with `ipad ⊕ opad`. -/
+/-- Sixteen-byte word `k` of the outer buffer: word `k` of the inner one,
+`K₀ ⊕ ipad`, XORed with `ipad ⊕ opad` (`xmm1`). -/
 def opadW (k : Nat) : List Instr :=
-  [.mov32 .rax (.mem (at_ .rbx (H.P.N + 4 * k))), .alu32 .xor .rax (.imm 0x6a6a6a6a),
-    .store32 (at_ .r12 (H.P.N + 4 * k)) .rax]
+  [.movdquLoad .xmm2 (at_ .rbx (H.P.N + 16 * k)), .xop (.bin .pxor .xmm2 .xmm1),
+    .movdquStore (at_ .r12 (H.P.N + 16 * k)) .xmm2]
 
 /-- The outer buffer, and the inner block's address for the compression
 function. -/
 def opadFill : List Instr :=
-  (List.range (H.P.B / 4)).flatMap H.opadW ++
+  padConst .xmm1 0x6a6a6a6a6a6a6a6a ++ (List.range (H.P.B / 16)).flatMap H.opadW ++
     ([.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.N))] : List Instr)
 
 /-- Both padded keys into the buffers: the part of `init` between its calls. -/
 def initKeys : Prog isa :=
-  .seq (.block H.ipadFill) (.seq (.ite .e (.block []) H.keyLoop) (.block H.opadFill))
+  .seq (.block H.ipadFill) (.seq (.ite .e (.block []) H.keyLoop16)
+    (.seq (.block [.alu .cmp .r14 (.reg .r13)]) (.seq (.ite .e (.block []) H.keyLoop) (.block H.opadFill))))
 
 /-- The outer state's hash value and block, for the compression function. -/
-def initOuter : List Instr :=
-  [.mov .rbx (.reg .r12), .mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.N))]
+def initOuter : List Instr := outerArgs H.P.N
 
 def hmacInit : Prog isa :=
   .seq (.block H.initPrologue)
   (.seq (H.stream.callInit .rbx)
   (.seq (H.stream.callInit .r12)
   (.seq H.initKeys
-  (.seq (compressAt H.compN H.compC)
-  (.seq (.block H.initOuter)
-  (.seq (compressAt H.compN H.compC)
-    (.block H.stream.restore)))))))
+  (.seq H.compBoth
+    (.block H.stream.restore)))))
 
 /-! ## HMAC's `finalize`
 

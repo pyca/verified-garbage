@@ -5,12 +5,12 @@
 // gives.
 
 vg_sha256_update_scratch:
-	mov QWORD PTR [r8+560], rbx
-	mov QWORD PTR [r8+568], rbp
-	mov QWORD PTR [r8+576], r12
-	mov QWORD PTR [r8+584], r13
-	mov QWORD PTR [r8+592], r14
-	mov QWORD PTR [r8+600], r15
+	mov QWORD PTR [r8+112], rbx
+	mov QWORD PTR [r8+120], rbp
+	mov QWORD PTR [r8+128], r12
+	mov QWORD PTR [r8+136], r13
+	mov QWORD PTR [r8+144], r14
+	mov QWORD PTR [r8+152], r15
 	mov rbx, rdi
 	mov r15, r8
 	mov rbp, rdx
@@ -33,7 +33,10 @@ vg_sha256_update_scratch:
 	jb 25f
 27:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+32], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+32], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -46,7 +49,10 @@ vg_sha256_update_scratch:
 	je 28f
 210:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -81,7 +87,10 @@ vg_sha256_update_scratch:
 	jb 217f
 219:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+32], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+32], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -94,7 +103,10 @@ vg_sha256_update_scratch:
 	je 220f
 222:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -137,11 +149,11 @@ vg_sha256_update_scratch:
 226:
 	test r14, r14
 	jne 20b
-	mov rbx, QWORD PTR [r15+560]
-	mov rbp, QWORD PTR [r15+568]
-	mov r12, QWORD PTR [r15+576]
-	mov r13, QWORD PTR [r15+584]
-	mov r14, QWORD PTR [r15+592]
-	mov r15, QWORD PTR [r15+600]
+	mov rbx, QWORD PTR [r15+112]
+	mov rbp, QWORD PTR [r15+120]
+	mov r12, QWORD PTR [r15+128]
+	mov r13, QWORD PTR [r15+136]
+	mov r14, QWORD PTR [r15+144]
+	mov r15, QWORD PTR [r15+152]
 	ret
 	.p2align 6

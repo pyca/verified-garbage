@@ -37,7 +37,12 @@ instructions in an ISA model) go in their own PR before either.
    `Verified.of_implies` (see `Proof/Framework/Contract.lean`).
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
    which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
-   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`), made
+   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`). An
+   algorithm has one file per target, holding the artifacts of all its
+   functions, whatever variant lists they map over
+   (`artifacts := [ … ] ++ Sign.artifacts`, with the artifacts of a function
+   generic over a list in a namespace of their own): never a directory for
+   one of its functions or interfaces. Each artifact is made
    from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
    with the file importing
    `Proof/Framework/Registration.lean` for its default proofs, and its
@@ -81,9 +86,34 @@ instructions in an ISA model) go in their own PR before either.
    for code that depends on a `Bool` or an enumeration (`adx`, a field
    variant), by cases on it. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). If its code uses instructions outside
-   the target's baseline ISA, list the CPU features they require in
-   `features` (the emitter rejects anything but the exact set).
+   them). The CPU features the code needs beyond the target's baseline ISA
+   are never stated: `Api.artifact` takes them from its instructions and
+   those of the functions it calls (`Code.requiresDedup`, from the ISA
+   model's `requires`).
+   On x86-64 a function also proves that it returns without secret residue
+   (`Registration.residue`, `TCB/X86_64/Residue.lean`): build its
+   registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
+   whose code clears what the residue analysis (`X86_64.RTaint`) finds may
+   hold secrets and which sets `residue`; the registration file binds the
+   result. Only functions `ci/residue_allowlist.txt` already lists may go
+   without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
+   emitter refuses a listed function that has a proof, so converting one
+   removes its line. Where the analysis fails, its trace says at which
+   instruction (an index it cannot bound, a value reloaded after a store it
+   cannot place): change the code so it can, as the Merkle–Damgård
+   streaming code clamps its indices, and ChaCha20's `apply` keeps the data
+   and its length in `r14` and `r15` and takes its state back from the
+   buffer `vg_chacha20_xor` returns. Code the analysis does not follow at
+   all (RSA's private-key functions, most of whose pointers and lengths
+   are arguments on the stack) is scrubbed with
+   `X86_64.Scrub.withScrubAll`, which wipes all the stack its frames and
+   calls use and needs only that its postcondition reads the memory on
+   return in its buffers alone (`PostOut`); its level `evex` also clears
+   `zmm16`–`zmm31` and MXCSR's status flags, for code that writes those.
+   It leaves a function as it is when the clearing would need a CPU
+   feature the function does not: one that needs no AVX and may run an AVX2
+   hash function through a table it takes (`vg_rsa_pss_sign`,
+   `vg_rsa_oaep_decrypt`).
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them, and its
    registration file applies it to each: the implementations of the callee
@@ -95,9 +125,9 @@ instructions in an ISA model) go in their own PR before either.
    SHA-256's `update`). A function that calls functions of several such
    interfaces maps over each of their lists, nested (e.g. Argon2's x86-64
    derivation, `Artifacts/Argon2/X86_64.lean`, calling BLAKE2b's streaming
-   functions and Argon2's `G`); its instances are named by
-   `Emit.qualifiedName`: the function's name, then a tag and the suffix of
-   each interface whose variant is not the baseline
+   functions and Argon2's `G`); its instances are named by `qualifiedName`
+   (`Proof/Framework/QualifiedName.lean`): the function's name, then a tag
+   and the suffix of each interface whose variant is not the baseline
    (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline), since
    variants of different interfaces may share a suffix; callers of one
    interface append the suffix alone. A function that takes every

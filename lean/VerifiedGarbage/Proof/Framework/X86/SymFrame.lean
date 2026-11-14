@@ -45,13 +45,13 @@ theorem SymAddrPost.arg {name : String} {s t : State} (h : SymAddrPost name s t)
     BitVec.ofNat 64 (4 + 4 * j), 4⟩) h.frame ?_ ?_ (by decide)
   · simp only [Region.Contains, Nat.reduceDiv]
     rw [show (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * j)).setWidth 64 = _ from
-      addr_eq (x := s.gpr .esp) (k := 4 + 4 * j) (by omega)]
+      addr_eq (x := s.gpr .esp) (k := 4 + 4 * j) (by omega_using [h₂])]
     simp
   · simp only [List.mem_singleton]
     rintro r rfl x hx hx'
     simp only [Region.Contains] at hx hx'
     rw [Taint.sub_setWidth h₁] at hx'
-    exact Offset.disjoint_below_above _ (m := 4) (a := 4 + 4 * j) (l := 4) (by omega) x hx' hx
+    exact Offset.disjoint_below_above _ (m := 4) (a := 4 + 4 * j) (l := 4) (by omega_using [h₂]) x hx' hx
 
 /-- The return address above the CALL frame is untouched. -/
 theorem SymAddrPost.ret {name : String} {s t : State} (h : SymAddrPost name s t)
@@ -63,7 +63,7 @@ theorem SymAddrPost.ret {name : String} {s t : State} (h : SymAddrPost name s t)
   rintro r rfl x hx hx'
   simp only [Region.Contains] at hx hx'
   rw [Taint.sub_setWidth h₁] at hx'
-  exact Offset.disjoint_below_above _ (m := 4) (a := 0) (l := 4) (by omega) x hx' (by
+  exact Offset.disjoint_below_above _ (m := 4) (a := 0) (l := 4) (by omega_using []) x hx' (by
     change (x - ((s.gpr .esp).setWidth 64 + 0)).toNat + 1 ≤ 4
     have hz : (s.gpr .esp).setWidth 64 + (0 : BitVec 64) = (s.gpr .esp).setWidth 64 := BitVec.add_zero _
     rw [hz]; exact hx)

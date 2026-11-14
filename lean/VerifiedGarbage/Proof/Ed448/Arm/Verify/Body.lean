@@ -204,7 +204,7 @@ theorem body_ok (hv : EqOk) (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L 
   refine WP.seq (WP.mono (reduce_step hc2 hL ha) fun t3 ⟨hc3, hk⟩ => ?_)
   refine WP.mono (equation_step hv hc3 hL ha) fun u ⟨hu, hr⟩ => ⟨hu, ?_⟩
   have hl : (Spec.Ed448.bytesAt m₀ (State.addr L.ctx) L.ctxLen.toNat).length ≤ 255 := by
-    simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]; have := hL.cl; omega
+    simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]; have := hL.cl; omega_using [this]
   rw [hr, hk, hh2, verify_of_len hl, take57]
 
 theorem body_noFrames : body.noFrames = true := by

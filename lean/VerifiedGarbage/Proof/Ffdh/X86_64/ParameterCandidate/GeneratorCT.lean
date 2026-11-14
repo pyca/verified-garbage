@@ -25,7 +25,7 @@ private theorem generator_header (d : CandidatePublic) (s : State) (h : PhaseLoa
   have hrd := hb.scr.ld (show 8 * oGen + 8 ≤ d.p.Z by change 88 ≤ d.p.Z; omega_using [hb.header_room])
   have hlinkrd := hg.scr.ld (show 8 * sLink + 8 ≤ d.p.Z - 256 by
     have hz := (hb.phase_dims false).z
-    change 136 ≤ d.p.Z - 256; unfold slot hdrBytes at hz; omega)
+    change 136 ≤ d.p.Z - 256; unfold slot hdrBytes at hz; omega_using [hz])
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 d.p.gen ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, ws, hdrOff, hg.rdi, hp.link, hgen, hrd, hlinkrd]) rfl)
     fun t ⟨⟨hdx, hm⟩, k⟩ => ?_

@@ -21,7 +21,7 @@ theorem expByteLoad_ok (s : State) {base ep : BitVec 32} {size : Nat}
       t.mem = s.mem ∧ Rest [.r1, .r2] s t := by
   unfold expByteLoad
   refine wp_ldr (a := off (State.addr base) 128) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read (by omega)) fun u h => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fits, this])) (ws.read (by omega_using [fits])) fun u h => ?_
   refine wp_ldrb (a := State.addr ep) (by decide)
     (by rw [h.gpr, pointer, BitVec.add_zero])
     (by rw [h.rd, h.wr]; exact read) fun t j => WP.block_nil ?_

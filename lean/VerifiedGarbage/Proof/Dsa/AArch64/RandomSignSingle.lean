@@ -3,18 +3,77 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
-
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgsSaved
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallRetry
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallValue
 import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
+
+/-! ### `Dsa.AArch64.RandomSignCallRetry`, which only this module used -/
+
+section
+
+/-! Compose supplied-nonce signing with link restoration and bounded retry. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64
+
+theorem random_signer_retry (S : Signer) {s t : State} {attempts : Nat} (h : RandomSignABI S.stack s)
+    (hsp : t.sp = randomBase s)
+    (hw : ∀ i < 3, word t.mem (randomBase s) (8 * i) = randomCallArg s i)
+    (h0 : t.gpr .x0 = s.gpr .x0) (h1 : t.gpr .x1 = s.gpr .x1)
+    (h2 : t.gpr .x2 = s.gpr .x3) (h3 : t.gpr .x3 = s.gpr .x4)
+    (h4 : t.gpr .x4 = s.gpr .x5) (h5 : t.gpr .x5 = off (randomBase s) Random.oNonce)
+    (h6 : t.gpr .x6 = s.gpr .x6) (h7 : t.gpr .x7 = s.gpr .x7)
+    (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr)
+    (hn : word t.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 attempts)
+    (hlink : word t.mem (randomBase s) RandomSign.oLink = t.gpr .x30)
+    (hpos : 0 < attempts) (hbound : attempts < 2 ^ 64)
+    (hkey : Spec.Rsa.bytesAt t.mem (s.gpr .x3) (s.gpr .x4).toNat = (randomInput s).key)
+    (hv : RandomValid S s) :
+    WP isa (.seq (.call S.name S.code) RandomSign.callFinish) t fun u =>
+      u.rd = t.rd ∧ u.wr = t.wr ∧ u.sp = t.sp ∧ (∀ r ∈ preserved, u.gpr r = t.gpr r) ∧
+      (∃ m : Mem,
+        Frame (randomCallWr s ++ [below (randomBase s) S.stack]) t.mem m ∧
+        Spec.Rsa.bytesAt m (s.gpr .x0) (s.gpr .x1).toNat =
+          (randomCallResult s t).getD (List.replicate (s.gpr .x1).toNat 0) ∧
+        u.mem = randomRetryMem m (randomBase s) (randomCallResult s t).isSome attempts) ∧
+      (∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64) := by
+  refine WP.seq (WP.mono (random_signer_outcome S h hsp hw h0 h1 h2 h3 h4 h5 h6 h7 hrd hwr hkey hv)
+    fun u ⟨hur, huw, husp, huc, hf, hstatus, hout, hv⟩ => ?_)
+  have hus : Scr u (randomBase s) Random.frameBytes :=
+    (random_alloc_scr h).congr (huw.trans hwr)
+  have hun : word u.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 attempts :=
+    (random_frame_words (random_call_frameBytes h hf) (by decide)).trans hn
+  have hul : word u.mem (randomBase s) RandomSign.oLink = t.gpr .x30 :=
+    (random_frame_words (random_call_frameBytes h hf) (by decide)).trans hlink
+  have hra : (u.gpr .x0).setWidth 32 = if (randomCallResult s t).isSome then 1 else 0 := by
+    apply BitVec.eq_of_toNat_eq
+    rw [hstatus]
+    cases randomCallResult s t <;> rfl
+  refine WP.mono (random_callFinish_ok (randomCallResult s t).isSome hus
+      (husp.trans hsp) hra hun hpos hbound) fun w ⟨hwm, hwl, hkw⟩ => ?_
+  refine ⟨hkw.rd.trans hur, hkw.wr.trans huw, hkw.sp.trans husp, ?_,
+    ⟨u.mem, hf, hout, hwm⟩, fun r hr => (hkw.vcs r hr).trans (hv r hr)⟩
+  intro r hr
+  by_cases hl : r = .x30
+  · subst r; exact hwl.trans hul
+  · exact (hkw.gpr r (by
+      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)).trans (huc r hr hl)
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
 /-! One complete supplied-nonce signing step, including arguments and retry state. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/RandomRestore.lean`, which only this module imported.
@@ -172,7 +231,7 @@ theorem random_sign_single (S : Signer) {s t : State} {h : RandomSignABI S.stack
   have hqbound : (s.gpr .x6).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   have hkey : Spec.Rsa.bytesAt a.mem (s.gpr .x3) (s.gpr .x4).toNat = (randomInput s).key := by
     simpa only [randomInput, bytesAt_length] using sourceBytes_eq hkeyA
   have hres : randomCallResult s a = randomSingleResult s k := by
@@ -180,7 +239,7 @@ theorem random_sign_single (S : Signer) {s t : State} {h : RandomSignABI S.stack
     have hdigest : Spec.Rsa.bytesAt a.mem (s.gpr .x7) (stackArg s 0).toNat = (randomInput s).digest := by
       simpa only [randomInput, bytesAt_length] using sourceBytes_eq hdigestA
     have hnonceA := (random_outside_bytes hargs
-      (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega)
+      (show Random.oNonce + (s.gpr .x6).toNat ≤ 2 ^ 64 by unfold Random.oNonce; omega_using [hqbound])
       (Or.inr (show 0 + 40 ≤ Random.oNonce by decide))).trans hnonce
     rw [hkey, hdigest, hnonceA]
     rfl

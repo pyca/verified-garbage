@@ -23,7 +23,7 @@ namespace VG.Proof.Rsa.RISCV64.Priv
 
 open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv
 
-theorem pre_of_preP {s : State} (h : PreP s) :
+theorem pre_of_preP {s : State} (h : PreP false s) :
     (Proof.Rsa.privateCheckedContract RISCV64.abi frameBytes).pre s := by
   obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, h7, e1,

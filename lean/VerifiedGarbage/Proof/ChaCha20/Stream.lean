@@ -87,7 +87,7 @@ theorem wordLE_byte (bs : List Byte) (j : Nat) {i : Nat} (hi : i < 4) :
     ext k hk
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
     repeat' split
-    all_goals first | (exfalso; omega) | (rw [BitVec.getLsbD_eq_getElem (by omega)]; congr 1; omega_using [])
+    all_goals first | (exfalso; omega) | (rw [BitVec.getLsbD_eq_getElem (by omega_using [hk])]; congr 1; omega_using [])
 
 /-- Word `j` of the 16-word state in memory, from its bytes. -/
 theorem stateAt_getElem (m : Mem) (p : Addr) {j : Nat} (hj : j < 16) {bs : List Byte}

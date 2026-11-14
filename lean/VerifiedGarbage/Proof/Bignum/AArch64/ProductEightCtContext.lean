@@ -40,7 +40,7 @@ theorem fast_width {L : Ws} {s : State} (h : FastW L s) :
   have := h.2
   unfold slot hdrBytes at hz
   dsimp [blocks]
-  omega
+  omega_using [hz, hn, this]
 
 theorem input_separation {L : Ws} {s : State} (h : FastW L s)
     {a : Nat} (ha1 : a ≠ Public.aAcc) (ha2 : a ≠ Public.aTmp) :
@@ -52,7 +52,7 @@ theorem input_separation {L : Ws} {s : State} (h : FastW L s)
   unfold productBase
   rw [he]
   unfold slot Public.aAcc Public.aTmp at *
-  omega
+  omega_arith
 
 theorem head_ctx {a b : Nat} (ha : a < 8) (hb : b < 8)
     (p : Ws × Nat) (s : State) (h : p.2 < blocks p.1 ∧ LoopCtx a b p.1 p.2 s) :
@@ -86,25 +86,25 @@ theorem row_ctx_next {a b : Nat} (ha : a < 8) (hb : b < 8)
     ⟨hg.scr, Keep.refl _ _, h.ptr, Outside.refl _ _ _ _, h.value⟩
   refine WP.mono (productRow_ok hg.x0 h.zero hh hsize ha hb hk hj hA hB hI)
     fun t ⟨ht, ht12⟩ => ?_
-  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega
+  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega_using []
   have hframe := Square.scratch_arrays (s := s) (t := t) (B := L.B) (w := 8 * blocks L) (by simpa only [productBase, hlen] using ht.frame)
   have hHt : Hdr t.mem L.B L.w mi := he ▸ hframe.hdr hh
   have hCount : t.gpr .x12 = BitVec.ofNat 64 (blocks L - (j + 1)) := by
     exact (ht12.trans (congrArg (· - BitVec.ofNat 64 1) h.count)).trans
-      ((BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)).trans
-        (congrArg (BitVec.ofNat 64) (by omega)))
+      ((BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using []) (by omega_using [hj])).trans
+        (congrArg (BitVec.ofNat 64) (by omega_using [])))
   refine ⟨⟨⟨⟨mi, ⟨ht.scr, (ht.keep.gpr .x0 (by decide)).trans hg.x0, hHt⟩, hz⟩, h.fast.2⟩,
     ht.ptr, hCount, (ht.keep.gpr .x7 (by decide)).trans h.zero, ?_⟩, ?_⟩
   · have hn := hg.scr.nowrap
     have hAZ := slot_le (w := 8 * blocks L) ha
     have hBZ := slot_le (w := 8 * blocks L) hb
-    have hqa := ht.frame.wv (d := slot (8 * blocks L) a) (k := 8 * (j + 1)) (by omega) (by omega)
-    have hqb := ht.frame.wv (d := slot (8 * blocks L) b) (k := 8 * blocks L) (by omega) (by omega)
+    have hqa := ht.frame.wv (d := slot (8 * blocks L) a) (k := 8 * (j + 1)) (by omega_using [hj, hA]) (by omega_using [hj, hsize, hn, hAZ])
+    have hqb := ht.frame.wv (d := slot (8 * blocks L) b) (k := 8 * blocks L) (by omega_using [hB]) (by omega_using [hsize, hn, hBZ])
     rw [hqa, hqb]
     exact ht.value
   · rw [eval_nonzero, hCount, ne_zero_iff, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show blocks L - (j + 1) < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show blocks L - (j + 1) < 2 ^ 64 by omega_using [hk])]
     simp only [Option.some.injEq, decide_eq_decide]
-    omega
+    omega_using []
 
 end VG.Proof.Bignum.AArch64.ProductEight

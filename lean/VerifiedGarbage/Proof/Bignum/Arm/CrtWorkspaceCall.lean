@@ -25,7 +25,7 @@ theorem crt_saveMain_ok (s : State) (fit : s.sp.toNat + 12 ≤ 2 ^ 32)
   unfold saveMain
   refine wp_stackAddr (by decide) fun u a => ?_
   refine wp_str (a := off (State.addr s.sp) 8) (by decide)
-    (by rw [a.gpr, BitVec.add_zero]; exact addr_add (by omega))
+    (by rw [a.gpr, BitVec.add_zero]; exact addr_add (by omega_using [fit]))
     (by rw [a.wr]; exact write) fun t b => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr s.sp) 8) (s.gpr .r0) := by
     rw [b.mem, a.mem, a.other .r0 (by decide)]
@@ -43,7 +43,7 @@ theorem crt_selectChild_ok (s : State) {base child : BitVec 32} {size slot : Nat
       Frame [⟨State.addr s.sp, 4⟩] s.mem t.mem ∧ Rest [.r0, .r12] s t := by
   rw [selectChild, WP.seq_iff]
   refine wp_ldr (a := off (State.addr base) slot) hs
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read fit) fun u a => WP.block_nil ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read fit) fun u a => WP.block_nil ?_
   refine WP.mono (activateWorkspace_ok u (by rw [a.wr, a.sp]; exact write)) ?_
   rintro t ⟨mem, frame, rest⟩
   rw [a.mem, a.sp, a.gpr, link] at mem
@@ -61,7 +61,7 @@ theorem crt_selectMain_ok (s : State) {base : BitVec 32}
       Frame [⟨State.addr s.sp, 4⟩] s.mem t.mem ∧ Rest [.r0, .r12] s t := by
   rw [selectMain, WP.seq_iff]
   refine wp_loadStack (a := off (State.addr s.sp) 8) (by decide)
-    (addr_add (by omega)) read fun u a => WP.block_nil ?_
+    (addr_add (by omega_using [fit])) read fun u a => WP.block_nil ?_
   refine WP.mono (activateWorkspace_ok u (by rw [a.wr, a.sp]; exact write)) ?_
   rintro t ⟨mem, frame, rest⟩
   rw [a.mem, a.sp, a.gpr, saved] at mem

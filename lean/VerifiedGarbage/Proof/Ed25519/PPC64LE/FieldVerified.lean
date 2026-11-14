@@ -100,9 +100,9 @@ theorem addW_ok (b : Addr) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · rcases ho with ho | ho
-    · exact ⟨_, List.mem_cons_self, Offset.sub _ (by simp only [offset]; omega) (by simp only [offset]; omega)⟩
+    · exact ⟨_, List.mem_cons_self, Offset.sub _ (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [ho])⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self,
-        Offset.sub _ (by simp only [offset]; omega) (by simp only [offset]; omega)⟩
+        Offset.sub _ (by simp only [offset]; omega_using [ho]) (by simp only [offset]; omega_using [ho])⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), Offset.sub _ (Nat.le_refl _)
       (Nat.le_refl _)⟩
 

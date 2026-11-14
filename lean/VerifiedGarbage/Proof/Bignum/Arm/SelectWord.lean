@@ -22,7 +22,7 @@ theorem select_value (a b c : BitVec 32) (hc : c.toNat ≤ 1) :
       show (0 : BitVec 32) - 0 = 0 from rfl]
     apply BitVec.eq_of_toNat_eq
     simp
-  · have e : c = 1 := BitVec.eq_of_toNat_eq (by change c.toNat = 1; omega)
+  · have e : c = 1 := BitVec.eq_of_toNat_eq (by change c.toNat = 1; omega_using [hc, hz])
     rw [e]
     simp only [show (1 : BitVec 32).toNat = 1 from rfl, Nat.one_ne_zero, ite_false,
       show (0 : BitVec 32) - 1 = BitVec.allOnes 32 from rfl, BitVec.and_allOnes]

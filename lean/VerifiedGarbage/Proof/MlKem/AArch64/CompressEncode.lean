@@ -124,9 +124,9 @@ theorem correct (s : State) (hs : compressEncodeAArch64.pre s) :
     simp only [BitVec.toNat_ofNat]
     congr 1
     apply decide_eq_decide.mpr
-    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega
+    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega_using []
   refine WP.ite _ z₂ (fun hb => ?_) (fun hb => ?_)
-  · have e : ((s.gpr .x1).setWidth 32).toNat = 1 := by simp at hb; omega
+  · have e : ((s.gpr .x1).setWidth 32).toNat = 1 := by simp at hb; omega_using [hlen, hb]
     exact width_ok (w := width1) hs e k₂ m₂ fun _ hp => loop1_ok hp
   refine WP.seq (wp_subImm (by decide) fun s₃ h₃ e₃ => wp_nil ?_)
   have k₃ : Keep [.x9] s s₃ := (k₂.trans h₃.keep).mono
@@ -135,9 +135,9 @@ theorem correct (s : State) (hs : compressEncodeAArch64.pre s) :
     simp only [BitVec.toNat_ofNat]
     congr 1
     apply decide_eq_decide.mpr
-    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega
+    rcases mem_compressWidths hd with h | h | h <;> rw [h] at hlen <;> omega_using []
   refine WP.ite _ z₃ (fun hb' => ?_) (fun hb' => ?_)
-  · have e : ((s.gpr .x1).setWidth 32).toNat = 4 := by simp at hb'; omega
+  · have e : ((s.gpr .x1).setWidth 32).toNat = 4 := by simp at hb'; omega_using [hlen, hb']
     exact width_ok (w := width4) hs e k₃ (by rw [h₃.mem, m₂]) fun _ hp => loop4_ok hp
   · have e : ((s.gpr .x1).setWidth 32).toNat = 10 := by
       simp at hb hb'

@@ -64,6 +64,8 @@ def kem1024 : Kem where
   ce := ce1024
   ddN := ddN1024
   dd := dd1024
+  ceU := cm11
+  ceV := cm5
 
 /-- ML-KEM-1024's layout with 16-bit polynomials: `Â` 8192 bytes from 4096,
 the others (at most 4608 bytes) from 12288, and the K-PKE functions' working

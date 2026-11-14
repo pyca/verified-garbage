@@ -80,9 +80,9 @@ theorem entryCopy_ok (s : State) {p : KeyPublic sampling} {i j : Nat}
   have bound := entryWords_max sampling
   have arg := h.incoming i incoming
   have address : State.addr (s.sp + BitVec.ofNat 32 (24 + 4 * i)) =
-      off (State.addr s.sp) (24 + 4 * i) := VG.Arm.addr_add (by have := arg.fits; omega)
+      off (State.addr s.sp) (24 + 4 * i) := VG.Arm.addr_add (by have := arg.fits; omega_using [this])
   unfold VG.Impl.Ffdh.Arm.KeySearch.stf
-  ffrun [(by omega : 24 + 4 * i < 4096), (by omega : 8 * j < 4096),
+  ffrun [(by omega_using [incoming, bound] : 24 + 4 * i < 4096), (by omega_using [slot] : 8 * j < 4096),
     address, arg.readable, arg.word, h.controller.addr slot, h.controller.write slot]
 
 theorem wp_entryCopy {p : KeyPublic sampling} {s : State} {i j : Nat} {is : List Instr} {Q : State → Prop}
@@ -98,7 +98,7 @@ theorem wp_entryCopy {p : KeyPublic sampling} {s : State} {i j : Nat} {is : List
   have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
     rw [mem]
     exact (Frame.refl _ _).writeW (r := ⟨State.addr p.control, 128⟩) (by simp) (incomingValue p i)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using [slot]) (by omega_using [slot]))
   exact next t (h.after rest (by simp) frame) mem rest
 
 end VG.Proof.Ffdh.Arm.KeySearch

@@ -42,7 +42,7 @@ theorem addI_ok (s : State) (d n : Reg) (imm : Nat) (h : imm < 2048) :
       (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   ⟨s.write d (s.gpr n + BitVec.ofNat 64 imm), by
     simp only [runBlock_cons, exec_addi (show imm12 (OfNat.ofNat imm : Int) by
-        show imm12 ((imm : Nat) : Int); unfold imm12; omega), runStep_some, runBlock_nil]
+        show imm12 ((imm : Nat) : Int); unfold imm12; omega_using [h]), runStep_some, runBlock_nil]
     rw [show (OfNat.ofNat imm : Int) = ((imm : Nat) : Int) from rfl, Steps.ofInt_ofNat],
     RegUpd.gpr_write_self _ _ _, fun r hr => RegUpd.gpr_write_of_ne _ _ hr, rfl, rfl, rfl⟩
 
@@ -52,7 +52,7 @@ theorem subI_ok (s : State) (d n : Reg) (imm : Nat) (h : imm ≤ 2048) :
       (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   ⟨s.write d (s.gpr n - BitVec.ofNat 64 imm), by
     simp only [runBlock_cons, exec_addi (show imm12 (-(OfNat.ofNat imm) : Int) by
-        show imm12 (-((imm : Nat) : Int)); unfold imm12; omega), runStep_some, runBlock_nil]
+        show imm12 (-((imm : Nat) : Int)); unfold imm12; omega_using [h]), runStep_some, runBlock_nil]
     rw [show (-(OfNat.ofNat imm) : Int) = -((imm : Nat) : Int) from rfl, Steps.add_ofInt_neg],
     RegUpd.gpr_write_self _ _ _, fun r hr => RegUpd.gpr_write_of_ne _ _ hr, rfl, rfl, rfl⟩
 
@@ -61,7 +61,7 @@ theorem li_ok (s : State) (d : Reg) {v : Nat} (hv : v < 2048) :
     ∃ s', runBlock isa [.li d (v : Int)] s = some s' ∧ s'.gpr d = BitVec.ofNat 64 v ∧
       (∀ r, r ≠ d → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   ⟨s.write d (BitVec.ofNat 64 v), by
-    simp only [runBlock_cons, exec_li (show imm12 ((v : Nat) : Int) by unfold imm12; omega), runStep_some,
+    simp only [runBlock_cons, exec_li (show imm12 ((v : Nat) : Int) by unfold imm12; omega_using [hv]), runStep_some,
       runBlock_nil, Steps.ofInt_ofNat],
     RegUpd.gpr_write_self _ _ _, fun r hr => RegUpd.gpr_write_of_ne _ _ hr, rfl, rfl, rfl⟩
 

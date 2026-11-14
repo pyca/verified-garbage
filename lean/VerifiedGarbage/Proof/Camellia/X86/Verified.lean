@@ -82,18 +82,18 @@ theorem ecbTaint_wf {s : State} (hp : EPre s) : VG.X86.Taint.Wf ecbTaint s := by
   have hD := hp.fD; have hB := hp.fB; have hs := hp.fSp
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ecbTaint]; omega, ?_⟩, ?_⟩ fun _ => ⟨hp.s16, ?_⟩
+    fun _ => ⟨by simp only [ecbTaint]; omega_using [hs], ?_⟩, ?_⟩ fun _ => ⟨hp.s16, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
       List.Pairwise.nil, and_true]
     exact ⟨hp.dDB, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [setWidth_toNat] <;> omega
+    rintro r (rfl | rfl) <;> simp only [setWidth_toNat] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.rD hp.aD
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.rB hp.aB
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [hs]) hp.rD hp.aD
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [hs]) hp.rB hp.aB
   · intro p hp'
     simp only [ecbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -112,12 +112,12 @@ theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre 
     fun k h4 hk => ?_⟩
   · simp only [ecbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
-  · rw [hp₁.wr, hp₂.wr, ha 2 (by omega), ha 3 (by omega), ha 4 (by omega)]
+  · rw [hp₁.wr, hp₂.wr, ha 2 (by omega_using []), ha 3 (by omega_using []), ha 4 (by omega_using [])]
   · simp only [ecbTaint] at hk
     rw [show VG.X86.Taint.depth ecbTaint.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 24) hp₂.fSp h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem ecb_taint (dir : Dir) : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir

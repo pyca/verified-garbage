@@ -421,7 +421,7 @@ theorem wipeChunks_run (R : Region) : ∀ (fuel words : Nat) (u : State), R ∈ 
       obtain ⟨u', e', f', o', sp', rd', wr'⟩ := wipeChunks_run R fuel (words - 256) u₃ hR
         (by rw [h5]; exact Spill.al8 hal (by decide)) (by omega_using [hw])
         (fun k hk => by
-          rw [h5, Offset.add_add, show 2048 + 8 * k = 8 * (256 + k) by omega]
+          rw [h5, Offset.add_add, show 2048 + 8 * k = 8 * (256 + k) by omega_using []]
           exact hc (256 + k) (by omega_using [hk]))
       refine ⟨u', ?_, (hf.trans f' : Frame [R] u.mem u'.mem), fun r hr => by rw [o' r hr, ho r hr],
         sp', rd', wr'⟩
@@ -446,7 +446,7 @@ theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr)
     simp [State.write]
   obtain ⟨u', he, hf, ho, sp', rd', wr'⟩ := wipeChunks_run R (words / 256) words
     ((u.write .t5 (u.sp + BitVec.ofNat 64 0)).write .t6 (BitVec.ofInt 64 0))
-    (by simpa [State.write]) (by rw [h5]; exact hal) (by omega) (by rw [h5]; exact hc)
+    (by simpa [State.write]) (by rw [h5]; exact hal) (by omega_using []) (by rw [h5]; exact hc)
   refine ⟨u', ?_, by simpa [State.write] using hf, fun r h5' h6 => ?_, by rw [sp']; rfl,
     by rw [rd']; rfl, by rw [wr']; rfl⟩
   · simp only [wipe, execBlock, isa, exec, show (0 : Nat) < 2048 by decide, ↓reduceIte]

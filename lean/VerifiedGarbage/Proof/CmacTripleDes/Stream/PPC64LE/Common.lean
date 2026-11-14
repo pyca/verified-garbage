@@ -62,7 +62,7 @@ end
 /-- A slot of the working space at `B` is writable. -/
 theorem scr_in {s : State} {B : Addr} {off : Nat} (hw : (⟨B, 640⟩ : Region) ∈ s.wr) (h : off + 8 ≤ 640) :
     InRegions s.wr (B + BitVec.ofNat 64 off) 8 :=
-  ⟨_, hw, VG.Offset.contains_base _ h (by omega)⟩
+  ⟨_, hw, VG.Offset.contains_base _ h (by omega_using [h])⟩
 
 theorem scr_rd {s : State} {B : Addr} {off : Nat} (hw : (⟨B, 640⟩ : Region) ∈ s.wr) (h : off + 8 ≤ 640) :
     InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 off) 8 :=
@@ -72,8 +72,8 @@ theorem scr_rd {s : State} {B : Addr} {off : Nat} (hw : (⟨B, 640⟩ : Region) 
 /-- A word read past a word written apart from it. -/
 theorem readW_sep64 {m : Mem} {a b : Addr} {v : BitVec 64} (h : Region.Disjoint ⟨a, 8⟩ ⟨b, 8⟩) :
     (m.writeW b v).readW a 64 = m.readW a 64 :=
-  Mem.readW_writeW_sep (fun x h1 h2 => h x (by simp only [Region.Contains]; omega)
-    (by simp only [Region.Contains]; omega)) (by decide)
+  Mem.readW_writeW_sep (fun x h1 h2 => h x (by simp only [Region.Contains]; omega_using [h1])
+    (by simp only [Region.Contains]; omega_using [h2])) (by decide)
 
 /-- The registers the functions use as temporaries are not preserved. -/
 theorem preserved_ne : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r3 ∧ r ≠ .r4 ∧ r ≠ .r5 ∧ r ≠ .r6 ∧ r ≠ .r7 ∧
@@ -86,8 +86,8 @@ theorem rev64_rev64 (x : BitVec 64) : rev64 (rev64 x) = x := Proof.Gcm.byteRev64
 theorem le8_inj {a b : BitVec 64} (h : le8 a = le8 b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have e := congrArg (fun l => (l.getD (i / 8) 0).getLsbD (i % 8)) h
-  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega), BitVec.getLsbD_extractLsb',
-    show i % 8 < 8 by omega, decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega] at e
+  simp only [Proof.Cmac.getD_le8 _ (show i / 8 < 8 by omega_using [hi]), BitVec.getLsbD_extractLsb',
+    show i % 8 < 8 by omega_using [], decide_true, Bool.true_and, show 8 * (i / 8) + i % 8 = i by omega_using []] at e
   exact e
 
 /-- The doubling as `dblCode` computes it. -/
@@ -125,7 +125,7 @@ theorem held_word {n : Nat} (hn : n < 2 ^ 64) (h0 : n ≠ 0) :
       BitVec.ofNat 64 ((n - 1) % 8 + 1) := by
   apply BitVec.eq_of_toNat_eq
   have e1 : (BitVec.ofNat 64 n - BitVec.ofNat 64 1).toNat = n - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega_using [hn, h0]
   rw [BitVec.toNat_add, BitVec.toNat_and, e1, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     show (7 : Nat) % 2 ^ 64 = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
 
@@ -145,7 +145,7 @@ theorem heldCode_wp {s : State} {n : Nat} (hn : n < 2 ^ 64) (h4 : s.gpr .r4 = Bi
     wp_addi (by decide) (by decide) fun t₄ u₄ => wp_nil ?_
   refine k t₄ ?_ (fun r h8 h9 => by rw [u₄.other r h8, u₃.other r h8, u₂.other r h9, u₁.other r h8])
     (by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]) (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr])
-  rw [u₄.gpr, u₃.gpr, u₂.gpr, u₂.other _ (by decide), u₁.gpr, h4, Proof.CmacTripleDes.Stream.held_pos (by omega)]
+  rw [u₄.gpr, u₃.gpr, u₂.gpr, u₂.other _ (by decide), u₁.gpr, h4, Proof.CmacTripleDes.Stream.held_pos (by omega_using [h0])]
   exact held_word hn h0
 
 end VG.Proof.CmacTripleDes.Stream.PPC64LE

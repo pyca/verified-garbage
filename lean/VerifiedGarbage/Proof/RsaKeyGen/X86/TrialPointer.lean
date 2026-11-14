@@ -15,7 +15,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 theorem word_address (p : BitVec 32) {n i : Nat} (fit : p.toNat + 4 * n ≤ 2 ^ 32) (index : i < n) :
     addr (p + BitVec.ofNat 32 (4 * i)) 0 = off (byteAddr p) (4 * i) := by
   change byteAddr (p + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0) = _
-  rw [BitVec.add_zero, byteAddr_add (by omega)]
+  rw [BitVec.add_zero, byteAddr_add (by omega_using [fit, index])]
 
 theorem pointer_zf (p : BitVec 32) {n i : Nat} (lengthBound : 4 * n < 2 ^ 32) (index : i < n) :
     (p + BitVec.ofNat 32 (4 * (i + 1)) - (p + BitVec.ofNat 32 (4 * n)) == 0) = decide (i + 1 = n) := by
@@ -25,9 +25,9 @@ theorem pointer_zf (p : BitVec 32) {n i : Nat} (lengthBound : 4 * n < 2 ^ 32) (i
   · have different : p + BitVec.ofNat 32 (4 * (i + 1)) ≠ p + BitVec.ofNat 32 (4 * n) := by
       intro equal
       have small := congrArg BitVec.toNat ((BitVec.add_right_inj p).mp equal)
-      simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 4 * (i + 1) < 2 ^ 32),
+      simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [lengthBound, index] : 4 * (i + 1) < 2 ^ 32),
         Nat.mod_eq_of_lt lengthBound] at small
-      omega
+      omega_using [done, small]
     have nonzero : p + BitVec.ofNat 32 (4 * (i + 1)) - (p + BitVec.ofNat 32 (4 * n)) ≠ 0 := by
       intro zero
       apply different

@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Poly1305.initContract`. The streaming state is the accumulator followed by the key (`VG.Spec.Poly1305.Repr`). Constant time: only the pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -16,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxDD"
+        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxAxwDHJMdJFMcDD"
 .p2align 6"#,
     )
 }
@@ -24,6 +26,8 @@ pub(crate) unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key
 /// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -45,17 +49,19 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAMM="
+.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAEiNpCR4////SI2kJIgAAAAxwDHJMdJFMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }
 
 /// The CPU features `vg_poly1305_update_ifma` requires (`Artifact.features`).
-pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA);
+pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -63,7 +69,7 @@ pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_ifma(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
@@ -78,7 +84,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -102,12 +108,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
@@ -119,6 +125,8 @@ pub const VG_POLY1305_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = v
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -141,7 +149,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -165,12 +173,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
     )
@@ -182,6 +190,8 @@ pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -204,7 +214,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -228,12 +238,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
@@ -242,6 +252,8 @@ jmp 212f
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -263,7 +275,7 @@ jmp 23f
 .base64 "SCnBSIXA"
 je 24f
 26:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 26b
 jmp 25f
 24:
@@ -287,12 +299,12 @@ jmp 210f
 je 211f
 .base64 "QbwAAAAASInI"
 213:
-.base64 "RA+2LkaIbCc4SIPGAUmDxAFIg+gB"
+.base64 "SYPkD0QPti5GiGwnOEiDxgFJg8QBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAEiNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
     )
@@ -317,3 +329,7 @@ pub(crate) mod vg_poly1305_blocks_ifma;
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]
 pub(crate) mod vg_poly1305_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_init_core.rs"]
+pub(crate) mod vg_poly1305_init_core;

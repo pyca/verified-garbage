@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.MlKem
 
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: the NTT as butterflies, for every target
@@ -87,7 +88,7 @@ private theorem listIs_spec {f : Nat → Nat} {l : List Nat} {i : Nat} (h : list
     | zero => simpa using Nat.eq_of_beq_eq_true h.1
     | succ j =>
       have := ih h.2 j (by simpa using hj)
-      rw [show i + (j + 1) = i + 1 + j by omega]
+      rw [show i + (j + 1) = i + 1 + j by omega_using []]
       simpa using this
 
 private theorem zetas_nat : ∀ i < 128, zetas.getD i 0 = 17 ^ bitRev7 i % 3329 := by
@@ -142,7 +143,7 @@ theorem bfly_get (f : Poly) {j len : Nat} (hlen : 0 < len) (hj : j + len < n) (z
   simp only [bfly]
   by_cases h1 : i = j
   · subst h1
-    rw [getElem!_set!_self _ hi, getElem!_set!_ne _ hi (by omega), ite_eq_left rfl]
+    rw [getElem!_set!_self _ hi, getElem!_set!_ne _ hi (by omega_using [hlen]), ite_eq_left rfl]
   · rw [getElem!_set!_ne _ hi (Ne.symm h1), ite_eq_right h1]
     by_cases h2 : i = j + len
     · subst h2; rw [getElem!_set!_self _ hi, ite_eq_left rfl]
@@ -157,10 +158,10 @@ theorem bflyInv_get (f : Poly) {j len : Nat} (hlen : 0 < len) (hj : j + len < n)
       else if i = j + len then z * (f[j + len]! - f[j]!)
       else f[i]! := by
   simp only [bflyInv]
-  rw [getElem!_set!_ne _ hj (by omega)]
+  rw [getElem!_set!_ne _ hj (by omega_using [hlen])]
   by_cases h1 : i = j
   · subst h1
-    rw [getElem!_set!_ne _ hi (by omega), getElem!_set!_self _ hi, ite_eq_left rfl]
+    rw [getElem!_set!_ne _ hi (by omega_using [hlen]), getElem!_set!_self _ hi, ite_eq_left rfl]
   · rw [ite_eq_right h1]
     by_cases h2 : i = j + len
     · subst h2; rw [getElem!_set!_self _ hi, ite_eq_left rfl]
@@ -221,11 +222,11 @@ theorem nttBlockN_get (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht : t 
       else f[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [nttBlockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [nttBlockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [nttBlockN_succ, bfly_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega), ih (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [nttBlockN_succ, bfly_get _ hlen (by omega_using [hs, ht]) _ hi, ih (i := start + t) (by omega_using [ht]) (by omega_using [hs, ht]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs, ht]), ih (by omega_using [ht]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
@@ -238,7 +239,7 @@ theorem nttBlock_get (f : Poly) {len k start : Nat} (hlen : 0 < len) (hs : start
       else if start + len ≤ i ∧ i < start + 2 * len then f[i - len]! - zeta k * f[i]!
       else f[i]! := by
   rw [nttBlock, nttBlockN_get f hlen (Nat.le_refl _) hs hi, show start + len + len = start + 2 * len by
-    omega]
+    omega_using []]
 
 /-- A step of the middle loop of Algorithm 9 with the counter `i`, as the
 standard writes it. -/
@@ -319,11 +320,11 @@ theorem nttInvBlockN_get (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht :
       else f[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [nttInvBlockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [nttInvBlockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [nttInvBlockN_succ, bflyInv_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega), ih (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [nttInvBlockN_succ, bflyInv_get _ hlen (by omega_using [hs, ht]) _ hi, ih (i := start + t) (by omega_using [ht]) (by omega_using [hs, ht]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs, ht]), ih (by omega_using [ht]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
@@ -336,7 +337,7 @@ theorem nttInvBlock_get (f : Poly) {len k start : Nat} (hlen : 0 < len) (hs : st
       else if start + len ≤ i ∧ i < start + 2 * len then zeta k * (f[i]! - f[i - len]!)
       else f[i]! := by
   rw [nttInvBlock, nttInvBlockN_get f hlen (Nat.le_refl _) hs hi,
-    show start + len + len = start + 2 * len by omega]
+    show start + len + len = start + 2 * len by omega_using []]
 
 /-- A step of the middle loop of Algorithm 10 with the counter `i`, as the
 standard writes it. -/
@@ -399,11 +400,11 @@ theorem nttBlockN_get' (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht : t
       else f[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [nttBlockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [nttBlockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [nttBlockN_succ, bfly_get _ hlen (by omega) _ hi, ih (i := start + t) (by omega) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega) (by omega), ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [nttBlockN_succ, bfly_get _ hlen (by omega_using [hs]) _ hi, ih (i := start + t) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]), ih (by omega_using [ht]) (by omega_using [hs]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
@@ -416,12 +417,12 @@ theorem nttInvBlockN_get' (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht 
       else f[i]! := by
   induction t generalizing i with
   | zero =>
-    rw [nttInvBlockN_zero, ite_eq_right (by omega), ite_eq_right (by omega)]
+    rw [nttInvBlockN_zero, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   | succ t ih =>
-    rw [nttInvBlockN_succ, bflyInv_get _ hlen (by omega) _ hi,
-      ih (i := start + t) (by omega) (by omega) (by omega),
-      ih (i := start + t + len) (by omega) (by omega) (by omega), ih (by omega) (by omega) hi]
-    rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
+    rw [nttInvBlockN_succ, bflyInv_get _ hlen (by omega_using [hs]) _ hi,
+      ih (i := start + t) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]),
+      ih (i := start + t + len) (by omega_using [ht]) (by omega_using [hs]) (by omega_using [hs]), ih (by omega_using [ht]) (by omega_using [hs]) hi]
+    rcases (by omega_using [] : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
       simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
@@ -432,17 +433,17 @@ theorem nttInvBlockN_get' (f : Poly) {len k start t : Nat} (hlen : 0 < len) (ht 
 theorem multiplyNTTs_even (f g : Poly) {i : Nat} (hi : i < 128) :
     (multiplyNTTs f g)[2 * i]! =
       f[2 * i]! * g[2 * i]! + f[2 * i + 1]! * g[2 * i + 1]! * gamma i := by
-  rw [getElem!_eq _ (by rw [n_eq]; omega), multiplyNTTs, Vector.getElem_ofFn]
+  rw [getElem!_eq _ (by rw [n_eq]; omega_using [hi]), multiplyNTTs, Vector.getElem_ofFn]
   dsimp only
-  rw [show 2 * i / 2 = i by omega, ite_eq_left (show 2 * i % 2 = 0 by omega)]
+  rw [show 2 * i / 2 = i by omega_using [], ite_eq_left (show 2 * i % 2 = 0 by omega_using [])]
   rfl
 
 /-- Coefficient `2i + 1` of `MultiplyNTTs(f, g)`: `f[2i]·g[2i+1] + f[2i+1]·g[2i]`. -/
 theorem multiplyNTTs_odd (f g : Poly) {i : Nat} (hi : i < 128) :
     (multiplyNTTs f g)[2 * i + 1]! = f[2 * i]! * g[2 * i + 1]! + f[2 * i + 1]! * g[2 * i]! := by
-  rw [getElem!_eq _ (by rw [n_eq]; omega), multiplyNTTs, Vector.getElem_ofFn]
+  rw [getElem!_eq _ (by rw [n_eq]; omega_using [hi]), multiplyNTTs, Vector.getElem_ofFn]
   dsimp only
-  rw [show (2 * i + 1) / 2 = i by omega, ite_eq_right (show ¬ (2 * i + 1) % 2 = 0 by omega)]
+  rw [show (2 * i + 1) / 2 = i by omega_using [], ite_eq_right (show ¬ (2 * i + 1) % 2 = 0 by omega_using [])]
   rfl
 
 /-- Any coefficient of `MultiplyNTTs(f, g)`. -/
@@ -453,9 +454,9 @@ theorem multiplyNTTs_get (f g : Poly) {h : Nat} (hh : h < n) :
       else f[h - 1]! * g[h]! + f[h]! * g[h - 1]! := by
   rw [n_eq] at hh
   split
-  · have := multiplyNTTs_even f g (i := h / 2) (by omega)
-    rwa [show 2 * (h / 2) = h by omega] at this
-  · have := multiplyNTTs_odd f g (i := h / 2) (by omega)
-    rwa [show 2 * (h / 2) + 1 = h by omega, show 2 * (h / 2) = h - 1 by omega] at this
+  · have := multiplyNTTs_even f g (i := h / 2) (by omega_using [hh])
+    rwa [show 2 * (h / 2) = h by omega_arith] at this
+  · have := multiplyNTTs_odd f g (i := h / 2) (by omega_using [hh])
+    rwa [show 2 * (h / 2) + 1 = h by omega_arith, show 2 * (h / 2) = h - 1 by omega_arith] at this
 
 end VG.Proof.MlKem

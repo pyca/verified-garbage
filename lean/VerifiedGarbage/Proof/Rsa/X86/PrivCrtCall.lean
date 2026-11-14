@@ -18,11 +18,11 @@ open VG VG.X86 VG.Impl.Rsa.X86.PrivChecked VG.Proof.Bignum.X86 VG.Proof.Mont.X86
 theorem PrivContext.temporaryWrite {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) : InRegions s.wr (byteAddr g.temporary) g.length := by
   rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
-  exact h.inner.write (by have := h.valid.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+  exact h.inner.write (by have := h.valid.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
 
 theorem PrivContext.outgoingWrite {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) {n : Nat} (hn : n ≤ 72) : InRegions s.wr (byteAddr g.stack) n := by
-  have W := h.inner.write (d := 0) (n := n) (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+  have W := h.inner.write (d := 0) (n := n) (by simp only [VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [hn])
   simpa only [BitVec.add_zero] using W
 
 theorem crtCovers {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State} (h : PrivContext g bs s) :
@@ -42,7 +42,7 @@ theorem crtWrites_sub {g : PrivGeometry} (h : g.Valid) :
   rcases hr with rfl | rfl | rfl
   · refine ⟨g.innerRegion, by simp [bodyWrites], ?_⟩
     rw [PrivGeometry.temporary, h.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.maxLength; simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [this])
   · exact ⟨g.workspaceRegion, by simp [bodyWrites], fun _ hx => hx⟩
   · exact ⟨g.innerRegion, by simp [bodyWrites], Region.sub_prefix (by decide : 72 ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes)⟩
 
@@ -53,7 +53,7 @@ theorem PrivContext.callBytes {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
     rw [State.callEntry_mem, h.sp]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (VG.X86.below_top (by decide : 4 ≤ 100) h.valid.stackLow (by decide : 4 ≤ 4))
-  have E := rsa_bytes_frame F (by have := (h.sources i).fits; omega : g.sourceLength i < 2 ^ 64)
+  have E := rsa_bytes_frame F (by have := (h.sources i).fits; omega_using [this] : g.sourceLength i < 2 ^ 64)
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr
         exact ((h.valid.stackSources i).sub_left h.valid.calleeSub).symm)
   exact E.trans (h.sources i).bytes
@@ -72,9 +72,9 @@ theorem crt_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s 
   refine ⟨ht, F, K, ?_⟩
   sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes] at post
   have sa := fun {j} (hj : j < 18) => crtArgs_values h args hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega
-  have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega_using [kfit, this]
+  have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega_using [kfit, this]
   simp only [sa (by decide : 0 < 18), sa (by decide : 2 < 18), sa (by decide : 3 < 18),
     sa (by decide : 4 < 18), sa (by decide : 6 < 18), sa (by decide : 7 < 18),
     sa (by decide : 8 < 18), sa (by decide : 9 < 18), sa (by decide : 10 < 18),

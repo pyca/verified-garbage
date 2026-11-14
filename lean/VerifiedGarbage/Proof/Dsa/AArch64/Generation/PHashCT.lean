@@ -81,14 +81,14 @@ theorem wrappedSeed_label {k j : Nat} {H : Spec.Mgf1.Hash} {p : PHashPublic} {s 
     have he : Spec.Rsa.bytesAt s.mem p.plan.seedPtr p.plan.len = p.plan.seed := hs.seed
     rw [← he]
     simp [Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD, hlen ▸ hi]
-  have hc := seedAdd_ok p.plan.seed (by omega) (show p.plan.offset + j < 2 ^ 32 by omega)
+  have hc := seedAdd_ok p.plan.seed (by omega_using [plen, hlen]) (show p.plan.offset + j < 2 ^ 32 by omega_using [hj, carry])
     hsi hdi hax
     (fun i hi => hs.seedRead i (hlen ▸ hi)) (fun i hi => hs.wrappedWrite i (hlen ▸ hi)) hb (by
       intro i hi l hl he
       have a : Region.Contains ⟨p.plan.seedPtr, p.plan.len⟩ (off p.plan.seedPtr i) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hlen, hi]) (by omega_using [plen, hlen, hi])
       have b : Region.Contains ⟨p.plan.wrapped, p.plan.len⟩ (off p.plan.wrapped l) 1 :=
-        Offset.contains_base _ (by omega) (by omega)
+        Offset.contains_base _ (by omega_using [hlen, hl]) (by omega_using [plen, hlen, hl])
       apply p.plan.seed_wrap _ a
       simpa only [← he] using b)
   rw [hlen] at hc
@@ -158,7 +158,7 @@ theorem pSeedHash_ct {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.st
   obtain ⟨p, hs, ht, _⟩ := hp
   obtain ⟨Vs, Ws, Ls, Rs, As⟩ := hs
   obtain ⟨Vt, Wt, Lt, Rt, At⟩ := ht
-  exact hashLabel_tr hG (by rcases hlen with h | h <;> omega) (Or.inl rfl)
+  exact hashLabel_tr hG (by rcases hlen with h | h <;> omega_using [h]) (Or.inl rfl)
     (X := fun W s => LabAt s p.plan.F p.plan.S W p.plan.wrapped len) (fun _ _ h => h)
     s t tr1 tr2 u v ⟨⟨Vs, Ws, Ls, Rs, As⟩, ⟨Vt, Wt, Lt, Rt, At⟩⟩ e1 e2
 

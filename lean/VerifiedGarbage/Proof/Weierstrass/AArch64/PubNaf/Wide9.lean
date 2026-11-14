@@ -38,11 +38,11 @@ theorem fastRaw9_eq {x : BitVec 64} {k j : Nat}
     change x.toNat &&& 1=0 ↔ x.toNat%2=0
     rw [Nat.and_one_is_mod]
   by_cases h : x.toNat%2=0
-  · have hm := (FastNaf.magnitude_zero_iff 9 k j).mpr (by omega)
+  · have hm := (FastNaf.magnitude_zero_iff 9 k j).mpr (by omega_using [hx, h])
     rw [fastRaw9,ite_eq_left (he.mpr h),fastDigit_eq,hm]
     split <;> rfl
   · rw [fastRaw9,ite_eq_right (fun h' => h (he.mp h'))]
-    exact fastChoice9_eq x k j hx (by omega)
+    exact fastChoice9_eq x k j hx (by omega_using [hx, h])
 
 /-- The digit of width nine of the scalar's low word `x5`, into `x2`. -/
 theorem chooseDigit9_ok {n : Nat} (hR : Regs n) (s : State) (h0 : s.gpr (cst n 0) = 511)

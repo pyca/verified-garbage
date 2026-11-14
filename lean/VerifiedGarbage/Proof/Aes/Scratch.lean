@@ -73,10 +73,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 end
 
@@ -115,7 +115,7 @@ theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.w
   dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig.words pb).length →
@@ -137,7 +137,7 @@ theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₂ r
   dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
   intro hk
-  rw [bytesAt_congr fun i hi => hs i (by simp only [rounds] at hi; omega)]
+  rw [bytesAt_congr fun i hi => hs i (by simp only [rounds] at hi; omega_using [hk, hi])]
   exact h hk
 
 end VG.Proof.Aes

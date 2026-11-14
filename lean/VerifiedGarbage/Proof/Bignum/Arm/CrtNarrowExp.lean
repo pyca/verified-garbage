@@ -43,7 +43,7 @@ structure NarrowExpInput (base ep : BitVec 32) (len v M x eLen es : Nat) (eb : L
 /-- A narrow workspace of a width at most the modulus's has room for the table. -/
 theorem table_fits {v W : Nat} (h : v ≤ W) : arrAt v 16 ≤ 8 * workspaceWords W := by
   simp only [arrAt, Proof.Rsa.Mont.hdrBytes, workspaceWords]
-  omega
+  omega_using [h]
 
 theorem crt_exponentArgs_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
     (h : NarrowExpInput base ep len v M x eLen es eb s) :
@@ -51,10 +51,10 @@ theorem crt_exponentArgs_ok (s : State) {base ep : BitVec 32} {len v M x eLen es
       t.gpr .r1 = ep ∧ t.gpr .r2 = BitVec.ofNat 32 eLen ∧ t.mem = s.mem ∧ Rest [.r1, .r2] s t := by
   have small := h.slotSmall
   unfold exponentArgs
-  refine wp_loadStack (a := off (State.addr s.sp) es) (by omega)
-    (addr_add (by have := h.stackFit; omega)) h.pointerRead fun u a => ?_
-  refine wp_loadStack (a := off (State.addr s.sp) (es + 4)) (by omega)
-    (by rw [a.sp]; exact addr_add (by have := h.stackFit; omega)) (by rw [a.rd, a.wr]; exact h.countRead)
+  refine wp_loadStack (a := off (State.addr s.sp) es) (by omega_using [small])
+    (addr_add (by have := h.stackFit; omega_using [this])) h.pointerRead fun u a => ?_
+  refine wp_loadStack (a := off (State.addr s.sp) (es + 4)) (by omega_using [small])
+    (by rw [a.sp]; exact addr_add (by have := h.stackFit; omega_using [this])) (by rw [a.rd, a.wr]; exact h.countRead)
     fun t b => WP.block_nil ?_
   exact ⟨by rw [b.other .r1 (by decide), a.gpr, h.pointer], by rw [b.gpr, a.mem, h.count],
     b.mem.trans a.mem, (a.rest (by decide)).trans (b.rest (by decide))⟩
@@ -80,12 +80,12 @@ theorem crt_narrowControls_ready (s : State) {base ep : BitVec 32} {len v M x eL
   have restT : Rest roundClobbers s t := rest.mono (by decide)
   have exponent := h.exponent.after_frame frame restT
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
-  have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega
+  have positive : 0 < M := by have := h.ready.modulus; rw [h.modulus] at this; omega_using [this]
   have r2 := (arrays 4 (by decide)).trans h.r2
   refine ⟨⟨ready, (arrays 0 (by decide)).trans h.modulus, h.odd, (arrays 1 (by decide)).trans h.input,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, exponent.byte⟩, frame, restT⟩
   · rw [r2]; exact Nat.mod_lt _ positive
-  · rw [r2, Nat.mod_mod, ← Nat.pow_add, show 64 * v + 64 * v = 128 * v by omega]
+  · rw [r2, Nat.mod_mod, ← Nat.pow_add, show 64 * v + 64 * v = 128 * v by omega_using []]
   · rw [pointer, pointerR]
   · rw [count, countR, exponent.length]
   · rw [exponent.length]; exact h.positive

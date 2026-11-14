@@ -41,10 +41,10 @@ theorem dgrp11_ok (B : List Byte) (hB : B.length = 32 * 11) {i : Nat} (hi : i < 
       (DD.GrpOut 11 8 B i s) := by
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   -- Bytes 0–5, and values 0–3.
-  refine WP.mono (ddLd_ok (o := 0) (b := 6) (by decide) s (fun k hk => by rw [Nat.zero_add]; exact h.rd k (by omega)))
+  refine WP.mono (ddLd_ok (o := 0) (b := 6) (by decide) s (fun k hk => by rw [Nat.zero_add]; exact h.rd k (by omega_using [hk])))
     fun s₁ ⟨r₁, m₁, k₁⟩ => ?_
   refine WP.mono (ddVals_ok (o := 0) (c := 4) (d := 11) (by decide) (by decide) (by decide) s₁ (fun j hj => by
-      rw [k₁.2.2, k₁.gpr (by decide), Nat.zero_add]; exact h.wr j (by omega))) fun s₂ ⟨w₂, f₂, k₂⟩ => ?_
+      rw [k₁.2.2, k₁.gpr (by decide), Nat.zero_add]; exact h.wr j (by omega_using [hj]))) fun s₂ ⟨w₂, f₂, k₂⟩ => ?_
   have si₁ : s₁.gpr .rsi = s.gpr .rsi := k₁.gpr (by decide)
   rw [si₁, Nat.mul_zero, add_ofNat_zero, m₁] at f₂
   -- Bytes 5–10, shifted, and values 4–7.
@@ -54,11 +54,11 @@ theorem dgrp11_ok (B : List Byte) (hB : B.length = 32 * 11) {i : Nat} (hi : i < 
     fun k hk => f₂.bytes (R := ⟨s.gpr .rdi, 11⟩) (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact h.dj.sub_right (Region.sub_prefix (by decide))) (show 11 ≤ 2 ^ 64 by decide) hk
   refine WP.mono (ddLd_ok (o := 5) (b := 6) (by decide) s₂ (fun k hk => by
-      rw [k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2, di₂]; exact h.rd _ (by omega))) fun s₃ ⟨r₃, m₃, k₃⟩ => ?_
+      rw [k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2, di₂]; exact h.rd _ (by omega_using [hk]))) fun s₃ ⟨r₃, m₃, k₃⟩ => ?_
   refine WP.mono (shr10_ok 4 (by decide) (by decide) s₃) fun s₄ ⟨⟨r₄, m₄⟩, k₄⟩ => ?_
   have si₄ : s₄.gpr .rsi = s.gpr .rsi := by rw [k₄.gpr (by decide), k₃.gpr (by decide), si₂]
   refine WP.mono (ddVals_ok (o := 4) (c := 4) (d := 11) (by decide) (by decide) (by decide) s₄ (fun j hj => by
-      rw [k₄.2.2, k₃.2.2, k₂.2.2, k₁.2.2, si₄]; exact h.wr _ (by omega))) fun s₅ ⟨w₅, f₅, k₅⟩ => ?_
+      rw [k₄.2.2, k₃.2.2, k₂.2.2, k₁.2.2, si₄]; exact h.wr _ (by omega_using [hj]))) fun s₅ ⟨w₅, f₅, k₅⟩ => ?_
   rw [si₄, m₄, m₃] at f₅
   have r9₄ : (s₄.gpr .r9).toNat = 3329 := by
     rw [k₄.gpr (by decide), k₃.gpr (by decide), k₂.gpr (by decide), k₁.gpr (by decide)]; exact h.r9
@@ -69,27 +69,27 @@ theorem dgrp11_ok (B : List Byte) (hB : B.length = 32 * 11) {i : Nat} (hi : i < 
       have hk : s₅.mem.readW (s.gpr .rsi + BitVec.ofNat 64 (4 * j)) 32 =
           s₂.mem.readW (s.gpr .rsi + BitVec.ofNat 64 (4 * j)) 32 :=
         f₅.readW (r := ⟨s.gpr .rsi + BitVec.ofNat 64 (4 * j), 4⟩) (Region.contains_self _ _) (fun r hr => by
-          rw [List.mem_singleton] at hr; subst hr; exact off_disj (by omega) (by decide)) (by decide)
+          rw [List.mem_singleton] at hr; subst hr; exact off_disj (by omega_using [hj4]) (by decide)) (by decide)
       have := w₂ j hj4
       rw [si₁, Nat.zero_add] at this
       rw [hk, this, ddW_toNat (by decide) (by decide) _ r9₁, shr_toNat, r₁]
       have e : (List.range 6).map (fun k => (s.mem (s.gpr .rdi + BitVec.ofNat 64 (0 + k))).toNat) =
           (List.range 6).map fun t => (B.getD (11 * i + (0 + t)) 0).toNat :=
         List.map_congr_left fun t ht => by
-          simp only [Nat.zero_add, h.bytes t (by have := List.mem_range.mp ht; omega)]
+          simp only [Nat.zero_add, h.bytes t (by have := List.mem_range.mp ht; omega_using [this])]
       rw [e, ← DD.seg (o := 0) (l := 6) (s := 0) (p := 11 * j) (c := 8) (b := 11) (by decide) (by decide) (by decide) B
-        (by omega) (by omega) (by omega) (by omega),
+        (by omega_using [hB, hi]) (by omega_using [hi, hj]) (by omega_using [hj4]) (by omega_using []),
         Nat.pow_zero, Nat.div_one]
-    · have := w₅ (j - 4) (by omega)
-      rw [si₄, show 4 + (j - 4) = j by omega] at this
+    · have := w₅ (j - 4) (by omega_using [hj])
+      rw [si₄, show 4 + (j - 4) = j by omega_using [hj4]] at this
       rw [this, ddW_toNat (by decide) (by decide) _ r9₄, shr_toNat, r₄, shr_toNat, r₃, di₂]
       have e : (List.range 6).map (fun k => (s₂.mem (s.gpr .rdi + BitVec.ofNat 64 (5 + k))).toNat) =
           (List.range 6).map fun t => (B.getD (11 * i + (5 + t)) 0).toNat :=
         List.map_congr_left fun t ht => by
           have := List.mem_range.mp ht
-          rw [b₂ _ (by omega), h.bytes _ (by omega)]
+          rw [b₂ _ (by omega_using [this]), h.bytes _ (by omega_using [this])]
       rw [e, ← DD.seg (o := 5) (l := 6) (s := 4) (p := 11 * (j - 4)) (c := 8) (b := 11) (by decide) (by decide)
-        (by decide) B (by omega) (by omega) (by omega) (by omega)]
+        (by decide) B (by omega_using [hB, hi]) (by omega_using [hi, hj]) (by omega_using [hj]) (by omega_using [hj4])]
   · refine (f₂.sub fun r hr => ?_).trans (f₅.sub fun r hr => ?_)
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
@@ -105,7 +105,7 @@ theorem ddLoop_ok {s₀ : State} (hp : decodeDecompress1024K.pre s₀) {d : Nat}
     WP isa (ddLoopW 32 (grp ++ ddTail 8 d)) s fun s' =>
       PolyIs s'.mem (DD.fP s₀) (decodeDecompress d (DD.B s₀ d)) ∧ Frame [pR (DD.fP s₀)] s₀.mem s'.mem := by
   have hd11 : d ≤ 11 := by rcases widths1024 hd with rfl | rfl <;> decide
-  exact DD.loop_ok (c := 8) (b := d) hp hd11 (by decide) (by decide) hd11 (by omega) (by decide) hdd hgrp
+  exact DD.loop_ok (c := 8) (b := d) hp hd11 (by decide) (by decide) hd11 (by omega_using []) (by decide) hdd hgrp
     hdi hsi hrd hwr hm
 
 theorem ddPrologue_ok (s₀ : State) :
@@ -129,7 +129,7 @@ theorem dd_wp {s₀ : State} (hp : decodeDecompress1024K.pre s₀) :
     have h5 : dArg s₀ .rdx = 5 := by simp only [dArg, h]; rfl
     rw [h5]
     exact ddLoop_ok hp (by rw [← h5]; exact hd) h5 (fun i hi s hs => DD.grp_ok (by decide) (by decide) (by decide)
-      (by decide) (by decide) _ (by rw [bytesAt_length]; omega) (by omega) hs)
+      (by decide) (by decide) _ (by rw [bytesAt_length]; omega_using [hi]) (by omega_using [hi]) hs)
       di₁ si₁ k₁.2.1 k₁.2.2 m₁
   · rw [sub_beq_zero32, decide_eq_false_iff_not] at h
     have h11 : dArg s₀ .rdx = 11 := by

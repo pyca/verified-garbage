@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSatWitness
@@ -46,9 +47,9 @@ private theorem cachedAttempt_domain :
   unfold CachedSat.domain
   decide +kernel
 
-theorem cachedKeyGenerate_sat : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre s := by
+theorem cachedKeyGenerate_sat : ∃ s, (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre s := by
   refine ⟨cachedAttemptSat,?_⟩
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract,Spec.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
     Spec.Ffdh.pLenValid,Spec.Ffdh.domainLenValid,abi,argRegs,reduceClassify,Loc.val,State.addr]
   simp only [cachedAttempt_arg 0 (by decide),cachedAttempt_arg 1 (by decide),cachedAttempt_arg 2 (by decide),
     cachedAttempt_arg 3 (by decide),cachedAttempt_arg 4 (by decide),cachedAttempt_arg 5 (by decide),

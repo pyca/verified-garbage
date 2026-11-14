@@ -69,14 +69,14 @@ theorem private_input (s : State) (pre : (Spec.Ffdh.checkPrivateContract abi 128
       stackDom.symm.sub_right (locals_sub_reserved s stackFit), by simp⟩
   have argStart : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   have argAddr (i : Nat) (hi : i < 5) : stackArgAddr s i = off (State.addr s.sp) (4 * i) :=
-    VG.Arm.addr_add (by omega)
+    VG.Arm.addr_add (by omega_using [argFit, hi])
   have argSub (i : Nat) (hi : i < 5) :
       (⟨stackArgAddr s i, 4⟩ : Region).Sub ⟨stackArgAddr s 0, 20⟩ := by
-    rw [argStart, argAddr i hi]; exact Offset.sub_base _ (by omega)
+    rw [argStart, argAddr i hi]; exact Offset.sub_base _ (by omega_using [hi])
   have incoming (i : Nat) (hi : i < 5) : IncomingWord (stackArg s i) (128 + 4 * i) (entered s) :=
-    enteredIncoming s stackFit (by omega)
+    enteredIncoming s stackFit (by omega_using [argFit, hi])
       ⟨⟨stackArgAddr s 0, 20⟩, List.mem_append_left _ (by rw [rd]; simp), by
-        rw [argStart, argAddr i hi]; exact Offset.contains_base _ (by omega) (by omega)⟩
+        rw [argStart, argAddr i hi]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
       (stackArgs.sub_right (argSub i hi)) rfl
   have nativeIncoming : PrivateIncoming p (entered s) := by
     refine ⟨?_, ?_, ?_⟩
@@ -87,7 +87,7 @@ theorem private_input (s : State) (pre : (Spec.Ffdh.checkPrivateContract abi 128
   refine ⟨stackFit, args, nativeIncoming, domain, ?_, ?_, peer,
     entered_octets rootPeer stackFit (by rw [yLength]; exact stackY), yLength,
     entered_octets rootScalar stackFit (by rw [xLength]; exact stackX),
-    by rw [xLength]; omega, by rw [xLength]; exact xMax, ?_, ?_, ?_, ?_⟩
+    by rw [xLength]; omega_using [xPositive], by rw [xLength]; exact xMax, ?_, ?_, ?_, ?_⟩
   · rw [← domLen, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [← count, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · change BitVec.ofNat 32 p.privateLength = _; rw [xLength]

@@ -60,7 +60,7 @@ theorem Top.step {S : Nat} {rbs wbs : List (Reg × Nat)} {σ s s' : State} (h : 
       s.mem.readW (pa s svP + BitVec.ofNat 64 (8 * k)) 64 := fun k hk => by
     rw [hP.pa (L.keepBs hc)]
     obtain ⟨n, hn, hl⟩ := inB_spec (keepB_in hc)
-    refine hP.frame.readW (r := ⟨pa s svP, 48⟩) (Offset.contains_base _ (by omega) (by omega))
+    refine hP.frame.readW (r := ⟨pa s svP, 48⟩) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
       (L.fdisj hc) (by decide)
   refine ⟨hP.rd.trans h.rd, hP.wr.trans h.wr, hP.sp.trans h.sp, by rw [hP.bs _ (by decide), h.x25],
     by rw [hP.bs _ (by decide), h.x26], by rw [hP.bs _ (by decide), h.x27], by rw [hP.bs _ (by decide), h.x28],
@@ -110,7 +110,7 @@ theorem epi_ok {σ s : State} (h : Top σ s) (hin : InRegions (s.rd ++ s.wr) (σ
       ⟨by rw [h28], by
         rw [hr, hw, show σ.gpr .x3 + BitVec.ofNat 64 (SV + 8 * k) = σ.gpr .x3 + BitVec.ofNat 64 SV +
           BitVec.ofNat 64 (8 * k) by rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
-        exact inRegions_sub hin (by omega) (by decide), by rw [hm]; exact h.saved k hk'⟩
+        exact inRegions_sub hin (by omega_using [hk']) (by decide), by rw [hm]; exact h.saved k hk'⟩
   have st : ∀ {w w' : State} {r : Reg}, Only [r] w w' → r ≠ .x28 →
       w.rd = s.rd ∧ w.wr = s.wr ∧ w.mem = s.mem ∧ w.gpr .x28 = σ.gpr .x3 →
       w'.rd = s.rd ∧ w'.wr = s.wr ∧ w'.mem = s.mem ∧ w'.gpr .x28 = σ.gpr .x3 :=

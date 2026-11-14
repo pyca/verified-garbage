@@ -26,7 +26,7 @@ theorem nafPublicFields_ok {F : Impl.Weierstrass.Mont.Modulus} {K : WinCfg} {bas
         (pointTransferEnv E K.E (K.tblPt ((a-1)/2+1))) t := by
   have hdz := hL.le K.E.z (hD _ (by simp [jacCoords]))
   rw [hn,hz] at hdz
-  refine WP.mono (nafPublicEntry_ok hI.scr ha ha' h8 hT (by omega) hSep)
+  refine WP.mono (nafPublicEntry_ok hI.scr ha ha' h8 hT (by omega_using [hdz]) hSep)
     fun t ⟨hv,hk,ho⟩ => hI.transferPointFields hL hAcc (by rw [hn]; exact hy) (by rw [hn]; exact hz) hD hQ ?_ ?_ ?_ hk (by simpa only [hn] using ho)
   · simpa only [hn,WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_zero,Nat.add_zero,
       show 24*4=96 from rfl] using hv 0 (by decide)

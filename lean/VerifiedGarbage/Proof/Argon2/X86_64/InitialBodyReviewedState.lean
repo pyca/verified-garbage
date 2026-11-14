@@ -727,8 +727,8 @@ theorem loop_rel [CompressImpl] (p : Params) (pass lane slice count : Nat) (left
         obtain ⟨ready, matrixA, matrixB⟩ := next active
         have indices := hp.indices
         rw [Proof.Argon2.lanes_succ, Proof.Argon2.lanes_succ] at indices
-        exact ⟨n, by omega, j + 1, Proof.Argon2.segment p pass j slice 0 p.segmentLen ls,
-          Proof.Argon2.segment p pass j slice 0 p.segmentLen rs, by omega, by omega, ready, matrixA, matrixB, indices⟩
+        exact ⟨n, by omega_using [], j + 1, Proof.Argon2.segment p pass j slice 0 p.segmentLen ls,
+          Proof.Argon2.segment p pass j slice 0 p.segmentLen rs, by omega_using [endLane], by omega_using [endLane, active], ready, matrixA, matrixB, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨lane, leftState, rightState, endLane, positive, h⟩) (fun _ _ h => h)
 
@@ -787,7 +787,7 @@ theorem code_rel [CompressImpl] (p : Params) (pass slice : Nat) (leftState right
     | seq setupB lanesB =>
       obtain ⟨setupTrace, related⟩ := setup_public_rel p pass slice leftState rightState _ _ _ _ _ _ hp setupA setupB
       obtain ⟨lanesTrace, _⟩ := FillLanes.loop_rel p pass 0 slice p.lanes leftState rightState
-        hp.left.parameters.lanesPositive (by omega) _ _ _ _ _ _ related lanesA lanesB
+        hp.left.parameters.lanesPositive (by omega_using []) _ _ _ _ _ _ related lanesA lanesB
       exact ⟨by rw [setupTrace, lanesTrace], trivial⟩
 
 end VG.Proof.Argon2.X86_64.FillSlice
@@ -880,8 +880,8 @@ theorem loop_rel [CompressImpl] (p : Params) (pass slice count : Nat) (leftState
           exact taken
         have indices := hp.indices
         rw [Proof.Argon2.slices_succ, Proof.Argon2.slices_succ] at indices
-        exact ⟨n, by omega, j + 1, Proof.Argon2.lanes p pass j 0 p.lanes ls,
-          Proof.Argon2.lanes p pass j 0 p.lanes rs, by omega, by omega, next active, indices⟩
+        exact ⟨n, by omega_using [], j + 1, Proof.Argon2.lanes p pass j 0 p.lanes ls,
+          Proof.Argon2.lanes p pass j 0 p.lanes rs, by omega_using [endSlice], by omega_using [endSlice, active], next active, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨slice, leftState, rightState, endSlice, positive, h⟩) (fun _ _ h => h)
 
@@ -1054,8 +1054,8 @@ theorem loop_rel [CompressImpl] (p : Params) (pass count : Nat) (leftState right
         have ready := next active
         have indices := hp.indices
         rw [Proof.Argon2.iterations_succ, Proof.Argon2.iterations_succ] at indices
-        exact ⟨n, by omega, j + 1, fillPass p ls j,
-          fillPass p rs j, by omega, by omega, ready, ready.leftMatrix, ready.rightMatrix, indices⟩
+        exact ⟨n, by omega_using [], j + 1, fillPass p ls j,
+          fillPass p rs j, by omega_using [endPass], by omega_using [endPass, active], ready, ready.leftMatrix, ready.rightMatrix, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨pass, leftState, rightState, endPass, positive, h⟩) (fun _ _ h => h)
 
@@ -1149,7 +1149,7 @@ theorem code_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String
   have q : 2 ≤ p.laneLen := by
     have segments := Proof.Argon2.laneLen_segments p params.lanesPositive
     have minimum := params.segment_bound.1
-    omega
+    omega_using [segments, minimum]
   have lanesBound : p.lanes < 2 ^ 64 := Nat.lt_trans params.lanesBound (by decide)
   have pub : MemoryInit.AgreeBases s t := by
     intro r hr
@@ -1288,7 +1288,7 @@ theorem ReviewedRelated.related {p : Params} {s t : State} (h : ReviewedRelated 
   have positive : 0 < p.laneLen := by
     have segments := Proof.Argon2.laneLen_segments p parameters.lanesPositive
     have minimum := parameters.segment_bound.1
-    omega
+    omega_using [segments, minimum]
   have indices := Proof.Argon2.references_injective p positive _ _ _ _ _ _ _ _ h.references
   unfold initial
   rw [Proof.Argon2.iterations_fill, Proof.Argon2.iterations_fill]

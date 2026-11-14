@@ -9,12 +9,111 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawMemoryValues
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+
+/-! ### `MlDsa.AArch64.Optimized.InverseRawMemoryValues`, which only this module used -/
+
+section
+
+/-! ## From `InverseRawMemory.lean` -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+def rawFinalMemStep (m : Mem) (p : Addr) (u : Nat) : Mem :=
+  writeBank (rawFinalValues (readBank m (coeffAddr p (4*u)) 128)) (coeffAddr p (4*u)) 128 m
+
+theorem rawFinalPassMem_step (m : Mem) (p : Addr) (u : Nat) :
+    rawFinalPassMem m p (u+1)=rawFinalMemStep (rawFinalPassMem m p u) p u := by
+  simp only [rawFinalPassMem,rawFinalMemStep,coeffAddr,show 4*(4*u)=16*u by omega_using []]
+
+theorem rawFinalMemStep_at (m : Mem) (p : Addr) {u : Nat}
+    (hu : u<8) (i : Fin 8) {e : Nat} (he : e<4) :
+    coeffAt (rawFinalMemStep m p u) p (4*u+32*i.val+e)=
+      vword (rawFinalValues (readBank m (coeffAddr p (4*u)) 128))[i.val] e := by
+  exact writeBank_coeff_at _ m p (start := 4*u) (step := 32) (by decide) (by omega_using [hu]) i he
+
+theorem rawFinalMemStep_outside (m : Mem) (p : Addr) {u k : Nat}
+    (hu : u<8) (hk : k<n) (hout : k%32/4≠u) :
+    coeffAt (rawFinalMemStep m p u) p k=coeffAt m p k := by
+  apply writeBank_coeff_outside (start := 4*u) (step := 32) _ m p (by omega_using [hu]) hk
+  intro i; omega_using [hu, hout]
+
+theorem rawFinalPass_untouched (m : Mem) (p : Addr) {u k : Nat}
+    (hu : u≤8) (hk : k<n) (hbefore : u≤k%32/4) :
+    coeffAt (rawFinalPassMem m p u) p k=coeffAt m p k := by
+  induction u with
+  | zero => rfl
+  | succ u ih =>
+    rw [rawFinalPassMem_step,rawFinalMemStep_outside _ _ (by omega_using [hu]) hk (by omega_using [hbefore])]
+    exact ih (by omega_using [hu]) (by omega_using [hbefore])
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+/-! ## From `InverseRawMemoryValues.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+theorem rawFinalPass_bank_original (m : Mem) (p : Addr) {u : Nat} (hu : u<8) :
+    readBank (rawFinalPassMem m p u) (coeffAddr p (4*u)) 128=
+      readBank m (coeffAddr p (4*u)) 128 := by
+  apply Vector.ext
+  intro i hi
+  apply vec_ext
+  intro e he
+  rw [readBank_coeff _ p (4*u) 32 ⟨i,hi⟩ he,readBank_coeff _ p (4*u) 32 ⟨i,hi⟩ he]
+  exact rawFinalPass_untouched m p (by omega_using [hu]) (by change 4*u+32*i+e<256; omega_using [hu, hi, he]) (by omega_using [hu, he])
+
+/-- A completed coefficient is the raw result of its own strided bank,
+evaluated on the original pass input. -/
+theorem rawFinalPass_processed (m : Mem) (p : Addr) {u k : Nat}
+    (hu : u≤8) (hk : k<n) (hp : k%32/4<u) :
+    coeffAt (rawFinalPassMem m p u) p k=
+      vword (rawFinalValues (readBank m (coeffAddr p (4*(k%32/4))) 128))[k/32]! (k%4) := by
+  induction u with
+  | zero => omega
+  | succ u ih =>
+    rw [rawFinalPassMem_step]
+    by_cases he : k%32/4=u
+    · have hi : k/32<8 := by change k<256 at hk; omega_using [hk]
+      have hidx : 4*u+32*(k/32)+k%4=k := by omega_using [he]
+      have hx := rawFinalMemStep_at (rawFinalPassMem m p u) p (by omega_using [hu] : u<8)
+        ⟨k/32,hi⟩ (e := k%4) (by omega_using [])
+      rw [hidx,rawFinalPass_bank_original m p (by omega_using [hu])] at hx
+      simpa only [he,getElem!_pos (rawFinalValues (readBank m (coeffAddr p (4*u)) 128)) (k/32) hi] using hx
+    · rw [rawFinalMemStep_outside _ _ (by omega_using [hu]) hk he]
+      exact ih (by omega_using [hu]) (by omega_using [hp, he])
+
+theorem rawFinalPass_all_values (m : Mem) (p : Addr) {k : Nat} (hk : k<n) :
+    coeffAt (rawFinalPassMem m p 8) p k=
+      vword (rawFinalValues (readBank m (coeffAddr p (4*(k%32/4))) 128))[k/32]! (k%4) :=
+  rawFinalPass_processed m p (by decide) hk (by omega_using [])
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
+
+end
+
 
 /-! ## From `RawInverseField.lean` -/
 
@@ -70,7 +169,7 @@ theorem rawFinalValues_field (v : Vector (BitVec 128) 8) (w : Poly)
   rw [rawFinalValues,runValues_split_last]
   refine ⟨hl.1,hl.2.1,?_⟩
   simpa only [← InverseTraversal.run_append,stridedOps_eq hu,
-    InverseTraversal.stridedLoc,show 32*i.val+4*u+e=4*u+32*i.val+e by omega,
+    InverseTraversal.stridedLoc,show 32*i.val+4*u+e=4*u+32*i.val+e by omega_using [],
     show ofInt (16382 : Int)=(16382 : Zq) by decide +kernel] using hl.2.2
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse
@@ -94,20 +193,20 @@ theorem rawFinalPass_field {m : Mem} {p : Addr} {w : Poly}
     rawFinalValues_field (readBank m (coeffAddr p (4*u)) 128) w hu
       (fun j e he => by
         rw [readBank_coeff m p (4*u) 32 j he]
-        exact h.bound _ (by change 4*u+32*j.val+e<256; omega))
+        exact h.bound _ (by change 4*u+32*j.val+e<256; omega_using [hu, he]))
       (fun j e he => by
         rw [readBank_coeff m p (4*u) 32 j he]
         simpa only [Traversal.loc,Nat.add_comm,Nat.add_left_comm,Nat.add_assoc] using
-          h.value (4*u+32*j.val+e) (by change 4*u+32*j.val+e<256; omega)) i he
+          h.value (4*u+32*j.val+e) (by change 4*u+32*j.val+e<256; omega_using [hu, he])) i he
   apply rawPolyIs_iff.mpr
   intro k hk
-  have hi : k/32<8 := by change k<256 at hk; omega
-  have hu : k%32/4<8 := by omega
-  have he : k%4<4 := by omega
+  have hi : k/32<8 := by change k<256 at hk; omega_using [hk]
+  have hu : k%32/4<8 := by omega_using []
+  have he : k%4<4 := by omega_using []
   rw [rawFinalPass_all_values m p hk,getElem!_pos _ (k/32) hi]
   have hh := bank _ hu ⟨k/32,hi⟩ _ he
   refine ⟨hh.1,hh.2.1,?_⟩
-  have hidx : 4*(k%32/4)+32*(k/32)+k%4=k := by omega
+  have hidx : 4*(k%32/4)+32*(k/32)+k%4=k := by omega_using []
   rw [hidx] at hh
   rw [map_mul_get _ _ hk,InverseTraversal.strided_coordinate w hk]
   exact hh.2.2

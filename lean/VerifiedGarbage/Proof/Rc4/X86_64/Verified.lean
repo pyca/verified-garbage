@@ -59,13 +59,13 @@ theorem init_correct (s : State) (hs : initX.pre s) :
     ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
       Region.contains_self _ _⟩
   have hsep : Mem.Sep (s.gpr .rdi) (s.gpr .rsi).toNat (s.gpr .rdx) 256 :=
-    fun x hx hy => hkc x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+    fun x hx hy => hkc x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])
   obtain ⟨tr, t, he, ⟨hpost, hf⟩, hkeep⟩ := WP.keep written (init_ok s hp hk hsep) (by lit_decide)
   have hframe : Frame s.wr s.mem t.mem := by
     intro x hx
     refine hf x fun hlt => hx ⟨s.gpr .rdx, 258⟩ (by rw [hwr]; exact List.mem_cons_self) ?_
     simp only [Region.Contains]
-    omega
+    omega_using [hlt]
   refine ⟨tr, t, he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hkeep (by decide) hframe ?_), ?_⟩
   · intro r hr
@@ -137,15 +137,15 @@ theorem apply_correct (s : State) (hs : applyX.pre s) :
     ⟨⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self,
       Region.contains_self _ _⟩
   have hsep : Mem.Sep (s.gpr .rdi) 258 (s.gpr .rsi) (s.gpr .rdx).toNat :=
-    fun x hx hy => hcd x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+    fun x hx hy => hcd x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])
   obtain ⟨tr, t, he, ⟨hpost, hf⟩, hkeep⟩ := WP.keep written (apply_ok s hp hd hsep) (by lit_decide)
   have hframe : Frame s.wr s.mem t.mem := by
     intro x hx
     refine hf x (fun hlt => hx ⟨s.gpr .rdi, 258⟩ (by rw [hwr]; exact List.mem_cons_self) ?_)
       (fun hlt => hx ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
         (by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self) ?_)
-    · simp only [Region.Contains]; omega
-    · simp only [Region.Contains]; omega
+    · simp only [Region.Contains]; omega_using [hlt]
+    · simp only [Region.Contains]; omega_using [hlt]
   refine ⟨tr, t, he, abiPreserved_of_exec (by lit_decide) he
     (gprPreserved_of hkeep (by decide) hframe ?_), hpost⟩
   intro r hr

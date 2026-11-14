@@ -26,9 +26,9 @@ theorem haveFive_ok {s : State} {P : Addr} {w i L : Nat} {mi : BitVec 64} {X Xc 
     hdr_enc (show Crt.sExpLen < 32 by decide),hc.ld (i := Crt.sI) (by decide),
     hc.ld (i := Crt.sExpLen) (by decide),hidx,hlen,VG.Offset.ofNat_sub_ofNat hi,
     decide_eq_true_eq]
-  simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show L-i < 2 ^ 64 by omega)]
+  simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show L-i < 2 ^ 64 by omega_using [hL])]
   change (if 18446744073709551616 ≤ L-i + 18446744073709551610 + 1 then (1#64) else 0) = _
-  simp only [show (18446744073709551616 ≤ L-i + 18446744073709551610 + 1) ↔ i+5 ≤ L by omega]
+  simp only [show (18446744073709551616 ≤ L-i + 18446744073709551610 + 1) ↔ i+5 ≤ L by omega_using []]
   rfl
 
 theorem advance_ok (n : Nat) (hn : n < 4096) {s : State} {P : Addr} {w i : Nat}

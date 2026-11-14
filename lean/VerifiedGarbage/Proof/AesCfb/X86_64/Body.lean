@@ -131,7 +131,7 @@ theorem linv_succ {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k <
   have g (r : Reg) (hr : r ∈ calleeSaved) (h13 : r ≠ .r13) (h14 : r ≠ .r14) : s₅.gpr r = s.gpr r := by
     rw [keep₅ r h13 h14, g₄ r (calleeSaved_ne_rax hr), a.g r hr]
   have hl' : (outK M s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   refine ⟨⟨?_, ?_, ?_, r13₅, r14₅, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, zf₅⟩
   · rw [g .rbx (by simp [calleeSaved]) (by decide) (by decide), h.rbx]
   · rw [g .rbp (by simp [calleeSaved]) (by decide) (by decide), h.rbp]

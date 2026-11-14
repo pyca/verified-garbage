@@ -14,6 +14,9 @@ public import VerifiedGarbage.Proof.MlKem.X86.Sample
 public import VerifiedGarbage.Proof.MlKem.X86.CallWipe
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.X86.CheckEk
+public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 
 /-! # ML-KEM (FIPS 203) on x86 -/
 
@@ -41,6 +44,26 @@ def artifacts : List Artifact := [
   Spec.MlKem.decapsApi.artifact X86.target {
     code := Impl.MlKem.X86.Wipe.decaps
     stack := 120
-    verified := Proof.MlKem.X86.Wipe.decaps_verified }]
+    verified := Proof.MlKem.X86.Wipe.decaps_verified },
+  Spec.MlKem1024.checkEkApi.artifact X86.target {
+    code := Impl.MlKem1024.X86.checkEk
+    stack := 16
+    verified := Proof.MlKem1024.X86.CheckEk.verified },
+  Spec.MlKem1024.keyGenApi.artifact X86.target {
+    code := Impl.MlKem.X86.Wipe.keyGen1024
+    stack := 120
+    verified := Proof.MlKem.X86.Wipe.keyGen1024_verified },
+  Spec.MlKem1024.encapsApi.artifact X86.target {
+    code := Impl.MlKem.X86.Wipe.encaps1024
+    stack := 120
+    verified := Proof.MlKem.X86.Wipe.encaps1024_verified },
+  Spec.MlKem1024.encapsHApi.artifact X86.target {
+    code := Impl.MlKem.X86.Wipe.encapsH1024
+    stack := 136
+    verified := Proof.MlKem.X86.Wipe.encapsH1024_verified },
+  Spec.MlKem1024.decapsApi.artifact X86.target {
+    code := Impl.MlKem.X86.Wipe.decaps1024
+    stack := 120
+    verified := Proof.MlKem.X86.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem.X86

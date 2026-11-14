@@ -55,7 +55,7 @@ def satState : State where
   syms _ := 0x30000
 
 theorem sat_arguments (i : Nat) (index : i < 10) : arg satState i = satArgument i := by
-  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega
+  have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega_using [index]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
 
 private theorem single_held {m : Mem} {f : String → Addr} {name : String} {words : List (BitVec 64)}
@@ -86,17 +86,17 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
   have address : ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat =
       65532 + 8 * i + j := by
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using [small, bound]
   have far : ∀ c : Addr, c.toNat < 0x10000 →
       0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j ≠ c := by
     intro c hc e
     have := congrArg BitVec.toNat e
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat] at this
-    omega
+    omega_using [small, bound, hc, this]
   change (if _ then _ else _) = _
   rw [ite_eq_right_of_eq_false _ _ (eq_false fun inside => by
       change ((0x30000#64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - 0x20004#64).toNat < 40 at inside
-      rw [address] at inside; omega),
+      rw [address] at inside; omega_using [inside]),
     ite_eq_right_of_eq_false _ _ (eq_false (far 0x6008 (by decide))), ite_eq_right_of_eq_false _ _ (eq_false (far 0x6010 (by decide))),
     ite_eq_right_of_eq_false _ _ (eq_false (far 0x6012 (by decide)))]
 

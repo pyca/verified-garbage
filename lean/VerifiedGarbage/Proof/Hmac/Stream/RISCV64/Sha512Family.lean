@@ -80,6 +80,6 @@ def ok (iv : HashValue) (D : Nat) (initN finN : String) (finC : Prog isa) (HF : 
   hashLen x := by
     rw [htake, List.length_take, Proof.Hmac.Generic.Common.finalHash_length]
     show min D 64 = D
-    omega
+    omega_using [hD]
 
 end VG.Proof.Hmac.Stream.RISCV64.Sha512Family

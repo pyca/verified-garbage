@@ -32,7 +32,7 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
   have hqw : (p.part q p.qLen).Disjoint (p.part witness p.qLen) :=
     p.parts_disjoint hq hw (by left; rcases p.qWidth with h | h <;> rw [h] <;> decide)
   have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
-    rw [h5]; exact Region.sub_prefix (by unfold usedBytes; omega)
+    rw [h5]; exact Region.sub_prefix (by unfold usedBytes; omega_using [])
   exact {
     prime := p.qPrime rand seed.bytes
     F := p.F
@@ -59,7 +59,7 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
     outputOutside := by
       change ∀ i < p.qLen, arithmeticBytes ≤ ofs (VG.Proof.Bignum.off p.B arithmetic) (VG.Proof.Bignum.off (VG.Proof.Bignum.off p.B q) i)
       intro i hi
-      exact out_scr hqa (Offset.contains_base _ (by omega) (by rcases p.qWidth with h | h <;> omega))
+      exact out_scr hqa (Offset.contains_base _ (by omega_using [hi]) (by rcases p.qWidth with h | h <;> omega_using [hi, h]))
     outputFrame := (p.frame_part hq).symm
     outputScratch := hqh.symm
     tapeHash := by
@@ -92,7 +92,7 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
       · exact (p.stack_part hq).symm
     geometry := {
       stackSize := p.stackSize
-      arenaBound := by have := p.arenaBound; rw [h5]; unfold usedBytes at this; omega
+      arenaBound := by have := p.arenaBound; rw [h5]; unfold usedBytes at this; omega_using [this]
       tapeBound := rand.bound
       tapeArena := rand.arena.sub_right hs
       tapeFrame := rand.frame

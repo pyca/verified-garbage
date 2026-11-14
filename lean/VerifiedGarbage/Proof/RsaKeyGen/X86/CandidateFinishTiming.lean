@@ -22,11 +22,11 @@ theorem finishArgs_ok {s : State} {base : Addr} {size : Nat}
     WP isa (.block (finishArgs hasCount)) s fun t => t.gpr .edx = s.mem.readW (off base 44) 32 := by
   cases hasCount
   · unfold finishArgs
-    refine wp_movS (readSrc_sc S (d := 44) (by omega)) fun a A _ => wp_movS rfl fun t T _ => WP.block_nil ?_
+    refine wp_movS (readSrc_sc S (d := 44) (by omega_using [header])) fun a A _ => wp_movS rfl fun t T _ => WP.block_nil ?_
     exact (T.other .edx (by decide)).trans A.gpr
   · unfold finishArgs
-    refine wp_movS (readSrc_sc S (d := 44) (by omega)) fun a A _ =>
-      wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 152) (by omega)) fun t T _ => WP.block_nil ?_
+    refine wp_movS (readSrc_sc S (d := 44) (by omega_using [header])) fun a A _ =>
+      wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 152) (by omega_using [header])) fun t T _ => WP.block_nil ?_
     exact (T.other .edx (by decide)).trans A.gpr
 
 def FinishPair (base : Addr) (size : Nat) (s t : State) : Prop :=

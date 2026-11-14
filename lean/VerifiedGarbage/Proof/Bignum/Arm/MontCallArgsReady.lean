@@ -28,22 +28,22 @@ theorem montCallArgs_input (s u : State) {base : BitVec 32} {len w o a b : Nat}
     (restU : Rest [.r1, .r2, .r3, .r12, .lr] (allocated 8 s) u) :
     CallInput base len w o a b u := by
   let A := allocated 8 s
-  have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega
+  have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega_using [this]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have endM := array_end_le (w := w) (j := 0) (k := 8) (by decide)
   have argsWs : Workspace A base (8 * len) :=
     ⟨h.workspace.nowrap, List.mem_cons_of_mem _ h.workspace.writable⟩
   refine ⟨argsWs.congr restU.wr, eq.layout h.layout,
-    (eq.width (by omega)).trans h.width, ptrU, outU, aU, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    (eq.width (by omega_using [size])).trans h.width, ptrU, outU, aU, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [restU.sp, memU]; exact Mem.readW_writeW_self32 _ _ _
   · change ((u.mem.readW (off (State.addr base) (arrAt w 0)) 64).toNat *
       (u.mem.readW (off (State.addr base) 56) 64).toNat + 1) % 2 ^ 64 = 0
-    rw [eq.word (d := arrAt w 0) (bits := 64) (by omega), eq.word (d := 56) (bits := 64) (by omega)]
+    rw [eq.word (d := arrAt w 0) (bits := 64) (by omega_using [fits, endM]), eq.word (d := 56) (bits := 64) (by omega_using [size])]
     exact h.inverse
   · rw [eq.number fits hb.1, eq.number fits (by decide : 0 < 8)]; exact operand
   · rw [restU.sp]; change 40 ≤ (s.sp - BitVec.ofNat 32 8).toNat
-    rw [sub_toNat' fit8]; have := cs.fit; omega
+    rw [sub_toNat' fit8]; have := cs.fit; omega_using [this]
   · rw [restU.rd, restU.wr, restU.sp]
     exact ⟨⟨State.addr A.sp, 8⟩, List.mem_append_right _ List.mem_cons_self,
       by change (⟨State.addr A.sp, 8⟩ : Region).Contains (State.addr A.sp) 4
@@ -55,7 +55,7 @@ theorem montCallArgs_input (s u : State) {base : BitVec 32} {len w o a b : Nat}
       change 40 ≤ (s.sp - BitVec.ofNat 32 8).toNat
       rw [sub_toNat' fit8]
       have := cs.fit
-      omega
+      omega_using [this]
     rw [belowA, addr_sub' fit40]
     exact Offset.below_disjoint _ (by decide)
 
@@ -68,9 +68,9 @@ theorem montCallArgs_ready (s : State) {base : BitVec 32} {len w o a b : Nat}
     WP isa (.block (VG.Impl.Bignum.Arm.MontCall.opArgs o a b)) (allocated 8 s)
       (CallInput base len w o a b) := by
   let A := allocated 8 s
-  have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega
+  have fit8 : 8 ≤ s.sp.toNat := by have := cs.fit; omega_using [this]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have argsWs : Workspace A base (8 * len) :=
     ⟨h.workspace.nowrap, List.mem_cons_of_mem _ h.workspace.writable⟩
   have argsWrite : InRegions A.wr (State.addr A.sp) 4 :=
@@ -78,13 +78,13 @@ theorem montCallArgs_ready (s : State) {base : BitVec 32} {len w o a b : Nat}
       by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide⟩
   have argsFit : A.sp.toNat + 8 ≤ 2 ^ 32 := by
     change (s.sp - BitVec.ofNat 32 8).toNat + 8 ≤ 2 ^ 32
-    rw [sub_toNat' fit8]; have := s.sp.isLt; omega
+    rw [sub_toNat' fit8]; have := s.sp.isLt; omega_using []
   have argSub : Region.Sub ⟨State.addr A.sp, 4⟩ (belowA s.sp 48) :=
     fun x hx => belowA_sub (a := 8) (by decide) cs.fit x (Region.sub_prefix (by decide) x hx)
   have argSep := cs.separate.sub_left argSub
-  refine WP.mono (montCallArgs_ok A argsWs (by omega) h.ptr argsFit argsWrite ho.1 ha.1 hb.1) ?_
+  refine WP.mono (montCallArgs_ok A argsWs (by omega_using [size]) h.ptr argsFit argsWrite ho.1 ha.1 hb.1) ?_
   rintro u ⟨ptrU, outU, aU, memU, frameU, restU⟩
-  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega : 8 * len < 2 ^ 64)
+  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega_using [this] : 8 * len < 2 ^ 64)
     frameU (by intro r hr; have er := List.mem_singleton.mp hr; subst r; exact argSep.symm)
   exact montCallArgs_input s u h cs hb operand eq ptrU outU aU memU restU
 

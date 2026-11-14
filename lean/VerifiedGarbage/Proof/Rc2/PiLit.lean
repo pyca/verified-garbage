@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rc2
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2's PITABLE as a packed table
 
@@ -42,16 +43,16 @@ theorem piTable_getD (i : Nat) : Spec.Rc2.piTable.getD i 0 = BitVec.ofNat 8 (piN
   split
   · rename_i hi
     rw [piRowNat, Vector.getD, piTable_eq, Array.getD, dite_eq_left (by simpa using hi)]
-    have h1 : i / 16 < piRows.toArray.size := by simp only [Vector.size_toArray]; omega
-    have e1 : piRows.toArray.getD (i / 16) default = piRows[i / 16]'(by omega) := by
+    have h1 : i / 16 < piRows.toArray.size := by simp only [Vector.size_toArray]; omega_using [hi]
+    have e1 : piRows.toArray.getD (i / 16) default = piRows[i / 16]'(by omega_using [hi]) := by
       unfold Array.getD; rw [dite_eq_left h1]; rfl
-    have h2 : i % 16 < (piRows[i / 16]'(by omega)).toArray.size := by
-      simp only [Vector.size_toArray]; omega
-    have e2 : (piRows[i / 16]'(by omega)).toArray.getD (i % 16) 0 =
-        (piRows[i / 16]'(by omega))[i % 16]'(by omega) := by
+    have h2 : i % 16 < (piRows[i / 16]'(by omega_using [hi])).toArray.size := by
+      simp only [Vector.size_toArray]; omega_using []
+    have e2 : (piRows[i / 16]'(by omega_using [hi])).toArray.getD (i % 16) 0 =
+        (piRows[i / 16]'(by omega_using [hi]))[i % 16]'(by omega_using []) := by
       unfold Array.getD; rw [dite_eq_left h2]; rfl
     rw [e1, e2, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-    exact Vector.getElem_flatten (xss := piRows) (by omega)
+    exact Vector.getElem_flatten (xss := piRows) (by omega_using [hi])
   · rename_i hi
     rw [Vector.getD, Array.getD, dite_eq_right (by simpa using hi)]
     rfl

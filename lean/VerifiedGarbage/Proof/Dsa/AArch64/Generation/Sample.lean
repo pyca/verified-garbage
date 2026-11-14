@@ -28,7 +28,7 @@ theorem sampleWitness_ok {B p : Addr} {Z w N : Nat} {bs : List Byte} {s : State}
   have hz := h.ready.ws.scr.nowrap
   have hX := h.ready.ws.sl (show aX < 16 by decide)
   unfold Impl.Dsa.AArch64.Generation.sampleWitness
-  refine WP.seq (WP.mono (testWitness_ok h hEZ hodd (by omega) hw)
+  refine WP.seq (WP.mono (testWitness_ok h hEZ hodd (by omega_using [hlen]) hw)
     fun u ⟨hu, hxu, huu, hu9, fu, ku⟩ => ?_)
   refine WP.ite (!decide (2 ≤ Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs < N - 1))
     (by rw [VG.Proof.MlKem.AArch64.eval_zero, hu9]; cases decide (2 ≤ Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs < N - 1) <;> decide)
@@ -39,7 +39,7 @@ theorem sampleWitness_ok {B p : Addr} {Z w N : Nat} {bs : List Byte} {s : State}
     have hfl := forcedWitnessBytes_length hlen
     refine WP.seq (WP.mono (forceSample_ok hu hEZ hlen hmax) fun v ⟨hv, huv, fv, kv⟩ => ?_)
     refine WP.mono (loadWitness_ok hv.ready hEZ hv.ptr hv.len hv.source
-      (by rw [hfl]; omega) (by rwa [hfl])) fun t ⟨ht, hxt, ft, kt⟩ => ?_
+      (by rw [hfl]; omega_using [hlen]) (by rwa [hfl])) fun t ⟨ht, hxt, ft, kt⟩ => ?_
     refine ⟨ht, ?_, ?_, ?_, ((ku.trans kv).trans kt).mono (by decide)⟩
     · simpa only [hspec] using hxt
     · rw [ft.word_eq (by intro r hr; rw [List.mem_singleton.mp hr]; left; simp only [kU, slot, hdrBytes, aX]; omega_arith)

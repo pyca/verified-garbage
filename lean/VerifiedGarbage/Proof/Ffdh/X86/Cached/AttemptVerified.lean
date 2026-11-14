@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptCT
 public import VerifiedGarbage.Proof.Ffdh.CachedSat
 public import VerifiedGarbage.TCB.Artifact
@@ -58,7 +59,7 @@ theorem sat_domain : Spec.Rsa.bytesAt satState.mem 0x3000 128 = CachedSat.domain
     decide
   exact this
 
-theorem satisfiable : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre s := by
+theorem satisfiable : ∃ s, (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre s := by
   have a0 : arg satState 0 = 0x1000 := by rw [sat_arg 0 (by decide)]; decide
   have a1 : arg satState 1 = 64 := by rw [sat_arg 1 (by decide)]; decide
   have a2 : arg satState 2 = 0x2000 := by rw [sat_arg 2 (by decide)]; decide
@@ -74,7 +75,7 @@ theorem satisfiable : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre
   have a12 : arg satState 12 = 275 := by rw [sat_arg 12 (by decide)]; decide
   have e : argAddr satState 0 = 0x20004 := by decide
   refine ⟨satState, ?_⟩
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argSlots, argVal, argBytes, stackBelow, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid,
     Spec.Ffdh.generationContextAt]
   simp only [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, e]
@@ -90,7 +91,7 @@ theorem satisfiable : ∃ s, (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre
     | decide
 
 theorem verified :
-    Verified target Impl.Ffdh.X86.Cached.Generate.code (Spec.Ffdh.cachedGenerateKeyContract abi stack) :=
+    Verified target Impl.Ffdh.X86.Cached.Generate.code (Proof.Ffdh.cachedGenerateKeyContract abi stack) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Ffdh.X86.Cached

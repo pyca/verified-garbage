@@ -143,8 +143,8 @@ theorem cbcTaint_wf (s : State) (hs : cbcDecX86_64.pre s) : Taint.Wf cbcTaint s 
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 16 ≤ 16; omega) (List.Forall₂.cons (by change 0 ≤ _; omega)
-        (List.Forall₂.cons (by change 8 * 400 ≤ 8 * 400; omega) List.Forall₂.nil))
+    · exact List.Forall₂.cons (by change 16 ≤ 16; omega_using []) (List.Forall₂.cons (by change 0 ≤ _; omega_using [])
+        (List.Forall₂.cons (by change 8 * 400 ≤ 8 * 400; omega_using []) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -155,9 +155,9 @@ theorem cbcTaint_wf (s : State) (hs : cbcDecX86_64.pre s) : Taint.Wf cbcTaint s 
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · change 16 ≤ 2 ^ 64; omega
-      · change 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64; omega
-      · change 8 * 400 ≤ 2 ^ 64; omega
+      · change 16 ≤ 2 ^ 64; omega_using []
+      · change 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64; omega_using [fitD]
+      · change 8 * 400 ≤ 2 ^ 64; omega_using []
   · intro p hp
     simp only [cbcTaint, List.mem_singleton] at hp
     subst p

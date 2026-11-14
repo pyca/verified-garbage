@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The fixed-base comb, on any target
@@ -67,7 +68,7 @@ theorem Law.add_mul_neg (hC : Law C) {P : Point C} (hP : onCurve C P = true) {a 
   have hb := hC.onCurve_mul hP b
   apply hf.inj (hC.onCurve_add ha (onCurve_negPt hb)) (hC.onCurve_mul hP _)
   rw [hf.add ha (onCurve_negPt hb), hf.neg hb, hf.mul hP, hf.mul hP, hf.mul hP]
-  have e : ((a - b : Nat) : Int) = (a : Int) + (-(b : Int)) := by omega
+  have e : ((a - b : Nat) : Int) = (a : Int) + (-(b : Int)) := by omega_using [hab]
   rw [e, Lean.Grind.IntModule.add_zsmul, Lean.Grind.IntModule.neg_zsmul]
 
 /-! ## The tables -/

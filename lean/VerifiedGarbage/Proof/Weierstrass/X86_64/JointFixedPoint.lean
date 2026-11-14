@@ -32,15 +32,15 @@ theorem jointFixedFast_ok {K : WinCfg} {s : State} {base T : Addr} {size x y u j
         (fixedEntryEnv K C.p E (FastNaf.byte 7 u j) x y K.E.z) (FastNaf.point C G 7 u j) ∧
       fixedEntryEnv K C.p E (FastNaf.byte 7 u j) x y K.E.z=1 := by
   have he : nafMagnitude (FastNaf.byte 7 u j)=FastNaf.magnitude 7 u j := FastNaf.byte_magnitude 7 u j
-  refine WP.mono (jointFixedEntry_fields_ok hL hn hm hi (by rw [he]; omega) h8
+  refine WP.mono (jointFixedEntry_fields_ok hL hn hm hi (by rw [he]; omega_using [hmag]) h8
     (by rw [he]; exact hS) hy hz hD hx hyy hOne hZero heZero hApart) fun t ⟨kt,it⟩ => ?_
-  have hp := fixedEntryEnv_point (E:=E) (b:=FastNaf.byte 7 u j) (by omega) hy hz hOneVal hPoint
+  have hp := fixedEntryEnv_point (E:=E) (b:=FastNaf.byte 7 u j) (by omega_using [hn]) hy hz hOneVal hPoint
   have ep : (if (FastNaf.byte 7 u j).toNat<128 then mul (FastNaf.magnitude 7 u j) G
       else negPt (mul (FastNaf.magnitude 7 u j) G))=FastNaf.point C G 7 u j := by
     rw [FastNaf.point,←FastNaf.byte_negative 7 u j]
     by_cases h : (FastNaf.byte 7 u j).toNat<128
-    · simp only [h,ite_true,show ¬128≤(FastNaf.byte 7 u j).toNat from by omega,decide_false,ite_false,Bool.false_eq_true]
-    · simp only [h,ite_false,show 128≤(FastNaf.byte 7 u j).toNat from by omega,decide_true,ite_true]
+    · simp only [h,ite_true,show ¬128≤(FastNaf.byte 7 u j).toNat from by omega_using [h],decide_false,ite_false,Bool.false_eq_true]
+    · simp only [h,ite_false,show 128≤(FastNaf.byte 7 u j).toNat from by omega_using [h],decide_true,ite_true]
   rw [ep] at hp
   exact ⟨kt,it,hp⟩
 

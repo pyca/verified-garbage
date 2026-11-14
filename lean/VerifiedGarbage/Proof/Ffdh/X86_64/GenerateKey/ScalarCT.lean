@@ -62,7 +62,7 @@ theorem cut_stage (p : GkP) (s : State) (h : MS p s) :
   have hu : Inputs p rb u := hi.keep (by intro a _; rw [hmem]) k₁ (by decide)
   refine WP.seq (WP.mono (cut_inputs hu hr) fun v ⟨hv, hx, hh, h8, _, k₂⟩ => ?_)
   have hnv : word v.mem p.B (8 * sEl) = BitVec.ofNat 64 p.n := by
-    rw [hh _ (by have := hi.base.hZ; change 200 ≤ p.Z; omega), hmem]; exact hn
+    rw [hh _ (by have := hi.base.hZ; change 200 ≤ p.Z; omega_using [this]), hmem]; exact hn
   refine WP.mono (finish_base hv hx hm hnv h8) fun t ⟨hb, hd, hG, hQ, _, hf, k₃⟩ => ?_
   refine ⟨rb, hb, hd, hG, hQ, hm, hx.congrK hf k₃, ?_, ?_, hi.base.xy, hi.base.cut_length, hi.base.ld_lt⟩
   · exact ⟨fun i hi' => by rw [k₃.2.2, k₂.2.2, k₁.2.2]; exact hi.base.x.wr i hi', hi.base.x.sep⟩

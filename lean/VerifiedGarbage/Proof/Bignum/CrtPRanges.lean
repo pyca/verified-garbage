@@ -29,7 +29,7 @@ theorem pRanges_le (w : Nat) : ∀ r ∈ pRanges w, r.1 + r.2 ≤ slot w 8 := by
   intro r hr
   simp only [pRanges, gRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
 
 theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
     ∀ r ∈ pRanges w ++ [xRange o wx], 8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot wx 8 + wsTab wx := by
@@ -41,11 +41,11 @@ theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
   have := slot_le (w := w) (show Public.aTmp < 8 by decide)
   have := slot_le (w := w) (show Public.aY < 8 by decide)
   have := slot_le (w := w) (show Public.aX < 8 by decide)
-  have : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   intro r hr
   simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
 
 theorem Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD) (h2 : i ≠ Public.sCnt) :
@@ -59,20 +59,20 @@ theorem Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w
   simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by omega_arith)
   · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-    unfold Crt.sD sFn at h1 ⊢; omega
+    unfold Crt.sD sFn at h1 ⊢; omega_using [h1]
   · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-    unfold Public.sCnt sFn at h2 ⊢; omega
-  · exact Or.inl (by omega)
-  · exact Or.inl (by simp only at hb ⊢; omega)) (by omega)
+    unfold Public.sCnt sFn at h2 ⊢; omega_using [h2]
+  · exact Or.inl (by omega_arith)
+  · exact Or.inl (by simp only at hb ⊢; omega_arith)) (by omega_using [hi])
 
 theorem Frm.px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + wsTab wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
     word m' B d = word m B d :=
-  hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega)) hd'
+  hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega_using [hd, this])) hd'
 
 theorem Frm.px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc)

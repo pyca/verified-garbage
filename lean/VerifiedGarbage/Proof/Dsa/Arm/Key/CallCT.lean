@@ -49,7 +49,7 @@ theorem params_call {s₀ u : State} (A : KeyABI s₀) (h : RReady s₀ u) (rd w
   simp only [State.withRegions_mem, State.callEntry_mem]
   rw [rBytes_frame (call_push_frame A h) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (A.stackKey.sub_left (low_sub s₀ (by decide))).symm)
-    (by have := (stackArg s₀ 0).isLt; omega), key_bytes A h]
+    (by have := (stackArg s₀ 0).isLt; omega_using []), key_bytes A h]
 
 theorem pushed_sp_eq {s₁ s₂ t₁ t₂ : State} (e : pubOf s₁ = pubOf s₂) (h₁ : RReady s₁ t₁) (h₂ : RReady s₂ t₂)
     (rd₁ wr₁ rd₂ wr₂ : List Region) : (callEntryOf rd₁ wr₁ t₁).sp = (callEntryOf rd₂ wr₂ t₂).sp := by
@@ -73,7 +73,7 @@ theorem check_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : Key
   · unfold checkParams
     rw [cc_r0 C₁, cc_r0 C₂, cc_r1 C₁, cc_r1 C₂, params_call A₁ h₁, params_call A₂ h₂, hk]
   · show stackArg _ i = stackArg _ i
-    obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
+    obtain rfl | rfl : i = 0 ∨ i = 1 := by omega_using [hi]
     · rw [cc_a0 A₁ h₁ C₁, cc_a0 A₂ h₂ C₂, pub_arg e 5 (by decide)]
     · rw [cc_a1 A₁ h₁ C₁, cc_a1 A₂ h₂ C₂, pub_arg e 6 (by decide)]
 
@@ -123,7 +123,7 @@ theorem derive_pub {s₁ s₂ t₁ t₂ : State} (A₁ : KeyABI s₁) (A₂ : Ke
     unfold deriveParams
     rw [dc_r2 C₁, dc_r2 C₂, dc_r3 C₁, dc_r3 C₂, params_call A₁ h₁, params_call A₂ h₂, hk]
   · show stackArg _ i = stackArg _ i
-    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+    obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_using [hi]
     · rw [dc_a0 A₁ h₁ C₁, dc_a0 A₂ h₂ C₂, pub_arg e 1 (by decide)]
     · exact addr_inj32 (by rw [dc_a1 A₁ h₁ C₁, dc_a1 A₂ h₂ C₂, pub_rBase e])
     · rw [dc_a2 A₁ h₁ C₁, dc_a2 A₂ h₂ C₂, pub_arg e 2 (by decide)]

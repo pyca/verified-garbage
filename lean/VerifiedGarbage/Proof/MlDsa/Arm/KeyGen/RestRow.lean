@@ -52,7 +52,7 @@ theorem modPm_t0 (t : Poly) :
   rw [Vector.map_map]
   refine Vector.map_congr_left fun c _ => ?_
   have := Proof.MlDsa.KeyGen.power2Round_snd c
-  exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega) (by omega)
+  exact Proof.MlDsa.KeyGen.modPm_ofInt (by omega_using [this]) (by omega_using [this])
 
 theorem t0_coeff {m : Mem} {a : Addr} {t : Poly} (h : PolyIs m a (t.map fun c => ofInt (power2Round c).2)) :
     ∀ i < n, -((4095 : Nat) : Int) ≤ modPm (coeffAt m a i).toNat q ∧ modPm (coeffAt m a i).toNat q ≤ ((4096 : Nat) : Int) :=
@@ -76,38 +76,38 @@ theorem t1_bound {m : Mem} {a : Addr} {p : Params} {A : Nat → Poly} {S : Nat �
 theorem chk_poly {p : Params} (hF : PFacts p) {STK i : Nat} (hi : i < p.k) {j : Nat} (hj : j < 3) :
     KRChk p STK (p.ℓ + p.k) p.ℓ i [(0, oP (p.k * p.ℓ + p.ℓ + p.k + j), 1024)] := by
   have := hF.k; have := hF.l; have := hF.kl; have := hF.scr
-  exact KRChk.c0 hF (by omega) (by omega) (.inr (by simp only [oP]; omega))
-    (.inr (by simp only [oP]; omega)) (by simp only [oP]; omega)
+  exact KRChk.c0 hF (by omega_using []) (by omega_using [hi]) (.inr (by simp only [oP]; omega_using []))
+    (.inr (by simp only [oP]; omega_using [])) (by simp only [oP]; omega_using [hj, this])
 
 theorem chk_t {p : Params} (hF : PFacts p) {STK i : Nat} (hi : i < p.k) :
     KRChk p STK (p.ℓ + p.k) p.ℓ i [(0, oP (p.k * p.ℓ + p.ℓ + p.k), 1024), (1, 0, STK)] := by
-  have := (chk_poly hF (STK := STK) hi (j := 0) (by decide)).append (W₂ := [_]) (KRChk.stk hF (by omega) (by omega))
+  have := (chk_poly hF (STK := STK) hi (j := 0) (by decide)).append (W₂ := [_]) (KRChk.stk hF (by omega_using []) (by omega_using [hi]))
   rwa [Nat.add_zero] at this
 
 theorem chk_inv {p : Params} (hF : PFacts p) {STK i : Nat} (hi : i < p.k) :
     KRChk p STK (p.ℓ + p.k) p.ℓ i [(0, oP (p.k * p.ℓ + p.ℓ + p.k), 1024), (0, oSS, 1024), (1, 0, STK)] := by
   have := hF.k; have := hF.l; have := hF.kl; have := hF.scr
   have := (chk_poly hF (STK := STK) hi (j := 0) (by decide)).append (W₁ := [_])
-    ((KRChk.c0 (o := oSS) (n := 1024) hF (by omega) (by omega) (.inr (by decide)) (.inl (by decide))
-      (by simp only [oSS]; omega)).append (W₁ := [_]) (KRChk.stk hF (by omega) (by omega)))
+    ((KRChk.c0 (o := oSS) (n := 1024) hF (by omega_using []) (by omega_using [hi]) (.inr (by decide)) (.inl (by decide))
+      (by simp only [oSS]; omega_using [this])).append (W₁ := [_]) (KRChk.stk hF (by omega_using []) (by omega_using [hi])))
   rwa [Nat.add_zero] at this
 
 theorem chk_p2r {p : Params} (hF : PFacts p) {STK i : Nat} (hi : i < p.k) :
     KRChk p STK (p.ℓ + p.k) p.ℓ i [(0, oP (p.k * p.ℓ + p.ℓ + p.k + 1), 1024),
       (0, oP (p.k * p.ℓ + p.ℓ + p.k + 2), 1024), (1, 0, STK)] :=
   (chk_poly hF hi (j := 1) (by decide)).append (W₁ := [_])
-    ((chk_poly hF hi (j := 2) (by decide)).append (W₁ := [_]) (KRChk.stk hF (by omega) (by omega)))
+    ((chk_poly hF hi (j := 2) (by decide)).append (W₁ := [_]) (KRChk.stk hF (by omega_using []) (by omega_using [hi])))
 
 theorem chk_sbp {p : Params} (hF : PFacts p) {STK i : Nat} (hi : i < p.k) :
     KRChk p STK (p.ℓ + p.k) p.ℓ i [(3, 32 + 320 * i, 320), (1, 0, STK)] :=
-  (KRChk.c3 hF (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.le_refl _) (by rw [hF.pk]; omega)).append (W₁ := [_])
+  (KRChk.c3 hF (Nat.le_refl _) (Nat.le_of_lt hi) (Nat.le_refl _) (by rw [hF.pk]; omega_using [hi])).append (W₁ := [_])
     (KRChk.stk hF (Nat.le_refl _) (Nat.le_of_lt hi))
 
 theorem chk_bp {p : Params} (hF : PFacts p) {STK i : Nat} (hi : i < p.k) :
     KRChk p STK (p.ℓ + p.k) p.ℓ i [(4, oT0 p + 416 * i, 416), (1, 0, STK)] := by
   have := hF.k; have := hF.l
-  exact (KRChk.c4 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [oT0]; omega) (.inr (by simp only [oT0]; omega))
-    (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega)).append (W₁ := [_]) (KRChk.stk hF (Nat.le_refl _) (Nat.le_of_lt hi))
+  exact (KRChk.c4 hF (Nat.le_refl _) (Nat.le_of_lt hi) (by simp only [oT0]; omega_using []) (.inr (by simp only [oT0]; omega_using []))
+    (.inr (Nat.le_refl _)) (by rw [hF.sk]; omega_using [hi])).append (W₁ := [_]) (KRChk.stk hF (Nat.le_refl _) (Nat.le_of_lt hi))
 
 section
 variable {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p) {STK : Nat} (hS : S + 8 ≤ STK)
@@ -122,12 +122,12 @@ theorem rowMul_ok {σ : State} {A : Nat → Poly} {S' : Nat → IPoly} {R : BitV
     WP isa (mulAt P (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
       KR p STK σ A S' R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p STK (fun A S => dotK p A S i 1) σ A S' s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  have hx0 := idx_lt (j := 0) hi (by omega)
-  have hA := h.polyA hi (j := 0) (by omega)
+  have hx0 := idx_lt (j := 0) hi (by omega_using [hl])
+  have hA := h.polyA hi (j := 0) (by omega_using [hl])
   rw [Nat.add_zero] at hx0 hA
-  have hS0 := h.polyS (j := 0) (by omega)
+  have hS0 := h.polyS (j := 0) (by omega_using [hl])
   rw [Nat.add_zero] at hS0
-  refine mul_ok hP.mul h.kc.site (by omega) (h := tP p) (f := aP (p.ℓ * i)) (g := sP p 0)
+  refine mul_ok hP.mul h.kc.site (by omega_using [hS]) (h := tP p) (f := aP (p.ℓ * i)) (g := sP p 0)
     ⟨⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, show ix Reg.r7 ∈ kWb by decide,
       by lsep hF, by lsep hF⟩ hA.1 hS0.1 fun s' k' hb => ⟨h.keep hF k' (chk_t hF hi), ?_⟩
   show PolyIs s'.mem (lpa (lay p STK σ) (tP p)) _
@@ -145,7 +145,7 @@ theorem rowMulAdd_ok {j : Nat} (hj : j < p.ℓ) {σ : State} {A : Nat → Poly} 
   have hx0 := idx_lt hi hj
   have hA := h.polyA hi hj
   have hSj := h.polyS hj
-  refine mulAdd_ok hP.mulAdd h.kc.site (by omega) (h := tP p) (f := aP (p.ℓ * i + j)) (g := sP p j)
+  refine mulAdd_ok hP.mulAdd h.kc.site (by omega_using [hS]) (h := tP p) (f := aP (p.ℓ * i + j)) (g := sP p j)
     ⟨⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, show ix Reg.r7 ∈ kWb by decide,
       by lsep hF, by lsep hF⟩ ht.1 hA.1 hSj.1 fun s' k' hb => ⟨h.keep hF k' (chk_t hF hi), ?_⟩
   show PolyIs s'.mem (lpa (lay p STK σ) (tP p)) _
@@ -168,7 +168,7 @@ theorem rowInv_ok {σ : State} {A : Nat → Poly} {S' : Nat → IPoly} {R : BitV
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   obtain ⟨m1, m2, m3⟩ := tP_m hF (σ := σ)
   unfold invNttAt
-  refine ip_ok (t := nttInv) hP.invNtt h.kc.site (by omega) m1 m2 (show ix Reg.r7 ∈ kWb by decide)
+  refine ip_ok (t := nttInv) hP.invNtt h.kc.site (by omega_using [hS]) m1 m2 (show ix Reg.r7 ∈ kWb by decide)
     (show ix Reg.r7 ∈ kWb by decide) m3 ht.1 fun s' k' hb => ⟨h.keep hF k' (chk_inv hF hi), ?_⟩
   show PolyIs s'.mem (lpa (lay p STK σ) (tP p)) _
   dsimp only
@@ -184,7 +184,7 @@ theorem rowAdd_ok {σ : State} {A : Nat → Poly} {S' : Nat → IPoly} {R : BitV
   dsimp only [tIs] at ht
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hS2 := h.s2 i hi
-  refine add_ok hP.add h.kc.site (by omega) (f := tP p) (g := sP p (p.ℓ + i))
+  refine add_ok hP.add h.kc.site (by omega_using [hS]) (f := tP p) (g := sP p (p.ℓ + i))
     ⟨⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, show ix Reg.r7 ∈ kWb by decide, by lsep hF⟩ ht.1 hS2.1
     fun s' k' hb => ⟨h.keep hF k' (chk_t hF hi), ?_⟩
   show PolyIs s'.mem (lpa (lay p STK σ) (tP p)) _
@@ -210,7 +210,7 @@ theorem rowP2r_ok {σ : State} {A : Nat → Poly} {S' : Nat → IPoly} {R : BitV
       KR p STK σ A S' R (p.ℓ + p.k) p.ℓ i s' ∧ p2rIs p STK i σ A S' s' := by
   dsimp only [tIs] at ht
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  refine p2r_ok hP.power2Round h.kc.site (by omega) (p2r_m hF) ht.1 fun s' k' h1 h0 =>
+  refine p2r_ok hP.power2Round h.kc.site (by omega_using [hS]) (p2r_m hF) ht.1 fun s' k' h1 h0 =>
     ⟨h.keep hF k' (chk_p2r hF hi), ?_, ?_⟩
   · show NatPolyIs s'.mem (lpa (lay p STK σ) (t1P p)) _
     rw [t1K, ← ht.2]; exact h1
@@ -234,7 +234,7 @@ theorem rowSbp_ok {σ : State} {A : Nat → Poly} {S' : Nat → IPoly} {R : BitV
     WP isa (simpleBitPackAt P (t1P p) 1023 (.r5, 32 + 320 * i) 320) s fun s' =>
       KR p STK σ A S' R (p.ℓ + p.k) p.ℓ i s' ∧ sbpIs p STK i σ A S' s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  refine sbp_ok hP.simpleBitPack h.kc.site (by omega) (sbp_m hF hi) (t1_bound h1.1) fun s' k' hb =>
+  refine sbp_ok hP.simpleBitPack h.kc.site (by omega_using [hS]) (sbp_m hF hi) (t1_bound h1.1) fun s' k' hb =>
     ⟨h.keep hF k' (chk_sbp hF hi), polyIs_keepW h.kc.site.ok k'.frame (by lsep hF [hF.pk]) (by decide) rfl h1.2, ?_⟩
   show bytesAt s'.mem (lpa (lay p STK σ) (.r5, 32 + 320 * i)) 320 = _
   rw [hb]
@@ -254,11 +254,11 @@ theorem rowBp_ok {σ : State} {A : Nat → Poly} {S' : Nat → IPoly} {R : BitVe
       (KR p STK σ A S' R (p.ℓ + p.k) p.ℓ (i + 1)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   unfold bitPackAt
-  refine bp_ok hP.bitPack h.kc.site (by omega) (bp_m hF hi) h0.1.1 (t0_coeff h0.1) fun s' k' hb => ?_
+  refine bp_ok hP.bitPack h.kc.site (by omega_using [hS]) (bp_m hF hi) h0.1.1 (t0_coeff h0.1) fun s' k' hb => ?_
   have hk' := h.keep hF k' (chk_bp hF hi)
   refine ⟨hk'.kc, hk'.r11, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
     fun i' hi' => ?_⟩
-  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
   · exact hk'.rows i' hi'
   · refine ⟨?_, ?_⟩
     · rw [bytes_keepW h.kc.site.ok k'.frame (i := 3) (o := 32 + 320 * i') (l := 320)
@@ -276,18 +276,18 @@ theorem rowMul_piece :
     KPiece p STK (KRx p STK (p.ℓ + p.k) p.ℓ i) (RowI p STK i (tIs p STK fun A S => dotK p A S i 1))
       (mulAt P (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
-  have hx0 := idx_lt (j := 0) hi (by omega)
+  have hx0 := idx_lt (j := 0) hi (by omega_using [hl])
   rw [Nat.add_zero] at hx0
   refine ⟨fun _ _ _ ⟨A, S', R, h⟩ => WP.mono (rowMul_ok hP hF hS hi h) fun _ h => ⟨A, S', R, h⟩,
     rel_of (Q := fun x y => ∃ σ, Two (lay p STK σ) kWb STK x y ∧
       (Reduced x.mem ((lay p STK σ).A 0 (oP (p.ℓ * i))) ∧ Reduced x.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ)))) ∧
       (Reduced y.mem ((lay p STK σ).A 0 (oP (p.ℓ * i))) ∧ Reduced y.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ)))))
-      (RelCT.exists_ fun σ => mul_tr hP.mul (by omega) (h := tP p) (f := aP (p.ℓ * i)) (g := sP p 0)
+      (RelCT.exists_ fun σ => mul_tr hP.mul (by omega_using [hS]) (h := tP p) (f := aP (p.ℓ * i)) (g := sP p 0)
         ⟨⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, show ix Reg.r7 ∈ kWb by decide,
           by lsep hF, by lsep hF⟩ fun x y ⟨T, ⟨a, b⟩, ⟨c, d⟩⟩ => ⟨T.1, T.2.1, T.2.2, a, b, c, d⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩
-  have a₁ := h₁.polyA hi (j := 0) (by omega); have a₂ := h₂.polyA hi (j := 0) (by omega)
-  have s₁ := h₁.polyS (j := 0) (by omega); have s₂ := h₂.polyS (j := 0) (by omega)
+  have a₁ := h₁.polyA hi (j := 0) (by omega_using [hl]); have a₂ := h₂.polyA hi (j := 0) (by omega_using [hl])
+  have s₁ := h₁.polyS (j := 0) (by omega_using [hl]); have s₂ := h₂.polyS (j := 0) (by omega_using [hl])
   rw [Nat.add_zero] at a₁ a₂ s₁ s₂
   rw [← lay_pub pub] at a₂ s₂
   exact ⟨σ₁, kc_twoL pub h₁.kc h₂.kc, ⟨a₁.1, s₁.1⟩, ⟨a₂.1, s₂.1⟩⟩
@@ -303,7 +303,7 @@ theorem rowMulAdd_piece {j : Nat} (hj : j < p.ℓ) :
         Reduced x.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + j)))) ∧
       (Reduced y.mem ((lay p STK σ).A 0 (oT p)) ∧ Reduced y.mem ((lay p STK σ).A 0 (oP (p.ℓ * i + j))) ∧
         Reduced y.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + j)))))
-      (RelCT.exists_ fun σ => mulAdd_tr hP.mulAdd (by omega) (h := tP p) (f := aP (p.ℓ * i + j)) (g := sP p j)
+      (RelCT.exists_ fun σ => mulAdd_tr hP.mulAdd (by omega_using [hS]) (h := tP p) (f := aP (p.ℓ * i + j)) (g := sP p j)
         ⟨⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, show ix Reg.r7 ∈ kWb by decide,
           by lsep hF, by lsep hF⟩ fun x y ⟨T, ⟨a, b, c⟩, ⟨d, e, f⟩⟩ => ⟨T.1, T.2.1, T.2.2, a, b, c, d, e, f⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩
@@ -320,7 +320,7 @@ theorem rowInv_piece :
       (RelCT.exists_ fun σ => by
         obtain ⟨m1, m2, m3⟩ := tP_m hF (σ := σ)
         unfold invNttAt
-        exact ip_tr (t := nttInv) hP.invNtt (by omega) m1 m2 (show ix Reg.r7 ∈ kWb by decide)
+        exact ip_tr (t := nttInv) hP.invNtt (by omega_using [hS]) m1 m2 (show ix Reg.r7 ∈ kWb by decide)
           (show ix Reg.r7 ∈ kWb by decide) m3 fun x y ⟨T, a, b⟩ => ⟨T.1, T.2.1, T.2.2, a, b⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩
   have t₂' := t₂.1
@@ -335,7 +335,7 @@ theorem rowAdd_piece :
     rel_of (Q := fun x y => ∃ σ, Two (lay p STK σ) kWb STK x y ∧
       (Reduced x.mem ((lay p STK σ).A 0 (oT p)) ∧ Reduced x.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + (p.ℓ + i))))) ∧
       (Reduced y.mem ((lay p STK σ).A 0 (oT p)) ∧ Reduced y.mem ((lay p STK σ).A 0 (oP (p.k * p.ℓ + (p.ℓ + i))))))
-      (RelCT.exists_ fun σ => add_tr hP.add (by omega) (f := tP p) (g := sP p (p.ℓ + i))
+      (RelCT.exists_ fun σ => add_tr hP.add (by omega_using [hS]) (f := tP p) (g := sP p (p.ℓ + i))
         ⟨⟨sc_ok _, by lsep hF⟩, ⟨sc_ok _, by lsep hF⟩, show ix Reg.r7 ∈ kWb by decide, by lsep hF⟩
         fun x y ⟨T, ⟨a, b⟩, ⟨c, d⟩⟩ => ⟨T.1, T.2.1, T.2.2, a, b, c, d⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩
@@ -349,7 +349,7 @@ theorem rowP2r_piece :
   refine ⟨fun _ _ _ ⟨A, S', R, h, ht⟩ => WP.mono (rowP2r_ok hP hF hS hi h ht) fun _ h => ⟨A, S', R, h⟩,
     rel_of (Q := fun x y => ∃ σ, Two (lay p STK σ) kWb STK x y ∧ Reduced x.mem ((lay p STK σ).A 0 (oT p)) ∧
       Reduced y.mem ((lay p STK σ).A 0 (oT p)))
-      (RelCT.exists_ fun σ => p2r_tr hP.power2Round (by omega) (p2r_m hF)
+      (RelCT.exists_ fun σ => p2r_tr hP.power2Round (by omega_using [hS]) (p2r_m hF)
         fun x y ⟨T, a, b⟩ => ⟨T.1, T.2.1, T.2.2, a, b⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩
   have t₂' := t₂.1
@@ -363,7 +363,7 @@ theorem rowSbp_piece :
     rel_of (Q := fun x y => ∃ σ, Two (lay p STK σ) kWb STK x y ∧
       (∀ j < n, (coeffAt x.mem ((lay p STK σ).A 0 (oT1 p)) j).toNat ≤ 1023) ∧
       (∀ j < n, (coeffAt y.mem ((lay p STK σ).A 0 (oT1 p)) j).toNat ≤ 1023))
-      (RelCT.exists_ fun σ => sbp_tr hP.simpleBitPack (by omega) (sbp_m hF hi)
+      (RelCT.exists_ fun σ => sbp_tr hP.simpleBitPack (by omega_using [hS]) (sbp_m hF hi)
         fun x y ⟨T, a, b⟩ => ⟨T.1, T.2.1, T.2.2, a, b⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩
   have t₂' := t1_bound t₂.1
@@ -383,7 +383,7 @@ theorem rowBp_piece :
         modPm (coeffAt y.mem ((lay p STK σ).A 0 (oT0' p)) j).toNat q ≤ ((4096 : Nat) : Int)))
       (RelCT.exists_ fun σ => by
         unfold bitPackAt
-        exact bp_tr hP.bitPack (by omega) (bp_m hF hi)
+        exact bp_tr hP.bitPack (by omega_using [hS]) (bp_m hF hi)
           fun x y ⟨T, ⟨a, b⟩, ⟨c, d⟩⟩ => ⟨T.1, T.2.1, T.2.2, a, c, b, d⟩) ?_⟩
   intro σ₁ _ _ _ _ _ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩
   have r₂ := t₂.1.1; have c₂ := t0_coeff t₂.1

@@ -36,10 +36,10 @@ theorem byte_ofBytes (f : Nat → BitVec 8) {i : Nat} (hi : i < 16) : byte (ofBy
 
 theorem ext_byte {a b : BitVec 128} (h : ∀ i < 16, byte a i = byte b i) : a = b := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  have := congrArg (BitVec.getLsbD · (j % 8)) (h (j / 8) (by omega))
-  simp only [byte, BitVec.getLsbD_extractLsb', decide_eq_true (Nat.mod_lt j (by omega : 8 > 0)),
+  have := congrArg (BitVec.getLsbD · (j % 8)) (h (j / 8) (by omega_using [hj]))
+  simp only [byte, BitVec.getLsbD_extractLsb', decide_eq_true (Nat.mod_lt j (by omega_using [] : 8 > 0)),
     Bool.true_and] at this
-  rwa [show 8 * (j / 8) + j % 8 = j by omega] at this
+  rwa [show 8 * (j / 8) + j % 8 = j by omega_using []] at this
 
 theorem byte_readW (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
     byte (m.readW p 128) i = m (p + BitVec.ofNat 64 i) := by
@@ -50,8 +50,8 @@ theorem byte_readW (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
 theorem pshufb_rev_rev (a : BitVec 128) :
     XBinOp.eval .pshufb (XBinOp.eval .pshufb a revMask) revMask = a := by
   apply ext_byte; intro i hi
-  rw [pshufb_rev, byte_ofBytes _ hi, pshufb_rev, byte_ofBytes _ (by omega)]
-  exact congrArg _ (by omega)
+  rw [pshufb_rev, byte_ofBytes _ hi, pshufb_rev, byte_ofBytes _ (by omega_using [])]
+  exact congrArg _ (by omega_using [hi])
 
 /-- The block at `p`, loaded and byte-reversed. -/
 theorem blockAt_eq (m : Mem) (p : Addr) :
@@ -88,7 +88,7 @@ theorem blockAt_eq (m : Mem) (p : Addr) :
   generalize m (p + BitVec.ofNat 64 13) = b13
   generalize m (p + BitVec.ofNat 64 14) = b14
   generalize m (p + BitVec.ofNat 64 15) = b15
-  omega
+  omega_using []
 
 /-- SP 800-38D's block of 16 bytes (the first the most significant) is the
 register holding them in reverse order. -/
@@ -114,7 +114,7 @@ theorem gcmOfBytes_eq (f : Nat → BitVec 8) :
   generalize f 13 = b13
   generalize f 14 = b14
   generalize f 15 = b15
-  omega
+  omega_using []
 
 /-- The register of a block `x` loaded as bytes: byte `i` is byte `15 - i` of `x`. -/
 theorem byte_pshufb_rev (x : BitVec 128) {i : Nat} (hi : i < 16) :

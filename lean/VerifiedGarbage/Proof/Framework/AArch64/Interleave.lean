@@ -182,7 +182,7 @@ theorem vctorIdx_inj {a b : VReg} (h : a.ctorIdx = b.ctorIdx) : a = b := by
 theorem testBit_range (off n o : Nat) : (range off n).testBit o = decide (off ≤ o ∧ o < off + n) := by
   rw [range, ← Nat.shiftLeft_eq, Nat.testBit_shiftLeft, Nat.testBit_two_pow_sub_one]
   by_cases h : off ≤ o
-  · have : o - off < n ↔ o < off + n := by omega
+  · have : o - off < n ↔ o < off + n := by omega_using [h]
     simp [h, this]
   · simp [h]
 
@@ -202,12 +202,12 @@ theorem read_congr {m m' : Mem} {a : Addr} {n : Nat}
   | zero => rfl
   | succ n ih =>
     simp only [Mem.read]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, ih fun k hk => by
-      have := h (k + 1) (by omega)
+      have := h (k + 1) (by omega_using [hk])
       rwa [show a + BitVec.ofNat 64 (k + 1) = a + 1 + BitVec.ofNat 64 k by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega] at this]
+        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using []] at this]
 
 theorem write_frame (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) (x : Addr)
     (h : ∀ k < n, x ≠ a + BitVec.ofNat 64 k) : m.write a n v x = m x := by
@@ -218,7 +218,7 @@ theorem write_frame (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) (x : Add
 theorem write_at (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) {k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
     m.write a n v (a + BitVec.ofNat 64 k) = v.extractLsb' (8 * k) 8 := by
   simp only [Mem.write]
-  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.add_comm a, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn]),
     ite_eq_left_iff.mpr fun h => absurd hk h]
 
 
@@ -275,7 +275,7 @@ theorem Frame.store {F : Fp} {s s' : State} {off n : Nat} {v : BitVec (8 * n)}
   · cases h
     exact {
       gpr := fun _ _ => rfl, v := fun _ _ => rfl, c := fun _ => rfl,
-      mem := fun x hx => write_frame _ _ _ _ _ fun k hk e => hx (off + k) (hm _ (by omega) (by omega))
+      mem := fun x hx => write_frame _ _ _ _ _ fun k hk e => hx (off + k) (hm _ (by omega_using []) (by omega_using [hk]))
         (by rw [e, BitVec.add_assoc, BitVec.ofNat_add]),
       sp := rfl, rd := rfl, wr := rfl, unknowns := rfl, syms := rfl, dit := rfl }
   · cases h
@@ -316,7 +316,7 @@ theorem frame {i : Instr} {F : Fp} (hf : fp xb i = some F) {s s' : State} (he : 
          split at he
          · simp only [Option.bind_some] at he
            first
-           | exact Frame.store (fun o h1 h2 => by simp [testBit_range]; omega) he
+           | exact Frame.store (fun o h1 h2 => by simp [testBit_range]; omega_using [h1, h2]) he
            | (simp only [State.load] at he
               split at he
               · simp only [Option.map_some, Option.some.injEq] at he; subst he
@@ -393,7 +393,7 @@ theorem load_congr {F : Fp} {s t : State} (h : Reads xb F s t) {off n : Nat}
   simp only [State.load, ← h.base, ← h.rd, ← h.wr]
   rw [read_congr (m' := t.mem) fun k hk => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact h.mem _ (hr _ (by omega) (by omega))]
+    exact h.mem _ (hr _ (by omega_using []) (by omega_using [hk]))]
 
 theorem store_det {F : Fp} {s t : State} (h : Reads xb F s t) {off n : Nat} (v : BitVec (8 * n))
     (hn : n ≤ 16) (hw : ∀ o, F.mw.testBit o = true → off ≤ o ∧ o < off + n)
@@ -412,7 +412,7 @@ theorem store_det {F : Fp} {s t : State} (h : Reads xb F s t) {off n : Nat} (v :
       simp only
       rw [show s.gpr xb + BitVec.ofNat 64 o = (s.gpr xb + BitVec.ofNat 64 off) + BitVec.ofNat 64 (o - off) by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' h1]]
-      rw [write_at _ _ _ _ (by omega) (by omega), write_at _ _ _ _ (by omega) (by omega)]
+      rw [write_at _ _ _ _ (by omega_using [h1, h2]) (by omega_using [hn]), write_at _ _ _ _ (by omega_using [h1, h2]) (by omega_using [hn])]
   · cases he
 
 
@@ -805,7 +805,7 @@ theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldr s
     split at he
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
-      rw [load_congr (off := off) (n := sz.bytes) h (fun o h1 h2 => by simp [testBit_range]; omega)] at he
+      rw [load_congr (off := off) (n := sz.bytes) h (fun o h1 h2 => by simp [testBit_range]; omega_using [h1, h2])] at he
       cases e : t.load (t.gpr n + BitVec.ofNat 64 off) sz.bytes with
       | none => rw [e] at he; cases he
       | some x =>
@@ -846,7 +846,7 @@ theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldrq r 
     split at he
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
-      rw [load_congr (off := off) (n := 16) h (fun o h1 h2 => by simp [testBit_range]; omega)] at he
+      rw [load_congr (off := off) (n := 16) h (fun o h1 h2 => by simp [testBit_range]; omega_using [h1, h2])] at he
       cases e : t.load (t.gpr n + BitVec.ofNat 64 off) 16 with
       | none => rw [e] at he; cases he
       | some x =>
@@ -969,9 +969,9 @@ theorem lt_pow {m o : Nat} (hm : m >>> 65536 = 0) (h : m.testBit o = true) : o <
   have : o < 65536 := by
     by_contra hc
     have := Nat.testBit_shiftRight m (i := 65536) (j := o - 65536)
-    rw [hm, Nat.zero_testBit, show 65536 + (o - 65536) = o by omega, h] at this
+    rw [hm, Nat.zero_testBit, show 65536 + (o - 65536) = o by omega_using [hc], h] at this
     exact Bool.noConfusion this
-  omega
+  omega_using [this]
 
 /-- What independence says, one location at a time. -/
 structure Indep (xb : Reg) (F G : Fp) : Prop where

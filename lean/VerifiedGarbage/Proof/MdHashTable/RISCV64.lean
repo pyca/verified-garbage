@@ -166,7 +166,7 @@ theorem flat64_length (f : Nat → BitVec 64) (k : Nat) :
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.length_append, ih, List.flatMap_singleton,
       bytes64_length]
-    omega
+    omega_using []
 
 theorem digest512_eq (mem : Mem) (p : Addr) :
     Proof.Sha512.md.digest (Proof.Sha512.md.stateAt mem p) = (List.range 8).flatMap fun k =>
@@ -201,24 +201,24 @@ theorem out64_step {s₀ : State} (hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gp
   simp only [Impl.Sha512.RISCV64.Stream.outW]
   rw [WP.block_append_iff]
   refine WP.mono (Words64.loadLE64_ok (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by omega)
-    ⟨Rin, by rw [h.rd, h.wr]; exact hRin, by rw [h1]; exact MdStream.RISCV64.contains_add cin (by omega)⟩)
+    (by decide) (by omega_using [hk])
+    ⟨Rin, by rw [h.rd, h.wr]; exact hRin, by rw [h1]; exact MdStream.RISCV64.contains_add cin (by omega_using [hk])⟩)
     fun s₁ u₁ => ?_
   have k3 : s₁.gpr .s3 = s₀.gpr .s3 := by rw [u₁.other _ (by decide) (by decide) (by decide), h3]
-  refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega)
+  refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega_using [hk])
     fun j hj => ⟨Rout, by rw [u₁.wr, h.wr]; exact hRout, by
-      rw [k3]; exact MdStream.RISCV64.contains_add cout (by omega)⟩) fun s₂ e₂ => ?_
+      rw [k3]; exact MdStream.RISCV64.contains_add cout (by omega_using [hk, hj])⟩) fun s₂ e₂ => ?_
   subst e₂
   have hread : s.mem.readW (s₀.gpr .s1 + BitVec.ofNat 64 (8 * k)) 64 =
       s₀.mem.readW (s₀.gpr .s1 + BitVec.ofNat 64 (8 * k)) 64 := by
     rw [h.mem]
     refine (writeBytes_frame (R := ⟨s₀.gpr .s3, 64⟩) _ _ _ ?_).readW
       (r := ⟨s₀.gpr .s1 + BitVec.ofNat 64 (8 * k), 8⟩) (Region.contains_self _ _) ?_ (by decide)
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hP]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hP]; omega_using [hk]
     · intro r' hr'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       subst hr'
-      exact hd.sub_left (Offset.sub_base _ (by omega))
+      exact hd.sub_left (Offset.sub_base _ (by omega_using [hk]))
   refine ⟨fun r h1' h2' h4' => ?_, u₁.rd.trans h.rd, u₁.wr.trans h.wr, u₁.sp.trans h.sp, ?_⟩
   · rw [RegUpd.gpr_write_of_ne _ _ h2']
     show s₁.gpr r = _
@@ -227,7 +227,7 @@ theorem out64_step {s₀ : State} (hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gp
   · rw [RegUpd.mem_write]
     show writeBytes s₁.mem (s₁.gpr .s3 + _) (ByteLoad.beBytes 8 (s₁.gpr .t1)) = _
     rw [k3, u₁.gpr, u₁.mem, h1, hread, beBytes_dword, h.mem,
-      writeBytes_after8 _ _ _ _ hP (by rw [hP, bytes64_length]; omega), List.range_succ,
+      writeBytes_after8 _ _ _ _ hP (by rw [hP, bytes64_length]; omega_using [hk]), List.range_succ,
       List.flatMap_append, List.flatMap_singleton]
 
 theorem out_sha512 : OutOK Proof.Sha512.md outSha512 := fun s hin hout hd =>

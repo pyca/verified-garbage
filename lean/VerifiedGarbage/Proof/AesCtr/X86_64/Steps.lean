@@ -100,16 +100,16 @@ theorem carry_ok (s : State) {Q : Addr} (hq : s.gpr .r12 = Q)
       have e₀ : (BitVec.signExtend 64 (0 : BitVec 32)).toNat = 0 := rfl
       rw [e₀]
       by_cases h : 2 ^ 64 ≤ L.toNat + 2 ^ 32
-      · rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 1 by omega]
+      · rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 1 by omega_using [h]]
         simp only [h, decide_true, BitVec.ofBool_true]
         have e₁ : (BitVec.setWidth 64 (1 : BitVec 1)).toNat = 1 := rfl
         rw [e₁]
-        omega
-      · rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 0 by omega]
+        omega_using []
+      · rw [show (L.toNat + 2 ^ 32) / 2 ^ 64 = 0 by omega_using [h]]
         simp only [h, decide_false, BitVec.ofBool_false]
         have e₁ : (BitVec.setWidth 64 (0 : BitVec 1)).toNat = 0 := rfl
         rw [e₁]
-        omega
+        omega_using []
   · exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base Q (d := 8) (n := 8) (k := 16) (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (by simpa using Offset.contains_base Q (d := 0) (n := 8) (k := 16) (by decide) (by decide))
@@ -155,9 +155,9 @@ theorem advA_ok (s : State) {S P : Addr} {left m : Nat} (hs : s.gpr .r15 = S) (h
   · simp only [gpr_setReg, ↓reduceIte, h13, hm]
     congr 1
     apply BitVec.eq_of_toNat_eq
-    have hm' : m < 2 ^ 64 := by omega
+    have hm' : m < 2 ^ 64 := by omega_using [h16]
     rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm', Nat.shiftLeft_eq]
-    omega
+    omega_using []
   · intro r h₁ h₂ h₃
     simp [gpr_setReg, gpr_setFlags, h₁, h₂, h₃]
   all_goals rfl

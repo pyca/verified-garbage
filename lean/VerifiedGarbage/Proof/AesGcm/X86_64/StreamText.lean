@@ -549,7 +549,7 @@ theorem dsub_crFrame {s : State} {D : Addr} {n j k e l : Nat} (hd : DataOk St W 
 omit L in
 theorem dsub_absFrame {s : State} {D : Addr} {n e l : Nat} (hd : DataOk St W SP s D n) (hel : e + l ≤ n) :
     ∀ r ∈ absFrame St W SP 16, (⟨D + BitVec.ofNat 64 e, l⟩ : Region).Disjoint r := fun r hr =>
-  (data_absFrame (yo := 16) (.inr rfl) hd r hr).sub_left (Offset.sub_base D hel)
+  (data_absFrame₀ (yo := 16) (.inr rfl) hd r hr).sub_left (Offset.sub_base D hel)
 
 end
 

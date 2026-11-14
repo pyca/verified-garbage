@@ -134,7 +134,7 @@ theorem main_ct :
     refine ⟨?_, ?_, ?_, Nat.zero_le 1, ?_⟩
     · show 1 ≤ (a.gpr .x2).toNat; rw [← h2]; exact hk1
     · show (a.gpr .x2).toNat ≤ 1024; rw [← h2]; exact hk2
-    · show T.H.D + 2 ≤ (a.gpr .x2).toNat - 0; rw [← h2]; omega
+    · show T.H.D + 2 ≤ (a.gpr .x2).toNat - 0; rw [← h2]; omega_using [hk]
     · intro ha
       have hb := hS.x10
       have he : anyC s = 0 := e.any.trans ha
@@ -143,14 +143,14 @@ theorem main_ct :
       have hn := of_decide_eq_false hb.symm
       show (a.gpr .x4).toNat < (a.gpr .x2).toNat - 0 - T.H.D - 1
       rw [← e.gpr (r := .x4) (by decide), ← h2]
-      omega
+      omega_using [hk, hn]
   refine WP.mono_syms (dbRegs_ok (lay_of hp hS.c.e.sp hS.c.e.x20 hS.c.e.wr) hS.x9 hS.c.e.lo)
     fun u ⟨O, x25, x24⟩ sy => vr_of ok e (hS.c.only O sy) x24 (by
-      rw [x25]; show _ = BitVec.ofNat 64 ((s.gpr .x2).toNat - 0 - T.H.D - 1); congr 1; omega)
+      rw [x25]; show _ = BitVec.ofNat 64 ((s.gpr .x2).toNat - 0 - T.H.D - 1); congr 1; omega_using [hk])
 
 include hH hGh hGl hGv hc hdo in
 theorem code_ct : RelCT isa (Two (E T)) (checkEncoding T.f T.H T.g) fun _ _ => True := by
-  have hD : T.H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega
+  have hD : T.H.D + 2 < 4096 := by have := hH.sizes.DN; have := hH.N_le; omega_arith
   unfold checkEncoding
   refine two_alloc (R := fun _ _ => True) ?_
   unfold chkBody seqs seqs seqs seqs
@@ -195,7 +195,7 @@ theorem code_ct : RelCT isa (Two (E T)) (checkEncoding T.f T.H T.g) fun _ _ => T
     fun a u ⟨s, h, hu, hem⟩ => ?_) ?_
   · have hk2 := h.1.k2
     exact WP.mono_syms (fitH_ok T.H hD (k := (s.gpr .x2).toNat)
-      (by rw [hu.e.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega)) fun t ⟨O, x9, x10⟩ sy =>
+      (by rw [hu.e.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega_using [hk2])) fun t ⟨O, x9, x10⟩ sy =>
       ⟨s, h, hu.only O sy, fun i hi => by rw [O.mem]; exact hem i hi, x9, x10⟩
   refine RelCT.seq ?_ (two_taint (Φ := fun a t => t.sp = fb a) [] (fun a t₁ t₂ h₁ h₂ =>
     ⟨by rw [h₁, h₂], fun _ h => absurd h List.not_mem_nil⟩) (by taint_decide))
@@ -211,7 +211,7 @@ theorem code_ct : RelCT isa (Two (E T)) (checkEncoding T.f T.H T.g) fun _ _ => T
     have hk2 := h.1.k2
     refine WP.seq (WP.mono_syms (expLen_ok (lay_of h.1 j.e.sp j.e.x20 j.e.wr) j.e.fr.any j.e.fr.sl)
       fun u₁ ⟨O₁, x12₁⟩ sy₁ => ?_)
-    exact WP.mono_syms (saltFitsR_ok T.H hD (a := (s.gpr .x2).toNat) (by omega) (by omega)
+    exact WP.mono_syms (saltFitsR_ok T.H hD (a := (s.gpr .x2).toNat) (by omega_using [hb]) (by omega_using [hk2])
       (by rw [O₁.get .x9, x9]) x12₁)
       fun w ⟨O₂, x9₂, x10₂⟩ sy₂ => ⟨s, h, (j.only O₁ sy₁).only O₂ sy₂,
         fun i hi => by rw [O₂.mem, O₁.mem]; exact hem i hi, x9₂, x10₂, hb⟩

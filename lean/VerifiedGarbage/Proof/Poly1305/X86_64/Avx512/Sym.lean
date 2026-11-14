@@ -37,13 +37,13 @@ open VG.Proof.Poly1305.X86_64.Avx2 (xr xi xr_xi xi_inj lo32 qword_paddq qword_pm
 def qz (s : State) (r : XReg) (k : Nat) : BitVec 64 := qword (s.zlane r (k / 2)) (k % 2)
 
 theorem cases8 {k : Nat} (hk : k < 8) :
-    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hk]
 
-theorem div2_lt {k : Nat} (hk : k < 8) : k / 2 < 4 := by omega
+theorem div2_lt {k : Nat} (hk : k < 8) : k / 2 < 4 := by omega_using [hk]
 
 /-- The quadwords of the low 256 bits are those of `Avx2.qw`. -/
 theorem qz_qw (s : State) (r : XReg) {k : Nat} (hk : k < 4) : qz s r k = Avx2.qw s r k := by
-  simp only [qz, Avx2.qw, State.zlane, show k / 2 < 2 by omega, ite_true]
+  simp only [qz, Avx2.qw, State.zlane, show k / 2 < 2 by omega_using [hk], ite_true]
 
 theorem qz_zbin (op : ZBinOp) (s : State) (d a b r : XReg) {k : Nat} (hk : k < 8) :
     qz ((ZOp.zbin op d a b).exec s) r k =
@@ -66,7 +66,7 @@ theorem qz_vpbroadcastq (s : State) (d a r : XReg) {k : Nat} (hk : k < 8) :
     qz ((ZOp.vpbroadcastq d a).exec s) r k = if r = d then qz s a 0 else qz s r k := by
   simp only [qz, zlane_vpbroadcastq _ _ _ _ (div2_lt hk)]
   split
-  · have : k % 2 = 0 ∨ k % 2 = 1 := by omega
+  · have : k % 2 = 0 ∨ k % 2 = 1 := by omega_using []
     rcases this with h | h <;> rw [h] <;> simp [State.zlane, State.lane]
   · rfl
 
@@ -80,8 +80,8 @@ theorem qz_vshufi32x4 (s : State) (d a b r : XReg) (n : BitVec 8) {k : Nat} (hk 
   simp only [qz, zlane_vshufi32x4 _ _ _ _ _ _ (div2_lt hk)]
   split
   · rw [shuf4Lanes_eq, sel4_eq]
-    have h1 : (2 * sel4 n.toNat (k / 2) + k % 2) / 2 = sel4 n.toNat (k / 2) := by omega
-    have h2 : (2 * sel4 n.toNat (k / 2) + k % 2) % 2 = k % 2 := by omega
+    have h1 : (2 * sel4 n.toNat (k / 2) + k % 2) / 2 = sel4 n.toNat (k / 2) := by omega_using []
+    have h2 : (2 * sel4 n.toNat (k / 2) + k % 2) % 2 = k % 2 := by omega_using []
     by_cases hl : k / 2 < 2 <;> simp only [hl, ite_true, ite_false, qz, h1, h2]
   · rfl
 
@@ -107,10 +107,10 @@ theorem qz_load (s : State) (d r : XReg) (a : Addr) {k : Nat} (hk : k < 8) :
         (s.mem.readW a 512).extractLsb' (8 * (8 * k)) (8 * 8) := by
       apply BitVec.eq_of_getLsbD_eq; intro j hj
       simp only [qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-        decide_eq_true (show 64 * (k % 2) + j < 128 by omega)]
-      exact congrArg _ (by omega)
+        decide_eq_true (show 64 * (k % 2) + j < 128 by omega_using [hj])]
+      exact congrArg _ (by omega_using [])
     rw [e]
-    exact readW_extract _ _ (by omega)
+    exact readW_extract _ _ (by omega_using [hk])
   · rfl
 
 /-! ## Terms -/
@@ -152,7 +152,7 @@ def shufIdx (sel k : Nat) : Nat := 2 * sel4 sel (k / 2) + k % 2
 
 theorem shufIdx_lt (sel k : Nat) : shufIdx sel k < 8 := by
   have := sel4_lt sel (k / 2)
-  simp only [shufIdx]; omega
+  simp only [shufIdx]; omega_using [this]
 
 def Q.eval (s₀ : State) : Q → Nat → BitVec 64
   | .reg r, k => qz s₀ (xr r) k
@@ -300,13 +300,13 @@ theorem mbIdx_ok {m : MemOp} {e : Nat} (h : mbIdx m = some e) :
   · rename_i hb
     obtain ⟨hr, hi, h₁, h₂⟩ := hb
     cases h
-    have e : ((m.disp.toNat : Nat) : Int) = m.disp := Int.toNat_of_nonneg (by omega)
-    refine ⟨by omega, by omega, fun s => ?_⟩
+    have e : ((m.disp.toNat : Nat) : Int) = m.disp := Int.toNat_of_nonneg (by omega_using [h₁])
+    refine ⟨by omega_using [h₁], by omega_using [h₂], fun s => ?_⟩
     simp only [State.ea, hi, hr, e]
   · cases h
 
 theorem qword_vv (v : BitVec 64) {j : Nat} (hj : j < 2) : qword (v ++ v) j = v := by
-  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
   · exact Avx2.qword_app0 v v
   · exact Avx2.qword_app1 v v
 
@@ -353,13 +353,13 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
       · rw [qword_punpcklqdq _ _ (mod2_lt k)]
         split
         · rename_i h0; rw [hR a k hk, qz, h0]
-        · rw [hR b (k - 1) (by omega), qz, show (k - 1) / 2 = k / 2 by omega,
-            show (k - 1) % 2 = 0 by omega]
+        · rw [hR b (k - 1) (by omega_using [hk]), qz, show (k - 1) / 2 = k / 2 by omega_arith,
+            show (k - 1) % 2 = 0 by omega_arith]
       · rw [qword_punpckhqdq _ _ (mod2_lt k)]
         split
-        · rw [hR a (k + 1) (by omega), qz, show (k + 1) / 2 = k / 2 by omega,
-            show (k + 1) % 2 = 1 by omega]
-        · rw [hR b k hk, qz, show k % 2 = 1 by omega]
+        · rw [hR a (k + 1) (by omega_arith), qz, show (k + 1) / 2 = k / 2 by omega_arith,
+            show (k + 1) % 2 = 1 by omega_arith]
+        · rw [hR b k hk, qz, show k % 2 = 1 by omega_arith]
     · rename_i op d a n
       split at e
       · rename_i hn

@@ -46,7 +46,7 @@ theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : Sta
       Ready L s5 ∧ word s5.mem L.base Field.mask.offset = mask (verifyAccepted L data valid) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
-  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
+  have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega_using [hqu]
   unfold verifyCompute
   refine WP.seq (WP.mono (publicKey_ok M Sq h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
     fun s1 ⟨h1, hm1, hqm1, hf1, hk1⟩ => ?_)
@@ -56,7 +56,7 @@ theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : Sta
   have hs1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by trivial) hs
   have hz1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.digest]) hz
   refine WP.seq (WP.mono (readyRange_ok h1 .q Core.signatureR (by trivial) hr1.active
-    (by rw [hrl]; omega) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hrl]; omega_using [hql]) (by simp only [hrl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false hm1) fun s2 h2 => ?_)
   have hg2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hy2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
@@ -65,7 +65,7 @@ theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : Sta
   have hz2 := h2.preserve h1 (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz1
   have hqm2 := h2.preserve h1 (Nat.le_refl _) (by decide) (by trivial) hqm1
   refine WP.seq (WP.mono (readyRange_ok h2.ready .q Core.signatureS (by trivial) hs2.active
-    (by rw [hsl]; omega) (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    (by rw [hsl]; omega_using [hql]) (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     false h2.mask) fun s3 h3 => ?_)
   have hg3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg2
   have hy3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy2
@@ -81,8 +81,8 @@ theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : Sta
   refine WP.mono (readyEqual_ok h4 (Core.scalar u) Core.signatureR
     (by change u < 2 ^ 31; decide) (by trivial) hu4 hr4.active
     (by simp only [encodeBE_length, ModulusSide.length, hrl])
-    (by simp only [encodeBE_length, ModulusSide.length]; omega)
-    (by simp only [encodeBE_length, ModulusSide.length]; omega) false hm4) fun s5 h5 => ?_
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hqu]) false hm4) fun s5 h5 => ?_
   refine ⟨h5.ready, ?_, (((hf1.trans h2.scheduleFrame).trans h3.scheduleFrame).trans hf4).trans h5.scheduleFrame,
     ((((hk1.trans h2.keep).trans h3.keep).trans hk4).trans h5.keep).mono (by decide)⟩
   have hm5 := h5.mask

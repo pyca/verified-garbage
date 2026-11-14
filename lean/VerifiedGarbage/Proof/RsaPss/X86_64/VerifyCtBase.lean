@@ -93,8 +93,8 @@ theorem n0 : s.mem (s.gpr .rdi) = a.mem (a.gpr .rdi) := by
   have := congrArg (fun l => l.getD 0 0) h.nB
   have hk := h.ps.k1
   have hk' := h.pa.k1
-  simpa [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_range (show 0 < (s.gpr .rsi).toNat by omega),
-    List.getElem?_range (show 0 < (a.gpr .rsi).toNat by omega)] using this
+  simpa [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_range (show 0 < (s.gpr .rsi).toNat by omega_using [hk]),
+    List.getElem?_range (show 0 < (a.gpr .rsi).toNat by omega_using [hk'])] using this
 
 end VSib
 
@@ -167,7 +167,7 @@ theorem rest : RestOk 1 (VG.Proof.RsaPss.X86_64.fb a) a.wr := by
     exact (hp.dKs.sub_left (vframe_sub a))
   · rw [hp.hwr]; intro r hr
     rw [List.mem_singleton.mp hr]
-    have := hp.wS; dsimp only; omega
+    have := hp.wS; dsimp only; omega_using [this]
 
 end VSib
 
@@ -261,7 +261,7 @@ theorem fnz_lt {f : Nat → Byte} : ∀ {j i : Nat}, fnz f j = some i → i < j
 
 theorem fnz_getD_lt {f : Nat → Byte} {j : Nat} (hj : 1 ≤ j) : (fnz f j).getD 0 < j := by
   cases h : fnz f j with
-  | none => simp only [Option.getD_none]; omega
+  | none => simp only [Option.getD_none]; omega_using [hj]
   | some i => exact fnz_lt h
 
 end VG.Proof.RsaPss.X86_64

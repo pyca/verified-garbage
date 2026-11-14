@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The running counter, for the modes on any 64-bit target
@@ -38,12 +39,12 @@ theorem carry_vals (V N : Nat) (hN : N < 2 ^ 64) :
   by_cases h : 2 ^ 64 ≤ V % 2 ^ 64 + N
   · rw [decide_eq_true h]
     simp only [Bool.toNat_true]
-    have : (V + N) / 2 ^ 64 = V / 2 ^ 64 + 1 := by omega
-    rw [this]; omega
+    have : (V + N) / 2 ^ 64 = V / 2 ^ 64 + 1 := by omega_using [hN, h]
+    rw [this]; omega_using []
   · rw [decide_eq_false h]
     simp only [Bool.toNat_false]
-    have : (V + N) / 2 ^ 64 = V / 2 ^ 64 := by omega
-    rw [this]; omega
+    have : (V + N) / 2 ^ 64 = V / 2 ^ 64 := by omega_using [h]
+    rw [this]; omega_using []
 
 /-- The counter block at `P`, as a number. -/
 abbrev ctrVal (m : Mem) (P : Addr) : Nat := Spec.Ctr.toNat (bytesAt m P 16)
@@ -62,10 +63,10 @@ theorem halves (m : Mem) (P : Addr) :
   constructor
   · apply BitVec.eq_of_toNat_eq
     rw [hiOf, BitVec.toNat_ofNat, ctrVal, h]
-    omega
+    omega_using []
   · apply BitVec.eq_of_toNat_eq
     rw [loOf, BitVec.toNat_ofNat, ctrVal, h]
-    omega
+    omega_using []
 
 /-- `bytesAt` of the two byte-reversed halves written at `P` and then
 `P + 8`: the big-endian bytes of `V`. -/
@@ -75,8 +76,8 @@ theorem bytes_pair (m : Mem) (P : Addr) (V : Nat) :
   rw [show (16 : Nat) = 8 + 8 from rfl, AesCtr.bytesAt_append, bytesAt_writeW_above _ _ _ (by decide) (by decide)
       (by decide), AesCtr.bytesAt_writeW_rv64, AesCtr.bytesAt_writeW_rv64, AesCtr.ofNat_add]
   congr 1
-  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega)
-  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
+  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega_using [])
+  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega_using [])
 
 /-- The same, written at `P + 8` and then `P`. -/
 theorem bytes_pair2 (m : Mem) (P : Addr) (V : Nat) :
@@ -85,7 +86,7 @@ theorem bytes_pair2 (m : Mem) (P : Addr) (V : Nat) :
   rw [show (16 : Nat) = 8 + 8 from rfl, AesCtr.bytesAt_append, AesCtr.bytesAt_writeW_rv64,
     AesCtr.bytesAt_writeW_sep _ _ _ (by decide) (by decide), AesCtr.bytesAt_writeW_rv64, AesCtr.ofNat_add]
   congr 1
-  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega)
-  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
+  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega_using [])
+  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega_using [])
 
 end VG.Proof.Modes

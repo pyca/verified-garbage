@@ -56,9 +56,9 @@ theorem zeroOut_ok {p : SearchPublic} {o s : State} (hb : SearchBase p o s) :
     Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), Keeps.refl _ _⟩
   have hRt : (⟨(arg o 0).setWidth 64, p.len⟩ : Region) ∈ t.wr := by rw [k.2.2]; exact hR
   refine WP.loop (M := isa) (fun (j : Nat) (u : State) => ∃ k, j = p.len - k ∧ k < p.len ∧ ZInv t (arg o 0) p.len k u)
-    (fun j u hu => ?_) _ t ⟨0, rfl, by omega, I₀⟩
+    (fun j u hu => ?_) _ t ⟨0, rfl, by omega_using [hv], I₀⟩
   obtain ⟨i, rfl, hk, I⟩ := hu
-  refine WP.mono (zeroStep_ok hRt hbnd (by omega) hk I) fun v ⟨J, z⟩ => ?_
+  refine WP.mono (zeroStep_ok hRt hbnd (by omega_using [hv]) hk I) fun v ⟨J, z⟩ => ?_
   by_cases he : p.len - (i + 1) = 0
   · left
     refine ⟨by simp only [eval, z, he, decide_true, Option.map_some, Bool.not_true], ⟨?_, ?_⟩, ?_⟩
@@ -72,10 +72,10 @@ theorem zeroOut_ok {p : SearchPublic} {o s : State} (hb : SearchBase p o s) :
       · intro j h₁ _
         simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
         simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at h₁
-        exact J.zero j (by omega)
+        exact J.zero j (by omega_using [he, h₁])
     · exact (k.trans (Keep.ofKeeps J.keeps)).mono (by simp)
   · right
-    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega,
-      i + 1, rfl, by omega, J⟩
+    exact ⟨by simp only [eval, z, he, decide_false, Option.map_some, Bool.not_false], _, by omega_using [hk],
+      i + 1, rfl, by omega_using [he], J⟩
 
 end VG.Proof.RsaKeyGen.X86.Search

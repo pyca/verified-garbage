@@ -110,7 +110,7 @@ theorem round_ct (R : RoundImpl) : RelCT isa (Two fun d s => (DMd d s ∧ decide
     rintro d s ⟨⟨⟨sv, toc, h, _⟩, h2⟩, hN⟩
     simp only [decide_eq_false_iff_not, Decidable.not_not] at h2 hN
     have hsp := h.m.st.sp
-    exact ⟨h.m.prep, h.a4, show wA d.mb d.q.r d.u < d.N by omega, by rw [hsp]; exact h.m.st.stk, by rw [hsp]; exact h.m.st.stkB⟩
+    exact ⟨h.m.prep, h.a4, show wA d.mb d.q.r d.u < d.N by omega_using [hN], by rw [hsp]; exact h.m.st.stk, by rw [hsp]; exact h.m.st.stkB⟩
   unfold Impl.MillerRabin.PPC64LE.Search.round
   refine RelCT.seq (two_post (two_map rcOf hrc (roundCall_ct R)) (Ψ := DR) fun d s h => ?_) ?_
   · obtain ⟨hp, ha, hac, hsp, hstk⟩ := hrc d s h

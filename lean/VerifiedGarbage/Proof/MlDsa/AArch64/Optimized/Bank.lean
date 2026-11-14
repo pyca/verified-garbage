@@ -77,7 +77,7 @@ def fastVector (v : BitVec 128) (z : Nat → Int) : BitVec 128 :=
 theorem fastVector_word (v : BitVec 128) (z : Nat → Int) {e : Nat} (he : e < 4) :
     vword (fastVector v z) e = fastMulWord (vword v e) (z e) := by
   rw [fastVector, VG.AArch64.vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 def productValues (v : Vector (BitVec 128) 8) (indices : List (Fin 8)) (z : Nat → Int) :
     Vector (BitVec 128) 8 :=

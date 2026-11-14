@@ -63,7 +63,7 @@ theorem zero_test (d : BitVec 64) :
   · have h : BitVec.ofNat 64 0 < d := by
       rw [BitVec.lt_def]
       have : d.toNat ≠ 0 := fun h => hd (BitVec.eq_of_toNat_eq (by simpa using h))
-      simp only [BitVec.toNat_ofNat]; omega
+      simp only [BitVec.toNat_ofNat]; omega_using [this]
     rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_right_of_eq_false _ _ (eq_false hd)]; decide
 
 /-- The comparison's last block: `s8` is 1 iff the 16 bytes at `W + 256` and
@@ -162,7 +162,7 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hs5 : s.gpr .s5 =
       (by decide)]
     exact zeros16_bytes _ _
   have hdT : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 272, c.tl⟩ :=
-    L.t_w.sub_right (Lay.wSub (by omega))
+    L.t_w.sub_right (Lay.wSub (by omega_using [ht16]))
   have hb₁ : BytesPre s₉ c.T (c.W + BitVec.ofNat 64 272) c.tl :=
     { a0 := by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.gpr, u₅.gpr, u₄.other _ (by decide),
         u₃.gpr, u₂.gpr, u₁.other _ (by decide), hs5]
@@ -170,10 +170,10 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hs5 : s.gpr .s5 =
         u₃.gpr, u₂.gpr, u₁.other _ (by decide), E.s1]; rfl
       a2 := by rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.gpr, u₄.other _ (by decide),
         u₃.gpr, u₂.gpr, u₁.other _ (by decide), E.s2]
-      pos := by omega
-      lt := by omega
+      pos := by omega_using [ht4]
+      lt := by omega_using [ht16]
       rd := by rw [pk₉.rd, pk₉.wr]; exact E.perm.t
-      wr := E₉.perm.wC (by omega)
+      wr := E₉.perm.wC (by omega_using [ht16])
       disj := hdT }
   refine WP.seq (WP.mono (copy_wp s₉ hb₁) fun s₁₀ ⟨hm₁₀, _, k₁₀⟩ => ?_)
   refine WP.seq (wp_addi (by decide) fun s₁₁ u₁₁ => wp_addi (by decide) fun s₁₂ u₁₂ =>
@@ -187,11 +187,11 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hs5 : s.gpr .s5 =
         E₉.s1]; rfl
       a1 := by rw [u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.other _ (by decide), k₁₀.gpr _ (by decide), E₉.s1]; rfl
       a2 := by rw [u₁₃.gpr, u₁₂.other _ (by decide), u₁₁.other _ (by decide), k₁₀.gpr _ (by decide), E₉.s2]
-      pos := by omega
-      lt := by omega
-      rd := E₁₃.perm.wCR (by omega)
-      wr := E₁₃.perm.wC (by omega)
-      disj := L.w_w (.inl (by omega)) (by omega) (by omega) }
+      pos := by omega_using [ht4]
+      lt := by omega_using [ht16]
+      rd := E₁₃.perm.wCR (by omega_using [ht16])
+      wr := E₁₃.perm.wC (by omega_using [ht16])
+      disj := L.w_w (.inl (by omega_using [ht16])) (by omega_using [ht16]) (by omega_using [ht16]) }
   refine WP.seq (WP.mono (copy_wp s₁₃ hb₂) fun s₁₄ ⟨hm₁₄, _, k₁₄⟩ => ?_)
   have E₁₄ := E₁₃.of_pk (PK.ofKeeps k₁₄)
   refine WP.mono (cmpTail_wp L E₁₄) fun s₁₅ ⟨pk₁₅, m₁₅, s8₁₅⟩ => ?_
@@ -206,21 +206,21 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hs5 : s.gpr .s5 =
   have f₉ : Frame [⟨c.W + BitVec.ofNat 64 256, 32⟩] s.mem s₉.mem := (f256.sub (one s256)).trans (f272.sub (one s272))
   have w₁₀ : Frame [⟨c.W + BitVec.ofNat 64 272, 16⟩] s₉.mem s₁₃.mem := by
     rw [m₁₃, hm₁₀]
-    exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Offset.contains c.W (Nat.le_refl _) (by omega) (by decide))
+    exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Offset.contains c.W (Nat.le_refl _) (by omega_using [ht16]) (by decide))
   have w₁₄ : Frame [⟨c.W + BitVec.ofNat 64 256, 16⟩] s₁₃.mem s₁₄.mem := by
     rw [hm₁₄]
-    exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Offset.contains c.W (Nat.le_refl _) (by omega) (by decide))
+    exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Offset.contains c.W (Nat.le_refl _) (by omega_using [ht16]) (by decide))
   have f₁₃ : Frame [⟨c.W + BitVec.ofNat 64 256, 32⟩] s.mem s₁₃.mem := f₉.trans (w₁₀.sub (one s272))
   refine ⟨pk₁₃.trans ((PK.ofKeeps k₁₄).trans pk₁₅), ?_, ?_⟩
   · rw [m₁₅]; exact f₁₃.trans (w₁₄.sub (one s256))
   · have hA : bytesAt s₁₃.mem (c.W + BitVec.ofNat 64 96) c.tl = bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl :=
       Proof.Cmac.bytesAt_frame f₁₃ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by decide))
-        (by omega)
+        simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_using [ht16])) (by omega_using [ht16]) (by decide))
+        (by omega_using [ht16])
     have hB : bytesAt s₉.mem c.T c.tl = bytesAt s.mem c.T c.tl :=
       Proof.Cmac.bytesAt_frame f₉ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide)))
-        (by omega)
+        (by omega_using [ht16])
     have z256' : bytesAt s₁₃.mem (c.W + BitVec.ofNat 64 256) 16 = Spec.Ccm.zeros 16 := by
       rw [Proof.Cmac.bytesAt_frame w₁₀ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by decide)) (by decide) (by decide))
@@ -228,11 +228,11 @@ theorem cmp_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hs5 : s.gpr .s5 =
       exact z256
     have h256 : bytesAt s₁₄.mem (c.W + BitVec.ofNat 64 256) 16 =
         bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl ++ Spec.Ccm.zeros (16 - c.tl) := by
-      rw [hm₁₄, Proof.AesCcm.pad_bytes z256' _ (by rw [length_bytesAt]; omega), length_bytesAt, hA]
+      rw [hm₁₄, Proof.AesCcm.pad_bytes z256' _ (by rw [length_bytesAt]; omega_using [ht16]), length_bytesAt, hA]
     have h272 : bytesAt s₁₄.mem (c.W + BitVec.ofNat 64 272) 16 = bytesAt s.mem c.T c.tl ++ Spec.Ccm.zeros (16 - c.tl) := by
       rw [Proof.Cmac.bytesAt_frame w₁₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide))
-        (by decide), m₁₃, hm₁₀, Proof.AesCcm.pad_bytes z272 _ (by rw [length_bytesAt]; omega), length_bytesAt, hB]
+        (by decide), m₁₃, hm₁₀, Proof.AesCcm.pad_bytes z272 _ (by rw [length_bytesAt]; omega_using [ht16]), length_bytesAt, hB]
     rw [s8₁₅, h256, h272]
     congr 2
     exact propext (Proof.AesCcm.pad_eq (by rw [length_bytesAt, length_bytesAt]))
@@ -287,11 +287,11 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
       (fun (w : Nat) (t : State) => ∃ i, w = c.n - i ∧ i < c.n ∧ t.gpr .a0 = c.D + BitVec.ofNat 64 i ∧
         t.gpr .a2 = BitVec.ofNat 64 (c.n - i) ∧ t.gpr .t1 = s₄.gpr .t1 ∧ t.gpr .s8 = s.gpr .s8 ∧
         t.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D i).map f) ∧ PK s t) ?_ (c.n - 0) _
-      ⟨0, rfl, by omega, by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, s8₄,
+      ⟨0, rfl, by omega_using [h0], by rw [r3₄]; exact (BitVec.add_zero _).symm, by rw [r4₄, Nat.sub_zero], rfl, s8₄,
         by rw [m₄]; simp [bytesAt, writeBytes_nil], pk₄⟩
     rintro w t ⟨i, rfl, hi, r3, r4, r9, s8, mem, pk⟩
     have Et := E.of_pk pk
-    have hin : i + 1 ≤ c.n := by omega
+    have hin : i + 1 ≤ c.n := by omega_using [hi]
     have hD : Covers [⟨c.D, c.n⟩] t.wr := Et.perm.d
     unfold maskBody
     refine wp_lbu (a := c.D + BitVec.ofNat 64 i) (by decide)
@@ -308,31 +308,31 @@ theorem mask_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {P : Prop} [Decid
     have hlen : ((bytesAt s.mem c.D i).map f).length = i := by rw [List.length_map, length_bytesAt]
     have hb : t.mem (c.D + BitVec.ofNat 64 i) = s.mem (c.D + BitVec.ofNat 64 i) := by
       rw [mem]
-      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega)
+      have := writeBytes_end s.mem c.D ((bytesAt s.mem c.D i).map f) (by rw [hlen]; omega_using [hn, hi])
       rwa [hlen] at this
     have hmem : t₅.mem = writeBytes s.mem c.D ((bytesAt s.mem c.D (i + 1)).map f) := by
       rw [u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₁.gpr, u₁.other .t1 (by decide), r9, r9₄, u₂.mem,
         u₁.mem, mask_byte, hb, mem, Proof.Cmac.Stream.bytesAt_append, bytesAt_one,
         List.map_append, List.map_singleton]
-      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen]
+      rw [writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_using [hn, hi]), hlen]
     have hstep : c.D + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     have r3' : t₅.gpr .a0 = c.D + BitVec.ofNat 64 (i + 1) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r3, hstep]
     have r4' : t₅.gpr .a2 = BitVec.ofNat 64 (c.n - (i + 1)) := by
       rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r4,
-        ofNat_sub_one (by omega), Nat.sub_sub]
+        ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
     have r9' : t₅.gpr .t1 = s₄.gpr .t1 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r9]
     have s8' : t₅.gpr .s8 = s.gpr .s8 := by
       rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
         s8]
-    have ev := eval_nz (r := .a2) (a := c.n - (i + 1)) r4' (by omega)
+    have ev := eval_nz (r := .a2) (a := c.n - (i + 1)) r4' (by omega_using [hn])
     by_cases he : i + 1 = c.n
     · left
       exact ⟨by rw [ev]; simp [he], pk₅, s8', by rw [hmem, he]⟩
     · right
-      exact ⟨by rw [ev]; simp; omega, c.n - (i + 1), by omega, i + 1, rfl, by omega, r3', r4', r9', s8', hmem, pk₅⟩
+      exact ⟨by rw [ev]; simp; omega_using [hi, he], c.n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], r3', r4', r9', s8', hmem, pk₅⟩
 
 /-! ## The function -/
 
@@ -411,7 +411,7 @@ theorem open_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have bD₁ : Buf c s₁ c.D c.n := bD.of_eq En.rd En.wr
   have hd₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [c0_list] at f₂
-    rw [Proof.Cmac.bytesAt_frame f₂ (bufW_keep bD₁ (by decide)) (by omega), entry_buf En.frame bD]
+    rw [Proof.Cmac.bytesAt_frame f₂ (bufW_keep bD₁ (by decide)) (by omega_using [hn]), entry_buf En.frame bD]
   have ha₃ : bytesAt s₃.mem c.A c.al = bytesAt s.mem c.A c.al := by
     rw [aad_mut L f₁₃, entry_buf En.frame (L.bufA Ar.perm)]
   have hpt : bytesAt s₃.mem c.D c.n =
@@ -420,19 +420,19 @@ theorem open_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have hd₇ : bytesAt s₇.mem c.D c.n = bytesAt s₃.mem c.D c.n := by
     rw [cmpR_list] at f₇
     rw [ctrR_list] at f₅
-    rw [Proof.Cmac.bytesAt_frame f₇ (bufW_keep bD₁ (by decide)) (by omega),
-      Proof.Cmac.bytesAt_frame f₅ (bufW_keep bD₁ (by decide)) (by omega),
-      Proof.Cmac.bytesAt_frame fM (bufW_keep bD₁ (by decide)) (by omega)]
+    rw [Proof.Cmac.bytesAt_frame f₇ (bufW_keep bD₁ (by decide)) (by omega_using [hn]),
+      Proof.Cmac.bytesAt_frame f₅ (bufW_keep bD₁ (by decide)) (by omega_using [hn]),
+      Proof.Cmac.bytesAt_frame fM (bufW_keep bD₁ (by decide)) (by omega_using [hn])]
   have hrecv : bytesAt s₅.mem c.T c.tl = bytesAt s.mem c.T c.tl := by
     rw [tag_mut L f₁₅, Proof.Cmac.bytesAt_frame En.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega_using [ht16])]
   have hcomp : bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
       Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
         (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))) := by
     rw [show c.W + BitVec.ofNat 64 96 = c.W + BitVec.ofNat 64 uO from rfl, Proof.AesCcm.bytesAt_prefix s₅.mem _ L.t16,
       h₅, k₄, take_xorFrom_zero (hBC _) _ (length_bytesAt _ _ _) L.t16, M.out, k₃,
-      ha₃, hpt, mac_eq _ _ (by rw [hnl]; have := L.h13; omega)]
+      ha₃, hpt, mac_eq _ _ (by rw [hnl]; have := L.h13; omega_using [this])]
     rfl
   rw [hcomp, hrecv] at s8₇
   refine WP.seq (WP.mono (mask_wp L (E₅.of_pk (pk₆.trans pk₇)) s8₇) fun s₈ ⟨pk₈, s8₈, m₈⟩ => ?_)
@@ -452,9 +452,9 @@ theorem open_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
   have hmlen : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
       (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))).length =
       c.tl := by
-    rw [mac_eq _ _ (by rw [hnl]; have := L.h13; omega), List.length_take,
+    rw [mac_eq _ _ (by rw [hnl]; have := L.h13; omega_using [this]), List.length_take,
       length_chain (hBC _) _ _ (by simp [Spec.Cmac.zeros])]
-    omega
+    omega_using [ht16]
   have hiff := cryptTag_eq_iff (hBC s.mem) L.t16 (bytesAt s.mem N c.nl) hmlen (length_bytesAt s.mem c.T c.tl)
   have hr3 : s'.gpr .a0 = s₇.gpr .s8 := by rw [r3', u₉.gpr, s8₈]
   simp only [openOut, Spec.Ccm.decryptWith]

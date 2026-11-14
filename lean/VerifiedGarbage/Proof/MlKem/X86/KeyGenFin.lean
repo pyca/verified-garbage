@@ -153,7 +153,7 @@ theorem enc_piece (j : Nat) (hj : j < L.p.k) :
   refine ⟨k.toB, fun hn => k.rhoE (by omega_using []), fun j' hj' hn => ?_, fun hn => by omega_using [hj, hn], fun hn => by omega_using [hj, hn],
     fun hn => by omega_using [hj, hn]⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hn with hn | e
-  · exact k.dk j' hj' (by omega)
+  · exact k.dk j' hj' (by omega_using [hn])
   · obtain rfl : j' = j := by omega_using [e]
     rw [post, (h.se j' (by omega_using [hj])).2]
 

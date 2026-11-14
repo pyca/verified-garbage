@@ -81,11 +81,11 @@ theorem absorb_next {R a : Nat} {W : Addr} {len n : Nat} (hn : 16 * n + 16 ≤ l
       u.gpr .x20 = W + BitVec.ofNat 64 (16 * (n + 1)) ∧ Keeps Poly.regs s u := by
   have hb (d : Nat) (hd : d + 8 ≤ 16) :
       InRegions (s.rd ++ s.wr) (s.gpr .x20 + BitVec.ofNat 64 d) 8 := by
-    rw [hp, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hr.blk _ (by omega)
+    rw [hp, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hr.blk _ (by omega_using [hn, hd])
   refine (Poly.block_absorb s ha (hb 0 (by decide)) (hb 8 (by decide)) hr.k0 hr.k1).mono
     fun u ⟨hu, hx, hk⟩ => ⟨?_, ?_, hk⟩
   · have hl : (bytesAt s.mem W (16 * n)).length % 16 = 0 := by
-      rw [Poly1305.length_bytesAt]; omega
+      rw [Poly1305.length_bytesAt]; omega_using []
     rw [bytesAt_succ, Poly1305.absorbAll_append hl, ← hp]
     exact hu
   · rw [hx, hp, BitVec.add_assoc]
@@ -103,13 +103,13 @@ theorem absorbN_ok {R a : Nat} {W : Addr} {len : Nat} (k : Nat) {n : Nat} (hn : 
   | zero => exact WP.block_nil ⟨ha, hp, fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ k ih =>
     rw [absorbN, List.replicate_succ, List.flatten_cons]
-    refine WP.block_append ((absorb_next (by omega) ha hp hr).mono fun s₁ ⟨a₁, p₁, k₁⟩ => ?_)
+    refine WP.block_append ((absorb_next (by omega_using [hn]) ha hp hr).mono fun s₁ ⟨a₁, p₁, k₁⟩ => ?_)
     have hm₁ : s₁.mem = s.mem := k₁.2.1
     rw [← hm₁] at a₁
-    refine (ih (n := n + 1) (by omega) a₁ p₁
+    refine (ih (n := n + 1) (by omega_using [hn]) a₁ p₁
       (hr.of k₁.2.2.1 k₁.2.2.2 (k₁.gpr' (r := .x0)))).mono fun u ⟨a, p, k'⟩ => ?_
-    rw [hm₁, show n + 1 + k = n + (k + 1) by omega] at a
-    rw [show n + 1 + k = n + (k + 1) by omega] at p
+    rw [hm₁, show n + 1 + k = n + (k + 1) by omega_using []] at a
+    rw [show n + 1 + k = n + (k + 1) by omega_using []] at p
     exact ⟨a, p, (k₁.trans k').mono (by
       intro r h; simp only [List.mem_append] at h; rcases h with h | h <;> exact h)⟩
 
@@ -161,8 +161,8 @@ theorem iter_ok {blocks v R a W lead k len s₀ s} {i : Nat} (hi : i < 5)
   have hbr : Readable W len b := (h.readable hr).of hc.rd hc.wr (hc.keep _ not_words_x0)
   have hk5 : 16 * (lead + k * i) + 16 * k ≤ len := by
     have : k * i + k ≤ 5 * k := by
-      rw [← Nat.mul_succ, Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by omega)
-    omega
+      rw [← Nat.mul_succ, Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by omega_using [hi])
+    omega_using [hlen, this]
   apply WP.block_append
   refine (VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors (absorbN_vdst k)
     (absorbN_ok k (n := lead + k * i) hk5 hbacc hbp hbr)).mono
@@ -240,7 +240,7 @@ theorem phaseWith_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaC
   refine ⟨s₁, hstart, ?_⟩
   apply WP.block_append
   refine (VG.Proof.ChaCha20.AArch64.Mixed5.keeps_vectors (absorbN_vdst lead)
-    (absorbN_ok lead (n := 0) (by omega) ha₁ hp₁ hr₁)).mono
+    (absorbN_ok lead (n := 0) (by omega_using [hlen]) ha₁ hp₁ hr₁)).mono
       fun s₂ ⟨⟨a₂, p₂, k₂⟩, v₂, sp₂, rd₂, wr₂⟩ => ?_
   apply WP.block_cons_iff.mpr
   refine ⟨s₂.write .x .x1 ((5 : BitVec 16).setWidth 64), ?_, WP.block_nil ?_⟩
@@ -277,7 +277,7 @@ theorem phaseWith_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaC
       rintro n u ⟨i, hi, rfl, hu, hcount⟩
       refine (iter_ok hi hlen hr hu).mono fun w ⟨hw, hx⟩ => ?_
       have hwc : w.gpr .x1 = BitVec.ofNat 64 (5 - (i + 1)) := by
-        rw [hx, hcount, Offset.ofNat_sub_ofNat (by omega : 1 ≤ 5 - i)]
+        rw [hx, hcount, Offset.ofNat_sub_ofNat (by omega_using [hi] : 1 ≤ 5 - i)]
         simp only [Nat.sub_sub]
       have he : eval (.nonzero .x .x1) w = some (BitVec.ofNat 64 (5 - (i + 1)) != 0) := by
         simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hwc]
@@ -286,10 +286,10 @@ theorem phaseWith_ok {blocks : Nat → VG.Spec.ChaCha20.State} {v : VG.Spec.ChaC
       · have hn0 : BitVec.ofNat 64 (5 - (i + 1)) ≠ 0 := by
           intro hz
           have hz' := congrArg BitVec.toNat hz
-          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : 5 - (i + 1) < 2 ^ 64)] at hz'
+          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : 5 - (i + 1) < 2 ^ 64)] at hz'
           change 5 - (i + 1) = 0 at hz'
-          omega
-        exact .inr ⟨by rw [he]; simpa using hn0, 5 - (i + 1), by omega, i + 1, by omega, rfl, hw, hwc⟩
+          omega_using [hi, hl, hz']
+        exact .inr ⟨by rw [he]; simpa using hn0, 5 - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, hl], rfl, hw, hwc⟩
     refine (WP.loop (M := isa) Inv hstep 5 s₃ ⟨0, by decide, rfl, h0, rfl⟩).mono fun w hw => ?_
     -- `x27` set back, and `x20` and `x1` restored.
     have hx0 : w.gpr .x0 = s.gpr .x0 := hw.keep _ not_words_x0 (by decide) (by decide)

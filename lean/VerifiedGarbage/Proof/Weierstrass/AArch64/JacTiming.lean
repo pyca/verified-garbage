@@ -111,6 +111,19 @@ theorem fieldWP_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   exact ⟨hct _ _ _ _ _ _ trivial trivial hp.public es et,is,it,
     ks.trans (hp.sp.trans kt.symm)⟩
 
+/-- Timing for hand-composed blocks that call the general subtraction directly. -/
+theorem subRaw_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+    {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m} {o a b : Nat}
+    (hL : Lay M size Sl) (hAl : Aligned M Sl)
+    (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
+      (.block (VG.Impl.Mont.AArch64.sub M o a b)))
+    (hS : ∀ x ∈ (FOp.sub o a b).out::(FOp.sub o a b).ins, Sl x)
+    (hR : ∀ x ∈ (FOp.sub o a b).ins, x ∈ V) :
+    RelCT isa (FieldPair M base size m Sl V E) (.block (VG.Impl.Mont.AArch64.sub M o a b))
+      (FieldPair M base size m Sl (o::V) ((FOp.sub o a b).run E)) :=
+  fieldWP_relCT hct fun _ hs => WP.mono (subRaw_ok hL hAl hs hS hR)
+    fun _ ⟨hk,it⟩ => ⟨it,hk.sp⟩
+
 /-- Only values in initialized slots are relevant to the relational invariant. -/
 theorem Inv.congr_env {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} {V : List Nat} {E E' : Nat → Fin m} {s : State}

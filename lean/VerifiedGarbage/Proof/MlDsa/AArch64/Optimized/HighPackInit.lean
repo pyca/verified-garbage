@@ -41,7 +41,7 @@ theorem repeatedWord_lane (n : Nat) {e : Nat} (he : e<4) :
     vword (repeatedWord n) e=BitVec.ofNat 32 n := by
   unfold repeatedWord
   rw [VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 structure SetupKeep (rs : List VReg) (s t : State) : Prop where
   gpr : ∀ r, r≠.x9 → t.gpr r=s.gpr r

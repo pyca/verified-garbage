@@ -128,7 +128,7 @@ theorem oneTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact L.cs.sub_right (Region.sub_prefix (by decide))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
-    · exact L.cw'.sub_right (Lay.wSub (by omega))
+    · exact L.cw'.sub_right (Lay.wSub (by omega_using [ho]))
     · exact L.cw'.sub_right (Lay.wSub (by decide))
     · exact X.cx
   have dJ : ∀ r ∈ absFrame (V .r30) (V .r31) 16 ++ tFrame (V .r30) (V .r31) 16,
@@ -159,7 +159,7 @@ theorem oneTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 
     rw [blockAt_frame ab.frame (ctx_absFrame L (.inr rfl))]; exact hH
   let ct := bytesAt s.mem (V .r27) (V .r23).toNat
   have hlx : ((a ++ zeros (padLen a.length)) ++ ct).length % 16 = (V .r23).toNat % 16 := by
-    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega
+    simp only [List.length_append, Proof.Gcm.length_zeros, ct, length_bytesAt] at hx ⊢; omega_using [hx]
   refine WP.seq (WP.mono (WP.with_rdwr (flush_ok L (yo := 16) (.inr rfl) (x := (a ++ zeros (padLen a.length)) ++ ct)
     (H := H) ⟨he₃, by rw [k₃.mem]; exact hH₂⟩ (by rw [a26', hlx]))) fun s₄ ⟨fl, _, wr₄, _⟩ => ?_)
   rw [k₃.mem] at fl

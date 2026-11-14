@@ -218,9 +218,9 @@ theorem argRg_contains {to : Bool} {s : State} (hsp : (s.gpr .esp).toNat + argN 
   have := hsp
   rcases hi with hi | ⟨rfl, rfl⟩
   · cases to <;> simp only [argRg, argN, Bool.false_eq_true, ↓reduceIte] at this ⊢ <;>
-      exact part_contains this (by omega) (by omega) (by omega) (by decide)
+      exact part_contains this (by omega_using []) (by omega_using []) (by omega_using [hi]) (by decide)
   · simp only [argRg, argN, ↓reduceIte] at this ⊢
-    exact part_contains this (by omega) (by omega) (by omega) (by decide)
+    exact part_contains this (by omega_using []) (by omega_using []) (by omega_using []) (by decide)
 
 theorem GPre.argC {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i < 6 ∨ (to = true ∧ i = 6)) :
     (argRg to s).Contains (addr (s.gpr .esp) (4 + 4 * i)) 4 :=
@@ -252,7 +252,7 @@ theorem disj_join {a : Addr} {X : Region} (h₁ : (⟨a, 24⟩ : Region).Disjoin
   intro x hx hX
   simp only [Region.Contains] at hx
   by_cases hlt : (x - a).toNat < 24
-  · exact h₁ x (by simp only [Region.Contains]; omega) hX
+  · exact h₁ x (by simp only [Region.Contains]; omega_using [hlt]) hX
   · refine h₂ x ?_ hX
     simp only [Region.Contains]
     bv_omega
@@ -262,7 +262,7 @@ theorem argAddr6 {s : State} (h : (s.gpr .esp).toNat + 32 ≤ 2 ^ 32) :
   simp only [argAddr]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem GPre.ofTo {s : State} (h : Proof.Aes.ctr32ToX86.pre s) : GPre true s := by
   obtain ⟨hrd, hwr, dSC, dSD, dSB, dCD, dCB, dDB, dSrcC, dSrcD, dSrcB, aC, aD, aB, lC, lD, lB, rC, rD, rB, fS, fC,
@@ -274,7 +274,7 @@ theorem GPre.ofTo {s : State} (h : Proof.Aes.ctr32ToX86.pre s) : GPre true s := 
     rA := fun i hi => by
       rcases hi with hi | ⟨-, rfl⟩
       · exact ⟨_, by rw [hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..),
-          argRg_contains (to := false) (by simp only [argN, Bool.false_eq_true, ↓reduceIte]; omega) (.inl hi)⟩
+          argRg_contains (to := false) (by simp only [argN, Bool.false_eq_true, ↓reduceIte]; omega_using [fSp]) (.inl hi)⟩
       · refine ⟨_, by rw [hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), ?_⟩
         rw [show addr (s.gpr .esp) (4 + 4 * 6) = argAddr s 6 from rfl]
         exact Region.contains_self _ _
@@ -292,9 +292,9 @@ theorem GPre.argSub {to : Bool} {s : State} (hp : GPre to s) {i : Nat} (hi : i <
   have := hp.fSp
   rcases hi with hi | ⟨rfl, rfl⟩
   · cases to <;> simp only [argRg, argN, Bool.false_eq_true, ↓reduceIte] at this ⊢ <;>
-      exact part_sub this (by omega) (by omega) (by omega)
+      exact part_sub this (by omega_using []) (by omega_using []) (by omega_using [hi])
   · simp only [argRg, argN, ↓reduceIte] at this ⊢
-    exact part_sub this (by omega) (by omega) (by omega)
+    exact part_sub this (by omega_using []) (by omega_using []) (by omega_using [])
 
 /-! ## Constant time -/
 
@@ -313,19 +313,19 @@ theorem ctrTo_wf₀ {s : State} (hp : Proof.Aes.ctr32ToX86.pre s) : VG.X86.Taint
   replace aB := disj_join aB lB
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ctrToτ₀]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ctrToτ₀]; omega_using [fSp], ?_⟩, ?_⟩
   · rw [hwr]
     exact .cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨⟨dCD, dCB⟩, dDB, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) rC aC
-    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) rD aD
-    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) rB aB
+    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [fSp]) rC aC
+    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [fSp]) rD aD
+    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [fSp]) rB aB
   · intro p hp'
     simp only [ctrToτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -342,12 +342,12 @@ theorem ctrTo_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32ToX86.pre s₁
   · simp only [ctrToτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [h₁.2.1, h₂.2.1]
-    simp only [ha 2 (by omega), ha 4 (by omega), ha 5 (by omega), ha 6 (by omega)]
+    simp only [ha 2 (by omega_using []), ha 4 (by omega_using []), ha 5 (by omega_using []), ha 6 (by omega_using [])]
   · simp only [ctrToτ₀] at hk
     rw [show VG.X86.Taint.depth ctrToτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 32) fSp₁ h4 hk, VG.X86.Taint.argByte_eq (n := 32) fSp₂ h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem ctr32To_ct :
     ConstantTime isa Proof.Aes.ctr32ToX86.pre Proof.Aes.ctr32ToX86.pub Impl.Aes.X86.ctr32To :=
@@ -360,19 +360,19 @@ theorem ctr_wf₀ {s : State} (hp : CPre s) : VG.X86.Taint.Wf ctrToτ₀ s := by
   have hC := hp.fC; have hD := hp.fD; have hB := hp.fB; have hs := hp.fSp
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ctrToτ₀]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ctrToτ₀]; omega_using [hs], ?_⟩, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil))
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨⟨hp.dCD, hp.dCB⟩, hp.dDB, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) hp.rC hp.aC
-    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) hp.rD hp.aD
-    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega) hp.rB hp.aB
+    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.rC hp.aC
+    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.rD hp.aD
+    · exact VG.X86.Taint.frame_disjoint (n := 28) (by omega_using [hs]) hp.rB hp.aB
   · have e6 : arg s 6 = arg s 3 := hp.same
     simp only [arg, argAddr] at e6
     intro p hp'
@@ -390,13 +390,13 @@ theorem ctr_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32X86.pre s₁) (h
   · simp only [ctrToτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
-    simp only [ctrR, datR, scrR, ctrP, datP, nBlk, scrP, ha 2 (by omega), ha 3 (by omega),
-      ha 4 (by omega), ha 5 (by omega)]
+    simp only [ctrR, datR, scrR, ctrP, datP, nBlk, scrP, ha 2 (by omega_using []), ha 3 (by omega_using []),
+      ha 4 (by omega_using []), ha 5 (by omega_using [])]
   · simp only [ctrToτ₀] at hk
     rw [show VG.X86.Taint.depth ctrToτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 32) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 32) hp₂.fSp h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 /-- `vg_aes_ctr32_to` in place. -/
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86.pre Proof.Aes.ctr32X86.pub Impl.Aes.X86.ctr32To :=

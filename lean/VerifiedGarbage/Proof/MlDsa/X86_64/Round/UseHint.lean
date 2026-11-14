@@ -95,15 +95,15 @@ theorem twoSub_mod {d x : Nat} (hd : 2 ≤ d) (hx : x ≤ 2 * d + 1) :
   · rw [ite_eq_right h1, Nat.mod_eq_sub_mod (Nat.le_of_not_lt h1)]
     by_cases h2 : x - d < d
     · rw [ite_eq_left h2, Nat.mod_eq_of_lt h2]
-    · rw [ite_eq_right h2, Nat.mod_eq_sub_mod (Nat.le_of_not_lt h2), Nat.mod_eq_of_lt (by omega)]
+    · rw [ite_eq_right h2, Nat.mod_eq_sub_mod (Nat.le_of_not_lt h2), Nat.mod_eq_of_lt (by omega_using [hd, hx])]
 
 /-- Two conditional subtractions of `m` reduce `x ≤ 2m + 1` modulo `m`. -/
 theorem condAddV_twice {g : Nat} {x : BitVec 64} (hx : x.toNat ≤ 2 * dMod g + 1) :
     (condAddV (condAddV x (BitVec.signExtend 64 (mImm g)) (mImm g)) (BitVec.signExtend 64 (mImm g))
       (mImm g)).toNat = x.toNat % dMod g := by
   have hm : dMod g < 2 ^ 31 := by rcases dMod_cases g with e | e <;> rw [e] <;> decide
-  rw [condAddV_imm_toNat' hm (by rw [condAddV_imm_toNat' hm (by omega)]; split <;> omega),
-    condAddV_imm_toNat' hm (by omega)]
+  rw [condAddV_imm_toNat' hm (by rw [condAddV_imm_toNat' hm (by omega_using [hx, hm])]; split <;> omega_using [hx, hm]),
+    condAddV_imm_toNat' hm (by omega_using [hx, hm])]
   have hd : 2 ≤ dMod g := by rcases dMod_cases g with e | e <;> rw [e] <;> decide
   exact twoSub_mod hd hx
 
@@ -119,9 +119,9 @@ theorem uhS_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
     rw [← hbM_mul h]; exact Nat.mul_le_mul_right _ hf
   have eX : (BitVec.ofNat 64 ((uhF g a).toNat * (BitVec.setWidth 64 (BitVec.ofNat 32 (2 * g))).toNat)).toNat =
       hbF g a.toNat * (2 * g) := by
-    rw [BitVec.toNat_ofNat, hF, setWidth64_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 * g < 2 ^ 32 by omega)]
+    rw [BitVec.toNat_ofNat, hF, setWidth64_toNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 * g < 2 ^ 32 by omega_using [hg])]
     rw [q_eq] at hfg
-    omega
+    omega_using [hfg]
   have e0 : (BitVec.setWidth 64 (0 : BitVec 32)).toNat = 0 := rfl
   have eh : decide (0 < (BitVec.setWidth 64 hv).toNat) = decide (hv ≠ 0) := by
     rw [setWidth64_toNat]
@@ -141,18 +141,18 @@ theorem uhS_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
     by_cases hb : hv ≠ 0 <;> by_cases hp : hbF g a.toNat * (2 * g) < a.toNat
     · rw [decide_eq_true hb, decide_eq_true hp]
       simp only [↓reduceIte, ne_eq, hb, hp, not_false_eq_true]
-      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, show (1 : BitVec 64).toNat = 1 from rfl]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, show (1 : BitVec 64).toNat = 1 from rfl]; omega_using [hf, hm16]
     · rw [decide_eq_true hb, decide_eq_false hp]
       simp only [↓reduceIte, ne_eq, hb, hp, not_false_eq_true, Bool.false_eq_true]
-      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, BitVec.toNat_allOnes]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, BitVec.toNat_allOnes]; omega_using [hf, hm16]
     · rw [decide_eq_false hb]
       simp only [↓reduceIte, hb, Bool.false_eq_true]
-      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, show (0 : BitVec 64).toNat = 0 from rfl]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [hf, hm16]
     · rw [decide_eq_false hb]
       simp only [↓reduceIte, hb, Bool.false_eq_true]
-      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, show (0 : BitVec 64).toNat = 0 from rfl]; omega
-  rw [uhS, BitVec.toNat_setWidth, condAddV_twice (by rw [hU]; split <;> [split; skip] <;> omega), hU]
-  exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega)) (by omega))
+      rw [BitVec.toNat_add, BitVec.toNat_add, hF, hm, show (0 : BitVec 64).toNat = 0 from rfl]; omega_using [hf, hm16]
+  rw [uhS, BitVec.toNat_setWidth, condAddV_twice (by rw [hU]; split <;> [split; skip] <;> omega_using [hf]), hU]
+  exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_using [hm16])) (by omega_using [hm16]))
 
 /-! ## The function -/
 

@@ -193,8 +193,8 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.encaps fun _ _ =
           have hK := hp.wf
           rw [List.mem_singleton] at hp'; subst hp'
           exact pieceE hp h (.inl rfl) (by simp) (by show 0 < 32768; decide)
-            (by show K.ekLen < 2048; have := hK.k4; simp only [KemLay.ekLen]; omega)
-            (by show 0 < K.ekLen; simp only [KemLay.ekLen]; omega) (by edecide))
+            (by show K.ekLen < 2048; have := hK.k4; simp only [KemLay.ekLen]; omega_using [this])
+            (by show 0 < K.ekLen; simp only [KemLay.ekLen]; omega_using []) (by edecide))
         (fun hp h p hp' => by
           have hK := hp.wf
           rw [List.mem_singleton] at hp'; subst hp'

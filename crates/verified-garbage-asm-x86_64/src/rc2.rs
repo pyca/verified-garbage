@@ -3,9 +3,11 @@
 //! `assembly/rc2.s`.
 #![allow(dead_code)]
 
-/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. Effective bits are independent of the supplied key length.
+/// Starts RC2-CBC without padding (RFC 2268, NIST SP 800-38A §6.2), in either direction: checks that `key_len` is in 1..=128, then that `effective_bits` is in 1..=1024, then that `iv_len` is 8, and returns 1, 2 or 3 respectively for the first that is not (`VG.Spec.Rc2.Error.code`). Otherwise writes to `*ctx` the context with the key schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with `vg_rc2_cbc_encrypt_chained` or `vg_rc2_cbc_decrypt_chained` on the schedule at the start of `*ctx` and the chaining value at `ctx + 128`. Effective bits are independent of the supplied key length.
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -42,141 +44,11 @@ call {vg_rc2_expand_key}
 jmp 27f
 26:
 27:
-.base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAADD"
+.base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkqP3///MPf0QkCEiNpCRYAgAAicAxyTHSRTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,
     )
 }
-
-/// Continues RC2-CBC encryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), encrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
-///
-/// Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 144 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `pending_len` must be less than 8.
-/// * `out_len` must be `(pending_len + len) / 8 * 8`.
-/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAhNhck="
-je 20f
-.base64 "QboAAAAASIX2"
-je 22f
-24:
-.base64 "Rg+2nBeIAAAAR4gcEEmDwgFJOfI="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SSnxSQHwQboAAAAATYXJ"
-je 25f
-27:
-.base64 "Rg+2HBJHiBwQSYPCAU05yg=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "TAHKTCnJQboAAAAASIXJ"
-je 28f
-210:
-.base64 "Rg+2HBJGiJwXiAAAAEmDwgFJOco="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "SSnwSQHxScHpA0yJwkyJyUiJ/kiBxoAAAABMi0QkCA=="
-call {vg_rc2_cbc_encrypt}
-jmp 21f
-20:
-.base64 "SIn4SAHwQboAAAAASIXJ"
-je 211f
-213:
-.base64 "Rg+2HBJGiJwQiAAAAEmDwgFJOco="
-jne 213b
-jmp 212f
-211:
-212:
-21:
-.base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAADD"
-.p2align 6"#,
-        vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt::vg_rc2_cbc_encrypt,
-    )
-}
-
-/// Continues RC2-CBC decryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), decrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last input ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
-///
-/// Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 144 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `pending_len` must be less than 8.
-/// * `out_len` must be `(pending_len + len) / 8 * 8`.
-/// * `ctx` and `out` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `out` may overlap the return address on the stack or the 608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJLD9//9IieBIg8AQSIlEJAhNhck="
-je 20f
-.base64 "QboAAAAASIX2"
-je 22f
-24:
-.base64 "Rg+2nBeIAAAAR4gcEEmDwgFJOfI="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SSnxSQHwQboAAAAATYXJ"
-je 25f
-27:
-.base64 "Rg+2HBJHiBwQSYPCAU05yg=="
-jne 27b
-jmp 26f
-25:
-26:
-.base64 "TAHKTCnJQboAAAAASIXJ"
-je 28f
-210:
-.base64 "Rg+2HBJGiJwXiAAAAEmDwgFJOco="
-jne 210b
-jmp 29f
-28:
-29:
-.base64 "SSnwSQHxScHpA0yJwkyJyUiJ/kiBxoAAAABMi0QkCA=="
-call {vg_rc2_cbc_decrypt}
-jmp 21f
-20:
-.base64 "SIn4SAHwQboAAAAASIXJ"
-je 211f
-213:
-.base64 "Rg+2HBJGiJwQiAAAAEmDwgFJOco="
-jne 213b
-jmp 212f
-211:
-212:
-21:
-.base64 "QbsAAAAATIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEyJnCRAAQAATImcJEgBAABMiZwkUAEAAEyJnCRYAQAATImcJGABAABMiZwkaAEAAEyJnCRwAQAATImcJHgBAABMiZwkgAEAAEyJnCSIAQAATImcJJABAABMiZwkmAEAAEyJnCSgAQAATImcJKgBAABMiZwksAEAAEyJnCS4AQAATImcJMABAABMiZwkyAEAAEyJnCTQAQAATImcJNgBAABMiZwk4AEAAEyJnCToAQAATImcJPABAABMiZwk+AEAAEyJnCQAAgAATImcJAgCAABMiZwkEAIAAEyJnCQYAgAATImcJCACAABMiZwkKAIAAEyJnCQwAgAATImcJDgCAABMiZwkQAIAAEyJnCRIAgAASI2kJFACAADD"
-.p2align 6"#,
-        vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt::vg_rc2_cbc_decrypt,
-    )
-}
-
-#[rustfmt::skip]
-#[path = "internal/vg_rc2_cbc_decrypt.rs"]
-pub(crate) mod vg_rc2_cbc_decrypt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_rc2_cbc_encrypt.rs"]
-pub(crate) mod vg_rc2_cbc_encrypt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_rc2_decrypt_block.rs"]

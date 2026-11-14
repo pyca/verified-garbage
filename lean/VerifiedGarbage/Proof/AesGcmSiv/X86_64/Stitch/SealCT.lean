@@ -127,7 +127,7 @@ theorem hashS_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk
       t.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧ t.gpr .rbp = BitVec.ofNat 64 (n % 256)) →
       AbsIn K W SP R N A D al n (D + BitVec.ofNat 64 (256 * (n / 256))) (n % 256) t ∧
         Bufs K W SP R N A D al n t := fun h =>
-    ⟨⟨h.1.one, h.1.data.slice (by omega), h.2.1, h.2.2⟩, h.1⟩
+    ⟨⟨h.1.one, h.1.data.slice (by omega_using []), h.2.1, h.2.2⟩, h.1⟩
   have r₅ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂)
     hDW hn (fun t₁ t₂ h => ⟨h.2.1.one, h.2.2.one, fun _ h => nomatch h⟩) rest_check).wp
     (F₁ := fun (t : State) =>
@@ -161,8 +161,8 @@ theorem ctr_bufs {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk 
   have hn := hB.data.lt
   have hp := spre_of L hR hB.one.env hB.data hB.dw h256 G.rdi G.rsi G.rdx G.rcx G.r8 G.r11 G.r12 G.r9
   have hnb : Stitch.nb t = 16 * (n / 256) := by
-    show (t.gpr .r9).toNat = _; rw [G.r9, toNat_ofNat_of_lt (by omega)]
-  refine WP.mono (hlp.ctr hp (by rw [hnb]; omega)) fun t' Cp => ?_
+    show (t.gpr .r9).toNat = _; rw [G.r9, toNat_ofNat_of_lt (by omega_using [hn])]
+  refine WP.mono (hlp.ctr hp (by rw [hnb]; omega_using [])) fun t' Cp => ?_
   have Fd : Frame [⟨W + BitVec.ofNat 64 96, 16⟩, ⟨D, 16 * (16 * (n / 256))⟩,
       ⟨W + BitVec.ofNat 64 1768, 256⟩] t.mem t'.mem := by
     have h := Cp.frame
@@ -175,7 +175,7 @@ theorem ctr_bufs {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsOk 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact (hB.data.w.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide)) |>.symm
+  · exact (hB.data.w.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Lay.wSub (by decide)) |>.symm
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
 
 /-- `cryptS`, in two runs with the same public arguments. -/
@@ -209,9 +209,9 @@ theorem cryptS_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.LoopsO
   have restIn : ∀ {t : State}, (Bufs K W SP R N A D al n t ∧
       t.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧ t.gpr .rbp = BitVec.ofNat 64 (n % 256)) →
       RestIn K W SP R N A D al n (16 * (n / 256)) t := fun h =>
-    ⟨h.1.one, h.1.data, by rw [h.2.1, show 256 * (n / 256) = 16 * (16 * (n / 256)) by omega],
-      by rw [h.2.2, show n % 256 = n - 16 * (16 * (n / 256)) by omega]⟩
-  have r₅ := cryptRest_rel v eb wide L hR hDW hn (j₀ := 16 * (n / 256)) (by omega) (P := fun t₁ t₂ => True ∧
+    ⟨h.1.one, h.1.data, by rw [h.2.1, show 256 * (n / 256) = 16 * (16 * (n / 256)) by omega_using []],
+      by rw [h.2.2, show n % 256 = n - 16 * (16 * (n / 256)) by omega_using []]⟩
+  have r₅ := cryptRest_rel v eb wide L hR hDW hn (j₀ := 16 * (n / 256)) (by omega_using []) (P := fun t₁ t₂ => True ∧
       (Bufs K W SP R N A D al n t₁ ∧ t₁.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧
         t₁.gpr .rbp = BitVec.ofNat 64 (n % 256)) ∧
       (Bufs K W SP R N A D al n t₂ ∧ t₂.gpr .r12 = D + BitVec.ofNat 64 (256 * (n / 256)) ∧
@@ -303,7 +303,7 @@ theorem sealSFront_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.Lo
     · by_cases hn256 : 256 ≤ n
       · exact hashS_rel hlp v wide L hDW hn hal hn' hn256 fun t₁ t₂ h => ⟨h.1.2.1.1.1.bufs, h.1.2.2.1.1.bufs⟩
       · refine RelCT.of_false fun _ _ h => hn256 ?_
-        have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega
+        have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega_using [this]
   have r₃ := i₃.wp (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨poly_st hlp v wide L h.2.1, poly_st hlp v wide L h.2.2⟩
   have r₃' := (expand_rel v L hR hDW hn (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
@@ -330,7 +330,7 @@ theorem sealSFront_rel {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (hlp : Stitch.Lo
     · by_cases hn256 : 256 ≤ n
       · exact cryptS_rel hlp v eb wide L hR hDW hn hn256 fun t₁ t₂ h => ⟨h.1.2.1.1.bufs, h.1.2.2.1.bufs⟩
       · refine RelCT.of_false fun _ _ h => hn256 ?_
-        have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega
+        have := h.2; rw [eval_b h.1.2.1.2] at this; simp at this; omega_using [this]
   have r₆ := i₆.wp (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨cry_st hlp v eb wide L hR h.2.1, cry_st hlp v eb wide L hR h.2.2⟩
   exact (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq (RelCT.seq r₁ r₂) r₃) r₃') r₄) r₅) r₆).mono

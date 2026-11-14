@@ -87,8 +87,8 @@ theorem andStore_ok {x : State} (h : In Ex base bytes len args x) {d : Nat} (hd 
   have r := KeyScan.word_room h hd
   refine wp_logicS (.inl rfl) (readSrc_sc h.scratch (d := d) r) fun u a => ?_
   have su : Scr u base bytes := h.scratch.of_keeps a.keeps (by decide)
-  refine wp_storeS (su.ea (d := d) (by omega)) (su.write (d := d) (n := 4) r) fun t m => WP.block_nil ?_
-  have O : Outside base d 4 x.mem t.mem := by rw [m.mem, a.mem]; exact writeW32_outside _ _ _ (by omega)
+  refine wp_storeS (su.ea (d := d) (by omega_using [r])) (su.write (d := d) (n := 4) r) fun t m => WP.block_nil ?_
+  have O : Outside base d 4 x.mem t.mem := by rw [m.mem, a.mem]; exact writeW32_outside _ _ _ (by omega_using [hd])
   exact Step.word h hd O (a.keeps.widen (m.keeps []))
 
 theorem powP_tp {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (he : e ≤ 17)
@@ -98,7 +98,7 @@ theorem powP_tp {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (he 
       (Both (TP Ex base bytes len dlen args sp)) :=
   VG.Proof.Bignum.X86.PublicRt.relCT_both
     ((powP_trace hb9 hb he9 he hcb hce).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ _ => trivial)
-    fun x T => WP.mono (powP_ok T.1.1 (b := b) (e := e) hb9 (by omega) he9 (by omega) rfl)
+    fun x T => WP.mono (powP_ok T.1.1 (b := b) (e := e) hb9 (by omega_using [hb]) he9 (by omega_using [he]) rfl)
       fun _ ⟨_, _, _, F, _, K⟩ => tp_step T (Step.ops T.1.1 F K)
 
 theorem qBranch_rel {Q : State → Prop} :
@@ -129,8 +129,8 @@ theorem tailWith_trace {Q : State → Prop} {pow : Prog isa}
           ⟨tp_step T (Step.word T.1.1 (by decide) O K), _, e⟩) ?_
     refine VG.RelCT.seq (aRel (F := TP Ex base bytes len dlen args sp) (fun _ T => T.1.1)
       VG.Proof.Ffdh.X86.CheckPrivate.store_check fun x ⟨T, c, e⟩ =>
-        WP.mono (storeMask_ok T.1.1 (d := accOff) (by omega) e) fun _ ⟨_, O, _, _, K⟩ =>
-          tp_step T (Step.word T.1.1 (by omega) O K)) ?_
+        WP.mono (storeMask_ok T.1.1 (d := accOff) (by omega_using [ao, nb]) e) fun _ ⟨_, O, _, _, K⟩ =>
+          tp_step T (Step.word T.1.1 (by omega_using [ao]) O K)) ?_
     refine VG.RelCT.seq (aRel (F := fun u => TP Ex base bytes len dlen args sp u ∧ Gate u (dlen = 2 * len))
       (fun _ T => T.1) VG.Proof.Ffdh.X86.CheckDomain.qTest_check fun x T =>
         WP.mono (qTest_ok T.1.1 T.2.e3 T.2.e12 T.2.dl) fun _ ⟨z, m, K⟩ =>

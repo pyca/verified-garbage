@@ -133,25 +133,25 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
   · refine WP.ite true (by show u₁.zf = some true; rw [z₁, hz]; rfl)
       (fun _ => WP.block_nil ⟨k₁, ?_⟩) (by simp)
     rw [hz]; rfl
-  · have hne := ofNat64_ne_zero (n := L s₀) (by omega) hL
+  · have hne := ofNat64_ne_zero (n := L s₀) (by omega_using [hz]) hL
     refine WP.ite false (by show u₁.zf = some false; rw [z₁, beq_false_of_ne hne]) (by simp) fun _ => ?_
     refine WP.loop (M := isa) (fun rem u => ∃ j, j < L s₀ ∧ rem = L s₀ - j ∧ ZK s₀ s u ∧
       u.gpr .rdx = dp s₀ + BitVec.ofNat 64 j ∧ u.gpr .rcx = BitVec.ofNat 64 (L s₀ - j) ∧
       Proof.Zeroize.Prefix u.mem (dp s₀) j) ?_ (L s₀) u₁
-      ⟨0, by omega, by omega, k₁, by rw [d₁]; exact (BitVec.add_zero _).symm, by rw [c₁, Nat.sub_zero],
+      ⟨0, by omega_using [hz], by omega_using [], k₁, by rw [d₁]; exact (BitVec.add_zero _).symm, by rw [c₁, Nat.sub_zero],
         fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
     intro rem u ⟨j, hj, hr, hu, e1, e2, hpz⟩
     have hc : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hL, hj])
     refine WP.mono (zeroStep_run e1 ⟨dR s₀, by rw [hu.inv.wr]; exact hp.d_wr, hc⟩)
       fun u' ⟨m', d', c', z', g', rd', wr', mx'⟩ => ?_
     have k' : ZK s₀ s u' := hu.step hp g' rd' wr'
       (by rw [m']; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc) mx'
     have p' : Proof.Zeroize.Prefix u'.mem (dp s₀) (j + 1) := by
       rw [m', hu.rax, h0]
-      exact Proof.Zeroize.prefix_writeW hpz (by omega)
+      exact Proof.Zeroize.prefix_writeW hpz (by omega_using [hL, hj])
     have hsub : BitVec.ofNat 64 (L s₀ - j) - 1 = BitVec.ofNat 64 (L s₀ - (j + 1)) := by
-      rw [ofNat64_sub_one (by omega) (by omega), Nat.sub_sub]
+      rw [ofNat64_sub_one (by omega_using [hj]) (by omega_using [hL]), Nat.sub_sub]
     rw [e2, hsub] at c' z'
     have d'' : u'.gpr .rdx = dp s₀ + BitVec.ofNat 64 (j + 1) := by
       rw [d', BitVec.add_assoc, BitVec.ofNat_add]; rfl
@@ -161,9 +161,9 @@ theorem zeroData_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : Inv s
       rw [he] at p'
       exact Proof.Zeroize.prefix_spec p'
     · right
-      have hne := ofNat64_ne_zero (n := L s₀ - (j + 1)) (by omega) (by omega)
+      have hne := ofNat64_ne_zero (n := L s₀ - (j + 1)) (by omega_using [hj, he]) (by omega_using [hL])
       refine ⟨by show u'.zf.map (!·) = some true; rw [z', beq_false_of_ne hne]; rfl,
-        L s₀ - (j + 1), by omega, j + 1, by omega, rfl, k', d'', c', p'⟩
+        L s₀ - (j + 1), by omega_using [hj, hr], j + 1, by omega_using [hj, he], rfl, k', d'', c', p'⟩
 
 /-! ## The tail -/
 

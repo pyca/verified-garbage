@@ -19,8 +19,8 @@ The streaming state (80 bytes at `state`) is the MD buffer followed by a
 
 `update` and `finalize` are the generic streaming code of
 `Impl/MdStream/X86_64.lean`, calling `vg_md5_compress`
-(`Impl.Md5.X86_64.compress`) with `scratch[0..64)` as its scratch space; our
-caller's callee-saved registers are saved in `scratch[64..112)`. The length
+(`Impl.Md5.X86_64.compress`), which uses no scratch space; our caller's
+callee-saved registers are saved in `scratch[0..48)`. The length
 field is little-endian, and so are the words of the digest.
 -/
 
@@ -41,7 +41,7 @@ def params : Params where
   N := 16
   B := 64
   L := 8
-  so := 64
+  so := 0
   len := len64 72 false
   lenV := MdStream.X86_64.lenV64 false
   out := out32 4 false

@@ -62,7 +62,7 @@ open VG.Proof.Sha3 (stateX2At)
 def scrR (q : Addr) : Region := ⟨q, 128⟩
 
 theorem scr_contains (q : Addr) {i : Nat} (hi : i < 8) :
-    (scrR q).Contains (q + BitVec.ofNat 64 (16*i)) 16 := Offset.contains_base q (by omega) (by omega)
+    (scrR q).Contains (q + BitVec.ofNat 64 (16*i)) 16 := Offset.contains_base q (by omega_using [hi]) (by omega_using [hi])
 
 /-- `q8`–`q15` saved at `q`. -/
 def Saved (s₀ : State) (q : Addr) (m : Mem) : Prop :=
@@ -86,9 +86,9 @@ theorem save_ok {s : State} {q : Addr} (hq : s.gpr .x1 = q)
       Frame [scrR q] s.mem s'.mem ∧
       ∀ i < k, s'.mem.read (q + BitVec.ofNat 64 (16*i)) 16 = s.v (vreg (8+i)))
     (fun k u hk ⟨hg,hv,hr,hwr,hsp,hf,hvals⟩ => ?_) 8 (Nat.le_refl _) s
-    ⟨rfl,rfl,rfl,rfl,rfl,Frame.refl _ _,fun _ h => absurd h (by omega)⟩
+    ⟨rfl,rfl,rfl,rfl,rfl,Frame.refl _ _,fun _ h => absurd h (by omega_using [])⟩
   unfold saveReg
-  refine WP.cons (exec_strq ⟨by omega,by omega⟩ (by rw [hwr,hg,hq]; exact hw k hk))
+  refine WP.cons (exec_strq ⟨by omega_using [],by omega_using [hk]⟩ (by rw [hwr,hg,hq]; exact hw k hk))
     (WP.block_nil_iff.mpr ⟨hg,hv,hr,hwr,hsp,?_,fun i hi => ?_⟩)
   · change Frame _ _ (u.mem.write _ 16 _)
     rw [hg,hq]
@@ -98,8 +98,8 @@ theorem save_ok {s : State} {q : Addr} (hq : s.gpr .x1 = q)
     by_cases he : i = k
     · subst i
       exact read_write16 _ _ _
-    · rw [Mem.read_write_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact hvals i (by omega)
+    · rw [Mem.read_write_sep (Offset.sep _ (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])) (by decide)]
+      exact hvals i (by omega_using [hi, he])
 
 theorem restore_ok {s₀ s : State} {q : Addr} (hq : s.gpr .x1 = q) (hs : Saved s₀ q s.mem)
     (hin : ∀ i < 8, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 (16*i)) 16) :
@@ -112,20 +112,20 @@ theorem restore_ok {s₀ s : State} {q : Addr} (hq : s.gpr .x1 = q) (hs : Saved 
       (fun k s' => s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
         ∀ i < k, s'.v (vreg (8+i)) = s₀.v (vreg (8+i)))
       (fun k u hk ⟨hg,hm,hr,hwr,hsp,hvals⟩ => ?_) 8 (Nat.le_refl _) s
-      ⟨rfl,rfl,rfl,rfl,rfl,fun _ h => absurd h (by omega)⟩
+      ⟨rfl,rfl,rfl,rfl,rfl,fun _ h => absurd h (by omega_using [])⟩
     unfold restoreReg
-    refine WP.cons (exec_ldrq ⟨by omega,by omega⟩ ?_) (WP.block_nil ?_)
+    refine WP.cons (exec_ldrq ⟨by omega_using [],by omega_using [hk]⟩ ?_) (WP.block_nil ?_)
     · rw [hr,hwr,hg,hq]; exact hin k hk
     refine ⟨by rw [RegUpd.gpr_setV,hg],by rw [RegUpd.mem_setV,hm],by rw [RegUpd.rd_setV,hr],
       by rw [RegUpd.wr_setV,hwr],by rw [RegUpd.sp_setV,hsp],fun i hi => ?_⟩
     rw [RegUpd.v_setV]
-    simp only [vreg_inj (8+i) (by omega) (8+k) (by omega),Nat.add_left_cancel_iff]
+    simp only [vreg_inj (8+i) (by omega_using [hk, hi]) (8+k) (by omega_using [hk]),Nat.add_left_cancel_iff]
     by_cases he : i = k
     · subst i
       simp only [ite_true,hm,hg,hq]
       exact hs k hk
-    · rw [ite_eq_right (by omega)]
-      exact hvals i (by omega)
+    · rw [ite_eq_right (by omega_using [he])]
+      exact hvals i (by omega_using [hi, he])
   refine hh.mono fun s' ⟨hg,hm,hr,hwr,hsp,hv⟩ => ⟨hg,hm,hr,hwr,hsp,fun r hr' => ?_⟩
   have hv' : ∀ r ∈ preservedV, ∃ i : Fin 8, r = vreg (8+i.val) := by decide
   obtain ⟨i,rfl⟩ := hv' r hr'
@@ -179,8 +179,8 @@ theorem pairAt_stateX2 (m : Mem) (p : Addr) : PairAt m p (stateX2At m p 0) (stat
   intro i hi
   rw [stateX2At_get m p 0 hi,stateX2At_get m p 1 hi,read16_dwords]
   unfold wordAddr
-  rw [BitVec.add_assoc,← BitVec.ofNat_add,show 8 * (2 * i + 0) = 16 * i by omega,
-    show 8 * (2 * i + 1) = 16 * i + 8 by omega]
+  rw [BitVec.add_assoc,← BitVec.ofNat_add,show 8 * (2 * i + 0) = 16 * i by omega_using [],
+    show 8 * (2 * i + 1) = 16 * i + 8 by omega_using []]
 
 /-- The pairs, as the interleaved states. -/
 theorem stateX2_of_pairAt {m : Mem} {p : Addr} {A B : Spec.Sha3.State} (h : PairAt m p A B) :
@@ -189,7 +189,7 @@ theorem stateX2_of_pairAt {m : Mem} {p : Addr} {A B : Spec.Sha3.State} (h : Pair
       vdword (ofVDwords A[i]! B[i]!) k := fun k hk i hi => by
     rw [← h i hi,vdword_read16 _ _ hk]
     unfold wordAddr
-    rw [BitVec.add_assoc,← BitVec.ofNat_add,show 16 * i + 8 * k = 8 * (2 * i + k) by omega]
+    rw [BitVec.add_assoc,← BitVec.ofNat_add,show 16 * i + 8 * k = 8 * (2 * i + k) by omega_using []]
   refine ⟨Vector.ext fun i hi => ?_,Vector.ext fun i hi => ?_⟩
   · rw [← getElem!_pos (stateX2At m p 0) i hi,← getElem!_pos A i hi,stateX2At_get m p 0 hi,
       hk 0 (by decide) i hi,vdword_ofVDwords_0]

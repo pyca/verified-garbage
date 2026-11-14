@@ -27,7 +27,7 @@ theorem context_words_count {m : Mem} {ctx : Addr} {count k : Nat} {dom : List B
  rw [canonical.1]
  simp only [Spec.Ffdh.generationPrecomputedWords,Spec.Rsa.FixedBaseComb.precomputedWords,
   Spec.Rsa.precomputedWords,Spec.Rsa.FixedBaseComb.entries,Spec.Rsa.FixedBaseComb.teeth]
- omega
+ omega_using []
 
 theorem context_header {m : Mem} {ctx : Addr} {count k j : Nat} {dom : List Byte}
  (length : k≤dom.length) (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (dom.take k)) k=true)
@@ -37,12 +37,12 @@ theorem context_header {m : Mem} {ctx : Addr} {count k j : Nat} {dom : List Byte
   BitVec.ofNat 64 ((Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)+7)/8),
   BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows (Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf k dom)))] : List (BitVec 64)).getD j 0 := by
  have words := congrArg (fun xs : List (BitVec 64) => xs[j]?) (context_words length valid canonical)
- have count3 : 3≤count := by rw [context_words_count canonical];omega
- simp only [Spec.Rsa.wordsAt,List.getElem?_map,List.getElem?_range (by omega : j<count),Option.map_some] at words
+ have count3 : 3≤count := by rw [context_words_count canonical];omega_using []
+ simp only [Spec.Rsa.wordsAt,List.getElem?_map,List.getElem?_range (by omega_using [hj, count3] : j<count),Option.map_some] at words
  have heads := congrArg (fun xs : List (BitVec 64) => xs[j]?) (VG.Proof.Ffdh.generationValues_headers k dom)
  simp only [List.getElem?_take,ite_eq_left hj] at heads
  rw [heads] at words
- have cases : j=0 ∨ j=1 ∨ j=2 := by omega
+ have cases : j=0 ∨ j=1 ∨ j=2 := by omega_using [hj]
  rcases cases with rfl | rfl | rfl <;> simpa using words
 
 /-- Entry a is a complete reduced Montgomery residue with no backend pointers. -/
@@ -62,9 +62,9 @@ theorem context_table_entry {m : Mem} {ctx : Addr} {count k a : Nat} {dom : List
   (Spec.Ffdh.domainOf k dom).p *2^(64*w)%(Spec.Ffdh.domainOf k dom).p
  have pBound : (Spec.Ffdh.domainOf k dom).p<2^(64*w) := by
   have bound := VG.Proof.Bignum.os2ip_lt (dom.take k)
-  have len : (dom.take k).length=k := by simp only [List.length_take];omega
+  have len : (dom.take k).length=k := by simp only [List.length_take];omega_using [length]
   rw [len,VG.Proof.Bignum.pow256_eq] at bound
-  exact Nat.lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) (by dsimp [w,Spec.Rsa.modulusWords];omega))
+  exact Nat.lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) (by dsimp [w,Spec.Rsa.modulusWords];omega_using []))
  have pPositive : 0<(Spec.Ffdh.domainOf k dom).p := by
   have facts := valid
   simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,decide_eq_true_eq] at facts
@@ -78,9 +78,9 @@ theorem context_table_entry {m : Mem} {ctx : Addr} {count k a : Nat} {dom : List
  let index := 3+(2+a)*w+i
  have indexFit : index<count := by
   have hcount := context_words_count canonical
-  have aW := Nat.mul_le_mul_right w (show 2+a≤33 by omega)
+  have aW := Nat.mul_le_mul_right w (show 2+a≤33 by omega_using [ha])
   dsimp [index,w] at *
-  omega
+  omega_using [hi, hcount, aW]
  have entry := congrArg (fun xs : List (BitVec 64) => xs[i]?) (VG.Proof.Ffdh.generationValues_entry k dom a ha)
  have hik : i<Spec.Rsa.modulusWords k := hi
  simp only [List.getElem?_take,ite_eq_left hik,List.getElem?_drop,Spec.Rsa.toWords,

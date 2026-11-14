@@ -43,8 +43,8 @@ theorem wordRel_eq {Q : Nat → BitVec 32} {x : Spec.Sm4.Word} (h : W32.WordRel 
   apply BitVec.eq_of_getLsbD_eq
   intro p hp
   rw [Proof.Sm4.planeOf32_bit x j hp]
-  have := h (p % 8) (by omega) (p / 8) (by omega) j hj
-  rw [show 8 * (p / 8) + p % 8 = p by omega] at this
+  have := h (p % 8) (by omega_using []) (p / 8) (by omega_using [hp]) j hj
+  rw [show 8 * (p / 8) + p % 8 = p by omega_using []] at this
   exact this
 
 theorem keyEntry_eq (k : Spec.Sm4.Schedule) (d : Dir) (e : Nat) : keyEntry k d e = dirKeys d k e := by
@@ -61,8 +61,8 @@ theorem layout_table : layout.table = [(384, 1024)] := rfl
 /-- Byte `j` of the word of slot `w`. -/
 theorem table_byte {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {o : Nat} (ho : o < 4 * tableEnd) :
     B.setWidth 64 + BitVec.ofNat 64 o = wordAddr B (o / 4) + BitVec.ofNat 64 (o % 4) := by
-  rw [wordAddr, addr_add (by rw [slots_eq] at hfit; rw [tableEnd_eq] at ho; omega), VG.Offset.add_add]
-  congr 2; omega
+  rw [wordAddr, addr_add (by rw [slots_eq] at hfit; rw [tableEnd_eq] at ho; omega_using [hfit, ho]), VG.Offset.add_add]
+  congr 2; omega_using []
 
 theorem holds_of_words {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {k : Spec.Sm4.Schedule}
     {d : Spec.Sm4.Direction} (h : WordsAt m B k (ofSpecDir d)) : Proof.Sm4.Prepared.Holds layout m (B.setWidth 64) k d := by
@@ -70,8 +70,8 @@ theorem holds_of_words {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤
   rw [layout_table, List.mem_singleton] at hr
   subst hr
   dsimp only at hi ⊢
-  rw [table_byte hfit (by rw [tableEnd_eq]; omega), Mem.readW_byte m _ (by omega),
-    h _ (by rw [tableSlot_eq]; omega) (by rw [tableEnd_eq]; omega)]
+  rw [table_byte hfit (by rw [tableEnd_eq]; omega_using [hi]), Mem.readW_byte m _ (by omega_using []),
+    h _ (by rw [tableSlot_eq]; omega_using []) (by rw [tableEnd_eq]; omega_using [hi])]
   rfl
 
 theorem words_of_holds {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 2 ^ 32) {k : Spec.Sm4.Schedule}
@@ -82,30 +82,30 @@ theorem words_of_holds {m : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤
   refine (congrArg (BitVec.setWidth 32) (Mem.read_eq_of_bytes (n := 4) (v := preparedWord k (ofSpecDir d) w)
     fun j hj => ?_)).trans (BitVec.setWidth_eq _)
   rw [tableSlot_eq] at h1; rw [tableEnd_eq] at h2
-  have := h (384, 1024) (by rw [layout_table]; exact List.mem_singleton_self _) (4 * w + j - 384) (by omega)
+  have := h (384, 1024) (by rw [layout_table]; exact List.mem_singleton_self _) (4 * w + j - 384) (by omega_using [h2, hj])
   dsimp only at this
-  rw [show 384 + (4 * w + j - 384) = 4 * w + j by omega, table_byte hfit (by rw [tableEnd_eq]; omega),
-    show (4 * w + j) / 4 = w by omega, show (4 * w + j) % 4 = j by omega] at this
+  rw [show 384 + (4 * w + j - 384) = 4 * w + j by omega_using [h1], table_byte hfit (by rw [tableEnd_eq]; omega_using [h2, hj]),
+    show (4 * w + j) / 4 = w by omega_using [hj], show (4 * w + j) % 4 = j by omega_using [hj]] at this
   rw [this]
   show (preparedWord k (ofSpecDir d) ((4 * w + j) / 4)).extractLsb' (8 * ((4 * w + j) % 4)) 8 = _
-  rw [show (4 * w + j) / 4 = w by omega, show (4 * w + j) % 4 = j by omega]
+  rw [show (4 * w + j) / 4 = w by omega_using [hj], show (4 * w + j) % 4 = j by omega_using [hj]]
 
 theorem preparedWord_entry (k : Spec.Sm4.Schedule) (d : Dir) {e j : Nat} (hj : j < 8) :
     preparedWord k d (tableSlot + 8 * e + j) = Impl.Sm4.planeOf32 (dirKeys d k e) j := by
-  rw [preparedWord, keyEntry_eq, show (tableSlot + 8 * e + j - tableSlot) / 8 = e by omega,
-    show (tableSlot + 8 * e + j - tableSlot) % 8 = j by omega]
+  rw [preparedWord, keyEntry_eq, show (tableSlot + 8 * e + j - tableSlot) / 8 = e by omega_using [hj],
+    show (tableSlot + 8 * e + j - tableSlot) % 8 = j by omega_using [hj]]
 
 theorem readyAt_of_words {m : Mem} {B : BitVec 32} {k : Spec.Sm4.Schedule} {d : Dir} (h : WordsAt m B k d) :
     ReadyAt d m B k := fun e he =>
   (Proof.Sm4.planeOf32_rel (dirKeys d k e)).congr fun j hj => by
-    rw [entryW, h _ (by omega) (by rw [tableEnd_eq, tableSlot_eq] at *; omega), preparedWord_entry k d hj]
+    rw [entryW, h _ (by omega_using []) (by rw [tableEnd_eq, tableSlot_eq] at *; omega_using [he, hj]), preparedWord_entry k d hj]
 
 theorem words_of_readyAt {m : Mem} {B : BitVec 32} {k : Spec.Sm4.Schedule} {d : Dir} (h : ReadyAt d m B k) :
     WordsAt m B k d := by
   intro w h1 h2
   obtain ⟨e, j, hj, rfl⟩ : ∃ e j, j < 8 ∧ w = tableSlot + 8 * e + j :=
-    ⟨(w - tableSlot) / 8, (w - tableSlot) % 8, by omega, by omega⟩
-  have he : e < 32 := by rw [tableSlot_eq, tableEnd_eq] at *; omega
+    ⟨(w - tableSlot) / 8, (w - tableSlot) % 8, by omega_using [], by omega_using [h1]⟩
+  have he : e < 32 := by rw [tableSlot_eq, tableEnd_eq] at *; omega_using [h2]
   rw [← entryW, preparedWord_entry k d hj]
   exact wordRel_eq (h e he) hj
 
@@ -147,9 +147,9 @@ theorem prepareBody_wp {s₀ : State} {b sched : BitVec 32} (hw : ScrIn s₀.wr 
     rw [← sv₁ i hi, ← m₂]
     refine h₃.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    rw [slot_addr (by have := hw.fit; rw [savedSlot_eq, slots_eq] at *; omega)]
-    exact VG.Offset.disjoint_base _ (by rw [savedSlot_eq, tableEnd_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    rw [slot_addr (by have := hw.fit; rw [savedSlot_eq, slots_eq] at *; omega_using [hi, this])]
+    exact VG.Offset.disjoint_base _ (by rw [savedSlot_eq, tableEnd_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄, sp₄⟩ := movR_ok s₃ .r12 sb
   obtain ⟨s₅, e₅, rg₅, -, m₅, rd₅, wr₅, sp₅⟩ := restore_ok
     (by rw [wr₄, h₃.wr, wr₂, wr₁]; exact hw) (by rw [r₄, h₃.pre.base]) (by rw [m₄]; exact sv₃)
@@ -158,7 +158,7 @@ theorem prepareBody_wp {s₀ : State} {b sched : BitVec 32} (hw : ScrIn s₀.wr 
   · rw [runBlock_app, e₄, Option.bind_some, e₅]
   · rw [m₅, m₄]
     exact f₂.trans (h₃.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega)⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega_using [])⟩)
   · rw [m₅, m₄, ← sch₂]
     apply words_of_readyAt
     intro e he
@@ -180,7 +180,7 @@ theorem prepared_byte {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32)
     m (State.addr b + BitVec.ofNat 64 o) =
       (m.readW (wordAddr b (o / 4)) 32).extractLsb' (8 * (o % 4)) 8 := by
   change m (b.setWidth 64 + BitVec.ofNat 64 o) = _
-  rw [table_byte hfit ho, Mem.readW_byte m _ (by omega)]
+  rw [table_byte hfit ho, Mem.readW_byte m _ (by omega_using [])]
 
 /-- The cipher transforms the eight buffered blocks, preserving its key table. -/
 theorem cryptBody_wp {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
@@ -199,15 +199,15 @@ theorem cryptBody_wp {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
   have key₂ : KeyCtx s₂ (dirKeys d k) :=
     ⟨by rw [b₂, wr₂, wr₁]; exact hw.mem, by rw [b₂]; exact hw.fit,
       fun e he => (hr e he).congr fun j hj => by
-        rw [b₂, entryW, entryW, slot₂ _ (by rw [tableSlot_eq, savedSlot_eq]; omega)]⟩
+        rw [b₂, entryW, entryW, slot₂ _ (by rw [tableSlot_eq, savedSlot_eq]; omega_using [he, hj])]⟩
   have tail₂ : ∀ j < 8, tailBlock s₂ j =
       Spec.Sm4.blockAt s₀.mem (State.addr b + BitVec.ofNat 64 (4 * tailSlot + 16 * j)) := by
     intro j hj
     apply Vector.ext; intro i hi
     simp only [tailBlock, Spec.Sm4.blockAt, Vector.getElem_ofFn, b₂]
-    rw [VG.Offset.add_add, prepared_byte hw.fit (o := 4 * tailSlot + 16 * j + i) (by rw [tailSlot_eq, tableEnd_eq]; omega) s₂.mem,
-      prepared_byte hw.fit (o := 4 * tailSlot + 16 * j + i) (by rw [tailSlot_eq, tableEnd_eq]; omega) s₀.mem,
-      slot₂ _ (by rw [tailSlot_eq, savedSlot_eq]; omega)]
+    rw [VG.Offset.add_add, prepared_byte hw.fit (o := 4 * tailSlot + 16 * j + i) (by rw [tailSlot_eq, tableEnd_eq]; omega_using [hj, hi]) s₂.mem,
+      prepared_byte hw.fit (o := 4 * tailSlot + 16 * j + i) (by rw [tailSlot_eq, tableEnd_eq]; omega_using [hj, hi]) s₀.mem,
+      slot₂ _ (by rw [tailSlot_eq, savedSlot_eq]; omega_using [hj, hi])]
   refine WP.seq (WP.of_runBlock ⟨s₂, ?_, ?_⟩)
   · rw [runBlock_app, e₁, Option.bind_some, e₂]
   refine WP.seq (WP.mono (crypt8_wp key₂) fun s₃ ⟨c₃, out₃⟩ => ?_)
@@ -217,9 +217,9 @@ theorem cryptBody_wp {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
     rw [← sv₁ i hi, ← m₂]
     refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    rw [slot_addr (by have := hw.fit; rw [savedSlot_eq, slots_eq] at *; omega)]
-    exact VG.Offset.disjoint_base _ (by rw [savedSlot_eq, tableSlot_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    rw [slot_addr (by have := hw.fit; rw [savedSlot_eq, slots_eq] at *; omega_using [hi, this])]
+    exact VG.Offset.disjoint_base _ (by rw [savedSlot_eq, tableSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   obtain ⟨s₄, e₄, r₄, -, m₄, rd₄, wr₄, sp₄⟩ := movR_ok s₃ .r12 sb
   obtain ⟨s₅, e₅, rg₅, -, m₅, rd₅, wr₅, sp₅⟩ := restore_ok
     (by rw [wr₄, c₃.wr, wr₂, wr₁]; exact hw) (by rw [r₄, b₃]) (by rw [m₄]; exact sv₃)
@@ -229,14 +229,14 @@ theorem cryptBody_wp {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
   · rw [m₅, m₄]
     have f₂ : Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s₂.mem := by rw [m₂]; exact f₁
     exact f₂.trans (f₃.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega)⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using [])⟩)
   · intro e he
     refine (hr e he).congr fun j hj => ?_
-    rw [entryW, entryW, m₅, m₄, ← slot₂ (tableSlot + 8 * e + j) (by rw [tableSlot_eq, savedSlot_eq]; omega)]
+    rw [entryW, entryW, m₅, m₄, ← slot₂ (tableSlot + 8 * e + j) (by rw [tableSlot_eq, savedSlot_eq]; omega_using [he, hj])]
     refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    rw [slot_addr (by have := hw.fit; rw [tableSlot_eq, slots_eq] at *; omega)]
-    exact VG.Offset.disjoint_base _ (by omega) (by rw [tableSlot_eq]; omega)
+    rw [slot_addr (by have := hw.fit; rw [tableSlot_eq, slots_eq] at *; omega_using [he, hj, this])]
+    exact VG.Offset.disjoint_base _ (by omega_using []) (by rw [tableSlot_eq]; omega_using [he, hj])
   · intro j hj
     have h := out₃ j hj
     simp only [tailBlock, b₃] at h

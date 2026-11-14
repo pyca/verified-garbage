@@ -65,7 +65,7 @@ theorem sc_cov {o n : Nat} (h : o + n ≤ oRsa) : Covers [⟨off (S s) o, n⟩] 
   Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr]
     obtain ⟨R, hR, hb, hl⟩ := P.sc
-    exact ⟨R, List.mem_cons_of_mem _ hR, o, by rw [hb], by simp only; omega⟩
+    exact ⟨R, List.mem_cons_of_mem _ hR, o, by rw [hb], by simp only; omega_using [h, hl]⟩
 
 theorem sc_inR {o n : Nat} (h : o + n ≤ oRsa) (rd : List Region) :
     InRegions (rd ++ (fr s :: s.wr)) (off (S s) o) n :=
@@ -83,7 +83,7 @@ omit P in
 /-- Two ranges of our part of the working space that do not overlap. -/
 theorem sdis {a n b k : Nat} (h : a + n ≤ b ∨ b + k ≤ a) (ha : a + n ≤ oRsa) (hb : b + k ≤ oRsa) :
     Region.Disjoint ⟨off (S s) a, n⟩ ⟨off (S s) b, k⟩ :=
-  Offset.disjoint _ h (by unfold oRsa at ha; omega) (by unfold oRsa at hb; omega)
+  Offset.disjoint _ h (by unfold oRsa at ha; omega_using [ha]) (by unfold oRsa at hb; omega_using [hb])
 
 /-- The 48 bytes below the frame and a range of our part of the working space. -/
 theorem cR_dis {o n : Nat} (h : o + n ≤ oRsa) : (cR s).Disjoint ⟨off (S s) o, n⟩ :=
@@ -97,7 +97,7 @@ theorem cR_slR (s : State) : (cR s).Disjoint (slR s) := by
     simp only [slR]; rw [fb_off]
   rw [e]
   have := Offset.disjoint (s.sp - BitVec.ofNat 64 304) (d := 0) (n := 48) (e := 48 + 112) (k := oLr + 8 - 112)
-    (.inl (by omega)) (by omega) (by decide)
+    (.inl (by omega_using [])) (by omega_using []) (by decide)
   rwa [BitVec.add_zero] at this
 
 /-! ## The state in the frame -/
@@ -135,7 +135,7 @@ theorem Base.of (P : Fits S s) (h : Base S vf s t) (hsp : w.sp = t.sp) (hrd : w.
     refine ⟨hsp.trans h.sv.sp, hwr.trans h.sv.wr, fun r hr => (hg r (List.mem_append_right _ hr)).trans
       (h.sv.hi r hr), h.sv.sv.frame hm fun p hp r hr => (hd r hr).sub_left ?_, ?_⟩
     · have := saved_offs p hp
-      exact Offset.sub _ (n := 8) (by omega) (by unfold oLr at *; omega)
+      exact Offset.sub _ (n := 8) (by omega_using [this]) (by unfold oLr at *; omega_using [this])
     · rw [hm.readW (Region.contains_self _ _) (fun r hr => (hd r hr).sub_left
         (Offset.sub _ (n := 8) (by decide) (by decide))) (by decide)]
       exact h.sv.ls
@@ -191,7 +191,7 @@ theorem words_entry {A B : Region} {m m' : Mem} (hf : Frame [A, B] m m') {p : Ad
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => hf.readW (r := ⟨p, n * 8⟩) ?_ (fun r hr => ?_) (by decide)
   · have := List.mem_range.mp hi
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [this]) (by omega_using [hl, this])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ha.symm

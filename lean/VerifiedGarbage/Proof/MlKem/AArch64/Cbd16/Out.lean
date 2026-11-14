@@ -34,9 +34,9 @@ theorem out_ok {s : State} {off : Nat} {part : VPermOp} {a : Addr} {f : Nat → 
     refine (lanes_add (by rw [h1.v]; exact hx) (by rw [h1.get .v17]; exact hc)).congr ?_
     intro e he
     have := hf e he
-    omega
+    omega_using [this]
   refine vcsub_ok (by decide) (by rw [h2.get .v16,h1.get .v16]; exact hq) hl
-    (fun e he => by have := hf e he; omega) fun s3 h3 hl3 => ?_
+    (fun e he => by have := hf e he; omega_using [this]) fun s3 h3 hl3 => ?_
   refine wp_strq (a := a) ho (by rw [h3.gpr,h2.gpr,h1.gpr]; exact ha)
     (by rw [h3.wr,h2.wr,h1.wr]; exact hin) fun s4 h4 => ?_
   refine k s4 (s3.v .v6) (((h1.keep.trans h2.keep).trans h3.keep).trans h4.keep)

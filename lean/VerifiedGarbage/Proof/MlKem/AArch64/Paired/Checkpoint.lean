@@ -32,7 +32,7 @@ theorem load_checkpoint (s : State) {r : Reg} {slot : Nat} (ho : slot+8<32768) (
       Only [.x3,.x4] s u ∧
       u.gpr .x3=s.mem.readW (s.gpr r+BitVec.ofNat 64 slot) 64 ∧
       u.gpr .x4=s.mem.readW (s.gpr r+BitVec.ofNat 64 (slot+8)) 64 := by
-    refine wp_ldrx (by omega) rfl h0 fun a ha ea => wp_ldrx (by omega)
+    refine wp_ldrx (by omega_using [ho, ha]) rfl h0 fun a ha ea => wp_ldrx (by omega_arith)
       (by rw [ha.get r hr']) (by rw [ha.rd,ha.wr]; exact h1) fun u hu eu => wp_nil ?_
     refine ⟨(ha.trans hu).mono (by decide),by rw [hu.get .x3,ea],?_⟩
     rw [eu,ha.mem]
@@ -50,7 +50,7 @@ theorem store_checkpoint (s : State) {r : Reg} {slot : Nat} (ho : slot+8<32768) 
   have he : s.gpr r+BitVec.ofNat 64 (slot+8)=p+8 := by simp only [p,BitVec.ofNat_add,BitVec.add_assoc]; rfl
   have hw : WP isa (.block [.str .x .x3 r slot,.str .x .x4 r (slot+8)]) s fun u =>
       Keep [] s u ∧ u.mem=(s.mem.writeW p (s.gpr .x3)).writeW (p+8) (s.gpr .x4) := by
-    refine wp_strx (by omega) rfl h0 fun a ha => wp_strx (by omega)
+    refine wp_strx (by omega_using [ho, ha]) rfl h0 fun a ha => wp_strx (by omega_arith)
       (by rw [ha.gpr]) (by rw [ha.wr]; exact h1) fun u hu => wp_nil ?_
     refine ⟨(ha.keep.trans hu.keep).mono (by decide),?_⟩
     rw [hu.mem,ha.mem,ha.gpr,he]

@@ -21,6 +21,10 @@ meta import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvLoads
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvStores
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyWs
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithB
+public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithC
+import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArith
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: constant time
@@ -43,6 +47,8 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.Rsa.PPC64LE.CrtValues (code entry check check1 check2 valid fail restore)
+open VG.Impl.Rsa.PPC64LE.Keys (seqs)
+open VG.Proof.Rsa.PPC64LE.Keys (flat_seqs)
 
 /-- The public data: the argument registers, the stack arguments and `n`'s bytes. -/
 structure CvD where
@@ -140,7 +146,7 @@ theorem check_args {s0 s : State} (h : EP s0 s) :
     -⟩ := id b.pre
   have wn' : (s0.gpr .r9).toNat + cvK s0 ≤ 2 ^ 64 := wn
   have hc : ∀ i < cvK s0, (⟨s0.gpr .r9, cvK s0⟩ : Region).Contains (off (s0.gpr .r9) i) 1 := fun i hi =>
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hi]) (by omega_using [wn', hi])
   refine ⟨by rw [k.gpr _ (by decide)]; simp [off], by rw [k.gpr _ (by decide)]; exact ofNat_toNat64 _,
     fun i hi => ⟨_, List.mem_append_left _ (by rw [b.rd, hrd]; simp), hc i hi⟩,
     fun i hi => by rw [b.frame _ (past_of_disjoint dn (hc i hi))]; simp [Spec.Rsa.bytesAt, off]⟩
@@ -165,7 +171,7 @@ theorem C1_of {d : CvD} {s : State} (h : E2 d s) : WP isa (.block check1) s (C1 
   obtain ⟨h9, h10, hrd, hb⟩ := check_args he
   obtain ⟨-, -, -, hk, -⟩ := pre_scr hs.1
   refine WP.mono (check1_ok h9 h10 hk (len_nb s0) hrd hb) fun t ⟨⟨i0, i11, im⟩, k⟩ =>
-    ⟨s0, s, hs, he, by rw [i0, getD_of_lt (by rw [len_nb]; omega)], by rw [i11, getD_of_lt (by rw [len_nb]; omega)],
+    ⟨s0, s, hs, he, by rw [i0, getD_of_lt (by rw [len_nb]; omega_using [hk])], by rw [i11, getD_of_lt (by rw [len_nb]; omega_using [hk])],
       im, k⟩
 
 theorem C2_of {d : CvD} {s : State} (h : C1 d s) : WP isa check2 s (C2 d) := by
@@ -173,8 +179,8 @@ theorem C2_of {d : CvD} {s : State} (h : C1 d s) : WP isa check2 s (C2 d) := by
   obtain ⟨-, -, -, hk, hk'⟩ := pre_scr hs.1
   have h10 : s.gpr .r10 = BitVec.ofNat 64 (cvK s0) := by
     rw [ku.gpr _ (by decide), k.gpr _ (by decide)]; exact ofNat_toNat64 _
-  refine WP.mono (check2_ok h10 hk hk' (len_nb s0) (by rw [i0, getD_of_lt (by rw [len_nb]; omega)])
-    (by rw [i11, getD_of_lt (by rw [len_nb]; omega)])) fun t ⟨hv, tm, kt⟩ =>
+  refine WP.mono (check2_ok h10 hk hk' (len_nb s0) (by rw [i0, getD_of_lt (by rw [len_nb]; omega_using [hk])])
+    (by rw [i11, getD_of_lt (by rw [len_nb]; omega_using [hk])])) fun t ⟨hv, tm, kt⟩ =>
     ⟨s0, hs, (b.of_regs ku im).of_regs kt tm, (a.of_keep ku).of_keep kt, hv⟩
 
 theorem check_ct : RelCT isa (Two E2) check (Two C2) :=
@@ -189,10 +195,11 @@ def D (d : CvD) (t : State) : Prop := ∃ s0 m, CVRel d s0 ∧ Fr s0 m t
 /-- The registers both branches start from. -/
 abbrev brRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r31]
 
-theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s) : Pins Φ brRegs := by
+theorem pins_args {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s) :
+    Pins Φ brRegs := by
   intro d s₁ s₂ h₁ h₂ r hr
-  obtain ⟨a, ha, b₁, a₁, -⟩ := hΦ _ _ h₁
-  obtain ⟨b, hb, b₂, a₂, -⟩ := hΦ _ _ h₂
+  obtain ⟨a, ha, b₁, a₁⟩ := hΦ _ _ h₁
+  obtain ⟨b, hb, b₂, a₂⟩ := hΦ _ _ h₂
   simp only [brRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · rw [a₁.r14, a₂.r14, ha.reg hb (by decide)]
@@ -207,6 +214,79 @@ theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s)
   · rw [a₁.r23, a₂.r23, ha.arg hb (by decide)]
   · rw [a₁.r24, a₂.r24, ha.arg hb (by decide)]
   · rw [b₁.r31, b₂.r31]; exact ha.arg hb (by decide)
+
+theorem pins_br {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → C2 d s) : Pins Φ brRegs :=
+  pins_args fun d s h => let ⟨s0, hs, b, a, _⟩ := hΦ d s h; ⟨s0, hs, b, a⟩
+
+/-- Before the stores: the arguments kept, which the division by words
+reloads from memory, and the stores then end the branch. -/
+def A (d : CvD) (t : State) : Prop :=
+  (∃ s0, CVRel d s0 ∧ Base s0 t ∧ Args s0 t ∧
+    VG.Proof.Rsa.PPC64LE.Keys.Ws t (cvB s0) (cvZ s0) (cvW s0) VG.Impl.Rsa.PPC64LE.CrtValues.nArr) ∧
+    WP isa VG.Impl.Rsa.PPC64LE.CrtValues.stores t (D d)
+
+/-- The registers the stores start from: the arguments, the base, `w` and the stride. -/
+abbrev stRegs : List Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r31, .r29, .r30]
+
+theorem pins_frame {Φ : CvD → State → Prop} (hΦ : ∀ d s, Φ d s → ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s ∧
+    VG.Proof.Rsa.PPC64LE.Keys.Ws s (cvB s0) (cvZ s0) (cvW s0) VG.Impl.Rsa.PPC64LE.CrtValues.nArr) :
+    Pins Φ stRegs := by
+  intro d s₁ s₂ h₁ h₂ r hr
+  obtain ⟨a, ha, b₁, a₁, w₁⟩ := hΦ _ _ h₁
+  obtain ⟨b, hb, b₂, a₂, w₂⟩ := hΦ _ _ h₂
+  have ew : cvW a = cvW b := by simp only [cvW]; rw [ha.k hb]
+  by_cases hbr : r ∈ brRegs
+  · exact pins_args (Φ := fun d s => ∃ s0, CVRel d s0 ∧ Base s0 s ∧ Args s0 s) (fun _ _ h => h) d s₁ s₂
+      ⟨a, ha, b₁, a₁⟩ ⟨b, hb, b₂, a₂⟩ r hbr
+  · simp only [stRegs, brRegs, List.mem_cons, List.not_mem_nil, or_false] at hr hbr
+    rcases hr with h | h | h | h | h | h | h | h | h | h | h | h | rfl | rfl
+    all_goals first | exact absurd h (by simp_all) | skip
+    · rw [w₁.r29, w₂.r29, ew]
+    · rw [w₁.r30, w₂.r30, ew]
+
+theorem pins_A : Pins A stRegs := pins_frame fun _ _ h => h.1
+
+theorem pre_A [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) :
+    WP isa (.seq (.seq VG.Impl.Rsa.PPC64LE.CrtValues.setup VG.Impl.Rsa.PPC64LE.CrtValues.loads)
+      VG.Impl.Rsa.PPC64LE.CrtValues.arith) s (A d) := by
+  obtain ⟨⟨s0, hs, b, a, hv⟩, h0⟩ := h
+  exact WP.assoc' (WP.mono (valid_pre_ok b a (hv.mp h0)) fun t ⟨⟨bt, at', wt⟩, w⟩ =>
+    ⟨⟨s0, hs, bt, at', wt⟩, WP.mono w fun _ ⟨⟨⟨m, f⟩, _⟩, _⟩ => ⟨s0, m, hs, f⟩⟩)
+
+/-- The valid branch up to the inverse and its checks. -/
+abbrev preAB : Prog isa :=
+  seqs ([VG.Impl.Rsa.PPC64LE.CrtValues.setup, VG.Impl.Rsa.PPC64LE.CrtValues.loads] ++ (partA ++ partB))
+
+theorem flat_preAB : (Code.seq (.seq VG.Impl.Rsa.PPC64LE.CrtValues.setup VG.Impl.Rsa.PPC64LE.CrtValues.loads)
+    VG.Impl.Rsa.PPC64LE.CrtValues.arith).flat = preAB.flat ++ (seqs partC).flat := by
+  have nA : partA ≠ [] := by unfold partA; exact List.cons_ne_nil _ _
+  have nC : partC ≠ [] := by unfold partC; exact List.cons_ne_nil _ _
+  rw [preAB, flat_seqs (by simp), flat_seqs nC, Code.flat, Code.flat, arith_eq,
+    flat_seqs (List.append_ne_nil_of_left_ne_nil nA _)]
+  simp only [List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.append_assoc]
+
+/-- After the inverse and its checks: the arguments kept, which the inverse
+reloads from memory, and the rest of `arith` then reaches `A`. -/
+def A1 (d : CvD) (t : State) : Prop :=
+  (∃ s0, CVRel d s0 ∧ Base s0 t ∧ Args s0 t ∧
+    VG.Proof.Rsa.PPC64LE.Keys.Ws t (cvB s0) (cvZ s0) (cvW s0) VG.Impl.Rsa.PPC64LE.CrtValues.nArr) ∧
+    WP isa (seqs partC) t (A d)
+
+theorem pins_A1 : Pins A1 stRegs := pins_frame fun _ _ h => h.1
+
+theorem pre_A1 [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa preAB s (A1 d) := by
+  obtain ⟨⟨s0, hs, b, a, -⟩, -⟩ := id h
+  exact WP.and (WP.mono (preAB_ok b a) fun _ ⟨bt, at', wt⟩ => ⟨s0, hs, bt, at', wt⟩) (Keys.WP.cut flat_preAB (pre_A h))
+
+/-- The valid branch, in three: the stores' registers pinned again after the
+inverse, which reloads them from memory, and after `arith`, whose divisions
+do. -/
+theorem valid_ct [InvLaw] : RelCT isa (Two fun d s => C2 d s ∧ s.gpr .r0 = 0) valid (Two D) := by
+  unfold valid
+  refine RelCT.assoc (RelCT.assoc (RelCT.seq (Keys.RelCT.cut (R := Two A1) flat_preAB
+    (two_post (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => pre_A1 h)
+    (two_post (two_taint _ pins_A1 (by taint_decide)) fun _ _ h => h.2))
+    (two_post (two_taint _ pins_A (by taint_decide)) fun _ _ h => h.2)))
 
 theorem valid_D [InvLaw] {d : CvD} {s : State} (h : C2 d s ∧ s.gpr .r0 = 0) : WP isa valid s (D d) := by
   obtain ⟨⟨s0, hs, b, a, hv⟩, h0⟩ := h
@@ -225,9 +305,7 @@ theorem valid_iff {d : CvD} {s₁ s₂ : State} (h₁ : C2 d s₁) (h₂ : C2 d 
 
 theorem branch_ct [InvLaw] : RelCT isa (Two C2) (.ite (.zero .d .r0) valid fail) (Two D) := by
   refine RelCT.ite (fun s₁ s₂ ⟨d, h₁, h₂, _⟩ => ?_)
-    (RelCT.mono (two_post (Φ := fun d s => C2 d s ∧ s.gpr .r0 = 0)
-      (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => valid_D h)
-      (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
+    (RelCT.mono valid_ct (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
     (RelCT.mono (two_post (Φ := fun d s => C2 d s ∧ s.gpr .r0 ≠ 0)
       (two_taint _ (pins_br fun _ _ h => h.1) (by taint_decide)) fun _ _ h => fail_D h)
       (fun s₁ s₂ ⟨⟨d, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)

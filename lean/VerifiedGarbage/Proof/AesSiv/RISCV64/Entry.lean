@@ -52,7 +52,7 @@ theorem sub_lo {c : Cx} {d k : Nat} (h : d + k ≤ 128) :
 
 theorem sub_hi {c : Cx} {d k : Nat} (h₁ : 240 ≤ d) (h₂ : d + k ≤ 2576) :
     ∃ r' ∈ mutR c, Region.Sub ⟨c.W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 theorem sub_data {c : Cx} : ∃ r' ∈ mutR c, Region.Sub ⟨c.D, c.n⟩ r' := ⟨_, by simp, fun _ h => h⟩
 
@@ -106,7 +106,7 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
   have hww := L.ww
   rw [entry_code]
   refine save_ok (b := .a7) (by rw [Ar.a7]; exact L.wal) savedL_off (fun p hp => by
-    rw [Ar.a7]; exact Ar.perm.wW (by have := savedL_bound p hp; omega)) ?_
+    rw [Ar.a7]; exact Ar.perm.wW (by have := savedL_bound p hp; omega_using [this])) ?_
   rw [Ar.a7]
   generalize hs₀ : ({ s with mem := saveMem s.mem c.W s.gpr savedL } : State) = s₀
   have g₀ : s₀.gpr = s.gpr := by rw [← hs₀]
@@ -150,7 +150,7 @@ theorem entry_wp {c : Cx} {s : State} (Ar : Args c s) : WP isa (.block entry) s 
       u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), g₀,
       Ar.a3]
   · rw [m₈, m₀]; exact saveMem_saved savedL_fits _ _ _
-  · rw [m₈, m₀]; exact Spill.saveMem_frame savedL_bound (by omega) _ _ _
+  · rw [m₈, m₀]; exact Spill.saveMem_frame savedL_bound (by omega_using []) _ _ _
   · rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, sp₀]
 
 /-! ## The exit -/
@@ -172,7 +172,7 @@ theorem exit_wp {c : Cx} (L : Lay c) {s₀ s : State} (E : Env c s) (sv : Saved 
   rw [restore_code]
   refine WP.mono (restore_wp (b := .s1) (B := c.W) L.wal E.s1 (by decide) (by decide) (fun p hp => by
       have := savedL_bound p (restoreL_sub p hp)
-      exact E.perm.wR (by omega)) (sv.sub restoreL_sub)) fun s' R => ?_
+      exact E.perm.wR (by omega_using [this])) (sv.sub restoreL_sub)) fun s' R => ?_
   refine ⟨⟨fun r hr => ?_, by rw [R.sp, hsp], R.gpr (.ra, raO) List.mem_cons_self⟩, R.mem,
     R.other _ (by decide)⟩
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (preserved_restored r hr)

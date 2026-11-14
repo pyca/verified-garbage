@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Deterministic ECDSA: the search for a candidate, step by step
@@ -59,7 +60,7 @@ theorem searchB_pos {b : Nat} (hb : blocks C hlen = b) {d e : Nat} {K V : List B
     1 ≤ (search C H hlen d e K V (n + 1)).2 := by
   cases h : Spec.Ecdsa.signWith C d e (bits2int C (genT H K b V).1) with
   | some rs => rw [searchB_ok hb h]; exact Nat.le_refl 1
-  | none => rw [searchB_fail hb h]; omega
+  | none => rw [searchB_fail hb h]; omega_using []
 
 theorem searchB_shift {b : Nat} (hb : blocks C hlen = b) {d e : Nat} {K V : List Byte} :
     ∀ i n, i ≤ n → (∀ j < i, Spec.Ecdsa.signWith C d e (bits2int C (candAtB H b K V j)) = none) →
@@ -68,9 +69,9 @@ theorem searchB_shift {b : Nat} (hb : blocks C hlen = b) {d e : Nat} {K V : List
           (search C H hlen d e (kvAtB H b K V i).1 (kvAtB H b K V i).2 (n - i)).2 + i)
   | 0, n, _, _ => by simp [kvAtB]
   | i + 1, n, hi, hf => by
-    rw [searchB_shift hb i n (by omega) fun j hj => hf j (by omega),
-      show n - i = (n - (i + 1)) + 1 by omega, searchB_fail hb (hf i (by omega))]
+    rw [searchB_shift hb i n (by omega_using [hi]) fun j hj => hf j (by omega_using [hj]),
+      show n - i = (n - (i + 1)) + 1 by omega_using [hi], searchB_fail hb (hf i (by omega_using []))]
     simp only [kvAtB, Prod.mk.injEq, true_and]
-    omega
+    omega_using []
 
 end VG.Proof.Ecdsa.Rfc6979

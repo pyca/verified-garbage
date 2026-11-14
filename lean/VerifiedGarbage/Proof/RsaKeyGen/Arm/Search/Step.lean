@@ -78,7 +78,7 @@ theorem rand_length {p : SearchPublic} {o : State} (h : SearchInput p o) : (sear
 
 theorem op_short {L : Nat} {eB pB r : List Byte} (h : r.length < L) : candidateOp L eB pB r = none := by
   unfold candidateOp Spec.RsaKeyGen.candidateStep Spec.RsaKeyGen.draw
-  have : (r.take (8 * L / 8)).length ≠ 8 * L / 8 := by rw [List.length_take]; omega
+  have : (r.take (8 * L / 8)).length ≠ 8 * L / 8 := by rw [List.length_take]; omega_using [h]
   simp only [this, ite_false]
   rfl
 
@@ -113,7 +113,7 @@ theorem head_ok {p : SearchPublic} {o s : State} {used remaining : Nat}
     · simpa using Offset.contains_base (State.addr p.up) (d := 0) (n := 4) (k := 8) (by decide) (by decide)
   ffrun [a, r, used_low hw, h0]
   change some (BitVec.ofNat 32 st - 1 == 0) = _
-  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_eq_beq (by omega) (by omega)]
+  rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_eq_beq (by omega_using [hst]) (by omega_using [])]
 
 theorem dec32 {k : Nat} (h1 : 1 ≤ k) :
     BitVec.ofNat 32 k - 1 = BitVec.ofNat 32 (k - 1) := by
@@ -129,25 +129,25 @@ theorem advance_ok {p : SearchPublic} {o s : State} {used k n st : Nat} (h : Sea
       (SearchLive p o (used + n) (if st = 3 then k - 1 else k)) := by
   have rem := h.input.facts.remaining
   have hrl : k < 2 ^ 32 := by
-    have := h.remaining_le; have := h.input.remaining_le; omega
+    have := h.remaining_le; have := h.input.remaining_le; omega_arith
   refine WP.seq (WP.mono (withRest_all (c := .block [.dp .add .r8 .r8 (.reg .r12), .cmp .r0 (.imm 3)]) [.r8]
     (Q := fun t => t.gpr .r8 = BitVec.ofNat 32 (used + n) ∧ isa.eval .eq t = some (decide (st = 3)) ∧
       t.mem = s.mem) ?_ (by rfl) (by rfl)) fun u ⟨⟨h8, he, hm⟩, ku⟩ => ?_)
   · ffrun [h.r8, h12, h0, add_ofNat32]
     change some (BitVec.ofNat 32 st - 3 == 0) = _
-    rw [show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_eq_beq (by omega) (by omega)]
+    rw [show (3 : BitVec 32) = BitVec.ofNat 32 3 from rfl, sub_eq_beq (by omega_using [hst]) (by omega_using [])]
   have hb := h.toSearchBase.keep ku hm
   refine WP.ite _ he (fun h3 => ?_) (fun h3 => ?_)
   · have h3 := of_decide_eq_true h3
     rw [ite_eq_left h3]
     refine WP.mono (withRest_all (c := .block [.dp .sub .r9 .r9 (.imm 1)]) [.r9]
       (Q := fun t => t.gpr .r9 = BitVec.ofNat 32 (k - 1) ∧ t.mem = u.mem) ?_ (by rfl) (by rfl))
-      fun t ⟨⟨h9, hmt⟩, kt⟩ => ⟨hb.keep kt hmt, by omega, by have := h.remaining_le; omega,
+      fun t ⟨⟨h9, hmt⟩, kt⟩ => ⟨hb.keep kt hmt, by omega_using [hu], by have := h.remaining_le; omega_using [this],
         (kt.gpr .r8 (by decide)).trans h8, h9, (kt.gpr .r11 (by decide)).trans ((ku.gpr .r11 (by decide)).trans h.r11)⟩
     ffrun [(ku.gpr .r9 (by decide)).trans h.r9, dec32 (Nat.pos_of_ne_zero hk)]
   · have h3 := of_decide_eq_false h3
     rw [ite_eq_right h3]
-    exact WP.block_nil ⟨hb, by omega, h.remaining_le, h8, (ku.gpr .r9 (by decide)).trans h.r9,
+    exact WP.block_nil ⟨hb, by omega_using [hu], h.remaining_le, h8, (ku.gpr .r9 (by decide)).trans h.r9,
       (ku.gpr .r11 (by decide)).trans h.r11⟩
 
 theorem SearchLive.keep {p : SearchPublic} {o s t : State} {used k : Nat} (h : SearchLive p o used k s)
@@ -174,9 +174,9 @@ theorem used_bound {p : SearchPublic} {o : State} {used : Nat} {x : Spec.RsaKeyG
   obtain ⟨m, hm, hL, hr⟩ := Search.candidateOp_suffix hop
   have hlen := rand_length h
   rw [List.length_drop, hlen] at hm
-  refine ⟨m, ?_, hL, by omega, by rw [hr, List.drop_drop]⟩
+  refine ⟨m, ?_, hL, by omega_using [hu, hm], by rw [hr, List.drop_drop]⟩
   rw [hr, List.length_drop, List.length_drop, hlen]
-  omega
+  omega_using [hm]
 
 /-- A rejected candidate, too close (2) or counted (3), of `m` octets. -/
 theorem rejected_ok {p : SearchPublic} {o u : State} {final : PrimeSearchResult} {used k m st : Nat}
@@ -196,18 +196,18 @@ theorem rejected_ok {p : SearchPublic} {o u : State} {final : PrimeSearchResult}
   have hlL := h.input.facts.valid
   unfold primeEntropy at rl
   unfold Spec.RsaKeyGen.primeLenValid at hlL
-  refine WP.seq (WP.mono (cmp0_ok (n := st) h0 (by omega)) fun u2 ⟨⟨he2, hm2⟩, k2⟩ => ?_)
+  refine WP.seq (WP.mono (cmp0_ok (n := st) h0 (by omega_using [hst])) fun u2 ⟨⟨he2, hm2⟩, k2⟩ => ?_)
   refine WP.ite _ he2 (fun c => by have := of_decide_eq_true c; omega) (fun _ => ?_)
   have hu2 := h.keep k2 hm2
   unfold reject
-  refine WP.seq (WP.mono (cmp0_ok (n := m) ((k2.gpr .r12 (by decide)).trans h12) (by omega))
+  refine WP.seq (WP.mono (cmp0_ok (n := m) ((k2.gpr .r12 (by decide)).trans h12) (by omega_using [hum, rl, hlL]))
     fun u3 ⟨⟨he3, hm3⟩, k3⟩ => ?_)
   have hu3 := hu2.keep k3 hm3
   rw [List.length_drop, hlen] at htail
   refine WP.ite _ he3 (fun z => ?_) (fun z => ?_)
   · have z := of_decide_eq_true z
     have e' : final = ⟨.exhausted, used, tr ++ entryOf p o used⟩ := by
-      rw [hfin, htail, ite_eq_right (by omega)]; rfl
+      rw [hfin, htail, ite_eq_right (by omega_using [hm, z])]; rfl
     rw [e']
     exact WP.mono (exhausted_ok hu3.toSearchBase hu3.r8 hu3.used_le _) fun t ht =>
       done_post (fun hc => hc.2.2.2 (by rw [hcu]; exact z)) ht
@@ -218,7 +218,7 @@ theorem rejected_ok {p : SearchPublic} {o u : State} {final : PrimeSearchResult}
     unfold StepPost nextK
     rw [ite_eq_left hc, hcu, hcs]
     refine ⟨ht, ?_⟩
-    rw [hfin, htail, ite_eq_left (by omega), Search.consume_consume, ← hm, tailOf, ← hrest]
+    rw [hfin, htail, ite_eq_left (by omega_using [hm, z]), Search.consume_consume, ← hm, tailOf, ← hrest]
 
 /-- After a candidate, from `used`, with `k` counted candidates left. -/
 theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} {used k : Nat}
@@ -250,7 +250,7 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
       split <;> rfl
     rw [e]
     have nc : ¬Cont p o used k := fun hc => by
-      have := hc.2.2.1; simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus] at this; omega
+      have := hc.2.2.1; simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus] at this; omega_using [this]
     exact WP.mono (short_ok hu2.toSearchBase hu2.r8 hu2.r9 hu hu2.remaining_le (by rw [hm2, hm]; exact hout) _)
       fun t ht => done_post nc ht
   | some pair =>
@@ -269,7 +269,7 @@ theorem classify_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult}
         rw [hfin, tailOf, Search.search_prime hk hop, List.length_drop, hlen, ← hn]; rfl
       rw [e]
       have nc : ¬Cont p o used k := fun hc => by
-        have := hc.2.2.1; simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus] at this; omega
+        have := hc.2.2.1; simp only [candStatus, candOp, hop, Spec.RsaKeyGen.candidateStatus] at this; omega_using [hk, hroom, hu, hlen, rl, hlenL, hm', hLm, hum, hn, h0', h12, this]
       exact WP.mono (accept_ok hu'.toSearchBase hu'.r8 h12 hum (by rw [hm]; exact hout) _) fun t ht => done_post nc ht
     | close =>
       refine WP.seq (WP.mono (head_ok h hw (st := 2) (by decide) (status_ofNat h0')) fun u ⟨⟨h12, he, hm⟩, ku⟩ => ?_)

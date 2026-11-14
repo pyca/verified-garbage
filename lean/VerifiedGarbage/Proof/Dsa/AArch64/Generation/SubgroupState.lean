@@ -81,14 +81,14 @@ structure SubgroupState (p : SubgroupPlan) (used : Nat) (s : State) : Prop where
 
 theorem SubgroupPlan.bits (p : SubgroupPlan) : Spec.Dsa.bitLength p.prime.N = 8 * p.prime.len := by
   rw [p.modulus]
-  exact VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.width with h | h <;> omega) _
+  exact VG.Proof.Dsa.Generation.qCandidate_bitLength (by rcases p.width with h | h <;> omega_using [h]) _
 
 theorem SubgroupPlan.encoding (p : SubgroupPlan) :
     Spec.Rsa.os2ip (Spec.Dsa.encodeBE p.prime.len p.prime.N) = p.prime.N := by
   rw [← VG.Proof.Dsa.decodeBE_os2ip]
   apply VG.Proof.Dsa.decodeBE_encodeBE
   have hshape := VG.Proof.Dsa.Generation.qCandidate_shape
-    (show 2 ≤ 8 * p.prime.len by rcases p.width with h | h <;> omega) p.seed
+    (show 2 ≤ 8 * p.prime.len by rcases p.width with h | h <;> omega_using [h]) p.seed
   rw [← p.modulus] at hshape
   have hp : 256 ^ p.prime.len = 2 ^ (8 * p.prime.len) := by
     rw [Nat.pow_mul]

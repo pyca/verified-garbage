@@ -15,11 +15,11 @@ The pieces of `sign` and `verifyPrecomputed`, which
 `Impl.Pbkdf2.Md.AArch64.Hash`, of which the code uses only its parameters
 and digest length) and MGF1's hash function, as on x86-64
 (`Impl/RsaPss/X86_64.lean`), whose design this follows. Both are given as
-tables (`Spec/MdHashTable.lean`, `Spec/HashTable.lean`): `H`'s streaming
+tables of `MdHash` (`Spec/MdHashTable.lean`): `H`'s streaming
 `init`, compression function and digest of a hash value are called through
 the words of its table of `MdHash` that `encode` and `checkEncoding` copy to
 slots of their frame (`tabSlots`, `scall`), and MGF1 is
-`Impl/RsaOaep/AArch64/Mgf1/Table.lean`'s, with the table of `Hash`, in a
+`Impl/RsaOaep/AArch64/Mgf1/Table.lean`'s, with MGF1's table, in a
 frame of its own (`mgfXor`). The RSA operation is `vg_rsa_private_checked`
 when signing, a precomputed public operation when verifying.
 
@@ -113,7 +113,7 @@ def sPreLen : Nat := 320
 
 /-- The slots of the words of the tables, in `encode` and `checkEncoding`
 (which use neither `p`, `p_len`, `pre` nor `pre_len`): the address of the
-table of `Hash`, and the table of `MdHash`'s `init` (its word 0),
+table of `MdHash`, and the table of `MdHash`'s `init` (its word 0),
 compression function (word 3) and digest (word 4). -/
 def sMgfT : Nat := 288
 def sIniH : Nat := 296
@@ -267,7 +267,7 @@ def mgfArgs : List Instr :=
 
 variable (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns)
 
-/-- `DB ⊕= MGF1(H, dbLen)`, with the hash function of the table of `Hash`
+/-- `DB ⊕= MGF1(H, dbLen)`, with the hash function of the table of `MdHash`
 whose address is in `sMgfT`. -/
 def mgfXor : Prog isa :=
   .frame (.alloc mgfFrame) (.seq (.block (mgfArgs H))
@@ -366,6 +366,31 @@ def privArgs : List Instr :=
     [movi .x9 oRsa, .add .x .x9 .x20 .x9, .str .x .x9 .x16 80, ld .x9 sScrLen, .subImm .x .x9 .x9 1024,
       .str .x .x9 .x16 88, ld .x0 sOut, mov .x1 .x23, ld .x2 sN, mov .x3 .x23, ld .x4 sE, ld .x5 sEl,
       .addImm .x .x6 .x20 oEm, mov .x7 .x23]
+
+/-! ### Signing with the key's precomputed values
+
+`vg_rsa_pss_sign_precomputed` takes `pre` and `pre_len` after `mgf1` (our
+stack arguments 16 and 17), for `vg_rsa_private_checked_precomputed`'s stack
+arguments 12 and 13: the words after the twelve of `vg_rsa_private_checked`'s,
+which are the slots of the caller's `x19` and `x20`. Those registers are
+restored from their slots before the call, which preserves them, and the
+slots then hold `pre` and `pre_len`; the restores at the end leave them
+out. -/
+
+/-- `x19` and `x20` restored from their slots. -/
+def reload : List Instr := [ld .x19 96, ld .x20 104]
+
+/-- `x19` and `x20` restored, and `pre` and `pre_len` in their slots. -/
+def preArgs : List Instr := reload ++ [arg .x9 16] ++ st .x9 96 ++ [arg .x9 17] ++ st .x9 104
+
+/-- The arguments of `vg_rsa_private_checked_precomputed`. -/
+def privArgsP : List Instr := privArgs ++ preArgs
+
+/-- Zeros to `out` and 0 returned, `x19` and `x20` restored. -/
+def signFailP : Prog isa := .seq signFail (.block reload)
+
+/-- The registers of `saved` but `x19` and `x20` restored. -/
+def restoreP : List Instr := .addSp .x16 0 :: (saved.drop 2).map fun (r, d) => .ldr .x r .x16 d
 
 /-- After the checks: `EM` at `scratch + oEm`. -/
 def signEnc : Prog isa :=

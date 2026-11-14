@@ -41,7 +41,7 @@ theorem powerArgs_input (s : State) {p : Inputs} {slots : List Nat} {bs es ec M 
   exact ⟨h.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr),
     by rw [mem]; exact h.modulus, odd, by rw [mem]; exact h.r2,
     h.source.after_workspace frame rest, h.exponent.after_workspace frame rest,
-    by rw [baseLength]; have := p.minLength; omega,
+    by rw [baseLength]; have := p.minLength; omega_using [this],
     by rw [baseLength]; exact p.width.2.2.2.1,
     positive, fits, source, by rw [baseLength]; exact length, exponent, exponentCount.trans count⟩
 
@@ -60,7 +60,7 @@ theorem powerAt_ct {p : Inputs} {slots : List Nat} {bs es ec M : Nat} {bb eb1 eb
   have tableFit : Proof.Rsa.Mont.arrAt p.w 3 + 32 ≤ 8 * p.len := by
     have fit := p.width.2.2.1
     simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes] at *
-    omega
+    omega_using [fit]
   unfold VG.Impl.Ffdh.Arm.Domain.powerAt
   exact relCT_chain args
     (fun s h => powerArgs_input s stable hb he hc hk baseLength positive fits count odd h)

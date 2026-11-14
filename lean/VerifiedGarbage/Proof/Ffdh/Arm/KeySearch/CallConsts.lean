@@ -70,8 +70,8 @@ open VG VG.Arm VG.Proof.Mont
       have fit : 176 ≤ (callSp p).toNat := by
         have enough := h.input.bounds.stackFits
         change 24 + sampling.argumentBytes + 176 ≤ p.sp.toNat at enough
-        rw [callSp, FrameStack.sub_toNat' (by omega : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
-        omega
+        rw [callSp, FrameStack.sub_toNat' (by omega_using [enough] : 24 + sampling.argumentBytes ≤ p.sp.toNat)]
+        omega_using [enough]
       rw [← FrameStack.addr_sub' fit]
       exact (h.input.constants_stack table member).sub_right (callStack_sub h.input.bounds.stackFits)
   · intro table member

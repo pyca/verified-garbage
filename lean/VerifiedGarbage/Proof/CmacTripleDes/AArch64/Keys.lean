@@ -74,7 +74,7 @@ theorem roundKeys_ok {s : State} (hok : Ok kCfg s) :
   · have h := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     simp only [beq_iff_eq] at h
     have hw : ∀ q < 64, (s'.mem.readW (wordAddr (s.gpr .x2) j) 64).getLsbD q = xorBits W (rkG j q) := by
-      have := outWord_rel (rkG_lt j hj) (p.rel.slot j _ (by simp only [kCfg]; omega) h)
+      have := outWord_rel (rkG_lt j hj) (p.rel.slot j _ (by simp only [kCfg]; omega_using [hj]) h)
       rwa [p.base] at this
     apply BitVec.eq_of_getLsbD_eq
     intro q hq
@@ -83,7 +83,7 @@ theorem roundKeys_ok {s : State} (hok : Ok kCfg s) :
     · rw [ite_eq_left h48, getLsbD_expandDesKey _ hj h48]
       have := rkSrc_lt j hj q h48
       simp [xorBits, bitOf, W, hq, Nat.mod_eq_of_lt this]
-    · rw [ite_eq_right h48, BitVec.getLsbD_of_ge _ _ (by omega)]
+    · rw [ite_eq_right h48, BitVec.getLsbD_of_ge _ _ (by omega_using [h48])]
       simp
   · have h := roundKeys_kept hr
     simp [h]

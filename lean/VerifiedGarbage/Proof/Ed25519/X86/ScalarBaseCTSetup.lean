@@ -133,9 +133,9 @@ theorem combAddr_ct : RelCT isa
     (scalarTaint_wf pt ot ht.2.1 ht.2.2.2.2.1) ?_ ?_ (by decide) hs.2.1 ht.2.1 ps.sp_fit pt.sp_fit
   · rw [P.gpr .esp (by decide), Q.gpr .esp (by decide), hp.1]
   · intro i hi
-    rw [P.arg ha.1.sp4 (by omega), Q.arg hb.1.sp4 (by omega)]
+    rw [P.arg ha.1.sp4 (by omega_using [fa, hi]), Q.arg hb.1.sp4 (by omega_using [fb, hi])]
     obtain ⟨_, a0, a1, a2, _⟩ := hp
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     exacts [a0, a1, a2]
 
 end VG.Proof.Ed25519.X86

@@ -123,7 +123,7 @@ theorem core_ok {s : State} {A : KState} {P : Addr} (rc : Lane) (hP : s.gpr .r4 
   obtain ⟨e', he', hpost⟩ := Straight.of_check _ _ _ check_eq
   let V : Nat → Lane := fun i => if i = 25 then rc else s.gpr (lane i)
   have hV : ∀ i (hi : i < 25), V i = A[i] ^^^ msk i := fun i hi => by
-    simp only [V, show i ≠ 25 by omega, ite_false]
+    simp only [V, show i ≠ 25 by omega_using [hi], ite_false]
     rw [← cmpl_get A hi]; exact hA i hi
   have hV25 : V 25 = rc := by simp [V]
   have hok : Ok cfg s :=
@@ -136,7 +136,7 @@ theorem core_ok {s : State} {A : KState} {P : Addr} (rc : Lane) (hP : s.gpr .r4 
         simp only [env₀, Option.map_eq_some_iff] at h
         obtain ⟨i, hi, rfl⟩ := h
         obtain ⟨rfl, hi25⟩ := laneOf_some hi
-        simp only [AnfRel, eval_atom, V, show i ≠ 25 by omega, ite_false]
+        simp only [AnfRel, eval_atom, V, show i ≠ 25 by omega_using [hi25], ite_false]
       slot := fun k a _ h => by
         simp only [env₀] at h
         split at h
@@ -150,8 +150,8 @@ theorem core_ok {s : State} {A : KState} {P : Addr} (rc : Lane) (hP : s.gpr .r4 
   have hb : s'.gpr .r4 = P := by have := p.base; simp only [cfg] at this; rw [this, hP]
   refine ⟨s', hs', ⟨fun i hi hi0 => ?_, ?_, ?_, ?_, p.rd, p.wr, p.sp, p.lr,
     by have := p.ext; simpa [cfg] using this, by have := p.base; simpa [cfg] using this⟩⟩
-  · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
-    have h := p.rel.reg _ _ (hl j (by omega))
+  · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega_using [hi0]⟩
+    have h := p.rel.reg _ _ (hl j (by omega_using [hi]))
     simp only [AnfRel, eval_specP hV hV25 hi] at h
     exact h.symm
   · split at h0

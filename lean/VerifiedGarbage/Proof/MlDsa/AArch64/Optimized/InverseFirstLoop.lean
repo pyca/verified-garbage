@@ -35,7 +35,7 @@ theorem tableWords_frame {m m' : Mem} {p : Addr} {rs : List Region}
     (hd : ∀ r∈rs, (⟨p,3904⟩ : Region).Disjoint r) : InverseTable.Words m' p := by
   intro k hk
   rw [hf.readW (r := ⟨p,3904⟩) (by
-    exact VG.Offset.contains_base p (by omega) (by omega)) hd (by decide)]
+    exact VG.Offset.contains_base p (by omega_using [hk]) (by omega_using [hk])) hd (by decide)]
   exact h k hk
 
 /-- All local stores stay within the output polynomial. -/
@@ -45,10 +45,10 @@ theorem firstPass_frame {m : Mem} {p : Addr} {u : Nat} (hu : u≤8) :
   | zero => exact Frame.refl _ _
   | succ u ih =>
     simp only [firstPassMem]
-    apply writeBank_frame _ _ _ (r := ⟨p,1024⟩) (by simp) ?_ (ih (by omega))
+    apply writeBank_frame _ _ _ (r := ⟨p,1024⟩) (by simp) ?_ (ih (by omega_using [hu]))
     intro i
     rw [BitVec.add_assoc,← BitVec.ofNat_add]
-    exact VG.Offset.contains_base p (by omega) (by omega)
+    exact VG.Offset.contains_base p (by omega_using [hu]) (by omega_using [hu])
 
 /-- Eight contiguous five-layer blocks, retaining exact memory and the public
 cursors needed by the final strided pass. -/
@@ -76,7 +76,7 @@ theorem firstLoop_ok {s : State}
     rcases hi with ⟨hk,hqt,hp0,hp1,hm⟩
     have ht' : InverseTable.Words t.mem (s.gpr .x1) := by
       rw [hm]
-      exact tableWords_frame ht (firstPass_frame (by omega)) (by
+      exact tableWords_frame ht (firstPass_frame (by omega_using [hu])) (by
         intro r hr
         have he := List.mem_singleton.mp hr
         subst r
@@ -96,10 +96,10 @@ theorem firstLoop_ok {s : State}
         rw [hvec₂,hv₁.v,hv.get .v31 (by decide)]
         exact hqt e he
       · rw [hp₂,hk₁.get .x0,hp0]
-        rw [show 128*(u+1)=128*u+128 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 128*(u+1)=128*u+128 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · rw [hp₃,hk₁.get .x1,hp1]
-        rw [show 480*(u+1)=480*u+480 by omega,BitVec.ofNat_add,BitVec.add_assoc]
+        rw [show 480*(u+1)=480*u+480 by omega_using [],BitVec.ofNat_add,BitVec.add_assoc]
         rfl
       · rw [hm₂,hv₁.mem]
         simp only [fiveSliceMem,hm,hp0,firstPassMem]

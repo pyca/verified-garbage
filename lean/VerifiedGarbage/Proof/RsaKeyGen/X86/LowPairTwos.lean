@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairScan
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.LowPair
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
-
-import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairFirst
 import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rc2.PairMem
@@ -15,6 +13,47 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairStep
 import VerifiedGarbage.Proof.Bignum.Words
+
+/-! ### `RsaKeyGen.X86.LowPairFirst`, which only this module used -/
+
+section
+
+/-! # The paired scan retains exactly the first nonzero source word -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.LowPair
+open VG
+
+theorem first_keep (m : Mem) (base : Addr) (src start count : Nat) (before : BitVec 32 × BitVec 32)
+    (nonzero : ¬(before.1 = 0#32 ∧ before.2 = 0#32)) : first m base src before start count = before := by
+  induction count generalizing start with
+  | zero => rfl
+  | succ count ih =>
+    unfold first select
+    rw [ite_eq_right nonzero]
+    exact ih (start + 1)
+
+theorem first_hit (m : Mem) (base : Addr) (src start count index : Nat)
+    (lo : start ≤ index) (hi : index < start + count)
+    (below : ∀ j, start ≤ j → j < index → pairAt m base (src + 8 * j) = (0#32, 0#32))
+    (hit : pairAt m base (src + 8 * index) ≠ (0#32, 0#32)) :
+    first m base src (0#32, 0#32) start count = pairAt m base (src + 8 * index) := by
+  induction count generalizing start with
+  | zero => omega
+  | succ count ih =>
+    change first m base src (pairAt m base (src + 8 * start)) (start + 1) count = _
+    by_cases same : start = index
+    · subst start
+      exact first_keep m base src (index + 1) count _ (fun ⟨a, b⟩ => hit (Prod.ext a b))
+    · rw [below start (Nat.le_refl _) (by omega_using [lo, same])]
+      exact ih (start + 1) (by omega_using [lo, same]) (by omega_using [hi]) (fun j hj lt => below j (by omega_using [hj]) lt)
+
+end VG.Proof.RsaKeyGen.X86.LowPair
+
+end
+
+end
+
 /-! # The native pair scan finds the word containing the exponent's lowest set bit -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/LowPairWord.lean`, which only this module imported.
@@ -94,8 +133,8 @@ theorem first_twos {m : Mem} {base : Addr} {src count N : Nat}
       exact wordsVal_lt _ _ _ _
     by_cases h : a < 64 * count
     · exact h
-    · have pow := Nat.pow_le_pow_right (n := 2) (by decide) (show 64 * count ≤ a by omega)
-      have mul := Nat.le_mul_of_pos_left (2 ^ a) (show 0 < (Spec.Rsa.splitTwos N).2 by omega)
+    · have pow := Nat.pow_le_pow_right (n := 2) (by decide) (show 64 * count ≤ a by omega_using [h])
+      have mul := Nat.le_mul_of_pos_left (2 ^ a) (show 0 < (Spec.Rsa.splitTwos N).2 by omega_using [odd])
       rw [← factor] at mul
       omega
   have digit {j : Nat} (index : j < count) :
@@ -105,18 +144,18 @@ theorem first_twos {m : Mem} {base : Addr} {src count N : Nat}
       pairAt m base (src + 8 * j) = (0#32, 0#32) := by
     apply (pairAt_zero_iff _ _ _).mpr
     apply BitVec.eq_of_toNat_eq
-    rw [digit (by omega), zero j hj]
+    rw [digit (by omega_using [bound, hj]), zero j hj]
     rfl
   have hit : pairAt m base (src + 8 * (a / 64)) ≠ (0#32, 0#32) := by
     intro h
     have empty := congrArg BitVec.toNat ((pairAt_zero_iff _ _ _).mp h)
-    rw [digit (by omega)] at empty
+    rw [digit (by omega_using [bound])] at empty
     have notZero : N / 2 ^ (64 * (a / 64)) % 2 ^ 64 ≠ 0 := by
       intro h
       rw [h, Nat.zero_testBit] at bit
       contradiction
     exact notZero empty
-  rw [first_hit m base src 0 count (a / 64) (by omega) (by omega) below hit, pairAt_word, digit (by omega)]
+  rw [first_hit m base src 0 count (a / 64) (by omega_using []) (by omega_using [bound]) below hit, pairAt_word, digit (by omega_using [bound])]
 
 theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : Scr s base size)
     (fit : src + 8 * count ≤ size) (value : val32 s.mem base src (2 * count) = N) (positive : 0 < N) :

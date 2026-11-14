@@ -65,7 +65,7 @@ theorem dsum_le (m : Mem) (B : Addr) (o : Nat) : ∀ k, dsum m B o k ≤ k * 2 ^
     have h1 := dsum_le m B o k
     have h2 : w32 m B (o + 4 * k) < 2 ^ 32 := (m.readW (off B (o + 4 * k)) 32).isLt
     show dsum m B o k + w32 m B (o + 4 * k) ≤ (k + 1) * 2 ^ 32
-    rw [Nat.add_mul, Nat.one_mul]; omega
+    rw [Nat.add_mul, Nat.one_mul]; omega_using [h1, h2]
 
 /-- Modulo a divisor of `2³² − 1`, a number is its digits' sum. -/
 theorem val32_mod {d : Nat} (hd : 2 ^ 32 % d = 1) (m : Mem) (B : Addr) (o : Nat) :
@@ -74,7 +74,7 @@ theorem val32_mod {d : Nat} (hd : 2 ^ 32 % d = 1) (m : Mem) (B : Addr) (o : Nat)
   | k + 1 => by
     have hd1 : 1 % d = 1 := by
       rcases Nat.lt_or_ge d 2 with h | h
-      · have : d = 0 ∨ d = 1 := by omega
+      · have : d = 0 ∨ d = 1 := by omega_using [h]
         rcases this with rfl | rfl <;> simp at hd
       · exact Nat.mod_eq_of_lt h
     have hp : 2 ^ (32 * k) % d = 1 := by rw [Nat.pow_mul, Nat.pow_mod, hd, Nat.one_pow, hd1]
@@ -94,12 +94,12 @@ theorem digitSum_ok {u : State} {B : Addr} {Z o w : Nat} (hs : Scr u B Z) (h10 :
   refine WP.seq (WP.mono (WP.keep [.r3, .r4, .r5] (Q := fun v => v.gpr .r3 = BitVec.ofNat 64 0 ∧
       v.gpr .r4 = BitVec.ofNat 64 (2 * w) ∧ v.gpr .r5 = off B o ∧ v.mem = u.mem)
     (by prun [h10, h11, BitVec.add_zero]) (by decide)) fun v ⟨⟨v3, v4, v5, vm⟩, kv⟩ => ?_)
-  refine WP.mono (wp_countdown (cnt := .r4) (N := 2 * w) (by omega) (by omega) (DInv u B o)
+  refine WP.mono (wp_countdown (cnt := .r4) (N := 2 * w) (by omega_using [hw']) (by omega_using [hw]) (DInv u B o)
     (fun j hj t ⟨⟨t3, t5, tm⟩, kt⟩ tc => ?_)
     ⟨⟨by rw [v3]; rfl, by rw [v5, Nat.mul_zero, Nat.add_zero], vm⟩, kv.mono (by decide)⟩ v4)
     fun t ⟨⟨t3, _, tm⟩, kt⟩ => ⟨⟨t3, tm⟩, kt⟩
   have hld : InRegions (t.rd ++ t.wr) (off B (o + 4 * j)) 4 := by
-    exact (hs.congr kt.wr).ld (by omega)
+    exact (hs.congr kt.wr).ld (by omega_using [hZ, hj])
   have hle := dsum_le u.mem B o j
   have hx : w32 u.mem B (o + 4 * j) < 2 ^ 32 := (u.mem.readW (off B (o + 4 * j)) 32).isLt
   refine WP.mono (WP.keep [.r0, .r3, .r4, .r5] (Q := fun t' => t'.gpr .r3 = BitVec.ofNat 64 (dsum u.mem B o (j + 1)) ∧
@@ -107,21 +107,21 @@ theorem digitSum_ok {u : State} {B : Addr} {Z o w : Nat} (hs : Scr u B Z) (h10 :
     (by decide)) fun t' ⟨⟨a3, a5, am, a4⟩, k'⟩ => ⟨⟨⟨a3, a5, am⟩, (kt.trans k').mono (by decide)⟩, a4⟩
   simp only [List.cons_append, List.nil_append]
   prun [t5, t3, hld, tm, BitVec.add_zero]
-  refine ⟨?_, by rw [show o + 4 * j + 4 = o + 4 * (j + 1) by omega]⟩
-  have hj' : j * 2 ^ 32 ≤ 256 * 2 ^ 32 := Nat.mul_le_mul_right _ (by omega)
+  refine ⟨?_, by rw [show o + 4 * j + 4 = o + 4 * (j + 1) by omega_using []]⟩
+  have hj' : j * 2 ^ 32 ≤ 256 * 2 ^ 32 := Nat.mul_le_mul_right _ (by omega_using [hw', hj])
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   show (dsum u.mem B o j % 2 ^ 64 + w32 u.mem B (o + 4 * j) % 2 ^ 64) % 2 ^ 64 =
     (dsum u.mem B o j + w32 u.mem B (o + 4 * j)) % 2 ^ 64
-  omega
+  omega_using []
 
 /-! ## The remainder by the reciprocal -/
 
 theorem quot3 {S : Nat} (hS : S < 18446744073709551616) :
-    S * 12297829382473034411 / 18446744073709551616 / 2 = S / 3 := by omega
+    S * 12297829382473034411 / 18446744073709551616 / 2 = S / 3 := by omega_using [hS]
 
 theorem quot3_lt {S : Nat} (hS : S < 18446744073709551616) :
-    S * 12297829382473034411 / 18446744073709551616 < 18446744073709551616 := by omega
+    S * 12297829382473034411 / 18446744073709551616 < 18446744073709551616 := by omega_using [hS]
 
 /-- `mod3`'s arithmetic: `S − ⌊S m / 2^(64 + 1)⌋ 3 = S mod 3`. (`BitVec.toNat_sub` sends
 `simp` astray here, so the product is rewritten first.) -/
@@ -136,8 +136,8 @@ theorem mod3_bv {S : Nat} (hS : S < 2 ^ 64) :
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hS]
     rw [show (12297829382473034411 : Nat) % 2 ^ 64 = 12297829382473034411 from rfl, Nat.mod_eq_of_lt (quot3_lt hS'),
       show (2 : Nat) ^ 1 = 2 from rfl, quot3 hS', show (3 : Nat) % 2 ^ 64 = 3 from rfl]
-  rw [hp, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (Nat.div_mul_le_self S 3),
-    show S - S / 3 * 3 = S % 3 by omega]
+  rw [hp, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hS]) (Nat.div_mul_le_self S 3),
+    show S - S / 3 * 3 = S % 3 by omega_using []]
 
 theorem mod3_ok {u : State} {S : Nat} (h3 : u.gpr .r3 = BitVec.ofNat 64 S) (hS : S < 2 ^ 64) :
     WP isa (.block mod3) u fun t =>
@@ -151,10 +151,10 @@ theorem mod3_ok {u : State} {S : Nat} (h3 : u.gpr .r3 = BitVec.ofNat 64 S) (hS :
   exact mod3_bv hS
 
 theorem quot5 {S : Nat} (hS : S < 18446744073709551616) :
-    S * 14757395258967641293 / 18446744073709551616 / 4 = S / 5 := by omega
+    S * 14757395258967641293 / 18446744073709551616 / 4 = S / 5 := by omega_using [hS]
 
 theorem quot5_lt {S : Nat} (hS : S < 18446744073709551616) :
-    S * 14757395258967641293 / 18446744073709551616 < 18446744073709551616 := by omega
+    S * 14757395258967641293 / 18446744073709551616 < 18446744073709551616 := by omega_using [hS]
 
 /-- `mod5`'s arithmetic: `S − ⌊S m / 2^(64 + 2)⌋ 5 = S mod 5`. (`BitVec.toNat_sub` sends
 `simp` astray here, so the product is rewritten first.) -/
@@ -169,8 +169,8 @@ theorem mod5_bv {S : Nat} (hS : S < 2 ^ 64) :
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hS]
     rw [show (14757395258967641293 : Nat) % 2 ^ 64 = 14757395258967641293 from rfl, Nat.mod_eq_of_lt (quot5_lt hS'),
       show (2 : Nat) ^ 2 = 4 from rfl, quot5 hS', show (5 : Nat) % 2 ^ 64 = 5 from rfl]
-  rw [hp, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (Nat.div_mul_le_self S 5),
-    show S - S / 5 * 5 = S % 5 by omega]
+  rw [hp, BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hS]) (Nat.div_mul_le_self S 5),
+    show S - S / 5 * 5 = S % 5 by omega_using []]
 
 theorem mod5_ok {u : State} {S : Nat} (h3 : u.gpr .r3 = BitVec.ofNat 64 S) (hS : S < 2 ^ 64) :
     WP isa (.block mod5) u fun t =>
@@ -209,9 +209,9 @@ theorem low_sum {m : Mem} {B : Addr} {o w : Nat} (hw : 1 ≤ w) :
       wv m B o w % 3 = dsum m B o (2 * w) % 3 ∧ wv m B o w % 5 = dsum m B o (2 * w) % 5 := by
   rw [← Pre.val32_eq_wv]
   refine ⟨?_, ?_, val32_mod (by decide) m B o _, val32_mod (by decide) m B o _⟩ <;>
-  · obtain ⟨k, hk⟩ : ∃ k, 2 * w = k + 1 := ⟨2 * w - 1, by omega⟩
+  · obtain ⟨k, hk⟩ : ∃ k, 2 * w = k + 1 := ⟨2 * w - 1, by omega_using [hw]⟩
     rw [hk, VG.Proof.Mont.val32]
-    omega
+    omega_using []
 
 /-- Generator 2's branch. -/
 theorem residue2_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) :
@@ -227,19 +227,19 @@ theorem residue2_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bit
   have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega_arith
   have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega_arith
   have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega_arith
-  obtain ⟨l8, -, l3, -⟩ := low_sum (m := s.mem) (B := p.B) (o := slot w 0) (by omega : 1 ≤ w)
+  obtain ⟨l8, -, l3, -⟩ := low_sum (m := s.mem) (B := p.B) (o := slot w 0) (by omega_using [hw8] : 1 ≤ w)
   unfold residue2
-  refine WP.seq (WP.mono (digitSum_ok h.scr h10 h11 (by omega) hw128 hZ) fun v ⟨⟨v3, vm⟩, kv⟩ => ?_)
+  refine WP.seq (WP.mono (digitSum_ok h.scr h10 h11 (by omega_using [hw8]) hw128 hZ) fun v ⟨⟨v3, vm⟩, kv⟩ => ?_)
   rw [WP.block_append_iff, WP.block_append_iff]
-  have hld : InRegions (v.rd ++ v.wr) (off p.B (slot w 0)) 4 := (h.scr.congr kv.wr).ld (by omega)
+  have hld : InRegions (v.rd ++ v.wr) (off p.B (slot w 0)) 4 := (h.scr.congr kv.wr).ld (by omega_using [hw8, hZ])
   refine WP.mono (WP.keep [.r4] (Q := fun a => a.gpr .r4 = BitVec.ofNat 64 (w32 s.mem p.B (slot w 0)) ∧
       a.mem = s.mem) ?_ (by decide)) fun a ⟨⟨a4, am⟩, ka⟩ => ?_
   · prun [(kv.gpr .r10 (by decide)).trans h10, hld, vm, BitVec.add_zero]
     rw [BitVec.ofNat_toNat]
   have hS : dsum s.mem p.B (slot w 0) (2 * w) < 2 ^ 64 := by
     have := dsum_le s.mem p.B (slot w 0) (2 * w)
-    have : 2 * w * 2 ^ 32 ≤ 256 * 2 ^ 32 := Nat.mul_le_mul_right _ (by omega)
-    omega
+    have : 2 * w * 2 ^ 32 ≤ 256 * 2 ^ 32 := Nat.mul_le_mul_right _ (by omega_using [hw128])
+    omega_arith
   refine WP.mono (mod3_ok ((ka.gpr .r3 (by decide)).trans v3) hS) fun b ⟨⟨b3, bm⟩, kb⟩ => ?_
   have hb : St p b := h.step (by rw [bm, am]; exact Frm.refl _ _ _) ((kv.trans ka).trans kb)
   refine WP.mono (WP.keep [.r3, .r4, .r6] (Q := fun t => t.mem = s.mem.writeW (p.B + BitVec.ofNat 64 200)
@@ -249,7 +249,7 @@ theorem residue2_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bit
   · simp only [sth, hBad]
     prun [hb.r31, hb.st (d := 200) (by decide), bm, am, b3, (kb.gpr .r4 (by decide)).trans a4]
   · rw [and7, flag2 _ (Nat.mod_lt _ (by decide)) _ (Nat.mod_lt _ (by decide)), ← l8, ← l3]
-    omega
+    omega_using []
 
 /-- Generator 5's branch. -/
 theorem residue5_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) :
@@ -265,19 +265,19 @@ theorem residue5_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bit
   have hw8 : 8 ≤ w := by simp only [wOf] at hwd; omega_arith
   have hw128 : w ≤ 128 := by simp only [wOf] at hwd; omega_arith
   have hZ : slot w 0 + 8 * w ≤ p.Z := by simp only [slot, hdrBytes, PP.Z, PP.L] at hn ⊢; omega_arith
-  obtain ⟨-, l2, -, l5⟩ := low_sum (m := s.mem) (B := p.B) (o := slot w 0) (by omega : 1 ≤ w)
+  obtain ⟨-, l2, -, l5⟩ := low_sum (m := s.mem) (B := p.B) (o := slot w 0) (by omega_using [hw8] : 1 ≤ w)
   unfold residue5
-  refine WP.seq (WP.mono (digitSum_ok h.scr h10 h11 (by omega) hw128 hZ) fun v ⟨⟨v3, vm⟩, kv⟩ => ?_)
+  refine WP.seq (WP.mono (digitSum_ok h.scr h10 h11 (by omega_using [hw8]) hw128 hZ) fun v ⟨⟨v3, vm⟩, kv⟩ => ?_)
   rw [WP.block_append_iff, WP.block_append_iff]
-  have hld : InRegions (v.rd ++ v.wr) (off p.B (slot w 0)) 4 := (h.scr.congr kv.wr).ld (by omega)
+  have hld : InRegions (v.rd ++ v.wr) (off p.B (slot w 0)) 4 := (h.scr.congr kv.wr).ld (by omega_using [hw8, hZ])
   refine WP.mono (WP.keep [.r4] (Q := fun a => a.gpr .r4 = BitVec.ofNat 64 (w32 s.mem p.B (slot w 0)) ∧
       a.mem = s.mem) ?_ (by decide)) fun a ⟨⟨a4, am⟩, ka⟩ => ?_
   · prun [(kv.gpr .r10 (by decide)).trans h10, hld, vm, BitVec.add_zero]
     rw [BitVec.ofNat_toNat]
   have hS : dsum s.mem p.B (slot w 0) (2 * w) < 2 ^ 64 := by
     have := dsum_le s.mem p.B (slot w 0) (2 * w)
-    have : 2 * w * 2 ^ 32 ≤ 256 * 2 ^ 32 := Nat.mul_le_mul_right _ (by omega)
-    omega
+    have : 2 * w * 2 ^ 32 ≤ 256 * 2 ^ 32 := Nat.mul_le_mul_right _ (by omega_using [hw128])
+    omega_arith
   refine WP.mono (mod5_ok ((ka.gpr .r3 (by decide)).trans v3) hS) fun b ⟨⟨b3, bm⟩, kb⟩ => ?_
   have hb : St p b := h.step (by rw [bm, am]; exact Frm.refl _ _ _) ((kv.trans ka).trans kb)
   refine WP.mono (WP.keep [.r3, .r4, .r6] (Q := fun t => t.mem = s.mem.writeW (p.B + BitVec.ofNat 64 200)
@@ -287,7 +287,7 @@ theorem residue5_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bit
   · simp only [sth, hBad]
     prun [hb.r31, hb.st (d := 200) (by decide), bm, am, b3, (kb.gpr .r4 (by decide)).trans a4]
   · rw [and1, flag5 _ (Nat.mod_lt _ (by decide)) _ (Nat.mod_lt _ (by decide)), ← l2, ← l5]
-    omega
+    omega_using []
 
 /-- `residue`: `hBad` zero iff array 0 has the generator's congruence. -/
 theorem residue_ok {C : Nat} {p : PP} {s : State} (h : St p s) (hp : Ph p p.bits C s) :

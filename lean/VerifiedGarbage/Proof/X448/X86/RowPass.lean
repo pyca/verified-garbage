@@ -47,23 +47,23 @@ theorem carryPass_ok {base : Addr} {o d : Nat} {rb : Reg} {src : Nat → List In
     simpa only [State.ea, at_, trb] using hea k hk
   have bound : c k + Radix16.carry c k < 2 ^ 32 := by
     have a := hc k hk
-    have b := carry_bound (n := k) (fun j hj => hc j (by omega))
+    have b := carry_bound (n := k) (fun j hj => hc j (by omega_using [hk, hj]))
     simp only [radix] at a
-    omega
+    omega_using [a, b]
   refine WP.mono (carryRaw_ok hrb ea (by rw [tk.2.2, h.regs.2.2]; exact hw k hk)
     (by rw [tv, tb, h.carry]; exact bound)) fun u ⟨uc, um, uk⟩ => ?_
   rw [tv, tb, h.carry] at uc um
   rw [tm] at um
   refine ⟨h.regs.trans ((tk.mono (by decide)).trans uk), uc, ?_, ?_⟩
   · rw [um]
-    exact (h.mem.mono (by omega) (by omega)).trans
-      ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    exact (h.mem.mono (by omega_using []) (by omega_using [])).trans
+      ((writeW_outside _ _ _ (by omega_using [ho, hk])).mono (by omega_using []) (by omega_using []))
   · intro j hj
     change (word u.mem base (o + 4 * j)).toNat = _
-    rw [um, word_write s.mem base (by omega) (by omega)]
+    rw [um, word_write s.mem base (by omega_using [ho, hk]) (by omega_using [ho, hk, hj])]
     by_cases he : j = k
     · rw [ite_eq_left he, he, BitVec.toNat_ofNat]
       exact Nat.mod_eq_of_lt (Nat.lt_trans (digit_lt c k) (by decide : radix < 2 ^ 32))
-    · rw [ite_eq_right he]; exact h.outs j (by omega)
+    · rw [ite_eq_right he]; exact h.outs j (by omega_using [hj, he])
 
 end VG.Proof.X448.X86

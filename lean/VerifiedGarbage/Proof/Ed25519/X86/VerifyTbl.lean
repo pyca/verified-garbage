@@ -39,17 +39,17 @@ def bDword (d : Nat) : BitVec 32 :=
 theorem bWord_lo (i : Nat) : (bWord i).setWidth 32 = bDword (2 * i) := by
   apply BitVec.eq_of_toNat_eq
   simp only [bWord, bDword, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [show 2 * i / 32 = i / 16 by omega, show 2 * i / 8 % 4 = i / 4 % 4 by omega,
-    show 2 * i % 8 = 2 * (i % 4) by omega, ← Nat.pow_mul, show 32 * (2 * (i % 4)) = 64 * (i % 4) by omega,
+  rw [show 2 * i / 32 = i / 16 by omega_using [], show 2 * i / 8 % 4 = i / 4 % 4 by omega_using [],
+    show 2 * i % 8 = 2 * (i % 4) by omega_using [], ← Nat.pow_mul, show 32 * (2 * (i % 4)) = 64 * (i % 4) by omega_using [],
     Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64)]
 
 theorem bWord_hi (i : Nat) : (bWord i).extractLsb' 32 32 = bDword (2 * i + 1) := by
   apply BitVec.eq_of_toNat_eq
   simp only [bWord, bDword, BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [show (2 * i + 1) / 32 = i / 16 by omega, show (2 * i + 1) / 8 % 4 = i / 4 % 4 by omega,
-    show (2 * i + 1) % 8 = 2 * (i % 4) + 1 by omega, ← Nat.pow_mul,
+  rw [show (2 * i + 1) / 32 = i / 16 by omega_using [], show (2 * i + 1) / 8 % 4 = i / 4 % 4 by omega_using [],
+    show (2 * i + 1) % 8 = 2 * (i % 4) + 1 by omega_using [], ← Nat.pow_mul,
     show (2 : Nat) ^ (32 * (2 * (i % 4) + 1)) = 2 ^ (64 * (i % 4)) * 2 ^ 32 by
-      rw [← Nat.pow_add]; congr 1; omega,
+      rw [← Nat.pow_add]; congr 1; omega_using [],
     ← Nat.div_div_eq_div_mul, show (2 : Nat) ^ 64 = 2 ^ 32 * 2 ^ 32 by decide, Nat.mod_mul_right_div_self,
     Nat.mod_mod]
 
@@ -71,8 +71,8 @@ structure BTblAt (s : State) (x T : BitVec 32) : Prop where
 theorem BTblAt.inR {s : State} {x T : BitVec 32} (h : BTblAt s x T) {d : Nat} (hd : d < 480) :
     InRegions (s.rd ++ s.wr) (addr T (4 * d)) 4 :=
   ⟨_, h.rd, by
-    have := sub_contains (x := T) (a := 0) (k := 1920) (d := 4 * d) (n := 4) (by have := h.fit; omega)
-      (Nat.zero_le _) (by omega) (by decide)
+    have := sub_contains (x := T) (a := 0) (k := 1920) (d := 4 * d) (n := 4) (by have := h.fit; omega_using [this])
+      (Nat.zero_le _) (by omega_using [hd]) (by decide)
     rwa [sub, addr_zero] at this⟩
 
 /-- The static survives what changes only regions apart from it. -/
@@ -82,8 +82,8 @@ theorem BTblAt.of_frame {s t : State} {x T : BitVec 32} (h : BTblAt s x T) {rs :
   ⟨h.fit, hrd ▸ h.rd, h.sc, fun d hd' => by
     rw [← h.val d hd']
     have hc : (⟨T.setWidth 64, 1920⟩ : Region).Contains (addr T (4 * d)) 4 := by
-      have := sub_contains (x := T) (a := 0) (k := 1920) (d := 4 * d) (n := 4) (by have := h.fit; omega)
-        (Nat.zero_le _) (by omega) (by decide)
+      have := sub_contains (x := T) (a := 0) (k := 1920) (d := 4 * d) (n := 4) (by have := h.fit; omega_using [this])
+        (Nat.zero_le _) (by omega_using [hd']) (by decide)
       rwa [sub, addr_zero] at this
     exact Frame.readW hf hc (fun r hr => hd r hr) (by decide)⟩
 
@@ -93,13 +93,13 @@ theorem BHeld.tblAt {s : State} {wr : List Region} {x : BitVec 32} (h : BHeld s 
     (hsc : scR 8192 x ∈ wr) : BTblAt s x (s.syms bSym) := by
   obtain ⟨held, fit', dj⟩ := h
   refine ⟨fit', hrd, dj _ hsc, fun d hd => ?_⟩
-  have hw := held (d / 2) (by omega)
-  rw [bWords_getD (by omega)] at hw
-  obtain ⟨i, rfl | rfl⟩ : ∃ i, d = 2 * i ∨ d = 2 * i + 1 := ⟨d / 2, by omega⟩
-  · rw [show 2 * i / 2 = i by omega] at hw
-    rw [wd, addr_eq (by omega), show 4 * (2 * i) = 8 * i by omega, Mem.readW_lo32 hw, bWord_lo]
-  · rw [show (2 * i + 1) / 2 = i by omega] at hw
-    rw [wd, addr_eq (by omega), show 4 * (2 * i + 1) = 8 * i + 4 by omega, ← Offset.add_add,
+  have hw := held (d / 2) (by omega_using [hd])
+  rw [bWords_getD (by omega_using [hd])] at hw
+  obtain ⟨i, rfl | rfl⟩ : ∃ i, d = 2 * i ∨ d = 2 * i + 1 := ⟨d / 2, by omega_using []⟩
+  · rw [show 2 * i / 2 = i by omega_using []] at hw
+    rw [wd, addr_eq (by omega_using [fit', hd]), show 4 * (2 * i) = 8 * i by omega_using [], Mem.readW_lo32 hw, bWord_lo]
+  · rw [show (2 * i + 1) / 2 = i by omega_using []] at hw
+    rw [wd, addr_eq (by omega_using [fit', hd]), show 4 * (2 * i + 1) = 8 * i + 4 by omega_using [], ← Offset.add_add,
       Mem.readW_hi32 hw, bWord_hi]
 
 /-- The memory of the contracts' witnesses: the static at `0x100000` (irreducible: unfolding it
@@ -110,6 +110,6 @@ theorem bSatMem_held : ∀ i < 240,
     bSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = bWords.getD i 0 := by
   unfold bSatMem
   intro i hi
-  exact constMem_held _ _ (by rw [bWords_length]; omega) i (by rw [bWords_length]; exact hi)
+  exact constMem_held _ _ (by rw [bWords_length]; omega_using []) i (by rw [bWords_length]; exact hi)
 
 end VG.Proof.Ed25519.X86

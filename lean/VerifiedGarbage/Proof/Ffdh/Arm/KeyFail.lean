@@ -40,7 +40,7 @@ theorem keyFail_ok (s : State) {p : Inputs} {slots : List Nat}
   refine WP.mono (ret_ok v 2 (by decide)) ?_
   rintro t ⟨⟨status, mem⟩, _⟩
   refine ⟨status, ?_, by rw [mem]; exact publicV, ?_⟩
-  · rw [mem, VG.Proof.Bignum.Arm.rsa_bytes_frame frameV (by have := p.maxLength; omega)
+  · rw [mem, VG.Proof.Bignum.Arm.rsa_bytes_frame frameV (by have := p.maxLength; omega_using [this])
       (by simpa using outputs.separate)]
     exact privateU
   · rw [mem]

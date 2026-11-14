@@ -43,15 +43,15 @@ theorem verifyingShape_ok {p : VerifyingInput} {s0 : State} (h : VerifyingPre p 
   have hkey := h.keySource.congrK hinside he.keep
   have hps : Src s1 p.base usedBytes (s0.gpr .rdi) p.components.p := source_take hkey
   have hqs : Src s1 p.base usedBytes (s0.gpr .rdi + BitVec.ofNat 64 p.pLen) p.components.q :=
-    source_slice hkey (by rw [p.keyLength]; omega)
+    source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hp1 : 0 < p.components.p.length := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq1 : 0 < p.components.q.length := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.2.2) he.base (by decide) he.p
     (by rw [he.q, h.pLength]) (by rw [he.pLen, h.pLength, p.components.pLength])
     (by rw [he.qLen, h.qLength, p.components.qLength]) hps hqs hp1 hp64 hq1 hq64 rfl rfl
@@ -97,9 +97,9 @@ theorem verifyingOperands {p : VerifyingInput} {original s : State}
   have hglen : p.components.g.length = p.pLen := p.components.gLength
   have hylen : p.components.y.length = p.pLen := p.components.yLength
   have hrlen : (p.signature.take p.qLen).length = p.qLen := by
-    simp only [List.length_take, p.signatureLength]; omega
+    simp only [List.length_take, p.signatureLength]; omega_using []
   have hslen : (p.signature.drop p.qLen).length = p.qLen := by
-    simp only [List.length_drop, p.signatureLength]; omega
+    simp only [List.length_drop, p.signatureLength]; omega_using []
   have qptr : L.fields .q = original.gpr .rdi + BitVec.ofNat 64 p.pLen := by
     change original.gpr .rdi + original.gpr .rdx = _
     rw [hp]
@@ -108,13 +108,13 @@ theorem verifyingOperands {p : VerifyingInput} {original s : State}
     rw [hp, hq, Offset.add_add]
   have yptr : L.fields .y = original.gpr .rdi + BitVec.ofNat 64 (2 * p.pLen + p.qLen) := by
     change original.gpr .rdi + original.gpr .rdx + original.gpr .rcx + original.gpr .rdx = _
-    rw [hp, hq, Offset.add_add, Offset.add_add, show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega]
+    rw [hp, hq, Offset.add_add, Offset.add_add, show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega_using []]
   have hqsrc : Src s p.base usedBytes (L.fields .q) p.components.q := by
-    rw [qptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [qptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hgsrc : Src s p.base usedBytes (L.fields .g) p.components.g := by
-    rw [gptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [gptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hysrc : Src s p.base usedBytes (L.fields .y) p.components.y := by
-    rw [yptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [yptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hpfield : L.fields .pLen = BitVec.ofNat 64 p.pLen := hp
   have hqfield : L.fields .qLen = BitVec.ofNat 64 p.qLen  := hq
   refine ⟨h.inputOperand .g .pLen (by decide) (by decide) hgsrc (by change L.fields .pLen = BitVec.ofNat 64 p.components.g.length; rw [hglen]; exact hpfield),
@@ -131,7 +131,7 @@ theorem verifyingOperands {p : VerifyingInput} {original s : State}
     · simp only [Core.signatureS, pointerValue, h.fields .signature (by decide), h.fields .qLen (by decide)]
       change Src s p.base usedBytes (original.gpr .r8 + original.gpr .rcx) (p.signature.drop p.qLen)
       rw [hq]
-      have hh := source_slice (offset := p.qLen) (len := p.qLen) hsig (by rw [p.signatureLength]; omega)
+      have hh := source_slice (offset := p.qLen) (len := p.qLen) hsig (by rw [p.signatureLength]; omega_using [])
       rw [List.take_of_length_le (Nat.le_of_eq hslen)] at hh
       exact hh
   · change BitVec.ofNat 64 p.prefixLength = BitVec.ofNat 64 (p.digest.take _).length
@@ -178,7 +178,7 @@ theorem verifyingInitialize_ok {p : VerifyingInput} {original s : State} (h : Ve
   have hqs : Src s L.base usedBytes (L.fields .q) p.components.q := by
     change Src s p.base usedBytes (original.gpr .rdi + original.gpr .rdx) p.components.q
     rw [h.pLength]
-    exact source_slice hkey (by rw [p.keyLength]; omega)
+    exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
   refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.rdi hs.fields hps hqs p.components.pLength p.components.qLength
     rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_
@@ -189,6 +189,6 @@ theorem verifyingInitialize_ok {p : VerifyingInput} {original s : State} (h : Ve
     (h.signatureSource.congrK hfull hkeep) (h.digestSource.congrK hfull hkeep), ?_, ?_, hfull, hkeep.mono (by decide)⟩
   · exact hm.trans ((hs.fields .mask).trans (congrArg mask ha))
   · intro i hi
-    exact (hf.word (Or.inl (by omega)) (by omega)).trans (hs.saved i hi)
+    exact (hf.word (Or.inl (by omega_using [hi])) (by omega_using [hi])).trans (hs.saved i hi)
 
 end VG.Proof.Dsa.X86_64

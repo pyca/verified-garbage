@@ -36,7 +36,7 @@ theorem Space.keepMem {W : Addr} {L w : Nat} {s t : State} (S : Space W L w s) {
 theorem Space.header {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) : 256 + 5 * (8 * w + 16) ≤ L := by
   have := S.space
   unfold slot stride VG.Impl.Bignum.hdrBytes at this
-  omega
+  omega_using [this]
 
 theorem Space.ws {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) : Ws s W L :=
   ⟨S.scratch.wr, S.scratch.nowrap⟩
@@ -47,13 +47,13 @@ theorem Space.edi_toNat {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) :
 theorem Space.base {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) : PtrAt s W .edi 0 := by
   have := S.scratch.nowrap
   have := S.header
-  rw [PtrAt, S.edi_toNat, Nat.add_zero, Nat.mod_eq_of_lt (by omega)]
+  rw [PtrAt, S.edi_toNat, Nat.add_zero, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `len` from header byte 4. -/
 theorem Space.lenRead {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) :
     readSrc s (.mem (sc 4)) = some (BitVec.ofNat 32 (8 * w)) := by
   have head := S.header
-  rw [show sc 4 = at_ .edi (0 + 4) from rfl, readSrc_ptr S.ws S.base (d := 4) (by omega), Nat.zero_add, S.len]
+  rw [show sc 4 = at_ .edi (0 + 4) from rfl, readSrc_ptr S.ws S.base (d := 4) (by omega_using [head]), Nat.zero_add, S.len]
 
 theorem lenPtr_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) {r t : Reg} (j : Nat)
     (index : j < 32) (hrt : t ≠ r) (hr : r ≠ .edi) (ht : t ≠ .edi) :
@@ -75,11 +75,11 @@ theorem lenPtr_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) {r t : 
   · rw [PtrAt, U.gpr, E.gpr, R, tc, ediD]
     simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, S.edi_toNat,
       show (16 : BitVec 32).toNat = 16 from rfl, show (256 : BitVec 32).toNat = 256 from rfl]
-    rw [Nat.mod_eq_of_lt (a := j) (by omega), Nat.mod_eq_of_lt (a := 8 * w) (by omega),
-      Nat.mod_eq_of_lt (a := 8 * w + 16) (by omega)]
+    rw [Nat.mod_eq_of_lt (a := j) (by omega_using [index]), Nat.mod_eq_of_lt (a := 8 * w) (by omega_using [bound]),
+      Nat.mod_eq_of_lt (a := 8 * w + 16) (by omega_using [bound])]
     unfold slot stride VG.Impl.Bignum.hdrBytes
-    have : j * (8 * w + 16) ≤ 32 * (8 * 64 + 16) := Nat.mul_le_mul (by omega) (by omega)
-    omega
+    have : j * (8 * w + 16) ≤ 32 * (8 * 64 + 16) := Nat.mul_le_mul (by omega_using [index]) (by omega_using [bound])
+    omega_using []
   · have kr {a b : State} {v : BitVec 32} (h : Upd a b r v) : Keeps [r, t] a b := h.keeps.mono (by simp)
     have kt {a b : State} {v : BitVec 32} (h : Upd a b t v) : Keeps [r, t] a b := h.keeps.mono (by simp)
     exact (((((kt A).trans (kt B)).trans (kr C)).trans (K.mono (by simp))).trans (kr E)).trans (kr U)

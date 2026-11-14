@@ -33,7 +33,6 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| {
                 let mut ctx = Rc4::new(black_box(&key)).unwrap();
                 ctx.apply_keystream(black_box(&mut data));
-                ctx.finalize();
             })
         });
         let mut output = vec![0; size + Cipher::rc4().block_size()];

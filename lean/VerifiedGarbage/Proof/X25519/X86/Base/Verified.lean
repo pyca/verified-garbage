@@ -168,7 +168,7 @@ theorem sat_arg (j : Nat) (hj : j < 3) : arg satState j = satArgs.readW (argAddr
   rw [satMemWith_out]
   have : ∀ j < 3, ∀ b < 4, 8 * 32 * 96 ≤ (argAddr satState j + BitVec.ofNat 64 b - 0x100000).toNat := by
     decide
-  exact this j hj b (by omega)
+  exact this j hj b (by omega_using [hb])
 
 theorem x25519Base_sat :
     (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 8).pre satState := by
@@ -204,7 +204,7 @@ theorem x25519Base_implies :
     obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, -, o2, o3, i2, s3, r0, -, r2, -,
       b0, b1, b2, -, f0, f1, f2⟩ := h
     have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := below_eq (sp := s.gpr .esp) h4
-    refine ⟨⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h4, by rw [be]; exact b1,
+    refine ⟨⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega_using [hsp], h4, by rw [be]; exact b1,
       by rw [be]; exact b2, by rw [be]; exact b0⟩, by rw [be]; exact b0, held, hfit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · intro r hr

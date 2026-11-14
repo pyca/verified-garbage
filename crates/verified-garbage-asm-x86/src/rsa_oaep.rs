@@ -5,7 +5,7 @@
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+/// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -19,8 +19,8 @@
 /// * `seed` must be valid for reads of `seed_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -33,12 +33,12 @@
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash` or `mgf1` (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the arguments on the stack, overlap the return address on the stack or the 260 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "U1VWV42kJHD///+LlCTkAAAAi1IQg/oU"
+        r#".base64 "U1VWV42kJHD///+LlCTkAAAAi1IYg/oU"
 je 20f
 .base64 "g/oc"
 je 22f
@@ -70,7 +70,7 @@ jne 217b
 jmp 216f
 215:
 216:
-.base64 "iegFEQQAAIlEJFiLhCSwAAAAg+gRiUQkXInoBQEEAACJRCRQuBAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFEQQAAIlEJFiLhCSwAAAAg+gRiUQkXInoBQEEAACJRCRQuBAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 218:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 219:
@@ -78,7 +78,7 @@ jmp 216f
 jne 219b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 218b
-.base64 "iegFAQQAAIlEJFi4EAAAAIlEJFyJ6AURBAAAiUQkUIuEJLAAAACD6BGJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFAQQAAIlEJFi4EAAAAIlEJFyJ6AURBAAAiUQkUIuEJLAAAACD6BGJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 220:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 221:
@@ -120,7 +120,7 @@ jne 230b
 jmp 229f
 228:
 229:
-.base64 "iegFQQQAAIlEJFiLhCSwAAAAg+hBiUQkXInoBQEEAACJRCRQuEAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFQQQAAIlEJFiLhCSwAAAAg+hBiUQkXInoBQEEAACJRCRQuEAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 231:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 232:
@@ -128,7 +128,7 @@ jmp 229f
 jne 232b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 231b
-.base64 "iegFAQQAAIlEJFi4QAAAAIlEJFyJ6AVBBAAAiUQkUIuEJLAAAACD6EGJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFAQQAAIlEJFi4QAAAAIlEJFyJ6AVBBAAAiUQkUIuEJLAAAACD6EGJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 233:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 234:
@@ -171,7 +171,7 @@ jne 243b
 jmp 242f
 241:
 242:
-.base64 "iegFMQQAAIlEJFiLhCSwAAAAg+gxiUQkXInoBQEEAACJRCRQuDAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFMQQAAIlEJFiLhCSwAAAAg+gxiUQkXInoBQEEAACJRCRQuDAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 244:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 245:
@@ -179,7 +179,7 @@ jmp 242f
 jne 245b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 244b
-.base64 "iegFAQQAAIlEJFi4MAAAAIlEJFyJ6AUxBAAAiUQkUIuEJLAAAACD6DGJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFAQQAAIlEJFi4MAAAAIlEJFyJ6AUxBAAAiUQkUIuEJLAAAACD6DGJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 246:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 247:
@@ -222,7 +222,7 @@ jne 256b
 jmp 255f
 254:
 255:
-.base64 "iegFIQQAAIlEJFiLhCSwAAAAg+ghiUQkXInoBQEEAACJRCRQuCAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFIQQAAIlEJFiLhCSwAAAAg+ghiUQkXInoBQEEAACJRCRQuCAAAACJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 257:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 258:
@@ -230,7 +230,7 @@ jmp 255f
 jne 258b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 257b
-.base64 "iegFAQQAAIlEJFi4IAAAAIlEJFyJ6AUhBAAAiUQkUIuEJLAAAACD6CGJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFAQQAAIlEJFi4IAAAAIlEJFyJ6AUhBAAAiUQkUIuEJLAAAACD6CGJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 259:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 260:
@@ -273,7 +273,7 @@ jne 269b
 jmp 268f
 267:
 268:
-.base64 "iegFHQQAAIlEJFiLhCSwAAAAg+gdiUQkXInoBQEEAACJRCRQuBwAAACJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFHQQAAIlEJFiLhCSwAAAAg+gdiUQkXInoBQEEAACJRCRQuBwAAACJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 270:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 271:
@@ -281,7 +281,7 @@ jmp 268f
 jne 271b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 270b
-.base64 "iegFAQQAAIlEJFi4HAAAAIlEJFyJ6AUdBAAAiUQkUIuEJLAAAACD6B2JRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFAQQAAIlEJFi4HAAAAIlEJFyJ6AUdBAAAiUQkUIuEJLAAAACD6B2JRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 272:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 273:
@@ -324,7 +324,7 @@ jne 282b
 jmp 281f
 280:
 281:
-.base64 "iegFFQQAAIlEJFiLhCSwAAAAg+gViUQkXInoBQEEAACJRCRQuBQAAACJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFFQQAAIlEJFiLhCSwAAAAg+gViUQkXInoBQEEAACJRCRQuBQAAACJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 283:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 284:
@@ -332,7 +332,7 @@ jmp 281f
 jne 284b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 283b
-.base64 "iegFAQQAAIlEJFi4FAAAAIlEJFyJ6AUVBAAAiUQkUIuEJLAAAACD6BWJRCRUi4Qk6AAAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFAQQAAIlEJFi4FAAAAIlEJFyJ6AUVBAAAiUQkUIuEJLAAAACD6BWJRCRUi4Qk6AAAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 285:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 286:
@@ -357,9 +357,9 @@ jne 287b
     )
 }
 
-/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+/// `vg_rsa_oaep_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_oaep_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+/// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -377,8 +377,9 @@ jne 287b
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -386,18 +387,20 @@ jne 287b
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash` or `mgf1` (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the arguments on the stack, overlap the return address on the stack or the 3608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or `pre` (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the arguments on the stack, overlap the return address on the stack or the 3608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "U1VWV42kJHD///+LrCT4AAAAiegFAAQAAIkEJIuEJLQAAACJRCQEi4QksAAAAIlEJAiLhCS0AAAAiUQkDIuEJLgAAACJRCQQi4QkvAAAAIlEJBSLhCTwAAAAiUQkGIuEJLQAAACJRCQci4QkwAAAAIlEJCCLhCTEAAAAiUQkJIuEJMgAAACJRCQoi4QkzAAAAIlEJCyLhCTQAAAAiUQkMIuEJMQAAACJRCQ0i4Qk2AAAAIlEJDiLhCTMAAAAiUQkPIuEJOAAAACJRCRAi4QkxAAAAIlEJESJ6AUAIAAAiUQkSIuEJPwAAAAtAAQAAIlEJEw="
-call {vg_rsa_private_checked}
-.base64 "i5QkAAEAAItSEIP6FA=="
+        r#".base64 "U1VWV42kJHD///+LrCT4AAAAiegFAAQAAIkEJIuEJLQAAACJRCQEi4QksAAAAIlEJAiLhCS0AAAAiUQkDIuEJLgAAACJRCQQi4QkvAAAAIlEJBSLhCTwAAAAiUQkGIuEJLQAAACJRCQci4QkwAAAAIlEJCCLhCTEAAAAiUQkJIuEJMgAAACJRCQoi4QkzAAAAIlEJCyLhCTQAAAAiUQkMIuEJMQAAACJRCQ0i4Qk2AAAAIlEJDiLhCTMAAAAiUQkPIuEJOAAAACJRCRAi4QkxAAAAIlEJESJ6AUAIAAAiUQkSIuEJPwAAAAtAAQAAIlEJEyLhCQIAQAAiUQkUIuEJAwBAACJRCRU"
+call {vg_rsa_private_checked_precomputed}
+.base64 "i5QkAAEAAItSGIP6FA=="
 je 20f
 .base64 "g/oc"
 je 22f
@@ -409,7 +412,7 @@ je 26f
 je 28f
 .base64 "iUQkYIuEJLQAAACD+CI="
 jb 210f
-.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4EAAAAIlEJFyJ6AURBAAAiUQkUIuEJLQAAACD6BGJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4EAAAAIlEJFyJ6AURBAAAiUQkUIuEJLQAAACD6BGJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 212:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 213:
@@ -417,7 +420,7 @@ jb 210f
 jne 213b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 212b
-.base64 "iegFEQQAAIlEJFiLhCS0AAAAg+gRiUQkXInoBQEEAACJRCRQuBAAAACJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFEQQAAIlEJFiLhCS0AAAAg+gRiUQkXInoBQEEAACJRCRQuBAAAACJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 214:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 215:
@@ -466,7 +469,7 @@ jmp 29f
 28:
 .base64 "iUQkYIuEJLQAAAA9ggAAAA=="
 jb 224f
-.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4QAAAAIlEJFyJ6AVBBAAAiUQkUIuEJLQAAACD6EGJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4QAAAAIlEJFyJ6AVBBAAAiUQkUIuEJLQAAACD6EGJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 226:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 227:
@@ -474,7 +477,7 @@ jb 224f
 jne 227b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 226b
-.base64 "iegFQQQAAIlEJFiLhCS0AAAAg+hBiUQkXInoBQEEAACJRCRQuEAAAACJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFQQQAAIlEJFiLhCS0AAAAg+hBiUQkXInoBQEEAACJRCRQuEAAAACJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 228:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 229:
@@ -524,7 +527,7 @@ jmp 27f
 26:
 .base64 "iUQkYIuEJLQAAACD+GI="
 jb 238f
-.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4MAAAAIlEJFyJ6AUxBAAAiUQkUIuEJLQAAACD6DGJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4MAAAAIlEJFyJ6AUxBAAAiUQkUIuEJLQAAACD6DGJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 240:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 241:
@@ -532,7 +535,7 @@ jb 238f
 jne 241b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 240b
-.base64 "iegFMQQAAIlEJFiLhCS0AAAAg+gxiUQkXInoBQEEAACJRCRQuDAAAACJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFMQQAAIlEJFiLhCS0AAAAg+gxiUQkXInoBQEEAACJRCRQuDAAAACJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 242:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 243:
@@ -582,7 +585,7 @@ jmp 25f
 24:
 .base64 "iUQkYIuEJLQAAACD+EI="
 jb 252f
-.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4IAAAAIlEJFyJ6AUhBAAAiUQkUIuEJLQAAACD6CGJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4IAAAAIlEJFyJ6AUhBAAAiUQkUIuEJLQAAACD6CGJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 254:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 255:
@@ -590,7 +593,7 @@ jb 252f
 jne 255b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 254b
-.base64 "iegFIQQAAIlEJFiLhCS0AAAAg+ghiUQkXInoBQEEAACJRCRQuCAAAACJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFIQQAAIlEJFiLhCS0AAAAg+ghiUQkXInoBQEEAACJRCRQuCAAAACJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 256:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 257:
@@ -640,7 +643,7 @@ jmp 23f
 22:
 .base64 "iUQkYIuEJLQAAACD+Do="
 jb 266f
-.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4HAAAAIlEJFyJ6AUdBAAAiUQkUIuEJLQAAACD6B2JRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4HAAAAIlEJFyJ6AUdBAAAiUQkUIuEJLQAAACD6B2JRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 268:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 269:
@@ -648,7 +651,7 @@ jb 266f
 jne 269b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 268b
-.base64 "iegFHQQAAIlEJFiLhCS0AAAAg+gdiUQkXInoBQEEAACJRCRQuBwAAACJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFHQQAAIlEJFiLhCS0AAAAg+gdiUQkXInoBQEEAACJRCRQuBwAAACJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 270:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 271:
@@ -698,7 +701,7 @@ jmp 21f
 20:
 .base64 "iUQkYIuEJLQAAACD+Co="
 jb 280f
-.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4FAAAAIlEJFyJ6AUVBAAAiUQkUIuEJLQAAACD6BWJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "i5QkAAEAAImUJIQAAACJ64HDAAIAAIu0JIQAAACLNlP/1liJ64HDAAIAAL8AAAAAuAAAAACLlCToAAAAi4wk7AAAAIu0JIQAAACLdgRVUVJQV1P/1lhYWFhYWInrgcMAAgAAi4Qk7AAAALkAAAAAieqBwoADAACLtCSEAAAAi3YIVVJRUFP/1lhYWFhYiegFAQQAAIlEJFi4FAAAAIlEJFyJ6AUVBAAAiUQkUIuEJLQAAACD6BWJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 282:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 283:
@@ -706,7 +709,7 @@ jb 280f
 jne 283b
 .base64 "i0QkaIPAAYlEJGiLRCRsA4QkiAAAAIlEJGw7RCRc"
 jb 282b
-.base64 "iegFFQQAAIlEJFiLhCS0AAAAg+gViUQkXInoBQEEAACJRCRQuBQAAACJRCRUi4QkBAEAAImEJIQAAACLQBCJhCSIAAAAuAAAAACJRCRoiUQkbA=="
+.base64 "iegFFQQAAIlEJFiLhCS0AAAAg+gViUQkXInoBQEEAACJRCRQuBQAAACJRCRUi4QkBAEAAImEJIQAAACLQBiJhCSIAAAAuAAAAACJRCRoiUQkbA=="
 284:
 .base64 "ieuBwwACAACLtCSEAAAAizZT/9ZYieuBwwACAAC/AAAAALgAAAAAi1QkUItMJFSLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiLRCRoD8iJhQADAACJ64HDAAIAAIt8JFS4AAAAAInqgcIAAwAAuQQAAACLtCSEAAAAi3YEVVFSUFdT/9ZYWFhYWFiJ64HDAAIAAItEJFSDwAS5AAAAAInqgcJAAwAAi7QkhAAAAIt2CFVSUVBT/9ZYWFhYWIt8JFgDfCRsie6BxkADAACLTCRcK0wkbInIK4QkiAAAABnSIdADhCSIAAAAicE="
 285:
@@ -754,6 +757,6 @@ jne 293b
 21:
 .base64 "jaQkkAAAAIs8JIt0JASLbCQIW1tbW8M="
 .p2align 6"#,
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

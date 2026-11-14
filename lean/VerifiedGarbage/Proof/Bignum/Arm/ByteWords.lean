@@ -18,6 +18,6 @@ theorem ZeroInv.frame {s0 s : State} {base : BitVec 32} {n : Nat}
   intro a ha
   have h := ha ⟨State.addr base, 4 * n⟩ (by simp)
   change ¬ ((a - State.addr base).toNat + 1 ≤ 4 * n) at h
-  exact inv.outside a (by simp only [ofs]; omega)
+  exact inv.outside a (by simp only [ofs]; omega_using [h])
 
 end VG.Proof.Bignum.Arm

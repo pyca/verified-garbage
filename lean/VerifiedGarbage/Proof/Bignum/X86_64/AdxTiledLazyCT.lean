@@ -61,7 +61,7 @@ theorem redcLazy_ct {α : Type} {P : α → List (Nat × Nat)} {L : α → Layou
     have hZ := (L x).hZ
     have hsrc : readSrc s (.mem (hdr (sArr aN)))=some (off (L x).B (slot (L x).w aN)) := by
       rw [readSrc_word (d := 8*sArr aN) hg.scr (by simp only [State.ea,hdr,hg.rdi,hdrOff])
-        (by have := hdr_lt_slot (L x).w 8 (show sArr aN<32 by decide); omega),hg.hdr.harr aN (by decide)]
+        (by have := hdr_lt_slot (L x).w 8 (show sArr aN<32 by decide); omega_using [hZ, this]),hg.hdr.harr aN (by decide)]
     exact WP.mono (movMem_ok s (dst := .r10) hsrc) fun _ ⟨p,_,_,k⟩ =>
       ⟨⟨⟨mi,hg.scr.congr k.keep.2.2,(k.keep.gpr (by decide)).trans hg.rdi,k.2.1 ▸ hg.hdr⟩,k.2.1 ▸ hv⟩,p⟩
   unfold Adx.lazy8

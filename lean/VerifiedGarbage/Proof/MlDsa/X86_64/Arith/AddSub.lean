@@ -133,11 +133,11 @@ theorem step {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 →
         ((xb op .xmm0 .xmm1 :: fix) ++ (accTail ++ ([.alu .sub .rcx (.imm 1)] : List Instr))))) s fun s' =>
       Inv s₀ (fun k => L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)) (i + 1) s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 4 * i + 4 ≤ 256 := by omega
+  have j0 : 4 * i + 4 ≤ 256 := by omega_using [hi]
   have hw : pR (s₀.gpr .rdi) ∈ s.wr := by rw [hI.wr, hp.2.1]; simp
   have hr : pR (s₀.gpr .rsi) ∈ s.rd ++ s.wr := by rw [hI.rd, hI.wr, hp.1]; simp
-  have e1 : s.gpr .rdi = coeffAddr (s₀.gpr .rdi) (4 * i) := by rw [hI.rdi]; congr 2; omega
-  have e2 : s.gpr .rsi = coeffAddr (s₀.gpr .rsi) (4 * i) := by rw [hI.rsi]; congr 2; omega
+  have e1 : s.gpr .rdi = coeffAddr (s₀.gpr .rdi) (4 * i) := by rw [hI.rdi]; congr 2; omega_using []
+  have e2 : s.gpr .rsi = coeffAddr (s₀.gpr .rsi) (4 * i) := by rw [hI.rsi]; congr 2; omega_using []
   refine WP.mono (accBody_ok hF s hI.q (by rw [e1]; exact f_in (List.mem_append_right _ hw) j0)
     (by rw [e2]; exact ⟨_, hr, pR_contains _ j0⟩) (by rw [e1]; exact f_in hw j0))
     fun s' ⟨hm, hdi, hsi, hcx, hz, hrd, hwr, hq, _⟩ => ⟨?_, hcx, hz⟩
@@ -147,15 +147,15 @@ theorem step {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 →
   · rw [hm, e1, coeffAt_write128 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 4 * (i + 1) by omega), hL _ _ _ (by omega), e2, dword_readW _ _ (by omega),
-        dword_readW _ _ (by omega), coeffAddr_add, coeffAddr_add, ← coeffAt_eq, ← coeffAt_eq,
-        show 4 * i + (k - 4 * i) = k by omega, hI.coeff k hk, ifn (by omega),
+      rw [ifp (show k < 4 * (i + 1) by omega_using [h]), hL _ _ _ (by omega_using [h]), e2, dword_readW _ _ (by omega_using [h]),
+        dword_readW _ _ (by omega_using [h]), coeffAddr_add, coeffAddr_add, ← coeffAt_eq, ← coeffAt_eq,
+        show 4 * i + (k - 4 * i) = k by omega_using [h], hI.coeff k hk, ifn (by omega_using [h]),
         coeffAt_frame hI.frame (by simpa using hp.2.2.1.symm) (by rw [n_eq]; exact hk)]
     · rename_i h
       rw [hI.coeff k hk]
       by_cases h' : k < 4 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
 
 /-- The whole function, from its precondition. -/
 theorem fn_ok {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 → BitVec 128}
@@ -190,7 +190,7 @@ theorem fn_ok {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 �
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_setXmm, hr, ite_false]) fun w ⟨hq, k1, m1⟩ => ?_)
     refine wp_rcxLoop (N := 64) (by decide) (by decide) _ (fun u o _ => ⟨?_, ?_, by rw [o.keep.2.1, k1.2.1],
       by rw [o.keep.2.2, k1.2.2], by rw [o.xmm]; exact hq, by rw [o.mem, m1]; exact Frame.refl _ _,
-      fun k _ => by rw [o.mem, m1, ifn (by omega)]⟩) fun i hi u hI => ?_
+      fun k _ => by rw [o.mem, m1, ifn (by omega_using [])]⟩) fun i hi u hI => ?_
     · rw [o.keep.gpr (by decide), k1.gpr (by decide), Nat.mul_zero, add_ofNat_zero]
     · rw [o.keep.gpr (by decide), k1.gpr (by decide), Nat.mul_zero, add_ofNat_zero]
     · rw [show [Instr.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0)] ++
@@ -204,7 +204,7 @@ theorem fn_ok {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 �
     polyIs_of_toNat fun k hk => ?_⟩
   · simpa using hp.2.2.2.1
   · rw [n_eq] at hk
-    rw [hI.coeff k hk, ifp (by omega)]
+    rw [hI.coeff k hk, ifp (by omega_using [hk])]
     exact hv k hk
 
 end

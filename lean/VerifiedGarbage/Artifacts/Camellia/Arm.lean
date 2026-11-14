@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
+/-! # Camellia on ARMv7 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Camellia.Arm

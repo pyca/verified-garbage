@@ -20,10 +20,10 @@ theorem LayoutFrameReady.after_external {s t : State} {base : BitVec 32} {len w 
     (rest : Rest rs s t) (ptr : t.gpr .r0 = base) :
     LayoutFrameReady base len w t ∧ WorkspaceEq (State.addr base) (8 * len) s.mem t.mem := by
   have fit : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
-  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega : 8 * len < 2 ^ 64) frame workspaceSep
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_using [fit]
+  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega_using [this] : 8 * len < 2 ^ 64) frame workspaceSep
   have saved := WorkspaceEq.of_frame (by decide : 4 < 2 ^ 64) frame baseSep
-  refine ⟨⟨⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega)).trans h.width, ptr⟩,
+  refine ⟨⟨⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega_using [size])).trans h.width, ptr⟩,
     ?_, ?_, ?_⟩, eq⟩
   · rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead
   · rw [rest.sp]; exact h.stackSep

@@ -19,6 +19,8 @@ OR of their bytes' XORs (`cmpAcc`), zero exactly if they are equal.
 
 namespace VG.Proof.Rsa.RISCV64.Priv
 
+variable {pc : Bool}
+
 open VG VG.RISCV64 VG.Impl.Rsa.RISCV64.Priv VG.RISCV64.RegUpd
 
 /-- `Late` is kept by a write of a word of the frame apart from the slots. -/
@@ -37,14 +39,14 @@ theorem Late.store {s t : State} (M : Late s t) {d : Nat} (hd : oRa + 8 ≤ d �
       rw [List.mem_singleton.mp hr]
       have := saved_offs p hp
       simp only [oSave, oRa] at this hd
-      exact Offset.disjoint _ (by omega) (by unfold frameBytes at hd'; omega)
-        (by unfold frameBytes at hd'; omega)⟩
+      exact Offset.disjoint _ (by omega_using [hd, this]) (by unfold frameBytes at hd'; omega_using [this])
+        (by unfold frameBytes at hd'; omega_using [hd'])⟩
   rw [hm]; exact M.mem.writeW (List.mem_cons_self ..) _ (frame_contains s hd')
 
 /-- `m^e mod n` in `out` and the public operation's status kept in the
 frame, if `n`'s values are valid. -/
-abbrev pubOutM (s u : State) : Prop :=
-  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = some ws →
+abbrev pubOutM (pc : Bool) (s u : State) : Prop :=
+  ∀ ws, Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) = some ws → preVal pc s = ws →
     Spec.Rsa.written u.mem (s.gpr .a0) (s.gpr .a3).toNat
       ((u.mem.readW (fb s + BitVec.ofNat 64 oEs) 64).setWidth 32)
       (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
@@ -52,16 +54,16 @@ abbrev pubOutM (s u : State) : Prop :=
         (Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat))
 
 /-- At the comparison. -/
-structure AtLoop (s u : State) : Prop extends Late s u where
+structure AtLoop (pc : Bool) (s u : State) : Prop extends Late s u where
   crt : crtOutM s u
-  pub : pubOutM s u
+  pub : pubOutM pc s u
   t2 : u.gpr .t2 = s.gpr .a0
   t3 : u.gpr .t3 = s.gpr .a6
   t4 : u.gpr .t4 = 0
   t5 : u.gpr .t5 = s.gpr .a3
 
-theorem cmpArgs_ok {s t : State} (h : PreP s) (A : AtCmp s t) :
-    WP isa (.block cmpArgs) t (AtLoop s) := by
+theorem cmpArgs_ok {s t : State} (h : PreP pc s) (A : AtCmp pc s t) :
+    WP isa (.block cmpArgs) t (AtLoop pc s) := by
   have hk := h.k2
   have ho : InRegions t.wr (fb s + BitVec.ofNat 64 160) 8 := by
     rw [A.wr]; exact in_fr s _ (by decide)
@@ -81,19 +83,19 @@ theorem cmpArgs_ok {s t : State} (h : PreP s) (A : AtCmp s t) :
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hd hn (by decide)
     have hm : Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat =
         Spec.Rsa.bytesAt t.mem (fb s + BitVec.ofNat 64 oM) (s.gpr .a3).toNat :=
-      bytes_of_frame (s := t) fw (ap (.inr (by decide)) (by unfold oM; omega)) (by omega)
+      bytes_of_frame (s := t) fw (ap (.inr (by decide)) (by unfold oM; omega_using [hk])) (by omega_using [])
     have ho' : Spec.Rsa.bytesAt u.mem (s.gpr .a0) (s.gpr .a3).toNat =
         Spec.Rsa.bytesAt t.mem (s.gpr .a0) (s.gpr .a3).toNat :=
       bytes_of_frame (s := t) fw (fun r hr => by
         rw [List.mem_singleton.mp hr, show (⟨s.gpr .a0, (s.gpr .a3).toNat⟩ : Region) = oR s from outR_eq h]
-        exact (h.ko.sub_left (frame_sub s (by decide))).symm) (by have := h.wo; rw [h.h1] at this; omega)
+        exact (h.ko.sub_left (frame_sub s (by decide))).symm) (by have := h.wo; rw [h.h1] at this; omega_using [])
     refine ⟨A.store (.inl (by decide)) (by decide) _ (fun r hr => k.gpr (by revert r; decide)) usp urd
       uwr um, ?_, ?_, u2, u3, u4, u5⟩
     · show Spec.Rsa.written _ _ _ _ _
       rw [fw.readW (Region.contains_self _ _) (ap (.inl (by decide)) (by decide)) (by decide)]
       exact written_congr hm A.crt
-    · intro ws hw
-      have := A.pub ws hw
+    · intro ws hw hv
+      have := A.pub ws hw hv
       rw [← hm] at this
       rw [um, Mem.readW_writeW_self64, ← um]
       exact written_congr ho' this
@@ -140,14 +142,14 @@ theorem cmpAcc_eq_zero (m : Mem) (a b : Addr) (j : Nat) :
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · exact h i hi
       · exact h'
-    · intro h; exact ⟨fun i hi => h i (by omega), h j (by omega)⟩
+    · intro h; exact ⟨fun i hi => h i (by omega_using [hi]), h j (by omega_using [])⟩
 
 theorem add_ofNat_one (p : Addr) (j : Nat) :
     p + BitVec.ofNat 64 j + BitVec.ofNat 64 1 = p + BitVec.ofNat 64 (j + 1) := by
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 /-- The comparison: the OR of the XORs of `out`'s bytes and the input's in `t4`. -/
-theorem compare_ok {s t : State} (h : PreP s) (A : AtLoop s t) :
+theorem compare_ok {s t : State} (h : PreP pc s) (A : AtLoop pc s t) :
     WP isa compare t fun u => u.gpr .t4 = cmpAcc t.mem (s.gpr .a0) (s.gpr .a6) (s.gpr .a3).toNat ∧
       u.mem = t.mem ∧ Keep [.a1, .a2, .t2, .t3, .t4, .t5] t u := by
   have hk := h.k2
@@ -156,16 +158,16 @@ theorem compare_ok {s t : State} (h : PreP s) (A : AtLoop s t) :
     u.gpr .t2 = s.gpr .a0 + BitVec.ofNat 64 j ∧ u.gpr .t3 = s.gpr .a6 + BitVec.ofNat 64 j ∧
       u.gpr .t4 = cmpAcc t.mem (s.gpr .a0) (s.gpr .a6) j ∧ u.mem = t.mem ∧
       Keep [.a1, .a2, .t2, .t3, .t4, .t5] t u
-  refine WP.mono (Proof.Bignum.RISCV64.wp_countdown (N := (s.gpr .a3).toNat) (by omega) (by omega) Inv
+  refine WP.mono (Proof.Bignum.RISCV64.wp_countdown (N := (s.gpr .a3).toNat) (by omega_using []) (by omega_using [hk1]) Inv
     (fun j hj u ⟨u2, u3, u4, um, uk⟩ hc => ?_)
     ⟨by rw [A.t2]; simp, by rw [A.t3]; simp, A.t4, rfl, Keep.refl _ _⟩ (by rw [A.t5]; simp))
     fun u ⟨_, _, u4, um, uk⟩ => ⟨u4, um, uk⟩
   have io : InRegions (u.rd ++ u.wr) (s.gpr .a0 + BitVec.ofNat 64 j) 1 := by
     rw [uk.2.1, uk.2.2, A.wr, h.hwr]
-    exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h1]; omega) (by omega)⟩
+    exact ⟨oR s, by simp, Offset.contains_base _ (by rw [h.h1]; omega_using [hj]) (by omega_using [hj])⟩
   have ii : InRegions (u.rd ++ u.wr) (s.gpr .a6 + BitVec.ofNat 64 j) 1 := by
     rw [uk.2.1, A.rd, h.hrd]
-    exact ⟨iR s, by simp, Offset.contains_base _ (by rw [h.h7]; omega) (by omega)⟩
+    exact ⟨iR s, by simp, Offset.contains_base _ (by rw [h.h7]; omega_using [hj]) (by omega_using [hj])⟩
   refine WP.mono (WP.keep [.a1, .a2, .t2, .t3, .t4, .t5] (Q := fun u' =>
     u'.gpr .t2 = s.gpr .a0 + BitVec.ofNat 64 (j + 1) ∧ u'.gpr .t3 = s.gpr .a6 + BitVec.ofNat 64 (j + 1) ∧
       u'.gpr .t4 = cmpAcc t.mem (s.gpr .a0) (s.gpr .a6) (j + 1) ∧ u'.mem = u.mem ∧

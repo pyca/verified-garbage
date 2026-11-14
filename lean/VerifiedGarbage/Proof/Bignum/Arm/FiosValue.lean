@@ -25,8 +25,8 @@ theorem prefix_extend {mem0 mem mem' : Mem} {base : Addr} {acc b mod i k x q old
   have power : 2^(32*((i+k)+1))=2^(32*(i+1))*2^(32*k) := by
     rw [←Nat.pow_add]
     congr 1
-    omega
-  rw [stored,power,show i+k+1=(i+1)+k by omega,
+    omega_using []
+  rw [stored,power,show i+k+1=(i+1)+k by omega_using [],
     val32_append mem0 base acc (i+1) k,val32_append mem0 base b (i+1) k,
     val32_append mem0 base mod (i+1) k]
   have scaled := congrArg (fun z => 2^(32*(i+1))*z) step

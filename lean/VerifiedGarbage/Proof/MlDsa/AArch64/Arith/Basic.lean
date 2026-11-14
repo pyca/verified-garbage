@@ -131,9 +131,9 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
   · rw [hc', hc]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hk]
   · rw [hc', hc, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hN]
 
 /-! ## `csub` -/
 
@@ -149,14 +149,14 @@ theorem csubX_toNat {v : BitVec 64} (h : v.toNat < 2 * q) : (csubX v).toNat = co
   rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
     BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat]
-  split <;> omega
+  split <;> omega_arith
 
 /-- The low word of a 64-bit value less than `2³²`. -/
 theorem toNat_setWidth32 {v : BitVec 64} (h : v.toNat < 2 ^ 32) : (v.setWidth 32).toNat = v.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt h]
 
 theorem toNat_setWidth64 (v : BitVec 32) : (v.setWidth 64).toNat = v.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := v.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := v.isLt; omega_using [])]
 
 /-! ## `reduce` -/
 
@@ -175,7 +175,7 @@ theorem barrett64_bounds {x : Nat} (hx : x < q * q) :
     barrett64 x * q ≤ x ∧ x < barrett64 x * q + 2 * q := by
   unfold barrett64
   rw [q_eq] at *
-  constructor <;> omega
+  constructor <;> omega_arith
 
 /-- What `reduce` leaves of `x`. -/
 def redX (x : BitVec 64) : BitVec 64 := csubX (x + (((x >>> 22) * Mv) >>> 40) * negQ)
@@ -186,12 +186,12 @@ theorem barrett64_nat {x : Nat} (hx : x < q * q) :
       (x + barrett64 x * (2 ^ 64 - 8380417)) % 2 ^ 64 = x - barrett64 x * q ∧
       x - barrett64 x * q < 2 * q ∧ (x - barrett64 x * q) % q = x % q := by
   have hb := barrett64_bounds hx
-  refine ⟨?_, ?_, by omega, by rw [Nat.mul_comm, Nat.sub_mul_mod (by rw [Nat.mul_comm]; exact hb.1)]⟩
-  · rw [q_eq] at hx; omega
+  refine ⟨?_, ?_, by omega_using [hb], by rw [Nat.mul_comm, Nat.sub_mul_mod (by rw [Nat.mul_comm]; exact hb.1)]⟩
+  · rw [q_eq] at hx; omega_using [hx]
   rw [q_eq] at hb hx ⊢
   generalize barrett64 x = B at hb
-  rw [show x + B * (2 ^ 64 - 8380417) = (x - B * 8380417) + B * 2 ^ 64 by omega,
-    Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt (by omega)]
+  rw [show x + B * (2 ^ 64 - 8380417) = (x - B * 8380417) + B * 2 ^ 64 by omega_using [hb],
+    Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt (by omega_using [hx])]
 
 theorem redX_toNat {x : BitVec 64} (hx : x.toNat < q * q) : (redX x).toNat = x.toNat % q := by
   obtain ⟨hm, h2, hl, h4⟩ := barrett64_nat hx
@@ -219,7 +219,7 @@ theorem q32 : (BitVec.ofNat 32 8380417).setWidth 64 = Qv := by decide
 theorem imm16 {k : Nat} (h : k < 65536) : (BitVec.ofNat 16 k).setWidth 64 = BitVec.ofNat 64 k := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- `movW d v`: `d ← v`. -/
 theorem movW_ok (d : Reg) (v : BitVec 32) (s : State) :

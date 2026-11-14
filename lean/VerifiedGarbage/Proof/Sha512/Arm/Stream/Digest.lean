@@ -56,8 +56,8 @@ theorem take_flatMap_wordBytes (l : List Spec.Sha512.Word) (n : Nat) :
     | zero => simp
     | succ n =>
       rw [List.flatMap_cons, List.take_succ_cons, List.flatMap_cons, List.take_append,
-        List.take_of_length_le (by simp [wordBytes]; omega), show 8 * (n + 1) - (wordBytes w).length = 8 * n by
-          simp [wordBytes]; omega, ih]
+        List.take_of_length_le (by simp [wordBytes]; omega_using []), show 8 * (n + 1) - (wordBytes w).length = 8 * n by
+          simp [wordBytes]; omega_using [], ih]
 
 /-- The first `n` words of the digest, to `r6`, where `8 n` bytes may be written. -/
 theorem out_take {n : Nat} (hn : n ≤ 8) (s : State) (f₀ : (s.gpr .r0).toNat + 64 ≤ 2 ^ 32)
@@ -69,7 +69,7 @@ theorem out_take {n : Nat} (hn : n ≤ 8) (s : State) (f₀ : (s.gpr .r0).toNat 
       s'.mem = writeBytes s.mem (State.addr (s.gpr .r6))
         ((Proof.Sha512.md.digest (Proof.Sha512.md.stateAt s.mem (State.addr (s.gpr .r0)))).take (8 * n)) := by
   rw [← List.append_nil ((List.range n).flatMap outW)]
-  refine out_ok (W := 8 * n) (by omega) f₀ f₆ hd n (Nat.le_refl _) [] s _ rfl rfl hin hout
+  refine out_ok (W := 8 * n) (by omega_using [hn]) f₀ f₆ hd n (Nat.le_refl _) [] s _ rfl rfl hin hout
     fun s' g rd wr sp m => WP.block_nil ⟨g, rd, wr, sp, ?_⟩
   rw [m]
   exact congrArg _ (take_flatMap_wordBytes _ n).symm
@@ -101,10 +101,10 @@ theorem out224_ok (s : State) (f₀ : (s.gpr .r0).toNat + 64 ≤ 2 ^ 32) (f₆ :
       exact hd.sub_left (Offset.sub_base _ (by decide))
   simp only [outHi]
   refine wp_ldr (a := State.addr (s.gpr .r0) + BitVec.ofNat 64 28) (by decide)
-    (by rw [g₁ _ (by decide) (by decide), addr_add (by omega)])
+    (by rw [g₁ _ (by decide) (by decide), addr_add (by omega_using [f₀])])
     (by rw [rd₁, wr₁]; exact InRegions.offset hin (by decide) (by decide)) fun s₂ u₂ => wp_rev fun s₃ u₃ => ?_
   refine wp_str (a := State.addr (s.gpr .r6) + BitVec.ofNat 64 24) (by decide)
-    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide) (by decide), addr_add (by omega)])
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide) (by decide), addr_add (by omega_using [f₆])])
     (by rw [u₃.wr, u₂.wr, wr₁]; exact InRegions.offset hout (by decide) (by decide)) fun s₄ g₄ =>
       WP.block_nil ⟨fun r h9 h10 => by rw [g₄.gpr, u₃.other r h10, u₂.other r h10, g₁ r h9 h10],
         by rw [g₄.rd, u₃.rd, u₂.rd, rd₁], by rw [g₄.wr, u₃.wr, u₂.wr, wr₁], by rw [g₄.sp, u₃.sp, u₂.sp, sp₁], ?_⟩

@@ -155,28 +155,33 @@ abbrev eP (L : Kem) : Ptr := qP (3 * L.k + 1)
 /-- `f += g`, inline, with `g` of `u16`s. -/
 def add16In (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) add16Y
 
-/-- `u[i] = NTT⁻¹(Â^⊺ ∘ ŷ)[i] + e₁[i]`, and `ByteEncode_{d_u}(Compress_{d_u}(u[i]))` to `c₁`. -/
+/-- `u[i] = NTT⁻¹(Â^⊺ ∘ ŷ)[i] + e₁[i]`, and `ByteEncode_{d_u}(Compress_{d_u}(u[i]))` to `c₁`
+(`L.ceU`). -/
 def uE (i : Nat) : Prog isa :=
   .seq (add16In (qP (2 * L.k + i)) (.r13, 512 * (L.k + i)))
     (.seq (.block (lea .rdi (qP (2 * L.k + i)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 L.du))] ++
       lea .rdx (.r15, 32 * L.du * i) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.du)))]))
-      (L.ce A.codecs))
+      L.ceU)
 
-/-- `v = NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂ + μ`, and `ByteEncode_{d_v}(Compress_{d_v}(v))` to `c₂`. -/
+/-- `v = NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂ + μ`, and `ByteEncode_{d_v}(Compress_{d_v}(v))` to `c₂`
+(`L.ceV`). -/
 def vE : Prog isa :=
   .seq (add16In (qP (3 * L.k)) (.r13, 512 * (2 * L.k)))
     (.seq (.seq (.block (lea .rdi (.r14, 0) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 (32 * 1))),
         .mov32 .rdx (.imm (BitVec.ofNat 32 1))] ++ lea .rcx (eP L))) A.codecs.dd) (.seq (addIn A (qP (3 * L.k)) (eP L))
       (.seq (.block (lea .rdi (qP (3 * L.k)) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 L.dv))] ++
         lea .rdx (.r15, 32 * L.du * L.k) ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (32 * L.dv)))]))
-        (L.ce A.codecs))))
+        L.ceV)))
 
 /-- The prologue, `t̂` and the products, with the code `mul` of the products. -/
 def kpkeEncPre (mul : Nat → Prog isa) : Prog isa :=
   .seq (.block proE) (.seq (seqR (tHatE L A) 0 L.k) (prodE L mul))
 
-/-- `u`, `v` and the epilogue. -/
-def kpkeEncPost : Prog isa := .seq (seqR (uE L A) 0 L.k) (.seq (vE L A) (.block epiE))
+/-- `u` and `v`, in an MXCSR region (`withMxcsr`, at `scratch + 768` again)
+for the multiplications of their compressions (`L.ceU`, `L.ceV`), and the
+epilogue. -/
+def kpkeEncPost : Prog isa :=
+  .seq (withMxcsr .rbx oMx (.seq (seqR (uE L) 0 L.k) (vE L A))) (.block epiE)
 
 /-! ## `vg_mlkem*_kpke_keygen` -/
 

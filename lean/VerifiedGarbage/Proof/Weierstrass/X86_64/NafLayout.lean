@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The eight-entry odd-multiple table and cached double and its disjoint scratch slots. -/
 
@@ -44,14 +45,14 @@ theorem nafTblPt_mem (K : WinCfg) {a : Nat} (ha : 1 ≤ a) (h9 : a ≤ 9) :
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl | rfl | rfl
   · rw [tblPt_x]; exact nafTbl_slot K (by omega)
-  · rw [tblPt_y]; exact nafTbl_slot K (by omega)
-  · rw [tblPt_z]; exact nafTbl_slot K (by omega)
+  · rw [tblPt_y]; exact nafTbl_slot K (by omega_using [h9])
+  · rw [tblPt_z]; exact nafTbl_slot K (by omega_using [h9])
 
 /-- The complete table of nine points fits in the scratch allocation. -/
 theorem NafLay.table_le {K : WinCfg} {size : Nat} (hL : NafLay K size) :
     K.tbl+216*K.M.n ≤ size := by
   have h := hL.lay.le (K.tbl+8*K.M.n*26) (List.mem_append_right _ (nafTbl_slot K (by decide)))
-  omega
+  omega_using [h]
 
 /-- The previous eight-entry layout is a sub-layout of this allocation. -/
 theorem nafOld_slots (K : WinCfg) : ∀ x ∈ winSlots K, x ∈ nafSlots K := by
@@ -61,14 +62,14 @@ theorem nafOld_slots (K : WinCfg) : ∀ x ∈ winSlots K, x ∈ nafSlots K := by
   · exact Or.inl hx
   · apply Or.inr
     obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
-    exact nafTbl_slot K (by have := List.mem_range.mp hi; omega)
+    exact nafTbl_slot K (by have := List.mem_range.mp hi; omega_using [this])
 
 /-- Existing coordinate and scratch-separation lemmas remain available for
 the working points, while the new table includes the cached double. -/
 theorem NafLay.toWinLay {K : WinCfg} {size : Nat} (hL : NafLay K size)
     (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) : WinLay K size := by
   have hn := hL.n
-  refine ⟨?_,hL.ro,hL.nodup,?_,by omega,by omega,?_,?_⟩
+  refine ⟨?_,hL.ro,hL.nodup,?_,by omega_using [hn],by omega_using [hJ, hn],?_,?_⟩
   · exact { le := fun x hx => hL.lay.le x (nafOld_slots K x hx)
             mo := fun x hx => hL.lay.mo x (nafOld_slots K x hx)
             tmp := fun x hx => hL.lay.tmp x (nafOld_slots K x hx)
@@ -76,8 +77,8 @@ theorem NafLay.toWinLay {K : WinCfg} {size : Nat} (hL : NafLay K size)
               hL.lay.apart x y (nafOld_slots K x hx) (nafOld_slots K y hy) hxy }
   · intro x hx
     have := hL.tbl x hx
-    omega
-  · have := hL.bits; omega
+    omega_using [this]
+  · have := hL.bits; omega_using [hJ, this]
   · intro w hw
     simp only [winW,List.mem_append,List.mem_map,List.mem_singleton] at hw
     rcases hw with ⟨x,hx,rfl⟩ | rfl
@@ -87,13 +88,13 @@ theorem NafLay.toWinLay {K : WinCfg} {size : Nat} (hL : NafLay K size)
         · exact Or.inl hx
         · apply Or.inr
           obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
-          exact nafTbl_slot K (by have := List.mem_range.mp hi; omega)
+          exact nafTbl_slot K (by have := List.mem_range.mp hi; omega_using [this])
       have := hL.bits_w x hnew
       dsimp only
-      omega
+      omega_using [hJ, this]
     · have := hL.bits_tmp
       dsimp only
-      omega
+      omega_using [hJ, this]
 
 /-- Reversing the two work points also separates all doubling operands. -/
 theorem NafLay.rcbApart_DR {K : WinCfg} {size : Nat} (hL : NafLay K size) :
@@ -120,7 +121,7 @@ theorem NafLay.rcbApart_twice {K : WinCfg} {size : Nat} (hL : NafLay K size) (hJ
   · have sep := hL.tbl x (List.mem_append_right _ (List.mem_append_right _ hw))
     simp only [Naf.twice,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at he
     have := hL.n
-    omega
+    omega_using [sep, he, this]
 
 /-- The initial double goes into the ninth point, outside the eight-entry odd table. -/
 theorem NafLay.rcbApart_init {K : WinCfg} {size : Nat} (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) :
@@ -136,14 +137,14 @@ theorem NafLay.rcbApart_init {K : WinCfg} {size : Nat} (hL : NafLay K size) (hJ 
     have sep := hL.tbl x hx
     simp only [Naf.twice,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at he
     have := hL.n
-    omega
+    omega_using [sep, he, this]
   refine ⟨?_,?_⟩
   · rw [ets,List.nodup_append]
     refine ⟨hn.1,?_,fun x hx y hy he => ht x (hts x hx) (he ▸ hy)⟩
     simp only [Naf.twice,WinCfg.tblPt,List.nodup_cons,List.mem_cons,List.not_mem_nil,
       or_false,not_or,List.nodup_nil,not_false_eq_true,and_true]
     have := hL.n
-    and_intros <;> omega
+    and_intros <;> omega_using [this]
   · intro x hx hw
     have hr : x∈winRo K := by
       simp only [rcbR,winRo,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢

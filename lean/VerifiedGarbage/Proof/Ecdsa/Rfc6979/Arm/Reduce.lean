@@ -495,6 +495,6 @@ theorem reduce_ok (hA : P.R.big = false) (hL : L.Ok) {t : State} (hc : Ctx L g m
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _
   rw [hH, hX]
-  exact reduce_math _ _ _ _ (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega)) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
+  exact reduce_math _ _ _ _ (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega_using [])) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

@@ -160,10 +160,10 @@ theorem layout : F.L.buf = 8 * F.W + 16 ∧ F.st0O = 8 * F.W + 16 ∧ F.st1O = 8
     F.uO = 8 * F.W + 16 + 4 * F.H.S ∧ F.tO = 8 * F.W + 16 + 4 * F.H.S + F.H.D ∧
     F.hkO = 8 * F.W + 16 + 4 * F.H.S + 2 * F.H.D ∧ F.intO = 8 * F.W + 16 + 4 * F.H.S + 2 * F.H.D + F.H.F := by
   dsimp only [Fns.st0O, Fns.st1O, Fns.stSO, Fns.stWO, Fns.uO, Fns.tO, Fns.hkO, Fns.intO, Fns.L, Hash.buf]
-  omega
+  omega_using []
 
 theorem end_le (hz : Sizes F) : F.intO + 4 ≤ F.L8 := by
-  have := layout (F := F); have := hz.fits; simp only [Fns.L8]; omega
+  have := layout (F := F); have := hz.fits; simp only [Fns.L8]; omega_arith
 
 /-! Bounds of the parts of `scratch`, each proved once for the many places that
 need it (each an `omega` call of its own otherwise), down the chain of their
@@ -203,7 +203,7 @@ theorem Sizes.stWO_S_intO (_hz : Sizes F) : F.stWO + F.H.S ≤ F.intO :=
     (Nat.le_trans (Nat.le_add_right F.tO F.H.D) (Nat.le_add_right F.hkO F.H.F))
 
 theorem L8_le (hz : Sizes F) : F.L8 ≤ 8 * 512 + 8 * 256 := by
-  have := hz.W; have := hz.S; simp only [Fns.L8]; omega
+  have := hz.W; have := hz.S; simp only [Fns.L8]; omega_arith
 
 /-- The save area of our caller's registers. -/
 abbrev svR (F : Fns) (s₀ : State) : Region := saveR F.L (scr s₀)
@@ -214,11 +214,11 @@ include hp hz
 
 omit hz in
 theorem dO_addr {o : Nat} (ho : o < F.L8) : (dO s₀ o).setWidth 64 = A s₀ o := by
-  have := hp.nsc; exact Pbkdf2.Stream.X86.setWidth_add (by omega)
+  have := hp.nsc; exact Pbkdf2.Stream.X86.setWidth_add (by omega_using [ho, this])
 
 omit hz in
 theorem dO_toNat {o : Nat} (ho : o < F.L8) : (dO s₀ o).toNat = (scr s₀).toNat + o := by
-  have := hp.nsc; exact Pbkdf2.Stream.X86.toNat_add_ofNat (by omega)
+  have := hp.nsc; exact Pbkdf2.Stream.X86.toNat_add_ofNat (by omega_using [ho, this])
 
 omit hp hz in
 theorem part_sub {o n : Nat} (h : o + n ≤ F.L8) : Region.Sub (sR s₀ o n) (scR s₀ F) :=
@@ -227,12 +227,12 @@ theorem part_sub {o n : Nat} (h : o + n ≤ F.L8) : Region.Sub (sR s₀ o n) (sc
 omit hp in
 theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ F.L8) (hb : b + n ≤ F.L8) :
     Region.Disjoint (sR s₀ a m) (sR s₀ b n) := by
-  have := L8_le hz; exact Offset.disjoint _ h (by omega) (by omega)
+  have := L8_le hz; exact Offset.disjoint _ h (by omega_using [ha, this]) (by omega_using [hb, this])
 
 omit hp in
 theorem low_disj {k b n : Nat} (hk : k ≤ b) (hbn : b + n ≤ F.L8) :
     Region.Disjoint (lowR s₀ k) (sR s₀ b n) := by
-  have := L8_le hz; exact Offset.base_disjoint _ hk (by omega)
+  have := L8_le hz; exact Offset.base_disjoint _ hk (by omega_using [hbn, this])
 
 omit hp hz in
 theorem low_sub {k : Nat} (hk : k ≤ F.L8) : Region.Sub (lowR s₀ k) (scR s₀ F) := Region.sub_prefix hk
@@ -240,19 +240,19 @@ theorem low_sub {k : Nat} (hk : k ≤ F.L8) : Region.Sub (lowR s₀ k) (scR s₀
 omit hp in
 theorem sv_sub : Region.Sub (svR F s₀) (scR s₀ F) := by
   have := end_le hz; have := layout (F := F)
-  exact Offset.sub_base _ (by show 8 * F.W + 16 ≤ F.L8; omega)
+  exact Offset.sub_base _ (by show 8 * F.W + 16 ≤ F.L8; omega_arith)
 
 omit hp in
 /-- A part of `scratch` after the save area is apart from it. -/
 theorem sv_disj {o n : Nat} (ho : 8 * F.W + 16 ≤ o) (hon : o + n ≤ F.L8) : (svR F s₀).Disjoint (sR s₀ o n) := by
-  have := L8_le hz; exact Offset.disjoint _ (Or.inl (by simp only [Fns.L]; omega)) (by simp only [Fns.L]; omega) (by omega)
+  have := L8_le hz; exact Offset.disjoint _ (Or.inl (by simp only [Fns.L]; omega_using [ho])) (by simp only [Fns.L]; omega_using [ho, hon, this]) (by omega_using [hon, this])
 
 omit hp in
 /-- The working space is apart from the save area. -/
 theorem sv_low {k : Nat} (hk : k ≤ 8 * F.W) : (svR F s₀).Disjoint (lowR s₀ k) := by
   have := L8_le hz; have := end_le hz; have := layout (F := F)
-  exact (Offset.base_disjoint _ (k := k) (e := 8 * F.L.W) (n := 16) (by simp only [Fns.L]; omega)
-    (by simp only [Fns.L]; omega)).symm
+  exact (Offset.base_disjoint _ (k := k) (e := 8 * F.L.W) (n := 16) (by simp only [Fns.L]; omega_using [hk])
+    (by simp only [Fns.L]; omega_arith)).symm
 
 omit hz in
 theorem sc_mem : scR s₀ F ∈ s₀.wr := by rw [hp.wr]; simp
@@ -260,7 +260,7 @@ theorem sc_mem : scR s₀ F ∈ s₀.wr := by rw [hp.wr]; simp
 theorem in_sc {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ F.L8) :
     InRegions s.wr (A s₀ o) n := by
   have := L8_le hz
-  exact ⟨scR s₀ F, by rw [hwr]; exact sc_mem hp, Offset.contains_base _ h (by omega)⟩
+  exact ⟨scR s₀ F, by rw [hwr]; exact sc_mem hp, Offset.contains_base _ h (by omega_using [h, this])⟩
 
 end
 
@@ -328,7 +328,7 @@ theorem KR.call {s₀ s s' : State} (hp : Pre F s₀) (hz : Sizes F) (h : KR F s
       exact (hp.b_s.sub_right (sv_sub hz)).symm
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hw r hr with ⟨k, rfl, hk⟩ | ⟨o, n, rfl, h₁, h₂⟩
-      · exact ⟨scR s₀ F, by simp, low_sub (F := F) (by omega)⟩
+      · exact ⟨scR s₀ F, by simp, low_sub (F := F) (by omega_using [hL, this, hk])⟩
       · exact ⟨_, by simp, part_sub h₂⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, by simp, fun _ h => h⟩
@@ -350,7 +350,7 @@ theorem KR.argEq {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 8) : arg s i
     · exact hp.o_a.symm
     · exact hp.s_a.symm
     · exact hp.b_a.symm
-  exact Pbkdf2.Stream.X86.arg_keep rfl hk.esp (n := 32) (by have := hp.spf; omega) hk.frame hd (by omega)
+  exact Pbkdf2.Stream.X86.arg_keep rfl hk.esp (n := 32) (by have := hp.spf; omega) hk.frame hd (by omega_using [hi])
 
 omit hp in
 theorem argW {s : State} (hs : s.gpr .esp = E s₀) (i : Nat) :
@@ -361,7 +361,7 @@ theorem argIn {s : State} (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) {i : Nat
     InRegions (s.rd ++ s.wr) (argAddr s₀ i) 4 := by
   rw [hrd, hwr, hp.rd, hp.wr]
   exact ⟨argR s₀, by simp, by
-    rw [argR_eq]; exact Pbkdf2.Stream.X86.arg_contains rfl (by omega) (by have := hp.spf; omega)⟩
+    rw [argR_eq]; exact Pbkdf2.Stream.X86.arg_contains rfl (by omega_using [hi]) (by have := hp.spf; omega)⟩
 
 /-- An argument, read from memory while `KR` holds. -/
 theorem KR.readArg {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 8) :
@@ -387,7 +387,7 @@ theorem KR.ret {s : State} (hk : KR F s₀ s) :
     · exact hp.r_o
     · exact hp.r_s
     · rw [stkR, below_eq hp.sp76]
-      exact (Offset.below_disjoint _ (by omega)).symm) (by decide)
+      exact (Offset.below_disjoint _ (by omega_using [])).symm) (by decide)
 
 omit hp in
 /-- The bytes of a region only read are those on entry. -/
@@ -402,7 +402,7 @@ theorem KR.pwBytes {s : State} (hk : KR F s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.pw_o
     · exact hp.pw_s
-    · exact hp.b_pw.symm) (by have := hp.npw; omega)
+    · exact hp.b_pw.symm) (by have := hp.npw; omega_using [this])
 
 theorem KR.saltBytes {s : State} (hk : KR F s₀ s) :
     bytesAt s.mem ((salt s₀).setWidth 64) (sl s₀) = bytesAt s₀.mem ((salt s₀).setWidth 64) (sl s₀) :=
@@ -411,7 +411,7 @@ theorem KR.saltBytes {s : State} (hk : KR F s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.sa_o
     · exact hp.sa_s
-    · exact hp.b_sa.symm) (by have := hp.nsa; omega)
+    · exact hp.b_sa.symm) (by have := hp.nsa; omega_using [this])
 
 end
 

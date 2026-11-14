@@ -47,7 +47,7 @@ theorem copy_ok (s : State) {base : BitVec 32} {len w o a : Nat}
   rintro t ⟨_, _, value, outside, frame, restT, ptr⟩
   rw [moved.mem] at value outside frame
   simp only [ite_self] at value
-  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega)
+  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega_using [this])
   have rest : Rest roundClobbers s t := (restU.mono (by simp [roundClobbers])).trans restT
   exact ⟨(h.after_array ho0 keeps frame rest ptr).1, value, keeps, frame, rest⟩
 

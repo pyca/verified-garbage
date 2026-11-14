@@ -22,7 +22,7 @@ theorem parsed_eq {s t : State} {b : Addr} {n d : Nat} (h : InputEq s t b n)
   unfold Spec.Sha3.bytesAt
   apply List.map_congr_left
   intro i hi
-  exact h i (by have := List.mem_range.mp hi; omega)
+  exact h i (by have := List.mem_range.mp hi; omega_using [hd, this])
 
 theorem ParseInv.publicRegs {σ τ s t : State} {b p : Addr} {n d : Nat} {L : List Zq}
     (he : InputEq σ τ b n) (hsp : σ.sp=τ.sp)

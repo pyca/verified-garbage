@@ -50,7 +50,7 @@ theorem maskIndex (x : BitVec 64) :
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth]
   change x.toNat &&& (2 ^ 6 - 1) = x.toNat % 64 % 18446744073709551616
   rw [Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem scheduleAt_getD (m : Mem) (p : Addr) (i : Nat) (hi : i < 64) :
     (Spec.Rc2.scheduleAt m p).getD i 0 =

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.Arith
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: the encapsulation key check, for every target
@@ -48,7 +49,7 @@ theorem flatMap_range_inj {α : Type} {g₁ g₂ : Nat → List α} {c N : Nat} 
         show (c * i + j) % c = j by rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hj],
         List.getElem?_range hi, Option.bind_some] at this
       exact this
-    · rw [List.getElem?_eq_none (by rw [h₁ i hi]; omega), List.getElem?_eq_none (by rw [h₂ i hi]; omega)]
+    · rw [List.getElem?_eq_none (by rw [h₁ i hi]; omega_using [hj]), List.getElem?_eq_none (by rw [h₂ i hi]; omega_using [hj])]
   · intro h
     simp only [List.flatMap_def]
     exact congrArg List.flatten (List.map_congr_left fun i hi => h i (List.mem_range.mp hi))
@@ -67,10 +68,10 @@ theorem eq_flatMap_slices {α : Type} [Inhabited α] (L : List α) {c N : Nat} (
   have hl : ∀ i < N, ((L.drop (c * i)).take c).length = c := fun i hi => by
     have : c * i + c ≤ c * N := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
     simp only [List.length_take, List.length_drop, hL]
-    omega
+    omega_using [this]
   refine eq_flatMap hc hl hL fun i hi j hj => ?_
   have : c * i + c ≤ c * N := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-  rw [getElem!_pos L _ (by omega), getElem!_pos _ _ (by rw [hl i hi]; exact hj), List.getElem_take,
+  rw [getElem!_pos L _ (by omega_using [hL, hj, this]), getElem!_pos _ _ (by rw [hl i hi]; exact hj), List.getElem_take,
     List.getElem_drop]
 
 /-! ## One polynomial -/
@@ -78,13 +79,13 @@ theorem eq_flatMap_slices {α : Type} [Inhabited α] (L : List α) {c N : Nat} (
 theorem bytes3_eq (L : List Byte) (hL : L.length = 384) :
     L = (List.range 128).flatMap fun g => [L.getD (3 * g) 0, L.getD (3 * g + 1) 0, L.getD (3 * g + 2) 0] :=
   eq_flatMap (c := 3) (by decide) (fun _ _ => rfl) hL fun i hi j hj => by
-    rw [getElem!_pos L _ (by omega)]
+    rw [getElem!_pos L _ (by omega_using [hL, hi, hj])]
     have e : ∀ k (hk : k < L.length), L[k] = L.getD k 0 := fun k hk => by
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some]
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
-    · exact e (3 * i) (by omega)
-    · exact e (3 * i + 1) (by omega)
-    · exact e (3 * i + 2) (by omega)
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
+    · exact e (3 * i) (by omega_using [hL, hi])
+    · exact e (3 * i + 1) (by omega_using [hL, hi])
+    · exact e (3 * i + 2) (by omega_using [hL, hi])
 
 private theorem ofNat8_eq_iff (x : Nat) (b : Byte) : BitVec.ofNat 8 x = b ↔ x % 256 = b.toNat := by
   rw [← BitVec.toNat_inj, BitVec.toNat_ofNat]
@@ -94,7 +95,7 @@ private theorem bytes3_inj {a b a' b' : Nat} (ha : a < 4096) (hb : b < 4096) (ha
     (hb' : b' < 4096) :
     (a % 256 = a' % 256 ∧ (a / 256 + 16 * (b % 16)) % 256 = (a' / 256 + 16 * (b' % 16)) % 256 ∧
       b / 16 % 256 = b' / 16 % 256) ↔ (a = a' ∧ b = b') := by
-  omega
+  omega_using [ha, hb, ha', hb']
 
 /-- The encoding of the two fields reduced modulo `q` is the encoding of
 the fields exactly when they are less than `q`. -/
@@ -105,7 +106,7 @@ private theorem group_ok {F₀ F₁ c₀ c₁ c₂ : Nat} (h₀ : F₀ < 4096) (
   subst e₀ e₁ e₂
   have := Nat.mod_lt F₀ (show 3329 > 0 by decide)
   have := Nat.mod_lt F₁ (show 3329 > 0 by decide)
-  rw [bytes3_inj (by omega) (by omega) h₀ h₁, Nat.mod_eq_iff_lt (by decide),
+  rw [bytes3_inj (by omega_using []) (by omega_using []) h₀ h₁, Nat.mod_eq_iff_lt (by decide),
     Nat.mod_eq_iff_lt (by decide)]
 
 /-- `ByteEncode₁₂(ByteDecode₁₂(C)) = C` exactly when both 12-bit fields of
@@ -119,7 +120,7 @@ theorem encode12_decode12 (C : List Byte) (hC : C.length = 384) :
   simp only [List.cons.injEq, and_true, ofNat8_eq_iff, field0, field1, q_eq, Nat.mod_mod]
   have := byte_lt (C.getD (3 * g) 0); have := byte_lt (C.getD (3 * g + 1) 0)
   have := byte_lt (C.getD (3 * g + 2) 0)
-  exact group_ok (by omega) (by omega) (by omega) (by omega) (by omega)
+  exact group_ok (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using []) (by omega_using [])
 
 /-! ## The encapsulation key check -/
 
@@ -129,34 +130,34 @@ less than `q`. -/
 theorem ekCheck_iff (p : Params) (ek : List Byte) (h : ek.length = p.ekLen) :
     ekCheck p ek = true ↔ ∀ g < 128 * p.k, field0 ek g < q ∧ field1 ek g < q := by
   have hE : (ek.take (384 * p.k)).length = 384 * p.k := by
-    simp only [List.length_take, h, Params.ekLen]; omega
+    simp only [List.length_take, h, Params.ekLen]; omega_using []
   have hs : ∀ i < p.k, (((ek.take (384 * p.k)).drop (384 * i)).take 384).length = 384 := fun i hi => by
-    simp only [List.length_take, List.length_drop, hE]; omega
+    simp only [List.length_take, List.length_drop, hE]; omega_using [hi]
   simp only [ekCheck, h, Bool.and_eq_true, beq_iff_eq, decide_true, true_and]
   rw [encodeVec, decodeVec, List.flatMap_map]
   conv => lhs; rhs; rw [eq_flatMap_slices (ek.take (384 * p.k)) (c := 384) (N := p.k) (by decide) hE]
   rw [flatMap_range_inj (c := 384) (by decide) (fun _ _ => encode12_length _) hs]
   constructor
   · intro H g hg
-    have := (encode12_decode12 _ (hs (g / 128) (by omega))).mp (H (g / 128) (by omega)) (g % 128)
-      (by omega)
-    simp only [field0, field1, slice_getD _ _ (show 3 * (g % 128) < 384 by omega),
-      slice_getD _ _ (show 3 * (g % 128) + 1 < 384 by omega),
-      slice_getD _ _ (show 3 * (g % 128) + 2 < 384 by omega)] at this
+    have := (encode12_decode12 _ (hs (g / 128) (by omega_using [hg]))).mp (H (g / 128) (by omega_using [hg])) (g % 128)
+      (by omega_using [])
+    simp only [field0, field1, slice_getD _ _ (show 3 * (g % 128) < 384 by omega_using []),
+      slice_getD _ _ (show 3 * (g % 128) + 1 < 384 by omega_using []),
+      slice_getD _ _ (show 3 * (g % 128) + 2 < 384 by omega_using [])] at this
     simp only [field0, field1]
-    rw [getD_take_of_lt _ (by omega), getD_take_of_lt _ (by omega), getD_take_of_lt _ (by omega)] at this
-    rwa [show 384 * (g / 128) + 3 * (g % 128) = 3 * g by omega,
-      show 384 * (g / 128) + (3 * (g % 128) + 1) = 3 * g + 1 by omega,
-      show 384 * (g / 128) + (3 * (g % 128) + 2) = 3 * g + 2 by omega] at this
+    rw [getD_take_of_lt _ (by omega_using [hg]), getD_take_of_lt _ (by omega_using [hg]), getD_take_of_lt _ (by omega_using [hg])] at this
+    rwa [show 384 * (g / 128) + 3 * (g % 128) = 3 * g by omega_using [],
+      show 384 * (g / 128) + (3 * (g % 128) + 1) = 3 * g + 1 by omega_using [],
+      show 384 * (g / 128) + (3 * (g % 128) + 2) = 3 * g + 2 by omega_using []] at this
   · intro H i hi
     refine (encode12_decode12 _ (hs i hi)).mpr fun g hg => ?_
-    have := H (128 * i + g) (by omega)
-    simp only [field0, field1, slice_getD _ _ (show 3 * g < 384 by omega),
-      slice_getD _ _ (show 3 * g + 1 < 384 by omega), slice_getD _ _ (show 3 * g + 2 < 384 by omega)]
-    rw [getD_take_of_lt _ (by omega), getD_take_of_lt _ (by omega), getD_take_of_lt _ (by omega),
-      show 384 * i + 3 * g = 3 * (128 * i + g) by omega,
-      show 384 * i + (3 * g + 1) = 3 * (128 * i + g) + 1 by omega,
-      show 384 * i + (3 * g + 2) = 3 * (128 * i + g) + 2 by omega]
+    have := H (128 * i + g) (by omega_using [hi, hg])
+    simp only [field0, field1, slice_getD _ _ (show 3 * g < 384 by omega_using [hg]),
+      slice_getD _ _ (show 3 * g + 1 < 384 by omega_using [hg]), slice_getD _ _ (show 3 * g + 2 < 384 by omega_using [hg])]
+    rw [getD_take_of_lt _ (by omega_using [hi, hg]), getD_take_of_lt _ (by omega_using [hi, hg]), getD_take_of_lt _ (by omega_using [hi, hg]),
+      show 384 * i + 3 * g = 3 * (128 * i + g) by omega_using [],
+      show 384 * i + (3 * g + 1) = 3 * (128 * i + g) + 1 by omega_using [],
+      show 384 * i + (3 * g + 2) = 3 * (128 * i + g) + 2 by omega_using []]
     exact this
 
 /-- The encapsulation key check of ML-KEM-768 (§7.2) of a key of 1184

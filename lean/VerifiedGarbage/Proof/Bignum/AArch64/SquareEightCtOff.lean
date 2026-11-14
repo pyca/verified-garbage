@@ -27,14 +27,14 @@ theorem off_ctx {a : Nat} (ha : a < 8) (ha1 : a ≠ Public.aAcc) (ha2 : a ≠ Pu
   have hA := input_separation hb.fast ha1 ha2
   have hAZ : slot (8*blocks p.1) a+64*blocks p.1 ≤ p.1.Z := by
     have := slot_le (w := 8*blocks p.1) ha
-    omega
+    omega_using [hsize, this]
   have hP : productBase (blocks p.1)+8*(16*blocks p.1+2) ≤ p.1.Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have hj := hb.index
   refine WP.mono (offDiagonal_full hg.scr hb.ptr hb.zero h.pending h.ptrs.tptr h.ptrs.nptr h.iterations
-    (by omega) hP (by omega) (by omega) (by omega) (by omega) (by omega)) fun t ⟨_, hto, kt⟩ => ?_
-  have hout := hto.mono (o' := productBase (blocks p.1)) (n' := 8*(16*blocks p.1+2)) (by omega) (by omega)
+    (by omega_using [hAZ, hj]) hP (by omega_using [hAZ, hj]) (by omega_using [hA, hj]) (by omega_using [hA, hj]) (by omega_using [hk, hj]) (by omega_using [hj])) fun t ⟨_, hto, kt⟩ => ?_
+  have hout := hto.mono (o' := productBase (blocks p.1)) (n' := 8*(16*blocks p.1+2)) (by omega_using []) (by omega_using [hj])
   have hHt : Hdr t.mem p.1.B p.1.w mi := he ▸ frame_header hout (he.symm ▸ hg.hdr)
   exact ⟨⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr _ (by decide)).trans hg.x0, hHt⟩, hz⟩, hb.fast.2⟩,
     hj, (kt.gpr _ (by decide)).trans hb.ptr, (kt.gpr _ (by decide)).trans hb.count,

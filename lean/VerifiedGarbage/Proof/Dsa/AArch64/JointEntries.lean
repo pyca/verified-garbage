@@ -36,13 +36,13 @@ theorem jointBuildStep_ok (M : Mont) {t₀ t : State} {P : Addr} {w n g y j : Na
     intro k hk'
     by_cases he : k = j
     · subst k; exact hv.trans h.vals.entry
-    · exact (ht k (by omega) he).trans (h.entries k (by omega))
+    · exact (ht k (by omega_using [hj, hk']) he).trans (h.entries k (by omega_using [hk', he]))
   refine WP.mono (jointAdvance_ok M hc hw hw' hn hR vals) fun u ⟨hu, hvu, hfu, hku⟩ => ?_
   refine ⟨hu, hvu, (hfu.hslot (by decide)).trans ((hh _ (by decide) (by decide)).trans h.tab),
     (hfu.hslot (by decide)).trans he, ?_, (h.frm.trans hf).trans (arrays_work hfu (by decide)),
     ((h.keep.trans hk).trans hku).mono (by decide)⟩
   intro k hk'
-  exact (joint_arrays_entry hfu (by decide) hc.scrT.nowrap (by omega)).trans (entries k hk')
+  exact (joint_arrays_entry hfu (by decide) hc.scrT.nowrap (by omega_using [hj, hk'])).trans (entries k hk')
 
 theorem jointBuildSteps_ok (M : Mont) {t₀ t : State} {P : Addr} {w n g y j count : Nat} {minv : BitVec 64}
     (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hn : 0 < n) (hR : Nat.Coprime (2 ^ (64 * w)) n)
@@ -52,7 +52,7 @@ theorem jointBuildSteps_ok (M : Mont) {t₀ t : State} {P : Addr} {w n g y j cou
   | zero => exact WP.block_nil h
   | succ count ih =>
     unfold Joint.buildSteps
-    refine WP.seq (WP.mono (jointBuildStep_ok M hw hw' hn hR (by omega) h) fun u hu => ?_)
-    simpa only [Nat.add_assoc, Nat.add_comm 1 count] using ih (j := j + 1) (by omega) hu
+    refine WP.seq (WP.mono (jointBuildStep_ok M hw hw' hn hR (by omega_using [hj]) h) fun u hu => ?_)
+    simpa only [Nat.add_assoc, Nat.add_comm 1 count] using ih (j := j + 1) (by omega_using [hj]) hu
 
 end VG.Proof.Dsa.AArch64

@@ -43,18 +43,18 @@ theorem pair_write {m : Mem} {base : Addr} {x y n j : Nat} (hx : Slot x) (hy : S
   dsimp only
   constructor
   · simp only [limbs, word]
-    rw [Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)]
+    rw [Mem.readW_writeW_sep (Offset.sep base (by omega_using [hxy, hn, hj]) (by omega_using [hj, xb]) (by omega_using [hn, yb])) (by decide)]
     rw [show m.readW (off base (x + 8 * j)) 64 = word m base (x + 8 * j) from rfl]
     change (word (m.writeW (off base (x + 8 * n)) vx) base (x + 8 * j)).toNat = _
-    rw [word_write m base (by omega) (by omega)]
+    rw [word_write m base (by omega_using [hn, xb]) (by omega_using [hj, xb])]
     split <;> rfl
   · change (word ((m.writeW (off base (x + 8 * n)) vx).writeW (off base (y + 8 * n)) vy)
       base (y + 8 * j)).toNat = _
-    rw [word_write (m.writeW (off base (x + 8 * n)) vx) base (by omega) (by omega)]
+    rw [word_write (m.writeW (off base (x + 8 * n)) vx) base (by omega_using [hn, yb]) (by omega_using [hj, yb])]
     by_cases h : j = n
     · rw [ite_eq_left h, ite_eq_left h]
     · rw [ite_eq_right h, ite_eq_right h]
       apply congrArg BitVec.toNat
-      exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+      exact Mem.readW_writeW_sep (Offset.sep base (by omega_using [hxy, hn, hj]) (by omega_using [hj, yb]) (by omega_using [hn, xb])) (by decide)
 
 end VG.Proof.X448.AArch64

@@ -92,10 +92,10 @@ theorem su0_words (a b c : BitVec 128) :
   intro e he
   simp only [sha1Su0, vword_xor]
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [he] : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3) with rfl | rfl | rfl | rfl <;>
     congr 2 <;> apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
     simp only [vword, vdword, ofVDwords, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append] <;>
-    simp +arith (disch := omega) <;> simp_all +arith [show i ≤ 31 by omega, show i ≤ 63 by omega]
+    simp +arith (disch := omega) <;> simp_all +arith [show i ≤ 31 by omega_using [hi], show i ≤ 63 by omega_using [hi]]
 
 theorem su1_words (x y : BitVec 128) :
     sha1Su1 x y = ofVWords
@@ -103,7 +103,7 @@ theorem su1_words (x y : BitVec 128) :
       ((vword x 1 ^^^ vword y 2).rotateLeft 1)
       ((vword x 2 ^^^ vword y 3).rotateLeft 1)
       ((vword x 3).rotateLeft 1 ^^^ (vword x 0 ^^^ vword y 1).rotateLeft 2) := by
-  simp (disch := omega) only [sha1Su1, vword_xor, vword_shr32,
+  simp (disch := omega_using []) only [sha1Su1, vword_xor, vword_shr32,
     Nat.reduceLT, ite_true, ite_false, Nat.reduceAdd, BitVec.ofNat_eq_ofNat, BitVec.xor_zero]
 
 theorem rotate_xor (a b : Word) (n : Nat) :
@@ -116,12 +116,12 @@ theorem rotate_twice (a : Word) : (a.rotateLeft 1).rotateLeft 1 = a.rotateLeft 2
   ext i hi
   simp only [BitVec.getElem_rotateLeft]
   simp (disch := omega) only [Nat.reduceMod, Nat.reduceSub]
-  (repeat' split) <;> first | omega | (congr 1 <;> omega)
+  (repeat' split) <;> first | omega | (congr 1 <;> omega_arith)
 
 theorem W_ge' (M : Block) (t : Nat) :
     W M (t + 16) = (W M (t + 13) ^^^ W M (t + 8) ^^^ W M (t + 2) ^^^ W M t).rotateLeft 1 := by
-  rw [W_ge M (by omega), show t + 16 - 3 = t + 13 by omega, show t + 16 - 8 = t + 8 by omega,
-    show t + 16 - 14 = t + 2 by omega, Nat.add_sub_cancel]
+  rw [W_ge M (by omega_using []), show t + 16 - 3 = t + 13 by omega_using [], show t + 16 - 8 = t + 8 by omega_using [],
+    show t + 16 - 14 = t + 2 by omega_using [], Nat.add_sub_cancel]
 
 theorem schedule_eq (M : Block) (i : Nat) :
     sha1Su1 (sha1Su0 (quad M i) (quad M (i + 1)) (quad M (i + 2))) (quad M (i + 3)) =
@@ -132,14 +132,14 @@ theorem schedule_eq (M : Block) (i : Nat) :
   have w1 := W_ge' M (4 * i + 1)
   have w2 := W_ge' M (4 * i + 2)
   have w3 := W_ge' M (4 * i + 3)
-  simp only [show 4 * i + 16 = 4 * (i + 4) by omega, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega,
-    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega,
-    show 4 * i + 13 = 4 * (i + 3) + 1 by omega, show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega,
-    show 4 * i + 2 + 13 = 4 * (i + 3) + 3 by omega,
-    show 4 * i + 8 = 4 * (i + 2) by omega, show 4 * i + 1 + 8 = 4 * (i + 2) + 1 by omega,
-    show 4 * i + 2 + 8 = 4 * (i + 2) + 2 by omega, show 4 * i + 3 + 8 = 4 * (i + 2) + 3 by omega,
-    show 4 * i + 2 + 2 = 4 * (i + 1) by omega, show 4 * i + 3 + 2 = 4 * (i + 1) + 1 by omega,
-    show 4 * i + 1 + 2 = 4 * i + 3 by omega] at w0 w1 w2 w3
+  simp only [show 4 * i + 16 = 4 * (i + 4) by omega_using [], show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega_using [],
+    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega_using [], show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega_using [],
+    show 4 * i + 13 = 4 * (i + 3) + 1 by omega_using [], show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega_using [],
+    show 4 * i + 2 + 13 = 4 * (i + 3) + 3 by omega_using [],
+    show 4 * i + 8 = 4 * (i + 2) by omega_using [], show 4 * i + 1 + 8 = 4 * (i + 2) + 1 by omega_using [],
+    show 4 * i + 2 + 8 = 4 * (i + 2) + 2 by omega_using [], show 4 * i + 3 + 8 = 4 * (i + 2) + 3 by omega_using [],
+    show 4 * i + 2 + 2 = 4 * (i + 1) by omega_using [], show 4 * i + 3 + 2 = 4 * (i + 1) + 1 by omega_using [],
+    show 4 * i + 1 + 2 = 4 * i + 3 by omega_using []] at w0 w1 w2 w3
   rw [w3, w0, w1, w2]
   simp only [rotate_xor, rotate_twice]
   ac_rfl
@@ -152,7 +152,7 @@ theorem eReg_words (v : HashValue) : eReg v = ofVWords v[4] 0 0 0 := by
   by_cases h : i < 32
   · simp only [h, ite_true]
   · simp only [h, ite_false, BitVec.getLsbD_zero, ite_self]
-    exact BitVec.getLsbD_of_ge _ _ (by omega)
+    exact BitVec.getLsbD_of_ge _ _ (by omega_using [h])
 
 theorem eReg_low (v : HashValue) : vword (eReg v) 0 = v[4] := by
   rw [eReg_words, vword_ofVWords_0]

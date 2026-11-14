@@ -170,7 +170,7 @@ theorem body_ok (v : BlocksImpl) : BodyOk ofbMode (body v.enc) := by
         · exact (hp.stk_data.sub_right (UPre.data_sub hk)).symm) (by decide),
       bytesAt_frame (xorMem_frame s₂.mem (blk s₀ k) (Iv s₀)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (hp.blk_iv hk).symm) (by decide)]
-  have hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega
+  have hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc : outK ofbMode s₀ (k + 1) = outK ofbMode s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
     rw [newBlk, newIv]
     simp only [outK, chainK, ofbMode_out, ofbMode_chain, take_succ_blks s₀ hk, crypt_snoc, hl]

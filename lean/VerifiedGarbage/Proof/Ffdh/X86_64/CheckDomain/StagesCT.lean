@@ -61,7 +61,7 @@ theorem entry_ct : RelCT isa (Two CR) (.block VG.Impl.Ffdh.X86_64.Domain.CheckDo
 
 theorem e1_dhp (p : CdP) (s : State) (h : E1 p s) : DHP p.d s := by
   have hz := h.1.hZ
-  exact ⟨h.1.scr, h.2, by change 256 ≤ p.Z; omega,
+  exact ⟨h.1.scr, h.2, by change 256 ≤ p.Z; omega_using [hz],
     h.1.hdr (sDom, p.dp) (by simp [CdP.headers]), h.1.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers])⟩
 
 theorem e1_ce (p : CdP) (s : State) (h : E1 p s) : WP isa (.block domHead) s (CE p) :=
@@ -85,20 +85,20 @@ theorem inner_good (p : CdP) (s : State) (h : Inner p s) : GoodW1 p.ws s := by
   obtain ⟨mi, hw, hd, _⟩ := h
   have hk := hw.base.k1
   have hk' := hw.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  exact ⟨⟨mi, (hw.mem.ctx hd).good, Nat.le_refl _⟩, show 1 ≤ p.w by omega, show p.w < 2 ^ 31 by omega⟩
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  exact ⟨⟨mi, (hw.mem.ctx hd).good, Nat.le_refl _⟩, show 1 ≤ p.w by omega_using [hk, ew], show p.w < 2 ^ 31 by omega_using [hk', ew]⟩
 
 theorem inner_load (p : CdP) (s : State) (h : Inner p s) : LPre aXm sG sK p.gl s := by
   obtain ⟨mi, hw, hd, _⟩ := h
   have hb := hw.base
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  exact ⟨mi, p.gb, hw.mem.ctx hd, show 2 ≤ p.w by omega, Nat.le_refl _, show p.w < 2 ^ 30 by omega,
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  exact ⟨mi, p.gb, hw.mem.ctx hd, show 2 ≤ p.w by omega_using [hk, ew], Nat.le_refl _, show p.w < 2 ^ 30 by omega_using [hk', ew],
     by decide, by decide, by decide, hw.g,
     by rw [hb.glen]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]),
-    hb.glen, (hb.dom.drop p.k).take p.k, by rw [hb.glen]; omega,
-    by rw [hb.glen]; omega, by rw [hb.glen]⟩
+    hb.glen, (hb.dom.drop p.k).take p.k, by rw [hb.glen]; omega_using [hk],
+    by rw [hb.glen]; omega_using [hk'], by rw [hb.glen]⟩
 
 theorem inner_generator (p : CdP) (s : State) (h : Inner p s) :
     WP isa (seqs (VG.Impl.Rsa.X86_64.Crt.loadArr aXm sG sK)) s (Generator p) := by

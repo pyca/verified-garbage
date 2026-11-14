@@ -200,7 +200,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
     fun s₁₁ hs₁₁ g₁₁ _ wr₁₁ U₁₁ ss_lt ss => ?_
   have hF := sl_le c h7 (i := FLAG) (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega))
+  refine WP.mono (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega_using [h0, hF]))
     fun s₁₂ ⟨f₁₂, k₁₂, O₁₂⟩ => ?_
   have hs₁₂ := hs₁₁.of_keepRegs k₁₂ (by decide)
   have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slW (l := [62, RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
@@ -235,13 +235,13 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = true := by
-      simp only [decide_eq_true_eq]; omega
+      simp only [decide_eq_true_eq]; omega_using [hP]
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [rax, hd]; rfl, ?_⟩
     rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
-      simp only [decide_eq_false_iff_not]; omega
+      simp only [decide_eq_false_iff_not]; omega_using [hP]
     rw [ite_eq_right_of_eq_false _ _ (eq_false hP)]
     refine ⟨by rw [rax, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl

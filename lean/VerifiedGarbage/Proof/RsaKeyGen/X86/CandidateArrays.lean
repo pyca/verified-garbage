@@ -15,17 +15,17 @@ theorem Environment.Valid.slotFit {E : Environment} (v : E.Valid) {j : Nat} (ind
   have fit := v.geometry.arrayFit index
   rw [← Prepared.slot_eq] at fit
   change slot E.width j + 4 * (2 * E.width) ≤ E.size at fit
-  omega
+  omega_using [fit]
 
 theorem Environment.slotHeader (E : Environment) (j : Nat) : 256 ≤ slot E.width j := by
   unfold slot VG.Impl.Bignum.hdrBytes
-  omega
+  omega_using []
 
 theorem Environment.slotBefore (E : Environment) {i j : Nat} (index : i < j) :
     slot E.width i + 8 * E.width ≤ slot E.width j := by
   have fit := E.geometry.arrayBefore index
   rw [← Prepared.slot_eq, ← Prepared.slot_eq] at fit
   change slot E.width i + 4 * (2 * E.width) ≤ slot E.width j at fit
-  omega
+  omega_using [fit]
 
 end VG.Proof.RsaKeyGen.X86.Candidate

@@ -34,13 +34,13 @@ open VG.Spec.Gcm (zeros)
 theorem bytesAt_zeros {m : Mem} {G : Addr} {o k N : Nat} (hz : bytesAt m G N = zeros N) (h : o + k ≤ N) :
     bytesAt m (G + BitVec.ofNat 64 o) k = zeros k := by
   have e := congrArg (fun l => (l.drop o).take k) hz
-  rw [show N = o + (k + (N - o - k)) by omega, bytesAt_add, bytesAt_add, List.drop_left' (length_bytesAt _ _ _),
+  rw [show N = o + (k + (N - o - k)) by omega_using [h], bytesAt_add, bytesAt_add, List.drop_left' (length_bytesAt _ _ _),
     List.take_left' (length_bytesAt _ _ _)] at e
   rw [e]; simp [zeros]
 
 theorem disjG {G : Addr} {o k e j : Nat} (h : o + k ≤ e ∨ e + j ≤ o) (h₁ : o + k ≤ 512) (h₂ : e + j ≤ 512) :
     (⟨G + BitVec.ofNat 64 o, k⟩ : Region).Disjoint ⟨G + BitVec.ofNat 64 e, j⟩ :=
-  Offset.disjoint G h (by omega) (by omega)
+  Offset.disjoint G h (by omega_using [h₁]) (by omega_using [h₂])
 
 /-- What `G` holds. -/
 theorem gLayout {G : Addr} {lead na nc : Nat} {a c lens : List Byte} {mZ mK mX mL : Mem} {rs : List Region}
@@ -59,46 +59,46 @@ theorem gLayout {G : Addr} {lead na nc : Nat} {a c lens : List Byte} {mZ mK mX m
   -- A part of `G` before the lengths block, in `mL` as in `mK` unless it meets `c`'s blocks.
   have kL : ∀ o k, o + k ≤ 16 * (lead + na + nc) → bytesAt mL (G + BitVec.ofNat 64 o) k = bytesAt mX (G + BitVec.ofNat 64 o) k :=
     fun o k h => bytesAt_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact disjG (.inl h) (by omega) (by omega)) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact disjG (.inl h) (by omega_using [hM, h]) (by omega_using [hM])) (by omega_using [hM, h])
   have kX : ∀ o k, o + k ≤ 512 → (o + k ≤ 16 * (lead + na) ∨ 16 * (lead + na) + c.length ≤ o) →
       bytesAt mX (G + BitVec.ofNat 64 o) k = bytesAt mK (G + BitVec.ofNat 64 o) k := fun o k h h' => by
-    refine bytesAt_frame fX (fun r hr => ?_) (by omega)
+    refine bytesAt_frame fX (fun r hr => ?_) (by omega_using [h])
     rcases hX r hr with rfl | hd
-    · exact disjG h' (by omega) (by omega)
+    · exact disjG h' (by omega_using [h]) (by omega_using [hc, hM])
     · exact hd.sub_left (Offset.sub_base G h)
   have kK : ∀ o k, o + k ≤ 512 → bytesAt mK (G + BitVec.ofNat 64 o) k =
       bytesAt (writeBytes mZ (G + BitVec.ofNat 64 (16 * lead)) a) (G + BitVec.ofNat 64 o) k := fun o k h =>
-    bytesAt_frame f₁ (fun r hr => (hrs r hr).sub_left (Offset.sub_base G h)) (by omega)
+    bytesAt_frame f₁ (fun r hr => (hrs r hr).sub_left (Offset.sub_base G h)) (by omega_using [h])
   have kA : ∀ o k, o + k ≤ 512 → (o + k ≤ 16 * lead ∨ 16 * lead + a.length ≤ o) →
       bytesAt (writeBytes mZ (G + BitVec.ofNat 64 (16 * lead)) a) (G + BitVec.ofNat 64 o) k = zeros k :=
     fun o k h h' => by
       rw [bytesAt_frame (writeBytes_frame' _ rfl) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact disjG h' (by omega) (by omega)) (by omega)]
+        simp only [List.mem_singleton] at hr; subst hr; exact disjG h' (by omega_using [h]) (by omega_using [ha, hM])) (by omega_using [h])]
       exact bytesAt_zeros hZ h
   -- The six parts.
   have e : 16 * (lead + na + nc + 1) = 16 * lead + (a.length + ((16 * na - a.length) + (c.length +
-      ((16 * nc - c.length) + 16)))) := by omega
+      ((16 * nc - c.length) + 16)))) := by omega_using [ha, hc]
   rw [e, bytesAt_add, bytesAt_add, bytesAt_add, bytesAt_add, bytesAt_add]
   simp only [add_ofNat_ofNat]
-  rw [show 16 * lead + a.length + (16 * na - a.length) = 16 * (lead + na) by omega,
-    show 16 * (lead + na) + c.length + (16 * nc - c.length) = 16 * (lead + na + nc) by omega, hL]
+  rw [show 16 * lead + a.length + (16 * na - a.length) = 16 * (lead + na) by omega_using [ha],
+    show 16 * (lead + na) + c.length + (16 * nc - c.length) = 16 * (lead + na + nc) by omega_using [hc], hL]
   have s₁ : bytesAt mL G (16 * lead) = zeros (16 * lead) := by
-    have := kL 0 (16 * lead) (by omega)
-    rw [kX 0 _ (by omega) (.inl (by omega)), kK 0 _ (by omega), kA 0 _ (by omega) (.inl (by omega))] at this
+    have := kL 0 (16 * lead) (by omega_using [])
+    rw [kX 0 _ (by omega_using [hM]) (.inl (by omega_using [])), kK 0 _ (by omega_using [hM]), kA 0 _ (by omega_using [hM]) (.inl (by omega_using []))] at this
     simpa using this
   have s₂ : bytesAt mL (G + BitVec.ofNat 64 (16 * lead)) a.length = a := by
-    rw [kL _ _ (by omega), kX _ _ (by omega) (.inl (by omega)), kK _ _ (by omega)]
-    exact bytesAt_writeBytes_self _ _ _ (by omega)
+    rw [kL _ _ (by omega_using [ha]), kX _ _ (by omega_using [ha, hM]) (.inl (by omega_using [ha])), kK _ _ (by omega_using [ha, hM])]
+    exact bytesAt_writeBytes_self _ _ _ (by omega_using [ha, hM])
   have s₃ : bytesAt mL (G + BitVec.ofNat 64 (16 * lead + a.length)) (16 * na - a.length) =
       zeros (16 * na - a.length) := by
-    rw [kL _ _ (by omega), kX _ _ (by omega) (.inl (by omega)), kK _ _ (by omega),
-      kA _ _ (by omega) (.inr (by omega))]
+    rw [kL _ _ (by omega_using [ha]), kX _ _ (by omega_using [ha, hM]) (.inl (by omega_using [ha])), kK _ _ (by omega_using [ha, hM]),
+      kA _ _ (by omega_using [ha, hM]) (.inr (by omega_using []))]
   have s₄ : bytesAt mL (G + BitVec.ofNat 64 (16 * (lead + na))) c.length = c := by
-    rw [kL _ _ (by omega)]; exact hXc
+    rw [kL _ _ (by omega_using [hc])]; exact hXc
   have s₅ : bytesAt mL (G + BitVec.ofNat 64 (16 * (lead + na) + c.length)) (16 * nc - c.length) =
       zeros (16 * nc - c.length) := by
-    rw [kL _ _ (by omega), kX _ _ (by omega) (.inr (by omega)), kK _ _ (by omega),
-      kA _ _ (by omega) (.inr (by omega))]
+    rw [kL _ _ (by omega_using [hc]), kX _ _ (by omega_using [hc, hM]) (.inr (by omega_using [])), kK _ _ (by omega_using [hc, hM]),
+      kA _ _ (by omega_using [hc, hM]) (.inr (by omega_using [ha]))]
   rw [s₁, s₂, s₃, s₄, s₅]
   simp only [List.append_assoc]
 

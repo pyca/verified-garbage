@@ -69,7 +69,7 @@ theorem save_wp {s : State} {B D : BitVec 32}
       workspace_part hw 1492 16 (by decide), Covers.right wd, ?_⟩
     · rw [h8]
     · rw [h0]; simp
-    · rw [h8]; change B.toNat + 1492 + 16 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at fitB; omega
+    · rw [h8]; change B.toNat + 1492 + 16 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at fitB; omega_using [fitB]
     · rw [h0]; exact fitD
     · exact (sep.symm.sub_left (Offset.sub_base _ (by decide))).sub_right (Region.sub_prefix (by decide))
   refine WP.mono (copyBlock_wp cp) fun s' h => ?_
@@ -94,12 +94,12 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     exact (Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨State.addr D, 16 * n⟩, List.mem_singleton_self _, 0, by simp,
-        by change 0 + 16 ≤ 16 * n; omega⟩).trans wd
-  have sep₁ := sep.sub_left (Region.sub_prefix (show 16 ≤ 16 * n by omega))
+        by change 0 + 16 ≤ 16 * n; omega_using [hn]⟩).trans wd
+  have sep₁ := sep.sub_left (Region.sub_prefix (show 16 ≤ 16 * n by omega_using [hn]))
   refine WP.seq (WP.mono (CfbGroup.batch_wp (g := 1) (by decide) (by decide) b₁ d₁ g₁ fitB
-    (by omega) (by rw [wr₁]; exact hw) wd₁ sep₁ (by rw [m₁]; exact hH)) fun s₂ b => ?_)
+    (by omega_using [hn, fitD]) (by rw [wr₁]; exact hw) wd₁ sep₁ (by rw [m₁]; exact hH)) fun s₂ b => ?_)
   have b₂ : s₂.gpr sb = B := (b.regs _ (by simp [sb])).trans b₁
-  refine WP.seq (WP.mono (save_wp b₂ b.data fitB (by omega)
+  refine WP.seq (WP.mono (save_wp b₂ b.data fitB (by omega_using [hn, fitD])
     (by rw [b.wr, wr₁]; exact hw) (by rw [b.wr]; exact wd₁) sep₁)
     fun s₃ ⟨o₃, rd₃, wr₃, sp₃, f₃, c₃⟩ => ?_)
   have n₃ : s₃.gpr .r7 = BitVec.ofNat 32 n :=

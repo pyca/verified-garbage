@@ -27,11 +27,11 @@ theorem clearMem_frame (m : Mem) (p : Addr) (n : Nat) (bound : 8 * n < 2 ^ 64) :
   | zero => exact Frame.refl _ _
   | succ n ih =>
     have smaller : Frame [⟨p, 8 * (n + 1)⟩] m (clearMem m p n) :=
-      (ih (by omega)).sub (by
+      (ih (by omega_using [bound])).sub (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩)
     exact smaller.writeW (List.mem_singleton_self _) (0 : BitVec 64)
-      (Offset.contains_base _ (by omega) (by omega))
+      (Offset.contains_base _ (by omega_using []) (by omega_using [bound]))
 
 theorem clearMem_word (m : Mem) (p : Addr) (n j : Nat)
     (bound : 8 * n < 2 ^ 64) (hj : j < n) :
@@ -43,8 +43,8 @@ theorem clearMem_word (m : Mem) (p : Addr) (n j : Nat)
     by_cases eq : j = n
     · subst j; exact Mem.readW_writeW_self64 _ _ _
     · rw [Mem.readW_writeW_sep ?_ (by decide)]
-      · exact ih (by omega) (by omega)
-      · exact Offset.sep p (by omega) (by omega) (by omega)
+      · exact ih (by omega_using [bound]) (by omega_using [hj, eq])
+      · exact Offset.sep p (by omega_using [eq]) (by omega_using [bound, hj]) (by omega_using [bound])
 
 theorem clearWord_ok (s : State) (hw : InRegions s.wr (s.gpr .r14) 8) :
     WP isa (.block clearWord) s fun t =>
@@ -81,7 +81,7 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
     (write : ∀ j < n, InRegions s₀.wr (p + BitVec.ofNat 64 (8 * j)) 8) :
     WP isa (.loop (.block clearWord) .ne) s₀ (ClearI s₀ p n n) := by
   refine WP.loop (M := isa) (fun k s => ∃ j, k = n - j ∧ j < n ∧ ClearI s₀ p n j s)
-    ?_ n s₀ ⟨0, by omega, lo, by omega, by simpa using dst, by simpa only [Nat.sub_zero] using count,
+    ?_ n s₀ ⟨0, by omega_using [], lo, by omega_using [], by simpa using dst, by simpa only [Nat.sub_zero] using count,
       zero, fun _ _ _ => rfl, rfl, rfl, rfl⟩
   rintro k s ⟨j, rfl, hj, h⟩
   have hw : InRegions s.wr (s.gpr .r14) 8 := by
@@ -89,10 +89,10 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
   refine (clearWord_ok s hw).mono ?_
   rintro t ⟨memT, dstT, countT, zfT, otherT, rdT, wrT⟩
   have nextCount : BitVec.ofNat 64 (n - j) - 1 = BitVec.ofNat 64 (n - (j + 1)) := by
-    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]
+    rw [show (1 : Addr) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_using [hj])]
     congr 1
   have next : ClearI s₀ p n (j + 1) t := by
-    refine ⟨by omega, ?_, ?_, (otherT _ (by decide) (by decide)).trans h.zero,
+    refine ⟨by omega_using [hj], ?_, ?_, (otherT _ (by decide) (by decide)).trans h.zero,
       fun r h1 h2 => (otherT r h1 h2).trans (h.other r h1 h2),
       rdT.trans h.rd, wrT.trans h.wr, ?_⟩
     · rw [dstT, h.destination, BitVec.add_assoc, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, ← BitVec.ofNat_add]
@@ -106,15 +106,15 @@ theorem clearLoop_ok (s₀ : State) (p : Addr) (n : Nat) (lo : 1 ≤ n)
     constructor
     · intro eq
       have num := congrArg BitVec.toNat eq
-      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : n - (j + 1) < 2 ^ 64),
+      simpa only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : n - (j + 1) < 2 ^ 64),
         show (0 : Addr).toNat = 0 from rfl] using num
     · intro eq; rw [eq]; rfl
   by_cases done : j + 1 = n
   · refine .inl ⟨?_, done ▸ next⟩
-    simp only [eval, zf, show n - (j + 1) = 0 by omega, decide_true,
+    simp only [eval, zf, show n - (j + 1) = 0 by omega_using [done], decide_true,
       Option.map_some, Bool.not_true]
-  · refine .inr ⟨?_, n - (j + 1), by omega, j + 1, rfl, by omega, next⟩
-    simp only [eval, zf, show n - (j + 1) ≠ 0 by omega, decide_false,
+  · refine .inr ⟨?_, n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, done], next⟩
+    simp only [eval, zf, show n - (j + 1) ≠ 0 by omega_using [hj, done], decide_false,
       Option.map_some, Bool.not_false]
 
 end VG.Proof.Argon2.X86_64.MemoryInit

@@ -67,16 +67,16 @@ theorem expandKeyTaint_wf (s : State) (hs : expandKeyX86_64.pre s) : Taint.Wf ex
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 272 ≤ 272; omega)
-        (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega) List.Forall₂.nil)
+    · exact List.Forall₂.cons (by change 272 ≤ 272; omega_using [])
+        (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega_using []) List.Forall₂.nil)
     · exact List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dSS)
         (List.Pairwise.cons (by simp) List.Pairwise.nil)
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · change 272 ≤ 2 ^ 64; omega
-      · change 8 * slots ≤ 2 ^ 64; omega
+      · change 272 ≤ 2 ^ 64; omega_using []
+      · change 8 * slots ≤ 2 ^ 64; omega_using [fitB]
   · intro p hp
     simp only [expandKeyTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl

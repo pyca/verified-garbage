@@ -39,18 +39,18 @@ theorem Ctx.scrw (hL : L.Ok) {t t' : State} (hc : Ctx L g mx m₀ t) (hrd : t'.r
   have keep : ∀ d, 80 ≤ d → d + 8 ≤ 104 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (Region.contains_self _ _)
-      (fun r hr => (hL.kc.sub_left (Offset.sub_base _ (by omega))).sub_right (hrs r hr).sub) (by decide)
+      (fun r hr => (hL.kc.sub_left (Offset.sub_base _ (by omega_using [h₂]))).sub_right (hrs r hr).sub) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
-    (keep 80 (by omega) (by omega)).trans hc.pScr, (keep 88 (by omega) (by omega)).trans hc.pSeed,
-    (keep 96 (by omega) (by omega)).trans hc.pOut,
+    (keep 80 (by omega_using []) (by omega_using [])).trans hc.pScr, (keep 88 (by omega_using []) (by omega_using [])).trans hc.pSeed,
+    (keep 96 (by omega_using []) (by omega_using [])).trans hc.pOut,
     hc.frame.trans (Frame.sub hf fun r hr => ⟨L.SCR, by simp, (hrs r hr).sub⟩)⟩
 
 /-- The Keccak state at `scratch`, on entry to a call from the frame. -/
 theorem Ctx.ce_state (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
     stateAt t.callEntry.mem L.scr = stateAt t.mem L.scr :=
   Proof.Sha3.stateAt_congr fun _ hi => ce_byte t (R := ⟨L.scr, 200⟩)
-    (by rw [hc.ret]; simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega) (by omega))
+    (by rw [hc.ret]; simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []))
     (by show (200 : Nat) ≤ 2 ^ 64; decide) hi
 
 /-- The seed on entry to a call from the frame. -/
@@ -59,7 +59,7 @@ theorem Ctx.ce_seed (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
   simp only [Spec.Sha3.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [ce_byte t (R := L.SEED) (by rw [hc.ret]; exact hL.stk_SEED (by omega))
+  rw [ce_byte t (R := L.SEED) (by rw [hc.ret]; exact hL.stk_SEED (by omega_using []))
     (by show (57 : Nat) ≤ 2 ^ 64; decide) hi]
   exact hc.seed hL hi
 
@@ -68,7 +68,7 @@ theorem Ctx.ce_seed (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
 theorem zeroHead_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block pkZeroHead) t fun t' =>
       Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .rdi = L.scr ∧ t'.gpr .rax = 0 := by
-  have h80 := hc.inFr (d := 80) (by omega) (by omega)
+  have h80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [pkZeroHead, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, State.load64,
     State.setReg32, ea_stk, RegUpd.gpr_setReg, RegUpd.mem_setReg,
@@ -80,7 +80,7 @@ theorem zstore_ok {t : State} (hc : Ctx L g mx m₀ t) (hdi : t.gpr .rdi = L.scr
     WP isa (.block [Instr.store { base := .rdi, disp := ((8 * k : Nat) : Int) } .rax]) t fun t' =>
       t'.mem = t.mem.writeW (L.scr + BitVec.ofNat 64 (8 * k)) (t.gpr .rax) ∧ t'.gpr = t.gpr ∧
         t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.mxcsr = t.mxcsr := by
-  have w := hc.inScrW (o := 8 * k) (by omega)
+  have w := hc.inScrW (o := 8 * k) (by omega_using [hk])
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_base, hdi, w, ite_true,
     Option.some.injEq, exists_eq_left']
@@ -97,19 +97,19 @@ theorem zstores_ok (hL : L.Ok) : ∀ n ≤ 25, ∀ t : State, Ctx L g mx m₀ t 
   | 0, _, _, hc, h1, h2 => WP.block_nil ⟨hc, h1, h2, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | n + 1, hn, t, hc, h1, h2 => by
     rw [zstores, List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (zstores_ok hL n (by omega) t hc h1 h2) fun u ⟨hu, u1, u2, uf, uz⟩ => ?_
-    refine WP.mono (zstore_ok hu u1 (k := n) (by omega)) fun v ⟨vm, vg, vrd, vwr, vmx⟩ => ?_
+    refine WP.mono (zstores_ok hL n (by omega_using [hn]) t hc h1 h2) fun u ⟨hu, u1, u2, uf, uz⟩ => ?_
+    refine WP.mono (zstore_ok hu u1 (k := n) (by omega_using [hn])) fun v ⟨vm, vg, vrd, vwr, vmx⟩ => ?_
     have hf1 : Frame [⟨L.scr, 200⟩] u.mem v.mem := by
       rw [vm]
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (Offset.contains_base _ (by omega) (by omega))
+        (Offset.contains_base _ (by omega_using [hn]) (by omega_using [hn]))
     refine ⟨hu.scrw hL vrd vwr vmx (fun r _ => by rw [vg])
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact within_base _ (by omega)) hf1,
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact within_base _ (by omega_using [])) hf1,
       by rw [vg]; exact u1, by rw [vg]; exact u2, uf.trans hf1, fun j hj => ?_⟩
     rw [vm, u2]
     by_cases hjk : j = n
     · subst hjk; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), uz j (by omega)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hjk]) (by omega_using [hn, hj]) (by omega_using [hn])) (by decide), uz j (by omega_using [hj, hjk])]
 
 theorem zero_state {m : Mem} {p : Addr} (h : ∀ j < 25, m.readW (p + BitVec.ofNat 64 (8 * j)) 64 = 0) :
     stateAt m p = Spec.Sha3.zero := by
@@ -121,7 +121,7 @@ theorem zero_state {m : Mem} {p : Addr} (h : ∀ j < 25, m.readW (p + BitVec.ofN
 theorem zero_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa pkZeroState t fun t' => Ctx L g mx m₀ t' ∧ stateAt t'.mem L.scr = Spec.Sha3.zero := by
   refine WP.seq (WP.mono (zeroHead_ok hc) fun u ⟨hu, _, u1, u2⟩ => ?_)
-  exact WP.mono (zstores_ok hL 25 (by omega) u hu u1 u2) fun v ⟨hv, _, _, _, hz⟩ => ⟨hv, zero_state hz⟩
+  exact WP.mono (zstores_ok hL 25 (by omega_using []) u hu u1 u2) fun v ⟨hv, _, _, _, hz⟩ => ⟨hv, zero_state hz⟩
 
 /-! ## The sponge functions -/
 
@@ -153,8 +153,8 @@ def AbsArgs (L : Lay) (t : State) : Prop :=
 
 theorem absArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block pkAbsorbArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ AbsArgs L t' := by
-  have h80 := hc.inFr (d := 80) (by omega) (by omega)
-  have h88 := hc.inFr (d := 88) (by omega) (by omega)
+  have h80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
+  have h88 := hc.inFr (d := 88) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [pkAbsorbArgs, scrPtr, keccakScratch, fScratch, fSeed, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.load64,
@@ -163,7 +163,7 @@ theorem absArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h80, h88, Option.some.injEq, exists_eq_left', hc.pScr, hc.pSeed, AbsArgs]
   exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, by decide, by decide, trivial, by decide,
-    by rw [sx32 (by omega)]⟩
+    by rw [sx32 (by omega_using [])]⟩
 
 abbrev absRd (L : Lay) : List Region := [L.SEED]
 abbrev absWr (L : Lay) : List Region := [⟨L.scr, 200⟩, ⟨L.scr + BitVec.ofNat 64 256, 640⟩]
@@ -184,27 +184,27 @@ theorem abs_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : AbsArgs L
   obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := abs_regs ha (absRd L) (absWr L)
   simp only [Proof.Sha3.absorbX86_64, rsp_ce, hdi, hsi, hdx, hcx, h8, h9, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr]
-  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega) (by omega),
-    by simpa using hL.seed_scr (e := 0) (k := 200) (by omega), hL.seed_scr (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega) (by omega),
-    hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 200) (by omega) (by omega),
-    by simpa using hL.stk_SEED (d := 0) (n := 8) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 256) (k := 640) (by omega) (by omega),
+  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega_using []) (by omega_using []),
+    by simpa using hL.seed_scr (e := 0) (k := 200) (by omega_using []), hL.seed_scr (by omega_using []),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []),
+    hL.stk_scr (d := 8) (n := 8) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_SEED (d := 0) (n := 8) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 256) (k := 640) (by omega_using []) (by omega_using []),
     by decide, by decide⟩
 
 theorem abs_sub : ∀ r ∈ absRd L ++ absWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact ⟨L.SEED, by simp, within_base _ (by omega)⟩
-  · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
-  · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+  · exact ⟨L.SEED, by simp, within_base _ (by omega_using [])⟩
+  · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
+  · exact ⟨L.SCR, by simp, within_off _ (by omega_using [])⟩
 
 theorem abs_wsub : ∀ r ∈ absWr L, Within r L.OUT ∨ Within r L.SCR := by
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact .inr (within_base _ (by omega))
-  · exact .inr (within_off _ (by omega))
+  · exact .inr (within_base _ (by omega_using []))
+  · exact .inr (within_off _ (by omega_using []))
 
 theorem repr_nil {mem : Mem} {p : Addr} {rate : Nat} (h : stateAt mem p = Spec.Sha3.zero) :
     Spec.Sha3.Repr mem p rate [] := by
@@ -237,7 +237,7 @@ def PadArgs (L : Lay) (t : State) : Prop :=
 
 theorem padArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block pkPadArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ PadArgs L t' := by
-  have h80 := hc.inFr (d := 80) (by omega) (by omega)
+  have h80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [pkPadArgs, scrPtr, keccakScratch, fScratch, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.load64,
@@ -246,7 +246,7 @@ theorem padArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h80, Option.some.injEq, exists_eq_left', hc.pScr, PadArgs]
   exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, by decide, by decide, by decide,
-    by rw [sx32 (by omega)]⟩
+    by rw [sx32 (by omega_using [])]⟩
 
 abbrev padRd : List Region := []
 abbrev padWr (L : Lay) : List Region := [⟨L.scr, 200⟩, ⟨L.scr + BitVec.ofNat 64 256, 640⟩]
@@ -266,18 +266,18 @@ theorem pad_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : PadArgs L
   obtain ⟨hdi, hsi, hdx, -, h8⟩ := pad_regs ha padRd (padWr L)
   simp only [Proof.Sha3.padX86_64, rsp_ce, hdi, hsi, hdx, h8, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr]
-  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega) (by omega),
-    hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 200) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 256) (k := 640) (by omega) (by omega),
+  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []),
+    hL.stk_scr (d := 8) (n := 8) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 256) (k := 640) (by omega_using []) (by omega_using []),
     by decide, by decide⟩
 
 theorem pad_sub : ∀ r ∈ padRd ++ padWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
-  · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+  · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
+  · exact ⟨L.SCR, by simp, within_off _ (by omega_using [])⟩
 
 theorem pad_wsub : ∀ r ∈ padWr L, Within r L.OUT ∨ Within r L.SCR := abs_wsub
 
@@ -311,15 +311,15 @@ def SqzArgs (L : Lay) (t : State) : Prop :=
 
 theorem sqzArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block pkSqueezeArgs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ SqzArgs L t' := by
-  have h80 := hc.inFr (d := 80) (by omega) (by omega)
+  have h80 := hc.inFr (d := 80) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [pkSqueezeArgs, scrPtr, keccakScratch, hashAt, fScratch, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32,
     State.load64, State.setReg32, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.mem_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp,
     add_add, Nat.reduceAdd, h80, Option.some.injEq, exists_eq_left', hc.pScr, SqzArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, by decide, by decide, by rw [sx32 (by omega)],
-    by decide, by rw [sx32 (by omega)]⟩
+  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, by decide, by decide, by rw [sx32 (by omega_using [])],
+    by decide, by rw [sx32 (by omega_using [])]⟩
 
 abbrev sqzRd : List Region := []
 abbrev sqzWr (L : Lay) : List Region :=
@@ -341,29 +341,29 @@ theorem sqz_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : SqzArgs L
   obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := sqz_regs ha sqzRd (sqzWr L)
   simp only [Proof.Sha3.squeezeX86_64, rsp_ce, hdi, hsi, hdx, hcx, h8, h9, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
-  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega) (by omega),
-    Offset.base_disjoint _ (by omega) (by omega), Offset.disjoint _ (by omega) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega) (by omega),
-    hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
-    hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 200) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 1024) (k := 114) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 256) (k := 640) (by omega) (by omega),
+  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega_using []) (by omega_using []),
+    Offset.base_disjoint _ (by omega_using []) (by omega_using []), Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []),
+    hL.stk_scr (d := 8) (n := 8) (by omega_using []) (by omega_using []),
+    hL.stk_scr (d := 8) (n := 8) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 200) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 1024) (k := 114) (by omega_using []) (by omega_using []),
+    by simpa using hL.stk_scr (d := 0) (n := 8) (e := 256) (k := 640) (by omega_using []) (by omega_using []),
     by decide, by decide⟩
 
 theorem sqz_sub : ∀ r ∈ sqzRd ++ sqzWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
-  · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
-  · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
+  · exact ⟨L.SCR, by simp, within_base _ (by omega_using [])⟩
+  · exact ⟨L.SCR, by simp, within_off _ (by omega_using [])⟩
+  · exact ⟨L.SCR, by simp, within_off _ (by omega_using [])⟩
 
 theorem sqz_wsub : ∀ r ∈ sqzWr L, Within r L.OUT ∨ Within r L.SCR := by
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact .inr (within_base _ (by omega))
-  · exact .inr (within_off _ (by omega))
-  · exact .inr (within_off _ (by omega))
+  · exact .inr (within_base _ (by omega_using []))
+  · exact .inr (within_off _ (by omega_using []))
+  · exact .inr (within_off _ (by omega_using []))
 
 theorem sqz_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : SqzArgs L t) :
     WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) t fun t' => Ctx L g mx m₀ t' ∧

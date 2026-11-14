@@ -45,15 +45,15 @@ theorem Keep.scr {base : Addr} {s t : State} (h : Keep base s t) (hs : Scr s bas
 theorem slot_bound (i : Index) : Slot (slot i.val) := by
   simp only [Slot, slot, ACC]
   have := i.isLt
-  omega
+  omega_using []
 
 theorem slot_aligned (i : Index) : slot i.val % 8 = 0 := by
-  simp only [slot]; omega
+  simp only [slot]; omega_using []
 
 theorem slot_sep {i j : Index} (h : i ≠ j) : slot i.val + 128 ≤ slot j.val ∨ slot j.val + 128 ≤ slot i.val := by
   have hn : i.val ≠ j.val := fun he => h (Fin.ext he)
   simp only [slot]
-  omega
+  omega_using [hn]
 
 theorem Op.keep {base : Addr} {o : Index} {s t : State} (h : Op base (slot o.val) s t) : Keep base s t := by
   refine ⟨h.keeps.mono (fun _ hr => List.mem_cons_of_mem _ hr), ?_⟩
@@ -61,7 +61,7 @@ theorem Op.keep {base : Addr} {o : Index} {s t : State} (h : Op base (slot o.val
   apply h.mem p _ hq
   have := o.isLt
   simp only [slot]
-  omega
+  omega_using [hp]
 
 def opMul (o a b : Index) (e : Env) : Env := Function.update e o (e a * e b)
 def opSub (o a b : Index) (e : Env) : Env := Function.update e o (e a - e b)

@@ -170,13 +170,13 @@ theorem pass_wp {ys : List (List Byte)} {y14 y15 : BitVec 64} (hN : 0 < N s₀) 
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (pstep_wp hp hk h) fun s' h' => ?_
   have hb : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  have ev := eval_x23 (x := N s₀ - (k + 1)) (by omega) h'.x23
+  have ev := eval_x23 (x := N s₀ - (k + 1)) (by omega_using [hb]) h'.x23
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_using [hk, hz]]
   · right
-    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hz], h'⟩
 
 omit hp in
 theorem movs_ok (s : State) :
@@ -328,7 +328,7 @@ theorem callArgs_wp {ys : List (List Byte)} {s : State}
     g r (preserved_ne' hr).2.2.2.2.2.2.1 (preserved_ne' hr).2.2.2.2.2.2.2.1 (preserved_ne' hr).2.2.2.2.2.2.2.2.1
       (preserved_ne' hr).2.2.2.2.2.2.2.2.2.1 (preserved_ne' hr).2.2.2.2.2.2.2.2.2.2 (preserved_ne' hr).1 h22 h23
   refine ⟨x19', x20', x21', x22₃, by rw [x23₃]; rfl, x24', rfl, rfl, other', by rw [sp₃, sp₂, sp₁, h.sp],
-    hrd, hwr, ?_, by rw [length_xored _ _ _ (by omega), hlen], ?_, ?_, ?_⟩
+    hrd, hwr, ?_, by rw [length_xored _ _ _ (by omega_using [hlen]), hlen], ?_, ?_, ?_⟩
   · exact h.frame.trans (fC.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨ivR s₀, by simp, fun _ h => h⟩)
   · rw [blocksAt_frame fC (fun j hj r hr => by
@@ -388,9 +388,9 @@ theorem final_of (enc : Bool) {y14 y15 : BitVec 64} {s : State}
           other := h.other, sp := h.sp, rd := h.rd, wr := h.wr, frame := h.frame
           data := by
             rw [h.data, xored_all _ h.len, xored_all _ hl, ce, outK, AesXts.xtsMode_out,
-              List.take_of_length_le (by omega), List.drop_of_length_le (by omega), List.append_nil]
+              List.take_of_length_le (by omega_using [hl]), List.drop_of_length_le (by omega_using [hl]), List.append_nil]
           iv := by
-            rw [h.iv, chainK, AesXts.xtsMode_chain, List.take_of_length_le (by omega), hl] }
+            rw [h.iv, chainK, AesXts.xtsMode_chain, List.take_of_length_le (by omega_using [hl]), hl] }
 
 /-- All the blocks. -/
 theorem batch_wp (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}

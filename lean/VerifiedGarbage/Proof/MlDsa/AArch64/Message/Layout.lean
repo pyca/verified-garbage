@@ -133,7 +133,7 @@ theorem inW (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 1024) (hk : 0 < k) : InRegi
   refine ⟨R, hR, ?_⟩
   simp only at hb hl
   rw [hb]
-  exact Offset.contains_base _ hl (by have := h.lenW R hR; omega)
+  exact Offset.contains_base _ hl (by have := h.lenW R hR; omega_using [hk, hl, this])
 
 /-- What lies within the first 904 bytes of `X`, or in `STK`, is apart from the saves. -/
 theorem sv_disj (h : L.Ok) {r : Region} (hr : Within r L.W ∨ Region.Sub r L.STK) {d n : Nat} (hd : d + n ≤ 88) :
@@ -144,8 +144,8 @@ theorem sv_disj (h : L.Ok) {r : Region} (hr : Within r L.W ∨ Region.Sub r L.ST
     obtain ⟨b, k⟩ := r
     simp only at hb hl
     subst hb
-    exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact (h.kX.symm.sub_left (Offset.sub_base _ (by omega))).sub_right hr
+    exact Offset.disjoint _ (.inr (by omega_using [hl])) (by omega_using [hd]) (by omega_using [hl])
+  · exact (h.kX.symm.sub_left (Offset.sub_base _ (by omega_using [hd]))).sub_right hr
 
 end Lay.Ok
 
@@ -194,7 +194,7 @@ theorem keep (hc : Ctx L g v m₀ t) (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hg .x28 (by decide) (by decide)).trans hc.x28,
     fun r hr h28 h30 => (hg r hr h30).trans (hc.cs r hr h28 h30), fun r hr => (hvs r hr).trans (hc.vs r hr),
     (keep 0 (by decide)).trans hc.s28, (keep 8 (by decide)).trans hc.s30,
-    fun j hj => (keep _ (by omega)).trans (hc.slot j hj), khdr.trans hc.hdr,
+    fun j hj => (keep _ (by omega_using [hj])).trans (hc.slot j hj), khdr.trans hc.hdr,
     hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
   rcases hrs r hr with h | h
   · exact ⟨L.XS, by simp, (h.trans (within_base L.X (by decide : 904 ≤ 1024))).sub⟩

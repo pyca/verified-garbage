@@ -58,22 +58,22 @@ theorem Prep.ofKgR {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := env.hZ
   have hnw := env.hs.nowrap
   refine h.keep env (h.t1_of ht1) (fun d hd => hf.word_eq ?_ (by
-    rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega))
+    rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega_arith))
     (fun j hj => ?_)
   · intro r hr
     simp only [kgR, hUni, hUsed, hIdx, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl <;>
-      rcases hr with rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega
+      rcases hr with rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega_arith
   · have hj27 : j ≤ 27 := by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide
     have hb : slot w j + 8 * w ≤ 2 ^ 64 := by
       have := Nat.mul_le_mul_right (8 * (w + 2)) hj27
       simp only [slot, hdrBytes]
-      omega
+      omega_using [hZ', hnw, this]
     simp only [A, Pre.wordsVal_eq_wv]
     refine hf.wv_eq (fun r hr => ?_) hb
     simp only [kgR, hUni, hUsed, hIdx, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hj with rfl | rfl | rfl | rfl | rfl <;>
-      rcases hr with rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega
+      rcases hr with rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega_using []
 
 /-- A change within `kgR` keeps memory outside the working space. -/
 theorem frame_of_kgR {B : Addr} {L w : Nat} {m m' : Mem} (hf : Frm B (kgR w) m m')
@@ -84,7 +84,7 @@ theorem frame_of_kgR {B : Addr} {L w : Nat} {m m' : Mem} (hf : Frm B (kgR w) m m
   refine hf x fun r hr => Or.inr ?_
   have hr' : r.1 + r.2 ≤ 8 * L := by
     simp only [kgR, hUni, hUsed, hIdx, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes] <;> omega
+    rcases hr with rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes] <;> omega_using [hZ]
   show r.1 + r.2 ≤ (x - B).toNat
   exact Nat.le_trans hr' (Nat.lt_succ_iff.mp hb)
 
@@ -138,9 +138,9 @@ theorem KCtx.ofKgR {s t : State} {B R : Addr} {L w c rl ch : Nat} (h : KCtx s B 
   · simp only [kgR, hUni, hUsed, hIdx, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [hRand, hRandLen, hK, hChecks] at hd
     rcases hd with rfl | rfl | rfl | rfl <;> rcases hr with rfl | rfl | rfl | rfl <;>
-      simp only [slot, hdrBytes] <;> omega
+      simp only [slot, hdrBytes] <;> omega_using []
   · simp only [hRand, hRandLen, hK, hChecks] at hd
-    rcases hd with rfl | rfl | rfl | rfl <;> omega
+    rcases hd with rfl | rfl | rfl | rfl <;> omega_using []
 
 /-- The tape survives a change of memory within the working space and the
 round's stack. -/
@@ -187,10 +187,10 @@ theorem loadA_ok {s : State} {B R : Addr} {L w c rl ch used : Nat} (h : KCtx s B
     have r152 : s.mem.readW (B + 152#64) 64 = BitVec.ofNat 64 used := hu
     have r216 : s.mem.readW (B + 216#64) 64 = BitVec.ofNat 64 (8 * w) := h.k
     simp only [ldh, sth, hRand, hUsed, hK]
-    brun [e.s6, hs.ld (d := 136) (n := 8) (by omega), hs.al8 (d := 136) (by omega) (by decide),
-      hs.ld (d := 152) (n := 8) (by omega), hs.al8 (d := 152) (by omega) (by decide),
-      hs.ld (d := 216) (n := 8) (by omega), hs.al8 (d := 216) (by omega) (by decide),
-      hs.st (d := 152) (n := 8) (by omega), r136, r152, r216]
+    brun [e.s6, hs.ld (d := 136) (n := 8) (by omega_using [hZ]), hs.al8 (d := 136) (by omega_using [hZ]) (by decide),
+      hs.ld (d := 152) (n := 8) (by omega_using [hZ]), hs.al8 (d := 152) (by omega_using [hZ]) (by decide),
+      hs.ld (d := 216) (n := 8) (by omega_using [hZ]), hs.al8 (d := 216) (by omega_using [hZ]) (by decide),
+      hs.st (d := 152) (n := 8) (by omega_using [hZ]), r136, r152, r216]
     rw [← BitVec.ofNat_add]
   · have e1 : Env u₁ B (8 * L) w := e.keep k1 (by decide)
     refine WP.mono (e1.base (rd := .a7) (by decide) 4) fun u₂ ⟨⟨b7, bm⟩, k2⟩ => ?_
@@ -217,21 +217,21 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl ch used : Nat} (h : KCtx s B 
   have hu' : Scr u B (8 * L) := hs.congr ku.2.2
   have hNr : ∀ i < 8 * w, InRegions (u.rd ++ u.wr) (off (R + BitVec.ofNat 64 used) i) 1 := fun i hi => by
     rw [ku.2.1, ku.2.2, show off (R + BitVec.ofNat 64 used) i = R + BitVec.ofNat 64 used + BitVec.ofNat 64 i from rfl,
-      Offset.add_add]; exact h.rdR _ (by omega)
+      Offset.add_add]; exact h.rdR _ (by omega_using [hav, hi])
   have hNs : ∀ i < 8 * w, ∀ x, ofs B x < 8 * L → off (R + BitVec.ofNat 64 used) i ≠ x := fun i hi x hx => by
     rw [show off (R + BitVec.ofNat 64 used) i = R + BitVec.ofNat 64 used + BitVec.ofNat 64 i from rfl,
-      Offset.add_add]; exact h.sepR _ (by omega) x hx
+      Offset.add_add]; exact h.sepR _ (by omega_using [hav, hi]) x hx
   refine WP.seq (WP.mono (loadN_ok (k := 8 * w) hu' ua7
-    (by rw [u7]; exact (BitVec.add_zero _).symm) u8 ((ku.gpr (by decide)).trans e.t0) (by omega) (Nat.le_refl _)
-    (by omega) (by simp only [slot, hdrBytes]; omega) (by simp only [slot, hdrBytes]; omega)
-    (by simp only [slot, hdrBytes]; omega) hNr hNs)
+    (by rw [u7]; exact (BitVec.add_zero _).symm) u8 ((ku.gpr (by decide)).trans e.t0) (by omega_using [hw4]) (Nat.le_refl _)
+    (by omega_using [hw128]) (by simp only [slot, hdrBytes]; omega_using []) (by simp only [slot, hdrBytes]; omega_using [])
+    (by simp only [slot, hdrBytes]; omega_using [hZ]) hNr hNs)
     fun v ⟨vv, vo, kv⟩ => ?_)
   -- The memory so far: `hUsed` and array 4.
   have fu : Frm B [(8 * hUsed, 8), (slot w 4, 8 * (w + 2))] s.mem v.mem := by
     refine Frm.trans (Frm.of_outside (o := 8 * hUsed) (n := 8) ?_ (by simp))
       (Frm.of_outside (o := slot w 4) (n := 8 * (w + 2))
-        (fun x hx => vo x (by simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at hx ⊢; omega)) (by simp))
-    rw [um]; exact writeW_outside _ _ _ (by simp only [hUsed]; omega)
+        (fun x hx => vo x (by simp only [VG.Proof.Mont.ofs, VG.Proof.Bignum.ofs] at hx ⊢; omega_using [hx])) (by simp))
+    rw [um]; exact writeW_outside _ _ _ (by simp only [hUsed]; omega_using [])
   have bytes : Spec.Rsa.bytesAt u.mem (R + BitVec.ofNat 64 used) (8 * w) =
       Spec.Rsa.bytesAt s.mem (R + BitVec.ofNat 64 used) (8 * w) := by
     rw [um]
@@ -239,8 +239,8 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl ch used : Nat} (h : KCtx s B 
     refine List.map_congr_left fun i hi => ?_
     rw [List.mem_range] at hi
     rw [Offset.add_add]
-    refine writeW_outside _ _ _ (by simp only [hUsed]; omega) _ ?_
-    have := Nat.le_of_not_lt fun hlt => h.sepR (used + i) (by omega) _ hlt rfl
+    refine writeW_outside _ _ _ (by simp only [hUsed]; omega_using []) _ ?_
+    have := Nat.le_of_not_lt fun hlt => h.sepR (used + i) (by omega_using [hav, hi]) _ hlt rfl
     simp only [hUsed]; omega
   have kvu := ku.trans kv
   have v6 : v.gpr .s6 = B := (kvu.gpr (by decide)).trans e.s6
@@ -252,7 +252,7 @@ theorem load_ok {s : State} {B R : Addr} {L w c rl ch used : Nat} (h : KCtx s B 
   · simp only [A]
     rw [ym, vv, bytes]
   · have hv1 : word v.mem B (8 * hUsed) = word u.mem B (8 * hUsed) :=
-      vo.word (by simp only [hUsed, slot, hdrBytes]; omega) (by simp only [hUsed]; omega)
+      vo.word (by simp only [hUsed, slot, hdrBytes]; omega_using []) (by simp only [hUsed]; omega_using [])
     rw [ym, hv1, um]
     exact word_writeW_self _ _ _ _
 

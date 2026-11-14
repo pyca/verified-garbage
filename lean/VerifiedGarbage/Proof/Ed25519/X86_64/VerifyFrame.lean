@@ -32,7 +32,7 @@ open VG.Proof.X25519.X86_64 (off ofs Outside)
 
 theorem tableFrame_work {base : Addr} {o n : Nat} {m m' : Mem}
     (h : TableFrame base o n m m') (ho : o ≤ 64) (hn : 768 ≤ o + n) : Outside base o n m m' :=
-  fun p hp => h p (by omega) hp
+  fun p hp => h p (by omega_using [ho, hn, hp]) hp
 
 theorem outside_bytes {base p : Addr} {o n len : Nat} {m m' : Mem}
     (h : Outside base o n m m') (hn : o + n ≤ 8192)
@@ -43,12 +43,12 @@ theorem outside_bytes {base p : Addr} {o n len : Nat} {m m' : Mem}
   apply h
   change ofs base (off p i) < o ∨ o + n ≤ ofs base (off p i)
   have := hf i (List.mem_range.mp hi)
-  omega
+  omega_using [hn, this]
 
 theorem PowersKeep.header {base : Addr} {o n d : Nat} {s t : State}
     (h : PowersKeep base o n s t) (hd : 7936 ≤ d) (hb : d + 8 ≤ 8192) (hn : o + n ≤ 7936) :
     t.mem.readW (off base d) 64 = s.mem.readW (off base d) 64 :=
-  h.mem.word (by omega) (Or.inr (by omega)) (by omega)
+  h.mem.word (by omega_using [hd]) (Or.inr (by omega_using [hd, hn])) (by omega_using [hb])
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -68,7 +68,7 @@ theorem loadPointer_ok {s : State} {base : Addr} (hs : Scratch s base) (r : Reg)
     WP isa (.block [.mov r (.mem (sc d))]) s fun t =>
       t.gpr r = s.mem.readW (off base d) 64 ∧ Keeps [r] s t := by
   have hr : InRegions (s.rd ++ s.wr) (off base d) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
     ea_sc, hs.rdi, hr, ite_true, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self]

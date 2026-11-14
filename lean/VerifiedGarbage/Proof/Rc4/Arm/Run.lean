@@ -100,7 +100,7 @@ theorem encodable_of_lt {v : BitVec 32} (h : v.toNat < 256) : encodable v = true
     simpa only [h0, decide_eq_true_eq] using h⟩
 
 theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
-  encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)
+  encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega_using [h])
 
 /-- 256, the one immediate of the code that needs a rotation. -/
 theorem encodable_256 : encodable (256#32) = true := by decide
@@ -150,13 +150,13 @@ theorem adc_mask' (c : Bool) (y : BitVec 32) :
 /-- The address of word `k` of the table at `P`, which does not wrap around. -/
 theorem row_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) {k : Nat} (hk : k < 64) :
     State.addr (P + BitVec.ofNat 32 (4 * k)) = State.addr P + BitVec.ofNat 64 (4 * k) :=
-  addr_add (by omega)
+  addr_add (by omega_using [hP, hk])
 
 /-- The address of byte `i` of the table at `P`. -/
 theorem idx_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) (i : Byte) :
     State.addr (P + i.setWidth 32 + BitVec.ofNat 32 0) = State.addr P + BitVec.ofNat 64 i.toNat := by
   rw [BitVec.add_zero, byte32]
-  exact addr_add (by have := i.isLt; omega)
+  exact addr_add (by have := i.isLt; omega_using [hP])
 
 /-- The branch conditions. -/
 theorem eval_ne (s : State) : isa.eval .ne s = some !s.z := rfl

@@ -359,7 +359,7 @@ theorem T5 {x : XD} {s : State} (h : X4 x s ∧ s.gpr .r0 = 0) : WP isa exPre s 
     rwa [hb.take_len] at this
   refine WP.mono (exPower_split hb.env hb.r23 he.r9 hb.r28 (by omega_arith) (by omega_arith) he.xl1 (by omega_arith) hb.rdY hb.sepY
     he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2)
-    (by rw [hp]; exact top_of_valid hv (by omega) (by omega)))
+    (by rw [hp]; exact top_of_valid hv (by omega_using [hwd]) (by omega_using [hk, hwd])))
     fun s₆ ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, hw⟩ => ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, WP.mono hw
       fun t ⟨⟨z5, p5, b5, r10₅⟩, k5⟩ => ?_⟩
   have k29 := (k5.gpr .r29 (by decide)).trans hb.env.h29
@@ -401,7 +401,7 @@ theorem ex_rel : RelCT isa (Two X0) exchange fun _ _ => True := by
     unfold exPower exOut
     exact RelCT.seq (RelCT.seq (two_post (two_taint _ (pins_XB (Φ := fun x s => X4 x s ∧ s.gpr .r0 = 0)
         fun _ _ h => h.1.1) (by taint_decide)) fun _ _ h => T5 h)
-      (two_post (two_taint _ pins_X5 (by taint_decide)) fun _ _ h => h.2))
+      (two_post (two_taintR _ pins_X5 (by taint_decide_rel)) fun _ _ h => h.2))
       (RelCT.seq (two_post (two_taint _ pins_X6 (by taint_decide)) fun _ _ h => h.2)
         (two_post (two_taint _ pins_X7 (by taint_decide)) fun _ _ h => h.2))
 

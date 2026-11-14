@@ -508,14 +508,14 @@ theorem i0_val (x : BitVec 64) (h : (x.setWidth 32).toNat ≤ 256) :
   have e : (BitVec.ofNat 64 256).setWidth 32 - x.setWidth 32 = BitVec.ofNat 32 (256 - (x.setWidth 32).toNat) :=
     BitVec.eq_of_toNat_eq (by
       simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at h ⊢
-      omega)
+      omega_using [h])
   rw [e]
   apply BitVec.eq_of_toNat_eq
   have hm : (BitVec.ofNat 32 (256 - (x.setWidth 32).toNat)).msb = false := by
-    rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat]; omega
+    rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat]; omega_using []
   rw [sext32, BitVec.signExtend_eq_setWidth_of_msb_false hm, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- `bSetup` before loading `q - 2`. -/
 abbrev bSetup₁ : List Instr :=
@@ -553,12 +553,12 @@ theorem setup_ok {s : State} (h : ZDone σ s) : WP isa (.block bSetup) s (BAt σ
   refine ⟨h.env.regs hp (m'.trans m) gp' (k.2.1.trans rd) (k.2.2.trans wr) (sp'.trans sp),
     by rw [m', m]; exact h.out, by rw [kk _ (by decide)]; exact g0, ?_, ?_, ?_,
     by rw [kk _ (by decide)]; exact g3, g4, by rw [m', m, hSt]; exact h.st⟩
-  · rw [kk _ (by decide), g1, e0, hSt, shl2 (by omega)]
+  · rw [kk _ (by decide), g1, e0, hSt, shl2 (by omega_using [])]
   · rw [kk _ (by decide), g2, e0, hSt]
   · show (v.gpr .a6).toNat = _
     rw [kk _ (by decide), hSt, Nat.sub_self, Nat.pow_zero, Nat.div_one, g6, readW_leNat _ _ (X σ) fun k hk => by
       have := congrArg (fun L => L.getD k 0) h.out
-      rw [MlKem.bytesAt_getD _ _ (by omega)] at this
+      rw [MlKem.bytesAt_getD _ _ (by omega_using [hk])] at this
       exact this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     have := leNat_lt ((X σ).take 8)
     rw [List.length_take, X_length] at this
@@ -596,7 +596,7 @@ theorem correct {σ : State} (hp : Pre σ) : WP isa Impl.MlDsa.RISCV64.Sample.sa
       ((ballFold (tau σ) (X σ)).2 = 256 →
         PolyIs s'.mem (σ.gpr .a3) (toRq (ballFold (tau σ) (X σ)).1)) ∧
       abiPreserved σ s' := by
-  have hτ : tau σ ≤ 256 := by have := hp.tau_le; omega
+  have hτ : tau σ ≤ 256 := by have := hp.tau_le; omega_using [this]
   exact WP.seq (WP.mono (pro_ball hp.ok rfl (by simp) rfl rfl) fun s₁ ⟨j1, h7⟩ =>
     WP.seq (WP.mono (sponge_ok hp.ok (rate := 136) (outlen := 272) (by decide) (by decide) j1)
       fun _ h2 => WP.seq (WP.mono (zero_ok hp.ok h2 h7) fun _ h3 => WP.seq (WP.mono (loop_ok hp.ok hτ h3)

@@ -94,8 +94,8 @@ theorem call_args_eq (hL : L.Ok) {vs : List Value} (hn : vs.length ≤ 6)
     {a b : State} (h : Two L g₁ g₂ m₁ m₂ (OutArgs L vs) a b) {j : Nat} (hj : j < vs.length) :
     arg a.callEntry j = arg b.callEntry j := by
   have H := hashSpace hL
-  rw [Whole.call_arg h.1.esp H.below H.frameFit (by omega),
-    Whole.call_arg h.2.1.esp H.below H.frameFit (by omega),
+  rw [Whole.call_arg h.1.esp H.below H.frameFit (by omega_using [hn, hj]),
+    Whole.call_arg h.2.1.esp H.below H.frameFit (by omega_using [hn, hj]),
     h.2.2.1.slot hL hj hn, h.2.2.2.slot hL hj hn]
 
 theorem call_ct (hL : L.Ok) {P : State → Prop} {k : Contract isa} {c : Prog isa} {name : String}
@@ -170,8 +170,8 @@ def finalize_ready (hc : Ctx L g m₀ s) (hL : L.Ok) {count : BitVec 64}
   have H := hashSpace hL
   have fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl,
-      Nat.mod_eq_of_lt (by have := hL.top; omega)]
-    have := hL.top; omega
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; omega_using [this]
   have hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((digestWithin hL).sub p hp))
   have hp := Whole.finalize_pre hc.esp H a0 a3 a4 hd (digest_below hL) (by
@@ -276,7 +276,7 @@ theorem update_call_ct (hL : L.Ok) {vs : List Value} (hn : vs.length = 6)
   · intro g m t hc hs
     exact update_ready hc hL hi (hargs t hs)
   · intro a b ar aw br bw h
-    exact ⟨congrArg (· - 4) (two_esp h), fun j hj => call_args_eq hL (by omega) h (by omega)⟩
+    exact ⟨congrArg (· - 4) (two_esp h), fun j hj => call_args_eq hL (by omega_using [hn]) h (by omega_using [hn, hj])⟩
 
 theorem append_pair_eq {a b c d : BitVec 32} (h : a ++ b = c ++ d) : a = c ∧ b = d := by
   constructor
@@ -297,12 +297,12 @@ theorem finalize_call_ct (hL : L.Ok) (count : BitVec 64) :
     refine ⟨congrArg (· - 4) (two_esp h), ?_⟩
     intro j hj
     have H := hashSpace hL
-    rw [arg_withRegions, arg_withRegions, Whole.call_arg h.1.esp H.below H.frameFit (by omega),
-      Whole.call_arg h.2.1.esp H.below H.frameFit (by omega)]
+    rw [arg_withRegions, arg_withRegions, Whole.call_arg h.1.esp H.below H.frameFit (by omega_using [hj]),
+      Whole.call_arg h.2.1.esp H.below H.frameFit (by omega_using [hj])]
     obtain ⟨a0, a3, a4, ac⟩ := h.2.2.1
     obtain ⟨b0, b3, b4, bc⟩ := h.2.2.2
     have pair := append_pair_eq (ac.trans bc.symm)
-    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl | rfl
+    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega_using [hj]) with rfl | rfl | rfl | rfl | rfl
     · exact a0.trans b0.symm
     · exact pair.2
     · exact pair.1
@@ -580,13 +580,13 @@ theorem entry_tbl {s : State} (h : verifyMessageLocal.pre s) : MsgTbl s :=
 
 theorem lay_base {s : State} (h : verifyMessageLocal.pre s) :
     (lay s).E.setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 256 :=
-  Taint.sub_setWidth (by have := (entry_bounds h).1; omega)
+  Taint.sub_setWidth (by have := (entry_bounds h).1; omega_using [this])
 
 theorem lay_args {s : State} (h : verifyMessageLocal.pre s) :
     (lay s).ARGS = ⟨argAddr s 0, 20⟩ := by
   rw [Lay.ARGS, lay_base h]
   have ha : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-    addr_eq (by have := (entry_bounds h).2; omega)
+    addr_eq (by have := (entry_bounds h).2; omega_using [this])
   rw [ha]
   congr 1
   change _ - 256#64 + 260#64 = _ + 4#64
@@ -610,12 +610,12 @@ theorem lay_ok {s : State} (h : verifyMessageLocal.pre s) : (lay s).Ok := by
   obtain ⟨_, tf, ts, tk, tr⟩ := mt
   have top : (lay s).E.toNat + 280 ≤ 2 ^ 32 := by
     change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 280 ≤ _
-    rw [sub_toNat (by omega)]
-    omega
+    rw [sub_toNat (by omega_using [nb])]
+    omega_using [na]
   refine ⟨?_, top, ?_, ?_, ?_, ?_, ?_, np, nm, ns, nc, tf⟩
   · change 24 ≤ (s.gpr .esp - BitVec.ofNat 32 256).toNat
-    rw [sub_toNat (by omega)]
-    omega
+    rw [sub_toNat (by omega_using [nb])]
+    omega_using [nb]
   · intro r hr
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -663,20 +663,20 @@ theorem lay_arguments {s : State} (h : verifyMessageLocal.pre s) : Arguments (la
   intro j hj
   have hb := lay_ok h
   have e : (lay s).E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j) = argAddr s j := by
-    rw [← addr_eq (by have := hb.top; omega)]
+    rw [← addr_eq (by have := hb.top; omega_using [hj, this])]
     simp only [addr, lay, argAddr]
-    rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega, BitVec.ofNat_add,
+    rw [show 260 + 4 * j = 256 + (4 + 4 * j) by omega_using [], BitVec.ofNat_add,
       ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rw [e]
   change arg s j = (lay s).value j
-  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 := by omega
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 := by omega_using [hj]
   rcases this with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem push_ctx {s : State} (h : verifyMessageLocal.pre s) :
     Ctx (lay s) s.gpr s.mem (pushed (List.replicate 64 .eax) s) := by
   have hn := (entry_bounds h).1
   have hf := pushed_frame (s := s) (rs := List.replicate 64 .eax) (by simp)
-    (by simp only [List.length_replicate]; omega)
+    (by simp only [List.length_replicate]; omega_using [hn])
   refine ⟨?_, ?_, ?_, fun r _ hn => pushed_gpr _ _ hn, ?_⟩
   · rw [pushed_rd, h.1]
     rw [Lay.inputs, lay_args h]
@@ -736,7 +736,7 @@ theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
   have hL := lay_ok h
   have hb := entry_bounds h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
-    (by simp only [List.length_replicate]; omega) body_nosp
+    (by simp only [List.length_replicate]; omega_using [hb]) body_nosp
     (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_tbl h).1
       (by rw [show (pushed (List.replicate 64 .eax) s).syms = s.syms from pushRegs_syms s _]; rfl))
       fun u ⟨hu, ho⟩ => ?_)
@@ -854,8 +854,8 @@ theorem verifySatMem_held : ∀ i < 240,
   rw [← bSatMem_held i hi]
   refine Mem.readW_congr fun j hj => ?_
   have e : (0x100000 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000 : Addr).toNat = 8 * i + j := by
-    rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  simp only [verifySatMem, e, show 8 * i + j < 1920 by omega, ↓reduceIte]
+    rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi, hj])]
+  simp only [verifySatMem, e, show 8 * i + j < 1920 by omega_using [hi, hj], ↓reduceIte]
 
 def verifySatState : State where
   gpr r := match r with | .esp => 0x8000 | _ => 0
@@ -945,7 +945,7 @@ theorem verifyWide_implies :
     simp only [bWords_length, Nat.reduceMul] at hd held fit dw tr tk
     simp only [verifyWide, verifyMessageLocal, MsgTbl]
     refine ⟨?_, hw, d0s, d1s, d3s, dsa.symm, r0, r1, r3, r4, k0, k1, k3, k4, f0, f1, f3, f4, lo,
-      by omega, held, fit, dw _ (by rw [hw]; simp), tk.symm, tr.symm⟩
+      by omega_using [sp], held, fit, dw _ (by rw [hw]; simp), tk.symm, tr.symm⟩
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by
     sig_post [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,

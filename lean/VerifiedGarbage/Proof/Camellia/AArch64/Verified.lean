@@ -57,16 +57,16 @@ theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbAArch64 dir).pre s) :
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by cases dir <;> lit_decide)⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
-  · exact h₁ 9 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
+  · exact h₁ 9 (by omega_using [])
   · exact h₃ _ (by simp)
 
 /-- A state satisfying the precondition (one block, 18 rounds). -/

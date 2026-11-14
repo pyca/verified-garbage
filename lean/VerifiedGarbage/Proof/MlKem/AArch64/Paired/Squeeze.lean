@@ -78,7 +78,7 @@ def Blocks (m : Mem) (a : Addr) (k : Nat) (A : Spec.Sha3.State) : Prop :=
 
 theorem block_sub (a : Addr) {j : Nat} (hj : j<3) :
     Region.Sub (rateR21 (blockAt a j)) (streamR a) :=
-  Offset.sub_base a (by omega)
+  Offset.sub_base a (by omega_using [hj])
 
 def squeezeWrites (p a b : Addr) : List Region := [pairR p,streamR a,streamR b,X2.callR (p+1536)]
 
@@ -101,17 +101,17 @@ theorem extend_blocks {m m' : Mem} {p a b : Addr} {A : Spec.Sha3.State} {k : Nat
   intro j hj
   by_cases he : j=k
   · subst j; exact new
-  · have hjk : j<k := by omega
+  · have hjk : j<k := by omega_using [hj, he]
     intro i hi
     have hc : (rateR21 (blockAt a j)).Contains (outAddr (blockAt a j) i) 8 :=
-      Offset.contains_base _ (by omega) (by omega)
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
     rw [hf.readW hc (by
         intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact (hpa.sub_right (block_sub a (by omega))).symm
-        · exact Offset.disjoint a (Or.inl (by omega)) (by omega) (by omega)
-        · exact (hab.sub_left (block_sub a (by omega))).sub_right (block_sub b hk)
-        · exact (hwa.sub_right (block_sub a (by omega))).symm) (by decide)]
+        · exact (hpa.sub_right (block_sub a (by omega_using [hk, hj]))).symm
+        · exact Offset.disjoint a (Or.inl (by omega_using [hj, he])) (by omega_using [hk, hj]) (by omega_using [hk])
+        · exact (hab.sub_left (block_sub a (by omega_using [hk, hj]))).sub_right (block_sub b hk)
+        · exact (hwa.sub_right (block_sub a (by omega_using [hk, hj]))).symm) (by decide)]
     exact old j hjk i hi
 
 theorem squeeze_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
@@ -137,9 +137,9 @@ theorem squeeze_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
       (hpa.sub_right (block_sub a hk)) (hpb.sub_right (block_sub b hk)) hpw
       (by rw [h.keep.wr]; exact hcov)) fun u ⟨ku,pu,au,bu,fu,ua,ub,uc⟩ => ?_
     have count : (u.gpr .x22).toNat=3-(k+1) := by
-      rw [uc,toNat_sub_n (by rw [h.count]; change 1≤3-k; omega),h.count]
-      change 3-k-1=3-(k+1); omega
-    refine ⟨⟨(h.keep.trans ku).mono (by simp),?_,?_,?_,?_,count,?_,?_,?_⟩,by rw [count]; omega⟩
+      rw [uc,toNat_sub_n (by rw [h.count]; change 1≤3-k; omega_using [hk]),h.count]
+      change 3-k-1=3-(k+1); omega_using []
+    refine ⟨⟨(h.keep.trans ku).mono (by simp),?_,?_,?_,?_,count,?_,?_,?_⟩,by rw [count]; omega_using [hk]⟩
     · simpa only [iterF_succ] using pu
     · rw [ku.gpr .x19 (by decide),h.ptr]
     · rw [ua]; change a+BitVec.ofNat 64 (168*k)+BitVec.ofNat 64 168 = _

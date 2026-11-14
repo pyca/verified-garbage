@@ -22,13 +22,13 @@ theorem codeAt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used step
       Outside g.W usedOffset 4 s.mem t.mem ∧ Keeps [.eax, .esi] s t := by
   have head := v.headerFit
   unfold codeAt
-  refine wp_movS (readSrc_sc S.ready.scratch (by omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_sc S.ready.scratch (by omega_using [head])) fun a A _ => ?_
   have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
-  refine wp_movS (readSrc_sc Sa (d := usedOffset) (by unfold usedOffset; omega)) fun b B _ =>
+  refine wp_movS (readSrc_sc Sa (d := usedOffset) (by unfold usedOffset; omega_using [head])) fun b B _ =>
     wp_addS rfl fun d D _ => wp_addS rfl fun e E _ => ?_
   have K : Keeps [.eax, .esi] s e := (((A.keeps.mono (by decide)).widen B.keeps).widen D.keeps).widen E.keeps
   have Se := S.ready.scratch.of_keeps K (by decide)
-  refine wp_storeS (Se.ea (by unfold usedOffset; omega)) (Se.write (by unfold usedOffset; omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Se.ea (by unfold usedOffset; omega_using [head])) (Se.write (by unfold usedOffset; omega_using [head])) fun t T => WP.block_nil ?_
   have Ot : Outside g.W usedOffset 4 s.mem t.mem := by
     rw [T.mem, E.mem, D.mem, B.mem, A.mem]
     exact writeW32_outside _ _ _ (by unfold usedOffset; decide)
@@ -43,6 +43,6 @@ theorem codeAt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity used step
   · rw [T.mem, w32_write_self, E.gpr, D.other .eax (by decide), B.gpr, A.mem,
       BitVec.toNat_add, BitVec.toNat_ofNat]
     change (w32 s.mem g.W usedOffset + step % 2 ^ 32) % 2 ^ 32 = _
-    rw [consumed, Nat.mod_eq_of_lt (a := step) (by omega), Nat.mod_eq_of_lt fit]
+    rw [consumed, Nat.mod_eq_of_lt (a := step) (by omega_using [fit]), Nat.mod_eq_of_lt fit]
 
 end VG.Proof.RsaKeyGen.X86.WitnessAdvance

@@ -8,12 +8,114 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
 public import VerifiedGarbage.Proof.Dsa.AArch64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.SignContractWith
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignABI
-
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCorrect
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignConstantTime
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalidCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBodyCT
 import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Dsa.AArch64.RandomSignCorrect`, which only this module used -/
+
+section
+
+/-! Randomized signing's functional correctness against its shared contract. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64
+
+theorem random_sign_shared_post {extra : Nat} {s t : State} (h : RandomSignABI extra s)
+    (hp : RandomSignCodePost s (randomSignRemaining (randomInput s) 0 8) t) :
+    (randomSignCheckedContract abi (extra + 256)).post s t := by
+  sig_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs]
+  sig_post [randomSignCheckedContract, Spec.Dsa.randomSignSig, abi, argRegs, randomSignStackArgs]
+  have he := random_remaining_bytes h
+  have hb : (randomSignRemaining (randomInput s) 0 8).status < 2 ^ 32 := by
+    have := randomSignLoop_status_le (randomInput s).pLen (randomInput s).qLen 8
+      (randomInput s).key (randomInput s).digest ((randomInput s).rand.drop 0)
+    change (randomSignRemaining (randomInput s) 0 8).status ≤ 2 at this
+    omega_using [this]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hp.status]
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 2 ^ 32 ∣ 2 ^ 64),
+      Nat.mod_eq_of_lt hb]
+    exact congrArg Spec.Dsa.RandomSignResult.status he
+  · exact (hp.output.trans (congrArg (fun r : Spec.Dsa.RandomSignResult => r.signature.getD
+      (List.replicate (s.gpr .x1).toNat 0)) he))
+  · change Spec.Rsa.wordsAt t.mem (s.gpr .x2) 1 = _
+    simp only [Spec.Rsa.wordsAt, List.range_succ, List.range_zero, List.nil_append,
+      List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero, hp.used]
+    exact congrArg (fun r : Spec.Dsa.RandomSignResult => [BitVec.ofNat 64 r.used]) he
+
+theorem random_sign_correct (S : Signer) (s : State)
+    (hpre : (randomSignCheckedContract abi (S.stack + 256)).pre s) (hval : RandomValid S s) :
+    ∃ trace t, Exec isa (RandomSign.code S.name S.code) s trace t ∧
+      abiPreserved s t ∧ (randomSignCheckedContract abi (S.stack + 256)).post s t := by
+  have h := randomSignABI_of hpre
+  obtain ⟨trace, t, he, hp⟩ := random_sign_code S h hval
+  exact ⟨trace, t, he, ⟨hp.callee, hp.sp, hp.vectors⟩, random_sign_shared_post h hp⟩
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
+/-! ### `Dsa.AArch64.RandomSignConstantTime`, which only this module used -/
+
+section
+
+/-! Whole-entry leakage equality against the merged randomized-signing contract. -/
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64 VG.Impl.Dsa.AArch64
+
+theorem random_sign_body_agreement (S : Signer) {s t : State}
+    (hs : RandomSignABI S.stack s) (ht : RandomSignABI S.stack t) (hp : RandomSignPublicAgree s t)
+    (hvs : RandomValid S s) (hvt : RandomValid S t)
+    (htrace : (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace)
+    (hstatus : (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status)
+    {tsa tsb : List Leak} {u w : State}
+    (ea : Exec isa (RandomSign.body S.name S.code) (allocated Random.frameBytes s) tsa u)
+    (eb : Exec isa (RandomSign.body S.name S.code) (allocated Random.frameBytes t) tsb w) : tsa = tsb := by
+  by_cases hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)
+  · exact random_sign_body_valid_ct S hs ht hp hvs hvt hq htrace hstatus ea eb
+  · exact random_sign_body_invalid_ct S hs ht hp hq ea eb
+
+theorem random_sign_alloc {extra : Nat} {s : State} (h : RandomSignABI extra s) :
+    isa.push (.alloc Random.frameBytes) s = some (allocated Random.frameBytes s) := by
+  have hl := h.stackLower
+  simp only [isa, push, allocated]
+  exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
+
+theorem random_sign_constantTime (S : Signer) :
+    ConstantTime isa (fun s => (randomSignCheckedContract abi (S.stack + 256)).pre s ∧ RandomValid S s)
+      (randomSignCheckedContract abi (S.stack + 256)).pub
+      (RandomSign.code S.name S.code) := by
+  intro s t tsa tsb u w ⟨hs, hvs⟩ ⟨ht, hvt⟩ hpub ea eb
+  have hsa := randomSignABI_of hs
+  have hta := randomSignABI_of ht
+  obtain ⟨hp, hstatus, _, htrace⟩ := random_sign_public_related hsa hta hpub
+  cases ea with
+  | frame hap hab _ =>
+    cases eb with
+    | frame hbp hbb _ =>
+      rw [random_sign_alloc hsa, Option.some.injEq] at hap
+      rw [random_sign_alloc hta, Option.some.injEq] at hbp
+      subst hap
+      subst hbp
+      have hh := random_sign_body_agreement S hsa hta hp hvs hvt htrace hstatus hab hbb
+      simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
+
+end VG.Proof.Dsa.AArch64
+
+end
+
+end
+
 /-! Complete verification of randomized DSA signing for every AArch64 backend:
 `vg_dsa_sign_random`, which calls the fully checked signer, and
 `vg_dsa_sign_random_prevalidated`, which calls the signer for a validated
@@ -47,7 +149,7 @@ theorem random_sign_sat_pre (extra : Nat) (hb : extra < 2 ^ 32) :
   sig_and_intros
   all_goals try simp only [sat_arg_0, sat_arg_1, sat_arg_2, sat_arg_3, sat_arg_4]
   all_goals first
-    | (change extra + 256 ≤ 281474976710656; omega)
+    | (change extra + 256 ≤ 281474976710656; omega_using [hb])
     | exact Region.disjoint_of_sep (by decide +kernel)
     | decide +kernel
     | (intro a h₁ h₂; simp only [Region.Contains, stackArgAddr, randomSignSatState] at h₁ h₂; bv_omega)

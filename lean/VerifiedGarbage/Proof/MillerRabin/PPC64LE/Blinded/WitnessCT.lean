@@ -70,9 +70,9 @@ theorem W2.facts {a : BD × Nat} {s : State} (h : W2 a s) :
   have kw : ∀ d, d + 8 ≤ slot a.1.w 3 → word s.mem a.1.B d = word s₀.mem a.1.B d := fun d hd => by
     rw [← m1]; exact f2.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [es] at hd ⊢ <;> omega) (by rw [es] at hd; omega)
+      rcases hr with rfl | rfl <;> simp only [es] at hd ⊢ <;> omega_using [hd]) (by rw [es] at hd; omega_using [hnw, hZ, hd])
   refine ⟨(e.keep k1 (by decide)).keep k2 (by decide), k2.sp.trans (k1.sp.trans sp), ?_, ?_,
-    (kw _ (by simp only [hTopOff, es]; omega)).trans c.topOff, (kw _ (by simp only [hTop, es]; omega)).trans c.top⟩
+    (kw _ (by simp only [hTopOff, es]; omega_using [])).trans c.topOff, (kw _ (by simp only [hTop, es]; omega_using [])).trans c.top⟩
   · rw [k2.gpr .r24 (by decide), h24, hx]
   · rw [h20, m1, hx]
 
@@ -99,13 +99,13 @@ theorem forceA_ok {s : State} {B : Addr} {Z w t : Nat} (e : Env s B Z w)
   refine WP.mono (e.base (rd := .r5) (by decide) (by decide) 4) fun y ⟨⟨y5, ym⟩, ky⟩ => ?_
   have hy : Scr y B Z := hs.congr ky.wr
   have y31 : y.gpr .r31 = B := (ky.gpr .r31 (by decide)).trans e.h31
-  have h4 : slot w 4 + 8 ≤ 2 ^ 64 := by rw [es]; omega
+  have h4 : slot w 4 + 8 ≤ 2 ^ 64 := by rw [es]; omega_using [hnw, hZ]
   have o1 := writeW_outside s.mem B (word s.mem B (slot w 4) ||| 2#64) h4
   have r128 : (s.mem.writeW (off B (slot w 4)) (word s.mem B (slot w 4) ||| 2#64)).readW (B + 128#64) 64 =
-      BitVec.ofNat 64 (8 * t) := (o1.word (by rw [es]; omega) (by omega)).trans hoff
+      BitVec.ofNat 64 (8 * t) := (o1.word (by rw [es]; omega_using []) (by omega_using [])).trans hoff
   simp only [ldh, hTopOff]
-  prun [y5, ym, y31, hy.ld (d := slot w 4) (n := 8) (by rw [es]; omega),
-    hy.st (d := slot w 4) (n := 8) (by rw [es]; omega), hy.ld (d := 128) (n := 8) (by omega), r128, BitVec.add_zero]
+  prun [y5, ym, y31, hy.ld (d := slot w 4) (n := 8) (by rw [es]; omega_using [hZ]),
+    hy.st (d := slot w 4) (n := 8) (by rw [es]; omega_using [hZ]), hy.ld (d := 128) (n := 8) (by omega_using [hZ]), r128, BitVec.add_zero]
   exact ky.sp
 
 theorem beq_zero_of_iff {x : BitVec 64} {P : Prop} [Decidable P] (h : x = 0#64 ↔ P) : (x == 0) = decide P := by

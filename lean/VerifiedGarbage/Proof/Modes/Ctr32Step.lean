@@ -40,10 +40,10 @@ theorem ofNat_ctr32Val_one (V : Nat) :
   congr 1
   · congr 1
     simp only [ctr32Val, Nat.reducePow]
-    omega
+    omega_using []
   · apply AesCtr.ofNat_congr
     simp only [ctr32Val, Nat.reducePow]
-    omega
+    omega_using []
 
 theorem ctr32_computes {ciph : Cipher} (hc : ∀ b, (ciph b).length = 16) :
     Computes Mode.ctr32 16 ciph (ctr32F ciph) := by
@@ -77,12 +77,12 @@ theorem ctr32_computes {ciph : Cipher} (hc : ∀ b, (ciph b).length = 16) :
   · rw [hnext]
     simp only [Op.apply, Op.width, Op.val, Bool.false_eq_true, ite_true, ite_false, true_and]
     by_cases h12 : 12 ≤ i
-    · rw [ite_eq_left ⟨h12, by omega⟩, hlo, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-        List.getElem?_append_right (by simp; omega)]
+    · rw [ite_eq_left ⟨h12, by omega_using [hi]⟩, hlo, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
+        List.getElem?_append_right (by simp; omega_using [h12])]
       simp only [List.length_take, ht, show min 12 16 = 12 from rfl]
     · rw [ite_eq_right (fun h => h12 h.1), hchn, List.getD_eq_getElem?_getD,
-        List.getElem?_append_left (by simp [ht]; omega), ← getD_rd (a := a) (l := .chn) hi, List.getD_eq_getElem?_getD,
-        List.getElem?_take_of_lt (by omega)]
+        List.getElem?_append_left (by simp [ht]; omega_using [h12]), ← getD_rd (a := a) (l := .chn) hi, List.getD_eq_getElem?_getD,
+        List.getElem?_take_of_lt (by omega_using [h12])]
 
 /-- The steps from the counter block `ofNat V 16`: block `j` XORed with the
 encryption of the counter block `ctr32Val V j`, and `ctr32Val V n` left. -/
@@ -97,7 +97,7 @@ theorem ctr32_run (ciph : Cipher) : ∀ (V : Nat) (xs : List (List Byte)),
       fun j => AesCtr.ofNat_congr (by
         rw [ctr32Val_add, AesCtr.toNat_ofNat]
         simp only [ctr32Val, Nat.reducePow]
-        omega)
+        omega_using [])
     obtain ⟨h1, h2⟩ := ctr32_run ciph (ctr32Val (toNat (ofNat V 16)) 1) xs
     simp only [hc] at h1 h2
     refine ⟨?_, ?_⟩

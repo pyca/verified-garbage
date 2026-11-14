@@ -114,7 +114,7 @@ theorem hint_m {σ : State} :
     HbuOk (vlay p STK σ) vWb (.r6, oHint p) (p.ω + p.k) p.ω (pH 0) (256 * p.k) := by
   have hk := hF.k; have hom := hF.om
   exact ⟨⟨rfl, by vsep hF⟩, ⟨rfl, by vsep hF⟩, show ix Reg.r7 ∈ vWb by decide, by vsep hF,
-    by rw [Nat.add_sub_cancel_left]; exact hF.hp, by omega, by rw [Nat.add_sub_cancel_left], by omega⟩
+    by rw [Nat.add_sub_cancel_left]; exact hF.hp, by omega_using [], by rw [Nat.add_sub_cancel_left], by omega_using [hk, hom]⟩
 
 /-- After the call of `HintBitUnpack`: its result in `r0`. -/
 structure H1 (p : Params) (STK : Nat) (σ s : State) : Prop where
@@ -126,7 +126,7 @@ theorem hbu_ok' {σ s : State} (h : VC p STK σ s) :
     WP isa (hintUnpackAt P (.r6, oHint p) (p.ω + p.k) p.ω (pH 0) (256 * p.k)) s (H1 p STK σ) := by
   have hs := h.site
   unfold hintUnpackAt
-  refine hbu_okS hP.hintUnpack hs (by omega) (hint_m hF) fun s' k' hm => ?_
+  refine hbu_okS hP.hintUnpack hs (by omega_using [hS]) (hint_m hF) fun s' k' hm => ?_
   have h' := h.keep k' (by vsep hF [vcChk])
   have eb : bytesAt s.mem (lpa (vlay p STK σ) (.r6, oHint p)) (p.ω + p.k) =
       ((sgOf p σ).drop (oHint p)).take (p.ω + p.k) := sig_slice h (by rw [hF.sig])
@@ -149,7 +149,7 @@ theorem hbu_piece :
   refine rel_of (Q := fun x y => ∃ σ, Two (vlay p STK σ) vWb STK x y ∧
     bytesAt x.mem (lpa (vlay p STK σ) (.r6, oHint p)) (p.ω + p.k) =
       bytesAt y.mem (lpa (vlay p STK σ) (.r6, oHint p)) (p.ω + p.k))
-    (RelCT.exists_ fun σ => hbu_tr hP.hintUnpack (by omega) (hint_m hF)
+    (RelCT.exists_ fun σ => hbu_tr hP.hintUnpack (by omega_using [hS]) (hint_m hF)
       fun x y ⟨T, e⟩ => ⟨T.1, T.2.1, T.2.2, e⟩) ?_
   intro σ₁ _ _ _ _ _ pub h₁ h₂
   refine ⟨σ₁, vc_twoL pub h₁.1 h₂.1, ?_⟩

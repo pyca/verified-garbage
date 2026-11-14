@@ -25,9 +25,9 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
   intro j
   by_cases hj : 1≤j
   · by_cases hn : j≤576
-    · have e : j-1+1=j := by omega
+    · have e : j-1+1=j := by omega_using [hj]
       refine (jointStep_relCT hL hp hC hM3 hone hP hG hF₁ hF₂ g₁ g₂ checks mixed
-       (j:=j-1) (by omega)).mono (P':=I j) (fun _ _ h=>by rw [e]; exact h.2.2) ?_
+       (j:=j-1) (by omega_using [hn])).mono (P':=I j) (fun _ _ h=>by rw [e]; exact h.2.2) ?_
       intro s t h
       have xs:=h.2.1.x19
       have xt:=h.2.2.1.x19
@@ -38,7 +38,7 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
           rw [bne_iff_ne]
           intro hh
           have hh':=congrArg BitVec.toNat hh
-          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : j-1<2^64)] at hh'
+          simp only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hn] : j-1<2^64)] at hh'
           exact hz hh'
          have ht : eval (.nonzero .x .x19) s=some true := by
           change some (s.read .x .x19 != 0)=some true
@@ -50,7 +50,7 @@ theorem jointLoop_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
          intro hz
          simp only [eval,State.read,xs,hz] at he
          cases he
-        exact ⟨j-1,by omega,by omega,by omega,h⟩
+        exact ⟨j-1,by omega_using [hj],by omega_using [hz],by omega_using [hn],h⟩
     · exact RelCT.of_false (fun _ _ h=>hn h.2.1)
   · exact RelCT.of_false (fun _ _ h=>hj h.1)
  exact (RelCT.loop I step 576).mono (fun _ _ h=>⟨by decide,by decide,h⟩) (fun _ _ h=>h)

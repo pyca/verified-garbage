@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Cast5
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CAST5: the round function by its type, and the rounds in order
@@ -35,7 +36,7 @@ theorem f_eq (i : Nat) (d km kr : Word) :
     f i d km kr = comb (i % 3) (S1 (byte (roundI i d km kr) 0)) (S2 (byte (roundI i d km kr) 1))
       (S3 (byte (roundI i d km kr) 2)) (S4 (byte (roundI i d km kr) 3)) := by
   unfold f roundI
-  rcases (show i % 3 = 0 ∨ i % 3 = 1 ∨ i % 3 = 2 by omega) with h | h | h <;> simp only [h] <;> rfl
+  rcases (show i % 3 = 0 ∨ i % 3 = 1 ∨ i % 3 = 2 by omega_using []) with h | h | h <;> simp only [h] <;> rfl
 
 /-! ## The rounds in order -/
 

@@ -42,15 +42,15 @@ theorem lo_ext (w : BitVec 64) : (w.setWidth 32).setWidth 64 = w &&& 0xffffffff 
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
   rw [show (0xffffffff : BitVec 64).toNat = 2 ^ 32 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   have := Nat.mod_lt w.toNat (show 0 < 2 ^ 32 by decide)
-  omega
+  omega_using []
 
 theorem hi_ext (w : BitVec 64) : (w.extractLsb' 32 32).setWidth 64 = w >>> 32 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow]
   have := w.isLt
-  have h32 : w.toNat / 2 ^ 32 < 2 ^ 32 := by omega
-  rw [Nat.mod_eq_of_lt h32, Nat.mod_eq_of_lt (by omega)]
+  have h32 : w.toNat / 2 ^ 32 < 2 ^ 32 := by omega_using []
+  rw [Nat.mod_eq_of_lt h32, Nat.mod_eq_of_lt (by omega_using [])]
 
 theorem FS.keep {s₀ s t : State} {pass slice lane index ctr : Nat} {st : FillState}
     (h : FS s₀ pass slice lane index ctr st s) (it : Inv s₀ t)
@@ -59,8 +59,8 @@ theorem FS.keep {s₀ s t : State} {pass slice lane index ctr : Nat} {st : FillS
     (hm : ∀ k < (prm s₀).blocks,
       blockAt t.mem (matrixCell (memP s₀) k) = blockAt s.mem (matrixCell (memP s₀) k)) :
     FS s₀ pass slice lane index ctr st t := by
-  refine ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => hl d (by omega) (by omega),
-    h.pos.of_lw fun d h₁ h₂ => hl d (by omega) (by omega), ?_, Represents.keep h.mem hm⟩
+  refine ⟨it, Prm.of_lw h.pr fun d h₁ h₂ => hl d (by omega_using [h₁]) (by omega_using [h₂]),
+    h.pos.of_lw fun d h₁ h₂ => hl d (by omega_using [h₁]) (by omega_using [h₂]), ?_, Represents.keep h.mem hm⟩
   obtain ⟨c0, c1, c2 | ⟨c3, c4⟩⟩ := h.cache
   · exact ⟨c0, by rw [hl _ (by decide) (by decide)]; exact c1, .inl c2⟩
   · exact ⟨c0, by rw [hl _ (by decide) (by decide)]; exact c1, .inr ⟨c3, by rw [hc]; exact c4⟩⟩
@@ -86,7 +86,7 @@ theorem FS.frame {s t : State} {pass slice lane index ctr : Nat} {st : FillState
   refine h.keep it (fun d h₁ h₂ => ?_) ?_ fun k hk => ?_
   · refine f.readW (r := ⟨E s₀ + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (fun r hr => (ho r hr).1.symm.sub_left ?_) (by decide)
-    rw [E_add]; exact Offset.sub _ (by omega) (by omega)
+    rw [E_add]; exact Offset.sub _ (by omega_using [h₁]) (by omega_using [h₂])
   · exact blockAt_keep f fun r hr => (ho r hr).2.1.symm
   · have hk' : k < blocksN s₀ := by rw [hp.blocks]; exact hk
     exact blockAt_keep f fun r hr => (ho r hr).2.2.symm.sub_left (Proof.Argon2.matrixCell_sub _ _ _ hk')
@@ -101,15 +101,15 @@ theorem FS.store {s t : State} {pass slice lane index ctr : Nat} {st : FillState
     fun r hr => ?_
   simp only [List.mem_singleton] at hr; subst hr
   rw [E_add]
-  refine ⟨Offset.disjoint _ (by omega) (by omega) (by omega), ?_, ?_⟩
-  · exact (stk_disj hp (by omega) (scrR s₀) (by simp)).sub_right (scr_sub (by decide))
-  · exact stk_disj hp (by omega) (memR s₀) (by simp)
+  refine ⟨Offset.disjoint _ (by omega_using [hd]) (by omega_using [hd']) (by omega_using []), ?_, ?_⟩
+  · exact (stk_disj hp (by omega_using [hd']) (scrR s₀) (by simp)).sub_right (scr_sub (by decide))
+  · exact stk_disj hp (by omega_using [hd']) (memR s₀) (by simp)
 
 theorem outside_scr {o n : Nat} (h : o + n ≤ 6144 ∨ (7168 ≤ o ∧ o + n ≤ 16384)) :
     Outside s₀ ⟨scrP s₀ + BitVec.ofNat 64 o, n⟩ := by
-  have sub : Region.Sub ⟨scrP s₀ + BitVec.ofNat 64 o, n⟩ (scrR s₀) := Offset.sub_base _ (by omega)
+  have sub : Region.Sub ⟨scrP s₀ + BitVec.ofNat 64 o, n⟩ (scrR s₀) := Offset.sub_base _ (by omega_using [h])
   refine ⟨((stk_disj hp (d := 256) (n := 64) (by decide) (scrR s₀) (by simp)).symm.sub_left sub),
-    Offset.disjoint _ (by omega) (by omega) (by omega), hp.mem_scr.symm.sub_left sub⟩
+    Offset.disjoint _ (by omega_using [h]) (by omega_using [h]) (by omega_using []), hp.mem_scr.symm.sub_left sub⟩
 
 /-- `dependentWord`: J₁ and J₂ are the halves of the previous block's first doubleword. -/
 theorem dependentWord_ok {s : State} {pass slice lane index ctr : Nat} {st : FillState}
@@ -121,7 +121,7 @@ theorem dependentWord_ok {s : State} {pass slice lane index ctr : Nat} {st : Fil
   have L8 := laneLen_ge hp
   obtain ⟨cl, cf⟩ := cell_fits hp hl
     (col := (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) % (prm s₀).laneLen)
-    (Nat.mod_lt _ (by omega))
+    (Nat.mod_lt _ (by omega_using [L8]))
   unfold Impl.Argon2.PPC64LE.Derive.dependentWord
   refine WP.seq ((prevPointer_ok hp h.inv h.pr h.pos hl hs hi).mono fun s₁ ⟨a₁, k₁⟩ => ?_)
   generalize (lane * (prm s₀).laneLen + (slice * (prm s₀).segmentLen + index + (prm s₀).laneLen - 1) %
@@ -131,12 +131,12 @@ theorem dependentWord_ok {s : State} {pass slice lane index ctr : Nat} {st : Fil
   have inP : ∀ o, o + 4 ≤ 1024 → (memR s₀).Contains (matrixCell (memP s₀) c + BitVec.ofNat 64 o) 4 :=
     fun o ho => by
       rw [matrixCell, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [cl, ho]) (by omega_using [cl, hb, ho])
   have mW : ∀ t, Inv s₀ t → memR s₀ ∈ t.wr := fun t it => by rw [it.wr]; exact mem_mem hp
   have hb := blocks_lt' hp
   have c0 : (memR s₀).Contains (matrixCell (memP s₀) c) 4 :=
     Offset.contains_base (memP s₀) (d := c * 1024) (n := 4) (k := blocksN s₀ * 1024)
-      (Nat.le_trans (Nat.add_le_add_left (by decide) _) cf) (by omega)
+      (Nat.le_trans (Nat.add_le_add_left (by decide) _) cf) (by omega_arith)
   refine wp_lwz (a := matrixCell (memP s₀) c) (by decide) (by rw [a₁]; simp [matrixCell])
     ⟨_, List.mem_append_right _ (mW _ h₁.inv), c0⟩ fun s₂ u₂ => ?_
   have h₂ := h₁.of_only (Only.of_upd u₂)

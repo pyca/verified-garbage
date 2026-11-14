@@ -13,7 +13,7 @@ emitted for the `x2` with the SHA-3 extension (`paired`), with each backend's
 single-state permutation; its sponge path (one state at a time, over the
 backend's sponge functions) for the baseline `x2` and the baseline backend
 only (`sponge`); and nothing for the baseline `x2` with the SHA-3 backend.
-Instances are named by `Emit.qualifiedName` from `parts`, and need both
+Instances are named by `qualifiedName` from `parts`, and need both
 variants' CPU features (`features`).
 -/
 
@@ -29,7 +29,7 @@ def paired (x2 : X2Permutation) : Bool := x2.sha3
 /-- The sponge path is emitted: both variants are the baseline. -/
 def sponge (x2 : X2Permutation) (v : Permutation) : Bool := !x2.sha3 && !v.callee.pairedSha3
 
-/-- The tags and suffixes of the two variants, for `Emit.qualifiedName`. -/
+/-- The tags and suffixes of the two variants, for `qualifiedName`. -/
 def parts (x2 : X2Permutation) (v : Permutation) : List (String × String) :=
   [("x2", x2.suffix), ("keccak", v.callee.suffix)]
 

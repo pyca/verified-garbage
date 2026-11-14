@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Words that are constant on each row
@@ -27,12 +28,12 @@ theorem testBit_rowsOf (w : Nat) (f : Nat → Bool) (n i : Nat) :
     have hlane : ((2 ^ w - 1) <<< (w * n)).testBit i = (decide (w * n ≤ i) && decide (i < w * (n + 1))) := by
       rw [Nat.testBit_shiftLeft, Nat.testBit_two_pow_sub_one]
       by_cases h : w * n ≤ i <;> simp only [h, decide_true, decide_false, Bool.true_and, Bool.false_and]
-      congr 1; apply propext; rw [Nat.mul_succ]; omega
+      congr 1; apply propext; rw [Nat.mul_succ]; omega_using [h]
     by_cases hi : i < w * n
-    · have : ¬ w * n ≤ i := by omega
+    · have : ¬ w * n ≤ i := by omega_using [hi]
       cases f n <;> simp [hi, hlane, this, Nat.lt_of_lt_of_le hi (Nat.mul_le_mul_left w (Nat.le_succ n))]
     · by_cases hi' : i < w * (n + 1)
-      · have hd : i / w = n := Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega)
+      · have hd : i / w = n := Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega_using [hi])
           (by rw [Nat.mul_comm]; exact hi')
         cases hf : f n <;> simp [hi, hi', hd, hf, hlane, Nat.le_of_not_lt hi]
       · cases f n <;> simp [hi, hi', hlane]

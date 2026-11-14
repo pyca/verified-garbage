@@ -44,31 +44,31 @@ theorem loadExponent_ok {s : State} {B : Addr} {Z n len : Nat} {p : BitVec 32}
   have source : v.gpr .esi = p := by rw [V.other _ (by decide), U.gpr]
   have count : v.gpr .ecx = BitVec.ofNat 32 len := V.gpr
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.loadBE_ok hv.old.workspace (by decide)
-    (by unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega) positive bound (by rw [source]; exact fit) count
+    (by unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head]) positive bound (by rw [source]; exact fit) count
     (by rw [source, K.2.1, K.2.2]; exact readable) (by rw [source]; exact separate))
     fun w ⟨value, Ow, Kw⟩ => ?_)
-  have hw := hv.keep Kw (Ow.mono (Nat.zero_le _) (by unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega))
+  have hw := hv.keep Kw (Ow.mono (Nat.zero_le _) (by unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head]))
   rw [memory, source, wordsVal_eq_val32] at value
   change val32 w.mem B kEv 2 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr p) len) at value
   have eFit := h.arr_fit (j := aE) (by decide)
   unfold S at eFit
   have eStart := VG.Proof.Rsa.X86.Keys.arr_end (w := n) (show 0 < aE by decide)
-  have hdrArr : VG.Impl.Rsa.X86.Keys.hdr ≤ arr n 0 := by unfold VG.Proof.Rsa.X86.Keys.arr; omega
-  refine WP.mono (widen_ok hw .exponent (arr aE) (.fixed kEv) (by simp only [Width.words]; omega)
-    (by change arr n aE + _ ≤ Z; omega)
-    (by change kEv + 4 * 2 ≤ Z; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega)
-    (Or.inl (by change kEv + 4 * 2 ≤ arr n aE; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega)))
+  have hdrArr : VG.Impl.Rsa.X86.Keys.hdr ≤ arr n 0 := by unfold VG.Proof.Rsa.X86.Keys.arr; omega_using []
+  refine WP.mono (widen_ok hw .exponent (arr aE) (.fixed kEv) (by simp only [Width.words]; omega_using [size])
+    (by change arr n aE + _ ≤ Z; omega_using [eFit])
+    (by change kEv + 4 * 2 ≤ Z; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [head])
+    (Or.inl (by change kEv + 4 * 2 ≤ arr n aE; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [eStart, hdrArr])))
     fun t ⟨ht, Ot, _, copied, Kt⟩ => ?_
   change Outside B (arr n aE) (4 * (n + 2)) w.mem t.mem at Ot
   change val32 t.mem B (arr n aE) n = val32 w.mem B kEv 2 at copied
   have exponent : val32 t.mem B kEv 2 = val32 w.mem B kEv 2 :=
-    Ot.val32 (Or.inl (by unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega)) (by decide)
+    Ot.val32 (Or.inl (by unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [eStart, hdrArr])) (by decide)
   refine ⟨ht, ?_, exponent.trans value, copied.trans exponent.symm,
     (K.mono (by decide)).trans (Kw.trans (Kt.mono (by decide)))⟩
   have first : Outs B (VG.Proof.RsaKeyGen.X86.Key.loadExponentRanges n) s.mem w.mem := by
     rw [← memory]
     exact Outs.of_outside Ow (by simp [VG.Proof.RsaKeyGen.X86.Key.loadExponentRanges])
-  exact first.trans (Outs.of_outside (Ot.mono (o' := arr n aE) (n' := S n) (Nat.le_refl _) (by unfold S; omega))
+  exact first.trans (Outs.of_outside (Ot.mono (o' := arr n aE) (n' := S n) (Nat.le_refl _) (by unfold S; omega_using []))
     (by simp [VG.Proof.RsaKeyGen.X86.Key.loadExponentRanges]))
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

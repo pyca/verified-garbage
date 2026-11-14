@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateResidue
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -91,6 +92,10 @@ structure BlocksImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The residue analysis of `vg_poly1305_update` over it, if the analysis
+  handles it: that instance then returns without secret residue
+  (`updateReg`). -/
+  update : Option (RScrub.Analysed Spec.Poly1305.updateApi.sig 160 [] (updateCode name code)) := none
 
 namespace BlocksImpl
 
@@ -118,6 +123,7 @@ def scalar : BlocksImpl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := Impl.Poly1305.X86_64.Blocks.features .scalar
+  update := some scalarUpdate
 
 theorem avx2_keeps : ((instrs Impl.Poly1305.X86_64.Avx2.blocksAvx2).all fun i =>
     !Taint.clobbers i .rsp) = true := by

@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyQ
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Table
-import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.ModExpPow
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
@@ -30,43 +34,74 @@ open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE VG.Impl.Dsa.PPC64
 open VG.Proof.Bignum (slot slot_sep)
 
 /-- The registers `rrQ` writes. -/
-def rrRegs : List Reg := [.r5, .r8, .r9, .r0, .r3, .r4, .r14, .r15, .r16, .r17, .r20] ++ copyRegs
+def rrRegs : List Reg :=
+  [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24]
 
-/-- `rrQ`: `R² mod q` into arrays 1 and 8; array 9 is kept. -/
+/-- `rrQ`: `-q⁻¹ mod 2³²` into `r12`, `R² mod q` into arrays 1 and 8 (`Precompute.r2Prime`);
+array 9 is kept. -/
 theorem rrQ_ok {s : State} {L : Lay} {key sig dig : Addr} (h : QS s L key sig dig)
-    (hq : 2 ≤ arrQ s.mem L 0) :
+    (hq : 2 ≤ arrQ s.mem L 0) (hqo : arrQ s.mem L 0 % 2 = 1) :
     WP isa rrQ s fun t =>
       (QS t L key sig dig ∧ arrQ t.mem L 8 = 2 ^ (128 * 4) % arrQ s.mem L 0 ∧ QArr L s.mem t.mem ∧
-        arrQ t.mem L 9 = arrQ s.mem L 9) ∧
+        arrQ t.mem L 9 = arrQ s.mem L 9 ∧ arrQ t.mem L 1 = 2 ^ (128 * 4) % arrQ s.mem L 0) ∧
         Keep rrRegs s t := by
   have e := h.inq.env
+  have hnw := e.hs.nowrap
+  have e0 := slot_eq 4 0
+  have hlow : (word s.mem L.Q (slot 4 0)).toNat % 2 = 1 := by
+    have h1 := word_eq_w32 s.mem L.Q (slot 4 0)
+    have h2 : val32 s.mem L.Q (slot 4 0) (7 + 1) =
+        w32 s.mem L.Q (slot 4 0) + 2 ^ 32 * val32 s.mem L.Q (slot 4 0 + 4) 7 := rfl
+    have h3 : val32 s.mem L.Q (slot 4 0) (7 + 1) = arrQ s.mem L 0 := rfl
+    omega_arith
   unfold rrQ
   refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (e.base (rd := .r5) (by decide) (by decide) 1) fun s₁ ⟨⟨a5, m1⟩, k1⟩ => ?_
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (Pub.minv_ok e.hs e.h10 (by omega_arith) hlow) fun s₁ ⟨⟨r12lt, r12inv, m1⟩, k1⟩ => ?_
   have e1 := e.keep k1 (by decide)
-  refine WP.mono (e1.base (rd := .r8) (by decide) (by decide) 2) fun s₂ ⟨⟨a8, m2⟩, k2⟩ => ?_
+  refine WP.mono (e1.base (rd := .r5) (by decide) (by decide) 1) fun s₂ ⟨⟨a5, m2⟩, k2⟩ => ?_
   have e2 := e1.keep k2 (by decide)
-  refine WP.mono (e2.base (rd := .r9) (by decide) (by decide) 3) fun s₃ ⟨⟨a9, m3⟩, k3⟩ => ?_
+  refine WP.mono (e2.base (rd := .r8) (by decide) (by decide) 2) fun s₃ ⟨⟨a8, m3⟩, k3⟩ => ?_
   have e3 := e2.keep k3 (by decide)
-  have hm3 : s₃.mem = s.mem := by rw [m3, m2, m1]
-  have k13 := (k1.trans k2).trans k3
-  refine WP.seq (WP.mono (r2_ok e3.hs ((k3.gpr .r8 (by decide)).trans a8) a9 e3.h10
-    ((k3.gpr .r5 (by decide)).trans ((k2.gpr .r5 (by decide)).trans a5)) e3.h11 (by decide) (by decide)
-    (by decide) (by rw [hm3]; exact hq)) fun s₄ ⟨v1, o4, k4⟩ => ?_)
-  rw [hm3] at v1 o4
+  refine WP.mono (e3.base (rd := .r9) (by decide) (by decide) 3) fun s₄ ⟨⟨a9, m4⟩, k4⟩ => ?_
   have e4 := e3.keep k4 (by decide)
-  refine WP.mono (copy_ok e4 (o := 8) (a := 1) (by decide) (by decide) (by decide)) fun t ⟨⟨v8, o5⟩, k5⟩ => ?_
-  have qa : QArr L s.mem t.mem :=
-    (QArr.of o4 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)).trans
-      (QArr.of o5 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith))
-  have kt := (k13.trans k4).trans k5
-  refine ⟨⟨h.step kt (by decide), ?_, qa, ?_⟩, kt.mono (by decide)⟩
-  · generalize (2 : Nat) ^ (128 * 4) = R at v1 ⊢
-    exact v8.trans v1
-  · show val32 t.mem L.Q (slot 4 9) (2 * 4) = val32 s.mem L.Q (slot 4 9) (2 * 4)
-    rw [Outside.val32 o5 (by simp only [slot_eq]; omega_arith) (by decide), Outside.val32 o4 (by simp only [slot_eq]; omega_arith)
-      (by decide)]
+  have e5 := e4
+  have hm5 : s₄.mem = s.mem := by rw [m4, m3, m2, m1]
+  have k15 := ((k1.trans k2).trans k3).trans k4
+  have a5' : s₄.gpr .r5 = off L.Q (slot 4 1) := by
+    rw [k4.gpr .r5 (by decide), k3.gpr .r5 (by decide)]; exact a5
+  have a8' : s₄.gpr .r8 = off L.Q (slot 4 2) := by
+    rw [k4.gpr .r8 (by decide)]; exact a8
+  have a9' : s₄.gpr .r9 = off L.Q (slot 4 3) := a9
+  have g12 : s₄.gpr .r12 = s₁.gpr .r12 := by
+    rw [k4.gpr .r12 (by decide), k3.gpr .r12 (by decide), k2.gpr .r12 (by decide)]
+  have r12' : (s₄.gpr .r12).toNat < 2 ^ 32 := by rw [g12]; exact r12lt
+  have inv' : (w32 s₄.mem L.Q (slot 4 0) * (s₄.gpr .r12).toNat + 1) % 2 ^ 32 = 0 := by
+    rw [g12, hm5]; exact r12inv
+  have v0 : val32 s₄.mem L.Q (slot 4 0) (2 * 4) = arrQ s.mem L 0 := by rw [hm5]
+  have fin : ∀ u, (val32 u.mem L.Q (slot 4 1) (2 * 4) = 2 ^ (128 * 4) % arrQ s.mem L 0 ∧
+      Mont.Outside L.Q (slot 4 1) (24 * (4 + 2)) s₄.mem u.mem ∧ Keep rrRegs s₄ u) →
+      WP isa (VG.Impl.MillerRabin.PPC64LE.copy 8 1) u fun t =>
+        (QS t L key sig dig ∧ arrQ t.mem L 8 = 2 ^ (128 * 4) % arrQ s.mem L 0 ∧ QArr L s.mem t.mem ∧
+          arrQ t.mem L 9 = arrQ s.mem L 9 ∧ arrQ t.mem L 1 = 2 ^ (128 * 4) % arrQ s.mem L 0) ∧ Keep rrRegs s t := by
+    intro u ⟨x1, o4, ku⟩
+    rw [hm5] at o4
+    have eu := e5.keep ku (by decide)
+    refine WP.mono (copy_ok eu (o := 8) (a := 1) (by decide) (by decide) (by decide)) fun t ⟨⟨v8, o5⟩, k6⟩ => ?_
+    have qa : QArr L s.mem t.mem :=
+      (QArr.of o4 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith)).trans
+        (QArr.of o5 (by simp only [slot_eq]; omega_arith) (by simp only [slot_eq]; omega_arith))
+    have kt := (k15.trans ku).trans k6
+    refine ⟨⟨h.step kt (by decide), ?_, qa, ?_, ?_⟩, kt.mono (by decide)⟩
+    · generalize (2 : Nat) ^ (128 * 4) = R at x1 ⊢
+      exact v8.trans x1
+    · show val32 t.mem L.Q (slot 4 9) (2 * 4) = val32 s.mem L.Q (slot 4 9) (2 * 4)
+      rw [Outside.val32 o5 (by simp only [slot_eq]; omega_arith) (by decide),
+        Outside.val32 o4 (by simp only [slot_eq]; omega_arith) (by decide)]
+    · show val32 t.mem L.Q (slot 4 1) (2 * 4) = _
+      rw [Outside.val32 o5 (by simp only [slot_eq]; omega_arith) (by decide)]; exact x1
+  exact WP.seq (WP.mono (Pre.r2Prime_ok e5.hs a8' a9' e5.h10 a5' e5.h11 (by decide) (by decide) (by decide) r12' inv'
+    (by rw [v0]; exact hq) (by rw [v0]; exact hqo)) fun u ⟨x1, o, ku⟩ => fin u ⟨by rw [x1, v0], o, ku.mono (by decide)⟩)
 
 /-- A subtraction `[t] := [a] − [m]` without a borrow, `[a] ≥ [m]`. -/
 theorem sub_val {n A M T c : Nat} (hc : c ≤ 1) (hv : T + M = A + 2 ^ (32 * n) * c)

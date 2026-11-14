@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Siv
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-SIV: lemmas about the specification
@@ -46,7 +47,7 @@ theorem macWith_split₂ (ciph : Spec.Cmac.Cipher) (k1 k2 : List Byte) {a b last
     Spec.Cmac.macWith ciph 16 k1 k2 (a ++ b ++ last) =
       ciph (Spec.Cmac.xor (chain ciph (chain ciph (zeros 16) (blocks 16 a)) (blocks 16 b))
         (lastBlock 16 k1 k2 last)) := by
-  rw [macWith_split ciph k1 k2 (by simp [List.length_append]; omega) hl hne,
+  rw [macWith_split ciph k1 k2 (by simp [List.length_append]; omega_using [ha, hb]) hl hne,
     Proof.Cmac.Stream.blocks_append ha, Proof.Cmac.chain_append]
 
 /-- The CMAC of a string `S`: the chaining value of its whole blocks but its
@@ -60,13 +61,13 @@ theorem macWith_chained (ciph : Spec.Cmac.Cipher) (k1 k2 S : List Byte) :
   have hc := Proof.Cmac.Stream.chainedLen_add_held S.length
   have hh := Proof.Cmac.Stream.held_le S.length
   refine macWith_split ciph k1 k2 ?_ ?_ ?_
-  · rw [List.length_take, Nat.min_eq_left (by omega)]; exact Proof.Cmac.Stream.chainedLen_mod _
-  · rw [List.length_drop]; unfold Proof.Cmac.Stream.held at hh; omega
+  · rw [List.length_take, Nat.min_eq_left (by omega_using [hc])]; exact Proof.Cmac.Stream.chainedLen_mod _
+  · rw [List.length_drop]; unfold Proof.Cmac.Stream.held at hh; omega_using [hh]
   · by_cases h0 : S.length = 0
     · left; simp [List.length_eq_zero_iff.mp h0]
     · right
       have := Proof.Cmac.Stream.held_pos (Nat.pos_of_ne_zero h0)
-      rw [List.length_drop]; unfold Proof.Cmac.Stream.held at this; omega
+      rw [List.length_drop]; unfold Proof.Cmac.Stream.held at this; omega_using [this]
 
 /-! ## Finishing S2V -/
 
@@ -80,11 +81,11 @@ followed by the rest of `S` xorend `D`. -/
 theorem xorend_split (s d : List Byte) {a : Nat} (ha : a + d.length ≤ s.length) :
     Spec.Siv.xorend s d = s.take a ++ Spec.Siv.xorend (s.drop a) d := by
   simp only [Spec.Siv.xorend, List.length_drop, List.drop_drop, List.take_drop]
-  have e : a + (s.length - a - d.length) = s.length - d.length := by omega
+  have e : a + (s.length - a - d.length) = s.length - d.length := by omega_using [ha]
   rw [e, ← List.append_assoc]
   congr 1
   conv => lhs; rw [← List.take_append_drop a (s.take (s.length - d.length))]
-  rw [List.take_take, Nat.min_eq_left (by omega)]
+  rw [List.take_take, Nat.min_eq_left (by omega_using [ha])]
 
 /-- S2V's end for a last string `P` of at least 16 bytes, split at any
 `a ≤ len(P) − 16`: the CMAC of the first `a` bytes of `P` followed by the
@@ -92,16 +93,16 @@ rest of `P` xorend `D`. -/
 theorem s2vFinish_long (mac : List Byte → List Byte) {d P : List Byte} (hd : d.length = 16)
     {a : Nat} (ha : a + 16 ≤ P.length) :
     Spec.Siv.s2vFinish mac d P = mac (P.take a ++ Spec.Siv.xorend (P.drop a) d) := by
-  rw [Spec.Siv.s2vFinish, ite_eq_left_of_eq_true _ _ (eq_true (show P.length ≥ 16 by omega)), xorend_split P d (a := a) (by omega)]
+  rw [Spec.Siv.s2vFinish, ite_eq_left_of_eq_true _ _ (eq_true (show P.length ≥ 16 by omega_using [ha])), xorend_split P d (a := a) (by omega_using [hd, ha])]
 
 /-- S2V's end for a last string `P` shorter than 16 bytes. -/
 theorem s2vFinish_short (mac : List Byte → List Byte) (d : List Byte) {P : List Byte}
     (hL : P.length < 16) :
     Spec.Siv.s2vFinish mac d P = mac (Spec.Siv.xor (Spec.Siv.dbl d) (Spec.Siv.pad P)) := by
-  rw [Spec.Siv.s2vFinish, ite_eq_right_of_eq_false _ _ (eq_false (show ¬ P.length ≥ 16 by omega))]
+  rw [Spec.Siv.s2vFinish, ite_eq_right_of_eq_false _ _ (eq_false (show ¬ P.length ≥ 16 by omega_using [hL]))]
 
 theorem length_pad {P : List Byte} (hL : P.length < 16) : (Spec.Siv.pad P).length = 16 := by
-  simp [Spec.Siv.pad, Spec.Siv.zeros]; omega
+  simp [Spec.Siv.pad, Spec.Siv.zeros]; omega_using [hL]
 
 theorem length_xorend {s d : List Byte} (h : d.length ≤ s.length) :
     (Spec.Siv.xorend s d).length = s.length := by
@@ -114,7 +115,7 @@ theorem length_flatMap16 (g : Nat → List Byte) (hg : ∀ i, (g i).length = 16)
     ((List.range n).flatMap g).length = 16 * n := by
   induction n with
   | zero => simp
-  | succ n ih => rw [List.range_succ, List.flatMap_append, List.length_append, ih]; simp [hg]; omega
+  | succ n ih => rw [List.range_succ, List.flatMap_append, List.length_append, ih]; simp [hg]; omega_using []
 
 theorem getD_flatMap16 (g : Nat → List Byte) (hg : ∀ i, (g i).length = 16) (n : Nat) {p : Nat}
     (hp : p < 16 * n) : ((List.range n).flatMap g).getD p 0 = (g (p / 16)).getD (p % 16) 0 := by
@@ -125,11 +126,11 @@ theorem getD_flatMap16 (g : Nat → List Byte) (hg : ∀ i, (g i).length = 16) (
     by_cases h : p < 16 * n
     · rw [List.getElem?_append_left (by rw [length_flatMap16 g hg]; exact h), ← List.getD_eq_getElem?_getD,
         ih h]
-    · rw [List.getElem?_append_right (by rw [length_flatMap16 g hg]; omega), length_flatMap16 g hg]
+    · rw [List.getElem?_append_right (by rw [length_flatMap16 g hg]; omega_using [h]), length_flatMap16 g hg]
       simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
       rw [← List.getD_eq_getElem?_getD]
-      have e1 : p / 16 = n := by omega
-      have e2 : p % 16 = p - 16 * n := by omega
+      have e1 : p / 16 = n := by omega_using [hp, h]
+      have e2 : p % 16 = p - 16 * n := by omega_using [hp, h]
       rw [e1, e2]
 
 /-- The keystream block of CTR from the counter `q` for block `i`. -/
@@ -139,7 +140,7 @@ abbrev ksBlock (ciph : Spec.Cmac.Cipher) (q : List Byte) (i : Nat) : List Byte :
 theorem length_ctr (ciph : Spec.Cmac.Cipher) (hc : ∀ y, (ciph y).length = 16) (q x : List Byte) :
     (Spec.Siv.ctr ciph q x).length = x.length := by
   simp only [Spec.Siv.ctr, length_xor, length_flatMap16 _ (fun i => hc _)]
-  omega
+  omega_using []
 
 /-- Byte `p` of CTR's output. -/
 theorem ctr_getD (ciph : Spec.Cmac.Cipher) (hc : ∀ y, (ciph y).length = 16) (q x : List Byte) {p : Nat}
@@ -148,12 +149,12 @@ theorem ctr_getD (ciph : Spec.Cmac.Cipher) (hc : ∀ y, (ciph y).length = 16) (q
   have hl := length_flatMap16 (fun i => ciph (Spec.Siv.be128 (Spec.Siv.beNat q + i))) (fun i => hc _)
     ((x.length + 15) / 16)
   simp only [Spec.Siv.ctr, Spec.Siv.xor, List.getD_eq_getElem?_getD, List.getElem?_zipWith,
-    List.getElem?_eq_getElem hp, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega)]
+    List.getElem?_eq_getElem hp, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega_using [hp])]
   show x[p] ^^^ _ = _
   congr 1
   have h := getD_flatMap16 (fun i => ciph (Spec.Siv.be128 (Spec.Siv.beNat q + i))) (fun i => hc _)
-    ((x.length + 15) / 16) (p := p) (by omega)
-  simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega),
+    ((x.length + 15) / 16) (p := p) (by omega_using [hp])
+  simpa only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show p < _ by rw [hl]; omega_using [hp]),
     Option.getD_some] using h
 
 end VG.Proof.Siv

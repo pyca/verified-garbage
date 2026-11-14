@@ -161,19 +161,19 @@ theorem kept_buf {d : Nat} (h₁ : 992 ≤ d) (h₂ : d + 8 ≤ 1064) {R : Regio
   · exact (h.kv.sub_left hs).sub_right hr
   · exact (h.kc.sub_left hs).sub_right hr
   · exact (h.ko.sub_left hs).sub_right hr
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hr
+  · exact (Offset.disjoint _ (by omega_using [h₂]) (by omega_using [h₂]) (by omega_using [])).sub_right hr
 
 /-- A range in our stack arguments is disjoint from a part of a writable buffer. -/
 theorem args_buf {d n : Nat} (h₁ : 1248 ≤ d) (h₂ : d + n ≤ 1288) {R : Region} (hR : IsBuf L R)
     {r : Region} (hr : Region.Sub r R) : Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
   have hnB := h.nB
-  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega_using [h₂])
   rcases hR with rfl | rfl | rfl | rfl | rfl
   · exact (h.ba.symm.sub_left hs).sub_right hr
   · exact (h.va.symm.sub_left hs).sub_right hr
   · exact (h.ca.symm.sub_left hs).sub_right hr
   · exact (h.oa.symm.sub_left hs).sub_right hr
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hr
+  · exact (Offset.disjoint _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])).sub_right hr
 
 end Lay.Ok
 
@@ -245,7 +245,7 @@ theorem InBuf.sub {L : Lay} {r : Region} (h : InBuf L r) : ∃ R, IsBuf L R ∧ 
 theorem Within.trans {r R S : Region} (h : Within r R) (h' : Within R S) : Within r S := by
   obtain ⟨o, hb, hl⟩ := h
   obtain ⟨o', hb', hl'⟩ := h'
-  refine ⟨o' + o, ?_, by omega⟩
+  refine ⟨o' + o, ?_, by omega_using [hl, hl']⟩
   rw [hb, hb', BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 theorem covers {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem} {t : State}
@@ -273,7 +273,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 992) :
     rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 992) (a := m) (b := 992) hm, BitVec.add_sub_cancel]
   show Region.Sub ⟨B + BitVec.ofNat 64 992 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hm])
 
 /-- A call of verified code (see `WP.callAny`), which uses at most 992 bytes
 of stack and is given regions within ours to read, and within the writable
@@ -292,7 +292,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
       k.post (t.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s') :
     WP isa (.call n c) t Q := by
   obtain ⟨hcov, hcovw⟩ := covers hc hsub hwsub
-  refine WP.callAny hv hpre hcov hcovw (fun s' hrd hwr hsp hf hcs hpost => ?_) (by omega)
+  refine WP.callAny hv hpre hcov hcovw (fun s' hrd hwr hsp hf hcs hpost => ?_) (by omega_using [hd])
   have hf' : Frame (wr ++ [⟨L.B, 992⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -309,8 +309,8 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
     rcases List.mem_append.mp hR with hR | hR
     · obtain ⟨R', hR', hs⟩ := (hwsub R hR).sub
       rcases hdd with hdd | hdd
-      · exact hL.kept_buf (by omega) (by omega) hR' hs
-      · exact hL.args_buf (by omega) (by omega) hR' hs
+      · exact hL.kept_buf (by omega_using [hdd]) (by omega_using [hdd]) hR' hs
+      · exact hL.args_buf (by omega_using [hdd]) (by omega_using [hdd]) hR' hs
     · simp only [List.mem_singleton] at hR; subst hR
       exact Offset.disjoint_base _ (by omega) (by omega)
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, (hcs _ (by decide)).trans hc.s3,
@@ -324,7 +324,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem}
     · exact ⟨_, by simp, hs⟩
     · exact ⟨_, by simp, hs⟩
     · exact ⟨L.STK, by simp, fun x hx => (Offset.sub_base L.B (d := 1072) (n := 168) (k := 1248)
-        (by omega)) x (hs x hx)⟩
+        (by omega_using [])) x (hs x hx)⟩
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨L.STK, by simp, Region.sub_prefix (by decide)⟩
 
@@ -349,11 +349,11 @@ theorem lay_ok {s : State} (h : scryptRV.pre s) : (lay s).Ok := by
     simp only [lay]
     simp only [stackBytes] at hst
     rw [Offset.toNat_sub_ofNat s.sp 1248]
-    omega
+    omega_using [hst]
   have nB : (lay s).B.toNat + 1288 ≤ 2 ^ 64 := by
-    simp only [stackBytes] at hst; rw [tB]; omega
+    simp only [stackBytes] at hst; rw [tB]; omega_using [h40]
   have aB : (lay s).B.toNat % 16 = 0 := by
-    simp only [stackBytes] at hst; rw [tB]; omega
+    simp only [stackBytes] at hst; rw [tB]; omega_using [hal]
   exact ⟨pb, pv, pc, po, sb, sv, sc, so, bv, bc, bo, ea ▸ ba, vc, vo, ea ▸ va, co, ea ▸ ca, ea ▸ oa,
     kp, ks, kb, kv, kc, ko, np, ns, nb, nv, nc, no, nB, aB, rpos, bmod, vmod, hval, olb, slen⟩
 

@@ -45,10 +45,10 @@ theorem ArgsKeep.agree {n : Nat} {s₀ s₀' s s' : State} (hk : ArgsKeep n s₀
     (argMem_of hsp' f fun i hi => by rw [hk.arg i hi, hk'.arg i hi, ha i hi])
 
 theorem ArgsKeep.weaken {n m : Nat} {s₀ s : State} (h : ArgsKeep n s₀ s) (hm : m ≤ n) : ArgsKeep m s₀ s :=
-  ⟨h.sp, h.rd, h.wr, fun i hi => h.arg i (by omega)⟩
+  ⟨h.sp, h.rd, h.wr, fun i hi => h.arg i (by omega_using [hm, hi])⟩
 
 theorem args_sub (s : State) {m n : Nat} (hm : m ≤ n) : Region.Sub (args s m) (args s n) :=
-  Region.sub_prefix (by omega)
+  Region.sub_prefix (by omega_using [hm])
 
 theorem rel_ite {F F' : State → Prop} {t e : Prog isa} (b : Bool) (hz : ∀ s, F s → s.z = b)
     (hz' : ∀ s, F' s → s.z = b) (ht : b = true → RelCT isa (fun a b => F a ∧ F' b) t fun _ _ => True)

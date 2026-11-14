@@ -103,7 +103,7 @@ theorem pdEntry_ok {s : State} {B : Addr} (hB : stackArg s 0 = B)
   rw [hm]
   intro x hx
   have e : ∀ i, i < 22 → ∀ (m : Mem) (v : BitVec 64), (m.writeW (off B (8 * i)) v) x = m x := fun i hi m v =>
-    writeW_outside m B v (d := 8 * i) (by omega) x (by omega)
+    writeW_outside m B v (d := 8 * i) (by omega_using [hi]) x (by omega_using [hx, hi])
   rw [e sIn (by decide), e sElen (by decide), e sE (by decide), e sK (by decide), e sN (by decide),
     e sOut (by decide)]
 
@@ -143,16 +143,16 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
   have hs : Scr s (stackArg s 0) ((stackArg s 1).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   have hpre : (⟨s.gpr .x2, (s.gpr .x3).toNat * 8⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  refine ⟨hk1, hk2, hL1, hL2, hpl, by omega, hs,
-    ⟨pdArgs s, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
-    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dps (contains_byte _ (by omega) (by omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
+  refine ⟨hk1, hk2, hL1, hL2, hpl, by omega_using [hsl], hs,
+    ⟨pdArgs s, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩,
+    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega_using [hpl, hi]) (by omega_using [hk2, hi])⟩,
+    fun j hj => out_scr dps (contains_byte _ (by omega_using [hpl, hj]) (by omega_using [wP])),
+    src_of_region (by rw [hrd]; simp) (by omega_using []) des,
+    src_of_region (by rw [hrd, ← hil]; simp) (by omega_using []) (by rw [← hil]; exact dis),
     span_of_region (by rw [hrd, ← hil]; simp),
-    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
+    fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_using [hj]) (by omega_using [])⟩,
     ⟨_, by rw [hwr]; exact List.mem_cons_self .., by simp [Region.Contains]⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega))⟩
+    fun j hj => out_scr dOs (contains_byte _ (by omega_using [hj]) (by omega_using []))⟩
 
 /-- `pre`'s words after the entry, as before it. -/
 theorem pre_wv_entry {s t₁ : State} (c : PdCtx s)
@@ -160,7 +160,7 @@ theorem pre_wv_entry {s t₁ : State} (c : PdCtx s)
     (he : e + 8 * (((s.gpr .x1).toNat + 7) / 8) ≤ 16 * (((s.gpr .x1).toNat + 7) / 8)) :
     wv t₁.mem (s.gpr .x2) e (((s.gpr .x1).toNat + 7) / 8) = wv s.mem (s.gpr .x2) e (((s.gpr .x1).toNat + 7) / 8) :=
   wv_congr fun i hi => Mem.readW_congr fun b hb => i₁ _ (by
-    have := c.hps (e + 8 * i + b) (by omega); rwa [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat])
+    have := c.hps (e + 8 * i + b) (by omega_using [he, hi, hb]); rwa [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat])
 
 /-- `rest`'s hypotheses, after the entry and the load, for values that pass
 the checks. -/
@@ -185,10 +185,10 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (h0 : t₁.gpr .x0 = stackA
   have hk1 := c.hk1
   have hk2 := c.hk2
   have hn := c.hs.nowrap
-  have hz : slot (((s.gpr .x1).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega
+  have hz : slot (((s.gpr .x1).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega_using [hZ']
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
   have i₂ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₂.mem :=
-    (InScr.of_outside ho₁ (by omega)).trans (InScr.of_frm f₂ fun r hr => Nat.le_trans (pdLoadRanges_le _ r hr) hz)
+    (InScr.of_outside ho₁ (by omega_using [hZ'])).trans (InScr.of_frm f₂ fun r hr => Nat.le_trans (pdLoadRanges_le _ r hr) hz)
   have kk := k₁.trans k₂
   exact
     { scr := c.hs.congr kk.wr, x0 := (k₂.gpr .x0 (by decide)).trans h0, z := hz, k1 := hk1, k2 := hk2,
@@ -222,15 +222,15 @@ theorem pdCodeWith_correct (rest : Prog isa)
       (.ite (.zero .x .x9) Precomputed.fail rest))) s fun s' => abiPreserved s s' ∧ pdContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, hg, hp⟩
-  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 22, InRegions s.wr (off (stackArg s 0) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ', hi])
   refine WP.seq (WP.mono (pdEntry_ok rfl hw c.ha0) fun t₁ ⟨h0, hO, hN, hK, hE, hL, hIn, ho₁, k₁⟩ => ?_)
-  have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
-  have hz : slot (((s.gpr .x1).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega
-  refine WP.seq (WP.mono (pdLoad_ok (c.hs.congr k₁.wr) h0 hz (by omega) (by omega) (by rw [hK, ofNat_toNat64])
+  have i₁ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_using [hZ'])
+  have hz : slot (((s.gpr .x1).toNat + 7) / 8) 8 ≤ (stackArg s 1).toNat * 8 := by unfold slot hdrBytes; omega_using [hZ']
+  refine WP.seq (WP.mono (pdLoad_ok (c.hs.congr k₁.wr) h0 hz (by omega_using [hk1]) (by omega_using [hk2]) (by rw [hK, ofNat_toNat64])
     hN (fun i hi => by rw [k₁.rd, k₁.wr]; exact c.hpr i hi) c.hps)
     fun t₂ ⟨hN₂, hR₂, hW₂, hb₂, hz₂, f₂, k₂⟩ => ?_)
-  rw [pre_wv_entry c i₁ (by omega)] at hN₂
-  rw [pre_wv_entry c i₁ (by omega)] at hR₂
+  rw [pre_wv_entry c i₁ (by omega_using [])] at hN₂
+  rw [pre_wv_entry c i₁ (by omega_using [])] at hR₂
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
   have i₂ : InScr (stackArg s 0) ((stackArg s 1).toNat * 8) s.mem t₂.mem :=
     i₁.trans (InScr.of_frm f₂ fun r hr => Nat.le_trans (pdLoadRanges_le _ r hr) hz)
@@ -270,24 +270,24 @@ theorem pdCodeWith_correct (rest : Prog isa)
   refine WP.ite (!cb) (by rw [eval_zero, hz₂']; cases cb <;> rfl) (fun hb => ?_) (fun hb => ?_)
   · -- Values of no modulus.
     have hcf : cb = false := by simpa using hb
-    refine WP.mono (pdFail_ok hs₂ h0₂ (by omega) (by omega) (by omega) hO₂ hK₂ hout₂)
+    refine WP.mono (pdFail_ok hs₂ h0₂ (by omega_using [hZ']) (by omega_using [hk1]) (by omega_using [hk2]) hO₂ hK₂ hout₂)
       fun t ⟨hbz, hx0, hfr, kf⟩ => fin t 0 false ⟨?_, by rw [hx0]; rfl,
         fun x _ hx => hfr x hx, kf⟩ fun nB hl hv hNv hRv => ?_
     · rw [← bytesAt_eq, hbz, i2osp_zero']
     obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
-    have := checks_true (by omega) (hN₂.trans hNv) hodd hlo
-      (by rw [hR₂, hRv]; exact Nat.mod_lt _ (by omega))
+    have := checks_true (by omega_using [hk1]) (hN₂.trans hNv) hodd hlo
+      (by rw [hR₂, hRv]; exact Nat.mod_lt _ (by omega_using [hodd]))
     rw [hcb, hcf] at this
     exact absurd this (by decide)
   · have hct : cb = true := by simpa using hb
     rw [hct] at hcb
-    obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega) hcb
+    obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega_using [hk1]) hcb
     have hpre := pdPre_of c h0 hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 hRN
     refine WP.mono (rest_ok hpre) fun t ⟨x, hx, hp⟩ => fin t _ _ hp fun nB hl hv hNv hRv => ?_
     rw [hN₂.trans hNv] at hx hp ⊢
     have hxX := hx (by
       rw [hR₂, hRv, Nat.mod_mod, ← Nat.pow_add, show 128 * (((s.gpr .x1).toNat + 7) / 8) =
-        64 * (((s.gpr .x1).toNat + 7) / 8) + 64 * (((s.gpr .x1).toNat + 7) / 8) by omega])
+        64 * (((s.gpr .x1).toNat + 7) / 8) + 64 * (((s.gpr .x1).toNat + 7) / 8) by omega_using []])
     refine ⟨rfl, ?_⟩
     rw [hxX]
 

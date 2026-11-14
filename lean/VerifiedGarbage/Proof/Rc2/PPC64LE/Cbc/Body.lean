@@ -1,16 +1,145 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Step
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
+public import VerifiedGarbage.Proof.Rc2.Contract
+import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+public import VerifiedGarbage.Proof.Rc2.PPC64LE.Run
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.CbcList
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Rc2.PPC64LE.Cbc.Call
+public import VerifiedGarbage.Impl.Rc2.PPC64LE.Cbc
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Rc2.PPC64LE.Cipher
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+
+/-! ### `Rc2.PPC64LE.Cbc.Step`, which only this module used -/
+
+section
+
+/-!
+# RC2-CBC on PPC64LE: one block
+
+`body_run`: an iteration of the loop takes the invariant `Inv` from `j` blocks
+done to `j + 1`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Rc2.PPC64LE.Cbc
+
+open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE VG.Impl.Rc2.PPC64LE.Cbc
+
+/-- The buffers: the schedule at `T`, the chaining value at `I`, `n` blocks
+at `D` and the working space at `W`, apart. -/
+structure Regions (T I D W : Addr) (n : Nat) : Prop where
+  TI : (⟨T, 128⟩ : Region).Disjoint ⟨I, 8⟩
+  TD : (⟨T, 128⟩ : Region).Disjoint ⟨D, 8 * n⟩
+  TW : (⟨T, 128⟩ : Region).Disjoint ⟨W, 512⟩
+  ID : (⟨I, 8⟩ : Region).Disjoint ⟨D, 8 * n⟩
+  IW : (⟨I, 8⟩ : Region).Disjoint ⟨W, 512⟩
+  DW : (⟨D, 8 * n⟩ : Region).Disjoint ⟨W, 512⟩
+  fit : 8 * n ≤ 2 ^ 64
+
+/-- After `j` of the `n` blocks, from memory `m₀` and with our caller's
+registers `g`. -/
+structure Inv (d : Spec.Rc2.Direction) (T I D W : Addr) (n : Nat) (g : Reg → BitVec 64) (m₀ : Mem)
+    (s₀ : State) (j : Nat) (t : State) : Prop where
+  rd : t.rd = [⟨T, 128⟩]
+  wr : t.wr = [⟨I, 8⟩, ⟨D, 8 * n⟩, ⟨W, 512⟩]
+  r26 : t.gpr .r26 = T
+  r27 : t.gpr .r27 = I
+  r28 : t.gpr .r28 = D + BitVec.ofNat 64 (8 * j)
+  r29 : t.gpr .r29 = BitVec.ofNat 64 (n - j)
+  r30 : t.gpr .r30 = W
+  pres : ∀ r ∈ preserved, r ∉ saved.map Prod.fst → t.gpr r = s₀.gpr r
+  saved : Spill.Saved W g saved t.mem
+  sched : Spec.Rc2.scheduleAt t.mem T = Spec.Rc2.scheduleAt m₀ T
+  done : Spec.Rc2.blocksAt t.mem D j =
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₀ T) d (Spec.Rc2.blockAt m₀ I) (Spec.Rc2.blocksAt m₀ D j)).1
+  iv : Spec.Rc2.blockAt t.mem I =
+    (Proof.Rc2.cbcBlocks (Spec.Rc2.scheduleAt m₀ T) d (Spec.Rc2.blockAt m₀ I) (Spec.Rc2.blocksAt m₀ D j)).2
+  rest : ∀ i, j ≤ i → i < n → Spec.Rc2.blockAt t.mem (D + BitVec.ofNat 64 (8 * i)) =
+    Spec.Rc2.blockAt m₀ (D + BitVec.ofNat 64 (8 * i))
+
+theorem saved_fits : ∀ p ∈ saved, p.2 % 8 = 0 ∧ p.2 < 32768 := by decide
+theorem saved_in : ∀ p ∈ saved, 256 ≤ p.2 ∧ p.2 + 8 ≤ 312 := by decide
+
+/-- What a step leaves alone: anything apart from the block, the chaining
+value and the block function's working space. -/
+theorem step_frame {T I D W : Addr} {n j : Nat} (R : Regions T I D W n) (hj : j < n) {m m' : Mem}
+    (F : Frame [⟨D + BitVec.ofNat 64 (8 * j), 8⟩, ⟨I, 8⟩, ⟨W, 256⟩] m m') :
+    Spec.Rc2.scheduleAt m' T = Spec.Rc2.scheduleAt m T ∧
+    (∀ g, Spill.Saved W g saved m → Spill.Saved W g saved m') ∧
+    (∀ i, i < n → i ≠ j → Spec.Rc2.blockAt m' (D + BitVec.ofNat 64 (8 * i)) =
+      Spec.Rc2.blockAt m (D + BitVec.ofNat 64 (8 * i))) ∧
+    Spec.Rc2.blocksAt m' D j = Spec.Rc2.blocksAt m D j := by
+  have hf := R.fit
+  have bj : Region.Sub ⟨D + BitVec.ofNat 64 (8 * j), 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hj])
+  have W256 : Region.Sub ⟨W, 256⟩ ⟨W, 512⟩ := Region.sub_prefix (by decide)
+  refine ⟨Proof.Rc2.scheduleAt_frame F T ?_, fun g sv => sv.frame F ?_, fun i hi hne => Proof.Rc2.blockAt_frame F _ ?_,
+    Proof.Rc2.blocksAt_frame F D j ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact R.TD.sub_right bj
+    · exact R.TI
+    · exact R.TW.sub_right W256
+  · intro p hp r hr
+    have hb := saved_in p hp
+    have slot : Region.Sub ⟨W + BitVec.ofNat 64 p.2, 8⟩ ⟨W, 512⟩ := Offset.sub_base W (by omega_using [hb])
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (R.DW.sub_left bj).symm.sub_left slot
+    · exact (R.IW.symm.sub_left slot)
+    · exact Offset.disjoint_base W (by omega_using [hb]) (by omega_using [hb])
+  · have bi : Region.Sub ⟨D + BitVec.ofNat 64 (8 * i), 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hi])
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact Offset.disjoint D (by omega_using [hne]) (by omega_using [hf, hi]) (by omega_using [hj, hf])
+    · exact (R.ID.sub_right bi).symm
+    · exact (R.DW.sub_left bi).sub_right W256
+  · have bp : Region.Sub ⟨D, 8 * j⟩ ⟨D, 8 * n⟩ := Region.sub_prefix (by omega_using [hj])
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact Offset.base_disjoint D (by omega_using []) (by omega_using [hj, hf])
+    · exact (R.ID.sub_right bp).symm
+    · exact (R.DW.sub_left bp).sub_right W256
+
+theorem blocksAt_one (m : Mem) (p : Addr) : Spec.Rc2.blocksAt m p 1 = [Spec.Rc2.blockAt m p] := by
+  simp [Spec.Rc2.blocksAt]
+
+/-- The done blocks, one more. -/
+theorem done_succ (m : Mem) (D : Addr) (j : Nat) :
+    Spec.Rc2.blocksAt m D (j + 1) = Spec.Rc2.blocksAt m D j ++ [Spec.Rc2.blockAt m (D + BitVec.ofNat 64 (8 * j))] := by
+  rw [Proof.Rc2.blocksAt_add, blocksAt_one]
+
+theorem covers {T I D W : Addr} {n j : Nat} (hj : j < n) :
+    Covers ([⟨T, 128⟩] ++ [⟨D + BitVec.ofNat 64 (8 * j), 8⟩, ⟨W, 256⟩])
+      ([⟨T, 128⟩] ++ [⟨I, 8⟩, ⟨D, 8 * n⟩, ⟨W, 512⟩]) := by
+  refine Covers.of_sub fun r hr => ?_
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨_, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
+  · exact ⟨⟨D, 8 * n⟩, by simp, 8 * j, rfl, by simp; omega_using [hj]⟩
+  · exact ⟨⟨W, 512⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
+
+theorem covers_wr {I D W : Addr} {n j : Nat} (hj : j < n) :
+    Covers [⟨D + BitVec.ofNat 64 (8 * j), 8⟩, ⟨W, 256⟩] [⟨I, 8⟩, ⟨D, 8 * n⟩, ⟨W, 512⟩] := by
+  refine Covers.of_sub fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact ⟨⟨D, 8 * n⟩, by simp, 8 * j, rfl, by simp; omega_using [hj]⟩
+  · exact ⟨⟨W, 512⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
+
+end VG.Proof.Rc2.PPC64LE.Cbc
+
+end
+
+end
+
 
 /-! # RC2-CBC on PPC64LE: an iteration of the loop -/
 
@@ -22,7 +151,7 @@ open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE VG.Impl.Rc2.PPC64LE.Cbc
 
 theorem count_sub {n j : Nat} (hj : j < n) :
     BitVec.ofNat 64 (n - j) - 1#64 = BitVec.ofNat 64 (n - (j + 1)) := by
-  rw [Offset.ofNat_sub_ofNat (by omega)]; congr 1
+  rw [Offset.ofNat_sub_ofNat (by omega_using [hj])]; congr 1
 
 theorem preserved_not : ∀ r ∈ preserved, r ∉ saved.map Prod.fst →
     r ∉ [Reg.r3, .r4, .r5, .r10, .r11, .r28, .r29, .r31] := by decide
@@ -41,13 +170,13 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
   have hf := R.fit
   let p := D + BitVec.ofNat 64 (8 * j)
   have pIn : InRegions t.wr p 8 := by
-    rw [H.wr]; exact ⟨⟨D, 8 * n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [H.wr]; exact ⟨⟨D, 8 * n⟩, by simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj, hf])⟩
   have pIn' : InRegions (t.rd ++ t.wr) p 8 := by
     obtain ⟨r, hr, hc⟩ := pIn; exact ⟨r, List.mem_append_right _ hr, hc⟩
   have iIn : InRegions t.wr I 8 := by rw [H.wr]; exact ⟨⟨I, 8⟩, by simp, Region.contains_self _ _⟩
   have iIn' : InRegions (t.rd ++ t.wr) I 8 := by
     obtain ⟨r, hr, hc⟩ := iIn; exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have bj : Region.Sub ⟨p, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
+  have bj : Region.Sub ⟨p, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_using [hj])
   have pI : (⟨p, 8⟩ : Region).Disjoint ⟨I, 8⟩ := (R.ID.sub_right bj).symm
   have r28 : t.gpr .r28 = p := H.r28
   have b₀ : Spec.Rc2.blockAt t.mem p = Spec.Rc2.blockAt m₀ p := H.rest j (Nat.le_refl _) hj
@@ -106,10 +235,10 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
       rw [k₃.gpr (by simp [hn']), g2 r hr (by simp [hn']), H.pres r hr hn]
     · rw [done_succ, done_succ, fD, H.done, spec, enc_spec, ← H.iv, b₃, out]
     · rw [done_succ, spec, enc_spec, ← H.iv, i₃, out]
-    · rw [fB i hn (by omega), H.rest i (by omega) hn]
-    · rw [a29, count_sub hj, ofNat_bne_zero (by omega)]
+    · rw [fB i hn (by omega_using [hi]), H.rest i (by omega_using [hi]) hn]
+    · rw [a29, count_sub hj, ofNat_bne_zero (by omega_using [hf])]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
+      exact decide_eq_decide.mpr (by omega_using [hj])
   | decrypt =>
     apply WP.seq
     refine WP.mono (WP.keep [.r3, .r4, .r5, .r31] (c := .block (before .decrypt)) (Q := fun t₁ =>
@@ -169,9 +298,9 @@ theorem body_run (d : Spec.Rc2.Direction) {T I D W : Addr} {n : Nat} {g : Reg �
       rw [k₃.gpr (by simp [hn']), g2 r hr (by simp [hn']), H.pres r hr hn]
     · rw [done_succ, done_succ, fD, H.done, spec, dec_spec, ← H.iv, b₃]
     · rw [done_succ, spec, dec_spec, i₃]
-    · rw [fB i hn (by omega), H.rest i (by omega) hn]
-    · rw [a29, count_sub hj, ofNat_bne_zero (by omega)]
+    · rw [fB i hn (by omega_using [hi]), H.rest i (by omega_using [hi]) hn]
+    · rw [a29, count_sub hj, ofNat_bne_zero (by omega_using [hf])]
       congr 1
-      exact decide_eq_decide.mpr (by omega)
+      exact decide_eq_decide.mpr (by omega_using [hj])
 
 end VG.Proof.Rc2.PPC64LE.Cbc

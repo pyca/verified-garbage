@@ -98,17 +98,19 @@ structure VPre (s : State) : Prop where
 /-- The regions the setup writes after the copy of `pk`. -/
 abbrev setW (b : Addr) : List Region :=
   [⟨b + BitVec.ofNat 64 SG, 114⟩, ⟨b + BitVec.ofNat 64 CH, 57⟩, ⟨b + BitVec.ofNat 64 BAD, 8⟩,
-    ⟨b + BitVec.ofNat 64 DK, 56⟩, ⟨b + BitVec.ofNat 64 BX, 56⟩, ⟨b + BitVec.ofNat 64 BY, 56⟩,
-    ⟨b + BitVec.ofNat 64 ONE, 56⟩]
+    ⟨b + BitVec.ofNat 64 DK, 56⟩, ⟨b + BitVec.ofNat 64 ONE, 56⟩]
 
-theorem vSetup_ok {s : State} (hp : VPre s) :
-    WP isa (.block vSetup) s fun t => VCtx (s.gpr .r6) t ∧ Rest [.r3, .r7] s t ∧
+/-- `vSetup` but its first three instructions, which keep the return address and `r14`. -/
+theorem vCopy_ok {s : State} (hp : VPre s) :
+    WP isa (.block (copyBytes .r3 PK 57 ++ copyBytes .r4 SG 114 ++ copyBytes .r5 CH 57 ++
+      ([.addi .r3 .r6 OUT, .li .r7 0, .store .d .r7 .r6 BAD] : List Instr) ++
+      constField DK Spec.Ed448.d.val ++ constField ONE 1)) s fun t => VCtx (s.gpr .r6) t ∧ Rest [.r3, .r7] s t ∧
       Frame [⟨s.gpr .r6, 8192⟩] s.mem t.mem ∧
+      Frame (⟨s.gpr .r6 + BitVec.ofNat 64 PK, 57⟩ :: setW (s.gpr .r6)) s.mem t.mem ∧
       Spec.Ed448.bytesAt t.mem (s.gpr .r6 + BitVec.ofNat 64 PK) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r3) 57 ∧
       Spec.Ed448.bytesAt t.mem (s.gpr .r6 + BitVec.ofNat 64 SG) 114 = Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114 ∧
       Spec.Ed448.bytesAt t.mem (s.gpr .r6 + BitVec.ofNat 64 CH) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57 ∧
       bad t.mem (s.gpr .r6) = 0 ∧ FS t.mem (s.gpr .r6) DK = Spec.Ed448.d ∧
-      FS t.mem (s.gpr .r6) BX = Spec.Ed448.basePoint.X ∧ FS t.mem (s.gpr .r6) BY = Spec.Ed448.basePoint.Y ∧
       FS t.mem (s.gpr .r6) ONE = 1 := by
   obtain ⟨b, hb⟩ : ∃ b, b = s.gpr .r6 := ⟨_, rfl⟩
   rw [← hb]
@@ -117,14 +119,11 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
   have hSG : SG = 3345 := rfl
   have hCH : CH = 3459 := rfl
   have hDK : DK = 336 := rfl
-  have hBX : BX = 2896 := rfl
-  have hBY : BY = 2952 := rfl
   have hON : ONE = 3232 := rfl
   have hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
   have hc : Ctx b s := ⟨hb.symm, ⟨8192, by decide, hws⟩⟩
   have sub8 : ∀ {o n : Nat}, o + n ≤ 8192 → Region.Sub ⟨b + BitVec.ofNat 64 o, n⟩ ⟨b, 8192⟩ :=
     fun h => Offset.sub_base _ h
-  unfold vSetup
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   -- The copies.
   refine WP.append (copyB_ok hc (rs := .r3) (by decide) rfl (n := 57) (o := PK) (by rw [hp.rd]; simp)
@@ -150,71 +149,62 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
     rw [u6.mem, u5.gpr, u5.mem, u4.mem]
   refine WP.append (constField_ok hc6 (o := DK) (by decide) (fe_lt _)) fun s7 ⟨r7, f7, v7⟩ => ?_
   have hc7 := hc6.of_rest r7 (by decide)
-  refine WP.append (constField_ok hc7 (o := BX) (by decide) (fe_lt _)) fun s8 ⟨r8, f8, v8⟩ => ?_
-  have hc8 := hc7.of_rest r8 (by decide)
-  refine WP.append (constField_ok hc8 (o := BY) (by decide) (fe_lt _)) fun s9 ⟨r9, f9, v9⟩ => ?_
-  have hc9 := hc8.of_rest r9 (by decide)
-  refine WP.mono (constField_ok hc9 (o := ONE) (by decide) (v := 1) (by decide)) fun t ⟨rt, ft, vt⟩ => ?_
+  refine WP.mono (constField_ok hc7 (o := ONE) (by decide) (v := 1) (by decide)) fun t ⟨rt, ft, vt⟩ => ?_
   -- The frames.
   have fB : Frame [⟨b + BitVec.ofNat 64 BAD, 8⟩] s3.mem s6.mem := by
     rw [hm6]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ (64 / 8))
   let L3 : List Region := (setW b).drop 2
   let L2 : List Region := (setW b).drop 1
   have F3 : Frame L3 s3.mem t.mem := by
-    refine (fB.mono (by simp [L3])).trans ((f7.mono (by simp [L3])).trans ((f8.mono (by simp [L3])).trans
-      ((f9.mono (by simp [L3])).trans (ft.mono (by simp [L3])))))
+    refine (fB.mono (by simp [L3])).trans ((f7.mono (by simp [L3])).trans (ft.mono (by simp [L3])))
   have F2 : Frame L2 s2.mem t.mem :=
     (h3.frame.mono (by simp [L2])).trans (F3.mono fun r hr => by
       simp only [L3, L2, List.drop, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with h | h | h | h | h <;> simp [h])
+      rcases hr with h | h | h <;> simp [h])
   have F1 : Frame (setW b) s1.mem t.mem :=
     (h2.frame.mono (by simp)).trans (F2.mono fun r hr => by
       simp only [L2, List.drop, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with h | h | h | h | h | h <;> simp [h])
+      rcases hr with h | h | h | h <;> simp [h])
   have sw : ∀ r ∈ setW b, Region.Sub r ⟨b, 8192⟩ := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact sub8 (by omega_arith)
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact sub8 (by omega_arith)
   have hrt : Rest [.r3, .r7] s t := (h1.rest.mono (by decide)).trans ((h2.rest.mono (by decide)).trans
     ((h3.rest.mono (by decide)).trans (hr5.trans ((u6.rest _).trans ((r7.mono (by decide)).trans
-      ((r8.mono (by decide)).trans ((r9.mono (by decide)).trans (rt.mono (by decide)))))))))
+      (rt.mono (by decide)))))))
   -- The values.
-  refine ⟨⟨hc9.of_rest rt (by decide), by rw [hrt.wr]; exact hws, ?_⟩, hrt, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [rt.gpr _ (by decide), r9.gpr _ (by decide), r8.gpr _ (by decide), r7.gpr _ (by decide), u6.gpr,
+  refine ⟨⟨hc7.of_rest rt (by decide), by rw [hrt.wr]; exact hws, ?_⟩, hrt, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [rt.gpr _ (by decide), r7.gpr _ (by decide), u6.gpr,
       u5.other _ (by decide), u4.gpr, hc3.r6]
   · refine (h1.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact sub8 (by omega_arith)⟩).trans (F1.sub fun r hr => ⟨_, List.mem_singleton_self _, sw r hr⟩)
+  · exact (h1.frame.mono (by simp)).trans (F1.mono fun r hr => List.mem_cons_of_mem _ hr)
   · rw [bytes_keep F1 (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), bytes_copy h1.bytes]
   · rw [bytes_keep F2 (fun r hr => by
       simp only [L2, List.drop, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
+      rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), bytes_copy h2.bytes,
       bytes_keep h1.frame (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hp.sig_ws.sub_right (by rw [← hb]; exact sub8 (by omega_arith))) (by decide)]
   · rw [bytes_keep F3 (fun r hr => by
       simp only [L3, List.drop, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
+      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), bytes_copy h3.bytes,
       bytes_keep h2.frame (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hp.ch_ws.sub_right (by rw [← hb]; exact sub8 (by omega_arith))) (by decide),
       bytes_keep h1.frame (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hp.ch_ws.sub_right (by rw [← hb]; exact sub8 (by omega_arith))) (by decide)]
   · have f6t : Frame (L3.drop 1) s6.mem t.mem := by
-      refine (f7.mono (by simp [L3])).trans ((f8.mono (by simp [L3])).trans ((f9.mono (by simp [L3])).trans
-        (ft.mono (by simp [L3]))))
+      refine (f7.mono (by simp [L3])).trans (ft.mono (by simp [L3]))
     unfold bad
     rw [f6t.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
         simp only [L3, List.drop, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
       hm6, Mem.readW_writeW_self64]
     rfl
-  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith), slot_keep f9 (by omega_arith) (by omega_arith) (by omega_arith),
-      slot_keep f8 (by omega_arith) (by omega_arith) (by omega_arith), v7, VG.Proof.X448.toFe_self]
-  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith), slot_keep f9 (by omega_arith) (by omega_arith) (by omega_arith), v8,
-      VG.Proof.X448.toFe_self]
-  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith), v9, VG.Proof.X448.toFe_self]
+  · rw [FS, slot_keep ft (by omega_arith) (by omega_arith) (by omega_arith), v7, VG.Proof.X448.toFe_self]
   · rw [FS, vt, VG.Proof.X448.toFe_one]
 
 end

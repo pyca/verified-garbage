@@ -129,7 +129,7 @@ theorem ofNat_sub_one {n : Nat} (hn : 1 ≤ n) (h : n < 2 ^ 64) :
     BitVec.ofNat 64 n - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
   rw [toNat_sub_le (by rw [toNat_imm h, toNat_imm (by decide)]; exact hn), toNat_imm h,
-    toNat_imm (by decide), toNat_imm (by omega)]
+    toNat_imm (by decide), toNat_imm (by omega_using [h])]
 
 /-- A word loaded and zero-extended. -/
 theorem toNat_ext32 (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
@@ -170,6 +170,6 @@ theorem in_base {rs : List Region} {P : Addr} {len d n : Nat} (hr : (⟨P, len�
 theorem al4 {P : Addr} (hP : P.toNat % 8 = 0) {d : Nat} (hd : d % 4 = 0) :
     (P + BitVec.ofNat 64 d).toNat % 4 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hP, hd]
 
 end VG.Proof.X25519.RISCV64

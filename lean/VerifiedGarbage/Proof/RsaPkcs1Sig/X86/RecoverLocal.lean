@@ -18,39 +18,39 @@ theorem localSub {g : Geometry} {d n : Nat} (fit : d + n ≤ VG.Impl.RsaPkcs1Sig
 
 theorem Context.em2Fit {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : g.em2.toNat + g.length ≤ 2 ^ 32 :=
-  h.valid.encodingFit (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+  h.valid.encodingFit (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
 
 theorem Context.em1Sub {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : (⟨byteAddr g.em1, g.length⟩ : Region).Sub g.innerRegion := by
   rw [Geometry.em1, h.valid.offsetAddr (by decide)]
-  exact localSub (by have := h.valid.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+  exact localSub (by have := h.valid.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
 
 theorem Context.em2Sub {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : (⟨byteAddr g.em2, g.length⟩ : Region).Sub g.innerRegion := by
   rw [Geometry.em2, h.valid.offsetAddr (by decide)]
-  exact localSub (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+  exact localSub (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
 
 theorem Context.em1Write {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : InRegions s.wr (byteAddr g.em1) g.length := by
   rw [Geometry.em1, h.valid.offsetAddr (by decide)]
-  exact h.inner.write (by have := h.valid.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+  exact h.inner.write (by have := h.valid.maxLength; simp only [em1Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
 
 theorem Context.em2Write {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : InRegions s.wr (byteAddr g.em2) g.length := by
   rw [Geometry.em2, h.valid.offsetAddr (by decide)]
-  exact h.inner.write (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega)
+  exact h.inner.write (by have := h.valid.maxLength; simp only [em2Offset, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes]; omega_using [this])
 
 theorem Context.em1Args {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : (⟨byteAddr g.em1, g.length⟩ : Region).Disjoint ⟨byteAddr g.stack, 40⟩ := by
   rw [Geometry.em1, h.valid.offsetAddr (by decide)]
   exact Offset.disjoint_base _ (by decide : 40 ≤ em1Offset)
-    (by have := h.valid.maxLength; simp only [em1Offset]; omega)
+    (by have := h.valid.maxLength; simp only [em1Offset]; omega_using [this])
 
 theorem Context.encodingsSeparate {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : (⟨byteAddr g.em1, g.length⟩ : Region).Disjoint ⟨byteAddr g.em2, g.length⟩ := by
   rw [Geometry.em1, h.valid.offsetAddr (by decide), Geometry.em2, h.valid.offsetAddr (by decide)]
-  exact Offset.disjoint _ (Or.inl (by have := h.valid.maxLength; simp only [em1Offset, em2Offset]; omega))
-    (by have := h.valid.maxLength; simp only [em1Offset]; omega)
-    (by have := h.valid.maxLength; simp only [em2Offset]; omega)
+  exact Offset.disjoint _ (Or.inl (by have := h.valid.maxLength; simp only [em1Offset, em2Offset]; omega_using [this]))
+    (by have := h.valid.maxLength; simp only [em1Offset]; omega_using [this])
+    (by have := h.valid.maxLength; simp only [em2Offset]; omega_using [this])
 
 end VG.Proof.RsaPkcs1Sig.X86.Rcv

@@ -33,8 +33,8 @@ theorem tailStep_ok {s t : State} {B : Addr} {Z eQ eT eN j : Nat}
     WP isa (.block (VG.Impl.Bignum.AArch64.BlockedRedc.tail j)) t
       fun u => TailInv s B eQ eT eN (j + 1) u := by
   have hnw := hs.nowrap
-  have hq := hI.frame.word (d := eQ + 8 * j) (by omega) (by omega)
-  have hn := hI.frame.word (d := eN) (by omega) (by omega)
+  have hq := hI.frame.word (d := eQ + 8 * j) (by omega_using [hQT, hj]) (by omega_using [hQ, hj, hnw])
+  have hn := hI.frame.word (d := eN) (by omega_using [hNT, hj]) (by omega_using [hN, hnw])
   have hop := (keep_operand hI.keep (by decide) (word t.mem B eN)).trans
     (congrArg (operand s) hn)
   have hopV := congrArg blockValue hop
@@ -42,27 +42,27 @@ theorem tailStep_ok {s t : State} {B : Addr} {Z eQ eT eN j : Nat}
     ((hI.keep.gpr .x8 (by decide)).trans h8) hI.ptr
     ((hI.keep.gpr .x17 (by decide)).trans h17)
     ((hI.keep.gpr .x7 (by decide)).trans h7)
-    (by omega) (by omega) hN hj) fun u ⟨lo, hv, hm, hp, ku⟩ => ?_
+    (by omega_using [hQ, hj]) (by omega_using [hT, hj]) hN hj) fun u ⟨lo, hv, hm, hp, ku⟩ => ?_
   have hqV := congrArg BitVec.toNat hq
   have hv' : lo.toNat + 2 ^ 64 *
       (blockValue (accumulator u) + (2 ^ 64) ^ 8 * u.c.toNat) =
         (blockValue (accumulator t) + (2 ^ 64) ^ 8 * t.c.toNat) +
           (word s.mem B (eQ + 8 * j)).toNat * blockValue (operand s (word s.mem B eN)) :=
-    hv.trans (by rewrite [hqV, hopV]; omega)
+    hv.trans (by rewrite [hqV, hopV]; omega_using [])
   have hstep := rows_step hI.value hv'
   have hmem := (congrArg (fun m : Mem => wv m B eT (j + 1)) hm).trans
-    (wv_writeW_top t.mem B eT j lo (by omega))
+    (wv_writeW_top t.mem B eT j lo (by omega_using [hT, hj, hnw]))
   refine ⟨?_, ?_, ?_, (hI.keep.trans ku).mono (by decide)⟩
   · have hqnext : wv s.mem B eQ (j + 1) = wv s.mem B eQ j +
         2 ^ (64 * j) * (word s.mem B (eQ + 8 * j)).toNat := rfl
     rewrite [hmem, pow64_succ, hqnext]
     exact hstep
-  · exact hp.trans (congrArg (off B) (by omega))
-  · have ho := writeW_outside t.mem B lo (d := eT + 8 * j) (by omega)
+  · exact hp.trans (congrArg (off B) (by omega_using []))
+  · have ho := writeW_outside t.mem B lo (d := eT + 8 * j) (by omega_using [hT, hj, hnw])
     have hm' : Outside B (eT + 8 * j) 8 t.mem u.mem := by
       intro x hx
       exact (congrArg (fun m : Mem => m x) hm).trans (ho x hx)
-    exact (hI.frame.mono (by omega) (by omega)).trans (hm'.mono (by omega) (by omega))
+    exact (hI.frame.mono (by omega_using []) (by omega_using [])).trans (hm'.mono (by omega_using []) (by omega_using []))
 
 /-- Compose any prefix of the eight unrolled rows using the same invariant. -/
 theorem tailPrefix_ok {s : State} {B : Addr} {Z eQ eT eN k : Nat}
@@ -84,8 +84,8 @@ theorem tailPrefix_ok {s : State} {B : Addr} {Z eQ eT eN k : Nat}
     rewrite [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    exact WP.mono (ih (by omega)) fun t hI =>
-      tailStep_ok hs h8 h17 h7 hQ hT hN hQT hNT (by omega) hI
+    exact WP.mono (ih (by omega_using [hk])) fun t hI =>
+      tailStep_ok hs h8 h17 h7 hQ hT hN hQT hNT (by omega_using [hk]) hI
 
 /-- The complete eight-row machine block has no ninth carry limb when its
 incoming accumulator is the sum of two bounded blocks. -/

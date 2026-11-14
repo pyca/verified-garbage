@@ -125,3 +125,33 @@ pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>,
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) }
 }
+
+/// The values of an RSA private key that its operations need and that do not depend on their input, so that they are computed once per key rather than once per operation: what the `_precomputed` private-key operations take. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, and the factors `p` (`p_len` bytes) and `q` (`q_len` bytes), most significant first, writes to `pre`, least significant word first: `n` and `R² mod n` for `R = 2^(64 w)` (`w` words each, what `vg_rsa_public_precompute` writes), then `R_p² mod p` for `R_p = 2^(64 w_p)` and `w_p = max(2, ⌈p_len / 8⌉)` (`w_p` words), then the same for `q`; and returns 1. Writes zeros and returns 0 if `n` is not such a modulus or `p q ≠ n`. The rest of the key is checked when it is loaded (`vg_rsa_check_key`).
+///
+/// Contract: `VG.Spec.Rsa.privatePrecomputeContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on `p` or `q`.
+///
+/// It runs `vg_rsa_private_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * The contents of `pre` are secret (they are values of `p` and `q`); the caller must destroy them after use.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre` and `scratch` must not overlap each other, `n`, `p` or `q` (distinct Rust objects never do).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 196 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rsa_private_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rsa::vg_rsa_private_precompute(pre, pre_len, n, n_len, p, p_len, q, q_len, scratch, scratch_len) }
+}

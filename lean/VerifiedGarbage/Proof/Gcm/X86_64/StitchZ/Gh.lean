@@ -109,7 +109,7 @@ theorem ghLoad_eq (k : Nat) :
 
 theorem lane_ld {k : Nat} (hk : k < 4) :
     zlaneSseBlock (restZ k) = some (if k = ord 0 then ldInit else ldAcc (decide (k = 0))) := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The products of a load in a lane, written (for the first load) or added. -/
 theorem lane_ld_ok {k : Nat} (t : State) :
@@ -195,10 +195,10 @@ theorem fold1_ok (r : XReg) (h11 : r ≠ .xmm11) (s : State) :
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil fun l hl => ?_⟩
   simp only [lane_vbin256, ite_true, VBinOp.sse, VG.Proof.Aes.X86_64.AesNi.eval_pxor]
-  rw [← State.zlane_lt2 _ _ hl, ← State.zlane_lt2 _ _ hl, zlane_vshufi32x4 _ _ _ _ _ _ (by omega),
-    zlane_vshufi32x4 _ _ _ _ _ _ (by omega)]
+  rw [← State.zlane_lt2 _ _ hl, ← State.zlane_lt2 _ _ hl, zlane_vshufi32x4 _ _ _ _ _ _ (by omega_using [hl]),
+    zlane_vshufi32x4 _ _ _ _ _ _ (by omega_using [hl])]
   simp only [h11, ite_false, ite_true, shuf4Lanes]
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
 
 /-- The SSE block of `reduceZ` in each lane. -/
 def redSse : List Instr :=
@@ -242,7 +242,7 @@ theorem combine10_ok (s : State) :
   · simp [VBinOp.sse, VG.Proof.Gcm.X86_64.Pclmul.eval_pxor, VOp.exec, State.setV, State.zlane, State.lane]
   · simp only [VOp.exec]
     rw [State.zlane_setV128 _ _ _ _ _ hl4]
-    simp [show l ≠ 0 by omega]
+    simp [show l ≠ 0 by omega_using [hl1]]
 
 /-! ## The products of a group -/
 
@@ -297,7 +297,7 @@ theorem off4 (a : Addr) (k l : Nat) :
     a + BitVec.ofInt 64 ((64 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l) =
       a + BitVec.ofNat 64 (16 * (4 * k + l)) := by
   rw [BitVec.ofInt_natCast, BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 64 * k + 16 * l = 16 * (4 * k + l) by omega]
+    show 64 * k + 16 * l = 16 * (4 * k + l) by omega_using []]
 
 theorem offp4 (a : Addr) (k l : Nat) :
     a + BitVec.ofInt 64 ((64 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l) =
@@ -308,7 +308,7 @@ theorem ord_lt (n : Nat) : ord n < 4 := by
   unfold ord; split <;> decide
 
 theorem ord_eq_zero {n : Nat} (hn : n < 4) : (ord n = ord 0) ↔ n = 0 := by
-  rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_using [hn] : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-- One GHASH load, the `n`-th: the first writes the products, which the
 others add to. -/
@@ -326,8 +326,8 @@ theorem ghStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat
       by_cases h0 : n = 0
       · subst h0; rfl
       · have hne : ¬ (ord n = ord 0) := fun h => h0 ((ord_eq_zero hn).1 h)
-        simp only [hne, ↓reduceIte]; exact hp (by omega) l hl
-    rw [p' l hl, hz, accN_succ, hE.rdx, hE.r11, off4, offp4, hE.xs _ (by omega) (by omega),
+        simp only [hne, ↓reduceIte]; exact hp (by omega_using [h0]) l hl
+    rw [p' l hl, hz, accN_succ, hE.rdx, hE.r11, off4, offp4, hE.xs _ (by omega_using [hlo]) (by omega_using [hk, hl]),
       hE.pv _ hk l hl, hy l hl]
     rfl
   · rw [f'.zlane _ (by decide) l hl, hy l hl]
@@ -403,34 +403,34 @@ theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {
   by_cases hl4 : j ≤ 4
   · -- A load.
     have hlo := hrd j hj1 hl4
-    rw [ite_f (by omega)] at h2
+    rw [ite_f (by omega_using [hl4])] at h2
     simp only [gq, show 1 ≤ j ∧ j ≤ 4 from ⟨hj1, hl4⟩, and_self, ite_true]
-    rw [show min (j - 1) 4 = j - 1 by omega] at h2
-    refine WP.mono (ghStep (by omega) hlo hE (fun hn => h2.1 (by omega)) h2.2) fun s' ⟨hE', p', y', f'⟩ =>
+    rw [show min (j - 1) 4 = j - 1 by omega_using [hl4]] at h2
+    refine WP.mono (ghStep (by omega_using [hl4]) hlo hE (fun hn => h2.1 (by omega_using [hn])) h2.2) fun s' ⟨hE', p', y', f'⟩ =>
       ⟨⟨hE'.mono (hmono j), fun l hl => by
         rw [f'.zlane _ (by decide) l hl]; exact h1 l hl,
         ?_⟩, f'.mono (by decide)⟩
-    rw [ite_f (by omega), show min (j + 1 - 1) 4 = j - 1 + 1 by omega]
+    rw [ite_f (by omega_using [hl4]), show min (j + 1 - 1) 4 = j - 1 + 1 by omega_using [hj1, hl4]]
     exact ⟨fun _ => p', y'⟩
   · by_cases h5 : j = 5
     · -- The reduction.
       subst h5
-      rw [ite_f (by omega)] at h2
-      simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega, ite_false, ite_true]
+      rw [ite_f (by omega_using [])] at h2
+      simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega_using [], ite_false, ite_true]
       refine WP.mono (ghFin hE h1) fun s' ⟨hE', y0, y1, f'⟩ =>
         ⟨⟨hE'.mono (hmono 5), fun l hl => by
           rw [f'.zlane _ (by decide) l hl]; exact h1 l hl,
           ?_⟩, f'.mono (by decide)⟩
-      rw [ite_t (by omega)]
+      rw [ite_t (by omega_using [])]
       refine ⟨by rw [y0, h2.1 (by decide) 0 (by decide), h2.1 (by decide) 1 (by decide),
         h2.1 (by decide) 2 (by decide), h2.1 (by decide) 3 (by decide)]; rfl, y1⟩
     · -- Nothing.
       have hg : gq j = [] := by
-        simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega, ite_false, h5]
+        simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega_using [hl4], ite_false, h5]
       rw [hg]
       refine WP.block_nil ⟨⟨hE.mono (hmono j), h1, ?_⟩, ZFrame.refl _ _⟩
-      rw [ite_t (by omega)]
-      rw [ite_t (by omega)] at h2
+      rw [ite_t (by omega_using [hl4])]
+      rw [ite_t (by omega_using [hl4, h5])] at h2
       exact h2
 
 end VG.Proof.Gcm.X86_64.StitchZ

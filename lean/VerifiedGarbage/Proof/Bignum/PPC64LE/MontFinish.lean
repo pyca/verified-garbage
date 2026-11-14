@@ -38,7 +38,7 @@ theorem mont_newton64 (m y : BitVec 64) (h : (m.toNat % 2 ^ 32 * y.toNat + 1) % 
     have hm : m.toNat % 2 ^ 32 * y.toNat % 2 ^ 32 = m.toNat * y.toNat % 2 ^ 32 := by
       rw [Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod]
     rw [BitVec.toNat_add, BitVec.toNat_mul, show (1#64).toNat = 1 from rfl]
-    omega
+    omega_using [h, hm]
   have e' := congrArg BitVec.toNat e
   rw [BitVec.toNat_add, BitVec.toNat_mul m, BitVec.toNat_mul (m * y + 1#64)] at e'
   obtain ⟨q, hq'⟩ : ∃ q, (m * y + 1#64).toNat = 2 ^ 32 * q := ⟨_, (Nat.div_add_mod _ _).symm.trans (by rw [hq, Nat.add_zero])⟩

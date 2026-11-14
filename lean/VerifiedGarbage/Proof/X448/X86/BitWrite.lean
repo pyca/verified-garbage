@@ -30,7 +30,7 @@ theorem bitShift_ok {s : State} {j : Nat} (hj : j < 8) :
   · subst j
     exact WP.block_nil ⟨ht.gpr, ht.mem, ht.rest (by decide)⟩
   · rw [ite_eq_right hz]
-    refine wp_shift (by omega) fun u hu => WP.block_nil ⟨?_, hu.mem.trans ht.mem,
+    refine wp_shift (by omega_using [hj, hz]) fun u hu => WP.block_nil ⟨?_, hu.mem.trans ht.mem,
       (ht.rest (by decide)).trans (hu.rest (by decide))⟩
     rw [hu.gpr, ht.gpr]
 
@@ -48,7 +48,7 @@ theorem bitP_ok {s : State} {base : Addr} (hs : Scr s base) {o d : Nat} (hd : d 
   have us := (hs.of_keeps tk (by decide)).of_upd hu (by decide)
   have up : u.gpr .ebp = u.gpr .edi + BitVec.ofNat 32 d := by
     rw [hu.other _ (by decide), hu.other _ (by decide), tk.1 _ (by decide), tk.1 _ (by decide), hp]
-  refine wp_store8 (us.ea_ptr up (by omega)) (us.write (d := d + (o + j)) (n := 1) (by omega))
+  refine wp_store8 (us.ea_ptr up (by omega_using [hd, hj])) (us.write (d := d + (o + j)) (n := 1) (by omega_using [hd, hj]))
     fun v hv => WP.block_nil ⟨?_, tk.trans ?_⟩
   · rw [hv.mem, hu.mem, tm, Reg8.reg, hu.gpr]
     change s.mem.writeW _ ((t.gpr .edx &&& (1 : BitVec 32)).setWidth 8) = _
@@ -74,14 +74,14 @@ theorem byteP_ok {s : State} {base : Addr} (hs : Scr s base) {o d : Nat} (hd : d
     · intro j hj
       rw [um, writeW8_apply]
       have eq : off base (d + (o + j)) = off base (d + (o + n)) ↔ j = n := by
-        rw [off_eq_iff base (by omega) (by omega)]
-        omega
+        rw [off_eq_iff base (by omega_using [hd, hn, hj]) (by omega_using [hd, hn])]
+        omega_using []
       by_cases he : j = n
       · rw [ite_eq_left (eq.mpr he), he]
-      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
     · intro x hx
       rw [um]
-      exact writeW8_outside _ _ _ (by omega) (by omega)
+      exact writeW8_outside _ _ _ (by omega_using [hd, hn]) (by omega_using [hn, hx])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

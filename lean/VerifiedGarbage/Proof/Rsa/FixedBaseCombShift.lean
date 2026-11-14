@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Fixed-position extraction from a shifted, zero-padded comb exponent. -/
 
@@ -13,19 +14,19 @@ theorem bit_mod_width (x width position : Nat) (h : position < width) :
   have power : 2^width = 2^position * 2^(width-position) := by
     rw [← Nat.pow_add]
     congr 1
-    omega
+    omega_using [h]
   unfold bit
   rw [power, Nat.mod_mul_right_div_self]
   apply Nat.mod_mod_of_dvd
   change 2^1 ∣ 2^(width-position)
-  exact Nat.pow_dvd_pow 2 (show 1 ≤ width-position by omega)
+  exact Nat.pow_dvd_pow 2 (show 1 ≤ width-position by omega_using [h])
 
 theorem bit_shift_up (x shift position : Nat) (h : shift ≤ position) :
     bit (x * 2^shift) position = bit x (position-shift) := by
   have power : 2^position = 2^(position-shift) * 2^shift := by
     rw [← Nat.pow_add]
     congr 1
-    omega
+    omega_using [h]
   unfold bit
   rw [power, Nat.mul_div_mul_right x (2^(position-shift)) (Nat.two_pow_pos shift)]
 
@@ -35,14 +36,14 @@ theorem shifted_tooth (bits x width row tooth : Nat)
     (hr : row < rows bits) (ht : tooth < 5) (hw : 5*rows bits ≤ width) :
     bit ((x * 2^(rows bits-1-row)) % 2^width) ((tooth+1)*rows bits-1) =
       bit x (row + tooth*rows bits) := by
-  have dpos : 0 < rows bits := by omega
+  have dpos : 0 < rows bits := by omega_using [hr]
   have bound : (tooth+1)*rows bits ≤ 5*rows bits :=
-    Nat.mul_le_mul_right _ (by omega)
+    Nat.mul_le_mul_right _ (by omega_using [ht])
   have low : rows bits ≤ (tooth+1)*rows bits := by
-    simpa only [Nat.one_mul] using Nat.mul_le_mul_right (rows bits) (show 1 ≤ tooth+1 by omega)
-  rw [bit_mod_width _ _ _ (by omega), bit_shift_up _ _ _ (by omega)]
+    simpa only [Nat.one_mul] using Nat.mul_le_mul_right (rows bits) (show 1 ≤ tooth+1 by omega_using [])
+  rw [bit_mod_width _ _ _ (by omega_using [hr, hw, bound]), bit_shift_up _ _ _ (by omega_using [low])]
   congr 1
   rw [Nat.add_mul, Nat.one_mul]
-  omega
+  omega_using [hr]
 
 end VG.Proof.Rsa.FixedBaseComb

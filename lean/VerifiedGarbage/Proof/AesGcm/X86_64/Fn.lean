@@ -67,18 +67,27 @@ def SavedAt (m : Mem) (W : Addr) (s₀ : State) : Prop :=
 /-- The saved registers' slots. -/
 abbrev savedR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 128, 48⟩
 
-theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers [⟨W, 2560⟩] s.wr) :
+theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
+    Covers [⟨p, n⟩] rs := by
+  intro a m ⟨r, hr, hc⟩
+  simp only [List.mem_singleton] at hr; subst hr
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
+
+/-- `save`, into a working space of at least the 176 bytes it reaches. -/
+theorem save_ok (s : State) (b : Reg) {W : Addr} {N : Nat} (hb : s.gpr b = W) (hw₀ : Covers [⟨W, N⟩] s.wr)
+    (hN : 176 ≤ N := by decide) :
     ∃ s', runBlock isa (save b) s = some s' ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       SavedAt s'.mem W s ∧ Frame [savedR W] s.mem s'.mem := by
-  have w₁ := in_off hw (show 128 + 8 ≤ 2560 by decide) (by decide)
-  have w₂ := in_off hw (show 136 + 8 ≤ 2560 by decide) (by decide)
-  have w₃ := in_off hw (show 144 + 8 ≤ 2560 by decide) (by decide)
-  have w₄ := in_off hw (show 152 + 8 ≤ 2560 by decide) (by decide)
-  have w₅ := in_off hw (show 160 + 8 ≤ 2560 by decide) (by decide)
-  have w₆ := in_off hw (show 168 + 8 ≤ 2560 by decide) (by decide)
+  have hw := covers_prefix hw₀ hN
+  have w₁ := in_off hw (show 128 + 8 ≤ 176 by decide) (by decide)
+  have w₂ := in_off hw (show 136 + 8 ≤ 176 by decide) (by decide)
+  have w₃ := in_off hw (show 144 + 8 ≤ 176 by decide) (by decide)
+  have w₄ := in_off hw (show 152 + 8 ≤ 176 by decide) (by decide)
+  have w₅ := in_off hw (show 160 + 8 ≤ 176 by decide) (by decide)
+  have w₆ := in_off hw (show 168 + 8 ≤ 176 by decide) (by decide)
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_using [ha]) (by omega_using [hd])
   have s128_136 := sep 128 136 (by decide) (by decide) (by decide)
   have s128_144 := sep 128 144 (by decide) (by decide) (by decide)
   have s128_152 := sep 128 152 (by decide) (by decide) (by decide)
@@ -101,7 +110,7 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := first | decide | with_reducible assumption) only [hb, Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · have c : ∀ d, 128 ≤ d → d + 8 ≤ 176 → (savedR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     simp only [hb]
     exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 128 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 136 (by decide) (by decide))).writeW
@@ -111,16 +120,17 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers
       (List.mem_singleton_self _) _ (c 168 (by decide) (by decide))
   all_goals rfl
 
-theorem restore_ok (s : State) {W : Addr} (h15 : s.gpr .r15 = W) (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr))
-    {s₀ : State} (hs : SavedAt s.mem W s₀) :
+theorem restore_ok (s : State) {W : Addr} {N : Nat} (h15 : s.gpr .r15 = W)
+    (hr₀ : Covers [⟨W, N⟩] (s.rd ++ s.wr)) {s₀ : State} (hs : SavedAt s.mem W s₀) (hN : 176 ≤ N := by decide) :
     ∃ s', runBlock isa restore s = some s' ∧ (∀ p ∈ saved, s'.gpr p.1 = s₀.gpr p.1) ∧
       (∀ r, r ∉ saved.map (·.1) → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have r₁ := in_off hr (show 128 + 8 ≤ 2560 by decide) (by decide)
-  have r₂ := in_off hr (show 136 + 8 ≤ 2560 by decide) (by decide)
-  have r₃ := in_off hr (show 144 + 8 ≤ 2560 by decide) (by decide)
-  have r₄ := in_off hr (show 152 + 8 ≤ 2560 by decide) (by decide)
-  have r₅ := in_off hr (show 160 + 8 ≤ 2560 by decide) (by decide)
-  have r₆ := in_off hr (show 168 + 8 ≤ 2560 by decide) (by decide)
+  have hr := covers_prefix hr₀ hN
+  have r₁ := in_off hr (show 128 + 8 ≤ 176 by decide) (by decide)
+  have r₂ := in_off hr (show 136 + 8 ≤ 176 by decide) (by decide)
+  have r₃ := in_off hr (show 144 + 8 ≤ 176 by decide) (by decide)
+  have r₄ := in_off hr (show 152 + 8 ≤ 176 by decide) (by decide)
+  have r₅ := in_off hr (show 160 + 8 ≤ 176 by decide) (by decide)
+  have r₆ := in_off hr (show 168 + 8 ≤ 176 by decide) (by decide)
   have e₁ := hs (.rbx, 128) (by simp [saved])
   have e₂ := hs (.rbp, 136) (by simp [saved])
   have e₃ := hs (.r12, 144) (by simp [saved])
@@ -158,11 +168,11 @@ theorem ret_kept {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {SP : Addr
   hf.readW (r := ⟨SP, 8⟩) (Region.contains_self _ _) hd (by decide)
 
 /-- The end of every function: our caller's registers restored. -/
-theorem exit_ok {s s₀ : State} {W : Addr} (h15 : s.gpr .r15 = W) (hsp : s.gpr .rsp = s₀.gpr .rsp)
-    (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀)
-    (hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64) :
+theorem exit_ok {s s₀ : State} {W : Addr} {N : Nat} (h15 : s.gpr .r15 = W) (hsp : s.gpr .rsp = s₀.gpr .rsp)
+    (hr : Covers [⟨W, N⟩] (s.rd ++ s.wr)) (hs : SavedAt s.mem W s₀)
+    (hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64) (hN : 176 ≤ N := by decide) :
     WP isa (.block restore) s fun s' => gprPreserved s₀ s' ∧ s'.mem = s.mem ∧ s'.gpr .rax = s.gpr .rax := by
-  obtain ⟨s', run, hsv, hother, hm, -, -⟩ := restore_ok s h15 hr hs
+  obtain ⟨s', run, hsv, hother, hm, -, -⟩ := restore_ok s h15 hr hs hN
   refine WP.of_runBlock ⟨s', run, ⟨fun r hr => ?_, by rw [hm, hret]⟩, hm, hother .rax (by simp [saved])⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -175,37 +185,45 @@ theorem exit_ok {s s₀ : State} {W : Addr} (h15 : s.gpr .r15 = W) (hsp : s.gpr 
   · exact hsv (.r15, 168) (by simp [saved])
 
 section
-variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N)
 include L
 
-theorem saved_absFrame {yo : Nat} (hyo : yo = 0 ∨ yo = 16) : ∀ r ∈ absFrame St W SP yo, (savedR W).Disjoint r := by
+theorem saved_absFrame {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ N) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) :
+    ∀ r ∈ absFrame St W SP yo gs, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
-  · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
+  · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, L.le⟩)).symm
+  · exact (L.st_w (by decide) (.inr ⟨by decide, L.le⟩)).symm
+  · exact L.w_gh hg (by decide) L.le
+  · exact (L.stk_w L.le).symm
 
-theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o, (savedR W).Disjoint r := by
+theorem saved_j0Frame (hN : 224 ≤ N) {gs : Nat} (hg : gs = 0 ∨ 512 + gs ≤ N) :
+    ∀ r ∈ j0Frame St W SP gs, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inr (by omega)) (by decide) (by omega)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
+  · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, L.le⟩)).symm
+  · exact L.w_w (.inr (by decide)) L.le L.le
+  · exact L.w_w (.inl (by decide)) L.le (Lay.leN hN)
+  · exact L.w_gh hg (by decide) L.le
+  · exact (L.stk_w L.le).symm
 
-theorem saved_j0Frame : ∀ r ∈ j0Frame St W SP, (savedR W).Disjoint r := by
+end
+
+section
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N)
+include L
+
+theorem saved_tagFrame (hN : 184 ≤ N) {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o N, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using (L.st_w (a := 0) (n := 80) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.stk_w (by decide)).symm
+  · simpa using (L.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, (Lay.leN hN)⟩)).symm
+  · exact L.w_w (.inr (by decide)) (Lay.leN hN) (Lay.leN hN)
+  · exact L.w_w (.inr (by omega_using [ho])) (Lay.leN hN) (by omega_using [hN, ho])
+  · exact L.w_hi (by decide) (Lay.leN hN)
+  · exact (L.stk_w (Lay.leN hN)).symm
 
 end
 
@@ -215,13 +233,14 @@ theorem toNat_mod16 (n : Nat) : (BitVec.ofNat 64 n).toNat % 16 = n % 16 := by
   rw [BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide)]
 
 /-- The layout, from disjointness of the context, the state, `W` and the stack. -/
-theorem Lay.of {Ctx St W SP : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
-    (ww : W.toNat + 2560 ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
-    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem Lay.of {Ctx St W SP : Addr} {N : Nat} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
+    (ww : W.toNat + N ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
+    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, N⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, N⟩)
     (kc : (below SP 8).Disjoint ⟨Ctx, 256⟩) (ks : (below SP 8).Disjoint ⟨St, 80⟩)
-    (kw : (below SP 8).Disjoint ⟨W, 2560⟩) : Lay Ctx St W SP :=
-  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by decide)), sW.sub_right (Lay.wSub (by decide)),
-    kc, ks, kw⟩
+    (kw : (below SP 8).Disjoint ⟨W, N⟩) (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    Lay Ctx St W SP N :=
+  ⟨cw, sw, ww, cs, cW, sW.sub_right (Region.sub_prefix (by omega_using [hN])), sW.sub_right (Lay.wSub (by omega_using [hN])),
+    kc, ks, kw, hN, hN'⟩
 
 theorem ofNat_lit (n : Nat) : (OfNat.ofNat n : Addr) = BitVec.ofNat 64 n := rfl
 

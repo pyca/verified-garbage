@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Spec.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Canonical Montgomery products add arbitrary fixed-base exponents. -/
 
@@ -30,6 +31,6 @@ theorem mont_square_encoded {g E R M a c : Nat}
     (encoded : a = powMod g E M * R % M)
     (square : c * R % M = a * a % M) :
     c = powMod g (2*E) M * R % M := by
-  simpa only [show E+E=2*E by omega] using mont_product_encoded coprime canonical encoded encoded square
+  simpa only [show E+E=2*E by omega_using []] using mont_product_encoded coprime canonical encoded encoded square
 
 end VG.Proof.Rsa.FixedBaseComb

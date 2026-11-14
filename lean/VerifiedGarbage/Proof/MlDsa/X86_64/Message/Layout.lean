@@ -55,7 +55,7 @@ theorem sx32 {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = Bi
 theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem gpr_ce (t : State) (rd wr : List Region) {r : Reg} (h : r ≠ .rsp) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
@@ -161,7 +161,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 40) :
     rw [Offset.sub_ofNat_eq (B + BitVec.ofNat 64 40) (a := m) (b := 40) hm, BitVec.add_sub_cancel]
   show Region.Sub ⟨B + BitVec.ofNat 64 40 - BitVec.ofNat 64 m, m⟩ _
   rw [this]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hm])
 
 theorem below32 (B : Addr) : below (B + BitVec.ofNat 64 32) 32 = ⟨B, 32⟩ := by
   show (⟨B + BitVec.ofNat 64 32 - BitVec.ofNat 64 32, 32⟩ : Region) = _
@@ -213,7 +213,7 @@ theorem congr (hc : Ctx L g mx m₀ t) {g' : Reg → BitVec 64} {mx' : BitVec 32
 /-- A slot of the frame is readable. -/
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₂ : d + 8 ≤ 72) :
     InRegions (t.rd ++ t.wr) (L.SP + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega_using [h₂])⟩
 
 /-- The return address of a call from the frame. -/
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 32, 8⟩ := by
@@ -241,7 +241,7 @@ theorem ce_byte (t : State) {R : Region} (hd : (below (t.gpr .rsp) 8).Disjoint R
     (hR : R.len ≤ 2 ^ 64) {i : Nat} (hi : i < R.len) :
     t.callEntry.mem (R.base + BitVec.ofNat 64 i) = t.mem (R.base + BitVec.ofNat 64 i) :=
   Frame.bytes (rs := [below (t.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (by simpa using hd.symm) hR hi
 
 theorem ce_bytesAt (hc : Ctx L g mx m₀ t) {p : Addr} {n : Nat}
@@ -263,29 +263,29 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
     intro d n h₁ r hr
     rw [Lay.SP, add_add]
     rcases List.mem_append.mp hr with hr | hr
-    · exact (hL.stk_r hL.kX (d := 40 + d) (n := n) (by omega)).sub_right (hrs r hr).sub
+    · exact (hL.stk_r hL.kX (d := 40 + d) (n := n) (by omega_using [h₁])).sub_right (hrs r hr).sub
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by omega) (by omega)
+      exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h₁])
   have keep : ∀ d, d + 8 ≤ 72 →
       t'.mem.readW (L.SP + BitVec.ofNat 64 d) 64 = t.mem.readW (L.SP + BitVec.ofNat 64 d) 64 :=
     fun d h => hf.readW (Region.contains_self _ _) (hdisj d 8 h) (by decide)
   have khdr : bytesAt t'.mem L.SP 2 = bytesAt t.mem L.SP 2 :=
     Proof.MlKem.bytesAt_congr fun i hi => by
-      have := hf.bytes (R := ⟨L.SP + BitVec.ofNat 64 0, 2⟩) (fun r hr => hdisj 0 2 (by omega) r hr)
+      have := hf.bytes (R := ⟨L.SP + BitVec.ofNat 64 0, 2⟩) (fun r hr => hdisj 0 2 (by omega_using []) r hr)
         (by show 2 ≤ 2 ^ 64; decide) hi
       simpa only [BitVec.add_zero] using this
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hcs .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
-    hmx.trans hc.mx, (keep 8 (by omega)).trans hc.pScr, (keep 16 (by omega)).trans hc.pRnd,
-    (keep 24 (by omega)).trans hc.pSig, (keep 32 (by omega)).trans hc.pCtxLen,
-    (keep 40 (by omega)).trans hc.pCtx, (keep 48 (by omega)).trans hc.pLen,
-    (keep 56 (by omega)).trans hc.pMsg, (keep 64 (by omega)).trans hc.pKey, khdr.trans hc.hdr,
+    hmx.trans hc.mx, (keep 8 (by omega_using [])).trans hc.pScr, (keep 16 (by omega_using [])).trans hc.pRnd,
+    (keep 24 (by omega_using [])).trans hc.pSig, (keep 32 (by omega_using [])).trans hc.pCtxLen,
+    (keep 40 (by omega_using [])).trans hc.pCtx, (keep 48 (by omega_using [])).trans hc.pLen,
+    (keep 56 (by omega_using [])).trans hc.pMsg, (keep 64 (by omega_using [])).trans hc.pKey, khdr.trans hc.hdr,
     hc.frame.trans (Frame.sub hf fun r hr => ?_)⟩
   rcases List.mem_append.mp hr with hr | hr
   · exact ⟨L.XS, by simp, (hrs r hr).sub⟩
   · simp only [List.mem_singleton] at hr; subst hr
     refine ⟨L.STK, by simp, ?_⟩
-    have := Offset.sub_base L.B (d := 0) (n := 40) (k := 112) (by omega)
+    have := Offset.sub_base L.B (d := 0) (n := 40) (k := 112) (by omega_using [])
     simpa using this
 
 /-! ## Calls that write only within `X` -/
@@ -318,7 +318,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     refine covers_of_within fun r hr => ?_
     obtain ⟨R, hR, hw⟩ := hwX r hr
     exact ⟨R, List.mem_cons_of_mem _ hR, hw⟩
-  refine WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
+  refine WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
   have hf' : Frame (wr ++ [⟨L.B, 40⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -333,29 +333,29 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     intro d n h₁ r hr
     rw [Lay.SP, add_add]
     rcases List.mem_append.mp hr with hr | hr
-    · exact (hL.stk_r hL.kX (d := 40 + d) (n := n) (by omega)).sub_right (hwsub r hr).sub
+    · exact (hL.stk_r hL.kX (d := 40 + d) (n := n) (by omega_using [h₁])).sub_right (hwsub r hr).sub
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint_base _ (by omega) (by omega)
+      exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h₁])
   have keep : ∀ d, d + 8 ≤ 72 →
       s'.mem.readW (L.SP + BitVec.ofNat 64 d) 64 = t.mem.readW (L.SP + BitVec.ofNat 64 d) 64 :=
     fun d h => hf'.readW (Region.contains_self _ _) (hdisj d 8 h) (by decide)
   have khdr : bytesAt s'.mem L.SP 2 = bytesAt t.mem L.SP 2 :=
     Proof.MlKem.bytesAt_congr fun i hi => by
-      have := hf'.bytes (R := ⟨L.SP + BitVec.ofNat 64 0, 2⟩) (fun r hr => hdisj 0 2 (by omega) r hr)
+      have := hf'.bytes (R := ⟨L.SP + BitVec.ofNat 64 0, 2⟩) (fun r hr => hdisj 0 2 (by omega_using []) r hr)
         (by show 2 ≤ 2 ^ 64; decide) hi
       simpa only [BitVec.add_zero] using this
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, ?_, fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
-    hmx.trans hc.mx, (keep 8 (by omega)).trans hc.pScr, (keep 16 (by omega)).trans hc.pRnd,
-    (keep 24 (by omega)).trans hc.pSig, (keep 32 (by omega)).trans hc.pCtxLen,
-    (keep 40 (by omega)).trans hc.pCtx, (keep 48 (by omega)).trans hc.pLen,
-    (keep 56 (by omega)).trans hc.pMsg, (keep 64 (by omega)).trans hc.pKey, khdr.trans hc.hdr,
+    hmx.trans hc.mx, (keep 8 (by omega_using [])).trans hc.pScr, (keep 16 (by omega_using [])).trans hc.pRnd,
+    (keep 24 (by omega_using [])).trans hc.pSig, (keep 32 (by omega_using [])).trans hc.pCtxLen,
+    (keep 40 (by omega_using [])).trans hc.pCtx, (keep 48 (by omega_using [])).trans hc.pLen,
+    (keep 56 (by omega_using [])).trans hc.pMsg, (keep 64 (by omega_using [])).trans hc.pKey, khdr.trans hc.hdr,
     hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
     · exact ⟨L.XS, by simp, (hwsub r hr).sub⟩
     · simp only [List.mem_singleton] at hr; subst hr
       refine ⟨L.STK, by simp, ?_⟩
-      have := Offset.sub_base L.B (d := 0) (n := 40) (k := 112) (by omega)
+      have := Offset.sub_base L.B (d := 0) (n := 40) (k := 112) (by omega_using [])
       simpa using this
 
 end VG.Proof.MlDsa.X86_64.Message

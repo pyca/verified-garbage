@@ -92,8 +92,8 @@ theorem call_args_eq (hL : L.Ok) {vs : List Value} (hn : vs.length ≤ 6)
     {a b : State} (h : Two L g₁ g₂ m₁ m₂ (OutArgs L vs) a b) {j : Nat} (hj : j < vs.length) :
     arg a.callEntry j = arg b.callEntry j := by
   have H := hashSpace hL
-  rw [Whole.call_arg h.1.esp H.below H.frameFit (by omega),
-    Whole.call_arg h.2.1.esp H.below H.frameFit (by omega),
+  rw [Whole.call_arg h.1.esp H.below H.frameFit (by omega_using [hn, hj]),
+    Whole.call_arg h.2.1.esp H.below H.frameFit (by omega_using [hn, hj]),
     h.2.2.1.slot hL hj hn, h.2.2.2.slot hL hj hn]
 
 theorem call_ct (hL : L.Ok) {P : State → Prop} {k : Contract isa} {c : Prog isa} {name : String}
@@ -154,15 +154,15 @@ theorem hash_frame_bytes {L : Lay} (hL : L.Ok) {m m' : Mem} (hf : Frame (hashWri
       Spec.Ed25519.bytesAt m (L.E.setWidth 64 + BitVec.ofNat 64 d) n := by
   unfold Spec.Ed25519.bytesAt
   refine List.map_congr_left fun i hi => ?_
-  refine hf.bytes (R := ⟨L.E.setWidth 64 + BitVec.ofNat 64 d, n⟩) ?_ (by change n ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+  refine hf.bytes (R := ⟨L.E.setWidth 64 + BitVec.ofNat 64 d, n⟩) ?_ (by change n ≤ 2 ^ 64; omega_using [hn]) (List.mem_range.mp hi)
   simp only [hashWrites, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
-  · exact hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p (Offset.sub_base _ (by omega : d + n ≤ 256) p hp))
-  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p (Offset.sub_base _ (by omega_using [hn] : d + n ≤ 256) p hp))
+  · exact Offset.disjoint_base _ (by omega_using [hd]) (by omega_using [hn])
   · change Region.Disjoint _ ⟨(L.E - BitVec.ofNat 32 24).setWidth 64, 24⟩
     rw [Taint.sub_setWidth hL.below]
-    exact Offset.disjoint_below _ (n := 24) (d := d) (k := n) (by omega)
-  · exact Offset.disjoint _ (e := 192) (k := 64) (by omega) (by omega) (by decide)
+    exact Offset.disjoint_below _ (n := 24) (d := d) (k := n) (by omega_using [hn])
+  · exact Offset.disjoint _ (e := 192) (k := 64) (by omega_using [hn]) (by omega_using [hn]) (by decide)
 
 theorem hash_out_bytes {L : Lay} (hL : L.Ok) {m m' : Mem} (hf : Frame (hashWrites L) m m') :
     Spec.Ed25519.bytesAt m' (L.out.setWidth 64) 32 = Spec.Ed25519.bytesAt m (L.out.setWidth 64) 32 := by
@@ -206,7 +206,7 @@ theorem update_prefix (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
       Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (L.scr.setWidth 64)
         (Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 64) 32) := by
   have e : (L.E + 64).setWidth 64 = L.E.setWidth 64 + 64 :=
-    addr_eq (x := L.E) (k := 64) (by have := hL.top; omega)
+    addr_eq (x := L.E) (k := 64) (by have := hL.top; omega_using [this])
   refine WP.mono (update_step hc hL ha (c := 0#32) (by decide) (by exact Whole.valid_all (by decide)) ?_
     (prefix_input hL) (prev := []) (by decide) hr) fun t ⟨ht, hf, hp⟩ => ⟨ht, hf, ?_⟩
   · intro t ht
@@ -224,7 +224,7 @@ theorem update_message (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   · intro t ht
     have h := update_args hL count (.caller 3 0) (.caller 4 0) ht
     simpa only [value, Lay.value, BitVec.add_zero] using h
-  · rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2 ^ 64; omega)] at hp
+  · rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2 ^ 64; omega_using [])] at hp
     exact hp
 
 end VG.Proof.Ed25519.X86.SignCached
@@ -294,9 +294,9 @@ theorem hashNonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
   refine WP.mono (finalize_step hw hL ha 32 (by decide) true ?_ ?_ rw')
     fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans (fw.trans ft)), hd⟩
   · rw [List.length_append, bytes_length, bytes_length]
-    have := L.len.isLt; omega
+    have := L.len.isLt; omega_using []
   · rw [List.length_append, bytes_length, bytes_length]
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using []
 
 theorem hashChallenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa hashChallenge s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
@@ -320,9 +320,9 @@ theorem hashChallenge_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m�
   refine WP.mono (finalize_step hz hL ha 64 (by decide) true ?_ ?_ rz)
     fun t ⟨ht, ft, hd⟩ => ⟨ht, fu.trans (fv.trans (fw.trans (fz.trans ft))), hd⟩
   · rw [List.length_append, List.length_append, bytes_length, bytes_length, bytes_length]
-    have := L.len.isLt; omega
+    have := L.len.isLt; omega_using []
   · rw [List.length_append, List.length_append, bytes_length, bytes_length, bytes_length]
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using []
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -342,8 +342,8 @@ theorem single_frame_bytes {d n e k : Nat} (hf : Frame [⟨L.E.setWidth 64 + Bit
     Spec.Ed25519.bytesAt m' (L.E.setWidth 64 + BitVec.ofNat 64 d) n =
       Spec.Ed25519.bytesAt m (L.E.setWidth 64 + BitVec.ofNat 64 d) n :=
   frame_bytes hf ⟨L.E.setWidth 64 + BitVec.ofNat 64 d, n⟩
-    (by rintro r hr; rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hsep (by omega) (by omega))
-    (by change n ≤ 2 ^ 64; omega)
+    (by rintro r hr; rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hsep (by omega_using [hd]) (by omega_using [he]))
+    (by change n ≤ 2 ^ 64; omega_using [hd])
 
 theorem primitive_field_bytes (hL : L.Ok) {out : Region}
     (hf : Frame (primitiveWrites L out) m m') {d : Nat} (hd : 24 ≤ d) (hb : d + 32 ≤ 256)
@@ -356,11 +356,11 @@ theorem primitive_field_bytes (hL : L.Ok) {out : Region}
   · exact ho
   · exact hL.kc.sub_left (field_sub hL hb)
   · change Region.Disjoint ⟨(fp L d).setWidth 64, 32⟩ _
-    rw [fp_addr hL (by omega)]
-    exact Offset.disjoint_base _ hd (by omega)
+    rw [fp_addr hL (by omega_using [hb])]
+    exact Offset.disjoint_base _ hd (by omega_using [hb])
   · change Region.Disjoint ⟨(fp L d).setWidth 64, 32⟩ ⟨(L.E - BitVec.ofNat 32 24).setWidth 64, 24⟩
-    rw [fp_addr hL (by omega), Taint.sub_setWidth hL.below]
-    exact Offset.disjoint_below _ (n := 24) (d := d) (k := 32) (by omega)
+    rw [fp_addr hL (by omega_using [hb]), Taint.sub_setWidth hL.below]
+    exact Offset.disjoint_below _ (n := 24) (d := d) (k := 32) (by omega_using [hb])
 
 theorem reduce_field_bytes (hL : L.Ok) {o d : Nat}
     (hf : Frame (primitiveWrites L (field L o)) m m') (hd : 24 ≤ d) (hb : d + 32 ≤ 256)
@@ -369,8 +369,8 @@ theorem reduce_field_bytes (hL : L.Ok) {o d : Nat}
       Spec.Ed25519.bytesAt m ((fp L d).setWidth 64) 32 := by
   refine primitive_field_bytes hL hf hd hb ?_
   change Region.Disjoint ⟨(fp L d).setWidth 64, 32⟩ ⟨(fp L o).setWidth 64, 32⟩
-  rw [fp_addr hL (by omega), fp_addr hL (by omega)]
-  exact Offset.disjoint _ hs (by omega) (by omega)
+  rw [fp_addr hL (by omega_using [hb]), fp_addr hL (by omega_using [ho])]
+  exact Offset.disjoint _ hs (by omega_using [hb]) (by omega_using [ho])
 
 theorem base_field_bytes (hL : L.Ok) (hf : Frame (primitiveWrites L (baseOut L)) m m')
     {d : Nat} (hd : 24 ≤ d) (hb : d + 32 ≤ 256) :
@@ -407,7 +407,7 @@ theorem hash_field_bytes (hL : L.Ok) (hf : Frame (hashWrites L) m m')
     {d : Nat} (hd : 24 ≤ d) (hb : d + 32 ≤ 192) :
     Spec.Ed25519.bytesAt m' ((fp L d).setWidth 64) 32 =
       Spec.Ed25519.bytesAt m ((fp L d).setWidth 64) 32 := by
-  rw [fp_addr hL (by omega)]
+  rw [fp_addr hL (by omega_using [hb])]
   exact hash_frame_bytes hL hf hd hb
 
 end VG.Proof.Ed25519.X86.SignCached
@@ -675,7 +675,7 @@ theorem update_call_ct (hL : L.Ok) {vs : List Value} (hn : vs.length = 6)
   · intro g m t hc hs
     exact update_ready hc hL hi (hargs t hs)
   · intro a b ar aw br bw h
-    exact ⟨congrArg (· - 4) (two_esp h), fun j hj => call_args_eq hL (by omega) h (by omega)⟩
+    exact ⟨congrArg (· - 4) (two_esp h), fun j hj => call_args_eq hL (by omega_using [hn]) h (by omega_using [hn, hj])⟩
 
 theorem append_pair_eq {a b c d : BitVec 32} (h : a ++ b = c ++ d) : a = c ∧ b = d := by
   constructor
@@ -696,12 +696,12 @@ theorem finalize_call_ct (hL : L.Ok) (count : BitVec 64) :
     refine ⟨congrArg (· - 4) (two_esp h), ?_⟩
     intro j hj
     have H := hashSpace hL
-    rw [arg_withRegions, arg_withRegions, Whole.call_arg h.1.esp H.below H.frameFit (by omega),
-      Whole.call_arg h.2.1.esp H.below H.frameFit (by omega)]
+    rw [arg_withRegions, arg_withRegions, Whole.call_arg h.1.esp H.below H.frameFit (by omega_using [hj]),
+      Whole.call_arg h.2.1.esp H.below H.frameFit (by omega_using [hj])]
     obtain ⟨a0, a3, a4, ac⟩ := h.2.2.1
     obtain ⟨b0, b3, b4, bc⟩ := h.2.2.2
     have pair := append_pair_eq (ac.trans bc.symm)
-    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl | rfl
+    rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega_using [hj]) with rfl | rfl | rfl | rfl | rfl
     · exact a0.trans b0.symm
     · exact pair.2
     · exact pair.1
@@ -871,7 +871,7 @@ theorem frame_ok {first : Prog isa} {s : State} (h : (signLocalWith n key post).
   have hL := lay_ok h sl
   have hb' := entry_bounds h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
-    (by simp only [List.length_replicate]; omega) (bodyFrom_nosp hn)
+    (by simp only [List.length_replicate]; omega_using [hb']) (bodyFrom_nosp hn)
     (WP.mono hb fun u ⟨hu, ho⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, hp _ ?_⟩
   · by_cases he : r = .esp
@@ -947,10 +947,10 @@ theorem seed64_disjoint (hL : L.Ok) (h64 : L.seedLen = 64) :
 theorem copy_arg {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok)
     (ha : Arguments L m₀) :
     InRegions (t.rd ++ t.wr) (addr L.E 264) 4 ∧ t.mem.readW (addr L.E 264) 32 = L.seed := by
-  rw [addr_eq (by have := hL.top; omega)]
+  rw [addr_eq (by have := hL.top; omega_using [this])]
   refine ⟨⟨L.ARGS, ?_, ?_⟩, (hc.arg_word hL (j := 1) (by decide)).trans (ha.1 1 (by decide))⟩
   · rw [hc.rd]; exact List.mem_append_left _ (by simp [Lay.inputs])
-  · exact Offset.contains _ (e := 260) (k := 24) (by omega) (by omega) (by decide)
+  · exact Offset.contains _ (e := 260) (k := 24) (by omega_using []) (by omega_using []) (by decide)
 
 /-- `copyExpanded` leaves the caller's 64 bytes at the second argument at frame offset 192. -/
 theorem copy_ok {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok)
@@ -958,10 +958,10 @@ theorem copy_ok {g : Reg → BitVec 32} {m₀ : Mem} {t : State} (hc : Ctx L g m
     WP isa copyExpanded t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.bytesAt u.mem (L.E.setWidth 64 + 192) 64 = Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 64 := by
   obtain ⟨harg, hp⟩ := copy_arg hc hL ha
-  refine WP.mono (Whole.copyExpanded_ok hc (by have := hL.top; omega) harg hp
-    (by have := hL.ns; omega) (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64))
+  refine WP.mono (Whole.copyExpanded_ok hc (by have := hL.top; omega_using [this]) harg hp
+    (by have := hL.ns; omega_using [h64, this]) (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64))
     (seed64_disjoint hL h64)) fun u ⟨hu, hb⟩ => ⟨hu, hb.trans ?_⟩
-  have hs := hc.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change L.seedLen ≤ 2 ^ 64; omega)
+  have hs := hc.input_bytes hL (r := L.SEED) (by simp [Lay.inputs]) (by change L.seedLen ≤ 2 ^ 64; omega_using [h64])
   rw [seed64 h64] at hs
   exact hs
 
@@ -989,11 +989,11 @@ theorem copy_ct (hL : L.Ok) (h64 : L.seedLen = 64) (ha : Arguments L m₁) (hb :
       · exact two_esp h
       · exact h.2.2.1.trans h.2.2.2.symm
     · intro t hc he
-      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega) he (by have := hL.ns; omega)
+      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega_using [this]) he (by have := hL.ns; omega_using [h64, this])
         (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64)) (seed64_disjoint hL h64))
         fun _ hu => ⟨hu.1, trivial⟩
     · intro t hc he
-      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega) he (by have := hL.ns; omega)
+      exact WP.mono (Whole.copyWords_ok hc (by have := hL.top; omega_using [this]) he (by have := hL.ns; omega_using [h64, this])
         (by rw [hc.rd]; exact List.mem_append_left _ (seed64_mem h64)) (seed64_disjoint hL h64))
         fun _ hu => ⟨hu.1, trivial⟩
   exact p.seq w

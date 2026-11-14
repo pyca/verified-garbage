@@ -1980,9 +1980,9 @@ bnez t5, 262b
     )
 }
 
-/// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
+/// `vg_rsa_pkcs1_sign`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_sign` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
+/// Contract: `VG.Spec.RsaPkcs1Sig.signPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash`, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on `digest`, the private key or the rest of `pre`.
 ///
 /// # Safety
 ///
@@ -1996,6 +1996,7 @@ bnez t5, 262b
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes, and aligned for `u64`.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -2003,28 +2004,30 @@ bnez t5, 262b
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 4416 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 4432 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 4, 0xb7010113
+.insn 4, 0xb6010113
 .insn 2, 0x828a
-.insn 4, 0x0692b023
-.insn 4, 0x0722b423
-.insn 4, 0x0732b823
-.insn 4, 0x0742bc23
-.insn 4, 0x0952b023
-.insn 4, 0x0812b423
+.insn 4, 0x0692b823
+.insn 4, 0x0722bc23
+.insn 4, 0x0932b023
+.insn 4, 0x0942b423
+.insn 4, 0x0952b823
+.insn 4, 0x0812bc23
 .insn 2, 0x84aa
 .insn 2, 0x8932
 .insn 2, 0x89b6
 .insn 2, 0x8a3a
 .insn 2, 0x8abe
-.insn 4, 0x49010f93
-.insn 4, 0x09028593
+.insn 4, 0x4a010f93
+.insn 4, 0x0a028593
 .insn 2, 0x864e
 .insn 4, 0x02081693
 .insn 2, 0x9281
@@ -2886,7 +2889,7 @@ j 225f
 225:
 beqz a0, 254f
 .insn 2, 0x828a
-.insn 4, 0x49010f93
+.insn 4, 0x4a010f93
 .insn 4, 0x008fb303
 .insn 4, 0x0062b023
 .insn 4, 0x010fb303
@@ -2911,17 +2914,21 @@ beqz a0, 254f
 .insn 4, 0x0462b823
 .insn 4, 0x060fb303
 .insn 4, 0x0462bc23
+.insn 4, 0x068fb303
+.insn 4, 0x0662b023
+.insn 4, 0x070fb303
+.insn 4, 0x0662b423
 .insn 2, 0x8526
 .insn 2, 0x85ce
 .insn 2, 0x864a
 .insn 2, 0x86ce
 .insn 2, 0x8752
 .insn 2, 0x87d6
-.insn 4, 0x09028813
+.insn 4, 0x0a028813
 .insn 2, 0x88ce
-call {vg_rsa_private_checked}
+call {vg_rsa_private_checked_precomputed}
 .insn 2, 0x828a
-.insn 4, 0x09028593
+.insn 4, 0x0a028593
 .insn 2, 0x8f4e
 .insn 2, 0x4281
 256:
@@ -2941,15 +2948,15 @@ j 255f
 bnez t5, 257b
 255:
 .insn 2, 0x828a
-.insn 4, 0x0602b483
-.insn 4, 0x0682b903
-.insn 4, 0x0702b983
-.insn 4, 0x0782ba03
-.insn 4, 0x0802ba83
-.insn 4, 0x0882b083
-.insn 4, 0x49010113
+.insn 4, 0x0702b483
+.insn 4, 0x0782b903
+.insn 4, 0x0802b983
+.insn 4, 0x0882ba03
+.insn 4, 0x0902ba83
+.insn 4, 0x0982b083
+.insn 4, 0x4a010113
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }

@@ -26,7 +26,7 @@ theorem rotate_mask_byte (x : BitVec 32) :
   · simp [h]
   · simp only [h, decide_false, Bool.not_false, Bool.true_and,
       ↓reduceIte,
-      decide_eq_true (show p - 8 < 32 by omega), Bool.and_true]
+      decide_eq_true (show p - 8 < 32 by omega_using [hp]), Bool.and_true]
 
 theorem exponentAccumulate_ok (s : State) {p : Addr}
     (ptr : s.ea ⟨.esi, 0⟩ = p) (read : InRegions (s.rd ++ s.wr) p 1) :

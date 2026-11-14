@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # PBKDF2-HMAC-SHA-512 (RFC 8018) on ARMv7: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-512 (RFC 8018) on ARMv7 -/
 
 @[expose] public section
 

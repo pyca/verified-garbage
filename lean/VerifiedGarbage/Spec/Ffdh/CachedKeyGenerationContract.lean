@@ -9,7 +9,7 @@ public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
 
 **Trusted.** These are new APIs. Existing full-width and vetted entry points
 are unchanged. The context is initialized once for checked parameters and
-reused for attempts and rejection searches. Their results and entropy-refill
+reused for rejection searches. Their results and entropy-refill
 protocol are those of `vettedScalarOfOctets` and `vettedKeySearch`.
 -/
 
@@ -55,60 +55,17 @@ def generationPrecomputeApi : Api where
   safety := domainSafety ++ ["domain must be one that vg_ffdh_check_domain accepted.",
     "ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8)."] ++ scratchSafety
 
-/-- Appending the context preserves every existing attempt argument's index. -/
-def cachedGenerateKeySig : Sig :=
-  { generateKeySig with params := generateKeySig.params ++ [("ctx", .slice false .u64 "ctx_len")] }
-
 /-- A cached operation receives exactly the context initialized for its domain. -/
 def generationContextAt (m : Mem) (ctx : Addr) (ctxLen pLen : Nat) (dom : List Byte) : Prop :=
   ctxLen = generationPrecomputedWords pLen ∧
     generationPrecompute pLen dom = some (wordsAt m ctx ctxLen)
-
-def cachedGenerateKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cachedGenerateKeySig.contract A
-    (pre := fun _x xLen _y yLen domain domainLen pLen _rand randLen _scratch scratchLen ctx ctxLen m =>
-      let dom := bytesAt m domain domainLen.toNat
-      pLenValid pLen.toNat ∧ domainLenValid pLen.toNat domainLen.toNat ∧
-      xLen.toNat = pLen.toNat ∧ yLen.toNat = pLen.toNat ∧ randLen.toNat = pLen.toNat ∧
-      scratchWords pLen.toNat ≤ scratchLen.toNat ∧ domainValid pLen.toNat dom ∧
-      generationContextAt m ctx ctxLen.toNat pLen.toNat dom)
-    (post := fun x _xLen y _yLen domain domainLen pLen rand randLen _scratch _scratchLen _ctx _ctxLen m m' r =>
-      let a := domainOf pLen.toNat (bytesAt m domain domainLen.toNat)
-      let s := vettedScalarOfOctets a (bytesAt m rand randLen.toNat)
-      r.toNat = keyStatus a s ∧
-        if keyStatus a s = 1 then
-          bytesAt m' x pLen.toNat = i2osp s pLen.toNat ∧
-            bytesAt m' y pLen.toNat = i2osp (powMod a.g s a.p) pLen.toNat
-        else bytesAt m' x pLen.toNat = List.replicate pLen.toNat 0 ∧
-          bytesAt m' y pLen.toNat = List.replicate pLen.toNat 0)
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _x _xLen _y _yLen domain domainLen pLen rand randLen _scratch _scratchLen _ctx _ctxLen m =>
-      let dom := bytesAt m domain domainLen.toNat
-      let a := domainOf pLen.toNat dom
-      dom.map (·.toNat) ++ [keyStatus a (vettedScalarOfOctets a (bytesAt m rand randLen.toNat))])
 
 def generationContextSafety : List String :=
   ["domain must be one that vg_ffdh_check_domain accepted.",
    "ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged \
     words written by vg_ffdh_generate_key_precompute for these parameters."]
 
-def cachedGenerateKeyApi : Api where
-  module := "ffdh"
-  name := "vg_ffdh_generate_key_cached"
-  sig := cachedGenerateKeySig
-  writeArgs := true
-  contracts := some fun A stack => cachedGenerateKeyContract A stack
-  summary := "One native finite-field Diffie–Hellman key-generation attempt using a reusable \
-    public five-tooth comb context. Takes p_len random bytes and implements the same \
-    vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted \
-    for checked parameters. The context's public maximum width fixes the schedule, \
-    including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. \
-    Timing may depend on the public domain, pointers, lengths and returned status, \
-    not otherwise on the random bytes or private scalar."
-  safety := domainSafety ++ generationContextSafety ++
-    ["x_len, y_len and rand_len must be p_len."] ++ scratchSafety
-
-/-- Appending the context also preserves every existing search argument's index. -/
+/-- Appending the context preserves every existing search argument's index. -/
 def cachedKeySearchSig : Sig :=
   { keySearchSig with params := keySearchSig.params ++ [("ctx", .slice false .u64 "ctx_len")] }
 

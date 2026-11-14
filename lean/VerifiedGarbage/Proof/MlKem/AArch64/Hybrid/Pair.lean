@@ -81,7 +81,7 @@ theorem pairMCode_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HS
   refine ⟨⟨ht.keep.gpr, ht.keep.rd, ht.keep.wr, ht.keep.sp, ht.keep.vcs⟩, hu.frame.trans (fut.mono fun r hr => List.mem_append_left _ hr), ht.left,
     ht.reducedLeft, ht.right, ht.reducedRight, ht.status, ?_, ?_⟩
   · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fut hSt, hu.hash]
-  · rw [VG.Proof.MlKem.bytesAt_frame fut hE' (by have := hS.lim; omega), hu.ek]
+  · rw [VG.Proof.MlKem.bytesAt_frame fut hE' (by have := hS.lim; omega_using [this]), hu.ek]
 
 structure PairMOutcomeW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : List Byte) (p a b e st : Addr) (E : List Byte) (j m : Nat)
     (s t : State) : Prop where

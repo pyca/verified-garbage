@@ -61,14 +61,14 @@ theorem ea_argOp {s₀ s : State} (h : s.gpr .esp = s₀.gpr .esp) (i : Nat) : s
 theorem arg_in (s : State) {n : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) {i : Nat} (hi : i < n) :
     (⟨argAddr s 0, 4 * n⟩ : Region).Contains (argAddr s i) 4 := by
   have hs := setWidth_toNat (s.gpr .esp)
-  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega),
-    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega)]
-  exact VG.Offset.contains _ (by omega) (by omega) (by omega)
+  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_using [hfit, hi]),
+    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_using [hfit, hi])]
+  exact VG.Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [hfit])
 
 /-- The working space, of `2 L ≥ slots` slots. -/
 theorem scrIn_of {rs : List Region} {b : BitVec 32} {L : Nat} (hr : (⟨b.setWidth 64, L * 8⟩ : Region) ∈ rs)
     (hfit : b.toNat + L * 8 ≤ 2 ^ 32) (hL : 4 * slots ≤ 8 * L) : ScrIn rs b :=
-  ⟨⟨2 * L, by omega, by omega, by rw [show 4 * (2 * L) = L * 8 by omega]; exact hr⟩, by omega⟩
+  ⟨⟨2 * L, by omega_using [hL], by omega_using [hfit], by rw [show 4 * (2 * L) = L * 8 by omega_using []]; exact hr⟩, by omega_using [hfit, hL]⟩
 
 /-- Every byte of `ws` from `4 * slots` on keeps its value. -/
 theorem keeps_of_frame {m m' : Mem} {b : BitVec 32} {L : Nat} {rs : List (Nat × Nat)}
@@ -77,9 +77,9 @@ theorem keeps_of_frame {m m' : Mem} {b : BitVec 32} {L : Nat} {rs : List (Nat ×
   fun i hi hout => hf _ fun r hr hc => by
     simp only [List.mem_singleton] at hr; subst hr
     simp only [Region.Contains] at hc
-    rw [Mem.sub_ofNat_toNat _ (by have := setWidth_toNat b; omega)] at hc
+    rw [Mem.sub_ofNat_toNat _ (by have := setWidth_toNat b; omega_using [fit, hi])] at hc
     have := hrs i hout
-    omega
+    omega_using [hc, this]
 
 /-! ## The preparation -/
 
@@ -118,19 +118,19 @@ theorem prep_correct (s : State) (hs : prepX86.pre s) :
   obtain ⟨hrd, hwr, dKW, dAW, dRW, fitK, fitW, fitE, -, hsz⟩ := hs
   rw [size_eq] at hsz
   let b := arg s 2
-  have hw : ScrIn s.wr b := scrIn_of (L := (arg s 3).toNat) (by rw [hwr]; simp [b]) fitW (by omega)
+  have hw : ScrIn s.wr b := scrIn_of (L := (arg s 3).toNat) (by rw [hwr]; simp [b]) fitW (by omega_using [hsz])
   have hrA : (⟨argAddr s 0, 16⟩ : Region) ∈ s.rd := by rw [hrd]; simp
   have dWS : ∀ r : Region, Region.Disjoint r ⟨b.setWidth 64, (arg s 3).toNat * 8⟩ →
-      Region.Disjoint r ⟨b.setWidth 64, 4 * slots⟩ := fun r h => h.sub_right (Region.sub_prefix (by omega))
+      Region.Disjoint r ⟨b.setWidth 64, 4 * slots⟩ := fun r h => h.sub_right (Region.sub_prefix (by omega_using [hsz]))
   have hE := setWidth_toNat (s.gpr .esp)
   have argSub : ∀ i < 4, Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 16⟩ := fun i hi => by
-    rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega),
-      show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega)]
-    exact VG.Offset.sub _ (by omega) (by omega)
+    rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_using [fitE, hi]),
+      show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_using [fitE])]
+    exact VG.Offset.sub _ (by omega_using []) (by omega_using [hi])
   obtain ⟨t, s', he, h₁, hesp, -, -, hf, hW⟩ := prepareBody_wp (s₀ := s) (b := b) (sched := arg s 0) hw
-    (fun i hi => by rw [ea_argOp rfl]; exact ⟨_, List.mem_append_left _ hrA, arg_in s (n := 4) (by omega) (by omega)⟩)
+    (fun i hi => by rw [ea_argOp rfl]; exact ⟨_, List.mem_append_left _ hrA, arg_in s (n := 4) (by omega_using [fitE]) (by omega_using [hi])⟩)
     (by rw [ea_argOp rfl]; rfl) (by rw [ea_argOp rfl]; rfl) (by rw [hrd]; simp) fitK (dWS _ dKW)
-    (fun i hi => by rw [ea_argOp rfl]; exact (dWS _ dAW).sub_left (argSub i (by omega)))
+    (fun i hi => by rw [ea_argOp rfl]; exact (dWS _ dAW).sub_left (argSub i (by omega_using [hi])))
   refine ⟨t, s', he, abi_of h₁ hesp ?_, ?_, keeps_of_frame hf fitW fun i hi => ?_⟩
   · exact hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dWS _ dRW) (by decide)
@@ -140,7 +140,7 @@ theorem prep_correct (s : State) (hs : prepX86.pre s) :
     exact hW
   · have := hi _ (List.mem_singleton_self _)
     simp only at this
-    omega
+    omega_using [this]
 
 /-! ## A batch -/
 
@@ -177,17 +177,17 @@ theorem crypt_correct (s : State) (hs : cryptX86.pre s) :
   obtain ⟨hrd, hwr, dAW, dRW, fitW, fitE, hsz, k₀, d₀, hH⟩ := hs
   rw [size_eq] at hsz
   let b := arg s 0
-  have hw : ScrIn s.wr b := scrIn_of (L := (arg s 1).toNat) (by rw [hwr]; simp [b]) fitW (by omega)
+  have hw : ScrIn s.wr b := scrIn_of (L := (arg s 1).toNat) (by rw [hwr]; simp [b]) fitW (by omega_using [hsz])
   have hE := setWidth_toNat (s.gpr .esp)
   have harg : InRegions (s.rd ++ s.wr) (s.ea (argOp 0)) 4 := by
     rw [ea_argOp rfl, hrd]; exact ⟨_, List.mem_append_left _ (List.mem_singleton_self _),
-      arg_in s (n := 2) (by omega) (by omega)⟩
+      arg_in s (n := 2) (by omega_using [fitE]) (by omega_using [])⟩
   have hb : s.mem.readW (s.ea (argOp 0)) 32 = b := by rw [ea_argOp rfl]; rfl
   obtain ⟨t, s', he, h₁, hesp, -, -, hf, hkeep, -⟩ :=
     cryptBody_wp hw harg hb (readyAt_of_words (words_of_holds hw.fit hH))
   refine ⟨t, s', he, abi_of h₁ hesp ?_, fun k d hk => ?_, fun i hi hout => ?_⟩
   · exact hf.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dRW.sub_right (Region.sub_prefix (by omega)))
+      simp only [List.mem_singleton] at hr; subst hr; exact dRW.sub_right (Region.sub_prefix (by omega_using [hsz])))
       (by decide)
   · obtain ⟨t₂, s₂, he₂, -, -, -, -, -, -, hB₂⟩ :=
       cryptBody_wp hw harg hb (readyAt_of_words (words_of_holds hw.fit hk))
@@ -201,12 +201,12 @@ theorem crypt_correct (s : State) (hs : cryptX86.pre s) :
     have hfit := hw.fit
     rw [slots_eq] at hfit
     by_cases ht : 384 ≤ i ∧ i < 1408
-    · rw [table_byte hw.fit (by rw [tableEnd_eq]; omega), Mem.readW_byte s'.mem _ (by omega),
-        Mem.readW_byte s.mem _ (by omega), hkeep _ (by rw [tableSlot_eq]; omega) (by rw [savedSlot_eq]; omega)]
+    · rw [table_byte hw.fit (by rw [tableEnd_eq]; omega_using [ht]), Mem.readW_byte s'.mem _ (by omega_using []),
+        Mem.readW_byte s.mem _ (by omega_using []), hkeep _ (by rw [tableSlot_eq]; omega_using [hout]) (by rw [savedSlot_eq]; omega_using [ht])]
     · refine hf _ fun r hr hc => ?_
       simp only [List.mem_singleton] at hr; subst hr
       simp only [Region.Contains, slots_eq] at hc
-      rw [Mem.sub_ofNat_toNat _ (by omega)] at hc
-      omega
+      rw [Mem.sub_ofNat_toNat _ (by omega_using [hi])] at hc
+      omega_using [hout, ht, hc]
 
 end VG.Proof.Sm4.X86

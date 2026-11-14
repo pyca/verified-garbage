@@ -89,10 +89,10 @@ theorem loadArg_vp {o j : Nat} {E : State → Prop} {A : State → Nat → Nat} 
     refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨e, h⟩ => ?_
     · rw [h₁.2.bk.sp, h₁.2.bk.pre.sp, h₂.2.bk.sp, h₂.2.bk.pre.sp]
     · obtain ⟨e1, e2, -⟩ := hin σ h.bk.pre
-      refine h.bk.ldrSp (o := o) (by omega) ho4 fun s1 u1 => ?_
+      refine h.bk.ldrSp (o := o) (by omega_using [ho']) ho4 fun s1 u1 => ?_
       have r1 := u1.rest (ws := [.r4]) (by simp)
       have b1 := h.bk.of_rest r1 u1.mem
-      refine b1.ldrSp (o := o + 4) (by omega) (by omega) fun t u2 => WP.block_nil ?_
+      refine b1.ldrSp (o := o + 4) (by omega_using [ho']) (by omega_using [ho4]) fun t u2 => WP.block_nil ?_
       have r2 := u2.rest (ws := [.r6]) (by simp)
       refine ⟨⟨e, ⟨b1.of_rest r2 u2.mem, (h.ws.rest r1).rest r2, by rw [u2.mem, u1.mem]; exact h.cnt,
         by rw [u2.mem, u1.mem]; exact h.full⟩⟩, by rw [u2.other .r4 (by simp), u1.gpr, e1], by rw [u2.gpr, e2]⟩
@@ -143,10 +143,10 @@ theorem consts_vp {E : State → Prop} :
     refine VP.block_append (l₁ := setWd aThree 0 3) (St.psetWd three_taint (by simp) (by decide) (by decide)
       (by decide) fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine VP.block_append (l₁ := setHi aMod 2 4 0x80000000) (St.psetHi (i := fun P => P.W - 1) mod_taint (by simp)
-      (by decide) (by decide) (by decide) (fun σ _ pre => by have := pre.wge; omega)
+      (by decide) (by decide) (by decide) (fun σ _ pre => by have := pre.wge; omega_using [this])
       fun σ _ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine VP.block_append (l₁ := setHi aTop 2 20 0x80000000) (St.psetHi (i := fun P => P.W - 5) top_taint (by simp)
-      (by decide) (by decide) (by decide) (fun σ _ pre => by have := pre.wge; omega)
+      (by decide) (by decide) (by decide) (fun σ _ pre => by have := pre.wge; omega_using [this])
       fun σ _ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _) ?_
     refine (St.psetWd c33_taint (by simp) (by decide) (by decide) (by decide)
       fun σ _ => by simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> exact Nat.two_pow_pos _).mono
@@ -158,17 +158,17 @@ theorem consts_vp {E : State → Prop} :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (config := {decide := true}) only [A0, Aload, upd, ↓reduceIte, Nat.zero_add, pow_mod_top]
-    all_goals (refine congrArg (2 ^ ·) ?_; simp only [KP.W] at *; omega)
+    all_goals (refine congrArg (2 ^ ·) ?_; simp only [KP.W] at *; omega_arith)
   refine st.mono (fun σ s ⟨e, h⟩ => h.st e fun j hj => ⟨?_, ?_⟩) (fun _ _ h => h)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · have pre := h.bk.pre
-    have p8 : 2 ^ (8 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega)
-    have p64 : 2 ^ 64 ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.wge; omega)
+    have p8 : 2 ^ (8 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using [])
+    have p64 : 2 ^ 64 ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.wge; omega_using [this])
     have := P0_lt P σ; have := Q0_lt P σ; have := pre.e_lt
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> first | exact Nat.two_pow_pos _ | omega
+      simp (config := {decide := true}) only [Aload, upd, ↓reduceIte] <;> first | exact Nat.two_pow_pos _ | omega_arith
 
 /-- The loads and the constants. -/
 theorem loads_vp {E : State → Prop} : VP (fun σ s => E σ ∧ Bk P σ s) loads (S0 P E) := by
@@ -181,12 +181,12 @@ theorem loads_vp {E : State → Prop} : VP (fun σ s => E σ ∧ Bk P σ s) load
   refine setupK_vp.seq (zero_vp.seq (VP.assoc ?_))
   refine (loadArg_vp (o := aoP) (A := fun _ _ => 0) (src := P.pP) (k := P.K) loadP_taint (by decide) (by decide)
     (by decide) fun σ h => ⟨h.aP, h.aPl, ⟨P.rP, List.mem_append_right _ (by rw [h.wr]; simp), Region.contains_self _ _⟩,
-      h.sP.symm, h.fP, by have := h.k1; omega, Nat.le_refl _⟩).seq (VP.assoc ?_)
+      h.sP.symm, h.fP, by have := h.k1; omega_using [this], Nat.le_refl _⟩).seq (VP.assoc ?_)
   refine (loadArg_vp (o := aoQ) (src := P.qP) (k := P.K) loadQ_taint (by decide) (by decide)
     (by decide) fun σ h => ⟨h.aQ, h.aQl, ⟨P.rQ, List.mem_append_right _ (by rw [h.wr]; simp), Region.contains_self _ _⟩,
-      h.sQ.symm, h.fQ, by have := h.k1; omega, Nat.le_refl _⟩).seq (VP.assoc ?_)
+      h.sQ.symm, h.fQ, by have := h.k1; omega_using [this], Nat.le_refl _⟩).seq (VP.assoc ?_)
   refine (loadArg_vp (o := aoE) (src := P.eP) (k := P.el) loadE_taint (by decide) (by decide)
-    (by decide) fun σ h => ⟨h.aE, h.aEl, h.rdE, h.sE.symm, h.fE, h.el1, by have := h.el2; have := h.k1; omega⟩).seq
+    (by decide) fun σ h => ⟨h.aE, h.aEl, h.rdE, h.sE.symm, h.fE, h.el1, by have := h.el2; have := h.k1; omega_arith⟩).seq
     (consts_vp.mono (fun σ s ⟨e, h⟩ => ⟨e, ⟨h.bk, h.ws, h.cnt, fun j hj => ?_⟩⟩) fun _ _ h => h)
   rw [h.full j hj]
   simp only [Aload, h.bk.pre.eB]

@@ -167,13 +167,13 @@ theorem call_okF {E : Addr} {g : Reg → BitVec 64} {v : VReg → BitVec 128}
     · exact ⟨FR E, List.mem_cons_self, hf⟩
     · exact ⟨R, List.mem_cons_of_mem _ hR, hs⟩
   have hcr : Covers (rd' ++ wr') (t.rd ++ t.wr) := by rw [h.rd, h.wr]; exact hcov
-  refine WP.callFV hv hpre hcr hcw (fun u hrd hwr hsp hf hcs hvs hp => ?_) (by omega)
+  refine WP.callFV hv hpre hcr hcw (fun u hrd hwr hsp hf hcs hvs hp => ?_) (by omega_using [hd])
   have hf' : Frame (wr' ++ [CK E]) t.mem u.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
     · rw [List.mem_singleton.mp hr, h.sp]
-      exact ⟨CK E, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega) (by decide)⟩
+      exact ⟨CK E, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega_using [hd]) (by decide)⟩
   refine hQ u (h.of_frameCK hrd hwr hsp hcs hvs hf' ?_) hf' hp
   intro r hr
   rcases hw r hr with hf | ⟨R, hR, hs⟩

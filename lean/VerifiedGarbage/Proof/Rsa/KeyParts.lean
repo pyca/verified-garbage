@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 
 /-!
@@ -30,9 +31,9 @@ def keyBits (n d p q dP dQ qInv Mp Mq Rp1 Rp2 Rq1 Rq2 Rpq : Nat) : Bool :=
 
 theorem factor_ge_two {n p q B : Nat} (h : p * q = n) (hq : q < B) (hB : B ≤ n) : 2 ≤ p := by
   rcases Nat.lt_or_ge p 2 with hp | hp
-  · rcases (show p = 0 ∨ p = 1 by omega) with rfl | rfl
-    · rw [Nat.zero_mul] at h; omega
-    · rw [Nat.one_mul] at h; omega
+  · rcases (show p = 0 ∨ p = 1 by omega_using [hp]) with rfl | rfl
+    · rw [Nat.zero_mul] at h; omega_using [hq, hB, h]
+    · rw [Nat.one_mul] at h; omega_using [hq, hB, h]
   · exact hp
 
 theorem keyValid_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = true) (he : exponentValid e = true)
@@ -50,18 +51,18 @@ theorem keyValid_parts {k n e d p q dP dQ qInv : Nat} (hm : modulusValid n k = t
   by_cases hpq : p * q = n
   · have hp2 := factor_ge_two hpq hq hn
     have hq2 := factor_ge_two (n := n) (q := p) (by rw [Nat.mul_comm]; exact hpq) hp hn
-    have eMp := hMp (by omega)
-    have eMq := hMq (by omega)
+    have eMp := hMp (by omega_using [hp2])
+    have eMq := hMq (by omega_using [hq2])
     by_cases hdP : dP < Mp
     · by_cases hdQ : dQ < Mq
       · by_cases hqi : qInv < p
-        · rw [hR1 (by omega), hR2 (by omega) hdP, hR3 (by omega), hR4 (by omega) hdQ, hR5 (by omega) hqi, eMp, eMq,
+        · rw [hR1 (by omega_using [hdP]), hR2 (by omega_using [hp2]) hdP, hR3 (by omega_using [hdQ]), hR4 (by omega_using [hq2]) hdQ, hR5 (by omega_using [hp2]) hqi, eMp, eMq,
             Nat.mul_comm e d, Nat.mul_comm qInv q]
           constructor
           · rintro ⟨h1, -, -, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
             exact ⟨h1, h4, h7, h5, h8, h9, h6, h10, h11, h12⟩
           · rintro ⟨h1, h4, h7, h5, h8, h9, h6, h10, h11, h12⟩
-            exact ⟨h1, by omega, by omega, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+            exact ⟨h1, by omega_using [hp, hMp, hR2, hR5, hn, hpq, hp2, hqi, h1, h4, h7, h5, h8, h11, h12], by omega_using [hq, hMq, hR4, hR5, hn, hpq, hq2, h1, h4, h9, h6, h10, h12], h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
         · simp only [hqi, false_and, and_false]
       · have hbad : ¬dQ < q - 1 := by simpa only [eMq] using hdQ
         simp only [hdQ, hbad, false_and, and_false]

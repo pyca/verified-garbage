@@ -99,7 +99,7 @@ theorem key_finish {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeyS
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hq)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   have hc (j : Nat) (hj : j < 4) : word t.mem p.control (8 * j) = word s.mem p.control (8 * j) :=
     hf.readW (r := ⟨p.control, 128⟩)
       (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
@@ -108,7 +108,7 @@ theorem key_finish {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeyS
   · rw [ha]
     have := key_status_lt result
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   · have ho := h.output
     unfold KeyOutput at ho ⊢
     rw [hb _ hd.1, hb _ hd.2.1]
@@ -135,7 +135,7 @@ theorem iteration_depth (a : Attempt) : sdepth (iteration a.call) ≤ 144 := by
   have := a.stack
   simp only [iteration, branch, attemptOrRequest, attemptRun, exhausted, zeroOutputs, zeroOut, classify,
     request, Impl.Bignum.PPC64LE.countLoop, sdepth, Attempt.call, Instr.frameBytes]
-  omega
+  omega_using [this]
 
 /-- After the frame: a finished search, with `r0` and the stack pointer
 back. -/
@@ -167,7 +167,7 @@ theorem key_body {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s)
     prun [exec_mflr]) (by decide)) fun t₁ ⟨⟨h0, hm₁⟩, k₁⟩ => ?_)
   have k' : Keep entryRegs s t₁ := k.trans' (k₁.mono (by decide))
   have hl := key_start h (by rw [k₁.gpr _ (by decide)]; exact hx) (hm₁.trans hm) k'
-  have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega
+  have hsp : 48 ≤ t₁.sp.toNat := by rw [k'.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
   refine WP.seq (WP.mono (WP.frameRegAny (r := .r0)
     (Q := fun u => KeyDone p s (keyResult s) u ∧ u.gpr .r0 = s.lr ∧ u.sp = s.sp) hsp ?_ ?_ ?_)
     fun u ⟨hd, h0', hsp'⟩ => ?_)
@@ -184,7 +184,7 @@ theorem key_body {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s)
     rw [RegUpd.gpr_write_self, h0, k.lr]
   · have := iteration_depth a
     simp only [sdepth]
-    omega
+    omega_using [this]
   · prun [exec_mtlr]
     exact ⟨⟨hd.input, hd.rd, hd.wr, hd.r31, hd.saved, hd.savedR31, hd.usedPtr, hd.used, hd.status,
       hd.policy, hd.output⟩, h0', hsp'⟩

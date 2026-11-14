@@ -19,7 +19,7 @@ theorem r2Counter_change {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
     (∀ a, a < 8 → wv t.mem B (slot w a) w = wv s.mem B (slot w a) w) ∧
     word t.mem B (slot w aN) = word s.mem B (slot w aN) ∧
     Frm B (r2Ranges w) s.mem t.mem := by
-  have hn : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+  have hn : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
   refine ⟨⟨hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi, ?_⟩, ?_, ?_, ?_, ?_⟩
   · rw [hm]; exact Hdr.store hg.hdr (by decide) (by decide) _
   · rw [hm, word_writeW_self]
@@ -29,7 +29,7 @@ theorem r2Counter_change {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
     exact Frm.of_outside (writeW_outside _ _ _ (by
       have := hdr_lt_slot w 0 (show sCnt < 32 by decide)
       have := slot_le (w := w) (show 0 < 8 by decide)
-      omega)) (by simp [r2Ranges])
+      omega_arith)) (by simp [r2Ranges])
 
 theorem r2Squares_init {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
     (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hn : n + 1 < 2 ^ 32) :
@@ -45,7 +45,7 @@ theorem r2Squares_init {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
     hg.scr.st (d := 8 * sCnt) (by
       have := hdr_lt_slot w 0 (show sCnt < 32 by decide)
       have := slot_le (w := w) (show 0 < 8 by decide)
-      omega)]
+      omega_arith)]
 
 theorem r2Squares_next {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
     (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z)
@@ -56,12 +56,12 @@ theorem r2Squares_next {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
   have hr : 8 * sCnt + 8 ≤ Z := by
     have := hdr_lt_slot w 0 (show sCnt < 32 by decide)
     have := slot_le (w := w) (show 0 < 8 by decide)
-    omega
+    omega_arith
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     t.mem = s.mem.writeW (off B (8 * sCnt)) (BitVec.ofNat 64 (n - 1)) ∧
     t.zf = some (decide (n - 1 = 0))) ?_ rfl) fun t ⟨⟨hm, hz⟩, hk⟩ => ⟨hm, hz, hk⟩
   xrun [R2Squares.next, State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld hr, hg.scr.st hr, hn,
-    ofNat64_pred h1 hb, ofNat64_beq_zero (show n - 1 < 2 ^ 64 by omega)]
+    ofNat64_pred h1 hb, ofNat64_beq_zero (show n - 1 < 2 ^ 64 by omega_using [hb])]
 
 theorem rolled_sqs_ok (M : Mont) {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
     {N E : Nat} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
@@ -84,7 +84,7 @@ theorem rolled_sqs_ok (M : Mont) {s : State} {B : Addr} {Z w n : Nat} {mi : BitV
   unfold R2Squares.run
   refine WP.seq (WP.mono (r2Squares_init hg hZ hn32) fun t ⟨hm, hk⟩ => ?_)
   obtain ⟨hgt, count, values, wordN, frame⟩ := r2Counter_change hg hZ hm hk
-  have start : I (n + 1) t := ⟨by omega, by omega, hgt,
+  have start : I (n + 1) t := ⟨by omega_using [], by omega_using [], hgt,
     by rw [values _ (by decide)]; exact hn, by rw [wordN]; exact hinv,
     by rw [values _ (by decide)]; exact hlt,
     by simp only [Nat.sub_self, Nat.pow_zero, Nat.one_mul]
@@ -96,22 +96,22 @@ theorem rolled_sqs_ok (M : Mont) {s : State} {B : Addr} {Z w n : Nat} {mi : BitV
   refine WP.seq (WP.mono (sq_ok M hgu hZ hw hw' hR nEq inv lt val)
     fun v ⟨hgv, nEqv, invv, ltv, valv, arr, kv⟩ => ?_)
   have countv := (arr.hslot (show sCnt < 32 by decide)).trans count
-  refine WP.mono (r2Squares_next hgv hZ countv h1 (by omega)) fun z ⟨hm, hz, kz⟩ => ?_
+  refine WP.mono (r2Squares_next hgv hZ countv h1 (by omega_using [hn32, hb])) fun z ⟨hm, hz, kz⟩ => ?_
   obtain ⟨hgz, countz, values, wordN, ff⟩ := r2Counter_change hgv hZ hm kz
   have fz := (frame.trans (Frm.of_arrays arr (by simp [r2Ranges]))).trans ff
   have kz' : Keep mmRegs s z := ((keep.trans kv).trans kz).mono (by decide)
   have vz : wv z.mem B (slot w aR2) w % N =
       2 ^ (2 ^ (n + 1 - (k - 1)) * E) * 2 ^ (64 * w) % N := by
     have he : 2 * (2 ^ (n + 1 - k) * E) = 2 ^ (n + 1 - (k - 1)) * E := by
-      rw [show n + 1 - (k - 1) = n + 1 - k + 1 by omega, Nat.pow_succ]
+      rw [show n + 1 - (k - 1) = n + 1 - k + 1 by omega_using [h1, hb], Nat.pow_succ]
       ac_rfl
     rw [values _ (by decide), valv, he]
   by_cases hk : k = 1
   · subst k
     exact Or.inl ⟨by simp [eval, hz], hgz, by rw [values _ (by decide)]; exact ltv,
       by simpa using vz, fz, kz'⟩
-  · refine Or.inr ⟨by simp [eval, hz, show k - 1 ≠ 0 by omega], k - 1, by omega,
-      by omega, by omega, hgz, ?_, ?_, ?_, vz, countz, fz, kz'⟩
+  · refine Or.inr ⟨by simp [eval, hz, show k - 1 ≠ 0 by omega_using [h1, hk]], k - 1, by omega_using [h1],
+      by omega_using [h1, hk], by omega_using [hb], hgz, ?_, ?_, ?_, vz, countz, fz, kz'⟩
     · rw [values _ (by decide)]; exact nEqv
     · rw [wordN]; exact invv
     · rw [values _ (by decide)]; exact ltv

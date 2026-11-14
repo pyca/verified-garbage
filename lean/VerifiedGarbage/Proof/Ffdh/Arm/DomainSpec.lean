@@ -20,10 +20,10 @@ theorem modOne_iff {p q : Nat} (positive : 0 < p) (large : 1 < q) :
     have product : p - 1 = q * (p / q) := by
       have split := Nat.mod_add_div p q
       rw [h] at split
-      omega
+      omega_using [split]
     rw [product, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod]
   · intro h
-    have step : p = (p - 1) + 1 := by omega
+    have step : p = (p - 1) + 1 := by omega_using [positive]
     calc
       p % q = ((p - 1) + 1) % q := congrArg (· % q) step
       _ = 1 := by rw [Nat.add_mod, h, Nat.zero_add, Nat.mod_mod, Nat.mod_eq_of_lt large]
@@ -41,11 +41,11 @@ theorem domainValid_native_iff (p : Inputs) : Spec.Ffdh.domainValid p.k p.dom = 
     constructor
     · rintro ⟨modulus, range, ⟨odd, lower, upper⟩, divides, power⟩
       have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
-      refine ⟨modulus, range, ⟨by omega, upper, odd⟩, (modOne_iff (by omega) lower).mpr divides, ?_⟩
+      refine ⟨modulus, range, ⟨by omega_using [odd, lower], upper, odd⟩, (modOne_iff (by omega_using [range]) lower).mpr divides, ?_⟩
       simpa only [VG.Proof.Bignum.powMod_eq] using power
     · rintro ⟨modulus, range, ⟨lower, upper, odd⟩, divides, power⟩
       have facts := VG.Proof.Bignum.valid_facts modulus p.minLength
-      refine ⟨modulus, range, ⟨odd, by omega, upper⟩, (modOne_iff (by omega) (by omega)).mp divides, ?_⟩
+      refine ⟨modulus, range, ⟨odd, by omega_using [lower], upper⟩, (modOne_iff (by omega_using [range]) (by omega_using [lower])).mp divides, ?_⟩
       simpa only [VG.Proof.Bignum.powMod_eq] using power
   · simp [hasQ]
 

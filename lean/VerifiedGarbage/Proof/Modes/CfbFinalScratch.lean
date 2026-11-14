@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Cfb.Final
 public import VerifiedGarbage.Spec.Ofb.Final
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CFB and OFB of a message's last piece, with its working space as an argument
@@ -58,10 +59,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 /-- The memory on return, within the data and the block. -/
 private theorem final_bufs {b pb : Nat} {vs : List (BitVec 64)} (hlen : vs.length = 4)
@@ -77,7 +78,7 @@ private theorem final_bufs {b pb : Nat} {vs : List (BitVec 64)} (hlen : vs.lengt
     have hv := agree_of hb.2.1
     have := Nat.mod_le len.toNat (2 ^ pb)
     exact ⟨k, iv, data, len, rfl, bytesAt_congr hv, bytesAt_congr fun i hi =>
-      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])⟩
 
 /-- The memory on entry, within the schedule (of bytes), the data and the
 block. -/
@@ -95,7 +96,7 @@ private theorem final_bufsIn {b pb nkLen : Nat} {vs : List (BitVec 64)} (hlen : 
     have hv := agree_of hb.2.1
     have := Nat.mod_le len.toNat (2 ^ pb)
     exact ⟨k, iv, data, len, rfl, agree_of hb.1, bytesAt_congr hv, bytesAt_congr fun i hi =>
-      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])⟩
 
 /-- The memory on entry, within the schedule, the data and the block. -/
 private theorem final_bufs3 {b pb : Nat} {vs : List (BitVec 64)} (hlen : vs.length = 4)
@@ -113,7 +114,7 @@ private theorem final_bufs3 {b pb : Nat} {vs : List (BitVec 64)} (hlen : vs.leng
     have hv := agree_of hb.2.1
     have := Nat.mod_le len.toNat (2 ^ pb)
     exact ⟨k, iv, data, len, rfl, hk, bytesAt_congr hv, bytesAt_congr fun i hi =>
-      hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+      hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])⟩
 
 end
 

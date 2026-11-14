@@ -29,10 +29,10 @@ theorem copyBytes_ok {s : State} {rp op : Addr} {bs : List Byte}
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧
       Keep [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] s t := by
   refine WP.mono (Ffdh.X86_64.ParameterCandidate.witnessCut_ok
-    (by omega) (by omega) (by omega) hrp hop hn hbits hrd hwr hbytes hsep)
+    (by omega_using [hlen]) (by omega_using [hlen]) (by omega_using []) hrp hop hn hbits hrd hwr hbytes hsep)
     fun t ⟨hb, _, hf, hk⟩ => ?_
   refine ⟨?_, hf, hk⟩
-  rw [show (8 * bs.length - 1) % 8 = 7 by omega] at hb
+  rw [show (8 * bs.length - 1) % 8 = 7 by omega_using [hlen]] at hb
   rw [hb]
   cases bs with
   | nil => simp at hlen
@@ -53,6 +53,6 @@ theorem copyDigest_ok {s : State} {rp op : Addr} {bs : List Byte}
       Spec.Rsa.bytesAt t.mem op bs.length = bs ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧
       Keep [.rax, .rdx, .r8, .r9, .r10, .r11, .rcx] s t := by
-  exact copyBytes_ok (by omega) hrp hop hn hbits hrd hwr hbytes hsep
+  exact copyBytes_ok (by omega_using [hlen]) hrp hop hn hbits hrd hwr hbytes hsep
 
 end VG.Proof.Dsa.X86_64.Generation

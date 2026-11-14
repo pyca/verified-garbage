@@ -45,6 +45,6 @@ theorem reduceExponent_ct : RelCT isa (Two ReductionStart)
       _ = 2 * p.q * (p.x / (2 * p.q)) := by ac_rfl
       _ ≤ p.x := Nat.mul_div_le _ _
   exact WP.mono (reduceCandidate_ok h.1 h.2.1 h.2.2.1 h.2.2.2)
-    fun t ⟨ht, _, hq, _, _⟩ => ⟨ht, by rw [hq]; omega⟩
+    fun t ⟨ht, _, hq, _, _⟩ => ⟨ht, by rw [hq]; omega_using [hxlt, bound]⟩
 
 end VG.Proof.Dsa.X86_64.Generation

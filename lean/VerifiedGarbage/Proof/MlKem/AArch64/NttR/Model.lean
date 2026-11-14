@@ -47,14 +47,14 @@ theorem Lf_succ (W : Nat → BitVec 16) (st p : Nat) : Lf W (st + 1) p =
 theorem div_sub_len {p len : Nat} (hpos : 0 < len) (hm : ¬ p % (2 * len) < len) :
     (p - len) / (2 * len) = p / (2 * len) := by
   have h1 := Nat.div_add_mod p (2 * len)
-  have h3 := Nat.mod_lt p (show 0 < 2 * len by omega)
+  have h3 := Nat.mod_lt p (show 0 < 2 * len by omega_using [hpos])
   apply Nat.div_eq_of_lt_le
   · rw [Nat.mul_comm]
     generalize 2 * len * (p / (2 * len)) = M at h1 ⊢
-    omega
+    omega_using [hm, h1]
   · rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm]
     generalize 2 * len * (p / (2 * len)) = M at h1 ⊢
-    omega
+    omega_using [h3, h1]
 
 theorem model (W : Nat → BitVec 16) : Model (Lf W) (Of W) fwdRules := by
   refine ⟨by decide, fun _ _ st p p' z t hb => ?_, nofun, nofun, nofun, nofun, fun p _ => rfl, nofun, nofun,
@@ -63,21 +63,21 @@ theorem model (W : Nat → BitVec 16) : Model (Lf W) (Of W) fwdRules := by
   simp only [Bool.and_eq_true, Nat.blt_eq, Nat.beq_eq] at hb
   obtain ⟨⟨⟨⟨⟨hst, rfl⟩, hm⟩, -⟩, rfl⟩, rfl⟩ := hb
   have hpos : 0 < 128 >>> st := by
-    rcases (by omega : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6) with
+    rcases (by omega_using [hst] : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   refine ⟨?_, ?_⟩
   · rw [Lf_succ, ite_eq_left hm]; rfl
   · have h1 : (p + (128 >>> st)) % (2 * (128 >>> st)) = p % (2 * (128 >>> st)) + (128 >>> st) := by
-      rw [Nat.add_mod, Nat.mod_eq_of_lt (show 128 >>> st < 2 * (128 >>> st) by omega)]
-      exact Nat.mod_eq_of_lt (by omega)
-    rw [Lf_succ, ite_eq_right (by omega), Nat.add_sub_cancel]
+      rw [Nat.add_mod, Nat.mod_eq_of_lt (show 128 >>> st < 2 * (128 >>> st) by omega_using [hm])]
+      exact Nat.mod_eq_of_lt (by omega_using [hm])
+    rw [Lf_succ, ite_eq_right (by omega_using [h1]), Nat.add_sub_cancel]
     rfl
 
 /-! ## The coefficients represent `NTT`'s -/
 
 theorem lens_get {st : Nat} (h : st < 7) :
     0 < 128 >>> st ∧ 2 * (128 >>> st) * (128 / (128 >>> st)) = 256 ∧ 128 / (128 >>> st) + 255 / (2 * (128 >>> st)) < 128 := by
-  rcases (by omega : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6) with
+  rcases (by omega_using [h] : st = 0 ∨ st = 1 ∨ st = 2 ∨ st = 3 ∨ st = 4 ∨ st = 5 ∨ st = 6) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem mmW_eq {b : BitVec 16} {z : Nat} {T : BitVec 16}
@@ -88,32 +88,32 @@ theorem mmW_eq {b : BitVec 16} {z : Nat} {T : BitVec 16}
 theorem pair_lt {p len K : Nat} (hpos : 0 < len) (hp : p < 2 * len * K) (hm : p % (2 * len) < len) :
     p + len < 2 * len * K := by
   have h1 := Nat.div_add_mod p (2 * len)
-  have hq : p / (2 * len) < K := (Nat.div_lt_iff_lt_mul (by omega)).2 (by rw [Nat.mul_comm]; exact hp)
+  have hq : p / (2 * len) < K := (Nat.div_lt_iff_lt_mul (by omega_using [hpos])).2 (by rw [Nat.mul_comm]; exact hp)
   have h2 : 2 * len * (p / (2 * len) + 1) ≤ 2 * len * K := Nat.mul_le_mul_left _ hq
   rw [Nat.mul_add, Nat.mul_one] at h2
   generalize 2 * len * (p / (2 * len)) = M at h1 h2
-  omega
+  omega_using [hm, h1, h2]
 
 /-- The coefficients after `st` layers represent those of `NTT` after `st` layers. -/
 theorem Lf_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F[p]! 3329) :
     ∀ st ≤ 7, ∀ p < 256, LRep (Lf W st p) (nttL st F)[p]! ((st + 1) * 3329)
-  | 0, _, p, hp => by simp only [Lf, nttL_zero]; exact (h p hp).mono (by omega)
+  | 0, _, p, hp => by simp only [Lf, nttL_zero]; exact (h p hp).mono (by omega_using [])
   | st + 1, hs, p, hp => by
-    have ih := Lf_rep W F h st (by omega)
-    obtain ⟨hpos, hl, hz⟩ := lens_get (st := st) (by omega)
-    rw [nttL_succ F (by omega), nttLayer_get _ hpos hl hp, Lf_succ]
+    have ih := Lf_rep W F h st (by omega_using [hs])
+    obtain ⟨hpos, hl, hz⟩ := lens_get (st := st) (by omega_using [hs])
+    rw [nttL_succ F (by omega_using [hs]), nttLayer_get _ hpos hl hp, Lf_succ]
     generalize 128 >>> st = len at hpos hl hz
-    have hdiv : p / (2 * len) ≤ 255 / (2 * len) := Nat.div_le_div_right (show p ≤ 255 by omega)
-    have hk : 128 / len + p / (2 * len) < 128 := by omega
-    rw [show (st + 1 + 1) * 3329 = (st + 1) * 3329 + 3329 by omega]
+    have hdiv : p / (2 * len) ≤ 255 / (2 * len) := Nat.div_le_div_right (show p ≤ 255 by omega_using [hp])
+    have hk : 128 / len + p / (2 * len) < 128 := by omega_using [hz, hdiv]
+    rw [show (st + 1 + 1) * 3329 = (st + 1) * 3329 + 3329 by omega_using []]
     by_cases hm : p % (2 * len) < len
     · rw [ite_eq_left hm, ite_eq_left hm]
-      obtain ⟨T, hT, l1, -⟩ := bf_lane (ih p hp) (ih (p + len) (by have := pair_lt hpos (show p < 2 * len * (128 / len) by omega) hm; omega)) (zeta_lt hk) (by omega) (by omega)
+      obtain ⟨T, hT, l1, -⟩ := bf_lane (ih p hp) (ih (p + len) (by have := pair_lt hpos (show p < 2 * len * (128 / len) by omega_using [hp, hl]) hm; omega_using [hl, this])) (zeta_lt hk) (by omega_using [hs]) (by omega_using [hs])
       unfold zk
       rw [mmW_eq hT, ← ofNat_zeta hk]
       exact l1
     · rw [ite_eq_right hm, ite_eq_right hm]
-      obtain ⟨T, hT, -, l2⟩ := bf_lane (ih (p - len) (by omega)) (ih p hp) (zeta_lt hk) (by omega) (by omega)
+      obtain ⟨T, hT, -, l2⟩ := bf_lane (ih (p - len) (by omega_using [hp])) (ih p hp) (zeta_lt hk) (by omega_using [hs]) (by omega_using [hs])
       unfold zk
       rw [div_sub_len hpos hm, mmW_eq hT, ← ofNat_zeta hk]
       exact l2
@@ -122,7 +122,7 @@ theorem Lf_rep (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F
 theorem normW_val {x : BitVec 16} {X : Zq} {B : Nat} (h : LRep x X B) (hB : B ≤ 32768) :
     (normW x).toNat = X.val := by
   obtain ⟨a1, a2, a3⟩ := h
-  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok x (z := 1) (by omega) (by decide)
+  obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok x (z := 1) (by omega_using [hB, a1]) (by decide)
   have e1 : n1W x = x - T * BitVec.ofNat 16 3329 := by
     unfold n1W qdW
     rw [show (BitVec.ofNat 16 10) = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.tw 1) from rfl, hT]
@@ -135,10 +135,10 @@ theorem normW_val {x : BitVec 16} {X : Zq} {B : Nat} (h : LRep x X B) (hB : B �
   have hX : X.val < 3329 := X.isLt
   have hv : (r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329)).toInt = (X.val : Int) := by
     rw [hn]
-    split <;> omega
+    split <;> omega_arith
   generalize r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329) = y at hv ⊢
   rw [BitVec.toInt_eq_toNat_cond] at hv
-  split at hv <;> omega
+  split at hv <;> omega_using [hv]
 
 /-- The reduced coefficients are those of `NTT`. -/
 theorem Of_ntt (W : Nat → BitVec 16) (F : Poly) (h : ∀ p < 256, LRep (W p) F[p]! 3329) {p : Nat} (hp : p < 256) :

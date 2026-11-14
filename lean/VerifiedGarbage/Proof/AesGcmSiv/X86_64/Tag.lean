@@ -44,7 +44,7 @@ theorem blockAt_zero2 (m : Mem) (p : Addr) : Spec.Gcm.blockAt (Proof.Cmac.zero2 
 theorem readW_writeW_W0 {m : Mem} {W : Addr} {d w w' : Nat} (v : BitVec w') (h : w' / 8 ≤ d)
     (hd : d + w / 8 ≤ 2 ^ 64) (hw : w / 8 < 2 ^ 64) (hw' : w' / 8 ≤ 2 ^ 64) :
     (m.writeW W v).readW (W + BitVec.ofNat 64 d) w = m.readW (W + BitVec.ofNat 64 d) w := by
-  simpa using readW_writeW_W (m := m) (W := W) (e := 0) (d := d) (w := w) v (.inr (by omega)) hd (by omega) hw
+  simpa using readW_writeW_W (m := m) (W := W) (e := 0) (d := d) (w := w) v (.inr (by omega_using [h])) hd (by omega_using [hw']) hw
 
 /-- What `tag o` writes. -/
 abbrev tagR (W SP : Addr) (o : Nat) : List Region :=
@@ -81,7 +81,7 @@ theorem tagArgs_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State}
   have r₈ := E.perm.wR (show 104 + 8 ≤ 3816 by decide)
   have r₁₆ := E.perm.wR (show 96 + 16 ≤ 3816 by decide)
   have w₀ := E.perm.wW (show 112 + 16 ≤ 3816 by decide)
-  have z₀ := E.perm.wW (show o + 16 ≤ 3816 by omega)
+  have z₀ := E.perm.wW (show o + 16 ≤ 3816 by omega_using [ho])
   rcases ho with rfl | rfl
   all_goals
     try simp only [Nat.reduceAdd, BitVec.add_zero] at z₀
@@ -104,11 +104,11 @@ theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R 
   obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, r8, r9, hg₁, hrd₁, hwr₁⟩ := tagArgs_ok L E S ho
   have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁
   have dO : (⟨W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112, 16⟩ :=
-    L.w_w (by omega) (by omega) (by decide)
+    L.w_w (by omega_using [ho]) (by omega_using [ho]) (by decide)
   have cc : CtrCall t₁ (W + BitVec.ofNat 64 248) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
       (W + BitVec.ofNat 64 1768) R 1 :=
-    cargs L E₁ hR (keyS L E₁.perm) (c := 112) (by decide) (srcW L E₁.perm (t := o) (k := 16 * 1) (by omega))
-      dO (L.w_w (.inr (by omega)) (by decide) (by omega)) (E₁.perm.wC (by omega)) rdi rsi rdx rcx r8 r9
+    cargs L E₁ hR (keyS L E₁.perm) (c := 112) (by decide) (srcW L E₁.perm (t := o) (k := 16 * 1) (by omega_using [ho]))
+      dO (L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])) (E₁.perm.wC (by omega_using [ho])) rdi rsi rdx rcx r8 r9
   have fZ := Proof.Cmac.frame_store2 (m := (t.mem.writeW (W + BitVec.ofNat 64 112)
     (t.mem.readW (W + BitVec.ofNat 64 96) 64)).writeW (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 8)
     (t.mem.readW (W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) 64)) (W + BitVec.ofNat 64 o) 0 0
@@ -129,7 +129,7 @@ theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-      · exact L.w_w (.inr (by omega)) (by decide) (by omega))
+      · exact L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho]))
       (by rcases hR with h | h <;> subst h <;> decide)
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (ctr_call v.ctr cc) fun t₂ P => ?_

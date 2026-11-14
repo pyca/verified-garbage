@@ -82,12 +82,12 @@ theorem bitMask_eq (q : BitVec 64) {c : Nat} (hc : c < 64) :
     · subst h0
       simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
         show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-        show ¬ (63 < 63 - c) by omega, decide_false, Bool.not_false,
-        show 63 - (63 - c) = c by omega]
+        show ¬ (63 < 63 - c) by omega_using [], decide_false, Bool.not_false,
+        show 63 - (63 - c) = c by omega_using [hc]]
       cases q.getLsbD c <;> rfl
     · have : (q <<< (63 - c) >>> 63).getLsbD i = false := by
         simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
-        simp only [show ¬ (63 + i < 64) by omega, decide_false, Bool.false_and]
+        simp only [show ¬ (63 + i < 64) by omega_using [h0], decide_false, Bool.false_and]
       rw [this]
       cases q.getLsbD c
       · simp
@@ -114,7 +114,7 @@ theorem isZero_eq (v : BitVec 64) (h : v.toNat < 2 ^ 63) :
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub]
       simp only [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      omega
+      omega_using [h, e]
     rw [this]; rfl
 
 end VG.Proof.Blowfish.PPC64LE

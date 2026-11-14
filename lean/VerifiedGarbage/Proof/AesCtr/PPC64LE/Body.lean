@@ -43,12 +43,12 @@ def mOf (s₀ : State) (k : Nat) : Nat := min (N s₀ - k) (2 ^ 32 - (toNat (iv0
 theorem length_iv0 (s₀ : State) : (iv0 s₀).length = 16 := Proof.Cmac.bytesAt_length _ _ _
 
 theorem mOf_pos {s₀ : State} {k : Nat} (hk : k < N s₀) : 0 < mOf s₀ k := by
-  unfold mOf; have := Nat.mod_lt (toNat (iv0 s₀) + k) (show 0 < 2 ^ 32 by decide); omega
+  unfold mOf; have := Nat.mod_lt (toNat (iv0 s₀) + k) (show 0 < 2 ^ 32 by decide); omega_using [hk]
 
 theorem mOf_le (s₀ : State) (k : Nat) : mOf s₀ k ≤ N s₀ - k := Nat.min_le_left _ _
 
 theorem lo32_mOf (s₀ : State) (k : Nat) : AesCtr.lo32 (next (iv0 s₀) k) + mOf s₀ k ≤ 2 ^ 32 := by
-  rw [AesCtr.lo32_next (length_iv0 s₀)]; unfold mOf; omega
+  rw [AesCtr.lo32_next (length_iv0 s₀)]; unfold mOf; omega_using []
 
 theorem chainK_ctr (s₀ : State) {k : Nat} (hk : k ≤ N s₀) : chainK AesCtr.ctrMode s₀ k = next (iv0 s₀) k := by
   rw [chainK, AesCtr.ctrMode_chain, List.length_take, Proof.AesCbc.length_blocksAt, Nat.min_eq_left hk]
@@ -58,18 +58,18 @@ variable {s₀ : State} (hp : UPre s₀)
 include hp
 
 theorem UPre.N_le : N s₀ ≤ 2 ^ 60 := by
-  have := hp.data_wrap; omega
+  have := hp.data_wrap; omega_using [this]
 
 theorem UPre.seg_wrap {k m : Nat} (hk : k < N s₀) (hkm : k + m ≤ N s₀) : (blk s₀ k).toNat + 16 * m ≤ 2 ^ 64 := by
   have := hp.data_wrap
   have : (blk s₀ k).toNat = (Dp s₀).toNat + 16 * k := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * k) (by omega),
-      Nat.mod_eq_of_lt (by omega)]
-  omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * k) (by omega_using [hk, this]),
+      Nat.mod_eq_of_lt (by omega_using [hk, this])]
+  omega_arith
 
 omit hp in
 theorem UPre.seg_sub {k m : Nat} (hkm : k + m ≤ N s₀) : Region.Sub ⟨blk s₀ k, 16 * m⟩ (dataR s₀) :=
-  Offset.sub_base _ (by omega)
+  Offset.sub_base _ (by omega_using [hkm])
 
 /-- The arguments of the call after `k` blocks. -/
 theorem UPre.ctrCall {k : Nat} (hk : k < N s₀) {s : State}
@@ -84,13 +84,13 @@ theorem UPre.ctrCall {k : Nat} (hk : k < N s₀) {s : State}
   r7 := r7
   r8 := r8
   rounds := hp.rounds
-  wrap := UPre.seg_wrap hp hk (by have := mOf_le s₀ k; omega)
+  wrap := UPre.seg_wrap hp hk (by have := mOf_le s₀ k; omega_using [hk, this])
   kc := hp.sch_iv
-  kd := hp.sch_data.sub_right (UPre.seg_sub (s₀ := s₀) (by have := mOf_le s₀ k; omega))
+  kd := hp.sch_data.sub_right (UPre.seg_sub (s₀ := s₀) (by have := mOf_le s₀ k; omega_using [hk, this]))
   ks := hp.sch_scr.sub_right (Region.sub_prefix (by decide))
-  cd := hp.iv_data.sub_right (UPre.seg_sub (s₀ := s₀) (by have := mOf_le s₀ k; omega))
+  cd := hp.iv_data.sub_right (UPre.seg_sub (s₀ := s₀) (by have := mOf_le s₀ k; omega_using [hk, this]))
   cs := hp.iv_scr.sub_right (Region.sub_prefix (by decide))
-  ds := (hp.data_scr.sub_left (UPre.seg_sub (s₀ := s₀) (by have := mOf_le s₀ k; omega))).sub_right
+  ds := (hp.data_scr.sub_left (UPre.seg_sub (s₀ := s₀) (by have := mOf_le s₀ k; omega_using [hk, this]))).sub_right
     (Region.sub_prefix (by decide))
   reads := by
     rw [hrd, hwr, hp.rd, hp.wr]
@@ -99,7 +99,7 @@ theorem UPre.ctrCall {k : Nat} (hk : k < N s₀) {s : State}
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
     · exact ⟨ivR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; have := mOf_le s₀ k; omega⟩
+    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; have := mOf_le s₀ k; omega_using [hk, this]⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
   writes := by
     rw [hwr, hp.wr]
@@ -107,7 +107,7 @@ theorem UPre.ctrCall {k : Nat} (hk : k < N s₀) {s : State}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨ivR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; have := mOf_le s₀ k; omega⟩
+    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; have := mOf_le s₀ k; omega_using [hk, this]⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
 
 /-- What the code before the call leaves. -/
@@ -129,11 +129,11 @@ theorem pre_wp {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode 
   have hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
   have hNl := UPre.N_le hp
-  refine count_wp (Q := Iv s₀) (S := S s₀) (left := N s₀ - k) h.r16 h.r18 (by omega) h.r19
+  refine count_wp (Q := Iv s₀) (S := S s₀) (left := N s₀ - k) h.r16 h.r18 (by omega_using [hNl]) h.r19
     (by rw [hR]; exact in_rw (r := ivR s₀) (by simp) (Offset.contains_base _ (by decide) (by decide)))
     (by rw [hW]; exact in_rw (by simp) cSv0) fun s₁ r10₁ g₁ mem₁ rd₁ wr₁ => ?_
   -- The number of blocks.
-  have hiv : bytesAt s.mem (Iv s₀) 16 = next (iv0 s₀) k := by rw [h.iv, chainK_ctr s₀ (by omega)]
+  have hiv : bytesAt s.mem (Iv s₀) 16 = next (iv0 s₀) k := by rw [h.iv, chainK_ctr s₀ (by omega_using [hk])]
   have hlo := AesCtr.lo32_bytesAt s.mem (Iv s₀)
   rw [hiv, AesCtr.lo32_next (length_iv0 s₀)] at hlo
   have hm : s₁.gpr .r10 = BitVec.ofNat 64 (mOf s₀ k) := by rw [r10₁, ← hlo]; rfl

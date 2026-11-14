@@ -41,11 +41,11 @@ theorem scan_ct {src table stack : Addr} {k : Nat} {dom : List Byte}
     let H := fun s : State => P s ∧
       (s.gpr .r10 = 0 ↔ g.len = k ∧ dom = g.domain.take dom.length)
     have stepWP (s : State) (h : P s) : WP isa (record g offset) s H := by
-      refine WP.mono_syms (withSp (record_ok h.1 g h.2.1 h.2.2.1.1 (by rw [total] at fit; omega))) ?_
+      refine WP.mono_syms (withSp (record_ok h.1 g h.2.1 h.2.2.1.1 (by rw [total] at fit; omega_using [fit]))) ?_
       rintro t ⟨⟨zero, mem, rest⟩, sp⟩ sym
       exact ⟨⟨h.1.after mem rest, sym ▸ h.2.1, h.2.2.1.after mem rest, sp.trans h.2.2.2⟩, zero⟩
     have stepCT := (record_ct (src := src) (table := table) (stack := stack) (k := k) (dom := dom)
-      g (valid g (by simp)) (offset := offset) (by rw [total] at fit; omega)).mono
+      g (valid g (by simp)) (offset := offset) (by rw [total] at fit; omega_using [fit])).mono
       (P' := fun s t => P s ∧ P t)
       (fun _ _ h => ⟨⟨h.1.1, h.1.2.1, h.1.2.2.2⟩, ⟨h.2.1, h.2.2.1, h.2.2.2.2⟩⟩) (fun _ _ h => h)
     have branches : RelCT isa (fun s t => H s ∧ H t)
@@ -63,8 +63,8 @@ theorem scan_ct {src table stack : Addr} {k : Nat} {dom : List Byte}
             table + BitVec.ofNat 64 (offset + 8 + 3 * g.len) := by
           rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
           congr 2
-          omega
-        exact (ih (offset + 8 + 3 * g.len) (by rw [total] at fit; omega)
+          omega_using []
+        exact (ih (offset + 8 + 3 * g.len) (by rw [total] at fit; omega_using [fit])
           (fun x hx => valid x (by simp [hx]))).mono
           (fun s t h => ⟨⟨h.1.1.1.1, h.1.1.1.2.1, by rw [← ptr]; exact h.1.1.1.2.2.1.2, h.1.1.1.2.2.2⟩,
             ⟨h.1.2.1.1, h.1.2.1.2.1, by rw [← ptr]; exact h.1.2.1.2.2.1.2, h.1.2.1.2.2.2⟩⟩)

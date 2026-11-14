@@ -41,7 +41,7 @@ structure FrameAt (n : Nat) (s t : State) : Prop where
   syms : t.syms = s.syms
 
 theorem FrameAt.refl (s : State) : FrameAt 0 s s :=
-  ⟨rfl, rfl, rfl, by simp, ⟨[], rfl⟩, fun h => absurd h (by decide), fun _ _ h0 h _ => absurd h (by omega), rfl⟩
+  ⟨rfl, rfl, rfl, by simp, ⟨[], rfl⟩, fun h => absurd h (by decide), fun _ _ h0 h _ => absurd h (by omega_using [h0]), rfl⟩
 
 /-- A frame of `k` bytes around one of `n`, from `allocd k s`. -/
 theorem FrameAt.alloc {n k : Nat} {s t : State} (h : FrameAt n (allocd k s) t) (hk : k % 16 = 0)
@@ -80,14 +80,14 @@ theorem chunks_wp {body : Prog isa} :
     rwa [e] at h
   | q + 1, s, Q, hsp, hb => by
     unfold chunks
-    refine WP.alloc ⟨by decide, by decide, by decide⟩ (by omega) ?_
+    refine WP.alloc ⟨by decide, by decide, by decide⟩ (by omega_using [hsp]) ?_
     have hsp' : 2032 * q ≤ (allocd 2032 s).sp.toNat := by
       simp only [allocd]
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]
-      omega
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
+      omega_using [hsp]
     refine chunks_wp q (allocd 2032 s) (fun x => Q (freed 2032 x)) hsp' fun t ht => ?_
-    have hf := FrameAt.alloc ht (by decide) (by omega) (by omega) (by decide) (by omega)
-    rw [show 2032 * q + 2032 = 2032 * (q + 1) by omega] at hf
+    have hf := FrameAt.alloc ht (by decide) (by omega_using []) (by omega_using [hsp]) (by decide) (by omega_using [])
+    rw [show 2032 * q + 2032 = 2032 * (q + 1) by omega_using []] at hf
     refine WP.mono (hb t hf) fun s₂ h => ?_
     have e : freed 2032 { s₂ with sp := (allocd 2032 s).sp, wr := (allocd 2032 s).wr } =
         { s₂ with sp := s.sp, wr := s.wr } := by
@@ -110,31 +110,31 @@ theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
   have whole : ∀ t, FrameAt n s t → n ≤ 2032 → 0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr :=
     fun t ht h2 h0 _ => by
       obtain ⟨L, h1, h3, h4⟩ := ht.low h0
-      rwa [show L = n by omega] at h4
+      rwa [show L = n by omega_using [h2, h1, h3]] at h4
   have e : 2032 * (n / 2032) + n % 2032 = n := Nat.div_add_mod n 2032
   unfold bigFrame
   split
   · rename_i h1
-    refine WP.allocLe ⟨by omega, h1.2, hn⟩ hsp ?_
-    refine WP.mono (WP.rdwr (hb _ (FrameAt.single s (by omega) hsp) fun _ _ => by simp [allocd]))
+    refine WP.allocLe ⟨by omega_using [h1], h1.2, hn⟩ hsp ?_
+    refine WP.mono (WP.rdwr (hb _ (FrameAt.single s (by omega_using [h1]) hsp) fun _ _ => by simp [allocd]))
       fun s₂ ⟨h, _, hw, hs⟩ => ?_
     rwa [freed_eq hw hs]
   split
   · rename_i h1 h0
-    refine chunks_wp (n / 2032) s Q (by omega) fun t ht => ?_
-    rw [show 2032 * (n / 2032) = n by omega] at ht
-    exact hb t ht fun h0' h4 => whole t ht (by omega) h0' h4
+    refine chunks_wp (n / 2032) s Q (by omega_using [hsp]) fun t ht => ?_
+    rw [show 2032 * (n / 2032) = n by omega_using [h0]] at ht
+    exact hb t ht fun h0' h4 => whole t ht (by omega_using [h1, h4]) h0' h4
   · rename_i h1 h0
     have hr : n % 2032 < 2032 := Nat.mod_lt _ (by decide)
-    refine WP.alloc ⟨by omega, by omega, by omega⟩ (by omega) ?_
+    refine WP.alloc ⟨by omega_using [h0], by omega_using [], by omega_using [hn]⟩ (by omega_using [hsp]) ?_
     have hsp' : 2032 * (n / 2032) ≤ (allocd (n % 2032) s).sp.toNat := by
       simp only [allocd]
-      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat]
-      omega
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hsp]), BitVec.toNat_ofNat]
+      omega_using [hsp]
     refine chunks_wp (n / 2032) (allocd (n % 2032) s) (fun x => Q (freed (n % 2032) x)) hsp' fun t ht => ?_
-    have hf := FrameAt.alloc ht (by omega) (by omega) (by omega) (by omega) (by omega)
+    have hf := FrameAt.alloc ht (by omega_using [hn]) (by omega_using []) (by omega_using [hsp]) (by omega_using []) (by omega_using [])
     rw [e] at hf
-    refine WP.mono (hb t hf fun h0' h4 => whole t hf (by omega) h0' h4) fun s₂ h => ?_
+    refine WP.mono (hb t hf fun h0' h4 => whole t hf (by omega_using [h1, h4]) h0' h4) fun s₂ h => ?_
     have e : freed (n % 2032) { s₂ with sp := (allocd (n % 2032) s).sp, wr := (allocd (n % 2032) s).wr } =
         { s₂ with sp := s.sp, wr := s.wr } := by
       simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]

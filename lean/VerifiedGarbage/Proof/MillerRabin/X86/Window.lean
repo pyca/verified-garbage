@@ -95,7 +95,7 @@ theorem window_ok {code : Prog isa} {name : String}
     (windowSquaresV V A c g.w F) (sSquares :: sThreshold :: windowFields) d at Sd
   have selectedLt : windowScanA V A c g.w F aX < c := by
     rw [windowScanA, setAt_self, squareValues,
-      setAt_other _ _ (by unfold aTable aY; omega : aTable + windowDigit V ≠ aY)]
+      setAt_other _ _ (by unfold aTable aY; omega_using [] : aTable + windowDigit V ≠ aY)]
     exact tableLt _ (digit_lt _)
   refine WP.seq (WP.mono (Sd.multiply verified noSp stack v length aX
     (by change 5 < 8 ∧ 5 ≠ 2 ∧ 5 ≠ 3; decide) odd selectedLt

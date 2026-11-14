@@ -44,22 +44,22 @@ theorem Prep.ofFrm {s t : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) (
   have hZ' : 256 + 28 * (8 * (w + 2)) ≤ 8 * L := hZ
   clear hZ
   refine h.keep env (fun d hd => hf.word_eq ?_ (by
-    rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega))
+    rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega_arith))
     (fun j hj => ?_)
   · intro r hr
     simp only [loopRanges, hUni, hUsed, hStat, hIdx, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hd with rfl | rfl | rfl | rfl | ⟨j, hj, rfl⟩ | rfl | rfl <;>
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega_arith
   · have hj27 : j ≤ 27 := by rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide
     have hb : slot w j + 8 * w ≤ 2 ^ 64 := by
       have := Nat.mul_le_mul_right (8 * (w + 2)) hj27
       simp only [slot, hdrBytes]
-      omega
+      omega_using [hnw, hZ', this]
     rw [VG.Proof.Bignum.PPC64LE.Pre.val32_eq_wv, VG.Proof.Bignum.PPC64LE.Pre.val32_eq_wv]
     refine hf.wv_eq (fun r hr => ?_) hb
     simp only [loopRanges, hUni, hUsed, hStat, hIdx, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hj with rfl | rfl | rfl | rfl | rfl <;>
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (try simp only [slot, hdrBytes]) <;> omega_using []
 
 /-- What the loop reads and never writes. -/
 structure BCtx (s : State) (B : Addr) (L w c : Nat) (R : Addr) (rl t b ch : Nat) : Prop where

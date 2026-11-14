@@ -22,8 +22,6 @@ def raw : List Instr :=
   f (.sub 576 t1 y2)++Linear.linear41 512 xy2 d++
   f (.mul t2 d t2)++f (.mul z2 y2 y2)++Linear.linear38 544 t2 z2
 
-def keep (off : Nat) : Bool := 512≤off && off<608
-
 def code : List Instr := EcdhAllocatedCode.double
 
 def program : Prog isa := .block code

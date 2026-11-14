@@ -44,11 +44,11 @@ theorem wipe_ok (s : State) (hal : (s.gpr .a7).toNat % 8 = 0)
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp) (fun k t hk h => ?_) 32
     (Nat.le_refl _) s ⟨Frame.refl _ _, rfl, rfl, rfl, rfl⟩
   obtain ⟨hf, hg, hrd, hwr, hsp⟩ := h
-  refine Wp.wp_sd (a := s.gpr .a7 + BitVec.ofNat 64 (8 * k)) (by omega) (by rw [hg])
-    (al_add hal (by omega) (by omega))
-    (by rw [hwr]; exact region_offset _ _ _ _ _ (by omega) (by omega) hw) fun u hu =>
+  refine Wp.wp_sd (a := s.gpr .a7 + BitVec.ofNat 64 (8 * k)) (by omega_using [hk]) (by rw [hg])
+    (al_add hal (by omega_using []) (by omega_using [hk]))
+    (by rw [hwr]; exact region_offset _ _ _ _ _ (by omega_using [hk]) (by omega_using [hk]) hw) fun u hu =>
     WP.block_nil ⟨?_, hu.gpr.trans hg, hu.rd.trans hrd, hu.wr.trans hwr, hu.sp.trans hsp⟩
   rw [hu.mem]
-  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
 
 end VG.Proof.Rc4.RISCV64

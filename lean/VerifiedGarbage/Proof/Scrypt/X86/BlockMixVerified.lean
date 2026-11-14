@@ -87,7 +87,7 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) {rest : List Instr} {Q : State �
     WP isa (.block (.mov .eax (.mem (at_ .esp 20)) ::
       (bmSaved.map (fun p => Instr.store (at_ .eax p.2) p.1) ++ rest))) s₀ Q := by
   have hs := hp.s_nw
-  refine wp_movm (a := addr (esp₀ s₀) 20) rfl (arg_in hp (by omega) (by omega)) fun s₁ u₁ => ?_
+  refine wp_movm (a := addr (esp₀ s₀) 20) rfl (arg_in hp (by omega_using []) (by omega_using [])) fun s₁ u₁ => ?_
   have e : s₁.gpr .eax = sc s₀ := u₁.gpr
   have ha := bmSaved_addr s₀ hp
   refine Spill.save_ok bmSaved (fun p hp' => ?_) fun s₂ u₂ => ?_
@@ -114,17 +114,17 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
   have rd₁ : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [hrd, hwr]
   unfold bmSetup
   refine wp_movm (a := addr (esp₀ s₀) 4) (by rw [ea_at, hesp])
-    (by rw [rd₁]; exact arg_in hp (by omega) (by omega)) fun a ua => ?_
+    (by rw [rd₁]; exact arg_in hp (by omega_using []) (by omega_using [])) fun a ua => ?_
   refine wp_movm (a := addr (esp₀ s₀) 12) (by rw [ea_at, ua.other _ (by decide), hesp])
-    (by rw [ua.rd, ua.wr, rd₁]; exact arg_in hp (by omega) (by omega)) fun b ub => ?_
+    (by rw [ua.rd, ua.wr, rd₁]; exact arg_in hp (by omega_using []) (by omega_using [])) fun b ub => ?_
   have eb : b.gpr .esp = esp₀ s₀ := by rw [ub.other _ (by decide), ua.other _ (by decide), hesp]
   have mb : b.mem = s₁.mem := by rw [ub.mem, ua.mem]
   have bx : b.gpr .ebx = bP s₀ := by
-    rw [ub.other _ (by decide), ua.gpr, arg_keep hp hf' (by omega) (by omega)]; rfl
+    rw [ub.other _ (by decide), ua.gpr, arg_keep hp hf' (by omega_using []) (by omega_using [])]; rfl
   have bs : b.gpr .esi = yP s₀ := by
-    rw [ub.gpr, ua.mem, arg_keep hp hf' (by omega) (by omega)]; rfl
-  refine timesR_ok (r := arg s₀ 1) (by rw [eb, mb, arg_keep hp hf' (by omega) (by omega)]; rfl)
-    (by rw [eb, ub.rd, ub.wr, ua.rd, ua.wr, rd₁]; exact arg_in hp (by omega) (by omega))
+    rw [ub.gpr, ua.mem, arg_keep hp hf' (by omega_using []) (by omega_using [])]; rfl
+  refine timesR_ok (r := arg s₀ 1) (by rw [eb, mb, arg_keep hp hf' (by omega_using []) (by omega_using [])]; rfl)
+    (by rw [eb, ub.rd, ub.wr, ua.rd, ua.wr, rd₁]; exact arg_in hp (by omega_using []) (by omega_using []))
     fun t e o mt rdt wrt => ?_
   refine wp_mov fun c uc => wp_add fun d ud => wp_mov fun f uf => wp_add fun i ui => wp_add fun j uj =>
     wp_subi fun l ul _ => WP.block_nil ?_
@@ -134,7 +134,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
       rw [ul.other _ h1, uj.other _ h1, ui.other _ h1, uf.other _ h1, ud.other _ h2, uc.other _ h2,
         o r h3 h4 h5]
   have ml : l.mem = s₁.mem := by rw [ul.mem, uj.mem, ui.mem, uf.mem, ud.mem, uc.mem, mt, mb]
-  refine ⟨Nat.zero_le _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega), ?_⟩
+  refine ⟨Nat.zero_le _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega_using []), ?_⟩
   · rw [ul.rd, uj.rd, ui.rd, uf.rd, ud.rd, uc.rd, rdt, ub.rd, ua.rd, hrd]
   · rw [ul.wr, uj.wr, ui.wr, uf.wr, ud.wr, uc.wr, wrt, ub.wr, ua.wr, hwr]
   · rw [kl _ (by decide) (by decide) (by decide) (by decide) (by decide), eb]
@@ -142,20 +142,20 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
   · rw [kl _ (by decide) (by decide) (by decide) (by decide) (by decide), bs]; simp
   · rw [ul.other _ (by decide), uj.other _ (by decide), ui.other _ (by decide), uf.other _ (by decide),
       ud.gpr, uc.gpr, uc.other _ (by decide), e64, o _ (by decide) (by decide) (by decide), bs]
-    congr 2; omega
+    congr 2; omega_using []
   · rw [ul.gpr, uj.gpr, ui.gpr, ui.other .eax (by decide), uf.gpr, uf.other .eax (by decide),
       ud.other .ebx (by decide), ud.other .eax (by decide), uc.other .ebx (by decide),
       uc.other .eax (by decide), e64, o _ (by decide) (by decide) (by decide), bx, add32,
-      sub32 _ (by omega)]
+      sub32 _ (by omega_using [pos])]
     show _ = bP s₀ + BitVec.ofNat 32 (128 * rr s₀ - 64)
-    congr 2; omega
+    congr 2; omega_using []
   · rw [ml]; exact hf'
   · rw [ml]; exact hsv
   · rw [ml]
     show bytesAt s₁.mem (bA s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)) 64 =
       blk (B s₀) (2 * rr s₀ - 1)
-    rw [blk_B s₀ (by omega), show 64 * (2 * rr s₀ - 1) = 128 * rr s₀ - 64 by omega]
-    exact b_frame hp hf' (by omega)
+    rw [blk_B s₀ (by omega_using [pos]), show 64 * (2 * rr s₀ - 1) = 128 * rr s₀ - 64 by omega_using []]
+    exact b_frame hp hf' (by omega_using [pos])
 
 /-! ## The loop -/
 
@@ -174,8 +174,8 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (h : Inv s₀ (rr 
   have hs := hp.s_nw
   rw [epilogue_eq]
   refine wp_movm (a := addr (esp₀ s₀) 20) (by rw [ea_at, h.esp])
-    (by rw [h.rd, h.wr]; exact arg_in hp (by omega) (by omega)) fun s₁ u₁ => ?_
-  have e : s₁.gpr .eax = sc s₀ := by rw [u₁.gpr, arg_keep hp h.frame (by omega) (by omega)]; rfl
+    (by rw [h.rd, h.wr]; exact arg_in hp (by omega_using []) (by omega_using [])) fun s₁ u₁ => ?_
+  have e : s₁.gpr .eax = sc s₀ := by rw [u₁.gpr, arg_keep hp h.frame (by omega_using []) (by omega_using [])]; rfl
   have ha := bmSaved_addr s₀ hp
   refine Spill.restore_ok bmSaved (by decide) (fun p hp' => ?_)
     (by rw [e, u₁.mem]; exact h.saved.congr (fun p hp' => (ha p hp').symm) fun _ _ => rfl)
@@ -191,7 +191,7 @@ theorem post_of {s₀ : State} {m : Mem}
     (h : ∀ i < rr s₀, bytesAt m (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
       bytesAt m (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1)) :
     bytesAt m (yA s₀) (128 * rr s₀) = blockMix (rr s₀) (B s₀) := by
-  rw [blockMix_eq, show 128 * rr s₀ = 64 * rr s₀ + 64 * rr s₀ by omega, bytesAt_add,
+  rw [blockMix_eq, show 128 * rr s₀ = 64 * rr s₀ + 64 * rr s₀ by omega_using [], bytesAt_add,
     bytesAt_blocks, bytesAt_blocks]
   congr 1
   · refine flatMap_congr fun i hi => ?_
@@ -263,9 +263,9 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
     rw [hsE, callEntry_argAddr0]; rfl
   have eSp : sE.gpr .esp = E - BitVec.ofNat 32 12 := by
     rw [hsE, callEntry_esp']; rfl
-  have b8 : Region.Sub (below E 8) (below E 12) := below_sub (by omega) hlo
+  have b8 : Region.Sub (below E 8) (below E 12) := below_sub (by omega_using []) hlo
   have r4 : Region.Sub ⟨(E - BitVec.ofNat 32 12).setWidth 64, 4⟩ (below E 12) := by
-    have := below_inner (sp := E) (a := 4) (b := 12) (k := 8) (by omega) hlo
+    have := below_inner (sp := E) (a := 4) (b := 12) (k := 8) (by omega_using []) hlo
     rw [show E - BitVec.ofNat 32 12 = E - BitVec.ofNat 32 8 - BitVec.ofNat 32 4 by bv_omega_arith]
     exact this
   have e12 : 4 * [Reg.eax, dR].length + stackUse Impl.Scrypt.X86.salsa + 4 = 12 := by
@@ -279,7 +279,7 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
       arg_withRegions, argAddr_withRegions, a0, a1, eA, eSp]
     refine ⟨trivial, trivial, hds, hsd.sub_left b8, hss.sub_left b8, hsd.sub_left r4, hss.sub_left r4,
       fd, fsc, ?_⟩
-    rw [sub_toNat hlo]; have := E.isLt; omega
+    rw [sub_toNat hlo]; have := E.isLt; omega_using []
   · intro a n ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -315,7 +315,7 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
     refine hQ s' rd' wr' cs' (f'.mono fun r hr => by simpa using hr) ?_
     rw [post]
     congr 1
-    refine Proof.Scrypt.Memory.frame_bytesAt hsE' (fun r hr => ?_) (by omega)
+    refine Proof.Scrypt.Memory.frame_bytesAt hsE' (fun r hr => ?_) (by omega_using [])
     simp only [List.mem_singleton] at hr; subst hr
     exact hsd.symm
 
@@ -340,7 +340,7 @@ theorem wf₀ {s : State} (h : Proof.Scrypt.blockMixX86.pre s) : VG.X86.Taint.Wf
       List.Pairwise.nil, and_true]
     exact ⟨hp.y_s, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.ret_y hp.a_y
@@ -365,12 +365,12 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Scrypt.blockMixX86.pre s₁)
   · simp only [τ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
   · rw [hp₁.wr, hp₂.wr]
-    simp only [yR, scR, yA, scA, yP, sc, rr, ha 1 (by omega), ha 2 (by omega), ha 4 (by omega)]
+    simp only [yR, scR, yA, scA, yP, sc, rr, ha 1 (by omega_using []), ha 2 (by omega_using []), ha 4 (by omega_using [])]
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq hp₁.sp_fit h4 hk, VG.X86.Taint.argByte_eq hp₂.sp_fit h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-    exact congrArg _ (ha _ (by omega))
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixX86.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.X86.blockMix s t s' ∧ abiPreserved s s' ∧

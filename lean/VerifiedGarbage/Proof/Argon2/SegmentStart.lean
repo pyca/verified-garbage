@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Segment
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The first two cells of pass zero's first segment are already initialized. -/
 
@@ -23,7 +24,7 @@ theorem segment_start (p : Params) (pass lane slice : Nat) (state : FillState) (
   by_cases first : pass = 0 ∧ slice = 0
   · obtain ⟨rfl, rfl⟩ := first
     have append := segment_append p 0 lane 0 0 2 (p.segmentLen - 2) state
-    rw [show 2 + (p.segmentLen - 2) = p.segmentLen by omega, segment_first_two] at append
+    rw [show 2 + (p.segmentLen - 2) = p.segmentLen by omega_using [minimum], segment_first_two] at append
     exact append
   · simp only [segmentStart, first, ite_false, Nat.sub_zero]
 

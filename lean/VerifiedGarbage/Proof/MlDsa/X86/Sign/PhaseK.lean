@@ -1,16 +1,927 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimB
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
-import VerifiedGarbage.Proof.MlKem.X86.TopSeq
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `MlDsa.X86.Sign.Run`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.X86.Sign.PhaseC`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.X86.Sign.PhaseD`, which only this module used -/
+
+section
+
+/-! ### `MlDsa.X86.Sign.PhaseA`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA signing on x86 (32-bit): `ExpandA`
+
+`ρ` is copied to `RS`, and entry `e` of `Â` (row `e / ℓ`, column `e % ℓ`) is
+sampled into slot `aBase + e` from the seed `ρ ‖ e % ℓ ‖ e / ℓ` (`seedE`),
+with `OK` the AND of the results (`okE`). After entry `e` (`IA e`): if every
+entry so far succeeded, their slots hold them, within `maxBounds` (`aVal`);
+otherwise one of them fails within `minBounds`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86.Sign
+
+open VG VG.X86
+open VG.Impl.MlKem.X86 (Buf at_ copyW)
+open VG.Impl.MlDsa.X86.Sign
+open VG.Proof.MlKem.X86 (Piece Only)
+open VG.Proof.MlKem.X86.Top
+open VG.Proof.MlDsa.Sign
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+variable {p : Params}
+
+section
+variable (p : Params)
+
+/-- `ρ`, from the initial state. -/
+abbrev rhoS (s₀ : State) : List Byte := rhoV (skOf p s₀)
+
+/-- The seed of entry `e`. -/
+abbrev seedE (s₀ : State) (e : Nat) : List Byte := aSeed (rhoS p s₀) (e / p.ℓ) (e % p.ℓ)
+
+/-- Entry `e`, within `maxBounds`. -/
+abbrev aVal (s₀ : State) (e : Nat) : Poly := Av (skOf p s₀) (e / p.ℓ) (e % p.ℓ)
+
+/-- The values of `ŝ₁`, `ŝ₂` and `t̂₀`, from the initial state. -/
+abbrev S1 (s₀ : State) : Nat → Poly := s1F p (skOf p s₀)
+abbrev S2 (s₀ : State) : Nat → Poly := s2F p (skOf p s₀)
+abbrev T0 (s₀ : State) : Nat → Poly := t0F p (skOf p s₀)
+
+/-- The first `n1`, `n2` and `n0` polynomials of `ŝ₁`, `ŝ₂` and `t̂₀`. -/
+structure DKs (n1 n2 n0 : Nat) (s₀ : State) (m : Mem) : Prop where
+  f1 : Fam s₀ m (s1B p) n1 (S1 p s₀)
+  f2 : Fam s₀ m (s2B p) n2 (S2 p s₀)
+  f0 : Fam s₀ m (t0B p) n0 (T0 p s₀)
+
+/-- The first `e` entries were sampled. -/
+def okE (F : List Byte → Bool) (s₀ : State) (e : Nat) : Bool := (List.range e).all fun e' => F (seedE p s₀ e')
+
+end
+
+theorem okE_succ {F : List Byte → Bool} {s₀ : State} {e : Nat} :
+    okE p F s₀ (e + 1) = (okE p F s₀ e && F (seedE p s₀ e)) := by
+  simp only [okE, List.range_succ, List.all_append, List.all_cons, List.all_nil, Bool.and_true]
+
+theorem okE_lt {F : List Byte → Bool} {s₀ : State} {e e' : Nat} (h : okE p F s₀ e = true) (he : e' < e) :
+    F (seedE p s₀ e') = true :=
+  List.all_eq_true.mp h e' (List.mem_range.mpr he)
+
+theorem DKs.keep {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {n1 n2 n0 : Nat} (h1 : n1 ≤ p.ℓ) (h2 : n2 ≤ p.k)
+    (h0 : n0 ≤ p.k) {bs : List Buf} {N : Nat} (hN : N ≤ 80) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m')
+    (h : ∀ c ∈ bs, OutS p n1 n2 n0 c) (d : DKs p n1 n2 n0 s₀ m) : DKs p n1 n2 n0 s₀ m' :=
+  ⟨d.f1.keep hp ps hN fr (by simp only [nS, s1B]; omega_arith) fun c hc => (h c hc).1,
+    d.f2.keep hp ps hN fr (by simp only [nS, s2B]; omega_arith) fun c hc => (h c hc).2.1,
+    d.f0.keep hp ps hN fr (by simp only [nS, t0B]; omega_arith) fun c hc => (h c hc).2.2⟩
+
+/-- After entry `e`. -/
+structure IA (p : Params) (F : List Byte → Bool) (e : Nat) (s₀ s : State) : Prop where
+  ctx : Ctx (Y p) s₀ s
+  rs : bytesAt s.mem (Buf.addr s₀ (sc oRS 32)) 32 = rhoS p s₀
+  ok : scw s₀ s oOK = if okE p F s₀ e then 1 else 0
+  fam : okE p F s₀ e = true → Fam s₀ s.mem (aBase p) e (aVal p s₀)
+  bad : okE p F s₀ e = false → ∃ e' < e, rejNTTPoly minBounds.rejNTT (seedE p s₀ e') = none
+  dk : DKs p p.ℓ p.k p.k s₀ s.mem
+
+/-- The result of `vg_mldsa_rej_ntt_poly`, if it succeeded within `maxBounds`. -/
+theorem rej_val {x : List Byte} {r : BitVec 32} {out : Poly}
+    (h : Outcome (fun b => rejNTTPoly b.rejNTT x) r out) (h1 : r = 1)
+    (hm : (rejNTTPoly maxBounds.rejNTT x).isSome) : out = (rejNTTPoly maxBounds.rejNTT x).getD zero := by
+  rcases h with ⟨_, b, hb⟩ | ⟨h0, _⟩
+  · obtain ⟨y, hy⟩ := Option.isSome_iff_exists.mp hm
+    have e1 := rejNTTPoly_mono (Nat.le_max_left b.rejNTT maxBounds.rejNTT) hb
+    have e2 := rejNTTPoly_mono (Nat.le_max_right b.rejNTT maxBounds.rejNTT) hy
+    rw [e1] at e2
+    rw [hy, Option.some.inj e2]; rfl
+  · rw [h1] at h0; cases h0
+
+theorem integerToBytes_one {x : Nat} : integerToBytes x 1 = [BitVec.ofNat 8 x] := by
+  simp [integerToBytes]
+
+theorem skLen_ge (ps : PS p) : 32 ≤ p.skLen := by have := ps.hskLen; omega_using [this]
+
+theorem rhoS_eq {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') : rhoS p s₀ = rhoS p s₀' :=
+  rho_of_leak (by rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps)
+    (by rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps) hq.coarse
+
+/-! ## An entry -/
+
+/-- The bytes of the layout an entry needs. -/
+theorem okRS (ps : PS p) : (Y p).ok (sc oRS 32) = true ∧ (Y p).okW (sc (oRS + 32) 1) = true ∧
+    (Y p).okW (sc (oRS + 33) 1) = true ∧ (Y p).ok (sc oRS 33) = true ∧ (Y p).ok (sc oRS 34) = true ∧
+    (Y p).ok (sc (oRS + 32) 1) = true ∧ (Y p).ok (sc (oRS + 33) 1) = true :=
+  ⟨sc_ok' ps (by decide) (by decide), sc_ok ps (by decide) (by decide), sc_ok ps (by decide) (by decide),
+    sc_ok' ps (by decide) (by decide), sc_ok' ps (by decide) (by decide), sc_ok' ps (by decide) (by decide),
+    sc_ok' ps (by decide) (by decide)⟩
+
+theorem seed_bytes (ps : PS p) {s₀ : State} (hp : TPre (Y p) s₀) {m : Mem} {ρ : List Byte} {i j : Nat}
+    (hρ : bytesAt m (Buf.addr s₀ (sc oRS 32)) 32 = ρ)
+    (hj : bytesAt m (Buf.addr s₀ (sc (oRS + 32) 1)) 1 = [BitVec.ofNat 8 j])
+    (hi : bytesAt m (Buf.addr s₀ (sc (oRS + 33) 1)) 1 = [BitVec.ofNat 8 i]) :
+    bytesAt m (Buf.addr s₀ (sc oRS 34)) 34 = aSeed ρ i j := by
+  obtain ⟨o1, -, -, o4, o5, o6, o7⟩ := okRS ps
+  rw [addr_off hp (d := 32) o5 o6] at hj
+  rw [addr_off hp (d := 33) o5 o7] at hi
+  rw [show Buf.addr s₀ (sc oRS 32) = Buf.addr s₀ (sc oRS 34) from rfl] at hρ
+  rw [VG.Proof.MlKem.bytesAt_add _ _ 33 1, VG.Proof.MlKem.bytesAt_add _ _ 32 1, hρ, hj, hi, aSeed,
+    integerToBytes_one, integerToBytes_one]
+
+theorem rs_hi (ps : PS p) : oRS + 34 ≤ scrLen p := by
+  have := scr_ge ps; simp only [oP, oRS, nS] at this ⊢; omega_using [this]
+
+/-- The two bytes of the seed of entry `e`. -/
+theorem seedBlk_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
+    SP p (IA p F.rejF e) (fun s₀ s => IA p F.rejF e s₀ s ∧
+      bytesAt s.mem (Buf.addr s₀ (sc oRS 34)) 34 = seedE p s₀ e)
+      (.block (st8 (oRS + 32) (e % p.ℓ) ++ st8 (oRS + 33) (e / p.ℓ))) := by
+  obtain ⟨o1, w2, w3, -, -, -, -⟩ := okRS ps
+  refine blk_piece (fun _ _ _ h => h.ctx) (fun s₀ s hp h => ?_) rfl
+  refine wp_st8 hp h.ctx w2 _ fun s₁ c₁ f₁ b₁ => ?_
+  rw [← List.append_nil (st8 (oRS + 33) (e / p.ℓ))]
+  refine wp_st8 hp c₁ w3 _ fun s₂ c₂ f₂ b₂ => WP.block_nil_iff.mpr ?_
+  have fs : ∀ o, o = oRS + 32 ∨ o = oRS + 33 → ∀ c ∈ [sc o 1], c.arg = SC ∧ oRS + 32 ≤ c.off ∧ c.off + c.len ≤ oRS + 34 ∧ 0 < c.len :=
+    fun o ho c hc => by rw [List.mem_singleton] at hc; subst hc; simp only [oRS, true_and] at ho ⊢; omega_using [ho]
+  have f := (frSc hp (M := 0) (Nat.le_refl _) (by decide) (by decide) (rs_hi ps) (fs _ (.inl rfl)) f₁).trans
+    (frSc hp (M := 0) (Nat.le_refl _) (by decide) (by decide) (rs_hi ps) (fs _ (.inr rfl)) f₂)
+  have o0 : ∀ c ∈ [sc (oRS + 32) (oRS + 34 - (oRS + 32))], Out p oOK (oOK + 4) c := by
+    intro c hc; rw [List.mem_singleton] at hc; subst hc; exact ⟨sc_ok' ps (by decide) (by decide), fun _ => by decide⟩
+  have o1' : ∀ c ∈ [sc (oRS + 32) (oRS + 34 - (oRS + 32))], Out p oRS (oRS + 32) c := by
+    intro c hc; rw [List.mem_singleton] at hc; subst hc; exact ⟨sc_ok' ps (by decide) (by decide), fun _ => by decide⟩
+  have oF : ∀ c ∈ [sc (oRS + 32) (oRS + 34 - (oRS + 32))], Out p (oP (aBase p)) (oP (aBase p + e)) c := by
+    intro c hc; rw [List.mem_singleton] at hc; subst hc
+    exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inl (by simp only [oP, oRS]; omega_using [])⟩
+  have hrs : bytesAt s₂.mem (Buf.addr s₀ (sc oRS 32)) 32 = rhoS p s₀ := by rw [keepB hp (by decide) f o1 o1', h.rs]
+  refine ⟨⟨c₂, hrs, by rw [scw, keepW' hp (by decide) f (sc_ok' ps (by decide) (by decide)) o0]; exact h.ok,
+    fun hk => (h.fam hk).keep hp ps (by decide) f (by simp only [nS, aBase]; omega_using [he]) oF, h.bad,
+    h.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) f (by ofsd)⟩, ?_⟩
+  have b₁' : bytesAt s₂.mem (Buf.addr s₀ (sc (oRS + 32) 1)) 1 = [BitVec.ofNat 8 (e % p.ℓ)] := by
+    rw [keepB hp (by decide) f₂ (sc_ok' ps (by decide) (by decide)) fun c hc => by
+      rw [List.mem_singleton] at hc; subst hc; exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inr (Nat.le_refl _)⟩, b₁]
+  exact seed_bytes ps hp hrs b₁' b₂
+
+/-- After the call of entry `e`. -/
+structure RB (p : Params) (F : List Byte → Bool) (e : Nat) (s₀ s : State) : Prop where
+  ia : IA p F e s₀ s
+  eax : s.gpr .eax = if F (seedE p s₀ e) then 1 else 0
+  yes : F (seedE p s₀ e) = true → PolyIs s.mem (Buf.addr s₀ (pS (aBase p + e))) (aVal p s₀ e)
+  no : F (seedE p s₀ e) = false → rejNTTPoly minBounds.rejNTT (seedE p s₀ e) = none
+
+theorem rej_lay (ps : PS p) {e : Nat} (he : e < p.k * p.ℓ) :
+    ((Y p).ok ⟨SC, oRS, 34⟩ && (Y p).okW ⟨SC, oP (aBase p + e), 1024⟩ && (Y p).okW ⟨SC, oPS, 2048⟩ &&
+      (Y p).sep ⟨SC, oRS, 34⟩ ⟨SC, oP (aBase p + e), 1024⟩ && (Y p).sep ⟨SC, oRS, 34⟩ ⟨SC, oPS, 2048⟩ &&
+      (Y p).sep ⟨SC, oP (aBase p + e), 1024⟩ ⟨SC, oPS, 2048⟩) = true := by ofsd
+
+/-- The call of entry `e`. -/
+theorem rejCall_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
+    SP p (fun s₀ s => IA p F.rejF e s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sc oRS 34)) 34 = seedE p s₀ e)
+      (RB p F.rejF e)
+      (callPR "vg_mldsa_rej_ntt_poly" P.rejNTT [.buf (sc oRS 34), .buf (pS (aBase p + e)), .buf bPS]) := by
+  refine rej_piece F.rejNTT (F.ok _ (by simp)) SC oRS SC (oP (aBase p + e)) SC oPS (rej_lay ps he)
+    (fun _ _ _ h => h.1.ctx) (fun s₀ s₀' s s' hp hp' hq h h' => by
+      rw [h.2, h'.2]; show aSeed (rhoS p s₀) _ _ = aSeed (rhoS p s₀') _ _; rw [rhoS_eq ps hq])
+    fun s₀ s s' hp ⟨h, hs⟩ c' fr heax hred hout => ?_
+  rw [hs] at heax hout
+  have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega_using [he]
+  refine ⟨⟨c', by rw [keepB hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), h.rs],
+    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok,
+    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega_using [hj]) (by ofsd), h.bad,
+    h.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr (by ofsd)⟩, heax, fun hy => ?_, fun hn => ?_⟩
+  · rw [hy] at heax; simp only [↓reduceIte] at heax
+    refine ⟨hred heax, ?_⟩
+    rw [rej_val hout heax (F.rejMax _ hy)]
+    rfl
+  · rw [hn] at heax
+    rcases hout with ⟨h1, _⟩ | ⟨_, h0⟩
+    · rw [heax] at h1; cases h1
+    · exact h0
+
+/-- `OK ← OK ∧ eax` after the call of entry `e`. -/
+theorem rejAnd_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
+    SP p (RB p F.rejF e) (IA p F.rejF (e + 1)) (.block andOK) := by
+  refine blk_piece (fun _ _ _ h => h.ia.ctx) (fun s₀ s hp h => wp_andOK hp h.ia.ctx ps fun s' c' fr ok' => ?_) rfl
+  have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega_using [he]
+  have fr' := fr0 hp (N := 80) (by decide) fr
+  have hfam : okE p F.rejF s₀ e = true → Fam s₀ s'.mem (aBase p) e (aVal p s₀) := fun hk =>
+    (h.ia.fam hk).keep hp ps (by decide) fr' (by omega_using [hj]) (by ofsd)
+  refine ⟨c', by rw [keepB hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), h.ia.rs], ?_, fun hk => ?_, fun hk => ?_,
+    h.ia.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr' (by ofsd)⟩
+  · rw [ok', h.ia.ok, h.eax, and01, okE_succ]
+  · rw [okE_succ, Bool.and_eq_true] at hk
+    exact (hfam hk.1).snoc (keepP hp ps (by decide) fr' hj (by ofsd) (h.yes hk.2))
+  · rw [okE_succ, Bool.and_eq_false_iff] at hk
+    rcases hk with hk | hk
+    · obtain ⟨e', he', hn⟩ := h.ia.bad hk
+      exact ⟨e', by omega_using [he'], hn⟩
+    · exact ⟨e, by omega_using [], h.no hk⟩
+
+theorem aP_slot {e : Nat} : aP p (e / p.ℓ) (e % p.ℓ) = pS (aBase p + e) := by
+  rw [aP_eq, Nat.div_add_mod]
+
+/-- Entry `e` of `Â`. -/
+theorem sampleE_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
+    SP p (IA p F.rejF e) (IA p F.rejF (e + 1)) (sampleE P p e) := by
+  unfold sampleE rejAt
+  rw [aP_slot]
+  exact (seedBlk_piece F ps e he).seq ((rejCall_piece F ps e he).seq (rejAnd_piece F ps e he))
+
+/-- `ρ` to `RS`, and `Â`. -/
+theorem expandA_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ scw s₀ s oOK = 1 ∧ DKs p p.ℓ p.k p.k s₀ s.mem) (IA p F.rejF (p.k * p.ℓ))
+      (Impl.MlDsa.X86.Sign.expandA P p) := by
+  unfold Impl.MlDsa.X86.Sign.expandA
+  refine Piece.seq (B := IA p F.rejF 0) (copy_piece 0 0 SC oRS 8 (by decide) (by decide) (by ofsd)
+    (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hb => ?_)
+    (by simpa using seqR_piece (I := IA p F.rejF) 0 (p.k * p.ℓ) fun e _ he => sampleE_piece F ps e (by omega_using [he]))
+  have fr' : Frame (FR s₀ [sc oRS 32] 80) s.mem s'.mem := fr.mono (by simp)
+  refine ⟨c', ?_, ?_, fun _ j hj => absurd hj (Nat.not_lt_zero _), fun hk => absurd hk (by simp [okE]),
+    h.2.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (by decide) fr' (by ofsd)⟩
+  · show bytesAt s'.mem (Buf.addr s₀ ⟨SC, oRS, 4 * 8⟩) (4 * 8) = _
+    rw [hb, h.1.roBytes hp (b := ⟨0, 0, 4 * 8⟩) (by ofsd) rfl]
+    exact (VG.Proof.MlKem.bytesAt_take _ _ (skLen_ge ps)).symm
+  · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd)]
+    simp [okE, h.2.1]
+
+end VG.Proof.MlDsa.X86.Sign
+
+end
+
+end
+
+
+/-!
+# ML-DSA signing on x86 (32-bit): the private key, and `ρ″`
+
+`ŝ₁`, `ŝ₂` and `t̂₀` are the `NTT` of the `BitUnpack` of their pieces of `sk`
+(`decOne_piece`), in the slots from `s1B`, `s2B` and `t0B`, next to `Â`
+(`DK`); then `K ‖ rnd` is copied to `HIN`, and `ρ″ = H(K ‖ rnd ‖ μ, 64)`
+hashed to `MS` (`KD`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86.Sign
+
+open VG VG.X86
+open VG.Impl.MlKem.X86 (Buf at_ copyW)
+open VG.Impl.MlDsa.X86.Sign
+open VG.Proof.MlKem.X86 (Piece Only)
+open VG.Proof.MlKem.X86.Top
+open VG.Proof.MlDsa.Sign
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+variable {p : Params}
+
+section
+variable (p : Params)
+
+/-- `ρ″`, from the initial state. -/
+abbrev rppS (s₀ : State) : List Byte := rppV (skOf p s₀) (muOf s₀) (rndOf s₀)
+
+/-- `Â`, and the first `n1`, `n2` and `n0` polynomials of `ŝ₁`, `ŝ₂` and `t̂₀`. -/
+structure DK (n1 n2 n0 : Nat) (s₀ : State) (m : Mem) : Prop where
+  fa : Fam s₀ m (aBase p) (p.k * p.ℓ) (aVal p s₀)
+  f1 : Fam s₀ m (s1B p) n1 (S1 p s₀)
+  f2 : Fam s₀ m (s2B p) n2 (S2 p s₀)
+  f0 : Fam s₀ m (t0B p) n0 (T0 p s₀)
+
+/-- What the loop needs of the setup. -/
+structure KD (s₀ s : State) : Prop where
+  ctx : Ctx (Y p) s₀ s
+  dk : DK p p.ℓ p.k p.k s₀ s.mem
+  ms : bytesAt s.mem (Buf.addr s₀ (sc oMS 64)) 64 = rppS p s₀
+
+end
+
+theorem DK.keep {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {n1 n2 n0 : Nat} (h1 : n1 ≤ p.ℓ) (h2 : n2 ≤ p.k)
+    (h0 : n0 ≤ p.k) {bs : List Buf} {N : Nat} (hN : N ≤ 80) {m m' : Mem} (fr : Frame (FR s₀ bs N) m m')
+    (h : ∀ c ∈ bs, OutK p n1 n2 n0 c) (d : DK p n1 n2 n0 s₀ m) : DK p n1 n2 n0 s₀ m' :=
+  ⟨d.fa.keep hp ps hN fr (by simp only [nS, aBase]; omega_arith) fun c hc => (h c hc).1,
+    d.f1.keep hp ps hN fr (by simp only [nS, s1B]; omega_arith) fun c hc => (h c hc).2.1,
+    d.f2.keep hp ps hN fr (by simp only [nS, s2B]; omega_arith) fun c hc => (h c hc).2.2.1,
+    d.f0.keep hp ps hN fr (by simp only [nS, t0B]; omega_arith) fun c hc => (h c hc).2.2.2⟩
+
+/-! ## A polynomial of the private key -/
+
+/-- The bytes `sk[o : o + l]`. -/
+theorem sk_slice {s₀ s : State} (hp : TPre (Y p) s₀) (h : Ctx (Y p) s₀ s) {o l : Nat} (hol : o + l ≤ p.skLen)
+    (hl : 0 < l) : bytesAt s.mem (Buf.addr s₀ (bSk o l)) l = ((skOf p s₀).drop o).take l := by
+  have ok : (Y p).ok (bSk o l) = true :=
+    Lay.ok_iff.mpr ⟨by rw [Y_n]; exact (by decide : 0 < 5), hl, by rw [Y_alen0]; exact hol⟩
+  have ok0 : (Y p).ok (bSk 0 p.skLen) = true :=
+    Lay.ok_iff.mpr ⟨by rw [Y_n]; exact (by decide : 0 < 5), by show 0 < p.skLen; omega_arith,
+      by rw [Y_alen0]; show 0 + p.skLen ≤ p.skLen; omega_arith⟩
+  rw [h.roBytes hp ok rfl, VG.Proof.MlKem.bytesAt_slice _ _ hol, Buf.addr_eq hp ok, Buf.addr_eq hp ok0]
+  simp only [BitVec.add_zero]
+
+/-- `f ← NTT(BitUnpack(sk[o : o + len], a, b))`, in slot `j`. -/
+theorem decOne_piece {P : Prims} (F : PrimsOk P) (ps : PS p) {A B : State → State → Prop} (j o len a b : Nat)
+    (hab : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hs : a < 2 ^ 32 ∧ b < 2 ^ 32 ∧ len < 2 ^ 32)
+    (hj : j < nS p) (hol : o + len ≤ p.skLen) (hlen : 0 < len)
+    (hA : ∀ s₀ s, TPre (Y p) s₀ → A s₀ s → Ctx (Y p) s₀ s)
+    (hQ : ∀ s₀ s s', TPre (Y p) s₀ → A s₀ s → Ctx (Y p) s₀ s' →
+      Frame (FR s₀ [pS j, sc oPS 1024] 80) s.mem s'.mem →
+      PolyIs s'.mem (Buf.addr s₀ (pS j)) (ntt (toRq (bitUnpack (((skOf p s₀).drop o).take len) a b))) → B s₀ s') :
+    SP p A B (.seq (bitUnpackAt P (bSk o len) a b (pS j)) (nttAt P (pS j))) := by
+  have hc : ((Y p).ok ⟨0, o, len⟩ && (Y p).okW ⟨SC, oP j, 1024⟩ && (Y p).sep ⟨0, o, len⟩ ⟨SC, oP j, 1024⟩) = true := by
+    have := slot_ok ps hj
+    simp only [Bool.and_eq_true, this, and_true]
+    exact ⟨Lay.ok_iff.mpr ⟨by rw [Y_n]; exact (by decide : 0 < 5), hlen, by rw [Y_alen0]; exact hol⟩, Lay.sep_iff.mpr (.inr ⟨by simp, .inr rfl⟩)⟩
+  refine Piece.seq (B := fun s₀ s₁ => ∃ s, A s₀ s ∧ Ctx (Y p) s₀ s₁ ∧ Frame (FR s₀ [pS j, sc oPS 1024] 80) s.mem s₁.mem ∧
+      PolyIs s₁.mem (Buf.addr s₀ (pS j)) (toRq (bitUnpack (((skOf p s₀).drop o).take len) a b)))
+    (bu_piece F.bitUnpack (F.ok _ (by simp)) a b len hab hl hs 0 o SC (oP j) hc hA
+      fun s₀ s s' hp ha c' fr hq => ⟨s, ha, c', fr.mono (by simp), by rw [← sk_slice hp (hA _ _ hp ha) hol hlen]; exact hq⟩) ?_
+  refine inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) (pS j) rfl (by
+      have := slot_ok ps hj; have := sc_ok ps (o := oPS) (n := 1024) (by decide) (by decide)
+      simp only [Bool.and_eq_true, *, true_and]; ofsd)
+    (fun s₀ s₁ hp ⟨_, _, c, _, hq⟩ => ⟨c, hq.1⟩) fun s₀ s₁ s' hp ⟨s, ha, c, fr, hq⟩ c' fr' post => ?_
+  rw [hq.2] at post
+  exact hQ s₀ s s' hp ha c' (fr.trans fr') post
+
+/-! ## The private key -/
+
+theorem ps_sk (ps : PS p) : sLen p * p.ℓ + sLen p * p.k + 416 * p.k + 128 = p.skLen := by
+  rw [ps.hskLen, Nat.mul_add]; omega_arith
+
+theorem ps_sLen (ps : PS p) : 0 < sLen p ∧ sLen p < 2 ^ 32 := by rcases ps.hsLen with h | h <;> omega_arith
+
+/-- `ŝ₁`. -/
+theorem decS1s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p 0 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ 0 0 s₀ s.mem)
+      (seqR (decS1 P p) 0 p.ℓ) := by
+  have := seqR_piece (p := p) (f := decS1 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DKs p r 0 0 s₀ s.mem) 0 p.ℓ
+    fun r _ hr => by
+      have hl := ps_sLen ps
+      have hk := ps_sk ps
+      have hr' : r < p.ℓ := by omega_arith
+      have hmul : sLen p * r + sLen p ≤ sLen p * p.ℓ := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hr'
+      exact decOne_piece F ps (s1B p + r) (skS1 p r) (sLen p) p.η p.η ps.hη.1 ps.hη.2.1
+        ⟨ps.hη.2.2, ps.hη.2.2, hl.2⟩ (by simp only [nS, s1B]; omega_arith) (by simp only [skS1]; omega_arith) hl.1
+        (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hq => ⟨c',
+          { (h.2.keep hp ps (by omega_arith) (by omega_arith) (by omega_arith) (by decide) fr (by ofsd)) with
+            f1 := (h.2.f1.keep hp ps (by decide) fr (by simp only [nS, s1B]; omega_arith) (by ofsd)).snoc hq }⟩
+  simpa using this
+
+/-- `ŝ₂`. -/
+theorem decS2s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k 0 s₀ s.mem)
+      (seqR (decS2 P p) 0 p.k) := by
+  have := seqR_piece (p := p) (f := decS2 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ r 0 s₀ s.mem) 0 p.k
+    fun r _ hr => by
+      have hl := ps_sLen ps
+      have hk := ps_sk ps
+      have hr' : r < p.k := by omega_arith
+      have hmul : sLen p * r + sLen p ≤ sLen p * p.k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hr'
+      exact decOne_piece F ps (s2B p + r) (skS2 p r) (sLen p) p.η p.η ps.hη.1 ps.hη.2.1
+        ⟨ps.hη.2.2, ps.hη.2.2, hl.2⟩ (by simp only [nS, s2B]; omega_arith) (by simp only [skS2]; omega_arith) hl.1
+        (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hq => ⟨c',
+          { (h.2.keep hp ps (Nat.le_refl _) (by omega_arith) (by omega_arith) (by decide) fr (by ofsd)) with
+            f2 := (h.2.f2.keep hp ps (by decide) fr (by simp only [nS, s2B]; omega_arith) (by ofsd)).snoc hq }⟩
+  simpa using this
+
+theorem t0F_eq (sk : List Byte) (i : Nat) :
+    t0F p sk i = ntt (toRq (bitUnpack ((sk.drop (skT0 p i)).take 416) 4095 4096)) := by
+  unfold t0F
+  rw [show 128 + lenS p * p.ℓ + lenS p * p.k + 32 * d * i = skT0 p i by
+    simp only [skT0, lenS, sLen, Nat.mul_add, d]; omega_arith]
+  rfl
+
+/-- `t̂₀`. -/
+theorem decT0s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k p.k s₀ s.mem)
+      (seqR (decT0 P p) 0 p.k) := by
+  have := seqR_piece (p := p) (f := decT0 P p) (I := fun r s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k r s₀ s.mem) 0 p.k
+    fun r _ hr => by
+      have hk := ps_sk ps
+      have hr' : r < p.k := by omega_arith
+      have hmul : 416 * r + 416 ≤ 416 * p.k := by omega_arith
+      exact decOne_piece F ps (t0B p + r) (skT0 p r) 416 4095 4096 ps.ht0.1 ps.ht0.2
+        ⟨by decide, by decide, by decide⟩ (by simp only [nS, t0B]; omega_arith) (by simp only [skT0, Nat.mul_add]; omega_arith) (by decide)
+        (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hq => ⟨c',
+          { (h.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (by omega_arith) (by decide) fr (by ofsd)) with
+            f0 := (h.2.f0.keep hp ps (by decide) fr (by simp only [nS, t0B]; omega_arith) (by ofsd)).snoc
+              (by show PolyIs _ _ (t0F p _ r); rw [t0F_eq]; exact hq) }⟩
+  simpa using this
+
+/-! ## `ρ″` -/
+
+/-- `ρ″ = H(K ‖ rnd ‖ μ, 64)`, with `K ‖ rnd` copied to `HIN` first. -/
+theorem rpp_piece (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem) (KD p) rpp := by
+  unfold rpp
+  have hk := ps_sk ps
+  refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem ∧
+      bytesAt s.mem (Buf.addr s₀ (sc oHIN 32)) 32 = ((skOf p s₀).drop 32).take 32)
+    (copy_piece 0 32 SC oHIN 8 (by decide) (by decide) (by ofsd) (fun _ _ _ h => h.1)
+      fun s₀ s s' hp h c' fr hb => ⟨c', h.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (N := 80)
+        (by decide) (show Frame (FR s₀ [sc oHIN 32] 80) s.mem s'.mem from fr.mono (by simp)) (by ofsd), by
+          show bytesAt s'.mem (Buf.addr s₀ ⟨SC, oHIN, 4 * 8⟩) (4 * 8) = _
+          rw [hb]; exact sk_slice hp h.1 (by omega_arith) (by decide)⟩) ?_
+  refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem ∧
+      bytesAt s.mem (Buf.addr s₀ (sc oHIN 64)) 64 = ((skOf p s₀).drop 32).take 32 ++ rndOf s₀)
+    (copy_piece 2 0 SC (oHIN + 32) 8 (by decide) (by decide) (by ofsd) (fun _ _ _ h => h.1)
+      fun s₀ s s' hp h c' fr hb => ⟨c', h.2.1.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (N := 80)
+        (by decide) (show Frame (FR s₀ [sc (oHIN + 32) 32] 80) s.mem s'.mem from fr.mono (by simp)) (by ofsd), by
+          rw [bytes_split hp s'.mem (o' := oHIN + 32) (l₁ := 32) (l₂ := 32) rfl rfl (sc_ok' ps (by decide) (by decide))
+            (sc_ok' ps (by decide) (by decide)), keepB hp (N := 80) (by decide) (show Frame (FR s₀ [sc (oHIN + 32) 32] 80) s.mem s'.mem from fr.mono (by simp))
+            (sc_ok' ps (by decide) (by decide)) (by ofsd), h.2.2]
+          have : bytesAt s'.mem (Buf.addr s₀ ⟨SC, oHIN + 32, 4 * 8⟩) (4 * 8) = _ := hb
+          rw [this, h.1.roBytes hp (b := ⟨2, 0, 4 * 8⟩) (by ofsd) rfl]⟩) ?_
+  refine hash2_piece' 136 0x1f (sc oHIN 64) bMu (sc oMS 64) (by decide) (by ofsd) (by decide) (by decide) (by decide)
+    (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hb => ⟨c', h.2.1.keep hp ps (Nat.le_refl _) (Nat.le_refl _)
+      (Nat.le_refl _) (by decide) fr (by ofsd), ?_⟩
+  have e : BitVec.setWidth 8 (31#32) = Spec.Sha3.shakeSuffix := by decide
+  rw [hb, h.2.2, h.1.roBytes hp (b := bMu) (by ofsd) rfl, e, rppS, rppV, VG.Proof.MlDsa.Sample.H_eq]
+
+/-- The private key's polynomials. -/
+theorem keys_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
+    SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p 0 0 0 s₀ s.mem) (fun s₀ s => Ctx (Y p) s₀ s ∧ DKs p p.ℓ p.k p.k s₀ s.mem)
+      (keys P p) :=
+  (decS1s_piece F ps).seq ((decS2s_piece F ps).seq (decT0s_piece F ps))
+
+end VG.Proof.MlDsa.X86.Sign
+
+end
+
+end
+
+
+/-!
+# ML-DSA signing on x86 (32-bit): the commitment of an iteration
+
+Iteration `t` of the loop (`IT`: the setup, `κ = ℓt` at `KAP` and `814 - t` at
+`CNT`) computes `y = ExpandMask(ρ″, κ)` and `ŷ = NTT(y)` (`maskR_piece`), `w =
+NTT⁻¹(Â ŷ)` (`rowW_piece`), the encoding of `w₁ = HighBits(w)` at `W1`
+(`w1R_piece`), and `c̃ = H(μ ‖ w1Encode(w₁), λ/4)` at `CT` (`commit_piece`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86.Sign
+
+open VG VG.X86
+open VG.Impl.MlKem.X86 (Buf at_ copyW)
+open VG.Impl.MlDsa.X86.Sign
+open VG.Proof.MlKem.X86 (Piece Only wp_shr)
+open VG.Proof.MlKem.X86.Top
+open VG.Proof.MlDsa.Sign
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+variable {p : Params}
+
+section
+variable (p : Params)
+
+/-- `Â`, `y`, `ŷ`, `w` and `c̃` of the iteration with counter `κ`. -/
+abbrev Am (s₀ : State) : Nat → Nat → Poly := Av (skOf p s₀)
+abbrev Yv (s₀ : State) (κ r : Nat) : Poly := toRq (yF p (rppS p s₀) κ r)
+abbrev YHv (s₀ : State) (κ r : Nat) : Poly := yhF p (rppS p s₀) κ r
+abbrev Wv (s₀ : State) (κ i : Nat) : Poly := wF p (Am p s₀) (rppS p s₀) κ i
+abbrev CTv (s₀ : State) (κ : Nat) : List Byte := ctF p (Am p s₀) (muOf s₀) (rppS p s₀) κ
+
+/-- Iteration `t`, on entry. -/
+structure IT (t : Nat) (s₀ s : State) : Prop where
+  kd : KD p s₀ s
+  kap : scw s₀ s oKAP = BitVec.ofNat 32 (p.ℓ * t)
+  cnt : scw s₀ s oCNT = BitVec.ofNat 32 (814 - t)
+  lt : t < 814
+
+end
+
+theorem IT.keep {t : Nat} {s₀ s s' : State} (hp : TPre (Y p) s₀) (ps : PS p) (h : IT p t s₀ s)
+    (c' : Ctx (Y p) s₀ s') {bs : List Buf} {N : Nat} (hN : N ≤ 80) (fr : Frame (FR s₀ bs N) s.mem s'.mem)
+    (hb : ∀ c ∈ bs, OutI p c) : IT p t s₀ s' :=
+  ⟨⟨c', h.kd.dk.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) hN fr fun c hc => (hb c hc).1,
+    by rw [keepB hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => (hb c hc).2.2, h.kd.ms]⟩,
+    by rw [scw, keepW' hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => ⟨(hb c hc).2.1.1, fun e => by
+      have := (hb c hc).2.1.2 e; simp only [oCNT, oKAP] at this ⊢; omega_arith⟩]; exact h.kap,
+    by rw [scw, keepW' hp hN fr (sc_ok' ps (by decide) (by decide)) fun c hc => ⟨(hb c hc).2.1.1, fun e => by
+      have := (hb c hc).2.1.2 e; simp only [oCNT, oKAP] at this ⊢; omega_arith⟩]; exact h.cnt, h.lt⟩
+
+theorem aVal_ij {s₀ : State} {i j : Nat} (hj : j < p.ℓ) : aVal p s₀ (p.ℓ * i + j) = Am p s₀ i j := by
+  have hl : 0 < p.ℓ := by omega_arith
+  have e1 : (p.ℓ * i + j) / p.ℓ = i := by
+    rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
+  have e2 : (p.ℓ * i + j) % p.ℓ = j := by
+    rw [Nat.add_comm, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hj]
+  simp only [aVal, e1, e2]
+
+/-! ## `y` and `ŷ` -/
+
+theorem integerToBytes_two (x : Nat) : integerToBytes x 2 = [BitVec.ofNat 8 x, BitVec.ofNat 8 (x / 256)] := by
+  simp [integerToBytes, List.range_succ]
+
+theorem kap_lt (ps : PS p) {t r : Nat} (ht : t < 814) (hr : r < p.ℓ) : p.ℓ * t + r < 2 ^ 16 := by
+  have := ps.hl
+  have : p.ℓ * t ≤ 7 * 813 := Nat.mul_le_mul (by omega_arith) (by omega_arith)
+  omega_arith
+
+/-- Iteration `t`, with the first `r` polynomials of `y` and `ŷ`. -/
+structure CM (p : Params) (t r : Nat) (s₀ s : State) : Prop where
+  it : IT p t s₀ s
+  fy : Fam s₀ s.mem (yB p) r (Yv p s₀ (p.ℓ * t))
+  fyh : Fam s₀ s.mem (yhB p) r (YHv p s₀ (p.ℓ * t))
+
+/-- `κ + r` to `MS + 64`: the seed of `y[r]` at `MS`. -/
+theorem setKappa_piece (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
+    SP p (CM p t r) (fun s₀ s => CM p t r s₀ s ∧
+      bytesAt s.mem (Buf.addr s₀ (sc oMS 66)) 66 = rppS p s₀ ++ integerToBytes (p.ℓ * t + r) 2)
+      (.block (setKappa r)) := by
+  refine blk_piece (fun _ _ _ h => h.it.kd.ctx) (fun s₀ s hp hc => ?_) rfl
+  have h := hc.it
+  have hk := kap_lt ps h.lt hr
+  unfold setKappa
+  refine wp_ldsc hp h.kd.ctx (sc_ok' ps (by decide) (by decide)) fun s₁ o₁ v₁ => wp_addi fun s₂ o₂ v₂ => ?_
+  have c₂ := h.kd.ctx.only (o₁.trans o₂) (by simp) (by simp)
+  refine wp_st8sc hp c₂ (sc_ok ps (by decide) (by decide)) fun s₃ c₃ g₃ m₃ => wp_shr (by decide) (by decide)
+    fun s₄ o₄ v₄ => ?_
+  have c₄ := c₃.only o₄ (by simp) (by simp)
+  refine wp_st8sc hp c₄ (sc_ok ps (by decide) (by decide)) fun s₅ c₅ g₅ m₅ => WP.block_nil_iff.mpr ?_
+  have ex : s₂.gpr .eax = BitVec.ofNat 32 (p.ℓ * t + r) := by
+    rw [v₂, v₁, h.kap, BitVec.ofNat_add]
+  have fr₃ : Frame (FR s₀ [sc (oMS + 64) 1] 0) s.mem s₃.mem := by
+    rw [m₃, ← (o₁.trans o₂).mem]; exact frW8 (Y := Y p)
+  have fr₅ : Frame (FR s₀ [sc (oMS + 65) 1] 0) s₃.mem s₅.mem := by
+    rw [m₅, ← o₄.mem]; exact frW8 (Y := Y p)
+  have fs : ∀ o, o = oMS + 64 ∨ o = oMS + 65 → ∀ c ∈ [sc o 1], c.arg = SC ∧ oMS + 64 ≤ c.off ∧
+      c.off + c.len ≤ oMS + 66 ∧ 0 < c.len :=
+    fun o ho c hc => by rw [List.mem_singleton] at hc; subst hc; simp only [oMS, true_and] at ho ⊢; omega_arith
+  have hhi : oMS + 66 ≤ scrLen p := by have := scr_ge ps; simp only [oP, oMS, nS] at this ⊢; omega_arith
+  have f := (frSc hp (M := 80) (by decide) (by decide) (by decide) hhi (fs _ (.inl rfl)) fr₃).trans
+    (frSc hp (M := 80) (by decide) (by decide) (by decide) hhi (fs _ (.inr rfl)) fr₅)
+  refine ⟨⟨h.keep hp ps c₅ (by decide) f (by ofsd), hc.fy.keep hp ps (by decide) f (by simp only [nS, yB]; omega_arith) (by ofsd),
+    hc.fyh.keep hp ps (by decide) f (by simp only [nS, yhB]; omega_arith) (by ofsd)⟩, ?_⟩
+  have b0 : bytesAt s₃.mem (Buf.addr s₀ (sc (oMS + 64) 1)) 1 = [BitVec.ofNat 8 (p.ℓ * t + r)] := by
+    rw [m₃, bytes1_write]; show [(s₂.gpr .eax).setWidth 8] = _; rw [ex, setWidth8_ofNat]
+  have b0' : bytesAt s₅.mem (Buf.addr s₀ (sc (oMS + 64) 1)) 1 = [BitVec.ofNat 8 (p.ℓ * t + r)] := by
+    rw [keepB hp (by decide) fr₅ (sc_ok' ps (by decide) (by decide)) fun c hc => by
+      rw [List.mem_singleton] at hc; subst hc; exact ⟨sc_ok' ps (by decide) (by decide), fun _ => .inr (Nat.le_refl _)⟩, b0]
+  have b1 : bytesAt s₅.mem (Buf.addr s₀ (sc (oMS + 65) 1)) 1 = [BitVec.ofNat 8 ((p.ℓ * t + r) / 256)] := by
+    rw [m₅, bytes1_write]; show [(s₄.gpr .eax).setWidth 8] = _; rw [v₄, g₃, ex]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
+    omega_arith
+  have hm : bytesAt s₅.mem (Buf.addr s₀ (sc oMS 64)) 64 = rppS p s₀ := by
+    rw [keepB hp (by decide) f (sc_ok' ps (by decide) (by decide)) (by ofsd), h.kd.ms]
+  rw [bytes_split hp s₅.mem (o' := oMS + 64) (l₁ := 64) (l₂ := 2) rfl rfl (sc_ok' ps (by decide) (by decide))
+    (sc_ok' ps (by decide) (by decide)), hm,
+    bytes_split hp s₅.mem (o' := oMS + 65) (l₁ := 1) (l₂ := 1) rfl rfl (sc_ok' ps (by decide) (by decide))
+    (sc_ok' ps (by decide) (by decide)), b0', b1, integerToBytes_two]
+  rfl
+
+/-- `y[r]` and `ŷ[r]`. -/
+theorem maskR_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
+    SP p (CM p t r) (CM p t (r + 1)) (maskR P p r) := by
+  have hj : yB p + r < nS p := by simp only [nS, yB]; omega_arith
+  have hj' : yhB p + r < nS p := by simp only [nS, yhB]; omega_arith
+  refine (setKappa_piece ps t r hr).seq ?_
+  refine Piece.seq (B := fun s₀ s => CM p t r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (yB p + r))) (Yv p s₀ (p.ℓ * t) r))
+    (mask_piece F.expandMask (F.ok _ (by simp)) p.γ₁ ps.hγ₁ SC oMS SC (oP (yB p + r)) SC oPS (by ofsd)
+      (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hq => ⟨⟨h.1.it.keep hp ps c' (by decide) fr (by ofsd),
+        h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega_arith) (by ofsd),
+        h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega_arith) (by ofsd)⟩, by rw [h.2] at hq; exact hq⟩) ?_
+  refine Piece.seq (B := fun s₀ s => CM p t r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (yB p + r))) (Yv p s₀ (p.ℓ * t) r) ∧
+      PolyIs s.mem (Buf.addr s₀ (pS (yhB p + r))) (Yv p s₀ (p.ℓ * t) r))
+    (copy_piece SC (oP (yB p + r)) SC (oP (yhB p + r)) 256 (by decide) (by decide) (by ofsd)
+      (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hb => ?_) ?_
+  · have fr' : Frame (FR s₀ [pS (yhB p + r)] 80) s.mem s'.mem := fr.mono (by simp)
+    exact ⟨⟨h.1.it.keep hp ps c' (by decide) fr' (by ofsd),
+      h.1.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega_arith) (by ofsd),
+      h.1.fyh.keep hp ps (by decide) fr' (by simp only [nS, yhB]; omega_arith) (by ofsd)⟩,
+      keepP hp ps (by decide) fr' hj (by ofsd) h.2, polyIs_of_bytes hb h.2⟩
+  refine inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) (pS (yhB p + r)) rfl (by ofsd)
+    (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.2.1⟩) fun s₀ s s' hp h c' fr hq => ?_
+  rw [h.2.2.2] at hq
+  exact ⟨h.1.it.keep hp ps c' (by decide) fr (by ofsd),
+    (h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega_arith) (by ofsd)).snoc (keepP hp ps (by decide) fr hj (by ofsd) h.2.1),
+    (h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega_arith) (by ofsd)).snoc hq⟩
+
+/-! ## `w` -/
+
+/-- `∑_{j < m} Â[i, j] ŷ[j]`, summed from `j = 0` with `AddNTT`. -/
+abbrev wAcc (p : Params) (s₀ : State) (κ i m : Nat) : Poly :=
+  ((List.range m).map fun j => multiplyNTT (Am p s₀ i j) (YHv p s₀ κ j)).foldl add zero
+
+theorem add_zero_left (x : Poly) : add zero x = x := by
+  apply Vector.ext
+  intro j hj
+  simp [add, zero]
+
+theorem wAcc_one (s₀ : State) (κ i : Nat) :
+    wAcc p s₀ κ i 1 = multiplyNTT (Am p s₀ i 0) (YHv p s₀ κ 0) := by
+  simp only [wAcc, List.range_one, List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, add_zero_left]
+
+theorem wAcc_succ (s₀ : State) (κ i m : Nat) :
+    wAcc p s₀ κ i (m + 1) = add (wAcc p s₀ κ i m) (multiplyNTT (Am p s₀ i m) (YHv p s₀ κ m)) := by
+  simp only [wAcc, List.range_succ, List.map_append, List.map_cons, List.map_nil, List.foldl_append,
+    List.foldl_cons, List.foldl_nil]
+
+/-- Iteration `t`, with `y`, `ŷ` and the first `i` polynomials of `w`. -/
+structure CW (p : Params) (t i : Nat) (s₀ s : State) : Prop where
+  cm : CM p t p.ℓ s₀ s
+  fw : Fam s₀ s.mem (wB p) i (Wv p s₀ (p.ℓ * t))
+
+theorem CW.keep {t i : Nat} {s₀ s s' : State} (hp : TPre (Y p) s₀) (ps : PS p) (h : CW p t i s₀ s) (hi : i ≤ p.k)
+    (c' : Ctx (Y p) s₀ s') {bs : List Buf} {N : Nat} (hN : N ≤ 80) (fr : Frame (FR s₀ bs N) s.mem s'.mem)
+    (hb : ∀ c ∈ bs, OutI p c ∧ Out p (oP (yB p)) (oP (wB p + i)) c) : CW p t i s₀ s' :=
+  ⟨⟨h.cm.it.keep hp ps c' hN fr fun c hc => (hb c hc).1,
+    h.cm.fy.keep hp ps hN fr (by simp only [nS, yB]; omega_arith) fun c hc => ⟨(hb c hc).2.1, fun e => by
+      have := (hb c hc).2.2 e; simp only [oP, yB, wB] at this ⊢; omega_arith⟩,
+    h.cm.fyh.keep hp ps hN fr (by simp only [nS, yhB]; omega_arith) fun c hc => ⟨(hb c hc).2.1, fun e => by
+      have := (hb c hc).2.2 e; simp only [oP, yB, yhB, wB] at this ⊢; omega_arith⟩⟩,
+    h.fw.keep hp ps hN fr (by simp only [nS, wB]; omega_arith) fun c hc => ⟨(hb c hc).2.1, fun e => by
+      have := (hb c hc).2.2 e; simp only [oP, yB, wB] at this ⊢; omega_arith⟩⟩
+
+theorem fam_at {s₀ : State} {m : Mem} {b n : Nat} {f : Nat → Poly} (h : Fam s₀ m b n f) {j : Nat} (hj : j < n) :
+    PolyIs m (Buf.addr s₀ (pS (b + j))) (f j) := h j hj
+
+/-- `w[i]`. -/
+theorem rowW_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
+    SP p (CW p t i) (CW p t (i + 1)) (rowW P p i) := by
+  have hl := ps.hl
+  have hj : wB p + i < nS p := by simp only [nS, wB]; omega_arith
+  have ha : ∀ j < p.ℓ, p.ℓ * i + j < p.k * p.ℓ := fun j hj => aIdx hi hj
+  unfold rowW
+  simp only [aP_eq]
+  refine Piece.seq (B := fun s₀ s => CW p t i s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i 1))
+    (mul_piece F.mul (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP (aBase p + (p.ℓ * i + 0))) SC (oP (yhB p + 0))
+      (by have := ha 0 (by omega_arith); ofsd)
+      (fun _ _ _ h => ⟨h.cm.it.kd.ctx, (fam_at h.cm.it.kd.dk.fa (ha 0 (by omega_arith))).1, (fam_at h.cm.fyh (by omega_arith)).1⟩)
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps (by omega_arith) c' (by decide) fr (by ofsd), ?_⟩) ?_
+  · rw [(fam_at h.cm.it.kd.dk.fa (ha 0 (by omega_arith))).2, (fam_at h.cm.fyh (by omega_arith)).2, aVal_ij (by omega_arith)] at hq
+    rw [wAcc_one]; exact hq
+  refine Piece.seq (B := fun s₀ s => CW p t i s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i p.ℓ))
+    ?_ ?_
+  · have := seqR_piece (p := p) (I := fun j s₀ s => CW p t i s₀ s ∧
+        PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i j)) 1 (p.ℓ - 1) fun j hj1 hj2 =>
+      mulAdd_piece (nm := "vg_mldsa_multiply_add_ntt") F.mulAdd (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP (aBase p + (p.ℓ * i + j))) SC (oP (yhB p + j))
+        (by have := ha j (by omega_arith); ofsd)
+        (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega_arith))).1,
+          (fam_at h.1.cm.fyh (by omega_arith)).1⟩)
+        fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps (by omega_arith) c' (by decide) fr (by ofsd), by
+          rw [h.2.2, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega_arith))).2, (fam_at h.1.cm.fyh (by omega_arith)).2,
+            aVal_ij (by omega_arith)] at hq
+          rw [wAcc_succ]; exact hq⟩
+    rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega_arith] at this
+  refine inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) (pS (wB p + i)) rfl (by ofsd)
+    (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1⟩) fun s₀ s s' hp h c' fr hq => ?_
+  rw [h.2.2] at hq
+  exact ⟨(h.1.keep hp ps (by omega_arith) c' (by decide) fr (by ofsd)).cm, (h.1.keep hp ps (by omega_arith) c' (by decide) fr
+    (by ofsd)).fw.snoc hq⟩
+
+/-! ## `w₁` and `c̃` -/
+
+/-- The encodings of the first `i` polynomials of `w₁`. -/
+abbrev w1Enc (p : Params) (s₀ : State) (κ i : Nat) : List Byte :=
+  (List.range i).flatMap fun j => simpleBitPack (w1F p (Am p s₀) (rppS p s₀) κ j) (w1Max p)
+
+/-- Iteration `t`, with `y`, `w`, and the encodings of the first `i` polynomials of `w₁` at `W1`. -/
+structure CH (p : Params) (t i : Nat) (s₀ s : State) : Prop where
+  cw : CW p t p.k s₀ s
+  w1 : bytesAt s.mem (Buf.addr s₀ (sc oW1 1024)) (w1Len p * i) = w1Enc p s₀ (p.ℓ * t) i
+
+theorem natPolyIs_coeff {m : Mem} {a : Addr} {f : Vector Nat n} (h : NatPolyIs m a f) {j : Nat} (hj : j < 256) :
+    (coeffAt m a j).toNat = f[j] := by
+  have := congrArg (·[j]) h
+  simp only [natPolyAt, Vector.getElem_ofFn] at this
+  exact this
+
+/-- `w1Encode(w₁[i])` to `W1 + w1Len · i`. -/
+theorem w1R_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
+    SP p (CH p t i) (CH p t (i + 1)) (w1R P p i) := by
+  have hj : wB p + i < nS p := by simp only [nS, wB]; omega_arith
+  have hw := ps.hw1
+  have hwl : w1Len p * i + w1Len p ≤ 1024 := by
+    have : w1Len p * i + w1Len p ≤ w1Len p * p.k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
+    rw [Nat.mul_comm p.k] at hw; omega_arith
+  have hwp : 0 < w1Len p := by rcases ps.hw1Len with h | h <;> omega_arith
+  refine Piece.seq (B := fun s₀ s => CH p t i s₀ s ∧
+      NatPolyIs s.mem (Buf.addr s₀ t1P) (w1F p (Am p s₀) (rppS p s₀) (p.ℓ * t) i))
+    (hb_piece F.highBits (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP (wB p + i)) SC (oP 1) (by ofsd)
+      (fun _ _ _ h => ⟨h.cw.cm.it.kd.ctx, (fam_at h.cw.fw hi).1⟩) fun s₀ s s' hp h c' fr hq =>
+      ⟨⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), by
+        rw [keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega_arith) (by ofsd)]
+        exact h.w1⟩, by rw [(fam_at h.cw.fw hi).2] at hq; exact hq⟩) ?_
+  refine sbp_piece F.simpleBitPack (F.ok _ (by simp)) (w1Max p) (w1Len p) ps.hw1Max.1 ps.hw1Max.2 SC (oP 1) SC
+    (oW1 + w1Len p * i) (by ofsd) (fun _ _ _ h => ⟨h.1.cw.cm.it.kd.ctx, fun j hj => by
+      rw [natPolyIs_coeff h.2 hj, w1F, Vector.getElem_map]; exact highBits_le ps.hγ₂ _⟩)
+    fun s₀ s s' hp h c' fr hq => ⟨h.1.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), ?_⟩
+  have e : Buf.addr s₀ (sc (oW1 + w1Len p * i) (w1Len p)) = Buf.addr s₀ (sc oW1 1024) + BitVec.ofNat 64 (w1Len p * i) :=
+    addr_off hp (sc_ok' ps (by decide) (by decide)) (by ofsd)
+  rw [Nat.mul_succ, VG.Proof.MlKem.bytesAt_add, ← e, hq, h.2,
+    keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega_arith) (by ofsd), h.1.w1,
+    w1Enc, w1Enc, List.range_succ, List.flatMap_append, List.flatMap_singleton]
+
+/-- Iteration `t`, with `y`, `w` and `c̃`. -/
+structure CC (p : Params) (t : Nat) (s₀ s : State) : Prop where
+  cw : CW p t p.k s₀ s
+  ct : bytesAt s.mem (Buf.addr s₀ (sc oCT (cLen p))) (cLen p) = CTv p s₀ (p.ℓ * t)
+
+theorem w1Enc_eq (s₀ : State) (κ : Nat) :
+    w1Enc p s₀ κ p.k = w1Encode p ((List.range p.k).map (w1F p (Am p s₀) (rppS p s₀) κ)) := by
+  simp only [w1Enc, w1Encode, List.flatMap_map]
+
+/-- The commitment of iteration `t`. -/
+theorem commit_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t : Nat) :
+    SP p (CM p t 0) (CC p t) (commit P p) := by
+  have hw := ps.hw1
+  have hc := ps.hcLen
+  refine Piece.seq (B := CM p t p.ℓ) ?_ ?_
+  · have := seqR_piece (p := p) (I := CM p t) 0 p.ℓ fun r _ hr => maskR_piece F ps t r (by omega_arith)
+    simpa using this
+  refine Piece.seq (B := CW p t p.k) ?_ ?_
+  · have := seqR_piece (p := p) (I := CW p t) 0 p.k fun i _ hi => rowW_piece F ps t i (by omega_arith)
+    simp only [Nat.zero_add] at this
+    exact this.mono (fun _ _ _ h => ⟨h, fun j hj => absurd hj (Nat.not_lt_zero _)⟩) fun _ _ _ h => h
+  refine Piece.seq (B := CH p t p.k) ?_ ?_
+  · have := seqR_piece (p := p) (I := CH p t) 0 p.k fun i _ hi => w1R_piece F ps t i (by omega_arith)
+    simp only [Nat.zero_add] at this
+    exact this.mono (fun _ _ _ h => ⟨h, rfl⟩) fun _ _ _ h => h
+  refine hash2_piece' 136 0x1f bMu (sc oW1 (p.k * w1Len p)) (sc oCT (cLen p)) (by decide) (by ofsd) (by decide)
+    (by show p.k * w1Len p < 2 ^ 32; omega_arith) (by show cLen p < 2 ^ 32; omega_arith) (fun _ _ _ h => h.cw.cm.it.kd.ctx)
+    fun s₀ s s' hp h c' fr hb => ⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), ?_⟩
+  have e : BitVec.setWidth 8 (31#32) = Spec.Sha3.shakeSuffix := by decide
+  have hw1 : bytesAt s.mem (Buf.addr s₀ (sc oW1 (p.k * w1Len p))) (p.k * w1Len p) = w1Enc p s₀ (p.ℓ * t) p.k := by
+    rw [Nat.mul_comm]; exact h.w1
+  simp only [sc, bMu] at hb hw1 ⊢
+  rw [hb, hw1, h.cw.cm.it.kd.ctx.roBytes hp (b := bMu) (by ofsd) rfl, e, w1Enc_eq, CTv, ctF,
+    VG.Proof.MlDsa.Sample.H_eq]
+
+end VG.Proof.MlDsa.X86.Sign
+
+end
+
+end
+
+
+/-!
+# ML-DSA signing on x86 (32-bit): what two related runs agree on
+
+Whether every entry of `Â` was sampled (`Good`), and the number of iterations
+of the loop (`NI`: the number the implementation's `SampleInBall` and the
+checks make, or 1 if `Â` was not sampled), are the same in two runs related by
+`SPub`; and at an iteration both reach (`t < NI`), so are `c̃`, whether
+`SampleInBall` succeeded, whether the checks passed, and then the hint.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86.Sign
+
+open VG VG.X86
+open VG.Impl.MlKem.X86 (Buf)
+open VG.Impl.MlDsa.X86.Sign
+open VG.Proof.MlKem.X86.Top
+open VG.Proof.MlDsa.Sign
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+variable {p : Params} {P : Prims}
+
+section
+variable (p : Params) (F : PrimsOk P)
+
+/-- Every entry of `Â` was sampled. -/
+abbrev Good (s₀ : State) : Prop := okE p F.rejF s₀ (p.k * p.ℓ) = true
+
+/-- The number of iterations of the loop. -/
+def NI (s₀ : State) : Nat := if Good p F s₀ then itV p (skOf p s₀) (muOf s₀) (rndOf s₀) F.ballF else 1
+
+end
+
+theorem NI_pos (F : PrimsOk P) (s₀ : State) : 0 < NI p F s₀ := by
+  unfold NI; split
+  · exact nIt_pos _ (by decide)
+  · decide
+
+theorem NI_le (F : PrimsOk P) (s₀ : State) : NI p F s₀ ≤ 814 := by
+  unfold NI; split
+  · exact nIt_le _ _
+  · decide
+
+theorem NI_good {F : PrimsOk P} {s₀ : State} (h : Good p F s₀) :
+    NI p F s₀ = itV p (skOf p s₀) (muOf s₀) (rndOf s₀) F.ballF := by
+  unfold NI; rw [ifp h]
+
+theorem seedE_eq {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') (e : Nat) : seedE p s₀ e = seedE p s₀' e := by
+  show aSeed (rhoS p s₀) _ _ = aSeed (rhoS p s₀') _ _; rw [rhoS_eq ps hq]
+
+theorem okE_eq {F : List Byte → Bool} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') (e : Nat) :
+    okE p F s₀ e = okE p F s₀' e := by
+  simp only [okE, seedE_eq ps hq]
+
+theorem skOf_len (ps : PS p) (s₀ : State) : 32 ≤ (skOf p s₀).length := by
+  rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps
+
+/-- `ExpandA` succeeds within `maxBounds` once every entry was sampled. -/
+theorem expandA_good {F : PrimsOk P} {s₀ : State} (h : Good p F s₀) :
+    expandA p maxBounds (rhoV (skOf p s₀)) = some (amat p (Av (skOf p s₀))) := by
+  refine expandA_some fun i hi j hj => ?_
+  have hl : 0 < p.ℓ := by omega_using [hj]
+  have he := okE_lt h (aIdx hi hj)
+  have e1 : (p.ℓ * i + j) / p.ℓ = i := by
+    rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
+  have e2 : (p.ℓ * i + j) % p.ℓ = j := by
+    rw [Nat.add_comm, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hj]
+  simp only [seedE, e1, e2] at he
+  exact F.rejMax _ he
+
+theorem leakV_eq {F : PrimsOk P} {s₀ s₀' : State} (ps : PS p) (h : Good p F s₀) (h' : Good p F s₀')
+    (hq : SPub p s₀ s₀') :
+    leakV p (skOf p s₀) (muOf s₀) (rndOf s₀) = leakV p (skOf p s₀') (muOf s₀') (rndOf s₀') :=
+  leakV_of_leak (skOf_len ps s₀) (skOf_len ps s₀') (expandA_good h) (expandA_good h') hq.coarse
+
+theorem good_iff {F : PrimsOk P} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') : Good p F s₀ ↔ Good p F s₀' := by
+  simp only [Good, okE_eq ps hq]
+
+theorem NI_eq {F : PrimsOk P} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') : NI p F s₀ = NI p F s₀' := by
+  by_cases h : Good p F s₀
+  · have h' := (good_iff ps hq).mp h
+    rw [NI_good h, NI_good h']
+    exact itV_eq ps.hok F.ballMax (leakV_eq ps h h' hq)
+  · have h' : ¬ Good p F s₀' := fun h' => h ((good_iff ps hq).mpr h')
+    unfold NI; rw [ifn h, ifn h']
+
+/-- Iteration `t` is run. -/
+def Run (p : Params) (F : PrimsOk P) (t : Nat) (s₀ : State) : Prop := Good p F s₀ ∧ t < NI p F s₀
+
+instance {F : PrimsOk P} {t : Nat} {s₀ : State} : Decidable (Run p F t s₀) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+theorem Run.cont {F : PrimsOk P} {t : Nat} {s₀ : State} (h : Run p F t s₀) :
+    ∀ j < t, contV p (skOf p s₀) (muOf s₀) (rndOf s₀) F.ballF j = true := by
+  have := h.2; rw [NI_good h.1] at this
+  exact nIt_before _ this
+
+theorem Run.lt {F : PrimsOk P} {t : Nat} {s₀ : State} (h : Run p F t s₀) : t < 814 :=
+  Nat.lt_of_lt_of_le h.2 (NI_le F s₀)
+
+theorem run_iff {F : PrimsOk P} {t : Nat} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') :
+    Run p F t s₀ ↔ Run p F t s₀' := by
+  simp only [Run, good_iff ps hq, NI_eq ps hq]
+
+/-- At an iteration both runs reach: `c̃`, the success of `SampleInBall`,
+the outcome of the checks, and the hint. -/
+theorem run_at {F : PrimsOk P} {t : Nat} {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') (h : Run p F t s₀) :
+    CTv p s₀ (p.ℓ * t) = CTv p s₀' (p.ℓ * t) ∧
+      (F.ballF p.τ (CTv p s₀ (p.ℓ * t)) = true →
+        (passV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) ↔ passV p (skOf p s₀') (muOf s₀') (rndOf s₀') (p.ℓ * t)) ∧
+        (passV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) →
+          hbitsV p (skOf p s₀) (muOf s₀) (rndOf s₀) (p.ℓ * t) = hbitsV p (skOf p s₀') (muOf s₀') (rndOf s₀') (p.ℓ * t))) :=
+  leak_at ps.hok F.ballMax (leakV_eq ps h.1 ((good_iff ps hq).mp h.1) hq) (by show t < 1000; have := h.lt; omega_using [this]) h.cont
+
+/-- The full rejection leakage at an iteration both runs reach. -/
+theorem run_leak {F : PrimsOk P} {t : Nat} {x y : State} (ps : PS p) (hq : SPub p x y) (h : Run p F t x) :
+    signLeakLoop p maxBounds (amat p (Am p x)) ((List.range p.ℓ).map (S1 p x))
+      ((List.range p.k).map (S2 p x)) ((List.range p.k).map (T0 p x)) (muOf x) (rppS p x)
+      (maxBounds.sign-t) (p.ℓ*t) =
+    signLeakLoop p maxBounds (amat p (Am p y)) ((List.range p.ℓ).map (S1 p y))
+      ((List.range p.k).map (S2 p y)) ((List.range p.k).map (T0 p y)) (muOf y) (rppS p y)
+      (maxBounds.sign-t) (p.ℓ*t) := by
+  have h' := (good_iff ps hq).mp h.1
+  have e := hq.2
+  rw [signLeak_eq (expandA_good h.1), signLeak_eq (expandA_good h')] at e
+  have hr : (skOf p x).take 32 = (skOf p y).take 32 := rhoS_eq ps hq
+  rw [hr] at e
+  have e' : leakVF p (skOf p x) (muOf x) (rndOf x) = leakVF p (skOf p y) (muOf y) (rndOf y) :=
+    List.append_cancel_left e
+  exact (leak_iterF ps.hok F.ballMax e' (by have := h.lt; show t < 1000; omega_using [this]) h.cont).2
+
+end VG.Proof.MlDsa.X86.Sign
+
+end
+
+end
+
 
 /-!
 # ML-DSA signing on x86 (32-bit): the checks of an iteration
@@ -115,7 +1026,7 @@ theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
       ((List.range p.k).map (T0 p σ₁)) (muOf σ₁) (rppS p σ₁) ((999 - t) + 1) (p.ℓ * t) =
     signLeakLoop p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1 p σ₂)) ((List.range p.k).map (S2 p σ₂))
       ((List.range p.k).map (T0 p σ₂)) (muOf σ₂) (rppS p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
-  rw [show 999 - t + 1 = 1000 - t by omega]; exact h
+  rw [show 999 - t + 1 = 1000 - t by omega_using [ht]]; exact h
 
 theorem outTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat} (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
     outTag (iterF p σ maxBounds κ) = if PassV p σ κ then
@@ -148,7 +1059,7 @@ theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable 
   unfold tagFn at h
   by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
     by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
-      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega)
+      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega_using [h])
 
 /-- The first polynomial of `z` that fails its check, or `ℓ`. -/
 abbrev zFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
@@ -181,21 +1092,21 @@ theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   have hpass := leq_pass hp h ht hs₁ hs₂
   by_cases h1 : PassV p σ₁ (p.ℓ * t)
   · have h2 := hpass.mp h1
-    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega)) (fun j hj => h2.1 j (by omega)),
-      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega)⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega)⟩, hpass⟩
+    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega_using [hr, hj])) (fun j hj => h2.1 j (by omega_using [hr, hj])),
+      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega_using [hi, hj])⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega_using [hi, hj])⟩, hpass⟩
   · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
     have e := leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
     rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
     obtain ⟨ea, ex, eab, ey⟩ := tagFn_eq e
     refine ⟨fun r hr => ?_, fun i hi => ?_, hpass⟩
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
-      · exact iff_of_true (fun j hj => hz j (by omega)) (fun j hj => ea.mp hz j (by omega))
+      · exact iff_of_true (fun j hj => hz j (by omega_using [hr, hj])) (fun j hj => ea.mp hz j (by omega_using [hr, hj]))
       · rw [prefix_ok _ hr, prefix_ok _ hr]; exact iff_of_eq (congrArg (r ≤ ·) (ex hz))
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
       · have hz' := ea.mp hz
         by_cases hr0 : R0Ok p σ₁ (p.ℓ * t)
         · have hr0' := (eab.mp ⟨hz, hr0⟩).2
-          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega)⟩ ⟨hz', fun j hj => hr0' j (by omega)⟩
+          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega_using [hi, hj])⟩ ⟨hz', fun j hj => hr0' j (by omega_using [hi, hj])⟩
         · rw [and_iff_right hz, and_iff_right hz', prefix_ok _ hi, prefix_ok _ hi]
           exact iff_of_eq (congrArg (i ≤ ·) (ey hz hr0))
       · exact iff_of_false (fun h => hz h.1) (fun h => hz (ea.mpr h.1))
@@ -860,18 +1771,18 @@ theorem seqOk_piece {I : Nat → State → State → Prop} {f : Nat → Prog isa
     (hpub : ∀ k, k≤limit → ∀ x y, TPre (Y p) x → TPre (Y p) y → SPub p x y → b k x=b k y) :
     ∀ (a n : Nat), (∀ k, a≤k → k<a+n → SP p (I k) (I (k+1)) (f k)) → a+n≤limit →
       SP p (I a) (fun s₀ s => ∃ k, a≤k ∧ k≤a+n ∧ I k s₀ s ∧ (k=a+n ∨ b k s₀=false)) (seqOk f a n)
-  | a, 0, _, _ => nil_piece fun _ _ _ h => ⟨a, Nat.le_refl _, by omega, h, .inl (by omega)⟩
+  | a, 0, _, _ => nil_piece fun _ _ _ h => ⟨a, Nat.le_refl _, by omega_using [], h, .inl (by omega_using [])⟩
   | a, n+1, h, hbound => by
     rw [seqOk]
-    refine Piece.seq (h a (Nat.le_refl _) (by omega)) ?_
-    refine okIte_piece hc (b (a+1)) (fun s₀ s hp hi => ⟨hctx _ _ _ hp hi, hok _ _ _ hi⟩) (hpub (a+1) (by omega)) ?_ ?_
-    · refine (seqOk_piece b limit hc hctx hok hmem hpub (a+1) n (fun k hk hk' => h k (by omega) (by omega)) (by omega)).mono
-        (fun s₀ s hp h => ?_) (fun s₀ s hp ⟨k,ha,hb,hi,hd⟩ => ⟨k,by omega,by omega,hi,hd.imp (fun _ => by omega) id⟩)
+    refine Piece.seq (h a (Nat.le_refl _) (by omega_using [])) ?_
+    refine okIte_piece hc (b (a+1)) (fun s₀ s hp hi => ⟨hctx _ _ _ hp hi, hok _ _ _ hi⟩) (hpub (a+1) (by omega_using [hbound])) ?_ ?_
+    · refine (seqOk_piece b limit hc hctx hok hmem hpub (a+1) n (fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk'])) (by omega_using [hbound])).mono
+        (fun s₀ s hp h => ?_) (fun s₀ s hp ⟨k,ha,hb,hi,hd⟩ => ⟨k,by omega_using [ha],by omega_using [hb],hi,hd.imp (fun _ => by omega_arith) id⟩)
       obtain ⟨⟨s',hi,ctx,hm⟩,_⟩ := h
       exact hmem _ _ _ _ hp hi ctx hm
     · refine nil_piece fun s₀ s hp h => ?_
       obtain ⟨⟨s',hi,ctx,hm⟩,hb⟩ := h
-      exact ⟨a+1,by omega,by omega,hmem _ _ _ _ hp hi ctx hm,.inr hb⟩
+      exact ⟨a+1,by omega_using [],by omega_using [],hmem _ _ _ _ hp hi ctx hm,.inr hb⟩
 
 /-- A complete phase continues only when every polynomial passed. -/
 theorem until_piece {B : State → State → Prop} {J : Nat → State → State → Prop}
@@ -886,26 +1797,26 @@ theorem until_piece {B : State → State → Prop} {J : Nat → State → State 
     (hstep : ∀ k, k<n → SP p (J k) (J (k+1)) (f k))
     (hcont : SP p (J n) B cont) :
     SP p (J 0) B (.seq (seqOk f 0 n) (ifOk cont)) := by
-  refine Piece.seq (seqOk_piece b n hc hctx hok hmem hpub 0 n (fun k _ hk => hstep k (by omega)) (by omega)) ?_
+  refine Piece.seq (seqOk_piece b n hc hctx hok hmem hpub 0 n (fun k _ hk => hstep k (by omega_using [hk])) (by omega_using [])) ?_
   refine okIte_piece hc (b n) (fun s₀ s hp ⟨k,_,hk,hj,hd⟩ => ⟨hctx k _ _ hp hj,?_⟩) (hpub n (Nat.le_refl _)) ?_ ?_
   · rw [hok k _ _ hj]
     rcases hd with he|hb
     · simpa only [Nat.zero_add] using congrArg (fun k => if b k s₀ then (1 : BitVec 32) else 0) he
     · have hn : b n s₀=false := Bool.eq_false_iff.mpr (fun h => by
-        have := hmono k _ _ (by omega) hj h; rw [hb] at this; cases this)
+        have := hmono k _ _ (by omega_using [hk]) hj h; rw [hb] at this; cases this)
       rw [hb,hn]
   · refine hcont.mono (fun s₀ s hp h => ?_) (fun _ _ _ h => h)
     obtain ⟨⟨s',⟨k,_,hk,hj,hd⟩,ctx,hm⟩,hb⟩ := h
     have hk' : k=n := by
       rcases hd with hd|hd
-      · omega
-      · have := hmono k _ _ (by omega) hj hb; rw [hd] at this; cases this
+      · omega_using [hd]
+      · have := hmono k _ _ (by omega_using [hk]) hj hb; rw [hd] at this; cases this
     subst hk'
     exact hmem _ _ _ _ hp hj ctx hm
   · refine nil_piece fun s₀ s hp h => ?_
     obtain ⟨⟨s',⟨k,_,hk,hj,hd⟩,ctx,hm⟩,hb⟩ := h
     have hj' := hmem _ _ _ _ hp hj ctx hm
-    apply hfail k _ _ hp (by omega) hj'
+    apply hfail k _ _ hp (by omega_using [hk]) hj'
     rcases hd with hd|hd
     · simpa only [Nat.zero_add,hd] using hb
     · exact hd
@@ -950,9 +1861,9 @@ theorem prefixB_mono {F : PrimsOk P} {t k n : Nat} {r0 : Bool} {s₀ : State} (h
   rintro ⟨hr,hb⟩
   refine ⟨hr,?_⟩
   cases r0 <;> simp only [Bool.false_eq_true,ite_false,ite_true] at hb ⊢
-  · exact all_range_iff.mpr (fun j hj => all_range_iff.mp hb j (by omega))
+  · exact all_range_iff.mpr (fun j hj => all_range_iff.mp hb j (by omega_using [hk, hj]))
   · obtain ⟨hz,hb⟩ := Bool.and_eq_true_iff.mp hb
-    exact Bool.and_eq_true_iff.mpr ⟨hz,all_range_iff.mpr fun j hj=>all_range_iff.mp hb j (by omega)⟩
+    exact Bool.and_eq_true_iff.mpr ⟨hz,all_range_iff.mpr fun j hj=>all_range_iff.mp hb j (by omega_using [hk, hj])⟩
 
 theorem rejectedCE {F : PrimsOk P} {t nh : Nat} {fy fw : State→Nat→Poly} {okb : State→Bool} {ones : State→Nat}
     {s₀ s : State} (h : CS p t fy fw nh okb ones s₀ s) (hr : Reached p F t s₀)
@@ -967,7 +1878,7 @@ theorem hints_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
   refine Piece.seq (B := fun s₀ s=>CS p t (zY p t p.ℓ) (hW p t p.k) p.k (okH p t p.k)
     (fun s₀=>onesS p s₀ (p.ℓ*t) p.k) s₀ s ∧ φ s₀) (sp_pure φ ?_) ?_
   · have h := seqR_piece (p:=p) (I:=fun i=>CS p t (zY p t p.ℓ) (hW p t i) i (okH p t i)
-      (fun s₀=>onesS p s₀ (p.ℓ*t) i)) 0 p.k fun i _ hi=>hR_piece F ps t i (by omega)
+      (fun s₀=>onesS p s₀ (p.ℓ*t) i)) 0 p.k fun i _ hi=>hR_piece F ps t i (by omega_using [hi])
     simp only [Nat.zero_add] at h
     refine h.mono (fun s₀ s _ h=>?_) (fun _ _ _ h=>h)
     have h' := h.congr (fY':=zY p t p.ℓ) (fW':=hW p t 0) (okb':=okH p t 0) (fun _ _=>rfl)
@@ -993,7 +1904,7 @@ theorem r0checks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
       simpa only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,ite_true] using hb
     refine rejectedCE h.1 h.2 (fun hpass=>?_) raw
     have hz : okZ p s₀ (p.ℓ*t) p.ℓ=true := all_range_iff.mpr hpass.1
-    have hr : okR p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.2.1 j (by omega))
+    have hr : okR p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.2.1 j (by omega_using [hk, hj]))
     rw [hz,hr] at raw; cases raw
   · intro i hi
     exact sp_pure (Reached p F t) (r0R_piece F ps t i hi)
@@ -1012,7 +1923,7 @@ theorem zchecks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     have raw : okZ p s₀ (p.ℓ*t) k=false := by
       simpa only [prefixB,h.2.1,h.2.2,true_and,decide_true,Bool.true_and,Bool.false_eq_true,ite_false] using hb
     refine rejectedCE h.1 h.2 (fun hpass=>?_) raw
-    have hz : okZ p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.1 j (by omega))
+    have hz : okZ p s₀ (p.ℓ*t) k=true := all_range_iff.mpr (fun j hj=>hpass.1 j (by omega_using [hk, hj]))
     rw [hz] at raw; cases raw
   · intro i hi
     exact sp_pure (Reached p F t) (zR_piece F ps t i hi)

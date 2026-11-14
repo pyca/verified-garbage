@@ -33,24 +33,24 @@ theorem rowHead_ok {s : State} {B : Addr} {Z k i a : Nat} {minv : BitVec 64}
        Outside B (productBase k) (128*(i+1)) s.mem t.mem) ∧ Keep headRegs s t := by
   have hP : productBase k+8*(16*k+2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [hZ]
   have hA : slot (8*k) a+64*k ≤ Z := by
     have := slot_le (w := 8*k) ha
-    omega
+    omega_using [hZ, this]
   unfold VG.Impl.Bignum.AArch64.WindowSparse.rowHead
   rw [List.append_assoc, List.append_assoc, List.append_assoc]
   apply WP.block_append
-  refine WP.mono (outputPtr_ok hs h0 hH hZ ha (by omega) h8 true) fun u ⟨⟨hu16, _, hum⟩, ku⟩ => ?_
+  refine WP.mono (outputPtr_ok hs h0 hH hZ ha (by omega_using [hk, hi]) h8 true) fun u ⟨⟨hu16, _, hum⟩, ku⟩ => ?_
   apply WP.block_append
   refine WP.mono (prefix_ok (hs.congr ku.wr) ((ku.gpr _ (by decide)).trans h8) hu16
-    ((ku.gpr _ (by decide)).trans h7) (by omega) (by omega) (by omega)) fun v ⟨hvv, hvo, kv⟩ => ?_
+    ((ku.gpr _ (by decide)).trans h7) (by omega_using [hi, hA]) (by omega_using [hi, hP]) (by omega_using [hi, hsep])) fun v ⟨hvv, hvo, kv⟩ => ?_
   have huv := ku.trans kv
   have ho : Outside B (productBase k) (128*(i+1)) s.mem v.mem := by
     intro x hx
-    exact ((hvo.mono (by omega) (by omega)) x hx).trans (congrArg (fun m : Mem => m x) hum)
-  have hwide : Outside B (productBase k) (8*(16*k+2)) s.mem v.mem := ho.mono (by omega) (by omega)
+    exact ((hvo.mono (by omega_using []) (by omega_using [])) x hx).trans (congrArg (fun m : Mem => m x) hum)
+  have hwide : Outside B (productBase k) (8*(16*k+2)) s.mem v.mem := ho.mono (by omega_using []) (by omega_using [hi])
   have hHv : Hdr v.mem B (8*k) minv :=
-    (Square.scratch_arrays (by simpa only [productBase, show 2*(8*k) = 16*k by omega] using hwide)).hdr hH
+    (Square.scratch_arrays (by simpa only [productBase, show 2*(8*k) = 16*k by omega_using []] using hwide)).hdr hH
   have hval : wv v.mem B (productBase k) (16*(i+1)) = wv s.mem B (productBase k) (16*i) +
       2 ^ (64*(16*i))*Square.crossValue s.mem B (slot (8*k) a+64*i) 8 := by
     simpa only [hum] using hvv
@@ -59,12 +59,12 @@ theorem rowHead_ok {s : State} {B : Addr} {Z k i a : Nat} {minv : BitVec 64}
   have kvc := huv.trans kc
   apply WP.block_append
   refine WP.mono (outputPtr_ok (hs.congr kvc.wr) ((kvc.gpr _ (by decide)).trans h0)
-    (hvm ▸ hHv) hZ ha (by omega) ((kvc.gpr _ (by decide)).trans h8) false)
+    (hvm ▸ hHv) hZ ha (by omega_using [hk, hi]) ((kvc.gpr _ (by decide)).trans h8) false)
     fun b ⟨⟨hb16, hb17, hbm⟩, kb⟩ => ?_
   have kab := kvc.trans kb
   have hbH : Hdr b.mem B (8*k) minv := (hbm.trans hvm) ▸ hHv
   refine WP.mono (rowCount_ok (hs.congr kab.wr) ((kab.gpr _ (by decide)).trans h0)
-    hbH hZ hk (by omega) ((kab.gpr _ (by decide)).trans h12))
+    hbH hZ hk (by omega_using [hi]) ((kab.gpr _ (by decide)).trans h12))
     fun t ⟨⟨ht15, htm⟩, kt⟩ => ?_
   have hm := htm.trans (hbm.trans hvm)
   refine ⟨⟨?_, (kt.gpr _ (by decide)).trans hb16, (kt.gpr _ (by decide)).trans hb17,

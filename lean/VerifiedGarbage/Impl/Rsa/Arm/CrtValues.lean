@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
+public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
 public import VerifiedGarbage.Impl.Bignum.Arm.LoadBE
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyDiv
 
 /-! # `vg_rsa_crt_values` on ARMv7
 
@@ -148,9 +150,9 @@ def primeWidth : List Instr :=
 
 /-- The checks of `p q = n` and of the inverse, `qInv` computed at the
 primes' width, and the division of `d` by `p - 1` set up. -/
-def checks : Prog isa := seqs ([
+def checks (um : Bool := false) : Prog isa := seqs ([
   .block ctx, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup ++ [
-  .block primeWidth, inverse, .block ctx, eqS sE3 1 aOne aT1,
+  .block primeWidth, inverse um, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT)])
 
@@ -175,8 +177,37 @@ def stores : Prog isa := seqs [
   .block [.ldrSp .r10 0, .ldrSp .r11 20], store 3,
   .block [.ldr .r0 .r8 sMask]]
 
-def valid : Prog isa := seqs [
-  loads, seqs divN, Rsa.Arm.Div.code, checks, Rsa.Arm.Div.code, divQ, Rsa.Arm.Div.code,
+/-! ## Balanced keys, by words -/
+
+/-- `KeyDiv.shape` with `n_len` into `r11`: Z exactly for a balanced key (`p_len` and
+`q_len` both `2 w` bytes, `w` even). -/
+def shapeCv : List Instr := .ldrSp .r11 12 :: KeyDiv.shape 20 28
+
+/-- `[r] := [d] mod [aDD]` by words (`KeyDiv.divW`), `[aDD]` being `[d']` with its low bit
+cleared and its top word (of `w / 2`) made not zero (as it is for `p - 1` and `q - 1`
+when `p q = n`), through `aDQ`, `aDT` and `aT1`. -/
+def divKc (r d' : Nat) : List (Prog isa) :=
+  [copy aDD d', .block (clrLow aDD ++ KeyDiv.fixTop aDD), KeyDiv.divW aD r aDD aDQ aDT aT1]
+
+/-- The checks and the values for a balanced key: `p q = n` by `p q mod 2^(32 w)`
+(`KeyDiv.mulLo`, exact there) in place of the division of `n` by `p` (the check of
+the remainder always passes), then `checks`' inverse and set-up as for any key, and
+(array 0, which `inverse` uses, zero again for `KeyDiv`) `d mod (p - 1)` and
+`d mod (q - 1)` by words. -/
+def midW (um : Bool := false) : Prog isa := seqs ([
+  .block (ctx ++ bitOf sPodd aP), KeyDiv.mulLo aDR aP aQ, eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++
+  invSetup ++ [
+  .block primeWidth, inverse um, .block ctx, eqS sE3 1 aOne aT1,
+  .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
+  copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT),
+  copy 0 aZero] ++ divKc aDR2 aP ++ divKc aDR3 aQ)
+
+/-- The checks and the values for any key: `n` divided by `p`. -/
+def midD (um : Bool := false) : Prog isa :=
+  seqs [seqs divN, Rsa.Arm.Div.code, checks um, Rsa.Arm.Div.code, divQ, Rsa.Arm.Div.code]
+
+def valid (um : Bool := false) : Prog isa := seqs [
+  loads, .block shapeCv, .ite .eq (midW um) (midD um),
   .block (ctx ++ [.ldr .r10 .r8 sDp, .ldr .r12 .r8 sDq]), stores]
 
 /-- `r4`–`r11` and `lr` restored. -/
@@ -184,7 +215,13 @@ def restore : List Instr :=
   [.ldrSp .r12 40, .ldr .r4 .r12 20, .ldr .r5 .r12 24, .ldr .r6 .r12 28, .ldr .r7 .r12 32, .ldr .r8 .r12 36,
    .ldr .r9 .r12 40, .ldr .r10 .r12 44, .ldr .r11 .r12 48, .ldr .lr .r12 52]
 
-/-- `vg_rsa_crt_values`. -/
-def code : Prog isa := .seq (.block entry) (.seq (.ite .eq valid fail) (.block restore))
+/-- `vg_rsa_crt_values`; `um` its inverse's `umaal` variant. -/
+def code (um : Bool := false) : Prog isa := .seq (.block entry) (.seq (.ite .eq (valid um) fail) (.block restore))
+
+/-- `vg_rsa_crt_values_umaal`: the inverse's and the rows' `umaal` variants. -/
+def codeU : Prog isa := VG.Impl.Bignum.Arm.umaalArithmetic (code true)
+
+/-- `codeU` for the inverse's `umaal` variant, else `code`. -/
+def codeFor (um : Bool) : Prog isa := if um then codeU else code
 
 end VG.Impl.Rsa.Arm.CrtValues

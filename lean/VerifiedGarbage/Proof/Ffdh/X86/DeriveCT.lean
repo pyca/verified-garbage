@@ -84,13 +84,13 @@ theorem loads_rg {x : State} (A : DAt Ex base bytes len dlen xl args sp D St x) 
   have dl := G.dl
   have fit := G.fit
   have lw := G.lower
-  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega)
-    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega) (by omega)
+  refine WP.seq (WP.mono (pSetup_ok h G.e3 (by omega_using [dl, fit])
+    (by have := VG.CallLay.inRegions_sub G.rd (off := 0) (l := len) (by omega_using [dl]) (by omega_using [fit])
         rwa [BitVec.add_zero] at this)
-    (G.apart.sub_left (Region.sub_prefix (by omega))))
+    (G.apart.sub_left (Region.sub_prefix (by omega_using [dl]))))
     fun u₁ ⟨I₁, F₁, _, _, _, _, K₁⟩ => ?_)
   have S₁ : Step Ex base bytes len args x u₁ := ⟨I₁, F₁, K₁⟩
-  refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega)
+  refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega_using [dl])
     (by decide)) fun u₂ ⟨_, O₂, K₂⟩ => ?_)
   have S₂ := S₁.trans (Step.slot I₁ (by decide) O₂ K₂)
   refine WP.seq (WP.mono (loadX_ok S₂.inp (A.x.keep ⟨rfl, rfl⟩ S₂.keeps)) fun u₃ ⟨_, O₃, K₃⟩ => WP.block_nil ?_)
@@ -118,7 +118,7 @@ theorem tail_trace {P : State → Prop}
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ?_
     obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
-    exact ⟨⟨X.e11, X.pos, by have := X.le; have := R.1.upper'; omega⟩, d⟩
+    exact ⟨⟨X.e11, X.pos, by have := X.le; have := R.1.upper'; omega_arith⟩, d⟩
   unfold Impl.Ffdh.X86.DerivePublic.tail
   exact VG.RelCT.seq ((CheckPrivate.powTop_trace hx.1 hx.2).mono (fun _ _ h => ⟨(hP _ h.1).1, (hP _ h.2).1⟩)
     fun _ _ h => h) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) rest_check)
@@ -153,7 +153,7 @@ theorem pub_facts {s t : State} (H : (Spec.Ffdh.derivePublicContract abi stack).
     fun h => (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp h
   obtain ⟨L₁, L₂⟩ := List.append_inj L (by simp [Spec.Rsa.bytesAt, a3])
   refine ⟨SP, fun i hi => ?_, inj L₁, List.cons.inj L₂ |>.1⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega)
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 by omega_using [hi])
     with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact a0
   · exact a1
@@ -185,14 +185,14 @@ theorem dAt_of {s f : State} (A : DerivePublicABI s) (Bf : BodyAt (Rd s) Impl.Ff
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   refine ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [outR s]) fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact A.belowOut.sub_left (by rw [FA]; exact Offset.sub_below _ (by decide) (by decide)), Bf.2.1⟩,
     Gm.dom, Gm.dom40, Gm.x, Gm.x40, ?_, ?_⟩
-  · exact frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega)
+  · exact frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega_using [])
   · show Spec.Ffdh.keyStatus _ (Spec.Rsa.os2ip (Spec.Rsa.bytesAt f.mem (argumentPointer s 5) _)) = _
-    rw [frame_keep A Bf.2.2.2.2 A.xScratch A.belowX (by have := A.xBound; omega)]
+    rw [frame_keep A Bf.2.2.2.2 A.xScratch A.belowX (by have := A.xBound; omega_using [])]
     rfl
 
 theorem constantTime : ConstantTime isa (Spec.Ffdh.derivePublicContract abi stack).pre

@@ -51,7 +51,7 @@ theorem leBytes_congr {n : Nat} {f g : Nat → Byte} (h : ∀ i < n, f i = g i) 
   | zero => rfl
   | succ n ih =>
     simp only [leBytes]
-    rw [ih fun i hi => h (i + 1) (by omega), h 0 (by omega)]
+    rw [ih fun i hi => h (i + 1) (by omega_using [hi]), h 0 (by omega_using [])]
 
 theorem parseBlock_congr {f g : Nat → Byte} (h : ∀ k < blockBytes w, f k = g k) :
     parseBlock (w := w) f = parseBlock g := by
@@ -61,8 +61,8 @@ theorem parseBlock_congr {f g : Nat → Byte} (h : ∀ k < blockBytes w, f k = g
   apply leBytes_congr
   intro i hi
   apply h
-  have : w / 8 * j.1 ≤ w / 8 * 15 := Nat.mul_le_mul_left _ (by omega)
-  simp only [blockBytes]; omega
+  have : w / 8 * j.1 ≤ w / 8 * 15 := Nat.mul_le_mul_left _ (by omega_using [])
+  simp only [blockBytes]; omega_using [hi, this]
 
 theorem getD_append_left {d x : List Byte} {i : Nat} (h : i < d.length) :
     (d ++ x).getD i 0 = d.getD i 0 := by
@@ -88,33 +88,33 @@ theorem compressList_congr (h : HashValue w) {d d' : List Byte} {n : Nat}
   induction n with
   | zero => simp only [compressList, List.range_zero, List.foldl_nil]
   | succ n ih =>
-    rw [compressList_succ, compressList_succ, ih fun i hi => hd i (by rw [Nat.mul_succ]; omega)]
+    rw [compressList_succ, compressList_succ, ih fun i hi => hd i (by rw [Nat.mul_succ]; omega_using [hi])]
     exact congrArg (fun b => F P _ b _ false)
-      (parseBlock_congr fun k hk => hd _ (by rw [Nat.mul_succ]; omega))
+      (parseBlock_congr fun k hk => hd _ (by rw [Nat.mul_succ]; omega_using [hk]))
 
 theorem compressList_append (h : HashValue w) {d : List Byte} (x : List Byte) {n : Nat}
     (hn : blockBytes w * n ≤ d.length) :
     compressList P h (d ++ x) n = compressList P h d n :=
-  compressList_congr P h fun _ hi => getD_append_left (by omega)
+  compressList_congr P h fun _ hi => getD_append_left (by omega_using [hn, hi])
 
 /-! ## The number of bytes in the buffer -/
 
 theorem bufLen_le (hbb : 0 < blockBytes w) (n : Nat) : bufLen w n ≤ blockBytes w := by
   unfold bufLen; split
-  · omega
-  · have := Nat.mod_lt (n - 1) hbb; omega
+  · omega_using []
+  · have := Nat.mod_lt (n - 1) hbb; omega_using [this]
 
 theorem bufLen_le_self (n : Nat) : bufLen w n ≤ n := by
   unfold bufLen; split
-  · omega
-  · have := Nat.mod_le (n - 1) (blockBytes w); omega
+  · omega_using []
+  · have := Nat.mod_le (n - 1) (blockBytes w); omega_arith
 
 /-- The data before the buffer is `bb · compressed w d` bytes. -/
 theorem sub_bufLen (d : List Byte) :
     d.length - bufLen w d.length = blockBytes w * compressed w d := by
   unfold bufLen compressed; split
   · simp [*]
-  · have := Nat.div_add_mod (d.length - 1) (blockBytes w); omega
+  · have := Nat.div_add_mod (d.length - 1) (blockBytes w); omega_using [this]
 
 theorem bufLen_pos {n : Nat} (h : n ≠ 0) : 1 ≤ bufLen w n := by
   unfold bufLen; simp [h]
@@ -125,7 +125,7 @@ theorem repr_iff (hbb : 0 < blockBytes w) (h0 : HashValue w) (mem : Mem) (p : Ad
   have e' : (d.length - bufLen w d.length) / blockBytes w = compressed w d := by
     rw [e, Nat.mul_div_cancel_left _ hbb]
   have e'' : d.length - blockBytes w * compressed w d = bufLen w d.length := by
-    have := bufLen_le_self (w := w) d.length; omega
+    have := bufLen_le_self (w := w) d.length; omega_using [e, this]
   unfold Spec.Blake2.Repr ReprR
   rw [e', e, e'', Nat.mul_mod_right]
   exact ⟨fun ⟨a, b⟩ => ⟨bufLen_le hbb _, bufLen_le_self _, rfl, a, b⟩, fun ⟨_, _, _, a, b⟩ => ⟨a, b⟩⟩
@@ -139,11 +139,11 @@ theorem repr_of_reprR (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem : Mem} {p
     obtain ⟨h1, h2, h3, -⟩ := h
     have hq := Nat.div_add_mod (d.length - r) (blockBytes w)
     rw [h3, Nat.add_zero] at hq
-    have hd : d.length ≠ 0 := by omega
+    have hd : d.length ≠ 0 := by omega_using [hr, h2]
     simp only [bufLen, hd, ite_false]
-    rw [show d.length - 1 = (r - 1) + blockBytes w * ((d.length - r) / blockBytes w) by omega,
-      Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show d.length - 1 = (r - 1) + blockBytes w * ((d.length - r) / blockBytes w) by omega_using [hr, h2, hq],
+      Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega_using [hbb, h1])]
+    omega_using [hr]
   rw [repr_iff P hbb, e]; exact h
 
 /-! ## The steps of `update` -/
@@ -156,12 +156,12 @@ theorem reprR_append {h0 : HashValue w} {mem mem' : Mem} {p : Addr} {d x : List 
       bytesAt mem (p + BitVec.ofNat 64 (bufOff w)) r ++ x) :
     ReprR P h0 mem' p (d ++ x) (r + x.length) := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  have e : (d ++ x).length - (r + x.length) = d.length - r := by simp; omega
+  have e : (d ++ x).length - (r + x.length) = d.length - r := by simp; omega_using []
   have hq : blockBytes w * ((d.length - r) / blockBytes w) ≤ d.length :=
-    Nat.le_trans (Nat.mul_div_le _ _) (by omega)
-  refine ⟨hx, by simp; omega, by rw [e]; exact h3, ?_, ?_⟩
+    Nat.le_trans (Nat.mul_div_le _ _) (by omega_using [])
+  refine ⟨hx, by simp; omega_using [h2], by rw [e]; exact h3, ?_, ?_⟩
   · rw [e, hs, h4, compressList_append P h0 x hq]
-  · rw [e, hb, h5, List.drop_append_of_le_length (by omega)]
+  · rw [e, hb, h5, List.drop_append_of_le_length (by omega_using [])]
 
 /-- Compressing the full buffer, which is not the last block: its counter is
 `|d|`. -/
@@ -175,10 +175,10 @@ theorem reprR_flush (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem mem' : Mem}
   rw [h3] at hq
   generalize hqd : (d.length - blockBytes w) / blockBytes w = q at hq h4
   have hd0 : d.length / blockBytes w = q + 1 := by
-    rw [show d.length = blockBytes w * (q + 1) by rw [Nat.mul_succ]; omega,
+    rw [show d.length = blockBytes w * (q + 1) by rw [Nat.mul_succ]; omega_using [h2, hq],
       Nat.mul_div_cancel_left _ hbb]
   refine ⟨Nat.zero_le _, Nat.zero_le _, ?_, ?_, by simp [bytesAt]⟩
-  · rw [Nat.sub_zero, show d.length = blockBytes w * (q + 1) by rw [Nat.mul_succ]; omega,
+  · rw [Nat.sub_zero, show d.length = blockBytes w * (q + 1) by rw [Nat.mul_succ]; omega_using [h2, hq],
       Nat.mul_mod_right]
   · rw [Nat.sub_zero, hd0, compressList_succ, hs, h4]
     refine F_congr P ?_ ?_
@@ -187,9 +187,9 @@ theorem reprR_flush (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem mem' : Mem}
       have := congrArg (fun l => l.getD k 0) h5
       simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk,
         Option.map_some, Option.getD_some, List.getElem?_drop] at this
-      rw [this, show d.length - blockBytes w + k = blockBytes w * q + k by omega]
+      rw [this, show d.length - blockBytes w + k = blockBytes w * q + k by omega_using [hq]]
       simp [List.getD_eq_getElem?_getD]
-    · rw [Nat.succ_mul, Nat.mul_comm q]; omega
+    · rw [Nat.succ_mul, Nat.mul_comm q]; omega_using [h2, hq]
 
 theorem bytesAt_getD (mem : Mem) (q : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt mem q n).getD i 0 = mem (q + BitVec.ofNat 64 i) := by
@@ -201,19 +201,19 @@ theorem compressList_bytes (h : HashValue w) {d : List Byte} {n : Nat}
     compressList P h (d ++ bytesAt mem q (blockBytes w * K)) (n + k) =
       compressBlocks P (compressList P h d n) mem q k (d.length + blockBytes w) false := by
   induction k with
-  | zero => rw [Nat.add_zero, compressList_append P h _ (by omega), compressBlocks_zero]
+  | zero => rw [Nat.add_zero, compressList_append P h _ (by omega_using [hd]), compressBlocks_zero]
   | succ k ih =>
-    rw [← Nat.add_assoc, compressList_succ, compressBlocks_succ, ih (by omega)]
+    rw [← Nat.add_assoc, compressList_succ, compressBlocks_succ, ih (by omega_using [hk])]
     refine F_congr P ?_ ?_
     · apply parseBlock_congr
       intro j hj
       have hkK : blockBytes w * k + j < blockBytes w * K := by
-        have h1 : blockBytes w * (k + 1) ≤ blockBytes w * K := Nat.mul_le_mul_left _ (by omega)
-        rw [Nat.mul_succ] at h1; omega
-      rw [getD_append_right (by rw [hd, Nat.mul_add]; omega),
-        show blockBytes w * (n + k) + j - d.length = blockBytes w * k + j by rw [hd, Nat.mul_add]; omega,
+        have h1 : blockBytes w * (k + 1) ≤ blockBytes w * K := Nat.mul_le_mul_left _ (by omega_using [hk])
+        rw [Nat.mul_succ] at h1; omega_using [hj, h1]
+      rw [getD_append_right (by rw [hd, Nat.mul_add]; omega_using []),
+        show blockBytes w * (n + k) + j - d.length = blockBytes w * k + j by rw [hd, Nat.mul_add]; omega_using [],
         bytesAt_getD _ _ hkK, BitVec.ofNat_add, BitVec.add_assoc]
-    · rw [hd, Nat.mul_comm (blockBytes w) n, Nat.succ_mul, Nat.add_mul]; omega
+    · rw [hd, Nat.mul_comm (blockBytes w) n, Nat.succ_mul, Nat.add_mul]; omega_using []
 
 /-- Compressing `k` whole blocks straight from the data (at `q`), with an
 empty buffer: the first one's counter is `|d| + bb`. -/
@@ -227,7 +227,7 @@ theorem reprR_blocks (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem mem' : Mem
   have hn := Nat.div_add_mod d.length (blockBytes w)
   rw [h3, Nat.add_zero] at hn
   have hl : (d ++ bytesAt mem q (blockBytes w * k)).length = blockBytes w * (d.length / blockBytes w + k) := by
-    simp only [List.length_append, bytesAt, List.length_map, List.length_range, Nat.mul_add]; omega
+    simp only [List.length_append, bytesAt, List.length_map, List.length_range, Nat.mul_add]; omega_using [hn]
   refine ⟨Nat.zero_le _, Nat.zero_le _, by rw [Nat.sub_zero, hl, Nat.mul_mod_right], ?_,
     by simp [bytesAt]⟩
   rw [Nat.sub_zero, hl, Nat.mul_div_cancel_left _ hbb, hs, h4,
@@ -244,8 +244,8 @@ theorem padZeros_eq {key : List Byte} (h0 : key.length ≠ 0) (h : key.length �
   congr 2
   by_cases e : key.length = blockBytes w
   · rw [e, Nat.mod_self, Nat.sub_zero, Nat.mod_self, Nat.sub_self]
-  · rw [Nat.mod_eq_of_lt (show key.length < blockBytes w by omega),
-      Nat.mod_eq_of_lt (show blockBytes w - key.length < blockBytes w by omega)]
+  · rw [Nat.mod_eq_of_lt (show key.length < blockBytes w by omega_using [h, e]),
+      Nat.mod_eq_of_lt (show blockBytes w - key.length < blockBytes w by omega_using [h0, h])]
 
 /-- The state `init` writes: the initial hash value and, for a key, the key
 padded with zeros in the buffer. -/
@@ -263,10 +263,10 @@ theorem repr_keyBlock (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem : Mem} {p
   · rename_i h0'
     rw [padZeros_eq h0' hk]
     have hl : (key ++ List.replicate (blockBytes w - key.length) 0).length = blockBytes w := by
-      simp; omega
+      simp; omega_using [hk]
     have hbl : bufLen w (blockBytes w) = blockBytes w := by
-      simp only [bufLen, Nat.ne_of_gt hbb, ite_false, Nat.mod_eq_of_lt (show blockBytes w - 1 < blockBytes w by omega)]
-      omega
+      simp only [bufLen, Nat.ne_of_gt hbb, ite_false, Nat.mod_eq_of_lt (show blockBytes w - 1 < blockBytes w by omega_using [hbb])]
+      omega_using [hbb]
     rw [hl, hbl]
     refine ⟨Nat.le_refl _, by rw [hl], by rw [hl, Nat.sub_self, Nat.zero_mod], ?_, ?_⟩ <;>
       rw [hl, Nat.sub_self]
@@ -292,7 +292,7 @@ theorem final_eq (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem mem' : Mem} {p
   rw [e'] at h4
   rw [e] at h5
   have e2 : d.length - blockBytes w * compressed w d = bufLen w d.length := by
-    have := bufLen_le_self (w := w) d.length; omega
+    have := bufLen_le_self (w := w) d.length; omega_using [e, this]
   unfold finalHash
   rw [hs, h4]
   refine congrArg (fun h : HashValue w => h.toList.flatMap wordBytes) (F_congr P ?_ rfl)
@@ -302,11 +302,11 @@ theorem final_eq (hbb : 0 < blockBytes w) {h0 : HashValue w} {mem mem' : Mem} {p
   simp only [bytesAt_getD _ _ hk] at this
   rw [this, h5]
   by_cases hkr : k < bufLen w d.length
-  · rw [getD_append_left (by simp only [List.length_drop, e2]; omega)]
+  · rw [getD_append_left (by simp only [List.length_drop, e2]; omega_using [hkr])]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_drop]
-  · rw [getD_append_right (by simp only [List.length_drop, e2]; omega)]
+  · rw [getD_append_right (by simp only [List.length_drop, e2]; omega_using [hkr])]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_replicate]
-    rw [List.getElem?_eq_none (by omega)]
+    rw [List.getElem?_eq_none (by omega_using [e, hkr])]
     split <;> rfl
 
 /-! ## Memory -/
@@ -318,9 +318,9 @@ theorem stateAt_congr {mem mem' : Mem} {p : Addr}
   congr 1; funext j
   apply Mem.readW_congr
   intro i hi
-  have : w / 8 * j.1 ≤ w / 8 * 7 := Nat.mul_le_mul_left _ (by omega)
+  have : w / 8 * j.1 ≤ w / 8 * 7 := Nat.mul_le_mul_left _ (by omega_using [])
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by simp only [bufOff]; omega)
+  exact h _ (by simp only [bufOff]; omega_using [hi, this])
 
 theorem blockAt_congr {mem mem' : Mem} {p : Addr}
     (h : ∀ k < blockBytes w, mem' (p + BitVec.ofNat 64 k) = mem (p + BitVec.ofNat 64 k)) :
@@ -334,10 +334,10 @@ theorem compressBlocks_congr {h : HashValue w} {m m' : Mem} {p : Addr} {n t : Na
   | zero => rw [compressBlocks_zero, compressBlocks_zero]
   | succ n ih =>
     rw [compressBlocks_succ, compressBlocks_succ,
-      ih fun j hj => hm j (by rw [Nat.mul_succ]; omega)]
+      ih fun j hj => hm j (by rw [Nat.mul_succ]; omega_using [hj])]
     refine F_congr P (blockAt_congr fun k hk => ?_) rfl
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact hm _ (by rw [Nat.mul_succ]; omega)
+    exact hm _ (by rw [Nat.mul_succ]; omega_using [hk])
 
 theorem bytesAt_congr {mem mem' : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < n, mem' (p + BitVec.ofNat 64 i) = mem (p + BitVec.ofNat 64 i)) :

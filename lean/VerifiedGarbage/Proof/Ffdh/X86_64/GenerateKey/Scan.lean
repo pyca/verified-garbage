@@ -38,12 +38,12 @@ theorem Inputs.keep {p : GkP} {rb : List Byte} {s t : State} {rs : List Reg} (h 
   have hZ := h.base.hZ
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [scanRanges, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only [sEp, sEl, sMsk, sFn] <;> omega)
+    rintro r (rfl | rfl | rfl) <;> simp only [sEp, sEl, sMsk, sFn] <;> omega_using [hZ])
   have hh : ∀ i < 32, i ≠ sEp → i ≠ sEl → i ≠ sMsk →
       word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi he hl hm =>
     hf.word_eq (by
       simp only [scanRanges, List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl | rfl) <;> simp only <;> omega) (by omega)
+      rintro r (rfl | rfl | rfl) <;> simp only <;> omega_arith) (by omega_using [hi])
   refine ⟨h.base.keep hi k ?_, (k.gpr hdi).trans h.rdi, h.y.congrK hi k,
     (hh _ (by decide) (by decide) (by decide) (by decide)).trans h.g,
     (hh _ (by decide) (by decide) (by decide) (by decide)).trans h.q⟩

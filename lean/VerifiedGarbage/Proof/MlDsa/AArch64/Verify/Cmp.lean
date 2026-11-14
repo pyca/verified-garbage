@@ -44,7 +44,7 @@ theorem shr_val (x : BitVec 64) (h : x.toNat < 256) : (x - 1) >>> 63 = if x = 0 
       show (1 : BitVec 64).toNat ≤ x.toNat; exact h1)]
     show (x.toNat - 1) >>> 63 = 0
     rw [Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [h]
 
 /-- After `k` of the `n` bytes at `A` and `B`. -/
 structure CI (A B : Addr) (n : Nat) (s : State) (k : Nat) (u : State) : Prop where
@@ -61,9 +61,9 @@ theorem cstep {A B : Addr} {n : Nat} {s : State} (hn : n < 2 ^ 32)
     {u : State} (h : CI A B n s k u) :
     WP isa (.block cmpBody) u fun u' => CI A B n s (k + 1) u' ∧ ((u'.gpr .x2).toNat ≠ 0 ↔ k + 1 ≠ n) := by
   have in₁ : InRegions (u.rd ++ u.wr) (A + BitVec.ofNat 64 k) 1 := by
-    rw [h.keep.rd, h.keep.wr]; exact inRegions_sub ha (by omega) (by omega)
+    rw [h.keep.rd, h.keep.wr]; exact inRegions_sub ha (by omega_using [hk]) (by omega_using [hn])
   have in₂ : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 k) 1 := by
-    rw [h.keep.rd, h.keep.wr]; exact inRegions_sub hb (by omega) (by omega)
+    rw [h.keep.rd, h.keep.wr]; exact inRegions_sub hb (by omega_using [hk]) (by omega_using [hn])
   refine wp_ldrb (a := A + BitVec.ofNat 64 k) (by decide) (by rw [h.x0, ptr_zero]) in₁ fun u₁ g₁ v₁ => ?_
   refine wp_ldrb (a := B + BitVec.ofNat 64 k) (by decide) (by rw [g₁.get .x1, h.x1, ptr_zero])
     (by rw [g₁.rd, g₁.wr]; exact in₂) fun u₂ g₂ v₂ => ?_
@@ -81,16 +81,16 @@ theorem cstep {A B : Addr} {n : Nat} {s : State} (hn : n < 2 ^ 32)
     rw [v₇, g₆.get .x2, g₅.get .x2, g₄.get .x2, g₃.get .x2, g₂.get .x2, g₁.get .x2]
   have hx2 : (u₇.gpr .x2).toNat = n - (k + 1) := by
     rw [x2, BitVec.toNat_sub_of_le (show (BitVec.ofNat 64 1).toNat ≤ (u.gpr .x2).toNat by
-      rw [h.x2, BitVec.toNat_ofNat]; omega), h.x2, BitVec.toNat_ofNat]
-    omega
-  refine ⟨⟨h.keep.trans o₇.keep |>.mono, by rw [o₇.mem, h.mem], ?_, ?_, hx2, ?_, ?_⟩, by rw [hx2]; omega⟩
+      rw [h.x2, BitVec.toNat_ofNat]; omega_using [hk]), h.x2, BitVec.toNat_ofNat]
+    omega_using []
+  refine ⟨⟨h.keep.trans o₇.keep |>.mono, by rw [o₇.mem, h.mem], ?_, ?_, hx2, ?_, ?_⟩, by rw [hx2]; omega_using [hk]⟩
   · rw [g₇.get .x0, g₆.get .x0, v₅, g₄.get .x0, g₃.get .x0, g₂.get .x0, g₁.get .x0, h.x0, ptr_add]
   · rw [g₇.get .x1, v₆, g₅.get .x1, g₄.get .x1, g₃.get .x1, g₂.get .x1, g₁.get .x1, h.x1, ptr_add]
   · rw [x10, BitVec.toNat_or, x9, BitVec.toNat_xor, BitVec.toNat_setWidth, BitVec.toNat_setWidth]
     have a := (s.mem (A + BitVec.ofNat 64 k)).isLt
     have b := (s.mem (B + BitVec.ofNat 64 k)).isLt
     have c := h.x10
-    exact Nat.or_lt_two_pow (n := 8) c (Nat.xor_lt_two_pow (by omega) (by omega))
+    exact Nat.or_lt_two_pow (n := 8) c (Nat.xor_lt_two_pow (by omega_using []) (by omega_using []))
   · have e1 : u.gpr .x10 ||| u₃.gpr .x9 = 0 ↔ u.gpr .x10 = 0 ∧ u₃.gpr .x9 = 0 := BitVec.or_eq_zero_iff
     rw [x10, e1, h.eq, x9, xor_zero_iff, bytesAt_succ', bytesAt_succ']
     constructor
@@ -119,10 +119,10 @@ theorem cmpAnd_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S
     (h₁.2.trans h₂.keep).mono (by decide)
   have c₀ : CI (pa s a) (pa s b) n s 0 s₂ :=
     ⟨k₂, by rw [h₂.mem, h₁.1.2], by rw [h₂.get .x0, a0, ptr_zero]; rfl, by rw [h₂.get .x1, a1, ptr_zero]; rfl,
-      by rw [h₂.get .x2, a2]; simp only [Arg.val, BitVec.toNat_ofNat]; omega, by rw [e₂]; decide,
+      by rw [h₂.get .x2, a2]; simp only [Arg.val, BitVec.toNat_ofNat]; omega_using [hn'], by rw [e₂]; decide,
       by rw [e₂]; exact ⟨fun _ => rfl, fun _ => rfl⟩⟩
   refine WP.seq (WP.mono (count_loop (cr := .x2) hn (CI (pa s a) (pa s b) n s)
-    (fun k hk u h => cstep (by omega) hA hB hk h) c₀) fun s₃ h₃ => ?_)
+    (fun k hk u h => cstep (by omega_using [hn']) hA hB hk h) c₀) fun s₃ h₃ => ?_)
   refine wp_subImm (by decide) fun s₄ h₄ e₄ => wp_lsr (by decide) fun s₅ h₅ e₅ =>
     wp_and32 fun s₆ h₆ e₆ => wp_nil ?_
   have o₆ : Only [.x10, .x24] s₃ s₆ := ((h₄.trans h₅).trans h₆).mono

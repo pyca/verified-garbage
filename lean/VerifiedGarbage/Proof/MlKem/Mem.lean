@@ -37,11 +37,11 @@ theorem coeffAt_eq (m : Mem) (p : Addr) (i : Nat) : coeffAt m p i = m.readW (coe
 abbrev polyRegion (p : Addr) : Region := ⟨p, 1024⟩
 
 theorem coeff_contains (p : Addr) {i : Nat} (hi : i < n) : (polyRegion p).Contains (coeffAddr p i) 4 := by
-  rw [n_eq] at hi; exact Offset.contains_base p (by omega) (by omega)
+  rw [n_eq] at hi; exact Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 theorem coeff_sep (p : Addr) {i j : Nat} (hi : i < n) (hj : j < n) (h : i ≠ j) :
     Mem.Sep (coeffAddr p i) 4 (coeffAddr p j) 4 := by
-  rw [n_eq] at hi hj; exact Offset.sep p (by omega) (by omega) (by omega)
+  rw [n_eq] at hi hj; exact Offset.sep p (by omega_using [h]) (by omega_using [hi]) (by omega_using [hj])
 
 theorem coeffAt_writeW_self (m : Mem) (p : Addr) (i : Nat) (v : BitVec 32) :
     coeffAt (m.writeW (coeffAddr p i) v) p i = v :=
@@ -98,7 +98,7 @@ theorem polyIs_toNat {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f) {i : Nat
 theorem polyIs_coeffAt {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f) {i : Nat} (hi : i < n) :
     coeffAt m p i = BitVec.ofNat 32 (f[i]!).val := by
   apply BitVec.eq_of_toNat_eq
-  rw [polyIs_toNat h hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt f[i]!; omega)]
+  rw [polyIs_toNat h hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt f[i]!; omega_using [this])]
 
 /-- `f` is stored at `p` if each of its coefficients is. -/
 theorem polyIs_of_toNat {m : Mem} {p : Addr} {f : Poly}
@@ -110,13 +110,13 @@ theorem polyIs_of_toNat {m : Mem} {p : Addr} {f : Poly}
 theorem polyIs_of_coeffAt {m : Mem} {p : Addr} {f : Poly}
     (h : ∀ i < n, coeffAt m p i = BitVec.ofNat 32 (f[i]!).val) : PolyIs m p f :=
   polyIs_of_toNat fun i hi => by
-    rw [h i hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt f[i]!; omega)]
+    rw [h i hi, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt f[i]!; omega_using [this])]
 
 /-- Writing a coefficient of a stored polynomial. -/
 theorem polyIs_writeW {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f) {j : Nat} (hj : j < n)
     (x : Zq) : PolyIs (m.writeW (coeffAddr p j) (BitVec.ofNat 32 x.val)) p (f.set! j x) := by
   have hx : (BitVec.ofNat 32 x.val).toNat = x.val := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [this])]
   refine ⟨reduced_writeW h.1 hj (by rw [hx]; exact x.isLt), ?_⟩
   rw [polyAt_writeW m p hj, hx, ofNat_val, h.2]
 
@@ -128,7 +128,7 @@ theorem coeffAt_congr {m m' : Mem} {p : Addr}
   rw [n_eq] at hi
   refine Mem.readW_congr fun k hk => ?_
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hk])
 
 theorem polyAt_congr {m m' : Mem} {p : Addr}
     (h : ∀ k < 1024, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) :
@@ -189,17 +189,17 @@ theorem bytesAt_add (m : Mem) (p : Addr) (a b : Nat) :
 
 theorem bytesAt_take (m : Mem) (p : Addr) {k len : Nat} (h : k ≤ len) :
     (bytesAt m p len).take k = bytesAt m p k := by
-  rw [show len = k + (len - k) by omega, bytesAt_add, List.take_left' (bytesAt_length _ _ _)]
+  rw [show len = k + (len - k) by omega_using [h], bytesAt_add, List.take_left' (bytesAt_length _ _ _)]
 
 theorem bytesAt_drop (m : Mem) (p : Addr) {k len : Nat} (h : k ≤ len) :
     (bytesAt m p len).drop k = bytesAt m (p + BitVec.ofNat 64 k) (len - k) := by
-  rw [show len = k + (len - k) by omega, bytesAt_add, List.drop_left' (bytesAt_length _ _ _),
+  rw [show len = k + (len - k) by omega_using [h], bytesAt_add, List.drop_left' (bytesAt_length _ _ _),
     Nat.add_sub_cancel_left]
 
 /-- `(B.drop k).take c` of the bytes at `p`: the `c` bytes at `p + k`. -/
 theorem bytesAt_slice (m : Mem) (p : Addr) {k c len : Nat} (h : k + c ≤ len) :
     ((bytesAt m p len).drop k).take c = bytesAt m (p + BitVec.ofNat 64 k) c := by
-  rw [bytesAt_drop m p (by omega), bytesAt_take _ _ (by omega)]
+  rw [bytesAt_drop m p (by omega_using [h]), bytesAt_take _ _ (by omega_using [h])]
 
 theorem bytesAt_congr {m m' : Mem} {p : Addr} {len : Nat}
     (h : ∀ i < len, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
@@ -208,7 +208,7 @@ theorem bytesAt_congr {m m' : Mem} {p : Addr} {len : Nat}
 
 /-- The bytes at `p` are `L` if each is. -/
 theorem bytesAt_eq {m : Mem} {p : Addr} {L : List Byte} {len : Nat} (hl : L.length = len)
-    (h : ∀ i (hi : i < len), m (p + BitVec.ofNat 64 i) = L[i]'(by omega)) : bytesAt m p len = L :=
+    (h : ∀ i (hi : i < len), m (p + BitVec.ofNat 64 i) = L[i]'(by omega_using [hl, hi])) : bytesAt m p len = L :=
   List.ext_getElem (by rw [bytesAt_length, hl]) fun i h₁ _ => by
     rw [bytesAt_getElem]; exact h i (by rw [bytesAt_length] at h₁; exact h₁)
 
@@ -216,7 +216,7 @@ theorem bytesAt_eq {m : Mem} {p : Addr} {L : List Byte} {len : Nat} (hl : L.leng
 `Encode.lean` state bytes). -/
 theorem bytesAt_eq! {m : Mem} {p : Addr} {L : List Byte} {len : Nat} (hl : L.length = len)
     (h : ∀ i < len, m (p + BitVec.ofNat 64 i) = L[i]!) : bytesAt m p len = L :=
-  bytesAt_eq hl fun i hi => by rw [h i hi, getElem!_pos L i (by omega)]
+  bytesAt_eq hl fun i hi => by rw [h i hi, getElem!_pos L i (by omega_using [hl, hi])]
 
 /-- The 34-byte input `ρ ‖ j ‖ i` of `SampleNTT`, from its pieces in memory. -/
 theorem seed_eq {m : Mem} {p : Addr} {ρ : List Byte} (hρ : bytesAt m p 32 = ρ) {j i : Byte}
@@ -224,7 +224,7 @@ theorem seed_eq {m : Mem} {p : Addr} {ρ : List Byte} (hρ : bytesAt m p 32 = ρ
     bytesAt m p 34 = ρ ++ [j, i] := by
   rw [show 34 = 32 + 2 from rfl, bytesAt_add, hρ]
   refine congrArg (ρ ++ ·) (bytesAt_eq rfl fun k hk => ?_)
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1) with rfl | rfl
   · rw [BitVec.add_zero]; exact hj
   · rw [Offset.add_add]; exact hi
 
@@ -257,6 +257,6 @@ theorem bytesAt_writeW8 (m : Mem) (p : Addr) {i len : Nat} (hi : i < len) (hlen 
 theorem bytesAt_writeW_sep (m : Mem) (p : Addr) {len : Nat} {a : Addr} {w : Nat} (v : BitVec w)
     (h : Mem.Sep p len a (w / 8)) (hlen : len < 2 ^ 64) :
     bytesAt (m.writeW a v) p len = bytesAt m p len :=
-  bytesAt_congr fun i hi => Mem.write_apply (h _ (by rw [Mem.sub_ofNat_toNat p (by omega)]; exact hi))
+  bytesAt_congr fun i hi => Mem.write_apply (h _ (by rw [Mem.sub_ofNat_toNat p (by omega_using [hlen, hi])]; exact hi))
 
 end VG.Proof.MlKem

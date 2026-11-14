@@ -37,9 +37,9 @@ theorem dig_buf {P : EP} (hP : ∃ σ, In h.D P σ) : RBuf (P.lay h.D) P.dig h.D
   obtain ⟨σ, hi⟩ := hP
   have hf := hi.ok.fits (P.DIG h.D) (by simp)
   simp only [BitVec.toNat_setWidth] at hf
-  rw [Nat.mod_eq_of_lt (by have := P.dig.isLt; omega)] at hf
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
-  exact ⟨hf, by omega, ⟨P.DIG h.D, by simp, Region.contains_self _ _⟩⟩
+  rw [Nat.mod_eq_of_lt (by have := P.dig.isLt; omega_using [])] at hf
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
+  exact ⟨hf, by omega_using [hD], ⟨P.DIG h.D, by simp, Region.contains_self _ _⟩⟩
 
 /-- `Y`: 8 zero bytes and `mHash`. -/
 abbrev Y1 (P : EP) (τ : State) (m : Mem) : Prop :=
@@ -77,7 +77,7 @@ abbrev Yf (P : EP) (τ : State) (m : Mem) : Prop := ∀ i < 2048, m (sa P.scr (o
 
 theorem Mf_length (P : EP) (τ : State) : (Mf h P τ).length = P.slt + (8 + h.D) := by
   simp only [Mf, List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.bytesAt_len, sltB,
-    List.length_map, List.length_range]; omega
+    List.length_map, List.length_range]; omega_using []
 
 /-- What the fixed path starts from. -/
 abbrev F0 (P : EP) (τ s : State) : Prop := Ctx (P.lay h.D) P.scr τ s ∧ (K2 h P τ s.mem ∧ P.any = 0) ∧ Y1 h P τ s.mem
@@ -132,7 +132,7 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       rw [u4.mem, u3.mem, u2.mem, u1.mem, hg.aFr ok sLo (by decide), hk.2.2.1.2.1, hg.aFr ok sDb (by decide),
         hk.2.2.1.2.2.1, hg.aArg ok 8 (by simp), hc.st.arg (vf_arg h (by decide)),
         show (P.lay h.D).argv.getD 8 0 = BitVec.ofNat 32 P.slt from rfl, BitVec.add_assoc, BitVec.add_assoc,
-        BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, add_ofNat_sub (by omega), Nat.add_assoc]
+        BitVec.ofNat_add_ofNat, BitVec.ofNat_add_ofNat, add_ofNat_sub (by omega_using [hdb, es]), Nat.add_assoc]
     · rw [f9.gpr, u8.gpr]; rfl
     · rw [z9, u8.gpr, BitVec.and_self]
       exact congrArg some (ofNat_beq_zero hsl)
@@ -143,25 +143,25 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   · by_cases h0 : P.slt = 0
     · exact VP.empty fun σ s ⟨⟨_, _, _, _, z⟩, e⟩ => by
         simp only [eval, z, decide_eq_true h0] at e; exact absurd e (by decide)
-    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.slt) (by omega) (by omega))
-      (hg.rbuf (o := oEm + lo P + dbN h P - P.slt) (n := P.slt) (by omega) (by omega))
-      (by rw [hg.scrA (by omega), hg.scrA (by omega)]; exact Geo.sep (by omega) (by omega) (by omega)) (by omega)
+    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.slt) (by omega_using [hdb, hsum, hK, es, e2, e3]) (by omega_using [h0]))
+      (hg.rbuf (o := oEm + lo P + dbN h P - P.slt) (n := P.slt) (by omega_using [hdb, hsum, hK, es, e1, e2]) (by omega_using [h0]))
+      (by rw [hg.scrA (by omega_using [hsum, hK, e1, e2]), hg.scrA (by omega_using [hD, e2, e3])]; exact Geo.sep (by omega_using [hdb, hsum, hK, es, e1, e3]) (by omega_using [hdb, hsum, hK, es, e1, e2]) (by omega_using [hdb, hsum, hK, es, e2, e3])) (by omega_using [h0])
       (f := fun τ i => dbF h P τ (dbN h P - P.slt + i))
       (Inv := fun τ m => (K2 h P τ m ∧ P.any = 0) ∧
         (∀ i < 8 + h.D, m (sa P.scr (oY + i)) = (Spec.RsaPss.zeros 8 ++ digB h P τ).getD i 0) ∧
         YZ P.scr (8 + h.D + P.slt) m) fun τ m m' ⟨⟨hk, ha'⟩, h1, h2⟩ hf' => ?_).mono
-      (fun τ s ⟨⟨⟨hc, hk, hy⟩, bx, si, cx, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega), fun i hi => ?_⟩, bx, si, cx,
+      (fun τ s ⟨⟨⟨hc, hk, hy⟩, bx, si, cx, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega_using [hD, hi]), fun i hi => ?_⟩, bx, si, cx,
         fun i hi => ?_⟩) fun τ s ⟨hc, ⟨hk, h1, h2⟩, hs⟩ => ⟨hc, hk, fun i hi => ?_⟩
-    · rw [hg.scrA (by omega)] at hf'
+    · rw [hg.scrA (by omega_using [hD, e2, e3])] at hf'
       refine ⟨⟨K2.keep h hk hf' fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega) (by omega), ha'⟩,
-        sbytes_keep hf' (fun r hr => ?_) (by omega) h1, sbytes_keep hf' (fun r hr => ?_) (by omega) h2⟩
-      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega) (by omega) (by omega)
-      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega) (by omega) (by omega)
-    · rw [show oY + (8 + h.D + P.slt) + i = oY + (8 + h.D + P.slt + i) by omega, hy _ (by omega),
-        getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.bytesAt_len]; omega)]
-    · rw [hg.byteAt_scr (by omega), show oEm + lo P + dbN h P - P.slt + i = oEm + lo P + (dbN h P - P.slt + i) by omega]
-      exact hk.1.2.2.2.1 _ (by omega)
+          simp only [List.mem_singleton] at hr; subst hr; exact away2_scr hg (by omega_using [hdb, hsum, hK, es, e2, e3]) (by omega_using [e1, e3]), ha'⟩,
+        sbytes_keep hf' (fun r hr => ?_) (by omega_using [hD, e3]) h1, sbytes_keep hf' (fun r hr => ?_) (by omega_using [hD, e3, hsl]) h2⟩
+      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega_using []) (by omega_using [hD, e2, e3]) (by omega_using [hdb, hsum, hK, es, e2, e3])
+      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by omega_using []) (by omega_using [hdb, hsum, hK, es, e2, e3]) (by omega_using [hdb, hsum, hK, es, e2, e3])
+    · rw [show oY + (8 + h.D + P.slt) + i = oY + (8 + h.D + P.slt + i) by omega_using [], hy _ (by omega_using [hi]),
+        getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.bytesAt_len]; omega_using [])]
+    · rw [hg.byteAt_scr (by omega_using [hlo, hdb, hsum, hK, hD, hD0, hK0, es, e1, e2, hsl, h0, hi]), show oEm + lo P + dbN h P - P.slt + i = oEm + lo P + (dbN h P - P.slt + i) by omega_using [hdb, es]]
+      exact hk.1.2.2.2.1 _ (by omega_using [hdb, es, hi])
     · have hl : (Spec.RsaPss.zeros 8 ++ digB h P τ).length = 8 + h.D := by
         simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.bytesAt_len]
       rw [RsaPss.getD_app, hl]
@@ -169,13 +169,13 @@ theorem fxSalt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       · rw [ite_eq_left e1]; exact h1 i e1
       rw [ite_eq_right e1]
       by_cases e2 : i < 8 + h.D + P.slt
-      · have e := hs (i - (8 + h.D)) (by omega)
-        rw [hg.byteAt_scr (by omega), show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega] at e
+      · have e := hs (i - (8 + h.D)) (by omega_using [h0, e2])
+        rw [hg.byteAt_scr (by omega_arith), show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega_using [e1]] at e
         rw [e]
-        simp [sltB, List.getD_eq_getElem?_getD, show i - (8 + h.D) < P.slt by omega]
-      · rw [getD_ge (l := sltB h P τ) (by simp only [sltB, List.length_map, List.length_range]; omega),
-          show oY + i = oY + (8 + h.D + P.slt) + (i - (8 + h.D + P.slt)) by omega]
-        exact h2 _ (by omega)
+        simp [sltB, List.getD_eq_getElem?_getD, show i - (8 + h.D) < P.slt by omega_using [h0, e2]]
+      · rw [getD_ge (l := sltB h P τ) (by simp only [sltB, List.length_map, List.length_range]; omega_using [e2]),
+          show oY + i = oY + (8 + h.D + P.slt) + (i - (8 + h.D + P.slt)) by omega_using [e2]]
+        exact h2 _ (by omega_using [hi, e2])
 
 /-- `M'`'s length and blocks. -/
 theorem lenF_vp (P : EP) :
@@ -184,7 +184,7 @@ theorem lenF_vp (P : EP) :
       (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Kt h P (Mf h P) (nbF h P) τ s.mem ∧ Yf h P τ s.mem) := by
   refine VP.taint [.esp, .ebp] h.certs.lenArgs8 (sp_bp fun _ _ h => h.1) fun τ s ⟨hc, ⟨hk, ha⟩, hy⟩ => ?_
   have hg := hk.1.geo
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_ge
   have hsl := hk.1.slt32
@@ -192,7 +192,7 @@ theorem lenF_vp (P : EP) :
   have es : eLen P = P.slt := by simp only [eLen, ha, ite_true]
   have e1 : BitVec.ofNat 32 (P.slt + (8 + h.D) + h.L) >>> lgB h.H =
       BitVec.ofNat 32 ((P.slt + (8 + h.D) + h.L) / h.B) := by
-    rw [ofNat_shr (by omega), h.pow_lg]
+    rw [ofNat_shr (by omega_using [hL, hdb, hsum, hK, es]), h.pow_lg]
   obtain ⟨σ', ok⟩ := hg.ok
   simp only [lenArgs, ld, st, addi]
   refine hc.wp_arg hg (vf_arg h (j := 8) (by decide)) (by decide) (by decide) fun t1 c1 u1 =>
@@ -236,24 +236,24 @@ theorem fixed_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
   swap
   · exact VP.empty fun σ s h' => hf ⟨h'.1.2.1.2.1, h'.1.2.2⟩
   obtain ⟨hf, ha⟩ := hf
-  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hD : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have hL := h.L_le
   have hB := h.B_le
-  have hB0 : 0 < h.B := by have := h.B_ge; omega
+  have hB0 : 0 < h.B := by have := h.B_ge; omega_using [this]
   obtain ⟨hlo, hdb, hsum, hK, hD', hD0, hK0⟩ := fitB h hi₀ hf
   have es : eLen P = P.slt := by simp only [eLen, ha, ite_true]
   have q1 := Nat.lt_mul_div_succ (P.slt + (8 + h.D) + h.L) hB0
   have q2 := Nat.mul_div_le (P.slt + (8 + h.D) + h.L) h.B
   have hT : nbF h P * h.B ≤ 2048 := by
     show ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B ≤ 2048
-    rw [Nat.succ_mul, Nat.mul_comm]; omega
+    rw [Nat.succ_mul, Nat.mul_comm]; omega_using [hD, hL, hB, hB0, hlo, hdb, hsum, hK, hD', hD0, hK0, es, q1, q2]
   show VP _ (.seq (yDig h.H 4) (.seq (.block (fxSalt h.H)) (.seq (.ite .e (.block []) Impl.Bignum.X86.copyBytes)
     (.seq (.block (lenArgs h.H 8)) (.seq (ctHashT f h.H 14) (cmpH h.H)))))) _
   refine (Proof.RsaOaep.X86.VP.syms (yDig_vf h P ⟨σ₀, hi₀⟩ (P.any = 0))).seq ?_
   refine Sg.vpAssoc ((Proof.RsaOaep.X86.VP.syms (fxSalt_vp h P ⟨σ₀, hi₀⟩)).seq
     ((Proof.RsaOaep.X86.VP.syms (lenF_vp h P)).seq ?_))
   exact (tail_vp h P ⟨σ₀, hi₀⟩ hTH fne hT (Nat.succ_pos _) (msg := Mf h P) fun τ => by
-      rw [Mf_length]; show _ ≤ ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega).mono
-    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega)⟩, sy⟩) fun τ s h => h
+      rw [Mf_length]; show _ ≤ ((P.slt + (8 + h.D) + h.L) / h.B + 1) * h.B; rw [Nat.mul_comm]; omega_using [q1]).mono
+    (fun τ s ⟨⟨hc, hk, hy⟩, sy⟩ => ⟨⟨hc, hk, fun i hi => hy i (by omega_using [hT, hi])⟩, sy⟩) fun τ s h => h
 
 end VG.Proof.RsaPss.X86.Vf

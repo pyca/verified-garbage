@@ -40,11 +40,11 @@ theorem addr_add (b : Addr) (x y : Nat) :
 /-- An immediate below `2³¹`, sign-extended. -/
 theorem signExtend_small {x : Nat} (h : x < 2 ^ 31) : (BitVec.ofNat 32 x).signExtend 64 = BitVec.ofNat 64 x := by
   have hm : (BitVec.ofNat 32 x).msb = false := by
-    rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+    rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : x < 2 ^ 32), Nat.mod_eq_of_lt (by omega : x < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [h] : x < 2 ^ 32), Nat.mod_eq_of_lt (by omega_using [h] : x < 2 ^ 64)]
 
 theorem movR_ok (s : State) (d r : Reg) :
     ∃ s', runBlock isa [movR d r] s = some s' ∧ s'.gpr d = s.gpr r ∧
@@ -137,7 +137,7 @@ theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegio
 /-- Slot `k` of a scratch buffer of `n` slots at `B` is writable. -/
 theorem slot_wr {rs : List Region} {B : Addr} {n : Nat} (h : (⟨B, 8 * n⟩ : Region) ∈ rs) (hn : 8 * n < 2 ^ 64)
     {k : Nat} (hk : k < n) : InRegions rs (wordAddr B k) 8 :=
-  ⟨_, h, VG.Offset.contains_base B (by omega) (by omega)⟩
+  ⟨_, h, VG.Offset.contains_base B (by omega_using [hk]) (by omega_using [hn, hk])⟩
 
 theorem readW_slot_write {m : Mem} {b : Addr} {j k : Nat} (v : BitVec 64) (hj : 8 * j < 2 ^ 64)
     (hk : 8 * k < 2 ^ 64) :

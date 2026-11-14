@@ -16,7 +16,7 @@ theorem Geometry.Valid.markerFit {g : Geometry} (v : g.Valid) :
     g.array aExponent + 4 * g.words + 8 ≤ g.L := by
   have fit := v.arraysFit
   unfold Geometry.array Geometry.words aExponent Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at *
-  omega
+  omega_using [fit]
 
 theorem markerPointer_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
     WP isa (.block markerPointer) s fun t =>
@@ -39,7 +39,7 @@ theorem markerPointer_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g
     simp only [BitVec.toNat_add, Count]
     have bound := v.maxWidth
     unfold Geometry.words
-    omega
+    omega_using [bound]
   refine wp_addS rfl fun t T _ => WP.block_nil ?_
   refine ⟨?_, ?_, Ke.widen T.keeps⟩
   · rw [PtrAt, T.gpr, ptr_add bp, width]

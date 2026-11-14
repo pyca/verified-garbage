@@ -18,17 +18,17 @@ private theorem cross_succ_bound {r x d c diag p : Nat}
     c + x*d*p < p*p*r := by
   have hc' : c < p*p := by
     have hh := Nat.mul_lt_mul_of_lt_of_lt hx hx
-    omega
+    omega_using [hc, hh]
   have hh : p * (r - 1) + p = p*r := by
-    rw [← Nat.mul_succ, show (r - 1).succ = r by omega]
+    rw [← Nat.mul_succ, show (r - 1).succ = r by omega_using [hr]]
   have hp' : x*d*p ≤ p*(r-1)*p :=
-    Nat.mul_le_mul_right p (Nat.mul_le_mul (Nat.le_of_lt hx) (by omega))
+    Nat.mul_le_mul_right p (Nat.mul_le_mul (Nat.le_of_lt hx) (by omega_using [hd]))
   have he : p*p + p*(r-1)*p = p*p*r := by
     calc
       _ = (p + p*(r-1))*p := by grind
       _ = (p*r)*p := by rw [Nat.add_comm, hh]
       _ = _ := by grind
-  omega
+  omega_using [hc', hp', he]
 
 theorem cross_words_succ_lt (m : Mem) (B : Addr) (e n : Nat) :
     Square.crossValue m B e (n+1) < 2 ^ (64*(2*n+1)) := by
@@ -40,7 +40,7 @@ theorem cross_words_succ_lt (m : Mem) (B : Addr) (e n : Nat) :
   have hp : 2 ^ (64*n) * 2 ^ (64*n) * 2 ^ 64 = 2 ^ (64*(2*n+1)) := by
     rw [← Nat.pow_add, ← Nat.pow_add]
     congr 1
-    omega
+    omega_using []
   rw [Square.crossValue_succ]
   exact Nat.lt_of_lt_of_eq h hp
 

@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ed448.WnafWide.Recoding
 public import Init.Data.Nat.Bitwise.Lemmas
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The bounded lookahead reconstructed from expanded scalar bits. -/
 
@@ -27,7 +28,7 @@ theorem look_step (k i n a : Nat) :
     (a*2+bit k (i+n))*2^n + look k i n = a*2^(n+1) + look k i (n+1) := by
   rw [look_succ, Nat.pow_succ, Nat.add_mul, Nat.mul_assoc, Nat.mul_comm 2 (2^n), ← Nat.mul_assoc]
   have hc := Nat.mul_comm (2^n) (bit k (i+n))
-  omega
+  omega_using [hc]
 
 theorem bit_shift (k i : Nat) : (k >>> i) &&& 1 = bit k i := by
   rw [Nat.and_one_is_mod, Nat.shiftRight_eq_div_pow]

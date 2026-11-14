@@ -38,6 +38,17 @@ read.
 
 namespace VG
 
+/-- The specification of one function. -/
+structure Contract (M : ISA) where
+  /-- Precondition on the entry state: argument registers, permitted memory
+  regions, disjointness, CPU features, … -/
+  pre : M.State → Prop
+  /-- Postcondition relating the entry state to the exit state. -/
+  post : M.State → M.State → Prop
+  /-- When two entry states agree on everything public (e.g. lengths and
+  pointers, but not keys or plaintexts). -/
+  pub : M.State → M.State → Prop
+
 /-- A code-generation target: an ISA model and its calling convention. What
 only the emitter reads of it (its printer, its Rust `cfg` and ABI string, and
 how documentation names its argument area and reserved memory: `Emitter`,
@@ -54,17 +65,12 @@ structure Target where
   /-- The calling convention, which the target's Rust ABI string stands for
   (`Emitter.rustAbi`). -/
   abi : Abi isa
-
-/-- The specification of one function. -/
-structure Contract (M : ISA) where
-  /-- Precondition on the entry state: argument registers, permitted memory
-  regions, disjointness, CPU features, … -/
-  pre : M.State → Prop
-  /-- Postcondition relating the entry state to the exit state. -/
-  post : M.State → M.State → Prop
-  /-- When two entry states agree on everything public (e.g. lengths and
-  pointers, but not keys or plaintexts). -/
-  pub : M.State → M.State → Prop
+  /-- What it means on this target for a function with code `c`, contract
+  `k` and a result of `retBits` bits to return without secret residue
+  (`X86_64.NoResidue`), if the target defines it: then every artifact of the
+  target proves it (`Artifact.residue`), but those `ci/residue_allowlist.txt`
+  lists, as the emitter checks (`Rust.checkResidue`). -/
+  noResidue : Option (Prog isa → Contract isa → Nat → Prop) := none
 
 /-- The contract of a function with signature `sig` under the calling
 convention `A`: the obligations the signature implies (see `TCB/Sig.lean`),

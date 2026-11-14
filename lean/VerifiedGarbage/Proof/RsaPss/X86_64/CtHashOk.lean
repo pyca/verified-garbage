@@ -38,20 +38,20 @@ theorem y_padded {B L fb : Nat} (msg len : List Byte) (hfb : fb = lastBlk B L ms
   have hfit : msg.length + L < B * (fb + 1) := by
     subst hfb; unfold lastBlk
     have := Nat.lt_div_mul_add (a := msg.length + L) (b := B) (by omega)
-    rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm]; omega
+    rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm]; omega_using [this]
   rw [Nat.mul_add, Nat.mul_one] at hj hfit
-  simp only [lenAt, padded, ← hfb, hV j (by rw [Nat.mul_add, Nat.mul_one]; omega)]
+  simp only [lenAt, padded, ← hfb, hV j (by rw [Nat.mul_add, Nat.mul_one]; omega_using [hj])]
   by_cases h1 : j < msg.length
-  · rw [ifn (by omega), ifp h1, ifn (by omega), oz]
+  · rw [ifn (by omega_using [hfit, h1]), ifp h1, ifn (by omega_using [h1]), oz]
   · have hz : msg.getD j 0 = 0 := by
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; rfl
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [h1])]; rfl
     rw [hz, zo, ifn h1]
     by_cases h2 : j = msg.length
-    · rw [ifp h2, ifn (by omega), ifp h2]
+    · rw [ifp h2, ifn (by omega_using [hfit, h2]), ifp h2]
     · rw [ifn h2, ifn h2]
       by_cases h3 : B * fb + B - L ≤ j ∧ j < B * fb + B
-      · rw [ifp (by omega), ifp h3, zo, show oY + j - (oY + B * fb + (B - L)) = j - (B * fb + B - L) by omega]
-      · rw [ifn (by omega), ifn h3]
+      · rw [ifp (by omega_using [hLB, h3]), ifp h3, zo, show oY + j - (oY + B * fb + (B - L)) = j - (B * fb + B - L) by omega_using [hLB]]
+      · rw [ifn (by omega_using [hLB, h3]), ifn h3]
 
 variable {H : Hash} (hH : HashOK H) (K : Callees H)
 
@@ -88,7 +88,7 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   have hNL := hH.hNL
   have hDN := hH.hDN
   have hnbm : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB0) hnb
-  have hfb : lastBlk H.P.B H.P.L ℓ < nbm := (Nat.div_lt_iff_lt_mul hB0).mpr (by omega)
+  have hfb : lastBlk H.P.B H.P.L ℓ < nbm := (Nat.div_lt_iff_lt_mul hB0).mpr (by omega_using [hfit])
   have hfbB : H.P.B * (lastBlk H.P.B H.P.L ℓ + 1) ≤ nbm * H.P.B := by
     rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ hfb
   unfold ctHashWith seqs seqs seqs seqs seqs
@@ -97,19 +97,19 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   -- `0x80`.
   refine WP.seq (X86_64.WP.mono_syms (hp L1 R1 hl hn) fun u2 P y2 => ?_)
   -- The length field.
-  refine WP.seq (X86_64.WP.mono_syms (lenField_ok hH P.L P.R hl (by omega)) fun u3 ⟨L3, k3, R3⟩ y3 => ?_)
+  refine WP.seq (X86_64.WP.mono_syms (lenField_ok hH P.L P.R hl (by omega_using [hfit, hnb])) fun u3 ⟨L3, k3, R3⟩ y3 => ?_)
   -- Into the last block.
   refine WP.seq (X86_64.WP.mono_syms (lenLoop_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
-      simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega), Nat.add_sub_cancel_left])
+      simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega_using [hi]), Nat.add_sub_cancel_left])
     (by simp [upd]) (by simp [upd, hn]) hfb hnb) fun u4 O y4 => ?_)
   -- Every block.
   refine WP.seq (WP.mono (compLoop_ok hH O.L O.R ?_ (by simp [upd]) (by simp [upd, hn]) hfb hnb
       (hT.congr (y4.trans (y3.trans (y2.trans y1))) (by simp [upd]) (by simp [upd]) (by simp [upd])))
     fun u5 ⟨L5, rd5, wr5, cs5, y5, V5, R5, keep5, st5, sel5⟩ => ?_)
   · rw [← iv1]
-    refine stateAt_rep hH R1 O.R (by unfold oSt oRsa; omega) fun i hi => ?_
+    refine stateAt_rep hH R1 O.R (by unfold oSt oRsa; omega_using [hN]) fun i hi => ?_
     simp only [lenAt, lenV, v80]
-    rw [ifn (by unfold oY oSt; omega), ifn (by unfold oLen oSt; omega), ifn (by unfold oY oSt; omega)]
+    rw [ifn (by unfold oY oSt; omega_using [hNL, hi]), ifn (by unfold oLen oSt; omega_using [hN, hi]), ifn (by unfold oY oSt; omega_using [hB, hNL, hi])]
   -- The digest.
   refine WP.mono (digestOut_ok hH L5 R5 (hT.congr (y5.trans (y4.trans (y3.trans (y2.trans y1))))
       (by simp [upd]) (by simp [upd]) (by simp [upd])) hdk) fun u6 ⟨L6, k6, R6⟩ => ?_
@@ -121,7 +121,7 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   have c5 : oSel = 2240 := rfl
   have hso := hH.hso
   have hfbB' : H.P.B * lastBlk H.P.B H.P.L ℓ + H.P.B ≤ 2048 := by
-    rw [← Nat.mul_add_one]; omega
+    rw [← Nat.mul_add_one]; omega_using [hnb, hfbB]
   have hsel := sel5 hfb
   refine ⟨L6, k6.2.1.trans (rd5.trans (O.keep.2.1.trans (k3.2.1.trans (P.keep.2.1.trans rd1)))),
     k6.2.2.trans (wr5.trans (O.keep.2.2.trans (k3.2.2.trans (P.keep.2.2.trans wr1)))), ?_, _, _, R6, ?_, ?_, ?_⟩
@@ -135,11 +135,11 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     have h4 : r ∉ [Reg.rcx, .rdx, .r10, .r8, .rax, .r9] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     rw [k6.gpr h1, cs5 r hcs, O.keep.gpr h2, k3.gpr h3, P.keep.gpr h4, cs1 r hcs]
   · intro o ho ⟨h1, h2⟩
-    have hno : ¬ (oDig ≤ o ∧ o < oDig + H.P.N) := by omega
+    have hno : ¬ (oDig ≤ o ∧ o < oDig + H.P.N) := by omega_using [hfit, hnb, hB, hB0, hN, hL, hNL, hDN, hfbB, c1, c2, c3, hfbB', ho, h1, h2]
     simp only [hno, ite_false]
-    rw [keep5 o ho (by simp only [inR_cons, inR_nil, or_false]; omega)]
+    rw [keep5 o ho (by simp only [inR_cons, inR_nil, or_false]; omega_using [hfit, hnb, hB, hB0, hN, hL, hNL, hDN, hfbB, c1, c2, c3, c4, c5, hso, hfbB', ho, h1, h2, hno])]
     simp only [lenAt, lenV, v80, inR_cons, inR_nil, or_false]
-    rw [ifn (by omega), ifn (by rw [hH.md.lenBytes_length]; omega), ifn (by omega), ifn (by omega)]
+    rw [ifn (by omega_using [hfit, hnb, hB, hB0, hL, hNL, hfb, hfbB, hO, c1, hfbB', ho, h1, h2, hno]), ifn (by rw [hH.md.lenBytes_length]; omega_using [hL, h1]), ifn (by omega_using [hfit, hnb, hB, hB0, hNL, hnbm, hfb, hfbB, c1, hfbB', ho, h1, h2, hno]), ifn (by omega_using [hfit, hnb, hB, hB0, hN, hL, hNL, hDN, hnbm, hfb, hfbB, c1, c2, c3, c4, hfbB', ho, h1, h2, hno])]
   · intro k hk h29 h30
     simp [upd, h29, h30]
   · intro msg hml hY
@@ -147,16 +147,16 @@ theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
     rw [hH.hash, MdStream.Md.hash, ← range_map_getD (by rw [hH.md.digest_length]; exact hDN)]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    simp only [show oDig ≤ oDig + i ∧ oDig + i < oDig + H.P.N from ⟨by omega, by omega⟩,
+    simp only [show oDig ≤ oDig + i ∧ oDig + i < oDig + H.P.N from ⟨by omega_using [], by omega_using [hDN, hi]⟩,
       Nat.add_sub_cancel_left]
     rw [hsel]
     refine congrArg (fun x => (hH.md.digest x).getD i 0) ?_
-    rw [RsaPss.pad_length hH.md msg hB0 (by omega), Nat.mul_div_cancel_left _ hB0]
+    rw [RsaPss.pad_length hH.md msg hB0 (by omega_using [hnb, hB, hB0, hN, hL, hNL, hDN, hnbm, hfit, hfb, hfbB, hfbB', hi]), Nat.mul_div_cancel_left _ hB0]
     refine hH.md.compressList_congr fun j hj => ?_
-    rw [yList_getD _ (by omega), RsaPss.pad_getD hH.md msg hB0 (by omega) hj, hO]
-    refine y_padded msg _ rfl (by omega) (hH.md.lenBytes_length _) _ (fun j' hj' => ?_) j hj
+    rw [yList_getD _ (by omega_using [hfbB, hj]), RsaPss.pad_getD hH.md msg hB0 (by omega_using [hnb, hB, hB0, hN, hL, hNL, hDN, hnbm, hfit, hfb, hfbB, hfbB', hi, hj]) hj, hO]
+    refine y_padded msg _ rfl (by omega_using [hnb, hB, hB0, hN, hL, hNL, hDN, hnbm, hfit, hfb, hfbB, hfbB', hi, hj]) (hH.md.lenBytes_length _) _ (fun j' hj' => ?_) j hj
     simp only [lenV, v80, inR_cons, inR_nil, or_false, hH.md.lenBytes_length]
-    rw [ifn (by omega), ifp (by omega), ifn (by omega), Nat.add_sub_cancel_left, hY j' (by omega)]
+    rw [ifn (by omega_using [hL, c1, c2]), ifp (by omega_using [hfbB, hj']), ifn (by omega_using [hnb, hB, hB0, hN, hNL, hDN, c1, c4, hfit, hfbB, hfbB', hj, hj']), Nat.add_sub_cancel_left, hY j' (by omega_using [hfbB, hj'])]
 
 include K in
 theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -170,9 +170,9 @@ theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {
         ∀ msg : List Byte, msg.length = ℓ → (∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) →
           (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
   have hfb : lastBlk H.P.B H.P.L ℓ < nbm :=
-    (Nat.div_lt_iff_lt_mul hH.B_pos).mpr (by omega)
+    (Nat.div_lt_iff_lt_mul hH.B_pos).mpr (by omega_using [hfit])
   exact ctHashWith_gen hH K (pad80 H) L R hl hn hfit hnb (fun L' R' hl' hn' =>
-    WP.mono (pad80_ok hH L' R' hl' hn' (by omega) hnb (by omega)) fun _ P => ⟨P.L, P.keep, P.R⟩) hT hdk
+    WP.mono (pad80_ok hH L' R' hl' hn' (by omega_using [hfb]) hnb (by omega_using [hfit, hnb])) fun _ P => ⟨P.L, P.keep, P.R⟩) hT hdk
 
 
 include K in

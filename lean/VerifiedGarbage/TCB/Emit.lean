@@ -71,17 +71,6 @@ def registrations : IO (List String) := modulesUnder registrationDir
 def listOf (mod : String) : String :=
   "VG." ++ (mod.dropPrefix "VerifiedGarbage.").toString ++ ".artifacts"
 
-/-- The name of an instance of a generic function of several interfaces:
-`base`, then `_<tag><suffix>` for each `(tag, suffix)` of `parts` (one per
-interface, in order) whose suffix is not empty. Suffixes start with `_`, so
-`qualifiedName "vg_argon2" [("blake2b", "_avx2"), ("g", "")]` is
-`vg_argon2_blake2b_avx2`. Two variants with the same suffix in different
-interfaces give different names, as long as the tags differ. It only names
-them: the emitter checks that names are unique (`Rust.checkUnique`). -/
-def qualifiedName (base : String) (parts : List (String × String)) : String :=
-  base ++ String.join (parts.map fun (tag, suffix) =>
-    if suffix.isEmpty then "" else "_" ++ tag ++ suffix)
-
 /-- The program that emits every artifact: those of each registration
 module `mods`, in order, each with the name of its module. It fails to
 elaborate unless each module defines its list, unless everything emitted
@@ -225,13 +214,23 @@ fails if the files on disk differ from what would be generated.
 With `--part FILE`, `all` are the registration modules of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
-checks the rest. -/
+checks the rest.
+
+First, every artifact proves that it returns without secret residue, or
+`ci/residue_allowlist.txt` (relative to `lean/`) lists it; with `--part`, which
+has all the artifacts of its targets, every function the list names of those
+targets is one without a proof (`Rust.checkResidue`). -/
 def run (all : List (String × List Artifact)) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
   if let .error e := checkSources all then
     IO.eprintln e
     return 1
   let as := all.flatMap (·.2)
+  let allowlist : FilePath := ".." / "ci" / "residue_allowlist.txt"
+  let text ← if ← allowlist.pathExists then IO.FS.readFile allowlist else pure ""
+  match Rust.parseResidueAllowlist text >>= fun pending => Rust.checkResidue pending part.isSome as with
+    | .ok () => pure ()
+    | .error e => do IO.eprintln e; return 1
   let files ← match Rust.files as with
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1

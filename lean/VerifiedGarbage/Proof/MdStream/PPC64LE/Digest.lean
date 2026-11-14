@@ -505,7 +505,7 @@ theorem digestFrame {SH : StreamingHash} {n bytes : Nat}
   PPC64LE.Verified.stackScratchWiped (sig := Spec.Sha256.digestSig SH.digestBytes) (nm := "scratch") (e := .u64)
     (n := n) (post := Spec.Sha256.digestPost SH.digestBytes SH.H.hash PPC64LE.abi.ptrBits) (wa := false)
     (stack := 96) (bytes := bytes) (words := n) h (by exact (by decide : 3 < 8)) hb
-    (by simp only [Elem.size]; omega) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (by simp only [Elem.size]; omega_using []) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Digest.digestPost_local _ _ _) (Digest.digestPostOut_local _ _ _) hsat rfl
 
 end VG.Proof.MdStream.PPC64LE.Digest

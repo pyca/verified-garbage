@@ -49,10 +49,10 @@ theorem block_regions_low {σ : State} {p n : Nat} (hp : p < 2) (hn : n < 6) :
   intro r hr
   simp only [blockW,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Offset.sub_base (scr σ) (by dsimp only [oSave]; omega)
-  · exact Offset.sub_base (scr σ) (by dsimp only [oBuf,oSave]; omega)
-  · exact Offset.sub_base (scr σ) (by dsimp only [oBuf,oSave]; omega)
-  · exact Offset.sub_base (scr σ) (by dsimp only [oX2,oSave]; omega)
+  · exact Offset.sub_base (scr σ) (by dsimp only [oSave]; omega_using [hp])
+  · exact Offset.sub_base (scr σ) (by dsimp only [oBuf,oSave]; omega_using [hp, hn])
+  · exact Offset.sub_base (scr σ) (by dsimp only [oBuf,oSave]; omega_using [hp, hn])
+  · exact Offset.sub_base (scr σ) (by dsimp only [oX2,oSave]; omega_using [])
 
 theorem env_regs {s t : State} {rs : List Reg} (h : RegKeep rs s t) (hr : ∀ r ∈ [Reg.x19,.x20,.x21,.x30], r ∉ rs) :
     ∀ r ∈ [Reg.x19,.x20,.x21,.x30], t.gpr r = s.gpr r := fun r hm => h.gpr r (hr r hm)
@@ -76,14 +76,14 @@ theorem pairBlock_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (he : Env σ s) 
   refine WP.seq (WP.mono (X2.call_ok sha3 (q := at' σ oX2) (by decide) hp1 hx
     (by rw [he.x19]; rfl)
     (Offset.disjoint (scr σ) (d := 400*p) (n := 400) (e := oX2) (k := 136)
-      (by dsimp only [oX2]; omega) (by omega) (by decide)) hpair
+      (by dsimp only [oX2]; omega_using [hpn]) (by omega_using [hpn]) (by decide)) hpair
     (by
       rw [hsw]
       refine Covers.of_sub fun r hr => ⟨scrR σ,by simp,?_⟩
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨400*p,rfl,by dsimp only [pairR,scrR]; omega⟩
-      · exact ⟨oX2,rfl,by dsimp only [X2.callR,scrR,oX2]; omega⟩))
+      · exact ⟨400*p,rfl,by dsimp only [pairR,scrR]; omega_using [hpn]⟩
+      · exact ⟨oX2,rfl,by dsimp only [X2.callR,scrR,oX2]; omega_using []⟩))
     fun t ⟨hk,hf,hpt⟩ => ?_)
   have hkt : RegKeep X2.clobbered s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
   have het : Env σ t := he.lowStep hf (fun r hr => block_regions_low hpn hn r (by
@@ -97,15 +97,15 @@ theorem pairBlock_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (he : Env σ s) 
     ((hkt.gpr _ hac).trans ha) ((hkt.gpr _ hbc).trans hb)
     hp6 hp7 ha6 ha7 hb6 hb7 hpt
     (Offset.disjoint (scr σ) (d := oBuf+1008*(2*p)+168*n) (n := 168)
-      (e := oBuf+1008*(2*p+1)+168*n) (k := 168) (by omega)
-      (by dsimp only [oBuf]; omega) (by dsimp only [oBuf]; omega))
+      (e := oBuf+1008*(2*p+1)+168*n) (k := 168) (by omega_using [])
+      (by dsimp only [oBuf]; omega_using [hpn, hn]) (by dsimp only [oBuf]; omega_using [hpn, hn]))
     (Offset.disjoint (scr σ) (d := 400*p) (n := 400) (e := oBuf+1008*(2*p)+168*n) (k := 168)
-      (by dsimp only [oBuf]; omega) (by omega) (by dsimp only [oBuf]; omega))
+      (by dsimp only [oBuf]; omega_using []) (by omega_using [hpn]) (by dsimp only [oBuf]; omega_using [hpn, hn]))
     (Offset.disjoint (scr σ) (d := 400*p) (n := 400) (e := oBuf+1008*(2*p+1)+168*n) (k := 168)
-      (by dsimp only [oBuf]; omega) (by omega) (by dsimp only [oBuf]; omega))
-    (fun i hi => by rw [pair_word]; exact in_scr_rd hp het.rd het.wr (by omega))
-    (fun i hi => by rw [buf_word]; exact in_scr hp het.wr (by dsimp only [oBuf]; omega))
-    (fun i hi => by rw [buf_word]; exact in_scr hp het.wr (by dsimp only [oBuf]; omega)))
+      (by dsimp only [oBuf]; omega_using []) (by omega_using [hpn]) (by dsimp only [oBuf]; omega_using [hpn, hn]))
+    (fun i hi => by rw [pair_word]; exact in_scr_rd hp het.rd het.wr (by omega_using [hpn, hi]))
+    (fun i hi => by rw [buf_word]; exact in_scr hp het.wr (by dsimp only [oBuf]; omega_using [hpn, hn, hi]))
+    (fun i hi => by rw [buf_word]; exact in_scr hp het.wr (by dsimp only [oBuf]; omega_using [hpn, hn, hi])))
     fun u ⟨hu,hfu,hau,hbu⟩ => ?_
   have hku : RegKeep [.x6,.x7] t u := ⟨fun r hr => by
     simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr; exact hu.gpr r hr.1 hr.2,
@@ -124,9 +124,9 @@ theorem pairBlock_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (he : Env σ s) 
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
       · exact Offset.disjoint (scr σ) (d := 400*p) (n := 400) (e := oBuf+1008*(2*p)+168*n) (k := 168)
-          (by dsimp only [oBuf]; omega) (by omega) (by dsimp only [oBuf]; omega)
+          (by dsimp only [oBuf]; omega_using []) (by omega_using [hpn]) (by dsimp only [oBuf]; omega_using [hpn, hn])
       · exact Offset.disjoint (scr σ) (d := 400*p) (n := 400) (e := oBuf+1008*(2*p+1)+168*n) (k := 168)
-          (by dsimp only [oBuf]; omega) (by omega) (by dsimp only [oBuf]; omega)) (by decide)]
+          (by dsimp only [oBuf]; omega_using []) (by omega_using [hpn]) (by dsimp only [oBuf]; omega_using [hpn, hn])) (by decide)]
     exact hpt i hi
   · refine (hf.mono fun r hr => ?_).trans (hfu'.mono fun r hr => ?_)
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

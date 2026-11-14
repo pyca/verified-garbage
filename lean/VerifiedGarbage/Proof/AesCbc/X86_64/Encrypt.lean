@@ -673,7 +673,7 @@ theorem written (s : State) (tr : List Leak) (t : State)
   exact hf _ fun r hr hc => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hp.iv_scr _ hc (Offset.contains_base _ (by omega) (by omega))
-    · exact hp.data_scr _ hc (Offset.contains_base _ (by omega) (by omega))
+    · exact hp.iv_scr _ hc (Offset.contains_base _ (by omega_using [hib]) (by omega_using [hib]))
+    · exact hp.data_scr _ hc (Offset.contains_base _ (by omega_using [hib]) (by omega_using [hib]))
 
 end VG.Proof.AesCbc.X86_64.Encrypt

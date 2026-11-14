@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Cached
@@ -143,13 +144,13 @@ theorem attemptCode_sp (v : RoundImpl) :
   exact List.all_eq_true.mpr fun i hi => ((Bool.and_eq_true _ _).mp (List.all_eq_true.mp h i hi)).2
 
 theorem attemptInline_verified (v : RoundImpl) :
-    Verified target (attemptInline v) (Spec.Ffdh.cachedGenerateKeyContract abi) :=
+    Verified target (attemptInline v) (Proof.Ffdh.cachedGenerateKeyContract abi) :=
   Verified.of_correct (cg_correct v.mont (R2Impl.words v.mont) (attemptInline_mx v))
     (cg_constantTime v.mont (R2Impl.words v.mont)) cg_implies
 
 /-- With calls of `v.mm`, which need 8 bytes of stack for the return address. -/
 theorem attemptCode_verified (v : RoundImpl) : Verified target (attemptCode v)
-    (Spec.Ffdh.cachedGenerateKeyContract abi 8) := by
+    (Proof.Ffdh.cachedGenerateKeyContract abi 8) := by
   have hv := attemptInline_verified v
   rw [← attemptCode_inline] at hv
   refine Verified.of_inline_verified (attemptCode_inlineOk v) hv
@@ -163,7 +164,7 @@ theorem attemptCode_verified (v : RoundImpl) : Verified target (attemptCode v)
     (by rw [hw]; simp) (Nat.le_of_lt (s.gpr .rcx).isLt)
   rw [hxl] at hx
   rw [hyl] at hy
-  sig_post [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+  sig_post [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argRegs, stackArgs_seven, List.append_eq] at hp ⊢
   rw [bytesAt_overlay hx, bytesAt_overlay hy]
   exact hp

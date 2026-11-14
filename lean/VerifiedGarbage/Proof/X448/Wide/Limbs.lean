@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.X448
 import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: radix-2⁵⁶ arithmetic
@@ -35,13 +36,13 @@ theorem valN_congr {f g : Nat → Nat} {n : Nat}
     (h : ∀ i < n, f i = g i) : valN f n = valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, ih (fun i hi => h i (by omega)), h n (by omega)]
+  | succ n ih => rw [valN, valN, ih (fun i hi => h i (by omega_using [hi])), h n (by omega_using [])]
 
 theorem valN_add (f g : Nat → Nat) (n : Nat) :
     valN (fun i => f i + g i) n = valN f n + valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, valN, ih, Nat.mul_add]; omega
+  | succ n ih => rw [valN, valN, valN, ih, Nat.mul_add]; omega_using []
 
 theorem valN_scale (c : Nat) (f : Nat → Nat) (n : Nat) :
     valN (fun i => c * f i) n = c * valN f n := by
@@ -60,12 +61,12 @@ theorem valN_lt {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < radix) :
   induction n with
   | zero => simp only [valN, Nat.pow_zero]; decide
   | succ n ih =>
-    have hn := h n (by omega)
-    have hp := ih fun i hi => h i (by omega)
+    have hn := h n (by omega_using [])
+    have hp := ih fun i hi => h i (by omega_using [hi])
     have hm := Nat.mul_le_mul_left (radix ^ n) hn
     rw [Nat.mul_succ] at hm
     rw [valN, Nat.pow_succ]
-    omega
+    omega_using [hp, hm]
 
 /-- Changing one limb changes the value at that limb's weight. -/
 theorem valN_update {f g : Nat → Nat} {n k v : Nat} (hk : k < n)
@@ -77,12 +78,12 @@ theorem valN_update {f g : Nat → Nat} {n k v : Nat} (hk : k < n)
     by_cases hn : k = n
     · subst k
       have he : valN g n = valN f n := valN_congr fun i hi => by
-        rw [h i (by omega), ite_eq_right (by omega)]
-      rw [valN, valN, he, h n (by omega), ite_eq_left rfl, Nat.mul_add]
-      omega
-    · rw [valN, valN, ih (by omega) (fun i hi => h i (by omega)),
-        h n (by omega), ite_eq_right (Ne.symm hn)]
-      omega
+        rw [h i (by omega_using [hi]), ite_eq_right (by omega_using [hi])]
+      rw [valN, valN, he, h n (by omega_using []), ite_eq_left rfl, Nat.mul_add]
+      omega_using []
+    · rw [valN, valN, ih (by omega_using [hk, hn]) (fun i hi => h i (by omega_using [hi])),
+        h n (by omega_using []), ite_eq_right (Ne.symm hn)]
+      omega_using []
 
 /-- The incoming carry at position `n`. -/
 def carry (f : Nat → Nat) : Nat → Nat
@@ -103,17 +104,17 @@ theorem pass_eq (f : Nat → Nat) (n : Nat) :
     change digit f n + radix * carry f (n + 1) = f n + carry f n at hd
     rw [valN, valN, Nat.pow_succ, Nat.mul_assoc, Nat.add_assoc, ← Nat.mul_add, hd,
       Nat.mul_add]
-    omega
+    omega_using [ih]
 
 theorem carry_bound {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < 2 ^ 118) :
     carry f n < 2 ^ 63 := by
   induction n with
   | zero => simp only [carry]; decide
   | succ n ih =>
-    have hi := ih fun i hi => h i (by omega)
-    have hn := h n (by omega)
+    have hi := ih fun i hi => h i (by omega_using [hi])
+    have hn := h n (by omega_using [])
     simp only [carry, radix]
-    omega
+    omega_using [hi, hn]
 
 /-- The carry-out folded into the normalized limbs at positions 0 and 4. -/
 def folded (f : Nat → Nat) (i : Nat) : Nat :=
@@ -143,7 +144,7 @@ theorem folded_bound {f : Nat → Nat} (h : ∀ i < 8, f i < 2 ^ 118) :
   intro i _
   have hd := digit_lt f i
   simp only [folded]
-  split <;> simp only [radix] at hd <;> omega
+  split <;> simp only [radix] at hd <;> omega_arith
 
 /-- After two folds, no carry remains beyond the 448-bit field width. -/
 theorem final_carry {f : Nat → Nat} (h : ∀ i < 8, f i < 2 ^ 118) :
@@ -164,17 +165,17 @@ theorem final_carry {f : Nat → Nat} (h : ∀ i < 8, f i < 2 ^ 118) :
   have c1 : carry (folded f) 8 ≤ 1 := by
     by_contra hc
     have hb := Nat.mul_le_mul_left (half + 1) (Nat.le_of_lt c0)
-    have hp := Nat.mul_le_mul_left full (show 2 ≤ carry (folded f) 8 from by omega)
-    omega
+    have hp := Nat.mul_le_mul_left full (show 2 ≤ carry (folded f) 8 from by omega_using [hc])
+    omega_using [v0, e1, small, hb, hp]
   rcases Nat.eq_zero_or_pos (carry (folded f) 8) with hc | hc
   · rw [hc, Nat.mul_zero, Nat.add_zero] at e2
     have hp := Nat.mul_le_mul_left full hn
-    omega
-  · have hc : carry (folded f) 8 = 1 := by omega
+    omega_using [v1, e2, hp]
+  · have hc : carry (folded f) 8 = 1 := by omega_using [c1, hc]
     rw [hc, Nat.mul_one] at e1 e2
     have hb := Nat.mul_le_mul_left (half + 1) (Nat.le_of_lt c0)
     have hp := Nat.mul_le_mul_left full hn
-    omega
+    omega_arith
 
 def normalized (f : Nat → Nat) : Nat → Nat := digit (folded (folded f))
 

@@ -43,18 +43,18 @@ theorem zeroOut_ok {g : Geometry} {bs : Fin 8 → List Byte} {s : State}
   have K : Keeps [.esi, .ecx, .eax] s c :=
     (A.keeps.mono (by decide)).trans ((B.keeps.mono (by decide)).trans (C.keeps.mono (by decide)))
   have M : c.mem = s.mem := C.mem.trans (B.mem.trans A.mem)
-  have k32 : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
+  have k32 : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
   refine WP.mono (VG.Proof.Dsa.X86.failureLoop_ok
-    (by have := h.valid.minLength; omega) k32 h.valid.outputFit
+    (by have := h.valid.minLength; omega_using [this]) k32 h.valid.outputFit
     (by rw [C.other .esi (by decide), B.other .esi (by decide), A.gpr, h.argumentValue (by decide : 0 < 21)]; rfl)
     (by rw [C.other .ecx (by decide), B.gpr, ha.argumentValue (by decide : 1 < 21)]; rfl) C.gpr ?_) ?_
   · intro i hi
     rw [K.2.2]
-    exact CallLay.inRegions_sub (off := i) h.outputWrite (by omega) (by omega)
+    exact CallLay.inRegions_sub (off := i) h.outputWrite (by omega_using [hi]) (by omega_using [k32])
   · rintro t ⟨V, Z, O, T⟩
     have F : Frame [g.outputRegion] s.mem t.mem := by
       rw [M] at O
-      simpa only [VG.Proof.Mont.off, BitVec.add_zero, Geometry.outputRegion, byteAddr] using outside_frame O (by omega)
+      simpa only [VG.Proof.Mont.off, BitVec.add_zero, Geometry.outputRegion, byteAddr] using outside_frame O (by omega_using [k32])
     have keep := K.trans (T.mono (by decide))
     refine ⟨h.after (F.sub ?_) keep (keep.1 .esp (by decide)), V, Z, F, keep⟩
     intro r hr; obtain rfl := List.mem_singleton.mp hr

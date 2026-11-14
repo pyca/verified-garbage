@@ -166,7 +166,7 @@ theorem batch_relCT {σ τ : State} {b p : Addr} {η off : Nat}
         (.block (Impl.MlDsa.AArch64.Optimized.BoundedFour.batchInit off)) (fun _ _=>True) :=
       RelCT.taint (A := taint) _ (fun _ _ h=>VG.Proof.MlKem.AArch64.agree_of
         (by rw [h.1.keep.sp,h.2.keep.sp]; exact hsp) (fun r hr=>by simp at hr)) hi
-    exact (hc.wp (fun s t h=>⟨batchAt_init (by omega) h.1,batchAt_init (by omega) h.2⟩)).mono
+    exact (hc.wp (fun s t h=>⟨batchAt_init (by omega_using [ho]) h.1,batchAt_init (by omega_using [ho]) h.2⟩)).mono
       (fun _ _ h=>h) (fun _ _ h=>h.2)
   · refine (RelCT.loop (M := isa) (fun m s t=>∃ i,i<4 ∧ m=4-i ∧
         BatchAt σ b p η off L X i s ∧ BatchAt τ b p η off M Y i t)
@@ -179,13 +179,13 @@ theorem batch_relCT {σ τ : State} {b p : Addr} {η off : Nat}
     · rw [batchAt_eval h1,batchAt_eval h2]
     · intro he
       rw [batchAt_eval h1] at he
-      have hl4 : i+1=4 := by simp at he; omega
+      have hl4 : i+1=4 := by simp at he; omega_using [hi, he]
       rw [hl4] at h1 h2
       exact ⟨h1.last,h2.last⟩
     · intro he
       rw [batchAt_eval h1] at he
-      have hl4 : i+1<4 := by simp at he; omega
-      exact ⟨4-(i+1),by omega,i+1,hl4,rfl,h1,h2⟩
+      have hl4 : i+1<4 := by simp at he; omega_using [he]
+      exact ⟨4-(i+1),by omega_using [hi, hm],i+1,hl4,rfl,h1,h2⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 
@@ -227,16 +227,16 @@ theorem sampleRound_relCT (sha3 : Bool) {η off : Nat} (hη : η=2∨η=4) (ho :
       cases et with | seq et0 et1 =>
         have e0:=(cs _ _ _ _ _ _ ⟨by rw [h.1.env.sp,h.2.env.sp]; exact hb.sp,
           by rw [h.1.env.x19,h.2.env.x19]; exact hb.scratch⟩ es0 et0).1
-        obtain ⟨_,_,ex,ha⟩:=squeezeStage_ok sha3 hp h.1 (by omega : off≤272)
-        obtain ⟨_,_,ey,hd⟩:=squeezeStage_ok sha3 hq h.2 (by omega : off≤272)
+        obtain ⟨_,_,ex,ha⟩:=squeezeStage_ok sha3 hp h.1 (by omega_using [ho] : off≤272)
+        obtain ⟨_,_,ey,hd⟩:=squeezeStage_ok sha3 hq h.2 (by omega_using [ho] : off≤272)
         obtain ⟨_,rfl⟩:=Exec.det es0 ex
         obtain ⟨_,rfl⟩:=Exec.det et0 ey
         have lx : BatchLayout _ (samplerScratch σ) (samplerOut σ) off (fun i=>chunkBytes (A i)) :=
-          samplerBatchLayout_ok hp ha.1.env.wr (by omega) (fun _ _=>chunkBytes_length _)
-            (fun i hi j hj=>by rw [chunkBytes_get _ hj]; exact stream136_byte (ha.2 i hi) (by omega))
+          samplerBatchLayout_ok hp ha.1.env.wr (by omega_using [ho]) (fun _ _=>chunkBytes_length _)
+            (fun i hi j hj=>by rw [chunkBytes_get _ hj]; exact stream136_byte (ha.2 i hi) (by omega_using [hj]))
         have ly : BatchLayout _ (samplerScratch τ) (samplerOut τ) off (fun i=>chunkBytes (B i)) :=
-          samplerBatchLayout_ok hq hd.1.env.wr (by omega) (fun _ _=>chunkBytes_length _)
-            (fun i hi j hj=>by rw [chunkBytes_get _ hj]; exact stream136_byte (hd.2 i hi) (by omega))
+          samplerBatchLayout_ok hq hd.1.env.wr (by omega_using [ho]) (fun _ _=>chunkBytes_length _)
+            (fun i hi j hj=>by rw [chunkBytes_get _ hj]; exact stream136_byte (hd.2 i hi) (by omega_using [hj]))
         have ia : BatchInv _ _ (samplerScratch σ) (samplerOut σ) L :=
           ⟨VG.Proof.MlKem.AArch64.Keep.refl _ _,Frame.refl _ _,ha.1.env.x19,ha.1.env.x21,ha.1.table,ha.1.fields⟩
         have ib : BatchInv _ _ (samplerScratch τ) (samplerOut τ) M :=
@@ -245,8 +245,8 @@ theorem sampleRound_relCT (sha3 : Bool) {η off : Nat} (hη : η=2∨η=4) (ho :
         have e1:=(batch_relCT hη ho lx ly
           (by rw [ha.1.env.sp,hd.1.env.sp]; exact hb.sp) hl hx _ _ _ _ _ _ ⟨ia,ib⟩ es1 et1).1
         exact ⟨by rw [e0,e1],trivial⟩
-  exact (ct.wp (fun _ _ h=>⟨sampleRound_ok sha3 hη hp h.1 (by omega),
-      sampleRound_ok sha3 hη hq h.2 (by omega)⟩)).mono
+  exact (ct.wp (fun _ _ h=>⟨sampleRound_ok sha3 hη hp h.1 (by omega_using [ho]),
+      sampleRound_ok sha3 hη hq h.2 (by omega_using [ho])⟩)).mono
     (fun _ _ h=>h) (fun _ _ h=>h.2)
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

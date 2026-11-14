@@ -73,7 +73,7 @@ theorem DeriveABI.used {s : State} (h : DeriveABI s) : deriveExtent ≤ (stackAr
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 16096 ≤ _
-  omega
+  omega_using [hl, hs]
 
 theorem DeriveABI.pre {s : State} (h : DeriveABI s) : DerivePre h.input s := by
   have hs : Scr s (s.gpr .x7) ((stackArg s 0).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound

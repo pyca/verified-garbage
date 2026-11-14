@@ -34,11 +34,11 @@ theorem private_count_loop {α : Type} {g : Geometry} {F : Nat → α → State 
     refine ⟨same, Eu.trans Ez.symm, ?_, ?_⟩
     · intro exit
       have small : ¬ 1 < n := by rw [Eu] at exit; simpa using exit
-      have eq : n - 1 = 0 := by omega
+      have eq : n - 1 = 0 := by omega_using [small]
       rw [eq] at T
       exact T
     · intro next
       have more : 1 < n := by rw [Eu] at next; simpa using next
-      exact ⟨n - 1, by omega, by omega, T⟩
+      exact ⟨n - 1, by omega_using [pos], by omega_using [more], T⟩
 
 end VG.Proof.MillerRabin.X86

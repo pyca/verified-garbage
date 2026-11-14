@@ -21,9 +21,8 @@ result is reduced fully. A limb is stored with `stw`, which keeps the low
 lives in the working space, at a constant offset from its base, which stays
 in `r6` (`out` stays in `r3`):
 
-* `x1, x2, z2, x3, z3`, the ladder's temporaries, the constant `a24`, the
-  inversion's result and the final reduction's temporary, 32 bytes each
-  (`X1`, …);
+* `x1, x2, z2, x3, z3`, the ladder's temporaries, the inversion's result
+  and the final reduction's temporary, 32 bytes each (`X1`, …);
 * the 8 words of a product (`ACC`, 64 bytes) and the bits of the scalar
   (`BITS`, byte `t` is bit `t` of the clamped scalar).
 
@@ -50,7 +49,7 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`):
   negative.
 
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
-multiplication by the constant element `A24`), over the bits of the scalar
+multiplication by the word `121665`, `mulA24`), over the bits of the scalar
 from 254 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
 The inversion `z2^(p-2)` is ref10's addition chain (254 squarings and 11
 multiplications), its runs of squarings counted by `r12`.
@@ -82,7 +81,7 @@ def BB : Nat := 320
 def E : Nat := 352
 def DA : Nat := 384
 def CB : Nat := 416
-def A24 : Nat := 448
+-- 448 to 480 is unused.
 def R : Nat := 480
 def Y : Nat := 512
 def ACC : Nat := 544
@@ -228,11 +227,92 @@ borrow). -/
 def sub (o a b : Nat) : List Instr :=
   (List.range 4).flatMap (subW a b) ++ [.li .r5 38] ++ borrowFold ++ borrowFold ++ stores4 o
 
+/-- `121665 = 2¹⁶ + 0xdb41` (`a24`) into `r5`. -/
+def a24Const : List Instr := [.lis .r5 1, .ori .r5 .r5 0xdb41]
+
+/-- `[o] = 121665 · [a]` (`a24 · [a]`; `o` may be `a`): the words of the
+product, each `mulld` plus the previous `mulhdu` by the carry chain, and its
+top word `t < 2¹⁷` (in `r7`), folded in as `38 t` twice. -/
+def mulA24 (o a : Nat) : List Instr :=
+  a24Const ++
+  [.load .d .r8 .r6 a, .mulhu .r7 .r8 .r5, .mul .r8 .r8 .r5,
+    .load .d .r9 .r6 (a + 8), .mulhu .r4 .r9 .r5, .mul .r9 .r9 .r5, .addc .r9 .r9 .r7,
+    .load .d .r10 .r6 (a + 16), .mulhu .r7 .r10 .r5, .mul .r10 .r10 .r5, .adde .r10 .r10 .r4,
+    .load .d .r11 .r6 (a + 24), .mulhu .r4 .r11 .r5, .mul .r11 .r11 .r5, .adde .r11 .r11 .r7,
+    .addze .r7 .r4, .li .r5 38] ++ foldTop ++ foldTop ++ stores4 o
+
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
 def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
-/-- `[o] = [a] · [b]`, with the product in `ACC`. -/
-abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
+/-! ### The multiplication in registers
+
+X25519's multiplication keeps its operands and its product in the
+nonvolatile registers `r14`–`r30`, which `x25519` saves once, around the
+ladder and the inversion (`saveNV`, `restoreNV`); Ed25519 uses `mulAt`. -/
+
+/-- Word `i` of the first operand, `r14`–`r17`. -/
+def opA (i : Nat) : Reg := if i = 0 then .r14 else if i = 1 then .r15 else if i = 2 then .r16 else .r17
+
+/-- Word `j` of the second operand, `r18`–`r21`. -/
+def opB (j : Nat) : Reg := if j = 0 then .r18 else if j = 1 then .r19 else if j = 2 then .r20 else .r21
+
+/-- Word `k` of the product, `r22`–`r30`: with the next two, column `k`'s
+accumulator. -/
+def pw (k : Nat) : Reg :=
+  [Reg.r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29].getD k .r30
+
+/-- The operands' words into `opA` and `opB`. -/
+def loadOps (a b : Nat) : List Instr :=
+  (List.range 4).map (fun i => .load .d (opA i) .r6 (a + 8 * i)) ++
+    (List.range 4).map fun j => .load .d (opB j) .r6 (b + 8 * j)
+
+/-- A term `a_i b_j` of column `k` added to `pw k, pw (k + 1), pw (k + 2)`. -/
+def termR (k : Nat) (p : Nat × Nat) : List Instr :=
+  [.mul .r7 (opA p.1) (opB p.2), .mulhu .r4 (opA p.1) (opB p.2), .addc (pw k) (pw k) .r7,
+    .adde (pw (k + 1)) (pw (k + 1)) .r4, .addze (pw (k + 2)) (pw (k + 2))]
+
+/-- Column `k`: its accumulator's top word cleared, then its terms. -/
+def colR (k : Nat) : List Instr := .li (pw (k + 2)) 0 :: (colPairs k).flatMap (termR k)
+
+/-- The words of `[a] · [b]` in `pw 0`, …, `pw 7`, by columns. -/
+def productR (a b : Nat) : List Instr :=
+  loadOps a b ++ [.li (pw 0) 0, .li (pw 1) 0] ++ (List.range 7).flatMap colR
+
+/-- `d = n + part of 38 src`: the low word of `38 src` (`mulld`), or with `hi`
+the high word (`mulhdu`), added with the carry in if `e` (38 in `r5`). -/
+def opR (d n src : Reg) (hi e : Bool) : List Instr :=
+  [if hi then .mulhu .r4 src .r5 else .mul .r4 src .r5, if e then .adde d n .r4 else .addc d n .r4]
+
+/-- Word `k` of `L + lo(38 H)` into `wreg k`, with the carry chain. -/
+def redLoR (k : Nat) : List Instr := opR (wreg k) (pw k) (pw (4 + k)) false (k != 0)
+
+/-- The high word of `38 H_k` added into word `k + 1` (into `r7`, the top
+word, for `k = 3`), with the carry chain. -/
+def redHiR (k : Nat) : List Instr :=
+  opR (if k = 3 then .r7 else wreg (k + 1)) (if k = 3 then .r7 else wreg (k + 1)) (pw (4 + k)) true (k != 0)
+
+/-- The product in `pw` reduced into `[o]`, as `reduce38` does. -/
+def reduceR (o : Nat) : List Instr :=
+  .li .r5 38 :: (List.range 4).flatMap redLoR ++ [.li .r7 0, .addze .r7 .r7] ++
+    (List.range 4).flatMap redHiR ++ foldTop ++ foldTop ++ stores4 o
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), in registers. -/
+def mulR (o a b : Nat) : List Instr := productR a b ++ reduceR o
+
+/-- `[o] = [a] · [b]`. -/
+abbrev mul (o a b : Nat) : Prog isa := .block (mulR o a b)
+
+/-- Where `x25519` saves `r14`–`r30`. -/
+def SAVE : Nat := 896
+
+/-- Nonvolatile register `k` of those `mulR` uses, `r14`–`r30`. -/
+def nvR (k : Nat) : Reg := if k < 4 then opA k else if k < 8 then opB (k - 4) else pw (k - 8)
+
+/-- `r14`–`r30` saved at `SAVE`. -/
+def saveNV : List Instr := (List.range 17).map fun k => .store .d (nvR k) .r6 (SAVE + 8 * k)
+
+/-- … and restored. -/
+def restoreNV : List Instr := (List.range 17).map fun k => .load .d (nvR k) .r6 (SAVE + 8 * k)
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
@@ -262,7 +342,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
@@ -334,11 +414,10 @@ def decodeStep (k : Nat) : List Instr :=
   [.load .w .r7 .r5 (4 * k)] ++ (if k = 7 then low31 else []) ++
     [.store .w .r7 .r6 (X1 + 4 * k), .store .w .r7 .r6 (X3 + 4 * k)]
 
-/-- `x2 = 1`, `z2 = 0`, `z3 = 1` and `A24 = 121665 = 2¹⁶ + 0xdb41`. -/
+/-- `x2 = 1`, `z2 = 0` and `z3 = 1`. -/
 def consts : List Instr :=
-  [.li .r7 1, .li .r8 0, .lis .r5 1, .ori .r5 .r5 0xdb41, .store .w .r7 .r6 X2,
-    .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3, .store .w .r5 .r6 A24] ++
-  storeN .r8 (X2 + 4) 7 ++ storeN .r8 (Z2 + 4) 7 ++ storeN .r8 (Z3 + 4) 7 ++ storeN .r8 (A24 + 4) 7
+  [.li .r7 1, .li .r8 0, .store .w .r7 .r6 X2, .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3] ++
+  storeN .r8 (X2 + 4) 7 ++ storeN .r8 (Z2 + 4) 7 ++ storeN .r8 (Z3 + 4) 7
 
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 8).flatMap decodeStep ++ consts
@@ -358,7 +437,7 @@ def bits : Prog isa :=
         .li .r7 1, .stb .r7 .r6 (BITS + 254)]))
 
 def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+  .seq (.block setup) <| .seq bits <| .seq (.block saveNV) <| .seq ladder <| .seq (.block lastSwap) <|
+    .seq invert <| .seq (mul X2 X2 R) (.block (restoreNV ++ freeze))
 
 end VG.Impl.X25519.PPC64LE

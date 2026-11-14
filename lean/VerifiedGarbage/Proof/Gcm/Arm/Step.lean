@@ -44,10 +44,10 @@ theorem neg_top (x : BitVec 32) :
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_ushiftRight, BitVec.msb_eq_getLsbD_last]
-    rcases (by omega : i = 0 ∨ 0 < i) with h | h
+    rcases (by omega_using [] : i = 0 ∨ 0 < i) with h | h
     · subst h; cases x.getLsbD (32 - 1) <;> simp
-    · simp only [show 31 + i ≥ 32 by omega, BitVec.getLsbD_of_ge]
-      split <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega]
+    · simp only [show 31 + i ≥ 32 by omega_using [h], BitVec.getLsbD_of_ge]
+      split <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega_using [h]]
   rw [h]; cases x.msb <;> decide
 
 /-- `((v ∧ 1) ⊕ 1) − 1` is all ones if the lowest bit of `v` is set, and zero otherwise. -/
@@ -57,9 +57,9 @@ theorem lsb_mask (v : BitVec 32) :
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_and]
-    rcases (by omega : i = 0 ∨ 0 < i) with h | h
+    rcases (by omega_using [] : i = 0 ∨ 0 < i) with h | h
     · subst h; cases v.getLsbD 0 <;> simp
-    · split <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega]
+    · split <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega_using [h]]
   rw [h]; cases v.getLsbD 0 <;> decide
 
 theorem w4_xor (a b c d a' b' c' d' : BitVec 32) :
@@ -88,20 +88,20 @@ theorem shr4 (a b c d : BitVec 32) :
   intro i hi
   rw [BitVec.getLsbD_ushiftRight, getLsbD_w4, getLsbD_w4]
   simp only [BitVec.getLsbD_xor, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
-  rcases (by omega : i < 31 ∨ i = 31 ∨ (32 ≤ i ∧ i < 63) ∨ i = 63 ∨ (64 ≤ i ∧ i < 95) ∨ i = 95 ∨
+  rcases (by omega_using [hi] : i < 31 ∨ i = 31 ∨ (32 ≤ i ∧ i < 63) ∨ i = 63 ∨ (64 ≤ i ∧ i < 95) ∨ i = 95 ∨
     (96 ≤ i ∧ i < 127) ∨ i = 127) with h | h | h | h | h | h | h | h
-  · simp [h, show 1 + i < 32 by omega, show i < 32 by omega]
+  · simp [h, show 1 + i < 32 by omega_using [h], show i < 32 by omega_using [h]]
   · subst h; simp
-  · simp [show ¬ i < 32 by omega, show i < 64 by omega, show 1 + i < 64 by omega,
-      show ¬ 1 + i < 32 by omega, show i - 32 < 31 by omega, show 1 + (i - 32) = 1 + i - 32 by omega]
+  · simp [show ¬ i < 32 by omega_using [h], show i < 64 by omega_using [h], show 1 + i < 64 by omega_using [h],
+      show ¬ 1 + i < 32 by omega_using [h], show i - 32 < 31 by omega_using [h], show 1 + (i - 32) = 1 + i - 32 by omega_using [h]]
   · subst h; simp
-  · simp [show ¬ i < 64 by omega, show i < 96 by omega, show 1 + i < 96 by omega,
-      show ¬ 1 + i < 64 by omega, show ¬ i < 32 by omega, show ¬ 1 + i < 32 by omega,
-      show i - 64 < 31 by omega, show 1 + (i - 64) = 1 + i - 64 by omega]
+  · simp [show ¬ i < 64 by omega_using [h], show i < 96 by omega_using [h], show 1 + i < 96 by omega_using [h],
+      show ¬ 1 + i < 64 by omega_using [h], show ¬ i < 32 by omega_using [h], show ¬ 1 + i < 32 by omega_using [h],
+      show i - 64 < 31 by omega_using [h], show 1 + (i - 64) = 1 + i - 64 by omega_using [h]]
   · subst h; simp
-  · simp [show ¬ i < 96 by omega, show ¬ 1 + i < 96 by omega, show ¬ i < 64 by omega,
-      show ¬ 1 + i < 64 by omega, show ¬ i < 32 by omega, show ¬ 1 + i < 32 by omega,
-      show 1 + (i - 96) = 1 + i - 96 by omega]
+  · simp [show ¬ i < 96 by omega_using [h], show ¬ 1 + i < 96 by omega_using [h], show ¬ i < 64 by omega_using [h],
+      show ¬ 1 + i < 64 by omega_using [h], show ¬ i < 32 by omega_using [h], show ¬ 1 + i < 32 by omega_using [h],
+      show 1 + (i - 96) = 1 + i - 96 by omega_using [h]]
   · subst h; simp
 
 theorem R_eq4 : Spec.Gcm.R = w4 0xE1000000 0 0 0 := by decide
@@ -164,11 +164,11 @@ theorem ff_bit : ∀ u < 8, (0xFF : BitVec 32).getLsbD u = true := by decide
 (from the left). -/
 theorem xr_msb (b : BitVec 8) {t : Nat} (ht : t < 8) :
     ((b.setWidth 32 ^^^ 0xFF) <<< 24 <<< t).msb = !(b.getMsbD t) := by
-  have e : 32 - 1 - t - 24 = 7 - t := by omega
+  have e : 32 - 1 - t - 24 = 7 - t := by omega_using []
   rw [BitVec.msb_eq_getLsbD_last, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_shiftLeft,
-    BitVec.getLsbD_xor, BitVec.getLsbD_setWidth, BitVec.getMsbD_eq_getLsbD, e, ff_bit _ (by omega)]
-  simp [show ¬ 32 - 1 < t by omega, show ¬ 32 - 1 - t < 24 by omega, ht,
-    show 31 - t < 32 by omega, show 7 - t < 32 by omega]
+    BitVec.getLsbD_xor, BitVec.getLsbD_setWidth, BitVec.getMsbD_eq_getLsbD, e, ff_bit _ (by omega_using [])]
+  simp [show ¬ 32 - 1 < t by omega_using [ht], show ¬ 32 - 1 - t < 24 by omega_using [ht], ht,
+    show 31 - t < 32 by omega_using [], show 7 - t < 32 by omega_using []]
 
 /-- The block `x` whose bits the steps use: its bytes at `y`. -/
 structure Bytes (x : Block) (y : BitVec 32) (sB : State) : Prop where
@@ -209,9 +209,9 @@ theorem byte_ok {x h : Block} {y : BitVec 32} {sB : State} (hB : Bytes x y sB) {
   have hfit := hB.fit
   rw [steps, WP.block_append_iff, WP.block_append_iff]
   have ha : State.addr (s.gpr XP + BitVec.ofNat 32 0) = State.addr y + BitVec.ofNat 64 j := by
-    rw [hs.xp, BitVec.add_zero, addr_add (by omega)]
+    rw [hs.xp, BitVec.add_zero, addr_add (by omega_using [hj, hfit])]
   have hin : InRegions (s.rd ++ s.wr) (State.addr y + BitVec.ofNat 64 j) 1 := by
-    rw [hs.rd, hs.wr, ← addr_add (by omega)]; exact Straight.in_off hB.inr hfit (by omega) (by decide)
+    rw [hs.rd, hs.wr, ← addr_add (by omega_using [hj, hfit])]; exact Straight.in_off hB.inr hfit (by omega_using [hj]) (by decide)
   refine wp_ldrb (by decide) ha hin fun s₁ u₁ => ?_
   refine wp_eor (op2_imm (by decide)) fun s₂ u₂ => wp_mov (op2_lsl (by decide)) fun s₃ u₃ =>
     wp_add (op2_imm (by decide)) fun s₄ u₄ => WP.block_nil ?_
@@ -267,6 +267,6 @@ theorem mul_ok {x h : Block} {y : BitVec 32} {sB : State} (hB : Bytes x y sB) {s
   by_cases hl : j + 1 = 16
   · exact .inl ⟨(VG.Proof.MdStream.Arm.eval_ne s').trans (by rw [hz, hl]; rfl), hl ▸ hs'⟩
   · exact .inr ⟨(VG.Proof.MdStream.Arm.eval_ne s').trans (by rw [hz, decide_eq_false hl]; rfl), _,
-      by omega, j + 1, rfl, by omega, hs'⟩
+      by omega_using [hj], j + 1, rfl, by omega_using [hj, hl], hs'⟩
 
 end VG.Proof.Gcm.Arm

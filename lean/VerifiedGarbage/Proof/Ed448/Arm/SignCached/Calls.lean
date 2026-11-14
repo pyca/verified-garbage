@@ -174,7 +174,7 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) :
   rw [gpr_entry (by decide : Reg.r0 ∉ linkRegs), gpr_entry (by decide : Reg.r1 ∉ linkRegs),
     gpr_entry (by decide : Reg.r2 ∉ linkRegs), h0, h1, h2, State.withRegions_rd, State.withRegions_wr,
     hL.ob_addr (by decide)]
-  exact ⟨rfl, rfl, hL.oc.sub_left (r0_sub L), hL.ob_scr (by decide), by have := hL.no; omega,
+  exact ⟨rfl, rfl, hL.oc.sub_left (r0_sub L), hL.ob_scr (by decide), by have := hL.no; omega_using [this],
     hL.ob_fit (by decide) (by decide), hL.nc⟩
 
 theorem base_covers (L : Lay) : Covers ([L.ob 57 57] ++ [L.R0, L.SCR]) (L.inputs ++ Whole.FR L.E :: L.outputs) := by
@@ -274,7 +274,7 @@ theorem mul_pre (hL : L.Ok) (he : t.sp = L.E) (ha : MulArgs L t) :
     (hL.ko.sub_left (Region.sub_prefix (by decide : 4 ≤ 280))).symm.sub_left (Lay.Ok.ob_sub (by decide)),
     (hL.kc.sub_left (Region.sub_prefix (by decide : 4 ≤ 280))).symm,
     hL.ob_fit (by decide) (by decide), hL.ob_fit (by decide) (by decide), hL.kit.frame_fit (by decide),
-    hL.kit.frame_fit (by decide), hL.nc, by rw [hsp]; omega⟩
+    hL.kit.frame_fit (by decide), hL.nc, by rw [hsp]; omega_using [ht]⟩
 
 theorem mul_covers (L : Lay) : Covers (mulRd L ++ [L.ob 57 57, L.SCR]) (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Shake.covers_of fun r hr => ?_
@@ -338,7 +338,7 @@ theorem mulAdd_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
 theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
     WP isa (.block wipe) t fun u => Ctx L g m₀ u ∧
       Spec.Ed448.bytesAt u.mem (State.addr L.out) 114 = Spec.Ed448.bytesAt t.mem (State.addr L.out) 114 := by
-  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega) (start := 2) (count := 60) (by decide))
+  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega_using [this]) (start := 2) (count := 60) (by decide))
     fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
   refine frame_bytes hf (D := L.OUT) (fun r hr => ?_) (by change 114 ≤ 2 ^ 64; decide)
   rw [List.mem_singleton.mp hr]

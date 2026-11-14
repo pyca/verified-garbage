@@ -135,7 +135,7 @@ theorem lay_pushed {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
     (kc : (below SP 56).Disjoint ⟨Ctx, 256⟩) (kw : (below SP 56).Disjoint ⟨W, 2560⟩) :
     Lay Ctx (W + BitVec.ofNat 64 16) W (SP - BitVec.ofNat 64 8) :=
   ⟨L.cw, L.sw, L.ww, L.cs, L.cw', L.sa, L.sb, kc.sub_left (below8_sub (by decide)),
-    (kw.sub_right (Lay.wSub (by decide))).sub_left (below8_sub (by decide)), kw.sub_left (below8_sub (by decide))⟩
+    (kw.sub_right (Lay.wSub (by decide))).sub_left (below8_sub (by decide)), kw.sub_left (below8_sub (by decide)), L.big, L.nlt⟩
 
 /-- What `seal_split` writes after `prefix`: `W` but its saved registers,
 the data, and the 56 bytes below `SP`. -/

@@ -40,9 +40,9 @@ theorem fail_ok {s : State} {B xp yp : Addr} {Z k : Nat}
  refine WP.mono (clear_ok scratch room base positive size (by decide : sX<32) x length writeX) ?_
  rintro a ⟨zeroX,frameX,restX⟩
  have sameScratch (q : Addr) (hq : ofs B q<Z) : a.mem q=s.mem q :=
-  frameX q (Or.inr (by have sep : k≤ofs xp q := le_ofs_of_sep outsideX hq;omega))
+  frameX q (Or.inr (by have sep : k≤ofs xp q := le_ofs_of_sep outsideX hq;omega_using [sep]))
  have sameHeader (i : Nat) (hi : i<32) : word a.mem B (8*i)=word s.mem B (8*i) :=
-  workspace_word (by have := scratch.nowrap;omega) sameScratch (by omega)
+  workspace_word (by have := scratch.nowrap;omega_using [this]) sameScratch (by omega_using [room, hi])
  rw [WP.seq_iff]
  refine WP.mono (clear_ok (scratch.congr restX.wr) room ((restX.gpr .x0 (by decide)).trans base) positive size
   (by decide : sY<32) ((sameHeader sY (by decide)).trans y) ((sameHeader sLen (by decide)).trans length)
@@ -55,7 +55,7 @@ theorem fail_ok {s : State} {B xp yp : Addr} {Z k : Nat}
   · intro i hi _
     have bound : i<k := by simpa only [Spec.Rsa.bytesAt,List.length_map,List.length_range] using hi
     simp only [Spec.Rsa.bytesAt,List.getElem_map,List.getElem_range]
-    exact frameY _ (Or.inr (by have := separate i bound;omega))
+    exact frameY _ (Or.inr (by have := separate i bound;omega_using [this]))
  have frame (ptr : Addr) {m m' : Mem} (h : Outside ptr 0 k m m')
   (member : (⟨ptr,k⟩ : Region)∈[⟨xp,k⟩,⟨yp,k⟩]) : Frame [⟨xp,k⟩,⟨yp,k⟩] m m' := by
   intro q hq
@@ -63,7 +63,7 @@ theorem fail_ok {s : State} {B xp yp : Addr} {Z k : Nat}
   right
   have no := hq ⟨ptr,k⟩ member
   change ¬ofs ptr q+1≤k at no
-  omega
+  omega_using [no]
  refine WP.mono (WP.keep [.x0] (Q:=fun t =>t.gpr .x0=2#64 ∧ t.mem=b.mem) ?_ rfl rfl rfl) ?_
  · brun
  · rintro t ⟨⟨status,mem⟩,rest⟩
@@ -121,8 +121,8 @@ theorem generateBody_ok (M : Mont) {p : Parameters} {s : State} {bs dom : List B
   simp only [Spec.Rsa.modulusValid,Bool.and_eq_true,beq_iff_eq,decide_eq_true_eq] at h
   rw [modulus]
   exact h.1.1.1
- have room256 : 256≤p.Z := by have := p.room;dsimp only [slot,hdrBytes] at this;omega
- have outsideX (i : Nat) (hi : i<p.k) : p.Z≤ofs p.B (p.src+BitVec.ofNat 64 i) := start.reads.scalarOutside i (by omega)
+ have room256 : 256≤p.Z := by have := p.room;dsimp only [slot,hdrBytes] at this;omega_using [this]
+ have outsideX (i : Nat) (hi : i<p.k) : p.Z≤ofs p.B (p.src+BitVec.ofNat 64 i) := start.reads.scalarOutside i (by omega_using [bsLength, hi])
  have length : word s.mem p.B (8*sLen)=BitVec.ofNat 64 p.k := bsLength ▸ start.controls.length
  have status := keyStatus_ranges paramValid X
  change Spec.Ffdh.keyStatus a X=(if 0<X ∧ X<Spec.Ffdh.scalarBound a then _ else 2) at status

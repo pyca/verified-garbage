@@ -161,7 +161,7 @@ theorem ABI.argsApartW {s : State} (a : ABI s) :
   · exact a.argsApart _ (by simp)
   · exact a.argsApart _ (by simp)
   · have z : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-      addr_eq (by have := a.stackBound; omega)
+      addr_eq (by have := a.stackBound; omega_using [this])
     rw [show (caller s).sp = s.gpr .esp from rfl, below_eq a.stackLow, z]
     exact Offset.disjoint_below _ (by decide)
 
@@ -198,7 +198,7 @@ theorem ABI.space {s : State} (a : ABI s) : arr (2 * (caller s).n + 2) nArr ≤ 
   have lo := a.lengths.1
   simp only [Spec.Rsa.scratchWords] at h
   simp only [caller, Spec.Rsa.modulusWords, arr, S, VG.Impl.Rsa.X86.Keys.hdr, nArr]
-  omega
+  omega_using [h, lo]
 
 theorem ABI.used {s : State} (a : ABI s) : 160 ≤ (caller s).Z :=
   Nat.le_trans (Nat.le_add_right _ _) a.space
@@ -207,11 +207,11 @@ theorem ABI.width {s : State} (a : ABI s) : 8 ≤ (caller s).n ∧ (caller s).n 
     (arg s 5).toNat ≤ 8 * (caller s).n := by
   have lo := a.lengths.1; have hi := a.lengths.2
   simp only [caller, Spec.Rsa.modulusWords]
-  omega
+  omega_using [lo, hi]
 
 theorem ABI.stackArgument {s : State} (a : ABI s) {i : Nat} (hi : i < 12) :
     StackArgument s (caller s).B (caller s).Z i := by
-  apply stackArgument_of (count := 12) (by have := a.stackBound; omega) hi
+  apply stackArgument_of (count := 12) (by have := a.stackBound; omega_using [this]) hi
   · rw [a.rd, a.wr]; simp
   · exact a.argsApart _ (by simp)
 
@@ -220,25 +220,25 @@ theorem ABI.stack {s : State} (a : ABI s) : StkOk (s.gpr .esp) (caller s).B (cal
   · have h := a.scratchBound
     simpa only [caller, argumentPointer, BitVec.toNat_setWidth,
       Nat.mod_eq_of_lt (Nat.lt_trans (arg s 10).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using h
-  · have := a.used; omega
+  · have := a.used; omega_using [this]
   · exact a.belowScratch
 
 theorem ABI.stackApart {s : State} (a : ABI s) {i : Nat} (hi : i < 12)
     {r : Region} (hr : r ∈ (caller s).writes) : (⟨stackAddress s i, 4⟩ : Region).Disjoint r := by
   apply (a.argsApartW r hr).sub_left
   have p : stackAddress s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-    addr_eq (by have := a.stackBound; omega)
+    addr_eq (by have := a.stackBound; omega_using [hi, this])
   have z : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-    addr_eq (by have := a.stackBound; omega)
+    addr_eq (by have := a.stackBound; omega_using [this])
   rw [p, z]
-  exact Offset.sub _ (by omega) (by omega)
+  exact Offset.sub _ (by omega_using []) (by omega_using [hi])
 
 theorem ABI.lengths_ok {s : State} (a : ABI s) : Lengths (caller s) :=
   ⟨a.lengths.1, a.lengths.2, rfl,
     BitVec.eq_of_toNat_eq (by
       simp only [caller, argumentPointer, BitVec.toNat_ofNat, BitVec.toNat_setWidth]
       have := (arg s 10).isLt
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]), rfl,
+      rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]), rfl,
     BitVec.eq_of_toNat_eq a.pLen, BitVec.eq_of_toNat_eq a.qLen⟩
 
 end VG.Proof.Rsa.X86.Recover
@@ -255,14 +255,14 @@ theorem ABI.inputLength {s : State} (a : ABI s) (i : Fin 3) :
   have lo := a.lengths.1
   have ep := a.ePositive; have dp := a.dPositive
   have eb := a.eBound; have db := a.dBound
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> rw [e]
   · change 0 < (arg s 5).toNat ∧ (arg s 5).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 5).toNat
-    omega
+    omega_using [w, lo]
   · change 0 < (arg s 7).toNat ∧ (arg s 7).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 5).toNat
-    omega
+    omega_using [w, ep, eb]
   · change 0 < (arg s 9).toNat ∧ (arg s 9).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 5).toNat
-    omega
+    omega_using [w, dp, db]
 
 theorem ABI.outputLength {s : State} (a : ABI s) (i : Fin 2) :
     0 < ((caller s).buffer (2 * i.val)).len ∧
@@ -271,43 +271,43 @@ theorem ABI.outputLength {s : State} (a : ABI s) (i : Fin 2) :
   change (arg s 5).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 5).toNat at w
   have lo := a.lengths.1
   have p := a.pLen; have q := a.qLen
-  have cases : i.val = 0 ∨ i.val = 1 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 := by omega_using []
   rcases cases with e | e <;> rw [e]
   · change 0 < (arg s 1).toNat ∧ (arg s 1).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 5).toNat
-    omega
+    omega_using [w, lo, p]
   · change 0 < (arg s 3).toNat ∧ (arg s 3).toNat ≤ 8 * Spec.Rsa.modulusWords (arg s 5).toNat
-    omega
+    omega_using [w, lo, q]
 
 theorem ABI.inputMember {s : State} (a : ABI s) (i : Fin 3) :
     (caller s).buffer (4 + 2 * i.val) ∈ s.rd := by
   rw [a.rd]
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> simp [e]
 
 theorem ABI.outputMember {s : State} (i : Fin 2) :
     (caller s).buffer (2 * i.val) ∈ [(caller s).buffer 0, (caller s).buffer 2] := by
-  have cases : i.val = 0 ∨ i.val = 1 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 := by omega_using []
   rcases cases with e | e <;> simp [e]
 
 theorem ABI.inputFit {s : State} (a : ABI s) (i : Fin 3) :
     (arg s (4 + 2 * i.val)).toNat + ((caller s).buffer (4 + 2 * i.val)).len ≤ 2 ^ 32 := by
   change (arg s _).toNat + (arg s _).toNat ≤ 2 ^ 32
   apply a.bounds
-  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega_using []
   rcases cases with e | e | e <;> simp [e]
 
 theorem ABI.outputFit {s : State} (a : ABI s) (i : Fin 2) :
     (arg s (2 * i.val)).toNat + ((caller s).buffer (2 * i.val)).len ≤ 2 ^ 32 := by
   change (arg s _).toNat + (arg s _).toNat ≤ 2 ^ 32
   apply a.bounds
-  have cases : i.val = 0 ∨ i.val = 1 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 := by omega_using []
   rcases cases with e | e <;> simp [e]
 
 theorem ABI.outputSeparate {s : State} (a : ABI s) (i j : Fin 2) (ne : i ≠ j) :
     ((caller s).buffer (2 * i.val)).Disjoint ((caller s).buffer (2 * j.val)) := by
   have neq : i.val ≠ j.val := fun h => ne (Fin.ext h)
-  have casesI : i.val = 0 ∨ i.val = 1 := by omega
-  have casesJ : j.val = 0 ∨ j.val = 1 := by omega
+  have casesI : i.val = 0 ∨ i.val = 1 := by omega_using []
+  have casesJ : j.val = 0 ∨ j.val = 1 := by omega_using []
   rcases casesI with e | e <;> rcases casesJ with f | f
   all_goals try omega
   all_goals simp only [e, f, Nat.mul_zero, Nat.mul_one]
@@ -323,7 +323,7 @@ theorem Inputs.argsEq {g : CallGeometry} {s : State} {args : Nat → BitVec 32} 
     (eq : ∀ i < 12, args i = g.args i) : Inputs {g with args := args} s := by
   have buffers (i : Nat) (hi : i + 1 < 12) :
       ({g with args := args} : CallGeometry).buffer i = g.buffer i := by
-    simp only [CallGeometry.buffer, eq i (by omega), eq (i + 1) hi]
+    simp only [CallGeometry.buffer, eq i (by omega_using [hi]), eq (i + 1) hi]
   have writes : ({g with args := args} : CallGeometry).writes = g.writes := by
     unfold CallGeometry.writes
     rw [buffers 0 (by decide), buffers 2 (by decide)]
@@ -335,25 +335,25 @@ theorem Inputs.argsEq {g : CallGeometry} {s : State} {args : Nat → BitVec 32} 
   · intro i hi r hr
     rw [writes] at hr
     exact h.stackApart i hi r hr
-  · intro i; rw [buffers _ (by omega)]; exact h.inputPositive i
-  · intro i; rw [buffers _ (by omega)]; exact h.inputBound i
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.inputPositive i
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.inputBound i
   · intro i
-    rw [buffers _ (by omega)]
+    rw [buffers _ (by omega_using [])]
     change (args (4 + 2 * i.val)).toNat + _ ≤ _
-    rw [eq (4 + 2 * i.val) (by omega)]
+    rw [eq (4 + 2 * i.val) (by omega_using [])]
     exact h.inputFit i
-  · intro i; rw [buffers _ (by omega)]; exact h.inputRead i
-  · intro i r hr; rw [writes] at hr; rw [buffers _ (by omega)]; exact h.inputApart i r hr
-  · intro i; rw [buffers _ (by omega)]; exact h.outputPositive i
-  · intro i; rw [buffers _ (by omega)]; exact h.outputBound i
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.inputRead i
+  · intro i r hr; rw [writes] at hr; rw [buffers _ (by omega_using [])]; exact h.inputApart i r hr
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.outputPositive i
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.outputBound i
   · intro i
-    rw [buffers _ (by omega)]
+    rw [buffers _ (by omega_using [])]
     change (args (2 * i.val)).toNat + _ ≤ _
-    rw [eq (2 * i.val) (by omega)]
+    rw [eq (2 * i.val) (by omega_using [])]
     exact h.outputFit i
-  · intro i; rw [buffers _ (by omega)]; exact h.outputWrite i
-  · intro i; rw [buffers _ (by omega)]; exact h.outputScratch i
-  · intro i j ne; rw [buffers _ (by omega), buffers _ (by omega)]; exact h.outputSeparate i j ne
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.outputWrite i
+  · intro i; rw [buffers _ (by omega_using [])]; exact h.outputScratch i
+  · intro i j ne; rw [buffers _ (by omega_using []), buffers _ (by omega_using [])]; exact h.outputSeparate i j ne
 
 /-- The inputs over a geometry that agrees on the arguments' values and the rest. -/
 theorem Inputs.geoEq {g g' : CallGeometry} {s : State} (h : Inputs g s) (hB : g'.B = g.B) (hZ : g'.Z = g.Z)
@@ -411,7 +411,7 @@ theorem entry_ok {s : State} {base : Addr} {size : Nat} {ptr : BitVec 32}
     have H : ¬ InRegions [⟨base, size⟩] a 1 := by
       simp only [InRegions, List.mem_singleton, exists_eq_left, Region.Contains]
       change ¬ (ofs base a + 1 ≤ size)
-      omega
+      omega_using [ha]
     exact (F a (by intro reg hreg hcontains; exact H ⟨reg, hreg, hcontains⟩)).trans (congrFun U.mem a)
 
 end VG.Proof.Rsa.X86.Recover
@@ -430,12 +430,12 @@ theorem installed_ok {s : State} (a : ABI s) :
       Spill.Saved t.mem (off (caller s).B) s.gpr PublicFn.savedRegisters ∧
       Keeps [.eax, .edi] s t ∧ Outside (caller s).B 0 (caller s).Z s.mem t.mem := by
   refine WP.mono (entry_ok (base := (caller s).B) (ptr := arg s 10) (a.stackArgument (by decide : 10 < 12)).readSrc
-    rfl a.scratchBound (by have := a.used; omega) (by rw [a.wr]; simp) a.stack)
+    rfl a.scratchBound (by have := a.used; omega_using [this]) (by rw [a.wr]; simp) a.stack)
     fun t ⟨sc, saved, k, o⟩ => ?_
   refine ⟨?_, saved, k, o⟩
   have w := a.width
-  refine ⟨⟨sc, a.space, by change 0 < 2 * (caller s).n + 2; omega,
-    by change 2 * (caller s).n + 2 ≤ 1024; omega⟩, w.1, w.2.1, k.1 _ (by decide), a.room,
+  refine ⟨⟨sc, a.space, by change 0 < 2 * (caller s).n + 2; omega_using [],
+    by change 2 * (caller s).n + 2 ≤ 1024; omega_using [w]⟩, w.1, w.2.1, k.1 _ (by decide), a.room,
     a.stackBound, ?_, ?_,
     (fun i => (a.inputLength i).1), (fun i => (a.inputLength i).2), a.inputFit, ?_, ?_,
     (fun i => (a.outputLength i).1), (fun i => (a.outputLength i).2), a.outputFit, ?_, ?_, a.outputSeparate,
@@ -469,24 +469,24 @@ theorem bodyFrame_full {g : CallGeometry} {m m' : Mem} (low : 16 ≤ g.Z)
   intro r hr
   simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨⟨g.B, g.Z⟩, by simp [CallGeometry.writes], Offset.sub_base _ (by omega)⟩
+  · exact ⟨⟨g.B, g.Z⟩, by simp [CallGeometry.writes], Offset.sub_base _ (by omega_using [low])⟩
   all_goals exact ⟨_, by simp [CallGeometry.writes], fun _ h => h⟩
 
 theorem bodyFrame_saved {g : CallGeometry} {s : State} {m m' : Mem} {regs : Reg → BitVec 32}
     (h : Inputs g s) (f : Frame (bodyWrites g) m m')
     (saved : Saved m (off g.B) regs PublicFn.savedRegisters) :
     Saved m' (off g.B) regs PublicFn.savedRegisters := by
-  have low : 16 ≤ g.Z := by have := h.ws.hdr_le; unfold VG.Impl.Rsa.X86.Keys.hdr at this; omega
-  have high : g.Z ≤ 2 ^ 64 := by have := h.ws.workspace.nowrap; omega
+  have low : 16 ≤ g.Z := by have := h.ws.hdr_le; unfold VG.Impl.Rsa.X86.Keys.hdr at this; omega_using [this]
+  have high : g.Z ≤ 2 ^ 64 := by have := h.ws.workspace.nowrap; omega_using [this]
   intro p hp
   have bound : p.2 + 4 ≤ 16 := by
     simp only [PublicFn.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> decide
-  refine (f.readW (r := ⟨g.B, 16⟩) (Offset.contains_base _ bound (by omega)) ?_ (by decide)).trans (saved p hp)
+  refine (f.readW (r := ⟨g.B, 16⟩) (Offset.contains_base _ bound (by omega_using [bound])) ?_ (by decide)).trans (saved p hp)
   intro r hr
   simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Offset.base_disjoint g.B (Nat.le_refl 16) (by omega)
+  · exact Offset.base_disjoint g.B (Nat.le_refl 16) (by omega_using [high])
   · exact (h.outputScratch 0).symm.sub_left (Region.sub_prefix low)
   · exact (h.outputScratch 1).symm.sub_left (Region.sub_prefix low)
   · exact h.room.apart.symm.sub_left (Region.sub_prefix low)
@@ -553,7 +553,7 @@ theorem outputFrame_body {g : CallGeometry} {m m' : Mem} (i : Fin 2)
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
-  have cases : i.val = 0 ∨ i.val = 1 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 := by omega_using []
   rcases cases with e | e <;> simp [bodyWrites, e]
 
 theorem clear_input_ok {g : CallGeometry} {s : State} (h : Inputs g s) (i : Fin 2) :
@@ -562,28 +562,28 @@ theorem clear_input_ok {g : CallGeometry} {s : State} (h : Inputs g s) (i : Fin 
         List.replicate (g.buffer (2 * i.val)).len 0 ∧
       t.gpr .eax = 0 ∧ Frame [g.buffer (2 * i.val)] s.mem t.mem ∧
       Keeps [.esi, .ecx, .eax] s t := by
-  have arg := h.arguments (2 * i.val) (by omega)
-  have len := h.arguments (2 * i.val + 1) (by omega)
+  have arg := h.arguments (2 * i.val) (by omega_using [])
+  have len := h.arguments (2 * i.val + 1) (by omega_using [])
   have bound : (g.buffer (2 * i.val)).len < 2 ^ 32 := by
-    have := h.outputBound i; have := h.upper; omega
+    have := h.outputBound i; have := h.upper; omega_arith
   refine WP.mono (clear_ok (2 * i.val) (h.outputPositive i) bound (h.outputFit i)
     arg.readSrc (by simpa only [CallGeometry.buffer, BitVec.ofNat_toNat, BitVec.setWidth_eq] using len.readSrc)
     (h.outputWrite i)) fun t ⟨v, z, o, k⟩ => ?_
   have f : Frame [g.buffer (2 * i.val)] s.mem t.mem := by
-    simpa only [CallGeometry.buffer, byteAddr, Bignum.off, BitVec.add_zero] using outside_frame o (by omega)
+    simpa only [CallGeometry.buffer, byteAddr, Bignum.off, BitVec.add_zero] using outside_frame o (by omega_using [bound])
   refine ⟨h.after k (by decide) (by decide) ?_, v, z, f, k⟩
   apply f.mono
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
-  have cases : i.val = 0 ∨ i.val = 1 := by omega
+  have cases : i.val = 0 ∨ i.val = 1 := by omega_using []
   rcases cases with e | e <;> simp [CallGeometry.writes, e]
 
 theorem clear_other {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s)
     (i k : Fin 2) (ne : k ≠ i) (f : Frame [g.buffer (2 * i.val)] m m') :
     Spec.Rsa.bytesAt m' (g.buffer (2 * k.val)).base (g.buffer (2 * k.val)).len =
       Spec.Rsa.bytesAt m (g.buffer (2 * k.val)).base (g.buffer (2 * k.val)).len := by
-  apply VG.Proof.Rsa.rsa_bytes_frame f (by have := h.outputBound k; have := h.upper; omega)
+  apply VG.Proof.Rsa.rsa_bytes_frame f (by have := h.outputBound k; have := h.upper; omega_arith)
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
@@ -629,8 +629,8 @@ theorem clear_trace (g : CallGeometry) (i : Fin 2) :
     rfl
   apply (VG.RelCT.seq head loop).mono
   · intro s t h
-    exact ⟨h.agree, (h.left.arguments _ (by omega)).readSrc, (h.right.arguments _ (by omega)).readSrc,
-      (h.left.arguments _ (by omega)).readSrc, (h.right.arguments _ (by omega)).readSrc⟩
+    exact ⟨h.agree, (h.left.arguments _ (by omega_using [])).readSrc, (h.right.arguments _ (by omega_using [])).readSrc,
+      (h.left.arguments _ (by omega_using [])).readSrc, (h.right.arguments _ (by omega_using [])).readSrc⟩
   · exact fun _ _ h => h
 
 theorem clear_relCT (g : CallGeometry) (i : Fin 2) : RelCT isa (Pair g) (clear (2 * i.val)) (Pair g) := by
@@ -740,8 +740,8 @@ theorem ks_agree (pg : PubG g) (h : KS g s0 A al AW aw V sl s) (j : KS g t0 B bl
     · exact BitVec.eq_of_toNat_eq (h.ws.workspace.edi_toNat.trans j.ws.workspace.edi_toNat.symm)
     · exact sp
   · simp only [τA] at hk
-    have C₁ := h.arg (h.start.2 ((k - 4) / 4) (by omega)).1 (by omega)
-    have C₂ := j.arg (j.start.2 ((k - 4) / 4) (by omega)).1 (by omega)
+    have C₁ := h.arg (h.start.2 ((k - 4) / 4) (by omega_using [hk])).1 (by omega_using [hk])
+    have C₂ := j.arg (j.start.2 ((k - 4) / 4) (by omega_using [hk])).1 (by omega_using [hk])
     rw [show VG.X86.Taint.depth τA.stk = 0 from rfl, Nat.zero_add,
       VG.X86.Taint.argByte_eq f₁ h4 hk, VG.X86.Taint.argByte_eq f₂ h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
@@ -763,9 +763,9 @@ theorem fixedLoop_relCT {body : Prog isa} {c : Nat}
     (Q := fun s t => I c s ∧ J c t)
     (fun remaining s t => ∃ k, k + remaining = c ∧ 0 < remaining ∧ I k s ∧ J k t)
     (fun remaining s t tr ur sf tf ⟨k, sum, pos, hs, ht⟩ es et => by
-      have trace := (rel k (by omega) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
-      obtain ⟨is, zs⟩ := VG.Proof.Dsa.X86.wp_result (left k s (by omega) hs) es
-      obtain ⟨it, zt⟩ := VG.Proof.Dsa.X86.wp_result (right k t (by omega) ht) et
+      have trace := (rel k (by omega_using [sum, pos]) _ _ _ _ _ _ ⟨hs, ht⟩ es et).1
+      obtain ⟨is, zs⟩ := VG.Proof.Dsa.X86.wp_result (left k s (by omega_using [sum, pos]) hs) es
+      obtain ⟨it, zt⟩ := VG.Proof.Dsa.X86.wp_result (right k t (by omega_using [sum, pos]) ht) et
       refine ⟨trace, ?_, ?_, ?_⟩
       · change sf.zf.map (!·) = tf.zf.map (!·)
         rw [zs, zt]
@@ -774,18 +774,18 @@ theorem fixedLoop_relCT {body : Prog isa} {c : Nat}
           change sf.zf.map (!·) = some false at done
           rw [zs] at done
           simp only [Option.map_some, Option.some.injEq, Bool.not_eq_false', decide_eq_true_eq] at done
-          omega
+          omega_using [sum, pos, done]
         exact ⟨last ▸ is, last ▸ it⟩
       · intro more
         have next : k + 1 < c := by
           change sf.zf.map (!·) = some true at more
           rw [zs] at more
           simp only [Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at more
-          omega
-        exact ⟨remaining - 1, by omega, k + 1, by omega, by omega, is, it⟩) c
+          omega_using [more]
+        exact ⟨remaining - 1, by omega_using [pos], k + 1, by omega_using [sum, pos], by omega_using [sum, next], is, it⟩) c
   apply loop.mono
   · intro s t ⟨hs, ht⟩
-    exact ⟨0, by omega, positive, hs, ht⟩
+    exact ⟨0, by omega_using [], positive, hs, ht⟩
   · intro s t h; exact h
 
 /-- What each run of the call leaves: a stage. -/

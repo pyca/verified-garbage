@@ -66,7 +66,7 @@ include hH in
 /-- A callee's frames are in the `F` bytes below the stack pointer. -/
 theorem frameF {c : Prog isa} (hd : sdepth c ≤ H.F) {wr : List Region} {sp : Addr} {m m' : Mem}
     (h : Frame (wr ++ [below sp (sdepth c)]) m m') : Frame (wr ++ [below sp H.F]) m m' :=
-  Frame.below_mono h hd (by have := hH.hF; omega)
+  Frame.below_mono h hd (by have := hH.hF; omega_using [this])
 
 /-- The call of the streaming `init` on the state at `st`. -/
 theorem callInit_ok {s : State} {st : Addr} (h0 : s.gpr .a0 = st)
@@ -77,7 +77,7 @@ theorem callInit_ok {s : State} {st : Addr} (h0 : s.gpr .a0 = st)
     WP isa H.callInit s Q := by
   have c0 : s.callEntry.gpr .a0 = st := (State.callEntry_gpr _ (by decide)).trans h0
   refine WP.callAny (k := initK H.S hH.SH.Repr) hH.init (rd := []) (wr := [⟨st, H.S⟩]) ?_
-    (by simpa using hc) hw ?_ (by have := hH.initSd; have := hH.hF; omega)
+    (by simpa using hc) hw ?_ (by have := hH.initSd; have := hH.hF; omega_arith)
   · simp only [initK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, c0]
     exact ⟨trivial, trivial⟩
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
@@ -103,7 +103,7 @@ theorem callUpd_ok {s : State} {st dat : Addr} {len : Nat}
   have c2 : s.callEntry.gpr .a2 = dat := (State.callEntry_gpr _ (by decide)).trans h2
   have c3 : (s.callEntry.gpr .a3).toNat = len := by rw [State.callEntry_gpr _ (by decide), h3]
   refine WP.callAny (k := updK H.S H.F hH.SH.Repr) hH.upd (rd := [⟨dat, len⟩])
-    (wr := [⟨st, H.S⟩]) ?_ hc hw ?_ (by have := hH.updSd; have := hH.hF; omega)
+    (wr := [⟨st, H.S⟩]) ?_ hc hw ?_ (by have := hH.updSd; have := hH.hF; omega_arith)
   · simp only [updK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c0, c2, c3]
     exact ⟨trivial, trivial, hd, hal, hsp, hs₁, hs₂⟩
@@ -131,7 +131,7 @@ theorem callFin_ok {s : State} {st o : Addr}
   have c2 : s.callEntry.gpr .a2 = o := (State.callEntry_gpr _ (by decide)).trans h2
   refine WP.callAny (k := finK H.S H.F H.D hH.SH.Repr hH.SH.H.hash) hH.fin (rd := [])
     (wr := [⟨st, H.S⟩, ⟨o, H.D⟩]) ?_ (by simpa using hc) hw ?_
-    (by have := hH.finSd; have := hH.hF; omega)
+    (by have := hH.finSd; have := hH.hF; omega_arith)
   · simp only [finK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_sp, State.callEntry_sp, c0, c2]
     exact ⟨trivial, trivial, hd, hal, hsp, hs₁, hs₂⟩
@@ -146,7 +146,7 @@ theorem repr_keep {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr
     (hx : x.length % H.B = 0) (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, H.N⟩ r) (hr : hH.SH.Repr m p x) :
     hH.SH.Repr m' p x :=
   hH.reloc m m' p p x hx (fun i hi => hf.bytes (R := ⟨p, H.N⟩) hd
-    (by have : H.N ≤ 64 := hH.hN.2; show H.N ≤ 2 ^ 64; omega) hi) hr
+    (by have : H.N ≤ 64 := hH.hN.2; show H.N ≤ 2 ^ 64; omega_using [this]) hi) hr
 
 end HashOK
 

@@ -34,9 +34,9 @@ theorem dzero_ok {s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hr : Regs
       u.gpr .r17 = BitVec.ofNat 64 (3 * L.pl + 2 * L.ql) ∧ u.mem = s.mem) (by
       unfold getP getQ
       prun [hr.r26, Regs.p_eq hr, Regs.q_eq hr, BitVec.add_zero]
-      exact ⟨rfl, by simp only [BitVec.ofNat_add_ofNat]; congr 1; omega⟩) (by decide))
+      exact ⟨rfl, by simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_using []⟩) (by decide))
     fun s₁ ⟨⟨a0, a16, a17, m1⟩, k1⟩ => ?_)
-  refine WP.seq (WP.mono (zeroLoop_ok (N := 3 * L.pl + 2 * L.ql) (by omega) (by omega) (ho.congr k1.wr) a0 a16 a17)
+  refine WP.seq (WP.mono (zeroLoop_ok (N := 3 * L.pl + 2 * L.ql) (by omega_using [hql]) (by omega_using [hql, hpl]) (ho.congr k1.wr) a0 a16 a17)
     fun t ⟨⟨tz, tout⟩, tk⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun u => u.gpr .r3 = 0 ∧ u.mem = t.mem) (by prun []; rfl) (by decide))
     fun u ⟨⟨u3, mu⟩, ku⟩ => ⟨⟨by rw [mu]; exact tz, by rw [mu, ← m1]; exact tout, u3⟩,

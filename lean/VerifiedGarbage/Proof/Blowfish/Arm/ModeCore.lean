@@ -76,7 +76,7 @@ def ecbSpec (up : Bool) : CoreSpec (ecbCore up) where
     obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, -⟩ := h
     sig_pre [Spec.Blowfish.ecbContract, Spec.Blowfish.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
-    exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD⟩
+    exact ⟨stk, by have := s.sp.isLt; omega_using [], rd, wr, kd, bk, bd, fK, fD⟩
   post_of _ s s' _ h := by
     sig_post [Spec.Blowfish.ecbContract, Spec.Blowfish.ecbSig, Spec.Blowfish.ecbPost, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h

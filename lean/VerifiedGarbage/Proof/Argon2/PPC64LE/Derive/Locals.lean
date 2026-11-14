@@ -35,7 +35,7 @@ variable {s₀ : State}
 theorem loc_in {s : State} (h : Inv s₀ s) {d n : Nat} (h₁ : 32 ≤ d) (h₂ : d + n ≤ 336) :
     InRegions s.wr (E s₀ + BitVec.ofNat 64 d) n := by
   rw [h.wr, entry_wr, E_add]
-  exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega) (by omega) (by omega)⟩
+  exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])⟩
 
 theorem loc_in' {s : State} (h : Inv s₀ s) {d n : Nat} (h₁ : 32 ≤ d) (h₂ : d + n ≤ 336) :
     InRegions (s.rd ++ s.wr) (E s₀ + BitVec.ofNat 64 d) n :=
@@ -47,8 +47,8 @@ theorem var_in {d : Nat} (hd : VarOff d) :
     ∃ r ∈ bodyW s₀, r.Contains (E s₀ + BitVec.ofNat 64 d) 8 := by
   rw [E_add]
   rcases hd.1 with h | h
-  · exact ⟨inR s₀, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
-  · exact ⟨varR s₀, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  · exact ⟨inR s₀, by simp, Offset.contains _ (by omega_using [h]) (by omega_using [h]) (by omega_using [])⟩
+  · exact ⟨varR s₀, by simp, Offset.contains _ (by omega_using [h]) (by omega_using [h]) (by omega_using [])⟩
 
 /-- `std r, d(r30)` -/
 theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : VarOff d) {r : Reg} {is : List Instr}
@@ -63,7 +63,7 @@ theorem wp_stloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : VarOff d) {r : Reg
     (by rw [lw, u.mem, Mem.readW_writeW_self64]) (fun e he he' => ?_) u.gpr u.mem
   rw [lw, lw, u.mem, Mem.readW_writeW_sep (by
     rw [E_add, E_add]
-    exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+    exact Offset.sep _ (by omega_using [he']) (by omega_using [he]) (by omega)) (by decide)]
 
 /-- `ld r, d(r30)` -/
 theorem wp_ldloc {s : State} (h : Inv s₀ s) {d : Nat} (hd : LocOff d) {r : Reg} {is : List Instr}
@@ -81,13 +81,13 @@ include hp
 theorem Inv.arg_in {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) {n : Nat} (hn : n ≤ 8) :
     InRegions (s.rd ++ s.wr) (E s₀ + BitVec.ofNat 64 (argOff i)) n := by
   by_cases h8 : i < 8
-  · refine loc_in' h ?_ ?_ <;> simp only [argOff, locals, h8, ite_true] <;> first | omega | skip
+  · refine loc_in' h ?_ ?_ <;> simp only [argOff, locals, h8, ite_true] <;> first | omega_arith | skip
   · have e : argOff i = 368 + 8 * i := by
-      simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega)]
+      simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega_using [h8])]
     rw [h.rd, e, E_add, hp.rd]
     refine ⟨argR s₀, List.mem_append_left _ (by simp), ?_⟩
     rw [argR_eq]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using [h8]) (by omega_using [hi, hn]) (by omega_using [])
 
 /-- `ld r, (argOff i)(r30)`: a 64-bit argument. -/
 theorem wp_lda {s : State} (h : Inv s₀ s) {i : Nat} (hi : i < 18) {r : Reg} {is : List Instr}
@@ -112,12 +112,12 @@ theorem loc_disj {d : Nat} (h₁ : 32 ≤ d) (h₂ : d + 8 ≤ 336) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact stk_disj hp (by omega) _ (by simp)
-  · exact stk_disj hp (by omega) _ (by simp)
-  · exact stk_disj hp (by omega) _ (by simp)
+  · exact stk_disj hp (by omega_using [h₂]) _ (by simp)
+  · exact stk_disj hp (by omega_using [h₂]) _ (by simp)
   · have e : B s₀ = B s₀ + BitVec.ofNat 64 0 := (BitVec.add_zero _).symm
     show Region.Disjoint _ ⟨B s₀, 48⟩
     rw [e]
-    exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    exact Offset.disjoint _ (by omega_using []) (by omega_using [h₂]) (by omega_using [])
 
 /-- The frame is kept by writes outside it. -/
 theorem lw_keep {s t : State} {rs : List Region} (f : Frame rs s.mem t.mem)
@@ -139,14 +139,14 @@ theorem saveMem_congr {m : Mem} {b : Addr} {g g' : Reg → BitVec 64} :
 /-- `scratch`, from the Parameter Save Area, after the setup. -/
 theorem setupMem_arg (s₀ : State) {i : Nat} (h₁ : 8 ≤ i) (h₂ : i < 18) :
     (setupMem s₀).readW (E s₀ + BitVec.ofNat 64 (argOff i)) 64 = arg s₀ i := by
-  obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ k, i = 8 + k := ⟨i - 8, by omega_using [h₁]⟩
   have e : argOff (8 + k) = 368 + 8 * (8 + k) := by
-    simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega)]
-  rw [E_add, e, show 48 + (368 + 8 * (8 + k)) = 416 + 8 * (8 + k) by omega,
+    simp only [argOff, locals]; rw [ite_eq_right_iff.mpr (by omega_using [])]
+  rw [E_add, e, show 48 + (368 + 8 * (8 + k)) = 416 + 8 * (8 + k) by omega_using [],
     (setupMem_frame s₀).readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by decide),
-    ← stackArg_eq, show 8 + k = k + 8 by omega]
+      exact Offset.disjoint _ (by omega_using []) (by omega_using [h₂]) (by omega_using [])) (by decide),
+    ← stackArg_eq, show 8 + k = k + 8 by omega_using []]
   rfl
 
 /-- The body's first instructions: the return address, the caller's
@@ -173,7 +173,7 @@ theorem setup_ok {s₀ : State} (hp : DPre s₀) {is : List Instr} {Q : State �
   have inE : ∀ d n, 32 ≤ d → d + n ≤ 336 → InRegions c.wr (E s₀ + BitVec.ofNat 64 d) n :=
     fun d n h₁ h₂ => by
       rw [cwr, entry_wr, E_add]
-      exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega) (by omega) (by omega)⟩
+      exact ⟨_, List.mem_cons_self .., Offset.contains _ (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])⟩
   refine wp_std (a := E s₀ + BitVec.ofNat 64 104) (by decide) (by rw [c12]; rfl)
     (inE 104 8 (by decide) (by decide)) fun d ud => ?_
   rw [show (savedSlots ++ argSlots).map (fun (r, d) => Instr.store .d r .r12 d) =
@@ -181,7 +181,7 @@ theorem setup_ok {s₀ : State} (hp : DPre s₀) {is : List Instr} {Q : State �
   refine Spill.save_ok (by decide) (fun p hp => slots_fits.1 p hp) (fun p hp => by
     rw [ud.wr, ud.gpr, c12]
     have := slots_in p hp
-    exact inE _ _ (by omega) (by omega)) ?_
+    exact inE _ _ (by omega_using [this]) (by omega_using [this])) ?_
   refine wp_mov fun f uf => ?_
   have f30 : f.gpr .r30 = E s₀ := by rw [uf.gpr]; show d.gpr .r12 = _; rw [ud.gpr, c12]
   have fmem : f.mem = setupMem s₀ := by

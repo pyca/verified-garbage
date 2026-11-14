@@ -35,7 +35,7 @@ theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (
 /-- Two runs of bytes at offsets of the same base. -/
 theorem off_disjoint (p : Addr) {a n b k : Nat} (ha : a + n ≤ 2 ^ 32) (hb : b + k ≤ 2 ^ 32)
     (h : a + n ≤ b ∨ b + k ≤ a) :
-    Region.Disjoint ⟨p + BitVec.ofNat 64 a, n⟩ ⟨p + BitVec.ofNat 64 b, k⟩ := Offset.disjoint p h (by omega) (by omega)
+    Region.Disjoint ⟨p + BitVec.ofNat 64 a, n⟩ ⟨p + BitVec.ofNat 64 b, k⟩ := Offset.disjoint p h (by omega_using [ha]) (by omega_using [hb])
 
 theorem off_sub (p : Addr) {a n b k : Nat} (_hb : b + k ≤ 2 ^ 32) (h₁ : b ≤ a) (h₂ : a + n ≤ b + k) :
     Region.Sub ⟨p + BitVec.ofNat 64 a, n⟩ ⟨p + BitVec.ofNat 64 b, k⟩ := Offset.sub p h₁ h₂
@@ -57,8 +57,8 @@ def Lanes (m : Mem) (p : Addr) (A : Spec.Sha3.State) : Prop :=
 theorem lane_contains (p : Addr) {i : Nat} (hi : i < 25) : (⟨p, 200⟩ : Region).Contains (laneAddr p i) 8 := by
   simp only [Region.Contains, laneAddr]
   rw [show p + BitVec.ofNat 64 (8 * i) - p = BitVec.ofNat 64 (8 * i) by bv_omega, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (by omega_using [hi])]
+  omega_using [hi]
 
 theorem lane_sep (p : Addr) {i j : Nat} (hi : i < 25) (hj : j < 25) (h : i ≠ j) :
     Mem.Sep (laneAddr p i) 8 (laneAddr p j) 8 := by
@@ -95,8 +95,8 @@ theorem outState_eq (A : Spec.Sha3.State) (ir : Nat) : outState A (RC ir) = rnd 
   apply Vector.ext
   intro i hi
   simp only [outState, Vector.getElem_ofFn]
-  have := rnd_get A ir (x := i % 5) (y := i / 5) (Nat.mod_lt _ (by omega)) (by omega)
-  simp only [show i % 5 + 5 * (i / 5) = i by omega] at this
+  have := rnd_get A ir (x := i % 5) (y := i / 5) (Nat.mod_lt _ (by omega_using [])) (by omega_using [hi])
+  simp only [show i % 5 + 5 * (i / 5) = i by omega_using []] at this
   exact this.symm
 
 theorem foldl_succ (A : Spec.Sha3.State) (r : Nat) :

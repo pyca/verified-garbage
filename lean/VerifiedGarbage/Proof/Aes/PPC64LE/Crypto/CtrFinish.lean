@@ -38,8 +38,8 @@ theorem counter_after {m m' : Mem} {C : Addr} {n : Nat} {word : BitVec 32}
   · rw [← hw]
     apply BitVec.eq_of_getLsbD_eq
     intro j hj
-    rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb', rev32_bit _ (by omega) hj]
+    rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb', rev32_bit _ (by omega_using [hk]) hj]
     simp only [hj, decide_true, Bool.true_and]
-    exact congrArg word.getLsbD (by omega)
+    exact congrArg word.getLsbD (by omega_arith)
 
 end VG.Proof.Aes.PPC64LE.Crypto

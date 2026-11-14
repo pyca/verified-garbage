@@ -21,7 +21,7 @@ theorem PublicStack.after_checks {s t : State} {base dst np ep xp : BitVec 32} {
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact h.separate.sub_left (Offset.sub_base _ fit)
-    · exact Offset.disjoint _ gap (by omega) (by decide)
+    · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
   refine ⟨by rw [rest.sp]; exact h.nowrap, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [rest.wr, rest.sp]; exact h.frameWritable
   · rw [rest.rd, rest.wr, rest.sp]; exact h.argumentsRead

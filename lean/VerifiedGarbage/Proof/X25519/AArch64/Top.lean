@@ -79,8 +79,8 @@ theorem save_frame {b : Addr} {rs : List Region} {m m' : Mem} (hf : Frame rs m m
     (hd : ∀ r ∈ rs, (saveR b).Disjoint r) {k : Nat} (hk : k < 6) :
     wd m' b (SAVE + 8 * k) = wd m b (SAVE + 8 * k) := by
   simp only [wd]
-  rw [hf.readW (r := saveR b) (Offset.contains_base b (by simp only [SAVE]; omega)
-    (by simp only [SAVE]; omega)) hd (by decide)]
+  rw [hf.readW (r := saveR b) (Offset.contains_base b (by simp only [SAVE]; omega_using [hk])
+    (by simp only [SAVE]; omega_using [hk])) hd (by decide)]
 
 /-! ## The arguments, decoded -/
 
@@ -95,8 +95,8 @@ theorem clampB_eq {m m₀ : Mem} {sc : Addr}
   · rfl
   · have hg : (bytesAt m₀ sc 32).getD (t / 8) 0 = m₀ (sc + BitVec.ofNat 64 (t / 8)) := by
       simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map,
-        List.getElem?_range (show t / 8 < 32 by omega), Option.map_some, Option.getD_some]
-    rw [hg, h _ (by omega)]
+        List.getElem?_range (show t / 8 < 32 by omega_using [ht]), Option.map_some, Option.getD_some]
+    rw [hg, h _ (by omega_using [ht])]
     rfl
 
 /-! ## The whole function -/

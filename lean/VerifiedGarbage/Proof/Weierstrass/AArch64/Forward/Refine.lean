@@ -25,19 +25,19 @@ theorem memory_eq {base : Addr} {size : Nat} (ha : size%8=0)
     let r := ofs base x%8
     have hr : r<8 := Nat.mod_lt _ (by decide)
     have hq : q%8=0 := by simp [q]
-    have arith : ∀ n sz : Nat, sz%8=0 → n<sz → n/8*8+8≤sz := by intros; omega
+    have arith : ∀ n sz : Nat, sz%8=0 → n<sz → n/8*8+8≤sz := by intros; omega_arith
     have hb : q+8≤size := arith _ _ ha hx
     have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*r) 8) (hw q hq hb)
     rw [readW_byte _ _ hr,readW_byte _ _ hr] at he
     have eq : base+BitVec.ofNat 64 q+BitVec.ofNat 64 r=x := by
       rw [BitVec.add_assoc,←BitVec.ofNat_add]
-      have hqr : q+r=ofs base x := by dsimp [q,r]; omega
+      have hqr : q+r=ofs base x := by dsimp [q,r]; omega_using []
       rw [hqr]
       change base+BitVec.ofNat 64 (x-base).toNat=x
       rw [BitVec.ofNat_toNat,BitVec.setWidth_eq,BitVec.add_comm,BitVec.sub_add_cancel]
     simpa only [off,eq] using he
-  · exact (hua x (fun w wh => Or.inr (by have := hwa w wh; omega))).trans
-      (hub x (fun w wh => Or.inr (by have := hwb w wh; omega))).symm
+  · exact (hua x (fun w wh => Or.inr (by have := hwa w wh; omega_using [hx, this]))).trans
+      (hub x (fun w wh => Or.inr (by have := hwb w wh; omega_using [hx, this]))).symm
 
 theorem post_of_runBlock {is : List Instr} {s t : State} {Q : State → Prop}
     (h : WP isa (.block is) s Q) (hr : runBlock isa is s=some t) : Q t := by

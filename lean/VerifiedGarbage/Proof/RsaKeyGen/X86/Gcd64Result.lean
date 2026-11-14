@@ -25,11 +25,11 @@ theorem equals_one (low high : BitVec 32) :
     rfl
   · intro H
     unfold Mod64.pair at H
-    have highZero : high.toNat = 0 := by omega
+    have highZero : high.toNat = 0 := by omega_using [H]
     refine ⟨?_, BitVec.eq_of_toNat_eq highZero⟩
     apply BitVec.eq_of_toNat_eq
     change low.toNat = 1
-    omega
+    omega_using [H]
 
 theorem result_ok {s : State} {base : Addr} {size : Nat}
     (scratch : Scr s base size) (fit : 184 ≤ size) :
@@ -37,9 +37,9 @@ theorem result_ok {s : State} {base : Addr} {size : Nat}
       t.gpr .eax = BitVec.ofNat 32 (decide (val32 s.mem base 176 2 = 1)).toNat ∧
       t.mem = s.mem ∧ Keeps [.eax, .ecx] s t := by
   unfold result
-  refine wp_movS (readSrc_sc scratch (by omega)) fun a A _ => wp_subS rfl fun b B _ => ?_
+  refine wp_movS (readSrc_sc scratch (by omega_using [fit])) fun a A _ => wp_subS rfl fun b B _ => ?_
   have Kb : Keeps [.eax] s b := A.keeps.trans B.keeps
-  have read := readSrc_sc (scratch.of_keeps Kb (by decide)) (d := 180) (by omega)
+  have read := readSrc_sc (scratch.of_keeps Kb (by decide)) (d := 180) (by omega_using [fit])
   rw [B.mem, A.mem] at read
   refine wp_orS read fun c C => wp_movS rfl fun d D _ => wp_subS rfl fun e E cfE =>
     wp_adcS rfl cfE fun f F _ => wp_movS rfl fun t T _ => WP.block_nil ?_
@@ -57,7 +57,7 @@ theorem result_ok {s : State} {base : Addr} {size : Nat}
     apply congrArg (fun b : Bool => BitVec.ofNat 32 b.toNat)
     apply decide_eq_decide.mpr
     rw [← equals_one]
-    omega
+    omega_using []
   · rw [T.mem, F.mem, E.mem, D.mem, C.mem, B.mem, A.mem]
 
 end VG.Proof.RsaKeyGen.X86.Gcd64

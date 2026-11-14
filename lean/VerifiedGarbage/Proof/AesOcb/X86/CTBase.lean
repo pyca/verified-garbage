@@ -65,7 +65,7 @@ theorem CT.loopN {body : Prog isa} {c : Cond} (Inv : Nat → State → Prop)
     fun ht => ?_⟩
   rw [c₁] at ht
   have h1 : n ≠ 1 := by simpa using ht
-  exact ⟨n - 1, by omega, i₁ h1, i₂ h1⟩
+  exact ⟨n - 1, by omega_using [hn], i₁ h1, i₂ h1⟩
 
 /-! ## `lNtz` -/
 
@@ -92,12 +92,12 @@ theorem lNtz_ct {I : State → Prop} {p : Prm} (L : Lay p) {i : Nat} (hi : 0 < i
   have hn' : n = ntz (k / 2) + 1 := by rw [← hn, Proof.Ocb.ntz_even hk0 hke]
   have hodd : k / 2 % 2 = 0 ↔ n ≠ 1 := by
     constructor
-    · intro h; rw [hn', Proof.Ocb.ntz_even (by omega) h]; omega
-    · intro h; by_contra h'; exact h (by rw [hn', Proof.Ocb.ntz_odd (by omega)])
-  refine WP.of_runBlock ⟨t₂, run, by omega, (eval_e zf').trans (by simp only [decide_eq_decide.mpr hodd]),
+    · intro h; rw [hn', Proof.Ocb.ntz_even (by omega_using [hk0, hke]) h]; omega_using []
+    · intro h; by_contra h'; exact h (by rw [hn', Proof.Ocb.ntz_odd (by omega_using [h'])])
+  refine WP.of_runBlock ⟨t₂, run, by omega_using [hn'], (eval_e zf').trans (by simp only [decide_eq_decide.mpr hodd]),
     fun h1 => ⟨Et.mut L (by rw [g' _ (by decide) (by decide) (by decide), Et.ebp])
       (by rw [g' _ (by decide) (by decide) (by decide), Et.esp]) rd' wr' (frame_toMut fr (inMut_lNtzR p)),
-      k / 2, by omega, hodd.mpr h1, by omega, by omega, kt'⟩⟩
+      k / 2, by omega_using [hk0, hke], hodd.mpr h1, by omega_using [hk], by omega_using [hn'], kt'⟩⟩
 
 /-! ## Calls -/
 

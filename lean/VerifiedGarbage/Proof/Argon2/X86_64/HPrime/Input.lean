@@ -59,7 +59,7 @@ theorem absorbInput_ok (v : Proof.Blake2.X86_64.Backend) (s : State)
   have ku := hu.keeps
   have repr' : Repr b h0 u.mem (u.gpr .rbx) headBytes := by rw [hu.mem, ku.rbx]; exact repr
   have count : u.gpr .rsi = BitVec.ofNat 64 headBytes.length := by rw [prefixLen]; exact hu.count
-  have bound : headBytes.length + (u.gpr .rcx).toNat < 2 ^ 64 := by rw [prefixLen, hu.size]; omega
+  have bound : headBytes.length + (u.gpr .rcx).toNat < 2 ^ 64 := by rw [prefixLen, hu.size]; omega_using [len]
   have wr : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [ku.rbx, ku.wr]; exact hwr
   have cover : Covers [⟨u.gpr .rdx, (u.gpr .rcx).toNat⟩] (u.rd ++ u.wr) := by
     rw [hu.data, hu.size, hu.rd, hu.wr]; exact hdata

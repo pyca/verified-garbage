@@ -37,7 +37,7 @@ theorem rbStep_two {η : Nat} {a : List Zq} (ha : a.length≤254) (b : Byte) :
     rbStep η a b = hbTry η (hbTry η a (b.toNat%16)) (b.toNat/16) := by
   have h1 := halfByteOk_le η (b.toNat%16)
   simp only [rbStep, n]
-  rw [ifT (by omega), ifT (by rw [hbTry_length]; omega)]
+  rw [ifT (by omega_using [ha]), ifT (by rw [hbTry_length]; omega_using [ha, h1])]
 
 theorem twoBytes_values {η : Nat} (hη : η=2 ∨ η=4) {a : List Zq}
     (ha : a.length≤252) (b c : Byte) :
@@ -45,8 +45,8 @@ theorem twoBytes_values {η : Nat} (hη : η=2 ∨ η=4) {a : List Zq}
   have h1 := halfByteOk_le η (b.toNat%16)
   have h2 := halfByteOk_le η (b.toNat/16)
   have hlen : (hbTry η (hbTry η a (b.toNat%16)) (b.toNat/16)).length≤254 := by
-    simp only [hbTry_length]; omega
-  rw [rbFold, rbStep_two (by omega), rbFold, rbStep_two hlen]
+    simp only [hbTry_length]; omega_using [ha, h1, h2]
+  rw [rbFold, rbStep_two (by omega_using [ha]), rbFold, rbStep_two hlen]
   simpa only [nibbles, List.foldl_cons, List.foldl_nil, rbFold] using
     fold_hbTry η hη a (nibbles b c)
 

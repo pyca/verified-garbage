@@ -42,7 +42,7 @@ open VG.Impl.MillerRabin.PPC64LE.Search (ldh sth hStat hUsed montPrep)
 open VG.Proof.Bignum (word off slot)
 open VG.Impl.Bignum (hdrBytes)
 open VG.Proof.MillerRabin.PPC64LE (Env arr RoundImpl)
-open VG.Proof.RsaPkcs1Sig.PPC64LE (Two Pins two_post two_taint two_ite)
+open VG.Proof.RsaPkcs1Sig.PPC64LE (Two Pins two_post two_taint two_taintR two_ite)
 open VG.Proof.MillerRabin.PPC64LE.Blinded (BD MS BCtx millerRabin_ct Pins.of_imp two_map)
 
 /-- The public data of a call. -/
@@ -145,7 +145,7 @@ theorem body_ct (Ri : RoundImpl) (bits : Nat) :
   refine two_ite (fun d u₁ u₂ ⟨σ₁, s₁, p₁, _, ⟨a22, _⟩, _⟩ ⟨σ₂, s₂, p₂, _, ⟨b22, _⟩, _⟩ => ?_) ?_ ?_
   · rw [VG.PPC64LE.eval_zero, VG.PPC64LE.eval_zero, a22, b22, p₁.2.2.2.2.2.2.2.2.2.2.1,
       p₂.2.2.2.2.2.2.2.2.2.2.1]
-  · refine RelCT.seq (two_post (Ψ := E2m bits) (two_taint _ (Pins.of_imp pT fun _ _ h => h.1) (by taint_decide))
+  · refine RelCT.seq (two_post (Ψ := E2m bits) (two_taintR _ (Pins.of_imp pT fun _ _ h => h.1) (by taint_decide_rel))
       fun d u ⟨h, _⟩ => ?_) ?_
     · obtain ⟨σ, p, b⟩ := h.bin
       exact WP.mono (montPrep_ctx b) fun v ⟨bc, hu, ht, vsp, _⟩ => ⟨σ, p, bc, hu, ht, vsp⟩

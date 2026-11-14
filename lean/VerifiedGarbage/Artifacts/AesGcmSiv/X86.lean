@@ -56,15 +56,13 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» v.callees)
     stack := 2888
     verified := Proof.AesGcmSiv.seal_keyed (seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
-    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v)
-    features := v.features },
+    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v) },
   Spec.GcmSiv.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» v.callees)
     stack := 2888
     verified := Proof.AesGcmSiv.open_keyed (open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)
-    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v)
-    features := v.features }]
+    spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v) }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifactsFor (v : GcmVariant) : List Artifact := artifactsOf v.impl

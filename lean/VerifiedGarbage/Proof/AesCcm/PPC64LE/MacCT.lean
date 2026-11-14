@@ -180,9 +180,9 @@ theorem aadPart_rel (h18₁ : σ₁.gpr .r18 = c.A) (h18₂ : σ₂.gpr .r18 = c
       rcases hr with rfl | rfl
       · rw [h18₁, h18₂]
       · rw [h19₁, h19₂])
-    (Runs.of_wp (aadHead_wp L E₁ hy hA₁ h18₁ h19₁ (by omega)))
-    (Runs.of_wp (aadHead_wp L E₂ hy hA₂ h18₂ h19₂ (by omega))) fun τ₁ τ₂ A₁ A₂ => ?_
-  have hn1 : Proof.AesCcm.headLen c.al ≤ c.al := by unfold Proof.AesCcm.headLen; omega
+    (Runs.of_wp (aadHead_wp L E₁ hy hA₁ h18₁ h19₁ (by omega_using [h0])))
+    (Runs.of_wp (aadHead_wp L E₂ hy hA₂ h18₂ h19₂ (by omega_using [h0]))) fun τ₁ τ₂ A₁ A₂ => ?_
+  have hn1 : Proof.AesCcm.headLen c.al ≤ c.al := by unfold Proof.AesCcm.headLen; omega_using []
   exact absorbPad_rel L (E₁.of_pk A₁.abs.pk) (E₂.of_pk A₂.abs.pk) (by rw [A₁.abs.pk.sp, A₂.abs.pk.sp, hsp]) hy
     ((hA₁.drop hn1).of_eq A₁.abs.pk.rd A₁.abs.pk.wr) ((hA₂.drop hn1).of_eq A₂.abs.pk.rd A₂.abs.pk.wr)
     A₁.r18 A₂.r18 A₁.r19 A₂.r19

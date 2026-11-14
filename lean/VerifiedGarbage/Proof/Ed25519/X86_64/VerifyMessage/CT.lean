@@ -97,7 +97,7 @@ theorem init_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs
   simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega_arith) (by omega_arith)
 
 theorem init_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs L t) :
-    WP isa (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
+    WP isa (.call "vg_sha512_init_core" (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr [] := by
   refine call_ok hL (Proof.Sha512.X86_64.Stream.init_verified _).1 (nosp_init _) (by decide) hc
     (init_pre hL hc ha) ?_ ?_ fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
@@ -114,7 +114,7 @@ theorem init_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArg
     rwa [← hm]
 
 theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa (callWith initArgs Spec.Sha512.init512Api.name
+    WP isa (callWith initArgs "vg_sha512_init_core"
       (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr [] :=
   WP.seq (WP.mono (initArgs_ok hc) fun _ ⟨hc₁, _, ha⟩ => init_call hL hc₁ ha)
@@ -148,7 +148,7 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (ha : UpdArgs L count p n t) (hi : Input L ⟨p, n.toNat⟩)
     (hcount : count = BitVec.ofNat 64 prev.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr prev) :
-    WP isa (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
+    WP isa (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.updateOwn v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧
         Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr (prev ++ Spec.Ed25519.bytesAt m₀ p n.toNat) := by
   refine call_ok hL (upd_verified v).1 (upd_nosp v) (upd_depth v) hc (upd_pre hL hc ha hi) ?_ ?_
@@ -200,7 +200,7 @@ theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     {message : List Byte} (hmess : message.length < 2 ^ 64)
     (hlen : L.len + 64 = BitVec.ofNat 64 message.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr message) :
-    WP isa (.call ("vg_sha512_finalize_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
+    WP isa (.call ("vg_sha512_finalize_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.bytesAt t'.mem (L.B + BitVec.ofNat 64 80) 64 =
         Spec.Sha512.sha512 message := by
   refine call_ok hL (fin_verified v).1 (fin_nosp v) (fin_depth v) hc (fin_pre hL hc ha) ?_ ?_
@@ -997,12 +997,12 @@ open VG.Proof.Ed25519.X86_64.PublicKey
 open VG.Proof.Sha512.X86_64 (Compress)
 
 theorem init_ct : RelCT isa (Two fun _ _ _ => True)
-    (Impl.Ed25519.X86_64.callWith initArgs Spec.Sha512.init512Api.name
+    (Impl.Ed25519.X86_64.callWith initArgs "vg_sha512_init_core"
       (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block initArgs) (Two fun L _ => InitArgs L) :=
     two_blk (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (initArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have c := two_callP (n := Spec.Sha512.init512Api.name) (Φ := fun L _ => InitArgs L)
+  have c := two_callP (n := "vg_sha512_init_core") (Φ := fun L _ => InitArgs L)
     (Proof.Sha512.X86_64.Stream.init_verified _).1 (Proof.Sha512.X86_64.Stream.init_verified _).2.1
     (nosp_init _) (by decide) (fun _ => initRd) initWr (fun _ _ _ _ _ hL hc ha => init_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ _ _ _ _ a₁ a₂ =>
@@ -1013,7 +1013,7 @@ theorem init_ct : RelCT isa (Two fun _ _ _ => True)
 theorem upd_ct (v : Compress) (count : Lay → BitVec 64) (p : Lay → Addr) (n : Lay → BitVec 64)
     (hi : ∀ L, Input L ⟨p L, (n L).toNat⟩) :
     RelCT isa (Two fun L _ => UpdArgs L (count L) (p L) (n L))
-      (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee))
+      (.call ("vg_sha512_update_scratch" ++ v.suffix) (Impl.Sha512.X86_64.Stream.updateOwn v.callee))
       (Two fun _ _ _ => True) := by
   exact two_callP (upd_verified v).1 (upd_verified v).2.1 (upd_nosp v) (upd_depth v)
     (fun L => [⟨p L, (n L).toNat⟩]) updWr
@@ -1027,7 +1027,7 @@ theorem upd_ct (v : Compress) (count : Lay → BitVec 64) (p : Lay → Addr) (n 
 
 theorem finalize_ct (v : Compress) : RelCT isa (Two fun _ _ _ => True)
     (Impl.Ed25519.X86_64.callWith finalizeArgs ("vg_sha512_finalize_scratch" ++ v.suffix)
-      (Impl.Sha512.X86_64.Stream.finalize v.callee)) (Two fun _ _ _ => True) := by
+      (Impl.Sha512.X86_64.Stream.finalizeOwn v.callee)) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block finalizeArgs) (Two fun L _ => FinArgs L) :=
     two_blk (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (finalizeArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩

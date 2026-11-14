@@ -95,7 +95,7 @@ theorem Environment.Valid.width_bounds {E : Environment} (v : E.Valid) : 4 ≤ E
 theorem Environment.Valid.capacityFit {E : Environment} (v : E.Valid) : E.capacity < 2 ^ 32 := by
   have fit := v.workspaceFit
   unfold Environment.size at fit
-  omega
+  omega_using [fit]
 
 theorem Environment.Valid.readWorkspace {E : Environment} (v : E.Valid) {r : Region} (mem : r ∈ E.readRegions) :
     r.Disjoint E.workspaceRegion := v.readWrite r mem _

@@ -53,7 +53,7 @@ theorem baseOddWords_getD {j f w : Nat} (hj : j < 128) (hf : f < 4) (hw : w < 4)
         (baseOddCached (baseOddAffine.getD j (0, 1))).Z,
         (baseOddCached (baseOddAffine.getD j (0, 1))).T].getD f 0) w := by
   rw [baseOddWords_eq, getD_flatMap_const _ 16 0 baseOddAffine (0, 1)
-      (fun q _ => entry4Words_length _) j (by rw [baseOddAffine_length]; exact hj) _ (by omega),
+      (fun q _ => entry4Words_length _) j (by rw [baseOddAffine_length]; exact hj) _ (by omega_using [hf, hw]),
     entry4Words_getD _ hf hw]
 
 /-- Field `f` of entry `j`, from the words at `T`. -/
@@ -72,8 +72,8 @@ theorem baseField {m : Mem} {T : Addr}
         (baseOddCached (baseOddAffine.getD j (0, 1))).T].getD f 0) w := by
     intro w hw
     simp only [Proof.X25519.X86_64.word, off, Offset.add_add]
-    rw [show 128 * j + (32 * f + 8 * w) = 8 * (j * 16 + (f * 4 + w)) by omega,
-      hheld _ (by omega), baseOddWords_getD hj hf hw]
+    rw [show 128 * j + (32 * f + 8 * w) = 8 * (j * 16 + (f * 4 + w)) by omega_using [],
+      hheld _ (by omega_using [hj, hf, hw]), baseOddWords_getD hj hf hw]
   simp only [F, fe]
   have h0 := hword 0 (by decide)
   have h1 := hword 1 (by decide)

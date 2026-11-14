@@ -56,20 +56,31 @@ def ptr (r : Reg) (j : Nat) : List Instr :=
 /-- `r7 := 4 (r9 + 2)`, the stride. -/
 def stride : List Instr := [.dp .add .r7 .r9 (.imm 2), .mov .r7 (.shifted .r7 .lsl 2)]
 
+/-- `lr := w` (`r9`) for `true`; nothing for `false`, where `lr` holds the count already. -/
+def lrPre : Bool → List Instr
+  | true => [.mov .lr (.reg .r9)]
+  | false => []
+
+/-- `[o] := [a] - [b]` over the `lr` low words (all `w` for `lrw`), the borrow out in `r11`. -/
+def subN (o a b : Nat) (lrw : Bool := false) : Prog isa :=
+  .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 b ++ lrPre lrw ++ [.mov .r11 (.imm 0)])) subRow
+
 /-- `[o] := [a] - [b]`, the borrow out in `r11`. -/
-def sub3 (o a b : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 b ++ [.mov .lr (.reg .r9), .mov .r11 (.imm 0)]))
-    subRow
+def sub3 (o a b : Nat) : Prog isa := subN o a b true
+
+/-- `[o] := [b]` if the slot `sl` holds 1, else `[a]`, over the `lr` low words (all `w` for `lrw`). -/
+def selN (o a b sl : Nat) (lrw : Bool := false) : Prog isa :=
+  .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 b ++ lrPre lrw ++ [.ldr .r11 .r8 sl])) selectRow
 
 /-- `[o] := [b]` if the slot `sl` holds 1, else `[a]`. -/
-def sel (o a b sl : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 b ++ [.mov .lr (.reg .r9), .ldr .r11 .r8 sl]))
-    selectRow
+def sel (o a b sl : Nat) : Prog isa := selN o a b sl true
+
+/-- `[o] := [a]` over the `lr` low words (all `w` for `lrw`). -/
+def copyN (o a : Nat) (lrw : Bool := false) : Prog isa :=
+  .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 a ++ lrPre lrw ++ [.mov .r11 (.imm 0)])) copyWords
 
 /-- `[o] := [a]`. -/
-def copy (o a : Nat) : Prog isa :=
-  .seq (.block (ptr .r0 o ++ ptr .r10 a ++ ptr .r12 a ++ [.mov .lr (.reg .r9), .mov .r11 (.imm 0)]))
-    copyWords
+def copy (o a : Nat) : Prog isa := copyN o a true
 
 /-- `[j] := ([j] + r11 · 2^(32 w)) / 2`: `r11` stored as word `w`, then the shift. -/
 def half (j : Nat) : Prog isa :=

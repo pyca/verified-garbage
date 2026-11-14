@@ -79,9 +79,9 @@ theorem out2_scr : (OUT2 s).Disjoint (SCR (arg s 7)) := h.oc.sub_left (out2_with
 
 theorem out2_fit : (arg s 0 + BitVec.ofNat 32 57).toNat + 57 ≤ 2 ^ 32 := by
   have := h.out
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 57) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 57) (by omega_using []),
+    Nat.mod_eq_of_lt (by omega_using [this])]
+  omega_using [this]
 
 omit h in
 theorem ab_eq (hu : GCtx s g m u) : ∀ rd wr, argAddr (u.callEntry.withRegions rd wr) 0 = (base s).setWidth 64 :=
@@ -122,7 +122,7 @@ theorem r_pre (hu : GCtx s g m u) (hs : RSlots s u) :
     out2_addr h]
   exact ⟨trivial, trivial, out2_scr h, hk.fr_scr (by decide), Kit.args_disj (by decide) (out2_lo h),
     Kit.args_disj (by decide) hk.lo_scr, hk.ret_disj (out2_lo h), hk.ret_disj hk.lo_scr, out2_fit h,
-    hk.fr_fit (by decide), h.scratch, by omega⟩
+    hk.fr_fit (by decide), h.scratch, by omega_using [hf, e4]⟩
 
 omit h in
 theorem r_covers (s : State) :
@@ -205,7 +205,7 @@ theorem b_pre (hu : GCtx s g m u) (hs : BSlots s u) :
     out2_addr h]
   exact ⟨trivial, trivial, out1_scr h, out2_scr h, Kit.args_disj (by decide) (out1_lo h),
     Kit.args_disj (by decide) hk.lo_scr, hk.ret_disj (out1_lo h), hk.ret_disj hk.lo_scr,
-    by have := h.out; omega, out2_fit h, h.scratch, by omega, hk.callee_room, (hk.callee_stk _ (out_in s)).sub_right (out1_within s).sub,
+    by have := h.out; omega_using [this], out2_fit h, h.scratch, by omega_using [hf, e4], hk.callee_room, (hk.callee_stk _ (out_in s)).sub_right (out1_within s).sub,
     hk.callee_stk _ (scr_in s)⟩
 
 omit h in
@@ -280,7 +280,7 @@ theorem k_pre (hu : GCtx s g m u) (hs : KSlots s u) :
   exact ⟨trivial, trivial, hk.fr_scr (by decide), hk.fr_scr (by decide),
     Offset.base_disjoint _ (by decide) (by decide), Kit.args_disj (by decide) hk.lo_scr,
     hk.ret_disj (lo_fr _ (by decide) (by decide)), hk.ret_disj hk.lo_scr, hk.fr_fit (by decide),
-    hk.fr_fit (by decide), h.scratch, by omega⟩
+    hk.fr_fit (by decide), h.scratch, by omega_using [hf, e4]⟩
 
 omit h in
 theorem k_covers (s : State) :
@@ -364,7 +364,7 @@ theorem m_pre (hu : GCtx s g m u) (hs : MSlots s u) :
   exact ⟨trivial, trivial, out2_scr h, out2_scr h, hk.fr_scr (by decide), hk.fr_scr (by decide),
     Kit.args_disj (by decide) (out2_lo h), Kit.args_disj (by decide) hk.lo_scr, hk.ret_disj (out2_lo h),
     hk.ret_disj hk.lo_scr, out2_fit h, out2_fit h, hk.fr_fit (by decide), hk.fr_fit (by decide), h.scratch,
-    by omega⟩
+    by omega_using [hf, e4]⟩
 
 omit h in
 theorem m_covers (s : State) :

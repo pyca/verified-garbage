@@ -27,7 +27,7 @@ theorem step_ok {mont round : Prog isa} {montName roundName : String}
     exact this
   unfold stepAt
   refine WP.seq (WP.mono (WitnessAvailable.codeAt_ok S.prepared.ready.scratch v.geometry.headerFit
-    (by have := v.geometry.maxWidth; have := v.wide; omega) S.randLength S.used usedBound) fun a ⟨CF, mem, Ka⟩ => ?_)
+    (by have := v.geometry.maxWidth; have := v.wide; omega_arith) S.randLength S.used usedBound) fun a ⟨CF, mem, Ka⟩ => ?_)
   have A := S.keepMem v mem Ka (by decide) (by decide)
   have condition : isa.eval .b a = some (decide (¬ P.start + P.bytes * k + P.bytes ≤ P.randLen)) := by
     change a.cf = _
@@ -35,7 +35,7 @@ theorem step_ok {mont round : Prog isa} {montName roundName : String}
     congr 1
     apply decide_eq_decide.mpr
     change (P.randLen - (P.start + P.bytes * k) < P.bytes) ↔ ¬ P.start + P.bytes * k + P.bytes ≤ P.randLen
-    omega
+    omega_using [usedBound]
   refine WP.seq ?_
   by_cases enough : P.start + P.bytes * k + P.bytes ≤ P.randLen
   · refine WP.ite false (by rw [condition]; simp only [enough, not_true_eq_false, decide_false])

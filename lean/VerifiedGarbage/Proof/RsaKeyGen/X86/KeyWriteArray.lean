@@ -41,6 +41,6 @@ theorem output_num {s : State} {B : Addr} {Z n j : Nat} {m m' : Mem} {p : BitVec
   intro k hk
   have fits := h.arr_fit index
   unfold S at fits
-  exact output_word h separate F (by omega)
+  exact output_word h separate F (by omega_using [hk, fits])
 
 end VG.Proof.RsaKeyGen.X86.Key

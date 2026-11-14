@@ -39,7 +39,7 @@ theorem countLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State
   · exact .inl ⟨by simp only [eval, hz, hj, decide_true, Option.map_some, Bool.not_true],
       hQ s' (by rw [hj] at hi'; exact hi')⟩
   · exact .inr ⟨by simp only [eval, hz, decide_eq_false hj, Option.map_some, Bool.not_false],
-      j - 1, by omega, by omega, by omega, hi'⟩
+      j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}

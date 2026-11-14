@@ -70,8 +70,8 @@ theorem sloadS_SL1 {v : VD} {s : State} (h : SC0 v s) :
 theorem spre_src {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) ∈ s.rd)
     (hd : (⟨A, n⟩ : Region).Disjoint ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩)
     (hn : n < 2 ^ 64) (hk : k ≤ n) {t : State} (hr : t.rd = s.rd) (hw : t.wr = s.wr) : Src t (slayOf s) A k :=
-  ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega) (by omega)⟩,
-    fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
+  ⟨fun i hi => ⟨_, by rw [hr, hw]; exact List.mem_append_left _ hm, Offset.contains_base _ (by omega_using [hk, hi]) (by omega_using [hn, hk, hi])⟩,
+    fun i hi => Pub.ne_of_disjoint hd (by omega_using [hn]) i (by omega_using [hk, hi])⟩
 
 theorem sfront_S0 {v : VD} {s : State} (h : SC0 v s) :
     WP isa (.block Sign.entry) s fun t => S0 v t ∧ SG v := by
@@ -84,16 +84,16 @@ theorem sfront_S0 {v : VD} {s : State} (h : SC0 v s) :
   have hK : ∀ {u : State} {n : Nat}, n ≤ 3 * (slayOf s).pl + 2 * (slayOf s).ql → u.rd = s.rd → u.wr = s.wr →
       Src u (slayOf s) (s.gpr .r5) n :=
     fun hn hr hw => spre_src (A := s.gpr .r5) (by rw [hrd]; simp) dKS (s.gpr .r6).isLt
-      (by simp only [slayOf] at hn ⊢; omega) hr hw
+      (by simp only [slayOf] at hn ⊢; omega_using [hkl, hn]) hr hw
   have Out : Outside (slayOf s).S 0 (slayOf s).Z s.mem t.mem :=
-    out.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega)
-  refine ⟨⟨⟨hL, hr, scr, hK (n := 3 * (slayOf s).pl + (slayOf s).ql) (by omega) k.rd k.wr,
+    out.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
+  refine ⟨⟨⟨hL, hr, scr, hK (n := 3 * (slayOf s).pl + (slayOf s).ql) (by omega_using []) k.rd k.wr,
     spre_src (A := s.gpr .r8) (k := (slayOf s).ql) (by rw [hrd]; simp) dNS (s.gpr .r9).isLt
       (Nat.le_refl _) k.rd k.wr,
     spre_src (A := s.gpr .r10) (k := min (stackArg s 0).toNat 64) (by rw [hrd]; simp) dDS (stackArg s 0).isLt
       (Nat.min_le_left _ _) k.rd k.wr,
-    ((hK (n := 3 * (slayOf s).pl + (slayOf s).ql) (by omega) rfl rfl).kept Out), hK (Nat.le_refl _) k.rd k.wr,
-    (fun o ho => by cases ho; exact hw), (fun _ => ⟨rfl, rfl, rfl⟩), (by simp only [svdOf, slayOf]; omega)⟩,
+    ((hK (n := 3 * (slayOf s).pl + (slayOf s).ql) (by omega_using []) rfl rfl).kept Out), hK (Nat.le_refl _) k.rd k.wr,
+    (fun o ho => by cases ho; exact hw), (fun _ => ⟨rfl, rfl, rfl⟩), (by simp only [svdOf, slayOf]; omega_using [])⟩,
     r2, fixL_nil t, trivial⟩, rfl⟩
 
 theorem sentry_rel : RelCT isa (Two SC0) (.block Sign.entry) (Two fun v s => S0 v s ∧ SG v) := by

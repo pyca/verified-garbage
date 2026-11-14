@@ -49,7 +49,7 @@ theorem writes_frame (m : Mem) (B : Addr) :
   | (j, v) :: l, h => by
     have hj : j < 8 := h (j, v) (List.mem_cons_self ..)
     exact ((Frame.refl [⟨B, 32⟩] m).writeW (List.mem_singleton_self _) v
-      (Offset.contains_base B (by omega) (by omega))).trans
+      (Offset.contains_base B (by omega_using [hj]) (by omega_using [hj]))).trans
       (writes_frame _ B l fun p hp => h p (List.mem_cons_of_mem _ hp))
 
 /-- What the function is given. -/
@@ -70,7 +70,7 @@ theorem abi_of {s : State} (h : (Spec.Dsa.parameterInitContract abi).pre s) : AB
 
 theorem ABI.read {s : State} (A : ABI s) {i : Nat} (hi : i < 2) :
     readSrc s (.mem (PublicFn.argument i)) = some (arg s i) :=
-  (VG.Proof.Dsa.X86.stackArgument_of (count := 2) (by have := A.stackBound; omega) hi
+  (VG.Proof.Dsa.X86.stackArgument_of (count := 2) (by have := A.stackBound; omega_using [this]) hi
     (by rw [A.rd]; exact List.mem_append_left _ (List.mem_singleton_self _)) A.outArgs.symm).readSrc
 
 /-- The arguments read the same after stores into the state. -/
@@ -88,12 +88,12 @@ theorem ABI.read_after {s u : State} (A : ABI s) {i : Nat} (hi : i < 2) (sp : u.
     · cases R
   have c : (⟨argAddr s 0, 8⟩ : Region).Contains (s.ea (PublicFn.argument i)) (32 / 8) := by
     have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-      addr_eq (by have := A.stackBound; omega)
+      addr_eq (by have := A.stackBound; omega_using [this])
     have ea : s.ea (PublicFn.argument i) = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := by
       change addr (s.gpr .esp) (4 + 4 * i) = _
-      exact addr_eq (by have := A.stackBound; omega)
+      exact addr_eq (by have := A.stackBound; omega_using [hi, this])
     rw [ea, a0]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])
   change u.load32 (u.ea _) = _
   change s.load32 (s.ea _) = _ at R
   rw [e]
@@ -120,8 +120,8 @@ theorem Cur.store {is : List Instr} {Q : State → Prop} {s u : State} {l : List
     (C : Cur s u l) (hc : u.gpr .ecx = arg s 0) {r : Reg} {j : Nat} (hj : j < 8)
     (k : ∀ t, Cur s t (l ++ [(j, u.gpr r)]) → (∀ q, t.gpr q = u.gpr q) → WP isa (.block is) t Q) :
     WP isa (.block (.store (at_ .ecx (4 * j)) r :: is)) u Q := by
-  refine store_ok hc (by have := A.outBound; omega) hj ?_ fun t K rd wr m => k t ⟨?_, ?_, ?_, ?_, ?_⟩ ?_
-  · exact ⟨_, by rw [C.wr, A.wr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  refine store_ok hc (by have := A.outBound; omega_using [this]) hj ?_ fun t K rd wr m => k t ⟨?_, ?_, ?_, ?_, ?_⟩ ?_
+  · exact ⟨_, by rw [C.wr, A.wr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   · rw [K.1 _ (by simp), C.esp]
   · rw [rd, C.rd]
   · rw [wr, C.wr]
@@ -202,7 +202,7 @@ theorem initial_words (m : Mem) (B : Addr) {L : Nat} (hL : L ≤ 384) :
       [4096, L, 32769 * L, 512 * L].map (BitVec.ofNat 64) := by
   rw [VG.Proof.Ffdh.X86.ParamInit.words_halves]
   simp (disch := decide) only [initial, writes, read_write_eq, read_write_ne]
-  rw [zero_half (by decide), zero_half (by omega), zero_half (by omega), zero_half (by omega)]
+  rw [zero_half (by decide), zero_half (by omega_using [hL]), zero_half (by omega_using [hL]), zero_half (by omega_using [hL])]
   rfl
 
 /-- What `init` leaves: the status and the stores. -/
@@ -256,7 +256,7 @@ theorem final_frame {s t : State} {v : Prop} [Decidable v]
   refine C.frame ?_
   split
   · intro p hp; simp only [initial, List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using []
   · intro p hp; simp only [cleared, List.mem_map, List.mem_range] at hp
     obtain ⟨j, hj, rfl⟩ := hp; exact hj
 
@@ -270,7 +270,7 @@ theorem correct (s : State) (h : (Spec.Dsa.parameterInitContract abi).pre s) :
   · sig_post [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig, abi, argSlots, argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right, ha, C.mem]
     by_cases hv : Valid (arg s 1).toNat
-    · have hL : (arg s 1).toNat ≤ 384 := by rcases hv with h | h | h <;> omega
+    · have hL : (arg s 1).toNat ≤ 384 := by rcases hv with h | h | h <;> omega_using [h]
       have e : Spec.Dsa.parameterInit (arg s 1).toNat =
           some [Spec.Dsa.parameterSeeds, (arg s 1).toNat, Spec.Dsa.parameterEntropy (arg s 1).toNat] := by
         have : Spec.Dsa.generationPLenValid (arg s 1).toNat = true := by
@@ -278,8 +278,8 @@ theorem correct (s : State) (h : (Spec.Dsa.parameterInitContract abi).pre s) :
         simp only [Spec.Dsa.parameterInit, this, ↓reduceIte]
       rw [e, ite_eq_left hv, ite_eq_left hv, initial_words _ _ hL]
       refine ⟨rfl, 512 * (arg s 1).toNat, rfl, ?_⟩
-      have : 0 < (arg s 1).toNat := by rcases hv with h | h | h <;> omega
-      exact ⟨by omega, by simp only [Spec.Dsa.parameterEntropy]; omega⟩
+      have : 0 < (arg s 1).toNat := by rcases hv with h | h | h <;> omega_using [h]
+      exact ⟨by omega_using [this], by simp only [Spec.Dsa.parameterEntropy]; omega_using []⟩
     · have e : Spec.Dsa.parameterInit (arg s 1).toNat = none := by
         have : Spec.Dsa.generationPLenValid (arg s 1).toNat = false := by
           simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_false_iff, beq_eq_false_iff_ne]
@@ -294,14 +294,14 @@ theorem args_out {s : State} (A : ABI s) : ArgsOut 2 s := by
   obtain rfl := List.mem_singleton.mp hr
   intro a ha hb
   let j := (a - (s.gpr .esp).setWidth 64).toNat
-  have hj : j < 12 := by change j + 1 ≤ 12 at ha; omega
+  have hj : j < 12 := by change j + 1 ≤ 12 at ha; omega_using [ha]
   have he : (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 j = a := by
     change (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (a - (s.gpr .esp).setWidth 64).toNat = a
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := A.stackBound; omega)
+  have a0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by have := A.stackBound; omega_using [this])
   by_cases h : j < 4
-  · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega) (by omega)) hb
-  · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega) (by omega) (by decide))
+  · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
+  · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega_using [h]) (by omega_using [hj]) (by decide))
 
 theorem constantTime : ConstantTime isa (Spec.Dsa.parameterInitContract abi).pre
     (Spec.Dsa.parameterInitContract abi).pub init := by
@@ -311,7 +311,7 @@ theorem constantTime : ConstantTime isa (Spec.Dsa.parameterInitContract abi).pre
   obtain ⟨SP, a0, a1⟩ := H
   refine agree_argTaint (k := 2) (fun _ h => nomatch h) SP (args_out (abi_of hs)) (args_out (abi_of ht)) ?_
   intro i hi
-  rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+  rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
   · exact a0
   · exact a1
 

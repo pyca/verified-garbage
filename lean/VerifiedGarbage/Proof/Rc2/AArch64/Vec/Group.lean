@@ -61,13 +61,13 @@ theorem out_block {m m' : Mem} {q : Addr} {X : BitVec 64} {R : Nat → Spec.Rc2.
   apply Vector.ext
   intro j hj
   simp only [Spec.Rc2.blockAt, Proof.Rc2.xorBlock, Vector.getElem_ofFn, Offset.add_add, Fin.getElem_fin]
-  rw [h _ (by omega), encodeBlock_getElem _ hj, show (8 * b + j) / 8 = b by omega,
-    show (8 * b + j) % 8 = j by omega, prevByte, prevBlock]
+  rw [h _ (by omega_using [hb, hj]), encodeBlock_getElem _ hj, show (8 * b + j) / 8 = b by omega_using [hj],
+    show (8 * b + j) % 8 = j by omega_using [hj], prevByte, prevBlock]
   by_cases h0 : b = 0
   · subst h0
-    simp only [ite_true, wordBlock, Vector.getElem_ofFn, show 8 * 0 + j = j by omega, hj]
-  · simp only [show ¬ 8 * b + j < 8 by omega, h0, ite_false, Spec.Rc2.blockAt, Vector.getElem_ofFn,
-      Offset.add_add, show 8 * (b - 1) + j = 8 * b + j - 8 by omega]
+    simp only [ite_true, wordBlock, Vector.getElem_ofFn, show 8 * 0 + j = j by omega_using [], hj]
+  · simp only [show ¬ 8 * b + j < 8 by omega_using [h0], h0, ite_false, Spec.Rc2.blockAt, Vector.getElem_ofFn,
+      Offset.add_add, show 8 * (b - 1) + j = 8 * b + j - 8 by omega_using [h0]]
 
 theorem group_ok {m : Mem} {p : Addr} (t : State) (hs : SchedV t m p) (hm : t.v m16 = mask16)
     (hrd : InRegions (t.rd ++ t.wr) (t.gpr .x1) 64) (hwr : InRegions t.wr (t.gpr .x1) 64) :
@@ -75,13 +75,13 @@ theorem group_ok {m : Mem} {p : Addr} (t : State) (hs : SchedV t m p) (hm : t.v 
   rw [group, storeGroup_eq]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loadGroup_ok t fun c hc => CallLay.inRegions_sub hrd (by omega) (by decide))
+  refine WP.mono (loadGroup_ok t fun c hc => CallLay.inRegions_sub hrd (by omega_using [hc]) (by decide))
     fun a ⟨aS, av, ag, am, ard, awr, asp⟩ => ?_
   have aw : ∀ w, w ≠ .v0 → w ≠ .v1 → w ≠ .v2 → w ≠ .v3 → w ≠ .v4 → w ≠ .v5 →
       (∀ i < 4, ∀ h < 2, w ≠ wreg h i) → a.v w = t.v w := fun w a0 a1 a2 a3 a4 _ hw =>
     av w a0 a1 a2 a3 a4 hw
   have hsA : SchedV a m p := fun r hr => by
-    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega)
+    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega_using [hr])
     rw [aw _ a0 a1 a2 a3 a4 a5 fun i hi h hh => ((regs_fixed h i hh hi).2.2.2.2.2.2.2.2 r hr).1]
     exact hs r hr
   have hmA : a.v m16 = mask16 := by
@@ -129,7 +129,7 @@ theorem group_ok {m : Mem} {p : Addr} (t : State) (hs : SchedV t m p) (hm : t.v 
     rw [dg _ (by decide) (by decide) (by decide), cx _ (by decide) (by decide) (by decide)]
   · rw [fg g h1 h10, dg g h9 h11 h12, cx g h6 h7 h9]
   · simp only [f, e, v_write]
-    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega)
+    obtain ⟨a0, a1, a2, a3, a4, a5, -, -⟩ := treg_ne8 r (by omega_using [hr])
     rw [dv _ a0 a1 a2 a3 a4 a5, cv _ a0 a1 a2 a3 a4, bk.sched r hr]
     exact hsA r hr
   · simp only [f, e, v_write]

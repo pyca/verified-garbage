@@ -47,7 +47,7 @@ theorem step_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i : Nat
   have hn := (s₀.gpr .rsi).isLt
   have hc : (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region).Contains
       (s₀.gpr .rdi + BitVec.ofNat 64 i) (if word then 8 else 1) :=
-    Offset.contains_base _ hi (by cases word <;> simp_all <;> omega)
+    Offset.contains_base _ hi (by cases word <;> simp_all <;> omega_using [hi])
   have hs : InRegions s.wr (s₀.gpr .rdi + BitVec.ofNat 64 i) (if word then 8 else 1) :=
     ⟨_, by rw [hw, hp.2.1]; simp, hc⟩
   have hmem := List.mem_singleton_self (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region)
@@ -60,8 +60,8 @@ theorem step_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i : Nat
       (show BitVec.ofInt 64 0 = 0 from rfl),
       (show ∀ a : Addr, a + 0 = a from BitVec.add_zero),
       (show (0 : BitVec 64).setWidth 8 = 0 from rfl)]
-  · exact ⟨hadd _, prefix_writeW hz (by omega), hf.writeW hmem _ hc⟩
-  · exact ⟨hadd _, prefix_writeW hz (by omega), hf.writeW hmem _ hc⟩
+  · exact ⟨hadd _, prefix_writeW hz (by omega_using [hi]), hf.writeW hmem _ hc⟩
+  · exact ⟨hadd _, prefix_writeW hz (by omega_using [hi]), hf.writeW hmem _ hc⟩
 
 /-- `body` `n` times, each zeroing `w` more bytes. -/
 theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i n : Nat)
@@ -74,7 +74,7 @@ theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i
   have hlt : n < 2 ^ 64 := by
     have := (s₀.gpr .rsi).isLt
     have : n ≤ w * n := Nat.le_mul_of_pos_left n hw
-    omega
+    omega_using [hn, this]
   have start : WP isa (.block [.alu .cmp .rdx (.imm 0)]) s fun t =>
       Inv s₀ i t ∧ t.gpr .rdx = BitVec.ofNat 64 n ∧ t.gpr .rsi = s.gpr .rsi ∧
       t.zf = some (BitVec.ofNat 64 n == 0) := by
@@ -88,7 +88,7 @@ theorem loopOf_ok (body : List Instr) (w : Nat) (hw : 0 < w) (s₀ s : State) (i
     refine WP.ite true (by simp [eval, hz]) (fun _ => WP.block_nil ?_) (by simp)
     simpa only [Nat.mul_zero, Nat.add_zero] using And.intro ht hsi
   · refine WP.ite false (by simp only [eval, hz, ofNat64_beq_zero hlt, decide_eq_false he]) (by simp) (fun _ => ?_)
-    apply wp_countdown hlt (by omega)
+    apply wp_countdown hlt (by omega_using [he])
       (fun j u => Inv s₀ (i + w * j) u ∧ u.gpr .rsi = s.gpr .rsi)
       (cnt := .rdx)
     · intro j hj u ⟨hu, hsu⟩ _
@@ -108,7 +108,7 @@ theorem loop_ok (word : Bool) (s₀ s : State) (hp : contract.pre s₀) (i n : N
       have hs := step_ok word s₀ u hp _ (by
         have : (if word then 8 else 1) * (j + 1) ≤ (if word then 8 else 1) * n :=
           Nat.mul_le_mul_left _ hj
-        rw [Nat.mul_succ] at this; omega) hu
+        rw [Nat.mul_succ] at this; omega_using [hn, this]) hu
       rwa [Nat.mul_succ, ← Nat.add_assoc])
     h hc
 
@@ -121,7 +121,7 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
   have hn := (s₀.gpr .rsi).isLt
   have hc : ∀ k, k ≤ 24 → (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region).Contains
       (s₀.gpr .rdi + BitVec.ofNat 64 (i + k)) 8 :=
-    fun k hk => Offset.contains_base _ (by omega) (by omega)
+    fun k hk => Offset.contains_base _ (by omega_using [hi, hk]) (by omega_using [hi, hk])
   have hmem := List.mem_singleton_self (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region)
   rw [← hp.2.1] at hmem
   have hs : ∀ k, k ≤ 24 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 (i + k)) 8 :=
@@ -142,7 +142,7 @@ theorem wideStep_ok (s₀ s : State) (hp : contract.pre s₀) (i : Nat)
       (s₀.gpr .rdi + BitVec.ofNat 64 (i + k)) (64 / 8) := hc
   have c0 : (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat⟩ : Region).Contains (s₀.gpr .rdi + BitVec.ofNat 64 i) (64 / 8) := by
     have := c 0 (by decide); rwa [Nat.add_zero] at this
-  exact ⟨prefix_writeW4 (w := 64) hz (by omega),
+  exact ⟨prefix_writeW4 (w := 64) hz (by omega_using [hi]),
     (((hf.writeW (w := 64) hmem _ c0).writeW hmem _ (c 8 (by decide))).writeW hmem _ (c 16 (by decide))).writeW
       hmem _ (c 24 (by decide))⟩
 
@@ -154,12 +154,12 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
       Inv s₀ 0 t ∧ t.gpr .rdx = BitVec.ofNat 64 (n / 32) ∧ t.gpr .rsi = s₀.gpr .rsi := by
     xrun [Inv, Prefix, shr64, (show BitVec.signExtend 64 (0 : BitVec 32) = 0 from rfl),
       (show ∀ p : Addr, p + BitVec.ofNat 64 0 = p from BitVec.add_zero)]
-    exact ⟨⟨by omega, Frame.refl _ _⟩, rfl⟩
+    exact ⟨⟨by omega_using [], Frame.refl _ _⟩, rfl⟩
   unfold zeroize
   refine WP.seq (WP.mono start fun t ⟨ht, hc, hs⟩ => ?_)
-  refine WP.seq (WP.mono (loopOf_ok wideStep 32 (by decide) s₀ t 0 (n / 32) (by dsimp [n]; omega)
+  refine WP.seq (WP.mono (loopOf_ok wideStep 32 (by decide) s₀ t 0 (n / 32) (by dsimp [n]; omega_using [])
     (fun j u hj hu => by
-      have := wideStep_ok s₀ u hp _ (by dsimp [n] at hj ⊢; omega) hu
+      have := wideStep_ok s₀ u hp _ (by dsimp [n] at hj ⊢; omega_using [hj]) hu
       rwa [Nat.mul_succ, ← Nat.add_assoc]) ht hc) fun u ⟨hu, hsu⟩ => ?_)
   have mid : WP isa (.block [.mov .rdx (.reg .rsi), .shift .shr .rdx 3, .alu .and .rdx (.imm 3)]) u fun v =>
       Inv s₀ (32 * (n / 32)) v ∧ v.gpr .rdx = BitVec.ofNat 64 (n / 8 % 4) ∧ v.gpr .rsi = s₀.gpr .rsi := by
@@ -167,15 +167,15 @@ theorem correct (s₀ : State) (hp : contract.pre s₀) :
       and3_64]
     exact ⟨by simpa only [Nat.zero_add, Inv] using hu, rfl⟩
   refine WP.seq (WP.mono mid fun v ⟨hv, hcv, hsv⟩ => ?_)
-  refine WP.seq (WP.mono (loop_ok true s₀ v hp (32 * (n / 32)) (n / 8 % 4) (by dsimp [n]; omega) hv hcv)
+  refine WP.seq (WP.mono (loop_ok true s₀ v hp (32 * (n / 32)) (n / 8 % 4) (by dsimp [n]; omega_using []) hv hcv)
     fun w ⟨hw, hsw⟩ => ?_)
   have tl : WP isa (.block [.mov .rdx (.reg .rsi), .alu .and .rdx (.imm 7)]) w fun x =>
       Inv s₀ (32 * (n / 32) + 8 * (n / 8 % 4)) x ∧ x.gpr .rdx = BitVec.ofNat 64 (n % 8) := by
     xrun [Inv, hsw, hsv, tail, (show BitVec.signExtend 64 (7 : BitVec 32) = 7 from rfl)]
     exact ⟨by simpa only [↓reduceIte, Inv] using hw, rfl⟩
   refine WP.seq (WP.mono tl fun x ⟨hx, hcx⟩ => ?_)
-  refine WP.mono (loop_ok false s₀ x hp _ (n % 8) (by dsimp [n]; simp; omega) hx hcx) fun y ⟨hy, _⟩ => ?_
-  have he : 32 * (n / 32) + 8 * (n / 8 % 4) + (if false then 8 else 1) * (n % 8) = n := by simp; omega
+  refine WP.mono (loop_ok false s₀ x hp _ (n % 8) (by dsimp [n]; simp; omega_using []) hx hcx) fun y ⟨hy, _⟩ => ?_
+  have he : 32 * (n / 32) + 8 * (n / 8 % 4) + (if false then 8 else 1) * (n % 8) = n := by simp; omega_using []
   rw [he] at hy
   exact ⟨prefix_spec hy.2.2.2.1, hy.2.2.2.2⟩
 

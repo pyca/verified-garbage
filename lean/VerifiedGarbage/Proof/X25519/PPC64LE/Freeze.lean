@@ -42,14 +42,14 @@ theorem freezeA_ok {X2 : Nat} (hX : X2 + 32 ≤ 4096) {s : State} (hc : Ctx b s)
       Frame [⟨b + BitVec.ofNat 64 X2, 32⟩] s.mem s'.mem ∧
       Rest [.r5, .r7, .r8] s s' := by
   simp only [freezeAAt, low31, List.cons_append, List.nil_append]
-  refine lw0_ok hc (d := X2 + 28) (by omega) fun s2 u2 => ?_
+  refine lw0_ok hc (d := X2 + 28) (by omega_using [hX]) fun s2 u2 => ?_
   refine wp_lsr (by decide) fun s3 u3 => wp_lsl (by decide) fun s4 u4 =>
     wp_lsr (by decide) fun s5 u5 => ?_
   have hr5 : Rest [.r7, .r8] s s5 :=
     (u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans (u5.rest (by decide))))
   have hc5 : Ctx b s5 := hc.of_rest hr5 (by decide)
-  refine sw0_ok hc5 (d := X2 + 28) (by omega) fun s6 u6 => ?_
+  refine sw0_ok hc5 (d := X2 + 28) (by omega_using [hX]) fun s6 u6 => ?_
   refine wp_li (by decide) fun s7 u7 => wp_mul fun s8 u8 => WP.block_nil ?_
   have hl7 := limb_lt s.mem b X2 7
   have e2 : (s2.gpr .r7).toNat = limb s.mem b X2 7 := by rw [u2.gpr, toNat_ext32]; rfl
@@ -81,13 +81,13 @@ theorem freezeB_ok {Y : Nat} (hY : Y + 32 ≤ 4096) {s : State} (hc : Ctx b s) :
       (∀ k < 8, limb s'.mem b Y k = mask31 (limb s.mem b Y) k) ∧
       Frame [⟨b + BitVec.ofNat 64 Y, 32⟩] s.mem s'.mem ∧ Rest [.r4, .r7, .r11] s s' := by
   simp only [freezeBAt, low31, List.cons_append, List.nil_append]
-  refine lw0_ok hc (d := Y + 28) (by omega) fun s1 u1 => ?_
+  refine lw0_ok hc (d := Y + 28) (by omega_using [hY]) fun s1 u1 => ?_
   refine wp_lsr (by decide) fun s2 u2 => wp_li (by decide) fun s3 u3 =>
     wp_sub fun s4 u4 => wp_lsl (by decide) fun s5 u5 => wp_lsr (by decide) fun s6 u6 => ?_
   have hr6 : Rest [.r4, .r7, .r11] s s6 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
-  refine sw0_ok (hc.of_rest hr6 (by decide)) (d := Y + 28) (by omega) fun s7 u7 => WP.block_nil ?_
+  refine sw0_ok (hc.of_rest hr6 (by decide)) (d := Y + 28) (by omega_using [hY]) fun s7 u7 => WP.block_nil ?_
   have e1 : (s1.gpr .r7).toNat = limb s.mem b Y 7 := by rw [u1.gpr, toNat_ext32]; rfl
   have hm7 : s7.mem = s.mem.writeW (b + BitVec.ofNat 64 (Y + 28)) ((s6.gpr .r7).setWidth 32) := by
     rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
@@ -167,7 +167,7 @@ theorem out_ok {s0 : State} (hc : Ctx b s0) {o : Addr} (h3 : s0.gpr .r3 = o)
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using []) (by omega_using [hk]))
   · rw [hm6]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega_using [hk, hi]) (by omega_using [hk])]; exact h.words i hi
+    · rw [wd_write_other _ _ _ (by omega_using [hi]) (by omega_using [hk, hi]) (by omega_using [hk])]; exact h.words i hi
     · rw [wd_write_self, ev]
 
 theorem frame_sub1 {m m' : Mem} {r r' : Region} {rs : List Region} (h : Frame [r] m m') (hs : Region.Sub r r')

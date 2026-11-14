@@ -34,8 +34,8 @@ def chkK : Contract isa where
     let dg : Region := ⟨s.gpr .rdi, T.H.D⟩
     let em : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
     let scr : Region := ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
-    let tH : Region := ⟨stackArg s 2, 40⟩
-    let tG : Region := ⟨stackArg s 3, 40⟩
+    let tH : Region := ⟨stackArg s 2, 56⟩
+    let tG : Region := ⟨stackArg s 3, 56⟩
     let args : Region := ⟨stackArgAddr s 0, 32⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 chkStack, chkStack⟩
@@ -50,7 +50,7 @@ def chkK : Contract isa where
       (s.gpr .rdx).toNat = Spec.RsaPss.emLength (s.gpr .rcx).toNat ∧
       Proof.RsaPss.encodingScratchWords ≤ (stackArg s 1).toNat ∧
       scr.Disjoint tH ∧ scr.Disjoint tG ∧ ret.Disjoint tH ∧ ret.Disjoint tG ∧ stk.Disjoint tH ∧ stk.Disjoint tG ∧
-      (stackArg s 2).toNat + 40 ≤ 2 ^ 64 ∧ (stackArg s 3).toNat + 40 ≤ 2 ^ 64 ∧
+      (stackArg s 2).toNat + 56 ≤ 2 ^ 64 ∧ (stackArg s 3).toNat + 56 ≤ 2 ^ 64 ∧
       TabsAt T.H T.dn T.f T.G T.g (stackArg s 2) (stackArg s 3) s
   post s s' :=
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPss.verifyEncoding Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) T.H.D)

@@ -109,7 +109,7 @@ theorem init_correct {s₀ : State} (hp : (Proof.Sha256.initX86 iv).pre s₀) :
   try rewrite [show arg s₀ 0 = st from rfl] at *
   have hst : st = arg s₀ 0 := rfl
   have o : ∀ k, k < 8 → InRegions s₀.wr (addr st (4 * k)) 4 :=
-    fun k hk => ⟨⟨st.setWidth 64, 96⟩, by simp [hwr], contains_addr (by omega) (by omega) hfit⟩
+    fun k hk => ⟨⟨st.setWidth 64, 96⟩, by simp [hwr], contains_addr (by omega_using [hk]) (by omega_using []) hfit⟩
   rw [initWith_eq]
   refine WP.seq (wp_movm (a := addr (s₀.gpr .esp) 4) (ea_at _ _ _)
     ⟨⟨argAddr s₀ 0, 4⟩, by simp [hrd], Region.contains_self _ _⟩ fun s₁ u₁ => WP.block_nil ?_)
@@ -117,35 +117,35 @@ theorem init_correct {s₀ : State} (hp : (Proof.Sha256.initX86 iv).pre s₀) :
   have w1 : s₁.wr = s₀.wr := u₁.wr
   rw [← List.append_nil (_ ++ word iv[7] 7)]
   simp only [List.append_assoc]
-  refine word_ok e1 (by rw [w1]; exact o 0 (by omega)) fun s2 a2 g2 _ wr2 m2 => ?_
-  refine word_ok a2 (by rw [wr2, w1]; exact o 1 (by omega)) fun s3 a3 g3 _ wr3 m3 => ?_
-  refine word_ok a3 (by rw [wr3, wr2, w1]; exact o 2 (by omega)) fun s4 a4 g4 _ wr4 m4 => ?_
-  refine word_ok a4 (by rw [wr4, wr3, wr2, w1]; exact o 3 (by omega)) fun s5 a5 g5 _ wr5 m5 => ?_
-  refine word_ok a5 (by rw [wr5, wr4, wr3, wr2, w1]; exact o 4 (by omega)) fun s6 a6 g6 _ wr6 m6 => ?_
-  refine word_ok a6 (by rw [wr6, wr5, wr4, wr3, wr2, w1]; exact o 5 (by omega))
+  refine word_ok e1 (by rw [w1]; exact o 0 (by omega_using [])) fun s2 a2 g2 _ wr2 m2 => ?_
+  refine word_ok a2 (by rw [wr2, w1]; exact o 1 (by omega_using [])) fun s3 a3 g3 _ wr3 m3 => ?_
+  refine word_ok a3 (by rw [wr3, wr2, w1]; exact o 2 (by omega_using [])) fun s4 a4 g4 _ wr4 m4 => ?_
+  refine word_ok a4 (by rw [wr4, wr3, wr2, w1]; exact o 3 (by omega_using [])) fun s5 a5 g5 _ wr5 m5 => ?_
+  refine word_ok a5 (by rw [wr5, wr4, wr3, wr2, w1]; exact o 4 (by omega_using [])) fun s6 a6 g6 _ wr6 m6 => ?_
+  refine word_ok a6 (by rw [wr6, wr5, wr4, wr3, wr2, w1]; exact o 5 (by omega_using []))
     fun s7 a7 g7 _ wr7 m7 => ?_
-  refine word_ok a7 (by rw [wr7, wr6, wr5, wr4, wr3, wr2, w1]; exact o 6 (by omega))
+  refine word_ok a7 (by rw [wr7, wr6, wr5, wr4, wr3, wr2, w1]; exact o 6 (by omega_using []))
     fun s8 a8 g8 _ wr8 m8 => ?_
-  refine word_ok a8 (by rw [wr8, wr7, wr6, wr5, wr4, wr3, wr2, w1]; exact o 7 (by omega))
+  refine word_ok a8 (by rw [wr8, wr7, wr6, wr5, wr4, wr3, wr2, w1]; exact o 7 (by omega_using []))
     fun s9 _ g9 _ _ m9 => WP.block_nil ?_
   have k9 : ∀ r, r ≠ .ecx → r ≠ .eax → s9.gpr r = s₀.gpr r := fun r h h' => by
     rw [g9 r h, g8 r h, g7 r h, g6 r h, g5 r h, g4 r h, g3 r h, g2 r h, u₁.other r h']
   have ha : ∀ k, k < 8 → addr st (4 * k) = st.setWidth 64 + BitVec.ofNat 64 (4 * k) :=
-    fun k hk => addr_eq (by omega)
+    fun k hk => addr_eq (by omega_using [hfit, hk])
   have hm : s9.mem = Proof.Sha256.StateMem.writeState s₀.mem (st.setWidth 64) iv := by
-    rw [m9, m8, m7, m6, m5, m4, m3, m2, u₁.mem, ha 0 (by omega), ha 1 (by omega), ha 2 (by omega),
-      ha 3 (by omega), ha 4 (by omega), ha 5 (by omega), ha 6 (by omega), ha 7 (by omega)]
+    rw [m9, m8, m7, m6, m5, m4, m3, m2, u₁.mem, ha 0 (by omega_using []), ha 1 (by omega_using []), ha 2 (by omega_using []),
+      ha 3 (by omega_using []), ha 4 (by omega_using []), ha 5 (by omega_using []), ha 6 (by omega_using []), ha 7 (by omega_using [])]
     rfl
   have hf : Frame [⟨st.setWidth 64, 96⟩] s₀.mem s9.mem := by
     rw [m9, m8, m7, m6, m5, m4, m3, m2, u₁.mem]
     have c : ∀ k, k < 8 → (⟨st.setWidth 64, 96⟩ : Region).Contains (addr st (4 * k)) (32 / 8) :=
-      fun k hk => contains_addr (by omega) (by omega) hfit
-    exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 1 (by omega))).writeW (List.mem_singleton_self _) _
-      (c 2 (by omega))).writeW (List.mem_singleton_self _) _ (c 3 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 4 (by omega))).writeW (List.mem_singleton_self _) _
-      (c 5 (by omega))).writeW (List.mem_singleton_self _) _ (c 6 (by omega))).writeW
-      (List.mem_singleton_self _) _ (c 7 (by omega))
+      fun k hk => contains_addr (by omega_using [hk]) (by omega_using []) hfit
+    exact ((((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c 1 (by omega_using []))).writeW (List.mem_singleton_self _) _
+      (c 2 (by omega_using []))).writeW (List.mem_singleton_self _) _ (c 3 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c 4 (by omega_using []))).writeW (List.mem_singleton_self _) _
+      (c 5 (by omega_using []))).writeW (List.mem_singleton_self _) _ (c 6 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ (c 7 (by omega_using []))
   refine ⟨⟨fun r hr => k9 r ?_ ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
@@ -192,7 +192,7 @@ theorem init_agree₀ {s₁ s₂ : State} (h₁ : (Proof.Sha256.initX86 iv).pre 
       fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hsp, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
     simp only [hw, List.mem_singleton]
     rintro r rfl
-    exact VG.X86.Taint.frame_disjoint (n := 4) (by omega) hr hd
+    exact VG.X86.Taint.frame_disjoint (n := 4) (by omega_using [hsp]) hr hd
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wf _ h₁, wf _ h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
@@ -201,8 +201,8 @@ theorem init_agree₀ {s₁ s₂ : State} (h₁ : (Proof.Sha256.initX86 iv).pre 
   · simp only [initτ₀] at hk
     rw [show VG.X86.Taint.depth initτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq h₁.2.2.2.2.2 h4 hk, VG.X86.Taint.argByte_eq h₂.2.2.2.2.2 h4 hk,
-      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega)),
-      show (k - 4) / 4 = 0 by omega]
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using [])),
+      show (k - 4) / 4 = 0 by omega_using [hk]]
     exact congrArg _ a0
 
 /-- `initWith iv` is verified, given that the taint analysis, which the
@@ -262,7 +262,7 @@ theorem dims : Dims params 160 := ⟨.inl rfl, by decide, by decide, by decide, 
 
 theorem shape : Shape (P := params) md where
   len _ hfit hlo hhi ho := len64_ok (so := params.so) (d := params.N + params.B - params.L) (be := true)
-    (by have : params.N + params.B - params.L + 8 = params.N + params.B := rfl; omega) hlo hhi
+    (by have : params.N + params.B - params.L + 8 = params.N + params.B := rfl; omega_using [hfit, this]) hlo hhi
     (ho _ (Nat.le_refl _) (by decide)) (ho _ (by decide) (by decide))
   out _ hbx hax hin hout hd := by
     refine (out32_ok (n := 8) true (by decide) hbx hax hin hout hd).mono fun s' ⟨g, rd, wr, m⟩ =>
@@ -390,8 +390,8 @@ theorem pfx {a : Addr} {m n : Nat} (h : Nat.ble m n = true) : Region.Prefix ⟨a
   ⟨rfl, Nat.le_of_ble_eq_true h⟩
 theorem sub112 (a : Addr) : Region.Sub ⟨a, 112⟩ ⟨a, 560⟩ := Region.sub_prefix (by decide)
 theorem sub160 (a : Addr) : Region.Sub ⟨a, 160⟩ ⟨a, 608⟩ := Region.sub_prefix (by decide)
-theorem le112 {x : Nat} (h : x + 560 ≤ 2 ^ 32) : x + 112 ≤ 2 ^ 32 := by omega
-theorem le160 {x : Nat} (h : x + 608 ≤ 2 ^ 32) : x + 160 ≤ 2 ^ 32 := by omega
+theorem le112 {x : Nat} (h : x + 560 ≤ 2 ^ 32) : x + 112 ≤ 2 ^ 32 := by omega_using [h]
+theorem le160 {x : Nat} (h : x + 608 ≤ 2 ^ 32) : x + 160 ≤ 2 ^ 32 := by omega_using [h]
 
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/

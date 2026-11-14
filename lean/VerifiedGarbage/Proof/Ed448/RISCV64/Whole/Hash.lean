@@ -272,7 +272,7 @@ theorem bytes_keep {W : List Region} {m m' : Mem} (hf : Frame W m m') {p : Addr}
   simp only [Spec.Sha3.bytesAt]
   refine List.map_congr_left fun i hi => hf _ fun r hr hc => ?_
   have hi' := List.mem_range.mp hi
-  exact hd r hr _ (Offset.contains_base p (by omega) (by omega)) hc
+  exact hd r hr _ (Offset.contains_base p (by omega_using [hi']) (by omega_using [hn, hi'])) hc
 
 /-- A piece's bytes while a hash runs. -/
 theorem PieceOk.bytes {sc : Addr} {s₀ s : State} {p : Piece} (hp : PieceOk sc s₀ p)
@@ -359,7 +359,7 @@ theorem zeroState_ok {sc : Reg} {scA : Addr} (hsc : sc ∈ preserved) {s : State
     WP isa (.block (Impl.Sha3.RISCV64.zeroState sc)) s fun s' =>
       Kept (kW scA s.sp) s s' ∧ stateAt s'.mem scA = Spec.Sha3.zero := by
   refine WP.mono (Proof.Sha3.RISCV64.Stream.zeroState_ok (pres_ne hsc).1 (by rw [hs]; exact he.al)
-    fun k hk => by rw [hs]; exact Proof.X25519.RISCV64.in_base he.w (by omega) (by omega)) fun s' ⟨hg, hrd, hwr, hsp, hf, hz⟩ => ?_
+    fun k hk => by rw [hs]; exact Proof.X25519.RISCV64.in_base he.w (by omega_using [hk]) (by omega_using [hk])) fun s' ⟨hg, hrd, hwr, hsp, hf, hz⟩ => ?_
   rw [hs] at hf hz
   refine ⟨⟨hrd, hwr, hsp, fun r hr => hg r (pres_ne hr).1, ?_⟩, hz⟩
   exact hf.sub fun r hr => by

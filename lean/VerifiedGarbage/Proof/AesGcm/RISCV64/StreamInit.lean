@@ -78,7 +78,7 @@ theorem si_entry {s : State} (hs : streamInitRISCV64.pre s) :
   have sW : Region.Sub (savedR W) ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
   have hiv : bytesAt s₁.mem Np n = bytesAt s.mem Np n :=
     bytesAt_frame en.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dnw.sub_right sW) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact dnw.sub_right sW) (by omega_using [hn])
   have hH : blockAt s₁.mem (s₁.gpr .s2 + BitVec.ofNat 64 240) = Spec.Gcm.ctxH s.mem Ctx := by
     rw [h29, ctxH_eq]
     exact blockAt_frame en.frame (fun r hr => by

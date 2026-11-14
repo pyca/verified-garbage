@@ -19,11 +19,11 @@ theorem cachedTransferEnv_point {n : Nat} {C : Curve} {E : Nat → Fe C} {o q : 
     (hDE : dst+16*n≤o.x ∨ o.x+24*n≤dst) {P : Point C}
     (hP : CachedPoint n C E q src P) :
     CachedPoint n C (cachedTransferEnv n E o q dst src) o dst P := by
-  have hyx : o.y≠o.x := by omega
-  have hzx : o.z≠o.x := by omega
-  have hzy : o.z≠o.y := by omega
-  have hd : dst≠o.x ∧ dst≠o.y ∧ dst≠o.z := by omega
-  have hd' : dst+8*n≠o.x ∧ dst+8*n≠o.y ∧ dst+8*n≠o.z ∧ dst+8*n≠dst := by omega
+  have hyx : o.y≠o.x := by omega_using [hn, hy]
+  have hzx : o.z≠o.x := by omega_using [hn, hz]
+  have hzy : o.z≠o.y := by omega_using [hy, hz, hyx]
+  have hd : dst≠o.x ∧ dst≠o.y ∧ dst≠o.z := by omega_using [hy, hz, hDE, hyx]
+  have hd' : dst+8*n≠o.x ∧ dst+8*n≠o.y ∧ dst+8*n≠o.z ∧ dst+8*n≠dst := by omega_using [hn, hy, hz, hDE]
   simpa only [CachedPoint,cachedTransferEnv,hyx,hzx,hzy,hd.1,hd.2.1,hd.2.2,
     hd'.1,hd'.2.1,hd'.2.2.1,hd'.2.2.2,ite_false,ite_true] using hP
 
@@ -35,10 +35,10 @@ theorem cachedEntryEnv_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {tbl ds
     CachedPoint K.M.n C (cachedEntryEnv K E tbl dst b) K.E dst
       (if b.toNat<128 then P else negPt P) := by
   have h := cachedTransferEnv_point hn hy hz hDE hP
-  have hxy : K.E.x≠K.E.y := by omega
-  have hzy : K.E.z≠K.E.y := by omega
-  have hd : dst≠K.E.y := by omega
-  have hd' : dst+8*K.M.n≠K.E.y := by omega
+  have hxy : K.E.x≠K.E.y := by omega_using [hn, hy]
+  have hzy : K.E.z≠K.E.y := by omega_using [hy, hz, hxy]
+  have hd : dst≠K.E.y := by omega_using [hy, hDE, hxy]
+  have hd' : dst+8*K.M.n≠K.E.y := by omega_using [hn, hy, hDE]
   unfold cachedEntryEnv
   split
   · exact h

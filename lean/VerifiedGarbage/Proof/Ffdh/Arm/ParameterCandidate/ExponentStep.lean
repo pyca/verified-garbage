@@ -96,7 +96,7 @@ theorem exponentHalfStep_ok {s : State} {base : BitVec 32} {capacity w count : N
   have restUV : Rest opRegs s v := (restU.mono (by simp [opRegs])).trans restV
   have stackV : Workspace v v.sp 72 := by rw [restUV.sp]; exact stack.congr restUV.wr
   have countSep : (⟨State.addr (s.sp + 64#32), 4⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩ := by
-    rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+    rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
     exact separate.sub_left (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
   have countV : v.mem.readW (State.addr (v.sp + 64#32)) 32 = BitVec.ofNat 32 count := by
     rw [restUV.sp, frameV.readW (r := ⟨State.addr (s.sp + 64#32), 4⟩)
@@ -108,7 +108,7 @@ theorem exponentHalfStep_ok {s : State} {base : BitVec 32} {capacity w count : N
     rw [memT]
     exact (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
   have equal : WorkspaceEq (State.addr base) (8 * capacity) v.mem t.mem :=
-    WorkspaceEq.of_frame (by have := workspace.nowrap; omega) tailFrame (by
+    WorkspaceEq.of_frame (by have := workspace.nowrap; omega_using [this]) tailFrame (by
       intro r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -127,6 +127,6 @@ theorem exponentHalfStep_ok {s : State} {base : BitVec 32} {capacity w count : N
   · intro d bound
     have fits := readyV.arrayFit (j := 0) (by decide)
     simp only [Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes, Nat.zero_mul, Nat.add_zero] at fits
-    rw [equal.word (bits := 64) (by omega), key_keep_header workspaceU readyU (by simp) bound keepV, memU]
+    rw [equal.word (bits := 64) (by omega_using [bound, fits]), key_keep_header workspaceU readyU (by simp) bound keepV, memU]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

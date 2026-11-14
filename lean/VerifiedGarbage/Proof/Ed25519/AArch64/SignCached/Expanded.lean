@@ -120,7 +120,7 @@ theorem bodyE_depth (v : Whole.Backend) :
   simp only [bodyFrom, copyExpanded, nonceCode, challengeCode, hashNonce, hashChallenge,
     init, update, finalize, reduce, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth, Nat.max_le,
     Impl.Sha512.AArch64.Stream.init, hr, hb, hm]
-  omega
+  omega_using [hu, hf]
 
 theorem signE_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) {s : State}
     (h : signLocalE.pre s) :
@@ -200,9 +200,9 @@ theorem sat_digest : Spec.Ed25519.bytesAt satMemE 0x2000 64 = satDigest := by
     have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
       change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2000 + i < 0x2000 from by omega, show 0x2000 + i < 0x3000 from by omega, ite_false, ite_true,
+      show ¬ 0x2000 + i < 0x2000 from by omega_using [], show 0x2000 + i < 0x3000 from by omega_using [hi'], ite_false, ite_true,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem sat_keyE : Spec.Ed25519.bytesAt satMemE 0x3000 32 = satKey := by
@@ -212,9 +212,9 @@ theorem sat_keyE : Spec.Ed25519.bytesAt satMemE 0x3000 32 = satKey := by
     have hi' : i < 32 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x3000 + i < 0x2000 from by omega, show ¬ 0x3000 + i < 0x3000 from by omega, ite_false,
+      show ¬ 0x3000 + i < 0x2000 from by omega_using [], show ¬ 0x3000 + i < 0x3000 from by omega_using [], ite_false,
       Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 /-- `satMemE`, and the comb's tables at `0x100000` (irreducible: unfolding it in a definitional
@@ -228,22 +228,22 @@ theorem satMemTE_bytes {p : Addr} {n : Nat} (hp : p.toNat + n ≤ 0x100000) :
   refine List.map_congr_left fun i hi => ?_
   have hi' := List.mem_range.mp hi
   unfold satMemTE
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
-  simp only [show ¬ 0x100000 ≤ (p.toNat + i) % 2 ^ 64 by omega, ite_false]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hp, hi'])]
+  simp only [show ¬ 0x100000 ≤ (p.toNat + i) % 2 ^ 64 by omega_using [hp, hi'], ite_false]
 
 theorem satMemTE_held : ∀ i < combWords.length,
     satMemTE.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   intro i hi
   have hl := combWords_length
-  rw [← constMem_held 0x100000 combWords (by omega) i hi]
+  rw [← constMem_held 0x100000 combWords (by omega_using [hl]) i hi]
   refine Mem.readW_congr fun b hb => ?_
   have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b).toNat = 0x100000 + 8 * i + b := by
     have h0 : (0x100000 : Addr).toNat = 0x100000 := rfl
     rw [Offset.add_add, BitVec.toNat_add, BitVec.toNat_ofNat, h0,
-      Nat.mod_eq_of_lt (a := 8 * i + b) (by omega)]
-    omega
+      Nat.mod_eq_of_lt (a := 8 * i + b) (by omega_using [hi, hl, hb])]
+    omega_using [hi, hl, hb]
   unfold satMemTE
-  simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega, ↓reduceIte]
+  simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega_using [], ↓reduceIte]
 
 def satStateE : State where
   gpr r := match r with

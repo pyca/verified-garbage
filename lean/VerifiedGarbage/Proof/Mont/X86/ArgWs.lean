@@ -23,6 +23,6 @@ open VG VG.X86 VG.Proof.Mont
 theorem ofs_far {base : Addr} {size : Nat} {x : Addr}
     (h : ¬ (⟨base, size⟩ : Region).Contains x 1) : size ≤ ofs base x := by
   simp only [Region.Contains, ofs] at h ⊢
-  omega
+  omega_using [h]
 
 end VG.Proof.Mont.X86.Dynamic

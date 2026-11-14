@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaKeyGen
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Miller–Rabin without splitting `w − 1`
@@ -44,7 +45,7 @@ theorem sqIter_succ' (w z t : Nat) : sqIter w z (t + 1) = sqIter w (z * z % w) t
 
 theorem sqIter_one (w : Nat) (hw : 2 ≤ w) : ∀ t, sqIter w 1 t = 1
   | 0 => rfl
-  | t + 1 => by rw [sqIter, sqIter_one w hw t, Nat.one_mul, Nat.mod_eq_of_lt (by omega)]
+  | t + 1 => by rw [sqIter, sqIter_one w hw t, Nat.one_mul, Nat.mod_eq_of_lt (by omega_using [hw])]
 
 /-- The squarings from `j ≤ a`, with `z` the value after `j − 1` of them:
 `possible`, or one of the next `a − j` squares is `w − 1`. -/
@@ -66,30 +67,30 @@ theorem mrSquarings_iff (w a : Nat) (hw : 3 ≤ w) :
         constructor
         · intro h; omega
         · rintro ⟨t, ht, _, he⟩
-          obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
-          rw [sqIter_succ', hz1, sqIter_one w (by omega)] at he
-          omega
+          obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega_using [ht]⟩
+          rw [sqIter_succ', hz1, sqIter_one w (by omega_using [hw])] at he
+          omega_using [hw, he]
       · simp only [hz, Bool.false_eq_true, ↓reduceIte]
-        rw [mrSquarings_iff w a hw fuel (j + 1) _ _ (by omega) (by omega) (by omega)]
+        rw [mrSquarings_iff w a hw fuel (j + 1) _ _ (by omega_using []) (by omega_using [hlt]) (by omega_using [haf])]
         simp only [Bool.or_eq_true, beq_iff_eq]
         constructor
         · rintro ((hp | he) | ⟨t, ht1, ht2, he⟩)
           · exact .inl hp
-          · exact .inr ⟨1, Nat.le_refl _, by omega, by rw [sqIter, sqIter]; exact he⟩
-          · exact .inr ⟨t + 1, by omega, by omega, by rw [sqIter_succ']; exact he⟩
+          · exact .inr ⟨1, Nat.le_refl _, by omega_using [hlt], by rw [sqIter, sqIter]; exact he⟩
+          · exact .inr ⟨t + 1, by omega_using [], by omega_using [hlt, ht2], by rw [sqIter_succ']; exact he⟩
         · rintro (hp | ⟨t, ht1, ht2, he⟩)
           · exact .inl (.inl hp)
-          · obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
+          · obtain ⟨t', rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega_using [ht1]⟩
             rcases t' with _ | t'
             · exact .inl (.inr (by rw [sqIter, sqIter] at he; exact he))
-            · exact .inr ⟨t' + 1, by omega, by omega, by rw [← sqIter_succ']; exact he⟩
-    · have hj : j = a := by omega
+            · exact .inr ⟨t' + 1, by omega_using [], by omega_using [ht2], by rw [← sqIter_succ']; exact he⟩
+    · have hj : j = a := by omega_using [hja, hge]
       subst hj
       cases possible
       · simp only [mrSquarings, Bool.not_false, and_self, ↓reduceIte, Bool.false_eq_true, false_or]
         constructor
         · intro h; exact absurd h (by decide)
-        · rintro ⟨t, h1, h2, _⟩; omega
+        · rintro ⟨t, h1, h2, _⟩; omega_using [h1, h2]
       · simp [mrSquarings_true]
 
 /-- `mrIteration`: `z = b^m mod w` is 1, or it squared fewer than `a` times
@@ -99,18 +100,18 @@ theorem mrIteration_iff {w a m b : Nat} (hw : 3 ≤ w) (ha : 1 ≤ a) (haw : a �
       ∃ t, t < a ∧ sqIter w (powMod b m w) t = w - 1) := by
   unfold mrIteration
   simp only
-  rw [mrSquarings_iff w a hw _ 1 _ _ (Nat.le_refl _) ha (by omega)]
+  rw [mrSquarings_iff w a hw _ 1 _ _ (Nat.le_refl _) ha (by omega_using [haw])]
   simp only [Bool.or_eq_true, beq_iff_eq]
   constructor
   · rintro ((h | h) | ⟨t, _, ht, he⟩)
     · exact .inl h
     · exact .inr ⟨0, ha, h⟩
-    · exact .inr ⟨t, by omega, he⟩
+    · exact .inr ⟨t, by omega_using [ha, ht], he⟩
   · rintro (h | ⟨t, ht, he⟩)
     · exact .inl (.inl h)
     · rcases t with _ | t
       · exact .inl (.inr he)
-      · exact .inr ⟨t + 1, by omega, by omega, he⟩
+      · exact .inr ⟨t + 1, by omega_using [], by omega_using [ht], he⟩
 
 /-! ## Powers from the top bit -/
 
@@ -118,8 +119,8 @@ theorem mrIteration_iff {w a m b : Nat} (hw : 3 ≤ w) (ha : 1 ≤ a) (haw : a �
 theorem powMod_double (b e w : Nat) (he : 0 < e) :
     powMod b (2 * e) w = powMod b e w * powMod b e w % w := by
   rw [powMod]
-  simp only [show 2 * e ≠ 0 by omega, ↓reduceIte, show 2 * e / 2 = e by omega,
-    show 2 * e % 2 = 0 by omega]
+  simp only [show 2 * e ≠ 0 by omega_using [he], ↓reduceIte, show 2 * e / 2 = e by omega_using [],
+    show 2 * e % 2 = 0 by omega_using []]
 
 /-- `b^(m 2^t)` is `b^m` squared `t` times. -/
 theorem powMod_pow2 (b m w : Nat) (hm : 0 < m) :
@@ -134,12 +135,12 @@ theorem splitTwos_spec : ∀ n, 0 < n → n = (splitTwos n).2 * 2 ^ (splitTwos n
   | n, hn => by
     rw [splitTwos]
     by_cases h : n = 0 ∨ n % 2 = 1
-    · simp only [h, ↓reduceIte, Nat.pow_zero, Nat.mul_one, true_and]; omega
+    · simp only [h, ↓reduceIte, Nat.pow_zero, Nat.mul_one, true_and]; omega_using [hn, h]
     · simp only [h, ↓reduceIte]
-      obtain ⟨h1, h2⟩ := splitTwos_spec (n / 2) (by omega)
+      obtain ⟨h1, h2⟩ := splitTwos_spec (n / 2) (by omega_using [h])
       refine ⟨?_, h2⟩
-      rw [Nat.pow_succ, ← Nat.mul_assoc, ← h1]; omega
+      rw [Nat.pow_succ, ← Nat.mul_assoc, ← h1]; omega_using [h]
 termination_by n => n
-decreasing_by omega
+decreasing_by omega_using [hn]
 
 end VG.Proof.RsaKeyGen

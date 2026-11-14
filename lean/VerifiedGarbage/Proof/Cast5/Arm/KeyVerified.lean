@@ -46,7 +46,7 @@ theorem τKey_wf {s : State} (h : keyArm.pre (stripConsts keyConsts s)) : VG.Arm
   refine ⟨fun _ => ⟨by simp [hwr, τKey], by simpa [hwr] using dKS, ?_⟩, fun p hp => ?_, fun h => absurd h (by decide),
     fun _ h => (List.not_mem_nil h).elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [toNat_addr] <;> omega
+    rintro r (rfl | rfl) <;> simp only [toNat_addr] <;> omega_arith
   · simp only [τKey, List.mem_singleton] at hp; subst hp
     simp only [VG.Arm.Taint.region, hwr]
     rfl

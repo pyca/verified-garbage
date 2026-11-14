@@ -91,10 +91,10 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Idea.Sche
   have hsep : Region.Disjoint ⟨p, 104⟩ ⟨B, 112⟩ := (hdis _ hR).sub_right (Region.sub_prefix (by rw [total_eq]; decide))
   refine WP.mono (copyN_wp (k := 13) (P := schedAddr B) (Q := p) ⟨by rw [hB], by rw [hp]; simp, by decide,
     by decide, fun w hw => ⟨_, hs.wr, by
-      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)⟩,
-    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
-    (hsep.sub_right (sched_sub B)).symm, by omega⟩) fun s' h => ?_
-  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega)], by rw [h.regs _ (by decide), hB],
+      rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega_using [hw]) (by simp only [schedSlot]; omega_using [hw])⟩,
+    fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega_using [hw]) (by omega_using [hw])⟩,
+    (hsep.sub_right (sched_sub B)).symm, by omega_using []⟩) fun s' h => ?_
+  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega_using [])], by rw [h.regs _ (by decide), hB],
     h.regs _ (by decide), h.regs _ (by decide), h.regs _ (by decide), ?_, h.rd, h.wr⟩
   rw [h.mem, core_eq]
   exact (over_frame _ _ _ _).sub fun r hr => by
@@ -107,8 +107,8 @@ theorem keyOk_at (s : State) {p : Addr} (hp : s.gpr .rdi = p)
   have hin' : ∀ d, d + 8 ≤ 104 → InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 d) 8 := fun d hd => by
     obtain ⟨r, h1, h2⟩ := hin d hd; exact ⟨r, List.mem_append_right _ h1, h2⟩
   refine ⟨fun k hk => ⟨?_, ?_⟩, fun j hj => ?_⟩
-  · rw [ea_at, hp]; exact hin' _ (by omega)
-  · rw [ea_at, hp]; exact subkey_read _ _ (by omega)
+  · rw [ea_at, hp]; exact hin' _ (by omega_using [hk])
+  · rw [ea_at, hp]; exact subkey_read _ _ (by omega_using [hk])
   · rw [ea_at, hp]; exact subkey_read96 _ _ hj
 
 theorem crypt_wp {s : State} {B : Addr} {k : Spec.Idea.Schedule} (hB : s.gpr sb = B)
@@ -140,16 +140,16 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Idea.Schedule} (hB : s.gpr sb 
   have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
   have inS : ∀ {t n}, t + n ≤ 176 → 0 < n → InRegions s₄.wr (B + BitVec.ofNat 64 t) n := fun ht hn =>
-    ⟨_, by rw [wr₄']; exact hw, Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, by rw [wr₄']; exact hw, Offset.contains_base B (by omega_using [ht]) (by omega_using [ht])⟩
   -- The block.
   have hk := keyOk_at s₄ rdi₄ fun d hd => by
-    rw [addr_add]; exact inS (by simp only [schedSlot]; omega) (by decide)
+    rw [addr_add]; exact inS (by simp only [schedSlot]; omega_using [hd]) (by decide)
   rw [mem₄, hr] at hk
   obtain ⟨s₅, e₅, b₅, f₅, g₅, rd₅, wr₅⟩ := cryptBlock_run k s₄ rsi₄
     (fun i hi => by
-      obtain ⟨r, h1, h2⟩ := inS (t := i) (n := 1) (by omega) (by decide)
+      obtain ⟨r, h1, h2⟩ := inS (t := i) (n := 1) (by omega_using [hi]) (by decide)
       exact ⟨r, List.mem_append_right _ h1, h2⟩)
-    (fun i hi => inS (by omega) (by decide)) hk
+    (fun i hi => inS (by omega_using [hi]) (by decide)) hk
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := movR_ok s₅ sb .rcx
   refine WP.of_runBlock ⟨s₆, ?_, ?_⟩
   · show runBlock isa (([Impl.Aes.X86_64.movR .rcx sb] ++ ([Impl.Aes.X86_64.movR .rdi sb] ++
@@ -172,7 +172,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Idea.Schedule} (hB : s.gpr sb 
     exact fB.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
-  · have hj0 : j = 0 := by simp only [modeCore] at hj; omega
+  · have hj0 : j = 0 := by simp only [modeCore] at hj; omega_using [hj]
     subst hj0
     have ea : blkAddr modeCore B 0 = B := by simp [modeCore]
     rw [modeCore_bw, ea, cipher_bytes, bytesAt_eq, m₆, b₅, mem₄]

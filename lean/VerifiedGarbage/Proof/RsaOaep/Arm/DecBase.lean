@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 import all Init.Data.Nat.Bitwise.Basic
@@ -61,6 +61,18 @@ structure EP where
   auL : BitVec 32
   afL : BitVec 32
   TL : State → Prop
+  /-- Given the key's precomputed values: `pre` among the buffers read, the
+  bytes of our stack arguments, and our arguments after `mgf1`. -/
+  X : List Region := []
+  A : Nat := 84
+  xargs : List (BitVec 32) := []
+  /-- The key's precomputed values, their length in words, what of them the
+  function may leak (the modulus' values), and what the entry state holds of
+  them. -/
+  pre : BitVec 32 := 0
+  prl : Nat := 0
+  preL : List Nat := []
+  PX : State → Prop := fun _ => True
 
 namespace EP
 
@@ -78,8 +90,8 @@ abbrev QI : Region := ⟨State.addr P.qinv, P.pl⟩
 abbrev LAB : Region := ⟨State.addr P.lab, P.ll⟩
 abbrev CT : Region := ⟨State.addr P.ct, P.K⟩
 abbrev SCR : Region := ⟨State.addr P.scr, P.scl * 8⟩
-abbrev TAB : Region := Sig.tableRegion 32 (State.addr P.tab) 5
-abbrev TABL : Region := Sig.tableRegion 32 (State.addr P.tabL) 5
+abbrev TAB : Region := Sig.tableRegion 32 (State.addr P.tab) 11
+abbrev TABL : Region := Sig.tableRegion 32 (State.addr P.tabL) 11
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
@@ -91,9 +103,9 @@ abbrev argv : List (BitVec 32) :=
 abbrev lay : Lay where
   B := P.B
   F := frameBytes
-  A := 84
-  argv := P.argv
-  ro := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.LAB, P.CT, P.TABL, P.TAB]
+  A := P.A
+  argv := P.argv ++ P.xargs
+  ro := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.LAB, P.CT] ++ P.X ++ [P.TABL, P.TAB]
   rw := [P.OUT, P.ML, P.SCR]
   C := 3440
 
@@ -116,6 +128,8 @@ structure In (P : EP) (σ : State) : Prop where
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.e) P.el = P.eB
   tabT : P.T σ
   tabTL : P.TL σ
+  A84 : 84 ≤ P.A
+  pxT : P.PX σ
 
 namespace In
 
@@ -132,7 +146,7 @@ theorem geo : Geo P.lay P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
-  exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
+  exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
 
 end In
 
@@ -144,16 +158,16 @@ abbrev stackBytes : Nat := 56 + frameBytes + 3440
 /-- The shared contract, with MGF1's hash function one of the tables `ts` and
 that stack. -/
 abbrev spec (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.decryptTablesContract
-    (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)]) stackBytes
+  Spec.RsaOaep.decryptMdTablesContract
+    (abi.withTables Spec.RsaOaep.decryptMdTablesSig [("hash", ts), ("mgf1", ts)]) stackBytes
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "dec_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
@@ -213,7 +227,7 @@ theorem spec_tab {ts : List FnTable} {s : State} (h : (spec ts).pre s) :
       (∃ T ∈ ts, Abi.tableHeld 32 s.mem (State.addr (stackArg s 20)) (FnTable.words isa s T)) ∧
       ((ts.map (fun T : FnTable => T.fns)).flatten ++ ((ts.map (fun T : FnTable => T.fns)).flatten ++ [])).Pairwise
         (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
-      (stackArg s 19).toNat + 20 ≤ 2 ^ 32 ∧ (stackArg s 20).toNat + 20 ≤ 2 ^ 32 := by
+      (stackArg s 19).toNat + 44 ≤ 2 ^ 32 ∧ (stackArg s 20).toNat + 44 ≤ 2 ^ 32 := by
   dec_pre at h
   sig_split h
   rename_i hsp hsa hheld hheld2 hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oTL oT oA mN mE mP mQ mDP mDQ mQI mL
@@ -260,7 +274,9 @@ theorem in_of_pre {ts : List FnTable} {s : State} (h : (spec ts).pre s)
         simp only [List.mem_singleton] at hr; subst hr; exact (kE.sub_left below).symm)
         (by show (stackArg s 2).toNat ≤ 2 ^ 64; omega_arith)
       tabT := hT
-      tabTL := hTL }
+      tabTL := hTL
+      A84 := Nat.le_refl _
+      pxT := trivial }
   rw [ep_lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr

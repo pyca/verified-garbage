@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Proof.Scrypt.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Calls
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
@@ -23,6 +26,7 @@ meta import VerifiedGarbage.Proof.Scrypt.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 
 @[expose] public section
 
@@ -44,7 +48,7 @@ open VG VG.X86_64 VG.Impl.Scrypt.X86_64
 open VG.Proof.Scrypt.Memory (toNat_ofNat_lt toNat_add_ofNat)
 open VG.Spec.Scrypt (bytesAt)
 
-variable {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem} {R : RMImpl}
 
 /-! ## The password, the salt and the blocks -/
 
@@ -218,7 +222,7 @@ theorem zf_eq (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
 
 theorem call_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L g m₀ t)
     (hb : InvB L m₀ i t) (ha : RomixArgs L (blkAt L i) t) :
-    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect) t fun t' => Ctx L g m₀ t' ∧ Mid L m₀ i t' := by
+    WP isa (.call R.name R.code) t fun t' => Ctx L g m₀ t' ∧ Mid L m₀ i t' := by
   refine WP.mono (romix_call hL hc hi ha) fun t₂ ⟨hc₂, hf₂, hr₂⟩ => ⟨hc₂, ?_, fun k hk => ?_⟩
   · rw [← hb.cur]
     refine hf₂.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -264,13 +268,13 @@ theorem next_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L 
       by rw [hz₃, next_eq, zf_eq hL hi]⟩
 
 theorem body_ok (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (h : Inv L g m₀ i t) :
-    WP isa (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect)
+    WP isa (.seq (.block romixArgs) (.seq (.call R.name R.code)
       (.block nextBlock))) t fun t' => Inv L g m₀ (i + 1) t' ∧ t'.zf = some (decide (i + 1 = L.pp)) :=
   WP.seq (WP.mono (romixArgs_ok hL h.1 h.2.cur) fun t₁ ⟨hc₁, hm₁, ha₁⟩ =>
     WP.seq (WP.mono (call_step hL hi hc₁ ⟨by rw [hm₁]; exact h.2.cur, by rw [hm₁]; exact h.2.blks⟩ ha₁) fun t₂ ⟨hc₂, hm₂⟩ =>
       WP.mono (next_step hL hi hc₂ hm₂) fun _ ⟨hc₃, hb₃, hz₃⟩ => ⟨⟨hc₃, hb₃⟩, hz₃⟩))
 
-theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa romixLoop t (Inv L g m₀ L.pp) :=
+theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa (romixLoop R.name R.code) t (Inv L g m₀ L.pp) :=
   RoMix.count_loop hL.pp_pos (Inv L g m₀) (fun _ hi _ h => body_ok hL hi h) h
 
 /-! ## Step 3 -/
@@ -320,7 +324,7 @@ theorem step3_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ L.pp t) :
 
 /-- The frame's body. -/
 theorem body_scrypt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (he : Entry L t) :
-    WP isa (scryptBody name pbk) t fun t' => Ctx L g m₀ t' ∧
+    WP isa (scryptBody R.name R.code name pbk) t fun t' => Ctx L g m₀ t' ∧
       Spec.Scrypt.scrypt (bytesAt m₀ L.pw L.pwl.toNat) (bytesAt m₀ L.salt L.sl.toNat) L.NN L.r.toNat L.pp
         L.ol.toNat = some (bytesAt t'.mem L.out L.ol.toNat) := by
   refine WP.seq (WP.mono (step1_ok hv hsp hd name hL hc he) fun t₁ ⟨hc₁, h1, hx⟩ => ?_)
@@ -357,7 +361,7 @@ include hv hsp hd
 
 /-- `vg_scrypt` meets `scryptX86_64` and the calling convention but for MXCSR. -/
 theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) :
-    WP isa (scrypt name pbk) s fun s' => gprPreserved s s' ∧ Proof.Scrypt.scryptX86_64.post s s' := by
+    WP isa (scrypt R.name R.code name pbk) s fun s' => gprPreserved s s' ∧ Proof.Scrypt.scryptX86_64.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
   have he := push_entry s
@@ -383,9 +387,9 @@ theorem scrypt_ok {s : State} (h : Proof.Scrypt.scryptX86_64.pre s) :
 
 /-- `vg_scrypt` meets `scryptX86_64` and the calling convention, if no
 instruction (of it or the functions it calls) loads MXCSR. -/
-theorem scrypt_correct (hmx : (scrypt name pbk).allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+theorem scrypt_correct (hmx : (scrypt R.name R.code name pbk).allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (h : Proof.Scrypt.scryptX86_64.pre s) :
-    ∃ t s', Exec isa (scrypt name pbk) s t s' ∧ abiPreserved s s' ∧ Proof.Scrypt.scryptX86_64.post s s' := by
+    ∃ t s', Exec isa (scrypt R.name R.code name pbk) s t s' ∧ abiPreserved s s' ∧ Proof.Scrypt.scryptX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := scrypt_ok hv hsp hd name h
   exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
 
@@ -415,6 +419,8 @@ namespace VG.Proof.Scrypt.X86_64.Whole
 
 open VG VG.X86_64 VG.Impl.Scrypt.X86_64
 open VG.Spec.Scrypt (bytesAt roMixIndices)
+
+variable {R : RMImpl}
 
 /-- The indices of every scryptROMix agree in two runs from `m₁` and `m₂`. -/
 def LeakEq (L : Lay) (m₁ m₂ : Mem) : Prop :=
@@ -537,8 +543,7 @@ abbrev LoopAt (n : Nat) (L : Lay) (m₀ : Mem) (t : State) : Prop :=
   0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n) t
 
 theorem body_ct (n : Nat) :
-    RelCT isa (Two (LoopAt n)) (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix"
-      Impl.Scrypt.X86_64.roMixDirect) (.block nextBlock)))
+    RelCT isa (Two (LoopAt n)) (.seq (.block romixArgs) (.seq (.call R.name R.code) (.block nextBlock)))
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n + 1) t ∧
         t.zf = some (decide (L.pp - n + 1 = L.pp))) := by
   have a : RelCT isa (Two (LoopAt n)) (.block romixArgs) (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧
@@ -547,9 +552,9 @@ theorem body_ct (n : Nat) :
       WP.mono (romixArgs_ok hL hc hb.cur) fun _ ⟨hc', hm, ha⟩ =>
         ⟨hc', h0, hn, ⟨by rw [hm]; exact hb.cur, by rw [hm]; exact hb.blks⟩, ha⟩
   have b : RelCT isa (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n) t ∧
-      RomixArgs L (blkAt L (L.pp - n)) t) (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect)
+      RomixArgs L (blkAt L (L.pp - n)) t) (.call R.name R.code)
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) :=
-    two_call RoMix.DirectFill.roMix_correct RoMix.DirectFill.roMix_ct (fun _ => []) (fun L => romixWr L (L.pp - n))
+    two_call R.correct R.ct (fun _ => []) (fun L => romixWr L (L.pp - n))
       (fun _ _ _ _ hL hc ⟨h0, hn, _, ha⟩ => romix_pre hL hc (by omega_arith) ha)
       (fun _ _ _ _ _ _ _ hL hk c₁ c₂ ⟨h0, hn, b₁, a₁⟩ ⟨_, _, b₂, a₂⟩ =>
         romix_pub_two hL hk c₁ c₂ (by omega_arith) b₁ b₂ a₁ a₂)
@@ -565,10 +570,10 @@ theorem body_ct (n : Nat) :
   exact a.seq (b.seq c)
 
 theorem loop_ct :
-    RelCT isa (Two fun L m₀ t => InvB L m₀ 0 t) romixLoop (Two fun L m₀ t => InvB L m₀ L.pp t) := by
+    RelCT isa (Two fun L m₀ t => InvB L m₀ 0 t) (romixLoop R.name R.code) (Two fun L m₀ t => InvB L m₀ L.pp t) := by
   have ev : ∀ x : State, isa.eval .ne x = x.zf.map (!·) := fun _ => rfl
   have h := fun n => RelCT.loop (M := isa) (c := .ne) (Q := Two fun L m₀ t => InvB L m₀ L.pp t)
-    (fun n => Two (LoopAt n)) (fun n => (body_ct n).mono (fun _ _ h => h) fun a b hab => by
+    (fun n => Two (LoopAt n)) (fun n => (body_ct (R := R) n).mono (fun _ _ h => h) fun a b hab => by
       obtain ⟨e, hL, hk, c₁, c₂, ⟨h0, hn, b₁, z₁⟩, ⟨-, -, b₂, z₂⟩⟩ := hab
       rw [ev, ev, z₁, z₂]
       refine ⟨rfl, fun hf => ?_, fun ht => ?_⟩
@@ -590,7 +595,7 @@ variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instanc
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
-theorem scryptBody_ct : RelCT isa (Two fun L _ t => Entry L t) (scryptBody name pbk) fun _ _ => True := by
+theorem scryptBody_ct : RelCT isa (Two fun L _ t => Entry L t) (scryptBody R.name R.code name pbk) fun _ _ => True := by
   have p1a : RelCT isa (Two fun L _ t => Entry L t) (.block pbk1Args)
       (Two fun L _ t => PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t) :=
     two_blk (by taint_decide) fun _ _ _ _ hL hc he =>
@@ -625,7 +630,7 @@ theorem scryptBody_ct : RelCT isa (Two fun L _ t => Entry L t) (scryptBody name 
     fun _ _ _ => trivial
 
 theorem scrypt_ct :
-    ConstantTime isa Proof.Scrypt.scryptX86_64.pre Proof.Scrypt.scryptX86_64.pub (scrypt name pbk) := by
+    ConstantTime isa Proof.Scrypt.scryptX86_64.pre Proof.Scrypt.scryptX86_64.pub (scrypt R.name R.code name pbk) := by
   refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
     (RelCT.mono (scryptBody_ct hv hsp hd name) ?_ fun _ _ _ => trivial))
   rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, hsp', hlk⟩, rfl, rfl⟩
@@ -708,13 +713,13 @@ theorem scrypt_implies :
 
 section
 variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24))
-  (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
+  (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String) {R : RMImpl}
 include hv hsp hd
 
-/-- `vg_scrypt`, calling the implementation `pbk` of PBKDF2 named `name`, if
+/-- `vg_scrypt`, calling the implementation `R` of ROMix and `pbk` of PBKDF2 named `name`, if
 no instruction of it (or of the functions it calls) loads MXCSR. -/
-theorem scrypt_verified_of (hmx : (scrypt name pbk).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified X86_64.target (scrypt name pbk) (Spec.Scrypt.scryptContract X86_64.abi 88) :=
+theorem scrypt_verified_of (hmx : (scrypt R.name R.code name pbk).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified X86_64.target (scrypt R.name R.code name pbk) (Spec.Scrypt.scryptContract X86_64.abi 88) :=
   Verified.of_correct (scrypt_correct hv hsp hd name hmx) (scrypt_ct hv hsp hd name) scrypt_implies
 
 end
@@ -725,7 +730,7 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-- How deeply calls nest in `pbkdf2`, from its own code. -/
 theorem core_pbkdf2_depth {H : Hash} (hc : H.compC.depth = 0) (hi : H.initC.depth = 0)
-    (h : (core H).pbkdf2.depth ≤ 3) : H.pbkdf2.depth ≤ 3 := by
+    (hb : H.compBoth.depth = 1) (h : (core H).pbkdf2.depth ≤ 3) : H.pbkdf2.depth ≤ 3 := by
   simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
     Hash.hmacInit, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.X86_64.iterate, Impl.Pbkdf2.X86_64.body,
     Impl.Pbkdf2.X86_64.compressBlock, Hash.updC, Hash.finC, Hash.stream, Hash.initKeys,
@@ -733,10 +738,41 @@ theorem core_pbkdf2_depth {H : Hash} (hc : H.compC.depth = 0) (hi : H.initC.dept
     Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
     Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
-    core, Code.depth, hc, hi] at h ⊢
+    core, Proof.Pbkdf2.Md.X86_64.coreBoth, Code.depth, hc, hi, hb] at h ⊢
   exact h
 
-variable (c : Proof.Sha256.X86_64.Compress)
+/-- `pbkG` verified with `8 a` bytes of scratch space is with `8 b ≥ 8 a`
+(`Verified.widen`: it runs as it does with `8 a`). -/
+theorem pbkG_widen {c : Prog isa} {S : Spec.Hmac.StreamingHash} {a b : Nat}
+    (h : Verified X86_64.target c (Proof.Pbkdf2.Md.X86_64.pbkG S a)) (hab : a ≤ b)
+    (hsat : ∃ s, (Proof.Pbkdf2.Md.X86_64.pbkG S b).pre s) :
+    Verified X86_64.target c (Proof.Pbkdf2.Md.X86_64.pbkG S b) :=
+  have h8 : a * 8 ≤ b * 8 := Nat.mul_le_mul_right 8 hab
+  Verified.widen h (fun s => [⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, a * 8⟩])
+    (fun _ ⟨h1, h2, h3, _, h5, h6, h7, h8', h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22,
+        h23, h24, h25, h26, h27⟩ =>
+      ⟨h1, h2, h3, rfl, h5, h6.sub_right (Region.sub_prefix h8), h7, h8'.sub_right (Region.sub_prefix h8), h9.sub_right (Region.sub_prefix h8), h10,
+        h11.sub_left (Region.sub_prefix h8), h12, h13, h14, h15.sub_right (Region.sub_prefix h8), h16, h17, h18, h19, h20.sub_right (Region.sub_prefix h8), h21, h22,
+        h23, h24, Nat.le_trans (Nat.add_le_add_left h8 _) h25, h26, h27⟩)
+    (fun _ ⟨_, _, _, h4, _⟩ => h4 ▸ .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, h8⟩ .nil))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+/-- A state satisfying the precondition of PBKDF2-HMAC-SHA256 with the
+working space scrypt gives it. -/
+theorem pbk_sat200 : ∃ s, (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24).pre s := by
+  inst_sat [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I,
+    Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
+    Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi, X86_64.argRegs] using Proof.Pbkdf2.Md.X86_64.pbkSat 200
+
+/-- The code PBKDF2 adds never writes `rsp` but in its frames, and nests
+calls at most three deep, for each implementation's working space. -/
+theorem core_pbkdf2_facts : ∀ so, Proof.Pbkdf2.Md.X86_64.Sha256.SoOk so →
+    (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).pbkdf2.allInstrs (fun i => !Taint.clobbers i .rsp) = true ∧
+      (Proof.Pbkdf2.Md.X86_64.Sha256.coreHS so).pbkdf2.depth ≤ 3 := by
+  intro so h
+  rcases h with rfl | rfl | rfl <;> exact ⟨by decide +kernel, by decide +kernel⟩
+
+variable (c : Proof.Sha256.X86_64.Compress) (R : RMImpl)
 
 /-- PBKDF2-HMAC-SHA256 made with `c`. -/
 abbrev pbkOf : Prog isa := (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).pbkdf2
@@ -744,43 +780,105 @@ abbrev pbkOf : Prog isa := (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).pbkdf2
 /-- Its name. -/
 abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch" ++ c.suffix
 
+/-- PBKDF2-HMAC-SHA256 made with `c` uses the working space it needs (of
+the 200 words scrypt gives it). -/
 theorem pbk_verified :
     Verified X86_64.target (pbkOf c) (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I X86_64.abi 24) :=
-  (Proof.Pbkdf2.Md.X86_64.Sha256.variant c).pbkdf2
+  have hw := Proof.Pbkdf2.Md.X86_64.Sha256.hashW c
+  (pbkG_widen (b := 200)
+    (Proof.Pbkdf2.Md.X86_64.pbkdf2_ok (Proof.Pbkdf2.Md.X86_64.Sha256.ok c) (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK c)
+      (Proof.Pbkdf2.Md.X86_64.Sha256.callees c) (Proof.Pbkdf2.Md.X86_64.Sha256.satI hw)
+      (Proof.Pbkdf2.Md.X86_64.Sha256.satF hw) (Proof.Pbkdf2.Md.X86_64.Sha256.satT hw)
+      (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ (Proof.Pbkdf2.Md.X86_64.Sha256.satP hw)).sat_left)
+    (by show (Proof.Pbkdf2.Md.X86_64.Sha256.hash c).W + 96 ≤ 200; rcases hw with h | h | h <;> omega_using [h])
+    (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ pbk_sat200).sat_left).of_implies
+    (Proof.Pbkdf2.Md.X86_64.pbkImp _ _ pbk_sat200)
 
 theorem pbk_nosp : NoSp (pbkOf c) :=
   nosp_of (core_pbkdf2 (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cNs
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iNs
-    (by decide +kernel : Proof.Pbkdf2.Md.X86_64.Sha256.coreH.pbkdf2.allInstrs
-      (fun i => !Taint.clobbers i .rsp) = true))
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iNs (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bNs
+    (core_pbkdf2_facts _ c.hso).1)
 
 theorem pbk_depth : (pbkOf c).depth ≤ 3 :=
   core_pbkdf2_depth (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cD
-    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iD
-    (by decide +kernel : Proof.Pbkdf2.Md.X86_64.Sha256.coreH.pbkdf2.depth ≤ 3)
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iD (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bD
+    (core_pbkdf2_facts _ c.hso).2
 
 theorem pbk_mx : (pbkOf c).allInstrs (fun i => !loadsMxcsr i) = true :=
   core_pbkdf2 (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).cMx (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).iMx
-    Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.pbkMx
+    (Proof.Pbkdf2.Md.X86_64.Sha256.callees c).b.bMx (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK c).pbkMx
 
-theorem scrypt_mx : (scrypt (pbkName c) (pbkOf c)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have hr : Impl.Scrypt.X86_64.roMixDirect.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
+theorem scrypt_mx : (scrypt R.name R.code (pbkName c) (pbkOf c)).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hr := R.mx
   simp only [scrypt, scryptBody, pbkCall, romixLoop, Code.allInstrs, pbk_mx c, hr, Bool.and_true,
     Bool.true_and]
   decide
 
 /-- `vg_scrypt` made with `c`. -/
 theorem scrypt_verified :
-    Verified X86_64.target (scrypt (pbkName c) (pbkOf c)) (Spec.Scrypt.scryptContract X86_64.abi 88) :=
-  scrypt_verified_of (pbk_verified c) (pbk_nosp c) (pbk_depth c) (pbkName c) (scrypt_mx c)
+    Verified X86_64.target (scrypt R.name R.code (pbkName c) (pbkOf c)) (Spec.Scrypt.scryptContract X86_64.abi 88) :=
+  scrypt_verified_of (pbk_verified c) (pbk_nosp c) (pbk_depth c) (pbkName c) (scrypt_mx c R)
 
 /-- No instruction writes `rsp` but the frame's push and pop. -/
-theorem scrypt_spSafe : (scrypt (pbkName c) (pbkOf c)).all (fun i => !isa.writesSp i) = true := by
+theorem scrypt_spSafe : (scrypt R.name R.code (pbkName c) (pbkOf c)).all (fun i => !isa.writesSp i) = true := by
   have hp : (pbkOf c).all (fun i => !isa.writesSp i) = true :=
-    (Proof.Pbkdf2.Md.X86_64.Sha256.variant c).pbkdf2Sp
-  have hr : Impl.Scrypt.X86_64.roMixDirect.all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Proof.Pbkdf2.Md.X86_64.pbkdf2_sp (Proof.Pbkdf2.Md.X86_64.Sha256.coreOK c) (Proof.Pbkdf2.Md.X86_64.Sha256.callees c)
+  have hr := R.sp
   simp only [scrypt, scryptBody, pbkCall, romixLoop, Code.all, hp, hr, Bool.and_true, Bool.true_and]
   decide
+
+
+/-! ## Without secret residue
+
+`vg_scrypt`'s instances are scrubbed with `X86_64.Scrub.withScrubAll`,
+which clears the registers their code writes and wipes all the stack their
+frames and calls use (the residue analysis does not follow their code). This
+is what that needs of the contract. -/
+
+/-- The postcondition reads the memory on return only in `out`. -/
+theorem scrypt_postOut (stack : Nat) :
+    VG.X86_64.Scrub.PostOut (Spec.Scrypt.scryptContract X86_64.abi stack) (Spec.Scrypt.scryptSig.retBits 64) :=
+  VG.X86_64.Scrub.postOut_of_local (leak := some _) VG.X86_64.Scrub.ScrubAbi.plain
+    fun vs m m₁ m₂ ret hlen hb h => by
+    obtain ⟨pw, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 12) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨pwLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨salt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨saltLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨r, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨b, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨blen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨v, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨vlen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨scratch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨slen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero hlen
+    simp only [Spec.Scrypt.scryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hb
+    have hby : Spec.Scrypt.bytesAt m₂ out outLen.toNat = Spec.Scrypt.bytesAt m₁ out outLen.toNat := by
+      unfold Spec.Scrypt.bytesAt
+      refine List.map_congr_left fun i hi => ?_
+      have := List.mem_range.mp hi
+      exact (hb.2.2.2.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [this])
+        (by have := outLen.isLt; omega_arith))).symm
+    replace h : Spec.Scrypt.scrypt (Spec.Scrypt.bytesAt m pw pwLen.toNat) (Spec.Scrypt.bytesAt m salt saltLen.toNat)
+        (vlen.toNat / r.toNat) r.toNat (blen.toNat / r.toNat) outLen.toNat =
+        some (Spec.Scrypt.bytesAt m₁ out outLen.toNat) := h
+    show _ = some (Spec.Scrypt.bytesAt m₂ out outLen.toNat)
+    rw [hby]; exact h
 
 end VG.Proof.Scrypt.X86_64.Whole

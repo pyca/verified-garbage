@@ -52,7 +52,7 @@ theorem xi_inj {r r' : XReg} : xi r = xi r' ↔ r = r' := by
 /-- Quadword `k` (`k < 4`) of `ymm r`. -/
 def qw (s : State) (r : XReg) (k : Nat) : BitVec 64 := qword (s.lane r (k / 2)) (k % 2)
 
-theorem cases4 {k : Nat} (hk : k < 4) : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega
+theorem cases4 {k : Nat} (hk : k < 4) : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_using [hk]
 
 /-! ### Quadwords of values -/
 
@@ -71,8 +71,8 @@ theorem qword_eq (v : BitVec 128) (i : Nat) : qword v i = dword v (2 * i + 1) ++
   simp only [qword, dword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
     Bool.true_and]
   by_cases h : j < 32
-  · simp only [h, ite_true, decide_true, Bool.true_and]; congr 1; omega
-  · simp only [h, ite_false, decide_eq_true (show j - 32 < 32 by omega), Bool.true_and]; congr 1; omega
+  · simp only [h, ite_true, decide_true, Bool.true_and]; congr 1; omega_using []
+  · simp only [h, ite_false, decide_eq_true (show j - 32 < 32 by omega_using [hj]), Bool.true_and]; congr 1; omega_using [h]
 
 theorem qword_and (x y : BitVec 128) (i : Nat) : qword (x &&& y) i = qword x i &&& qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -85,50 +85,50 @@ theorem qword_or (x y : BitVec 128) (i : Nat) : qword (x ||| y) i = qword x i ||
 theorem qword_andn (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (~~~x &&& y) i = ~~~qword x i &&& qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp [qword, hj, show 64 * i + j < 128 by omega]
+  simp [qword, hj, show 64 * i + j < 128 by omega_using [hi, hj]]
 
 theorem dword_lo (x : BitVec 128) (i : Nat) : dword x (2 * i) = (qword x i).extractLsb' 0 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [dword, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 0 + j < 64 by omega)]
-  exact congrArg _ (by omega)
+    decide_eq_true (show 0 + j < 64 by omega_using [hj])]
+  exact congrArg _ (by omega_using [])
 
 theorem dword_hi (x : BitVec 128) (i : Nat) : dword x (2 * i + 1) = (qword x i).extractLsb' 32 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [dword, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 32 + j < 64 by omega)]
-  exact congrArg _ (by omega)
+    decide_eq_true (show 32 + j < 64 by omega_using [hj])]
+  exact congrArg _ (by omega_using [])
 
 /-- The low doubleword of a quadword, zero-extended. -/
 def lo32 (x : BitVec 64) : BitVec 64 := (x.extractLsb' 0 32).setWidth 64
 
 theorem qword_paddq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .paddq x y) i = qword x i + qword y i := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
 
 theorem qword_pmuludq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .pmuludq x y) i = lo32 (qword x i) * lo32 (qword y i) := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · simp only [XBinOp.eval, qword_app0, lo32, ← dword_lo]
   · simp only [XBinOp.eval, qword_app1, lo32, ← dword_lo]
 
 theorem qword_punpcklqdq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .punpcklqdq x y) i = if i = 0 then qword x 0 else qword y 0 := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
 
 theorem qword_punpckhqdq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .punpckhqdq x y) i = if i = 0 then qword x 1 else qword y 1 := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
 
 theorem qword_psllq (x : BitVec 128) {n : BitVec 8} (hn : n.toNat < 64) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psllq x n) i = qword x i <<< n.toNat := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [hn], ite_false]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp
 
 theorem qword_psrlq (x : BitVec 128) {n : BitVec 8} (hn : n.toNat < 64) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psrlq x n) i = qword x i >>> n.toNat := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [hn], ite_false]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp
 
 /-- A quadword from its doublewords picked by two selector bits. -/
 def pick2 (a b : BitVec 64) (lo hi : Bool) : BitVec 64 :=
@@ -137,14 +137,14 @@ def pick2 (a b : BitVec 64) (lo hi : Bool) : BitVec 64 :=
 
 theorem qword_ofDwords (a b c d : BitVec 32) {i : Nat} (hi : i < 2) :
     qword (ofDwords a b c d) i = if i = 0 then b ++ a else d ++ c := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> rw [qword_eq] <;> simp
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> rw [qword_eq] <;> simp
 
 theorem qword_blendDwords (x y : BitVec 128) (imm : BitVec 4) {i : Nat} (hi : i < 2) :
     qword (blendDwords x y imm) i =
       pick2 (qword x i) (qword y i) (imm.getLsbD (2 * i)) (imm.getLsbD (2 * i + 1)) := by
   simp only [blendDwords]
   rw [qword_ofDwords _ _ _ _ hi]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · simp only [ite_true, pick2, ← dword_lo, ← dword_hi, Nat.mul_zero, Nat.zero_add]
   · simp only [show (1 : Nat) ≠ 0 by decide, ite_false, pick2, ← dword_lo, ← dword_hi]
 
@@ -153,8 +153,8 @@ theorem qword256_eq (x : BitVec 256) (k : Nat) :
     qword256 x k = qword (x.extractLsb' (128 * (k / 2)) 128) (k % 2) := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [qword256, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 64 * (k % 2) + j < 128 by omega)]
-  congr 1; omega
+    decide_eq_true (show 64 * (k % 2) + j < 128 by omega_using [hj])]
+  congr 1; omega_using []
 
 theorem qword256_ymm (s : State) (r : XReg) {k : Nat} (hk : k < 4) : qword256 (s.ymm r) k = qw s r k := by
   rw [qword256_eq, qw]
@@ -174,7 +174,7 @@ theorem qword256_cat (a b c d : BitVec 64) {k : Nat} (hk : k < 4) :
       ← Nat.shiftLeft_add_eq_or_of_lt d.isLt]
     simp only [Nat.shiftLeft_eq]
   simp only [qword256, BitVec.extractLsb'_toNat, e, Nat.shiftRight_eq_div_pow]
-  rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp <;> omega
+  rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp <;> omega_using []
 
 /-- The selector of quadword `k` in `vpermq`'s immediate. -/
 def sel4 (o k : Nat) : Nat := o / 4 ^ k % 4
@@ -242,16 +242,16 @@ theorem qw_vpblendd (s : State) (d a b r : XReg) (n : BitVec 8) {k : Nat} (hk : 
         blendDwords (s.lane a (k / 2)) (s.lane b (k / 2)) (n.extractLsb' (4 * (k / 2)) 4) := by
       rcases cases4 hk with rfl | rfl | rfl | rfl <;> rfl
     rw [e, qword_blendDwords _ _ _ (Nat.mod_lt _ (by decide)), qw_lane, qw_lane,
-      getLsbD_nibble _ _ _ (by omega), getLsbD_nibble _ _ _ (by omega),
-      show 4 * (k / 2) + 2 * (k % 2) = 2 * k by omega,
-      show 4 * (k / 2) + (2 * (k % 2) + 1) = 2 * k + 1 by omega]
+      getLsbD_nibble _ _ _ (by omega_using []), getLsbD_nibble _ _ _ (by omega_using []),
+      show 4 * (k / 2) + 2 * (k % 2) = 2 * k by omega_using [],
+      show 4 * (k / 2) + (2 * (k % 2) + 1) = 2 * k + 1 by omega_using []]
   · rfl
 
 theorem qw_vpbroadcastq (s : State) (d a r : XReg) (k : Nat) :
     qw ((VOp.vpbroadcastq .l256 d a).exec s) r k = if r = d then qw s a 0 else qw s r k := by
   simp only [VOp.exec, qw_setV256]
   split
-  · have : k % 2 = 0 ∨ k % 2 = 1 := by omega
+  · have : k % 2 = 0 ∨ k % 2 = 1 := by omega_using []
     rcases this with h | h <;> rw [h] <;> split <;> simp [qw, State.lane]
   · rfl
 
@@ -278,8 +278,8 @@ theorem qw_load (s : State) (d r : XReg) (a : Addr) {k : Nat} (hk : k < 4) :
   · have e : (if k / 2 = 0 then (s.mem.readW a 256).extractLsb' 0 128 else (s.mem.readW a 256).extractLsb' 128 128) =
         (s.mem.readW a 256).extractLsb' (128 * (k / 2)) 128 := by
       rcases cases4 hk with rfl | rfl | rfl | rfl <;> rfl
-    rw [e, ← qword256_eq, qword256, show 64 * k = 8 * (8 * k) by omega]
-    exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega)
+    rw [e, ← qword256_eq, qword256, show 64 * k = 8 * (8 * k) by omega_using []]
+    exact readW_extract _ _ (k := 8 * k) (n := 8) (by omega_using [hk])
   · rfl
 
 /-! ## Terms -/
@@ -488,13 +488,13 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
       · rw [qword_punpcklqdq _ _ (mod2_lt k)]
         split
         · rename_i h0; rw [hR a k hk, qw, h0]
-        · rw [hR b (k - 1) (by omega), qw, show (k - 1) / 2 = k / 2 by omega,
-            show (k - 1) % 2 = 0 by omega]
+        · rw [hR b (k - 1) (by omega_using [hk]), qw, show (k - 1) / 2 = k / 2 by omega_arith,
+            show (k - 1) % 2 = 0 by omega_arith]
       · rw [qword_punpckhqdq _ _ (mod2_lt k)]
         split
-        · rw [hR a (k + 1) (by omega), qw, show (k + 1) / 2 = k / 2 by omega,
-            show (k + 1) % 2 = 1 by omega]
-        · rw [hR b k hk, qw, show k % 2 = 1 by omega]
+        · rw [hR a (k + 1) (by omega_arith), qw, show (k + 1) / 2 = k / 2 by omega_arith,
+            show (k + 1) % 2 = 1 by omega_arith]
+        · rw [hR b k hk, qw, show k % 2 = 1 by omega_arith]
     · rename_i op d a n
       unfold Sym.shift at e
       split at e

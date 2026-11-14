@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Proof.Camellia.FbScratch
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModeCore
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.SerialCore
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
 import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
@@ -26,7 +27,8 @@ public import VerifiedGarbage.Spec.Ofb
 # Camellia's modes on PPC64LE meet their contracts
 
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
-`Proof/Modes/PPC64LE/` over Camellia's core (`Mode.dirCoreSpec`), run from
+`Proof/Modes/PPC64LE/` over Camellia's cores (`Mode.dirCoreSpec` for CBC and CFB
+decryption and CTR, the single-block `Serial.coreSpec` for the serial modes), run from
 the state `wrap` makes of the arguments (`entry`, `wrap_wp`), with the
 working space as the sixth argument (`modeContract`), meet the contracts
 with a scratch buffer of 422 words (`Proof.Camellia.cbcEncChainedScratchContract`,
@@ -153,7 +155,7 @@ theorem data_entry (hs : (modeContract post).pre s) : Proof.Modes.chunksAt 16 (e
     Proof.Modes.chunksAt 16 s.mem (s.gpr .r6) (s.gpr .r7).toNat := by
   have h := hs
   obtain ⟨-, -, -, -, -, -, -, dDS, -, -, fD, -⟩ := h
-  exact Proof.Modes.PPC64LE.chunksAt_frame (entry_frame s) (extra_apart dDS) (by omega)
+  exact Proof.Modes.PPC64LE.chunksAt_frame (entry_frame s) (extra_apart dDS) (by omega_using [fD])
 
 theorem key_entry (hs : (modeContract post).pre s) (R : Nat) (hR : R = 18 ∨ R = 24) :
     schedWords (entry s).mem (s.gpr .r3) R = schedWords s.mem (s.gpr .r3) R := by
@@ -162,32 +164,34 @@ theorem key_entry (hs : (modeContract post).pre s) (R : Nat) (hR : R = 18 ∨ R 
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
+  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
   exact Proof.Camellia.wordAt_frame (entry_frame s) fun r hr =>
     (extra_apart dKS r hr).sub_left (VG.Offset.sub_base _ hl)
 
 theorem rounds_of (hs : (modeContract post).pre s) : ((s.gpr .r4).toNat = 18 ∨ (s.gpr .r4).toNat = 24) := hs.2.2.2.2.2.2.2.2.2.2.2.2
 
 /-- `modeContract`'s precondition gives the modes'. -/
-theorem seqPre_of (hs : (modeContract post).pre s) {M : Mode} (d : Dir) (hstep : M.step = 16) : SeqPre (dirCore d) M (entry s) := by
+theorem seqPre_of (hs : (modeContract post).pre s) {M : Mode} (c : Impl.Modes.PPC64LE.Core) (hT : c.total = modeSlots)
+    (hbw : c.bw = 4) (hL : Proof.Modes.PPC64LE.Layout c) (hstep : M.step = 16) : SeqPre c M (entry s) := by
   have h := hs
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, -, fV, fD, fS, -⟩ := h
-  have e16 : 4 * (dirCore d).bw = 16 := rfl
-  have eS : scrRegion (dirCore d) (S (entry s)) = ⟨s.gpr .r8, 8 * modeSlots⟩ := by
-    simp [scrRegion, S, entry_gpr, dirCore]
-  have eV : ivR (entry s) (dirCore d) = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, dirCore]
+  have e16 : 4 * c.bw = 16 := by rw [hbw]
+  have eS : scrRegion c (S (entry s)) = ⟨s.gpr .r8, 8 * modeSlots⟩ := by
+    simp [scrRegion, S, entry_gpr, hT]
+  have eV : ivR (entry s) c = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, hbw]
   have eD : Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) M.step (N (entry s)) = ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩ := by
     simp [Proof.Modes.PPC64LE.dataRegion, Dp, N, entry_gpr, hstep]
-  refine ⟨⟨by rw [show (8 * (dirCore d).total) = 8 * modeSlots from rfl, show S (entry s) = s.gpr .r8 by
-      simp [S, entry_gpr], entry_wr, hwr]; simp, by simpa [S, entry_gpr, dirCore] using fS⟩,
+  refine ⟨⟨by rw [show (8 * c.total) = 8 * modeSlots by rw [hT], show S (entry s) = s.gpr .r8 by
+      simp [S, entry_gpr], entry_wr, hwr]; simp, by simpa [S, entry_gpr, hT] using fS⟩,
     by rw [eV, entry_rd, entry_wr, hwr]; simp, fun _ => by rw [eV, entry_wr, hwr]; simp,
     by rw [e16]; simpa [P, entry_gpr] using fV, by rw [eD, entry_wr, hwr]; simp,
     by rw [hstep]; simpa [Dp, N, entry_gpr] using fD, by rw [eD, eS]; exact dDS,
-    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD, ⟨by omega, by rw [e16]; omega⟩,
-    (dirCoreSpec d).layout⟩
+    by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD, ⟨by omega_using [hstep], by rw [e16]; omega_using [hstep]⟩,
+    hL⟩
 
-theorem keyArgs_of (hs : (modeContract post).pre s) {M : Mode} (d : Dir) (hstep : M.step = 16) :
-    KeyArgs (entry s) (Proof.Modes.PPC64LE.wrs0 (dirCore d) M (entry s))
+theorem keyArgs_of (hs : (modeContract post).pre s) {M : Mode} (c : Impl.Modes.PPC64LE.Core) (hT : c.total = modeSlots)
+    (hstep : M.step = 16) :
+    KeyArgs (entry s) (Proof.Modes.PPC64LE.wrs0 c M (entry s))
       ((s.gpr .r4).toNat, schedWords s.mem (s.gpr .r3) (s.gpr .r4).toNat) := by
   have hR := rounds_of hs
   have h := hs
@@ -198,13 +202,14 @@ theorem keyArgs_of (hs : (modeContract post).pre s) {M : Mode} (d : Dir) (hstep 
     or_false] at hr
   rcases hr with rfl | rfl
   · simpa [Proof.Modes.PPC64LE.dataRegion, Dp, N, entry_gpr, hstep] using dKD
-  · simpa [scrRegion, S, entry_gpr, dirCore] using dKS
+  · simpa [scrRegion, S, entry_gpr, hT] using dKS
 
 /-- A mode over the core, wrapped: its results on the entry's memory. -/
-theorem run_wrapped (hs : (modeContract post).pre s) {d : Dir} {M : Mode} (hstep : M.step = 16)
+theorem run_wrapped (hs : (modeContract post).pre s) {c : Impl.Modes.PPC64LE.Core}
+    (hsl : c.slots = slots) (hbw : c.bw = 4) {M : Mode} (hstep : M.step = 16)
     {X : State → Prop} {p : Prog isa}
     (hres : WP isa p (entry s) fun s' => abiPreserved (entry s) s' ∧ X s')
-    (hch : WP isa p (entry s) (Changes (dirCore d) M (entry s))) :
+    (hch : WP isa p (entry s) (Changes c M (entry s))) :
     WP isa (wrap p) s fun s' => abiPreserved s s' ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧ X s₂ := by
   have h := hs
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, -, fV, fD, fS, -⟩ := h
@@ -212,22 +217,22 @@ theorem run_wrapped (hs : (modeContract post).pre s) {d : Dir} {M : Mode} (hstep
   obtain ⟨t, s', he, ⟨abi, r⟩, ch⟩ := WP.and hres hch
   refine ⟨t, s', he, abi, by simpa [S, entry_gpr, Impl.Modes.PPC64LE.sb] using ch.sb, ?_, by rw [(Exec.rdwr he).2.1]; rfl, s', rfl, r⟩
   have hfit := fS
-  have ex : ∀ r ∈ [Proof.Modes.PPC64LE.coreRegion (dirCore d) (S (entry s)), Proof.Modes.PPC64LE.modeR (dirCore d) (S (entry s)),
-      Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) M.step (N (entry s)), ivR (entry s) (dirCore d)],
+  have ex : ∀ r ∈ [Proof.Modes.PPC64LE.coreRegion c (S (entry s)), Proof.Modes.PPC64LE.modeR c (S (entry s)),
+      Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) M.step (N (entry s)), ivR (entry s) c],
       Region.Disjoint ⟨extraA s, 8⟩ r := by
     intro r hr
     have eS : S (entry s) = s.gpr .r8 := by simp [S, entry_gpr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · rw [eS]; exact VG.Offset.disjoint_base _ (by simp [extraSlot_eq, dirCore, slots_eq])
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega)
-    · rw [eS]; exact VG.Offset.disjoint _ (.inr (by simp [extraSlot_eq, dirCore, slots_eq]))
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega) (by rw [modeSlots_eq] at hfit; simp [dirCore, slots_eq])
+    · rw [eS]; exact VG.Offset.disjoint_base _ (by simp [extraSlot_eq, hsl, slots_eq])
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega_using [])
+    · rw [eS]; exact VG.Offset.disjoint _ (.inr (by simp [extraSlot_eq, hsl, slots_eq]))
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega_using []) (by rw [modeSlots_eq] at hfit; simp [hsl, slots_eq])
     · have e : Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) M.step (N (entry s)) = ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩ := by
         simp [Proof.Modes.PPC64LE.dataRegion, Dp, N, entry_gpr, hstep]
       rw [e]
       exact (extra_apart dDS _ (List.mem_singleton_self _)).symm
-    · have e : ivR (entry s) (dirCore d) = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, dirCore]
+    · have e : ivR (entry s) c = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, hbw]
       rw [e]
       exact (extra_apart dVS _ (List.mem_singleton_self _)).symm
   rw [ch.frame.readW (Region.contains_self _ _) ex (by decide), entry_mem, Mem.readW_writeW_self64]
@@ -243,6 +248,11 @@ theorem cipher_enc (m : Mem) (p : Addr) (R : Nat) :
   rfl
 
 attribute [local irreducible] Spec.Camellia.cipher Spec.Camellia.invCipher in
+theorem cipher_ser (m : Mem) (p : Addr) (R : Nat) :
+    Serial.coreSpec.cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
+attribute [local irreducible] Spec.Camellia.cipher Spec.Camellia.invCipher in
 theorem cipher_dec (m : Mem) (p : Addr) (R : Nat) :
     (dirCoreSpec .decrypt).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
@@ -253,102 +263,173 @@ theorem entry_args (s : State) : P (entry s) = s.gpr .r5 ∧ Dp (entry s) = s.gp
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcEncPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cbcEncChained_wp (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.cbcEncChained 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cbcEncChained 4) rfl)
-  have hc := Proof.Modes.PPC64LE.cbcEncChained_changes (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.cbcEncChained 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cbcEncChained 4) rfl)
+  have hw := Proof.Modes.PPC64LE.cbcEncChained_wp Serial.coreSpec
+    (seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cbcEncChained 4) rfl) (keyArgs_of hs Serial.core rfl (M := Mode.cbcEncChained 4) rfl)
+  have hc := Proof.Modes.PPC64LE.cbcEncChained_changes Serial.coreSpec
+    (seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cbcEncChained 4) rfl) (keyArgs_of hs Serial.core rfl (M := Mode.cbcEncChained 4) rfl)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  refine WP.mono (run_wrapped hs rfl rfl rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
   all_goals rw [← hm]
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
+      show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h2
     exact h2
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h3
-    exact h3
-
-theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
-    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 3) (by decide) (by decide) (by decide)
-    (seqPre_of hs .decrypt (M := Mode.cbcDecChained 4) rfl) (keyArgs_of hs .decrypt (M := Mode.cbcDecChained 4) rfl)
-  obtain ⟨eP, eD, eN⟩ := entry_args s
-  rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
-    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
-  all_goals rw [← hm]
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_dec] at h2
-    exact h2
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h3
     exact h3
 
 theorem ofb_correct (s : State) (hs : (modeContract ofbPost).pre s) :
     ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract ofbPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.ofb_wp (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.ofb 4) rfl) (keyArgs_of hs .encrypt (M := Mode.ofb 4) rfl)
-  have hc := Proof.Modes.PPC64LE.ofb_changes (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.ofb 4) rfl) (keyArgs_of hs .encrypt (M := Mode.ofb 4) rfl)
+  have hw := Proof.Modes.PPC64LE.ofb_wp Serial.coreSpec
+    (seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ofb 4) rfl) (keyArgs_of hs Serial.core rfl (M := Mode.ofb 4) rfl)
+  have hc := Proof.Modes.PPC64LE.ofb_changes Serial.coreSpec
+    (seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ofb 4) rfl) (keyArgs_of hs Serial.core rfl (M := Mode.ofb 4) rfl)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  refine WP.mono (run_wrapped hs rfl rfl rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
   all_goals rw [← hm]
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
+      show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h2
     exact h2
   · simp only [Proof.Modes.PPC64LE.iv0, eP,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs] at h3
-    rw [cipher_enc] at h3
+      show 4 * Serial.core.bw = 16 from rfl, iv_entry hs] at h3
+    rw [cipher_ser] at h3
     exact h3
 
 theorem cfbEncrypt_correct (s : State) (hs : (modeContract cfbEncPost).pre s) :
     ∃ t s', Exec isa cfbEncrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbEncPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cfbEnc_wp (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.cfbEnc 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cfbEnc 4) rfl)
-  have hc := Proof.Modes.PPC64LE.cfbEnc_changes (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.cfbEnc 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cfbEnc 4) rfl)
+  have hw := Proof.Modes.PPC64LE.cfbEnc_wp Serial.coreSpec
+    (seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cfbEnc 4) rfl) (keyArgs_of hs Serial.core rfl (M := Mode.cfbEnc 4) rfl)
+  have hc := Proof.Modes.PPC64LE.cfbEnc_changes Serial.coreSpec
+    (seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cfbEnc 4) rfl) (keyArgs_of hs Serial.core rfl (M := Mode.cfbEnc 4) rfl)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  refine WP.mono (run_wrapped hs rfl rfl rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
   all_goals rw [← hm]
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
+      show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h2
     exact h2
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h3
+      show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h3
     exact h3
+
+/-- The modes' arguments, with `r8` written as `pick` writes it. -/
+theorem entry_args_r8 (s : State) (v : BitVec 64) :
+    P ((entry s).write .r8 v) = s.gpr .r5 ∧ Dp ((entry s).write .r8 v) = s.gpr .r6 ∧
+      N ((entry s).write .r8 v) = (s.gpr .r7).toNat ∧ ((entry s).write .r8 v).mem = (entry s).mem := by
+  simp [P, Dp, N, entry_gpr, State.write]
+
+/-- The key's arguments do not mention `r8`. -/
+theorem keyArgs_r8 {c : Impl.Modes.PPC64LE.Core} {M : Mode} {k : Nat × List (BitVec 64)} {s : State} (v : BitVec 64)
+    (h : KeyArgs s (Proof.Modes.PPC64LE.wrs0 c M s) k) :
+    KeyArgs (s.write .r8 v) (Proof.Modes.PPC64LE.wrs0 c M (s.write .r8 v)) k := by
+  obtain ⟨eS, -, eD, eN, -, -, -⟩ := Proof.Modes.PPC64LE.args_write_r8 s v
+  have ew : Proof.Modes.PPC64LE.wrs0 c M (s.write .r8 v) = Proof.Modes.PPC64LE.wrs0 c M s := by
+    simp only [Proof.Modes.PPC64LE.wrs0, eS, eD, eN]
+  rw [ew]
+  obtain ⟨p, h3, h28, hR, hk, hin, hfit, hd⟩ := h
+  exact ⟨p, by rw [RegUpd.gpr_write_of_ne _ _ (by decide)]; exact h3,
+    by rw [RegUpd.gpr_write_of_ne _ _ (by decide)]; exact h28, hR, hk, hin, hfit, hd⟩
+
+/-- A function of `wrap (pick 3 short long)`: each branch meets `post`, whose
+memory alone it reads, and changes what `c`'s functions change. -/
+theorem pick_wrapped {s : State} {post : State → State → Prop} (hs : (modeContract post).pre s) {M : Mode} (hstep : M.step = 16)
+    (hpost : ∀ s₁ s₂ : State, s₁.mem = s₂.mem → post s s₁ → post s s₂) {short long : Prog isa}
+    (h : ∀ v : BitVec 64, WP isa (if v = 0 then short else long) ((entry s).write .r8 v) fun s' =>
+      abiPreserved (entry s) s' ∧ post s s' ∧ Changes (dirCore .encrypt) M (entry s) s') :
+    ∃ t s', Exec isa (wrap (Impl.Modes.PPC64LE.pick 3 short long)) s t s' ∧ abiPreserved s s' ∧ post s s' := by
+  have hall : WP isa (Impl.Modes.PPC64LE.pick 3 short long) (entry s) fun s' =>
+      abiPreserved (entry s) s' ∧ post s s' ∧ Changes (dirCore .encrypt) M (entry s) s' :=
+    Proof.Modes.PPC64LE.pick_wp (by decide)
+      (fun e => by have := h ((entry s).gpr .r6 >>> 3); rwa [ite_eq_left e] at this)
+      (fun e => by have := h ((entry s).gpr .r6 >>> 3); rwa [ite_eq_right e] at this)
+  refine WP.mono (run_wrapped hs rfl rfl hstep (WP.mono hall fun _ h => ⟨h.1, h.2.1⟩) (WP.mono hall fun _ h => h.2.2))
+    fun s' ⟨abi, s₂, hm, hp⟩ => ⟨abi, hpost s₂ s' hm hp⟩
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbDecPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cfbDecWide_wp (dirCoreSpec .encrypt) (lg := 3) (by decide) (by decide) (by decide)
-    (seqPre_of hs .encrypt (M := Mode.cfbDecEarly 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cfbDecEarly 4) rfl)
-  obtain ⟨eP, eD, eN⟩ := entry_args s
-  rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
-    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
-  all_goals rw [← hm]
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
-    exact h2
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
-    exact h3
+  refine pick_wrapped hs (M := Mode.cfbDecEarly 4) rfl
+    (fun s₁ s₂ hm h => by simpa only [cfbDecPost, dataAt, ivAt, hm] using h) fun v => ?_
+  obtain ⟨eP, eD, eN, eM⟩ := entry_args_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.cfbDecSeq_wp Serial.coreSpec
+      ((seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cfbDec 4) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs Serial.core rfl (M := Mode.cfbDec 4) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      exact h3
+  · refine WP.mono (Proof.Modes.PPC64LE.cfbDecWide_wp (dirCoreSpec .encrypt) (lg := 3) (by decide) (by decide)
+      (by decide) ((seqPre_of hs (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.cfbDecEarly 4) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs (dirCore .encrypt) rfl (M := Mode.cfbDecEarly 4) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      exact h3
+
+attribute [local irreducible] Spec.Camellia.cipher Spec.Camellia.invCipher in
+theorem cipher_serDec (m : Mem) (p : Addr) (R : Nat) :
+    Serial.decCoreSpec.cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
+theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
+    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' := by
+  refine pick_wrapped hs (M := Mode.cbcDecChained 4) rfl
+    (fun s₁ s₂ hm h => by simpa only [cbcDecPost, dataAt, ivAt, hm] using h) fun v => ?_
+  obtain ⟨eP, eD, eN, eM⟩ := entry_args_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.cbcDecSeq_wp Serial.decCoreSpec
+      ((seqPre_of hs Serial.decCore rfl rfl Serial.decCoreSpec.layout (M := Mode.cbcDecChained 4) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs Serial.decCore rfl (M := Mode.cbcDecChained 4) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.decCore.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_serDec] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.decCore.bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      exact h3
+  · refine WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 3) (by decide) (by decide)
+      (by decide) ((seqPre_of hs (dirCore .decrypt) rfl rfl (dirCoreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs (dirCore .decrypt) rfl (M := Mode.cbcDecChained 4) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_dec] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      exact h3
 
 theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract ctrPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 3) rfl (by decide) (by decide) (by decide)
-    (seqPre_of hs .encrypt (M := Mode.ctrEarly) rfl) (keyArgs_of hs .encrypt (M := Mode.ctrEarly) rfl)
-  obtain ⟨eP, eD, eN⟩ := entry_args s
-  rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
-    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
-  all_goals rw [← hm]
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
-    exact h2
-  · simp only [Proof.Modes.PPC64LE.iv0, eP, show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs] at h3
-    exact h3
+  refine pick_wrapped hs (M := Mode.ctrEarly) rfl
+    (fun s₁ s₂ hm h => by simpa only [ctrPost, dataAt, ivAt, hm] using h) fun v => ?_
+  obtain ⟨eP, eD, eN, eM⟩ := entry_args_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.ctrSeq_wp Serial.coreSpec rfl
+      ((seqPre_of hs Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ctrEarly) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs Serial.core rfl (M := Mode.ctrEarly) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, eP, eM, show 4 * Serial.core.bw = 16 from rfl, iv_entry hs] at h3
+      exact h3
+  · refine WP.mono (Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 3) rfl (by decide) (by decide)
+      (by decide) ((seqPre_of hs (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.ctrEarly) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs (dirCore .encrypt) rfl (M := Mode.ctrEarly) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, eP, eM, show 4 * (dirCore Dir.encrypt).bw = 16 from rfl,
+        iv_entry hs] at h3
+      exact h3
 
 /-! ## The contracts -/
 

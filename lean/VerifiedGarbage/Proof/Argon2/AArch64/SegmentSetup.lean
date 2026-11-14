@@ -100,13 +100,13 @@ theorem code_ok (s : State) (p : Params) (pass lane slice : Nat)
     have bound := of_decide_eq_true taken
     have active := prepared.context.activate bound (start_active pass slice)
     refine (FillSegment.loop_ok (p.segmentLen - start pass slice) b p pass lane slice (start pass slice) 0
-      active state matrix (by omega) (by omega)).mono ?_
+      active state matrix (by omega_using [bound]) (by omega_using [bound])).mono ?_
     intro t finished
     exact finished_prepared prepared finished
   · intro skipped
     have bound := of_decide_eq_false skipped
     have minimum := h.parameters.segment_bound.1
-    have last : start pass slice = p.segmentLen := by have := start_le pass slice p.segmentLen minimum; omega
+    have last : start pass slice = p.segmentLen := by have := start_le pass slice p.segmentLen minimum; omega_using [bound, this]
     have finished : FillSegment.Finished b b p pass lane slice state :=
       ⟨matrix, rfl, rfl, last ▸ prepared.context.position, prepared.context.layout,
         ⟨0, prepared.context.cache⟩, prepared.context.matrixWork, prepared.context.cache.words.passWord,

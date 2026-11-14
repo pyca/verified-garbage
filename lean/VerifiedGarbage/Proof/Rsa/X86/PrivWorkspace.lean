@@ -20,7 +20,7 @@ theorem Workspace.congr {s t : State} {base : BitVec 32} {size : Nat}
 theorem Workspace.write {s : State} {base : BitVec 32} {size d n : Nat}
     (h : Workspace s base size) (hd : d + n ≤ size) :
     InRegions s.wr (byteAddr base + BitVec.ofNat 64 d) n :=
-  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega)⟩
+  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega_using [hd, this])⟩
 
 theorem Workspace.read {s : State} {base : BitVec 32} {size d n : Nat}
     (h : Workspace s base size) (hd : d + n ≤ size) :

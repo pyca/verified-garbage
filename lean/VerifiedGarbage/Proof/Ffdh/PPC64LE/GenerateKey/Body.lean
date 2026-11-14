@@ -34,7 +34,7 @@ def gkSt (x g p b : Nat) : Nat :=
 theorem out_scr {X B : Addr} {Z k : Nat} {m m' : Mem} (h : Outside X 0 k m m')
     (hsep : ∀ y, ofs B y < Z → k ≤ ofs X y) : Outside B Z (2 ^ 64) m m' := fun y hy => h y (Or.inr (by
   rcases hy with hy | hy
-  · have := hsep y hy; omega
+  · have := hsep y hy; omega_using [this]
   · have := (y - B).isLt; simp only [ofs] at hy; omega))
 
 end VG.Proof.Ffdh.PPC64LE.GenerateKey

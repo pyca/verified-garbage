@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 import VerifiedGarbage.Proof.Rsa.WordRanges
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The fixed 128-bit correction bank fits every native RSA workspace -/
 
@@ -27,7 +28,7 @@ theorem correction_scratch_arr {m m' : Mem} {B : Addr} {j : Nat} (hj : j < 4)
   apply O x
   have H := hx (hdr, 96) (by simp [correctionScratch])
   simp only [arr, S, hdr] at H ⊢
-  omega
+  omega_using [hj, H]
 
 theorem correction_scratch_outside {m m' : Mem} {B : Addr} {out len : Nat}
     (low : hdr ≤ out) (high : out + len ≤ hdr + 96) (O : Outside B out len m m') :
@@ -36,6 +37,6 @@ theorem correction_scratch_outside {m m' : Mem} {B : Addr} {out len : Nat}
   apply O x
   have H := hx (hdr, 96) (by simp [correctionScratch])
   simp only at H
-  omega
+  omega_using [low, high, H]
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

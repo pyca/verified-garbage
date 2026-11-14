@@ -206,7 +206,7 @@ theorem ver_run [VG.Proof.Gcm.RISCV64.GhashLaw] {s₀ : State} (h : verPre s₀)
             · exact (hbw.sub_right (Lay.wSub (by decide))).symm) (by decide), hb₄, k₃.mem,
           ← h1.s9, bytesAt_frame h1.en.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; rw [h1.s9]
-            exact dT (d := 128) (k := 104) (by decide)) (by omega), h1.s9]
+            exact dT (d := 128) (k := 104) (by decide)) (by omega_using []), h1.s9]
       have hX : (bytesAt s₅.mem (s₁.gpr .s0 + BitVec.ofNat 64 0) (s₀.gpr .a5).toNat ++
             zeros (16 - (s₀.gpr .a5).toNat) = bytesAt s₅.mem (s₁.gpr .s0 + BitVec.ofNat 64 256) 16) ↔
           (fullTag (ctxCiph s₀.mem (s₀.gpr .a0)) (ctxH s₀.mem (s₀.gpr .a0)) iv a ct).take

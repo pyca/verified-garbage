@@ -127,9 +127,9 @@ theorem passRest_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
         simp only [List.mem_singleton] at hr; subst hr
         exact (L.cw'.sub_left (Lay.ctxSub (by decide))).sub_right (Lay.wSub (by decide)))]
       exact hH
-    · refine hx.congr (blockAt_frame hf (hst (by decide))) (bytesAt_frame hf (hst ?_) (by omega))
+    · refine hx.congr (blockAt_frame hf (hst (by decide))) (bytesAt_frame hf (hst ?_) (by omega_using []))
       have := Nat.mod_lt (x ++ zeros (padLen x.length)).length (by decide : 0 < 16)
-      omega
+      omega_using []
   -- the data and its tag
   refine CT.seq (J := OneOP DOk c W sp R Np n Ad A S Ln T TL) ?_ (fun s ⟨hT, hab, hX⟩ => ?_) ?_
   · have ev : ∀ s, J₁ s → isa.eval (.zero .d .r23) s = some (decide (Ln.toNat = 0)) :=
@@ -147,7 +147,7 @@ theorem passRest_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum
     · exact WP.mono (WP.with_rdwr (oneTag_ok (L.v a b d) (o := 112) (.inr rfl) (H := H) (a := x) he e hR
         (by rw [a]; exact hH) (by rw [i]; exact hl) (by rw [b]; exact hx) (by rw [b, d, j, k]; exact hD)))
         fun s' ⟨ot, rd, wr, _⟩ => OneOP.keep hP hT (fun r hr => (he.fr r hr).symm) ot.env rd wr
-    · have hpos : 0 < (V .r23).toNat := by rw [k]; have := of_decide_eq_false hb; omega
+    · have hpos : 0 < (V .r23).toNat := by rw [k]; have := of_decide_eq_false hb; omega_using [this]
       obtain ⟨hd, hsd, hi, hv, _⟩ := hX
       have wi : Pass.WholeIn V sp R Dst s :=
         ⟨he, e, hR, by rw [b, d, j, k]; exact hD, by rw [a, b, d, k]; exact hd, by rw [j, k]; exact hsd, hi, hv⟩

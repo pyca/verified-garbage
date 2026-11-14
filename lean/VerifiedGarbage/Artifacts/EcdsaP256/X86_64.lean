@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -8,6 +11,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -87,37 +93,70 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedLoad
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedPoint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 public import VerifiedGarbage.Proof.P256.X86_64.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256Adx
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # ECDSA over P-256 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
 
+-- Deterministic ECDSA (RFC 6979) over P-256 on x86-64, with HMAC as a table
+namespace VG.Artifacts.EcdsaP256.X86_64.Rfc6979
+
+open VG.Proof.P256.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p256Of p256T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+open VG.Proof.Variants.MdHash.X86_64 (variants)
+
+def artifacts : List Artifact :=
+  if hv : OK variants ∧ "VG_P256_COMB" ∉ names variants then [
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      tables := [("hmac", tables variants)]
+      code := signCodeT (p256Of false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)
+        Spec.Ecdsa.Rfc6979.Curves.p256.tries variants
+      stack := stackT
+      verified := p256T_verified false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p256.combConsts _ _)),
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      suffix := "_adx"
+      tables := [("hmac", tables variants)]
+      code := signCodeT (p256Of true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)
+        Spec.Ecdsa.Rfc6979.Curves.p256.tries variants
+      stack := stackT
+      verified := p256T_verified true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv
+      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p256.combConsts _ _))]
+  else []
+
+end VG.Artifacts.EcdsaP256.X86_64.Rfc6979
+
 namespace VG.Artifacts.EcdsaP256.X86_64
 
 open VG.Proof.P256.X86_64 (hasLaw)
 
-/-- The function of `Spec.Ecdsa.P256.verifyHashApi`, multiplying with BMI2 and ADX
-(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
-`rsp` (`hsp`). -/
-def verify (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P256.inst.verifyHashContract (X86_64.abi.withConsts Impl.P256.X86_64.p256v.combConsts) 96))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
-    stack := 96
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
-
 def artifacts : List Artifact := [
-  verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-    Impl.Ecdsa.Verify.X86_64.jointVerifyP256)
-    (Proof.Ecdsa.Verify.X86_64.verifyHash_verified hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv hasLaw.prime),
-  verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
-    Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx)
-    (Proof.Ecdsa.Verify.X86_64.verifyHash_verified_adx hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime)]
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    suffix := "_ifma"
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_ifma hasLaw.law (Proof.P256.gtabOk9 hasLaw.law)
+      hasLaw.inv hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)),
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP256
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)),
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    suffix := "_adx"
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP256Adx
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.verifyHash_verified_adx hasLaw.law (Proof.P256.gtabOk9 hasLaw.law) hasLaw.inv
+      hasLaw.prime }
+    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts))] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.X86_64

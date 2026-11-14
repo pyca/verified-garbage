@@ -54,7 +54,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre P s₀) : WP isa (.block P.kgProlog
   have hin : ∀ k < own.length, InRegions s₀.wr (kA s₀ 3 + BitVec.ofNat 64 (SV P + 8 * k)) 8 := fun k hk => by
     rw [hp.wr]
     exact in_regions (R := ⟨kA s₀ 3, kL P 3⟩) (by simp) (contains_off (by simp at hk; simp only [kL]; lom)
-      (by have := kL_le hw 3; omega))
+      (by have := kL_le hw 3; omega_using [this]))
   have hsv : SV P + 8 * own.length ≤ 32768 := by simp only [own, List.length_cons, List.length_nil]; lom
   have h8 : SV P % 8 = 0 := by lom
   refine WP.mono (WP.preservedV (saves_ok (kA s₀ 3) .x3 (SV P) own hsv h8 6 (by decide) rfl hin)
@@ -68,7 +68,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre P s₀) : WP isa (.block P.kgProlog
   refine wp_strb (a := kA s₀ 3 + BitVec.ofNat 64 BK) (by decide) (by rw [c28])
     (by rw [k₇.wr, w₁, hp.wr]
         exact in_regions (R := ⟨kA s₀ 3, kL P 3⟩) (by simp) (contains_off (by simp only [kL]; lom)
-          (by have := kL_le hw 3; omega)))
+          (by have := kL_le hw 3; omega_using [this])))
     fun s₈ h₈ => wp_nil ?_
   have m₈ : s₈.mem = s₁.mem.writeW (kA s₀ 3 + BitVec.ofNat 64 BK) ((s₇.gpr .x9).setWidth 8) := by
     rw [h₈.mem, h₇.mem, h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem]
@@ -94,7 +94,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre P s₀) : WP isa (.block P.kgProlog
   · rw [h₈.gpr, h₇.get .x24, e₆]; rfl
   · rw [m₈]
     refine bytesAt_eq (by rfl) fun i hi => ?_
-    have : i = 0 := by omega
+    have : i = 0 := by omega_using [hi]
     subst this
     rw [ptr_zero, writeW8_apply, ite_eq_left rfl, e₇]
     exact sfx8 (by lom)
@@ -128,8 +128,8 @@ theorem KB.hash {s₀ s s' : State} (hp : Pre P s₀) (h : KB P s₀ s) {outs : 
   obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hr
   obtain ⟨b, o, l, rfl, h1, h4, f, hs⟩ := ho p hp'
   simp only [preg, h.breg h4]
-  exact ⟨hp.args.rdisj (by decide) h4 hp.sv f (by omega),
-    hp.args.rdisj (by decide) h4 (by kl) f (by omega)⟩
+  exact ⟨hp.args.rdisj (by decide) h4 hp.sv f (by omega_using [hs]),
+    hp.args.rdisj (by decide) h4 (by kl) f (by omega_using [h1])⟩
 
 /-- After `G(d ‖ k)`. -/
 structure AfterA (P : KemLay) (s₀ s : State) : Prop where

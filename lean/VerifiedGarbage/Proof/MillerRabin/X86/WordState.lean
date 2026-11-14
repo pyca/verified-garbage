@@ -43,7 +43,7 @@ theorem wordWindow_next (V : Nat → BitVec 32) (A : Nat → Nat) (c w : Nat) (x
   have powers : (fun d => setAt A aY (wordState A c w x F i).1 (aTable + d)) =
       (fun d => A (aTable + d)) := by
     funext d
-    exact setAt_other _ _ (by unfold aTable aY; omega)
+    exact setAt_other _ _ (by unfold aTable aY; omega_using [])
   rw [powers]
   rfl
 

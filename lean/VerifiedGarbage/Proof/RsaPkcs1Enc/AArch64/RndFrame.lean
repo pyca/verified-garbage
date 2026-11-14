@@ -121,7 +121,7 @@ def preW (s : State) : List (BitVec 64) := Spec.Rsa.wordsAt s.mem (stackArg s 5)
 
 theorem RPre.ps {P : Nat} {s : State} (hp : RPre P s) :
     8 ≤ psLen s ∧ psLen s + (stackArg s 0).toNat + 3 = kOf s ∧ psLen s ≤ 1021 := by
-  have := hp.hml; have := hp.k2; unfold psLen kOf; omega
+  have := hp.hml; have := hp.k2; unfold psLen kOf; omega_arith
 
 theorem RPre.randLen {P : Nat} {s : State} (hp : RPre P s) : (stackArg s 2).toNat ≤ psLen s + 128 := hp.hrl
 
@@ -143,11 +143,11 @@ theorem off_off (p : Addr) (a b : Nat) : off (off p a) b = off p (a + b) := by
 
 theorem off_toNat {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) : (off p d).toNat = p.toNat + d := by
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega), Nat.mod_eq_of_lt h]
+  rw [Nat.mod_eq_of_lt (show d < 2 ^ 64 by omega_using [h]), Nat.mod_eq_of_lt h]
 
 theorem Q_kb (P : Nat) (s : State) : Q s = off (kb P s) (P + 1088) := by
   simp only [Q, kb, off, rndStack]
-  rw [show P + 2192 = 1104 + (P + 1088) by omega, BitVec.ofNat_add, ← BitVec.sub_sub,
+  rw [show P + 2192 = 1104 + (P + 1088) by omega_using [], BitVec.ofNat_add, ← BitVec.sub_sub,
     BitVec.sub_add_cancel]
 
 theorem kb_toNat {P : Nat} {s : State} (hp : RPre P s) :
@@ -155,21 +155,21 @@ theorem kb_toNat {P : Nat} {s : State} (hp : RPre P s) :
   have := hp.sp1
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := s.sp.isLt
-  unfold rndStack at *; omega
+  unfold rndStack at *; omega_arith
 
 theorem Q_toNat {P : Nat} {s : State} (hp : RPre P s) : (Q s).toNat + 1104 = s.sp.toNat ∧
     P + 1088 ≤ (Q s).toNat := by
   have := hp.sp1
   simp only [Q, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := s.sp.isLt
-  unfold rndStack at *; omega
+  unfold rndStack at *; omega_arith
 
 theorem Q_sp (s : State) : Q s + BitVec.ofNat 64 1104 = s.sp := BitVec.sub_add_cancel _ _
 
 /-- Bytes of the frames are in the stack the function uses. -/
 theorem frame_sub {P : Nat} (s : State) {d n : Nat} (h : d + n ≤ 1104) : Region.Sub ⟨off (Q s) d, n⟩ (stkR P s) := by
   rw [Q_kb P, off_off, stkR_eq]
-  exact Offset.sub_base _ (by unfold rndStack; omega)
+  exact Offset.sub_base _ (by unfold rndStack; omega_using [h])
 
 theorem stackArgAddr_Q (s : State) (j : Nat) : stackArgAddr s j = off (Q s) (1104 + 8 * j) := by
   simp only [stackArgAddr, off]
@@ -180,7 +180,7 @@ theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr 
 
 theorem arg_contains (s : State) {j : Nat} (hj : j < 7) : (argsR s).Contains (stackArgAddr s j) 8 := by
   rw [argsR, stackArgAddr_eq s j]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-- The state in which the inner frame's body starts. -/
 def entered (s : State) : State := allocated frameBytes (pushed .x30 s)
@@ -211,7 +211,7 @@ theorem entered_mem (s : State) : (entered s).mem = s.mem.writeW (off (Q s) 1088
 /-- A stack argument, in the memory on entry to the frames' body. -/
 theorem arg_entered (s : State) {j : Nat} (hj : j < 7) :
     (entered s).mem.readW (off (Q s) (1104 + 8 * j)) 64 = stackArg s j := by
-  rw [entered_mem, Mem.readW_writeW_sep (Offset.sep _ (.inr (by omega)) (by omega) (by omega)) (by decide)]
+  rw [entered_mem, Mem.readW_writeW_sep (Offset.sep _ (.inr (by omega_using [])) (by omega_using [hj]) (by omega_using [])) (by decide)]
   show _ = s.mem.readW (stackArgAddr s j) 64
   rw [stackArgAddr_Q]
 

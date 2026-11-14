@@ -111,7 +111,7 @@ def sha1MdOK : HashOK sha1Md where
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha1.md, Spec.Sha1.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega_using [hj])
   len := by decide
   stream := sha1OK
   iv := Spec.Sha1.H0
@@ -136,7 +136,7 @@ def md5MdOK : HashOK md5Md where
     apply Vector.ext
     intro j hj
     simp only [Proof.Md5.md, Spec.Md5.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 16) h (by omega_using [hj])
   len := by decide
   stream := md5OK
   iv := Spec.Md5.H0
@@ -168,7 +168,7 @@ def sha512MdOK {D : Nat} {initN : String} {iv : Spec.Sha512.HashValue}
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha512.md, Spec.Sha512.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 64) h (by omega_using [hj])
   len := hlen
   stream := hs
   iv := iv

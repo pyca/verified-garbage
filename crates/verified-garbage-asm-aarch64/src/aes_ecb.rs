@@ -210,7 +210,7 @@ bl {vg_aes_encrypt_blocks}
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
@@ -236,7 +236,7 @@ bl {vg_aes_decrypt_blocks}
 bl {vg_zeroize}
 .inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }

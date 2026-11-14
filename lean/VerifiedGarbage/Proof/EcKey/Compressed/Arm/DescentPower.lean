@@ -35,15 +35,15 @@ theorem descentPower_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} {j : 
     [.ldr .r11 wb (c.sl T2), decCounter])) (Impl.EcKey.Compressed.Arm.squarePower c)) s _
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by have := sl_le c h7 (i := T0) (by decide); omega)
-    (by have := sl_apart c (i := T3) (j := T0) (by decide); omega)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
-  rw [show 4 * (2 * c.n) = 8 * c.n by omega] at O₁
+  refine WP.mono (copy_ok (2 * c.n) hs (by omega_using [h3]) (by have := sl_le c h7 (i := T0) (by decide); omega_using [this])
+    (by have := sl_apart c (i := T3) (j := T0) (by decide); omega_using [this])) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
+  rw [show 4 * (2 * c.n) = 8 * c.n by omega_using []] at O₁
   have v₁' : sv c base s₁ T3 = sv c base s T0 := by
     simpa only [sv, wordsVal_eq_val32] using v₁
   have hs₁ := hs.of_rest k₁ (by decide)
-  refine wp_ldr (hs₁.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.read (by omega : c.sl T2 + 4 ≤ size)) fun s₂ u₂ => ?_
+  refine wp_ldr (hs₁.off_lt (by omega_using [h0, h2])) (hs₁.ea (by omega_using [h0, h2])) (hs₁.read (by omega_using [h0, h2] : c.sl T2 + 4 ≤ size)) fun s₂ u₂ => ?_
   have hb₂ : s₂.gpr .r11 = BitVec.ofNat 32 j := by
-    rw [u₂.gpr, BitVec.eq_of_toNat_eq (O₁.w32 (by have := sl_apart c (i := T2) (j := T3) (by decide); omega) (by omega)), hword]
+    rw [u₂.gpr, BitVec.eq_of_toNat_eq (O₁.w32 (by have := sl_apart c (i := T2) (j := T3) (by decide); omega_using [h0, this]) (by omega_using [hn, h2])), hword]
   refine wp_decCounter hj hb₂ fun s₃ u₃ => WP.block_nil ?_
   have K : Rest powClob s s₃ := (k₁.mono (by decide)).trans
     ((u₂.rest (by simp [powClob])).trans (u₃.rest (by simp [powClob])))
@@ -51,10 +51,10 @@ theorem descentPower_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} {j : 
   have m₃ : s₃.mem = s₁.mem := u₃.mem.trans u₂.mem
   have M₃ : ModOkW c.MP' size c.C.p s₃.mem base := modP_of hc (by
     rw [m₃, O₁.wordsVal (sl_apart c (i := MP) (j := T3) (by decide))
-      (by have := sl_le c h7 (i := MP) (by decide); omega)]
+      (by have := sl_le c h7 (i := MP) (by decide); omega_using [hn, this])]
     exact hM.val)
   refine WP.mono (squarePower_ok hc hs₃ (hf.of_rest K) M₃
-    (by rw [sv, m₃]; change sv c base s₁ T3 < _; rw [v₁']; exact hlt) u₃.gpr (by omega))
+    (by rw [sv, m₃]; change sv c base s₁ T3 < _; rw [v₁']; exact hlt) u₃.gpr (by omega_using [hj']))
     fun t ⟨Kt, Ut, lt, vt⟩ => ?_
   refine ⟨K.trans Kt, ?_, lt, ?_⟩
   · rw [m₃] at Ut

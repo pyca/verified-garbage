@@ -87,7 +87,7 @@ structure Prepared (s₀ s : State) (n : Nat := 0) : Prop where
     · intro k hk
       change InRegions c.wr (c.gpr .x1 + BitVec.ofNat 64 (4 * k)) 4
       rw [hcw,hab.wr,hw,hcg _ (by decide),hab.gpr _ (by decide),hg _ (by decide) (by decide)]
-      exact hp.data _ _ (by omega)
+      exact hp.data _ _ (by omega_using [hk])
     · change (⟨c.gpr .x1,256⟩ : Region).Disjoint ⟨c.gpr .x0,64⟩
       rw [hcg _ (by decide),hcg _ (by decide),hab.gpr _ (by decide),hg _ (by decide) (by decide),h0]
       exact hp.st_d.symm.sub_left (Region.sub_prefix (by decide : 256 ≤ 320))

@@ -42,9 +42,9 @@ theorem write_ok {s0 s : State} {x : BitVec 32} {h : Hash} {k : Nat} (buf : Buf 
   unfold write
   refine WP.seq (WP.mono (head_ok buf bound room initial
     ((pre.keep.1 .ecx (by decide)).trans pre.length) pre.info) fun s1 ⟨h1, ax, count, k1⟩ => ?_)
-  refine WP.seq (WP.mono (psLoop_ok buf bound (by omega) (by simp; omega) 0xff h1 ax count)
+  refine WP.seq (WP.mono (psLoop_ok buf bound (by omega_using [room]) (by simp; omega_using [room]) 0xff h1 ax count)
     fun s2 ⟨h2, k2⟩ => ?_)
-  refine WP.seq (WP.mono (putByte_ok buf (by simp; omega) 0x00 h2) fun s3 ⟨h3, k3⟩ => ?_)
+  refine WP.seq (WP.mono (putByte_ok buf (by simp; omega_using [room]) 0x00 h2) fun s3 ⟨h3, k3⟩ => ?_)
   have kept : Keeps [.eax, .edi, .ebx] s s3 :=
     (k1.trans (k2.mono (by decide))).trans (k3.mono (by decide))
   have hash3 : s3.gpr .edx = x :=
@@ -59,7 +59,7 @@ theorem write_ok {s0 s : State} {x : BitVec 32} {h : Hash} {k : Nat} (buf : Buf 
       rw [eq, Nat.zero_add, ofId_hashes j hj] at id
       exact Option.some.inj id
     rw [same]
-    refine WP.mono (putBytes_ok buf h.prefix (by simp; omega) (W_sameF h3 hu)) fun t ⟨ht, kt⟩ => ?_
+    refine WP.mono (putBytes_ok buf h.prefix (by simp; omega_using [room]) (W_sameF h3 hu)) fun t ⟨ht, kt⟩ => ?_
     refine ⟨ht, ?_⟩
     exact kept.trans ⟨fun r hr => by rw [kt.1 r (by simp_all), hu.1],
       kt.2.1.trans hu.2.2.1, kt.2.2.trans hu.2.2.2⟩
@@ -72,13 +72,13 @@ theorem write_ok {s0 s : State} {x : BitVec 32} {h : Hash} {k : Nat} (buf : Buf 
     have member : x.toNat < hashes.length := by
       by_contra no
       have id := pre.id
-      rw [ofId_ge (by omega)] at id
+      rw [ofId_ge (by omega_using [no])] at id
       cases id
-    exact absent _ member (by omega)
+    exact absent _ member (by omega_using [])
   refine WP.seq (WP.mono (dispatch_ok (fun _ h => prefixBytes h) (.block []) x hash3 hashes 0
     (by decide) case default s3 ⟨rfl, rfl, rfl, rfl⟩) fun s4 ⟨h4, k4⟩ => ?_)
   refine WP.seq (WP.mono (copyLoop_ok buf bound digest (by cases h <;> decide)
-    (by simp; omega) h4
+    (by simp; omega_using [room]) h4
     ((k4.1 _ (by decide)).trans (pre.keep.1 _ (by decide)))
     ((k4.1 _ (by decide)).trans ((pre.keep.1 _ (by decide)).trans pre.digest))) fun s5 h5 => ?_)
   refine VG.Proof.Mont.X86.wp_movS rfl fun t T _ => WP.block_nil ?_

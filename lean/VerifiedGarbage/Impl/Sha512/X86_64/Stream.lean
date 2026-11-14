@@ -41,14 +41,17 @@ open VG.X86_64
 open VG.Impl.Sha512.X86_64 (at_ compress)
 open VG.Impl.MdStream.X86_64 (Params len64 out64)
 
-/-- A compression function to call: its symbol and its code. -/
+/-- A compression function to call: its symbol, its code, and the bytes of
+scratch space it uses (`so`), which the functions that call it by name give
+it (`updateOwn`, `finalizeOwn`). -/
 structure Callee where
   name : String
   code : Prog isa
+  so : Nat
 
-def Callee.scalar : Callee := ⟨"vg_sha512_compress", Rolled.compress⟩
-def Callee.avx2 : Callee := ⟨"vg_sha512_compress_avx2", Avx2Rolled.compress⟩
-def Callee.shani : Callee := ⟨"vg_sha512_compress_shani", ShaNi.compress⟩
+def Callee.scalar : Callee := ⟨"vg_sha512_compress", Rolled.compress, 192⟩
+def Callee.avx2 : Callee := ⟨"vg_sha512_compress_avx2", Avx2Rolled.compress, 1328⟩
+def Callee.shani : Callee := ⟨"vg_sha512_compress_shani", ShaNi.compress, 0⟩
 
 def init (iv : Spec.Sha512.HashValue) : Prog isa :=
   .block ((List.range 8).flatMap fun k => [.movImm64 .rax iv[k]!, .store (at_ .rdi (8 * k)) .rax])
@@ -67,6 +70,14 @@ def params : Params where
 def update (f : Callee) : Prog isa := MdStream.X86_64.update params f.name f.code
 
 def finalize (f : Callee) : Prog isa := MdStream.X86_64.finalize params f.name f.code
+
+/-- `update` and `finalize` giving the compression function the scratch
+space it uses (`Callee.so`): the functions `vg_sha512_update_scratch` and
+`vg_sha512_finalize_scratch` (with `f`'s suffix) that other functions call
+by name. -/
+def updateOwn (f : Callee) : Prog isa := MdStream.X86_64.update { params with so := f.so } f.name f.code
+
+def finalizeOwn (f : Callee) : Prog isa := MdStream.X86_64.finalize { params with so := f.so } f.name f.code
 
 /-! ## The truncated digests
 

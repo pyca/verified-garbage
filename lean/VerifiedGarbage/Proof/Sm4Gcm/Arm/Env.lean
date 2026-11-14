@@ -42,9 +42,9 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [Region.Contains] at hc ⊢
   have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hk]),
+    Nat.mod_eq_of_lt (by omega_using [hd, hk, hc])]
+  omega_using [hd, hc]
 
 theorem in_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n :=
@@ -72,7 +72,7 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
     Covers [⟨p, n⟩] rs := by
   intro a m ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 theorem add_ofNat_zero {w : Nat} (x : BitVec w) : x + BitVec.ofNat w 0 = x := BitVec.add_zero x
 
@@ -158,7 +158,7 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 768) : Region.Sub ⟨W + BitV
 
 theorem bSub {W : Addr} {d n : Nat} (h₁ : 96 ≤ d) (h₂ : d + n ≤ 768) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W + BitVec.ofNat 64 96, 672⟩ :=
-  Offset.sub _ h₁ (by omega)
+  Offset.sub _ h₁ (by omega_using [h₂])
 
 theorem aSub {W : Addr} {d n : Nat} (h : d + n ≤ 16) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 16⟩ :=
   Offset.sub_base _ h
@@ -169,13 +169,13 @@ include L
 /-! ### The code's sums do not wrap -/
 
 theorem cA {d : Nat} (hd : d < 256) : State.addr (c + BitVec.ofNat 32 d) = State.addr c + BitVec.ofNat 64 d :=
-  addr_add (by have := L.cw; omega)
+  addr_add (by have := L.cw; omega_using [hd, this])
 
 theorem stA {d : Nat} (hd : d < 80) : State.addr (st + BitVec.ofNat 32 d) = State.addr st + BitVec.ofNat 64 d :=
-  addr_add (by have := L.sw; omega)
+  addr_add (by have := L.sw; omega_using [hd, this])
 
 theorem wA {d : Nat} (hd : d < 768) : State.addr (w + BitVec.ofNat 32 d) = State.addr w + BitVec.ofNat 64 d :=
-  addr_add (by have := L.ww; omega)
+  addr_add (by have := L.ww; omega_using [hd, this])
 
 /-- Parts of the state and of `W` outside `[16, 96)` are disjoint. -/
 theorem st_w {a n d k : Nat} (ha : a + n ≤ 80) (hd : (d + k ≤ 16) ∨ (96 ≤ d ∧ d + k ≤ 768)) :
@@ -205,31 +205,31 @@ omit L in
 /-- Parts of the state are disjoint. -/
 theorem st_st {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 80) (hd : d + k ≤ 80) :
     (⟨State.addr st + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr st + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 omit L in
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 768) (hd : d + k ≤ 768) :
     (⟨State.addr w + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 omit L in
 theorem ctx_ctx {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 256) (hd : d + k ≤ 256) :
     (⟨State.addr c + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨State.addr c + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 /-- The 32-bit sums of the pointers, as numbers. -/
 theorem cN {d : Nat} (hd : d < 256) : (c + BitVec.ofNat 32 d).toNat = c.toNat + d := by
   have := L.cw
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem stN {d : Nat} (hd : d < 80) : (st + BitVec.ofNat 32 d).toNat = st.toNat + d := by
   have := L.sw
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 theorem wN {d : Nat} (hd : d < 768) : (w + BitVec.ofNat 32 d).toNat = w.toNat + d := by
   have := L.ww
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
 end Lay
 

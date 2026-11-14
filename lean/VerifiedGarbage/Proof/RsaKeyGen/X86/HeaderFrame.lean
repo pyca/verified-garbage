@@ -19,8 +19,8 @@ theorem pointers_frame (indices : List Nat) {base : Addr} {p : BitVec 32} {w : N
   | cons i indices ih =>
     rw [List.foldl_cons]
     have first : Outs base ranges m (pointerMemory base p w m i) :=
-      Outs.of_outside ((writeW_outside _ base _ (by have := bound i (by simp); omega)).mono
-        (by omega) (by have := bound i (by simp); omega))
+      Outs.of_outside ((writeW_outside _ base _ (by have := bound i (by simp); omega_using [this])).mono
+        (by omega_using []) (by have := bound i (by simp); omega_using [this]))
         (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     exact first.trans (ih (fun j mem => bound j (List.mem_cons_of_mem _ mem)))
 

@@ -39,7 +39,7 @@ theorem correct (s : State) (hp : contract.pre s) :
   refine ⟨tr,t,he,VG.Proof.MlKem.AArch64.abi_of rfl (by decide +kernel) he (by decide +kernel),
     polyIs_of_toNat fun i hit => ?_⟩
   have hlt : i<256 := hit
-  rw [hi.coeff i hlt,ite_eq_left (by omega),result_field]
+  rw [hi.coeff i hlt,ite_eq_left (by omega_using [hlt]),result_field]
   change _ = ((multiplyNTT (polyAt s.mem (s.gpr .x1)) (polyAt s.mem (s.gpr .x2))).map (·*montgomeryRInv))[i]!.val
   rw [map_mul_get _ _ hit,mul_get _ _ hit,
     polyAt_get _ _ hit,polyAt_get _ _ hit]

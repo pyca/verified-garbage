@@ -3,13 +3,13 @@
 //! `assembly/rsa_oaep.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_rsa_oaep_decrypt_umaal` requires (`Artifact.features`).
+/// The CPU features `vg_rsa_oaep_decrypt_precomputed_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+pub const VG_RSA_OAEP_DECRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
-/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+/// `vg_rsa_oaep_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_oaep_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+/// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
 /// # Safety
 ///
@@ -25,8 +25,9 @@ pub const VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = v
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -34,16 +35,18 @@ pub const VG_RSA_OAEP_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = v
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt_umaal(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt_precomputed_umaal(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 sub sp, sp, #128
@@ -93,9 +96,17 @@ add r0, r0, lr
 ldr r1, [sp, #184]
 ldr r2, [sp, #140]
 ldr r3, [sp, #184]
-bl {vg_rsa_private_checked_umaal}
+add r12, sp, #0
+ldr r4, [sp, #268]
+str r4, [r12, #64]
+ldr r4, [sp, #272]
+str r4, [r12, #68]
+bl {vg_rsa_private_checked_precomputed_umaal}
+add r12, sp, #0
+ldr r4, [sp, #252]
+str r4, [r12, #64]
 ldr r1, [sp, #260]
-ldr r1, [r1, #16]
+ldr r1, [r1, #24]
 cmp r1, #16
 beq 20f
 cmp r1, #20
@@ -176,7 +187,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -312,7 +323,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -719,7 +730,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -855,7 +866,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -1263,7 +1274,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -1399,7 +1410,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -1807,7 +1818,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -1943,7 +1954,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -2351,7 +2362,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -2487,7 +2498,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -2895,7 +2906,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -3031,7 +3042,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -3379,7 +3390,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal::vg_rsa_private_checked_umaal,
+        vg_rsa_private_checked_precomputed_umaal = sym super::rsa::vg_rsa_private_checked_precomputed_umaal::vg_rsa_private_checked_precomputed_umaal,
     )
 }
 
@@ -3389,7 +3400,7 @@ pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+/// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// # Safety
 ///
@@ -3401,8 +3412,8 @@ pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::
 /// * `seed` must be valid for reads of `seed_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -3415,17 +3426,17 @@ pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed_umaal(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed_umaal(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 sub sp, sp, #128
 ldr r1, [sp, #232]
-ldr r1, [r1, #16]
+ldr r1, [r1, #24]
 cmp r1, #16
 beq 20f
 cmp r1, #20
@@ -3577,7 +3588,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -3713,7 +3724,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -4013,7 +4024,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -4149,7 +4160,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -4450,7 +4461,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -4586,7 +4597,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -4887,7 +4898,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -5023,7 +5034,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -5324,7 +5335,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -5460,7 +5471,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -5761,7 +5772,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -5897,7 +5908,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -6071,9 +6082,9 @@ bx lr",
     )
 }
 
-/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+/// `vg_rsa_oaep_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_oaep_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+/// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
 /// # Safety
 ///
@@ -6089,8 +6100,9 @@ bx lr",
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -6098,14 +6110,16 @@ bx lr",
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 sub sp, sp, #128
@@ -6155,9 +6169,17 @@ add r0, r0, lr
 ldr r1, [sp, #184]
 ldr r2, [sp, #140]
 ldr r3, [sp, #184]
-bl {vg_rsa_private_checked}
+add r12, sp, #0
+ldr r4, [sp, #268]
+str r4, [r12, #64]
+ldr r4, [sp, #272]
+str r4, [r12, #68]
+bl {vg_rsa_private_checked_precomputed}
+add r12, sp, #0
+ldr r4, [sp, #252]
+str r4, [r12, #64]
 ldr r1, [sp, #260]
-ldr r1, [r1, #16]
+ldr r1, [r1, #24]
 cmp r1, #16
 beq 20f
 cmp r1, #20
@@ -6238,7 +6260,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -6374,7 +6396,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -6781,7 +6803,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -6917,7 +6939,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -7325,7 +7347,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -7461,7 +7483,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -7869,7 +7891,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -8005,7 +8027,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -8413,7 +8435,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -8549,7 +8571,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -8957,7 +8979,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -9093,7 +9115,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #264]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -9441,13 +9463,13 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+/// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// # Safety
 ///
@@ -9459,8 +9481,8 @@ bx lr",
 /// * `seed` must be valid for reads of `seed_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -9473,15 +9495,15 @@ bx lr",
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 sub sp, sp, #128
 ldr r1, [sp, #232]
-ldr r1, [r1, #16]
+ldr r1, [r1, #24]
 cmp r1, #16
 beq 20f
 cmp r1, #20
@@ -9633,7 +9655,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -9769,7 +9791,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -10069,7 +10091,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -10205,7 +10227,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -10506,7 +10528,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -10642,7 +10664,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -10943,7 +10965,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -11079,7 +11101,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -11380,7 +11402,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -11516,7 +11538,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -11817,7 +11839,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0
@@ -11953,7 +11975,7 @@ str r3, [r12, #72]
 add r12, sp, #0
 ldr r0, [sp, #236]
 str r0, [r12, #120]
-ldr r0, [r0, #16]
+ldr r0, [r0, #24]
 str r0, [r12, #124]
 add r12, sp, #0
 movw r0, #0

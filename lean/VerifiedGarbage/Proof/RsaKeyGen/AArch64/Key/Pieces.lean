@@ -393,7 +393,7 @@ theorem halfW_ok {s : State} {w : Nat} (h12 : s.gpr .x12 = BitVec.ofNat 64 (2 * 
   brun [h12, RegUpd.v_write]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using [hw]
 
 /-- `inverseAt halfW u v x₁ x₂ m t`: `inverse_k` at the primes' `w = W / 2`
 words, at which `u` and `m` fit. -/
@@ -415,8 +415,8 @@ theorem inverseHalf_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (
   have hl1 := L.pl1
   have hl2 := L.pl2
   refine WP.mono (InvLaw.inverseAt_ok h.ws (n := I.pl / 8) hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM
-    dVT dX dX₁M dX₁T dX₂M dX₂T dMT (by omega) (by omega) (by omega)
-    (fun _ _ _ h12 _ _ => halfW_ok (by rw [h12, hW]) (by omega)) hUn hMn hVM) fun t ⟨_, hf, k, hv⟩ => ?_
+    dVT dX dX₁M dX₁T dX₂M dX₂T dMT (by omega_using [hl1]) (by omega_using [hW]) (by omega_using [hl2])
+    (fun _ _ _ h12 _ _ => halfW_ok (by rw [h12, hW]) (by omega_using [hl2])) hUn hMn hVM) fun t ⟨_, hf, k, hv⟩ => ?_
   have f : KF I.B I.W [.arr iU, .arr iV, .arr iX₁, .arr iX₂, .arr iT] s.mem t.mem :=
     KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

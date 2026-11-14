@@ -5,12 +5,12 @@
 // gives.
 
 vg_sha512_finalize_scratch:
-	mov QWORD PTR [rcx+1328], rbx
-	mov QWORD PTR [rcx+1336], rbp
-	mov QWORD PTR [rcx+1344], r12
-	mov QWORD PTR [rcx+1352], r13
-	mov QWORD PTR [rcx+1360], r14
-	mov QWORD PTR [rcx+1368], r15
+	mov QWORD PTR [rcx+192], rbx
+	mov QWORD PTR [rcx+200], rbp
+	mov QWORD PTR [rcx+208], r12
+	mov QWORD PTR [rcx+216], r13
+	mov QWORD PTR [rcx+224], r14
+	mov QWORD PTR [rcx+232], r15
 	mov rbx, rdi
 	mov r15, rcx
 	mov rbp, rdx
@@ -29,7 +29,10 @@ vg_sha512_finalize_scratch:
 	mov rax, r13
 	and rax, 15
 	je 23f
-	mov BYTE PTR [rbx+r13*1+64], r9b
+	mov r10d, 127
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+64], r9b
 	add r13, 1
 	mov eax, 128
 	test r14, r14
@@ -43,7 +46,10 @@ vg_sha512_finalize_scratch:
 	cmp rax, 8
 	jb 27f
 29:
-	mov QWORD PTR [rbx+r13*1+64], r9
+	mov r10d, 120
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+64], r9
 	add r13, 8
 	sub rax, 8
 	cmp rax, 8
@@ -54,7 +60,10 @@ vg_sha512_finalize_scratch:
 	test rax, rax
 	je 210f
 212:
-	mov BYTE PTR [rbx+r13*1+64], r9b
+	mov r10d, 127
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+64], r9b
 	add r13, 1
 	sub rax, 1
 	jne 212b
@@ -82,7 +91,10 @@ vg_sha512_finalize_scratch:
 	cmp r13, 112
 	jae 215f
 217:
-	movdqu XMMWORD PTR [rbx+r13*1+64], xmm0
+	mov r10d, 112
+	cmp r13, r10
+	cmovb r10, r13
+	movdqu XMMWORD PTR [rbx+r10*1+64], xmm0
 	pxor xmm0, xmm0
 	add r13, 16
 	cmp r13, 112
@@ -145,11 +157,11 @@ vg_sha512_finalize_scratch:
 	mov rax, QWORD PTR [rbx+56]
 	bswap rax
 	mov QWORD PTR [rbp+56], rax
-	mov rbx, QWORD PTR [r15+1328]
-	mov rbp, QWORD PTR [r15+1336]
-	mov r12, QWORD PTR [r15+1344]
-	mov r13, QWORD PTR [r15+1352]
-	mov r14, QWORD PTR [r15+1360]
-	mov r15, QWORD PTR [r15+1368]
+	mov rbx, QWORD PTR [r15+192]
+	mov rbp, QWORD PTR [r15+200]
+	mov r12, QWORD PTR [r15+208]
+	mov r13, QWORD PTR [r15+216]
+	mov r14, QWORD PTR [r15+224]
+	mov r15, QWORD PTR [r15+232]
 	ret
 	.p2align 6

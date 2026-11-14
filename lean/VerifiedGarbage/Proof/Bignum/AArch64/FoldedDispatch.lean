@@ -31,20 +31,20 @@ theorem fastLoop_dispatch (M : Mont) {s : State} {B ep : Addr} {Z w L : Nat} {mi
       exact hnFalse hc.1))
   have heq : L = 3 := by simpa only [decide_eq_true_eq] using h3
   have hel3 : eb.length = 3 := hel.trans heq
-  let a := eb[0]'(by omega)
-  let b := eb[1]'(by omega)
-  let c := eb[2]'(by omega)
+  let a := eb[0]'(by omega_using [hel3])
+  let b := eb[1]'(by omega_using [hel3])
+  let c := eb[2]'(by omega_using [hel3])
   have heb : eb = [a,b,c] := List.eq_getElem_of_length_eq_three eb hel3
   have hg' : Good t B Z w mi :=
     ⟨hg.scr.congr kt.wr, (kt.gpr .x0 (by decide)).trans hg.x0, hm ▸ hg.hdr⟩
   have htRead (i : Nat) (hi : i < 3) : InRegions (t.rd ++ t.wr) (ep + BitVec.ofNat 64 i) 1 := by
     rw [kt.rd, kt.wr]
-    exact hs.rd i (by omega)
+    exact hs.rd i (by omega_using [hel3, hi])
   have ha : t.mem ep = a := by
     rw [hm]
-    simpa only [BitVec.add_zero] using hs.val 0 (by omega)
-  have hb : t.mem (ep+1#64) = b := by rw [hm]; exact hs.val 1 (by omega)
-  have hc : t.mem (ep+2#64) = c := by rw [hm]; exact hs.val 2 (by omega)
+    simpa only [BitVec.add_zero] using hs.val 0 (by omega_using [hel3])
+  have hb : t.mem (ep+1#64) = b := by rw [hm]; exact hs.val 1 (by omega_using [hel3])
+  have hc : t.mem (ep+2#64) = c := by rw [hm]; exact hs.val 2 (by omega_using [hel3])
   refine WP.seq (WP.mono (bytesTest_ok hg' hZ (by rw [hm]; exact he) a b c htRead ha hb hc)
     fun u ⟨hu, hum, ku⟩ => ?_)
   refine WP.ite (decide (Spec.Rsa.os2ip [a,b,c] = 65537)) hu

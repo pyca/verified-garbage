@@ -173,12 +173,12 @@ theorem r_lt : 128 * rr s₀ < 2 ^ 32 := by
   have := v_lt hp
   have := NN_pos hp
   have : 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := Nat.le_mul_of_pos_right _ (by omega_using [this])
-  omega
+  omega_arith
 
 theorem NN_lt : NN s₀ < 2 ^ 32 := by
   have := v_lt hp
   have : NN s₀ ≤ 128 * rr s₀ * NN s₀ := Nat.le_mul_of_pos_left _ (by have := hp.pos; omega_using [this])
-  omega
+  omega_arith
 
 omit hp in
 theorem v_le {i : Nat} (hi : i < NN s₀) : 128 * rr s₀ * i + 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := by
@@ -189,7 +189,7 @@ theorem vAt_sub {i : Nat} (hi : i < NN s₀) : Region.Sub ⟨vAt s₀ i, 128 * r
   have := v_lt hp
   have := v_le hi
   show Region.Sub ⟨vA s₀ + BitVec.ofNat 64 (128 * rr s₀ * i), 128 * rr s₀⟩ ⟨vA s₀, vl s₀ * 128⟩
-  exact sub_off (by rw [vl_mul hp]; omega_using [this]) (by omega)
+  exact sub_off (by rw [vl_mul hp]; omega_using [this]) (by omega_arith)
 
 theorem vAt_disj {i k : Nat} (hi : i < NN s₀) (hk : k < NN s₀) (hik : i ≠ k) :
     Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ ⟨vAt s₀ k, 128 * rr s₀⟩ := by
@@ -208,7 +208,7 @@ theorem vAt_addr {i : Nat} (hi : i < NN s₀) : State.addr (vAt32 s₀ i) = vAt 
   have := hp.v_nw
   have := vl_mul hp
   have := hp.pos
-  exact addr_add (by omega)
+  exact addr_add (by omega_arith)
 
 theorem vAt_nw {i : Nat} (hi : i < NN s₀) : (vAt32 s₀ i).toNat + 128 * rr s₀ ≤ 2 ^ 32 := by
   have := v_lt hp
@@ -216,8 +216,8 @@ theorem vAt_nw {i : Nat} (hi : i < NN s₀) : (vAt32 s₀ i).toNat + 128 * rr s�
   have := hp.v_nw
   have := vl_mul hp
   have := hp.pos
-  rw [toNat_add32 (by omega)]
-  omega
+  rw [toNat_add32 (by omega_arith)]
+  omega_arith
 
 /-- `T` is in `scratch`. -/
 theorem t_sub : Region.Sub ⟨tP s₀, 128 * rr s₀⟩ (scR s₀) := by
@@ -239,7 +239,7 @@ theorem t_w : Region.Disjoint ⟨tP s₀, 128 * rr s₀⟩ ⟨scA s₀, 128⟩ :
   have := hp.s_nw
   have := hp.pos
   have := disj_off (scA s₀) (o₁ := 192) (n₁ := 128 * rr s₀) (o₂ := 0) (n₂ := 128) (by omega_using [])
-    (by omega_using []) (by omega_using []) (by omega) (by omega_using [])
+    (by omega_using []) (by omega_using []) (by omega_arith) (by omega_using [])
   simpa using this
 
 end
@@ -297,7 +297,7 @@ theorem keep_t : (keepR s₀).Disjoint ⟨tP s₀, 128 * rr s₀⟩ := by
   have := hp.s_nw
   have := hp.pos
   exact disj_off (scA s₀) (o₁ := 128) (n₁ := 64) (o₂ := 192) (n₂ := 128 * rr s₀) (by omega_using [])
-    (by omega_using []) (by omega_using []) (by omega_using []) (by omega)
+    (by omega_using []) (by omega_using []) (by omega_using []) (by omega_arith)
 
 omit hp in
 theorem b_sub' : Region.Sub ⟨bA s₀, 128 * rr s₀⟩ (bR s₀) := by
@@ -347,7 +347,7 @@ theorem and_mask32 (w : BitVec 32) {e : Nat} (he : e ≤ 32) :
     (w &&& BitVec.ofNat 32 (2 ^ e - 1)).toNat = w.toNat % 2 ^ e := by
   have := Nat.pow_le_pow_right (by omega_using [] : 0 < 2) he
   have := Nat.one_le_two_pow (n := e)
-  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
     Nat.and_two_pow_sub_one_eq_mod]
 
 end VG.Proof.Scrypt.Arm.RoMix
@@ -1328,7 +1328,7 @@ theorem jOf_eq {s₀ : State} (hp : Pre s₀) (m : Mem) :
     jOf, he, integerify_mod32 _ _ hp.pos he']
 
 theorem jOf_lt32 {s₀ : State} (hp : Pre s₀) (m : Mem) : jOf s₀ m < 2 ^ 32 := by
-  have := jOf_lt hp m; have := NN_lt hp; omega
+  have := jOf_lt hp m; have := NN_lt hp; omega_arith
 
 /-- The memory after iteration `i` of step 3. -/
 theorem mem3_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s : State} (h : Inv3 s₀ i s)

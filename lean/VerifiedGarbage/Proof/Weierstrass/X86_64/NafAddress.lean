@@ -32,7 +32,7 @@ theorem stridedAddress_ok (s : State) {base : Addr} {d tbl j : Nat}
         BitVec.ofNat 64 (d*j) := by
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat,BitVec.toNat_setWidth,Nat.mod_eq_of_lt hn]
-      rw [Nat.mod_mul_mod,Nat.mul_comm j,Nat.mod_eq_of_lt (show d<2^64 by omega)]
+      rw [Nat.mod_mul_mod,Nat.mul_comm j,Nat.mod_eq_of_lt (show d<2^64 by omega_using [hn])]
     change base+BitVec.ofNat 64 tbl+BitVec.ofNat 64 ((BitVec.ofNat 64 j).toNat*
       ((BitVec.ofNat 32 d).setWidth 64).toNat)=_
     rw [hm,Offset.add_add]
@@ -60,7 +60,7 @@ theorem nafIndex_ok (s : State) {a : Nat} (ha : 1≤a) (ha' : a≤15)
       BitVec.ofNat_sub_ofNat_of_le a 1 (by decide) ha]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_ofNat]
-    omega
+    omega_using [ha']
   · simp only [List.mem_singleton] at h
     simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,h,ite_false]
 

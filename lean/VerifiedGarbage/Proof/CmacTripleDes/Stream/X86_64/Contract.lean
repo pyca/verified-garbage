@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 
 The artifacts' contracts are the shared ones of
 `Spec/Cmac/TripleDesContract.lean`, with the working space as an argument
-(`Proof/CmacTripleDes/StreamScratch.lean`), which imply these
+(`Implies.lean`), which imply these
 (`Verified.lean`). The functions call nothing and use no stack.
 -/
 
@@ -27,12 +27,12 @@ def initX86_64 : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 416⟩
     let key : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
-    let scr : Region := ⟨s.gpr .rcx, 640⟩
+    let scr : Region := ⟨s.gpr .rcx, 120⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [key] ∧ s.wr = [state, scr] ∧ state.Disjoint key ∧ state.Disjoint scr ∧ key.Disjoint scr ∧
       ret.Disjoint state ∧ ret.Disjoint scr ∧
       (s.gpr .rdi).toNat + 416 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .rcx).toNat + 640 ≤ 2 ^ 64 ∧ Spec.TripleDes.validKey (s.gpr .rdx).toNat
+      (s.gpr .rcx).toNat + 120 ≤ 2 ^ 64 ∧ Spec.TripleDes.validKey (s.gpr .rdx).toNat
   post s s' :=
     Spec.Cmac.tdesRepr s'.mem (s.gpr .rdi) (Spec.TripleDes.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat) []
   pub s₁ s₂ :=
@@ -44,13 +44,13 @@ def absorbX86_64 : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 416⟩
     let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 688⟩
+    let scr : Region := ⟨s.gpr .r8, 160⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [data] ∧ s.wr = [state, scr] ∧
       state.Disjoint data ∧ state.Disjoint scr ∧ data.Disjoint scr ∧
       ret.Disjoint state ∧ ret.Disjoint scr ∧
       (s.gpr .rdi).toNat + 416 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r8).toNat + 688 ≤ 2 ^ 64
+      (s.gpr .r8).toNat + 160 ≤ 2 ^ 64
   post s s' :=
     ∀ key msg, Spec.Cmac.tdesRepr s.mem (s.gpr .rdi) key msg →
       s.gpr .rsi = BitVec.ofNat 64 msg.length → msg.length + (s.gpr .rcx).toNat < 2 ^ 64 →
@@ -65,13 +65,13 @@ def finishX86_64 : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 416⟩
     let out : Region := ⟨s.gpr .rdx, 8⟩
-    let scr : Region := ⟨s.gpr .rcx, 640⟩
+    let scr : Region := ⟨s.gpr .rcx, 120⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [] ∧ s.wr = [state, out, scr] ∧
       state.Disjoint out ∧ state.Disjoint scr ∧ out.Disjoint scr ∧
       ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scr ∧
       (s.gpr .rdi).toNat + 416 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 8 ≤ 2 ^ 64 ∧
-      (s.gpr .rcx).toNat + 640 ≤ 2 ^ 64
+      (s.gpr .rcx).toNat + 120 ≤ 2 ^ 64
   post s s' :=
     ∀ key msg, Spec.Cmac.tdesRepr s.mem (s.gpr .rdi) key msg →
       s.gpr .rsi = BitVec.ofNat 64 msg.length → msg.length < 2 ^ 64 →

@@ -38,7 +38,7 @@ theorem keyScan_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List Byt
     by_cases go : b = 0 ∧ 1 < (b :: tail).length
     · rw [ite_eq_left go] at result
       obtain ⟨ptrU, countU, zeroU⟩ := result
-      have tailPositive : 0 < tail.length := by have := go.2; simp only [List.length_cons] at this; omega
+      have tailPositive : 0 < tail.length := by have := go.2; simp only [List.length_cons] at this; omega_using [this]
       have leadAdd : VG.Proof.Ffdh.lead (b :: tail) = VG.Proof.Ffdh.lead tail + 1 := by
         cases tail with
         | nil => simp at tailPositive
@@ -48,11 +48,11 @@ theorem keyScan_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List Byt
       have sourceTail : Octets base (src + 1) len tail u := by
         rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl]
         simpa only [List.drop_succ_cons, List.drop_zero, List.take_length] using
-          sourceU.slice (d := 1) (k := tail.length) tailPositive (by simp only [List.length_cons]; omega)
+          sourceU.slice (d := 1) (k := tail.length) tailPositive (by simp only [List.length_cons]; omega_using [])
       have countTail : u.gpr .r6 = BitVec.ofNat 32 tail.length := by
         simpa only [List.length_cons, Nat.add_sub_cancel] using countU
       obtain ⟨traceT, t, runT, ptrT, countT, byteT, memT, restT⟩ :=
-        ih u sourceTail tailPositive (by simp only [List.length_cons] at fits; omega) ptrU countTail
+        ih u sourceTail tailPositive (by simp only [List.length_cons] at fits; omega_using [fits]) ptrU countTail
       refine ⟨_, t, Exec.loopNext run (by simp only [eval, zeroU, Bool.not_false]) runT, ?_, ?_, ?_, memT.trans memU, restU.trans restT⟩
       · rw [ptrT, leadAdd, BitVec.add_assoc]
         change src + (BitVec.ofNat 32 1 + BitVec.ofNat 32 (VG.Proof.Ffdh.lead tail)) = _
@@ -60,7 +60,7 @@ theorem keyScan_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List Byt
       · rw [countT, leadAdd]
         apply congrArg (BitVec.ofNat 32)
         simp only [List.length_cons]
-        omega
+        omega_using []
       · rw [byteT, leadAdd]
         rfl
     · rw [ite_eq_right go] at result

@@ -38,7 +38,7 @@ theorem ptr_eq {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) {r : Reg} 
   have nowrap := S.scratch.nowrap
   have bound := fit
   rw [P, BitVec.toNat_add, BitVec.toNat_ofNat, S.edi_toNat]
-  omega
+  omega_using []
 
 theorem importArgs_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) (j : Nat) (index : j < 32)
     (fit : slot w j < L) (src : BitVec 32) :
@@ -64,11 +64,11 @@ theorem importArgs_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) (j 
     unfold VG.Proof.RsaKeyGen.X86.Import.Geometry.destPtr importGeometry
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, show (4 : BitVec 32).toNat = 4 from rfl]
-    omega
+    omega_using [width]
   · rw [U.gpr, D.other .ecx (by decide), C.other .ecx (by decide), B.gpr]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, importGeometry]
-    omega
+    omega_using [bound]
 
 theorem importAt_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) (j : Nat) (index : j < 32)
     (fit : slot w j + 8 * w ≤ L) {src : BitVec 32} (source : s.gpr .esi = src)
@@ -80,11 +80,11 @@ theorem importAt_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) (j : 
       Frame [⟨off W (slot w j), 8 * w⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .esi, .ecx, .edx] s t := by
   have width := S.width
   have C : VG.Proof.RsaKeyGen.X86.Import.Context (importGeometry src (s.gpr .edi) w j) s :=
-    VG.Proof.RsaKeyGen.X86.Import.context_workspace S.scratch (out := slot w j) (n := 2 * w) (by omega) (by omega)
-      (by omega)
-      (by rw [show 4 * (2 * w) = 8 * w by omega]; exact readable)
-      (by rw [show 4 * (2 * w) = 8 * w by omega]; exact separate)
-  have below : slot w j < L := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right (by omega)) fit
+    VG.Proof.RsaKeyGen.X86.Import.context_workspace S.scratch (out := slot w j) (n := 2 * w) (by omega_using [width]) (by omega_using [fit])
+      (by omega_using [sourceFit])
+      (by rw [show 4 * (2 * w) = 8 * w by omega_using []]; exact readable)
+      (by rw [show 4 * (2 * w) = 8 * w by omega_using []]; exact separate)
+  have below : slot w j < L := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right (by omega_using [width])) fit
   have dstAddr : (s.gpr .edi + BitVec.ofNat 32 (slot w j)).setWidth 64 = off W (slot w j) :=
     S.scratch.ea below
   unfold importAt
@@ -101,9 +101,9 @@ theorem importAt_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) (j : 
   have frame := T.frame
   rw [M] at value frame
   simp only [VG.Proof.RsaKeyGen.X86.Import.Geometry.destRegion, importGeometry] at frame value
-  rw [dstAddr, show 4 * (2 * w) = 8 * w by omega] at frame value
+  rw [dstAddr, show 4 * (2 * w) = 8 * w by omega_using []] at frame value
   refine ⟨?_, frame, (K.mono (by decide)).widen T.keeps⟩
-  rw [← VG.Proof.Bignum.read_eq_val32, show 4 * (2 * w) = 8 * w by omega]
+  rw [← VG.Proof.Bignum.read_eq_val32, show 4 * (2 * w) = 8 * w by omega_using []]
   exact value
 
 theorem bits_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) :
@@ -114,41 +114,41 @@ theorem bits_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) :
   have nowrap := S.scratch.nowrap
   have width := S.width
   unfold bits
-  refine WP.block_append (WP.mono (VG.Proof.RsaKeyGen.X86.CandidateBits.forceWord_ok 1 S.scratch (by omega))
+  refine WP.block_append (WP.mono (VG.Proof.RsaKeyGen.X86.CandidateBits.forceWord_ok 1 S.scratch (by omega_using [head]))
     fun a ⟨low, Oa, Ka⟩ => ?_)
   have Sa := S.keep Ka (by decide) (by decide)
-    (BitVec.eq_of_toNat_eq (Oa.w32 (d := 4) (Or.inl (by omega)) (by omega)))
+    (BitVec.eq_of_toNat_eq (Oa.w32 (d := 4) (Or.inl (by omega_using [])) (by omega_using [])))
   refine wp_movS Sa.lenRead fun b B _ => wp_addS rfl fun c C _ => ?_
   have Kc : Keeps [.eax, .ebx] a c := (B.keeps.trans C.keeps).mono (by decide)
   have P : PtrAt c W .ebx (8 * w) := by
     rw [PtrAt, C.gpr, B.gpr, BitVec.toNat_add, BitVec.toNat_ofNat, B.other .edi (by decide), Sa.edi_toNat]
-    omega
+    omega_using []
   have hw := Sa.ws.of_keeps Kc
-  refine wp_movS (readSrc_ptr hw P (d := 252) (by omega)) fun d D _ => wp_orS rfl fun e E => ?_
+  refine wp_movS (readSrc_ptr hw P (d := 252) (by omega_using [head])) fun d D _ => wp_orS rfl fun e E => ?_
   have Ke : Keeps [.eax, .ebx] c e := (D.keeps.trans E.keeps).mono (by decide)
   have Pe : PtrAt e W .ebx (8 * w) := by
     rw [PtrAt, E.other .ebx (by decide), D.other .ebx (by decide)]; exact P
   have hwe := hw.of_keeps Ke
-  refine wp_storeS (ea_ptr hwe Pe (d := 252) (by omega)) (ws_write hwe (y := 8 * w + 252) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr hwe Pe (d := 252) (by omega_using [head])) (ws_write hwe (y := 8 * w + 252) (n := 4) (by omega_using [head]))
     fun t T => WP.block_nil ?_
   have Mc : c.mem = a.mem := by rw [C.mem, B.mem]
   have Ot : Outside W (8 * w + 252) 4 a.mem t.mem := by
-    rw [T.mem, E.mem, D.mem, Mc]; exact writeW32_outside _ _ _ (by omega)
+    rw [T.mem, E.mem, D.mem, Mc]; exact writeW32_outside _ _ _ (by omega_using [head, nowrap])
   have topT : w32 t.mem W (8 * w + 252) = w32 a.mem W (8 * w + 252) ||| 3 * 2 ^ 30 := by
     rw [T.mem, w32_write_self, E.gpr, D.gpr, Mc, BitVec.toNat_or]
     rfl
-  have topA : w32 a.mem W (8 * w + 252) = w32 s.mem W (8 * w + 252) := Oa.w32 (Or.inr (by omega)) (by omega)
-  have lowT : w32 t.mem W 256 = w32 a.mem W 256 := by rw [T.mem, E.mem, D.mem, Mc]; exact w32_write_ne nowrap (by omega) (by omega) (by omega) _
-  refine ⟨?_, (Oa.mono (by omega) (by omega)).trans (Ot.mono (by omega) (by omega)),
+  have topA : w32 a.mem W (8 * w + 252) = w32 s.mem W (8 * w + 252) := Oa.w32 (Or.inr (by omega_using [width])) (by omega_using [head, nowrap])
+  have lowT : w32 t.mem W 256 = w32 a.mem W 256 := by rw [T.mem, E.mem, D.mem, Mc]; exact w32_write_ne nowrap (by omega_using [head]) (by omega_using [head]) (by omega_using []) _
+  refine ⟨?_, (Oa.mono (by omega_using []) (by omega_using [width])).trans (Ot.mono (by omega_using [width]) (by omega_using [])),
     ((Ka.mono (by decide)).trans Kc).trans Ke |>.widen (T.keeps [])⟩
-  rw [show 64 * w = 32 * (2 * w) by omega]
-  apply VG.Proof.RsaKeyGen.val32_candidate (by omega)
+  rw [show 64 * w = 32 * (2 * w) by omega_using []]
+  apply VG.Proof.RsaKeyGen.val32_candidate (by omega_using [width])
   · rw [lowT, low]
     rfl
-  · rw [show 256 + 4 * (2 * w - 1) = 8 * w + 252 by omega, topT, topA]
+  · rw [show 256 + 4 * (2 * w - 1) = 8 * w + 252 by omega_using [width], topT, topA]
   · intro j first last
-    rw [T.mem, E.mem, D.mem, Mc, w32_write_ne nowrap (by omega) (by omega) (by omega) _]
-    exact Oa.w32 (by omega) (by omega)
+    rw [T.mem, E.mem, D.mem, Mc, w32_write_ne nowrap (by omega_using [head]) (by omega_using [head, last]) (by omega_using [last]) _]
+    exact Oa.w32 (by omega_using [first]) (by omega_using [head, nowrap, last])
 
 theorem count_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) :
     WP isa (.block count) s fun t =>
@@ -157,17 +157,17 @@ theorem count_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) :
   have bound := S.widthBound
   unfold count
   refine wp_movS S.lenRead fun a A _ =>
-    wp_storeS ((S.scratch.of_keeps A.keeps (by decide)).ea (d := 152) (by omega))
-      ((S.scratch.of_keeps A.keeps (by decide)).write (by omega)) fun b B =>
+    wp_storeS ((S.scratch.of_keeps A.keeps (by decide)).ea (d := 152) (by omega_using [head]))
+      ((S.scratch.of_keeps A.keeps (by decide)).write (by omega_using [head])) fun b B =>
     wp_movS rfl fun c C _ => ?_
   have Kc := (A.keeps.widen (B.keeps [])).trans C.keeps
   have Sc := S.scratch.of_keeps Kc (by decide)
-  refine wp_storeS (Sc.ea (d := 156) (by omega)) (Sc.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Sc.ea (d := 156) (by omega_using [head])) (Sc.write (by omega_using [head])) fun t T => WP.block_nil ?_
   have pair : (0#32 ++ BitVec.ofNat 32 (8 * w)) = BitVec.ofNat 64 (8 * w) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_append]
     simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or,
-      Nat.mod_eq_of_lt (show 8 * w < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show 8 * w < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show 8 * w < 2 ^ 32 by omega_using [bound]), Nat.mod_eq_of_lt (show 8 * w < 2 ^ 64 by omega_using [bound])]
   have memory : t.mem = s.mem.writeW (off W 152) (BitVec.ofNat 64 (8 * w)) := by
     rw [T.mem, C.mem, B.mem, A.mem, C.gpr, A.gpr]
     have high : off W 156 = off W 152 + BitVec.ofNat 64 4 := by
@@ -195,22 +195,22 @@ theorem load_ok {W : Addr} {L w : Nat} {s : State} (S : Space W L w s) {rand : B
   have nowrap := S.scratch.nowrap
   have slot0 := VG.Proof.RsaKeyGen.X86.ExponentRt.slot0_eq w
   unfold load
-  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 28) (by omega)) fun a A _ => WP.block_nil ?_)
+  refine WP.seq (wp_movS (readSrc_sc S.scratch (d := 28) (by omega_using [head])) fun a A _ => WP.block_nil ?_)
   have Sa := S.keepMem A.keeps (by decide) (by decide) A.mem
-  refine WP.seq (WP.mono (importAt_ok Sa 0 (by decide) (by rw [slot0]; omega) (by rw [A.gpr]; exact sourceEq)
+  refine WP.seq (WP.mono (importAt_ok Sa 0 (by decide) (by rw [slot0]; omega_using [head]) (by rw [A.gpr]; exact sourceEq)
     sourceFit (by rw [A.keeps.2.1, A.keeps.2.2]; exact readable) separate) fun b ⟨value, Fb, Kb⟩ => ?_)
   rw [A.mem, slot0] at value Fb
-  have Ob := VG.Proof.RsaKeyGen.frame_outside Fb (by omega)
+  have Ob := VG.Proof.RsaKeyGen.frame_outside Fb (by omega_using [sourceFit])
   have Sb := Sa.keep Kb (by decide) (by decide)
-    (by rw [A.mem]; exact BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (Or.inl (by omega)) (by omega)))
+    (by rw [A.mem]; exact BitVec.eq_of_toNat_eq (Ob.w32 (d := 4) (Or.inl (by omega_using [])) (by omega_using [])))
   refine WP.block_append (WP.mono (bits_ok Sb) fun c ⟨cand, Oc, Kc⟩ => ?_)
-  have Sc := Sb.keep Kc (by decide) (by decide) (BitVec.eq_of_toNat_eq (Oc.w32 (d := 4) (Or.inl (by omega)) (by omega)))
+  have Sc := Sb.keep Kc (by decide) (by decide) (BitVec.eq_of_toNat_eq (Oc.w32 (d := 4) (Or.inl (by omega_using [])) (by omega_using [])))
   refine WP.mono (count_ok Sc) fun t ⟨countT, Ot, Kt⟩ => ?_
   rw [slot0]
   have kept : val32 t.mem W 256 (2 * w) = val32 c.mem W 256 (2 * w) :=
-    Ot.val32 (Or.inr (by omega)) (by omega)
+    Ot.val32 (Or.inr (by omega_using [])) (by omega_using [sourceFit])
   refine ⟨by rw [kept, cand, value], countT, ?_, ?_⟩
-  · have Fc := VG.Proof.Bignum.outside_frame Oc (by omega)
+  · have Fc := VG.Proof.Bignum.outside_frame Oc (by omega_using [sourceFit])
     have Ft := VG.Proof.Bignum.outside_frame Ot (by decide)
     exact ((Fb.mono (fun _ mem => by obtain rfl := List.mem_singleton.mp mem; exact List.mem_cons_self)).trans
       (Fc.mono (fun _ mem => by obtain rfl := List.mem_singleton.mp mem; exact List.mem_cons_self))).trans

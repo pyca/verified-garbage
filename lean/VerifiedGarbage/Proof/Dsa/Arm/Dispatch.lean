@@ -39,7 +39,7 @@ theorem matchOne_ok {s : State} {base : Addr} {size d w : Nat} (hs : Ws s base s
     WP isa (.block [.ldr .r4 .r12 d, .movw .r5 (BitVec.ofNat 16 w), .cmp .r4 (.reg .r5)]) s fun t =>
       t.z = decide ((hdr base s d).toNat = w) ∧ Rest [.r4, .r5] s t ∧ t.mem = s.mem :=
   wp_ldr12 hs hd hd' fun u₁ v₁ => wp_movw fun u₂ v₂ => wp_cmp (op2_reg _ _) fun t f z => WP.block_nil
-    ⟨by rw [z, v₂.gpr, v₂.other .r4 (by decide), v₁.gpr, movw_ofNat hw, cmp_word (by omega)],
+    ⟨by rw [z, v₂.gpr, v₂.other .r4 (by decide), v₁.gpr, movw_ofNat hw, cmp_word (by omega_using [hw])],
       ((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (f.rest _), by rw [f.mem, v₂.mem, v₁.mem]⟩
 
 theorem widthMatch_ok {s : State} {base : Addr} {size pLen qLen wp wq : Nat} (hs : Ws s base size)
@@ -48,11 +48,11 @@ theorem widthMatch_ok {s : State} {base : Addr} {size pLen qLen wp wq : Nat} (hs
     WP isa (Entry.widthMatch wp wq) s fun t =>
       t.z = decide (pLen = wp ∧ qLen = wq) ∧ Rest [.r4, .r5] s t ∧ t.mem = s.mem := by
   unfold Entry.widthMatch
-  refine WP.seq (WP.mono (matchOne_ok (d := 100) hs (by decide) (by omega) bp) fun u ⟨Z, R, M⟩ => ?_)
+  refine WP.seq (WP.mono (matchOne_ok (d := 100) hs (by decide) (by omega_using [hz]) bp) fun u ⟨Z, R, M⟩ => ?_)
   rw [hp] at Z
   refine WP.ite u.z (eval_eq _) (fun ht => ?_) (fun hf => ?_)
   · have P : pLen = wp := of_decide_eq_true (Z ▸ ht)
-    refine WP.mono (matchOne_ok (d := 104) (hs.of_rest R (by decide)) (by decide) (by omega) bq)
+    refine WP.mono (matchOne_ok (d := 104) (hs.of_rest R (by decide)) (by decide) (by omega_using [hz]) bq)
       fun t ⟨Z₂, R₂, M₂⟩ => ⟨?_, R.trans R₂, M₂.trans M⟩
     rw [Z₂, show hdr base u 104 = hdr base s 104 by simp only [hdr, M], hq]
     simp [P]
@@ -119,7 +119,7 @@ theorem failureStep_ok {s : State} {out : BitVec 32} {len i : Nat}
       t.z = decide (i + 1 = len) ∧ Prefix t.mem (State.addr out) (i + 1) ∧
       Outside (State.addr out) 0 len s.mem t.mem ∧ Rest [.r11] s t := by
   have ea : State.addr (s.gpr .r11 + BitVec.ofNat 32 0) = State.addr out + BitVec.ofNat 64 i := by
-    rw [hp, Offset.add_add, Nat.add_zero, VG.Arm.addr_add (by omega)]
+    rw [hp, Offset.add_add, Nat.add_zero, VG.Arm.addr_add (by omega_using [hi, hf])]
   refine wp_strb (by decide) ea hw fun u₁ m₁ => wp_dp (op2_imm (by decide)) fun u₂ v₂ =>
     wp_cmp (op2_reg _ _) fun t f z => WP.block_nil ?_
   have r11 : u₂.gpr .r11 = out + BitVec.ofNat 32 (i + 1) := by
@@ -131,11 +131,11 @@ theorem failureStep_ok {s : State} {out : BitVec 32} {len i : Nat}
     rw [f.mem, v₂.mem, m₁.mem, hz]
   refine ⟨by rw [f.gpr, r11], by rw [f.gpr, lr], by rw [f.gpr, v₂.other .r4 (by decide), m₁.gpr, hz], ?_, ?_, ?_,
     ((m₁.rest _).trans (v₂.rest (by decide))).trans (f.rest _)⟩
-  · rw [z, r11, lr, he, sub_add_add, cmp_ofNat (by omega) (by omega)]
+  · rw [z, r11, lr, he, sub_add_add, cmp_ofNat (by omega_using [hi, hl]) (by omega_using [hl])]
   · rw [mt, show BitVec.setWidth 8 (0 : BitVec 32) = (0 : BitVec 8) from rfl]
-    exact prefix_writeW (w := 8) zeroed (by omega)
+    exact prefix_writeW (w := 8) zeroed (by omega_using [hi, hf])
   · rw [mt]
-    exact (writeW8_outside s.mem (State.addr out) (d := i) _ (by omega)).mono (Nat.zero_le _) (by omega)
+    exact (writeW8_outside s.mem (State.addr out) (d := i) _ (by omega_using [hi, hf])).mono (Nat.zero_le _) (by omega_using [hi])
 
 theorem failureLoop_ok {s : State} {out : BitVec 32} {len : Nat} (h0 : 0 < len) (hf : out.toNat + len ≤ 2 ^ 32) (hl : len < 2 ^ 32)
     (hp : s.gpr .r11 = out) (he : s.gpr .lr = out + BitVec.ofNat 32 len) (hz : s.gpr .r4 = 0)
@@ -145,14 +145,14 @@ theorem failureLoop_ok {s : State} {out : BitVec 32} {len : Nat} (h0 : 0 < len) 
   refine WP.loop (M := isa) (fun k (u : State) => ∃ i, k = len - i ∧ i < len ∧
       u.gpr .r11 = out + BitVec.ofNat 32 i ∧ u.gpr .lr = out + BitVec.ofNat 32 len ∧ u.gpr .r4 = 0 ∧
       Prefix u.mem (State.addr out) i ∧ Outside (State.addr out) 0 len s.mem u.mem ∧ Rest [.r11] s u) ?_ len s
-    ⟨0, by omega, h0, by rw [hp]; exact (BitVec.add_zero _).symm, he, hz, fun j hj => absurd hj (Nat.not_lt_zero _),
+    ⟨0, by omega_using [], h0, by rw [hp]; exact (BitVec.add_zero _).symm, he, hz, fun j hj => absurd hj (Nat.not_lt_zero _),
       Outside.refl _ _ _ _, Rest.refl _ _⟩
   rintro k u ⟨i, rfl, hi, Pu, Eu, Zu, Bu, Ou, Ru⟩
   refine WP.mono (failureStep_ok hi hf hl Pu Eu Zu (by rw [Ru.wr]; exact hw i hi) Bu)
     fun t ⟨Pt, Et, Zt, zt, Bt, Ot, Rt⟩ => ?_
   by_cases d : i + 1 = len
   · exact .inl ⟨by rw [eval_ne, zt]; simp [d], d ▸ Bt, Ou.trans Ot, Ru.trans Rt⟩
-  · exact .inr ⟨by rw [eval_ne, zt]; simp [d], len - (i + 1), by omega, i + 1, rfl, by omega, Pt, by rw [Et, Eu],
+  · exact .inr ⟨by rw [eval_ne, zt]; simp [d], len - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, d], Pt, by rw [Et, Eu],
       Zt, Bt, Ou.trans Ot, Ru.trans Rt⟩
 
 /-- Signing's failure: zeros in the output and 0 in `r0`. -/
@@ -166,8 +166,8 @@ theorem failure_ok {s : State} {base : Addr} {size qLen : Nat} (hs : Ws s base s
       Outside (State.addr (pointerValue base s (.input .out))) 0 (2 * qLen) s.mem t.mem := by
   have hf := O.fits
   simp only [Entry.failure, ↓reduceIte, Core.sequence, List.foldr]
-  refine WP.seq (wp_ldr12 hs (d := 96) (by decide) (by omega) fun u₁ v₁ => ?_)
-  refine wp_ldr12 (hs.of_upd v₁ (by decide)) (d := 104) (by decide) (by omega) fun u₂ v₂ => ?_
+  refine WP.seq (wp_ldr12 hs (d := 96) (by decide) (by omega_using [hz]) fun u₁ v₁ => ?_)
+  refine wp_ldr12 (hs.of_upd v₁ (by decide)) (d := 104) (by decide) (by omega_using [hz]) fun u₂ v₂ => ?_
   refine wp_dp (op2_reg _ _) fun u₃ v₃ => wp_dp (op2_reg _ _) fun u₄ v₄ => wp_mov (op2_imm (by decide))
     fun u₅ v₅ => WP.block_nil ?_
   have out : u₅.gpr .r11 = pointerValue base s (.input .out) := by
@@ -184,8 +184,8 @@ theorem failure_ok {s : State} {base : Addr} {size qLen : Nat} (hs : Ws s base s
     ((((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (v₃.rest (by decide))).trans
       (v₄.rest (by decide))).trans (v₅.rest (by decide))
   have M₅ : u₅.mem = s.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem]
-  refine WP.seq (WP.mono (failureLoop_ok (by omega) hf (by omega) out lr v₅.gpr
-    (fun i hi => by rw [R₅.wr]; exact O.writes i 1 (by omega))) fun t ⟨B, Ot, Rt⟩ => ?_)
+  refine WP.seq (WP.mono (failureLoop_ok (by omega_using [q0]) hf (by omega_using [q32]) out lr v₅.gpr
+    (fun i hi => by rw [R₅.wr]; exact O.writes i 1 (by omega_using [hi]))) fun t ⟨B, Ot, Rt⟩ => ?_)
   refine WP.seq (wp_mov (op2_imm (by decide)) fun t' v => WP.block_nil (WP.block_nil ⟨v.gpr, ?_, ?_, ?_⟩))
   · rw [v.mem]; exact prefix_spec B
   · exact (R₅.trans (Rt.mono (by decide))).trans (v.rest (by decide))

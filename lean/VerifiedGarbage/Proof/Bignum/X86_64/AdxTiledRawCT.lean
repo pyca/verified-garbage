@@ -38,8 +38,8 @@ theorem GoodV.of_outside {ps : List (Nat × Nat)} {L : Layout} {s t : State} (h 
     (o : Outside L.B (slot L.w aAcc) (16*L.w+32) s.mem t.mem) (k : VG.Proof.MlKem.X86_64.Keep mmRegs s t) :
     GoodV ps L t := by
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
-  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
-    hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩
+  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega_using [])⟩,
+    hv.of_outside o (by unfold slot sFn hdrBytes; omega_using [])⟩
 
 /-- `GoodV` after code that changed the borrowed header words, then only the
 accumulator. -/
@@ -48,8 +48,8 @@ theorem GoodV.of_bare {ps : List (Nat × Nat)} {L : Layout} {s t : State} (h : G
     (k : VG.Proof.MlKem.X86_64.Keep mmRegs s t) : GoodV ps L t := by
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
   exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,
-    (hg.hdr.of_outside_fn o₁ (by unfold sFn; omega)).of_outside o₂ (by unfold slot; omega)⟩,
-    (hv.of_outside o₁ (Nat.le_refl _)).of_outside o₂ (by unfold slot sFn hdrBytes; omega)⟩
+    (hg.hdr.of_outside_fn o₁ (by unfold sFn; omega_using [])).of_outside o₂ (by unfold slot; omega_using [])⟩,
+    (hv.of_outside o₁ (Nat.le_refl _)).of_outside o₂ (by unfold slot sFn hdrBytes; omega_using [])⟩
 
 theorem setup_fw {ps : List (Nat × Nat)} {cb b : Nat} (pb : (cb, b) ∈ ps) (L : Layout) (s : State)
     (h : GoodV ps L s) : WP isa (.block (Adx.setup cb)) s (Ready ps L) := by
@@ -62,10 +62,10 @@ theorem zero_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Ready ps 
   obtain ⟨⟨⟨mi,hg⟩,hv⟩,p,w⟩ := h
   have pads := AdxHeader.pads_bound L.hZ
   have hw := L.hw
-  refine WP.mono (zeroWin8_ok hg.scr p w L.hwN L.hn (by omega)
-    (by unfold AdxHeader.highPad at pads; omega)) fun t ⟨_,o,k⟩ => ?_
-  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
-    hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩
+  refine WP.mono (zeroWin8_ok hg.scr p w L.hwN L.hn (by omega_using [hw])
+    (by unfold AdxHeader.highPad at pads; omega_using [pads])) fun t ⟨_,o,k⟩ => ?_
+  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega_using [])⟩,
+    hv.of_outside o (by unfold slot sFn hdrBytes; omega_using [])⟩
 
 theorem save_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : GoodV ps L s) :
     WP isa AdxHeader.save s (GoodV ps L) := by
@@ -76,9 +76,9 @@ theorem save_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : GoodV ps 
     apply f x
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [] <;> unfold AdxHeader.highPad at * <;> omega
-  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
-    hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩
+    rcases hr with rfl | rfl <;> simp only [] <;> unfold AdxHeader.highPad at * <;> omega_using [hx]
+  exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega_using [])⟩,
+    hv.of_outside o (by unfold slot sFn hdrBytes; omega_using [])⟩
 
 theorem raw_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (ha : a<8) (hb : b<8)

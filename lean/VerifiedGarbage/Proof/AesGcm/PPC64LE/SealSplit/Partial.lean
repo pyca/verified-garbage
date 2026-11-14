@@ -58,7 +58,7 @@ theorem partial_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     rw [he.fr .r27 (by decide)] at hh
     exact hh
   have hsub : Region.Sub ⟨V .r27+BitVec.ofNat 64 (count-count%16),count%16⟩ ⟨V .r27,(V .r23).toNat⟩ :=
-    Offset.sub_base _ (by have := lay.bound; omega)
+    Offset.sub_base _ (by have := lay.bound; omega_using [this])
   have hctx : ∀ r ∈ [⟨V .r27+BitVec.ofNat 64 (count-count%16),count%16⟩],
       (⟨V .r29,256⟩ : Region).Disjoint r := by
     intro r hr
@@ -80,11 +80,11 @@ theorem partial_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.
     rw [hH]
     apply hab.congr
     · exact blockAt_frame hf (fun r hr => by rw [List.mem_singleton] at hr; subst r; exact hst 16 16 (by decide))
-    · apply bytesAt_frame hf _ (by omega)
+    · apply bytesAt_frame hf _ (by omega_using [])
       intro r hr
       rw [List.mem_singleton] at hr
       subst r
-      exact hst 32 _ (by omega)
+      exact hst 32 _ (by omega_using [])
   refine WP.mono (finish_ok L heT hdT layT hR hv ha hn habT) fun z hz => ?_
   have hp := Input.copied cfg ht
   rw [lay.source,he.fr .r27 (by decide)] at hp

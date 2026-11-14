@@ -17,16 +17,16 @@ open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Neon4
 
 /-- One 16-byte row of the final four ChaCha blocks. -/
 def output (vs : Nat → CState) (n : Nat) : BitVec 128 :=
-  ofVWords ((vs (n / 4))[4 * (n % 4)]'(by omega))
-    ((vs (n / 4))[4 * (n % 4) + 1]'(by omega))
-    ((vs (n / 4))[4 * (n % 4) + 2]'(by omega))
-    ((vs (n / 4))[4 * (n % 4) + 3]'(by omega))
+  ofVWords ((vs (n / 4))[4 * (n % 4)]'(by omega_using []))
+    ((vs (n / 4))[4 * (n % 4) + 1]'(by omega_using []))
+    ((vs (n / 4))[4 * (n % 4) + 2]'(by omega_using []))
+    ((vs (n / 4))[4 * (n % 4) + 3]'(by omega_using []))
 
 theorem output_slot (vs : Nat → CState) (r j : Fin 4) :
     output vs (slot r j) = ofVWords ((vs j)[rowWord r 0]) ((vs j)[rowWord r 1])
       ((vs j)[rowWord r 2]) ((vs j)[rowWord r 3]) := by
-  have hd : slot r j / 4 = j.val := by unfold slot; omega
-  have hm : slot r j % 4 = r.val := by unfold slot; omega
+  have hd : slot r j / 4 = j.val := by unfold slot; omega_using []
+  have hm : slot r j % 4 = r.val := by unfold slot; omega_using []
   simp only [output, hd, hm, rowWord, Fin.getElem_fin]; rfl
 
 structure Keep (s s' : State) : Prop where
@@ -71,7 +71,7 @@ theorem finishRowForTo_ok (d : Reg) (js : List (Fin 4)) (hj : js.Nodup) {s : Sta
   · exact ⟨hk.gpr.trans hs.gpr, hk.rd.trans hs.rd, hk.wr.trans hs.wr, hk.sp.trans hs.sp⟩
 
 theorem slot_ne {r t : Fin 4} (hne : r ≠ t) (i j : Fin 4) : slot r i ≠ slot t j := by
-  intro e; apply hne; apply Fin.ext; unfold slot at e; omega
+  intro e; apply hne; apply Fin.ext; unfold slot at e; omega_using [e]
 
 theorem finishRowsForTo_ok (d : Reg) (js : List (Fin 4)) (hj : js.Nodup) (rs : List (Fin 4))
     (hn : rs.Nodup) {s : State} {m₀ : Mem} {q p : Addr} {N : Nat} {vs : Nat → CState}
@@ -123,26 +123,26 @@ theorem all_slots (n : Fin 16) : n.val ∈ (List.finRange 4).flatMap rowSlots :=
   (show ∀ n : Fin 16, n.val ∈ (List.finRange 4).flatMap rowSlots by decide) n
 
 theorem output_word (vs : Nat → CState) (n : Nat) {e : Nat} (he : e < 4) :
-    vword (output vs n) e = (vs (n / 4))[4 * (n % 4) + e]'(by omega) := by
+    vword (output vs n) e = (vs (n / 4))[4 * (n % 4) + e]'(by omega_using [he]) := by
   rw [output, vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega_using [he]) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem byte_vword (v : BitVec 128) {i : Nat} (_hi : i < 16) :
     v.extractLsb' (8 * i) 8 = (vword v (i / 4)).extractLsb' (8 * (i % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [vword, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and,
-    show 8 * (i % 4) + b < 32 by omega]
-  exact congrArg v.getLsbD (by omega)
+    show 8 * (i % 4) + b < 32 by omega_using [hb]]
+  exact congrArg v.getLsbD (by omega_using [])
 
 theorem output_byte (vs : Nat → CState) {k : Nat} (_hk : k < 256) :
     (output vs (k / 16)).extractLsb' (8 * (k % 16)) 8 =
       (VG.Spec.ChaCha20.serialize (vs (k / 64))).getD (k % 64) 0 := by
-  rw [byte_vword _ (by omega), output_word _ _ (by omega),
-    VG.Proof.ChaCha20.serialize_getD _ (by omega)]
-  simp only [show k / 16 / 4 = k / 64 by omega,
-    show 4 * (k / 16 % 4) + k % 16 / 4 = k % 64 / 4 by omega,
-    show k % 16 % 4 = k % 64 % 4 by omega]
+  rw [byte_vword _ (by omega_using []), output_word _ _ (by omega_using []),
+    VG.Proof.ChaCha20.serialize_getD _ (by omega_using [])]
+  simp only [show k / 16 / 4 = k / 64 by omega_using [],
+    show 4 * (k / 16 % 4) + k % 16 / 4 = k % 64 / 4 by omega_using [],
+    show k % 16 % 4 = k % 64 % 4 by omega_using []]
 
 /-- The four blocks' keystream XORed with the 256 bytes of the source (at
 `x1`) into the destination (at `d`), which is the source or apart from it. -/
@@ -160,11 +160,11 @@ theorem finishBlocksTo_ok (d : Reg) {s : State} {vs : Nat → CState} (h : Holds
   refine (finishRowsForTo_ok d (List.finRange 4) (List.nodup_finRange 4) (List.finRange 4)
     (List.nodup_finRange 4) (DataTo.nil s.mem (s.gpr .x1) (s.gpr d) 256 (output vs)) rfl rfl halias
     (by decide) (fun r _ i j => h (rowWord r i) j j.isLt) (fun _ _ _ _ => List.not_mem_nil)
-    (fun r j _ => by have := slot_lt r j; omega) (fun r j _ => hin r j)
+    (fun r j _ => by have := slot_lt r j; omega_using [this]) (fun r j _ => hin r j)
     (fun r j _ => hout r j)).mono fun s' ⟨hd, hs⟩ => ⟨?_, hd.frame, hs⟩
   intro k hk
-  rw [hd _, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : k < 2 ^ 64),
-    ite_eq_left ⟨List.mem_append_left _ (all_slots ⟨k / 16, by omega⟩), hk⟩,
+  rw [hd _, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk] : k < 2 ^ 64),
+    ite_eq_left ⟨List.mem_append_left _ (all_slots ⟨k / 16, by omega_using [hk]⟩), hk⟩,
     output_byte vs hk]
 
 /-- `finishBlocksTo_ok` in place. -/

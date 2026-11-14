@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Group
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import Mathlib.GroupTheory.Perm.Cycle.Type
 import Mathlib.SetTheory.Cardinal.Finite
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A curve of prime order, from the order of its base point
@@ -63,7 +64,7 @@ theorem card_le : Nat.card (wcC C).Point ≤ 2 * C.p + 1 := by
   have h := Nat.card_le_card_of_injective _ (code_injective (C := C))
   rw [Finite.card_option, Nat.card_prod, Nat.card_zmod, Nat.card_eq_fintype_card (α := Bool),
     Fintype.card_bool] at h
-  omega
+  omega_using [h]
 
 /-- A curve with no point of order 2 has no element of order 2. -/
 theorem addOrderOf_ne_two (hC : Good C) (Q : (wcC C).Point) : addOrderOf Q ≠ 2 := by
@@ -103,9 +104,9 @@ theorem card_eq_n (hC : Good C) (hn : C.n.Prime) (hG : onCurve C (G C) = true)
   obtain ⟨k, hk⟩ := hdvd
   have hpos : 0 < Nat.card (wcC C).Point := Nat.card_pos
   have hk3 : k < 3 := Nat.lt_of_mul_lt_mul_left (a := C.n) (by
-    have := card_le (C := C); rw [hk] at this; omega)
+    have := card_le (C := C); rw [hk] at this; omega_using [hb, this])
   have hk1 : k = 1 := by
-    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with h | h | h
+    rcases (by omega_using [hk3] : k = 0 ∨ k = 1 ∨ k = 2) with h | h | h
     · rw [hk, h, Nat.mul_zero] at hpos; omega
     · exact h
     · have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩

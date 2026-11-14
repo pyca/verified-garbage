@@ -41,7 +41,7 @@ theorem fill_wp {s : State} {B D : BitVec 32} (h : CfbFill.Pre B D 1 s) :
   have xp : NPre 4 s₁ sb .r6 (4 * tailSlot) 0 (bufferAddr B 0) (State.addr D) := by
     refine ⟨by rw [hb]; rfl, by rw [hd]; simp, ?_, ?_, by decide, by decide,
       by decide, by decide, by decide, by decide, ?_, ?_, ?_⟩
-    · rw [hb]; have := h.fitB; change B.toNat + 256 + 16 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega
+    · rw [hb]; have := h.fitB; change B.toNat + 256 + 16 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this]
     · rw [hd]; simpa using h.fitD
     · rw [f.wr]; exact workspace_part h.hw 256 16 (by decide)
     · rw [f.rd, f.wr]; exact Covers.right h.wd
@@ -66,7 +66,7 @@ theorem copy_wp {s : State} {B D : BitVec 32} (h : CfbFill.Pre B D 1 s) :
     by decide, by decide, by decide, by decide, h.wd,
     Covers.right (workspace_part h.hw 256 16 (by decide)), ?_⟩
   · rw [h.data]; simpa using h.fitD
-  · rw [h.base]; have := h.fitB; change B.toNat + 256 + 16 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega
+  · rw [h.base]; have := h.fitB; change B.toNat + 256 + 16 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this]
   · exact h.sep.sub_right (Offset.sub_base _ (by decide))
 
 end VG.Proof.Sm4.Arm.SerialCbcFill

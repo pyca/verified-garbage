@@ -66,7 +66,7 @@ structure FirstReady (a b : Addr) (τ : Nat) (X : List Byte) (s : State) : Prop 
       ∃tr u,Exec isa Impl.MlDsa.AArch64.Optimized.Ball.first (s.withRegions rd wr) tr u := by
     obtain ⟨tr,u,he,_⟩ := first_ok (τ := τ) (s := s.withRegions rd wr) hX hs.x25 hs.x26 hs.x27 hτ
       (in_rd (in_regions (List.mem_singleton_self _) (by simp [Region.Contains])))
-      (fun j hj => in_rd (in_regions (List.mem_singleton_self _) (Offset.contains_base _ (by omega) (by omega))))
+      (fun j hj => in_rd (in_regions (List.mem_singleton_self _) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))))
       hs.buf (fun j hj => in_regions (List.mem_singleton_self _) (coeff_contains _ hj)) hsep hs.zero
     exact ⟨tr,u,he⟩
   refine RelCT.narrow rd wr
@@ -129,14 +129,14 @@ theorem zero_ready {σ s : State} (hp : sbK.pre σ) (h : Resume 136 136 (spOf σ
   have ps := Sample.Ball.spOk hp
   refine WP.mono (zeroWide_coeffs h.first.env.x26 (fun i hi => ?_)) fun t ⟨kt,ft,hz⟩ => ?_
   · rw [h.first.env.wr,ps.wr]
-    exact in_regions (List.mem_cons_self ..) (Offset.contains_base _ (by omega) (by omega))
+    exact in_regions (List.mem_cons_self ..) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   have et := h.first.env.keepA ps kt ft
   have ot : bytesAt t.mem ((spOf σ).at' 840) 136=firstBytes σ := by
     rw [MlKem.bytesAt_frame ft (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (a_scr' ps (by decide)).symm) (by decide),h.first.out]
     exact (H_eq _ _).symm
   refine ⟨kt,by rw [et.x25]; rfl,et.x26,?_,?_,hz,?_,?_⟩
-  · rw [et.x27]; simp [tauOf]; omega
+  · rw [et.x27]; simp [tauOf]; omega_using []
   · intro j hj
     rw [← ot,MlKem.bytesAt_getD _ _ hj]
   · rw [regions ps et]
@@ -220,7 +220,7 @@ def CursorPair (J : State → State → Prop) (s t : State) : Prop :=
     obtain ⟨_,rfl⟩ := Exec.det ez₂ ze₂
     have rr₂ := r₂
     rw [← pub_eq hq,← tau_eq hq,← first_eq hq] at rr₂
-    have hf := first_relCT (H_length _ _) (by have := (Sample.Ball.params p₁).2.2; omega)
+    have hf := first_relCT (H_length _ _) (by have := (Sample.Ball.params p₁).2.2; omega_using [this])
       (a_scr' (Sample.Ball.spOk p₁) (by decide)).symm _ _ _ _ _ _
       ⟨r₁,rr₂,by rw [k₁.sp,k₂.sp]; exact hsp⟩ ef₁ ef₂
     exact congr (congrArg (fun xs ys : List Leak => xs ++ ys) hz.1) hf.1

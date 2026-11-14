@@ -52,7 +52,7 @@ private theorem first_ready (q : KeyPoint) (s : State) (h : KeyAttempted q s) :
   have h4 : q.status < 4 := by
     rw [← he]
     rcases attemptStatus_cases (policy:=.cached) q.inputs.a q.inputs.len ((keyRand original).drop q.used) with
-      h | h | h <;> omega
+      h | h | h <;> omega_using [h]
   refine WP.mono (key_classify_head h hr hp) fun t ⟨ht, _, hax, hev⟩ => ?_
   exact ⟨⟨original, _, _, _, ht⟩, by rw [hax, he], by rw [hev, he], h4⟩
 
@@ -105,7 +105,7 @@ theorem nextKeyPoint_inputs (q : KeyPoint) : (nextKeyPoint q).inputs = q.inputs 
 theorem nextKeyPoint_measure {q : KeyPoint} (h : keyContinues q) :
     128 * (nextKeyPoint q).keys + (nextKeyPoint q).scalars < 128 * q.keys + q.scalars := by
   obtain ⟨hk, hs, -, -⟩ := h
-  unfold nextKeyPoint; split <;> dsimp only <;> omega
+  unfold nextKeyPoint; split <;> dsimp only <;> omega_arith
 
 /-- After the guards, the attempt and its classification. -/
 def KeyBranchResult (q : KeyPoint) (t : State) : Prop :=
@@ -153,7 +153,7 @@ theorem attempt_of_room {q : KeyPoint} {s : State}
     (h : RoomGuard q s ∧ isa.eval (.zero .x .x12) s = some false) : KeyReady q s := by
   obtain ⟨⟨⟨original, hl, hst⟩, hk, hs, he⟩, hf⟩ := h
   have hr := of_decide_eq_false (Option.some.inj (he.symm.trans hf))
-  exact ⟨⟨original, hl, hst⟩, hk, hs, by have := hl.used_le; omega⟩
+  exact ⟨⟨original, hl, hst⟩, hk, hs, by have := hl.used_le; omega_using [hr, this]⟩
 
 theorem key_branch_ready (a : Attempt) (q : KeyPoint) (s : State) (h : KeysGuard q s) :
     WP isa (branch a.call) s (KeyBranchResult q) := by
@@ -178,20 +178,20 @@ theorem key_branch_ready (a : Attempt) (q : KeyPoint) (s : State) (h : KeysGuard
   refine WP.ite _ hb ?_ ?_
   · intro hshort
     have := of_decide_eq_true hshort
-    exact WP.mono (key_request hu3) fun t ht => done t _ (fun hc => by have := hc.2.2.1; omega) ht
+    exact WP.mono (key_request hu3) fun t ht => done t _ (fun hc => by have := hc.2.2.1; omega_arith) ht
   intro hlong
   have hroom : q.used + q.inputs.len ≤ q.inputs.randLen := by
-    have := of_decide_eq_false hlong; have := hl.used_le; omega
+    have := of_decide_eq_false hlong; have := hl.used_le; omega_arith
   refine WP.seq (WP.mono (key_attempt_run a hu3 hroom) fun t ⟨ht, hp⟩ => ?_)
   refine WP.mono (key_classify ht hroom (Nat.pos_of_ne_zero hk) (Nat.pos_of_ne_zero hs) hp)
     fun r hq => ?_
   have hstat := attempt_status hl hst hk hs hroom
-  have hr : q.inputs.len ≤ (keyRand original).length - q.used := by rw [hl.rand_length]; omega
+  have hr : q.inputs.len ≤ (keyRand original).length - q.used := by rw [hl.rand_length]; omega_using [hroom]
   rcases attemptStatus_cases (policy:=.cached) q.inputs.a q.inputs.len ((keyRand original).drop q.used) with h1 | h2 | h3
   · simp only [KeyClassified, h1, ite_true] at hq
     exact done r _ (fun hc => hc.2.2.2 (by rw [← hstat, h1])) hq
   · simp only [KeyClassified, h2, Nat.reduceEqDiff, ite_true, ite_false] at hq
-    have hc : keyContinues q := ⟨hk, hs, by omega, by rw [← hstat, h2]; decide⟩
+    have hc : keyContinues q := ⟨hk, hs, by omega_using [hroom], by rw [← hstat, h2]; decide⟩
     have hn : nextKeyPoint q = ⟨q.inputs, q.used + q.inputs.len, q.keys, q.scalars - 1, q.statuses.tail⟩ := by
       simp only [nextKeyPoint, ← hstat, h2, ite_true]
     simp only [KeyBranchResult, hc, ite_true, hn]
@@ -199,7 +199,7 @@ theorem key_branch_ready (a : Attempt) (q : KeyPoint) (s : State) (h : KeysGuard
     rw [← hst]
     simp only [KeyPublic.tail, keyTail_scalar hk hs hr h2, List.tail_cons]
   · simp only [KeyClassified, h3, Nat.reduceEqDiff, ite_false] at hq
-    have hc : keyContinues q := ⟨hk, hs, by omega, by rw [← hstat, h3]; decide⟩
+    have hc : keyContinues q := ⟨hk, hs, by omega_using [hroom], by rw [← hstat, h3]; decide⟩
     have hn : nextKeyPoint q = ⟨q.inputs, q.used + q.inputs.len, q.keys - 1, 128, q.statuses.tail⟩ := by
       simp only [nextKeyPoint, ← hstat, h3, Nat.reduceEqDiff, ite_false]
     simp only [KeyBranchResult, hc, ite_true, hn]

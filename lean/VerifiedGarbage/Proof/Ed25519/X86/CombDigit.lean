@@ -56,7 +56,7 @@ theorem combBits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {j : Nat}
     by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_⟩
   have e₄ : s₄.gpr .edx = BitVec.ofNat 32 (8 * j) := by
     rw [h₄.gpr, h₃.gpr, h₂.gpr, h₁.gpr, hs, ← BitVec.ofNat_add, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
-    exact congrArg (BitVec.ofNat 32) (by omega)
+    exact congrArg (BitVec.ofNat 32) (by omega_using [])
   have i₄ : s₄.gpr .edi = x := by
     rw [h₄.other .edi (by decide), h₃.other .edi (by decide), h₂.other .edi (by decide),
       h₁.other .edi (by decide), hc.edi]
@@ -68,7 +68,7 @@ private theorem byte_word : ∀ v < 2, (BitVec.ofNat 8 v).setWidth 32 = BitVec.o
 
 private theorem horner (a b : Nat) :
     BitVec.ofNat 32 a + BitVec.ofNat 32 a + BitVec.ofNat 32 b = BitVec.ofNat 32 (a * 2 + b) := by
-  rw [← BitVec.ofNat_add, ← BitVec.ofNat_add]; exact congrArg (BitVec.ofNat 32) (by omega)
+  rw [← BitVec.ofNat_add, ← BitVec.ofNat_add]; exact congrArg (BitVec.ofNat 32) (by omega_using [])
 
 theorem combNibble_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j o i : Nat} (hj : j < 32)
     (ho : o = 7168 ∨ o = 7172) (hi : 8 * j + o = 7168 + 4 * i)
@@ -78,10 +78,10 @@ theorem combNibble_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j o i : Nat}
       Keep s t ∧ t.mem = s.mem ∧ t.gpr .edx = s.gpr .edx ∧ t.gpr .eax = BitVec.ofNat 32 (nib S i) := by
   have hbit : ∀ t < 4, s.mem (addr (s.gpr .edx) (o + t)) = BitVec.ofNat 8 ((S / 2 ^ (4 * i + t)) % 2) :=
     fun t ht => by
-      rw [hd, addr_plus, show 8 * j + (o + t) = 7168 + (4 * i + t) by omega]
-      exact hb _ (by omega)
+      rw [hd, addr_plus, show 8 * j + (o + t) = 7168 + (4 * i + t) by omega_using [hi]]
+      exact hb _ (by omega_using [hj, ho, hi, ht])
   have hin : ∀ t < 4, InRegions (s.rd ++ s.wr) (addr (s.gpr .edx) (o + t)) 1 := fun t ht => by
-    rw [hd, addr_plus]; exact hc.inRW (by omega) (by decide)
+    rw [hd, addr_plus]; exact hc.inRW (by omega_using [hj, ho, ht]) (by decide)
   have lt2 : ∀ t, (S / 2 ^ (4 * i + t)) % 2 < 2 := fun t => Nat.mod_lt _ (by decide)
   refine scalar_ld8 rfl (hin 3 (by decide)) fun s₁ h₁ => Wp.wp_add fun s₂ h₂ _ => ?_
   have m₂ : s₂.mem = s.mem := by rw [h₂.mem, h₁.mem]
@@ -111,7 +111,7 @@ theorem combNibble_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j o i : Nat}
   · rw [h₁₀.other .edx (by decide), h₉.other .edx (by decide), d₈]
   · have v₂ : s₂.gpr .eax = BitVec.ofNat 32 ((S / 2 ^ (4 * i + 3)) % 2 * 2) := by
       rw [h₂.gpr, h₁.gpr, hbit 3 (by decide), byte_word _ (lt2 3), ← BitVec.ofNat_add]
-      exact congrArg (BitVec.ofNat 32) (by omega)
+      exact congrArg (BitVec.ofNat 32) (by omega_using [])
     have v₄ : s₄.gpr .eax = BitVec.ofNat 32 ((S / 2 ^ (4 * i + 3)) % 2 * 2 + (S / 2 ^ (4 * i + 2)) % 2) := by
       rw [h₄.gpr, h₃.gpr, h₃.other .eax (by decide), v₂, m₂, hbit 2 (by decide),
         byte_word _ (lt2 2), ← BitVec.ofNat_add]
@@ -170,7 +170,7 @@ theorem combMask_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {masks a : Nat} (
   refine Wp.wp_mov fun s₁ h₁ => wp_xori fun s₂ h₂ => Wp.wp_subi fun s₃ h₃ c₃ _ =>
     Wp.wp_sbb_self c₃ fun s₄ h₄ => ?_
   have k₄ : Keep s s₄ := (updKeep h₁).trans ((updKeep h₂).trans ((updKeep h₃).trans (updKeep h₄)))
-  have hw : masks + 4 * k + 4 ≤ 8192 := by omega
+  have hw : masks + 4 * k + 4 ≤ 8192 := by omega_using [hm, hk]
   refine Wp.wp_stm (k₄.ctx hc).edi ((k₄.ctx hc).inW hw (by decide)) fun t ht => WP.block_nil ?_
   have e₃ : s₂.gpr .ecx = BitVec.ofNat 32 a ^^^ BitVec.ofNat 32 k := by rw [h₂.gpr, h₁.gpr, hax]
   refine ⟨k₄.trans ⟨by rw [ht.gpr], by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr⟩, ?_, ?_, ?_, ?_⟩
@@ -192,16 +192,16 @@ theorem combMaskAll_ok {x : BitVec 32} {s₀ : State} (hc : Ctx x s₀) {masks a
   | 0, _ => WP.block_nil ⟨Keep.refl _, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append (WP.mono (combMaskAll_ok hc hm ha hax n (by omega))
+    refine WP.block_append (WP.mono (combMaskAll_ok hc hm ha hax n (by omega_using [hn]))
       fun s₁ ⟨k₁, a₁, d₁, f₁, w₁⟩ => ?_)
-    refine WP.mono (combMask_ok (k₁.ctx hc) n hm ha (by omega) (a₁.trans hax))
+    refine WP.mono (combMask_ok (k₁.ctx hc) n hm ha (by omega_using [hn]) (a₁.trans hax))
       fun t ⟨kt, at', dt, ft, wt⟩ => ?_
     refine ⟨k₁.trans kt, at'.trans a₁, dt.trans d₁, ?_, fun k hk => ?_⟩
-    · exact (frameWiden f₁ hc.fit (Nat.le_refl _) (by omega) (by omega)).trans
-        (frameWiden ft hc.fit (by omega) (by omega) (by omega))
+    · exact (frameWiden f₁ hc.fit (Nat.le_refl _) (by omega_using []) (by omega_using [hm])).trans
+        (frameWiden ft hc.fit (by omega_using []) (by omega_using []) (by omega_using [hm, hn]))
     · by_cases e : k = n
       · subst e; exact wt
-      · rw [wd_frame1 ft hc.fit (by omega) (by omega) (by omega)]; exact w₁ k (by omega)
+      · rw [wd_frame1 ft hc.fit (by omega_using [hm, hn]) (by omega_using [hm, hn, hk]) (by omega_using [e])]; exact w₁ k (by omega_using [hk, e])
 
 /-- A byte of the scalar's bits, outside the masks. -/
 theorem digit_bit {x : BitVec 32} {m m' : Mem} (hf : Frame [sub x 1024 136] m m')
@@ -211,7 +211,7 @@ theorem digit_bit {x : BitVec 32} {m m' : Mem} (hf : Frame [sub x 1024 136] m m'
   intro r hr
   rw [List.mem_singleton.mp hr]
   exact (sub_disj (by omega_using [hx, hq]) (by omega_using [hx])
-    (Or.inr (by omega)) : (sub x (7168 + q) 1).Disjoint (sub x 1024 136)) _ (Region.contains_self _ _)
+    (Or.inr (by omega_using [])) : (sub x (7168 + q) 1).Disjoint (sub x 1024 136)) _ (Region.contains_self _ _)
 
 /-- Both digits' masks, of table `j`. -/
 structure DigitMasks (x : BitVec 32) (S j : Nat) (m : Mem) : Prop where
@@ -229,7 +229,7 @@ theorem combDigits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j : Nat} (hj
   refine WP.block_append (WP.mono (combBits_ok hc hs) fun s₁ ⟨k₁, m₁, d₁⟩ => ?_)
   have c₁ := k₁.ctx hc
   refine WP.block_append (WP.mono (combNibble_ok c₁ (S := S) (i := 2 * j + 1) hj (Or.inr rfl)
-    (by omega) d₁ (fun q hq => by rw [m₁]; exact hb q hq)) fun s₂ ⟨k₂, m₂, d₂, a₂⟩ => ?_)
+    (by omega_using []) d₁ (fun q hq => by rw [m₁]; exact hb q hq)) fun s₂ ⟨k₂, m₂, d₂, a₂⟩ => ?_)
   have c₂ := k₂.ctx c₁
   refine WP.block_append (WP.mono (combSign_ok c₂ (by decide) (nib_lt S _) a₂)
     fun s₃ ⟨k₃, f₃, w₃, a₃, d₃⟩ => ?_)
@@ -242,7 +242,7 @@ theorem combDigits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j : Nat} (hj
     exact (frameWiden f₃ hfit (by decide) (by decide) (by decide)).trans
       (frameWiden f₄ hfit (by decide) (by decide) (by decide))
   refine WP.block_append (WP.mono (combNibble_ok c₄ (S := S) (i := 2 * j) hj (Or.inl rfl)
-    (by omega) (by rw [d₄, d₃, d₂, d₁]) (fun q hq => by rw [digit_bit f₁₄ hfit (by omega)]; exact hb q hq))
+    (by omega_using []) (by rw [d₄, d₃, d₂, d₁]) (fun q hq => by rw [digit_bit f₁₄ hfit (by omega_using [hq])]; exact hb q hq))
     fun s₅ ⟨k₅, m₅, _, a₅⟩ => ?_)
   have c₅ := k₅.ctx c₄
   refine WP.block_append (WP.mono (combSign_ok c₅ (by decide) (nib_lt S _) a₅)
@@ -256,10 +256,10 @@ theorem combDigits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j : Nat} (hj
       (frameWiden ft hfit (by decide) (by decide) (by decide))
   refine ⟨⟨k₁.trans (k₂.trans (k₃.trans (k₄.trans (k₅.trans (k₆.trans kt))))), f₁₄.trans f₅t⟩,
     ⟨fun k hk => ?_, fun k hk => ?_, ?_, ?_⟩⟩
-  · rw [wd_frame1 ft hfit (by decide) (by simp only [combOddMasks]; omega)
-      (by simp only [combOddMasks, combEvenMasks]; omega),
-      wd_frame1 f₆ hfit (by decide) (by simp only [combOddMasks]; omega)
-      (by simp only [combOddMasks, combEvenSign]; omega), m₅]
+  · rw [wd_frame1 ft hfit (by decide) (by simp only [combOddMasks]; omega_using [hk])
+      (by simp only [combOddMasks, combEvenMasks]; omega_using [hk]),
+      wd_frame1 f₆ hfit (by decide) (by simp only [combOddMasks]; omega_using [hk])
+      (by simp only [combOddMasks, combEvenSign]; omega_using [hk]), m₅]
     exact w₄ k hk
   · exact wt k hk
   · rw [wd_frame1 ft hfit (by decide) (by decide) (by decide), wd_frame1 f₆ hfit (by decide) (by decide)

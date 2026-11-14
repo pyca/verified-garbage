@@ -83,7 +83,7 @@ theorem keygen_deriveArgs_saved {s t : State} (hs : Scr t (randomBase s) Random.
     h6.trans (hv (88, s.gpr .x6) (by simp [keygenSavedValues])),
     h7.trans (hv (128, stackArg s 1) (by simp [keygenSavedValues])),
     by rw [hm, keygen_deriveOutgoing_words]; exact hv (136, stackArg s 2) (by simp [keygenSavedValues]),
-    hv.congr (fun d hd hd' => hf.word (Or.inr (by omega)) (by omega)), hf, hk⟩
+    hv.congr (fun d hd hd' => hf.word (Or.inr (by omega_using [hd])) (by omega_using [hd'])), hf, hk⟩
 
 def keygenDeriveRd (s : State) : List Region :=
   [⟨s.gpr .x3, (s.gpr .x4).toNat⟩, ⟨off (randomBase s) Random.oNonce, (s.gpr .x6).toNat⟩,
@@ -98,7 +98,7 @@ theorem keygen_derive_covers {extra : Nat} {s t : State} (h : GenerateKeyABI ext
   have hq : (s.gpr .x6).toNat ≤ 32 := by
     have hl := h.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   have hf : (⟨randomBase s, Random.frameBytes⟩ : Region) ∈ t.wr := by rw [hwr]; exact .head _
   have ho : (⟨s.gpr .x0, (s.gpr .x1).toNat⟩ : Region) ∈ t.wr := by rw [hwr, h.wr]; simp
   have hs : (⟨stackArg s 1, (stackArg s 2).toNat * 8⟩ : Region) ∈ t.wr := by rw [hwr, h.wr]; simp
@@ -112,7 +112,7 @@ theorem keygen_derive_covers {extra : Nat} {s t : State} (h : GenerateKeyABI ext
   simp only [keygenDeriveRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_append_left _ (by rw [hrd, h.rd]; simp), 0, zero _, by simp⟩
-  · exact ⟨_, List.mem_append_right _ hf, 200, rfl, by change 200 + (s.gpr .x6).toNat ≤ 256; omega⟩
+  · exact ⟨_, List.mem_append_right _ hf, 200, rfl, by change 200 + (s.gpr .x6).toNat ≤ 256; omega_using [hq]⟩
   · exact ⟨_, List.mem_append_right _ hf, 0, zero _, by change 0 + 8 ≤ 256; decide⟩
 
 end VG.Proof.Dsa.AArch64

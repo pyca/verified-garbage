@@ -21,9 +21,9 @@ theorem stackArgs_six (s : State) : List.map (stackArg s) (List.range 6) =
 private theorem args_nowrap {s : State} (h : (s.gpr .rsp).toNat + 56 ≤ 2 ^ 64) :
     (stackArgAddr s 0).toNat + 48 ≤ 2 ^ 64 := by
   simp only [stackArgAddr, Nat.zero_add, Nat.mul_one]
-  rw [BitVec.toNat_add_of_lt (by simp only [BitVec.toNat_ofNat]; omega)]
+  rw [BitVec.toNat_add_of_lt (by simp only [BitVec.toNat_ofNat]; omega_using [h])]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 theorem search_implies_pre (s : State) (h : (primeSearchContract abi stackUse).pre s) :
     searchContract.pre s := by

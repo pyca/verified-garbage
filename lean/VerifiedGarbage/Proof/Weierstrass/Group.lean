@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import VerifiedGarbage.Proof.Weierstrass.Affine
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The specification's group law is Mathlib's
@@ -43,7 +44,7 @@ theorem mul_two_mul_add (P : Point C) (m : Nat) (bit : Bool) :
     mul (2 * m + bit.toNat) P =
       if bit then add (add (mul m P) (mul m P)) P else add (mul m P) (mul m P) := by
   by_cases h0 : 2 * m + bit.toNat = 0
-  · have hm : m = 0 := by omega
+  · have hm : m = 0 := by omega_using [h0]
     have hb : bit = false := by cases bit <;> simp_all
     subst hm hb
     rw [mul, ite_eq_left h0]
@@ -52,7 +53,7 @@ theorem mul_two_mul_add (P : Point C) (m : Nat) (bit : Bool) :
     rfl
   · rw [mul, ite_eq_right h0]
     have hd : (2 * m + bit.toNat) / 2 = m := by
-      cases bit <;> simp only [Bool.toNat_false, Bool.toNat_true] <;> omega
+      cases bit <;> simp only [Bool.toNat_false, Bool.toNat_true] <;> omega_using []
     have hr : (2 * m + bit.toNat) % 2 = bit.toNat := by cases bit <;> simp
     simp only [hd, hr]
     cases bit <;> simp
@@ -64,7 +65,7 @@ theorem mul_shiftRight (P : Point C) (k j : Nat) :
       else add (mul (k >>> (j + 1)) P) (mul (k >>> (j + 1)) P) := by
   have hk : k >>> j = 2 * (k >>> (j + 1)) + (k.testBit j).toNat := by
     rw [Nat.testBit, Nat.shiftRight_succ, Nat.one_and_eq_mod_two]
-    cases h : (k >>> j) % 2 == 1 <;> simp_all <;> omega
+    cases h : (k >>> j) % 2 == 1 <;> simp_all <;> omega_using [h]
   rw [hk, mul_two_mul_add]
 
 /-- Multiples of a point of the curve are on the curve. -/
@@ -76,7 +77,7 @@ theorem onCurve_mul [Fact C.p.Prime] (hp : 2 < C.p) {P : Point C} (hP : onCurve 
     by_cases h0 : k = 0
     · rw [ite_eq_left h0]; rfl
     · rw [ite_eq_right h0]
-      have hQ := ih (k / 2) (Nat.div_lt_self (by omega) (by decide))
+      have hQ := ih (k / 2) (Nat.div_lt_self (by omega_using [h0]) (by decide))
       have h2 := onCurve_add hp hQ hQ
       dsimp only
       split
@@ -144,9 +145,9 @@ theorem add_of_chordOk (hp : 2 < C.p) {x1 y1 x2 y2 x3 y3 : Nat} (h1 : x1 < C.p) 
   have hl := toF_chord_slope hp (y₁ := Fin.ofNat C.p y1) (y₂ := Fin.ofNat C.p y2) hxne
   have ex := natCast_eq_of_mod hx
   have ey := natCast_eq_of_mod hy
-  have c1 : ((x2 + C.p - x1 : Nat) : ZMod C.p) = x2 - x1 := cast_sub_p (by omega)
-  have c2 : ((y2 + C.p - y1 : Nat) : ZMod C.p) = y2 - y1 := cast_sub_p (by omega)
-  have c3 : ((x1 + C.p - x3 : Nat) : ZMod C.p) = x1 - x3 := cast_sub_p (by omega)
+  have c1 : ((x2 + C.p - x1 : Nat) : ZMod C.p) = x2 - x1 := cast_sub_p (by omega_using [h1])
+  have c2 : ((y2 + C.p - y1 : Nat) : ZMod C.p) = y2 - y1 := cast_sub_p (by omega_using [hy1])
+  have c3 : ((x1 + C.p - x3 : Nat) : ZMod C.p) = x1 - x3 := cast_sub_p (by omega_using [h3])
   simp only [Nat.cast_mul, Nat.cast_add, c1, c2, c3] at ex ey
   generalize (Fin.ofNat C.p y2 - Fin.ofNat C.p y1) * inv (Fin.ofNat C.p x2 - Fin.ofNat C.p x1) = L
     at hl ⊢
@@ -192,7 +193,7 @@ theorem add_of_tangentOk (hp : 2 < C.p) {x1 y1 x3 y3 : Nat}
   have hl := toF_tangent_slope hp (x₁ := Fin.ofNat C.p x1) (two_mul_ne_zero hyy)
   have ex := natCast_eq_of_mod hx
   have ey := natCast_eq_of_mod hy
-  have c3 : ((x1 + C.p - x3 : Nat) : ZMod C.p) = x1 - x3 := cast_sub_p (by omega)
+  have c3 : ((x1 + C.p - x3 : Nat) : ZMod C.p) = x1 - x3 := cast_sub_p (by omega_using [h3])
   simp only [Nat.cast_mul, Nat.cast_add, Nat.cast_ofNat, c3] at ex ey
   generalize (3 * Fin.ofNat C.p x1 * Fin.ofNat C.p x1 + Fin.ofNat C.p C.a) *
     inv (2 * Fin.ofNat C.p y1) = L at hl ⊢
@@ -338,15 +339,15 @@ theorem toW_mul (hC : Good C) {P : Point C} (hP : onCurve C P = true) :
     simp only [h0, ↓reduceIte]
     have hm := hC.onCurve_mul hP (k / 2)
     have hd := hC.onCurve_add hm hm
-    have IH := ih (k / 2) (by omega)
+    have IH := ih (k / 2) (by omega_using [h0])
     split
     · rename_i h
       rw [toW_add hC hm hm, IH, ← add_smul]
       congr 1
-      omega
+      omega_using [h]
     · rw [toW_add hC hd hP, toW_add hC hm hm, IH, ← add_smul, ← succ_nsmul]
       congr 1
-      omega
+      omega_arith
 
 /-- The reflection is the negation. -/
 theorem toW_neg (hC : Good C) {P : Point C} (hP : onCurve C P = true) :

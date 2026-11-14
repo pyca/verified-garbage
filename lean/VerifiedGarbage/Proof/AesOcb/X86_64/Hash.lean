@@ -44,7 +44,7 @@ theorem hashRest_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
   have E := H.env
   have hs := C.short
   generalize hm : a.length / 16 = m at H
-  have hrest : a.length - 16 * m = a.length % 16 := by omega
+  have hrest : a.length - 16 * m = a.length % 16 := by omega_using [hm]
   -- `Offset_m ⊕ L_*`
   obtain ⟨t₁, run₁, B₁⟩ := xor16_ok (s := t) (b := .r14) (a := 240) (d := ohO) E.r15 E.r14 (by decide) (by decide)
     (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide)) (E.perm.wW (by decide))
@@ -56,19 +56,19 @@ theorem hashRest_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W (by decide) (by decide)⟩)
   -- `pad(A_*)`
-  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega)
+  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega_using [hm])
   have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩] (t₁.rd ++ t₁.wr) := by
     rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
   have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 bufO, 16⟩ :=
     hB.w.sub_right (Lay.wSub (by decide))
   have hrestb : bytesAt t₁.mem (A + BitVec.ofNat 64 (16 * m)) (a.length % 16) = a.drop (16 * m) := by
-    have hd := Proof.Ocb.bytesAt_drop s₀.mem A (a := 16 * m) (n := a.length) (by omega)
+    have hd := Proof.Ocb.bytesAt_drop s₀.mem A (a := 16 * m) (n := a.length) (by omega_using [hm])
     rw [C.aad, hrest] at hd
     rw [bytesAt_frame (hashR_mut (D := D) (n := n) fr₁) (fun r hr =>
-      (C.a_mut r hr).sub_left (Offset.sub_base A (by omega))) (by omega), hd]
+      (C.a_mut r hr).sub_left (Offset.sub_base A (by omega_using [hm]))) (by omega_using []), hd]
   unfold hashRest
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (padTo_ok E₁ hr (by omega) (by decide) (by rw [B₁.gpr _ (by decide), H.rbx])
+  refine WP.seq (WP.mono (padTo_ok E₁ hr (by omega_using []) (by decide) (by rw [B₁.gpr _ (by decide), H.rbx])
     (by rw [B₁.gpr _ (by decide), h12]) hS hSD) fun t₂ ⟨fr₂, pad₂, g₂, rd₂, wr₂⟩ => ?_)
   rw [hrestb] at pad₂
   have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => g₂ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
@@ -125,7 +125,7 @@ theorem hashRest_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩), ?_,
     by rw [B₅.rd, P₄.rd, B₃.rd, rd₂, B₁.rd, H.rd], by rw [B₅.wr, P₄.wr, B₃.wr, wr₂, B₁.wr, H.wr]⟩
   rw [B₅.val, sum₄, buf₄, Proof.Ocb.hash_eq]
-  have hlen : (a.drop (16 * m)).length = a.length % 16 := by simp; omega
+  have hlen : (a.drop (16 * m)).length = a.length % 16 := by simp; omega_using [hm]
   simp only [hlen, show a.length % 16 > 0 from hr, ↓reduceIte, hm]
 
 /-- After the whole blocks: the rest, if any. -/
@@ -144,7 +144,7 @@ theorem hashTail_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
     refine ⟨_, by orun [H.env.r15, r₁, rest], ?_, ?_, fun r h => ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true]
     · simp only [zf_arithFlags, gpr_setReg, ite_true,
-        Proof.AesCcm.X86_64.and_self_beq (show a.length % 16 < 2 ^ 64 by omega)]
+        Proof.AesCcm.X86_64.and_self_beq (show a.length % 16 < 2 ^ 64 by omega_using [])]
     · simp only [gpr_setReg, gpr_arithFlags, h, ite_false]
     all_goals rfl
   have H₁ : HInv K W SP D n ciph l A a s₀ t₁ (a.length / 16) :=
@@ -164,9 +164,9 @@ theorem hashTail_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
   · have h0 : a.length % 16 = 0 := of_decide_eq_true hb
     refine ⟨H₁.env, H₁.frame, ?_, H₁.rd, H₁.wr⟩
     rw [H₁.sum, Proof.Ocb.hash_eq]
-    have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega
+    have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega_using [h0]
     simp [hlen]
-  · exact hashRest_ok v C H₁ (by have := of_decide_eq_false hb; omega) r12₁
+  · exact hashRest_ok v C H₁ (by have := of_decide_eq_false hb; omega_using [this]) r12₁
 
 /-- `HASH(K, A)` to `W + sumO`, with `aad` and `aad_len` in `W`. -/
 theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
@@ -190,10 +190,10 @@ theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₀.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ => by
     rw [B₂.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (a := _) (d := 144) (k := 16) (by omega) h₂ (by decide)) (by decide),
+        exact L.w_w (a := _) (d := 144) (k := 16) (by omega_using [h₁]) h₂ (by decide)) (by decide),
       B₁.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (a := _) (d := 48) (k := 16) (by omega) h₂ (by decide)) (by decide)]
+        exact L.w_w (a := _) (d := 48) (k := 16) (by omega_using [h₁]) h₂ (by decide)) (by decide)]
   have haad₂ := (kA (d := 240) (by decide) (by decide)).trans haad
   have halen₂ := (kA (d := 248) (by decide) (by decide)).trans halen
   have r₁ : InRegions (s₂.rd ++ s₂.wr) (W + BitVec.ofNat 64 240) 8 := by rw [B₂.rd, B₂.wr, B₁.rd, B₁.wr]; exact E.perm.wR (by decide)
@@ -214,11 +214,11 @@ theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, e1]
     · simp only [zf_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq,
-        Proof.AesCcm.X86_64.shr4 _ (show a.length < 2 ^ 64 by omega),
-        Proof.AesCcm.X86_64.and_self_beq (show a.length / 16 < 2 ^ 64 by omega)]
+        Proof.AesCcm.X86_64.shr4 _ (show a.length < 2 ^ 64 by omega_using [hs]),
+        Proof.AesCcm.X86_64.and_self_beq (show a.length / 16 < 2 ^ 64 by omega_using [hs])]
     · simp only [mem_setReg, mem_setFlags, mem_arithFlags, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
-        ite_false, reduceCtorEq, e15, Proof.AesCcm.X86_64.and15', toNat_ofNat_of_lt (show a.length < 2 ^ 64 by omega),
-        Proof.AesCcm.X86_64.shr4 _ (show a.length < 2 ^ 64 by omega)]
+        ite_false, reduceCtorEq, e15, Proof.AesCcm.X86_64.and15', toNat_ofNat_of_lt (show a.length < 2 ^ 64 by omega_using [hs]),
+        Proof.AesCcm.X86_64.shr4 _ (show a.length < 2 ^ 64 by omega_using [hs])]
     · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, h1, h2, h3, h4, ite_false]
     all_goals try rfl
   have f₁₁₂ : ∀ (M : Mem) (x y : BitVec 64), Frame [⟨W + BitVec.ofNat 64 112, 8⟩, ⟨W + BitVec.ofNat 64 248, 8⟩] M
@@ -232,8 +232,8 @@ theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A
       exact blockAtMem_frame (f₁₁₂ _ _ _) fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact L.w_w (by omega) (by omega) (by decide)
-        · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+        · exact L.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+        · exact L.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
   have H₀ : HInv K W SP D n ciph l A a s₀ s₃ 0 :=
     { env := E.keep (fun r hr => by
           simp at hr
@@ -280,11 +280,11 @@ theorem hashLoop_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
   refine WP.mono (hashChunk_ok v C H hj) fun u' ⟨H', hz⟩ => ?_
   by_cases he : a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0
   · left
-    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega
+    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega_using [hj, he]
     exact ⟨(eval_ne hz).trans (by simp [he]), hje ▸ H'⟩
   · right
-    exact ⟨(eval_ne hz).trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega,
-      j + min 8 (a.length / 16 - j), rfl, by omega, H'⟩
+    exact ⟨(eval_ne hz).trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega_using [hj],
+      j + min 8 (a.length / 16 - j), rfl, by omega_using [he], H'⟩
 
 theorem hash_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
     {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)

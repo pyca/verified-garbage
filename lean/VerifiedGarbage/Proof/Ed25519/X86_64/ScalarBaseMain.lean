@@ -1,6 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
@@ -9,9 +19,93 @@ import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+
+/-! ### `Ed25519.X86_64.ScalarBaseEngine`, which only this module used -/
+
+section
+
+/-! The scalar bits, point multiplication, and canonical encoding compose. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64
+open VG.Proof.X25519.X86_64 (off ofs Outside val4)
+
+variable {fld : Arith} [EdArith fld]
+
+def encodedValue (p : Spec.Ed25519.Point) : Nat :=
+  (p.Y * Spec.X25519.pow p.Z (Spec.X25519.P - 2)).val +
+    ((p.X * Spec.X25519.pow p.Z (Spec.X25519.P - 2)).val % 2) * 2 ^ 255
+
+theorem encodedValue_spec (p : Spec.Ed25519.Point) :
+    Spec.Ed25519.encodePoint p = Spec.Ed25519.encodeLE 32 (encodedValue p) := rfl
+
+theorem powersKeep_outside {base : Addr} {s t : State} (h : PowersKeep base 56 7368 s t) :
+    Outside base 56 7368 s.mem t.mem := fun p hp => h.mem p (by omega_using [hp]) hp
+
+theorem scalarBaseInit_ok {s : State} {base : Addr} (hs : Scratch s base) :
+    WP isa (.block (scalarBaseInit fld)) s fun t => Keep base s t ∧
+      point (env t.mem base) 0 1 2 3 = Spec.Ed25519.basePoint ∧ env t.mem base 16 = Spec.Ed25519.d := by
+  rw [scalarBaseInit, WP.block_append_iff]
+  refine WP.mono (constFieldWide_ok hs 16 Spec.Ed25519.d) fun a ⟨ka, va⟩ => ?_
+  refine WP.mono (fieldCodeWide_ok (hs.of_keep ka) (constPointOps Spec.Ed25519.basePoint))
+    fun t ⟨kt, vt⟩ => ?_
+  refine ⟨ka.trans kt, ?_, ?_⟩
+  · rw [vt, constPoint_eval]
+  · rw [vt, va]; rfl
+
+theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scratch s base) (hp : s.gpr .rsi = k)
+    (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
+    (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) :
+    WP isa (scalarBasePrepare fld) s fun t => PowersKeep base 56 7368 s t ∧
+      point (env t.mem base) 0 1 2 3 = Spec.Ed25519.basePoint ∧
+      env t.mem base 16 = Spec.Ed25519.d ∧
+      (∀ i < 16 * 16, t.mem (off base (768 + i)) =
+        BitVec.ofNat 8 ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) / 2 ^ i) % 2)) ∧
+      Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) < 2 ^ (16 * 16) := by
+  rw [scalarBasePrepare]
+  refine WP.seq (WP.mono (expandScalarBits_ok hs hp 32 (by decide) (by decide) hr hd)
+    fun a ⟨ka, abits⟩ => ?_)
+  have kap : PowersKeep base 56 7368 s a := by
+    refine ⟨fun r hb _ hr => ka.gpr r (fun hm => ?_), ka.rd, ka.wr,
+      (TableFrame.table ka.mem).mono (by decide) (by decide)⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
+    rcases hm with rfl | rfl | rfl
+    · exact hr (by decide)
+    · exact hr (by decide)
+    · exact hb rfl
+  refine WP.mono (scalarBaseInit_ok (ka.scratch hs)) fun b ⟨kb, bp, bd⟩ => ?_
+  have hscalar : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) < 2 ^ (16 * 16) := by
+    have h := decodeLE_lt (Spec.Ed25519.bytesAt s.mem k 32)
+    simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] at h
+    rw [show 256 ^ 32 = 2 ^ (16 * 16) by decide] at h
+    exact h
+  have bbits : ∀ i < 16 * 16, b.mem (off base (768 + i)) =
+      BitVec.ofNat 8 ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32) / 2 ^ i) % 2) := by
+    intro i hi
+    rw [kb.bit _ (by omega_using [hi])]; exact abits i hi
+  exact ⟨kap.trans (PowersKeep.of_keep kb), bp, bd, bbits, hscalar⟩
+
+/-- An engine of the base-point multiplication, from the scalar at `k`, with the comb's
+tables at `T`, past the scratch. -/
+def BaseEngineCorrect (engine : Prog isa) : Prop :=
+  ∀ {s : State} {base k T : Addr}, Scratch s base → s.gpr .rsi = k →
+    (∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1) →
+    (∀ q < 32, 8192 ≤ ofs base (off k q)) → CombTbl s T → TblFar base T →
+    WP isa engine s fun t => PowersKeep base 56 7368 s t ∧
+      val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) =
+        encodedValue (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32))
+          Spec.Ed25519.basePoint)
+
+end VG.Proof.Ed25519.X86_64
+
+end
+
+end
+
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBaseMemory`. -/
 
@@ -91,10 +185,10 @@ def scalarBaseLocal : Contract isa where
 theorem farScratch {base p : Addr} {n : Nat}
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
     8192 ≤ ofs base (off p i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
   change (off p i - base).toNat + 1 ≤ 8192
   change (off p i - base).toNat < 8192 at h
-  omega
+  omega_using [h]
 
 /-- The comb's tables, from the contract: readable, held, and past the scratch at `rdx`. -/
 theorem scalarBaseLocal_tbl {s : State} (hs : scalarBaseLocal.pre s) :
@@ -127,7 +221,7 @@ theorem scalarBase_correct_of_engine (engine : Prog isa) (engine_ok : BaseEngine
   apply WP.seq
   refine WP.mono (engine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .rsi, 32⟩, by rw [rb, ra, hr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩)
+      Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩)
     (fun q hq => farScratch hd hq (by decide)) tblb far) fun c ⟨kc, vc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .rdx) s.gpr c.mem := svb.outside mc (by decide)
@@ -163,7 +257,7 @@ theorem scalarBase_correct_of_engine (engine : Prog isa) (engine_ok : BaseEngine
   · have ft : Frame [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] s.mem t.mem := by
       rw [mt]
       have hc : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
-        fun d hd => Offset.contains_base _ hd (by omega)
+        fun d hd => Offset.contains_base _ hd (by omega_using [hd])
       have hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
       exact ((((fme.mono (by simp)).writeW hm _ (hc 0 (by decide))).writeW hm _
         (hc 8 (by decide))).writeW hm _ (hc 16 (by decide))).writeW hm _ (hc 24 (by decide))

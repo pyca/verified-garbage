@@ -126,7 +126,7 @@ theorem ecbCall_correct (d : Spec.Seed.Direction) (s₀ : State) (hs : (ecbCallX
     have hsch := Proof.Seed.scheduleAt_frame hfr (p := s₀.gpr .rdi) fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact sK.symm
     have hblk := Proof.Seed.blocksAt_frame hfr (p := s₀.gpr .rsi) (n := (s₀.gpr .rdx).toNat) (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega)
+      rw [List.mem_singleton] at hr; subst hr; exact sD.symm) (by omega_using [fitD])
     refine ⟨⟨hcs, hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide), hmx⟩, ?_⟩
     · rw [hwr] at hr
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -149,15 +149,15 @@ theorem ecbCallTaint_wf (d : Spec.Seed.Direction) (s : State) (hs : (ecbCallX86_
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ (s.gpr .rdx).toNat * 16; omega)
-        (List.Forall₂.cons (by change 1088 ≤ 1088; omega) List.Forall₂.nil)
+    · exact List.Forall₂.cons (by change 0 ≤ (s.gpr .rdx).toNat * 16; omega_using [])
+        (List.Forall₂.cons (by change 1088 ≤ 1088; omega_using []) List.Forall₂.nil)
     · exact List.Pairwise.cons
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dataSep)
         (List.Pairwise.cons (by simp) List.Pairwise.nil)
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · change (s.gpr .rdx).toNat * 16 ≤ 2 ^ 64; omega
+      · change (s.gpr .rdx).toNat * 16 ≤ 2 ^ 64; omega_using [fitD]
       · change 1088 ≤ 2 ^ 64; decide
   · intro p hp
     simp only [ecbCallTaint, List.mem_singleton] at hp

@@ -33,8 +33,8 @@ theorem hint_coeffs {x y : State} {k : Nat} {f : Nat → Vector Bool n} (hx : HF
     rw [pS_hint s (i / 256)]
     unfold coeffAt
     rw [BitVec.add_assoc (pa s _) (BitVec.ofNat 64 (1024 * (i / 256))), ← BitVec.ofNat_add,
-      show 1024 * (i / 256) + 4 * (i % 256) = 4 * i by omega]
-  have hq : i / 256 < k := by omega
+      show 1024 * (i / 256) + 4 * (i % 256) = 4 * i by omega_using []]
+  have hq : i / 256 < k := by omega_using [hi]
   have hj : i % 256 < n := Nat.mod_lt _ (by decide)
   have ex := (hx _ hq).2 0 (by decide) _ hj
   have ey := (hy _ hq).2 0 (by decide) _ hj
@@ -81,11 +81,11 @@ theorem output_tr {P : Prims} (hP : PrimsOk P D) (hc : oChk p = true) {E : State
   refine RelCT.seq (R := fun x y => RS p D E (IOr p D p.ℓ) x y ∧ HJ p x y) (RelCT.mono (seqR_tr
     (R := fun r x y => RS p D E (IOr p D r) x y ∧ HJ p x y) p.ℓ 0 fun r _ hr => liftQ
       (F := fun s s' => ∀ f, HFam s 5 p.k f → HFam s' 5 p.k f)
-      (fun σ s _ ⟨κ, h, hpass⟩ => WP.mono (packZ_ok hP hc (by omega) h hpass) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
-      (RelCT.mono (bpAt_tr hP hbp hzl (cz r (by omega)).1.1) (fun x y ⟨h, _⟩ =>
+      (fun σ s _ ⟨κ, h, hpass⟩ => WP.mono (packZ_ok hP hc (by omega_using [hr]) h hpass) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
+      (RelCT.mono (bpAt_tr hP hbp hzl (cz r (by omega_using [hr])).1.1) (fun x y ⟨h, _⟩ =>
         ⟨h.lrel fun σ s ⟨_, h, _⟩ => h.k.d.im.st, by
           obtain ⟨_, _, _, _, _, _, i₁, i₂⟩ := h
-          exact ⟨i₁.zr (by omega), i₂.zr (by omega)⟩⟩) fun _ _ h => h)
+          exact ⟨i₁.zr (by omega_using [hr]), i₂.zr (by omega_using [hr])⟩⟩) fun _ _ h => h)
       fun σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ ⟨f, hx, hy⟩ j₁ j₂ g₁ g₂ _ =>
         ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, j₁, j₂⟩, f, g₁ f hx, g₂ f hy⟩)
     (fun _ _ h => h) fun x y h => by rwa [Nat.zero_add] at h) ?_

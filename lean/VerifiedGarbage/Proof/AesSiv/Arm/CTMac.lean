@@ -86,11 +86,11 @@ theorem Buf.rest {w sp P : BitVec 32} {n : Nat} {s : State} (hP : Buf w sp s P n
   have hcl := chainedLen_le n
   by_cases h0 : n - Spec.Cmac.chainedLen 16 n = 0
   · have : n = 0 := by
-      by_contra hne; have := chainedLen_ne hne; omega
+      by_contra hne; have := chainedLen_ne hne; omega_using [h0, this]
     subst this
     rw [chainedLen_zero, show P + BitVec.ofNat 32 0 = P from BitVec.add_zero P]
     exact hP
-  · exact hP.sub (j := Spec.Cmac.chainedLen 16 n) (k := n - Spec.Cmac.chainedLen 16 n) (by omega) (by omega)
+  · exact hP.sub (j := Spec.Cmac.chainedLen 16 n) (k := n - Spec.Cmac.chainedLen 16 n) (by omega_using [hcl]) (by omega_using [h0])
 
 section
 variable {c w sp : BitVec 32} {R : Nat} (L : Lay c w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -224,7 +224,7 @@ theorem s2vAds_ct {a : BitVec 32} {N : Nat} {dsc : Nat → Nat → BitVec 32} (h
   have eb := Proof.AesGcm.Arm.eval_ne' p.2.2.2
   refine ⟨by rw [ea, eb], fun e => trivial, fun e => ?_⟩
   have he : N - (i + 1) ≠ 0 := by rw [ea] at e; simpa using e
-  exact ⟨N - (i + 1), by omega, i + 1, rfl, by omega, p.2.1.1, p.2.2.1⟩
+  exact ⟨N - (i + 1), by omega_using [hiN], i + 1, rfl, by omega_using [he], p.2.1.1, p.2.2.1⟩
 
 end
 

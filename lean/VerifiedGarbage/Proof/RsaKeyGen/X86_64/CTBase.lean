@@ -70,14 +70,14 @@ theorem kT_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {r
     obtain ⟨e, he, rfl⟩ := hsl
     have := hS e he
     simp only [kT, List.getD_cons_succ, List.getD_cons_zero, Function.comp]
-    omega
+    omega_using [this]
   · simp only [kT, List.map_map, List.mem_map] at hsl
     obtain ⟨e, he, rfl⟩ := hsl
     simp only [Function.comp] at hk₁ hk₂ ⊢
     have ea : B + BitVec.ofNat 64 k = off B (8 * e.1) + BitVec.ofNat 64 (k - 8 * e.1) := by
-      rw [off, VG.Offset.add_ofNat_add_ofNat]; congr 2; omega
+      rw [off, VG.Offset.add_ofNat_add_ofNat]; congr 2; omega_using [hk₁]
     rw [hb h₁, hb h₂, ea]
-    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega)
+    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega_using [hk₂])
 
 /-- A piece the taint analysis checks from `kT rs S`, for runs that agree
 on the public data. -/
@@ -183,7 +183,7 @@ theorem HP.frm {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {s t
     (hdi : t.gpr .rdi = B) (hw : t.wr = s.wr) : HP B wr vs t :=
   ⟨hdi, hw.trans h.wr, fun e he => by
     have := hvs e he
-    rw [hf.word_eq (fun r hr => Or.inl (by have := hrs r hr; omega)) (by omega)]; exact h.hdr e he⟩
+    rw [hf.word_eq (fun r hr => Or.inl (by have := hrs r hr; omega_arith)) (by omega_using [this])]; exact h.hdr e he⟩
 
 /-- Header words survive changes away from them. -/
 theorem hdr_frm {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} {vs : List (Nat × BitVec 64)} (hf : Frm B rs m m')

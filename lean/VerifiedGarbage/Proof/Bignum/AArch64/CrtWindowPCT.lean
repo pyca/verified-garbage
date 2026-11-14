@@ -91,8 +91,8 @@ theorem o3_of (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  have ho64 : o < 2 ^ 64 := by omega
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+  have ho64 : o < 2 ^ 64 := by omega_using [hhi, hn, hX8]
   -- `c^dP R_p mod p`.
   refine ⟨⟨⟨minv, mx, N, X, C, eb, hg, hw28, hlo, hhi, hwx2, hwx, by decide, hslv, hws, hX, hX1, hXodd, hcg, hpl,
       hpy, by decide, by decide, hep, hel, rfl, hL1, hL2, he⟩,hwide⟩,
@@ -106,23 +106,23 @@ theorem o3_of (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w
   have fx₅ : Frm B [CrtWindowFive.xRange32 o wx] s.mem s₅.mem := by rw [hm₅]; exact fx₄
   have k05 := k₄.trans k₅
   have hb₅ : ∀ d, d + 8 ≤ o → word s₅.mem B d = word s.mem B d := fun d hd => CrtWindowFive.x_below32 fx₅ hd ho64
-  have hg₅ : Good s₅ B Z w minv := ⟨hs.congr k05.wr, hdi₅, ⟨(hb₅ _ (by unfold sW; omega)).trans hg.hdr.hw,
-    (hb₅ _ (by unfold sMinv; omega)).trans hg.hdr.hminv,
-    fun j hj => (hb₅ _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega); omega)).trans
+  have hg₅ : Good s₅ B Z w minv := ⟨hs.congr k05.wr, hdi₅, ⟨(hb₅ _ (by unfold sW; omega_using [hlo, h8])).trans hg.hdr.hw,
+    (hb₅ _ (by unfold sMinv; omega_using [hlo, h8])).trans hg.hdr.hminv,
+    fun j hj => (hb₅ _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega_using [hj]); omega_using [hlo, this])).trans
       (hg.hdr.harr j hj)⟩⟩
   have hX₅ : XVals s₅ B o wx mx X := ⟨by rw [hm₅]; exact hX₄.n, by rw [hm₅]; exact hX₄.inv, by rw [hm₅]; exact hX₄.one⟩
   have i05 : InScr B Z s.mem s₅.mem := InScr.of_frm fx₅ fun r hr => by
-    rw [List.mem_singleton.mp hr]; simp only [CrtWindowFive.xRange32]; omega
+    rw [List.mem_singleton.mp hr]; simp only [CrtWindowFive.xRange32]; omega_using [hwide, hX8]
   -- `h`.
-  have a1 : word s₅.mem B (8 * sWsP) = off B o := by rw [hb₅ _ (by unfold sWsP sFn; omega)]; exact hslv
+  have a1 : word s₅.mem B (8 * sWsP) = off B o := by rw [hb₅ _ (by unfold sWsP sFn; omega_using [hlo, h8])]; exact hslv
   have a2 : WsAt s₅.mem B o wx mx := by rw [hm₅]; exact hc₄.ws
   have a3 : wv s₅.mem (off B o) (slot wx Public.aY) wx < X := by rw [hm₅]; exact hlt₄
   have a5 : word s₅.mem (off B o) (8 * sMaskX) = mask c := by rw [hm₅, hM₄]; exact hmask
-  have a6 : word s₅.mem B (8 * sQinv) = qp := by rw [hb₅ _ (by unfold sQinv sFn; omega)]; exact hqp
+  have a6 : word s₅.mem B (8 * sQinv) = qp := by rw [hb₅ _ (by unfold sQinv sFn; omega_using [hlo, h8])]; exact hqp
   have a7 : word s₅.mem B (8 * sPlen) = BitVec.ofNat 64 qib.length := by
-    rw [hb₅ _ (by unfold sPlen sFn; omega), hql]; exact hel
-  have := h_chain M hg₅ hw28 hlo hhi hwx2 hwx a1 a2 hX₅ hX1 a3 a5 a6 a7 (hqs.congrK i05 k05) (by omega)
-    (by omega) hqw hqi
+    rw [hb₅ _ (by unfold sPlen sFn; omega_using [hlo, h8]), hql]; exact hel
+  have := h_chain M hg₅ hw28 hlo hhi hwx2 hwx a1 a2 hX₅ hX1 a3 a5 a6 a7 (hqs.congrK i05 k05) (by omega_using [hL1, hql])
+    (by omega_using [hL2, hql]) hqw hqi
   rw [hql] at this
   exact this
 

@@ -90,33 +90,33 @@ theorem padded_bytes (m : Mem) (C : Addr) (xs : List Byte) (hL : xs.length < 16)
     (hz : Spec.Aes.bytesAt m C 16 = Spec.Cmac.zeros 16) :
     Spec.Aes.bytesAt ((writeBytes m C xs).writeW (C + BitVec.ofNat 64 xs.length) (0x80 : Byte)) C 16 =
       xs ++ [0x80] ++ Spec.Cmac.zeros (16 - xs.length - 1) := by
-  refine ext16 (by simp [Spec.Aes.bytesAt]) (by simp [Spec.Cmac.zeros]; omega) fun k hk => ?_
+  refine ext16 (by simp [Spec.Aes.bytesAt]) (by simp [Spec.Cmac.zeros]; omega_using [hL]) fun k hk => ?_
   rw [getD_bytesAt _ _ hk, writeW8_apply]
   have hz' : m (C + BitVec.ofNat 64 k) = 0 := by
     have := congrArg (fun l => l.getD k 0) hz
     rw [getD_bytesAt _ _ hk] at this
     rw [this]; simp only [Spec.Cmac.zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate, hk,
       ite_true, Option.getD_some]
-  have hsub : (C + BitVec.ofNat 64 k - C).toNat = k := Mem.sub_ofNat_toNat C (by omega)
+  have hsub : (C + BitVec.ofNat 64 k - C).toNat = k := Mem.sub_ofNat_toNat C (by omega_using [hk])
   have heq : (C + BitVec.ofNat 64 k = C + BitVec.ofNat 64 xs.length) ↔ k = xs.length := by
     constructor
     · intro h
       have := congrArg (fun a => (a - C).toNat) h
-      simp only [Mem.sub_ofNat_toNat C (show k < 2 ^ 64 by omega),
-        Mem.sub_ofNat_toNat C (show xs.length < 2 ^ 64 by omega)] at this
+      simp only [Mem.sub_ofNat_toNat C (show k < 2 ^ 64 by omega_using [hk]),
+        Mem.sub_ofNat_toNat C (show xs.length < 2 ^ 64 by omega_using [hL])] at this
       exact this
     · intro h; rw [h]
   rcases Nat.lt_trichotomy k xs.length with h | h | h
-  · have hne : ¬ (C + BitVec.ofNat 64 k = C + BitVec.ofNat 64 xs.length) := by rw [heq]; omega
+  · have hne : ¬ (C + BitVec.ofNat 64 k = C + BitVec.ofNat 64 xs.length) := by rw [heq]; omega_using [h]
     simp only [hne, ite_false, writeBytes, hsub, h, ite_true]
     simp [List.getD_eq_getElem?_getD, List.getElem?_append_left h]
   · subst h
     simp [List.getD_eq_getElem?_getD]
-  · have hne : ¬ (C + BitVec.ofNat 64 k = C + BitVec.ofNat 64 xs.length) := by rw [heq]; omega
-    simp only [hne, ite_false, writeBytes, hsub, show ¬ k < xs.length by omega, hz']
-    obtain ⟨j, hj⟩ : ∃ j, k - xs.length = j + 1 := ⟨k - xs.length - 1, by omega⟩
-    rw [List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (show xs.length ≤ k by omega),
+  · have hne : ¬ (C + BitVec.ofNat 64 k = C + BitVec.ofNat 64 xs.length) := by rw [heq]; omega_using [h]
+    simp only [hne, ite_false, writeBytes, hsub, show ¬ k < xs.length by omega_using [h], hz']
+    obtain ⟨j, hj⟩ : ∃ j, k - xs.length = j + 1 := ⟨k - xs.length - 1, by omega_using [h]⟩
+    rw [List.getD_eq_getElem?_getD, List.append_assoc, List.getElem?_append_right (show xs.length ≤ k by omega_using [h]),
       hj, List.singleton_append, List.getElem?_cons_succ, Spec.Cmac.zeros, List.getElem?_replicate]
-    simp only [show j < 16 - xs.length - 1 by omega, ite_true, Option.getD_some]
+    simp only [show j < 16 - xs.length - 1 by omega_using [hk, hj], ite_true, Option.getD_some]
 
 end VG.Proof.Cmac

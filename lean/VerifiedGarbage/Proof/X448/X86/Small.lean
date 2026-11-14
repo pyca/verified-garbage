@@ -26,10 +26,10 @@ theorem smallStep_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat}
       t.mem = s.mem.writeW (off base (TMP + 4 * i)) (BitVec.ofNat 32 (39081 * limbs s.mem base a i)) ∧
       Keeps [.eax, .edx] s t := by
   have ha' : a + 112 ≤ 3584 := ha
-  refine wp_load (hs.ea_ptr (k := 4 * i) hp (by omega)) (hs.read (by omega)) fun t ht => ?_
+  refine wp_load (hs.ea_ptr (k := 4 * i) hp (by omega_using [hi, ha'])) (hs.read (by omega_using [hi, ha'])) fun t ht => ?_
   have ts := hs.of_upd ht (by decide)
   refine wp_mul fun u uv um uk => ?_
-  refine store_ok (ts.of_keeps uk (by decide)) (by simp only [TMP]; omega) fun v hv => WP.block_nil ⟨?_, ?_⟩
+  refine store_ok (ts.of_keeps uk (by decide)) (by simp only [TMP]; omega_using [hi]) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, um, ht.mem, uv, ht.gpr, ht.other .ecx (by decide), hc, Nat.mul_comm _ 39081]
   · exact (ht.rest (by decide)).trans (uk.trans (hv.rest _))
 

@@ -35,7 +35,7 @@ theorem frame_of_outside {B : Addr} {o n Z : Nat} {m m' : Mem} (h : Outside B o 
     Frame [⟨B, Z⟩] m m' := fun x hx => h x (Or.inr (by
   have := hx _ List.mem_cons_self
   simp only [Region.Contains, ofs] at this ⊢
-  omega))
+  omega_using [hZ, this]))
 
 /-- A change within ranges `[o, o + n)` of `B` is outside the region of
 `Z` bytes at `B` that holds them. -/
@@ -45,7 +45,7 @@ theorem frame_of_outs {B : Addr} {rs : List (Nat × Nat)} {Z : Nat} {m m' : Mem}
   have h2 := hZ r hr
   simp only [Region.Contains] at h1
   simp only [ofs]
-  omega)
+  omega_using [h1, h2])
 
 /-- Octets survive what keeps their bytes. -/
 theorem bytes_keep {rs : List Region} {m m' : Mem} (f : Frame rs m m') {Ra : Addr} {rl : Nat} (hrl : rl < 2 ^ 64)
@@ -53,7 +53,7 @@ theorem bytes_keep {rs : List Region} {m m' : Mem} (f : Frame rs m m') {Ra : Add
   unfold Spec.Rsa.bytesAt
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
-  exact f _ fun ρ hρ => hd ρ hρ _ (Offset.contains_base Ra (by omega) (by omega))
+  exact f _ fun ρ hρ => hd ρ hρ _ (Offset.contains_base Ra (by omega_using [hi]) (by omega_using [hrl, hi]))
 
 /-- `zeroOut`: the `L` bytes at `O` (`r23`, `L` in `r24`) := 0. -/
 theorem zeroOut_ok {s : State} {O : Addr} {L : Nat} (h23 : s.gpr .r23 = O)
@@ -73,9 +73,9 @@ theorem zeroOut_ok {s : State} {O : Addr} {L : Nat} (h23 : s.gpr .r23 = O)
     t.gpr .r14 = off O i ∧ t.gpr .r0 = 0 ∧ Outside O 0 i s.mem t.mem ∧ (∀ c < i, t.mem (off O c) = 0) ∧
       Keep [.r0, .r14, .r17] s t
   refine WP.mono (wp_countdown (body := .block ([.stb .r0 .r14 0, .addi .r14 .r14 1] ++
-      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := L) (by omega) (by omega) Inv
+      ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := L) (by omega_using [hL']) (by omega_using [hL]) Inv
     (fun i hi t ⟨t14, t0, tout, tz, tk⟩ _ => ?_)
-    ⟨u14, u0, by rw [um]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega), ku⟩ u17)
+    ⟨u14, u0, by rw [um]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), ku⟩ u17)
     fun t ⟨_, _, tout, tz, tk⟩ => ⟨tz, tout, tk⟩
   have hst : WP isa (.block [.stb .r0 .r14 0, .addi .r14 .r14 1, .subi .r17 .r17 1]) t fun t' =>
       (t'.gpr .r14 = off O (i + 1) ∧ t'.gpr .r0 = 0 ∧ t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1 ∧
@@ -85,14 +85,14 @@ theorem zeroOut_ok {s : State} {O : Addr} {L : Nat} (h23 : s.gpr .r23 = O)
       (by rw [tk.wr]; exact hO i hi : InRegions t.wr (off O i) 1)]
     rfl
   refine WP.mono hst fun t' ⟨⟨l14, l0, l17, lm⟩, lk⟩ => ⟨⟨l14, l0, ?_, ?_, tk.trans' lk.mono⟩, l17⟩
-  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega)
-    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega) (by omega)).trans
-      (hw1.mono (o' := 0) (n' := i + 1) (by omega) (by omega))
-  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega)
+  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega_using [hL', hi])
+    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega_using []) (by omega_using [])).trans
+      (hw1.mono (o' := 0) (n' := i + 1) (by omega_using []) (by omega_using []))
+  · have hw1 := write1_outside t.mem O (d := i) 0 (by omega_using [hL', hi])
     intro c hc
     rw [lm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hc with hc | rfl
-    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega)]; omega)]; exact tz c hc
+    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega_arith)]; omega_using [hc])]; exact tz c hc
     · rw [write1_self]
 
 /-- `finish r`: `used := r28` (at `U`, in `r25`), and the result `r`. -/
@@ -128,11 +128,11 @@ theorem bytes_of_copy {m m' : Mem} {B O : Addr} {d w L : Nat} (hL : L = 8 * w)
     Spec.Rsa.bytesAt m' O L = Spec.Rsa.i2osp (val32 m B d (2 * w)) L := by
   have hr := VG.Proof.Bignum.reversed_read m' m O (off B d) L fun c hc => by
     rw [off_add]
-    have := hb (L - 1 - c) (by omega)
-    rw [show L - 1 - (L - 1 - c) = c by omega] at this
+    have := hb (L - 1 - c) (by omega_using [hc])
+    rw [show L - 1 - (L - 1 - c) = c by omega_using [hc]] at this
     rw [← this]
   have e := VG.Proof.Bignum.read_eq_val32 m B (2 * w) d
-  rw [show 4 * (2 * w) = L by omega] at e
+  rw [show 4 * (2 * w) = L by omega_using [hL]] at e
   rw [← e, hr]
   have hl : (Spec.Rsa.bytesAt m' O L).length = L := by simp [Spec.Rsa.bytesAt]
   have e2 := VG.Proof.Rsa.i2osp_os2ip (Spec.Rsa.bytesAt m' O L)
@@ -160,15 +160,15 @@ theorem copyOut_ok {s : State} {B O : Addr} {Z L : Nat} (hs : Scr s B Z) (h31 : 
     refine WP.keep _ ?_ (by decide)
     prun [h31, h23, h24, VG.Impl.Bignum.hdrBytes]
     refine ⟨?_, by simp⟩
-    rw [off_sub1 _ (by omega)]
+    rw [off_sub1 _ (by omega_using [])]
   refine WP.mono hb fun u ⟨⟨u15, u16, u17, um⟩, ku⟩ => ?_
   let Inv : Nat → State → Prop := fun i t =>
     t.gpr .r15 = off B (256 + L - 1 - i) ∧ t.gpr .r16 = off O i ∧ Outside O 0 i s.mem t.mem ∧
       (∀ c < i, t.mem (off O c) = s.mem (off B (256 + (L - 1 - c)))) ∧ Keep [.r0, .r10, .r15, .r16, .r17] s t
   refine WP.mono (wp_countdown (body := .block ([.lbz .r0 .r15 0, .stb .r0 .r16 0, .addi .r16 .r16 1,
-      .subi .r15 .r15 1] ++ ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := L) (by omega) (by omega) Inv
+      .subi .r15 .r15 1] ++ ([.subi .r17 .r17 1] : List Instr))) (cnt := .r17) (N := L) (by omega_using [hZ, hnw]) (by omega_using [hL]) Inv
     (fun i hi t ⟨t15, t16, tout, tb, tk⟩ _ => ?_)
-    ⟨by rw [u15]; rfl, u16, by rw [um]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega), ku.mono⟩ u17)
+    ⟨by rw [u15]; rfl, u16, by rw [um]; exact Outside.refl _ _ _ _, fun _ h => absurd h (by omega_using []), ku.mono⟩ u17)
     fun t ⟨_, _, tout, tb, tk⟩ => ⟨tb, tout, tk⟩
   have hst : WP isa (.block [.lbz .r0 .r15 0, .stb .r0 .r16 0, .addi .r16 .r16 1, .subi .r15 .r15 1,
       .subi .r17 .r17 1]) t fun t' =>
@@ -179,24 +179,24 @@ theorem copyOut_ok {s : State} {B O : Addr} {Z L : Nat} (hs : Scr s B Z) (h31 : 
     refine WP.keep _ ?_ (by decide)
     prun [t15, t16, exec_lbz' (show Reg.r15 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
       exec_stb (show Reg.r16 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide),
-      (hs.congr tk.wr).ld (d := 256 + L - 1 - i) (n := 1) (by omega),
+      (hs.congr tk.wr).ld (d := 256 + L - 1 - i) (n := 1) (by omega_using [hZ]),
       (by rw [tk.wr]; exact hO i hi : InRegions t.wr (off O i) 1), read_one']
   refine WP.mono hst fun t' ⟨⟨l15, l16, l17, lm⟩, lk⟩ => ⟨⟨?_, l16, ?_, ?_, tk.trans' lk.mono⟩, l17⟩
-  · rw [l15, off_sub1 _ (by omega), show 256 + L - 1 - i - 1 = 256 + L - 1 - (i + 1) by omega]
-  · have hw1 := write1_outside t.mem O (d := i) (t.mem (off B (256 + L - 1 - i))) (by omega)
-    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega) (by omega)).trans
-      (hw1.mono (o' := 0) (n' := i + 1) (by omega) (by omega))
-  · have hw1 := write1_outside t.mem O (d := i) (t.mem (off B (256 + L - 1 - i))) (by omega)
+  · rw [l15, off_sub1 _ (by omega_using [hi]), show 256 + L - 1 - i - 1 = 256 + L - 1 - (i + 1) by omega_using []]
+  · have hw1 := write1_outside t.mem O (d := i) (t.mem (off B (256 + L - 1 - i))) (by omega_using [hOw, hi])
+    rw [lm]; exact (tout.mono (o' := 0) (n' := i + 1) (by omega_using []) (by omega_using [])).trans
+      (hw1.mono (o' := 0) (n' := i + 1) (by omega_using []) (by omega_using []))
+  · have hw1 := write1_outside t.mem O (d := i) (t.mem (off B (256 + L - 1 - i))) (by omega_using [hOw, hi])
     intro c hc
     rw [lm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hc with hc | rfl
-    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega)]; omega)]; exact tb c hc
-    · rw [write1_self, show 256 + (L - 1 - c) = 256 + L - 1 - c by omega]
+    · rw [hw1 _ (by rw [Mont.ofs_off0 O (by omega_arith)]; omega_using [hc])]; exact tb c hc
+    · rw [write1_self, show 256 + (L - 1 - c) = 256 + L - 1 - c by omega_using [hi]]
       refine tout _ (Or.inr ?_)
       by_contra hlt
       have hx : off O (ofs O (off B (256 + L - 1 - c))) = off B (256 + L - 1 - c) := by
         simp only [off, ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq]
         rw [BitVec.add_comm]; exact BitVec.sub_add_cancel _ _
-      exact hsep _ (by omega) _ (by rw [Mont.ofs_off0 B (by omega)]; omega) hx
+      exact hsep _ (by omega_using [hi, hlt]) _ (by rw [Mont.ofs_off0 B (by omega_using [hZ, hnw])]; omega_using [hZ]) hx
 
 end VG.Proof.RsaKeyGen.PPC64LE.Cand

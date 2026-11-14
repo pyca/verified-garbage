@@ -50,7 +50,7 @@ theorem setupW_ok {s : State} {bo : Reg} (hbo : bo ≠ .x0) {out : Nat} (ho : ou
   · rw [k₃.get .x0, k₂.get .x0, h₁.2]; exact (BitVec.add_zero _).symm
   · rw [e₃, sy₂, sy₁]; exact (BitVec.add_zero _).symm
   · rw [e11]; rfl
-  · rw [hm]; intro i _; rw [ite_eq_right (by omega)]
+  · rw [hm]; intro i _; rw [ite_eq_right (by omega_using [])]
 
 theorem dotW_partition (bo bf bg : Reg) (out : Nat) (terms : List (Nat × Nat)) :
     Impl.MlKem.AArch64.DotW.dotW bo bf bg out terms =
@@ -69,10 +69,10 @@ theorem dotW_ok {s : State} {bo bf bg : Reg} (hbo : bo ≠ .x0) {out : Nat} (ho 
   refine WP.seq (WP.mono (setupW_ok hbo ho (resultW terms (polyValues F) (polyValues G) gammaValues))
     fun s₁ h₁ => ?_)
   refine WP.mono (loopW_ok hd h₁) fun s₂ h₂ => ?_
-  refine ⟨h₂.keep, h₂.frame, h₂.out.polyIs (fun i hi => by omega) fun i hi => ?_⟩
+  refine ⟨h₂.keep, h₂.frame, h₂.out.polyIs (fun i hi => by omega_using [hi]) fun i hi => ?_⟩
   rw [resultW, result_field terms F G hi, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   have : ((polySum terms F G)[i]!).val < 3329 := Fin.isLt _
   change _ % 2 ^ 32 % 2 ^ 16 = _
-  omega
+  omega_using [this]
 
 end VG.Proof.MlKem.AArch64.DotW

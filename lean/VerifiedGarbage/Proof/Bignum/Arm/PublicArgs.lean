@@ -17,7 +17,7 @@ theorem publicExponentArgs_ok (s : State) {base dst np ep xp : BitVec 32} {len k
     WP isa (.block PublicFn.exponentArgs) s fun t =>
       t.gpr .r1 = ep ∧ t.gpr .lr = BitVec.ofNat 32 eLen ∧ t.mem = s.mem ∧ Rest [.r1, .lr] s t := by
   refine WP.mono (stackPair_ok s .r1 .lr 56 60 (by decide) (by decide) (by decide)
-    (by have := h.nowrap; omega) (by have := h.nowrap; omega)
+    (by have := h.nowrap; omega_using [this]) (by have := h.nowrap; omega_using [this])
     (h.read (by decide) (by decide)) (h.read (by decide) (by decide))) ?_
   rintro t ⟨ptr, count, mem, rest⟩
   exact ⟨ptr.trans h.exponent, count.trans h.exponentCount, mem, rest⟩
@@ -27,7 +27,7 @@ theorem publicInputArgs_ok (s : State) {base dst np ep xp : BitVec 32} {len k eL
     WP isa (.block PublicFn.inputArgs) s fun t =>
       t.gpr .r4 = xp ∧ t.gpr .r6 = BitVec.ofNat 32 k ∧ t.mem = s.mem ∧ Rest [.r4, .r6] s t := by
   refine WP.mono (stackPair_ok s .r4 .r6 64 12 (by decide) (by decide) (by decide)
-    (by have := h.nowrap; omega) (by have := h.nowrap; omega)
+    (by have := h.nowrap; omega_using [this]) (by have := h.nowrap; omega_using [this])
     (h.read (by decide) (by decide)) (h.read (by decide) (by decide))) ?_
   rintro t ⟨ptr, count, mem, rest⟩
   exact ⟨ptr.trans h.input, count.trans h.savedCount, mem, rest⟩
@@ -37,7 +37,7 @@ theorem publicControlArgs_ok (s : State) {base dst np ep xp : BitVec 32} {len k 
     WP isa (.block PublicFn.controlArgs) s fun t =>
       t.gpr .r1 = ep ∧ t.gpr .r2 = BitVec.ofNat 32 eLen ∧ t.mem = s.mem ∧ Rest [.r1, .r2] s t := by
   refine WP.mono (stackPair_ok s .r1 .r2 56 60 (by decide) (by decide) (by decide)
-    (by have := h.nowrap; omega) (by have := h.nowrap; omega)
+    (by have := h.nowrap; omega_using [this]) (by have := h.nowrap; omega_using [this])
     (h.read (by decide) (by decide)) (h.read (by decide) (by decide))) ?_
   rintro t ⟨ptr, count, mem, rest⟩
   exact ⟨ptr.trans h.exponent, count.trans h.exponentCount, mem, rest⟩
@@ -49,7 +49,7 @@ theorem publicOutputArgs_ok (s : State) {base dst np ep xp : BitVec 32} {len k e
   unfold PublicFn.outputArgs
   refine wp_mov (op2_imm (by decide)) fun u a => ?_
   refine WP.mono (stackPair_ok u .r4 .r6 4 12 (by decide) (by decide) (by decide)
-    (by rw [a.sp]; have := h.nowrap; omega) (by rw [a.sp]; have := h.nowrap; omega)
+    (by rw [a.sp]; have := h.nowrap; omega_using [this]) (by rw [a.sp]; have := h.nowrap; omega_using [this])
     (by rw [a.rd, a.wr, a.sp]; exact h.read (by decide) (by decide))
     (by rw [a.rd, a.wr, a.sp]; exact h.read (by decide) (by decide))) ?_
   rintro t ⟨ptr, count, mem, rest⟩

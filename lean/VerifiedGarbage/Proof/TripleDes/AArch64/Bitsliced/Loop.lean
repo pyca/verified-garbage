@@ -41,7 +41,7 @@ theorem exec_movz_x {s : State} {d : Reg} {imm : BitVec 16} :
 theorem wAt_zero (p : Addr) : wAt p 0 = p := by simp [wAt]
 
 theorem scratch_word {B : Addr} {i : Nat} (hi : i < 128) :
-    (⟨B, 1024⟩ : Region).Contains (wAt B i) 8 := Offset.contains_base _ (by omega) (by omega)
+    (⟨B, 1024⟩ : Region).Contains (wAt B i) 8 := Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 /-- The registers the loop changes. -/
 def EcbRegs (r : Reg) : Prop :=
@@ -386,14 +386,14 @@ theorem ecb_correct (d : Direction) {s : State} (E : Env s) :
   have hl := E.len
   have hx2 : s.gpr .x2 = BitVec.ofNat 64 n := by simp [n]
   rw [Impl.TripleDes.AArch64.BitsliceNeon.ecb]
-  apply WP.ite _ (eval_zero s .x2 hx2 (by omega))
+  apply WP.ite _ (eval_zero s .x2 hx2 (by omega_using []))
   · intro hz
     apply WP.block_nil
     intro b hb
     simp at hz
     omega
   · intro hnz
-    have hn0 : 0 < n := by simp at hnz; omega
+    have hn0 : 0 < n := by simp at hnz; omega_using [hnz]
     refine WP.loop (M := isa) (EcbInv d s n) (fun m s' h => step_ok d E rfl m s' h) n s ?_
     exact ⟨hn0, Nat.le_refl _, rfl, hx2, by simp [wAt], fun _ _ => rfl, rfl, rfl, rfl,
       fun b hb => by omega, by rw [Nat.sub_self]; exact Frame.refl _ _⟩

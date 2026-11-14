@@ -138,7 +138,7 @@ def fbByte : FbMode → Byte → Byte → Byte
 
 theorem xor_getD {a b : List Byte} {u : Nat} (ha : u < a.length) (hb : u < b.length) :
     (Spec.Cbc.xor a b).getD u 0 = a.getD u 0 ^^^ b.getD u 0 := by
-  have h : u < (Spec.Cbc.xor a b).length := by simp only [Spec.Cbc.xor, List.length_zipWith]; omega
+  have h : u < (Spec.Cbc.xor a b).length := by simp only [Spec.Cbc.xor, List.length_zipWith]; omega_using [ha, hb]
   rw [← List.getElem_eq_getD (h := h) 0, ← List.getElem_eq_getD (h := ha) 0, ← List.getElem_eq_getD (h := hb) 0]
   simp only [Spec.Cbc.xor, List.getElem_zipWith]
 

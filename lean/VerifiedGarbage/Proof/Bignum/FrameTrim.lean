@@ -17,7 +17,7 @@ theorem word_eq_byte {m m' : Mem} {B x : Addr} {d : Nat}
   have hj : j < 8 := by omega
   have hx : off B d + BitVec.ofNat 64 j = x := by
     simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add]
-    rw [show d + j = ofs B x by omega]
+    rw [show d + j = ofs B x by omega_using [lo]]
     simp only [ofs, BitVec.ofNat_toNat]
     bv_omega
   have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8 * j) 8) h

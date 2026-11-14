@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Gather.RISCV64.Loop
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Callee
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.RISCV64.SealGather
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.RISCV64.Gather.Contract
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
@@ -11,6 +17,90 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `ChaCha20Poly1305.RISCV64.Gather.Callee`, which only this module used -/
+
+section
+
+/-!
+# ChaCha20-Poly1305 encryption out of place, from a list of slices, RISC-V: the function called
+
+Untrusted: everything here is checked by Lean. `vg_chacha20_poly1305_seal_gather`
+calls `vg_chacha20_poly1305_seal`, with its working space in a frame of its
+own, by its shared contract (`Spec.ChaCha20Poly1305.sealContract`, with 624
+bytes of stack, which its frame uses: `seal_sdepth`): its precondition from
+the layout the call gives it (`callPre`, `sealSpec_pre`), its postcondition
+(`sealSpec_post`) and its public data (`sealSpec_pub`). As on PPC64LE
+(`Proof/ChaCha20Poly1305/PPC64LE/Gather/Callee.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.ChaCha20Poly1305.RISCV64.Gather
+
+open VG VG.RISCV64
+open VG.Spec.Poly1305 (bytesAt)
+open VG.Spec.ChaCha20Poly1305 (encrypt)
+
+/-- The frame of `vg_chacha20_poly1305_seal` uses the 624 bytes of stack its
+contract reserves. -/
+theorem seal_sdepth : sdepth Impl.ChaCha20Poly1305.RISCV64.SealGather.sealCode = 624 := by
+  decide +kernel
+
+/-- What a call of `vg_chacha20_poly1305_seal(key = a0, nonce = a1, aad = a2,
+aad_len = a3, data = a4, len = a5, tag = a6)` needs. -/
+def callPre (s : State) : Prop :=
+  let key : Region := ⟨s.gpr .a0, 32⟩
+  let nonce : Region := ⟨s.gpr .a1, 12⟩
+  let aad : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+  let data : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
+  let tag : Region := ⟨s.gpr .a6, 16⟩
+  let stk : Region := ⟨s.sp - BitVec.ofNat 64 624, 624⟩
+  s.rd = [key, nonce, aad] ∧ s.wr = [data, tag] ∧
+    key.Disjoint data ∧ key.Disjoint tag ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
+    aad.Disjoint data ∧ aad.Disjoint tag ∧ data.Disjoint tag ∧
+    stk.Disjoint key ∧ stk.Disjoint nonce ∧ stk.Disjoint aad ∧ stk.Disjoint data ∧ stk.Disjoint tag ∧
+    (s.gpr .a0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .a1).toNat + 12 ≤ 2 ^ 64 ∧
+    (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64 ∧ (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .a6).toNat + 16 ≤ 2 ^ 64 ∧ s.sp.toNat % 16 = 0 ∧ 624 ≤ s.sp.toNat
+
+theorem sealSpec_pre {s : State} (h : callPre s) :
+    (Spec.ChaCha20Poly1305.sealContract RISCV64.abi 624).pre s := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁⟩ := h
+  sig_pre [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, RISCV64.abi, RISCV64.argRegs]
+  sig_reduce [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, RISCV64.abi,
+    RISCV64.argRegs, List.getD]
+  sig_and_intros
+  all_goals first
+    | with_reducible assumption
+    | trivial
+    | omega
+    | exact Region.Disjoint.symm ‹_›
+
+theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract RISCV64.abi 624).post s s') :
+    encrypt (bytesAt s.mem (s.gpr .a0) 32) (bytesAt s.mem (s.gpr .a1) 12)
+        (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat) =
+      (bytesAt s'.mem (s.gpr .a4) (s.gpr .a5).toNat, bytesAt s'.mem (s.gpr .a6) 16) := by
+  sig_post [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig,
+    Spec.ChaCha20Poly1305.sealPost, RISCV64.abi, RISCV64.argRegs] at h
+  exact h
+
+theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧
+    s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧
+    s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.gpr .a6 = s₂.gpr .a6 ∧ s₁.sp = s₂.sp) :
+    (Spec.ChaCha20Poly1305.sealContract RISCV64.abi 624).pub s₁ s₂ := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  sig_pub [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, RISCV64.abi, RISCV64.argRegs]
+  sig_reduce [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, RISCV64.abi, RISCV64.argRegs]
+  sig_and_intros
+  all_goals first | with_reducible assumption | trivial
+
+end VG.Proof.ChaCha20Poly1305.RISCV64.Gather
+
+end
+
+end
+
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, RISC-V: the function
@@ -126,7 +216,7 @@ theorem bs_toNat : (Bs s).toNat = s.sp.toNat - 640 := by
   have e := congrArg BitVec.toNat h.hB
   rw [BitVec.toNat_add, BitVec.toNat_ofNat] at e
   have := h.hBn
-  omega
+  omega_using [e, this]
 
 theorem argIn : argR s ∈ s.rd := by rw [h.pre.1]; simp
 
@@ -135,18 +225,18 @@ omit h in
 theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 640⟩) {x : Addr} (hx : r.Contains x 1) :
     eMem s x = s.mem x :=
   Mem.write_apply fun hc => hr x hx (stk_sub s 632 8 (by decide) x (by
-    simp only [Region.Contains, raA] at hc ⊢; omega))
+    simp only [Region.Contains, raA] at hc ⊢; omega_using [hc]))
 
 theorem frame_eMem : Frame [FA s] s.mem (eMem s) :=
   (Frame.refl _ _).write (List.mem_singleton_self _) _
-    (Offset.contains (Bs s) (d := 632) (e := 624) (by decide) (by decide) (by have := h.hBn; omega))
+    (Offset.contains (Bs s) (d := 632) (e := 624) (by decide) (by decide) (by have := h.hBn; omega_using []))
 
 /-- `tag`, after the push. -/
 theorem eTag : (eMem s).readW (Bs s + BitVec.ofNat 64 640) 64 = Tg s := by
   rw [Frame.readW h.frame_eMem (r := ⟨Bs s + BitVec.ofNat 64 640, 8⟩) (Region.contains_self _ _)
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inr (by decide)) (by have := h.hBn; omega) (by have := h.hBn; omega))
+      exact Offset.disjoint _ (.inr (by decide)) (by have := h.hBn; omega_using []) (by have := h.hBn; omega_using []))
     (by decide)]
   show _ = s.mem.readW (stackArgAddr s 0) 64
   rw [show stackArgAddr s 0 = Bs s + BitVec.ofNat 64 640 from congrArg Region.base h.hargR]
@@ -207,7 +297,7 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (pushed .ra s
   refine wp_addSp (imm := 16) (by decide) fun u₁ v₁ => ?_
   have p₁ : u₁.gpr .t5 = Bs s + BitVec.ofNat 64 640 := by rw [v₁.gpr, asp, Offset.add_add]
   refine wp_ld (a := Bs s + BitVec.ofNat 64 640) (by decide) (by rw [p₁]; exact BitVec.add_zero _)
-    (by rw [← h.hB]; have := h.al; omega)
+    (by rw [← h.hB]; have := h.al; omega_using [this])
     (by rw [v₁.rd, v₁.wr]
         exact ⟨_, List.mem_append_left _ h.argIn, by rw [h.hargR]; exact Region.contains_self _ _⟩)
     fun u₂ v₂ => wp_mv fun u₃ v₃ => WP.block_nil ?_
@@ -327,14 +417,14 @@ theorem Ready.call {s c : State} (h : Lay s) (hc : Ready s c) :
   obtain ⟨c3, c4, c5, c6, c7, c8, c9⟩ := hc.callGpr
   have hb := h.bs_toNat
   have hc24 : (Bs s + BitVec.ofNat 64 624).toNat = (Bs s).toNat + 624 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := h.hBn; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := h.hBn; omega_using [hb]
   refine ⟨?_, ?_, ?_⟩
   · simp only [callPre, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, State.withRegions_sp,
       State.callEntry_sp, c3, c4, c5, c6, c7, c8, c9, hc.sp, cs_sub]
     exact ⟨trivial, trivial, kd, kt, nd, nt, ad, at_, dt, h.bk.sub_left (stk_sub0 s _ (by decide)),
       h.bn.sub_left (stk_sub0 s _ (by decide)), h.ba.sub_left (stk_sub0 s _ (by decide)),
       h.bd.sub_left (stk_sub0 s _ (by decide)), h.bt.sub_left (stk_sub0 s _ (by decide)),
-      ok, on, oa, od, ot, by rw [hc24]; omega, by rw [hc24]; omega⟩
+      ok, on, oa, od, ot, by rw [hc24]; omega_using [al, hb], by rw [hc24]; omega_using []⟩
   · refine covers_mem fun r hr => ?_
     simp only [rdC, wrC, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hc.rd, hc.wr, rd, wr]

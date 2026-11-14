@@ -39,7 +39,7 @@ structure CopyInv (E : Addr) (g : Reg → BitVec 64) (v : VReg → BitVec 128) (
 theorem CopySrc.word {D : Addr} (hs : CopySrc E R W D) {t : State} (hc : Ctx E g v m₀ R W t)
     {k : Nat} (hk : k < 8) :
     t.mem.readW (D + BitVec.ofNat 64 (8 * k)) 64 = m₀.readW (D + BitVec.ofNat 64 (8 * k)) 64 :=
-  hc.frame.readW (r := ⟨D, 64⟩) (Offset.contains_base D (by omega) (by omega)) hs.out (by decide)
+  hc.frame.readW (r := ⟨D, 64⟩) (Offset.contains_base D (by omega_using [hk]) (by omega_using [hk])) hs.out (by decide)
 
 theorem copyWord_ok {D : Addr} (hs : CopySrc E R W D) {k : Nat} (hk : k < 8) {t : State}
     (hi : CopyInv E g v m₀ R W D k t) :
@@ -48,12 +48,12 @@ theorem copyWord_ok {D : Addr} (hs : CopySrc E R W D) {k : Nat} (hk : k < 8) {t 
   have hc := hi.ctx
   have src : InRegions (t.rd ++ t.wr) (t.gpr .x1 + BitVec.ofNat 64 (8 * k)) 8 := by
     rw [hi.x1, hc.rd]
-    exact ⟨_, List.mem_append_left _ hs.mem, Offset.contains_base D (by omega) (by omega)⟩
+    exact ⟨_, List.mem_append_left _ hs.mem, Offset.contains_base D (by omega_using [hk]) (by omega_using [hk])⟩
   have dst : InRegions t.wr (E + BitVec.ofNat 64 (192 + 8 * k)) 8 :=
-    hc.writable_frame (Offset.contains_base E (by omega) (by omega))
+    hc.writable_frame (Offset.contains_base E (by omega_using [hk]) (by omega_using [hk]))
   apply WP.of_runBlock
-  rw [runBlock_cons, exec_ldr_x ⟨by omega, by omega⟩ src, runStep_some, runBlock_cons,
-    exec_str_x ⟨by omega, by omega⟩ (by
+  rw [runBlock_cons, exec_ldr_x ⟨by omega_using [], by omega_using [hk]⟩ src, runStep_some, runBlock_cons,
+    exec_str_x ⟨by omega_using [], by omega_using [hk]⟩ (by
       simpa only [RegUpd.wr_write, RegUpd.gpr_write, reduceCtorEq, ite_false, hi.x15,
         Offset.add_add] using dst),
     runStep_some, runBlock_nil]
@@ -68,7 +68,7 @@ theorem copyWord_ok {D : Addr} (hs : CopySrc E R W D) {k : Nat} (hk : k < 8) {t 
     rintro rfl; simp [preserved] at hr
   · intro r hr
     rw [List.mem_singleton.mp hr]
-    exact .inl (Offset.sub_base _ (by omega))
+    exact .inl (Offset.sub_base _ (by omega_using [hk]))
   · exact (RegUpd.gpr_write_of_ne (s := t) .x (r := .x9) (r' := .x1)
       (t.mem.readW (D + BitVec.ofNat 64 (8 * k)) 64) (by decide)).trans hi.x1
   · exact (RegUpd.gpr_write_of_ne (s := t) .x (r := .x9) (r' := .x15)
@@ -78,8 +78,8 @@ theorem copyWord_ok {D : Addr} (hs : CopySrc E R W D) {k : Nat} (hk : k < 8) {t 
     · subst j
       rw [Mem.readW_writeW_self64]
       exact hs.word hc hk
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact hi.words j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hjk]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact hi.words j (by omega_using [hj, hjk])
 
 theorem copyWords_ok {D : Addr} (hs : CopySrc E R W D) :
     ∀ n ≤ 8, ∀ {t : State}, CopyInv E g v m₀ R W D 0 t →
@@ -88,7 +88,7 @@ theorem copyWords_ok {D : Addr} (hs : CopySrc E R W D) :
   | 0, _, _, h => WP.block_nil h
   | n + 1, hn, _, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    exact WP.mono (copyWords_ok hs n (by omega) h) fun _ hu => copyWord_ok hs (by omega) hu
+    exact WP.mono (copyWords_ok hs n (by omega_using [hn]) h) fun _ hu => copyWord_ok hs (by omega_using [hn]) hu
 
 /-- After the copy, the 64 bytes at `frame 192` are the digest's. -/
 theorem copy_digest {D : Addr} (hs : CopySrc E R W D) {t : State} (h0 : CopyInv E g v m₀ R W D 0 t) :

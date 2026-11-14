@@ -118,12 +118,12 @@ theorem piSteps_ok (count n : Nat) (hbound : n + count ≤ 32)
     exact ⟨hinv, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, rfl⟩
   | succ count ih =>
     rw [List.range'_succ, List.flatMap_cons, WP.block_append_iff]
-    apply WP.mono (piStep_ok s x n (by omega) hinv)
+    apply WP.mono (piStep_ok s x n (by omega_using [hbound]) hinv)
     intro s₁ h₁
-    apply WP.mono (ih (n + 1) (by omega) s₁ h₁.1)
+    apply WP.mono (ih (n + 1) (by omega_using [hbound]) s₁ h₁.1)
     intro s₂ h₂
     refine ⟨?_, h₁.2.1.trans h₂.2.1, h₂.2.2.trans h₁.2.2⟩
-    have he : n + 1 + count = n + (count + 1) := by omega
+    have he : n + 1 + count = n + (count + 1) := by omega_using []
     exact he ▸ h₂.1
 
 end VG.Proof.Rc2.X86_64.Sse2
@@ -497,7 +497,7 @@ theorem forwardLoop (body : Prog isa) (I : Nat → State → Prop) (stop : Nat)
   · right
     constructor
     · simp only [eval, h'.2, he, decide_false, Option.map_some, Bool.not_false]
-    · exact ⟨stop - (j + 1), by omega, j + 1, by omega, rfl, h'.1⟩
+    · exact ⟨stop - (j + 1), by omega_using [hj, hn], j + 1, by omega_using [hj, he], rfl, h'.1⟩
 
 /-- Across a key-expansion loop only the six temporaries and the schedule
 buffer change. The key, scratch saves, and return address are separate. -/
@@ -523,7 +523,7 @@ theorem KeyFrame.step {s₀ s s' : State} (h : KeyFrame s₀ s) (i : Nat) (hi : 
   refine ⟨fun r hr => (keep.reg r hr).trans (h.reg r hr), keep.rd.trans h.rd,
     keep.wr.trans h.wr, ?_⟩
   rw [keep.mem]
-  exact h.mem.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  exact h.mem.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
 
 theorem KeyFrame.keep {s₀ s s' : State} (h : KeyFrame s₀ s) (keep : Keep keyTemps s s') :
     KeyFrame s₀ s' := by

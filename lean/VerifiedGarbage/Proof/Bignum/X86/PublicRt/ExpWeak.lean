@@ -41,7 +41,7 @@ theorem exponentiate_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : 
   have f5 := (h.fits (j := 5) (by decide)).2
   have f1 := (h.fits (j := 1) (by decide)).1
   have f2 := (h.fits (j := 2) (by decide)).1
-  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega
+  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega_using []
   have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega
   have e3 : numAt len 3 = 256 + 3 * wb len := by simp only [numAt, numOff] <;> omega
   have e4 : numAt len 4 = 256 + 4 * wb len := by simp only [numAt, numOff] <;> omega
@@ -51,7 +51,7 @@ theorem exponentiate_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : 
   refine WP.seq (WP.mono (mulRaw_ok E hbytes (o := 1) (a := 1) (b := 4) (by decide) (by decide) (by decide)
     (by decide) hT) fun u₁ ⟨E₁, C₁, cs₁, F₁, L₁, _⟩ => ?_)
   have O₁ : val32 u₁.mem base (numAt len 3) (nw len) = val32 s.mem base (numAt len 3) (nw len) :=
-    mulFrame_val32 E.room nw' F₁ (.inr (by omega)) (by omega) (by omega) f1 f5
+    mulFrame_val32 E.room nw' F₁ (.inr (by omega_using [e1, e3])) (by omega_using [wbe, e3, e5]) (by omega_using [wbe, f5, e3, e5]) f1 f5
   refine WP.seq (WP.mono (seed_ok E₁ hbytes L₁ (by rw [O₁, hO]; exact hM1))
     fun u₂ ⟨E₂, C₂, cs₂, L₂, pv₂, _, _⟩ => ?_)
   have Y₂ : val32 u₂.mem base (numAt len 2) (nw len) < M := L₂

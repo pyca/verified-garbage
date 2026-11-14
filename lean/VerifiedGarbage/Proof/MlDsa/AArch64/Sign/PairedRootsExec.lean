@@ -14,13 +14,13 @@ cannot alter the separate immutable paired inverse table. -/
 theorem PairedRoots.exec {S : Nat} {s u : State} {code : Prog isa} {tr : List Leak}
     (h : PairedRoots S s) (he : Exec isa code s tr u)
     (hd : 16*code.aarch64Depth≤S) (hS : S<2^64) : PairedRoots S u := by
-  have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega)) hd hS
+  have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega_using [hd, hS])) hd hS
   obtain ⟨hr,hw,hsp⟩ := VG.AArch64.Exec.rdwr he
   have hy := VG.AArch64.Exec.syms he
   refine ⟨?_,by simpa only [hy] using h.fit,?_,?_,?_,by simpa only [hy] using h.aligned⟩
   · intro i hi
     rw [hy,hf.readW (r:=⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩)
-      (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)]
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) ?_ (by decide)]
     · exact h.held i hi
     · intro r hm
       rcases List.mem_append.mp hm with hm|hm

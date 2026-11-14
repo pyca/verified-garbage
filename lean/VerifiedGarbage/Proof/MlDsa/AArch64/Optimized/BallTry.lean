@@ -45,7 +45,7 @@ theorem try_ok {τ i : Nat} {signs : Array Bool} {a : Addr} {c : IPoly} {j : Byt
   have v6 : (s₃.gpr .x6).toNat = j.toNat := by rw [o₃.get .x6,o₂.get .x6,e₁,toNat_byte,hb]
   have v7 : (s₃.gpr .x7).toNat = if i<j.toNat then 1 else 0 := by
     rw [e₃,e₂,o₁.get .x10]
-    exact lt_bit h10 (by rw [e₁,toNat_byte,hb]) (by omega) (by have := j.isLt; omega)
+    exact lt_bit h10 (by rw [e₁,toNat_byte,hb]) (by omega_using [hi]) (by have := j.isLt; omega_using [])
   by_cases hr : i<j.toNat
   · have hstep : bStep τ signs (c,i) j = (c,i) := by
       unfold bStep; rw [ifT (show i<n by exact hi),ifT hr]
@@ -61,13 +61,13 @@ theorem try_ok {τ i : Nat} {signs : Array Bool} {a : Addr} {c : IPoly} {j : Byt
         ((c.set! i c[j.toNat]!).set! j.toNat (if signs.getD (i+τ-256) false then -1 else 1),i+1) := by
       unfold bStep; rw [ifT (show i<n by exact hi),ifF hr]
     refine WP.ite false (by rw [eval_nonzero,ne_zero_iff,v7,ifF hr]; rfl)
-      (fun h => nomatch h) (fun _ => WP.mono (set_ok (aP := a) (c := c) (i := i) (j := j.toNat) (by omega) hi
+      (fun h => nomatch h) (fun _ => WP.mono (set_ok (aP := a) (c := c) (i := i) (j := j.toNat) (by omega_using [hr]) hi
         (by rw [k₃.get .x26,h26]) v6 (by rw [k₃.get .x10,h10])
         (by rw [k₃.get .x11,h11]) (by rw [k₃.get .x12,h12]) (by rw [k₃.get .x15,h15])
         (by rw [k₃.wr]; exact hw) (by rw [m₃]; exact hst)) fun u ⟨ku,hu10,hu11,hu9,hcu,hfu⟩ => ?_)
     refine ⟨(k₃.trans ku).mono (by decide), ?_, ?_, ?_, ?_, ?_⟩
     · rw [← m₃]; exact hfu
-    · rw [hstep,show i+1-i=1 by omega,hu9,k₃.get .x9]
+    · rw [hstep,show i+1-i=1 by omega_using [],hu9,k₃.get .x9]
     · rw [hstep]; exact hu10
     · rw [hstep]; exact hu11
     · rw [hstep]; rw [k₃.get .x9,h9] at hcu; exact hcu

@@ -23,7 +23,7 @@ open VG.Spec.MlDsa
 
 theorem mem_hintParams {ω k : Nat} (h : (ω, k) ∈ hintParams) : 4 ≤ k ∧ k ≤ 8 ∧ ω ≤ 80 := by
   simp only [hintParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega
+  omega_using [h]
 
 /-- Coefficient `j` of polynomial `i` of the hint at `p`. -/
 theorem hintAt_get {m : Mem} {p : Addr} {k i j : Nat} (hi : i < k) (hj : j < n) :
@@ -64,13 +64,13 @@ theorem byte_of_zero_words {m : Mem} {p : Addr} {N : Nat} (hz : ∀ t < N, coeff
   have ea : a = coeffAddr p ((a - p).toNat / 4) + BitVec.ofNat 64 ((a - p).toNat % 4) := by
     rw [coeffAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.ofNat_toNat,
       BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  rw [ea, Mem.readW_byte m (coeffAddr p _) ht, ← coeffAt_eq, hz _ (by omega)]
+  rw [ea, Mem.readW_byte m (coeffAddr p _) ht, ← coeffAt_eq, hz _ (by omega_using [ha])]
   simp
 
 /-- `a - b` in 64 bits, for `a, b < 2⁶³`: its sign bit says whether `a < b`. -/
 theorem sub_lsr63 {a b : BitVec 64} (ha : a.toNat < 2 ^ 63) (hb : b.toNat < 2 ^ 63) :
     ((a - b) >>> 63).toNat = if a.toNat < b.toNat then 1 else 0 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
-  split <;> omega
+  split <;> omega_arith
 
 end VG.Proof.MlDsa.Pack

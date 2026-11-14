@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Fixed permutations in the FIPS numbering convention. Untrusted. -/
 
@@ -27,9 +28,9 @@ private theorem prefix_bit {n m : Nat} (positions : Vector Nat m) (x : BitVec n)
     by_cases hzero : j = 0
     · subst j
       simp [hn]
-    · have hj1 : j - 1 < m := by omega
-      rw [ih (by omega) (j - 1) hj1]
-      have hge : ¬j < 1 := by omega
+    · have hj1 : j - 1 < m := by omega_using [hj]
+      rw [ih (by omega_using [hk]) (j - 1) hj1]
+      have hge : ¬j < 1 := by omega_using [hzero]
       have hone : (1 : BitVec n).getLsbD j = false := by
         change (BitVec.ofNat n 1).getLsbD j = false
         rw [BitVec.getLsbD_ofNat]
@@ -41,11 +42,11 @@ private theorem prefix_bit {n m : Nat} (positions : Vector Nat m) (x : BitVec n)
       simp only [hone, Bool.and_false, Bool.or_false, hge,
         decide_false, Bool.not_false, Bool.true_and]
       by_cases hlt : j < k + 1
-      · have hlt' : j - 1 < k := by omega
+      · have hlt' : j - 1 < k := by omega_using [hzero, hlt]
         simp only [hlt, hlt', ite_true]
-        have heq : k - 1 - (j - 1) = k + 1 - 1 - j := by omega
+        have heq : k - 1 - (j - 1) = k + 1 - 1 - j := by omega_using [hzero]
         rw [heq]
-      · have hlt' : ¬j - 1 < k := by omega
+      · have hlt' : ¬j - 1 < k := by omega_using [hlt]
         simp only [hlt, hlt', ite_false]
 
 theorem permute_bit {n m : Nat} (positions : Vector Nat m) (x : BitVec n)

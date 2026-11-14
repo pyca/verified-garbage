@@ -33,14 +33,14 @@ theorem preparation_ctx {a b : Nat} (ha : a < 8)
     unfold productBase
     rw [he]
     unfold slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have h8 : s.gpr .x8 = off L.B (productBase (blocks L)) := by
     simpa only [productBase, he] using h.ptr
   have h12 : s.gpr .x12 = BitVec.ofNat 64 (8 * blocks L) := by rw [he]; exact h.count
   unfold preparation
   refine WP.seq (WP.mono (WideLoops.zero_ok hg.scr h8 h.zero h12 hP hk hk')
     fun u ⟨hu0, huo, ku⟩ => ?_)
-  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega
+  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega_using []
   have hframe := Square.scratch_arrays (s := s) (t := u) (B := L.B) (w := 8 * blocks L)
     (by simpa only [productBase, hlen] using huo)
   have hh : Hdr u.mem L.B (8 * blocks L) mi := hframe.hdr (he.symm ▸ hg.hdr)
@@ -72,16 +72,16 @@ theorem square_preparation_ctx {a : Nat} (ha : a < 8)
     unfold productBase
     rw [he]
     unfold slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have h8 : s.gpr .x8 = off L.B (productBase (blocks L)) := by
     simpa only [productBase, he] using h.ptr
   have h12 : s.gpr .x12 = BitVec.ofNat 64 (8 * blocks L) := by rw [he]; exact h.count
   unfold squarePreparation
-  refine WP.seq (WP.mono (WindowSparse.padding_ok (e := productBase (blocks L)) hg.scr h8 h12 h.zero (by omega) hk')
+  refine WP.seq (WP.mono (WindowSparse.padding_ok (e := productBase (blocks L)) hg.scr h8 h12 h.zero (by omega_using [hP]) hk')
     fun u ⟨hu0, huo, ku⟩ => ?_)
-  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega
+  have hlen : 2 * (8 * (blocks L)) = 16 * (blocks L) := by omega_using []
   have hframe := Square.scratch_arrays (s := s) (t := u) (B := L.B) (w := 8 * blocks L)
-    (by simpa only [productBase, hlen] using huo.mono (o' := productBase (blocks L)) (n' := 8*(16*blocks L+2)) (by omega) (by omega))
+    (by simpa only [productBase, hlen] using huo.mono (o' := productBase (blocks L)) (n' := 8*(16*blocks L+2)) (by omega_using []) (by omega_using []))
   have hh : Hdr u.mem L.B (8 * blocks L) mi := hframe.hdr (he.symm ▸ hg.hdr)
   refine WP.mono (start_ok (hg.scr.congr ku.wr)
     ((ku.gpr .x0 (by decide)).trans hg.x0) hh (he.symm ▸ hz) ha hk'

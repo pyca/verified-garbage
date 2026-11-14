@@ -25,7 +25,7 @@ theorem square_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
       Op base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a * F s.mem base a := by
   let f := limbs s.mem base a
   rw [Impl.Curve448.AArch64.sqr, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loadCached_ok hs (by have := ha; change a + 128 ≤ 3584 at this; omega) ha8)
+  refine WP.mono (loadCached_ok hs (by have := ha; change a + 128 ≤ 3584 at this; omega_using [this]) ha8)
     fun s₁ ⟨c₁, m₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have fc : ∀ i < 8, (s₁.gpr (cacheReg i)).toNat = f i := by intro i hi; rw [c₁ i hi]

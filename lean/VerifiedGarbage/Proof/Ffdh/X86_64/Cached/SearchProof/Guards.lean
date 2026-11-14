@@ -27,14 +27,14 @@ theorem budget_guard {p : KeyPublic} {original s : State} {used keys scalars : N
       KeyLive p original used keys scalars t ∧ eval .e t = some (decide (n = 0)) := by
   have scr := h.input.control_scr (t := s) h.wr
   have hl : InRegions (s.rd ++ s.wr) (p.control + BitVec.ofNat 64 (8 * j)) 8 :=
-    scr.ld (by omega)
+    scr.ld (by omega_using [hj])
   have hw : s.mem.readW (p.control + BitVec.ofNat 64 (8 * j)) 64 = BitVec.ofNat 64 n := by
     simpa only [Bignum.word, off] using h.header hv
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     eval .e t = some (decide (n = 0)) ∧ t.mem = s.mem) ?_ rfl)
     fun _ ⟨⟨he, hm⟩, k⟩ => ⟨h.keep k hm (by decide), he⟩
   xrun [State.ea, field, off, h.r12, BitVec.ofInt_natCast, hl, hw, eval, BitVec.and_self,
-    ofNat64_beq_zero (show n < 2 ^ 64 by omega)]
+    ofNat64_beq_zero (show n < 2 ^ 64 by omega_using [hn])]
 
 theorem keys_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) :
@@ -61,10 +61,10 @@ theorem room_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat
   have hv10 := h.header (j := 10) (v := BitVec.ofNat 64 (p.randLen - used)) (by simp [KeyPublic.headers])
   simp only [Bignum.word, off] at hv2 hv10
   have hr : p.randLen < 2 ^ 64 := by rw [← h.input.2]; exact BitVec.isLt _
-  have hk : p.len < 2 ^ 64 := by have := h.input.len_lt; omega
+  have hk : p.len < 2 ^ 64 := by have := h.input.len_lt; omega_using [this]
   have hb : (BitVec.ofNat 64 (p.randLen - used)).toNat < (BitVec.ofNat 64 p.len).toNat ↔
       p.randLen - used < p.len := by
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p.randLen - used < 2 ^ 64 by omega),
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show p.randLen - used < 2 ^ 64 by omega_using [hr]),
       Nat.mod_eq_of_lt hk]
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     eval .b t = some (decide (p.randLen - used < p.len)) ∧ t.mem = s.mem) ?_ rfl)

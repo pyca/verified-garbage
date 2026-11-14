@@ -73,7 +73,7 @@ theorem cWhole1_ok {j : Nat} {m₀ : Mem} {s : State} (h : CrMid Ctx St W SP K R
       (icb := icb) (D := D) (n := n) (P := P) j ((n - j) / 16) m₀) := by
   have he := h.at_.env
   obtain ⟨s₁, run, bx, di, zf, g, m, rd, wr⟩ := splitWhole_ok L he h.dO h.nO (r := n - j)
-    (by have := h.at_.nlt; omega)
+    (by have := h.at_.nlt; omega_using [this])
   refine WP.of_runBlock ⟨s₁, run, ?_⟩
   have fr : Frame [pslotR W] s.mem s₁.mem := by
     rw [m]; exact pslot_write (pslot_write (Frame.refl _ _) (by decide) (by decide) _) (by decide) (by decide) _
@@ -93,7 +93,7 @@ theorem cArgs_ok (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb �
   have hd := h.at_.data
   obtain ⟨s', run, ax, cx, dx, bp, g, m, rd, wr⟩ := ctrArgs_ok L he h.at_.rounds
   refine WP.of_runBlock ⟨s', run, ?_, m, rd, wr⟩
-  have hjn : j < n := by omega
+  have hjn : j < n := by omega_using [hnb, hj]
   have eP := hd.ok.ptr hjn
   have eC := L.aS (o := 48) (by decide)
   obtain ⟨dr, dst, dw, dk⟩ := hd.ok.part (j := j) (k := 16 * nb) hj
@@ -103,7 +103,7 @@ theorem cArgs_ok (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hj : j + 16 * nb �
     by rw [g _ (by decide) (by decide) (by decide) (by decide), he.esi],
     by rw [g _ (by decide) (by decide) (by decide) (by decide), he.esp], by rw [rd, wr]; exact he.ctxR,
     by rw [wr]; exact he.stW, by rw [wr]; exact he.wW, by rw [m]; exact he.ctx, by rw [m]; exact h.at_.rounds,
-    by rw [L.nS (by decide)]; have := L.fs; omega, by rw [hd.ok.ptrN hjn]; have := hd.ok.fit; omega,
+    by rw [L.nS (by decide)]; have := L.fs; omega_using [this], by rw [hd.ok.ptrN hjn]; have := hd.ok.fit; omega_using [hj, this],
     by rw [wr, eC]; exact he.stC (by decide), by rw [wr, eP]; exact dwr,
     by rw [eC, eP]; exact (dst.sub_right (Lay.stSub (by decide))).symm,
     by rw [eC]; exact L.cs.sub_right (Lay.stSub (by decide)), by rw [eP]; exact dctx,
@@ -140,7 +140,7 @@ theorem ctrFr_disj (hK : K = 32) {s : State} (hd : DataW Ctx St W SP K s D n) {j
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact (hd.ok.st.sub_left hs).sub_right (Lay.stSub (by decide))
-  · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  · exact Offset.disjoint _ (by omega_using [hsep]) (by omega_using [hal, hn]) (by omega_using [hj, hn])
   · exact (hd.ok.w.sub_left hs).sub_right (Lay.wSub (by decide))
   · exact (hd.ok.stk.sub_right hs).symm
 
@@ -153,10 +153,10 @@ theorem ctrFr_slot (hK : K = 32) {s : State} (hd : DataW Ctx St W SP K s D n) {j
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact ((hd.ok.w.sub_left (Offset.sub_base _ hj)).sub_right (Lay.wSub (by omega))).symm
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.stk_w (by omega)).symm
+  · exact (L.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [h₂]⟩)).symm
+  · exact ((hd.ok.w.sub_left (Offset.sub_base _ hj)).sub_right (Lay.wSub (by omega_using [h₂]))).symm
+  · exact Lay.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+  · exact (L.stk_w (by omega_using [h₂])).symm
 
 theorem ctrFr_crFrame (hK : K = 32) {j nb : Nat} (hj : j + 16 * nb ≤ n) {m m' : Mem}
     (h : Frame [(⟨w64 St + BitVec.ofNat 64 48, 16⟩ : Region), ⟨w64 D + BitVec.ofNat 64 j, 16 * nb⟩,
@@ -178,8 +178,8 @@ theorem cWhole3 (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hnbd : nb = (n - j)
     CrMid Ctx St W SP K R icb D n P m₀ (j + 16 * nb) s' := by
   have ha := h.at_
   have hd := ha.data
-  have hj : j + 16 * nb ≤ n := by omega
-  have hjn : j < n := by omega
+  have hj : j + 16 * nb ≤ n := by omega_using [hnb, hnbd]
+  have hjn : j < n := by omega_using [hnb, hnbd]
   have eP := hd.ok.ptr hjn
   have eC := L.aS (o := 48) (by decide)
   have gf := g.frame
@@ -192,29 +192,29 @@ theorem cWhole3 (hK : K = 32) {j nb : Nat} (hnb : nb ≠ 0) (hnbd : nb = (n - j)
   have crs := ctrFr_crFrame L (D := D) (n := n) hK hj gf
   have hcm : ciphOf s₁.mem Ctx R = ciphOf m₀ Ctx R := ciph_crFrame L hd ha.frame ha.rounds.2
   rw [hcm] at go
-  have hw : (P + j) % 16 = 0 := ha.whole.resolve_left (by omega)
+  have hw : (P + j) % 16 = 0 := ha.whole.resolve_left (by omega_using [hjn])
   have hrest16 : bytesAt s₁.mem (w64 D + BitVec.ofNat 64 j) (16 * nb) =
       bytesAt m₀ (w64 D + BitVec.ofNat 64 j) (16 * nb) := by
     have e := congrArg (List.take (16 * nb)) ha.rest
-    rwa [bytesAt_take _ _ (by omega), bytesAt_take _ _ (by omega)] at e
+    rwa [bytesAt_take _ _ (by omega_using [hnbd]), bytesAt_take _ _ (by omega_using [hnbd])] at e
   refine ⟨⟨g.env, hj, ha.nlt, hd.of_eq (g.rd.trans rd₂) (g.wr.trans wr₂), g.rounds, fun hc₀ => ?_, fun hc₀ => ?_,
-    ?_, .inr (by omega), ha.frame.trans crs⟩, ?_, ?_⟩
+    ?_, .inr (by omega_using [hw]), ha.frame.trans crs⟩, ?_, ?_⟩
   · have := (Proof.Gcm.ctr_whole (ha.ctr hc₀) hw go gc).2
     rwa [Nat.add_assoc] at this
   · have w := (Proof.Gcm.ctr_whole (ha.ctr hc₀) hw go gc).1
     rw [hrest16] at w
     refine done_append ?_ w
-    have := ctrFr_disj L hK hd (a := 0) (l := j) (j := j) (nb := nb) (by omega) (.inl (by omega)) hj
+    have := ctrFr_disj L hK hd (a := 0) (l := j) (j := j) (nb := nb) (by omega_using [hj]) (.inl (by omega_using [])) hj
     simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this
-    rw [bytesAt_frame gf this (by omega)]; exact ha.done hc₀
-  · rw [bytesAt_frame gf (ctrFr_disj L hK hd (by omega) (.inr (Nat.le_refl _)) hj) (by omega)]
+    rw [bytesAt_frame gf this (by omega_using [hnb, hnbd, hn])]; exact ha.done hc₀
+  · rw [bytesAt_frame gf (ctrFr_disj L hK hd (by omega_using [hnb, hnbd]) (.inr (Nat.le_refl _)) hj) (by omega_using [hnbd])]
     have e := congrArg (List.drop (16 * nb)) ha.rest
-    rw [bytesAt_drop _ _ (by omega), bytesAt_drop _ _ (by omega), add_ofNat_assoc,
-      show n - j - 16 * nb = n - (j + 16 * nb) by omega] at e
+    rw [bytesAt_drop _ _ (by omega_using [hnbd]), bytesAt_drop _ _ (by omega_using [hnbd]), add_ofNat_assoc,
+      show n - j - 16 * nb = n - (j + 16 * nb) by omega_using []] at e
     exact e
   · rw [slotv_eq, slot_frame gf (ctrFr_slot L hK hd (by decide) (by decide) hj)]; exact h.dO
   · rw [slotv_eq, slot_frame gf (ctrFr_slot L hK hd (by decide) (by decide) hj)]
-    have := h.nO; rw [slotv_eq] at this; rw [this]; congr 1; omega
+    have := h.nO; rw [slotv_eq] at this; rw [this]; congr 1; omega_using [hnbd]
 
 theorem cryptWhole_pc (hK : K = 32) {j : Nat} :
     Pc (CrMid Ctx St W SP K R icb D n P · j) (cryptWhole vg.callees)
@@ -229,10 +229,10 @@ theorem cryptWhole_pc (hK : K = 32) {j : Nat} :
   · have h0 : nb = 0 := by simpa using ht
     subst h0
     refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s h => ?_
-    rw [show j + 16 * 0 = j by omega]
-    refine ⟨h.at_, by rw [h.dO, show j + 16 * 0 = j by omega], by rw [h.nO]; congr 1; omega⟩
+    rw [show j + 16 * 0 = j by omega_using []]
+    refine ⟨h.at_, by rw [h.dO, show j + 16 * 0 = j by omega_using []], by rw [h.nO]; congr 1; omega_using [hnb]⟩
   · have h0 : nb ≠ 0 := by simpa using hf
-    have hjn : j + 16 * nb ≤ n := by omega
+    have hjn : j + 16 * nb ≤ n := by omega_using [hnb, h0]
     refine Pc.seq (cArgs_pc L hK h0 hjn) ?_
     exact Pc.mono (Pc.of (I := CtrReady Ctx St W SP R (St + BitVec.ofNat 32 48) (D + BitVec.ofNat 32 j) nb)
         (fun _ h => ctrW_ok L hK h) (ctrW_ct L hK) _ fun _ _ ⟨_, _, g, _⟩ => g) (fun _ _ h => h)

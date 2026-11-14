@@ -17,10 +17,10 @@ open VG.Proof.Mont.X86
 
 theorem modulus_low {n m : Nat} {base : Addr} {mem : Mem} (hn : 0 < n)
     (hv : wordsVal mem base (slot n 0) n = m) : m % 2 ^ 32 = w32 mem base (slot n 0) := by
-  obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega⟩
+  obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega_using [hn]⟩
   rw [wordsVal_eq_val32, hk, val32] at hv
   have hl : w32 mem base (slot n 0) < 2 ^ 32 := (mem.readW (off base (slot n 0)) 32).isLt
-  omega
+  omega_using [hv, hl]
 
 def setupRanges (n : Nat) : List (Nat × Nat) :=
   [(0, 4), (slot n 3, 8 * n), (slot n 4, 8 * n), (slot n 1, 8 * n), (slot n 2, 16 * n + 4)]
@@ -49,24 +49,24 @@ theorem contextStart_ok {n size m : Nat} {base : Addr} {s : State}
   have s23 := slot_le (n := n) (i := 2) (j := 3) (by decide)
   have s34 := slot_le (n := n) (i := 3) (j := 4) (by decide)
   have low := modulus_low hn hv
-  have lowodd : w32 s.mem base (slot n 0) % 2 = 1 := by omega
+  have lowodd : w32 s.mem base (slot n 0) % 2 = 1 := by omega_using [hodd, low]
   unfold contextStart
   refine WP.seq (WP.mono (setupInverse_ok hs
-    (by unfold stride at b0; omega) (by unfold stride at b0; omega) lowodd) fun u ⟨inv, O, K⟩ => ?_)
+    (by unfold stride at b0; omega_using [hz, b0]) (by unfold stride at b0; omega_using [hz, b0]) lowodd) fun u ⟨inv, O, K⟩ => ?_)
   have cu : Context n m base size u := by
     refine ⟨hs.of_keeps K (by decide), hz, ⟨hn, ?_, ?_, ?_, ?_⟩, hm1, ?_⟩
-    · change slot n 0 + 8 * n ≤ size; unfold stride at b0; omega
-    · change slot n 1 + 8 * n ≤ size; unfold stride at b1; omega
+    · change slot n 0 + 8 * n ≤ size; unfold stride at b0; omega_using [hz, b0]
+    · change slot n 1 + 8 * n ≤ size; unfold stride at b1; omega_using [hz, b1]
     · change slot n 0 + 8 * n ≤ slot n 1 ∨ slot n 1 + 8 * n ≤ slot n 0
-      unfold stride at s01; omega
+      unfold stride at s01; omega_using [s01]
     · change wordsVal u.mem base (slot n 0) n = m
-      rw [wordsVal_eq_val32, O.val32 (by omega) (by unfold stride at b0; omega), ← wordsVal_eq_val32, hv]
+      rw [wordsVal_eq_val32, O.val32 (by omega_using [hd0]) (by unfold stride at b0; omega_using [hn, hz, nw, b0, b1, b3, b4, hd0, hd1, hd2, hd3, hd4, s01, s03, s04, s13, s23, s34]), ← wordsVal_eq_val32, hv]
     · rw [Nat.add_mod, Nat.mul_mod, low] at ⊢
       rw [Nat.add_mod, Nat.mul_mod] at inv
       simpa only [Nat.mod_eq_of_lt (s.mem.readW (off base (slot n 0)) 32).isLt] using inv
-  refine WP.mono (one_ok cu.scr hn (by unfold stride at b3; omega)) fun v ⟨Ov, Vv, Kv⟩ => ?_
+  refine WP.mono (one_ok cu.scr hn (by unfold stride at b3; omega_using [hz, b3])) fun v ⟨Ov, Vv, Kv⟩ => ?_
   have cv := cu.outside_keep Kv (by decide) (by decide) Ov
-    (.inl (by unfold stride at s03; omega)) (by omega)
+    (.inl (by unfold stride at s03; omega_using [s03])) (by omega_using [hd3])
   refine ⟨cv, Vv, ?_, (K.mono (by decide)).trans (Kv.mono (by decide))⟩
   exact (Outs.of_outside O (by simp [setupRanges])).trans
     (Outs.of_outside Ov (by simp [setupRanges]))
@@ -96,7 +96,7 @@ theorem Context.power_frame {n size m : Nat} {base : Addr} {s t : State}
       apply O.val32
       · intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> simp only [contextMod] <;> omega
+        rcases hr with rfl | rfl | rfl <;> simp only [contextMod] <;> omega_arith
       · decide
     have vv' : w32 t.mem base 0 = w32 s.mem base 0 := by
       simpa only [val32, Nat.mul_zero, Nat.add_zero] using vv
@@ -107,12 +107,12 @@ theorem Context.power_frame {n size m : Nat} {base : Addr} {s t : State}
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp only [contextMod, accLen, words] <;>
-        unfold stride at s13 s23 s34 <;> omega
-    · unfold stride at b3; omega
+        unfold stride at s13 s23 s34 <;> omega_arith
+    · unfold stride at b3; omega_using [hz, nw, b3]
   · exact O.mono (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp [setupRanges, contextMod, accLen, words] <;> omega)
+      rcases hr with rfl | rfl | rfl <;> simp [setupRanges, contextMod, accLen, words] <;> omega_using [])
 
 theorem contextSeed_ok {n size m bits : Nat} {base : Addr} {s : State}
     (hs : Scr s base size) (hn : 0 < n) (hbits : 0 < bits) (hn32 : bits < 2 ^ 32)
@@ -142,7 +142,7 @@ theorem contextSeed_ok {n size m bits : Nat} {base : Addr} {s : State}
   refine WP.seq (WP.mono (contextStart_ok hs hn hz hv hm1 hodd) fun v ⟨cv, Vv, Ov, Kv⟩ => ?_)
   refine WP.mono (powerTwo_ok cv.scr cv.modulus
     (context_opLay hz (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
-    (by change slot n 4 + 8 * n ≤ slot n 0 ∨ slot n 0 + 8 * n ≤ slot n 4; unfold stride at s04; omega)
+    (by change slot n 4 + 8 * n ≤ slot n 0 ∨ slot n 0 + 8 * n ≤ slot n 4; unfold stride at s04; omega_using [s04])
     hm1 hbits hn32) fun t ⟨Vt, _, Mt, Ot, Kt⟩ => ?_
   obtain ⟨Ct, one, frame⟩ := cv.power_frame Mt Ot Kt
   exact ⟨Ct, one.trans Vv, Vt, Ov.trans frame, Kv.trans Kt⟩
@@ -155,6 +155,6 @@ theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State}
       Context n m base size t ∧ wordsVal t.mem base (slot n 3) n = 1 ∧
       wordsVal t.mem base (slot n 4) n = 2 ^ (128 * n) % m ∧
       Outs base (setupRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
-  exact contextSeed_ok hs hn (by omega) hn32 hz hv hm1 hodd
+  exact contextSeed_ok hs hn (by omega_using [hn]) hn32 hz hv hm1 hodd
 
 end VG.Proof.Mont.X86.Dynamic

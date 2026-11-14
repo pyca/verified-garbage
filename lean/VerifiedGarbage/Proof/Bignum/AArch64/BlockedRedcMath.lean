@@ -24,7 +24,7 @@ theorem value_congr {r n : Nat} {f g : Nat → Nat} (h : ∀ i < n, f i = g i) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [value, value, h n (by omega), ih (fun i hi => h i (by omega))]
+    rw [value, value, h n (by omega_using []), ih (fun i hi => h i (by omega_using [hi]))]
 
 
 open VG.Proof.Ed25519.Word64
@@ -64,21 +64,21 @@ all eight rows, without assuming that the Montgomery inverse is valid. -/
 theorem tile_carry_zero {r a x q n lo hi c : Nat}
     (hr : 1 < r) (ha : a < r) (hx : x < r) (hq : q < r) (hn : n < r)
     (hv : lo + r * (hi + r * c) = a + x + q * n) : c = 0 := by
-  have hq' : q ≤ r - 1 := by omega
-  have hn' : n ≤ r - 1 := by omega
+  have hq' : q ≤ r - 1 := by omega_using [hq]
+  have hn' : n ≤ r - 1 := by omega_using [hn]
   have hp := Nat.mul_le_mul hq' hn'
   have he : r * r = (r - 1) * (r - 1) + 2 * (r - 1) + 1 := by
-    have h : r = (r - 1) + 1 := by omega
+    have h : r = (r - 1) + 1 := by omega_using [hr]
     calc
       r * r = ((r - 1) + 1) * ((r - 1) + 1) := congrArg (fun v => v * v) h
       _ = (r - 1) * (r - 1) + 2 * (r - 1) + 1 := by grind
-  have ht : a + x + q * n < r * r := by omega
+  have ht : a + x + q * n < r * r := by omega_using [ha, hx, hp, he]
   by_contra hc
   have hc' : 1 ≤ c := by omega
   have hm := Nat.mul_le_mul_left (r * r) hc'
   simp only [Nat.mul_one] at hm
   rw [Nat.mul_add, ← Nat.mul_assoc] at hv
-  omega
+  omega_using [hr, ha, hx, hq, hn, hv, hq', hn', hp, he, ht, hc', hm]
 
 
 /-- Combine the two carry chains and the shift without losing either carry. -/
@@ -94,10 +94,10 @@ theorem chained_row_value {b r a q n low high aLow cLow shifted aHigh cHigh cin 
 theorem value_lt (r : Nat) (f : Nat → Nat) (k : Nat)
     (hf : ∀ i < k, f i < r) : value r f k < r ^ k := by
   induction k with
-  | zero => simp only [value, Nat.pow_zero]; omega
+  | zero => simp only [value, Nat.pow_zero]; omega_using []
   | succ k ih =>
-    have hp := ih (fun i hi => hf i (by omega))
-    have hd : f k + 1 ≤ r := by have := hf k (by omega); omega
+    have hp := ih (fun i hi => hf i (by omega_using [hi]))
+    have hd : f k + 1 ≤ r := by have := hf k (by omega_using []); omega_using [this]
     calc
       value r f (k + 1) = value r f k + f k * r ^ k := rfl
       _ < r ^ k + f k * r ^ k := Nat.add_lt_add_right hp _
@@ -110,23 +110,23 @@ register block even if the supplied Montgomery inverse is malformed. -/
 theorem cancel_carry_zero {b r a q n lo hi c : Nat}
     (hb : 0 < b) (ha : a < r) (hq : q < b) (hn : n < r)
     (hv : lo + b * (hi + r * c) = a + q * n) : c = 0 := by
-  have hq' : q + 1 ≤ b := by omega
-  have hn' : n ≤ r - 1 := by omega
+  have hq' : q + 1 ≤ b := by omega_using [hq]
+  have hn' : n ≤ r - 1 := by omega_using [hn]
   have hp := Nat.mul_le_mul_left q hn'
   have hprod := Nat.mul_le_mul_right (r - 1) hq'
   have he : b * r = b * (r - 1) + b := by
-    have hr : r = (r - 1) + 1 := by omega
+    have hr : r = (r - 1) + 1 := by omega_using [ha]
     calc
       b * r = b * ((r - 1) + 1) := congrArg (b * ·) hr
       _ = b * (r - 1) + b := by rw [Nat.mul_add, Nat.mul_one]
   have ht : a + q * n < b * r := by
     rw [Nat.add_mul, Nat.one_mul] at hprod
-    omega
+    omega_using [hb, ha, hp, hprod, he]
   by_contra hc
   have hm := Nat.mul_le_mul_left (b * r) (show 1 ≤ c by omega)
   simp only [Nat.mul_one] at hm
   rw [Nat.mul_add, ← Nat.mul_assoc] at hv
-  omega
+  omega_using [hv, ht, hm]
 
 /-- Extend the accumulated block equation by one emitted digit. -/
 theorem rows_step {b p out state next initial qsum q n lo : Nat}
@@ -180,11 +180,11 @@ theorem row_extend {r w lo hi q n p p' tail : Nat}
 
 theorem append_digit_bound {r p q d : Nat} (hq : q < p) (hd : d < r) :
     q + p * d < p * r := by
-  have hr : r = (r - 1) + 1 := by omega
-  have hh := Nat.mul_le_mul_left p (show d ≤ r - 1 by omega)
+  have hr : r = (r - 1) + 1 := by omega_using [hd]
+  have hh := Nat.mul_le_mul_left p (show d ≤ r - 1 by omega_using [hd])
   have hp : p * r = p * (r - 1) + p :=
     (congrArg (p * ·) hr).trans (by rw [Nat.mul_add, Nat.mul_one])
-  omega
+  omega_using [hq, hh, hp]
 
 theorem outer_initial {v raw w c n : Nat} (hv : v = raw) (hc : c = 0) :
     1 * (v + w * c) = raw + 0 * n := by

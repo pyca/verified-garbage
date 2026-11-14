@@ -50,7 +50,7 @@ theorem runSat_pre {len size : Nat} (hl : len < 0x10000) (hs : size < 0x10000) :
   refine ⟨show 32 ≤ (0x400000 : BitVec 64).toNat by decide, rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     first
     | (intro a h₁ h₂; simp only [Region.Contains, runSat] at h₁ h₂; bv_omega)
-    | (simp only [runSat, BitVec.reduceToNat]; omega)
+    | (simp only [runSat, BitVec.reduceToNat]; omega_arith)
 
 /-- Memory equal to `m` but in `[lo, hi)`. -/
 def patch (m : Mem) (lo hi : Nat) (f : Addr → Byte) : Mem := fun a =>
@@ -61,20 +61,20 @@ theorem patch_bytes {m : Mem} {lo hi : Nat} {f : Addr → Byte} {a : Addr} {len 
   apply Proof.MlKem.bytesAt_congr
   intro i hi'
   have he : (a + BitVec.ofNat 64 i).toNat = a.toNat + i := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hlo, hi'] : i < 2 ^ 64)]
+    exact Nat.mod_eq_of_lt (by omega_using [h, hlo, hi'])
   simp only [patch, he]
-  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 (by omega)
+  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 (by omega_using [h, hi'])
 
 theorem patch_readW {m : Mem} {lo hi : Nat} {f : Addr → Byte} {a : Addr} (h₁ : lo ≤ a.toNat) (h₂ : a.toNat + 8 ≤ hi)
     (h₃ : a.toNat + 8 < 2 ^ 64) : (patch m lo hi f).readW a 64 = Mem.readW f a 64 :=
   Mem.readW_congr fun i hi' => by
     have hi8 : i < 8 := hi'
     have he : (a + BitVec.ofNat 64 i).toNat = a.toNat + i := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
-      exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi'] : i < 2 ^ 64)]
+      exact Nat.mod_eq_of_lt (by omega_using [h₃, hi'])
     simp only [patch, he]
-    have hc : lo ≤ a.toNat + i ∧ a.toNat + i < hi := by omega
+    have hc : lo ≤ a.toNat + i ∧ a.toNat + i < hi := by omega_using [h₁, h₂, hi']
     simp only [hc, and_self, ↓reduceIte]
 
 theorem patch_readW' {m : Mem} {lo hi : Nat} {f : Addr → Byte} {a : Addr} (h : a.toNat + 8 ≤ lo ∨ hi ≤ a.toNat)
@@ -82,10 +82,10 @@ theorem patch_readW' {m : Mem} {lo hi : Nat} {f : Addr → Byte} {a : Addr} (h :
   Mem.readW_congr fun i hi' => by
     have hi8 : i < 8 := hi'
     have he : (a + BitVec.ofNat 64 i).toNat = a.toNat + i := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : i < 2 ^ 64)]
-      exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi'] : i < 2 ^ 64)]
+      exact Nat.mod_eq_of_lt (by omega_using [h₃, hi'])
     simp only [patch, he]
-    exact ite_eq_right_iff.mpr fun h' => absurd h' (by omega)
+    exact ite_eq_right_iff.mpr fun h' => absurd h' (by omega_using [h, hi'])
 
 /-! ## Signing -/
 
@@ -109,9 +109,9 @@ theorem signPrepared_sat {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ pa
   have hsz : p.skLen < 0x10000 ∧ preparedSecretKeyBytes p < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
-  obtain ⟨_, s', _, _, _, hk⟩ := prepareSecret_correct C hp _ (runSat_pre hsz.1 (by omega))
+  obtain ⟨_, s', _, _, _, hk⟩ := prepareSecret_correct C hp _ (runSat_pre hsz.1 (by omega_using [hsz]))
   have hk' : PreparedSecretKey p (signPSat p s'.mem).mem 0x1000 :=
-    prepared_congr (patch_bytes (by simp only [BitVec.reduceToNat]; omega) (by decide)) hk
+    prepared_congr (patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hsz]) (by decide)) hk
   refine ⟨signPSat p s'.mem, ?_⟩
   have a0 : stackArg (signPSat p s'.mem) 0 = 0xB000 := by
     rw [stackArg, show stackArgAddr (signPSat p s'.mem) 0 = 0x80008 from rfl]
@@ -150,33 +150,33 @@ def verifyPSat (p : Params) (m : Mem) : State where
 
 theorem verifyPSat_tr {p : Params} {m : Mem} (hp : preparedPublicKeyBytes p < 0x7000) :
     bytesAt (verifyPSat p m).mem 0x8000 64 = pkTr (bytesAt (verifyPSat p m).mem 0x1000 p.pkLen) := by
-  have hpk : p.pkLen ≤ preparedPublicKeyBytes p := by unfold preparedPublicKeyBytes; omega
+  have hpk : p.pkLen ≤ preparedPublicKeyBytes p := by unfold preparedPublicKeyBytes; omega_using []
   have hk : bytesAt (verifyPSat p m).mem 0x1000 p.pkLen = bytesAt m 0x1000 p.pkLen := by
     rw [show (verifyPSat p m).mem = patch (patch m 0x80008 0x80018 stkMem) 0x8000 0x8040 (trBytes p m) from rfl,
-      patch_bytes (by simp only [BitVec.reduceToNat]; omega) (by decide),
-      patch_bytes (by simp only [BitVec.reduceToNat]; omega) (by decide)]
+      patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hp, hpk]) (by decide),
+      patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hp, hpk]) (by decide)]
   rw [hk]
   have hl : (pkTr (bytesAt m 0x1000 p.pkLen)).length = 64 := Proof.MlDsa.Verify.H_length _ _
   apply Proof.MlKem.bytesAt_eq hl
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [verifyPSat, patch, trBytes, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, and_self,
+    omega_using [hi]
+  simp only [verifyPSat, patch, trBytes, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], and_self,
     ↓reduceIte, Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 theorem verifyPrepared_sat {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) :
     ∃ s, (preparedVerifyMessageContract p X86_64.abi 112).pre s := by
   have hsz : p.pkLen < 0x10000 ∧ preparedPublicKeyBytes p < 0x7000 := by
     simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> decide
-  obtain ⟨_, s', _, _, _, hk⟩ := preparePublic_correct C hp _ (runSat_pre hsz.1 (by omega))
+  obtain ⟨_, s', _, _, _, hk⟩ := preparePublic_correct C hp _ (runSat_pre hsz.1 (by omega_using [hsz]))
   have hk' : PreparedPublicKey p (verifyPSat p s'.mem).mem 0x1000 :=
     preparedPk_congr (by
       rw [show (verifyPSat p s'.mem).mem =
-          patch (patch s'.mem 0x80008 0x80018 stkMem) 0x8000 0x8040 (trBytes p s'.mem) from rfl, patch_bytes (by simp only [BitVec.reduceToNat]; omega) (by decide),
-        patch_bytes (by simp only [BitVec.reduceToNat]; omega) (by decide)]) hk
+          patch (patch s'.mem 0x80008 0x80018 stkMem) 0x8000 0x8040 (trBytes p s'.mem) from rfl, patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hsz]) (by decide),
+        patch_bytes (by simp only [BitVec.reduceToNat]; omega_using [hsz]) (by decide)]) hk
   have htr := verifyPSat_tr (m := s'.mem) hsz.2
   refine ⟨verifyPSat p s'.mem, ?_⟩
   have a0 : stackArg (verifyPSat p s'.mem) 0 = 0x10000 := by

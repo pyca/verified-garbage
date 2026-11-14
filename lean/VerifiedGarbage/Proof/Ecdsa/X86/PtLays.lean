@@ -29,13 +29,13 @@ theorem sl_below_pt (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
   simp only [Impl.Weierstrass.Point.oAt, Impl.Weierstrass.Point.pAt, Impl.Weierstrass.Point.qAt,
     Impl.Weierstrass.Point.aAt, Impl.Weierstrass.Point.b3At, Impl.Weierstrass.Point.ownAt,
     Impl.Weierstrass.Point.elemBytes, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]
-  omega
+  omega_using [h6, this]
 
 theorem oAt_le (c : Cfg) : Impl.Weierstrass.Point.oAt c.n ≤ 4096 := by
   simp only [Impl.Weierstrass.Point.oAt, Impl.Weierstrass.Point.pAt, Impl.Weierstrass.Point.qAt,
     Impl.Weierstrass.Point.aAt, Impl.Weierstrass.Point.b3At, Impl.Weierstrass.Point.ownAt,
     Impl.Weierstrass.Point.elemBytes, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]
-  omega
+  omega_using []
 
 /-- The ladder's slots are below the point functions'. -/
 theorem ladPt (h : 3 ≤ c.n ∧ c.n ≤ 6) : Point.LadPt c.ladderCfg where
@@ -62,7 +62,7 @@ theorem tbl_apart_ptW (j t : Nat) :
   intro w hw
   unfold Point.ptW at hw
   split at hw
-  · rw [List.mem_singleton.mp hw, bitsAt_eq]; have := oAt_le c; dsimp only; omega
+  · rw [List.mem_singleton.mp hw, bitsAt_eq]; have := oAt_le c; dsimp only; omega_using []
   · simp at hw
 
 theorem fixedOk_ptW : FixedOk c (Point.ptW c.n) := by

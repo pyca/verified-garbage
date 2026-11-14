@@ -74,7 +74,7 @@ theorem projectiveChecks_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : S
       (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, t.gpr r = g r) ∧
       (t.gpr .rax).setWidth 32 = if A ∧ sv c base s RZ ≠ 0 ∧
         (sv c base s W = 0 ∨ (sv c base s K < sv c base s MN ∧ sv c base s XN = 0)) then 1 else 0 := by
-  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c hc.n10 (i := FLAG) (by decide); have := hc.n0; omega
+  have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c hc.n10 (i := FLAG) (by decide); have := hc.n0; omega_arith
   rw [Impl.Ecdsa.Verify.X86_64.Cfg.projectiveChecks]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -88,10 +88,10 @@ theorem projectiveChecks_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : S
     fun s₃ ⟨f₃,k₃,O₃⟩ => ?_
   have U : Unch base [(c.sl FLAG,8)] s.mem s₃.mem := by
     rw [← k₁.2.1]; exact (O₂.unch.trans O₃.unch).mono (by simp)
-  have saved₃ := Saved.unch saved (fun w hw => by rw [List.mem_singleton.mp hw]; simp (disch := sl_ne) only [sl_eq]; omega) U
+  have saved₃ := Saved.unch saved (fun w hw => by rw [List.mem_singleton.mp hw]; simp (disch := sl_ne) only [sl_eq]; omega_using []) U
   have hz : sv c base s₂ RZ = sv c base s RZ := by
-    rw [sv, O₂.wordsVal (by have := sl_apart c (i := RZ) (j := FLAG) (by decide); have := hc.n0; omega)
-      (by have := sl_le c hc.n10 (i := RZ) (by decide); have := hs.nowrap; omega), k₁.2.1]
+    rw [sv, O₂.wordsVal (by have := sl_apart c (i := RZ) (j := FLAG) (by decide); have := hc.n0; omega_arith)
+      (by have := sl_le c hc.n10 (i := RZ) (by decide); have := hs.nowrap; omega_arith), k₁.2.1]
   have f : word s₃.mem base (c.sl FLAG) = mask (A ∧ sv c base s RZ ≠ 0 ∧
       (sv c base s W = 0 ∨ (sv c base s K < sv c base s MN ∧ sv c base s XN = 0))) := by
     change wordsVal s₂.mem base (c.sl RZ) c.n = sv c base s RZ at hz

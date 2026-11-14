@@ -37,11 +37,11 @@ theorem Represents.update {m m' : Mem} {base : Addr} {n : Nat} {blocks : Array B
 
 theorem matrixCell_sub (base : Addr) (n k : Nat) (hk : k < n) :
     Region.Sub ⟨matrixCell base k, 1024⟩ ⟨base, n * 1024⟩ :=
-  Offset.sub_base base (by omega)
+  Offset.sub_base base (by omega_using [hk])
 
 theorem matrixCell_disjoint (base : Addr) (n i j : Nat) (bound : n * 1024 < 2 ^ 64)
     (hi : i < n) (hj : j < n) (different : i ≠ j) :
     (⟨matrixCell base i, 1024⟩ : Region).Disjoint ⟨matrixCell base j, 1024⟩ :=
-  Offset.disjoint base (by omega) (by omega) (by omega)
+  Offset.disjoint base (by omega_using [different]) (by omega_using [bound, hi]) (by omega_using [bound, hj])
 
 end VG.Proof.Argon2

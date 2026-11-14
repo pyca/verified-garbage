@@ -51,10 +51,10 @@ theorem mulBitsF_ok {r : Reg} (hr' : r ≠ .r9) {S : Nat} :
     rw [mulBitsF]
     by_cases hj2 : j < 2
     · simp only [hj2, ↓reduceIte]
-      exact WP.block_nil ⟨by rw [hr, show j = 1 by omega, Nat.one_mul], rfl, Keep.refl _ _⟩
+      exact WP.block_nil ⟨by rw [hr, show j = 1 by omega_using [hj, hj2], Nat.one_mul], rfl, Keep.refl _ _⟩
     simp only [hj2, ↓reduceIte]
     rw [WP.block_append_iff, WP.block_append_iff]
-    refine WP.mono (mulBitsF_ok hr' f (j / 2) (by omega) (by omega) t hr h9) fun t₁ ⟨h₁, m₁, k₁⟩ => ?_
+    refine WP.mono (mulBitsF_ok hr' f (j / 2) (by omega_using [hj2]) (by omega_using [hf]) t hr h9) fun t₁ ⟨h₁, m₁, k₁⟩ => ?_
     have h9₁ : t₁.gpr .r9 = BitVec.ofNat 64 S := (k₁.gpr (by simp [hr'.symm])).trans h9
     have e₂ : WP isa (.block [.alu .add r (.reg r)]) t₁ fun (t₂ : State) =>
         t₂.gpr r = BitVec.ofNat 64 (2 * (j / 2) * S) ∧ t₂.mem = t₁.mem ∧ Keep [r] t₁ t₂ := by
@@ -82,7 +82,7 @@ theorem mulBitsF_ok {r : Reg} (hr' : r ≠ .r9) {S : Nat} :
       rw [h₂]
       congr 1
       have := Nat.div_add_mod j 2
-      rw [show j % 2 = 0 by omega, Nat.add_zero] at this
+      rw [show j % 2 = 0 by omega_using [hb], Nat.add_zero] at this
       rw [this]
 
 /-- `mulBits r j`: `r := j · S`, from `r = S` and `r9 = S`. -/
@@ -154,7 +154,7 @@ theorem base_ok {s : State} {B : Addr} {w : Nat} (j : Nat) {r : Reg} (hr' : r �
     simp only [off, slot]
     rw [BitVec.add_comm (BitVec.ofNat 64 (j * (8 * (w + 2)))) B, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     congr 2
-    omega
+    omega_using []
   exact WP.mono e₃ fun t₃ ⟨h₃, m₃, k₃⟩ =>
     ⟨h₃, m₃.trans (m₂.trans m₁), ((k₁.trans k₂).trans k₃).mono (by simp)⟩
 
@@ -576,12 +576,12 @@ theorem sub_ok {s : State} {B : Addr} {Z N eA eN eT : Nat} (hs : Scr s B Z)
   exact ⟨c, hc, hv, hI.out, hI.keep⟩
 
 /-- `wordLoop 0 addMBody` over `N` words: `[rbx] := ([r10] & mask c) + [r8]`,
-its carry in `rbp`. -/
+its carry in `rbp` (`[r8]` may be `[rbx]` itself). -/
 theorem addM_ok {s : State} {B : Addr} {Z N eo eN eA : Nat} {c : Bool} (hs : Scr s B Z)
     (hbx : s.gpr .rbx = off B eo) (h10 : s.gpr .r10 = off B eN) (h8 : s.gpr .r8 = off B eA)
     (h15 : s.gpr .r15 = mask c) (h12 : s.gpr .r12 = BitVec.ofNat 64 N) (hbp : s.gpr .rbp = mask false)
     (hN : 1 ≤ N) (hN' : N < 2 ^ 31) (ho : eo + 8 * N ≤ Z) (hNz : eN + 8 * N ≤ Z) (hA : eA + 8 * N ≤ Z)
-    (sN : eN + 8 * N ≤ eo ∨ eo + 8 * N ≤ eN) (sA : eA + 8 * N ≤ eo ∨ eo + 8 * N ≤ eA) :
+    (sN : eN + 8 * N ≤ eo ∨ eo + 8 * N ≤ eN) (sA : eA + 8 * N ≤ eo ∨ eo ≤ eA) :
     WP isa (wordLoop 0 addMBody) s fun t => ∃ c' : Bool, t.gpr .rbp = mask c' ∧
       wv t.mem B eo N + 2 ^ (64 * N) * c'.toNat = (if c then wv s.mem B eN N else 0) + wv s.mem B eA N ∧
       Outside B eo (8 * N) s.mem t.mem ∧ Keep [.rax, .rbp, .r14] s t := by

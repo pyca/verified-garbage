@@ -21,7 +21,7 @@ theorem public_push_argAddr {s : State} (fit : 56 ≤ s.sp.toNat) :
     off (State.addr (pcPushed s).sp) 56 = State.addr s.sp := by
   have spNat : (pcPushed s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' fit
   change State.addr (pcPushed s).sp + BitVec.ofNat 64 56 = State.addr s.sp
-  rw [← addr_add (a := (pcPushed s).sp) (k := 56) (by rw [spNat]; have := s.sp.isLt; omega)]
+  rw [← addr_add (a := (pcPushed s).sp) (k := 56) (by rw [spNat]; have := s.sp.isLt; omega_using [])]
   change State.addr (s.sp - BitVec.ofNat 32 56 + BitVec.ofNat 32 56) = _
   rw [BitVec.sub_add_cancel]
 

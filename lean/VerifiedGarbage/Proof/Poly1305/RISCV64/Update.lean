@@ -310,7 +310,7 @@ structure Filled (s₀ : State) (n : Nat) (s : State) : Prop extends UCommon s�
 /-- `Region.Disjoint` as `Mem.Sep`. -/
 theorem sep_of_disjoint {r₁ r₂ : Region} (h : r₁.Disjoint r₂) :
     Mem.Sep r₁.base r₁.len r₂.base r₂.len :=
-  fun x hx hy => h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+  fun x hx hy => h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy])
 
 theorem copyFill_ok {s₀ : State} (hp : UPre s₀) {s : State} {n : Nat} (h : Counted s₀ n s) :
     WP isa (.ite (.zero X0) (.block []) (Impl.Words.RISCV64.copyLoop Y0 T1 X1 X0)) s
@@ -329,7 +329,7 @@ theorem copyFill_ok {s₀ : State} (hp : UPre s₀) {s : State} {n : Nat} (h : C
     have hb : off (st s₀) 56 + BitVec.ofNat 64 (kb s₀) = s.gpr X1 := by
       rw [h.x1, off, Offset.add_add]
     have hsub : Region.Sub ⟨s.gpr X1, n⟩ (wR (st s₀)) := by
-      rw [h.x1]; exact Offset.sub _ (by omega) (by omega_using [hn'])
+      rw [h.x1]; exact Offset.sub _ (by omega_using []) (by omega_using [hn'])
     have hsubS : Region.Sub ⟨s.gpr X1, n⟩ (sR (st s₀)) := by
       rw [h.x1]; exact Offset.sub_base _ (by omega_using [hn'])
     refine WP.mono (copyLoop_ok (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -451,7 +451,7 @@ theorem data_value {s₀ : State} (hp : UPre s₀) {m : Mem} (hf : Frame [wR (st
     rw [Offset.add_add]
     refine hf.readW (r := dR s₀) (w := 64)
       (contains_off (n := 64 / 8) (by omega_using [hc, hd]) (by omega_using [hc, hdl, hd])) ?_
-      (by omega)
+      (by omega_using [])
     simp only [List.mem_singleton, forall_eq]
     exact hp.st_d.symm.sub_right (sub_sR _ (by decide))
   rw [← block_value]
@@ -632,7 +632,7 @@ theorem rest_ok {s₀ : State} (hp : UPre s₀) {s : State}
           frame := hU₂.frame.trans (hf.sub fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact ⟨_, List.mem_singleton_self _, by
-              rw [x1₂]; exact Offset.sub _ (by omega) (by omega_using [hlt])⟩) }
+              rw [x1₂]; exact Offset.sub _ (by omega_using []) (by omega_using [hlt])⟩) }
       have hacc : Acc s₀ (Bf s₀ ++ Dt s₀ c) t := by
         intro hA
         obtain ⟨e, b⟩ := Temps.acc hc.acc ht hA
@@ -667,7 +667,7 @@ theorem storeHm_buf (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) {n : Nat} (hn :
     bytesAt (storeHm m st w0 w1 w2) (off st 56) n = bytesAt m (off st 56) n := by
   have hf : Frame [hR st] m (storeHm m st w0 w1 w2) := by
     have c : ∀ d, d + 8 ≤ 24 → (hR st).Contains (off st d) (64 / 8) := fun d hd =>
-      contains_off hd (by omega)
+      contains_off hd (by omega_using [hd])
     exact (((Frame.refl _ _).writeW List.mem_cons_self _ (c 0 (by decide))).writeW List.mem_cons_self _
       (c 8 (by decide))).writeW List.mem_cons_self _ (c 16 (by decide))
   refine Poly1305.bytesAt_frame hf (fun r hr => ?_) (by omega_using [hn])

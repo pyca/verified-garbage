@@ -34,8 +34,31 @@ theorem VP.stk {F G : State → State → Prop} {code : List Instr}
   VP.of_ct (fun _ _ => (VG.Proof.Rsa.Arm.setupChecked_ct code keep leak).mono
     (fun _ _ h => sp _ _ _ _ h.1 h.2) fun _ _ _ => trivial) wp
 
-/-- A call of verified code `c` (with frames of its own, `armStack c ≤ S`)
-given the regions `rd` and `wr`, the same in both runs. -/
+/-- A call of code `c` (with frames of its own, `armStack c ≤ S`), correct
+and constant time against `k` (its `Verified` but for a state that meets
+it: `VP.callF`), given the regions `rd` and `wr`, the same in both runs. -/
+theorem VP.callC {n : String} {c : Prog isa} {k : Contract isa}
+    (hc : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ target.abiPreserved s s' ∧ k.post s s')
+    (hct : ConstantTime isa k.pre k.pub c)
+    {S : Nat} (hst : FrameStack.armStack c ≤ S) (rd wr : List Region) {F G : State → State → Prop}
+    (pre : ∀ σ s, F σ s → k.pre (s.callEntry.withRegions rd wr))
+    (cov : ∀ σ s, F σ s → Covers (rd ++ wr) (s.rd ++ s.wr) ∧ Covers wr s.wr)
+    (room : ∀ σ s, F σ s → S ≤ s.sp.toNat)
+    (pub : ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ →
+      k.pub (s₁.callEntry.withRegions rd wr) (s₂.callEntry.withRegions rd wr))
+    (post : ∀ σ s s', F σ s → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      Frame (wr ++ [FrameStack.belowA s.sp S]) s.mem s'.mem →
+      (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
+      k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → G σ s') :
+    VP F (.call n c) G :=
+  VP.of_ct (fun _ _ => RelCT.call hc hct rd wr fun _ _ h =>
+      ⟨pre _ _ h.1, pre _ _ h.2, pub _ _ _ _ h.1 h.2, (cov _ _ h.1).1, (cov _ _ h.1).2, (cov _ _ h.2).1,
+        (cov _ _ h.2).2⟩)
+    fun σ s h => FrameStack.WP.callF hc (pre σ s h) (cov σ s h).1 (cov σ s h).2
+      (Nat.le_trans hst (room σ s h))
+      fun s' r w p f g po => post σ s s' h r w p (FrameStack.Frame.belowA_mono f hst (room σ s h)) g po
+
+/-- A call of verified code `c`. -/
 theorem VP.callF {n : String} {c : Prog isa} {k : Contract isa} (hv : Verified target c k)
     {S : Nat} (hst : FrameStack.armStack c ≤ S) (rd wr : List Region) {F G : State → State → Prop}
     (pre : ∀ σ s, F σ s → k.pre (s.callEntry.withRegions rd wr))
@@ -48,12 +71,7 @@ theorem VP.callF {n : String} {c : Prog isa} {k : Contract isa} (hv : Verified t
       (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
       k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → G σ s') :
     VP F (.call n c) G :=
-  VP.of_ct (fun _ _ => RelCT.call hv.1 hv.2.1 rd wr fun _ _ h =>
-      ⟨pre _ _ h.1, pre _ _ h.2, pub _ _ _ _ h.1 h.2, (cov _ _ h.1).1, (cov _ _ h.1).2, (cov _ _ h.2).1,
-        (cov _ _ h.2).2⟩)
-    fun σ s h => FrameStack.WP.callF hv.1 (pre σ s h) (cov σ s h).1 (cov σ s h).2
-      (Nat.le_trans hst (room σ s h))
-      fun s' r w p f g po => post σ s s' h r w p (FrameStack.Frame.belowA_mono f hst (room σ s h)) g po
+  VP.callC (n := n) hv.1 hv.2.1 hst rd wr pre cov room pub post
 
 /-- A piece that is constant time when some of its inputs agree. -/
 theorem VP.ct {F G : State → State → Prop} {c : Prog isa} {Pub : State → State → Prop}

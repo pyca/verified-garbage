@@ -47,7 +47,7 @@ theorem ParametersABI.used {s : State} (h : ParametersABI s) : usedBytes ≤ (s.
   unfold Spec.Dsa.lengthsValid at hl
   unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
-  omega
+  omega_using [hl, hs]
 
 theorem ParametersABI.pre {s : State} (h : ParametersABI s) : ParametersPre h.input s := by
   have hs : Scr s (s.gpr .x4) ((s.gpr .x5).toNat * 8) := Scr.of_mem (by rw [h.wr]; simp) h.scratchBound

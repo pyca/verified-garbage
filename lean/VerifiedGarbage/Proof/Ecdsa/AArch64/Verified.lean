@@ -45,7 +45,7 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
   show 256 ≤ Spec.P256.curve.n.log2 + 1
   have : 255 ≤ Spec.P256.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
   window_tmp := by decide +kernel
@@ -67,7 +67,7 @@ theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
-  sh := by have := p256_nBits; have : p256.n = 4 := rfl; have : p256.C.len = 32 := rfl; unfold Cfg.sh; omega
+  sh := by have := p256_nBits; have : p256.n = 4 := rfl; have : p256.C.len = 32 := rfl; unfold Cfg.sh; omega_arith
   n4 := by decide
   sound_p := hI Proof.P256.p_prime
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)

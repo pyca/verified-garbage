@@ -26,7 +26,7 @@ theorem sampleScalarArgs_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots
       Rest [.r0, .r1, .r2, .r3, .r12, .lr] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have r20 := h.locals.read (d := 20) (by decide)
   have r32 := h.locals.read (d := 32) (by decide)
   have r40 := h.locals.read (d := 40) (by decide)
@@ -37,7 +37,7 @@ theorem sampleScalarArgs_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots
     apply congrArg (BitVec.ofNat 32)
     have := l.lead_lt
     unfold ScalarLayout.width
-    omega
+    omega_using [this]
   refine withRest_all [.r0, .r1, .r2, .r3, .r12, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.scalarArgs VG.Impl.Ffdh.Arm.Domain.st
   ffrun [addr 20 (by decide), addr 32 (by decide), addr 40 (by decide), addr 48 (by decide),
@@ -68,8 +68,8 @@ theorem sampleScalarArgs_retained (s : State) {p : Inputs} {l : ScalarLayout p} 
       have item := List.all_eq_true.mp stable d hd
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, bne_iff_ne] at item
       have excluded := special d hd
-      exact Offset.disjoint _ (by omega) (by have := h.locals.space.nowrap; omega)
-        (by have := h.locals.space.nowrap; omega))
+      exact Offset.disjoint _ (by omega_using [excluded]) (by have := h.locals.space.nowrap; omega_using [bounds])
+        (by have := h.locals.space.nowrap; omega_using []))
   have keep (d : Nat) (hd : d = 20 ∨ d = 68) :
       t.mem.readW (off (State.addr t.sp) d) 32 = s.mem.readW (off (State.addr s.sp) d) 32 := by
     rw [rest.sp, mem]

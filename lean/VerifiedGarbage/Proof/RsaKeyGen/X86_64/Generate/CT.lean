@@ -71,14 +71,14 @@ theorem next_measure {q : GenPoint} {t : State} (hc : q.continues) (h : GenCTL q
   rcases hc with ⟨h3, hl2⟩ | ⟨h1, hc0, -⟩
   · simp only [h3, ↓reduceIte] at hlt ⊢
     have hmul : (q.inputs.randLen - (q.used + q.cand)) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
-    omega
-  · have h3 : ¬q.status = 3 := by omega
+      Nat.mul_le_mul_right _ (by omega_using [])
+    omega_using [hl2]
+  · have h3 : ¬q.status = 3 := by omega_using [h1]
     simp only [h3, ↓reduceIte] at hlt ⊢
     have hmul : (q.inputs.randLen - (q.used + q.cand) + 1) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [hle, hc0])
     rw [Nat.add_mul, Nat.one_mul] at hmul
-    omega
+    omega_using [hle, hc0]
 
 private def LoopPair (n : Nat) (s t : State) : Prop := ∃ q : GenPoint, n = q.measure ∧ GenCTL q s ∧ GenCTL q t
 
@@ -163,8 +163,8 @@ theorem start_point (q : GenPoint) (t : State) (h : StartCT q t) : WP isa clearA
     split at hpB
     · cases hpB
     · cases hpB
-      exact bytes_kept hfr (hg.frame_key.sub_right (slot_sub _ (by omega))) (by
-        show (initialPoint s).inputs.L ≤ 2 ^ 64; have := hf.nK; omega)
+      exact bytes_kept hfr (hg.frame_key.sub_right (slot_sub _ (by omega_using []))) (by
+        show (initialPoint s).inputs.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   · -- The state's request word, kept through the entry and the clearing.
     have hd : ∀ r ∈ [(⟨(initialPoint s).inputs.kp, 9 * (initialPoint s).inputs.L⟩ : Region),
         (initialPoint s).inputs.frame], (cS (initialPoint s).inputs).Disjoint r := by
@@ -174,10 +174,10 @@ theorem start_point (q : GenPoint) (t : State) (h : StartCT q t) : WP isa clearA
       · exact hf.kT.symm
       · exact hg.state_frame.symm
     have h1 := hfw.readW (r := cS (initialPoint s).inputs) (a := (initialPoint s).inputs.stp + BitVec.ofNat 64 24)
-      (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega)) hd
+      (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega_using [])) hd
       (by decide)
     have h2 := hfr.readW (r := cS (initialPoint s).inputs) (a := (initialPoint s).inputs.stp + BitVec.ofNat 64 24)
-      (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega))
+      (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega_using []))
       (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hg.state_frame.symm) (by decide)
     exact h1.trans h2
 

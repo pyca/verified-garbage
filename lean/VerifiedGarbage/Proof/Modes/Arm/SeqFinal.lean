@@ -158,14 +158,14 @@ theorem bytesAt_congr_of {m m' : Mem} {D : Addr} {n : Nat}
   List.map_congr_left fun i hi => by
     have := List.mem_range.mp hi
     rw [VG.Offset.add_add]
-    exact h _ (by omega)
+    exact h _ (by omega_using [hl, this])
 
 theorem blocksOf_congr_of {m m' : Mem} {D : Addr} {n : Nat}
     (h : ∀ i < n, m (D + BitVec.ofNat 64 i) = m' (D + BitVec.ofNat 64 i)) {L k : Nat} (hk : L * k ≤ n) :
     blocksOf L m D k = blocksOf L m' D k :=
   List.map_congr_left fun j hj => by
     have := VG.Proof.Modes.idx_lt (L := L) (List.mem_range.mp hj)
-    exact bytesAt_congr_of h (by omega)
+    exact bytesAt_congr_of h (by omega_using [hk, this])
 
 theorem rKF_zero {c : Core} (S : CoreSpec c) (M : Mode) (s₀ : State) : rKF S s₀ M 0 = ([], b0 c s₀) := by
   simp only [rKF, List.take_zero, runSeq]
@@ -187,7 +187,7 @@ theorem FInv.of_linv {c : Core} {S : CoreSpec c} {M : Mode} {s₀ s : State} (h 
       s₀.mem (State.addr (Dp c s₀) + BitVec.ofNat 64 i) := fun i hi =>
     byte_of_blocksOf1 (m := s.mem) (m' := s₀.mem) hd hi
   refine ⟨h.r4, h.r5, by rw [h.r6, Nat.mul_zero, Nat.mul_zero], by rw [h.r7, Nat.mul_zero], h.r8, h.r11, h.sp,
-    h.rd, h.wr, Nat.zero_le _, h.frame, ?_, bytesAt_congr_of hb (by have := nF_rF c s₀; omega), ?_, ?_⟩
+    h.rd, h.wr, Nat.zero_le _, h.frame, ?_, bytesAt_congr_of hb (by have := nF_rF c s₀; omega_using [this]), ?_, ?_⟩
   · rw [rKF_zero, List.drop_zero, List.nil_append]
     exact blocksOf_congr_of hb (nF_le c s₀)
   · rw [h.o, rK_zero, rKF_zero]
@@ -480,7 +480,7 @@ theorem xorLoop_wp {s₀ : State} {K R : BitVec 32} {r : Nat} (hp : XPre s₀ K 
   refine WP.mono (xorByte_wp hp hj) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨z, d⟩
-  · exact .inr ⟨z, r - (j + 1), by have := d.lt; have := hj.lt; omega, j + 1, rfl, d⟩
+  · exact .inr ⟨z, r - (j + 1), by have := d.lt; have := hj.lt; omega_arith, j + 1, rfl, d⟩
 
 /-- The bytes `over` leaves: those at `R` XORed with those at `K`. -/
 theorem bytesAt_over_xf (m : Mem) (K R : Addr) {r L : Nat} (hr : r ≤ L) (h64 : r ≤ 2 ^ 64) :

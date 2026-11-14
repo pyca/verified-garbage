@@ -35,11 +35,11 @@ theorem pDomain_reduction {len x q : Nat} (hw : len = 128 ∨ len = 256 ∨ len 
 
 theorem PDomain.predBits {len value : Nat} (h : PDomain len value) :
     Spec.RsaKeyGen.bitLength (value - 1) = 8 * len := by
-  have hl : 2 ≤ 8 * len := by rcases h.width with hh | hh | hh <;> omega
+  have hl : 2 ≤ 8 * len := by rcases h.width with hh | hh | hh <;> omega_using [hh]
   have hlo := VG.Proof.Ffdh.ParameterCandidate.odd_above_power hl h.odd h.lower
   have hb := VG.Proof.RsaKeyGen.bitLength_of hlo
-    (show value - 1 < 2 ^ (8 * len - 1 + 1) by rw [Nat.sub_add_cancel (by omega : 1 ≤ 8 * len)]; omega_using [h.upper])
-  simpa only [Nat.sub_add_cancel (by omega : 1 ≤ 8 * len)] using hb
+    (show value - 1 < 2 ^ (8 * len - 1 + 1) by rw [Nat.sub_add_cancel (by omega_using [hl] : 1 ≤ 8 * len)]; omega_using [h.upper])
+  simpa only [Nat.sub_add_cancel (by omega_using [hl] : 1 ≤ 8 * len)] using hb
 
 theorem PDomain.draw {len value : Nat} (h : PDomain len value) :
     Spec.RsaKeyGen.witnessBytes value = len := by
@@ -51,7 +51,7 @@ theorem PDomain.large {len value : Nat} (h : PDomain len value) : 8161 < value :
   have hb : 8161 < 2 ^ (8 * len - 1) := by
     apply Nat.lt_of_lt_of_le (show 8161 < 2 ^ 13 by decide)
     apply Nat.pow_le_pow_right (by decide)
-    rcases h.width with hh | hh | hh <;> omega
+    rcases h.width with hh | hh | hh <;> omega_using [hh]
   exact Nat.lt_of_lt_of_le hb h.lower
 
 end VG.Proof.Dsa.Generation

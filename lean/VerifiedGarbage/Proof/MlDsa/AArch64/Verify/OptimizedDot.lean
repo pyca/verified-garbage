@@ -32,7 +32,7 @@ theorem dot_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre 
   have L := hs.vc.lay hF hp
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
   have hrow : p.ℓ*r+p.ℓ≤p.k*p.ℓ := by
-    have hm:=Nat.mul_le_mul_left p.ℓ (show r+1≤p.k by omega)
+    have hm:=Nat.mul_le_mul_left p.ℓ (show r+1≤p.k by omega_using [hr])
     rw [Nat.mul_succ,Nat.mul_comm p.ℓ p.k] at hm
     exact hm
   have hn : p.ℓ=4∨p.ℓ=5∨p.ℓ=7 := by rcases hF.mem with rfl|rfl|rfl <;> decide
@@ -48,7 +48,7 @@ theorem dot_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre 
     have hv:=hs.z j hj
     simp only [Stored,decide_eq_true_eq.mpr hj,↓reduceIte,ite_eq_left hj] at hv
     change PosPolyIs s.mem (pa s (VG.Impl.MlDsa.AArch64.Call.sc (oP (p.k*p.ℓ+(1+p.k+j))))) _ at hv
-    have he : p.k*p.ℓ+(1+p.k+j)=(p.k*p.ℓ+(1+p.k))+j := by omega
+    have he : p.k*p.ℓ+(1+p.k+j)=(p.k*p.ℓ+(1+p.k))+j := by omega_using []
     rw [he,poly_addr] at hv
     simpa only [zP,vP,Nat.add_zero] using hv
   have ready : MontDot.Ready p.ℓ (wP p) (aP (p.ℓ*r)) (zP p 0) s :=
@@ -60,10 +60,10 @@ theorem dot_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre 
   have hb : PPostB S s t [(wP p,1024)] := hP.b
   have hw : w1Len p * r ≤ 1024 := by
     have := Nat.mul_le_mul_left (w1Len p) (Nat.le_of_lt hr); rw [Nat.mul_comm (w1Len p) p.k] at this
-    have := hF.w1; omega
+    have := hF.w1; omega_arith
   have hc : SCChk p r [(wP p, 1024)] :=
-    SCChk.x28 hF (Nat.le_of_lt hr) (.inr (by simp only [SV, oP]; omega)) (.inr (by simp only [oP]; omega))
-      (.inr (by simp only [oP]; omega)) (.inr (by simp only [oP]; omega)) (by rw [hsc]; simp only [oP]; omega)
+    SCChk.x28 hF (Nat.le_of_lt hr) (.inr (by simp only [SV, oP]; omega_using [])) (.inr (by simp only [oP]; omega_using []))
+      (.inr (by simp only [oP]; omega_using [hw])) (.inr (by simp only [oP]; omega_using [])) (by rw [hsc]; simp only [oP]; omega_using [])
   refine ⟨hs.keep hF hp hb hc hy
     (fun w hm=>by obtain rfl:=List.mem_singleton.mp hm;exact wo)
     (hP.cs .x24 (by decide) (by decide)),?_⟩

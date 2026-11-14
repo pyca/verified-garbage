@@ -58,33 +58,33 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
     (fit : 108 ≤ (s.gpr .esp).toNat)
     (far : (⟨g.W, g.L⟩ : Region).Disjoint (below (s.gpr .esp) 108)) :
     (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96).pre (entry g s) := by
-  have sa := fun {i} (hi : i < 2) => entry_arg A (by omega) hi
+  have sa := fun {i} (hi : i < 2) => entry_arg A (by omega_using [fit]) hi
   have capBound : capacity < 2 ^ 32 := by have := S.ready.scratch.nowrap; omega
-  have ptrBound : g.W.toNat < 2 ^ 32 := by have := S.ready.scratch.nowrap; have := v.headerFit; omega
-  have F := entry_frame (by omega : 12 ≤ (s.gpr .esp).toNat) S.ready.scratch.nowrap
+  have ptrBound : g.W.toNat < 2 ^ 32 := by have := S.ready.scratch.nowrap; have := v.headerFit; omega_arith
+  have F := entry_frame (by omega_using [fit] : 12 ≤ (s.gpr .esp).toNat) S.ready.scratch.nowrap
     (far.sub_right (below_sub (by decide : 12 ≤ 108) fit))
   have Mu := S.ready.modulus.keep v F (by simp) (by simp)
   have lu : Proof.MillerRabin.Round.Layout Proof.MillerRabin.Round.compact (entry g s).mem g.W capacity := by
     unfold Proof.MillerRabin.Round.Layout
     rw [Mu.width]
     refine ⟨Or.inr rfl, ?_, v.minWidth, v.maxWidth, ?_, ?_⟩
-    · have M := Mu.layout v (by rw [length]; omega)
+    · have M := Mu.layout v (by rw [length]; omega_using [])
       simpa only [length, Nat.mul_div_cancel_left capacity (by decide : 0 < 8)] using M
     · change Proof.Rsa.Mont.arrAt g.w 28 ≤ 8 * capacity
       rw [← length]
       exact v.arraysFit
     · change (entry g s).mem.readW (off g.W 224) 64 = _
-      rw [F.read64 (by have := v.headerFit; omega) (by simp)]
+      rw [F.read64 (by have := v.headerFit; omega_using [this]) (by simp)]
       exact S.stride
   have pu : Proof.MillerRabin.Round.Prepared Proof.MillerRabin.Round.compact (entry g s).mem g.W := by
     refine Prepare.prepared_of Mu odd large ?_ ?_ ?_ ?_ ?_
     · rw [F.val32 (v.arrayFit (by decide)) (by simp), witness]
-      exact Nat.mod_lt _ (by omega)
+      exact Nat.mod_lt _ (by omega_using [odd])
     · rw [F.val32 (v.arrayFit (by decide)) (by simp)]; exact S.one
     · rw [F.val32 (v.arrayFit (by decide)) (by simp)]; exact S.minusOne
     · rw [F.val32 (v.arrayFit (by decide)) (by simp)]; exact S.exponent
     · change (entry g s).mem.readW (off g.W (g.array 27 + 8 * g.w)) 64 = _
-      rw [F.read64 (by have := Prepared.paddedFit v (j := 27) (by decide); omega) (by simp)]
+      rw [F.read64 (by have := Prepared.paddedFit v (j := 27) (by decide); omega_using [this]) (by simp)]
       exact S.marker
   have sp : (entry g s).gpr .esp = s.gpr .esp - 12#32 := by
     change (pushed args s).callEntry.gpr .esp = _
@@ -105,21 +105,21 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
   sig_pre [Proof.MillerRabin.Round.roundContract, Proof.MillerRabin.Round.roundSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [sa0, sa1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt capBound, Nat.mod_eq_of_lt ptrBound,
     ptr, rd, wr, sp, ar, ← length, Nat.mul_comm capacity 8]
-  have sp12 : (s.gpr .esp - 12#32).toNat = (s.gpr .esp).toNat - 12 := sub_toNat (by omega)
+  have sp12 : (s.gpr .esp - 12#32).toNat = (s.gpr .esp).toNat - 12 := sub_toNat (by omega_using [fit])
   have nat8 : ((s.gpr .esp - 8#32).setWidth 64).toNat = (s.gpr .esp).toNat - 8 := by
-    rw [BitVec.toNat_setWidth, sub_toNat (by omega)]
-    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+    rw [BitVec.toNat_setWidth, sub_toNat (by omega_using [fit])]
+    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])
   have nat12 : ((s.gpr .esp - 12#32).setWidth 64).toNat = (s.gpr .esp).toNat - 12 := by
     rw [BitVec.toNat_setWidth, sp12]
-    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])
   have saved : (s.gpr .esp - 12#32).setWidth 64 - 96#64 = (s.gpr .esp - 108#32).setWidth 64 := by
-    rw [← Taint.sub_setWidth (by rw [sp12]; omega : 96 ≤ (s.gpr .esp - 12#32).toNat)]
+    rw [← Taint.sub_setWidth (by rw [sp12]; omega_using [fit] : 96 ≤ (s.gpr .esp - 12#32).toNat)]
     congr 1
     rw [BitVec.sub_sub]
     rfl
   have nat68 : ((s.gpr .esp - 108#32).setWidth 64).toNat = (s.gpr .esp).toNat - 108 := by
     rw [BitVec.toNat_setWidth, sub_toNat fit]
-    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])
   have argSub : (⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ : Region).Sub (below (s.gpr .esp) 108) := below_sub (by decide) fit
   have retSub : (⟨(s.gpr .esp - 12#32).setWidth 64, 4⟩ : Region).Sub (below (s.gpr .esp) 108) :=
     fun x hx => below_sub (by decide : 12 ≤ 108) fit x ((Region.sub_prefix (by decide : 4 ≤ 12)) x hx)
@@ -127,11 +127,11 @@ theorem entry_pre {g : Geometry} (v : g.Valid) {s : State} {c capacity b : Nat} 
     rw [saved]
     exact Region.sub_prefix (by decide : 96 ≤ 108)
   have retArgs : (⟨(s.gpr .esp - 12#32).setWidth 64, 4⟩ : Region).Disjoint ⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ :=
-    Offset.disjoint_of_le (by simp only [nat12, nat8]; omega) (by simp only [nat8]; have := (s.gpr .esp).isLt; omega)
+    Offset.disjoint_of_le (by simp only [nat12, nat8]; omega_using [fit]) (by simp only [nat8]; have := (s.gpr .esp).isLt; omega_using [])
   have saveArgs : (⟨(s.gpr .esp - 12#32).setWidth 64 - 96#64, 96⟩ : Region).Disjoint ⟨(s.gpr .esp - 8#32).setWidth 64, 8⟩ := by
     rw [saved]
-    exact Offset.disjoint_of_le (by simp only [nat68, nat8]; omega) (by simp only [nat8]; have := (s.gpr .esp).isLt; omega)
-  exact ⟨by rw [sp12]; omega, by rw [sp12]; have := (s.gpr .esp).isLt; omega,
+    exact Offset.disjoint_of_le (by simp only [nat68, nat8]; omega_using [fit]) (by simp only [nat8]; have := (s.gpr .esp).isLt; omega_using [])
+  exact ⟨by rw [sp12]; omega_using [fit], by rw [sp12]; have := (s.gpr .esp).isLt; omega_using [],
     trivial, trivial, far.sub_right argSub, (far.sub_right retSub).symm, retArgs,
     (far.sub_right saveSub).symm, saveArgs, S.ready.scratch.nowrap, lu, pu⟩
 

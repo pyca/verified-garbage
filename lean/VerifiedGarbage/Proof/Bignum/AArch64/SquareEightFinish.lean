@@ -17,7 +17,7 @@ private theorem carry_weight (i j : Nat) :
     2 ^ (64*i) * 2 ^ (64*j) = 2 ^ (64*(i+j)) := by
   rw [← Nat.pow_add]
   congr 1
-  omega
+  omega_using []
 
 private theorem carry_lift {a b w r p c x : Nat}
     (hp : w*r = p) (h : a+w*(r*c) = b+w*0+w*x) : a+p*c = b+w*x := by grind
@@ -30,10 +30,10 @@ theorem finishCarry_full {s : State} {B : Addr} {Z e i n : Nat}
         wv s.mem B e n + 2 ^ (64*(16*i+8))*(s.gpr .x10).toNat ∧
       Outside B (e+128*i+64) 56 s.mem t.mem ∧ Keep [.x13] s t := by
   have hn := hs.nowrap
-  refine WP.mono (finishCarry_ok hs h16 h7 (by omega)) fun t ⟨htv, hto, kt⟩ => ?_
-  have offeq : e+8*(16*i+8) = e+128*i+64 := by omega
+  refine WP.mono (finishCarry_ok hs h16 h7 (by omega_using [he, hi])) fun t ⟨htv, hto, kt⟩ => ?_
+  have offeq : e+8*(16*i+8) = e+128*i+64 := by omega_using []
   have hf := ProductEight.wv_window_delta (n := n) (j := 16*i+8) (k := 7)
-    (by omega : e+8*n ≤ 2 ^ 64) (by omega)
+    (by omega_using [he, hn] : e+8*n ≤ 2 ^ 64) (by omega_using [hi])
     (by simpa only [offeq] using hto)
   rw [offeq] at hf
   have heq : wv t.mem B (e+128*i+64) 7 + 2 ^ (64*7)*t.c.toNat =
@@ -41,7 +41,7 @@ theorem finishCarry_full {s : State} {B : Addr} {Z e i n : Nat}
     simpa only [Nat.add_zero] using htv
   have h := ProductEight.window_lift hf heq
   have hp : 2 ^ (64*(16*i+8)) * 2 ^ (64*7) = 2 ^ (64*(16*i+15)) := by
-    simpa only [show 16*i+8+7 = 16*i+15 by omega] using carry_weight (16*i+8) 7
+    simpa only [show 16*i+8+7 = 16*i+15 by omega_using []] using carry_weight (16*i+8) 7
   exact ⟨carry_lift hp h, hto, kt⟩
 
 /-- After the row's product and carry passes, the high carry vanishes from
@@ -58,9 +58,9 @@ theorem row_finish_value {m : Mem} {B : Addr} {e i old middle out carry pending 
   have hb := row_cross_bound m B e i
   have hc : carry = 0 := by
     by_contra hh
-    have hp := Nat.mul_le_mul_left (2 ^ (64*(16*i+15))) (show 1 ≤ carry by omega)
+    have hp := Nat.mul_le_mul_left (2 ^ (64*(16*i+15))) (show 1 ≤ carry by omega_using [hh])
     simp only [Nat.mul_one] at hp
-    omega
+    omega_using [hv, hb, hp]
   exact ⟨by simpa only [hc, Nat.mul_zero, Nat.add_zero] using hv, hc⟩
 
 end VG.Proof.Bignum.AArch64.SquareEight

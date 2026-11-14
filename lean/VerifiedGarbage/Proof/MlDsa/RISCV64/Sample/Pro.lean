@@ -98,7 +98,7 @@ theorem pro_ok {scr a msg : Reg} {len prm : List Instr} (hs : σ.gpr scr = P.scr
     rw [m2, m1]
     refine ((((((Frame.refl _ _).writeW (r := P.scrR) (by simp) _ ?_).writeW (r := P.scrR) (by simp) _ ?_).writeW
       (r := P.scrR) (by simp) _ ?_).writeW (r := P.scrR) (by simp) _ ?_).writeW (r := P.scrR) (by simp) _ ?_).writeW
-      (r := P.scrR) (by simp) _ ?_ <;> exact Offset.contains_base _ (by omega) (by omega)
+      (r := P.scrR) (by simp) _ ?_ <;> exact Offset.contains_base _ (by omega_using []) (by omega_using [])
   refine ⟨⟨⟨rd2.trans rd1, wr2.trans wr1, sp2.trans sp1, g10, g11,
     fun r hr a b c d e => by rw [cs r hr a b c d e, g1], ?_, ?_, ?_, ?_, ?_, ?_, fr⟩, g9, g8⟩, g7⟩ <;>
   · rw [m2, m1]
@@ -242,7 +242,7 @@ theorem accept_store {s : State} (he : Env P σ s) {v : Reg} {L : List Zq}
     ⟨P.aR, by rw [he.wr, hp.wr]; simp, cA⟩
   have alA : (P.a + BitVec.ofNat 64 (4 * L.length)).toNat % 4 = 0 := by
     have := hp.alA
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [this]
   have g1 := ha.a1
   have g2 := ha.a2
   refine WP.ite _ (Steps.eval_zero _ _) (fun e => absurd (beq_iff_eq.mp e) h) fun _ => ?_
@@ -261,9 +261,9 @@ theorem accept_store {s : State} (he : Env P σ s) {v : Reg} {L : List Zq}
     (fun r hr => rr r (by rintro rfl; exact absurd hr (by decide)) (by rintro rfl; exact absurd hr (by decide)))
     rd wr sp, rr, hf⟩
   · rw [r4, List.length_append, List.length_singleton, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * (L.length + 1) = 4 * L.length + 4 by omega]
+      show 4 * (L.length + 1) = 4 * L.length + 4 by omega_using []]
   · rw [r5, List.length_append, List.length_singleton, BitVec.ofNat_add]
-  · simp only [List.length_append, List.length_singleton]; omega
+  · simp only [List.length_append, List.length_singleton]; omega_using [hL]
   · rw [m, hx]; exact stored_snoc ha.st hL x
 
 end

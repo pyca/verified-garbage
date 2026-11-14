@@ -33,8 +33,8 @@ abbrev kb (K : Nat) (s : State) : Addr := s.sp - BitVec.ofNat 64 (stk K)
 
 theorem fb_eq (K : Nat) (s : State) : fb s = kb K s + BitVec.ofNat 64 K := by
   unfold fb kb
-  rw [Offset.sub_ofNat_eq s.sp (show frameBytes ≤ stk K by unfold stk; omega)]
-  rw [show stk K - frameBytes = K by unfold stk; omega]
+  rw [Offset.sub_ofNat_eq s.sp (show frameBytes ≤ stk K by unfold stk; omega_using [])]
+  rw [show stk K - frameBytes = K by unfold stk; omega_using []]
 
 theorem off_fb (K : Nat) (s : State) (d : Nat) :
     fb s + BitVec.ofNat 64 d = kb K s + BitVec.ofNat 64 (K + d) := by
@@ -44,19 +44,19 @@ theorem kb_toNat {K : Nat} {s : State} (hp : PreV K s) :
     (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 24 ≤ 2 ^ 64 := by
   have := hp.sp1; have := hp.sp2
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem fb_toNat {K : Nat} {s : State} (hp : PreV K s) : (fb s).toNat + frameBytes = s.sp.toNat := by
   have := hp.sp1
-  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega
+  simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold stk at this; omega_using [this]
 
 /-- A region of the frame is in the stack the function uses. -/
 theorem frame_sub (K : Nat) (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :
     Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR K s) := by
-  rw [off_fb K]; exact Offset.sub_base _ (by unfold stk; omega)
+  rw [off_fb K]; exact Offset.sub_base _ (by unfold stk; omega_using [h])
 
 theorem frame_sub0 (K : Nat) (s : State) : Region.Sub ⟨fb s, frameBytes⟩ (kR K s) := by
-  have := frame_sub K s (d := 0) (n := frameBytes) (by omega)
+  have := frame_sub K s (d := 0) (n := frameBytes) (by omega_using [])
   rwa [BitVec.add_zero] at this
 
 /-- The stack below the frame, which the callee uses. -/
@@ -64,7 +64,7 @@ theorem below_fb (K : Nat) (s : State) : below (fb s) K = ⟨kb K s, K⟩ := by
   simp only [below, fb_eq K, BitVec.add_sub_cancel]
 
 theorem below_sub (K : Nat) (s : State) : Region.Sub (below (fb s) K) (kR K s) := by
-  rw [below_fb]; exact Region.sub_prefix (by unfold stk; omega)
+  rw [below_fb]; exact Region.sub_prefix (by unfold stk; omega_using [])
 
 /-- The stack arguments, from the frame. -/
 theorem stackArgAddr_fb (s : State) (j : Nat) :
@@ -121,15 +121,15 @@ theorem Saved.write {s : State} {g : Reg → BitVec 64} {m : Mem} (h : Spill.Sav
     Spill.Saved (fb s) g saved (m.writeW (fb s + BitVec.ofNat 64 d) v) :=
   h.frame_in saved_offs (Frame.writeW (Frame.refl [⟨fb s + BitVec.ofNat 64 d, 8⟩] m) (List.mem_singleton_self _) v
     (Region.contains_self _ _)) fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega_using [hd]) (by omega_using []) (by omega_using [hd])
 
 theorem wr_frame {s t : State} (hwr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr) {d n : Nat}
     (h : d + n ≤ frameBytes) : InRegions t.wr (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, by rw [hwr]; exact List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
+  ⟨_, by rw [hwr]; exact List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])⟩
 
 theorem in_frame (s : State) (rs : List Region) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (⟨fb s, frameBytes⟩ :: rs) (fb s + BitVec.ofNat 64 d) n :=
-  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by unfold frameBytes at h; omega_using [h])⟩
 
 theorem contains_fb (s : State) {n : Nat} (h : n ≤ frameBytes) :
     (⟨fb s, frameBytes⟩ : Region).Contains (fb s) n := by
@@ -137,7 +137,7 @@ theorem contains_fb (s : State) {n : Nat} (h : n ≤ frameBytes) :
 
 theorem in_frame0 (s : State) (rs : List Region) {n : Nat} (h : n ≤ frameBytes) :
     InRegions (⟨fb s, frameBytes⟩ :: rs) (fb s) n := by
-  simpa using in_frame s rs (d := 0) (by omega)
+  simpa using in_frame s rs (d := 0) (by omega_using [h])
 
 theorem stackArgAddr_eq (s : State) (j : Nat) :
     stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
@@ -147,12 +147,12 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
 theorem arg_in {K : Nat} {s : State} (hp : PreV K s) {rs : List Region} (hrd : Covers s.rd rs) {j : Nat}
     (hj : j < 3) : InRegions rs (stackArgAddr s j) 8 :=
   hrd _ _ <| hp.hrd _ _ ⟨aR s, by simp, by
-    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- A stack argument, in memory changed only in the frame. -/
 theorem arg_frame {K : Nat} {s : State} (hp : PreV K s) {m : Mem} (h : Frame [⟨fb s, frameBytes⟩] s.mem m)
     {j : Nat} (hj : j < 3) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
-  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega))
+  h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
     (keep_of_frame hp.ka) (by decide)
 
 theorem pubArgs_ok {K : Nat} {s u : State} (hp : PreV K s) (hsp : u.sp = fb s) (hrd : u.rd = s.rd)
@@ -164,14 +164,14 @@ theorem pubArgs_ok {K : Nat} {s u : State} (hp : PreV K s) (hsp : u.sp = fb s) (
   refine wp_addSp (by decide) fun u₁ o₁ e₁ => ?_
   rw [hsp, BitVec.add_zero] at e₁
   have hin : ∀ p ∈ saved, InRegions u₁.wr (u₁.gpr .x16 + BitVec.ofNat 64 p.2) 8 := fun p hp' => by
-    rw [e₁, o₁.wr]; exact wr_frame hwr (by have := saved_offs p hp'; unfold frameBytes; omega)
+    rw [e₁, o₁.wr]; exact wr_frame hwr (by have := saved_offs p hp'; unfold frameBytes; omega_using [this])
   refine Spill.save_ok (b := .x16) (l := saved) saved_ho hin ?_
   obtain ⟨u₂, hu₂⟩ : ∃ u₂ : State, u₂ = { u₁ with mem := Spill.saveMem u₁.mem (u₁.gpr .x16) u₁.gpr saved } :=
     ⟨_, rfl⟩
   rw [← hu₂]
   have m₂ : Frame [⟨fb s, frameBytes⟩] s.mem u₂.mem := by
     rw [hu₂, e₁, o₁.mem, hm]
-    exact Spill.saveMem_frame_base (fun p hp' => by have := saved_offs p hp'; unfold frameBytes; omega)
+    exact Spill.saveMem_frame_base (fun p hp' => by have := saved_offs p hp'; unfold frameBytes; omega_using [this])
       (by decide) _ _ _
   have sv₂ : Spill.Saved (fb s) s.gpr saved u₂.mem := by
     rw [hu₂, e₁]

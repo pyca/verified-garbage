@@ -18,18 +18,18 @@ theorem maskCtx_of_region (s : State) {dst : BitVec 32} {n : Nat}
     (write : InRegions s.wr (State.addr dst) n) : MaskCtx s dst n := by
   have writable (i : Nat) (hi : i < n) :
       InRegions s.wr (State.addr (dst + BitVec.ofNat 32 i)) 1 := by
-    rw [addr_add (by omega)]
+    rw [addr_add (by omega_using [fit, hi])]
     obtain ⟨r, hr, hc⟩ := write
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hn, hi])]; omega_using [hi])⟩
   refine ⟨hn, ?_, writable, ?_⟩
   · intro i hi
     obtain ⟨r, hr, hc⟩ := writable i hi
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · intro i hi j hj he
-    rw [addr_add (by omega), addr_add (by omega)] at he
+    rw [addr_add (by omega_using [fit, hi]), addr_add (by omega_using [fit, hj])] at he
     have eq := congrArg (fun a => (a - State.addr dst).toNat) he
-    simpa only [Mem.sub_ofNat_toNat _ (by omega : i < 2 ^ 64),
-      Mem.sub_ofNat_toNat _ (by omega : j < 2 ^ 64)] using eq
+    simpa only [Mem.sub_ofNat_toNat _ (by omega_using [hn, hi] : i < 2 ^ 64),
+      Mem.sub_ofNat_toNat _ (by omega_using [hn, hj] : j < 2 ^ 64)] using eq
 
 theorem maskBuffer_ok (s : State) {dst : BitVec 32} {n : Nat}
     (hn : 0 < n) (hn' : n < 2 ^ 32) (fit : dst.toNat + n ≤ 2 ^ 32)
@@ -47,13 +47,13 @@ theorem maskBuffer_ok (s : State) {dst : BitVec 32} {n : Nat}
     intro j hj
     have hj' : j < n := List.mem_range.mp hj
     have value := inv.masked j hj'
-    rw [addr_add (by omega)] at value
+    rw [addr_add (by omega_using [fit, hj'])] at value
     exact value
   · intro a ha
     apply inv.outside a
     intro j hj he
     apply ha ⟨State.addr dst, n⟩ (by simp)
-    rw [he, addr_add (by omega)]
-    exact Offset.contains_base _ (by omega) (by omega)
+    rw [he, addr_add (by omega_using [fit, hj])]
+    exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn', hj])
 
 end VG.Proof.Bignum.Arm

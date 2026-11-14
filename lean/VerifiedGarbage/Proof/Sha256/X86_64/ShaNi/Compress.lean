@@ -418,19 +418,19 @@ theorem store_ok (s : State) (v : HashValue) (h1 : s.xmm .xmm1 = abef v) (h2 : s
 
 /-! ## The loop over the blocks -/
 
-open VG.Proof.Sha256.X86_64 (Pre pre_of st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
+open VG.Proof.Sha256.X86_64 (PreN preN_of st bp nb scr stR blR scrR retR H₀ blkAddr blk blk_word
   compressBlocks_succ contains_offset contains_offset' toNat_ofNat_lt)
 
-theorem Pre.blk16 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s₀) (hn : n < 4) :
+theorem PreN.blk16 {sz : Nat} {s₀ : State} (hp : PreN sz s₀) {i n : Nat} (hi : i < nb s₀) (hn : n < 4) :
     (blR s₀).Contains (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 := by
   have := hp.nb_lt
   rw [ofInt_natCast', show blkAddr s₀ i + BitVec.ofNat 64 (16 * n) =
     bp s₀ + BitVec.ofNat 64 (64 * i + 16 * n) from Offset.add_add _ _ _]
   exact contains_offset (by omega_arith) (by omega_arith)
 
-theorem Pre.in_blk16 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s₀) (hn : n < 4) :
+theorem PreN.in_blk16 {sz : Nat} {s₀ : State} (hp : PreN sz s₀) {i n : Nat} (hi : i < nb s₀) (hn : n < 4) :
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 :=
-  ⟨blR s₀, by simp [hp.rd], Pre.blk16 hp hi hn⟩
+  ⟨blR s₀, by simp [hp.rd], PreN.blk16 hp hi hn⟩
 
 /-- What holds between blocks, after `i` of them: no memory has changed, and
 `rax` holds the table's address. -/
@@ -450,7 +450,7 @@ structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i
   rdx : s.gpr .rdx = BitVec.ofNat 64 (nb s₀ - i)
 
 /-- Block `i`. -/
-theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State} (hL : LInv s₀ i s) :
+theorem body_ok {s₀ : State} (hp : PreN 0 s₀) {i : Nat} (hi : i < nb s₀) {s : State} (hL : LInv s₀ i s) :
     WP isa body s fun s' =>
       (eval .ne s' = some false ∧ i + 1 = nb s₀ ∧ Common s₀ (nb s₀) s') ∨
       (eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
@@ -465,7 +465,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.seq (WP.mono_syms h₁ fun s₁ ⟨e9, e10, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ hsy₁ => ?_)
   refine WP.seq (WP.mono (rounds_ok _ (blk s₀ i) (blkAddr s₀ i) s₁ (by rw [hg₁, hL.rsi])
     (by rw [hx₁ _ (by decide) (by decide), hL.x8]) (by rw [hg₁, hsy₁]; exact hL.rax)
-    (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact Pre.in_blk16 hp hi hn)
+    (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact PreN.in_blk16 hp hi hn)
     (fun t ht => by rw [hm₁, hL.mem]; exact blk_word i t ht)
     (by rw [hx₁ _ (by decide) (by decide), hL.x1]) (by rw [hx₁ _ (by decide) (by decide), hL.x2])
     16 (Nat.le_refl _)) fun s₂ hR => ?_)
@@ -532,7 +532,7 @@ theorem st16 (s₀ : State) {d : Nat} (hd : d ≤ 16) :
     (stR s₀).Contains (st s₀ + BitVec.ofInt 64 (d : Int)) 16 :=
   contains_offset' (by omega_arith) (by omega_arith)
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct {s₀ : State} (hp : PreN 0 s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha256.compressX86_64.post s₀ s' := by
   have in0 : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
     ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega_arith)⟩
@@ -579,16 +579,24 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     · show stateAt s'.mem (st s₀) = _
       rw [← hrdi]; exact hst
 
-theorem compress_verified :
-    Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress Proof.Sha256.compressX86_64 := by
+/-- The compression function, verified with no scratch space, which it does
+not use. -/
+theorem compress_verified0 :
+    Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress (Proof.Sha256.compressX86_64S 0) := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
+  · obtain ⟨t, s', he, h⟩ := correct (preN_of 0 s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
-  · exact (Proof.Sha256.X86_64.compress_verified).2.2
+  · exact Proof.Sha256.X86_64.compressS_sat0
+
+/-- `compress_verified0` with the scratch space of `vg_sha256_compress`'s
+contract. -/
+theorem compress_verified :
+    Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress Proof.Sha256.compressX86_64 :=
+  Proof.Sha256.X86_64.compressS_widen compress_verified0 (by decide) Proof.Sha256.X86_64.compressS_sat560
 
 end VG.Proof.Sha256.X86_64.ShaNi

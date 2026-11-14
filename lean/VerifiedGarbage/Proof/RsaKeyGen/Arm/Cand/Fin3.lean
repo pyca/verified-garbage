@@ -95,7 +95,7 @@ theorem mrResult_vp (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
         have := cv_lt pre
         have := pre.L_eq
         simp (config := {decide := true}) only [AB2, AX, A3, A0, upd, ↓reduceIte]
-        rwa [show 8 * P.L = 64 * P.w by omega]
+        rwa [show 8 * P.L = 64 * P.w by omega_using [this]]
       · have hq : statQ P σ = 1 := by rw [statQ_eq (hE σ e).1 (hE σ e).2, hs]
         refine ⟨e, b, by rw [r0, hq], ?_, ?_⟩
         · rw [o, outM, hq]

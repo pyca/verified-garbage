@@ -29,10 +29,10 @@ theorem keeps_of_native {mem mem' : Mem} {base : BitVec 32} {len w o : Nat}
   intro r hr
   have ofsEq : ofs (State.addr base) (State.addr base + BitVec.ofNat 64 i) = i := by
     unfold ofs
-    rw [Mem.sub_ofNat_toNat _ (by omega)]
+    rw [Mem.sub_ofNat_toNat _ (by omega_using [nowrap, hi])]
   rw [ofsEq]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
 
 
 theorem frame_of_native {mem mem' : Mem} {base : Addr} {size w o : Nat}
@@ -50,6 +50,6 @@ theorem frame_of_native {mem mem' : Mem} {base : Addr} {size w o : Nat}
   apply outside
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [ofs] <;> omega
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [ofs] <;> omega_arith
 
 end VG.Proof.Bignum.Arm

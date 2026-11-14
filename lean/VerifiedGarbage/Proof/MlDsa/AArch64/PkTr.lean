@@ -144,13 +144,13 @@ theorem pkTr_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : p = mlDs
   have hin : ∀ k < 6, InRegions σ₁.wr (σ₁.gpr .x3 + BitVec.ofNat 64 (Impl.MlDsa.AArch64.KeyGen.SV + 8 * k)) 8 :=
     fun k hk => by
       rw [e3, o.wr]
-      exact inRegions_sub hscr (by omega) (by omega)
+      exact inRegions_sub hscr (by omega_using [hbig, hk]) (by omega_using [hsm])
   refine WP.seq (WP.mono (KeyGen.pro_ok hin) fun s ⟨ht, _, hf⟩ => ?_)
   have L := trLay hp hpre o ht e3
   refine WP.seq (WP.mono (shake_ok (keccak := v) h16 hS L (by simp) (hchk hp)) fun s' ⟨hP, _, ho⟩ => ?_)
   have ht' := ht.step L hP (keepSv hp)
   have hin' : InRegions (s'.rd ++ s'.wr) (σ₁.gpr .x3 + BitVec.ofNat 64 Impl.MlDsa.AArch64.KeyGen.SV) 48 := by
-    obtain ⟨r, hr, hc⟩ := inRegions_sub (off := Impl.MlDsa.AArch64.KeyGen.SV) (l := 48) hscr (by omega) (by omega)
+    obtain ⟨r, hr, hc⟩ := inRegions_sub (off := Impl.MlDsa.AArch64.KeyGen.SV) (l := 48) hscr (by omega_using [hbig]) (by omega_using [hsm])
     refine ⟨r, List.mem_append_right _ ?_, by rw [e3]; exact hc⟩
     rw [hP.wr, ht.wr, o.wr]; exact hr
   refine WP.mono (KeyGen.epi_ok ht' hin') fun s'' ⟨ha, _, hm⟩ => ⟨?_, ?_⟩
@@ -164,11 +164,11 @@ theorem pkTr_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : p = mlDs
       Proof.MlKem.AArch64.pbytes, e25] at ho
     rw [hm, ← e26, ho, Spec.MlDsa.pkTr]
     refine congrArg (Spec.MlDsa.H · 64) ?_
-    rw [Proof.MlKem.bytesAt_frame hf (fun r hr => ?_) (by omega), o.mem]
+    rw [Proof.MlKem.bytesAt_frame hf (fun r hr => ?_) (by omega_arith), o.mem]
     simp only [List.mem_singleton] at hr
     subst hr
     rw [e3]
-    exact d02.sub_right (VG.Offset.sub_base _ (by omega))
+    exact d02.sub_right (VG.Offset.sub_base _ (by omega_using [hbig]))
 
 /-! ## The contract -/
 

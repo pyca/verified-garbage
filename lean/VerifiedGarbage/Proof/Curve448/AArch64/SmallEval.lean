@@ -18,9 +18,9 @@ theorem smallEval_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat}
     WP isa (.block (Impl.Curve448.AArch64.smallEval a i)) s fun t =>
       pair (t.gpr .x4) (t.gpr .x5) = 39081 * limbs s.mem base a i ∧
       t.mem = s.mem ∧ Keeps [.x4, .x5, .x6] s t := by
-  have la := hs.read (d := a + 8 * i) (n := 8) (by change a + 128 ≤ 3584 at ha; omega)
+  have la := hs.read (d := a + 8 * i) (n := 8) (by change a + 128 ≤ 3584 at ha; omega_using [hi, ha])
   have ae : (a + 8 * i) % 8 = 0 ∧ a + 8 * i < 32768 := by
-    change a + 128 ≤ 3584 at ha; omega
+    change a + 128 ≤ 3584 at ha; omega_using [ha8, hi, ha]
   apply WP.of_runBlock
   simp only [Impl.Curve448.AArch64.smallEval, ld, runBlock_cons, runStep_some, runBlock_nil, exec,
     addr, Size.bytes, Size.bits, Nat.reduceMul, Nat.reduceLT, BitVec.shiftLeft_zero,

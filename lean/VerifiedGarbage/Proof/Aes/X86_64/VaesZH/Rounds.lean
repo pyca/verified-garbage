@@ -92,7 +92,7 @@ theorem roundZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (_h8 : kr �
   rw [hv b hb l hl]
   show st (XBinOp.eval .aesenc _ _) = _
   rw [aesenc_st _ _ (roundKey w (k + 1)) (by
-    rw [hK.base.sched]; exact byte_roundKey _ _ (by omega)), hI b hb l hl, rnds_succ]
+    rw [hK.base.sched]; exact byte_roundKey _ _ (by omega_using [hk])), hI b hb l hl, rnds_succ]
 /-- Rounds 1 to `k` (at most 9), with `g j` after round `j`. -/
 theorem roundsZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ regs) {nr : Nat}
     {w : List Byte} {x : XReg → Nat → Spec.Aes.State} (g : Nat → List Instr) (G : List XReg)
@@ -109,12 +109,12 @@ theorem roundsZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr �
     rw [List.range_zero, List.flatMap_nil]; exact WP.block_nil ⟨hI, hQ, KFrame.refl _ _⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ ⟨hI₁, hQ₁, hf₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hQ₁, hf₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     rw [WP.block_append_iff]
-    refine WP.mono (roundZ_ok kr regs hnd h8 (k := k) (by omega) (by omega) (KFrame.of_keys hK hf₁) hI₁)
+    refine WP.mono (roundZ_ok kr regs hnd h8 (k := k) (by omega_using [hnr, hk]) (by omega_using [hk]) (KFrame.of_keys hK hf₁) hI₁)
       fun s₂ ⟨hI₂, hf₂⟩ => ?_
-    refine WP.mono (hg (k + 1) (by omega) (by omega) s₂ (KFrame.of_keys (KFrame.of_keys hK hf₁) hf₂)
+    refine WP.mono (hg (k + 1) (by omega_using []) (by omega_using [hk]) s₂ (KFrame.of_keys (KFrame.of_keys hK hf₁) hf₂)
       (hq _ _ _ hQ₁ hf₂)) fun s' ⟨hQ', hf'⟩ => ⟨fun b hb l hl => ?_, hQ', ?_⟩
     · rw [hf'.zlane b (fun h => hG b h hb) l hl]; exact hI₂ b hb l hl
     · exact hf₁.trans ((hf₂.mono fun _ => mem_kr_l).trans
@@ -140,7 +140,7 @@ theorem aes_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ re
       (∀ b ∈ regs, ∀ l < 4, st (s'.zlane b l) = cipher nr w (st (s.zlane b l))) ∧ Q 10 s' ∧
       KFrame (kr :: (regs ++ G)) s s' := by
   let x : XReg → Nat → Spec.Aes.State := fun b l => st (s.zlane b l)
-  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega)
+  have k0 := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := 0) (by omega_using [])
   simp only [Nat.mul_zero] at k0
   -- `AddRoundKey` and rounds 1–9.
   have h₁ : WP isa (.block (keyOp (keyReg 0) regs .vpxord ++
@@ -148,13 +148,13 @@ theorem aes_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ re
       RInv regs w x 9 s' ∧ Q 10 s' ∧ KFrame (kr :: (regs ++ G)) s s' := by
     rw [WP.block_append_iff]
     refine WP.mono (keyOpMem_ok kr (keyReg 0) regs .vpxord _ s hnd
-      (hK.inner 0 (by rcases hnr with h | h | h <;> omega) (by decide)))
+      (hK.inner 0 (by rcases hnr with h | h | h <;> omega_using [h]) (by decide)))
       fun s₁ ⟨hv₁, hf₁⟩ => ?_
     have hI₁ : RInv regs w x 0 s₁ := fun b hb l hl => by
       rw [hv₁ b hb l hl]
       show st (XBinOp.eval .pxor _ _) = _
       rw [pxor_st _ _ (roundKey w 0) (by rw [hK.base.sched]; exact k0), rnds_zero]
-    exact WP.mono (roundsZ_ok kr regs hnd h8 g G hG Q hg hq 9 s₁ (by omega) (by omega)
+    exact WP.mono (roundsZ_ok kr regs hnd h8 g G hG Q hg hq 9 s₁ (by omega_using []) (by omega_using [hnr])
         (KFrame.of_keys hK hf₁) hI₁ (hq _ _ _ hQ hf₁))
       fun s' ⟨hI', hQ', hf'⟩ => ⟨hI', hQ', (hf₁.mono fun _ => mem_kr_l).trans hf'⟩
   have keep : ∀ {s₁ s₂ : State} {k : Nat}, RInv regs w x k s₁ → KFrame [] s₁ s₂ →
@@ -179,8 +179,8 @@ theorem aes_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ re
       refine WP.ite false (by simp [eval, hz₁]) (fun h => absurd h (by decide)) fun _ => ?_
       refine WP.seq ?_
       rw [WP.block_append_iff, WP.block_append_iff]
-      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 9) (by omega) (by omega) hK₁ hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
-      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 10) (by omega) (by omega) (KFrame.of_keys hK₁ hf₂) hI₂)
+      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 9) (by omega_using []) (by omega_using []) hK₁ hI₁) fun s₂ ⟨hI₂, hf₂⟩ => ?_
+      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 10) (by omega_using []) (by omega_using []) (KFrame.of_keys hK₁ hf₂) hI₂)
         fun s₃ ⟨hI₃, hf₃⟩ => ?_
       have hrsi₃ : s₃.gpr .rsi = s₁.gpr .rsi := by rw [hf₃.gpr, hf₂.gpr]
       refine WP.mono (cmpRsiZ_ok s₃ 12 _ (hrsi₃.trans hrsi₁)) fun s₄ ⟨hz₄, hf₄⟩ => ?_
@@ -192,9 +192,9 @@ theorem aes_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ re
     · refine WP.ite false (by simp [eval, hz₄]) (fun h => absurd h (by decide)) fun _ => ?_
       rw [WP.block_append_iff]
       have hK₄ := KFrame.of_keys hK₁ (hf₂.trans (hf₃.trans (hf₄.mono (by simp))))
-      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 11) (by omega) (by omega) hK₄ (keep hI₃ hf₄))
+      refine WP.mono (roundZ_ok kr regs hnd h8 (k := 11) (by omega_using []) (by omega_using []) hK₄ (keep hI₃ hf₄))
         fun s₅ ⟨hI₅, hf₅⟩ => ?_
-      exact WP.mono (roundZ_ok kr regs hnd h8 (k := 12) (by omega) (by omega) (KFrame.of_keys hK₄ hf₅) hI₅)
+      exact WP.mono (roundZ_ok kr regs hnd h8 (k := 12) (by omega_using []) (by omega_using []) (KFrame.of_keys hK₄ hf₅) hI₅)
         fun s' ⟨hI', hf'⟩ => ⟨hI', keepQ (keepQ hQ₄ hf₅) hf', hf₁₄.trans ((hf₅.trans hf').mono fun _ => mem_kr_l)⟩
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -209,7 +209,7 @@ theorem aes_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ re
   rw [hv b hb l hl]
   show st (XBinOp.eval .aesenclast _ _) = _
   rw [aesenclast_st _ _ (roundKey w nr) (by
-    rw [hK₂.base.sched]; exact byte_roundKey _ _ (by omega)), hI₂ b hb l hl, cipher_eq]
+    rw [hK₂.base.sched]; exact byte_roundKey _ _ (by omega_using [])), hI₂ b hb l hl, cipher_eq]
 
 /-- A write outside the schedule does not invalidate cached round keys.
 The two memory-key facts establish equality of every schedule word. -/
@@ -221,12 +221,12 @@ theorem Keys.keep {nr : Nat} {w : List Byte} {s t : State} (h : Keys nr w s)
     intro j hj
     apply VG.Proof.Gcm.X86_64.ext_byte
     intro i hi
-    have hs := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := j) (by omega) i hi
-    have ht := byte_roundKey t.mem (t.gpr .rdi) (L := 16 * (nr + 1)) (j := j) (by omega) i hi
+    have hs := byte_roundKey s.mem (s.gpr .rdi) (L := 16 * (nr + 1)) (j := j) (by omega_using [hj]) i hi
+    have ht := byte_roundKey t.mem (t.gpr .rdi) (L := 16 * (nr + 1)) (j := j) (by omega_using [hj]) i hi
     rw [← h.base.sched, BitVec.ofInt_natCast] at hs
     rw [← hb.sched, BitVec.ofInt_natCast] at ht
     exact hs.trans ht.symm
-  exact ⟨hb, fun j hj h14 l hl => (hh.lane _ _).trans ((h.inner j hj h14 l hl).trans (eqkey j (by omega))),
+  exact ⟨hb, fun j hj h14 l hl => (hh.lane _ _).trans ((h.inner j hj h14 l hl).trans (eqkey j (by omega_using [hj]))),
     fun l hl => (hh.lane _ _).trans ((h.last l hl).trans (eqkey nr (Nat.le_refl _)))⟩
 
 end VG.Proof.Aes.X86_64.VaesZH

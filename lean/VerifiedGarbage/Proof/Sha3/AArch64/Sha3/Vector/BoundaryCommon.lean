@@ -52,10 +52,10 @@ def Saved (s₀ : VG.AArch64.State) (m : Mem) : Prop :=
 
 theorem scratch_contains (s : VG.AArch64.State) {i : Nat} (hi : i < 8) :
     (⟨s.gpr .x1,512⟩ : Region).Contains (s.gpr .x1 + BitVec.ofNat 64 (16*i)) 16 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 theorem state_pair_contains (s : VG.AArch64.State) {i : Nat} (hi : i < 12) :
     (⟨s.gpr .x0,200⟩ : Region).Contains (s.gpr .x0 + BitVec.ofNat 64 (16*i)) 16 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector

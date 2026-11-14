@@ -82,9 +82,9 @@ theorem addr_sub {a : BitVec 32} {k : Nat} (h : k ≤ a.toNat) :
   apply BitVec.eq_of_toNat_eq
   have := a.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := k) (by omega),
-    Nat.mod_eq_of_lt (a := a.toNat) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := k) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := a.toNat) (by omega_using [])]
+  omega_using [h]
 
 /-- The 1520 bytes below the stack pointer `sp`, which the calls use: all of
 them `vg_sm4_ctr32`, and the frame of `vg_ghash` the 8 bytes `push8 sp`. -/
@@ -102,9 +102,9 @@ theorem below_sub (sp : BitVec 32) {n : Nat} (hn : n ≤ 1520) :
     have := sp.isLt
     apply BitVec.eq_of_toNat_eq
     simp only [State.addr, BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hn]
   rw [e]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hn])
 
 theorem push8_sub (sp : BitVec 32) : Region.Sub (push8 sp) (below sp) :=
   below_sub sp (n := 8) (by decide)
@@ -113,7 +113,7 @@ theorem push8_sub (sp : BitVec 32) : Region.Sub (push8 sp) (below sp) :=
 theorem belowA_sub {sp : BitVec 32} {n : Nat} (hn : n ≤ 1520) (hsp : 1520 ≤ sp.toNat) :
     Region.Sub (FrameStack.belowA sp n) (below sp) := by
   simp only [FrameStack.belowA]
-  rw [FrameStack.addr_sub' (by omega)]
+  rw [FrameStack.addr_sub' (by omega_using [hn, hsp])]
   exact below_sub sp hn
 
 theorem storeWords_two (m : Mem) (a : BitVec 32) (x y : BitVec 32) :
@@ -132,7 +132,7 @@ theorem hspA : (s.sp - 8).toNat = s.sp.toNat - 8 :=
 
 theorem hA4 : State.addr (s.sp - 8 + BitVec.ofNat 32 4) = State.addr s.sp - 8 + 4 := by
   have := s.sp.isLt
-  rw [addr_add (by rw [hspA hsp]; omega), hA hsp]; rfl
+  rw [addr_add (by rw [hspA hsp]; omega_using []), hA hsp]; rfl
 
 /-- The memory after `push {r12, lr}`. -/
 theorem amem : (pushed [.r12, .lr] s).mem =
@@ -145,7 +145,7 @@ theorem amem : (pushed [.r12, .lr] s).mem =
 theorem fA : Frame [push8 s.sp] s.mem (pushed [.r12, .lr] s).mem := by
   rw [amem hsp]
   refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
   · simp only [Region.Contains]
     rw [Offset.add_sub_cancel_left]; decide
 
@@ -217,7 +217,7 @@ theorem cover_frame {s : State} (hsp : 8 ≤ s.sp.toNat) {n : Nat} (hn : n ≤ 8
   intro x n' ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
   refine ⟨_, List.mem_append_right _ (by rw [pushed_wr8 hsp]; exact List.mem_cons_self ..), ?_⟩
-  simp only [Region.Contains] at hc ⊢; omega
+  simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]
 
 theorem covers_append' {xs ys ts : List Region} (h₁ : Covers xs ts) (h₂ : Covers ys ts) :
     Covers (xs ++ ys) ts := by
@@ -285,7 +285,7 @@ namespace CtrCall
 variable {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D n)
 include h
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
 omit h in
 theorem a_sp : (ctrArgs s).sp = s.sp := rfl
@@ -301,7 +301,7 @@ theorem pre : (Proof.Sm4.ctr32Contract Arm.abi 1520).pre
   have hn := toNat_ofNat32 h.n_lt
   sig_pre [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rw [h.r0, h.r2, h.r3, h.r12, hn, Nat.mul_comm n 16]
-  exact ⟨h.hsp, by have := s.sp.isLt; omega, rfl, by unfold ctrWr; rw [Nat.mul_comm n 16]; rfl, h.kc, h.kd, h.cd,
+  exact ⟨h.hsp, by have := s.sp.isLt; omega_using [], rfl, by unfold ctrWr; rw [Nat.mul_comm n 16]; rfl, h.kc, h.kd, h.cd,
     h.bk, h.bc, h.bd, h.fitK, h.fitC, h.fitD⟩
 
 theorem cov : Covers (ctrRd K ++ ctrWr C D n) ((ctrArgs s).rd ++ (ctrArgs s).wr) := by
@@ -414,9 +414,9 @@ namespace GhCall
 variable {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D S n)
 include h
 
-theorem hsp : 8 ≤ s.sp.toNat := by have := h.big; omega
+theorem hsp : 8 ≤ s.sp.toNat := by have := h.big; omega_using [this]
 
-theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega
+theorem n_lt : n < 2 ^ 32 := by have := h.fitD; omega_using [this]
 
 theorem pre : Proof.Gcm.ghashArm.pre
     ((pushed [.r12, .lr] s).callEntry.withRegions (ghRd s.sp H D n) (ghWr Y S)) := by
@@ -430,7 +430,7 @@ theorem pre : Proof.Gcm.ghashArm.pre
     stackArgAddr_callEntry, arg0 h.hsp, arg1 h.hsp, argAddr0 h.hsp, h.r12, hn]
   refine ⟨trivial, trivial, h.hy, h.hs, h.yd, h.ys, h.ds, (b4 _ h.by').symm, (b4 _ h.bs).symm, h.fitH, h.fitY,
     h.fitD, h.fitS, ?_⟩
-  have := s.sp.isLt; omega
+  have := s.sp.isLt; omega_using []
 
 theorem cov : Covers (ghRd s.sp H D n ++ ghWr Y S)
     ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
@@ -461,7 +461,7 @@ theorem gh_call {s : State} {H Y D S : BitVec 32} {n : Nat} (h : GhCall s H Y D 
       simp only [List.mem_singleton] at hr; subst hr; exact (h.by'.sub_left (push8_sub s.sp)).symm)
   have blocksD : blocksAt (pushed [.r12, .lr] s).mem (State.addr D) n = blocksAt s.mem (State.addr D) n :=
     blocksAt_frame fA' (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (h.bd.sub_left (push8_sub s.sp)).symm) (by have := h.fitD; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact (h.bd.sub_left (push8_sub s.sp)).symm) (by have := h.fitD; omega_using [hn])
   simp only [Proof.Gcm.ghashArm, State.withRegions_mem, State.callEntry_mem, view_gpr _ _ _ .r0 (by decide),
     view_gpr _ _ _ .r1 (by decide), view_gpr _ _ _ .r2 (by decide), view_gpr _ _ _ .r3 (by decide), h.r0, h.r1,
     h.r2, h.r3, hn, blockH, blockY, blocksD] at hpost
@@ -549,7 +549,7 @@ theorem pre : (Spec.Sm4.expandKeyContract Arm.abi 1456).pre
     Arm.Loc.val]
   rw [h.r0, h.r1]
   have s1 := below_sub s.sp (n := 1456) (by decide)
-  exact ⟨by have := h.hsp; omega, by have := s.sp.isLt; omega, rfl, rfl, h.kc, h.bk.sub_left s1,
+  exact ⟨by have := h.hsp; omega_using [this], by have := s.sp.isLt; omega_using [], rfl, rfl, h.kc, h.bk.sub_left s1,
     h.bc.sub_left s1, h.fitK, h.fitC⟩
 
 theorem cov : Covers ([⟨State.addr K, 16⟩] ++ [⟨State.addr C, 128⟩]) (s.rd ++ s.wr) :=
@@ -562,7 +562,7 @@ end KeyCall
 theorem key_call {s : State} {K C : BitVec 32} (h : KeyCall s K C) : WP isa keyCall s (KeyPost s K C) := by
   refine FrameStack.WP.callF (k := Spec.Sm4.expandKeyContract Arm.abi 1456) Proof.Sm4.Arm.expandKey_framed.1
     (rd := [⟨State.addr K, 16⟩]) (wr := [⟨State.addr C, 128⟩]) h.pre h.cov h.writes
-    (Nat.le_trans key_stack (by have := h.hsp; omega)) ?_
+    (Nat.le_trans key_stack (by have := h.hsp; omega_using [this])) ?_
   intro s' hrd hwr hsp hf hcs hpost
   sig_post [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, Proof.Sm4.expandKeyPost, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val] at hpost

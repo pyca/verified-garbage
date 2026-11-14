@@ -38,9 +38,9 @@ theorem fastWord16 (k j : Nat) :
     simp only [FastNaf.negative,FastNaf.ne_9_7,ite_true,ite_false]
   rw [BitVec.toNat_setWidth,fastWord_toNat,FastNaf.word,hw,hm,hn]
   cases hn' : FastNaf9.negative k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_using [hb]
   · have hp := FastNaf9.negative_magnitude_pos k j hn'
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using [hb, hp]
 
 theorem ea_tbl16 {s : State} {base : Addr} (hb : s.gpr .rdi=base) {t : Nat}
     (ht : s.gpr .rbx=BitVec.ofNat 64 t) (d : Nat) :
@@ -55,8 +55,8 @@ theorem writeW16_apply (m : Mem) (a x : Addr) (v : BitVec 16) :
 theorem writeW16_at (m : Mem) (base : Addr) {d e : Nat} (v : BitVec 16) (he : e<2) : (m.writeW (off base d) v) (off base (d+e))=v.extractLsb' (8*e) 8 := by
   have hs : (off base (d+e)-off base d).toNat=e := by
     simp only [off]
-    rw [Offset.add_sub_add_left,Offset.ofNat_sub_ofNat (by omega),Nat.add_sub_cancel_left,
-      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_add_left,Offset.ofNat_sub_ofNat (by omega_using []),Nat.add_sub_cancel_left,
+      BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [he])]
   rw [writeW16_apply,hs,ite_eq_left he]
 
 theorem writeW16_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 16) (hd : d+2≤2^64)
@@ -75,7 +75,7 @@ theorem fastStore16_ok {s : State} {base : Addr} {size bits k j : Nat}
     WP isa (.block [.store16 (FastNaf.tbl16 bits) .rcx]) s fun t =>
       t.mem=s.mem.writeW (off base (bits+2*j)) (FastNaf.word k j) ∧ KeepRegs [] s t := by
   have hw : InRegions s.wr (off base (bits+2*j)) 2 :=
-    ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,hs.wr,hs.contains (by omega_using [hb]) (by decide)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,State.store16,
     ea_tbl16 hs.rdi hc,hw,hd,fastWord16,ite_true,Option.some.injEq,exists_eq_left']
@@ -101,10 +101,10 @@ theorem readW16_bytes (m : Mem) (a : Addr) {d : BitVec 16} (h0 : m a=d.extractLs
   simp only [BitVec.getLsbD_setWidth,BitVec.getLsbD_append,BitVec.getLsbD_extractLsb']
   by_cases h8 : i<8
   · simp [h8,hi]
-  · have h16 : i-8<8 := by omega
+  · have h16 : i-8<8 := by omega_using [hi]
     simp only [h8,ite_false]
     simp only [h16,hi,decide_true,Bool.true_and]
-    rw [show 8+(i-8)=i by omega]
+    rw [show 8+(i-8)=i by omega_using [h8]]
     simp only [ite_true]
 
 /-- `r8` = the sixteen-bit digit `rbx` at `bits`, and its test. -/
@@ -115,7 +115,7 @@ theorem nafRead16_ok {s : State} {base : Addr} {size bits j : Nat} {d : BitVec 1
     WP isa (.block [.movzx16 .r8 (FastNaf.tbl16 bits),.alu .test .r8 (.reg .r8)]) s fun t =>
       t.gpr .r8=d.setWidth 64 ∧ t.zf=some (decide (d=0)) ∧ Keeps [.r8] s t := by
   have hr : InRegions (s.rd++s.wr) (off base (bits+2*j)) 2 :=
-    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hj]) (by decide)⟩
   have h1' : s.mem (off base (bits+2*j)+1)=d.extractLsb' 8 8 := by
     rw [← h1]; simp only [off]
     rw [BitVec.add_assoc,show BitVec.ofNat 64 (bits+2*j)+1=BitVec.ofNat 64 (bits+2*j+1) from by
@@ -129,7 +129,7 @@ theorem nafRead16_ok {s : State} {base : Addr} {size bits j : Nat} {d : BitVec 1
         intro he; apply h; apply BitVec.eq_of_toNat_eq
         have := congrArg BitVec.toNat he
         simp only [BitVec.toNat_setWidth] at this ⊢
-        rwa [Nat.mod_eq_of_lt (by have := d.isLt; omega)] at this
+        rwa [Nat.mod_eq_of_lt (by have := d.isLt; omega_using [])] at this
       rw [beq_false_of_ne this,decide_eq_false h]
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,

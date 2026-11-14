@@ -44,17 +44,17 @@ theorem nttSecret_ok {S' : Nat} {p : Params} (hF : PFacts p) {σ : State}
         have hv := h.s1 j' hj'
         by_cases hlt : j' < j
         · simp only [ite_eq_left hlt] at hv
-          simp only [ite_eq_left (show j' < j+1 by omega)]
+          simp only [ite_eq_left (show j' < j+1 by omega_using [hlt])]
           exact Sign.keepPosPoly L hP' (by layd) hv
         · simp only [ite_eq_right hlt] at hv
-          simp only [ite_eq_right (show ¬ j' < j+1 by omega)]
+          simp only [ite_eq_right (show ¬ j' < j+1 by omega_using [e, hlt])]
           exact L.keepPoly hP' (by layd) hv,
     by rw [L.keepBytes hP' (by layd)]; exact h.pk0,
     by rw [L.keepBytes hP' (by layd)]; exact h.sk0,
     by rw [L.keepBytes hP' (by layd)]; exact h.sk1,
     fun r hr => by
       have : lenS p * r + lenS p ≤ lenS p * (p.ℓ + p.k) := by
-        rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
+        rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [hr])
       rw [L.keepBytes hP' (by rcases hlen with hlen | hlen <;> lay [hF.pk, hF.sk, hlen])]; exact h.packs r hr,
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
 

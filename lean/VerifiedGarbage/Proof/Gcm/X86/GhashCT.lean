@@ -121,18 +121,18 @@ theorem gh_wf₀ {s : State} (hp : GPre s) : VG.X86.Taint.Wf ghτ₀ s := by
   have hY := hp.fY; have hS := hp.fS; have hs := hp.fSp
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ghτ₀]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ghτ₀]; omega_using [hs], ?_⟩, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨hp.dYS, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega
+    rintro r (rfl | rfl) <;> simp only [toNat_setWidth32] <;> omega_arith
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.rY hp.aY
-    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega) hp.rS hp.aS
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [hs]) hp.rY hp.aY
+    · exact VG.X86.Taint.frame_disjoint (n := 20) (by omega_using [hs]) hp.rS hp.aS
   · intro p hp'
     simp only [ghτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -153,7 +153,7 @@ theorem gh_agree₀ {s₁ s₂ : State} (h₁ : Proof.Gcm.ghashX86.pre s₁) (h�
     rw [show VG.X86.Taint.depth ghτ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (n := 24) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 24) hp₂.fSp h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (ha _ (by omega))
+    exact congrArg _ (ha _ (by omega_using [hk]))
 
 theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashX86.pre Proof.Gcm.ghashX86.pub Impl.Gcm.X86.ghash :=
   VG.Taint.constantTime (A := VG.X86.taint) ghτ₀ (fun _ _ h₁ h₂ hp => gh_agree₀ h₁ h₂ hp)

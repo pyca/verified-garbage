@@ -115,7 +115,7 @@ theorem verifyingInitialize_ok {p : VerifyingInput} {original s : State} (h : Ve
   have hqs : Src s L.base usedBytes (L.fields .q) p.components.q := by
     change Src s p.base usedBytes (original.gpr .x0 + original.gpr .x2) p.components.q
     rw [h.pLength]
-    exact source_slice hkey (by rw [p.keyLength]; omega)
+    exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
   refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.x0 hs.fields hps hqs p.components.pLength p.components.qLength
     rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_

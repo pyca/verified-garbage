@@ -51,13 +51,13 @@ theorem scan_raw_ct {sp : Nat} {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
         · exact h.2.2.2.2.2
         · exact h.1) hT₂))
   obtain ⟨hs, hdi, hZ, hp, hk, hne, hl, hsrc, hsp⟩ := h
-  have l1 := hs.ld (d := 8 * sp) (by omega)
-  have l2 := hs.ld (d := 8 * sK) (by change 152 ≤ a.Z; omega)
+  have l1 := hs.ld (d := 8 * sp) (by omega_using [hZ, hsp])
+  have l2 := hs.ld (d := 8 * sK) (by change 152 ≤ a.Z; omega_using [hZ])
   exact WP.mono (WP.keep [.rsi, .rcx] (Q := fun t => t.gpr .rsi = a.p ∧ t.gpr .rcx = BitVec.ofNat 64 a.bs.length ∧
       t.mem = s.mem)
     (by xrun [State.ea, hdr, hdi, hdrOff, l1, l2, hp, hk])
     rfl)
-    fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega, by rw [h1]; simp, by rw [h2]; simp, hne, hl,
+    fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega_using [], by rw [h1]; simp, by rw [h2]; simp, hne, hl,
       hsrc.congr (by rw [hm]; exact InScr.refl _ _ _) k.2.1 k.2.2, (k.gpr (by decide)).trans hdi⟩
 
 end VG.Proof.Ffdh.X86_64

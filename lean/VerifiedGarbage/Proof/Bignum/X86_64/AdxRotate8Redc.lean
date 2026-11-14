@@ -28,9 +28,9 @@ theorem redc_ok {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
   have hbound := hs.nowrap
   have hA := slot_le (w := w) (show aAcc < 8 by decide)
   have hT := slot_le (w := w) (show aTmp < 8 by decide)
-  have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega
-  have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
-  have hhead : hdrBytes ≤ slot w aAcc := by unfold slot; omega
+  have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega_using []
+  have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega_using []
+  have hhead : hdrBytes ≤ slot w aAcc := by unfold slot; omega_using []
   unfold AdxRotate8.redc
   refine WP.seq (WP.mono (setup_ok hs hdi hH hZ) fun a ⟨hc, hz, oa, ka⟩ => ?_)
   have ha := hH.of_outside oa hhead
@@ -47,19 +47,19 @@ theorem redc_ok {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
       (fun _ _ hlt _ h => tileStep_ok hZ hw hlt h) (fun _ h => h) hi
   refine WP.seq (WP.mono loop fun b hb => ?_)
   have bp : b.gpr .rcx = off B (slot w aTmp) := by
-    rw [hb.rcx]; congr 1; omega
+    rw [hb.rcx]; congr 1; omega_using [hw, hAT]
   refine WP.mono (finish_ok hb.scr hb.rdi hb.hdr hZ bp) fun t ⟨vt, ot, kt⟩ => ?_
-  refine ⟨?_, ((oa.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega) (by omega)).trans hb.out).trans
-    (ot.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega) (by omega)),
+  refine ⟨?_, ((oa.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega_using []) (by omega_using [])).trans hb.out).trans
+    (ot.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega_using [hAT]) (by omega_using [hAT])),
     (ka.trans (hb.keep.trans kt)).mono (by decide)⟩
   intro hinv
-  have m0 : word a.mem B (slot w aN) = word s.mem B (slot w aN) := oa.word (by omega) (by omega)
+  have m0 : word a.mem B (slot w aN) = word s.mem B (slot w aN) := oa.word (by omega_using [hsep]) (by omega_using [hZ, hbound, hA, hsep])
   obtain ⟨q, hq, heq⟩ := hb.val (by rw [m0]; exact hinv)
   have inp : wv a.mem B (slot w aAcc + 16) (2 * w) = wv s.mem B (slot w aAcc + 16) (2 * w) :=
-    oa.wv (by omega) (by omega)
-  have modn : wv a.mem B (slot w aN) w = wv s.mem B (slot w aN) w := oa.wv (by omega) (by omega)
-  rw [show 512 * n = 64 * w by omega] at hq heq
-  rw [show slot w aAcc + 16 + 64 * n = slot w aTmp by omega,
-    show 2 * w - 8 * n = w by omega, inp, modn] at heq
+    oa.wv (by omega_using []) (by omega_using [hZ, hbound, hT, hAT])
+  have modn : wv a.mem B (slot w aN) w = wv s.mem B (slot w aN) w := oa.wv (by omega_using [hsep]) (by omega_using [hZ, hbound, hA, hsep])
+  rw [show 512 * n = 64 * w by omega_using [hw]] at hq heq
+  rw [show slot w aAcc + 16 + 64 * n = slot w aTmp by omega_using [hw, hAT],
+    show 2 * w - 8 * n = w by omega_using [hw], inp, modn] at heq
   exact ⟨q, hq, by rw [vt]; exact heq⟩
 end VG.Proof.Bignum.X86_64.AdxRotate8

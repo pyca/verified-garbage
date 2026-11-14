@@ -38,15 +38,15 @@ theorem signingShape_ok {p : SigningInput} {s0 : State} (h : SigningPre p s0) :
   have hkey := h.keySource.congrK hinside he.keep
   have hps : Src s1 p.base usedBytes (s0.gpr .x2) p.components.p := source_take hkey
   have hqs : Src s1 p.base usedBytes (s0.gpr .x2 + BitVec.ofNat 64 p.pLen) p.components.q :=
-    source_slice hkey (by rw [p.keyLength]; omega)
+    source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hp1 : 0 < p.components.p.length := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq1 : 0 < p.components.q.length := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hp64 : p.components.p.length < 2 ^ 64 := by
-    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.pLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   have hq64 : p.components.q.length < 2 ^ 64 := by
-    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega
+    rw [p.components.qLength]; have := p.lengths; unfold Spec.Dsa.lengthsValid at this; omega_using [this]
   refine WP.mono (domainShape_ok (h.scratch.congr he.keep.wr) he.base (by decide) he.p
     (by rw [he.q, h.pLength]) (by rw [he.pLen, h.pLength, p.components.pLength])
     (by rw [he.qLen, p.components.qLength]) hps hqs hp1 hp64 hq1 hq64 rfl rfl
@@ -98,7 +98,7 @@ theorem signingInitialize_ok {p : SigningInput} {original s : State} (h : Signin
   have hqs : Src s L.base usedBytes (L.fields .q) p.components.q := by
     change Src s p.base usedBytes (original.gpr .x2 + original.gpr .x4) p.components.q
     rw [h.pLength]
-    exact source_slice hkey (by rw [p.keyLength]; omega)
+    exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   obtain ⟨_, hpo, hqo⟩ := p.shapeFacts ha
   refine WP.mono (workspacesReady_ok (L := L) hs.scratch hs.x0 hs.fields hps hqs p.components.pLength p.components.qLength
     rfl rfl hpo hqo) fun t ⟨pi, qi, hr, hf, hm, hk⟩ => ?_

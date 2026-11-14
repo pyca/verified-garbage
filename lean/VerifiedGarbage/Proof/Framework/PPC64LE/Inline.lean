@@ -55,7 +55,7 @@ theorem Covers.of_sub {rs rs' : List Region}
     rw [show a - r'.base = (a - (r'.base + BitVec.ofNat 64 off)) + BitVec.ofNat 64 off by bv_omega_arith,
       BitVec.toNat_add, BitVec.toNat_ofNat]
     exact Nat.le_trans (Nat.mod_le _ _) (Nat.add_le_add_left (Nat.mod_le _ _) _)
-  omega
+  omega_using [hc, hl, this]
 
 /-- A frame's push inserts its region into the writable regions of both
 states. -/
@@ -281,7 +281,7 @@ theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
   · split at h <;> cases h; exact ⟨_, rfl, rfl, rfl, rfl⟩
   · split at h <;> cases h
     rename_i hc
-    exact ⟨_, rfl, rfl, rfl, by simp only; rw [Nat.sub_add_cancel (by omega)]⟩
+    exact ⟨_, rfl, rfl, rfl, by simp only; rw [Nat.sub_add_cancel (by omega_using [hc])]⟩
 
 /-- A frame's pop removes the region at the head of `wr`, and changes only
 its register. -/

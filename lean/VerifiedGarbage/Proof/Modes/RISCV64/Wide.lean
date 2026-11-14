@@ -106,9 +106,9 @@ theorem wideSteps_ok (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstw : Mw.step = 2
   have hwq : Mw.step * q + st * r = st * n := by rw [hwq', ← Nat.mul_add, ← hnr]
   have hWdat : dataRegion D st n ∈ wrs c B D n st := List.mem_cons_self
   have coreScr : Region.Sub (coreRegion c B) (scrRegion c B) := VG.Offset.sub_base _ (by
-    have h1 := total_ge hL; simp only [coreSlot] at h1 ⊢; omega)
+    have h1 := total_ge hL; simp only [coreSlot] at h1 ⊢; omega_using [h1])
   have chnScr : Region.Sub (chnRegion c B) (scrRegion c B) := VG.Offset.sub_base _ (by
-    have h1 := total_ge hL; have h2 := bw_le hL; simp only [Core.chnSlot, coreSlot] at h1 ⊢; omega)
+    have h1 := total_ge hL; have h2 := bw_le hL; simp only [Core.chnSlot, coreSlot] at h1 ⊢; omega_using [h1, h2])
   -- The groups.
   have hFw : Fixed c s₂ B D q Mw.step (4 * c.bw * 2 ^ lg) (wrs c B D n st) n (2 ^ lg) :=
     ⟨hFx.scr, dataW_mono hFx.dataW (by omega_using [hwq]), by omega_using [hDf, hwq],
@@ -124,7 +124,7 @@ theorem wideSteps_ok (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstw : Mw.step = 2
     · simp only [hxw, List.take_zero, run, List.nil_append, List.drop_zero]
     · rw [hI.chn]; rfl
   have hxwl : xw.length = q := by rw [← hxw, chunksAt_length]
-  have hBal : B.toNat % 4 = 0 := by have := hFx.scr.al; omega
+  have hBal : B.toNat % 4 = 0 := by have := hFx.scr.al; omega_using [this]
   have hww : WordOk c w Mw B D Mw.step := ⟨hpreWA, hpostWA, hBal, fun hw =>
     ⟨(hD hw).1, by rw [hstw, Nat.mul_mod, (hD hw).2, Nat.mul_zero, Nat.zero_mod]⟩⟩
   refine WP.seq (WP.mono (loopWide_wp cs (by omega_using [hlg]) hFw hww rfl rfl hB hpreW hpostW hcompW hxwl hIw)

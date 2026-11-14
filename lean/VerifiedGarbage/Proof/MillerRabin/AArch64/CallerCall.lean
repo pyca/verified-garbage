@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
-
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerRestore
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
@@ -13,7 +12,36 @@ import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSaved
+
+/-! ### `MillerRabin.AArch64.CallerSaved`, which only this module used -/
+
+section
+
+/-! # The caller's saved words and untouched Montgomery-one value -/
+
+@[expose] public section
+
+namespace VG.Proof.MillerRabin.AArch64.Caller
+
+open VG VG.AArch64 VG.Proof.Bignum VG.Impl.Bignum VG.Impl.Bignum.Public
+
+theorem saved_x19 (s : State) (B : Addr) (w : Nat) (hp : pad w + 16 ≤ 2 ^ 64) :
+    word (savedMem s B w) B (pad w) = s.gpr .x19 := by
+  unfold savedMem
+  rw [(writeW_outside _ B (s.gpr .x30) (d := pad w + 8) (by omega_arith)).word
+    (Or.inl (by omega_arith)) (by omega_arith), word_writeW_self]
+
+theorem saved_x30 (s : State) (B : Addr) (w : Nat) :
+    word (savedMem s B w) B (pad w + 8) = s.gpr .x30 := by
+  unfold savedMem
+  exact word_writeW_self _ _ _ _
+
+end VG.Proof.MillerRabin.AArch64.Caller
+
+end
+
+end
+
 
 /-! # Calling the shared prepared round from a larger workspace -/
 

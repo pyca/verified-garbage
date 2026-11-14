@@ -31,13 +31,13 @@ theorem frame_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' :
   have B : p.2 + 4 ≤ 16 := by
     simp only [PublicFn.savedRegisters, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl <;> decide
-  refine (F.readW (r := ⟨base, 16⟩) (Offset.contains_base _ B (by omega)) ?_ (by decide)).trans (S p hp)
+  refine (F.readW (r := ⟨base, 16⟩) (Offset.contains_base _ B (by omega_using [B])) ?_ (by decide)).trans (S p hp)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.base_disjoint base (Nat.le_refl 16) (by omega)
-  · exact A.sub_left (Region.sub_prefix (by omega))
-  · exact (Z.sub_right (Region.sub_prefix (by omega))).symm
+  · exact Offset.base_disjoint base (Nat.le_refl 16) (by omega_using [high])
+  · exact A.sub_left (Region.sub_prefix (by omega_using [low]))
+  · exact (Z.sub_right (Region.sub_prefix (by omega_using [low]))).symm
 
 theorem frame_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
     (F : Frame [⟨off base 16, bytes - 16⟩, ⟨out, len⟩, below sp 96] m m') (low : 16 ≤ bytes) :
@@ -46,7 +46,7 @@ theorem frame_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨⟨base, bytes⟩, by simp, Offset.sub_base base (by omega)⟩
+  · exact ⟨⟨base, bytes⟩, by simp, Offset.sub_base base (by omega_using [low])⟩
   · exact ⟨⟨out, len⟩, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
 

@@ -41,7 +41,7 @@ theorem wins_ct (M : Mont) (Sq : MontS) :
   apply two_loop (Φ := WinI Sq.bd) (fun _ => 2)
   · apply two_map (fun q : (XPub × Nat) × Nat => (q.1.1, q.1.2 * 16 ^ q.2)) ?_ (window_ct M Sq)
     intro q s ⟨hj, t₀, minv, X, Xc, E, hI, hw, hw', hR, _, hv⟩
-    have hp : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega) with h | h <;> rw [h] <;> decide
+    have hp : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega_using [hj]) with h | h <;> rw [h] <;> decide
     exact ⟨minv, X, Xc, hI.ctx, hI.tab, hI.ylt, hI.v,
       by have := Nat.mul_le_mul_left q.1.2 hp; omega, hw, hw', hR⟩
   · intro p j s hj ⟨t₀, minv, X, Xc, E, hI, hw, hw', hR, hXN, hv⟩

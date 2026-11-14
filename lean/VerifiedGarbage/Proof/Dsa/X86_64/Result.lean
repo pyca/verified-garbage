@@ -28,7 +28,7 @@ theorem result_ok {s : State} {B : Addr} {Z : Nat} {valid : Bool}
       (∀ i < 6, t.gpr (saved.getD i .rax) = word s.mem B (8 * i)) ∧
       t.mem = s.mem ∧ Keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 :=
-    fun i hi => hs.ld (Nat.le_trans (show 8 * i + 8 ≤ pWorkspace by change 8 * i + 8 ≤ 3456; omega) hZ)
+    fun i hi => hs.ld (Nat.le_trans (show 8 * i + 8 ≤ pWorkspace by change 8 * i + 8 ≤ 3456; omega_using [hi]) hZ)
   unfold SignVerify.result
   rw [exit_eq]
   refine WP.mono (WP.keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun t =>
@@ -43,7 +43,7 @@ theorem result_ok {s : State} {B : Addr} {Z : Nat} {valid : Bool}
       hl 0 (by decide), hl 1 (by decide), hl 2 (by decide), hl 3 (by decide), hl 4 (by decide), hl 5 (by decide)]
   · refine ⟨ht, ?_, hmem, hk⟩
     intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2

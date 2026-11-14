@@ -29,13 +29,13 @@ theorem view_wb (m : Mem) {S : Addr} {d o : Nat} (xs : List Byte)
     (hd : d + xs.length ≤ oRsa) (ho : o < oRsa) :
     view (writeBytes m (off S d) xs) S o = if d ≤ o ∧ o < d + xs.length then xs.getD (o - d) 0 else view m S o := by
   simp only [view, writeBytes]
-  rw [Offset.sub_toNat' S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega)]
+  rw [Offset.sub_toNat' S (by unfold oRsa at *; omega_using [hd]) (by unfold oRsa at *; omega_using [ho])]
   by_cases h : d ≤ o
   · rw [ifp h]
     by_cases h' : o - d < xs.length
-    · rw [ifp h', ifp ⟨h, by omega⟩]
-    · rw [ifn h', ifn (by omega)]
-  · rw [ifn h, ifn (by unfold oRsa at *; omega), ifn (by omega)]
+    · rw [ifp h', ifp ⟨h, by omega_using [h']⟩]
+    · rw [ifn h', ifn (by omega_using [h'])]
+  · rw [ifn h, ifn (by unfold oRsa at *; omega_using [hd]), ifn (by omega_using [h])]
 
 theorem view_w8 (m : Mem) {S : Addr} {d o : Nat} (b : Byte) (hd : d < oRsa)
     (ho : o < oRsa) : view (m.writeW (off S d) b) S o = if o = d then b else view m S o := by
@@ -43,7 +43,7 @@ theorem view_w8 (m : Mem) {S : Addr} {d o : Nat} (b : Byte) (hd : d < oRsa)
   rw [writeW8_apply]
   by_cases h : o = d
   · subst h; simp
-  · rw [ifn (Offset.add_ofNat_ne S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega) h), ifn h]
+  · rw [ifn (Offset.add_ofNat_ne S (by unfold oRsa at *; omega_using [ho]) (by unfold oRsa at *; omega_using [hd]) h), ifn h]
 
 section
 variable {S : State → Addr} {vf : State → Reg → BitVec 64} {s : State} (P : Fits S s)
@@ -55,14 +55,14 @@ theorem S_fits : (S s).toNat + oRsa ≤ 2 ^ 64 := P.wS
 theorem sc_w {t : State} (ht : t.wr = fr s :: s.wr) {d n : Nat} (hd : d + n ≤ oRsa) :
     ∀ i < n, InRegions t.wr (off (S s) d + BitVec.ofNat 64 i) 1 := fun i hi => by
   show InRegions t.wr (off (off (S s) d) i) 1
-  rw [ht, off_off]; exact sc_inW P (by omega)
+  rw [ht, off_off]; exact sc_inW P (by omega_using [hd, hi])
 
 omit P in
 /-- Bytes of a caller's buffer are readable. -/
 theorem rd_in {t : State} (ht : t.rd = s.rd) {R : Region} (hR : R ∈ s.rd) (hw : R.base.toNat + R.len ≤ 2 ^ 64)
     {n : Nat} (hn : n ≤ R.len) : ∀ j < n, InRegions (t.rd ++ t.wr) (R.base + BitVec.ofNat 64 j) 1 := fun j hj => by
   rw [ht]
-  exact ⟨R, List.mem_append_left _ hR, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨R, List.mem_append_left _ hR, Offset.contains_base _ (by omega_using [hn, hj]) (by omega_using [hw, hn, hj])⟩
 
 omit P in
 /-- Bytes of two disjoint regions are at different addresses. -/

@@ -85,7 +85,7 @@ theorem search_finish {p : SPub} {original s : State} {result : ParameterSearchR
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hd.1)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   have hc (j : Nat) (hj : j < 4) : word t.mem p.control (8 * j) = word s.mem p.control (8 * j) :=
     hf.readW (r := ⟨p.control, 128⟩)
       (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
@@ -94,7 +94,7 @@ theorem search_finish {p : SPub} {original s : State} {result : ParameterSearchR
   · rw [ha]
     have := result_status_lt result
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   · have ho := h.output
     unfold SOutput at ho ⊢
     rw [hb]
@@ -147,7 +147,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     WP isa (search c.call) t fun u =>
       SDone p s (searchResult s) u ∧ u.gpr .x30 = s.gpr .x30 ∧ u.sp = s.sp := by
   have hl := search_start h hx hm k
-  have hsp : 16 ≤ t.sp.toNat := by rw [k.sp, ← h.sp_eq]; have := h.sp_room; omega
+  have hsp : 16 ≤ t.sp.toNat := by rw [k.sp, ← h.sp_eq]; have := h.sp_room; omega_using [this]
   unfold search
   refine WP.frameReg hsp ?_ ?_ ?_
   · intro R hR

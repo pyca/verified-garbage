@@ -69,7 +69,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : State.addr (s.gpr .r3) = base
     rcases h with rfl | rfl <;> decide
   · intro r h; simp only [List.mem_singleton] at h; subst r; decide
   · exact (show Outside base 0 8192 t.mem u.mem from fun q h =>
-      um q (by simp only [X1, slot]; omega) (by simp only [X3, slot]; omega)).trans
+      um q (by simp only [X1, slot]; omega_using [h]) (by simp only [X3, slot]; omega_using [h])).trans
       (vm.mono (by decide) (by decide))
   · rw [decodeUCoordinate_eq (length_bytesAt _ _ _)]
     exact v0.trans uv0
@@ -113,7 +113,7 @@ theorem setupBase_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = ba
     rcases h with rfl | rfl <;> decide
   · intro r h; simp only [List.mem_singleton] at h; subst r; decide
   · exact (show Outside base 0 8192 t.mem u.mem from fun q h =>
-      um q (by simp only [X1, slot]; omega) (by simp only [X3, slot]; omega)).trans
+      um q (by simp only [X1, slot]; omega_using [h]) (by simp only [X3, slot]; omega_using [h])).trans
       (vm.mono (by decide) (by decide))
   · rw [decodeUCoordinate_eq (by rfl), v0, uv0, valN_five]; rfl
 

@@ -123,8 +123,8 @@ theorem readW_writeW_slot (m : Mem) (a : Addr) {x y : Nat} (v : BitVec 64) (hxy 
     (m.writeW (a + BitVec.ofNat 64 y) v).readW (a + BitVec.ofNat 64 x) 64 = m.readW (a + BitVec.ofNat 64 x) 64 := by
   refine Mem.readW_writeW_sep ?_ (by decide)
   rcases hxy with h | h
-  · exact (off_disj (p := a) h (by omega)).sep (Region.contains_self _ _) (Region.contains_self _ _)
-  · exact (off_disj (p := a) h (by omega)).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · exact (off_disj (p := a) h (by omega_using [hy])).sep (Region.contains_self _ _) (Region.contains_self _ _)
+  · exact (off_disj (p := a) h (by omega_using [hx])).symm.sep (Region.contains_self _ _) (Region.contains_self _ _)
 
 /-- The six stores of `topPro`: each slot holds its register. -/
 theorem stores_read (m : Mem) (a : Addr) (v : Nat → BitVec 64) : ∀ k < 6,
@@ -132,9 +132,9 @@ theorem stores_read (m : Mem) (a : Addr) (v : Nat → BitVec 64) : ∀ k < 6,
       (a + BitVec.ofNat 64 856) (v 2)).writeW (a + BitVec.ofNat 64 864) (v 3)).writeW (a + BitVec.ofNat 64 872)
       (v 4)).writeW (a + BitVec.ofNat 64 880) (v 5)).readW (a + BitVec.ofNat 64 (oSV + 8 * k)) 64 = v k := by
   intro k hk
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    simp (disch := omega) only [oSV, Nat.reduceMul, Nat.reduceAdd, readW_writeW_slot, Mem.readW_writeW_self64]
+    simp (disch := omega_using []) only [oSV, Nat.reduceMul, Nat.reduceAdd, readW_writeW_slot, Mem.readW_writeW_self64]
 
 /-! ## The return -/
 
@@ -231,16 +231,16 @@ theorem seqR_ok {f : Nat → Prog isa} {I : Nat → State → Prop} :
   | 0, a, _, s, hs => WP.block_nil hs
   | n + 1, a, h, s, hs => by
     rw [seqR]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
-    rw [show a + (n + 1) = a + 1 + n by omega]
-    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega) (by omega)) s₁ h₁
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun s₁ h₁ => ?_)
+    rw [show a + (n + 1) = a + 1 + n by omega_using []]
+    exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk'])) s₁ h₁
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (R k) (f k) (R (k + 1))) →
       RelCT isa (R a) (seqR f a n) (R (a + n))
   | 0, _, _ => nil_tr
   | n + 1, a, h => by
-    rw [seqR, show a + (n + 1) = a + 1 + n by omega]
-    exact RelCT.seq (h a (Nat.le_refl _) (by omega)) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega) (by omega))
+    rw [seqR, show a + (n + 1) = a + 1 + n by omega_using []]
+    exact RelCT.seq (h a (Nat.le_refl _) (by omega_using [])) (seqR_tr n (a + 1) fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk']))
 
 end VG.Proof.MlKem.X86_64

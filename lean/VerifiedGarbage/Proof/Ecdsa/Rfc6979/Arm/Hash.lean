@@ -84,7 +84,7 @@ abbrev Q : Nat := P.R.E.C.len
 theorem shape (h : (P.F.H.D, P.F.H.B) ∈ shapes) :
     16 ≤ P.F.H.D ∧ P.F.H.D ≤ 64 ∧ P.F.H.D % 4 = 0 ∧ P.F.H.D < P.F.H.B ∧ P.F.H.B ≤ 128 ∧ 64 ≤ P.F.H.B := by
   simp only [shapes, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
-  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega
+  rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega_using [h, h']
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
@@ -101,21 +101,21 @@ theorem wsizes : 3 ≤ P.w ∧ P.w ≤ 9 ∧ 6 ≤ P.k ∧ P.k ≤ 2 * P.w ∧ 8
   have hw : 8 ≤ P.Q ∧ 8 * P.w < P.Q + 8 ∧ P.Q ≤ 8 * P.w := P.R.len_words
   have hQ : P.Q ≤ 66 := by
     cases hb : P.R.big
-    · have := P.R.sizesA hb; simp only [Q]; omega
-    · have := P.R.sizesW hb; simp only [Q]; omega
-  exact ⟨P.R.n3, P.R.n9, (by have := P.R.len_words; have := P.R.n3; simp only [k]; split <;> omega),
-    (by simp only [k, w]; omega), hw.1, hQ, hw.2.2, hw.2.1⟩
+    · have := P.R.sizesA hb; simp only [Q]; omega_using [this]
+    · have := P.R.sizesW hb; simp only [Q]; omega_using [this]
+  exact ⟨P.R.n3, P.R.n9, (by have := P.R.len_words; have := P.R.n3; simp only [k]; split <;> omega_arith),
+    (by simp only [k, w]; omega_using []), hw.1, hQ, hw.2.2, hw.2.1⟩
 
 /-- Unless `big`, the scalars fill at most sixteen 32-bit words. -/
 theorem sizesA (h : P.R.big = false) : P.Q = 4 * P.k ∧ P.k ≤ 16 ∧ P.Q ≤ 64 := by
   have := P.R.sizesA h
-  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega
+  rcases this.1 with h' | h' | h' | h' <;> simp only [Q, k] <;> split <;> omega_arith
 
 /-- If `big`, P-521's sizes, longer than any digest. -/
 theorem sizesW (h : P.R.big = true) : P.w = 9 ∧ P.Q = 66 ∧ P.k = 18 ∧ P.F.H.D < P.Q := by
   have h₁ := P.R.sizesW h
   have h₂ := (P.shape P.hDB).2.1
-  refine ⟨h₁.1, h₁.2.1, ?_, by simp only [Q]; omega⟩
+  refine ⟨h₁.1, h₁.2.1, ?_, by simp only [Q]; omega_using [h₁, h₂]⟩
   simp only [k, h₁.1, h₁.2.1]; decide
 
 theorem mac_length (K t : List Byte) : (P.mac K t).length = P.F.H.D := by

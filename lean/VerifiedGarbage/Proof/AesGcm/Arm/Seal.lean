@@ -43,7 +43,7 @@ theorem saved_otFrame {s₀ : State} (h : onePre n wi s₀) {o : Nat} (ho : o = 
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · rw [hst]; exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
   · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact Lay.w_w (.inr (by omega)) (by decide) (by omega)
+  · exact Lay.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 
@@ -94,11 +94,11 @@ theorem seal_mid {s₀ s₁ s₂ s₃ : State} (h : onePre n wi s₀)
       simp only [List.mem_append, List.mem_singleton] at hr
       rcases hr with rfl | hr
       · exact dDW.sub_right (Lay.wSub (by decide))
-      · exact one_dataJ0 h dDW bD r hr) (by have := hd.ok.lt; omega)
+      · exact one_dataJ0 h dDW bD r hr) (by have := hd.ok.lt; omega_using [])
   have hb := Nat.mod_lt (bytesAt s₀.mem (State.addr (arg s₀ 0)) (arg s₀ 1).toNat ++
     zeros (padLen (bytesAt s₀.mem (State.addr (arg s₀ 0)) (arg s₀ 1).toNat).length)).length (show 16 > 0 by decide)
   refine ⟨?_, (oa.abs.congr (blockAt_frame oc.frame (stp_crFrame L hd (by decide)))
-      (bytesAt_frame oc.frame (stp_crFrame L hd (by omega)) (by omega))), ?_,
+      (bytesAt_frame oc.frame (stp_crFrame L hd (by omega_using [])) (by omega_using []))), ?_,
     by rw [ciph_frame oc.frame dCr hR, hc₂], by rw [oc.out, hc₂, hD₂],
     (h1.saved.frame oa.frame (saved_j0Frame L)).frame oc.frame (saved_crFrame L hd)⟩
   · rw [blockAt_frame oc.frame (fun r hr => (dCr r hr).sub_left (Lay.ctxSub (by decide)))]; exact oa.hH
@@ -141,7 +141,7 @@ theorem seal_wp {s₀ : State} (h : sealArm.pre s₀) :
   obtain ⟨-, -, -, -, -, -, -, -, dDW, -, -, -, -, -, bD, -⟩ := hpre
   have hD₄ : bytesAt s₄.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
       bytesAt s₃.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat := by
-    refine bytesAt_frame ot.frame (fun r hr => ?_) (by omega)
+    refine bytesAt_frame ot.frame (fun r hr => ?_) (by omega_using [])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [oSt_addr h']; exact dDW.sub_right (Lay.wSub (by decide))
@@ -151,7 +151,7 @@ theorem seal_wp {s₀ : State} (h : sealArm.pre s₀) :
     · exact bD.symm
   have hD₅ : bytesAt s₅.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat =
       bytesAt s₄.mem (State.addr (arg s₀ 2)) (arg s₀ 3).toNat :=
-    bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dT) (by omega)
+    bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dT) (by omega_using [])
   have ho := ot.out
   rw [hc₃, hj₃, add_ofNat_zero, ← Proof.Gcm.fullTag_eq] at ho
   simp only [sealArm, encryptWith, hm, hD₅, hD₄, hD₃, hb₅, ho]

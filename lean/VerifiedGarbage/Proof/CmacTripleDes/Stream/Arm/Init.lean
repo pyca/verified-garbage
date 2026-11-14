@@ -89,15 +89,15 @@ theorem initPre_wp {s₀ : State} {St Kp S : BitVec 32} {KL : Nat} (hp : IPre s�
       s₁.mem = zeroCv s₀.mem (State.addr St + BitVec.ofNat 64 400) ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr := by
   have hSt := hp.fSt
   have hKL : s₀.gpr .r2 = BitVec.ofNat 32 KL :=
-    BitVec.eq_of_toNat_eq (by rw [hp.r2, toNat_ofNat32 (by rcases hp.klen with h | h <;> omega)])
+    BitVec.eq_of_toNat_eq (by rw [hp.r2, toNat_ofNat32 (by rcases hp.klen with h | h <;> omega_using [h])])
   have inSt (d : Nat) (hd : d + 4 ≤ 416) : InRegions s₀.wr (State.addr St + BitVec.ofNat 64 d) 4 := by
-    rw [hp.wr]; exact ⟨⟨State.addr St, 416⟩, by simp, Offset.contains_base _ hd (by omega)⟩
+    rw [hp.wr]; exact ⟨⟨State.addr St, 416⟩, by simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => ?_
   refine wp_str (a := State.addr St + BitVec.ofNat 64 400) (by decide)
-    (by rw [u₁.other _ (by decide), hp.r0]; exact addr_add (by omega)) (by rw [u₁.wr]; exact inSt 400 (by decide))
+    (by rw [u₁.other _ (by decide), hp.r0]; exact addr_add (by omega_using [hSt])) (by rw [u₁.wr]; exact inSt 400 (by decide))
     fun s₂ v₂ => ?_
   refine wp_str (a := State.addr St + BitVec.ofNat 64 400 + BitVec.ofNat 64 4) (by decide)
-    (by rw [v₂.gpr, u₁.other _ (by decide), hp.r0, Offset.add_add]; exact addr_add (by omega))
+    (by rw [v₂.gpr, u₁.other _ (by decide), hp.r0, Offset.add_add]; exact addr_add (by omega_using [hSt]))
     (by rw [v₂.wr, u₁.wr, Offset.add_add]; exact inSt 404 (by decide)) fun s₃ v₃ => ?_
   refine wp_mov (op2_reg _ _) fun s₄ u₄ => wp_mov (op2_reg _ _) fun s₅ u₅ => wp_mov (op2_reg _ _) fun s₆ u₆ =>
     wp_mov (op2_reg _ _) fun s₇ u₇ => WP.block_nil ?_
@@ -134,7 +134,7 @@ theorem init_wp {s₀ : State} (h0 : initArm.pre s₀) :
       ks := hp.k_s
       os := hp.st_s.sub_left oSt
       fK := hp.fK
-      fO := by omega
+      fO := by omega_using [hw]
       fS := hp.fS
       reads := by
         rw [rd₁, wr₁, hp.rd, hp.wr]
@@ -163,7 +163,7 @@ theorem init_wp {s₀ : State} (h0 : initArm.pre s₀) :
     exact f₁.bytes (R := ⟨State.addr Kp, KL⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hp.st_k.symm.sub_right (Offset.sub_base _ (by decide)))
-      (by show KL ≤ 2 ^ 64; have := hp.fK; omega) (List.mem_range.mp hi)
+      (by show KL ≤ 2 ^ 64; have := hp.fK; omega_using [this]) (List.mem_range.mp hi)
   have hlen : (Spec.TripleDes.bytesAt s₀.mem (State.addr Kp) KL).length = KL := by simp [Spec.TripleDes.bytesAt]
   obtain ⟨hs, hk⟩ := h₂.out
   rw [hkey] at hs hk
@@ -193,7 +193,7 @@ theorem initTaint_wf {s : State} (h : initArm.pre s) : VG.Arm.Taint.Wf initTaint
     exact hp.st_s
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     have := hp.fSt; have := hp.fS
-    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega_arith
   · simp only [initTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> simp [VG.Arm.Taint.region, hp.wr]
 

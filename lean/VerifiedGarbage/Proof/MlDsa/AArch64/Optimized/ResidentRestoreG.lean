@@ -32,22 +32,22 @@ theorem saveG_ok (s : State)
       ∀ i<k, t.mem.readW (s.gpr .x4+BitVec.ofNat 64 (7968+8*i)) 64=s.gpr (saved[i]!))
     (fun k t hk ⟨ht,hf,hvals⟩ => ?_) 10 (Nat.le_refl _) s
     ⟨⟨rfl,rfl,rfl,rfl,rfl,rfl⟩,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
-  refine wp_str (a := s.gpr .x4+BitVec.ofNat 64 (7968+8*k)) ⟨by omega,by omega⟩
+  refine wp_str (a := s.gpr .x4+BitVec.ofNat 64 (7968+8*k)) ⟨by omega_using [],by omega_using [hk]⟩
     (by rw [ht.gpr]) (by rw [ht.wr]; exact hw k hk) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact ⟨hu.gpr.trans ht.gpr,rfl,hu.rd.trans ht.rd,hu.wr.trans ht.wr,
       hu.sp.trans ht.sp,hu.vec.trans ht.vec⟩
   · rw [hu.mem]
     exact hf.writeW (List.mem_singleton_self _) _
       (Offset.contains (s.gpr .x4) (d := 7968+8*k) (e := 7968) (n := 8) (k := 80)
-        (by omega) (by omega) (by decide))
+        (by omega_using []) (by omega_using [hk]) (by decide))
   · intro i hi
     rw [hu.mem,ht.gpr]
     by_cases he : i=k
     · subst i; rw [Mem.readW_writeW_self64]
     · rw [Mem.readW_writeW_sep (Offset.sep (s.gpr .x4)
         (d := 7968+8*i) (e := 7968+8*k) (n := 8) (k := 8)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact hvals i (by omega)
+        (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])) (by decide)]
+      exact hvals i (by omega_using [hi, he])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 
@@ -70,7 +70,7 @@ private theorem saveV_step (s : State) {i : Nat} (hi : i<8)
       t.mem=s.mem.writeW (s.gpr .x4+BitVec.ofNat 64 (8048+8*i)) (vdword (s.v (vreg (8+i))) 0) := by
   refine WP.cons (s' := s.write .x .x8 (vdword (s.v (vreg (8+i))) 0)) rfl ?_
   have h1 := Upd.write64 s .x8 (vdword (s.v (vreg (8+i))) 0)
-  refine wp_str ⟨by omega,by omega⟩ (by rw [h1.other .x4 (by decide)])
+  refine wp_str ⟨by omega_using [],by omega_using [hi]⟩ (by rw [h1.other .x4 (by decide)])
     (by rw [h1.wr]; exact hw) fun t h2 => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact (RegKeep.upd h1).trans (RegKeep.mupd h2) |>.mono (by simp)
   · exact h2.vec.trans h1.vec
@@ -94,15 +94,15 @@ theorem saveV_ok (s : State)
   · rw [hm]
     exact hf.writeW (List.mem_singleton_self _) _
       (Offset.contains (s.gpr .x4) (d := 8048+8*k) (e := 8048) (n := 8) (k := 64)
-        (by omega) (by omega) (by decide))
+        (by omega_using []) (by omega_using [hk]) (by decide))
   · intro i hi
     rw [hm,hv]
     by_cases he : i=k
     · subst i; rw [Mem.readW_writeW_self64]
     · rw [Mem.readW_writeW_sep (Offset.sep (s.gpr .x4)
         (d := 8048+8*i) (e := 8048+8*k) (n := 8) (k := 8)
-        (by omega) (by omega) (by omega)) (by decide)]
-      exact hvals i (by omega)
+        (by omega_using [he]) (by omega_using [hk, hi]) (by omega_using [hk])) (by decide)]
+      exact hvals i (by omega_using [hi, he])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 
@@ -134,7 +134,7 @@ private theorem restoreV_step (s : State) {i : Nat} (hi : i<8)
       fun t => RegKeep [.x8] s t ∧ t.mem=s.mem ∧
         vdword (t.v (vreg (8+i))) 0=s.mem.readW (s.gpr .x19+BitVec.ofNat 64 (8048+8*i)) 64 ∧
         ∀ r, r≠vreg (8+i) → t.v r=s.v r := by
-  refine wp_ldr ⟨by omega,by omega⟩ rfl hin fun u h1 => ?_
+  refine wp_ldr ⟨by omega_using [],by omega_using [hi]⟩ rfl hin fun u h1 => ?_
   refine wp_vop (d := vreg (8+i)) rfl fun t h2 => WP.block_nil_iff.mpr ⟨?_,?_,?_,?_⟩
   · exact ((RegKeep.upd h1).trans (RegKeep.vupd h2)).mono (by simp)
   · exact h2.mem.trans h1.mem
@@ -159,9 +159,9 @@ theorem restoreV_ok (s : State)
   by_cases heq : i=k
   · subst i; rw [hvu,hm,ht.gpr .x19 (by decide)]
   · rw [hother (vreg (8+i)) (fun he => heq (by
-      have hv := (vreg_inj (8+i) (by omega) (8+k) (by omega)).mp he
-      omega))]
-    exact hvals i (by omega)
+      have hv := (vreg_inj (8+i) (by omega_using [hk, hi]) (8+k) (by omega_using [hk])).mp he
+      omega_using [hv]))]
+    exact hvals i (by omega_using [hi, heq])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 
@@ -190,7 +190,7 @@ theorem restoreG_ok (s : State)
     (fun k t hk ⟨ht,hvals⟩ => ?_) 9 (Nat.le_refl _) s
     ⟨Only.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
   have h19 : t.gpr .x19=s.gpr .x19 := ht.get .x19 (by decide)
-  refine wp_ldrx ⟨by omega,by omega⟩ (by rw [h19])
+  refine wp_ldrx ⟨by omega_using [],by omega_using [hk]⟩ (by rw [h19])
     (by rw [ht.rd,ht.wr]; exact hr k hk) fun u hu eu => WP.block_nil_iff.mpr ⟨?_,fun i hi => ?_⟩
   · exact (ht.trans hu).mono (by
       intro r hr
@@ -202,9 +202,9 @@ theorem restoreG_ok (s : State)
   · by_cases heq : i=k
     · subst i; rw [eu,ht.mem]
     · rw [hu.get (saved[i+1]!) (by
-        simp only [List.mem_singleton,saved_inj (i+1) (by omega) (k+1) (by omega)]
-        omega)]
-      exact hvals i (by omega)
+        simp only [List.mem_singleton,saved_inj (i+1) (by omega_using [hk, hi]) (k+1) (by omega_using [hk])]
+        omega_using [heq])]
+      exact hvals i (by omega_using [hi, heq])
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 

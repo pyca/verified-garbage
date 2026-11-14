@@ -20,10 +20,10 @@ theorem store_slot {s : State} {B : Addr} {Z w N d : Nat} (h : Ws s B Z w N)
       Ws t B Z w N ∧ Keep B w [] [d] s.mem t.mem ∧
       slot t.mem B d = (s.gpr r).toNat ∧ Keeps [] s t := by
   have head := h.hdr_le
-  refine wp_storeS (h.workspace.ea (by omega)) (h.workspace.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (h.workspace.ea (by omega_using [hd, head])) (h.workspace.write (by omega_using [hd, head])) fun t T => WP.block_nil ?_
   refine ⟨h.rest (T.keeps []) (by decide) (by decide), ?_, ?_, T.keeps []⟩
   · rw [T.mem]
-    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at hd; omega)) (by simp)
+    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at hd; omega_using [hd])) (by simp)
   · unfold slot; rw [T.mem, w32_write_self]
 
 theorem andS_ok {s : State} {B : Addr} {Z w N d a b : Nat} (h : Ws s B Z w N)
@@ -35,16 +35,16 @@ theorem andS_ok {s : State} {B : Addr} {Z w N d a b : Nat} (h : Ws s B Z w N)
       Keeps [.eax] s t := by
   have head := h.hdr_le
   unfold andS
-  refine wp_movS (readSrc_sc h.workspace (by omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h.workspace (by omega_using [ha, head])) fun u U _ => ?_
   have hu := h.workspace.of_keeps U.keeps (by decide)
-  refine wp_logicS (.inl rfl) (readSrc_sc hu (by omega)) fun v V => ?_
+  refine wp_logicS (.inl rfl) (readSrc_sc hu (by omega_using [hb, head])) fun v V => ?_
   have hv := hu.of_keeps V.keeps (by decide)
-  refine wp_storeS (hv.ea (by omega)) (hv.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (hv.ea (by omega_using [hd, head])) (hv.write (by omega_using [hd, head])) fun t T => WP.block_nil ?_
   have r : Keeps [.eax] s t := (U.keeps.trans V.keeps).trans (T.keeps _)
   have mem : t.mem = s.mem.writeW (off B d) (v.gpr .eax) := by rw [T.mem, V.mem, U.mem]
   refine ⟨h.rest r, ?_, ?_, r⟩
   · rw [mem]
-    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at hd; omega)) (by simp)
+    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at hd; omega_using [hd])) (by simp)
   · unfold slot
     rw [mem, w32_write_self, V.gpr, ite_eq_left rfl, U.gpr, U.mem]
     exact bv_and_bits ba bb

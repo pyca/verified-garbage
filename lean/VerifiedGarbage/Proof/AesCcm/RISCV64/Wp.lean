@@ -69,8 +69,8 @@ theorem in_off' {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n := by
   refine h _ _ ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_using [hd, hk])]
+  omega_using [hd]
 
 /-- The byte at `S + i` (`j ≤ i < L`), not among the `j` bytes written at
 `D`, is what it was. -/
@@ -80,7 +80,7 @@ theorem byte_kept {m : Mem} {S D : Addr} {j L : Nat} (hd : (⟨S, L⟩ : Region)
   refine (writeBytes_frame m D (bytesAt m S j) (R := ⟨D, j⟩)
     (by rw [length_bytesAt]; exact Region.contains_self _ _)) _ fun r hr hcon => ?_
   simp only [List.mem_singleton] at hr; subst hr
-  exact hd _ (Offset.contains_base S (show i + 1 ≤ L by omega) (by omega)) (Region.sub_prefix hj _ hcon)
+  exact hd _ (Offset.contains_base S (show i + 1 ≤ L by omega_using [hi]) (by omega_using [hL, hi])) (Region.sub_prefix hj _ hcon)
 
 theorem bytesAt_one (m : Mem) (p : Addr) : bytesAt m p 1 = [m p] := by
   simp [bytesAt]
@@ -124,7 +124,7 @@ theorem copy_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     ⟨0, rfl, h.pos, by rw [h.a0]; exact (BitVec.add_zero _).symm, by rw [h.a1]; exact (BitVec.add_zero _).symm,
       by rw [h.a2, Nat.sub_zero], by simp [bytesAt, writeBytes_nil], Keeps.refl s⟩
   rintro w t ⟨i, rfl, hi, a0, a1, a2, mem, kp⟩
-  have hin : i + 1 ≤ n := by omega
+  have hin : i + 1 ≤ n := by omega_using [hi]
   refine wp_lbu (a := S + BitVec.ofNat 64 i) (by decide)
     (by rw [a0]; exact BitVec.add_zero _) (by rw [kp.rd, kp.wr]; exact in_off' h.rd hin hL)
     fun t₁ u₁ => ?_
@@ -138,7 +138,7 @@ theorem copy_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     rw [mem]; exact byte_kept h.disj hL hi (Nat.le_of_lt hi)
   have hmem : t₅.mem = writeBytes s.mem D (bytesAt s.mem S (i + 1)) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, byte_rt, hb, mem, Proof.Cmac.Stream.bytesAt_append,
-      bytesAt_one, writeBytes_snoc _ _ _ _ (by rw [length_bytesAt]; omega), length_bytesAt]
+      bytesAt_one, writeBytes_snoc _ _ _ _ (by rw [length_bytesAt]; omega_using [hL, hi]), length_bytesAt]
   have hstep (P : Addr) : P + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = P + BitVec.ofNat 64 (i + 1) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   have a0' : t₅.gpr .a0 = S + BitVec.ofNat 64 (i + 1) := by
@@ -147,13 +147,13 @@ theorem copy_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), a1, hstep]
   have a2' : t₅.gpr .a2 = BitVec.ofNat 64 (n - (i + 1)) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), a2,
-      ofNat_sub_one (by omega), Nat.sub_sub]
-  have ev := eval_nz (r := .a2) (a := n - (i + 1)) a2' (by omega)
+      ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
+  have ev := eval_nz (r := .a2) (a := n - (i + 1)) a2' (by omega_using [hL])
   by_cases he : i + 1 = n
   · left
     exact ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [a1', he], kp₅⟩
   · right
-    exact ⟨by rw [ev]; simp; omega, n - (i + 1), by omega, i + 1, rfl, by omega, a0', a1', a2', hmem, kp₅⟩
+    exact ⟨by rw [ev]; simp; omega_using [hi, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], a0', a1', a2', hmem, kp₅⟩
 
 /-! ## XORing bytes -/
 
@@ -176,7 +176,7 @@ theorem xorBytes_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     ⟨0, rfl, h.pos, by rw [h.a0]; exact (BitVec.add_zero _).symm, by rw [h.a1]; exact (BitVec.add_zero _).symm,
       by rw [h.a2, Nat.sub_zero], by simp [bytesAt, writeBytes_nil], Keeps.refl s⟩
   rintro w t ⟨i, rfl, hi, a0, a1, a2, mem, kp⟩
-  have hin : i + 1 ≤ n := by omega
+  have hin : i + 1 ≤ n := by omega_using [hi]
   have hlen : (xorL (bytesAt s.mem D i) (bytesAt s.mem S i)).length = i := by
     simp [length_bytesAt]
   refine wp_lbu (a := S + BitVec.ofNat 64 i) (by decide)
@@ -201,22 +201,22 @@ theorem xorBytes_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
     refine (writeBytes_frame s.mem D _ (R := ⟨D, i⟩) (by rw [hlen]; exact Region.contains_self _ _))
       _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.disj _ (Offset.contains_base S (show i + 1 ≤ n by omega) (by omega))
-      (Region.sub_prefix (show i ≤ n by omega) _ hc)
+    exact h.disj _ (Offset.contains_base S (show i + 1 ≤ n by omega_using [hi]) (by omega_using [hL, hi]))
+      (Region.sub_prefix (show i ≤ n by omega_using [hi]) _ hc)
   have hD : t.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) := by
     rw [mem]
     refine (writeBytes_frame s.mem D _ (R := ⟨D, i⟩) (by rw [hlen]; exact Region.contains_self _ _))
       _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
     simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at hc
-    rw [Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)] at hc
-    omega
+    rw [Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hL, hi])] at hc
+    omega_using [hc]
   have hmem : t₇.mem = writeBytes s.mem D (xorL (bytesAt s.mem D (i + 1)) (bytesAt s.mem S (i + 1))) := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.other .t0 (by decide),
       u₁.gpr, u₂.mem, u₁.mem, xor_byte, hS, hD, mem, Proof.Cmac.Stream.bytesAt_append,
       Proof.Cmac.Stream.bytesAt_append, xorL, xorL, List.zipWith_append (by simp [length_bytesAt]),
       bytesAt_one, bytesAt_one, List.zipWith_cons_cons, List.zipWith_nil_left,
-      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen]
+      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_using [hL, hi]), hlen]
   have hstep (P : Addr) : P + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = P + BitVec.ofNat 64 (i + 1) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   have a0' : t₇.gpr .a0 = S + BitVec.ofNat 64 (i + 1) := by
@@ -227,13 +227,13 @@ theorem xorBytes_wp (s : State) {S D : Addr} {n : Nat} (h : BytesPre s S D n) :
       u₂.other _ (by decide), u₁.other _ (by decide), a1, hstep]
   have a2' : t₇.gpr .a2 = BitVec.ofNat 64 (n - (i + 1)) := by
     rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), a2, ofNat_sub_one (by omega), Nat.sub_sub]
-  have ev := eval_nz (r := .a2) (a := n - (i + 1)) a2' (by omega)
+      u₂.other _ (by decide), u₁.other _ (by decide), a2, ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
+  have ev := eval_nz (r := .a2) (a := n - (i + 1)) a2' (by omega_using [hL])
   by_cases he : i + 1 = n
   · left
     exact ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [a1', he], kp₇⟩
   · right
-    exact ⟨by rw [ev]; simp; omega, n - (i + 1), by omega, i + 1, rfl, by omega, a0', a1', a2', hmem, kp₇⟩
+    exact ⟨by rw [ev]; simp; omega_using [hi, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], a0', a1', a2', hmem, kp₇⟩
 
 
 /-! ## Big-endian doublewords -/
@@ -246,11 +246,11 @@ theorem beBytes_eq (x : BitVec 64) : ByteLoad.beBytes 8 x = Proof.Cmac.le8 (byte
   have hj8 : j < 8 := List.mem_range.mp hj
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', byteRev64_getLsbD _ (by omega),
+  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', byteRev64_getLsbD _ (by omega_using [hj8, hi]),
     BitVec.getLsbD_ushiftRight]
   simp only [hi, decide_true, Bool.true_and]
   congr 1
-  omega
+  omega_using [hi]
 
 /-- What `storeBE 8` writes is the byte-reversed word. -/
 theorem writeBytes_beBytes (m : Mem) (a : Addr) (x : BitVec 64) :
@@ -291,7 +291,7 @@ theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := b) (by omega_using [h, ha]), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega_using [ha])]
+  omega_using [h, ha]
 
 end VG.Proof.AesCcm.RISCV64

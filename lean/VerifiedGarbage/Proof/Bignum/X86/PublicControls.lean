@@ -24,12 +24,12 @@ theorem saveExponent_ok {s : State} {base : Addr} {bytes e : Nat}
     WP isa (.block PublicFn.saveExponent) s fun t =>
       val32 t.mem base 128 2 = e ∧ Outside base 128 8 s.mem t.mem ∧ Keeps [] s t := by
   unfold PublicFn.saveExponent
-  refine wp_storeS (hs.ea (by omega)) (hs.write (by omega)) fun u A => ?_
+  refine wp_storeS (hs.ea (by omega_using [hb])) (hs.write (by omega_using [hb])) fun u A => ?_
   have hu := hs.of_keeps (A.keeps []) (by decide)
-  refine wp_storeS (hu.ea (by omega)) (hu.write (by omega)) fun t B => WP.block_nil ?_
+  refine wp_storeS (hu.ea (by omega_using [hb])) (hu.write (by omega_using [hb])) fun t B => WP.block_nil ?_
   have Oa : Outside base 128 4 s.mem u.mem := by rw [A.mem]; exact writeW32_outside _ _ _ (by decide)
   have Ob : Outside base 132 4 u.mem t.mem := by rw [B.mem]; exact writeW32_outside _ _ _ (by decide)
-  refine ⟨?_, (Oa.mono (by omega) (by omega)).trans (Ob.mono (by omega) (by omega)),
+  refine ⟨?_, (Oa.mono (by omega_using []) (by omega_using [])).trans (Ob.mono (by omega_using []) (by omega_using [])),
     (A.keeps []).trans (B.keeps [])⟩
   have low : w32 t.mem base 128 = e % 2 ^ 32 := by
     rw [Outside.w32 Ob (.inl (by decide)) (by decide), A.mem, w32_write_self, lo, BitVec.toNat_ofNat,
@@ -37,10 +37,10 @@ theorem saveExponent_ok {s : State} {base : Addr} {bytes e : Nat}
   have high : w32 t.mem base 132 = e / 2 ^ 32 := by
     rw [B.mem, w32_write_self, A.gpr, hi, BitVec.toNat_ofNat]
     unfold exponentHigh
-    omega
+    omega_using [he]
   simp only [val32, Nat.mul_zero, Nat.add_zero]
   change w32 t.mem base 128 + 2 ^ 32 * w32 t.mem base 132 = e
   rw [low, high]
-  omega
+  omega_using []
 
 end VG.Proof.Bignum.X86

@@ -84,7 +84,7 @@ theorem op_ok (op : Op) {vs : Nat → Rows} {s : State} (h : Holds vs s) (ht : s
       · exact h k j hj
     have hn : n.val < 32 := n.isLt
     have hsh : VShiftOp.ushr.ok VArr.s4.esize (32 - n.val) = true := by
-      simp only [VShiftOp.ok, VArr.esize, Bool.and_eq_true, decide_eq_true_eq]; omega
+      simp only [VShiftOp.ok, VArr.esize, Bool.and_eq_true, decide_eq_true_eq]; omega_using []
     have hsl : VShiftOp.sli.ok VArr.s4.esize n.val = true := by
       simp only [VShiftOp.ok, VArr.esize, decide_eq_true_eq]; exact hn
     apply WP.of_runBlock
@@ -101,7 +101,7 @@ theorem op_ok (op : Op) {vs : Nat → Rows} {s : State} (h : Holds vs s) (ht : s
     · exact h k j hj
 
   | permute d n =>
-    have hn : 4 * n.val < 16 := by omega
+    have hn : 4 * n.val < 16 := by omega_using []
     apply WP.of_runBlock
     simp only [Op.code, runBlock_cons, runBlock_nil, exec, reduceVOpEval, isa, runStep_some,
       hn, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
@@ -115,8 +115,8 @@ theorem op_ok (op : Op) {vs : Nat → Rows} {s : State} (h : Holds vs s) (ht : s
 
 theorem ror_sub (x : BitVec 32) {n : Nat} (h0 : 0 < n) (hn : n < 32) :
     x.rotateRight (32 - n) = x.rotateLeft n := by
-  rw [BitVec.rotateRight_def, BitVec.rotateLeft_def, Nat.mod_eq_of_lt (show 32 - n < 32 by omega),
-    Nat.mod_eq_of_lt hn, show 32 - (32 - n) = n by omega, BitVec.or_comm]
+  rw [BitVec.rotateRight_def, BitVec.rotateLeft_def, Nat.mod_eq_of_lt (show 32 - n < 32 by omega_using [h0]),
+    Nat.mod_eq_of_lt hn, show 32 - (32 - n) = n by omega_using [hn], BitVec.or_comm]
 
 /-- `op_ok` for the code with SVE2: an XAR in place of an `xorRol` whose
 destination is its first source. -/
@@ -135,7 +135,7 @@ theorem op_ok_for (sve : Bool) (op : Op) {vs : Nat → Rows} {s : State} (h : Ho
       by_cases hda : d = a ∧ 0 < n.val
       · obtain ⟨rfl, h0⟩ := hda
         have hn : n.val < 32 := n.isLt
-        have hr : 1 ≤ 32 - n.val ∧ 32 - n.val ≤ 32 := ⟨by omega, by omega⟩
+        have hr : 1 ≤ 32 - n.val ∧ 32 - n.val ≤ 32 := ⟨by omega_using [], by omega_using []⟩
         rw [show Op.codeFor true (.xorRol d d b n) = [.vop (.xarS (vreg d) (vreg b) (32 - n.val))]
           from ite_eq_left ⟨rfl, h0⟩]
         apply WP.of_runBlock

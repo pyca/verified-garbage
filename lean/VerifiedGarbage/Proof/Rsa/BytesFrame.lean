@@ -19,7 +19,7 @@ theorem rsa_bytes_frame {regions : List Region} {m m' : Mem} {src : Addr} {k : N
   unfold Spec.Rsa.bytesAt
   apply List.map_congr_left
   intro j hj
-  exact frame.bytes (R := ⟨src, k⟩) sep (by change k ≤ 2 ^ 64; omega) (List.mem_range.mp hj)
+  exact frame.bytes (R := ⟨src, k⟩) sep (by change k ≤ 2 ^ 64; omega_using [fit]) (List.mem_range.mp hj)
 
 
 theorem wordsAt_frame {regions : List Region} {m m' : Mem} {p : Addr} {n : Nat}
@@ -29,6 +29,6 @@ theorem wordsAt_frame {regions : List Region} {m m' : Mem} {p : Addr} {n : Nat}
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact frame.readW (r := ⟨p, 8 * n⟩) (Offset.contains_base _ (by omega) (by omega)) sep (by decide)
+  exact frame.readW (r := ⟨p, 8 * n⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [fit, hi])) sep (by decide)
 
 end VG.Proof.Rsa

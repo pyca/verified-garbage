@@ -94,7 +94,7 @@ theorem crEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have rA : Covers [argsR (s₀.gpr .esp) 10] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     have aw : (argsR (s₀.gpr .esp) 10).Disjoint ⟨w64 (arg s₀ 9), 2560⟩ := by rw [argsR_eq]; exact d_wa.symm
-    refine entry_ok crKeeps [] (by decide) (by decide) (by decide) (by decide) rfl rfl wW rA aw (by omega) fw
+    refine entry_ok crKeeps [] (by decide) (by decide) (by decide) (by decide) rfl rfl wW rA aw (by omega_using [fa]) fw
       fun s₂ e => ?_
     have he : Env (arg s₀ 0) (arg s₀ 2) (arg s₀ 9) (s₀.gpr .esp) s₂ :=
       ⟨e.ebp, e.esi, e.esp, by rw [e.rd, e.wr, hrd]; exact covers_of_mem (by simp),
@@ -132,7 +132,7 @@ theorem crEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     clear hp
     have rA : Covers [argsR (s₀.gpr .esp) 10] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
-    exact WP.mono (arg0_ok (argIn_of rA (by omega) (by decide))) fun s' ⟨ax, sp⟩ =>
+    exact WP.mono (arg0_ok (argIn_of rA (by omega_using [fa]) (by decide))) fun s' ⟨ax, sp⟩ =>
       ⟨by rw [ax]; exact pubOf_arg hpub (by decide), by rw [sp]; exact pubOf_esp hpub⟩
 
 /-- `setText`: the text as the pieces take it. -/

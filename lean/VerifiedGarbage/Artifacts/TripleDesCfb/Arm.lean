@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.TripleDes.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Triple DES-CFB64 artifacts on baseline ARMv7 -/
+/-! # Triple DES-CFB64 on ARMv7 -/
 
 @[expose] public section
 

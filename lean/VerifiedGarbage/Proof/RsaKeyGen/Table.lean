@@ -8,6 +8,7 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Primes
 meta import VerifiedGarbage.Impl.RsaKeyGen.Primes
 meta import VerifiedGarbage.Spec.RsaKeyGen
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The table of small primes
@@ -43,7 +44,7 @@ to check the rewrites. -/
 theorem slots_length_of {P : List Nat} (hlen : P.length = 1024) :
     ((P.take 512).drop 1 ++ [3] ++ P.drop 512).length = 1024 := by
   simp only [List.length_append, List.length_drop, List.length_take, hlen, List.length_singleton]
-  omega
+  omega_using []
 
 theorem slots_length : slots.length = 1024 := slots_length_of primes_length
 
@@ -67,7 +68,7 @@ theorem mem_slots_take_of {P : List Nat} (hlen : P.length = 1024) (h3 : 3 ∈ (P
     (x : Nat) : x ∈ ((P.take 512).drop 1 ++ [3] ++ P.drop 512).take 512 ↔ x ∈ (P.take 512).drop 1 := by
   have hl : ((P.take 512).drop 1 ++ [3]).length = 512 := by
     simp only [List.length_append, List.length_drop, List.length_take, hlen, List.length_singleton]
-    omega
+    omega_using []
   simp only [List.take_append_of_le_length (Nat.le_of_eq hl.symm), List.take_of_length_le (Nat.le_of_eq hl),
     List.mem_append, List.mem_singleton]
   constructor
@@ -94,7 +95,7 @@ theorem tabEntry_facts {i : Nat} (hi : i < 1024) : tabEntry i % 2 = 1 ∧ 3 ≤ 
 def trialAny (n c : Nat) : Bool := (List.range (4 * n)).any fun i => c % tabEntry i == 0
 
 theorem range_map_tabEntry (n : Nat) (hn : n ≤ 1024) : (List.range n).map tabEntry = slots.take n := by
-  apply List.ext_getElem (by simp [slots_length]; omega)
+  apply List.ext_getElem (by simp [slots_length]; omega_using [hn])
   intro i h1 h2
   simp only [List.getElem_map, List.getElem_range, List.getElem_take, tabEntry]
   exact getD_of_lt _
@@ -119,16 +120,16 @@ theorem trialAny_eq {w c : Nat} (hc : 8161 < c) :
     apply Bool.eq_iff_iff.mpr
     simp only [List.any_eq_true, Bool.and_eq_true, bne_iff_ne, ne_eq]
     exact ⟨fun ⟨x, hx, h1, _⟩ => ⟨x, hx, h1⟩, fun ⟨x, hx, h1⟩ => ⟨x, hx, h1, by
-      have := smallPrimes_lt (hl x hx); omega⟩⟩
+      have := smallPrimes_lt (hl x hx); omega_using [hc, this]⟩⟩
   rw [hne _ fun s hs => List.mem_of_mem_take (List.mem_of_mem_drop hs), ← primes_eq]
   rw [show (fun i => c % tabEntry i == 0) = (fun s => c % s == 0) ∘ tabEntry from rfl, ← List.any_map]
   unfold trialPrimes
   by_cases hw : 17 ≤ w
-  · simp only [hw, ↓reduceIte, show 1024 < 64 * w by omega]
+  · simp only [hw, ↓reduceIte, show 1024 < 64 * w by omega_using [hw]]
     rw [range_map_tabEntry _ (by decide), show 4 * 256 = 1024 from rfl,
       List.take_of_length_le (Nat.le_of_eq slots_length)]
     exact any_mem_congr _ (mem_slots_of primes_length three_mem)
-  · simp only [hw, ↓reduceIte, show ¬ 1024 < 64 * w by omega]
+  · simp only [hw, ↓reduceIte, show ¬ 1024 < 64 * w by omega_using [hw]]
     rw [range_map_tabEntry _ (by decide), show 4 * 128 = 512 from rfl]
     exact any_mem_congr _ (mem_slots_take_of primes_length three_mem)
 

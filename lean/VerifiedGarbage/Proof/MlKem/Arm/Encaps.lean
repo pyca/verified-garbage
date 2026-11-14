@@ -103,15 +103,15 @@ theorem lay_ok : (lay s₀ K).Ok := by
   have es := stack_eq hp
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [lay, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
     · exact hp.f_scr
     · exact stack_fit hp
     · exact hp.f_ek
     · exact hp.f_key
     · exact hp.f_ct
   · simp only [lay, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl <;>
     simp only [lay, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · rw [es]; exact hp.b_scr.symm
@@ -129,13 +129,13 @@ theorem layM_ok : (layM s₀ K).Ok := by
   have es := stack_eq hp
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [layM, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact hp.f_scr
     · exact stack_fit hp
     · exact hp.f_m
   · simp only [layM, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2) with rfl | rfl <;>
     simp only [layM, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · rw [es]; exact hp.b_scr.symm
@@ -192,7 +192,7 @@ theorem EnEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : EnEnv
   · rw [hk.cs .r6 (by decide) (by decide) (hx .r6 (by simp)), h.r6]
   · rw [hk.cs .r8 (by decide) (by decide) (hx .r8 (by simp)), h.r8]
   · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 36)
-      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)]
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega_using []) (by omega_using [hi]) (by omega_using [])) hd (by decide)]
     exact h.sav i hi
   · rw [hk.frame.readW hc hd (by decide)]; exact h.savlr
   · rw [Lay.bytes_keep hL hk.frame h2 (by have := hp.wf; offs)]; exact h.ek
@@ -246,19 +246,19 @@ theorem setup_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h12 : s₁.
   have wS : ∀ {o n : Nat}, o + n ≤ K.scratch → InRegions s₁.wr ((lay s₀ K).A 0 o) n := fun h => by
     rw [hwr]; exact Lay.covers w0 h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [encapsSetup, WP.block_append_iff]
-  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; exact fit_le (by omega) fc) fun i hi => by
-    rw [h12, add_ofNat_add]; exact wS (by omega)) fun s₂ h₂ => ?_
+  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; exact fit_le (by omega_using [scr]) fc) fun i hi => by
+    rw [h12, add_ofNat_add]; exact wS (by omega_using [scr, hi])) fun s₂ h₂ => ?_
   have g12 : s₂.gpr .r12 = pScr s₀ := by rw [h₂.gpr, h12]
   have e872 : State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSave + 32)) = (lay s₀ K).A 0 872 := by
     rw [g12]; exact addr_add (by offs)
   have i872 : InRegions s₂.wr (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSave + 32))) 4 := by
-    rw [e872, h₂.wr]; exact wS (by omega)
+    rw [e872, h₂.wr]; exact wS (by omega_using [scr])
   have o1 : oSave + 32 < 4096 := by decide
   run_block [i872, o1]
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
     fun i hi m v => Mem.readW_writeW_sep
-      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)
   have g : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r hr' => by rw [h₂.gpr, hr r hr']
   have hne : ∀ i < 8, savedRegs.getD i Reg.r4 ≠ Reg.r12 := by decide
   have fr₀ : Frame ((lay s₀ K).RL [(0, 840, 36)]) s₀.mem s₂.mem := by
@@ -267,7 +267,7 @@ theorem setup_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h12 : s₁.
     rw [List.mem_singleton] at hr'; subst hr'
     show Region.Sub ⟨State.addr (s₁.gpr .r12) + BitVec.ofNat 64 840, 32⟩ _
     rw [h12, ← lay_ptr0]
-    exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega)
+    exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega_using [scr])
   have c872 : ((lay s₀ K).R 0 840 36).Contains ((lay s₀ K).A 0 872) 4 :=
     Offset.contains _ (by decide) (by decide) (by decide)
   refine ⟨⟨⟨hL, scr, rfl, by simp [lay], ?_, by show 8 ≤ s₂.sp.toNat; rw [h₂.sp, hsp]; exact hp.sp8, ?_, ?_⟩,
@@ -614,13 +614,13 @@ theorem layH_ok : (layH K e).Ok := by
   have es : (⟨State.addr (e.sp - BitVec.ofNat 32 8), 8⟩ : Region) = below e 8 := stack_eq (s₀ := args e) hp
   refine Lay.ok_of (fun i hi => ?_) (fun i hi j hj hij => ?_)
   · simp only [layH, List.length_cons, List.length_nil] at hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact hp.f_scr
     · exact stack_fit (s₀ := args e) hp
     · exact hq.f_h
   · simp only [layH, List.length_cons, List.length_nil] at hi hj
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;>
-    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : i = 0 ∨ i = 1) with rfl | rfl <;>
+    rcases (by omega_using [hj, hij] : j = 1 ∨ j = 2) with rfl | rfl <;>
     simp only [layH, Lay.size, List.getD_cons_zero, List.getD_cons_succ] <;>
     first | omega | skip
     · rw [es]; exact hp.b_scr.symm
@@ -646,13 +646,13 @@ theorem setupH_ok {s₁ : State} (h12 : s₁.gpr .r12 = pScr (args e)) (hr : ∀
   have wS : ∀ {o n : Nat}, o + n ≤ K.scratch → InRegions s₁.wr ((lay (args e) K).A 0 o) n := fun h => by
     rw [hwr]; exact Lay.covers w0 h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   rw [encapsHSetup, WP.block_append_iff]
-  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; exact fit_le (by omega) fc) fun i hi => by
-    rw [h12, add_ofNat_add]; exact wS (by omega)) fun s₂ h₂ => ?_
+  refine WP.mono (saveRegs_ok .r12 (off := 840) (by decide) (by rw [h12]; exact fit_le (by omega_using [scr]) fc) fun i hi => by
+    rw [h12, add_ofNat_add]; exact wS (by omega_using [scr, hi])) fun s₂ h₂ => ?_
   have g12 : s₂.gpr .r12 = pScr (args e) := by rw [h₂.gpr, h12]
   have e872 : State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSave + 32)) = (lay (args e) K).A 0 872 := by
     rw [g12]; exact addr_add (by offs)
   have i872 : InRegions s₂.wr (State.addr (s₂.gpr .r12 + BitVec.ofNat 32 (oSave + 32))) 4 := by
-    rw [e872, h₂.wr]; exact wS (by omega)
+    rw [e872, h₂.wr]; exact wS (by omega_using [scr])
   have o1 : oSave + 32 < 4096 := by decide
   have o0 : (0 : Nat) < 4096 := by decide
   have iCt : InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.sp + BitVec.ofNat 32 0)) 4 := by
@@ -664,7 +664,7 @@ theorem setupH_ok {s₁ : State} (h12 : s₁.gpr .r12 = pScr (args e)) (hr : ∀
       ((lay (args e) K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 =
         m.readW ((lay (args e) K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
     fun i hi m v => Mem.readW_writeW_sep
-      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)
   have g : ∀ r, r ≠ .r12 → s₂.gpr r = e.gpr r := fun r hr' => by rw [h₂.gpr, hr r hr']
   have hne : ∀ i < 8, savedRegs.getD i Reg.r4 ≠ Reg.r12 ∧ savedRegs.getD i Reg.r4 ≠ Reg.r1 ∧
       savedRegs.getD i Reg.r4 ≠ Reg.r2 ∧ savedRegs.getD i Reg.r4 ≠ Reg.r3 := by decide
@@ -674,7 +674,7 @@ theorem setupH_ok {s₁ : State} (h12 : s₁.gpr .r12 = pScr (args e)) (hr : ∀
     rw [List.mem_singleton] at hr'; subst hr'
     show Region.Sub ⟨State.addr (s₁.gpr .r12) + BitVec.ofNat 64 840, 32⟩ _
     rw [h12, ← lay_ptr0]
-    exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega)
+    exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega_using [scr])
   have c872 : ((lay (args e) K).R 0 840 36).Contains ((lay (args e) K).A 0 872) 4 :=
     Offset.contains _ (by decide) (by decide) (by decide)
   have fr₁ := fr₀.writeW (List.mem_singleton_self _) (s₂.gpr .lr) c872
@@ -692,7 +692,7 @@ theorem setupH_ok {s₁ : State} (h12 : s₁.gpr .r12 = pScr (args e)) (hr : ∀
     rw [e872, h₂.sp, hsp, fr₁.readW (r := ⟨stackArgAddr e 0, 4⟩) (Region.contains_self _ _) (fun r' hr' => by
       simp only [Lay.RL, List.map_cons, List.map_nil, List.mem_singleton] at hr'
       subst hr'
-      exact hq.d_ct_scr.sub_right (Lay.R_sub (by simp [lay]; omega))) (by decide)]
+      exact hq.d_ct_scr.sub_right (Lay.R_sub (by simp [lay]; omega_using [scr]))) (by decide)]
     rfl
   · show (s₂.mem.writeW _ _).readW _ _ = _
     rw [e872, ne1 i hi]

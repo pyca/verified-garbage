@@ -34,8 +34,8 @@ theorem bWord_eq (j c w : Nat) (hc : c < 4) (hw : w < 4) :
     bWord (16 * j + 4 * c + w) = BitVec.ofNat 64
       ((pointCoord (Impl.Ed25519.negBaseCached j) c).val / 2 ^ (64 * w)) := by
   unfold bWord
-  rw [show (16 * j + 4 * c + w) / 16 = j by omega, show (16 * j + 4 * c + w) / 4 % 4 = c by omega,
-    show (16 * j + 4 * c + w) % 4 = w by omega]
+  rw [show (16 * j + 4 * c + w) / 16 = j by omega_using [hc, hw], show (16 * j + 4 * c + w) / 4 % 4 = c by omega_using [hc, hw],
+    show (16 * j + 4 * c + w) % 4 = w by omega_using [hw]]
 
 /-- The static, in `s`, as a contract states it: its words, not wrapping around, apart from the
 regions `wr`. -/
@@ -62,7 +62,7 @@ theorem BTblAt.of_far {s t : State} {base T : Addr} (h : BTblAt s base T)
     rw [← h.val i hi]
     refine Mem.readW_congr fun b hb => hm _ ?_
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact h.far _ (by omega)⟩
+    exact h.far _ (by omega_using [hi, hb])⟩
 
 /-- The static, from a contract's facts: readable, and apart from the working space at `base`,
 one of the regions `wr`. -/
@@ -70,11 +70,11 @@ theorem BHeld.tblAt {s : State} {wr : List Region} {base : Addr} (h : BHeld s wr
     (hrd : (⟨s.syms bSym, 1920⟩ : Region) ∈ s.rd ++ s.wr)
     (hsc : (⟨base, 8192⟩ : Region) ∈ wr) : BTblAt s base (s.syms bSym) := by
   obtain ⟨held, fit, dj⟩ := h
-  refine ⟨fun i hi => ⟨_, hrd, Offset.contains_base _ (by omega) (by omega)⟩, fun i hi => ?_,
+  refine ⟨fun i hi => ⟨_, hrd, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩, fun i hi => ?_,
     fun i hi => by rw [held i hi, bWords_getD hi]⟩
   refine Nat.le_of_not_lt fun hlt => dj _ hsc _
-    (Offset.contains_base _ (d := i) (n := 1) (k := 1920) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at hlt; omega
+    (Offset.contains_base _ (d := i) (n := 1) (k := 1920) (by omega_using [hi]) (by omega_using [hi])) ?_
+  simp only [Region.Contains]; simp only [ofs] at hlt; omega_using [hlt]
 
 /-- The memory of the contracts' witnesses: the static at `0x100000` (irreducible: unfolding it
 in a definitional check would evaluate the table). -/
@@ -84,6 +84,6 @@ theorem bSatMem_held : ∀ i < 240,
     bSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = bWords.getD i 0 := by
   unfold bSatMem
   intro i hi
-  exact constMem_held _ _ (by rw [bWords_length]; omega) i (by rw [bWords_length]; exact hi)
+  exact constMem_held _ _ (by rw [bWords_length]; omega_using []) i (by rw [bWords_length]; exact hi)
 
 end VG.Proof.Ed25519.AArch64

@@ -23,10 +23,10 @@ theorem crt_setupPrime_ct {base child : BitVec 32} {len slot w : Nat}
       (setupPrime slot) (fun _ _ => True) := by
   let P := CrtSetupPrimeInput base child len slot w
   have enter := (crt_enterPrime_ct (base := base) (child := child) (size := 8 * len) (w := w)
-    (by omega) slotFit hs).mono (P' := fun s t => P s ∧ P t)
+    (by omega_using [fit]) slotFit hs).mono (P' := fun s t => P s ∧ P t)
     (fun _ _ h => ⟨h.1.toCrtEnterInput, h.2.toCrtEnterInput⟩) (fun _ _ _ => trivial)
   have wp (s : State) (h : P s) : WP isa (enterPrime slot) s (fun t => t.gpr .r0 = child) :=
-    WP.mono (crt_enterPrime_ok s h.workspace h.childWorkspace (by omega) slotFit hs fit h.ptr h.count h.link)
+    WP.mono (crt_enterPrime_ok s h.workspace h.childWorkspace (by omega_using [fit]) slotFit hs fit h.ptr h.count h.link)
       (fun _ j => j.1)
   refine (pair_posts enter wp).seq ?_
   intro s t tr1 tr2 u v h e1 e2

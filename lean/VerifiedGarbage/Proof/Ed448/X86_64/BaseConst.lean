@@ -82,7 +82,7 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
     intro x i v hv hx rest Q k
     rw [WP.block_append_iff]
     refine WP.mono (constSlot_ok hx i v hv) fun y ⟨ey, oy, gy, rdy, wry⟩ =>
-      k y ey (oy.mono (by simp only [slot]; omega) (by have := i.isLt; simp only [slot]; omega))
+      k y ey (oy.mono (by simp only [slot]; omega_using []) (by have := i.isLt; simp only [slot]; omega_using []))
         gy rdy wry ⟨(gy _ (by decide)).trans hx.rdi, wry ▸ hx.wr, hx.nowrap⟩
   refine step 0 0 c0 hs fun s1 e1 o1 g1 rd1 wr1 hs1 => ?_
   refine step 1 1 c1 hs1 fun s2 e2 o2 g2 rd2 wr2 hs2 => ?_
@@ -93,7 +93,7 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (constSlot_ok hs6 11 _ cd) fun t ⟨et, ot, gt, rdt, wrt⟩ => ?_
   have O : Outside base 64 1584 s.mem t.mem :=
     o1.trans (o2.trans (o3.trans (o4.trans (o5.trans (o6.trans
-      (ot.mono (by simp only [slot]; omega) (by simp only [slot]; omega)))))))
+      (ot.mono (by simp only [slot]; omega_using []) (by simp only [slot]; omega_using [])))))))
   refine ⟨?_, ?_, ?_, O, fun r hr => ?_, ?_, ?_, fun i h1 h2 => ?_⟩
   · rw [et, e6, e5, e4, e3, e2, e1]; rfl
   · rw [et, e6, e5, e4, e3, e2, e1]; rfl
@@ -102,7 +102,7 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
   · rw [rdt, rd6, rd5, rd4, rd3, rd2, rd1]
   · rw [wrt, wr6, wr5, wr4, wr3, wr2, wr1]
   · have ne : ∀ j : Index, j.val < 3 ∨ (8 ≤ j.val ∧ j.val < 12) → i ≠ j := fun j hj h => by
-      subst h; omega
+      subst h; omega_using [h1, h2, hj]
     rw [et, e6, e5, e4, e3, e2, e1, Function.update_of_ne (ne 11 (by decide)),
       Function.update_of_ne (ne 10 (by decide)), Function.update_of_ne (ne 9 (by decide)),
       Function.update_of_ne (ne 8 (by decide)), Function.update_of_ne (ne 2 (by decide)),

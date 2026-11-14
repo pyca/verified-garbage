@@ -59,22 +59,22 @@ theorem em_input {m : Mem} {S : Addr} {V : Nat → Byte} {lo el k : Nat} {e : Li
   have c1 : oEm = 2560 := rfl
   have c3 : oEnc = 4096 := rfl
   apply List.ext_getElem
-  · simp [Spec.RsaPss.zeros, Spec.Rsa.bytesAt]; omega
+  · simp [Spec.RsaPss.zeros, Spec.Rsa.bytesAt]; omega_using [hk]
   intro i h1 h2
   simp only [List.length_map, List.length_range] at h1
   simp only [List.getElem_map, List.getElem_range]
   by_cases hi : i < lo
   · rw [ifn (fun ⟨p, hp, a, b⟩ => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl <;> dsimp only at a b <;> omega)]
-    rw [List.getElem_append_left (by simp [Spec.RsaPss.zeros]; omega)]
+      rcases hp with rfl | rfl <;> dsimp only at a b <;> omega_arith)]
+    rw [List.getElem_append_left (by simp [Spec.RsaPss.zeros]; omega_using [hi])]
     simp only [upd, Spec.RsaPss.zeros, List.getElem_replicate]
-    rw [ifp (by omega)]
-  · rw [ifp ⟨_, List.mem_cons_self .., by dsimp only; omega, by dsimp only; omega⟩]
-    rw [List.getElem_append_right (by simp [Spec.RsaPss.zeros]; omega)]
+    rw [ifp (by omega_using [hlo, hi])]
+  · rw [ifp ⟨_, List.mem_cons_self .., by dsimp only; omega_using [hi], by dsimp only; omega_using [hk, h1]⟩]
+    rw [List.getElem_append_right (by simp [Spec.RsaPss.zeros]; omega_using [hi])]
     simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, Spec.RsaPss.zeros, List.length_replicate,
       off_plus]
-    congr 2; omega
+    congr 2; omega_using [hi]
 
 /-- The slots after `idxSlot`. -/
 def proW1 (s : State) : Nat → BitVec 64 := upd (proW s) 47 (s.mem.readW (off (stackArg s 16) 40) 64)
@@ -87,10 +87,7 @@ theorem r11Arg_ok {s u : State} (hp : SPre tsH tsG s) (hsp : u.gpr .rsp = fb s) 
   have hF := fb_toNat hp
   have := hp.sp2
   have hin : InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * 16)) 8 := by
-    refine ⟨⟨stackArgAddr s 0, 144⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
-    rw [argAddr, show stackArgAddr s 16 = stackArgAddr s 0 + BitVec.ofNat 64 (8 * 16) by
-      simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
-    exact Offset.contains_base _ (by omega_using []) (by omega_using [])
+    rw [argAddr]; exact hp.argIn hrd (by decide)
   have hv : u.mem.readW (off (fb s) (frameBytes + 8 + 8 * 16)) 64 = stackArg s 16 := by
     rw [argAddr]; exact hA 16 (by decide)
   refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.mem = u.mem ∧ u'.gpr .r11 = stackArg s 16 ∧ u'.zf = u.zf) ?_ rfl)
@@ -108,8 +105,8 @@ theorem idxSlot_ok {s u : State} (hp : SPre tsH tsG s) (L : Lay u (fb s) (stackA
   have hw := hp.wTH
   have G' := L.geo
   have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 16) 40) 8 :=
-    ⟨⟨stackArg s 16, 88⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
-      Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨⟨stackArg s 16, 88⟩, hp.rdIn hrd (by simp),
+      Offset.contains_base _ (by omega_using []) (by omega_using [])⟩
   have R1 := R.wf G' (k := 47) (by decide) (s.mem.readW (off (stackArg s 16) 40) 64)
   rw [show off (fb s) (8 * 47) = off (fb s) sIdx from rfl] at R1
   refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.mem = u.mem.writeW (off (fb s) sIdx)
@@ -156,19 +153,55 @@ theorem encPrep_ok {s u : State} (L : Lay u (fb s) (stackArg s 14)) {V : Nat →
     (by simp [upd, h39]) (by simp [upd, h40]))
     fun t' ⟨L4, k4, R4, a, b, c, d, e, f⟩ => ⟨L4, k3.trans k4, R4, a, b, c, d, e, f⟩
 
-theorem signC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {privC : Prog isa}
+/-- Bytes of the working space, as two memories with the same bytes there
+give them. -/
+theorem Rep.bytes_eq {m₁ m₂ : Mem} {F S : Addr} {V : Nat → Byte} {W₁ W₂ : Nat → BitVec 64}
+    (R₁ : Rep m₁ F S V W₁) (R₂ : Rep m₂ F S V W₂) {o n : Nat} (h : o + n ≤ oRsa) :
+    Spec.Rsa.bytesAt m₁ (off S o) n = Spec.Rsa.bytesAt m₂ (off S o) n := by
+  rw [bytesAt_off, bytesAt_off]
+  exact List.map_congr_left fun i hi => by
+    have := List.mem_range.mp hi
+    rw [R₁.scr _ (by omega_using [h, this]), R₂.scr _ (by omega_using [h, this])]
+
+/-- The private-key operation's arguments `args` and its call, as `signC`
+needs them: from the frame after the test of `encode`'s result, they leave
+the frame's last words (the saved registers), the callee-saved registers,
+MXCSR's control bits and the working space, and `out` as
+`Rsa.privateChecked` says on the `k` bytes at `scratch + oEm`. -/
+def PStep (args : List Instr) (privN : String) (privC : Prog isa) (s : State) : Prop :=
+  ∀ (u : State) (V : Nat → Byte) (W : Nat → BitVec 64), Lay u (fb s) (stackArg s 14) → u.rd = s.rd →
+    u.wr = frR s :: s.wr → Frame (wrR s) s.mem u.mem → Rep u.mem (fb s) (stackArg s 14) V W →
+    W 16 = s.gpr .rdi → W 17 = s.gpr .rcx → W 18 = s.gpr .rdx → W 19 = s.gpr .r8 → W 20 = s.gpr .r9 →
+    W 22 = stackArg s 15 →
+    WP isa (.seq (.block args) (.call privN privC)) u fun u' => ∃ W', Lay u' (fb s) (stackArg s 14) ∧
+      u'.wr = u.wr ∧ (∀ r ∈ [Reg.r13, .r14, .r15], u'.gpr r = u.gpr r) ∧
+      u'.mxcsr.extractLsb' 6 10 = u.mxcsr.extractLsb' 6 10 ∧ Rep u'.mem (fb s) (stackArg s 14) V W' ∧
+      (∀ j, 40 < j → j < nW → W' j = W j) ∧
+      Spec.Rsa.writtenOutcome u'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((u'.gpr .rax).setWidth 32)
+        (Spec.Rsa.privateChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+          (Spec.Rsa.bytesAt u.mem (off (stackArg s 14) oEm) (s.gpr .rcx).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat))
+
+/-- `signC`'s frame, with the arguments `args` of the private-key operation,
+which `PStep` describes. -/
+theorem signCWith_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {privC : Prog isa}
+    {args : List Instr}
     (hspE : ∀ i ∈ idxs, SpSafe (encode f (ofIdx i) g)) (hdE : ∀ i ∈ idxs, (encode f (ofIdx i) g).x86_64Depth ≤ encStack)
-    (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) {s : State}
-    (h : (signK tsH tsG).pre s) {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} (E : ESel f g s i T Hs Gs) :
-    WP isa (Impl.RsaPss.X86_64.signC f g privN privC) s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+    {s : State} (hp : SPre tsH tsG s) (hstep : PStep args privN privC s)
+    {i : Nat} {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} (E : ESel f g s i T Hs Gs) :
+    WP isa (.frame (.alloc frameBytes) (signCBodyWith f g privN privC args) (.free frameBytes)) s fun s' =>
+      (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       (signK tsH tsG).post s s' ∧ s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
-  have hp := SPre.of tsH tsG h
   have hF := fb_toNat hp
   have hk1 := hp.k1; have hk2 := hp.k2
   have hHl : Hs.len = T.H.D := ((hp.hdl Hs E.hH).symm.trans E.hD.symm)
   refine wp_frame (by have := hp.sp1; unfold signStack Rsa.X86_64.stackBytes frameBytes at *; omega_arith) ?_
-  rw [signCBody]
+  rw [signCBodyWith]
   simp only [seqs]
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
@@ -201,7 +234,7 @@ theorem signC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {
   have hnB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat = n₀ :: rest := bytesAt_cons _ _ (by omega_arith)
   have hrl : rest.length = (s.gpr .rcx).toNat - 1 := by simp [hrest, Spec.Rsa.bytesAt]
   have hHs : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-      Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G → H = Hs ∧ G = Gs := fun H G a b =>
+      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G → H = Hs ∧ G = Gs := fun H G a b =>
     ⟨Option.some.inj (a.symm.trans E.hH), Option.some.inj (b.symm.trans E.hG)⟩
   have hx3' : t3.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by rw [hx3, hx2', hx2, hx1]; rfl
   refine WP.ite (M := isa) _ (show isa.eval .e t3 = _ by rw [show isa.eval .e t3 = t3.zf from rfl, hz3, hz2', hz2])
@@ -315,35 +348,19 @@ theorem signC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {
       (Spec.Rsa.bytesAt s.mem (stackArg s 12) (stackArg s 13).toNat) eb with
     | none => rw [he] at hE; exact absurd hE hb9
     | some e => rw [he] at hE; exact ⟨e, rfl, hE.2⟩
-  -- The private-key operation's arguments.
-  refine WP.seq (WP.mono_mx (by decide) (WP.keepIn (by decide) (by exact Nat.zero_le 16)
-    (privArgs_ok hp L9 hrd9 (argsKept_of hp hM9) R9 (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd])
+  -- The private-key operation's arguments and call.
+  refine WP.mono (hstep t9 _ W6 L9 hrd9 hw9 hM9 R9 (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd])
       (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd]) (by simp [hW6, proW1, proW, upd])
-      (by simp [hW6, proW1, proW, upd])))
-    fun u2 ⟨⟨k10, L10, ⟨W2, R10, hW2a, hW2b⟩, h2di, h2si, h2dx, h2cx, h2r8, h2r9⟩, f10⟩ hx10 => ?_)
-  have hw10 : u2.wr = frR s :: s.wr := k10.2.2.trans hw9
-  have hM10 := frame_keep hp hw9 L9.rsp hM9 f10
-  -- The call.
-  refine WP.mono (priv_call hv hspC hdC hp L10.rsp (k10.2.1.trans hrd9) hw10 hM10
-    (fun i hi => (R10.fr i (by unfold nW frameBytes; omega_arith)).trans (hW2a i hi)) h2di h2si h2dx h2cx h2r8 h2r9)
-    fun u3 ⟨rd3, wr3, cs3, mx3, _, hk3, hout3⟩ => ?_
-  have R3' : Rep u3.mem (fb s) (stackArg s 14) V8 W2 := R10.of_keep L10.geo fun x hx => hk3 x hx
-  have L3' : Lay u3 (fb s) (stackArg s 14) := L10.of_rep' R10 R3' rfl (cs3 .rsp (by decide)) wr3
-  have w : ∀ j, 40 < j → j < nW → W2 j = proW1 s j := fun j h hj => by
-    rw [hW2b j hj (by omega_arith)]; simp only [hW6, upd]
-    rw [ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith),
-      ifn (by omega_arith), ifn (by omega_arith)]
-  refine ⟨L3', wr3.trans hw10, fun r hr => ?_, ?_, ?_, ?_, fun H G a b => ?_, by rw [mx3, hx10]; exact hmx9⟩
-  · have hr3 : r = .r13 ∨ r = .r14 ∨ r = .r15 := by simpa using hr
-    have h1 : r ∈ calleeSaved := by rcases hr3 with rfl | rfl | rfl <;> decide
-    have h2 : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] := by rcases hr3 with rfl | rfl | rfl <;> decide
-    rw [cs3 r h1, k10.gpr h2, hcs9 r hr]
-  · rw [R3'.rd (d := sRbx) 41 rfl (by decide), w 41 (by decide) (by decide)]; simp [proW1, proW, upd]
-  · rw [R3'.rd (d := sRbp) 42 rfl (by decide), w 42 (by decide) (by decide)]; simp [proW1, proW, upd]
-  · rw [R3'.rd (d := sR12) 43 rfl (by decide), w 43 (by decide) (by decide)]; simp [proW1, proW, upd]
+      (by simp [hW6, proW1, proW, upd]))
+    fun u3 ⟨W2, L3', wr3, cs3, mx3, R3', w, hout3⟩ => ?_
+  refine ⟨L3', wr3.trans hw9, fun r hr => (cs3 r hr).trans (hcs9 r hr), ?_, ?_, ?_, fun H G a b => ?_,
+    by rw [mx3]; exact hmx9⟩
+  · rw [R3'.rd (d := sRbx) 41 rfl (by decide), w 41 (by decide) (by decide)]; simp [hW6, proW1, proW, upd]
+  · rw [R3'.rd (d := sRbp) 42 rfl (by decide), w 42 (by decide) (by decide)]; simp [hW6, proW1, proW, upd]
+  · rw [R3'.rd (d := sR12) 43 rfl (by decide), w 43 (by decide) (by decide)]; simp [hW6, proW1, proW, upd]
   · obtain ⟨rfl, rfl⟩ := hHs H G a b
-    have hem : Spec.Rsa.bytesAt u2.mem (off (stackArg s 14) oEm) k = Spec.RsaPss.zeros lo ++ e := by
-      rw [bytesAt_off, List.map_congr_left fun i hi => R10.scr _ (by have := List.mem_range.mp hi; unfold oEm oRsa; omega_arith)]
+    have hem : Spec.Rsa.bytesAt t9.mem (off (stackArg s 14) oEm) k = Spec.RsaPss.zeros lo ++ e := by
+      rw [bytesAt_off, List.map_congr_left fun i hi => R9.scr _ (by have := List.mem_range.mp hi; unfold oEm oRsa; omega_arith)]
       exact em_input hlok hlo hbytes
     rw [hem] at hout3
     rw [signOut, RsaPss.sign_encode₂ H G heb, hHl, he, bytesAt_length]

@@ -26,7 +26,7 @@ theorem terminal_ok (s : State) {base : BitVec 32} {status : Nat}
   refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   have addr28 : State.addr (s.gpr .r4 + BitVec.ofNat 32 28) = off (State.addr base) 28 := by
     rw [h.ptr]
-    exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
+    exact VG.Arm.addr_add (by have := h.space.nowrap; omega_using [this])
   unfold VG.Impl.Ffdh.Arm.KeySearch.terminal VG.Impl.Ffdh.Arm.KeySearch.stf terminalMem writeLow
   simp only [List.foldl_cons, List.foldl_nil]
   rcases statusBound with rfl | rfl <;>
@@ -46,7 +46,7 @@ theorem requestBlock_ok (s : State) {base : BitVec 32} (h : Controller base s) :
   refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
   have addr28 : State.addr (s.gpr .r4 + BitVec.ofNat 32 28) = off (State.addr base) 28 := by
     rw [h.ptr]
-    exact VG.Arm.addr_add (by have := h.space.nowrap; omega)
+    exact VG.Arm.addr_add (by have := h.space.nowrap; omega_using [this])
   unfold VG.Impl.Ffdh.Arm.KeySearch.ldf VG.Impl.Ffdh.Arm.KeySearch.stf requestMem writeLow lowWord
   simp only [List.foldl_cons, List.foldl_nil]
   ffrun [h.addr (by decide : 2 < 16), h.addr (by decide : 3 < 16), h.addr (by decide : 14 < 16),

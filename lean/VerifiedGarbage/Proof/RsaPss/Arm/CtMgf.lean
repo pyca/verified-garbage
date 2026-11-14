@@ -54,7 +54,7 @@ theorem slotW (hg : Geo L scr) {d : Nat} (hd : d + 4 ≤ frameBytes) : ∃ R ∈
 /-- Two slots apart. -/
 theorem slotSep {d e : Nat} (hd : d + 4 ≤ frameBytes) (he : e + 4 ≤ frameBytes) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (slotR L d).Disjoint (slotR L e) :=
-  Lay.fr_sep h (by unfold frameBytes at hd; omega) (by unfold frameBytes at he; omega)
+  Lay.fr_sep h (by unfold frameBytes at hd; omega_using [hd]) (by unfold frameBytes at he; omega_using [he])
 
 
 /-- A word's bits as a mask. -/
@@ -77,7 +77,7 @@ theorem i2osp4_length (c : Nat) : (Spec.Rsa.i2osp c 4).length = 4 := by simp [Sp
 /-- A slot read after a write of another. -/
 theorem slot_ww (m : Mem) {d e : Nat} (v : BitVec 32) (hd : d + 4 ≤ frameBytes) (he : e + 4 ≤ frameBytes)
     (h : d + 4 ≤ e ∨ e + 4 ≤ d) : (m.writeW (L.fr e) v).readW (L.fr d) 32 = m.readW (L.fr d) 32 :=
-  Mem.readW_writeW_sep (Offset.sep _ h (by unfold frameBytes at hd; omega) (by unfold frameBytes at he; omega))
+  Mem.readW_writeW_sep (Offset.sep _ h (by unfold frameBytes at hd; omega_using [hd]) (by unfold frameBytes at he; omega_using [he]))
     (by decide)
 
 
@@ -89,7 +89,7 @@ theorem shr0 (c : Nat) : (BitVec.ofNat 32 c).setWidth 8 = BitVec.ofNat 8 (c / 25
   rw [Nat.pow_zero, Nat.div_one]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 
 theorem bit_z (p : Prop) [Decidable p] : ((if p then (1 : BitVec 32) else 0) - 0 == 0) = decide (¬ p) := by
@@ -104,6 +104,6 @@ theorem below_low (hg : Geo L scr) {σ s : State} (hc : Ctx L scr σ s) :
   have hB := hc.st.ok.B56
   rw [Pbkdf2.Stream.Arm.below, hc.st.sp]
   show Region.Sub ⟨State.addr L.B - BitVec.ofNat 64 16, 16⟩ ⟨State.addr L.B - BitVec.ofNat 64 L.C, L.C⟩
-  exact Offset.sub_below _ hC (by omega)
+  exact Offset.sub_below _ hC (by omega_using [hC])
 
 end VG.Proof.RsaPss.Arm

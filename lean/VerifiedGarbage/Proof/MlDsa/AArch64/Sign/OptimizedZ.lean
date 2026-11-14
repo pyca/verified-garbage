@@ -38,7 +38,7 @@ theorem optimizedZ_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
     (responseProductChk_z hp r hr) h.b.c (h.b.l.k.d.s1 r hr)) fun a ⟨hpa,h24a,hprod⟩ hsa => ?_)
   have ha := h.step hpa hsa zp yp hwp
   have hy : PolyIs a.mem (pa a (yP p r)) (Yv p σ (p.ℓ*t) r) := by
-    have hv := ha.y 0 (by omega)
+    have hv := ha.y 0 (by omega_using [hr])
     simpa only [Nat.add_zero] using hv
   have hraw : RawPolyIs a.mem (pa a t1P)
       (nttInv (multiplyNTT (VG.Proof.MlDsa.Sign.chF (cV p σ (p.ℓ*t))) (S1v p σ r))) := by

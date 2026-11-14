@@ -34,11 +34,11 @@ theorem columns_prefix {n context size d : Nat} {base : Addr} {s t : Mem}
   have hh := slot_header n 9
   change slot n 9 ≤ context at hd
   have sep : slot n 2 + (16*n+4) ≤ context := by
-    simp only [slot,stride] at *; omega
+    simp only [slot,stride] at *; omega_using [h5]
   rw [wordsVal_eq_val32,wordsVal_eq_val32]
   exact O.val32 (by
     intro r hr; simp only [columnRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl|rfl <;> omega) (by omega)
+    rcases hr with rfl|rfl|rfl|rfl|rfl <;> omega_arith) (by omega_using [nw, hi, hb])
 
 theorem subsets_prefix {n context size d : Nat} {base : Addr} {s t : Mem}
     (L : Layout n context size) (nw : base.toNat+size ≤ 2^32)
@@ -54,11 +54,11 @@ theorem subsets_prefix {n context size d : Nat} {base : Addr} {s t : Mem}
   have hh := slot_header n 9
   change slot n 9 ≤ context at hd
   have sep : slot n 2 + (16*n+4) ≤ context := by
-    simp only [slot,stride] at *; omega
+    simp only [slot,stride] at *; omega_using [h5]
   rw [wordsVal_eq_val32,wordsVal_eq_val32]
   exact O.val32 (by
     intro r hr; simp only [subsetRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> omega) (by omega)
+    rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> omega_arith) (by omega_using [nw, hi, hb])
 
 theorem Columns.tableAt {n e context size m g : Nat} {base : Addr} {s t : State}
     (L : Layout n context size) (nw : base.toNat+size≤2^32)
@@ -69,10 +69,10 @@ theorem Columns.tableAt {n e context size m g : Nat} {base : Addr} {s t : State}
 
   intro j hj hk
   rcases hk with zero | tooth
-  · have eq : j=0 := by omega
+  · have eq : j=0 := by omega_using [zero]
     subst j
     have addr : entry n (context+16*n) 0 = context+16*n := by simp [entry]
-    rw [addr,columns_prefix L nw I.mem (by omega) (by omega),zeroEntry]
+    rw [addr,columns_prefix L nw I.mem (by omega_using []) (by omega_using []),zeroEntry]
     simp only [tableValue,VG.Proof.Rsa.FixedBaseComb.exponent_zero,VG.Proof.Bignum.powMod_eq,Nat.pow_zero]
     rw [Nat.mod_mul_mod,Nat.one_mul]
   · have jt : ∃ k, k≤4 ∧ j=2^k := by
@@ -85,7 +85,7 @@ theorem Columns.tableAt {n e context size m g : Nat} {base : Addr} {s t : State}
     obtain ⟨k,hk,rfl⟩ := jt
     rw [I.table k hk]
     unfold tableValue columnValue
-    rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega),Nat.mul_comm k]
+    rw [VG.Proof.Rsa.FixedBaseComb.exponent_tooth _ _ (by omega_using [hk]),Nat.mul_comm k]
 
 
 theorem build_ok {n e context size m : Nat} {base : Addr} {s : State}
@@ -113,8 +113,8 @@ theorem build_ok {n e context size m : Nat} {base : Addr} {s : State}
   have Tv := I.tableAt L nw Yu
   refine WP.seq (WP.mono (buildSubsets_ok L I.ctx Tv) fun t J => WP.block_nil ?_)
   refine ⟨J.ctx,?_,?_,?_,?_,(Ku.trans I.keeps).trans J.keeps⟩
-  · rw [subsets_prefix L nw J.mem (by omega) (by omega),columns_prefix L nw I.mem (by omega) (by omega),Pu]
-  · rw [subsets_prefix L nw J.mem (by omega) (by omega),columns_prefix L nw I.mem (by omega) (by omega),Ru]
+  · rw [subsets_prefix L nw J.mem (by omega_using []) (by omega_using []),columns_prefix L nw I.mem (by omega_using []) (by omega_using []),Pu]
+  · rw [subsets_prefix L nw J.mem (by omega_using []) (by omega_using []),columns_prefix L nw I.mem (by omega_using []) (by omega_using []),Ru]
   · intro j hj _; exact J.table j hj (.inl hj)
   · have a : Outs base (buildRanges n context) s.mem u.mem := Ou.mono (by
       intro r hr; simp only [startRanges,encodeRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -126,7 +126,7 @@ theorem build_ok {n e context size m : Nat} {base : Addr} {s : State}
       · exact ⟨_,by simp [buildRanges],Nat.le_refl _,Nat.le_refl _⟩
       · exact ⟨_,by simp [buildRanges],Nat.le_refl _,Nat.le_refl _⟩
       · exact ⟨_,by simp [buildRanges],Nat.le_refl _,Nat.le_refl _⟩
-      · exact ⟨(context,272*n),by simp [buildRanges],by omega,by omega⟩)
+      · exact ⟨(context,272*n),by simp [buildRanges],by omega_using [],by omega_using []⟩)
     have c : Outs base (buildRanges n context) v.mem t.mem := widen J.mem (by
       intro r hr; simp only [subsetRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
@@ -137,7 +137,7 @@ theorem build_ok {n e context size m : Nat} {base : Addr} {s : State}
       · exact ⟨_,by simp [buildRanges],Nat.le_refl _,Nat.le_refl _⟩
       · exact ⟨_,by simp [buildRanges],Nat.le_refl _,Nat.le_refl _⟩
       · exact ⟨_,by simp [buildRanges],Nat.le_refl _,Nat.le_refl _⟩
-      · exact ⟨(context,272*n),by simp [buildRanges],by omega,by omega⟩)
+      · exact ⟨(context,272*n),by simp [buildRanges],by omega_using [],by omega_using []⟩)
     exact (a.trans b).trans c
 
 end VG.Proof.Mont.X86.Comb

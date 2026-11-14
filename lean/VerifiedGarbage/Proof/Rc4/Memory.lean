@@ -43,8 +43,8 @@ theorem table_write (m : Mem) (p : Addr) (idx value : Byte) :
     constructor
     · intro h
       have hn := congrArg BitVec.toNat h
-      simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
-        Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega)] at hn
+      simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_using [hk]),
+        Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 64 by omega_using [])] at hn
       exact hn.symm
     · intro h; rw [h]
   simp only [heq]
@@ -76,7 +76,7 @@ theorem table_write_sep (m : Mem) (p q : Addr) (value : Byte)
   intro k hk
   simp only [contextAt, Vector.getElem_ofFn]
   apply Mem.write_apply
-  exact h _ (by rw [Mem.sub_ofNat_toNat p (by omega)]; exact hk)
+  exact h _ (by rw [Mem.sub_ofNat_toNat p (by omega_using [hk])]; exact hk)
 
 /-- Scheduling modifies only the 256-byte table. -/
 def TableFrame (p : Addr) (m m' : Mem) : Prop :=
@@ -95,7 +95,7 @@ theorem swap_frame (m : Mem) (p : Addr) (i j : Byte) :
   have hne (idx : Byte) : x ≠ p + BitVec.ofNat 64 idx.toNat := by
     intro he
     apply hx
-    rw [he, Mem.sub_ofNat_toNat p (by omega)]
+    rw [he, Mem.sub_ofNat_toNat p (by omega_using [])]
     exact idx.isLt
   rw [write_byte, ite_eq_right (hne _), write_byte, ite_eq_right (hne _)]
 
@@ -115,7 +115,7 @@ theorem region_offset (rs : List Region) (p : Addr) (n d k : Nat)
   unfold Region.Contains at hcontains ⊢
   rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd]
   have hmod := Nat.mod_le ((p - region.base).toNat + d) (2 ^ 64)
-  omega
+  omega_using [hk, hcontains]
 
 /-- Writing the two stream indices completes the abstract context. -/
 theorem context_finish (m : Mem) (p : Addr) (i j : Byte) :

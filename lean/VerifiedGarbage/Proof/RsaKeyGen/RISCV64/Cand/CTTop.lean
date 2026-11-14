@@ -272,7 +272,7 @@ theorem finA_ok {s0 s : State} (h : Fr s0 s) :
 
 theorem finish_rel (r : Nat) (hr : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) :
     RelCT isa (Two (SG fun s0 t => Fr s0 t)) (finish r) fun _ _ => True := by
-  have hr' : r < 2048 := by omega
+  have hr' : r < 2048 := by omega_using [hr]
   have hw : ∀ s0 s, Fr s0 s → WP isa (.seq (.block [ldf .t2 oRead, ldf .t3 oUsed])
       (.block [.store .d .t2 .t3 0, .li .a0 (r : Int)])) s fun _ => True := fun s0 s h => by
     have := finish_ok r h hr'
@@ -692,8 +692,8 @@ theorem close_cand {a : KD} {x y : State} (kx : KR a x) (ky : KR a y) (hav : oL 
   have e := close_agree kx.1 ky.1 hav
   obtain ⟨hw, -, -⟩ := cw_facts kx.1.1
   obtain ⟨hw', -, -⟩ := cw_facts ky.1.1
-  rw [candS_eq kx.1.1 hav, candS_eq ky.1.1 hav', hw, hw', show 8 * (8 * cw x) = 64 * cw x by omega,
-    show 8 * (8 * cw y) = 64 * cw y by omega] at e
+  rw [candS_eq kx.1.1 hav, candS_eq ky.1.1 hav', hw, hw', show 8 * (8 * cw x) = 64 * cw x by omega_using [],
+    show 8 * (8 * cw y) = 64 * cw y by omega_using []] at e
   exact e
 
 theorem gcd_cand {a : KD} {x y : State} (kx : KR a x) (ky : KR a y) (hav : oL x ≤ rL x)
@@ -702,7 +702,7 @@ theorem gcd_cand {a : KD} {x y : State} (kx : KR a x) (ky : KR a y) (hav : oL x 
   have hav' : oL y ≤ rL y := by rw [← kx.1.oL_eq ky.1, ← kx.1.rL_eq ky.1]; exact hav
   obtain ⟨hw, -, -⟩ := cw_facts kx.1.1
   have hc' : Spec.RsaKeyGen.tooClose (8 * oL x) (Spec.RsaKeyGen.otherPrime (pB x)) (candS x) = false := by
-    rw [candS_eq kx.1.1 hav, hw, show 8 * (8 * cw x) = 64 * cw x by omega]; exact hc
+    rw [candS_eq kx.1.1 hav, hw, show 8 * (8 * cw x) = 64 * cw x by omega_using []]; exact hc
   have e := gcd_agree kx.1 ky.1 hav hc'
   rw [candS_eq kx.1.1 hav, candS_eq ky.1.1 hav'] at e
   exact e

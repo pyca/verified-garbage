@@ -73,13 +73,13 @@ theorem updatePost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (update
   simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   have hd : ∀ i < (ln.setWidth pb).toNat, m₂ (dt + BitVec.ofNat 64 i) = m₁ (dt + BitVec.ofNat 64 i) :=
     fun i hi => by
       have := Nat.mod_le ln.toNat (2 ^ pb)
       have := ln.isLt
       rw [BitVec.toNat_setWidth] at hi
-      exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+      exact (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
   intro msg hr hc
   rw [show bytesAt m₂ (ArgWord.addr.ofRaw dt) ((ArgWord.int pb).ofRaw ln).toNat =
     bytesAt m₁ dt (ln.setWidth pb).toNat from Stream.bytesAt_congr hd]
@@ -101,7 +101,7 @@ theorem finalizePost_local (pb : Nat) :
   simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro msg hr hc
   exact h msg (Stream.repr_congr (fun i hi => (hs i hi).symm) hr) hc
 

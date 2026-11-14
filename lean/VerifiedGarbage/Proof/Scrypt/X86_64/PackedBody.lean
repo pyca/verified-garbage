@@ -63,7 +63,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
  refine WP.mono (BlockMix.prologue_ok hp) fun s h => ?_
  have hi : InRegions (s.rd++s.wr) (s.gpr .r15) 64 := by
   rw [h.rd,h.wr,h.r15,xP,hp.rd,hp.wr]
-  exact ⟨BlockMix.bR s₀,by simp,BlockMix.in_b hp (o:=128*rr s₀-64) (n:=64) (by have := hp.pos; omega)⟩
+  exact ⟨BlockMix.bR s₀,by simp,BlockMix.in_b hp (o:=128*rr s₀-64) (n:=64) (by have := hp.pos; omega_using [this])⟩
  exact WP.mono (load_ok hi) fun t ⟨f,ht⟩ =>
   ⟨Inv.frame_registers h f,by rw [f.mem]; rw [h.r15] at ht; exact ht⟩
 
@@ -83,24 +83,24 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k<rr s₀) {s : S
  WP isa body s fun t => Inv s₀ (k+1) t ∧ t.zf=some (BitVec.ofNat 64 (rr s₀-k)-1==0) := by
  have ie : InRegions (s.rd++s.wr) (bB s₀ k) 64 := by
   rw [h.rd,h.wr,hp.rd,hp.wr]
-  exact ⟨BlockMix.bR s₀,by simp,in_b hp (by omega)⟩
+  exact ⟨BlockMix.bR s₀,by simp,in_b hp (by omega_using [hk])⟩
  have we : InRegions s.wr (yE s₀ k) 64 := by
   rw [h.wr,hp.wr]
-  exact ⟨yR s₀,by simp,in_y hp (by omega)⟩
+  exact ⟨yR s₀,by simp,in_y hp (by omega_using [hk])⟩
  refine WP.seq (WP.mono (Packed.half_ok h.words (by rw [h.rbx]; exact plus_zero _) ie h.rbp we) fun a ha => ?_)
  obtain ⟨wa,ma,fa,ga,ra,wra⟩ := ha
  have ba : Spec.Scrypt.bytesAt a.mem (yE s₀ k) 64 = Spec.Scrypt.salsa
    (Spec.Pbkdf2.xorBytes (Spec.Scrypt.bytesAt s.mem (xP s₀ k) 64) (Spec.Scrypt.bytesAt s.mem (bB s₀ k) 64)) :=
   core_bytes (fun j hj => by have := congrArg (fun v : Vector Spec.Scrypt.Word 16 => v[j]'hj) ma; simpa only [memWords,Vector.getElem_ofFn] using this)
  have baddr : plus (bB s₀ k) 64 = bP s₀ + BitVec.ofNat 64 (64*(2*k+1)) := by
-  rw [plus,bB,Memory.add_ofNat]; congr 2; omega
+  rw [plus,bB,Memory.add_ofNat]; congr 2; omega_using []
  let src := bP s₀+BitVec.ofNat 64 (64*(2*k+1))
  have io : InRegions (a.rd++a.wr) src 64 := by
   rw [ra,wra,h.rd,h.wr,hp.rd,hp.wr]
-  exact ⟨BlockMix.bR s₀,by simp,in_b hp (by omega)⟩
+  exact ⟨BlockMix.bR s₀,by simp,in_b hp (by omega_using [hk])⟩
  have wo : InRegions a.wr (yO s₀ k) 64 := by
   rw [wra,h.wr,hp.wr]
-  exact ⟨yR s₀,by simp,in_y hp (by omega)⟩
+  exact ⟨yR s₀,by simp,in_y hp (by omega_using [hk])⟩
  have wa' : Holds (memWords a.mem (yE s₀ k)) a := by rw [ma]; exact wa
  refine WP.seq (WP.mono (Packed.half_ok wa' (by rw [ga,h.rbx]; exact baddr) io
   (by rw [ga,h.r12]) wo) fun b hb => ?_)
@@ -127,12 +127,12 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k<rr s₀) {s : S
  have nextc : BitVec.ofNat 64 (rr s₀-k)-1=BitVec.ofNat 64 (rr s₀-(k+1)) := by
   have := r_lt hp
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub,Memory.toNat_ofNat_lt (by omega),Memory.toNat_ofNat_lt (by omega),
+  rw [BitVec.toNat_sub,Memory.toNat_ofNat_lt (by omega_using [this]),Memory.toNat_ofNat_lt (by omega_using [this]),
     show (1 : BitVec 64).toNat=1 from rfl]
-  omega
+  omega_using [hk, this]
  have zf := ht.zf
  rw [gb,ga,h.r14] at zf
- refine ⟨⟨⟨by omega,ht.rd.trans (rb.trans (ra.trans h.rd)),ht.wr.trans (wrb.trans (wra.trans h.wr)),
+ refine ⟨⟨⟨by omega_using [hk],ht.rd.trans (rb.trans (ra.trans h.rd)),ht.wr.trans (wrb.trans (wra.trans h.wr)),
   ?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩,?_⟩,zf⟩
  · rw [ht.keep _ (by decide) (by decide) (by decide) (by decide) (by decide),gb,ga]; exact h.rsp
  · rw [ht.rbx,gb,ga,h.rbx,nextb]
@@ -145,7 +145,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k<rr s₀) {s : S
  · rw [ht.mem]; exact saved
  · rw [ht.mem]; exact done
  · rw [ht.mem]; change Spec.Scrypt.bytesAt b.mem (yO s₀ k) 64=_
-   rw [(done k (by omega)).2]; rfl
+   rw [(done k (by omega_using [])).2]; rfl
  · rw [ht.mem]; exact wb'.keep (fun _ _ => congrFun hx _)
 
 end VG.Proof.Scrypt.X86_64.Packed.BM

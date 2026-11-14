@@ -132,7 +132,7 @@ theorem le8_join (x y : BitVec 32) :
       BitVec.getLsbD_setWidth, Nat.reduceMul, Nat.zero_add] <;>
     simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and, Bool.not_true,
       Bool.not_false, Bool.or_false, Bool.false_or, Bool.and_true, Bool.and_false, BitVec.getLsbD_of_ge] <;>
-    (try (congr 1; omega))
+    (try (congr 1; omega_using []))
 
 /-- One block: `little_endian_uint32(i) ‖ nonce` at `W + 488 + 16 i`. -/
 theorem blkStep_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {σ : State}

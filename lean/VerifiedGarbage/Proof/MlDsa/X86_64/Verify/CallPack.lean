@@ -61,7 +61,7 @@ theorem uh_pre (hg : g2 ∈ gamma2s) (hr : Reduced s.mem (pa s r)) {s1 : State} 
   sig_pre [useHintContract, useHintSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.rsp, h1.1.2]
   simp only [Arg.val]
-  rw [imm32 (show g2 < 2 ^ 32 by have := gamma2s_lt hg; omega)]
+  rw [imm32 (show g2 < 2 ^ 32 by have := gamma2s_lt hg; omega_using [this])]
   exact ⟨L.sp16, by first | rfl | trivial, by first | rfl | trivial, L.disj c1, L.disj c2, L.ret8 c3, L.ret8 c4,
     L.ret8 c5, L.stk16 c3, L.stk16 c4, L.stk16 c5, L.nwp c3, L.nwp c4, L.nwp c5, hg, L.wreduced c4 _ hr⟩
 
@@ -83,7 +83,7 @@ theorem useHintAt_ok {P : Prims} (C : CalleeOk P.useHint (useHintContract X86_64
   sig_post [useHintContract, useHintSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, h1.r3, hm, h1.rsp, h1.1.2] at hq
   simp only [Arg.val] at hq
-  rw [imm32 (show g2 < 2 ^ 32 by have := gamma2s_lt hg; omega), L.whintAt c3, L.wpolyAt c4] at hq
+  rw [imm32 (show g2 < 2 ^ 32 by have := gamma2s_lt hg; omega_using [this]), L.whintAt c3, L.wpolyAt c4] at hq
   exact hq
 
 theorem useHintAt_tr {P : Prims} (C : CalleeOk P.useHint (useHintContract X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
@@ -146,7 +146,7 @@ theorem sbp_pre (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b)
   sig_pre [simpleBitPackContract, simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.rsp, h1.1.2]
   simp only [Arg.val]
-  rw [imm32 (show b < 2 ^ 32 by omega), imm64 (show len < 2 ^ 64 by omega)]
+  rw [imm32 (show b < 2 ^ 32 by omega_using [hs]), imm64 (show len < 2 ^ 64 by omega_using [hs])]
   exact ⟨L.sp16, by first | rfl | trivial, by first | rfl | trivial, L.disj c1, L.ret8 c2, L.ret8 c3, L.stk16 c2,
     L.stk16 c3, L.nwp c2, L.nwp c3, hb, hl, fun i hi => by rw [L.wcoeffAt c2 _ hi]; exact hf i hi⟩
 
@@ -169,7 +169,7 @@ theorem sbpAt_ok {P : Prims} (C : CalleeOk P.simpleBitPack (simpleBitPackContrac
   sig_post [simpleBitPackContract, simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, h1.r3, hm, h1.rsp, h1.1.2] at hq
   simp only [Arg.val] at hq
-  rw [imm32 (show b < 2 ^ 32 by omega), imm64 (show len < 2 ^ 64 by omega), L.wnatPolyAt c2] at hq
+  rw [imm32 (show b < 2 ^ 32 by omega_using [hs]), imm64 (show len < 2 ^ 64 by omega_using [hs]), L.wnatPolyAt c2] at hq
   exact hq
 
 theorem sbpAt_tr {P : Prims} (C : CalleeOk P.simpleBitPack (simpleBitPackContract X86_64.abi 16))
@@ -235,7 +235,7 @@ theorem bu_pre (hab : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b))
   sig_pre [bitUnpackContract, bitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.rsp]
   simp only [Arg.val]
-  rw [imm32 (show a < 2 ^ 32 by omega), imm32 (show b < 2 ^ 32 by omega), imm64 (show len < 2 ^ 64 by omega)]
+  rw [imm32 (show a < 2 ^ 32 by omega_using [hs]), imm32 (show b < 2 ^ 32 by omega_using [hs]), imm64 (show len < 2 ^ 64 by omega_using [hs])]
   exact ⟨L.sp16, by first | rfl | trivial, by first | rfl | trivial, L.disj c1, L.ret8 c2, L.ret8 c3, L.stk16 c2,
     L.stk16 c3, L.nwp c2, L.nwp c3, hab, hl⟩
 
@@ -257,7 +257,7 @@ theorem bitUnpackAt_ok {P : Prims} (C : CalleeOk P.bitUnpack (bitUnpackContract 
   sig_post [bitUnpackContract, bitUnpackSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, hm, h1.rsp, h1.1.2] at hq
   simp only [Arg.val] at hq
-  rw [imm32 (show a < 2 ^ 32 by omega), imm32 (show b < 2 ^ 32 by omega), imm64 (show len < 2 ^ 64 by omega),
+  rw [imm32 (show a < 2 ^ 32 by omega_using [hs]), imm32 (show b < 2 ^ 32 by omega_using [hs]), imm64 (show len < 2 ^ 64 by omega_using [hs]),
     L.wbytesAt c2] at hq
   exact hq
 
@@ -368,7 +368,7 @@ theorem hu_small {len omega hlen : Nat} (h : HuPar len omega hlen) :
     len < 2 ^ 31 ∧ omega < 2 ^ 31 ∧ hlen < 2 ^ 31 := by
   obtain ⟨hp, hl, hh⟩ := h
   simp only [hintParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp
-  omega
+  omega_using [hh, hp]
 
 theorem hu_args {bs wbs : List (Reg × Nat)} (L : LayOk bs) {y h : Ptr} {len omega hlen : Nat}
     (hp : HuPar len omega hlen) (hc : huChk bs wbs y len h hlen = true) :
@@ -399,7 +399,7 @@ theorem hu_pre (hp : HuPar len omega hlen) {s1 : State} (h1 : Args (huArgs y len
   sig_pre [hintBitUnpackContract, hintBitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h1.rsp]
   simp only [Arg.val]
-  rw [imm64 (show len < 2 ^ 64 by omega), imm32 (show omega < 2 ^ 32 by omega), imm64 (show hlen < 2 ^ 64 by omega)]
+  rw [imm64 (show len < 2 ^ 64 by omega_using [hs]), imm32 (show omega < 2 ^ 32 by omega_using [hs]), imm64 (show hlen < 2 ^ 64 by omega_using [hs])]
   exact ⟨L.sp16, by first | rfl | trivial, by first | rfl | trivial, L.disj c1, L.ret8 c2, L.ret8 c3, L.stk16 c2,
     L.stk16 c3, L.nwp c2, L.nwp c3, hp.1, hp.2.1, hp.2.2⟩
 
@@ -423,7 +423,7 @@ theorem hintUnpackAt_ok {P : Prims} (C : CalleeOk P.hintUnpack (hintBitUnpackCon
   sig_post [hintBitUnpackContract, hintBitUnpackSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, h1.r3, hm, h1.rsp, h1.1.2, hg _ (by decide)] at hq
   simp only [Arg.val] at hq
-  rw [imm64 (show len < 2 ^ 64 by omega), imm32 (show omega < 2 ^ 32 by omega), L.wbytesAt c2] at hq
+  rw [imm64 (show len < 2 ^ 64 by omega_using [hs]), imm32 (show omega < 2 ^ 32 by omega_using [hs]), L.wbytesAt c2] at hq
   exact hq
 
 theorem hintUnpackAt_tr {P : Prims} (C : CalleeOk P.hintUnpack (hintBitUnpackContract X86_64.abi 16))
@@ -444,7 +444,7 @@ theorem hintUnpackAt_tr {P : Prims} (C : CalleeOk P.hintUnpack (hintBitUnpackCon
   sig_pub [hintBitUnpackContract, hintBitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h2.r0, h2.r1, h2.r2, h2.r3, h2.r4, h1.1.2, h2.1.2, h1.rsp, h2.rsp]
   simp only [Arg.val]
-  rw [imm64 (show len < 2 ^ 64 by omega), Lx.wbytesAt c2, Ly.wbytesAt c2, eb]
+  rw [imm64 (show len < 2 ^ 64 by omega_using [hs]), Lx.wbytesAt c2, Ly.wbytesAt c2, eb]
   exact ⟨by rw [e.2], rfl, e.pa (ptr_bs hS c2), by first | rfl | trivial, by first | rfl | trivial,
     e.pa (ptr_bs hS c3), by first | rfl | trivial⟩
 
@@ -477,7 +477,7 @@ theorem normLtAt_ok {P : Prims} (C : CalleeOk P.normLt (normLtContract X86_64.ab
     fun s' ⟨hP, s1, h1, s₂, hm, hg, hq⟩ => ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
   sig_post [normLtContract, normLtSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.rsp, h1.1.2, hg _ (by decide)] at hq
-  simp only [Arg.val, imm32 (show bound < 2 ^ 32 by omega), L.wpolyAt hc] at hq
+  simp only [Arg.val, imm32 (show bound < 2 ^ 32 by omega_using [hb]), L.wpolyAt hc] at hq
   exact hq
 
 theorem normLtAt_tr {P : Prims} (C : CalleeOk P.normLt (normLtContract X86_64.abi 16))

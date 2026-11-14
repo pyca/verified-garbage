@@ -25,7 +25,7 @@ theorem next_even (s : Sums) (fe fo ge go g : Nat) :
   change (s.even+fe*ge+(s.odd+fo*go)*g)%q = _
   rw [Nat.add_mul]
   congr 1
-  omega
+  omega_using []
 
 theorem next_cross (s : Sums) (fe fo ge go : Nat) :
     (s.next fe fo ge go).cross%q = (s.cross%q + (fe*go+fo*ge)%q)%q := by
@@ -47,8 +47,8 @@ theorem PairRel.next {a : Sums} {P F G : Poly} {i : Nat} (hi : i < 128) (h : Pai
     PairRel (a.next (F[2*i]!).val (F[2*i+1]!).val (G[2*i]!).val (G[2*i+1]!).val)
       (add P (multiplyNTTs F G)) i := by
   constructor
-  · rw [next_even,h.1,add_get _ _ (by change 2*i < 256; omega),val_add',multiply_even_val _ _ hi]
-  · rw [next_cross,h.2,add_get _ _ (by change 2*i+1 < 256; omega),val_add',multiply_odd_val _ _ hi]
+  · rw [next_even,h.1,add_get _ _ (by change 2*i < 256; omega_using [hi]),val_add',multiply_even_val _ _ hi]
+  · rw [next_cross,h.2,add_get _ _ (by change 2*i+1 < 256; omega_using [hi]),val_add',multiply_odd_val _ _ hi]
 
 theorem sumTerms_field (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Poly)
     {c e : Nat} (hc : c < 32) (he : e < 4) {a : Nat → Sums} {P : Poly}
@@ -59,8 +59,8 @@ theorem sumTerms_field (terms : List (Nat × Nat)) (F G : (Nat × Nat) → Poly)
   | nil => exact h
   | cons fg terms ih =>
     apply ih
-    have hn := h.next (F := F fg) (G := G fg) (by omega)
-    simpa only [advance,blockValues,polyValues,show 8*c+2*e = 2*(4*c+e) by omega,
-      show 8*c+(2*e+1) = 2*(4*c+e)+1 by omega] using hn
+    have hn := h.next (F := F fg) (G := G fg) (by omega_using [hc, he])
+    simpa only [advance,blockValues,polyValues,show 8*c+2*e = 2*(4*c+e) by omega_using [],
+      show 8*c+(2*e+1) = 2*(4*c+e)+1 by omega_using []] using hn
 
 end VG.Proof.MlKem.AArch64.Dot

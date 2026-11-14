@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Tactic.NormNum.Prime
@@ -17,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -28,6 +29,142 @@ import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Rc2
+
+/-! ### `Ed25519.X86.VerifyMessage.Args`, which only this module used -/
+
+section
+
+/-! Merged from `Proof.Ed25519.X86.VerifyMessage.Layout`. -/
+
+@[expose] public section
+
+section
+/-! Buffer geometry of complete Ed25519 verification on x86. -/
+namespace VG.Proof.Ed25519.X86.VerifyMessage
+open VG VG.X86
+
+structure Lay where
+  pk : BitVec 32
+  msg : BitVec 32
+  len : BitVec 32
+  sig : BitVec 32
+  scr : BitVec 32
+  E : BitVec 32
+  /-- The address of the static of `-[1]B … -[15]B`, which the equation reads. -/
+  tbl : BitVec 32
+
+namespace Lay
+variable (L : Lay)
+abbrev PK : Region := ⟨L.pk.setWidth 64, 32⟩
+abbrev MSG : Region := ⟨L.msg.setWidth 64, L.len.toNat⟩
+abbrev SIG : Region := ⟨L.sig.setWidth 64, 64⟩
+abbrev SCR : Region := ⟨L.scr.setWidth 64, 8192⟩
+abbrev ARGS : Region := ⟨L.E.setWidth 64 + 260, 20⟩
+abbrev RET : Region := ⟨L.E.setWidth 64 + 256, 4⟩
+abbrev FR : Region := Whole.FR L.E
+abbrev STK : Region := Whole.STK L.E
+abbrev TBL : Region := ⟨L.tbl.setWidth 64, 1920⟩
+def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ARGS, L.TBL]
+def outputs : List Region := [L.SCR]
+def value (j : Nat) : BitVec 32 :=
+  match j with | 0 => L.pk | 1 => L.msg | 2 => L.len | 3 => L.sig | _ => L.scr
+
+structure Ok : Prop where
+  below : 24 ≤ L.E.toNat
+  top : L.E.toNat + 280 ≤ 2 ^ 32
+  sc : ∀ r ∈ L.inputs, r.Disjoint L.SCR
+  ks : ∀ r ∈ L.inputs, L.STK.Disjoint r
+  rs : ∀ r ∈ L.inputs, L.RET.Disjoint r
+  kc : L.STK.Disjoint L.SCR
+  rc : L.RET.Disjoint L.SCR
+  np : L.pk.toNat + 32 ≤ 2 ^ 32
+  nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
+  ns : L.sig.toNat + 64 ≤ 2 ^ 32
+  nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+  nt : L.tbl.toNat + 1920 ≤ 2 ^ 32
+end Lay
+
+abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=
+  Whole.Ctx L.E g m₀ L.inputs L.outputs t
+
+namespace Ctx
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
+
+theorem input_bytes (hc : Ctx L g m₀ t) (hL : L.Ok)
+    {r : Region} (hr : r ∈ L.inputs) (hn : r.len ≤ 2 ^ 64) :
+    Spec.Ed25519.bytesAt t.mem r.base r.len = Spec.Ed25519.bytesAt m₀ r.base r.len := by
+  unfold Spec.Ed25519.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  refine Frame.bytes hc.frame ?_ hn (List.mem_range.mp hi)
+  intro R hR
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hR
+  rcases hR with rfl | rfl
+  · exact hL.sc r hr
+  · exact (hL.ks r hr).symm
+
+theorem arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 5) :
+    t.mem.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 =
+      m₀.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 := by
+  refine hc.frame.readW (r := L.ARGS) ?_ ?_ (by decide)
+  · exact Offset.contains _ (e := 260) (k := 20) (by omega_using []) (by omega_using [hj]) (by decide)
+  · intro R hR
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hR
+    have ha : L.ARGS ∈ L.inputs := by simp [Lay.inputs]
+    rcases hR with rfl | rfl
+    · exact hL.sc _ ha
+    · exact (hL.ks _ ha).symm
+
+end Ctx
+end VG.Proof.Ed25519.X86.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.X86.VerifyMessage
+open VG VG.X86 VG.Impl.Ed25519.X86.Whole
+
+def Arguments (L : Lay) (m : Mem) : Prop :=
+  ∀ j < 5, m.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 = L.value j
+
+def value (L : Lay) : Value → BitVec 32
+  | .const n => BitVec.ofNat 32 n
+  | .frame d => L.E + BitVec.ofNat 32 d
+  | .caller j d => L.value j + BitVec.ofNat 32 d
+
+def OutArgs (L : Lay) (vs : List Value) (s : State) : Prop :=
+  ∀ j (hj : j < vs.length), s.mem.readW (addr L.E (4 * j)) 32 = value L (vs[j]'hj)
+
+variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem Ctx.value (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    {v : Value} (hv : Whole.valid 5 v) : Whole.value L.E s.mem v = value L v := by
+  cases v with
+  | const => rfl
+  | frame => rfl
+  | caller j d =>
+    change j < 5 at hv
+    simp only [Whole.value, VerifyMessage.value]
+    rw [addr_eq (by have := hL.top; omega_using [hv, this]), hc.arg_word hL hv, ha j hv]
+
+theorem args_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    {vs : List Value} (hlen : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 5 v) :
+    WP isa (.block (setup 0 vs)) s fun t => Ctx L g m₀ t ∧
+      Frame [⟨L.E.setWidth 64, 24⟩] s.mem t.mem ∧ OutArgs L vs t := by
+  refine WP.mono (Whole.Ctx.setup hc (by simpa using hL.top) ?_ (by omega_using [hlen]) hv)
+    fun t ⟨ht, hf, hvals⟩ => ⟨ht, hf, fun j hj => ?_⟩
+  · intro j hj
+    refine ⟨L.ARGS, ?_, ?_⟩
+    · rw [hc.rd]; exact List.mem_append_left _ (by simp [Lay.inputs])
+    · rw [addr_eq (by have := hL.top; omega_using [hj, this])]
+      exact Offset.contains _ (e := 260) (k := 20) (by omega_using []) (by omega_using [hj]) (by decide)
+  · simpa only [Nat.zero_add, hc.value hL ha (hv _ (List.getElem_mem _))] using hvals j hj
+
+end VG.Proof.Ed25519.X86.VerifyMessage
+
+end
+
+end
+
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.Hash`. -/
 
@@ -41,7 +178,7 @@ open VG.Impl.Ed25519.X86.PublicKey (callWith)
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem hashSpace (h : L.Ok) : Whole.HashSpace L.E L.scr :=
-  ⟨h.below, by have := h.top; omega, h.nc, h.kc⟩
+  ⟨h.below, by have := h.top; omega_using [this], h.nc, h.kc⟩
 
 theorem shaWithin (L : Lay) : Whole.Within (Whole.SHA L.scr) L.SCR :=
   ⟨0, by simp, by change 0 + 192 ≤ 8192; decide⟩
@@ -106,7 +243,7 @@ theorem OutArgs.slot {vs : List Value} {t : State} (h : OutArgs L vs t) (hL : L.
     {j : Nat} (hj : j < vs.length) (hlen : vs.length ≤ 6) :
     Whole.slots L.E t j = value L (vs[j]'hj) := by
   have e := h j hj
-  rw [addr_eq (by have := hL.top; omega)] at e
+  rw [addr_eq (by have := hL.top; omega_using [hj, hlen, this])] at e
   exact e
 
 theorem init_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
@@ -162,7 +299,7 @@ def TblAt (L : Lay) (m : Mem) : Prop :=
 theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L m₀) : TblAt L s.mem := fun i hi => by
   have tin : L.TBL ∈ L.inputs := by simp [Lay.inputs]
   have hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
-    Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega) (by have := hL.nt; omega)
+    Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega_using [hi]) (by have := hL.nt; omega_using [hi])
   rw [hc.frame.readW hcon (fun R hR => by
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hR
@@ -180,7 +317,7 @@ theorem equation_tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ht : TblAt L s.mem) (hy 
   refine ⟨fun i hi => ?_, by rw [hy']; exact hL.nt, fun r hr => ?_⟩
   · rw [hy']
     have hcon : L.TBL.Contains (L.tbl.setWidth 64 + BitVec.ofNat 64 (8 * i)) (64 / 8) :=
-      Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega) (by have := hL.nt; omega)
+      Offset.contains_base _ (d := 8 * i) (n := 8) (k := 1920) (by omega_using [hi]) (by have := hL.nt; omega_using [hi])
     change (s.callEntry.mem).readW _ 64 = _
     rw [Frame.readW (Whole.callEntry_frame s) hcon (fun R hR => by
         rw [List.mem_singleton.mp hR, hc.esp]
@@ -206,7 +343,7 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : T
   have e3 := (ca (j := 3) (by decide)).trans a3
   have ab := Whole.arg_base hc.esp (equationRd L) (equationWr L)
   have stk := Whole.inner_sub_stack hL.below
-  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega
+  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega_using [this]
   have cs : callStk (s.callEntry.withRegions (equationRd L) (equationWr L)) =
       below (L.E - BitVec.ofNat 32 4) 8 := by
     simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
@@ -222,9 +359,9 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) (ht : T
     (hL.ks _ (by simp [Lay.inputs])).sub_left stk,
     Whole.inner_frame hL.below hf (d := 128) (n := 64) (by decide) (by decide), hb⟩
   all_goals
-    have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega)
+    have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega_using [this])
     rw [e]
-    have := hL.top; have := hL.below; omega
+    have := hL.top; have := hL.below; omega_arith
 
 theorem equation_correct_result (s : State) (h : verifyLocal.pre s) :
     ∃ tr t, Exec isa verifyEquation s tr t ∧ abiPreserved s t ∧ verifyLocal.post s t := verify_correct h
@@ -341,12 +478,12 @@ theorem finalizeArgs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀
   have hr : InRegions (u.rd ++ u.wr) (addr L.E 268) 4 := by
     refine ⟨L.ARGS, ?_, ?_⟩
     · rw [hu.rd]; simp [Lay.inputs]
-    · rw [addr_eq (by have := hL.top; omega)]
+    · rw [addr_eq (by have := hL.top; omega_using [this])]
       exact Offset.contains _ (e := 260) (k := 20) (d := 268) (n := 4) (by decide) (by decide) (by decide)
   have hx : u.mem.readW (addr L.E 268) 32 = L.len := by
-    rw [addr_eq (by have := hL.top; omega)]
+    rw [addr_eq (by have := hL.top; omega_using [this])]
     exact (hu.arg_word hL (j := 2) (by decide)).trans (ha 2 (by decide))
-  refine WP.mono (Whole.Ctx.count hu (index := 2) (n := 64) (by have := hL.top; omega) hr hx)
+  refine WP.mono (Whole.Ctx.count hu (index := 2) (n := 64) (by have := hL.top; omega_using [this]) hr hx)
     fun t ⟨ht, hft, hlo, hhi⟩ => ⟨ht, hf.trans (count_frame hft),
       (count_keep hft (.inl rfl)).trans aa,
       (count_keep hft (.inr (.inl rfl))).trans ad,
@@ -366,7 +503,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86.VerifyMessage
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
 theorem digest_addr (hL : L.Ok) : (L.E + 192).setWidth 64 = L.E.setWidth 64 + 192 :=
-  addr_eq (x := L.E) (k := 192) (by have := hL.top; omega)
+  addr_eq (x := L.E) (k := 192) (by have := hL.top; omega_using [this])
 
 theorem digestWithin (hL : L.Ok) : Whole.Within ⟨(L.E + 192).setWidth 64, 64⟩ L.FR :=
   ⟨192, digest_addr hL, by change 192 + 64 ≤ 256; decide⟩
@@ -386,8 +523,8 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   have H := hashSpace hL
   have fit : (L.E + 192).toNat + 64 ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl,
-      Nat.mod_eq_of_lt (by have := hL.top; omega)]
-    have := hL.top; omega
+      Nat.mod_eq_of_lt (by have := hL.top; omega_using [this])]
+    have := hL.top; omega_using [this]
   have hd : Region.Disjoint ⟨(L.E + 192).setWidth 64, 64⟩ L.SCR :=
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((digestWithin hL).sub p hp))
   have hp := Whole.finalize_pre hu.esp H a0 a3 a4 hd (digest_below hL) (by
@@ -456,7 +593,7 @@ theorem count_zero_high (x : BitVec 32) : (0#32) ++ x = BitVec.ofNat 64 x.toNat 
   have hx := x.isLt
   simp only [BitVec.toNat_ofNat]
   change 0 * 2 ^ 32 + x.toNat = x.toNat % 2 ^ 64
-  omega
+  omega_using []
 
 theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     {vs : List Value} (hlen : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 5 v)
@@ -508,7 +645,7 @@ theorem update_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
       refine List.map_congr_left fun i hi' => ?_
       exact hf.bytes (R := ⟨p.setWidth 64, n.toNat⟩)
         (by rintro r hr; rw [List.mem_singleton.mp hr]; exact hi.args)
-        (by have := n.isLt; change n.toNat ≤ 2 ^ 64; omega) (List.mem_range.mp hi')
+        (by have := n.isLt; change n.toNat ≤ 2 ^ 64; omega_using []) (List.mem_range.mp hi')
     rw [same] at hrepr
     exact hrepr
 
@@ -533,7 +670,7 @@ theorem input_pk (hL : L.Ok) : Input L L.pk 32 :=
 
 theorem input_sig (hL : L.Ok) : Input L L.sig 32 :=
   input_geometry hL (R := L.SIG) (by simp [Lay.inputs]) ⟨0, by simp, by change 0 + 32 ≤ 64; decide⟩
-    (by change L.sig.toNat + 32 ≤ 2 ^ 32; have := hL.ns; omega)
+    (by change L.sig.toNat + 32 ≤ 2 ^ 32; have := hL.ns; omega_using [this])
 
 theorem input_msg (hL : L.Ok) : Input L L.msg L.len :=
   input_geometry hL (R := L.MSG) (by simp [Lay.inputs]) ⟨0, by simp, by simp⟩ hL.nm
@@ -610,7 +747,7 @@ theorem sig_prefix_same (hc : Ctx L g m₀ s) (hL : L.Ok) :
     rcases hr with rfl | rfl
     · exact hL.sc _ (by simp [Lay.inputs])
     · exact (hL.ks _ (by simp [Lay.inputs])).symm)
-    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega)
+    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega_using [this])
 
 theorem hash_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa hash s fun t => Ctx L g m₀ t ∧
@@ -629,12 +766,12 @@ theorem hash_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     rw [List.length_append, bytes_length, bytes_length]
   refine WP.seq (WP.mono (message_step hv hL ha hpkl hpk) fun w ⟨hw, _, hmsg⟩ => ?_)
   rw [hv.input_bytes hL (r := L.MSG) (by simp [Lay.inputs])
-    (by have := L.len.isLt; change L.len.toNat ≤ 2 ^ 64; omega)] at hmsg
+    (by have := L.len.isLt; change L.len.toNat ≤ 2 ^ 64; omega_using [])] at hmsg
   have hlen : (hashInput L m₀).length = L.len.toNat + 64 := by
     simp only [hashInput, List.length_append, bytes_length]
-    omega
+    omega_using []
   refine WP.mono (finalize_step hw hL ha (msg := hashInput L m₀)
-    (by rw [hlen]; have := L.len.isLt; omega) hlen.symm hmsg) fun t ⟨ht, _, hd⟩ => ⟨ht, hd⟩
+    (by rw [hlen]; have := L.len.isLt; omega_using []) hlen.symm hmsg) fun t ⟨ht, _, hd⟩ => ⟨ht, hd⟩
 
 end VG.Proof.Ed25519.X86.VerifyMessage
 end
@@ -661,7 +798,7 @@ theorem setup_bytes {u : State} {d n : Nat}
   refine List.map_congr_left fun i hi => ?_
   exact hf.bytes (R := ⟨L.E.setWidth 64 + BitVec.ofNat 64 d, n⟩) (by
     rintro r hr; rw [List.mem_singleton.mp hr]
-    exact (Offset.base_disjoint _ hd (by omega)).symm) (by change n ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
+    exact (Offset.base_disjoint _ hd (by omega_using [hn])).symm) (by change n ≤ 2 ^ 64; omega_using [hn]) (List.mem_range.mp hi)
 
 theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (VG.Impl.Ed25519.X86.PublicKey.callWith reduceArgs "vg_ed25519_scalar_reduce" Impl.Ed25519.X86.scalarReduce) s
@@ -703,10 +840,10 @@ theorem extend_step (hc : Ctx L g m₀ s) (hL : L.Ok) {digest : List Byte}
     apply Proof.X25519.bytesAt_leBytes_words32
     intro j hj
     have z := hz j hj
-    rw [addr_eq (by have := hL.top; omega)] at z
+    rw [addr_eq (by have := hL.top; omega_using [hj, this])] at z
     have e : L.E.setWidth 64 + BitVec.ofNat 64 (4 * (40 + j)) =
         L.E.setWidth 64 + 160 + BitVec.ofNat 64 (4 * j) := by
-      rw [show 4 * (40 + j) = 160 + 4 * j by omega, BitVec.ofNat_add, BitVec.add_assoc]
+      rw [show 4 * (40 + j) = 160 + 4 * j by omega_using [], BitVec.ofNat_add, BitVec.add_assoc]
       rfl
     rw [e] at z
     rw [z]

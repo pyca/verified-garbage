@@ -39,7 +39,7 @@ open VG.Impl.Dsa.Generation.Layout
 theorem SeedGeneratorPublic.q_bounds (a : SeedGeneratorPublic) :
     0 < a.qValue ∧ a.qValue < 256 ^ a.seed.context.geo.qLen := by
   have shape := VG.Proof.Dsa.Generation.qCandidate_shape
-    (by rcases a.seed.context.geo.qWidth with hh | hh <;> omega : 2 ≤ 8 * a.seed.context.geo.qLen) a.seed.seed.bytes
+    (by rcases a.seed.context.geo.qWidth with hh | hh <;> omega_using [hh] : 2 ≤ 8 * a.seed.context.geo.qLen) a.seed.seed.bytes
   refine ⟨Nat.lt_of_lt_of_le (Nat.two_pow_pos _) shape.2.1, ?_⟩
   have := shape.2.2
   rw [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul]

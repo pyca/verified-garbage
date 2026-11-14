@@ -78,8 +78,8 @@ private theorem ExponentCountAfter.continue {p : ExponentCountData} {s : State}
     change some (!s.z) = some true at go
     rw [h.zero] at go
     simpa using go
-  have nextPositive : 0 < p.count - 1 := by omega
-  have nextBound : p.count - 1 ≤ 4 := by omega
+  have nextPositive : 0 < p.count - 1 := by omega_using [positive, notLast]
+  have nextBound : p.count - 1 ≤ 4 := by omega_using [bound]
   exact ⟨h.workspace, h.ready, h.data, h.stack, h.separate, nextPositive, nextBound, h.saved⟩
 
 theorem exponentHalfLoop_ct : RelCT isa (Two ExponentCountState)
@@ -100,7 +100,7 @@ theorem exponentHalfLoop_ct : RelCT isa (Two ExponentCountState)
         change some (!u.z) = some true at go
         rw [postV.zero, ← postU.zero]
         exact go
-      exact ⟨p.count - 1, by rw [← remaining]; have := left.positive; omega,
+      exact ⟨p.count - 1, by rw [← remaining]; have := left.positive; omega_using [this],
         ⟨p.math, p.count - 1⟩, rfl, postU.continue left.positive left.bound go,
         postV.continue right.positive right.bound goV, spUV⟩
   intro s t trS trT u v h runS runT

@@ -59,7 +59,7 @@ theorem polys_congr {m₁ m₂ : Mem} {key : Addr} {kl N : Nat}
   have hc : ∀ k < 1024, m₂ (key + BitVec.ofNat 64 (kl + 4 * VG.Spec.MlDsa.n * i) + BitVec.ofNat 64 k) =
       m₁ (key + BitVec.ofNat 64 (kl + 4 * VG.Spec.MlDsa.n * i) + BitVec.ofNat 64 k) := fun k hk => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact hs _ (by simp only [VG.Spec.MlDsa.n]; omega)
+    exact hs _ (by simp only [VG.Spec.MlDsa.n]; omega_using [hi, hk])
   refine ⟨fun j hj => by rw [Proof.MlDsa.Arith.coeffAt_congr hc hj]; exact (h i hi).1 j hj, ?_⟩
   rw [← (h i hi).2]
   unfold Proof.MlDsa.polyAt
@@ -75,11 +75,11 @@ theorem preparedSecret_of_bytes {p : Params} {m m' : Mem} {key : Addr}
     fun k hk => by
       have := congrArg (fun xs : List Byte => xs.getD k 0) h
       rwa [Proof.MlKem.bytesAt_getD _ _ hk, Proof.MlKem.bytesAt_getD _ _ hk] at this
-  have hl : p.skLen ≤ preparedSecretKeyBytes p := by unfold preparedSecretKeyBytes; omega
+  have hl : p.skLen ≤ preparedSecretKeyBytes p := by unfold preparedSecretKeyBytes; omega_using []
   rw [Proof.MlDsa.preparedSecretKey_iff] at hk ⊢
-  rw [Proof.MlKem.bytesAt_congr (m := m) (m' := m') fun i hi => hs i (by omega)]
+  rw [Proof.MlKem.bytesAt_congr (m := m) (m' := m') fun i hi => hs i (by omega_using [hl, hi])]
   exact polys_congr (kl := p.skLen) (N := p.ℓ + 2 * p.k) (fun k hk => hs k (by
-    unfold preparedSecretKeyBytes; simp only [VG.Spec.MlDsa.n] at hk ⊢; omega)) hk
+    unfold preparedSecretKeyBytes; simp only [VG.Spec.MlDsa.n] at hk ⊢; omega_using [hk])) hk
 
 /-- A prepared public key, in memory whose bytes of it are the same. -/
 theorem preparedPublic_of_bytes {p : Params} {m m' : Mem} {key : Addr}
@@ -89,11 +89,11 @@ theorem preparedPublic_of_bytes {p : Params} {m m' : Mem} {key : Addr}
     fun k hk => by
       have := congrArg (fun xs : List Byte => xs.getD k 0) h
       rwa [Proof.MlKem.bytesAt_getD _ _ hk, Proof.MlKem.bytesAt_getD _ _ hk] at this
-  have hl : p.pkLen ≤ preparedPublicKeyBytes p := by unfold preparedPublicKeyBytes; omega
+  have hl : p.pkLen ≤ preparedPublicKeyBytes p := by unfold preparedPublicKeyBytes; omega_using []
   rw [Proof.MlDsa.preparedPublicKey_iff] at hk ⊢
-  rw [Proof.MlKem.bytesAt_congr (m := m) (m' := m') fun i hi => hs i (by omega)]
+  rw [Proof.MlKem.bytesAt_congr (m := m) (m' := m') fun i hi => hs i (by omega_using [hl, hi])]
   exact polys_congr (kl := p.pkLen) (N := p.k) (fun k hk => hs k (by
-    unfold preparedPublicKeyBytes; simp only [VG.Spec.MlDsa.n] at hk ⊢; omega)) hk
+    unfold preparedPublicKeyBytes; simp only [VG.Spec.MlDsa.n] at hk ⊢; omega_using [hk])) hk
 
 end VG.Proof.MlDsa.RISCV64.PreparedKey
 

@@ -31,7 +31,7 @@ theorem squeezePointers_ok (s : State) : WP isa (.block ((squeezeSetup 0 0).take
   · rw [h6.get .x22,h5.get .x22,h4.get .x22,h3.get .x22,h2.get .x22,e1]
   · rw [h6.get .x23,h5.get .x23,h4.get .x23,h3.get .x23,e2,h1.get .x19]
   · intro k hk
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl
     · change t.gpr .x24 = _
       rw [h6.get .x24,h5.get .x24,h4.get .x24,e3,h2.get .x19,h1.get .x19]
     · change t.gpr .x25 = _
@@ -55,7 +55,7 @@ theorem squeezeSetupZero_ok (n : Nat) (hn : n<65536) (s : State) : WP isa (.bloc
   · rw [h7.get .x22,h6.get .x22,h5.get .x22,h4.get .x22,h3.get .x22,h2.get .x22,e1]
   · rw [h7.get .x23,h6.get .x23,h5.get .x23,h4.get .x23,h3.get .x23,e2,h1.get .x19]
   · intro k hk
-    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl
     · change t.gpr .x24 = _
       rw [h7.get .x24,h6.get .x24,h5.get .x24,h4.get .x24,e3,h2.get .x19,h1.get .x19]
     · change t.gpr .x25 = _
@@ -67,7 +67,7 @@ theorem squeezeSetupZero_ok (n : Nat) (hn : n<65536) (s : State) : WP isa (.bloc
   · rw [e7]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth,BitVec.natCast_eq_ofNat,BitVec.toNat_ofNat]
-    omega
+    omega_using [hn]
 
 theorem squeezeSetupZero_env {v : Nat} {σ s : State} (he : Env v σ s) :
     WP isa (.block (squeezeSetup 0 5)) s fun t => Env v σ t ∧

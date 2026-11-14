@@ -49,7 +49,7 @@ theorem nBits_brainpoolp384r1 : Spec.Ecdsa.nBits Spec.BrainpoolP384r1.curve = 38
   show Spec.BrainpoolP384r1.curve.n.log2 + 1 = 384
   have h₁ : 383 ≤ Spec.BrainpoolP384r1.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.BrainpoolP384r1.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 theorem coreArgs_pre {s : State} {o d g k w : Addr} (h : CoreArgs 48 [] s o d g k w) :
     signRV.pre (s.callEntry.withRegions [⟨d, 48⟩, ⟨g, 48⟩, ⟨k, 48⟩] [⟨o, 96⟩, ⟨w, 8192⟩]) := by

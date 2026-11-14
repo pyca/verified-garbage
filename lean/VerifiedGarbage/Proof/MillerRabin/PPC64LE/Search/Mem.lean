@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A prime search on PPC64LE: words of the working space read through stores -/
 
@@ -17,7 +18,7 @@ open VG VG.Proof.Bignum
 theorem rw_off (m : Mem) (B : Addr) {a b : Nat} (v : BitVec 64) (hab : a + 8 ≤ b ∨ b + 8 ≤ a)
     (ha : a + 8 ≤ 2 ^ 64) (hb : b + 8 ≤ 2 ^ 64) :
     (m.writeW (B + BitVec.ofNat 64 a) v).readW (B + BitVec.ofNat 64 b) 64 = m.readW (B + BitVec.ofNat 64 b) 64 :=
-  Mem.readW_writeW_sep (Offset.sep B (d := b) (e := a) (by simp only [Nat.reduceDiv]; omega) (by omega) (by omega))
+  Mem.readW_writeW_sep (Offset.sep B (d := b) (e := a) (by simp only [Nat.reduceDiv]; omega_using [hab]) (by omega_using [hb]) (by omega_using [ha]))
     (by decide)
 
 theorem rw_self (m : Mem) (a : Addr) (v : BitVec 64) : (m.writeW a v).readW a 64 = v :=

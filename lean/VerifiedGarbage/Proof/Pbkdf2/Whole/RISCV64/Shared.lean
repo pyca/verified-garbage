@@ -34,7 +34,7 @@ theorem shared (hF : FnsOK F) (hc : Checks F) {I : Spec.Hmac.Instance} (hSH : hF
     (hs : ∃ s, (I.pbkdf2Contract RISCV64.abi (F.itB + F.frB + F.X)).pre s) :
     Verified RISCV64.target F.pbkdf2 (I.pbkdf2Contract RISCV64.abi (F.itB + F.frB + F.X)) := by
   obtain ⟨n, hn⟩ : ∃ n, F.itB + F.frB + F.X = n + 1 :=
-    ⟨_, (Nat.succ_pred_eq_of_pos (by have := (layout (F := F)).2.2.2.2.2.2.2; simp only [Fns.bytes] at this; omega)).symm⟩
+    ⟨_, (Nat.succ_pred_eq_of_pos (by have := (layout (F := F)).2.2.2.2.2.2.2; simp only [Fns.bytes] at this; omega_using [this])).symm⟩
   have imp := pbkImp I n (by rw [← hn]; exact hs)
   rw [← hSH] at imp
   have v : Verified RISCV64.target F.pbkdf2 (pbkR hF.hH.SH (n + 1)) :=

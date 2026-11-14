@@ -66,8 +66,8 @@ theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
   have hp := hc.p_lt
   have hp3 := hc.p_ge
   have hm1 : c.mont 1 < 2 ^ (64 * c.n) := by
-    have : c.mont 1 < c.C.p := Nat.mod_lt _ (by omega)
-    omega
+    have : c.mont 1 < c.C.p := Nat.mod_lt _ (by omega_using [hp3])
+    omega_using [hp, this]
   rw [save_eq]
   refine WP.block_append (WP.mono (copySl_ok hc hs (o := UX) (a := RX) (by decide) (by decide) (by decide))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
@@ -192,7 +192,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
   · rw [K₄.1 r (fun h => hr (by simp only [List.mem_singleton] at h; subst h; decide)), PK.gpr r hr]
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
-    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
+    rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega_using [hn, this])]
     · exact hM.val
     · exact (apart_slWk (c := c) (i := MP) (by decide) (by decide)) w hw
   · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))

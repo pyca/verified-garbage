@@ -37,7 +37,7 @@ theorem loadWord_ok {r : Reg} (hr : r ≠ .r11 ∧ r ≠ .r4) (k : Nat) (hk : k 
       t.mem = s.mem) ?_ (by simp [writesOnly, Code.allInstrs_eq, instrs, loadWord, dstOf]) rfl)
     fun t ⟨⟨h₁, h₂⟩, hk⟩ => ⟨h₁, h₂, hk⟩
   unfold loadWord
-  irun [ha, h0, h1, hr.1, Ne.symm hr.1, hr.2, Ne.symm hr.2, show 2 * k < 2 ^ 15 by omega, show 2 * k + 1 < 2 ^ 15 by omega]
+  irun [ha, h0, h1, hr.1, Ne.symm hr.1, hr.2, Ne.symm hr.2, show 2 * k < 2 ^ 15 by omega_using [hk], show 2 * k + 1 < 2 ^ 15 by omega_using [hk]]
   exact bytes16 _ _
 
 /-- The bytes of the block at `a` can be read. -/
@@ -84,8 +84,8 @@ theorem rounds_ok (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
   | 0, _, s, hx, _ => WP.block_nil ⟨hx, rfl, Keep.refl _ _⟩
   | n + 1, hn, s, hx, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok z x n (by omega) s hx hk) fun s₁ ⟨x₁, m₁, e₁⟩ => ?_
-    refine WP.mono (round_ok n (by omega) z _ s₁ x₁ (hk.keep e₁ m₁ (by decide) (by decide)))
+    refine WP.mono (rounds_ok z x n (by omega_using [hn]) s hx hk) fun s₁ ⟨x₁, m₁, e₁⟩ => ?_
+    refine WP.mono (round_ok n (by omega_using [hn]) z _ s₁ x₁ (hk.keep e₁ m₁ (by decide) (by decide)))
       fun s₂ ⟨x₂, m₂, e₂⟩ => ⟨?_, m₂.trans m₁, (e₁.trans e₂).mono (by decide)⟩
     simp only [roundsSpec, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
     exact x₂
@@ -103,7 +103,7 @@ theorem hi16 (x : BitVec 32) : ((x.setWidth 64 >>> 16).setWidth 16) = (x >>> 16)
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 64)]
+  rw [Nat.mod_eq_of_lt (by omega_using [] : x.toNat < 2 ^ 64)]
 
 theorem out1_ok (s : State) (hk : InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 100) 4) :
     WP isa (.block [mov .r11 .r9, .load .w .r12 .r3 100, .lsr .d .r12 .r12 16]) s fun t =>
@@ -183,8 +183,8 @@ theorem storeWord_ok (r : Reg) (k : Nat) (hk : k < 4) (s : State) {a : Addr}
       (by rfl) rfl)
     fun t ⟨h, hk⟩ => ⟨h, hk⟩
   unfold storeWord
-  irun [ha, h0, h1, show 2 * k < 2 ^ 15 by omega,
-    show 2 * k + 1 < 2 ^ 15 by omega]
+  irun [ha, h0, h1, show 2 * k < 2 ^ 15 by omega_using [hk],
+    show 2 * k + 1 < 2 ^ 15 by omega_using [hk]]
 
 /-- The bytes of the block at `a` can be written. -/
 def BlockWrite (s : State) (a : Addr) : Prop :=
@@ -192,7 +192,7 @@ def BlockWrite (s : State) (a : Addr) : Prop :=
 
 theorem frame_write1 {a : Addr} {m m' : Mem} {j : Nat} (v : BitVec 8) (hj : j < 8)
     (h : Frame [⟨a, 8⟩] m m') : Frame [⟨a, 8⟩] m (m'.write (a + BitVec.ofNat 64 j) 1 v) :=
-  h.write (List.mem_singleton_self _) (n := 1) v (Offset.contains_base a (by omega) (by omega))
+  h.write (List.mem_singleton_self _) (n := 1) v (Offset.contains_base a (by omega_using [hj]) (by omega_using [hj]))
 
 theorem store_ok (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .r4 = a)
     (hw : BlockWrite s a) (hy : OutHolds y s) :
@@ -232,7 +232,7 @@ theorem store_ok (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .r4 = 
     intro i hi
     simp only [Spec.Idea.blockAt, Vector.getElem_ofFn, m₄, encodeBlock_get _ hi]
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨
-        i = 5 ∨ i = 6 ∨ i = 7 := by omega
+        i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [hi]
     all_goals simp (disch := decide) only [write1_apply, Nat.reduceMul, Nat.reduceAdd, Nat.reduceDiv,
       Nat.reduceMod, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte, lo8, hi8, BitVec.ushiftRight_zero]
   · rw [m₄]

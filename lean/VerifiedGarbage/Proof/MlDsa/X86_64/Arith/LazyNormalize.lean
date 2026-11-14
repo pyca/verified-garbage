@@ -2,12 +2,78 @@ module
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
-
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyReduce
+public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `MlDsa.X86_64.Arith.LazyReduce`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.Arith.Lazy
+open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
+open VG.Proof.MlDsa.Arith
+open VG.Proof.MlDsa.Arith.Lazy
+open VG.Proof.MlKem.X86_64 (XOnly)
+open VG.Impl.MlKem.X86_64 (xb xmov)
+open VG.Spec.MlDsa (q Zq)
+
+def foldL (x : BitVec 32) : BitVec 32 := x - ((x >>> 23) <<< 23) + ((x >>> 23) <<< 13) - (x >>> 23)
+
+theorem foldL_toNat (x : BitVec 32) (hx : x.toNat < 17 * q) :
+    (foldL x).toNat = x.toNat % 8388608 + x.toNat / 8388608 * 8191 := by
+  simp only [foldL, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_shiftLeft,
+    BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
+  change x.toNat < 17 * 8380417 at hx
+  omega_using []
+
+theorem reduceL_toNat (x : BitVec 32) (hx : x.toNat < 17 * q) :
+    (csubL (foldL x)).toNat = x.toNat % q := by
+  have hf := final_reduce hx
+  rw [csubL_toNat (by rw [foldL_toNat x hx]; exact hf.1), foldL_toNat x hx, condSub_eq hf.1, hf.2]
+
+theorem dword_psrld (a : BitVec 128) (k : BitVec 8) (hk : k.toNat < 32) {i : Nat} (hi : i < 4) :
+    dword (XShiftOp.eval .psrld a k) i = dword a i >>> k.toNat := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval, show ¬ 31 < k.toNat by omega_using [hk]]
+
+theorem dword_pslld (a : BitVec 128) (k : BitVec 8) (hk : k.toNat < 32) {i : Nat} (hi : i < 4) :
+    dword (XShiftOp.eval .pslld a k) i = dword a i <<< k.toNat := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;> simp [XShiftOp.eval, show ¬ 31 < k.toNat by omega_using [hk]]
+
+def foldV (x : BitVec 128) : BitVec 128 :=
+  let t := XShiftOp.eval .psrld x 23
+  XBinOp.eval .psubd (XBinOp.eval .paddd
+    (XBinOp.eval .psubd x (XShiftOp.eval .pslld t 23)) (XShiftOp.eval .pslld t 13)) t
+
+theorem dword_foldV (x : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (foldV x) i = foldL (dword x i) := by
+  rw [foldV, dword_psubd _ _ hi, dword_paddd _ _ hi, dword_psubd _ _ hi,
+    dword_pslld _ _ (by decide) hi, dword_pslld _ _ (by decide) hi, dword_psrld _ _ (by decide) hi]
+  rfl
+
+theorem reduce_ok {s : State} (hc : Arith.VConsts s) {a : Nat → Word}
+    (ha : DLanes (s.xmm .xmm0) a) (hb : ∀ i < 4, (a i).val < 17 * q) :
+    WP isa (.block reduceLazy) s fun s' =>
+      Arith.DLanes (s'.xmm .xmm0) (fun i => residue (a i)) ∧ XOnly [.xmm0, .xmm1, .xmm2] s s' := by
+  simp only [reduceLazy, vcsub, vcadd, xmov, xb, List.cons_append, List.nil_append]
+  vrun [eval_movdqa]
+  rw [hc.q]
+  refine ⟨?_, by xonly⟩
+  change Arith.DLanes (csubV (foldV (s.xmm .xmm0))) _
+  intro i hi
+  rw [dword_csubV _ hi, dword_foldV _ hi, reduceL_toNat _ (by rw [ha i hi]; exact hb i hi), ha i hi]
+  rfl
+
+end VG.Proof.MlDsa.X86_64.Arith.Lazy
+
+end
+
+end
+
 
 @[expose] public section
 
@@ -35,7 +101,7 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
       Normalized s'.mem fP G (i + 1) ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
         Frame [pR fP] s.mem s'.mem ∧ YConsts s' ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_using [hi]
   have r0 : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 0) 32 := by
     rw [hdx, add_ofNat_zero]; exact f_in32 (List.mem_append_right _ hw) j0
   rw [reduceBody, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -46,8 +112,8 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
     fun l hl => reduce_ok (yonly_yconsts o1 hc (by decide) (by decide) (by decide) l hl).toVConsts
       (fun e he => by
         rw [State.proj_xmm, L1 l hl, hdx, add_ofNat_zero, dword_readW _ _ he, lane_load,
-          coeffAddr_add, ← coeffAt_eq, hS _ (by omega), ifn (by omega)])
-      (fun e he => hb _ (by omega))) fun s2 ⟨V2, o2⟩ => ?_
+          coeffAddr_add, ← coeffAt_eq, hS _ (by omega_using [hi, hl, he]), ifn (by omega_using [])])
+      (fun e he => hb _ (by omega_using [hi, hl, he]))) fun s2 ⟨V2, o2⟩ => ?_
   have o12 := o1.trans o2
   have hv : ∀ l < 2, ∀ e < 4, (dword (s2.lane .xmm0 l) e).toNat = (residue G[8 * i + 4 * l + e]!).val :=
     fun l hl e he => V2 l hl e he
@@ -60,19 +126,19 @@ theorem normalize_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State
   · rw [coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 8 * (i + 1) by omega), State.ymm, extract_ymm _ _ (by omega)]
+      rw [ifp (show k < 8 * (i + 1) by omega_using [h]), State.ymm, extract_ymm _ _ (by omega_using [h])]
       split
-      · have := hv 0 (by decide) (k - 8 * i) (by omega)
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this; exact this
-      · have := hv 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this; exact this
+      · have := hv 0 (by decide) (k - 8 * i) (by omega_arith)
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_using [h]] at this; exact this
+      · have := hv 1 (by decide) (k - 8 * i - 4) (by omega_using [h])
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_arith] at this; exact this
     · rename_i h
       rw [hS k hk]
       by_cases h' : k < 8 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
   · rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add,
-      show 8 * i + 8 = 8 * (i + 1) by omega]
+      show 8 * i + 8 = 8 * (i + 1) by omega_using []]
   · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (pR_contains32 fP j0)
   · exact ylanes_gpr (s := s2) (fun r l => by simp only [lane_setReg, lane_setFlags, State.setMem_lane]) o12 hc
       (by decide) (by decide)
@@ -98,7 +164,7 @@ theorem normalize_ok {fP : Addr} {G : Poly} {f : VG.Spec.MlDsa.Poly}
     (fun i u => Normalized u.mem fP G i ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧ YConsts u ∧
       Keep [.rcx, .rdx] w u ∧ Frame [pR fP] w.mem u.mem ∧ u.mxcsr = w.mxcsr)
     (fun u o hu _ => ⟨fun k hk => by
-        rw [o.mem, og.mem, ifn (by omega)]; exact polyIs_toNat hS hk,
+        rw [o.mem, og.mem, ifn (by omega_using [])]; exact polyIs_toNat hS hk,
       by rw [o.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       ylanes_gpr (s := w) (o.lane hu) (YOnly.refl [] w) cw (by decide) (by decide),
       o.keep.mono (by simp), by rw [o.mem]; exact Frame.refl _ _, o.mxcsr⟩)

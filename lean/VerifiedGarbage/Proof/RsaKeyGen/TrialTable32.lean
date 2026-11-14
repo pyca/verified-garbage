@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Certify the prepared inverse of every sieve divisor -/
 
@@ -41,17 +42,17 @@ theorem entry_bound {i : Nat} (bound : i < 1024) : entry i < 2 ^ 64 := by
   have prime := (VG.Proof.RsaKeyGen.tabEntry_facts bound).2.2
   have inv := (inverse (BitVec.ofNat 32 (tabEntry i))).isLt
   unfold entry
-  omega
+  omega_using [prime]
 
 theorem entry_low {i : Nat} (bound : i < 1024) : entry i % 2 ^ 32 = tabEntry i := by
   have prime := (VG.Proof.RsaKeyGen.tabEntry_facts bound).2.2
   unfold entry
-  rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega_using [prime])]
 
 theorem entry_high {i : Nat} (bound : i < 1024) :
     entry i / 2 ^ 32 = (inverse (BitVec.ofNat 32 (tabEntry i))).toNat := by
   have prime := (VG.Proof.RsaKeyGen.tabEntry_facts bound).2.2
   unfold entry
-  rw [Nat.add_mul_div_left _ _ (by decide : 0 < 2 ^ 32), Nat.div_eq_of_lt (by omega), Nat.zero_add]
+  rw [Nat.add_mul_div_left _ _ (by decide : 0 < 2 ^ 32), Nat.div_eq_of_lt (by omega_using [prime]), Nat.zero_add]
 
 end VG.Proof.RsaKeyGen.TrialTable32

@@ -30,7 +30,7 @@ theorem advanceCore_ok {s : State} {c r n : Nat} (hc : c≤4) (hr : c≤r) (hn :
   refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by rfl) (hv := rfl)
   unfold advanceCore
   arun [h6,h4,h5,countShift c hc]
-  exact ⟨rfl,BitVec.ofNat_sub_ofNat_of_le (w := 64) _ _ (by omega) hr,
+  exact ⟨rfl,BitVec.ofNat_sub_ofNat_of_le (w := 64) _ _ (by omega_using [hc]) hr,
     BitVec.ofNat_sub_ofNat_of_le (w := 64) _ _ (by decide) hn⟩
 
 theorem guard_ok {s : State} (h16 : s.gpr .x16=4) (h0 : s.gpr .x0=0) :

@@ -68,7 +68,7 @@ theorem byte_of_zero_words {m : Mem} {p : Addr} {N : Nat} (hz : ∀ t < N, coeff
   have ea : a = coeffAddr p ((a - p).toNat / 4) + BitVec.ofNat 64 ((a - p).toNat % 4) := by
     rw [coeffAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.ofNat_toNat,
       BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  rw [ea, Mem.readW_byte m (coeffAddr p _) ht, ← coeffAt_eq, hz _ (by omega)]
+  rw [ea, Mem.readW_byte m (coeffAddr p _) ht, ← coeffAt_eq, hz _ (by omega_using [ha])]
   simp
 
 /-- Two runs, from states that agree on the public data. -/
@@ -104,7 +104,7 @@ theorem yByte_eq {a b : State} (ha : ∀ t < uLen s₁, a.mem (State.addr (uY s�
       s₁.mem (State.addr (uY s₁) + BitVec.ofNat 64 t))
     (hb : ∀ t < uLen s₂, b.mem (State.addr (uY s₂) + BitVec.ofNat 64 t) = s₂.mem (State.addr (uY s₂) + BitVec.ofNat 64 t))
     {x : Addr} (hx : (uyR s₁).Contains x 1) : a.mem x = b.mem x := by
-  have hlt : (x - State.addr (uY s₁)).toNat < uLen s₁ := by simp only [Region.Contains] at hx; omega
+  have hlt : (x - State.addr (uY s₁)).toNat < uLen s₁ := by simp only [Region.Contains] at hx; omega_using [hx]
   have ea : x = State.addr (uY s₁) + BitVec.ofNat 64 (x - State.addr (uY s₁)).toNat := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   have eY : uY s₂ = uY s₁ := by simp only [uY, h.r0]

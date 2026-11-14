@@ -27,13 +27,13 @@ theorem countLoop {body : Prog isa} {N : Nat} (hN : 0 < N) (I : Nat → State �
     (hstep : ∀ j t, j < N → I j t → WP isa body t fun u => I (j + 1) u ∧ u.zf = some (decide (j + 1 = N)))
     {t₀ : State} (h₀ : I 0 t₀) : WP isa (.loop body .ne) t₀ (I N) := by
   refine WP.loop (M := isa) (Q := I N) (fun m t => ∃ j, m = N - j ∧ j < N ∧ I j t) ?_ N t₀
-    ⟨0, by omega, hN, h₀⟩
+    ⟨0, by omega_using [], hN, h₀⟩
   rintro m t ⟨j, rfl, hj, hI⟩
   refine WP.mono (hstep j t hj hI) fun u ⟨I', zu⟩ => ?_
   by_cases hjN : j + 1 = N
   · exact .inl ⟨by simp only [eval, zu, hjN, decide_true, Option.map_some, Bool.not_true], hjN ▸ I'⟩
   · exact .inr ⟨by simp only [eval, zu, decide_eq_false hjN, Option.map_some, Bool.not_false],
-      N - (j + 1), by omega, j + 1, rfl, by omega, I'⟩
+      N - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hjN], I'⟩
 
 /-- A pointer up a word. -/
 theorem ptr4 {t : State} {W : Addr} {r : Reg} {x j : Nat} (hp : PtrAt t W r (x + 4 * j)) :
@@ -184,10 +184,10 @@ theorem compareLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
         rw [pow32_succ]
         have : 2 ^ (32 * j) * (s₂.gpr .eax - s₂.mem.readW (off W (y + 4 * j + 0)) 32 -
             (BitVec.ofBool c).setWidth 32).toNat ≤ 2 ^ (32 * j) * (2 ^ 32 - 1) :=
-          Nat.mul_le_mul_left _ (by omega)
+          Nat.mul_le_mul_left _ (by omega_using [])
         have : 2 ^ (32 * j) * (2 ^ 32 - 1) + 2 ^ (32 * j) = 2 ^ (32 * j) * 2 ^ 32 := by
           rw [Nat.mul_sub, Nat.mul_one, Nat.sub_add_cancel (Nat.le_mul_of_pos_right _ (by decide))]
-        omega
+        omega_arith
       · rw [val32_succ t₀.mem W x, val32_succ t₀.mem W y, pow32_succ]
         exact chain_sub_step V h
     · rw [z₇, u₆.other _ (by decide), u₅.other _ (by decide), r₄ _ (.inr (.inr rfl)), c₂']
@@ -198,8 +198,8 @@ theorem compareLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
     congr 1
     cases c
     · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at V
-      exact (decide_eq_false (by omega)).symm
+      exact (decide_eq_false (by omega_using [V])).symm
     · simp only [Bool.toNat_true, Nat.mul_one] at V
-      exact (decide_eq_true (by omega)).symm
+      exact (decide_eq_true (by omega_using [hD, V])).symm
 
 end VG.Proof.Bignum.X86.PublicRt

@@ -41,13 +41,13 @@ theorem results_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} 
   obtain ⟨-, eU, -, -, -, -, eT⟩ := hi.regions
   refine withRest_all [.r0, .r1, .r12] ?_ (by rfl) (by rfl)
   have aT (d : Nat) (hd : d < 32) : State.addr (p.stp + BitVec.ofNat 32 d) = off (State.addr p.stp) d :=
-    VG.Arm.addr_add (by have := f.nT; omega)
+    VG.Arm.addr_add (by have := f.nT; omega_using [hd, this])
   have aU (d : Nat) (hd : d < 8) : State.addr (p.up + BitVec.ofNat 32 d) = off (State.addr p.up) d :=
-    VG.Arm.addr_add (by have := f.nU; omega)
+    VG.Arm.addr_add (by have := f.nU; omega_using [hd, this])
   have wT (d : Nat) (hd : d + 4 ≤ 32) : InRegions s.wr (off (State.addr p.stp) d) 4 :=
-    ⟨inState o, by rw [h.wr, hi.wr]; simp [inWrites], by rw [eT]; exact Offset.contains_base _ hd (by omega)⟩
+    ⟨inState o, by rw [h.wr, hi.wr]; simp [inWrites], by rw [eT]; exact Offset.contains_base _ hd (by omega_using [hd])⟩
   have wU (d : Nat) (hd : d + 4 ≤ 8) : InRegions s.wr (off (State.addr p.up) d) 4 :=
-    ⟨inUsed o, by rw [h.wr, hi.wr]; simp [inWrites], by rw [eU]; exact Offset.contains_base _ hd (by omega)⟩
+    ⟨inUsed o, by rw [h.wr, hi.wr]; simp [inWrites], by rw [eU]; exact Offset.contains_base _ hd (by omega_using [hd])⟩
   have c7 : pushBytes + 0 + 4 * 7 < 4096 := by decide
   have stp : stackArg o 7 = p.stp := by rw [← hi.2]; rfl
   unfold results arg finished stateWords writeSlots
@@ -55,8 +55,8 @@ theorem results_ok {p : SearchPublic} {o s : State} {final : PrimeSearchResult} 
     h.r5, h.r6, h.r8, h.r9, h.r10, h.r11, aT 0 (by decide), aT 4 (by decide), aT 8 (by decide), aT 12 (by decide),
     aT 16 (by decide), aT 20 (by decide), aT 24 (by decide), aT 28 (by decide), aU 0 (by decide), aU 4 (by decide),
     wT 0 (by decide), wT 4 (by decide), wT 8 (by decide), wT 12 (by decide), wT 16 (by decide), wT 20 (by decide),
-    wT 24 (by decide), wT 28 (by decide), wU 0 (by decide), wU 4 (by decide), shl32' p.len 15 (by omega),
-    add_ofNat32, show p.len * 2 ^ 15 + p.len = 32769 * p.len by omega]
+    wT 24 (by decide), wT 28 (by decide), wU 0 (by decide), wU 4 (by decide), shl32' p.len 15 (by omega_using [hv]),
+    add_ofNat32, show p.len * 2 ^ 15 + p.len = 32769 * p.len by omega_using []]
   rfl
 
 theorem stateWords_bound (p : SearchPublic) (r : PrimeSearchResult) : ∀ e ∈ stateWords p r, e.1 < 8 := by
@@ -85,7 +85,7 @@ theorem finished_bytes {p : SearchPublic} {o : State} (h : SearchInput p o) (m :
   have nO := h.facts.nO
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
-  refine (finished_frame h m r).bytes (R := inOut o) (fun q hq => ?_) (by rw [eO]; simp only; omega)
+  refine (finished_frame h m r).bytes (R := inOut o) (fun q hq => ?_) (by rw [eO]; simp only; omega_using [nO])
     (by rw [eO]; exact List.mem_range.mp hi) |> fun e => by rw [eO] at e; exact e
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl
@@ -119,7 +119,7 @@ theorem finished_state {p : SearchPublic} {o : State} (h : SearchInput p o) (m :
       slot (writeSlots m (State.addr p.stp) (stateWords p r)) (State.addr p.stp) j := by
     refine (writeSlots_frame _ (State.addr p.up) (N := 2) (by decide) _ (usedWords_bound r)).readW
       (r := inState o) ?_ (fun q hq => ?_) (by decide)
-    · rw [eT]; exact Offset.contains_base _ (by omega) (by omega)
+    · rw [eT]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
     · obtain rfl := List.mem_singleton.mp hq
       change (inState o).Disjoint (rU p)
       rw [← eU]; exact dUT.symm
@@ -141,11 +141,11 @@ theorem restore_ok {p : SearchPublic} {o s : State} (hi : SearchInput p o) (hsp 
         Rest [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] s t := by
   have room := hi.facts.room
   have top := hi.facts.top
-  have S1n : p.S1.toNat = p.sp.toNat - 40 := FrameStack.sub_toNat' (by omega)
+  have S1n : p.S1.toNat = p.sp.toNat - 40 := FrameStack.sub_toNat' (by omega_using [room])
   have a (d : Nat) (hd : d < 40) : State.addr (s.sp + BitVec.ofNat 32 d) = State.addr p.S1 + BitVec.ofNat 64 d := by
-    rw [hsp]; exact VG.Arm.addr_add (by omega)
+    rw [hsp]; exact VG.Arm.addr_add (by omega_using [S1n, hd])
   have r (d : Nat) (hd : d + 4 ≤ 40) : InRegions (s.rd ++ s.wr) (State.addr p.S1 + BitVec.ofNat 64 d) 4 :=
-    ⟨_, List.mem_append_right _ hw, Offset.contains_base _ hd (by omega)⟩
+    ⟨_, List.mem_append_right _ hw, Offset.contains_base _ hd (by omega_using [hd])⟩
   have v (q : Reg × Nat) (hq : q ∈ slots) : s.mem.readW (State.addr p.S1 + BitVec.ofNat 64 q.2) 32 = o.gpr q.1 :=
     hs q hq
   refine withRest_all [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] ?_ (by rfl) (by rfl)
@@ -163,7 +163,7 @@ theorem push_apart {p : SearchPublic} {o : State} (h : SearchInput p o) :
     ∀ q ∈ inWrites o, Region.Disjoint ⟨State.addr p.S1 + BitVec.ofNat 64 0, 40 - 0⟩ q := by
   have room := h.facts.room
   have push : Region.Sub ⟨State.addr p.S1 + BitVec.ofNat 64 0, 40 - 0⟩ (inStack o) := by
-    rw [BitVec.add_zero, SearchPublic.S1, FrameStack.addr_sub' (by omega), h.sp_eq]
+    rw [BitVec.add_zero, SearchPublic.S1, FrameStack.addr_sub' (by omega_using [room]), h.sp_eq]
     exact h.stack_sub (by decide) (by decide)
   exact fun q hq => SearchInput.disj_sub (h.stack_disjoint (List.mem_append_left _ hq)) push
 
@@ -182,7 +182,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   unfold primeEntropy at rl
   have rem := hp.remaining_le
   unfold code body
-  refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega) (by decide) ?_
+  refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm) fun s2 hd => ?_)
   unfold finish
@@ -208,16 +208,16 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   obtain ⟨bu, br, bq⟩ := hd.bounds
   have st := status_lt (searchResult s)
   refine ⟨⟨?_, ?_, ?_, ?_⟩, fun r hr' => ?_, ?_⟩
-  · rw [BitVec.setWidth_append_eq_right, g0, toNat_small (by omega)]
+  · rw [BitVec.setWidth_append_eq_right, g0, toNat_small (by omega_using [st])]
   · change Spec.Rsa.bytesAt _ (State.addr p.op) p.len = _
     rw [mem, finished_bytes hp]
     exact hd.output
   · change Spec.Rsa.wordsAt _ (State.addr p.up) 1 = _
-    rw [mem, finished_used _ _ (by omega)]
+    rw [mem, finished_used _ _ (by omega_using [hv, rl, bu])]
   · refine ⟨_, ?_, Search.search_requests (searchLen s) (searchE s) (searchP s)
       (searchRemaining s) (searchRand s)⟩
     change Spec.Rsa.wordsAt _ (State.addr p.stp) 4 = _
-    rw [mem, finished_state hp _ _ (by omega) (by omega) (by omega) (by unfold primeEntropy at bq; omega)]
+    rw [mem, finished_state hp _ _ (by omega_using [rem, br]) (by omega_using [hv]) (by omega_using [hv]) (by unfold primeEntropy at bq; omega_using [hv, bq])]
     rfl
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

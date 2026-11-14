@@ -119,13 +119,13 @@ theorem convert_pair {mont : Prog isa} {name : String}
   intro s t tr ur u z H E G
   have input {a : State} (I : Work g capacity p a) : WitnessMont.Input g capacity p a := by
     obtain ⟨c, S, odd, large⟩ := I
-    exact ⟨c, S, odd, by omega⟩
+    exact ⟨c, S, odd, by omega_using [odd]⟩
   obtain ⟨trace, pair⟩ := WitnessMont.code_raw verified noSp stack v length _ _ _ _ _ _
     ⟨H.1, input H.2.1, input H.2.2⟩ E G
   have post {a : State} (I : Work g capacity p a) :
       WP isa (VG.Impl.RsaKeyGen.X86.WitnessMont.code name mont) a (RoundCall.Input g capacity p) := by
     obtain ⟨c, S, odd, large⟩ := I
-    refine WP.mono (WitnessMont.code_ok verified noSp stack v length S odd (by omega)) fun b ⟨D, value, _, _, _⟩ => ?_
+    refine WP.mono (WitnessMont.code_ok verified noSp stack v length S odd (by omega_using [odd])) fun b ⟨D, value, _, _, _⟩ => ?_
     exact ⟨c, val32 a.mem g.W (g.array 6) g.words, D, odd, large, by rw [Nat.mod_mul_mod]; exact value⟩
   exact ⟨trace, pair, wp_result (post H.2.1) E, wp_result (post H.2.2) G⟩
 

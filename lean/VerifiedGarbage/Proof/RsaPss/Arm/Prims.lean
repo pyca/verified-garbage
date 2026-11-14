@@ -53,11 +53,11 @@ structure RBuf (L : Lay) (p : BitVec 32) (n : Nat) : Prop where
 variable {L : Lay} {scr : BitVec 32}
 
 theorem byte32 {p : BitVec 32} {n i : Nat} (h : p.toNat + n ≤ 2 ^ 32) (hi : i < n) :
-    State.addr (p + BitVec.ofNat 32 i) = byteAt p i := addr_add (by omega)
+    State.addr (p + BitVec.ofNat 32 i) = byteAt p i := addr_add (by omega_using [h, hi])
 
 theorem contains_byte {R : Region} {p : BitVec 32} {n i : Nat} (hc : R.Contains (State.addr p) n)
     (fit : p.toNat + n ≤ 2 ^ 32) (hi : i < n) : R.Contains (byteAt p i) 1 :=
-  hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hi)
+  hc.byte (by rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [fit, hi])]; exact hi)
 
 theorem WBuf.inW {p : BitVec 32} {n : Nat} (hb : WBuf L p n) {σ s : State} (hs : L.St σ s) {i : Nat}
     (hi : i < n) : InRegions s.wr (byteAt p i) 1 := by
@@ -85,7 +85,7 @@ theorem WBuf.rbuf {p : BitVec 32} {n : Nat} (hb : WBuf L p n) : RBuf L p n :=
 /-- The bytes of the buffer are distinct addresses. -/
 theorem byteAt_inj {p : BitVec 32} {n i j : Nat} (h : p.toNat + n ≤ 2 ^ 32) (hi : i < n) (hj : j < n)
     (e : byteAt p i = byteAt p j) : i = j :=
-  Classical.byContradiction fun hne => Offset.add_ofNat_ne (State.addr p) (a := i) (b := j) (by omega) (by omega) hne e
+  Classical.byContradiction fun hne => Offset.add_ofNat_ne (State.addr p) (a := i) (b := j) (by omega_using [h, hi]) (by omega_using [h, hj]) hne e
 
 theorem frame_of_outside {p : BitVec 32} {n : Nat} {m m' : Mem} (h : p.toNat + n ≤ 2 ^ 32)
     (hm : ∀ a, (∀ j < n, a ≠ State.addr (p + BitVec.ofNat 32 j)) → m' a = m a) :
@@ -94,7 +94,7 @@ theorem frame_of_outside {p : BitVec 32} {n : Nat} {m m' : Mem} (h : p.toNat + n
   refine hm a fun j hj e => ha _ (List.mem_singleton_self _) ?_
   rw [e, byte32 h hj]
   simp only [Region.Contains]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hj])]; omega_using [hj]
 
 /-- `maskBytes` with a zero mask: zeros at `p`. -/
 theorem zero_vp {p : BitVec 32} {n : Nat} (hb : WBuf L p n) (hn : 0 < n)
@@ -119,7 +119,7 @@ theorem zero_vp {p : BitVec 32} {n : Nat} (hb : WBuf L p n) (hn : 0 < n)
     · rcases List.mem_cons.mp hR with rfl | hR
       · exact List.mem_cons_self
       · exact List.mem_cons_of_mem _ (List.mem_append_left _ hR)
-    · simp only [Region.Contains] at ha; omega
+    · simp only [Region.Contains] at ha; omega_using [ha]
   · simp only [List.mem_singleton] at hr; subst hr; exact hb.slot
   · rw [← byte32 fit hi', inv.masked i hi', r2]
     exact BitVec.and_zero
@@ -157,7 +157,7 @@ theorem copy_vp {src dst : BitVec 32} {n : Nat} (hd : WBuf L dst n) (hs : RBuf L
     · rcases List.mem_cons.mp hR with rfl | hR
       · exact List.mem_cons_self
       · exact List.mem_cons_of_mem _ (List.mem_append_left _ hR)
-    · simp only [Region.Contains] at ha; omega
+    · simp only [Region.Contains] at ha; omega_using [ha]
   · simp only [List.mem_singleton] at hr; subst hr; exact hd.slot
   · rw [← byte32 fit hi', inv.copied i hi', byte32 fis hi', hf i hi']
 

@@ -88,7 +88,7 @@ theorem pro_ok : WP isa (.block (pro .x3 .x2 (.addImm .w .x27 .x1 0) (.movz .x .
 
 omit hp in
 theorem x27_toNat {s : State} (h : Env (spOf σ) σ s) : (s.gpr .x27).toNat = gammaOf σ := by
-  rw [h.x27]; simp; omega
+  rw [h.x27]; simp; omega_using []
 
 /-- The loop for `c`. -/
 theorem loop_ok' {s : State} (h : J6 136 640 (spOf σ) σ s) {c : Nat} (hc : c = emC (gammaOf σ)) :
@@ -99,10 +99,10 @@ theorem loop_ok' {s : State} (h : J6 136 640 (spOf σ) σ s) {c : Nat} (hc : c =
   have hc' : c = 18 ∨ c = 20 := by subst hc; unfold emC; split <;> simp
   have lp : ExpandMask.LPre (X σ) c ((spOf σ).at' 840) (σ.gpr .x2) s :=
     ⟨hc', H_length _ _, fun p hp' => by rw [X, H_eq, ← h.out, MlKem.bytesAt_getD _ _ hp'],
-      fun p hp' => by rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by omega),
+      fun p hp' => by rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by omega_using [hp']),
       fun g hg' => by
-        rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by rcases hc' with rfl | rfl <;> omega),
-      fun i hi => inA (spOk hp) h.env.wr hi, (a_scr' (spOk hp) (by omega)).symm, by rw [h.env.x25],
+        rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by rcases hc' with rfl | rfl <;> omega_using [hg']),
+      fun i hi => inA (spOk hp) h.env.wr hi, (a_scr' (spOk hp) (by omega_using [])).symm, by rw [h.env.x25],
       h.env.x26, by rw [x27_toNat h.env, e3, hc]⟩
   exact WP.mono (ExpandMask.loop_ok lp) fun u hu => ⟨h.env.keepA (spOk hp) hu.keep hu.frame, hu.st⟩
 

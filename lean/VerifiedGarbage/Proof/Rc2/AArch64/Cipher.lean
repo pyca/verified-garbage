@@ -51,7 +51,7 @@ theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   apply foldWords_ok (step := fun k i v => Spec.Rc2.mix k (4 * j + i) i v) _ _ _ s v hv readable
   intro i hi s v hv readable
   have bound := List.mem_range.mp hi
-  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega) readable)
+  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega_using [hj, bound]) readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
@@ -64,8 +64,8 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   intro i hi s v hv readable
   have bound : i < 4 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    omega
-  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) readable)
+    omega_using [hi]
+  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega_using [hj, bound]) readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
@@ -94,7 +94,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
     | encrypt => exact List.mem_range.mp hi
     | decrypt =>
       simp only [order, List.mem_cons, List.not_mem_nil, or_false] at hi
-      omega
+      omega_using [hi]
   apply WP.mono (mash_ok d s v hv i bound readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
@@ -135,7 +135,7 @@ theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv :
     exact finish s₁ _ h₁
   | decrypt =>
     rw [round, WP.block_append_iff]
-    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega) readable)
+    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega_using []) readable)
     intro s₁ h₁
     exact finish s₁ _ h₁
 

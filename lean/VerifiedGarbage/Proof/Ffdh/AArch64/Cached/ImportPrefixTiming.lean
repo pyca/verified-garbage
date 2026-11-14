@@ -23,7 +23,7 @@ theorem importPrefix_ct : RelCT isa (Two ImportReady) importPrefix (fun _ _ =>Tr
   have eq : r= .x0 := by simpa using hr
   subst r;exact hs.base.trans ht.base.symm) (by taint_decide) ?_) importData_ct
  intro q s h
- refine WP.mono (head_ok h.scratch h.base (by rw [←q.words];exact q.room) (by have :=q.size;omega)
+ refine WP.mono (head_ok h.scratch h.base (by rw [←q.words];exact q.room) (by have :=q.size;omega_using [this])
   (by change word s.mem q.workspace.B (8*Public.sK)=_;exact h.length)) ?_
  rintro t ⟨_,width,arrays,frame,rest⟩
  rw [←q.words] at width arrays

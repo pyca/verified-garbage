@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The quotient-based private exponent with an exact small correction
 
@@ -19,10 +20,10 @@ theorem odd_correction_le {e R x : Nat} (positive : 2 ≤ e) : (R * (e - x) + 1)
   have product := Nat.mul_le_mul_left R (Nat.sub_le e x)
   have numerator : R * (e - x) + 1 < (R + 1) * e := by
     rw [Nat.add_mul, Nat.one_mul]
-    omega
+    omega_using [positive, product]
   have bound : (R * (e - x) + 1) / e < R + 1 :=
-    (Nat.div_lt_iff_lt_mul (by omega)).mpr numerator
-  omega
+    (Nat.div_lt_iff_lt_mul (by omega_using [positive])).mpr numerator
+  omega_using [bound]
 
 theorem oddQuotient_le {e L Q R x : Nat} (positive : 2 ≤ e) (division : L = e * Q + R) :
     oddQuotient e Q R x ≤ L := by
@@ -30,7 +31,7 @@ theorem oddQuotient_le {e L Q R x : Nat} (positive : 2 ≤ e) (division : L = e 
   have correction := odd_correction_le (R := R) (x := x) positive
   rw [Nat.mul_comm Q e] at product
   unfold oddQuotient
-  omega
+  omega_using [division, product, correction]
 
 theorem oddQuotient_inverse {e L Q R x : Nat} (positive : 3 ≤ e) (large : 2 ≤ L)
     (division : L = e * Q + R) (inverse : (e : Int) ∣ (x : Int) * R - 1) (bound : x < e) :
@@ -46,7 +47,7 @@ theorem oddQuotient_inverse {e L Q R x : Nat} (positive : 3 ≤ e) (large : 2 �
   have numerator : L * (e - x) + 1 = e * (Q * (e - x)) + (R * (e - x) + 1) := by
     rw [division]
     rw [Nat.add_mul, Nat.mul_assoc, Nat.add_assoc]
-  rw [numerator, Nat.mul_add_div (by omega)] at result
+  rw [numerator, Nat.mul_add_div (by omega_using [positive])] at result
   exact result
 
 theorem odd_correction_fits {e R x : Nat} (positive : 2 ≤ e) (exponent : e < 2 ^ 64) (remainder : R < e) :
@@ -55,9 +56,9 @@ theorem odd_correction_fits {e R x : Nat} (positive : 2 ≤ e) (exponent : e < 2
 
 theorem odd_numerator_fits {e R x : Nat} (exponent : e < 2 ^ 64) (remainder : R < e) :
     R * (e - x) + 1 < 2 ^ 128 := by
-  have left : R ≤ 2 ^ 64 - 1 := by omega
-  have right : e - x ≤ 2 ^ 64 - 1 := by omega
+  have left : R ≤ 2 ^ 64 - 1 := by omega_using [exponent, remainder]
+  have right : e - x ≤ 2 ^ 64 - 1 := by omega_using [exponent]
   have product := Nat.mul_le_mul left right
-  omega
+  omega_using [product]
 
 end VG.Proof.RsaKeyGen

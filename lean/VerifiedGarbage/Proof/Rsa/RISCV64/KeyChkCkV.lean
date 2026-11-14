@@ -58,7 +58,7 @@ theorem ck_same {s t : State} (h : ckData s = ckData t) :
     (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 he⟩
 
 theorem ck_ok : ckKC.Ok 8 10 VG.Impl.Rsa.RISCV64.CheckKey.moves
-    (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.RISCV64.CheckKey.loads ++ (.block keepLen :: start ++ crtChecks ++ dChecks) ++
+    (([setup, .block eArr] : List (Prog isa)) ++ VG.Impl.Rsa.RISCV64.CheckKey.loads ++ (.block keepLen :: start ++ checks) ++
       ([.block ret] : List (Prog isa))) ckRegs where
   hk s h := ck_kpre (ckP_of h)
   hm s h := ck_moves_ok (ckP_of h)
@@ -67,7 +67,7 @@ theorem ck_ok : ckKC.Ok 8 10 VG.Impl.Rsa.RISCV64.CheckKey.moves
     have := h0.lv; have := h0.e1; have := h0.e2
     simp only [Spec.Rsa.lenValid] at *
     show 1 ≤ (s.gpr .a3).toNat ∧ (s.gpr .a3).toNat ≤ 1024
-    exact ⟨h0.e1, by omega⟩
+    exact ⟨h0.e1, by omega_arith⟩
   hE s h := by
     have h0 := ckP_of h
     exact ⟨by rw [h0.hrd]; simp [ckKC], h0.de, h0.we⟩

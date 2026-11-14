@@ -44,23 +44,23 @@ def hw (g : Nat) (v : HashValue) (w : Word) : HashValue :=
 theorem f_eq {t : Nat} (ht : t < 80) : f t = sha1F (t / 20) := by
   funext x y z
   simp only [f, Spec.Sha1.ch, Spec.Sha1.parity, Spec.Sha1.maj]
-  rcases (by omega : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
+  rcases (by omega_using [] : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
   · simp only [h, ite_true, Nat.div_eq_of_lt h]; rfl
-  · simp only [show ¬ t < 20 by omega, h.2, ite_false, ite_true, show t / 20 = 1 by omega]; rfl
-  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, h.2, ite_false, ite_true,
-      show t / 20 = 2 by omega]; rfl
-  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, show ¬ t < 60 by omega, ite_false,
-      show t / 20 = 3 by omega]; rfl
+  · simp only [show ¬ t < 20 by omega_using [h], h.2, ite_false, ite_true, show t / 20 = 1 by omega_using [h]]; rfl
+  · simp only [show ¬ t < 20 by omega_using [h], show ¬ t < 40 by omega_using [h], h.2, ite_false, ite_true,
+      show t / 20 = 2 by omega_using [h]]; rfl
+  · simp only [show ¬ t < 20 by omega_using [h], show ¬ t < 40 by omega_using [h], show ¬ t < 60 by omega_using [h], ite_false,
+      show t / 20 = 3 by omega_using [ht, h]]; rfl
 
 theorem K_eq {t : Nat} (ht : t < 80) : K t = sha1K (t / 20) := by
   simp only [K]
-  rcases (by omega : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
+  rcases (by omega_using [] : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
   · simp only [h, ite_true, Nat.div_eq_of_lt h]; rfl
-  · simp only [show ¬ t < 20 by omega, h.2, ite_false, ite_true, show t / 20 = 1 by omega]; rfl
-  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, h.2, ite_false, ite_true,
-      show t / 20 = 2 by omega]; rfl
-  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, show ¬ t < 60 by omega, ite_false,
-      show t / 20 = 3 by omega]; rfl
+  · simp only [show ¬ t < 20 by omega_using [h], h.2, ite_false, ite_true, show t / 20 = 1 by omega_using [h]]; rfl
+  · simp only [show ¬ t < 20 by omega_using [h], show ¬ t < 40 by omega_using [h], h.2, ite_false, ite_true,
+      show t / 20 = 2 by omega_using [h]]; rfl
+  · simp only [show ¬ t < 20 by omega_using [h], show ¬ t < 40 by omega_using [h], show ¬ t < 60 by omega_using [h], ite_false,
+      show t / 20 = 3 by omega_using [ht, h]]; rfl
 
 /-- A round of the specification is `hw` of its group. -/
 theorem round_hw (M : Block) (v : HashValue) {t : Nat} (ht : t < 80) :
@@ -87,7 +87,7 @@ theorem hw_4 : (hw g v w)[4] = v[3] := rfl
 end
 
 theorem imm_eq {g : Nat} (hg : g < 4) : ((BitVec.ofNat 8 g).extractLsb' 0 2).toNat = g := by
-  rcases (by omega : g = 0 ∨ g = 1 ∨ g = 2 ∨ g = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_using [hg] : g = 0 ∨ g = 1 ∨ g = 2 ∨ g = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- `sha1rnds4` does four rounds of group `g`, given `W₀ + E` in bits 127:96 of
 its source and `W₁ … W₃` below. -/
@@ -124,8 +124,8 @@ theorem dword_xor (x y : BitVec 128) (k : Nat) : dword (x ^^^ y) k = dword x k ^
 
 theorem W_ge' (M : Block) (t : Nat) :
     W M (t + 16) = (W M (t + 13) ^^^ W M (t + 8) ^^^ W M (t + 2) ^^^ W M t).rotateLeft 1 := by
-  rw [W_ge M (by omega), show t + 16 - 3 = t + 13 by omega, show t + 16 - 8 = t + 8 by omega,
-    show t + 16 - 14 = t + 2 by omega, Nat.add_sub_cancel]
+  rw [W_ge M (by omega_using []), show t + 16 - 3 = t + 13 by omega_using [], show t + 16 - 8 = t + 8 by omega_using [],
+    show t + 16 - 14 = t + 2 by omega_using [], Nat.add_sub_cancel]
 
 /-- `sha1msg1`, `pxor` and `sha1msg2` compute the next four schedule words
 from the previous sixteen. -/
@@ -138,14 +138,14 @@ theorem schedule_eq (M : Block) (i : Nat) :
   have w1 := W_ge' M (4 * i + 1)
   have w2 := W_ge' M (4 * i + 2)
   have w3 := W_ge' M (4 * i + 3)
-  simp only [show 4 * i + 16 = 4 * (i + 4) by omega, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega,
-    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega,
-    show 4 * i + 13 = 4 * (i + 3) + 1 by omega, show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega,
-    show 4 * i + 2 + 13 = 4 * (i + 3) + 3 by omega,
-    show 4 * i + 8 = 4 * (i + 2) by omega, show 4 * i + 1 + 8 = 4 * (i + 2) + 1 by omega,
-    show 4 * i + 2 + 8 = 4 * (i + 2) + 2 by omega, show 4 * i + 3 + 8 = 4 * (i + 2) + 3 by omega,
-    show 4 * i + 2 + 2 = 4 * (i + 1) by omega, show 4 * i + 3 + 2 = 4 * (i + 1) + 1 by omega,
-    show 4 * i + 1 + 2 = 4 * i + 3 by omega] at w0 w1 w2 w3 ⊢
+  simp only [show 4 * i + 16 = 4 * (i + 4) by omega_using [], show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega_using [],
+    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega_using [], show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega_using [],
+    show 4 * i + 13 = 4 * (i + 3) + 1 by omega_using [], show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega_using [],
+    show 4 * i + 2 + 13 = 4 * (i + 3) + 3 by omega_using [],
+    show 4 * i + 8 = 4 * (i + 2) by omega_using [], show 4 * i + 1 + 8 = 4 * (i + 2) + 1 by omega_using [],
+    show 4 * i + 2 + 8 = 4 * (i + 2) + 2 by omega_using [], show 4 * i + 3 + 8 = 4 * (i + 2) + 3 by omega_using [],
+    show 4 * i + 2 + 2 = 4 * (i + 1) by omega_using [], show 4 * i + 3 + 2 = 4 * (i + 1) + 1 by omega_using [],
+    show 4 * i + 1 + 2 = 4 * i + 3 by omega_using []] at w0 w1 w2 w3 ⊢
   rw [w3, w0, w1, w2]
   generalize W M = f
   ac_rfl

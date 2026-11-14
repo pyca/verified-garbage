@@ -29,8 +29,8 @@ theorem vdwords (v : BitVec 128) : v = vdword v 1 ++ vdword v 0 := by
   simp only [vdword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 64
   · simp only [h, ↓reduceIte, decide_true, Nat.mul_zero, Nat.zero_add, Bool.true_and]
-  · simp only [h, ite_false, decide_eq_true (show i - 64 < 64 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
+  · simp only [h, ite_false, decide_eq_true (show i - 64 < 64 by omega_using [hi]), Bool.true_and]
+    exact congrArg _ (by omega_using [h])
 
 theorem vdword_append_0 (a b : BitVec 64) : vdword (a ++ b) 0 = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -40,7 +40,7 @@ theorem vdword_append_0 (a b : BitVec 64) : vdword (a ++ b) 0 = b := by
 theorem vdword_append_1 (a b : BitVec 64) : vdword (a ++ b) 1 = a := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vdword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', hi, decide_true,
-    Bool.true_and, Nat.mul_one, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    Bool.true_and, Nat.mul_one, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
 
 theorem vdword_xor (a b : BitVec 128) (e : Nat) : vdword (a ^^^ b) e = vdword a e ^^^ vdword b e := by
   simp only [vdword, BitVec.extractLsb'_xor]
@@ -55,10 +55,10 @@ theorem ext8_eq (n m : BitVec 128) : ext8 n m = vdword m 0 ++ vdword n 1 := by
   simp only [ext8, vdword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb',
     BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and, Nat.zero_add]
   by_cases h : i < 64
-  · simp only [h, ite_true, show 64 + i < 128 by omega, decide_true, Bool.true_and]
-  · simp only [h, ite_false, show ¬ 64 + i < 128 by omega, decide_eq_true (show i - 64 < 64 by omega),
+  · simp only [h, ite_true, show 64 + i < 128 by omega_using [h], decide_true, Bool.true_and]
+  · simp only [h, ite_false, show ¬ 64 + i < 128 by omega_using [h], decide_eq_true (show i - 64 < 64 by omega_using [hi]),
       Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
 
 theorem vdword_ext8_0 (n m : BitVec 128) : vdword (ext8 n m) 0 = vdword n 1 := by
   rw [ext8_eq, vdword_append_0]
@@ -118,29 +118,29 @@ export VG.Proof.VectorCrypto (getLsbD_append_block getLsbD_ofVBytes)
 
 theorem getLsbD_read (m : Mem) : ∀ (n : Nat) (a : Addr) (i : Nat), i < 8 * n →
     (m.read a n).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8)
-  | 0, _, _, h => absurd h (by omega)
+  | 0, _, _, h => absurd h (by omega_using [])
   | n + 1, a, i, h => by
     simp only [Mem.read, BitVec.getLsbD_append]
     by_cases hi : i < 8
     · simp [hi, Nat.div_eq_of_lt hi, Nat.mod_eq_of_lt hi]
     · simp only [hi, ite_false]
-      rw [getLsbD_read m n (a + 1) (i - 8) (by omega)]
-      have e1 : (i - 8) / 8 = i / 8 - 1 := by omega
-      have e2 : (i - 8) % 8 = i % 8 := by omega
+      rw [getLsbD_read m n (a + 1) (i - 8) (by omega_using [h, hi])]
+      have e1 : (i - 8) / 8 = i / 8 - 1 := by omega_using []
+      have e2 : (i - 8) % 8 = i % 8 := by omega_using [hi]
       rw [e1, e2]
       congr 2
       rw [BitVec.add_assoc]; congr 1
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-      omega
+      omega_using [hi]
 
 theorem vdword_read16 (m : Mem) (p : Addr) {e : Nat} (he : e < 2) :
     VG.Proof.Gcm.Clmul.vdword (m.read p 16) e = m.readW (p + BitVec.ofNat 64 (8 * e)) 64 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [VG.Proof.Gcm.Clmul.vdword, Mem.readW, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hi,
     decide_true, Bool.true_and]
-  rw [getLsbD_read m 16 p _ (by omega), getLsbD_read m 8 _ i (by omega), Offset.add_add,
-    show 8 * e + i / 8 = (64 * e + i) / 8 by omega, show i % 8 = (64 * e + i) % 8 by omega]
+  rw [getLsbD_read m 16 p _ (by omega_using [he, hi]), getLsbD_read m 8 _ i (by omega_using [hi]), Offset.add_add,
+    show 8 * e + i / 8 = (64 * e + i) / 8 by omega_using [], show i % 8 = (64 * e + i) % 8 by omega_using []]
 
 export VG.Proof.VectorCrypto (read_write16)
 

@@ -1,14 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
 import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+meta import VerifiedGarbage.Proof.Bignum.CrtResult
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
@@ -138,49 +144,57 @@ def RA : StageRel := fun p _ xb _ _ _ _ _ t => ∃ minv, SetupOut t p.B p.Z p.w 
 /-- After `R² mod n`. -/
 def RB : StageRel := fun p _ _ _ _ _ _ _ t => ∃ minv, Good t p.B p.Z p.w minv
 
-/-- `n`'s setup leaks the same in runs that agree on `n`. -/
-theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
-  rw [nSetup_eq]
-  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq (R := Two (Stage RA)) ?_ ?_)
-  · refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
+/-- The setup of `n` and the input leaks the same in runs that agree on `n`. -/
+theorem setupA_ct : RelCT isa (Two (Stage R0)) (seqs (loadSteps ++ restSteps)) (Two (Stage RA)) := by
+  refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
       (RelCT.seq setupLoad_ct (two_map (fun p : SPub => (⟨p.B, p.Z, p.w⟩ : RPub)) (fun _ _ h => h.sr)
         setupRest_ct))).mono (fun _ _ h => two_bind (fun (p : CrtPub) _ _ h₁ h₂ =>
           ⟨(⟨p.B, p.Z, p.k, p.np, p.ip, p.nb⟩ : SPub), stage0_sh h₁, stage0_sh h₂⟩) h)
         fun _ _ h => h)) ?_
-    rintro p σ xb _ _ _ _ _ t h hv rfl
-    obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  rintro p σ xb _ _ _ _ _ t h hv rfl
+  obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
+  have := h.k1
+  have := h.k2
+  have hZq := h.z
+  exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega_arith) (by omega_arith) (by omega_arith) h.hK h.hN h.hIn
+    h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
+
+/-- `R² mod n` leaks the same in runs that agree on `n`. -/
+theorem r2B_ct (M : Mont) : RelCT isa (Two (Stage RA)) (R2Words.choice M.mm) (Two (Stage RB)) := by
+  refine stage_step ((R2w.choice_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
+  · obtain ⟨σ₁, xb₁, _, _, _, _, _, h₁, hv, mi₁, so₁⟩ := h₁
+    obtain ⟨σ₂, xb₂, _, _, _, _, _, _, _, mi₂, so₂⟩ := h₂
+    obtain ⟨hodd, -, hlo⟩ := valid_facts hv h₁.k1
+    have := h₁.k1
+    have := h₁.k2
+    have hZq := h₁.z
+    have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega_arith
+    obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold CrtPub.w; omega_arith)
+    exact ⟨⟨⟨p.B, p.Z, p.w, mi₁⟩, p.N⟩,
+      ⟨⟨so₁.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₁.n, so₁.inv, so₁.r12, so₁.r10,
+        hodd, hlo⟩,
+      ⟨⟨so₂.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₂.n, so₂.inv, so₂.r12, so₂.r10,
+        hodd, hlo⟩⟩
+  · rintro p _ xb _ _ _ _ _ t h hv ⟨minv, so⟩
+    obtain ⟨hodd, -, hlo⟩ := valid_facts hv h.k1
     have := h.k1
     have := h.k2
     have hZq := h.z
-    exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega_arith) (by omega_arith) (by omega_arith) h.hK h.hN h.hIn
-      h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two (Stage RB)) ?_ ?_)
-  · refine stage_step ((R2w.choice_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
-    · obtain ⟨σ₁, xb₁, _, _, _, _, _, h₁, hv, mi₁, so₁⟩ := h₁
-      obtain ⟨σ₂, xb₂, _, _, _, _, _, _, _, mi₂, so₂⟩ := h₂
-      obtain ⟨hodd, -, hlo⟩ := valid_facts hv h₁.k1
-      have := h₁.k1
-      have := h₁.k2
-      have hZq := h₁.z
-      have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega_arith
-      obtain rfl := so_minv so₁ so₂ hodd (show 1 ≤ p.w by unfold CrtPub.w; omega_arith)
-      exact ⟨⟨⟨p.B, p.Z, p.w, mi₁⟩, p.N⟩,
-        ⟨⟨so₁.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₁.n, so₁.inv, so₁.r12, so₁.r10,
-          hodd, hlo⟩,
-        ⟨⟨so₂.good, hZ⟩, show 2 ≤ p.w by unfold CrtPub.w; omega_arith, show p.w < 2 ^ 30 by unfold CrtPub.w; omega_arith, so₂.n, so₂.inv, so₂.r12, so₂.r10,
-          hodd, hlo⟩⟩
-    · rintro p _ xb _ _ _ _ _ t h hv ⟨minv, so⟩
-      obtain ⟨hodd, -, hlo⟩ := valid_facts hv h.k1
-      have := h.k1
-      have := h.k2
-      have hZq := h.z
-      exact WP.mono (R2w.choice_ok M so.good (by unfold CrtPub.w; unfold offQ at hZq; omega_arith) (by unfold CrtPub.w; omega_arith)
-        (by unfold CrtPub.w; omega_arith) so.n so.inv so.r12 so.r10 hodd hlo) fun t' ⟨hg, _⟩ => ⟨minv, hg⟩
-  simp only [seqs]
-  exact two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun p t ⟨_, _, _, _, _, _, _, h, _, minv, hg⟩ => by
+    exact WP.mono (R2w.choice_ok M so.good (by unfold CrtPub.w; unfold offQ at hZq; omega_arith) (by unfold CrtPub.w; omega_arith)
+      (by unfold CrtPub.w; omega_arith) so.n so.inv so.r12 so.r10 hodd hlo) fun t' ⟨hg, _⟩ => ⟨minv, hg⟩
+
+/-- `c R mod n` leaks the same in runs that agree on `n`. -/
+theorem nTail_ct (M : Mont) : RelCT isa (Two (Stage RB)) (M.mm Public.aXm Public.aX Public.aR2) fun _ _ => True :=
+  two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun p t ⟨_, _, _, _, _, _, _, h, _, minv, hg⟩ => by
     have hZq := h.z
     exact ⟨minv, hg, show slot ((p.k + 7) / 8) 8 ≤ p.Z by unfold offQ at hZq; omega_arith⟩)
     (M.ct (by unfold MmUse; decide))
+
+/-- `n`'s setup leaks the same in runs that agree on `n`. -/
+theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
+  rw [nSetup_eq]
+  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq setupA_ct ?_)
+  exact RelCT.seqs_append (by simp) (by simp) (RelCT.seq (r2B_ct M) (nTail_ct M))
 
 /-! ## From the stages to the parts' claims -/
 
@@ -217,13 +231,21 @@ theorem setupS_ct (hS : SetupCT) : RelCT isa (Two (Stage R1)) (seqs primesSetup)
   · have := h.pl2; simp only [CrtPub.w]; omega_arith
   · have := h.ql2; simp only [CrtPub.w]; omega_arith
 
-/-- The checks leak the same in runs that agree on the public data. -/
-theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) := by
+/-- Checks `c` as constant time as `checks` (`hC`) and as correct (`hw`),
+from a stage `R` that implies `R2`, leak the same in runs that agree on the
+public data. -/
+theorem checksSWith_ct {R : StageRel} {c : List (Prog isa)}
+    (hR : ∀ p σ xb pb qb dpb dqb qib t, R p σ xb pb qb dpb dqb qib t → R2 p σ xb pb qb dpb dqb qib t)
+    (hC : RelCT isa (Two ChecksPre) (seqs c) fun _ _ => True)
+    (hw : ∀ p σ xb pb qb dpb dqb qib t,
+      CrtPre σ p.B p.Z p.k p.op p.np p.ip p.pp p.qp p.dpp p.dqp p.qip p.pl p.ql p.nb xb pb qb dpb dqb qib →
+      Spec.Rsa.modulusValid p.N p.k = true → R p σ xb pb qb dpb dqb qib t →
+      WP isa (seqs c) t (R3 p σ xb pb qb dpb dqb qib)) :
+    RelCT isa (Two (Stage R)) (seqs c) (Two (Stage R3)) := by
   refine stage_step (hC.mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
-    offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ =>
-      ?_) h) fun _ _ h => h)
-    fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, mp, mq, hr⟩ => WP.mono (checksPart_ok h hv hr) fun _ ⟨mp', mq', h'⟩ =>
-      ⟨minv, mp', mq', h'⟩
+    offQ p.w p.pl, wsWords p.pl, wsWords p.ql⟩ : ChecksPub)) (fun p σ xb pb qb dpb dqb qib t h hv hR' => ?_) h)
+      fun _ _ h => h) hw
+  obtain ⟨minv, mp, mq, hr⟩ := hR _ _ _ _ _ _ _ _ _ hR'
   obtain ⟨hodd, -, -⟩ := valid_facts hv h.k1
   have hk1 := h.k1
   have hk2 := h.k2
@@ -239,6 +261,11 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
     show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from Nat.le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
     wsWords_le (by have := h.pl2; omega_arith) (by omega_arith), hwq2, wsWords_le (by have := h.ql2; omega_arith) (by omega_arith),
     hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.n.nv.n, hr.n.msk, hr.pv, hr.qv, hr.qiv, hodd⟩
+
+/-- The checks leak the same in runs that agree on the public data. -/
+theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (Two (Stage R3)) :=
+  checksSWith_ct (fun _ _ _ _ _ _ _ _ _ h => h) hC fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hr⟩ =>
+    WP.mono (checksPart_ok h hv hr) fun _ ⟨mp', mq', h'⟩ => ⟨minv, mp', mq', h'⟩
 
 /-- `q`'s phase leaks the same in runs that agree on the public data. -/
 theorem qS_ct (M : Mont) (E : CrtExpL M) (hQ : QPhaseCT M E) : RelCT isa (Two (Stage R3)) (seqs (qPhase M.mm E.code)) (Two (Stage R4)) := by
@@ -357,22 +384,5 @@ theorem outArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) (by taint_decide)
 
 /-! ## `main` -/
-
-/-- `main` leaks the same in runs that agree on the public data, given that
-its parts do. -/
-theorem crtMain_ct (M : Mont) (E : CrtExpL M) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M E) (hP : PPhaseCT M E)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
-    RelCT isa (Two (Stage R0)) (Crt.main M.mm E.code) fun _ _ => True := by
-  rw [crtMain_eq]
-  refine RelCT.seqs_append (by simp [nSetup]) (by simp [qPhase]) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
-  · refine RelCT.seqs_append (by simp [nSetup]) (by simp [checks])
-      (RelCT.seq (R := Two (Stage R2)) ?_ (checksS_ct hC))
-    refine RelCT.seqs_append (by simp [nSetup]) (by simp [primesSetup])
-      (RelCT.seq (R := Two (Stage R1)) ?_ (setupS_ct hS))
-    exact stage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
-      subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
-  rw [List.append_assoc]
-  refine RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M E hQ) ?_)
-  exact RelCT.seqs_append (by simp [pPhase]) (by simp [finish]) (RelCT.seq (pS_ct M E hP) hF)
 
 end VG.Proof.Bignum.X86_64

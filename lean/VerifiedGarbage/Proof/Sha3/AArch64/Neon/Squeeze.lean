@@ -52,10 +52,10 @@ theorem squeeze_step {s : State} {a b : Addr} {ra rb : Reg} {i : Nat} (hi : i < 
   let s1 := s.write .x .x6 (vdword (s.v (vreg i)) 0)
   refine WP.cons (s' := s1.write .x .x7 (vdword (s1.v (vreg i)) 1)) (by rfl) ?_
   have h2 := Upd.write64 s1 .x7 (vdword (s1.v (vreg i)) 1)
-  refine wp_str ⟨by omega,by omega⟩
+  refine wp_str ⟨by omega_using [],by omega_using [hi]⟩
     (by rw [h2.other ra ha7,h1.other ra ha6,ha])
     (by rw [h2.wr,h1.wr]; exact hwa) fun s3 h3 => ?_
-  refine wp_str ⟨by omega,by omega⟩
+  refine wp_str ⟨by omega_using [],by omega_using [hi]⟩
     (by rw [h3.gpr,h2.other rb hb7,h1.other rb hb6,hb])
     (by rw [h3.wr,h2.wr,h1.wr]; exact hwb) fun s4 h4 => WP.block_nil_iff.mpr ⟨?_,?_⟩
   · exact ((OutKeep.upd h1 (Or.inl rfl)).trans (OutKeep.upd h2 (Or.inr rfl))).trans
@@ -66,11 +66,11 @@ theorem squeeze_step {s : State} {a b : Addr} {ra rb : Reg} {i : Nat} (hi : i < 
 /-- Word-wise output is the SHA-3 specification's byte serialization. -/
 theorem RateAt.byte {m : Mem} {p : Addr} {A : Spec.Sha3.State} (h : RateAt m p A)
     {j : Nat} (hj : j < 168) : m (p+BitVec.ofNat 64 j) = Proof.Sha3.byteOf A j := by
-  have hw := h (j/8) (by omega)
+  have hw := h (j/8) (by omega_using [hj])
   have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8*(j%8)) 8) hw
   change (m.read (outAddr p (j/8)) 8).extractLsb' (8*(j%8)) 8 = _ at he
-  rw [Mem.extractLsb'_read m _ (by omega)] at he
+  rw [Mem.extractLsb'_read m _ (by omega_using [])] at he
   rw [outAddr,BitVec.add_assoc,← BitVec.ofNat_add,
-    show 8*(j/8)+j%8 = j by omega] at he
+    show 8*(j/8)+j%8 = j by omega_using []] at he
   exact he
 end VG.Proof.Sha3.AArch64.Neon

@@ -109,8 +109,8 @@ theorem K5Chk.cons_c0 {p : Params} (hF : VFacts p) {STK nr : Nat} (hnr : nr ≤ 
     (h3 : o + n ≤ oP 0 ∨ oP 8 ≤ o) (h4 : o + n ≤ oP 8 ∨ oP 16 ≤ o) (h5 : o + n ≤ oP 20) (h : K5Chk p STK nr W) :
     K5Chk p STK nr ((0, o, n) :: W) := by
   have : w1Len p * nr ≤ 1024 := by
-    have := Nat.mul_le_mul_left (w1Len p) hnr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega
-  exact (K5Chk.c0 hF hnr h1 (by omega) h3 h4 h5).append (W₁ := [_]) h
+    have := Nat.mul_le_mul_left (w1Len p) hnr; rw [Nat.mul_comm (w1Len p) p.k] at this; have := hF.w1; omega_arith
+  exact (K5Chk.c0 hF hnr h1 (by omega_using [h2, this]) h3 h4 h5).append (W₁ := [_]) h
 
 theorem K5Chk.cons_stk {p : Params} (hF : VFacts p) {STK nr : Nat} (hnr : nr ≤ p.k) {W : List (Nat × Nat × Nat)}
     (h : K5Chk p STK nr W) : K5Chk p STK nr ((1, 0, STK) :: W) :=
@@ -133,8 +133,8 @@ theorem KC5.keep {p : Params} (hF : VFacts p) {STK : Nat} {σ : State} {A' : Nat
     {s s' : State} (hk5 : KC5 p STK σ A' cc h R nz nc nr s) {W : List (Nat × Nat × Nat)}
     (hk : Kept ((vlay p STK σ).RL W) s s') (hc : K5Chk p STK nr W) : KC5 p STK σ A' cc h R nz nc nr s' := by
   have hL := hk5.vc.site.ok
-  have hle : w1Len p ≤ 2 ^ 64 := by rcases hF.w1l with e | ⟨e, _⟩ <;> omega
-  exact ⟨hk5.vc.keep hk hc.vc, hk5.hh, hintIs_keepW hL hk.frame hc.hint (by decide) (by have := hF.k; omega) hk5.hint,
+  have hle : w1Len p ≤ 2 ^ 64 := by rcases hF.w1l with e | ⟨e, _⟩ <;> omega_using [e]
+  exact ⟨hk5.vc.keep hk hc.vc, hk5.hh, hintIs_keepW hL hk.frame hc.hint (by decide) (by have := hF.k; omega_using [this]) hk5.hint,
     fun r hr s' hs' => polyIs_keepW hL hk.frame (hc.a r hr s' hs') (by decide) rfl (hk5.a r hr s' hs'),
     fun i hi => polyIs_keepW hL hk.frame (hc.z i hi) (by decide) rfl (hk5.z i hi),
     polyIs_keepW hL hk.frame hc.c (by decide) rfl hk5.c,
@@ -159,11 +159,11 @@ theorem nttZ_ok {j : Nat} (hj : j < p.ℓ) {σ : State} {A' cc h R} {s : State}
   have hz := hk5.z j hj
   rw [ifn (Nat.lt_irrefl j)] at hz
   unfold nttAt
-  refine ip_ok (t := ntt) hP.ntt hs hS (f := pZ j) (w := sc oSS) ⟨⟨vptr_ok rfl (by unfold oP; omega), by vsep hF⟩,
+  refine ip_ok (t := ntt) hP.ntt hs hS (f := pZ j) (w := sc oSS) ⟨⟨vptr_ok rfl (by unfold oP; omega_using [hj, hl]), by vsep hF⟩,
     ⟨vptr_ok rfl (by decide), by vsep hF⟩, show ix Reg.s11 ∈ vWb by decide, show ix Reg.s11 ∈ vWb by decide,
     by vsep hF, by valsep, by valsep⟩ hz.1 fun s' k' hb => ?_
   refine ⟨hk5.vc.keep k' (by vsep hF [vcChk]), hk5.hh,
-    hintIs_keepW hL k'.frame (by vsep hF) (by decide) (by omega) hk5.hint,
+    hintIs_keepW hL k'.frame (by vsep hF) (by decide) (by omega_using [hk]) hk5.hint,
     fun r hr s' hs' => polyIs_keepW hL k'.frame (by vsep hF) (by decide) rfl (hk5.a r hr s' hs'),
     fun i hi => ?_, polyIs_keepW hL k'.frame (by vsep hF) (by decide) rfl hk5.c,
     fun _ h => absurd h (Nat.not_lt_zero _), (k'.cs .s4 (by decide)).trans hk5.s4, hk5.gd⟩
@@ -176,8 +176,8 @@ theorem nttZ_ok {j : Nat} (hj : j < p.ℓ) {σ : State} {A' cc h R} {s : State}
     exact hb
   · have := polyIs_keepW hL k'.frame (i := 0) (o := oP (8 + i)) (by vsep hF) (by decide) rfl (hk5.z i hi)
     by_cases hlt : i < j
-    · rwa [ifp hlt, ← ifp (show i < j + 1 by omega) (zHat p (sgOf p σ) i) (toRq (vZ p (sgOf p σ) i))] at this
-    · rwa [ifn hlt, ← ifn (show ¬ i < j + 1 by omega) (zHat p (sgOf p σ) i) (toRq (vZ p (sgOf p σ) i))] at this
+    · rwa [ifp hlt, ← ifp (show i < j + 1 by omega_using [hlt]) (zHat p (sgOf p σ) i) (toRq (vZ p (sgOf p σ) i))] at this
+    · rwa [ifn hlt, ← ifn (show ¬ i < j + 1 by omega_using [e, hlt]) (zHat p (sgOf p σ) i) (toRq (vZ p (sgOf p σ) i))] at this
 
 theorem nttZ_piece {j : Nat} (hj : j < p.ℓ) :
     VPiece p STK (KX p STK j false 0) (KX p STK (j + 1) false 0) (nttAt P (pZ j)) := by
@@ -187,7 +187,7 @@ theorem nttZ_piece {j : Nat} (hj : j < p.ℓ) :
   refine rel_of (Q := fun x y => ∃ σ, Two (vlay p STK σ) vWb STK x y ∧
     Reduced x.mem (lpa (vlay p STK σ) (pZ j)) ∧ Reduced y.mem (lpa (vlay p STK σ) (pZ j)))
     (RelCT.exists_ fun σ => ip_tr (t := ntt) hP.ntt hS (f := pZ j) (w := sc oSS)
-      (⟨⟨vptr_ok rfl (by unfold oP; omega), by vsep hF⟩, ⟨vptr_ok rfl (by decide), by vsep hF⟩,
+      (⟨⟨vptr_ok rfl (by unfold oP; omega_using [hj, hl]), by vsep hF⟩, ⟨vptr_ok rfl (by decide), by vsep hF⟩,
         show ix Reg.s11 ∈ vWb by decide, show ix Reg.s11 ∈ vWb by decide, by vsep hF, by valsep, by valsep⟩ : KeyGen.IpOk (vlay p STK σ) vWb _ _)
       fun x y ⟨T, a, b⟩ => ⟨T.1, T.2.1, T.2.2, a, b⟩)
     fun σ₁ _ _ _ _ _ pub ⟨_, _, _, _, h₁⟩ ⟨_, _, _, _, h₂⟩ => ?_
@@ -205,7 +205,7 @@ theorem nttC_ok {σ : State} {A' cc h R} {s : State} (hk5 : KC5 p STK σ A' cc h
     ⟨vptr_ok rfl (by decide), by vsep hF⟩, show ix Reg.s11 ∈ vWb by decide, show ix Reg.s11 ∈ vWb by decide,
     by vsep hF, by valsep, by valsep⟩ hk5.c.1 fun s' k' hb => ?_
   refine ⟨hk5.vc.keep k' (by vsep hF [vcChk]), hk5.hh,
-    hintIs_keepW hL k'.frame (by vsep hF) (by decide) (by omega) hk5.hint,
+    hintIs_keepW hL k'.frame (by vsep hF) (by decide) (by omega_using [hk]) hk5.hint,
     fun r hr s' hs' => polyIs_keepW hL k'.frame (by vsep hF) (by decide) rfl (hk5.a r hr s' hs'),
     fun i hi => polyIs_keepW hL k'.frame (by vsep hF) (by decide) rfl (hk5.z i hi), ?_,
     fun _ h => absurd h (Nat.not_lt_zero _), (k'.cs .s4 (by decide)).trans hk5.s4, hk5.gd⟩

@@ -26,22 +26,22 @@ theorem powerInit_ok {P : PowCfg} {F : Impl.Weierstrass.Mont.Modulus} {base : Ad
   have hba := hL.base_w (P.acc, 8 * P.M.n) (by simp [powW])
   have hbt := hL.base_w (P.tmp, 8 * P.M.n) (by simp [powW])
   refine WP.block_append (WP.mono (copy_ok (2 * P.M.n) hs (o := P.acc) (a := P.base)
-    (by omega) (by omega) (by omega)) fun s₁ ⟨V₁, K₁, O₁⟩ => ?_)
+    (by omega_using [ha]) (by omega_using [hb]) (by omega_using [hba])) fun s₁ ⟨V₁, K₁, O₁⟩ => ?_)
   have hs₁ := hs.of_keeps K₁ (by decide)
   refine WP.mono (copy_ok (2 * P.M.n) hs₁ (o := P.tmp) (a := P.base)
-    (by omega) (by omega) (by omega)) fun u ⟨V₂, K₂, O₂⟩ => ?_
-  rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega] at O₁ O₂
+    (by omega_using [ht]) (by omega_using [hb]) (by omega_using [hbt])) fun u ⟨V₂, K₂, O₂⟩ => ?_
+  rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega_using []] at O₁ O₂
   have U : Unch base (powWx P wk) s.mem u.mem := by
     intro x hx
     rw [O₂ x (hx (P.tmp, 8 * P.M.n) (by simp [powWx, powW])),
       O₁ x (hx (P.acc, 8 * P.M.n) (by simp [powWx, powW]))]
-  have eb₁ := O₁.wordsVal hba (by omega)
+  have eb₁ := O₁.wordsVal hba (by omega_using [hn, hb])
   have ea : wordsVal u.mem base P.acc P.M.n = wordsVal s.mem base P.base P.M.n := by
-    rw [O₂.wordsVal hL.acc_tmp (by omega), wordsVal_eq_val32, V₁, ← wordsVal_eq_val32]
+    rw [O₂.wordsVal hL.acc_tmp (by omega_using [hn, ha]), wordsVal_eq_val32, V₁, ← wordsVal_eq_val32]
   have et : wordsVal u.mem base P.tmp P.M.n = wordsVal s.mem base P.base P.M.n := by
     rw [wordsVal_eq_val32, V₂, ← wordsVal_eq_val32, eb₁]
-  have eb := U.wordsVal (powWx_base hL hW) (by omega)
-  have em := U.wordsVal (powWx_mo hL hW) (by omega)
+  have eb := U.wordsVal (powWx_base hL hW) (by omega_using [hn, hb])
+  have em := U.wordsVal (powWx_mo hL hW) (by omega_using [hn, hmo])
   refine ⟨⟨hs₁.of_keeps K₂ (by decide),
     ⟨hM.n0, hM.mo, hM.tmp, hM.sep, em.trans hM.val, hM.inv, hM.red⟩,
     eb ▸ hB, ?_, ea ▸ hB, ?_, et ▸ hB, ?_⟩, K₁.trans K₂, U⟩

@@ -19,6 +19,6 @@ theorem Outs.frame {base : Addr} {size : Nat} {rs : List (Nat × Nat)} {m m' : M
   have H := hx _ (List.mem_singleton_self _)
   have B := fits r hr
   simp only [Region.Contains,ofs] at H ⊢
-  omega
+  omega_using [H, B]
 
 end VG.Proof.Mont

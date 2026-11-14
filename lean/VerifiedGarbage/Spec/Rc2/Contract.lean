@@ -12,15 +12,11 @@ public import VerifiedGarbage.TCB.Artifact
 decryption (`Spec/Rc2.lean`) on 8-byte blocks (this does not assert that RC2
 is a NIST-approved cipher).
 
-The streaming model follows issue #1's `init(key, iv, direction)`,
-`update(ctx, data)` and `finalize(ctx)`: initialization
-(`initWithEffectiveBits`) takes the effective bit count explicitly (issue
-#1's default is eight times the key length), and `update` emits all
-complete blocks and retains a partial block. Unpadded CBC's finalization
-emits no bytes and rejects a partial block (`Error.incompleteBlock`) in
-either direction; padding is the caller's responsibility. The immutable
-model returns the next context; the Rust API can mutate its own context
-and consume it on finalization.
+Initialization (`initWithEffectiveBits`) follows issue #1's
+`init(key, iv, direction)`, taking the effective bit count explicitly (issue
+#1's default is eight times the key length). Unpadded CBC rejects a partial
+block (`Error.incompleteBlock`) in either direction; padding is the caller's
+responsibility.
 
 The signatures derive memory validity, non-overlap, permitted
 writes and public pointers/lengths from `Sig.contract`. Key bytes, expanded
@@ -29,38 +25,32 @@ algorithm parameter, independent of the key's byte length.
 
 `stack` describes an implementation's frames and calls.
 
-## Streaming
+## Initialization
 
-`vg_rc2_cbc_init`, `vg_rc2_cbc_encrypt_update` and
-`vg_rc2_cbc_decrypt_update` implement the streaming model above
-(`initWithEffectiveBits` and `update`) on a context in memory, `contextAt`:
-the key schedule, the chaining value and the pending partial block, all
-secret. The context's public parts are not stored in it: the caller keeps the
-direction (choosing the update function by it) and the number of pending
-bytes (`pending_len`, 0 after `init` and `(pending_len + len) % 8` after
-each update), and passes the latter to every update. A context therefore
-holds nothing an implementation may branch on, as constant time requires.
+`vg_rc2_cbc_init` implements `initWithEffectiveBits` on a context in memory,
+`contextAt`: the key schedule, the chaining value and the pending partial
+block, all secret, which the chained functions below continue from. The
+context's public parts are not stored in it: the caller keeps the direction
+and the number of pending bytes (0 after `init`). A context therefore holds
+nothing an implementation may branch on, as constant time requires.
 
 `init` checks the key length, the effective key bits and the IV length
 itself, in `initWithEffectiveBits`'s order, and returns `Error.code` of the
 first that fails, or 0: so the verified code decides every outcome of
 initialization, although the lengths are public and the caller could check
-them. Finalization has no primitive: it succeeds, with no bytes, exactly
-if the context's pending input is empty, which, by `contextAt`, is
-`pending_len = 0`, a public length the caller holds. Unpadded CBC emits
-nothing at finalization, and nothing secret is involved.
+them.
 
-`init` and the updates keep their working space on the stack, and zero it
-before returning. They may overwrite their arguments passed in memory,
-where the calling convention allows it (`writeArgs`), to pass arguments to
-the functions they call.
+`init` keeps its working space on the stack, and zeroes it before
+returning. It may overwrite its arguments passed in memory, where the
+calling convention allows it (`writeArgs`), to pass arguments to the
+function it calls.
 -/
 
 @[expose] public section
 
 namespace VG.Spec.Rc2
 
-/-! ## The streaming model -/
+/-! ## The model -/
 
 /-- RC2 encryption as CBC's forward function `CIPH_K` (`Spec/Cbc.lean`), under
 the schedule `k`, on blocks as lists of 8 bytes. -/
@@ -71,11 +61,6 @@ def cipher (k : Schedule) : Cbc.Cipher := fun b =>
 `k`, on blocks as lists of 8 bytes. -/
 def invCipher (k : Schedule) : Cbc.Cipher := fun b =>
   (decryptBlock k (Vector.ofFn fun i => b.getD i.val 0)).toList
-
-/-- Complete blocks only; a partial suffix is handled by `update`. -/
-def blocks (data : List Byte) : List Block :=
-  (List.range (data.length / 8)).map fun j =>
-    Vector.ofFn fun i => data.getD (8 * j + i.val) 0
 
 structure Context where
   schedule : Schedule
@@ -97,31 +82,9 @@ def initWithEffectiveBits (key iv : List Byte) (direction : Direction) (effectiv
     direction := direction
     iv := Vector.ofFn fun i => iv.getD i 0 }
 
-/-- Emit all complete blocks, retaining at most seven bytes for the next
-update. The complete blocks of the pending bytes followed by `data` are
-encrypted or decrypted by CBC (`Cbc.encrypt`, `Cbc.decrypt`) from the
-context's chaining value, which becomes the last ciphertext block
-(`Cbc.next`: the last output block when encrypting, the last input block when
-decrypting, and unchanged if there is no complete block), from which CBC of
-the rest of the message continues (`Spec/Cbc.lean`). Empty updates leave
-every valid context unchanged. -/
-def update (ctx : Context) (data : List Byte) : Context × List Byte :=
-  let input := ctx.pending ++ data
-  let ps := (blocks input).map Vector.toList
-  let output := match ctx.direction with
-    | .encrypt => Cbc.encrypt (cipher ctx.schedule) ctx.iv.toList ps
-    | .decrypt => Cbc.decrypt (invCipher ctx.schedule) ctx.iv.toList ps
-  let ciphertext := match ctx.direction with
-    | .encrypt => output
-    | .decrypt => ps
-  ({ ctx with
-      iv := Vector.ofFn fun i => (Cbc.next ctx.iv.toList ciphertext).getD i.val 0
-      pending := input.drop (8 * (input.length / 8)) },
-    output.flatten)
+/-! ## The context in memory -/
 
-/-! ## Streaming -/
-
-/-- The streaming context at `p` (`[u8; 144]`), for the direction `direction`
+/-- The context at `p` (`[u8; 144]`), for the direction `direction`
 and `pendingLen` pending bytes, both of which the caller keeps: the key
 schedule in bytes 0–127 (as `scheduleAt`), the chaining value in bytes
 128–135, and the pending input in the first `pendingLen` bytes of bytes
@@ -176,91 +139,91 @@ def cbcInitApi : Api where
     schedule of the `key_len` bytes at `key` with `effective_bits` effective key bits \
     (`VG.Spec.Rc2.expandKey`), the `iv_len` bytes at `iv` as the chaining value, and no \
     pending input (`VG.Spec.Rc2.contextAt`), and returns 0. Continue with \
-    `vg_rc2_cbc_encrypt_update` or `vg_rc2_cbc_decrypt_update` from 0 pending bytes. \
-    Effective bits are independent of the supplied key length.\n\n\
+    `vg_rc2_cbc_encrypt_chained` or `vg_rc2_cbc_decrypt_chained` on the schedule at the \
+    start of `*ctx` and the chaining value at `ctx + 128`. Effective bits are independent of the supplied key length.\n\n\
     Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, \
     `effective_bits` and `iv_len` may affect timing, not the key or the IV."
   safety := [
     "If the function returns nonzero, the contents of `ctx` on return are unspecified."]
 
-/-- The update functions:
-`(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize,
-out: *mut u8, out_len: usize)`. `pending_len` is public. `out` is a separate
-buffer: the output is longer than `data` when pending bytes complete a block,
-so it cannot be `data` in place, and like every writable buffer it overlaps
-no other. -/
-def cbcUpdateSig : Sig where
-  params := [("ctx", .array true .u8 144), ("pending_len", .int .usize true),
-    ("data", .slice false .u8 "len"), ("out", .slice true .u8 "out_len")]
+/-! ## In-place CBC
 
-/-- For `pending_len < 8` and `out_len = (pending_len + len) / 8 * 8`: if
-`ctx` holds the context `c` with `pending_len` pending bytes
-(`contextAt`), then `update c` of the `len` bytes at `data` writes its
-output, the `out_len` bytes of all complete blocks, to `out`, and leaves at
-`ctx` its next context, with `(pending_len + len) % 8` pending bytes. -/
-def cbcUpdatePre (pb : Nat) : Curry (cbcUpdateSig.words pb) (Mem → Prop) :=
-  fun _ctx pendingLen _data len _out outLen _ =>
-    pendingLen.toNat < 8 ∧ outLen.toNat = (pendingLen.toNat + len.toNat) / 8 * 8
+The chained functions process whole blocks in place and replace `iv` with
+`Cbc.next`, so subsequent calls continue the message. Empty input leaves
+both buffers unchanged. Neither function buffers partial blocks or adds
+or removes padding.
 
-/-- The postcondition, which also states `pending_len < 8` (the
-precondition's), so that it reads only the context's 144 bytes. -/
-def cbcUpdatePost (direction : Direction) (pb : Nat) : cbcUpdateSig.Post pb :=
-  fun ctx pendingLen data len out outLen m m' _ => pendingLen.toNat < 8 →
-    let result := update (contextAt m ctx direction pendingLen.toNat) (bytesAt m data len.toNat)
-    contextAt m' ctx direction ((pendingLen.toNat + len.toNat) % 8) = result.1 ∧
-      bytesAt m' out outLen.toNat = result.2
+Both directions read the same 128-byte schedule (`scheduleAt`), as written
+at the start of the context by `vg_rc2_cbc_init`, which chooses the effective
+key size. The schedule, IV and data are separate buffers. Only pointers
+and the block count are public; the schedule, IV and data remain secret.
+-/
+/-- The `n` 8-byte blocks at `p`, as lists of bytes. -/
+def cbcBlocksAt (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
+  (blocksAt m p n).map Vector.toList
 
-/-- `cbcUpdatePre` and `cbcUpdatePost`. -/
-def cbcUpdateContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) :
-    Contract M :=
-  cbcUpdateSig.contract A (pre := cbcUpdatePre A.ptrBits) (post := cbcUpdatePost direction A.ptrBits)
+/-- `vg_rc2_cbc_encrypt_chained(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize)`,
+and `vg_rc2_cbc_decrypt_chained` with the same signature. -/
+def cbcChainedSig : Sig where
+  params := [("schedule", .array false .u8 128), ("iv", .array true .u8 8),
+    ("data", .slice true (.array .u8 8) "n")]
+
+/-- Replaces the `n` blocks at `data` with their RC2-CBC encryption from
+`iv`, under the schedule at `schedule`, and `iv` with the last ciphertext
+block (unchanged if `n = 0`). -/
+def cbcEncryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cbcChainedSig.contract A
+    (post := fun schedule iv data n m m' _ =>
+      let cs := Cbc.encrypt (cipher (scheduleAt m schedule)) (bytesAt m iv 8)
+        (cbcBlocksAt m data n.toNat)
+      cbcBlocksAt m' data n.toNat = cs ∧
+        bytesAt m' iv 8 = Cbc.next (bytesAt m iv 8) cs)
     (writeArgs := true) (stack := stack)
 
-def cbcEncryptUpdateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcUpdateContract A .encrypt stack
+/-- Replaces the `n` blocks at `data` with their RC2-CBC decryption from
+`iv`, under the schedule at `schedule`, and `iv` with the last input
+ciphertext block (unchanged if `n = 0`). -/
+def cbcDecryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cbcChainedSig.contract A
+    (post := fun schedule iv data n m m' _ =>
+      let cs := cbcBlocksAt m data n.toNat
+      cbcBlocksAt m' data n.toNat =
+          Cbc.decrypt (invCipher (scheduleAt m schedule)) (bytesAt m iv 8) cs ∧
+        bytesAt m' iv 8 = Cbc.next (bytesAt m iv 8) cs)
+    (writeArgs := true) (stack := stack)
 
-def cbcDecryptUpdateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcUpdateContract A .decrypt stack
-
-/-- The `# Safety` items the update functions share. -/
-def cbcUpdateSafety : List String := [
-  "`pending_len` must be less than 8.",
-  "`out_len` must be `(pending_len + len) / 8 * 8`."]
-
-def cbcEncryptUpdateApi : Api where
-  module := "rc2"
-  name := "vg_rc2_cbc_encrypt_update"
-  sig := cbcUpdateSig
+/-- `vg_rc2_cbc_encrypt_chained` on every target. -/
+def cbcEncryptChainedApi : Api where
+  module := "rc2_cbc"
+  name := "vg_rc2_cbc_encrypt_chained"
+  sig := cbcChainedSig
   writeArgs := true
-  contracts := some fun A stack => cbcEncryptUpdateContract A stack
-  summary := "Continues RC2-CBC encryption without padding: if `*ctx` is a context with \
-    `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and \
-    updated by this function), encrypts the complete 8-byte blocks of the pending bytes \
-    followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the \
-    context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` \
-    the last ciphertext block as the chaining value and the remaining \
-    `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of \
-    pending bytes; when the input ends, it is an incomplete block unless it is 0.\n\n\
-    Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, \
-    `pending_len`, `len` and `out_len` may affect timing, not the context or the data."
-  safety := cbcUpdateSafety
+  contracts := some fun A stack => cbcEncryptChainedContract A stack
+  summary := "RC2-CBC encryption (RFC 2268 §§3–4, NIST SP 800-38A §6.2) of whole blocks, in place: \
+    replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` \
+    is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a \
+    further call continues the message. `CIPH_K` is RC2 encryption under the 128-byte \
+    little-endian schedule at `schedule`, as written at the start of the context by \
+    `vg_rc2_cbc_init`. No padding is added.\n\n\
+    Contract: `VG.Spec.Rc2.cbcEncryptChainedContract`. Constant time: only the pointers and `n` \
+    may affect timing, not the schedule, the chaining value or the data."
+  safety := []
 
-def cbcDecryptUpdateApi : Api where
-  module := "rc2"
-  name := "vg_rc2_cbc_decrypt_update"
-  sig := cbcUpdateSig
+/-- `vg_rc2_cbc_decrypt_chained` on every target. -/
+def cbcDecryptChainedApi : Api where
+  module := "rc2_cbc"
+  name := "vg_rc2_cbc_decrypt_chained"
+  sig := cbcChainedSig
   writeArgs := true
-  contracts := some fun A stack => cbcDecryptUpdateContract A stack
-  summary := "Continues RC2-CBC decryption without padding: if `*ctx` is a context with \
-    `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and \
-    updated by this function), decrypts the complete 8-byte blocks of the pending bytes \
-    followed by the `len` bytes at `data`, `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]` \
-    from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in \
-    `*ctx` the last input ciphertext block as the chaining value and the remaining \
-    `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of \
-    pending bytes; when the input ends, it is an incomplete block unless it is 0.\n\n\
-    Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, \
-    `pending_len`, `len` and `out_len` may affect timing, not the context or the data."
-  safety := cbcUpdateSafety
+  contracts := some fun A stack => cbcDecryptChainedContract A stack
+  summary := "RC2-CBC decryption (RFC 2268 §§3–4, NIST SP 800-38A §6.2) of whole blocks, in place: \
+    replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` \
+    is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it \
+    unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is RC2 \
+    decryption under the same 128-byte little-endian schedule as encryption, as written at \
+    the start of the context by `vg_rc2_cbc_init`. No padding is removed.\n\n\
+    Contract: `VG.Spec.Rc2.cbcDecryptChainedContract`. Constant time: only the pointers and `n` \
+    may affect timing, not the schedule, the chaining value or the data."
+  safety := []
 
 end VG.Spec.Rc2

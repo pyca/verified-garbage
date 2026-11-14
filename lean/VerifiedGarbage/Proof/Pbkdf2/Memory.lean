@@ -44,7 +44,7 @@ private theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤
     rw [show a - base = (a - (base + BitVec.ofNat 64 off)) + BitVec.ofNat 64 off by bv_omega,
       BitVec.toNat_add, toNat_ofNat_lt ho]
     exact Nat.mod_le _ _
-  omega
+  omega_using [h, ha, this]
 
 /-! ## Memory -/
 
@@ -54,18 +54,18 @@ theorem frame_bytesAt {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, n⟩) hd hn (List.mem_range.mp hi)
 
 theorem contains_base {a : Addr} {n len : Nat} (h : n ≤ len) : (⟨a, len⟩ : Region).Contains a n := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [h]
 
 theorem off_contains {a x : Addr} {o n len : Nat} (h : (x - (a + BitVec.ofNat 64 o)).toNat < n)
     (hl : o + n ≤ len) (ho : o < 2 ^ 64) : (⟨a, len⟩ : Region).Contains x 1 :=
-  sub_offset (off := o) (len := n) hl ho x (by simp only [Region.Contains]; omega)
+  sub_offset (off := o) (len := n) hl ho x (by simp only [Region.Contains]; omega_using [h])
 
 /-- Bytes from `p + a` are not among the first `a` from `p`. -/
 theorem sep_after {p x : Addr} {a n : Nat} (h₁ : (x - (p + BitVec.ofNat 64 a)).toNat < n) (h₂ : (x - p).toNat < a)
     (ha : a + n < 2 ^ 64) : False := by
   rw [show x - p = (x - (p + BitVec.ofNat 64 a)) + BitVec.ofNat 64 a by bv_omega, BitVec.toNat_add,
-    toNat_ofNat_lt (by omega), Nat.mod_eq_of_lt (by omega)] at h₂
-  omega
+    toNat_ofNat_lt (by omega_using [ha]), Nat.mod_eq_of_lt (by omega_using [h₁, ha])] at h₂
+  omega_using [h₂]
 
 theorem xorBytes_length (a b : List Byte) (h : a.length = b.length) :
     (Spec.Pbkdf2.xorBytes a b).length = a.length := by
@@ -89,7 +89,7 @@ theorem add_ofNat (a : Addr) (o j : Nat) : a + BitVec.ofNat 64 o + BitVec.ofNat 
 
 /-- A byte of the low 32 bits of `i`: `INT (i)`'s bytes. -/
 theorem mod32_div_mod8 (i k : Nat) (hk : k + 8 ≤ 32) : i % 2 ^ 32 / 2 ^ k % 2 ^ 8 = i / 2 ^ k % 2 ^ 8 := by
-  rw [show 2 ^ 32 = 2 ^ k * 2 ^ (32 - k) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)],
-    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))]
+  rw [show 2 ^ 32 = 2 ^ k * 2 ^ (32 - k) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega_using [hk])],
+    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega_using [hk]))]
 
 end VG.Proof.Pbkdf2.Memory

@@ -64,7 +64,7 @@ structure XPost (enc : Bool) (s : State) (W T D S : Addr) (N R : Nat) (s' : Stat
   tw : bytesAt s'.mem T 16 = Spec.Xts.next (bytesAt s.mem T 16) N
 
 theorem toNat_n {N : Nat} (h : N < 2 ^ 60) : (BitVec.ofNat 64 N).toNat = N := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h])
 
 theorem ce0 (s : State) : s.callEntry.gpr .a0 = s.gpr .a0 := s.callEntry_gpr (by decide)
 theorem ce1 (s : State) : s.callEntry.gpr .a1 = s.gpr .a1 := s.callEntry_gpr (by decide)

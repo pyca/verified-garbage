@@ -49,9 +49,9 @@ theorem publicOutput_ok {p : GkP} {rb : List Byte} {s : State}
     change a = p.yp + BitVec.ofNat 64 i at he
     have hsep : p.Z ≤ ofs p.B (p.yp + BitVec.ofNat 64 i) := hb.sep i hi
     rw [← he] at hsep
-    omega
+    omega_using [hh, ha64, hsep]
   have hh : ∀ d, d + 8 ≤ p.Z → word t.mem p.B d = word v.mem p.B d :=
-    fun d hd => hhf.word (Or.inl hd) (by have hn : p.B.toNat + p.Z ≤ 2 ^ 64 := hb.scr.nowrap; omega)
+    fun d hd => hhf.word (Or.inl hd) (by have hn : p.B.toNat + p.Z ≤ 2 ^ 64 := hb.scr.nowrap; omega_using [hd, hn])
   have hxt : Src t p.B p.Z p.xp (p.cut rb) := by
     refine ⟨fun i hi => by rw [k₃.2.1, k₃.2.2]; exact hxv.rd i hi, ?_, hxv.out⟩
     intro i hi
@@ -62,11 +62,11 @@ theorem publicOutput_ok {p : GkP} {rb : List Byte} {s : State}
   have hs₂' : ∀ i < 6, word v.mem p.B (8 * i) = word u.mem p.B (8 * i) := hs₂
   have hs₃' : ∀ i < 6, word t.mem p.B (8 * i) = word v.mem p.B (8 * i) := hs₃
   refine ⟨hy, hflag, hd, hxt, hb.scr.congr k₃.2.2, ?_, ?_, ?_, ?_, ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  · rw [hh _ (by change 168 ≤ p.Z; omega)]
+  · rw [hh _ (by change 168 ≤ p.Z; omega_using [hZ])]
     exact hb.hdr (sX, off p.xp p.ld) (by simp [Exchange.ExP.headers, outputP, GkP.kp])
-  · rw [hh _ (by change 176 ≤ p.Z; omega)]
+  · rw [hh _ (by change 176 ≤ p.Z; omega_using [hZ])]
     exact hb.hdr (sXl, BitVec.ofNat 64 p.n) (by simp [Exchange.ExP.headers, outputP, GkP.kp])
-  · rw [hh _ (by change 152 ≤ p.Z; omega)]
+  · rw [hh _ (by change 152 ≤ p.Z; omega_using [hZ])]
     exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [Exchange.ExP.headers, outputP, GkP.kp])
   · intro i hi
     rw [hs₃' i hi, hs₂' i hi, hs₁' i hi]

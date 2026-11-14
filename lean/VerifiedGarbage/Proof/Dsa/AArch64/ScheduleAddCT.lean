@@ -54,6 +54,6 @@ theorem scheduleScalarAdd_ct (inputs : SchedulePublic → List (Operand × Nat))
       (by change 1 ≤ (Spec.Rsa.bytesAt s.mem (off p.layout.base b) p.layout.qLen).length; rw [lenb]; exact p.layout.widths.1)
       (by simp only [ModulusSide.length, lenb]; exact Nat.le_refl _) hra hrb d hd (hde p))
       fun t h => ⟨h.schedule hs hd (hde p) (stable p), ?_⟩
-    exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega)) p.qFits
+    exact h.reduced (Nat.mod_lt _ (by have := p.qGreater; omega_using [this])) p.qFits
 
 end VG.Proof.Dsa.AArch64

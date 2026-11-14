@@ -57,13 +57,13 @@ theorem tag_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {nonce : List Byte
   unfold ctrArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_addi (by decide) (by decide) fun s₅ u₅ =>
-    wp_addi (by decide) (by decide) fun s₆ u₆ => wp_addi (by decide) (by omega) fun s₇ u₇ =>
+    wp_addi (by decide) (by decide) fun s₆ u₆ => wp_addi (by decide) (by omega_using [hy]) fun s₇ u₇ =>
     wp_li (by decide) fun s₈ u₈ => WP.block_nil ?_
   have pk₈ : PK s s₈ := (PK.ofUpd u₁).trans (pk₂.trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
     ((PK.ofUpd u₅).trans ((PK.ofUpd u₆).trans ((PK.ofUpd u₇).trans (PK.ofUpd u₈)))))))
   have E₈ := E.of_pk pk₈
   have m₈ : s₈.mem = s₂.mem := by rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem]
-  have C := cargsW L E₈ (o := 64) (d := y) (by decide) (by omega) (by omega)
+  have C := cargsW L E₈ (o := 64) (d := y) (by decide) (by omega_using [hy]) (by omega_using [hy])
     (by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₃.gpr, (PK.ofUpd u₁ |>.trans pk₂).gpr .r16 (by decide), E.r16])
     (by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
@@ -92,9 +92,9 @@ theorem tag_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {nonce : List Byte
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
-  · have hx := Proof.AesCcm.ctr32_ccm (nonce := nonce) (k := 1) (j := 0) (by have := L.h13; omega)
+  · have hx := Proof.AesCcm.ctr32_ccm (nonce := nonce) (k := 1) (j := 0) (by have := L.h13; omega_using [hnl, this])
       (fun i hi => by
-        rw [show i = 0 by omega, Nat.add_zero]
+        rw [show i = 0 by omega_using [hi], Nat.add_zero]
         show Spec.Gcm.ofBytes _ = _
         rw [m₈, hc₂]) h.out
     rw [Nat.mul_one] at hx
@@ -103,7 +103,7 @@ theorem tag_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {nonce : List Byte
       unfold Spec.Ccm.ctxCiph
       rw [m₈, Proof.Cmac.bytesAt_frame f₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega)]
+        exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega_using [this])]
     have hY : bytesAt s₈.mem (c.W + BitVec.ofNat 64 y) 16 = bytesAt s.mem (c.W + BitVec.ofNat 64 y) 16 := by
       rw [m₈]
       exact Proof.Cmac.bytesAt_frame f₂ (fun r hr => by

@@ -59,7 +59,7 @@ structure EntryPost (W T : Addr) (s₀ s : State) : Prop where
 /-- A stack argument's doubleword is readable. -/
 theorem stk_in {s : State} (h : Covers [⟨stackArgAddr s 0, 24⟩] (s.rd ++ s.wr)) {i : Nat} (hi : i < 3) :
     InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * i)) 8 := by
-  have := in_off h (d := 8 * i) (n := 8) (by omega) (by decide)
+  have := in_off h (d := 8 * i) (n := 8) (by omega_using [hi]) (by decide)
   rwa [stackArgAddr, add_ofNat_assoc, Nat.zero_add] at this
 
 /-- `entry`. -/
@@ -72,7 +72,7 @@ theorem entry_ok {s₀ : State} {W T : Addr} (L : Lay (s₀.gpr .a0) W) (hW : Co
   have dA : (⟨stackArgAddr s₀ 0, 24⟩ : Region).Disjoint (oneR W) := hAW.sub_right (Lay.wSub (by decide))
   have dAi : ∀ {i : Nat}, i < 3 → (⟨s₀.sp + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint (oneR W) :=
     fun {i} hi => by
-      have hs := Offset.sub_base (stackArgAddr s₀ 0) (d := 8 * i) (n := 8) (k := 24) (by omega)
+      have hs := Offset.sub_base (stackArgAddr s₀ 0) (d := 8 * i) (n := 8) (k := 24) (by omega_using [hi])
       rw [stackArgAddr, add_ofNat_assoc, Nat.zero_add] at hs
       exact dA.sub_left hs
   simp only [entry, Impl.AesGcm.RISCV64.openEntry, lsetup, List.append_assoc]
@@ -85,7 +85,7 @@ theorem entry_ok {s₀ : State} {W T : Addr} (L : Lay (s₀.gpr .a0) W) (hW : Co
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dAi (by decide)) (by decide)]
     rfl
   refine WP.block_append (Steps.wp_ld (off := 8) (a := s₀.sp + BitVec.ofNat 64 8) (by decide) (by rw [h1.t1])
-    (Spill.al8 (by omega) (by decide)) (by rw [k₁.rd, k₁.wr]; exact stk_in hA (i := 1) (by decide))
+    (Spill.al8 (by omega_using [hsa]) (by decide)) (by rw [k₁.rd, k₁.wr]; exact stk_in hA (i := 1) (by decide))
     fun s₂ u₂ => WP.block_nil ?_)
   have e : ∀ r, r ≠ .s8 → s₂.gpr r = s₁.gpr r := u₂.other
   have h0₂ : s₂.gpr .s0 = W := by rw [e _ (by decide), h1.s0]
@@ -140,7 +140,7 @@ theorem entry_ok {s₀ : State} {W T : Addr} (L : Lay (s₀.gpr .a0) W) (hW : Co
     rw [← m₂]
     exact frW.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w_w (.inr (by omega)) (by omega) (by decide)) (by decide)
+      exact L.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)) (by decide)
   refine
     { env := ⟨fun _ _ => rfl, by rw [B₅.sp, B₄.sp, B₃.sp, u₂.sp, k₁.sp], by
         rw [gg _ (by decide), h1.s2, gg _ (by decide), h1.s0]; exact perm⟩

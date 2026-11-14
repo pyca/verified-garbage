@@ -1,12 +1,107 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Call4
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CallMore
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+import VerifiedGarbage.Proof.MlKem.Mem
+
+/-! ### `MlDsa.AArch64.Sign.Call4`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA signing on AArch64: calls of the samplers
+
+For each call of `vg_mldsa_rej_ntt_poly4` and `vg_mldsa_sample_in_ball`: what it
+needs of the layout (`…Chk`), what it does (`…_ok`), and that two runs whose
+layout registers agree, and whose sampler leaks the same, leak the same
+(`…_tr`).
+-/
+
+@[expose] public section
+
+/-! Calls of the four-way sampler through the shared contract, including public return values. -/
+
+namespace VG.Proof.MlDsa.AArch64.Sign
+open VG.Impl.MlDsa.AArch64.Call
+
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sign
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+/-! ## `RejNTTPoly` -/
+
+def rej4Chk (rbs wbs : List (Reg × Nat)) (seed a ss : Ptr) : Bool :=
+  sepB rbs wbs seed 136 a 4096 && sepB rbs wbs seed 136 ss 8192 && sepB rbs wbs a 4096 ss 8192 &&
+    inB (rbs ++ wbs) seed 136 && inB (rbs ++ wbs) a 4096 && inB (rbs ++ wbs) ss 8192 && inB wbs a 4096 &&
+    inB wbs ss 8192
+
+abbrev rej4Args (seed a ss : Ptr) : List (Reg × Arg) := [(.x0, .ptr seed), (.x1, .ptr a), (.x2, .ptr ss)]
+
+section
+variable {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {seed a ss : Ptr}
+  (hc : rej4Chk rbs wbs seed a ss = true)
+include L hc
+
+theorem rej4_cov : Covers ([⟨pa s seed, 136⟩] ++ [⟨pa s a, 4096⟩, ⟨pa s ss, 8192⟩]) (s.rd ++ s.wr) ∧
+    Covers [⟨pa s a, 4096⟩, ⟨pa s ss, 8192⟩] s.wr := by
+  simp only [rej4Chk, Bool.and_eq_true, and_assoc] at hc
+  obtain ⟨_, _, _, c4, _, _, c7, c8⟩ := hc
+  exact ⟨Covers.append_left (L.cR c4) (Covers.right (Covers.cons (L.cW c7) (L.cW c8))), Covers.cons (L.cW c7) (L.cW c8)⟩
+
+theorem rej4_pre {s1 : State} (h1 : Args (rej4Args seed a ss) s s1) :
+    (rejNTT4Contract AArch64.abi S).pre
+      (s1.callEntry.withRegions [⟨pa s seed, 136⟩] [⟨pa s a, 4096⟩, ⟨pa s ss, 8192⟩]) := by
+  simp only [rej4Chk, Bool.and_eq_true, and_assoc] at hc
+  obtain ⟨c1, c2, c3, c4, c5, c6, _, _⟩ := hc
+  sig_pre [rejNTT4Contract, rejNTT4Sig, AArch64.abi, VG.AArch64.argRegs]
+  rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.sp h1]
+  simp only [Arg.val]
+  cpre L
+
+end
+
+theorem rej4_args {B : List Reg} {bs : List (Reg × Nat)} (L : LayIn B bs) {seed a ss : Ptr} (c4 : inB bs seed 136 = true)
+    (c5 : inB bs a 4096 = true) (c6 : inB bs ss 8192 = true) :
+    ∀ x ∈ rej4Args seed a ss, x.2.Ok ∧ x.1 ∈ argRegs := by
+  simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+  exact ⟨⟨ptr_ok (ptr_kept L c4), by decide⟩, ⟨ptr_ok (ptr_kept L c5), by decide⟩, ⟨ptr_ok (ptr_kept L c6), by decide⟩⟩
+
+
+theorem rej4AtK_trRet {S : Nat} {P : Prims} (C : CalleeOk S P.rej4 (rejNTT4Contract AArch64.abi S))
+    (hr : RetPub (rejNTT4Contract AArch64.abi S) P.rej4)
+    {rbs wbs : List (Reg × Nat)} (hB : LayOk (rbs ++ wbs)) {seed a ss : Ptr} (hc : rej4Chk rbs wbs seed a ss = true)
+    {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Lay S rbs wbs x ∧ Lay S rbs wbs y ∧
+      bytesAt x.mem (pa x seed) 136 = bytesAt y.mem (pa y seed) 136 ∧ SameB x y) :
+    RelCT isa Q (callAt ("vg_mldsa_rej_ntt_poly4" ++ P.suffix) P.rej4 (rej4Args seed a ss))
+      fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 := by
+  have hc' := hc
+  simp only [rej4Chk, Bool.and_eq_true, and_assoc] at hc'
+  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
+  have hb : seed.1 ∈ bases ∧ a.1 ∈ bases ∧ ss.1 ∈ bases := ⟨ptr_bs hB c4, ptr_bs hB c5, ptr_bs hB c6⟩
+  refine callAt_trRet C hr (rej4_args hB c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+    fun x y x1 y1 hp h1 h2 => ?_
+  obtain ⟨Lx, Ly, hsd, e⟩ := hQ x y hp
+  refine ⟨_, _, rej4_pre Lx hc h1, ?_, ?_, (rej4_cov Lx hc).1, (rej4_cov Lx hc).2, ?_, ?_⟩
+  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact rej4_pre Ly hc h2
+  · sig_pub [rejNTT4Contract, rejNTT4Sig, AArch64.abi, VG.AArch64.argRegs]
+    rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2, Args.sp h1, Args.sp h2,
+      Args.mem h1, Args.mem h2]
+    simp only [Arg.val]
+    exact ⟨e.2, by rw [hsd], e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2⟩
+  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (rej4_cov Ly hc).1
+  · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (rej4_cov Ly hc).2
+
+end VG.Proof.MlDsa.AArch64.Sign
+
+end
+
+end
+
 
 /-! Signing matrix expansion in batches of four: sampler outcomes, bounded failure, and the single-stream remainder. -/
 
@@ -58,7 +153,7 @@ theorem batchChk_ok : ∀ p ∈ [mlDsa44,mlDsa65,mlDsa87],∀ g < p.k*p.ℓ/4,ba
 theorem pa_poly4 (s : State) (e k : Nat) : poly4 (pa s (pS e)) k = pa s (pS (e+k)) := by
   unfold poly4
   rw [pa_sc_add]
-  rw [show oP e+1024*k = oP (e+k) by simp only [oP]; omega]
+  rw [show oP e+1024*k = oP (e+k) by simp only [oP]; omega_using []]
 
 theorem batch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {g : Nat}
     (hc : batchChk p g = true) {s : State} (h : AS p D σ (4*g) 4 s) :
@@ -87,12 +182,12 @@ theorem batch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
     refine ⟨fun e' he' => ?_,fun e' he' => ?_⟩
     · by_cases hlt : e' < 4*g
       · exact ok e' hlt
-      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
-        rw [← aseeds_eq h (by omega)]; exact hmax hs.2 k (by omega)
+      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+        rw [← aseeds_eq h (by omega_using [he'])]; exact hmax hs.2 k (by omega_using [he'])
     · by_cases hlt : e' < 4*g
       · exact fm e' hlt
-      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega⟩
-        have hk : k < 4 := by omega
+      · obtain ⟨k,rfl⟩ : ∃ k,e'=4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+        have hk : k < 4 := by omega_using [he']
         have hm := hmax hs.2 k hk
         have hv : polyAt s1.mem (poly4 (pa s (pS (aBase p+4*g))) k) = aVal p σ (4*g+k) := by
           obtain ⟨_,hb⟩ | ⟨h0,_⟩ := hout
@@ -105,12 +200,12 @@ theorem batch_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
         exact ⟨hred hs.2 k hk,hv⟩
   · rw [et'] at ht
     rcases h.ia.r01 with e0 | e0
-    · obtain ⟨e',he',hn⟩ := h.ia.bad e0; exact ⟨e',by omega,hn⟩
+    · obtain ⟨e',he',hn⟩ := h.ia.bad e0; exact ⟨e',by omega_using [he'],hn⟩
     · rcases hr with e1 | e1
       · rw [e0,e1] at ht; exact absurd ht (by decide)
       · rcases hout with ⟨h1,_⟩ | ⟨_,k,hk,hn⟩
         · exact absurd (e1.symm.trans h1) (by decide)
-        · exact ⟨4*g+k,by omega,by rw [← aseeds_eq h hk]; exact hn⟩
+        · exact ⟨4*g+k,by omega_using [hk],by rw [← aseeds_eq h hk]; exact hn⟩
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -126,7 +221,7 @@ theorem sample4_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : S
     WP isa (sample4 P p g) s (IA p D σ (4*g+4)) := by
   unfold sample4
   refine WP.seq (WP.mono (seqR_ok (I := AS p D σ (4*g)) 4 0
-    (fun j _ hj s h => WP.mono (slot4_ok (by omega) (hs j (by omega)) h) fun _ ht => ht.1)
+    (fun j _ hj s h => WP.mono (slot4_ok (by omega_using [hj]) (hs j (by omega_using [hj])) h) fun _ ht => ht.1)
     s ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩) fun t ht => ?_)
   exact batch_ok hP hb (by simpa using ht)
 
@@ -139,11 +234,11 @@ theorem sampleAll_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 :
     exact hc.1.1.1
   unfold sampleAll
   refine WP.seq (WP.mono (seqR_ok (I := fun g => IA p D σ (4*g)) (p.k*p.ℓ/4) 0
-    (fun g _ hg s h => sample4_ok hP (batchChk_ok p hp g (by omega))
-      (fun j hj => slotChk_ok p hp (4*g) (by omega) j hj) h) s h) fun t ht => ?_)
+    (fun g _ hg s h => sample4_ok hP (batchChk_ok p hp g (by omega_using [hg]))
+      (fun j hj => slotChk_ok p hp (4*g) (by omega_using [hg]) j hj) h) s h) fun t ht => ?_)
   have htail := seqR_ok (I := IA p D σ) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
-    (fun e _ he' s h => sampleE_ok hP (he e (by omega)) h) t (by simpa only [Nat.zero_add] using ht)
-  have eqn : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega
+    (fun e _ he' s h => sampleE_ok hP (he e (by omega_using [he'])) h) t (by simpa only [Nat.zero_add] using ht)
+  have eqn : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
   simpa only [eqn] using htail
 
 theorem expandA_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) (hc : aChk p = true) {σ s : State}

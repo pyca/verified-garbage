@@ -30,6 +30,7 @@ structure WordStored (s t : State) : Prop where
   ptr11 : t.gpr .r11 = s.gpr .r11 + 4#64
   index : t.gpr .r12 = s.gpr .r12 + 4#64
   test : t.gpr .r0 = (s.gpr .r12 + 4#64) - s.gpr .r7
+  word : (t.gpr .r9).setWidth 32 = (s.gpr .r9).setWidth 32 ^^^ s.mem.readW (s.gpr .r10) 32
 
 theorem wordStore_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r10) 4)
     (hw : InRegions s.wr (s.gpr .r11 + 4#64) 4) :
@@ -42,7 +43,7 @@ theorem wordStore_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r10) 4)
     (by rw [u₂.wr, u₁.wr]; exact hw) fun s₃ u₃ => ?_
   refine wp_addi (by decide) (by decide) fun s₄ u₄ => wp_addi (by decide) (by decide) fun s₅ u₅ => ?_
   refine wp_addi (by decide) (by decide) fun s₆ u₆ => wp_sub fun s₇ u₇ => wp_nil ?_
-  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₇.other _ hr.1, u₆.other _ hr.2.2.2.2.2, u₅.other _ hr.2.2.2.1,
       u₄.other _ hr.2.2.2.2.1, congrFun u₃.gpr r, u₂.other _ hr.2.2.1, u₁.other _ hr.2.1]
@@ -59,10 +60,13 @@ theorem wordStore_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r10) 4)
   · rw [u₇.gpr, u₆.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₄.other _ (by decide), congrFun u₃.gpr .r12, congrFun u₃.gpr .r7,
       u₂.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), u₁.other _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      congrFun u₃.gpr .r9, u₂.gpr, u₁.gpr, u₁.other _ (by decide),
+      BitVec.setWidth_xor, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq]
 
 theorem next_mod {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8) :
     (i+1)%nk = if i%nk+1 = nk then 0 else i%nk+1 := by
-  rcases h3 with rfl | rfl | rfl <;> split <;> omega
+  rcases h3 with rfl | rfl | rfl <;> split <;> omega_arith
 
 theorem wordEnd_ok (s : State) {nk i total : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8) (hi : i < total)
     (h0 : s.gpr .r0 = BitVec.ofNat 64 (4*(i%nk+1)) - BitVec.ofNat 64 (4*nk))
@@ -70,12 +74,12 @@ theorem wordEnd_ok (s : State) {nk i total : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk
     WP isa Impl.Aes.PPC64LE.Crypto.wordEnd s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 (4*((i+1)%nk)) ∧
       t.gpr .r4 = BitVec.ofNat 64 (total-(i+1)) ∧ Local [.r4, .r12] [] s t := by
-  have hnk : 0 < nk ∧ nk ≤ 8 := by omega
+  have hnk : 0 < nk ∧ nk ≤ 8 := by omega_using [h3]
   have hrem := Nat.mod_lt i hnk.1
   have he : eval (.zero .d .r0) s = some (decide (i%nk+1 = nk)) := by
     simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, h0]
-    have hp : (4*(i%nk+1) = 4*nk) ↔ (i%nk+1 = nk) := by omega
-    exact congrArg some ((Offset.ofNat_sub_ofNat_beq (by omega) (by omega)).trans (by rw [Bool.eq_iff_iff]; simpa only [decide_eq_true_iff] using hp))
+    have hp : (4*(i%nk+1) = 4*nk) ↔ (i%nk+1 = nk) := by omega_using []
+    exact congrArg some ((Offset.ofNat_sub_ofNat_beq (by omega_using [h3, hrem]) (by omega_using [h3])).trans (by rw [Bool.eq_iff_iff]; simpa only [decide_eq_true_iff] using hp))
   have hm := next_mod (i := i) h3
   rw [Impl.Aes.PPC64LE.Crypto.wordEnd]
   have branch : WP isa (.ite (.zero .d .r0) (.block [.li .r12 0]) (.block [])) s fun t =>
@@ -95,7 +99,7 @@ theorem wordEnd_ok (s : State) {nk i total : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk
   simp only [Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, (he.trans (Local.write u .r4 (u.gpr .r4 - BitVec.ofNat 64 1))).weaken (by simp [or_comm]) (by simp)⟩
   · rw [RegUpd.gpr_write, ite_eq_right (by decide)]; exact hv
-  · rw [RegUpd.gpr_write_self, he.keep.gpr (by decide), h4, Offset.ofNat_sub_ofNat (by omega)]
-    exact congrArg (BitVec.ofNat 64) (by omega)
+  · rw [RegUpd.gpr_write_self, he.keep.gpr (by decide), h4, Offset.ofNat_sub_ofNat (by omega_using [hi])]
+    exact congrArg (BitVec.ofNat 64) (by omega_using [])
 
 end VG.Proof.Aes.PPC64LE.Crypto

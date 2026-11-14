@@ -76,8 +76,8 @@ theorem wrap_trace_syms {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (
       fun _ _ => True)
     {tr ur : List Leak} {sf tf : State} (E : Exec isa (wrap a body) s tr sf)
     (F : Exec isa (wrap a body) t ur tf) : tr = ur := by
-  have ws := args a.ws (by have := A.below.ws; omega)
-  have wsl := args (a.ws + 1) (by have := A.below.ws; omega)
+  have ws := args a.ws (by have := A.below.ws; omega_using [this])
+  have wsl := args (a.ws + 1) (by have := A.below.ws; omega_using [this])
   have baseEq : wsBase a s = wsBase a t := by simp only [wsBase, argumentPointer, ws]
   unfold wrap at E F
   cases E with
@@ -85,8 +85,8 @@ theorem wrap_trace_syms {a : Args} {n : Nat} {s t : State} (A : WrapABI a n s) (
     cases F with
     | @seq _ _ _ v _ _ _ F1 Frest =>
       have T1 := (entry_relCT a _ _ _ _ _ _ ⟨SP, ws,
-        (A.argument (i := a.ws) (by have := A.below.ws; omega)).readSrc,
-        (B.argument (i := a.ws) (by have := B.below.ws; omega)).readSrc⟩ E1 F1).1
+        (A.argument (i := a.ws) (by have := A.below.ws; omega_using [this])).readSrc,
+        (B.argument (i := a.ws) (by have := B.below.ws; omega_using [this])).readSrc⟩ E1 F1).1
       obtain ⟨Su, -, Ku, Ou⟩ := wp_result (entry_ok A) E1
       obtain ⟨Sv, -, Kv, Ov⟩ := wp_result (entry_ok B) F1
       cases Erest with
@@ -167,7 +167,7 @@ theorem synth_congr {a : Args} {n : Nat} (B : Below a n) {f g : Nat → BitVec 3
   have hd := h _ B.dom
   have hp := h _ B.plen
   have hl := h _ B.dlen
-  have hw := h _ (show a.ws < n by have := B.ws; omega)
+  have hw := h _ (show a.ws < n by have := B.ws; omega_using [this])
   have hw1 := h _ B.ws
   have ho := opt B.out
   have hy := opt B.y
@@ -175,7 +175,7 @@ theorem synth_congr {a : Args} {n : Nat} (B : Below a n) {f g : Nat → BitVec 3
     cases ey : a.y with
     | none => rw [ey] at e; cases e
     | some k => rw [ey] at e; cases e; exact B.plen
-  have hx := opt (o := a.x) fun j e => by have := B.x j e; omega
+  have hx := opt (o := a.x) fun j e => by have := B.x j e; omega_using [this]
   have hx' := opt (o := a.x.map (· + 1)) fun j e => by
     cases ex : a.x with
     | none => rw [ex] at e; cases e
@@ -227,7 +227,7 @@ theorem WrapABI.frameWs (A : WrapABI a n s) :
   have low := A.stackLow
   have st' : stack = 172 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
-    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega)
+    VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact A.belowScratch.sub_left (by rw [FA]; exact Offset.sub_below _ (by decide) (by decide))
 
 theorem BodyAt.argsOk (A : WrapABI a n s) (B : BodyAt Ex a s f) {Out : List Region}

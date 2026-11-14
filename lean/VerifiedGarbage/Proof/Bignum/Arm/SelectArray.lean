@@ -24,9 +24,9 @@ open VG.Proof.X25519.Arm (Rest)
 theorem array_select_separate (w o a : Nat) :
     arrAt w o + 4 * (2 * w) ≤ arrAt w a ∨ arrAt w a + 4 * (2 * w) ≤ arrAt w o ∨ arrAt w o = arrAt w a := by
   rcases Nat.lt_trichotomy o a with lt | eq | gt
-  · left; have := array_end_le (w := w) lt; omega
+  · left; have := array_end_le (w := w) lt; omega_using [this]
   · right; right; rw [eq]
-  · right; left; have := array_end_le (w := w) gt; omega
+  · right; left; have := array_end_le (w := w) gt; omega_using [this]
 
 theorem selectArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
@@ -43,7 +43,7 @@ theorem selectArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t ∧ t.gpr .r0 = base := by
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have fo := Nat.le_trans (array_end_le (w := w) ho) fits
   have fa := Nat.le_trans (array_end_le (w := w) ha) fits
   have fb := Nat.le_trans (array_end_le (w := w) hb) fits
@@ -53,18 +53,18 @@ theorem selectArray_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   refine WP.mono (selectArrayArgs_ok s ho ha hb ws size header ptr) ?_
   rintro u ⟨p0, p10, p12, count, memU, restU⟩
   have ctx : SelectCtx u base (8 * len) (arrAt w o) (arrAt w a) (arrAt w b) (2 * w) :=
-    ⟨ws.nowrap, by omega, by omega, by omega, array_select_separate w o a, array_select_separate w o b,
+    ⟨ws.nowrap, by omega_using [fo], by omega_using [fa], by omega_using [fb], array_select_separate w o a, array_select_separate w o b,
       by rw [restU.wr]; exact ws.writable⟩
   have bitU := restU.gpr .r11 (by decide)
   rw [WP.seq_iff]
-  refine WP.mono (selectAliasRow_ok u ctx (by omega) p0 p10 p12 count (by rw [bitU]; exact bit)) ?_
+  refine WP.mono (selectAliasRow_ok u ctx (by omega_using [hw]) p0 p10 p12 count (by rw [bitU]; exact bit)) ?_
   intro v inv
   have value := inv.value
   have outside := inv.outside
   rw [memU, bitU, ← numAt_native, ← numAt_native, ← numAt_native] at value
-  rw [memU, show 4 * (2 * w) = 8 * w by omega] at outside
-  have frame := outside_workspace outside (size := 8 * len) (by omega)
-  have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega)
+  rw [memU, show 4 * (2 * w) = 8 * w by omega_using []] at outside
+  have frame := outside_workspace outside (size := 8 * len) (by omega_using [fo])
+  have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega_using [this])
   have kl := keeps_layout layout (by rw [width]; exact keeps)
   have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans
     (inv.rest.mono (by decide))

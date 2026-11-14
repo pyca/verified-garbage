@@ -83,7 +83,7 @@ theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded
     by rw [vt.mem, mv, eu]; exact d1, by rw [vt.mem, mv, eu]; exact d2⟩
   · simp only [eval, hz, ev]
     change some (!(BitVec.ofNat 32 k - BitVec.ofNat 32 0 == 0)) = _
-    rw [BitVec.sub_zero, ofNat32_beq_zero (by omega)]
+    rw [BitVec.sub_zero, ofNat32_beq_zero (by omega_using [hk])]
   · rw [vt.gpr, gv r (fun h => hr (by simp [h])), ku.regs.1 r (fun h => hr (List.mem_cons_of_mem _ h))]
   · rw [vt.rd, rv, ku.regs.2.1]
   · rw [vt.wr, wv, ku.regs.2.2]
@@ -103,8 +103,8 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     ⟨by decide, by decide, e₁, k₁, by rw [m₁]; exact Outside2.refl _ _ _ _ _ _, m₁ ▸ hb, by rw [m₁]; rfl,
       by rw [m₁]; rfl⟩
   intro m t ⟨h1, h2, et, kt, ot, bt, qt, rt⟩
-  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (vdoubleStep_ok (hs.of_keeps kt (by decide)) bt (by omega) et)
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [h1]⟩
+  refine WP.mono (vdoubleStep_ok (hs.of_keeps kt (by decide)) bt (by omega_using [h2]) et)
     fun u ⟨eu, zu, ku, ou, bu, qu, ru⟩ => ?_
   have ku' : Keeps (.r11 :: workRegs) s u := kt.trans ku
   have ou' := ot.trans ou
@@ -113,9 +113,9 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   · refine .inl ⟨rfl, ku', ou', bu, ?_, ?_⟩
     · rw [qu, qt]; rfl
     · rw [ru, rt]; rfl
-  · have k1 : k = 1 := by omega
+  · have k1 : k = 1 := by omega_using [h2, hk]
     subst k1
-    refine .inr ⟨rfl, 1, by omega, by omega, by omega, eu, ku', ou', bu, by rw [qu, qt]; rfl,
+    refine .inr ⟨rfl, 1, by omega_using [], by omega_using [], by omega_using [], eu, ku', ou', bu, by rw [qu, qt]; rfl,
       by rw [ru, rt]; rfl⟩
 
 /-- `vresult`: `r0 = (BAD == 0)`, the callee-saved registers and the link register restored. -/
@@ -193,7 +193,7 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.m
     c, hcl, ?_, ?_⟩
   · simp only [eval, hz, ev]
     change some (!(BitVec.ofNat 32 k - BitVec.ofNat 32 0 == 0)) = _
-    rw [BitVec.sub_zero, ofNat32_beq_zero (by omega)]
+    rw [BitVec.sub_zero, ofNat32_beq_zero (by omega_using [hk])]
   · have a1 : ∀ x ∈ workRegs, x ∈ .r10 :: .r11 :: workRegs := by decide
     have a2 : ∀ x ∈ Reg.r10 :: workRegs, x ∈ .r10 :: .r11 :: workRegs := by decide
     rw [vt.gpr, gv r (fun h => hr (by subst h; decide)), k3.regs.1 r (fun h => hr (a1 r h)),

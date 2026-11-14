@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # GCM: one-shot encryption out of place, from a list of slices
@@ -56,7 +57,7 @@ theorem listed_cons (m : Mem) (p : Addr) (n : Nat) :
   have e : BitVec.ofNat 64 ((i+1)*(2*(64/8)))=16#64+BitVec.ofNat 64 (i*(2*(64/8))) := by
     rw [← BitVec.ofNat_add]
     congr 1
-    omega
+    omega_using []
   simp only [Function.comp_apply,Nat.succ_eq_add_one,e,BitVec.add_assoc]
   rfl
 

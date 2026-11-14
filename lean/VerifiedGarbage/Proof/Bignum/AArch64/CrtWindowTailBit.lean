@@ -24,13 +24,13 @@ theorem pendingDigit_value (v V shift : Nat) (hv : v < 16) (hV : V < 256) :
       (Nat.shiftLeft_add_eq_or_of_lt (i := 1) hb v).symm
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_or,BitVec.toNat_shiftLeft,BitVec.toNat_and,BitVec.toNat_ushiftRight,
-    BitVec.toNat_ofNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show V < 2 ^ 64 by omega),Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (show v * 2 ^ 1 < 2 ^ 64 by omega),
+    BitVec.toNat_ofNat,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show v < 2 ^ 64 by omega_using [hv]),
+    Nat.mod_eq_of_lt (show V < 2 ^ 64 by omega_using [hV]),Nat.shiftLeft_eq,Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (show v * 2 ^ 1 < 2 ^ 64 by omega_using [hv]),
     show (BitVec.setWidth 64 (1#16)).toNat = 2 ^ 1 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod,hor,BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show 2 * v + V / 2 ^ shift % 2 < 2 ^ 64 by omega)]
-  omega
+    Nat.mod_eq_of_lt (show 2 * v + V / 2 ^ shift % 2 < 2 ^ 64 by omega_using [hv])]
+  omega_using []
 
 theorem prepareBit_ok {s : State} {P : Addr} {w b v V i : Nat} {mi : BitVec 64} {X Xc : Nat}
     (hc : TableCtx s P w mi X Xc) (hi : i < 8) (hv : v < 16) (hV : V < 256)

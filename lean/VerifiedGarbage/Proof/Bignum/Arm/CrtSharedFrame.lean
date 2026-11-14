@@ -49,7 +49,7 @@ theorem CrtShared.after_external {s t : State} {g : CrtGeometry} {bs : Fin 7 →
   have eq (base : BitVec 32) (ws : Workspace s base (8 * workspaceWords g.words))
       (member : (⟨State.addr base, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words) :
       WorkspaceEq (State.addr base) (8 * workspaceWords g.words) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := ws.nowrap; omega) frame
+    WorkspaceEq.of_frame (by have := ws.nowrap; omega_using [this]) frame
       (fun r hr => (separate r hr).sub_left (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member))
   have mainEq := eq g.base h.buffers.context.main (by simp [crtRegions])
   exact h.after_frame (frame.mono subset) rest (h.main.congr mainEq)

@@ -59,7 +59,7 @@ theorem advance_ok (s : State) (p : Addr) (n r : Nat) (hr : r ≤ n)
       VArr.map2, vdword_ofVDwords_0, h20, h21, hsub]
     congr 1
     apply Bool.eq_iff_iff.mpr
-    rw [beq_iff_eq, decide_eq_true_eq, Sha3.Vector.enough_iff (n - r) r (by omega) hrb]
-    exact and_iff_left (by omega)
+    rw [beq_iff_eq, decide_eq_true_eq, Sha3.Vector.enough_iff (n - r) r (by omega_using [hu]) hrb]
+    exact and_iff_left (by omega_using [hu])
 
 end VG.Proof.Sha3.AArch64.Scalar.Resident

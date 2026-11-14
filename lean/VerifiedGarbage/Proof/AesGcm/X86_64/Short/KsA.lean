@@ -92,12 +92,12 @@ theorem finKsA_ksOk : KsOk finKsA := by
   obtain ⟨s₁, run₁, x5, x7, di₁, si₁, r10₁, g₁, m₁, rd₁, wr₁, k₁⟩ := finCtrsA_ok s he hR
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   generalize hw : bytesAt s.mem Ctx (16 * (nr + 1)) = w
-  have hK : Keys nr w s₁ := ⟨by rw [di₁, m₁, hw], by omega, fun j hj => by
-    rw [rd₁, wr₁, di₁, BitVec.ofInt_natCast]; exact he.perm.ctxR (by omega)⟩
+  have hK : Keys nr w s₁ := ⟨by rw [di₁, m₁, hw], by omega_using [hnr], fun j hj => by
+    rw [rd₁, wr₁, di₁, BitVec.ofInt_natCast]; exact he.perm.ctxR (by omega_using [hnr, hj])⟩
   refine WP.seq (WP.mono (aes_ok [.xmm5, .xmm7] (by decide) (by decide) hnr s₁ hK si₁ (by rw [r10₁, di₁]))
     fun s₂ ⟨e₂, f₂⟩ => ?_)
   have hw₂ : ∀ d, d + 16 ≤ 64 → InRegions s₂.wr (W + BitVec.ofNat 64 (1024 + d)) 16 := fun d hd => by
-    rw [f₂.wr, wr₁]; exact he.perm.wW (by omega)
+    rw [f₂.wr, wr₁]; exact he.perm.wW (by omega_using [hd])
   have ea : ∀ d, s₂.gpr .r15 + BitVec.ofInt 64 ((kO + d : Nat) : Int) = W + BitVec.ofNat 64 (1024 + d) := by
     intro d; rw [f₂.gpr, g₁ _ (by decide) (by decide) (by decide), he.r15, BitVec.ofInt_natCast]; rfl
   have ea0 : s₂.gpr .r15 + BitVec.ofInt 64 ((kO : Nat) : Int) = W + BitVec.ofNat 64 (1024 + 0) := ea 0

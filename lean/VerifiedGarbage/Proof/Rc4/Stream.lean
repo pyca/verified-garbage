@@ -45,10 +45,10 @@ theorem sep_tail {p d : Addr} {n : Nat} (_hn : n + 1 < 2 ^ 64)
     change (d + 1#64 - d).toNat + n ≤ n + 1
     rw [Offset.add_sub_cancel_left]
     change 1 + n ≤ n + 1
-    omega
+    omega_using []
   have hb := hh.byte ht
   change (x - d).toNat + 1 ≤ n + 1 at hb
-  omega
+  omega_using [hb]
 
 theorem bytes_write_sep (m : Mem) (d q : Addr) (n : Nat) (value : Byte)
     (hn : n < 2 ^ 64) (h : Mem.Sep d n q 1) :
@@ -57,7 +57,7 @@ theorem bytes_write_sep (m : Mem) (d q : Addr) (n : Nat) (value : Byte)
   apply List.map_congr_left
   intro k hk
   have hk' := List.mem_range.mp hk
-  exact Mem.write_apply (h _ (by rw [Mem.sub_ofNat_toNat d (by omega)]; exact hk'))
+  exact Mem.write_apply (h _ (by rw [Mem.sub_ofNat_toNat d (by omega_using [hn, hk'])]; exact hk'))
 
 theorem bytes_table_frame (m m' : Mem) (p d : Addr) (n : Nat) (hn : n < 2 ^ 64)
     (h : TableFrame p m m') (hs : Mem.Sep d n p 256) : bytesAt m' d n = bytesAt m d n := by
@@ -65,7 +65,7 @@ theorem bytes_table_frame (m m' : Mem) (p d : Addr) (n : Nat) (hn : n < 2 ^ 64)
   apply List.map_congr_left
   intro k hk
   have hk' := List.mem_range.mp hk
-  exact h _ (hs _ (by rw [Mem.sub_ofNat_toNat d (by omega)]; exact hk'))
+  exact h _ (hs _ (by rw [Mem.sub_ofNat_toNat d (by omega_using [hn, hk'])]; exact hk'))
 
 theorem stream_frame_trans_tail {m a b : Mem} {p d : Addr} {n : Nat}
     (h : StreamFrame p d 1 m a) (k : StreamFrame p (d + 1#64) n a b) :
@@ -77,19 +77,19 @@ theorem stream_frame_trans_tail {m a b : Mem} {p d : Addr} {n : Nat}
       change (d + 1#64 - d).toNat + n ≤ n + 1
       rw [Offset.add_sub_cancel_left]
       change 1 + n ≤ n + 1
-      omega
+      omega_using []
     have hh := hc.byte hx
     change (x - d).toNat + 1 ≤ n + 1 at hh
-    omega
-  exact (k x hp htail).trans (h x hp (by omega))
+    omega_using [hd, hh]
+  exact (k x hp htail).trans (h x hp (by omega_using [hd]))
 
 theorem stream_head (m m' : Mem) (p d : Addr) (n : Nat) (hn : n + 1 < 2 ^ 64)
     (h : StreamFrame p (d + 1#64) n m m') (hs : Mem.Sep p 256 d (n + 1)) : m' d = m d := by
   have hp : ¬ (d - p).toNat < 256 := by
     intro hh
-    exact hs d hh (by simp only [BitVec.sub_self]; change 0 < n + 1; omega)
+    exact hs d hh (by simp only [BitVec.sub_self]; change 0 < n + 1; omega_using [])
   apply h d hp
-  have hsep : Mem.Sep d 1 (d + 1#64) n := Offset.sep_base d (by decide) (by omega)
+  have hsep : Mem.Sep d 1 (d + 1#64) n := Offset.sep_base d (by decide) (by omega_using [hn])
   exact hsep d (by simp only [BitVec.sub_self]; decide)
 
 theorem sep_offset_right {d p : Addr} {n k off count : Nat}
@@ -101,6 +101,6 @@ theorem sep_offset_right {d p : Addr} {n k off count : Nat}
     Offset.contains_base p hc ho
   have hb := hh.byte hx
   change (x - p).toNat + 1 ≤ k at hb
-  omega
+  omega_using [hb]
 
 end VG.Proof.Rc4

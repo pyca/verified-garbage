@@ -59,7 +59,7 @@ theorem sanitizeModulus_ct {base : BitVec 32} {len w : Nat} :
     exact h.1.ptr.trans h.2.1.ptr.symm
   have loadWP (s : State) (h : Q s) : WP isa (.block sanitizeBit) s Q := by
     have fits := h.layout.2.2.1
-    have size : 216 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 216 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
     refine WP.mono (sanitizeBit_ok s h.workspace size h.ptr) ?_
     rintro t ⟨_, mem, rest⟩
     exact ⟨h.workspace.congr rest.wr, by rw [mem]; exact h.layout,

@@ -22,10 +22,10 @@ theorem wv_change_window {m m' : Mem} {B : Addr} {A n i len v : Nat}
     (ho : Outside B (A + 8 * i) (8 * len) m m')
     (hv : wv m' B (A + 8 * i) len = wv m B (A + 8 * i) len + v) :
     wv m' B A n = wv m B A n + 2 ^ (64 * i) * v := by
-  have hl : wv m' B A i = wv m B A i := ho.wv (by omega) (by omega)
+  have hl : wv m' B A i = wv m B A i := ho.wv (by omega_using []) (by omega_using [hn, hA])
   have hh : wv m' B (A + 8 * i + 8 * len) (n - (i + len)) =
-      wv m B (A + 8 * i + 8 * len) (n - (i + len)) := ho.wv (by omega) (by omega)
-  have he : n = i + (len + (n - (i + len))) := by omega
+      wv m B (A + 8 * i + 8 * len) (n - (i + len)) := ho.wv (by omega_using []) (by omega_using [hn, hA])
+  have he : n = i + (len + (n - (i + len))) := by omega_using [hn]
   have h1 := wv_add m' B A i (len + (n - (i + len)))
   have h2 := wv_add m B A i (len + (n - (i + len)))
   rw [← he] at h1 h2
@@ -56,8 +56,8 @@ theorem crossValue_congr {m m' : Mem} {B : Addr} {eb w : Nat}
   induction w with
   | zero => rfl
   | succ w ih =>
-    rw [crossValue_succ, crossValue_succ, ih (fun j hj => h j (by omega)), h w (by omega),
-      wv_congr (fun j hj => h j (by omega))]
+    rw [crossValue_succ, crossValue_succ, ih (fun j hj => h j (by omega_using [hj])), h w (by omega_using []),
+      wv_congr (fun j hj => h j (by omega_using [hj]))]
 
 def diagonalValue (m : Mem) (B : Addr) (eb i : Nat) : Nat :=
   VG.Proof.Bignum.Square.diagonal (2 ^ 64) (fun j => (word m B (eb + 8 * j)).toNat) i
@@ -68,7 +68,7 @@ theorem diagonalValue_succ (m : Mem) (B : Addr) (eb i : Nat) :
   unfold diagonalValue
   rw [VG.Proof.Bignum.Square.diagonal, ← Nat.pow_mul]
   have h : 2 ^ (128 * i) = 2 ^ (64 * i) * 2 ^ (64 * i) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using []
   rw [h]
   grind
 
@@ -78,7 +78,7 @@ theorem diagonalValue_congr {m m' : Mem} {B : Addr} {eb w : Nat}
   induction w with
   | zero => rfl
   | succ w ih =>
-    rw [diagonalValue_succ, diagonalValue_succ, ih (fun j hj => h j (by omega)), h w (by omega)]
+    rw [diagonalValue_succ, diagonalValue_succ, ih (fun j hj => h j (by omega_using [hj])), h w (by omega_using [])]
 
 theorem square_decomposition (m : Mem) (B : Addr) (eb w : Nat) :
     2 * crossValue m B eb w + diagonalValue m B eb w = wv m B eb w * wv m B eb w := by

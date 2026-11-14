@@ -39,8 +39,8 @@ theorem byteBits_ok {s : State} {b : Byte} (hb : b ≠ 0) (hax : s.gpr .rax = b.
   have hbl := KeyScalar.bitLength_bounds hb0
   have hlt : b.toNat < 256 := b.isLt
   have hpos : 1 ≤ bitLength b.toNat := by
-    by_contra h; have : bitLength b.toNat = 0 := by omega
-    rw [this] at hbl; omega
+    by_contra h; have : bitLength b.toNat = 0 := by omega_using [h]
+    rw [this] at hbl; omega_using [hbl]
   unfold Precompute.byteBits
   refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 0 ∧ t.mem = s.mem)
     (by xrun) rfl) fun s₁ ⟨⟨hcx₁, hm₁⟩, k₁⟩ => ?_)
@@ -57,16 +57,16 @@ theorem byteBits_ok {s : State} {b : Byte} (hb : b ≠ 0) (hax : s.gpr .rax = b.
     · intro h
       have h' : b.toNat / 2 ^ (j + 1) = 0 := by
         have := congrArg BitVec.toNat h
-        rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega))] at this
+        rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega_using []))] at this
       rw [Nat.div_eq_zero_iff_lt (Nat.two_pow_pos _)] at h'
       by_contra hne
       have : 2 ^ (bitLength b.toNat - 1) ≥ 2 ^ (j + 1) := Nat.pow_le_pow_right (by decide) (by omega)
-      omega
+      omega_arith
     · intro h
       rw [h, Nat.div_eq_of_lt hbl.2]; rfl
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t' => t'.gpr .rax = BitVec.ofNat 64 (b.toNat / 2 ^ (j + 1)) ∧
       t'.gpr .rcx = BitVec.ofNat 64 (j + 1) ∧ t'.mem = t.mem ∧ t'.zf = some (decide (j + 1 = bitLength b.toNat)))
-    (by xrun [hat, hct, shr_one_div _ _ (by omega : b.toNat < 2 ^ 64), ofNat_add_one, BitVec.and_self, hz]) rfl)
+    (by xrun [hat, hct, shr_one_div _ _ (by omega_using [] : b.toNat < 2 ^ 64), ofNat_add_one, BitVec.and_self, hz]) rfl)
     fun t' ⟨⟨ha', hc', hm', hz'⟩, k'⟩ => ⟨hz', ha', hc', hm'.trans hmt, (kt.trans k').mono (by decide)⟩
 
 open VG.Impl.Bignum.X86_64.Public (sK)
@@ -89,10 +89,10 @@ theorem rows_mul {x : Nat} (hx : x ≤ 8192) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     Spec.Rsa.FixedBaseComb.rows, Spec.Rsa.FixedBaseComb.teeth]
-  rw [Nat.mod_eq_of_lt (show x + 4 < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show (52429 : Nat) < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show (x + 4) * 52429 < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show (x + 5 - 1) / 5 < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show x + 4 < 2 ^ 64 by omega_using [hx]), Nat.mod_eq_of_lt (show (52429 : Nat) < 2 ^ 64 by omega_using []),
+    Nat.mod_eq_of_lt (show (x + 4) * 52429 < 2 ^ 64 by omega_using [hx]),
+    Nat.mod_eq_of_lt (show (x + 5 - 1) / 5 < 2 ^ 64 by omega_using [hx])]
+  omega_using [hx]
 
 theorem bb_eq {e c : Nat} (he1 : 1 ≤ e) (he2 : e ≤ 1024) :
     BitVec.ofNat 64 e <<< 3 - 8 + BitVec.ofNat 64 c = BitVec.ofNat 64 (8 * e - 8 + c) := by
@@ -111,18 +111,18 @@ theorem width_only {s : State} {B cp : Addr} {Z c e r : Nat} (hs : Scr s B Z) (h
       t.gpr .rax = BitVec.ofNat 64 (pick r (8 * e - 8 + c)) ∧ t.gpr .rsi = cp ∧ t.mem = s.mem ∧
         Keep [.rax, .rdx, .rsi] s t := by
   have hC8 : InRegions (s.rd ++ s.wr) (off B (8 * sCtx)) 8 :=
-    hs.ld (by unfold sCtx VG.Impl.Ffdh.X86_64.Domain.sXe sFn; omega)
-  have hR8 : InRegions (s.rd ++ s.wr) (off B (8 * sRec)) 8 := hs.ld (by unfold sRec VG.Impl.Ffdh.X86_64.Domain.sY sFn; omega)
-  have hE8 : InRegions (s.rd ++ s.wr) (off B (8 * sEl)) 8 := hs.ld (by unfold sEl sFn; omega)
+    hs.ld (by unfold sCtx VG.Impl.Ffdh.X86_64.Domain.sXe sFn; omega_using [hZ])
+  have hR8 : InRegions (s.rd ++ s.wr) (off B (8 * sRec)) 8 := hs.ld (by unfold sRec VG.Impl.Ffdh.X86_64.Domain.sY sFn; omega_using [hZ])
+  have hE8 : InRegions (s.rd ++ s.wr) (off B (8 * sEl)) 8 := hs.ld (by unfold sEl sFn; omega_using [hZ])
   have hz : (BitVec.ofNat 64 r &&& BitVec.ofNat 64 r == 0) = decide (r = 0) := by
     rw [BitVec.and_self]; apply Bool.eq_iff_iff.mpr; simp only [beq_iff_eq, decide_eq_true_iff]
     constructor
-    · intro h; have := congrArg BitVec.toNat h; simpa [Nat.mod_eq_of_lt (show r < 2 ^ 64 by omega)] using this
+    · intro h; have := congrArg BitVec.toNat h; simpa [Nat.mod_eq_of_lt (show r < 2 ^ 64 by omega_using [hr])] using this
     · rintro rfl; rfl
   have hlt : decide ((BitVec.ofNat 64 r).toNat < (BitVec.ofNat 64 (8 * e - 8 + c)).toNat) =
       decide (r < 8 * e - 8 + c) := by
-    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show 8 * e - 8 + c < 2 ^ 64 by omega)]
+    simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r < 2 ^ 64 by omega_using [hr]),
+      Nat.mod_eq_of_lt (show 8 * e - 8 + c < 2 ^ 64 by omega_using [hc, he2])]
   by_cases h0 : r = 0
   · subst h0
     refine WP.mono (WP.keep [.rax, .rdx, .rsi] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (pick 0 (8 * e - 8 + c)) ∧
@@ -161,8 +161,8 @@ theorem metadata_ok {s : State} {B cp : Addr} {Z F : Nat} (hs : Scr s B Z) (hdi 
   simp only [Nat.mul_one, Nat.reduceMul] at hw1 hw2
   have sx7 : BitVec.signExtend 64 (7 : BitVec 32) = 7 := by decide
   have sx4 : BitVec.signExtend 64 (4 : BitVec 32) = 4 := by decide
-  have hB8 : InRegions s.wr (off B (8 * sBits)) 8 := hs.st (by unfold sBits VG.Impl.Ffdh.X86_64.Domain.sXl sFn; omega)
-  have hS8 : InRegions s.wr (off B (8 * sRows)) 8 := hs.st (by unfold sRows VG.Impl.Ffdh.X86_64.Domain.sOut sFn; omega)
+  have hB8 : InRegions s.wr (off B (8 * sBits)) 8 := hs.st (by unfold sBits VG.Impl.Ffdh.X86_64.Domain.sXl sFn; omega_using [hZ])
+  have hS8 : InRegions s.wr (off B (8 * sRows)) 8 := hs.st (by unfold sRows VG.Impl.Ffdh.X86_64.Domain.sOut sFn; omega_using [hZ])
   have hrows : ((BitVec.ofNat 64 F + 4) * BitVec.signExtend 64 (52429 : BitVec 32)) >>> 18 =
       BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows F) := by
     rw [← rows_mul hF, BitVec.ofNat_add]; rfl
@@ -170,8 +170,8 @@ theorem metadata_ok {s : State} {B cp : Addr} {Z F : Nat} (hs : Scr s B Z) (hdi 
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       show (7 : BitVec 64).toNat = 7 from rfl]
-    rw [Nat.mod_eq_of_lt (show F < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show F + 7 < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show (F + 7) / 8 < 2 ^ 64 by omega)]
+    rw [Nat.mod_eq_of_lt (show F < 2 ^ 64 by omega_using [hF]), Nat.mod_eq_of_lt (show F + 7 < 2 ^ 64 by omega_using [hF]),
+      Nat.mod_eq_of_lt (show (F + 7) / 8 < 2 ^ 64 by omega_using [hF])]
   refine WP.mono (WP.keep [.rcx, .rdx] (Q := fun t => t.mem = _) (by
     unfold Precompute.metadata
     xrun [State.ea, hdr, hdi, hdrOff, hB8, hS8, hrsi, hax,

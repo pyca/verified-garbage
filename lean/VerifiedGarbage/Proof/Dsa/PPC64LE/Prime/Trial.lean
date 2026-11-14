@@ -67,13 +67,13 @@ theorem trial_ok {bits c : Nat} {s : State} {B T : Addr}
     ?_ fun u ⟨⟨u23, u24, um, us⟩, ug, urd, uwr, usp⟩ => ?_))
   · refine WP.cons (exec_adrSym (by decide)) ?_
     simp only [ldh, hCnt]
-    prun [e.h31, hsc.ld (d := 40) (n := 8) (by omega)]
+    prun [e.h31, hsc.ld (d := 40) (n := 8) (by omega_using [hZ])]
     refine ⟨⟨hT, hcnt, rfl⟩, fun r hr => ?_⟩
     have h1 : r ≠ .r23 := fun h => hr (by subst h; decide)
     have h2 : r ≠ .r24 := fun h => hr (by subst h; decide)
     simp only [h1, h2, ↓reduceIte]
   · refine WP.mono (VG.Proof.RsaKeyGen.PPC64LE.Trial.loop_ok (n := count bits) (o := slot (words bits) 0) (w := words bits) (hsc.congr uwr) ?_ ?_ ?_
-      (by omega) (by omega) (by simp only [slot, hdrBytes]; omega) hn.1 hn.2 u23 (fun i hi => ⟨by rw [um]; exact htab i (by omega), ?_⟩) u24)
+      (by omega_using [hw4]) (by omega_using [hw128]) (by simp only [slot, hdrBytes]; omega_using [hZ]) hn.1 hn.2 u23 (fun i hi => ⟨by rw [um]; exact htab i (by omega_using [hn, hi]), ?_⟩) u24)
       fun t ⟨⟨t22, tm⟩, kt⟩ sy => ⟨⟨t22, tm.trans um⟩, fun r hr => (kt.gpr r hr).trans (ug r hr),
         kt.rd.trans urd, kt.wr.trans uwr, kt.sp.trans usp, sy⟩
     · exact (ug _ (by decide)).trans e.h10
@@ -81,6 +81,6 @@ theorem trial_ok {bits c : Nat} {s : State} {B T : Addr}
     · rw [um]; exact hc
     · refine ⟨_, by rw [urd]; exact List.mem_append_left _ hTr, ?_⟩
       simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega)]; omega
+      rw [Nat.mod_eq_of_lt (by omega_using [hn, hi])]; omega_using [hn, hi]
 
 end VG.Proof.Dsa.PPC64LE.Prime

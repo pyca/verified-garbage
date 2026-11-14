@@ -48,10 +48,10 @@ theorem seeds_two {p : Params} (hF : PFacts p) {STK : Nat} (σ : State) :
   have hk := hF.k; have hl := hF.l
   have hP : ∀ x y, Two (lay p STK σ) kWb STK x y → Two (lay p STK σ) kWb STK x y := fun _ _ h => h
   unfold seeds
-  refine RelCT.seq (RelCT.two hP (taint31 hP (setKL_taint p.k (by omega) p.ℓ (by omega))) fun x hs => ?_) ?_
+  refine RelCT.seq (RelCT.two hP (taint31 hP (setKL_taint p.k (by omega_using [hk]) p.ℓ (by omega_using [hl]))) fun x hs => ?_) ?_
   · refine WP.block_append (WP.mono (setB_ok hs (q := sc oKL) ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide)
-      (v := p.k) (by omega)) fun s₁ ⟨k₁, _⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oKL + 1))
-        ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := p.ℓ) (by omega)) fun s₂ ⟨k₂, _⟩ =>
+      (v := p.k) (by omega_using [hk])) fun s₁ ⟨k₁, _⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oKL + 1))
+        ⟨sc_ok (by decide), by lsep hF⟩ (by decide) (by decide) (v := p.ℓ) (by omega_using [hl])) fun s₂ ⟨k₂, _⟩ =>
           ⟨_, (k₁.monoL (W' := [tri (sc oKL) 1, tri (sc (oKL + 1)) 1]) (by simp)).trans (k₂.monoL (by simp))⟩)
   have hin : ∀ s, Site (lay p STK σ) kWb STK s → ∀ pc ∈ ([⟨.s10, 0, 32⟩, ⟨.s11, oKL, 2⟩] : List Impl.MlKem.RISCV64.Piece),
       PieceOk (hashLay (lay p STK σ) s fun _ => true) ix s false pc := fun s hs pc hpc => by

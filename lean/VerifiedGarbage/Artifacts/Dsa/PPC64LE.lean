@@ -10,12 +10,16 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
+public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
-/-! # DSA on PPC64LE -/
+/-! # DSA (FIPS 186-4) on PPC64LE -/
 
 @[expose] public section
 
 namespace VG.Artifacts.Dsa.PPC64LE
+
+open VG Proof.Dsa.PPC64LE.Gen
 
 def artifacts : List Artifact := [
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
@@ -40,6 +44,12 @@ def artifacts : List Artifact := [
     verified := Proof.Dsa.PPC64LE.prevalidated_verified },
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
-    verified := Proof.Dsa.PPC64LE.Gen.init_verified }]
+    verified := Proof.Dsa.PPC64LE.Gen.init_verified }] ++
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
+    Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
+      suffix := v.suffix
+      code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
+      stack := 176
+      verified := search_params v }])
 
 end VG.Artifacts.Dsa.PPC64LE

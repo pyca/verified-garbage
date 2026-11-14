@@ -6,6 +6,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ed448_public_key_adx` if the CPU supports its features (`VG_ED448_PUBLIC_KEY_ADX_FEATURES`); or else `vg_ed448_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -54,6 +56,8 @@ pub unsafe fn vg_ed448_public_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out:
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ed448_sign_cached_adx` if the CPU supports its features (`VG_ED448_SIGN_CACHED_ADX_FEATURES`); or else `vg_ed448_sign_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -108,6 +112,8 @@ pub unsafe fn vg_ed448_sign_cached_auto(_dit: verified_garbage_cpu::Dit<'_>, out
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ed448_verify_adx` if the CPU supports its features (`VG_ED448_VERIFY_ADX_FEATURES`); or else `vg_ed448_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

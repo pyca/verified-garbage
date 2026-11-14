@@ -62,6 +62,11 @@ theorem wp_addi {d : Reg} {v : BitVec 32}
     WP isa (.block (.alu .add d (.imm v) :: is)) s Q :=
   WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
 
+theorem wp_andi {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Upd s s' d (s.gpr d &&& v.signExtend 64) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
+  WP.cons rfl (k _ (Upd.flags _ _ _ _ _ _))
+
 theorem wp_cmp {d r : Reg}
     (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
       s'.cf = some (decide ((s.gpr d).toNat < (s.gpr r).toNat)) →
@@ -202,8 +207,8 @@ theorem se16' : BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 16 := by
 
 /-- The copy loop's body. -/
 def copyBody : List Instr :=
-  [.movzx8 .r13 (at_ .rsi 0), .store8 (bufAt .r12) .r13, .alu .add .rsi (.imm 1),
-    .alu .add .r12 (.imm 1), .alu .sub .rax (.imm 1)]
+  [.alu .and .r12 (.imm 15), .movzx8 .r13 (at_ .rsi 0), .store8 (bufAt .r12) .r13,
+    .alu .add .rsi (.imm 1), .alu .add .r12 (.imm 1), .alu .sub .rax (.imm 1)]
 
 theorem copyIn_eq : copyIn = .loop (.block copyBody) .ne := rfl
 
@@ -230,10 +235,31 @@ theorem ofNat_add_one (a : Addr) (j : Nat) :
     a + BitVec.ofNat 64 j + BitVec.signExtend 64 (1 : BitVec 32) = a + BitVec.ofNat 64 (j + 1) := by
   rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide, ofNat_succ, BitVec.add_assoc]
 
-theorem copy_step {sI : State} {m₀ : Mem} {src : Addr} {j0 n : Nat} (hj0 : j0 + n ≤ 16)
+/-- The copy loop's `and r12, 15` keeps `r12`, which is below 16. -/
+theorem CopyInv.andMask {sI : State} {m₀ : Mem} {src : Addr} {j0 n j : Nat} (hj0 : j0 + n ≤ 16)
+    (hj : j < n) {s s' : State} (h : CopyInv sI m₀ src j0 n j s)
+    (u : Upd s s' .r12 (s.gpr .r12 &&& BitVec.signExtend 64 (15 : BitVec 32))) :
+    CopyInv sI m₀ src j0 n j s' where
+  j_le := h.j_le
+  rsi := by rw [u.other _ (by decide), h.rsi]
+  r12 := by
+    rw [u.gpr, h.r12, and15, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j0 + j) (by omega_using [hj0, hj]),
+      Nat.mod_eq_of_lt (a := j0 + j) (by omega_using [hj0, hj])]
+  rax := by rw [u.other _ (by decide), h.rax]
+  keep r h1 h2 h3 h4 := by rw [u.other r h2, h.keep r h1 h2 h3 h4]
+  rd := by rw [u.rd, h.rd]
+  wr := by rw [u.wr, h.wr]
+  mem := by rw [u.mem, h.mem]
+
+/-- The copy loop's body after its `and`. -/
+def copyMove : List Instr :=
+  [.movzx8 .r13 (at_ .rsi 0), .store8 (bufAt .r12) .r13,
+    .alu .add .rsi (.imm 1), .alu .add .r12 (.imm 1), .alu .sub .rax (.imm 1)]
+
+theorem copyMove_step {sI : State} {m₀ : Mem} {src : Addr} {j0 n : Nat} (hj0 : j0 + n ≤ 16)
     (hw : sR (sI.gpr .rdi) ∈ sI.wr) (hs : SrcOk sI m₀ src n) {j : Nat} (hj : j < n) {s : State}
     (h : CopyInv sI m₀ src j0 n j s) :
-    WP isa (.block copyBody) s fun s' =>
+    WP isa (.block copyMove) s fun s' =>
       CopyInv sI m₀ src j0 n (j + 1) s' ∧ s'.zf = some (decide (n - (j + 1) = 0)) := by
   obtain ⟨hin, hnb, hm₀⟩ := hs j hj
   have hrdi : s.gpr .rdi = sI.gpr .rdi := h.keep _ (by decide) (by decide) (by decide) (by decide)
@@ -277,6 +303,13 @@ theorem copy_step {sI : State} {m₀ : Mem} {src : Addr} {j0 n : Nat} (hj0 : j0 
       List.getElem?_eq_getElem hj', Option.toList_some, writeBytes_snoc _ _ _ _ (by omega_using [hj0, hj, hxs, hl])]
   · rw [hz₅, u₄.other .rax (by decide), u₃.other .rax (by decide), g₂, u₁.other .rax (by decide), h.rax, e1,
       ofNat_pred (by omega_using [hj, hxs]), ofNat_beq_zero (by omega_using [hj0, hj, hxs]), show n - j - 1 = n - (j + 1) by omega_using []]
+
+theorem copy_step {sI : State} {m₀ : Mem} {src : Addr} {j0 n : Nat} (hj0 : j0 + n ≤ 16)
+    (hw : sR (sI.gpr .rdi) ∈ sI.wr) (hs : SrcOk sI m₀ src n) {j : Nat} (hj : j < n) {s : State}
+    (h : CopyInv sI m₀ src j0 n j s) :
+    WP isa (.block copyBody) s fun s' =>
+      CopyInv sI m₀ src j0 n (j + 1) s' ∧ s'.zf = some (decide (n - (j + 1) = 0)) :=
+  wp_andi fun _ u => copyMove_step hj0 hw hs hj (h.andMask hj0 hj u)
 
 theorem copy_ok {sI : State} {m₀ : Mem} {src : Addr} {j0 n : Nat} (hj0 : j0 + n ≤ 16) (hn : 0 < n)
     (hw : sR (sI.gpr .rdi) ∈ sI.wr) (hs : SrcOk sI m₀ src n) (hrsi : sI.gpr .rsi = src)

@@ -2,14 +2,86 @@ module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
-public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+
+/-! ### `Bignum.X86_64.AdxDualAddInput`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.X86_64.AdxDualAdd
+open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum.X86_64.AdxRotate8 (cols number cols_keep number_words)
+open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
+
+theorem xorRax_ok (s : State) :
+    WP isa (.block [.alu32 .xor .rax (.reg .rax)]) s fun t =>
+      t.gpr .rax = 0 ∧ t.cf = some false ∧ t.of = some false ∧ Keeps [.rax] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, Option.bind_some,
+    State.setReg32, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [RegUpd.gpr_setReg_self, BitVec.xor_self]; rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+
+theorem addInput_ok {s : State} {B : Addr} {Z e : Nat}
+    (hs : Scr s B Z) (hp : s.gpr .rsi = off B e) (he : e + 64 ≤ Z) :
+    WP isa (.block AdxDualAdd.addInput) s fun t =>
+      cols t + 2^512 * (t.gpr .rax).toNat =
+        cols s + wv s.mem B e 8 + (s.gpr .rdx).toNat ∧
+      (t.gpr .rax).toNat ≤ 2 ∧ t.cf = some false ∧ t.of = some false ∧
+      Keeps [.rax,.rdx,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
+  unfold AdxDualAdd.addInput
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (xorRax_ok s) fun a ⟨za,hca,hoa,ka⟩ => ?_
+  rw [WP.block_append_iff]
+  have srcA : ∀ k < 8, ∀ t, Keeps AdxDualAdd.regs a t →
+      readSrc t (.mem (at_ .rsi (8*k))) = some (word s.mem B (e+8*k)) := by
+    intro k hk t kt
+    rw [kt.readMem (by simp [AdxDualAdd.regs, at_]) (by intro r h; nomatch h),
+      ka.readMem (by simp [at_]) (by intro r h; nomatch h)]
+    exact readSrc_word hs (AdxRotate8.ea_at hp (8*k)) (by omega_using [he, hk])
+  have srcB : ∀ k < 8, ∀ t, Keeps AdxDualAdd.regs a t →
+      readSrc t (.reg (if k = 0 then .rdx else .rax)) =
+        some (if k = 0 then s.gpr .rdx else 0) := by
+    intro k _ t kt
+    by_cases hk : k = 0
+    · simp only [hk, ↓reduceIte, readSrc,
+        kt.gpr (r := .rdx) (by decide), ka.gpr (r := .rdx) (by decide)]
+    · simp only [hk, ↓reduceIte, readSrc, kt.gpr (r := .rax) (by decide), za]
+  refine WP.mono (chain_ok a _ _ _ _ hca hoa srcA srcB
+    (fun _ _ _ h => nomatch h) (fun _ _ _ h => nomatch h))
+    fun b ⟨cb,ob,hcb,hob,eb,kb⟩ => ?_
+  refine WP.mono (close_ok b hcb hob ((kb.gpr (by decide)).trans za))
+    fun t ⟨et,hct,hot,kt⟩ => ?_
+  rw [number_words, cols_keep ka.keep (by decide)] at eb
+  simp only [number, Nat.reduceEqDiff, ↓reduceIte,
+    show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero,
+    Bool.toNat_false] at eb
+  refine ⟨?_,?_,hct,hot,(ka.trans (kb.trans kt)).mono (by simp [AdxDualAdd.regs])⟩
+  · rw [cols_keep kt.keep (by decide), et]
+    exact eb
+  · rw [et]; have bc := Bool.toNat_le cb; have bo := Bool.toNat_le ob; omega_using [bc, bo]
+
+end VG.Proof.Bignum.X86_64.AdxDualAdd
+
+end
+
+end
+
 
 /-! ## AdxRect8Product -/
 
@@ -41,17 +113,17 @@ theorem productN_disjoint_ok {s : State} {B : Addr} {Z eU eO eN n : Nat}
       Outside.refl _ _ _ _, Keep.refl _ _⟩
   | succ n ih =>
     unfold AdxRotate8.productN
-    refine WP.seq (WP.mono (ih (by omega) (by omega) (by omega) (by omega)) fun a ⟨va, oa, ka⟩ => ?_)
+    refine WP.seq (WP.mono (ih (by omega_using [huZ]) (by omega_using [hoZ]) (by omega_using [hsepU]) (by omega_using [hsepN])) fun a ⟨va, oa, ka⟩ => ?_)
     have sa := hs.congr ka.2.2
     have hna := sa.nowrap
     refine WP.mono (productStep_ok sa ((ka.gpr (by decide)).trans hc)
       ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho)
-      (by omega) (by omega) hnZ) fun t ⟨vt, ot, kt⟩ => ?_
-    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega) (by omega)
-    have mu : word a.mem B (eU + 8 * n) = word s.mem B (eU + 8 * n) := oa.word (by omega) (by omega)
-    have lo : wv t.mem B eO n = wv a.mem B eO n := ot.wv (by omega) (by omega)
-    refine ⟨?_, (oa.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)).trans
-      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by decide)⟩
+      (by omega_using [huZ]) (by omega_using [hoZ]) hnZ) fun t ⟨vt, ot, kt⟩ => ?_
+    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega_using [hsepN]) (by omega_using [hnZ, hna])
+    have mu : word a.mem B (eU + 8 * n) = word s.mem B (eU + 8 * n) := oa.word (by omega_using [hsepU]) (by omega_using [huZ, hna])
+    have lo : wv t.mem B eO n = wv a.mem B eO n := ot.wv (by omega_using []) (by omega_using [hoZ, hna])
+    refine ⟨?_, (oa.mono (o' := eO) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])).trans
+      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega_using []) (by omega_using [])), (ka.trans kt).mono (by decide)⟩
     rw [mn, mu] at vt
     rw [wv, wv, lo, pow64_succ]
     grind
@@ -130,22 +202,22 @@ theorem streamTile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
       Keep [.rdx,.rax,.rbx,.rsi,.rbp,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
   have nowrap := hs.nowrap
   unfold AdxRect8.streamTile
-  refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega) (by omega) hB
-    (by omega) (by omega)) fun a ⟨ea,oa,ka⟩ => ?_)
+  refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega_using [hA]) (by omega_using [hO]) hB
+    (by omega_using [sepA]) (by omega_using [sepB])) fun a ⟨ea,oa,ka⟩ => ?_)
   refine WP.seq (WP.mono (upper_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hd)
-    ((ka.gpr (by decide)).trans ho) (by omega)) fun b ⟨db,pb,mb,kb⟩ => ?_)
+    ((ka.gpr (by decide)).trans ho) (by omega_using [hO, sepC])) fun b ⟨db,pb,mb,kb⟩ => ?_)
   have kab := ka.trans kb
-  refine WP.seq (WP.mono (AdxDualAdd.addInput_ok (hs.congr kab.2.2) pb (by omega))
+  refine WP.seq (WP.mono (AdxDualAdd.addInput_ok (hs.congr kab.2.2) pb (by omega_using [hO]))
     fun c ⟨ec,bc,_,_,kc⟩ => ?_)
   have kabc := kab.trans kc.keep
   refine WP.mono (streamEnd_ok (hs.congr kabc.2.2) ((kabc.gpr (by decide)).trans hd)
-    ((kabc.gpr (by decide)).trans hb) (by omega)) fun t ⟨wt,ot,pt,kt⟩ => ?_
+    ((kabc.gpr (by decide)).trans hb) (by omega_using [hO, sepC])) fun t ⟨wt,ot,pt,kt⟩ => ?_
   have carryA : word a.mem B carryOffset = word s.mem B carryOffset :=
-    oa.word (by omega) (by omega)
+    oa.word (by omega_using [sepC]) (by omega_using [hO, sepC, nowrap])
   have upperA : wv a.mem B (eO+64) 8 = wv s.mem B (eO+64) 8 :=
-    oa.wv (by omega) (by omega)
+    oa.wv (by omega_using []) (by omega_using [hO, nowrap])
   have lowT : wv t.mem B eO 8 = wv a.mem B eO 8 := by
-    rw [ot.wv (by omega) (by omega),kc.2.1,mb]
+    rw [ot.wv (by omega_using [sepC]) (by omega_using [hO, nowrap]),kc.2.1,mb]
   have colsT : cols t = cols c := cols_keep kt (by decide)
   rw [cols_keep kb (by decide),mb,db,carryA,upperA] at ec
   simp only [Nat.reduceMul] at ea
@@ -195,7 +267,7 @@ theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
       t.gpr .rsi = off B (slot w aAcc+16+8*(i+j)) ∧
       t.mem = s.mem ∧ Keep [.rax,.rdx,.rcx,.rbp,.rsi] s t := by
   have hl : ∀ k < 32, InRegions (s.rd ++ s.wr) (off B (8*k)) 8 := fun k hk =>
-    hs.ld (by have := hdr_lt_slot w 8 hk; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   refine WP.mono (WP.keep [.rax,.rdx,.rcx,.rbp,.rsi] (Q := fun t =>
     t.gpr .rcx = off B (slot w a+8*i) ∧
     t.gpr .rbp = off B (slot w b+8*j) ∧
@@ -203,7 +275,7 @@ theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     fun t ⟨⟨hc,hp,ho,hm⟩,k⟩ => ⟨hc,hp,ho,hm,k⟩
   unfold AdxRect8.setup
   xrun [State.ea,hdr,hd,hdrOff,hl (sFn 12) (by decide),hl (sFn 13) (by decide),
-    hl (sArr ca) (by have := hv.lt pa; unfold sArr; omega),hl (sArr cb) (by have := hv.lt pb; unfold sArr; omega),
+    hl (sArr ca) (by have := hv.lt pa; unfold sArr; omega_using [this]),hl (sArr cb) (by have := hv.lt pb; unfold sArr; omega_using [this]),
     hl (sArr aAcc) (by decide),hi,hj,show word s.mem B (8*sArr ca) = _ from hv.at pa,
     show word s.mem B (8*sArr cb) = _ from hv.at pb,hh.harr aAcc (by decide),
     shift3,show (16 : BitVec 32).signExtend 64 = 16 from rfl]

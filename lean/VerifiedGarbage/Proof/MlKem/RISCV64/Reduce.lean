@@ -29,7 +29,7 @@ open VG VG.RISCV64 VG.Impl.MlKem.RISCV64
 open VG.Spec.MlKem
 
 theorem toNat_val64 (x : Zq) : (BitVec.ofNat 64 x.val).toNat = x.val := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [this])]
 
 /-! ## Tables -/
 
@@ -47,7 +47,7 @@ theorem entry_val (v : Nat) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_ofInt, BitVec.toNat_ofNat]
   simp only [show (2048 : BitVec 64).toNat = 2048 from rfl]
-  omega
+  omega_using []
 
 /-- After the first `k` entries of a table at `B`. -/
 structure TabInv (T : List Nat) (B : Addr) (s₀ : State) (k : Nat) (s : State) : Prop where
@@ -76,8 +76,8 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 4096) {b : Reg} 
   have e : (s.write .t2 (s.gpr .t0 + BitVec.ofInt 64 ((T.getD k 0 : Int) - 2048))).gpr b +
       BitVec.ofNat 64 (4 * k) = B + BitVec.ofNat 64 (4 * k) := by
     simp only [State.write, hb, ite_false, h.gpr b hb0 hb, hB]
-  refine Wp.WP.cons (exec_addi (by unfold imm12; have := hT k hk; omega))
-    (Wp.WP.cons (exec_store_w (show 4 * k < 2048 by omega) (by rw [e]; exact align4_add hal k)
+  refine Wp.WP.cons (exec_addi (by unfold imm12; have := hT k hk; omega_using [this]))
+    (Wp.WP.cons (exec_store_w (show 4 * k < 2048 by omega_using [hk]) (by rw [e]; exact align4_add hal k)
       (by rw [e]; simp only [State.write]; rw [h.wr]; exact hwr k hk)) (WP.block_nil ?_))
   rw [e]
   have hv : ((s.write .t2 (s.gpr .t0 + BitVec.ofInt 64 ((T.getD k 0 : Int) - 2048))).gpr .t2).setWidth 32 =
@@ -87,17 +87,17 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 4096) {b : Reg} 
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     have := hT k hk
-    omega
+    omega_using []
   refine ⟨fun r h0 h2 => ?_, ?_, h.rd, h.wr, h.sp, ?_, fun j hj => ?_⟩
   · simp only [State.write, h2, ite_false]; exact h.gpr r h0 h2
   · simp only [State.write, show Reg.t0 ≠ Reg.t2 by decide, ite_false]; exact h.t0
-  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · simp only [State.write] at hv ⊢
     rw [hv]
     by_cases ej : j = k
     · subst ej; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.tab j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [ej]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.tab j (by omega_using [hj, ej])
 
 /-! ## Kept registers -/
 

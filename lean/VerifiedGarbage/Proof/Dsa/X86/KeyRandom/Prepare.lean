@@ -32,30 +32,30 @@ theorem zeroWord_at (m : Mem) (B : Addr) (d i : Nat) (hi : i < 4) :
   have he : off B (d + i) = off B d + BitVec.ofNat 64 i := by
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   rw [he]
-  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, Mem.sub_ofNat_toNat (off B d) (i := i) (by omega),
+  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, Mem.sub_ofNat_toNat (off B d) (i := i) (by omega_using [hi]),
     show 32 / 8 = 4 from rfl, hi, ite_true]
   exact BitVec.extractLsb'_zero
 
 theorem clearMem_outside (m : Mem) (B : Addr) : ∀ k, k ≤ 8 → Outside B oNonce 32 m (clearMem m B k)
   | 0, _ => Outside.refl _ _ _ _
-  | k + 1, hk => (clearMem_outside m B k (by omega)).trans
-      ((writeW32_outside _ B (d := oNonce + 4 * k) 0 (by unfold oNonce; omega)).mono
-        (by unfold oNonce; omega) (by unfold oNonce; omega))
+  | k + 1, hk => (clearMem_outside m B k (by omega_using [hk])).trans
+      ((writeW32_outside _ B (d := oNonce + 4 * k) 0 (by unfold oNonce; omega_using [hk])).mono
+        (by unfold oNonce; omega_using []) (by unfold oNonce; omega_using [hk]))
 
 theorem clearMem_zero (m : Mem) (B : Addr) : ∀ k, k ≤ 8 → ∀ i < 4 * k, clearMem m B k (off B (oNonce + i)) = 0
-  | 0, _, i, hi => absurd hi (by omega)
+  | 0, _, i, hi => absurd hi (by omega_using [])
   | k + 1, hk, i, hi => by
     by_cases hlo : i < 4 * k
-    · rw [clearMem, writeW32_outside _ B (d := oNonce + 4 * k) 0 (by unfold oNonce; omega) _
-        (by rw [ofs_off0 B (by unfold oNonce; omega)]; omega)]
-      exact clearMem_zero m B k (by omega) i hlo
-    · rw [clearMem, show oNonce + i = oNonce + 4 * k + (i - 4 * k) by omega]
-      exact zeroWord_at _ B _ _ (by omega)
+    · rw [clearMem, writeW32_outside _ B (d := oNonce + 4 * k) 0 (by unfold oNonce; omega_using [hk]) _
+        (by rw [ofs_off0 B (by unfold oNonce; omega_using [hk, hi])]; omega_using [hlo])]
+      exact clearMem_zero m B k (by omega_using [hk]) i hlo
+    · rw [clearMem, show oNonce + i = oNonce + 4 * k + (i - 4 * k) by omega_using [hlo]]
+      exact zeroWord_at _ B _ _ (by omega_using [hi])
 
 theorem clearMem_frame (s₀ : State) (m : Mem) : ∀ k, k ≤ 8 → Frame [rStack s₀] m (clearMem m (rBase s₀) k)
   | 0, _ => Frame.refl _ _
-  | k + 1, hk => (clearMem_frame s₀ m k (by omega)).trans
-      (frame_store s₀ _ (d := oNonce + 4 * k) (by unfold oNonce KeyRandom.frameBytes; omega) 0)
+  | k + 1, hk => (clearMem_frame s₀ m k (by omega_using [hk])).trans
+      (frame_store s₀ _ (d := oNonce + 4 * k) (by unfold oNonce KeyRandom.frameBytes; omega_using [hk]) 0)
 
 theorem clearNonce_ok {s : State} {B : Addr} (hf : RF s B) {is : List Instr} {Q : State → Prop}
     (k : ∀ t, RF t B → t.mem = clearMem s.mem B 8 → Keeps [.eax] s t → t.gpr .eax = 0 →
@@ -94,8 +94,8 @@ theorem add_ofNat_sub32 (a : BitVec 32) {k d : Nat} (hd : d ≤ k) (hk : k < 2 ^
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := a.isLt
-  rw [Nat.mod_eq_of_lt (a := k) hk, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (a := k - d) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) hk, Nat.mod_eq_of_lt (a := d) (by omega_using [hd, hk]), Nat.mod_eq_of_lt (a := k - d) (by omega_using [hk])]
+  omega_using [hd, hk]
 
 theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
     WP isa prepare t fun u =>
@@ -119,7 +119,7 @@ theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
     rw [hqn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have esi₄ : t₄.gpr .esi = rQ s₀ := by rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr]; rfl
   have ecx₄ : t₄.gpr .ecx = BitVec.ofNat 32 (rQBytes s₀).length := by rw [u₄.gpr, e6]
-  refine WP.seq (WP.mono (significant_ok esi₄ ecx₄ (h₄.q A) (rQBytes_pos A) (by omega))
+  refine WP.seq (WP.mono (significant_ok esi₄ ecx₄ (h₄.q A) (rQBytes_pos A) (by omega_using [hql]))
     fun t₅ ⟨bx₅, dx₅, m₅, k₅⟩ => ?_)
   have h₅ : Ready s₀ t₅ := h₄.congr k₅ (by rw [m₅]; exact Frame.refl _ _)
   refine WP.seq (wp_movS (h₅.argSrc A (j := 3) (by decide)) fun t₆ u₆ _ => ?_)
@@ -134,7 +134,7 @@ theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
     rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), bx₅]
   have esi₉ : t₉.gpr .esi = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀) := by
     rw [u₉.gpr, u₈.gpr, u₇.gpr, u₆.gpr, u₈.other .ebx (by decide), u₇.other _ (by decide),
-      u₆.other _ (by decide), bx₅, e6, add_ofNat_sub32 _ hfit (by omega)]
+      u₆.other _ (by decide), bx₅, e6, add_ofNat_sub32 _ hfit (by omega_using [hql])]
     rfl
   refine wp_slot h₉.rf (by decide) esi₉ fun t₁₀ f₁₀ m₁₀ g₁₀ r₁₀ w₁₀ _ _ => ?_
   refine wp_slot f₁₀ (by decide) (v := BitVec.ofNat 32 (rWidth s₀)) (by rw [g₁₀]; exact ebx₉)
@@ -142,7 +142,7 @@ theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
   have edx₁₁ : t₁₁.gpr .edx = (rLead s₀).setWidth 32 := by
     rw [g₁₁, g₁₀, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), dx₅]
-  refine WP.mono (prepareFinish_ok f₁₁ (w := rWidth s₀) (b := rLead s₀) (show (VG.Proof.Dsa.significant (rQBytes s₀)).1 < 2 ^ 32 by omega)
+  refine WP.mono (prepareFinish_ok f₁₁ (w := rWidth s₀) (b := rLead s₀) (show (VG.Proof.Dsa.significant (rQBytes s₀)).1 < 2 ^ 32 by omega_using [hfit, hql])
     (by rw [g₁₁, g₁₀]; exact ebx₉) edx₁₁) fun u ⟨ax, mu, ku⟩ => ?_
   -- Memory.
   have m₉ : t₉.mem = clearMem t.mem (rBase s₀) 8 := by
@@ -164,18 +164,18 @@ theorem prepare_ok {s₀ t : State} (A : KeyABI s₀) (h : Ready s₀ t) :
           (frame_store s₀ _ (by decide) _))
   have e := VG.Proof.Dsa.random_valid_scan_ge (rQBytes s₀)
   refine ⟨by simp only [ax, e], fun _ => ⟨hu, ?_, ?_, ?_, ?_⟩, hu, ?_, kregs⟩
-  · rw [mu', slot_write_ne _ _ _ (by unfold oQ oMask; omega) (by decide) (by decide),
-      slot_write_ne _ _ _ (by unfold oQ oWidth; omega) (by decide) (by decide), slot_write_self]
-  · rw [mu', slot_write_ne _ _ _ (by unfold oWidth oMask; omega) (by decide) (by decide), slot_write_self]
+  · rw [mu', slot_write_ne _ _ _ (by unfold oQ oMask; omega_using []) (by decide) (by decide),
+      slot_write_ne _ _ _ (by unfold oQ oWidth; omega_using []) (by decide) (by decide), slot_write_self]
+  · rw [mu', slot_write_ne _ _ _ (by unfold oWidth oMask; omega_using []) (by decide) (by decide), slot_write_self]
   · rw [mu', slot_write_self]
   · intro i hi
     have ho : ∀ d, d + 4 ≤ oNonce → ofs (rBase s₀) (off (rBase s₀) (oNonce + i)) < d ∨
         d + 4 ≤ ofs (rBase s₀) (off (rBase s₀) (oNonce + i)) := fun d hd => by
-      rw [ofs_off0 _ (by unfold oNonce; omega)]; omega
+      rw [ofs_off0 _ (by unfold oNonce; omega_using [hi])]; omega_using [hd]
     rw [mu', writeW32_outside _ _ (d := oMask) _ (by decide) _ (ho _ (by decide)),
       writeW32_outside _ _ (d := oWidth) _ (by decide) _ (ho _ (by decide)),
       writeW32_outside _ _ (d := oQ) _ (by decide) _ (ho _ (by decide))]
-    exact clearMem_zero _ _ 8 (by decide) i (by omega)
+    exact clearMem_zero _ _ 8 (by decide) i (by omega_using [hi])
   · rw [mu']
     have o₀ := clearMem_outside t.mem (rBase s₀) 8 (by decide)
     have o₁ := writeW32_outside (clearMem t.mem (rBase s₀) 8) (rBase s₀) (d := oQ)

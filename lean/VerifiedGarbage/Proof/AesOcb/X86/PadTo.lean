@@ -66,26 +66,26 @@ theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
     WP isa (padTo d cO) s fun t => Frame [⟨w64 p.W + BitVec.ofNat 64 d, 16⟩] s.mem t.mem ∧
       blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 d) = pad (bytesAt s.mem (w64 S) n) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have aD : w64 (p.W + BitVec.ofNat 32 d) = w64 p.W + BitVec.ofNat 64 d := L.aW (by omega)
+  have aD : w64 (p.W + BitVec.ofNat 32 d) = w64 p.W + BitVec.ofNat 64 d := L.aW (by omega_using [hd])
   obtain ⟨s₁, run₁, m₁, di₁, dx₁, cx₁, g₁, rd₁, wr₁⟩ := padToHead_ok L E hd hc hcd hsi hcnt
   have fr₁ : Frame [⟨w64 p.W + BitVec.ofNat 64 d, 16⟩] s.mem s₁.mem := by
     rw [m₁]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   have eS : bytesAt s₁.mem (w64 S) n = bytesAt s.mem (w64 S) n :=
     Proof.AesGcm.X86.bytesAt_frame fr₁ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hS.w.sub_right (Lay.wSub hd)) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hS.w.sub_right (Lay.wSub hd)) (by omega_using [hn'])
   have lp : LoopPre s₁ S (p.W + BitVec.ofNat 32 d) n :=
-    ⟨di₁, dx₁, cx₁, hn, by omega, hS.fit, by rw [L.nW (by omega)]; have := L.ww; omega,
-      by rw [rd₁, wr₁]; exact hS.rd, by rw [aD, wr₁]; exact E.perm.wC (by omega),
-      by rw [aD]; exact hS.w.sub_right (Lay.wSub (by omega))⟩
+    ⟨di₁, dx₁, cx₁, hn, by omega_using [hn'], hS.fit, by rw [L.nW (by omega_using [hd])]; have := L.ww; omega_using [hn', hd, this],
+      by rw [rd₁, wr₁]; exact hS.rd, by rw [aD, wr₁]; exact E.perm.wC (by omega_using [hn', hd]),
+      by rw [aD]; exact hS.w.sub_right (Lay.wSub (by omega_using [hn', hd]))⟩
   unfold padTo
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (copyLoop_ok s₁ lp) fun s₂ P₂ => ?_)
   have aN : w64 (p.W + BitVec.ofNat 32 d + BitVec.ofNat 32 n + BitVec.ofNat 32 0) =
       w64 p.W + BitVec.ofNat 64 d + BitVec.ofNat 64 n := by
     rw [show p.W + BitVec.ofNat 32 d + BitVec.ofNat 32 n + BitVec.ofNat 32 0 = p.W + BitVec.ofNat 32 (d + n) by
-      rw [BitVec.add_zero, Proof.AesGcm.X86.add_ofNat_assoc32], L.aW (by omega), add_ofNat_assoc]
+      rw [BitVec.add_zero, Proof.AesGcm.X86.add_ofNat_assoc32], L.aW (by omega_using [hn', hd]), add_ofNat_assoc]
   have w₂ : InRegions s₂.wr (w64 p.W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) 1 := by
-    rw [P₂.wr, wr₁, add_ofNat_assoc]; exact E.perm.wW (by omega)
+    rw [P₂.wr, wr₁, add_ofNat_assoc]; exact E.perm.wW (by omega_using [hn', hd])
   obtain ⟨s₃, run₃, m₃, g₃, rd₃, wr₃⟩ : ∃ s₃, runBlock isa [.mov .eax (imm 0x80), .store8 (at_ .edx 0) .al] s₂ =
       some s₃ ∧ s₃.mem = s₂.mem.writeW (w64 p.W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) (0x80 : Byte) ∧
       (∀ r, r ≠ .eax → s₃.gpr r = s₂.gpr r) ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
@@ -94,16 +94,16 @@ theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have hlen : (bytesAt s.mem (w64 S) n).length = n := length_bytesAt _ _ _
   have key : s₃.mem = writeBytes s₁.mem (w64 p.W + BitVec.ofNat 64 d) (bytesAt s.mem (w64 S) n ++ [0x80]) := by
-    rw [m₃, P₂.mem, eS, aD, writeBytes_snoc _ _ _ _ (by omega), hlen]
+    rw [m₃, P₂.mem, eS, aD, writeBytes_snoc _ _ _ _ (by omega_using [hn', hlen]), hlen]
   refine ⟨?_, ?_, fun r h₁ h₂ h₃ h₄ => ?_, by rw [rd₃, P₂.rd, rd₁], by rw [wr₃, P₂.wr, wr₁]⟩
   · rw [key]
     refine fr₁.trans fun x hx => ?_
     exact writeBytes_frame _ _ _ (by
-      simp only [List.length_append, hlen, List.length_singleton]; exact contains_pre _ (by omega)) x hx
-  · rw [key, blockAtMem, Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by simp [hlen]; omega) (by decide), m₁,
+      simp only [List.length_append, hlen, List.length_singleton]; exact contains_pre _ (by omega_using [hn'])) x hx
+  · rw [key, blockAtMem, Proof.AesCcm.bytesAt_writeBytes_base _ _ _ (by simp [hlen]; omega_using [hn']) (by decide), m₁,
       Proof.Cmac.zero4_bytes]
     simp only [pad, hlen, List.length_append, List.length_singleton, Spec.Cmac.zeros, Spec.Ocb.zeros,
-      List.drop_replicate, List.append_assoc, List.singleton_append, show 16 - (n + 1) = 15 - n by omega]
+      List.drop_replicate, List.append_assoc, List.singleton_append, show 16 - (n + 1) = 15 - n by omega_using []]
   · rw [g₃ r h₁, P₂.other r h₁ h₄ h₃ h₂, g₁ r h₁ h₂ h₃ h₄]
 
 end VG.Proof.AesOcb.X86

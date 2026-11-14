@@ -48,7 +48,7 @@ theorem checkingSizedWith_spec {base : Addr} {size pLen qLen p q g : Nat}
       (Spec.Dsa.checkParametersBytes pLen qLen params=true → I sf.mem) ∧
       ∀ regs, VG.X86.Spill.Saved s.mem (off base) regs Entry.savedRegisters →
         VG.X86.Spill.Saved sf.mem (off base) regs Entry.savedRegisters := by
-  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega
+  have bound : 8248 ≤ size := by have H : 15712 ≤ size := extent; omega_using [H]
   have value : Spec.Dsa.checkParametersBytes pLen qLen params =
       decide (Spec.Dsa.parametersValid ⟨p, q, g⟩) := by
     simp only [Spec.Dsa.checkParametersBytes, widths, paramsLen, paramsValue, decide_true,
@@ -74,7 +74,7 @@ theorem checkingSizedWith_spec {base : Addr} {size pLen qLen p q g : Nat}
     · rw [Of]
       intro a ha hstack
       exact (E.outside a ha (by rw [K.1 .esp (by decide)]; exact hstack)).trans
-        ((shapeFrame_outside O) a (.inr (by have : 15712≤written := hwritten; omega)))
+        ((shapeFrame_outside O) a (.inr (by have : 15712≤written := hwritten; omega_using [ha, this])))
     · intro regs saved
       rw [Of]
       exact E.saved regs (shapeFrame_saved O saved)
@@ -89,7 +89,7 @@ theorem checkingSizedWith_spec {base : Addr} {size pLen qLen p q g : Nat}
       rfl
     · rw [Of]
       intro a ha _
-      exact (shapeFrame_outside O) a (.inr (by have : 15712≤written := hwritten; omega))
+      exact (shapeFrame_outside O) a (.inr (by have : 15712≤written := hwritten; omega_using [ha, this]))
     · rw [value]
       simp only [invalid,decide_false,Bool.false_eq_true, false_implies]
     · intro regs saved

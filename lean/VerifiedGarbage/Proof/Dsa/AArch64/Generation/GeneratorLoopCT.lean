@@ -44,11 +44,11 @@ private theorem generatorLoop_step (M : Mont)  (len : Nat)
   refine ⟨hs.1.trans ht.1.symm, fun _ => True.intro, fun he => ?_⟩
   have cont : p.continues = true := Option.some.inj (hs.1.symm.trans he)
   have room := (p.next cont).bound
-  have positive : 0 < p.plan.core.len := by rcases p.plan.core.width with hh | hh | hh <;> omega
+  have positive : 0 < p.plan.core.len := by rcases p.plan.core.width with hh | hh | hh <;> omega_using [hh]
   refine ⟨p.plan.tape.length - (p.used + p.plan.core.len) + 1, ?_, p.next cont,
     ⟨rfl, hs.2 cont⟩, ⟨rfl, ht.2 cont⟩, hsp⟩
   change p.used + p.plan.core.len ≤ p.plan.tape.length at room
-  omega
+  omega_using [hr, positive, room]
 
 theorem generatorLoop_ct (M : Mont)  (len : Nat)
     (hl : len = 128 ∨ len = 256 ∨ len = 384) :

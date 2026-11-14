@@ -79,7 +79,7 @@ theorem addOps_ok (x1 y1 z1 x2 y2 z2 : Index) (hx1 : x1.val < 10) (hy1 : y1.val 
       EV t.mem base = genEnv x1 y1 z1 x2 y2 z2 (EV s.mem base) := by
   -- Every temporary differs from every point slot.
   have n : ∀ {i : Index}, i.val < 10 → ∀ k : Index, 10 ≤ k.val → k ≠ i := fun hi k hk h => by
-    rw [h] at hk; omega
+    rw [h] at hk; omega_using [hi, hk]
   have nn : ∀ {i : Index}, i.val < 10 → ∀ k : Index, 10 ≤ k.val → i ∉ [k] := fun hi k hk h => by
     rw [List.mem_singleton] at h; exact n hi k hk h.symm
   have nn' : ∀ {i j : Index}, i ≠ j → i ∉ [j] := fun h hm => h (List.mem_singleton.mp hm)

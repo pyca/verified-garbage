@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerPhase
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPower
-
+public import VerifiedGarbage.Proof.Ffdh.Arm.Power
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpStep
 import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Framework.RelCT
@@ -21,7 +21,6 @@ import VerifiedGarbage.Impl.Bignum.Arm.Exp
 import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -38,6 +37,41 @@ import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
 import VerifiedGarbage.Proof.Bignum.Math
+
+/-! ### `Ffdh.Arm.KeyPower`, which only this module used -/
+
+section
+
+/-! # Generator-specialized key-generation power after exponent and base import -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.KeyPower
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.X25519.Arm (Rest)
+
+structure Input (base src ep : BitVec 32) (len w M : Nat) (P : State → Prop)
+    (regions : List Region) (bb eb : List Byte) (s : State) : Prop where
+  power : PowerInput base src ep len w M bb eb s
+  persistent : P s
+  separate : ∀ r ∈ regions, Region.Disjoint ⟨State.addr ep, eb.length⟩ r
+
+theorem import_ok {base src ep : BitVec 32} {len w M : Nat} {P : State → Prop}
+    {regions : List Region} {bb eb : List Byte}
+    (A : TwoExp.Montgomery base len w P regions) (s : State)
+    (h : Input base src ep len w M P regions bb eb s) :
+    WP isa VG.Impl.Ffdh.Arm.powerImport s fun t =>
+      PhaseInput base ep len w M (Spec.Rsa.os2ip bb) P regions eb t ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  refine WP.mono (powerImport_ok s h.power) ?_
+  rintro t ⟨input, frame, rest⟩
+  exact ⟨⟨input, A.stable frame rest h.persistent, h.separate⟩, frame, rest⟩
+
+end VG.Proof.Ffdh.Arm.KeyPower
+
+end
+
+end
+
 /-! # Imported public-generator dispatch retains private-scalar timing -/
 
 @[expose] public section

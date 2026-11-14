@@ -41,15 +41,15 @@ theorem zeroBody_ok {w16 : Bool} {aP : Addr} {L : List Zq} {s u : State} {j : Na
   · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ (cAddr_contains4 w16 _ hj)
   · rw [hv.gpr .x3 (by decide),ec,hb.gpr,ha.gpr .x3 (by decide),h.x3,← cAddr_add w16 aP j 1]
     cases w16 <;> rfl
-  · rw [ev,toNat_sub_n (by rw [hc.gpr .x4 (by decide),hb.gpr,ha.gpr .x4 (by decide),h.x4]; change 1≤256-j; omega),
+  · rw [ev,toNat_sub_n (by rw [hc.gpr .x4 (by decide),hb.gpr,ha.gpr .x4 (by decide),h.x4]; change 1≤256-j; omega_using [hj]),
       hc.gpr .x4 (by decide),hb.gpr,ha.gpr .x4 (by decide),h.x4]
     change 256-j-1=256-(j+1)
-    omega
+    omega_using []
   · intro i hi
-    rw [hm,coeffAtW_writeW32 _ _ (show i<256 by omega) hj _ (by decide)]
+    rw [hm,coeffAtW_writeW32 _ _ (show i<256 by omega_using [hj, hi]) hj _ (by decide)]
     by_cases he : j=i
-    · rw [ite_eq_left he,ite_eq_right (by omega)]; rfl
-    · rw [ite_eq_right he,ite_eq_right (by omega),h.coeffs i (by omega)]
+    · rw [ite_eq_left he,ite_eq_right (by omega_using [hl, he])]; rfl
+    · rw [ite_eq_right he,ite_eq_right (by omega_using [hi]),h.coeffs i (by omega_using [hi, he])]
 
 theorem zeroSuffix_prefix {w16 : Bool} {aP : Addr} {L : List Zq} {s : State}
     (hina : ∀i<256,InRegions s.wr (cAddr w16 aP i) 4)
@@ -62,13 +62,13 @@ theorem zeroSuffix_prefix {w16 : Bool} {aP : Addr} {L : List Zq} {s : State}
     ⟨Keep.refl _ _,Frame.refl _ _,h3,h4,fun i hi => by rw [ite_eq_left hi]; exact hc i hi⟩
   refine WP.ite (s.gpr .x4 == 0) (eval_zero _ _) (fun hz => ?_) (fun hz => ?_)
   · rw [eq_zero_iff,decide_eq_true_eq,h4] at hz
-    have he : L.length=256 := by omega
-    exact wp_nil ⟨Keep.refl _ _,Frame.refl _ _,fun i hi => zi.coeffs i (by omega)⟩
+    have he : L.length=256 := by omega_using [hl, hz]
+    exact wp_nil ⟨Keep.refl _ _,Frame.refl _ _,fun i hi => zi.coeffs i (by omega_using [hz, hi])⟩
   · rw [eq_zero_iff,decide_eq_false_iff_not,h4] at hz
-    have hn : 0<256-L.length := by omega
+    have hn : 0<256-L.length := by omega_using [hz]
     refine WP.mono (count_loop hn (fun k u => ZInv w16 aP L s (L.length+k) u)
-      (fun k hk u hu => WP.mono (zeroBody_ok hina (by omega) (by omega) hu)
-        fun v hv => ⟨hv,by rw [hv.x4]; omega⟩) zi) fun u hu => ?_
-    exact ⟨hu.keep,hu.frame,fun i hi => hu.coeffs i (by omega)⟩
+      (fun k hk u hu => WP.mono (zeroBody_ok hina (by omega_using []) (by omega_using [hk]) hu)
+        fun v hv => ⟨hv,by rw [hv.x4]; omega_using [hk]⟩) zi) fun u hu => ?_
+    exact ⟨hu.keep,hu.frame,fun i hi => hu.coeffs i (by omega_using [hi])⟩
 
 end VG.Proof.MlKem.AArch64.Rej8

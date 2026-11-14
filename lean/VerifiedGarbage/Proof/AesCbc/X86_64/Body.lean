@@ -52,12 +52,12 @@ include hp
 
 theorem UPre.blk_toNat {k : Nat} (hk : k < N s₀) : (blk s₀ k).toNat = (Dp s₀).toNat + 16 * k := by
   have := hp.data_wrap
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * k) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * k) (by omega_using [hk, this]),
+    Nat.mod_eq_of_lt (by omega_using [hk, this])]
 
 theorem UPre.blk_wrap {k : Nat} (hk : k < N s₀) : (blk s₀ k).toNat + 16 ≤ 2 ^ 64 := by
   have := hp.data_wrap
-  rw [hp.blk_toNat hk]; omega
+  rw [hp.blk_toNat hk]; omega_using [hk, this]
 
 /-- The regions the code reads and writes, from the invariant. -/
 theorem LInv.regs {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) :
@@ -95,24 +95,24 @@ theorem UPre.callPre {k : Nat} (hk : k < N s₀) {s : State}
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨schR s₀, by simp, 0, by simp, by simp⟩
-    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega⟩
+    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega_using [hk]⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
   writes := by
     rw [hwr, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega⟩
+    · exact ⟨dataR s₀, by simp, 16 * k, rfl, by simp; omega_using [hk]⟩
     · exact ⟨scrR s₀, by simp, 0, by simp, by simp⟩
 
 theorem UPre.cBlk0 {k : Nat} (hk : k < N s₀) : (dataR s₀).Contains (blk s₀ k) 8 := by
   have := hp.data_wrap
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, this])
 
 theorem UPre.cBlk8 {k : Nat} (hk : k < N s₀) :
     (dataR s₀).Contains (blk s₀ k + BitVec.ofNat 64 8) 8 := by
   have := hp.data_wrap
-  rw [Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [Offset.add_add]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, this])
 
 omit hp in
 theorem cIv0 : (ivR s₀).Contains (Iv s₀) 8 := by
@@ -141,7 +141,7 @@ theorem UPre.iv_sv : (ivR s₀).Disjoint ⟨S s₀ + BitVec.ofNat 64 2048, 16⟩
   hp.iv_scr.sub_right (UPre.scr_sub (by decide))
 
 theorem UPre.sv_scr : (⟨S s₀ + BitVec.ofNat 64 2048, 16⟩ : Region).Disjoint ⟨S s₀, 2048⟩ :=
-  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)
+  Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])
 
 omit hp in
 /-- The frame of a step, in the regions the invariant allows. -/
@@ -272,7 +272,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
       bytesAt_frame (copyMem_frame s₂.mem (Iv s₀) (blk s₀ k)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.blk_iv hk) (by decide)]
   have hl : (outK (cbcMode true) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (cbcMode true) s₀ (k + 1) = outK (cbcMode true) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
     rw [newBlk]
@@ -424,7 +424,7 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
       bytesAt_frame (xorMem_frame _ _ _) (one _ _ (hp.blk_sv hk).symm) (by decide),
       bytesAt_frame c.frame callSv (by decide), a.mem, copyMem_bytes _ (hp.blk_sv hk).symm, hblk]
   have hl : (outK (cbcMode false) s₀ k).length = k := by
-    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega_using [hk]
   have outSucc :
       outK (cbcMode false) s₀ (k + 1) = outK (cbcMode false) s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
     rw [newBlk]

@@ -114,64 +114,97 @@ def finAccY : Prog isa :=
     (.seq (rcxLoop 8 finAccBodyY) (.block [.vop .vzeroupper]))
 
 
-/-! ### A row of products, in registers -/
+/-! ### A row of products, in registers
 
-/-- `vbase` without its last two Montgomery multiplications by `R² mod q`
-and their reductions: `h₀ · 2⁻¹⁶` in `xmm1` and `h₁ · 2⁻¹⁶` in `xmm2`, each a
-sum of two words in `(-q, q)`. -/
-def vbaseL : List Instr :=
-  (xmov .xmm1 .xmm4 :: vmont .xmm1 .xmm10 .xmm2) ++ vmont .xmm1 .xmm13 .xmm2 ++
-    (xmov .xmm2 .xmm0 :: vmont .xmm2 .xmm6 .xmm3) ++ (xb .paddw .xmm1 .xmm2 :: xmov .xmm2 .xmm0 ::
-      vmont .xmm2 .xmm10 .xmm3) ++ vmont .xmm4 .xmm6 .xmm3 ++ [xb .paddw .xmm2 .xmm4]
+A row sums its `k` products before it reduces them. Doubleword `d` of a
+register of `f` holds a pair of coefficients, `f₀` in its low word and `f₁`
+in its high one, so `vpmaddwd` with the pairs `(g₀, g₁γ)` gives
+`f₀g₀ + f₁g₁γ`, the first coefficient of `BaseCaseMultiply`, as a doubleword,
+and with the pairs `(g₁, g₀)` the second, `f₀g₁ + f₁g₀`. The `k ≤ 4` products
+of a coefficient add up as doublewords, less than `8q²` in magnitude, and one
+Montgomery reduction of the sum (`predD`) leaves a word. -/
+
+/-- The four doublewords of products of a lane to `d₀, …, d₃`: with the
+pairs of coefficients `0, …, 3` of `f` in `xmm0` and `4, …, 7` in `xmm1`,
+the coefficients `g₀` of `g` in the words of `xmm6` and `g₁` in those of
+`xmm10`, and the `γ`s in `xmm13`: `g₁γ` to `xmm4` (`vmont`, with `xmm5`),
+then `f₀g₀ + f₁g₁γ` of pairs `0, …, 3` to `d₀` and of `4, …, 7` to `d₁`, and
+`f₀g₁ + f₁g₀` to `d₂` and `d₃`. -/
+def pterm (d₀ d₁ d₂ d₃ : XReg) : List Instr :=
+  (xmov .xmm4 .xmm10 :: vmont .xmm4 .xmm13 .xmm5) ++
+    [xmov d₀ .xmm6, xb .punpcklwd d₀ .xmm4, xb .pmaddwd d₀ .xmm0,
+      xmov d₁ .xmm6, xb .punpckhwd d₁ .xmm4, xb .pmaddwd d₁ .xmm1,
+      xmov d₂ .xmm10, xb .punpcklwd d₂ .xmm6, xb .pmaddwd d₂ .xmm0,
+      xmov d₃ .xmm10, xb .punpckhwd d₃ .xmm6, xb .pmaddwd d₃ .xmm1]
+
+/-- The first product of a row, to the sums: `xmm11` and `xmm2` (the first
+coefficients), `xmm12` and `xmm3` (the second). -/
+def ptermSet : List Instr := pterm .xmm11 .xmm2 .xmm12 .xmm3
+
+/-- Another product of a row, added to the sums. -/
+def ptermAdd : List Instr :=
+  pterm .xmm5 .xmm7 .xmm8 .xmm9 ++
+    [xb .paddd .xmm11 .xmm5, xb .paddd .xmm2 .xmm7, xb .paddd .xmm12 .xmm8, xb .paddd .xmm3 .xmm9]
+
+/-- The doublewords `x` of `x`, each less than `8q²` in magnitude, to
+`(x - (x q⁻¹ mod± 2¹⁶) q) / 2¹⁶`: with `q⁻¹` in the words of `xmm14` and `q`
+in the low word of each doubleword of `xmm7`, whose high word is zero, so
+that `pmaddwd` multiplies the low word of each doubleword of `xmm5` by `q`. -/
+def predD (x : XReg) : List Instr :=
+  [xmov .xmm5 x, xb .pmullw .xmm5 .xmm14, xb .pmaddwd .xmm5 .xmm7, xb .psubd x .xmm5, .xop (.shift .psrad x 16)]
+
+/-- The sums reduced, each to a word in `(-q, q)`: the first coefficients to
+the words of `xmm11` and the second to those of `xmm12`, in `vbase`'s
+order. -/
+def pred : List Instr :=
+  [xmov .xmm7 .xmm15, .xop (.shift .psrld .xmm7 16)] ++ predD .xmm11 ++ predD .xmm2 ++ predD .xmm12 ++
+    predD .xmm3 ++ [xb .packssdw .xmm11 .xmm2, xb .packssdw .xmm12 .xmm3]
 
 /-- `yload4` from `p + o`. -/
 def yload4o (p : Reg) (o : Nat) (a b c d : XReg) : List Instr :=
   [.vmovdquLoad .l256 a (at_ p o), .vmovdquLoad .l256 b (at_ p (o + 32)), .vmovdquLoad .l256 c (at_ p (o + 64)),
     .vmovdquLoad .l256 d (at_ p (o + 96))]
 
-/-- The 32 coefficients of block `b` of the `u32`s at `rsi + o j`, the even
-ones as the words of `ymm0` and the odd ones as those of `ymm4`, in
-`vbase`'s order. -/
+/-- The 32 coefficients of block `b` of the `u32`s at `rsi + o j`, as pairs:
+doubleword `d` of lane `l` of `ymm0` holds the pair `4⌊d/2⌋ + (d mod 2) + 2l`
+of the sixteen (`vbase`'s order) and that of `ymm1` the pair eight higher,
+which is how `vpackssdw` packs the `u32`s of each lane. -/
 def rowLdY (o j : Nat) : List Instr :=
-  yload4o .rsi (o * j) .xmm0 .xmm1 .xmm2 .xmm3 ++ toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5)
-
-/-- The low words of the doublewords of `ymm0` and `ymm1` packed to `ymm0`,
-and their high words to `ymm4`, lane by lane. -/
-def de16Y : List Instr :=
-  [.vop (.vshift .psrld .l256 .xmm4 .xmm0 16), .vop (.vshift .psrld .l256 .xmm5 .xmm1 16),
-    .vop (.vshift .pslld .l256 .xmm0 .xmm0 16), .vop (.vshift .psrld .l256 .xmm0 .xmm0 16),
-    .vop (.vshift .pslld .l256 .xmm1 .xmm1 16), .vop (.vshift .psrld .l256 .xmm1 .xmm1 16),
-    yb .vpackssdw .xmm0 .xmm0 .xmm1, yb .vpackssdw .xmm4 .xmm4 .xmm5]
+  yload4o .rsi (o * j) .xmm0 .xmm1 .xmm8 .xmm9 ++
+    [yb .vpackssdw .xmm0 .xmm0 .xmm1, yb .vpackssdw .xmm1 .xmm8 .xmm9]
 
 /-- `rowLdY` of `u16`s: the 64 bytes at `rsi + o j`, each 128-bit lane
-holding the quadwords `vpermq` with `0xD8` brings it, then `de16Y`. -/
+holding the quadwords `vpermq` with `0xD8` brings it. -/
 def rowLdY16 (o j : Nat) : List Instr :=
   [.vmovdquLoad .l256 .xmm0 (at_ .rsi (o * j)), .vmovdquLoad .l256 .xmm1 (at_ .rsi (o * j + 32)),
-    .vop (.vpermq .xmm0 .xmm0 0xD8), .vop (.vpermq .xmm1 .xmm1 0xD8)] ++ de16Y
+    .vop (.vpermq .xmm0 .xmm0 0xD8), .vop (.vpermq .xmm1 .xmm1 0xD8)]
 
-/-- Product `j` of a block, in `ymm1` and `ymm2` (`vbaseL`): of the 32
-coefficients `ld j` loads and of `g = rdx + 1024 j`. -/
+/-- The operands of product `j` of a block: the 32 coefficients `ld j`
+loads, and those of `g = rdx + 1024 j`, the even ones in the words of `ymm6`
+and the odd ones in those of `ymm10` (`vbase`'s order). -/
 def rowMulYg (ld : Nat → List Instr) (j : Nat) : List Instr :=
-  ld j ++ yload4o .rdx (1024 * j) .xmm6 .xmm7 .xmm8 .xmm9 ++ toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) ++
-    toY vbaseL
+  ld j ++ yload4o .rdx (1024 * j) .xmm6 .xmm7 .xmm8 .xmm9 ++ toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5)
 
 
-/-- Product `j` of a block (`mul j`), stored to (`j = 0`) or added to the
-sums in `ymm11` and `ymm12`. -/
+/-- Product `j` of a block (of the operands `mul j` loads), stored to
+(`j = 0`) or added to the sums. -/
 def rowSum (mul : Nat → List Instr) (j : Nat) : List Instr :=
-  mul j ++
-    (if j = 0 then [.vop (.vmovdqa .l256 .xmm11 .xmm1), .vop (.vmovdqa .l256 .xmm12 .xmm2)]
-     else [yb .vpaddw .xmm11 .xmm11 .xmm1, yb .vpaddw .xmm12 .xmm12 .xmm2])
+  mul j ++ toY (if j = 0 then ptermSet else ptermAdd)
 
-/-- The products `0, …, n - 1` of a block (`mul`). -/
-def rowSums (mul : Nat → List Instr) : Nat → List Instr
+/-- The products `0, …, n - 1` of a block (`mul`), summed and reduced
+(`pred`): the sums of the first coefficients, times `2⁻¹⁶`, in the words of
+`ymm11`, and those of the second in `ymm12`, each in `(-q, q)`. -/
+def rowSumsAux (mul : Nat → List Instr) : Nat → List Instr
   | 0 => []
-  | n + 1 => rowSums mul n ++ rowSum mul n
+  | n + 1 => rowSumsAux mul n ++ rowSum mul n
+
+def rowSums (mul : Nat → List Instr) (n : Nat) : List Instr := rowSumsAux mul n ++ toY pred
 
 
 
-/-- A block of row `k`: its `k` products (`rowMulYg ld`) summed in `ymm11`
-and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and added to
+/-- A block of row `k`: its `k` products (of the operands `rowMulYg ld`
+loads) summed and reduced to the words of `ymm11` and `ymm12` (`rowSums`),
+those made the coefficients (times `R² mod q`, then `vcadd`), and added to
 the `u32`s at `rdi` as `finAccBodyY` does; the constants of the products
 back, and `rsi` on by `sv`, the bytes of a block of `f`. -/
 def rowBodyYg (ld : Nat → List Instr) (sv : BitVec 32) (k : Nat) : List Instr :=
@@ -198,16 +231,16 @@ def rowY16 (k : Nat) : Prog isa := rowYg (rowLdY16 512) 64 k
 
 /-! ### A row of products to an accumulator -/
 
-/-- Product `j` of a block: of the 32 coefficients `ld j` loads and of
-block of the accumulator `g = rdx + 512 j`, whose words are already in
-`vbase`'s order. -/
+/-- The operands of product `j` of a block: the 32 coefficients `ld j`
+loads, and the block of the accumulator `g = rdx + 512 j`, whose words are
+already in `vbase`'s order. -/
 def rowMulEg (ld : Nat → List Instr) (j : Nat) : List Instr :=
-  ld j ++ [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))] ++
-    toY vbaseL
+  ld j ++ [.vmovdquLoad .l256 .xmm6 (at_ .rdx (512 * j)), .vmovdquLoad .l256 .xmm10 (at_ .rdx (512 * j + 32))]
 
-/-- A block of row `k` to an accumulator: its `k` products summed in `ymm11`
-and `ymm12`, the sums reduced once (`R² mod q`, then `vcadd`), and stored to
-the accumulator at `rdi`; `rsi` moves `st` bytes on. -/
+/-- A block of row `k` to an accumulator: its `k` products summed and
+reduced to the words of `ymm11` and `ymm12` (`rowSums`), those made the
+coefficients (times `R² mod q`, then `vcadd`), and stored to the accumulator
+at `rdi`; `rsi` moves `st` bytes on. -/
 def rowBodyEg (ld : Nat → List Instr) (st : BitVec 32) (k : Nat) : List Instr :=
   [.vmovdquLoad .l256 .xmm13 (at_ .r8 0)] ++ rowSums (rowMulEg ld) k ++ yconst .xmm13 0x05490549 ++
     toY (vmont .xmm11 .xmm13 .xmm3 ++ vcadd .xmm11 .xmm3 ++ vmont .xmm12 .xmm13 .xmm3 ++ vcadd .xmm12 .xmm3) ++

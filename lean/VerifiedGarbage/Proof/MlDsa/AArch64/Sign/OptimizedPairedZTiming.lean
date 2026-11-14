@@ -47,17 +47,17 @@ open VG.Proof.MlDsa.AArch64.Optimized
 theorem pairedZ_ready {p : Params} {S : Nat} {σ s : State} {t r : Nat}
     (hp : Ok3 p) (hr : r+1<p.ℓ) (roots : PairedRoots S s) (h : PositiveIZ p S σ t r s) :
     Paired.PairedZReady cP (s1P p r) (yP p r) t1P (p.γ₁-p.β) s := by
-  have checks := pairedZChk_ok hp r (by omega) hr
+  have checks := pairedZChk_ok hp r (by omega_using [hr]) hr
   simp only [pairedZChk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at checks
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hc,hs⟩,hy⟩,hw⟩,hwy⟩,hww⟩,hcy⟩,hcw⟩,hsy⟩,hsw⟩,hyw⟩,hB⟩,_⟩,_⟩,_⟩,_⟩,_⟩ := checks
   apply pairedZReady_layout h.1.b.l.st.lay roots hc hs hy hw hwy hww hcy hcw hsy hsw hyw
   · refine ⟨h.1.b.c.bound,?_⟩
     intro j hj
     rw [paired_pS_addr]
-    simpa only [PositiveReduced,Nat.add_assoc] using (h.1.b.l.k.d.s1 (r+j) (by omega)).bound
+    simpa only [PositiveReduced,Nat.add_assoc] using (h.1.b.l.k.d.s1 (r+j) (by omega_using [hr, hj])).bound
   · intro j hj
     rw [paired_pS_addr]
-    simpa only [Nat.add_assoc] using (h.1.y j (by omega)).1
+    simpa only [Nat.add_assoc] using (h.1.y j (by omega_using [hr, hj])).1
   · exact hB.1
   · exact hB.2
 

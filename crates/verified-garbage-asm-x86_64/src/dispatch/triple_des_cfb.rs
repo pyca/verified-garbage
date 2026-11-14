@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_triple_des_cfb64_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -27,6 +29,8 @@ pub unsafe fn vg_triple_des_cfb64_encrypt_auto(_dit: verified_garbage_cpu::Dit<'
 /// Contract: `VG.Spec.TripleDes.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// It runs `vg_triple_des_cfb64_encrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -48,6 +52,8 @@ pub unsafe fn vg_triple_des_cfb64_encrypt_final_auto(_dit: verified_garbage_cpu:
 ///
 /// It runs `vg_triple_des_cfb64_decrypt_final`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -67,6 +73,8 @@ pub unsafe fn vg_triple_des_cfb64_decrypt_final_auto(_dit: verified_garbage_cpu:
 /// Contract: `VG.Spec.TripleDes.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_triple_des_cfb64_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES`); `vg_triple_des_cfb64_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_cfb64_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

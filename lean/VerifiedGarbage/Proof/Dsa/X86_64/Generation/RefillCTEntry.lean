@@ -60,12 +60,12 @@ theorem refillWr_pairwise : (refillWr s₀).Pairwise Region.Disjoint := by
   have fs : (⟨refillBase s₀, frameBytes⟩ : Region).Disjoint ⟨off (low s₀) 520, 48⟩ :=
     Offset.disjoint (low s₀) (d := 192) (n := 296) (e := 520) (k := 48) (by decide) (by decide) (by
       have := Refill.low_toNat h; have := (s₀.gpr .rsp).isLt; have : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower
-      omega)
+      omega_using [])
   have cs : (Refill.ctlRegion (refillBase s₀)).Disjoint ⟨off (low s₀) 520, 48⟩ := by
     rw [Refill.ctlRegion_eq]
     exact Offset.disjoint (low s₀) (d := 488) (n := 32) (e := 520) (k := 48) (by decide) (by decide) (by
       have := Refill.low_toNat h; have := (s₀.gpr .rsp).isLt; have : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower
-      omega)
+      omega_using [])
   have ab := fun {r : Region} (hr : r = inOut s₀ ∨ r = inUsed s₀ ∨ r = inRand s₀ ∨ r = inScr s₀ ∨ r = inState s₀ ∨
       r = inArgs s₀) => h.frame_disjoint hr
   simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
@@ -89,7 +89,7 @@ theorem refillWr_lengths : ∀ r ∈ refillWr s₀, r.len ≤ 2 ^ 64 := by
   · exact Nat.le_of_lt (s₀.gpr .rsi).isLt
   · show 8 ≤ 2 ^ 64; decide
   · show (stackArg s₀ 0).toNat * 8 ≤ 2 ^ 64
-    have := h.scrBound; omega
+    have := h.scrBound; omega_using [this]
   · show 32 ≤ 2 ^ 64; decide
 
 theorem refill_header : PrimeHeaderLayout (refillGeometry h).B (refillWr s₀) := by
@@ -97,10 +97,10 @@ theorem refill_header : PrimeHeaderLayout (refillGeometry h).B (refillWr s₀) :
     refillWr_lengths h⟩
   have hs := h.scratchSize
   have hw : pBytes = 128 ∨ pBytes = 256 ∨ pBytes = 384 := by
-    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+    have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
   have : 28928 ≤ VG.Impl.Dsa.Generation.Layout.usedBytes pBytes := by
     rcases hw with rfl | rfl | rfl <;> decide
-  omega
+  omega_using [hs, this]
 
 theorem refill_ctlOK : CtlOK (refillContext h) (s₀.gpr .rdx) (stackArg s₀ 1) :=
   ⟨Refill.ctl_changed h, Refill.rand_ctl h, Refill.rand_ctl h, h.ctl_hash, Refill.refillBase_bound h⟩
@@ -148,9 +148,9 @@ theorem refill_endOK : EndOK (refillContext h) (s₀.gpr .rdx) (stackArg s₀ 1)
     rw [bytesAt_length]
     have := h.randLength
     have hw : Refill.refillPLen s₀ ≤ 384 := by
-      have := h.valid; unfold Spec.Dsa.generationPLenValid at this; simp at this; omega
+      have := h.valid; unfold Spec.Dsa.generationPLenValid at this; simp at this; omega_using [this]
     unfold Spec.Dsa.parameterEntropy at this
-    omega
+    omega_using [this, hw]
 
 /-- The controller's public state on entry. -/
 def loopPublic : LoopPublic where
@@ -221,7 +221,7 @@ theorem entryFirst_ready {pBytes qBytes : Nat} {P : LoopPublic} {u : State} (hi 
     ⟨inArgs s₀, List.mem_append_left _ (by rw [kt.2.1, a.rd, h.rd]; simp), argsC⟩
   have hsp : t.gpr .rsp = refillBase s₀ := (kt.gpr (by decide)).trans a.rsp
   have cs : Scr t (off (refillBase s₀) 296) 32 := Scr.of_mem (by rw [kt.2.2]; exact a.ctl) (by
-    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega)
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hb])
   have c1 : InRegions t.wr (off (refillBase s₀) 304) 8 := by simpa [off_off] using cs.st (d := 8) (by decide)
   refine WP.mono (WP.keep [.rax] (Q := fun v => v.gpr .rax = stackArg s₀ 1) ?_ rfl) fun v ⟨hv, kv⟩ =>
     ⟨(kv.gpr (by decide)).trans hsp, hv⟩
@@ -237,7 +237,7 @@ theorem entry_ct (pBytes qBytes : Nat) (hp : pBytes = 128 ∨ pBytes = 256 ∨ p
       (.block (Refill.headerA pBytes qBytes ++ ([.mov .rax (.mem (sp (Impl.Dsa.X86_64.Generation.Refill.frameBytes + 32 + 48 + 16))),
       .store (Impl.Dsa.X86_64.Generation.Refill.ctl 1) .rax] : List Instr))) hc).isSome = true := by
     subst hq; rcases hp with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  have p31 : pBytes < 2 ^ 31 := by omega
+  have p31 : pBytes < 2 ^ 31 := by omega_using [hp]
   have q31 : qBytes < 2 ^ 31 := by subst hq; rcases hp with rfl | rfl | rfl <;> decide
   refine two_post ?_ fun P u hi => entry_ready hq hi
   have e : Impl.Dsa.X86_64.Generation.Refill.entryHeader pBytes qBytes ++ Impl.Dsa.X86_64.Generation.entryDerived =

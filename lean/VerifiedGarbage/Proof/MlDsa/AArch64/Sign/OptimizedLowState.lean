@@ -32,7 +32,7 @@ theorem NatFam.keep {S : Nat} {rbs wbs : List (Reg × Nat)} {s u : State}
 theorem NatFam.snoc {s : State} {b m : Nat} {f : Nat → Vector Nat n}
     (h : NatFam s b m f) (ht : NatPl s (b+m) (f m)) : NatFam s b (m+1) f := by
   intro j hj
-  rcases (show j<m∨j=m by omega) with hj|rfl
+  rcases (show j<m∨j=m by omega_using [hj]) with hj|rfl
   · exact h j hj
   · exact ht
 

@@ -31,7 +31,7 @@ theorem exportBETail_ok (s : State) {k : Nat} (hk : 0 < k) (count : s.gpr .r6 = 
   · rw [e.other .r1 (by decide), d.gpr, dpVal, c.gpr, dpVal, b.other .r1 (by decide),
       a.other .r1 (by decide), b.other .r6 (by decide), a.other .r6 (by decide), count]
     change s.gpr .r1 + BitVec.ofNat 32 k - BitVec.ofNat 32 1 = _
-    rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg, BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hk])]
   · rw [e.other .lr (by decide), d.other .lr (by decide), c.other .lr (by decide), b.gpr,
       a.other .r6 (by decide), count]
   · rw [e.other .r5 (by decide), d.other .r5 (by decide), c.other .r5 (by decide), b.other .r5 (by decide), a.gpr]
@@ -46,7 +46,7 @@ theorem exportBEArgs_ok (s : State) {base : BitVec 32} {size w o k : Nat}
       t.gpr .lr = BitVec.ofNat 32 k ∧ t.gpr .r5 = base ∧
       t.mem = s.mem ∧ Rest [.r0, .r1, .r2, .r5, .lr] s t := by
   rw [exportBEArgs, WP.block_append_iff]
-  refine WP.mono (loadArray_ok s .r1 .r2 ws (by omega) ptr index (header.array o ho)) ?_
+  refine WP.mono (loadArray_ok s .r1 .r2 ws (by omega_using [fit, ho]) ptr index (header.array o ho)) ?_
   rintro u ⟨array, mem, rest⟩
   refine WP.mono (exportBETail_ok u hk ((rest.gpr .r6 (by decide)).trans count)) ?_
   rintro t ⟨out, src, countT, saved, memT, keep⟩

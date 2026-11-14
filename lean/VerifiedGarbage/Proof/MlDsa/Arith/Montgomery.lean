@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.MontgomeryContract
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Representation identities for Montgomery-scaled ML-DSA callers -/
 
@@ -23,7 +24,7 @@ theorem neg_mul (a c : Zq) : (-a) * c = -(a * c) := by
   have h := Nat.mul_le_mul_right c.val (Nat.le_of_lt a.isLt)
   have hz : q * c.val % q = 0 := Nat.mul_mod_right _ _
   simp only [q] at h hz ⊢
-  omega
+  omega_using [h]
 
 theorem sub_mul (a b c : Zq) : (a - b) * c = a * c - b * c := by
   rw [Fin.sub_eq_add_neg, add_mul, neg_mul, ← Fin.sub_eq_add_neg]

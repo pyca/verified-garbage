@@ -220,7 +220,7 @@ theorem extraBoth_ok {w16 : Bool} {s : State} {p a b : Addr} {L M : List Zq} {A 
   refine WP.seq (WP.mono (bothStart_ok h) fun t i0 => ?_)
   refine WP.seq (WP.mono (count_loop (n:=2) (cr:=.x23) (body:=bothBody w16) (by decide)
     (BothInv w16 L M A B p a b s) (fun k hk v hv => ?_) i0) fun u hu => ?_)
-  · rcases (show k=0 ∨ k=1 by omega) with rfl|rfl
+  · rcases (show k=0 ∨ k=1 by omega_using [hk]) with rfl|rfl
     · exact bothStep0_ok h hv
     · exact bothStep1_ok h hv
   obtain ⟨ku,fu,cu,_,u22,ca,sa,cb,sb⟩ := hu

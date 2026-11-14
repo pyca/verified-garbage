@@ -20,15 +20,15 @@ theorem pcFailArgs_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     WP isa (.block PcFn.failArgs) s fun t =>
       t.gpr .r0 = dst ∧ t.gpr .lr = BitVec.ofNat 32 (4 * Spec.Rsa.modulusWords k) ∧ t.gpr .r3 = 0 ∧
       t.mem = s.mem ∧ Rest [.r0, .r3, .lr] s t := by
-  have kn : (s.gpr .r6).toNat = k := by rw [count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  have words := modulus_words_word (s.gpr .r6) (by rw [kn]; omega)
+  have kn : (s.gpr .r6).toNat = k := by rw [count, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk])]
+  have words := modulus_words_word (s.gpr .r6) (by rw [kn]; omega_using [hk])
   rw [kn] at words
   unfold PcFn.failArgs
   refine wp_dp (op2_imm (by decide)) fun u h => ?_
   refine wp_mov (op2_lsr (by decide)) fun v j => ?_
   refine wp_mov (op2_lsl (by decide)) fun z l => ?_
   refine wp_loadStack (a := VG.Proof.Mont.off (State.addr s.sp) 4) (by decide)
-    (by rw [l.sp, j.sp, h.sp]; exact addr_add (by have := stack.nowrap; omega))
+    (by rw [l.sp, j.sp, h.sp]; exact addr_add (by have := stack.nowrap; omega_using [this]))
     (by rw [l.rd, l.wr, j.rd, j.wr, h.rd, h.wr]; exact stack.read (by decide)) fun a q => ?_
   refine wp_mov (op2_imm (by decide)) fun t r => WP.block_nil ?_
   refine ⟨?_, ?_, r.gpr, r.mem.trans (q.mem.trans (l.mem.trans (j.mem.trans h.mem))),

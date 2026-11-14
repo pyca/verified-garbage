@@ -33,7 +33,7 @@ theorem jointEncode_ok (M : Mont) {s : State} {P : Addr} {w n g y : Nat} {minv :
   have x1 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hg
   have y1 := (hf1.wv_of_not_mem (by decide) (by decide) hnow).trans hy
   refine WP.seq (WP.mono (jointProduct_ok M hc1 hw hw' (by unfold MmUse; decide)
-    (by rw [r21]; exact Nat.mod_lt _ (by omega))) fun s2 ⟨hc2, hl2, hv2, hf2, hk2⟩ => ?_)
+    (by rw [r21]; exact Nat.mod_lt _ (by omega_using [hn]))) fun s2 ⟨hc2, hl2, hv2, hf2, hk2⟩ => ?_)
   rw [x1, r21] at hv2
   have val2 := VG.Proof.Dsa.mont_scale hR hv2
   rw [Nat.mod_eq_of_lt hl2] at val2
@@ -41,7 +41,7 @@ theorem jointEncode_ok (M : Mont) {s : State} {P : Addr} {w n g y : Nat} {minv :
   have y2 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans y1
   have acc2 := (hf2.wv_of_not_mem (by decide) (by decide) hnow).trans val1
   refine WP.seq (WP.mono (jointProduct_ok M hc2 hw hw' (by unfold MmUse; decide)
-    (by rw [r22]; exact Nat.mod_lt _ (by omega))) fun s3 ⟨hc3, hl3, hv3, hf3, hk3⟩ => ?_)
+    (by rw [r22]; exact Nat.mod_lt _ (by omega_using [hn]))) fun s3 ⟨hc3, hl3, hv3, hf3, hk3⟩ => ?_)
   rw [y2, r22] at hv3
   have val3 := VG.Proof.Dsa.mont_scale hR hv3
   rw [Nat.mod_eq_of_lt hl3] at val3

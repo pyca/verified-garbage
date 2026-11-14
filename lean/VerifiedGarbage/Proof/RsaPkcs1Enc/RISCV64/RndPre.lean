@@ -142,12 +142,12 @@ abbrev lowR (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 4304, 2176⟩
 section
 variable {s : State}
 
-theorem psLen_le (hp : RPre s) : psLen s ≤ 1021 := by have := hp.ml; have := hp.k2; unfold psLen; omega
+theorem psLen_le (hp : RPre s) : psLen s ≤ 1021 := by have := hp.ml; have := hp.k2; unfold psLen; omega_using [this]
 
-theorem sp1' (hp : RPre s) : frameBytes ≤ s.sp.toNat := by have := hp.sp1; unfold frameBytes; omega
+theorem sp1' (hp : RPre s) : frameBytes ≤ s.sp.toNat := by have := hp.sp1; unfold frameBytes; omega_using [this]
 
 theorem fb_ge (hp : RPre s) : 2176 ≤ (fb s).toNat := by
-  have := fb_toNat (sp1' hp); have := hp.sp1; unfold frameBytes at *; omega
+  have := fb_toNat (sp1' hp); have := hp.sp1; unfold frameBytes at *; omega_arith
 
 theorem kR_sub : Region.Sub (kR s) (stR s) :=
   Offset.sub_below s.sp (a := frameBytes) (b := 4304) (n := frameBytes) (m := 4304) (by decide) (by decide)
@@ -176,10 +176,10 @@ theorem kR_lowR (hp : RPre s) : (kR s).Disjoint (lowR s) := by
     show s.sp - BitVec.ofNat 64 2128 = _
     rw [Offset.sub_ofNat_eq s.sp (show 2128 ≤ 4304 by decide)]
   rw [kR, e]
-  exact Offset.disjoint_base _ (by decide) (by unfold frameBytes; omega)
+  exact Offset.disjoint_base _ (by decide) (by unfold frameBytes; omega_using [])
 
 theorem in_a7R {j : Nat} (hj : j < 7) : (a7R s).Contains (stackArgAddr s j) 8 := by
-  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem arg_rd (hp : RPre s) (rs : List Region) {j : Nat} (hj : j < 7) :
     InRegions (s.rd ++ rs) (stackArgAddr s j) 8 :=
@@ -220,7 +220,7 @@ theorem words_mem {m : Mem} (hf : Frame [kR s, tR s, oR s, scR s, lowR s] s.mem 
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => hf.readW (r := ⟨p, n * 8⟩) ?_ (fun r hr => ?_) (by decide)
   · have := List.mem_range.mp hi
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [this]) (by omega_using [hw, this])
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact hk.symm
@@ -318,7 +318,7 @@ theorem InF.only {s t w : State} {rs : List Reg} (h : InF s t) (o : Only rs t w)
 theorem wok_frame (s : State) {e n : Nat} (he : oRa + 8 ≤ e) (hen : e + n ≤ frameBytes) :
     Wok s ⟨fb s + BitVec.ofNat 64 e, n⟩ :=
   ⟨⟨kR s, List.mem_cons_self .., frame_sub s hen⟩,
-    Offset.disjoint _ (.inl (by unfold oSave oRa at *; omega)) (by decide) (by unfold frameBytes at hen; omega)⟩
+    Offset.disjoint _ (.inl (by unfold oSave oRa at *; omega_using [he])) (by decide) (by unfold frameBytes at hen; omega_using [hen])⟩
 
 /-- A write of a region apart from the stack. -/
 theorem wok_apart {s : State} {r : Region} (hr : r ∈ W s) (hd : (stR s).Disjoint r) : Wok s r :=

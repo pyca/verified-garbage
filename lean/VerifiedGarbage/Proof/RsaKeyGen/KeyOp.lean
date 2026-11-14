@@ -47,23 +47,23 @@ theorem primes_of_inverse {e P Q d : Nat} (hqp : Q ≤ P)
       rw [Nat.mod_zero] at hed
       have : d ≤ 1 := by
         rcases Nat.eq_zero_or_pos e with h0 | h0
-        · subst h0; omega
+        · subst h0; omega_using [hed]
         · exact Nat.le_of_dvd (by decide) ⟨e, by rw [← hed, Nat.mul_comm]⟩
-      omega
+      omega_using [hd2, this]
     · exact h
   have hdL := hdL hL0
-  have hq1 : Q - 1 ≠ 0 := fun h => by rw [h, Nat.lcm_zero_right] at hL; omega
+  have hq1 : Q - 1 ≠ 0 := fun h => by rw [h, Nat.lcm_zero_right] at hL; omega_using [hL, hL0]
   have hLle : L ≤ (P - 1) * (Q - 1) := by
     rw [← hL]
-    exact Nat.le_of_dvd (Nat.mul_pos (by omega) (by omega)) (Nat.lcm_dvd_mul _ _)
+    exact Nat.le_of_dvd (Nat.mul_pos (by omega_using [hqp, hq1]) (by omega_using [hq1])) (Nat.lcm_dvd_mul _ _)
   have hp3 : 3 ≤ P := by
     by_contra h
     have : (P - 1) * (Q - 1) ≤ 1 := by
-      have : P - 1 ≤ 1 := by omega
-      have : Q - 1 ≤ 1 := by omega
+      have : P - 1 ≤ 1 := by omega_using [h]
+      have : Q - 1 ≤ 1 := by omega_using [hqp, h]
       exact Nat.mul_le_mul (by omega) (by omega) |>.trans (by decide)
-    omega
-  exact ⟨hp3, by omega, hdL⟩
+    omega_arith
+  exact ⟨hp3, by omega_using [hq1], hdL⟩
 
 /-- The key from the primes, as the code computes it. -/
 theorem keyFromPrimes_code {pLen e P₀ Q₀ x : Nat} (hl1 : 32 ≤ pLen) (hl2 : pLen ≤ 512)
@@ -86,29 +86,29 @@ theorem keyFromPrimes_code {pLen e P₀ Q₀ x : Nat} (hl1 : 32 ≤ pLen) (hl2 :
   intro P Q
   have hswap : (if P₀ < Q₀ then (Q₀, P₀) else (P₀, Q₀)) = (P, Q) := by
     by_cases h : P₀ < Q₀ <;> simp [P, Q, h]
-  have hqp : Q ≤ P := by by_cases h : P₀ < Q₀ <;> simp [P, Q, h] <;> omega
-  have hP : P < 2 ^ (8 * pLen) := by by_cases h : P₀ < Q₀ <;> simp [P, h] <;> omega
+  have hqp : Q ≤ P := by by_cases h : P₀ < Q₀ <;> simp [P, Q, h] <;> omega_using [h]
+  have hP : P < 2 ^ (8 * pLen) := by by_cases h : P₀ < Q₀ <;> simp [P, h] <;> omega_arith
   unfold keyFromPrimes
   rw [hswap]
   dsimp only
   rcases hd : Spec.Rsa.inverse e (Nat.lcm (P - 1) (Q - 1)) with _ | d
   · rfl
   · dsimp only
-    rw [show 16 * pLen / 2 = 8 * pLen by omega]
+    rw [show 16 * pLen / 2 = 8 * pLen by omega_using []]
     by_cases hsm : d ≤ 2 ^ (8 * pLen)
     · rw [ite_eq_left hsm, ite_eq_left hsm]
     · rw [ite_eq_right hsm, ite_eq_right hsm]
-      have h2 : 2 ≤ 2 ^ (8 * pLen) := Nat.le_self_pow (by omega) 2 |>.trans' (by decide)
-      obtain ⟨hp3, hq2, hdL⟩ := primes_of_inverse hqp hd (by omega)
-      have hdb : 2 ^ (8 * pLen) < d := by omega
+      have h2 : 2 ≤ 2 ^ (8 * pLen) := Nat.le_self_pow (by omega_using [hl1]) 2 |>.trans' (by decide)
+      obtain ⟨hp3, hq2, hdL⟩ := primes_of_inverse hqp hd (by omega_using [hP₀, hsm])
+      have hdb : 2 ^ (8 * pLen) < d := by omega_using [hsm]
       by_cases hc : (decide (2 ^ (16 * pLen - 1) ≤ P * Q) && decide (Nat.gcd Q (qModP P) = 1) &&
           decide (P % 2 = 1) && decide (Q % 2 = 1) && Spec.Rsa.exponentValid e) = true
       · rw [ite_eq_left hc]
         simp only [Bool.and_eq_true, decide_eq_true_eq] at hc
         obtain ⟨⟨⟨⟨htop, hg⟩, hpo⟩, hqo⟩, hev⟩ := hc
-        have hM : qModP P = P := by unfold qModP; simp [hpo]; omega
+        have hM : qModP P = P := by unfold qModP; simp [hpo]; omega_using [hp3]
         rw [hM] at hg hx hxl
-        have hqi : Spec.Rsa.inverse Q P = some x := inverse_eq (by omega) hxl (by rw [hg] at hx; exact_mod_cast hx)
+        have hqi : Spec.Rsa.inverse Q P = some x := inverse_eq (by omega_using [hp3]) hxl (by rw [hg] at hx; exact_mod_cast hx)
         rw [hqi]
         dsimp only
         rw [ite_eq_left ((keyCheck_iff hl1 hl2 hP hqp he hd hdb hqi).mpr ⟨hpo, hqo, htop, hev⟩)]
@@ -118,7 +118,7 @@ theorem keyFromPrimes_code {pLen e P₀ Q₀ x : Nat} (hl1 : 32 ≤ pLen) (hl2 :
         · dsimp only
           refine ite_eq_right fun hk => ?_
           obtain ⟨hpo, hqo, htop, hev⟩ := (keyCheck_iff hl1 hl2 hP hqp he hd hdb hqi).mp hk
-          have hM : qModP P = P := by unfold qModP; simp [hpo]; omega
+          have hM : qModP P = P := by unfold qModP; simp [hpo]; omega_using [hp3]
           apply hc
           simp only [Bool.and_eq_true, decide_eq_true_eq]
           refine ⟨⟨⟨⟨htop, ?_⟩, hpo⟩, hqo⟩, hev⟩

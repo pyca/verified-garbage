@@ -85,7 +85,7 @@ theorem mulQ_w (hc : BaseCfgOk c) : MulW c (mulQW c) where
   flag := fun w hw => by
     have := hc.n0
     rcases apart_mulW (c := c) (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_using [this, h])
     · exact Or.inr h
 
 end VG.Proof.Ecdh.X86_64

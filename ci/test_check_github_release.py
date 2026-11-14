@@ -59,17 +59,21 @@ class Download(unittest.TestCase):
             self.assertIsNone(req.get_header("Authorization"))
 
     def test_authenticated(self):
-        server = Server()
+        server = Server([http_error(504)] * 5)
         self.assertEqual(self.download(server, token="secret"), b"data")
+        server.errors = [http_error(504)] * 5
         self.assertEqual(self.download(server, tag="latest", token="secret"), b"data")
-        self.assertEqual([r.full_url for r in server.requests], [
+        self.assertEqual([r.full_url for r in server.requests if r.full_url.startswith(API)], [
             f"{API}/repos/owner/repo/releases/tags/v1", ASSET,
             f"{API}/repos/owner/repo/releases/latest", ASSET])
         for req in server.requests:
+            if not req.full_url.startswith(API):
+                self.assertFalse(req.has_header("Authorization"))
+                continue
             # Sent to the API alone: not copied onto a redirect.
             self.assertEqual(req.unredirected_hdrs["Authorization"], "Bearer secret")
             self.assertNotIn("Authorization", req.headers)
-        self.assertEqual(server.requests[1].get_header("Accept"), "application/octet-stream")
+        self.assertEqual(server.requests[6].get_header("Accept"), "application/octet-stream")
 
     def test_token_not_redirected(self):
         # What urllib sends to the host an asset redirects to.
@@ -85,7 +89,7 @@ class Download(unittest.TestCase):
 
     def test_no_such_file(self):
         with self.assertRaisesRegex(SystemExit, "owner/repo v1: no file missing.tar.gz"):
-            self.download(Server(), name="missing.tar.gz", token="secret")
+            self.download(Server([http_error(404)]), name="missing.tar.gz", token="secret")
 
     def test_retries_transient_failures(self):
         server = Server([http_error(503), http_error(429), urllib.error.URLError("reset"),
@@ -97,7 +101,7 @@ class Download(unittest.TestCase):
     def test_gives_up(self):
         server = Server([http_error(504)] * 5)
         with self.assertRaises(urllib.error.HTTPError):
-            self.download(server, token="secret")
+            self.download(server)
         self.assertEqual(len(server.requests), 5)
         self.assertEqual(self.slept, [2, 4, 8, 16])
 
@@ -107,6 +111,25 @@ class Download(unittest.TestCase):
             self.download(server)
         self.assertEqual(len(server.requests), 1)
         self.assertEqual(self.slept, [])
+
+    def test_token_unused_when_public_works(self):
+        server = Server()
+        self.assertEqual(self.download(server, token="secret"), b"data")
+        self.assertEqual(len(server.requests), 1)
+        self.assertFalse(server.requests[0].has_header("Authorization"))
+
+    def test_authenticated_retries_exhausted(self):
+        server = Server([http_error(504)] * 10)
+        with self.assertRaises(urllib.error.HTTPError):
+            self.download(server, token="secret")
+        self.assertEqual(len(server.requests), 10)
+        self.assertEqual(self.slept, [2, 4, 8, 16] * 2)
+
+    def test_five_second_timeout(self):
+        with mock.patch.object(urllib.request, "urlopen") as opener:
+            req = urllib.request.Request("https://example.com")
+            github_release.urlopen(req)
+        opener.assert_called_once_with(req, timeout=5)
 
     def test_other_error_not_retried(self):
         with self.assertRaises(ValueError):
@@ -122,7 +145,7 @@ class Main(unittest.TestCase):
                  mock.patch.object(github_release, "urlopen", Server()) as server:
                 github_release.main(["owner/repo", "latest", "tool.tar.gz", str(out)])
             self.assertEqual(out.read_bytes(), b"data")
-            self.assertEqual(server.requests[0].full_url, f"{API}/repos/owner/repo/releases/latest")
+            self.assertEqual(server.requests[0].full_url, "https://github.com/owner/repo/releases/latest/download/tool.tar.gz")
             self.assertEqual(os.listdir(tmp), ["tool.tar.gz"])
 
 

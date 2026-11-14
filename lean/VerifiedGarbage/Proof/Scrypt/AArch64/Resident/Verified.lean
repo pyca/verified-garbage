@@ -38,12 +38,12 @@ theorem loop_ok {s₀ : State} (hp : BlockMix.Pre s₀) {s : State} (h : Inv s�
   refine WP.mono (body_ok hp hk hi) fun s' hi' => ?_
   have hz : isa.eval (.nonzero .x .x23) s' = some (decide (rr s₀-(k+1) ≠ 0)) := by
     show VG.AArch64.eval (.nonzero .x .x23) s' = _
-    rw [eval_nonzero,hi'.x23,bne,ofNat_beq_zero (by omega)]
+    rw [eval_nonzero,hi'.x23,bne,ofNat_beq_zero (by omega_using [lt])]
     simp
   by_cases hl : rr s₀-(k+1) = 0
   · refine .inl ⟨by rw [hz]; simp [hl],?_⟩
-    rwa [show k+1 = rr s₀ by omega] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl],rr s₀-(k+1),by omega,k+1,rfl,by omega,hi'⟩
+    rwa [show k+1 = rr s₀ by omega_using [hk, hl]] at hi'
+  · exact .inr ⟨by rw [hz]; simp [hl],rr s₀-(k+1),by omega_using [hk],k+1,rfl,by omega_using [hl],hi'⟩
 
 theorem prologue_ok {s₀ : State} (hp : BlockMix.Pre s₀) :
     WP isa (.block VG.Impl.Scrypt.AArch64.Resident.prologue) s₀ (BlockMix.Inv s₀ 0) := by

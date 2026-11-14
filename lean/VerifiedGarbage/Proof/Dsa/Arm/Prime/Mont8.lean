@@ -48,25 +48,25 @@ theorem MS.of_keeps {σ s t : State} (pre : In P σ) (h : MS P σ s) {o : Nat} (
     have e1 := a 1; have e2 := a 2; have e3 := a 3; have e4 := a 4; have e5 := a 5; have eo := a o
     have m1 : o * (8 * (P.w + 2)) ≥ 1 * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega)
     rcases hj with hj | hj | hj <;> rw [hj]
-    · simp only [Proof.Rsa.Mont.aAcc]; omega
-    · simp only [Proof.Rsa.Mont.aTmp]; omega
-    · rcases (by omega : o < 4 ∨ 4 < o) with c | c
-      · have : (o + 1) * (8 * (P.w + 2)) ≤ 4 * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega)
-        rw [Nat.add_mul] at this; omega
-      · have : 5 * (8 * (P.w + 2)) ≤ o * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega)
-        omega
-  have lm : arrAt P.w 8 = 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega
-  have a28 : arrAt P.w 4 + 8 * P.w ≤ arrAt P.w 8 := by simp only [arrAt]; omega
+    · simp only [Proof.Rsa.Mont.aAcc]; omega_using [hr, e1, e2, e4]
+    · simp only [Proof.Rsa.Mont.aTmp]; omega_using [hr, e1, e3, e4]
+    · rcases (by omega_using [ho4] : o < 4 ∨ 4 < o) with c | c
+      · have : (o + 1) * (8 * (P.w + 2)) ≤ 4 * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega_using [c])
+        rw [Nat.add_mul] at this; omega_using [hr, e1, e4, eo, m1, this]
+      · have : 5 * (8 * (P.w + 2)) ≤ o * (8 * (P.w + 2)) := Nat.mul_le_mul_right _ (by omega_using [c])
+        omega_using [hr, e1, e4, eo, this]
+  have lm : arrAt P.w 8 = 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_using []
+  have a28 : arrAt P.w 4 + 8 * P.w ≤ arrAt P.w 8 := by simp only [arrAt]; omega_using []
   refine h.of_read (fun d n hd => ?_) ?_ ?_ sp rd wr
   · have hb : d + n ≤ arrAt P.w 1 := by
-      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
-      rcases hd with (h1 | ⟨_, h1⟩) | ⟨_, h1⟩ <;> simp only [mHd, arrAt] at * <;> omega
+      have : 232 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
+      rcases hd with (h1 | ⟨_, h1⟩) | ⟨_, h1⟩ <;> simp only [mHd, arrAt] at * <;> omega_arith
     refine Mem.read_congr fun i hi => ?_
     simp only [off]; rw [Offset.add_add]
-    exact kb _ (by simp only [arrAt] at *; omega) (.inl (by simp only [arrAt] at *; omega))
+    exact kb _ (by simp only [arrAt] at *; omega_using [lm, hb, hi]) (.inl (by simp only [arrAt] at *; omega_using [hb, hi]))
   · unfold numAt
     exact congrArg BitVec.toNat (Mem.read_congr fun i hi => by
-      rw [Offset.add_add]; exact kb _ (by omega) (.inr ⟨by omega, by omega⟩))
+      rw [Offset.add_add]; exact kb _ (by omega_using [lm, a28, hi]) (.inr ⟨by omega_using [], by omega_using [hi]⟩))
   · rw [sp]
     have hc : (⟨State.addr s.sp, 4⟩ : Region).Contains (State.addr s.sp) (32 / 8) := by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
@@ -97,7 +97,7 @@ theorem St.pmontOp {o a b : Nat} (ho : Operand o) (ha : Operand a) (hb : Operand
       (fun σ s => (E σ ∧ KS P σ (A σ) L' (V σ) LS s) ∧ MS P σ s ∧
         numAt s.mem (State.addr P.M0) P.w o < cv P σ ∧
         numAt s.mem (State.addr P.M0) P.w o * 2 ^ (64 * P.w) % cv P σ = na σ * nb σ % cv P σ) := by
-  have fitM : arrAt P.w 3 + 32 ≤ 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega
+  have fitM : arrAt P.w 3 + 32 ≤ 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_using []
   refine VP.of_ct (fun σ₁ σ₂ => (montOp_ct (base := P.M0) (len := P.lenM) (w := P.w) ho ha hb fitM).mono
     (fun s t ⟨⟨⟨⟨e₁, h₁, w₁⟩, m₁⟩, r₁⟩, ⟨⟨⟨e₂, h₂, w₂⟩, m₂⟩, r₂⟩⟩ => ⟨⟨m₁.ready h₁.pre r₁, ?_⟩, ⟨m₂.ready h₂.pre r₂, ?_⟩,
       by rw [h₁.sp, h₁.pre.sp, h₂.sp, h₂.pre.sp]⟩) fun _ _ _ => trivial) fun σ s ⟨⟨⟨e, h, hw⟩, m⟩, r0⟩ => ?_
@@ -111,7 +111,7 @@ theorem St.pmontOp {o a b : Nat} (ho : Operand o) (ha : Operand a) (hb : Operand
   · have kp := keep_of_mont pre keeps fr
     have hjs : ∀ j ∈ [mBase + 2, mBase + 3, mBase + o], j < nArr := by
       have := ho.1; simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro j (rfl | rfl | rfl) <;>
-        simp only [mBase, nArr] <;> omega
+        simp only [mBase, nArr] <;> omega_arith
     refine h.core kp hjs (by simp) rest.sp rest.rd rest.wr (fun j hj => ?_) (h.sl_keep kp (by simp) (by simp))
       (fun j hj => h.live_lt j (hL' j hj).1) h.ls_ok
     obtain ⟨hjL, h2, h3, ho'⟩ := hL' j hj

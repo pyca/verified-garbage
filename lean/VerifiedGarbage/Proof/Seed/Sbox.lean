@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Seed.Layers
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # SEED's S-boxes through the AES S-box
@@ -68,7 +69,7 @@ theorem row_linT {rows : List (List Nat)} (hr : ∀ l ∈ rows, ∀ i ∈ l, i <
   by_cases hj' : j < rows.length
   · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj', Option.getD_some] at h
     exact hr _ (List.getElem_mem hj') i h
-  · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega), Option.getD_none] at h
+  · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [hj']), Option.getD_none] at h
     cases h
 
 theorem row_xorConstT (A : List Nat) (b : Byte) {c : Nat} (hc : c < 256) :

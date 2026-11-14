@@ -28,7 +28,7 @@ theorem inputCompareLayout_ok (s : State) {base : BitVec 32} {len w : Nat}
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have hw : 2 ≤ w := h.width ▸ h.layout.1
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have f0 := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) fits
   have f1 := Nat.le_trans (array_end_le (w := w) (by decide : 1 < 8)) fits
   have f3 := Nat.le_trans (array_end_le (w := w) (by decide : 3 < 8)) fits
@@ -40,15 +40,15 @@ theorem inputCompareLayout_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (inputCompareArgs_ok s h.workspace size header h.ptr) ?_
   rintro u ⟨p0, p10, p12, count, borrow, memU, restU⟩
   have ctx : SubCtx u base (8 * len) (arrAt w 3) (arrAt w 1) (arrAt w 0) (2 * w) :=
-    ⟨h.workspace.nowrap, by omega, by omega, by omega, Or.inr (by omega), Or.inr (by omega),
+    ⟨h.workspace.nowrap, by omega_using [f3], by omega_using [f1], by omega_using [f0], Or.inr (by omega_using [sep1]), Or.inr (by omega_using [sep0]),
       by rw [restU.wr]; exact h.workspace.writable⟩
   rw [WP.seq_iff]
-  refine WP.mono (subCompare_ok u ctx (by omega) p0 p10 p12 count borrow) ?_
+  refine WP.mono (subCompare_ok u ctx (by omega_using [hw]) p0 p10 p12 count borrow) ?_
   rintro v ⟨value, outside, restV⟩
   rw [memU, ← numAt_native, ← numAt_native] at value
-  rw [memU, show 4 * (2 * w) = 8 * w by omega] at outside
-  have frame := outside_workspace outside (size := 8 * len) (by omega)
-  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega)
+  rw [memU, show 4 * (2 * w) = 8 * w by omega_using []] at outside
+  have frame := outside_workspace outside (size := 8 * len) (by omega_using [f3])
+  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega_using [this])
   have restUV : Rest roundClobbers s v := (restU.mono (by decide)).trans
     (restV.mono (by decide))
   refine WP.mono (restoreBase_ok v

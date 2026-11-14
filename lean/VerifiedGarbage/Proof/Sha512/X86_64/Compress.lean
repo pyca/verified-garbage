@@ -51,7 +51,7 @@ theorem var_succ (t k : Nat) (hk : k < 7) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 7 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 theorem var_mem (t k : Nat) : var t k ∈ work := by
   unfold var List.getD
@@ -364,6 +364,47 @@ def finalizeX86_64 : Contract X86_64.isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+open VG.X86_64 in
+/-- `updateX86_64` with `n` bytes of scratch space, for an implementation of
+the compression function that uses `n - 48` (`updateX86_64` is
+`updateX86_64S 1376`). -/
+def updateX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 192⟩
+    let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
+    let scratch : Region := ⟨s.gpr .r8, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [data] ∧ s.wr = [state, scratch] ∧
+    state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, Repr iv s.mem (s.gpr .rdi) m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+    Repr iv s'.mem (s.gpr .rdi) (m ++ bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+open VG.X86_64 in
+/-- `finalizeX86_64` with `n` bytes of scratch space (`finalizeX86_64` is
+`finalizeX86_64S 1376`). -/
+def finalizeX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 192⟩
+    let out : Region := ⟨s.gpr .rdx, 64⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, Repr iv s.mem (s.gpr .rdi) m → m.length < 2 ^ 64 →
+    s.gpr .rsi = BitVec.ofNat 64 m.length → bytesAt s'.mem (s.gpr .rdx) 64 = finalHash iv m
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
 end VG.Proof.Sha512
 
 
@@ -458,7 +499,7 @@ theorem nb_lt : 128 * nb s₀ < 2 ^ 64 := by
   refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
   have := (st s₀ - bp s₀).isLt
-  omega
+  omega_using [hn]
 
 theorem in_state {k : Nat} (hk : k < 8) :
     InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 :=
@@ -760,7 +801,7 @@ theorem saveMem_saved {s₀ : State} : Saved s₀ (saveMem s₀) :=
   Spill.saveMem_saved _ _ _ _ (by decide)
 
 theorem saveMem_frame {s₀ : State} : Frame [scrR s₀] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega) (by decide)
+  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega_using [this]) (by decide)
 
 theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hg : s₁.gpr = s₀.gpr)
     (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) (hm : s₁.mem = saveMem s₀) : Common s₀ 0 s₁ := by

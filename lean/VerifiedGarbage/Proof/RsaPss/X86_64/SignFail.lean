@@ -31,13 +31,13 @@ theorem Rep.of_outside {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat →
     {O : Region} (hm : ∀ x, ¬ O.Contains x 1 → m' x = m x) (hS : O.Disjoint ⟨S, oRsa⟩)
     (hF : O.Disjoint ⟨F, frameBytes⟩) (G : Geo F S) : Rep m' F S V W where
   scr o ho := by
-    rw [hm _ fun h => hS _ h (Offset.contains_base _ (by omega) (by unfold oRsa at *; omega)), R.scr o ho]
+    rw [hm _ fun h => hS _ h (Offset.contains_base _ (by omega_using [ho]) (by unfold oRsa at *; omega_using [ho])), R.scr o ho]
   fr k hk := by
     rw [← R.fr k hk]
     refine Mem.readW_congr fun i hi => hm _ fun h => hF _ h ?_
     have := G.Fw
     rw [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact Offset.contains_base _ (by unfold nW frameBytes at *; omega) (by unfold nW frameBytes at *; omega)
+    exact Offset.contains_base _ (by unfold nW frameBytes at *; omega_using [hk, hi]) (by unfold nW frameBytes at *; omega_using [hk, hi])
 
 structure ZI (u₀ : State) (p : Addr) (j : Nat) (v : State) : Prop where
   keep : Keep [.r8] u₀ v
@@ -58,7 +58,7 @@ theorem zeroOut_ok {u₀ : State} {p : Addr} {n : Nat} {cnt : Src} (hs : StepOk 
   have hea : p + BitVec.ofNat 64 j + BitVec.ofNat 64 0 = p + BitVec.ofNat 64 j := by
     rw [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
   have hin : InRegions v.wr (p + BitVec.ofNat 64 j) 1 :=
-    ⟨_, I.keep.2.2 ▸ hw, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, I.keep.2.2 ▸ hw, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hpn, hj])⟩
   refine WP.mono (WP.keep [] (Q := fun v' => v'.gpr .r8 = BitVec.ofNat 64 j ∧
       v'.mem = v.mem.writeW (p + BitVec.ofNat 64 j) (0 : Byte)) ?_ rfl)
     fun v' ⟨⟨h8', hm⟩, k⟩ => ⟨(I.keep.trans k).mono (by decide), h8', fun v'' k' hm' h8'' => ?_⟩
@@ -71,12 +71,12 @@ theorem zeroOut_ok {u₀ : State} {p : Addr} {n : Nat} {cnt : Src} (hs : StepOk 
   · subst he
     rw [ifp rfl]
     exact (ifp (show (⟨p, j + 1⟩ : Region).Contains (p + BitVec.ofNat 64 j) 1 from
-      Offset.contains_base _ (by omega) (by omega)) _ _).symm
+      Offset.contains_base _ (by omega_using []) (by omega_using [hpn, hj])) _ _).symm
   · rw [ifn he]
     have hne : (x - p).toNat ≠ j := fun h => he (by
       rw [← h, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel])
     have iff : (⟨p, j + 1⟩ : Region).Contains x 1 ↔ (⟨p, j⟩ : Region).Contains x 1 := by
-      simp only [Region.Contains]; omega
+      simp only [Region.Contains]; omega_using [hne]
     by_cases h1 : (⟨p, j⟩ : Region).Contains x 1
     · rw [ifp h1, ifp (iff.mpr h1)]
     · rw [ifn h1, ifn (fun h => h1 (iff.mp h))]
@@ -94,8 +94,8 @@ theorem signFail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     fun v ⟨⟨h₁, h₁₀, h₂, h₃, hm⟩, hkv⟩ => ?_)
   · xrun [signFail, ea_sp, L.rsp, L.ld (d := sOut) (by decide), L.ld (d := sK) (by decide),
       R.rd (d := sOut) 16 rfl (by decide), R.rd (d := sK) 17 rfl (by decide), ho, hk]
-  refine WP.mono (zeroOut_ok (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.r8] by decide) (by decide) h₁₀)
-    (by omega) hpn (by rw [hkv.2.2]; exact hw) h₁ h₂ h₃) fun w ⟨kw, hmw⟩ => ?_
+  refine WP.mono (zeroOut_ok (stepR_ok (by omega_using [hk2]) v (show Reg.r10 ∉ [Reg.r8] by decide) (by decide) h₁₀)
+    (by omega_using [hk1]) hpn (by rw [hkv.2.2]; exact hw) h₁ h₂ h₃) fun w ⟨kw, hmw⟩ => ?_
   have hout : ∀ x, ¬ (⟨out, k⟩ : Region).Contains x 1 → w.mem x = u.mem x := fun x hx => by
     rw [hmw, ifn hx, hm]
   have Rw : Rep w.mem F S V W := R.of_outside hout hS hF L.geo
@@ -105,6 +105,6 @@ theorem signFail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
   apply List.ext_getElem (by simp)
   intro i h₁ h₂
   simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
-  rw [hmw, ifp (Offset.contains_base _ (by simp at h₁; omega) (by simp at h₁; omega))]
+  rw [hmw, ifp (Offset.contains_base _ (by simp at h₁; omega_using [h₁]) (by simp at h₁; omega_using [hk2, h₁]))]
 
 end VG.Proof.RsaPss.X86_64

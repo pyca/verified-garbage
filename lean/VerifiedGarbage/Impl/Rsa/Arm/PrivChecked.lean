@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
 public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 
 /-! # ARMv7 private RSA with public re-exponentiation before release
 
@@ -83,12 +84,49 @@ def release : Prog isa := .loop (.block releaseStep) .ne
 def releaseTail : Prog isa := .seq (.block maskCore) (.seq (.block releaseArgs)
   (.seq release (.block [.mov .r0 (.reg .r4)])))
 def tail : Prog isa := .seq (.block cmpArgs) (.seq Bignum.Arm.compareBytes releaseTail)
-def check (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
-  .seq (.block pcArgs) (.seq (.call pcName pc) (.seq (.block pdArgs) (.seq (.call pdName pd) tail)))
-def body (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
-  .seq (.block crtArgs) (.seq (.call crtName crt) (check pcName pc pdName pd))
-def code (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+/-- Check a CRT result, given the stage that leaves the public precomputation
+in the frame. -/
+def checkWith (pcStage : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  .seq (.block pcArgs) (.seq pcStage (.seq (.block pdArgs) (.seq (.call pdName pd) tail)))
+def bodyWith (crtName : String) (crt : Prog isa) (chk : Prog isa) : Prog isa :=
+  .seq (.block crtArgs) (.seq (.call crtName crt) chk)
+def codeWith (body : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.frame (.alloc frameBytes) (body crtName crt pcName pc pdName pd) (.free frameBytes))
+    (.seq (.frame (.alloc frameBytes) body (.free frameBytes))
       (.block Bignum.Arm.PcFn.restore)) (.pop .r12 56)
+
+def check (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  checkWith (.call pcName pc) pdName pd
+def body (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  bodyWith crtName crt (check pcName pc pdName pd)
+def code (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  codeWith (body crtName crt pcName pc pdName pd)
+
+/-! ## `vg_rsa_private_checked_precomputed`
+
+`vg_rsa_private_checked`'s arguments, then the key's precomputed values
+`pre` and `pre_len` (incoming arguments 16 and 17). In place of
+`vg_rsa_public_precompute`, its output, the first `2 w` words of `pre`, is
+copied into the frame where that call wrote it, with its status 1; and in
+place of `vg_rsa_private_crt`, `vg_rsa_private_crt_precomputed` is given
+the rest of `pre`, the factors' `R²`. -/
+
+/-- `pcArgs` leaves the frame's `pre` in r0 and `2 w` in r1: the `16 w` bytes
+of the incoming `pre` into it, and the status 1. -/
+def pcCopy : Prog isa :=
+  .seq (.block [.mov .lr (.shifted .r1 .lsl 3), .ldrSp .r1 (arg 16)])
+    (.seq Bignum.Arm.copyBytes (.block [.mov .r0 (.imm 1)]))
+def checkP (pdName : String) (pd : Prog isa) : Prog isa := checkWith pcCopy pdName pd
+/-- The outgoing arguments 14 and 15 of `vg_rsa_private_crt_precomputed`:
+the factors' `R²`, `pre`'s words after its first `2 w`, and their number. -/
+def r2Args : List Instr :=
+  [.ldrSp .r0 (arg 17)] ++ preWords .r1 ++
+    [.ldrSp .lr (arg 16), .dp .sub .r0 .r0 (.reg .r1), .dp .add .lr .lr (.shifted .r1 .lsl 3),
+     .str .r0 .r12 60, .str .lr .r12 56]
+def crtArgsP : List Instr := saveSlots ++ copyArgs ++ r2Args ++ crtRegs
+/-- `bodyWith`, calling `vg_rsa_private_crt_precomputed` (`crtName`). -/
+def bodyP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  .seq (.block crtArgsP) (.seq (.call crtName crt) (checkP pdName pd))
+def codeP (crtName : String) (crt : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  codeWith (bodyP crtName crt pdName pd)
 end VG.Impl.Rsa.Arm.PrivChecked

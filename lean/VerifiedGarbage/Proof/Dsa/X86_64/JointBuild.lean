@@ -30,7 +30,7 @@ theorem jointBuild_ok (M : Mont) {t : State} {P : Addr} {w n g y : Nat} {minv : 
       wv u.mem P (slot w aOne) w = 1 ∧
       Frm P (workRanges w) t.mem u.mem ∧ Keep mmRegs t u := by
   have hnow := hc.scrT.nowrap
-  have hsmall : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
+  have hsmall : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
   unfold Joint.build Joint.tableInit seqs
   refine WP.seq (WP.mono (tabInit_ok hc.exp) fun v ⟨hm, hk⟩ => ?_)
   have o1 := writeW_outside t.mem P (d := 8 * Crt.sTab) (off P (slot w 8)) (by decide)
@@ -43,8 +43,8 @@ theorem jointBuild_ok (M : Mont) {t : State} {P : Addr} {w n g y : Nat} {minv : 
   have cv := hc.exp.of_frm hf hk.2.2 (hk.gpr (by decide))
   have vals : JointBuildValues v.mem P w n g y 0 := h.congr fun a ha => by
     have hab := slot_le (w := w) ha
-    rw [o2.wv (Or.inr (hdr_lt_slot w a (by decide))) (by omega),
-      o1.wv (Or.inr (hdr_lt_slot w a (by decide))) (by omega)]
+    rw [o2.wv (Or.inr (hdr_lt_slot w a (by decide))) (by omega_using [hnow, hab]),
+      o1.wv (Or.inr (hdr_lt_slot w a (by decide))) (by omega_using [hnow, hab])]
   have h0 : JointBuildInv v P w n g y minv 0 v := by
     refine ⟨⟨⟨cv.good, cv.n, cv.inv⟩, cv.scrT⟩, vals, ?_, ?_, fun k hk => by omega,
       Frm.refl _ _ _, Keep.refl _ _⟩
@@ -58,11 +58,11 @@ theorem jointBuild_ok (M : Mont) {t : State} {P : Addr} {w n g y : Nat} {minv : 
     fun s' ⟨hc', hv, hf', hk'⟩ => ?_)
   have sy : wv s'.mem P (slot w aY) w = 2 ^ (64 * w) % n := hv.trans hs.vals.one
   have st' := st.of_arrays hf' (by decide) hs.ctx.scrT.nowrap
-  refine WP.mono (one_ok hc'.mod.good (Nat.le_refl _) hw (by omega) (by decide))
+  refine WP.mono (one_ok hc'.mod.good (Nat.le_refl _) hw (by omega_using [hw']) (by decide))
     fun u ⟨hu, hone, hfu, hku⟩ => ?_
   have uc : JointCtx u P w n minv := ⟨⟨hu,
     (hfu.wv_of_not_mem (by decide) (by decide) hc'.mod.good.scr.nowrap).trans hc'.mod.modulus,
-    by rw [hfu.word0_of_not_mem (by decide) (by decide) hc'.mod.good.scr.nowrap (by omega)]; exact hc'.mod.inverse⟩,
+    by rw [hfu.word0_of_not_mem (by decide) (by decide) hc'.mod.good.scr.nowrap (by omega_using [hw])]; exact hc'.mod.inverse⟩,
     hc'.scrT.congr hku.2.2⟩
   refine ⟨uc, st'.of_arrays hfu (by decide) hc'.scrT.nowrap,
     (hfu.wv_of_not_mem (by decide) (by decide) hc'.mod.good.scr.nowrap).trans sy, hone,

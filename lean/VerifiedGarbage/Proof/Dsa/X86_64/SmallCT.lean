@@ -42,7 +42,7 @@ theorem smallW_ct {a : Nat} (ha : a < 8)
       fun t ⟨⟨h12, hcx, hm⟩, hk⟩ =>
         ⟨⟨minv, ⟨hg.1.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.1.rdi, hm ▸ hg.1.hdr⟩, hg.2⟩, h12, hcx⟩
     xrun [State.ea, hdr, hg.1.rdi, hdrOff, hg.1.hdr.hw,
-      hg.1.scr.ld (show 8 * sW + 8 ≤ L.Z by have := hdr_lt_slot L.w 8 (show sW < 32 by decide); have := hg.2; omega)]
+      hg.1.scr.ld (show 8 * sW + 8 ≤ L.Z by have := hdr_lt_slot L.w 8 (show sW < 32 by decide); have := hg.2; omega_arith)]
   rw [setWord_eq]
   refine RelCT.seq (two_piece (Ψ := fun L t => t.gpr .r8 = off L.B (slot L.w a) ∧
     t.gpr .r12 = BitVec.ofNat 64 L.w ∧ t.gpr .rcx = 0) [.rdi]
@@ -59,7 +59,7 @@ theorem smallW_ct {a : Nat} (ha : a < 8)
     fun t ⟨h8, hk⟩ => ⟨h8, (hk.gpr (by decide)).trans h12, (hk.gpr (by decide)).trans hcx⟩
   xrun [State.ea, hdr, hg.1.rdi, hdrOff, hg.1.hdr.harr a ha,
     hg.1.scr.ld (show 8 * sArr a + 8 ≤ L.Z by
-      have := hdr_lt_slot L.w 8 (show sArr a < 32 by unfold sArr; omega); have := hg.2; omega)]
+      have := hdr_lt_slot L.w 8 (show sArr a < 32 by unfold sArr; omega_using [ha]); have := hg.2; omega_arith)]
 
 
 end VG.Proof.Dsa.X86_64

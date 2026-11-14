@@ -52,8 +52,8 @@ theorem checked_step {I : State → Mem → Prop} (C : CheckInvoke I) {s₀ : St
   refine WP.seq (WP.mono (C.correct A hu slots) fun v ⟨hv, frame, _, eax, invariant⟩ => ?_)
   have low (d : Nat) (hd : 44 ≤ d) (hd' : d + 4 ≤ 120) :
       slot v.mem (rBase s₀) d = slot t.mem (rBase s₀) d := by
-    rw [CheckCall.call_frame_slot A frame hd hd', outs_high ou (e := 44) (by decide) hd (by omega)]
-  have savedV : Saved s₀ v.mem := saved.of_slots fun d hd hd' => low d hd (by omega)
+    rw [CheckCall.call_frame_slot A frame hd hd', outs_high ou (e := 44) (by decide) hd (by omega_using [hd'])]
+  have savedV : Saved s₀ v.mem := saved.of_slots fun d hd hd' => low d hd (by omega_using [hd'])
   have usedV : slot v.mem (rBase s₀) oUsed = 0 := by rw [low _ (by decide) (by decide)]; exact used
   have statusV : slot v.mem (rBase s₀) oStatus = 0 := by rw [low _ (by decide) (by decide)]; exact status
   rw [checkResult_eq A hu] at eax invariant

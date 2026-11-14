@@ -57,7 +57,7 @@ theorem ldS_list_ok : ∀ (L : List (Reg × Nat)) (s : State), (s.gpr sb).toNat 
 theorem stS_ok (s : State) {k : Nat} (t : Reg) (hk : 8 * k < 2048) (hal : (s.gpr sb).toNat % 8 = 0)
     (hin : InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * k)) 8) :
     runBlock isa [stS k t] s = some { s with mem := s.mem.writeW (wordAddr (s.gpr sb) k) (s.gpr t) } := by
-  simp only [stS, runBlock_cons, runStep_some, runBlock_nil, exec_store_d hk (Spill.al8 hal (by omega)) hin]
+  simp only [stS, runBlock_cons, runStep_some, runBlock_nil, exec_store_d hk (Spill.al8 hal (by omega_using [])) hin]
 
 /-- Stores of registers to distinct slots in the region `R`. -/
 theorem stS_list_ok (R : Region) : ∀ (L : List (Nat × Reg)) (s : State), (s.gpr sb).toNat % 8 = 0 →
@@ -76,7 +76,7 @@ theorem stS_list_ok (R : Region) : ∀ (L : List (Nat × Reg)) (s : State), (s.g
     obtain ⟨s', e', g', rd', wr', f', o', v'⟩ :=
       stS_list_ok R L s₁ hal hnd.2 fun y hy => hin y (List.mem_cons_of_mem _ hy)
     have hsep : ∀ k, k ≠ x.1 → k < 2 ^ 58 → slotW s₁ k = slotW s k := fun k hk hk58 =>
-      Mem.readW_writeW_sep (slot_sep _ (by omega) (by omega) hk) (by decide)
+      Mem.readW_writeW_sep (slot_sep _ (by omega_using [hk58]) (by omega) hk) (by decide)
     refine ⟨s', ?_, g', rd', wr', ?_, fun k hk hk58 => ?_, fun y hy => ?_⟩
     · rw [List.map_cons, ← List.singleton_append, runBlock_append', stS_ok s x.2 hx.1 hal hx.2.1,
         Option.bind_some]
@@ -124,7 +124,7 @@ theorem slotW_above {s₀ s s' : State} (hc : Ctx s₀ s) (hb : s'.gpr sb = s.gp
   simp only [slotW, hb, hc.base]; exact slot_above hf hk hk'
 
 theorem mask_lt {kv : Nat × BitVec 64} (hkv : kv ∈ allMasks) : kv.1 < savedSlot := by
-  have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega
+  have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega_using [this]
 
 /-! ## The steps -/
 

@@ -70,9 +70,9 @@ private theorem layout_legacy {p : KeyPublic sampling} {s : State} (h : KeyInput
     rcases hr with (rfl | rfl | rfl | rfl | rfl) | ((rfl | rfl | rfl) | constant)
     · exact xFit
     · exact yFit
-    · change (stackArg s 0).toNat + 8 ≤ 2 ^ 32; omega
+    · change (stackArg s 0).toNat + 8 ≤ 2 ^ 32; omega_using [uFit]
     · exact sFit
-    · change (stackArg s 8).toNat + 128 ≤ 2 ^ 32; omega
+    · change (stackArg s 8).toNat + 128 ≤ 2 ^ 32; omega_using [cFit]
     · exact dFit
     · exact rFit
     · have addr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
@@ -81,7 +81,7 @@ private theorem layout_legacy {p : KeyPublic sampling} {s : State} (h : KeyInput
       have eq : (State.addr s.sp).toNat = s.sp.toNat := by
         simp only [State.addr, BitVec.toNat_setWidth]
         exact Nat.mod_eq_of_lt (Nat.lt_trans s.sp.isLt (by decide))
-      rw [eq]; omega
+      rw [eq]; omega_using [argsFit]
     · exact (hc.2.2.1 r constant).1
   · simp only [writes, List.pairwise_cons, List.Pairwise.nil, List.mem_cons,
       List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, false_implies, and_true]

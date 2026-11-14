@@ -49,7 +49,7 @@ theorem CandidateTape.drawState {p : CandidateP} {used : Nat} {q : Bool} {c : Ch
     have hij : i < p.k := Nat.lt_of_lt_of_le hi (h.base.phase_load_widths q).2.2
     change off p.op i = off (off p.rp used) j at he
     rw [off_off] at he
-    exact h.base.outRand i hij (used + j) (by rw [List.length_drop] at hj; omega) he
+    exact h.base.outRand i hij (used + j) (by rw [List.length_drop] at hj; omega_using [hj]) he
 
 theorem CandidateTape.roundRoom {p : CandidateP} {used : Nat} {q : Bool} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s) (ho : p.phaseValue q % 2 = 1) :
@@ -57,6 +57,6 @@ theorem CandidateTape.roundRoom {p : CandidateP} {used : Nat} {q : Bool} {s : St
   refine ⟨by rw [h.base.sp]; exact h.base.stackSize, by rw [h.base.sp]; exact h.base.stackRoot, ?_⟩
   intro i hi
   rw [h.base.sp, off_off]
-  exact h.base.stackRand (used + i) (by rw [List.length_drop] at hi; omega)
+  exact h.base.stackRand (used + i) (by rw [List.length_drop] at hi; omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

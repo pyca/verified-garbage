@@ -52,7 +52,7 @@ theorem playOf_ok_of {s : State} (nw : (s.gpr .r7).toNat + (s.gpr .r8).toNat * 8
     (hsw : Spec.Dsa.scratchWords (s.gpr .r5).toNat ≤ (s.gpr .r8).toNat) : (playOf s).Ok := by
   simp only [Spec.Dsa.scratchWords] at hsw
   simp only [Spec.Dsa.lengthsValid] at hv
-  exact ⟨by simp only [playOf]; omega, by simp only [playOf]; omega, by simp only [playOf]; omega, nw⟩
+  exact ⟨by simp only [playOf]; omega_using [hv], by simp only [playOf]; omega_using [hv], by simp only [playOf]; omega_using [hsw], nw⟩
 
 theorem playOf_ok {s : State} (h : pcContract.pre s) : (playOf s).Ok :=
   playOf_ok_of h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.2
@@ -64,7 +64,7 @@ theorem pack_entry0 (x y : BitVec 64) (hx : x.toNat < 2 ^ 16) (hy : y.toNat < 2 
   rw [pack_toNat hx hy (by decide) (by decide)]
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   simp only [Nat.reducePow] at *
-  omega
+  omega_using [hx, hy]
 
 /-- The registers `entry` writes. -/
 def pentryRegs : List Reg := [.r0, .r2, .r11, .r21, .r26, .r27, .r28]
@@ -82,8 +82,8 @@ theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .r
         (∀ i < 19, word t.mem (s.gpr .r7) (saveOff i) = s.gpr (saved i)) ∧
         Outside (s.gpr .r7) 0 256 s.mem t.mem) ∧ Keep pentryRegs s t := by
   have hZ := hL.z256
-  have hpl : (s.gpr .r5).toNat < 2 ^ 16 := by have := hL.pl; simp only [playOf] at this; omega
-  have hql : (s.gpr .r6).toNat < 2 ^ 16 := by have := hL.ql; simp only [playOf] at this; omega
+  have hpl : (s.gpr .r5).toNat < 2 ^ 16 := by have := hL.pl; simp only [playOf] at this; omega_using [this]
+  have hql : (s.gpr .r6).toNat < 2 ^ 16 := by have := hL.ql; simp only [playOf] at this; omega_using [this]
   unfold Params.entry
   simp only [List.append_assoc]
   refine WP.block_append (WP.mono (WP.keep [.r11] (Q := fun u => u.gpr .r11 = s.gpr .r7 ∧ u.mem = s.mem)
@@ -92,7 +92,7 @@ theorem pfront_ok_of {s : State} (hL : (playOf s).Ok) (hwr : s.wr = [⟨s.gpr .r
     Scr.of_mem (by rw [ht, hwr]; simp [playOf]) nw
   have hin : ∀ i < 19, InRegions s₁.wr (off (savW (s₁.gpr .r11)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq, a11]
-    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [playOf] at hZ ⊢; omega)
+    exact (hscr s₁ k1.wr).st (d := 104 + 8 * i) (by simp only [playOf] at hZ ⊢; omega_using [hZ, hi])
   refine WP.block_append (WP.mono (save_ok s₁ hin) fun s₂ hS => ?_)
   have k12 := k1.trans hS.keep
   have h21 : s₂.gpr .r21 = s.gpr .r7 := hS.r21.trans a11

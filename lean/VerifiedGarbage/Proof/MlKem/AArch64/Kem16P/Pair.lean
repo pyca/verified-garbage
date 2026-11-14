@@ -184,7 +184,7 @@ theorem beginP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
       · have hh := ht'.savedB
         rw [v19,v28,h.outRight] at hh
         exact hh
-      · exact pfu.frame (by omega) fut (fun r hr => by
+      · exact pfu.frame (by omega_using []) fut (fun r hr => by
           simp only [stepWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
           · exact hh.lay.dPF.symm
@@ -225,7 +225,7 @@ theorem pairPCode_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
   refine ⟨⟨ht.keep.gpr, ht.keep.rd, ht.keep.wr, ht.keep.sp, ht.keep.vcs⟩,
     hu.frame.trans (fut.mono fun r hr => List.mem_append_left _ (List.mem_append_left _ hr)), ht.left,
     ht.reducedLeft, ht.right, ht.reducedRight, ht.status, ?_⟩
-  exact hu.prf.frame (by omega) fut (fun r hr => by
+  exact hu.prf.frame (by omega_using []) fut (fun r hr => by
     simp only [stepWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hh.lay.dPF.symm

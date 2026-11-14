@@ -34,7 +34,7 @@ theorem KeygenState.after_call {extra : Nat} {s t u : State} {h : GenerateKeyABI
   have hpl : (keygenInput s).params.length = (s.gpr .r8).toNat := bytesAt_length _ _ _
   have hrl : (keygenInput s).rand.length = (stackArg s 2).toNat := bytesAt_length _ _ _
   refine ⟨⟨ht.scr.congr huw, (huc .rsp (by decide)).trans ht.sp,
-    ht.saved.congr (fun d _ hd => hw d (by unfold Random.frameBytes; omega)),
+    ht.saved.congr (fun d _ hd => hw d (by unfold Random.frameBytes; omega_using [hd])),
     (hw _ (by decide)).trans ht.usedWord, hur.trans ht.rd, huw.trans ht.wr,
     keygen_call_source ht.params hf hur huw (by rw [hpl]; exact hwrP) (by rw [hpl]; exact h.stackParams)
       (by rw [hpl]; exact Nat.le_of_lt (s.gpr .r8).isLt),

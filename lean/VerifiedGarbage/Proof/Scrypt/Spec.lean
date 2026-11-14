@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Facts about the Salsa20/8 Core specification
@@ -15,8 +16,8 @@ open VG.Spec.Scrypt (Word step wordLE serialize bytesAt)
 
 theorem rotateLeft_eq (x : Word) {k : Nat} (hk : 0 < k) (hk' : k < 32) :
     x.rotateLeft k = x.rotateRight (32 - k) := by
-  rw [BitVec.rotateLeft_def, BitVec.rotateRight_def, Nat.mod_eq_of_lt hk', Nat.mod_eq_of_lt (by omega),
-    show 32 - (32 - k) = k by omega, BitVec.or_comm]
+  rw [BitVec.rotateLeft_def, BitVec.rotateRight_def, Nat.mod_eq_of_lt hk', Nat.mod_eq_of_lt (by omega_using [hk]),
+    show 32 - (32 - k) = k by omega_using [hk'], BitVec.or_comm]
 
 /-! ## Lines with `Nat` indices -/
 
@@ -53,13 +54,13 @@ theorem readW32_eq (m : Mem) (a : Addr) :
   · rfl
   split
   · rfl
-  simp only [show i - 8 - 8 - 8 < 8 by omega, ite_true]
+  simp only [show i - 8 - 8 - 8 < 8 by omega_using [hi], ite_true]
 
 /-- Word `j` of the bytes at `p` is the little-endian word at `p + 4j`. -/
 theorem wordLE_bytesAt (m : Mem) (p : Addr) {n j : Nat} (hj : 4 * j + 4 ≤ n) :
     wordLE (bytesAt m p n) j = m.readW (p + BitVec.ofNat 64 (4 * j)) 32 := by
-  rw [wordLE, bytesAt_getD _ _ (by omega), bytesAt_getD _ _ (by omega),
-    bytesAt_getD _ _ (by omega), bytesAt_getD _ _ (by omega), readW32_eq]
+  rw [wordLE, bytesAt_getD _ _ (by omega_using [hj]), bytesAt_getD _ _ (by omega_using [hj]),
+    bytesAt_getD _ _ (by omega_using [hj]), bytesAt_getD _ _ (by omega_using [hj]), readW32_eq]
   rw [show p + BitVec.ofNat 64 (4 * j + 3) = p + BitVec.ofNat 64 (4 * j) + 3 by
       rw [BitVec.add_assoc, BitVec.ofNat_add]; rfl,
     show p + BitVec.ofNat 64 (4 * j + 2) = p + BitVec.ofNat 64 (4 * j) + 2 by
@@ -71,7 +72,7 @@ theorem range_mul4 (g : Nat → Byte) : ∀ n, (List.range (4 * n)).map g =
     (List.range n).flatMap fun j => [g (4 * j), g (4 * j + 1), g (4 * j + 2), g (4 * j + 3)]
   | 0 => rfl
   | n + 1 => by
-    rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega, List.range_succ, List.range_succ,
+    rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega_using [], List.range_succ, List.range_succ,
       List.range_succ, List.range_succ, List.range_succ, List.flatMap_append, ← range_mul4 g n]
     simp
 
@@ -104,7 +105,7 @@ theorem bytesAt_eq_serialize (m : Mem) (p : Addr) (x : Vector Word 16)
       BitVec.ofNat 64 i by rw [BitVec.add_assoc, BitVec.ofNat_add]]
     exact Mem.readW_byte _ _ hi
   simp only [getElem!_pos x j hj']
-  rw [← e 1 (by omega), ← e 2 (by omega), ← e 3 (by omega), ← e 0 (by omega)]
+  rw [← e 1 (by omega_using []), ← e 2 (by omega_using []), ← e 3 (by omega_using []), ← e 0 (by omega_using [])]
   rfl
 
 end VG.Proof.Scrypt

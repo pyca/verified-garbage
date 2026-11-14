@@ -27,8 +27,9 @@ each is correct and constant time, by the taint analysis (`fbTaint`): the
 pointers, `rounds`, `n`, the stack pointer and the table's address are
 public, and so is everything the code computes from them; the subkeys, the
 chaining value and the data are secret. `cbcEncryptChained_framed` and
-`cbcDecryptChained_framed` run them with their working space on the stack,
-zeroed on return: 240 bytes, the 29 words of the scratch buffer and 8 more.
+`cbcDecryptChained_framed` run them with their working space on the stack:
+240 bytes, the 29 words of the scratch buffer and 8 more, which the scrub
+after them zeroes (`Proof.Cast5.X86_64.Scrub`).
 -/
 
 @[expose] public section
@@ -242,7 +243,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcChainedSig.Post X86_64.abi.ptrBits) :
 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cbcEncryptChained)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cbcEncryptChained)
       (Proof.Cast5.cbcEncryptChainedRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Proof.Cast5.cbcChainedPre X86_64.abi.ptrBits)
@@ -252,7 +253,7 @@ theorem cbcEncryptChained_framed :
 
 /-- `cbcDecryptChained` with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cbcDecryptChained)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cbcDecryptChained)
       (Proof.Cast5.cbcDecryptChainedRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Proof.Cast5.cbcChainedPre X86_64.abi.ptrBits)

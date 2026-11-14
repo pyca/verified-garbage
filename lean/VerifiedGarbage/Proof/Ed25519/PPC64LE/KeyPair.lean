@@ -142,10 +142,10 @@ theorem K_toNat {s : State} (h : Pre s) {d : Nat} (hd : d ≤ 768) :
   have hk : (K s).toNat + 768 = s.sp.toNat := by
     have := h.sp
     simp only [K, BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   have := s.sp.isLt
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hd, hk]
 
 namespace Pre
 
@@ -195,7 +195,7 @@ theorem exec_addSp12 (t : State) : exec (.addSp .r12 32) t = some (t.write .r12 
 theorem Ctx.inAR {s t : State} (hc : Ctx s t) {d : Nat} (hd : d + 8 ≤ 32) :
     InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 32 + BitVec.ofNat 64 d) 8 := by
   rw [hc.wr, hc.sp, add_add, add_add]
-  exact ⟨AR s, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  exact ⟨AR s, by simp, Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])⟩
 
 /-- The link register and the arguments saved, and the digest's arguments. -/
 theorem saveArgs_ok (s : State) :
@@ -216,7 +216,7 @@ theorem saveArgs_ok (s : State) :
     simp only [e0, add_add, Nat.reduceAdd]
   have hin : ∀ d, d + 8 ≤ 32 → InRegions u.wr (u.sp + BitVec.ofNat 64 32 + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [ew, ha]
-    exact ⟨AR s, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+    exact ⟨AR s, by simp, Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])⟩
   refine WP.cons exec_mflr ?_
   refine WP.cons (exec_addSp12 _) ?_
   refine WP.cons (exec_store_d (t := .r0) (n := .r12) (off := 0) (by decide) (by decide) (hin 0 (by decide))) ?_
@@ -229,9 +229,9 @@ theorem saveArgs_ok (s : State) :
   have hk : STK s ∈ [OUT s, EXP s, SCR s, STK s] := by simp
   have sep : ∀ {d e : Nat}, d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ 768 → e + 8 ≤ 768 →
       Mem.Sep (K s + BitVec.ofNat 64 d) (64 / 8) (K s + BitVec.ofNat 64 e) (64 / 8) :=
-    fun h₁ h₂ h₃ => Offset.sep _ h₁ (by omega) (by omega)
+    fun h₁ h₂ h₃ => Offset.sep _ h₁ (by omega_using [h₂]) (by omega_using [h₃])
   have kc : ∀ {d : Nat}, d + 8 ≤ 768 → (STK s).Contains (K s + BitVec.ofNat 64 d) 8 :=
-    fun hd => Offset.contains_base _ hd (by omega)
+    fun hd => Offset.contains_base _ hd (by omega_using [hd])
   -- The memory, and the registers, after the block.
   refine (?_ : ∀ t : State, t.rd = u.rd → t.wr = u.wr → t.sp = u.sp → t.syms = u.syms →
       (∀ r ∈ preserved, t.gpr r = u.gpr r) → t.gpr .r3 = u.gpr .r5 + BitVec.ofNat 64 0 →
@@ -302,11 +302,11 @@ theorem Ctx.call {s t t' : State} (h : Pre s) (hc : Ctx s t) {wr : List Region} 
     refine hf.readW (r := ⟨K s + BitVec.ofNat 64 e, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rcases List.mem_append.mp hr with hr | hr
     · rcases hsub r hr with rfl | rfl | rfl
-      · exact h.kO (by omega)
-      · exact h.kE (by omega)
-      · exact h.kC (by omega)
+      · exact h.kO (by omega_using [h₂])
+      · exact h.kE (by omega_using [h₂])
+      · exact h.kC (by omega_using [h₂])
     · rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (Or.inr (by omega_using [hn, h₁])) (by omega_using [h₂]) (by omega_using [hn])
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp, fun r hr => (hcs r hr).trans (hc.cs r hr),
     (keep 736 (by decide) (by decide)).trans hc.lr, (keep 744 (by decide) (by decide)).trans hc.fOut,
     (keep 752 (by decide) (by decide)).trans hc.fExp, (keep 760 (by decide) (by decide)).trans hc.fScr,
@@ -317,7 +317,7 @@ theorem Ctx.call {s t t' : State} (h : Pre s) (hc : Ctx s t) {wr : List Region} 
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   · rw [List.mem_singleton.mp hr]
-    exact ⟨_, by simp, stk_sub s (by omega)⟩
+    exact ⟨_, by simp, stk_sub s (by omega_using [hn])⟩
 
 /-! ## The digest -/
 
@@ -337,7 +337,7 @@ theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx3 : t.gpr .r3 = s.gpr
   have hb := hc.belowEq (n := 704) (Nat.le_refl _)
   simp only [below] at hb
   rw [hx3, hx4, hx5, hb, show (BitVec.ofNat 64 32).toNat = 32 from rfl]
-  refine ⟨by rw [hc.sp, K_toNat h (by decide)]; omega, rfl, rfl, h.es.symm, ?_, ?_, h.ns, h.ne⟩
+  refine ⟨by rw [hc.sp, K_toNat h (by decide)]; omega_using [], rfl, rfl, h.es.symm, ?_, ?_, h.ns, h.ne⟩
   · exact h.kS (by decide)
   · exact h.kE (by decide)
 
@@ -419,12 +419,12 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx3 : t.gpr .r3 = s.gpr
     · exact h.tE
     · exact h.tC
     · exact h.tK
-  refine ⟨by rw [hc.sp, K_toNat h (by decide)]; omega, rfl, fun i hi => ?_, h.fit, h.tO, h.tC, h.kT (by decide),
+  refine ⟨by rw [hc.sp, K_toNat h (by decide)]; omega_using [], rfl, fun i hi => ?_, h.fit, h.tO, h.tC, h.kT (by decide),
     h.al, rfl, rfl, h.oe, h.oc, h.ec, h.kO (by decide), h.kE (by decide), h.kC (by decide), h.no, h.ne, h.nc,
     _, by simp [Spec.Ed25519.bytesAt], hE⟩
   exact (hc.frame.readW (r := TB s) (a := s.syms combSym + BitVec.ofNat 64 (8 * i)) (w := 64)
-    (Offset.contains_base _ (show 8 * i + 64 / 8 ≤ 8 * combWords.length by omega)
-      (by have := h.fit; omega)) hT (by decide)).trans (h.held i hi)
+    (Offset.contains_base _ (show 8 * i + 64 / 8 ≤ 8 * combWords.length by omega_using [hi])
+      (by have := h.fit; omega_using [hi, this])) hT (by decide)).trans (h.held i hi)
 
 theorem pk_cov {s t : State} (h : Pre s) (hc : Ctx s t) :
     Covers (pkRd s ++ pkWr s) (t.rd ++ t.wr) ∧ Covers (pkWr s) t.wr := by
@@ -498,7 +498,7 @@ theorem body_ok {s : State} (h : Pre s) {dn pn : String} :
 theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn pkCode) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
-  refine WP.alloc (by decide) (by have := h.sp; omega) (WP.mono (body_ok h) fun u ⟨hsp, hcs, hlr, hE, hO⟩ =>
+  refine WP.alloc (by decide) (by have := h.sp; omega_using [this]) (WP.mono (body_ok h) fun u ⟨hsp, hcs, hlr, hE, hO⟩ =>
     ⟨⟨hcs, ?_, hlr⟩, ?_⟩)
   · show u.sp + BitVec.ofNat 64 64 = s.sp
     rw [hsp, add_add, sp_eq s]

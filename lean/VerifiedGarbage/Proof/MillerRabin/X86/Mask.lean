@@ -18,20 +18,20 @@ theorem maskIndex_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
         (if (s.mem.readW (off g.W sValue) 32 >>> 28).toNat = j then BitVec.allOnes 32 else 0#32) ∧
       Outside g.W sEq1 4 s.mem t.mem ∧ Keeps [.eax, .ecx] s t ∧ Context g t := by
   unfold maskIndex
-  refine wp_movS (readSrc_ptr C.ws C.base (d := sValue) (by have := v.headerFit; unfold sValue; omega))
+  refine wp_movS (readSrc_ptr C.ws C.base (d := sValue) (by have := v.headerFit; unfold sValue; omega_using [this]))
     fun a A _ => wp_shr (by decide) fun b B _ => ?_
   refine wp_logicS (.inr rfl) rfl fun c D => wp_subS rfl fun d E _ => ?_
   refine wp_shr (by decide) fun e F _ => wp_movS rfl fun f G _ => wp_subS rfl fun h H _ => ?_
   have K : Keeps [.eax, .ecx] s h :=
     ((((((A.keeps.mono (by decide)).widen B.keeps).widen D.keeps).widen E.keeps).widen F.keeps).widen G.keeps).widen H.keeps
   have Ch := C.keepMem K (by decide) (by rw [H.mem, G.mem, F.mem, E.mem, D.mem, B.mem, A.mem])
-  refine wp_storeS (ea_ptr Ch.ws Ch.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega))
-    (ws_write Ch.ws (y := 0 + sEq1) (n := 4) (by have := v.headerFit; unfold sEq1; omega))
+  refine wp_storeS (ea_ptr Ch.ws Ch.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega_using [this]))
+    (ws_write Ch.ws (y := 0 + sEq1) (n := 4) (by have := v.headerFit; unfold sEq1; omega_using [this]))
     fun t T => WP.block_nil ?_
   have M : h.mem = s.mem := by rw [H.mem, G.mem, F.mem, E.mem, D.mem, B.mem, A.mem]
   have O : Outside g.W sEq1 4 s.mem t.mem := by
     rw [T.mem, Nat.zero_add, M]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; have := v.headerFit; unfold sEq1; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; have := v.headerFit; unfold sEq1; omega_using [])
   have Kt : Keeps [.eax, .ecx] s t := K.widen (T.keeps [])
   refine ⟨?_, O, Kt, C.keepScalar Kt (by decide) O (by unfold scratchWord sEq1; simp)⟩
   rw [T.mem, Nat.zero_add, Mem.readW_writeW_self32, H.gpr, G.gpr, G.other .eax (by decide),

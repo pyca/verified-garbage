@@ -12,7 +12,11 @@ features detected (see
 `crates/verified-garbage-cpu/src/detect.rs`), but never those the compilation
 target enables (`COMPILED`, e.g. `-C target-cpu=x86-64-v3` or
 `aarch64-apple-darwin`'s baseline), which it is limited to the others of:
-test the baseline with a target that enables none. CI tests each configuration that
+test the baseline with a target that enables none. A microarchitecture
+(`TUNING` in `crates/verified-garbage-cpu/src/lib.rs`, such as `zen5`) is the
+exception: no code needs one, so it may be named on any CPU, and the native
+runner's line naming it with the features its implementation needs
+(`avx,zen5 | <groups>`) tests that choice. CI tests each configuration that
 chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
 `cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA

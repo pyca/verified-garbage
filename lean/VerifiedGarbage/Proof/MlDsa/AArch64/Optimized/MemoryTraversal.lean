@@ -25,7 +25,7 @@ open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
 private theorem positive_toInt {x : BitVec 32} (h : x.toNat<3*8380417) :
     x.toInt=(x.toNat : Int) := by
   have ht := BitVec.toInt_eq_toNat_cond x
-  split at ht <;> omega
+  split at ht <;> omega_arith
 
 private theorem ofInt_nat (n : Nat) : ofInt (n : Int)=ofNat n := by
   apply Fin.ext
@@ -42,22 +42,22 @@ theorem readInner_bank {m : Mem} {p : Addr} {w : Poly} {u : Nat} (hu : u<8)
   constructor
   · intro i e he
     rw [readBank_coeff m p (32*u) 4 i he]
-    exact h.bound _ (by unfold n; omega)
+    exact h.bound _ (by unfold n; omega_using [hu, he])
   · intro i e he
     rw [readBank_coeff m p (32*u) 4 i he]
-    exact h.value _ (by unfold n; omega)
+    exact h.value _ (by unfold n; omega_using [hu, he])
 
 theorem fiveMemStep_at (m : Mem) (p : Addr) {u : Nat} (hu : u<8) (i : Fin 8)
     {e : Nat} (he : e<4) :
     coeffAt (fiveMemStep m p u) p (32*u+4*i.val+e)=
       vword (fiveValues (readBank m (coeffAddr p (32*u)) 16) (innerRoot u) (tailRoot u))[i.val] e := by
   unfold fiveMemStep
-  exact writeBank_coeff_at _ m p (start := 32*u) (step := 4) (by decide) (by omega) i he
+  exact writeBank_coeff_at _ m p (start := 32*u) (step := 4) (by decide) (by omega_using [hu]) i he
 
 theorem fiveMemStep_outside (m : Mem) (p : Addr) {u k : Nat} (hu : u<8) (hk : k<256)
     (ho : k/32≠u) : coeffAt (fiveMemStep m p u) p k=coeffAt m p k := by
   unfold fiveMemStep
-  exact writeBank_coeff_outside _ m p (start := 32*u) (step := 4) (by omega) hk (fun i => by omega)
+  exact writeBank_coeff_outside _ m p (start := 32*u) (step := 4) (by omega_using [hu]) hk (fun i => by omega_using [ho])
 
 /-- One contiguous slice preserves the signed representation globally and
 normalizes its own 32 coefficients into the positive range. -/
@@ -72,17 +72,17 @@ theorem fiveMemStep_field {m : Mem} {p : Addr} {w : Poly} {u : Nat} (hu : u<8)
       (coeffAt (fiveMemStep m p u) p k).toNat<3*8380417 ∧
       ofNat (coeffAt (fiveMemStep m p u) p k).toNat=
         (Traversal.run (Traversal.innerSlice u) w)[k]! := by
-    let i : Fin 8 := ⟨k%32/4,by omega⟩
-    have heq : k=32*u+4*i.val+k%4 := by dsimp only [i]; omega
-    rw [heq,fiveMemStep_at m p hu i (by omega)]
-    exact ⟨hv.1 i _ (by omega),hv.2 i _ (by omega)⟩
+    let i : Fin 8 := ⟨k%32/4,by omega_using []⟩
+    have heq : k=32*u+4*i.val+k%4 := by dsimp only [i]; omega_using [he]
+    rw [heq,fiveMemStep_at m p hu i (by omega_using [])]
+    exact ⟨hv.1 i _ (by omega_using []),hv.2 i _ (by omega_using [])⟩
   constructor
   · constructor
     · intro k hk
       by_cases he : k/32=u
       · have hv := (hAt k hk he).1
         rw [positive_toInt hv]
-        omega
+        omega_using [hv]
       · rw [fiveMemStep_outside m p hu hk he]
         exact h.bound k hk
     · intro k hk
@@ -121,7 +121,7 @@ theorem innerFieldPass_eq (w : Poly) (N : Nat) :
 theorem fivePassMem_step (m : Mem) (p : Addr) (u : Nat) :
     fivePassMem m p innerRoot tailRoot (u+1)=
       fiveMemStep (fivePassMem m p innerRoot tailRoot u) p u := by
-  simp only [fivePassMem,fiveMemStep,coeffAddr,show 128*u=4*(32*u) by omega]
+  simp only [fivePassMem,fiveMemStep,coeffAddr,show 128*u=4*(32*u) by omega_using []]
 
 theorem fivePassMem_field_prefix {m : Mem} {p : Addr} {w : Poly}
     (h : SignedPolyIs m p w (-15*8380417) (15*8380417)) {N : Nat} (hn : N≤8) :
@@ -131,15 +131,15 @@ theorem fivePassMem_field_prefix {m : Mem} {p : Addr} {w : Poly}
   induction N with
   | zero => exact ⟨h,fun k hk => by omega⟩
   | succ N ih =>
-    have hi := ih (by omega)
-    have hs := fiveMemStep_field (u := N) (by omega) hi.1
+    have hi := ih (by omega_using [hn])
+    have hs := fiveMemStep_field (u := N) (by omega_using [hn]) hi.1
     rw [fivePassMem_step]
     refine ⟨hs.1,?_⟩
     intro k hk
     by_cases he : k/32=N
-    · exact hs.2 k (by omega) he
-    · rw [fiveMemStep_outside _ _ (by omega) (by omega) he]
-      exact hi.2 k (by omega)
+    · exact hs.2 k (by omega_using [hn, hk]) he
+    · rw [fiveMemStep_outside _ _ (by omega_using [hn]) (by omega_using [hn, hk]) he]
+      exact hi.2 k (by omega_using [hk, he])
 
 /-- All eight slices finish in the positive internal representation, with the
 same field polynomial as the exact inner NTT traversal. -/
@@ -161,7 +161,7 @@ theorem fivePassMem_field {m : Mem} {p : Addr} {w : Poly}
       (coeffAt (fivePassMem m p innerRoot tailRoot 8) p k)
     have he : (coeffAt (fivePassMem m p innerRoot tailRoot 8) p k).toInt=
         ((coeffAt (fivePassMem m p innerRoot tailRoot 8) p k).toNat : Int) := by
-      split at ht <;> omega
+      split at ht <;> omega_arith
     rw [he] at hv
     have hc (j : Nat) : ofInt (j : Int)=ofNat j := by
       apply Fin.ext

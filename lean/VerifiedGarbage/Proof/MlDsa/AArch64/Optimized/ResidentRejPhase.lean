@@ -32,9 +32,9 @@ theorem parsed_done (s : State) (b : Addr) (L : List Zq) {d n : Nat}
     (hd : d≤n) (h : d=n ∨ (parsed s b L d).length=256) : parsed s b L d=parsed s b L n := by
   rcases h with rfl | hf
   · rfl
-  · conv => rhs; rw [show n=d+(n-d) by omega]
+  · conv => rhs; rw [show n=d+(n-d) by omega_using [hd]]
     unfold parsed at hf ⊢
-    rw [candidateBytes_append,rnFold_append _ _ _ (by rw [candidateBytes_length]; omega),
+    rw [candidateBytes_append,rnFold_append _ _ _ (by rw [candidateBytes_length]; omega_using []),
       rnFold_full hf]
 
 theorem widePhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
@@ -46,10 +46,10 @@ theorem widePhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
         (n<d'+16 ∨ 256<(parsed s₀ b L d').length+16) := by
   rw [h.x4,h.x5] at hg
   by_cases hp : d+16≤n ∧ (parsed s₀ b L d).length+16≤256
-  · refine WP.ite false (by rw [eval_zero,hg,ite_eq_left (by omega)]; rfl)
+  · refine WP.ite false (by rw [eval_zero,hg,ite_eq_left (by omega_using [hp])]; rfl)
       (fun h => nomatch h) (fun _ => wideLoop_ok hl h h17 hp.1 hp.2)
-  · refine WP.ite true (by rw [eval_zero,hg,ite_eq_right (by omega)]; rfl)
-      (fun _ => WP.block_nil_iff.mpr ⟨d,h,Nat.le_refl _,rfl,h17,by omega⟩) (fun h => nomatch h)
+  · refine WP.ite true (by rw [eval_zero,hg,ite_eq_right (by omega_using [hp])]; rfl)
+      (fun _ => WP.block_nil_iff.mpr ⟨d,h,Nat.le_refl _,rfl,h17,by omega_using [hp]⟩) (fun h => nomatch h)
 
 theorem fourPhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
     (hl : StreamLayout s₀ b p n) (h : ParseInv s₀ b p n L d s)
@@ -65,9 +65,9 @@ theorem fourPhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
       have hh := congrArg BitVec.toNat he
       rw [h.x5] at hh
       change n-d=0 at hh
-      omega
-    refine WP.ite false (by rw [eval_zero,hg,ite_eq_left (by omega),show (s.gpr .x5 == 0)=false from beq_eq_false_iff_ne.mpr hn])
-      (fun h => nomatch h) (fun _ => fourLoop_ok hl h h17 (by have:=h.bound; omega) hp.2 hmod)
+      omega_using [hp, hh]
+    refine WP.ite false (by rw [eval_zero,hg,ite_eq_left (by omega_using [hp]),show (s.gpr .x5 == 0)=false from beq_eq_false_iff_ne.mpr hn])
+      (fun h => nomatch h) (fun _ => fourLoop_ok hl h h17 (by have:=h.bound; omega_using [hmod, hp]) hp.2 hmod)
   · have hz : s.gpr .x16=0 := by
       rw [hg]
       split
@@ -75,10 +75,10 @@ theorem fourPhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
         rw [h.x5]
         change n-d=0
         have:=h.bound
-        omega
+        omega_arith
       · rfl
     refine WP.ite true (by rw [eval_zero,hz]; rfl)
-      (fun _ => WP.block_nil_iff.mpr ⟨d,h,Nat.le_refl _,hmod,h17,by have:=h.bound; omega⟩)
+      (fun _ => WP.block_nil_iff.mpr ⟨d,h,Nat.le_refl _,hmod,h17,by have:=h.bound; omega_using [hp, this]⟩)
       (fun h => nomatch h)
 
 /-- The final scalar phase is skipped exactly when the output is full or
@@ -97,8 +97,8 @@ theorem scalarPhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
   have hb : (parsed s₀ b L d).length≤256 := rnFold_length_le hL _
   have hval : (a.gpr .x16).toNat=(256-(parsed s₀ b L d).length)*(n-d) := by
     rw [h16,toNat_mul_n (by
-      have h4b : (s.gpr .x4).toNat≤256 := by rw [h.x4]; omega
-      have h5b : (s.gpr .x5).toNat≤336 := by rw [h.x5]; have:=hl.bound; omega
+      have h4b : (s.gpr .x4).toNat≤256 := by rw [h.x4]; omega_using []
+      have h5b : (s.gpr .x5).toNat≤336 := by rw [h.x5]; have:=hl.bound; omega_using [this]
       exact Nat.lt_of_le_of_lt (Nat.mul_le_mul h4b h5b) (by decide)),h.x4,h.x5]
   have he : isa.eval (.zero .x .x16) a=
       some (decide (d=n ∨ (parsed s₀ b L d).length=256)) := by
@@ -107,11 +107,11 @@ theorem scalarPhase_ok {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
     apply decide_eq_decide.mpr
     rw [Nat.mul_eq_zero]
     have:=h.bound
-    omega
+    omega_using [hb, this]
   by_cases hd : d=n ∨ (parsed s₀ b L d).length=256
   · exact WP.ite true (by rw [he,decide_eq_true hd])
       (fun _ => WP.block_nil_iff.mpr ⟨d,hi,Nat.le_refl _,hd⟩) (fun h => nomatch h)
   · exact WP.ite false (by rw [he,decide_eq_false hd]) (fun h => nomatch h)
-      (fun _ => scalarLoop_ok hl hi hL (by have:=h.bound; omega) (by omega))
+      (fun _ => scalarLoop_ok hl hi hL (by have:=h.bound; omega_using [hd, this]) (by omega_using [hb, hd]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

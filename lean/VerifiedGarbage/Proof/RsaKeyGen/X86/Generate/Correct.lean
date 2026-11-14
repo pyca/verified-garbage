@@ -77,9 +77,9 @@ theorem results_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress}
   have hi := hb.input
   have A := hi.abi
   have WU (k : Nat) (hk : k < 8) : (arg o 2 + BitVec.ofNat 32 k).setWidth 64 = (arg o 2).setWidth 64 + BitVec.ofNat 64 k :=
-    VG.Proof.MlKem.X86.ea_off (by have := A.uBound; omega)
+    VG.Proof.MlKem.X86.ea_off (by have := A.uBound; omega_using [hk, this])
   have WUi (k : Nat) (hk : k + 4 ≤ 8) : InRegions s.wr ((arg o 2).setWidth 64 + BitVec.ofNat 64 k) 4 :=
-    ⟨uR o, by rw [hb.wr, A.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨uR o, by rw [hb.wr, A.wr]; simp, Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
   refine WP.blockKeep _ ?_ (by rfl)
   simp only [results, param_eq, pushWords, Nat.reduceMul, Nat.reduceAdd]
   xrun [State.ea, at_, hb.arg_ea (i := 2) (d := 28) rfl, hb.arg_in (i := 2) (by decide),
@@ -101,10 +101,10 @@ theorem restore_ok {p : GenPublic} {o s : State} (hi : GenInput p o) (hsp : s.gp
   have r (d : Nat) (hd : d + 4 ≤ 16) : InRegions (s.rd ++ s.wr) ((p.S1 + BitVec.ofNat 32 d).setWidth 64) 4 := by
     refine ⟨_, List.mem_append_right _ hw, ?_⟩
     rw [pe]
-    have e := addr_sub A (k := 16) (d := d) (by decide) (by omega)
+    have e := addr_sub A (k := 16) (d := d) (by decide) (by omega_using [hd])
     rw [show (p.S1 + BitVec.ofNat 32 d).setWidth 64 = addr (o.gpr .esp - BitVec.ofNat 32 16) d by
       rw [GenPublic.S1, hi.sp_eq]; rfl, e]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    exact Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])
   obtain ⟨s0, s1, s2, -⟩ := hs
   refine WP.blockKeep _ ?_ (by rfl)
   unfold Impl.Mont.X86.Compact.restoreRegs
@@ -128,7 +128,7 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
   have h1 : 284 ≤ (o.gpr .esp).toNat := A.stackLow
   unfold code
   refine WP.frame (rs := pushRegs) (r := .ebx) (by decide) (by decide) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega) (body_noSp' srch key) ?_
+    (by simp only [List.length_cons, List.length_nil]; omega_using [h1]) (body_noSp' srch key) ?_
   unfold body
   refine WP.seq (WP.mono (entry_ok hp) fun s1 ⟨f1, hbx1, hm1⟩ => ?_)
   refine WP.seq (WP.mono (clearAround_ok f1 hbx1 ?other) fun s2 h2 => ?_)
@@ -141,13 +141,13 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
       subst hph'
       rw [hm1]
       have hf := pushed_frame (rs := pushRegs) (s := o) (by decide)
-        (by simp only [List.length_cons, List.length_nil]; omega)
+        (by simp only [List.length_cons, List.length_nil]; omega_using [h1])
       have hk : Region.Sub ⟨p.slot 4, p.L⟩ (kR o) := by
-        rw [hp.kR_eq]; exact Offset.sub_base _ (by omega)
+        rw [hp.kR_eq]; exact Offset.sub_base _ (by omega_using [])
       exact bytes_keep (R := ⟨p.slot 4, p.L⟩) hf (fun q hq => by
         obtain rfl := List.mem_singleton.mp hq
         exact (A.lowK.symm.sub_left hk).sub_right (by rw [hp.low_eq]; exact below_sub (by decide) A.stackLow))
-        (show p.L ≤ 2 ^ 64 by omega)
+        (show p.L ≤ 2 ^ 64 by omega_using [hv])
   have hinv : GenInv p o (tailOf p o 0 (genProgress o)) (genMeasure p 0 (genProgress o)) s2 :=
     ⟨0, _, rfl, h2.1, [], (consume_zero _).symm⟩
   refine WP.seq (WP.mono (gen_loop srch key hinv) fun s3 hd => ?_)
@@ -198,13 +198,13 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
         obtain rfl := List.mem_singleton.mp hr
         exact sU.sub_left (by rw [hp.sR_eq]; exact Offset.sub_base _ hd)
     refine ⟨?_, ?_, ?_, req3, ?_, ?_, hr3⟩
-    · rw [BitVec.setWidth_append_eq_right, ax5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    · rw [BitVec.setWidth_append_eq_right, ax5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlt])]
     · rw [m5]
       have := bytes_keep (R := ⟨p.kp.setWidth 64, 9 * p.L⟩) fr4 (fun r hr => by
-        obtain rfl := List.mem_singleton.mp hr; rw [← hp.kR_eq]; exact A.ku) (show 9 * p.L ≤ 2 ^ 64 by omega)
+        obtain rfl := List.mem_singleton.mp hr; rw [← hp.kR_eq]; exact A.ku) (show 9 * p.L ≤ 2 ^ 64 by omega_using [hv])
       exact this.trans hkey3
     · simp only [Spec.Rsa.wordsAt, show List.range 1 = [0] from rfl, List.map_cons, List.map_nil, Nat.mul_zero]
-      rw [m5, word_halves (d := 0) hlo hhi, g3.esi, zero_app (by omega)]
+      rw [m5, word_halves (d := 0) hlo hhi, g3.esi, zero_app (by omega_using [hul, hrl])]
     · simp only [Spec.Rsa.wordsAt, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, List.map_cons, List.map_nil,
         Nat.reduceMul]
       have hph : ∀ ph : KeyPhase, (if ph = KeyPhase.p then 0 else 1) = phaseWord ph := by

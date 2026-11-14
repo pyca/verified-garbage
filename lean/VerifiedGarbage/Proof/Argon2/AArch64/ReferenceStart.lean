@@ -117,7 +117,7 @@ theorem start_nat (p : Spec.Argon2.Params) (hl : 0 < p.lanes)
   by_cases lastSlice : slice = 3
   · simp only [lastSlice, ite_true, show (3 : Nat) + 1 = 4 from rfl, Nat.mod_self]
   · have smaller : (slice + 1) * p.segmentLen < 4 * p.segmentLen :=
-      Nat.mul_lt_mul_of_pos_right (by omega) hg
+      Nat.mul_lt_mul_of_pos_right (by omega_using [hs, lastSlice]) hg
     rw [Nat.mod_eq_of_lt smaller]
     simp only [lastSlice, ite_false]
 
@@ -140,7 +140,7 @@ theorem value_nat (s : State) (p : Spec.Argon2.Params) (pass slice : Nat)
     constructor
     · intro h
       have hn := congrArg BitVec.toNat h
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at hn
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs])] at hn
       exact hn
     · intro h; rw [h]; rfl
   unfold value

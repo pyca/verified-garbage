@@ -26,13 +26,13 @@ abbrev wb (len : Nat) : Nat := 8 * Spec.Rsa.modulusWords len
 abbrev numAt (len j : Nat) : Nat := numOff + j * wb len
 
 theorem wb_le {len : Nat} (hl : len ≤ 1024) : wb len ≤ 1024 := by
-  simp only [wb, Spec.Rsa.modulusWords]; omega
+  simp only [wb, Spec.Rsa.modulusWords]; omega_using [hl]
 
 theorem wb_ge {len : Nat} (hl : 64 ≤ len) : 64 ≤ wb len := by
-  simp only [wb, Spec.Rsa.modulusWords]; omega
+  simp only [wb, Spec.Rsa.modulusWords]; omega_using [hl]
 
 theorem len_le_wb (len : Nat) : len ≤ wb len := by
-  simp only [wb, Spec.Rsa.modulusWords]; omega
+  simp only [wb, Spec.Rsa.modulusWords]; omega_using []
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -74,11 +74,11 @@ theorem widthB_ok {s : State} {is : List Instr} {Q : State → Prop} {k len : Na
   apply BitVec.eq_of_toNat_eq
   have h7 : (BitVec.ofNat 32 len + 7).toNat = len + 7 := by
     have e7 : (7 : BitVec 32).toNat = 7 := rfl
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, e7, Nat.mod_eq_of_lt (a := len) (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, e7, Nat.mod_eq_of_lt (a := len) (by omega_using [hl])]
+    omega_using [hl]
   simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, h7, BitVec.toNat_ofNat, wb, Spec.Rsa.modulusWords,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- `slotPtr r j t`: `r = edi + 256 + j B`, `t = B`. -/
 theorem slotPtr_ok {s : State} {is : List Instr} {Q : State → Prop} {base : Addr} {len j : Nat} {r t : Reg}
@@ -100,9 +100,9 @@ theorem slotPtr_ok {s : State} {is : List Instr} {Q : State → Prop} {base : Ad
   rw [PtrAt, e, u₃.gpr, u₂.gpr, et, edi₁]
   have : j * wb len ≤ 8 * 1024 := Nat.mul_le_mul hj hw
   have hB : (BitVec.ofNat 32 (wb len)).toNat = wb len := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hw])
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, hB, hedi, numAt, numOff]
-  rw [Nat.mod_eq_of_lt (a := 256) (by omega), Nat.mod_eq_of_lt (a := j * wb len) (by omega), Nat.mod_add_mod,
+  rw [Nat.mod_eq_of_lt (a := 256) (by omega_using []), Nat.mod_eq_of_lt (a := j * wb len) (by omega_using [this]), Nat.mod_add_mod,
     Nat.add_assoc]
 
 end VG.Proof.Bignum.X86.PublicRt

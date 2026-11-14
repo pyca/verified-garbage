@@ -17,12 +17,12 @@ theorem words_preserve_byte {m m' : Mem} {B : Addr} {count i : Nat}
     (hi : i < 8 * count) : m' (off B i) = m (off B i) := by
   have he : off B (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) = off B i := by
     simp only [off, BitVec.add_assoc, ← BitVec.ofNat_add]
-    rw [show 8 * (i / 8) + i % 8 = i by omega]
+    rw [show 8 * (i / 8) + i % 8 = i by omega_using []]
   have h := congrArg (fun v : BitVec 64 => v.extractLsb' (8 * (i % 8)) 8)
-    (hw (i / 8) (by omega))
+    (hw (i / 8) (by omega_using [hi]))
   change (m'.read (off B (8 * (i / 8))) 8).extractLsb' (8 * (i % 8)) 8 =
     (m.read (off B (8 * (i / 8))) 8).extractLsb' (8 * (i % 8)) 8 at h
-  rw [Mem.extractLsb'_read m' _ (by omega), Mem.extractLsb'_read m _ (by omega), he] at h
+  rw [Mem.extractLsb'_read m' _ (by omega_using []), Mem.extractLsb'_read m _ (by omega_using []), he] at h
   exact h
 
 theorem frame_without_words {m m' : Mem} {B : Addr} {count : Nat} {rs : List Region}
@@ -33,7 +33,7 @@ theorem frame_without_words {m m' : Mem} {B : Addr} {count : Nat} {rs : List Reg
   by_cases hB : (⟨B, 8 * count⟩ : Region).Contains x 1
   · have hi : (x - B).toNat < 8 * count := by
       change (x - B).toNat + 1 ≤ 8 * count at hB
-      omega
+      omega_using [hB]
     have he : off B (x - B).toNat = x := by
       simp only [off, BitVec.ofNat_toNat]
       bv_omega

@@ -120,13 +120,13 @@ open VG.Proof.X25519.Arm (Rest)
 
 theorem layout_width (p : Inputs) (positive : 0 < bits p) :
     (ScalarLayout.vetted p).width = (bits p + 7) / 8 := by
-  have fit := VG.Proof.Ffdh.ScalarWidth.width_le (by have := p.minLength; omega : 0 < p.k)
+  have fit := VG.Proof.Ffdh.ScalarWidth.width_le (by have := p.minLength; omega_using [this] : 0 < p.k)
     (Nat.le_trans (VG.Proof.Ffdh.VettedPolicy.bits_le_bound _) p.scalarBound_bits_fit)
   change p.k - (p.k - VG.Proof.Ffdh.ScalarWidth.width (bits p)) = _
   change VG.Proof.Ffdh.ScalarWidth.width (bits p) ≤ p.k at fit
   rw [Nat.sub_sub_self fit]
   unfold VG.Proof.Ffdh.ScalarWidth.width
-  omega
+  omega_using [positive]
 
 theorem bound_ok (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (environment : CachedGenerationContext p s)
@@ -144,7 +144,7 @@ theorem bound_ok (s : State) {p : Inputs} {slots : List Nat}
   change shiftCount (bits p) = BitVec.ofNat 32 (7 - (bits p - 1) % 8) at countEq
   rw [countEq] at countU
   rw [WP.seq_iff]
-  refine WP.mono (mask_ok u (by omega : 7 - (bits p - 1) % 8 < 8) countU maskU) ?_
+  refine WP.mono (mask_ok u (by omega_using [] : 7 - (bits p - 1) % 8 < 8) countU maskU) ?_
   rintro v ⟨maskV, memV, restV⟩
   rw [VG.Proof.Ffdh.ScalarWidth.mask_shift32 positive] at maskV
   have ptrV := (restV.gpr .r0 (by simp)).trans ((restU.gpr .r0 (by simp)).trans h.ptr)

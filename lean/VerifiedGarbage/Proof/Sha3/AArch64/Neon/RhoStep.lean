@@ -22,10 +22,10 @@ theorem rhoPiStep_ok {s : State} {j k : Nat} (hj : j < 25) (hk0 : 0 < k) (hk : k
         ((vdword (s.v .v25) 1).rotateLeft k) ∧ s'.v .v25 = s.v (vreg j) := by
   have h25 : vreg j ≠ VReg.v25 := by
     change vreg j ≠ vreg 25
-    rw [ne_eq,vreg_inj j (by omega) 25 (by decide)]; omega
+    rw [ne_eq,vreg_inj j (by omega_using [hj]) 25 (by decide)]; omega_using [hj]
   have h26 : vreg j ≠ VReg.v26 := by
     change vreg j ≠ vreg 26
-    rw [ne_eq,vreg_inj j (by omega) 26 (by decide)]; omega
+    rw [ne_eq,vreg_inj j (by omega_using [hj]) 26 (by decide)]; omega_using [hj]
   unfold rhoPiStep
   simp only [List.cons_append,List.nil_append]
   refine wp_vop (d := .v26) rfl fun s₁ h1 => ?_

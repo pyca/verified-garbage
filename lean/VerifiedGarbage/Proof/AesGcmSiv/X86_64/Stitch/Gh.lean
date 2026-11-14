@@ -67,7 +67,7 @@ theorem ldR_eq (k : Nat) (p : XReg) : ldR k p = .vmovdquLoad .l256 .xmm7 (at_ .r
   simp only [ldR, restR, List.cons_append, List.nil_append]
 
 theorem lane_ldR12 {k : Nat} (hk : k < 8) : laneSseBlock (restR k .xmm12) = some (accR (decide (k = 0)) .xmm12) := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- Blocks `2k` and `2k + 1` at `rdx + 32 k`, as they are, added to the
@@ -86,7 +86,7 @@ theorem loadR_ok {k : Nat} (hk : k < 8) (s : State)
   rw [ldR_eq, WP.block_cons_iff]
   refine ⟨s₁, by simp only [isa, exec, State.load256, ea_at, hin, ite_true, Option.map_some]; rfl, ?_⟩
   have l7 : ∀ l < 2, s₁.lane .xmm7 l = s.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp [s₁, State.lane_setV256, v, load256_lo]
     · simp [s₁, State.lane_setV256, v, load256_hi]
   have keep : ∀ r, r ≠ .xmm7 → ∀ l < 2, s₁.lane r l = s.lane r l := fun r hr l _ => by
@@ -124,7 +124,7 @@ theorem ghLoad_ok {k : Nat} (hk : k < 8) (t : State)
   have keep : ∀ r, r ≠ .xmm12 → ∀ l < 2, t₁.lane r l = t.lane r l := fun r hr l _ => by
     simp [t₁, State.lane_setV256, hr]
   have l12 : ∀ l < 2, t₁.lane .xmm12 l = t.mem.readW (a + BitVec.ofNat 64 (16 * l)) 128 := fun l hl => by
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp [t₁, State.lane_setV256, v, load256_lo]
     · simp [t₁, State.lane_setV256, v, load256_hi]
   refine WP.mono (loadR_ok hk t₁ (by simpa [t₁] using hin)) fun t' ⟨p', f'⟩ => ⟨fun l hl => ?_, ?_⟩

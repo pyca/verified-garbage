@@ -158,7 +158,7 @@ theorem trMem_key {p : Params} {m : Mem} {L : Nat} (hp : L ≤ 0xE000) :
   intro i hi
   have he : ((0x4000 : Addr) + BitVec.ofNat 64 i).toNat = 0x4000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hp, hi]
   simp only [trMem, he]
   split
   · rename_i h; omega
@@ -172,10 +172,10 @@ theorem trMem_tr {p : Params} {m : Mem} (hp : p.pkLen ≤ 0xE000) :
   intro i hi
   have he : ((0x12000 : Addr) + BitVec.ofNat 64 i).toNat = 0x12000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [trMem, he, show 0x12000 ≤ 0x12000 + i ∧ 0x12000 + i < 0x12040 by omega, and_self, ite_true,
+    omega_using [hi]
+  simp only [trMem, he, show 0x12000 ≤ 0x12000 + i ∧ 0x12000 + i < 0x12040 by omega_using [hi], and_self, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 theorem mspSat_pre {p : Params} (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {m : Mem}
     (hk : PreparedSecretKey p m 0x4000) : (signMessageEK p true 1184).pre (mspSat p m) := by

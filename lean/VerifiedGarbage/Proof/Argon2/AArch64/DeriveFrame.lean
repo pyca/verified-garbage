@@ -53,11 +53,11 @@ theorem frame_ok (s : State) (rs : List Reg) (body : Prog isa) (Q : State → Pr
       rw [BitVec.toNat_sub_of_le (by
         rw [BitVec.le_def]
         change 16 ≤ s.sp.toNat
-        simp only [List.length_cons] at space; omega)]
+        simp only [List.length_cons] at space; omega_using [space])]
       rfl
     have innerSpace : 272 + 16 * rs.length ≤ (pushed r s).sp.toNat := by
-      rw [pushedBound]; simp only [List.length_cons] at space; omega
-    apply WP.frame (by simp only [List.length_cons] at space; omega)
+      rw [pushedBound]; simp only [List.length_cons] at space; omega_using [space]
+    apply WP.frame (by simp only [List.length_cons] at space; omega_using [space])
     apply ih (pushed r s) (fun t => Q (popped r t)) innerSpace
     apply run.mono
     rintro t ⟨sp, wr, result⟩

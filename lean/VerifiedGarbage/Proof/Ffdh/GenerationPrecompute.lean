@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ffdh.GenerationPrecompute
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 public import VerifiedGarbage.Spec.Rsa.FixedBaseComb
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Canonical words, headers, and entry slices of a reusable generation context. -/
 
@@ -26,7 +27,7 @@ theorem generationPrecompute_eq {pLen : Nat} {dom : List Byte}
     (length : pLen≤dom.length)
     (valid : VG.Spec.Rsa.modulusValid (VG.Spec.Rsa.os2ip (dom.take pLen)) pLen = true) :
     VG.Spec.Ffdh.generationPrecompute pLen dom = some (generationValues pLen dom) := by
-  have len : (dom.take pLen).length=pLen := by simp only [List.length_take]; omega
+  have len : (dom.take pLen).length=pLen := by simp only [List.length_take]; omega_using [length]
   simp only [VG.Spec.Ffdh.generationPrecompute,VG.Spec.Rsa.FixedBaseComb.precompute,
     VG.Spec.Rsa.publicPrecompute,len,valid,↓reduceIte,Option.bind_eq_bind,Option.bind_some,Option.pure_def,generationValues,
     VG.Spec.Ffdh.domainOf,List.append_assoc]
@@ -36,7 +37,7 @@ theorem generationValues_length (pLen : Nat) (dom : List Byte) :
   simp only [generationValues,List.length_append,List.length_cons,List.length_nil,toWords_length,
     table_length,VG.Spec.Ffdh.generationPrecomputedWords,VG.Spec.Rsa.FixedBaseComb.precomputedWords,
     VG.Spec.Rsa.precomputedWords,VG.Spec.Rsa.FixedBaseComb.entries,VG.Spec.Rsa.FixedBaseComb.teeth]
-  omega
+  omega_using []
 
 theorem generationValues_headers (pLen : Nat) (dom : List Byte) :
     let bits := generationScalarBits (domainOf pLen dom)
@@ -52,7 +53,7 @@ theorem generationValues_montgomery (pLen : Nat) (dom : List Byte) :
   simp only [generationValues,List.cons_append,List.nil_append,List.drop_succ_cons,List.drop_zero]
   have len : (toWords (domainOf pLen dom).p (modulusWords pLen) ++
       toWords (2^(128*modulusWords pLen)%(domainOf pLen dom).p) (modulusWords pLen)).length =
-      2*modulusWords pLen := by rw [List.length_append,toWords_length,toWords_length]; omega
+      2*modulusWords pLen := by rw [List.length_append,toWords_length,toWords_length]; omega_using []
   rw [← len,List.take_left]
 
 theorem generationValues_entry (pLen : Nat) (dom : List Byte) (a : Nat) (ha : a<32) :
@@ -65,13 +66,13 @@ theorem generationValues_entry (pLen : Nat) (dom : List Byte) (a : Nat) (ha : a<
   let w := modulusWords pLen
   have preLength : (toWords (domainOf pLen dom).p w ++
       toWords (2^(128*w)%(domainOf pLen dom).p) w).length = 2*w := by
-    rw [List.length_append,toWords_length,toWords_length]; omega
+    rw [List.length_append,toWords_length,toWords_length]; omega_using []
   rw [show 3+(2+a)*w = 3+(2*w+a*w) by rw [Nat.add_mul]]
   rw [← List.drop_drop (i := 2*w+a*w) (j := 3)]
   simp only [generationValues,List.cons_append,List.nil_append,List.drop_succ_cons,List.drop_zero]
   rw [List.drop_append]
-  rw [List.drop_eq_nil_of_le (by rw [preLength]; omega),List.nil_append,preLength]
-  rw [show 2*w+a*w-2*w=a*w by omega]
+  rw [List.drop_eq_nil_of_le (by rw [preLength]; omega_using []),List.nil_append,preLength]
+  rw [show 2*w+a*w-2*w=a*w by omega_using []]
   exact table_entry _ _ _ _ _ ha
 
 end VG.Proof.Ffdh

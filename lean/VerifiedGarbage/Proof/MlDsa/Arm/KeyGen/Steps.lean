@@ -26,7 +26,7 @@ open VG.Proof.MlKem.Arm (PieceOk Outs)
 theorem byte16 (v : Nat) : ((BitVec.ofNat 16 v).setWidth 32).setWidth 8 = BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 section
 variable {L : Lay} {Wb : List Nat} {STK : Nat} {s : State} (hs : Site L Wb STK s)

@@ -105,11 +105,11 @@ theorem generateWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stabl
   unfold generateWith
   refine WP.seq (WP.mono (prepare_ok A h) fun u ⟨ax, P, hu, ou, _⟩ => ?_)
   have low : ∀ d, d + 4 ≤ oQ → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
-    outs_low ou (by decide) hd (by unfold oQ at hd; omega)
+    outs_low ou (by decide) hd (by unfold oQ at hd; omega_using [hd])
   refine WP.seq (wp_cmpi fun v fv _ z => WP.block_nil ?_)
   have hv := hu.fupd fv
   have savedV : Saved s₀ v.mem := by
-    rw [fv.mem]; exact saved.of_slots fun d _ hd => low d (by unfold oQ; omega)
+    rw [fv.mem]; exact saved.of_slots fun d _ hd => low d (by unfold oQ; omega_using [hd])
   have usedV : slot v.mem (rBase s₀) oUsed = 0 := by rw [fv.mem, low _ (by decide)]; exact used
   have prepared := P hq
   rw [ax] at z
@@ -119,11 +119,11 @@ theorem generateWith_ok {I : State → Mem → Prop} (F : DeriveInvoke I) (stabl
   have initial : Smp s₀ 0 (slot v.mem (rBase s₀) oDraws).toNat v := by
     refine ⟨hv, by rw [fv.mem]; exact prepared.q, by rw [fv.mem]; exact prepared.width,
       by rw [fv.mem]; exact prepared.mask, usedV, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      fun i hi => by rw [fv.mem]; exact prepared.nonce i (by omega), Nat.zero_le _⟩
+      fun i hi => by rw [fv.mem]; exact prepared.nonce i (by omega_using [hql, hi]), Nat.zero_le _⟩
   refine WP.seq (WP.mono (sample_ok A initial hq) fun w ⟨O, eax, _, ow, _⟩ => ?_)
   rw [← draw_spl] at O eax
   have Iv : I s₀ v.mem := by rw [fv.mem]; exact stable ou (by decide) invariant
-  exact sampledWith_ok F stable A hc O (savedV.of_slots fun d _ hd => outs_low ow (by decide) hd (by omega))
+  exact sampledWith_ok F stable A hc O (savedV.of_slots fun d _ hd => outs_low ow (by decide) hd (by omega_using [hd]))
     (stable ow (by decide) Iv) eax
 
 end VG.Proof.Dsa.X86.KeyRandom

@@ -35,12 +35,12 @@ theorem bit_mask (q : BitVec 64) {c : Nat} (hc : c < 64) :
   have key : (q <<< (63 - c)).getLsbD 63 = q.getLsbD c := by
     rw [BitVec.getLsbD_shiftLeft]
     simp only [show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-      show ¬ (63 < 63 - c) by omega, decide_false, Bool.not_false, show 63 - (63 - c) = c by omega]
+      show ¬ (63 < 63 - c) by omega_using [], decide_false, Bool.not_false, show 63 - (63 - c) = c by omega_using [hc]]
   rw [show (if 63 + i < 64 then (q <<< (63 - c)).getLsbD (63 + i) else (q <<< (63 - c)).getLsbD (64 - 1)) =
-    (q <<< (63 - c)).getLsbD 63 by split; (congr 1; omega); rfl, key]
+    (q <<< (63 - c)).getLsbD 63 by split; (congr 1; omega_arith); rfl, key]
   cases q.getLsbD c
   · simp
-  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega, decide_false,
+  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true, show ¬ 64 ≤ i by omega_using [hi], decide_false,
       Bool.not_false, Bool.and_true]
 
 /-- Row `k`'s mask from the row's bit: all ones exactly for the index's row. -/
@@ -64,7 +64,7 @@ theorem rowBit_run (u : State) (hq : (u.gpr .t0).toNat < 256) :
       t.gpr .t3 = BitVec.twoPow 64 ((u.gpr .t0).toNat / 8) ∧ t.mem = u.mem := by
   unfold rowBit
   rrun
-  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hq])]
   rfl
 
 theorem row0_run {base : Reg} (R : ScanRegs base) (u : State) {T B : BitVec 64} (hT : u.gpr base = T)
@@ -84,8 +84,8 @@ theorem row_run {base : Reg} (R : ScanRegs base) (u : State) {T B : BitVec 64} {
         (B <<< (63 - k)).sshiftRight 63) ∧ t.mem = u.mem := by
   have b0 := R.b0; have b12 := R.b12; have b13 := R.b13
   unfold row rowMask
-  rrun [hT, h3, hr, hal, b0, b12, b13, Ne.symm b0, Ne.symm b12, Ne.symm b13, show 63 - k < 64 by omega,
-    show 8 * k < 2048 by omega]
+  rrun [hT, h3, hr, hal, b0, b12, b13, Ne.symm b0, Ne.symm b12, Ne.symm b13, show 63 - k < 64 by omega_using [],
+    show 8 * k < 2048 by omega_using [hk]]
 
 /-- After rows `0, …, n - 1`, from the scan's start `s₀`. -/
 structure RowInv (s₀ : State) (T : Addr) (n : Nat) (u : State) : Prop where
@@ -121,29 +121,29 @@ theorem rows_run {base : Reg} (R : ScanRegs base) {s₀ : State} {T : Addr} (hT 
     unfold rowsCode
     simp only [List.range_zero, List.flatMap_nil, List.append_nil]
     have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [hk.2.1, hk.2.2]
-    have r0 := hr 0 (by omega)
+    have r0 := hr 0 (by omega_arith)
     simp only [Nat.mul_zero, BitVec.add_zero] at r0
     refine WP.mono (WP.keep [.a7, .t1, .t2] (row0_run R u ((hk.gpr nb).trans hT) h3 hal
       (by rw [hrd]; exact r0)) (by rfl) rfl) fun t ⟨⟨t1, tm⟩, tk⟩ =>
         ⟨?_, by rw [tk.gpr (by decide), h3], (hk.trans tk).mono (by decide), tm.trans hm⟩
     rw [t1, row_mask _ (by decide), keep_or, hm]
     by_cases h : (s₀.gpr .t0).toNat / 8 = 0
-    · rw [ite_eq_left h, ite_eq_left (by omega), h, Nat.mul_zero, BitVec.add_zero]
-    · rw [ite_eq_right h, ite_eq_right (by omega)]
+    · rw [ite_eq_left h, ite_eq_left (by omega_using [h]), h, Nat.mul_zero, BitVec.add_zero]
+    · rw [ite_eq_right h, ite_eq_right (by omega_using [h])]
   | succ n ih =>
     intro hn
     rw [rowsCode_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun v V => ?_
+    refine WP.mono (ih (by omega_using [hn])) fun v V => ?_
     have hrd : v.rd ++ v.wr = s₀.rd ++ s₀.wr := by rw [V.keep.2.1, V.keep.2.2]
-    refine WP.mono (WP.keep [.a7, .t1, .t2] (row_run R v (k := n + 1) (by omega) ((V.keep.gpr nb).trans hT)
-      V.bit (Spill.al8 hal (by omega)) (by rw [hrd]; exact hr _ hn)) (by rfl) rfl) fun t ⟨⟨t1, tm⟩, tk⟩ =>
+    refine WP.mono (WP.keep [.a7, .t1, .t2] (row_run R v (k := n + 1) (by omega_using [hrows, hn]) ((V.keep.gpr nb).trans hT)
+      V.bit (Spill.al8 hal (by omega_using [])) (by rw [hrd]; exact hr _ hn)) (by rfl) rfl) fun t ⟨⟨t1, tm⟩, tk⟩ =>
         ⟨?_, by rw [tk.gpr (by decide), V.bit], (V.keep.trans tk).mono (by decide), tm.trans V.mem⟩
-    rw [t1, V.acc, row_mask _ (by omega), keep_or, V.mem]
+    rw [t1, V.acc, row_mask _ (by omega_using [hrows, hn]), keep_or, V.mem]
     by_cases h1 : (s₀.gpr .t0).toNat / 8 = n + 1
-    · rw [ite_eq_right (by omega), ite_eq_left h1, ite_eq_left (by omega), h1, BitVec.zero_or]
+    · rw [ite_eq_right (by omega_using [h1]), ite_eq_left h1, ite_eq_left (by omega_using [h1]), h1, BitVec.zero_or]
     · by_cases h2 : (s₀.gpr .t0).toNat / 8 < n + 1
-      · rw [ite_eq_left h2, ite_eq_right h1, ite_eq_left (by omega), BitVec.or_zero]
-      · rw [ite_eq_right h2, ite_eq_right h1, ite_eq_right (by omega), BitVec.or_zero]
+      · rw [ite_eq_left h2, ite_eq_right h1, ite_eq_left (by omega_using [h2]), BitVec.or_zero]
+      · rw [ite_eq_right h2, ite_eq_right h1, ite_eq_right (by omega_using [h1, h2]), BitVec.or_zero]
 
 /-! ## The lane -/
 
@@ -158,7 +158,7 @@ theorem shl_shr (x : BitVec 64) {n : Nat} (hn : n ≤ 64) :
 /-- `andi` of a numeral below 2048. -/
 theorem exec_andi_nat {s : State} {d n : Reg} {m : Nat} (h : m < 2048) :
     exec (.logicImm .and d n (m : Int)) s = some (s.write d (s.gpr n &&& BitVec.ofNat 64 m)) := by
-  rw [exec_logicImm (by unfold imm12; omega), BitVec.ofInt_natCast]
+  rw [exec_logicImm (by unfold imm12; omega_using [h]), BitVec.ofInt_natCast]
 
 theorem lane_run (u : State) {laneBits : Nat} (hb : laneBits < 2048)
     (hlane : (u.gpr .t0 &&& BitVec.ofNat 64 laneBits).toNat = (u.gpr .t0).toNat % 8) :
@@ -167,7 +167,7 @@ theorem lane_run (u : State) {laneBits : Nat} (hb : laneBits < 2048)
   unfold laneCode
   rrun [↓exec_andi_nat, hb]
   have := Nat.mod_lt (u.gpr .t0).toNat (by decide : 8 > 0)
-  rw [BitVec.toNat_shiftLeft, hlane, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_shiftLeft, hlane, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using []),
     Nat.mul_comm]
 
 /-- The whole scan. -/
@@ -184,8 +184,8 @@ theorem scan_run {base : Reg} (R : ScanRegs base) (s : State) {T : Addr} (hT : s
       Keep [.a7, .t1, .t2, .t3] s t ∧ t.mem = s.mem := by
   unfold scan
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (WP.keep [.t2, .t3] (rowBit_run s (by omega)) (by rfl) rfl) fun u ⟨⟨u3, um⟩, uk⟩ => ?_
-  refine WP.mono (rows_run R hT hal u3 (uk.mono (by decide)) um hrows.2 hr (rows - 1) (by omega)) fun v V => ?_
+  refine WP.mono (WP.keep [.t2, .t3] (rowBit_run s (by omega_using [hrows, hq])) (by rfl) rfl) fun u ⟨⟨u3, um⟩, uk⟩ => ?_
+  refine WP.mono (rows_run R hT hal u3 (uk.mono (by decide)) um hrows.2 hr (rows - 1) (by omega_using [hrows])) fun v V => ?_
   have q : v.gpr .t0 = s.gpr .t0 := V.keep.gpr (by decide)
   refine WP.mono (WP.keep [.t1, .t2] (lane_run v hb (by rw [q]; exact hlane)) (by rfl) rfl)
     fun w ⟨⟨w1, wm⟩, wk⟩ => ?_
@@ -193,6 +193,6 @@ theorem scan_run {base : Reg} (R : ScanRegs base) (s : State) {T : Addr} (hT : s
       t.mem = w.mem) (by unfold mask; rrun [show 64 - bits < 64 by omega_arith]; exact shl_shr _ hbits.2)
     (by rfl) rfl) fun t ⟨⟨t11, tm⟩, tk⟩ =>
       ⟨?_, ((V.keep.trans wk).trans tk).mono (by decide), by rw [tm, wm, V.mem]⟩
-  rw [t11, w1, V.acc, q, ite_eq_left (by omega)]
+  rw [t11, w1, V.acc, q, ite_eq_left (by omega_using [hq])]
 
 end VG.Proof.Rc2.RISCV64

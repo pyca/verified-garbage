@@ -101,7 +101,7 @@ theorem wp_twordM {S : State → Addr} {vf : State → Reg → BitVec 64} {s t :
       (by rw [o₂.rd, o₁.rd, h.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₃ o₃ e₃ => kk u₃ ((o₁.trans (o₂.trans o₃)).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr) (by
-        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) hd (by omega)) hd T.jo
+        rw [e₃, o₂.mem, o₁.mem, h.readW_apart (T.tK k hk) (T.tS k hk)])) hd (by omega_using [hk])) hd T.jo
 
 /-- The call of the table's function `k`, among `ts`, which reaches `n`, as
 the call of `n` from the state the load of its address leaves. -/
@@ -112,7 +112,7 @@ theorem tcallM_ok {S : State → Addr} {vf : State → Reg → BitVec 64} {s t :
     (hw : s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.syms n) {Q : State → Prop}
     (kk : ∀ t', Only [.r12] t t' → t'.syms = t.syms → WP isa (.call n c) t' Q) : WP isa (tcall j k ts) t Q := by
   show WP isa (.seq (.block (tword .r12 j k ++ [])) (Code.icalls .bctrl ts)) t Q
-  refine WP.seq (WP.of_syms (wp_twordM T h (by omega) (by decide) fun t' o e => wp_nil fun sy' => ?_))
+  refine WP.seq (WP.of_syms (wp_twordM T h (by omega_using [hk]) (by decide) fun t' o e => wp_nil fun sy' => ?_))
   refine WP.icalls_of_call (a := t'.gpr .r12) rfl ?_ (kk t' o sy')
   show ts.find? (fun q => t'.syms q.1 == t'.gpr .r12) = _
   rw [e, hw, sy', sy]; exact hf

@@ -46,12 +46,12 @@ theorem callHead_run {p : Call3Public} {s : State} {a b output : Operand}
     WP isa (.block (callHead a b output p.x.o)) s fun t =>
       PowerFinishPre p.toPowerFinishPublic t ∧ Frm p.x.B argumentRanges s.mem t.mem ∧ Keep coreRegs s t := by
   obtain ⟨hg, child, ⟨ba, bb, has, hbs, hbl, hel⟩, hp, hep, hop, hol, hout, hprefix⟩ := h
-  have h256 : 256 ≤ slot p.x.w 8 := by unfold slot hdrBytes; omega
+  have h256 : 256 ≤ slot p.x.w 8 := by unfold slot hdrBytes; omega_using []
   have hlo : slot p.x.w 8 ≤ p.x.o := p.childLow
   have hhi : p.x.o + slot p.x.wx 8 + tabBytes p.x.wx ≤ p.x.Z := p.childHigh
   unfold callHead
   rw [WP.block_append_iff]
-  refine WP.mono (arguments_ok hg child p.extent (by omega) (by omega) a b output ha hb ho)
+  refine WP.mono (arguments_ok hg child p.extent (by omega_using [h256, hlo]) (by omega_using [hhi]) a b output ha hb ho)
     fun u ⟨hgu, hcu, hargs, _, hf, hk⟩ => ?_
   refine WP.mono (enter_ok hgu hcu.header p.childLow p.childHigh p.offsetBound)
     fun t ⟨hct, hmem, hkt⟩ => ?_

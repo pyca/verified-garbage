@@ -22,7 +22,7 @@ theorem read_input {s₀ s : State} (hp : Pre s₀) {k : Nat} (hk : k < 8)
     vbyte (s.mem.read (s.gpr .x0) 16) e = BitVec.ofNat 8 (Cbd2.byte s₀ (16 * k + e)) := by
   rw [VG.Proof.Rc4.AArch64.vbyte_read _ _ he, h.x0, ptr_add]
   apply BitVec.eq_of_toNat_eq
-  rw [hp.byte_eq h.frame (by omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (byte_lt _)]
+  rw [hp.byte_eq h.frame (by omega_using [hk, he]), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (byte_lt _)]
 
 theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 8)
     {s : State} (h : Inv s₀ k s) : WP isa (.block body16) s fun t =>
@@ -31,7 +31,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 8)
   simp only [List.cons_append, List.nil_append, List.append_assoc]
   refine wp_ldrq (a := s.gpr .x0) (by decide) (by simp) ?_ fun s1 h1 => ?_
   · rw [h.rd, h.wr, hp.rd, hp.wr, h.x0]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hk]) (by decide)))
   rw [WP.block_append_iff]
   refine WP.mono (prepare_ok s1
     (by rw [h1.get .v18]; exact h.consts.c18)
@@ -48,9 +48,9 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 8)
       (vbyte (VPermOp.eval .zip2 .b16 (s2.v .v2) (s2.v .v3)) e).toNat = nib s₀ k (16 * 1 + e) := by
     intro e he
     rw [v2, v3, h1.v, (byte_zip_nibbles _ he).1, (byte_zip_nibbles _ he).2,
-      read_input hp hk h (by omega), read_input hp hk h (by omega)]
-    simp only [nib, show 16 * 0 + e = e by omega, show (16 * 1 + e) / 2 = 8 + e / 2 by omega,
-      show (16 * 1 + e) % 2 = e % 2 by omega, and_self]
+      read_input hp hk h (by omega_using [he]), read_input hp hk h (by omega_using [he])]
+    simp only [nib, show 16 * 0 + e = e by omega_using [], show (16 * 1 + e) / 2 = 8 + e / 2 by omega_using [],
+      show (16 * 1 + e) % 2 = e % 2 by omega_using [], and_self]
   have hw : s2.wr = [fR s₀] := by rw [wr2, h1.wr, h.wr, hp.wr]
   refine half_ok (c := 0) hk (by decide) rfl hw (by rw [gpr2, h.x1]) cs2 (fun e he => (nl e he).1)
     (by rw [mem2]; exact h.out) (by rw [mem2]; exact h.frame)
@@ -73,12 +73,12 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 8)
     refine ⟨((h5.trans h6).trans h7).mono (by decide), ?_, ?_, ?_⟩
     · rw [h7.get .x0, h6.get .x0, e5]; rfl
     · rw [h7.get .x1, e6, h5.get .x1]; rfl
-    · rw [e7, toNat_sub_n (by rw [h6.get .x10, h5.get .x10, gp4, h.count]; simp; omega),
+    · rw [e7, toNat_sub_n (by rw [h6.get .x10, h5.get .x10, gp4, h.count]; simp; omega_using [hk]),
         h6.get .x10, h5.get .x10, gp4, h.count]
-      simp; omega
+      simp; omega_using []
   refine WP.mono (WP.keepV (by decide) scalar) ?_
   intro s7 ⟨⟨kept, xx0, xx1, cnt⟩, vv⟩
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, cnt, ?_, ?_, ?_⟩, by rw [cnt]; omega⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, cnt, ?_, ?_, ?_⟩, by rw [cnt]; omega_using [hk]⟩
   · rw [kept.rd, rd4, rd3, rd2, h1.rd, h.rd]
   · rw [kept.wr, wr4, wr3, wr2, h1.wr, h.wr]
   · rw [kept.sp, sp4, sp3, sp2, h1.sp, h.sp]
@@ -87,7 +87,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 8)
   · rw [xx1, gp4, h.x1, show (64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, ptr_add]
     congr 2
   · exact cs2.of fun r _ _ _ _ r4 r5 r6 r7 => by rw [vv, hv4 r r4 r5 r6 r7, hv3 r r4 r5 r6 r7]
-  · rw [kept.mem, show 64 * (k + 1) = 64 * k + 32 * 1 + 32 by omega]; exact o4
+  · rw [kept.mem, show 64 * (k + 1) = 64 * k + 32 * 1 + 32 by omega_using []]; exact o4
   · rw [kept.mem]; exact f4
 
 theorem init (s : State) : WP isa (.block (tables ++ constant .v18 .b16 0x55 ++

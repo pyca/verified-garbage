@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: arithmetic modulo `q`, for every target
@@ -100,14 +101,14 @@ def condSub (t : Nat) : Nat := if q ≤ t then t - q else t
 
 /-- One conditional subtraction reduces a value less than `2q`. -/
 theorem condSub_eq {t : Nat} (h : t < 2 * q) : condSub t = t % q := by
-  unfold condSub; rw [q_eq] at *; split <;> omega
+  unfold condSub; rw [q_eq] at *; split <;> omega_arith
 
 theorem val_add (a b : Zq) : (a + b).val = condSub (a.val + b.val) := by
-  rw [val_add', condSub_eq (by have := a.isLt; have := b.isLt; omega)]
+  rw [val_add', condSub_eq (by have := a.isLt; have := b.isLt; omega_using [])]
 
 theorem val_sub (a b : Zq) : (a - b).val = condSub (a.val + q - b.val) := by
   have := a.isLt; have := b.isLt
-  rw [val_sub', condSub_eq (by omega), show a.val + (q - b.val) = a.val + q - b.val by omega]
+  rw [val_sub', condSub_eq (by omega_using []), show a.val + (q - b.val) = a.val + q - b.val by omega_using []]
 
 /-! ## Barrett reduction with the high half of a 128-bit product -/
 
@@ -126,12 +127,12 @@ theorem barrett_bounds {x : Nat} (hx : x < 2 ^ 64) :
     barrettQuot x * q ≤ x ∧ x < barrettQuot x * q + 2 * q := by
   unfold barrettQuot barrettM
   rw [q_eq]
-  constructor <;> omega
+  constructor <;> omega_arith
 
 theorem barrett_lt {x : Nat} (hx : x < 2 ^ 64) : barrett x < 2 * q := by
   have := barrett_bounds hx
   unfold barrett
-  omega
+  omega_using [this]
 
 theorem barrett_mod {x : Nat} (hx : x < 2 ^ 64) : barrett x % q = x % q := by
   have h := (barrett_bounds hx).1
@@ -139,7 +140,7 @@ theorem barrett_mod {x : Nat} (hx : x < 2 ^ 64) : barrett x % q = x % q := by
   generalize barrettQuot x = e at h
   have := Nat.mul_mod_left e q
   rw [q_eq] at *
-  omega
+  omega_using [h]
 
 /-- Reduction modulo `q` of `x < 2⁶⁴`. -/
 theorem reduce_barrett {x : Nat} (hx : x < 2 ^ 64) : condSub (barrett x) = x % q := by

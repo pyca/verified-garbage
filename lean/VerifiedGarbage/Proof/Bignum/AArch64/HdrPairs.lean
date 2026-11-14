@@ -35,7 +35,7 @@ theorem hdrPair_ok {t : State} {B : Addr} {j i : Nat} {v : BitVec 64} (h8 : t.gp
     (hi : i < 32) (ha : InRegions (t.rd ++ t.wr) (t.sp + BitVec.ofNat 64 (8 * j)) 8)
     (hv : t.mem.readW (t.sp + BitVec.ofNat 64 (8 * j)) 64 = v) (hw : InRegions t.wr (off B (8 * i)) 8) :
     WP isa (.block (hdrPair j i)) t fun t' => t'.mem = t.mem.writeW (off B (8 * i)) v ∧ Keep [.x9] t t' := by
-  have ho : 8 * j % 8 = 0 ∧ 8 * j < 32768 := ⟨Nat.mul_mod_right _ _, by omega⟩
+  have ho : 8 * j % 8 = 0 ∧ 8 * j < 32768 := ⟨Nat.mul_mod_right _ _, by omega_using [hj]⟩
   exact WP.keep [.x9] (by brun [hdrPair, exec_ldrSp ho ha, hv, h8, hdr_enc hi, hw]) rfl rfl rfl
 
 /-- The stack arguments `p.1` into the header slots `p.2`, for `p ∈ ps`. -/
@@ -54,7 +54,7 @@ theorem hdrPairs_ok {s : State} {B : Addr} : ∀ (ps : List (Nat × Nat)) (t : S
       (by rw [hwr]; exact hw)) fun t₁ ⟨hm, k⟩ => ?_
     refine WP.mono (hdrPairs_ok ps t₁ (fun q hq => hps q (List.mem_cons_of_mem _ hq))
       (by rw [k.gpr .x8 (by decide)]; exact h8) (by rw [k.sp]; exact hsp) (k.rd.trans hrd)
-      (k.wr.trans hwr) (by rw [hm]; exact Outside.store_hdr ho (by omega) (by decide) _))
+      (k.wr.trans hwr) (by rw [hm]; exact Outside.store_hdr ho (by omega_using [hi]) (by decide) _))
       fun t' ⟨hm', k'⟩ => ⟨by rw [hm', hm]; rfl, (k.trans k').mono (by decide)⟩
 
 end VG.Proof.Bignum.AArch64

@@ -42,7 +42,7 @@ theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : St
     sa (by decide : 16 < 18), ta (by decide : 16 < 18),
     sa (by decide : 17 < 18), ta (by decide : 17 < 18),
     crtArgument, PrivGeometry.argument, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ite_true, ite_false, true_and, and_true]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega : g.length < 2 ^ 32)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega_using [this] : g.length < 2 ^ 32)]
   have bytes : Spec.Rsa.bytesAt s.callEntry.mem ((g.sources 0).setWidth 64) g.length =
       Spec.Rsa.bytesAt t.callEntry.mem ((g.sources 0).setWidth 64) g.length :=
     (hs.callBytes 0).trans (nb.trans (ht.callBytes 0).symm)
@@ -64,7 +64,7 @@ theorem pcCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : Sta
     sa (by decide : 4 < 6), ta (by decide : 4 < 6),
     sa (by decide : 5 < 6), ta (by decide : 5 < 6),
     pcArgument, true_and, and_true]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega : g.length < 2 ^ 32)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hs.valid.maxLength; omega_using [this] : g.length < 2 ^ 32)]
   have bytes : Spec.Rsa.bytesAt s.callEntry.mem ((g.sources 0).setWidth 64) g.length =
       Spec.Rsa.bytesAt t.callEntry.mem ((g.sources 0).setWidth 64) g.length :=
     (hs.callBytes 0).trans (nb.trans (ht.callBytes 0).symm)
@@ -92,9 +92,9 @@ theorem pdCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : Sta
     sa (by decide : 8 < 10), ta (by decide : 8 < 10),
     sa (by decide : 9 < 10), ta (by decide : 9 < 10),
     pdArgument, true_and, and_true]
-  have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega
+  have ef : g.exponentLength < 2 ^ 32 := by have := hs.valid.exponentFits; have := hs.valid.maxLength; omega_arith
   have pf : 2 * Spec.Rsa.modulusWords g.length < 2 ^ 32 := by
-    have := hs.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega
+    have := hs.valid.maxLength; simp only [Spec.Rsa.modulusWords]; omega_using [this]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ef, Nat.mod_eq_of_lt pf]
   have bytes : Spec.Rsa.bytesAt s.callEntry.mem ((g.sources 1).setWidth 64) g.exponentLength =
       Spec.Rsa.bytesAt t.callEntry.mem ((g.sources 1).setWidth 64) g.exponentLength :=

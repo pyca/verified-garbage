@@ -20,10 +20,10 @@ theorem scalarFour_ok {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat → 
     (h : Scalar.InvW w16 initial N B bP aP s₀ t s) (ht : t+4≤N) :
     WP isa (scalarFour w16) s fun u => Scalar.InvW w16 initial N B bP aP s₀ (t+4) u ∧ u.v=s.v := by
   have hw : WP isa (scalarFour w16) s (Scalar.InvW w16 initial N B bP aP s₀ (t+4)) := by
-    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega) h) fun a ⟨ha,_⟩ => ?_)
-    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega) ha) fun b ⟨hb,_⟩ => ?_)
-    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega) hb) fun c ⟨hc,_⟩ => ?_)
-    exact WP.mono (Scalar.body_ok hp (by omega) hc) fun _ ⟨hd,_⟩ => hd
+    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega_using [ht]) h) fun a ⟨ha,_⟩ => ?_)
+    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega_using [ht]) ha) fun b ⟨hb,_⟩ => ?_)
+    refine WP.seq (WP.mono (Scalar.body_ok hp (by omega_using [ht]) hb) fun c ⟨hc,_⟩ => ?_)
+    exact WP.mono (Scalar.body_ok hp (by omega_using [ht]) hc) fun _ ⟨hd,_⟩ => hd
   obtain ⟨tr,u,he,hu⟩ := hw
   refine ⟨tr,u,he,hu,?_⟩
   funext r

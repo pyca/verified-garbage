@@ -315,6 +315,10 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   code := WindowFive.code
   verified := WindowFive.base_verified
   noFrames := by decide +kernel
+  crtPName := "vg_rsa_private_crt_precomputed"
+  crtP := WindowFive.codeGiven
+  crtPVerified := WindowFive.given_verified
+  crtPNoFrames := by decide +kernel
   pcName := Spec.Rsa.publicPrecomputeApi.name
   pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
   pcVerified := precompute_verified Mont.base

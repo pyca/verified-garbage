@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # SM4-GCM on x86: the contracts the proofs are written against
@@ -229,6 +230,6 @@ theorem ret32_eq (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm,
     ← Nat.two_pow_add_eq_or_of_lt b.isLt]
-  omega
+  omega_using []
 
 end VG.Proof.Sm4Gcm.X86

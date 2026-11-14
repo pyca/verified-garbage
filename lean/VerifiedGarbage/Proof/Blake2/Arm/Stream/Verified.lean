@@ -160,11 +160,11 @@ theorem argMem_of {s₁ s₂ : State} {j : Nat} (hsp : s₁.sp = s₂.sp) (hf : 
   have e : ∀ s : State, s.sp.toNat + 4 * j ≤ 2 ^ 32 →
       VG.Arm.Taint.argByte s k = stackArgAddr s (k / 4) + BitVec.ofNat 64 (k % 4) := fun s hs => by
     simp only [VG.Arm.Taint.argByte, stackArgAddr]
-    rw [addr_add (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
-    congr 2; omega
-  rw [e s₁ hf, e s₂ (hsp ▸ hf), Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)),
-    Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
-  exact congrArg _ (h _ (by omega))
+    rw [addr_add (by omega_using [hk, hs]), BitVec.add_assoc, ← BitVec.ofNat_add]
+    congr 2; omega_using []
+  rw [e s₁ hf, e s₂ (hsp ▸ hf), Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega_using [])),
+    Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega_using []))]
+  exact congrArg _ (h _ (by omega_using [hk]))
 
 theorem agree_argTaint {rs : List Reg} {n : Nat} {s₁ s₂ : State} (h : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
     (hsp : s₁.sp = s₂.sp)
@@ -313,7 +313,7 @@ theorem update_rel (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk 
         · exact hpub.2.1
         · exact hpub.2.2.1
         · exact hpub.2.2.2.1
-      · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+      · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
         · exact hpub.2.2.2.2.1
         · exact hpub.2.2.2.2.2.1
         · exact hpub.2.2.2.2.2.2) c₁
@@ -405,7 +405,7 @@ theorem finalize_rel (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeO
         · exact hpub.2.1
         · exact hpub.2.2.1
         · exact hpub.2.2.2.1
-      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
         · exact hpub.2.2.2.2.1
         · exact hpub.2.2.2.2.2) c₁
     (fun s e => by rw [e]; exact pro_ok hP hp) (fun s e => by rw [e]; exact pro_ok hP hp')

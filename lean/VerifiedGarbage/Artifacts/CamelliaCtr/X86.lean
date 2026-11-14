@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Camellia.X86.CtrLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
-/-! # Camellia-CTR artifacts on baseline x86 (32-bit) -/
+/-! # Camellia-CTR on x86 -/
 
 @[expose] public section
 

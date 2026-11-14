@@ -20,26 +20,26 @@ def Words (m : Mem) (p : Addr) : Prop :=
 
 theorem Artifact.words {m : Mem} {p : Addr} (h : Artifact m p) : Words m p := by
   intro k hk
-  have hi : k/2<488 := by omega
+  have hi : k/2<488 := by omega_using [hk]
   have hv := h (k/2) hi
-  have hr : k%2=0 ∨ k%2=1 := by omega
+  have hr : k%2=0 ∨ k%2=1 := by omega_using []
   rcases hr with hr | hr
-  · have he : k=2*(k/2) := by omega
+  · have he : k=2*(k/2) := by omega_using [hr]
     have hx := congrArg (fun v : BitVec 64 => v.extractLsb' 0 32) hv
     rw [readW64_lo,expandedWords_low hi] at hx
-    simpa only [show 8*(k/2)=4*k by omega,← he] using hx
-  · have he : k=2*(k/2)+1 := by omega
+    simpa only [show 8*(k/2)=4*k by omega_using [hr],← he] using hx
+  · have he : k=2*(k/2)+1 := by omega_using [hr]
     have hx := congrArg (fun v : BitVec 64 => v.extractLsb' 32 32) hv
     rw [readW64_hi,expandedWords_high hi,BitVec.add_assoc,
       ← BitVec.ofNat_add (8*(k/2)) 4] at hx
-    simpa only [show 8*(k/2)+4=4*k by omega,← he] using hx
+    simpa only [show 8*(k/2)+4=4*k by omega_using [hr],← he] using hx
 
 theorem Words.vector {m : Mem} {p : Addr} (h : Words m p)
     {k e : Nat} (hk : k+4≤976) (he : e<4) :
     vword (m.read (p+BitVec.ofNat 64 (4*k)) 16) e=BitVec.ofNat 32 expandedVals[k+e]! := by
   rw [VG.Proof.MlDsa.AArch64.Arith.Neon.vword_read16 _ _ he,
     BitVec.add_assoc,← BitVec.ofNat_add,← Nat.mul_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hk, he])
 
 /-- A pair of SIMD loads selects a root and its reciprocal from one row. -/
 theorem Words.row {m : Mem} {p : Addr} (h : Words m p)
@@ -49,11 +49,11 @@ theorem Words.row {m : Mem} {p : Addr} (h : Words m p)
       expandedVals[120*u+off/4+8*g+e+4]! = bar (z root)) :
     vword (m.read (p+BitVec.ofNat 64 (480*u+off+32*g)) 16) e=BitVec.ofNat 32 (z root) ∧
     vword (m.read (p+BitVec.ofNat 64 (480*u+off+32*g+16)) 16) e=BitVec.ofNat 32 (bar (z root)) := by
-  have h0 : 480*u+off+32*g=4*(120*u+off/4+8*g) := by omega
-  have h1 : 480*u+off+32*g+16=4*(120*u+off/4+8*g+4) := by omega
+  have h0 : 480*u+off+32*g=4*(120*u+off/4+8*g) := by omega_using [ho]
+  have h1 : 480*u+off+32*g+16=4*(120*u+off/4+8*g+4) := by omega_using [ho]
   constructor
-  · rw [h0,h.vector (by omega) he,hv.1]
-  · rw [h1,h.vector (by omega) he]
-    rw [show 120*u+off/4+8*g+4+e=120*u+off/4+8*g+e+4 by omega,hv.2]
+  · rw [h0,h.vector (by omega_using [hb]) he,hv.1]
+  · rw [h1,h.vector (by omega_using [hb]) he]
+    rw [show 120*u+off/4+8*g+4+e=120*u+off/4+8*g+e+4 by omega_using [],hv.2]
 
 end VG.Proof.MlDsa.AArch64.Optimized.InverseTable

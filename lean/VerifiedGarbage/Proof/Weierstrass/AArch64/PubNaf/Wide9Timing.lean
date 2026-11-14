@@ -81,22 +81,22 @@ theorem prepLoop9_relCT {K : WinCfg} {src : Nat} (hR : Regs K.M.n) (hc : Prep9Ch
       (eval (.nonzero .x .x19) s = some true → ∃ n < m, I n s t)) := by
     intro m
     by_cases hm : 1 ≤ m ∧ m ≤ D
-    · have hp := FastNaf.residual_boundB 9 (B := 64 * K.M.n) (Nat.le_of_lt hk) (j := D - m) (by omega)
+    · have hp := FastNaf.residual_boundB 9 (B := 64 * K.M.n) (Nat.le_of_lt hk) (j := D - m) (by omega_using [hm])
       have hv : FastNaf.residual 9 k (D - m) ≤ 2 ^ (64 * K.M.n) :=
-        Nat.le_trans hp (Nat.pow_le_pow_right (by decide) (by omega))
-      refine (prepStep9_relCT hR hc hb (j := D - m) (by omega) hv).mono
+        Nat.le_trans hp (Nat.pow_le_pow_right (by decide) (by omega_using []))
+      refine (prepStep9_relCT hR hc hb (j := D - m) (by omega_using [hm]) hv).mono
         (P' := I m) (fun _ _ h => h.2.2) ?_
       intro s t hp
-      have s19 : s.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.left.count]; congr 1; omega
-      have t19 : t.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.right.count]; congr 1; omega
+      have s19 : s.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.left.count]; congr 1; omega_using [hm]
+      have t19 : t.gpr .x19 = BitVec.ofNat 64 (m - 1) := by rw [hp.right.count]; congr 1; omega_using [hm]
       refine ⟨by simp only [eval, read_x, s19, t19], fun _ => trivial, fun he => ?_⟩
       have hn : m - 1 ≠ 0 := by
         intro hz; simp only [eval, read_x, s19, hz] at he; cases he
-      refine ⟨m - 1, by omega, by omega, by omega, ?_⟩
-      have hj : D - (m - 1) = D - m + 1 := by omega
+      refine ⟨m - 1, by omega_using [hm], by omega_using [hn], by omega_using [hm], ?_⟩
+      have hj : D - (m - 1) = D - m + 1 := by omega_using [hm]
       rw [hj]; exact hp
     · exact RelCT.of_false (fun _ _ h => hm ⟨h.1, h.2.1⟩)
-  exact (RelCT.loop I step D).mono (fun _ _ h => ⟨by omega, Nat.le_refl _, by simpa [D] using h⟩)
+  exact (RelCT.loop I step D).mono (fun _ _ h => ⟨by omega_using [], Nat.le_refl _, by simpa [D] using h⟩)
     (fun _ _ h => h)
 
 /-- The recoding of width nine of the same scalar in two runs leaks the same trace. -/

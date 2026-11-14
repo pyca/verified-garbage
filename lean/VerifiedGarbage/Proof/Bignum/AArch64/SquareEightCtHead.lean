@@ -43,7 +43,7 @@ theorem output_ctx_mem {a : Nat} (ha : a < 8) (twice : Bool)
   obtain ⟨mi, hg, hz⟩ := h.fast.1
   have hh : Hdr s.mem p.1.B (8*blocks p.1) mi := he.symm ▸ hg.hdr
   have hsize : slot (8*blocks p.1) 8 ≤ p.1.Z := he.symm ▸ hz
-  refine WP.mono (outputPtr_ok hg.scr hg.x0 hh hsize ha (by have := h.index; omega) h.ptr twice)
+  refine WP.mono (outputPtr_ok hg.scr hg.x0 hh hsize ha (by have := h.index; omega_using [hk, this]) h.ptr twice)
     fun t ⟨⟨ht16, ht17, htm⟩, kt⟩ => ?_
   exact ⟨⟨⟨⟨⟨mi, ⟨hg.scr.congr kt.wr, (kt.gpr _ (by decide)).trans hg.x0, htm ▸ hg.hdr⟩, hz⟩, h.fast.2⟩,
     h.index, (kt.gpr _ (by decide)).trans h.ptr, (kt.gpr _ (by decide)).trans h.count,
@@ -56,7 +56,7 @@ theorem initial_ptr_ctx {a : Nat} (ha : a < 8) (p : Ws × Nat) (s : State)
   refine WP.mono (output_ctx_mem ha true p s hb) fun t ⟨ht, hm⟩ => ?_
   refine ⟨ht, ?_⟩
   rw [hm, h.2.value]
-  simpa only [show 128*(8*p.2) = 64*(16*p.2) by omega] using
+  simpa only [show 128*(8*p.2) = 64*(16*p.2) by omega_using []] using
     cross_words_lt_full s.mem p.1.B (slot (8*blocks p.1) a) (8*p.2)
 
 abbrev AfterInternal (a : Nat) (p : Ws × Nat) (s : State) := BasicCtx a p s ∧ s.gpr .x10 = 0
@@ -73,15 +73,15 @@ theorem internal_ctx {a : Nat} (ha : a < 8) (p : Ws × Nat) (s : State) (h : Int
   have hsize : slot (8*blocks p.1) 8 ≤ p.1.Z := he.symm ▸ hz
   have hA : slot (8*blocks p.1) a+64*blocks p.1 ≤ p.1.Z := by
     have := slot_le (w := 8*blocks p.1) ha
-    omega
+    omega_using [hsize, this]
   have hP : productBase (blocks p.1)+8*(16*blocks p.1+2) ≤ p.1.Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have hj := hb.index
   apply WP.block_append
-  refine WP.mono (internal_ok hg.scr hb.ptr h.ptrs.tptr hb.zero (by omega) hP (by omega) h.bound)
+  refine WP.mono (internal_ok hg.scr hb.ptr h.ptrs.tptr hb.zero (by omega_using [hA, hj]) hP (by omega_using [hj]) h.bound)
     fun t ⟨_, hto, kt⟩ => ?_
-  have hout := hto.mono (o' := productBase (blocks p.1)) (n' := 8*(16*blocks p.1+2)) (by omega) (by omega)
+  have hout := hto.mono (o' := productBase (blocks p.1)) (n' := 8*(16*blocks p.1+2)) (by omega_using []) (by omega_using [hj])
   have hHt : Hdr t.mem p.1.B p.1.w mi := he ▸ frame_header hout (he.symm ▸ hg.hdr)
   refine WP.mono (clearPending_ok t) fun u ⟨⟨hu10, hum⟩, ku⟩ => ?_
   have kk := kt.trans ku

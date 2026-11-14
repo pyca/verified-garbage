@@ -78,7 +78,7 @@ theorem candidateWorkspace_ready {w pLen qLen : Nat} {c : CandidateWorkspacePubl
   have hz : 256 ≤ c.frame.Z := Nat.le_trans (Nat.le_add_right 256 _) c.room
   have bound : ∀ r ∈ workspaceRanges, r.1 + r.2 ≤ c.frame.Z := by
     simp only [workspaceRanges, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> simp only <;> omega
+    rintro r (rfl | rfl | rfl) <;> simp only <;> omega_using [hz]
   have ht' : Ws t c.frame.B c.frame.Z c.frame.w := by rw [h.1.2.2.1]; exact ht
   refine ⟨?_, ht', h.1.2.2.2⟩
   refine ⟨hk.sp.trans h.1.1.stack, ?_, ?_,

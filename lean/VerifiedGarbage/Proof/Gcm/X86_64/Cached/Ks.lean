@@ -37,12 +37,12 @@ open VG.Spec.Gcm (Block blockAt inc32)
 /-- The key schedule is not in the data, the working space or the counter. -/
 theorem sch_frame3 {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {m : Mem} (hf : Frame [dR s₀, pR s₀, cR s₀] s₀.mem m) :
     Spec.Aes.bytesAt m (kp s₀) (16 * (nr s₀ + 1)) = sch s₀ := by
-  have hn : 16 * (nr s₀ + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> omega
+  have hn : 16 * (nr s₀ + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> omega_using [h]
   simp only [sch, Spec.Aes.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
   refine hf.bytes (R := ⟨kp s₀, 16 * (nr s₀ + 1)⟩) (fun r hr => ?_)
-    (by show 16 * (nr s₀ + 1) ≤ 2 ^ 64; omega) hi
+    (by show 16 * (nr s₀ + 1) ≤ 2 ^ 64; omega_using [hn]) hi
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.d_k.symm.sub_left (Region.sub_prefix hn)
@@ -53,10 +53,10 @@ theorem sch_frame3 {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {m : Mem} (hf :
 written it. -/
 theorem keys_of {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {t : State} (h1 : t.gpr .rdi = kp s₀) (h2 : t.rd = s₀.rd)
     (h3 : t.wr = s₀.wr) (h4 : Frame [dR s₀, pR s₀, cR s₀] s₀.mem t.mem) : Keys (nr s₀) (sch s₀) t :=
-  ⟨by rw [h1, sch_frame3 hp h4], by rcases hp.rounds with h | h | h <;> omega,
+  ⟨by rw [h1, sch_frame3 hp h4], by rcases hp.rounds with h | h | h <;> omega_using [h],
     fun j hj => by
       rw [h2, h3, h1]
-      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega_using [hj, h])⟩
 
 theorem ctrsZ_keeps (c m i : XReg) : ∀ regs : List XReg,
     (Impl.Aes.X86_64.VaesZ.ctrsZ c m i regs).all Instr.keepsH = true

@@ -36,6 +36,9 @@ address in both runs, and keeps them).
 
 `addi` and `subi` of a register with a known base move the base; `mr` (`or d,
 n, n`) copies it. Frames (`push`, `pop`, `alloc`, `free`) are not analysed.
+The vector registers are not tracked, so all are secret: a vector
+instruction keeps the taint, `mfvsrd` writes a secret register, and a table
+load (`lxvd2xTbl`) needs a public offset, its one address.
 -/
 
 @[expose] public section
@@ -151,8 +154,12 @@ def step (τ : T) : Instr → Option T
     if pub τ a && pub τ b then some { τ with slots := if pub τ t then τ.slots else [] } else none
   | .mflr d => some (wr τ d false)
   | .mtlr _ => some τ
-  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .adrSym ..
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. => none
+  -- The vector registers are not tracked: they are all secret.
+  | .vop _ | .mtvsrd .. => some τ
+  | .mfvsrd d _ => some (wr τ d false)
+  | .lxvd2xTbl _ _ b .. => if pub τ b then some τ else none
+  | .adrSym d _ => some (wr τ d false)
+  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -267,14 +274,14 @@ theorem addr_of_addrOf {τ : T} {s : State} (hw : Wf τ s) {n : Reg} {off i d : 
 
 theorem lens_ne {τ : T} {i n : Nat} (h : 0 < n) (hn : n ≤ τ.lens.getD i 0) : τ.lens ≠ [] := by
   rintro h'; simp only [h', List.getD_eq_getElem?_getD, List.length_nil, Nat.not_lt_zero,
-      not_false_eq_true, getElem?_neg, Option.getD_none, Nat.le_zero_eq] at hn; omega
+      not_false_eq_true, getElem?_neg, Option.getD_none, Nat.le_zero_eq] at hn; omega_using [h, hn]
 
 /-- Slots live in regions of the same address in both runs. -/
 theorem Agree.byteAddr_eq {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {sl : Nat × Nat × Nat}
     (h : sl ∈ τ.slots) {k : Nat} (hk : k < sl.2.1 + sl.2.2) :
     byteAddr s₁ sl.1 k = byteAddr s₂ sl.1 k := by
   have := ha.ok sl h
-  simp only [byteAddr, region, ha.wr (lens_ne (n := sl.2.1 + sl.2.2) (by omega) this)]
+  simp only [byteAddr, region, ha.wr (lens_ne (n := sl.2.1 + sl.2.2) (by omega_using [hk]) this)]
 
 /-- A load of `w` bytes from a public slot. -/
 theorem Agree.load {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {n : Reg} {off w : Nat}
@@ -288,7 +295,7 @@ theorem Agree.load {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {n : R
   obtain ⟨sl, hsl, ⟨rfl, ho⟩, hd⟩ := hp
   intro k hk
   rw [addr_of_addrOf ha.wf₁ h, addr_of_addrOf ha.wf₂ h, byteAddr_add, byteAddr_add]
-  exact ha.slots sl hsl _ (by omega) (by omega)
+  exact ha.slots sl hsl _ (by omega_using [ho]) (by omega_using [hd, hk])
 
 theorem forall₂_length {rs : List Region} {ls : List Nat}
     (h : List.Forall₂ (fun r l => l ≤ r.len) rs ls) : rs.length = ls.length := by
@@ -315,7 +322,7 @@ theorem region_mem {τ : T} {s : State} (hw : Wf τ s) (hne : τ.lens ≠ []) {i
   have : i < τ.lens.length := by
     by_contra h'
     rw [List.getD_eq_getElem?_getD,
-        List.getElem?_eq_none (by omega)] at hi; simp only [Option.getD_none, Nat.lt_irrefl] at hi
+        List.getElem?_eq_none (by omega_using [h'])] at hi; simp only [Option.getD_none, Nat.lt_irrefl] at hi
   have hi' : i < s.wr.length := hl ▸ this
   exact ⟨hi', by simp only [region, List.getD_eq_getElem?_getD,
                    List.getElem?_eq_getElem hi', Option.getD_some]⟩
@@ -326,10 +333,10 @@ theorem write_other {τ : T} {s : State} (hw : Wf τ s) {i d n j k : Nat} (hn : 
     (hd : d + n ≤ τ.lens.getD i 0) (hk : k < τ.lens.getD j 0) (hsep : j ≠ i ∨ k < d ∨ d + n ≤ k)
     (V : BitVec (8 * n)) :
     s.mem.write (byteAddr s i d) n V (byteAddr s j k) = s.mem (byteAddr s j k) := by
-  have hne := lens_ne (n := d + n) (by omega) hd
+  have hne := lens_ne (n := d + n) (by omega_using [hn]) hd
   obtain ⟨-, hdisj, hbound⟩ := hw.1 hne
-  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega)
-  obtain ⟨hj, hrj⟩ := region_mem hw hne (i := j) (by omega)
+  obtain ⟨hi, hri⟩ := region_mem hw hne (i := i) (by omega_using [hn, hd])
+  obtain ⟨hj, hrj⟩ := region_mem hw hne (i := j) (by omega_using [hk])
   have hli := region_len hw hne i
   have hlj := region_len hw hne j
   have hbi : (region s i).len ≤ 2 ^ 64 := by rw [hri]; exact hbound _ (List.getElem_mem _)
@@ -341,15 +348,15 @@ theorem write_other {τ : T} {s : State} (hw : Wf τ s) {i d n j k : Nat} (hn : 
     have hsep := hsep.resolve_left (· rfl)
     have h : byteAddr s j k - byteAddr s j d = BitVec.ofNat 64 k - BitVec.ofNat 64 d :=
       Offset.add_sub_add_left _ _ _
-    exact Offset.not_lt_sub_ofNat hsep (by omega) hn (by omega) (h ▸ hlt)
+    exact Offset.not_lt_sub_ofNat hsep (by omega_using [hk, hlj, hbj]) hn (by omega_using [hlj, hbj, hd]) (h ▸ hlt)
   · have hA : (region s i).Contains (byteAddr s i d) n := by
       simp only [Region.Contains, byteAddr]
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, hd, hli, hbi])]
+      omega_using [hd, hli]
     have hX : (region s j).Contains (byteAddr s j k) 1 := by
       simp only [Region.Contains, byteAddr]
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hlj, hbj])]
+      omega_using [hk, hlj]
     have hXi := hA.byte hlt
     rw [List.pairwise_iff_getElem] at hdisj
     rcases Nat.lt_or_gt_of_ne hji with h | h
@@ -420,9 +427,9 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {n : 
         · simp only at hk₁ hk₂
           simp only [e₁, e₂, Mem.write, hv hp]
           have hd : ∀ s : State, byteAddr s i k - byteAddr s i d = BitVec.ofNat 64 (k - d) :=
-            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega))
+            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega_using [hk₁]))
           have hlt : (BitVec.ofNat 64 (k - d)).toNat < w := by
-            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega)
+            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega_using [hw, hk₂])
           rw [hd, hd]; simp only [hlt, ite_true]
         · by_cases hp : p = true
           · exact same h hp
@@ -430,11 +437,11 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {n : 
             rcases hsep with h' | h' | h' | h'
             · exact absurd h' hp
             · exact .inl h'
-            · exact .inr (.inr (by omega))
-            · exact .inr (.inl (by omega))
+            · exact .inr (.inr (by omega_using [hk₁, h']))
+            · exact .inr (.inl (by omega_using [hk₂, h']))
           have hk := ha.ok sl h
-          rw [e₁, e₂, write_other ha.wf₁ hw hfit (by omega) hsep,
-            write_other ha.wf₂ hw hfit (by omega) hsep]
+          rw [e₁, e₂, write_other ha.wf₁ hw hfit (by omega_using [hk₂, hk]) hsep,
+            write_other ha.wf₂ hw hfit (by omega_using [hk₂, hk]) hsep]
           exact ha.slots sl h k hk₁ hk₂
       · split at hsl <;> [exact same hsl ‹_›; cases hsl]
     · split at hsl <;> [exact same hsl ‹_›; cases hsl]
@@ -502,11 +509,56 @@ theorem addrX_eq {s : State} {a b : Reg} {ea : Addr} (h : addrX s a b = some ea)
   split at h <;> [cases h; cases h]
   rfl
 
+/-- The relation holds of states with the same registers, stack pointer,
+regions and memory: it says nothing of the vector registers, the link
+register or the unknowns. -/
+theorem Agree.of_same {τ : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (g₁ : s₁'.gpr = s₁.gpr) (g₂ : s₂'.gpr = s₂.gpr) (p₁ : s₁'.sp = s₁.sp) (p₂ : s₂'.sp = s₂.sp)
+    (w₁ : s₁'.wr = s₁.wr) (w₂ : s₂'.wr = s₂.wr) (m₁ : s₁'.mem = s₁.mem) (m₂ : s₂'.mem = s₂.mem) :
+    Agree τ s₁' s₂' := by
+  obtain ⟨hsp, hr, hw, wf₁, wf₂, ok, sl⟩ := ha
+  refine ⟨by rw [p₁, p₂, hsp], fun r h => by rw [g₁, g₂]; exact hr r h, fun h => by rw [w₁, w₂]; exact hw h,
+    ?_, ?_, ok, ?_⟩
+  · simp only [Wf, region] at wf₁ ⊢; rw [g₁, w₁]; exact wf₁
+  · simp only [Wf, region] at wf₂ ⊢; rw [g₂, w₂]; exact wf₂
+  · simp only [SlotsAgree, byteAddr, region] at sl ⊢; rw [m₁, m₂, w₁, w₂]; exact sl
+
 theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x => simp only [step, reduceCtorEq] at hs
+  | vop op =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨⟨d₁, v₁⟩, -, rfl⟩ := e₁; obtain ⟨⟨d₂, v₂⟩, -, rfl⟩ := e₂
+    exact ⟨rfl, ha.of_same rfl rfl rfl rfl rfl rfl rfl rfl⟩
+  | mtvsrd d n =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.of_same rfl rfl rfl rfl rfl rfl rfl rfl⟩
+  | mfvsrd d n =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.wrW d fun h => by cases h⟩
+  | lxvd2xTbl d a b name ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hb; cases hs
+    refine ⟨by simp [addrs, ha.reg hb], ?_⟩
+    simp only [reduceExec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ha.of_same rfl rfl rfl rfl rfl rfl rfl rfl
+  | adrSym d name =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    by_cases hd : d = .r0
+    · simp only [reduceExec, hd, ne_eq, not_true_eq_false, ↓reduceIte, reduceCtorEq] at e₁
+    simp only [reduceExec, ne_eq, hd, not_false_eq_true, ↓reduceIte, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    exact ⟨rfl, (ha.wrW d (v₁ := s₁.syms name) (v₂ := s₂.syms name) fun h => by cases h).of_same
+      rfl rfl rfl rfl rfl rfl rfl rfl⟩
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec] at e₁ e₂
@@ -843,8 +895,11 @@ def stepK (τ : T) : Instr → Option T
     bif pub τ a && pub τ b then some { τ with slots := bif pub τ t then τ.slots else [] } else none
   | .mflr d => some (wrK τ d false)
   | .mtlr _ => some τ
-  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .adrSym ..
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. => none
+  | .vop _ | .mtvsrd .. => some τ
+  | .mfvsrd d _ => some (wrK τ d false)
+  | .lxvd2xTbl _ _ b .. => bif pub τ b then some τ else none
+  | .adrSym d _ => some (wrK τ d false)
+  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. => none
 
 theorem wrK_eq (τ : T) (d : Reg) (p : Bool) : wrK τ d p = wr τ d p := by
   simp only [wrK, wr, killK_eq]

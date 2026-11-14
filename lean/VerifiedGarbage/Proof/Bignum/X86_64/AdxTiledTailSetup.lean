@@ -22,14 +22,14 @@ theorem tailTest_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
     WP isa (.block AdxTiledProduct.tailTest) s fun t =>
       t.zf = some (decide (i+8=w)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
   have ld : ∀ k < 32, InRegions (s.rd ++ s.wr) (off B (8*k)) 8 := fun k hk =>
-    hs.ld (by have := hdr_lt_slot w 8 hk; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   have add : BitVec.ofNat 64 i + (8 : BitVec 64) = BitVec.ofNat 64 (i+8) := by
     rw [BitVec.ofNat_add]; rfl
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (i+8=w)) ∧ t.mem = s.mem) ?_ rfl)
     fun t ⟨⟨z,m⟩,k⟩ => ⟨z,m,k⟩
   unfold AdxTiledProduct.tailTest
   xrun [State.ea,hdr,hd,hdrOff,ld (sFn 12) (by decide),ld sW (by decide),
-    hidx,hh.hw,add,ofNat_sub_beq (by omega : i+8<2^64) (by omega : w<2^64)]
+    hidx,hh.hw,add,ofNat_sub_beq (by omega_using [hw, hi] : i+8<2^64) (by omega_using [hw] : w<2^64)]
 
 theorem tailSetup_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
@@ -39,7 +39,7 @@ theorem tailSetup_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
       t.gpr .rsi = off B (rawBase w+8*(i+w+8)) ∧ t.gpr .rdx = off B (highPad w) ∧
       t.gpr .rcx = 0 ∧ t.mem = s.mem ∧ Keep [.rbp,.rsi,.rdx,.rcx] s t := by
   have ld : ∀ k < 32, InRegions (s.rd ++ s.wr) (off B (8*k)) 8 := fun k hk =>
-    hs.ld (by have := hdr_lt_slot w 8 hk; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   have sh : BitVec.ofNat 64 w <<< (4 : Nat) = BitVec.ofNat 64 (16*w) := by
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 64 w * BitVec.ofNat 64 16 = BitVec.ofNat 64 (16*w)
@@ -48,11 +48,11 @@ theorem tailSetup_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
       off B (highPad w) := by
     rw [BitVec.add_comm (BitVec.ofNat 64 (16*w))]
     change off (off (off B (slot w aAcc)) (16*w)) 16 = off B (highPad w)
-    rw [off_off,off_off]; congr 1; unfold highPad; omega
+    rw [off_off,off_off]; congr 1; unfold highPad; omega_using []
   have advance : off B (rawBase w+8*(i+w))+(64 : BitVec 64) =
       off B (rawBase w+8*(i+w+8)) := by
     change off (off B (rawBase w+8*(i+w))) 64 = _
-    rw [off_off]; apply congrArg (off B); omega
+    rw [off_off]; apply congrArg (off B); omega_using []
   refine WP.mono (WP.keep [.rbp,.rsi,.rdx,.rcx] (Q := fun t =>
     t.gpr .rbp = word s.mem B carryOffset ∧ t.gpr .rsi = off B (rawBase w+8*(i+w+8)) ∧
     t.gpr .rdx = off B (highPad w) ∧ t.gpr .rcx = 0 ∧ t.mem = s.mem) ?_ rfl)

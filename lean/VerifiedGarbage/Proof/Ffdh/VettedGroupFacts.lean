@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ffdh.VettedGroups
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Canonical byte comparisons recognizeList exactly the reviewed group policy. -/
 
@@ -17,7 +18,7 @@ private theorem pow_chunks (n : Nat) :
     (256 : Nat) ^ n = (256 ^ 128) ^ (n / 128) * 256 ^ (n % 128) := by
   rw [← Nat.pow_mul, ← Nat.pow_add]
   congr 1
-  omega
+  omega_using []
 
 theorem group_bounds (g : Group) (member : g ∈ groups) :
     0 < g.len ∧ 256 ^ (g.len - 1) ≤ g.prime ∧ g.prime < 256 ^ g.len := by
@@ -57,16 +58,16 @@ theorem width_unique_word {k : Nat} {g : Group} {p : Nat}
 theorem domain_parts {k : Nat} {dom : List Byte}
     (size : dom.length = 2 * k ∨ dom.length = 3 * k) :
     dom.take k ++ (dom.drop k).take k ++ (dom.drop (2 * k)).take k = dom := by
-  rw [← List.take_add, show k + k = 2 * k by omega, ← List.take_add]
-  exact List.take_of_length_le (by omega)
+  rw [← List.take_add, show k + k = 2 * k by omega_using [], ← List.take_add]
+  exact List.take_of_length_le (by omega_using [size])
 
 theorem domain_encoding {k : Nat} {dom : List Byte}
     (size : dom.length = 2 * k ∨ dom.length = 3 * k) :
     dom = i2osp (os2ip (dom.take k)) k ++ i2osp (os2ip ((dom.drop k).take k)) k ++
       if dom.length = 3 * k then i2osp (os2ip ((dom.drop (2 * k)).take k)) k else [] := by
-  have lenP : (dom.take k).length = k := by simp only [List.length_take]; omega
+  have lenP : (dom.take k).length = k := by simp only [List.length_take]; omega_using [size]
   have lenG : ((dom.drop k).take k).length = k := by
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [size]
   have invP : i2osp (os2ip (dom.take k)) k = dom.take k := by
     simpa only [lenP] using VG.Proof.Rsa.i2osp_os2ip (dom.take k)
   have invG : i2osp (os2ip ((dom.drop k).take k)) k = (dom.drop k).take k := by
@@ -74,20 +75,20 @@ theorem domain_encoding {k : Nat} {dom : List Byte}
   rw [invP, invG]
   split
   · have lenQ : ((dom.drop (2 * k)).take k).length = k := by
-      simp only [List.length_take, List.length_drop]; omega
+      simp only [List.length_take, List.length_drop]; omega_arith
     have invQ : i2osp (os2ip ((dom.drop (2 * k)).take k)) k = (dom.drop (2 * k)).take k := by
       simpa only [lenQ] using VG.Proof.Rsa.i2osp_os2ip ((dom.drop (2 * k)).take k)
     rw [invQ]
     exact (domain_parts size).symm
   · have empty : (dom.drop (2 * k)).take k = [] := by
-      rw [List.drop_eq_nil_iff.mpr (by omega), List.take_nil]
+      rw [List.drop_eq_nil_iff.mpr (by omega_arith), List.take_nil]
     simpa only [empty, List.append_nil] using (domain_parts size).symm
 
 theorem domainOf_injective {k : Nat} {left right : List Byte}
     (sizes : left.length = 2 * k ∨ left.length = 3 * k)
     (sameLength : left.length = right.length)
     (parameters : Spec.Ffdh.domainOf k left = Spec.Ffdh.domainOf k right) : left = right := by
-  have rightSizes : right.length = 2 * k ∨ right.length = 3 * k := by omega
+  have rightSizes : right.length = 2 * k ∨ right.length = 3 * k := by omega_using [sizes, sameLength]
   have prime := congrArg Spec.Ffdh.Parameters.p parameters
   have generator := congrArg Spec.Ffdh.Parameters.g parameters
   have subgroup := congrArg Spec.Ffdh.Parameters.q parameters
@@ -104,18 +105,18 @@ theorem group_take_two (g : Group) :
     g.domain.take (2 * g.len) = i2osp g.prime g.len ++ i2osp 2 g.len := by
   unfold VG.Impl.Ffdh.VettedGroups.Group.domain
   rw [show 2 * g.len = (i2osp g.prime g.len ++ i2osp 2 g.len).length by
-    simp only [List.length_append, VG.Proof.Rsa.i2osp_length]; omega]
+    simp only [List.length_append, VG.Proof.Rsa.i2osp_length]; omega_using []]
   exact List.take_left
 
 theorem group_take_three (g : Group) : g.domain.take (3 * g.len) = g.domain := by
   apply List.take_of_length_le
   simp only [VG.Impl.Ffdh.VettedGroups.Group.domain, List.length_append, VG.Proof.Rsa.i2osp_length]
-  omega
+  omega_using []
 
 theorem domainOf_two {k p g : Nat} (positive : 0 < k)
     (pfits : p < 256 ^ k) (gfits : g < 256 ^ k) :
     Spec.Ffdh.domainOf k (i2osp p k ++ i2osp g k) = ⟨p, g, none⟩ := by
-  have different : k + k ≠ 3 * k := by omega
+  have different : k + k ≠ 3 * k := by omega_using [positive]
   have takeAll (x : Nat) : (i2osp x k).take k = i2osp x k :=
     List.take_of_length_le (by rw [VG.Proof.Rsa.i2osp_length];exact Nat.le_refl _)
   simp [Spec.Ffdh.domainOf, VG.Proof.Rsa.i2osp_length, takeAll,
@@ -127,10 +128,10 @@ theorem domainOf_three {k p g q : Nat}
   have takeAll (x : Nat) : (i2osp x k).take k = i2osp x k :=
     List.take_of_length_le (by rw [VG.Proof.Rsa.i2osp_length];exact Nat.le_refl _)
   have dropAll : (i2osp p k).drop (k + k) = [] :=
-    List.drop_eq_nil_iff.mpr (by rw [VG.Proof.Rsa.i2osp_length]; omega)
+    List.drop_eq_nil_iff.mpr (by rw [VG.Proof.Rsa.i2osp_length]; omega_using [])
   simp [Spec.Ffdh.domainOf, List.drop_append, VG.Proof.Rsa.i2osp_length, takeAll, dropAll,
     VG.Proof.Rsa.os2ip_i2osp, Nat.mod_eq_of_lt pfits, Nat.mod_eq_of_lt gfits,
-    Nat.mod_eq_of_lt qfits, show k + (k + k) = 3 * k by omega, show 2 * k = k + k by omega]
+    Nat.mod_eq_of_lt qfits, show k + (k + k) = 3 * k by omega_using [], show 2 * k = k + k by omega_using []]
 
 def NumericMatch (g : Group) (a : Spec.Ffdh.Parameters) : Prop :=
   a.p = g.prime ∧ a.g = 2 ∧ (a.q = none ∨ a.q = some ((a.p - 1) / 2))
@@ -150,21 +151,21 @@ theorem group_parameters (g : Group) (member : g ∈ groups) {n : Nat}
   have twoFits : 2 < 256 ^ g.len := by
     have : 256 ^ 1 ≤ 256 ^ g.len := Nat.pow_le_pow_right (by decide) bounds.1
     simp only [Nat.pow_one] at this
-    omega
+    omega_using [this]
   rcases size with rfl | rfl
   · rw [group_take_two, domainOf_two bounds.1 bounds.2.2 twoFits,
-      ite_eq_right (by have := bounds.1; omega : 2 * g.len ≠ 3 * g.len)]
+      ite_eq_right (by have := bounds.1; omega_using [bounds] : 2 * g.len ≠ 3 * g.len)]
   · rw [group_take_three]
     rw [ite_eq_left rfl]
     exact domainOf_three bounds.2.2 twoFits
-      (show (g.prime - 1) / 2 < 256 ^ g.len by omega)
+      (show (g.prime - 1) / 2 < 256 ^ g.len by omega_using [bounds])
 
 theorem group_match_iff {k : Nat} {dom : List Byte} (positive : 0 < k)
     (size : dom.length = 2 * k ∨ dom.length = 3 * k)
     (normalized : 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ os2ip (dom.take k))
     (g : Group) (member : g ∈ groups) :
     (g.len = k ∧ dom = g.domain.take dom.length) ↔ NumericMatch g (Spec.Ffdh.domainOf k dom) := by
-  have lenP : (dom.take k).length = k := by simp only [List.length_take]; omega
+  have lenP : (dom.take k).length = k := by simp only [List.length_take]; omega_using [size]
   constructor
   · rintro ⟨rfl, same⟩
     have parameters := congrArg (Spec.Ffdh.domainOf g.len) same
@@ -184,9 +185,9 @@ theorem group_match_iff {k : Nat} {dom : List Byte} (positive : 0 < k)
     · have domainLength : g.domain.length = 3 * g.len := by
         simp only [VG.Impl.Ffdh.VettedGroups.Group.domain, List.length_append,
           VG.Proof.Rsa.i2osp_length]
-        omega
+        omega_using []
       simp only [List.length_take, domainLength]
-      omega
+      omega_using [size]
     · rw [group_parameters g member size]
       change os2ip (dom.take g.len) = g.prime at prime
       change os2ip ((dom.drop g.len).take g.len) = 2 at generator

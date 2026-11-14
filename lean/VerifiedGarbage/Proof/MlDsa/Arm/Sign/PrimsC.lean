@@ -75,9 +75,9 @@ theorem bitsAt_ok {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
     WP isa (callR n c [.ptr r, .imm γ, .ptr out]) s fun s' => PPostB D s s' [(out, 1024)] ∧ CS s s' ∧
       Q γ (polyAt s.mem (pa s r)) s'.mem (pa s out) := by
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
-  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega) (bitsArgs_ok b1 b2) L.sp
+  refine WP.mono (callR_ok C.ver.1 (by have := C.su; have := C.hS; omega_arith) (bitsArgs_ok b1 b2) L.sp
     (rd := [pR (pa s r)]) (wr := [pR (pa s out)])
-    (fun s1 hA k => bitsPre (ent_R L k (by have := C.hS; omega) _ _) hγ hc
+    (fun s1 hA k => bitsPre (ent_R L k (by have := C.hS; omega_using [this]) _ _) hγ hc
       (by rw [vR _ _ _ nl0]; exact (argsIn3 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn3 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn3 hA).2.2) rfl rfl hr)
     (Covers.append_left (L.cR i1) (Covers.right (L.cW w1))) (L.cW w1))
@@ -93,7 +93,7 @@ theorem bitsAt_tr {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
       (callR n c [.ptr r, .imm γ, .ptr out]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
-  have hS : C.S ≤ D := by have := C.hS; omega
+  have hS : C.S ≤ D := by have := C.hS; omega_using [this]
   refine callR_tr C.ver.1 C.ver.2.1 (bitsArgs_ok b1 b2) fun x y x1 y1 ⟨R, rx, ry⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, bitsPre (ent_R R.lx kx hS [pR (pa x r)] [pR (pa x out)]) hγ hc
       (by rw [vR _ _ _ nl0]; exact (argsIn3 hAx).1) (by rw [vR _ _ _ nl1]; exact (argsIn3 hAx).2.1)
@@ -160,9 +160,9 @@ theorem normCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
       s'.gpr .r0 = if normRq [polyAt s.mem (pa s f)] < B then 1 else 0 := by
   have i1 : inB (rbs ++ wbs) f 1024 = true := by
     simp only [normChk, Bool.and_eq_true] at hc; exact hc.1
-  refine WP.mono (callR_ok hP.normLt.ver.1 (by have := hP.normLt.su; have := hP.normLt.hS; omega)
+  refine WP.mono (callR_ok hP.normLt.ver.1 (by have := hP.normLt.su; have := hP.normLt.hS; omega_arith)
     (normArgs_ok hc) L.sp (rd := [pR (pa s f)]) (wr := [])
-    (fun s1 hA k => normPre (ent_R L k (by have := hP.normLt.hS; omega) _ _) hc
+    (fun s1 hA k => normPre (ent_R L k (by have := hP.normLt.hS; omega_using [this]) _ _) hc
       (by rw [vR _ _ _ nl0]; exact (argsIn2 hA).1) rfl rfl hr)
     (Covers.append_left (L.cR i1) Covers.nil) Covers.nil)
     fun s' ⟨hpost, hcs, s1, hA, k, hq⟩ => ⟨hpost, hcs, ?_⟩
@@ -176,7 +176,7 @@ theorem normCall_tr {P : Prims} (hP : PrimsOk P D) {f : Ptr} {B : Nat} (hc : nor
       (callR "vg_mldsa_norm_lt" P.normLt [.ptr f, .imm B]) fun _ _ => True := by
   have i1 : inB (rbs ++ wbs) f 1024 = true := by
     simp only [normChk, Bool.and_eq_true] at hc; exact hc.1
-  have hS : hP.normLt.S ≤ D := by have := hP.normLt.hS; omega
+  have hS : hP.normLt.S ≤ D := by have := hP.normLt.hS; omega_using [this]
   refine callR_tr hP.normLt.ver.1 hP.normLt.ver.2.1 (normArgs_ok hc) fun x y x1 y1 ⟨R, rx, ry⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, normPre (ent_R R.lx kx hS [pR (pa x f)] []) hc (by rw [vR _ _ _ nl0]; exact (argsIn2 hAx).1)
       rfl rfl rx,
@@ -230,9 +230,9 @@ theorem hintCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
       (s'.gpr .r0).toNat =
         hintOnes [Vector.zipWith (makeHint γ) (polyAt s.mem (pa s z)) (polyAt s.mem (pa s r))] := by
   obtain ⟨w1, i1, i2, i3, _, _, b1, b2, b3⟩ := hintChk_spec hc
-  refine WP.mono (callR_ok hP.makeHint.ver.1 (by have := hP.makeHint.su; have := hP.makeHint.hS; omega)
+  refine WP.mono (callR_ok hP.makeHint.ver.1 (by have := hP.makeHint.su; have := hP.makeHint.hS; omega_arith)
     (hintArgs_ok b1 b2 b3) L.sp (rd := [pR (pa s z), pR (pa s r)]) (wr := [pR (pa s h)])
-    (fun s1 hA k => hintPre (ent_R L k (by have := hP.makeHint.hS; omega) _ _) hγ hc
+    (fun s1 hA k => hintPre (ent_R L k (by have := hP.makeHint.hS; omega_using [this]) _ _) hγ hc
       (by rw [vR _ _ _ nl0]; exact (argsIn4 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn4 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn4 hA).2.2.1) (by rw [vR _ _ _ nl3]; exact (argsIn4 hA).2.2.2) rfl rfl rz rr)
     (Covers.append_left (Covers.cons (L.cR i1) (L.cR i2)) (Covers.right (L.cW w1))) (L.cW w1))
@@ -249,7 +249,7 @@ theorem hintCall_tr {P : Prims} (hP : PrimsOk P D) {z r h : Ptr} {γ : Nat} (hγ
       (Reduced y.mem (pa y z) ∧ Reduced y.mem (pa y r)))
       (callR "vg_mldsa_make_hint" P.makeHint [.ptr z, .ptr r, .imm γ, .ptr h]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _, _, b1, b2, b3⟩ := hintChk_spec hc
-  have hS : hP.makeHint.S ≤ D := by have := hP.makeHint.hS; omega
+  have hS : hP.makeHint.S ≤ D := by have := hP.makeHint.hS; omega_using [this]
   refine callR_tr hP.makeHint.ver.1 hP.makeHint.ver.2.1 (hintArgs_ok b1 b2 b3)
     fun x y x1 y1 ⟨R, ⟨rzx, rrx⟩, ⟨rzy, rry⟩⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, hintPre (ent_R R.lx kx hS [pR (pa x z), pR (pa x r)] [pR (pa x h)]) hγ hc
@@ -302,9 +302,9 @@ theorem sbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
       bytesAt s'.mem (pa s out) len = simpleBitPack (natPolyAt s.mem (pa s f)) b := by
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
   obtain ⟨hb', hl', hl0⟩ := sbp_lt hb hl
-  refine WP.mono (callR_ok hP.simpleBitPack.ver.1 (by have := hP.simpleBitPack.su; have := hP.simpleBitPack.hS; omega)
+  refine WP.mono (callR_ok hP.simpleBitPack.ver.1 (by have := hP.simpleBitPack.su; have := hP.simpleBitPack.hS; omega_arith)
     (sbpArgs_ok b1 b2) L.sp (rd := [pR (pa s f)]) (wr := [⟨pa s out, len⟩])
-    (fun s1 hA k => sbpPre (ent_R L k (by have := hP.simpleBitPack.hS; omega) _ _) hb hl hc
+    (fun s1 hA k => sbpPre (ent_R L k (by have := hP.simpleBitPack.hS; omega_using [this]) _ _) hb hl hc
       (by rw [vR _ _ _ nl0]; exact (argsIn4 hA).1) (by rw [vR _ _ _ nl1]; exact (argsIn4 hA).2.1)
       (by rw [vR _ _ _ nl2]; exact (argsIn4 hA).2.2.1) (by rw [vR _ _ _ nl3]; exact (argsIn4 hA).2.2.2) rfl rfl hle)
     (Covers.append_left (L.cR i1) (Covers.right (L.cW w1))) (L.cW w1))
@@ -319,7 +319,7 @@ theorem sbpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {b len : Nat}
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ (∀ i < 256, (coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
       (∀ i < 256, (coeffAt y.mem (pa y f) i).toNat ≤ b)) (simpleBitPackAt P f b out len) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, b1, b2⟩ := rwChk_spec hc
-  have hS : hP.simpleBitPack.S ≤ D := by have := hP.simpleBitPack.hS; omega
+  have hS : hP.simpleBitPack.S ≤ D := by have := hP.simpleBitPack.hS; omega_using [this]
   refine callR_tr hP.simpleBitPack.ver.1 hP.simpleBitPack.ver.2.1 (sbpArgs_ok b1 b2)
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨hAx, kx⟩ ⟨hAy, ky⟩ =>
     ⟨_, _, _, _, sbpPre (ent_R R.lx kx hS [pR (pa x f)] [⟨pa x out, len⟩]) hb hl hc

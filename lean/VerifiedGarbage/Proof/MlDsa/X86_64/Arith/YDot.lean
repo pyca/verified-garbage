@@ -87,12 +87,12 @@ theorem macs_ok {c : Nat} (hc : c ≤ 7) {Av Bv : Nat → Nat → Nat} (hA : ∀
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (macs_ok hc hA hB hr hr' ha hb h0 n (by omega)) fun s1 ⟨A1, o1⟩ => ?_
+    refine WP.mono (macs_ok hc hA hB hr hr' ha hb h0 n (by omega_using [hn])) fun s1 ⟨A1, o1⟩ => ?_
     rw [dotLoads, show ∀ (x y : Instr) (l : List Instr), [x, y] ++ l = [x] ++ ([y] ++ l) from fun _ _ _ => rfl,
       WP.block_append_iff]
-    refine WP.mono (yld_ok (by rw [o1.rd, o1.wr, o1.gpr]; exact hr n (by omega))) fun s2 ⟨L2, o2⟩ => ?_
+    refine WP.mono (yld_ok (by rw [o1.rd, o1.wr, o1.gpr]; exact hr n (by omega_using [hn]))) fun s2 ⟨L2, o2⟩ => ?_
     rw [WP.block_append_iff]
-    refine WP.mono (yld_ok (by rw [o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact hr' n (by omega)))
+    refine WP.mono (yld_ok (by rw [o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact hr' n (by omega_using [hn])))
       fun s3 ⟨L3, o3⟩ => ?_
     refine WP.mono (ylanes lane_dotMac (P := fun l t =>
         t.xmm .xmm5 = macE ((s3.proj l).xmm .xmm5) ((s3.proj l).xmm .xmm0) ((s3.proj l).xmm .xmm1) ∧
@@ -111,18 +111,18 @@ theorem macs_ok {c : Nat} (hc : c ≤ 7) {Av Bv : Nat → Nat → Nat} (hA : ∀
         rw [State.proj_xmm, o3.lane _ (by decide) l hl, o2.lane _ (by decide) l hl]
       have e5 : s4.lane .xmm5 l = _ := (M4 l hl).1
       have e6 : s4.lane .xmm6 l = _ := (M4 l hl).2
-      have a0 := ha n (by omega) l hl (2 * k) (by omega)
-      have a1 := ha n (by omega) l hl (2 * k + 1) (by omega)
-      have b0 := hb n (by omega) l hl (2 * k) (by omega)
-      have b1 := hb n (by omega) l hl (2 * k + 1) (by omega)
+      have a0 := ha n (by omega_using [hn]) l hl (2 * k) (by omega_using [hk])
+      have a1 := ha n (by omega_using [hn]) l hl (2 * k + 1) (by omega_using [hk])
+      have b0 := hb n (by omega_using [hn]) l hl (2 * k) (by omega_using [hk])
+      have b1 := hb n (by omega_using [hn]) l hl (2 * k + 1) (by omega_using [hk])
       rw [← x0] at a0 a1
       rw [← x1] at b0 b1
-      rw [show 4 * l + (2 * k + 1) = 4 * l + 2 * k + 1 by omega] at a1 b1
+      rw [show 4 * l + (2 * k + 1) = 4 * l + 2 * k + 1 by omega_using []] at a1 b1
       refine ⟨?_, ?_⟩
-      · rw [e5, qword_macE hk (by rw [x5, (A1 l hl k hk).1, a0, b0]; exact prod_bound hc hA hB (by omega) (by omega)), x5,
+      · rw [e5, qword_macE hk (by rw [x5, (A1 l hl k hk).1, a0, b0]; exact prod_bound hc hA hB (by omega_using [hn]) (by omega_using [hl, hk])), x5,
           (A1 l hl k hk).1, a0, b0]
         rfl
-      · rw [e6, qword_macO hk (by rw [x6, (A1 l hl k hk).2, a1, b1]; exact prod_bound hc hA hB (by omega) (by omega)), x6,
+      · rw [e6, qword_macO hk (by rw [x6, (A1 l hl k hk).2, a1, b1]; exact prod_bound hc hA hB (by omega_using [hn]) (by omega_using [hl, hk])), x6,
           (A1 l hl k hk).2, a1, b1]
         rfl
     · exact (((o1.trans o2).trans o3).trans o4).mono (by simp)
@@ -153,20 +153,20 @@ include hc7 hwo hra hrb hda hdb hA hB
 theorem step {i : Nat} (hi : i < 32) {s : State} (hI : DI o a b c s₀ i s) :
     WP isa (.block (dotBody c ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       DI o a b c s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_using [hi]
   -- the values of the coefficients loaded
   have hv : ∀ (p : Addr), (∀ j < c, (pR (p + BitVec.ofNat 64 (1024 * j))).Disjoint (pR o)) → ∀ j < c, ∀ l < 2,
       ∀ e < 4, (dword (s.mem.readW (coeffAddr p (8 * i) + BitVec.ofNat 64 (1024 * j) + BitVec.ofNat 64 (16 * l)) 128)
         e).toNat = famV s₀.mem p j (8 * i + (4 * l + e)) := fun p hd j hj l hl e he => by
     rw [addr_fam, dword_readW _ _ he, lane_load, coeffAddr_add, ← coeffAt_eq, famV, ← Nat.add_assoc,
-      coeffAt_frame hI.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd j hj) (by rw [n_eq]; omega)]
+      coeffAt_frame hI.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd j hj) (by rw [n_eq]; omega_using [hi, hl, he])]
   simp only [dotBody, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (ylanes lane_dotZero (P := fun l t => t.xmm .xmm5 = 0 ∧ t.xmm .xmm6 = 0)
     fun l _ => WP.mono (dotZero_ok _) fun t ⟨h5, h6, ht⟩ => ⟨⟨h5, h6⟩, ht⟩) fun s1 ⟨Z1, o1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (macs_ok hc7 (Av := fun j t => famV s₀.mem a j (8 * i + t)) (Bv := fun j t => famV s₀.mem b j (8 * i + t))
-    (fun j hj t ht => hA j hj _ (by omega)) (fun j hj t ht => hB j hj _ (by omega))
+    (fun j hj t ht => hA j hj _ (by omega_using [hi, ht])) (fun j hj t ht => hB j hj _ (by omega_using [hi, ht]))
     (fun j hj => by
       rw [o1.rd, o1.wr, o1.gpr, hI.r10, hI.keep.2.1, hI.keep.2.2, addr_fam]; exact hra j hj _ j0)
     (fun j hj => by
@@ -190,7 +190,7 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : DI o a b c s₀ i s) :
     rw [e3, dot_lane (e := (s2.proj l).xmm .xmm5) (o := (s2.proj l).xmm .xmm6)
       (A := fun j t => famV s₀.mem a j (8 * i + (4 * l + t)))
       (B := fun j t => famV s₀.mem b j (8 * i + (4 * l + t))) hc7
-      (fun j hj t ht => hA j hj _ (by omega)) (fun j hj t ht => hB j hj _ (by omega))
+      (fun j hj t ht => hA j hj _ (by omega_using [hi, hl, ht])) (fun j hj t ht => hB j hj _ (by omega_using [hi, hl, ht]))
       (fun k hk => by rw [State.proj_xmm]; exact (A2 l hl k hk).1)
       (fun k hk => by rw [State.proj_xmm, (A2 l hl k hk).2]; simp only [Nat.add_assoc]) he]
     simp only [dotOut, Nat.add_assoc]
@@ -201,9 +201,9 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : DI o a b c s₀ i s) :
     State.setMem_ymm, w0, sx32]
   rw [g3, o13.mem]
   have p8 : coeffAddr o (8 * i) + 32 = coeffAddr o (8 * (i + 1)) := by
-    rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, show 8 * i + 8 = 8 * (i + 1) by omega]
+    rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, show 8 * i + 8 = 8 * (i + 1) by omega_using []]
   have pa : ∀ p : Addr, coeffAddr p (8 * i) + 32 = coeffAddr p (8 * (i + 1)) := fun p => by
-    rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, show 8 * i + 8 = 8 * (i + 1) by omega]
+    rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, show 8 * i + 8 = 8 * (i + 1) by omega_using []]
   refine ⟨⟨?_, ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, fun k hk => ?_⟩, by rw [o13.gpr], by rw [o13.gpr]⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq, State.setMem_gpr]
     exact p8
@@ -223,15 +223,15 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : DI o a b c s₀ i s) :
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
     exact hI.frame.writeW (List.mem_singleton_self _) _ (pR_contains32 _ j0)
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
-    rw [coeffAt_write256 _ _ j0 _ (by omega)]
+    rw [coeffAt_write256 _ _ j0 _ (by omega_using [hi, hk])]
     split
-    · rw [State.ymm, extract_ymm _ _ (by omega)]
+    · rw [State.ymm, extract_ymm _ _ (by omega_using [hk])]
       split
-      · have := hres 0 (by decide) (k - 8 * i) (by omega)
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this; exact this
-      · have := hres 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this; exact this
-    · exact hI.done k (by omega)
+      · have := hres 0 (by decide) (k - 8 * i) (by omega_arith)
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_arith] at this; exact this
+      · have := hres 1 (by decide) (k - 8 * i - 4) (by omega_using [hk])
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_arith] at this; exact this
+    · exact hI.done k (by omega_arith)
 
 /-- The loop, from the constants and the pointers, in `s₀`. -/
 theorem pass_ok (h8 : s₀.gpr .r8 = o) (h10 : s₀.gpr .r10 = a) (hdx : s₀.gpr .rdx = b) (hc : YConsts s₀) :
@@ -242,14 +242,14 @@ theorem pass_ok (h8 : s₀.gpr .r8 = o) (h10 : s₀.gpr .r10 = a) (hdx : s₀.gp
       by rw [og.keep.gpr (by decide), h10, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       by rw [og.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       og.keep.mono (by simp), ylanes_gpr (s := s₀) (og.lane hy) (YOnly.refl [] s₀) hc (by decide) (by decide),
-      by rw [og.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩)
+      by rw [og.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega_using [])⟩)
     (fun i hi u hI => step hc7 hwo hra hrb hda hdb hA hB hi hI)) fun u hI => ⟨⟨fun k hk => ?_, ?_⟩, hI.keep, hI.frame⟩
   · rw [n_eq] at hk
-    rw [hI.done k (by omega)]; exact (dotOut s₀.mem a b c k).isLt
+    rw [hI.done k (by omega_using [hk])]; exact (dotOut s₀.mem a b c k).isLt
   · apply Vector.ext; intro k hk
     rw [polyAt, Vector.getElem_ofFn, Vector.getElem_ofFn]
     apply Fin.ext
-    rw [Fin.val_ofNat, hI.done k (by rw [n_eq] at hk; omega), Nat.mod_eq_of_lt (dotOut s₀.mem a b c k).isLt]
+    rw [Fin.val_ofNat, hI.done k (by rw [n_eq] at hk; omega_using [hk]), Nat.mod_eq_of_lt (dotOut s₀.mem a b c k).isLt]
 
 end
 
@@ -319,7 +319,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
     have hr : ∀ p : Addr, famR p c ∈ s.rd → ∀ j < c, ∀ k, k + 8 ≤ 256 →
         InRegions (s3.rd ++ s3.wr) (coeffAddr (p + BitVec.ofNat 64 (1024 * j)) k) 32 := fun p hp j hj k hk =>
       ⟨famR p c, by rw [k13.2.1, rd1]; exact List.mem_append_left _ hp, by
-        rw [coeffAddr, VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+        rw [coeffAddr, VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hj, hk]) (by omega_using [hc7, hj, hk])⟩
     refine WP.seq (WP.mono (pass_ok (s₀ := s3) hc7 (by rw [k13.2.2, wr1]; exact hwo)
       (hr _ (by rw [hrd]; simp)) (hr _ (by rw [hrd]; simp))
       (fun j hj => (d1.sub_right (fam_sub _ hj)).symm) (fun j hj => (d2.sub_right (fam_sub _ hj)).symm)

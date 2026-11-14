@@ -22,8 +22,8 @@ theorem dZero_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) :
   unfold dZero
   refine wp_movS rfl fun u U _ => ?_
   have hu := h.rest U.keeps
-  refine wp_storeS (hu.workspace.ea (by unfold kOk hdr at *; omega))
-    (hu.workspace.write (by unfold kOk hdr at *; omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (hu.workspace.ea (by unfold kOk hdr at *; omega_using [head]))
+    (hu.workspace.write (by unfold kOk hdr at *; omega_using [head])) fun t T => WP.block_nil ?_
   refine ⟨hu.rest (T.keeps []), ?_, ?_, U.keeps.trans (T.keeps _)⟩
   · rw [T.mem, U.mem]
     exact Keep.of_slot (writeW32_outside _ _ _ (by decide)) (by simp)

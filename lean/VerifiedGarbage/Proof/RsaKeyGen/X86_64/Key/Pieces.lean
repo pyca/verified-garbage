@@ -623,8 +623,8 @@ theorem kHalf_ok {t : State} {W : Nat} (h12 : t.gpr .r12 = BitVec.ofNat 64 W) (h
   unfold kHalf
   xrun [h12]
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hW]),
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [hW])]
 
 /-- `kOne`: `r13 := 1`. -/
 theorem kOne_ok {t : State} :
@@ -656,7 +656,7 @@ theorem inverseK_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s)
   have h₂ : Ws s₂ I.B I.Z I.W :=
     h.ws.congr (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k₁.trans k₂) (by decide)
   refine WP.mono (InvLaw.inverseN_ok h₂ h.z26 ((k₂.gpr (by decide)).trans h9) h13 hn1 hnw
-    (by have := h.w20; omega) hU hV hX₂ hM dVX₂) fun t ⟨_, hf, kt, hv⟩ => ?_
+    (by have := h.w20; omega_using [hnw, this]) hU hV hX₂ hM dVX₂) fun t ⟨_, hf, kt, hv⟩ => ?_
   rw [hm] at hf hv
   have k : Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t :=
     ((k₁.trans k₂).trans kt).mono (by decide)

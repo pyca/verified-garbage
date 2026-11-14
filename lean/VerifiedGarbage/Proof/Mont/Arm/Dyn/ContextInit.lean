@@ -26,7 +26,7 @@ def setupRanges (n : Nat) : List (Nat × Nat) :=
 /-- The low digit of a number is its low word's. -/
 theorem val32_mod16 (m : Mem) (base : Addr) (d k : Nat) (hk : 0 < k) :
     val32 m base d k % 2 ^ 16 = w32 m base d % 2 ^ 16 := by
-  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega_using [hk]⟩
   rw [val32, Nat.add_mod, show 2 ^ 32 * val32 m base (d + 4) k = 2 ^ 16 * (2 ^ 16 * val32 m base (d + 4) k) by
     rw [← Nat.mul_assoc], Nat.mul_mod_right, Nat.add_zero, Nat.mod_mod]
 
@@ -39,21 +39,21 @@ theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State} (hs : Ws s ba
   have nw := hs.nowrap
   have b0 := slot_bound (n := n) (i := 0) (by decide)
   have h0 := slot_header n 0
-  have low : w32 s.mem base (slot n 0) % 2 ^ 16 = m % 2 ^ 16 := by rw [← hv, val32_mod16 _ _ _ _ (by omega)]
+  have low : w32 s.mem base (slot n 0) % 2 ^ 16 = m % 2 ^ 16 := by rw [← hv, val32_mod16 _ _ _ _ (by omega_using [hn])]
   unfold contextSetup
-  refine WP.seq (WP.mono (setupInverse_ok hs (mo := modS n) (by simp only [modS, stride] at *; omega)
-    (by simp only [modS, stride] at *; omega) (by omega) (by simp only [modS]; omega)) fun t₁ ⟨w₁, I₁, O₁, R₁, _⟩ => ?_)
+  refine WP.seq (WP.mono (setupInverse_ok hs (mo := modS n) (by simp only [modS, stride] at *; omega_using [hz, b0])
+    (by simp only [modS, stride] at *; omega_using [h16, b0]) (by omega_using [hz, b0, h0]) (by simp only [modS]; omega_using [hodd, low])) fun t₁ ⟨w₁, I₁, O₁, R₁, _⟩ => ?_)
   have c₁ : Context n m base size t₁ := by
     refine ⟨w₁, hz, h16, hn, ?_, hm1, ?_⟩
-    · rw [O₁.val32 (by simp only [invO]; omega) (by simp only [stride] at *; omega)]; exact hv
+    · rw [O₁.val32 (by simp only [invO]; omega_using [h0]) (by simp only [stride] at *; omega_using [h16, b0])]; exact hv
     · rw [Nat.add_mod, Nat.mul_mod, ← low, ← Nat.mul_mod, ← Nat.add_mod]; exact I₁
   have b6 := slot_bound (n := n) (i := 6) (by decide)
-  refine WP.seq (WP.mono (one_ok w₁ (n := n) (out := oneS n) hn (by simp only [oneS, stride] at *; omega)
-    (by simp only [oneS, stride] at *; omega)) fun t₂ ⟨w₂, V₂, O₂, R₂⟩ => ?_)
+  refine WP.seq (WP.mono (one_ok w₁ (n := n) (out := oneS n) hn (by simp only [oneS, stride] at *; omega_using [hz, b6])
+    (by simp only [oneS, stride] at *; omega_using [h16, b6])) fun t₂ ⟨w₂, V₂, O₂, R₂⟩ => ?_)
   have K₂ : OpKeep n base 6 t₁ t₂ := ⟨R₂.mono (by decide), Outs.of_outside O₂ (by simp [oneS])⟩
-  have c₂ := c₁.keep (by omega) w₂ K₂
-  refine WP.mono (powerTwo_ok c₂ (o := 7) (by decide) (by omega) h128) fun t ⟨c, V, O, R⟩ => ⟨c, ?_, V, ?_, ?_⟩
-  · have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega
+  have c₂ := c₁.keep (by omega_using []) w₂ K₂
+  refine WP.mono (powerTwo_ok c₂ (o := 7) (by decide) (by omega_using [hn]) h128) fun t ⟨c, V, O, R⟩ => ⟨c, ?_, V, ?_, ?_⟩
+  · have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by omega_using [hz, nw]
     rw [slot_val32 O (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw']; exact V₂
   · refine ((Outs.of_outside O₁ (by simp [setupRanges, invO])).trans
       (Outs.of_outside O₂ (by simp [setupRanges, oneS]))).trans (O.mono ?_)

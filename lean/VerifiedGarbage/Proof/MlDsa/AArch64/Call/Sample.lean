@@ -138,13 +138,13 @@ theorem ball_pre {tau : Nat} (ht : (len, tau) ∈ ballParams) {s1 : State}
     (sampleInBallContract AArch64.abi S).pre
       (s1.callEntry.withRegions [⟨pa s ct, len⟩] [⟨pa s c, 1024⟩, ⟨pa s ss, 2048⟩]) := by
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega_using [ht]
   simp only [ballChk, Bool.and_eq_true, and_assoc] at hc
   obtain ⟨c1, c2, c3, c4, c5, c6, _, _⟩ := hc
   sig_pre [sampleInBallContract, sampleInBallSig, AArch64.abi, VG.AArch64.argRegs]
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.sp h1]
   simp only [Arg.val]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), imm32 hl.2]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl]), imm32 hl.2]
   cpre L
   exact ht
 
@@ -166,7 +166,7 @@ theorem ballAt_ok {S : Nat} (hS : S < 2 ^ 64) {nm : String} {cd : Prog isa} (C :
       Outcome (fun b => (sampleInBall tau b.ball (bytesAt s.mem (pa s ct) len)).map toRq)
         ((s'.gpr .x0).setWidth 32) (polyAt s'.mem (pa s c)) := by
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega_using [ht]
   have hc' := hc
   simp only [ballChk, Bool.and_eq_true, and_assoc] at hc'
   obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
@@ -176,7 +176,7 @@ theorem ballAt_ok {S : Nat} (hS : S < 2 ^ 64) {nm : String} {cd : Prog isa} (C :
   sig_post [sampleInBallContract, sampleInBallSig, AArch64.abi, VG.AArch64.argRegs] at hq
   rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.mem h1] at hq
   simp only [Arg.val] at hq
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), imm32 hl.2] at hq
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl]), imm32 hl.2] at hq
   exact hq
 
 theorem ballAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (sampleInBallContract AArch64.abi S))
@@ -186,7 +186,7 @@ theorem ballAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (sa
       bytesAt x.mem (pa x ct) len = bytesAt y.mem (pa y ct) len ∧ SameIn B x y) :
     RelCT isa Q (callAt nm cd (ballArgs ct len tau c ss)) fun _ _ => True := by
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
-    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega
+    simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at ht; omega_using [ht]
   have hc' := hc
   simp only [ballChk, Bool.and_eq_true, and_assoc] at hc'
   obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
@@ -200,7 +200,7 @@ theorem ballAt_tr {S : Nat} {nm : String} {cd : Prog isa} (C : CalleeOk S cd (sa
     rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r4 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2,
       Args.r3 h2, Args.r4 h2, Args.sp h1, Args.sp h2, Args.mem h1, Args.mem h2]
     simp only [Arg.val]
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hl])]
     exact ⟨e.2, by rw [hsd], e.pa hb.1, trivial, trivial, e.pa hb.2.1, e.pa hb.2.2⟩
   · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (ball_cov Ly hc).1
   · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (ball_cov Ly hc).2

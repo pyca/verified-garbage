@@ -29,7 +29,7 @@ theorem step_ok {base : Addr} {P Q : Point C} {u v j : Nat} {s : State}
     (h1 : 1 ≤ j) (h256 : j ≤ 128) (h : Running base P Q u v j s) :
     WP isa step s fun t => Changes base loopWork s t ∧ Running base P Q u v (j-1) t := by
   rw [step]
-  refine WP.seq (WP.mono (decCounter_ok s h1 (by omega) h.counter) fun s₀ ⟨c₀,k₀⟩ => ?_)
+  refine WP.seq (WP.mono (decCounter_ok s h1 (by omega_using [h256]) h.counter) fun s₀ ⟨c₀,k₀⟩ => ?_)
   have W₀ : Changes base loopWork s s₀ := Changes.of_keeps k₀ (by decide)
   have I₀ := h.inputs.unch (W₀.mono loopWork_sub)
   have R₀ := h.point.of_mem k₀.mem
@@ -42,8 +42,8 @@ theorem step_ok {base : Addr} {P Q : Point C} {u v j : Nat} {s : State}
   have C₂ : s₂.gpr .x19=BitVec.ofNat 64 (j-1) := c₂.trans (c₁.trans c₀)
   have hAA := hC.onCurve_add hA hA
   refine WP.mono (addDigit_ok hc hC hP hQ (hC.onCurve_add hAA hAA) I₂ B₂ T₂ R₂
-    (by omega) C₂) fun t ⟨k₃,I₃,B₃,T₃,R₃,c₃⟩ => ?_
-  have eqj : j-1+1=j := by omega
+    (by omega_using [h256]) C₂) fun t ⟨k₃,I₃,B₃,T₃,R₃,c₃⟩ => ?_
+  have eqj : j-1+1=j := by omega_using [h1]
   have em := at_step hC hP hQ u v (j-1)
   rw [eqj] at em
   have hcmt := point_comm hC

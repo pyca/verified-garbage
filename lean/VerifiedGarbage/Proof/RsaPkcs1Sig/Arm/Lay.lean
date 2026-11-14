@@ -92,7 +92,7 @@ variable {L : Lay}
 /-- `B + d` as an address. -/
 theorem Ok.addrB {σ : State} (h : L.Ok σ) {d : Nat} (hd : d < L.F + 56 + L.A) :
     State.addr (L.B + BitVec.ofNat 32 d) = L.fr d :=
-  addr_add (by have := h.fit; omega)
+  addr_add (by have := h.fit; omega_using [hd, this])
 
 /-- A range of the frames is within our stack. -/
 theorem sub_stk {d n : Nat} (hd : d + n ≤ L.F + 56) : Region.Sub ⟨L.fr d, n⟩ L.STK := by
@@ -100,24 +100,24 @@ theorem sub_stk {d n : Nat} (hd : d + n ≤ L.F + 56) : Region.Sub ⟨L.fr d, n�
     simp only [fr]
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   rw [e]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hd])
 
-theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega)
+theorem low_stk : Region.Sub L.LOW L.STK := Region.sub_prefix (by omega_using [])
 
 theorem FR_stk : Region.Sub L.FR L.STK := by
-  have := sub_stk (L := L) (d := 0) (n := L.F) (by omega)
+  have := sub_stk (L := L) (d := 0) (n := L.F) (by omega_using [])
   simp only [fr, BitVec.add_zero] at this
   exact this
 
 /-- Two ranges of the frames, apart. -/
 theorem fr_sep {d n d' n' : Nat} (hs : d + n ≤ d' ∨ d' + n' ≤ d) (h₁ : d + n ≤ 2 ^ 32)
     (h₂ : d' + n' ≤ 2 ^ 32) : Region.Disjoint ⟨L.fr d, n⟩ ⟨L.fr d', n'⟩ :=
-  Offset.disjoint _ hs (by omega) (by omega)
+  Offset.disjoint _ hs (by omega_using [h₁]) (by omega_using [h₂])
 
 /-- A range of the frames misses the `C` bytes below them. -/
 theorem fr_low {d n : Nat} (hd : d + n ≤ 2 ^ 32) (hC : L.C ≤ 2 ^ 32 := by simp) :
     Region.Disjoint ⟨L.fr d, n⟩ L.LOW :=
-  Offset.disjoint_below _ (by omega)
+  Offset.disjoint_below _ (by omega_using [hd, hC])
 
 theorem Ok.low_eq {σ : State} (h : L.Ok σ) : FrameStack.belowA L.B L.C = L.LOW := by
   simp only [FrameStack.belowA, LOW, Q]
@@ -129,7 +129,7 @@ theorem argOff_lt {j : Nat} (hj : j < 4 + L.A / 4) :
       (j < 4 → Impl.RsaPkcs1Sig.Arm.argOff L.F j + 4 ≤ L.F + 56) ∧
       (4 ≤ j → L.F + 56 ≤ Impl.RsaPkcs1Sig.Arm.argOff L.F j) := by
   simp only [Impl.RsaPkcs1Sig.Arm.argOff]
-  split <;> omega
+  split <;> omega_arith
 
 /-- An argument's place is in the push or the stack arguments, apart from
 what the body writes. -/
@@ -137,31 +137,31 @@ theorem Ok.arg_apart {σ : State} (h : L.Ok σ) {j : Nat} (hj : j < L.argv.lengt
     ∀ r ∈ L.W, Region.Disjoint ⟨L.argA j, 4⟩ r := by
   have hn := h.nargs
   have := h.fit
-  have ha := argOff_lt (L := L) (j := j) (by omega)
+  have ha := argOff_lt (L := L) (j := j) (by omega_using [hj, hn])
   intro r hr
   simp only [W, List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | hr | rfl
-  · exact (Offset.disjoint_base _ (by omega) (by omega))
+  · exact (Offset.disjoint_base _ (by omega_using [ha]) (by omega_using [this, ha]))
   · -- A writable buffer misses the push and the stack arguments.
     have hs := h.stk r (List.mem_append_right _ hr)
-    rcases (by omega : j < 4 ∨ 4 ≤ j) with hj4 | hj4
-    · exact (hs.sub_left (sub_stk (by have := ha.2.2.1 hj4; omega))).symm.symm
+    rcases (by omega_using [] : j < 4 ∨ 4 ≤ j) with hj4 | hj4
+    · exact (hs.sub_left (sub_stk (by have := ha.2.2.1 hj4; omega_using [this]))).symm.symm
     · have hw := h.wro r hr L.ARGS (List.mem_append_right _ (List.mem_singleton_self _))
       refine (hw.sub_right ?_).symm
-      exact Offset.sub _ (ha.2.2.2 hj4) (by omega)
-  · exact fr_low (by omega) (by have := h.B56; have := L.B.isLt; omega)
+      exact Offset.sub _ (ha.2.2.2 hj4) (by omega_using [ha])
+  · exact fr_low (by omega_using [this, ha]) (by have := h.B56; have := L.B.isLt; omega_arith)
 
 /-- An argument's place may be read. -/
 theorem Ok.arg_read {σ : State} (h : L.Ok σ) {j : Nat} (hj : j < L.argv.length) :
     InRegions (σ.rd ++ σ.wr) (L.argA j) 4 := by
   have hn := h.nargs
   have := h.fit
-  have ha := argOff_lt (L := L) (j := j) (by omega)
-  rcases (by omega : j < 4 ∨ 4 ≤ j) with hj4 | hj4
+  have ha := argOff_lt (L := L) (j := j) (by omega_using [hj, hn])
+  rcases (by omega_using [] : j < 4 ∨ 4 ≤ j) with hj4 | hj4
   · refine ⟨L.PUSH, List.mem_append_right _ (by rw [h.wr]; simp), ?_⟩
-    exact Offset.contains _ ha.1 (by have := ha.2.2.1 hj4; omega) (by omega)
+    exact Offset.contains _ ha.1 (by have := ha.2.2.1 hj4; omega_using [this]) (by omega_using [this])
   · refine ⟨L.ARGS, List.mem_append_left _ (by rw [h.rd]; simp), ?_⟩
-    exact Offset.contains _ (ha.2.2.2 hj4) ha.2.1 (by omega)
+    exact Offset.contains _ (ha.2.2.2 hj4) ha.2.1 (by omega_using [this])
 
 namespace Ok
 
@@ -184,9 +184,9 @@ theorem push_apart : ∀ r ∈ L.W, L.PUSH.Disjoint r := by
   intro r hr
   simp only [W, List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | hr | rfl
-  · exact Offset.disjoint_base _ (Nat.le_refl _) (by omega)
+  · exact Offset.disjoint_base _ (Nat.le_refl _) (by omega_using [this])
   · exact (h.stk r (List.mem_append_right _ hr)).sub_left (sub_stk (Nat.le_refl _))
-  · exact fr_low (by omega) (by have := h.B56; have := L.B.isLt; omega)
+  · exact fr_low (by omega_using [this]) (by have := h.B56; have := L.B.isLt; omega_arith)
 
 end Ok
 
@@ -202,7 +202,7 @@ theorem arg (h : L.St σ s) {j : Nat} (hj : j < L.argv.length) :
 /-- A buffer only read keeps its bytes. -/
 theorem ro {R : Region} (h : L.St σ s) (hR : R ∈ L.ro) :
     Spec.Rsa.bytesAt s.mem R.base R.len = Spec.Rsa.bytesAt σ.mem R.base R.len := by
-  refine bytesAt_frame h.frame (fun r hr => ?_) (by have := h.ok.fits R (List.mem_append_left _ hR); omega)
+  refine bytesAt_frame h.frame (fun r hr => ?_) (by have := h.ok.fits R (List.mem_append_left _ hR); omega_using [this])
   simp only [W, List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | hr | rfl
   · exact ((h.ok.stk R (List.mem_append_left _ hR)).sub_left FR_stk).symm
@@ -212,7 +212,7 @@ theorem ro {R : Region} (h : L.St σ s) (hR : R ∈ L.ro) :
 /-- A buffer only read keeps its words. -/
 theorem ro_words {R : Region} (h : L.St σ s) (hR : R ∈ L.ro) {n : Nat} (hn : n * 8 = R.len) :
     Spec.Rsa.wordsAt s.mem R.base n = Spec.Rsa.wordsAt σ.mem R.base n := by
-  refine wordsAt_frame h.frame (fun r hr => ?_) (by have := h.ok.fits R (List.mem_append_left _ hR); omega)
+  refine wordsAt_frame h.frame (fun r hr => ?_) (by have := h.ok.fits R (List.mem_append_left _ hR); omega_using [hn, this])
   rw [hn]
   simp only [W, List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | hr | rfl
@@ -243,7 +243,7 @@ theorem frameW (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) (hf : Frame [⟨
 
 /-- A range of the frame may be written. -/
 theorem inFr (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) : InRegions s.wr (L.fr d) n :=
-  ⟨L.FR, by rw [h.wr, h.ok.wr]; simp, Offset.contains_base _ hd (by have := h.ok.fit; omega)⟩
+  ⟨L.FR, by rw [h.wr, h.ok.wr]; simp, Offset.contains_base _ hd (by have := h.ok.fit; omega_using [hd, this])⟩
 
 theorem inFrR (h : L.St σ s) {d n : Nat} (hd : d + n ≤ L.F) : InRegions (s.rd ++ s.wr) (L.fr d) n :=
   let ⟨r, hr, hc⟩ := h.inFr hd
@@ -255,9 +255,9 @@ theorem wp_arg (h : L.St σ s) {j : Nat} (hj : j < L.argv.length) {r : Reg} {is 
     (k : ∀ t, L.St σ t → Upd s t r (L.argv.getD j 0) → WP isa (.block is) t Q) :
     WP isa (.block (.ldrSp r (Impl.RsaPkcs1Sig.Arm.argOff L.F j) :: is)) s Q := by
   have hn := h.ok.nargs
-  have ha := argOff_lt (L := L) (j := j) (by omega)
+  have ha := argOff_lt (L := L) (j := j) (by omega_using [hj, hn])
   refine VG.Proof.Bignum.Arm.wp_loadStack hoff (a := L.argA j) ?_ ?_ fun t u => ?_
-  · rw [h.sp]; exact h.ok.addrB (by omega)
+  · rw [h.sp]; exact h.ok.addrB (by omega_using [ha])
   · rw [h.rd, h.wr]; exact h.ok.arg_read hj
   · rw [h.arg hj] at u
     exact k t (h.of_rest (u.rest (ws := [r]) (by simp)) u.mem) u
@@ -269,7 +269,7 @@ theorem wp_slot (h : L.St σ s) {d : Nat} (hd : d + 4 ≤ L.F) (hoff : d < 4096)
     WP isa (.block (.ldrSp r d :: is)) s Q := by
   refine VG.Proof.Bignum.Arm.wp_loadStack hoff (a := L.fr d) ?_ (h.inFrR hd) fun t u =>
     k t (h.of_rest (u.rest (ws := [r]) (by simp)) u.mem) u
-  rw [h.sp]; exact h.ok.addrB (by omega)
+  rw [h.sp]; exact h.ok.addrB (by omega_using [hd])
 
 /-- `str r, [r12, #d]` into the frame, with `r12 = B`. -/
 theorem wp_strFr (h : L.St σ s) {d : Nat} (hd : d + 4 ≤ L.F) (hoff : d < 4096) (h12 : s.gpr .r12 = L.B)
@@ -277,7 +277,7 @@ theorem wp_strFr (h : L.St σ s) {d : Nat} (hd : d + 4 ≤ L.F) (hoff : d < 4096
     (k : ∀ t, L.St σ t → Mupd s t (s.mem.writeW (L.fr d) (s.gpr r)) → WP isa (.block is) t Q) :
     WP isa (.block (.str r .r12 d :: is)) s Q := by
   refine Proof.X25519.Arm.wp_str hoff (a := L.fr d) ?_ (h.inFr hd) fun t u => k t ?_ u
-  · rw [h12]; exact h.ok.addrB (by omega)
+  · rw [h12]; exact h.ok.addrB (by omega_using [hd])
   · refine h.frameW hd ?_ u.rd u.wr u.sp
     rw [u.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -299,13 +299,13 @@ end St
 theorem readW_fr_other (L : Lay) (m : Mem) {d e : Nat} (v : BitVec 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d)
     (hd : d + 4 ≤ 2 ^ 32) (he : e + 4 ≤ 2 ^ 32) :
     (m.writeW (L.fr e) v).readW (L.fr d) 32 = m.readW (L.fr d) 32 :=
-  Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hd]) (by omega_using [he])) (by decide)
 
 /-- A byte of the frame read after a word is written elsewhere. -/
 theorem byte_fr_other (L : Lay) (m : Mem) {d e : Nat} (v : BitVec 32) (h : d + 1 ≤ e ∨ e + 4 ≤ d)
     (hd : d + 1 ≤ 2 ^ 32) (he : e + 4 ≤ 2 ^ 32) :
     (m.writeW (L.fr e) v) (L.fr d) = m (L.fr d) :=
-  Mem.write_apply fun h' => Offset.sep _ h (by omega) (by omega) (L.fr d) (by simp) h'
+  Mem.write_apply fun h' => Offset.sep _ h (by omega_using [hd]) (by omega_using [he]) (L.fr d) (by simp) h'
 
 end Lay
 

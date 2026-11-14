@@ -49,7 +49,7 @@ theorem innerGroup_ok (r : Ren) (gap group : Nat) (hv : ValidGroup gap group)
         (coreValues values gap group (z gap group)) → WP isa (.block rest) t Q) :
     WP isa (.block (rootAt (innerBase gap) group ++ coreCode r gap group ++ rest)) s Q := by
   have hg : group < 2048 := by
-    rcases hv with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩ <;> omega
+    rcases hv with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩ <;> omega_arith
   rw [List.append_assoc]
   refine rootAt_ok (innerBase gap) group hg ?_ (hconst.read gap group hv 16 (by simp))
     fun s₁ hc₁ hz₁ hb₁ => ?_

@@ -26,7 +26,7 @@ theorem val_extract (s₀ : State) (t : T) {l : Nat} (hl : l < 4) :
     (t.val s₀).extractLsb' (8 * (8 * l)) (8 * 8) = t.eval s₀ l := by
   have := VG.Proof.Poly1305.X86_64.Avx2.qword256_cat (t.eval s₀ 3) (t.eval s₀ 2) (t.eval s₀ 1)
     (t.eval s₀ 0) hl
-  rw [show 8 * (8 * l) = 64 * l by omega]
+  rw [show 8 * (8 * l) = 64 * l by omega_using []]
   refine this.trans ?_
   rcases VG.X86_64.cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
@@ -46,12 +46,12 @@ theorem stores_mq (s₀ : State) (base : Addr) (m : Mem) :
     rcases List.mem_cons.1 h with h | h
     · cases h
       rw [mq, BitVec.ofNat_add, ← BitVec.add_assoc,
-        readW_writeW_inside _ _ _ (k := 8 * l) (n := 8) (by omega) (by decide), val_extract _ _ hl]
+        readW_writeW_inside _ _ _ (k := 8 * l) (n := 8) (by omega_using [hl]) (by decide), val_extract _ _ hl]
     · have h₀ := ha.1 _ h
       have e1 := readW_writeW_off (stores s₀ base st m) base (t₀.val s₀) (d := e + 8 * l) (e := e₀) (n := 8)
-        (by have := hs _ (List.mem_cons_of_mem _ h); simp at this; omega)
-        (by have := hs _ (List.mem_cons_self ..); simp at this; omega)
-        (by simp at h₀; omega)
+        (by have := hs _ (List.mem_cons_of_mem _ h); simp at this; omega_using [hl, this])
+        (by have := hs _ (List.mem_cons_self ..); simp at this; omega_using [this])
+        (by simp at h₀; omega_using [hl, h₀])
       exact e1.trans (stores_mq s₀ base m st h hl (fun x hx => hs x (List.mem_cons_of_mem _ hx)) ha.2)
 
 end VG.Proof.X25519.X86_64.Ifma

@@ -23,7 +23,7 @@ theorem reduced_norm_iff (x : Int) (B : Nat)
   have hr := (ofInt x).isLt
   change (ofInt x).val<8380417 at hr
   change (ofInt x).val<B ∨ 8380417-(ofInt x).val<B ↔ _
-  omega
+  omega_using [hl, hh, hB, hv]
 
 theorem reduce32_norm_iff (x : Int) (B : Nat)
     (hl : -2*8380417<x) (hh : x<3*8380417) (hB : B≤524288) :
@@ -33,7 +33,7 @@ theorem reduce32_norm_iff (x : Int) (B : Nat)
     have h1 := VG.Proof.MlDsa.KeyGen.ofInt_val (reduce32 x)
     have h2 := VG.Proof.MlDsa.KeyGen.ofInt_val x
     have h3 := reduce32_mod x
-    omega
+    omega_using [h1, h2, h3]
   rw [← he]
   exact reduced_norm_iff _ _ (reduce32_bounds hl hh).1 (reduce32_bounds hl hh).2 hB
 

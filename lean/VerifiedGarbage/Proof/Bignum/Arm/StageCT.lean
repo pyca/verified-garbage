@@ -56,12 +56,12 @@ theorem productStage_ct {base : BitVec 32} {size tmp a b mod acc n i : Nat} (hi 
     intro s t tr1 tr2 u v h e1 e2
     obtain ⟨cs, ⟨is, hs⟩, ps⟩ := h.1
     obtain ⟨ct, ⟨it, ht⟩, pt⟩ := h.2
-    exact productArgs_ct (a := a + 4 * i) (by have := cs.tmpFits; omega)
+    exact productArgs_ct (a := a + 4 * i) (by have := cs.tmpFits; omega_using [this])
       s t tr1 tr2 u v ⟨cs.workspace, ct.workspace, ps, pt, hs.aPtr, ht.aPtr⟩ e1 e2
   have wp (s : State) (h : P s) : WP isa (.block productArgs) s Q := by
     obtain ⟨ctx, ⟨inv, hdr⟩, ptr⟩ := h
     have fits := ctx.aFits
-    exact WP.mono (productArgs_ok s ctx.workspace ctx.tmpFits (by omega)
+    exact WP.mono (productArgs_ok s ctx.workspace ctx.tmpFits (by omega_using [hi, fits])
       ptr hdr.aPtr hdr.count hdr.bPtr hdr.accPtr) (fun _ h => ⟨h.2.1, h.2.2.1, h.2.2.2.1⟩)
   unfold productStage
   refine (pair_posts ct wp).seq ?_

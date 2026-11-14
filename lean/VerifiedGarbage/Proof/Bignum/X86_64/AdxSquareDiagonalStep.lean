@@ -25,10 +25,10 @@ theorem write2 (m : Mem) (B : Addr) (d : Nat) (x y : BitVec 64) (hd : d + 16 ≤
     let m' := (m.writeW (off B d) x).writeW (off B (d + 8)) y
     wv m' B d 2 = x.toNat + 2 ^ 64 * y.toNat ∧ Outside B d 16 m m' := by
   intro m'
-  have ho := writeW_outside m B x (d := d) (by omega)
-  have ho' := writeW_outside (m.writeW (off B d) x) B y (d := d + 8) (by omega)
-  refine ⟨?_, (ho.mono (Nat.le_refl _) (by omega)).trans (ho'.mono (by omega) (by omega))⟩
-  rw [wv2, ho'.word (by omega) (by omega), word_writeW_self, word_writeW_self]
+  have ho := writeW_outside m B x (d := d) (by omega_using [hd])
+  have ho' := writeW_outside (m.writeW (off B d) x) B y (d := d + 8) (by omega_using [hd])
+  refine ⟨?_, (ho.mono (Nat.le_refl _) (by omega_using [])).trans (ho'.mono (by omega_using []) (by omega_using []))⟩
+  rw [wv2, ho'.word (by omega_using []) (by omega_using [hd]), word_writeW_self, word_writeW_self]
 
 /-- A diagonal step's core: `rbx:r12:r11 = 2 (r11 + 2⁶⁴ r12) + rdx² + r15`,
 as the diagonal step computes it. -/
@@ -55,9 +55,9 @@ theorem diagonalStepWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {
       Keep [.rdx, .r11, .r12, .rsi, .rbx, .rax, .rcx, .r15, .rbp, .r14] s t := by
   have hn := hs.nowrap
   have ad : off B A + BitVec.ofNat 64 (2 * i) * BitVec.ofNat 64 8 + BitVec.ofInt 64 0 = off B (A + 16 * i) := by
-    rw [addrK0]; congr 1; omega
+    rw [addrK0]; congr 1; omega_using []
   have ad' : off B A + BitVec.ofNat 64 (2 * i) * BitVec.ofNat 64 8 + BitVec.ofInt 64 8 = off B (A + 16 * i + 8) := by
-    rw [addrK1]; congr 1; omega
+    rw [addrK1]; congr 1; omega_using []
   have src : off B eb + BitVec.ofNat 64 i * BitVec.ofNat 64 8 + BitVec.ofInt 64 0 = off B (eb + 8 * i) := by
     rw [addrK0]; congr 1
   have head : WP isa (.block AdxSquare.diagonalHead) s fun t =>
@@ -69,8 +69,8 @@ theorem diagonalStepWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {
       fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
     unfold AdxSquare.diagonalHead
     xrun [State.ea, ix, h8, h9, hbp, h14, ad, ad', src,
-      hs.ld (show eb + 8 * i + 8 ≤ Z by omega), hs.ld (show A + 16 * i + 8 ≤ Z by omega),
-      hs.ld (show A + 16 * i + 8 + 8 ≤ Z by omega)]
+      hs.ld (show eb + 8 * i + 8 ≤ Z by omega_using [hb]), hs.ld (show A + 16 * i + 8 ≤ Z by omega_using [hA]),
+      hs.ld (show A + 16 * i + 8 + 8 ≤ Z by omega_using [hA])]
   unfold AdxSquare.diagonalStepWith
   refine WP.seq (WP.mono head fun s₁ ⟨hdx, h11, h12, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (hc.ok s₁) fun s₂ ⟨hv, k₂⟩ => ?_)
@@ -81,7 +81,7 @@ theorem diagonalStepWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {
   have h10₂ : s₂.gpr .r10 = BitVec.ofNat 64 w := (k12.gpr (by decide)).trans h10
   have hs₂ := hs.congr k12.2.2
   have cnt : BitVec.ofNat 64 (2 * i) + 2 = BitVec.ofNat 64 (2 * (i + 1)) := by
-    rw [show 2 * (i + 1) = 2 * i + 2 by omega, BitVec.ofNat_add]; rfl
+    rw [show 2 * (i + 1) = 2 * i + 2 by omega_using [], BitVec.ofNat_add]; rfl
   have tail : WP isa (.block AdxSquare.diagonalTail) s₂ fun t =>
       t.mem = (s₂.mem.writeW (off B (A + 16 * i)) (s₂.gpr .r11)).writeW (off B (A + 16 * i + 8)) (s₂.gpr .r12) ∧
       t.gpr .r15 = s₂.gpr .rbx ∧ t.gpr .rbp = BitVec.ofNat 64 (i + 1) ∧
@@ -94,10 +94,10 @@ theorem diagonalStepWith_ok {core : List Instr} (hc : CoreOk core) {s : State} {
       fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
     unfold AdxSquare.diagonalTail
     xrun [State.ea, ix, h8₂, h14₂, hbp₂, h10₂, ad, ad', cnt, ofNat_add_one,
-      hs₂.st (show A + 16 * i + 8 ≤ Z by omega), hs₂.st (show A + 16 * i + 8 + 8 ≤ Z by omega),
-      ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show w < 2 ^ 64 by omega)]
+      hs₂.st (show A + 16 * i + 8 ≤ Z by omega_using [hA]), hs₂.st (show A + 16 * i + 8 + 8 ≤ Z by omega_using [hA]),
+      ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega_using [hi, hw]) (show w < 2 ^ 64 by omega_using [hw])]
   refine WP.mono tail fun t ⟨hm, h15', hbp', h14', hz, kt⟩ => ?_
-  obtain ⟨hval, ho⟩ := write2 s₂.mem B (A + 16 * i) (s₂.gpr .r11) (s₂.gpr .r12) (by omega)
+  obtain ⟨hval, ho⟩ := write2 s₂.mem B (A + 16 * i) (s₂.gpr .r11) (s₂.gpr .r12) (by omega_using [hA, hn])
   rw [← hm] at hval ho
   rw [k₂.2.1, hm₁] at ho
   refine ⟨?_, ho, hbp', h14', hz, (k12.trans kt).mono (by decide)⟩

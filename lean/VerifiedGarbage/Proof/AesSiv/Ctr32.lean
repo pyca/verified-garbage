@@ -43,9 +43,9 @@ theorem inc32_ofNat {x : Nat} (hx : x % 2 ^ 32 + 1 < 2 ^ 32) (h128 : x < 2 ^ 128
   apply BitVec.eq_of_toNat_eq
   rw [toNat_inc32, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h128,
     Nat.mod_eq_of_lt (a := x % 2 ^ 32 + 1) hx]
-  have : x + 1 < 2 ^ 128 := by omega
+  have : x + 1 < 2 ^ 128 := by omega_using [hx, h128]
   rw [Nat.mod_eq_of_lt this]
-  omega
+  omega_using []
 
 /-- From a counter block `q` whose last 32 bits do not wrap around in `k`
 increments, the `i`-th counter block, `i < k`, is `q + i`. -/
@@ -58,7 +58,7 @@ theorem repeat_inc32 {q : List Byte} (hq : q.length = 16) {k : Nat} (hk : Siv.be
   induction i with
   | zero => rw [beNat_eq]; rfl
   | succ i ih =>
-    rw [Nat.repeat, ih (by omega), inc32_ofNat (by omega) (by omega), Nat.add_assoc]
+    rw [Nat.repeat, ih (by omega_using [hi]), inc32_ofNat (by omega_using [hk, hi]) (by omega_using [hk, hb, hi]), Nat.add_assoc]
 
 /-- `vg_aes_ctr32`'s keystream from `q`, over `k` blocks whose counter blocks
 are `q + i`, XORed into `k` blocks: CTR's output on them. -/
@@ -70,8 +70,8 @@ theorem xorKs_ctrPart {G : Gcm.Block → Gcm.Block} {ciph : Cmac.Cipher}
     Proof.Gcm.xorKs G icb 0 d = ctrPart ciph q d (16 * k) := by
   refine ext_getD (by rw [Proof.Gcm.length_xorKs, length_ctrPart]) fun p hp => ?_
   rw [Proof.Gcm.length_xorKs] at hp
-  rw [Proof.Gcm.getD_xorKs _ _ _ _ hp, getD_ctrPart _ _ _ _ hp, ite_eq_left (by omega), Nat.zero_add,
-    Proof.Gcm.ksByte, hinc (p / 16) (by omega), hG _ (length_be128 _)]
+  rw [Proof.Gcm.getD_xorKs _ _ _ _ hp, getD_ctrPart _ _ _ _ hp, ite_eq_left (by omega_using [hd, hp]), Nat.zero_add,
+    Proof.Gcm.ksByte, hinc (p / 16) (by omega_using [hd, hp]), hG _ (length_be128 _)]
 
 /-- `vg_aes_ctr32` from `q` over `k` blocks at `D` whose counter blocks are
 `q + i`: CTR's output, with the first `16 k` bytes done, on the data. -/
@@ -98,7 +98,7 @@ theorem counter_low (v : List Byte) : Siv.beNat (Siv.counter v) % 2 ^ 32 < 2 ^ 3
   have hn : beVal [] = 0 := rfl
   rw [hn]
   simp only [Nat.reducePow, Nat.reduceAdd] at h1 h2 h3 ⊢
-  omega
+  omega_using [h0]
 
 /-- The counter `Q` is a block. -/
 theorem length_counter (v : List Byte) : (Siv.counter v).length = 16 := by simp [Siv.counter]
@@ -111,7 +111,7 @@ theorem ctrPart_append (ciph : Cmac.Cipher) (q a b : List Byte) :
     ctrPart ciph q (a ++ b) a.length = ctrPart ciph q a a.length ++ b := by
   refine ext_getD (by simp [length_ctrPart]) fun p hp => ?_
   simp only [length_ctrPart, List.length_append] at hp
-  rw [getD_ctrPart _ _ _ _ (by simp; omega)]
+  rw [getD_ctrPart _ _ _ _ (by simp; omega_using [hp])]
   by_cases h : p < a.length
   · rw [ite_eq_left h]
     have e1 : (a ++ b).getD p 0 = a.getD p 0 := by
@@ -122,10 +122,10 @@ theorem ctrPart_append (ciph : Cmac.Cipher) (q a b : List Byte) :
     rw [e1, e2, getD_ctrPart _ _ _ _ h, ite_eq_left h]
   · rw [ite_eq_right h]
     have e1 : (a ++ b).getD p 0 = b.getD (p - a.length) 0 := by
-      simp [List.getD_eq_getElem?_getD, List.getElem?_append_right (show a.length ≤ p by omega)]
+      simp [List.getD_eq_getElem?_getD, List.getElem?_append_right (show a.length ≤ p by omega_using [h])]
     have e2 : (ctrPart ciph q a a.length ++ b).getD p 0 = b.getD (p - a.length) 0 := by
       simp [List.getD_eq_getElem?_getD, List.getElem?_append_right
-        (show (ctrPart ciph q a a.length).length ≤ p by rw [length_ctrPart]; omega), length_ctrPart]
+        (show (ctrPart ciph q a a.length).length ≤ p by rw [length_ctrPart]; omega_using [h]), length_ctrPart]
     rw [e1, e2]
 
 /-- `vg_aes_ctr32` on a zero block: the keystream block of its counter. -/
@@ -172,24 +172,24 @@ theorem counter_words4 (a b c d : BitVec 32) :
     Option.getD_some]
   rw [← List.getD_eq_getElem?_getD, ← List.getD_eq_getElem?_getD, Proof.Cmac.getD_le4_append4 _ _ _ _ hk,
     Proof.Cmac.getD_le4_append4 _ _ _ _ hk]
-  rcases (by omega : k < 8 ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with h | h | h
-  · have : ¬ (k = 8 ∨ k = 12) := by omega
+  rcases (by omega_using [] : k < 8 ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with h | h | h
+  · have : ¬ (k = 8 ∨ k = 12) := by omega_using [h]
     simp only [this, ite_false]
     by_cases h4 : k < 4 <;> simp [h4, h]
-  · simp only [show ¬ k < 4 by omega, show ¬ k < 8 by omega, h.2, ite_false, ite_true, extractLsb'_and32,
-      qm4_byte (k % 4) (by omega)]
+  · simp only [show ¬ k < 4 by omega_using [h], show ¬ k < 8 by omega_using [h], h.2, ite_false, ite_true, extractLsb'_and32,
+      qm4_byte (k % 4) (by omega_using [])]
     by_cases h8 : k = 8
     · subst h8; simp
-    · simp only [show ¬ (k = 8 ∨ k = 12) by omega, show k % 4 ≠ 0 by omega, ite_false]
+    · simp only [show ¬ (k = 8 ∨ k = 12) by omega_using [h, h8], show k % 4 ≠ 0 by omega_using [h, h8], ite_false]
       apply BitVec.eq_of_getLsbD_eq; intro j hj
       simp only [BitVec.getLsbD_and]
       have : (0xff : Byte).getLsbD j = true := by revert j; decide
       rw [this, Bool.and_true]
-  · simp only [show ¬ k < 4 by omega, show ¬ k < 8 by omega, show ¬ k < 12 by omega, ite_false,
-      extractLsb'_and32, qm4_byte (k % 4) (by omega)]
+  · simp only [show ¬ k < 4 by omega_using [h], show ¬ k < 8 by omega_using [h], show ¬ k < 12 by omega_using [h], ite_false,
+      extractLsb'_and32, qm4_byte (k % 4) (by omega_using [])]
     by_cases h12 : k = 12
     · subst h12; simp
-    · simp only [show ¬ (k = 8 ∨ k = 12) by omega, show k % 4 ≠ 0 by omega, ite_false]
+    · simp only [show ¬ (k = 8 ∨ k = 12) by omega_using [h, h12], show k % 4 ≠ 0 by omega_using [hk, h, h12], ite_false]
       apply BitVec.eq_of_getLsbD_eq; intro j hj
       simp only [BitVec.getLsbD_and]
       have : (0xff : Byte).getLsbD j = true := by revert j; decide

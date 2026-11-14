@@ -20,12 +20,12 @@ theorem keepGaps {g : Geometry} (v : g.Valid) {s t : State} (C : Context g s)
     congrArg BitVec.toNat (F.read32 (Nat.le_trans fit v.headerFit) apart)
   refine ⟨C.ws.of_keeps K, ?_, ?_, ?_, ?_⟩
   · rw [PtrAt, K.1 .edi base]; exact C.base
-  · rw [read (by decide) (fun r mem => by have := header r mem; omega)]
+  · rw [read (by decide) (fun r mem => by have := header r mem; omega_using [this])]
     exact C.width
-  · rw [read (by decide) (fun r mem => by have := header r mem; omega)]
+  · rw [read (by decide) (fun r mem => by have := header r mem; omega_using [this])]
     exact C.stride
   · intro j index
-    rw [read (by omega) (fun r mem => by have := header r mem; omega)]
+    rw [read (by omega_using [index]) (fun r mem => by have := header r mem; omega_using [index, this])]
     exact C.pointers j index
 
 end VG.Proof.RsaKeyGen.X86.Prepared

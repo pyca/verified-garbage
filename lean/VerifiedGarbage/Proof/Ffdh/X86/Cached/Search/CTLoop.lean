@@ -55,10 +55,10 @@ theorem budget_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p
   rcases hd with rfl | rfl
   · refine S.ld (Or.inl rfl) (d := keysOff) (by decide) (by decide) fun t₁ S₁ g₁ _ _ _ => ?_
     refine wp_test fun t₂ F₂ z₂ => WP.block_nil ⟨(S₁.fupd F₂).live hul hkl hcl, ?_⟩
-    exact test_zero (k := keys) (by omega) g₁ z₂
+    exact test_zero (k := keys) (by omega_using [hkl]) g₁ z₂
   · refine S.ld (Or.inl rfl) (d := scalarsOff) (by decide) (by decide) fun t₁ S₁ g₁ _ _ _ => ?_
     refine wp_test fun t₂ F₂ z₂ => WP.block_nil ⟨(S₁.fupd F₂).live hul hkl hcl, ?_⟩
-    exact test_zero (k := scalars) (by omega) g₁ z₂
+    exact test_zero (k := scalars) (by omega_using [hcl]) g₁ z₂
 
 /-- `room`: the borrow when the tape holds less than an attempt. -/
 theorem room_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o used keys scalars s) :
@@ -78,7 +78,7 @@ theorem room_ok {p : KPub} {o s : State} {used keys scalars : Nat} (h : Live p o
   show t₇.cf = _
   rw [c₇, o₆ .eax (by decide), g₅, g₆]
   simp only [liveF, leftOff, lenOff, ↓reduceIte, Nat.reduceEqDiff]
-  rw [toNat_ofNat_lt (by omega), toNat_ofNat_lt hL]
+  rw [toNat_ofNat_lt (by omega_using [hR]), toNat_ofNat_lt hL]
 
 /-- The status of the next attempt, from the statuses still to come. -/
 theorem head_status {p : KPub} {o : State} {used keys scalars : Nat} {sts : List Nat}
@@ -131,7 +131,7 @@ theorem branch_ct : RelCT isa (Two LiveCT) branch fun _ _ => True := by
     have hp := L.input.2
     have hr : q.1.1.len ≤ (randOf o).length - q.1.2.1 := by rw [← hp, rand_length, hp]; exact hf
     have hu := L.used_le
-    exact ⟨o, L, by dsimp only; omega, head_status hs hk hc hr⟩
+    exact ⟨o, L, by dsimp only; omega_using [hf, hu], head_status hs hk hc hr⟩
   refine RelCT.seq (two_post (Ψ := fun q t => ClsAt (q.1, q.2.headD 0) t)
     (two_map (fun q => (q.1, q.2.headD 0)) hatt attempt_ct) fun q s h => ?_)
     (two_map (fun q => (q.1, q.2.headD 0)) (fun _ _ h => h) classify_ct)
@@ -140,7 +140,7 @@ theorem branch_ct : RelCT isa (Two LiveCT) branch fun _ _ => True := by
   have hp := L.input.2
   have hc := attemptStatus_cases (policy := .cached) q.1.1.a q.1.1.len ((randOf o).drop q.1.2.1)
   refine WP.mono (attempt_ok L hu) fun u ⟨Su, eu, _⟩ => ⟨o, hp, Su, by rw [eu, st], ?_, hu⟩
-  dsimp only; rw [← st]; omega
+  dsimp only; rw [← st]; omega_using [hc]
 
 theorem Done.any {p : KPub} {o s : State} {r : KeySearchResult} (h : Done p o r s) : Any p s := by
   obtain ⟨A, rfl⟩ := h.input
@@ -184,27 +184,27 @@ theorem ct_step (q : Kp) (s : State) (h : LiveCT q s) : WP isa iteration s (CTSt
       obtain ⟨hk, hc, hr, h23⟩ := hco
       dsimp only at hk hc hr h23
       refine stop ⟨hk, hc, hr, ?_⟩
-      rw [head_status hs hk hc (by rw [hlen]; omega)]
+      rw [head_status hs hk hc (by rw [hlen]; omega_using [hr])]
       exact h23
     simp only [CTStep, nc, ite_false]
     exact he
   · refine WP.mono (guard_rej R) fun t ⟨he, Lt⟩ => ?_
-    have e2 : sts.headD 0 = 2 := by rw [← head_status hs hk hc (by rw [hlen]; omega)]; exact h2
+    have e2 : sts.headD 0 = 2 := by rw [← head_status hs hk hc (by rw [hlen]; omega_using [hr])]; exact h2
     have co : Kp.cont ((p, used, keys, scalars), sts) := ⟨hk, hc, hr, Or.inl e2⟩
     simp only [CTStep, co, ite_true, Kp.next, e2]
     refine ⟨he, o, Lt, ?_⟩
     have := hs
     show (keyTail .cached _ _ _ _ _ _).statuses = sts.tail
-    rw [KPub.tail, keyTail_scalar hk hc (by rw [hlen]; omega) h2] at this
+    rw [KPub.tail, keyTail_scalar hk hc (by rw [hlen]; omega_using [hr]) h2] at this
     rw [← this]; rfl
   · refine WP.mono (guard_rej R) fun t ⟨he, Lt⟩ => ?_
-    have e3 : sts.headD 0 = 3 := by rw [← head_status hs hk hc (by rw [hlen]; omega)]; exact h3
+    have e3 : sts.headD 0 = 3 := by rw [← head_status hs hk hc (by rw [hlen]; omega_using [hr])]; exact h3
     have co : Kp.cont ((p, used, keys, scalars), sts) := ⟨hk, hc, hr, Or.inr e3⟩
     simp only [CTStep, co, ite_true, Kp.next, e3]
     refine ⟨he, o, Lt, ?_⟩
     have := hs
     show (keyTail .cached _ _ _ _ _ _).statuses = sts.tail
-    rw [KPub.tail, keyTail_public hk hc (by rw [hlen]; omega) h3] at this
+    rw [KPub.tail, keyTail_public hk hc (by rw [hlen]; omega_using [hr]) h3] at this
     rw [← this]; rfl
 
 /-- The loop's measure. -/
@@ -213,7 +213,7 @@ def Kp.measure (q : Kp) : Nat := 129 * q.1.2.2.1 + q.1.2.2.2
 theorem Kp.next_measure {q : Kp} (h : q.cont) : q.next.measure < q.measure := by
   obtain ⟨hk, hc, _, _⟩ := h
   unfold Kp.next Kp.measure
-  split <;> dsimp only <;> omega
+  split <;> dsimp only <;> omega_arith
 
 private def LoopPair (n : Nat) (s t : State) : Prop := ∃ q : Kp, n = q.measure ∧ LiveCT q s ∧ LiveCT q t
 

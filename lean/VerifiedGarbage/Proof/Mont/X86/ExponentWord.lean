@@ -19,7 +19,7 @@ theorem lowBit_nat (x : BitVec 32) : (x &&& 1).toNat = x.toNat % 2 := by
 
 theorem rotate_lowBit (x : BitVec 32) :
     ((x &&& 1).rotateRight 1).toNat = 2 ^ 31 * (x.toNat % 2) := by
-  have h : x.toNat % 2 = 0 ∨ x.toNat % 2 = 1 := by omega
+  have h : x.toNat % 2 = 0 ∨ x.toNat % 2 = 1 := by omega_using []
   rcases h with h | h
   · have e : x &&& 1 = 0 := by
       apply BitVec.eq_of_toNat_eq
@@ -40,7 +40,7 @@ theorem shifted_word (x y : BitVec 32) :
   have hx := x.isLt
   have hy : y.toNat % 2 < 2 := Nat.mod_lt _ (by decide)
   apply Nat.mod_eq_of_lt
-  omega
+  omega_using []
 
 /-- Only the current word changes; the next word is read before it shifts. -/
 theorem shiftWord_ok {s : State} {base : Addr} {size out : Nat} (hs : Scr s base size)
@@ -54,7 +54,7 @@ theorem shiftWord_ok {s : State} {base : Addr} {size out : Nat} (hs : Scr s base
   have load : readSrc s (if last then .imm 0 else .mem (sc (out + 4))) = some upper := by
     cases last with
     | true => rfl
-    | false => exact readSrc_sc hs (by have := hn rfl; omega)
+    | false => exact readSrc_sc hs (by have := hn rfl; omega_using [this])
   unfold VG.Impl.Mont.X86.Dynamic.shiftWord
   refine wp_movS load fun s₁ u₁ _ => ?_
   refine wp_logicS (.inl rfl) rfl fun s₂ u₂ => ?_
@@ -66,9 +66,9 @@ theorem shiftWord_ok {s : State} {base : Addr} {size out : Nat} (hs : Scr s base
   refine wp_addS rfl fun s₆ u₆ _ => ?_
   have k₆ : Keeps [.eax, .edx] s s₆ := ((k₃.widen u₄.keeps).widen u₅.keeps).widen u₆.keeps
   have hs₆ := hs.of_keeps k₆ (by decide)
-  refine wp_storeS (hs₆.ea (by omega)) (hs₆.write ho) fun t mt => WP.block_nil ⟨?_, ?_, k₆.trans (mt.keeps _)⟩
+  refine wp_storeS (hs₆.ea (by omega_using [ho])) (hs₆.write ho) fun t mt => WP.block_nil ⟨?_, ?_, k₆.trans (mt.keeps _)⟩
   · rw [mt.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [ho, this])
   · rw [mt.mem, w32_write_self, u₆.gpr, u₅.gpr, u₄.gpr,
       u₅.other .eax (by decide), u₄.other .eax (by decide), u₃.gpr, u₂.gpr, u₁.gpr,
       u₃.mem, u₂.mem, u₁.mem, ite_eq_left rfl, shifted_word]

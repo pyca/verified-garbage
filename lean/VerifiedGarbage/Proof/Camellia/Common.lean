@@ -32,7 +32,7 @@ theorem addr_add (b : Addr) (x y : Nat) :
 
 theorem off_sub_toNat (B : Addr) {t e : Nat} (h : e ≤ t) (ht : t < 2 ^ 64) :
     (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat = t - e := by
-  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega
+  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega_using [ht]
 
 theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
     (he : e + n ≤ 2 ^ 64) : ¬ (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < n := by
@@ -40,16 +40,16 @@ theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t
 
 theorem not_contains_off (b : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
     (he : e + n ≤ 2 ^ 64) : ¬ (⟨b + BitVec.ofNat 64 e, n⟩ : Region).Contains (b + BitVec.ofNat 64 t) 1 := by
-  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega)
+  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega_using [hc])
 
 /-- A byte of `A`'s area is not among the 8 at `B + e`. -/
 theorem not_in_of_disjoint {A B : Addr} {n t e : Nat} (hsep : Region.Disjoint ⟨A, n⟩ ⟨B, n⟩) (ht : t < n)
     (he : e + 8 ≤ n) (hn : n < 2 ^ 64) : ¬ (A + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < 8 :=
-  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega) (by omega))
-    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega))
+  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega_using [ht]) (by omega_using [ht, hn]))
+    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega_using [h]))
 
 theorem toNat_off (b : Addr) {d : Nat} (h : b.toNat + d < 2 ^ 64) : (b + BitVec.ofNat 64 d).toNat = b.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h] : d < 2 ^ 64), Nat.mod_eq_of_lt h]
 
 theorem ite_swap2 {α : Type} {k w : Nat} (A B C : α) :
     (if k = w + 1 then A else if k = w then B else C) = if k = w then B else if k = w + 1 then A else C := by
@@ -71,7 +71,7 @@ theorem writeW_readW_apply (m m' : Mem) (a c x : Addr) :
 theorem frame_writeW {m : Mem} {a : Addr} {R : Region} (v : BitVec 64) (hs : Region.Sub ⟨a, 8⟩ R) :
     Frame [R] m (m.writeW a v) := fun x hx => by
   simp only [Mem.writeW, Mem.write]
-  exact ite_eq_right fun h => hx R (List.mem_singleton_self _) (hs x (by simp only [Region.Contains]; omega))
+  exact ite_eq_right fun h => hx R (List.mem_singleton_self _) (hs x (by simp only [Region.Contains]; omega_using [h]))
 
 /-- A word of a region the frame keeps. -/
 theorem wordAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Addr}
@@ -106,8 +106,8 @@ theorem bytesAt_words (m : Mem) : ∀ (ws : List (BitVec 64)) (p : Addr),
       simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero] at this
       exact this
     rw [h1, bytesAt_words m ws _ fun i hi j hj => ?_]
-    rw [addr_add, show 8 + (8 * i + j) = 8 * (i + 1) + j by omega]
-    have := h (i + 1) (by simp only [List.length_cons]; omega) j hj
+    rw [addr_add, show 8 + (8 * i + j) = 8 * (i + 1) + j by omega_using []]
+    have := h (i + 1) (by simp only [List.length_cons]; omega_using [hi]) j hj
     simp only [List.getD_cons_succ] at this
     exact this
 
@@ -118,9 +118,9 @@ theorem byteOf_wordAt (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
     byteOf (wordAt m a) i = m (a + BitVec.ofNat 64 i) := by
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  rw [getLsbD_byteOf _ hi hj, wordAt, getLsbD_ofBytes 64 _ (by omega) (by simp [bytesAt])]
+  rw [getLsbD_byteOf _ hi hj, wordAt, getLsbD_ofBytes 64 _ (by omega_using [hj]) (by simp [bytesAt])]
   simp only [bytesAt, List.length_map, List.length_range]
-  rw [show 8 - 1 - (56 - 8 * i + j) / 8 = i by omega, show (56 - 8 * i + j) % 8 = j by omega]
+  rw [show 8 - 1 - (56 - 8 * i + j) / 8 = i by omega_using [hi, hj], show (56 - 8 * i + j) % 8 = j by omega_using [hj]]
   simp [hi]
 
 /-- The subkey's word, little-endian, read as the halves are. -/
@@ -143,7 +143,7 @@ theorem WordOf.zero : WordOf 0 0 := fun i hi j hj => by
 
 theorem WordOf.not {w h : BitVec 64} (hw : WordOf w h) : WordOf (~~~ w) (~~~ h) := fun i hi j hj => by
   rw [getLsbD_byteOf _ hi hj, BitVec.getLsbD_not, BitVec.getLsbD_not, hw i hi j hj, getLsbD_byteOf _ hi hj]
-  simp only [show 8 * i + j < 64 by omega, show 56 - 8 * i + j < 64 by omega, decide_true, Bool.true_and]
+  simp only [show 8 * i + j < 64 by omega_using [hi, hj], show 56 - 8 * i + j < 64 by omega_using [hj], decide_true, Bool.true_and]
 
 theorem wordOf_readW (m : Mem) (a : Addr) : WordOf (m.readW a 64) (wordAt m a) :=
   fun i hi j hj => by rw [readW64_bit m a hi hj, byteOf_wordAt m a hi]
@@ -169,8 +169,8 @@ theorem blocksAt_of_dinv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Block}
   have hj := List.mem_range.mp hj
   apply Vector.ext; intro t ht
   simp only [blockAt, Vector.getElem_ofFn]
-  rw [addr_add, h _ (by omega), ite_eq_left (by omega), show (16 * j + t) / 16 = j by omega,
-    show (16 * j + t) % 16 = t by omega]
+  rw [addr_add, h _ (by omega_using [hj, ht]), ite_eq_left (by omega_using [hj, ht]), show (16 * j + t) / 16 = j by omega_using [ht],
+    show (16 * j + t) % 16 = t by omega_using [ht]]
   simp [Vector.getD, ht]
 
 /-- The schedule's words, as `subkeysAt` reads them. -/
@@ -195,7 +195,7 @@ def dirPerm : Direction → Nat → Nat → Nat
   | .decrypt => decPerm
 
 theorem dirPerm_lt (d : Direction) {g i : Nat} (hi : i < 8 * g + 2) : dirPerm d g i < 8 * g + 2 := by
-  cases d <;> simp only [dirPerm, decPerm] <;> (try split) <;> (try split) <;> omega
+  cases d <;> simp only [dirPerm, decPerm] <;> (try split) <;> (try split) <;> omega_arith
 
 theorem outF_spec (d : Direction) (m : Mem) (sched D : Addr) {R : Nat} (hR : R = 18 ∨ R = 24) (j : Nat) :
     outF m D (R / 6) (fun i => (schedWords m sched R).getD (dirPerm d (R / 6) i) 0) j =
@@ -219,10 +219,10 @@ theorem group_eq (g : Nat) (E : Nat → BitVec 64) (d : BitVec 64 × BitVec 64) 
       (fl (pairsN E i 3 d).1 (E (8 + 8 * i)), flinv (pairsN E i 3 d).2 (E (9 + 8 * i)))
       else pairsN E i 3 d := by
   simp only [group, pairsN, List.range_succ, List.range_zero, List.foldl_append, List.foldl_cons,
-    List.foldl_nil, List.nil_append, show 2 + 8 * i + 2 * 0 = 2 + 8 * i by omega,
-    show 3 + 8 * i + 2 * 0 = 3 + 8 * i by omega, show 2 + 8 * i + 2 * 1 = 4 + 8 * i by omega,
-    show 3 + 8 * i + 2 * 1 = 5 + 8 * i by omega, show 2 + 8 * i + 2 * 2 = 6 + 8 * i by omega,
-    show 3 + 8 * i + 2 * 2 = 7 + 8 * i by omega]
+    List.foldl_nil, List.nil_append, show 2 + 8 * i + 2 * 0 = 2 + 8 * i by omega_using [],
+    show 3 + 8 * i + 2 * 0 = 3 + 8 * i by omega_using [], show 2 + 8 * i + 2 * 1 = 4 + 8 * i by omega_using [],
+    show 3 + 8 * i + 2 * 1 = 5 + 8 * i by omega_using [], show 2 + 8 * i + 2 * 2 = 6 + 8 * i by omega_using [],
+    show 3 + 8 * i + 2 * 2 = 7 + 8 * i by omega_using []]
 
 /-- The first `i` groups. -/
 def groupsN (g : Nat) (E : Nat → BitVec 64) (i : Nat) (d : BitVec 64 × BitVec 64) : BitVec 64 × BitVec 64 :=
@@ -243,7 +243,7 @@ theorem testBit_planeBits (x : BitVec 64) (j n p : Nat) :
   | succ n ih =>
     rw [planeBits, Nat.testBit_or, ih]
     have hlt : (decide (p < n + 1)) = (decide (p < n) || decide (p = n)) := by
-      by_cases h : p < n <;> by_cases h' : p = n <;> simp [h, h'] <;> omega
+      by_cases h : p < n <;> by_cases h' : p = n <;> simp [h, h'] <;> omega_arith
     rw [hlt]
     by_cases hpn : p = n
     · subst hpn; split <;> simp_all
@@ -257,8 +257,8 @@ theorem keyPlane_bit (x : BitVec 64) (j : Nat) {p : Nat} (hp : p < 64) :
 /-- The planes `sigmaOne` stores hold the constant in every lane. -/
 theorem sigma_planes (x : BitVec 64) {b c j : Nat} (hb : b < 8) (hc : c < 8) (hj : j < 8) :
     (keyPlane x j).getLsbD (8 * c + b) = (byteOf x (pos c)).getLsbD j := by
-  rw [keyPlane_bit x j (by omega), getLsbD_byteOf x (pos_lt hc) hj, bytePos_eq,
-    show (8 * c + b) / 8 = c by omega]
+  rw [keyPlane_bit x j (by omega_using [hb, hc]), getLsbD_byteOf x (pos_lt hc) hj, bytePos_eq,
+    show (8 * c + b) / 8 = c by omega_using [hb]]
 
 /-- The subkeys of the pairs, `Sigma1 … Sigma6`. -/
 def sigE (i : Nat) : BitVec 64 := sigmas.getD i 0
@@ -305,7 +305,7 @@ theorem schedule_of_stores {m : Mem} {S : Addr} {ks : List (Nat × Nat × Bool)}
   rw [← hl]
   refine bytesAt_words m _ S fun i hi j hj => ?_
   rw [hl] at hi
-  rw [show 8 * i + j = 8 * (0 + i) + j by omega, hm i hi j hj]
+  rw [show 8 * i + j = 8 * (0 + i) + j by omega_using [], hm i hi j hj]
   have hk : ks.getD i (0, 0, true) = ks[i] := by simp [List.getD_eq_getElem?_getD, hi]
   have h4 := hg ks[i].1 (hv _ (List.getElem_mem hi))
   rw [hk, h4.1, h4.2]

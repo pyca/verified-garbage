@@ -31,12 +31,12 @@ theorem setLowBit_ct {base : BitVec 32} {len w : Nat} :
   have wp (s : State) (h : ArithmeticReady base len w s) :
       WP isa (.block [.ldr .r4 .r0 120]) s fun t => t.gpr .r4 = base + BitVec.ofNat 32 (arrAt w 7) := by
     have fit : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-    have size : 124 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega
+    have size : 124 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit; omega_using [fit]
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     refine wp_ldr (by decide) (a := off (State.addr base) 120)
-      (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega))
-      (h.workspace.read (by omega)) fun t loaded => WP.block_nil ?_
+      (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, this]))
+      (h.workspace.read (by omega_using [size])) fun t loaded => WP.block_nil ?_
     exact loaded.gpr.trans (header.array 7 (by decide))
   have body : RelCT isa (fun s t => s.gpr .r4 = base + BitVec.ofNat 32 (arrAt w 7) ∧
       t.gpr .r4 = base + BitVec.ofNat 32 (arrAt w 7) ∧ s.sp = t.sp)

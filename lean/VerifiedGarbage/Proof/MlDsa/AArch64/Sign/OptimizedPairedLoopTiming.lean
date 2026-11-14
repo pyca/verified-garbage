@@ -232,7 +232,7 @@ theorem optimizedHint_paired_vector_tr {p : Params} {S : Nat} (hp : Ok3 p) {t : 
   simpa only [Nat.mul_zero,Nat.zero_add,he] using
     seqR_tr (Q:=fun j=>PairedRS p S E (PositiveIH p S · t (2*j))) (p.k/2) 0
       (fun j _ hj=>by simpa only [Nat.mul_add,Nat.mul_one] using
-        optimizedHint_pair_tr (E:=E) hp (by omega : 2*j+1<p.k))
+        optimizedHint_pair_tr (E:=E) hp (by omega_using [hj] : 2*j+1<p.k))
 
 end VG.Proof.MlDsa.AArch64.Sign
 
@@ -302,24 +302,24 @@ theorem earlyPairedSeq_tr {p : Params} {S : Nat} {E : State → State → Prop}
         (PairedRS p S E fun σ s => ∃ k, a≤k ∧ k≤a+n ∧ I k σ s ∧
           (k=a+n ∨ (s.gpr .x24).setWidth 32=0))
   | 0,a,_,_,_ => earlyNil fun _ _ h =>
-      h.mono fun _ _ hi => ⟨a,Nat.le_refl _,by omega,hi,.inl (by omega)⟩
-  | 1,a,_,h,_ => RelCT.mono (h a (Nat.le_refl _) (by omega))
+      h.mono fun _ _ hi => ⟨a,Nat.le_refl _,by omega_using [],hi,.inl (by omega_using [])⟩
+  | 1,a,_,h,_ => RelCT.mono (h a (Nat.le_refl _) (by omega_using []))
       (fun _ _ h => h) (fun _ _ h => h.mono fun _ _ hi =>
-        ⟨a+1,by omega,by omega,hi,.inl rfl⟩)
+        ⟨a+1,by omega_using [],by omega_using [],hi,.inl rfl⟩)
   | n+2,a,hq,h1,h2 => by
     rw [Impl.MlDsa.AArch64.Sign.Optimized.seqPairedOk]
-    refine RelCT.seq (h2 a (Nat.le_refl _) (by omega)) ?_
-    refine earlyIf_tr (hq (a+2) (by omega) (by omega)) ?_ ?_
+    refine RelCT.seq (h2 a (Nat.le_refl _) (by omega_using [])) ?_
+    refine earlyIf_tr (hq (a+2) (by omega_using []) (by omega_using [])) ?_ ?_
     · refine RelCT.mono (earlyPairedSeq_tr n (a+2)
-        (fun k hk hk' => hq k (by omega) (by omega))
-        (fun k hk hk' => h1 k (by omega) (by omega))
-        (fun k hk hk' => h2 k (by omega) (by omega)))
+        (fun k hk hk' => hq k (by omega_using [hk]) (by omega_using [hk']))
+        (fun k hk hk' => h1 k (by omega_using [hk]) (by omega_using [hk']))
+        (fun k hk hk' => h2 k (by omega_using [hk]) (by omega_using [hk'])))
         (fun _ _ h => h.mono fun _ _ hi => hi.1) ?_
       intro _ _ h
       exact h.mono fun _ _ ⟨k,hk,hk',hi,hd⟩ =>
-        ⟨k,by omega,by omega,hi,hd.imp (fun _ => by omega) id⟩
+        ⟨k,by omega_using [hk],by omega_using [hk'],hi,hd.imp (fun _ => by omega_arith) id⟩
     · exact earlyNil fun _ _ h =>
-        h.mono fun _ _ ⟨hi,hz⟩ => ⟨a+2,by omega,by omega,hi,.inr hz⟩
+        h.mono fun _ _ ⟨hi,hz⟩ => ⟨a+2,by omega_using [],by omega_using [],hi,.inr hz⟩
 
 theorem earlyZ_tr {p:Params} {S:Nat} (hp:Ok3 p) (h16:16≤S) (hS:S<2^64) {t r:Nat} (hr:r<p.ℓ) {E:State→State→Prop} :
     RelCT isa (PairedRS p S E (PositiveIZ p S · t r)) (Impl.MlDsa.AArch64.Sign.Optimized.zR p r)
@@ -347,9 +347,9 @@ theorem positivePairedChecks_tr {p : Params} {S : Nat} (hp : Ok3 p) (hc : ksChk 
       (fun r _ hr x y h=>by
         obtain ⟨σ,τ,_,_,_,he,hx,hy⟩:=h.1.1
         rw [hx.1.2,hy.1.2]
-        exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).1 r (by omega))))
-      (fun r _ hr=>earlyZ_tr hp h16 hS (by omega))
-      (fun r _ hr=>optimizedZ_pair_tr hp (by omega))))) ?_
+        exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).1 r (by omega_using [hr]))))
+      (fun r _ hr=>earlyZ_tr hp h16 hS (by omega_using [hr]))
+      (fun r _ hr=>optimizedZ_pair_tr hp (by omega_using [hr]))))) ?_
   refine earlyIf_tr (fun x y h=>?_) ?_ ?_
   · obtain ⟨σ,τ,_,_,_,he,⟨⟨i,_,hi,hx,hdx⟩,_⟩,⟨⟨j,_,hj,hy,hdy⟩,_⟩⟩:=h.1.1
     rw [Nat.zero_add] at hi hdx hj hdy
@@ -360,9 +360,9 @@ theorem positivePairedChecks_tr {p : Params} {S : Nat} (hp : Ok3 p) (hc : ksChk 
         (fun i _ hi x y h=>by
           obtain ⟨σ,τ,_,_,_,he,hx,hy⟩:=h.1.1
           rw [hx.1.2,hy.1.2]
-          exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).2.1 i (by omega))))
-        (fun i _ hi=>earlyR0_tr hp h16 hS (by omega))
-        (fun i _ hi=>optimizedR0_pair_tr hp (by omega))) ?_)
+          exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).2.1 i (by omega_using [hi]))))
+        (fun i _ hi=>earlyR0_tr hp h16 hS (by omega_using [hi]))
+        (fun i _ hi=>optimizedR0_pair_tr hp (by omega_using [hi]))) ?_)
       (fun _ _ h=>h.mono fun σ s ⟨⟨i,_,hi,h,hd⟩,hn⟩=>by
         rw [Nat.zero_add] at hi hd
         have he:i=p.ℓ:=hd.resolve_right hn
@@ -451,7 +451,7 @@ theorem pairedSignLoop_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
   have ht : t<814 := by obtain ⟨_,_,_,_,_,_,hx,_⟩ := hr.1.1; exact hx.1.t_lt
   obtain ⟨htr,hi⟩ := pairedIter_tr hP hp hchecks hcommit hball ht _ _ _ _ _ _ hr ex ey
   exact ⟨htr,by rw [eval_x9,eval_x9,hi.1.1],fun h=>hi.1.2.2 (x9_zero h),
-    fun h=>⟨814-(t+1),by omega,t+1,rfl,hi.next (x9_ne h)⟩⟩
+    fun h=>⟨814-(t+1),by omega_using [hn, ht],t+1,rfl,hi.next (x9_ne h)⟩⟩
 
 end VG.Proof.MlDsa.AArch64.Sign
 

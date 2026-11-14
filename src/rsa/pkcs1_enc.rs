@@ -30,7 +30,7 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::dispatch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt_auto, vg_rsa_pkcs1_encrypt_random_auto,
+    vg_rsa_pkcs1_decrypt_precomputed_auto, vg_rsa_pkcs1_encrypt_random_auto,
 };
 use crate::entropy::{self, Step, Stop};
 use crate::rsa::{PrivateKey, PublicKey, public_scratch_words, scratch_words};
@@ -201,10 +201,12 @@ impl PrivateKey {
         // above give `64 ≤ n_len ≤ 1024`, `out_len = input_len = n_len`,
         // `1 ≤ e_len ≤ 5 ≤ n_len`, `d_len = n_len`, `1 ≤ p_len < n_len`,
         // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len`, `dq_len = q_len`
-        // and `scratch_len = 16 n_len + 32`; and the dispatcher calls only an
+        // and `scratch_len = 16 n_len + 32`, and `pre`, of `pre_len` words,
+        // holds the key's precomputed values (`PrivateKey::precompute`); and
+        // the dispatcher calls only an
         // implementation the CPU has the features of.
         let r = unsafe {
-            vg_rsa_pkcs1_decrypt_auto(
+            vg_rsa_pkcs1_decrypt_precomputed_auto(
                 dit,
                 out.as_mut_ptr(),
                 k,
@@ -229,6 +231,8 @@ impl PrivateKey {
                 self.qinv.len(),
                 scratch.as_mut_ptr(),
                 scratch.len(),
+                self.pre.as_ptr(),
+                self.pre.len(),
             )
         };
         // `PrivateKey::from_crt` checked `n`, `e` and the self, so a refusal

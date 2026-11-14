@@ -71,10 +71,10 @@ theorem ready_of {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) {i : Nat}
   have hF := fb_toNat hp
   have hP := hp.ps
   refine ⟨⟨(hI.keep.gpr (by decide)).trans hb.rsp, hI.keep.2.1.trans hb.rd, hI.keep.2.2.trans hb.wr,
-    hb.out.trans (hI.out.mono (by decide) (by unfold frameBytes oBuf; omega)), ?_⟩, hI.rcx,
+    hb.out.trans (hI.out.mono (by decide) (by unfold frameBytes oBuf; omega_using [hf, hP])), ?_⟩, hI.rcx,
     (hI.keep.gpr (by decide)).trans hb.rdi, hf, ?_, hI.hi⟩
   · have w : ∀ {d : Nat}, d + 8 ≤ oBuf → word u.mem (fb s) d = word t₀.mem (fb s) d := fun hd =>
-      hI.out.word (.inl hd) (by unfold frameBytes oBuf at *; omega)
+      hI.out.word (.inl hd) (by unfold frameBytes oBuf at *; omega_using [hd])
     exact ⟨(w (by decide)).trans hb.slots.sOut, (w (by decide)).trans hb.slots.sTape,
       (w (by decide)).trans hb.slots.sN, (w (by decide)).trans hb.slots.sK, (w (by decide)).trans hb.slots.sE,
       (w (by decide)).trans hb.slots.sPs⟩
@@ -98,15 +98,15 @@ theorem full_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) {i : Nat} 
   have hP := hp.ps
   have hsp : u.gpr .rsp = fb s := (hI.keep.gpr (by decide)).trans hb.rsp
   have hs : Scr u (fb s) frameBytes := Scr.of_mem (by rw [hI.keep.2.2, hb.wr]; exact List.mem_cons_self ..)
-    (by have := hF.1; omega)
+    (by have := hF.1; omega_using [hF])
   have hpsv : word u.mem (fb s) oPs = BitVec.ofNat 64 (psLen s) :=
-    (hI.out.word (.inl (by decide)) (by unfold frameBytes oPs at *; omega)).trans hb.slots.sPs
+    (hI.out.word (.inl (by decide)) (by unfold frameBytes oPs at *; omega_using [])).trans hb.slots.sPs
   have hc := hI.hc
   refine WP.mono (WP.keep [.rdx] (Q := fun v => v.mem = u.mem ∧ v.gpr .rdx = u.gpr .rdx ∧
       v.zf = some (decide ((kept s i).length = psLen s))) (by
     xrun [ea_sp, hsp, fb_off, hs.ld (d := oPs) (by decide),
       show u.mem.readW (off (fb s) oPs) 64 = word u.mem (fb s) oPs from rfl, hpsv, hI.rdx,
-      ofNat_beq (show (kept s i).length < 2 ^ 64 by omega) (show psLen s < 2 ^ 64 by omega)]) (by decide))
+      ofNat_beq (show (kept s i).length < 2 ^ 64 by omega_using [hP, hc]) (show psLen s < 2 ^ 64 by omega_using [hP])]) (by decide))
     fun v ⟨⟨hm, hd, hz⟩, k⟩ => ⟨hm, k, hd, hz⟩
 
 /-- What every path leaves: the frame, and memory changed only where the
@@ -162,10 +162,10 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
   have hsp : u.gpr .rsp = fb s := (hI.keep.gpr (by decide)).trans hb.rsp
   have hwr : u.wr = ⟨fb s, frameBytes⟩ :: s.wr := hI.keep.2.2.trans hb.wr
   have hout : Outside (fb s) 0 frameBytes s.mem u.mem :=
-    hb.out.trans (hI.out.mono (by decide) (by unfold frameBytes oBuf; omega))
+    hb.out.trans (hI.out.mono (by decide) (by unfold frameBytes oBuf; omega_using [hc, hP]))
   have hsl : Slots s u.mem := by
     have w : ∀ {d : Nat}, d + 8 ≤ oBuf → word u.mem (fb s) d = word t₀.mem (fb s) d := fun hd =>
-      hI.out.word (.inl hd) (by unfold frameBytes oBuf at *; omega)
+      hI.out.word (.inl hd) (by unfold frameBytes oBuf at *; omega_using [hd])
     exact ⟨(w (by decide)).trans hb.slots.sOut, (w (by decide)).trans hb.slots.sTape,
       (w (by decide)).trans hb.slots.sN, (w (by decide)).trans hb.slots.sK, (w (by decide)).trans hb.slots.sE,
       (w (by decide)).trans hb.slots.sPs⟩
@@ -184,8 +184,8 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
   refine WP.seq (WP.mono (wipeDrawn_ok hp ((k₁.gpr (by decide)).trans hsp) (k₁.2.2.trans hwr) hc hdx₁)
     fun u₂ ⟨f₂, k₂, hdx₂⟩ => ?_)
   have bufD : ∀ {d : Nat}, d + 8 ≤ oBuf → (⟨off (fb s) d, 8⟩ : Region).Disjoint ⟨off (fb s) oBuf, (kept s (stackArg s 4).toNat).length⟩ :=
-    fun hd => Offset.disjoint (fb s) (.inl hd) (by unfold frameBytes oBuf at *; omega)
-      (by unfold frameBytes oBuf at *; omega)
+    fun hd => Offset.disjoint (fb s) (.inl hd) (by unfold frameBytes oBuf at *; omega_using [hd])
+      (by unfold frameBytes oBuf at *; omega_using [hc, hP])
   have sl₂ : Slots s u₂.mem := by
     have w : ∀ {d : Nat}, d + 8 ≤ oBuf → word u₂.mem (fb s) d = word u₁.mem (fb s) d := fun hd =>
       f₂.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact bufD hd)
@@ -199,16 +199,16 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
     (hdx₂.trans hdx₁) h11) fun x ⟨f₃, k₃, hex, hen⟩ => ?_
   have k := k₁₂.trans k₃
   -- memory
-  have bufS : Region.Sub ⟨off (fb s) oBuf, (kept s (stackArg s 4).toNat).length⟩ (stkR s) := frame_sub s (by unfold frameBytes oBuf; omega)
+  have bufS : Region.Sub ⟨off (fb s) oBuf, (kept s (stackArg s 4).toNat).length⟩ (stkR s) := frame_sub s (by unfold frameBytes oBuf; omega_using [hc, hP])
   have hfr : Frame [stkR s, tapeR s, outR s, scrR s] s.mem x.mem :=
     ((((frame_of_outside hout).mono (by simp)).trans (f₁.mono (by simp))).trans
       (f₂.sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨stkR s, by simp, bufS⟩)).trans
       (f₃.mono (by simp))
   have outZ : Spec.Rsa.bytesAt x.mem (s.gpr .rdi) (kOf s) = List.replicate (kOf s) 0 := by
     have e : (⟨s.gpr .rdi, kOf s⟩ : Region) = outR s := by rw [outR, hp.hsi]; rfl
-    rw [bytes_frame f₃ (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dOt) (by unfold kOf; omega),
+    rw [bytes_frame f₃ (fun r hr => by rw [List.mem_singleton.mp hr, e]; exact hp.dOt) (by unfold kOf; omega_using []),
       bytes_frame f₂ (fun r hr => by
-        rw [List.mem_singleton.mp hr, e]; exact fun y h₁ h₂ => hp.dKo y (bufS y h₂) h₁) (by unfold kOf; omega), z₁]
+        rw [List.mem_singleton.mp hr, e]; exact fun y h₁ h₂ => hp.dKo y (bufS y h₂) h₁) (by unfold kOf; omega_using []), z₁]
   refine ⟨⟨(k.gpr (by decide)).trans hsp, k.2.1.trans (hI.keep.2.1.trans hb.rd), k.2.2.trans hwr, hfr⟩, ?_,
     fun r hr' => ?_⟩
   · have hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all]; exact hc
@@ -220,13 +220,13 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
       obtain ⟨h0, h1, hr⟩ := hex hge
       rw [ho, hu, randB_length]
       exact ⟨⟨0, by rw [h0]; simp, h1, rfl⟩, hr, outZ⟩
-    · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega)
-      obtain ⟨h0, h1, hr⟩ := hen (by omega)
+    · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega_using [hcap, hge])
+      obtain ⟨h0, h1, hr⟩ := hen (by omega_using [hge])
       rw [ho, hu]
       refine ⟨⟨_, h0, h1, ?_⟩, hr, outZ⟩
       rw [randB_length]
       constructor
-      · simp only [Nat.lt_min]; constructor <;> unfold cap Spec.RsaPkcs1Enc.padEntropy at * <;> omega
+      · simp only [Nat.lt_min]; constructor <;> unfold cap Spec.RsaPkcs1Enc.padEntropy at * <;> omega_arith
       · exact Nat.min_le_left _ _
   · have hn : r ∉ [Reg.rdi, .r10, .rax] ++ [Reg.rdi, .r10, .rcx, .rdx] ++ [Reg.rax, .r8, .r9, .r10, .r11] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -244,7 +244,7 @@ theorem ret_apart {s : State} (hp : RPre s) {m : Mem} (h : Frame [stkR s, tapeR 
   · rw [stkR_eq, retR, show s.gpr .rsp = off (kb s) rndStack by
       simp only [off, kb]; exact (BitVec.sub_add_cancel _ _).symm]
     exact (Offset.base_disjoint (kb s) (e := rndStack) (n := 8) (k := rndStack) (Nat.le_refl _)
-      (by omega)).symm
+      (by omega_using [hK])).symm
   · exact hp.dXt
   · exact hp.dXo
   · exact hp.dXs
@@ -270,7 +270,7 @@ theorem body_ok (v : PublicImpl) {s : State} (hp : RPre s) :
       ⟨hfin, hpost, fun r hr hr' => (hcs r hr).trans (cs r hr hr'), ?_⟩
     rw [hmx, hmx₃, hmx₂, hmx₁]
   · subst hi
-    refine WP.ite false (by rw [eval_e hzw, decide_eq_false (by omega)]) (fun h => absurd h (by decide))
+    refine WP.ite false (by rw [eval_e hzw, decide_eq_false (by omega_using [hc])]) (fun h => absurd h (by decide))
       fun _ => ?_
     refine WP.mono (reject_ok hp hb hI' hc) fun x ⟨hfin, hpost, hcs, hmx⟩ =>
       ⟨hfin, hpost, fun r hr hr' => (hcs r hr).trans (cs r hr hr'), ?_⟩
@@ -283,7 +283,7 @@ theorem code_correct (v : PublicImpl) (s : State)
   suffices hw : WP isa (code (encName v) (encCode v)) s fun s' => abiPreserved s s' ∧ post s s' by
     obtain ⟨t, s', he, hq⟩ := hw
     exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold rndStack at this; omega) ?_
+  refine wp_alloc (by decide) (by decide) (by decide) (by have := hp.sp1; unfold rndStack at this; omega_using [this]) ?_
   refine WP.mono (body_ok v hp) fun x ⟨hfin, hpost, hcs, hmx⟩ => ⟨hfin.rsp, by rw [hfin.wr]; rfl, ?_, hpost⟩
   refine ⟨fun r hr => ?_, ret_apart hp hfin.fr, hmx⟩
   by_cases hr' : r = .rsp

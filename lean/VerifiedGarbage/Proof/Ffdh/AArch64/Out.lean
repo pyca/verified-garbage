@@ -33,6 +33,6 @@ theorem outside_of_frame {B : Addr} {Z : Nat} {m m' : Mem} {op : Addr} {len : Na
     have := hsep j hj
     rw [← he] at this
     have : ofs B x < 2 ^ 64 := (x - B).isLt
-    rcases hx' with h | h <;> omega
+    rcases hx' with h | h <;> omega_arith
 
 end VG.Proof.Ffdh.AArch64

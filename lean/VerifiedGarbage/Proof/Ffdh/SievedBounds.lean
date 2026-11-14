@@ -29,7 +29,7 @@ theorem search_available_lt (bits generator : Nat) : ∀ remaining r k a u,
       · cases h
       · rename_i hlt
         cases h
-        omega
+        omega_using [hlt]
     | some pair =>
       obtain ⟨value, rest⟩ := pair
       rw [he] at h
@@ -52,7 +52,7 @@ theorem search_requests (bits generator remaining : Nat) (r : Rand) :
       (Proof.Ffdh.requested bits (sievedParameterSearch bits generator remaining r)) :=
   Proof.Ffdh.requested_requests fun k a u h => by
     have hlt := search_available_lt bits generator remaining r k a u h
-    exact Entropy.request_valid (by unfold parameterEntropy at hlt; omega) hlt
+    exact Entropy.request_valid (by unfold parameterEntropy at hlt; omega_using [hlt]) hlt
 
 theorem candidate_rest {bits generator : Nat} {rand rest : Rand} {value : Option Nat}
     (h : sievedParameterCandidate bits generator rand = some (value, rest)) :

@@ -305,7 +305,7 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
     ⟨_, List.mem_append_left _ (by rw [h₁.rd, hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_of_mem _ (List.mem_cons_self ..)))), by
         rw [h₁.sp]; simp only [stackArgAddr, Region.Contains, Nat.mul_zero, show BitVec.ofNat 32 0 = 0 from rfl]
-        rw [addr_add (k := 4) (by omega)]; simp; have := (State.addr σ.sp).isLt; omega⟩
+        rw [addr_add (k := 4) (by omega_using [h8])]; simp; have := (State.addr σ.sp).isLt; omega_using []⟩
   have h4 : (4 : Nat) < 4096 := by decide
   have hl : WP isa (.block [.ldrSp .r9 4]) s₁ fun s => s.gpr .r9 = s₁.mem.readW (State.addr (s₁.sp + BitVec.ofNat 32 4)) 32 ∧
       (∀ r, r ≠ .r9 → s.gpr r = s₁.gpr r) ∧ s.mem = s₁.mem ∧ s.rd = s₁.rd ∧ s.wr = s₁.wr ∧ s.sp = s₁.sp := by
@@ -316,7 +316,7 @@ theorem pro_ok {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ) :
     rw [g9, h₁.sp, stackArg, stackArgAddr]
     refine hf₁.readW (r := ⟨stackArgAddr σ 0, 8⟩) ?_ ?_ (by decide)
     · simp only [stackArgAddr, Region.Contains, Nat.mul_zero, show BitVec.ofNat 32 0 = 0 from rfl]
-      rw [addr_add (k := 4) (by omega)]; simp; have := (State.addr σ.sp).isLt; omega
+      rw [addr_add (k := 4) (by omega_using [h8])]; simp; have := (State.addr σ.sp).isLt; omega_using []
     · intro r hr; rw [List.mem_singleton] at hr; subst hr; exact ha.symm
   have epa : ∀ o, pa s (sc o) = pa s₁ (sc o) := fun o => by simp only [pa, g .r7 (by decide)]
   refine ⟨⟨hrd'.trans h₁.rd, hwr'.trans h₁.wr, hsp'.trans h₁.sp, fun r hr => ?_, ?_, ?_⟩, by rw [hm]; exact hf₁,
@@ -446,15 +446,15 @@ theorem seqOk_ok {D : Nat} {f : Nat → Prog isa} {I : Nat → State → Prop} :
       (∀ k, a ≤ k → k < a + n → ∀ s, I k s → WP isa (f k) s (I (k + 1))) →
       ∀ s, I a s → WP isa (seqOk f a n) s fun s' => ∃ k, a ≤ k ∧ k ≤ a + n ∧ I k s' ∧
         (k = a + n ∨ (s'.gpr .r11) = 0)
-  | 0, a, _, _, s, hs => WP.block_nil ⟨a, Nat.le_refl _, by omega, hs, .inl rfl⟩
+  | 0, a, _, _, s, hs => WP.block_nil ⟨a, Nat.le_refl _, by omega_using [], hs, .inl rfl⟩
   | n + 1, a, hst, h, s, hs => by
     rw [seqOk]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun s₁ h₁ => ?_)
     refine ifOkElse_ok (D := D) (fun s₂ hP hcs hm _ => ?_) fun s₂ hP hcs hm he => ?_
-    · refine WP.mono (seqOk_ok n (a + 1) (fun k hk hk' => hst k (by omega) (by omega))
-        (fun k hk hk' => h k (by omega) (by omega)) s₂ (hst _ (by omega) (by omega) _ _ h₁ hP hcs hm))
-        fun s' ⟨k, hk, hk', hI, hk''⟩ => ⟨k, by omega, by omega, hI, hk''.imp (fun _ => by omega) id⟩
-    · exact WP.block_nil ⟨a + 1, by omega, by omega, hst _ (by omega) (by omega) _ _ h₁ hP hcs hm,
+    · refine WP.mono (seqOk_ok n (a + 1) (fun k hk hk' => hst k (by omega_using [hk]) (by omega_using [hk']))
+        (fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk'])) s₂ (hst _ (by omega_using []) (by omega_using []) _ _ h₁ hP hcs hm))
+        fun s' ⟨k, hk, hk', hI, hk''⟩ => ⟨k, by omega_using [hk], by omega_using [hk'], hI, hk''.imp (fun _ => by omega_arith) id⟩
+    · exact WP.block_nil ⟨a + 1, by omega_using [], by omega_using [], hst _ (by omega_using []) (by omega_using []) _ _ h₁ hP hcs hm,
         .inr (by rw [hcs _ (by decide) (by decide)]; exact he)⟩
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :

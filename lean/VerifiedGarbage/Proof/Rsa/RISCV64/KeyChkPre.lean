@@ -84,7 +84,7 @@ theorem ck_kpre {s : State} (h : CkP s) :
   have lv := h.lv
   simp only [Spec.Rsa.scratchWords] at hs
   simp only [Spec.Rsa.lenValid] at lv
-  exact ⟨by rw [h.hwr]; simp, h.ws, h.al, by omega, lv.1, lv.2, by have := h.sp2; omega, h.sp16,
+  exact ⟨by rw [h.hwr]; simp, h.ws, h.al, by omega_using [hs], lv.1, lv.2, by have := h.sp2; omega_using [this], h.sp16,
     by rw [h.hrd]; simp, h.dsa, rfl, by decide, rfl⟩
 
 end VG.Proof.Rsa.RISCV64.KeyCheck

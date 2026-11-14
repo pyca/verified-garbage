@@ -39,17 +39,17 @@ open VG.Impl.Rsa.AArch64.WindowFive (loadGroup appliedBatch appliedGroup groupBo
 theorem loadGroup_ready {p : RunPub} {i : Nat} {s : State} (hi : i+5 ≤ p.len)
     (h : RunInv p i 0 s) : WP isa (.block loadGroup) s (GroupPre p.ws) := by
   obtain ⟨s0,mi,X,Xc,bs,hI,hw,hw',hR,hL,_,hr,hb,ho⟩ := h
-  have hi' : i+5 ≤ bs.length := by omega
-  have hb5 : 5 ≤ (bs.drop i).length := by simp only [List.length_drop]; omega
+  have hi' : i+5 ≤ bs.length := by omega_using [hi, hL]
+  have hb5 : 5 ≤ (bs.drop i).length := by simp only [List.length_drop]; omega_using [hi, hL]
   have hr5 : ∀ j < 5, InRegions (s.rd ++ s.wr) ((p.ep + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) 1 := by
     intro j hj
     rw [hI.keep.rd,hI.keep.wr,BitVec.add_assoc,ofNat_add_ofNat]
-    exact hr (i+j) (by omega)
+    exact hr (i+j) (by omega_using [hi, hL, hj])
   have hb' : ∀ j (hj : j < 5), s.mem ((p.ep + BitVec.ofNat 64 i) + BitVec.ofNat 64 j) =
-      (bs.drop i)[j]'(by simp only [List.length_drop]; omega) := by
+      (bs.drop i)[j]'(by simp only [List.length_drop]; omega_using [hi, hL, hj]) := by
     intro j hj
     rw [BitVec.add_assoc,ofNat_add_ofNat,List.getElem_drop]
-    exact hI.source hb ho (by omega)
+    exact hI.source hb ho (by omega_using [hi, hL, hj])
   refine WP.mono (loadGroup_ok hI.ctx hb5 hI.exp hI.idx hr5 hb') fun t ⟨hm,kt⟩ => ?_
   have out := writeW_outside s.mem (off p.ws.B p.ws.o) (d := 8 * Crt.sV)
     (BitVec.ofNat 64 (pre (bs.drop i) 5)) (by decide)
@@ -59,20 +59,20 @@ theorem loadGroup_ready {p : RunPub} {i : Nat} {s : State} (hi : i+5 ≤ p.len)
   obtain ⟨E,v,_,_,_,hy,_⟩ := hI.pending
   have ey : wv t.mem (off p.ws.B p.ws.o) (slot p.ws.wx aY) p.ws.wx =
       wv s.mem (off p.ws.B p.ws.o) (slot p.ws.wx aY) p.ws.wx :=
-    out.wv (by have := hdr_lt_slot p.ws.wx aY (show Crt.sV < 32 by decide); omega) (by
+    out.wv (by have := hdr_lt_slot p.ws.wx aY (show Crt.sV < 32 by decide); omega_using [this]) (by
       have := hI.ctx.good.scr.nowrap
       have := slot_le (w := p.ws.wx) (show aY < 8 by decide)
-      omega)
+      omega_arith)
   exact ⟨mi,X,Xc,pre (bs.drop i) 5,hI.ctx.of_win ft kt.wr (kt.gpr .x0 (by decide)),
     hI.tab.of_win ft hI.ctx.scrT.nowrap,ey.symm ▸ hy,hw,hw',hR,
-    by have := pre_lt (bs.drop i) hb5; omega,by rw [hm,word_writeW_self]⟩
+    by have := pre_lt (bs.drop i) hb5; omega_using [this],by rw [hm,word_writeW_self]⟩
 
 theorem appliedGroup_ready (W : Window) (n : Nat) (hn : n ≤ 8) {p : XPub} {s : State}
     (h : GroupPre p s) : WP isa (appliedGroup W.code n) s (GroupPre p) := by
   induction n generalizing s with
   | zero => exact WP.block_nil h
   | succ n ih =>
-    exact WP.seq (WP.mono (appliedStep_post W (5*n) (by omega) h) fun _ h => ih (by omega) h)
+    exact WP.seq (WP.mono (appliedStep_post W (5*n) (by omega_using [hn]) h) fun _ h => ih (by omega_using [hn]) h)
 
 theorem groupBody_ct (W : Window) :
     RelCT isa (Two fun (p : RunPub × Nat) s => p.2+5 ≤ p.1.len ∧ RunInv p.1 p.2 0 s)
@@ -90,7 +90,7 @@ theorem loadTail_ready {p : RunPub} {i b : Nat} {s : State} (hi : i < p.len)
     (h : RunInv p i b s) :
     WP isa (.block VG.Impl.Rsa.AArch64.WindowFive.loadTailByte) s (TailPre (p.ws,b)) := by
   obtain ⟨s0,mi,X,Xc,bs,hI,hw,hw',hR,hL,_,hr,hb,ho⟩ := h
-  have hi' : i < bs.length := by omega
+  have hi' : i < bs.length := by omega_using [hi, hL]
   refine WP.mono (loadTailByte_ok hI.ctx hI.tab hI.pending hI.idx hI.exp
     (by rw [hI.keep.rd,hI.keep.wr]; exact hr i hi') (hI.source hb ho hi'))
     fun t ⟨ct,tt,pt,vt,_⟩ => ?_

@@ -105,7 +105,7 @@ theorem applyInput_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have wbe := wb_eq len
   have f7 := h.fits (j := 7) (by decide)
   have wl := wb_ge h.lower
-  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega
+  have e1 : numAt len 1 = 256 + wb len := by simp only [numAt, numOff] <;> omega_using []
   have e2 : numAt len 2 = 256 + 2 * wb len := by simp only [numAt, numOff] <;> omega
   have e5 : numAt len 5 = 256 + 5 * wb len := by simp only [numAt, numOff] <;> omega
   have h256 : numOff = 256 := rfl
@@ -121,36 +121,36 @@ theorem applyInput_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat �
   have A₇ : u₇.mem.readW (off base 144) 32 = cmask (decide (x < M)) := by
     have a₇ : u₇.mem.readW (off base 144) 32 = u₄.mem.readW (off base 144) 32 := by
       simp only [Mem.readW]
-      rw [frame_read F₇ R nw' (by omega) (d := 144) (k := 4) (by omega) (.inr ⟨by decide, by omega⟩)]
+      rw [frame_read F₇ R nw' (by omega_using [f7, e1, e5]) (d := 144) (k := 4) (by omega_using [f7, wl]) (.inr ⟨by decide, by omega_using [e1]⟩)]
     rw [a₇, A₄]
   -- The result cleared unless the input was accepted, and written out.
   refine WP.seq (WP.mono (maskOut_ok E₇.pi (c := decide (x < M)) A₇) fun u₈ ⟨O₈, V₈, K₈⟩ => ?_)
-  have h₈ := E₇.pi.keep K₈ (by decide) (by decide) (O₈.mono (by omega) (by omega))
+  have h₈ := E₇.pi.keep K₈ (by decide) (by decide) (O₈.mono (by omega_using []) (by omega_using [f7, e2, e5]))
   refine WP.mono (write_any_ok h₈) fun t ⟨B, Ax, Ft, Kt⟩ => ⟨?_, ?_, ?_, ?_⟩
   · intro hT fit
     have V := Y₇ hT
     rw [V] at V₈
     have fitv : val32 u₈.mem base (numAt len 2) (nw len) < 2 ^ (8 * len) := by
       rw [V₈]; split
-      · exact Nat.lt_trans (Nat.mod_lt _ (by omega)) fit
+      · exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [odd])) fit
       · exact Nat.two_pow_pos _
     rw [B fitv, V₈]; simp only [decide_eq_true_eq]
   · have a₈ : u₈.mem.readW (off base PublicFn.acceptanceOffset) 32 = cmask (decide (x < M)) := by
       rw [← A₇]
-      exact BitVec.eq_of_toNat_eq (O₈.w32 (.inl (by simp only [PublicFn.acceptanceOffset]; omega)) (by
-        simp only [PublicFn.acceptanceOffset]; omega))
+      exact BitVec.eq_of_toNat_eq (O₈.w32 (.inl (by simp only [PublicFn.acceptanceOffset]; omega_using [e2])) (by
+        simp only [PublicFn.acceptanceOffset]; omega_using []))
     rw [Ax, a₈]
     cases decide (x < M) <;> rfl
-  · have G₄ := ((outside_frame S₄ (by omega)).mono (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩,
+  · have G₄ := ((outside_frame S₄ (by omega_using [hbytes])).mono (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩,
       below (s.gpr .esp) 96]) (by simp))
     have G₇ : Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96] u₄.mem u₇.mem := by
       refine F₇.sub fun r hr => ?_
       simp only [Chg, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self .., sub_off (by omega) (by omega)⟩
-      · exact ⟨_, List.mem_cons_self .., sub_off (by omega) (by omega)⟩
+      · exact ⟨_, List.mem_cons_self .., sub_off (by omega_using []) (by omega_using [f7, wl])⟩
+      · exact ⟨_, List.mem_cons_self .., sub_off (by omega_using [e1]) (by omega_using [f7, e1, e5])⟩
       · exact ⟨below (s.gpr .esp) 96, by simp, fun _ h => h⟩
-    have G₈ := ((outside_frame (O₈.mono (o' := 16) (n' := bytes - 16) (by omega) (by omega)) (by omega)).mono
+    have G₈ := ((outside_frame (O₈.mono (o' := 16) (n' := bytes - 16) (by omega_using [e2]) (by omega_using [f7, e2, e5])) (by omega_using [hbytes])).mono
       (rs' := [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 96]) (by simp))
     exact ((G₄.trans G₇).trans G₈).trans (Ft.mono (by simp))
   · exact ((K₁₄.trans K₇).trans (K₈.mono (by decide))).trans (Kt.mono (by decide))

@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Data.Finset.Attr
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Inversion by batches of divsteps
@@ -66,7 +67,7 @@ def IState.inv (s : IState) (p x : Int) (K : Int) : Prop :=
 theorem cancel_pow2 {p a b : Int} {N : Nat} (hp : p % 2 = 1) (hp0 : 0 < p) (h : 2 ^ N * a ≡ 2 ^ N * b [ZMOD p]) :
     a ≡ b [ZMOD p] := by
   have hc : Int.gcd p (2 ^ N) = 1 := Int.gcd_pow_right_of_gcd_eq_one (gcd_two hp)
-  have := Int.ModEq.cancel_left_div_gcd (by omega) h
+  have := Int.ModEq.cancel_left_div_gcd (by omega_using [hp0]) h
   rwa [hc, Int.ofNat_one, Int.ediv_one] at this
 
 theorem batch_inv {N : Nat} (hN : N ≤ 30) {p m x K : Int} (hp : p % 2 = 1) (hp0 : 0 < p)
@@ -93,13 +94,13 @@ theorem batch_inv {N : Nat} (hN : N ≤ 30) {p m x K : Int} (hp : p % 2 = 1) (hp
           rw [abs_of_nonneg a0, abs_of_nonneg b0]
           exact add_le_add (mul_le_mul_of_nonneg_left a1.le (abs_nonneg _))
             (mul_le_mul_of_nonneg_left b1.le (abs_nonneg _))
-    have h30 : (2 : Int) ^ N ≤ 2 ^ 31 := pow_le_pow_right₀ (by norm_num) (by omega)
+    have h30 : (2 : Int) ^ N ≤ 2 ^ 31 := pow_le_pow_right₀ (by norm_num) (by omega_using [hN])
     nlinarith
   have rA := mred_range hp0 hm (small t.u t.v bu)
   have rB := mred_range hp0 hm (small t.q t.r bq)
   have cA := mred_cong (p := p) (t := t.u * s.a + t.v * s.b) hm
   have cB := mred_cong (p := p) (t := t.q * s.a + t.r * s.b) hm
-  have e32 : (2 : Int) ^ 32 = 2 ^ N * 2 ^ (32 - N) := by rw [← pow_add]; congr 1; omega
+  have e32 : (2 : Int) ^ 32 = 2 ^ N * 2 ^ (32 - N) := by rw [← pow_add]; congr 1; omega_using [hN]
   refine ⟨?_, ?_, rA.1, rA.2, rB.1, rB.2⟩
   · apply cancel_pow2 (N := N) hp hp0
     show 2 ^ N * ((t.u * s.f + t.v * s.g) / 2 ^ N) ≡ _ [ZMOD p]
@@ -122,12 +123,12 @@ theorem batch_inv {N : Nat} (hN : N ≤ 30) {p m x K : Int} (hp : p % 2 = 1) (hp
 theorem invRun_inv {N : Nat} (hN : N ≤ 30) {p m x : Int} (hp : p % 2 = 1) (hp1 : 1 < p)
     (hm : (p * m + 1) % 2 ^ 32 = 0) : ∀ B, (invRun N p m x B).inv p x (2 ^ ((32 - N) * B))
   | 0 => by
-    refine ⟨?_, ?_, le_refl _, by simp only [invRun]; omega, by simp [invRun], by simp only [invRun]; omega⟩
+    refine ⟨?_, ?_, le_refl _, by simp only [invRun]; omega_using [hp1], by simp [invRun], by simp only [invRun]; omega_using [hp1]⟩
     · simp only [invRun, mul_zero, pow_zero, mul_one]
       exact Int.emod_self.trans (by simp)
     · simp [invRun, Int.ModEq]
   | B + 1 => by
-    have := batch_inv hN hp (by omega) hm ((invRun_dfg (N := N) (m := m) (x := x) hp B).2) (invRun_inv hN hp hp1 hm B)
+    have := batch_inv hN hp (by omega_using [hp1]) hm ((invRun_dfg (N := N) (m := m) (x := x) hp B).2) (invRun_inv hN hp hp1 hm B)
     simp only [invRun]
     rw [show (32 - N) * (B + 1) = (32 - N) * B + (32 - N) by ring, pow_add]
     exact this
@@ -146,7 +147,7 @@ theorem invRun_spec {N B : Nat} (hN : N ≤ 30) {p m x : Int} (hp : p % 2 = 1) (
   have hfa : s.f.natAbs = 1 := by
     have : s.f = (divsteps (N * B) (1, p, x)).2.1 := by rw [← hd]
     rw [this, hdone.2, hg]
-  have hf1 : s.f = 1 ∨ s.f = -1 := by omega
+  have hf1 : s.f = 1 ∨ s.f = -1 := by omega_using [hfa]
   refine ⟨hf1, ?_⟩
   -- `f ≡ x a 2^(c B)` and `f² = 1`.
   have := hI.1.mul_left s.f

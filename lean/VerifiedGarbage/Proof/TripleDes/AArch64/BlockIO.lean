@@ -72,7 +72,7 @@ theorem upperHalf_extend (x : BitVec 64) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
   by_cases h : j < 32
   · simp only [h, hj, decide_true, Bool.true_and]
-  · have hz : x.getLsbD (32 + j) = false := BitVec.getLsbD_of_ge _ _ (by omega)
+  · have hz : x.getLsbD (32 + j) = false := BitVec.getLsbD_of_ge _ _ (by omega_using [h])
     simp only [h, hj, decide_false, decide_true, Bool.false_and, Bool.true_and, hz]
 
 theorem runAppend_some (xs ys : List Instr) (s t u : State)

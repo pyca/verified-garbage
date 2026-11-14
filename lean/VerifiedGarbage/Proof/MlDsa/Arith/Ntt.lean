@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: the NTT as butterflies, for every target
@@ -81,7 +82,7 @@ theorem bfly_get (w : Poly) {j len : Nat} (hlen : 0 < len) (hj : j + len < n) (z
   simp only [bfly]
   by_cases h1 : i = j
   · subst h1
-    rw [getElem!_set!_self _ hi, getElem!_set!_ne _ hi (by omega), ite_eq_left rfl]
+    rw [getElem!_set!_self _ hi, getElem!_set!_ne _ hi (by omega_using [hlen]), ite_eq_left rfl]
   · rw [getElem!_set!_ne _ hi (Ne.symm h1), ite_eq_right h1]
     by_cases h2 : i = j + len
     · subst h2; rw [getElem!_set!_self _ hi, ite_eq_left rfl]
@@ -96,10 +97,10 @@ theorem bflyInv_get (w : Poly) {j len : Nat} (hlen : 0 < len) (hj : j + len < n)
       else if i = j + len then z * (w[j]! - w[j + len]!)
       else w[i]! := by
   simp only [bflyInv]
-  rw [getElem!_set!_self _ hj, getElem!_set!_ne _ hj (by omega)]
+  rw [getElem!_set!_self _ hj, getElem!_set!_ne _ hj (by omega_using [hlen])]
   by_cases h1 : i = j
   · subst h1
-    rw [getElem!_set!_ne _ hi (by omega), getElem!_set!_ne _ hi (by omega), getElem!_set!_self _ hi,
+    rw [getElem!_set!_ne _ hi (by omega_using [hlen]), getElem!_set!_ne _ hi (by omega_using [hlen]), getElem!_set!_self _ hi,
       ite_eq_left rfl]
   · rw [ite_eq_right h1]
     by_cases h2 : i = j + len
@@ -176,7 +177,7 @@ private theorem foldl_nttMid (len st m : Nat) (w : Poly) :
       Nat.zero_add]
     show (blockN bfly _ len (zetas (m + cnt + 1)) (st * cnt) len, m + cnt + 1) = _
     rw [Nat.add_right_comm m cnt 1]
-    exact Prod.ext rfl (by omega)
+    exact Prod.ext rfl (by omega_using [])
 
 private theorem nttOuter_eq (w : Poly) (len m : Nat) :
     nttOuter (w, m) len = ((List.range (n / (2 * len))).foldl

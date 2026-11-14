@@ -84,7 +84,7 @@ theorem key_depth :
 within `stkN` bytes below the stack pointer. -/
 theorem below_stk (sp : Addr) {d : Nat} (hd : d ≤ stkN - 8) : Region.Sub (below sp (d + 8)) (below sp stkN) := by
   have := stkN_eq
-  exact Offset.sub_below sp (by omega) (by omega)
+  exact Offset.sub_below sp (by omega_using [hd, this]) (by omega_using [hd, this])
 
 /-- The return address and the reserved stack of a callee's contract, from
 the state after the call stored its return address: within `stkN` bytes below
@@ -92,10 +92,10 @@ the caller's stack pointer. -/
 theorem reserved_stk (sp : Addr) {d : Nat} (hd : d ≤ stkN - 8) :
     Region.Sub ⟨sp - 8, 8⟩ (below sp stkN) ∧ Region.Sub ⟨sp - 8 - BitVec.ofNat 64 d, d⟩ (below sp stkN) := by
   have := stkN_eq
-  refine ⟨Offset.sub_below sp (a := 8) (by decide) (by omega), ?_⟩
+  refine ⟨Offset.sub_below sp (a := 8) (by decide) (by omega_using [this]), ?_⟩
   rw [show sp - 8 - BitVec.ofNat 64 d = sp - BitVec.ofNat 64 (d + 8) by
     rw [BitVec.sub_sub, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, BitVec.ofNat_add_ofNat, Nat.add_comm]]
-  exact Offset.sub_below sp (by omega) (by omega)
+  exact Offset.sub_below sp (by omega_using [hd, this]) (by omega_using [hd])
 
 /-! ## `vg_sm4_ctr32` -/
 
@@ -132,7 +132,7 @@ structure CtrPost (s : State) (K C D : Addr) (n : Nat) (s' : State) : Prop where
 
 theorem CtrCall.pre {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
     ctrK.pre (s.callEntry.withRegions [⟨K, 128⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩]) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   have ⟨rR, rS⟩ := reserved_stk (s.gpr .rsp) (d := 3216) (by decide)
   sig_pre [ctrK, Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, X86_64.abi, X86_64.argRegs]
   simp only [h.rdi, h.rsi, h.rdx, h.rcx, hn, Nat.mul_comm n 16]
@@ -140,11 +140,11 @@ theorem CtrCall.pre {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n)
   have := stkN_eq
   refine ⟨?_, trivial, trivial, h.kc, h.kd, h.cd, (h.stkK.sub_left rR), (h.stkC.sub_left rR), (h.stkD.sub_left rR),
     (h.stkK.sub_left rS), (h.stkC.sub_left rS), (h.stkD.sub_left rS), h.kw, h.cw, h.wrap⟩
-  rw [BitVec.toNat_sub, show (8 : Addr).toNat = 8 from rfl]; omega
+  rw [BitVec.toNat_sub, show (8 : Addr).toNat = 8 from rfl]; omega_using [hsp, this]
 
 theorem ctr_call {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
     WP isa (.call ctrFn.name ctrFn.code) s (CtrPost s K C D n) := by
-  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_lt (show n < 2 ^ 64 by have := h.wrap; omega_using [this])
   refine WP.callF (k := ctrK) Proof.Sm4.X86_64.ctr32_framed.1 ctr_spSafe
     (Nat.lt_of_le_of_lt (Nat.add_le_add_right ctr_depth 16) (by decide))
     (rd := [⟨K, 128⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩]) h.pre h.reads h.writes ?_
@@ -162,15 +162,15 @@ theorem ctr_call {s : State} {K C D : Addr} {n : Nat} (h : CtrCall s K C D n) :
   have dD : ∀ r ∈ [below (s.gpr .rsp) 8], (⟨D, 16 * n⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact (h.stkD.sub_left s8).symm
   have eK : Spec.Sm4.scheduleAt (s.mem.writeW (s.gpr .rsp - 8) (s.unknowns 0)) K = Spec.Sm4.scheduleAt s.mem K :=
-    Proof.Sm4.scheduleAt_congr fun i hi => fE.bytes (R := ⟨K, 128⟩) dK (by show 128 ≤ 2 ^ 64; omega) hi
-  rw [blockAt_frame fE dC, blocksAt_frame fE dD (by have := h.wrap; omega), eK] at hdata
+    Proof.Sm4.scheduleAt_congr fun i hi => fE.bytes (R := ⟨K, 128⟩) dK (by show 128 ≤ 2 ^ 64; omega_using []) hi
+  rw [blockAt_frame fE dC, blocksAt_frame fE dD (by have := h.wrap; omega_using [this]), eK] at hdata
   rw [blockAt_frame fE dC] at hctr
   refine ⟨hrd, hwr, hcs, hf.sub fun r hr => ?_, hdata, hctr⟩
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
-  · exact ⟨_, by simp, below_stk _ (by have := ctr_depth; have := stkN_eq; omega)⟩
+  · exact ⟨_, by simp, below_stk _ (by have := ctr_depth; have := stkN_eq; omega_arith)⟩
 
 theorem ctr_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C D : Addr, ∃ n : Nat,
@@ -216,7 +216,7 @@ theorem KeyCall.pre {s : State} {Kk Sc : Addr} (h : KeyCall s Kk Sc) :
   have := stkN_eq
   refine ⟨?_, trivial, trivial, h.ks, (h.stkK.sub_left rR), (h.stkS.sub_left rR), (h.stkK.sub_left rS),
     (h.stkS.sub_left rS), h.kw, h.sw⟩
-  rw [BitVec.toNat_sub, show (8 : Addr).toNat = 8 from rfl]; omega
+  rw [BitVec.toNat_sub, show (8 : Addr).toNat = 8 from rfl]; omega_using [hsp, this]
 
 theorem key_call {s : State} {Kk Sc : Addr} (h : KeyCall s Kk Sc) :
     WP isa (.call keyFn.name keyFn.code) s (KeyPost s Kk Sc) := by
@@ -235,13 +235,13 @@ theorem key_call {s : State} {Kk Sc : Addr} (h : KeyCall s Kk Sc) :
     simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
     exact fE.bytes (R := ⟨Kk, 16⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (h.stkK.sub_left s8).symm)
-      (by show 16 ≤ 2 ^ 64; omega) hi
+      (by show 16 ≤ 2 ^ 64; omega_using []) hi
   rw [eK] at hpost
   refine ⟨hrd, hwr, hcs, hf.sub fun r hr => ?_, hpost⟩
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-  · exact ⟨_, by simp, below_stk _ (by have := key_depth; have := stkN_eq; omega)⟩
+  · exact ⟨_, by simp, below_stk _ (by have := key_depth; have := stkN_eq; omega_arith)⟩
 
 theorem key_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kk Sc : Addr,

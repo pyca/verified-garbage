@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Entry
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sign.Inst
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT
@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.BitPack
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.Ball
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
@@ -54,7 +55,7 @@ open VG.Spec.Sha3 (bytesAt)
 
 theorem rn_ret {s s' : State} {tr : List Leak} (h : (rejNTTContract PPC64LE.abi 48).pre s)
     (e : Exec isa Impl.MlDsa.PPC64LE.Sample.rejNTT s tr s') :
-    s'.gpr .r3 = if (rnFold [] (G (bytesAt s.mem (s.gpr .r3) 34) 1008)).length = 256 then 1 else 0 := by
+    s'.gpr .r3 = if (Sample.RejNtt.Lr s).length = 256 then 1 else 0 := by
   obtain ⟨_, _, e', h0, _⟩ := Sample.RejNtt.correct (Sample.RejNtt.spOk_of h)
   obtain ⟨-, rfl⟩ := Exec.det e e'
   exact h0
@@ -84,8 +85,8 @@ theorem zero_ne_one32 : (BitVec.setWidth 32 (0 : BitVec 64)) ≠ 1 := by decide
 
 /-- The primitives satisfy what the proofs of signing need of them. -/
 theorem prims_ok : SPrimsOk prims 96 where
-  ntt := ⟨⟨96, by decide, Arith.Ntt.verified⟩, by decide +kernel⟩
-  invNtt := ⟨⟨96, by decide, Arith.NttInv.verified⟩, by decide +kernel⟩
+  ntt := ⟨⟨96, by decide, VNtt.verified⟩, by decide +kernel⟩
+  invNtt := ⟨⟨96, by decide, VNtt.iverified⟩, by decide +kernel⟩
   mul := ⟨⟨0, by decide, Arith.Mul.mul_verified⟩, by decide +kernel⟩
   mulAdd := ⟨⟨0, by decide, Arith.Mul.mulAdd_verified⟩, by decide +kernel⟩
   add := ⟨⟨0, by decide, Arith.AddSub.add_verified⟩, by decide +kernel⟩
@@ -104,11 +105,17 @@ theorem prims_ok : SPrimsOk prims 96 where
   rejX := ⟨48, by decide, Sample.rejNTT_verified,
     fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
       ⟨Sample.rejNTT_verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
-        show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩,
+        show _ = _ by
+          rw [rn_ret h₁ e₁, rn_ret h₂ e₂]
+          simp only [Sample.RejNtt.Lr, Sample.RejNtt.X, Sample.RejNtt.B, rn_pub s₁ s₂ hp]⟩,
     fun s t s' h e h1 => by
       rw [rn_ret h e] at h1
-      by_cases hf : (rnFold [] (G (bytesAt s.mem (s.gpr .r3) 34) 1008)).length = 256
-      · rw [rejNTTPoly_mono (show 1008 ≤ maxBounds.rejNTT by decide) (rejNTT_some hf)]; rfl
+      simp only [Sample.RejNtt.Lr, Sample.RejNtt.X, Sample.RejNtt.B] at h1
+      by_cases h0 : (rnFold [] (G (bytesAt s.mem (s.gpr .r3) 34) (3 * 280))).length = 256
+      · rw [rejNTTPoly_mono (show 3 * 280 ≤ maxBounds.rejNTT by decide) (rejNTT_some h0)]; rfl
+      rw [ifn h0] at h1
+      by_cases hf : (rnFold [] (G (bytesAt s.mem (s.gpr .r3) 34) (3 * 336))).length = 256
+      · rw [rejNTTPoly_mono (show 3 * 336 ≤ maxBounds.rejNTT by decide) (rejNTT_some hf)]; rfl
       · rw [ifn hf] at h1; exact absurd h1 zero_ne_one32⟩
   ballX := ⟨48, by decide, Sample.sampleInBall_verified,
     fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>

@@ -94,7 +94,7 @@ theorem spec_of {s : State} (h : Pre s) : spec.pre s := by
   sig_pre [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts,
     Abi.constRegions, Abi.constsHeld, stackBelow]
-  refine ⟨h.sp, by have := s.sp.isLt; omega, by rw [h.rd]; rfl, h.held, h.fit, fun r hr => ?_, h.tK, h.al,
+  refine ⟨h.sp, by have := s.sp.isLt; omega_using [], by rw [h.rd]; rfl, h.held, h.fit, fun r hr => ?_, h.tK, h.al,
     by rw [h.rd]; rfl, h.wr, h.oe, h.os, h.oc, h.es, h.ec, h.sc, h.ko, h.ke, h.ks, h.kc, h.no, h.ne, h.ns,
     h.nc⟩
   rw [h.wr] at hr
@@ -117,7 +117,7 @@ theorem sub_sub' (x : BitVec 32) (a b : Nat) :
 /-- `sp - k`, as an offset of `K s`. -/
 theorem addrK {s : State} (h : Pre s) {k : Nat} (hk : k ≤ 600) :
     State.addr (s.sp - BitVec.ofNat 32 k) = K s + BitVec.ofNat 64 (600 - k) := by
-  rw [addr_sub' (by have := h.sp; omega)]
+  rw [addr_sub' (by have := h.sp; omega_using [hk, this])]
   exact Offset.sub_ofNat_eq _ hk
 
 theorem stk_sub (s : State) {d n : Nat} (h : d + n ≤ 600) : Region.Sub ⟨K s + BitVec.ofNat 64 d, n⟩ (STK s) :=
@@ -161,19 +161,19 @@ structure Ctx (s t : State) : Prop where
   frame : Frame [OUT s, EXP s, SCR s, STK s] s.mem t.mem
 
 theorem Ctx.sp_toNat {s t : State} (h : Pre s) (hc : Ctx s t) : t.sp.toNat = s.sp.toNat - 16 := by
-  rw [hc.sp, sub_toNat' (by have := h.sp; omega)]
+  rw [hc.sp, sub_toNat' (by have := h.sp; omega_using [this])]
 
 /-- `sp + d`, from between the pushes and the pops. -/
 theorem Ctx.addr_sp {s t : State} (h : Pre s) (hc : Ctx s t) {d : Nat} (hd : d ≤ 16) :
     State.addr (t.sp + BitVec.ofNat 32 d) = K s + BitVec.ofNat 64 (584 + d) := by
   have := s.sp.isLt
-  rw [addr_add (by rw [hc.sp_toNat h]; omega), hc.sp, addrK h (by decide), add_add]
+  rw [addr_add (by rw [hc.sp_toNat h]; omega_using [hd]), hc.sp, addrK h (by decide), add_add]
 
 /-- The `n` bytes below `sp`, from between the pushes and the pops. -/
 theorem Ctx.below {s t : State} (h : Pre s) (hc : Ctx s t) {n : Nat} (hn : n ≤ 584) :
     belowA t.sp n = ⟨K s + BitVec.ofNat 64 (584 - n), n⟩ := by
   simp only [belowA]
-  rw [hc.sp, sub_sub', addrK h (by omega), show 600 - (16 + n) = 584 - n by omega]
+  rw [hc.sp, sub_sub', addrK h (by omega_using [hn]), show 600 - (16 + n) = 584 - n by omega_using []]
 
 /-- A write of a register the ABI does not preserve. -/
 theorem Ctx.setReg {s t : State} (hc : Ctx s t) {r : Reg} (hr : r ∉ preserved) (x : BitVec 32) :
@@ -189,10 +189,10 @@ abbrev entered (s : State) : State := pushed [.r0, .r1, .r3] (pushed [.lr] s)
 theorem entered_ctx {s : State} (h : Pre s) : Ctx s (entered s) := by
   have hsp := h.sp
   have hlt := s.sp.isLt
-  have h4 : 4 * [Reg.lr].length ≤ s.sp.toNat := by simp only [List.length_cons, List.length_nil]; omega
+  have h4 : 4 * [Reg.lr].length ≤ s.sp.toNat := by simp only [List.length_cons, List.length_nil]; omega_using [hsp]
   have e4 : (pushed [.lr] s).sp = s.sp - BitVec.ofNat 32 4 := rfl
   have h12 : 4 * [Reg.r0, .r1, .r3].length ≤ (pushed [.lr] s).sp.toNat := by
-    rw [e4, sub_toNat' (by omega)]; simp only [List.length_cons, List.length_nil]; omega
+    rw [e4, sub_toNat' (by omega_using [hsp])]; simp only [List.length_cons, List.length_nil]; omega_using [hsp]
   have e16 : (entered s).sp = s.sp - BitVec.ofNat 32 16 := by
     show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 12 = _
     rw [sub_sub']
@@ -201,19 +201,19 @@ theorem entered_ctx {s : State} (h : Pre s) : Ctx s (entered s) := by
     show storeWords _ (s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 12) _ = _
     rw [sub_sub']; rfl
   have em₁ : (pushed [.lr] s).mem = storeWords s.mem (s.sp - BitVec.ofNat 32 4) [s.gpr .lr] := rfl
-  have t16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega)
+  have t16 : (s.sp - BitVec.ofNat 32 16).toNat = s.sp.toNat - 16 := sub_toNat' (by omega_using [hsp])
   -- The saved arguments.
   have slot : ∀ i (hi : i < 3), (entered s).mem.readW (K s + BitVec.ofNat 64 (584 + 4 * i)) 32 =
       [s.gpr .r0, s.gpr .r1, s.gpr .r3][i] := fun i hi => by
     have e := Argon2.Arm.storeWords_readW (pushed [.lr] s).mem (s.sp - BitVec.ofNat 32 16)
-      [s.gpr .r0, s.gpr .r1, s.gpr .r3] (by simp only [List.length_cons, List.length_nil]; omega) hi
-    rw [addr_add (by rw [t16]; omega), addrK h (by decide), add_add] at e
+      [s.gpr .r0, s.gpr .r1, s.gpr .r3] (by simp only [List.length_cons, List.length_nil]; omega_using [t16]) hi
+    rw [addr_add (by rw [t16]; omega_using [hi]), addrK h (by decide), add_add] at e
     rw [em]; exact e
   -- The saved `lr`, which the second push leaves alone.
   have hf₂ : Frame [⟨K s + BitVec.ofNat 64 584, 12⟩] (pushed [.lr] s).mem (entered s).mem := by
     have := Argon2.Arm.pushed_stk (rs := [.r0, .r1, .r3]) (s := pushed [.lr] s) h12
     simp only [Argon2.Arm.stkR, e4, List.length_cons, List.length_nil] at this
-    rwa [← addr_sub' (by rw [sub_toNat' (by omega)]; omega), sub_sub', addrK h (by decide)] at this
+    rwa [← addr_sub' (by rw [sub_toNat' (by omega_using [hsp])]; omega_using [hsp]), sub_sub', addrK h (by decide)] at this
   have hf₁ : Frame [⟨State.addr s.sp - BitVec.ofNat 64 4, 4⟩] s.mem (pushed [.lr] s).mem :=
     Argon2.Arm.pushed_stk (rs := [.lr]) (s := s) h4
   have hk : STK s ∈ [OUT s, EXP s, SCR s, STK s] := by simp
@@ -227,7 +227,7 @@ theorem entered_ctx {s : State} (h : Pre s) : Ctx s (entered s) := by
         rw [List.mem_singleton.mp hr]
         exact Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide)) (by decide), em₁]
     have e := Argon2.Arm.storeWords_readW s.mem (s.sp - BitVec.ofNat 32 4) [s.gpr .lr]
-      (by rw [sub_toNat' (by omega)]; simp only [List.length_cons, List.length_nil]; omega) (i := 0) (by simp)
+      (by rw [sub_toNat' (by omega_using [hsp])]; simp only [List.length_cons, List.length_nil]; omega_using []) (i := 0) (by simp)
     rw [Nat.mul_zero, BitVec.add_zero, addrK h (by decide)] at e
     exact e
   · rw [List.mem_singleton.mp hr]
@@ -245,7 +245,7 @@ theorem exec_ldrSp {u : State} {t : Reg} {off : Nat} {a : Addr} (ho : off < 4096
 theorem Ctx.inAR {s t : State} (hc : Ctx s t) {d : Nat} (hd : d + 4 ≤ 12) :
     InRegions (t.rd ++ t.wr) (K s + BitVec.ofNat 64 (584 + d)) 4 := by
   rw [hc.wr]
-  exact ⟨AR s, by simp, Offset.contains _ (by omega) (by omega) (by omega)⟩
+  exact ⟨AR s, by simp, Offset.contains _ (by omega_using []) (by omega_using [hd]) (by omega_using [])⟩
 
 /-- The digest's arguments: `data = seed`, `len = 32`, `out = expanded`. -/
 theorem digestArgs_ok {s : State} (h : Pre s) :
@@ -301,11 +301,11 @@ theorem Ctx.call {s t t' : State} (h : Pre s) (hc : Ctx s t) {wr : List Region} 
     refine hf.readW (r := ⟨K s + BitVec.ofNat 64 e, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rcases List.mem_append.mp hr with hr | hr
     · rcases hsub r hr with rfl | rfl | rfl
-      · exact h.kO (by omega)
-      · exact h.kE (by omega)
-      · exact h.kC (by omega)
+      · exact h.kO (by omega_using [h₂])
+      · exact h.kE (by omega_using [h₂])
+      · exact h.kC (by omega_using [h₂])
     · rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+      exact Offset.disjoint _ (Or.inr (by omega_using [hn, h₁])) (by omega_using [h₂]) (by omega_using [hn])
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.sp,
     fun r hr hr' => (hcs r hr hr').trans (hc.cs r hr hr'),
     (keep 596 (by decide) (by decide)).trans hc.lr, (keep 584 (by decide) (by decide)).trans hc.fOut,
@@ -317,7 +317,7 @@ theorem Ctx.call {s t t' : State} (h : Pre s) (hc : Ctx s t) {wr : List Region} 
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   · rw [List.mem_singleton.mp hr]
-    exact ⟨_, by simp, stk_sub s (by omega)⟩
+    exact ⟨_, by simp, stk_sub s (by omega_using [hn])⟩
 
 /-! ## The digest -/
 
@@ -334,11 +334,11 @@ theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx0 : t.gpr .r0 = s.gpr
     dgK.pre (t.callEntry.withRegions [SEED s] [EXP s]) := by
   sig_pre [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, stackBelow]
-  have hle : 584 ≤ t.sp.toNat := by rw [hc.sp_toNat h]; have := h.sp; omega
+  have hle : 584 ≤ t.sp.toNat := by rw [hc.sp_toNat h]; have := h.sp; omega_using [this]
   have hb := hc.below h (n := 584) (le_refl _)
   simp only [belowA, addr_sub' hle] at hb
   rw [hx0, hx1, hx2, hb]
-  exact ⟨hle, by have := t.sp.isLt; omega, rfl, rfl, h.es.symm, h.kS (by decide), h.kE (by decide), h.ns, h.ne⟩
+  exact ⟨hle, by have := t.sp.isLt; omega_using [], rfl, rfl, h.es.symm, h.kS (by decide), h.kE (by decide), h.ns, h.ne⟩
 
 theorem dg_cov {s t : State} (h : Pre s) (hc : Ctx s t) :
     Covers ([SEED s] ++ [EXP s]) (t.rd ++ t.wr) ∧ Covers [EXP s] t.wr := by
@@ -357,7 +357,7 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (hx0 : 
       Spec.Ed25519.bytesAt t'.mem (State.addr (s.gpr .r1)) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r2)) 32) := by
   refine WP.of_syms (WP.callF dg_verified.1 (dg_pre h hc hx0 hx1 hx2) (dg_cov h hc).1 (dg_cov h hc).2
-    (by rw [dg_stack, hc.sp_toNat h]; have := h.sp; omega)
+    (by rw [dg_stack, hc.sp_toNat h]; have := h.sp; omega_using [this])
     (fun t' hrd hwr hsp hf hcs hpost hsy => ⟨?_, ?_⟩))
   · rw [dg_stack] at hf
     exact Ctx.call h hc (le_refl _) (by simp) hrd hwr hsp hf hcs hsy
@@ -409,7 +409,7 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx0 : t.gpr .r0 = s.gpr
   sig_pre [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
     Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
-  have hle : 280 ≤ t.sp.toNat := by rw [hc.sp_toNat h]; have := h.sp; omega
+  have hle : 280 ≤ t.sp.toNat := by rw [hc.sp_toNat h]; have := h.sp; omega_using [this]
   have hb := hc.below h (n := 280) (by decide)
   simp only [belowA, addr_sub' hle] at hb
   rw [hx0, hx1, hx2, hb, hc.sym]
@@ -420,12 +420,12 @@ theorem pk_pre {s t : State} (h : Pre s) (hc : Ctx s t) (hx0 : t.gpr .r0 = s.gpr
     · exact h.tE
     · exact h.tC
     · exact h.tK
-  refine ⟨hle, by have := t.sp.isLt; omega, rfl, fun i hi => ?_, h.fit, h.tO, h.tC, h.kT (by decide), h.al,
+  refine ⟨hle, by have := t.sp.isLt; omega_using [], rfl, fun i hi => ?_, h.fit, h.tO, h.tC, h.kT (by decide), h.al,
     rfl, rfl, h.oe, h.oc, h.ec, h.kO (by decide), h.kE (by decide), h.kC (by decide), h.no, h.ne, h.nc,
     _, by simp [Spec.Ed25519.bytesAt], hE⟩
   · exact (hc.frame.readW (r := TB s) (a := State.addr (s.syms combSym) + BitVec.ofNat 64 (8 * i)) (w := 64)
-      (Offset.contains_base _ (show 8 * i + 64 / 8 ≤ 8 * combWords.length by omega)
-        (by have := h.fit; omega)) hT (by decide)).trans (h.held i hi)
+      (Offset.contains_base _ (show 8 * i + 64 / 8 ≤ 8 * combWords.length by omega_using [hi])
+        (by have := h.fit; omega_using [hi, this])) hT (by decide)).trans (h.held i hi)
 
 theorem pk_cov {s t : State} (h : Pre s) (hc : Ctx s t) :
     Covers (pkRd s ++ pkWr s) (t.rd ++ t.wr) ∧ Covers (pkWr s) t.wr := by
@@ -450,17 +450,17 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (hx0 : t.gp
   have hd := pk_stack
   refine WP.of_syms (WP.callF Proof.Ed25519.Arm.PublicKey.publicKeyExpanded_verified.1
     (pk_pre h hc hx0 hx1 hx2 hE) (pk_cov h hc).1 (pk_cov h hc).2
-    (by rw [hc.sp_toNat h]; have := h.sp; omega)
+    (by rw [hc.sp_toNat h]; have := h.sp; omega_using [hd, this])
     (fun t' hrd hwr hsp hf hcs hpost hsy =>
-      ⟨Ctx.call h hc (by omega) (by simp) hrd hwr hsp hf hcs hsy, ?_, ?_⟩))
+      ⟨Ctx.call h hc (by omega_using [hd]) (by simp) hrd hwr hsp hf hcs hsy, ?_, ?_⟩))
   · rw [← hE]
-    rw [hc.below h (by omega)] at hf
+    rw [hc.below h (by omega_using [hd])] at hf
     refine bytesAt_frame hf (fun r hr => ?_) (by decide)
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h.oe.symm
     · exact h.ec
-    · exact (h.kE (by omega)).symm
+    · exact (h.kE (by omega_using [hd])).symm
   · sig_post [Proof.Ed25519.publicKeyExpandedContract, Proof.Ed25519.publicKeyExpandedSig,
       Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Proof.Ed25519.Arm.combConsts_eq, Abi.withConsts] at hpost
@@ -493,10 +493,10 @@ theorem keyPair_ok {s : State} (hs : spec.pre s) {dn pn : String} :
     WP isa (keyPair dn dgCode pn PublicKey.codeExpanded) s fun s' => abiPreserved s s' ∧ spec.post s s' := by
   have h := pre_of hs
   have hsp := h.sp
-  refine WP.frame (rs := [.lr]) (r := .lr) (by decide) (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.frame (rs := [.lr]) (r := .lr) (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [hsp])
     (by decide) ?_
   refine WP.frame (rs := [.r0, .r1, .r3]) (r := .r3) (by decide)
-    (by show 12 ≤ (s.sp - BitVec.ofNat 32 4).toNat; rw [sub_toNat' (by omega)]; omega) (by decide)
+    (by show 12 ≤ (s.sp - BitVec.ofNat 32 4).toNat; rw [sub_toNat' (by omega_using [hsp])]; omega_using [hsp]) (by decide)
     (WP.mono (body_ok h) fun u ⟨hu, hE, hO⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩)
   · by_cases hl : r = .lr
     · subst hl

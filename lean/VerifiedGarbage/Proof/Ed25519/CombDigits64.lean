@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.CombTable16
 public import VerifiedGarbage.Proof.Ed25519.CombDigits
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A comb of one table per digit
@@ -42,14 +43,14 @@ theorem combCached64_ok (i k : Nat) (hi : i < 64) (hk : k < 9) :
     ∃ q, combCached64 i k = cache q ∧ q.Z = 1 ∧ Rep q ((k * 16 ^ i) • baseAff) := by
   unfold combCached64
   split
-  · obtain ⟨q, h1, h2, h3⟩ := combCached_ok (i / 2) k (by omega) hk
+  · obtain ⟨q, h1, h2, h3⟩ := combCached_ok (i / 2) k (by omega_using [hi]) hk
     have e : 16 ^ i = 256 ^ (i / 2) := by
-      rw [show (256 : Nat) = 16 ^ 2 from rfl, ← pow_mul]; congr 1; omega
+      rw [show (256 : Nat) = 16 ^ 2 from rfl, ← pow_mul]; congr 1; omega_arith
     exact ⟨q, h1, h2, by rw [e]; exact h3⟩
-  · obtain ⟨q, h1, h2, h3⟩ := combCached16_ok (i / 2) k (by omega) hk
+  · obtain ⟨q, h1, h2, h3⟩ := combCached16_ok (i / 2) k (by omega_using [hi]) hk
     have e : k * 16 ^ i = k * 256 ^ (i / 2) * 16 := by
       rw [show (256 : Nat) = 16 ^ 2 from rfl, ← pow_mul, Nat.mul_assoc, ← pow_succ]
-      congr 2; omega
+      congr 2; omega_arith
     rw [smul_smul] at h3
     exact ⟨q, h1, h2, by rw [e]; exact h3⟩
 
@@ -62,13 +63,13 @@ theorem combEntry64_ok (i n : Nat) (hi : i < 64) (hn : n < 16) :
   by_cases hlt : n < 8
   · refine ⟨negPoint q₀, by simp only [hlt, ↓reduceIte]; rw [hq₀, negCached_cache], hz, ?_⟩
     have e : ((n : ℤ) - 8) * 16 ^ i = -(((mag n * 16 ^ i : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : n ≤ 8)]
-      rw [← Int.neg_mul]; congr 1; omega
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_using [hlt] : n ≤ 8)]
+      rw [← Int.neg_mul]; congr 1; omega_using []
     rw [e, neg_smul, natCast_zsmul]
     exact hr.neg
   · refine ⟨q₀, by simp only [hlt, ↓reduceIte]; exact hq₀, hz, ?_⟩
     have e : ((n : ℤ) - 8) * 16 ^ i = (((mag n * 16 ^ i : Nat) : ℤ)) := by
-      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ n)]
+      simp only [mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega_using [hlt] : 8 ≤ n)]
       rfl
     rw [e, natCast_zsmul]
     exact hr
@@ -100,7 +101,7 @@ theorem digitSum64_eq (S : Nat) : ∀ c, digitSum64 S c = nibSum S c - 8 * geom1
     simp only [digitSum64, nibSum, geom16, digitSum64_eq S c, sdig]
     push_cast
     rw [Int.sub_mul, Int.mul_add]
-    omega
+    omega_using []
 
 theorem geom16_64 : 8 * geom16 64 = 17 * combGVal := by decide
 
@@ -109,6 +110,6 @@ theorem comb64_total {S : Nat} (hS : S < 2 ^ 256) :
     ((17 * combGVal : Nat) : ℤ) + digitSum64 S 64 = S := by
   rw [digitSum64_eq, nibSum_eq, Nat.mod_eq_of_lt (by simpa using hS), ← geom16_64]
   push_cast
-  omega
+  omega_using []
 
 end VG.Proof.Ed25519

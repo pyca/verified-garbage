@@ -168,7 +168,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -189,7 +189,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 223b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -687,7 +687,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -708,7 +708,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 255b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1207,7 +1207,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1228,7 +1228,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 287b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1727,7 +1727,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1748,7 +1748,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 2119b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2247,7 +2247,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2268,7 +2268,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 2151b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2767,7 +2767,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2788,7 +2788,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 2183b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3287,7 +3287,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3308,7 +3308,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 2215b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3807,7 +3807,7 @@ vg_rsa_pss_verify_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 184
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3828,7 +3828,7 @@ vg_rsa_pss_verify_precomputed:
 	bnez a6, 2247b
 	addi t1, sp, 184
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -4183,7 +4183,7 @@ vg_rsa_pss_verify_precomputed:
 	ret
 	.option pop
 
-vg_rsa_pss_sign:
+vg_rsa_pss_sign_precomputed:
 	.option push
 	.option arch, +m, +c
 	addi t5, sp, 112
@@ -4447,7 +4447,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -4468,7 +4468,7 @@ vg_rsa_pss_sign:
 	bnez a6, 232b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -4479,9 +4479,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -4517,8 +4517,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 219f
 218:
 	addi a1, s2, 0
@@ -4816,7 +4820,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -4837,7 +4841,7 @@ vg_rsa_pss_sign:
 	bnez a6, 254b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -4848,9 +4852,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -4886,8 +4890,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 241f
 240:
 	addi a1, s2, 0
@@ -5186,7 +5194,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -5207,7 +5215,7 @@ vg_rsa_pss_sign:
 	bnez a6, 276b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -5218,9 +5226,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -5256,8 +5264,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 263f
 262:
 	addi a1, s2, 0
@@ -5556,7 +5568,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -5577,7 +5589,7 @@ vg_rsa_pss_sign:
 	bnez a6, 298b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -5588,9 +5600,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -5626,8 +5638,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 285f
 284:
 	addi a1, s2, 0
@@ -5926,7 +5942,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -5947,7 +5963,7 @@ vg_rsa_pss_sign:
 	bnez a6, 2120b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -5958,9 +5974,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -5996,8 +6012,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 2107f
 2106:
 	addi a1, s2, 0
@@ -6296,7 +6316,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -6317,7 +6337,7 @@ vg_rsa_pss_sign:
 	bnez a6, 2142b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -6328,9 +6348,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -6366,8 +6386,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 2129f
 2128:
 	addi a1, s2, 0
@@ -6666,7 +6690,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -6687,7 +6711,7 @@ vg_rsa_pss_sign:
 	bnez a6, 2164b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -6698,9 +6722,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -6736,8 +6760,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 2151f
 2150:
 	addi a1, s2, 0
@@ -7035,7 +7063,7 @@ vg_rsa_pss_sign:
 	jalr ra, 0(t1)
 	addi a6, sp, 248
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -7056,7 +7084,7 @@ vg_rsa_pss_sign:
 	bnez a6, 2186b
 	addi t1, sp, 248
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -7067,9 +7095,9 @@ vg_rsa_pss_sign:
 	lbu a2, 0(a1)
 	and a2, a2, t2
 	sb a2, 0(a1)
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	ld t1, 1376(s0)
 	sd t1, 0(t0)
 	ld t1, 1384(s0)
@@ -7105,8 +7133,12 @@ vg_rsa_pss_sign:
 	ld a5, 1368(s0)
 	addi a6, s0, 0
 	addi a7, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 128(t6)
+	sd t1, 96(t0)
+	ld t1, 136(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	j 2173f
 2172:
 	addi a1, s2, 0

@@ -218,8 +218,8 @@ fn rsa_pkcs1_sign_test() {
                 BigUint::from_be_bytes(&k.exponent1.0),
                 BigUint::from_be_bytes(&k.exponent2.0),
                 BigUint::from_be_bytes(&k.coefficient.0),
-            )
-            .unwrap_or_else(|e| panic!("{name}: {e}"));
+            );
+            let private = private.unwrap_or_else(|e| panic!("{name}: {e}"));
             let public = PublicKey::new(
                 BigUint::from_be_bytes(n),
                 BigUint::from_be_bytes(&k.public_exponent.0),
@@ -228,9 +228,8 @@ fn rsa_pkcs1_sign_test() {
             for (test, h) in group.tests.iter().take(4).zip(HASHES.iter().cycle()) {
                 let id = test.tc_id;
                 let d = digest(*h, &test.case.msg.0);
-                let sig = private
-                    .sign_pkcs1v15(&d, *h)
-                    .unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+                let sig = private.sign_pkcs1v15(&d, *h);
+                let sig = sig.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
                 assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
                 assert!(check(&name, id, &public, *h, &d, &sig, Expectation::Valid));
                 assert_eq!(private.sign_pkcs1v15(&d, *h), Ok(sig), "{name} tcId {id}");

@@ -33,7 +33,7 @@ theorem rotr_toNat {w r : Nat} (x : BitVec w) (hr : r < w) (hx : x.toNat < 2 ^ r
     Nat.zero_or, Nat.shiftLeft_eq]
   apply Nat.mod_eq_of_lt
   calc x.toNat * 2 ^ (w - r) < 2 ^ r * 2 ^ (w - r) := Nat.mul_lt_mul_of_pos_right hx (Nat.two_pow_pos _)
-    _ = 2 ^ w := by rw [← Nat.pow_add]; congr 1; omega
+    _ = 2 ^ w := by rw [← Nat.pow_add]; congr 1; omega_using [hr]
 
 theorem shr_toNat {w : Nat} (x : BitVec w) (n : Nat) : (x >>> n).toNat = x.toNat / 2 ^ n := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -42,7 +42,7 @@ theorem shr_toNat {w : Nat} (x : BitVec w) (n : Nat) : (x >>> n).toNat = x.toNat
 theorem b8_eq (x : BitVec 32) : BitVec.setWidth 8 (BitVec.setWidth 64 x) = BitVec.ofNat 8 x.toNat := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- The byte a `store8` stores of a 64-bit value. -/
 theorem b8_eq64 (x : BitVec 64) : BitVec.setWidth 8 x = BitVec.ofNat 8 x.toNat := by
@@ -50,13 +50,13 @@ theorem b8_eq64 (x : BitVec 64) : BitVec.setWidth 8 x = BitVec.ofNat 8 x.toNat :
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
 
 theorem toNat_setWidth64 (x : BitVec 32) : (BitVec.setWidth 64 x).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; omega
+  simp only [BitVec.toNat_setWidth]; omega_using []
 
 theorem toNat_setWidth64_8 (x : BitVec 8) : (BitVec.setWidth 64 x).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; omega
+  simp only [BitVec.toNat_setWidth]; omega_using []
 
 theorem toNat_setWidth32_64 {x : BitVec 64} (h : x.toNat < 2 ^ 32) : (BitVec.setWidth 32 x).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; omega
+  simp only [BitVec.toNat_setWidth]; omega_using [h]
 
 /-! ## Regions -/
 
@@ -64,7 +64,7 @@ theorem contains_offset' {base : Addr} {len off n : Nat} (h : off + n ≤ len) (
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := by
   simp only [Region.Contains]
   rw [show base + BitVec.ofNat 64 off - base = BitVec.ofNat 64 off by bv_omega, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [h, hl])]
   exact h
 
 theorem sub_offset' {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (hl : len' < 2 ^ 64) :
@@ -72,9 +72,9 @@ theorem sub_offset' {base : Addr} {off len len' : Nat} (h : off + len ≤ len') 
   intro a ha
   simp only [Region.Contains] at *
   have e : a - base = (a - (base + BitVec.ofNat 64 off)) + BitVec.ofNat 64 off := by bv_omega
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [h, hl]),
+    Nat.mod_eq_of_lt (by omega_using [h, hl, ha])]
+  omega_using [h, ha]
 
 /-- Two ranges at offsets of the same pointer, one below the other. -/
 theorem off_disj {p : Addr} {a n b m : Nat} (h : a + n ≤ b) (hb : b + m < 2 ^ 64) :
@@ -99,7 +99,7 @@ theorem Written.first (m : Mem) (o : Addr) (b : Byte) : Written m (m.writeW o b)
   · subst h; simp
   · have : (x - o).toNat ≠ 0 := fun e => h (by bv_omega)
     simp only [h, ↓reduceIte]
-    rw [ifn (by omega)]
+    rw [ifn (by omega_using [this])]
 
 theorem Written.snoc {m m' : Mem} {o : Addr} {c : Nat} {v : Nat → Byte} (h : Written m m' o c v)
     (hc : c + 1 < 2 ^ 64) (b : Byte) :
@@ -110,13 +110,13 @@ theorem Written.snoc {m m' : Mem} {o : Addr} {c : Nat} {v : Nat → Byte} (h : W
   · subst hx
     have : (o + BitVec.ofNat 64 c - o).toNat = c := by
       rw [show o + BitVec.ofNat 64 c - o = BitVec.ofNat 64 c by bv_omega, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (by omega)]
+        Nat.mod_eq_of_lt (by omega_using [hc])]
     simp [this]
   · have : (x - o).toNat ≠ c := fun e => hx (by bv_omega)
     simp only [hx, ↓reduceIte, this]
     by_cases hl : (x - o).toNat < c
-    · rw [ifp hl, ifp (by omega)]
-    · rw [ifn hl, ifn (by omega)]
+    · rw [ifp hl, ifp (by omega_using [hl])]
+    · rw [ifn hl, ifn (by omega_using [this, hl])]
 
 /-- Writing `c` bytes within the region `R`. -/
 theorem Written.frame {m m' : Mem} {o : Addr} {c : Nat} {v : Nat → Byte} (h : Written m m' o c v)
@@ -148,16 +148,16 @@ theorem Written.extend {m m' : Mem} {out : Addr} {a c : Nat} {val : Nat → Byte
   · have : ¬ (out + BitVec.ofNat 64 k - (out + BitVec.ofNat 64 a)).toNat < c := by
       rw [show out + BitVec.ofNat 64 k - (out + BitVec.ofNat 64 a) =
         BitVec.ofNat 64 k - BitVec.ofNat 64 a by bv_omega]
-      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-        Nat.mod_eq_of_lt (by omega)]
-      omega
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlen, h]),
+        Nat.mod_eq_of_lt (by omega_using [hlen])]
+      omega_using [hlen]
     rw [ifn this, hd k h]
   · have e : (out + BitVec.ofNat 64 k - (out + BitVec.ofNat 64 a)).toNat = k - a := by
       rw [show out + BitVec.ofNat 64 k - (out + BitVec.ofNat 64 a) = BitVec.ofNat 64 (k - a) by
-        rw [show k = a + (k - a) by omega, BitVec.ofNat_add]; bv_omega]
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    rw [e, ifp (by omega)]
-    exact congrArg val (by omega)
+        rw [show k = a + (k - a) by omega_using [h], BitVec.ofNat_add]; bv_omega]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlen, hk])]
+    rw [e, ifp (by omega_using [hk, h])]
+    exact congrArg val (by omega_using [h])
 
 /-- The loop's output so far, and the frame, one step further. -/
 theorem Written.step {m₀ m m' : Mem} {out : Addr} {a c len : Nat} {val : Nat → Byte}
@@ -165,10 +165,10 @@ theorem Written.step {m₀ m m' : Mem} {out : Addr} {a c len : Nat} {val : Nat �
     (hw : Written m m' (out + BitVec.ofNat 64 a) c fun j => val (a + j)) (hac : a + c ≤ len)
     (hlen : len < 2 ^ 64) :
     Frame [⟨out, len⟩] m₀ m' ∧ ∀ k < a + c, m' (out + BitVec.ofNat 64 k) = val k := by
-  refine ⟨hf.trans (hw.frame ?_), Written.extend hd hw (by omega)⟩
+  refine ⟨hf.trans (hw.frame ?_), Written.extend hd hw (by omega_using [hac, hlen])⟩
   simp only [Region.Contains]
   rw [show out + BitVec.ofNat 64 a - out = BitVec.ofNat 64 a by bv_omega, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [hac, hlen])]
   exact hac
 
 end VG.Proof.MlKem.X86_64

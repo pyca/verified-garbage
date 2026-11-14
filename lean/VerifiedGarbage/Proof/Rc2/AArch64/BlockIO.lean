@@ -21,7 +21,7 @@ theorem unpackWord_ok (s : State) (i : Nat) (hi : i < 4) :
     ∃ s', runBlock isa (unpackWord i) s = some s' ∧
       s'.gpr (wordReg i) = (((s.gpr .x8) >>> (16 * i)).setWidth 16).setWidth 64 ∧
       Keep [wordReg i] s s' := by
-  have hn : 16 * i < 64 := by omega
+  have hn : 16 * i < 64 := by omega_using [hi]
   refine ⟨_, by
     simp (config := {decide := true}) only [unpackWord, mask, rr, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, State.read, gpr_write, BitVec.setWidth_eq,

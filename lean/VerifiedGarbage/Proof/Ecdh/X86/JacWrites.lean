@@ -35,7 +35,7 @@ theorem jwinW_apart (h4 : c.n=4) {i : Nat} (hi : i<45) (hw : i∉windowSlots) :
   left
   rw [sl_eq,h4]
   dsimp only
-  omega
+  omega_using [hi]
 
 theorem jwinW_table (h4 : c.n=4) {t : Nat} (ht : t<64*c.n) :
     ∀ w∈jwinW c,bitsAt c.n 1+t+1≤w.1 ∨ w.1+w.2≤bitsAt c.n 1+t := by
@@ -47,7 +47,7 @@ theorem jwinW_table (h4 : c.n=4) {t : Nat} (ht : t<64*c.n) :
   rw [bitsAt_eq,h4]
   rw [h4] at ht
   dsimp only
-  omega
+  omega_using [ht]
 
 theorem jwinW_cover (h4 : c.n=4) :
     ∀ w∈JWin.allW (Impl.Ecdh.X86.Cfg.jwinCfg c) (Mont.own c.n),

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.TripleDes.Contract
 /-!
 # Triple DES ECB on x86-64, calling one copy of the SSE2 code
 
-`vg_triple_des_ecb_{en,de}crypt_core(schedule = rdi, data = rsi, n = rdx, scratch = rcx)`
+`vg_triple_des_ecb_{en,de}crypt_scratch(schedule = rdi, data = rsi, n = rdx, scratch = rcx)`
 is the SSE2 code (`BitsliceSse.ecb`: batches of 128 blocks, then the
 64-block code), with its working space as an argument. Every ECB function
 calls it for the blocks it leaves (`inner`), in place of a copy of that code:
@@ -30,8 +30,8 @@ def core : Direction → Prog isa
 
 /-- The core's name. -/
 def coreName : Direction → String
-  | .encrypt => "vg_triple_des_ecb_encrypt_core"
-  | .decrypt => "vg_triple_des_ecb_decrypt_core"
+  | .encrypt => "vg_triple_des_ecb_encrypt_scratch"
+  | .decrypt => "vg_triple_des_ecb_decrypt_scratch"
 
 /-- A call of the core. -/
 def coreCall (d : Direction) : Prog isa := .call (coreName d) (core d)

@@ -21,10 +21,10 @@ theorem powerArgs_ok (s : State) {p : Inputs} {slots : List Nat} (bs es ec : Nat
         t.gpr .r1 = p.slotValue es ∧ t.gpr .r2 = p.slotValue ec ∧ t.mem = s.mem) ∧
       Rest [.r1, .r2, .r4, .r6] s t := by
   have bounds (d : Nat) (hd : d ∈ slots) := (stableSlots_at stable hd).1
-  have small (d : Nat) (hd : d ∈ slots) : d < 4096 := by have := bounds d hd; omega
+  have small (d : Nat) (hd : d ∈ slots) : d < 4096 := by have := bounds d hd; omega_using [this]
   have addr (d : Nat) (hd : d ∈ slots) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := bounds d hd; have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := bounds d hd; have := h.locals.space.nowrap; omega_arith)
   have rb := h.locals.read (bounds bs hb)
   have re := h.locals.read (bounds es he)
   have rc := h.locals.read (bounds ec hc)

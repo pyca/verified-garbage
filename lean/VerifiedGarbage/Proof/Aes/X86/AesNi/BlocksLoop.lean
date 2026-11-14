@@ -50,7 +50,7 @@ theorem loadData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : re
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
     simp only [List.length_cons] at hin
     rw [loadData, ← List.singleton_append, WP.block_append_iff]
-    have hin0 := hin 0 (by omega)
+    have hin0 := hin 0 (by omega_using [])
     rw [Nat.add_zero] at hin0
     refine WP.mono (Q := fun s₁ => s₁ = s.setXmm b (s.mem.readW (addr (s.gpr p) (16 * j)) 128)) ?_
       fun s₁ e₁ => ?_
@@ -59,8 +59,8 @@ theorem loadData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : re
         ↓reduceIte, Option.map_some, Option.some.injEq, exists_eq_left']
     subst e₁
     refine WP.mono (ih (j + 1) _ (List.nodup_cons.mp hnd).2 (fun k hk => by
-        rw [rd_setXmm, wr_setXmm, gpr_setXmm, show j + 1 + k = j + (k + 1) by omega]
-        exact hin (k + 1) (by omega)))
+        rw [rd_setXmm, wr_setXmm, gpr_setXmm, show j + 1 + k = j + (k + 1) by omega_using []]
+        exact hin (k + 1) (by omega_using [hk])))
       fun s' ⟨hb, g, m, rd, wr, hx⟩ => ?_
     rw [gpr_setXmm, mem_setXmm] at hb
     refine ⟨fun k hk => ?_, g, m, rd, wr, fun r hr => ?_⟩
@@ -70,7 +70,7 @@ theorem loadData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State) (hnd : re
         rw [hx b hbs, xmm_setXmm_self, stateAt_eq]
       | succ k =>
         simp only [List.getElem_cons_succ]
-        rw [hb k (by simpa using hk), show j + 1 + k = j + (k + 1) by omega]
+        rw [hb k (by simpa using hk), show j + 1 + k = j + (k + 1) by omega_using []]
     · simp only [List.mem_cons, not_or] at hr
       rw [hx r hr.2, xmm_setXmm_of_ne _ _ hr.1]
 
@@ -87,7 +87,7 @@ theorem storeData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State)
   | cons b bs ih =>
     simp only [List.length_cons] at hin hw
     rw [storeData, ← List.singleton_append, WP.block_append_iff]
-    have hin0 := hin 0 (by omega)
+    have hin0 := hin 0 (by omega_using [])
     rw [Nat.add_zero] at hin0
     let s₁ : State := { s with mem := s.mem.writeW (addr (s.gpr p) (16 * j)) (s.xmm b) }
     refine WP.mono (Q := fun t => t = s₁) ?_ fun t e => ?_
@@ -97,10 +97,10 @@ theorem storeData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State)
       rfl
     subst e
     have ha0 : addr (s.gpr p) (16 * j) = (s.gpr p).setWidth 64 + BitVec.ofNat 64 (16 * j) :=
-      addr_eq (by omega)
+      addr_eq (by omega_using [hw])
     refine WP.mono (ih (j + 1) s₁ (fun k hk => by
-        rw [show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
-      (by show (s.gpr p).toNat + _ ≤ _; omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+        rw [show j + 1 + k = j + (k + 1) by omega_using []]; exact hin (k + 1) (by omega_using [hk]))
+      (by show (s.gpr p).toNat + _ ≤ _; omega_using [hw])) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
     let R₀ : Region := ⟨(s.gpr p).setWidth 64 + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩
     -- The blocks after the first: apart from it, and within the whole run.
     have hrest : ∀ r ∈ [(⟨addr (s₁.gpr p) (16 * (j + 1)), 16 * bs.length⟩ : Region)],
@@ -110,8 +110,8 @@ theorem storeData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State)
       by_cases hl : bs.length = 0
       · rw [hl]
         exact ⟨fun a _ h => by simp [Region.Contains] at h, fun a h => by simp [Region.Contains] at h⟩
-      · rw [show s₁.gpr p = s.gpr p from rfl, addr_eq (by omega)]
-        exact ⟨Offset.disjoint _ (.inl (by omega)) (by omega) (by omega), Offset.sub _ (by omega) (by omega)⟩
+      · rw [show s₁.gpr p = s.gpr p from rfl, addr_eq (by omega_using [hw, hl])]
+        exact ⟨Offset.disjoint _ (.inl (by omega_using [])) (by omega_using [hw]) (by omega_using [hw]), Offset.sub _ (by omega_using []) (by omega_using [])⟩
     refine ⟨fun k hk => ?_, ?_, g, rd, wr, hx⟩
     · cases k with
       | zero =>
@@ -121,12 +121,12 @@ theorem storeData_ok (p : Reg) (regs : List XReg) (j : Nat) (s : State)
         exact congrArg st (Mem.readW_writeW_self _ _ 16 _ (by decide))
       | succ k =>
         simp only [List.getElem_cons_succ]
-        rw [show j + (k + 1) = j + 1 + k by omega]
+        rw [show j + (k + 1) = j + 1 + k by omega_using []]
         exact hb k (by simpa using hk)
     · rw [ha0]
       have hm : R₀ ∈ [R₀] := List.mem_singleton_self _
       refine (Frame.writeW (Frame.refl _ s.mem) hm (s.xmm b) ?_).trans
         (hf.sub fun r hr => ⟨_, hm, (hrest r hr).2⟩)
-      rw [ha0]; exact Offset.contains _ (Nat.le_refl _) (by omega) (by omega)
+      rw [ha0]; exact Offset.contains _ (Nat.le_refl _) (by omega_using []) (by omega_using [hw])
 
 end VG.Proof.Aes.X86.AesNi

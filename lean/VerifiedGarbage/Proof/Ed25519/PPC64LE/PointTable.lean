@@ -27,11 +27,11 @@ open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE VG.Proof.X25519.PPC64LE
 
 theorem Ctx8.inW {b : Addr} {s : State} (h : Ctx8 b s) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions s.wr (b + BitVec.ofNat 64 d) n :=
-  in_base h.wr hd (by omega)
+  in_base h.wr hd (by omega_using [hd])
 
 theorem Ctx8.inR {b : Addr} {s : State} (h : Ctx8 b s) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions (s.rd ++ s.wr) (b + BitVec.ofNat 64 d) n :=
-  in_base (List.mem_append_right _ h.wr) hd (by omega)
+  in_base (List.mem_append_right _ h.wr) hd (by omega_using [hd])
 
 theorem Ctx8.of_rest {b : Addr} {s t : State} {R : List Reg} (h : Ctx8 b s) (hr : Rest R s t)
     (h6 : Reg.r6 ∉ R) : Ctx8 b t :=
@@ -59,30 +59,30 @@ theorem pointToTable_ok {s : State} (hc : Ctx8 b s) {o : Nat} (h14 : s.gpr .r14 
     ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => by omega⟩) fun t h => ⟨h.rest, h.frame, ?_⟩
   · have hct : Ctx8 b t := hc.of_rest h.rest (by decide)
     refine WP.mono (packField_ok hct.ctx (q := b + BitVec.ofNat 64 o) (a := 64 + 32 * j) (dst := 32 * j)
-      (by rw [h.rest.gpr _ (by decide), h14]) (by omega) (by omega)
-      (fun k hk => by rw [Offset.add_add]; exact hct.inW (by omega))
-      (by rw [Offset.add_add]; exact Offset.disjoint _ (by omega) (by omega) (by omega))) fun u hu => ?_
+      (by rw [h.rest.gpr _ (by decide), h14]) (by omega_using [hj]) (by omega_using [hj])
+      (fun k hk => by rw [Offset.add_add]; exact hct.inW (by omega_using [ho', hj, hk]))
+      (by rw [Offset.add_add]; exact Offset.disjoint _ (by omega_using [ho]) (by omega_using [ho', hj]) (by omega_using [hj]))) fun u hu => ?_
     have hf : Frame [⟨b + BitVec.ofNat 64 (o + 32 * j), 32⟩] t.mem u.mem := by
       have := hu.frame; rwa [Offset.add_add] at this
     have hsrc : V t.mem b (64 + 32 * j) = V s.mem b (64 + 32 * j) := by
       unfold V
       exact val32_congr (limb_frame h.frame fun r hr k hk => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [ho, hj, hk])) (by omega_using [hj, hk]) (by omega_using [ho', hj]))
     refine ⟨h.rest.trans hu.rest, ?_, fun i hi => ?_⟩
     · refine (h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
         (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
-      · rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)
-      · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)
+      · rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])
+      · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using []) (by omega_using [])
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · rw [← h.outs i hi]
         unfold V
         exact val32_congr (limb_frame hf fun r hr k hk => by
-          rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
+          rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hi, hk])) (by omega_arith) (by omega_using [ho', hj]))
       · rw [← hsrc, V, V]
         refine val32_congr fun k hk => ?_
         have := hu.outs k hk
         rw [wd_shift] at this
-        rw [limb, show o + 32 * i + 4 * k = o + (32 * i + 4 * k) by omega, this]
+        rw [limb, show o + 32 * i + 4 * k = o + (32 * i + 4 * k) by omega_using [], this]
   · simp only [tableAt, point, env, FS]
     have e0 := h.outs 0 (by decide)
     have e1 := h.outs 1 (by decide)
@@ -107,27 +107,27 @@ theorem pointFromTable_ok {s : State} (hc : Ctx8 b s) {o : Nat} (h14 : s.gpr .r1
     ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => by omega⟩) fun t h => ⟨h.rest, h.frame, ?_, fun i hi => ?_⟩
   · have hct : Ctx8 b t := hc.of_rest h.rest (by decide)
     refine WP.mono (unpackField_ok hct.ctx (q := b + BitVec.ofNat 64 o) (o := 64 + 32 * j) (src := 32 * j)
-      (by rw [h.rest.gpr _ (by decide), h14]) (by omega) (by omega)
-      (fun k hk => by rw [Offset.add_add]; exact hct.inR (by omega))
-      (by rw [Offset.add_add]; exact Offset.disjoint _ (by omega) (by omega) (by omega)))
+      (by rw [h.rest.gpr _ (by decide), h14]) (by omega_using [hj]) (by omega_using [hj])
+      (fun k hk => by rw [Offset.add_add]; exact hct.inR (by omega_using [ho', hj, hk]))
+      (by rw [Offset.add_add]; exact Offset.disjoint _ (by omega_using [ho]) (by omega_using [ho', hj]) (by omega_using [hj])))
       fun u ⟨ru, fu, lu⟩ => ?_
     have hsrc : V t.mem b (o + 32 * j) = V s.mem b (o + 32 * j) := by
       unfold V
       exact val32_congr (limb_frame h.frame fun r hr k hk => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega))
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_using [ho])) (by omega_using [ho', hj, hk]) (by omega_using [hj]))
     refine ⟨h.rest.trans ru, ?_, fun i hi => ?_⟩
     · refine (h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
         (fu.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
-      · rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)
-      · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)
+      · rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])
+      · rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using []) (by omega_using [])
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · rw [← h.outs i hi]
         unfold V
         exact val32_congr (limb_frame fu fun r hr k hk => by
-          rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega))
+          rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hi, hk])) (by omega_arith) (by omega_using [hj]))
       · rw [← hsrc, V, V]
         refine val32_congr fun k hk => ?_
-        rw [lu k hk, wd_shift, limb, show o + 32 * i + 4 * k = o + (32 * i + 4 * k) by omega]
+        rw [lu k hk, wd_shift, limb, show o + 32 * i + 4 * k = o + (32 * i + 4 * k) by omega_using []]
   · have e0 := h.outs 0 (by decide)
     have e1 := h.outs 1 (by decide)
     have e2 := h.outs 2 (by decide)
@@ -140,7 +140,7 @@ theorem pointFromTable_ok {s : State} (hc : Ctx8 b s) {o : Nat} (h14 : s.gpr .r1
     unfold env FS V
     refine congrArg _ (val32_congr (limb_frame h.frame fun r hr k hk => ?_))
     rw [List.mem_singleton.mp hr]
-    exact Offset.disjoint _ (.inr (by simp only [offset]; omega)) (by omega) (by omega)
+    exact Offset.disjoint _ (.inr (by simp only [offset]; omega_using [hi])) (by omega_using [hs, hk]) (by omega_using [])
 
 end
 

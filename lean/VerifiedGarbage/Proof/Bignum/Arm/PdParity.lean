@@ -19,7 +19,7 @@ open VG.Proof.Rsa.Mont (numAt arrAt)
 theorem numAt_byte_parity (m : Mem) (base : Addr) {w o : Nat} (positive : 0 < w) :
     (m (base + BitVec.ofNat 64 (arrAt w o))).toNat % 2 = numAt m base w o % 2 := by
   have low := congrArg BitVec.toNat (read_prefix m (base + BitVec.ofNat 64 (arrAt w o))
-    (n := 8 * w) (k := 1) (by omega))
+    (n := 8 * w) (k := 1) (by omega_using [positive]))
   simp only [BitVec.toNat_setWidth] at low
   have first (a : Addr) : (m.read a 1).toNat = (m a).toNat := by
     change (0#0 ++ m a : BitVec 8).toNat = (m a).toNat
@@ -27,14 +27,14 @@ theorem numAt_byte_parity (m : Mem) (base : Addr) {w o : Nat} (positive : 0 < w)
     simp
   rw [first] at low
   unfold numAt
-  omega
+  omega_using [low]
 
 theorem numAt_parity_word (m : Mem) (base : Addr) {w o : Nat} (positive : 0 < w) :
     (m (base + BitVec.ofNat 64 (arrAt w o))).setWidth 32 &&& 1 =
       BitVec.ofNat 32 (numAt m base w o % 2) := by
   have byteFit : (m (base + BitVec.ofNat 64 (arrAt w o))).toNat < 2 ^ 32 := by
     have := (m (base + BitVec.ofNat 64 (arrAt w o))).isLt
-    omega
+    omega_using []
   rw [parity_word, BitVec.toNat_setWidth, Nat.mod_eq_of_lt byteFit,
     numAt_byte_parity m base (o := o) positive]
 

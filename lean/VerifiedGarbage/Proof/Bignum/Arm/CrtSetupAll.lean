@@ -30,7 +30,7 @@ theorem crt_setupAll_ok (s : State) {base : BitVec 32} {len w : Nat}
   rintro u ⟨mainU, ptrU, frameU, restU⟩
   have ctxU := h.congr restU.wr
   rw [WP.seq_iff]
-  refine WP.mono (crt_setupPrime_ok u ctxU.main ctxU.p (by omega) (by omega : 224 + 4 ≤ 8 * len)
+  refine WP.mono (crt_setupPrime_ok u ctxU.main ctxU.p (by omega_using [size]) (by omega_using [size] : 224 + 4 ≤ 8 * len)
     (by decide) h.width h.widthFit h.arraysFit ptrU (mainU.toCrtLayoutState.nativeCount ctxU.main) mainU.p) ?_
   rintro v ⟨layoutP, widthP, ptrP, linkP, frameP, restP⟩
   have pV : CrtPrimeState (crtP base w) base len w v.mem := ⟨⟨layoutP, widthP⟩, linkP⟩
@@ -38,13 +38,13 @@ theorem crt_setupAll_ok (s : State) {base : BitVec 32} {len w : Nat}
   have restSV := restU.trans restP
   have ctxV := h.congr restSV.wr
   rw [WP.seq_iff]
-  refine WP.mono (crt_leavePrime_ok v ctxV.p (by omega) ptrP linkP) ?_
+  refine WP.mono (crt_leavePrime_ok v ctxV.p (by omega_using [size]) ptrP linkP) ?_
   rintro z ⟨ptrZ, memZ, restZ⟩
   have mainZ : CrtMainState base len w z.mem := memZ ▸ mainV
   have restSZ := restSV.trans (restZ.mono (by decide))
   have ctxZ := h.congr restSZ.wr
   rw [WP.seq_iff]
-  refine WP.mono (crt_setupPrime_ok z ctxZ.main ctxZ.q (by omega) (by omega : 228 + 4 ≤ 8 * len)
+  refine WP.mono (crt_setupPrime_ok z ctxZ.main ctxZ.q (by omega_using [size]) (by omega_using [size] : 228 + 4 ≤ 8 * len)
     (by decide) h.width h.widthFit h.arraysFit ptrZ (mainZ.toCrtLayoutState.nativeCount ctxZ.main) mainZ.q) ?_
   rintro r ⟨layoutQ, widthQ, ptrQ, linkQ, frameQ, restQ⟩
   have mainR := mainZ.congr (h.main.eq_of_frame h.sepMQ frameQ)
@@ -52,7 +52,7 @@ theorem crt_setupAll_ok (s : State) {base : BitVec 32} {len w : Nat}
   have pR := pZ.congr (h.p.eq_of_frame h.sepPQ frameQ)
   have qR : CrtPrimeState (crtQ base w) base len w r.mem := ⟨⟨layoutQ, widthQ⟩, linkQ⟩
   have restSR := restSZ.trans restQ
-  refine WP.mono (crt_leavePrime_ok r (h.q.congr restSR.wr) (by omega) ptrQ linkQ) ?_
+  refine WP.mono (crt_leavePrime_ok r (h.q.congr restSR.wr) (by omega_using [size]) ptrQ linkQ) ?_
   rintro t ⟨ptrT, memT, restT⟩
   rw [memZ] at frameQ
   have frame : Frame (crtRegions base len w) s.mem r.mem := (frameU.mono (by simp [crtRegions])).trans

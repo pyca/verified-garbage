@@ -115,11 +115,11 @@ theorem keyStep_ok (s : State) (f : Nat → BitVec 16) (x : Byte) (n : Nat) (hn 
     · rw [val₂, keep₁.xmm .xmm1 (by decide), keep₁.xmm .xmm0 (by decide),
         keep₁.xmm .xmm2 (by decide), keep₁.xmm .xmm6 (by decide), val₁,
         hinv.acc, hinv.input, hinv.indices, hinv.ones]
-      apply acc_step f x n (by omega)
+      apply acc_step f x n (by omega_using [hn])
       intro j hj
-      rw [word_readW _ _ hj, hf (8 * n + j) (by omega)]
+      rw [word_readW _ _ hj, hf (8 * n + j) (by omega_using [hn, hj])]
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact congrArg (fun d => s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 d) 16) (by omega)
+      exact congrArg (fun d => s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 d) 16) (by omega_using [])
     · rw [idx₂, keep₁.xmm .xmm2 (by decide), keep₁.xmm .xmm7 (by decide),
         hinv.indices, hinv.eights]
       exact indices_next n
@@ -142,16 +142,16 @@ theorem keySteps_ok (count n : Nat) (hbound : n + count ≤ 8)
     exact ⟨hinv, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, rfl⟩
   | succ count ih =>
     rw [List.range'_succ, List.flatMap_cons, WP.block_append_iff]
-    apply WP.mono (keyStep_ok s f x n (by omega) hinv hf (hread n (by omega)))
+    apply WP.mono (keyStep_ok s f x n (by omega_using [hbound]) hinv hf (hread n (by omega_using [hbound])))
     intro s₁ h₁
     have hf₁ : ∀ i < 64, f i = s₁.mem.readW (s₁.gpr .rdi + BitVec.ofNat 64 (2 * i)) 16 := by
       rw [h₁.2.1.mem, h₁.2.1.reg .rdi (by simp)]; exact hf
     have hr₁ : ∀ i < 8, InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rdi + BitVec.ofNat 64 (16 * i)) 16 := by
       rw [h₁.2.1.rd, h₁.2.1.wr, h₁.2.1.reg .rdi (by simp)]; exact hread
-    apply WP.mono (ih (n + 1) (by omega) s₁ h₁.1 hf₁ hr₁)
+    apply WP.mono (ih (n + 1) (by omega_using [hbound]) s₁ h₁.1 hf₁ hr₁)
     intro s₂ h₂
     refine ⟨?_, h₁.2.1.trans h₂.2.1, h₂.2.2.trans h₁.2.2⟩
-    have he : n + 1 + count = n + (count + 1) := by omega
+    have he : n + 1 + count = n + (count + 1) := by omega_using []
     exact he ▸ h₂.1
 
 end VG.Proof.Rc2.X86_64.Sse2
@@ -171,14 +171,14 @@ theorem schedule_readWord (m : Mem) (p : Addr) (i : Nat) (hi : i < 64) :
   intro j hj
   simp only [Mem.readW, BitVec.getLsbD_setWidth, BitVec.getLsbD_or,
     BitVec.getLsbD_shiftLeft, decide_eq_true hj, Bool.true_and]
-  rw [getLsbD_read _ _ (by omega)]
+  rw [getLsbD_read _ _ (by omega_using [hj])]
   by_cases h : j < 8
   · simp only [h, decide_true, Bool.not_true, Bool.false_and, Bool.or_false,
       Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h, BitVec.add_zero]
-  · have hj' : j - 8 < 8 := by omega
+  · have hj' : j - 8 < 8 := by omega_using [hj]
     simp only [h, decide_false, Bool.not_false]
-    have hdiv : j / 8 = 1 := by omega
-    have hmod : j % 8 = j - 8 := by omega
+    have hdiv : j / 8 = 1 := by omega_using [hj, h]
+    have hmod : j % 8 = j - 8 := by omega_using [hj, h]
     rw [hdiv, hmod]
     have hp : p + BitVec.ofNat 64 (2 * i) + BitVec.ofNat 64 1 =
         p + BitVec.ofNat 64 (2 * i + 1) := by rw [BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -221,12 +221,12 @@ theorem keyLookup_ok (s : State)
       simp only [x, BitVec.toNat_setWidth]
       have h := ((s.gpr .rax).setWidth 6).isLt
       simp only [BitVec.toNat_setWidth] at h
-      omega
+      omega_using []
     have xe : x.toNat = ((s.gpr .rax).setWidth 6).toNat := by
       simp only [x, BitVec.toNat_setWidth]
       have h := ((s.gpr .rax).setWidth 6).isLt
       simp only [BitVec.toNat_setWidth] at h
-      omega
+      omega_using []
     rw [out₄, reduced₃, h₂.1.acc, reduce_acc, ite_eq_left xb]
     dsimp only [f]
     rw [schedule_readWord _ _ _ xb, xe]
@@ -295,8 +295,8 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .rax)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
     ∃ s', runBlock isa (rotate16 r n) s = some s' ∧
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧ Keep [r, .rax] s s' := by
-  have hleft : 1 ≤ 64 - n ∧ 64 - n ≤ 63 := by omega
-  have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 63 := by omega
+  have hleft : 1 ≤ 64 - n ∧ 64 - n ≤ 63 := by omega_using [hn, hn']
+  have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 63 := by omega_using [hn']
   refine ⟨_, by
     simp only [rotate16, rr, runBlock_cons, runStep_some, runBlock_nil, exec,
       execAlu, execShift, readSrc, hleft, hright, and_self, ite_true, hr, Ne.symm hr,
@@ -327,8 +327,8 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
   have h₁ := wordReg_separate (i + 1)
   have h₂ := wordReg_separate (i + 2)
   have h₃ := wordReg_separate (i + 3)
-  have lo := readable (2 * j) (by omega)
-  have hi := readable (2 * j + 1) (by omega)
+  have lo := readable (2 * j) (by omega_using [hj])
+  have hi := readable (2 * j + 1) (by omega_using [hj])
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, mixInputs, loadKey, rr, memOp,
       List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
@@ -498,7 +498,7 @@ theorem wordReg_offset_ne (i : Nat) (hi : i < 4) (d : Nat) (hd : 1 ≤ d) (hd' :
   rw [wordReg_mod (i + d)]
   intro he
   have := (wordReg_injective _ (Nat.mod_lt _ (by decide)) i hi).mp he
-  omega
+  omega_using [hd, hd', this]
 
 theorem keep_inputs {s s' : State} (h : Keep [.r8, .r9, .r10, .r11] s s') (i : Nat) :
     Keep (wordReg i :: temps) s s' := h.weaken (by
@@ -532,7 +532,7 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   have sep := wordReg_separate i
   have hn := rotation_bounds i
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := rotate16_ok s (wordReg i) sep.1 (v.getD i 0)
-    (hv i hi) (16 - Spec.Rc2.rotation i) (by omega) (by omega)
+    (hv i hi) (16 - Spec.Rc2.rotation i) (by omega_using [hn]) (by omega_using [hn])
   rw [rotateLeft_reverse _ _ hn.1 hn.2] at out₁
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
@@ -595,7 +595,7 @@ theorem indexWord (x : BitVec 16) :
     ((x.setWidth 64).setWidth 6).toNat = (x &&& 63).toNat := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
   change x.toNat % 18446744073709551616 % 64 = x.toNat &&& (2 ^ 6 - 1)
-  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 18446744073709551616 by have := x.isLt; omega)]
+  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 18446744073709551616 by have := x.isLt; omega_using [])]
 
 def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
@@ -700,7 +700,7 @@ theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   apply foldWords_ok (step := fun k i v => Spec.Rc2.mix k (4 * j + i) i v) _ _ _ s v hv readable
   intro i hi s v hv readable
   have bound := List.mem_range.mp hi
-  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega) readable.bytes)
+  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega_using [hj, bound]) readable.bytes)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
@@ -713,8 +713,8 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   intro i hi s v hv readable
   have bound : i < 4 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    omega
-  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) readable.bytes)
+    omega_using [hi]
+  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega_using [hj, bound]) readable.bytes)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
@@ -743,7 +743,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
     | encrypt => exact List.mem_range.mp hi
     | decrypt =>
       simp only [order, List.mem_cons, List.not_mem_nil, or_false] at hi
-      omega
+      omega_using [hi]
   apply WP.mono (mash_ok d s v hv i bound readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
@@ -783,7 +783,7 @@ theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv :
     exact finish s₁ _ h₁
   | decrypt =>
     rw [round, WP.block_append_iff]
-    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega) readable)
+    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega_using []) readable)
     intro s₁ h₁
     exact finish s₁ _ h₁
 
@@ -827,7 +827,7 @@ theorem unpackWord_ok (s : State) (i : Nat) (hi : i < 4) :
       · simp only [mem_setReg, mem_arithFlags]
       · simp only [rd_setReg, rd_arithFlags]
       · simp only [wr_setReg, wr_arithFlags]
-  · have hn : 1 ≤ 16 * i ∧ 16 * i ≤ 63 := by omega
+  · have hn : 1 ≤ 16 * i ∧ 16 * i ≤ 63 := by omega_using [hi, hz]
     refine ⟨_, by
       simp only [unpackWord, rr, hz, ite_false, List.cons_append, List.nil_append,
         runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc,
@@ -913,7 +913,7 @@ theorem packWord_ok (s : State) (i : Nat) (hi : 1 ≤ i) (hi' : i < 4) :
     ∃ s', runBlock isa (packWord i) s = some s' ∧
       s'.gpr .rax = s.gpr .rax ||| (s.gpr (wordReg i)).rotateRight (64 - 16 * i) ∧
       Keep [.rax, .rcx] s s' := by
-  have hn : 1 ≤ 64 - 16 * i ∧ 64 - 16 * i ≤ 63 := by omega
+  have hn : 1 ≤ 64 - 16 * i ∧ 64 - 16 * i ≤ 63 := by omega_using [hi, hi']
   refine ⟨_, by
     simp only [packWord, rr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
       execShift, readSrc, Option.map_some, Option.bind_some, gpr_setReg, gpr_setFlags,
@@ -1021,8 +1021,8 @@ theorem saveMem_read (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) (hn 
     rw [saveMem_succ]
     by_cases he : i = n
     · subst i; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)]
-      exact ih (by omega) (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_using [he]) (by omega_using [hn, hi]) (by omega_using [hn])) (by decide)]
+      exact ih (by omega_using [hn]) (by omega_using [hi, he])
 
 theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) (hn : n ≤ 64) :
     Frame [⟨p, 8 * n⟩] m (saveMem m p v n) := by
@@ -1031,7 +1031,7 @@ theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) (hn
   | succ n ih =>
     rw [saveMem_succ]
     have prev : Frame [⟨p, 8 * (n + 1)⟩] m (saveMem m p v n) := by
-      apply (ih (by omega)).sub
+      apply (ih (by omega_using [hn])).sub
       intro r hr
       simp only [List.mem_singleton] at hr
       subst r
@@ -1039,8 +1039,8 @@ theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) (hn
       intro x hx
       change (x - p).toNat + 1 ≤ 8 * n at hx
       change (x - p).toNat + 1 ≤ 8 * (n + 1)
-      omega
-    exact prev.writeW List.mem_cons_self _ (Offset.contains_base p (by omega) (by omega))
+      omega_using [hx]
+    exact prev.writeW List.mem_cons_self _ (Offset.contains_base p (by omega_using []) (by omega_using [hn]))
 
 def saveCode (base : Reg) (regs : Nat → Reg) (n : Nat) : List Instr :=
   (List.range n).map fun i => .store (memOp base (8 * i)) (regs i)
@@ -1056,9 +1056,9 @@ theorem saveCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (n : Nat)
     exact ⟨rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [saveCode, List.range_succ, List.map_append, List.map_cons, List.map_nil, WP.block_append_iff]
-    apply WP.mono (ih (fun i hi => writable i (by omega)))
+    apply WP.mono (ih (fun i hi => writable i (by omega_using [hi])))
     intro s₁ h₁
-    have valid := writable n (by omega)
+    have valid := writable n (by omega_using [])
     have valid₁ : InRegions s₁.wr (s₁.gpr base + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [h₁.1, h₁.2.2.1]; exact valid
     refine WP.of_runBlock ⟨{s₁ with mem := s₁.mem.writeW (s₁.gpr base + BitVec.ofNat 64 (8 * n)) (s₁.gpr (regs n))}, ?_, ?_⟩
@@ -1126,7 +1126,7 @@ theorem restoreCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (is : List 
 theorem saveMem_frame_le (m : Mem) (p : Addr) (v : Nat → BitVec 64)
     (n capacity : Nat) (hn : n ≤ capacity) (hc : capacity ≤ 64) :
     Frame [⟨p, 8 * capacity⟩] m (saveMem m p v n) := by
-  apply (saveMem_frame m p v n (by omega)).sub
+  apply (saveMem_frame m p v n (by omega_using [hn, hc])).sub
   intro r hr
   simp only [List.mem_singleton] at hr
   subst r
@@ -1134,6 +1134,6 @@ theorem saveMem_frame_le (m : Mem) (p : Addr) (v : Nat → BitVec 64)
   intro x hx
   change (x - p).toNat + 1 ≤ 8 * n at hx
   change (x - p).toNat + 1 ≤ 8 * capacity
-  omega
+  omega_using [hn, hx]
 
 end VG.Proof.Rc2.X86_64

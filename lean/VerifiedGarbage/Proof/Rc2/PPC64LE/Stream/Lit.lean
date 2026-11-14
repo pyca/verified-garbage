@@ -21,7 +21,5 @@ from rebuilding it. -/
 
 namespace VG
 
-materialize_code Impl.Rc2.PPC64LE.Stream.encryptUpdate
-materialize_code Impl.Rc2.PPC64LE.Stream.decryptUpdate
 
 end VG

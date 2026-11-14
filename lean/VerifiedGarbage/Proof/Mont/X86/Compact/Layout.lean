@@ -22,12 +22,12 @@ theorem operand_apart {w j : Nat} (operand : Operand j) :
   unfold arrAt hdrBytes
   by_cases before : j < 2
   · exact Or.inl (by
-      have : j ≤ 1 := by omega
+      have : j ≤ 1 := by omega_using [before]
       have := Nat.mul_le_mul_right (8 * (w + 2)) this
-      omega)
+      omega_using [this])
   · exact Or.inr (by
-      have : 4 ≤ j := by omega
+      have : 4 ≤ j := by omega_using [notAcc, notTmp, before]
       have := Nat.mul_le_mul_right (8 * (w + 2)) this
-      omega)
+      omega_using [this])
 
 end VG.Proof.Mont.X86.Compact

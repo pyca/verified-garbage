@@ -31,13 +31,13 @@ theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
   have a4 := call_stackArg (j := 4) facts.argsFits memory (by decide)
   simp only [callValue] at a0 a1 a2 a3 a4
   have widthNat : (BitVec.ofNat 32 p.c.length).toNat = p.c.length := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.width_bounds; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.width_bounds; omega_using [this])]
   have bitsNat : (BitVec.ofNat 32 p.c.bits).toNat = p.c.bits := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.maxBits; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.maxBits; omega_using [this])]
   have genNat : (BitVec.ofNat 32 p.c.generator).toNat = p.c.generator := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rcases p.c.generatorAllowed with eq | eq <;> omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rcases p.c.generatorAllowed with eq | eq <;> omega_using [eq])]
   have tapeNat : (BitVec.ofNat 32 (p.c.bytes.length - used)).toNat = p.c.bytes.length - used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.tapeCount; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := p.c.tapeCount; omega_using [this])]
   have capNat : (BitVec.ofNat 32 p.c.capacity).toNat = p.c.capacity := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.capacity_fits]
   sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,

@@ -21,16 +21,16 @@ theorem loadArray_ok (s : State) (d i : Reg) {base : BitVec 32} {size j a : Nat}
   have shift : BitVec.ofNat 32 j <<< 3 = BitVec.ofNat 32 (8 * j) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 32)]
+    rw [Nat.mod_eq_of_lt (by omega_using [fit, nowrap] : j < 2 ^ 32)]
     congr 1
-    omega
+    omega_using []
   unfold MontFn.loadArray
   refine wp_dp (op2_lsl (by decide)) fun u hu => ?_
   have pu : u.gpr i = base + BitVec.ofNat 32 (8 * j) := by
     rw [hu.gpr, dpVal, ptr, index, shift]
   have wu := ws.congr hu.wr
-  refine wp_ldr (by decide) (wu.ea pu (by omega)) (wu.read (by omega)) fun t ht => WP.block_nil ?_
+  refine wp_ldr (by decide) (wu.ea pu (by omega_using [fit])) (wu.read (by omega_using [fit])) fun t ht => WP.block_nil ?_
   refine ⟨?_, ht.mem.trans hu.mem, (hu.rest (by simp)).trans (ht.rest (by simp))⟩
-  rw [ht.gpr, hu.mem, show 8 * j + 64 = 64 + 8 * j by omega, header]
+  rw [ht.gpr, hu.mem, show 8 * j + 64 = 64 + 8 * j by omega_using [], header]
 
 end VG.Proof.Bignum.Arm

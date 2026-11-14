@@ -62,12 +62,12 @@ variable (hg : Geo L scr)
 include hg
 
 theorem addr {o : Nat} (h : o < oRsa) : State.addr (scr + BitVec.ofNat 32 o) = sa scr o :=
-  addr_add (by have := hg.fit; unfold oRsa at *; omega)
+  addr_add (by have := hg.fit; unfold oRsa at *; omega_using [h, this])
 
 /-- A range of our part of `scratch` within a writable buffer. -/
 theorem inR {o n : Nat} (h : o + n ≤ oRsa) : ∃ R ∈ L.rw, Region.Sub (sR scr o n) R := by
   obtain ⟨k, hk, hR⟩ := hg.sub
-  exact ⟨_, hR, Offset.sub_base _ (by omega)⟩
+  exact ⟨_, hR, Offset.sub_base _ (by omega_using [h, hk])⟩
 
 theorem inW {o n : Nat} (h : o + n ≤ oRsa) : ∃ R ∈ L.W, Region.Sub (sR scr o n) R := by
   obtain ⟨R, hR, hs⟩ := hg.inR h
@@ -93,7 +93,7 @@ theorem ro {σ : State} (ok : L.Ok σ) {o n : Nat} (h : o + n ≤ oRsa) {R : Reg
 
 theorem wr {σ s : State} (hs : L.St σ s) {o n : Nat} (h : o + n ≤ oRsa) : InRegions s.wr (sa scr o) n := by
   obtain ⟨k, hk, hR⟩ := hg.sub
-  exact ⟨_, by rw [hs.wr, hs.ok.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR), Offset.contains_base _ (by omega) (by unfold oRsa at h; omega)⟩
+  exact ⟨_, by rw [hs.wr, hs.ok.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hR), Offset.contains_base _ (by omega_using [h, hk]) (by unfold oRsa at h; omega_using [h])⟩
 
 theorem rd {σ s : State} (hs : L.St σ s) {o n : Nat} (h : o + n ≤ oRsa) :
     InRegions (s.rd ++ s.wr) (sa scr o) n :=
@@ -104,7 +104,7 @@ omit hg in
 /-- Two ranges of our part of `scratch`. -/
 theorem sep {o n e k : Nat} (h : o + n ≤ e ∨ e + k ≤ o) (ho : o + n ≤ oRsa) (he : e + k ≤ oRsa) :
     (sR scr o n).Disjoint (sR scr e k) :=
-  Offset.disjoint _ h (by unfold oRsa at ho; omega) (by unfold oRsa at he; omega)
+  Offset.disjoint _ h (by unfold oRsa at ho; omega_using [ho]) (by unfold oRsa at he; omega_using [he])
 
 end Geo
 
@@ -130,7 +130,7 @@ theorem setReg_iff {σ s : State} {r : Reg} {v : BitVec 32} : Ctx L scr σ (s.se
 /-- A slot's address, for the symbolic execution of a block. -/
 theorem aFr {σ s : State} (hg : Geo L scr) (h : Ctx L scr σ s) :
     ∀ d, d + 4 ≤ frameBytes → State.addr (L.B + BitVec.ofNat 32 d) = L.fr d :=
-  fun d hd => h.st.ok.addrB (by rw [hg.F]; omega)
+  fun d hd => h.st.ok.addrB (by rw [hg.F]; omega_using [hd])
 
 theorem rFr {σ s : State} (hg : Geo L scr) (h : Ctx L scr σ s) :
     ∀ d, d + 4 ≤ frameBytes → InRegions (s.rd ++ s.wr) (L.fr d) 4 :=

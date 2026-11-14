@@ -66,10 +66,10 @@ theorem shl8_add (v : Nat) (hv : v < 2 ^ 32) (b : Byte) :
   apply BitVec.eq_of_toNat_eq
   have hb := b.isLt
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : v < 2 ^ 64), Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega : v * 2 ^ 8 < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv] : v < 2 ^ 64), Nat.shiftLeft_eq,
+    Nat.mod_eq_of_lt (by omega_using [] : b.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [hv] : v * 2 ^ 8 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [hv]), Nat.mod_eq_of_lt (by omega_using [hv])]
+  omega_using []
 
 theorem shr_ofNat {n : Nat} (hn : n < 2 ^ 64) (k : Nat) :
     BitVec.ofNat 64 n >>> k = BitVec.ofNat 64 (n / 2 ^ k) := by
@@ -126,7 +126,7 @@ theorem octet_ok {t : State} {P : Addr} {j v : Nat} {acc : BitVec 64}
       Keep [.a2, .a3, .t0, .t1, .t3, .t4] t u := by
   refine WP.keep [.a2, .a3, .t0, .t1, .t3, .t4] ?_ (by decide +kernel)
   have hb := (t.mem (P + BitVec.ofNat 64 j)).isLt
-  have hN : 256 * v + (t.mem (P + BitVec.ofNat 64 j)).toNat < 2 ^ 64 := by omega
+  have hN : 256 * v + (t.mem (P + BitVec.ofNat 64 j)).toNat < 2 ^ 64 := by omega_using [hv32]
   have e5 : P + BitVec.ofNat 64 j + BitVec.ofNat 64 1 = P + BitVec.ofNat 64 (j + 1) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   unfold octet
@@ -143,23 +143,23 @@ theorem scan_body {s u : State} {P : Addr} {len j : Nat} (hj : j < len)
     fun v ⟨⟨h2, h3, h4, hmv, h6⟩, kv⟩ => ⟨⟨h2, ?_, ?_, ?_, hmv.trans hm, (k.trans kv).mono (by decide)⟩, h6⟩
   · rw [h3, bytesAt_succ, os2ip_snoc, hm]
     congr 1
-    omega
+    omega_using []
   · have := (s.mem (P + BitVec.ofNat 64 j)).isLt
     have := Nat.mod_lt (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P j)) (show 0 < 2 ^ 32 by decide)
-    rw [h4, or_eq_zero, hr4, bytesAt_succ, os2ip_snoc, hm, ofNat64_eq_zero (by omega)]
+    rw [h4, or_eq_zero, hr4, bytesAt_succ, os2ip_snoc, hm, ofNat64_eq_zero (by omega_using [])]
     constructor
     · rintro ⟨h1, h2⟩
       have : 256 * (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P j) % 2 ^ 32) +
         (s.mem (P + BitVec.ofNat 64 j)).toNat < 2 ^ 32 := (Nat.div_eq_zero_iff_lt (by decide)).mp h2
-      omega
+      omega_using [h1, h2]
     · intro h
-      exact ⟨by omega, Nat.div_eq_of_lt (by omega)⟩
+      exact ⟨by omega_using [h], Nat.div_eq_of_lt (by omega_using [h])⟩
   · have := (s.mem (P + BitVec.ofNat 64 j)).isLt
     have := Nat.mod_lt (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem P j)) (show 0 < 2 ^ 32 by decide)
     rw [h4, BitVec.toNat_or, BitVec.toNat_ofNat, hm]
     exact Nat.or_lt_two_pow hlt (by
-      rw [Nat.mod_eq_of_lt (by omega)]
-      exact (Nat.div_lt_iff_lt_mul (by decide)).mpr (by omega))
+      rw [Nat.mod_eq_of_lt (by omega_using [])]
+      exact (Nat.div_lt_iff_lt_mul (by decide)).mpr (by omega_using []))
 
 theorem scan_ok {s : State} {P : Addr} {len : Nat} (hp : s.gpr .a2 = P)
     (hl : s.gpr .a3 = BitVec.ofNat 64 len) (hl64 : len < 2 ^ 64)
@@ -176,7 +176,7 @@ theorem scan_ok {s : State} {P : Addr} {len : Nat} (hp : s.gpr .a2 = P)
     subst hz
     exact WP.block_nil h0
   · have hz : len ≠ 0 := of_decide_eq_false hz
-    exact wp_countdown (N := len) hl64 (by omega) (ScanInv s P)
+    exact wp_countdown (N := len) hl64 (by omega_using [hz]) (ScanInv s P)
       (fun i hi u hI _ => scan_body hi hrd hI) h0 h6
 
 /-! ## The status -/
@@ -200,7 +200,7 @@ theorem and_one (n : Nat) (hn : n < 2 ^ 64) : BitVec.ofNat 64 n &&& BitVec.ofNat
   rw [BitVec.toNat_and]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn, show (1 : Nat) % 2 ^ 64 = 2 ^ 1 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem bit_and (a b : Prop) [Decidable a] [Decidable b] :
     BitVec.ofNat 64 (if a then 1 else 0) &&& BitVec.ofNat 64 (if b then 1 else 0) =
@@ -213,7 +213,7 @@ theorem bit_not (a : Prop) [Decidable a] :
   by_cases ha : a <;> simp only [ha, not_true_eq_false, not_false_eq_true, ↓reduceIte] <;> decide
 
 theorem bit_mod2 (n : Nat) : BitVec.ofNat 64 (n % 2) = BitVec.ofNat 64 (if n % 2 = 1 then 1 else 0) := by
-  congr 1; split <;> omega
+  congr 1; split <;> omega_arith
 
 theorem c8193 : BitVec.ofNat 64 1 <<< 13 + BitVec.ofNat 64 1 = BitVec.ofNat 64 8193 := by decide
 
@@ -224,17 +224,17 @@ theorem expValid_ok (s : State) {E : Nat} (h3 : s.gpr .t3 = BitVec.ofNat 64 (E %
       (t.gpr .t5 = BitVec.ofNat 64 (if E % 2 = 1 ∧ 3 ≤ E ∧ E < 2 ^ 32 then 1 else 0) ∧ t.mem = s.mem) ∧
         Keep [.t0, .t5] s t := by
   refine WP.keep [.t0, .t5] ?_ (by decide +kernel)
-  have hV : E % 2 ^ 32 < 2 ^ 64 := by have := Nat.mod_lt E (show 0 < 2 ^ 32 by decide); omega
+  have hV : E % 2 ^ 32 < 2 ^ 64 := by have := Nat.mod_lt E (show 0 < 2 ^ 32 by decide); omega_using []
   have h4' : s.gpr .t4 = BitVec.ofNat 64 (s.gpr .t4).toNat := by
     apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _)]
   have hz : (s.gpr .t4).toNat < 1 ↔ E < 2 ^ 32 := by
     rw [← h4]; constructor
-    · intro h; exact BitVec.eq_of_toNat_eq (by simp; omega)
+    · intro h; exact BitVec.eq_of_toNat_eq (by simp; omega_using [h])
     · intro h; rw [h]; decide
   generalize (s.gpr .t4).toNat = X at h4' h4b hz
   generalize hVd : E % 2 ^ 32 = V at h3 hV
   unfold expValid
-  brun [h3, h4', exec_li, ltu_ofNat (show X < 2 ^ 64 by omega) (show 1 < 2 ^ 64 by decide),
+  brun [h3, h4', exec_li, ltu_ofNat (show X < 2 ^ 64 by omega_using [h4b]) (show 1 < 2 ^ 64 by decide),
     ltu_ofNat hV (show 3 < 2 ^ 64 by decide), and_one _ hV, bit_mod2, bit_and, bit_not]
   congr 2
   apply propext
@@ -243,10 +243,10 @@ theorem expValid_ok (s : State) {E : Nat} (h3 : s.gpr .t3 = BitVec.ofNat 64 (E %
   constructor
   · rintro ⟨⟨h1, h2⟩, h3⟩
     have : E % 2 ^ 32 = E := Nat.mod_eq_of_lt h1
-    refine ⟨by omega, by omega, h1⟩
+    refine ⟨by omega_using [h2], by omega_using [h3], h1⟩
   · rintro ⟨h1, h2, h3⟩
     have : E % 2 ^ 32 = E := Nat.mod_eq_of_lt h3
-    exact ⟨⟨h3, by omega⟩, by omega⟩
+    exact ⟨⟨h3, by omega_using [h1]⟩, by omega_using [h2, h3]⟩
 
 /-- `sizeValid`: `t6` is 1 exactly for a valid size. -/
 theorem sizeValid_ok (s : State) {bits : Nat} (h1 : s.gpr .a1 = BitVec.ofNat 64 bits) (hb : bits < 2 ^ 64) :
@@ -259,7 +259,7 @@ theorem sizeValid_ok (s : State) {bits : Nat} (h1 : s.gpr .a1 = BitVec.ofNat 64 
     bit_not, bit_and]
   congr 2
   apply propext
-  omega
+  omega_using []
 
 theorem status_vals (a b : Prop) [Decidable a] [Decidable b] :
     (BitVec.ofNat 64 2 - BitVec.ofNat 64 (if b then 1 else 0)) * BitVec.ofNat 64 (if a then 1 else 0) =
@@ -363,14 +363,14 @@ theorem stored_eq (m : Mem) (B : Addr) (w : List (BitVec 64)) : stored m B w =
 theorem stored_word (m : Mem) (B : Addr) (w : List (BitVec 64)) {j : Nat} (hj : j < 7) :
     word (stored m B w) B (8 * j) = w.getD j 0 := by
   rw [stored_eq]
-  simp only [controller_store_word _ _ _ (show 6 < 16 by decide) (show j < 16 by omega),
-    controller_store_word _ _ _ (show 5 < 16 by decide) (show j < 16 by omega),
-    controller_store_word _ _ _ (show 4 < 16 by decide) (show j < 16 by omega),
-    controller_store_word _ _ _ (show 3 < 16 by decide) (show j < 16 by omega),
-    controller_store_word _ _ _ (show 2 < 16 by decide) (show j < 16 by omega),
-    controller_store_word _ _ _ (show 1 < 16 by decide) (show j < 16 by omega),
-    controller_store_word _ _ _ (show 0 < 16 by decide) (show j < 16 by omega)]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6) with
+  simp only [controller_store_word _ _ _ (show 6 < 16 by decide) (show j < 16 by omega_using [hj]),
+    controller_store_word _ _ _ (show 5 < 16 by decide) (show j < 16 by omega_using [hj]),
+    controller_store_word _ _ _ (show 4 < 16 by decide) (show j < 16 by omega_using [hj]),
+    controller_store_word _ _ _ (show 3 < 16 by decide) (show j < 16 by omega_using [hj]),
+    controller_store_word _ _ _ (show 2 < 16 by decide) (show j < 16 by omega_using [hj]),
+    controller_store_word _ _ _ (show 1 < 16 by decide) (show j < 16 by omega_using [hj]),
+    controller_store_word _ _ _ (show 0 < 16 by decide) (show j < 16 by omega_using [hj])]
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6) with
     h | h | h | h | h | h | h <;> subst h <;> rfl
 
 theorem stored_words6 (m : Mem) (B : Addr) (w : List (BitVec 64)) :
@@ -400,9 +400,9 @@ theorem stored_bytes (m : Mem) (B : Addr) (w : List (BitVec 64)) :
   have hi := List.mem_range.mp hi
   simp only [Mem.writeW, Mem.write]
   have hx : (B + 48 + BitVec.ofNat 64 i - (B + 48)).toNat = i := by
-    rw [BitVec.add_comm (B + 48), BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.add_comm (B + 48), BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hi])]
   have h48 : off B 48 = B + 48 := rfl
-  rw [h48, hx, ite_eq_left (by omega)]
+  rw [h48, hx, ite_eq_left (by omega_using [hi])]
   simp only [BitVec.setWidth_eq, Nat.reduceDiv, Nat.reduceMul]
 
 theorem rev_byte (x : BitVec 64) (i : Nat) (hi : i < 8) :
@@ -410,10 +410,10 @@ theorem rev_byte (x : BitVec 64) (i : Nat) (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
   rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
-    byteRev64_getLsbD _ (by omega)]
+    byteRev64_getLsbD _ (by omega_using [hi, hk])]
   simp only [hk, decide_true, Bool.true_and]
   congr 1
-  omega
+  omega_using [hk]
 
 theorem rev_bytes {E : Nat} (hE : E < 2 ^ 64) :
     ((List.range 8).map fun i => (byteRev64 (BitVec.ofNat 64 E)).extractLsb' (8 * i) 8) = Spec.Rsa.i2osp E 8 := by
@@ -423,7 +423,7 @@ theorem rev_bytes {E : Nat} (hE : E < 2 ^ 64) :
   rw [rev_byte _ _ hi, shr_ofNat hE]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt
-    (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hE), show 8 - 1 - i = 7 - i by omega,
+    (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hE), show 8 - 1 - i = 7 - i by omega_using [],
     show (256 : Nat) ^ (7 - i) = 2 ^ (8 * (7 - i)) by rw [Nat.pow_mul]]
 
 /-! ## The result -/
@@ -447,24 +447,24 @@ def initPost (s t : State) : Prop :=
 theorem plen_eq {bits : Nat} (hb : bits < 2 ^ 64) : plenBV bits = BitVec.ofNat 64 (bits / 128 * 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt hb, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt hb, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_using [hb])]
 
 theorem three_eq {V : Nat} (hV : V < 2 ^ 32) : threeBV V = BitVec.ofNat 64 (if V = 3 then 1 else 0) := by
   have hd : (BitVec.ofNat 64 V ^^^ BitVec.ofNat 64 3).toNat < 2 ^ 32 := by
-    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hV])]
     exact Nat.xor_lt_two_pow hV (by decide)
   have he : BitVec.ofNat 64 V ^^^ BitVec.ofNat 64 3 = BitVec.ofNat 64 (BitVec.ofNat 64 V ^^^ BitVec.ofNat 64 3).toNat := by
     apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _)]
-  rw [threeBV, he, ltu_ofNat (by omega) (by decide)]
+  rw [threeBV, he, ltu_ofNat (by omega_using []) (by decide)]
   congr 2
   apply propext
   rw [show (BitVec.ofNat 64 V ^^^ BitVec.ofNat 64 3).toNat < 1 ↔ (BitVec.ofNat 64 V ^^^ BitVec.ofNat 64 3) = 0#64 from
-    ⟨fun h => BitVec.eq_of_toNat_eq (by simp only [BitVec.toNat_ofNat]; omega), fun h => by rw [h]; decide⟩,
+    ⟨fun h => BitVec.eq_of_toNat_eq (by simp only [BitVec.toNat_ofNat]; omega_using [h]), fun h => by rw [h]; decide⟩,
     BitVec.xor_eq_zero_iff]
   constructor
   · intro h
     have := congrArg BitVec.toNat h
-    rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+    rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hV])] at this
   · intro h; subst h; rfl
 
 theorem result_post {s t : State} {E : Nat}
@@ -485,7 +485,7 @@ theorem result_post {s t : State} {E : Nat}
     have hvE : E % 2 = 1 ∧ 3 ≤ E ∧ E < 2 ^ 32 := by
       unfold Spec.RsaKeyGen.exponentValid at hv
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv
-      omega
+      omega_using [hv]
     cases hmb : Spec.RsaKeyGen.modulusBits bits with
     | none =>
       have h2 : initStatus bits E = 2 := by
@@ -501,19 +501,19 @@ theorem result_post {s t : State} {E : Nat}
         · by_cases h2 : bits / 128 * 128 < 512
           · simp [h1, h2] at hmb
           · simp only [h1, h2, ↓reduceIte, Option.some.injEq] at hmb
-            omega
+            omega_using [h1, h2, hmb]
       have h1 : initStatus bits E = 1 := by
-        rw [hst, ite_eq_left hvE, ite_eq_left (by omega)]
-      have hP : nlen / 16 = bits / 128 * 8 := by omega
-      have hL : bits / 128 * 8 ≤ 512 := by omega
-      have hL32 : 32 ≤ bits / 128 * 8 := by omega
+        rw [hst, ite_eq_left hvE, ite_eq_left (by omega_using [hn])]
+      have hP : nlen / 16 = bits / 128 * 8 := by omega_using [hn]
+      have hL : bits / 128 * 8 ≤ 512 := by omega_using [hn]
+      have hL32 : 32 ≤ bits / 128 * 8 := by omega_using [hn]
       refine ⟨by rw [hax, h1]; rfl, 32 * (bits / 128 * 8), ?_, ?_, ?_⟩
       · rw [hm, h1, ite_eq_left rfl, stored_words6]
         simp only [wordValues, plen_eq hb, Nat.mod_eq_of_lt hvE.2.2, three_eq hvE.2.2, List.getD_cons_zero,
           List.getD_cons_succ, hP, List.cons_append, List.nil_append, List.map_cons, List.map_nil,
           Spec.RsaKeyGen.keyGenerations, Spec.RsaKeyGen.primeLimit, Spec.RsaKeyGen.primeEntropy]
-        rw [shl_ofNat _ 15 (by omega), shl_ofNat _ 5 (by omega), shl_ofNat _ 3 (by omega),
-          shl_ofNat _ 4 (by omega), add_ofNat, add_ofNat, add_ofNat]
+        rw [shl_ofNat _ 15 (by omega_using [hn]), shl_ofNat _ 5 (by omega_using [hn]), shl_ofNat _ 3 (by omega_using [hbits]),
+          shl_ofNat _ 4 (by omega_using [hbits]), add_ofNat, add_ofNat, add_ofNat]
         have m1 : (1#64 : BitVec 64) = BitVec.ofNat 64 1 := rfl
         have m0 : (0#64 : BitVec 64) = BitVec.ofNat 64 0 := rfl
         by_cases h3 : E = 3 <;> simp only [h3, ↓reduceIte, List.cons.injEq, and_true] <;>
@@ -521,15 +521,15 @@ theorem result_post {s t : State} {E : Nat}
           first
             | trivial
             | rfl
-            | (rw [m1, ← BitVec.ofNat_mul, add_ofNat]; congr 1; simp only [Nat.reducePow]; omega)
-            | (rw [m0, ← BitVec.ofNat_mul, add_ofNat]; congr 1; simp only [Nat.reducePow]; omega)
-            | (congr 1; simp only [Nat.reducePow]; omega)
+            | (rw [m1, ← BitVec.ofNat_mul, add_ofNat]; congr 1; simp only [Nat.reducePow]; omega_using [])
+            | (rw [m0, ← BitVec.ofNat_mul, add_ofNat]; congr 1; simp only [Nat.reducePow]; omega_using [])
+            | (congr 1; simp only [Nat.reducePow]; omega_using [])
       · rw [hm, h1, ite_eq_left rfl, stored_bytes]
         simp only [wordValues, List.getD_cons_zero, List.getD_cons_succ, Nat.mod_eq_of_lt hvE.2.2]
-        exact rev_bytes (by omega)
+        exact rev_bytes (by omega_using [hvE])
       · simp only [List.getD_cons_zero, List.getD_cons_succ, hP]
         unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
-        omega
+        omega_using [hn]
   · have hv' : Spec.RsaKeyGen.exponentValid E = false := by simpa using hv
     rw [ite_eq_left (by rw [hv']; rfl)]
     have h0 : initStatus bits E = 0 := by
@@ -602,7 +602,7 @@ theorem init_correct (s : State) (h : initPre s) :
   have scr : Scr s (s.gpr .a0) 56 := Scr.of_mem (by rw [hwr]; simp) hroom hal
   have hreads : ∀ i < (s.gpr .a3).toNat, InRegions (s.rd ++ s.wr) (s.gpr .a2 + BitVec.ofNat 64 i) 1 :=
     fun i hi => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   obtain ⟨tr, t, he, hp, k⟩ := init_ok scr hreads
   exact ⟨tr, t, he, abiPreserved_of_keep he k (by decide) (by decide), hp⟩
 

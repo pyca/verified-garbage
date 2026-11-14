@@ -41,7 +41,7 @@ theorem initPostOut_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀ 
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs : ∀ (p : Addr), (∀ a, Region.Contains ⟨p, S.stateBytes⟩ a 1 → m₁ a = m₂ a) →
       ∀ i < S.stateBytes, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) :=
-    fun p hp i hi => (hp _ (Offset.contains_base _ (by omega) (by omega))).symm
+    fun p hp i hi => (hp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hS, hi]))).symm
   exact ⟨hR (hs _ hb.1) h.1, hR (hs _ hb.2.1) h.2⟩
 
 end VG.Proof.Hmac

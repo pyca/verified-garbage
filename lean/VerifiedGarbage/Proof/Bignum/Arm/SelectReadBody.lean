@@ -24,7 +24,7 @@ theorem selectRead_slice {rs : List Region} {p : Addr} {n d : Nat}
     rw [off, Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt bound]
     exact Nat.mod_le _ _
   simp only [Region.Contains] at hc ⊢
-  omega
+  omega_using [hd, hc, le]
 
 theorem selectReadBody_ok {s0 s : State} {dst src : BitVec 32} {n i : Nat}
     (ctx : SelectReadCtx s0 dst src n) (inv : SelectReadInv s0 dst src n i s) (hi : i < n)
@@ -37,16 +37,16 @@ theorem selectReadBody_ok {s0 s : State} {dst src : BitVec 32} {n i : Nat}
       (fit : p.toNat + 4 * n ≤ 2 ^ 32) :
       State.addr (s.gpr r + BitVec.ofNat 32 0) = off (State.addr p) (4 * i) := by
     rw [hp, BitVec.add_zero]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_using [hi, fit])
   have writable : InRegions s.wr (off (State.addr dst) (4 * i)) 4 := by
     rw [inv.rest.wr]
-    exact selectRead_slice ctx.write (by omega) (by omega)
+    exact selectRead_slice ctx.write (by omega_using [hi]) (by omega_using [hi, hn])
   have readableA : InRegions (s.rd ++ s.wr) (off (State.addr dst) (4 * i)) 4 := by
     obtain ⟨r, hr, h⟩ := writable
     exact ⟨r, List.mem_append_right _ hr, h⟩
   have readableB : InRegions (s.rd ++ s.wr) (off (State.addr src) (4 * i)) 4 := by
     rw [inv.rest.rd, inv.rest.wr]
-    exact selectRead_slice ctx.read (by omega) (by omega)
+    exact selectRead_slice ctx.read (by omega_using [hi]) (by omega_using [hi, hn])
   rw [selectBody, WP.seq_iff]
   refine WP.mono (selectStep_ok s _ _ _ (addr inv.outPtr hd) (addr inv.aPtr hd)
     (addr inv.bPtr hs) writable readableA readableB
@@ -57,7 +57,7 @@ theorem selectReadBody_ok {s0 s : State} {dst src : BitVec 32} {n i : Nat}
   rintro t ⟨p0, p10, p12, count, zero, mem2, keep2⟩
   have uc : u.gpr .lr = BitVec.ofNat 32 (n - i) :=
     (keep.gpr .lr (by simp [selectClobbers])).trans inv.count
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨by omega_using [hi], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [p0, keep.gpr .r0 (by simp [selectClobbers]), inv.outPtr]
     change dst + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
@@ -72,7 +72,7 @@ theorem selectReadBody_ok {s0 s : State} {dst src : BitVec 32} {n i : Nat}
     congr 1
   · rw [count, uc]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
   · rw [mem2]; exact outside
   · rw [mem2]; exact frame
@@ -84,7 +84,7 @@ theorem selectReadBody_ok {s0 s : State} {dst src : BitVec 32} {n i : Nat}
     all_goals decide
   · rw [zero, uc]
     change (BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi]), ofNat_beq_zero (by omega_using [hn])]
+    simp only [show n - i - 1 = 0 ↔ i + 1 = n by omega_using [hi]]
 
 end VG.Proof.Bignum.Arm

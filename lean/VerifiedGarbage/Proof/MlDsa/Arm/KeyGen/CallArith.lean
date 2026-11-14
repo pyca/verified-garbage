@@ -98,7 +98,7 @@ theorem mul_ok {c : Prog isa} (hc : Callee c (fun stk => mulContract Arm.abi stk
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := mul_cov hs m
   refine callV hver.1 m.hg (mul_preS hs (Nat.le_trans hstk hS) m rf rg) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri h 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1, g2⟩ := mulG hs m (mulRd L f g) (mulWr L h)
   have := mul_post hp
@@ -115,7 +115,7 @@ theorem mulAdd_ok {c : Prog isa} (hc : Callee c (fun stk => mulAddContract Arm.a
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := mul_cov hs m
   refine callV hver.1 m.hg (mulAdd_preS hs (Nat.le_trans hstk hS) m rh rf rg) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri h 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1, g2⟩ := mulG hs m (mulRd L f g) (mulWr L h)
   have := mulAdd_post hp
@@ -225,7 +225,7 @@ theorem add_ok {c : Prog isa} (hc : Callee c (fun stk => addContract Arm.abi stk
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := acc_cov hs m
   refine callV hver.1 m.hg (add_preS hs (Nat.le_trans hstk hS) m rf rg) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri f 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1⟩ := accG hs m (accRd L g) (accWr L f)
   have := add_post hp
@@ -240,7 +240,7 @@ theorem sub_ok {c : Prog isa} (hc : Callee c (fun stk => subContract Arm.abi stk
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := acc_cov hs m
   refine callV hver.1 m.hg (sub_preS hs (Nat.le_trans hstk hS) m rf rg) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri f 1024] (Nat.le_trans hc.stack hS) hk) ?_
   obtain ⟨g0, g1⟩ := accG hs m (accRd L g) (accWr L f)
   have := sub_post hp

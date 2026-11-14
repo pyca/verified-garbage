@@ -8,6 +8,7 @@ meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Round
 meta import VerifiedGarbage.Proof.TripleDes.Core
 meta import VerifiedGarbage.Proof.TripleDes.Word
 meta import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A bitsliced DES pass, lane by lane
@@ -76,7 +77,7 @@ theorem pairs_halves (keys : DesSchedule) (d : Direction) (n : Nat) (W : Nat →
   induction n with
   | zero => rfl
   | succ n ih =>
-    have e : 2 * (n + 1) = 2 * n + 1 + 1 := by omega
+    have e : 2 * (n + 1) = 2 * n + 1 + 1 := by omega_using []
     rw [e, roundPrefix_succ, roundPrefix_succ, ← ih]
     simp only [pairs]
     obtain ⟨ba₁, ba₂⟩ := roundW_half .ba (roundKey keys d (2 * n)) (pairs (roundKey keys d) n W) hb
@@ -151,7 +152,7 @@ theorem rounds_two_mul (key : Nat → BitVec 48) (n : Nat) (W : Nat → BitVec w
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [show 2 * (n + 1) = 2 * n + 1 + 1 by omega]
+    rw [show 2 * (n + 1) = 2 * n + 1 + 1 by omega_using []]
     simp only [rounds, pairs, ih]
     have h0 : roleAt (2 * n) = .ba := by simp [roleAt]
     have h1 : roleAt (2 * n + 1) = .ab := by simp [roleAt, Nat.add_mod]

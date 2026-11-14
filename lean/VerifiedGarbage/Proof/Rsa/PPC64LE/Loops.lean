@@ -43,7 +43,7 @@ def Ahead (dO dA n : Nat) : Prop := dO ≤ dA ∨ dA + 4 * n ≤ dO
 /-- A digit at `dA + 4 i` is outside the digits written before it. -/
 theorem Ahead.outside {dO dA n i : Nat} (h : Ahead dO dA n) (hi : i < n) :
     dA + 4 * i + 4 ≤ dO ∨ dO + 4 * i ≤ dA + 4 * i := by
-  unfold Ahead at h; omega
+  unfold Ahead at h; omega_using [h, hi]
 
 /-- `[o] := [a] - [b]` over `n` digits (`countLoop .r8 subBody`), from the
 borrow `c` in `r9`: the difference and the borrow out. -/

@@ -81,9 +81,9 @@ theorem frontV : ∀ v s, C0v v s → WP isa (.block Params.entry) s (P0 v) := b
   obtain ⟨hrd, hwr, dKS, -, nw, -, hkl, -, alS, -⟩ := h
   refine WP.mono (pfront_ok_of hL hwr nw alS) fun t ⟨F, k⟩ => ?_
   have hK : Src t (playOf s) (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat) :=
-    psrc_of hrd dKS (by omega) k.2.1 k.2.2
+    psrc_of hrd dKS (by omega_using [hkl]) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
-    hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega), (by simp only [vdV, playOf]; omega),
+    hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdV, playOf]; omega_using []),
     (fun h => nomatch h), fun _ h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem kyC0v : ∀ v s, C0v v s → KY v := by
@@ -96,7 +96,7 @@ abbrev XS (v : VD) (u : State) : Prop := Src u v.L v.key (3 * v.L.pl + 2 * v.L.q
 theorem xsC0v : ∀ v s, C0v v s → XS v s := by
   rintro _ s ⟨h, rfl⟩
   obtain ⟨hrd, -, dKS, -, -, -, hkl, -⟩ := h
-  exact psrc_of hrd dKS (by simp only [vdV, playOf]; omega) rfl rfl
+  exact psrc_of hrd dKS (by simp only [vdV, playOf]; omega_using [hkl]) rfl rfl
 
 theorem xs_at {Φ : VD → State → Prop} {F : List (Prog isa)} {n : Nat} (h : ∀ v s, Φ v s → XS v s) {v : VD}
     {u : State} (hu : At Φ F n v u) : XS v u := by
@@ -245,7 +245,7 @@ theorem pinsV12 : Pins (At ΦVR FVR 12) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s1
     WP.of_flat (c := .seq (.block KP0) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (copy 1 24)
       (.block (getQ .s10)))))) (by decide +kernel)
       (stKV0 (onVR h).1 fun _ c a7 _ a9 =>
-        powP_pre c.cb (c.cb.1.hk.sub (by have := c.cb.1.kn; omega)) a7 a9)
+        powP_pre c.cb (c.cb.1.hk.sub (by have := c.cb.1.kn; omega_using [this])) a7 a9)
 
 /-- A power in the P space, from its pointers. -/
 theorem powV {v : VD} {s : State} {N E : Addr} (h : VK v s) (hN : Src s v.L N v.L.pl) (h7 : s.gpr .s7 = N)
@@ -258,8 +258,8 @@ theorem powV {v : VD} {s : State} {N E : Addr} (h : VK v s) (hN : Src s v.L N v.
   have e0 := e 0; have e1 := e 1; have e24 := e 24; have hw := hL.wp_ge
   refine WP.mono (powSrc_ok hL B.scr B.regs ip I hN h7 hE h9 p0 hp hpo p24) fun t ⟨⟨_, ip', I', o⟩, k⟩ => ?_
   have hb := p_arrays_body hL o
-  exact ⟨⟨B.body k hb, ip', I', (o.wordsVal (by omega) (by omega_arith)).trans p0,
-    (o.wordsVal (by omega) (by omega_arith)).trans p24⟩, (keepQ_arr0 hL (PLow.keepQ hL o)).trans h.q0,
+  exact ⟨⟨B.body k hb, ip', I', (o.wordsVal (by omega_using [e0, e1]) (by omega_arith)).trans p0,
+    (o.wordsVal (by omega_using [e1, e24]) (by omega_arith)).trans p24⟩, (keepQ_arr0 hL (PLow.keepQ hL o)).trans h.q0,
     h.xs.keep k.2.1 k.2.2⟩
 
 theorem pinsV53 : Pins (At ΦVR FVR 53) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
@@ -269,7 +269,7 @@ theorem pinsV53 : Pins (At ΦVR FVR 53) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
     have bd := VG.Proof.Dsa.supported_bounds hsz
     exact WP.of_flat (c := .seq (.block KP0) (.seq Verify.powP (.block ptrY))) (by decide +kernel)
       (stKV0 V fun _ c a7 _ a9 => WP.seq (WP.mono (powV c
-        (c.cb.1.hk.sub (by have := c.cb.1.kn; omega)) a7 (c.xs.sub (by omega)) a9 (by omega) hpo) fun _ c' =>
+        (c.cb.1.hk.sub (by have := c.cb.1.kn; omega_using [this])) a7 (c.xs.sub (by omega_using [])) a9 (by omega_using [bd]) hpo) fun _ c' =>
         WP.mono (ptrY_ok c'.cb.1.scr c'.cb.1.ok c'.cb.1.regs) fun _ ⟨⟨b7, b8, m⟩, k⟩ =>
           (fix_CB (c'.keepM k m).cb).app ⟨b7, b8, trivial⟩))
 
@@ -279,7 +279,7 @@ theorem kpV {v : VD} {s : State} (h : ΦVR v s) : WP isa Sign.keyPair s (Base v)
   have bd := VG.Proof.Dsa.supported_bounds hsz
   have B := V.cb.1
   have hL := B.ok
-  refine WP.mono (keyPair_ok hL B.scr B.regs V.cb.2.1 V.cb.2.2.1 V.xs V.cb.2.2.2.1 (by omega) hpo V.cb.2.2.2.2)
+  refine WP.mono (keyPair_ok hL B.scr B.regs V.cb.2.1 V.cb.2.2.1 V.xs V.cb.2.2.2.1 (by omega_using [bd]) hpo V.cb.2.2.2.2)
     fun t ⟨⟨_, _, _, m, o, w⟩, k⟩ => ?_
   have K : BKept v.L s.mem t.mem := (BKept.ofBody hL (PLow.body hL o)).trans (BKept.ofMask hL w)
   exact B.step (B.regs.ofBKept k K) k.2.1 k.2.2 K.out (K.word (by decide) (by decide)) (K.word (by decide) (by decide))
@@ -307,7 +307,7 @@ theorem pinsV69 : Pins (At ΦVR FVR 69) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
         have e : ∀ j, slot v.L.wq j = 256 + j * (8 * (v.L.wq + 2)) := fun _ => rfl
         have e7 := e 7; have e8 := e 8; have e28 := e 28
         refine WP.seq (WP.mono (zeroArr_ok iq.env (j := 7) (by decide)) fun _ ⟨⟨_, o⟩, k'⟩ => ?_)
-        have B2 := B1.body k' (Body.ofQ hL o (by omega))
+        have B2 := B1.body k' (Body.ofQ hL o (by omega_using [hwq, e7]))
         have iq2 := iq.keep k'
         exact WP.mono (ptrX_ok B2.scr hL B2.regs) fun _ ⟨⟨c7, c8, m'⟩, k''⟩ =>
           ((B2.keepM k'' m').fixB.app (fix_envQ (iq2.keep k''))).app ⟨c7, c8, trivial⟩)))
@@ -407,7 +407,7 @@ theorem vdV_eq {s t : State} (hs : vpkContract.pre s) (hp : vpkContract.pub s t)
   obtain ⟨hl, -⟩ := List.append_inj' hl rfl
   simp only [Spec.Dsa.publicBytesLeak, bytesAt_take] at hl
   have e := (List.map_inj_right fun _ _ h => BitVec.eq_of_toNat_eq h).mp hl
-  rw [← e0, ← e1, ← e2, ← e3, Nat.min_eq_right (by omega)] at e
+  rw [← e0, ← e1, ← e2, ← e3, Nat.min_eq_right (by omega_using [hk])] at e
   simp only [vdV, playOf]
   rw [e, e0, e2, e3, e4, e5]
 

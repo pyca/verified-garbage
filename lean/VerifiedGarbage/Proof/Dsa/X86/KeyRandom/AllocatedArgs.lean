@@ -19,7 +19,7 @@ theorem allocated_arg {s₀ t : State} (h : Ready s₀ t) {i : Nat} (hi : i<11) 
   rw [show t.gpr .esp-4+BitVec.ofNat 32 (4+4*i)=t.gpr .esp+BitVec.ofNat 32 (4*i) by
     rw [BitVec.ofNat_add]
     bv_omega]
-  rw [h.rf.ptr (by unfold argOff VG.Impl.Dsa.X86.KeyRandom.frameBytes; omega)]
+  rw [h.rf.ptr (by unfold argOff VG.Impl.Dsa.X86.KeyRandom.frameBytes; omega_using [hi])]
 
 theorem derivingABI_congr {s t : State} (A : DerivingABI s)
     (sp : t.gpr .esp=s.gpr .esp) (args : ∀ i<9, arg t i=arg s i)
@@ -72,14 +72,14 @@ theorem allocated_derivingABI {s₀ t : State} (A : KeyABI s₀) (R : Ready s₀
     DerivingABI ((allocated 4 t).withRegions (callRd s₀) (callWr s₀)) := by
   apply derivingABI_congr (t := (allocated 4 t).withRegions (callRd s₀) (callWr s₀)) (derivingABI_of (call_pre A R C)) rfl ?_ rfl rfl
   intro i hi
-  rw [allocated_arg R (by omega),ce_arg A R C _ _ hi]
+  rw [allocated_arg R (by omega_using [hi]),ce_arg A R C _ _ hi]
   exact C i hi
 
 theorem allocated_checkingABI {s₀ t : State} (A : KeyABI s₀) (R : Ready s₀ t) (C : CheckCall.CallSlots s₀ t) :
     CheckingABI ((allocated 4 t).withRegions (CheckCall.callRd s₀) (CheckCall.callWr s₀)) := by
   apply checkingABI_congr (t := (allocated 4 t).withRegions (CheckCall.callRd s₀) (CheckCall.callWr s₀)) (checkingABI_of (CheckCall.call_pre A R C)) rfl ?_ rfl rfl
   intro i hi
-  rw [allocated_arg R (by omega),CheckCall.ce_arg A R C _ _ hi]
+  rw [allocated_arg R (by omega_using [hi]),CheckCall.ce_arg A R C _ _ hi]
   exact C i hi
 
 end VG.Proof.Dsa.X86.KeyRandom

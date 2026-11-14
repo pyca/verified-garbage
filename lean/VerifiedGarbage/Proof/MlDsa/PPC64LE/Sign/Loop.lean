@@ -325,7 +325,7 @@ theorem checksR0_ok {σ : State} (hpre:SPre p STK σ) {t : Nat} {s : State} (h:I
     WP isa (checksR0 P p) s (KO p STK σ t) := by
   unfold checksR0
   refine WP.seq (WP.mono (seqOk_ok (I:=fun i=>IQ p STK σ t i i) p.k 0
-    (fun i _ hi s hs=>(r0R_piece hP hF hS (by omega)).ok σ s hpre hs) s h) fun s₁ ⟨k,_,hk,hi,hd⟩=>?_)
+    (fun i _ hi s hs=>(r0R_piece hP hF hS (by omega_using [hi])).ok σ s hpre hs) s h) fun s₁ ⟨k,_,hk,hi,hd⟩=>?_)
   rw [Nat.zero_add] at hk hd
   apply WP.ite _ (eval_nonzero s₁ .r24)
   · intro hb
@@ -341,7 +341,7 @@ theorem checksR0_ok {σ : State} (hpre:SPre p STK σ) {t : Nat} {s : State} (h:I
 theorem zchecks_ok {σ : State} (hpre:SPre p STK σ) {t : Nat} {s : State} (h:IZ p STK σ t 0 0 s) :
     WP isa (.seq (seqOk (zR P p) 0 p.ℓ) (ifOk (checksR0 P p))) s (KO p STK σ t) := by
   refine WP.seq (WP.mono (seqOk_ok (I:=fun i=>IZ p STK σ t i i) p.ℓ 0
-    (fun i _ hi s hs=>(zR_piece hP hF hS (by omega)).ok σ s hpre hs) s h) fun s₁ ⟨k,_,hk,hi,hd⟩=>?_)
+    (fun i _ hi s hs=>(zR_piece hP hF hS (by omega_using [hi])).ok σ s hpre hs) s h) fun s₁ ⟨k,_,hk,hi,hd⟩=>?_)
   rw [Nat.zero_add] at hk hd
   apply WP.ite _ (eval_nonzero s₁ .r24)
   · intro hb
@@ -359,7 +359,7 @@ theorem checks_ok {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h :
   unfold checks
   refine WP.seq (WP.mono ((cntt_piece hP hF hS).ok σ s hpre h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (kinit_piece.ok σ s1 hpre h1) fun s2 h2 => ?_)
-  exact WP.seq (WP.mono (zchecks_ok hP hF hS hpre h2) fun s₃ h₃=>kbranch_ok (by have := hF.l; omega) h₃)
+  exact WP.seq (WP.mono (zchecks_ok hP hF hS hpre h2) fun s₃ h₃=>kbranch_ok (by have := hF.l; omega_using [this]) h₃)
 
 theorem iter_ok (hp : ParamsOk p) {σ : State} (hpre : SPre p STK σ) {t : Nat} {s : State} (h : IL p STK σ t s) :
     WP isa (iter P p) s (LP p STK σ t) := by

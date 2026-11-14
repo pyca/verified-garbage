@@ -32,7 +32,7 @@ theorem stateAt_congr {mem mem' : Mem} {p : Addr} (h : ∀ i < 20, mem' (p + Bit
   intro i hi
   rw [show p + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (4 * k + i) by
     simp only [BitVec.ofNat_add]; rw [BitVec.add_assoc]]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hk, hi])
 
 theorem bytesAt_congr {mem mem' : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < n, mem' (p + BitVec.ofNat 64 i) = mem (p + BitVec.ofNat 64 i)) :
@@ -46,11 +46,11 @@ theorem bytesAt_congr {mem mem' : Mem} {p : Addr} {n : Nat}
 theorem repr_congr {mem mem' : Mem} {p : Addr} {m : List Byte}
     (h : ∀ i < 84, mem' (p + BitVec.ofNat 64 i) = mem (p + BitVec.ofNat 64 i))
     (hr : Spec.Sha1.Repr mem p m) : Spec.Sha1.Repr mem' p m := by
-  refine ⟨by rw [stateAt_congr fun i hi => h i (by omega)]; exact hr.1, ?_⟩
+  refine ⟨by rw [stateAt_congr fun i hi => h i (by omega_using [hi])]; exact hr.1, ?_⟩
   rw [← hr.2]
   apply bytesAt_congr
   intro i hi
-  have := h (20 + i) (by omega)
+  have := h (20 + i) (by omega_using [hi])
   rwa [show p + 20 + BitVec.ofNat 64 i = p + BitVec.ofNat 64 (20 + i) by
     simp only [BitVec.ofNat_add]; rw [BitVec.add_assoc]; rfl]
 
@@ -67,6 +67,6 @@ theorem parseBlock_congr {f g : Nat → Byte} (h : ∀ k < 64, f k = g k) : pars
   funext j
   have := j.isLt
   simp only [parseBlock]
-  rw [h _ (by omega), h _ (by omega), h _ (by omega), h _ (by omega)]
+  rw [h _ (by omega_using []), h _ (by omega_using []), h _ (by omega_using []), h _ (by omega_using [])]
 
 end VG.Proof.Sha1.Stream

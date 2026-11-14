@@ -32,14 +32,14 @@ theorem domainDivides_ok (s : State) {p : Inputs} {slots : List Nat}
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have qStack : Region.Disjoint ⟨State.addr p.q, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.toArgumentMemory.domainSliceStack (by have := p.minLength; omega)
-      (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega)
+    h.toArgumentMemory.domainSliceStack (by have := p.minLength; omega_using [this])
+      (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega_using [])
   rw [VG.Impl.Ffdh.Arm.Domain.CheckDomain.divides, WP.seq_iff]
   refine WP.mono (prepareAt_ok s 60 h stable h60 h32 h0 (h.qBytes hasQ) (p.qLength hasQ) qStack large odd) ?_
   rintro u ⟨contextU, readyU, modU, r2U, frameU, restU⟩
   rw [WP.seq_iff]
   refine WP.mono (importAt_ok u 1 24 32 contextU stable h24 h32 readyU (by decide) (by decide) contextU.pBytes
-    (by rw [p.pLength]; have := p.minLength; omega) (by rw [p.pLength]; exact p.width.2.2.2.1)
+    (by rw [p.pLength]; have := p.minLength; omega_using [this]) (by rw [p.pLength]; exact p.width.2.2.2.1)
     (by change BitVec.ofNat 32 p.k = _; rw [p.pLength])) ?_
   rintro v ⟨_, readyV, valueV, keepsV, frameV, restV⟩
   have fits : arrAt p.w 8 ≤ 8 * p.len := readyV.width ▸ readyV.layout.2.2.1

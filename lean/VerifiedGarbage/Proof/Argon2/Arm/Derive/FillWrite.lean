@@ -40,10 +40,10 @@ include hp
 
 theorem blocks22 : blocksN s₀ < 2 ^ 22 := by
   have hb := hp.blocks_lt
-  omega
+  omega_using [hb]
 
 theorem mem_addr' {o : Nat} (ho : o < blocksN s₀ * 1024) : A (memP s₀) o = memB s₀ + BitVec.ofNat 64 o :=
-  addr_add (by have := hp.mem_fits; omega)
+  addr_add (by have := hp.mem_fits; omega_using [ho, this])
 
 /-- A word of the matrix after a store to another, or the same. -/
 theorem mw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ blocksN s₀ * 1024) (hb : b + 4 ≤ blocksN s₀ * 1024)
@@ -52,8 +52,8 @@ theorem mw_store (m : Mem) {a b : Nat} (ha : a + 4 ≤ blocksN s₀ * 1024) (hb 
   have := blocks22 hp
   by_cases e : a = b
   · subst e; rw [ite_eq_left rfl]; exact Mem.readW_writeW_self32 _ _ _
-  · rw [ite_eq_right e, mw, mw, mem_addr' hp (by omega), mem_addr' hp (by omega)]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  · rw [ite_eq_right e, mw, mw, mem_addr' hp (by omega_using [ha]), mem_addr' hp (by omega_using [hb])]
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [h, e]) (by omega_using [hb, this]) (by omega_using [ha, this])) (by decide)
 
 /-- The words of the current block, `n` of them written. -/
 theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < blocksN s₀) (xo : Bool)
@@ -67,14 +67,14 @@ theorem writeWords_ok {s : State} (h : Inv s₀ s) {cur : Nat} (hc : cur < block
       ∀ i < 256, mw s₀ t.mem (cur * 1024 + 4 * i) = if i < n then
         (if xo then s.mem.readW (A P (4 * i)) 32 ^^^ mw s₀ s.mem (cur * 1024 + 4 * i) else s.mem.readW (A P (4 * i)) 32)
         else mw s₀ s.mem (cur * 1024 + 4 * i)
-  | 0, _ => WP.block_nil ⟨h, fun _ _ _ => rfl, Frame.refl _ _, fun i _ => by rw [ite_eq_right (by omega)]⟩
+  | 0, _ => WP.block_nil ⟨h, fun _ _ _ => rfl, Frame.refl _ _, fun i _ => by rw [ite_eq_right (by omega_using [])]⟩
   | n + 1, hn => by
     have hs := hp.scr_fits
     have hm := hp.mem_fits
     have hb := blocks22 hp
-    have hc' : cur * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega
+    have hc' : cur * 1024 + 1024 ≤ blocksN s₀ * 1024 := by omega_using [hc]
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append ((writeWords_ok h hc xo hsi hPfit hPw hPC hdi n (by omega)).mono
+    refine WP.block_append ((writeWords_ok h hc xo hsi hPfit hPw hPC hdi n (by omega_using [hn])).mono
       fun t ⟨it, gt, ft, wt⟩ => ?_)
     have cell : matrixCell (memB s₀) cur = memB s₀ + BitVec.ofNat 64 (cur * 1024) := rfl
     -- The source word is kept: only the current block has been written.

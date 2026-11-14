@@ -51,9 +51,9 @@ theorem inRegions_off {rs : List Region} {a : Addr} {n off l : Nat} (h : InRegio
   obtain ⟨r, hr, hc⟩ := h
   refine ⟨r, hr, ?_⟩
   simp only [Region.Contains] at hc ⊢
-  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega)]
+  rw [Offset.add_sub_comm, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [hl, hn])]
   have := Nat.mod_le ((a - r.base).toNat + off) (2 ^ 64)
-  omega
+  omega_using [hl, hc]
 
 theorem copyBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 8)
     (h1 : InRegions s.wr (s.gpr .rdi) 8) :
@@ -72,13 +72,13 @@ theorem copy_byte (m m' : Mem) (p q : Addr) {k j : Nat} (hj : j < 2 ^ 62) (hk : 
   split
   · rename_i h
     have e := writeW_byte m (p + BitVec.ofNat 64 (8 * k)) (m'.readW (q + BitVec.ofNat 64 (8 * k)) 64)
-      (k := j - 8 * k) (by omega) (by decide)
-    rw [off_add, Nat.add_sub_cancel' h.1, byte_readW _ _ (by omega), off_add, Nat.add_sub_cancel' h.1] at e
+      (k := j - 8 * k) (by omega_using [h]) (by decide)
+    rw [off_add, Nat.add_sub_cancel' h.1, byte_readW _ _ (by omega_using [h]), off_add, Nat.add_sub_cancel' h.1] at e
     exact e
   · rename_i h
     refine writeW_byte_off _ _ _ _ ?_
-    rw [Offset.sub_toNat' _ (by omega) (by omega)]
-    split <;> omega
+    rw [Offset.sub_toNat' _ (by omega_using [hk]) (by omega_using [hj])]
+    split <;> omega_arith
 
 theorem copy_ok (dst src : Ptr) (n : Nat) (hn0 : 0 < n ∧ n % 8 = 0) (hn : n < 2 ^ 31) (hd : dst.2 < 2 ^ 31)
     (hs : src.2 < 2 ^ 31) (hsr : src.1 ≠ .rdi) (s : State)
@@ -91,9 +91,9 @@ theorem copy_ok (dst src : Ptr) (n : Nat) (hn0 : 0 < n ∧ n % 8 = 0) (hn : n < 
   refine WP.seq (WP.mono (WP.keep [.rdi, .rsi, .rcx] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rdi = pa s dst ∧
       s'.gpr .rsi = pa s src ∧ s'.gpr .rcx = BitVec.ofNat 64 (n / 8))
     (by xrun [sx_ofNat hd, sx_ofNat hs, hsr, List.cons_append, List.nil_append,
-      sw_ofNat (show n / 8 < 2 ^ 32 by omega)])
+      sw_ofNat (show n / 8 < 2 ^ 32 by omega_using [hn])])
     (by rfl)) fun s1 ⟨⟨hm1, hdi1, hsi1, hcx1⟩, k1⟩ => ?_)
-  refine WP.mono (wp_countdown (cnt := .rcx) (N := n / 8) (by omega) (by omega) (fun k s' =>
+  refine WP.mono (wp_countdown (cnt := .rcx) (N := n / 8) (by omega_using [hn]) (by omega_using [hn0]) (fun k s' =>
       s'.gpr .rdi = pa s dst + BitVec.ofNat 64 (8 * k) ∧ s'.gpr .rsi = pa s src + BitVec.ofNat 64 (8 * k) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨pa s dst, n⟩] s.mem s'.mem ∧
       (∀ j < 8 * k, s'.mem (pa s dst + BitVec.ofNat 64 j) = s.mem (pa s src + BitVec.ofNat 64 j)) ∧
@@ -102,20 +102,20 @@ theorem copy_ok (dst src : Ptr) (n : Nat) (hn0 : 0 < n ∧ n % 8 = 0) (hn : n < 
     ⟨by rw [hdi1]; simp, by rw [hsi1]; simp, k1.2.1, k1.2.2, by rw [hm1]; exact Frame.refl _ _,
       fun j hj => absurd hj (Nat.not_lt_zero _), k1.mono (by decide)⟩ hcx1)
     fun s' ⟨_, _, _, _, hf, hc, kk⟩ => ⟨?_, hf, kk⟩
-  · refine WP.mono (copyBody_ok s' (by rw [hrd', hwr', hsi]; exact inRegions_off hrd (by omega) (by omega))
-      (by rw [hwr', hdi]; exact inRegions_off hwr (by omega) (by omega))) fun s'' ⟨⟨hm, hdi', hsi', hcx, hz⟩, k'⟩ =>
+  · refine WP.mono (copyBody_ok s' (by rw [hrd', hwr', hsi]; exact inRegions_off hrd (by omega_using [hk]) (by omega_using [hn]))
+      (by rw [hwr', hdi]; exact inRegions_off hwr (by omega_using [hk]) (by omega_using [hn]))) fun s'' ⟨⟨hm, hdi', hsi', hcx, hz⟩, k'⟩ =>
         ⟨⟨by rw [hdi', hdi, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, off_add]; rfl,
           by rw [hsi', hsi, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, off_add]; rfl,
           k'.2.1.trans hrd', k'.2.2.trans hwr', ?_, fun j hj => ?_, (kk.trans k').mono (by decide)⟩, hcx, hz⟩
     · rw [hm, hdi]
-      exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega) (by omega))
-    · rw [hm, hdi, hsi, copy_byte _ _ _ _ (by omega) (by omega)]
+      exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega_using [hk]) (by omega_using [hn]))
+    · rw [hm, hdi, hsi, copy_byte _ _ _ _ (by omega_using [hn, hk, hj]) (by omega_using [hn, hk])]
       split
       · rename_i h
-        exact hf.bytes (R := ⟨pa s src, n⟩) (by simpa using hdj) (show n ≤ 2 ^ 64 by omega) (show j < n by omega)
-      · exact hc j (by omega)
+        exact hf.bytes (R := ⟨pa s src, n⟩) (by simpa using hdj) (show n ≤ 2 ^ 64 by omega_using [hn]) (show j < n by omega_using [hk, hj])
+      · exact hc j (by omega_arith)
   · simp only [bytesAt]
-    exact List.map_congr_left fun i hi => hc i (by have := List.mem_range.mp hi; omega)
+    exact List.map_congr_left fun i hi => hc i (by have := List.mem_range.mp hi; omega_using [hn0, this])
 
 section
 variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s)
@@ -159,7 +159,7 @@ theorem setQ_ok (p : Ptr) (v : Nat) (hr : p.1 ≠ .rax) (hv : v < 2 ^ 31) (s : S
     WP isa (.block (setQ p v)) s fun s' => s'.mem = s.mem.writeW (pa s p) (BitVec.ofNat 64 v) ∧ Keep [.rax] s s' := by
   refine WP.keep [.rax] ?_ (by rfl)
   unfold setQ
-  xrun [hw, hr, sw_ofNat (show v < 2 ^ 32 by omega)]
+  xrun [hw, hr, sw_ofNat (show v < 2 ^ 32 by omega_using [hv])]
 
 theorem setQ_okB {p : Ptr} {v : Nat} (hr : p.1 ≠ .rax) (hv : v < 2 ^ 31) (hc : inB wbs p 8 = true) :
     WP isa (.block (setQ p v)) s fun s' => PPostB D s s' [(p, 8)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧

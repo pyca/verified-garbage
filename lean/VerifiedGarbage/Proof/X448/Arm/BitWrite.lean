@@ -25,7 +25,7 @@ open VG VG.Arm VG.Impl.X448.Arm
 theorem sub_toNat_lt_one (x a : Addr) : (x - a).toNat < 1 ↔ x = a := by
   constructor
   · intro h
-    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega)
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by rw [show (0 : Addr).toNat = 0 from rfl]; omega_using [h])
     calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
       _ = a := by rw [h0]; exact BitVec.zero_add a
   · rintro rfl; simp
@@ -65,7 +65,7 @@ theorem bitShift_eval (s : State) {j : Nat} (hj : j < 8) :
   by_cases hz : j = 0
   · subst j; simp only [ite_true, Op2.eval, BitVec.ushiftRight_zero]
   · rw [ite_eq_right hz]
-    exact VG.Proof.X25519.Arm.op2_lsr (by omega)
+    exact VG.Proof.X25519.Arm.op2_lsr (by omega_using [hj, hz])
 
 theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 56)
     (hp : s.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 (8 * i))
@@ -78,10 +78,10 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u hu => ?_
   have ea : State.addr (u.gpr .r7 + BitVec.ofNat 32 (BITS + j)) = off base (BITS + (8 * i + j)) := by
     rw [hu.other .r7 (by decide), ht.other .r7 (by decide), hp,
-      BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [BITS]; omega)]
-    congr 1; omega
-  have wr := hs.write (d := BITS + (8 * i + j)) (n := 1) (by simp only [BITS]; omega)
-  refine VG.Proof.X25519.Arm.wp_strb (by simp only [BITS]; omega) ea
+      BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [BITS]; omega_using [hi, hj])]
+    congr 1; omega_using []
+  have wr := hs.write (d := BITS + (8 * i + j)) (n := 1) (by simp only [BITS]; omega_using [hi, hj])
+  refine VG.Proof.X25519.Arm.wp_strb (by simp only [BITS]; omega_using [hj]) ea
     (by rw [hu.wr, ht.wr]; exact wr) fun v hv => WP.block_nil ⟨?_, ?_⟩
   · rw [hv.mem, hu.mem, ht.mem, hu.gpr]
     change s.mem.writeW _ ((t.gpr .r2 &&& (1 : BitVec 32)).setWidth 8) = _
@@ -107,14 +107,14 @@ theorem byteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : 
     · intro j hj
       rw [um, writeW8_apply]
       have eq : off base (BITS + (8 * i + j)) = off base (BITS + (8 * i + n)) ↔ j = n := by
-        rw [off_eq_iff base (by simp only [BITS]; omega) (by simp only [BITS]; omega)]
-        omega
+        rw [off_eq_iff base (by simp only [BITS]; omega_using [hi, hn, hj]) (by simp only [BITS]; omega_using [hi, hn])]
+        omega_using []
       by_cases he : j = n
       · rw [ite_eq_left (eq.mpr he), he]
-      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
+      · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega_using [hj, he])
     · intro x hx
       rw [um]
-      exact writeW8_outside _ _ _ (by simp only [BITS]; omega) (by omega)
+      exact writeW8_outside _ _ _ (by simp only [BITS]; omega_using [hi, hn]) (by omega_using [hn, hx])
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 

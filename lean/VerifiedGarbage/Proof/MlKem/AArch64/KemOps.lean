@@ -48,7 +48,7 @@ abbrev sA (L : Layout) (s₀ : State) (o : Nat) : Addr := kA s₀ L.sc + BitVec.
 def PO (P : KemLay) (off : Nat) : Prop := AH ≤ off ∧ off + 1024 ≤ SV P
 
 theorem PO.le {off : Nat} (h : PO P off) : off + 1024 ≤ SV P + 48 := by
-  obtain ⟨-, h⟩ := h; omega
+  obtain ⟨-, h⟩ := h; omega_using [h]
 
 theorem PO.safe {s₀ : State} (hp : Pre P L s₀) {off : Nat} (h : PO P off) :
     Safe P L s₀ (R (kA s₀) L.sc off 1024) :=
@@ -91,7 +91,7 @@ theorem prfCbd_ok {s₀ : State} (hp : Pre P L s₀) {N off : Nat} (hN : N < 256
         rw [List.mem_singleton.mp hr]
         exact sdisj hp (by kom) (by kom) (by decide)) (by decide), hr]
     refine congrArg (rv ++ ·) (bytesAt_eq rfl fun k hk' => ?_)
-    have : k = 0 := by omega
+    have : k = 0 := by omega_using [hk']
     subst this
     rw [ptr_zero, ptr_add, m₂, writeW8_apply, ite_eq_left rfl, e₁]
     exact sfx8 hN
@@ -263,12 +263,12 @@ theorem width_imm : ∀ d < 12, (((BitVec.ofNat 16 d).setWidth 64).setWidth 32).
   decide
 
 theorem slot_ne {k : Nat} (hk : k < 4) (r : Reg) (hr : r ∈ [Reg.x0, .x1, .x2, .x3]) : r ≠ slotReg k := by
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
   rcases mem4 hr with rfl | rfl | rfl | rfl <;> decide
 
 theorem slot_off {s₀ : State} (hp : Pre P L s₀) {k o l : Nat} (hk : k < 4) (f : o + l ≤ L.len (L.slot k)) :
     o < 65536 := by
-  have := hp.args.len _ (hp.lt hk); omega
+  have := hp.args.len _ (hp.lt hk); omega_using [f, this]
 
 /-- `ByteEncode_d(Compress_d(f))` of the polynomial at `off` into bytes
 `[o, o + 32d)` of the buffer in `slotReg k`, by a function meeting the
@@ -322,7 +322,7 @@ theorem ceWith_ok {s₀ : State} (hp : Pre P L s₀) {name : String} {code : Pro
     by rw [k₅.cs _ (by decide) (by decide), h₄.get .x24, h₃.get .x24, h₂.get .x24, h₁.get .x24]⟩
 
 theorem mem_widths {d : Nat} (hd : d ∈ compressWidths) : d < 12 := by
-  simp only [compressWidths, List.mem_cons, List.not_mem_nil, or_false] at hd; omega
+  simp only [compressWidths, List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd]
 
 /-- `ByteEncode_d(Compress_d(f))` for the widths of ML-KEM-768 (`d = 1`). -/
 theorem ce_ok {s₀ : State} (hp : Pre P L s₀) {off d k o : Nat} (ho : PO P off) (hd : d ∈ compressWidths)
@@ -346,7 +346,7 @@ theorem ceL_ok {s₀ : State} (hp : Pre P L s₀) (hc : Calls P) {off d k o : Na
       KB P L s₀ s' ∧ Frame [R (kA s₀) (L.slot k) o (32 * d)] s.mem s'.mem ∧
       bytesAt s'.mem (kA s₀ (L.slot k) + BitVec.ofNat 64 o) (32 * d) =
         compressEncode d (polyAt s.mem (sA L s₀ off)) ∧ s'.gpr .x24 = s.gpr .x24 :=
-  ceWith_ok hp (fun h => by have := hp.wf.facts; omega) hc.ce ho hd hk4 hw f hs hk hr
+  ceWith_ok hp (fun h => by have := hp.wf.facts; omega_using [h, this]) hc.ce ho hd hk4 hw f hs hk hr
 
 /-- `Decompress_d(ByteDecode_d(·))` of bytes `[o, o + 32d)` of the buffer in
 `slotReg k`, into the polynomial at `off`, by a function meeting the contract
@@ -409,7 +409,7 @@ theorem ddL_ok {s₀ : State} (hp : Pre P L s₀) (hc : Calls P) {k o d off : Na
       PolyIs s'.mem (sA L s₀ off)
         (decodeDecompress d (bytesAt s.mem (kA s₀ (L.slot k) + BitVec.ofNat 64 o) (32 * d))) ∧
       s'.gpr .x24 = s.gpr .x24 :=
-  ddWith_ok hp (fun h => by have := hp.wf.facts; omega) hc.dd hk4 f hd ho hs hk
+  ddWith_ok hp (fun h => by have := hp.wf.facts; omega_using [h, this]) hc.dd hk4 f hd ho hs hk
 
 /-- `ByteDecode₁₂` of bytes `[o, o + 384)` of the buffer in `slotReg k`, into
 the polynomial at `off`. -/

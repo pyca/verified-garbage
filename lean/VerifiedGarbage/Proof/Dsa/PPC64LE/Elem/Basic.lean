@@ -24,7 +24,7 @@ open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Dsa.PPC64LE
 open VG.Proof.Bignum (slot)
 
 theorem Lay.Ok.hdr {L : Lay} (hL : L.Ok) : 256 ≤ L.Z := by
-  have := hL.room; rcases hL.pl with e | e | e <;> omega
+  have := hL.room; rcases hL.pl with e | e | e <;> omega_using [this, e]
 
 theorem unmask_eq (b : Bool) :
     (mask b &&& BitVec.ofNat 64 1) ^^^ BitVec.ofNat 64 1 = BitVec.ofNat 64 (if b then 0 else 1) := by
@@ -61,7 +61,7 @@ theorem Src.bytesPre {s : State} {L : Lay} {D : Addr} {n : Nat} (h : Src s L D n
   refine List.map_congr_left fun i hi => hb _ (Or.inr ?_)
   have hi := List.mem_range.mp hi
   by_contra hc
-  exact h.sep i (by omega) (D + BitVec.ofNat 64 i) (by omega) rfl
+  exact h.sep i (by omega_using [hk, hi]) (D + BitVec.ofNat 64 i) (by omega) rfl
 
 /-- `Env`, again after code that set `r31` back to the space. -/
 theorem env_keep31 {s t : State} {B : Addr} {Z w : Nat} {rs : List Reg} (h : Env s B Z w) (k : Keep rs s t)

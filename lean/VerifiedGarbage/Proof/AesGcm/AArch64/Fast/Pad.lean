@@ -57,8 +57,8 @@ theorem ghashFrom_pad (H y : Block) {b : List Byte} (hb : b.length ≤ 16) :
   by_cases h0 : b = []
   · subst h0; rfl
   · have hl : 0 < b.length := List.length_pos_iff.mpr h0
-    have hp : padLen b.length = 16 - b.length := by simp only [padLen]; omega
-    rw [hp, Proof.Gcm.blocks_single (by simp [Spec.Gcm.zeros]; omega)]
+    have hp : padLen b.length = 16 - b.length := by simp only [padLen]; omega_using [hb, hl]
+    rw [hp, Proof.Gcm.blocks_single (by simp [Spec.Gcm.zeros]; omega_using [hb])]
     simp only [padStep, h0, ↓reduceIte]
     rfl
 
@@ -71,7 +71,7 @@ theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n
       Others [.x9, .x11, .x12, .x13, .x14, .x15] s s' ∧ Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem ∧
       (∀ r, r ∉ [A, LO, MID, HI, T, Y] → s'.v r = s.v r) := by
   unfold Impl.AesGcm.AArch64.Fast.padMul
-  refine WP.ite (decide (n = 0)) (eval_zero h13 (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (n = 0)) (eval_zero h13 (by omega_using [hn])) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n = 0 := by simpa using ht
     subst h0
     exact WP.block_nil ⟨by rw [show bytesAt s.mem P 0 = [] from rfl]; exact hy, hk, he, fun _ _ => rfl,
@@ -90,22 +90,22 @@ theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n
   obtain ⟨og₁, sp₁, rd₁, wr₁, v₁⟩ := r₁
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have lp : LoopPre s₁ P (W + BitVec.ofNat 64 96) n := by
-    refine ⟨by omega, by rw [rd₁, wr₁]; exact hP, by rw [wr₁]; exact he.perm.wC (by omega),
-      hPW.sub_right (Region.sub_prefix (by omega))⟩
+    refine ⟨by omega_using [hn], by rw [rd₁, wr₁]; exact hP, by rw [wr₁]; exact he.perm.wC (by omega_using [hn]),
+      hPW.sub_right (Region.sub_prefix (by omega_using [hn]))⟩
   refine WP.seq (WP.mono (WP.keepV (copy_ok s₁ (by rw [og₁ _ (by decide), h12]) x11₁
     (by rw [og₁ _ (by decide), h13]) lp) copy_novec) fun s₂ ⟨⟨m₂, g₂, sp₂, rd₂, wr₂⟩, v₂⟩ => ?_)
   have fz : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s₁.mem := by rw [m₁]; exact Proof.Cmac.frame_store2 _ _ _
   have hPo : bytesAt s₁.mem P n = bytesAt s.mem P n :=
-    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hPW) (by omega)
+    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hPW) (by omega_using [hn])
   have hlen := length_bytesAt s₁.mem P n
   have hT : bytesAt s₂.mem (W + BitVec.ofNat 64 96) 16 = bytesAt s.mem P n ++ zeros (16 - n) := by
-    rw [m₂, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by decide), hlen, hPo]
+    rw [m₂, bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_using [hn]) (by decide), hlen, hPo]
     congr 1
     have := zeroT_bytes s.mem (W + BitVec.ofNat 64 96)
-    rw [← m₁, show (16 : Nat) = n + (16 - n) by omega, bytesAt_add] at this
+    rw [← m₁, show (16 : Nat) = n + (16 - n) by omega_using [hn], bytesAt_add] at this
     have e := congrArg (List.drop n) this
     rw [List.drop_left' (length_bytesAt _ _ _)] at e
-    rw [e, show n + (16 - n) = 16 by omega, Spec.Gcm.zeros, List.drop_replicate]
+    rw [e, show n + (16 - n) = 16 by omega_using [hn], Spec.Gcm.zeros, List.drop_replicate]
     rfl
   have gg : ∀ r, r ∉ [Reg.x9, .x11, .x12, .x13, .x14, .x15] → s₂.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -129,7 +129,7 @@ theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n
   · rw [o₃.mem, m₂]
     exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [hn])⟩)
 
 /-- GHASH of the padded input, from that of the additional data padded and
 the whole blocks `w` of the text, and its last bytes `t`. -/
@@ -142,12 +142,12 @@ theorem ghash_padded (H : Block) (a w t : List Byte) (hw : w.length % 16 = 0) (h
   · have hX : (a ++ zeros (padLen a.length) ++ w).length % 16 = 0 := by
       simp only [List.length_append, Proof.Gcm.length_zeros]
       have := Proof.Gcm.length_pad_mod a.length
-      omega
+      omega_using [hw, this]
     have hp : padLen (a ++ zeros (padLen a.length) ++ (w ++ t)).length = padLen t.length := by
       have h := hX
       simp only [List.length_append, Proof.Gcm.length_zeros] at h ⊢
-      simp only [padLen] at h ⊢; omega
+      simp only [padLen] at h ⊢; omega_using [hw]
     rw [Proof.Gcm.padded, Proof.Gcm.ghashInput_of_ne hc, hp, ← List.append_assoc, List.append_assoc _ t,
-      blocks_append hX, ghash, Proof.Gcm.ghashFrom_append, ← ghash, ghashFrom_pad H _ (by omega)]
+      blocks_append hX, ghash, Proof.Gcm.ghashFrom_append, ← ghash, ghashFrom_pad H _ (by omega_using [ht])]
 
 end VG.Proof.AesGcm.AArch64.Fast

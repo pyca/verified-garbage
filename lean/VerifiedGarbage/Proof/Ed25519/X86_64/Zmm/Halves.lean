@@ -31,13 +31,13 @@ theorem _root_.VG.Proof.Ed25519.X86_64.Ifma.EConsts.of_mq {m m' : Mem} {base : A
     (w : ∀ d, 1344 ≤ d → d + 8 ≤ 4096 → mq m' base d = mq m base d) : EConsts m' base := by
   refine ⟨⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, fun l hl => ?_⟩, fun l hl => ?_,
     fun l hl => ?_, fun l hl => ?_⟩
-  · rw [w _ (by simp only [KM]; omega) (by simp only [KM]; omega)]; exact hk.km l hl
-  · rw [w _ (by simp only [K19]; omega) (by simp only [K19]; omega)]; exact hk.k19 l hl
-  · rw [w _ (by simp only [KB0]; omega) (by simp only [KB0]; omega)]; exact hk.kb0 l hl
-  · rw [w _ (by simp only [KB1]; omega) (by simp only [KB1]; omega)]; exact hk.kb1 l hl
-  · rw [w _ (by simp only [EK13]; omega) (by simp only [EK13]; omega)]; exact hk.k13 l hl
-  · rw [w _ (by simp only [EK26]; omega) (by simp only [EK26]; omega)]; exact hk.k26 l hl
-  · rw [w _ (by simp only [EK39]; omega) (by simp only [EK39]; omega)]; exact hk.k39 l hl
+  · rw [w _ (by simp only [KM]; omega_using []) (by simp only [KM]; omega_using [hl])]; exact hk.km l hl
+  · rw [w _ (by simp only [K19]; omega_using []) (by simp only [K19]; omega_using [hl])]; exact hk.k19 l hl
+  · rw [w _ (by simp only [KB0]; omega_using []) (by simp only [KB0]; omega_using [hl])]; exact hk.kb0 l hl
+  · rw [w _ (by simp only [KB1]; omega_using []) (by simp only [KB1]; omega_using [hl])]; exact hk.kb1 l hl
+  · rw [w _ (by simp only [EK13]; omega_using []) (by simp only [EK13]; omega_using [hl])]; exact hk.k13 l hl
+  · rw [w _ (by simp only [EK26]; omega_using []) (by simp only [EK26]; omega_using [hl])]; exact hk.k26 l hl
+  · rw [w _ (by simp only [EK39]; omega_using []) (by simp only [EK39]; omega_using [hl])]; exact hk.k39 l hl
 
 /-! ## Registers -/
 
@@ -50,13 +50,13 @@ theorem Rel.qw_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b 
     (hj : xi r ∉ J) {k : Nat} (hk : k < 4) : qw y r k = qw (Zmm.half b h z) r k := by
   rw [qw_half b z r hk]
   simp only [qw, zq]
-  rw [hr.lane hj (show k / 2 < 2 by omega)]
+  rw [hr.lane hj (show k / 2 < 2 by omega_using [hk])]
 
 theorem Rel.lanes_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y) {r : Nat}
     (hr16 : r + 5 ≤ 16) (hj : ∀ q, r ≤ q → q < r + 5 → q ∉ J) :
     ∀ l < 4, ∀ i < 5, lanes y r l i = lanes (Zmm.half b h z) r l i := fun l hl i hi => by
   simp only [lanes]
-  rw [hr.qw_eq (by rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega)]; exact hj _ (by omega) (by omega)) hl]
+  rw [hr.qw_eq (by rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega_using [hr16, hi])]; exact hj _ (by omega_using []) (by omega_using [hi])) hl]
 
 theorem Rel.lanePt_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y)
     (hj : ∀ q < 5, q ∉ J) : lanePt y = lanePt (Zmm.half b h z) := by
@@ -76,7 +76,7 @@ theorem Rel.mq_eq {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b 
   simp only [mq]
   refine Mem.readW_congr fun i hi => ?_
   rw [Offset.add_ofNat_add_ofNat]
-  exact hr.mem _ (by rw [off_ofNat _ (by omega)]; unfold InZ ZB; omega)
+  exact hr.mem _ (by rw [off_ofNat _ (by omega_using [hd, hi])]; unfold InZ ZB; omega_using [hd, hi])
 
 theorem Rel.econsts {b : Addr} {h : Nat} {J : List Nat} {z y : State} (hr : Rel b h J z y)
     (hk : EConsts y.mem b) : EConsts (Zmm.half b h z).mem b :=

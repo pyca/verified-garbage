@@ -50,7 +50,7 @@ theorem be64_toNat (m : Mem) (p : Addr) (off : Nat) :
       m (p + BitVec.ofNat 64 off + BitVec.ofNat 64 7)] from rfl]
   simp only [add_ofNat_add, Nat.add_zero, be64, BitVec.toNat_append, shl8_or, ofBytes, List.foldl_cons,
     List.foldl_nil]
-  omega
+  omega_using []
 
 /-- A number's top word. -/
 theorem wordsVal_top (m : Mem) (b : Addr) : ∀ (a k : Nat),
@@ -58,9 +58,9 @@ theorem wordsVal_top (m : Mem) (b : Addr) : ∀ (a k : Nat),
   | a, 0 => by simp [wordsVal]
   | a, k + 1 => by
     rw [wordsVal, wordsVal_top m b (a + 8) k, wordsVal, pow64_succ,
-      show a + 8 + 8 * k = a + 8 * (k + 1) by omega]
+      show a + 8 + 8 * k = a + 8 * (k + 1) by omega_using []]
     rw [Nat.mul_add, Nat.mul_assoc]
-    omega
+    omega_using []
 
 /-- The bytes of a number of `a + b` bytes: its top `a`, then its low `b`. -/
 theorem toBytes_add (a b x : Nat) : toBytes (a + b) x = toBytes a (x >>> (8 * b)) ++ toBytes b x := by
@@ -80,7 +80,7 @@ theorem toBytes_mod (b x w : Nat) : toBytes b (x + 2 ^ (8 * b) * w) = toBytes b 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   have e : 2 ^ (8 * b) = 2 ^ (8 * i) * (256 * 2 ^ (8 * (b - i - 1))) := by
-    rw [show 256 = 2 ^ 8 from rfl, ← Nat.pow_add, ← Nat.pow_add]; congr 1; omega
+    rw [show 256 = 2 ^ 8 from rfl, ← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_using [hi]
   rw [e, Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.mul_assoc, Nat.add_mul_mod_self_left]
 
 /-- `storeBE`'s bytes are `toBytes`. -/
@@ -102,7 +102,7 @@ theorem bytesAt_out {base q : Addr} {o len n : Nat} {m m' : Mem} (h : Outside ba
   rw [List.mem_range] at hi
   have := hsep i hi
   simp only [Region.Contains] at this
-  exact h _ (.inr (by simp only [ofs]; omega))
+  exact h _ (.inr (by simp only [ofs]; omega_using [hl, this]))
 
 /-- `loadNum`: the `8 k` bytes at `p + off`, big-endian, to the slot at `o`. -/
 theorem loadNum_ok : ∀ (k : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg} {off : Nat},
@@ -117,35 +117,35 @@ theorem loadNum_ok : ∀ (k : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg}
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hp
     rw [loadNum, List.append_assoc]
     refine WP.block_append (WP.mono (VG.RISCV64.ByteLoad.loadBE64_ok (d := .t0) (tmp := .t1) (n := p) (off := off)
-      (Ne.symm hp.1) (Ne.symm hp.2) (by decide) (by omega) (by simpa using hin 0 (by omega))) fun s₁ e₁ => ?_)
+      (Ne.symm hp.1) (Ne.symm hp.2) (by decide) (by omega_using [hoff]) (by simpa using hin 0 (by omega_using []))) fun s₁ e₁ => ?_)
     subst e₁
     have r₁ : Rest [.t0, .t1] s ((s.write .t1 ((s.mem (s.gpr p + BitVec.ofNat 64 (off + 7))).setWidth 64)).write .t0
         (be64 s.mem (s.gpr p) off)) :=
       ((Upd.write _ _ _).rest (by decide)).trans ((Upd.write _ _ _).rest (by decide))
     have hw₁ := hw.of_rest r₁
-    refine sdAt_ws hw₁ (by decide) (d := o + 8 * k) (by omega) (by omega) fun s₂ u₂ => ?_
+    refine sdAt_ws hw₁ (by decide) (d := o + 8 * k) (by omega_using [ho']) (by omega_using [ho]) fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := r₁.trans (u₂.rest _)
     have O₂ : Outside base (o + 8 * k) 8 s.mem s₂.mem := by
-      rw [u₂.mem]; exact writeW_outside _ _ _ (by omega)
+      rw [u₂.mem]; exact writeW_outside _ _ _ (by omega_using [ho'])
     have g₂ : s₂.gpr p = s.gpr p := r₂.gpr _ (by simp [hp.1, hp.2])
-    refine WP.mono (loadNum_ok k (hw.of_rest r₂) (p := p) (off := off + 8) (by simp [hp.1, hp.2]) ho (by omega)
-      (by omega) (fun j hj => by
-        rw [r₂.rd, r₂.wr, g₂, show off + 8 + 8 * j = off + 8 * (j + 1) by omega]
-        exact hin (j + 1) (by omega))
+    refine WP.mono (loadNum_ok k (hw.of_rest r₂) (p := p) (off := off + 8) (by simp [hp.1, hp.2]) ho (by omega_using [ho'])
+      (by omega_using [hoff]) (fun j hj => by
+        rw [r₂.rd, r₂.wr, g₂, show off + 8 + 8 * j = off + 8 * (j + 1) by omega_using []]
+        exact hin (j + 1) (by omega_using [hj]))
       (fun i hi => by
-        rw [g₂, show off + 8 + i = off + (8 + i) by omega]
-        exact hsep _ (by omega)))
-      fun s₃ ⟨r₃, O₃, e₃⟩ => ⟨r₂.trans r₃, (O₂.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega)), ?_⟩
+        rw [g₂, show off + 8 + i = off + (8 + i) by omega_using []]
+        exact hsep _ (by omega_using [hi])))
+      fun s₃ ⟨r₃, O₃, e₃⟩ => ⟨r₂.trans r₃, (O₂.mono (by omega_using []) (by omega_using [])).trans (O₃.mono (by omega_using []) (by omega_using [])), ?_⟩
     have e₃' : wordsVal s₃.mem base o k = ofBytes (bytesAt s.mem (s.gpr p + BitVec.ofNat 64 (off + 8)) (8 * k)) := by
-      rw [e₃, g₂, bytesAt_out O₂ (by omega) (fun i hi => by
-        rw [add_ofNat_add, show off + 8 + i = off + (8 + i) by omega]; exact hsep (8 + i) (by omega))]
-    rw [wordsVal_top, e₃', O₃.word (by omega) (by omega), u₂.mem, word_writeW_self]
+      rw [e₃, g₂, bytesAt_out O₂ (by omega_using [ho']) (fun i hi => by
+        rw [add_ofNat_add, show off + 8 + i = off + (8 + i) by omega_using []]; exact hsep (8 + i) (by omega_using [hi]))]
+    rw [wordsVal_top, e₃', O₃.word (by omega_using []) (by omega_using [ho']), u₂.mem, word_writeW_self]
     simp only [State.write, ↓reduceIte]
-    rw [be64_toNat, show 8 * (k + 1) = 8 + 8 * k by omega, bytesAt_add, ofBytes_append, length_bytesAt,
+    rw [be64_toNat, show 8 * (k + 1) = 8 + 8 * k by omega_using [], bytesAt_add, ofBytes_append, length_bytesAt,
       add_ofNat_add, show (256 : Nat) ^ (8 * k) = 2 ^ (64 * k) by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega]
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega_using []]
     rw [Nat.mul_comm (2 ^ (64 * k))]
-    omega
+    omega_using []
 
 /-- `setConst`: `x mod 2^(64 k)` to the slot at `o`. -/
 theorem setConst_ok : ∀ (k : Nat) {s : State} {base : Addr} {o x : Nat},
@@ -161,12 +161,12 @@ theorem setConst_ok : ∀ (k : Nat) {s : State} {base : Addr} {o x : Nat},
     have r₁ : Rest [.t0, .t1] s ((s.write .t1 (sext32 ((BitVec.ofNat 64 x).setWidth 32))).write .t0
         (BitVec.ofNat 64 x)) :=
       ((Upd.write _ _ _).rest (by decide)).trans ((Upd.write _ _ _).rest (by decide))
-    refine sdAt_ws (hw.of_rest r₁) (by decide) (d := o) (by omega) ho fun s₂ u₂ => ?_
+    refine sdAt_ws (hw.of_rest r₁) (by decide) (d := o) (by omega_using [ho']) ho fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := r₁.trans (u₂.rest _)
-    have O₂ : Outside base o 8 s.mem s₂.mem := by rw [u₂.mem]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (setConst_ok k (hw.of_rest r₂) (o := o + 8) (x := x >>> 64) (by omega) (by omega))
-      fun s₃ ⟨r₃, O₃, e₃⟩ => ⟨r₂.trans r₃, (O₂.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega)), ?_⟩
-    rw [wordsVal, e₃, O₃.word (by omega) (by omega), u₂.mem, word_writeW_self, pow64_succ, Nat.mod_mul,
+    have O₂ : Outside base o 8 s.mem s₂.mem := by rw [u₂.mem]; exact writeW_outside _ _ _ (by omega_using [ho'])
+    refine WP.mono (setConst_ok k (hw.of_rest r₂) (o := o + 8) (x := x >>> 64) (by omega_using [ho]) (by omega_using [ho']))
+      fun s₃ ⟨r₃, O₃, e₃⟩ => ⟨r₂.trans r₃, (O₂.mono (by omega_using []) (by omega_using [])).trans (O₃.mono (by omega_using []) (by omega_using [])), ?_⟩
+    rw [wordsVal, e₃, O₃.word (by omega_using []) (by omega_using [ho']), u₂.mem, word_writeW_self, pow64_succ, Nat.mod_mul,
       Nat.shiftRight_eq_div_pow]
     simp only [State.write, ↓reduceIte, BitVec.toNat_ofNat]
 
@@ -179,7 +179,7 @@ theorem writeBytes_unch {base Q : Addr} {xs : List Byte} (m : Mem)
   have h := hx _ (List.mem_singleton_self _)
   have hlt := (x - base).isLt
   simp only [ofs] at h
-  have h' : (x - base).toNat < 8192 := by omega
+  have h' : (x - base).toNat < 8192 := by omega_using [h]
   simp only [writeBytes]
   split
   · rename_i hi
@@ -187,7 +187,7 @@ theorem writeBytes_unch {base Q : Addr} {xs : List Byte} (m : Mem)
     refine hsep _ hi ?_
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
     show (x - base).toNat + 1 ≤ 8192
-    omega
+    omega_using [h]
   · rfl
 
 open VG.WriteBytes in
@@ -206,7 +206,7 @@ theorem storeNum_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {a : Na
   | k + 1, s, base, a, q, off, hw, hc, hq, ha, ha', hoff, hout, hsep => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [storeNum, List.cons_append, List.append_assoc]
-    refine ldAt_ws hw (d := a + 8 * k) (by omega) (by omega) fun s₁ u₁ => wp_and fun s₂ u₂ => ?_
+    refine ldAt_ws hw (d := a + 8 * k) (by omega_using [ha']) (by omega_using [ha]) fun s₁ u₁ => wp_and fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have g₂ : s₂.gpr q = s.gpr q := r₂.gpr _ (by simp [hq.1, hq.2])
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
@@ -214,11 +214,11 @@ theorem storeNum_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {a : Na
       rw [u₂.gpr, u₁.gpr, u₁.other .a7 (by decide), hc]
     rw [List.nil_append]
     refine WP.block_append (WP.mono (VG.RISCV64.ByteLoad.storeBE_ok (s := s₂) (v := .t0) (tmp := .t1) (n := q)
-      (off := off) (w := 8) (by decide) (Ne.symm hq.2) (by decide) (by decide) (by omega) (fun j hj => by
-        rw [r₂.wr, g₂]; exact hout j (by omega))) fun s₃ e₃ => ?_)
+      (off := off) (w := 8) (by decide) (Ne.symm hq.2) (by decide) (by decide) (by omega_using [hoff]) (fun j hj => by
+        rw [r₂.wr, g₂]; exact hout j (by omega_using [hj]))) fun s₃ e₃ => ?_)
     have hB : (beBytes 8 (s₂.gpr .t0)).length = 8 := VG.RISCV64.ByteLoad.beBytes_length _ _
     have U₃ := writeBytes_unch (base := base) (Q := s.gpr q + BitVec.ofNat 64 off) (xs := beBytes 8 (s₂.gpr .t0))
-      s.mem (fun i hi => by rw [hB] at hi; rw [add_ofNat_add]; exact hsep i (by omega))
+      s.mem (fun i hi => by rw [hB] at hi; rw [add_ofNat_add]; exact hsep i (by omega_using [hi]))
     have mem₃ : s₃.mem = writeBytes s₂.mem (s₂.gpr q + BitVec.ofNat 64 off) (beBytes 8 (s₂.gpr .t0)) := by
       rw [e₃]; rfl
     have r₃ : Rest [.t0, .t1] s₂ s₃ := ⟨fun r hr => by
@@ -227,31 +227,31 @@ theorem storeNum_ok (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr} {a : Na
     have g₃ : s₃.gpr q = s.gpr q := (r₂.trans r₃).gpr _ (by simp [hq.1, hq.2])
     refine WP.mono (storeNum_ok c k ((hw.of_rest r₂).of_rest r₃) (a := a) (q := q) (off := off + 8)
       (by rw [(r₂.trans r₃).gpr _ (by decide), hc]) (by simp [hq.1, hq.2]) ha
-      (by omega) (by omega)
+      (by omega_using [ha']) (by omega_using [hoff])
       (fun i hi => by
-        rw [(r₂.trans r₃).wr, g₃, show off + 8 + i = off + (8 + i) by omega]
-        exact hout _ (by omega))
+        rw [(r₂.trans r₃).wr, g₃, show off + 8 + i = off + (8 + i) by omega_using []]
+        exact hout _ (by omega_using [hi]))
       (fun i hi => by
-        rw [g₃, show off + 8 + i = off + (8 + i) by omega]
-        exact hsep _ (by omega)))
+        rw [g₃, show off + 8 + i = off + (8 + i) by omega_using []]
+        exact hsep _ (by omega_using [hi])))
       fun s₄ ⟨r₄, m₄⟩ => ⟨(r₂.trans r₃).trans r₄, ?_⟩
     have hwa := writeBytes_append s.mem (s.gpr q + BitVec.ofNat 64 off) (beBytes 8 (s₂.gpr .t0))
       (toBytes (8 * k) (if c then wordsVal s.mem base a k else 0)) (by
-        rw [hB, VG.Proof.Weierstrass.length_toBytes]; omega)
+        rw [hB, VG.Proof.Weierstrass.length_toBytes]; omega_using [ha'])
     rw [hB, add_ofNat_add] at hwa
     rw [m₄, mem₃, g₃, g₂, m₂]
-    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hwa]
+    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [ha']) (by omega_using [ha']), hwa]
     congr 1
-    rw [v₂, beBytes_eq, wordsVal_top, show 8 * (k + 1) = 8 + 8 * k by omega, toBytes_add]
+    rw [v₂, beBytes_eq, wordsVal_top, show 8 * (k + 1) = 8 + 8 * k by omega_using [], toBytes_add]
     have hX := wordsVal_lt s.mem base a k
     cases c
     · simp [maskOf]
     · simp only [maskOf, ↓reduceIte, BitVec.and_allOnes]
       have e1 : (wordsVal s.mem base a k + 2 ^ (64 * k) * (word s.mem base (a + 8 * k)).toNat) >>> (8 * (8 * k)) =
           (word s.mem base (a + 8 * k)).toNat := by
-        rw [Nat.shiftRight_eq_div_pow, show 8 * (8 * k) = 64 * k by omega, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
+        rw [Nat.shiftRight_eq_div_pow, show 8 * (8 * k) = 64 * k by omega_using [], Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
           Nat.div_eq_of_lt hX, Nat.zero_add]
-      rw [e1, show 2 ^ (64 * k) = 2 ^ (8 * (8 * k)) by congr 1; omega, toBytes_mod]
+      rw [e1, show 2 ^ (64 * k) = 2 ^ (8 * (8 * k)) by congr 1; omega_using [], toBytes_mod]
 
 /-! ## Numbers of any length in bytes -/
 
@@ -280,28 +280,28 @@ theorem loadBytesBE_ok : ∀ (k : Nat) {s : State} {p : Reg} {off : Nat},
   | k + 1, s, p, off, hp, ho, hk, hv, hin => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hp
     rw [loadBytesBE]
-    have h0 := hin 0 (by omega)
+    have h0 := hin 0 (by omega_using [])
     rw [Nat.add_zero] at h0
-    refine WP.block_append (WP.mono (loadByte_ok hp.1 (by omega) h0)
+    refine WP.block_append (WP.mono (loadByte_ok hp.1 (by omega_using [ho]) h0)
       fun s₁ ⟨r₁, m₁, e₁⟩ => ?_)
     generalize hB : s.mem (s.gpr p + BitVec.ofNat 64 off) = B at e₁
     have hb := B.isLt
     have g₁ := r₁.gpr p (by simp [hp.1, hp.2])
     have eX : (256 : Nat) ^ (8 - k) = 256 ^ (8 - (k + 1)) * 256 := by
-      rw [← Nat.pow_succ]; congr 1; omega
+      rw [← Nat.pow_succ]; congr 1; omega_using [hk]
     have hX : (256 : Nat) ^ (8 - k) ≤ 2 ^ 64 :=
-      Nat.le_trans (Nat.pow_le_pow_right (n := 256) (by decide) (show 8 - k ≤ 8 by omega)) (by decide)
+      Nat.le_trans (Nat.pow_le_pow_right (n := 256) (by decide) (show 8 - k ≤ 8 by omega_using [])) (by decide)
     have v₁ : (s₁.gpr .t0).toNat = (s.gpr .t0).toNat * 256 + B.toNat := by
       rw [e₁, BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, Nat.shiftLeft_eq,
         Nat.mod_eq_of_lt (show (s.gpr .t0).toNat * 2 ^ 8 < 2 ^ 64 by omega),
-        Nat.mod_eq_of_lt (show B.toNat < 2 ^ 64 by omega),
+        Nat.mod_eq_of_lt (show B.toNat < 2 ^ 64 by omega_using []),
         ← Nat.shiftLeft_eq, ← Nat.shiftLeft_add_eq_or_of_lt (show B.toNat < 2 ^ 8 from hb), Nat.shiftLeft_eq]
     refine WP.mono (loadBytesBE_ok k (s := s₁) (p := p) (off := off + 1)
-      (by simp [hp.1, hp.2]) (by omega) (by omega) (by rw [v₁]; omega) (fun i hi => ?_))
+      (by simp [hp.1, hp.2]) (by omega_using [ho]) (by omega_using [hk]) (by rw [v₁]; omega_using [hv, eX]) (fun i hi => ?_))
       fun s₂ ⟨r₂, m₂, e₂⟩ => ⟨r₁.trans r₂, by rw [m₂, m₁], ?_⟩
-    · rw [g₁, r₁.rd, r₁.wr, show off + 1 + i = off + (i + 1) by omega]
-      exact hin _ (by omega)
-    · rw [e₂, g₁, v₁, m₁, show k + 1 = 1 + k by omega, bytesAt_add, ofBytes_append, length_bytesAt,
+    · rw [g₁, r₁.rd, r₁.wr, show off + 1 + i = off + (i + 1) by omega_using []]
+      exact hin _ (by omega_using [hi])
+    · rw [e₂, g₁, v₁, m₁, show k + 1 = 1 + k by omega_using [], bytesAt_add, ofBytes_append, length_bytesAt,
         add_ofNat_add]
       have e1 : bytesAt s.mem (s.gpr p + BitVec.ofNat 64 off) 1 = [B] := by
         simp [bytesAt, ← hB]
@@ -319,51 +319,51 @@ theorem loadLen_ok (len : Nat) {s : State} {base : Addr} {o : Nat} {p : Reg} {of
       wordsVal s'.mem base o ((len + 7) / 8) = ofBytes (bytesAt s.mem (s.gpr p + BitVec.ofNat 64 off) len) := by
   have hin : ∀ {s₀ : State}, s₀.rd ++ s₀.wr = s.rd ++ s.wr → s₀.gpr p = s.gpr p → ∀ i n, i + n ≤ len →
       InRegions (s₀.rd ++ s₀.wr) (s₀.gpr p + BitVec.ofNat 64 (off + i)) n := fun e g i n hi => by
-    rw [e, g]; exact ⟨_, hrd, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [e, g]; exact ⟨_, hrd, Offset.contains_base _ (by omega_using [hoff, hi]) (by omega_using [hoff, hL, hi])⟩
   rw [loadLen]
   split
   · rename_i h8
-    rw [List.nil_append, h8, Nat.add_zero, show (len + 7) / 8 = len / 8 by omega]
-    refine WP.mono (loadNum_ok (len / 8) hw hp ho (by omega) (by omega) (fun j hj => hin rfl rfl _ _ (by omega))
-      (fun i hi => hsep i (by omega))) fun s' ⟨r', O', e'⟩ => ⟨r', O', ?_⟩
-    rw [e', show 8 * (len / 8) = len by omega]
+    rw [List.nil_append, h8, Nat.add_zero, show (len + 7) / 8 = len / 8 by omega_using [h8]]
+    refine WP.mono (loadNum_ok (len / 8) hw hp ho (by omega_using [ho']) (by omega_using [hoff, hL]) (fun j hj => hin rfl rfl _ _ (by omega_using [hj]))
+      (fun i hi => hsep i (by omega_using [hi]))) fun s' ⟨r', O', e'⟩ => ⟨r', O', ?_⟩
+    rw [e', show 8 * (len / 8) = len by omega_using [h8]]
   · rename_i h8
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hp
-    have hq : (len + 7) / 8 = len / 8 + 1 := by omega
+    have hq : (len + 7) / 8 = len / 8 + 1 := by omega_using [h8]
     rw [hq, List.append_assoc, List.append_assoc, List.singleton_append]
     refine wp_li (imm := 0) (by decide) fun s₁ u₁ => ?_
     have r₁ : Rest [.t0, .t1] s s₁ := u₁.rest (by decide)
     have g₁ : s₁.gpr p = s.gpr p := r₁.gpr _ (by simp [hp.1, hp.2])
     refine WP.block_append (WP.mono (loadBytesBE_ok (len % 8) (s := s₁) (p := p) (off := off)
-      (by simp [hp.1, hp.2]) (by omega) (by omega) (by rw [u₁.gpr]; exact Nat.pow_pos (by decide))
-      (fun i hi => hin (by rw [r₁.rd, r₁.wr]) g₁ _ _ (by omega))) fun s₂ ⟨r₂, m₂, e₂⟩ => ?_)
+      (by simp [hp.1, hp.2]) (by omega_using [hoff, hL]) (by omega_using []) (by rw [u₁.gpr]; exact Nat.pow_pos (by decide))
+      (fun i hi => hin (by rw [r₁.rd, r₁.wr]) g₁ _ _ (by omega_using [hi]))) fun s₂ ⟨r₂, m₂, e₂⟩ => ?_)
     have r₁₂ := r₁.trans r₂
-    refine sdAt_ws (hw.of_rest r₁₂) (by decide) (d := o + 8 * (len / 8)) (by omega) (by omega) fun s₃ u₃ => ?_
+    refine sdAt_ws (hw.of_rest r₁₂) (by decide) (d := o + 8 * (len / 8)) (by omega_using [ho', h8]) (by omega_using [ho]) fun s₃ u₃ => ?_
     have r₃ : Rest [.t0, .t1] s s₃ := r₁₂.trans (u₃.rest _)
     have O₃ : Outside base (o + 8 * (len / 8)) 8 s.mem s₃.mem := by
-      rw [u₃.mem, m₂, u₁.mem]; exact writeW_outside _ _ _ (by omega)
+      rw [u₃.mem, m₂, u₁.mem]; exact writeW_outside _ _ _ (by omega_using [ho'])
     have g₃ : s₃.gpr p = s.gpr p := r₃.gpr _ (by simp [hp.1, hp.2])
     refine WP.mono (loadNum_ok (len / 8) (hw.of_rest r₃) (p := p) (o := o) (off := off + len % 8)
-      (by simp [hp.1, hp.2]) ho (by omega) (by omega)
+      (by simp [hp.1, hp.2]) ho (by omega_using [ho']) (by omega_using [hoff, hL])
       (fun j hj => by
-        rw [show off + len % 8 + 8 * j = off + (len % 8 + 8 * j) by omega]
-        exact hin (by rw [r₃.rd, r₃.wr]) g₃ _ _ (by omega))
+        rw [show off + len % 8 + 8 * j = off + (len % 8 + 8 * j) by omega_using []]
+        exact hin (by rw [r₃.rd, r₃.wr]) g₃ _ _ (by omega_using [hj]))
       (fun i hi => by
-        rw [g₃, show off + len % 8 + i = off + (len % 8 + i) by omega]
-        exact hsep _ (by omega)))
-      fun s₄ ⟨r₄, O₄, e₄⟩ => ⟨r₃.trans r₄, (O₃.mono (by omega) (by omega)).trans (O₄.mono (by omega) (by omega)), ?_⟩
+        rw [g₃, show off + len % 8 + i = off + (len % 8 + i) by omega_using []]
+        exact hsep _ (by omega_using [hi])))
+      fun s₄ ⟨r₄, O₄, e₄⟩ => ⟨r₃.trans r₄, (O₃.mono (by omega_using []) (by omega_using [])).trans (O₄.mono (by omega_using []) (by omega_using [])), ?_⟩
     have e₄' : wordsVal s₄.mem base o (len / 8) =
         ofBytes (bytesAt s.mem (s.gpr p + BitVec.ofNat 64 (off + len % 8)) (8 * (len / 8))) := by
-      rw [e₄, g₃, bytesAt_out O₃ (by omega) (fun i hi => by
-        rw [add_ofNat_add, show off + len % 8 + i = off + (len % 8 + i) by omega]; exact hsep _ (by omega))]
-    rw [wordsVal_top, e₄', O₄.word (by omega) (by omega), u₃.mem, word_writeW_self, e₂, u₁.gpr, g₁]
-    rw [show len = len % 8 + 8 * (len / 8) by omega, bytesAt_add, ofBytes_append, length_bytesAt,
+      rw [e₄, g₃, bytesAt_out O₃ (by omega_using [ho']) (fun i hi => by
+        rw [add_ofNat_add, show off + len % 8 + i = off + (len % 8 + i) by omega_using []]; exact hsep _ (by omega_using [hi]))]
+    rw [wordsVal_top, e₄', O₄.word (by omega_using []) (by omega_using [ho']), u₃.mem, word_writeW_self, e₂, u₁.gpr, g₁]
+    rw [show len = len % 8 + 8 * (len / 8) by omega_using [], bytesAt_add, ofBytes_append, length_bytesAt,
       add_ofNat_add, show (256 : Nat) ^ (8 * (len / 8)) = 2 ^ (64 * (len / 8)) by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega]
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega_using []]
     simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_mul, Nat.zero_add]
-    rw [show (len % 8 + 8 * (len / 8)) % 8 = len % 8 by omega, show (len % 8 + 8 * (len / 8)) / 8 = len / 8 by omega]
+    rw [show (len % 8 + 8 * (len / 8)) % 8 = len % 8 by omega_using [], show (len % 8 + 8 * (len / 8)) / 8 = len / 8 by omega_using []]
     rw [Nat.mul_comm (2 ^ (64 * (len / 8))), u₁.mem]
-    omega
+    omega_using []
 
 /-- `storeBE`'s `w` bytes are `toBytes`. -/
 theorem beBytes_toBytes (w : Nat) (v : BitVec 64) : beBytes w v = toBytes w v.toNat := by
@@ -386,27 +386,27 @@ theorem storeLen_ok (c : Bool) (len : Nat) {s : State} {base : Addr} {a : Nat} {
   rw [storeLen]
   split
   · rename_i h8
-    rw [List.nil_append, h8, Nat.add_zero, show (len + 7) / 8 = len / 8 by omega]
-    refine WP.mono (storeNum_ok c (len / 8) hw hc hq ha (by omega) (by omega) (fun i hi => hout i (by omega))
-      (fun i hi => hsep i (by omega))) fun s' ⟨r', m'⟩ => ⟨r', ?_⟩
-    rw [m', show 8 * (len / 8) = len by omega]
+    rw [List.nil_append, h8, Nat.add_zero, show (len + 7) / 8 = len / 8 by omega_using [h8]]
+    refine WP.mono (storeNum_ok c (len / 8) hw hc hq ha (by omega_using [ha']) (by omega_using [hoff]) (fun i hi => hout i (by omega_using [hi]))
+      (fun i hi => hsep i (by omega_using [hi]))) fun s' ⟨r', m'⟩ => ⟨r', ?_⟩
+    rw [m', show 8 * (len / 8) = len by omega_using [h8]]
   · rename_i h8
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-    rw [show (len + 7) / 8 = len / 8 + 1 by omega]
+    rw [show (len + 7) / 8 = len / 8 + 1 by omega_using [h8]]
     simp only [List.append_assoc, List.cons_append, List.nil_append]
-    refine ldAt_ws hw (d := a + 8 * (len / 8)) (by omega) (by omega) fun s₁ u₁ => wp_and fun s₂ u₂ => ?_
+    refine ldAt_ws hw (d := a + 8 * (len / 8)) (by omega_using [ha', h8]) (by omega_using [ha]) fun s₁ u₁ => wp_and fun s₂ u₂ => ?_
     have r₂ : Rest [.t0, .t1] s s₂ := (u₁.rest (by decide)).trans (u₂.rest (by decide))
     have g₂ : s₂.gpr q = s.gpr q := r₂.gpr _ (by simp [hq.1, hq.2])
     have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
     have v₂ : s₂.gpr .t0 = word s.mem base (a + 8 * (len / 8)) &&& maskOf c := by
       rw [u₂.gpr, u₁.gpr, u₁.other .a7 (by decide), hc]
     refine WP.block_append (WP.mono (VG.RISCV64.ByteLoad.storeBE_ok (s := s₂) (v := .t0) (tmp := .t1) (n := q)
-      (off := off) (w := len % 8) (by decide) (Ne.symm hq.2) (by omega) (by omega) (by omega) (fun j hj => by
-        rw [r₂.wr, g₂]; exact hout j (by omega))) fun s₃ e₃ => ?_)
+      (off := off) (w := len % 8) (by decide) (Ne.symm hq.2) (by omega_using [h8]) (by omega_using []) (by omega_using [hoff]) (fun j hj => by
+        rw [r₂.wr, g₂]; exact hout j (by omega_using [hj]))) fun s₃ e₃ => ?_)
     have hB : (beBytes (len % 8) (s₂.gpr .t0)).length = len % 8 := VG.RISCV64.ByteLoad.beBytes_length _ _
     have U₃ := writeBytes_unch (base := base) (Q := s.gpr q + BitVec.ofNat 64 off)
       (xs := beBytes (len % 8) (s₂.gpr .t0)) s.mem (fun i hi => by
-        rw [hB] at hi; rw [add_ofNat_add]; exact hsep i (by omega))
+        rw [hB] at hi; rw [add_ofNat_add]; exact hsep i (by omega_using [hi]))
     have mem₃ : s₃.mem = writeBytes s₂.mem (s₂.gpr q + BitVec.ofNat 64 off) (beBytes (len % 8) (s₂.gpr .t0)) := by
       rw [e₃]; rfl
     have r₃ : Rest [.t0, .t1] s₂ s₃ := ⟨fun r hr => by
@@ -414,22 +414,22 @@ theorem storeLen_ok (c : Bool) (len : Nat) {s : State} {base : Addr} {a : Nat} {
       rw [e₃]; simp only [State.write, this, ↓reduceIte], by rw [e₃]; rfl, by rw [e₃]; rfl, by rw [e₃]; rfl⟩
     have g₃ : s₃.gpr q = s.gpr q := (r₂.trans r₃).gpr _ (by simp [hq.1, hq.2])
     refine WP.mono (storeNum_ok c (len / 8) ((hw.of_rest r₂).of_rest r₃) (a := a) (q := q) (off := off + len % 8)
-      (by rw [(r₂.trans r₃).gpr _ (by decide), hc]) (by simp [hq.1, hq.2]) ha (by omega) (by omega)
+      (by rw [(r₂.trans r₃).gpr _ (by decide), hc]) (by simp [hq.1, hq.2]) ha (by omega_using [ha']) (by omega_using [hoff])
       (fun i hi => by
-        rw [(r₂.trans r₃).wr, g₃, show off + len % 8 + i = off + (len % 8 + i) by omega]
-        exact hout _ (by omega))
+        rw [(r₂.trans r₃).wr, g₃, show off + len % 8 + i = off + (len % 8 + i) by omega_using []]
+        exact hout _ (by omega_using [hi]))
       (fun i hi => by
-        rw [g₃, show off + len % 8 + i = off + (len % 8 + i) by omega]
-        exact hsep _ (by omega)))
+        rw [g₃, show off + len % 8 + i = off + (len % 8 + i) by omega_using []]
+        exact hsep _ (by omega_using [hi])))
       fun s₄ ⟨r₄, m₄⟩ => ⟨(r₂.trans r₃).trans r₄, ?_⟩
     have hwa := writeBytes_append s.mem (s.gpr q + BitVec.ofNat 64 off) (beBytes (len % 8) (s₂.gpr .t0))
       (toBytes (8 * (len / 8)) (if c then wordsVal s.mem base a (len / 8) else 0)) (by
-        rw [hB, VG.Proof.Weierstrass.length_toBytes]; omega)
+        rw [hB, VG.Proof.Weierstrass.length_toBytes]; omega_using [ha'])
     rw [hB, add_ofNat_add] at hwa
     rw [m₄, mem₃, g₃, g₂, m₂]
-    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hwa]
+    rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_using [ha']) (by omega_using [ha']), hwa]
     congr 1
-    have hl : toBytes len = toBytes (len % 8 + 8 * (len / 8)) := by congr 1; omega
+    have hl : toBytes len = toBytes (len % 8 + 8 * (len / 8)) := by congr 1; omega_using []
     rw [v₂, beBytes_toBytes, wordsVal_top, hl, toBytes_add]
     have hX := wordsVal_lt s.mem base a (len / 8)
     cases c
@@ -438,9 +438,9 @@ theorem storeLen_ok (c : Bool) (len : Nat) {s : State} {base : Addr} {a : Nat} {
       have e1 : (wordsVal s.mem base a (len / 8) + 2 ^ (64 * (len / 8)) *
           (word s.mem base (a + 8 * (len / 8))).toNat) >>> (8 * (8 * (len / 8))) =
           (word s.mem base (a + 8 * (len / 8))).toNat := by
-        rw [Nat.shiftRight_eq_div_pow, show 8 * (8 * (len / 8)) = 64 * (len / 8) by omega,
+        rw [Nat.shiftRight_eq_div_pow, show 8 * (8 * (len / 8)) = 64 * (len / 8) by omega_using [],
           Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hX, Nat.zero_add]
-      rw [e1, show 2 ^ (64 * (len / 8)) = 2 ^ (8 * (8 * (len / 8))) by congr 1; omega, toBytes_mod]
+      rw [e1, show 2 ^ (64 * (len / 8)) = 2 ^ (8 * (8 * (len / 8))) by congr 1; omega_using [], toBytes_mod]
 
 /-- `loadLen` of whole words is `loadNum`. -/
 theorem loadLen_mul (n o : Nat) (p : Reg) (off : Nat) : loadLen (8 * n) o p off = loadNum n o p off := by

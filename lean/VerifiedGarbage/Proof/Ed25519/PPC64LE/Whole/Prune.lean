@@ -288,45 +288,45 @@ theorem copy64_ok {t : State} {a b : Reg} {A B : Addr} {o : Nat} {rest : List In
     rw [copyIn64, show List.range 8 = List.range 4 ++ (List.range 4).map (4 + ·) from @List.range_add 4 4,
       List.flatMap_append, List.flatMap_map]
   have cB : ∀ j < 8, Region.Contains ⟨B + BitVec.ofNat 64 o, 64⟩ (B + BitVec.ofNat 64 (o + 8 * j)) 8 :=
-    fun j hj => Offset.contains _ (by omega) (by omega) (by omega)
+    fun j hj => Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [ho])
   have sAB : ∀ i < 8, ∀ j < 8, Mem.Sep (A + BitVec.ofNat 64 (8 * i)) 8 (B + BitVec.ofNat 64 (o + 8 * j)) 8 :=
-    fun i hi j hj => hd.sep (Offset.contains_base _ (by omega) (by omega)) (cB j hj)
+    fun i hi j hj => hd.sep (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) (cB j hj)
   have sBB : ∀ i < 8, ∀ j < 8, i ≠ j →
       Mem.Sep (B + BitVec.ofNat 64 (o + 8 * i)) 8 (B + BitVec.ofNat 64 (o + 8 * j)) 8 :=
-    fun i hi j hj hij => Offset.sep _ (by omega) (by omega) (by omega)
+    fun i hi j hj hij => Offset.sep _ (by omega_using [hij]) (by omega_using [ho, hi]) (by omega_using [ho, hj])
   rw [hsplit, List.append_assoc]
   refine copy_ok (A := A) (B := B) (da := fun k => 8 * k) (db := fun k => o + 8 * k)
-    (R := ⟨B + BitVec.ofNat 64 o, 32⟩) ha0 hb0 ha8 hb8 hA hB (fun j hj => ⟨by omega, by omega⟩)
-    (fun j hj => ⟨by omega, by omega⟩) (fun j hj => hr j (by omega)) (fun j hj => hw j (by omega))
-    (fun j hj => Offset.contains _ (by omega) (by omega) (by omega))
-    (fun i hi j hj => sAB i (by omega) j (by omega)) (fun i hi j hj hij => sBB i (by omega) j (by omega) hij)
+    (R := ⟨B + BitVec.ofNat 64 o, 32⟩) ha0 hb0 ha8 hb8 hA hB (fun j hj => ⟨by omega_using [hj], by omega_using []⟩)
+    (fun j hj => ⟨by omega_using [ho, hj], by omega_using [ho4]⟩) (fun j hj => hr j (by omega_using [hj])) (fun j hj => hw j (by omega_using [hj]))
+    (fun j hj => Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [ho]))
+    (fun i hi j hj => sAB i (by omega_using [hi]) j (by omega_using [hj])) (fun i hi j hj hij => sBB i (by omega_using [hi]) j (by omega_using [hj]) hij)
     fun u hu hfu hwu => ?_
   refine copy_ok (A := A) (B := B) (da := fun k => 8 * (4 + k)) (db := fun k => o + 8 * (4 + k))
     (R := ⟨B + BitVec.ofNat 64 (o + 32), 32⟩) ha0 hb0 ha8 hb8 (by rw [hu.gpr _ (by simpa using ha8), hA])
-    (by rw [hu.gpr _ (by simpa using hb8), hB]) (fun j hj => ⟨by omega, by omega⟩)
-    (fun j hj => ⟨by omega, by omega⟩) (fun j hj => by rw [hu.rd, hu.wr]; exact hr _ (by omega))
-    (fun j hj => by rw [hu.wr]; exact hw _ (by omega))
-    (fun j hj => Offset.contains _ (by omega) (by omega) (by omega))
-    (fun i hi j hj => sAB _ (by omega) _ (by omega))
-    (fun i hi j hj hij => sBB _ (by omega) _ (by omega) (by omega)) fun v hv hfv hwv => ?_
+    (by rw [hu.gpr _ (by simpa using hb8), hB]) (fun j hj => ⟨by omega_using [hj], by omega_using []⟩)
+    (fun j hj => ⟨by omega_using [ho, hj], by omega_using [ho4]⟩) (fun j hj => by rw [hu.rd, hu.wr]; exact hr _ (by omega_using [hj]))
+    (fun j hj => by rw [hu.wr]; exact hw _ (by omega_using [hj]))
+    (fun j hj => Offset.contains _ (by omega_using []) (by omega_using [hj]) (by omega_using [ho]))
+    (fun i hi j hj => sAB _ (by omega_using [hi]) _ (by omega_using [hj]))
+    (fun i hi j hj hij => sBB _ (by omega_using [hi]) _ (by omega_using [hj]) (by omega_using [hij])) fun v hv hfv hwv => ?_
   have hsub : ∀ {d : Nat}, d ≤ 32 → ∀ r ∈ [(⟨B + BitVec.ofNat 64 (o + d), 32⟩ : Region)],
       ∃ r' ∈ [(⟨B + BitVec.ofNat 64 o, 64⟩ : Region)], Region.Sub r r' := fun hd r hr => by
     rw [List.mem_singleton.mp hr]
-    exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega) (by omega)⟩
+    exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_using []) (by omega_using [hd])⟩
   have fu : Frame [⟨B + BitVec.ofNat 64 o, 64⟩] t.mem u.mem :=
-    hfu.sub (by rw [show B + BitVec.ofNat 64 o = B + BitVec.ofNat 64 (o + 0) by rw [Nat.add_zero]] at *; exact hsub (by omega))
-  refine k v (hu.trans hv) (fu.trans (hfv.sub (hsub (by omega)))) ?_
+    hfu.sub (by rw [show B + BitVec.ofNat 64 o = B + BitVec.ofNat 64 (o + 0) by rw [Nat.add_zero]] at *; exact hsub (by omega_using []))
+  refine k v (hu.trans hv) (fu.trans (hfv.sub (hsub (by omega_using [])))) ?_
   refine Proof.Ed25519.bytesAt_of_words fun j hj => ?_
   rw [Offset.add_add]
   by_cases hj4 : j < 4
   · rw [hfv.readW (r := ⟨B + BitVec.ofNat 64 (o + 8 * j), 8⟩) (Region.contains_self _ _) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hj4])) (by omega_using [ho, hj]) (by omega_using [ho])) (by decide)]
     exact hwu j hj4
-  · have e := hwv (j - 4) (by omega)
-    rw [show 4 + (j - 4) = j by omega] at e
+  · have e := hwv (j - 4) (by omega_using [hj])
+    rw [show 4 + (j - 4) = j by omega_using [hj4]] at e
     rw [e]
-    exact hfu.readW (r := ⟨A, 64⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact hd.sub_right (Offset.sub _ (by omega) (by omega))) (by decide)
+    exact hfu.readW (r := ⟨A, 64⟩) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hd.sub_right (Offset.sub _ (by omega_using []) (by omega_using []))) (by decide)
 
 /-- 32 zero bytes, from four zero words. -/
 theorem bytes32_zero {m : Mem} {p : Addr} (h : ∀ k < 4, m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = 0) :

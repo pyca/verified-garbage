@@ -54,7 +54,7 @@ theorem of_eq {s' : State} (h : DataW4 Ctx St W SP s D n) (hrd : s'.rd = s.rd) (
 
 theorem drop (h : DataW4 Ctx St W SP s D n) {k : Nat} (hk : k ≤ n) :
     DataW4 Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) :=
-  ⟨h.dw.drop hk, h.stk.sub_right (Offset.sub_base D (by omega))⟩
+  ⟨h.dw.drop hk, h.stk.sub_right (Offset.sub_base D (by omega_using [hk]))⟩
 
 theorem take (h : DataW4 Ctx St W SP s D n) {k : Nat} (hk : k ≤ n) : DataW4 Ctx St W SP s D k :=
   ⟨h.dw.take hk, h.stk.sub_right (Region.sub_prefix hk)⟩
@@ -121,7 +121,7 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
   simp only [ciphOf]
   rw [Proof.Sm4.scheduleAt_congr fun i hi =>
     hf.bytes (R := ⟨Ctx, 128⟩) (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide)))
-      (by show 128 ≤ 2 ^ 64; omega) hi]
+      (by show 128 ≤ 2 ^ 64; omega_using []) hi]
 
 end
 

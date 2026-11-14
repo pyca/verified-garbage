@@ -112,9 +112,9 @@ theorem rounds_ok (regs : List XReg) (hnd : regs.Nodup) (h6 : .xmm6 ∉ regs)
   | zero => rw [List.range_zero, List.flatMap_nil]; exact WP.block_nil ⟨hI, XFrame.refl _ _⟩
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun s₁ ⟨hI₁, hf₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    exact WP.mono (round_ok regs hnd h6 (k := k) (by omega) (hK.of_frame hf₁) hI₁)
+    exact WP.mono (round_ok regs hnd h6 (k := k) (by omega_using [hk]) (hK.of_frame hf₁) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
 
 theorem start_ok (regs : List XReg) (hnd : regs.Nodup) (h6 : .xmm6 ∉ regs)
@@ -150,8 +150,8 @@ theorem two_ok (regs : List XReg) (hnd : regs.Nodup) (h6 : .xmm6 ∉ regs)
     WP isa (.block (round regs (k + 1) ++ round regs (k + 2))) s fun s' =>
       RInv regs w x (k + 2) s' ∧ XFrame (.xmm6 :: regs) s s' := by
   rw [WP.block_append_iff]
-  refine WP.mono (round_ok regs hnd h6 (k := k) (by omega) hK hI) fun s₁ ⟨hI₁, hf₁⟩ => ?_
-  exact WP.mono (round_ok regs hnd h6 (k := k + 1) (by omega) (hK.of_frame hf₁) hI₁)
+  refine WP.mono (round_ok regs hnd h6 (k := k) (by omega_using [hk]) hK hI) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+  exact WP.mono (round_ok regs hnd h6 (k := k + 1) (by omega_using [hk]) (hK.of_frame hf₁) hI₁)
     fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
 
 theorem aes_ok (regs : List XReg) (hnd : regs.Nodup) (h6 : .xmm6 ∉ regs)
@@ -166,7 +166,7 @@ theorem aes_ok (regs : List XReg) (hnd : regs.Nodup) (h6 : .xmm6 ∉ regs)
       RInv regs w x 9 s' ∧ XFrame (.xmm6 :: regs) s s' := by
     rw [WP.block_append_iff]
     refine WP.mono (start_ok regs hnd h6 s hK) fun s₁ ⟨hI₁, hf₁⟩ => ?_
-    have hn : 9 ≤ nr := by rcases hnr with h | h | h <;> omega
+    have hn : 9 ≤ nr := by rcases hnr with h | h | h <;> omega_using [h]
     exact WP.mono (rounds_ok regs hnd h6 9 s₁ hn (hK.of_frame hf₁) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
   unfold aes

@@ -3,33 +3,36 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
 
-/-! # RSASSA-PSS signing on x86-64, with the hash functions as tables -/
+/-! # RSASSA-PSS (RFC 8017) on x86-64 -/
 
 @[expose] public section
 
 namespace VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
-open VG.Proof.RsaPss.X86_64 (signStack sign_ok signC_spAll enc_safe OK)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP privCodeP_spSafe)
+open VG.Proof.RsaPss.X86_64 (signStack signPrecomputed_ok signCP_spAll enc_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signTableApi.artifact X86_64.target {
-      suffix := Emit.qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.HashTable.X86_64.tables vs)]
-      code := Impl.RsaPss.X86_64.signC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
-        (privOf c).name (privOf c).code
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+      suffix := qualifiedName "" [("crt", c.suffix)]
+      extra := c.extra
+      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
+      code := Impl.RsaPss.X86_64.signCP (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
+        (privNameP c) (privCodeP c)
       stack := signStack
-      verified := sign_ok h (privOf c).ok (privOf c).ct (X86_64.SpSafe.of_all (privOf c).spSafe) (privOf c).depth
-      spSafe := Code.all_of_allInstrs (signC_spAll (fun i hi => (enc_safe h i hi).1) (fun i hi => (enc_safe h i hi).2)
-        (X86_64.SpSafe.of_all (privOf c).spSafe))
-      features := c.features }]
+      verified := signPrecomputed_ok h c
+      spSafe := Code.all_of_allInstrs (signCP_spAll (fun i hi => (enc_safe h i hi).1) (fun i hi => (enc_safe h i hi).2)
+        (X86_64.SpSafe.of_all (privCodeP_spSafe c))) } (VG.Proof.RsaPss.X86_64.signPrecomputed_postOut _ _))]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
@@ -41,16 +44,15 @@ open VG.Proof.RsaPss.X86_64 (verifyStack verify_ok chk_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.verifyPrecomputedTableApi.artifact X86_64.target {
-      suffix := Emit.qualifiedName "" [("rsa", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.HashTable.X86_64.tables vs)]
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target {
+      suffix := qualifiedName "" [("rsa", c.suffix)]
+      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
         c.name c.code
       stack := verifyStack
       verified := verify_ok h c
       spSafe := Code.all_of_allInstrs (Proof.RsaPss.X86_64.Pc.codeC_spAll (fun i hi => (chk_safe h i hi).1)
-        (fun i hi => (chk_safe h i hi).2) c)
-      features := c.features }]
+        (fun i hi => (chk_safe h i hi).2) c) }]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash

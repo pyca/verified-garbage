@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The lane domain: linear layers as XORs of input bits
@@ -34,7 +35,7 @@ def rep (w c : Nat) : Nat → Nat
   | k + 1 => rep w c k ||| rep w c k <<< (w * 2 ^ k)
 
 theorem testBit_ge_of_lt {c w i : Nat} (hc : c < 2 ^ w) (hi : w ≤ i) : c.testBit i = false :=
-  Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hc (Nat.pow_le_pow_right (by omega) hi))
+  Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hc (Nat.pow_le_pow_right (by omega_using []) hi))
 
 theorem testBit_rep {w c : Nat} (hc : c < 2 ^ w) (k i : Nat) :
     (rep w c k).testBit i = (decide (i < w * 2 ^ k) && c.testBit (i % w)) := by
@@ -50,16 +51,16 @@ theorem testBit_rep {w c : Nat} (hc : c < 2 ^ w) (k i : Nat) :
     rw [e]
     generalize hW : w * 2 ^ k = W
     by_cases h1 : i < W
-    · simp [h1, show i < W + W by omega, show ¬ W ≤ i by omega]
+    · simp [h1, show i < W + W by omega_using [h1], show ¬ W ≤ i by omega_using [h1]]
     · have hm : (i - W) % w = i % w := by
-        rw [← hW]; exact Nat.sub_mul_mod (by omega)
+        rw [← hW]; exact Nat.sub_mul_mod (by omega_using [hW, h1])
       by_cases h2 : i < W + W
-      · simp [h1, h2, show W ≤ i by omega, show i - W < W by omega, hm]
-      · simp [h1, h2, show ¬ i - W < W by omega]
+      · simp [h1, h2, show W ≤ i by omega_using [h1], show i - W < W by omega_using [h2], hm]
+      · simp [h1, h2, show ¬ i - W < W by omega_using [h2]]
 
 theorem lane_lt {a n w q : Nat} (ha : a < n) (hq : q < w) : w * a + q < w * n := by
   have : w * (a + 1) ≤ w * n := Nat.mul_le_mul_left w ha
-  rw [Nat.mul_add, Nat.mul_one] at this; omega
+  rw [Nat.mul_add, Nat.mul_one] at this; omega_using [hq, this]
 
 theorem lane_ge {a n w q : Nat} (ha : n ≤ a) : w * n ≤ w * a + q :=
   Nat.le_trans (Nat.mul_le_mul_left w ha) (Nat.le_add_right _ _)
@@ -72,13 +73,13 @@ theorem testBit_rep_lane {w c : Nat} (hc : c < 2 ^ w) (k a : Nat) {q : Nat} (hq 
   · simp [ha, Nat.not_lt.mpr (lane_ge (q := q) (w := w) (Nat.le_of_not_lt ha))]
 
 theorem two_pow_sub_one_lt {m w : Nat} (h : m ≤ w) : 2 ^ m - 1 < 2 ^ w :=
-  Nat.lt_of_lt_of_le (Nat.sub_lt (Nat.two_pow_pos m) (by omega)) (Nat.pow_le_pow_right (by omega) h)
+  Nat.lt_of_lt_of_le (Nat.sub_lt (Nat.two_pow_pos m) (by omega_using [])) (Nat.pow_le_pow_right (by omega_using []) h)
 
 theorem high_mask_lt {m w : Nat} (h : m ≤ w) : (2 ^ m - 1) <<< (w - m) < 2 ^ w := by
   rw [Nat.shiftLeft_eq]
-  have : 2 ^ w = 2 ^ m * 2 ^ (w - m) := by rw [← Nat.pow_add]; congr 1; omega
+  have : 2 ^ w = 2 ^ m * 2 ^ (w - m) := by rw [← Nat.pow_add]; congr 1; omega_using [h]
   rw [this]
-  exact Nat.mul_lt_mul_of_pos_right (Nat.sub_lt (Nat.two_pow_pos m) (by omega)) (Nat.two_pow_pos _)
+  exact Nat.mul_lt_mul_of_pos_right (Nat.sub_lt (Nat.two_pow_pos m) (by omega_using [])) (Nat.two_pow_pos _)
 
 /-- Every lane rotated right by `m < w` bits. -/
 def rotL (w k m f : Nat) : Nat :=
@@ -92,11 +93,11 @@ theorem testBit_rotL {w k m f a q : Nat} (hm : m < w) (hq : q < w) (ha : a < 2 ^
     Nat.testBit_two_pow_sub_one, Nat.testBit_shiftLeft, Nat.testBit_shiftRight]
   by_cases h : q + m < w
   · rw [Nat.mod_eq_of_lt h]
-    simp [show q < w - m by omega, show ¬ w - m ≤ q by omega, show m + (w * a + q) = w * a + (q + m) by omega]
+    simp [show q < w - m by omega_using [h], show ¬ w - m ≤ q by omega_using [h], show m + (w * a + q) = w * a + (q + m) by omega_using []]
   · rw [show (q + m) % w = q + m - w by
-      rw [show q + m = (q + m - w) + w by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]; omega]
-    simp [show ¬ q < w - m by omega, show w - m ≤ q by omega, show q - (w - m) < m by omega,
-      show w - m ≤ w * a + q by omega, show w * a + q - (w - m) = w * a + (q + m - w) by omega]
+      rw [show q + m = (q + m - w) + w by omega_using [h], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hm, hq])]; omega_using []]
+    simp [show ¬ q < w - m by omega_using [h], show w - m ≤ q by omega_using [h], show q - (w - m) < m by omega_using [hq, h],
+      show w - m ≤ w * a + q by omega_using [h], show w * a + q - (w - m) = w * a + (q + m - w) by omega_using [hm, h]]
 
 /-- Every lane shifted right by `n ≤ w` bits. -/
 def shrL (w k n f : Nat) : Nat := (f >>> n) &&& rep w (2 ^ (w - n) - 1) k
@@ -106,8 +107,8 @@ theorem testBit_shrL {w k n f a q : Nat} (hq : q < w) (ha : a < 2 ^ k) :
   simp only [shrL, Nat.testBit_and, testBit_rep_lane (two_pow_sub_one_lt (Nat.sub_le w n)) k a hq,
     ha, decide_true, Bool.true_and, Nat.testBit_two_pow_sub_one, Nat.testBit_shiftRight]
   by_cases h : q + n < w
-  · simp [h, show q < w - n by omega, show n + (w * a + q) = w * a + (q + n) by omega]
-  · simp [h, show ¬ q < w - n by omega]
+  · simp [h, show q < w - n by omega_using [h], show n + (w * a + q) = w * a + (q + n) by omega_using []]
+  · simp [h, show ¬ q < w - n by omega_using [h]]
 
 /-! ## Values -/
 
@@ -121,7 +122,7 @@ theorem par_congr {w A f g q q' n : Nat} (h : ∀ a < n, f.testBit (w * a + q) =
   induction n with
   | zero => rfl
   | succ n ih =>
-    simp only [par, ih fun a ha => h a (by omega), h n (by omega)]
+    simp only [par, ih fun a ha => h a (by omega_using [ha]), h n (by omega_using [])]
 
 theorem par_xor (w A f g q n : Nat) : par w A (f ^^^ g) q n = (par w A f q n ^^ par w A g q n) := by
   induction n with
@@ -144,39 +145,39 @@ theorem par_high {w A f q N : Nat} (hf : f < 2 ^ (w * N)) (hq : q < w) :
   | d + 1 => by
     rw [← Nat.add_assoc, par, par_high hf hq d,
       Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hf (Nat.pow_le_pow_right (by decide)
-        (by rw [Nat.mul_add]; omega))), Bool.false_and, Bool.xor_false]
+        (by rw [Nat.mul_add]; omega_using []))), Bool.false_and, Bool.xor_false]
 
 theorem par_congr_assign {w A B f q : Nat} :
     ∀ {n}, (∀ a < n, A.testBit a = B.testBit a) → par w A f q n = par w B f q n
   | 0, _ => rfl
   | n + 1, h => by
-    rw [par, par, par_congr_assign (n := n) fun a ha => h a (by omega), h n (by omega)]
+    rw [par, par, par_congr_assign (n := n) fun a ha => h a (by omega_using [ha]), h n (by omega_using [])]
 
 theorem le_sum_of_mem {a : Nat} : ∀ {l : List Nat}, a ∈ l → a ≤ l.sum
-  | _ :: l, .head _ => by simp only [List.sum_cons]; omega
-  | b :: l, .tail _ h => by simp only [List.sum_cons]; have := le_sum_of_mem h; omega
+  | _ :: l, .head _ => by simp only [List.sum_cons]; omega_using []
+  | b :: l, .tail _ h => by simp only [List.sum_cons]; have := le_sum_of_mem h; omega_using [this]
 
 theorem par_and_rep {w A f c q n k : Nat} (hc : c < 2 ^ w) (hq : q < w) (hn : n ≤ 2 ^ k) :
     par w A (f &&& rep w c k) q n = (c.testBit q && par w A f q n) := by
   induction n with
   | zero => simp [par]
   | succ n ih =>
-    simp only [par, ih (by omega), Nat.testBit_and, testBit_rep_lane hc k n hq,
-      show n < 2 ^ k by omega, decide_true, Bool.true_and]
+    simp only [par, ih (by omega_using [hn]), Nat.testBit_and, testBit_rep_lane hc k n hq,
+      show n < 2 ^ k by omega_using [hn], decide_true, Bool.true_and]
     cases c.testBit q <;> simp
 
 theorem getLsbD_rotateRight_lt {w : Nat} (x : BitVec w) (n q : Nat) (hq : q < w) :
     (x.rotateRight n).getLsbD q = x.getLsbD ((q + n) % w) := by
-  have hw : 0 < w := by omega
+  have hw : 0 < w := by omega_using [hq]
   have h2 := Nat.mod_lt n hw
   have e : (q + n) % w = (q + n % w) % w := (Nat.add_mod_mod q n w).symm
   rw [BitVec.getLsbD_rotateRight, e]
   split
-  · rw [Nat.mod_eq_of_lt (show q + n % w < w by omega), Nat.add_comm]
+  · rw [Nat.mod_eq_of_lt (show q + n % w < w by omega_arith), Nat.add_comm]
   · simp only [hq, decide_true, Bool.true_and]
     congr 1
-    rw [show q + n % w = (q - (w - n % w)) + w by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (show q - (w - n % w) < w by omega)]
+    rw [show q + n % w = (q - (w - n % w)) + w by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (show q - (w - n % w) < w by omega_using [hq])]
 
 
 /-! ## The domain -/
@@ -259,13 +260,13 @@ theorem lanes_sound {w k A : Nat} : (lanes w k).Sound (LaneRel k A) where
         simp only [hqn, decide_true, Bool.true_and]
         congr 1
         exact par_congr fun b hb => by rw [testBit_shrL hq hb]; simp [hqn]
-      · rw [BitVec.getLsbD_of_ge x _ (by omega)]
+      · rw [BitVec.getLsbD_of_ge x _ (by omega_using [hqn])]
         simp only [hqn, decide_false, Bool.false_and, Bool.false_xor]
         rw [← par_zero w A q (2 ^ k)]
         exact par_congr fun b hb => by rw [testBit_shrL hq hb]; simp [hqn]
     · simp only [Option.some.injEq] at h; subst h
       refine ⟨Nat.two_pow_pos w, fun q hq => ?_⟩
-      rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_of_ge x _ (by omega)]
+      rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_of_ge x _ (by omega_arith)]
       simp [par_zero]
   const {v c} h := by
     simp only [lanes, Option.some.injEq] at h; subst h
@@ -289,7 +290,7 @@ def mk (w : Nat) (g : Nat → List Nat) : Nat → Nat
 
 theorem lane_inj {w a b q q' : Nat} (hq : q < w) (hq' : q' < w) (h : w * a + q = w * b + q') :
     a = b ∧ q = q' := by
-  have hw : 0 < w := by omega
+  have hw : 0 < w := by omega_using [hq]
   have e1 := congrArg (· % w) h
   have e2 := congrArg (· / w) h
   simp only [Nat.mul_add_mod, Nat.mod_eq_of_lt hq, Nat.mod_eq_of_lt hq'] at e1
@@ -308,9 +309,9 @@ theorem par_two_pow {w A a q q' : Nat} (hq : q < w) (hq' : q' < w) (n : Nat) :
     · have : ¬ (q' = q ∧ a = n) := fun ⟨e1, e2⟩ => h (by rw [e1, e2])
       simp only [h, decide_false, Bool.false_and, Bool.xor_false]
       by_cases h2 : q' = q ∧ a < n
-      · simp [h2, show a < n + 1 by omega]
+      · simp [h2, show a < n + 1 by omega_using [h2]]
       · have : ¬ (q' = q ∧ a < n + 1) := fun ⟨e1, e2⟩ =>
-          this ⟨e1, by have := fun e => h2 ⟨e1, e⟩; omega⟩
+          this ⟨e1, by have := fun e => h2 ⟨e1, e⟩; omega_arith⟩
         simp [h2, this]
 
 theorem par_atomsAt {w A q q' n : Nat} (hq : q < w) (hq' : q' < w) (l : List Nat)
@@ -327,13 +328,13 @@ theorem par_mk {w A q n N : Nat} (hq : q < w) (hn : n ≤ w) (g : Nat → List N
   induction n with
   | zero => simp [mk, par_zero]
   | succ n ih =>
-    simp only [mk, par_xor, ih (by omega) fun q' hq' => hg q' (by omega),
-      par_atomsAt hq (show n < w by omega) _ (hg n (by omega))]
+    simp only [mk, par_xor, ih (by omega_using [hn]) fun q' hq' => hg q' (by omega_using [hq']),
+      par_atomsAt hq (show n < w by omega_using [hn]) _ (hg n (by omega_using []))]
     by_cases h : q = n
     · subst h; simp
     · have : n ≠ q := Ne.symm h
       by_cases h2 : q < n
-      · simp [h2, this, show q < n + 1 by omega]
-      · simp [h2, this, show ¬ q < n + 1 by omega]
+      · simp [h2, this, show q < n + 1 by omega_using [h2]]
+      · simp [h2, this, show ¬ q < n + 1 by omega_using [h, h2]]
 
 end VG.Bitslice

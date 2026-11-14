@@ -90,12 +90,12 @@ theorem compress_ok {s : State} (hs : compRV.pre s) :
   have hdis : (⟨out, 67⟩ : Region).Disjoint ⟨base, 8192⟩ := how
   -- The values.
   have x₁ : sv base s₂ CX = ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 66) := by
-    rw [x₂, a1, bytesAt_unch U₁ (by decide) (sep_at' hpw hfp (off := 1) (k := 66) (by omega))]
+    rw [x₂, a1, bytesAt_unch U₁ (by decide) (sep_at' hpw hfp (off := 1) (k := 66) (by omega_using []))]
   have y₁ : sv base s₂ CY = ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 67) 66) := by
-    rw [y₂, a1, bytesAt_unch U₁ (by decide) (sep_at' hpw hfp (off := 67) (k := 66) (by omega))]
+    rw [y₂, a1, bytesAt_unch U₁ (by decide) (sep_at' hpw hfp (off := 67) (k := 66) (by omega_using []))]
   have b₁ : s₁.mem (s₁.gpr .a1) = s.mem (s.gpr .a1) := by
     have h1 := bytesAt_unch U₁ (q := s.gpr .a1) (n := 1) (by decide)
-      (by simpa using sep_at' hpw hfp (off := 0) (k := 1) (by omega))
+      (by simpa using sep_at' hpw hfp (off := 0) (k := 1) (by omega_using []))
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
     simp only [BitVec.add_zero] at h1
     rw [a1, h1]
@@ -133,7 +133,7 @@ theorem compress_ok {s : State} (hs : compRV.pre s) :
       u₅.other _ (by decide), u₄.gpr, sl_FLAG, fl₃, tag_eq, cy₃]
   have hout' : ∀ i < 67, InRegions s.wr (out + BitVec.ofNat 64 i) 1 := fun i hi => by
     rw [hwr]
-    exact ⟨_, List.mem_cons_self .., Offset.contains_base out (d := i) (n := 1) (k := 67) (by omega) (by omega)⟩
+    exact ⟨_, List.mem_cons_self .., Offset.contains_base out (d := i) (n := 1) (k := 67) (by omega_using [hi]) (by omega_using [hi])⟩
   refine wp_sb (off := 0) (a := out) (by decide) (by rw [q₆, BitVec.add_zero])
     (by rw [wr₆]; simpa using hout' 0 (by decide)) fun s₇ u₇ => ?_
   have hw₇ := hw₆.of_kp (Kp.of_mupd u₇)
@@ -153,8 +153,8 @@ theorem compress_ok {s : State} (hs : compRV.pre s) :
   -- `x`.
   refine WP.block_append (WP.mono (storeLen_ok _ 66 hw₇ a₇ (q := .s2) (a := p521.sl CX) (off := 1) (by decide)
     (by decide) (by decide) (by decide)
-    (fun i hi => by rw [q₇, u₇.wr, wr₆]; exact hout' (1 + i) (by omega))
-    (fun i hi => by rw [q₇]; exact out_of_disj hdis hfo (by omega))) fun s₈ ⟨r₈, m₈⟩ => ?_)
+    (fun i hi => by rw [q₇, u₇.wr, wr₆]; exact hout' (1 + i) (by omega_using [hi]))
+    (fun i hi => by rw [q₇]; exact out_of_disj hdis hfo (by omega_using [hi]))) fun s₈ ⟨r₈, m₈⟩ => ?_)
   have hw₈ := hw₇.of_rest r₈
   have xo₇ : wordsVal s₇.mem base (p521.sl CX) 9 = x := by rw [U₇.wordsVal (by decide) (by decide), cx₃]
   simp only [Nat.reduceAdd, Nat.reduceDiv] at m₈
@@ -341,7 +341,7 @@ theorem dsetup_ok {s : State} (hs : DPre s) :
   -- `x`.
   refine WP.block_append (WP.mono (loadLen_ok 66 hw₁ (o := p521.sl CX) (p := .a1) (off := 1) (L := 67) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by rw [a1]; exact rdp)
-    (fun i hi => by rw [a1]; exact out_of_disj hpw hfp (by omega))) fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
+    (fun i hi => by rw [a1]; exact out_of_disj hpw hfp (by omega_using [hi]))) fun s₂ ⟨r₂, O₂, e₂⟩ => ?_)
   simp only [Nat.reduceAdd, Nat.reduceDiv] at O₂ e₂
   have hw₂ := hw₁.of_rest r₂
   have a1₂ : s₂.gpr .a1 = s.gpr .a1 := by rw [r₂.gpr _ (by decide), a1]
@@ -400,18 +400,18 @@ theorem dsetup_ok {s : State} (hs : DPre s) :
       r₅.gpr _ (hp1 x hx), u₄.gpr, u₃a.other _ (hp5 x hx), u₃.other _ (hp5 x hx), r₂.gpr _ (hp2 x hx)]
   have b₂ : s₂.mem (s.gpr .a1) = s.mem (s.gpr .a1) := by
     have h1 := bytesAt_unch (U₁.trans O₂.unch) (q := s.gpr .a1) (n := 1) (by decide)
-      (by simpa using sep_at' hpw hfp (off := 0) (k := 1) (by omega))
+      (by simpa using sep_at' hpw hfp (off := 0) (k := 1) (by omega_using []))
     simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
     simp only [BitVec.add_zero] at h1
     exact h1
   have x₂ : sv base s₂ CX = ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 66) := by
     show wordsVal _ _ _ _ = _
-    rw [e₂, a1, bytesAt_unch U₁ (by decide) (sep_at' hpw hfp (off := 1) (k := 66) (by omega))]
+    rw [e₂, a1, bytesAt_unch U₁ (by decide) (sep_at' hpw hfp (off := 1) (k := 66) (by omega_using []))]
   have cs₇ : ∀ e ∈ consts p521, sv base s₇ e.1 = e.2 := fun e he => by
     rw [e₇ e he, Nat.mod_eq_of_lt (consts_lt e he)]
   have hap : ∀ e ∈ consts p521, ∀ w ∈ [(p521.sl EXPS, 8 * 9)] ++ [(FL, 8)],
       p521.sl e.1 + 72 ≤ w.1 ∨ w.1 + w.2 ≤ p521.sl e.1 := by decide
-  have csl : ∀ e ∈ consts p521, e.1 < 100 := fun e he => by have := consts_slots e he; omega
+  have csl : ∀ e ∈ consts p521, e.1 < 100 := fun e he => by have := consts_slots e he; omega_using [this]
   subst hb
   refine ⟨hw₉.of_rest r₁₀, by rw [gp _ (by decide), o₁], by rw [gp _ (by decide), h3₁],
     fun x h0 h2 h3 hx => by rw [gp _ hx, g₁ _ h0 h2 h3], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -428,7 +428,7 @@ theorem dsetup_ok {s : State} (hs : DPre s) :
   · rw [U₄₁₀.word (by decide) (by decide), par₄, b₂]
   · have b₄ : s₄.mem (s.gpr .a1) = s.mem (s.gpr .a1) := by
       have h1 := bytesAt_unch ((U₁.trans O₂.unch).trans O₄.unch) (q := s.gpr .a1) (n := 1) (by decide)
-        (by simpa using sep_at' hpw hfp (off := 0) (k := 1) (by omega))
+        (by simpa using sep_at' hpw hfp (off := 0) (k := 1) (by omega_using []))
       simp only [bytesAt, List.range_one, List.map_cons, List.map_nil, List.cons.injEq, and_true] at h1
       simp only [BitVec.add_zero] at h1
       exact h1
@@ -442,9 +442,9 @@ theorem dsetup_ok {s : State} (hs : DPre s) :
       word_writeW_self, g₅, g₉, a1₄, b₄, mp₈, cx₈, maskOf_and]
   · intro e he
     show wordsVal _ _ _ _ = _
-    rw [U₈₁₀.wordsVal (fun w hw => hap e he w (List.mem_append_right _ hw)) (by have := csl e he; rw [sl_eq]; omega),
+    rw [U₈₁₀.wordsVal (fun w hw => hap e he w (List.mem_append_right _ hw)) (by have := csl e he; rw [sl_eq]; omega_using [this]),
       O₈.wordsVal (by have := hap e he _ (List.mem_append_left _ (List.mem_singleton_self _)); simpa using this)
-        (by have := csl e he; rw [sl_eq]; omega)]
+        (by have := csl e he; rw [sl_eq]; omega_using [this])]
     exact cs₇ e he
   · show wordsVal _ _ _ _ = _
     rw [U₈₁₀.wordsVal (by decide) (by decide), e₈]
@@ -563,7 +563,7 @@ theorem root_ok {s : State} {base : Addr} (hw : WsReg s base) (hacc : sv base s 
     have hr1 : sv base s₁ RHS < W.p := by rw [e₁' RHS (by simp)]; exact hrhs
     have hm : toM W.p (2 ^ 576) (sv base s₁ YSQ) = toM W.p (2 ^ 576) (sv base s ACC) *
         toM W.p (2 ^ 576) (sv base s ACC) := toM_mul unit e₁
-    rw [h2, toM_sub (by omega), hm, e₁' RHS (by simp)]
+    rw [h2, toM_sub (by omega_using [hr1]), hm, e₁' RHS (by simp)]
   · rw [y1₄]
     refine toM_one_mul unit ?_
     have h := e₃
@@ -595,8 +595,8 @@ theorem parMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha :
       Rest [.t0, .t1, .a7] s s' ∧ s'.mem = s.mem ∧
       s'.gpr .a7 = maskOf (decide ((word s.mem base (p521.sl a)).toNat % 2 ≠
         (word s.mem base (p521.sl PAR)).toNat % 2)) := by
-  have sl8 : p521.sl a % 8 = 0 := by rw [sl_eq]; omega
-  have sl2 : p521.sl a < 2048 := by rw [sl_eq]; omega
+  have sl8 : p521.sl a % 8 = 0 := by rw [sl_eq]; omega_using []
+  have sl2 : p521.sl a < 2048 := by rw [sl_eq]; omega_using [ha]
   rw [Cfg.parMask]
   refine ld_ws hw sl2 sl8 fun s₁ u₁ => ?_
   refine ld_ws (hw.of_kp (Kp.of_upd u₁)) (d := p521.sl PAR) (by decide) (by decide) fun s₂ u₂ => ?_
@@ -619,8 +619,8 @@ theorem sameMask_ok {s : State} {base : Addr} (hw : WsReg s base) {a : Nat} (ha 
       Rest [.t0, .t1, .a7] s s' ∧ s'.mem = s.mem ∧
       s'.gpr .a7 = maskOf (decide ((word s.mem base (p521.sl a)).toNat % 2 =
         (word s.mem base (p521.sl PAR)).toNat % 2)) := by
-  have sl8 : p521.sl a % 8 = 0 := by rw [sl_eq]; omega
-  have sl2 : p521.sl a < 2048 := by rw [sl_eq]; omega
+  have sl8 : p521.sl a % 8 = 0 := by rw [sl_eq]; omega_using []
+  have sl2 : p521.sl a < 2048 := by rw [sl_eq]; omega_using [ha]
   rw [Cfg.sameMask]
   refine ld_ws hw sl2 sl8 fun s₁ u₁ => ?_
   refine ld_ws (hw.of_kp (Kp.of_upd u₁)) (d := p521.sl PAR) (by decide) (by decide) fun s₂ u₂ => ?_
@@ -671,9 +671,9 @@ theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s
   refine WP.block_append (WP.mono (andFlag_ok hw₁) fun s₂ ⟨f₂, r₂, O₂⟩ => ?_)
   have hw₂ := hw₁.of_rest r₂
   have w₂ : ∀ i, i < 44 → i ≠ FLAG → wordsVal s₂.mem base (p521.sl i) 9 = sv base s i := fun i hi hf => by
-    rw [O₂.wordsVal (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega), m₁]
+    rw [O₂.wordsVal (by rw [sl_eq, FL]; omega_using [hi]) (by rw [sl_eq]; omega_using [hi]), m₁]
   have wd₂ : ∀ i, i < 44 → i ≠ FLAG → word s₂.mem base (p521.sl i) = word s.mem base (p521.sl i) := fun i hi hf => by
-    rw [O₂.word (by rw [sl_eq, FL]; omega) (by rw [sl_eq]; omega), m₁]
+    rw [O₂.word (by rw [sl_eq, FL]; omega_using [hi]) (by rw [sl_eq]; omega_using [hi]), m₁]
   -- The root of the first byte's parity.
   refine WP.block_append (WP.mono (parMask_ok hw₂ (a := Y1) (by decide)) fun s₃ ⟨r₃, m₃, g₃⟩ => ?_)
   have hw₃ := hw₂.of_rest r₃
@@ -715,8 +715,8 @@ theorem dfin_ok {s : State} {base out : Addr} (hw : WsReg s base) (h2 : s.gpr .s
     fun s' ⟨a0', b', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
   have m₇₄ : s₇.mem = s₆.mem := u₇.mem
   have w₇ : ∀ d, d + 8 ≤ 40 → word s₇.mem base d = word s.mem base d := fun d hd => by
-    rw [m₇₄, O₆.word (by rw [FL]; omega) (by omega), m₅, O₄.word (by rw [sl_eq]; omega) (by omega), m₃,
-      O₂.word (by rw [FL]; omega) (by omega), m₁]
+    rw [m₇₄, O₆.word (by rw [FL]; omega_using [hd]) (by omega_using [hd]), m₅, O₄.word (by rw [sl_eq]; omega_using [hd]) (by omega_using [hd]), m₃,
+      O₂.word (by rw [FL]; omega_using [hd]) (by omega_using [hd]), m₁]
   have cx₇ : sv base s₇ CX = sv base s CX := by
     show wordsVal _ _ _ _ = _
     rw [m₇₄, O₆.wordsVal (by decide) (by decide), m₅, O₄.wordsVal (by decide) (by decide), m₃,
@@ -818,8 +818,8 @@ theorem decompress_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : DPre s
   have wr₄ : s₄.wr = s.wr := by rw [K₄.wr, Kc₃.wr, K₂.wr, Swr]
   refine WP.mono (dfin_ok hw₄ h2₄ hfo (fun i hi => by
       rw [wr₄, hwr]
-      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 133) (by omega)
-        (by omega)⟩) how hF hpr)
+      exact ⟨_, List.mem_cons_self .., Offset.contains_base (s.gpr .a0) (d := i) (n := 1) (k := 133) (by omega_using [hi])
+        (by omega_using [hi])⟩) how hF hpr)
     fun s' ⟨a0', b', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
   -- The registers.
   refine ⟨⟨fun r hr => ?_, by rw [sp', K₄.sp, Kc₃.sp, K₂.sp, Ssp],

@@ -80,12 +80,12 @@ private theorem start_ok {base k out T : Addr} {s : State} (hs : BaseStart base 
     (gb _ (by decide)).trans ((congrFun ga _).trans hk), ?_, ?_, ?_, by rw [syb, sya]; exact hT⟩,
     ob.trans ho⟩
   · intro q hq
-    exact ⟨⟨k, 32⟩, by rw [rb, ra, hr, hk]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨k, 32⟩, by rw [rb, ra, hr, hk]; simp, Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq])⟩
   · intro q hq
     rw [hk, hb] at hd
     exact farScr hd hq (by decide)
   · exact htb.of_far (by rw [rb, ra, wb, wa]) fun x hx => by
-      rw [mb x (Or.inr (by omega)), ma x (Or.inr (by omega))]
+      rw [mb x (Or.inr (by omega_using [hx])), ma x (Or.inr (by omega_using [hx]))]
 
 private theorem start_ct (base k out T : Addr) :
     CT (fun x y => BaseStart base k out T x ∧ BaseStart base k out T y)

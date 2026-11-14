@@ -22,9 +22,9 @@ theorem byteZero32 : ∀ b : Byte, (b.setWidth 32 - 0#32 == 0#32) = decide (b = 
 theorem countOne32 {n : Nat} (positive : 0 < n) (fits : n < 2 ^ 32) :
     (BitVec.ofNat 32 n - 1#32 == 0#32) = decide (n = 1) := by
   change (BitVec.ofNat 32 n - BitVec.ofNat 32 1 == (0 : BitVec 32)) = _
-  rw [Offset.ofNat_sub_ofNat (by omega), ofNat_beq_zero (by omega)]
+  rw [Offset.ofNat_sub_ofNat (by omega_using [positive]), ofNat_beq_zero (by omega_using [fits])]
   apply decide_eq_decide.mpr
-  omega
+  omega_using [positive]
 
 theorem scanRead_ok (s : State) {base src : BitVec 32} {len : Nat} {bs : List Byte}
     (source : Octets base src len bs s) (positive : 0 < bs.length) (ptr : s.gpr .r4 = src) :
@@ -65,6 +65,6 @@ theorem scanAdvance_ok (s : State) {n : Nat} (positive : 0 < n)
   refine withRest_all [.r4, .r6, .r11] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.advance VG.Impl.Ffdh.Arm.PublicScan.advance
   ffrun [count]
-  exact Offset.ofNat_sub_ofNat (by omega : 1 ≤ n)
+  exact Offset.ofNat_sub_ofNat (by omega_using [positive] : 1 ≤ n)
 
 end VG.Proof.Ffdh.Arm

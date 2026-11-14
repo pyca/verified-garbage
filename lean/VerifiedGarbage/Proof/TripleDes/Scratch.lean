@@ -86,7 +86,7 @@ private theorem scheduleAt_congr
   congr 1
   funext i
   refine foldl_congr _ _ fun j hj out => ?_
-  rw [h _ (by have := i.isLt; have := List.mem_range.mp hj; omega)]
+  rw [h _ (by have := i.isLt; have := List.mem_range.mp hj; omega_using [this])]
 
 private theorem blocksAt_congr {n : Nat}
     (h : ∀ i < n * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
@@ -96,7 +96,7 @@ private theorem blocksAt_congr {n : Nat}
   have := List.mem_range.mp hi
   congr 1
   funext j
-  have : 8 * i + j.val < n * 8 := by have := j.isLt; omega
+  have : 8 * i + j.val < n * 8 := by have := j.isLt; omega_arith
   rw [Offset.add_add]
   exact h _ this
 
@@ -107,10 +107,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 end
 
@@ -149,7 +149,7 @@ theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.w
   dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le kl.toNat (2 ^ pb)
   rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-    rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
@@ -176,7 +176,7 @@ theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
   dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega_arith)]
   exact h
 
 theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig.words pb).length →
@@ -223,7 +223,7 @@ theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
   dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega_arith)]
   exact h
 
 end VG.Proof.TripleDes

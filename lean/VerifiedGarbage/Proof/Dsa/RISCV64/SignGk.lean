@@ -26,14 +26,14 @@ open VG.Proof.Bignum (slot)
 theorem buf_pword {L : Lay} (hL : L.Ok) {m m' : Mem} (h : Outside L.Buf 0 L.pl m m') {d : Nat}
     (hd : d + 8 ≤ L.qOff) : word m' L.S d = word m L.S d := by
   have hw := hL.wp_ge
-  have hq : L.qOff < 2 ^ 63 := by simp only [Lay.qOff, Lay.slot_eq]; omega
+  have hq : L.qOff < 2 ^ 63 := by simp only [Lay.qOff, Lay.slot_eq]; omega_using [hw]
   refine (Mem.readW_congr fun i hi => (h _ (Or.inr ?_)).symm).symm
   by_contra hc
   have h1 := bufPastP hL (off L.S d + BitVec.ofNat 64 i) (by
-    simp only [ofs] at hc ⊢; omega)
-  have h2 := ofs_off L.S (d := d) (i := i) (by omega)
+    simp only [ofs] at hc ⊢; omega_using [hc])
+  have h2 := ofs_off L.S (d := d) (i := i) (by omega_using [hd, hq, hi])
   simp only [ofs] at h1 h2
-  omega
+  omega_using [hd, hi, h1, h2]
 
 /-- The registers `gk` writes. -/
 def gkRegs : List Reg := [.s9] ++ ptrRegs ++ powPRegs ++ [.s7, .t2] ++ [.s8] ++ storeRegs
@@ -61,7 +61,7 @@ theorem gk_ok {s : State} {L : Lay} {key nonce : Addr} {p : Nat} (hL : L.Ok) (hs
       (hr.keepM k12 hm2) (hin.keep k12) (by
         show ((word s₂.mem L.S (slot L.wp 0)).toNat * (s₂.gpr .t1).toNat + 1) % 2 ^ 64 = 0
         rw [hm2, k12.gpr (by decide)]; exact hi)
-      ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega)) b7 (hn.keep k12.2.1 k12.2.2)
+      ((hk.keep k12.2.1 k12.2.2).sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 (hn.keep k12.2.1 k12.2.2)
       ((k2.gpr (by decide)).trans a9) (by rw [hm2]; exact hp0) hp hpo (by rw [hm2]; exact hrr))
     fun s₃ ⟨⟨v4, in3, i3, o3⟩, k3⟩ => ?_)
   rw [hm2] at v4 o3
@@ -75,21 +75,21 @@ theorem gk_ok {s : State} {L : Lay} {key nonce : Addr} {p : Nat} (hL : L.Ok) (hs
   have k14 := (k13.trans ku).trans k4
   have en4 := in3.env.keep (ku.trans k4)
   refine WP.mono (storeBE_ok (j := 4) (O := L.Buf) (k := L.pl) en4 (by decide)
-    (by have := ScrL.bufSt (hs.congr k14.2.2) hL (o := 0) (k := L.pl) (by omega)
+    (by have := ScrL.bufSt (hs.congr k14.2.2) hL (o := 0) (k := L.pl) (by omega_using [])
         simpa only [off, BitVec.add_zero] using this)
-    (by have := buf_nowrap hL (o := 0) (k := L.pl) (by omega) (by omega); simpa only [off, BitVec.add_zero] using this)
-    ((k4.gpr (by decide)).trans f7) f8 (by omega) (by omega) (bufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
+    (by have := buf_nowrap hL (o := 0) (k := L.pl) (by omega_using []) (by omega_using [hpl]); simpa only [off, BitVec.add_zero] using this)
+    ((k4.gpr (by decide)).trans f7) f8 (by omega_using [hpl]) (by omega_using [hw8]) (bufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   rw [hm4] at vt ot
   have hplt : p < 2 ^ (8 * L.pl) := by
-    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 64 * L.wp by omega]; exact wordsVal_lt _ _ _ _
+    rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 64 * L.wp by omega_using []]; exact wordsVal_lt _ _ _ _
   have kall := k14.trans kt
   have y3 : arrP s₃.mem L 4 = gOf s.mem L key ^ kOf s.mem L nonce % p := v4
   refine ⟨⟨?_, ⟨en4.keep kt, (kall.gpr (by decide)).trans hin.s6⟩, ?_, ⟨s₃.mem, o3, ot⟩⟩, ?_⟩
   · rw [vt, read_low _ _ (w := L.wp) (by rw [hw8]) (by
-      show arrP s₃.mem L 4 < 2 ^ (8 * L.pl); rw [y3]; exact Nat.lt_trans (Nat.mod_lt _ (by omega)) hplt)]
+      show arrP s₃.mem L 4 < 2 ^ (8 * L.pl); rw [y3]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp])) hplt)]
     exact y3
   · show ((word t.mem L.S (slot L.wp 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [buf_pword hL ot (by simp only [Lay.qOff, Lay.slot_eq]; omega), ((ku.trans k4).trans kt).gpr (by decide)]
+    rw [buf_pword hL ot (by simp only [Lay.qOff, Lay.slot_eq]; omega_using []), ((ku.trans k4).trans kt).gpr (by decide)]
     exact i3
   · simp only [gkRegs, List.append_assoc] at kall ⊢
     exact kall.mono (by decide)

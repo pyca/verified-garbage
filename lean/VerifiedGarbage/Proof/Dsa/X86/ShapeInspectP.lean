@@ -63,14 +63,14 @@ theorem inspectP_ok {s : State} {base : Addr} {size len p : Nat}
       shapeWord t base 40 = mask32 (Spec.Dsa.bitLength p = 3072) ∧
       (shapeWord t base 56).toNat % 2 = p % 2 ∧
       Keeps shapeClob s t ∧ Outside base 0 (contextBytes 48) s.mem t.mem := by
-  have hn : (len + 7) / 8 ≤ 48 := by omega
+  have hn : (len + 7) / 8 ≤ 48 := by omega_using [hmax]
   have cb := VG.Proof.Dsa.X86.Layout.context_bound hn
   have hsaved : 8256 ≤ size := hz
   unfold Shape.inspectP
   refine WP.seq (WP.mono (loadWidths_ok hs hz rfl h4 hmax hw4 R.toReadableComponent
     ((R.smaller hn).slot (by decide)) hp (by decide) (by decide) (by decide) (by decide))
     fun u ⟨Mu, P1, P2, P3, Ku, Ou⟩ => ?_)
-  refine WP.mono (saveParity_ok (hs.of_keeps Ku (by decide)) (by omega) (by omega) Mu)
+  refine WP.mono (saveParity_ok (hs.of_keeps Ku (by decide)) (by omega_using [h4]) (by omega_using [cb, hsaved]) Mu)
     fun t ⟨Pt, Kt, Ot⟩ => ?_
   refine ⟨?_, ?_, ?_, Pt, Ku.widen Kt, ?_⟩
   · rw [outside_shapeWord Ot (by decide) (.inl (by decide)), P1]

@@ -7,6 +7,9 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Tail
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZC
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
@@ -62,7 +65,7 @@ theorem bigP_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Blo
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   obtain ⟨hpw, hH⟩ := ctx_keep hp hI.a.frame
   refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hp hdi hr11 hI.a.rd hI.a.wr hpw
-    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega)) hI.m1))
+    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega_using [hl])) hI.m1))
     fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
   rw [hH] at t
   let T : Nat → Nat → Nat → Block := fun g k l =>
@@ -71,18 +74,54 @@ theorem bigP_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Blo
       s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
     by_cases h2 : g = 2
     · subst h2
-      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega]
-      rw [keep _ (by omega)]; exact hI.pw k hk l hl
+      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+      rw [keep _ (by omega_using [hk, hl])]; exact hI.pw k hk l hl
     · simp only [T, h2, ↓reduceIte]
   have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
     by_cases h2 : g = 2
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
-    · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
+    · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
   have hA₁ := (hI.a.pow hp.base fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
   exact bigRest_ok hp.base hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
     hA₁ hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp.base))
+
+/-- `StitchZH.midC`: the powers of 48 blocks loaded, then the whole message,
+no block of the output loaded back (`StitchZC.midRestM_ok`). -/
+theorem midC_ok {s₀ : State} (hp : SPrePrepared s₀) {P : Nat → Nat → Block} (hr : RemOkG (hk s₀) P)
+    (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
+    (hFin : ∀ T : Nat → Nat → Nat → Block,
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
+        FinOk48 (hk s₀) T) {s : State}
+    (hR : Ready s₀ P s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa Impl.Gcm.X86_64.StitchZH.midC s (Stitch.EPost s₀) := by
+  have hdi : s.gpr .rdi = kp s₀ := hR.a.rdi
+  have hr11 : s.gpr .r11 = pp s₀ := hR.gpr .r11 (by decide) (by decide) (by decide)
+  obtain ⟨hpw, hH⟩ := ctx_keep hp hR.a.frame
+  refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hp hdi hr11 hR.a.rd hR.a.wr hpw
+    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hR.a.msk l (by omega_using [hl])) hR.m1))
+    fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
+  rw [hH] at t
+  let T : Nat → Nat → Nat → Block := fun g k l =>
+    if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
+  have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
+      s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2
+      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+      rw [keep _ (by omega_using [hk, hl])]; exact hR.pw k hk l hl
+    · simp only [T, h2, ↓reduceIte]
+  have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
+    · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
+  have hA₁ := (hR.a.pow hp.base fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+  exact WP.mono (StitchZC.midRestM_ok (Stitch.SPre.toM hp.base) hp.base.c_k hp.base.d_c hr hT
+    (fun k l => by simp only [T, ↓reduceIte]) hp.base.nb16 hR.toM hA₁.toM hv pm g₁
+    (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
+    (hCache.keep hh₁ (hA₁.keys hp.base))) fun _ h => h.toEPost
 
 theorem bigDPM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀)
     (hQ : SPrePrepared (if ix then StitchZTo.dst s₀ else s₀)) {P : Nat → Nat → Block}
@@ -97,7 +136,7 @@ theorem bigDPM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀)
     have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (fun _ => by decide) (by decide) (by decide)
     obtain ⟨hpw, hH⟩ := ctx_keep hQ hI.a.frame
     refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hQ hdi hr11 hI.a.rd hI.a.wr hpw
-      (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega)) hI.m1))
+      (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega_using [hl])) hI.m1))
       fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
     rw [hH] at t
     let T : Nat → Nat → Nat → Block := fun g k l =>
@@ -106,13 +145,13 @@ theorem bigDPM_ok {ix : Bool} {s₀ : State} (hp : Stitch.LPre ix s₀)
         s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
       by_cases h2 : g = 2
       · subst h2
-        simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega]
-        exact (keep (64 * k + 16 * l) (by omega)).trans (hI.pw k hk l hl)
+        simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+        exact (keep (64 * k + 16 * l) (by omega_using [hk, hl])).trans (hI.pw k hk l hl)
       · simp only [T, h2, ↓reduceIte]
     have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
       by_cases h2 : g = 2
       · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
-      · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
+      · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
     have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
     exact bigDRestM_ok hp hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
       hA₁ hv pm g₁

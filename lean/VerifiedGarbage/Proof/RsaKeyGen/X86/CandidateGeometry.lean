@@ -14,12 +14,12 @@ def geometry (workspace : Addr) (length capacity : Nat) : Geometry := ⟨workspa
 theorem length_eq {length : Nat} (valid : Spec.RsaKeyGen.primeLenValid length) :
     8 * (length / 8) = length := by
   obtain ⟨_, _, multiple⟩ := valid
-  omega
+  omega_using [multiple]
 
 theorem width_bounds {length : Nat} (valid : Spec.RsaKeyGen.primeLenValid length) :
     4 ≤ length / 8 ∧ length / 8 ≤ 64 := by
   obtain ⟨lo, hi, _⟩ := valid
-  omega
+  omega_using [lo, hi]
 
 theorem geometry_valid {workspace : Addr} {length capacity : Nat}
     (valid : Spec.RsaKeyGen.primeLenValid length)
@@ -27,14 +27,14 @@ theorem geometry_valid {workspace : Addr} {length capacity : Nat}
   have lo := (width_bounds valid).1
   have hi := (width_bounds valid).2
   have len := length_eq valid
-  refine ⟨lo, by change length / 8 ≤ 128; omega, ?_⟩
+  refine ⟨lo, by change length / 8 ≤ 128; omega_using [hi], ?_⟩
   change Proof.Rsa.Mont.arrAt (length / 8) 28 ≤ 8 * capacity
   unfold Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes
   unfold Spec.Rsa.scratchWords at space
-  omega
+  omega_using [space, lo]
 
 theorem native_length_bound {length : Nat} (valid : Spec.RsaKeyGen.primeLenValid length) : length < 2 ^ 32 := by
   obtain ⟨_, hi, _⟩ := valid
-  omega
+  omega_using [hi]
 
 end VG.Proof.RsaKeyGen.X86.CandidateGeometry

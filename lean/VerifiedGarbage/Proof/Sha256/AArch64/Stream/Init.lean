@@ -51,13 +51,13 @@ theorem append_pairs (a b c d : BitVec 32) :
   intro i hi
   simp only [ofVWords, BitVec.getLsbD_append]
   by_cases h0 : i < 32
-  · simp [h0, show i < 64 by omega]
+  · simp [h0, show i < 64 by omega_using [h0]]
   by_cases h1 : i < 64
-  · simp [h0, h1, show i - 32 < 32 by omega]
+  · simp [h0, h1, show i - 32 < 32 by omega_using [h1]]
   by_cases h2 : i < 96
-  · simp [h0, h1, show ¬ i - 32 < 32 by omega, show i - 32 - 32 = i - 64 by omega, show i - 64 < 32 by omega]
-  · simp [h0, h1, show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega,
-      show ¬ i - 64 < 32 by omega, show i - 32 - 32 - 32 = i - 64 - 32 by omega]
+  · simp [h0, h1, show ¬ i - 32 < 32 by omega_using [h1], show i - 32 - 32 = i - 64 by omega_using [], show i - 64 < 32 by omega_using [h2]]
+  · simp [h0, h1, show ¬ i - 32 < 32 by omega_using [h1], show ¬ i - 32 - 32 < 32 by omega_using [h2],
+      show ¬ i - 64 < 32 by omega_using [h2], show i - 32 - 32 - 32 = i - 64 - 32 by omega_using []]
 
 variable (iv : Spec.Sha256.HashValue)
 
@@ -67,7 +67,7 @@ theorem exec_ivld (r : VReg) (off : Nat) (ho : off = 0 ∨ off = 16) {s : State}
     exec (.ldrqTbl r .x9 off (ivName iv) (ivTable iv)) s =
       some (s.setV r ((ivTable iv).getD (off / 8 + 1) 0 ++ (ivTable iv).getD (off / 8) 0)) := by
   have hc : s.gpr .x9 = s.syms (ivName iv) ∧ off % 16 = 0 ∧ off < 65536 ∧
-      off / 8 + 2 ≤ (ivTable iv).length := ⟨hx, by omega, by omega, by simp [ivTable]; omega⟩
+      off / 8 + 2 ≤ (ivTable iv).length := ⟨hx, by omega_using [ho], by omega_using [ho], by simp [ivTable]; omega_using [ho]⟩
   simp only [exec, ite_eq_left_of_eq_true _ _ (eq_true hc)]
 
 theorem write_iv (m : Mem) (p : Addr) :
@@ -87,7 +87,7 @@ theorem initQ_correct {s₀ : State} (hp : (Proof.Sha256.initAArch64 iv).pre s�
   apply WP.withPreservedV (hc := by rfl)
   obtain ⟨-, hwr⟩ := hp
   have o : ∀ d, d + 16 ≤ 32 → InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 d) 16 :=
-    fun d hd => ⟨⟨s₀.gpr .x0, 96⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
+    fun d hd => ⟨⟨s₀.gpr .x0, 96⟩, by simp [hwr], contains_offset (by omega_using [hd]) (by omega_using [hd])⟩
   have hx : (s₀.write .x .x9 (s₀.syms (ivName iv))).gpr .x9 =
       (s₀.write .x .x9 (s₀.syms (ivName iv))).syms (ivName iv) := RegUpd.gpr_write_self _ _ _ _
   refine WP.block_cons_iff.mpr ⟨_, exec_adrSym, WP.block_cons_iff.mpr ⟨_, exec_ivld iv .v0 0 (.inl rfl) hx,

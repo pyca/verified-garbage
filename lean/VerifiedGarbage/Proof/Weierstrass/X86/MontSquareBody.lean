@@ -28,25 +28,25 @@ theorem squareRound_ok {s : State} {base : Addr} (hb : Bx s base 8192)
   have hn := hb.nowrap
   have ho : own 4 = 3840 := rfl
   simp only [squareRound, List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_bp hb (d := own 4 + 4 * i) (by omega)) fun t R _ => ?_
+  refine wp_movS (readSrc_bp hb (d := own 4 + 4 * i) (by omega_using [hi, ho])) fun t R _ => ?_
   have hbt := hb.of_keeps R.keeps (by decide)
   have hq : (t.gpr .ecx).toNat = w32 s.mem base (own 4 + 4 * i) := by rw [R.gpr]
   have hqB := (t.gpr .ecx).isLt
   have hqp : (t.gpr .ecx).toNat * p256Prime ≤ (2 ^ 32 - 1) * p256Prime :=
-    Nat.mul_le_mul_right _ (by omega)
-  refine WP.mono (squareRed_ok hbt (w := own 4 + 4 * i) (extra := 7 - i) (by omega)
-    (by omega) (by rw [R.mem]; exact hq) ?_) fun u ⟨O, V, K⟩ => ?_
-  · rw [R.mem, show 10 + (7 - i) = 17 - i by omega]
+    Nat.mul_le_mul_right _ (by omega_using [])
+  refine WP.mono (squareRed_ok hbt (w := own 4 + 4 * i) (extra := 7 - i) (by omega_using [])
+    (by omega_using [hi, ho]) (by rw [R.mem]; exact hq) ?_) fun u ⟨O, V, K⟩ => ?_
+  · rw [R.mem, show 10 + (7 - i) = 17 - i by omega_using [hi]]
     exact Nat.lt_of_le_of_lt (Nat.add_le_add_left hqp _) hlt
   · refine ⟨?_, (R.keeps.mono (by decide)).widen K (by decide), (t.gpr .ecx).toNat, hqB, ?_⟩
     · rw [R.mem] at O
-      exact O.mono (by omega) (by omega)
-    · rw [R.mem, show 10 + (7 - i) = 17 - i by omega] at V
-      have he : 17 - i = (16 - i) + 1 := by omega
+      exact O.mono (by omega_using []) (by omega_using [hi])
+    · rw [R.mem, show 10 + (7 - i) = 17 - i by omega_using [hi]] at V
+      have he : 17 - i = (16 - i) + 1 := by omega_using [hi]
       rw [he, val32, val32] at V
       have hlow := (u.mem.readW (off base (own 4 + 4 * i)) 32).isLt
       rw [← hq] at V
-      have heq : own 4 + 4 * (i + 1) = own 4 + 4 * i + 4 := by omega
+      have heq : own 4 + 4 * (i + 1) = own 4 + 4 * i + 4 := by omega_using []
       rw [heq, he, val32, ← hq]
       simp only [p256Prime, w32] at V ⊢
       omega_using [V, hlow]
@@ -76,14 +76,14 @@ theorem squareRounds_ok {s : State} {base : Addr} {T : Nat} (hb : Bx s base 8192
   | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, Keeps.refl _ _, hI⟩
   | r + 1, hr => by
     rw [squareRounds]
-    refine WP.block_append (WP.mono (squareRounds_ok hb hI r (by omega)) fun t ⟨O, K, H, U, hU, E⟩ => ?_)
+    refine WP.block_append (WP.mono (squareRounds_ok hb hI r (by omega_using [hr])) fun t ⟨O, K, H, U, hU, E⟩ => ?_)
     have hbt := hb.of_keeps K (by decide)
-    refine WP.mono (squareRound_ok hbt (by omega) (square_round_room (by omega) H))
+    refine WP.mono (squareRound_ok hbt (by omega_using [hr]) (square_round_room (by omega_using [hr]) H))
       fun u ⟨O', K', q, hq, E'⟩ => ⟨O.trans O', K.trans K', ?_, ?_⟩
-    · have h := square_round_bound (by omega : r < 8) hq H E'
-      rwa [show 17 - (r + 1) = 16 - r by omega]
+    · have h := square_round_bound (by omega_using [hr] : r < 8) hq H E'
+      rwa [show 17 - (r + 1) = 16 - r by omega_using []]
     · have h := square_round_multiple hq hU E E'
-      rwa [show 17 - (r + 1) = 16 - r by omega]
+      rwa [show 17 - (r + 1) = 16 - r by omega_using []]
 
 /-- The final nine words are below `2p` and congruent to the square times `R⁻¹`. -/
 theorem squareReduce_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
@@ -97,7 +97,7 @@ theorem squareReduce_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192
   have hI : SquareInv base (a * a) 0 s.mem := by
     simp only [SquareInv, Nat.mul_zero, Nat.add_zero, Nat.sub_zero, Nat.pow_zero, Nat.one_mul, hT]
     refine ⟨?_, 0, by decide, by simp⟩
-    omega
+    omega_using [haa]
   refine WP.mono (squareRounds_ok hb hI 8 (by decide)) fun u ⟨O, K, _, U, hU, E⟩ =>
     ⟨O, K, square_final_bound ha hU E, U, E⟩
 
@@ -124,7 +124,7 @@ theorem squareBody_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
   unfold squareBody
   refine WP.block_append (WP.mono (squareInit_ok hb hp ha) fun t ⟨O, K, V⟩ => ?_)
   refine WP.mono (squareReduce_ok (hb.of_keeps K (by decide)) hA V) fun u ⟨O', K', H, E⟩ =>
-    ⟨O.trans (O'.mono (by omega) (by omega)), K.widen K' (by decide), H, E⟩
+    ⟨O.trans (O'.mono (by omega_using []) (by omega_using [])), K.widen K' (by decide), H, E⟩
 
 end VG.Proof.Weierstrass.X86.Mont
 

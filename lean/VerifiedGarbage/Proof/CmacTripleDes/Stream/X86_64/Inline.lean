@@ -45,37 +45,37 @@ structure UArgs (s : State) (W C D S : Addr) (n : Nat) : Prop where
   r8 : s.gpr .r8 = S
   hn : 8 * n < 2 ^ 64
   wc : (⟨W, 384⟩ : Region).Disjoint ⟨C, 8⟩
-  ws : (⟨W, 384⟩ : Region).Disjoint ⟨S, 640⟩
+  ws : (⟨W, 384⟩ : Region).Disjoint ⟨S, 120⟩
   dc : (⟨D, 8 * n⟩ : Region).Disjoint ⟨C, 8⟩
-  ds : (⟨D, 8 * n⟩ : Region).Disjoint ⟨S, 640⟩
-  cs : (⟨C, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  ds : (⟨D, 8 * n⟩ : Region).Disjoint ⟨S, 120⟩
+  cs : (⟨C, 8⟩ : Region).Disjoint ⟨S, 120⟩
   retC : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨C, 8⟩
-  retS : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  retS : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 120⟩
   wrapC : C.toNat + 8 ≤ 2 ^ 64
   wrapD : D.toNat + 8 * n ≤ 2 ^ 64
-  wrapS : S.toNat + 640 ≤ 2 ^ 64
-  reads : Covers ([⟨W, 384⟩, ⟨D, 8 * n⟩] ++ [⟨C, 8⟩, ⟨S, 640⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨C, 8⟩, ⟨S, 640⟩] s.wr
+  wrapS : S.toNat + 120 ≤ 2 ^ 64
+  reads : Covers ([⟨W, 384⟩, ⟨D, 8 * n⟩] ++ [⟨C, 8⟩, ⟨S, 120⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 8⟩, ⟨S, 120⟩] s.wr
 
 /-- What a run of `update` leaves. -/
 structure UPost (s : State) (W C D S : Addr) (n : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 8⟩, ⟨S, 640⟩] s.mem s'.mem
+  frame : Frame [⟨C, 8⟩, ⟨S, 120⟩] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem C 8 =
     Spec.Cmac.chain (ciphAt s.mem W) (Spec.Aes.bytesAt s.mem C 8) (Spec.Cmac.blocksAt s.mem D 8 n)
 
 theorem UArgs.pre {s : State} {W C D S : Addr} {n : Nat} (h : UArgs s W C D S n) :
-    updateX86_64.pre (s.withRegions [⟨W, 384⟩, ⟨D, 8 * n⟩] [⟨C, 8⟩, ⟨S, 640⟩]) := by
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+    updateX86_64.pre (s.withRegions [⟨W, 384⟩, ⟨D, 8 * n⟩] [⟨C, 8⟩, ⟨S, 120⟩]) := by
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h.rdi,
     h.rsi, h.rdx, h.rcx, h.r8, hN]
   exact ⟨trivial, trivial, h.wc, h.ws, h.dc, h.ds, h.cs, h.retC, h.retS, h.wrapC, h.wrapD, h.wrapS⟩
 
 theorem upd_wp {s : State} {W C D S : Addr} {n : Nat} (h : UArgs s W C D S n) :
     WP isa Impl.CmacTripleDes.X86_64.update s (UPost s W C D S n) := by
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   refine WP.inline (k := updateX86_64) Proof.CmacTripleDes.X86_64.update_correct h.pre h.reads h.writes
     (fun s' hrd hwr ha hf _ hpost => ⟨hrd, hwr, ha.1, hf, ?_⟩) (by lit_decide)
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi, h.rdx, h.rcx,
@@ -94,25 +94,25 @@ structure FArgs (s : State) (K St P S : Addr) (L : Nat) : Prop where
   r8 : s.gpr .r8 = S
   len : L ≤ 8
   kst : (⟨K, 400⟩ : Region).Disjoint ⟨St, 8⟩
-  ks : (⟨K, 400⟩ : Region).Disjoint ⟨S, 640⟩
+  ks : (⟨K, 400⟩ : Region).Disjoint ⟨S, 120⟩
   pst : (⟨P, L⟩ : Region).Disjoint ⟨St, 8⟩
-  ps : (⟨P, L⟩ : Region).Disjoint ⟨S, 640⟩
-  sts : (⟨St, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  ps : (⟨P, L⟩ : Region).Disjoint ⟨S, 120⟩
+  sts : (⟨St, 8⟩ : Region).Disjoint ⟨S, 120⟩
   retSt : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨St, 8⟩
-  retS : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  retS : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 120⟩
   wrapK : K.toNat + 400 ≤ 2 ^ 64
   wrapSt : St.toNat + 8 ≤ 2 ^ 64
   wrapP : P.toNat + L ≤ 2 ^ 64
-  wrapS : S.toNat + 640 ≤ 2 ^ 64
-  reads : Covers ([⟨K, 400⟩, ⟨P, L⟩] ++ [⟨St, 8⟩, ⟨S, 640⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨St, 8⟩, ⟨S, 640⟩] s.wr
+  wrapS : S.toNat + 120 ≤ 2 ^ 64
+  reads : Covers ([⟨K, 400⟩, ⟨P, L⟩] ++ [⟨St, 8⟩, ⟨S, 120⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨St, 8⟩, ⟨S, 120⟩] s.wr
 
 /-- What a run of `finalize` leaves. -/
 structure FPost (s : State) (K St P S : Addr) (L : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨St, 8⟩, ⟨S, 640⟩] s.mem s'.mem
+  frame : Frame [⟨St, 8⟩, ⟨S, 120⟩] s.mem s'.mem
   out : let ciph := ciphAt s.mem K
     let ks := Spec.Cmac.subkeys ciph 8
     Spec.Aes.bytesAt s.mem (K + 384) 16 = ks.1 ++ ks.2 →
@@ -121,8 +121,8 @@ structure FPost (s : State) (K St P S : Addr) (L : Nat) (s' : State) : Prop wher
       Spec.Aes.bytesAt s'.mem St 8 = Spec.Cmac.macFull ciph 8 (msg ++ Spec.Aes.bytesAt s.mem P L)
 
 theorem FArgs.pre {s : State} {K St P S : Addr} {L : Nat} (h : FArgs s K St P S L) :
-    finalizeX86_64.pre (s.withRegions [⟨K, 400⟩, ⟨P, L⟩] [⟨St, 8⟩, ⟨S, 640⟩]) := by
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+    finalizeX86_64.pre (s.withRegions [⟨K, 400⟩, ⟨P, L⟩] [⟨St, 8⟩, ⟨S, 120⟩]) := by
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   simp only [finalizeX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h.rdi,
     h.rsi, h.rdx, h.rcx, h.r8, hL]
   exact ⟨trivial, trivial, h.kst, h.ks, h.pst, h.ps, h.sts, h.retSt, h.retS, h.wrapK, h.wrapSt, h.wrapP,
@@ -130,7 +130,7 @@ theorem FArgs.pre {s : State} {K St P S : Addr} {L : Nat} (h : FArgs s K St P S 
 
 theorem fin_wp {s : State} {K St P S : Addr} {L : Nat} (h : FArgs s K St P S L) :
     WP isa Impl.CmacTripleDes.X86_64.finalize s (FPost s K St P S L) := by
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   refine WP.inline (k := finalizeX86_64) Proof.CmacTripleDes.X86_64.finalize_correct h.pre h.reads
     h.writes (fun s' hrd hwr ha hf _ hpost => ⟨hrd, hwr, ha.1, hf, ?_⟩) (by lit_decide)
   simp only [finalizeX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi, h.rdx, h.rcx,
@@ -148,36 +148,36 @@ structure IArgs (s : State) (Kp O S : Addr) (KL : Nat) : Prop where
   rcx : s.gpr .rcx = S
   klen : Spec.TripleDes.validKey KL
   ko : (⟨Kp, KL⟩ : Region).Disjoint ⟨O, 400⟩
-  ks : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 640⟩
-  os : (⟨O, 400⟩ : Region).Disjoint ⟨S, 640⟩
+  ks : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 120⟩
+  os : (⟨O, 400⟩ : Region).Disjoint ⟨S, 120⟩
   retO : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨O, 400⟩
-  retS : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 640⟩
+  retS : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨S, 120⟩
   wrapK : Kp.toNat + KL ≤ 2 ^ 64
   wrapO : O.toNat + 400 ≤ 2 ^ 64
-  wrapS : S.toNat + 640 ≤ 2 ^ 64
-  reads : Covers ([⟨Kp, KL⟩] ++ [⟨O, 400⟩, ⟨S, 640⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨O, 400⟩, ⟨S, 640⟩] s.wr
+  wrapS : S.toNat + 120 ≤ 2 ^ 64
+  reads : Covers ([⟨Kp, KL⟩] ++ [⟨O, 400⟩, ⟨S, 120⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨O, 400⟩, ⟨S, 120⟩] s.wr
 
 /-- What a run of `init` leaves. -/
 structure IPost (s : State) (Kp O S : Addr) (KL : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨O, 400⟩, ⟨S, 640⟩] s.mem s'.mem
+  frame : Frame [⟨O, 400⟩, ⟨S, 120⟩] s.mem s'.mem
   out : let k := Spec.TripleDes.expandKey (Spec.TripleDes.bytesAt s.mem Kp KL)
     let ks := Spec.Cmac.subkeys (Spec.Cmac.tdesWith k) 8
     Spec.TripleDes.scheduleAt s'.mem O = k ∧ Spec.Aes.bytesAt s'.mem (O + 384) 16 = ks.1 ++ ks.2
 
 theorem IArgs.pre {s : State} {Kp O S : Addr} {KL : Nat} (h : IArgs s Kp O S KL) :
-    initX86_64.pre (s.withRegions [⟨Kp, KL⟩] [⟨O, 400⟩, ⟨S, 640⟩]) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega)
+    initX86_64.pre (s.withRegions [⟨Kp, KL⟩] [⟨O, 400⟩, ⟨S, 120⟩]) := by
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega_using [h])
   simp only [initX86_64, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, h.rdi,
     h.rsi, h.rdx, h.rcx, hK]
   exact ⟨trivial, trivial, h.ko, h.ks, h.os, h.retO, h.retS, h.wrapK, h.wrapO, h.wrapS, h.klen⟩
 
 theorem init_inline_wp {s : State} {Kp O S : Addr} {KL : Nat} (h : IArgs s Kp O S KL) :
     WP isa Impl.CmacTripleDes.X86_64.init s (IPost s Kp O S KL) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h <;> omega_using [h])
   refine WP.inline (k := initX86_64) Proof.CmacTripleDes.X86_64.init_correct h.pre h.reads h.writes
     (fun s' hrd hwr ha hf _ hpost => ⟨hrd, hwr, ha.1, hf, ?_⟩) (by lit_decide)
   simp only [initX86_64, State.withRegions_gpr, State.withRegions_mem, h.rdi, h.rsi, h.rdx, hK] at hpost

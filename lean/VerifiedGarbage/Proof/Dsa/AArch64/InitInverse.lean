@@ -27,7 +27,7 @@ theorem initInverse_ok {s : State} {B : Addr} {Z w : Nat} {oldMinv : BitVec 64}
     Nat.le_trans (hdr_lt_slot w 8 hi) hZ
   have hn : slot w aN + 8 ≤ Z := by
     have h := slot_le (w := w) (show aN < 8 by decide)
-    omega
+    omega_using [hZ, h]
   unfold initInverse
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (WP.keep [.x3] (Q := fun u =>
@@ -53,6 +53,6 @@ theorem initInverse_ok {s : State} {B : Addr} {Z w : Nat} {oldMinv : BitVec 64}
   · exact (hf.word (Or.inl (by decide)) (by decide)).trans hg.hdr.hw
   · rw [htm, word_writeW_self]
   · intro j hj
-    exact (hf.word (Or.inr (by unfold sArr sMinv; omega)) (by unfold sArr; omega)).trans (hg.hdr.harr j hj)
+    exact (hf.word (Or.inr (by unfold sArr sMinv; omega_using [])) (by unfold sArr; omega_using [hj])).trans (hg.hdr.harr j hj)
 
 end VG.Proof.Dsa.AArch64

@@ -33,7 +33,7 @@ theorem halfByte_val {carry : Nat} (hc : carry ≤ 1) (b : Byte) :
     (halfByte carry b).toNat = b.toNat / 2 + 128 * carry := by
   have hb := b.isLt
   simp only [halfByte, BitVec.toNat_ofNat]
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [hc])
 
 /-- A carry of zero divides the encoded integer by two. A carry of one
 prepends one significant bit before the same shift. -/
@@ -42,9 +42,9 @@ theorem halfOctets_value (bs : List Byte) {carry : Nat} (hc : carry ≤ 1) :
   induction bs generalizing carry with
   | nil =>
     simp only [halfOctets, Spec.Rsa.os2ip, List.foldl_nil, List.length_nil, Nat.pow_zero, Nat.mul_one, Nat.add_zero]
-    omega
+    omega_using [hc]
   | cons b bs ih =>
-    rw [halfOctets, os2ip_cons, halfOctets_length, halfByte_val hc, ih (by omega), os2ip_cons]
+    rw [halfOctets, os2ip_cons, halfOctets_length, halfByte_val hc, ih (by omega_using []), os2ip_cons]
     simp only [List.length_cons]
     have he : carry * 256 ^ (bs.length + 1) + (b.toNat * 256 ^ bs.length + Spec.Rsa.os2ip bs) =
         (b.toNat % 2 * 256 ^ bs.length + Spec.Rsa.os2ip bs) +
@@ -56,7 +56,7 @@ theorem halfOctets_value (bs : List Byte) {carry : Nat} (hc : carry ≤ 1) :
             Nat.add_assoc, Nat.add_left_comm, Nat.add_comm]
         _ = (2 * (b.toNat / 2 + 128 * carry) + b.toNat % 2) * 256 ^ bs.length + Spec.Rsa.os2ip bs := by
           congr 2
-          omega
+          omega_using []
         _ = _ := by
           simp only [Nat.add_mul, Nat.mul_add, Nat.mul_assoc, Nat.mul_left_comm, Nat.mul_comm,
             Nat.add_assoc, Nat.add_left_comm, Nat.add_comm]
@@ -75,7 +75,7 @@ theorem carryAt_le {carry : Nat} (hc : carry ≤ 1) (bs : List Byte) (j : Nat) :
   unfold carryAt
   split
   · exact hc
-  · omega
+  · omega_using []
 
 theorem carryAt_next (carry : Nat) {bs : List Byte} {j : Nat} (hj : j < bs.length) :
     carryAt carry bs (j + 1) = bs[j].toNat % 2 := by
@@ -92,7 +92,7 @@ theorem halfOctets_get (carry : Nat) {bs : List Byte} {j : Nat} (hj : j < bs.len
     | zero => rfl
     | succ j =>
       simp only [halfOctets, List.getElem_cons_succ]
-      rw [ih (b.toNat % 2) (by simp only [List.length_cons] at hj; omega)]
+      rw [ih (b.toNat % 2) (by simp only [List.length_cons] at hj; omega_using [hj])]
       cases j with
       | zero => rfl
       | succ j => simp [carryAt]

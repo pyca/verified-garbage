@@ -98,7 +98,7 @@ theorem partI_crypt {s : State} (h : PartI Ctx St W SP P₀ D n s) :
   refine WP.mono (AesGcm.X86_64.WP.with_rdwr (crypt_ok L (icb := 0) h.crIn)) fun s' ⟨co, hrd, hwr⟩ => ?_
   have sl : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
-    co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_crFrame L hd h₁ (by omega))
+    co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_crFrame L hd h₁ (by omega_using [h₂]))
       (by decide)
   exact ⟨co.env, hd.of_eq hrd hwr, by rw [sl 200 (by decide) (by decide)]; exact h.1.2.2.1,
     by rw [sl 208 (by decide) (by decide)]; exact h.1.2.2.2.1, by rw [sl 192 (by decide) (by decide)]; exact h.1.2.2.2.2⟩
@@ -110,7 +110,7 @@ theorem partI_absorb {s : State} (h : PartI Ctx St W SP P₀ D n s) :
   refine WP.mono (AesGcm.X86_64.WP.with_rdwr (absorb_ok v L.lay (.inr rfl) h.absIn)) fun s' ⟨ao, hrd, hwr⟩ => ?_
   have sl : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
-    ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ (by omega))
+    ao.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (slot_absFrame L h₁ (by omega_using [h₂]))
       (by decide)
   exact ⟨ao.env, hd.of_eq hrd hwr, by rw [sl 200 (by decide) (by decide)]; exact h.1.2.2.1,
     by rw [sl 208 (by decide) (by decide)]; exact h.1.2.2.2.1, by rw [sl 192 (by decide) (by decide)]; exact h.1.2.2.2.2⟩

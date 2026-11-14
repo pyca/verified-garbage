@@ -56,14 +56,14 @@ theorem call_pub {valid : Nat → Nat → List Byte → Bool} {s₁ s₂ t₁ t�
   have hql₂ := rQBytes_le A₂
   have hqn₂ := rQBytes_length A₂
   have esp := esp_of_rf h₁.rf (pub_rBase e ▸ h₂.rf)
-  rw [callEntry_bytes A₁ h₁ (A₁.stackKeyWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
-    callEntry_bytes A₁ h₁ ((Offset.disjoint _ (by omega) (by omega) (by omega) :
-      Region.Disjoint ⟨off (rLow s₁) 20, 4⟩ ⟨off (rLow s₁) 112, (X86.arg s₁ 6).toNat⟩).symm) (by omega),
-    callEntry_bytes A₁ h₁ (A₁.stackDigestWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega),
-    callEntry_bytes A₂ h₂ (A₂.stackKeyWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega),
-    callEntry_bytes A₂ h₂ ((Offset.disjoint _ (by omega) (by omega) (by omega) :
-      Region.Disjoint ⟨off (rLow s₂) 20, 4⟩ ⟨off (rLow s₂) 112, (X86.arg s₂ 6).toNat⟩).symm) (by omega),
-    callEntry_bytes A₂ h₂ (A₂.stackDigestWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega)]
+  rw [callEntry_bytes A₁ h₁ (A₁.stackKeyWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega_using []),
+    callEntry_bytes A₁ h₁ ((Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []) :
+      Region.Disjoint ⟨off (rLow s₁) 20, 4⟩ ⟨off (rLow s₁) 112, (X86.arg s₁ 6).toNat⟩).symm) (by omega_using []),
+    callEntry_bytes A₁ h₁ (A₁.stackDigestWide.symm.sub_right (stk_sub s₁ (by decide))) (by omega_using []),
+    callEntry_bytes A₂ h₂ (A₂.stackKeyWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega_using []),
+    callEntry_bytes A₂ h₂ ((Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []) :
+      Region.Disjoint ⟨off (rLow s₂) 20, 4⟩ ⟨off (rLow s₂) 112, (X86.arg s₂ 6).toNat⟩).symm) (by omega_using []),
+    callEntry_bytes A₂ h₂ (A₂.stackDigestWide.symm.sub_right (stk_sub s₂ (by decide))) (by omega_using [])]
   have k₁ := callKey A₁ h₁
   have k₂ := callKey A₂ h₂
   simp only [argumentPointer] at k₁ k₂

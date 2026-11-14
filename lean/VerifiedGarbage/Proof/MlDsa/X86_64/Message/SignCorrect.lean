@@ -64,10 +64,10 @@ theorem signMov_ok {p : Params} {prep : Bool} {s s1 : State} (h : SPre p prep s)
     intro d hd
     refine ⟨rArgs s, by simp [hrd, h.rd], ?_⟩
     rw [hg, ← add_add, ← stackArgAddr0]
-    exact Offset.contains_base _ hd (by omega)
+    exact Offset.contains_base _ hd (by omega_using [hd])
   refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
-  have h8 := hin 0 (by omega)
-  have h16 := hin 8 (by omega)
+  have h8 := hin 0 (by omega_using [])
+  have h16 := hin 8 (by omega_using [])
   simp only [Nat.add_zero, Nat.reduceAdd] at h8 h16
   xrun [ea_stk, h8, h16, RegUpd.mxcsr_setReg]
   rw [hm, hg]
@@ -81,10 +81,10 @@ theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r10, .r11, .rax] := by decide
 /-- The arguments of `signRegs`, pushed. -/
 theorem signRegs_vals {p : Params} {prep : Bool} {s s2 : State} (hk : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r)
     (h10 : s2.gpr .r10 = stackArg s 0) (h11 : s2.gpr .r11 = stackArg s 1) (hax : s2.gpr .rax = 0) :
-    ∀ j (hj : j < 9), s2.gpr (signRegs[j]'(by simp [signRegs]; omega)) =
-      (slay p prep s).vals[j]'(by simp [Lay.vals]; omega) := by
+    ∀ j (hj : j < 9), s2.gpr (signRegs[j]'(by simp [signRegs]; omega_using [hj])) =
+      (slay p prep s).vals[j]'(by simp [Lay.vals]; omega_using [hj]) := by
   intro j hj
-  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 := by omega
+  have : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 := by omega_using [hj]
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [signRegs, Lay.vals, slay, List.getElem_cons_zero, List.getElem_cons_succ, h10, h11, hax] <;>
     exact hk _ (by decide)
@@ -111,13 +111,13 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
     have hsp2 : s2.gpr .rsp = (slay p prep s).B + BitVec.ofNat 64 112 := by
       rw [hg2 _ (by decide), slay_B]
     have hn : 8 * signRegs.length ≤ (s2.gpr .rsp).toNat := by
-      rw [hg2 _ (by decide)]; have := h.sp; simp only [signRegs, List.length_cons, List.length_nil]; omega
+      rw [hg2 _ (by decide)]; have := h.sp; simp only [signRegs, List.length_cons, List.length_nil]; omega_using [this]
     refine WP.frame (by decide) (by decide) (by decide) hn ?_
     refine WP.seq (WP.mono (entry_ok hL rfl (by decide) hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1)
       (signRegs_vals hg2 h10 h11 hax) (hg2 _ (by decide)))
       fun t ⟨hc, htw, htsp⟩ => ?_)
     have wtr : Within ⟨(slay p prep s).key + BitVec.ofNat 64 64, 64⟩ (slay p prep s).KEY :=
-      within_off _ (show 64 + 64 ≤ keyLen p prep by omega)
+      within_off _ (show 64 + 64 ≤ keyLen p prep by omega_using [hK])
     refine WP.seq (WP.mono (muHash_ok hL rfl hc (tr := .slotOff fKey 64) (by decide)
       (fun t' hc' => by rw [hc'.slotOff, fKey, hc'.pKey]) ⟨_, List.mem_append_left _ hL.inKey, wtr⟩
       ((hL.xKey.symm.sub_left wtr.sub).sub_right (Region.sub_prefix (by decide : 200 ≤ 1024)))
@@ -135,7 +135,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
         · rw [popped_gpr _ _ _ hr' (cs_r11 r hr), hcs' r hr, hc₁.cs r hr hr', hg2 r (cs_tmp r hr)]
       · have eR : rRet s = ⟨(slay p prep s).B + BitVec.ofNat 64 112, 8⟩ := by rw [slay_B]
         have dB : ∀ k, k ≤ 112 → (rRet s).Disjoint ⟨(slay p prep s).B, k⟩ := fun k hk => by
-          rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega)
+          rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega_using [])
         rw [popped_mem, hf'.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl | rfl
@@ -153,13 +153,13 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
       simp only [signInternal, messageRep, skTr]
       have ek : bytesAt t₁.mem (s.gpr .rdi) p.skLen = bytesAt s.mem (s.gpr .rdi) p.skLen := by
         rw [hc₁.bytesAt_eq (p := s.gpr .rdi) (n := p.skLen) (hL.xKey.sub_right (Region.sub_prefix hK.2.2))
-          (hL.kKey.sub_right (Region.sub_prefix hK.2.2)) (by have := h.nSk; omega), hm₀]
+          (hL.kKey.sub_right (Region.sub_prefix hK.2.2)) (by have := h.nSk; omega_using [hK]), hm₀]
       have er : bytesAt t₁.mem (s.gpr .r9) 32 = bytesAt s.mem (s.gpr .r9) 32 := by
         rw [hc₁.bytesAt_eq (p := s.gpr .r9) (n := 32) (h.rndScr.symm.sub_left (slay_X p prep s).sub) h.stkRnd (by decide), hm₀]
       have etr : bytesAt t.mem ((slay p prep s).key + BitVec.ofNat 64 64) 64 =
           ((bytesAt s.mem (s.gpr .rdi) p.skLen).drop 64).take 64 := by
         rw [hc.bytesAt_eq (hL.xKey.sub_right wtr.sub) (hL.kKey.sub_right wtr.sub) (by decide), hm₀,
-          Proof.MlKem.bytesAt_slice _ _ (show 64 + 64 ≤ p.skLen by have := skLen_ge hp; omega)]
+          Proof.MlKem.bytesAt_slice _ _ (show 64 + 64 ≤ p.skLen by have := skLen_ge hp; omega_using [this])]
         rfl
       rw [ek, er, hμ, etr, hm₀] at hq
       simp only [hdrBytes, Proof.MlKem.bytesAt_length, List.append_assoc] at hq ⊢
@@ -170,7 +170,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} (h
     refine ⟨⟨fun r hr => ?_, by rw [RegUpd.mem_setReg, hm1], by rw [RegUpd.mxcsr_setReg, hx1]⟩, ?_⟩
     · rw [RegUpd.gpr_setReg_of_ne _ _ (fun e => by subst e; revert hr; decide), hg1]
     · unfold SPost
-      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega)]
+      rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8])]
       rfl
 
 theorem sPost_of {p : Params} {s s' : State} (h : SPost p s s') : (signMessageContract p X86_64.abi 112).post s s' := by

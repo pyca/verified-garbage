@@ -35,7 +35,7 @@ theorem coeffAt_writeW32 (m : Mem) (q : Addr) {N i j : Nat} (hN : N ≤ 2 ^ 20) 
   unfold coeffAt
   split
   · subst j; exact Mem.readW_writeW_self32 m _ v
-  · exact Mem.readW_writeW_sep (Offset.sep q (by omega) (by omega) (by omega)) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep q (by omega_arith) (by omega_using [hN, hi]) (by omega_using [hN, hj])) (by decide)
 
 /-! ## One coefficient -/
 
@@ -89,8 +89,8 @@ theorem maskN_ok {p : Params} {s : State} (L : Lay kgR (kgW p) s) {a : Ptr} (ha 
         if (s.gpr .rax).setWidth 32 = 1 then coeffAt s.mem (pa s a) i else 0) ?_)
     fun s' ⟨⟨hP, h15, hc⟩, hx⟩ => ⟨hP, hx, h15, hc⟩
   unfold mask
-  refine WP.seq (WP.mono (maskPre_ok ha ha15 (N := N) (by omega) s) fun s1 ⟨⟨hm1, h15, h8, hdi, hcx⟩, k1⟩ => ?_)
-  refine WP.mono (wp_countdown (cnt := .rcx) (N := N) (by omega) hN0 (fun i s' =>
+  refine WP.seq (WP.mono (maskPre_ok ha ha15 (N := N) (by omega_using [hN]) s) fun s1 ⟨⟨hm1, h15, h8, hdi, hcx⟩, k1⟩ => ?_)
+  refine WP.mono (wp_countdown (cnt := .rcx) (N := N) (by omega_using [hN]) hN0 (fun i s' =>
       s'.gpr .rdi = pa s a + BitVec.ofNat 64 (4 * i) ∧ s'.gpr .r8 = s1.gpr .r8 ∧ s'.gpr .r15 = s1.gpr .r15 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨pa s a, 4 * N⟩] s.mem s'.mem ∧
       (∀ j < N, coeffAt s'.mem (pa s a) j =
@@ -102,9 +102,9 @@ theorem maskN_ok {p : Params} {s : State} (L : Lay kgR (kgW p) s) {a : Ptr} (ha 
     fun s' ⟨_, h8', h15', hrd', hwr', hf, hc, kk⟩ => ⟨⟨hrd', hwr', fun r hr => kk.gpr ?_, kk.gpr (by decide),
       hf.mono fun _ hr => List.mem_append_left _ hr⟩, ?_, ?_⟩
   · have hc4 : (⟨pa s a, 4 * N⟩ : Region).Contains (pa s a + BitVec.ofNat 64 (4 * i)) 4 :=
-      contains_offset' (by omega) (by omega)
+      contains_offset' (by omega_using [hi]) (by omega_using [hN])
     have hin : InRegions s'.wr (s'.gpr .rdi) 4 := by
-      rw [hwr', hdi']; exact inRegions_sub hW (by omega) (by omega)
+      rw [hwr', hdi']; exact inRegions_sub hW (by omega_using [hi]) (by omega_using [hN])
     have hin0 : InRegions (s'.rd ++ s'.wr) (s'.gpr .rdi) 4 :=
       let ⟨r, hr, hc⟩ := hin; ⟨r, List.mem_append_right _ hr, hc⟩
     refine WP.mono (maskBody_ok s' hin0 hin)
@@ -113,7 +113,7 @@ theorem maskN_ok {p : Params} {s : State} (L : Lay kgR (kgW p) s) {a : Ptr} (ha 
         (kk.trans k').mono (by decide)⟩, hcx'', hz⟩
     · rw [hdi'', hdi', show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, off_add]; rfl
     · rw [hm, hdi']; exact hf.writeW (List.mem_singleton_self _) _ hc4
-    · rw [hm, hdi', coeffAt_writeW32 _ _ hN hj (by omega), h8']
+    · rw [hm, hdi', coeffAt_writeW32 _ _ hN hj (by omega_using [hi]), h8']
       by_cases e : i = j
       · subst e
         rw [ifp rfl, ifp (Nat.lt_succ_self _)]
@@ -122,8 +122,8 @@ theorem maskN_ok {p : Params} {s : State} (L : Lay kgR (kgW p) s) {a : Ptr} (ha 
         rw [← this]; rfl
       · rw [ifn e, hc j hj]
         by_cases hji : j < i
-        · rw [ifp hji, ifp (by omega)]
-        · rw [ifn hji, ifn (by omega)]
+        · rw [ifp hji, ifp (by omega_using [hji])]
+        · rw [ifn hji, ifn (by omega_using [e, hji])]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, bases] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
   · rw [h15', h15]

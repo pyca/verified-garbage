@@ -42,7 +42,7 @@ theorem saveLink_ok {sc : Reg} {st wk rate : Nat} {s₀ s : State}
     apply fr
     intro r hr hc
     rw [List.mem_singleton.mp hr] at hc
-    exact hS.d _ (contains_off (by omega) (by decide)) hc
+    exact hS.d _ (contains_off (by omega_using [hi]) (by decide)) hc
 
 theorem restoreLink_ok {sc : Reg} {st wk rate : Nat} {s₀ s : State}
     (hS : HSetup sc st wk rate s₀) (hg : Rg s₀ s)

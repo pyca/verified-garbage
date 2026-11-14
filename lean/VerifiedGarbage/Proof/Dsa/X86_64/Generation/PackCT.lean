@@ -25,8 +25,8 @@ theorem packPart_context_ct (src dst len : Nat) (hsrc : src + len ≤ packed) (h
     (ht : (taint.check (Taint.ofRegs [.rsp]) (.block (packArgs src dst len)) hc).isSome = true) :
     RelCT isa (Two GenerationMemoryBefore) (packPart src dst len) (Two GenerationMemoryBefore) := by
   refine two_post (two_map GenerationContext.packPublic (fun _ _ h => generationMemory_pack h)
-    (packPart_ct src dst len (by unfold packed at hsrc; omega) (by unfold packed at hend; omega)
-      (by omega) ht)) ?_
+    (packPart_ct src dst len (by unfold packed at hsrc; omega_using [hsrc]) (by unfold packed at hend; omega_using [hend])
+      (by omega_using [hlen]) ht)) ?_
   exact fun _ _ h => packPart_memory h src dst len hsrc hdst hend hlen
 
 theorem pack_ct (pLen qLen : Nat)

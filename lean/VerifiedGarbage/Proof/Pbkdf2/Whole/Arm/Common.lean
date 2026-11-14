@@ -166,10 +166,10 @@ theorem layout : F.L.buf = 8 * F.W + 36 ∧ F.st0O = 8 * F.W + 36 ∧ F.st1O = 8
     F.uO = 8 * F.W + 36 + 4 * F.H.S ∧ F.tO = 8 * F.W + 36 + 4 * F.H.S + F.H.D ∧
     F.hkO = 8 * F.W + 36 + 4 * F.H.S + 2 * F.H.D ∧ F.intO = 8 * F.W + 36 + 4 * F.H.S + 2 * F.H.D + F.H.F := by
   dsimp only [Fns.st0O, Fns.st1O, Fns.stSO, Fns.stWO, Fns.uO, Fns.tO, Fns.hkO, Fns.intO, Fns.L, Hash.buf]
-  omega
+  omega_using []
 
 theorem end_le (hz : Sizes F) : F.intO + 4 ≤ F.L8 := by
-  have := layout (F := F); have := hz.fits; simp only [Fns.L8]; omega
+  have := layout (F := F); have := hz.fits; simp only [Fns.L8]; omega_arith
 
 /-! Bounds of the parts of `scratch`, each proved once for the many places that
 need it (each an `omega` call of its own otherwise), down the chain of their
@@ -223,12 +223,12 @@ include hp hz
 
 omit hz in
 theorem dO_addr {o : Nat} (ho : o < F.L8) : State.addr (dO s₀ o) = A s₀ o := by
-  have := hp.nsc; exact addr_add (by omega)
+  have := hp.nsc; exact addr_add (by omega_using [ho, this])
 
 omit hz in
 theorem dO_toNat {o : Nat} (ho : o < F.L8) : (dO s₀ o).toNat = (scr s₀).toNat + o := by
   have := hp.nsc
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho, this]), Nat.mod_eq_of_lt (by omega_using [ho, this])]
 
 omit hp hz in
 theorem part_sub {o n : Nat} (h : o + n ≤ F.L8) : Region.Sub (sR s₀ o n) (scR s₀ F) :=
@@ -237,12 +237,12 @@ theorem part_sub {o n : Nat} (h : o + n ≤ F.L8) : Region.Sub (sR s₀ o n) (sc
 omit hp in
 theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ F.L8) (hb : b + n ≤ F.L8) :
     Region.Disjoint (sR s₀ a m) (sR s₀ b n) := by
-  have := hz.reach; exact Offset.disjoint _ h (by omega) (by omega)
+  have := hz.reach; exact Offset.disjoint _ h (by omega_using [ha, this]) (by omega_using [hb, this])
 
 omit hp in
 theorem low_disj {k b n : Nat} (hk : k ≤ b) (hbn : b + n ≤ F.L8) :
     Region.Disjoint (lowR s₀ k) (sR s₀ b n) := by
-  have := hz.reach; exact Offset.base_disjoint _ hk (by omega)
+  have := hz.reach; exact Offset.base_disjoint _ hk (by omega_using [hbn, this])
 
 omit hp hz in
 theorem low_sub {k : Nat} (hk : k ≤ F.L8) : Region.Sub (lowR s₀ k) (scR s₀ F) := Region.sub_prefix hk
@@ -250,19 +250,19 @@ theorem low_sub {k : Nat} (hk : k ≤ F.L8) : Region.Sub (lowR s₀ k) (scR s₀
 omit hp in
 theorem sv_sub : Region.Sub (svR F s₀) (scR s₀ F) := by
   have := end_le hz; have := layout (F := F)
-  exact Offset.sub_base _ (by show 8 * F.W + 36 ≤ F.L8; omega)
+  exact Offset.sub_base _ (by show 8 * F.W + 36 ≤ F.L8; omega_arith)
 
 omit hp in
 /-- A part of `scratch` after the save area is apart from it. -/
 theorem sv_disj {o n : Nat} (ho : 8 * F.W + 36 ≤ o) (hon : o + n ≤ F.L8) : (svR F s₀).Disjoint (sR s₀ o n) := by
-  have := hz.reach; exact Offset.disjoint _ (Or.inl (by simp only [Fns.L]; omega)) (by simp only [Fns.L]; omega) (by omega)
+  have := hz.reach; exact Offset.disjoint _ (Or.inl (by simp only [Fns.L]; omega_using [ho])) (by simp only [Fns.L]; omega_using [ho, hon, this]) (by omega_using [hon, this])
 
 omit hp in
 /-- The working space is apart from the save area. -/
 theorem sv_low {k : Nat} (hk : k ≤ 8 * F.W) : (svR F s₀).Disjoint (lowR s₀ k) := by
   have := hz.reach; have := end_le hz; have := layout (F := F)
-  exact (Offset.base_disjoint _ (k := k) (e := 8 * F.L.W) (n := 36) (by simp only [Fns.L]; omega)
-    (by simp only [Fns.L]; omega)).symm
+  exact (Offset.base_disjoint _ (k := k) (e := 8 * F.L.W) (n := 36) (by simp only [Fns.L]; omega_using [hk])
+    (by simp only [Fns.L]; omega_arith)).symm
 
 omit hz in
 theorem sc_mem : scR s₀ F ∈ s₀.wr := by rw [hp.wr]; simp
@@ -270,7 +270,7 @@ theorem sc_mem : scR s₀ F ∈ s₀.wr := by rw [hp.wr]; simp
 theorem in_sc {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ F.L8) :
     InRegions s.wr (A s₀ o) n := by
   have := hz.reach
-  exact ⟨scR s₀ F, by rw [hwr]; exact sc_mem hp, Offset.contains_base _ h (by omega)⟩
+  exact ⟨scR s₀ F, by rw [hwr]; exact sc_mem hp, Offset.contains_base _ h (by omega_using [h, this])⟩
 
 end
 
@@ -342,7 +342,7 @@ theorem KR.call {s₀ s s' : State} (hp : Pre F s₀) (hz : Sizes F) (h : KR F s
       exact (hp.b_s.sub_right (sv_sub hz)).symm
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hw r hr with ⟨k, rfl, hk⟩ | ⟨o, n, rfl, h₁, h₂⟩
-      · exact ⟨scR s₀ F, by simp, low_sub (F := F) (by omega)⟩
+      · exact ⟨scR s₀ F, by simp, low_sub (F := F) (by omega_using [hL, this, hk])⟩
       · exact ⟨_, by simp, part_sub h₂⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, by simp, fun _ h => h⟩
@@ -354,11 +354,11 @@ variable {s₀ : State} (hp : Pre F s₀)
 include hp
 
 theorem argR_sub {i : Nat} (hi : i < 4) : Region.Sub ⟨stackArgAddr s₀ i, 4⟩ (argR s₀) := by
-  have e : stackArgAddr s₀ i = State.addr s₀.sp + BitVec.ofNat 64 (4 * i) := addr_add (by have := hp.spf; omega)
+  have e : stackArgAddr s₀ i = State.addr s₀.sp + BitVec.ofNat 64 (4 * i) := addr_add (by have := hp.spf; omega_using [hi, this])
   have e0 : stackArgAddr s₀ 0 = State.addr s₀.sp := by simp [stackArgAddr]
   show Region.Sub ⟨stackArgAddr s₀ i, 4⟩ ⟨stackArgAddr s₀ 0, 16⟩
   rw [e, e0]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [hi])
 
 theorem KR.stackArg {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 4) : stackArg s i = stackArg s₀ i := by
   have ea : stackArgAddr s i = stackArgAddr s₀ i := by simp only [stackArgAddr, hk.sp]
@@ -375,18 +375,18 @@ theorem argIn {s : State} (hk : KR F s₀ s) {i : Nat} (hi : i < 4) :
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * i))) 4 := by
   rw [hk.rd, hk.wr, hp.rd, hp.wr, hk.sp]
   have e : State.addr (s₀.sp + BitVec.ofNat 32 (4 * i)) = State.addr s₀.sp + BitVec.ofNat 64 (4 * i) :=
-    addr_add (by have := hp.spf; omega)
+    addr_add (by have := hp.spf; omega_using [hi, this])
   have e0 : stackArgAddr s₀ 0 = State.addr s₀.sp := by simp [stackArgAddr]
   refine ⟨argR s₀, by simp, ?_⟩
   show Region.Contains ⟨stackArgAddr s₀ 0, 16⟩ _ 4
   rw [e, e0]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 /-- `ldr d, [sp, #4 i]`: stack argument `i`, while `KR` holds. -/
 theorem wp_arg {s : State} (hk : KR F s₀ s) {d : Reg} {i : Nat} (hi : i < 4) {is : List Instr}
     {Q : State → Prop} (k : ∀ s', Upd s s' d (stackArg s₀ i) → WP isa (.block is) s' Q) :
     WP isa (.block (.ldrSp d (4 * i) :: is)) s Q :=
-  VG.Proof.MdStream.Arm.wp_ldrSp (a := State.addr (s.sp + BitVec.ofNat 32 (4 * i))) (by omega) rfl
+  VG.Proof.MdStream.Arm.wp_ldrSp (a := State.addr (s.sp + BitVec.ofNat 32 (4 * i))) (by omega_using [hi]) rfl
     (argIn hp hk hi) fun s' u => k s' (by rw [← hk.stackArg hp hi]; exact u)
 
 omit hp in
@@ -402,7 +402,7 @@ theorem KR.pwBytes {s : State} (hk : KR F s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.pw_o
     · exact hp.pw_s
-    · exact hp.b_pw.symm) (by have := hp.npw; omega)
+    · exact hp.b_pw.symm) (by have := hp.npw; omega_using [this])
 
 theorem KR.saltBytes {s : State} (hk : KR F s₀ s) :
     bytesAt s.mem (State.addr (salt s₀)) (sl s₀) = bytesAt s₀.mem (State.addr (salt s₀)) (sl s₀) :=
@@ -411,7 +411,7 @@ theorem KR.saltBytes {s : State} (hk : KR F s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.sa_o
     · exact hp.sa_s
-    · exact hp.b_sa.symm) (by have := hp.nsa; omega)
+    · exact hp.b_sa.symm) (by have := hp.nsa; omega_using [this])
 
 end
 
@@ -480,7 +480,7 @@ theorem wp_lt {is : List Instr} {s : State} {Q : State → Prop} {x : Reg} {k : 
         (by rw [f₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [f₄.wr, u₃.wr, u₂.wr, u₁.wr]) (by rw [f₄.sp, u₃.sp, u₂.sp, u₁.sp]) ?_
   rw [z₄, u₃.gpr, u₂.gpr, c₂, c₁]
   by_cases hlt : (s.gpr x).toNat < k.toNat
-  · simp [hlt, show ¬ (k.toNat ≤ (s.gpr x).toNat) by omega]
-  · simp [hlt, show k.toNat ≤ (s.gpr x).toNat by omega]
+  · simp [hlt, show ¬ (k.toNat ≤ (s.gpr x).toNat) by omega_using [hlt]]
+  · simp [hlt, show k.toNat ≤ (s.gpr x).toNat by omega_using [hlt]]
 
 end VG.Proof.Pbkdf2.Whole.Arm

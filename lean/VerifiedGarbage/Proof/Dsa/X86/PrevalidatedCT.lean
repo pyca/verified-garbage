@@ -59,16 +59,16 @@ theorem prevalidatedSized_relCT (L : CallLayout) (digestLen : Nat)
     have Sc : CallOperand L .signatureS L.qLen := .inl ⟨_, S, Nat.le_refl _⟩
     have Dc : CallOperand L (.input .digest) L.digestPrefix :=
       .inl ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩
-    have U := CallOperand.localBuffer L u L.qLen (by decide) (by change 14816 + L.qLen ≤ 15712; omega)
+    have U := CallOperand.localBuffer L u L.qLen (by decide) (by change 14816 + L.qLen ≤ 15712; omega_using [W])
     have Compute : RelCT isa (CallPair L) (Prevalidated.compute L.pLen L.qLen) (CallPair L) := by
       unfold Prevalidated.compute Core.sequence
       dsimp only [List.foldr]
-      exact RelCT.seq (callMinusQ_relCT L qMinusTwo Qc (by decide) (by change 14912 + L.qLen ≤ 15712; omega))
+      exact RelCT.seq (callMinusQ_relCT L qMinusTwo Qc (by decide) (by change 14912 + L.qLen ≤ 15712; omega_using [W]))
         (RelCT.seq (RelCT.seq
-          (callRange_relCT L L.qLen .q (.input .signature) false Qc Rc (by omega) (by omega) L.aligned.2)
-          (callRange_relCT L L.qLen .q .signatureS false Qc Sc (by omega) (by omega) L.aligned.2))
-        (RelCT.seq (callVerify_relCT L Pc Qc Gc Yc Rc Sc Dc (by rw [hd]; omega))
-        (RelCT.seq (callEqual_relCT L L.qLen (.local u) (.input .signature) U Rc (by omega) (by omega)
+          (callRange_relCT L L.qLen .q (.input .signature) false Qc Rc (by omega_using [W]) (by omega_using [W]) L.aligned.2)
+          (callRange_relCT L L.qLen .q .signatureS false Qc Sc (by omega_using [W]) (by omega_using [W]) L.aligned.2))
+        (RelCT.seq (callVerify_relCT L Pc Qc Gc Yc Rc Sc Dc (by rw [hd]; omega_using [B]))
+        (RelCT.seq (callEqual_relCT L L.qLen (.local u) (.input .signature) U Rc (by omega_using [W]) (by omega_using [W])
           L.aligned.2)
         (RelCT.block_nil (fun _ _ h => h)))))
     have CT := RelCT.seq Compute (result_relCT.mono (fun _ _ H => H.workspace) (fun _ _ h => h))
@@ -183,13 +183,13 @@ theorem validatingInstalled_ready {s t : State} (A : ValidatingABI s)
     (I : Installed (argumentPointer s 4) ((arg s 5).toNat * 8) Generate.checkArguments 0 2 3 s t) :
     ShapeCallReady (validatingLayout s A) (arg s 2).toNat t := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Key, Bytes⟩ := I.input (by decide : (0, .p) ∈ Generate.checkArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Qptr, Gptr, Yptr, _⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Y, Value⟩ := publicKey_buffers Key L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr Yptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr Yptr
   refine ⟨I.keeps.1 .esp (by decide), I.scr, ?_, ?_, ?_, ?_,
     congrArg BitVec.toNat (I.arguments (2, .digestLen) (by decide))⟩
   · intro input hi

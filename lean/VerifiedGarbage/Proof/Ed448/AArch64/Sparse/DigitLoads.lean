@@ -28,8 +28,8 @@ theorem keyDigit_ok {s:State} {base:Addr} (hs:Scr s base) {i:Nat} (hi:i<464)
       Keeps [.x2,.x11] s t ∧ t.mem=s.mem := by
   have ha:base+BitVec.ofNat 64 i+BitVec.ofNat 64 BITS=off base (BITS+i):=by
     rw [off,Offset.add_add]
-    exact congrArg (fun n => base+BitVec.ofNat 64 n) (by omega)
-  have hr:=hs.read (d:=BITS+i) (n:=1) (by simp only [BITS];omega)
+    exact congrArg (fun n => base+BitVec.ofNat 64 n) (by omega_using [])
+  have hr:=hs.read (d:=BITS+i) (n:=1) (by simp only [BITS];omega_using [hi])
   have enc:BITS%1=0 ∧ BITS<4096:=by decide
   apply WP.of_runBlock
   simp only [keyDigit,runBlock_cons,runStep_some,runBlock_nil,exec,State.read,Size.bits,
@@ -48,8 +48,8 @@ theorem baseDigit_ok {s:State} {base:Addr} (hs:Scr s base) {i:Nat} (hi:i<464)
   have ha:base+BitVec.ofNat 64 i+(3400#64)+(3400#64)=off base (SDIG+i):=by
     change base+BitVec.ofNat 64 i+BitVec.ofNat 64 3400+BitVec.ofNat 64 3400=_
     rw [off,Offset.add_add,Offset.add_add]
-    exact congrArg (fun n => base+BitVec.ofNat 64 n) (by simp only [SDIG];omega)
-  have hr:=hs.read (d:=SDIG+i) (n:=1) (by simp only [SDIG];omega)
+    exact congrArg (fun n => base+BitVec.ofNat 64 n) (by simp only [SDIG];omega_using [])
+  have hr:=hs.read (d:=SDIG+i) (n:=1) (by simp only [SDIG];omega_using [hi])
   apply WP.of_runBlock
   simp only [baseDigit,runBlock_cons,runStep_some,runBlock_nil,exec,State.read,Size.bits,
     addr,Nat.reduceMul,Nat.reduceLT,Nat.mod_one,and_self,RegUpd.gpr_write,RegUpd.rd_write,RegUpd.wr_write,RegUpd.mem_write,BitVec.setWidth_eq,hs.x3,hc,ha,

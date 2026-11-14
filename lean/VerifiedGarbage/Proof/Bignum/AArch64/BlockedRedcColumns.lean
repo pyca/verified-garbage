@@ -26,13 +26,13 @@ theorem wv_blocks_succ (m : Mem) (B : Addr) (e j : Nat) :
     wv m B e (8 * (j + 1)) = wv m B e (8 * j) +
       2 ^ (64 * (8 * j)) * wv m B (e + 64 * j) 8 := by
   have h := wv_add m B e (8 * j) 8
-  rw [show 8 * j + 8 = 8 * (j + 1) by omega,
-    show e + 8 * (8 * j) = e + 64 * j by omega] at h
+  rw [show 8 * j + 8 = 8 * (j + 1) by omega_using [],
+    show e + 8 * (8 * j) = e + 64 * j by omega_using []] at h
   exact h
 
 theorem pow_blocks_succ (j : Nat) : 2 ^ (64 * (8 * (j + 1))) =
     2 ^ (64 * (8 * j)) * (2 ^ 64) ^ 8 := by
-  rw [show 64 * (8 * (j + 1)) = 64 * (8 * j) + 64 * 8 by omega, Nat.pow_add,
+  rw [show 64 * (8 * (j + 1)) = 64 * (8 * j) + 64 * 8 by omega_using [], Nat.pow_add,
     Nat.pow_mul 2 64 8]
 
 theorem columnFinish_ok {s : State} {B : Addr} {eN : Nat}
@@ -54,18 +54,18 @@ theorem columnStep_ok {s t : State} {B : Addr} {Z eQ eT eN j k : Nat}
       ([.addImm .x .x17 .x17 64, .subImm .x .x15 .x15 1] : List Instr))) t fun u =>
       ColumnInv s B eQ eT eN (j + 1) u ∧ u.gpr .x15 = t.gpr .x15 - BitVec.ofNat 64 1 := by
   have hnw := hs.nowrap
-  have q := hI.frame.wv (d := eQ) (k := 8) (by omega) (by omega)
-  have x := hI.frame.wv (d := eT + 64 * j) (k := 8) (by omega) (by omega)
-  have n := hI.frame.wv (d := eN + 64 * j) (k := 8) (by omega) (by omega)
+  have q := hI.frame.wv (d := eQ) (k := 8) (by omega_using [hQT, hj]) (by omega_using [hQ, hnw])
+  have x := hI.frame.wv (d := eT + 64 * j) (k := 8) (by omega_using []) (by omega_using [hT, hj, hnw])
+  have n := hI.frame.wv (d := eN + 64 * j) (k := 8) (by omega_using [hNT, hj]) (by omega_using [hN, hj, hnw])
   apply WP.block_append
   refine WP.mono (tailBlock_ok (hs.congr hI.keep.wr)
     ((hI.keep.gpr .x8 (by decide)).trans h8) hI.ptrT hI.ptrN
     ((hI.keep.gpr .x7 (by decide)).trans h7)
-    hQ (by omega) (by omega) (by omega) (by omega)) fun a ⟨hav, _, ha16, hao, ka⟩ => ?_
+    hQ (by omega_using [hT, hj]) (by omega_using [hN, hj]) (by omega_using [hQT, hj]) (by omega_using [hNT, hj])) fun a ⟨hav, _, ha16, hao, ka⟩ => ?_
   refine WP.mono (columnFinish_ok ((ka.gpr .x17 (by decide)).trans hI.ptrN))
     fun u ⟨⟨hu17, hu15, hum⟩, ku⟩ => ?_
   have hax : wv a.mem B eT (8 * j) = wv t.mem B eT (8 * j) :=
-    hao.wv (by omega) (by omega)
+    hao.wv (by omega_using []) (by omega_using [hT, hj, hnw])
   have hav' : wv a.mem B (eT + 64 * j) 8 + (2 ^ 64) ^ 8 * blockValue (accumulator a) =
       blockValue (accumulator t) + wv s.mem B (eT + 64 * j) 8 +
         wv s.mem B eQ 8 * wv s.mem B (eN + 64 * j) 8 := by
@@ -77,12 +77,12 @@ theorem columnStep_ok {s t : State} {B : Addr} {Z eQ eT eN j k : Nat}
   · rewrite [hup, hua, wv_blocks_succ, hax, pow_blocks_succ,
       wv_blocks_succ s.mem B eT, wv_blocks_succ s.mem B eN]
     exact he
-  · exact ((ku.gpr .x16 (by decide)).trans ha16).trans (congrArg (off B) (by omega))
-  · exact hu17.trans (congrArg (off B) (by omega))
+  · exact ((ku.gpr .x16 (by decide)).trans ha16).trans (congrArg (off B) (by omega_using []))
+  · exact hu17.trans (congrArg (off B) (by omega_using []))
   · have ho : Outside B (eT + 64 * j) 64 t.mem u.mem := by
       intro a ha
       exact (congrArg (fun m : Mem => m a) hum).trans (hao a ha)
-    exact (hI.frame.mono (by omega) (by omega)).trans (ho.mono (by omega) (by omega))
+    exact (hI.frame.mono (by omega_using []) (by omega_using [])).trans (ho.mono (by omega_using []) (by omega_using []))
   · exact hu15.trans (congrArg (· - BitVec.ofNat 64 1) (ka.gpr .x15 (by decide)))
 
 /-- The complete fixed-count column loop, including pointer and memory frames. -/
@@ -107,7 +107,7 @@ theorem wv_blocks_first (m : Mem) (B : Addr) (e k : Nat) :
     wv m B e (8 * (k + 1)) = wv m B e 8 +
       (2 ^ 64) ^ 8 * wv m B (e + 64) (8 * k) := by
   have h := wv_radix_add m B e 8 (8 * k)
-  rw [show 8 + 8 * k = 8 * (k + 1) by omega] at h
+  rw [show 8 + 8 * k = 8 * (k + 1) by omega_using []] at h
   exact h
 
 end VG.Proof.Bignum.AArch64.BlockedRedc

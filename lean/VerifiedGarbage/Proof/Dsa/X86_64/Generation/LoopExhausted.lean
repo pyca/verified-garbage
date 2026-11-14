@@ -20,13 +20,13 @@ theorem loopExhausted_ok {P : PrimeParams} {mi : BitVec 64} {s₀ s : State}
       (.block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)])) s fun t =>
         isa.eval .e t = some false ∧ PrimeLoopEnd P mi s₀ res t := by
   have hr := VG.Proof.RsaKeyGen.mrLoop_step P.N P.checks (Spec.Rsa.splitTwos (P.N - 1)).1
-    (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega)
+    (Spec.Rsa.splitTwos (P.N - 1)).2 P.drawBytes P.rand i uni used h.go P.drawWidth (by have := P.drawMin; omega_using [this])
   have hnone : res = none := by
     rw [← h.rest]
     change Spec.RsaKeyGen.loop _ _ _ = _
-    rw [hr, ite_eq_right (by omega)]
+    rw [hr, ite_eq_right (by omega_using [hshort])]
   have hst : InRegions s.wr (off P.B (8 * kStat)) 8 :=
-    h.state.ready.good.scr.st (by have := hdr_lt_slot P.w 8 (show kStat < 32 by decide); have := P.dims.z; omega)
+    h.state.ready.good.scr.st (by have := hdr_lt_slot P.w 8 (show kStat < 32 by decide); have := P.dims.z; omega_arith)
   refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun u =>
       u.mem = s.mem.writeW (off P.B (8 * kStat)) (BitVec.ofNat 64 0)) (by
     xrun [State.ea, hdr, hdrOff, h.state.ready.good.rdi, hst]; rfl) rfl) fun u ⟨hm, ku⟩ => ?_)
@@ -39,7 +39,7 @@ theorem loopExhausted_ok {P : PrimeParams} {mi : BitVec 64} {s₀ s : State}
   have hused : word u.mem P.B (8 * kUsed) = BitVec.ofNat 64 used := by
     rw [hf.word_eq (by rng_disj) (by decide : 8 * kUsed + 8 ≤ 2 ^ 64)]; exact h.state.used
   have hu := h.state.advance hready hused hf.work k
-    (by simp only [List.mem_singleton, forall_eq]; change 240 ≤ P.Z; have := P.z256; omega) (by
+    (by simp only [List.mem_singleton, forall_eq]; change 240 ≤ P.Z; have := P.z256; omega_using [this]) (by
       intro j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj)

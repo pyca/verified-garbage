@@ -29,6 +29,6 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_decrypt_blocks_aesni = sym crate::aes::vg_aes_decrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni = sym crate::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
     )
 }

@@ -58,7 +58,7 @@ theorem slow_wp (hv : Gather.SealOk) {s e : State} (h : Gather.Lay s) (he : Gath
 theorem nonempty_of_choice {s : State} (h : Gather.Lay s)
     (hn : (stackArg s 1 >>> 9).toNat≠0) : 0<Cnt s := by
   by_contra hc
-  have hz : Cnt s=0 := by omega
+  have hz : Cnt s=0 := by omega_using [hc]
   have hl : L s=0 := h.hgl.symm.trans (by rw [hz]; rfl)
   have hw : stackArg s 1=0 := BitVec.eq_of_toNat_eq hl
   rw [hw] at hn
@@ -83,7 +83,7 @@ theorem sealGather_wp (hv : Gather.SealOk) (hs : SplitOk) {s : State} (h : Layou
     WP isa Impl.AesGcm.PPC64LE.GatherSplit.sealGather s
       fun z => abiPreserved s z ∧ gatherPost s z := by
   unfold Impl.AesGcm.PPC64LE.GatherSplit.sealGather Impl.AesGcm.PPC64LE.SealGather.withBody
-  refine WP.alloc ⟨by decide,by decide,by decide⟩ (by have := h.space; omega) ?_
+  refine WP.alloc ⟨by decide,by decide,by decide⟩ (by have := h.space; omega_using [this]) ?_
   refine WP.seq (WP.mono (entered_wp h.base) fun e he => ?_)
   exact body_wp hv hs h he.1 he.2
 

@@ -41,10 +41,10 @@ theorem candidate_bit (z : BitVec 32) (hz : z.toNat < 2^23) :
   by_cases h : z.toNat < 8380417
   · rw [ite_eq_left h]
     simp only [hq, h1, Nat.shiftRight_eq_div_pow, Nat.reducePow] at hz ⊢
-    omega
+    omega_using [h]
   · rw [ite_eq_right h]
     simp only [hq, h0, Nat.shiftRight_eq_div_pow, Nat.reducePow] at hz ⊢
-    omega
+    omega_using [hz, h]
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
@@ -78,8 +78,8 @@ theorem gather_byte (m : Mem) (p : Addr) {e : Nat} (he : e<16) :
       if e%4<3 then m (p+BitVec.ofNat 64 (3*(e/4)+e%4)) else 0 := by
   rw [gatherValue,vbyte_ofVBytes _ he,gatherIndex_byte he]
   split
-  · rw [ite_eq_left (by omega)]
-    exact Mem.extractLsb'_read m p (by omega)
+  · rw [ite_eq_left (by omega_using [he])]
+    exact Mem.extractLsb'_read m p (by omega_using [he])
   · rfl
 
 /-- Masking the top bit of each gathered word gives exactly a 23-bit read,
@@ -181,7 +181,7 @@ theorem accepted_all (x modulus : BitVec 128)
   rw [h]
   constructor
   · rintro ⟨h0,h1,h2,h3⟩ e he
-    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he]) with rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2

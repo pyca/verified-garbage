@@ -23,7 +23,7 @@ theorem diagonalValue_succ (m : Mem) (B : Addr) (eb i : Nat) :
   unfold diagonalValue
   rw [Square.diagonal, ← Nat.pow_mul]
   have h : 2 ^ (128 * i) = 2 ^ (64 * i) * 2 ^ (64 * i) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using []
   rw [h]
   grind
 
@@ -48,18 +48,18 @@ theorem diagStep_ok {core : List Instr} (hc : CoreOk core) {s₀ t : State} {B :
   have kp := hI.keep
   refine WP.mono (diagonalStepWith_ok hc hI.scr ((kp.gpr (by decide)).trans h8)
     ((kp.gpr (by decide)).trans h9) hI.rbp hI.r14 ((kp.gpr (by decide)).trans h10)
-    hi hw (by omega) (by omega)) fun t' ⟨hv, ho, hbp, h14, hz, kt⟩ => ⟨hz, ?_⟩
-  have rT : wv t.mem B (A + 16 * i) 2 = wv s₀.mem B (A + 16 * i) 2 := hI.out.wv (by omega) (by omega)
-  have rX : word t.mem B (eb + 8 * i) = word s₀.mem B (eb + 8 * i) := hI.out.word (by omega) (by omega)
-  have rL : wv t'.mem B A (2 * i) = wv t.mem B A (2 * i) := ho.wv (by omega) (by omega)
+    hi hw (by omega_using [hi, hA]) (by omega_using [hi, hb])) fun t' ⟨hv, ho, hbp, h14, hz, kt⟩ => ⟨hz, ?_⟩
+  have rT : wv t.mem B (A + 16 * i) 2 = wv s₀.mem B (A + 16 * i) 2 := hI.out.wv (by omega_using []) (by omega_using [hi, hA, hn])
+  have rX : word t.mem B (eb + 8 * i) = word s₀.mem B (eb + 8 * i) := hI.out.word (by omega_using [hi, sb]) (by omega_using [hi, hb, hn])
+  have rL : wv t'.mem B A (2 * i) = wv t.mem B A (2 * i) := ho.wv (by omega_using []) (by omega_using [hi, hA, hn])
   rw [rT, rX] at hv
   refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by decide), hbp, h14, ?_, ?_⟩
-  · exact (hI.out.mono (o' := A) (n' := 16 * (i + 1)) (Nat.le_refl _) (by omega)).trans
-      (ho.mono (o' := A) (n' := 16 * (i + 1)) (by omega) (by omega))
+  · exact (hI.out.mono (o' := A) (n' := 16 * (i + 1)) (Nat.le_refl _) (by omega_using [])).trans
+      (ho.mono (o' := A) (n' := 16 * (i + 1)) (by omega_using []) (by omega_using []))
   · have hval := hI.val
-    rw [show 2 * (i + 1) = 2 * i + 2 by omega, wv_add, wv_add s₀.mem B A, rL,
-      show A + 8 * (2 * i) = A + 16 * i by omega, show 64 * (2 * i) = 128 * i by omega,
-      show 128 * (i + 1) = 128 * i + 128 by omega, Nat.pow_add, diagonalValue_succ]
+    rw [show 2 * (i + 1) = 2 * i + 2 by omega_using [], wv_add, wv_add s₀.mem B A, rL,
+      show A + 8 * (2 * i) = A + 16 * i by omega_using [], show 64 * (2 * i) = 128 * i by omega_using [],
+      show 128 * (i + 1) = 128 * i + 128 by omega_using [], Nat.pow_add, diagonalValue_succ]
     grind
 
 /-- The doubled cross products plus the diagonal, with the final carry

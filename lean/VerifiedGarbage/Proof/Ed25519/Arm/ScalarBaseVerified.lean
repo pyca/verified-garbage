@@ -183,7 +183,7 @@ theorem combLoop_ct (b T : BitVec 32) :
     (fun n => ?_) 64).mono (fun x y h => ⟨by decide, le_rfl, by simpa using h⟩) fun _ _ h => h
   by_cases hn : 0 < n ∧ n ≤ 64
   · have step : ∀ x, CombRun b T (64 - n) x → WP isa combStep x (StepPost b T (64 - n)) :=
-      fun x ⟨s₀, p, S, E, h⟩ => WP.mono (combStep_ok E h (by omega)) fun t ⟨e, h'⟩ => ⟨e, s₀, p, S, E, h'⟩
+      fun x ⟨s₀, p, S, E, h⟩ => WP.mono (combStep_ok E h (by omega_using [hn])) fun t ⟨e, h'⟩ => ⟨e, s₀, p, S, E, h'⟩
     refine ((combStep_ct b T (64 - n)).wp (F₁ := StepPost b T (64 - n)) (F₂ := StepPost b T (64 - n))
       (fun x y h => ⟨step x h.1, step y h.2⟩)).mono
       (fun x y h => ⟨h.2.2.1, h.2.2.2⟩) fun u v h => ?_
@@ -194,9 +194,9 @@ theorem combLoop_ct (b T : BitVec 32) :
       exact ⟨hu.ctx, hv.ctx⟩
     · rw [eu] at ht
       have hn1 : 64 - n + 1 ≠ 64 := by simpa using ht
-      refine ⟨n - 1, by omega, by omega, by omega, ?_, ?_⟩
-      · rw [show 64 - (n - 1) = 64 - n + 1 by omega]; exact ru
-      · rw [show 64 - (n - 1) = 64 - n + 1 by omega]; exact rv
+      refine ⟨n - 1, by omega_using [hn], by omega_using [hn, hn1], by omega_using [hn], ?_, ?_⟩
+      · rw [show 64 - (n - 1) = 64 - n + 1 by omega_using [hn]]; exact ru
+      · rw [show 64 - (n - 1) = 64 - n + 1 by omega_using [hn]]; exact rv
   · exact RelCT.of_false fun x y h => hn ⟨h.1, h.2.1⟩
 
 theorem combMultiply_ct (b p T : BitVec 32) :
@@ -306,7 +306,7 @@ theorem scalarBaseSetup_ok {s : State} (h : ScalarBasePre s) :
   simp only [List.append_assoc]
   refine WP.append (scalarSave_ok rfl h.f2 hw) fun u ⟨su, fu, gu, ku⟩ => ?_
   refine wp_str (a := State.addr (s.gpr .r2) + BitVec.ofNat 64 48) (by decide)
-    (by rw [gu]; exact addr_add (by have := h.f2; omega))
+    (by rw [gu]; exact addr_add (by have := h.f2; omega_using [this]))
     (by rw [ku.wr]; exact in_base hw (by decide) (by decide)) fun v hv => ?_
   refine wp_mov (op2_reg _ _) fun w hw' => ?_
   have kw : Rest [.r0] s w := (ku.mono (by decide)).trans ((hv.rest _).trans (hw'.rest (by decide)))
@@ -325,12 +325,12 @@ theorem scalarBaseSetup_ok {s : State} (h : ScalarBasePre s) :
   · rw [ht.other _ (by decide), xr.gpr _ (by decide)]; exact hcw.r0
   · rw [ht.gpr, xr.gpr _ (by decide), hw'.other _ (by decide), hv.gpr, gu]
   · intro i hi
-    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := LRS) (n := 4) (k := 4) (by omega) (by omega)
-      (by omega)) (by decide), Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := 48) (n := 4) (k := 4)
-      (by omega) (by omega) (by omega)) (by decide)]
+    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := LRS) (n := 4) (k := 4) (by omega_using [hS, hi]) (by omega_using [hi])
+      (by omega_using [hS])) (by decide), Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := 48) (n := 4) (k := 4)
+      (by omega_using [hi]) (by omega_using [hi]) (by omega_using [])) (by decide)]
     exact su i hi
-  · rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 48) (e := LRS) (n := 4) (k := 4) (by omega) (by omega)
-      (by omega)) (by decide), Mem.readW_writeW_self32]
+  · rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 48) (e := LRS) (n := 4) (k := 4) (by omega_using [hS]) (by omega_using [])
+      (by omega_using [hS])) (by decide), Mem.readW_writeW_self32]
   · rw [mt, Mem.readW_writeW_self32]
   · rw [mt]
     exact ((fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
@@ -376,7 +376,7 @@ theorem scalarBaseSetup_ct (b p out T : BitVec 32) :
         hs.tbl_ws⟩, hout⟩
       intro i hib
       rw [hr.rd, hr.wr]
-      exact in_base hi (by omega) (by omega)
+      exact in_base hi (by omega_using [hib]) (by omega_using [hib])
     rw [ho, hp, hb, hT] at ht
     exact ht
 
@@ -456,8 +456,8 @@ theorem scalarBaseFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
   refine ldr0_ok hc0 (by decide) fun u hu => ?_
   have hcu := hc0.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
   refine WP.append (packField_ok (p := p) (a := FR) (dst := 0) hcu (by decide) (hu.mem ▸ hl) (by decide)
-    (hu.gpr.trans hp) (by omega)
-    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw0 (by omega) (by omega))
+    (hu.gpr.trans hp) (by omega_using [hfit])
+    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw0 (by omega_using [hi]) (by omega_using [hi]))
     (by simpa only [BitVec.add_zero] using
       hsep.symm.sub_left (Offset.sub_base _ (by decide : FR + 64 ≤ 8192))))
     fun v ⟨kv, fv, vv⟩ => ?_
@@ -465,7 +465,7 @@ theorem scalarBaseFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
   have hs' : ScalarSaved (State.addr b) g v.mem :=
     (hu.mem ▸ hs).frame fv fun r hr i hi => by
       rw [List.mem_singleton.mp hr, BitVec.add_zero]
-      exact hsep.symm.sub_left (Offset.sub_base _ (by omega))
+      exact hsep.symm.sub_left (Offset.sub_base _ (by omega_using [hi]))
   refine WP.mono (scalarRestore_ok hcv hs') fun t ⟨saved, kt, mt⟩ => ?_
   refine ⟨saved, (r0'.mono (by decide)).trans ((hu.rest (by decide)).trans ((kv.mono (by decide)).trans
     (kt.mono (by decide)))), ?_, ?_, ?_⟩
@@ -488,13 +488,13 @@ theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
   refine WP.seq (WP.mono_syms (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, lu, ku, fu⟩ syu => ?_)
   have input : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (scalarBaseEngine_ok hcu pu h.f1
-    (fun n hn => by rw [ku.rd, ku.wr]; exact in_base input (by omega) (by omega)) h.scalar_ws
+    (fun n hn => by rw [ku.rd, ku.wr]; exact in_base input (by omega_using [hn]) (by omega_using [hn])) h.scalar_ws
     (h.tbl_of (by rw [ku.rd, ku.wr]) fu) (by rw [syu]) h.tbl_ws)
     fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : ScalarSaved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
       simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega)) (by omega) (by decide)
+      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0

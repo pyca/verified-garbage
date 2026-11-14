@@ -300,12 +300,12 @@ theorem vproC_ok {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 8 ≤ STK) {σ
     by rw [hm]; exact h0.pk, by rw [hm]; exact h0.mu, by rw [hm]; exact h0.sg, e8, fun hne => ?_⟩,
     by rw [g _ (by decide)]; exact h11⟩
   obtain ⟨c0, c1, cf, -⟩ := hp.cache hne
-  refine ⟨c0, ?_, by omega, ?_⟩
+  refine ⟨c0, ?_, by omega_using [cf], ?_⟩
   · show (cacheRV p σ).Disjoint ⟨State.addr (σ.sp - BitVec.ofNat 32 STK), STK⟩
     rw [es]; exact c1.symm
   · rw [hm]
     exact Proof.MlKem.bytesAt_frame fr (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact c0.sub_right hsc) (by omega)
+      rw [List.mem_singleton] at hr; subst hr; exact c0.sub_right hsc) (by omega_using [cf])
 
 /-- A load from the stack leaks only its address. -/
 theorem ldrSp_trace {r : Reg} {off : Nat} {s u : State} {a : List Leak}

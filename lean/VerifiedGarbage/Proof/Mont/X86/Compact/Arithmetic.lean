@@ -14,7 +14,7 @@ open VG VG.Proof.Mont VG.Proof.Rsa.Mont
 theorem numAt_val32 (m : Mem) (W : Addr) (w j : Nat) :
     numAt m W w j = val32 m W (arrAt w j) (2 * w) := by
   unfold numAt
-  rw [show 8 * w = 4 * (2 * w) by omega]
+  rw [show 8 * w = 4 * (2 * w) by omega_using []]
   exact VG.Proof.Bignum.read_eq_val32 m W (2 * w) (arrAt w j)
 
 theorem val32_low (m : Mem) (W : Addr) (d : Nat) {n : Nat} (positive : 0 < n) :
@@ -42,7 +42,7 @@ theorem prepared_inverse {m : Mem} {W : Addr} {w : Nat} (positive : 0 < w)
     rw [VG.Proof.Bignum.read_eq_val32, val32_low _ _ _ (by decide)]
   rw [modulus, ← header_low m W minvWord] at h
   change (w32 m W (arrAt w aM) * w32 m W 56 + 1) % 2 ^ 32 = 0 at h
-  have low := val32_low m W (arrAt w aM) (n := 2 * w) (by omega)
+  have low := val32_low m W (arrAt w aM) (n := 2 * w) (by omega_using [positive])
   simpa only [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, low] using h
 
 end VG.Proof.Mont.X86.Compact

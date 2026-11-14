@@ -21,8 +21,8 @@ open VG.Impl.MlDsa.AArch64.Sample.Rej4 (oBuf)
 /-- The four seeds are slices of the public 136-byte input. -/
 theorem B_pub {σ τ : State} (hq : r4K.pub σ τ) {k : Nat} (hk : k < 4) : B σ k = B τ k := by
   unfold B Proof.MlDsa.seed4
-  rw [← VG.Proof.MlKem.bytesAt_slice σ.mem (seedP σ) (show 34*k+34 ≤ 136 by omega),
-    ← VG.Proof.MlKem.bytesAt_slice τ.mem (seedP τ) (show 34*k+34 ≤ 136 by omega),hq.2.2.2.2]
+  rw [← VG.Proof.MlKem.bytesAt_slice σ.mem (seedP σ) (show 34*k+34 ≤ 136 by omega_using [hk]),
+    ← VG.Proof.MlKem.bytesAt_slice τ.mem (seedP τ) (show 34*k+34 ≤ 136 by omega_using [hk]),hq.2.2.2.2]
 
 theorem X_pub {σ τ : State} (hq : r4K.pub σ τ) {k : Nat} (hk : k < 4) : X σ k = X τ k := by
   unfold X
@@ -58,12 +58,12 @@ theorem zero_lpre {σ s : State} (hp : Pre σ) {k : Nat} (hk : k < 4) (h : ZeroR
   ⟨h.ready.out k hk,fun j hj => by
     unfold bufP at'
     rw [Offset.add_add]
-    exact in_scr_rd hp h.ready.env.rd h.ready.env.wr (by dsimp only [oBuf]; omega),
+    exact in_scr_rd hp h.ready.env.rd h.ready.env.wr (by dsimp only [oBuf]; omega_using [hk, hj]),
     coeffs_in hp h.ready.env.wr hk,buf_poly hp hk hk,by
       rw [h.x25]
       unfold at' bufP
       rw [Offset.add_add]
-      exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by dsimp only [oBuf]; omega),h.x26⟩
+      exact congrArg (fun d => scr σ+BitVec.ofNat 64 d) (by dsimp only [oBuf]; omega_using []),h.x26⟩
 
 theorem loop_ready {σ s : State} (hp : Pre σ) {k : Nat} (hk : k < 4) (h : ZeroReady σ k s) :
     WP isa rnLoop s (Ready σ) :=

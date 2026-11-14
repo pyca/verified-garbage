@@ -90,7 +90,7 @@ theorem tmpPtr_ok (L : Ws) (s : State) (h : GoodW1 L s) :
     WP isa (.block [.mov .rbx (.mem (hdr (sArr aTmp)))]) s fun t => GoodW1 L t ∧ t.gpr .rbx = off L.B (slot L.w aTmp) := by
   obtain ⟨⟨mi, hg, hZ⟩, hw⟩ := h
   exact WP.mono (WP.keep [.rbx] (Q := fun t => t.gpr .rbx = off L.B (slot L.w aTmp) ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (show 8 * sArr aTmp + 8 ≤ L.Z by have := hdr_lt_slot L.w 8 (show sArr aTmp < 32 by decide); omega),
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (show 8 * sArr aTmp + 8 ≤ L.Z by have := hdr_lt_slot L.w 8 (show sArr aTmp < 32 by decide); omega_using [hZ, this]),
       hg.hdr.harr aTmp (by decide)]) rfl)
     fun t ⟨⟨h16, hm⟩, k⟩ => ⟨⟨GoodW.keep ⟨mi, hg, hZ⟩ hm (k.gpr (by decide)) k.2.2, hw⟩, h16⟩
 
@@ -102,11 +102,11 @@ theorem or1_ok (L : Ws) (s : State) (h : GoodW1 L s ∧ s.gpr .rbx = off L.B (sl
   have hT0 := hdr_lt_slot L.w aTmp (show 31 < 32 by decide)
   refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.mem = s.mem.writeW (off L.B (slot L.w aTmp))
       (word s.mem L.B (slot L.w aTmp) ||| 1))
-    (by xrun [State.ea, at0, h16, show off L.B (slot L.w aTmp) + BitVec.ofInt 64 0 = off L.B (slot L.w aTmp) from by simp, hg.scr.ld (show slot L.w aTmp + 8 ≤ L.Z by omega), hg.scr.st (show slot L.w aTmp + 8 ≤ L.Z by omega)])
+    (by xrun [State.ea, at0, h16, show off L.B (slot L.w aTmp) + BitVec.ofInt 64 0 = off L.B (slot L.w aTmp) from by simp, hg.scr.ld (show slot L.w aTmp + 8 ≤ L.Z by omega_using [sT]), hg.scr.st (show slot L.w aTmp + 8 ≤ L.Z by omega_using [sT])])
     rfl) fun t ⟨hm, k⟩ => ?_
-  have o := writeW_outside s.mem L.B (d := slot L.w aTmp) (word s.mem L.B (slot L.w aTmp) ||| 1) (by omega)
+  have o := writeW_outside s.mem L.B (d := slot L.w aTmp) (word s.mem L.B (slot L.w aTmp) ||| 1) (by omega_using [hn, sT])
   rw [← hm] at o
-  exact ⟨⟨mi, hg.of_outside (by omega) o k.2.2 (k.gpr (by decide)), hZ⟩, hw⟩
+  exact ⟨⟨mi, hg.of_outside (by omega_using [hT0]) o k.2.2 (k.gpr (by decide)), hZ⟩, hw⟩
 
 theorem ltP_eq : seqs (([.block [.mov .rbx (.mem (hdr (sArr aTmp)))], .block [.mov .rax (.mem (at0 .rbx)), .alu .or .rax (.imm 1), .store (at0 .rbx) .rax]] : List (Prog isa)) ++ ltArr aTmp aN) = .seq (.block [.mov .rbx (.mem (hdr (sArr aTmp)))])
     (.seq (.block [.mov .rax (.mem (at0 .rbx)), .alu .or .rax (.imm 1), .store (at0 .rbx) .rax]) (seqs (ltArr aTmp aN))) := rfl
@@ -131,7 +131,7 @@ theorem ltP_ct {a : Nat} (ha : a < 8) (haT : a ≠ aTmp) {hc₁ hc₂ : VG.Taint
   obtain ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ := h
   have hT0 := hdr_lt_slot L.w aTmp (show 31 < 32 by decide)
   exact WP.mono (copyArr_ok hg hZ hw hw' (show aTmp < 8 by decide) ha (Ne.symm haT)) fun t ⟨_, ho, k⟩ =>
-    ⟨⟨mi, hg.of_outside (by omega) ho k.2.2 (k.gpr (by decide)), hZ⟩, hw, hw'⟩
+    ⟨⟨mi, hg.of_outside (by omega_using [hT0]) ho k.2.2 (k.gpr (by decide)), hZ⟩, hw, hw'⟩
 
 /-- `GoodW1` after a change of memory at offsets `o ≥ 128`. -/
 theorem GoodW1.of_outside {L : Ws} {s t : State} (h : GoodW1 L s) {o n : Nat} (ho : 8 * 16 ≤ o)
@@ -152,10 +152,10 @@ theorem stF_ok {sl : Nat} (hsl : 16 ≤ sl) (hsl' : sl < 32) (L : Ws) (s : State
   have h8 := hdr_lt_slot L.w 0 hsl'
   have h8' := hdr_lt_slot L.w 8 hsl'
   refine WP.mono (WP.keep [] (Q := fun t' => t'.mem = s.mem.writeW (off L.B (8 * sl)) (s.gpr .rax))
-    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.st (show 8 * sl + 8 ≤ L.Z by omega)]) rfl) fun t ⟨hm, k⟩ => ?_
-  have o := writeW_outside s.mem L.B (d := 8 * sl) (s.gpr .rax) (by omega)
+    (by xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.st (show 8 * sl + 8 ≤ L.Z by omega_using [hZ, h8'])]) rfl) fun t ⟨hm, k⟩ => ?_
+  have o := writeW_outside s.mem L.B (d := 8 * sl) (s.gpr .rax) (by omega_using [hsl'])
   rw [← hm] at o
-  exact GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw⟩ (by omega) o k.2.2 (k.gpr (by decide))
+  exact GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw⟩ (by omega_using [hsl]) o k.2.2 (k.gpr (by decide))
 
 /-- `range a` (`a ≠ aTmp`). -/
 theorem range_ct {a : Nat} (ha : a < 8) (haT : a ≠ aTmp) {hc₁ hc₂ hc₃ : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -178,7 +178,7 @@ theorem range_ct {a : Nat} (ha : a < 8) (haT : a ≠ aTmp) {hc₁ hc₂ hc₃ : 
   · obtain ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ := h
     have hT0 := hdr_lt_slot L.w aTmp (show 31 < 32 by decide)
     exact WP.mono (ltP_ok hg hZ hw hw' ha haT) fun t ⟨_, ho, k⟩ =>
-      GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ (by omega) ho k.2.2 (k.gpr (by decide))
+      GoodW1.of_outside ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ (by omega_using [hT0]) ho k.2.2 (k.gpr (by decide))
   exact two_taint [.rdi] pins_goodW1 (by taint_decide)
 
 end VG.Proof.Ffdh.X86_64

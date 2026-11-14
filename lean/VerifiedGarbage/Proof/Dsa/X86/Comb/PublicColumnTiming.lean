@@ -93,7 +93,7 @@ theorem publicColumnStep_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m 
     refine ⟨C.scr,?_⟩
     have H := O.val32 (d := 28) (k := 1) (by
       intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl <;> left <;> simp [slot,stride] <;> omega) (by decide)
+      rcases hr with rfl|rfl|rfl <;> left <;> simp [slot,stride] <;> omega_using []) (by decide)
     have equal : w32 v.mem base 28=w32 u.mem base 28 := by
       simpa only [val32,Nat.mul_zero,Nat.add_zero] using H
     exact equal.trans U.header
@@ -123,11 +123,11 @@ theorem publicColumnLoop_relCT {n e : Nat} (h : Supported n e) (base : Addr) (m 
     · intro hc
       have next : i+1<4 := by
         by_contra hn
-        have eq : i+1=4 := by omega
+        have eq : i+1=4 := by omega_using [hi, hn]
         change VG.X86.eval .ne sf=some true at hc
         simp only [VG.X86.eval,Zs,eq,decide_true,Option.map_some,Bool.not_true] at hc
         cases hc
-      exact ⟨4-(i+1),by omega,i+1,rfl,next,S',T'⟩
+      exact ⟨4-(i+1),by omega_using [hi],i+1,rfl,next,S',T'⟩
   · intro s t ⟨S,T⟩
     exact ⟨0,rfl,by decide,S,T⟩
 

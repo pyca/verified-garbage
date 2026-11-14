@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
+public import VerifiedGarbage.Impl.Bignum.PPC64LE.Crt
 
 /-!
 # DSA verification on PPC64LE
@@ -11,7 +12,7 @@ scratch, scratch_len)`, `scratch` and `scratch_len` on the stack. After
 `checkKey` (`Common.lean`), which branches on the public key only:
 
 * in the Q space, the mask of `0 < r < q` and `0 < s < q` (`subMod`'s
-  borrow and `eqMask` with 0), `R² mod q` (into array 8 too), `q − 2`
+  borrow and `eqMask` with 0), `R² mod q` (`rrQ`, into array 8 too), `q − 2`
   (two `subMod`s of 1) to the buffer, `w = s^(q − 2) mod q` (`powSecret` over its
   octets), then `u1 = z w mod q` and `u2 = r w mod q` (two Montgomery
   multiplications each, by w and by R²), for the digest's scalar `z` (its
@@ -21,7 +22,9 @@ scratch, scratch_len)`, `scratch` and `scratch_len` on the stack. After
   (`jointTable`), then for each pair of bits of u1 and u2, two squares and a
   multiplication by the entry they select (`jointWindow`); `v` to the
   buffer;
-* in the Q space, `v mod q` (`reduce`) compared with r (`eqMask`).
+* `v mod q` (`vModQ`: v copied into the P space's array 6, then reduced in
+  the Q space by Montgomery multiplications, four words of v at a time, as
+  `Crt.reduceIn` reduces c modulo a prime) compared with r (`eqMask`).
 
 The result is that comparison under the mask: nothing branches on the
 signature or the digest, only on their lengths and on the key.
@@ -78,9 +81,34 @@ def ranges : Prog isa :=
 /-- The mask into the header's word `hMask` (secret: it stays in memory). -/
 def keepMask : List Instr := [.store .d .r22 .r21 hMask]
 
-/-- `R² mod q` into array 1 and array 8. -/
+/-- `redEnter`'s pointers: the P space's array 6 into `r30` (`S + hdrBytes +
+6 (p_len + 16)`) and its `p_len / 8` words into `r31`. -/
+def redPtrs : List Instr :=
+  getP .r30 ++
+    [.addi .r30 .r30 16, .li .r0 6, .mul .r30 .r30 .r0, .add .r30 .r30 .r21, .addi .r30 .r30 hdrBytes] ++
+    getP .r31 ++ [.lsr .d .r31 .r31 3]
+
+/-- Into the Q space for a reduction of the P space's array 6 (`reduceQ`):
+`enterQ`, the pointers (`redPtrs`) and `-q⁻¹ mod 2³²` into `r12`. -/
+def redEnter : List Instr := enterQ ++ redPtrs ++ minv
+
+/-- The Q space back into `r31`. -/
+def redExit : List Instr := [.addi .r31 .r23 0]
+
+/-- `c mod q` into array 4, for `c`'s `r31` words at `r30` (`redEnter`), with
+`R² mod q` in array 1: `Crt.reduceFrom` in the Q space, whose array 0 is
+`r23 + hdrBytes` (`r21` holds `S` here), with the pointers already set. -/
+def reduceQ : Prog isa := Crt.reduceFrom [.addi .r10 .r23 hdrBytes] []
+
+/-- `v mod q` into the Q space's array 4, for `v` in the P space's array 6:
+`redEnter`, `reduceQ`, `redExit`. -/
+def vModQ : Prog isa := .seq (.block redEnter) (.seq reduceQ (.block redExit))
+
+/-- `R² mod q` into array 1 and array 8: `-q⁻¹ mod 2³²` into `r12`, then
+`Precompute.r2Prime` (`65 w` doublings on 64-bit words and six Montgomery
+squares), which branches on nothing but `w`. -/
 def rrQ : Prog isa :=
-  .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2 (copy 8 1))
+  .seq (.block (minv ++ base .r5 1 ++ base .r8 2 ++ base .r9 3)) (.seq Precompute.r2Prime (copy 8 1))
 
 /-- `q − 2` to the buffer: 1 into array 7, `[4] := [0] − [7]` and `[6] := [4] − [7]`
 (`subMod`). -/
@@ -167,8 +195,8 @@ def combine : Prog isa :=
 array 1, r into array 5, and `r3 :=` 1 if they are equal and the mask in
 `hMask` is all ones, else 0. -/
 def compare : Prog isa :=
-  .seq (.block (enterQ ++ bufBase .r30 .r0 ++ getP .r31)) (.seq ModArith.reduce
-    (.seq (.block ([.addi .r31 .r23 0] ++ ptrR)) (.seq (loadArr 5) (.seq (eqMask .r3 1 5)
+  .seq (copy 6 4) (.seq vModQ
+    (.seq (.block ptrR) (.seq (loadArr 5) (.seq (eqMask .r3 4 5)
       (.block [.load .d .r4 .r21 hMask, .logic .and .r3 .r3 .r4, .li .r0 1, .logic .and .r3 .r3 .r0])))))
 
 /-- The verification, after the check of the key. -/

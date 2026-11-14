@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunF
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.LitFI
 meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on AArch64: the run of `vg_mlkem16_inv_ntt` (mlkem-native's schedule)
@@ -39,6 +40,6 @@ theorem tabI_length : tab.length = 464 := by rw [tab.lit_eq]; decide +kernel
 
 theorem initFI_t {j e : Nat} (hj : j < 58) (he : e < 8) :
     (initFI.chunk 1 j).get e = cT (tab.getD (8 * j + e) 0) :=
-  packH_get he (by rw [tabI_length]; omega)
+  packH_get he (by rw [tabI_length]; omega_using [hj, he])
 
 end VG.Proof.MlKem.AArch64.NttR

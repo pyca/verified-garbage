@@ -151,6 +151,44 @@ def dispatchOf (as : List Artifact) : String :=
       files, A and B"
   | .ok _ => false
 
+/-! ## Implementations kept from being chosen (`Artifact.notWith`) -/
+
+/-- The text of `update`'s `select`, from the dispatchers `d`. -/
+def updateSelect (d : String) : String :=
+  (((d.splitOn "pub unsafe fn vg_poly1305_update_auto").getD 1 "").splitOn "fn first").getD 0 ""
+
+/-- The veto of `dit`, as the dispatcher writes it. -/
+def notDit : String :=
+  "&& !cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::DIT))"
+
+-- With a vendor: its condition also needs `dit` not to be reported.
+#guard
+  let sel := updateSelect (dispatchOf (others ++ neon.map fun a => { a with notWith := ["dit"] }))
+  has sel notDit && has sel "return crate::poly1305::vg_poly1305_update_neon;"
+
+-- Without one: the condition is put in parentheses before it.
+#guard
+  let sel := updateSelect (dispatchOf (others ++ neon.map fun a =>
+    { a with vendor := none, extra := [], notWith := ["dit"] }))
+  has sel "if (const { verified_garbage_cpu::COMPILED.0 != 0 }" && has sel notDit
+
+-- `_neon2` would hide `_neon` (it needs nothing `_neon` does not), but not where it is kept
+-- from being chosen and `_neon` is not: no error; where both are, it hides it again.
+#guard !has (dispatchOf (others ++ neon2.map (fun a => { a with notWith := ["dit"] }) ++ neon))
+  "error:"
+#guard has (dispatchOf (others ++ neon2.map (fun a => { a with notWith := ["dit"] }) ++
+    neon.map (fun a => { a with notWith := ["dit"] })))
+  "error: aarch64: vg_poly1305_update_neon would never run"
+
+-- It means nothing for a base, and a microarchitecture must be a name.
+#guard has (dispatchOf (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
+    if a.name == "vg_poly1305_update" then { a with notWith := ["dit"] } else a))
+  "error: aarch64: vg_poly1305_update is a base, which its dispatcher falls back on: `notWith` \
+  means nothing for it"
+#guard match neonOut fun a => { a with vendor := some "apple", extra := ["neon"], notWith := ["d it"] } with
+  | .error e => has e "vg_poly1305_update_neon needs the feature `d it`"
+  | .ok _ => false
+
 /-! ## Tables of functions (`Rust.tableDispatcher`) -/
 
 /-- Tables of one interface: `VG_T` and its implementations `_SHANI` and

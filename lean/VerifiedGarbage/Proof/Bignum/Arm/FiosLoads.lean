@@ -20,9 +20,9 @@ theorem loadsA_ok (s : State) (dst : Reg) (hne : dst ≠ .r3)
       t.gpr .r3=s.mem.readW (off (State.addr base) (a+ka)) 32 ∧
       t.gpr dst=s.mem.readW (off (State.addr base) (d+kd)) 32 ∧
       t.mem=s.mem ∧ Rest [.r3,dst] s t := by
-  refine wp_ldr (a:=off (State.addr base) (a+ka)) hka (ws.ea pa (by omega)) (ws.read fa) fun u hu => ?_
+  refine wp_ldr (a:=off (State.addr base) (a+ka)) hka (ws.ea pa (by omega_using [fa])) (ws.read fa) fun u hu => ?_
   refine wp_ldr (a:=off (State.addr base) (d+kd)) hkd
-    (by rw [hu.other .r0 (by decide)];exact ws.ea pd (by omega))
+    (by rw [hu.other .r0 (by decide)];exact ws.ea pd (by omega_using [fd]))
     (by rw [hu.rd,hu.wr];exact ws.read fd) fun t ht => WP.block_nil ?_
   refine ⟨?_,?_,?_,?_⟩
   · rw [ht.other .r3 (Ne.symm hne),hu.gpr]
@@ -36,7 +36,7 @@ theorem loadsM_ok (s : State) {base : BitVec 32} {size m k : Nat}
     WP isa (.block [.ldr .r5 .r4 k]) s fun t =>
       t.gpr .r5=s.mem.readW (off (State.addr base) (m+k)) 32 ∧
       t.mem=s.mem ∧ Rest [.r5] s t := by
-  refine wp_ldr (a:=off (State.addr base) (m+k)) hk (ws.ea pm (by omega)) (ws.read fm) fun t ht => WP.block_nil ?_
+  refine wp_ldr (a:=off (State.addr base) (m+k)) hk (ws.ea pm (by omega_using [fm])) (ws.read fm) fun t ht => WP.block_nil ?_
   exact ⟨ht.gpr,ht.mem,ht.rest (by simp)⟩
 
 end VG.Proof.Bignum.Arm.Fios

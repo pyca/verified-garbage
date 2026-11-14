@@ -89,7 +89,7 @@ theorem power_finish (backend : MontBackend) (s : State) {p : Inputs} {slots : L
   rintro u ⟨context, ready, value, modulus, _, _, _, rest⟩
   refine ⟨⟨context, ready, h.output.after rest, h.workspaceSep, by rw [rest.sp]; exact h.stackSep, ?_⟩, modulus⟩
   rw [value, VG.Proof.Bignum.powMod_eq]
-  exact Nat.lt_trans (Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega)) p.modulusBound
+  exact Nat.lt_trans (Nat.mod_lt _ (by have := h.ready.modulus; rw [h.modulus] at this; omega_using [odd])) p.modulusBound
 
 theorem power_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {xb1 xb2 : List Byte}
     (stable : stableSlots slots = true) (h32 : 32 ∈ slots) (h40 : 40 ∈ slots)

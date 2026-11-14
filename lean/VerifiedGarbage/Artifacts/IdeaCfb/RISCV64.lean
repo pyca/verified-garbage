@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Idea.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Idea.RISCV64.FbFinalLit
 
-/-! # IDEA-CFB64 artifacts on baseline RISC-V -/
+/-! # IDEA-CFB64 on RISC-V -/
 
 @[expose] public section
 

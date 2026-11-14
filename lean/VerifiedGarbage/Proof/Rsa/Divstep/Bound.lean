@@ -10,6 +10,7 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Uniform divstep convergence for RSA-sized operands
 
@@ -42,7 +43,7 @@ theorem contraction_words (w : Nat) (hw : 0<w) :
            _ ≤ r := ih
   rw [pow_mul, pow_mul, ← mul_pow]
   have := step (w-1)
-  rw [show w-1+1=w by omega] at this
+  rw [show w-1+1=w by omega_using [hw]] at this
   exact this.trans base
 
 /-- Odd inputs need no preliminary division even when the second is larger.
@@ -55,13 +56,13 @@ theorem done_words {w steps : Nat} {p x : Int} (hw : 0<w)
       (divsteps steps (1,p,x)).2.1.natAbs=Int.gcd p x := by
   have zero : (divsteps steps (1,p,x)).2.2=0 := by
     by_cases le : x≤p
-    · exact (divsteps_bound hp hx0 le hpSize (contraction_words w hw) (by omega : 80*w≤steps)).1
+    · exact (divsteps_bound hp hx0 le hpSize (contraction_words w hw) (by omega_using [hn] : 80*w≤steps)).1
     · have odd : x%2=1 := start.resolve_left le
       have first : divsteps 1 (1,p,x)=(1,x,(x-p)/2) := by
         simp [divsteps,divstep,odd]
-      rw [show steps=1+(steps-1) by omega,divsteps_add,first]
-      exact (divsteps_bound odd (by omega) (by omega) hxSize (contraction_words w hw)
-        (by omega : 80*w≤steps-1)).1
+      rw [show steps=1+(steps-1) by omega_using [hn],divsteps_add,first]
+      exact (divsteps_bound odd (by omega_using [le]) (by omega_using [hp0, hx0]) hxSize (contraction_words w hw)
+        (by omega_using [hn] : 80*w≤steps-1)).1
   refine ⟨zero,?_⟩
   have h := divsteps_gcd (d:=1) (f:=p) (g:=x) (by decide) hp steps
   rw [zero,Int.gcd_zero_right] at h

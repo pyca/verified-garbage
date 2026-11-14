@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.CtrFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # SM4-CTR artifacts on baseline ARMv7 -/
+/-! # SM4-CTR on ARMv7 -/
 
 @[expose] public section
 

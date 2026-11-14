@@ -57,8 +57,8 @@ theorem lay (len B : Nat) (hB : len * B = 128) (hBp : 0 < B) (hk : 128 / len + B
     Piece Pre Pub (fun s₀ s => LB s₀ montZetaTable (P s₀) (kf len 0) s)
       (fun s₀ s => LB s₀ montZetaTable (layerN bfly (P s₀) len (zf zetas kf len) B) (kf len B) s)
       (layerCode bflyBody zUp len) :=
-  layer_piece bf montZetaTable zetas kf P tab true len B hB hBp (fun c _ => by simp [kf]; omega)
-    (fun c hc => by simp only [kf]; omega) (fun h => absurd h (by decide)) t₁ t₂ t₃ t₄
+  layer_piece bf montZetaTable zetas kf P tab true len B hB hBp (fun c _ => by simp [kf]; omega_using [])
+    (fun c hc => by simp only [kf]; omega_using [hk, hc]) (fun h => absurd h (by decide)) t₁ t₂ t₃ t₄
 
 /-- The input polynomial. -/
 abbrev F (s₀ : State) : Poly := polyAt s₀.mem (fA s₀)
@@ -109,7 +109,7 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀)
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => LB s₀ montZetaTable (nttLens.foldl nttLayer (F s₀)) 256 s) s₀ s')
     Impl.MlDsa.X86.Arith.ntt :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     (body_piece.mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.mem.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
@@ -135,7 +135,7 @@ theorem verified : Verified X86.target Impl.MlDsa.X86.Arith.ntt (nttContract X86
         | (rw [show BitVec.setWidth 64 (arg st 0) = BitVec.ofNat 64 0 by decide]
            refine reduced_below (fun a ha => ?_) 0 (by decide)
            simp only [satMem]
-           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+           rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])])
         | decide +kernel
 
 end VG.Proof.MlDsa.X86.Arith.NttFwd

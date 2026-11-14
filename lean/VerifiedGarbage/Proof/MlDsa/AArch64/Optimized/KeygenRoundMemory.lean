@@ -1,11 +1,68 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Block
+
+/-! ### `MlDsa.AArch64.Optimized.KeygenRoundWord`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenRound
+open VG VG.AArch64 VG.Spec.MlDsa
+
+def highWord (x : BitVec 32) : BitVec 32 := (x+4095#32)>>>13
+def rawWord (x : BitVec 32) : BitVec 32 := x-(highWord x<<<13)
+def lowWord (x : BitVec 32) : BitVec 32 := Inverse.signCorrected (rawWord x)
+
+theorem highWord_nat {x : BitVec 32} (hx : x.toNat<q) :
+    (highWord x).toNat=(x.toNat+4095)/8192 := by
+  change x.toNat<8380417 at hx
+  simp only [highWord,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,BitVec.toNat_add]
+  change ((x.toNat+4095)%4294967296)/8192=(x.toNat+4095)/8192
+  rw [Nat.mod_eq_of_lt (by omega_using [hx])]
+
+theorem rawWord_int {x : BitVec 32} (hx : x.toNat<q) :
+    (rawWord x).toInt=((x.toNat+4095)%8192:Int)-4095 := by
+  have hh := highWord_nat hx
+  have hx' : x.toNat<8380417 := hx
+  have he := BitVec.toInt_eq_toNat_cond (rawWord x)
+  have hv : (rawWord x).toNat=(2^32-(((x.toNat+4095)/8192*8192)%2^32)+x.toNat)%2^32 := by
+    simp only [rawWord,BitVec.toNat_sub,BitVec.toNat_shiftLeft,Nat.shiftLeft_eq,hh]
+  rw [hv] at he
+  omega_using [he]
+
+theorem highWord_eq {x : BitVec 32} (hx : x.toNat<q) :
+    highWord x=VG.Proof.MlDsa.AArch64.Round.t1V x := by
+  apply BitVec.eq_of_toNat_eq
+  rw [highWord_nat hx,VG.Proof.MlDsa.AArch64.Round.t1V_toNat hx]
+
+theorem lowWord_eq {x : BitVec 32} (hx : x.toNat<q) :
+    lowWord x=VG.Proof.MlDsa.AArch64.Round.t0V x := by
+  have hr := rawWord_int hx
+  have hb : (x.toNat+4095)%8192<8192 := Nat.mod_lt _ (by decide)
+  have he := Inverse.signCorrected_int (rawWord x) (by omega_using [hr]) (by omega_using [hr])
+  have hv := BitVec.toInt_eq_toNat_cond (lowWord x)
+  change (lowWord x).toInt=_ at he
+  rw [hr] at he
+  apply BitVec.eq_of_toNat_eq
+  rw [VG.Proof.MlDsa.AArch64.Round.t0V_toNat hx]
+  change (lowWord x).toNat=if (x.toNat+4095)%8192<4095 then (x.toNat+4095)%8192+8380417-4095 else (x.toNat+4095)%8192-4095
+  split <;> split at he <;> omega
+
+end VG.Proof.MlDsa.AArch64.Optimized.KeygenRound
+
+end
+
+end
+
 
 /-! ## From `KeygenRoundVec.lean` -/
 
@@ -75,7 +132,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.KeygenRound
 def wordVector (f : Nat → BitVec 32) : BitVec 128 := ofVWords (f 0) (f 1) (f 2) (f 3)
 theorem wordVector_word (f : Nat → BitVec 32) {e : Nat} (he : e<4) : vword (wordVector f) e=f e := by
   rw [wordVector,VG.Proof.MlKem.AArch64.vword_ofVWords _ _ _ _ he]
-  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega
+  have h : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
   rcases h with rfl|rfl|rfl|rfl <;> rfl
 
 def highVector (v : BitVec 128) : BitVec 128 := wordVector fun e=>highWord (vword v e)
@@ -157,9 +214,9 @@ theorem body_step {s : State} {input high low : Addr} {u i : Nat}
     WP isa (.block (body (16*i))) s fun t =>
       StepKeep [.v0,.v1,.v2,.v7] s t ∧ Ready t ∧ t.mem=roundStep input high low (4*u+i) s.mem := by
   rw [←List.append_nil (body (16*i))]
-  refine body_ok (by omega) ha hh hl hr.q hr.bias fun t hk hm => WP.block_nil_iff.mpr ⟨hk,hr.frame hk,?_⟩
+  refine body_ok (by omega_using [hi]) ha hh hl hr.q hr.bias fun t hk hm => WP.block_nil_iff.mpr ⟨hk,hr.frame hk,?_⟩
   simpa only [roundStep,h0,h1,h2,BitVec.add_assoc,←BitVec.ofNat_add,
-    show 64*u+16*i=16*(4*u+i) by omega] using hm
+    show 64*u+16*i=16*(4*u+i) by omega_using []] using hm
 
 end VG.Proof.MlDsa.AArch64.Optimized.KeygenRound
 

@@ -40,6 +40,6 @@ theorem cbcBlocksAt_congr {m m' : Mem} {p : Addr} {n : Nat}
   simp only [Function.comp_apply, Spec.TripleDes.blockAt]
   refine congrArg Vector.toList (congrArg Vector.ofFn (funext fun j => ?_))
   rw [Offset.add_add]
-  exact h _ (by have := j.isLt; omega)
+  exact h _ (by have := j.isLt; omega_using [hi])
 
 end VG.Proof.TripleDes.X86_64

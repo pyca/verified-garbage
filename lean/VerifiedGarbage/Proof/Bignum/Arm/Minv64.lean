@@ -56,7 +56,7 @@ theorem minv64_ok (s : State) (a b : Addr)
     have h' := congrArg (fun n : Nat => (n : Int)) h
     simp only [Int.natCast_emod, Int.natCast_mul] at h'
     change (_ - 1) % (8 : Int) = 0
-    omega
+    omega_using [h]
   rw [WP.block_append_iff]
   refine WP.mono (newton64_lift pa pb ra rb (by decide) inv0) ?_
   intro s1 inv1

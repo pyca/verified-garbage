@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Signed (Booth) digits for the fixed-base comb, and why they never collide
@@ -52,10 +53,10 @@ theorem Law.group_zmul (hC : Law C) {A : Type} [Lean.Grind.IntModule A] {f : Poi
   split
   · rw [hf.mul hP]
     congr 1
-    omega
+    omega_arith
   · rw [hf.neg (hC.onCurve_mul hP _), hf.mul hP, ← Lean.Grind.IntModule.neg_zsmul]
     congr 1
-    omega
+    omega_arith
 
 /-- `[a]P + [b]P = [a + b]P`, for integers. -/
 theorem Law.add_zmul (hC : Law C) {P : Point C} (hP : onCurve C P = true) (a b : Int) :
@@ -114,7 +115,7 @@ theorem Law.zmul_dvd (hC : Law C) (hG : onCurve C (G C) = true)
   have habs : ((a - b).natAbs : Int) • f (G C) = 0 := by
     rcases Int.natAbs_eq (a - b) with e | e
     · rw [← e]; exact hab
-    · have : ((a - b).natAbs : Int) = -(a - b) := by omega
+    · have : ((a - b).natAbs : Int) = -(a - b) := by omega_using [e]
       rw [this, Lean.Grind.IntModule.neg_zsmul, hab]; grind
   rw [← Int.natAbs_dvd_natAbs]
   simp only [Int.natAbs_natCast]
@@ -131,7 +132,7 @@ theorem Law.zmul_dvd (hC : Law C) (hG : onCurve C (G C) = true)
 /-! ## Booth's digits -/
 
 theorem two_pow_pred {t : Nat} (ht : 1 ≤ t) : 2 ^ t = 2 * 2 ^ (t - 1) := by
-  obtain ⟨m, rfl⟩ : ∃ m, t = m + 1 := ⟨t - 1, by omega⟩
+  obtain ⟨m, rfl⟩ : ∃ m, t = m + 1 := ⟨t - 1, by omega_using [ht]⟩
   rw [Nat.pow_succ, Nat.add_sub_cancel, Nat.mul_comm]
 
 /-- `c_j`: bit `wj - 1` of `k`, `0` for `j = 0`. -/
@@ -146,7 +147,7 @@ def bpart (w k j : Nat) : Int :=
   ((k % 2 ^ (w * j) : Nat) : Int) - ((2 ^ (w * j) * bcar w k j : Nat) : Int)
 
 theorem bcar_le (w k j : Nat) : bcar w k j ≤ 1 := by
-  unfold bcar; split <;> omega
+  unfold bcar; split <;> omega_using []
 
 /-- The bit below a multiple of `2^t`, from the residue. -/
 theorem div_pow_mod_two (k t : Nat) : k / 2 ^ t % 2 = k % 2 ^ (t + 1) / 2 ^ t := by
@@ -157,9 +158,9 @@ theorem bpart_zero (w k : Nat) : bpart w k 0 = 0 := by simp [bpart, bcar]
 /-- `c_{j+1}` is the top bit of window `j`. -/
 theorem bcar_succ {w : Nat} (hw : 1 ≤ w) (k j : Nat) :
     bcar w k (j + 1) = combWin w k j / 2 ^ (w - 1) := by
-  have e : w * (j + 1) - 1 = w * j + (w - 1) := by rw [Nat.mul_succ]; omega
+  have e : w * (j + 1) - 1 = w * j + (w - 1) := by rw [Nat.mul_succ]; omega_using [hw]
   simp only [bcar, Nat.add_one_ne_zero, ↓reduceIte, e, Nat.pow_add, combWin]
-  rw [← Nat.div_div_eq_div_mul, div_pow_mod_two, show w - 1 + 1 = w by omega]
+  rw [← Nat.div_div_eq_div_mul, div_pow_mod_two, show w - 1 + 1 = w by omega_using [hw]]
 
 /-- `bpart (j + 1) = bpart j + d_j 2^(wj)`. -/
 theorem bpart_succ (w k j : Nat) :
@@ -175,9 +176,9 @@ theorem bpart_succ (w k j : Nat) :
 /-- The digits add up to `k`. -/
 theorem bpart_top {w k J : Nat} (hJ : 1 ≤ J) (hk : k < 2 ^ (w * J - 1)) :
     bpart w k J = k := by
-  have hk' : k < 2 ^ (w * J) := Nat.lt_of_lt_of_le hk (Nat.pow_le_pow_right (by decide) (by omega))
+  have hk' : k < 2 ^ (w * J) := Nat.lt_of_lt_of_le hk (Nat.pow_le_pow_right (by decide) (by omega_using []))
   have hc : bcar w k J = 0 := by
-    simp only [bcar, show J ≠ 0 by omega, ↓reduceIte, Nat.div_eq_of_lt hk, Nat.zero_mod]
+    simp only [bcar, show J ≠ 0 by omega_using [hJ], ↓reduceIte, Nat.div_eq_of_lt hk, Nat.zero_mod]
   simp [bpart, hc, Nat.mod_eq_of_lt hk']
 
 /-- `|bpart j| ≤ 2^(wj - 1)`. -/
@@ -186,18 +187,18 @@ theorem bpart_abs_le {w : Nat} (hw : 1 ≤ w) (k : Nat) {j : Nat} (hj : 1 ≤ j)
   have hwj : 1 ≤ w * j := Nat.mul_le_mul hw hj
   have e := two_pow_pred hwj
   have hc : bcar w k j = k % 2 ^ (w * j) / 2 ^ (w * j - 1) := by
-    simp only [bcar, show j ≠ 0 by omega, ↓reduceIte]
-    rw [div_pow_mod_two, show w * j - 1 + 1 = w * j by omega]
+    simp only [bcar, show j ≠ 0 by omega_using [hj], ↓reduceIte]
+    rw [div_pow_mod_two, show w * j - 1 + 1 = w * j by omega_using [hwj]]
   have hm := Nat.mod_lt k (Nat.two_pow_pos (w * j))
   have hd := Nat.div_add_mod (k % 2 ^ (w * j)) (2 ^ (w * j - 1))
   have hl := Nat.mod_lt (k % 2 ^ (w * j)) (Nat.two_pow_pos (w * j - 1))
   have hq : k % 2 ^ (w * j) / 2 ^ (w * j - 1) ≤ 1 := by
-    rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega
+    rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega_using [e]
   simp only [bpart, hc]
   generalize 2 ^ (w * j - 1) = h at *
   generalize k % 2 ^ (w * j) = r at *
   rw [e]
-  rcases (by omega : r / h = 0 ∨ r / h = 1) with h0 | h0 <;> rw [h0] at hd ⊢ <;> omega
+  rcases (by omega : r / h = 0 ∨ r / h = 1) with h0 | h0 <;> rw [h0] at hd ⊢ <;> omega_using [hd, hl]
 
 /-- The digit's magnitude. -/
 def bmag (w k j : Nat) : Nat := (bdig w k j).natAbs
@@ -210,13 +211,13 @@ theorem bmag_le {w : Nat} (hw : 1 ≤ w) (k j : Nat) : bmag w k j ≤ 2 ^ (w - 1
   have hd := Nat.div_add_mod (combWin w k j) (2 ^ (w - 1))
   have hl := Nat.mod_lt (combWin w k j) (Nat.two_pow_pos (w - 1))
   have hq : combWin w k j / 2 ^ (w - 1) ≤ 1 := by
-    rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega
+    rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega_using [hW, h2]
   simp only [bmag, bdig, bcar_succ hw]
   rw [h2]
   generalize 2 ^ (w - 1) = h at *
   generalize combWin w k j = W at *
   generalize W / h = q at *
-  rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl <;> omega
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1) with rfl | rfl <;> omega_using [hc, hl, hd]
 
 /-- The digit's sign and magnitude: for a window whose top bit
 `c_{j+1}` is set, `d_j = -(2^w - (W_j + c_j)) ≤ 0`, else `d_j = W_j + c_j ≥ 0`. -/
@@ -230,13 +231,13 @@ theorem bdig_cases {w : Nat} (hw : 1 ≤ w) (k j : Nat) :
   have hd := Nat.div_add_mod (combWin w k j) (2 ^ (w - 1))
   have hl := Nat.mod_lt (combWin w k j) (Nat.two_pow_pos (w - 1))
   have hq : combWin w k j / 2 ^ (w - 1) ≤ 1 := by
-    rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega
+    rw [Nat.div_le_iff_le_mul_add_pred (Nat.two_pow_pos _)]; omega_using [hW, h2]
   simp only [bdig, bcar_succ hw]
   rw [h2] at hW ⊢
   generalize 2 ^ (w - 1) = h at *
   generalize combWin w k j = W at *
   generalize W / h = q at *
-  rcases (by omega : q = 0 ∨ q = 1) with rfl | rfl <;> omega
+  rcases (by omega_using [hq] : q = 0 ∨ q = 1) with rfl | rfl <;> omega_arith
 
 /-- The magnitude the code computes: `s ? 2^w - (W_j + c_j) : W_j + c_j`. -/
 theorem bmag_eq {w : Nat} (hw : 1 ≤ w) (k j : Nat) :
@@ -272,8 +273,8 @@ theorem bentry_eq {w : Nat} (hw : 1 ≤ w) (k j : Nat) :
         rw [Int.neg_mul, Int.neg_neg, Int.natCast_mul]
       have hneg : ¬ (0 ≤ -((bmag w k j : Nat) : Int) * ((2 ^ (w * j) : Nat) : Int)) := by
         rw [Int.neg_mul, ← Int.natCast_mul]
-        have : 0 < bmag w k j * 2 ^ (w * j) := Nat.mul_pos (by omega) hP
-        omega
+        have : 0 < bmag w k j * 2 ^ (w * j) := Nat.mul_pos (by omega_using [h0]) hP
+        omega_using [this]
       simp only [hneg, ↓reduceIte]
       rw [e, Int.toNat_natCast]
   · have hm : bmag w k j = combWin w k j + bcar w k j := by
@@ -314,7 +315,7 @@ theorem booth_not_dvd {n w J kmax : Nat} (hsafe : BoothSafe n w J kmax) (hw : 1 
   have hEpos := Nat.two_pow_pos (w * j)
   obtain ⟨m, hm1, hmH, hdig⟩ : ∃ m : Nat, 1 ≤ m ∧ m ≤ 2 ^ (w - 1) ∧
       (bdig w k j = m ∨ bdig w k j = -(m : Int)) :=
-    ⟨bmag w k j, Nat.pos_of_ne_zero hm, hD, by unfold bmag; omega⟩
+    ⟨bmag w k j, Nat.pos_of_ne_zero hm, hD, by unfold bmag; omega_using []⟩
   have hME : 2 ^ (w * j) ≤ m * 2 ^ (w * j) := Nat.le_mul_of_pos_left _ hm1
   have hMH : m * 2 ^ (w * j) ≤ 2 ^ (w - 1) * 2 ^ (w * j) := Nat.mul_le_mul_right _ hmH
   have he : bdig w k j * ((2 ^ (w * j) : Nat) : Int) = ((m * 2 ^ (w * j) : Nat) : Int) ∨
@@ -328,7 +329,7 @@ theorem booth_not_dvd {n w J kmax : Nat} (hsafe : BoothSafe n w J kmax) (hw : 1 
   by_cases htop : j + 1 < J
   · -- Below the top: `0 < |P - e| < n`.
     have hjle : 2 ^ (w * j) ≤ 2 ^ (w * (J - 2)) :=
-      Nat.pow_le_pow_right (by decide) (Nat.mul_le_mul_left _ (by omega))
+      Nat.pow_le_pow_right (by decide) (Nat.mul_le_mul_left _ (by omega_using [htop]))
     have h3 : 2 ^ (w - 1) * 2 ^ (w * j) ≤ 2 ^ (w - 1) * 2 ^ (w * (J - 2)) :=
       Nat.mul_le_mul_left _ hjle
     have hs := hsafe.1
@@ -342,38 +343,38 @@ theorem booth_not_dvd {n w J kmax : Nat} (hsafe : BoothSafe n w J kmax) (hw : 1 
     generalize bdig w k j * (E : Int) = e at he habs
     generalize bpart w k j = P at hP habs
     have hx0 : x.natAbs ≠ 0 := by
-      intro h0; rw [h0, Nat.mul_zero] at habs; rcases he with rfl | rfl <;> omega
+      intro h0; rw [h0, Nat.mul_zero] at habs; rcases he with rfl | rfl <;> omega_using [hw, hJ, hkJ, hn0, hk, hj1, hj, hm, hD, hm1, hmH, htop, h3, hs, hMH, hx, hsum, hEpos, hjle, hME, hE, hP, h0, habs]
     have : n * 1 ≤ n * x.natAbs := Nat.mul_le_mul_left _ (Nat.pos_of_ne_zero hx0)
     generalize n * x.natAbs = NX at habs this
-    rcases he with rfl | rfl <;> omega
+    rcases he with rfl | rfl <;> omega_using [hw, hJ, hkJ, hn0, hk, hj1, hj, hm, hD, hm1, hmH, htop, h3, hs, hMH, hx, hsum, hEpos, hjle, hME, hE, hP, hx0, this, habs]
   · -- The top window: `P + e = k`, so `e > 0`, `P - e = -t n`.
-    have hjJ : j + 1 = J := by omega
-    rw [hjJ, bpart_top (by omega) (Nat.lt_of_lt_of_le hk hkJ)] at hsum
-    have hcheck := hsafe.2 m (by omega)
-    rw [show J - 1 = j by omega] at hcheck
+    have hjJ : j + 1 = J := by omega_using [hj, htop]
+    rw [hjJ, bpart_top (by omega_using [hJ]) (Nat.lt_of_lt_of_le hk hkJ)] at hsum
+    have hcheck := hsafe.2 m (by omega_using [hmH])
+    rw [show J - 1 = j by omega_using [hj, htop]] at hcheck
     generalize m * 2 ^ (w * j) = ME at hME hMH he hcheck
     generalize 2 ^ (w * j - 1) = B at hP hE hcheck
     generalize 2 ^ (w * j) = E at *
     generalize bdig w k j * (E : Int) = e at he habs hsum hx
     generalize bpart w k j = P at hP habs hsum hx
-    have hep : e = (ME : Int) := by rcases he with h | h <;> omega
+    have hep : e = (ME : Int) := by rcases he with h | h <;> omega_arith
     subst hep
     -- `n x = P - ME < 0`.
-    have hxneg : (n : Int) * x < 0 := by omega
+    have hxneg : (n : Int) * x < 0 := by omega_using [hkJ, hn0, hk, hm, hD, hm1, hmH, hEpos, hME, hMH, hE, hP, he, habs, hsum, hx]
     obtain ⟨t, ht1, rfl⟩ : ∃ t : Nat, 1 ≤ t ∧ x = -(t : Int) := by
       have hx0 : x < 0 := by
         refine Classical.byContradiction fun h => ?_
-        have : 0 ≤ (n : Int) * x := Int.mul_nonneg (Int.natCast_nonneg _) (by omega)
-        omega
-      exact ⟨(-x).toNat, by omega, by omega⟩
+        have : 0 ≤ (n : Int) * x := Int.mul_nonneg (Int.natCast_nonneg _) (by omega_using [h])
+        omega_using [hw, hJ, hkJ, hn0, hk, hj1, hj, hm, hD, hm1, hmH, htop, hjJ, hEpos, hME, hMH, hE, hP, he, habs, hsum, hx, hxneg, h, this]
+      exact ⟨(-x).toNat, by omega_using [hx0], by omega_using [hx0]⟩
     have htn : ((t * n : Nat) : Int) = ME - P := by
       rw [Int.natCast_mul, Int.mul_comm]
       have : (n : Int) * -(t : Int) = -((n : Int) * t) := Int.mul_neg _ _
-      omega
-    have h2 : t * n ≤ 2 * ME := by omega
+      omega_using [hx, this]
+    have h2 : t * n ≤ 2 * ME := by omega_using [hsum, htn]
     have hlt : t < 2 * ME / n + 1 := by
-      have := (Nat.le_div_iff_mul_le hn0).mpr h2; omega
-    exact hcheck t hlt ⟨hm1, ht1, h2, by omega, by omega, by omega⟩
+      have := (Nat.le_div_iff_mul_le hn0).mpr h2; omega_using [this]
+    exact hcheck t hlt ⟨hm1, ht1, h2, by omega_using [hkJ, hn0, hk, hME, hMH, he, hsum, ht1, habs, hx, hxneg, htn, h2, hlt], by omega_using [hn0, hME, hMH, hP, he, hsum, ht1, habs, hx, hxneg, htn, h2, hlt], by omega_using [hn0, hME, hMH, hP, he, hsum, ht1, habs, hx, hxneg, htn, h2, hlt]⟩
 
 /-- The sum below digit `j` is never the digit's term, as a multiple of `G`. -/
 theorem booth_ne (hC : Law C) (hG : onCurve C (G C) = true)

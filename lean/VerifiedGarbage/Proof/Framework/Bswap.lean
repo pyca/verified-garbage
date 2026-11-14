@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Byte reversal of a little-endian load is a big-endian load
@@ -42,8 +43,8 @@ theorem extractLsb'_append_byte_hi {w : Nat} (y : BitVec w) (a : BitVec 8) {k : 
     (y ++ a).extractLsb' k 8 = y.extractLsb' (k - 8) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬k + i < 8 by omega, ite_false]
-  exact congrArg _ (by omega)
+    show ¬k + i < 8 by omega_using [hk], ite_false]
+  exact congrArg _ (by omega_using [hk])
 
 theorem byteRev32_bytes (b0 b1 b2 b3 : BitVec 8) :
     byteRev32 ((0#0 ++ b3 ++ b2 ++ b1 ++ b0).setWidth 32) = (b0 ++ b1 ++ b2 ++ b3 : BitVec 32) := by
@@ -86,8 +87,8 @@ theorem getLsbD_append_byte {w : Nat} (x : BitVec w) (b : BitVec 8) (k : Nat) {r
   cases k with
   | zero => simp only [Nat.mul_zero, Nat.zero_add, hr, ite_true]
   | succ k =>
-    rw [show 8 * (k + 1) + r - 8 = 8 * k + r by omega]
-    simp only [show ¬ 8 * (k + 1) + r < 8 by omega, Nat.succ_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
+    rw [show 8 * (k + 1) + r - 8 = 8 * k + r by omega_using []]
+    simp only [show ¬ 8 * (k + 1) + r < 8 by omega_using [], Nat.succ_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
 
 /-- Bit `i` of a byte-reversed 32-bit word. The byte's index is a literal in each case,
 so every `if` and subtraction reduces without `omega`. -/
@@ -95,8 +96,8 @@ theorem byteRev32_getLsbD (w : BitVec 32) {i : Nat} (hi : i < 32) :
     (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) := by
   obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
     ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
-  have ha : a < 4 := by omega
-  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  have ha : a < 4 := by omega_using [hi]
+  rw [show (8 * a + b) / 8 = a by omega_using [hb], show (8 * a + b) % 8 = b by omega_using [hb]]
   unfold byteRev32
   match a, ha with
   | 0, _ | 1, _ | 2, _ | 3, _ =>
@@ -108,8 +109,8 @@ theorem byteRev64_getLsbD (w : BitVec 64) {i : Nat} (hi : i < 64) :
     (byteRev64 w).getLsbD i = w.getLsbD (8 * (7 - i / 8) + i % 8) := by
   obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
     ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
-  have ha : a < 8 := by omega
-  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  have ha : a < 8 := by omega_using [hi]
+  rw [show (8 * a + b) / 8 = a by omega_using [hb], show (8 * a + b) % 8 = b by omega_using [hb]]
   unfold byteRev64
   match a, ha with
   | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>

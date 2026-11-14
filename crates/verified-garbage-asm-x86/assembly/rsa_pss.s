@@ -136,7 +136,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -891,7 +891,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1647,7 +1647,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -2403,7 +2403,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3159,7 +3159,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3911,7 +3911,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -4663,7 +4663,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -5415,7 +5415,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -6062,7 +6062,7 @@ vg_rsa_pss_verify_precomputed:
 	ret
 	.p2align 6
 
-vg_rsa_pss_sign:
+vg_rsa_pss_sign_precomputed:
 	push ebx
 	push ebp
 	push esi
@@ -6388,7 +6388,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -6545,7 +6545,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 215f
 214:
 	mov esi, DWORD PTR [esp+164]
@@ -6864,7 +6868,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -7021,7 +7025,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 235f
 234:
 	mov esi, DWORD PTR [esp+164]
@@ -7341,7 +7349,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -7498,7 +7506,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 255f
 254:
 	mov esi, DWORD PTR [esp+164]
@@ -7818,7 +7830,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -7975,7 +7987,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 275f
 274:
 	mov esi, DWORD PTR [esp+164]
@@ -8293,7 +8309,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -8450,7 +8466,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 295f
 294:
 	mov esi, DWORD PTR [esp+164]
@@ -8768,7 +8788,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -8925,7 +8945,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 2115f
 2114:
 	mov esi, DWORD PTR [esp+164]
@@ -9243,7 +9267,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -9400,7 +9424,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 2135f
 2134:
 	mov esi, DWORD PTR [esp+164]
@@ -9716,7 +9744,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -9873,7 +9901,11 @@ vg_rsa_pss_sign:
 	mov eax, DWORD PTR [esp+248]
 	sub eax, 1024
 	mov DWORD PTR [esp+76], eax
-	call {vg_rsa_private_checked}
+	mov eax, DWORD PTR [esp+260]
+	mov DWORD PTR [esp+80], eax
+	mov eax, DWORD PTR [esp+264]
+	mov DWORD PTR [esp+84], eax
+	call {vg_rsa_private_checked_precomputed}
 	jmp 2155f
 2154:
 	mov esi, DWORD PTR [esp+164]

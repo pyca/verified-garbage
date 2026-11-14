@@ -72,12 +72,12 @@ structure Inv (s₀ : State) (v : Nat → BitVec 32) (i : Nat) (s : State) : Pro
 
 theorem in32 {rs : List Region} {p : Addr} (hw : pR p ∈ rs) {j : Nat} (hj : j + 8 ≤ 256) :
     InRegions rs (coeffAddr p j) 32 :=
-  ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+  ⟨_, hw, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
 
 /-- Doubleword `e` of lane `l` of a 256-bit load of coefficient `j`. -/
 theorem lane_coeff (m : Mem) (p : Addr) (j l e : Nat) (he : e < 4) :
     dword (m.readW (coeffAddr p j + BitVec.ofNat 64 (16 * l)) 128) e = coeffAt m p (j + 4 * l + e) := by
-  rw [dword_readW _ _ he, show 16 * l = 4 * (4 * l) by omega, coeffAddr_off p j (4 * l),
+  rw [dword_readW _ _ he, show 16 * l = 4 * (4 * l) by omega_using [], coeffAddr_off p j (4 * l),
     coeffAddr_off p (j + 4 * l) e, ← coeffAt_eq]
 
 section
@@ -96,7 +96,7 @@ theorem step {i : Nat} (hi : i < 32) {s : State}
     WP isa (.block (yaccBody ar ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv s₀ (fun k => L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)) (i + 1) s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_using [hi]
   have hw : pR (s₀.gpr .rdi) ∈ s.wr := by rw [hI.wr, hp.2.1]; simp
   have hr : pR (s₀.gpr .rsi) ∈ s.rd ++ s.wr := by rw [hI.rd, hI.wr, hp.1]; simp
   have e1 : s.gpr .rdi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rdi) (8 * i) := by
@@ -128,25 +128,25 @@ theorem step {i : Nat} (hi : i < 32) {s : State}
   · simp only [lane_setReg, lane_setFlags, State.setMem_lane]; rw [o13.lane _ (by decide) l hl]; exact hI.q l hl
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
     rw [g3, o13.mem]
-    exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
     rw [g3, o13.mem, coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 8 * (i + 1) by omega)]
+      rw [ifp (show k < 8 * (i + 1) by omega_using [h])]
       obtain ⟨l, e, hl, he, hk'⟩ : ∃ l e, l < 2 ∧ e < 4 ∧ k = 8 * i + 4 * l + e :=
-        ⟨(k - 8 * i) / 4, (k - 8 * i) % 4, by omega, by omega, by omega⟩
+        ⟨(k - 8 * i) / 4, (k - 8 * i) % 4, by omega_using [h], by omega_using [], by omega_using [h]⟩
       subst hk'
-      rw [show 8 * (4 * (8 * i + 4 * l + e - 8 * i)) = 8 * (16 * l + 4 * e) by omega, extract_ymm _ _ hl he,
+      rw [show 8 * (4 * (8 * i + 4 * l + e - 8 * i)) = 8 * (16 * l + 4 * e) by omega_using [], extract_ymm _ _ hl he,
         ← State.proj_xmm, B3 l hl e he, State.proj_xmm, State.proj_xmm, o2.lane _ (by decide) l hl, L1 l hl,
         L2 l hl, o1.gpr, o1.mem, e1, e2, lane_coeff _ _ _ _ _ he, lane_coeff _ _ _ _ _ he,
-        hI.coeff _ (by omega), ifn (by omega),
-        coeffAt_congr (bytes_frame hI.frame (by simpa using hp.2.2.1.symm) (by decide)) (by rw [n_eq]; omega)]
+        hI.coeff _ (by omega_using [hi, hl, he]), ifn (by omega_using []),
+        coeffAt_congr (bytes_frame hI.frame (by simpa using hp.2.2.1.symm) (by decide)) (by rw [n_eq]; omega_using [hi, hl, he])]
     · rename_i h
       rw [hI.coeff k hk]
       by_cases h' : k < 8 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
   · exact ⟨by rw [o13.gpr], by rw [o13.gpr]⟩
 
 /-- The whole function, from its precondition. -/
@@ -165,11 +165,11 @@ theorem fn_ok (hv : ∀ k < 256, (L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffA
         by rw [o.keep.2.1, k1.2.1], by rw [o.keep.2.2, k1.2.2],
         fun l hl => by
           rw [show u.lane .xmm15 l = w.lane .xmm15 l by simp only [State.lane]; rw [o.xmm, hy], lq l hl]; decide,
-        by rw [o.mem, m1]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, ifn (by omega)]⟩)
+        by rw [o.mem, m1]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, ifn (by omega_using [])]⟩)
       fun i hi u hI => step hp hF hY hi hI) fun u hI => ?_)
     refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem) (by vrunm; rfl) fun u' hm' => ?_
     rw [hm']
-    exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega)]⟩
+    exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega_using [hk])]⟩
   obtain ⟨tr, s', he, ⟨hf, hco⟩, hk⟩ := WP.keep _ hW hc
   refine ⟨tr, s', he, abiPreserved_of_exec hm he (gprPreserved_of hk (by decide) hf ?_),
     polyIs_of_toNat fun k hk => ?_⟩

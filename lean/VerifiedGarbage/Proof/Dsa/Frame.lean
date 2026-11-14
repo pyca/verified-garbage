@@ -36,13 +36,13 @@ theorem outs_bytes {m m' : Mem} {base p : Addr} {len : Nat} {ranges : List (Nat 
   apply O _
   intro r hr
   have inside : (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base p (by omega) (by omega)
+    Offset.contains_base p (by omega_using [hilt]) (by omega_using [hl, hilt])
   have outside := apart r hr _ inside
   have H := Offset.lt_iff (p + BitVec.ofNat 64 i) base (hb r hr)
   change ¬ ((p + BitVec.ofNat 64 i - off base r.1).toNat + 1 ≤ r.2) at outside
   change (p + BitVec.ofNat 64 i - off base r.1).toNat < r.2 ↔
     r.1 ≤ ofs base (p + BitVec.ofNat 64 i) ∧ ofs base (p + BitVec.ofNat 64 i) < r.1 + r.2 at H
-  omega
+  omega_using [outside, H]
 
 theorem outside_rebase {base : Addr} {out len : Nat} {m m' : Mem}
     (h : Outside (off base out) 0 len m m') (hb : out + len ≤ 2 ^ 64) :
@@ -53,7 +53,7 @@ theorem outside_rebase {base : Addr} {out len : Nat} {m m' : Mem}
   change ofs (off base out) x < len ↔ out ≤ ofs base x ∧ ofs base x < out + len at H
   right
   simp only [Nat.zero_add]
-  omega
+  omega_using [hx, H]
 
 theorem val32_prefix_of_lt {mem : Mem} {base : Addr} {d k n : Nat} (hk : k ≤ n)
     (hlt : val32 mem base d n < 2 ^ (32 * k)) : val32 mem base d k = val32 mem base d n := by
@@ -70,6 +70,6 @@ theorem decoded_exponent_fits (mem : Mem) (p : Addr) (len : Nat) :
   simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at H
   have E : 256 ^ len = 2 ^ (8 * len) := by rw [Nat.pow_mul]
   rw [E] at H
-  exact Nat.lt_of_lt_of_le H (Nat.pow_le_pow_right (by decide) (by omega))
+  exact Nat.lt_of_lt_of_le H (Nat.pow_le_pow_right (by decide) (by omega_using []))
 
 end VG.Proof.Dsa

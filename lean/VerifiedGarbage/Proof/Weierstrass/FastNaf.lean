@@ -2,7 +2,223 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf7
-public import VerifiedGarbage.Proof.Weierstrass.FastNaf9
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `Weierstrass.FastNaf9`, which only this module used -/
+
+section
+
+/-! Sparse signed nine-bit recoding of a public scalar, its digits (`±1 … ±255`)
+stored in sixteen bits (`word`). -/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.FastNaf9
+open Spec.Weierstrass
+
+def next (n : Nat) : Nat :=
+  if n % 2 = 0 then n / 2 else ((n + 256) / 512) * 256
+
+def residual (k : Nat) : Nat → Nat
+  | 0 => k
+  | j + 1 => next (residual k j)
+
+def negative (k j : Nat) : Bool :=
+  decide (residual k j % 2 ≠ 0 ∧ 256 ≤ residual k j % 512)
+
+def magnitude (k j : Nat) : Nat :=
+  let n := residual k j
+  if n % 2 = 0 then 0 else if n % 512 < 256 then n % 512 else 512 - n % 512
+
+def digit (k j : Nat) : Int :=
+  if negative k j then -(magnitude k j : Int) else (magnitude k j : Int)
+
+def word (k j : Nat) : BitVec 16 := BitVec.ofInt 16 (digit k j)
+
+theorem residual_zero (k : Nat) : residual k 0 = k := rfl
+
+theorem residual_succ (k j : Nat) : residual k (j+1)=next (residual k j) := rfl
+
+theorem mod512_parity (n : Nat) : n % 512 % 2 = n % 2 := by omega_using []
+
+theorem magnitude_le (k j : Nat) : magnitude k j ≤ 255 := by
+  have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
+  have hp := mod512_parity (residual k j)
+  dsimp only [magnitude]
+  split <;> (try split) <;> omega_arith
+
+theorem magnitude_odd_or_zero (k j : Nat) : magnitude k j=0 ∨ magnitude k j%2=1 := by
+  have hp := mod512_parity (residual k j)
+  have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
+  dsimp only [magnitude]
+  split <;> (try split) <;> omega_arith
+
+theorem magnitude_zero_iff (k j : Nat) : magnitude k j=0 ↔ residual k j%2=0 := by
+  have hp := mod512_parity (residual k j)
+  have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
+  dsimp only [magnitude]
+  split <;> (try split) <;> omega_arith
+
+theorem recurrence (k j : Nat) :
+    if negative k j then residual k j + magnitude k j = 2*residual k (j+1)
+    else residual k j = 2*residual k (j+1)+magnitude k j := by
+  have hd := Nat.div_add_mod (residual k j) 512
+  have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
+  have hp := mod512_parity (residual k j)
+  simp only [negative,magnitude,residual_succ,next]
+  by_cases he : residual k j%2=0
+  · simp only [he,ne_eq,not_true_eq_false,false_and,decide_false,Bool.false_eq_true,ite_false,ite_true]
+    omega_using [he]
+  · simp only [he,ne_eq,not_false_eq_true,true_and,ite_false,decide_eq_true_eq]
+    split <;> split <;> omega_arith
+
+theorem negative_magnitude_pos (k j : Nat) (h : negative k j=true) : 0<magnitude k j := by
+  have hz := magnitude_zero_iff k j
+  simp only [negative,decide_eq_true_eq] at h
+  omega_using [hz, h]
+
+theorem word_toNat (k j : Nat) :
+    (word k j).toNat = if negative k j then 65536-magnitude k j else magnitude k j := by
+  have hb := magnitude_le k j
+  have hp := negative_magnitude_pos k j
+  simp only [word,digit,BitVec.toNat_ofInt,Nat.reducePow]
+  cases hn : negative k j
+  · simp only [Bool.false_eq_true,ite_false]
+    change ((magnitude k j : Int)%65536).toNat=magnitude k j
+    omega_using [hb]
+  · have hp := hp hn
+    simp only [ite_true]
+    change ((-(magnitude k j : Int))%65536).toNat=65536-magnitude k j
+    omega_using [hb, hp]
+
+theorem word_magnitude (k j : Nat) :
+    (if (word k j).toNat<256 then (word k j).toNat else 65536-(word k j).toNat)=magnitude k j := by
+  have hb := magnitude_le k j
+  have hp := negative_magnitude_pos k j
+  rw [word_toNat]
+  cases hn : negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at * <;> split <;> omega_arith
+
+theorem word_negative (k j : Nat) : decide (256≤(word k j).toNat)=negative k j := by
+  have hb := magnitude_le k j
+  have hp := negative_magnitude_pos k j
+  rw [word_toNat]
+  cases hn : negative k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at *
+  · exact decide_eq_false (by omega_using [hb])
+  · exact decide_eq_true (by omega_using [hb])
+
+theorem word_zero_iff (k j : Nat) : word k j=0 ↔ magnitude k j=0 := by
+  have hb := magnitude_le k j
+  rw [←BitVec.toNat_inj]
+  change (word k j).toNat=0 ↔ magnitude k j=0
+  rw [word_toNat]
+  cases hn : negative k j
+  · simp only [Bool.false_eq_true,ite_false]
+  · have hp := negative_magnitude_pos k j hn
+    simp only [ite_true]
+    omega_using [hb, hp]
+
+def byte (k j : Nat) : BitVec 8 := BitVec.ofInt 8 (digit k j)
+
+theorem byte_toNat (k j : Nat) :
+    (byte k j).toNat = if negative k j then 256-magnitude k j else magnitude k j := by
+  have hb := magnitude_le k j
+  have hp := negative_magnitude_pos k j
+  simp only [byte,digit,BitVec.toNat_ofInt,Nat.reducePow]
+  cases hn : negative k j
+  · simp only [Bool.false_eq_true,ite_false]
+    change ((magnitude k j : Int)%256).toNat=magnitude k j
+    omega_using [hb]
+  · have hp := hp hn
+    simp only [ite_true]
+    change ((-(magnitude k j : Int))%256).toNat=256-magnitude k j
+    omega_using [hb, hp]
+
+theorem byte_zero_iff (k j : Nat) : byte k j=0 ↔ magnitude k j=0 := by
+  have hb := magnitude_le k j
+  rw [←BitVec.toNat_inj]
+  change (byte k j).toNat=0 ↔ magnitude k j=0
+  rw [byte_toNat]
+  cases hn : negative k j
+  · simp only [Bool.false_eq_true,ite_false]
+  · have hp := negative_magnitude_pos k j hn
+    simp only [ite_true]
+    omega_using [hb, hp]
+
+theorem digit_mod512 (k j : Nat) : digit k j =
+    if residual k j%512%2=0 then 0 else if residual k j%512<256 then (residual k j%512:Int) else (residual k j%512:Int)-512 := by
+  have hr := Nat.mod_lt (residual k j) (by decide : 0<512)
+  rw [mod512_parity]
+  simp only [digit,negative,magnitude,decide_eq_true_eq]
+  split <;> split <;> (try split) <;> omega_arith
+
+/-- One recoding step halves any power-of-two bound. -/
+theorem next_pow_bound {n e : Nat} (hn : n≤2^(e+1)) : next n≤2^e := by
+  by_cases he : n%2=0
+  · rw [next,ite_eq_left he,Nat.pow_succ] at *; omega_using [hn]
+  · rw [next,ite_eq_right he]
+    by_cases h8 : e<8
+    · rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 ∨ e=4 ∨ e=5 ∨ e=6 ∨ e=7 by omega_using [h8]) with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [Nat.reduceAdd,Nat.reducePow] at hn ⊢ <;> omega_arith
+    · have hp : 2^(e+1)=512*2^(e-8) := by
+        rw [show 512=2^9 from rfl,←Nat.pow_add]; congr 1; omega_using [h8]
+      have hq : 2^e=256*2^(e-8) := by
+        rw [show 256=2^8 from rfl,←Nat.pow_add]; congr 1; omega_using [h8]
+      rw [hp] at hn
+      rw [hq]
+      omega_using [hn]
+
+/-- The residual of a scalar of `B` bits after `j` digits has `B - j` bits. -/
+theorem residual_boundB {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
+    residual k j≤2^(B-j) := by
+  induction j with
+  | zero => exact hk
+  | succ j ih =>
+    have hp := ih (by omega_using [hj])
+    have he : B-j=(B-(j+1))+1 := by omega_using [hj]
+    rw [he] at hp
+    exact next_pow_bound hp
+
+/-- A scalar of `B` bits has `B + 1` digits. -/
+theorem residual_zero_top {B k : Nat} (hk : k<2^B) : residual k (B+1)=0 := by
+  have h := residual_boundB (Nat.le_of_lt hk) (j:=B) (by omega_using [])
+  simp only [Nat.sub_self,Nat.pow_zero] at h
+  change next (residual k B)=0
+  unfold next
+  split <;> omega_using [h]
+
+def point (C : Curve) (P : Point C) (k j : Nat) : Point C :=
+  if negative k j then negPt (mul (magnitude k j) P) else mul (magnitude k j) P
+
+theorem add_step {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (k j : Nat) :
+    Spec.Weierstrass.add (mul (2*residual k (j+1)) P) (point C P k j)=mul (residual k j) P := by
+  have hs := recurrence k j
+  cases he : negative k j with
+  | false =>
+    simp only [point,he,Bool.false_eq_true,ite_false] at hs ⊢
+    rw [hC.add_mul_mul hP]
+    congr 1; omega_using [hs]
+  | true =>
+    simp only [point,he,ite_true] at hs ⊢
+    rw [hC.add_mul_neg hP (by omega_using [hs])]
+    congr 1; omega_using [hs]
+
+theorem onCurve_point {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (k j : Nat) :
+    onCurve C (point C P k j)=true := by
+  unfold point
+  split
+  · exact onCurve_negPt (hC.onCurve_mul hP _)
+  · exact hC.onCurve_mul hP _
+
+end VG.Proof.Weierstrass.FastNaf9
+
+end
+
+end
+
 
 /-! Shared interface for the public verification NAF widths: five and seven, whose digits are
 bytes (`Width`), and nine, whose digits are stored as sixteen-bit words (`word`). -/
@@ -177,8 +393,8 @@ theorem next_even (w n : Nat) (hn : n%2=0) : next w n=n/2 := by
   split <;> (try split) <;> rfl
 
 theorem next_double (w n : Nat) : next w (2*n)=n := by
-  rw [next_even w _ (by omega)]
-  omega
+  rw [next_even w _ (by omega_using [])]
+  omega_using []
 
 theorem residual_add (w k j i : Nat) : residual w k (j+i)=residual w (residual w k j) i := by
   induction i with
@@ -189,16 +405,16 @@ theorem residual_pow (w n e i : Nat) (hi : i≤e) :
     residual w (2^e*n) i=2^(e-i)*n := by
   induction e generalizing i with
   | zero =>
-    have hi0 : i=0 := by omega
+    have hi0 : i=0 := by omega_using [hi]
     subst i
     rw [residual_zero]
   | succ e ih =>
     cases i with
     | zero => rw [residual_zero,Nat.sub_zero]
     | succ i =>
-      rw [show i+1=1+i from by omega,residual_add,residual_succ,residual_zero,
+      rw [show i+1=1+i from by omega_using [],residual_add,residual_succ,residual_zero,
         Nat.pow_succ,show 2^e*2*n=2*(2^e*n) from by simp only [Nat.mul_assoc,Nat.mul_left_comm],next_double,
-        ih i (by omega),show e+1-(1+i)=e-i from by omega]
+        ih i (by omega_using [hi]),show e+1-(1+i)=e-i from by omega_using []]
 
 theorem next_odd {w : Nat} (hw : Width w) (n : Nat) (hn : n%2≠0) :
     next w n=2^(w-1)*((n+2^(w-1))/2^w) := by
@@ -210,19 +426,19 @@ theorem residual_skip {w : Nat} (hw : Width w) (k j : Nat)
     (hn : residual w k j%2≠0) :
     residual w k (j+w)=(residual w k j+2^(w-1))/2^w := by
   have hw0 : 0<w := by rcases hw with rfl | rfl <;> decide
-  rw [show j+w=j+1+(w-1) from by omega,residual_add,residual_succ,next_odd hw _ hn,
-    residual_pow w _ (w-1) (w-1) (by omega),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
+  rw [show j+w=j+1+(w-1) from by omega_using [hw0],residual_add,residual_succ,next_odd hw _ hn,
+    residual_pow w _ (w-1) (w-1) (by omega_using []),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
 
 theorem residual_skip_between {w : Nat} (hw : Width w) (k j i : Nat)
     (hn : residual w k j%2≠0) (hi : 0<i) (hiw : i≤w) :
     residual w k (j+i)=2^(w-i)*((residual w k j+2^(w-1))/2^w) := by
-  rw [show j+i=j+1+(i-1) from by omega,residual_add,residual_succ,next_odd hw _ hn,
-    residual_pow w _ (w-1) (i-1) (by omega),show w-1-(i-1)=w-i from by omega]
+  rw [show j+i=j+1+(i-1) from by omega_using [hi],residual_add,residual_succ,next_odd hw _ hn,
+    residual_pow w _ (w-1) (i-1) (by omega_using [hiw]),show w-1-(i-1)=w-i from by omega_using [hi]]
 
 theorem byte_skip_zero {w : Nat} (hw : Width w) (k j i : Nat)
     (hn : residual w k j%2≠0) (hi : 0<i) (hiw : i<w) : byte w k (j+i)=0 := by
-  rw [byte_zero_iff,magnitude_zero_iff,residual_skip_between hw k j i hn hi (by omega)]
-  have he : w-i=(w-i-1)+1 := by omega
+  rw [byte_zero_iff,magnitude_zero_iff,residual_skip_between hw k j i hn hi (by omega_using [hiw])]
+  have he : w-i=(w-i-1)+1 := by omega_using [hiw]
   rw [he,Nat.pow_succ]
   simp only [Nat.mul_mod,Nat.mod_self,Nat.mul_zero,Nat.zero_mul,Nat.zero_mod]
 
@@ -237,7 +453,7 @@ theorem byte_of_zero (w k j : Nat) (hz : residual w k j=0) : byte w k j=0 := by
 
 theorem residual_zero_geB {w B k j : Nat} (hk : k<2^B) (hj : B+1≤j) :
     residual w k j=0 := by
-  rw [show j=(B+1)+(j-(B+1)) from by omega]
+  rw [show j=(B+1)+(j-(B+1)) from by omega_using [hj]]
   exact residual_of_zero w k (B+1) (residual_zero_top w hk) _
 
 theorem residual_zero_ge {w k j : Nat} (hk : k<2^256) (hj : 257≤j) :
@@ -256,18 +472,18 @@ theorem next_odd9 (n : Nat) (hn : n%2≠0) : next 9 n=2^8*((n+2^8)/2^9) := by
 
 theorem residual_skip9 (k j : Nat) (hn : residual 9 k j%2≠0) :
     residual 9 k (j+9)=(residual 9 k j+2^8)/2^9 := by
-  rw [show j+9=j+1+8 from by omega,residual_add 9 k (j+1) 8,residual_succ 9 k j,next_odd9 _ hn,
-    residual_pow 9 _ 8 8 (by omega),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
+  rw [show j+9=j+1+8 from by omega_using [],residual_add 9 k (j+1) 8,residual_succ 9 k j,next_odd9 _ hn,
+    residual_pow 9 _ 8 8 (by omega_using []),Nat.sub_self,Nat.pow_zero,Nat.one_mul]
 
 theorem residual_skip_between9 (k j i : Nat) (hn : residual 9 k j%2≠0) (hi : 0<i) (hiw : i≤9) :
     residual 9 k (j+i)=2^(9-i)*((residual 9 k j+2^8)/2^9) := by
-  rw [show j+i=j+1+(i-1) from by omega,residual_add 9 k (j+1) (i-1),residual_succ 9 k j,next_odd9 _ hn,
-    residual_pow 9 _ 8 (i-1) (by omega),show 8-(i-1)=9-i from by omega]
+  rw [show j+i=j+1+(i-1) from by omega_using [hi],residual_add 9 k (j+1) (i-1),residual_succ 9 k j,next_odd9 _ hn,
+    residual_pow 9 _ 8 (i-1) (by omega_using [hiw]),show 8-(i-1)=9-i from by omega_using [hi]]
 
 theorem magnitude_skip_zero9 (k j i : Nat) (hn : residual 9 k j%2≠0) (hi : 0<i) (hiw : i<9) :
     magnitude 9 k (j+i)=0 := by
-  rw [magnitude_zero_iff,residual_skip_between9 k j i hn hi (by omega)]
-  have he : 9-i=(9-i-1)+1 := by omega
+  rw [magnitude_zero_iff,residual_skip_between9 k j i hn hi (by omega_using [hiw])]
+  have he : 9-i=(9-i-1)+1 := by omega_using [hiw]
   rw [he,Nat.pow_succ]
   simp only [Nat.mul_mod,Nat.mod_self,Nat.mul_zero,Nat.zero_mul,Nat.zero_mod]
 

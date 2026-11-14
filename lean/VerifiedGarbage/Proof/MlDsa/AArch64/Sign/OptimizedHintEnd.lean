@@ -19,7 +19,7 @@ theorem positiveOnesOk_ok {D : Nat} {p : Params} (hc : ksChk p = true)
   have L6 := J6.b.l.st.lay
   have hS := onesSum_le (Hv p σ (p.ℓ*t)) p.k
   refine WP.mono_syms (onesOk_run p hω s (L6.inR c8)) fun s7 ⟨⟨h157,hm7⟩,k7⟩ hy => ?_
-  rw [J6.ones,sign_bit (by omega) (by omega),h156,bit_and',bit_congr passV_iff] at h157
+  rw [J6.ones,sign_bit (by omega_using [hk, hS]) (by omega_arith),h156,bit_and',bit_congr passV_iff] at h157
   have hP7 : PPostB D s s7 [] := postB_of_keep k7 (by decide) (by rw [hm7]; exact Frame.refl _ _)
   exact ⟨J6.b.step hP7 hy c13 (by simp),SignedFam.keep L6 hP7 c16 J6.z,
     HFam.keep L6 hP7 c17 J6.h,h157⟩

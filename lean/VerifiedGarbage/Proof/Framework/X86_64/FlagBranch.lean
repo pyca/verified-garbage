@@ -64,7 +64,7 @@ theorem testFlag_run {t : Nat} (htv : t = 16 ∨ t = 48) (s : State)
       rcases htv with rfl | rfl <;> rfl
     simp only [e, Option.some.injEq]
     generalize (s.mem.readW _ 64).toNat = x
-    by_cases h : t ≤ x <;> simp [h] <;> omega
+    by_cases h : t ≤ x <;> simp [h] <;> omega_using [h]
 
 /-! ## What a contract reads is the same after the test -/
 
@@ -455,7 +455,7 @@ theorem Verified.widenFirstArrayW {c : Prog isa} {name : String} {e : Elem} {n n
       rcases List.mem_cons.mp ha' with rfl | ha'
       · have := hb _ (List.mem_cons_self ..)
         have := Nat.mul_le_mul_right e.size hn
-        dsimp only at *; omega
+        dsimp only at *; omega_arith
       · exact hb a (List.mem_cons_of_mem _ ha')
     · exact hp.apply _ _ hpre
   · intro s s' _ h
@@ -515,7 +515,7 @@ theorem Verified.stack_mono {c : Prog isa} {sig : Sig} {pre : Curry (sig.words 6
         | succ k' =>
           have w' : k' + 1 ≤ (s.gpr .rsp).toNat := w
           show k + 1 ≤ (s.gpr .rsp).toNat
-          omega
+          omega_using [hn, w']
     · refine ⟨?_, w.2⟩
       cases n with
       | zero => trivial
@@ -524,7 +524,7 @@ theorem Verified.stack_mono {c : Prog isa} {sig : Sig} {pre : Curry (sig.words 6
         | succ k' =>
           have w' : k' + 1 ≤ (s.gpr .rsp).toNat := w.1
           show k + 1 ≤ (s.gpr .rsp).toNat
-          omega
+          omega_using [hn, w']
   · simp only [abi] at hr res
     rcases List.mem_cons.mp hr with rfl | hr
     · exact res _ List.mem_cons_self a ha
@@ -537,8 +537,8 @@ theorem Verified.stack_mono {c : Prog isa} {sig : Sig} {pre : Curry (sig.words 6
           simp only [stackBelow, List.mem_singleton] at hr
           subst hr
           exact (res _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)) a ha).sub_left
-            (Offset.sub_below _ (a := k + 1) (n := k + 1) (b := k' + 1) (m := k' + 1) (by omega)
-              (by omega))
+            (Offset.sub_below _ (a := k + 1) (n := k + 1) (b := k' + 1) (m := k' + 1) (by omega_using [hn])
+              (by omega_using [hn]))
 
 /-! ## Leaking more -/
 

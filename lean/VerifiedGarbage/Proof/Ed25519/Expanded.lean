@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Facts about the seed's SHA-512 digest, for the expanded-key entry points
 
@@ -44,9 +45,9 @@ theorem bytesAt_of_words {m m' : Mem} {p p' : Addr}
   have ha : ∀ q : Addr, q + BitVec.ofNat 64 i = q + BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
     intro q
     have e : BitVec.ofNat 64 i = BitVec.ofNat 64 (8 * (i / 8)) + BitVec.ofNat 64 (i % 8) := by
-      rw [BitVec.ofNat_add_ofNat]; congr 1; omega
+      rw [BitVec.ofNat_add_ofNat]; congr 1; omega_using []
     rw [e, BitVec.add_assoc]
-  have hk : i / 8 < 8 := by omega
+  have hk : i / 8 < 8 := by omega_using [hi']
   have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
   rw [ha p', ha p, readW_byte64 m' _ hj, readW_byte64 m _ hj, h _ hk]
 

@@ -57,7 +57,7 @@ theorem rd_of_mem {s : State} {A : Addr} {L n : Nat} (h : (⟨A, L⟩ : Region) 
     ∀ i < n, InRegions (s.rd ++ s.wr) (off A i) 1 := fun i hi =>
   ⟨_, List.mem_append_left _ h, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
-theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
+theorem pre_factsG {X : List Region} {s₀ : State} (h : preCore (baseRd s₀ ++ X) s₀) : PF s₀ := by
   obtain ⟨hsp, hrd, hwr, dON, dOI, dOP, dOQ, dODP, dODQ, dOQI, dOS, dOA, dNS, dIS, dPS, dQS, dDPS, dDQS, dQIS,
     dSA, nwO, nwN, nwI, nwP, nwQ, nwDP, nwDQ, nwQI, nwS, ⟨hk, hk'⟩, hOL, hIL, hp1, hpk, hq1, hqk, hdpl, hqil, hdql,
     hsl⟩ := h
@@ -65,22 +65,22 @@ theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
   refine ⟨hk, hk', hp1, hpk, hq1, hqk, ?_, ?_, nwS, Scr.of_mem (by rw [hwr, hOL]; simp)
     (by show (s₀.gpr .r3).toNat + (s₀.gpr .r6).toNat ≤ 2 ^ 64; rw [← hOL]; exact nwO),
     fun x hx => Pub.sep_of_disjoint dOS x (by rw [hOL]; exact hx),
-    rd_of_mem (by rw [hrd]; simp) (Nat.le_refl _) (BitVec.isLt _),
+    rd_of_mem (by rw [hrd]; simp [baseRd]) (Nat.le_refl _) (BitVec.isLt _),
     Pub.ne_of_disjoint dNS (Nat.le_of_lt (BitVec.isLt _)),
-    rd_of_mem (L := (s₀.gpr .r8).toNat) (by rw [hrd]; simp) (Nat.le_of_eq hIL.symm) (BitVec.isLt _),
+    rd_of_mem (L := (s₀.gpr .r8).toNat) (by rw [hrd]; simp [baseRd]) (Nat.le_of_eq hIL.symm) (BitVec.isLt _),
     fun i hi => Pub.ne_of_disjoint dIS (Nat.le_of_lt (BitVec.isLt _)) i (by
       change i < (s₀.gpr .r6).toNat at hi; omega_arith),
-    rd_of_mem (by rw [hrd]; simp) (Nat.le_refl _) (BitVec.isLt _),
+    rd_of_mem (by rw [hrd]; simp [baseRd]) (Nat.le_refl _) (BitVec.isLt _),
     Pub.ne_of_disjoint dPS (Nat.le_of_lt (BitVec.isLt _)),
-    rd_of_mem (by rw [hrd]; simp) (Nat.le_refl _) (BitVec.isLt _),
+    rd_of_mem (by rw [hrd]; simp [baseRd]) (Nat.le_refl _) (BitVec.isLt _),
     Pub.ne_of_disjoint dQS (Nat.le_of_lt (BitVec.isLt _)),
-    rd_of_mem (L := (stackArg s₀ 3).toNat) (by rw [hrd]; simp) (Nat.le_of_eq hdpl.symm) (BitVec.isLt _),
+    rd_of_mem (L := (stackArg s₀ 3).toNat) (by rw [hrd]; simp [baseRd]) (Nat.le_of_eq hdpl.symm) (BitVec.isLt _),
     fun i hi => Pub.ne_of_disjoint dDPS (Nat.le_of_lt (BitVec.isLt _)) i (by
       change i < (s₀.gpr .r10).toNat at hi; omega_arith),
-    rd_of_mem (L := (stackArg s₀ 5).toNat) (by rw [hrd]; simp) (Nat.le_of_eq hdql.symm) (BitVec.isLt _),
+    rd_of_mem (L := (stackArg s₀ 5).toNat) (by rw [hrd]; simp [baseRd]) (Nat.le_of_eq hdql.symm) (BitVec.isLt _),
     fun i hi => Pub.ne_of_disjoint dDQS (Nat.le_of_lt (BitVec.isLt _)) i (by
       change i < (stackArg s₀ 1).toNat at hi; omega_arith),
-    rd_of_mem (L := (stackArg s₀ 7).toNat) (by rw [hrd]; simp) (Nat.le_of_eq hqil.symm) (BitVec.isLt _),
+    rd_of_mem (L := (stackArg s₀ 7).toNat) (by rw [hrd]; simp [baseRd]) (Nat.le_of_eq hqil.symm) (BitVec.isLt _),
     fun i hi => Pub.ne_of_disjoint dQIS (Nat.le_of_lt (BitVec.isLt _)) i (by
       change i < (s₀.gpr .r10).toNat at hi; omega_arith)⟩
   · show slot (2 * (((s₀.gpr .r6).toNat + 7) / 8)) 8 + slot (wsWords (s₀.gpr .r10).toNat) 24 +
@@ -88,5 +88,7 @@ theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := by
     unfold slot wsWords hdrBytes; omega_arith
   · show wsWords (s₀.gpr .r10).toNat + wsWords (stackArg s₀ 1).toNat ≤ 2 * (((s₀.gpr .r6).toNat + 7) / 8)
     unfold wsWords; omega_arith
+
+theorem pre_facts {s₀ : State} (h : fnContract.pre s₀) : PF s₀ := pre_factsG (preCore_nil h)
 
 end VG.Proof.Bignum.PPC64LE.Crt

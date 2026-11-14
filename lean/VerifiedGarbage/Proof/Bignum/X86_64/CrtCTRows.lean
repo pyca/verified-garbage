@@ -85,9 +85,9 @@ theorem RowsPre.hl {ja : Nat} {p : RowsPub} {s : State} (h : RowsPre ja p s) :
   have h8 := hdr_lt_slot p.w 8 (show 31 < 32 by decide)
   have h8p := hdr_lt_slot p.wp 8 (show 31 < 32 by decide)
   have h8q := hdr_lt_slot p.wq 8 (show 31 < 32 by decide)
-  exact ⟨fun i hi => hs.ld (by omega),
-    fun i hi => (hs.sub (o := p.op) (n := slot p.wp 8) (by omega) (by omega)).ld (by omega),
-    fun i hi => (hs.sub (o := p.oq) (n := slot p.wq 8) (by omega) (by omega)).ld (by omega)⟩
+  exact ⟨fun i hi => hs.ld (by omega_using [hoq, h8q, hi]),
+    fun i hi => (hs.sub (o := p.op) (n := slot p.wp 8) (by omega_using [hop, hoq]) (by omega_using [h8p])).ld (by omega_using [h8p, hi]),
+    fun i hi => (hs.sub (o := p.oq) (n := slot p.wq 8) (by omega_using [hoq]) (by omega_using [h8q])).ld (by omega_using [h8q, hi])⟩
 
 theorem RowsPre.keep {ja : Nat} {p : RowsPub} {s t : State} (h : RowsPre ja p s) (hm : t.mem = s.mem)
     {regs : List Reg} (k : Keep regs s t) (hr : .rdi ∉ regs) : RowsPre ja p t := by
@@ -127,7 +127,7 @@ theorem rows_ct {ja : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     exact WP.mono (WP.keep [.r11, .r10, .rax] (Q := fun t => t.gpr .rax = off p.B p.oq ∧
         t.gpr .r11 = off p.B (p.op + slot p.wp ja) ∧ t.gpr .r10 = BitVec.ofNat 64 p.wp ∧ t.mem = s.mem)
       (by xrun [State.ea, hdr, Crt.ws, hdi, hax, hdrOff, hl Crt.sWsQ (by decide),
-        hlp (sArr ja) (by unfold sArr; omega), hlp sW (by decide), hq, hpw, hpa]) rfl)
+        hlp (sArr ja) (by unfold sArr; omega_using [hja]), hlp sW (by decide), hq, hpw, hpa]) rfl)
       fun t ⟨⟨hax', h11, h10, hm⟩, k⟩ => ⟨h.keep hm k (by decide), hax', h11, h10⟩
   · refine two_piece (Ψ := fun (p : RowsPub) t => t.gpr .r11 = off p.B (p.op + slot p.wp ja) ∧
         t.gpr .r10 = BitVec.ofNat 64 p.wp ∧ t.gpr .r9 = off p.B (p.oq + slot p.wq aN) ∧

@@ -46,13 +46,13 @@ private theorem c2_ps0 (p : KpP) (s : State) (h : C2 p s) : PS0 sG sK sX sXl p.p
   have hk' := hb.k2
   have hgl : p.gb.length = p.k := by
     simp only [KpP.gb, List.length_take, List.length_drop, hb.doml]
-    rcases hb.dl with hd | hd <;> rw [hd] <;> omega
+    rcases hb.dl with hd | hd <;> rw [hd] <;> omega_using []
   have hg : Src s p.B p.Z (off p.dp p.k) p.gb := (hb.dom.drop p.k).take p.k
   simpa only [KpP.pw, hgl, hb.xlen] using ps0_of hc
     (bp := sG) (bl := sK) (ep := sX) (el := sXl) (pb := off p.dp p.k) (pe := p.xp) (bb := p.gb) (eb := xb)
     (by decide) (by decide) (by decide) (by decide) hG
     (by rw [hgl]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) hg
-    (by rw [hgl]; omega) (by rw [hgl]) (hb.hdr (sX, p.xp) (by simp [KpP.headers]))
+    (by rw [hgl]; omega_using [hk]) (by rw [hgl]) (hb.hdr (sX, p.xp) (by simp [KpP.headers]))
     (by rw [hb.xlen]; exact hb.hdr (sXl, BitVec.ofNat 64 p.xl) (by simp [KpP.headers]))
     hb.x (by rw [hb.xlen]; exact hb.xl1) (by rw [hb.xlen]; exact hb.xl2.trans hk')
 
@@ -65,7 +65,7 @@ private theorem c3_good (p : KpP) (s : State) (h : C3 p s) : GoodW1 p.ws s := by
   obtain ⟨xb, ⟨mi, hb, hc, _⟩, _⟩ := h
   have hw := hc.w2
   have hw' := hc.w28
-  exact ⟨⟨mi, hc.sub.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega, show p.w < 2 ^ 31 by omega⟩
+  exact ⟨⟨mi, hc.sub.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega_using [hw], show p.w < 2 ^ 31 by omega_using [hw']⟩
 
 private theorem c3_c4 (p : KpP) (s : State) (h : C3 p s) : WP isa (seqs (range aY)) s (C4 p) := by
   obtain ⟨xb, hh⟩ := h
@@ -75,11 +75,11 @@ private theorem c4_lpre (p : KpP) (s : State) (h : C4 p s) : LPre aXm sY sK p.yl
   obtain ⟨xb, mi, hb, hc, _⟩ := h
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  exact ⟨mi, p.yb, hc, show 2 ≤ p.w by omega, Nat.le_refl _, show p.w < 2 ^ 30 by omega,
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  exact ⟨mi, p.yb, hc, show 2 ≤ p.w by omega_using [hk, ew], Nat.le_refl _, show p.w < 2 ^ 30 by omega_using [hk', ew],
     by decide, by decide, by decide, hb.hdr (sY, p.yp) (by simp [KpP.headers]),
     by rw [hb.ylen]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers]), hb.ylen,
-    hb.y, by rw [hb.ylen]; omega, by rw [hb.ylen]; omega, by rw [hb.ylen]⟩
+    hb.y, by rw [hb.ylen]; omega_using [hk], by rw [hb.ylen]; omega_using [hk'], by rw [hb.ylen]⟩
 
 private theorem c4_c5 (p : KpP) (s : State) (h : C4 p s) : WP isa (seqs (loadArr aXm sY sK)) s (C5 p) := by
   obtain ⟨xb, hh⟩ := h
@@ -89,8 +89,8 @@ private theorem c5_good (p : KpP) (s : State) (h : C5 p s) : GoodW1 p.ws s := by
   obtain ⟨xb, mi, hb, hc, _⟩ := h
   have hk := hb.k1
   have hk' := hb.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  exact ⟨⟨mi, hc.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega, show p.w < 2 ^ 31 by omega⟩
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  exact ⟨⟨mi, hc.good, Nat.le_refl _⟩, show 1 ≤ p.w by omega_using [hk, ew], show p.w < 2 ^ 31 by omega_using [hk', ew]⟩
 
 private theorem eq_keep (L : Ws) (s : State) (h : GoodW1 L s) : WP isa (seqs (eqArr aY aXm)) s (GoodW1 L) := by
   obtain ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ := h

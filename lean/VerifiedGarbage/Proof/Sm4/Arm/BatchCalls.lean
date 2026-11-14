@@ -84,12 +84,12 @@ theorem table_kept {m m' : Mem} {B : BitVec 32} {K : Spec.Sm4.Schedule} {d : Spe
   rw [layout_table, List.mem_singleton] at hr
   subst hr
   dsimp only at hi ⊢
-  rw [hk (384 + i) (by omega) (by
+  rw [hk (384 + i) (by omega_using [hi]) (by
     intro r hr
     simp only [layout, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · right; change 384 ≤ 384 + i; omega
-    · left; change 384 + i < 1408; omega)]
+    · right; change 384 ≤ 384 + i; omega_using []
+    · left; change 384 + i < 1408; omega_using [hi])]
   exact h (384, 1024) (by rw [layout_table]; simp) i hi
 
 /-- Inline the eight-block cipher on its already prepared workspace. -/

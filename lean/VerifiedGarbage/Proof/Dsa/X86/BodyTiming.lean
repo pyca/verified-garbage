@@ -70,7 +70,7 @@ theorem callSignBody_relCT (L : CallLayout) (out : BitVec 32)
   refine RelCT.seq (M := isa) (R := fun s t => SignatureReady L out s ∧ SignatureReady L out t) ?_ ?_
   · have C := callSignCompute_relCT L P Q (.inl ⟨_, G, Nat.le_refl _⟩)
       (.inl ⟨_, Y, Nat.le_refl _⟩) (.inl ⟨_, K, Nat.le_refl _⟩) (.inl ⟨_, X, Nat.le_refl _⟩)
-      (.inl D) (by omega)
+      (.inl D) (by omega_using [hd])
     intro s t tr ur sf tf ⟨H, S, T⟩ E F
     exact ⟨(C _ _ _ _ _ _ H E F).1,
       wp_result (signatureReady_compute H.1 S G Y X K D hd) E,

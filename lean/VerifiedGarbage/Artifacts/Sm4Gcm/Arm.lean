@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # SM4-GCM on baseline ARMv7 -/
+/-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on ARMv7 -/
 
 @[expose] public section
 

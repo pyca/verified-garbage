@@ -35,17 +35,17 @@ theorem expBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : Li
   refine WP.loop (M := isa) I ?_ eb.length s ?_
   · intro k t inv
     obtain ⟨j, jk, hk, state, ptr, counter, frame, rest⟩ := inv
-    have hj : j < eb.length := by omega
+    have hj : j < eb.length := by omega_using [jk, hk]
     have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-      addr_add (by omega)
+      addr_add (by omega_using [sourceFit, hj])
     have currentRead : InRegions (t.rd ++ t.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
       rw [rest.rd, rest.wr, address]
-      exact CallLay.inRegions_sub read (by omega) (by omega)
+      exact CallLay.inRegions_sub read (by omega_using [hj]) (by omega_using [countFit])
     have currentByte : t.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
       rw [address, frame.bytes (R := ⟨State.addr ep, eb.length⟩)
-        (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact separate) (by change eb.length ≤ 2 ^ 64; omega) hj]
+        (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact separate) (by change eb.length ≤ 2 ^ 64; omega_using [countFit]) hj]
       exact bytes j hj
-    refine WP.mono (expByte_ok t state hk (by omega) ptr counter currentRead) ?_
+    refine WP.mono (expByte_ok t state hk (by omega_using [countFit, jk]) ptr counter currentRead) ?_
     rintro u ⟨next, ptrU, counterU, zero, frameU, restU⟩
     rw [currentByte] at next
     have prefixEq : 256 * pre eb j + (eb[j]).toNat = pre eb (j + 1) := by
@@ -60,13 +60,13 @@ theorem expBytes_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : Li
       refine ⟨?_, ?_, frame.trans frameU, rest.trans restU⟩
       · change some (!u.z) = some false
         simp only [zero, last, decide_true, Bool.not_true]
-      · simpa only [show j + 1 = eb.length by omega, pre_len] using next
+      · simpa only [show j + 1 = eb.length by omega_using [jk, last], pre_len] using next
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, next, ptrNext, counterU,
+      refine ⟨?_, k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [hk, last], next, ptrNext, counterU,
         frame.trans frameU, rest.trans restU⟩
       change some (!u.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, positive, h, ?_, count, Frame.refl _ _, Rest.refl _ _⟩
+  · refine ⟨0, by omega_using [], positive, h, ?_, count, Frame.refl _ _, Rest.refl _ _⟩
     simpa only [BitVec.add_zero] using pointer
 
 end VG.Proof.Bignum.Arm.ConditionalExp

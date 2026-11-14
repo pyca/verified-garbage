@@ -79,11 +79,11 @@ def encapsAArch64S (P : KemLay) : Contract AArch64.isa where
 theorem preS {s : State} (h : (encapsAArch64S P).pre s) : (encapsAArch64 P).pre s ∧ Stk128 P (enL P) s := by
   obtain ⟨rd0, rd1, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp128, k0, k1, k2, k3, k4⟩ := h
   have sub : Region.Sub ⟨s.sp - 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
-  refine ⟨⟨rd0, rd1, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, by omega,
+  refine ⟨⟨rd0, rd1, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, by omega_using [sp128],
     k0.sub_left sub, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub, k4.sub_left sub⟩, sp128, ?_⟩
   intro b hb
   have hb : b < 5 := hb
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl
   · exact k0
   · exact k1
   · exact k2

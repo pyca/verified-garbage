@@ -17,7 +17,7 @@ theorem precomputeArguments {s t : State} (H : (Spec.Rsa.publicPrecomputeContrac
   constructor
   · assumption
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem precomputeModulusLeak {s t : State} (H : (Spec.Rsa.publicPrecomputeContract abi 96).pub s t) :

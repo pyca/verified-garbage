@@ -25,7 +25,7 @@ structure Pub where
 structure Ready (p : Pub) (s : State) : Prop where
   ws : Ws s p.B p.Z p.W
   z : slot p.W 17 ≤ p.Z
-  w : 4 ≤ p.W
+  w : 6 ≤ p.W
   j : p.j ≤ p.W
   counter : word s.mem p.B (slot p.W aV + 16) = BitVec.ofNat 64 p.j
   top : 2 ^ 63 ≤ (word s.mem p.B (slot p.W aM + 8 * (p.W / 2 - 1))).toNat
@@ -93,20 +93,20 @@ theorem ready_step {p : Pub} {s : State} (h : Ready p s) (hj : 0 < p.j) :
   · dsimp only; rw [top, v]; exact h.reciprocal
   · dsimp only; rw [hx, M]; exact Nat.mod_lt _ (by omega_using [h.remainder])
 
-def At (p : Pub) (i : Nat) : State → Prop := Ready { p with j := p.W - i }
+def At (p : Pub) (i : Nat) : State → Prop := Ready { p with j := p.j - i }
 
-/-- Both executions run exactly `W` digit iterations. -/
-theorem loop_ct : RelCT isa (Two fun (p : Pub) s => 0 < p.W ∧ At p 0 s)
-    (.loop body .ne) (Two fun (p : Pub) s => At p p.W s) := by
-  refine two_loop (Φ := At) Pub.W ?_ ?_
-  · exact two_map (fun q : Pub × Nat => { q.1 with j := q.1.W - q.2 })
+/-- Both executions run exactly `j` digit iterations, from the public count `j`. -/
+theorem loop_ct : RelCT isa (Two fun (p : Pub) s => 0 < p.j ∧ At p 0 s)
+    (.loop body .ne) (Two fun (p : Pub) s => At p p.j s) := by
+  refine two_loop (Φ := At) Pub.j ?_ ?_
+  · exact two_map (fun q : Pub × Nat => { q.1 with j := q.1.j - q.2 })
       (fun _ _ h => ⟨by dsimp only; omega_using [h.1], h.2⟩) body_ct
   · intro p i s hi h
     refine WP.mono (ready_step h (by dsimp only; omega_using [hi])) fun t ⟨ht, hz⟩ => ?_
-    have he : isa.eval .ne t = some (decide (i + 1 < p.W)) := by
-      simp only [eval, hz, Option.map_some, show (p.W - i = 1) ↔ ¬ (i + 1 < p.W) by omega_using [hi], decide_not, Bool.not_not]
+    have he : isa.eval .ne t = some (decide (i + 1 < p.j)) := by
+      simp only [eval, hz, Option.map_some, show (p.j - i = 1) ↔ ¬ (i + 1 < p.j) by omega_using [hi], decide_not, Bool.not_not]
     refine ⟨he, fun _ => ?_, fun hi' => ?_⟩
     · simpa only [At, Nat.sub_add_eq] using ht
-    · simpa only [At, show p.W - i - 1 = p.W - p.W by omega_using [hi']] using ht
+    · simpa only [At, show p.j - i - 1 = p.j - p.j by omega_using [hi']] using ht
 
 end VG.Proof.Rsa.X86_64.WordDivide

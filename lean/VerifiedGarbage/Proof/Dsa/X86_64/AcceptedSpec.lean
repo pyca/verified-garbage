@@ -41,7 +41,7 @@ theorem privateAccepted_spec (L : ExecutionLayout) (data : SignValues) (yb : Lis
         decide (0 < Spec.Dsa.decodeBE data.nonce ∧ Spec.Dsa.decodeBE data.nonce < L.subgroup)) := by
   have hp := (VG.Proof.Dsa.supported_bounds hsize).1
   have hfit := Nat.lt_of_lt_of_le (VG.Proof.Dsa.powMod_lt (Spec.Dsa.decodeBE data.generator)
-    (Spec.Dsa.decodeBE data.privateScalar) (by omega : 0 < L.modulus)) hpf
+    (Spec.Dsa.decodeBE data.privateScalar) (by omega_using [hop] : 0 < L.modulus)) hpf
   unfold privateAccepted
   rw [publicAccepted_spec L data.generator yb hsize hop hoq]
   apply Bool.eq_iff_iff.mpr

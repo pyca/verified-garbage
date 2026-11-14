@@ -44,11 +44,11 @@ theorem pdOdd_ct {base : BitVec 32} {len w : Nat} :
   have wpPointer (s : State) (h : LayoutFrameReady base len w s) :
       WP isa (.block [.ldr .r1 .r0 64]) s Q := by
     have fits := h.layout.2.2.1
-    have size : 68 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 68 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
     have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
     rw [h.width] at header
     refine wp_ldr (a := off (State.addr base) 64) (by decide)
-      (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega))
+      (by rw [h.ptr]; exact addr_add (by have := h.workspace.nowrap; omega_using [size, this]))
       (h.workspace.read size) fun t moved => WP.block_nil ?_
     exact moved.gpr.trans (header.array 0 (by decide))
   have loaded := (relCT_keep_sp pointer (fun _ _ h => h.2.2)).wp

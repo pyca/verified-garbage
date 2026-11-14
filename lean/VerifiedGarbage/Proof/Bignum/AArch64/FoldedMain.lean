@@ -67,9 +67,9 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   have one3 : wv t₃.mem B (slot ((k+7)/8) aOne) ((k+7)/8) = 1 := by
     rw [ha₃.wv_of_not_mem (by decide) (by decide) hn']; exact so.one
   change WP isa (.seq (Folded.fastLoop M.mm) (Folded.finishFused M.mm)) t₃ _
-  refine WP.mono (phase_ok M (x := x) ⟨hg₃,hn₃,hinv₃,rfl⟩ hZ hw (by omega) hR h.n1 hlt₃ hx
+  refine WP.mono (phase_ok M (x := x) ⟨hg₃,hn₃,hinv₃,rfl⟩ hZ hw (by omega_using [hk2]) hR h.n1 hlt₃ hx
     input3 one3 (by rw [x₁₃ sE (by decide)]; exact h.hE)
-    (by rw [x₁₃ sElen (by decide)]; exact h.hL) he₃ h.el h.L1 (by omega))
+    (by rw [x₁₃ sElen (by decide)]; exact h.hL) he₃ h.el h.L1 (by omega_using [hk2, hL2]))
     fun t₄ ⟨hg₄,hy₄,y₄,f₄',k₄⟩ => ?_
   have f₄ : Frm B (pdAll ((k+7)/8)) t₃.mem t₄.mem :=
     f₄'.mono fun _ hr => List.mem_append_right _ hr
@@ -78,9 +78,9 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   have k₁₄ := (k₂.trans k₃).trans k₄
   have mask4 : word t₄.mem B (8*sMask) = mask (decide (Spec.Rsa.os2ip xb < N)) := by
     rw [f₄'.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-      (by unfold sMask sFn; omega),ha₃.hslot (by decide)]
+      (by unfold sMask sFn; omega_using []),ha₃.hslot (by decide)]
     exact so.mask
-  refine WP.mono (outPhase_ok hg₄ hZ (by omega) (by omega) rfl
+  refine WP.mono (outPhase_ok hg₄ hZ (by omega_using [hk1]) (by omega_using [hk2]) rfl
     (by rw [x₁₄ sOut (by decide)]; exact h.hO)
     (by rw [x₁₄ sK (by decide)]; exact h.hK) mask4
     (by rw [k₁₄.wr]; exact h.out) h.outSep)

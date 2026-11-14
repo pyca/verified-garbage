@@ -24,7 +24,7 @@ theorem combBitsSave_ok (s : State) {base : BitVec 32} {len width h : Nat}
       Frame [⟨off (State.addr s.sp) 16,4⟩] s.mem t.mem ∧ Rest [.r1,.r6,.r12] s t := by
   unfold bitsSave
   refine wp_loadStack (a := off (State.addr s.sp) 20) (by decide)
-    (addr_add (by have := locals.space.nowrap; omega)) (locals.read (by decide)) fun u load => ?_
+    (addr_add (by have := locals.space.nowrap; omega_using [this])) (locals.read (by decide)) fun u load => ?_
   refine wp_dp (op2_imm (by decide)) fun v sub => ?_
   refine wp_mov (op2_lsl (by decide)) fun w shift => ?_
   refine wp_dp (op2_reg _ _) fun z add => ?_

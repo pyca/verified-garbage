@@ -39,12 +39,12 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c w : BitVec 32) (hw : w.toNat = c.toNat
       (p + BitVec.ofNat 64 4) 0x38343464#32) p 10 = hdrBytes c := by
   generalize hM : ((m.writeW (p + BitVec.ofNat 64 8) w).writeW p 0x45676953#32).writeW
       (p + BitVec.ofNat 64 4) 0x38343464#32 = M
-  have s84 : Mem.Sep (p + BitVec.ofNat 64 8) 4 (p + BitVec.ofNat 64 4) 4 := Offset.sep p (by omega) (by omega) (by omega)
+  have s84 : Mem.Sep (p + BitVec.ofNat 64 8) 4 (p + BitVec.ofNat 64 4) 4 := Offset.sep p (by omega_using []) (by omega_using []) (by omega_using [])
   have s80 : Mem.Sep (p + BitVec.ofNat 64 8) 4 p 4 := by
-    have := Offset.sep p (d := 8) (n := 4) (e := 0) (k := 4) (by omega) (by omega) (by omega)
+    have := Offset.sep p (d := 8) (n := 4) (e := 0) (k := 4) (by omega_using []) (by omega_using []) (by omega_using [])
     rwa [BitVec.add_zero] at this
   have s04 : Mem.Sep p 4 (p + BitVec.ofNat 64 4) 4 := by
-    have := Offset.sep p (d := 0) (n := 4) (e := 4) (k := 4) (by omega) (by omega) (by omega)
+    have := Offset.sep p (d := 0) (n := 4) (e := 4) (k := 4) (by omega_using []) (by omega_using []) (by omega_using [])
     rwa [BitVec.add_zero] at this
   have h0 : M.readW p 32 = 0x45676953#32 := by
     rw [← hM, Mem.readW_writeW_sep s04 (by decide), Mem.readW_writeW_self32]
@@ -70,8 +70,8 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c w : BitVec 32) (hw : w.toNat = c.toNat
   simp only [Proof.X25519.leBytes_succ, List.take_succ_cons, List.take_zero]
   have e2 : BitVec.ofNat 8 (c.toNat * 256) = 0 := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, show (0 : BitVec 8).toNat = 0 from rfl]; omega
-  have e3 : c.toNat * 256 / 256 = c.toNat := by omega
+    rw [BitVec.toNat_ofNat, show (0 : BitVec 8).toNat = 0 from rfl]; omega_using []
+  have e3 : c.toNat * 256 / 256 = c.toNat := by omega_using []
   rw [e2, e3]
   rfl
 
@@ -104,10 +104,10 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
       ∀ r, r ≠ .eax → u.gpr r = t.gpr r := by
   have hf := hk.frame
   have ea : ∀ k ≤ 8, addr E (off + k) = E.setWidth 64 + BitVec.ofNat 64 off + BitVec.ofNat 64 k := fun k hk' => by
-    rw [addr_eq (by omega), Offset.add_add]
+    rw [addr_eq (by omega_using [ho, hf, hk']), Offset.add_add]
   have hw : ∀ k ≤ 8, InRegions t.wr (E.setWidth 64 + BitVec.ofNat 64 off + BitVec.ofNat 64 k) 4 := fun k hk' => by
     rw [Offset.add_add]
-    exact hc.writable_frame (Offset.contains_base _ (by omega) (by omega))
+    exact hc.writable_frame (Offset.contains_base _ (by omega_using [ho, hk']) (by omega_using [ho, hk']))
   have e0 : E.setWidth 64 + BitVec.ofNat 64 off + BitVec.ofNat 64 0 = E.setWidth 64 + BitVec.ofNat 64 off :=
     BitVec.add_zero _
   unfold hdrAt
@@ -117,14 +117,14 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
   refine WP.mono (dbl_ok 8) fun s2 ⟨h2, m2, rd2, wr2, o2⟩ => ?_
   have esp2 : s2.gpr .esp = E := by rw [o2 _ (by decide), v1.other _ (by decide), hc.esp]
   have hwr2 : s2.wr = t.wr := by rw [wr2, v1.wr]
-  refine wp_stm (b := .esp) (o := off + 8) esp2 (by rw [ea 8 (by omega), hwr2]; exact hw 8 (by omega))
+  refine wp_stm (b := .esp) (o := off + 8) esp2 (by rw [ea 8 (by omega_using []), hwr2]; exact hw 8 (by omega_using []))
     fun s3 v3 => wp_movi fun s4 v4 => ?_
   refine wp_stm (b := .esp) (o := off) (by rw [v4.other _ (by decide), v3.gpr, esp2])
-    (by rw [v4.wr, v3.wr, hwr2, ← Nat.add_zero off, ea 0 (by omega)]; exact hw 0 (by omega))
+    (by rw [v4.wr, v3.wr, hwr2, ← Nat.add_zero off, ea 0 (by omega_using [])]; exact hw 0 (by omega_using []))
     fun s5 v5 => wp_movi fun s6 v6 => ?_
   refine wp_stm (b := .esp) (o := off + 4)
     (by rw [v6.other _ (by decide), v5.gpr, v4.other _ (by decide), v3.gpr, esp2])
-    (by rw [v6.wr, v5.wr, v4.wr, v3.wr, hwr2, ea 4 (by omega)]; exact hw 4 (by omega))
+    (by rw [v6.wr, v5.wr, v4.wr, v3.wr, hwr2, ea 4 (by omega_using [])]; exact hw 4 (by omega_using []))
     fun u vu => WP.block_nil ?_
   have w0 : s2.gpr .eax = BitVec.ofNat 32 (2 ^ 8 * (val j).toNat) := by
     rw [h2, v1.gpr, hk.arg_word hc hj, ha j hj]
@@ -132,16 +132,16 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
       (BitVec.ofNat 32 (2 ^ 8 * (val j).toNat))).writeW
       (E.setWidth 64 + BitVec.ofNat 64 off) 0x45676953#32).writeW
       (E.setWidth 64 + BitVec.ofNat 64 off + BitVec.ofNat 64 4) 0x38343464#32 := by
-    rw [vu.mem, v6.gpr, v6.mem, v5.mem, v4.gpr, v4.mem, v3.mem, w0, m2, v1.mem, ea 8 (by omega), ea 4 (by omega),
-      ← Nat.add_zero off, ea 0 (by omega), e0]
+    rw [vu.mem, v6.gpr, v6.mem, v5.mem, v4.gpr, v4.mem, v3.mem, w0, m2, v1.mem, ea 8 (by omega_using []), ea 4 (by omega_using []),
+      ← Nat.add_zero off, ea 0 (by omega_using []), e0]
     rfl
   have hfr : Frame [fr E off 12] t.mem u.mem := by
     rw [hm]
     have c : ∀ k ≤ 8, (fr E off 12).Contains (E.setWidth 64 + BitVec.ofNat 64 off + BitVec.ofNat 64 k) 4 :=
-      fun k hk' => Offset.contains_base _ (by omega) (by omega)
-    refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 8 (by omega))).writeW
-      (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ (c 4 (by omega))
-    have h := c 0 (by omega)
+      fun k hk' => Offset.contains_base _ (by omega_using [hk']) (by omega_using [hk'])
+    refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 8 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ (c 4 (by omega_using []))
+    have h := c 0 (by omega_using [])
     rw [e0] at h
     exact h
   have gp : ∀ r, r ≠ .eax → u.gpr r = t.gpr r := fun r hr => by
@@ -155,7 +155,7 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
     exact .inl (Offset.sub_base _ ho)
   · rw [hm]
     refine hdr_bytes _ _ _ _ ?_
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hcl])]
+    omega_using []
 
 end VG.Proof.Ed448.X86.Shake

@@ -49,7 +49,7 @@ theorem signSized_relCT (L : CallLayout) (digestLen : Nat) (out : BitVec 32)
   · simp only [valid, decide_true, Bool.not_true, Bool.false_eq_true, ite_false]
     have B := shape_digest_width valid
     have CT := callSignBody_relCT L out (.inl ⟨_, P, Nat.le_refl _⟩) (.inl ⟨_, Q, Nat.le_refl _⟩)
-      G Y X K ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩ (by rw [hd]; omega)
+      G Y X K ⟨_, D, by rw [hd]; exact Nat.min_le_left _ _⟩ (by rw [hd]; omega_using [B])
     exact CT.mono (fun _ _ H => ⟨⟨(H.1.2 True.intro).1.ready, (H.1.2 True.intro).2.ready⟩,
       H.2.1.signature (H.1.2 True.intro).1, H.2.2.signature (H.1.2 True.intro).2⟩) (fun _ _ h => h)
   · simp only [valid, decide_false, Bool.not_false, ite_true]

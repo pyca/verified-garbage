@@ -18,8 +18,8 @@ theorem CrtShared.savedOperand {g : CrtGeometry} {bs : Fin 7 → List Byte} {s :
     SavedOperand child (g.source i.succ) (workspaceWords g.words) (g.sourceLength i.succ)
       (56 + 8 * i.val) (60 + 8 * i.val) (bs i.succ) s := by
   have sub := crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member
-  exact ⟨h.stack.nowrap, ⟨h.stack.read (by have := i.isLt; omega), h.stack.read (by have := i.isLt; omega)⟩, h.stack.separate.sub_right sub,
-    by have := i.isLt; omega, by have := i.isLt; omega, h.stack.pointer i, h.stack.length i,
+  exact ⟨h.stack.nowrap, ⟨h.stack.read (by have := i.isLt; omega_using []), h.stack.read (by have := i.isLt; omega_using [])⟩, h.stack.separate.sub_right sub,
+    by have := i.isLt; omega_using [], by have := i.isLt; omega_using [], h.stack.pointer i, h.stack.length i,
     h.buffers.source i.succ, (h.buffers.sourceSeparate i.succ).sub_right sub⟩
 
 theorem CrtShared.inputSaved {g : CrtGeometry} {bs : Fin 7 → List Byte} {s : State} {child : BitVec 32}

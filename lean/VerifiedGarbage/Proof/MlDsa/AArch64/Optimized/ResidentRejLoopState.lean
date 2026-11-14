@@ -43,7 +43,7 @@ theorem ParseInv.byte {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
     {i : Nat} (hi : i<3*n+4) : s.mem (b+BitVec.ofNat 64 i)=s₀.mem (b+BitVec.ofNat 64 i) := by
   exact h.frame _ fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact hl.disjoint _ (Offset.contains_base b (by omega) (by have:=hl.bound; omega))
+    exact hl.disjoint _ (Offset.contains_base b (by omega_using [hi]) (by have:=hl.bound; omega_using [hi, this]))
 
 theorem ParseInv.candidate {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Zq}
     (hl : StreamLayout s₀ b p n) (h : ParseInv s₀ b p n L d s)
@@ -52,10 +52,10 @@ theorem ParseInv.candidate {s₀ s : State} {b p : Addr} {n d : Nat} {L : List Z
       candidate s₀.mem (b+BitVec.ofNat 64 (3*(d+j))) := by
   rw [h.x2,Offset.add_add,←Nat.mul_add]
   unfold ResidentRej.candidate
-  rw [h.byte hl (by omega)]
+  rw [h.byte hl (by omega_using [hj])]
   have h1 : b+BitVec.ofNat 64 (3*(d+j))+1=b+BitVec.ofNat 64 (3*(d+j)+1) := by bv_omega_arith
   have h2 : b+BitVec.ofNat 64 (3*(d+j))+2=b+BitVec.ofNat 64 (3*(d+j)+2) := by bv_omega_arith
-  rw [h1,h2,h.byte hl (by omega),h.byte hl (by omega)]
+  rw [h1,h2,h.byte hl (by omega_using [hj]),h.byte hl (by omega_using [hj])]
 
 theorem ParseInv.batch {s₀ s : State} {b p : Addr} {n d k : Nat} {L : List Zq}
     (hl : StreamLayout s₀ b p n) (h : ParseInv s₀ b p n L d s)
@@ -67,7 +67,7 @@ theorem ParseInv.batch {s₀ s : State} {b p : Addr} {n d k : Nat} {L : List Zq}
     congr 1
     apply List.map_congr_left
     intro j hj
-    rw [h.candidate hl (by have:=List.mem_range.mp hj; omega),Offset.add_add,←Nat.mul_add]
+    rw [h.candidate hl (by have:=List.mem_range.mp hj; omega_using [hk, this]),Offset.add_add,←Nat.mul_add]
   rw [hm]
   exact candidateFold_continue _ _ _ _ _ hout
 

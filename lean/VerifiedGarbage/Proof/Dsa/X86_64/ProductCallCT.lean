@@ -42,7 +42,7 @@ theorem productCall_load {p : ProductCallPublic} {s : State}
   obtain ⟨⟨hc, hm, hb⟩, hone, hr2⟩ := h
   have hlen : bs.length < 2 ^ 31 := by
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hfit, hw48]
   refine WP.mono (load_ok hc p.lower p.fits p.upper ha hsp hsl hp hl hs h1 hlen hfit)
     fun t ⟨hct, _, hf, hk⟩ => ?_
   have hfa : Arrays (off p.x.B p.x.o) p.x.wx [a] s.mem t.mem :=
@@ -53,7 +53,7 @@ theorem productCall_load {p : ProductCallPublic} {s : State}
   have hmr : aR2 ∉ [a] := by simpa using Ne.symm har
   have hmt : ModCtx t (off p.x.B p.x.o) (slot p.x.wx 8) p.x.wx p.minv p.modulus := by
     refine ⟨hct.good, (hfa.wv_of_not_mem (by decide) hmn hz).trans hm.modulus, ?_⟩
-    rw [hfa.word0_of_not_mem (by decide) hmn hz (by have := p.lower; omega)]
+    rw [hfa.word0_of_not_mem (by decide) hmn hz (by have := p.lower; omega_using [h1, hfit])]
     exact hm.inverse
   exact ⟨⟨hct, hmt, hb.frame hc (arrays_work hfa (by intro j hj; obtain rfl := List.mem_singleton.mp hj; exact ha)) hk⟩,
     (hfa.wv_of_not_mem (by decide) hmo hz).trans hone,
@@ -75,7 +75,7 @@ theorem productCall_ct (M : Mont) :
       hp, hl, hbl, hb, hbl ▸ p.basePositive, ?_, hbl ▸ p.baseFits⟩
     have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hbw, hw48]
   · intro p s h
     obtain ⟨bb, _, hp, hl, _, _, hbl, _, hb, _⟩ := h.1.2.2
     exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -88,7 +88,7 @@ theorem productCall_ct (M : Mont) :
       hp, hl, hel, hb, hel ▸ p.expPositive, ?_, hel ▸ p.secondFits⟩
     have hbw : (eb.length + 7) / 8 ≤ p.x.wx := hel ▸ p.secondFits
     have hw48 : p.x.wx ≤ 48 := p.width48
-    omega
+    omega_using [hbw, hw48]
   · intro p s h
     obtain ⟨_, eb, _, _, hp, hl, _, hel, _, hb⟩ := h.1.2.2
     exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -100,7 +100,7 @@ theorem productCall_ct (M : Mont) :
     rcases hj with rfl | rfl
     · dsimp only [PowerPublic.product]
       rw [hr2]
-      exact Nat.mod_lt _ (by have := p.greater; omega)
+      exact Nat.mod_lt _ (by have := p.greater; omega_using [this])
     · dsimp only [PowerPublic.product]
       rw [hone]
       exact p.greater) (productCore_ct M)

@@ -58,7 +58,7 @@ structure Env (σ s : State) : Prop where
 theorem in_scr {σ s : State} (hp : Pre σ) (hw : s.wr = σ.wr) {d n : Nat} (hd : d+n ≤ 8192) :
     InRegions s.wr (at' σ d) n := by
   rw [hw,hp.wr]
-  exact ⟨scrR σ,by simp,Offset.contains_base (scr σ) hd (by omega)⟩
+  exact ⟨scrR σ,by simp,Offset.contains_base (scr σ) hd (by omega_using [hd])⟩
 
 theorem in_scr_rd {σ s : State} (hp : Pre σ) (_hr : s.rd = σ.rd) (hw : s.wr = σ.wr)
     {d n : Nat} (hd : d+n ≤ 8192) : InRegions (s.rd++s.wr) (at' σ d) n := by
@@ -68,7 +68,7 @@ theorem in_scr_rd {σ s : State} (hp : Pre σ) (_hr : s.rd = σ.rd) (hw : s.wr =
 theorem in_seed {σ s : State} (hp : Pre σ) (hr : s.rd = σ.rd)
     {d n : Nat} (hd : d+n ≤ 136) : InRegions (s.rd++s.wr) (seedP σ+BitVec.ofNat 64 d) n := by
   rw [hr,hp.rd]
-  exact ⟨seedsR σ,by simp,Offset.contains_base (seedP σ) hd (by omega)⟩
+  exact ⟨seedsR σ,by simp,Offset.contains_base (seedP σ) hd (by omega_using [hd])⟩
 
 theorem low_save (σ : State) : (saveR σ).Disjoint (lowR σ) :=
   Offset.disjoint_base (scr σ) (d := oSave) (n := 144) (k := oSave) (by decide) (by decide)

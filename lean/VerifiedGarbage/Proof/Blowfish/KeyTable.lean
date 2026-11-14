@@ -38,17 +38,17 @@ theorem table_byte {m : Mem} {T : Addr}
     (held : ∀ i < 521, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = Impl.Blowfish.initWords.getD i 0)
     {o : Nat} (ho : o < 4168) : m (T + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o := by
   have e := initWord_byte (o / 8) (b := o % 8) (Nat.mod_lt _ (by decide))
-  rw [show 8 * (o / 8) + o % 8 = o by omega] at e
-  rw [← e, ← initWords_getD (by omega), ← held _ (by omega),
-    ← readW64_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add, show 8 * (o / 8) + o % 8 = o by omega]
+  rw [show 8 * (o / 8) + o % 8 = o by omega_using []] at e
+  rw [← e, ← initWords_getD (by omega_using [ho]), ← held _ (by omega_using [ho]),
+    ← readW64_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add, show 8 * (o / 8) + o % 8 = o by omega_using []]
 
 /-- The initial P-array's words. -/
 theorem table_P {m : Mem} {T : Addr}
     (hT : ∀ o < 4168, m (T + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o) {i : Nat} (hi : i < 18) :
     m.readW (T + BitVec.ofNat 64 (4096 + 4 * i)) 32 = initial.getD i 0 := by
   refine word_ext fun b hb => ?_
-  rw [← Mem.readW_byte m _ hb, Offset.add_add, hT _ (by omega),
-    show 4096 + 4 * i + b = entryOff i b by simp [entryOff, hi], initByte_entry (by omega) hb]
+  rw [← Mem.readW_byte m _ hb, Offset.add_add, hT _ (by omega_using [hi, hb]),
+    show 4096 + 4 * i + b = entryOff i b by simp [entryOff, hi], initByte_entry (by omega_using [hi]) hb]
 
 theorem keyed_getD (key : List Byte) {i : Nat} (hi : i < 1042) :
     (keyed key).getD i 0 =
@@ -68,7 +68,7 @@ theorem keyed_of_mem {m : Mem} {S : Addr} {key : List Byte}
       Mem.readW_byte m (S + BitVec.ofNat 64 (4096 + 4 * i)) hb, hP i h]
   · simp only [h, ite_false]
     have := entryOff_lt hi hb
-    rw [hS _ (by unfold entryOff at this ⊢; simp only [h, ite_false] at this ⊢; omega), initByte_entry hi hb]
+    rw [hS _ (by unfold entryOff at this ⊢; simp only [h, ite_false] at this ⊢; omega_using [hi, hb]), initByte_entry hi hb]
 
 theorem bytesAt_getD (m : Mem) (K : Addr) {L c : Nat} (hc : c < L) :
     (bytesAt m K L).getD c 0 = m (K + BitVec.ofNat 64 c) := by
@@ -99,7 +99,7 @@ def sDone (j : Nat) : Nat := 2 * (j - 9)
 /-- Entry `2 j` is byte `sDone j` of the S-boxes, at its offset in the planes. -/
 theorem entryOff_sbox {j b : Nat} (hj : 9 ≤ j) (hj' : j < 521) (k : Nat) (hk : k < 2) :
     1024 * (sDone j / 256) + sDone j % 256 + (256 * b + k) = entryOff (2 * j + k) b := by
-  unfold entryOff sDone; simp only [show ¬ 2 * j + k < 18 by omega, ite_false]; omega
+  unfold entryOff sDone; simp only [show ¬ 2 * j + k < 18 by omega, ite_false]; omega_using [hj, hk]
 
 theorem ksIter_zero (key : List Byte) : ksIter key 0 = (keyed key, 0, 0) := rfl
 

@@ -44,7 +44,7 @@ theorem checkFrame_outer {s₀ : State} {m m' : Mem} (F : Frame (CheckCall.callW
 
 theorem invocation_below {s₀ t : State} (A : KeyABI s₀) (R : Ready s₀ t) :
     below (t.gpr .esp) 112=⟨rCall s₀,112⟩ := by
-  have low : 112≤(t.gpr .esp).toNat := by have := esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega
+  have low : 112≤(t.gpr .esp).toNat := by have := esp_toNat A R; have := rLow_toNat A; have := A.stackLow; omega_arith
   apply congrArg (fun base => Region.mk base 112)
   rw [Taint.sub_setWidth low,R.rf.esp]
   unfold rBase off rLow rCall

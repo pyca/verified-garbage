@@ -81,13 +81,13 @@ theorem body_ok {s₀ s : State} {base : Addr} {size count i : Nat} (space : 15 
   · exact S.rest.trans (((Ka.mono (by decide)).trans (Kb.mono (by decide))).widen K)
   · rw [counter, beforeCount, S.counter]
     change BitVec.ofNat 32 (64 - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [index])]
     congr 1
-  · rw [M, show 2 * (i + 1) = 2 * i + 1 + 1 by omega]
+  · rw [M, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_using []]
     exact Vb
   · rw [Z, beforeCount, S.counter]
     change some (BitVec.ofNat 32 (64 - i) - BitVec.ofNat 32 1 == 0) = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega), ofNat_beq_zero (by omega)]
-    simp only [show 64 - i - 1 = 0 ↔ i + 1 = 64 by omega]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [index]), ofNat_beq_zero (by omega_using [])]
+    simp only [show 64 - i - 1 = 0 ↔ i + 1 = 64 by omega_using [index]]
 
 end VG.Proof.RsaKeyGen.X86.Gcd64

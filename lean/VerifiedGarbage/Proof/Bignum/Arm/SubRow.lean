@@ -25,7 +25,7 @@ theorem subRow_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
   refine WP.loop (M := isa) inv ?_ n s ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
-    refine WP.mono (subBody_ok ctx hi (by omega)) ?_
+    refine WP.mono (subBody_ok ctx hi (by omega_using [hik, hk])) ?_
     rintro u ⟨hu, hz⟩
     by_cases he : i + 1 = n
     · left
@@ -33,11 +33,11 @@ theorem subRow_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
       change some (!u.z) = some false
       simp only [hz, he, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, i + 1, by omega, by omega, hu⟩
+      refine ⟨?_, k - 1, by omega_using [hk], i + 1, by omega_using [hik, hk], by omega_using [hik, hk, he], hu⟩
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
-  · refine ⟨0, by omega, hn, ?_⟩
-    refine ⟨by omega, ?_, ?_, ?_, ?_, hc, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
+  · refine ⟨0, by omega_using [], hn, ?_⟩
+    refine ⟨by omega_using [], ?_, ?_, ?_, ?_, hc, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
     · simpa only [Nat.mul_zero, Nat.add_zero] using hp0
     · simpa only [Nat.mul_zero, Nat.add_zero] using hp10
     · simpa only [Nat.mul_zero, Nat.add_zero] using hp12

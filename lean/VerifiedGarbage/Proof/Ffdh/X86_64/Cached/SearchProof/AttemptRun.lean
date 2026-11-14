@@ -127,8 +127,8 @@ theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State}
       rw [hu, ← hsp, h.rsp]
       show Region.Sub ⟨p.sp - 56 - BitVec.ofNat 64 (d + 8), d + 8⟩ ⟨p.sp - BitVec.ofNat 64 72, 72⟩
       rw [BitVec.sub_sub, show (56 : BitVec 64) + BitVec.ofNat 64 (d + 8) = BitVec.ofNat 64 (64 + d) by
-        rw [show (56 : BitVec 64) = BitVec.ofNat 64 56 from rfl, ← BitVec.ofNat_add]; congr 1; omega]
-      exact Offset.sub_below _ (by omega) (by omega)
+        rw [show (56 : BitVec 64) = BitVec.ofNat 64 56 from rfl, ← BitVec.ofNat_add]; congr 1; omega_using []]
+      exact Offset.sub_below _ (by omega_using [hd]) (by omega_using [hd])
   exact h1.trans h2
 
 /-- What the call's entry changes: the arguments and its return address. -/

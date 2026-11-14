@@ -82,11 +82,13 @@ def r2StepsOld (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
 number of words, and by `r2StepsOld` otherwise. -/
 def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [R2Div.choice (seqs (r2StepsOld mul))]
 
-/-- `r2Steps` for a public `m`, whose steps branch on the sign of `t`
+/-- `R² mod m` for a public `m`, whose steps branch on the sign of `t`
 (`R2Div.choicePub`): for `vg_rsa_public_precompute`, whose timing may depend
-on `n`. -/
+on `n`; by word steps of long division whatever `m`'s top word
+(`R2Div.fastN` when its top bit is clear), but for `m` of two words whose
+top bit is clear (`r2StepsOld`). -/
 def r2StepsPub (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  [R2Div.choicePub (seqs (r2StepsOld mul))]
+  [R2Div.choicePub (R2Div.choiceW (seqs (r2StepsOld mul)) R2Div.fastN)]
 
 /-! ## `vg_rsa_public_precompute`
 

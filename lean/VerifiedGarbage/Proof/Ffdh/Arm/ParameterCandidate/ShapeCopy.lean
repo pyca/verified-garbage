@@ -24,9 +24,9 @@ theorem shapeCopy_ok (s : State) {dst src : BitVec 32} {bs : List Byte} {bits : 
   rintro u ⟨⟨dest, source, count, memory⟩, rest⟩
   have context := h.after_memory memory rest
   refine WP.mono (copyBytes_ok u
-    (copyCtx_of_regions u src dst (by have := h.size; omega) h.sourceFits h.destFits
+    (copyCtx_of_regions u src dst (by have := h.size; omega_using [this]) h.sourceFits h.destFits
       context.read context.write h.buffers)
-    (by have := h.size; omega) source dest count) ?_
+    (by have := h.size; omega_using [this]) source dest count) ?_
   intro t copied
   have frame := copied.frame h.destFits
   refine ⟨context.after_output frame copied.rest, ?_, ?_, (rest.mono (by simp)).trans copied.rest⟩

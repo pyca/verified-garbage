@@ -37,7 +37,7 @@ theorem base_sub (q : Addr) {o n : Nat} (h : o + n ≤ 2048) :
     Region.Sub ⟨base q + BitVec.ofNat 64 o, n⟩ ⟨q, 8192⟩ := by
   have := Align.pad_lt q
   rw [Offset.add_add]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [h, this])
 
 /-- `align`, from a working space of 8192 bytes at `q` in `a3`. -/
 theorem align_ok {s : State} {q : Addr} (h3 : s.gpr .a3 = q) (hws : (⟨q, 8192⟩ : Region) ∈ s.wr) :
@@ -51,7 +51,7 @@ theorem align_ok {s : State} {q : Addr} (h3 : s.gpr .a3 = q) (hws : (⟨q, 8192�
   refine ⟨⟨e, Align.align_al _, fun d n hd => ?_⟩, hr, by rw [u2.mem, u1.mem]⟩
   have := Align.pad_lt q
   rw [hr.wr, Offset.add_add]
-  exact in_base hws (by omega) (by omega)
+  exact in_base hws (by omega_using [hd, this]) (by omega_using [hd, this])
 
 /-- The 32 bytes of an element, as a number. -/
 theorem read_V (m : Mem) (b : Addr) (o : Nat) : (m.read (b + BitVec.ofNat 64 o) 32).toNat = V m b o := by
@@ -83,7 +83,7 @@ theorem sext32_lo (c : BitVec 32) : (sext32 c).toNat % 2 ^ 32 = c.toNat := by
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_setWidth, sext32, BitVec.getLsbD_signExtend]
-    simp [hi, show i < 64 by omega]
+    simp [hi, show i < 64 by omega_using [hi]]
   rw [← BitVec.toNat_setWidth, e]
 
 /-- A word built by `li32` and zero-extended by two shifts. -/
@@ -95,10 +95,10 @@ theorem li32_zext (c : BitVec 32) : (((sext32 c) <<< 32) >>> 32).toNat = c.toNat
 theorem sext_ofNat {v : Nat} (h : v < 2 ^ 31) : sext32 (BitVec.ofNat 32 v) = BitVec.ofNat 64 v := by
   rw [sext32, BitVec.signExtend_eq_setWidth_of_msb_false]
   · apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  · rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [h])]
+  · rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]
     simp only [decide_eq_false_iff_not, Nat.not_le]
-    omega
+    omega_using [h]
 
 end VG.Proof.Ed25519.RISCV64

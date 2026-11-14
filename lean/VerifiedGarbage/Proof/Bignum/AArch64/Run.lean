@@ -50,24 +50,24 @@ structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
 /-- A writable region is a working space. -/
 theorem Scr.of_mem {s : State} {base : Addr} {size : Nat} (h : (⟨base, size⟩ : Region) ∈ s.wr)
     (hn : base.toNat + size ≤ 2 ^ 64) : Scr s base size :=
-  ⟨⟨base, 0, size, h, by simp [off], by omega, by omega⟩, hn⟩
+  ⟨⟨base, 0, size, h, by simp [off], by omega_using [], by omega_using [hn]⟩, hn⟩
 
 /-- Part of a working space is one. -/
 theorem Scr.sub {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o n : Nat}
     (h : o + n ≤ size) (hn0 : 0 < n) : Scr s (off base o) n := by
   obtain ⟨⟨B₀, o₀, L, hm, hb, hL, hL'⟩, hn⟩ := hs
-  refine ⟨⟨B₀, o₀ + o, L, hm, ?_, by omega, hL'⟩, ?_⟩
+  refine ⟨⟨B₀, o₀ + o, L, hm, ?_, by omega_using [h, hL], hL'⟩, ?_⟩
   · subst hb; simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
   · rw [show (off base o).toNat = base.toNat + o by
-      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]]
-    omega
+      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega_using [h, hn0, hn]), Nat.mod_eq_of_lt (by omega_using [h, hn0, hn])]]
+    omega_using [h, hn]
 
 theorem Scr.region {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (h : d + n ≤ size) (hn : 0 < n) : ∃ r ∈ s.wr, r.Contains (off base d) n := by
   obtain ⟨⟨B₀, o, L, hm, hb, hL, hL'⟩, _⟩ := hs
   refine ⟨_, hm, ?_⟩
   rw [hb, show off (off B₀ o) d = off B₀ (o + d) by simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
-  exact Offset.contains_base B₀ (by omega) (by omega)
+  exact Offset.contains_base B₀ (by omega_using [h, hL]) (by omega_using [h, hn, hL, hL'])
 
 theorem Scr.ld {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 8 ≤ size) : InRegions (s.rd ++ s.wr) (off base d) 8 :=
@@ -260,9 +260,9 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
   · rw [hc', hc]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hk]
   · rw [hc', hc, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hN]
 
 /-! ## Sequences -/
 

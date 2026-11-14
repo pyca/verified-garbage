@@ -33,7 +33,7 @@ theorem signingOperands {p : SigningInput} {original s : State}
   have hqlen : p.components.q.length = p.qLen := p.components.qLength
   have hglen : p.components.g.length = p.pLen := p.components.gLength
   have hylen : p.components.y.length = p.pLen := p.components.yLength
-  have hxlen : p.components.x.length = p.qLen := component_length (by rw [p.keyLength]; omega)
+  have hxlen : p.components.x.length = p.qLen := component_length (by rw [p.keyLength]; omega_using [])
   have qptr : L.fields .q = original.gpr .rdx + BitVec.ofNat 64 p.pLen := by
     change original.gpr .rdx + original.gpr .r8 = _
     rw [hp]
@@ -42,19 +42,19 @@ theorem signingOperands {p : SigningInput} {original s : State}
     rw [hp, Offset.add_add]
   have yptr : L.fields .y = original.gpr .rdx + BitVec.ofNat 64 (2 * p.pLen + p.qLen) := by
     change original.gpr .rdx + original.gpr .r8 + BitVec.ofNat 64 p.qLen + original.gpr .r8 = _
-    rw [hp, Offset.add_add, Offset.add_add, show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega]
+    rw [hp, Offset.add_add, Offset.add_add, show p.pLen + (p.qLen + p.pLen) = 2 * p.pLen + p.qLen by omega_using []]
   have xptr : L.fields .x = original.gpr .rdx + BitVec.ofNat 64 (3 * p.pLen + p.qLen) := by
     change original.gpr .rdx + original.gpr .r8 + BitVec.ofNat 64 p.qLen + original.gpr .r8 + original.gpr .r8 = _
     rw [hp, Offset.add_add, Offset.add_add, Offset.add_add,
-      show p.pLen + (p.qLen + (p.pLen + p.pLen)) = 3 * p.pLen + p.qLen by omega]
+      show p.pLen + (p.qLen + (p.pLen + p.pLen)) = 3 * p.pLen + p.qLen by omega_using []]
   have hqsrc : Src s p.base usedBytes (L.fields .q) p.components.q := by
-    rw [qptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [qptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hgsrc : Src s p.base usedBytes (L.fields .g) p.components.g := by
-    rw [gptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [gptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hysrc : Src s p.base usedBytes (L.fields .y) p.components.y := by
-    rw [yptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [yptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hxsrc : Src s p.base usedBytes (L.fields .x) p.components.x := by
-    rw [xptr]; exact source_slice hkey (by rw [p.keyLength]; omega)
+    rw [xptr]; exact source_slice hkey (by rw [p.keyLength]; omega_using [])
   have hpfield : L.fields .pLen = BitVec.ofNat 64 p.pLen := hp
   have hqfield : L.fields .qLen = BitVec.ofNat 64 p.qLen := rfl
   refine ⟨h.inputOperand .g .pLen (by decide) (by decide) hgsrc (by change L.fields .pLen = BitVec.ofNat 64 p.components.g.length; rw [hglen]; exact hpfield),

@@ -81,7 +81,7 @@ theorem InitInv.scr : Scr (s.gpr .r3) s.wr := by
 
 theorem InitInv.out : s.mem.readW (A (s.gpr .r3) outOff) 32 = op σ := by
   have := h.saved (.r2, outOff) (by decide)
-  rw [h.r3, A_eq (by have := hp.scr_fits; simp only [outOff]; omega)]; exact this
+  rw [h.r3, A_eq (by have := hp.scr_fits; simp only [outOff]; omega_using [this])]; exact this
 
 end
 

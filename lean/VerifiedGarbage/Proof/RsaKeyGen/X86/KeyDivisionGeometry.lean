@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The four-array native RSA division bank -/
 
@@ -15,19 +16,19 @@ def divisionGeometry (B : Addr) (Z n : Nat) : VG.Proof.Rsa.X86.Div.Geometry :=
 
 theorem division_context {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 4) :
     VG.Proof.Rsa.X86.Div.Context (divisionGeometry B Z n) s := by
-  refine ⟨h.workspace, h.wpos, by have := h.wle; change n < 2 ^ 24; omega, ?_, ?_⟩
+  refine ⟨h.workspace, h.wpos, by have := h.wle; change n < 2 ^ 24; omega_using [this], ?_, ?_⟩
   · intro i
     have fit := h.arr_fit i.isLt
     change arr n i.val + 4 * (if i = 0 then n else n + 1) ≤ Z
     unfold S at fit
-    split <;> omega
+    split <;> omega_using [fit]
   · intro i j ne
     have indices : i.val ≠ j.val := fun e => ne (Fin.ext e)
     have disj := arr_disj (w := n) indices
     change arr n i.val + 4 * (if i = 0 then n else n + 1) ≤ arr n j.val ∨
       arr n j.val + 4 * (if j = 0 then n else n + 1) ≤ arr n i.val
     unfold S at disj
-    split <;> split <;> omega
+    split <;> split <;> omega_using [disj]
 
 theorem division_frame {m m' : Mem} {B : Addr} {Z n : Nat}
     (O : Outs B (divisionGeometry B Z n).ranges m m') :
@@ -39,6 +40,6 @@ theorem division_frame {m m' : Mem} {B : Addr} {Z n : Nat}
     List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   all_goals simp only [arr, S] at hx ⊢
-  all_goals omega
+  all_goals omega_using [hx]
 
 end VG.Proof.RsaKeyGen.X86.Key

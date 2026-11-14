@@ -126,7 +126,7 @@ theorem vmid_xd : (seqs [.block acc0, mgfXor H g, .block clearTop, scanCheck H])
   have := mgfXor_xd (H := H) hg
   simp only [seqs, scanCheck, prefixCheck, prefixWords, prefixBytes, posScan, posCheck, byteLoop, Code.x86_64Depth,
     Nat.max_le]
-  omega
+  omega_using [this]
 
 theorem ite_setWidth {p : Prop} [Decidable p] {b : Bool} (h : p ↔ b = true) :
     ((if p then 1 else 0 : BitVec 64).setWidth 32) = if b then 1 else 0 := by

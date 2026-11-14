@@ -65,7 +65,7 @@ theorem next_ok (s : State) {n j : Nat} (hn : n ≤ 57) (hj : j < n) (hc : s.gpr
       Keeps [.x19, .x9] s t ∧ t.mem = s.mem := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
-    show (1 : Nat) < 4096 from by decide, show n < 4096 by omega, ite_true,
+    show (1 : Nat) < 4096 from by decide, show n < 4096 by omega_using [hn], ite_true,
     RegUpd.gpr_write, BitVec.setWidth_eq, hc, (next_fact hn hj).1, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, (next_fact hn hj).2, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩

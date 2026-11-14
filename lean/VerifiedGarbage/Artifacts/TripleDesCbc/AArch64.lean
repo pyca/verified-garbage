@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcTables
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # Triple DES-CBC artifacts on baseline AArch64 -/
+/-! # Triple DES-CBC on AArch64 -/
 
 @[expose] public section
 

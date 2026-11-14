@@ -102,8 +102,8 @@ theorem t0_piece : Piece Pre Pub (fun s₀ s => OM s₀ (K s₀) (PS s₀ (K s�
     (.block [.alu .cmp .eax (.mem (at_ .esp 28))]) := by
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa h.esp 2
-    have i2 := h.argIn hp (i := 2) (by omega)
-    have v2 := h.argw hp (i := 2) (by omega) (by omega) (by omega)
+    have i2 := h.argIn hp (i := 2) (by omega_using [])
+    have v2 := h.argw hp (i := 2) (by omega_using []) (by omega_using []) (by omega_using [])
     have hb : WP isa (.block [.alu .cmp .eax (.mem (at_ .esp 28))]) s fun s' =>
         s'.cf = some (decide ((s.gpr .eax).toNat < (arg s₀ 2).toNat)) ∧ s'.gpr .eax = s.gpr .eax ∧
           s'.mem = s.mem := by
@@ -114,7 +114,7 @@ theorem t0_piece : Piece Pre Pub (fun s₀ s => OM s₀ (K s₀) (PS s₀ (K s�
     refine ⟨⟨⟨h.toBase.keep k (by simp) (by rw [m]; exact Frame.refl _ _), by rw [k.gpr (by simp), h.edi],
       by rw [m]; exact h.sr⟩, by rw [ea, h.eax]⟩, ?_⟩
     show s'.cf = _
-    rw [c, h.eax, toNat_ofNat32 (by omega)]
+    rw [c, h.eax, toNat_ofNat32 (by omega_using [hl])]
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esp, h'.esp, P0_esp, P0_esp, hq.e0]
@@ -124,7 +124,7 @@ theorem ne_zero_byte (b : Byte) : (!(BitVec.setWidth 32 b - 0 == 0)) = decide (b
   by_cases hb : b = 0
   · subst hb; rfl
   · have : b.toNat ≠ 0 := fun h => hb (BitVec.eq_of_toNat_eq h)
-    rw [ofNat_beq_zero (by have := b.isLt; omega)]
+    rw [ofNat_beq_zero (by have := b.isLt; omega_using [])]
     simpa [this] using hb
 
 theorem load_piece (k : Nat) : Piece Pre Pub (TI k)
@@ -134,7 +134,7 @@ theorem load_piece (k : Nat) : Piece Pre Pub (TI k)
     (by native_taint_decide)
   · obtain ⟨hb, hax, e, hl, ht⟩ := h
     have hf := hp.facts
-    have hy : i₀ s₀ + k < yL s₀ := by omega
+    have hy : i₀ s₀ + k < yL s₀ := by omega_using [hl, hf]
     have ea : addr (s.gpr .edi + s.gpr .eax) 0 = rA s₀ + BitVec.ofNat 64 (i₀ s₀ + k) := by
       rw [hb.edi, hax]; exact yAddr hp hy
     have hin := hb.inY hp hy
@@ -179,26 +179,26 @@ theorem tcmp_piece (k : Nat) : Piece Pre Pub (TM k)
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · obtain ⟨hb, hax, e, hl, ht⟩ := h
     have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa hb.esp 2
-    have i2 := hb.argIn hp (i := 2) (by omega)
-    have v2 := hb.argw hp (i := 2) (by omega) (by omega) (by omega)
+    have i2 := hb.argIn hp (i := 2) (by omega_using [])
+    have v2 := hb.argw hp (i := 2) (by omega_using []) (by omega_using []) (by omega_using [])
     have hbk : WP isa (.block [.alu .cmp .eax (.mem (at_ .esp 28))]) s fun s' =>
         s'.cf = some (decide ((s.gpr .eax).toNat < (arg s₀ 2).toNat)) ∧ s'.gpr .eax = s.gpr .eax ∧
           s'.mem = s.mem := by
       hrun [a2, i2, v2]
     have hf := hp.facts
-    have htr : tr s₀ k ≤ 256 := by unfold tr; split <;> omega
+    have htr : tr s₀ k ≤ 256 := by unfold tr; split <;> omega_arith
     refine (WP.keep [.eax] hbk (by decide)).mono fun s' ⟨⟨c, ea, m⟩, k'⟩ => ?_
     have kk := k'.drop ea
     have hb' := hb.keep kk (by simp) (by simp) m
     have hax' : s'.gpr .eax = BitVec.ofNat 32 (tr s₀ k) := by rw [ea, hax]
     refine ⟨?_, fun hc => ?_, fun hc => ?_⟩
     · show s'.cf = _
-      rw [c, hax, toNat_ofNat32 (by omega)]
+      rw [c, hax, toNat_ofNat32 (by omega_using [htr])]
     · -- The byte is zero, and the index still below `ω`.
       have hc := of_decide_eq_true hc
-      have hz : ¬ (Y s₀).getD (i₀ s₀ + k) 0 ≠ 0 := fun h => by rw [tr, ite_pos' h] at hc; omega
+      have hz : ¬ (Y s₀).getD (i₀ s₀ + k) 0 ≠ 0 := fun h => by rw [tr, ite_pos' h] at hc; omega_using [hf, hc]
       have htk : tr s₀ k = i₀ s₀ + k + 1 := by rw [tr, ite_neg' hz]
-      refine ⟨hb', by rw [hax', htk]; rfl, e, by omega, ?_⟩
+      refine ⟨hb', by rw [hax', htk]; rfl, e, by omega_using [hc, htk], ?_⟩
       unfold TF at ht ⊢
       rw [optFold_range'_succ, ht, Option.bind_some]
       exact ite_neg' hz _ _
@@ -212,11 +212,11 @@ theorem tcmp_piece (k : Nat) : Piece Pre Pub (TM k)
           rw [optFold_range'_succ, ht, Option.bind_some]
           exact ite_pos' hz _ _
         unfold TF at h1 ⊢
-        exact optFold_range'_none _ _ (show k + 1 ≤ ω s₀ - i₀ s₀ by omega) h1
+        exact optFold_range'_none _ _ (show k + 1 ≤ ω s₀ - i₀ s₀ by omega_using [hl]) h1
       · have htk : tr s₀ k = i₀ s₀ + k + 1 := by rw [tr, ite_neg' hz]
         rw [htk] at hc ⊢
-        rw [TS_some e, show i₀ s₀ + k + 1 = ω s₀ by omega]
-        rw [show ω s₀ - i₀ s₀ = k + 1 by omega]
+        rw [TS_some e, show i₀ s₀ + k + 1 = ω s₀ by omega_using [hl, hc]]
+        rw [show ω s₀ - i₀ s₀ = k + 1 by omega_using [hl, hc]]
         unfold TF at ht ⊢
         rw [optFold_range'_succ, ht, Option.bind_some]
         exact ite_neg' hz _ _
@@ -232,7 +232,7 @@ theorem tloop_piece : Piece Pre Pub (TI 0) TFin (.loop (.seq (.block hbuTrailLoa
       have hc := of_decide_eq_true hc
       show k + 1 < ω s₀ - i₀ s₀
       unfold tr at hc
-      split at hc <;> omega)
+      split at hc <;> omega_arith)
     (fun k s₀ s₀' _ _ hq => by rw [hq.etr, hq.eω])
     fun k => Piece.seq (load_piece k) (Piece.seq (Piece.ite
       (fun s₀ => decide ((Y s₀).getD (i₀ s₀ + k) 0 ≠ 0)) (fun _ _ _ h => h.2)
@@ -251,7 +251,7 @@ theorem trail_piece : Piece Pre Pub (fun s₀ s => OM s₀ (K s₀) (PS s₀ (K 
       rw [e] at hc hax
       refine ⟨hb, by rw [hax, Nat.add_zero]; simp only [idxOf, i₀, ec], by rw [ec]; exact e, ?_, rfl⟩
       simp only [idxOf] at hc
-      simp only [i₀, ec]; omega
+      simp only [i₀, ec]; omega_using [hc]
   · refine nil_piece fun s₀ s hp ⟨⟨⟨hb, hax⟩, _⟩, hc⟩ => ⟨hb, ?_⟩
     have hc := of_decide_eq_false hc
     rw [hax]
@@ -262,8 +262,8 @@ theorem trail_piece : Piece Pre Pub (fun s₀ s => OM s₀ (K s₀) (PS s₀ (K 
       have hle := (hb.sr st e).1
       rw [e] at hc
       simp only [idxOf] at hc ⊢
-      rw [TS_some (by rw [e, ec]) (by rw [show ω s₀ - i₀ s₀ = 0 by simp only [i₀, ec]; omega]; rfl)]
-      congr 1; omega
+      rw [TS_some (by rw [e, ec]) (by rw [show ω s₀ - i₀ s₀ = 0 by simp only [i₀, ec]; omega_using [hc]]; rfl)]
+      congr 1; omega_using [hc, hle]
 
 /-! ## The return value -/
 
@@ -275,8 +275,8 @@ def res (s₀ : State) : BitVec 32 := match TS s₀ with
 theorem ret_piece : Piece Pre Pub TFin (fun s₀ s => TB s₀ s ∧ s.gpr .eax = res s₀) (.block hbuRet) := by
   refine Piece.taint [.esp] (fun s₀ s hp ⟨hb, hax⟩ => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa hb.esp 2
-    have i2 := hb.argIn hp (i := 2) (by omega)
-    have v2 := hb.argw hp (i := 2) (by omega) (by omega) (by omega)
+    have i2 := hb.argIn hp (i := 2) (by omega_using [])
+    have v2 := hb.argw hp (i := 2) (by omega_using []) (by omega_using []) (by omega_using [])
     have hbk : WP isa (.block hbuRet) s fun s' =>
         s'.gpr .eax = 1 - 0 - (BitVec.ofBool (decide ((arg s₀ 2).toNat < (s.gpr .eax).toNat))).setWidth 32 ∧
           s'.mem = s.mem := by
@@ -289,12 +289,12 @@ theorem ret_piece : Piece Pre Pub TFin (fun s₀ s => TB s₀ s ∧ s.gpr .eax =
     | none =>
       have e1 : fin s₀ = 256 := by unfold fin; rw [hT]
       have e2 : res s₀ = 0 := by unfold res; rw [hT]
-      rw [e1, e2, toNat_ofNat32 (by omega), decide_eq_true (show (arg s₀ 2).toNat < 256 by simp only [ω] at hf; omega)]
+      rw [e1, e2, toNat_ofNat32 (by omega_using []), decide_eq_true (show (arg s₀ 2).toNat < 256 by simp only [ω] at hf; omega_using [hf])]
       rfl
     | some _ =>
       have e1 : fin s₀ = ω s₀ := by unfold fin; rw [hT]
       have e2 : res s₀ = 1 := by unfold res; rw [hT]
-      rw [e1, e2, toNat_ofNat32 (by omega), decide_eq_false (Nat.lt_irrefl _)]
+      rw [e1, e2, toNat_ofNat32 (by omega_using [hf]), decide_eq_false (Nat.lt_irrefl _)]
       rfl
   · simp only [List.mem_singleton] at hr
     subst hr
@@ -312,7 +312,7 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀)
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => TB s₀ s ∧ s.gpr .eax = res s₀) s₀ s') Impl.MlDsa.X86.Pack.hintBitUnpack :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp => hp.hW) (fun _ _ _ _ hq => hq.e0) body_piece
 
 /-- The spec, as the result. -/

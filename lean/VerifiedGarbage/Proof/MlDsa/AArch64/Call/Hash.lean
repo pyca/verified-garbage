@@ -68,7 +68,7 @@ theorem hsetup (hc : inB wbs (sc 0) 200 = true) (hc' : inB wbs (sc 200) 640 = tr
   have cv := Covers.cons (L.cW hc) (L.cW hc')
   simp only [pa] at hd' k1 k2 cv
   have hr : (136 : Nat) ∈ Spec.Sha3.rates := by simp [Spec.Sha3.rates]
-  have hsp : 16 ≤ s.sp.toNat := by have := L.spS; omega
+  have hsp : 16 ≤ s.sp.toNat := by have := L.spS; omega_using [h16, this]
   exact ⟨by decide, by decide, by decide, hr, hd', hsp, k1, k2, cv⟩
 
 theorem pieceOk {w : Bool} {q : Impl.MlKem.AArch64.Piece} (hc : pieceChk rbs wbs w q = true) :

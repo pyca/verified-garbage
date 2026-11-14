@@ -140,7 +140,7 @@ abbrev pLen (s : State) : Nat := (s.gpr .a5).toNat
 abbrev wOf (s : State) : Nat := (2 * pLen s + 7) / 8
 
 theorem PreC.wOf_eq {s : State} (h : PreC s) : 4 * wOf s = pLen s := by
-  have := h.p8; simp only [wOf, pLen] at this ⊢; omega
+  have := h.p8; simp only [wOf, pLen] at this ⊢; omega_using [this]
 
 theorem PreC.zk {s : State} (h : PreC s) : 8 * (16 * (s.gpr .a1).toNat + 32) ≤ zOf s := by
   have := h.hs; simp only [Spec.Rsa.scratchWords] at this; simp only [zOf]; omega_arith

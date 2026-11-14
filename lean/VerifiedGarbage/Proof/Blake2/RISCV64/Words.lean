@@ -28,7 +28,7 @@ def Keeps3 (s s' : State) (a b c : Reg) : Prop :=
     s'.wr = s.wr
 
 theorem zB_mul_le (z : Size) {j N : Nat} (hj : j < N) : zB z * j + zB z ≤ zB z * N := by
-  have := Nat.mul_le_mul_left (zB z) (show j + 1 ≤ N by omega)
+  have := Nat.mul_le_mul_left (zB z) (show j + 1 ≤ N by omega_using [hj])
   rw [Nat.mul_succ] at this; exact this
 
 theorem ldLE_ok {z : Size} {s : State} {d tmp tmp2 n : Reg} {off : Nat}
@@ -40,7 +40,7 @@ theorem ldLE_ok {z : Size} {s : State} {d tmp tmp2 n : Reg} {off : Nat}
       Keeps3 s s' d tmp tmp2 := by
   cases z
   · simp only [ldLE, Size.bits, show (32 : Nat) ≠ 64 by decide, ite_false]
-    refine WP.mono (ByteLoad.loadLE32_ok hdn htn hdt (by omega) h) fun s' e => ?_
+    refine WP.mono (ByteLoad.loadLE32_ok hdn htn hdt (by omega_using [ho]) h) fun s' e => ?_
     subst e
     refine ⟨by rw [RegUpd.gpr_write_self, lo32_ext], fun r h1 h2 _ => ?_, rfl, rfl, rfl⟩
     rw [RegUpd.gpr_write_of_ne _ _ h1, RegUpd.gpr_write_of_ne _ _ h2]
@@ -57,7 +57,7 @@ theorem stLE_ok {z : Size} {s : State} {v tmp tmp2 n : Reg} {off : Nat}
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   cases z
   · simp only [stLE, Size.bits, show (32 : Nat) ≠ 64 by decide, ite_false]
-    refine WP.mono (ByteLoad.storeLE32_ok htv htn (by omega) h) fun s' e => ?_
+    refine WP.mono (ByteLoad.storeLE32_ok htv htn (by omega_using [ho]) h) fun s' e => ?_
     subst e
     exact ⟨fun r h1 _ => RegUpd.gpr_write_of_ne _ _ h1, rfl, rfl, rfl⟩
   · simp only [stLE, Size.bits, ite_true]

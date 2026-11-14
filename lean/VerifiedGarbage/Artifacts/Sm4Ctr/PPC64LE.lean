@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 
-/-! # SM4-CTR artifacts on baseline PPC64LE -/
+/-! # SM4-CTR on PPC64LE -/
 
 @[expose] public section
 

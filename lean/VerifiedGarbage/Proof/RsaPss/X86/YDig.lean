@@ -39,7 +39,7 @@ theorem yDig_vp (hg : Geo L scr) {j : Nat} (hcert : TaintOk [.esp, .ebp] (.block
       (yDig h.H j)
       (fun σ s => Ctx L scr σ s ∧ X σ s.mem ∧
         ∀ i < 2048, s.mem (sa scr (oY + i)) = (Spec.RsaPss.zeros 8 ++ dl σ).getD i 0) := by
-  have hDl : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega
+  have hDl : h.D ≤ 64 := by have := h.D_le; have := h.N_le; omega_arith
   have eD : h.H.D = h.D := rfl
   have hD0 := h.D_pos
   have fit := hg.fit
@@ -77,9 +77,9 @@ theorem yDig_vp (hg : Geo L scr) {j : Nat} (hcert : TaintOk [.esp, .ebp] (.block
     have m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨((c1.upd u2 (by decide) (by decide)).upd u3 (by decide) (by decide)).upd u4 (by decide) (by decide),
       ⟨m4 ▸ hx, fun i hi => ?_, fun i hi => ?_⟩, ?_, ?_, ?_, fun i hi => m4 ▸ hro σ s hc i hi⟩
-    · rw [m4, ← hg.byteAt_scr (by pomega)]; exact hz i (by omega)
-    · rw [m4, show oY + (8 + h.D) + i = oY + (8 + h.D + i) by omega, ← hg.byteAt_scr (by pomega)]
-      exact hz _ (by omega)
+    · rw [m4, ← hg.byteAt_scr (by pomega)]; exact hz i (by omega_using [hi])
+    · rw [m4, show oY + (8 + h.D) + i = oY + (8 + h.D + i) by omega_using [], ← hg.byteAt_scr (by pomega)]
+      exact hz _ (by omega_using [hi])
     · simp (disch := decide) only [u4.other, u3.gpr, u2.gpr, u1.other, hc.ebp]
     · simp (disch := decide) only [u4.other, u3.other, u2.other, u1.gpr, hv]
     · rw [u4.gpr]
@@ -94,8 +94,8 @@ theorem yDig_vp (hg : Geo L scr) {j : Nat} (hcert : TaintOk [.esp, .ebp] (.block
     · rw [ite_eq_left h1, RsaPss.zeros_getD]; exact h8 i h1
     rw [ite_eq_right h1]
     by_cases h2 : i < 8 + h.D
-    · rw [← hy (i - 8) (by omega), hg.byteAt_scr (by pomega), show oY + 8 + (i - 8) = oY + i by omega]
-    · rw [getD_ge (by rw [hdl]; omega), show oY + i = oY + (8 + h.D) + (i - (8 + h.D)) by omega]
-      exact hz _ (by omega)
+    · rw [← hy (i - 8) (by omega_using [hD0, h2]), hg.byteAt_scr (by pomega), show oY + 8 + (i - 8) = oY + i by omega_using [h1]]
+    · rw [getD_ge (by rw [hdl]; omega_using [h2]), show oY + i = oY + (8 + h.D) + (i - (8 + h.D)) by omega_using [h2]]
+      exact hz _ (by omega_using [hDl, hi])
 
 end VG.Proof.RsaPss.X86

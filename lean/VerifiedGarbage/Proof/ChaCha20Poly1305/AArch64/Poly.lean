@@ -181,7 +181,7 @@ theorem extr2_toNat (hi lo : BitVec 64) :
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
     Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
   have := lo.isLt; have := hi.isLt
-  omega
+  omega_using []
 
 theorem and3' (x : BitVec 64) : (x &&& 3#64).toNat = x.toNat % 4 := and3_toNat x
 
@@ -215,7 +215,7 @@ theorem reduce_arith (t0 t1 t2 t3 : BitVec 64) (ht3 : t3.toNat < 2 ^ 63) :
     t0.toNat + 2 ^ 64 * t1.toNat + 2 ^ 128 * (t2.toNat % 4) + 5 * (t2.toNat / 4 + 2 ^ 62 * t3.toNat) := by
   have a2 := and3' t2
   have a0 : (t2 - (t2 &&& 3#64)).toNat = t2.toNat - t2.toNat % 4 := by
-    rw [BitVec.toNat_sub, a2]; have := t2.isLt; omega
+    rw [BitVec.toNat_sub, a2]; have := t2.isLt; omega_using []
   have ex := extr2_toNat t3 t2
   have sh : (t3 >>> 2).toNat = t3.toNat / 4 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]

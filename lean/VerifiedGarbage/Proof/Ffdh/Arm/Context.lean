@@ -80,7 +80,7 @@ theorem publicSpace (p : Inputs) : Spec.Rsa.publicScratchWords p.k ≤ p.len := 
   have := p.space
   have := p.minLength
   simp only [Spec.Rsa.scratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords] at *
-  omega
+  omega_arith
 
 theorem width (p : Inputs) : 2 ≤ p.w ∧ p.w < 2 ^ 31 ∧
     Proof.Rsa.Mont.arrAt p.w 16 ≤ 8 * p.len ∧ p.k ≤ 8 * p.w ∧ 128 * p.w < 2 ^ 32 := by
@@ -89,25 +89,25 @@ theorem width (p : Inputs) : 2 ≤ p.w ∧ p.w < 2 ^ 31 ∧
     have := p.minLength
     simp only [Spec.Rsa.scratchWords, Spec.Rsa.publicScratchWords,
       Spec.Rsa.modulusWords] at *
-    omega)
+    omega_arith)
   refine ⟨dims.1, dims.2.1, ?_, dims.2.2.2.1, dims.2.2.2.2⟩
   have := p.space
   have := p.minLength
   simp only [Spec.Rsa.scratchWords, Proof.Rsa.Mont.arrAt, w,
     Spec.Rsa.modulusWords, Proof.Rsa.Mont.hdrBytes] at *
-  omega
+  omega_arith
 
 theorem pLength (p : Inputs) : (p.dom.take p.k).length = p.k := by
   simp only [List.length_take, p.domainLength]
-  split <;> omega
+  split <;> omega_using []
 
 theorem gLength (p : Inputs) : ((p.dom.drop p.k).take p.k).length = p.k := by
   simp only [List.length_take, List.length_drop, p.domainLength]
-  split <;> omega
+  split <;> omega_using []
 
 theorem qLength (p : Inputs) (hasQ : p.hasQ = true) : ((p.dom.drop (2 * p.k)).take p.k).length = p.k := by
   simp only [List.length_take, List.length_drop, p.domainLength, hasQ, ite_true]
-  omega
+  omega_using []
 
 end Inputs
 
@@ -121,7 +121,7 @@ structure ArgumentMemory (p : Inputs) (slots : List Nat) (s : State) : Prop wher
 theorem ArgumentMemory.domainSliceStack {p : Inputs} {slots : List Nat} {s : State}
     (h : ArgumentMemory p slots s) {d k : Nat} (positive : 0 < k) (fit : d + k ≤ p.dom.length) :
     Region.Disjoint ⟨State.addr (p.domain + BitVec.ofNat 32 d), k⟩ ⟨State.addr s.sp, 72⟩ := by
-  rw [VG.Arm.addr_add (by have := h.domain.fits; omega)]
+  rw [VG.Arm.addr_add (by have := h.domain.fits; omega_using [positive, fit, this])]
   exact h.domainStack.sub_left (Offset.sub_base _ fit)
 
 theorem ArgumentMemory.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
@@ -174,8 +174,8 @@ theorem Context.after_local {p : Inputs} {slots : List Nat} {s t : State} {rs : 
     rw [List.mem_singleton] at hr
     subst r
     have := bounds e he
-    exact Offset.disjoint _ (saved e he) (by have := h.locals.space.nowrap; omega)
-      (by have := h.locals.space.nowrap; omega)
+    exact Offset.disjoint _ (saved e he) (by have := h.locals.space.nowrap; omega_arith)
+      (by have := h.locals.space.nowrap; omega_using [fit])
 
 theorem Context.of_mem {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
     (h : Context p slots s) (mem : t.mem = s.mem) (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) :
@@ -190,15 +190,15 @@ theorem Context.after_workspace {p : Inputs} {slots : List Nat} {s t : State} {r
 
 theorem Context.pBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s) :
     Octets p.base p.domain p.len (p.dom.take p.k) s := by
-  have fit : 0 + p.k ≤ p.dom.length := by rw [p.domainLength]; split <;> have := p.minLength <;> omega
-  simpa only [List.drop_zero, BitVec.add_zero] using h.domain.slice (by have := p.minLength; omega) fit
+  have fit : 0 + p.k ≤ p.dom.length := by rw [p.domainLength]; split <;> have := p.minLength <;> omega_using []
+  simpa only [List.drop_zero, BitVec.add_zero] using h.domain.slice (by have := p.minLength; omega_using [this]) fit
 
 theorem Context.gBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s) :
     Octets p.base p.g p.len ((p.dom.drop p.k).take p.k) s :=
-  h.domain.slice (by have := p.minLength; omega) (by rw [p.domainLength]; split <;> omega)
+  h.domain.slice (by have := p.minLength; omega_using [this]) (by rw [p.domainLength]; split <;> omega_using [])
 
 theorem Context.qBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s)
     (hasQ : p.hasQ = true) : Octets p.base p.q p.len ((p.dom.drop (2 * p.k)).take p.k) s :=
-  h.domain.slice (by have := p.minLength; omega) (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega)
+  h.domain.slice (by have := p.minLength; omega_using [this]) (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega_using [])
 
 end VG.Proof.Ffdh.Arm

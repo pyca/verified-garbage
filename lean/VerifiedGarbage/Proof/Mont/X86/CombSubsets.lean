@@ -172,7 +172,7 @@ theorem buildSubsets_ok {n context size m g bits : Nat} {base : Addr} {s : State
   refine WP.seq (WP.mono (buildSubsets_initial C T) fun t init => ?_)
   exact VG.Proof.Bignum.X86.PublicRt.countLoop (N := 31) (by decide)
     (fun i => Subsets n context size m g bits (i+1) base s)
-    (fun i t hi I => WP.mono (subsetStep_ok L I (by omega) (by omega))
-      fun z ⟨Iz,Z⟩ => ⟨Iz, by simpa only [show (i+1+1=32) ↔ (i+1=31) by omega] using Z⟩) init
+    (fun i t hi I => WP.mono (subsetStep_ok L I (by omega_using []) (by omega_using [hi]))
+      fun z ⟨Iz,Z⟩ => ⟨Iz, by simpa only [show (i+1+1=32) ↔ (i+1=31) by omega_using []] using Z⟩) init
 
 end VG.Proof.Mont.X86.Comb

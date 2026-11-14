@@ -60,7 +60,7 @@ theorem widthMatch_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ pLen
   refine SameTrace.seq (SameTrace.of_relCT (erased_relCT (σ := T0) (c₀ := .block [.ldr .r4 .r12 0, .movw .r5 0,
       .cmp .r4 (.reg .r5)]) (VG.Taint.hintOf taint T0 (.block [.ldr .r4 .r12 0, .movw .r5 0, .cmp .r4 (.reg .r5)]))
       (by kernel_rfl) (wsT_noBase _ _) (by kernel_rfl)) (agree0 h₁ h₂))
-    (matchOne_ok (d := 100) h₁ (by decide) (by omega) bp) (matchOne_ok (d := 100) h₂ (by decide) (by omega) bp)
+    (matchOne_ok (d := 100) h₁ (by decide) (by omega_using [hz₁]) bp) (matchOne_ok (d := 100) h₂ (by decide) (by omega_using [hz₂]) bp)
     fun u₁ u₂ ⟨Z₁, R₁, _⟩ ⟨Z₂, R₂, _⟩ => ?_
   have w₁ := h₁.of_rest R₁ (by decide)
   have w₂ := h₂.of_rest R₂ (by decide)
@@ -108,8 +108,8 @@ theorem failureHead_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base si
       .dp .add .lr .r11 (.reg .r4), .dp .add .lr .lr (.reg .r4), .mov .r4 (.imm 0)]) s fun t =>
       t.gpr .r11 = hdr base s 96 ∧ t.gpr .lr = hdr base s 96 + hdr base s 104 + hdr base s 104 ∧
       Ws t base size := by
-  refine wp_ldr12 hs (d := 96) (by decide) (by omega) fun u₁ v₁ => ?_
-  refine wp_ldr12 (hs.of_upd v₁ (by decide)) (d := 104) (by decide) (by omega) fun u₂ v₂ => ?_
+  refine wp_ldr12 hs (d := 96) (by decide) (by omega_using [hz]) fun u₁ v₁ => ?_
+  refine wp_ldr12 (hs.of_upd v₁ (by decide)) (d := 104) (by decide) (by omega_using [hz]) fun u₂ v₂ => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u₃ v₃ =>
     VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun u₄ v₄ =>
     VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u₅ v₅ => WP.block_nil ⟨?_, ?_, ?_⟩

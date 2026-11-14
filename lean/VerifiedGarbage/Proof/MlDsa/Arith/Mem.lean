@@ -30,11 +30,11 @@ theorem coeffAt_eq (m : Mem) (p : Addr) (i : Nat) : coeffAt m p i = m.readW (coe
 abbrev polyRegion (p : Addr) : Region := ⟨p, 1024⟩
 
 theorem coeff_contains (p : Addr) {i : Nat} (hi : i < n) : (polyRegion p).Contains (coeffAddr p i) 4 := by
-  rw [n_eq] at hi; exact Offset.contains_base p (by omega) (by omega)
+  rw [n_eq] at hi; exact Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])
 
 theorem coeff_sep (p : Addr) {i j : Nat} (hi : i < n) (hj : j < n) (h : i ≠ j) :
     Mem.Sep (coeffAddr p i) 4 (coeffAddr p j) 4 := by
-  rw [n_eq] at hi hj; exact Offset.sep p (by omega) (by omega) (by omega)
+  rw [n_eq] at hi hj; exact Offset.sep p (by omega_using [h]) (by omega_using [hi]) (by omega_using [hj])
 
 theorem coeffAddr_add (p : Addr) (j len : Nat) :
     coeffAddr p j + BitVec.ofNat 64 (4 * len) = coeffAddr p (j + len) := by
@@ -94,7 +94,7 @@ theorem coeffAt_congr {m m' : Mem} {p : Addr}
   rw [n_eq] at hi
   refine Mem.readW_congr fun k hk => ?_
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hk])
 
 theorem bytes_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {len : Nat}
     (hd : ∀ r ∈ rs, (⟨p, len⟩ : Region).Disjoint r) (hlen : len ≤ 2 ^ 64) :

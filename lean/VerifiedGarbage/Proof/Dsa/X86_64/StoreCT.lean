@@ -53,15 +53,15 @@ theorem store_ct : RelCT isa (Two StorePre) (Arithmetic.store aY result resultLe
       ⟨⟨minv, hc.mem hm hk (by decide), hm ▸ hp, hm ▸ hl⟩, ha⟩
     xrun [State.ea, hdr, hc.rdi, hdrOff, hc.link,
       hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot p.x.wx 8 by
-        have := hdr_lt_slot p.x.wx 8 (show Crt.sLink < 32 by decide); omega)]
+        have := hdr_lt_slot p.x.wx 8 (show Crt.sLink < 32 by decide); omega_using [this])]
   · intro p s ⟨⟨minv, hc, hp, hl⟩, ha⟩
     have hsmall : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off p.x.B p.x.o) (8 * i)) 8 :=
-      fun i hi => hc.good.scr.ld (by have := hdr_lt_slot p.x.wx 8 hi; omega)
+      fun i hi => hc.good.scr.ld (by have := hdr_lt_slot p.x.wx 8 hi; omega_using [this])
     have hlarge : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.x.B (8 * i)) 8 :=
       fun i hi => hc.scr.ld (by
         have := hc.lo; have := hc.hi
-        have : 256 ≤ slot p.x.w 8 := by unfold slot hdrBytes; omega
-        omega)
+        have : 256 ≤ slot p.x.w 8 := by unfold slot hdrBytes; omega_using []
+        omega_arith)
     xrun [StoreRegs, State.ea, hdr, Crt.ws, hc.rdi, ha, hdrOff,
       hlarge result (by decide), hlarge resultLen (by decide), hp, hl,
       hsmall (sArr aY) (by decide), hc.hdr.harr aY (by decide)]

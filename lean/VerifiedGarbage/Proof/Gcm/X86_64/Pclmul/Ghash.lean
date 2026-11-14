@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 meta import VerifiedGarbage.Proof.Gcm.Poly
 meta import VerifiedGarbage.Proof.Gcm.Powers
@@ -28,6 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Gcm.Contract
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Blocks`.
@@ -438,6 +440,7 @@ def ghashX86_64 : Contract X86_64.isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
 
+
 end VG.Proof.Gcm.X86_64.Pclmul
 
 namespace VG.Proof.Gcm.X86_64.Pclmul
@@ -498,20 +501,23 @@ abbrev blkAddr (i : Nat) : Addr := dp s₀ + BitVec.ofNat 64 (16 * i)
 
 end
 
+/-- What the proof needs of the precondition: the code never touches
+`scratch`, so it holds under `ghashX86_64` and under `Proof.Gcm.ghashX86_64F`,
+which has no `scratch`. -/
 structure Pre (s₀ : State) : Prop where
   rd : s₀.rd = [hR s₀, dR s₀]
-  wr : s₀.wr = [yR s₀, scrR s₀]
+  wr : yR s₀ ∈ s₀.wr
   h_y : (hR s₀).Disjoint (yR s₀)
-  h_scr : (hR s₀).Disjoint (scrR s₀)
   y_d : (yR s₀).Disjoint (dR s₀)
-  y_scr : (yR s₀).Disjoint (scrR s₀)
-  d_scr : (dR s₀).Disjoint (scrR s₀)
   ret_y : (retR s₀).Disjoint (yR s₀)
-  ret_scr : (retR s₀).Disjoint (scrR s₀)
 
 theorem pre_of (s₀ : State) (h : ghashX86_64.pre s₀) : Pre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  obtain ⟨h1, h2, h3, -, h5, -, -, h8, -⟩ := h
+  exact ⟨h1, by rw [h2]; exact List.mem_cons_self .., h3, h5, h8⟩
+
+theorem pre_ofF (s₀ : State) (h : Proof.Gcm.ghashX86_64F.pre s₀) : Pre s₀ := by
+  obtain ⟨h1, h2, h3, h5, h8⟩ := h
+  exact ⟨h1, by rw [h2]; exact List.mem_cons_self .., h3, h5, h8⟩
 
 namespace Pre
 variable {s₀ : State} (h : Pre s₀)
@@ -529,10 +535,10 @@ theorem in_h : InRegions (s₀.rd ++ s₀.wr) (hA s₀ + BitVec.ofInt 64 ((0 : N
   ⟨hR s₀, by simp only [h.rd, List.cons_append, List.nil_append, List.mem_cons, Region.mk.injEq, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, left_eq_mul₀, true_or], by rw [ofInt_natCast]; exact contains_offset (by decide) (by decide)⟩
 
 theorem in_y : InRegions (s₀.rd ++ s₀.wr) (yp s₀ + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-  ⟨yR s₀, by simp only [h.wr, List.mem_append, List.mem_cons, Region.mk.injEq, Nat.reduceEqDiff, and_false, List.not_mem_nil, or_self, or_false, or_true], by rw [ofInt_natCast]; exact contains_offset (by decide) (by decide)⟩
+  ⟨yR s₀, List.mem_append_right _ h.wr, by rw [ofInt_natCast]; exact contains_offset (by decide) (by decide)⟩
 
 theorem out_y : InRegions s₀.wr (yp s₀ + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-  ⟨yR s₀, by simp only [h.wr, List.mem_cons, Region.mk.injEq, Nat.reduceEqDiff, and_false, List.not_mem_nil, or_self, or_false], by rw [ofInt_natCast]; exact contains_offset (by decide) (by decide)⟩
+  ⟨yR s₀, h.wr, by rw [ofInt_natCast]; exact contains_offset (by decide) (by decide)⟩
 
 /-- Block `i + j` is in the data. -/
 theorem in_blk {i j : Nat} (hij : i + j < nb s₀) :
@@ -938,7 +944,8 @@ theorem ghash_correct (s : State) (hs : ghashX86_64.pre s) :
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
-theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86_64.Pclmul.ghash :=
+/-- Constant time under any precondition. -/
+theorem ghash_ctP (P : State → Prop) : ConstantTime isa P ghashX86_64.pub Impl.Gcm.X86_64.Pclmul.ghash :=
     by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) ?_
     (by taint_decide)
@@ -946,6 +953,17 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86_64.Pclmul.ghash :=
+  ghash_ctP _
+
+theorem ghash_correctF (s : State) (hs : Proof.Gcm.ghashX86_64F.pre s) :
+    ∃ t s', Exec isa Impl.Gcm.X86_64.Pclmul.ghash s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashX86_64F.post s s' := by
+  obtain ⟨t, s', he, h⟩ := correct (pre_ofF s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+
+theorem ghash_ctF : ConstantTime isa Proof.Gcm.ghashX86_64F.pre Proof.Gcm.ghashX86_64F.pub Impl.Gcm.X86_64.Pclmul.ghash :=
+  ghash_ctP _
 
 end VG.Proof.Gcm.X86_64.Pclmul
 

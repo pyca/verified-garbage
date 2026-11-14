@@ -189,11 +189,27 @@ noncomputable def checkStep (i : Nat) : Bool :=
   | none => false
 
 /-- The layouts the code runs. -/
-def LayOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop := l = lay2048 ∨ l = lay3072 ∨ l = lay4096
+def LayOk (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
+  l = lay2048 ∨ l = lay3072 ∨ l = lay4096 ∨ l = lay2048z
+
+/-- The two layouts for 2048-bit keys, one in each function. -/
+def Lay2 (l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop := l2 = lay2048 ∨ l2 = lay2048z
+
+/-- The layouts of the function whose layout for 2048-bit keys is `l2`. -/
+def LayOf (l2 l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop := l = l2 ∨ l = lay3072 ∨ l = lay4096
+
+theorem LayOf.ok {l2 l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOf l2 l) (h2 : Lay2 l2) : LayOk l := by
+  rcases hl with rfl | rfl | rfl
+  · rcases h2 with rfl | rfl
+    · exact .inl rfl
+    · exact .inr (.inr (.inr rfl))
+  · exact .inr (.inl rfl)
+  · exact .inr (.inr (.inl rfl))
 
 theorem checkStep_2048 : ∀ i < lay2048.R, checkStep lay2048 i = true := by decide +kernel
 theorem checkStep_3072 : ∀ i < lay3072.R, checkStep lay3072 i = true := by decide +kernel
 theorem checkStep_4096 : ∀ i < lay4096.R, checkStep lay4096 i = true := by decide +kernel
+theorem checkStep_2048z : ∀ i < lay2048z.R, checkStep lay2048z i = true := by decide +kernel
 
 open VG.Impl.Rsa.X86_64.PubIfma (pay1024 pay1536 pay2048 pay3072 pay4096) in
 /-- The layouts the multiplication runs: the CRT's, the public operation's,
@@ -219,10 +235,11 @@ theorem checkStep_p1536 : ∀ i < VG.Impl.Rsa.X86_64.PubIfma.pay1536.R,
     checkStep VG.Impl.Rsa.X86_64.PubIfma.pay1536 i = true := by decide +kernel
 
 theorem checkStep_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : AmmOk l) : ∀ i < l.R, checkStep l i = true := by
-  rcases hl with (rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
+  rcases hl with (rfl | rfl | rfl | rfl) | rfl | rfl | rfl | rfl | rfl
   · exact checkStep_2048
   · exact checkStep_3072
   · exact checkStep_4096
+  · exact checkStep_2048z
   · exact checkStep_p2048
   · exact checkStep_p3072
   · exact checkStep_p4096

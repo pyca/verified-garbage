@@ -32,14 +32,14 @@ abbrev Env := Index → Spec.X448.Fe
 def E (m : Mem) (base : Addr) (i : Index) : Spec.X448.Fe := F m base (slot i.val)
 
 theorem slot_lt (i : Index) : slot i.val + 56 ≤ ACC := by
-  have := i.isLt; simp only [slot, ACC]; omega
+  have := i.isLt; simp only [slot, ACC]; omega_using []
 
-theorem slot_ge (i : Index) : 64 ≤ slot i.val := by simp only [slot]; omega
+theorem slot_ge (i : Index) : 64 ≤ slot i.val := by simp only [slot]; omega_using []
 
 theorem slot_sep {i j : Index} (h : i ≠ j) :
     slot i.val + 56 ≤ slot j.val ∨ slot j.val + 56 ≤ slot i.val := by
   have : i.val ≠ j.val := fun e => h (Fin.ext e)
-  simp only [slot]; omega
+  simp only [slot]; omega_using [this]
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Index}
     (h : Outside2 base (slot o.val) 56 ACC 112 m m') :
@@ -51,7 +51,7 @@ theorem E_update {base : Addr} {m m' : Mem} {o : Index}
     have := slot_lt i
     simp only [ACC] at this
     show toFe (mv m' base (slot i.val) 7) = toFe (mv m base (slot i.val) 7)
-    rw [h.mv (slot_sep hi) (Or.inl (by simp only [ACC]; omega)) (by omega)]
+    rw [h.mv (slot_sep hi) (Or.inl (by simp only [ACC]; omega_using [this])) (by omega_using [this])]
 
 theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Index)
     (hi : slot i.val + 56 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
@@ -59,7 +59,7 @@ theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m
   simp only [ACC] at this
   simp only [E, F]
   show toFe (mv m' base (slot i.val) 7) = toFe (mv m base (slot i.val) 7)
-  rw [h.mv (by omega) (by omega)]
+  rw [h.mv (by omega_using [hi]) (by omega_using [this])]
 
 /-- What the field operations keep: the registers but `clob`, the regions,
 and the memory outside `[64, 1648)`. -/
@@ -82,7 +82,7 @@ theorem Keep.scr {base : Addr} {s s' : State} (h : Keep base s s') (hs : Scr s b
 
 theorem Op.keep {base : Addr} {o : Index} {s s' : State} (h : Op base (slot o.val) s s') :
     Keep base s s' :=
-  ⟨h.gpr, h.rd, h.wr, h.mem.outside (slot_ge o) (by have := slot_lt o; simp only [ACC] at *; omega)
+  ⟨h.gpr, h.rd, h.wr, h.mem.outside (slot_ge o) (by have := slot_lt o; simp only [ACC] at *; omega_using [this])
     (by decide) (by decide)⟩
 
 /-! ## The field multiplications -/
@@ -173,7 +173,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Index) (hxy : 
   refine ⟨⟨fun r hr => k.1 r fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl | rfl <;> decide), k.2.1, k.2.2,
-    out.outside gx (by omega) gy (by omega)⟩, k.1 _ (by decide), ?_⟩
+    out.outside gx (by omega_using [hx]) gy (by omega_using [hy])⟩, k.1 _ (by decide), ?_⟩
   funext i
   have ex : E s'.mem base x = if sw then E s.mem base y else E s.mem base x := by
     simp only [E, F, fe_sel fx]; cases sw <;> rfl
@@ -188,6 +188,6 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Index) (hxy : 
       have hi := slot_lt i
       simp only [ACC] at hi
       show toFe (mv s'.mem base (slot i.val) 7) = toFe (mv s.mem base (slot i.val) 7)
-      rw [out.mv (slot_sep hix) (slot_sep hiy) (by omega)]
+      rw [out.mv (slot_sep hix) (slot_sep hiy) (by omega_using [hi])]
 
 end VG.Proof.X448.X86_64

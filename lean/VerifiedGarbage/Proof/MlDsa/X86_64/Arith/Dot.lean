@@ -91,12 +91,12 @@ theorem macs_ok {c : Nat} (hc : c ≤ 7) {Av Bv : Nat → Nat → Nat} (hA : ∀
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (macs_ok hc hA hB hr hr' ha hb h0 n (by omega)) fun s1 ⟨A1, o1⟩ => ?_
+    refine WP.mono (macs_ok hc hA hB hr hr' ha hb h0 n (by omega_using [hn])) fun s1 ⟨A1, o1⟩ => ?_
     rw [dotLoadsS, show ∀ (x y : Instr) (l : List Instr), [x, y] ++ l = [x] ++ ([y] ++ l) from fun _ _ _ => rfl,
       WP.block_append_iff]
-    refine WP.mono (xld_ok (by rw [o1.rd, o1.wr, o1.gpr]; exact hr n (by omega))) fun s2 ⟨L2, o2⟩ => ?_
+    refine WP.mono (xld_ok (by rw [o1.rd, o1.wr, o1.gpr]; exact hr n (by omega_using [hn]))) fun s2 ⟨L2, o2⟩ => ?_
     rw [WP.block_append_iff]
-    refine WP.mono (xld_ok (by rw [o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact hr' n (by omega)))
+    refine WP.mono (xld_ok (by rw [o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact hr' n (by omega_using [hn])))
       fun s3 ⟨L3, o3⟩ => ?_
     refine WP.mono (dotMac_ok s3) fun s4 ⟨M5, M6, o4⟩ => ⟨fun k hk => ?_, (((o1.trans o2).trans o3).trans o4).mono (by simp)⟩
     have x0 : s3.xmm .xmm0 = s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (1024 * n)) 128 := by
@@ -105,17 +105,17 @@ theorem macs_ok {c : Nat} (hc : c ≤ 7) {Av Bv : Nat → Nat → Nat} (hA : ∀
       rw [L3, o2.mem, o2.gpr, o1.mem, o1.gpr]
     have x5 : s3.xmm .xmm5 = s1.xmm .xmm5 := by rw [o3.xmm _ (by decide), o2.xmm _ (by decide)]
     have x6 : s3.xmm .xmm6 = s1.xmm .xmm6 := by rw [o3.xmm _ (by decide), o2.xmm _ (by decide)]
-    have a0 := ha n (by omega) (2 * k) (by omega)
-    have a1 := ha n (by omega) (2 * k + 1) (by omega)
-    have b0 := hb n (by omega) (2 * k) (by omega)
-    have b1 := hb n (by omega) (2 * k + 1) (by omega)
+    have a0 := ha n (by omega_using [hn]) (2 * k) (by omega_using [hk])
+    have a1 := ha n (by omega_using [hn]) (2 * k + 1) (by omega_using [hk])
+    have b0 := hb n (by omega_using [hn]) (2 * k) (by omega_using [hk])
+    have b1 := hb n (by omega_using [hn]) (2 * k + 1) (by omega_using [hk])
     rw [← x0] at a0 a1
     rw [← x1] at b0 b1
     refine ⟨?_, ?_⟩
-    · rw [M5, qword_macE hk (by rw [x5, (A1 k hk).1, a0, b0]; exact prod_bound hc hA hB (by omega) (by omega)), x5,
+    · rw [M5, qword_macE hk (by rw [x5, (A1 k hk).1, a0, b0]; exact prod_bound hc hA hB (by omega_using [hn]) (by omega_using [hk])), x5,
         (A1 k hk).1, a0, b0]
       rfl
-    · rw [M6, qword_macO hk (by rw [x6, (A1 k hk).2, a1, b1]; exact prod_bound hc hA hB (by omega) (by omega)), x6,
+    · rw [M6, qword_macO hk (by rw [x6, (A1 k hk).2, a1, b1]; exact prod_bound hc hA hB (by omega_using [hn]) (by omega_using [hk])), x6,
         (A1 k hk).2, a1, b1]
       rfl
 
@@ -132,7 +132,7 @@ theorem plain_dw {x : BitVec 128} {P : Nat} {e : Nat} (he : e < 4)
     (hx : (dword x e).toNat = (Fin.ofNat q P * montgomeryRInv).val) :
     (dword (csubV (montV x r2V r2V)) e).toNat = (Fin.ofNat q P : Zq).val := by
   have hzo : ∀ j < 2, dword r2V (2 * j) = dword r2V (2 * j + 1) := fun j hj => by
-    rw [dword_r2V (by omega), dword_r2V (by omega)]
+    rw [dword_r2V (by omega_using [hj]), dword_r2V (by omega_using [hj])]
   have hb : ∀ i < 4, (dword x i).toNat * (dword r2V i).toNat < q * 2 ^ 32 := fun i hi => by
     rw [dword_r2V hi]
     exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (dword x i).isLt (Nat.le_refl _) (by decide)) (by decide)
@@ -173,18 +173,18 @@ include hc7 hwo hra hrb hda hdb hA hB
 theorem step {i : Nat} (hi : i < 64) {s : State} (hI : DI o a b c s₀ i s) :
     WP isa (.block (dotBodyS c ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       DI o a b c s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 4 * i + 4 ≤ 256 := by omega
+  have j0 : 4 * i + 4 ≤ 256 := by omega_using [hi]
   have hv : ∀ (p : Addr), (∀ j < c, (pR (p + BitVec.ofNat 64 (1024 * j))).Disjoint (pR o)) → ∀ j < c,
       ∀ e < 4, (dword (s.mem.readW (coeffAddr p (4 * i) + BitVec.ofNat 64 (1024 * j)) 128) e).toNat =
         famV s₀.mem p j (4 * i + e) := fun p hd j hj e he => by
     rw [addr_fam, dword_readW _ _ he, coeffAddr_add, ← coeffAt_eq, famV,
-      coeffAt_frame hI.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd j hj) (by rw [n_eq]; omega)]
+      coeffAt_frame hI.frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd j hj) (by rw [n_eq]; omega_using [hi, he])]
   simp only [dotBodyS, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (dotZero_ok s) fun s1 ⟨z5, z6, o1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (macs_ok hc7 (Av := fun j t => famV s₀.mem a j (4 * i + t)) (Bv := fun j t => famV s₀.mem b j (4 * i + t))
-    (fun j hj t ht => hA j hj _ (by omega)) (fun j hj t ht => hB j hj _ (by omega))
+    (fun j hj t ht => hA j hj _ (by omega_using [hi, ht])) (fun j hj t ht => hB j hj _ (by omega_using [hi, ht]))
     (fun j hj => by
       rw [o1.rd, o1.wr, o1.gpr, hI.r10, hI.keep.2.1, hI.keep.2.2, addr_fam]; exact hra j hj _ j0)
     (fun j hj => by
@@ -206,14 +206,14 @@ theorem step {i : Nat} (hi : i < 64) {s : State} (hI : DI o a b c s₀ i s) :
     rw [P4, x11]
     refine plain_dw he ?_
     rw [R3, dot_lane (A := fun j t => famV s₀.mem a j (4 * i + t)) (B := fun j t => famV s₀.mem b j (4 * i + t)) hc7
-      (fun j hj t ht => hA j hj _ (by omega)) (fun j hj t ht => hB j hj _ (by omega))
+      (fun j hj t ht => hA j hj _ (by omega_using [hi, ht])) (fun j hj t ht => hB j hj _ (by omega_using [hi, ht]))
       (fun k hk => (A2 k hk).1) (fun k hk => (A2 k hk).2) he]
   have g4 : s4.gpr .r8 = coeffAddr o (4 * i) := by rw [o14.gpr, hI.r8]
   have w0 : InRegions s4.wr (coeffAddr o (4 * i)) 16 := by rw [o14.wr, hI.keep.2.2]; exact f_in hwo j0
   vrund [g4, w0]
   rw [o14.mem]
   have p16 : ∀ p : Addr, coeffAddr p (4 * i) + 16 = coeffAddr p (4 * (i + 1)) := fun p => by
-    rw [show (16 : BitVec 64) = BitVec.ofNat 64 (4 * 4) from rfl, coeffAddr_add, show 4 * i + 4 = 4 * (i + 1) by omega]
+    rw [show (16 : BitVec 64) = BitVec.ofNat 64 (4 * 4) from rfl, coeffAddr_add, show 4 * i + 4 = 4 * (i + 1) by omega_using []]
   refine ⟨⟨?_, ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, fun k hk => ?_⟩, by rw [o14.gpr], by rw [o14.gpr]⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq]
     exact p16 o
@@ -233,10 +233,10 @@ theorem step {i : Nat} (hi : i < 64) {s : State} (hI : DI o a b c s₀ i s) :
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
     exact hI.frame.writeW (List.mem_singleton_self _) _ (pR_contains o j0)
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags]
-    rw [coeffAt_write128 _ _ j0 _ (by omega)]
+    rw [coeffAt_write128 _ _ j0 _ (by omega_using [hi, hk])]
     split
-    · rw [hres _ (by omega), show 4 * i + (k - 4 * i) = k by omega]
-    · exact hI.done k (by omega)
+    · rw [hres _ (by omega_using [hk]), show 4 * i + (k - 4 * i) = k by omega_arith]
+    · exact hI.done k (by omega_arith)
 
 
 /-- The loop, from the constants and the pointers, in `s₀`. -/
@@ -249,14 +249,14 @@ theorem pass_ok (h8 : s₀.gpr .r8 = o) (h10 : s₀.gpr .r10 = a) (hdx : s₀.gp
       by rw [og.keep.gpr (by decide), h10, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       by rw [og.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       og.keep.mono (by simp), ⟨by rw [og.xmm]; exact hc.q, by rw [og.xmm]; exact hc.qinv⟩,
-      by rw [og.xmm]; exact h11, by rw [og.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩)
+      by rw [og.xmm]; exact h11, by rw [og.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega_using [])⟩)
     (fun i hi u hI => step hc7 hwo hra hrb hda hdb hA hB hi hI)) fun u hI => ⟨⟨fun k hk => ?_, ?_⟩, hI.keep, hI.frame⟩
   · rw [n_eq] at hk
-    rw [hI.done k (by omega)]; exact (dotP s₀.mem a b c k).isLt
+    rw [hI.done k (by omega_using [hk])]; exact (dotP s₀.mem a b c k).isLt
   · apply Vector.ext; intro k hk
     rw [polyAt, Vector.getElem_ofFn, Vector.getElem_ofFn]
     apply Fin.ext
-    rw [Fin.val_ofNat, hI.done k (by rw [n_eq] at hk; omega), Nat.mod_eq_of_lt (dotP s₀.mem a b c k).isLt]
+    rw [Fin.val_ofNat, hI.done k (by rw [n_eq] at hk; omega_using [hk]), Nat.mod_eq_of_lt (dotP s₀.mem a b c k).isLt]
 
 end
 
@@ -326,7 +326,7 @@ theorem correct {c : Nat} (hc7 : c ≤ 7)
     have hr : ∀ p : Addr, famR p c ∈ s.rd → ∀ j < c, ∀ k, k + 4 ≤ 256 →
         InRegions (s3.rd ++ s3.wr) (coeffAddr (p + BitVec.ofNat 64 (1024 * j)) k) 16 := fun p hp j hj k hk =>
       ⟨famR p c, by rw [k13.2.1, rd1]; exact List.mem_append_left _ hp, by
-        rw [coeffAddr, VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+        rw [coeffAddr, VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hj, hk]) (by omega_using [hc7, hj, hk])⟩
     refine WP.seq (WP.mono (pass_ok (s₀ := s3) hc7 (by rw [k13.2.2, wr1]; exact hwo)
       (hr _ (by rw [hrd]; simp)) (hr _ (by rw [hrd]; simp))
       (fun j hj => (d1.sub_right (fam_sub _ hj)).symm) (fun j hj => (d2.sub_right (fam_sub _ hj)).symm)

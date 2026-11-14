@@ -76,10 +76,10 @@ private theorem storeRow_ct' {a : Nat} (ha : a < 8) {hc : VG.Taint.Hint VG.X86_6
   rw [WP.block_append_iff]
   refine WP.mono (rowPtr_env he hax) fun t ⟨hb, h12, hm, k⟩ => ?_
   have hg := he.mc.sub.good
-  have hA := hdr_lt_slot q.1.w 8 (show sArr a < 32 by unfold sArr; omega)
+  have hA := hdr_lt_slot q.1.w 8 (show sArr a < 32 by unfold sArr; omega_using [ha])
   have hdt : t.gpr .rdi = off q.1.B q.1.o := (k.gpr (by decide)).trans hg.rdi
   have hld : InRegions (t.rd ++ t.wr) (off (off q.1.B q.1.o) (8 * sArr a)) 8 := by
-    rw [k.2.1, k.2.2]; exact hg.scr.ld (by omega)
+    rw [k.2.1, k.2.2]; exact hg.scr.ld (by omega_using [hA])
   have hv : t.mem.readW (off (off q.1.B q.1.o) (8 * sArr a)) 64 = off (off q.1.B q.1.o) (slot q.1.w a) := by
     rw [hm]; exact hg.hdr.harr a ha
   refine WP.mono (WP.keep [.rsi] (Q := fun u => u.gpr .rsi = off (off q.1.B q.1.o) (slot q.1.w a)) (by
@@ -110,10 +110,10 @@ private theorem loadRow_ct' {a : Nat} (ha : a < 8) {hc : VG.Taint.Hint VG.X86_64
   rw [WP.block_append_iff]
   refine WP.mono (rowPtr_env he hax) fun t ⟨hb, h12, hm, k⟩ => ?_
   have hg := he.mc.sub.good
-  have hA := hdr_lt_slot q.1.w 8 (show sArr a < 32 by unfold sArr; omega)
+  have hA := hdr_lt_slot q.1.w 8 (show sArr a < 32 by unfold sArr; omega_using [ha])
   have hdt : t.gpr .rdi = off q.1.B q.1.o := (k.gpr (by decide)).trans hg.rdi
   have hld : InRegions (t.rd ++ t.wr) (off (off q.1.B q.1.o) (8 * sArr a)) 8 := by
-    rw [k.2.1, k.2.2]; exact hg.scr.ld (by omega)
+    rw [k.2.1, k.2.2]; exact hg.scr.ld (by omega_using [hA])
   have hv : t.mem.readW (off (off q.1.B q.1.o) (8 * sArr a)) 64 = off (off q.1.B q.1.o) (slot q.1.w a) := by
     rw [hm]; exact hg.hdr.harr a ha
   refine WP.mono (WP.keep [.rsi, .rbx] (Q := fun u => u.gpr .rbx = off (off q.1.B q.1.o) (slot q.1.w a) ∧
@@ -138,7 +138,7 @@ theorem eval_ne_step {s : State} {j N : Nat} (hj : j < N) (hz : s.zf = some (dec
     isa.eval .ne s = some (decide (j + 1 < N)) := by
   simp only [eval, hz, Option.map_some]
   congr 1
-  by_cases h : j + 1 = N <;> simp [h] <;> omega
+  by_cases h : j + 1 = N <;> simp [h] <;> omega_using [hj, h]
 
 /-! ## The squares -/
 
@@ -154,14 +154,14 @@ theorem squares_ct (Mo : Mont) :
   unfold Precompute.squares
   refine RelCT.seq (R := Two fun (q : TabP × Nat) t => 0 < q.1.rows ∧ SqAt q 0 t)
     (two_piece [.rdi] (pins_env (fun q => q.1) fun _ _ h => h.1) (by taint_decide)
-      fun q s h => WP.mono (squares_start h.1 h.2.1) fun t ht => ⟨by have := h.2.2.1; omega, s, h, ht⟩) ?_
+      fun q s h => WP.mono (squares_start h.1 h.2.1) fun t ht => ⟨by have := h.2.2.1; omega_using [this], s, h, ht⟩) ?_
   refine two_loop (Φ := SqAt) (N := fun q => q.1.rows) ?_ ?_
   · refine RelCT.seq (R := Two fun (p : (TabP × Nat) × Nat) u => Env p.1.1 u)
       (two_post (mm_ct Mo (.inr (.inl ⟨rfl, rfl, rfl⟩)) (fun p => p.1.1) fun _ _ h => by
         obtain ⟨_, _, _, hI⟩ := h; exact hI.1) ?_)
       (two_taint [.rdi] (pins_env (fun (p : (TabP × Nat) × Nat) => p.1.1) fun _ _ h => h) (by taint_decide))
     intro p t ⟨_, s, hs, hI⟩
-    have hP : 0 < p.1.1.P := by have := hs.1.mc.x1; omega
+    have hP : 0 < p.1.1.P := by have := hs.1.mc.x1; omega_using [this]
     exact WP.mono (mm_env Mo hI.1 (Or.inr (Or.inr rfl)) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by rw [hI.2.2.1]; exact p.1.1.M_lt hP _)) fun u hu => hu.1
   · intro q j t hj ⟨s, hs, hI⟩
@@ -195,7 +195,7 @@ theorem product_ct (Mo : Mont) : RelCT isa (Two PrAt) (Precompute.product Mo.mm)
   · have hg := h.1.mc.sub.good
     have hlJ := hdr_lt_slot q.1.w 8 (show iJ < 32 by decide)
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (q.2.2 + 2) ∧ t.mem = s.mem) (by
-      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iJ) (by omega), h.2.1]
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iJ) (by omega_using [hlJ]), h.2.1]
       apply BitVec.eq_of_toNat_eq; simp) rfl) fun t ⟨⟨hax, hm⟩, k⟩ => ⟨?_, hax⟩
     exact h.of_env (h.1.of_outScr (by intro x _; rw [hm]) k.2.1 k.2.2 (k.gpr (by decide)))
       (fun i _ _ => by rw [hm]) (by rw [hm])
@@ -203,7 +203,7 @@ theorem product_ct (Mo : Mont) : RelCT isa (Two PrAt) (Precompute.product Mo.mm)
   refine RelCT.seq (R := Two PrAt) (two_post (two_map (fun (q : TabP × Nat × Nat) => (q.1, q.2.2 + 2)) (fun _ _ h => ⟨h.1.1, h.2⟩)
     (loadRow_ct (Or.inl rfl))) fun q s ⟨h, hax⟩ => ?_) ?_
   · have hw := h.1.mc.w2
-    refine WP.mono (load_env h.1 hax (Or.inl rfl) (by have := h.2.2.2.2; omega)
+    refine WP.mono (load_env h.1 hax (Or.inl rfl) (by have := h.2.2.2.2; omega_using [this])
       (row_of_words (fun i _ => rfl)) (wv_lt _ _ _ _)) fun t ⟨he, _, ha, _, hd, _, _⟩ =>
       h.of_env he (fun i _ hi => hd i hi) (ha _ (by decide) (by decide))
   -- `aX := aX aY`.
@@ -221,9 +221,9 @@ theorem product_ct (Mo : Mont) : RelCT isa (Two PrAt) (Precompute.product Mo.mm)
     have hlD := hdr_lt_slot q.1.w 8 (show iD < 32 by decide)
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (2 + q.2.1 + q.2.2) ∧
         t.mem = s.mem) (by
-      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iJ) (by omega),
-        hg.scr.ld (d := 8 * iD) (by omega), h.2.1, h.2.2.1]
-      apply BitVec.eq_of_toNat_eq; simp; omega) rfl) fun t ⟨⟨hax, hm⟩, k⟩ =>
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iJ) (by omega_using [hlJ]),
+        hg.scr.ld (d := 8 * iD) (by omega_using [hlD]), h.2.1, h.2.2.1]
+      apply BitVec.eq_of_toNat_eq; simp; omega_using []) rfl) fun t ⟨⟨hax, hm⟩, k⟩ =>
       ⟨h.1.of_outScr (by intro x _; rw [hm]) k.2.1 k.2.2 (k.gpr (by decide)), hax, h.2.2.2.2⟩
   -- Its row, and the counter.
   refine RelCT.seq (R := Two fun (q : TabP × Nat × Nat) t => Env q.1 t) (two_post (two_map (fun (q : TabP × Nat × Nat) => (q.1, 2 + q.2.1 + q.2.2))
@@ -247,7 +247,7 @@ def PrL (q : TabP × Nat) (j : Nat) (s : State) : Prop :=
     Entries q.1 (2 ^ (q.2 + 1) + (j + 1)) s.mem ∧ q.2 < 4
 
 theorem pow_facts {c : Nat} (hc : c < 4) : 2 ≤ 2 ^ (c + 1) ∧ 2 ^ (c + 1) ≤ 16 := by
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> decide
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_using [hc]) with rfl | rfl | rfl | rfl <;> decide
 
 theorem column_ct (Mo : Mont) : RelCT isa (Two CoAt) (Precompute.column Mo.mm) fun _ _ => True := by
   unfold Precompute.column
@@ -264,7 +264,7 @@ theorem column_ct (Mo : Mont) : RelCT isa (Two CoAt) (Precompute.column Mo.mm) f
     refine WP.mono (squares_ok Mo he hx hr hr') fun t ⟨he₁, hx₁, hr₁, st₁, _⟩ => ⟨he₁, ?_, ?_, ?_, hc⟩
     · rw [st₁.hdr _ (by decide) (by decide) (by decide)]; exact hD
     · rw [← q.1.entry_tooth hc] at hx₁; exact hx₁
-    · intro a ha; rw [hr₁ _ (rowFits_of (by have := (pow_facts hc).2; omega))]; exact hE a ha
+    · intro a ha; rw [hr₁ _ (rowFits_of (by have := (pow_facts hc).2; omega_using [ha, this]))]; exact hE a ha
   -- `rax := d + 2`.
   refine RelCT.seq (R := Two fun (q : TabP × Nat) t => (Env q.1 t ∧
       word t.mem (off q.1.B q.1.o) (8 * iD) = BitVec.ofNat 64 (2 ^ (q.2 + 1)) ∧
@@ -276,8 +276,8 @@ theorem column_ct (Mo : Mont) : RelCT isa (Two CoAt) (Precompute.column Mo.mm) f
     have hd := (pow_facts h.2.2.2.2).2
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (2 + 2 ^ (q.2 + 1)) ∧
         t.mem = s.mem) (by
-      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iD) (by omega), h.2.1]
-      apply BitVec.eq_of_toNat_eq; simp; omega) rfl) fun t ⟨⟨hax, hm⟩, k⟩ =>
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.ld (d := 8 * iD) (by omega_using [hlD]), h.2.1]
+      apply BitVec.eq_of_toNat_eq; simp; omega_using []) rfl) fun t ⟨⟨hax, hm⟩, k⟩ =>
       ⟨⟨h.1.of_outScr (by intro x _; rw [hm]) k.2.1 k.2.2 (k.gpr (by decide)), by rw [hm]; exact h.2.1,
         by rw [hm]; exact h.2.2.1, by intro a ha; rw [hm]; exact h.2.2.2.1 a ha, h.2.2.2.2⟩, hax⟩
   -- The tooth's row.
@@ -291,18 +291,18 @@ theorem column_ct (Mo : Mont) : RelCT isa (Two CoAt) (Precompute.column Mo.mm) f
     have hd := (pow_facts hc).2
     have hn := he.mc.sub.scr.nowrap
     have hio : ∀ i < 32, q.1.o + 8 * i + 8 ≤ q.1.Z := fun i hi => by
-      have := hdr_lt_slot q.1.w 8 hi; have := he.mc.sub.lo; have := he.mc.sub.hi; omega
+      have := hdr_lt_slot q.1.w 8 hi; have := he.mc.sub.lo; have := he.mc.sub.hi; omega_arith
     have hwo : ∀ b < 8, q.1.o + slot q.1.w b + 8 * q.1.w ≤ q.1.Z := fun b hb => by
-      have := slot_le (w := q.1.w) hb; have := he.mc.sub.hi; omega
-    refine WP.mono (store_env he hax (by decide) (by omega)) fun t ⟨he₃, hrow₃, hr₃, hos₃, _, _⟩ =>
+      have := slot_le (w := q.1.w) hb; have := he.mc.sub.hi; omega_arith
+    refine WP.mono (store_env he hax (by decide) (by omega_using [hd])) fun t ⟨he₃, hrow₃, hr₃, hos₃, _, _⟩ =>
       ⟨he₃, ?_, ?_, fun a ha => ?_, hc⟩
     · rw [OutScr.wordAt hos₃ (hio _ (by decide)) hn]; exact hD
     · rw [OutScr.wvAt hos₃ (hwo _ (by decide)) hn]; exact hx
     · by_cases hlast : a = 2 ^ (q.2 + 1)
       · subst hlast
-        rw [show 2 + 2 ^ (q.2 + 1) = 2 ^ (q.2 + 1) + 2 by omega] at hrow₃
-        rw [show 2 + 2 ^ (q.2 + 1) = 2 ^ (q.2 + 1) + 2 by omega, hrow₃, hx]
-      · rw [hr₃ _ (by omega) (rowFits_of (by omega))]; exact hE a (by omega)
+        rw [show 2 + 2 ^ (q.2 + 1) = 2 ^ (q.2 + 1) + 2 by omega_using []] at hrow₃
+        rw [show 2 + 2 ^ (q.2 + 1) = 2 ^ (q.2 + 1) + 2 by omega_using [], hrow₃, hx]
+      · rw [hr₃ _ (by omega_using [hlast]) (rowFits_of (by omega_using [hd, ha]))]; exact hE a (by omega_using [ha, hlast])
   -- `J := 1`.
   refine RelCT.seq (R := Two fun (q : TabP × Nat) t => 0 < 2 ^ (q.2 + 1) - 1 ∧ PrL q 0 t)
     (two_piece [.rdi] (pins_env (fun q => q.1) fun _ _ h => h.1) (by taint_decide) fun q s h => ?_) ?_
@@ -312,13 +312,13 @@ theorem column_ct (Mo : Mont) : RelCT isa (Two CoAt) (Precompute.column Mo.mm) f
     have hd := pow_facts hc
     refine WP.mono (WP.keep [.rax] (Q := fun t =>
         t.mem = s.mem.writeW (off (off q.1.B q.1.o) (8 * iJ)) (BitVec.ofNat 64 1)) (by
-      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.st (d := 8 * iJ) (by omega),
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hg.scr.st (d := 8 * iJ) (by omega_using [hlJ]),
         show BitVec.setWidth 64 (1 : BitVec 32) = BitVec.ofNat 64 1 from rfl]) rfl) fun t ⟨hm, k⟩ => ?_
     obtain ⟨he₄, hJ₄, hh₄, ha₄, hr₄, _⟩ := slot_env he (i := iJ) (by decide) (by decide) hm k.2.1 k.2.2
       (k.gpr (by decide))
-    refine ⟨by omega, he₄, hJ₄, by rw [hh₄ _ (by decide) (by decide)]; exact hD,
+    refine ⟨by omega_using [hd], he₄, hJ₄, by rw [hh₄ _ (by decide) (by decide)]; exact hD,
       by rw [ha₄ _ (by decide)]; exact hx, fun a ha => ?_, hc⟩
-    rw [hr₄ _ (rowFits_of (by omega))]; exact hE a ha
+    rw [hr₄ _ (rowFits_of (by omega_using [hd, ha]))]; exact hE a ha
   -- The products.
   refine RelCT.seq (R := Two fun (q : TabP × Nat) t => Env q.1 t)
     ((two_loop (Φ := PrL) (Ψ := fun q t => Env q.1 t) (N := fun q => 2 ^ (q.2 + 1) - 1) ?_ ?_).mono
@@ -326,14 +326,14 @@ theorem column_ct (Mo : Mont) : RelCT isa (Two CoAt) (Precompute.column Mo.mm) f
     (two_taint [.rdi] (pins_env (fun (q : TabP × Nat) => q.1) fun _ _ h => h) (by taint_decide))
   · refine two_map (fun (p : (TabP × Nat) × Nat) => (p.1.1, 2 ^ (p.1.2 + 1), p.2 + 1))
       (fun p s ⟨hj, he, hJ, hD, hx, _, hc⟩ => ⟨he, hJ, hD, ?_, ?_⟩) (product_ct Mo)
-    · have hP : 0 < p.1.1.P := by have := he.mc.x1; omega
+    · have hP : 0 < p.1.1.P := by have := he.mc.x1; omega_using [this]
       rw [hx]; exact p.1.1.M_lt hP _
-    · have := (pow_facts hc).2; simp only at hj ⊢; omega
+    · have := (pow_facts hc).2; simp only at hj ⊢; omega_using [hj, this]
   · intro q j t hj ⟨he, hJ, hD, hx, hE, hc⟩
     have hd := pow_facts hc
-    refine WP.mono (product_ok Mo he (jt := q.2 + 1) (J := j + 1) (by omega) (by omega) (by omega) (by omega)
+    refine WP.mono (product_ok Mo he (jt := q.2 + 1) (J := j + 1) (by omega_using [hc]) (by omega_using []) (by omega_using [hj]) (by omega_using [])
       hJ hD hx hE) fun u ⟨heu, hz, hJu, hDu, hxu, hEu, _⟩ =>
-      ⟨eval_ne_step hj (by rw [hz]; congr 1; apply Bool.eq_iff_iff.mpr; simp only [decide_eq_true_iff]; omega),
+      ⟨eval_ne_step hj (by rw [hz]; congr 1; apply Bool.eq_iff_iff.mpr; simp only [decide_eq_true_iff]; omega_using []),
         fun _ => ⟨heu, hJu, hDu, hxu, hEu, hc⟩, fun _ => heu⟩
 
 /-! ## The table -/
@@ -358,7 +358,7 @@ theorem rax_imm_ok {T : TabP} {s : State} (he : Env T s) (n : Nat) (hn : n < 2 ^
       t.gpr .rax = BitVec.ofNat 64 n ∧ t.mem = s.mem ∧ Env T t ∧ Keep [.rax] s t := by
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 n ∧ t.mem = s.mem) (by
     xrun [show (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n from by
-      apply BitVec.eq_of_toNat_eq; simp [Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]]) rfl)
+      apply BitVec.eq_of_toNat_eq; simp [Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [hn])]]) rfl)
     fun t ⟨⟨hax, hm⟩, k⟩ => ⟨hax, hm, he.of_outScr (by intro x _; rw [hm]) k.2.1 k.2.2 (k.gpr (by decide)), k⟩
 
 /-- Entries 0 and 1, and the tooth `2`. -/
@@ -390,20 +390,20 @@ theorem initial_ct (Mo : Mont) : RelCT isa (Two TbAt)
       (two_post (two_map (fun (q : TabP × Addr × Nat) => (⟨⟨q.1.B, q.1.Z, q.1.o, q.1.w, q.1.w⟩, q.2.1, q.2.2⟩ : BPub))
         (fun q s h => ?_) (loadArr_ct (by decide) (by taint_decide) (by taint_decide))) fun q s h => ?_) ?_)
   · obtain ⟨gb, he, _, _, _, hsG, hsK, hl, hsrc, _, hgl, hgw⟩ := h
-    exact ⟨q.1.mi, gb, he.mc.sub, he.mc.w2, Nat.le_refl _, show q.1.w < 2 ^ 30 by have := he.mc.w28; omega,
+    exact ⟨q.1.mi, gb, he.mc.sub, he.mc.w2, Nat.le_refl _, show q.1.w < 2 ^ 30 by have := he.mc.w28; omega_using [this],
       by decide, by decide, by decide, hsG, hsK, hl, hsrc, hgl,
-      show gb.length < 2 ^ 31 by have := he.mc.w28; omega, hgw⟩
+      show gb.length < 2 ^ 31 by have := he.mc.w28; omega_using [hgw, this], hgw⟩
   · obtain ⟨gb, he, _, _, _, hsG, hsK, _, hsrc, _, hgl, hgw⟩ := h
     refine WP.mono (primeLoad_ok he.mc.sub he.mc.w2 (Nat.le_refl _)
-      (by have := he.mc.w28; omega) (show aX < 8 by decide) (show VG.Impl.Ffdh.X86_64.Domain.sG < 32 by decide)
-      (show sK < 32 by decide) hsG hsK hsrc hgl (by have := he.mc.w28; omega) hgw) fun t ⟨_, _, ho, k⟩ => ?_
+      (by have := he.mc.w28; omega_using [this]) (show aX < 8 by decide) (show VG.Impl.Ffdh.X86_64.Domain.sG < 32 by decide)
+      (show sK < 32 by decide) hsG hsK hsrc hgl (by have := he.mc.w28; omega_using [hgw, this]) hgw) fun t ⟨_, _, ho, k⟩ => ?_
     have hf : Frm (off q.1.B q.1.o) [(slot q.1.w aX, 8 * (q.1.w + 2))] s.mem t.mem := Frm.of_outside ho (by simp)
     have hd : ∀ i, i < 32 → word t.mem (off q.1.B q.1.o) (8 * i) = word s.mem (off q.1.B q.1.o) (8 * i) :=
       fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (hdr_lt_slot q.1.w aX hi))
-        (by have := hdr_lt_slot q.1.w 8 hi; omega)
+        (by have := hdr_lt_slot q.1.w 8 hi; omega_using [hi])
     exact he.of_inner (Frm.cover hf (fun r hr => by
         rw [List.mem_singleton.mp hr]
-        exact ⟨(slot q.1.w aX, 3 * (8 * (q.1.w + 2))), by simp [innerR], by simp only; omega, by simp only; omega⟩))
+        exact ⟨(slot q.1.w aX, 3 * (8 * (q.1.w + 2))), by simp [innerR], by simp only; omega_using [], by simp only; omega_using []⟩))
       k.2.1 k.2.2 (k.gpr (by decide)) (hd _ (by decide)) (hd _ (by decide))
   simp only [seqs]
   -- Entry 1.

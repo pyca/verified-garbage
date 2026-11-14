@@ -7,10 +7,10 @@ public import VerifiedGarbage.Impl.ICall
 # MGF1 on AArch64 with the hash function of a table
 
 `mgfXor` of `Impl/RsaOaep/AArch64/Mgf1.lean` for the hash function of a
-table of the interface `Hash` (`Spec/HashTable.lean`) rather than a fixed
+table of the interface `MdHash` (`Spec/MdHashTable.lean`) rather than a fixed
 one, as on x86-64 (`Impl/Mgf1/X86_64/Table.lean`): the table's address is
 the word at `[sp + sArg]` (the caller's argument), which MGF1 copies to the
-slot `sTab`, and the table's digest length (its word 4) to the slot `sD`.
+slot `sTab`, and the table's digest length (its word 6) to the slot `sD`.
 The hash function's `init`, `update` and `finalize` are the table's
 functions 0, 1 and 2, which it calls indirectly (`tcall`: their address, the
 table's word `j`, into `x16`, then `blr x16`, of whichever of the functions
@@ -67,7 +67,7 @@ def tabArg : List Instr := [.ldrSp .x10 sArg, .addSp .x9 0, .str .x .x10 .x9 sTa
 /-- The table's digest length (from the table at `x10`, as `tabArg` leaves
 it) to `sD`, and the counter and `done` set to 0. -/
 def tabHead : List Instr :=
-  [.ldr .x .x10 .x10 32, .addSp .x9 0, .str .x .x10 .x9 sD,
+  [.ldr .x .x10 .x10 48, .addSp .x9 0, .str .x .x10 .x9 sD,
     .movz .x .x10 0 0, .str .x .x10 .x9 L.sCtr, .str .x .x10 .x9 L.sDone]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of

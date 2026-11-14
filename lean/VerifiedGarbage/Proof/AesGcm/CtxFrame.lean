@@ -32,7 +32,7 @@ theorem ctx_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : Addr
   have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
   refine ⟨?_, ?_⟩
   · simp only [ctxCiph]
-    rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
+    rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega_using [hR])]
   · simp only [ctxH, Spec.Gcm.blockAt]
     exact congrArg _ (Proof.Cmac.bytesAt_frame hf (p := K + BitVec.ofNat 64 240) (fun r hr => (hd r hr).sub_left
       (Offset.sub_base K (show 240 + 16 ≤ 256 by decide))) (by decide))
@@ -44,7 +44,7 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (h : xs.le
   · simp [bytesAt]
   · intro i h₁ h₂
     simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₂, ite_true]
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₂]), h₂, ite_true]
     simp [List.getD_eq_getElem?_getD, h₂]
 
 end VG.Proof.AesGcm

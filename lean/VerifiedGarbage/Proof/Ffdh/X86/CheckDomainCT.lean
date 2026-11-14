@@ -95,13 +95,13 @@ abbrev qD (len : Nat) (D : List Byte) : Nat := ((Spec.Ffdh.domainOf len D).q).ge
 theorem DomAt.comp0 {u : State} (A : DomAt Ex base bytes len dlen args sp D u) :
     comp u.mem args len 0 = pD len D := by
   have := A.geo.dl
-  rw [comp_p u.mem args (dlen := dlen) (by omega)]
+  rw [comp_p u.mem args (dlen := dlen) (by omega_using [this])]
   exact congrArg (fun d => (Spec.Ffdh.domainOf len d).p) A.dom
 
 theorem DomAt.comp1 {u : State} (A : DomAt Ex base bytes len dlen args sp D u) :
     comp u.mem args len 1 = gD len D := by
   have := A.geo.dl
-  rw [comp_g u.mem args (dlen := dlen) (by omega)]
+  rw [comp_g u.mem args (dlen := dlen) (by omega_using [this])]
   exact congrArg (fun d => (Spec.Ffdh.domainOf len d).g) A.dom
 
 theorem DomAt.comp2 {u : State} (A : DomAt Ex base bytes len dlen args sp D u) (h3 : dlen = 3 * len) :
@@ -176,7 +176,7 @@ theorem withQ_relCT :
   refine VG.RelCT.seq (aRel (F := W1 Ex base bytes len dlen args sp D) (fun _ h => h.1.1.run) withQFront_check
     fun x h => ?_) ?_
   · obtain ⟨⟨A, _, _, h15, _⟩, n2⟩ := h
-    have h3 : dlen = 3 * len := by have := A.geo.dl; omega
+    have h3 : dlen = 3 * len := by have := A.geo.dl; omega_using [n2, this]
     have G3 : DomGeo args base bytes len (3 * len) x.rd x.wr := h3 ▸ A.geo
     refine WP.mono (withQFront_ok A.run.1 G3 h15) fun u ⟨S, Gt, q11, kk⟩ => ⟨A.step S, ?_, ?_, ?_⟩
     · rw [A.comp2 h3] at Gt; exact Gt
@@ -224,7 +224,7 @@ theorem pub_facts {s t : State} (H : (Spec.Ffdh.checkDomainContract abi stack).p
   sig_pub [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argSlots, argVal, argBytes] at H
   obtain ⟨SP, L, a0, a1, a2, a3, a4⟩ := H
   refine ⟨SP, fun i hi => ?_, (List.map_inj_right (fun x y h => BitVec.eq_of_toNat_eq h)).mp L⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl
   · exact a0
   · exact a1
   · exact a2

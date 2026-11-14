@@ -16,8 +16,8 @@ open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
 
 private theorem lowByte (b : Byte) : b.setWidth 32 &&& 7 = BitVec.ofNat 32 (b.toNat % 8) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega : b.toNat < 2 ^ 32),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : b.toNat % 8 < 2 ^ 32)]
+  rw [BitVec.toNat_and, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [] : b.toNat < 2 ^ 32),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [] : b.toNat % 8 < 2 ^ 32)]
   change b.toNat &&& (2 ^ 3 - 1) = _
   exact Nat.and_two_pow_sub_one_eq_mod _ _
 
@@ -32,7 +32,7 @@ theorem residueLow_ok (s : State) (dst : BitVec 32) (n : Nat)
         Rest [.r2, .r4, .r5] s t := by
   have zero (b : Byte) : ((b.setWidth 32 &&& 7) - 3 == 0) = decide (b.toNat % 8 = 3) := by
     rw [lowByte, sub_beq_zero]
-    exact ofNat_beq_eq (by omega) (by decide)
+    exact ofNat_beq_eq (by omega_using []) (by decide)
   refine withRest_all [.r2, .r4, .r5] ?_ (by rfl) (by rfl)
   change InRegions (s.rd ++ s.wr) (State.addr (s.sp + 4#32)) 4 at readOut
   change InRegions (s.rd ++ s.wr) (State.addr (s.sp + 12#32)) 4 at readWidth

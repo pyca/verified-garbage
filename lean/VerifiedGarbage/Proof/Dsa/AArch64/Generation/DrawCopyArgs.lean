@@ -30,21 +30,21 @@ theorem drawCopyArgs_ok {s : State} {B rp op : Addr} {Z w used len drawBytes : N
   have hz := h.scr.nowrap
   have h256 := h.h256
   have hout (v : BitVec 64) : (s.mem.writeW (off B (8 * kUsed)) v).readW (off B (8 * kOut)) 64 = op :=
-    ((writeW_outside _ B v (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega)).word
-      (by decide) (by simp only [kOut, sFn]; omega)).trans ho
+    ((writeW_outside _ B v (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega_using [])).word
+      (by decide) (by simp only [kOut, sFn]; omega_using [])).trans ho
   unfold Impl.Dsa.AArch64.Generation.drawCopyArgs
   brun [h.x0, hdr_enc (show kRand < 32 by decide), hdr_enc (show kUsed < 32 by decide),
     hdr_enc (show kOut < 32 by decide), hp, hu, hout,
-    h.scr.ld (d := 8 * kRand) (by simp only [kRand, sFn]; omega),
-    h.scr.ld (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega),
-    h.scr.ld (d := 8 * kOut) (by simp only [kOut, sFn]; omega),
-    h.scr.st (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega),
-    hmax, show drawBytes - len < 4096 by omega]
+    h.scr.ld (d := 8 * kRand) (by simp only [kRand, sFn]; omega_using [h256]),
+    h.scr.ld (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega_using [h256]),
+    h.scr.ld (d := 8 * kOut) (by simp only [kOut, sFn]; omega_using [h256]),
+    h.scr.st (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega_using [h256]),
+    hmax, show drawBytes - len < 4096 by omega_using [hmax]]
   simp only [BitVec.ofNat_add_ofNat]
   have hv : (BitVec.ofNat 16 len).setWidth 64 = BitVec.ofNat 64 len := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hlen, hmax]
   simp [hv]
 
 end VG.Proof.Dsa.AArch64.Generation

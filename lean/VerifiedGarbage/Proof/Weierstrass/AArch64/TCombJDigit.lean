@@ -274,7 +274,7 @@ theorem bdigit_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
   have ml : combWin K.w k j+bcar K.w k j<2^K.w+1 := by
     have := combWin_lt K.w k j
     have := bcar_le K.w k j
-    omega
+    omega_arith
   rw [←List.append_assoc]
   refine WP.mono (bmagTail_ok K hw ml (Nat.lt_succ_of_le (bcar_le _ _ _)) (by omega_using [hbw]) d2 dr dm)
     fun t ⟨t2,kt⟩ => ?_

@@ -143,10 +143,10 @@ theorem sub_args {sp : BitVec 32} (h : entryStack ≤ sp.toNat) :
 theorem sub_kern {sp : BitVec 32} (h : entryStack ≤ sp.toNat) :
     Region.Sub (belowA (sp - BitVec.ofNat 32 8 - BitVec.ofNat 32 8) kernStack) (belowA sp entryStack) := by
   rw [belowA_eq, belowA_eq]
-  have h8 : 8 ≤ sp.toNat := by simp only [entryStack] at h; omega
+  have h8 : 8 ≤ sp.toNat := by simp only [entryStack] at h; omega_using [h]
   exact fun x hx => Argon2.Arm.stkR_inner (sp := sp) (a := 44) (k := 8) (b := entryStack) (by decide) h x
     (Argon2.Arm.stkR_inner (sp := sp - BitVec.ofNat 32 8) (a := kernStack) (k := 8) (b := 44) (by decide)
-      (by rw [FrameStack.sub_toNat' h8]; simp only [entryStack] at h; omega) x hx)
+      (by rw [FrameStack.sub_toNat' h8]; simp only [entryStack] at h; omega_using [h]) x hx)
 
 theorem sub_frames {sp : BitVec 32} (h : entryStack ≤ sp.toNat) :
     Region.Sub (Argon2.Arm.stkR sp 16) (belowA sp entryStack) := by
@@ -164,16 +164,16 @@ theorem kE_gpr {r : Reg} (hr : r ∉ linkRegs) (h4 : r ≠ .r4) (h12 : r ≠ .r1
 
 theorem kE_sp8 : 8 ≤ s.sp.toNat := by
   have hsp := hpre.stk
-  rw [hm.sp, FrameStack.sub_toNat' (by simp only [entryStack] at hsp; omega)]
-  simp only [entryStack] at hsp; omega
+  rw [hm.sp, FrameStack.sub_toNat' (by simp only [entryStack] at hsp; omega_using [hsp])]
+  simp only [entryStack] at hsp; omega_using [hsp]
 
 theorem kE_arg0 : stackArg (kE p prepared σ s) 0 = cacheV p prepared (σ.gpr .r0) := by
-  rw [Argon2.Arm.pushed_arg (by simp only [List.length_cons, List.length_nil]; have := kE_sp8 hpre hm; omega)
+  rw [Argon2.Arm.pushed_arg (by simp only [List.length_cons, List.length_nil]; have := kE_sp8 hpre hm; omega_using [this])
     (by decide)]
   exact hm.r12
 
 theorem kE_argAddr : stackArgAddr (kE p prepared σ s) 0 = (belowA (σ.sp - BitVec.ofNat 32 8) 8).base := by
-  rw [Argon2.Arm.pushed_argAddr (by simp only [List.length_cons, List.length_nil]; have := kE_sp8 hpre hm; omega),
+  rw [Argon2.Arm.pushed_argAddr (by simp only [List.length_cons, List.length_nil]; have := kE_sp8 hpre hm; omega_using [this]),
     hm.sp]
   rfl
 
@@ -185,10 +185,10 @@ theorem kE_sp : (kE p prepared σ s).sp = σ.sp - BitVec.ofNat 32 8 - BitVec.ofN
 theorem kE_mem : Frame [Argon2.Arm.stkR σ.sp 16] σ.mem (kE p prepared σ s).mem := by
   have hsp := hpre.stk
   have h8 := kE_sp8 hpre hm
-  have hσ : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hsp; omega
+  have hσ : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hsp; omega_using [hsp]
   simp only [State.withRegions_mem, State.callEntry_mem]
-  have f₁ := Argon2.Arm.pushed_stk (rs := [.r4, .lr]) (s := σ) (by simp only [List.length_cons, List.length_nil]; omega)
-  have f₂ := Argon2.Arm.pushed_stk (rs := [.r12, .lr]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega)
+  have f₁ := Argon2.Arm.pushed_stk (rs := [.r4, .lr]) (s := σ) (by simp only [List.length_cons, List.length_nil]; omega_arith)
+  have f₂ := Argon2.Arm.pushed_stk (rs := [.r12, .lr]) (s := s) (by simp only [List.length_cons, List.length_nil]; omega_using [h8])
   rw [hm.mem] at f₂
   rw [hm.sp] at f₂
   refine Frame.trans (f₁.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
@@ -209,15 +209,15 @@ theorem kE_pub : pkOf p (kE p prepared σ s) = pkOf p σ ∧ muOf (kE p prepared
   have e1 := kE_gpr hm (r := .r1) (by decide) (by decide) (by decide)
   have e2 := kE_gpr hm (r := .r2) (by decide) (by decide) (by decide)
   have keySub : Region.Sub (regA (σ.gpr .r0) p.pkLen) (regA (σ.gpr .r0) (publicKeyLen p prepared)) :=
-    Region.sub_prefix (by rw [publicKeyLen_eq]; omega)
+    Region.sub_prefix (by rw [publicKeyLen_eq]; omega_using [])
   have hl := hpre.f_p
   refine ⟨?_, ?_, ?_⟩
   · show bytesAt _ (State.addr ((kE p prepared σ s).gpr .r0)) p.pkLen = _
-    rw [e0]; exact kE_bytes hpre hm (hpre.b_p.sub_right keySub) (by rw [publicKeyLen_eq] at hl; omega)
+    rw [e0]; exact kE_bytes hpre hm (hpre.b_p.sub_right keySub) (by rw [publicKeyLen_eq] at hl; omega_using [hl])
   · show bytesAt _ (State.addr ((kE p prepared σ s).gpr .r1)) 64 = _
     rw [e1]; exact kE_bytes hpre hm hpre.b_m (by decide)
   · show bytesAt _ (State.addr ((kE p prepared σ s).gpr .r2)) p.sigLen = _
-    rw [e2]; exact kE_bytes hpre hm hpre.b_s (by have := hpre.f_s; omega)
+    rw [e2]; exact kE_bytes hpre hm hpre.b_s (by have := hpre.f_s; omega_using [this])
 
 /-- The kernel's precondition, on entry to it. -/
 theorem kE_pre (hc : 0 < p.k) : VPre p kernStack (kE p prepared σ s) := by
@@ -230,18 +230,18 @@ theorem kE_pre (hc : 0 < p.k) : VPre p kernStack (kE p prepared σ s) := by
   have esp := kE_sp hm
   have hσ : entryStack ≤ σ.sp.toNat := hpre.stk
   have keySub : Region.Sub (regA (σ.gpr .r0) p.pkLen) (regA (σ.gpr .r0) (publicKeyLen p prepared)) :=
-    Region.sub_prefix (by rw [publicKeyLen_eq]; omega)
+    Region.sub_prefix (by rw [publicKeyLen_eq]; omega_using [])
   have kS : Region.Sub (below (kE p prepared σ s) kernStack) (below σ entryStack) := by
     simp only [below]; rw [esp]; exact sub_kern hσ
   have aS : Region.Sub ⟨(belowA (σ.sp - BitVec.ofNat 32 8) 8).base, 4⟩ (below σ entryStack) :=
     fun x hx => sub_args hσ x (Region.sub_prefix (by decide) x hx)
   have espN : (σ.sp - BitVec.ofNat 32 8 - BitVec.ofNat 32 8).toNat = σ.sp.toNat - 16 := by
-    have : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hσ; omega
-    rw [FrameStack.sub_toNat' (by rw [FrameStack.sub_toNat' (by omega)]; omega), FrameStack.sub_toNat' (by omega)]
-    omega
+    have : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hσ; omega_arith
+    rw [FrameStack.sub_toNat' (by rw [FrameStack.sub_toNat' (by omega_using [this])]; omega_using [this]), FrameStack.sub_toNat' (by omega_using [this])]
+    omega_using []
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals try simp only [vPk, vMu, vSg, vScr, e0, e1, e2, e3, esp]
-  · rw [espN]; simp only [entryStack, kernStack] at hσ ⊢; omega
+  · rw [espN]; simp only [entryStack, kernStack] at hσ ⊢; omega_arith
   · rw [State.withRegions_rd]
     simp only [kRd, cacheRdV, cacheRV, eaa, ea0]
   · rw [State.withRegions_wr]; exact hpre.wr
@@ -252,11 +252,11 @@ theorem kE_pre (hc : 0 < p.k) : VPre p kernStack (kE p prepared σ s) := by
   · exact hpre.b_m.sub_left kS
   · exact hpre.b_s.sub_left kS
   · exact hpre.b_c.sub_left kS
-  · have := hpre.f_p; rw [publicKeyLen_eq] at this; omega
+  · have := hpre.f_p; rw [publicKeyLen_eq] at this; omega_using [this]
   · exact hpre.f_m
   · exact hpre.f_s
   · exact hpre.f_c
-  · rw [espN]; have := σ.sp.isLt; omega
+  · rw [espN]; have := σ.sp.isLt; omega_using []
   · rw [eaa]; exact hpre.b_c.sub_left aS
   · intro hne
     rw [ea0] at hne ⊢
@@ -266,14 +266,14 @@ theorem kE_pre (hc : 0 < p.k) : VPre p kernStack (kE p prepared σ s) := by
     have hk : publicKeyLen p true = p.pkLen + 1024 * p.k := by rw [publicKeyLen_eq]; rfl
     rw [hk] at hl
     have ec : State.addr (σ.gpr .r0 + BitVec.ofNat 32 p.pkLen) =
-        State.addr (σ.gpr .r0) + BitVec.ofNat 64 p.pkLen := addr_add (by omega)
+        State.addr (σ.gpr .r0) + BitVec.ofNat 64 p.pkLen := addr_add (by omega_using [hc, hl])
     have cS : Region.Sub ⟨State.addr (σ.gpr .r0 + BitVec.ofNat 32 p.pkLen), 1024 * p.k⟩
         (regA (σ.gpr .r0) (publicKeyLen p true)) := by rw [ec]; exact Offset.sub_base _ (by rw [hk])
     simp only [cacheRV, ea0, cacheV, ite_true]
     refine ⟨hpre.d_pc.sub_left cS, (hpre.b_p.sub_left kS).sub_right cS, ?_, fun i hi => ?_⟩
-    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.pkLen) (by omega),
-        Nat.mod_eq_of_lt (by omega)]
-      omega
+    · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := p.pkLen) (by omega_using [hc, hl]),
+        Nat.mod_eq_of_lt (by omega_using [hc, hl])]
+      omega_using [hl]
     · have hb : bytesAt (kE p true σ s).mem (State.addr (σ.gpr .r0)) (preparedPublicKeyBytes p) =
           bytesAt σ.mem (State.addr (σ.gpr .r0)) (preparedPublicKeyBytes p) :=
         kE_bytes hpre hm hpre.b_p (by have : publicKeyLen p true = preparedPublicKeyBytes p := rfl; omega)
@@ -294,7 +294,7 @@ theorem kE_covers (hc : 0 < p.k) : Covers (kRd p prepared σ ++ σ.wr) ((pushed 
   simp only [pushed_rd, pushed_wr, hm.rd, hm.wr, hm.sp, hrd]
   simp only [kRd, List.cons_append, List.mem_cons, List.mem_append] at hr
   rcases hr with rfl | rfl | rfl | rfl | hr | hr
-  · exact ⟨regA (σ.gpr .r0) (publicKeyLen p prepared), by simp, within_base _ (by rw [publicKeyLen_eq]; omega)⟩
+  · exact ⟨regA (σ.gpr .r0) (publicKeyLen p prepared), by simp, within_base _ (by rw [publicKeyLen_eq]; omega_using [])⟩
   · exact ⟨_, by simp, within_self _⟩
   · exact ⟨_, by simp, within_self _⟩
   · refine ⟨⟨State.addr (σ.sp - BitVec.ofNat 32 8 - BitVec.ofNat 32 8), 8⟩, by simp, ?_⟩
@@ -309,7 +309,7 @@ theorem kE_covers (hc : 0 < p.k) : Covers (kRd p prepared σ ++ σ.wr) ((pushed 
       refine ⟨regA (σ.gpr .r0) (publicKeyLen p true), by simp, ?_⟩
       rw [hk] at n1
       have ec : State.addr (σ.gpr .r0 + BitVec.ofNat 32 p.pkLen) =
-          State.addr (σ.gpr .r0) + BitVec.ofNat 64 p.pkLen := addr_add (by omega)
+          State.addr (σ.gpr .r0) + BitVec.ofNat 64 p.pkLen := addr_add (by omega_using [hc, n1])
       rw [hr, ec]; exact within_off _ (by rw [hk])
   · exact ⟨r, by simp [hr], within_self _⟩
 
@@ -328,17 +328,17 @@ theorem r4_kept {p : Params} {prepared : Bool} {σ s s₃ : State} (hpre : VE p 
     (hm : Mid p prepared σ s) (hf : Frame (σ.wr ++ [Argon2.Arm.stkR s.sp 44]) s.mem s₃.mem) :
     s₃.mem.readW (State.addr (σ.sp - BitVec.ofNat 32 8)) 32 = σ.gpr .r4 := by
   have hsp := hpre.stk
-  have h16 : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hsp; omega
-  have h8 : 8 ≤ σ.sp.toNat := by omega
+  have h16 : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hsp; omega_using [hsp]
+  have h8 : 8 ≤ σ.sp.toNat := by omega_using [h16]
   have hsub : Region.Sub ⟨State.addr (σ.sp - BitVec.ofNat 32 8), 4⟩ (below σ entryStack) := by
     refine fun x hx => (Argon2.Arm.stkR_sub (a := 8) (b := entryStack) (by decide) hsp) x ?_
     rw [FrameStack.addr_sub' h8] at hx
-    have := Offset.sub_base (State.addr σ.sp - BitVec.ofNat 64 8) (d := 0) (n := 4) (k := 8) (by omega) x
+    have := Offset.sub_base (State.addr σ.sp - BitVec.ofNat 64 8) (d := 0) (n := 4) (k := 8) (by omega_using []) x
       (by simpa using hx)
     exact this
   rw [hf.readW (Region.contains_self _ _) ?_ (by decide), hm.mem]
   · have := Argon2.Arm.storeWords_readW σ.mem (σ.sp - BitVec.ofNat 32 8) [σ.gpr .r4, σ.gpr .lr]
-      (by rw [FrameStack.sub_toNat' h8]; have := σ.sp.isLt; simp; omega) (i := 0) (by simp)
+      (by rw [FrameStack.sub_toNat' h8]; have := σ.sp.isLt; simp; omega_using []) (i := 0) (by simp)
     simpa [pushed] using this
   · intro r hr
     rcases List.mem_append.mp hr with hr | hr
@@ -349,7 +349,7 @@ theorem r4_kept {p : Params} {prepared : Bool} {σ s s₃ : State} (hpre : VE p 
       rw [hm.sp]
       show Region.Disjoint ⟨State.addr (σ.sp - BitVec.ofNat 32 8), 4⟩
         ⟨State.addr (σ.sp - BitVec.ofNat 32 8) - BitVec.ofNat 64 44, 44⟩
-      exact Offset.base_disjoint_below (State.addr (σ.sp - BitVec.ofNat 32 8)) (n := 44) (k := 4) (by omega)
+      exact Offset.base_disjoint_below (State.addr (σ.sp - BitVec.ofNat 32 8)) (n := 44) (k := 4) (by omega_using [])
 
 theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
     (hpre : (verifyE p prepared entryStack).pre σ) :
@@ -357,19 +357,19 @@ theorem entry_correct {p : Params} (h3 : Ok3 p) (prepared : Bool) (σ : State)
       (verifyE p prepared entryStack).post σ s' := by
   have hpre' : VE p prepared entryStack σ := hpre
   have hσ := hpre'.stk
-  have h16 : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hσ; omega
+  have h16 : 16 ≤ σ.sp.toNat := by simp only [entryStack] at hσ; omega_arith
   have hF := vfacts h3
-  have hc : 0 < p.k := by have := hF.k; omega
+  have hc : 0 < p.k := by have := hF.k; omega_using [this]
   unfold verifyEntry
   refine (WP.frame (rs := [.r4, .lr]) (r := .r4) (by decide)
-    (by simp only [List.length_cons, List.length_nil]; omega) (by decide) ?_).elim
+    (by simp only [List.length_cons, List.length_nil]; omega_using [h16]) (by decide) ?_).elim
     fun t ⟨s', he, hq⟩ => ⟨t, s', he, hq⟩
   refine WP.seq (WP.mono (blockA_ok p prepared σ) fun s₁ hm => ?_)
   have cov := kE_covers hpre' hm hc
   refine WP.seq (Argon2.Arm.frameCall_ok (rs := [.r12, .lr]) (t := .r12) (by decide) (by decide) (by decide)
     (withCache_correct prims_ok hF (STK := kernStack) (by decide)) (K := 44) (by
-      have := withCache_stack h3; simp only [List.length_cons, List.length_nil, kernStack] at this ⊢; omega)
-    (by rw [hm.sp, FrameStack.sub_toNat' (by omega)]; simp only [entryStack] at hσ; omega)
+      have := withCache_stack h3; simp only [List.length_cons, List.length_nil, kernStack] at this ⊢; omega_using [this])
+    (by rw [hm.sp, FrameStack.sub_toNat' (by omega_using [h16])]; simp only [entryStack] at hσ; omega_arith)
     (kE_pre hpre' hm hc) cov.1 cov.2 fun s₂ hA hpost => ?_)
   refine VG.Proof.MdStream.Arm.wp_mov (VG.Proof.MdStream.Arm.op2_reg _ _) fun σ₄ u₄ => WP.block_nil ?_
   have r4' : σ₄.gpr .lr = σ.gpr .lr := by rw [u₄.gpr, hA.cs .r4 (by decide) (by decide), hm.r4]
@@ -412,7 +412,7 @@ theorem entry_ct {p : Params} (h3 : Ok3 p) (prepared : Bool) :
     ConstantTime isa (verifyE p prepared entryStack).pre (verifyE p prepared entryStack).pub
       (verifyEntry prims p prepared) := by
   have hF := vfacts h3
-  have hc : 0 < p.k := by have := hF.k; omega
+  have hc : 0 < p.k := by have := hF.k; omega_using [this]
   unfold verifyEntry
   refine RelCT.constantTime (RelCT.frame (fun s₁ s₂ h => h.2.2.1) ?_)
   refine RelCT.mono (P := fun a b => ∃ q : State × State, ((verifyE p prepared entryStack).pre q.1 ∧

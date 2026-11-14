@@ -53,9 +53,9 @@ theorem args_out {t : State} (h : Pre (H := H.st) sc t) {s : State} (hsp : s.gpr
   rw [e, hwr, h.wr]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_i h.a_i
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_p h.a_p
-  · exact Taint.frame_disjoint (by have := h.spf; omega) h.r_s h.a_s
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_i h.a_i
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_p h.a_p
+  · exact Taint.frame_disjoint (by have := h.spf; omega_using [this]) h.r_s h.a_s
 
 include hq in
 theorem kr_agree {s s' : State} (h : KR (H := H.st) sc s₀ s) (h' : KR (H := H.st) sc s₀' s') :
@@ -133,7 +133,7 @@ theorem ct : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') H.hmacFin fun _ _ =
       (fun _ ⟨k, si⟩ => WP.mono (mid_ok hO hp k si) fun _ h => ⟨h.1, h.2.1⟩)
       (fun _ ⟨k, si⟩ => WP.mono (mid_ok hO hp' k si) fun _ h => ⟨h.1, h.2.1⟩)
   -- The compression.
-  have hB : 0 < H.B := by have := hO.sizes.B4; omega
+  have hB : 0 < H.B := by have := hO.sizes.B4; omega_using [this]
   have cm : RelCT isa (fun s s' => (KR (H := H.st) sc s₀ s ∧ s.gpr .eax = inn s₀ + BitVec.ofNat 32 H.N) ∧
         (KR (H := H.st) sc s₀' s' ∧ s'.gpr .eax = inn s₀' + BitVec.ofNat 32 H.N)) H.cmp
       fun s s' => KR (H := H.st) sc s₀ s ∧ KR (H := H.st) sc s₀' s' :=

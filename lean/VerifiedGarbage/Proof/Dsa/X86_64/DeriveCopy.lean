@@ -21,16 +21,16 @@ open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 theorem child_of_outside {mem mem' : Mem} {B : Addr} {o wx m d k : Nat} {minv : BitVec 64}
     (child : ChildReady mem B o wx m minv) (hf : Outside B d k mem mem')
     (hd : o + slot wx 8 ≤ d) (hbound : o + slot wx 8 ≤ 2 ^ 64) : ChildReady mem' B o wx m minv := by
-  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hslot : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have hN := slot_le (w := wx) (show aN < 8 by decide)
   have he : ∀ e, e + 8 ≤ slot wx 8 → word mem' (off B o) e = word mem (off B o) e := by
     intro e he
     rw [word_off, word_off]
-    exact hf.word (Or.inl (by omega)) (by omega)
-  refine ⟨child.header.of_words (fun i hi => he _ (by omega)), ?_, ?_⟩
-  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => he _ (by omega))]
+    exact hf.word (Or.inl (by omega_using [hd, he])) (by omega_using [hbound, he])
+  refine ⟨child.header.of_words (fun i hi => he _ (by omega_using [hslot, hi])), ?_, ?_⟩
+  · rw [wv_congr (m := mem) (m' := mem') (fun i hi => he _ (by omega_using [hN, hi]))]
     exact child.modulus
-  · rw [he _ (by omega)]
+  · rw [he _ (by omega_using [hN])]
     exact child.inverse
 
 /-- Writes at or above the workspaces' end keep a ready state ready. -/
@@ -42,22 +42,22 @@ theorem Ready.of_outside {L : ExecutionLayout} {s t : State} {d k : Nat} (h : Re
   change qWorkspace + slot L.qWords 8 + tabBytes L.qWords ≤ activeBytes at hqHi
   have hqa : qWorkspace ≤ activeBytes := by decide
   have he : ∀ i < 32, word t.mem L.base (8 * i) = word s.mem L.base (8 * i) := fun i hi =>
-    hf.word (Or.inl (by have : 256 ≤ activeBytes := (by decide); omega)) (by omega)
+    hf.word (Or.inl (by have : 256 ≤ activeBytes := (by decide); omega_using [hd, hi, this])) (by omega_using [hi])
   have hg := h.parent
   refine ⟨⟨hg.scr.congr hwr, hdi, ⟨(he _ (by decide)).trans hg.hdr.hw, (he _ (by decide)).trans hg.hdr.hminv,
-      fun j hj => (he _ (by unfold sArr; omega)).trans (hg.hdr.harr j hj)⟩⟩,
-    h.scratch.congr hwr, ?_, child_of_outside h.pChild hf (by omega) (by have : activeBytes < 2 ^ 64 := (by decide); omega),
-    child_of_outside h.qChild hf (by omega) (by have : activeBytes < 2 ^ 64 := (by decide); omega)⟩
+      fun j hj => (he _ (by unfold sArr; omega_using [hj])).trans (hg.hdr.harr j hj)⟩⟩,
+    h.scratch.congr hwr, ?_, child_of_outside h.pChild hf (by omega_using [hd, hpHi, hqHi]) (by have : activeBytes < 2 ^ 64 := (by decide); omega_using [hpHi, hqHi, this]),
+    child_of_outside h.qChild hf (by omega_using [hd, hqHi]) (by have : activeBytes < 2 ^ 64 := (by decide); omega_using [hqHi, this])⟩
   intro f hm
   exact (hf.word (Or.inl (Nat.le_trans (VG.Proof.Dsa.field_bounds f).2 (by
     have : 368 ≤ activeBytes := (by decide)
-    omega))) (Nat.le_trans (VG.Proof.Dsa.field_bounds f).2 (by decide))).trans (h.fields f hm)
+    omega_using [hd, hpHi, hqHi]))) (Nat.le_trans (VG.Proof.Dsa.field_bounds f).2 (by decide))).trans (h.fields f hm)
 
 theorem minusOne_mask : BitVec.signExtend 64 (-1 : BitVec 32) = mask true := by decide
 
 theorem scr_byte_rd {s : State} {B : Addr} {Z d : Nat} (hs : Scr s B Z) (hd : d < Z) :
     InRegions (s.rd ++ s.wr) (off B d) 1 :=
-  let ⟨r, hr, hc⟩ := hs.region (d := d) (n := 1) (by omega) (by decide)
+  let ⟨r, hr, hc⟩ := hs.region (d := d) (n := 1) (by omega_using [hd]) (by decide)
   ⟨r, List.mem_append_right _ hr, hc⟩
 
 theorem off_add (B : Addr) (d i : Nat) : off B d + BitVec.ofNat 64 i = off B (d + i) := by

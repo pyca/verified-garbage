@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # SM4's rounds as the implementations run them
@@ -49,8 +50,8 @@ theorem round4_eq (K : Nat → Word) (m : Nat) (x : Nat → Word) :
   simp
 
 theorem range_four (n : Nat) : List.range (4 * (n + 1)) = List.range (4 * n) ++ [4 * n, 4 * n + 1, 4 * n + 2, 4 * n + 3] := by
-  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega, List.range_succ, show 4 * n + 3 = 4 * n + 2 + 1 by omega,
-    List.range_succ, show 4 * n + 2 = 4 * n + 1 + 1 by omega, List.range_succ, List.range_succ]
+  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega_using [], List.range_succ, show 4 * n + 3 = 4 * n + 2 + 1 by omega_using [],
+    List.range_succ, show 4 * n + 2 = 4 * n + 1 + 1 by omega_using [], List.range_succ, List.range_succ]
   simp
 
 theorem foldl_rounds (K : Nat → Word) (x : Nat → Word) (n : Nat) :
@@ -111,7 +112,7 @@ theorem foldl_ek (key : Block) (n : Nat) (hn : n ≤ 8) :
   induction n with
   | zero => exact ⟨rfl, fun i h => by simp⟩
   | succ n ih =>
-    obtain ⟨h1, h2⟩ := ih (by omega)
+    obtain ⟨h1, h2⟩ := ih (by omega_using [hn])
     rw [range_four, List.foldl_append]
     generalize hB : (List.range (4 * n)).foldl ekStep (tup (keyInit key), Vector.replicate 32 0) = B at h1 h2
     simp only [List.foldl_cons, List.foldl_nil]
@@ -126,25 +127,25 @@ theorem foldl_ek (key : Block) (n : Nat) (hn : n ≤ 8) :
       simp only [Prod.mk.injEq] at hk
       obtain ⟨k0, k1, k2, k3⟩ := hk
       have hr : ∀ r < 4, rkOf key (4 * n + r) = quads .key ck (n + 1) (keyInit key) r := fun r hr => by
-        simp only [rkOf, show (4 * n + r) / 4 + 1 = n + 1 by omega, show (4 * n + r) % 4 = r by omega]
-      have l3 : 4 * n + 3 < 4 * (n + 1) := by omega
-      have l2 : 4 * n + 2 < 4 * (n + 1) := by omega
-      have l1 : 4 * n + 1 < 4 * (n + 1) := by omega
-      have l0 : 4 * n < 4 * (n + 1) := by omega
-      have r0 := hr 0 (by omega)
+        simp only [rkOf, show (4 * n + r) / 4 + 1 = n + 1 by omega_using [hr], show (4 * n + r) % 4 = r by omega_using [hr]]
+      have l3 : 4 * n + 3 < 4 * (n + 1) := by omega_using []
+      have l2 : 4 * n + 2 < 4 * (n + 1) := by omega_using []
+      have l1 : 4 * n + 1 < 4 * (n + 1) := by omega_using []
+      have l0 : 4 * n < 4 * (n + 1) := by omega_using []
+      have r0 := hr 0 (by omega_using [])
       simp only [Nat.add_zero] at r0
       by_cases h3 : 4 * n + 3 = i
-      · subst h3; simp only [↓reduceIte, l3, hr 3 (by omega), ← k3]
+      · subst h3; simp only [↓reduceIte, l3, hr 3 (by omega_using []), ← k3]
       by_cases h2' : 4 * n + 2 = i
-      · subst h2'; simp only [h3, ↓reduceIte, l2, hr 2 (by omega), ← k2]
+      · subst h2'; simp only [h3, ↓reduceIte, l2, hr 2 (by omega_using []), ← k2]
       by_cases h1' : 4 * n + 1 = i
-      · subst h1'; simp only [h3, h2', ↓reduceIte, l1, hr 1 (by omega), ← k1]
+      · subst h1'; simp only [h3, h2', ↓reduceIte, l1, hr 1 (by omega_using []), ← k1]
       by_cases h0 : 4 * n = i
       · subst h0; simp only [h3, h2', h1', ↓reduceIte, l0, r0, ← k0]
       · simp only [h3, h2', h1', h0, ↓reduceIte]
         by_cases hi : i < 4 * n
-        · simp only [hi, ↓reduceIte, show i < 4 * (n + 1) by omega]
-        · simp only [hi, ↓reduceIte, show ¬ i < 4 * (n + 1) by omega]
+        · simp only [hi, ↓reduceIte, show i < 4 * (n + 1) by omega_using [hi]]
+        · simp only [hi, ↓reduceIte, show ¬ i < 4 * (n + 1) by omega_using [h3, h2', h1', h0, hi]]
 
 theorem expandKey_eq (key : Block) : expandKey key = Vector.ofFn fun i => rkOf key i.val := by
   have h := (foldl_ek key 8 (by decide)).2

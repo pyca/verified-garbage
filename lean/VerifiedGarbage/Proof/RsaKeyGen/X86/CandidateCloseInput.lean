@@ -20,7 +20,7 @@ theorem MemoryFacts.other_choice {E : Environment} (v : E.Valid) {eBytes pBytes 
   have pLength : pBytes.length = E.otherLength := by rw [← M.otherBytes]; exact VG.Proof.Bignum.bytesAt_length _ _ _
   have lengthBound : E.otherLength < 2 ^ 32 := by
     have prime := v.length; unfold Spec.RsaKeyGen.primeLenValid at prime
-    have := v.otherLength; omega
+    have := v.otherLength; omega_using [prime, this]
   by_cases empty : E.otherLength = 0
   · have pEmpty : pBytes = [] := List.length_eq_zero_iff.mp (by rw [pLength, empty])
     rw [empty, pEmpty]

@@ -48,8 +48,8 @@ theorem shapeOdd_ct : RelCT isa (Two ShapeMasked) (.block oddCheck)
     (Two (fun (p : ShapePublic) s => BasePublic p.base s)) := by
   refine two_post (two_map (fun p => p) (fun _ _ h => h.1) oddCheck_ct) ?_
   intro p s ⟨h, valid, hm⟩
-  have hp : p.pBytes.length - 1 < p.pBytes.length := by have := p.pPositive; omega
-  have hq : p.qBytes.length - 1 < p.qBytes.length := by have := p.qPositive; omega
+  have hp : p.pBytes.length - 1 < p.pBytes.length := by have := p.pPositive; omega_using [this]
+  have hq : p.qBytes.length - 1 < p.qBytes.length := by have := p.qPositive; omega_using [this]
   exact WP.mono (oddCheck_ok h.scr h.x0 p.extentBound h.pPointer h.qPointer h.pLength h.qLength
     p.pPositive p.pBound p.qPositive p.qBound (h.pSource.rd _ hp) (h.qSource.rd _ hq)
     (h.pSource.val _ hp) (h.qSource.val _ hq) hm)

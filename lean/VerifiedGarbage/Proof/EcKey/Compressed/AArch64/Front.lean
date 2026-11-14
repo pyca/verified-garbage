@@ -69,9 +69,9 @@ theorem front_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Pre c s₀)
         InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x1 + 1 + BitVec.ofNat 64 e) 8 := by
       intro e he
       rw [BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
-      exact ⟨_, hp.pk, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨_, hp.pk, Offset.contains_base _ (by omega_using [he]) (by omega_using [h7, this, he])⟩
     have hd : Region.Disjoint ⟨s₀.gpr .x1 + 1, c.C.len⟩ ⟨s₀.gpr .x2, size⟩ :=
-      hp.disjoint.sub_left (Offset.sub_base _ (d := 1) (by omega))
+      hp.disjoint.sub_left (Offset.sub_base _ (d := 1) (by omega_using []))
     exact ⟨by rw [k₁.wr, r8]; exact hp.ws,
       by rw [rcx, rw₁]; exact hin, by rw [rsi, rw₁]; exact hin,
       by rw [rdx, rw₁]; exact hin, by rw [rsi, r8]; exact hd,
@@ -95,9 +95,9 @@ theorem front_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Pre c s₀)
     sv_unch U₃ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
   have x₃ := (e₃ (i := E) (by decide) (by decide) (by decide)).trans x₂
   have y₃' : sv c (s₀.gpr .x2) s₃ QY = keyY c s₀ := by
-    rw [y₃, bytesAt_keep W₂ (hp.disjoint.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [y₃, bytesAt_keep W₂ (hp.disjoint.sub_left (Offset.sub_base _ (by omega_using []))) (by omega_using [hsz]) (by omega_using [h7, this])]
   have lead₂ : s₂.mem (s₀.gpr .x1) = s₀.mem (s₀.gpr .x1) := by
-    have e := keep_of_disjoint' W₂ hp.disjoint (by omega) (i := 0) (by omega) (by omega)
+    have e := keep_of_disjoint' W₂ hp.disjoint (by omega_using [hsz]) (i := 0) (by omega_using []) (by omega_using [h7, this])
     simpa only [BitVec.add_zero] using e
   have flag₃ : word s₃.mem (s₀.gpr .x2) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .x1) = 4) := by
     rw [f₃, S.flag, BitVec.allOnes_and, lead₂]

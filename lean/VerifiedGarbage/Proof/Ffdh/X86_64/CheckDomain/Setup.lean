@@ -49,15 +49,15 @@ theorem setup_work {p : CdP} {s : State} (h : Base p s) (hd : s.gpr .rdi = p.B)
   change Frm p.B (setupR p.w) s.mem t.mem at hf
   have hw := room_k hk hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hw
-  have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega
+  have h256 : 256 ≤ inner p.w := by simp only [inner, slot, hdrBytes]; omega_using []
   have hh : ∀ i < 32, i ≠ sW → i ≠ sWs → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
       word t.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi h1 h2 h3 =>
     hf.word_eq (fun r hr => by
       simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega) (by omega)
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega_arith) (by omega_using [hi])
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [setupR, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega)
+    rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega_arith)
   have hb : Base p t := h.keep hi k (by
     intro e he
     simp only [CdP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
@@ -67,6 +67,6 @@ theorem setup_work {p : CdP} {s : State} (h : Base p s) (hd : s.gpr .rdi = p.B)
   · rw [hh _ (by decide) (by decide) (by decide) (by decide)]; exact hG
   · rw [hh _ (by decide) (by decide) (by decide) (by decide)]; exact hQ
   · intro i hi
-    exact hh i (by omega) (by unfold sW; omega) (by unfold sWs sFn; omega) (by unfold sArr; omega)
+    exact hh i (by omega_using [hi]) (by unfold sW; omega_using [hi]) (by unfold sWs sFn; omega_using [hi]) (by unfold sArr; omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.CheckDomain

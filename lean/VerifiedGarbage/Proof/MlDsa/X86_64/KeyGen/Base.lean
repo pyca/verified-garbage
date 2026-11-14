@@ -88,7 +88,7 @@ theorem WP.callMx {n : String} {c : Prog isa} {k : Contract isa}
         k.post (s.callEntry.withRegions rd wr) s₂) → Q s') :
     WP isa (.call n c) s Q := by
   obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
-  have hf := Exec.frameSp he hsp (by omega)
+  have hf := Exec.frameSp he hsp (by omega_using [hd])
   simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_rsp] at hf
   have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
@@ -116,14 +116,14 @@ theorem WP.callMx {n : String} {c : Prog isa} {k : Contract isa}
         State.callEntry_gpr _ h]
   · have f₀ : Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.mem s.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_call _ (by omega) (by omega))
+        (below_call _ (by omega_using []) (by omega_using [hd]))
     have f₁ : Frame (wr ++ [below (s.gpr .rsp) (8 * (c.depth + 1))]) s.callEntry.mem s₁.mem :=
       Frame.sub hf fun r hr => by
         rcases List.mem_append.mp hr with hr | hr
         · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
         · simp only [List.mem_singleton] at hr; subst hr
           refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-          rw [show 8 * (c.depth + 1) = 8 * c.depth + 8 by omega]
+          rw [show 8 * (c.depth + 1) = 8 * c.depth + 8 by omega_using []]
           exact below_callee _ _
     exact Frame.trans f₀ f₁
 
@@ -141,11 +141,11 @@ theorem glueCallMx_ok {glue : List Instr} {n : String} {c : Prog isa} {k : Contr
         (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post (s1.callEntry.withRegions rd wr) s₂ := by
   refine WP.seq (WP.mono (WP.mx (c := .block glue) (by simpa [instrs] using hgl) hg)
     fun s1 ⟨⟨⟨hV, hm⟩, k1⟩, hx1⟩ => ?_)
-  refine WP.callMx hv hsp (by omega) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
+  refine WP.callMx hv hsp (by omega_using [hd]) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
     (by rw [k1.2.2]; exact hw) fun s' hrd hwr hcs hf hx hpost => ⟨⟨hrd.trans k1.2.1, hwr.trans k1.2.2,
       fun r hr => by rw [hcs r hr, k1.gpr (argRegs_cs r hr)], ?_⟩, hx.trans hx1, s1, hV, hm, k1, hpost⟩
   have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
   rw [hm, hsp1] at hf
-  exact Frame.below_mono hf (by omega) (by omega)
+  exact Frame.below_mono hf (by omega_using [hd]) (by omega_using [])
 
 end VG.Proof.MlDsa.X86_64.KeyGen

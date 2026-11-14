@@ -108,7 +108,7 @@ theorem reduce_ok (M : Mont) {s : State} {B p : Addr} {Z o w wx m : Nat}
       wv t.mem (off B o) (slot wx aY) wx = Spec.Dsa.decodeBE bytes % m ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Arithmetic.reduce seqs
-  refine WP.seq (WP.mono (reduceSetup_ok M hc hw hw48 (by omega) hodd hn hinv)
+  refine WP.seq (WP.mono (reduceSetup_ok M hc hw hw48 (by omega_using [hm]) hodd hn hinv)
     fun u ⟨hcu, hmu, hur, huy, hux, hfu, hku⟩ => ?_)
   refine WP.seq (WP.mono (reduceInit_ok hcu hmu hsp hsl
     ((work_parent hc hfu hsp).trans hp) ((work_parent hc hfu hsl).trans hl) hlen)
@@ -120,7 +120,7 @@ theorem reduce_ok (M : Mont) {s : State} {B p : Addr} {Z o w wx m : Nat}
   have hv : ReduceState v B Z o w wx m minv p bytes 0 :=
     ⟨hcv, hmv, (harr aXm (by decide)).trans hur,
       fun i hi _ => (wv_eq_zero_iff _ _ _ _).mp hvx i hi,
-      hvy, by omega, hvp, hvl, work_source hc hf hk hs⟩
+      hvy, by omega_using [hm], hvp, hvl, work_source hc hf hk hs⟩
   by_cases he : bytes.length = 0
   · refine WP.ite true ?_ (fun _ => WP.block_nil ?_) (fun h => Bool.noConfusion h)
     · change some (v.gpr .x3 == (0#64)) = some true
@@ -140,7 +140,7 @@ theorem reduce_ok (M : Mont) {s : State} {B p : Addr} {Z o w wx m : Nat}
         exact he val
       simp [hnz]
 
-    · refine WP.mono (reduceLoop_ok M hv hw (by omega) hm hodd (by omega) hlen)
+    · refine WP.mono (reduceLoop_ok M hv hw (by omega_using [hw48]) hm hodd (by omega_using [he]) hlen)
         fun t ⟨hct, hmt, htval, hft, hkt⟩ => ?_
       rw [VG.Proof.Dsa.reduceBytes_eq] at htval
       exact ⟨hct, hmt, htval, hf.trans hft, (hk.trans hkt).mono (by decide)⟩

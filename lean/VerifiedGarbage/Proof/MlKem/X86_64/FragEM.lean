@@ -72,7 +72,7 @@ theorem ce_matAt (st : State) {p : Addr} {k : Nat} (h : (below (st.gpr .rsp) 32)
   have hi := List.mem_range.mp hi
   have hj := List.mem_range.mp hj
   have e : k * i + j < k * k := by
-    have := Nat.mul_le_mul_left k (show i + 1 ≤ k by omega); rw [Nat.mul_succ] at this; omega
+    have := Nat.mul_le_mul_left k (show i + 1 ≤ k by omega_using [hi]); rw [Nat.mul_succ] at this; omega_using [hj, this]
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, ← Nat.mul_add]
   exact ce_polyAt st (h.sub_right (DecMul.sub_v p e))
 

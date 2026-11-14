@@ -80,7 +80,7 @@ theorem words_f {K : Nat} {s : State} {m : Mem} (hf : Frame [⟨fb s, frameBytes
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => hf.readW (r := ⟨p, n * 8⟩) ?_ (fun r hr => ?_) (by decide)
   · have := List.mem_range.mp hi
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_using [this]) (by omega_using [hl, this])
   · rw [List.mem_singleton.mp hr]; exact (hk.sub_left (frame_sub0 K s)).symm
 
 /-! ## The precomputed public operation -/
@@ -104,12 +104,12 @@ theorem call_ct (c : PdChecked) {tsH tsG : List FnTable} {K : Nat} (hcK : c.stac
     · rw [c₁.x5, c₂.x5, e .x3 (by decide)]
     · rw [c₁.x6, c₂.x6, e .x6 (by decide)]
     · rw [c₁.x7, c₂.x7, e .x1 (by decide)]
-  · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
     · rw [c₁.a0, c₂.a0, h₁.scr, h₂.scr]
     · rw [c₁.a1, c₂.a1, g 3 (by decide) (by decide)]
   · rw [c₁.x2, c₁.x3, c₂.x2, c₂.x3, words_f c₁.mem h₁.1.kP h₁.1.wP, words_f c₂.mem h₂.1.kP h₂.1.wP, h₁.2.w, h₂.2.w]
-  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_f c₁.mem h₁.1.ke (by have := h₁.1.we; omega),
-      bytes_f c₂.mem h₂.1.ke (by have := h₂.1.we; omega), h₁.2.be, h₂.2.be]
+  · rw [c₁.x4, c₁.x5, c₂.x4, c₂.x5, bytes_f c₁.mem h₁.1.ke (by have := h₁.1.we; omega_using []),
+      bytes_f c₂.mem h₂.1.ke (by have := h₂.1.we; omega_using []), h₁.2.be, h₂.2.be]
 
 /-- An entry state with the anchor's public data, whose tables name the
 functions `T` (and hash functions `Hs`, `Gs`) at the anchor's addresses,
@@ -161,7 +161,7 @@ theorem chk_ct :
     · simp only [State.withRegions_gpr]
       rw [callEntry_gpr (by decide), callEntry_gpr (by decide), j₁.x5, j₂.x5, h₁.1.any, h₂.1.any]
     · show stackArg t₂ j = stackArg t₁ j
-      rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+      rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
       · rw [j₁.a0, j₂.a0, h₁.1.2.args 6 (by decide) (by decide), h₂.1.2.args 6 (by decide) (by decide)]
       · rw [j₁.a1, j₂.a1, h₁.1.2.args 7 (by decide) (by decide), h₂.1.2.args 7 (by decide) (by decide)]
     · show t₂.syms n = t₁.syms n
@@ -258,7 +258,7 @@ theorem code_ct : RelCT isa (Two (ES f g tsH tsG K i T Hs Gs)) (verifyC f g c.na
   refine RelCT.seq (byIdx_ct (Q := Two fun a t => ∃ s, ES f g tsH tsG K i T Hs Gs a s ∧ AfterChkC Hs Gs K s t)
     (fun _ => i) (fun a t t' ⟨s, h, z, j, y⟩ o sy => ⟨s, h, z, j.only9 o, sy.trans y⟩)
     (fun a t ⟨s, h, z, j, y⟩ => ⟨h.2.1.mem, j.x27.trans h.2.1.idx, rfl⟩)
-    (fun j hj => by unfold idxs at hj; simp at hj; omega) (fun j hj => ?_) (fun j hj => ?_)) ?_
+    (fun j hj => by unfold idxs at hj; simp at hj; omega_using [hj]) (fun j hj => ?_) (fun j hj => ?_)) ?_
   · unfold idxs at hj
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>

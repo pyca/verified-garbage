@@ -26,6 +26,8 @@ namespace VG.Proof.RsaPkcs1Sig.RISCV64.Sign
 open VG VG.RISCV64 VG.Impl.RsaPkcs1Sig.RISCV64.Sign
 open VG.Proof.RsaPkcs1Sig.RISCV64 (EPre EPost EOut encodeId encode_ok)
 
+variable {pc : Bool}
+
 /-- `out`, `n`, `k`, `e` and `e_len`, which `s1`–`s5` keep. -/
 abbrev SMid (S : List Region) (s t : State) : Prop :=
   Mid S s (s.gpr .a0) (s.gpr .a2) (s.gpr .a3) (s.gpr .a4) (s.gpr .a5) t
@@ -42,12 +44,12 @@ abbrev encOut (s : State) : Option (List Byte) := encodeId (hid s) (hashOf s) (s
 /-- `EM`, in the frame. -/
 abbrev emR (s : State) : Region := ⟨fb s + BitVec.ofNat 64 oEM, (s.gpr .a3).toNat⟩
 
-theorem em_sub {s : State} (h : SPre s) : Region.Sub (emR s) (kR s) :=
-  frame_sub s (by have := h.k2; unfold oEM frameBytes; omega)
+theorem em_sub {s : State} (h : SPre pc s) : Region.Sub (emR s) (kR s) :=
+  frame_sub s (by have := h.k2; unfold oEM frameBytes; omega_using [this])
 
 theorem zext_toNat (x : BitVec 64) : (x <<< 32 >>> 32).toNat = (x.setWidth 32).toNat := by
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth]
-  omega
+  omega_using []
 
 /-- At `encode`. -/
 structure AtEnc (s t : State) : Prop extends SMid [] s t where
@@ -59,25 +61,25 @@ structure AtEnc (s t : State) : Prop extends SMid [] s t where
   t6 : t.gpr .t6 = stackArgAddr s 0
 
 /-- Our stack argument `j`, in memory changed only in the stack. -/
-theorem arg_frame {s : State} (h : SPre s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < 13) :
+theorem arg_frame {s : State} (h : SPre pc s) {m : Mem} (hm : Frame [kR s] s.mem m) {j : Nat} (hj : j < nA pc) :
     m.readW (stackArgAddr s j) 64 = stackArg s j :=
   hm.readW (in_aR hj) (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.ka.symm) (by decide)
 
-theorem arg_in {s t : State} (h : SPre s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 13) :
+theorem arg_in {s t : State} (h : SPre pc s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < nA pc) :
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 := by
   rw [hrd, h.hrd]
-  exact ⟨_, List.mem_append_left _ (by simp), in_aR hj⟩
+  exact ⟨_, List.mem_append_left _ (by cases pc <;> simp), in_aR hj⟩
 
-theorem arg_al {s : State} (h : SPre s) (j : Nat) : (stackArgAddr s j).toNat % 8 = 0 := by
+theorem arg_al {s : State} (h : SPre pc s) (j : Nat) : (stackArgAddr s j).toNat % 8 = 0 := by
   simp only [stackArgAddr, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := s.sp.isLt; have := h.sp16
-  omega
+  omega_using [this]
 
-theorem setup_ok {s : State} (h : SPre s) :
+theorem setup_ok {s : State} (h : SPre pc s) :
     WP isa (.block (save ++ encArgs)) (allocd frameBytes s) (AtEnc s) := by
   have hfa := fb_al h
   rw [save_eq, List.append_assoc]
-  refine save_ok (s := s) (u := allocd frameBytes s) rfl rfl (by omega) (Frame.refl _ _) (fun _ _ => rfl) fun v kv v0 fv sv => ?_
+  refine save_ok (s := s) (u := allocd frameBytes s) rfl rfl (by omega_using [hfa]) (Frame.refl _ _) (fun _ _ => rfl) fun v kv v0 fv sv => ?_
   have gv : ∀ r, r ∉ [Reg.t0] → v.gpr r = s.gpr r := fun r hr => kv.gpr r hr
   simp only [moves, encArgs, argBase, List.cons_append, List.nil_append]
   refine wp_mov fun v₁ o₁ e₁ => wp_mov fun v₂ o₂ e₂ => wp_mov fun v₃ o₃ e₃ => wp_mov fun v₄ o₄ e₄ =>
@@ -92,8 +94,8 @@ theorem setup_ok {s : State} (h : SPre s) :
     rw [o₁₁.get .t6, o₁₀.get .t6, o₉.get .t6, o₈.get .t6, o₇.get .t6, e₆, sp₅, stackArgAddr_fb]; rfl
   have rd₁₁ : v₁₁.rd = s.rd := by rw [O.rd, kv.rd]; rfl
   refine wp_ld (a := stackArgAddr s 0) (by rw [t6₁₁, BitVec.add_zero]) (arg_al h 0)
-    (arg_in h rd₁₁ (j := 0) (by decide)) fun w o e => wp_nil ?_
-  rw [O.mem, arg_frame h fv (j := 0) (by decide)] at e
+    (arg_in h rd₁₁ (j := 0) (nA_le pc (by decide))) fun w o e => wp_nil ?_
+  rw [O.mem, arg_frame h fv (j := 0) (nA_le pc (by decide))] at e
   have P : Only [.s1, .s2, .s3, .s4, .s5, .t6, .a1, .a2, .a3, .a4, .a5] v w := (O.trans o).mono
   exact {
     sp := by rw [P.sp, kv.sp]; rfl
@@ -133,24 +135,24 @@ theorem setup_ok {s : State} (h : SPre s) :
     t6 := by rw [o.get .t6, t6₁₁] }
 
 /-- A byte of `EM` is in our frame. -/
-theorem em_in {s : State} (h : SPre s) (rs : List Region) {i : Nat} (hi : i < (s.gpr .a3).toNat) :
+theorem em_in {s : State} (h : SPre pc s) (rs : List Region) {i : Nat} (hi : i < (s.gpr .a3).toNat) :
     InRegions (frR s :: rs) (fb s + BitVec.ofNat 64 oEM + BitVec.ofNat 64 i) 1 := by
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact in_fr s rs (by have := h.k2; unfold oEM frameBytes; omega)
+  exact in_fr s rs (by have := h.k2; unfold oEM frameBytes; omega_using [hi, this])
 
-theorem AtEnc.epre {s t : State} (h : SPre s) (A : AtEnc s t) : EPre t (hid s) (s.gpr .a3).toNat := by
+theorem AtEnc.epre {s t : State} (h : SPre pc s) (A : AtEnc s t) : EPre t (hid s) (s.gpr .a3).toNat := by
   refine ⟨A.a3, by rw [A.a2], h.k2, fun i hi => ?_, fun j hj => ?_, fun j hj i hi e => ?_⟩
   · rw [A.a1, A.wr]; exact em_in h _ hi
   · rw [A.a4, A.rd, h.hrd]
     rw [A.a5] at hj
-    exact ⟨dR s, List.mem_append_left _ (by simp), Offset.contains_base _ (by omega) (by have := h.wd; omega)⟩
+    exact ⟨dR s, List.mem_append_left _ (by cases pc <;> simp), Offset.contains_base _ (by omega_using [hj]) (by have := h.wd; omega_using [hj])⟩
   · rw [A.a5] at hj
     rw [A.a4, A.a1] at e
     have c1 : (dR s).Contains (s.gpr .a7 + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ (by omega) (by have := h.wd; omega)
+      Offset.contains_base _ (by omega_using [hj]) (by have := h.wd; omega_using [hj])
     have c2 : (kR s).Contains (s.gpr .a7 + BitVec.ofNat 64 j) 1 := by
       rw [e, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact frame_contains s (by have := h.k2; unfold oEM frameBytes; omega)
+      exact frame_contains s (by have := h.k2; unfold oEM frameBytes; omega_using [hi, this])
     exact h.kd _ c2 c1
 
 theorem encodeId_len {x : Nat} {H em : List Byte} {k : Nat} (h : encodeId x H k = some em) :
@@ -167,13 +169,13 @@ structure AtAft (s u : State) : Prop extends SMid [] s u where
     | some em => u.gpr .a0 = 1 ∧ Spec.Rsa.bytesAt u.mem (fb s + BitVec.ofNat 64 oEM) (s.gpr .a3).toNat = em
     | none => u.gpr .a0 = 0
 
-theorem enc_ok {s t : State} (h : SPre s) (A : AtEnc s t) :
+theorem enc_ok {s t : State} (h : SPre pc s) (A : AtEnc s t) :
     WP isa Impl.RsaPkcs1Sig.RISCV64.encode t (AtAft s) := by
   have hk := h.k2
   have hH : Spec.Rsa.bytesAt t.mem (t.gpr .a4) (t.gpr .a5).toNat = hashOf s := by
     rw [A.a4, A.a5]
     exact bytes_of_frame A.mem (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.kd.symm)
-      (by have := h.wd; omega)
+      (by have := h.wd; omega_using [])
   refine WP.mono (encode_ok (A.epre h)) fun u ⟨kp, eo⟩ => ?_
   rw [hH] at eo
   have hf : Frame [emR s] t.mem u.mem ∧ (match encOut s with
@@ -191,9 +193,9 @@ theorem enc_ok {s t : State} (h : SPre s) (A : AtEnc s t) :
       rw [A.a1] at eo
       refine ⟨by rw [eo.2]; show Frame [⟨_, _⟩] _ _; rw [← hl]; exact Proof.RsaPkcs1Sig.frame_writeBytes _ _ _,
         eo.1, ?_⟩
-      rw [eo.2, ← hl]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega)
+      rw [eo.2, ← hl]; exact Proof.RsaPkcs1Sig.bytesAt_writeBytes _ _ _ (by omega_using [hl])
   obtain ⟨hf, he⟩ := hf
-  have hm := A.frameMem (f := oEM) (n := (s.gpr .a3).toNat) (.inl (by decide)) (by unfold oEM frameBytes; omega) hf
+  have hm := A.frameMem (f := oEM) (n := (s.gpr .a3).toNat) (.inl (by decide)) (by unfold oEM frameBytes; omega_using [hk]) hf
   exact ⟨A.keep kp hm.1 hm.2, (kp.get .t6).trans A.t6, he⟩
 
 end VG.Proof.RsaPkcs1Sig.RISCV64.Sign

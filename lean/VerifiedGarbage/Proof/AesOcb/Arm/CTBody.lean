@@ -121,7 +121,7 @@ theorem wholeArgs_ok {p : Prm} (L : Lay p) {τ : State} (E : Env p τ) {m : Nat}
     (p.W + BitVec.ofNat 32 scrO)).setReg .r2 p.D).setReg .r3 (BitVec.ofNat 32 m))
     (rs := [.r0, .r1, .r2, .r3, .r12]) (by others_tac) (by rfl) (by rfl) (by rfl)
   exact ⟨blkCall_of L E' (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by simp [gpr_setReg])
-    (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by omega)
+    (by simp [gpr_setReg]) (by simp [gpr_setReg]) (by omega_using [hmn, fd])
     (Proof.AesGcm.Arm.covers_prefix E.perm.d hmn) (L.k_d.sub_right (Region.sub_prefix hmn))
     ((L.d_w' (d := scrO) (k := 2048) (by decide)).sub_left (Region.sub_prefix hmn))
     (L.bd.sub_right (Region.sub_prefix hmn)), E', by simp [gpr_setReg, h8], by simp [gpr_setReg, h7]⟩
@@ -198,7 +198,7 @@ theorem bodyHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p 
   · simp [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg]
   · simp [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ofNat_lsr32 n32]
   · simp only [z_subFlags, Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, BitVec.sub_zero, ofNat_lsr32 n32,
-      Nat.reducePow, z_cmp0 (show p.n / 16 < 2 ^ 32 by omega)]
+      Nat.reducePow, z_cmp0 (show p.n / 16 < 2 ^ 32 by omega_using [n32])]
 
 /-- Where the rest of the data is. -/
 theorem restBlk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem) (h8 : t.gpr .r8 = p.D) :
@@ -212,11 +212,11 @@ theorem restBlk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t
   · exact E.of_others (rs := [.r4, .r5]) (by others_tac) (by rfl) (by rfl) (by rfl)
   · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, and15,
       toNat_ofNat32 n32, h8]
-    rw [ofNat_sub32 (Nat.mod_le _ _) n32, BitVec.add_comm, show p.n - p.n % 16 = 16 * (p.n / 16) by omega]
+    rw [ofNat_sub32 (Nat.mod_le _ _) n32, BitVec.add_comm, show p.n - p.n % 16 = 16 * (p.n / 16) by omega_using []]
   · simp only [Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, and15,
       toNat_ofNat32 n32]
   · simp only [z_subFlags, Proof.AesGcm.Arm.gpr_subFlags, gpr_setReg, ite_true, BitVec.sub_zero, and15,
-      toNat_ofNat32 n32, z_cmp0 (show p.n % 16 < 2 ^ 32 by omega)]
+      toNat_ofNat32 n32, z_cmp0 (show p.n % 16 < 2 ^ 32 by omega_using [])]
 
 theorem bodyHead_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 24)
     (.block [.ldrSp .r8 8, .ldrSp .r7 12, .mov .r7 (.shifted .r7 .lsr 4), .cmp .r7 (imm 0)]) h).isSome = true :=

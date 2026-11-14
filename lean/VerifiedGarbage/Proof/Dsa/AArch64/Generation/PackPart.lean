@@ -34,14 +34,14 @@ theorem packArgs_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bit
   have cast (n : Nat) (hn : n < 2 ^ 16) : (BitVec.ofNat 16 n).setWidth 64 = BitVec.ofNat 64 n := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [hn]
   refine WP.mono (WP.keep [.x12, .x2, .x9, .x3] (Q := fun t =>
       t.gpr .x12 = VG.Proof.Bignum.off (W 5) src ∧ t.gpr .x2 = VG.Proof.Bignum.off (W 5) dst ∧
       t.gpr .x9 = BitVec.ofNat 64 len ∧ t.mem = s.mem) (by
     have hw : s.mem.readW (F + BitVec.ofNat 64 40) 64 = W 5 := R.fr 5 (by decide)
     brun [Impl.Dsa.AArch64.Generation.packArgs, exec_ldrSp (off := 40) (by decide), L.sp,
       L.ld (d := 40) (n := 8) (by decide), hw,
-      cast src hs, cast dst hd, cast len (by omega)]) rfl rfl rfl)
+      cast src hs, cast dst hd, cast len (by omega_using [hl])]) rfl rfl rfl)
     fun t ⟨⟨hsi, hdi, hcx, hm⟩, hk⟩ => ⟨hsi, hdi, hcx, hm, hk⟩
 
 theorem packPart_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -60,7 +60,7 @@ theorem packPart_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bit
       Frame [⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩] s.mem t.mem ∧ Keep (.x0 :: mmRegs) s t := by
   unfold Impl.Dsa.AArch64.Generation.packPart
   refine WP.seq (WP.mono (packArgs_ok L R hs hd hl.2) fun u ⟨hsi, hdi, hcx, hm, ku⟩ => ?_)
-  refine WP.mono (copyBytes_ok (by omega) hsi hdi hcx
+  refine WP.mono (copyBytes_ok (by omega_using [hl]) hsi hdi hcx
     (fun i hi => by rw [ku.rd, ku.wr]; exact hrd i hi)
     (fun i hi => by rw [ku.wr]; exact hwr i hi)
     (fun i hi => by rw [hm]; exact hb i hi) hsep) fun t ⟨result, ft, kt⟩ => ?_
@@ -70,7 +70,7 @@ theorem packPart_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → Bit
       intro i hi he
       apply ha ⟨VG.Proof.Bignum.off (W 5) dst, bs.length⟩ (by simp)
       rw [he]
-      exact Offset.contains_base _ (by omega) (by omega)), hm]
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])), hm]
   have Rt := rep_of_disjoint_frame R ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hS)

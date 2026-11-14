@@ -57,6 +57,8 @@ VerifiedGarbage/
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../crates/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating
+VerifiedGarbageAuditBase.lean  Checks `TCB/AuditBase.lean` against the private data of Lean and
+                the dependencies (the lakefile's `AuditBase` library, not a module)
 ```
 
 `ci/check_lean_imports.py` enforces the import discipline between these
@@ -200,12 +202,13 @@ is built (`TCB/AuditRecords.lean`; the `lean-modules` skill), so they run on
 a build restored without those parts ([Without the private
 parts](#without-the-private-parts)).
 
-On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
-distributions (65,530): it maps every module its drivers import. It refuses
-to start below eight regions of memory per `.olean` and names the command to
-raise the limit, `sudo sysctl -w vm.max_map_count=262144`, which CI runs
-(`EmitOne.lean` loads far fewer). Past the limit Lean would fail with
-`failed to read file '….olean'`.
+On Linux, each of `Emit.lean`'s drivers maps every `.olean` it imports, and
+a process may map at most `vm.max_map_count` regions of memory (65,530 by
+default on many distributions). The largest driver needs well under that
+(about 38,000), but CI raises the limit to 262,144 so that it never depends on
+the margin. If a driver ever passes the limit, Lean fails with
+`failed to read file '….olean'`: raise it with
+`sudo sysctl -w vm.max_map_count=262144`.
 
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module
@@ -437,14 +440,14 @@ most about 1,200 of this project's). These run it themselves:
 * `ci/check_lean_public_imports.py` and `ci/trim_lean_imports.py`, before
   `lake shake`, which reads the private part of each module it checks and of
   all they import;
-* `ci/lit_imports.py`, before `CheckLitImports.lean`.
+* `ci/lit_imports.py`, before `ci/lit_imports.lean`.
 
 Run it yourself before what else reads them, which otherwise fails with
 `failed to read file '….olean.private', invalid header`:
 
 * a file that is not a module and imports the project's modules, run with
   `lake env lean` or opened in the editor (`fill-private lean
-  GenerateP256Ecdh.lean`: a file's imports);
+  lean/Scratch.lean`: a file's imports);
 * a module with an `import all` of a module of this project (`fill-private`
   on that module).
 

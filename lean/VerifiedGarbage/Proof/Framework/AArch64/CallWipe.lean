@@ -769,8 +769,8 @@ theorem cw_get {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem} {
     show (sig.params.flatMap fun p => p.2.words 64).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
-  rw [← hr]; exact regArgs_getD' s.gpr (by omega_using [hk]) (by rw [hL]; omega)
+    omega_using []
+  rw [← hr]; exact regArgs_getD' s.gpr (by omega_using [hk]) (by rw [hL]; omega_using [])
 
 /-- The array is among the buffers. -/
 theorem cw_arr {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem} {k : Nat} {r : Reg}
@@ -782,9 +782,9 @@ theorem cw_arr {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem} {
     show (sig.params.flatMap fun p => p.2.words 64).length = _
     rw [hps, List.flatMap_append, List.flatMap_cons]
     simp only [List.length_append, Param.words.eq_2, List.length_cons, List.length_nil]
-    omega
+    omega_using []
   rw [← cw_get hk hps hr s, hps]
-  exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega)
+  exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega_using [])
 
 /-- The array's address is public. -/
 theorem cw_pubArr {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem} {k st : Nat} {r : Reg}

@@ -4,19 +4,116 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Loop
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Digit
-
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.CompactLoop
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.CompactStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.TableLayout
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.LoopOps
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Math
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Table
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.TableLayout
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Moves
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+
+/-! ### `Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.CompactLoop`, which only this module used -/
+
+section
+
+/-! The fifteen table additions share one bounded public loop. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
+open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64 VG.Spec.Weierstrass
+open VG.Proof.Ed25519.AArch64 (Keeps read_x)
+open VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
+
+theorem tableIncrement_ok (s : State) {d : Nat} (h19 : s.gpr .x19=BitVec.ofNat 64 d) :
+    WP isa (.block [.addImm .x .x19 .x19 1,.subImm .x .x6 .x19 16]) s fun t =>
+      t.gpr .x19=BitVec.ofNat 64 (d+1) ∧
+      t.gpr .x6=BitVec.ofNat 64 (d+1)-16 ∧ Keeps [.x19,.x6] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,
+    show (1 : Nat)<4096 by decide,show (16 : Nat)<4096 by decide,
+    ite_true,BitVec.setWidth_eq,RegUpd.gpr_write,reduceCtorEq,ite_false,h19,
+    Option.some.injEq,exists_eq_left']
+  have e : BitVec.ofNat 64 d+1=BitVec.ofNat 64 (d+1) := by
+    change BitVec.ofNat 64 d+BitVec.ofNat 64 1=_
+    rw [←BitVec.ofNat_add]
+  refine ⟨e,congrArg (fun x : BitVec 64 => x-BitVec.ofNat 64 16) e,⟨fun r hr => ?_,rfl,rfl,rfl,rfl⟩⟩
+  simp only [List.mem_cons,not_or] at hr
+  simp only [RegUpd.gpr_write,hr.1,hr.2,ite_false]
+
+theorem tableLoopStep_ok {base : Addr} {P Q : Point C} {s : State}
+    (hc : BaseCfgOk cfg) (hC : Law C) (hP : onCurve C P=true) (hQ : onCurve C Q=true)
+    {d : Nat} (h1 : 1 ≤ d) (h15 : d ≤ 15) (hi : Inputs base P Q s)
+    (ht : Table base P Q (d-1) s) (h19 : s.gpr .x19=BitVec.ofNat 64 d) :
+    WP isa tableLoopStep s fun t =>
+      Changes base arithmeticWork s t ∧ Inputs base P Q t ∧ Table base P Q d t ∧
+      t.gpr .x19=BitVec.ofNat 64 (d+1) ∧ t.gpr .x6=BitVec.ofNat 64 (d+1)-16 := by
+  rw [tableLoopStep]
+  refine WP.seq (WP.mono (prepChoice_ok hc hC h1 h15 hi ht h19) fun a ⟨⟨W,I,R,E⟩,c⟩ => ?_)
+  have hA : onCurve C (pair P Q ((previous d)%4) ((previous d)/4))=true := pair_curve hC hP hQ _ _
+  have he : onCurve C (if d%4=0 then Q else P)=true := by split <;> with_reducible assumption
+  refine WP.seq (WP.mono (sum_points hc hC I.scr I.mod I.a I.b I.a_lt I.b_lt he hA E R)
+    fun b ⟨W',R',c'⟩ => ?_)
+  have K := W.trans (W'.mono addWork_sub)
+  have I' := hi.unch (K.mono loopWork_sub)
+  have T : Table base P Q (d-1) b := fun j hj hjm => K.table hi.scr hj (by omega_using [h15, hjm]) (ht j hj hjm)
+  rw [table_step hC hP hQ h1] at R'
+  refine WP.seq (WP.mono (storeChoice_ok h1 h15 I' T R' (c'.trans (c.trans h19)))
+    fun u ⟨⟨L,Iu,Tu⟩,cu⟩ => ?_)
+  refine WP.mono (tableIncrement_ok u (cu.trans (c'.trans (c.trans h19)))) fun t ⟨ct,ft,kt⟩ => ?_
+  have Z : Changes base arithmeticWork u t := Changes.of_keeps kt (by decide)
+  exact ⟨((K.mono loopWork_sub).trans L).trans Z,Iu.unch Z,
+    fun j hj hjd => (Tu j hj hjd).of_mem kt.mem,ct,ft⟩
+
+theorem buildTable_ok {base : Addr} {P Q : Point C} {s : State}
+    (hc : BaseCfgOk cfg) (hC : Law C) (hP : onCurve C P=true) (hQ : onCurve C Q=true)
+    (hi : Inputs base P Q s) :
+    WP isa buildTable s fun t =>
+      Changes base arithmeticWork s t ∧ Inputs base P Q t ∧ Table base P Q 15 t := by
+  rw [buildTable]
+  refine WP.seq (WP.mono (setCounter_ok s (j:=1) (by decide)) fun a ⟨ca,ka⟩ => ?_)
+  have Wa : Changes base arithmeticWork s a := Changes.of_keeps ka (by decide)
+  let Inv := fun j t => Changes base arithmeticWork s t ∧ Inputs base P Q t ∧
+    Table base P Q (15-j) t ∧ t.gpr .x19=BitVec.ofNat 64 (16-j)
+  refine WP.loop (M:=isa) (fun j t => 1 ≤ j ∧ j ≤ 15 ∧ Inv j t)
+    (fun j t ⟨h1,h15,ht⟩ => ?_) 15 a ⟨by decide,by decide,Wa,hi.unch Wa,?_,ca⟩
+  · obtain ⟨W,I,T,c⟩ := ht
+    have T' : Table base P Q ((16-j)-1) t := by simpa only [show 16-j-1=15-j by omega_using []] using T
+    refine WP.mono (tableLoopStep_ok hc hC hP hQ (by omega_using [h15]) (by omega_using [h1]) I T' c)
+      fun u ⟨L,Iu,Tu,cu,fu⟩ => ?_
+    by_cases e : j=1
+    · subst j
+      refine Or.inl ⟨?_,W.trans L,Iu,Tu⟩
+      change some (u.read .x .x6 != 0)=some false
+      rw [read_x,fu]; rfl
+    · refine Or.inr ⟨?_,j-1,by omega_using [h1],by omega_using [h1, e],by omega_using [h15],W.trans L,Iu,?_,?_⟩
+      · change some (u.read .x .x6 != 0)=some true
+        rw [read_x,fu]
+        apply congrArg some
+        rw [bne_iff_ne]
+        intro hz
+        have hh := congrArg BitVec.toNat hz
+        rw [BitVec.toNat_sub,BitVec.toNat_ofNat] at hh
+        change (2^64-16+((16-j+1)%(2^64)))%(2^64)=0 at hh
+        rw [Nat.mod_eq_of_lt (by omega_using [] : 16-j+1 < 2^64)] at hh
+        omega_using [e, hh]
+      · simpa only [show 15-(j-1)=16-j by omega_using [h1]] using Tu
+      · simpa only [show 16-(j-1)=16-j+1 by omega_using [h1, h15]] using cu
+  · intro j hj h0; omega
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
+
+end
+
+end
+
 /-! The joint multiplier feeds the unchanged complete ECDSA final check. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/BrainpoolP256r1/Joint/Prepare.lean`, which only this module imported.
@@ -38,7 +135,7 @@ abbrev prepWork : List (Nat × Nat) := [(bitsU,512),(cfg.sl EXPP,32)]
 theorem generator_point {base : Addr} {s : State} {g : Reg → BitVec 64}
     (hc : BaseCfgOk cfg) (hC : Law C) (hf : Fixed cfg base g s.mem) :
     PointAt base s gSource (G C) := by
-  have hp : 0 < cfg.C.p := by have := hc.p_ge; omega
+  have hp : 0 < cfg.C.p := by have := hc.p_ge; omega_using [this]
   have hm (x : Nat) : cfg.mont x < C.p := Nat.mod_lt _ hp
   have e1 : num base s (cfg.sl ONEP)=cfg.mont 1 := by
     rw [num,hf.onep]; simp only [Cfg.mont,Cfg.R,Nat.one_mul]
@@ -68,7 +165,7 @@ theorem prepare_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : P
   have boundV : cfg.sl V+32 ≤ 8192 := by decide
   have hs := hM.scr
   have hn := hs.nowrap
-  have hm0 : 0 < cfg.C.p := by have := hc.p_ge; omega
+  have hm0 : 0 < cfg.C.p := by have := hc.p_ge; omega_using [this]
   have hm (x : Nat) : cfg.mont x < C.p := Nat.mod_lt _ hm0
   have hbconst : cfg.mont (3*cfg.C.b) < 2^(64*cfg.n) := Nat.lt_trans (hm _) hc.p_lt
   rw [prepare]
@@ -77,7 +174,7 @@ theorem prepare_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : P
     fun s₁ ⟨b₁,k₁,u₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have v₁ : wordsVal s₁.mem base (cfg.sl V) 4=wordsVal s.mem base (cfg.sl V) 4 :=
-    u₁.wordsVal (by decide) (by omega)
+    u₁.wordsVal (by decide) (by omega_using [boundV])
   refine WP.seq (WP.mono (bits_ok hs₁ (n:=4) (src:=cfg.sl V) (dst:=bitsV)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (Or.inl (by decide)))
     fun s₂ ⟨b₂,k₂,u₂⟩ => ?_)
@@ -112,14 +209,14 @@ theorem prepare_ok {base : Addr} {s₀ s : State} {g : Reg → BitVec 64} {P : P
     · exact (congrArg (fun x => toM cfg.C.p (2^(64*cfg.n)) x) b₃).trans (toM_cmont hc _)
   refine ⟨W,I,?_,?_⟩
   · intro j hj
-    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 448+32 ≤ 2944+j; omega)
-        (by change 2944+j < 2^64; omega),
-      u₂.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change 2944+j+1 ≤ 3200 ∨ _; omega)
-        (by change 2944+j < 2^64; omega),b₁ j hj]
+    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 448+32 ≤ 2944+j; omega_using [])
+        (by change 2944+j < 2^64; omega_using [hj]),
+      u₂.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change 2944+j+1 ≤ 3200 ∨ _; omega_using [hj])
+        (by change 2944+j < 2^64; omega_using [hj]),b₁ j hj]
     rfl
   · intro j hj
-    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 448+32 ≤ 3200+j; omega)
-        (by change 3200+j < 2^64; omega),b₂ j hj,v₁]
+    rw [u₃.unch.byte (by intro w hw; rw [List.mem_singleton.mp hw]; change _ ≤ _ ∨ 448+32 ≤ 3200+j; omega_using [])
+        (by change 3200+j < 2^64; omega_using [hj]),b₂ j hj,v₁]
     rfl
 end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
 end
@@ -191,19 +288,19 @@ theorem final_state {base : Addr} {s₀ s t : State} {g : Reg → BitVec 64} {P 
   have same (i : Nat) (hle : cfg.sl i+32 ≤ 8192)
       (hap : ∀ w ∈ work,cfg.sl i+32 ≤ w.1 ∨ w.1+w.2 ≤ cfg.sl i) :
       sv cfg base t i=sv cfg base s i :=
-    h.mem.wordsVal hap (by omega)
+    h.mem.wordsVal hap (by omega_using [hn8, hle])
   have r := same RM' (by decide) (by decide)
   have k := same K (by decide) (by decide)
   refine ⟨h.scr hM.scr,h.wr.trans hM.wr,h.rd.trans hM.rd,
     hM.fixed.unch hc.n10 hn (by unfold FixedOk work loopWork addWork entryWork; decide) h.mem,?_,?_,?_,?_,?_,?_,?_⟩
-  · rw [h.mem.word (by decide) (by omega)]
+  · rw [h.mem.word (by decide) (by omega_using [flagBound])]
     exact hM.flag
   · rw [r]; exact hM.rm_lt
   · rw [r]; exact hM.rm
   · exact hp.1 _ (by decide)
   · exact (hM.unch.trans h.mem).cover (by
       intro w hw
-      refine ⟨(0,8192),by simp,by omega,?_⟩
+      refine ⟨(0,8192),by simp,by omega_using [],?_⟩
       rcases List.mem_append.mp hw with hw | hw
       · rw [List.mem_singleton.mp hw]
       · have hd : ∀ w ∈ work,w.1+w.2 ≤ 8192 := by decide

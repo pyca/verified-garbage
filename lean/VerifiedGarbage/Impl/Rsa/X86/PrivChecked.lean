@@ -103,4 +103,29 @@ def code (crtName : String) (crt : Prog isa) (preName : String) (pre : Prog isa)
     (.seq (.frame (.alloc frameBytes) (body crtName crt preName pre publicName publicCode) (.free frameBytes))
       (.block restore)) (.pop .ebx 4)
 
+/-! ## `vg_rsa_private_checked_precomputed`
+
+With the key's precomputed values `pre` (argument 20, `pre_len` words in
+argument 21), whose first `2 w` words (`w = ⌈n_len / 8⌉`) are `n`'s values and
+the rest the primes' `R² mod p` and `R² mod q`: `vg_rsa_private_crt_precomputed`
+is given the primes' values, `pre + 16 w` and `pre_len - 2 w` words, as its
+arguments 18 and 19. -/
+
+/-- `vg_rsa_private_crt_precomputed`'s arguments 18 and 19. -/
+def preR2Args : List Instr :=
+  [.mov .eax (.mem (incoming 3)), .alu .add .eax (.imm 7), .shift .shr .eax 3, .alu .add .eax (.reg .eax),
+    .mov .ecx (.mem (incoming 21)), .alu .sub .ecx (.reg .eax), .store (stackAt (4 * 19)) .ecx,
+    .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .alu .add .eax (.mem (incoming 20)), .store (stackAt (4 * 18)) .eax]
+
+def bodyP (crtName : String) (crt : Prog isa) (preName : String) (pre : Prog isa)
+    (publicName : String) (publicCode : Prog isa) : Prog isa :=
+  .seq (.block (crtArgs ++ preR2Args)) (.seq (.call crtName crt) (check preName pre publicName publicCode))
+
+def codeP (crtName : String) (crt : Prog isa) (preName : String) (pre : Prog isa)
+    (publicName : String) (publicCode : Prog isa) : Prog isa :=
+  .frame (.push [.ebx, .ebp, .esi, .edi])
+    (.seq (.frame (.alloc frameBytes) (bodyP crtName crt preName pre publicName publicCode) (.free frameBytes))
+      (.block restore)) (.pop .ebx 4)
+
 end VG.Impl.Rsa.X86.PrivChecked

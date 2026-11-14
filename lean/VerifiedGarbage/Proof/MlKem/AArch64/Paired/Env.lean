@@ -30,14 +30,14 @@ theorem rejection_envW {w16 : Bool} {s : State} {p out : Addr} {off N : Nat} {B 
   have ir {o l : Nat} (h : o+l≤2048) : InRegions (s.rd++s.wr) (p+BitVec.ofNat 64 o) l := by
     obtain ⟨r,hr,hc⟩ := iw h; exact ⟨r,List.mem_append_right _ hr,hc⟩
   refine ⟨⟨bytes,?_,?_,?_,hn⟩,?_,?_,tr,tv,td⟩
-  · intro i hi; rw [BitVec.add_assoc,← BitVec.ofNat_add]; exact ir (by omega)
+  · intro i hi; rw [BitVec.add_assoc,← BitVec.ofNat_add]; exact ir (by omega_using [hf, hi])
   · intro i hi
-    exact Noise.inScratch ho (by cases w16 <;> simp [VG.Proof.MlKem.cs_eq] <;> omega :
+    exact Noise.inScratch ho (by cases w16 <;> simp [VG.Proof.MlKem.cs_eq] <;> omega_using [hi] :
       VG.Proof.MlKem.cs w16*i+4≤1024) (by decide)
-  · exact hd.sub_left (Offset.sub_base p (by omega))
-  · intro t ht; rw [BitVec.add_assoc,← BitVec.ofNat_add]; exact ir (by omega)
+  · exact hd.sub_left (Offset.sub_base p (by omega_using [hf]))
+  · intro t ht; rw [BitVec.add_assoc,← BitVec.ofNat_add]; exact ir (by omega_using [hf, ht])
   · intro i hi
-    exact Noise.inScratch ho (by cases w16 <;> simp [VG.Proof.MlKem.cs_eq] at hi ⊢ <;> omega :
+    exact Noise.inScratch ho (by cases w16 <;> simp [VG.Proof.MlKem.cs_eq] at hi ⊢ <;> omega_using [hi] :
       VG.Proof.MlKem.cs w16*i+16≤1024) (by decide)
 
 end VG.Proof.MlKem.AArch64.Paired

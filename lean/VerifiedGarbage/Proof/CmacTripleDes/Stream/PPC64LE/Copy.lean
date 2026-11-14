@@ -28,7 +28,7 @@ open VG VG.PPC64LE VG.Impl.CmacTripleDes.Stream.PPC64LE
 theorem sub_lt_one {x a : Addr} : (x - a).toNat < 1 ↔ x = a := by
   constructor
   · intro h
-    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by show _ = 0; omega)
+    have h0 : x - a = 0 := BitVec.eq_of_toNat_eq (by show _ = 0; omega_using [h])
     calc x = x - a + a := (BitVec.sub_add_cancel x a).symm
       _ = a := by rw [h0]; simp
   · rintro rfl; simp
@@ -62,7 +62,7 @@ theorem copy_step {s : State} {src dst : Addr} {n j : Nat} (hj : j < n) (hn : n 
   refine wp_addi (by decide) (by decide) fun t₃ u₃ => wp_addi (by decide) (by decide) fun t₄ u₄ =>
     wp_subi (by decide) (by decide) fun t₅ u₅ => wp_nil ?_
   have src_j : t.mem (src + BitVec.ofNat 64 j) = s.mem (src + BitVec.ofNat 64 j) :=
-    hI.rest _ fun i hi => hsep j hj i (by omega)
+    hI.rest _ fun i hi => hsep j hj i (by omega_using [hj, hi])
   have m₅ : t₅.mem = t.mem.writeW (dst + BitVec.ofNat 64 j) (s.mem (src + BitVec.ofNat 64 j)) := by
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, setWidth8_64, src_j]
   refine ⟨?_, ?_, ?_, fun r h0 h10 h11 h12 => ?_, by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, hI.rd],
@@ -74,7 +74,7 @@ theorem copy_step {s : State} {src dst : Addr} {n j : Nat} (hj : j < n) (hn : n 
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hI.r12]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   · rw [u₅.other r h12, u₄.other r h11, u₃.other r h10, u₂.gpr, u₁.other r h0, hI.regs r h0 h10 h11 h12]
   · rw [m₅, write1_apply]
     by_cases e : i = j
@@ -83,11 +83,11 @@ theorem copy_step {s : State} {src dst : Addr} {n j : Nat} (hj : j < n) (hn : n 
         intro h
         have := congrArg (fun y => BitVec.toNat (y - dst)) h
         simp only [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at this
-        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+        rw [Nat.mod_eq_of_lt (by omega_using [hj, hn, hi]), Nat.mod_eq_of_lt (by omega_using [hj, hn])] at this
         exact e this
-      rw [ite_eq_right (fun h => hne (sub_lt_one.mp h)), hI.copied i (by omega)]
-  · rw [m₅, write1_apply, ite_eq_right (fun h => hx j (by omega) (sub_lt_one.mp h)),
-      hI.rest x fun i hi => hx i (by omega)]
+      rw [ite_eq_right (fun h => hne (sub_lt_one.mp h)), hI.copied i (by omega_using [hi, e])]
+  · rw [m₅, write1_apply, ite_eq_right (fun h => hx j (by omega_using []) (sub_lt_one.mp h)),
+      hI.rest x fun i hi => hx i (by omega_using [hi])]
 
 theorem copyLoop_wp {s : State} {src dst : Addr} {n : Nat} (hn : n < 2 ^ 64)
     (h10 : s.gpr .r10 = src) (h11 : s.gpr .r11 = dst) (h12 : s.gpr .r12 = BitVec.ofNat 64 n)
@@ -104,12 +104,12 @@ theorem copyLoop_wp {s : State} {src dst : Addr} {n : Nat} (hn : n < 2 ^ 64)
       (fun h => by cases h)
   refine WP.ite false (by rw [eval_zero_ofNat s .r12 hn h12]; simp [hz]) (fun h => by cases h) fun _ => ?_
   refine WP.loop (M := isa) (Q := Q)
-    (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ CopyInv s src dst n j t) ?_ n s ⟨0, by omega, by omega, h0⟩
+    (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ CopyInv s src dst n j t) ?_ n s ⟨0, by omega_using [], by omega_using [hz], h0⟩
   rintro _ t ⟨j, rfl, hj, hI⟩
   refine WP.mono (copy_step hj hn hrd hwr hsep hI) fun t' h' => ?_
-  have e := eval_nonzero_ofNat' t' .r12 (k := n - (j + 1)) (by omega) h'.r12
+  have e := eval_nonzero_ofNat' t' .r12 (k := n - (j + 1)) (by omega_using [hn]) h'.r12
   by_cases he : j + 1 = n
   · left; exact ⟨by rw [e]; simp [he], k t' (he ▸ h')⟩
-  · right; exact ⟨by rw [e]; simp; omega, n - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+  · right; exact ⟨by rw [e]; simp; omega_using [hj, he], n - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, he], h'⟩
 
 end VG.Proof.CmacTripleDes.Stream.PPC64LE

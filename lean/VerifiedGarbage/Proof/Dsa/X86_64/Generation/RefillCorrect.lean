@@ -53,9 +53,9 @@ theorem written_state (m : Mem) {St U : Addr} (hd : (⟨U, 8⟩ : Region).Disjoi
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact Offset.disjoint_base St h₁ (by omega)
-      · exact Offset.disjoint St (d := d) (e := 24) (by omega) (by omega) (by omega)
-      · exact (hd.symm.sub_left (Offset.sub_base St (by omega))) ) (by decide)
+      · exact Offset.disjoint_base St h₁ (by omega_using [h₂])
+      · exact Offset.disjoint St (d := d) (e := 24) (by omega_using [h₂]) (by omega_using [h₂]) (by omega_using [])
+      · exact (hd.symm.sub_left (Offset.sub_base St (by omega_using [h₂]))) ) (by decide)
   have uSt : Mem.Sep St 8 U 8 := hd.symm.sep (contains_head _ (by decide)) (contains_head _ (by decide))
   have uSt24 : Mem.Sep (off St 24) 8 U 8 := hd.symm.sep (Offset.contains_base _ (by decide) (by decide))
     (contains_head _ (by decide))
@@ -81,7 +81,7 @@ theorem wordsAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   unfold Spec.Rsa.wordsAt
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (Offset.contains_base p (d := 8 * i) (n := 8) (k := 8 * n) (by omega) (by omega)) hd (by decide)
+  exact hf.readW (Offset.contains_base p (d := 8 * i) (n := 8) (k := 8 * n) (by omega_using [hi]) (by omega_using [hn, hi])) hd (by decide)
 
 section
 variable {pBytes : Nat} {s₀ : State} (h : RefillABI pBytes s₀)
@@ -170,7 +170,7 @@ theorem body_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : 
     rw [← e]; exact ft
   have stateM : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' → (∀ q ∈ rs, (inState s₀).Disjoint q) →
       ∀ d, d + 8 ≤ 32 → m'.readW (stackArg s₀ 1 + BitVec.ofNat 64 d) 64 = m.readW (stackArg s₀ 1 + BitVec.ofNat 64 d) 64 :=
-    fun hf hd d hd8 => hf.readW (Offset.contains_base _ (d := d) (n := 8) (k := 32) hd8 (by omega)) hd (by decide)
+    fun hf hd d hd8 => hf.readW (Offset.contains_base _ (d := d) (n := 8) (k := 32) hd8 (by omega_using [hd8])) hd (by decide)
   have allPrior : ∀ q ∈ savedRegion (s₀ := s₀) :: ctlRegion (refillBase s₀) :: (refillContext h).changed,
       (inState s₀).Disjoint q := buffer_disjoint h (by simp)
   have fu : Frame [savedRegion (s₀ := s₀), ⟨refillBase s₀, frameBytes⟩, ctlRegion (refillBase s₀)] s₀.mem v.mem :=
@@ -232,20 +232,20 @@ theorem saved_body : ∀ r ∈ bodyRegions h, (savedRegion (s₀ := s₀)).Disjo
   simp only [bodyRegions, GenerationContext.changed, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [ctlRegion_eq]; exact Offset.disjoint (low s₀) (d := 520) (e := 488) (by omega) (by omega) (by omega)
+  · rw [ctlRegion_eq]; exact Offset.disjoint (low s₀) (d := 520) (e := 488) (by omega_using []) (by omega_using []) (by omega_using [])
   · exact (h.stack_disjoint (r := inScr s₀) (by decide) (by simp)).sub_right h.arena_sub
-  · exact Offset.disjoint (low s₀) (d := 520) (e := 192) (k := 296) (by omega) (by omega) (by omega)
+  · exact Offset.disjoint (low s₀) (d := 520) (e := 192) (k := 296) (by omega_using []) (by omega_using []) (by omega_using [])
   · change savedRegion.Disjoint (below (refillBase s₀) 192)
     rw [refillBase_below]
-    exact Offset.disjoint_base (low s₀) (by omega) (by omega)
+    exact Offset.disjoint_base (low s₀) (by omega_using []) (by omega_using [])
   · exact h.stack_disjoint (by decide) (by simp)
   · exact h.stack_disjoint (by decide) (by simp)
   · exact h.stack_disjoint (by decide) (by simp)
 
 theorem toNat_sub_k {x : Addr} {k : Nat} (h : k ≤ x.toNat) : (x - BitVec.ofNat 64 k).toNat = x.toNat - k := by
   have := x.isLt
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact h),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]; exact h),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem rsp_alloc (x : Addr) :
     x - BitVec.ofNat 64 48 - BitVec.ofNat 64 32 - BitVec.ofNat 64 296 = off (x - BitVec.ofNat 64 568) 192 := by
@@ -288,12 +288,12 @@ theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul :
       t.gpr .rsp = u.gpr .rsp ∧ t.rd = u.rd ∧ t.wr = u.wr := by
   have lower : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower
   have ursp : u.gpr .rsp = s₀.gpr .rsp - BitVec.ofNat 64 48 := by rw [hg]; rfl
-  have u48 : (u.gpr .rsp).toNat = (s₀.gpr .rsp).toNat - 48 := by rw [ursp, toNat_sub_k (by omega)]
-  have r1 : 32 ≤ (u.gpr .rsp).toNat := by omega
+  have u48 : (u.gpr .rsp).toNat = (s₀.gpr .rsp).toNat - 48 := by rw [ursp, toNat_sub_k (by omega_using [lower])]
+  have r1 : 32 ≤ (u.gpr .rsp).toNat := by omega_using [lower, u48]
   apply alloc_frame_ok (by decide) r1
   have r2 : 296 ≤ ((allocState 32 u).gpr .rsp).toNat := by
     change 296 ≤ (u.gpr .rsp - BitVec.ofNat 64 32).toNat
-    rw [toNat_sub_k (by omega)]; omega
+    rw [toNat_sub_k (by omega_using [r1])]; omega_using [lower, u48]
   apply alloc_frame_ok (by decide) r2
   have a : RefillAllocated h (allocState 296 (allocState 32 u)) :=
     { rsp := by
@@ -332,7 +332,7 @@ theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : N
     WP isa (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) G1 G256 sq mul prime pBytes qBytes) s₀
       fun t => RefillRes h t ∧ (∀ r ∈ calleeSaved, t.gpr r = s₀.gpr r) ∧ t.rd = s₀.rd ∧ t.wr = s₀.wr := by
   unfold Impl.Dsa.X86_64.Generation.Refill.code
-  apply alloc_frame_ok (by decide) (by have hl : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega)
+  apply alloc_frame_ok (by decide) (by have hl : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega_using [hl])
   refine WP.seq (WP.mono (entrySave_ok (s := allocState 48 s₀) (List.mem_cons_self ..)) ?_)
   intro u ⟨hg, hr, hw, saved, hf⟩
   have saved' : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots := by
@@ -404,7 +404,7 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
     fun hs W t seed hin hm hlen hseed h1 used h16 hu => attempt_ok hm hin seed hlen hseed h1 h16 hu
   obtain ⟨tr, t, he, result, callee, _, _⟩ := run_ok h rfl hA
   refine ⟨tr, t, he, ⟨callee, ?_, VG.X86_64.Exec.ctl ctl he⟩, ?_⟩
-  · have hf := Exec.stackFrame (SpSafe.of_all sp) he (by have : refillStack = 568 := rfl; omega)
+  · have hf := Exec.stackFrame (SpSafe.of_all sp) he (by have : refillStack = 568 := rfl; omega_using [depth, this])
     have hfb := VG.X86_64.Frame.below_mono hf depth (by decide)
     apply hfb.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) _ (by decide)
     intro r hr
@@ -433,13 +433,13 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
     have outLen : (s.gpr .rsi).toNat = 2 * pBytes + Spec.Dsa.generationQLen pBytes := by
       rw [h.outLength, h.width]
     have hp : 0 < pBytes := by
-      have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega
+      have := h.lengths; unfold Spec.Dsa.generationLengthsValid at this; omega_using [this]
     rw [hw, ht]
     refine ⟨?_, ?_, used, VG.Proof.Dsa.Generation.requested pBytes (total h), ?_,
       VG.Proof.Dsa.Generation.requested_requests hp _ _⟩
     · have hs : (total h).status < 4 := by
         unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
-      rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hs]), Nat.mod_eq_of_lt (by omega_using [hs])]
     · rw [outLen, bytes]
       unfold expectedOf
       generalize (total h).outcome = o

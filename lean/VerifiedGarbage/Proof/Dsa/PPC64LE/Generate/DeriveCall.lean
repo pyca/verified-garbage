@@ -67,7 +67,7 @@ theorem deriveArgs_ok {L : GL} {s₀ t : State} (hL : L.Ok) (hc : Ctx L s₀ t) 
   unfold deriveArgs
   prun [hc.r18, hc.r19, hc.r20, hc.r21, hc.r22, hc.sp, exec_addSp (show oNonce < 2 ^ 15 by decide), add0,
     ← BitVec.ofNat_add]
-  refine ⟨by simp only [GL.ol]; congr 1; omega, by simp only [GL.kl]; congr 1; omega⟩
+  refine ⟨by simp only [GL.ol]; congr 1; omega_using [], by simp only [GL.kl]; congr 1; omega_using []⟩
 
 theorem dentry_stackArg (t : State) (rd wr : List Region) (i : Nat) :
     stackArg (t.callEntry.withRegions rd wr) i = t.mem.readW (t.sp + BitVec.ofNat 64 (32 + 8 * (8 + i))) 64 := rfl
@@ -94,20 +94,20 @@ theorem derive_pre {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf 
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]
   have hsl := hL.sl
   have nwN : (off (glOf s₀).F oNonce).toNat + (glOf s₀).ql ≤ 2 ^ 64 := by
-    rw [off, BitVec.toNat_add, tn _ (by decide), Nat.mod_eq_of_lt (by simp only [oNonce]; omega)]
-    simp only [oNonce]; omega
+    rw [off, BitVec.toNat_add, tn _ (by decide), Nat.mod_eq_of_lt (by simp only [oNonce]; omega_using [hF])]
+    simp only [oNonce]; omega_using [hq, hF]
   unfold dContract
   simp only [State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
   rw [g .r3 (by decide), g .r4 (by decide), g .r5 (by decide), g .r6 (by decide), g .r7 (by decide),
     g .r8 (by decide), g .r9 (by decide), g .r10 (by decide), ha.r3, ha.r4, ha.r5, ha.r6, ha.r7, ha.r8, ha.r9,
-    ha.r10, sa0, sargs, ssp, tn (glOf s₀).ol (by simp only [GL.ol]; omega),
-    tn (glOf s₀).kl (by simp only [GL.kl]; omega), tn (glOf s₀).ql (by omega), tn (glOf s₀).pl (by omega),
+    ha.r10, sa0, sargs, ssp, tn (glOf s₀).ol (by simp only [GL.ol]; omega_using [hp, hq]),
+    tn (glOf s₀).kl (by simp only [GL.kl]; omega_using [hp, hq]), tn (glOf s₀).ql (by omega_using [hq]), tn (glOf s₀).pl (by omega_using [hp]),
     tn _ hsl]
-  refine ⟨by omega, rfl, rfl, hL.dOK, ?_, hL.dOS, ?_, hL.dKS, ?_, ?_, hL.nwOut, hk, nwN,
-    hL.nwScr, hL.lv, by simp only [GL.ol], by simp only [GL.kl], by simp only [Spec.Dsa.scratchWords]; omega⟩
-  · exact (GL.Ok.frame_disj (d := oNonce) (n := (glOf s₀).ql) hL.dFO (by simp only [oNonce, frameBytes]; omega)).symm
+  refine ⟨by omega_using [hF], rfl, rfl, hL.dOK, ?_, hL.dOS, ?_, hL.dKS, ?_, ?_, hL.nwOut, hk, nwN,
+    hL.nwScr, hL.lv, by simp only [GL.ol], by simp only [GL.kl], by simp only [Spec.Dsa.scratchWords]; omega_using [hsw]⟩
+  · exact (GL.Ok.frame_disj (d := oNonce) (n := (glOf s₀).ql) hL.dFO (by simp only [oNonce, frameBytes]; omega_using [hq])).symm
   · exact (GL.Ok.frame_disj (d := oArgs) (n := 8) hL.dFO (by decide)).symm
-  · exact GL.Ok.frame_disj (d := oNonce) (n := (glOf s₀).ql) hL.dFS (by simp only [oNonce, frameBytes]; omega)
+  · exact GL.Ok.frame_disj (d := oNonce) (n := (glOf s₀).ql) hL.dFS (by simp only [oNonce, frameBytes]; omega_using [hq])
   · exact (GL.Ok.frame_disj (d := oArgs) (n := 8) hL.dFS (by decide)).symm
 
 /-- `vg_dsa_derive_key_checked`'s contract on the registers holds when it is
@@ -124,8 +124,8 @@ theorem derive_pre_checked {s₀ t : State} (h : gkContract.pre s₀) (ha : DArg
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem]
   rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r9 (by decide), ha.r5, ha.r6, ha.r7, ha.r9]
   simp only [BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := (glOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (glOf s₀).ql) (by omega),
-    Nat.mod_eq_of_lt (a := (glOf s₀).kl) (by simp only [GL.kl]; omega), ha.ctx.par]
+  rw [Nat.mod_eq_of_lt (a := (glOf s₀).pl) (by omega_using [hp]), Nat.mod_eq_of_lt (a := (glOf s₀).ql) (by omega_using [hq]),
+    Nat.mod_eq_of_lt (a := (glOf s₀).kl) (by simp only [GL.kl]; omega_using [hp, hq]), ha.ctx.par]
   exact hchk
 
 /-- The regions given to `vg_dsa_derive_key_checked` are within the caller's. -/
@@ -144,7 +144,7 @@ theorem derive_cov {s₀ t : State} (h : gkContract.pre s₀) (hc : Ctx (glOf s�
     · exact VG.Covers.of_mem fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
         exact List.mem_append_left _ (by rw [hc.rd, hrd]; exact List.mem_cons_self ..)
-    · exact VG.Covers.one (inF _ _ (by decide) (by simp only [oNonce, frameBytes]; omega))
+    · exact VG.Covers.one (inF _ _ (by decide) (by simp only [oNonce, frameBytes]; omega_using [hq]))
     · exact VG.Covers.one (inF _ _ (by decide) (by decide))
     · exact VG.Covers.of_mem fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
@@ -171,8 +171,8 @@ theorem dres_eq {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf s�
   rw [g .r5 (by decide), g .r6 (by decide), g .r7 (by decide), g .r8 (by decide), g .r9 (by decide),
     ha.r5, ha.r6, ha.r7, ha.r8, ha.r9]
   simp only [BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := (glOf s₀).pl) (by omega), Nat.mod_eq_of_lt (a := (glOf s₀).ql) (by omega),
-    Nat.mod_eq_of_lt (a := (glOf s₀).kl) (by simp only [GL.kl]; omega)]
+  rw [Nat.mod_eq_of_lt (a := (glOf s₀).pl) (by omega_using [hp]), Nat.mod_eq_of_lt (a := (glOf s₀).ql) (by omega_using [hq]),
+    Nat.mod_eq_of_lt (a := (glOf s₀).kl) (by simp only [GL.kl]; omega_using [hp, hq])]
 
 /-- What the call leaves. -/
 structure Derived (L : GL) (s₀ : State) (t t' : State) : Prop where
@@ -201,7 +201,7 @@ theorem derive_ok {s₀ t : State} (h : gkContract.pre s₀) (ha : DArgs (glOf s
   refine ⟨hc.step hL hsp' hrd' hwr' (fun r hr => hpres r (hdis r hr)) (hf.mono (by simp)), hpres, hf, p3, ?_⟩
   simp only [State.withRegions_mem, State.withRegions_gpr] at pout
   rw [State.callEntry_gpr t (r := .r3) (by decide), State.callEntry_gpr t (r := .r4) (by decide), ha.r3, ha.r4,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := (glOf s₀).ol) (by simp only [GL.ol]; omega)] at pout
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := (glOf s₀).ol) (by simp only [GL.ol]; omega_using [hp, hq])] at pout
   exact pout
 
 end VG.Proof.Dsa.PPC64LE.GK

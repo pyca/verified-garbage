@@ -42,8 +42,8 @@ theorem KeyCallMemory.of_outer {p : Inputs} {s : State} {sp : BitVec 32}
     exact belowA_inner (a := 48) (k := 128) (by decide) fit
   refine ⟨⟨?_, workspace.sub_left inner⟩, domain.sub_right inner,
     privateValue.sub_right inner, publicValue.sub_right inner, entropy.sub_right inner, privateFits⟩
-  rw [pointer, sub_toNat' (by omega : 128 ≤ sp.toNat)]
-  omega
+  rw [pointer, sub_toNat' (by omega_using [fit] : 128 ≤ sp.toNat)]
+  omega_using [fit]
 
 theorem KeyCallMemory.after {p : Inputs} {s t : State} {rs : List Reg}
     (h : KeyCallMemory p s) (rest : Rest rs s t) : KeyCallMemory p t := by

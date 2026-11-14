@@ -65,21 +65,21 @@ theorem BytesPrefix.write {m : Mem} {p : Addr} {l : KeyBytes} {n i : Nat}
     (h : BytesPrefix m p l n) (hn : n ≤ 128) (hi : i < n) (b : Byte) :
     BytesPrefix (m.writeW (p + BitVec.ofNat 64 i) b) p (l.set! i b) n := by
   intro j hj
-  rw [WriteBytes.writeW8_apply, getD_set l i j (by omega)]
+  rw [WriteBytes.writeW8_apply, getD_set l i j (by omega_using [hn, hj])]
   by_cases he : i = j
   · subst j; simp
-  · have hne := Offset.add_ofNat_ne p (show j < 2 ^ 64 by omega) (show i < 2 ^ 64 by omega) (Ne.symm he)
+  · have hne := Offset.add_ofNat_ne p (show j < 2 ^ 64 by omega_using [hn, hj]) (show i < 2 ^ 64 by omega_using [hn, hi]) (Ne.symm he)
     rw [ite_eq_right he, ite_eq_right hne, h j hj]
 
 theorem BytesPrefix.extend {m : Mem} {p : Addr} {l : KeyBytes} {n : Nat}
     (h : BytesPrefix m p l n) (hn : n < 128) (b : Byte) :
     BytesPrefix (m.writeW (p + BitVec.ofNat 64 n) b) p (l.set! n b) (n + 1) := by
   intro j hj
-  rw [WriteBytes.writeW8_apply, getD_set l n j (by omega)]
+  rw [WriteBytes.writeW8_apply, getD_set l n j (by omega_using [hn, hj])]
   by_cases he : n = j
   · subst j; simp
-  · have hne := Offset.add_ofNat_ne p (show j < 2 ^ 64 by omega) (show n < 2 ^ 64 by omega) (Ne.symm he)
-    rw [ite_eq_right he, ite_eq_right hne, h j (by omega)]
+  · have hne := Offset.add_ofNat_ne p (show j < 2 ^ 64 by omega_using [hn, hj]) (show n < 2 ^ 64 by omega_using [hn]) (Ne.symm he)
+    rw [ite_eq_right he, ite_eq_right hne, h j (by omega_using [hj, he])]
 
 theorem scheduleAt_expanded {m : Mem} {p : Addr} {key : List Byte} {bits : Nat}
     (h : BytesPrefix m p (Spec.Rc2.expandBytes key bits) 128) :
@@ -87,7 +87,7 @@ theorem scheduleAt_expanded {m : Mem} {p : Addr} {key : List Byte} {bits : Nat}
   apply Vector.ext
   intro i hi
   simp only [Spec.Rc2.scheduleAt, Spec.Rc2.expandKey, Vector.getElem_ofFn]
-  rw [h (2 * i) (by omega), h (2 * i + 1) (by omega)]
+  rw [h (2 * i) (by omega_using [hi]), h (2 * i + 1) (by omega_using [hi])]
 
 theorem bytesAt_getD (m : Mem) (p : Addr) (n i : Nat) (hi : i < n) :
     (Spec.Rc2.bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by

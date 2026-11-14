@@ -42,18 +42,18 @@ theorem Valid.innerSaved {g : Geometry} (_h : g.Valid) : g.innerRegion.Disjoint 
 
 theorem Valid.offsetAddr {g : Geometry} (h : g.Valid) {d : Nat} (fit : d < VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 52) :
     byteAddr (g.stack + BitVec.ofNat 32 d) = byteAddr g.stack + BitVec.ofNat 64 d :=
-  byteAddr_add (by have := h.stackHigh; omega)
+  byteAddr_add (by have := h.stackHigh; omega_using [fit, this])
 
 theorem Valid.offsetNat {g : Geometry} (h : g.Valid) {d : Nat} (fit : d < VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 52) :
     (g.stack + BitVec.ofNat 32 d).toNat = g.stack.toNat + d := by
-  have sum : g.stack.toNat + d < 2 ^ 32 := by have := h.stackHigh; omega
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32), Nat.mod_eq_of_lt sum]
+  have sum : g.stack.toNat + d < 2 ^ 32 := by have := h.stackHigh; omega_using [fit, this]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [sum] : d < 2 ^ 32), Nat.mod_eq_of_lt sum]
 
 theorem Valid.encodingFit {g : Geometry} (h : g.Valid) {d : Nat} (hd : d + g.length ≤ VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes) :
     (g.stack + BitVec.ofNat 32 d).toNat + g.length ≤ 2 ^ 32 := by
-  rw [h.offsetNat (by omega)]
+  rw [h.offsetNat (by omega_using [hd])]
   have := h.stackHigh
-  omega
+  omega_using [hd, this]
 
 end Geometry
 end VG.Proof.RsaPkcs1Sig.X86.Rcv

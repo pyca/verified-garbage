@@ -39,7 +39,7 @@ theorem importOperandLayout_ok (s : State) {base src : BitVec 32} {len w o k : N
     ready.stackRead ready.stackSep ready.saved) ?_
   rintro t ⟨value, outside, frame, restT, ptr⟩
   rw [a.mem] at value outside frame
-  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega)
+  have keeps := outside_array_keeps outside (len := len) (by have := h.workspace.nowrap; omega_using [this])
   have rest : Rest roundClobbers s t := (restU.mono (by decide)).trans restT
   exact ⟨h.after_array keeps frame rest ptr, value, keeps, frame, rest⟩
 

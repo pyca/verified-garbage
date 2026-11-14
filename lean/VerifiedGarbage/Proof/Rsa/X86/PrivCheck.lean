@@ -37,8 +37,8 @@ theorem check_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s 
   refine WP.seq (WP.mono (pd_call v h3 args3) ?_)
   rintro s4 ⟨h4, frame4, rest4, pd⟩
   have bound := h.valid.maxLength
-  have fit : g.length < 2 ^ 64 := by omega
-  have tempFit : candidateOffset + g.length ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes := by simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega
+  have fit : g.length < 2 ^ 64 := by omega_using [bound]
+  have tempFit : candidateOffset + g.length ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes := by simp only [candidateOffset, VG.Impl.Rsa.X86.PrivChecked.frameBytes]; omega_using [bound]
   have tempCall : ∀ r ∈ pdWr g ++ [g.calleeRegion], (⟨byteAddr g.temporary, g.length⟩ : Region).Disjoint r := by
     rw [temporary_region h.valid]
     exact innerSlice_pdCall h.valid (by decide : 40 ≤ candidateOffset) tempFit
@@ -54,7 +54,7 @@ theorem check_ok (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} (s 
   have r3 : s4.mem.readW (byteAddr g.stack + BitVec.ofNat 64 precomputeStatusOffset) 32 = s2.gpr .eax := by
     rw [status_frame frame4 (innerSlice_pdCall h.valid (by decide : 40 ≤ precomputeStatusOffset) (by decide : precomputeStatusOffset + 4 ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes))]
     exact status3
-  have pre := wordsAt_frame frame3 (by simp only [Spec.Rsa.modulusWords]; omega)
+  have pre := wordsAt_frame frame3 (by simp only [Spec.Rsa.modulusWords]; omega_using [bound])
     (precomputation_setup h.valid)
   have pcBit : match Spec.Rsa.publicPrecompute (bs 0) with
       | some _ => s2.gpr .eax = 1 | none => s2.gpr .eax = 0 := by

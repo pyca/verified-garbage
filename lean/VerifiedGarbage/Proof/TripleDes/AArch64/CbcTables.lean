@@ -95,7 +95,7 @@ theorem scr_sub {d n : Nat} (h : d + n ≤ 464) :
     Region.Sub ⟨S s₀ + BitVec.ofNat 64 d, n⟩ (scrR s₀) := Offset.sub_base _ h
 
 theorem data_sub {j : Nat} (hj : j < N s₀) :
-    Region.Sub ⟨D s₀ + BitVec.ofNat 64 (8*j), 8⟩ (dataR s₀) := Offset.sub_base _ (by omega)
+    Region.Sub ⟨D s₀ + BitVec.ofNat 64 (8*j), 8⟩ (dataR s₀) := Offset.sub_base _ (by omega_using [hj])
 
 theorem sched_frame (hp : Pre s₀) {m : Mem} (hf : Frame (changes s₀) s₀.mem m) :
     Spec.TripleDes.scheduleAt m (W s₀) = Spec.TripleDes.scheduleAt s₀.mem (W s₀) :=
@@ -153,7 +153,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
   have rdwr : s.rd ++ s.wr = [keyR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   obtain ⟨s₁, run₁, ax₁, keep₁, sp₁, mem₁, rd₁, wr₁⟩ := chainIn_ok s h.x1 h.x2
     (by rw [rdwr]; exact in_rw (r := ivR s₀) (by simp) (Region.contains_self _ _))
-    (by rw [rdwr]; exact in_rw (r := dataR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+    (by rw [rdwr]; exact in_rw (r := dataR s₀) (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, hdw])))
   have vec₁ := VG.AArch64.Tbl.runBlock_v chainIn_v run₁
   have x14₁ : s₁.gpr .x14 = W s₀ := by rw [keep₁ _ (by decide) (by decide), h.x14]
   have x15₁ : s₁.gpr .x15 = S s₀ := by rw [keep₁ _ (by decide) (by decide), h.x15]
@@ -174,7 +174,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
     rw [same₂.keep .x2 (by simp [outer]), keep₁ _ (by decide) (by decide), h.x2]
   obtain ⟨s₃, run₃, x2₃, x3₃, keep₃, mem₃, sp₃, rd₃, wr₃⟩ := store_ok s₂ x1₂ x2₂
     (by rw [wr₂]; exact in_rw (r := ivR s₀) (by simp) (Region.contains_self _ _))
-    (by rw [wr₂]; exact in_rw (r := dataR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+    (by rw [wr₂]; exact in_rw (r := dataR s₀) (by simp) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk, hdw])))
   have vec₃ := VG.AArch64.Tbl.runBlock_v store_v run₃
   have vals₂ : ∀ j < N s₀, Spec.Aes.bytesAt s₂.mem (D s₀ + BitVec.ofNat 64 (8*j)) 8 =
       if j < k then out s₀ j else Spec.Aes.bytesAt s₀.mem (D s₀ + BitVec.ofNat 64 (8*j)) 8 := by
@@ -209,7 +209,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
   · rw [x2₃, x2₂]
     exact x2_succ _ _
   · rw [x3₃, same₂.keep .x3 (by simp [outer]), keep₁ _ (by decide) (by decide), h.x3,
-      ofNat_sub_one (by omega) (by omega)]
+      ofNat_sub_one (by omega_using [hk]) (by omega_using [hN])]
     congr 1
   · rw [sp₃, same₂.sp, sp₁, h.sp]
   · rw [rd₃, same₂.rd, rd₁, h.rd]
@@ -227,14 +227,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
       obtain ⟨n5, -, -, -, -, -, -, -, -, -, n2, n3, -⟩ := maskRegs_ne p hp'
       simp [n2,n3,n5]))
   · intro i hi
-    rw [fStore.readW (Region.contains_self _ _) (stD (by omega)) (by decide)]
+    rw [fStore.readW (Region.contains_self _ _) (stD (by omega_using [hi])) (by decide)]
     have e := keys₂ i hi
     rw [x15₁, sch₁] at e
     exact e
   · exact (h.slots.frame_in (lo := 384) (n := 72) saveSlots_facts.1 fr₂ (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact Offset.disjoint_base _ (by decide) (by decide))).frame fStore
-        (fun q hq => stD (by have := saveSlots_facts.1 q hq; omega))
+        (fun q hq => stD (by have := saveSlots_facts.1 q hq; omega_using [this]))
   · intro j hj
     rw [bytesAt_frame fIv (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
@@ -242,14 +242,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
     by_cases he : j = k
     · subst j
       change Spec.Aes.bytesAt (s₂.mem.writeW _ _) _ 8 = _
-      rw [← le8_readW, Mem.readW_writeW_self64, value, ite_eq_left (by omega)]
+      rw [← le8_readW, Mem.readW_writeW_self64, value, ite_eq_left (by omega_using [])]
     · rw [bytesAt_frame fData (fun r hr => by
         obtain rfl := List.mem_singleton.mp hr
-        exact Offset.disjoint (D s₀) (by omega) (by omega) (by omega)) (by decide)]
+        exact Offset.disjoint (D s₀) (by omega_using [he]) (by omega_using [hdw, hj]) (by omega_using [hk, hdw])) (by decide)]
       rw [vals₂ j hj]
       by_cases hlt : j < k
-      · rw [ite_eq_left hlt, ite_eq_left (by omega)]
-      · rw [ite_eq_right hlt, ite_eq_right (by omega)]
+      · rw [ite_eq_left hlt, ite_eq_left (by omega_using [hlt])]
+      · rw [ite_eq_right hlt, ite_eq_right (by omega_using [he, hlt])]
   · rw [mem₃, ← le8_readW, Mem.readW_writeW_self64, value]
     simp [prev, cbcEncPrev, out]
 
@@ -263,13 +263,13 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < N s₀) {s : 
   rintro n s ⟨k,rfl,hk,h⟩
   refine WP.mono (body_ok hp hk h) fun s' h' => ?_
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
-  have ev := eval_nonzero (r := .x3) (x := N s₀-(k+1)) (by omega) h'.x3
+  have ev := eval_nonzero (r := .x3) (x := N s₀-(k+1)) (by omega_using [hN]) h'.x3
   by_cases hz : N s₀-(k+1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k+1 by omega]
+    rwa [show N s₀ = k+1 by omega_using [hk, hz]]
   · right
-    exact ⟨by rw [ev]; simp [hz], N s₀-(k+1), by omega, k+1,rfl,by omega,h'⟩
+    exact ⟨by rw [ev]; simp [hz], N s₀-(k+1), by omega_using [hk], k+1,rfl,by omega_using [hz],h'⟩
 
 /-- The shared API's data and chaining-value postcondition. -/
 def Result (s₀ s : State) : Prop :=
@@ -345,7 +345,7 @@ theorem encrypt_wp {s₀ : State} (hp : Pre s₀) :
         obtain rfl := List.mem_singleton.mp hr
         rw [x15₁]; exact hp.iv_scr.sub_right (Region.sub_prefix (by decide))) (by decide)
   apply WP.seq
-  refine WP.mono (loop_ok hp (by omega) inv₂) fun s₃ h₃ => ?_
+  refine WP.mono (loop_ok hp (by omega_using [hn]) inv₂) fun s₃ h₃ => ?_
   refine WP.mono (restore_ok' bp (by rw [h₃.x15,x15₁]) h₃.rd h₃.wr (by
     rw [x15₁]
     intro p hp'

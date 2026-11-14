@@ -43,7 +43,7 @@ theorem var_succ (t k : Nat) (hk : k < 7) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 7 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 /-- The registers of a round are all different. -/
 theorem round_nodup (t : Nat) :
@@ -53,8 +53,8 @@ theorem round_nodup (t : Nat) :
     simp only [carry]; split <;> split <;> first | rfl | omega
   rw [e]
   simp only [var, carry]
-  have h8 := Nat.mod_lt t (show 8 > 0 by omega)
-  rw [show t % 2 = t % 8 % 2 by omega]
+  have h8 := Nat.mod_lt t (show 8 > 0 by omega_using [])
+  rw [show t % 2 = t % 8 % 2 by omega_using []]
   generalize t % 8 = c at *
   revert h8; revert c; decide +kernel
 
@@ -91,10 +91,10 @@ theorem round_ok (j t : Nat) (s : State) (v : HashValue) (w : Word)
       (∀ r ∈ pubRegs, s'.gpr r = s.gpr r) ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
   have hd := round_nodup t
   have hd' := VG.nodup_reverse hd
-  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega),
-    var_succ t _ (show 1 < 7 by omega), var_succ t _ (show 2 < 7 by omega),
-    var_succ t _ (show 3 < 7 by omega), var_succ t _ (show 4 < 7 by omega),
-    var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
+  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega_using []),
+    var_succ t _ (show 1 < 7 by omega_using []), var_succ t _ (show 2 < 7 by omega_using []),
+    var_succ t _ (show 3 < 7 by omega_using []), var_succ t _ (show 4 < 7 by omega_using []),
+    var_succ t _ (show 5 < 7 by omega_using []), var_succ t _ (show 6 < 7 by omega_using [])] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hc⟩ := hv
   have ea : s.ea (wSlot j t) = s.gpr .rcx + BitVec.ofInt 64 ((32 * (t / 4) + 16 * j + 4 * (t % 4) : Nat) : Int) :=
     rfl
@@ -167,12 +167,12 @@ theorem rounds4_ok (j n : Nat) (H : HashValue) (M : Block) (s : State)
     WP isa (.block (round j (4 * n) ++ round j (4 * n + 1) ++ round j (4 * n + 2) ++ round j (4 * n + 3))) s
       fun s' => Vars (4 * n + 4) s' (Spec.Sha256.rounds H M (4 * n + 4)) ∧ Keeps s s' := by
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (round_step j _ H M s hv (hw 0 (by omega))) fun s₁ ⟨hv₁, hk₁⟩ => ?_
-  refine WP.mono (round_step j _ H M s₁ hv₁ ((hw 1 (by omega)).keeps hk₁)) fun s₂ ⟨hv₂, hk₂⟩ => ?_
+  refine WP.mono (round_step j _ H M s hv (hw 0 (by omega_using []))) fun s₁ ⟨hv₁, hk₁⟩ => ?_
+  refine WP.mono (round_step j _ H M s₁ hv₁ ((hw 1 (by omega_using [])).keeps hk₁)) fun s₂ ⟨hv₂, hk₂⟩ => ?_
   have hk₂' := hk₁.trans hk₂
-  refine WP.mono (round_step j _ H M s₂ hv₂ ((hw 2 (by omega)).keeps hk₂')) fun s₃ ⟨hv₃, hk₃⟩ => ?_
+  refine WP.mono (round_step j _ H M s₂ hv₂ ((hw 2 (by omega_using [])).keeps hk₂')) fun s₃ ⟨hv₃, hk₃⟩ => ?_
   have hk₃' := hk₂'.trans hk₃
-  refine WP.mono (round_step j _ H M s₃ hv₃ ((hw 3 (by omega)).keeps hk₃')) fun s₄ ⟨hv₄, hk₄⟩ => ?_
+  refine WP.mono (round_step j _ H M s₃ hv₃ ((hw 3 (by omega_using [])).keeps hk₃')) fun s₄ ⟨hv₄, hk₄⟩ => ?_
   exact ⟨hv₄, hk₃'.trans hk₄⟩
 
 /-- The rounds of the second block. -/
@@ -183,8 +183,8 @@ theorem rounds2_ok (H : HashValue) (M : Block) (s : State) (hv : Vars 0 s H)
   induction n with
   | zero => exact WP.block_nil ⟨hv, Keeps.refl s⟩
   | succ n ih =>
-    refine WP.seq (WP.mono (ih (by omega)) fun s₁ ⟨hv₁, hk₁⟩ => ?_)
-    exact WP.mono (round_step 1 n H M s₁ hv₁ ((hw n (by omega)).keeps hk₁)) fun s₂ ⟨hv₂, hk₂⟩ =>
+    refine WP.seq (WP.mono (ih (by omega_using [hn])) fun s₁ ⟨hv₁, hk₁⟩ => ?_)
+    exact WP.mono (round_step 1 n H M s₁ hv₁ ((hw n (by omega_using [hn])).keeps hk₁)) fun s₂ ⟨hv₂, hk₂⟩ =>
       ⟨hv₂, hk₁.trans hk₂⟩
 
 end VG.Proof.Sha256.X86_64.Avx2

@@ -115,10 +115,10 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 272) (h : LAt σ pos t s) :
   have hw : pR (σ.gpr .rdx) ∈ s.wr := by rw [h.env.wr, hp.2.1]; simp
   have hp' := spOk (pos := pos) hp
   refine WP.mono (rbBody_ok (eta hp) s (aP := σ.gpr .rdx) h.env.rbp h.rdi (Lt_length_le t) (.of_mem hw) h.stored
-    (by rw [h.rsi, at_add]; exact inScrRd hp' h.env (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
+    (by rw [h.rsi, at_add]; exact inScrRd hp' h.env (by omega_using [ht]))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
   have ht1 : Lt σ (t + 1) = rbStep (etaOf σ) (Lt σ t) ((X σ).getD t 0) := by
     simp only [Lt]
-    rw [take_succ' _ (by rw [X_length]; omega), rbFold_snoc]
+    rw [take_succ' _ (by rw [X_length]; omega_using [ht]), rbFold_snoc]
   rw [out_byte h ht, ← ht1] at hdi hst
   have hk' : Keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] s s' := hk.mono (by simp)
   have hsv : ∀ k, 2024 ≤ k → k + 8 ≤ 2048 →
@@ -128,12 +128,12 @@ theorem lat_step {t : Nat} {s : State} (ht : t < 272) (h : LAt σ pos t s) :
     by rw [hk'.gpr (by decide), h.env.rbp], by rw [hk'.gpr (by decide), h.env.r12],
     by rw [hk'.gpr (by decide), h.env.rsp],
     fun r hr => by rw [hk'.gpr (r13_not hr), h.env.cs r hr],
-    (by rw [hsv 2024 (by omega) (by omega), hsv 2032 (by omega) (by omega), hsv 2040 (by omega) (by omega)];
+    (by rw [hsv 2024 (by omega_using []) (by omega_using []), hsv 2032 (by omega_using []) (by omega_using []), hsv 2040 (by omega_using []) (by omega_using [])];
         exact h.env.saved), h.env.frame.trans (hf.mono (by simp))⟩,
-    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 272) (by omega)).symm)
-      (by omega)]; exact h.out,
+    by rw [MlKem.bytesAt_frame hf (by simpa using (a_scr' hp' (a := 840) (n := 272) (by omega_using [])).symm)
+      (by omega_using [])]; exact h.out,
     by rw [hsi, h.rsi, offAdd],
-    hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega) (by omega)]; rfl, hst, h.stream.frame hf
+    hdi, by rw [hcx, h.rcx, ofNat64_pred (by omega_using [ht]) (by omega_using [])]; rfl, hst, h.stream.frame hf
       (by simpa using (hp'.a_scr.sub_right (sub_scr0 (n := 200) (by decide))).symm)⟩, by rw [hz, h.rcx]⟩
 
 omit hp in
@@ -155,7 +155,7 @@ theorem loop_ok {s : State} (h : J6 136 272 (spOf σ pos) σ s) (hs : SpongeStre
     WP.mono (lat_step hp ht hI) fun s' ⟨hI', hz⟩ => ⟨hI', ?_, by rw [hz, hI.rcx]⟩) (fun _ h => h)
     ⟨he.keep hm (hk.mono (by decide)), by rw [hm]; exact hout, by rw [hk.gpr (by decide), hsi]; simp,
       by rw [hk.gpr (by decide), hdi]; rfl, hcx, by rw [hm]; exact stored_nil _ _, hstream.mem_eq hm⟩ hcx
-  rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega) (by omega)]; rfl
+  rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega_using [ht]) (by omega_using [])]; rfl
 
 
 omit hp in
@@ -243,9 +243,9 @@ theorem continue_ok {s : State} (h : LAt σ pos 272 s) :
   refine WP.seq (WP.mono (continue_args_ok hp h) fun s2 h2 => ?_)
   exact WP.seq (WP.mono (wp_countdown (N := 272) (by decide) (by decide)
       (fun t => RejBounded.LAt σ (272 + t))
-      (fun t ht s hI _ => WP.mono (RejBounded.lat_step hp (by omega) hI) fun s' ⟨hI', hz⟩ =>
+      (fun t ht s hI _ => WP.mono (RejBounded.lat_step hp (by omega_using [ht]) hI) fun s' ⟨hI', hz⟩ =>
         ⟨by simpa only [Nat.add_assoc] using hI', by
-          rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega) (by omega)]; rfl,
+          rw [hI'.rcx, hI.rcx, ofNat64_pred (by omega_using [ht]) (by omega_using [])]; rfl,
           by rw [hz, hI.rcx]⟩)
       (fun _ h => h) (by simpa using h2) h2.rcx) fun _ h3 => RejBounded.end_ok hp h3)
 
@@ -269,7 +269,7 @@ theorem finish_ok {s : State} (h : LAt σ pos 272 s) :
       apply beq_eq_false_iff_ne.mpr
       intro e
       have := congrArg BitVec.toNat e
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Lt_length_le (σ := σ) 272; omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Lt_length_le (σ := σ) 272; omega_using [this])] at this
       exact hf this
     apply WP.ite false hz' (fun e => by contradiction) (fun _ => continue_ok hp h')
 

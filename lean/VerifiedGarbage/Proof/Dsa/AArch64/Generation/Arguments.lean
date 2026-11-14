@@ -46,11 +46,11 @@ theorem headerArgument_ok {s : State} {B F : Addr} {W : Nat → BitVec 64}
     (by rcases a with ⟨d, v⟩; cases v <;> rfl) (by rcases a with ⟨d, v⟩; cases v <;> rfl)
   cases he : a.value with
   | ones =>
-    brun [headerArgument, he, hdi, hdr_enc hd', hB.st (d := 8 * a.destination) (by omega)]
+    brun [headerArgument, he, hdi, hdr_enc hd', hB.st (d := 8 * a.destination) (by omega_using [hd'])]
     rfl
   | literal n =>
     rw [he] at hv
-    brun [headerArgument, he, hdi, hdr_enc hd', hB.st (d := 8 * a.destination) (by omega), argumentValue, off]
+    brun [headerArgument, he, hdi, hdr_enc hd', hB.st (d := 8 * a.destination) (by omega_using [hd']), argumentValue, off]
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat,
@@ -59,7 +59,7 @@ theorem headerArgument_ok {s : State} {B F : Addr} {W : Nat → BitVec 64}
     rw [he] at hv
     have henc : 8 * k % 8 = 0 ∧ 8 * k < 32768 := by omega
     brun [headerArgument, he, exec_ldrSp henc, hsp, hdi, hdr_enc hd',
-      hB.st (d := 8 * a.destination) (by omega), hr k hv.1, hwords k hv.1]
+      hB.st (d := 8 * a.destination) (by omega_using [hd']), hr k hv.1, hwords k hv.1]
     congr 2
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat,
@@ -102,7 +102,7 @@ theorem argumentWrites_outside (B : Addr) (W : Nat → BitVec 64) (m : Mem)
     have hd := h.1
     have hd' := h.2.1
     have hf : Outside B 128 128 m (m.writeW (off B (8 * a.destination)) (argumentValue W a.value)) :=
-      (writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)
+      (writeW_outside _ _ _ (by omega_using [hd'])).mono (by omega_using [hd]) (by omega_using [hd'])
     exact hf.trans (ih _ (fun b hb => ha b (List.mem_cons_of_mem _ hb)))
 
 def argumentWords (W H : Nat → BitVec 64) : List HeaderArgument → Nat → BitVec 64

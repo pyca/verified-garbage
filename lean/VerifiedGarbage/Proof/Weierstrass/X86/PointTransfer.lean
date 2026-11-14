@@ -35,7 +35,7 @@ theorem Inv.transferPointFields {FM : Impl.Weierstrass.Mont.Modulus} {wk : Nat} 
       have hx₂ := hx (o.z,8*M.n) (by simp [progW,jacCoords])
       rw [hy] at hx₁
       rw [hz] at hx₂
-      omega
+      omega_using [hx₀, hx₁, hx₂]
   have hlt : ∀ x∈jacCoords o, wordsVal t.mem base x M.n<m := by
     intro x hx
     simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx

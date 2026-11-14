@@ -59,18 +59,18 @@ theorem primeTrial_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State
     WP isa (seqs trial) s fun t =>
       t.zf = some (!Spec.RsaKeyGen.obviouslyComposite (Spec.Dsa.bitLength P.N) P.N) ∧
       PrimeInput P mi used t ∧ Frm P.B (primeTrialRanges P.w) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (trial_ok h.good P.dims.z hz (by have := P.dims.w4; omega)
-    (by omega) h.n hn hpolicy) fun t ⟨hzf, hg, hf, hk⟩ => ?_
+  refine WP.mono (trial_ok h.good P.dims.z hz (by have := P.dims.w4; omega_using [this])
+    (by omega_using [hw]) h.n hn hpolicy) fun t ⟨hzf, hg, hf, hk⟩ => ?_
   have k : Keep mmRegs s t := hk.mono (by decide)
   have hn' : wv t.mem P.B (slot P.w aN) P.w = P.N := by
     rw [hf.wv_eq (by have := P.dims.w4; rng_disj)
-      (by have := P.dims.z; have := h.good.scr.nowrap; simp only [slot, hdrBytes, aN] at *; omega)]
+      (by have := P.dims.z; have := h.good.scr.nowrap; simp only [slot, hdrBytes, aN] at *; omega_using [hw])]
     exact h.n
   have hi := h.advance hg hn' hf k (by
     have := P.z256
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hz, by simp only [kT0, sFn]; omega, by simp only [kT1, sFn]; omega,
-      by simp only [kT2, sFn]; omega⟩)
+    exact ⟨hz, by simp only [kT0, sFn]; omega_using [hz], by simp only [kT1, sFn]; omega_using [hz],
+      by simp only [kT2, sFn]; omega_using [hz]⟩)
     (by
       intro j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hj

@@ -78,11 +78,11 @@ theorem fail_ok {s0 s : State} (h : Base s0 s) (p0 : s.gpr .r0 = s0.gpr .r0) (p3
   have kb := pre.kb
   refine ⟨dt, u12.gpr, ?_, ?_, ?_⟩
   · simp only [outDp]
-    rw [u12.mem, bytes_frame f11 (by rw [eDp]; simpa using pre.dpQi) (by omega), u10.mem, u9.mem, u8.mem,
-      bytes_frame f7 (by rw [eDp]; simpa using pre.dpDq) (by omega), u6.mem, u5.mem, u4.mem]
+    rw [u12.mem, bytes_frame f11 (by rw [eDp]; simpa using pre.dpQi) (by omega_using [lp, kb]), u10.mem, u9.mem, u8.mem,
+      bytes_frame f7 (by rw [eDp]; simpa using pre.dpDq) (by omega_using [lp, kb]), u6.mem, u5.mem, u4.mem]
     simpa only [rDp, reg, pre.dpLen] using o3
   · simp only [outDq]
-    rw [u12.mem, bytes_frame f11 (by rw [eDq]; simpa using pre.dqQi) (by omega), u10.mem, u9.mem, u8.mem]
+    rw [u12.mem, bytes_frame f11 (by rw [eDq]; simpa using pre.dqQi) (by omega_using [lq, kb]), u10.mem, u9.mem, u8.mem]
     simpa only [rDq, reg, pre.dqLen] using o7
   · simp only [outQi]
     rw [u12.mem]
@@ -101,12 +101,12 @@ theorem ldrSaved {s0 s : State} (h : Done s0 s) (p12 : s.gpr .r12 = cvB s0) {i :
     WP isa (.block (.ldr t .r12 (20 + 4 * i) :: rest)) s Q := by
   have pre := h.pre
   have fS := pre.fS
-  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega) pre.fits
+  have hz : 64 ≤ cvZ s0 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_using []) pre.fits
   simp only [cvZ] at hz
   have eB : (cvB s0).toNat = (stackArg s0 10).toNat := rfl
-  refine wp_ldr (by omega) (by rw [p12]; exact addr_add (by omega))
+  refine wp_ldr (by omega_using [hi]) (by rw [p12]; exact addr_add (by omega_using [hi, fS, hz, eB]))
     ⟨rS s0, List.mem_append_right _ (by rw [h.wr, pre.wr]; simp),
-      Offset.contains_base _ (by omega) (by omega)⟩ fun s' u => k s' ?_
+      Offset.contains_base _ (by omega_using [hi, hz]) (by omega_using [hi])⟩ fun s' u => k s' ?_
   have e : s.mem.readW (off (State.addr (cvB s0)) (20 + 4 * i)) 32 = s0.gpr (savedReg i) :=
     BitVec.eq_of_toNat_eq (h.saved i hi)
   exact ⟨by rw [u.gpr]; exact e, u.other, u.mem, u.rd, u.wr, u.sp⟩

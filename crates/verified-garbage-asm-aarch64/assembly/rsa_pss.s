@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_pss_sign:
+vg_rsa_pss_sign_precomputed:
 	sub sp, sp, #336
 	ldr x10, [sp, #448]
 	add x16, sp, #0
@@ -143,7 +143,15 @@ vg_rsa_pss_sign:
 	ldr x5, [sp, #200]
 	add x6, x20, #2560
 	add x7, x23, #0
-	bl {vg_rsa_private_checked}
+	ldr x19, [sp, #96]
+	ldr x20, [sp, #104]
+	ldr x9, [sp, #464]
+	add x16, sp, #0
+	str x9, [x16, #96]
+	ldr x9, [sp, #472]
+	add x16, sp, #0
+	str x9, [x16, #104]
+	bl {vg_rsa_private_checked_precomputed}
 	b 217f
 216:
 	ldr x14, [sp, #216]
@@ -155,6 +163,8 @@ vg_rsa_pss_sign:
 	sub x13, x13, #1
 	cbnz x13, 218b
 	movz x0, #0, lsl #0
+	ldr x19, [sp, #96]
+	ldr x20, [sp, #104]
 217:
 	b 21f
 20:
@@ -167,10 +177,10 @@ vg_rsa_pss_sign:
 	sub x13, x13, #1
 	cbnz x13, 219b
 	movz x0, #0, lsl #0
+	ldr x19, [sp, #96]
+	ldr x20, [sp, #104]
 21:
 	add x16, sp, #0
-	ldr x19, [x16, #96]
-	ldr x20, [x16, #104]
 	ldr x21, [x16, #112]
 	ldr x22, [x16, #120]
 	ldr x23, [x16, #128]

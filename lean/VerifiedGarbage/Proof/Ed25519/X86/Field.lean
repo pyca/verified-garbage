@@ -116,7 +116,7 @@ theorem FieldKeep.ctx {x : BitVec 32} {s t : State}
 theorem offset_inj {a b : Slot} (h : offset a = offset b) : a = b := by
   apply Fin.ext
   simp only [offset] at h
-  omega
+  omega_using [h]
 
 theorem restrict_update (e : Nat → Spec.X25519.Fe) (o : Slot) (v : Spec.X25519.Fe) :
     (fun i : Slot => Function.update e (offset o) v (offset i)) =
@@ -134,8 +134,8 @@ theorem const_env {x : BitVec 32} {m m' : Mem} (hx : x.toNat + 8192 ≤ 2 ^ 32) 
   · subst i; rw [Function.update_self]; rfl
   · rw [Function.update_of_ne hi]
     apply congrArg VG.Proof.X25519.toFe
-    exact fe_frame1 hf hx (by simp only [offset]; omega)
-      (by simp only [offset]; omega) (slot_ne (slot_valid o) (slot_valid i) (fun h => hi (offset_inj h)))
+    exact fe_frame1 hf hx (by simp only [offset]; omega_using [])
+      (by simp only [offset]; omega_using []) (slot_ne (slot_valid o) (slot_valid i) (fun h => hi (offset_inj h)))
 
 theorem raw_field_ok {s : State} {x : BitVec 32} (hc : Ctx x s c) (op : Op)
     (hv : opValid 64 op = true) (o : Slot) (ho : opOut op = offset o) :
@@ -154,8 +154,8 @@ theorem fieldOp_ok {s : State} {x : BitVec 32} (hc : Ctx x s c) (op : FieldOp) :
   cases op with
   | const o v =>
     refine WP.mono (constField_op hc o v) fun t ⟨hk, hf, hv⟩ => ?_
-    refine ⟨⟨hk, frameWiden hf hc.fit (by simp only [offset]; omega)
-      (by simp only [offset]; omega) (by simp only [offset]; omega)⟩, ?_⟩
+    refine ⟨⟨hk, frameWiden hf hc.fit (by simp only [offset]; omega_using [])
+      (by simp only [offset]; omega_using []) (by simp only [offset]; omega_using [])⟩, ?_⟩
     rw [const_env hc.fit o hf, hv]; rfl
   | copy o a =>
     exact raw_field_ok hc (.copy (offset o) (offset a))
@@ -205,7 +205,7 @@ theorem FieldKeep.call {x : BitVec 32} {s t : State} (h : FieldKeep x s t) : Cal
 theorem stk_apart {x : BitVec 32} {s : State} (hc : Ctx x s) {d n : Nat} (hd : d + n ≤ 8192) (hn : 0 < n) :
     (sub x d n).Disjoint (callStk s) :=
   (hc.stk rfl (Nat.le_refl _)).2.sub_left (by
-    rw [scR_eq]; exact sub_sub hc.fit (Nat.zero_le _) (by omega) (by omega))
+    rw [scR_eq]; exact sub_sub hc.fit (Nat.zero_le _) (by omega_using [hd]) (by omega_using [hd, hn]))
 
 /-- A word of the working space apart from regions `rs`, through a frame of them and of the
 stack a call uses. -/
@@ -222,13 +222,13 @@ theorem wd_frame1s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n 
     (hf : Frame [sub x o n, callStk s] m m') (ho : o + n ≤ 8192) (hd : d + 4 ≤ 8192)
     (h : d + 4 ≤ o ∨ o + n ≤ d) : wd m' x d = wd m x d :=
   wd_frameS hc (rs := [sub x o n]) hf hd fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact sub_disj (by have := hc.fit; omega) (by have := hc.fit; omega) h
+    rw [List.mem_singleton.mp hr]; exact sub_disj (by have := hc.fit; omega_using [hd, this]) (by have := hc.fit; omega_using [ho, this]) h
 
 /-- `fe_frame1` with the stack a call uses. -/
 theorem fe_frame1s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n q : Nat}
     (hf : Frame [sub x o n, callStk s] m m') (ho : o + n ≤ 8192) (hq : q + 32 ≤ 8192)
     (h : q + 32 ≤ o ∨ o + n ≤ q) : fe m' x q = fe m x q :=
-  fe_frame fun k hk => wd_frame1s hc hf ho (by omega) (by omega)
+  fe_frame fun k hk => wd_frame1s hc hf ho (by omega_using [hq, hk]) (by omega_using [h, hk])
 
 /-- A frame of a region and the stack is one of any region containing it, and the stack. -/
 theorem frameWidenS {x : BitVec 32} {s : State} {m m' : Mem} {o n o' n' : Nat}
@@ -249,10 +249,10 @@ theorem Frame.withStk {x : BitVec 32} {s : State} {m m' : Mem} {o n : Nat}
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩
 
 def addResult (e : Env) (q : Nat) (hq : q + 3 < 22) : Spec.Ed25519.Point :=
-  let x := e ⟨q, by omega⟩
-  let y := e ⟨q + 1, by omega⟩
-  let z := e ⟨q + 2, by omega⟩
-  let t := e ⟨q + 3, by omega⟩
+  let x := e ⟨q, by omega_using [hq]⟩
+  let y := e ⟨q + 1, by omega_using [hq]⟩
+  let z := e ⟨q + 2, by omega_using [hq]⟩
+  let t := e ⟨q + 3, by omega_using [hq]⟩
   let a := (e 1 - e 0) * (y - x)
   let b := (e 1 + e 0) * (y + x)
   let c := (e 3 * e 16 + e 3 * e 16) * t
@@ -265,7 +265,7 @@ theorem pointAdd_formula (e : Env) :
 
 theorem addResult_eq (e : Env) (q : Nat) (hq : q + 3 < 22) (hd : e 16 = Spec.Ed25519.d) :
     addResult e q hq = Spec.Ed25519.pointAdd (point e 0 1 2 3)
-      (point e ⟨q, by omega⟩ ⟨q + 1, by omega⟩ ⟨q + 2, by omega⟩ ⟨q + 3, hq⟩) := by
+      (point e ⟨q, by omega_using [hq]⟩ ⟨q + 1, by omega_using [hq]⟩ ⟨q + 2, by omega_using [hq]⟩ ⟨q + 3, hq⟩) := by
   simp only [addResult, point, Spec.Ed25519.pointAdd, hd]
   congr 1 <;> grind
 

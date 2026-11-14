@@ -58,10 +58,10 @@ the frame. -/
 structure Tab (G : Stream) (f : Fns) (F p : Addr) (sArg : Nat) (u : State) : Prop where
   ok : TabOK G f u.syms
   rd : ∀ j < 3, InRegions (u.rd ++ u.wr) (off p (8 * j)) 8
-  rdD : InRegions (u.rd ++ u.wr) (off p 32) 8
+  rdD : InRegions (u.rd ++ u.wr) (off p 48) 8
   rdA : InRegions (u.rd ++ u.wr) (off F sArg) 8
   mem : ∀ m, Frame (u.wr ++ [below F 16]) u.mem m → TabMem G u.syms p m ∧
-    m.readW (off p 32) 64 = BitVec.ofNat 64 G.D ∧ m.readW (off F sArg) 64 = p
+    m.readW (off p 48) 64 = BitVec.ofNat 64 G.D ∧ m.readW (off F sArg) 64 = p
 
 /-- The table at `p`, in the state `t`. -/
 structure TabAt (G : Stream) (f : Fns) (p : Addr) (t : State) : Prop where
@@ -482,14 +482,14 @@ omit hG in
 /-- The table's digest length to its slot, and the counter and `done` set
 to 0: the loop's invariant for counter 0. -/
 theorem tabHead_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (h35 : W 35 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 32) 8)
-    (hD : u.mem.readW (off p 32) 64 = BitVec.ofNat 64 G.D) (mk : List Byte) (dst dstLen : Nat) :
+    (R : Rep u.mem F S V W) (h35 : W 35 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 48) 8)
+    (hD : u.mem.readW (off p 48) 64 = BitVec.ofNat 64 G.D) (mk : List Byte) (dst dstLen : Nat) :
     WP isa (.block (tabHead lay sTab sD)) u fun v =>
       MgfI u F S V (upd W 36 (BitVec.ofNat 64 G.D)) mk dst dstLen G.D 0 v ∧ v.syms = u.syms := by
   have G' := L.geo
   have R1 := R.wf G' (k := 36) (by decide) (BitVec.ofNat 64 G.D)
   rw [show off F (8 * 36) = off F sD from rfl] at R1
-  rw [show tabHead lay sTab sD = [.mov .rax (.mem (sp sTab)), .mov .rax (.mem (at_ .rax 32)), .store (sp sD) .rax] ++
+  rw [show tabHead lay sTab sD = [.mov .rax (.mem (sp sTab)), .mov .rax (.mem (at_ .rax 48)), .store (sp sD) .rax] ++
     [.mov32 .rax (.imm 0), .store (sp lay.sCtr) .rax, .store (sp lay.sDone) .rax] from rfl, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off F sD) (BitVec.ofNat 64 G.D) ∧
       u'.syms = u.syms) ?_ rfl) fun u1 ⟨⟨hm, hs⟩, k⟩ => ?_
@@ -526,7 +526,7 @@ theorem mgfXorT_ok (hgi : FnsGood f.init) (hgu : FnsGood f.upd) (hgf : FnsGood f
   have J0 := J1.step hwr1 L1.rsp f0 s0
   have I0' := mgfI_rebase I0 hrd1 hwr1 (keep_cs' k1 (cs_disj _ (by decide)))
   have A' : MArgs (upd (upd W 35 p) 36 (BitVec.ofNat 64 G.D)) S src srcLen dst dstLen :=
-    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega), ifn (by omega)]
+    A.of_eq fun k h1 h2 => by simp only [upd]; rw [ifn (by omega_using [h2]), ifn (by omega_using [h2])]
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfI u F S V (upd (upd W 35 p) 36 (BitVec.ofNat 64 G.D)) (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) dst
         dstLen G.D c w ∧ TJ u F w)

@@ -29,7 +29,7 @@ theorem sign_bit {j l : Nat} (hj : j < 2 ^ 32) (hl : l < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow]
-  split <;> omega
+  split <;> omega_arith
 
 theorem ofNat_sub_one {k : Nat} (hk : 1 ≤ k) (hk' : k < 2 ^ 64) :
     BitVec.ofNat 64 k - BitVec.ofNat 64 1 = BitVec.ofNat 64 (k - 1) := by
@@ -54,14 +54,14 @@ theorem ofNat_add' (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.
 theorem ofNat_shl3 {a : Nat} (h : 8 * a < 2 ^ 64) : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_using [h])]
+  omega_using []
 
 theorem ofNat_shr3 {a : Nat} (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 3 = BitVec.ofNat 64 (a / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     Nat.mod_eq_of_lt h]
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem ofNat_and7 (a : Nat) : BitVec.ofNat 64 a &&& BitVec.ofNat 64 7 = BitVec.ofNat 64 (a % 8) := by
   apply BitVec.eq_of_toNat_eq
@@ -80,7 +80,7 @@ theorem ofNat_and1 (a : Nat) : BitVec.ofNat 64 a &&& BitVec.ofNat 64 1 = BitVec.
 theorem ofNat_shr1 (a : Nat) (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 1 = BitVec.ofNat 64 (a / 2) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt h, Nat.pow_one, Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt h, Nat.pow_one, Nat.mod_eq_of_lt (by omega_using [h])]
 
 /-- The shift loop: `r20 := r20 >> c` for the count `c` in `r18`, from 1. -/
 theorem shiftLoop_ok {s : State} {v c : Nat} (hv : v < 2 ^ 64) (hc : 1 ≤ c) (hc' : c < 64)
@@ -88,7 +88,7 @@ theorem shiftLoop_ok {s : State} {v c : Nat} (hv : v < 2 ^ 64) (hc : 1 ≤ c) (h
     WP isa (.loop (.block [.lsr .d .r20 .r20 1, .subi .r18 .r18 1]) (.nonzero .d .r18)) s fun t =>
       (t.gpr .r20 = BitVec.ofNat 64 (v / 2 ^ c) ∧ t.mem = s.mem) ∧ Keep [.r18, .r20] s t := by
   refine WP.mono (wp_countdown (body := .block [.lsr .d .r20 .r20 1, .subi .r18 .r18 1]) (cnt := .r18) (N := c)
-    (by omega) (by omega) (fun i t => (t.gpr .r20 = BitVec.ofNat 64 (v / 2 ^ i) ∧ t.mem = s.mem) ∧ Keep [.r18, .r20] s t)
+    (by omega_using [hc']) (by omega_using [hc]) (fun i t => (t.gpr .r20 = BitVec.ofNat 64 (v / 2 ^ i) ∧ t.mem = s.mem) ∧ Keep [.r18, .r20] s t)
     (fun i hi t ⟨⟨a20, am⟩, ak⟩ _ => ?_) ⟨⟨by rw [h20, Nat.pow_zero, Nat.div_one], rfl⟩, Keep.refl _ _⟩ h18)
     fun t h => h
   refine WP.mono (WP.keep [.r18, .r20] (Q := fun u => u.gpr .r20 = BitVec.ofNat 64 (v / 2 ^ (i + 1)) ∧
@@ -113,17 +113,17 @@ theorem bit_ok {s : State} {X : Addr} {xb : List Byte} {i rows j : Nat}
       (t.gpr .r20 = BitVec.ofNat 64 (Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2) ∧ t.mem = s.mem) ∧
         Keep bitRegs s t := by
   have hrows : rows * j < 2 ^ 31 := by
-    have : j * rows < 2 ^ 31 := by omega
+    have : j * rows < 2 ^ 31 := by omega_using [hk]
     rwa [Nat.mul_comm] at this
   obtain ⟨k, hk_def⟩ : ∃ k, k = i + j * rows := ⟨_, rfl⟩
   rw [← hk_def] at hk ⊢
   unfold bit
   refine WP.seq (WP.mono (WP.keep [.r0, .r18, .r19] (Q := fun t => t.gpr .r19 = BitVec.ofNat 64 k ∧
       t.gpr .r18 = BitVec.ofNat 64 (if k < 8 * xb.length then 1 else 0) ∧ t.mem = s.mem) (by
-    prun [h24, h21, h28, exec_li (show j < 2 ^ 15 by omega), ofNat_sub_one (show 1 ≤ i + 1 by omega) (show i + 1 < 2 ^ 64 by omega),
-      Nat.add_sub_cancel, ofNat_mul', ofNat_add', ofNat_shl3 (show 8 * xb.length < 2 ^ 64 by omega)]
+    prun [h24, h21, h28, exec_li (show j < 2 ^ 15 by omega_using [hj]), ofNat_sub_one (show 1 ≤ i + 1 by omega_using []) (show i + 1 < 2 ^ 64 by omega),
+      Nat.add_sub_cancel, ofNat_mul', ofNat_add', ofNat_shl3 (show 8 * xb.length < 2 ^ 64 by omega_using [hL])]
     rw [show i + rows * j = k by rw [hk_def, Nat.mul_comm rows j]]
-    exact ⟨rfl, sign_bit (by omega) (by omega)⟩) rfl) fun s₁ ⟨⟨a19, a18, m1⟩, k1⟩ => ?_)
+    exact ⟨rfl, sign_bit (by omega_using [hk]) (by omega_using [hL])⟩) rfl) fun s₁ ⟨⟨a19, a18, m1⟩, k1⟩ => ?_)
   refine WP.ite (decide ¬ k < 8 * xb.length) (by
       rw [eval_zero, a18]; by_cases hc : k < 8 * xb.length <;> simp [hc]) (fun hb => ?_) (fun hb => ?_)
   · -- From `8 L` up: 0.
@@ -133,12 +133,12 @@ theorem bit_ok {s : State} {X : Addr} {xb : List Byte} {i rows j : Nat}
     rw [b20]
     have hlt : Spec.Rsa.os2ip xb < 2 ^ k :=
       Nat.lt_of_lt_of_le (VG.Proof.Bignum.os2ip_lt xb) (by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega))
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_using [hb']))
     rw [Nat.div_eq_of_lt hlt]; rfl
   · have hb' : k < 8 * xb.length := by simpa using hb
     obtain ⟨n, hn⟩ : ∃ n, n = xb.length - 1 - k / 8 := ⟨_, rfl⟩
-    have hidx : n < xb.length := by omega
-    have hn' : xb.length - k / 8 - 1 = n := by omega
+    have hidx : n < xb.length := by omega_using [hb', hn]
+    have hn' : xb.length - k / 8 - 1 = n := by omega_using [hn]
     have h28' : s₁.gpr .r28 = BitVec.ofNat 64 xb.length := (k1.gpr .r28 (by decide)).trans h28
     have a17 : s₁.gpr .r27 = X := (k1.gpr .r27 (by decide)).trans h27
     have l3 : InRegions (s₁.rd ++ s₁.wr) (X + BitVec.ofNat 64 n) 1 := by
@@ -150,9 +150,9 @@ theorem bit_ok {s : State} {X : Addr} {xb : List Byte} {i rows j : Nat}
     refine WP.seq (WP.mono (WP.keep [.r0, .r17, .r18, .r20] (Q := fun t =>
         t.gpr .r20 = BitVec.ofNat 64 (xb[n]'hidx).toNat ∧
         t.gpr .r18 = BitVec.ofNat 64 (k % 8) ∧ t.mem = s₁.mem) (by
-      prun [a17, h28', a19, ofNat_shr3 (show k < 2 ^ 64 by omega),
-        ofNat_sub' (show k / 8 ≤ xb.length by omega) (show xb.length < 2 ^ 64 by omega),
-        ofNat_sub_one (show 1 ≤ xb.length - k / 8 by omega) (show xb.length - k / 8 < 2 ^ 64 by omega),
+      prun [a17, h28', a19, ofNat_shr3 (show k < 2 ^ 64 by omega_using [hk]),
+        ofNat_sub' (show k / 8 ≤ xb.length by omega_using [hb']) (show xb.length < 2 ^ 64 by omega_using [hL]),
+        ofNat_sub_one (show 1 ≤ xb.length - k / 8 by omega_using [hb']) (show xb.length - k / 8 < 2 ^ 64 by omega_using [hL]),
         hn', exec_lbz' (show Reg.r17 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), l3, v3, ofNat_and7]) rfl) fun s₂ ⟨⟨b20, b18, m2⟩, k2⟩ => ?_)
     have hbyte : (xb[n]'hidx).toNat < 2 ^ 64 :=
       Nat.lt_trans (xb[n]'hidx).isLt (by decide)
@@ -162,14 +162,14 @@ theorem bit_ok {s : State} {X : Addr} {xb : List Byte} {i rows j : Nat}
       (WP.ite (decide (k % 8 = 0)) (by
         rw [eval_zero, b18]; by_cases hc : k % 8 = 0 <;> simp [hc]
         intro h; have := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this; exact hc this) (fun hc => ?_) (fun hc => ?_))
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])] at this; exact hc this) (fun hc => ?_) (fun hc => ?_))
       fun t ht => ?_)
     · have hc' : k % 8 = 0 := by simpa using hc
       refine WP.mono (WP.keep [] (Q := fun t => t = s₂) (by prun) (by decide)) fun t ⟨ht, _⟩ => ?_
       subst ht
       exact ⟨⟨by rw [b20, hc', Nat.pow_zero, Nat.div_one], rfl⟩, Keep.refl _ _⟩
     · have hc' : k % 8 ≠ 0 := by simpa using hc
-      exact shiftLoop_ok hbyte (by omega) (Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)) b20 b18
+      exact shiftLoop_ok hbyte (by omega_using [hc']) (Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)) b20 b18
     · obtain ⟨⟨c20, cm⟩, ck⟩ := ht
       refine WP.mono (WP.keep [.r0, .r20] (Q := fun u =>
           u.gpr .r20 = BitVec.ofNat 64 ((xb[n]'hidx).toNat / 2 ^ (k % 8) % 2) ∧ u.mem = t.mem)
@@ -180,16 +180,16 @@ theorem bit_ok {s : State} {X : Addr} {xb : List Byte} {i rows j : Nat}
 
 theorem tooth_bv {acc b j : Nat} (hb : b < 2) (hj : j < 5) (ha : acc < 2 ^ j) :
     BitVec.ofNat 64 acc ||| BitVec.ofNat 64 b <<< j = BitVec.ofNat 64 (acc + 2 ^ j * b) := by
-  have h2j : 2 ^ j ≤ 16 := Nat.le_trans (Nat.pow_le_pow_right (by decide : 0 < 2) (show j ≤ 4 by omega)) (by decide)
+  have h2j : 2 ^ j ≤ 16 := Nat.le_trans (Nat.pow_le_pow_right (by decide : 0 < 2) (show j ≤ 4 by omega_using [hj])) (by decide)
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show acc < 2 ^ 64 by omega), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega),
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show acc < 2 ^ 64 by omega_using [ha, h2j]), Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_using [hb]),
     Nat.mod_eq_of_lt (show b * 2 ^ j < 2 ^ 64 by
-      have : b * 2 ^ j ≤ 1 * 16 := Nat.mul_le_mul (by omega) h2j
-      omega),
+      have : b * 2 ^ j ≤ 1 * 16 := Nat.mul_le_mul (by omega_using [hb]) h2j
+      omega_using [this]),
     Nat.mod_eq_of_lt (show acc + 2 ^ j * b < 2 ^ 64 by
-      have : 2 ^ j * b ≤ 16 * 1 := Nat.mul_le_mul h2j (by omega)
-      omega),
+      have : 2 ^ j * b ≤ 16 * 1 := Nat.mul_le_mul h2j (by omega_using [hb])
+      omega_using [ha, h2j, this]),
     Nat.or_comm, Nat.mul_comm b, ← Nat.two_pow_add_eq_or_of_lt ha, Nat.add_comm]
 
 /-- `tooth j`: `r16 := acc + 2^j` bit `i + j rows` of x, for `acc < 2^j`. -/
@@ -214,7 +214,7 @@ theorem tooth_ok {s : State} {X : Addr} {xb : List Byte} {i rows j acc : Nat}
     fun u ⟨⟨b16, bm⟩, bk⟩ => ⟨⟨b16, bm.trans m⟩, (k.trans bk).mono (by decide)⟩
   by_cases h0 : j = 0
   · subst h0
-    have ha0 : acc = 0 := by omega
+    have ha0 : acc = 0 := by omega_using [ha]
     subst ha0
     simp only [ite_true, List.nil_append]
     refine WP.mono (WP.keep [.r16, .r20] (Q := fun u =>
@@ -227,7 +227,7 @@ theorem tooth_ok {s : State} {X : Addr} {xb : List Byte} {i rows j acc : Nat}
     refine WP.mono (WP.keep [.r16, .r20] (Q := fun u =>
         u.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * (Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2)) ∧ u.mem = t.mem)
       ?_ rfl) post
-    prun [a20, h16', exec_lsl (show j < 64 by omega), tooth_bv hb hj ha]
+    prun [a20, h16', exec_lsl (show j < 64 by omega_using [hj]), tooth_bv hb hj ha]
 
 /-- The comb's digit of row `i`, for `rows` rows: `FixedBaseComb.digit` for
 `rows = rows bits`. -/
@@ -261,8 +261,8 @@ theorem XCtx.tooth {s : State} {X : Addr} {xb : List Byte} {i rows j acc : Nat}
       (t.gpr .r16 = BitVec.ofNat 64 (acc + 2 ^ j * Rsa.FixedBaseComb.bit (Spec.Rsa.os2ip xb) (i + j * rows)) ∧
         XCtx t X xb i rows) ∧ t.mem = s.mem ∧ Keep (.r16 :: bitRegs) s t :=
   WP.mono (tooth_ok h.h28 h.h24 h.h21 h.h27 h.hrd h.hval hj
-      (by have : j * rows ≤ 4 * rows := Nat.mul_le_mul_right _ (by omega)
-          have := h.hk; omega) h.hL h16 ha)
+      (by have : j * rows ≤ 4 * rows := Nat.mul_le_mul_right _ (by omega_using [hj])
+          have := h.hk; omega_arith) h.hL h16 ha)
     fun t ⟨⟨a16, am⟩, ak⟩ => ⟨⟨a16, h.keep am ak⟩, am, ak⟩
 
 theorem seqs_teeth : seqs ((List.range 5).map tooth) =
@@ -282,17 +282,17 @@ theorem digit_ok {s : State} {X : Addr} {xb : List Byte} {i rows : Nat}
   have c0 := h.keep m0 (k0.mono (by decide))
   refine WP.seq (WP.seq ?_)
   refine WP.mono (c0.tooth (j := 0) (by decide) a0 (by decide)) fun t₁ ⟨⟨a1, c1⟩, m1, k1⟩ => ?_
-  refine WP.seq (WP.mono (c1.tooth (j := 1) (by decide) a1 (by have := hb (i + 0 * rows); omega))
+  refine WP.seq (WP.mono (c1.tooth (j := 1) (by decide) a1 (by have := hb (i + 0 * rows); omega_using [this]))
     fun t₂ ⟨⟨a2, c2⟩, m2, k2⟩ => ?_)
   refine WP.seq (WP.mono (c2.tooth (j := 2) (by decide) a2
-    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); omega))
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); omega_arith))
     fun t₃ ⟨⟨a3, c3⟩, m3, k3⟩ => ?_)
   refine WP.seq (WP.mono (c3.tooth (j := 3) (by decide) a3
-    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows); omega))
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows); omega_arith))
     fun t₄ ⟨⟨a4, c4⟩, m4, k4⟩ => ?_)
   refine WP.mono (c4.tooth (j := 4) (by decide) a4
     (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows)
-        have := hb (i + 3 * rows); omega))
+        have := hb (i + 3 * rows); omega_arith))
     fun t₅ ⟨⟨a5, c5⟩, m5, k5⟩ => ?_
   have k05 := (((((k0.mono (by decide : ∀ r ∈ [Reg.r16], r ∈ Reg.r16 :: bitRegs)).trans k1).trans k2).trans
     k3).trans k4).trans k5

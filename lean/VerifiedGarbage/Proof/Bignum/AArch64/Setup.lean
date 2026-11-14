@@ -37,18 +37,18 @@ theorem newton_val (a x : BitVec 64) :
   generalize a.toNat = A at *
   -- `D = 2 - A X + 2⁶⁴ j`.
   have hDj : (D : Int) = 2 - (A * X : Nat) + 2 ^ 64 * (((D : Int) - 2 + (A * X : Nat)) / 2 ^ 64) := by
-    have : ((A * X : Nat) : Int) % 2 ^ 64 = ((A * X % 2 ^ 64 : Nat) : Int) := by omega
-    omega
+    have : ((A * X : Nat) : Int) % 2 ^ 64 = ((A * X % 2 ^ 64 : Nat) : Int) := by omega_using []
+    omega_using [hD]
   generalize (((D : Int) - 2 + (A * X : Nat)) / 2 ^ 64) = j at hDj
   have hXD : ((X * D : Nat) : Int) = 2 * X - (X : Int) * (A * X : Nat) + 2 ^ 64 * (X * j) := by
     rw [Int.natCast_mul, hDj, Int.mul_add, Int.mul_sub, Int.mul_left_comm (X : Int) (2 ^ 64) j]
-    omega
+    omega_using []
   have e : (X : Int) * (2 - (A : Int) * X) = 2 * X - (X : Int) * (A * X : Nat) := by
     rw [Int.mul_sub, Int.natCast_mul, Int.mul_comm (X : Int) 2]
   rw [e]
-  have : ((X * D % 2 ^ 64 : Nat) : Int) = ((X * D : Nat) : Int) % 2 ^ 64 := by omega
+  have : ((X * D % 2 ^ 64 : Nat) : Int) = ((X * D : Nat) : Int) % 2 ^ 64 := by omega_using []
   rw [hR, this, hXD]
-  omega
+  omega_using []
 
 theorem newton_ok (t : State) :
     WP isa (.block newton) t fun t' =>
@@ -86,7 +86,7 @@ theorem minv_ok (s : State) (hodd : (s.gpr .x3).toNat % 2 = 1) :
       simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
         show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show (((s.gpr .x3).toNat : Int) * (s.gpr .x3).toNat - 1) % 8 = 0
-    omega
+    omega_using [h1]
   rw [WP.block_append_iff]
   refine WP.mono (newton_step_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨⟨e₁, hb₁, hm₁⟩, k₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -116,13 +116,13 @@ theorem setBase_ok {t : State} {B : Addr} {Z w j : Nat} (hs : Scr t B Z) (h0 : t
     WP isa (.block (setBase j)) t fun t' =>
       (t'.mem = t.mem.writeW (off B (8 * sArr j)) (off B (slot w j)) ∧
       t'.gpr .x4 = off B (slot w (j + 1))) ∧ Keep [.x4] t t' := by
-  have h8 : 8 * sArr j + 8 ≤ 8 * sArr 8 := by unfold sArr; omega
-  have hst : InRegions t.wr (off B (8 * sArr j)) 8 := hs.st (by omega)
-  have hsa : sArr j < 32 := by unfold sArr; omega
+  have h8 : 8 * sArr j + 8 ≤ 8 * sArr 8 := by unfold sArr; omega_using [hj]
+  have hst : InRegions t.wr (off B (8 * sArr j)) 8 := hs.st (by omega_using [hZ, h8])
+  have hsa : sArr j < 32 := by unfold sArr; omega_using [hj]
   refine WP.keep [.x4] ?_ rfl rfl rfl
   unfold setBase
   brun [h0, h4, h3, hdr_enc hsa, hst]
-  rw [show slot w (j + 1) = slot w j + 8 * (w + 2) by unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega]
+  rw [show slot w (j + 1) = slot w j + 8 * (w + 2) by unfold slot; rw [Nat.add_mul, Nat.one_mul]; omega_using []]
 
 theorem setBasesN_ok {B : Addr} {Z w : Nat} (hZ : 8 * sArr 8 ≤ Z) :
     ∀ n ≤ 8, ∀ t : State, Scr t B Z → t.gpr .x0 = B → t.gpr .x4 = off B (slot w 0) →
@@ -134,26 +134,26 @@ theorem setBasesN_ok {B : Addr} {Z w : Nat} (hZ : 8 * sArr 8 ≤ Z) :
   induction n with
   | zero =>
     intro _ t _ _ h4 _
-    exact WP.block_nil ⟨fun j hj => absurd hj (by omega), h4, Outside.refl _ _ _ _, Keep.refl _ _⟩
+    exact WP.block_nil ⟨fun j hj => absurd hj (by omega_using []), h4, Outside.refl _ _ _ _, Keep.refl _ _⟩
   | succ n ih =>
     intro hn t hs h0 h4 h3
     have hnZ := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) t hs h0 h4 h3) fun t₁ ⟨hw₁, h4₁, ho₁, k₁⟩ => ?_
-    refine WP.mono (setBase_ok (hs.congr k₁.wr) ((k₁.gpr .x0 (by decide)).trans h0) (by omega) hZ h4₁
+    refine WP.mono (ih (by omega_using [hn]) t hs h0 h4 h3) fun t₁ ⟨hw₁, h4₁, ho₁, k₁⟩ => ?_
+    refine WP.mono (setBase_ok (hs.congr k₁.wr) ((k₁.gpr .x0 (by decide)).trans h0) (by omega_using [hn]) hZ h4₁
       ((k₁.gpr .x3 (by decide)).trans h3)) fun t' ⟨⟨hm, h4'⟩, k'⟩ =>
         ⟨?_, h4', ?_, (k₁.trans k').mono (by decide)⟩
     · intro j hj
       rw [hm]
       by_cases hjn : j = n
       · subst hjn; exact word_writeW_self _ _ _ _
-      · rw [(writeW_outside t₁.mem B _ (by unfold sArr at *; omega)).word
-          (by unfold sArr; omega) (by unfold sArr; omega)]
-        exact hw₁ j (by omega)
+      · rw [(writeW_outside t₁.mem B _ (by unfold sArr at *; omega_using [hn])).word
+          (by unfold sArr; omega_using [hjn]) (by unfold sArr; omega_using [hn, hj])]
+        exact hw₁ j (by omega_using [hj, hjn])
     · rw [hm]
       intro x hx
-      rw [writeW_outside t₁.mem B _ (by unfold sArr; omega) x (by unfold sArr at *; omega)]
-      exact ho₁ x (by omega)
+      rw [writeW_outside t₁.mem B _ (by unfold sArr; omega_using [hn]) x (by unfold sArr at *; omega_using [hx])]
+      exact ho₁ x (by omega_using [hx])
 
 /-- `setBases`: the arrays' bases into the header, for `w` in `x12`. -/
 theorem setBases_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
@@ -170,8 +170,8 @@ theorem setBases_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z) (h0 : s.
     refine ⟨?_, by simp [off, slot, hdrBytes]⟩
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
-  refine WP.mono (setBasesN_ok hZ 8 (by omega) t (hs.congr k.wr) ((k.gpr .x0 (by decide)).trans h0) h4 h3)
+    omega_using []
+  refine WP.mono (setBasesN_ok hZ 8 (by omega_using []) t (hs.congr k.wr) ((k.gpr .x0 (by decide)).trans h0) h4 h3)
     fun t' ⟨hw', _, ho, k'⟩ => ⟨hw', by rw [← hm]; exact ho, (k.trans k').mono (by decide)⟩
 
 end VG.Proof.Bignum.AArch64

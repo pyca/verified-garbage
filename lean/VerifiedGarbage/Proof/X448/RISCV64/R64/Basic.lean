@@ -53,9 +53,9 @@ theorem dw_split (m : Mem) (P : Addr) (d : Nat) : dw m P d = wd m P d + 2 ^ 32 *
       BitVec.getElem_zero]
     by_cases h : i < 32
     · simp [h]
-    · simp [h, BitVec.getLsbD_of_ge lo i (by omega)]
+    · simp [h, BitVec.getLsbD_of_ge lo i (by omega_using [h])]
   rw [e, BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
-    Nat.mod_eq_of_lt (by omega : lo.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega : hi.toNat < 2 ^ 64),
+    Nat.mod_eq_of_lt (by omega_using [] : lo.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [] : hi.toNat < 2 ^ 64),
     Nat.shiftLeft_eq]
   omega_using [h1, h2]
 
@@ -106,8 +106,8 @@ theorem dbl_or (x y : BitVec 64) (hy : y.toNat ≤ 1) :
       by_cases h0 : i = 0 <;> simp [h0]
   have e : (x <<< 1).toNat = x.toNat * 2 % 2 ^ 64 := by
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  have : x.toNat * 2 % 2 ^ 64 % 2 = 0 := by omega
-  rw [or_add hand (by rw [e]; omega), e]
+  have : x.toNat * 2 % 2 ^ 64 % 2 = 0 := by omega_using []
+  rw [or_add hand (by rw [e]; omega_using [hy]), e]
 
 /-- The upper half of `h` and the lower half of `h'`, as a doubleword. -/
 theorem rot_or (h h' : BitVec 64) :
@@ -118,13 +118,13 @@ theorem rot_or (h h' : BitVec 64) :
     by_cases hl : i < 32
     · simp [hl]
     · simp only [hl, decide_false, Bool.not_false, Bool.true_and]
-      rw [BitVec.getLsbD_of_ge h (32 + i) (by omega)]; simp
+      rw [BitVec.getLsbD_of_ge h (32 + i) (by omega_using [hl])]; simp
   have := h.isLt; have := h'.isLt
   rw [or_add hand, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq,
     Nat.shiftRight_eq_div_pow]
-  · omega
+  · omega_using []
   · rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using []
 
 /-! ## Memory -/
 
@@ -145,7 +145,7 @@ theorem dw_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P : Addr}
 theorem al8 {P : Addr} (hP : P.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
     (P + BitVec.ofNat 64 d).toNat % 8 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hP, hd]
 
 section
 variable {b : Addr} {is : List Instr} {s : State} {Q : State → Prop}
@@ -154,13 +154,13 @@ variable {b : Addr} {is : List Instr} {s : State} {Q : State → Prop}
 theorem ld_ok (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d + 8 ≤ 2048) (hd8 : d % 8 = 0)
     (k : ∀ s', Upd s s' t (s.mem.readW (b + BitVec.ofNat 64 d) 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.load .d t .a3 d :: is)) s Q :=
-  wp_ld (by omega) (by rw [hc.a3]) (al8 hc.al hd8) (hc.inR hd) k
+  wp_ld (by omega_using [hd]) (by rw [hc.a3]) (al8 hc.al hd8) (hc.inR hd) k
 
 /-- `sd t, d(a3)` in the working space. -/
 theorem sd_ok (hc : Ctx b s) {t : Reg} {d : Nat} (hd : d + 8 ≤ 2048) (hd8 : d % 8 = 0)
     (k : ∀ s', Mupd s s' (s.mem.writeW (b + BitVec.ofNat 64 d) (s.gpr t)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store .d t .a3 d :: is)) s Q :=
-  wp_sd (by omega) (by rw [hc.a3]) (al8 hc.al hd8) (hc.inW hd) k
+  wp_sd (by omega_using [hd]) (by rw [hc.a3]) (al8 hc.al hd8) (hc.inW hd) k
 
 end
 

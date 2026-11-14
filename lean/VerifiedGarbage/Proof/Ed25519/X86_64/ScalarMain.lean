@@ -48,7 +48,7 @@ theorem scalarSave_frame {base : Addr} {m m' : Mem} (h : Outside base 0 48 m m')
   have hn := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hn
   simp only [ofs]
-  omega
+  omega_using [hn]
 
 theorem bytesAt_frame {m m' : Mem} {p base : Addr} (hf : Frame [⟨base, 8192⟩] m m')
     (hd : (⟨p, 64⟩ : Region).Disjoint ⟨base, 8192⟩) : bytesAt m' p 64 = bytesAt m p 64 := by
@@ -83,9 +83,9 @@ theorem scalarReduce_correct {s : State} (hs : scalarReduceLocal.pre s) :
     intro k hk
     refine ⟨⟨s.gpr .rsi, 64⟩, ?_, ?_⟩
     · rw [rw₂.1, hr]; simp
-    · rw [rsi₂]; exact Offset.contains_base _ (by omega) (by omega)
+    · rw [rsi₂]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
   have o₂ : Outside (s.gpr .rdx) 48 8 s₁.mem s₂.mem := by
-    rw [mem₂]; exact writeW_outside _ _ _ (by omega)
+    rw [mem₂]; exact writeW_outside _ _ _ (by omega_using [])
   have fm₂ : Frame [⟨s.gpr .rdx, 8192⟩] s.mem s₂.mem :=
     (scalarSave_frame o₁).trans (scratchFrame o₂ (by decide))
   apply WP.seq
@@ -121,7 +121,7 @@ theorem scalarReduce_correct {s : State} (hs : scalarReduceLocal.pre s) :
   · have ft : Frame [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] s.mem t.mem := by
       rw [mt]
       have c : ∀ d, d + 8 ≤ 32 → (⟨s.gpr .rdi, 32⟩ : Region).Contains (off (s.gpr .rdi) d) (64 / 8) :=
-        fun d hd => Offset.contains_base _ hd (by omega)
+        fun d hd => Offset.contains_base _ hd (by omega_using [hd])
       have hm : (⟨s.gpr .rdi, 32⟩ : Region) ∈ [⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rdi, 32⟩] := by simp
       exact ((((fm.mono (by simp)).writeW hm _ (c 0 (by decide))).writeW hm _
         (c 8 (by decide))).writeW hm _ (c 16 (by decide))).writeW hm _ (c 24 (by decide))

@@ -60,7 +60,7 @@ theorem St.psetWd {j o x : Nat} (cert : Cert (.block (setWd j o x))) (hj : j ∈
   VP.kv cert (fun _ _ h => h.2.2) fun σ s ⟨e, h, hw⟩ => by
     rw [← List.append_nil (setWd j o x)]
     have hj' := h.live_lt j hj
-    refine setWd_ok hw hj' (by decide) ho (by have := h.pre.wge; omega) hx (by rw [h.arrs j hj]; exact hl σ e)
+    refine setWd_ok hw hj' (by decide) ho (by have := h.pre.wge; omega_using [how, this]) hx (by rw [h.arrs j hj]; exact hl σ e)
       fun t ht k v r => WP.block_nil ⟨e, h.write1 k hj' (by simp) r.sp r.rd r.wr (by rw [v, h.arrs j hj]) (by simp),
         ht⟩
 

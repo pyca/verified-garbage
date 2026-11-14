@@ -30,16 +30,16 @@ theorem stored_append_four {m : Mem} {p : Addr} {L W : List Zq} {v : BitVec 128}
     (hv : ∀e<4,(vword v e).toNat=(W.getD e 0).val) :
     Stored (m.write (coeffAddr p L.length) 16 v) p (L++W) := by
   intro i hi
-  have hb : i<256 := by rw [List.length_append,hlen] at hi; omega
+  have hb : i<256 := by rw [List.length_append,hlen] at hi; omega_using [hsize, hi]
   rw [coeffAt_write16 _ _ hsize _ hb]
   by_cases h : i<L.length
-  · rw [ite_eq_right (by omega),List.getD_eq_getElem?_getD,List.getElem?_append_left h]
+  · rw [ite_eq_right (by omega_using [h]),List.getD_eq_getElem?_getD,List.getElem?_append_left h]
     exact hL i h
-  · rw [ite_eq_left (by rw [List.length_append,hlen] at hi; omega),
-      List.getD_eq_getElem?_getD,List.getElem?_append_right (by omega)]
+  · rw [ite_eq_left (by rw [List.length_append,hlen] at hi; omega_using [hi, h]),
+      List.getD_eq_getElem?_getD,List.getElem?_append_right (by omega_using [h])]
     apply BitVec.eq_of_toNat_eq
     rw [zw_toNat]
-    exact hv (i-L.length) (by rw [List.length_append,hlen] at hi; omega)
+    exact hv (i-L.length) (by rw [List.length_append,hlen] at hi; omega_using [hi])
 
 /-- Successful vector acceptance stores all four values in one write and
 advances exactly as four scalar acceptances would. -/
@@ -60,13 +60,13 @@ theorem vectorAccept_ok {s : State} {p : Addr} {L W : List Zq}
   refine ⟨((ha.keep.trans hb.keep).trans ht.keep).mono (by decide),?_,hm,?_,?_,?_⟩
   · rw [hm,h3]
     exact (Frame.refl _ _).write (List.mem_singleton_self _) _
-      (Offset.contains_base p (by omega) (by omega))
+      (Offset.contains_base p (by omega_using [hsize]) (by omega_using [hsize]))
   · rw [ht.get .x3,eb,ha.gpr,h3,List.length_append,hlen,coeffAddr,coeffAddr]
     rw [Offset.add_add]
     congr 1
   · rw [et,hb.get .x4,ha.gpr,toNat_sub_c _ 4 (by decide),h4,List.length_append,hlen,
-      ite_eq_left (by omega)]
-    omega
+      ite_eq_left (by omega_using [hsize])]
+    omega_using []
   · rw [hm,h3]
     exact stored_append_four hL hsize hlen hv
 
@@ -106,7 +106,7 @@ theorem lane_ok {s : State} {r : VReg} {e : Nat} {p : Addr} {L : List Zq}
       (t.gpr .x4).toNat=256-(acc L (vword (s.v r) e).toNat).length ∧
       Stored t.mem p (acc L (vword (s.v r) e).toNat) := by
     refine wp_x (d := .x11) (v := (vword (s.v r) e).setWidth 64)
-      (by simp only [exec,Size.bits,show e*32<128 by omega,ite_true]; rfl) fun a ha ea => ?_
+      (by simp only [exec,Size.bits,show e*32<128 by omega_using [he],ite_true]; rfl) fun a ha ea => ?_
     refine WP.mono (accept_ok (aP := p) (L := L) (z := (vword (s.v r) e).toNat)
       (by rw [ea,BitVec.toNat_setWidth_of_le (by decide)]) hz
       (by rw [ha.get .x9]; exact h9) (by rw [ha.get .x3]; exact h3)
@@ -173,11 +173,11 @@ theorem lanes_ok (rs : List (VReg×Nat)) {s : State} {p : Addr} {L : List Zq}
   | cons re rs ih =>
     rcases re with ⟨r,e⟩
     have hb := hr r e (List.mem_cons_self)
-    have hl : L.length<256 := by simp only [List.length_cons] at hL; omega
+    have hl : L.length<256 := by simp only [List.length_cons] at hL; omega_using [hL]
     have hnext : (acc L (vword (s.v r) e).toNat).length+rs.length≤256 := by
       rw [acc_length]
       simp only [List.length_cons] at hL
-      split <;> omega
+      split <;> omega_using [hL]
     rw [lanesCode,List.flatMap_cons,WP.block_append_iff]
     refine WP.mono (lane_ok hb.1 hb.2 h9 h3 h4 hl hst (hw _ hl))
       fun a ⟨ha,hvec,hframe,hptr,hcount,hstored⟩ => ?_
@@ -242,7 +242,7 @@ theorem fourChoice_ok {s : State} {p : Addr} {L : List Zq}
     have hv (e : Nat) (he' : e<4) :
         (vword (s.v .v1) e).toNat=((fourValues (s.v .v1)).getD e 0).val := by
       have hh := ha e he'
-      rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega) with rfl | rfl | rfl | rfl
+      rcases (show e=0 ∨ e=1 ∨ e=2 ∨ e=3 by omega_using [he']) with rfl | rfl | rfl | rfl
       all_goals exact (Nat.mod_eq_of_lt hh).symm
     refine WP.mono (WP.keepV (by decide) (vectorAccept_ok hst hL (by rfl) hv h3 h4 hw16))
       fun t ⟨⟨hk,hframe,_,hp,hcount,hs⟩,hvec⟩ => ?_

@@ -87,7 +87,7 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {s : Stat
   have hs₂ := h₂.site
   have hK : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → (fun _ => true) i = true → (fun _ => true) j = true →
       i ∈ kWb ∨ j ∈ kWb := fun i hi j hj hij _ _ _ _ => by
-    simp only [kWb, List.mem_cons, List.not_mem_nil, or_false]; omega
+    simp only [kWb, List.mem_cons, List.not_mem_nil, or_false]; omega_using [hi, hj, hij]
   refine WP.seq (WP.mono (hashS hs₂ hK (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by decide) (by decide)
       (ins := [⟨.r4, 0, 32⟩, ⟨.r7, oKL, 2⟩]) (q := ⟨.r7, oHX, 128⟩) (by simp) (fun pc hpc => ?_)
       (pieceS hs₂ rfl (by decide) (by decide) (by decide) (by decide) (by lsep hF [hashLay, Lay.size]) (.inl rfl)

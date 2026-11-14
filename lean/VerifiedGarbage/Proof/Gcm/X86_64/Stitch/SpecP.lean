@@ -79,7 +79,7 @@ def CtxMode.powers : CtxMode where
         (hd r hr).sub_left (Offset.sub_base _ ho)
     have hH : Spec.Gcm.ctxH m' p = Spec.Gcm.ctxH m p := kb 240 (by decide)
     intro k hk
-    rw [kb _ (by omega), h k hk, hH]
+    rw [kb _ (by omega_using [hk]), h k hk, hH]
 
 /-- The key context of `m` as a region. -/
 abbrev kMR (M : CtxMode) (s₀ : State) : Region := ⟨kp s₀, M.len⟩
@@ -127,7 +127,7 @@ theorem StitchOkM.small {M : CtxMode} {enc dec : Prog isa} {le ld : Nat} (h : St
 
 /-- No loops need take fewer than 16 blocks from 16 on. -/
 theorem StitchOkSmall.of16 (M : CtxMode) (enc dec : Prog isa) : StitchOkSmall M enc dec 16 16 :=
-  ⟨fun _ hp h => absurd hp.base.nb16 (by omega), fun _ hp h => absurd hp.base.nb16 (by omega)⟩
+  ⟨fun _ hp h => absurd hp.base.nb16 (by omega_using [h]), fun _ hp h => absurd hp.base.nb16 (by omega_using [h])⟩
 
 theorem StitchOk.toM {enc dec : Prog isa} (h : StitchOk enc dec) (M : CtxMode) : StitchOkM M enc dec :=
   ⟨fun s₀ hp => h.1 s₀ hp.base, fun s₀ hp => h.2 s₀ hp.base⟩

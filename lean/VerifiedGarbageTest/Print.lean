@@ -949,8 +949,8 @@ def featureSample : Code String Unit :=
 #guard featureSample.requires req == ["sha", "sha", "ssse3", "sse4.1"]
 #guard (Code.block ["mov", "add"] : Code String Unit).requires req == []
 
-/-! `Rust.requiresDedup` and `Rust.firstSome?` go through the code of each
-call once (`Rust.distinctCalls`): the features of `Code.requires` each once,
+/-! `Code.requiresDedup` and `Rust.firstSome?` go through the code of each
+call once (`Code.distinctCalls`): the features of `Code.requires` each once,
 and an instruction through any call. -/
 
 /-- Calls of `f` and `g` nested in a call of `k`, and a later call of `f`
@@ -959,12 +959,12 @@ def nestedSample : Code String Unit :=
   .seq (.call "k" (.seq (.block ["mov"]) (.call "g" (.call "f" (.block ["sha256rnds2"])))))
     (.seq (.call "f" (.block ["sha256rnds2"])) (.call "f" (.block ["pblendw"])))
 
-#guard Rust.requiresDedup req featureSample == ["sha", "sse4.1", "ssse3"]
-#guard Rust.requiresDedup req nestedSample == ["sha", "sse4.1"]
-#guard Rust.requiresDedup req (Code.block ["mov", "add"] : Code String Unit) == []
+#guard Code.requiresDedup req featureSample == ["sha", "sse4.1", "ssse3"]
+#guard Code.requiresDedup req nestedSample == ["sha", "sse4.1"]
+#guard Code.requiresDedup req (Code.block ["mov", "add"] : Code String Unit) == []
 -- The value of each call's code, but for a later call of a function whose
 -- value is the first call's.
-#guard Rust.distinctCalls (Rust.ownRequires req []) nestedSample.calls ==
+#guard Code.distinctCalls (Code.ownRequires req []) nestedSample.calls ==
   [[], [], ["sha"], ["sse4.1"]]
 
 /-- The instruction `bad`, which a printer cannot encode. -/

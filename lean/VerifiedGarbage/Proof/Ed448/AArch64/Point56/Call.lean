@@ -135,10 +135,10 @@ theorem outside2_of {ok : Nat → Bool} (hok : ∀ d, ok d = true → 64 ≤ d �
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
   simp only [ofs] at h1 h2
   have : (a - base).toNat < 2 ^ 64 := (a - base).isLt
-  omega
+  omega_arith
 
 theorem dblOk_slots : ∀ d, dblOk d = true → 64 ≤ d ∧ d + 8 ≤ 2880 ∨ 3584 ≤ d ∧ d + 8 ≤ 4736 := by
-  intro d hd; simp only [dblOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd; omega
+  intro d hd; simp only [dblOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hd; omega_using [hd]
 
 /-- **A call of `vg_ed448_r56_point_double`**, as the inlined doubling. -/
 theorem doubleCall_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
@@ -178,7 +178,7 @@ theorem powCall_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem 
     (fun t ht h0 _ => by
       refine WP.mono (powFn_ok ht) fun u hu => ?_
       rw [h0] at hu; exact hu)
-    (fun m m' hq p h1 h2 => hq.2.2 p (by omega) h2) powFn_keepsV
+    (fun m m' hq p h1 h2 => hq.2.2 p (by omega_using [h1]) h2) powFn_keepsV
     (by decide +kernel) hs hb trivial
 
 end VG.Proof.Ed448.AArch64.Point56

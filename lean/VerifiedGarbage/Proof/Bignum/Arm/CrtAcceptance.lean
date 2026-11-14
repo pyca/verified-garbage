@@ -25,11 +25,11 @@ theorem crt_installAcceptance_ok (s : State) {base : BitVec 32} {size : Nat}
   unfold installAcceptance
   refine wp_stackAddr (by decide) fun u h => ?_
   refine wp_ldr (a := off (State.addr s.sp) 48) (by decide)
-    (by rw [h.gpr, BitVec.add_zero]; exact addr_add (by omega))
+    (by rw [h.gpr, BitVec.add_zero]; exact addr_add (by omega_using [stackFit]))
     (by rw [h.rd, h.wr]; exact read) fun v j => ?_
   refine wp_str (a := off (State.addr base) 212) (by decide)
     (by rw [j.other .r0 (by decide), h.other .r0 (by decide), ptr]
-        exact addr_add (by have := ws.nowrap; omega))
+        exact addr_add (by have := ws.nowrap; omega_using [fit, this]))
     (by rw [j.wr, h.wr]; exact ws.write fit) fun t k => WP.block_nil ?_
   have mem : t.mem = s.mem.writeW (off (State.addr base) 212) (s.mem.readW (off (State.addr s.sp) 48) 32) := by
     rw [k.mem, j.gpr, j.mem, h.mem]

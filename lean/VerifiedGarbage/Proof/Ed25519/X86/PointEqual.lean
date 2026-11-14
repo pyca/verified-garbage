@@ -39,7 +39,7 @@ theorem equalStep_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {n : Nat} (h1 : 
       fun hne => absurd (of_decide_eq_true heq) hne⟩
     · rw [u₂.gpr, u₁.other _ (by decide), esi_b, Wp.ofNat_pred h1]
     · show t.zf.map (!·) = _
-      rw [z₂, u₁.other _ (by decide), esi_b, Wp.ofNat_pred h1, Wp.ofNat_beq_zero (by omega)]
+      rw [z₂, u₁.other _ (by decide), esi_b, Wp.ofNat_pred h1, Wp.ofNat_beq_zero (by omega_using [h2])]
       cases h : decide (n - 1 = 0) <;> simp_all
     · rw [u₂.mem, u₁.mem, eb]; exact ea 10 (by decide)
     · rw [u₂.mem, u₁.mem, eb]; exact ea 11 (by decide)

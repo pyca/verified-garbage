@@ -19,26 +19,19 @@ fn table_hash(hash: Hash) -> TableHash {
 }
 
 /// The hash function `hash` as the verified functions take it, their
-/// argument `hash`: the words of the best of its tables of `MdHash` that
-/// this CPU runs.
+/// argument `hash` or `mgf1`: the words of the best of its tables of
+/// `MdHash` that this CPU runs.
 pub(super) fn md_table(hash: Hash) -> super::MdTable {
     table_hash(hash).md_hash_table()
 }
 
-/// MGF1's hash function `hash` as the verified functions take it, their
-/// argument `mgf1`: the words of its table of `Hash`.
-pub(super) fn table(hash: Hash) -> super::Table {
-    table_hash(hash).hash_table()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Hash, md_table, table};
+    use super::{Hash, md_table};
 
-    /// The tables of each hash function hold its digest length, the one the
-    /// verified functions take the hash value's to be: a table of `MdHash`
-    /// in its word 6, one of `Hash` in its word 4. (`crate::hashes::tables`
-    /// checks the tables' indices.)
+    /// The table of each hash function holds its digest length, the one the
+    /// verified functions take the hash value's to be, in its word 6.
+    /// (`crate::hashes::tables` checks the tables' indices.)
     #[test]
     fn tables() {
         let all = [
@@ -52,11 +45,10 @@ mod tests {
             Hash::Sha512_256,
         ];
         for h in all {
-            // SAFETY: the pointers point to the tables' words, of immutable
-            // `'static` `repr(C)` values of 11 and 5 pointer-sized words.
-            let (md, g) = unsafe { (*md_table(h), *table(h)) };
+            // SAFETY: the pointer points to the table's words, of an
+            // immutable `'static` `repr(C)` value of 11 pointer-sized words.
+            let md = unsafe { *md_table(h) };
             assert_eq!(md[6], h.digest_len(), "{h:?}");
-            assert_eq!(g[4], h.digest_len(), "{h:?}");
         }
     }
 }

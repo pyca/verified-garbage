@@ -26,15 +26,15 @@ theorem wp_store_arg {s : State} {p : Inputs} {slots : List Nat} {is : List Inst
     (next : ∀ t, ArgumentMemory p (d :: slots) t →
       Frame [⟨State.addr s.sp, 72⟩] s.mem t.mem → Rest [] s t → WP isa (.block is) t Q) :
     WP isa (.block (.str r .r12 d :: is)) s Q := by
-  refine wp_str (a := off (State.addr s.sp) d) (by omega)
-    (by rw [stackBase]; exact addr_add (by have := h.locals.space.nowrap; omega))
+  refine wp_str (a := off (State.addr s.sp) d) (by omega_using [fit])
+    (by rw [stackBase]; exact addr_add (by have := h.locals.space.nowrap; omega_using [fit, this]))
     (h.locals.space.write fit) fun t stored => ?_
   have mem : t.mem = s.mem.writeW (off (State.addr s.sp) d) (p.slotValue d) := by rw [stored.mem, source]
   have rest := stored.rest []
   have args := h.store_slot stable d aligned fit mem rest
   apply next t args _ rest
   rw [mem]
-  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ fit (by omega))
+  exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ fit (by omega_using [fit]))
 
 structure IncomingScratch (p : Inputs) (s : State) : Prop where
   fits : s.sp.toNat + 136 ≤ 2 ^ 32

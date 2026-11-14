@@ -79,10 +79,10 @@ structure Ready (s : State) : Prop where
   stackWork : (below (s.gpr .rsp) 8).Disjoint ⟨work s, 8192⟩
 
 theorem displacement_eq (n : Nat) (bound : n ≤ 8192) : displacement n = BitVec.ofNat 64 n := by
-  have n32 : n < 2 ^ 32 := by omega
+  have n32 : n < 2 ^ 32 := by omega_using [bound]
   have msb : (BitVec.ofNat 32 n).msb = false := by
     rw [BitVec.msb_eq_false_iff_two_mul_lt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt n32]
-    omega
+    omega_using [bound]
   unfold displacement
   rw [BitVec.signExtend_eq_setWidth_of_msb_false msb,
     BitVec.setWidth_ofNat_of_le_of_lt (by decide) n32]
@@ -132,9 +132,9 @@ theorem args_call_ready (s a : State) (h : Ready s) (x y out : Nat)
   · rw [args.scratch, args.keeps.wr]
     simpa only [off, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero]
       using work_cover s h 0 4096 (by decide)
-  · rw [args.left, args.scratch]; exact Offset.disjoint_base _ hx (by omega)
-  · rw [args.right, args.scratch]; exact Offset.disjoint_base _ hy (by omega)
-  · rw [args.output, args.scratch]; exact Offset.disjoint_base _ ho (by omega)
+  · rw [args.left, args.scratch]; exact Offset.disjoint_base _ hx (by omega_using [bx])
+  · rw [args.right, args.scratch]; exact Offset.disjoint_base _ hy (by omega_using [by_])
+  · rw [args.output, args.scratch]; exact Offset.disjoint_base _ ho (by omega_using [bo])
   · rw [sp, args.left]; exact h.stackWork.sub_right (Offset.sub_base _ bx)
   · rw [sp, args.right]; exact h.stackWork.sub_right (Offset.sub_base _ by_)
   · rw [sp, args.output]; exact h.stackWork.sub_right (Offset.sub_base _ bo)
@@ -196,8 +196,8 @@ theorem stage_ok [CompressImpl] (s : State) (h : Ready s) (x y out : Nat)
     (bx : x + 1024 ≤ 8192) (by_ : y + 1024 ≤ 8192) (bo : out + 1024 ≤ 8192) :
     WP isa (stage x y out) s fun t => StageDone s t x y out ∧ ctl t.mxcsr = ctl s.mxcsr := by
   unfold stage
-  refine WP.seq ((WP.with_mx (by rfl) (args_nat_ok s h x y out (by omega) (by omega)
-    (by omega))).mono ?_)
+  refine WP.seq ((WP.with_mx (by rfl) (args_nat_ok s h x y out (by omega_using [bx]) (by omega_using [by_])
+    (by omega_using [bo]))).mono ?_)
   rintro a ⟨args, mx1⟩
   have callReady := args_call_ready s a h x y out hx hy ho bx by_ bo args
   refine (FillCompress.call_ok a callReady).mono ?_

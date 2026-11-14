@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStages
 public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Layout
@@ -26,8 +27,9 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
     (bit : (s.mem.readW (off (State.addr s.sp) 48) 32).toNat ≤ 1)
     (valid : (s.mem.readW (off (State.addr s.sp) 48) 32).toNat ≠ 0 →
       1 < numAt s.mem (State.addr child) g.words 0 ∧ numAt s.mem (State.addr child) g.words 0 % 2 = 1)
-    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ)) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((CrtFn.powerWith kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ))
+    (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((CrtFn.powerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -38,7 +40,7 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       Rest roundClobbers s t := by
   obtain ⟨member, ws, layout, _, slotFit, slotSmall, link⟩ := h.child kind
   have exponent : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
-  rw [CrtFn.powerWith, WP.seq_iff]
+  rw [CrtFn.powerOf, WP.seq_iff]
   refine WP.mono (crt_selectLinked_ready s h ws layout member slotFit slotSmall ready.ptr link) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
   have eqU := h.workspace_eq_after_base ws member frameU
@@ -46,12 +48,12 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   have modulusU := eqU.number h.buffers.context.arraysFit (by decide : 0 < 8)
   have input : CrtPrimePowerInput child g.input (g.source i.succ) (workspaceWords g.words) g.words g.length
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) u :=
-    ⟨⟨readyU, by have := sharedU.stack.nowrap; omega, sharedU.stack.read (by decide),
+    ⟨⟨readyU, by have := sharedU.stack.nowrap; omega_using [this], sharedU.stack.read (by decide),
       by rw [flagU]; exact bit, by rw [flagU, modulusU]; exact valid⟩,
       sharedU.power_sources i exponent member⟩
   rw [WP.seq_iff]
-  refine WP.mono ((crt_narrowPower_ok (kernel := kernel)) u sharedU kind j i pair input (by rw [modulusU]; exact prime)) ?_
-  rintro v ⟨sharedV, _, powered, flagV, frameV, restV⟩
+  refine WP.mono ((crt_narrowPower_ok (kernel := kernel)) u sharedU kind j i pair input (by rw [modulusU]; exact prime) st hst) ?_
+  rintro v ⟨sharedV, powered, flagV, frameV, restV⟩
   rw [flagU, modulusU] at powered
   refine WP.mono (crt_selectMain_ready v sharedV) ?_
   rintro t ⟨sharedT, readyT, frameT, restT⟩

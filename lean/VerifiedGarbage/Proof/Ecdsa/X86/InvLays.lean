@@ -50,18 +50,18 @@ theorem tbl_apart_pwW {l : List Nat} {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n
   rcases List.mem_cons.mp hw with rfl | hw
   · refine Or.inr ?_
     have := wk_below_bits c j
-    have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
+    have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega_using [hn])
     simp only [sl_eq, wk_eq] at *
-    omega
+    omega_arith
   · exact (tbl_apart_wk hj ht) w hw
 
 theorem flag_unch_pwW {l : List Nat} {base : Addr} {m m' : Mem} (hu : Unch base (pwW c l) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l := by decide) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  refine Unch.readW32 hu (fun w hw => ?_) (by omega)
+  refine Unch.readW32 hu (fun w hw => ?_) (by omega_using [hn, hF])
   rcases apart_pwW (c := c) (i := FLAG) (by decide) hl h7 w hw with h | h
-  · exact Or.inl (by omega)
+  · exact Or.inl (by omega_using [h0, h])
   · exact Or.inr h
 
 theorem invLay_of (hc : CfgOk c) (h4 : c.n = 4) {M : Mod} {F : Impl.Weierstrass.Mont.Modulus} (hMn : M.n = c.n)
@@ -78,7 +78,7 @@ theorem invLay_of (hc : CfgOk c) (h4 : c.n = 4) {M : Mod} {F : Impl.Weierstrass.
   have lt45 : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ c.sl 45 := fun hi => sl_lt c hi
   simp only [h4] at modTmp outTmp lt45
   constructor
-  · exact ⟨hMn.trans h4, by simp only [InvCfg.ofMod, invAt_eq]; have := wk_own c (by omega); show _ ≤ 8192; omega,
+  · exact ⟨hMn.trans h4, by simp only [InvCfg.ofMod, invAt_eq]; have := wk_own c (by omega_using [h4]); show _ ≤ 8192; omega_using [hinv, this],
       by simpa only [InvCfg.ofMod, hmo, h4] using sl_le c hc.n10 hjm45,
       by simpa only [InvCfg.ofMod, htmp, h4] using sl_le c hc.n10 (i := TMP) (by decide),
       Or.inr (by simpa only [InvCfg.ofMod, hmo, invAt_eq] using lt45 hjm45),
@@ -92,6 +92,6 @@ theorem invLay_of (hc : CfgOk c) (h4 : c.n = 4) {M : Mod} {F : Impl.Weierstrass.
   · simp only [InvCfg.ofMod, invAt_eq, ← hwk]; exact hinv
   · simp only [InvCfg.ofMod, ← hwk]
     have := lt45 (i := ACC) (by decide)
-    omega
+    omega_using [hinv, this]
 
 end VG.Proof.Ecdsa.X86

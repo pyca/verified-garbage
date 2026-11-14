@@ -83,10 +83,10 @@ def Saved (scr : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop :=
 
 /-- The saved registers lie in the scratch space, past the permutation's. -/
 theorem slot_sub (scr : Addr) {k : Nat} (hk : k < 6) : Region.Sub ⟨slot scr k, 8⟩ ⟨scr, 640⟩ :=
-  sub_offset (by omega) (by omega)
+  sub_offset (by omega_using [hk]) (by omega_using [hk])
 
 theorem slot_scr (scr : Addr) {k : Nat} (hk : k < 6) :
-    Region.Disjoint ⟨slot scr k, 8⟩ ⟨scr, 512⟩ := Offset.disjoint_base scr (by omega) (by omega)
+    Region.Disjoint ⟨slot scr k, 8⟩ ⟨scr, 512⟩ := Offset.disjoint_base scr (by omega_using []) (by omega_using [hk])
 
 theorem Saved.frame {scr : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Saved scr g m) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ k < 6, ∀ r ∈ rs, Region.Disjoint ⟨slot scr k, 8⟩ r) : Saved scr g m' :=
@@ -188,7 +188,7 @@ theorem preserved_cases : ∀ r ∈ preserved, r ≠ .x30 → (∃ k < 6, sv k =
 theorem write_frame_apply {m : Mem} {sp : Addr} {v : BitVec (8 * 8)} {R : Region}
     (hd : Region.Disjoint ⟨sp - 16, 16⟩ R) {x : Addr} (hx : R.Contains x 1) :
     m.write (sp - 16) 8 v x = m x :=
-  Mem.write_apply fun h => hd x (by simp only [Region.Contains]; omega) hx
+  Mem.write_apply fun h => hd x (by simp only [Region.Contains]; omega_using [h]) hx
 
 /-- The bytes of a region disjoint from a frame are unchanged by the push. -/
 theorem write_frame_bytes {m : Mem} {sp : Addr} {v : BitVec (8 * 8)} {R : Region}
@@ -197,8 +197,8 @@ theorem write_frame_bytes {m : Mem} {sp : Addr} {v : BitVec (8 * 8)} {R : Region
   write_frame_apply hd (by
     simp only [Region.Contains]
     rw [show R.base + BitVec.ofNat 64 i - R.base = BitVec.ofNat 64 i by bv_omega,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega)
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hR, hi])]
+    omega_using [hi])
 
 /-- The state is unchanged by the push. -/
 theorem write_frame_state {m : Mem} {sp : Addr} {v : BitVec (8 * 8)} {st : Addr}

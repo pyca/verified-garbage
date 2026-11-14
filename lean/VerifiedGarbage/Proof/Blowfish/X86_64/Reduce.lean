@@ -31,12 +31,12 @@ theorem dword_or (a b : BitVec 128) (k : Nat) : dword (a ||| b) k = dword a k ||
 theorem psrld_dwords (a : BitVec 128) (c : BitVec 8) (hn : c.toNat < 32) :
     XShiftOp.eval .psrld a c =
       ofDwords (dword a 0 >>> c.toNat) (dword a 1 >>> c.toNat) (dword a 2 >>> c.toNat) (dword a 3 >>> c.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 31 < c.toNat by omega, ite_false]
+  simp only [XShiftOp.eval, show ¬ 31 < c.toNat by omega_using [hn], ite_false]
 
 theorem pslld_dwords (a : BitVec 128) (c : BitVec 8) (hn : c.toNat < 32) :
     XShiftOp.eval .pslld a c =
       ofDwords (dword a 0 <<< c.toNat) (dword a 1 <<< c.toNat) (dword a 2 <<< c.toNat) (dword a 3 <<< c.toNat) := by
-  simp only [XShiftOp.eval, show ¬ 31 < c.toNat by omega, ite_false]
+  simp only [XShiftOp.eval, show ¬ 31 < c.toNat by omega_using [hn], ite_false]
 
 theorem reduceV_dword (a : BitVec 128) :
     dword (reduceV a) 0 =
@@ -57,8 +57,8 @@ theorem dword_words (v : BitVec 128) (k : Nat) : dword v k = word v (2 * k + 1) 
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [getLsbD_dword, BitVec.getLsbD_append, getLsbD_word, decide_eq_true hi, Bool.true_and]
   split
-  · simp only [decide_eq_true ‹i < 16›, Bool.true_and]; exact congrArg _ (by omega)
-  · simp only [decide_eq_true (show i - 16 < 16 by omega), Bool.true_and]; exact congrArg _ (by omega)
+  · simp only [decide_eq_true ‹i < 16›, Bool.true_and]; exact congrArg _ (by omega_using [])
+  · simp only [decide_eq_true (show i - 16 < 16 by omega_using [hi]), Bool.true_and]; exact congrArg _ (by omega_arith)
 
 theorem reduce_scan (p : Nat → Byte) {x : Nat} (hx : x < 256) :
     dword (reduceV (scanAcc p x 16)) 0 = (p x).setWidth 32 := by
@@ -72,7 +72,7 @@ theorem reduce_scan (p : Nat → Byte) {x : Nat} (hx : x < 256) :
     hw _ (by decide : 4 < 8), hw _ (by decide : 5 < 8), hw _ (by decide : 6 < 8), hw _ (by decide : 7 < 8)]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   have h8 : x % 16 / 2 < 8 := by omega_arith
-  have h2 : x % 2 = 0 ∨ x % 2 = 1 := by omega
+  have h2 : x % 2 = 0 ∨ x % 2 = 1 := by omega_using []
   generalize x % 16 / 2 = w at h8
   rcases (by omega_arith : w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 ∨ w = 4 ∨ w = 5 ∨ w = 6 ∨ w = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -80,7 +80,7 @@ theorem reduce_scan (p : Nat → Byte) {x : Nat} (hx : x < 256) :
     simp (disch := omega) only [reduceCtorEq, ite_true, ite_false, h2, Nat.mul_zero, Nat.mul_one] <;>
     simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or,
       BitVec.getLsbD_append, BitVec.getLsbD_setWidth] <;>
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨ i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 ∨ i = 29 ∨ i = 30 ∨ i = 31) with
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨ i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 ∨ i = 29 ∨ i = 30 ∨ i = 31) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 end VG.Proof.Blowfish.X86_64

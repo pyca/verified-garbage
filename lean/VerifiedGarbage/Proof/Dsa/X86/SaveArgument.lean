@@ -23,15 +23,15 @@ theorem saveArgument_ok {s : State} {base : Addr} {size i : Nat} {value : BitVec
       pointerValue base t (.input f) = value ∧ Keeps [.eax] s t ∧
       Outside base (Layout.field f) 4 s.mem t.mem := by
   have B := VG.Proof.Dsa.X86.Layout.field_bounds f
-  have bound : Layout.field f + 4 ≤ size := by omega
+  have bound : Layout.field f + 4 ≤ size := by omega_using [hz, B]
   unfold Entry.saveArgument
   refine wp_movS hr fun u su _ => ?_
   have hu := hs.of_keeps su.keeps (by decide)
-  refine wp_storeS (hu.ea (by omega)) (hu.write bound) fun t ut => WP.block_nil ⟨?_, ?_, ?_⟩
+  refine wp_storeS (hu.ea (by omega_using [hz, B])) (hu.write bound) fun t ut => WP.block_nil ⟨?_, ?_, ?_⟩
   · change t.mem.readW (off base (Layout.field f)) 32 = value
     rw [ut.mem, Mem.readW_writeW_self32, su.gpr]
   · exact su.keeps.trans (ut.keeps [.eax])
   · rw [ut.mem, su.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hz, B, this])
 
 end VG.Proof.Dsa.X86

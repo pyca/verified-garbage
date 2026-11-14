@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate for an RSA prime: Miller–Rabin, witness by witness
@@ -55,9 +56,9 @@ theorem mrAt_next (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 0
   have l1 : primalityTest c (r.drop L) = loop (mrStep c ch a m) (mrS c L r (k + 1)) (r.drop (L * (k + 1 + 1))) := by
     rw [h.loop, e]; rfl
   have ic := iters_cont (c := c) (ch := ch) (a := a) (m := m) (r := r) (i := (mrS c L r (k + 1)).1)
-    (uni := (mrS c L r (k + 1)).2) (u := L * (k + 1 + 1)) hg hwb hL (by rw [Nat.mul_succ]; omega) (by omega)
-  rw [← l1, show L * (k + 1 + 1) - L = L * (k + 1) by rw [Nat.mul_succ]; omega, h.iters] at ic
-  exact ⟨by omega, ⟨l1, hg, by omega, by omega⟩⟩
+    (uni := (mrS c L r (k + 1)).2) (u := L * (k + 1 + 1)) hg hwb hL (by rw [Nat.mul_succ]; omega_using []) (by omega_using [hav, hk])
+  rw [← l1, show L * (k + 1 + 1) - L = L * (k + 1) by rw [Nat.mul_succ]; omega_using [], h.iters] at ic
+  exact ⟨by omega_using [ic], ⟨l1, hg, by omega_using [ic], by omega_using [hav, hk]⟩⟩
 
 /-- The witness passes and no more are needed: `c` is probably prime. -/
 theorem mrAt_done (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 0 < L)
@@ -75,8 +76,8 @@ theorem mrAt_done (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 0
   have := h.iters
   rw [l1] at this
   simp only [shapeOf, Option.map_some, itersOf, List.length_drop] at this
-  rw [show r.length - (r.length - (L * (k + 1) + L)) - L * (k + 1) = L by omega, Nat.div_self hL] at this
-  omega
+  rw [show r.length - (r.length - (L * (k + 1) + L)) - L * (k + 1) = L by omega_using [hav], Nat.div_self hL] at this
+  omega_using [this]
 
 /-- The witness fails: `c` is composite. -/
 theorem mrAt_fail (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 0 < L)
@@ -91,8 +92,8 @@ theorem mrAt_fail (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 0
   have := h.iters
   rw [l1] at this
   simp only [shapeOf, Option.map_some, itersOf, List.length_drop] at this
-  rw [show r.length - (r.length - (L * (k + 1) + L)) - L * (k + 1) = L by omega, Nat.div_self hL] at this
-  omega
+  rw [show r.length - (r.length - (L * (k + 1) + L)) - L * (k + 1) = L by omega_using [hav], Nat.div_self hL] at this
+  omega_using [this]
 
 /-- Too few octets left for the witness. -/
 theorem mrAt_short (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 0 < L)
@@ -104,20 +105,20 @@ theorem mrAt_short (h : MrAt c ch a m L r k n) (hwb : witnessBytes c = L) (hL : 
   have := h.iters
   rw [l1] at this
   simp only [shapeOf, Option.map_none, itersOf] at this
-  rw [Nat.div_eq_of_lt (by omega)] at this
-  omega
+  rw [Nat.div_eq_of_lt (by omega_using [hL, hav])] at this
+  omega_using [this]
 
 /-- The start. -/
 theorem mrAt_zero (hc : primalityTest c (r.drop L) = loop (mrStep c ch a m) (1, 0) (r.drop L)) (hwb : witnessBytes c = L)
     (hL : 0 < L) (hu : L ≤ r.length) :
     MrAt c ch a m L r 0 (itersOf L r.length (shapeOf (primalityTest c (r.drop L))) L - 1) := by
   have hg : goS ch (mrS c L r 0) := .inl (by simp [mrS, blindedChecks])
-  refine ⟨by rw [hc]; simp [mrS], hg, ?_, by omega⟩
+  refine ⟨by rw [hc]; simp [mrS], hg, ?_, by omega_using [hu]⟩
   have := (iters_cont (c := c) (ch := ch) (a := a) (m := m) (r := r) (i := 1) (uni := 0) (u := L) hg hwb hL
     (Nat.le_refl _) hu).2
   rw [← hc] at this
   rw [Nat.zero_add, Nat.mul_one]
-  omega
+  omega_using [this]
 
 end
 

@@ -75,11 +75,11 @@ theorem csub_nat {M x y : Nat} {c : Bool} (hM : 2 * L ≤ M) (hx : x < 2 * L) (h
   cases c with
   | false =>
     simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at he
-    rw [ite_eq_right Bool.false_ne_true, Nat.mod_eq_of_lt (by omega)]
+    rw [ite_eq_right Bool.false_ne_true, Nat.mod_eq_of_lt (by omega_using [hy, he])]
   | true =>
     simp only [Bool.toNat_true, Nat.mul_one] at he
-    rw [ite_eq_left rfl, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [ite_eq_left rfl, Nat.mod_eq_sub_mod (by omega_using [hM, he]), Nat.mod_eq_of_lt (by omega_using [hx])]
+    omega_using [hM, he]
 
 /-- Folding a word into the remainder of the words above it. -/
 theorem mod_step (a w : Nat) : (a % L * 2 ^ 64 + w) % L = (w + 2 ^ 64 * a) % L := by
@@ -122,7 +122,7 @@ theorem encodeLE_57 (y b : Nat) (hy : y < 256 ^ 56) :
   have h455 : (2 : Nat) ^ 455 = 256 ^ 56 * 128 := by decide +kernel
   rw [encodeLE_eq, show 57 = 56 + 1 from rfl, Proof.X25519.leBytes_add, h455, leBytes_one]
   generalize hM : (256 : Nat) ^ 56 = M at *
-  have hM0 : 0 < M := by omega
+  have hM0 : 0 < M := by omega_using [hM]
   have e1 : (y + b * (M * 128)) % M = y := by
     rw [show y + b * (M * 128) = y + M * (b * 128) by grind, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hy]
   have e2 : (y + b * (M * 128)) / M = 128 * b := by
@@ -139,15 +139,15 @@ theorem sCheck_nat {y b r c : Nat} (hy : y < 2 ^ 448) (hr : r < 2 ^ 448) (hc : c
   rw [e]
   generalize (2 : Nat) ^ 448 = M at *
   constructor
-  · rintro ⟨rfl, rfl⟩; simp only [Nat.mul_zero, Nat.add_zero] at h ⊢; omega
+  · rintro ⟨rfl, rfl⟩; simp only [Nat.mul_zero, Nat.add_zero] at h ⊢; omega_using [hr, h]
   · intro h'
     have : b = 0 := by
       rcases Nat.eq_zero_or_pos b with hb | hb
       · exact hb
       · have : M ≤ M * b := Nat.le_mul_of_pos_right M hb
-        omega
+        omega_using [hL, h', this]
     subst this
-    rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> omega
+    rcases (by omega_using [hc] : c = 0 ∨ c = 1) with rfl | rfl <;> omega_arith
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
@@ -158,6 +158,6 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
 theorem scalar_bit (m : Mem) (p : Addr) {t : Nat} (ht : t < 456) :
     ((m (p + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1 =
       (decodeLE (bytesAt m p 57) >>> t) &&& 1 := by
-  rw [decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega)]
+  rw [decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega_using [ht])]
 
 end VG.Proof.Ed448

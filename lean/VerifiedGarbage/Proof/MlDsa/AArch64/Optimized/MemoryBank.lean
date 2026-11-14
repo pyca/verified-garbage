@@ -37,8 +37,8 @@ theorem writeBank_coeff_fold (v : Vector (BitVec 128) 8) (m : Mem) (p : Addr)
       simp only [List.foldl_cons]
       rw [ih,show 4*step*i.val=4*(step*i.val) from Nat.mul_assoc _ _ _,coeffAddr_add,
         coeffAt_write16 _ _ (by
-          have h := Nat.mul_le_mul_left step (show i.val≤7 by omega)
-          omega) _ hk]
+          have h := Nat.mul_le_mul_left step (show i.val≤7 by omega_using [])
+          omega_using [hb, h]) _ hk]
   exact go _ m
 
 /-- Repeated overwrites of a single selected slot have the expected result. -/
@@ -57,8 +57,8 @@ theorem writeBank_coeff_at (v : Vector (BitVec 128) 8) (m : Mem) (p : Addr)
     {start step : Nat} (hs : 4≤step) (hb : start+step*7+4≤256)
     (i : Fin 8) {e : Nat} (he : e<4) :
     coeffAt (writeBank v (coeffAddr p start) (4*step) m) p (start+step*i.val+e)=vword v[i.val] e := by
-  have hi := Nat.mul_le_mul_left step (show i.val≤7 by omega)
-  rw [writeBank_coeff_fold v m p hb (by omega)]
+  have hi := Nat.mul_le_mul_left step (show i.val≤7 by omega_using [])
+  rw [writeBank_coeff_fold v m p hb (by omega_using [hb, he, hi])]
   have ef : (fun (w : BitVec 32) (j : Fin 8) =>
       if start+step*j.val≤start+step*i.val+e ∧ start+step*i.val+e<start+step*j.val+4 then
         vword v[j.val] (start+step*i.val+e-(start+step*j.val)) else w) =
@@ -69,11 +69,11 @@ theorem writeBank_coeff_at (v : Vector (BitVec 128) 8) (m : Mem) (p : Addr)
     · have hj : j.val≠i.val := fun hv => h (Fin.ext hv)
       have hd : step*j.val+4≤step*i.val ∨ step*i.val+4≤step*j.val := by
         rcases Nat.lt_or_gt_of_ne hj with hlt | hgt
-        · left; have := Nat.mul_le_mul_left step (show j.val+1≤i.val by omega)
-          rw [Nat.mul_add,Nat.mul_one] at this; omega
-        · right; have := Nat.mul_le_mul_left step (show i.val+1≤j.val by omega)
-          rw [Nat.mul_add,Nat.mul_one] at this; omega
-      have hn : ¬(start+step*j.val≤start+step*i.val+e ∧ start+step*i.val+e<start+step*j.val+4) := by omega
+        · left; have := Nat.mul_le_mul_left step (show j.val+1≤i.val by omega_using [hlt])
+          rw [Nat.mul_add,Nat.mul_one] at this; omega_using [hs, this]
+        · right; have := Nat.mul_le_mul_left step (show i.val+1≤j.val by omega_using [hgt])
+          rw [Nat.mul_add,Nat.mul_one] at this; omega_using [hs, this]
+      have hn : ¬(start+step*j.val≤start+step*i.val+e ∧ start+step*i.val+e<start+step*j.val+4) := by omega_using [he, hd]
       simp only [hn,h,ite_false]
   rw [ef,fold_select]
   simp

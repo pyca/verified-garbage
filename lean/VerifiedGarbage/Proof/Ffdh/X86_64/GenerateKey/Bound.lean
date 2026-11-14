@@ -40,9 +40,9 @@ theorem bound_ok {s : State} {B dp : Addr} {Z k dl : Nat} {dom : List Byte}
       Frm B [(8 * sEp, 8), (8 * sEl, 8)] s.mem t.mem ∧
       Keep [.rsi, .rcx, .rax, .rbp, .rdx] s t := by
   have hlen := KeyScalar.bnd_length (k := k) (dom := dom) (by rw [hl]; exact hd)
-  have hne : KeyScalar.bnd k dom ≠ [] := by intro he; rw [he] at hlen; simp at hlen; omega
-  have h2 : 2 * k ≤ dl := by rcases hd with h | h <;> omega
-  have hdl : dl < 2 ^ 32 := by rcases hd with h | h <;> omega
+  have hne : KeyScalar.bnd k dom ≠ [] := by intro he; rw [he] at hlen; simp at hlen; omega_using [hk1, hlen]
+  have h2 : 2 * k ≤ dl := by rcases hd with h | h <;> omega_using [h]
+  have hdl : dl < 2 ^ 32 := by rcases hd with h | h <;> omega_using [hk, h]
   unfold bound
   change WP isa (.seq (.block qTest) (.ite .e (seqs (scan sDom)) (seqs (scan sQ)))) s _
   refine WP.seq (WP.mono (qTest_ok hs hdi hZ hDl hK h2 hdl) fun u ⟨_, hz, hm, ku⟩ => ?_)
@@ -72,15 +72,15 @@ theorem bound_ok {s : State} {B dp : Addr} {Z k dl : Nat} {dom : List Byte}
       · exact (hsrcu.drop (2 * k)).take k
       · exact hsrcu.take k
     refine WP.mono (scan_raw_ok (B := B) (Z := Z) (sp := sp) (p := boundPtr dp k dom)
-      (bs := KeyScalar.bnd k dom) hsu hdu hZ hsp hp (by rw [hlen, hm]; exact hK) hne (by omega) src)
+      (bs := KeyScalar.bnd k dom) hsu hdu hZ hsp hp (by rw [hlen, hm]; exact hK) hne (by omega_using [hk, hlen]) src)
       fun t ⟨hEp, hEl, hax, hf, kt⟩ => ?_
     exact ⟨hne, hEp, by rwa [hlen] at hEl, hax, fun a ha => by rw [hf a ha, hm],
       (ku.trans kt).mono (by decide)⟩
   refine WP.ite (decide (dl = 2 * k)) (by simp [eval, hz]) (fun he => ?_) (fun he => ?_)
   · have hno := of_decide_eq_true he
-    exact run sDom (by decide) (ite_eq_right (by omega))
+    exact run sDom (by decide) (ite_eq_right (by omega_using [hk1, hno]))
   · have hno := of_decide_eq_false he
-    have hq : dl = 3 * k := by rcases hd with h | h <;> omega
+    have hq : dl = 3 * k := by rcases hd with h | h <;> omega_arith
     exact run sQ (by decide) (ite_eq_left hq)
 
 end VG.Proof.Ffdh.X86_64.GenerateKey

@@ -41,23 +41,23 @@ theorem subModQ_toNat {b x : Nat} (hb : b < q) (hx : x < q) :
     (subModQ (BitVec.ofNat 64 b) (BitVec.ofNat 64 x)).toNat = (b + q - x) % q := by
   have hq : q = 8380417 := rfl
   have hs : (BitVec.ofNat 64 b - BitVec.ofNat 64 x).toNat = (2 ^ 64 - x + b) % 2 ^ 64 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b) (by omega),
-      Nat.mod_eq_of_lt (a := x) (by omega)]
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b) (by omega_using [hb, hq]),
+      Nat.mod_eq_of_lt (a := x) (by omega_using [hx, hq])]
   unfold subModQ
   rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hs,
     BitVec.toNat_ofNat, hq]
   by_cases h : x ≤ b
-  · rw [show (2 ^ 64 - x + b) % 2 ^ 64 = b - x by omega]
-    omega
-  · rw [show (2 ^ 64 - x + b) % 2 ^ 64 = 2 ^ 64 - x + b by omega]
-    omega
+  · rw [show (2 ^ 64 - x + b) % 2 ^ 64 = b - x by omega_using [hb, hq, h]]
+    omega_using [hb, hq, h]
+  · rw [show (2 ^ 64 - x + b) % 2 ^ 64 = 2 ^ 64 - x + b by omega_using [hb, hq, h]]
+    omega_using [hx, hq, h]
 
 /-- The value `bpLd` loads of a word, for `b = B`. -/
 abbrev bpVal (B : Nat) (w : BitVec 32) : Nat := (subModQ (BitVec.ofNat 64 B) (w.setWidth 64)).toNat
 
 theorem bpLd_ok (B : Nat) : LdOk bpLd (bpVal B) (BitVec.ofNat 64 B) (BitVec.ofNat 64 q) :=
   fun j s h12 h13 hj hin =>
-  wp_ldrw ⟨by omega, by omega⟩ rfl hin fun s₁ o₁ e₁ => wp_sub fun s₂ o₂ e₂ => wp_lsr (by decide) fun s₃ o₃ e₃ =>
+  wp_ldrw ⟨by omega_using [], by omega_using [hj]⟩ rfl hin fun s₁ o₁ e₁ => wp_sub fun s₂ o₂ e₂ => wp_lsr (by decide) fun s₃ o₃ e₃ =>
     wp_madd fun s₄ o₄ e₄ => wp_nil ⟨by
       rw [e₄, e₃, o₃.get .x10, o₃.get .x13, e₂, o₂.get .x13, o₁.get .x12, o₁.get .x13, h12, h13, e₁]; rfl,
       (((o₁.trans o₂).trans o₃).trans o₄).mono⟩
@@ -85,7 +85,7 @@ theorem bitPack_vals {m : Mem} {f : Addr} (hr : Reduced m f) {b : Nat} (hb : b �
   have hi := List.mem_range.mp hi
   have hx := hr i hi
   simp only [Function.comp_apply, Fin.val_ofNat, Nat.mod_eq_of_lt hx]
-  rw [bpVal, ← BitVec.ofNat_toNat, subModQ_toNat (by omega) hx, sub_modPm hx hb (hle i hi)]
+  rw [bpVal, ← BitVec.ofNat_toNat, subModQ_toNat (by omega_using [hb, hx]) hx, sub_modPm hx hb (hle i hi)]
 
 theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
     WP isa Impl.MlDsa.AArch64.Pack.bitPack s₀ fun s' => bitPackK.post s₀ s' := by
@@ -111,10 +111,10 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
     · obtain ⟨h₁, h₂⟩ := hbnd i hi
       rw [hB] at h₂
       have hx := hred i hi
-      rw [bpVal, ← BitVec.ofNat_toNat, subModQ_toNat (by omega) hx, ← sub_modPm hx (by omega) h₂, ← hd, hB]
+      rw [bpVal, ← BitVec.ofNat_toNat, subModQ_toNat (by omega_using [hq, hB19]) hx, ← sub_modPm hx (by omega_using [hq, hB19]) h₂, ← hd, hB]
       exact lt_bitlen (sub_modPm_le h₁ h₂)
     · show bytesAt s'.mem (s₀.gpr .x3) (s₀.gpr .x4).toNat = bitPack _ _ _
-      rw [hlen, hB', bitPack_eq, bitPack_vals hred (by omega) (fun i hi => (hbnd i hi).2), hd,
+      rw [hlen, hB', bitPack_eq, bitPack_vals hred (by omega_using [hc, hq]) (fun i hi => (hbnd i hi).2), hd,
         hB]
   unfold Impl.MlDsa.AArch64.Pack.bitPack
   refine WP.seq (wp_mov fun s₁ o₁ e₁ => ?_)
@@ -128,14 +128,14 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   refine sel_ok (by decide) (fun s₃ o₃ h => ?_) (fun s₃ o₃ h => ?_)
   · rw [h4] at h
     exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₃ (by rw [o₃.get .x0, h0]) (by rw [o₃.get .x2, h2]) (by rw [o₃.get .x13, h13])
+      (by omega_using [hc, h]) (by omega_using [hlen, h]) s₃ (by rw [o₃.get .x0, h0]) (by rw [o₃.get .x2, h2]) (by rw [o₃.get .x13, h13])
       (by rw [o₃.rd, k₂.rd]) (by rw [o₃.wr, k₂.wr]) (by rw [o₃.mem, k₂.mem])
   have k₃ := k₂.trans o₃
   rw [h4] at h
   refine sel_ok (by decide) (fun s₄ o₄ h' => ?_) (fun s₄ o₄ h' => ?_)
   · rw [o₃.get .x4, h4] at h'
     exact go (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₄ (by rw [o₄.get .x0, k₃.get .x0]) (by rw [o₄.get .x2, o₃.get .x2, h2])
+      (by omega_using [hc, h']) (by omega_using [hlen, h']) s₄ (by rw [o₄.get .x0, k₃.get .x0]) (by rw [o₄.get .x2, o₃.get .x2, h2])
       (by rw [o₄.get .x13, o₃.get .x13, h13]) (by rw [o₄.rd, k₃.rd]) (by rw [o₄.wr, k₃.wr])
       (by rw [o₄.mem, k₃.mem])
   have k₄ := k₃.trans o₄
@@ -143,7 +143,7 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   refine sel_ok (by decide) (fun s₅ o₅ h'' => ?_) (fun s₅ o₅ h'' => ?_)
   · rw [o₄.get .x4, o₃.get .x4, h4] at h''
     exact go (d := 13) (c := 8) (nb := 13) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₅ (by rw [o₅.get .x0, k₄.get .x0]) (by rw [o₅.get .x2, o₄.get .x2, o₃.get .x2, h2])
+      (by omega_using [hc, h'']) (by omega_using [hlen, h'']) s₅ (by rw [o₅.get .x0, k₄.get .x0]) (by rw [o₅.get .x2, o₄.get .x2, o₃.get .x2, h2])
       (by rw [o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₅.rd, k₄.rd]) (by rw [o₅.wr, k₄.wr])
       (by rw [o₅.mem, k₄.mem])
   have k₅ := k₄.trans o₅
@@ -151,13 +151,13 @@ theorem bp_wp {s₀ : State} (hp : bitPackK.pre s₀) :
   refine sel_ok (by decide) (fun s₆ o₆ h''' => ?_) (fun s₆ o₆ h''' => ?_)
   · rw [o₅.get .x4, o₄.get .x4, o₃.get .x4, h4] at h'''
     exact go (d := 18) (c := 4) (nb := 9) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₆ (by rw [o₆.get .x0, k₅.get .x0])
+      (by omega_using [hc, h''']) (by omega_using [hlen, h''']) s₆ (by rw [o₆.get .x0, k₅.get .x0])
       (by rw [o₆.get .x2, o₅.get .x2, o₄.get .x2, o₃.get .x2, h2])
       (by rw [o₆.get .x13, o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₆.rd, k₅.rd])
       (by rw [o₆.wr, k₅.wr]) (by rw [o₆.mem, k₅.mem])
   · rw [o₅.get .x4, o₄.get .x4, o₃.get .x4, h4] at h'''
     exact go (d := 20) (c := 2) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by omega) (by omega) s₆ (by rw [o₆.get .x0, k₅.get .x0])
+      (by omega_using [hc, h, h', h'', h''']) (by omega_using [hc, h, h', h'', h''']) s₆ (by rw [o₆.get .x0, k₅.get .x0])
       (by rw [o₆.get .x2, o₅.get .x2, o₄.get .x2, o₃.get .x2, h2])
       (by rw [o₆.get .x13, o₅.get .x13, o₄.get .x13, o₃.get .x13, h13]) (by rw [o₆.rd, k₅.rd])
       (by rw [o₆.wr, k₅.wr]) (by rw [o₆.mem, k₅.mem])

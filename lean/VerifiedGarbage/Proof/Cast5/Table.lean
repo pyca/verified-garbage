@@ -34,7 +34,7 @@ theorem getD_append' {α : Type} (l l' : List α) (n : Nat) (d : α) :
   simp only [List.getD_eq_getElem?_getD]
   by_cases h : n < l.length
   · rw [ite_eq_left h, List.getElem?_append_left h]
-  · rw [ite_eq_right h, List.getElem?_append_right (by omega)]
+  · rw [ite_eq_right h, List.getElem?_append_right (by omega_using [h])]
 
 theorem pairs_length {α : Type} (f g : Nat → α) :
     ∀ n, ((List.range n).flatMap fun i => [f i, g i]).length = 2 * n
@@ -42,7 +42,7 @@ theorem pairs_length {α : Type} (f g : Nat → α) :
   | n + 1 => by
     rw [flatMap_range_succ, List.length_append, pairs_length f g n]
     simp only [List.length_cons, List.length_nil]
-    omega
+    omega_using []
 
 /-- Element `2 e` and `2 e + 1` of a list of pairs. -/
 theorem pairs_getD {α : Type} (f g : Nat → α) (d : α) :
@@ -52,12 +52,12 @@ theorem pairs_getD {α : Type} (f g : Nat → α) (d : α) :
   | n + 1, e, h => by
     rw [flatMap_range_succ, getD_append', getD_append', pairs_length]
     by_cases he : e < n
-    · rw [ite_eq_left (by omega), ite_eq_left (by omega)]
+    · rw [ite_eq_left (by omega_using [he]), ite_eq_left (by omega_using [he])]
       exact pairs_getD f g d n e he
-    · have : e = n := by omega
+    · have : e = n := by omega_using [h, he]
       subst this
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), Nat.sub_self,
-        show 2 * e + 1 - 2 * e = 1 by omega]
+      rw [ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), Nat.sub_self,
+        show 2 * e + 1 - 2 * e = 1 by omega_using []]
       exact ⟨rfl, rfl⟩
 
 /-- Memory holding the quadwords `W` at `T`. -/
@@ -75,7 +75,7 @@ theorem setWidth_append32 (x y : BitVec 32) : (x ++ y).setWidth 32 = y := by
 theorem extract_append32 (x y : BitVec 32) : (x ++ y).extractLsb' 32 32 = x := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi, Bool.true_and,
-    ite_eq_right (by omega), Nat.add_sub_cancel_left]
+    ite_eq_right (by omega_using []), Nat.add_sub_cancel_left]
 
 /-- Dword `k` of entry `e` of `table a b c d`. -/
 def tableEnt (a b c d : Byte → Spec.Cast5.Word) (e k : Nat) : Spec.Cast5.Word :=
@@ -87,21 +87,21 @@ theorem ent_table {m : Mem} {T : Addr} {a b c d : Byte → Spec.Cast5.Word}
     ent m T e k = tableEnt a b c d e k := by
   have hp := pairs_getD (fun i => b (BitVec.ofNat 8 i) ++ a (BitVec.ofNat 8 i))
     (fun i => d (BitVec.ofNat 8 i) ++ c (BitVec.ofNat 8 i)) 0 256 e he
-  have h0 := h (2 * e) (by rw [table_length]; omega)
-  have h1 := h (2 * e + 1) (by rw [table_length]; omega)
+  have h0 := h (2 * e) (by rw [table_length]; omega_using [he])
+  have h1 := h (2 * e + 1) (by rw [table_length]; omega_using [he])
   unfold table at h0 h1
   rw [hp.1] at h0
   rw [hp.2] at h1
   unfold ent tableEnt
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
-  · rw [show 16 * e + 4 * 0 = 8 * (2 * e) by omega, Mem.readW_lo32 h0, setWidth_append32]
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl
+  · rw [show 16 * e + 4 * 0 = 8 * (2 * e) by omega_using [], Mem.readW_lo32 h0, setWidth_append32]
     rfl
-  · rw [show 16 * e + 4 * 1 = 8 * (2 * e) + 4 by omega, ← Offset.add_add, Mem.readW_hi32 h0,
+  · rw [show 16 * e + 4 * 1 = 8 * (2 * e) + 4 by omega_using [], ← Offset.add_add, Mem.readW_hi32 h0,
       extract_append32]
     rfl
-  · rw [show 16 * e + 4 * 2 = 8 * (2 * e + 1) by omega, Mem.readW_lo32 h1, setWidth_append32]
+  · rw [show 16 * e + 4 * 2 = 8 * (2 * e + 1) by omega_using [], Mem.readW_lo32 h1, setWidth_append32]
     rfl
-  · rw [show 16 * e + 4 * 3 = 8 * (2 * e + 1) + 4 by omega, ← Offset.add_add, Mem.readW_hi32 h1,
+  · rw [show 16 * e + 4 * 3 = 8 * (2 * e + 1) + 4 by omega_using [], ← Offset.add_add, Mem.readW_hi32 h1,
       extract_append32]
     rfl
 

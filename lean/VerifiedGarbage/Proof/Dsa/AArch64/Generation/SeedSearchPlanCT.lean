@@ -17,7 +17,7 @@ def SeedPublic.words (p : SeedPublic) : Nat → BitVec 64 :=
 
 def SeedPublic.searchPlan (p : SeedPublic) : SearchPlan :=
   p.context.geo.searchPlan p.seed p.context.rand p.length (searchWords p.context.geo.B p.words) 0
-    (by have := p.context.geo.hashSizes.1; omega)
+    (by have := p.context.geo.hashSizes.1; omega_using [this])
     (by simp [searchWords, words, upd])
     (by simpa [searchWords, words, upd] using p.context.wrappedSlot)
     (by simpa [searchWords, words, upd] using p.context.hashesSlot)
@@ -33,7 +33,7 @@ def SeedPublic.search (p : SeedPublic) : SearchPublic where
   used := p.used
   bound := by
     change 0 < 32 * p.context.geo.pLen
-    rcases p.context.geo.width with h | h | h <;> omega
+    rcases p.context.geo.width with h | h | h <;> omega_using [h]
 
 def SeedPrimeBefore (pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   SeedBefore qLen p s ∧ p.context.geo.pLen = pLen ∧
@@ -52,10 +52,10 @@ theorem seedPrime_words {p : SeedPublic} {s : State}
   · subst k; simpa [searchWords, SeedPublic.words, upd] using h10
   have member : k ∈ generationSlots := by
     simp only [searchSlots, generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢
-    omega
+    omega_using [hk1, hk10, hk]
   have neq : k ≠ 0 ∧ k ≠ 2 ∧ k ≠ 25 := by
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    omega
+    omega_using [hk]
   simpa [searchWords, SeedPublic.words, upd, hk1, hk10, neq.1, neq.2.1, neq.2.2] using h.slots k member
 
 end VG.Proof.Dsa.AArch64.Generation

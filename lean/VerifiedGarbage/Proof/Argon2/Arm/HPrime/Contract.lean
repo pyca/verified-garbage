@@ -82,6 +82,6 @@ theorem pre_of (s₀ : State) (h : hPrimeArm.pre s₀) : Pre s₀ := by
 
 /-- `[scratch + d]`, as the code addresses it. -/
 theorem scr_addr {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d < 16384) :
-    State.addr (scr s₀ + BitVec.ofNat 32 d) = P s₀ + BitVec.ofNat 64 d := addr_add (by have := hp.scr_fits; omega)
+    State.addr (scr s₀ + BitVec.ofNat 32 d) = P s₀ + BitVec.ofNat 64 d := addr_add (by have := hp.scr_fits; omega_using [hd, this])
 
 end VG.Proof.Argon2.Arm.HPrime

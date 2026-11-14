@@ -28,31 +28,31 @@ structure InputPre (c : Cfg) (len : Nat) (s : State) : Prop where
 
 theorem args_idx {i : Nat} (hi : i ∈ Impl.EcKey.Compressed.X86.args.idx) : i < 3 := by
   simp only [Impl.EcKey.Compressed.X86.args, Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
-  omega
+  omega_using [hi]
 
 theorem input_setup {c : Cfg} {len : Nat} {s : State}
     (hp : InputPre c len s) (hlen : c.C.len ≤ len) :
     SetupPre c Impl.EcKey.Compressed.X86.args s := by
   have hfit := hp.pk_fit
   have hi : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s 1 + BitVec.ofNat 64 e) 4 :=
-    fun _ he => ⟨_, hp.pk, Offset.contains_base _ (by omega) (by omega)⟩
+    fun _ he => ⟨_, hp.pk, Offset.contains_base _ (by omega_using [hlen, he]) (by omega_using [hlen, hfit, he])⟩
   have hd : Region.Disjoint ⟨ptr s 1, c.C.len⟩ ⟨ptr s 2, size⟩ :=
     hp.disjoint.sub_left (by simpa using Region.sub_prefix hlen)
   refine ⟨.inl rfl, hp.ws, ?_, ?_, ?_, hi, hi, hi, hd, hd, hd,
-    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega,
-    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega,
-    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega,
+    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega_using [hlen, hfit],
+    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega_using [hlen, hfit],
+    by change (arg s 1).toNat + c.C.len ≤ 2 ^ 32; have := hp.pk_fit; omega_using [hlen, hfit],
     hp.ws_fit, ?_, hp.sp_lo, hp.stk_sc⟩
   · intro i h
-    exact ⟨_, hp.args, arg_containsN (k := 3) (by have := hp.sp_fit; omega) (args_idx h)⟩
+    exact ⟨_, hp.args, arg_containsN (k := 3) (by have := hp.sp_fit; omega_using [this]) (args_idx h)⟩
   · intro i h
-    exact hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega) (args_idx h))
+    exact hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega_using [this]) (args_idx h))
   · intro i h
     have := args_idx h
     have := hp.sp_fit
-    omega
+    omega_arith
   · exact stkOk_of (Cfg.stk_ge c) hp.sp_lo
-      (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.ws_fit; omega)]; exact hp.ws_fit)
+      (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.ws_fit; omega_using [])]; exact hp.ws_fit)
       (by decide) hp.stk_sc
 
 theorem setup_fixed {c : Cfg} {s₀ s : State} {base : Addr}

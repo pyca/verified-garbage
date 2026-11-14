@@ -73,7 +73,7 @@ include h
 
 theorem env (r : Nat) (hr : r < 24) :
     Env s₀.rd s₀.wr (cur src oth r) (nxt src oth r) (tbl + BitVec.ofNat 64 (32 * r)) := by
-  have hsub : Region.Sub ⟨tbl + BitVec.ofNat 64 (32 * r), 32⟩ ⟨tbl, 768⟩ := Offset.sub_base tbl (by omega)
+  have hsub : Region.Sub ⟨tbl + BitVec.ofNat 64 (32 * r), 32⟩ ⟨tbl, 768⟩ := Offset.sub_base tbl (by omega_using [hr])
   rcases cur_cases src oth r with ⟨e₁, e₂⟩ | ⟨e₁, e₂⟩ <;> rw [e₁, e₂]
   · exact ⟨fun i hi => in_append (h.src_in i hi), h.oth_in, h.tbl_in r hr, h.src_oth.symm,
       h.oth_tbl.sub_right hsub⟩
@@ -83,7 +83,7 @@ theorem env (r : Nat) (hr : r < 24) :
 /-- Writes to the states keep the table. -/
 theorem rc_frame {m : Mem} (hf : Frame [⟨src, 800⟩, ⟨oth, 800⟩] s₀.mem m) {r k : Nat} (hr : r < 24)
     (hk : k < 4) : m.readW (la tbl r k) 64 = RC r := by
-  rw [hf.readW (Offset.contains_base tbl (show 32 * r + 8 * k + 64 / 8 ≤ 768 by omega) (by omega))
+  rw [hf.readW (Offset.contains_base tbl (show 32 * r + 8 * k + 64 / 8 ≤ 768 by omega_using [hr, hk]) (by omega_using [hr, hk]))
     (by simpa using ⟨h.src_tbl.symm, h.oth_tbl.symm⟩) (by decide)]
   exact h.rc r hr k hk
 
@@ -105,8 +105,8 @@ theorem end_beq (tbl : Addr) (r : Nat) (hr : r < 24) :
     (tbl + BitVec.ofNat 64 (32 * r) + 32 - (tbl + BitVec.ofNat 64 768) == 0) = decide (r + 1 = 24) := by
   rw [show tbl + BitVec.ofNat 64 (32 * r) + 32 = tbl + BitVec.ofNat 64 (32 * r + 32) by
       rw [BitVec.add_assoc, BitVec.ofNat_add]; rfl,
-    Offset.add_sub_add_left, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
-  simp only [show (32 * r + 32 = 768) = (r + 1 = 24) by apply propext; omega]
+    Offset.add_sub_add_left, Offset.ofNat_sub_ofNat_beq (by omega_using [hr]) (by omega_using [])]
+  simp only [show (32 * r + 32 = 768) = (r + 1 = 24) by apply propext; omega_using []]
 
 theorem round_step {s₀ : State} {src oth tbl : Addr} {A : Nat → KState} (hp : Pre4 s₀ src oth tbl)
     (hcx : s₀.gpr .rcx = tbl + BitVec.ofNat 64 768) {r : Nat} (hr : r < 24) {s : State}
@@ -138,7 +138,7 @@ theorem body_ok {s₀ : State} {src oth tbl : Addr} {A : Nat → KState} (hp : P
     WP isa (.block (round ++ round)) s fun s' =>
       eval .ne s' = some (!decide (r + 2 = 24)) ∧ LInv s₀ src oth tbl A (r + 2) s' := by
   rw [WP.block_append_iff]
-  exact WP.mono (round_step hp hcx (by omega) hL) fun s₁ ⟨_, h₁⟩ => round_step hp hcx (by omega) h₁
+  exact WP.mono (round_step hp hcx (by omega_using [hr]) hL) fun s₁ ⟨_, h₁⟩ => round_step hp hcx (by omega_using [hr]) h₁
 
 /-- The 24 rounds: Keccak-f[1600] on each of the four states at `src`,
 with `rdi`, `rsi` and every register but `rax` and `rdx` as they were. -/
@@ -157,12 +157,12 @@ theorem permute4M_ok {s₀ : State} {src oth tbl : Addr} (hp : Pre4 s₀ src oth
       by rw [k₁.mem]; exact Frame.refl _ _, fun x hx k hk => by rw [c₁ x hx k hk]; rfl⟩
   let Inv : Nat → State → Prop := fun n s => ∃ j, n = 12 - j ∧ j < 12 ∧ LInv s₀ src oth tbl A (2 * j) s
   refine WP.loop (M := isa) (Q := fun s => LInv s₀ src oth tbl A 24 s) Inv (fun n s ⟨j, hn, hj, hL⟩ => ?_)
-    12 s₁ ⟨0, rfl, by omega, h₀⟩ |>.mono fun s hL => ?_
-  · refine WP.mono (body_ok hp hcx (by omega) hL) fun s' ⟨he, hl⟩ => ?_
+    12 s₁ ⟨0, rfl, by omega_using [], h₀⟩ |>.mono fun s hL => ?_
+  · refine WP.mono (body_ok hp hcx (by omega_using [hj]) hL) fun s' ⟨he, hl⟩ => ?_
     by_cases hlast : 2 * j + 2 = 24
     · exact .inl ⟨by show eval .ne s' = _; rw [he, hlast]; rfl, hlast ▸ hl⟩
-    · exact .inr ⟨by show eval .ne s' = _; rw [he]; simp [hlast], 12 - (j + 1), by omega, j + 1, rfl, by omega,
-        by rw [show 2 * (j + 1) = 2 * j + 2 by omega]; exact hl⟩
+    · exact .inr ⟨by show eval .ne s' = _; rw [he]; simp [hlast], 12 - (j + 1), by omega_using [hn, hj], j + 1, rfl, by omega_using [hj, hlast],
+        by rw [show 2 * (j + 1) = 2 * j + 2 by omega_using []]; exact hl⟩
   · refine ⟨fun i hi k hk => ?_, hL.frame, hL.rd, hL.wr, hL.rdx, fun g a d => ?_⟩
     · have := hL.state i hi k hk
       simp only [cur, show 24 % 2 = 0 from rfl, ite_true] at this

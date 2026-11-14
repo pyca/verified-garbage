@@ -32,7 +32,7 @@ theorem M0_addr {P : RP} (sz : Sizes P) (hf : P.B.toNat + P.Z ≤ 2 ^ 32) :
     State.addr P.M0 = off (State.addr P.B) P.oM :=
   addr_add (by
     have := sz.hdrM; have := sz.endM; have := sz.fits; have := arr_mono (w := P.w) (show mBase + 8 ≤ nArr by decide)
-    have : 0 < P.lenM := by simp only [RP.lenM]; omega
-    omega)
+    have : 0 < P.lenM := by simp only [RP.lenM]; omega_using []
+    omega_arith)
 
 end VG.Proof.Rsa.Arm.Recover

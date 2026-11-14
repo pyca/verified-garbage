@@ -54,13 +54,13 @@ theorem checkingInstalled_ready {s t : State} (A : CheckingABI s)
     (I : Installed (argumentPointer s 4) ((arg s 5).toNat * 8) Generate.checkArguments 0 2 3 s t) :
     ShapeCallReady (checkingLayout s A) (arg s 2).toNat t := by
   have L : 0 < (arg s 2).toNat ∧ 0 < (arg s 3).toNat := by
-    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega
+    have H := A.lengths; unfold Spec.Dsa.lengthsValid at H; omega_using [H]
   obtain ⟨Params, Bytes⟩ := I.input (by decide : (0, .p) ∈ Generate.checkArguments) A.keyBound
     (by rw [A.rd, A.wr]; simp) A.keyScratch A.room
     (by rw [callStack_eq A.stackLow]; exact A.belowKey.symm)
   obtain ⟨Qptr, Gptr, _⟩ := I.pointers (by decide)
   obtain ⟨P, Q, G, Value⟩ := parameters_buffers Params L.1 L.2
-    (by have := A.keyLength; omega) Bytes Qptr Gptr
+    (by have := A.keyLength; omega_using [this]) Bytes Qptr Gptr
   refine ⟨I.keeps.1 .esp (by decide), I.scr, ?_, ?_, ?_, ?_,
     congrArg BitVec.toNat (I.arguments (2, .digestLen) (by decide))⟩
   · intro input hi

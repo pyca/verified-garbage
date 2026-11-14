@@ -13,7 +13,7 @@ regions, place and length of `DB`, and addresses of statics (`MA`) leak the
 same trace (`mgfXor_ct`): the loop runs once per `hLen` bytes of `DB` in
 both, each round's pieces between the calls are checked by the taint
 analysis (`FixedChecks`, `HashChecks`), and each call through a slot of the
-table of `Hash` is of the same streaming function of `G` in both runs
+table of `MdHash` is of the same streaming function of `G` in both runs
 (`two_scall`), whose arguments agree (`two_init`, `two_upd`, `two_fin`).
 -/
 
@@ -41,7 +41,7 @@ structure MA where
   sy : String → Addr
 
 /-- The public words in round `j`: `scratch`, `DB`, `dbLen`, the seed, the
-counter, the bytes done, and the slots of the table of `Hash`. -/
+counter, the bytes done, and the slots of the table of `MdHash`. -/
 def mws (G : Stream) (D : Nat) (a : MA) (j : Nat) : List (Nat × BitVec 64) :=
   [(21, a.S), (23, off a.S a.e), (24, BitVec.ofNat 64 a.db), (29, off a.S (a.e + a.db)), (30, BitVec.ofNat 64 D),
     (31, BitVec.ofNat 64 j), (32, BitVec.ofNat 64 (j * G.D)), (14, BitVec.ofNat 64 G.D), (11, a.sy G.initN),

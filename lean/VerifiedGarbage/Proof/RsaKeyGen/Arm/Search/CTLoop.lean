@@ -40,7 +40,7 @@ theorem zero_ready (p : SearchPublic) (T : List Nat) (q : Pt) (s : State) (h : L
   obtain ⟨o, hT, hl, hf⟩ := h
   have := hl.input.remaining_le
   have := hl.remaining_le
-  exact WP.mono (cmp0_ok hl.r9 (by omega)) fun t ⟨⟨he, hm⟩, k⟩ => ⟨⟨o, hT, hl.keep k hm, hf⟩, he⟩
+  exact WP.mono (cmp0_ok hl.r9 (by omega_arith)) fun t ⟨⟨he, hm⟩, k⟩ => ⟨⟨o, hT, hl.keep k hm, hf⟩, he⟩
 
 theorem iteration_ct (c : Cand) (p : SearchPublic) (T : List Nat) :
     RelCT isa (Two (LiveCT p T)) (iteration c.call) (fun _ _ => True) := by

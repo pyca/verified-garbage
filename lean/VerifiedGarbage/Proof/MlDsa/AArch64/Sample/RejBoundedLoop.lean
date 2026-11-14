@@ -99,7 +99,7 @@ theorem val_ok {η : Nat} (hη : η = 2 ∨ η = 4) {u : State} (hc : Consts η 
       wp_nil ⟨((o₁.trans o₂).trans o₃).mono, ?_⟩
     rw [e₃, o₂.get .x13, e₂, e₁, o₂.get .x9, o₁.get .x9, hc.x9, hc.x10]; rfl
 
-theorem rbB_le {η : Nat} : rbB η ≤ 15 := by unfold rbB; split <;> omega
+theorem rbB_le {η : Nat} : rbB η ≤ 15 := by unfold rbB; split <;> omega_using []
 
 theorem hbTry_length' {η : Nat} (hη : η = 2 ∨ η = 4) (L : List Zq) (b : Nat) :
     (hbTry η L b).length = L.length + if b < rbB η then 1 else 0 := by
@@ -118,8 +118,8 @@ theorem try_ok {η : Nat} (hη : η = 2 ∨ η = 4) {aP : Addr} {L : List Zq} {b
   refine wp_sub fun u₁ o₁ e₁ => wp_lsr (by decide) fun u₂ o₂ e₂ => ?_
   have v12 : (u₂.gpr .x12).toNat = if b < rbB η then 1 else 0 := by
     rw [e₂, e₁]
-    exact lt_bit (by rw [h7, BitVec.toNat_ofNat]; omega) (by rw [hc.x15, BitVec.toNat_ofNat]; have := @rbB_le η; omega)
-      (by omega) (by have := @rbB_le η; omega)
+    exact lt_bit (by rw [h7, BitVec.toNat_ofNat]; omega_using [hb]) (by rw [hc.x15, BitVec.toNat_ofNat]; have := @rbB_le η; omega_using [this])
+      (by omega_using [hb]) (by have := @rbB_le η; omega_using [this])
   have hc₂ : Consts η u₂ := hc.keep (o₁.keep.trans o₂.keep)
   rw [List.append_eq, List.append_eq, List.nil_append, WP.block_append_iff]
   refine WP.mono (val_ok hη hc₂) fun u₃ ⟨o₃, e₃⟩ => ?_
@@ -146,9 +146,9 @@ theorem try_ok {η : Nat} (hη : η = 2 ∨ η = 4) {aP : Addr} {L : List Zq} {b
   · rw [m₇]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hl)
   · rw [o₇.get .x3, e₆, x14, o₅.get .x3, o₄.gpr, o₃.get .x3, o₂.get .x3, o₁.get .x3, h3, coeffAddr, coeffAddr,
       ptr_add, hbTry_length' hη, Nat.mul_add]
-  · have hx : (u₆.gpr .x12).toNat ≤ (u₆.gpr .x4).toNat := by rw [x12, c4]; split <;> omega
+  · have hx : (u₆.gpr .x12).toNat ≤ (u₆.gpr .x4).toNat := by rw [x12, c4]; split <;> omega_arith
     rw [e₇, toNat_sub_n hx, c4, x12, hbTry_length' hη]
-    omega
+    omega_using []
   · rw [m₇, hbTry_eq hη]
     split
     · rename_i hr

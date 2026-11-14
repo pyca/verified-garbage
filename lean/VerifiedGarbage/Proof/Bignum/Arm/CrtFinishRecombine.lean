@@ -76,17 +76,17 @@ theorem crt_finishPad_ready (s : State) {base : BitVec 32} {size len w o d : Nat
   refine WP.mono (crt_padModulus_ok s p 1) ?_
   rintro u ⟨padded, outside, ptrU, restU⟩
   have low := crt_paddedResidue_low padded
-  have product := outside.val32 (d := o) (k := 4 * w + 2) (Or.inl h.separate) (by have := h.outputFits; omega)
+  have product := outside.val32 (d := o) (k := 4 * w + 2) (Or.inl h.separate) (by have := h.outputFits; omega_using [nowrap, this])
   have frame := outside_workspace outside p.fits
   have count := p.layout.nativeCount p.main
   have ready : CrtAddWideInput base size o d w u := by
-    refine ⟨p.workspace.congr restU.wr, by omega,
+    refine ⟨p.workspace.congr restU.wr, by omega_using [small, sep, fits],
       ⟨h.row.nowrap, h.row.outFits, h.row.inFits, h.row.separate, by rw [restU.wr]; exact h.row.writable⟩,
       ?_, h.outputFits, ptrU, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · have hw := p.layout.width ▸ p.layout.layout.1; omega
-    · rw [outside_read32 outside (d := 48) (by omega) (by decide)]; exact count
-    · rw [outside_read32 outside (d := 232) (by omega) (by decide)]; exact h.output
-    · rw [outside_read32 outside (d := 240) (by omega) (by decide)]; exact p.link
+    · have hw := p.layout.width ▸ p.layout.layout.1; omega_using [hw]
+    · rw [outside_read32 outside (d := 48) (by omega_using [small, sep]) (by decide)]; exact count
+    · rw [outside_read32 outside (d := 232) (by omega_using [small, sep]) (by decide)]; exact h.output
+    · rw [outside_read32 outside (d := 240) (by omega_using [small, sep]) (by decide)]; exact p.link
     · rw [product, low]; exact h.sumFits
     · rw [restU.rd, restU.wr, restU.sp]; exact p.stackRead
     · rw [restU.sp]; exact p.stackSep

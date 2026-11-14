@@ -351,9 +351,9 @@ theorem prefix_rel (v : HPrime.Backend) (lo : Nat) (slot : lo ∈ slots)
       (.seq (.block (lengthArgs lo)) (Impl.Argon2.AArch64.HPrime.update v.hash)) (LengthRelated lo) := by
   have args := ((lengthArgs_rel lo check).mono (P' := RelatedRegs [.x20])
     (fun _ _ h => ⟨h.1.sp, h.1.bp, h.1.bx⟩) (fun _ _ h => h)).wpDep
-    (fun s t h => ⟨lengthArgs_ok s lo (slots_aligned lo slot) (by omega) (h.1.left.space.readable lo slot)
+    (fun s t h => ⟨lengthArgs_ok s lo (slots_aligned lo slot) (by omega_using [bound]) (h.1.left.space.readable lo slot)
       (by simpa using h.1.left.space.write 792 4 (by decide)),
-      lengthArgs_ok t lo (slots_aligned lo slot) (by omega) (h.1.right.space.readable lo slot)
+      lengthArgs_ok t lo (slots_aligned lo slot) (by omega_using [bound]) (h.1.right.space.readable lo slot)
       (by simpa using h.1.right.space.write 792 4 (by decide))⟩)
   have call := HPrime.update_rel v (P := PrefixRelated lo) (fun a b ⟨_, s, t, hp, ha, hb⟩ =>
     ⟨prefix_update_ready hp.1.left.space ha, prefix_update_ready hp.1.right.space hb,
@@ -733,8 +733,8 @@ theorem loop_rel (p : Params) (pass lane slice count : Nat) (leftState rightStat
         obtain ⟨ready, matrixA, matrixB⟩ := next active
         have indices := hp.indices
         rw [Proof.Argon2.lanes_succ, Proof.Argon2.lanes_succ] at indices
-        exact ⟨n, by omega, j + 1, Proof.Argon2.segment p pass j slice 0 p.segmentLen ls,
-          Proof.Argon2.segment p pass j slice 0 p.segmentLen rs, by omega, by omega, ready, matrixA, matrixB, indices⟩
+        exact ⟨n, by omega_using [], j + 1, Proof.Argon2.segment p pass j slice 0 p.segmentLen ls,
+          Proof.Argon2.segment p pass j slice 0 p.segmentLen rs, by omega_using [endLane], by omega_using [endLane, active], ready, matrixA, matrixB, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨lane, leftState, rightState, endLane, positive, h⟩) (fun _ _ h => h)
 
@@ -794,7 +794,7 @@ theorem code_rel (p : Params) (pass slice : Nat) (leftState rightState : FillSta
     | seq setupB lanesB =>
       obtain ⟨setupTrace, related⟩ := setup_public_rel p pass slice leftState rightState _ _ _ _ _ _ hp setupA setupB
       obtain ⟨lanesTrace, _⟩ := FillLanes.loop_rel p pass 0 slice p.lanes leftState rightState
-        hp.left.parameters.lanesPositive (by omega) _ _ _ _ _ _ related lanesA lanesB
+        hp.left.parameters.lanesPositive (by omega_using []) _ _ _ _ _ _ related lanesA lanesB
       exact ⟨by rw [setupTrace, lanesTrace], trivial⟩
 
 end VG.Proof.Argon2.AArch64.FillSlice
@@ -894,8 +894,8 @@ theorem loop_rel (p : Params) (pass slice count : Nat) (leftState rightState : F
           exact taken
         have indices := hp.indices
         rw [Proof.Argon2.slices_succ, Proof.Argon2.slices_succ] at indices
-        exact ⟨n, by omega, j + 1, Proof.Argon2.lanes p pass j 0 p.lanes ls,
-          Proof.Argon2.lanes p pass j 0 p.lanes rs, by omega, by omega, next active, indices⟩
+        exact ⟨n, by omega_using [], j + 1, Proof.Argon2.lanes p pass j 0 p.lanes ls,
+          Proof.Argon2.lanes p pass j 0 p.lanes rs, by omega_using [endSlice], by omega_using [endSlice, active], next active, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨slice, leftState, rightState, endSlice, positive, h⟩) (fun _ _ h => h)
 
@@ -1072,8 +1072,8 @@ theorem loop_rel (p : Params) (pass count : Nat) (leftState rightState : FillSta
         have ready := next active
         have indices := hp.indices
         rw [Proof.Argon2.iterations_succ, Proof.Argon2.iterations_succ] at indices
-        exact ⟨n, by omega, j + 1, fillPass p ls j,
-          fillPass p rs j, by omega, by omega, ready, ready.leftMatrix, ready.rightMatrix, indices⟩
+        exact ⟨n, by omega_using [], j + 1, fillPass p ls j,
+          fillPass p rs j, by omega_using [endPass], by omega_using [endPass, active], ready, ready.leftMatrix, ready.rightMatrix, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨pass, leftState, rightState, endPass, positive, h⟩) (fun _ _ h => h)
 
@@ -1167,7 +1167,7 @@ theorem code_rel (v : HPrime.Backend) (name : String) (p : Params) :
   have q : 2 ≤ p.laneLen := by
     have segments := Proof.Argon2.laneLen_segments p params.lanesPositive
     have minimum := params.segment_bound.1
-    omega
+    omega_using [segments, minimum]
   have lanesBound : p.lanes < 2 ^ 64 := Nat.lt_trans params.lanesBound (by decide)
   have pub : MemoryInit.AgreeBases s t := by
     refine ⟨hp.stacks, ?_⟩
@@ -1306,7 +1306,7 @@ theorem ReviewedRelated.related {p : Params} {s t : State} (h : ReviewedRelated 
   have positive : 0 < p.laneLen := by
     have segments := Proof.Argon2.laneLen_segments p parameters.lanesPositive
     have minimum := parameters.segment_bound.1
-    omega
+    omega_using [segments, minimum]
   have indices := Proof.Argon2.references_injective p positive _ _ _ _ _ _ _ _ h.references
   unfold initial
   rw [Proof.Argon2.iterations_fill, Proof.Argon2.iterations_fill]

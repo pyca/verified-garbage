@@ -94,10 +94,10 @@ theorem fillCompress_rel {pass slice lane index ctr : Nat} {st₁ st₂ : FillSt
   have hR₂ : R < blocksN s₀₂ := T.pb.blocksN_eq ▸ hR
   have L8 := laneLen_ge T.hp₁
   obtain ⟨cl, _⟩ := cell_fits T.hp₁ hl (col := (slice * (prm s₀₁).segmentLen + index + (prm s₀₁).laneLen - 1) %
-    (prm s₀₁).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀₁).laneLen) (Nat.mod_lt _ (by omega_using [L8]))
   have L8₂ := laneLen_ge T.hp₂
   obtain ⟨cl₂, _⟩ := cell_fits T.hp₂ hl₂ (col := (slice * (prm s₀₂).segmentLen + index + (prm s₀₂).laneLen - 1) %
-    (prm s₀₂).laneLen) (Nat.mod_lt _ (by omega))
+    (prm s₀₂).laneLen) (Nat.mod_lt _ (by omega_using [L8₂]))
   unfold Impl.Argon2.RISCV64.Derive.fillCompress
   refine RelCT.seqW (T.leafF [] [] (fun s₁ s₂ h => ⟨⟨_, _, _, _, _, h.1.1.w, h.2.1.w⟩, by simp, by simp⟩)
       ⟨_, by taint_decide⟩)

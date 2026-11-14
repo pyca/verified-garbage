@@ -1,9 +1,465 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
-
-import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyConstantTime
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyBlockCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyPublic
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyDerive
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyGenerate
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallLayout
+import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
+public import VerifiedGarbage.Proof.Dsa.Contract
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleAgreement
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBodyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySampled
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyBody
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
+
+/-! ### `Dsa.X86_64.GenerateKeyConstantTime`, which only this module used -/
+
+section
+
+/-! ### `Dsa.X86_64.GenerateKeyGenerateCT`, which only this module used -/
+
+section
+
+/-! ### `Dsa.X86_64.GenerateKeyCallCT`, which only this module used -/
+
+section
+
+/-! # Key generation's calls, by their callees' leakage contracts -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Dsa.X86_64
+
+/-- The registers the domain check is called with. -/
+def KeygenCheckRegs (s t : State) : Prop :=
+  t.gpr .rdi = s.gpr .rcx ∧ t.gpr .rsi = s.gpr .r8 ∧ t.gpr .rdx = s.gpr .r9 ∧
+    t.gpr .rcx = stackArg s 0 ∧ t.gpr .r8 = stackArg s 3 ∧ t.gpr .r9 = stackArg s 4
+
+def KeygenCheckRelated (v : Backend) (a b : State) : Prop :=
+  ∃ s t, ∃ hs : GenerateKeyABI v.stack s, ∃ ht : GenerateKeyABI v.stack t,
+    KeygenState hs 0 a ∧ KeygenState ht 0 b ∧ KeygenCheckRegs s a ∧ KeygenCheckRegs t b ∧
+    KeygenPublicAgree s t
+
+theorem keygen_check_ct (v : Backend) : RelCT isa (KeygenCheckRelated v)
+    (.call (keygenCheckName v) (Generate.checkParameters v.sq v.mul)) (fun _ _ => True) := by
+  apply VG.X86_64.RelCT.callEx v.parametersVerified.1 v.parametersVerified.2.1
+  intro a b ⟨s, t, hs, ht, ha, hb, ⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩, hp⟩
+  obtain ⟨hca, hwa⟩ := keygen_check_covers hs ha.rd ha.wr
+  obtain ⟨hcb, hwb⟩ := keygen_check_covers ht hb.rd hb.wr
+  refine ⟨keygenCheckRd s, keygenCheckWr s, keygenCheckRd t, keygenCheckWr t,
+    keygen_check_pre hs ha.sp a1 a2 a3 a4 a5 a6, keygen_check_pre ht hb.sp b1 b2 b3 b4 b5 b6, ?_,
+    hca, hwa, hcb, hwb, ha.sp.trans (hp.base.trans hb.sp.symm)⟩
+  sig_pub [Proof.Dsa.checkParametersContract, Proof.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+  rw [show a.mem.writeW (a.gpr .rsp - 8) (a.unknowns 0) = a.callEntry.mem from rfl,
+    show b.mem.writeW (b.gpr .rsp - 8) (b.unknowns 0) = b.callEntry.mem from rfl, a1, a2, b1, b2,
+    keygen_callEntry_bytes hs ha.sp hs.stackParams (s.gpr .r8).isLt,
+    keygen_callEntry_bytes ht hb.sp ht.stackParams (t.gpr .r8).isLt, keygen_bytes_params ha,
+    keygen_bytes_params hb, hp.params, a3, a4, a5, a6, b3, b4, b5, b6, ha.sp, hb.sp, hp.base]
+  exact ⟨rfl, rfl, hp.regs .rcx (by decide), hp.regs .r8 (by decide), hp.regs .r9 (by decide),
+    hp.args 0 (by decide), hp.args 3 (by decide), hp.args 4 (by decide)⟩
+
+/-- The registers and outgoing words the derivation is called with. -/
+def KeygenDeriveRegs (s t : State) : Prop :=
+  t.gpr .rdi = s.gpr .rdi ∧ t.gpr .rsi = s.gpr .rsi ∧ t.gpr .rdx = s.gpr .rcx ∧ t.gpr .rcx = s.gpr .r8 ∧
+    t.gpr .r8 = s.gpr .r9 ∧ t.gpr .r9 = off (randomBase s) Random.oNonce ∧
+    ∀ i < 3, word t.mem (randomBase s) (8 * i) = keygenDeriveArg s i
+
+/-- The derivation's status from the x in the frame. -/
+def keygenDeriveStatus (s a : State) : Nat :=
+  Spec.Dsa.signStatus (Spec.Dsa.deriveKeyBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params
+    (Spec.Rsa.bytesAt a.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat))
+
+def KeygenDeriveRelated (v : Backend) (a b : State) : Prop :=
+  ∃ s t, ∃ hs : GenerateKeyABI v.stack s, ∃ ht : GenerateKeyABI v.stack t, ∃ ua ub : Nat,
+    KeygenState hs ua a ∧ KeygenState ht ub b ∧ KeygenDeriveRegs s a ∧ KeygenDeriveRegs t b ∧
+    KeygenPublicAgree s t ∧ keygenDeriveStatus s a = keygenDeriveStatus t b ∧
+    Spec.Dsa.checkParametersBytes (keygenInput s).pLen (keygenInput s).qLen (keygenInput s).params = true ∧
+    Spec.Dsa.checkParametersBytes (keygenInput t).pLen (keygenInput t).qLen (keygenInput t).params = true
+
+theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
+    (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) (fun _ _ => True) := by
+  apply VG.X86_64.RelCT.callEx v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1
+  intro a b ⟨s, t, hs, ht, _, _, ha, hb, ⟨a1, a2, a3, a4, a5, a6, aw⟩, ⟨b1, b2, b3, b4, b5, b6, bw⟩, hp, hst,
+    hcs, hct⟩
+  obtain ⟨hca, hwa⟩ := keygen_derive_covers hs ha.rd ha.wr
+  obtain ⟨hcb, hwb⟩ := keygen_derive_covers ht hb.rd hb.wr
+  refine ⟨keygenDeriveRd s, keygenDeriveWr s, keygenDeriveRd t, keygenDeriveWr t,
+    keygen_derive_checked_pre hs ha.sp aw a1 a2 a3 a4 a5 a6 (keygen_bytes_params ha) hcs,
+    keygen_derive_checked_pre ht hb.sp bw b1 b2 b3 b4 b5 b6 (keygen_bytes_params hb) hct, ?_,
+    hca, hwa, hcb, hwb, ha.sp.trans (hp.base.trans hb.sp.symm)⟩
+  have hA (i : Nat) (hi : i < 3) :
+      stackArg (a.callEntry.withRegions (keygenDeriveRd s) (keygenDeriveWr s)) i = keygenDeriveArg s i :=
+    (random_call_stackArg ha.sp _ _ (by omega_using [hi])).trans (aw i hi)
+  have hB (i : Nat) (hi : i < 3) :
+      stackArg (b.callEntry.withRegions (keygenDeriveRd t) (keygenDeriveWr t)) i = keygenDeriveArg t i :=
+    (random_call_stackArg hb.sp _ _ (by omega_using [hi])).trans (bw i hi)
+  sig_pub [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
+  simp only [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hB 0 (by decide), hB 1 (by decide),
+    hB 2 (by decide), keygenDeriveArg, List.getD_cons_succ, List.getD_cons_zero]
+  rw [show a.mem.writeW (a.gpr .rsp - 8) (a.unknowns 0) = a.callEntry.mem from rfl,
+    show b.mem.writeW (b.gpr .rsp - 8) (b.unknowns 0) = b.callEntry.mem from rfl, a3, a4, a5, a6, b3, b4, b5, b6,
+    keygen_callEntry_bytes hs ha.sp hs.stackParams (s.gpr .r8).isLt,
+    keygen_callEntry_bytes ht hb.sp ht.stackParams (t.gpr .r8).isLt,
+    keygen_callEntry_nonce hs ha.sp, keygen_callEntry_nonce ht hb.sp,
+    keygen_bytes_params ha, keygen_bytes_params hb, a1, a2, b1, b2, ha.sp, hb.sp]
+  refine ⟨by rw [hp.base], ?_, hp.regs .rdi (by decide), hp.regs .rsi (by decide), hp.regs .rcx (by decide),
+    hp.regs .r8 (by decide), hp.regs .r9 (by decide), by rw [hp.base], hp.args 0 (by decide), hp.args 3 (by decide),
+    hp.args 4 (by decide)⟩
+  have hst' := hst
+  unfold keygenDeriveStatus at hst'
+  change List.map _ (keygenInput s).params ++ [Spec.Dsa.signStatus (Spec.Dsa.deriveKeyBytes (keygenInput s).pLen
+    (keygenInput s).qLen _ _)] = List.map _ (keygenInput t).params ++ [Spec.Dsa.signStatus
+    (Spec.Dsa.deriveKeyBytes (keygenInput t).pLen (keygenInput t).qLen _ _)]
+  rw [hst', hp.params]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+
+/-! # Key generation's sampling and derivation leak only its public trace -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64
+
+theorem keygen_prepare_pre {extra : Nat} {s t : State} {h : GenerateKeyABI extra s}
+    (ht : KeygenState h 0 t) (hQ : word t.mem (randomBase s) Random.oQ = s.gpr .rcx + s.gpr .r9) :
+    RandomPreparePre ⟨randomBase s, s.gpr .rcx + s.gpr .r9, keygenQBytes s⟩ t := by
+  have hl := h.lengths
+  unfold Spec.Dsa.lengthsValid at hl
+  refine ⟨ht.scr, ht.sp, hQ, ?_, ?_, ?_, ?_⟩
+  · simpa only [Random.oQLen, keygen_q_length h, ofNat_toNat64] using
+      ht.saved (88, stackArg s 0) (by simp [keygenSavedValues])
+  · have hh := random_src_take (random_src_drop ht.params (keygenInput s).pLen) (keygenInput s).qLen
+    simpa only [keygenQBytes, keygenInput, ofNat_toNat64] using hh
+  · change 0 < (keygenQBytes s).length
+    rw [keygen_q_length h]
+    omega_using [hl]
+  · change (keygenQBytes s).length < 2 ^ 64
+    rw [keygen_q_length h]
+    exact (stackArg s 0).isLt
+
+theorem keygen_deriveArgs_step {extra : Nat} {s d : State} {h : GenerateKeyABI extra s} {used : Nat}
+    (hd : KeygenState h used d) :
+    WP isa (.block GenerateKey.deriveArgs) d fun e =>
+      KeygenState h used e ∧ KeygenDeriveRegs s e ∧
+      Spec.Rsa.bytesAt e.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat =
+        Spec.Rsa.bytesAt d.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat := by
+  refine WP.mono_mx (by decide) (keygen_deriveArgs_saved hd.scr hd.sp hd.saved)
+    fun e ⟨hdi, hsi, hdx, hcx, h8, h9, hw, _, hargs, hke⟩ hmxe => ?_
+  have hq : (stackArg s 0).toNat ≤ 32 := by
+    have hl := h.lengths
+    unfold Spec.Dsa.lengthsValid at hl
+    omega_using [hl]
+  exact ⟨hd.of_outgoing hargs (hke.mono (by decide)) hmxe, ⟨hdi, hsi, hdx, hcx, h8, h9, hw⟩,
+    random_outside_bytes hargs (show Random.oNonce + (stackArg s 0).toNat ≤ 2 ^ 64 by
+      unfold Random.oNonce; omega_using [hq]) (Or.inr (show 0 + 24 ≤ Random.oNonce by decide))⟩
+
+theorem keygen_block_nil {a u : State} {tr : List Leak} (e : Exec isa (.block []) a tr u) :
+    tr = [] ∧ u = a := by
+  cases e with
+  | block h => cases h; exact ⟨rfl, rfl⟩
+
+theorem keygen_scalar_of_flag {S : Spec.Dsa.Random.Sample}
+    (h : (BitVec.ofNat 64 (VG.Proof.Dsa.Random.sampleStatus S) == 1) = true) : ∃ k, S.scalar = some k := by
+  cases hx : S.scalar with
+  | some k => exact ⟨k, rfl⟩
+  | none =>
+    simp only [VG.Proof.Dsa.Random.sampleStatus, hx] at h
+    split at h <;> exact absurd h (by decide)
+
+theorem keygen_deriveStatus_eq {extra : Nat} {s t x y : State} {ks kt : Nat}
+    (hs : GenerateKeyABI extra s) (ht : GenerateKeyABI extra t)
+    (hc : keygenChecked s = true) (hct : keygenChecked t = true)
+    (hxs : (keygenDraw s).scalar = some ks) (hxt : (keygenDraw t).scalar = some kt)
+    (hstatus : (keygenResult s).status = (keygenResult t).status)
+    (hx : Spec.Rsa.bytesAt x.mem (off (randomBase s) Random.oNonce) (stackArg s 0).toNat =
+      Spec.Dsa.encodeBE (stackArg s 0).toNat ks)
+    (hy : Spec.Rsa.bytesAt y.mem (off (randomBase t) Random.oNonce) (stackArg t 0).toNat =
+      Spec.Dsa.encodeBE (stackArg t 0).toNat kt) :
+    keygenDeriveStatus s x = keygenDeriveStatus t y := by
+  unfold keygenDeriveStatus
+  rw [hx, hy]
+  have he := hstatus
+  rw [keygen_result_checked hs hc, keygen_result_checked ht hct] at he
+  simp only [hxs, hxt] at he
+  exact he
+
+theorem keygen_generate_ct (v : Backend) {s t a b : State}
+    {hs : GenerateKeyABI v.stack s} {ht : GenerateKeyABI v.stack t}
+    (ha : KeygenState hs 0 a) (hb : KeygenState ht 0 b)
+    (hQa : word a.mem (randomBase s) Random.oQ = s.gpr .rcx + s.gpr .r9)
+    (hQb : word b.mem (randomBase t) Random.oQ = t.gpr .rcx + t.gpr .r9)
+    (hc : keygenChecked s = true) (hp : KeygenPublicAgree s t)
+    (hstatus : (keygenResult s).status = (keygenResult t).status)
+    (htrace : (keygenResult s).trace = (keygenResult t).trace)
+    {tsa tsb : List Leak} {u w : State}
+    (ea : Exec isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) a tsa u)
+    (eb : Exec isa (GenerateKey.generate (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) b tsb w) :
+    tsa = tsb := by
+  have hct : keygenChecked t = true := hp.checked ▸ hc
+  have hqs := keygen_q_valid hs hc
+  have hqt := keygen_q_valid ht hct
+  have hdq : Spec.Dsa.decodeBE (keygenQBytes s) = Spec.Dsa.decodeBE (keygenQBytes t) := by rw [hp.qBytes]
+  have hdt : (keygenDraw s).trace = (keygenDraw t).trace := by
+    rw [← keygen_draw_trace hs hc, ← keygen_draw_trace ht hct, htrace]
+  have hag : (keygenDraw s).scalar.isSome = (keygenDraw t).scalar.isSome ∧
+      VG.Proof.Dsa.Random.sampleStatus (keygenDraw s) = VG.Proof.Dsa.Random.sampleStatus (keygenDraw t) := by
+    have hh := hdt
+    unfold keygenDraw at hh ⊢
+    rw [hdq] at hh ⊢
+    exact (VG.Proof.Dsa.Random.sample_trace_agree hh).2
+  unfold GenerateKey.generate at ea eb
+  cases ea with | seq eaP eaR => cases eaR with | seq eaC eaI =>
+  cases eb with | seq ebP ebR => cases ebR with | seq ebC ebI =>
+  have hP := (random_prepare_ct _ _ _ _ _ _ ⟨_, keygen_prepare_pre ha hQa, by
+    rw [hp.base, hp.regs .rcx (by decide), hp.regs .r9 (by decide), hp.qBytes]
+    exact keygen_prepare_pre hb hQb⟩ eaP ebP).1
+  have hC := (random_sign_cmp_zero_ct _ _ _ _ _ _ trivial eaC ebC).1
+  obtain ⟨hza, ⟨da, hra⟩, hka, hmxa⟩ := random_post_of_exec (keygen_prepared ha hQa hqs) (.seq eaP eaC)
+  obtain ⟨hzb, ⟨db, hrb⟩, hkb, hmxb⟩ := random_post_of_exec (keygen_prepared hb hQb hqt) (.seq ebP ebC)
+  cases eaI with
+  | iteT hc' _ => simp only [eval, hza] at hc'; contradiction
+  | iteF _ eaS =>
+  cases ebI with
+  | iteT hc' _ => simp only [eval, hzb] at hc'; contradiction
+  | iteF _ ebS =>
+  cases eaS with | seq eaSa eaR2 => cases eaR2 with | seq eaSt eaI2 =>
+  cases ebS with | seq ebSa ebR2 => cases ebR2 with | seq ebSt ebI2 =>
+  have hS := random_sample_agreement hra hrb hqs hp.base (hp.args 1 (by decide))
+    (by change s.gpr .rcx + s.gpr .r9 = t.gpr .rcx + t.gpr .r9
+        rw [hp.regs .rcx (by decide), hp.regs .r9 (by decide)])
+    hp.qBytes
+    (by simp only [keygenContextOf, keygenInput, bytesAt_length, hp.args 2 (by decide)])
+    (by simpa only [keygenContextOf, List.drop_zero] using hdt) eaSa ebSa
+  have hspa : _ := random_post_of_exec (random_sample_encoded hqs hra) eaSa
+  have hspb : _ := random_post_of_exec (random_sample_encoded hqt hrb) ebSa
+  obtain ⟨_, ra⟩ := hspa.2.2.2.2.2.1
+  obtain ⟨_, rb⟩ := hspb.2.2.2.2.2.1
+  have hSt := (keygen_storeStatus_ct _ _ _ _ _ _ (by
+    dsimp only
+    rw [ra.sp, rb.sp]
+    exact hp.base) eaSt ebSt).1
+  obtain ⟨hda, hdza, -, hna⟩ := random_post_of_exec (keygen_sampled ha hra hka hmxa) (.seq eaSa eaSt)
+  obtain ⟨hdb, hdzb, -, hnb⟩ := random_post_of_exec (keygen_sampled hb hrb hkb hmxb) (.seq ebSa ebSt)
+  rw [← hag.2] at hdzb
+  cases eaI2 with
+  | iteF hca eaN =>
+    cases ebI2 with
+    | iteT hcb _ => simp only [eval, hdza] at hca; simp only [eval, hdzb] at hcb; rw [hca] at hcb; cases hcb
+    | iteF _ ebN =>
+      rw [(keygen_block_nil eaN).1, (keygen_block_nil ebN).1, hP, hC, hS, hSt]
+  | iteT hca eaT =>
+    cases ebI2 with
+    | iteF hcb _ => simp only [eval, hdza] at hca; simp only [eval, hdzb] at hcb; rw [hca] at hcb; cases hcb
+    | iteT hcb ebT =>
+      simp only [eval, hdza, Option.some.injEq] at hca
+      simp only [eval, hdzb, Option.some.injEq] at hcb
+      obtain ⟨ks, hxs⟩ := keygen_scalar_of_flag hca
+      obtain ⟨kt, hxt⟩ := keygen_scalar_of_flag (by rw [← hag.2]; exact hcb)
+      cases eaT with | seq eaDA eaR3 => cases eaR3 with | seq eaCall eaK =>
+      cases ebT with | seq ebDA ebR3 => cases ebR3 with | seq ebCall ebK =>
+      have hDA := (keygen_deriveArgs_ct _ _ _ _ _ _ (by
+        dsimp only
+        rw [hda.sp, hdb.sp]
+        exact hp.base) eaDA ebDA).1
+      obtain ⟨hea, hrega, hnea⟩ := random_post_of_exec (keygen_deriveArgs_step hda) eaDA
+      obtain ⟨heb, hregb, hneb⟩ := random_post_of_exec (keygen_deriveArgs_step hdb) ebDA
+      have hst := keygen_deriveStatus_eq hs ht hc hct hxs hxt hstatus ((hnea).trans (hna ks hxs))
+        ((hneb).trans (hnb kt hxt))
+      have hCall := (keygen_derive_ct v _ _ _ _ _ _
+        ⟨s, t, hs, ht, _, _, hea, heb, hrega, hregb, hp, hst, hc, hct⟩ eaCall ebCall).1
+      obtain ⟨a1, a2, a3, a4, a5, a6, aw⟩ := hrega
+      obtain ⟨b1, b2, b3, b4, b5, b6, bw⟩ := hregb
+      obtain ⟨-, -, huca, -⟩ := random_post_of_exec
+        (keygen_derive_call v hs hea.sp aw a1 a2 a3 a4 a5 a6 hea.rd hea.wr (keygen_bytes_params hea) hc) eaCall
+      obtain ⟨-, -, hucb, -⟩ := random_post_of_exec
+        (keygen_derive_call v ht heb.sp bw b1 b2 b3 b4 b5 b6 heb.rd heb.wr (keygen_bytes_params heb) hct) ebCall
+      have hK := (keygen_keepStatus_ct _ _ _ _ _ _ (by
+        dsimp only
+        rw [huca .rsp (by decide), hucb .rsp (by decide), hea.sp, heb.sp]
+        exact hp.base) eaK ebK).1
+      rw [hP, hC, hS, hSt, hDA, hCall, hK]
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
+
+/-! # Key generation's leak: the domain, its status, its draws used and its trace -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64
+
+theorem keygen_finish_public_pre {extra : Nat} {s t : State} {h : GenerateKeyABI extra s} {used : Nat}
+    {status : BitVec 64} (hr : KeygenState h used t)
+    (hz : word t.mem (randomBase s) Random.oStatus = status) :
+    RandomFinishPre (randomFinishPublic s status) t := by
+  refine ⟨hr.scr, hr.sp,
+    hr.saved (40, s.gpr .rdi) (by simp [keygenSavedValues]), ?_,
+    hr.saved (56, s.gpr .rdx) (by simp [keygenSavedValues]), hz, ?_, (s.gpr .rsi).isLt, ?_, ?_⟩
+  · change word t.mem (randomBase s) Random.oOutLen = BitVec.ofNat 64 (s.gpr .rsi).toNat
+    simpa only [Random.oOutLen, ofNat_toNat64] using hr.saved (48, s.gpr .rsi) (by simp [keygenSavedValues])
+  · change 0 < (s.gpr .rsi).toNat
+    have hl := h.lengths
+    have ho := h.outLength
+    unfold Spec.Dsa.lengthsValid at hl
+    omega_using [hl, ho]
+  · intro j hj
+    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hr.wr, h.wr]; simp,
+      contains_byte _ hj (Nat.le_of_lt (s.gpr .rsi).isLt)⟩
+  · intro d hd
+    exact ((h.stackOut.sub_left (keygen_frame_sub h)).sub_left (Offset.sub_base _ hd)).sep
+      (Region.contains_self _ _) (Region.contains_self _ _)
+
+theorem keygen_finish_agreement {extra : Nat} {s t a b : State} {hs : GenerateKeyABI extra s}
+    {ht : GenerateKeyABI extra t} {useda usedb : Nat} {status : BitVec 64}
+    (ha : KeygenState hs useda a) (hb : KeygenState ht usedb b) (hpub : KeygenPublicAgree s t)
+    (hsa : word a.mem (randomBase s) Random.oStatus = status)
+    (hsb : word b.mem (randomBase t) Random.oStatus = status)
+    {tsa tsb : List Leak} {u w : State}
+    (ea : Exec isa RandomSign.finish a tsa u) (eb : Exec isa RandomSign.finish b tsb w) : tsa = tsb := by
+  have hpa := keygen_finish_public_pre ha hsa
+  have hpb := keygen_finish_public_pre hb hsb
+  have he : randomFinishPublic s status = randomFinishPublic t status := by
+    unfold randomFinishPublic
+    rw [hpub.base, hpub.regs .rdi (by decide), hpub.regs .rsi (by decide), hpub.regs .rdx (by decide)]
+  rw [← he] at hpb
+  exact (random_finish_ct _ _ _ _ _ _ ⟨_, hpa, hpb⟩ ea eb).1
+
+theorem keygen_alloc_sp (s : State) : (allocState Random.frameBytes s).gpr .rsp = randomBase s := by
+  simp only [allocState, State.setReg, ite_true]; rfl
+
+theorem keygen_testCheck_mx {t : State} :
+    WP isa (.block [.mov32 .rax (.reg .rax), .alu .cmp .rax (.imm 0)]) t fun u =>
+      ((u.mem = t.mem ∧ u.zf = some (((t.gpr .rax).setWidth 32).toNat == 0)) ∧ Keep [.rax] t u) ∧
+        u.mxcsr = t.mxcsr :=
+  WP.mono_mx (by decide) keygen_test_check (fun _ h hm => ⟨h, hm⟩)
+
+theorem keygen_body_ct (v : Backend) {s t : State}
+    (hs : GenerateKeyABI v.stack s) (ht : GenerateKeyABI v.stack t) (hp : KeygenPublicAgree s t)
+    (hstatus : (keygenResult s).status = (keygenResult t).status)
+    (htrace : (keygenResult s).trace = (keygenResult t).trace)
+    {tsa tsb : List Leak} {u w : State}
+    (ea : Exec isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
+      (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
+    (eb : Exec isa (GenerateKey.body (keygenCheckName v) (keygenDeriveName v)
+      (Generate.checkParameters v.sq v.mul) (Generate.deriveChecked v.sq v.mul)) (allocState Random.frameBytes t) tsb w) :
+    tsa = tsb := by
+  unfold GenerateKey.body at ea eb
+  cases ea with | seq eaA eaR => cases eaR with | seq eaCall eaR2 =>
+  cases eaR2 with | seq eaT eaR3 => cases eaR3 with | seq eaI eaF =>
+  cases eb with | seq ebA ebR => cases ebR with | seq ebCall ebR2 =>
+  cases ebR2 with | seq ebT ebR3 => cases ebR3 with | seq ebI ebF =>
+  have hA := (keygen_head_ct _ _ _ _ _ _ (by
+    dsimp only
+    rw [keygen_alloc_sp, keygen_alloc_sp]
+    exact hp.base) eaA ebA).1
+  obtain ⟨ha, hsta, hQa, a1, a2, a3, a4, a5, a6⟩ := random_post_of_exec (keygen_head hs) eaA
+  obtain ⟨hb, hstb, hQb, b1, b2, b3, b4, b5, b6⟩ := random_post_of_exec (keygen_head ht) ebA
+  have hCall := (keygen_check_ct v _ _ _ _ _ _
+    ⟨s, t, hs, ht, ha, hb, ⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩, hp⟩ eaCall ebCall).1
+  obtain ⟨hua, hwa, haxa⟩ := random_post_of_exec (keygen_check_step v ha a1 a2 a3 a4 a5 a6) eaCall
+  obtain ⟨hub, hwb, haxb⟩ := random_post_of_exec (keygen_check_step v hb b1 b2 b3 b4 b5 b6) ebCall
+  have hT := (keygen_testCheck_ct _ _ _ _ _ _ (by
+    dsimp only
+    rw [hua.sp, hub.sp]
+    exact hp.base) eaT ebT).1
+  obtain ⟨⟨⟨hma, hza⟩, hka⟩, hmxa⟩ := random_post_of_exec keygen_testCheck_mx eaT
+  obtain ⟨⟨⟨hmb, hzb⟩, hkb⟩, hmxb⟩ := random_post_of_exec keygen_testCheck_mx ebT
+  have hsa := hua.of_frame (by rw [hma]; exact InScr.refl _ _ _) (fun d _ _ => by rw [hma])
+    (hka.mono (by decide)) (by rw [hmxa])
+  have hsb := hub.of_frame (by rw [hmb]; exact InScr.refl _ _ _) (fun d _ _ => by rw [hmb])
+    (hkb.mono (by decide)) (by rw [hmxb])
+  have hct := hp.checked
+  cases hcs : keygenChecked s with
+  | false =>
+    rw [hcs] at haxa hct
+    rw [← hct] at haxb
+    cases eaI with
+    | iteF hc' _ => simp only [eval, hza, haxa, Option.some.injEq] at hc'; exact absurd hc' (by decide)
+    | iteT _ eaN =>
+    cases ebI with
+    | iteF hc' _ => simp only [eval, hzb, haxb, Option.some.injEq] at hc'; exact absurd hc' (by decide)
+    | iteT _ ebN =>
+    obtain ⟨hna, rfl⟩ := keygen_block_nil eaN
+    obtain ⟨hnb, rfl⟩ := keygen_block_nil ebN
+    have hF := keygen_finish_agreement hsa hsb hp
+      (by rw [hma, hwa _ (by decide), hsta]) (by rw [hmb, hwb _ (by decide), hstb]) eaF ebF
+    rw [hA, hCall, hT, hna, hnb, hF]
+  | true =>
+    rw [hcs] at haxa hct
+    rw [← hct] at haxb
+    cases eaI with
+    | iteT hc' _ => simp only [eval, hza, haxa, Option.some.injEq] at hc'; exact absurd hc' (by decide)
+    | iteF _ eaG =>
+    cases ebI with
+    | iteT hc' _ => simp only [eval, hzb, haxb, Option.some.injEq] at hc'; exact absurd hc' (by decide)
+    | iteF _ ebG =>
+    have hQa' := (hwa _ (by decide)).trans hQa
+    have hQb' := (hwb _ (by decide)).trans hQb
+    rw [← hma] at hQa'
+    rw [← hmb] at hQb'
+    have hG := keygen_generate_ct v hsa hsb hQa' hQb' hcs hp hstatus htrace eaG ebG
+    obtain ⟨hga, hgsa, -⟩ := random_post_of_exec (keygen_generate v hsa hQa' hcs) eaG
+    obtain ⟨hgb, hgsb, -⟩ := random_post_of_exec (keygen_generate v hsb hQb' hct.symm) ebG
+    rw [hstatus] at hgsa
+    have hF := keygen_finish_agreement hga hgb hp hgsa hgsb eaF ebF
+    rw [hA, hCall, hT, hG, hF]
+
+theorem keygen_alloc {extra : Nat} {s : State} (h : GenerateKeyABI extra s) :
+    isa.push (.alloc Random.frameBytes) s = some (allocState Random.frameBytes s) := by
+  have hl := h.stackLower
+  simp only [isa, push, allocState]
+  exact ite_eq_left ⟨by decide, by decide, by decide, by unfold Random.frameBytes; omega_using [hl]⟩
+
+theorem keygen_constantTime (v : Backend) :
+    ConstantTime isa (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pre
+      (Spec.Dsa.generateKeyContract abi (v.stack + 256)).pub
+      (GenerateKey.code (keygenCheckName v) (keygenDeriveName v) (Generate.checkParameters v.sq v.mul)
+        (Generate.deriveChecked v.sq v.mul)) := by
+  intro s t tsa tsb u w hs ht hpub ea eb
+  have hsa := generateKeyABI_of hs
+  have hta := generateKeyABI_of ht
+  obtain ⟨hp, hstatus, _, htrace⟩ := keygen_public_related hpub
+  cases ea with
+  | frame hap hab _ =>
+    cases eb with
+    | frame hbp hbb _ =>
+      rw [keygen_alloc hsa, Option.some.injEq] at hap
+      rw [keygen_alloc hta, Option.some.injEq] at hbp
+      subst hap
+      subst hbp
+      have hh := keygen_body_ct v hsa hta hp hstatus htrace hab hbb
+      simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using hh
+
+end VG.Proof.Dsa.X86_64
+
+end
+
+end
+
 
 /-! # Complete verification of DSA key generation for every x86-64 backend -/
 
@@ -47,7 +503,7 @@ theorem keygen_satisfiable (v : Backend) :
   sig_and_intros
   all_goals try simp only [sat_arg_0, sat_arg_1, sat_arg_2, sat_arg_3, sat_arg_4]
   all_goals first
-    | (change v.stack + 256 ≤ 281474976710656; omega)
+    | (change v.stack + 256 ≤ 281474976710656; omega_using [hb])
     | exact Region.disjoint_of_sep (by decide +kernel)
     | decide +kernel
     | (intro a h₁ h₂; simp only [Region.Contains, stackArgAddr, keygenSatState] at h₁ h₂; bv_omega)

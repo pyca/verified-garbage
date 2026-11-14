@@ -143,7 +143,7 @@ theorem AddReady.unch {M : Mod} {size : Nat} {Sl : Nat → Prop} {S : RcbSlots} 
     show wordsVal mem' base bAt M.n = wordsVal mem' base S.b3 M.n
     have h1 := hc.lay.le bAt (Or.inr rfl)
     have h2 := hc.lay.le S.b3 (Or.inl hb3)
-    rw [hU.wordsVal (fun w hw => (hW w hw).1) (by omega), hU.wordsVal (fun w hw => (hW w hw).2) (by omega)]
+    rw [hU.wordsVal (fun w hw => (hW w hw).1) (by omega_using [hn, h1]), hU.wordsVal (fun w hw => (hW w hw).2) (by omega_using [hn, h2])]
     exact hr
 
 theorem Inv.mono_sl {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl Sl' : Nat → Prop} {V : List Nat}
@@ -209,8 +209,8 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
       · rw [hI.val x ((List.mem_cons.mp hx).resolve_left hxb)]; exact (Function.update_of_ne hxb ..).symm
   -- the call
   have hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
-    have := hs.contains (d := 0) (n := size) (by have := hL'.le bAt hbS; omega) (by
-      have := hL'.le bAt hbS; have := hI.mod.n0; omega)
+    have := hs.contains (d := 0) (n := size) (by have := hL'.le bAt hbS; omega_using []) (by
+      have := hL'.le bAt hbS; have := hI.mod.n0; omega_arith)
     simpa [off] using this⟩
   have hp₂ : RcbApart { S with a := bAt, b3 := bAt } p q o :=
     ⟨hA.nodup, fun y hy => by
@@ -328,7 +328,7 @@ theorem _root_.VG.Proof.Mont.AArch64.ModOkA.unch {M : Mod} {size m : Nat} {base 
     (hW : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo) (hn : base.toNat + size ≤ 2 ^ 64) :
     ModOkA M size m mem' base :=
   ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
-    by rw [hU.wordsVal hW (by have := hM.mo; omega)]; exact hM.val, hM.inv, hM.red, hM.call⟩
+    by rw [hU.wordsVal hW (by have := hM.mo; omega_using [hn, this])]; exact hM.val, hM.inv, hM.red, hM.call⟩
 
 /-- `o = a`, a point, for `o`'s slots apart from each other and from `a`'s. -/
 theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size) {o a : Pt}
@@ -426,7 +426,7 @@ theorem copyAdd_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl <;> dsimp only <;>
         exact (hL.apart _ _ (hI.sl y hy) (hrSl _ (by simp)) (fun e => hne _ (by simp) y hy e.symm)))
-      (by have := hL.le y (hI.sl y hy); omega)
+      (by have := hL.le y (hI.sl y hy); omega_using [hn, this])
   have er := rext_r E c hrd
   have hI₁ : Inv M base size m Sl ([r.x, r.y, r.z] ++ V) (rext E r c) s₁ := by
     refine ⟨hs₁, hI.mod.unch U₁ (fun w hw => ?_) hn, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩
@@ -451,7 +451,7 @@ theorem copyAdd_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         · rw [e₃, er.2.2]; exact hI.val _ (hcV _ cz)
       · rw [wv x hx, rext_of (fun h => hrV x h hx)]; exact hI.val x hx
   have hr₁ := hr.unch hpa (hSl _ (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))
-    (by omega) U₁ hfar
+    (by omega_using [hn]) U₁ hfar
   refine WP.mono (addP_ok hL hAl hm hA hSl hLow hpa hI₁ hV hr₁) fun s₂ ⟨k₂, I₂, v₂⟩ => ⟨?_, I₂, v₂⟩
   have hx1 : Reg.x1 ∈ clob M.n := by simp [clob]
   refine ⟨fun r' hr' => (k₂.gpr r' hr').trans (k₁.gpr r' (by intro h; simp only [List.mem_singleton] at h; exact hr' (h ▸ hx1))),

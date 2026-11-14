@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
-import VerifiedGarbage.Proof.Rsa.Arm.PrivBodyCT
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivStages
 
 /-! # Allocation adds no secret-dependent trace around the private body -/
 
@@ -11,13 +11,13 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm
 
 theorem PrivFnInput.pushAlloc {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivFnInput g bs s) : isa.push (.alloc frameBytes) (pcPushed s) = some (entered s) := by
-  have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega
+  have stackFit : 56 ≤ s.sp.toNat := by have := h.stackFit; simp only [stackBytes] at this; omega_using [this]
   have allocation : frameBytes ≤ (pcPushed s).sp.toNat := by
     change frameBytes ≤ (s.sp - BitVec.ofNat 32 56).toNat
     rw [FrameStack.sub_toNat' stackFit]
     have := h.stackFit
     simp only [stackBytes, frameBytes] at *
-    omega
+    omega_using [this]
   have hn : 0 < frameBytes ∧ frameBytes < 4096 ∧ frameBytes % 8 = 0 ∧ encodable (BitVec.ofNat 32 frameBytes) = true := by decide
   simp only [isa, push, hn.1, hn.2.1, hn.2.2.1, hn.2.2.2, allocation, and_self, ite_true]
   rfl
@@ -34,18 +34,20 @@ theorem allocation_ct {bytes : Nat} {body : Prog isa} {P : State → State → P
       have trace := (inside _ _ _ _ _ _ ⟨s, t, h, p1, p2⟩ b1 b2).1
       exact ⟨by simp only [addrs, trace], trivial⟩
 
-theorem privateAlloc_ct (v : CrtImpl) {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
-    (hs : PrivFnInput g bs1 s) (ht : PrivFnInput g bs2 t) (nb : bs1 0 = bs2 0) (eb : bs1 1 = bs2 1) :
+theorem privateAllocWith_ct {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {Q1 Q2 : State → Prop}
+    {b : Prog isa}
+    (bodyCt : RelCT isa (fun s t => (PrivateStart g bs1 s ∧ Q1 s) ∧ (PrivateStart g bs2 t ∧ Q2 t) ∧ s.sp = t.sp)
+      b (fun _ _ => True)) {s t : State}
+    (hs : PrivFnInput g bs1 s) (ht : PrivFnInput g bs2 t) (q1 : Q1 (entered s)) (q2 : Q2 (entered t)) :
     RelCT isa (fun a b => a = pcPushed s ∧ b = pcPushed t)
-      (.frame (.alloc frameBytes) (body v.name v.code v.pcName v.pc v.pdName v.pd) (.free frameBytes))
-      (fun _ _ => True) := by
+      (.frame (.alloc frameBytes) b (.free frameBytes)) (fun _ _ => True) := by
   apply allocation_ct
   intro a b tr1 tr2 u v' h e1 e2
   obtain ⟨_, _, ⟨rfl, rfl⟩, pa, pb⟩ := h
   have ea : entered s = a := Option.some.inj (hs.pushAlloc.symm.trans pa)
   have eb' : entered t = b := Option.some.inj (ht.pushAlloc.symm.trans pb)
   subst a; subst b
-  exact privateBody_ct v nb eb _ _ _ _ _ _
-    ⟨⟨hs.context, hs.output, hs.modulus, hs.count⟩, ⟨ht.context, ht.output, ht.modulus, ht.count⟩,
+  exact bodyCt _ _ _ _ _ _
+    ⟨⟨⟨hs.context, hs.output, hs.modulus, hs.count⟩, q1⟩, ⟨⟨ht.context, ht.output, ht.modulus, ht.count⟩, q2⟩,
       hs.context.sp.trans ht.context.sp.symm⟩ e1 e2
 end VG.Proof.Rsa.Arm

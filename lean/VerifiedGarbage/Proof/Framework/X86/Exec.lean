@@ -25,9 +25,9 @@ theorem addr_eq {x : BitVec 32} {k : Nat} (h : x.toNat + k < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := x.toNat + k) h,
-    Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := x.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega)]
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat + k) h,
+    Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []),
+    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega_using [h])]
 
 theorem bswap_readW (m : Mem) (a : Addr) :
     bswap (m.readW a 32) = (m a ++ m (a + 1) ++ m (a + 1 + 1) ++ m (a + 1 + 1 + 1) : BitVec 32) :=

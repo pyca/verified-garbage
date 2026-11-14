@@ -16,6 +16,6 @@ open VG VG.Proof.Mont
 theorem wordsVal_read (m : Mem) (base : Addr) (d n : Nat) :
     wordsVal m base d n = (m.read (off base d) (8 * n)).toNat := by
   rw [wordsVal_eq_val32, ← read_eq_val32]
-  rw [show 4 * (2 * n) = 8 * n by omega]
+  rw [show 4 * (2 * n) = 8 * n by omega_using []]
 
 end VG.Proof.Bignum

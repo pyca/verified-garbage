@@ -64,7 +64,7 @@ theorem roundResult_ok {p : WitnessParams} {rp : Addr} {used i checks : Nat} {pa
         simp only [List.mem_singleton] at hr
         subst hr
         change 8 * j + 8 ≤ 144 ∨ 160 ≤ 8 * j
-        omega_using [h18, h19]) (by omega), hm]
+        omega_using [h18, h19]) (by omega_using [hj]), hm]
     · rw [← hm]
       exact DrawFrame.of_scr (InScr.of_frm hf (fun r hr => Nat.le_trans (hhi r hr) p.space_bounds.1))
 

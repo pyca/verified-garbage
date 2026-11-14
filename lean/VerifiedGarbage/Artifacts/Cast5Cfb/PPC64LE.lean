@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
 
-/-! # CAST5-CFB64 artifacts on baseline PPC64LE -/
+/-! # CAST5-CFB64 on PPC64LE -/
 
 @[expose] public section
 

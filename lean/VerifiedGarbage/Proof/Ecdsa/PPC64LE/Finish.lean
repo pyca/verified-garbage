@@ -40,8 +40,8 @@ theorem outside_shift {p : Addr} {d len : Nat} {m m' : Mem}
     rcases Nat.lt_or_ge (x - (p + BitVec.ofNat 64 d)).toNat len with hlt | hge
     · have := (Offset.lt_iff x p hd).mp hlt
       simp only [ofs] at hx
-      omega
-    · omega))
+      omega_using [hx, this]
+    · omega_using [hge]))
 
 theorem mask_bit (b : Bool) : (mask64 (b = true) &&& BitVec.ofNat 64 1 : BitVec 64) = if b then 1 else 0 := by
   cases b <;> decide
@@ -56,15 +56,15 @@ theorem restore_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
       t.gpr .r14 = word s.mem base 0 → t.gpr .r31 = word s.mem base 8 → WP isa (.block is) t Q) :
     WP isa (.block (Cfg.restore ++ is)) s Q := by
   rw [restore_eq, List.cons_append, List.cons_append, List.cons_append, List.cons_append, List.nil_append]
-  refine wp_step (ld0_ok hs h3 (by decide) (by decide) (by simp only [Cfg.lrAt]; omega)) ?_
+  refine wp_step (ld0_ok hs h3 (by decide) (by decide) (by simp only [Cfg.lrAt]; omega_using [hsz])) ?_
   refine wp_step exec_mtlr ?_
   simp only [write_gpr, ite_true]
   have hs₂ : Ws { s.write .r0 (word s.mem base Cfg.lrAt) with lr := word s.mem base Cfg.lrAt } base size :=
     hs.of_wr rfl
   have h3₂ : At { s.write .r0 (word s.mem base Cfg.lrAt) with lr := word s.mem base Cfg.lrAt } base .r3 0 :=
     h3.write (d := .r0) (word s.mem base Cfg.lrAt)
-  refine wp_step (ld0_ok hs₂ h3₂ (by decide) (by decide) (by omega)) ?_
-  refine wp_step (ld0_ok (hs₂.write .r14 (word s.mem base 0)) (h3₂.write (d := .r14) (word s.mem base 0)) (by decide) (by decide) (by omega)) ?_
+  refine wp_step (ld0_ok hs₂ h3₂ (by decide) (by decide) (by omega_using [hsz])) ?_
+  refine wp_step (ld0_ok (hs₂.write .r14 (word s.mem base 0)) (h3₂.write (d := .r14) (word s.mem base 0)) (by decide) (by decide) (by omega_using [hsz])) ?_
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ rfl ?_ ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, hr.1, hr.2.1, hr.2.2, ite_false]

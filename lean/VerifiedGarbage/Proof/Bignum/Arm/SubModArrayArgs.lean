@@ -24,7 +24,7 @@ theorem subModArrayArgs_ok (s : State) {base : BitVec 32} {size w o a b : Nat}
       t.gpr .lr = BitVec.ofNat 32 (2 * w) ∧ t.mem = s.mem ∧ Rest [.r0, .r9, .r10, .r12, .lr] s t := by
   rw [subModArrayArgs, WP.seq_iff]
   refine wp_ldr (a := off (State.addr base) 64) (by decide)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read (by omega)) fun u load => WP.block_nil ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, this])) (ws.read (by omega_using [fit])) fun u load => WP.block_nil ?_
   refine WP.mono (selectArrayArgs_ok u ho ha hb (ws.congr load.wr) fit
     (by rw [load.mem]; exact header) ((load.other .r0 (by decide)).trans ptr)) ?_
   rintro t ⟨out, first, second, count, mem, rest⟩

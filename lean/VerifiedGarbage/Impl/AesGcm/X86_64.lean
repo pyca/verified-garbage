@@ -33,6 +33,9 @@ Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
   `[448, 2560)` that of `vg_aes_gcm_encrypt_blocks` and
   `vg_aes_gcm_decrypt_blocks`.
 
+`stream_init` and `stream_aad` use only `[96, 240)` and `vg_ghash`'s 256
+bytes at 512, so their own instances have a buffer of 768 bytes.
+
 ## Registers
 
 `r15` holds `W`, `r14` the streaming state and `r13` the key context

@@ -140,7 +140,7 @@ theorem copyN_ok (hl0 : 0 < len) {s : State}
     KeyGen.glueSt_arg (d := .a1) (a := .ptr dst) s hg (by simp) (by simp)
   have g2 : (glueSt s [(.a0, .ptr src), (.a1, .ptr dst), (.a2, .imm len)]).gpr .a2 = BitVec.ofNat 64 len :=
     KeyGen.glueSt_arg (d := .a2) (a := .imm len) s hg (by simp) (by simp)
-  refine WP.mono (Proof.MlKem.RISCV64.copy_loop (by omega) hl0 hd
+  refine WP.mono (Proof.MlKem.RISCV64.copy_loop (by omega_using [hlen]) hl0 hd
     (by rw [KeyGen.glueSt_rd, KeyGen.glueSt_wr]; exact cr) (by rw [KeyGen.glueSt_wr]; exact cw) g0 g1 g2)
     fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ⟨fun r hr => (cs r hr).trans (KeyGen.glueSt_pres s hg r hr),
       rd.trans (KeyGen.glueSt_rd _ _), wr.trans (KeyGen.glueSt_wr _ _), sp.trans (KeyGen.glueSt_sp _ _),
@@ -183,7 +183,7 @@ theorem sel_eq (a b : BitVec 64) :
   by_cases h : b = 0
   · subst h; simp
   · have : (0#64 : BitVec 64) < b := by
-      rw [BitVec.lt_def]; have := (BitVec.toNat_ne_iff_ne).mpr h; simp at this ⊢; omega
+      rw [BitVec.lt_def]; have := (BitVec.toNat_ne_iff_ne).mpr h; simp at this ⊢; omega_using [this]
     rw [ite_eq_right_of_eq_false _ _ (eq_false h), ite_eq_left_of_eq_true _ _ (eq_true this), show (0#64 : BitVec 64) - 1#64 = BitVec.allOnes 64 from rfl, BitVec.and_allOnes]
 
 /-- A branch on `s3`, which the runs agree on, of the pieces of a function. -/

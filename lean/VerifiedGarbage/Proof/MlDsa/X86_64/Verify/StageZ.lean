@@ -64,7 +64,7 @@ theorem hint_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   refine WP.mono (mov15_ok s₁) fun s₂ ⟨⟨h15, hm₂⟩, k₂⟩ => ?_
   have hP₂ : PPostB s₁ s₂ [] := postB_of_keep k₂ (by decide) (by rw [hm₂]; exact Frame.refl _ _)
   refine ⟨h₁.step hp hv hP₂ (tChk_nil p hp), ?_⟩
-  rw [h.sigSlice c4, show p.ω + p.k - p.ω = p.k by omega] at hq₁
+  rw [h.sigSlice c4, show p.ω + p.k - p.ω = p.k by omega_using []] at hq₁
   have e : pa s₂ (pH 0) = pa s (pH 0) := by rw [hP₂.pa (by decide), hP₁.pa (by decide)]
   have hv' : vHint p (vSig p σ) = hintBitUnpack p.ω p.k (((vSig p σ).drop (oHint p)).take (p.ω + p.k)) := rfl
   rw [hv']
@@ -125,7 +125,7 @@ theorem zOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
     (fun _ h => absurd h List.not_mem_nil) (fun _ h => absurd h List.not_mem_nil)
   refine ⟨t₂.step hp hv hP₃ (tChk_nil p hp), ?_, fun i' hi' => ?_, ?_⟩
   · exact L₁.keepHint hP₂₃ (keepB_nil c6) (L.keepHint hP₁ c6 hs.hint)
-  · rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  · rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
     · exact L₁.keepPoly hP₂₃ (keepB_nil (c7 i' hi')) (L.keepPoly hP₁ (c7 i' hi') (hs.z i' hi'))
     · exact L₁.keepPoly hP₂₃ (keepB_nil_of (show Reg.rbx ∈ bases by decide) c8) hq₁
   · rw [h15₃, h15₂, h15₁, hs.r15]
@@ -136,11 +136,11 @@ theorem zOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
       · right; rw [ifn hh]
     rw [and_flag hr]
     have hq2 : polyAt s₁.mem (pa s₁ (pZ i)) = toRq (vZ p (vSig p σ) i) := hq₁.2
-    refine flag_congr ⟨fun ⟨h1, h2⟩ i' hi' => ?_, fun h1 => ⟨fun i' hi' => h1 i' (by omega), ?_⟩⟩
-    · rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+    refine flag_congr ⟨fun ⟨h1, h2⟩ i' hi' => ?_, fun h1 => ⟨fun i' hi' => h1 i' (by omega_using [hi']), ?_⟩⟩
+    · rcases (by omega_using [hi'] : i' < i ∨ i' = i) with hi' | rfl
       · exact h1 i' hi'
       · rw [hr₂, hq2] at h2
         by_contra hn; rw [ifn hn] at h2; cases h2
-    · rw [hr₂, hq2, ifp (h1 i (by omega))]
+    · rw [hr₂, hq2, ifp (h1 i (by omega_using []))]
 
 end VG.Proof.MlDsa.X86_64.Verify

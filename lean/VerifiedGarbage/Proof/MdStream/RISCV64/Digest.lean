@@ -106,7 +106,7 @@ theorem dlay {H : Hash} (hl : Lay H) : DLay H := by
   have hB := hl.B
   have hN := hl.N
   have hS : H.S = H.N + H.B := rfl
-  refine ⟨?_, ?_⟩ <;> simp only [dso, dbytes, hS] <;> omega
+  refine ⟨?_, ?_⟩ <;> simp only [dso, dbytes, hS] <;> omega_arith
 
 variable {H : Hash} {s₀ : State}
 

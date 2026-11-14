@@ -28,8 +28,8 @@ theorem accL_eq_zero (V : Nat → Byte) (D : Nat) :
     rw [accL, or_eq_zero, accL_eq_zero V D j, xor_eq_zero, zx_inj]
     constructor
     · rintro ⟨⟨h0, h⟩, h'⟩
-      exact ⟨h0, fun i hi => if hij : i < j then h i hij else by rw [show i = j by omega]; exact h'⟩
+      exact ⟨h0, fun i hi => if hij : i < j then h i hij else by rw [show i = j by omega_using [hi, hij]]; exact h'⟩
     · rintro ⟨h0, h⟩
-      exact ⟨⟨h0, fun i hi => h i (by omega)⟩, h j (by omega)⟩
+      exact ⟨⟨h0, fun i hi => h i (by omega_using [hi])⟩, h j (by omega_using [])⟩
 
 end VG.Proof.RsaOaep.X86_64

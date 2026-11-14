@@ -72,9 +72,9 @@ theorem copyMask_ok (p : Params) (s : State)
     (fun k hk u ⟨e0,e1,e2,ku,hf,hb⟩=>?_) ?_) fun t ⟨_,_,_,kt,hf,hb⟩=>?_
   · refine WP.mono (copyBody_ok u ?_ ?_) fun t ⟨hm,t0,t1,t2,kt⟩=>?_
     · rw [ku.rd,ku.wr,e1]
-      exact inRegions_sub hin (by omega) (by omega)
+      exact inRegions_sub hin (by omega_using [hk]) (by omega_using [])
     · rw [ku.wr,e0]
-      exact inRegions_sub hout (by omega) (by omega)
+      exact inRegions_sub hout (by omega_using [hk]) (by omega_using [])
     · have hw : Written u.mem t.mem (dst+BitVec.ofNat 64 (8*k)) 8
           (fun j=>s.mem (src+BitVec.ofNat 64 (8*k+j))) := by
         rw [hm,e0]
@@ -83,15 +83,15 @@ theorem copyMask_ok (p : Params) (s : State)
         simp only [Mem.readW,BitVec.setWidth_eq]
         rw [Mem.extractLsb'_read _ _ hj,ptr_add]
         exact hf.bytes (R:=⟨src,1024⟩) (by simpa only [List.mem_singleton,forall_eq] using hsep)
-          (by change 1024≤2^64;decide) (by change 8*k+j<1024;omega)
-      obtain ⟨hf',hb'⟩ := Written.step hf hb hw (by omega) (by decide : 1024<2^64)
+          (by change 1024≤2^64;decide) (by change 8*k+j<1024;omega_using [hk, hj])
+      obtain ⟨hf',hb'⟩ := Written.step hf hb hw (by omega_using [hk]) (by decide : 1024<2^64)
       refine ⟨⟨?_,?_,?_,(ku.trans kt).mono (by simp),hf',?_⟩,?_⟩
       · rw [t0,e0,show (8:BitVec 64)=BitVec.ofNat 64 8 by rfl,ptr_add,Nat.mul_succ]
       · rw [t1,e1,show (8:BitVec 64)=BitVec.ofNat 64 8 by rfl,ptr_add,Nat.mul_succ]
       · rw [t2,e2,ofNat_sub_one hk]
       · simpa only [Nat.mul_succ] using hb'
-      · rw [t2,e2,ofNat_sub_one hk,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)]
-        omega
+      · rw [t2,e2,ofNat_sub_one hk,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [])]
+        omega_using [hk]
   · exact ⟨by simpa only [Nat.mul_zero,VG.Proof.MlKem.AArch64.ptr_zero] using h0,
       by simpa only [Nat.mul_zero,VG.Proof.MlKem.AArch64.ptr_zero] using h1,
       h2,ka.keep.mono (by simp),by rw [ka.mem];exact Frame.refl _ _,by intro j hj;omega⟩

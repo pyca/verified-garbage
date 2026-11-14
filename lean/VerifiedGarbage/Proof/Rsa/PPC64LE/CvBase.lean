@@ -26,11 +26,11 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE
 open VG.Impl.Rsa.PPC64LE.CrtValues (entry stackArg stackOff)
 
-/-- The working space's base, size, `n_len` and `w = ⌈n_len / 4⌉`. -/
+/-- The working space's base, size, `n_len` and `w = 2 ⌈n_len / 8⌉`. -/
 abbrev cvB (s0 : State) : Addr := PPC64LE.stackArg s0 6
 abbrev cvZ (s0 : State) : Nat := (PPC64LE.stackArg s0 7).toNat * 8
 abbrev cvK (s0 : State) : Nat := (s0.gpr .r10).toNat
-abbrev cvW (s0 : State) : Nat := (cvK s0 + 3) / 4
+abbrev cvW (s0 : State) : Nat := 2 * ((cvK s0 + 7) / 8)
 
 /-- The register saved in the header word `i` (bytes `8 i`). -/
 def savedReg : Nat → Reg

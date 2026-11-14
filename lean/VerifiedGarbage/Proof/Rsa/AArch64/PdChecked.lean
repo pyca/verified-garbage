@@ -53,7 +53,7 @@ theorem pdGeom {s : State} (h : pdContract.pre s) : Geom s := by
   have c := pdCtx_of h
   have hk2 := c.hk2
   have hL2 := c.hL2
-  exact ⟨by have := c.hk1; omega, by omega, c.hout, c.hL1, by omega,
+  exact ⟨by have := c.hk1; omega_using [this], by omega_using [hk2], c.hout, c.hL1, by omega_using [hk2, hL2],
     fun i hi => c.heb.rd i (by rw [bytesAt_length]; exact hi)⟩
 
 /-! ## `vg_rsa_public_precomputed_checked` -/

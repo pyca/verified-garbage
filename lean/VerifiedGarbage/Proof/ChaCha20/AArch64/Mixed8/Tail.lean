@@ -18,8 +18,8 @@ theorem bytes_of_bytesAt {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks
     m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k) ^^^ ks.getD k 0 := by
   have e := congrArg (fun l => l[k]?) h
   simp only [bytesAt, List.getElem?_map, List.getElem?_range hk, Option.map_some,
-    List.getElem?_zipWith, List.getElem?_eq_getElem (show k < ks.length by omega)] at e
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show k < ks.length by omega),
+    List.getElem?_zipWith, List.getElem?_eq_getElem (show k < ks.length by omega_using [hks, hk])] at e
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show k < ks.length by omega_using [hks, hk]),
     Option.getD_some]
   simpa using e
 
@@ -32,8 +32,8 @@ theorem ttail_ok {sve : Bool} {s₀ : State} (hp : VG.Proof.ChaCha20.AArch64.Xor
   (VG.Proof.ChaCha20.AArch64.Xor.rest_ok (VG.Proof.ChaCha20.AArch64.Small.xor_noFrames sve)
     (fun s hs _ => (VG.Proof.ChaCha20.AArch64.Small.correct s hs).mono fun _ ⟨ha, hu⟩ =>
       ⟨⟨ha.1, ha.2.1⟩, hu⟩)
-    hp (n := 512 * t) h.le (by omega) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
-    (by rw [h.cnt, show 512 * t / 64 = 8 * t by omega]) h.data h.src).mono
+    hp (n := 512 * t) h.le (by omega_using []) h.x0 h.x1 h.x2 h.x3 h.x4 h.rd h.wr
+    (by rw [h.cnt, show 512 * t / 64 = 8 * t by omega_using []]) h.data h.src).mono
     fun _ ⟨ha, hpost, h0, h1⟩ => ⟨⟨fun r hr => (ha.1 r hr).trans (h.cs r hr), ha.2.trans h.sp⟩, hpost, h0, h1⟩
 
 end VG.Proof.ChaCha20.AArch64.Mixed8

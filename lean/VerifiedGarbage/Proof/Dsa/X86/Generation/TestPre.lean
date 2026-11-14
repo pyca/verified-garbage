@@ -71,21 +71,21 @@ theorem testHead_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     WP isa (.block [.mov .ecx (.mem (sc fUsed)), .mov .edx (.mem (sc fWit)), .alu .add .edx (.reg .ecx),
         .mov .ebx (.mem (sc fWitLen)), .alu .sub .ebx (.reg .ecx)]) s (TestHead base W witLen used s) := by
   have szs : fWitLen + 4 ≤ size ∧ fUsed + 4 ≤ size ∧ fWit + 4 ≤ size := by
-    simp only [fWitLen, fUsed, fWit, hdr, sPP] at hsz ⊢; omega
-  refine ld_ok hs (by omega) fun s₁ u₁ => ld_ok (Scr.of_eq hs (u₁.other _ (by decide))
-    (u₁.other _ (by decide)) u₁.wr) (by omega) fun s₂ u₂ => wp_add fun s₃ u₃ _ => ?_
+    simp only [fWitLen, fUsed, fWit, hdr, sPP] at hsz ⊢; omega_using [hsz]
+  refine ld_ok hs (by omega_using [szs]) fun s₁ u₁ => ld_ok (Scr.of_eq hs (u₁.other _ (by decide))
+    (u₁.other _ (by decide)) u₁.wr) (by omega_using [szs]) fun s₂ u₂ => wp_add fun s₃ u₃ _ => ?_
   have edi₃ : s₃.gpr .edi = s.gpr .edi := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
   refine ld_ok (Scr.of_eq hs edi₃
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
-    (by rw [u₃.wr, u₂.wr, u₁.wr])) (by omega) fun s₄ u₄ => wp_sub fun s₅ u₅ z₅ => WP.block_nil ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr])) (by omega_using [szs]) fun s₄ u₄ => wp_sub fun s₅ u₅ z₅ => WP.block_nil ?_
   have c₂ : s₂.gpr .ecx = BitVec.ofNat 32 used := by rw [u₂.other _ (by decide), u₁.gpr, hU]
   have d₂ : s₂.gpr .edx = W := by rw [u₂.gpr, u₁.mem, hW]
   have b₅ : s₅.gpr .ebx = BitVec.ofNat 32 (witLen - used) := by
     rw [u₅.gpr, u₄.gpr, u₄.other _ (by decide), u₃.other _ (by decide), c₂, u₃.mem, u₂.mem, u₁.mem, hWL,
-      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) hu]
+      BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hu, hwl]) hu]
   refine ⟨?_, ?_, b₅, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [z₅, ← u₅.gpr, b₅, ofNat_beq_zero (by omega)]
+  · rw [z₅, ← u₅.gpr, b₅, ofNat_beq_zero (by omega_using [hwl])]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, d₂, c₂]
   · intro r a b c d e
     rw [u₅.other r b, u₄.other r b, u₃.other r d, u₂.other r d, u₁.other r c]
@@ -102,7 +102,7 @@ theorem testMid_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     WP isa (.seq (.ite .e (.block [.mov .edx (.mem (sc fWit))]) (.block []))
       (.block (scr .eax sPP ++ ([.mov .ecx (.imm (BitVec.ofNat 32 ppWords))] : List Instr) ++ scr .ebp fUsedOut))) t
       (TestArgs base W witLen used s) := by
-  have szs : fWit + 4 ≤ size := by simp only [fWit, hdr, sPP] at hsz ⊢; omega
+  have szs : fWit + 4 ≤ size := by simp only [fWit, hdr, sPP] at hsz ⊢; omega_using [hsz]
   have edi₅ : t.gpr .edi = s.gpr .edi := H.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
   have sp₅ : t.gpr .esp = s.gpr .esp := H.other _ (by decide) (by decide) (by decide) (by decide) (by decide)
   have hs₅ : Scr t base size := Scr.of_eq hs edi₅ sp₅ H.wr
@@ -127,7 +127,7 @@ theorem testMid_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     · rw [rd₈, u₇.rd, rd₆, xrd]
     · rw [wr₈, u₇.wr, wr₆, xwr]
     · rw [sy₈, u₇.syms, sy₆, xsy]
-  refine WP.seq (WP.ite (decide (witLen - used = 0)) H.zf (fun hz => ld_ok hs₅ (by omega) fun s₆ u₆ =>
+  refine WP.seq (WP.ite (decide (witLen - used = 0)) H.zf (fun hz => ld_ok hs₅ (by omega_using [szs]) fun s₆ u₆ =>
     WP.block_nil (tail s₆ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_)) (fun hz => WP.block_nil (tail t edi₅ ?_ H.ebx H.other H.mem H.rd
       H.wr H.syms)))
   · rw [u₆.other _ (by decide), edi₅]
@@ -195,7 +195,7 @@ theorem packed_len : VG.Impl.RsaKeyGen.TrialTable32.packed.length = 1024 := by
 
 /-- A part of a region, by its start and length. -/
 theorem sub_of_contains {R : Region} {a : Addr} {n : Nat} (h : R.Contains a n) : Region.Sub ⟨a, n⟩ R :=
-  fun _ hx => h.byte (by simp only [Region.Contains] at hx; omega)
+  fun _ hx => h.byte (by simp only [Region.Contains] at hx; omega_using [hx])
 
 theorem randPtr_toNat {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
     (randPtr (E.wit.setWidth 32) E.witLen used).toNat = (randAddr E used).toNat := by
@@ -206,34 +206,34 @@ theorem randPtr_toNat {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witL
   by_cases h0 : E.witLen - used = 0
   · simp only [randPtr, randAddr, h0, ↓reduceIte, w32]
   · have e1 : (E.wit.setWidth 32 + BitVec.ofNat 32 used).toNat = E.wit.toNat + used := by
-      rw [BitVec.toNat_add, w32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-        Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_add, w32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega_using [wf, h0]),
+        Nat.mod_eq_of_lt (by omega_using [wf, h0])]
     have e2 : (E.wit + BitVec.ofNat 64 used).toNat = E.wit.toNat + used := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-        Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega_using [e1]),
+        Nat.mod_eq_of_lt (by omega_using [hu, wf])]
     simp only [randPtr, randAddr, h0, ↓reduceIte, e1, e2]
 
 theorem randPtr_wide {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
     (randPtr (E.wit.setWidth 32) E.witLen used).setWidth 64 = randAddr E used :=
   BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_setWidth, randPtr_toNat v hu, Nat.mod_eq_of_lt (by
-    have := (randPtr (E.wit.setWidth 32) E.witLen used).isLt; rw [randPtr_toNat v hu] at this; omega)])
+    have := (randPtr (E.wit.setWidth 32) E.witLen used).isLt; rw [randPtr_toNat v hu] at this; omega_using [])])
 
 theorem randAddr_fit {E : Env} (v : E.Valid) {used : Nat} (hu : used ≤ E.witLen) :
     (randAddr E used).toNat + (E.witLen - used) ≤ 2 ^ 32 := by
   have wf := v.witFit
   by_cases h0 : E.witLen - used = 0
-  · simp only [randAddr, h0, ↓reduceIte]; omega
+  · simp only [randAddr, h0, ↓reduceIte]; omega_using [wf]
   · have e2 : (E.wit + BitVec.ofNat 64 used).toNat = E.wit.toNat + used := by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega),
-        Nat.mod_eq_of_lt (by omega)]
-    simp only [randAddr, h0, ↓reduceIte, e2]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := used) (by omega_using [hu, wf]),
+        Nat.mod_eq_of_lt (by omega_using [hu, wf])]
+    simp only [randAddr, h0, ↓reduceIte, e2]; omega_using [hu, wf]
 
 theorem randAddr_sub {E : Env} {used : Nat} (hu : used ≤ E.witLen) :
     Region.Sub ⟨randAddr E used, E.witLen - used⟩ E.witRegion := by
   by_cases h0 : E.witLen - used = 0
   · intro x hx; simp only [Region.Contains, h0] at hx; omega
   · simp only [randAddr, h0, ↓reduceIte]
-    exact Offset.sub_base E.wit (by omega)
+    exact Offset.sub_base E.wit (by omega_using [hu])
 
 /-- The witnesses left, in memory that holds the tape. -/
 theorem rand_bytes {E : Env} {used : Nat} {m : Mem}
@@ -242,7 +242,7 @@ theorem rand_bytes {E : Env} {used : Nat} {m : Mem}
   rw [← hm]
   by_cases h0 : E.witLen - used = 0
   · simp only [randAddr, h0, ↓reduceIte, Spec.Rsa.bytesAt, List.range_zero, List.map_nil]
-    exact (List.drop_eq_nil_of_le (by simp; omega)).symm
+    exact (List.drop_eq_nil_of_le (by simp; omega_using [h0])).symm
   · simp only [randAddr, h0, ↓reduceIte, Spec.Rsa.bytesAt]
     apply List.ext_getElem (by simp)
     intro i h₁ h₂
@@ -272,23 +272,23 @@ theorem cand_frame {E : Env} (v : E.Valid) {bits : Nat}
   have sz := v.size_ge
   have low := v.low
   have lay' : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate + bits / 8 ≤ ppWords * 8 := by
-    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega
+    simp only [VG.Impl.Dsa.X86.ProbablePrime.layout] at lay ⊢; omega_using [lay]
   unfold Proof.Dsa.ProbablePrime.candidateAt
   refine congrArg Spec.Dsa.decodeBE ?_
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   simp only [List.mem_range] at hi
   have subWS : Region.Sub ⟨off E.base sPP, ppWords * 8⟩ E.scratchRegion :=
-    Offset.sub_base _ (by simp only [sPP, ppWords]; omega)
+    Offset.sub_base _ (by simp only [sPP, ppWords]; omega_using [sz])
   have sub : Region.Sub ⟨off E.base sPP + BitVec.ofNat 64 (VG.Impl.Dsa.X86.ProbablePrime.layout bits).candidate,
       bits / 8⟩ ⟨off E.base sPP, ppWords * 8⟩ := Offset.sub_base _ (by simpa using lay')
   have lb : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).bits = bits := rfl
   rw [lb] at hi
   refine Frame.bytes F (R := ⟨_, bits / 8⟩) ?_ (by
-      show bits / 8 ≤ 2 ^ 64; simp only [VG.Impl.Dsa.X86.ProbablePrime.layout, ppWords] at lay; omega)
+      show bits / 8 ≤ 2 ^ 64; simp only [VG.Impl.Dsa.X86.ProbablePrime.layout, ppWords] at lay; omega_using [lay])
     (by simpa using hi)
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
-  exact ((v.scratchStack.sub_left subWS).sub_left sub).sub_right (below_sub hk (by omega))
+  exact ((v.scratchStack.sub_left subWS).sub_left sub).sub_right (below_sub hk (by omega_using [low]))
 
 theorem test_pre {bits : Nat} {E : Env} (v : E.Valid) {s₀ s : State} (B : Base E s₀) {used : Nat}
     (A : TestArgs E.base (E.wit.setWidth 32) E.witLen used s₀ s) (hu : used ≤ E.witLen)

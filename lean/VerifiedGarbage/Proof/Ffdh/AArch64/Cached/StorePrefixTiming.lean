@@ -51,7 +51,7 @@ theorem storePrefix_ct : RelCT isa (Two StorePrefixReady) Precompute.storePrefix
      · exact hs.2.2.1.trans ht.2.2.1.symm
      · exact hs.2.2.2.trans ht.2.2.2.symm) (by taint_decide)) ?_) ?_
    · rintro p s ⟨⟨good,space,_⟩,src,dst,count⟩
-     refine WP.mono (copyToContext_ok good space (by decide : 0<8) (by omega : 3+p.w≤3+34*p.w) src dst count) ?_
+     refine WP.mono (copyToContext_ok good space (by decide : 0<8) (by omega_using [] : 3+p.w≤3+34*p.w) src dst count) ?_
      rintro t ⟨good,_,_,_,ptr,_⟩
      exact ⟨good,by simpa only [Nat.mul_add,Nat.reduceMul] using ptr⟩
    · refine RelCT.seq (two_piece (Ψ:=fun p s =>s.gpr .x16=off p.B (slot p.w 4) ∧

@@ -79,7 +79,7 @@ theorem disj (hL : L.Ok) {i o l j o' l' : Nat} (h : sepB L.sizes (i, o, l) (j, o
       · exact .inl hs
       · exact .inr hs
     have := (L.ptr i).isLt
-    exact Offset.disjoint _ hs' (by omega) (by omega)
+    exact Offset.disjoint _ hs' (by omega_using [hla, hf]) (by omega_using [hlb, hf])
   · exact ((hL.disj _ ha _ hb e).sub_left (R_sub hla)).sub_right (R_sub hlb)
 
 theorem disjAll (hL : L.Ok) {i o l : Nat} {W : List (Nat × Nat × Nat)} (h : sepAll L.sizes (i, o, l) W = true) :

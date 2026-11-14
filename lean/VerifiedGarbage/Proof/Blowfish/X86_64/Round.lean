@@ -57,14 +57,14 @@ theorem dword_movq (s : State) (r : Reg) (v : BitVec 32) (h : s.gpr r = v.setWid
     dword ((0 : BitVec 64) ++ s.gpr r) 0 = v := by
   rw [h]; apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [getLsbD_dword, BitVec.getLsbD_append, decide_eq_true hi, Bool.true_and, Nat.mul_zero, Nat.zero_add,
-    itT _ _ (show i < 64 by omega), BitVec.getLsbD_setWidth, decide_eq_true (show i < 64 by omega), Bool.true_and]
+    itT _ _ (show i < 64 by omega_using [hi]), BitVec.getLsbD_setWidth, decide_eq_true (show i < 64 by omega_using [hi]), Bool.true_and]
 
 theorem runBlock_append_x {a b : List Instr} {s s₁ : State} (h : runBlock isa a s = some s₁) :
     runBlock isa (a ++ b) s = runBlock isa b s₁ := by
   rw [runBlock_append, h]; rfl
 
 theorem ord_lt (up : Bool) {m : Nat} (hm : m < 18) : ord up m < 18 := by
-  cases up <;> simp only [ord, Bool.false_eq_true, ite_false, ite_true] <;> omega
+  cases up <;> simp only [ord, Bool.false_eq_true, ite_false, ite_true] <;> omega_arith
 
 theorem ea_p (t : State) (sch : Reg) (S : Addr) (n : Nat) (h1 : t.gpr sch = S)
     (h2 : t.gpr .rax = BitVec.ofNat 64 n) :
@@ -133,7 +133,7 @@ theorem ord_next (up : Bool) {m : Nat} (hm : m < 16) :
     (if up then BitVec.ofNat 64 (4 * ord up m) + 4 else BitVec.ofNat 64 (4 * ord up m) - 4) =
       BitVec.ofNat 64 (4 * ord up (m + 1)) := by
   cases up <;> simp only [ord, Bool.false_eq_true, ite_false, ite_true] <;>
-    apply BitVec.eq_of_toNat_eq <;> simp <;> omega
+    apply BitVec.eq_of_toNat_eq <;> simp <;> omega_arith
 
 theorem round_step {sch : Reg} {S : Addr} {up : Bool} {s₀ : State} (E : CipherEnv sch S s₀) {i : Nat}
     (hi : i < 16) {u : State} (I : CInv sch S up s₀ i u) :
@@ -146,10 +146,10 @@ theorem round_step {sch : Reg} {S : Addr} {up : Bool} {s₀ : State} (E : Cipher
     rw [I.gpr _ E.neA (E.look.ne8) E.look.ne9 E.ne10 E.look.ne11]; exact E.look.hsch
   have ea := ea_p u sch S _ hsch I.rax
   have hR : InRegions (u.rd ++ u.wr) (u.ea { base := sch, index := some .rax, disp := Int.ofNat pOff }) 4 := by
-    rw [ea, hrd, hwr]; exact E.rdP _ (ord_lt up (by omega))
+    rw [ea, hrd, hwr]; exact E.rdP _ (ord_lt up (by omega_using [hi]))
   let P := u.mem.readW (u.ea { base := sch, index := some .rax, disp := Int.ofNat pOff }) 32
   have hP : P = pEntry (scheduleAt s₀.mem S) (ord up i) := by
-    rw [pEntry_read _ _ (ord_lt up (by omega))]; simp only [P, ea, hm]
+    rw [pEntry_read _ _ (ord_lt up (by omega_using [hi]))]; simp only [P, ea, hm]
   let u₁ := u.setReg32 .r11 P
   let u₂ := (XOp.movq tmp .r11).exec u₁
   let u₃ := (XOp.bin .pxor xL tmp).exec u₂
@@ -177,10 +177,10 @@ theorem round_step {sch : Reg} {S : Addr} {up : Bool} {s₀ : State} (E : Cipher
   apply WP.seq
   refine WP.mono (f_run LE) fun u₄ ⟨hf, O⟩ => ?_
   obtain ⟨u₅, r₅, xl₅, xr₅, k₅, rax₅, r10₅, z₅, g₅, up₅⟩ := roundTail_run u₄ up
-  refine WP.of_runBlock ⟨u₅, r₅, ⟨by omega, ?_, ?_, ?_, fun d hd => ?_, fun g h1 h2 h3 h4 h5 => ?_, ?_⟩, ?_⟩
+  refine WP.of_runBlock ⟨u₅, r₅, ⟨by omega_using [hi], ?_, ?_, ?_, fun d hd => ?_, fun g h1 h2 h3 h4 h5 => ?_, ?_⟩, ?_⟩
   · rw [rax₅, O.gpr _ (by decide) (by decide) (by decide), g₃ _ (by decide), I.rax, ord_next up hi]
   · rw [r10₅, O.gpr _ (by decide) (by decide) (by decide), g₃ _ (by decide), I.r10]
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_using [hi]
   · rw [iter_succ, ← I.halves, xl₅, xr₅, dword_xor, hf, O.xmm xR (by decide), O.xmm xL (by decide),
       k₃ xR (by decide) (by decide), show u₃.mem = s₀.mem by rw [up₃, hm], x₃, hP]
     simp only [roundStep]
@@ -194,7 +194,7 @@ theorem round_step {sch : Reg} {S : Addr} {up : Bool} {s₀ : State} (E : Cipher
   · exact Upd.trans up₅ (Upd.trans O.eq (Upd.trans up₃ I.upd))
   · rw [z₅, O.gpr _ (by decide) (by decide) (by decide), g₃ _ (by decide), I.r10,
       show BitVec.ofNat 64 (16 - i) - 1 = BitVec.ofNat 64 (16 - (i + 1)) from by
-        apply BitVec.eq_of_toNat_eq; simp; omega]
+        apply BitVec.eq_of_toNat_eq; simp; omega_using [hi]]
 
 
 /-- Only the rounds' registers and the flags change. -/
@@ -240,7 +240,7 @@ theorem cipher_run {sch : Reg} {S : Addr} {s : State} (E : CipherEnv sch S s) (u
   apply WP.seq
   let u₀ := (s.setReg32 .rax (if up then 0 else 68)).setReg32 .r10 16
   have I0 : CInv sch S up s 0 u₀ := by
-    refine ⟨by omega, ?_, ?_, rfl, fun d _ => rfl, fun g h1 _ _ h4 _ => ?_, ?_⟩
+    refine ⟨by omega_using [], ?_, ?_, rfl, fun d _ => rfl, fun g h1 _ _ h4 _ => ?_, ?_⟩
     · simp only [u₀, State.setReg32, gpr_setReg_of_ne _ _ (show Reg.rax ≠ Reg.r10 by decide), gpr_setReg_self]
       cases up <;> rfl
     · simp only [u₀, State.setReg32, gpr_setReg_self]; rfl
@@ -250,7 +250,7 @@ theorem cipher_run {sch : Reg} {S : Addr} {s : State} (E : CipherEnv sch S s) (u
   · rw [runBlock_cons, exec_mov32_imm, runStep_some, runBlock_cons, exec_mov32_imm, runStep_some, runBlock_nil]
   apply WP.seq
   refine WP.mono (WP.loop (M := isa) (Q := CInv sch S up s 16)
-    (fun m u => ∃ i, i < 16 ∧ m = 16 - i ∧ CInv sch S up s i u) ?_ 16 u₀ ⟨0, by omega, rfl, I0⟩)
+    (fun m u => ∃ i, i < 16 ∧ m = 16 - i ∧ CInv sch S up s i u) ?_ 16 u₀ ⟨0, by omega_using [], rfl, I0⟩)
     fun v Iv => ?_
   · intro m u ⟨i, hi, hm, I⟩
     refine WP.mono (round_step E hi I) fun u' ⟨I', zu⟩ => ?_
@@ -260,9 +260,9 @@ theorem cipher_run {sch : Reg} {S : Addr} {s : State} (E : CipherEnv sch S s) (u
     · left; exact ⟨by rw [ev, h]; rfl, h ▸ I'⟩
     · right
       have nz : BitVec.ofNat 64 (16 - (i + 1)) ≠ 0 := by
-        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
+        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_using [hi, h, this]
       exact ⟨by rw [ev, show (BitVec.ofNat 64 (16 - (i + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
-        16 - (i + 1), by omega, i + 1, by omega, rfl, I'⟩
+        16 - (i + 1), by omega_using [hi, hm], i + 1, by omega_using [hi, h], rfl, I'⟩
   have Ov : COnly s v := ⟨Iv.xmm, Iv.gpr, Iv.upd⟩
   obtain ⟨w₁, r₁, x₁, k₁, g₁, u₁⟩ := xorP_run E Ov (i := ord up 16) (ord_lt up (by decide)) (d := xL) (by decide)
   have O₁ : COnly s w₁ := ⟨fun d hd => by

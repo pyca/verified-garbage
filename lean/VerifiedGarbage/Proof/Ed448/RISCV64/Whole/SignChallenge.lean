@@ -117,10 +117,10 @@ theorem challenge_ok {s t : State} (hp : SignPre s) (h : S3 s t) : WP isa signCh
   -- What the steps keep.
   have kr : ∀ {d n : Nat}, d + n ≤ 520 → (d + n ≤ 320 ∨ 377 ≤ d) →
       bytesAt t₃.mem (sF s + BitVec.ofNat 64 d) n = bytesAt t₂.mem (sF s + BitVec.ofNat 64 d) n :=
-    fun hdn hd => bytes_keep f₃ (by omega) fun r hr => by
+    fun hdn hd => bytes_keep f₃ (by omega_using [hdn]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_using [hd]) (by omega_using [hdn]) (by omega_using [])
       · exact fsc hp hdn
   have e256 : bytesAt t₃.mem (sF s + BitVec.ofNat 64 256) 57 = rB s := by
     rw [kr (by decide) (by decide), keep_hash hp h.inv (o := 16) (d := 256) (n := 57) (by decide) (by decide)

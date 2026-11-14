@@ -46,7 +46,7 @@ theorem i0_val (x : BitVec 64) (h : (x.setWidth 32).toNat ≤ 256) :
     BitVec.ofNat 64 256 - zx x = BitVec.ofNat 64 (256 - (x.setWidth 32).toNat) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, zx_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 section
 variable {σ : State} (hp : SpOk (spOf σ) σ) (hτ : tau σ ≤ 256)
@@ -71,12 +71,12 @@ theorem setup_ok {s : State} (h : ZDone σ s) : WP isa (.block bSetup) s (BAt σ
   have e0 := i0_val (σ.gpr .r5) hτ
   have hSt : St σ 0 = (Vector.replicate n 0, i0 σ) := rfl
   refine ⟨h.env.regs hp m gp rd wr sp, by rw [m]; exact h.out, g3, ?_, ?_, ?_, g6, g7, by rw [m, hSt]; exact h.st⟩
-  · rw [g4, e0, hSt, shl2 (by omega)]
+  · rw [g4, e0, hSt, shl2 (by omega_using [])]
   · rw [g5, e0, hSt]
   · show (u.gpr .r9).toNat = _
     rw [hSt, Nat.sub_self, Nat.pow_zero, Nat.div_one, g9, readW_leNat _ _ (X σ) fun k hk => by
       have := congrArg (fun L => L.getD k 0) h.out
-      rw [MlKem.bytesAt_getD _ _ (by omega)] at this
+      rw [MlKem.bytesAt_getD _ _ (by omega_using [hk])] at this
       exact this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
     have := leNat_lt ((X σ).take 8)
     rw [List.length_take, X_length] at this
@@ -114,7 +114,7 @@ theorem correct {σ : State} (hp : Pre σ) : WP isa Impl.MlDsa.PPC64LE.Sample.sa
       ((ballFold (tau σ) (X σ)).2 = 256 →
         PolyIs s'.mem (σ.gpr .r6) (toRq (ballFold (tau σ) (X σ)).1)) ∧
       abiPreserved σ s' := by
-  have hτ : tau σ ≤ 256 := by have := hp.tau_le; omega
+  have hτ : tau σ ≤ 256 := by have := hp.tau_le; omega_using [this]
   exact WP.seq (WP.mono (pro_ball hp.ok rfl (by simp) rfl rfl) fun s₁ ⟨j1, h27⟩ =>
     WP.seq (WP.mono (sponge_ok hp.ok (rate := 136) (outlen := 272) (by decide) (by decide) j1)
       fun _ h2 => WP.seq (WP.mono (zero_ok hp.ok h2 h27) fun _ h3 => WP.seq (WP.mono (loop_ok hp.ok hτ h3)

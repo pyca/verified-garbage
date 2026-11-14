@@ -170,7 +170,7 @@ theorem decT0_ok {i : Nat} (hi : i < p.k) {s : State} (hs : ID p D σ p.ℓ p.k 
   refine WP.mono (dec_ok hP (by decide) (by decide) c hs) fun s' ⟨I', hq⟩ => ⟨I'.im, I'.s1, I'.s2,
     Fam.snoc I'.t0 ?_⟩
   have e : skT0 p i = 128 + lenS p * p.ℓ + lenS p * p.k + 32 * 13 * i := by
-    unfold skT0 lenS sLen; rw [Nat.mul_add]; omega
+    unfold skT0 lenS sLen; rw [Nat.mul_add]; omega_using []
   rw [sk_slice hs.im.st ck, e] at hq
   exact hq
 
@@ -181,22 +181,22 @@ theorem rpp_ok {s : State} (hs : ID p D σ p.ℓ p.k p.k s) :
     ⟨hs.step hP4 h5, ?_⟩
   rw [hP4.pa (by decide), hb]
   simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil]
-  rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega), hs.im.st.rnd, hs.im.st.mu, ← List.append_assoc]
+  rw [sk_slice hs.im.st (o := 32) (len := 32) (by omega_using [hsk]), hs.im.st.rnd, hs.im.st.mu, ← List.append_assoc]
 
 theorem decode_ok {s : State} (h : IM p D σ s) : WP isa (decode P p) s (IK p D σ) := by
   unfold decode
   refine WP.seq (WP.mono (seqR_ok (I := fun r => ID p D σ r 0 0) p.ℓ 0
-    (fun r _ hr s hs => decS1_ok hP hc (by omega) hs) s
+    (fun r _ hr s hs => decS1_ok hP hc (by omega_using [hr]) hs) s
     ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s1 hs1 => ?_)
   rw [Nat.zero_add] at hs1
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D σ p.ℓ i 0) p.k 0
-    (fun i _ hi s hs => decS2_ok hP hc (by omega) hs) s1
+    (fun i _ hi s hs => decS2_ok hP hc (by omega_using [hi]) hs) s1
     ⟨hs1.im, hs1.s1, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s2 hs2 => ?_)
   rw [Nat.zero_add] at hs2
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ID p D σ p.ℓ p.k i) p.k 0
-    (fun i _ hi s hs => decT0_ok hP hc (by omega) hs) s2
+    (fun i _ hi s hs => decT0_ok hP hc (by omega_using [hi]) hs) s2
     ⟨hs2.im, hs2.s1, hs2.s2, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s3 hs3 => ?_)
   rw [Nat.zero_add] at hs3
   exact rpp_ok hP hc hs3
@@ -238,7 +238,7 @@ theorem cachedSlot {D : Nat} {p : Params} {σ : State} {s : State} (hpre : (sign
   have hpj := hpol j hj
   rw [show 4 * Spec.MlDsa.n * j = 1024 * j by simp only [Spec.MlDsa.n]] at hpj
   refine VG.Proof.MlDsa.PreparedKey.polyIs_of_copy ?_ hpj
-  have hk : 1024 * j + 1024 ≤ cacheLen p := by simp only [cacheLen]; omega
+  have hk : 1024 * j + 1024 ≤ cacheLen p := by simp only [cacheLen]; omega_using [hj]
   rw [oP_s1, pa_add, ← VG.Proof.MlKem.bytesAt_slice _ _ hk, ← VG.Proof.MlKem.bytesAt_slice _ _ hk]
   show ((bytesAt s.mem (pa s (s1P p 0)) (cacheLen p)).drop (1024 * j)).take 1024 = _
   rw [hb]
@@ -282,11 +282,11 @@ theorem cachedCopy_ok {D : Nat} {p : Params} (hc : dcChk p = true) {σ s : State
       bytesAt σ.mem (State.addr (stackArg σ 1)) (cacheLen p) := by
     rw [hP.pa (pS_bases _), hbs, hb]
   refine ⟨I', fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩
-  · have := cachedSlot hpre hne hb' (j := j) (by omega)
+  · have := cachedSlot hpre hne hb' (j := j) (by omega_using [hj])
     rwa [VG.Proof.MlDsa.PreparedKey.secret_s1 _ _ hj] at this
-  · have := cachedSlot hpre hne hb' (j := p.ℓ + j) (by omega)
+  · have := cachedSlot hpre hne hb' (j := p.ℓ + j) (by omega_using [hj])
     rwa [VG.Proof.MlDsa.PreparedKey.secret_s2 _ _ hj, ← Nat.add_assoc, e1] at this
-  · have := cachedSlot hpre hne hb' (j := p.ℓ + p.k + j) (by omega)
+  · have := cachedSlot hpre hne hb' (j := p.ℓ + p.k + j) (by omega_using [hj])
     rwa [VG.Proof.MlDsa.PreparedKey.secret_t0 _ _ hj, ← Nat.add_assoc, ← Nat.add_assoc, e1, e2] at this
 
 theorem decodeC_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hd : dChk p = true)

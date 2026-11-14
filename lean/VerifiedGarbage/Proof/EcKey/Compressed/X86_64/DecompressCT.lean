@@ -45,7 +45,7 @@ theorem decompress_agree {C : Spec.Weierstrass.Curve}
       · intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · dsimp; omega
+        · dsimp; omega_using [hfit]
         · change 8192 ≤ 2 ^ 64; decide
     · intro p hp
       obtain rfl := List.mem_singleton.mp hp

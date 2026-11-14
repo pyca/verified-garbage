@@ -95,8 +95,8 @@ theorem fprogBI_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       (opProg_ok hL hm hI (hSl op (List.mem_cons_self ..)) hR.1)) fun s₁ ⟨⟨k₁, I₁⟩, x₁, y₁⟩ sy₁ => ?_)
     have hS₁ := hstab i op.out s s₁ (hSl op (List.mem_cons_self ..) op.out (List.mem_cons_self ..)) hS k₁ x₁ y₁
       sy₁
-    refine WP.seq (WP.mono (hside i s₁ (by rw [List.length_cons] at hN; omega) hS₁) fun s₂ ⟨hS₂, k₂⟩ => ?_)
-    refine WP.mono (fprogBI_ok hL hm hside hstab ops (i + 1) (by rw [List.length_cons] at hN; omega)
+    refine WP.seq (WP.mono (hside i s₁ (by rw [List.length_cons] at hN; omega_using [hN]) hS₁) fun s₂ ⟨hS₂, k₂⟩ => ?_)
+    refine WP.mono (fprogBI_ok hL hm hside hstab ops (i + 1) (by rw [List.length_cons] at hN; omega_using [hN])
       (fun op' h => hsc op' (List.mem_cons_of_mem _ h))
       (I₁.of_side k₂) hS₂ (fun op' h => hSl op' (List.mem_cons_of_mem _ h)) hR.2)
       fun s₃ ⟨k₃, I₃, hS₃⟩ => ⟨?_, I₃, by rw [List.length_cons, ← Nat.add_assoc, Nat.add_right_comm]; exact hS₃⟩

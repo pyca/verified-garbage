@@ -64,7 +64,7 @@ theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   simp only [Mem.read]
   ext i hi
   rw [BitVec.getElem_append]
-  simp only [show i < 8 by omega, dite_true]
+  simp only [show i < 8 by omega_using [hi], dite_true]
 
 /-- `s'` is `s` with memory `m`. -/
 structure Mupd (s s' : State) (m : Mem) : Prop where
@@ -205,7 +205,7 @@ theorem ofNat_succ (k : Nat) : BitVec.ofNat 64 (k + 1) = BitVec.ofNat 64 k + 1 :
   rw [BitVec.ofNat_add]; rfl
 
 theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) := by
-  rw [show k = (k - 1) + 1 by omega, ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
+  rw [show k = (k - 1) + 1 by omega_using [h], ofNat_succ, Nat.add_sub_cancel, BitVec.add_sub_cancel]
 
 theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
   by_cases hk : k = 0
@@ -232,7 +232,7 @@ theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
       Nat.mod_eq_of_lt hb] at this
     change _ = 0 at this
-    omega
+    omega_using [ha, hb, this]
 
 /-- `x >>> n`, of a number below 2⁶⁴. -/
 theorem ofNat_shr {a n : Nat} (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> n = BitVec.ofNat 64 (a / 2 ^ n) := by
@@ -246,7 +246,7 @@ theorem ofNat_shl {a n : Nat} (h : 2 ^ n * a < 2 ^ 64) :
   have ha : a ≤ 2 ^ n * a := Nat.le_mul_of_pos_left a (Nat.two_pow_pos n)
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega), Nat.mul_comm, Nat.mod_eq_of_lt h]
+    Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_using [h, ha]), Nat.mul_comm, Nat.mod_eq_of_lt h]
 
 /-- `x &&& (2 ^ n - 1)`. -/
 theorem and_mask {n : Nat} (hn : n ≤ 16) (x : BitVec 64) :
@@ -255,9 +255,9 @@ theorem and_mask {n : Nat} (hn : n ≤ 16) (x : BitVec 64) :
   have h1 : 1 ≤ 2 ^ n := Nat.two_pow_pos n
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show 2 ^ n - 1 < 2 ^ 64 by omega), Nat.and_two_pow_sub_one_eq_mod]
+    Nat.mod_eq_of_lt (show 2 ^ n - 1 < 2 ^ 64 by omega_using [hp]), Nat.and_two_pow_sub_one_eq_mod]
   have := Nat.mod_lt x.toNat (Nat.two_pow_pos n)
-  omega
+  omega_using [hp]
 
 /-- A 64-bit store is a store of its eight bytes. -/
 theorem writeW_eq_writeBytes (m : Mem) (a : Addr) (v : BitVec 64) :
@@ -291,8 +291,8 @@ theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {R : Re
     m' (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) := by
   refine hf _ fun r hr hc => hd r hr _ ?_ hc
   simp only [Region.Contains]
-  rw [Offset.add_sub_cancel_left, toNat_ofNat_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, toNat_ofNat_lt (by omega_using [hR, hi])]
+  omega_using [hi]
 
 /-- Registers that no instruction writes keep their values, as a postcondition. -/
 theorem WP.gprs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) {rs : List Reg}
@@ -313,7 +313,7 @@ theorem write_frame_apply {m : Mem} {sp v : BitVec 64} {R : Region}
     pushMem m sp v x = m x := by
   simp only [pushMem]
   rw [Mem.write_apply fun h => hd x (by simp only [Region.Contains] at h ⊢; bv_omega) hx,
-    Mem.write_apply fun h => hd x (by simp only [Region.Contains] at h ⊢; omega) hx]
+    Mem.write_apply fun h => hd x (by simp only [Region.Contains] at h ⊢; omega_using [h]) hx]
 
 /-- The bytes of a region disjoint from a frame are unchanged by the push. -/
 theorem write_frame_bytes {m : Mem} {sp v : BitVec 64} {R : Region}
@@ -321,8 +321,8 @@ theorem write_frame_bytes {m : Mem} {sp v : BitVec 64} {R : Region}
     pushMem m sp v (R.base + BitVec.ofNat 64 i) = m (R.base + BitVec.ofNat 64 i) :=
   write_frame_apply hd (by
     simp only [Region.Contains]
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega)
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hR, hi])]
+    omega_using [hi])
 
 /-- The frame's local variable space is in the frame. -/
 theorem frame_sub (sp : Addr) : Region.Sub ⟨sp - 48 + 32, 16⟩ ⟨sp - 48, 48⟩ := by
@@ -334,7 +334,7 @@ theorem frame_sub (sp : Addr) : Region.Sub ⟨sp - 48 + 32, 16⟩ ⟨sp - 48, 48
 
 theorem save_sep (b : Addr) {d e : Nat} (hd : d < 2 ^ 32) (he : e < 2 ^ 32)
     (h : d + 8 ≤ e ∨ e + 8 ≤ d) : Mem.Sep (b + BitVec.ofNat 64 d) 8 (b + BitVec.ofNat 64 e) 8 := by
-  exact Offset.sep _ h (by omega) (by omega)
+  exact Offset.sep _ h (by omega_using [hd]) (by omega_using [he])
 
 theorem readW_writeW_save (m : Mem) (b : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
@@ -347,12 +347,12 @@ theorem readW_writeW_save_so {so : Nat} (hso : so ≤ 1024) (m : Mem) (b : Addr)
     {d e : Nat} (hd : d ≤ 64) (he : e ≤ 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
     (m.writeW (b + BitVec.ofNat 64 (so + e)) v).readW (b + BitVec.ofNat 64 (so + d)) 64 =
       m.readW (b + BitVec.ofNat 64 (so + d)) 64 :=
-  readW_writeW_save m b v (by omega) (by omega) (by omega)
+  readW_writeW_save m b v (by omega_using [hso, hd]) (by omega_using [hso, he]) (by omega_using [h])
 
 theorem readW_writeW_save_so_l {so : Nat} (hso : so ≤ 1024) (m : Mem) (b : Addr) (v : BitVec 64)
     {e : Nat} (he : e ≤ 64) (h : 8 ≤ e) :
     (m.writeW (b + BitVec.ofNat 64 (so + e)) v).readW (b + BitVec.ofNat 64 so) 64 =
       m.readW (b + BitVec.ofNat 64 so) 64 :=
-  readW_writeW_save m b v (by omega) (by omega) (by omega)
+  readW_writeW_save m b v (by omega_using [hso]) (by omega_using [hso, he]) (by omega_using [h])
 
 end VG.Proof.MdStream.PPC64LE

@@ -109,9 +109,9 @@ theorem step_inv {x i : Nat} (hx : x < P) {D : Word} {F G U V : Nat} (h : RInv x
   refine ⟨by rw [e], ?_, ?_, Nat.mod_lt _ (by positivity), Nat.mod_lt _ (by positivity), hUl, hVl,
     ?_, ?_, fun hx0 => ?_⟩
   · rw [e]
-    exact (shift_rep (by rw [hWF, ← m1]) ⟨by omega, by omega⟩).1
+    exact (shift_rep (by rw [hWF, ← m1]) ⟨by omega_using [l1, hP], by omega_using [l1, hP]⟩).1
   · rw [e]
-    exact (shift_rep (by rw [hWG, ← m2]) ⟨by omega, by omega⟩).1
+    exact (shift_rep (by rw [hWG, ← m2]) ⟨by omega_using [l2, hP], by omega_using [l2, hP]⟩).1
   · rw [e]
     have hP2 : (2 : Int) ^ (59 * (i + 1)) = 2 ^ (59 * i) * 2 ^ 59 := by rw [← pow_add]; ring_nf
     dsimp only

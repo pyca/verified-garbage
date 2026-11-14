@@ -79,14 +79,14 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
       m.readW (SP + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 n := fun m k hf hk => by
     rw [hf.readW (r := ⟨SP + BitVec.ofNat 64 8, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hdA.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega))) (by decide), hn']
+      exact (hdA.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by omega_using [hk]))) (by decide), hn']
   have hn₁ : s₁.mem.readW (SP + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 n := hsepA _ 48 (hm₀ ▸ f₁) (by decide)
   have sA : ∀ d, 176 ≤ d → d + 8 ≤ 216 → Mem.Sep (SP + BitVec.ofNat 64 8) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
     fun d h₁ h₂ => Region.Disjoint.sep ((hdA.sub_left (Region.sub_prefix (by decide))).sub_right
-      (Lay.wSub (n := 8) (d := d) (by omega))) (Region.contains_self _ _) (Region.contains_self _ _)
+      (Lay.wSub (n := 8) (d := d) (by omega_using [h₂]))) (Region.contains_self _ _) (Region.contains_self _ _)
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_using [ha]) (by omega_using [hd])
   have a₁₇₆ := sA 176 (by decide) (by decide)
   have a₁₈₄ := sA 184 (by decide) (by decide)
   have a₁₉₂ := sA 192 (by decide) (by decide)
@@ -136,7 +136,7 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
   have f₂ : Frame [⟨W + BitVec.ofNat 64 176, 40⟩] s₁.mem s₂.mem := by
     rw [hm₂]
     have c : ∀ d, 176 ≤ d → d + 8 ≤ 216 → (⟨W + BitVec.ofNat 64 176, 40⟩ : Region).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 176 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 184 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 192 (by decide) (by decide))).writeW
@@ -154,7 +154,7 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
   · rw [rd 176 _ (.inl ⟨rfl, rfl⟩)]; exact BitVec.eq_of_toNat_eq (by simp)
   · exact hsv₁'.frame f₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using [])
   · rw [hm₀] at f₁
     exact (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -203,7 +203,7 @@ theorem CryptCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.streamCryptPre cl 
   replace d_cd := d_cd.sub_left c256
   replace d_cw := d_cw.sub_left c256
   replace t_c := t_c.sub_right c256
-  replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega
+  replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega_using [hcl, wc]
   have b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
   have k_c := t_c.sub_left b8
   have k_s := t_s.sub_left b8
@@ -215,11 +215,11 @@ theorem CryptCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.streamCryptPre cl 
   have pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 16⟩] (s.rd ++ s.wr) := by
     rw [hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine ⟨L, ⟨?_, ?_, ?_⟩, ww, ⟨?_, ?_⟩, d_wa.symm, ⟨⟨?_, by have := (stackArg s 0).isLt; omega, wd, d_sd.symm, d_dw,
+  refine ⟨L, ⟨?_, ?_, ?_⟩, ww, ⟨?_, ?_⟩, d_wa.symm, ⟨⟨?_, by have := (stackArg s 0).isLt; omega_using [], wd, d_sd.symm, d_dw,
     k_d⟩, ?_, d_cd⟩, r_d, r_s, r_w, d_dw, hR, t_c, t_s, t_w, t_d, sp24⟩
   · rw [hrd]; intro a m ⟨r, hr, hc⟩
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_append_left _ (List.mem_cons_self ..), by simp only [Region.Contains] at hc ⊢; omega⟩
+    exact ⟨_, List.mem_append_left _ (List.mem_cons_self ..), by simp only [Region.Contains] at hc ⊢; omega_using [hcl, hc]⟩
   · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · simpa using in_off pm (show 0 + 8 ≤ 16 by decide) (by decide)

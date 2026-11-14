@@ -50,7 +50,7 @@ theorem scalarBaseEngine_ok {s : State} (hc : Ctx8 b s) (hws : WS b s) {p T : Ad
   have hb1 : bytesAt s1.mem p 32 = bytesAt s.mem p 32 := by
     simp only [Spec.Ed25519.bytesAt, List.map_inj_left]
     intro i hi
-    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)) hpd (by decide)
+    exact bytes_ws f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])) hpd (by decide)
       (List.mem_range.mp hi)
   have hT1 : TblAt s1 T := hT.of_frame (by rw [r1.rd, r1.wr]) f1 fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
@@ -73,9 +73,9 @@ theorem combW_saves (lo n : Nat) (h1 : 1024 ≤ lo) (h2 : lo + n ≤ 1152) :
   have hG : SGN = 56 := rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+  · exact Offset.disjoint _ (.inl (by omega_using [h2, hS])) (by omega_using [h2]) (by omega_using [hS])
+  · exact Offset.disjoint _ (.inr (by omega_using [h1, hG])) (by omega_using [h2]) (by omega_using [hG])
+  · exact Offset.disjoint _ (.inr (by omega_using [h1])) (by omega_using [h2]) (by omega_using [])
 
 end
 
@@ -132,7 +132,7 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
   have e1 : s1.gpr .a3 = b := by rw [u1.gpr, hb]
   have hsin : ∀ p ∈ baseList, InRegions s1.wr (s1.gpr .a3 + BitVec.ofNat 64 p.2) 8 := fun p hpl => by
     have := baseList_in p hpl
-    rw [e1, u1.wr]; exact in_base hws (by omega) (by omega)
+    rw [e1, u1.wr]; exact in_base hws (by omega_using [this]) (by omega_using [this])
   refine Spill.save_ok (b := .a3) (by rw [e1]; exact hal) baseList_fits hsin ?_
   generalize hs2 : ({ s1 with mem := Spill.saveMem s1.mem (s1.gpr .a3) s1.gpr baseList } : State) = s2
   have hsv : Spill.Saved b s.gpr baseList s2.mem := by
@@ -141,7 +141,7 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
     exact fun p hpl => by rw [h p hpl, u1.other _ (baseList_not_a3 p hpl)]
   have hf2 : Frame [⟨b, 8192⟩] s.mem s2.mem := by
     rw [← hs2, ← u1.mem, ← e1]
-    exact Spill.saveMem_frame_base (fun p hpl => by have := baseList_in p hpl; omega) (by decide) _ _ _
+    exact Spill.saveMem_frame_base (fun p hpl => by have := baseList_in p hpl; omega_using [this]) (by decide) _ _ _
   have hg2 : s2.gpr = s1.gpr := by rw [← hs2]
   have hrd2 : s2.rd = s1.rd := by rw [← hs2]
   have hwr2 : s2.wr = s1.wr := by rw [← hs2]
@@ -169,17 +169,17 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
   have hin4 : ∀ i < 32, InRegions (s4.rd ++ s4.wr) (s.gpr .a1 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [hR4.rd, hR4.wr, hp.rd]
-    exact in_base (List.mem_append_left _ List.mem_cons_self) (by omega) (by omega)
+    exact in_base (List.mem_append_left _ List.mem_cons_self) (by omega_using [hi]) (by omega_using [hi])
   have hws4 : WS b s4 := Covers.of_sub fun r hr => by
     rw [List.mem_singleton.mp hr, hR4.wr]
     exact ⟨_, hws, 0, by rw [BitVec.add_zero], by simp⟩
   have hT4 : TblAt s4 (s.syms combSym) :=
     ⟨hp.tal, hp.tfit, ⟨TBL (s.syms combSym), by rw [hR4.rd, hp.rd]; simp, by
       simpa only [BitVec.add_zero] using Offset.contains_base (s.syms combSym) (d := 0) (n := 49152) (k := 49152)
-        (by omega) (by omega)⟩,
+        (by omega_using []) (by omega_using [])⟩,
       fun q hq => by
         rw [hm4, ← hp.words q hq]
-        exact hf2.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega) (by omega))
+        exact hf2.readW (r := TBL (s.syms combSym)) (Offset.contains_base _ (by omega_using [hq]) (by omega_using [hq]))
           (by simp only [List.mem_singleton, forall_eq]; rw [hb]; exact hp.tbl_ws) (by decide)⟩
   have hsym4 : s4.syms combSym = s.syms combSym := congrFun sy4 combSym
   refine WP.seq (WP.mono (he hc4 hws4 e14 hin4 hpd hT4 hsym4 (hb ▸ hp.tbl_ws))
@@ -197,24 +197,24 @@ theorem baseWrap_ok {e : Prog isa} {R : List Byte → List Byte} (he : EngineOk 
   have hdo : (⟨s.gpr .a0 + BitVec.ofNat 64 0, 32⟩ : Region).Disjoint ⟨b, 8192⟩ := by
     rw [BitVec.add_zero]; exact hb ▸ hp.out_ws
   refine WP.block_append_iff.mpr (WP.mono (packField_ok hcv.ctx (p := .s0) (by decide) ev (a := FR) (dst := 0)
-    (by omega) (by omega) (by decide)
-    (fun k hk => by rw [hwv]; exact in_base hout (by omega) (by omega))
-    (hdo.sub_right (Offset.sub_base b (by omega)))) fun w hw => ?_)
+    (by omega_using [hX]) (by omega_using [hX]) (by decide)
+    (fun k hk => by rw [hwv]; exact in_base hout (by omega_using [hk]) (by omega_using [hk]))
+    (hdo.sub_right (Offset.sub_base b (by omega_using [hX])))) fun w hw => ?_)
   have hsvw : Spill.Saved b s.gpr baseList w.mem := by
     have h7 : Spill.Saved b s.gpr baseList s7.mem := by
       rw [← hm4] at hsv
-      exact hsv.frame_in (lo := 1024) (n := 104) baseList_in f7 (combW_saves 1024 104 (by omega) (by omega))
+      exact hsv.frame_in (lo := 1024) (n := 104) baseList_in f7 (combW_saves 1024 104 (by omega_using []) (by omega_using []))
     rw [← uv.mem] at h7
     exact h7.frame_in (lo := 1024) (n := 104) baseList_in hw.frame fun r hr => by
       rw [List.mem_singleton.mp hr]
-      exact (hdo.sub_right (Offset.sub_base b (d := 1024) (n := 104) (by omega))).symm
+      exact (hdo.sub_right (Offset.sub_base b (d := 1024) (n := 104) (by omega_using []))).symm
   have e6w : w.gpr .a3 = b := by rw [hw.rest.gpr _ (by decide), hcv.a3]
   rw [← List.append_nil (Spill.restoreCode .a3 baseList)]
   refine Spill.restore_ok (b := .a3) (B := b) hal e6w baseList_fits baseList_restorable
     (fun p hpl => by
       have := baseList_in p hpl
       rw [hw.rest.rd, hw.rest.wr, hwv, uv.rd, r7.rd, hR4.rd]
-      exact in_base (List.mem_append_right _ hws) (by omega) (by omega)) hsvw fun t ht => WP.block_nil
+      exact in_base (List.mem_append_right _ hws) (by omega_using [this]) (by omega_using [this])) hsvw fun t ht => WP.block_nil
       ⟨fun r hr => ?_, by rw [ht.sp, hw.rest.sp, uv.sp, r7.sp, hR4.sp], ?_, ?_⟩
   · by_cases hm : r ∈ baseSaved
     · exact ht.gpr_of (.inl (by rw [baseList_regs]; exact hm))

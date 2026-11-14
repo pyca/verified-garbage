@@ -19,7 +19,7 @@ theorem load_ok (s : State) {p : Inputs} {slots : List Nat} (h : Context p slots
         t.gpr .r3 = s.mem.readW (off (State.addr s.sp) 68) 32 ∧ t.mem = s.mem) ∧
       Rest [.r3, .r6] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have r20 := h.locals.read (d := 20) (by decide)
   have r68 := h.locals.read (d := 68) (by decide)
   refine withRest_all [.r3, .r6] ?_ (by rfl) (by rfl)
@@ -31,7 +31,7 @@ theorem save_store (s : State) {p : Inputs} {slots : List Nat} (h : Context p sl
       t.mem = (s.mem.writeW (off (State.addr s.sp) 20) (s.gpr .r6)).writeW
         (off (State.addr s.sp) 68) (s.gpr .r3) ∧ Rest [.r12] s t := by
   have addr (d : Nat) (hd : d + 4 ≤ 72) : State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
   have w20 := h.locals.space.write (off := 20) (by decide)
   have w68 := h.locals.space.write (off := 68) (by decide)
   refine withRest_all [.r12] ?_ (by rfl) (by rfl)
@@ -62,8 +62,8 @@ theorem save_ok (s : State) {p : Inputs} {slots : List Nat} (h : Context p slots
       have nowrap := h.locals.space.nowrap
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_using [bounds]) (by omega_using [bounds]) (by omega_using [])
+      · exact Offset.disjoint _ (by omega_using [bounds]) (by omega_using [bounds]) (by omega_using [])
   refine ⟨ctx, ?_, ?_, frame, rest⟩
   · rw [rest.sp, mem, Mem.readW_writeW_sep (Offset.sep (State.addr s.sp) (d := 20) (n := 4) (e := 68) (k := 4) (by decide)
       (by decide) (by decide)) (by decide), Mem.readW_writeW_self32]

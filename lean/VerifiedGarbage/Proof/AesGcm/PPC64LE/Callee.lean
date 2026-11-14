@@ -39,7 +39,7 @@ theorem callEntry_gpr' (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callEntry.
   State.callEntry_gpr _ h
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hR])
 
 /-! ## `vg_ghash` -/
 
@@ -214,7 +214,7 @@ structure KeyPost (s : State) (K : Addr) (kl : Nat) (C S : Addr) (s' : State) : 
     Spec.Aes.expandKey (bytesAt s.mem K kl)
 
 theorem toNat_kl {kl : Nat} (h : kl = 16 ∨ kl = 24 ∨ kl = 32) : (BitVec.ofNat 64 kl).toNat = kl := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [h])
 
 theorem KeyCall.pre {s : State} {K : Addr} {kl : Nat} {C S : Addr} (h : KeyCall s K kl C S) :
     Proof.Aes.expandKeyPPC64LE.pre (s.callEntry.withRegions [⟨K, kl⟩] [⟨C, 240⟩, ⟨S, 512⟩]) := by

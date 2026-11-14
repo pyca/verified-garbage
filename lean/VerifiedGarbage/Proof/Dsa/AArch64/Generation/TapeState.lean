@@ -27,14 +27,14 @@ theorem tapeReset_frame_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat 
   refine WP.mono (WP.keep [.x0, .x15] (Q := fun t =>
     t.mem = s.mem.writeW (off F (8 * slots.used)) (0 : BitVec 64)) (by
     unfold tapeReset Impl.Dsa.AArch64.Random.store
-    brun [exec_addSp (show 8 * slots.used < 4096 by omega), L.sp,
-      L.st (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega)]
+    brun [exec_addSp (show 8 * slots.used < 4096 by omega_using [hu]), L.sp,
+      L.st (d := 8 * slots.used) (n := 8) (by unfold frameBytes; omega_using [hu])]
     rfl) rfl rfl rfl) fun t ⟨hm, hk⟩ => ?_
   have Rt : Rep t.mem F S V (upd W slots.used 0) := by
     rw [hm]; exact R.wf L.geo hu _
   refine ⟨lay_of_rep L R Rt (by simp [upd, Ne.symm hu12]) hk.sp hk.wr, Rt, ?_, hk⟩
   rw [hm]
-  exact writeW_outside _ _ _ (by omega)
+  exact writeW_outside _ _ _ (by omega_using [hu])
 
 theorem tapeStatus_ok {s : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay s F S) (R : Rep s.mem F S V W) :

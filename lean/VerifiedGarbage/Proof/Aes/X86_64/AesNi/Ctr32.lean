@@ -289,7 +289,6 @@ abbrev nb : Nat := (s₀.gpr .r8).toNat
 abbrev sR : Region := ⟨sp s₀, 240⟩
 abbrev cR : Region := ⟨cp s₀, 16⟩
 abbrev dR : Region := ⟨dp s₀, 16 * nb s₀⟩
-abbrev scrR : Region := ⟨s₀.gpr .r9, 2048⟩
 abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
 /-- The key schedule. -/
 abbrev sch : List Byte := Spec.Aes.bytesAt s₀.mem (sp s₀) (16 * (nr s₀ + 1))
@@ -312,16 +311,13 @@ end
 
 structure Pre (to : Bool) (s₀ : State) : Prop where
   rd : s₀.rd = if to then [sR s₀, dR s₀] else [sR s₀]
-  wr : s₀.wr = [cR s₀, ddR s₀ to, scrR s₀]
+  /-- Then the scratch buffer, if any: the code never touches it. -/
+  wr : ∃ X, s₀.wr = cR s₀ :: ddR s₀ to :: X
   s_c : (sR s₀).Disjoint (cR s₀)
   s_d : (sR s₀).Disjoint (ddR s₀ to)
-  s_scr : (sR s₀).Disjoint (scrR s₀)
   c_d : (cR s₀).Disjoint (ddR s₀ to)
-  c_scr : (cR s₀).Disjoint (scrR s₀)
-  d_scr : (ddR s₀ to).Disjoint (scrR s₀)
   ret_c : (retR s₀).Disjoint (cR s₀)
   ret_d : (retR s₀).Disjoint (ddR s₀ to)
-  ret_scr : (retR s₀).Disjoint (scrR s₀)
   /-- Out of place, the data and the output do not overlap. -/
   src : to = true → (dR s₀).Disjoint (ddR s₀ to)
   wrap : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
@@ -329,12 +325,16 @@ structure Pre (to : Bool) (s₀ : State) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
 
 theorem pre_of (s₀ : State) (h : ctr32X86_64.pre s₀) : Pre false s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun h => Bool.noConfusion h, h12, h12, h13⟩
+  obtain ⟨h1, h2, h3, h4, _, h6, _, _, h9, h10, _, h12, h13⟩ := h
+  exact ⟨h1, ⟨_, h2⟩, h3, h4, h6, h9, h10, fun h => Bool.noConfusion h, h12, h12, h13⟩
+
+theorem preF_of (s₀ : State) (h : ctr32X86_64F.pre s₀) : Pre false s₀ := by
+  obtain ⟨h1, h2, h3, h4, h6, h9, h10, h12, h13⟩ := h
+  exact ⟨h1, ⟨_, h2⟩, h3, h4, h6, h9, h10, fun h => Bool.noConfusion h, h12, h12, h13⟩
 
 theorem preTo_of (s₀ : State) (h : ctr32ToX86_64.pre s₀) : Pre true s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, _, h7, h8, h9, _, h11, h12, h13, h14, h15, h16, h17⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h7, h8, h11, h12, h13, h14, fun _ => h9, h15, h16, h17⟩
+  obtain ⟨h1, h2, h3, h4, _, _, h7, _, h9, _, _, h12, h13, _, h15, h16, h17⟩ := h
+  exact ⟨h1, ⟨_, h2⟩, h3, h4, h7, h12, h13, fun _ => h9, h15, h16, h17⟩
 
 namespace Pre
 variable {to : Bool} {s₀ : State} (hp : Pre to s₀)
@@ -357,11 +357,11 @@ theorem in_out {k : Nat} (hk : k < nb s₀) : (ddR s₀ to).Contains (oAddr s₀
 theorem src_blk {k : Nat} (hk : k < nb s₀) : InRegions (s₀.rd ++ s₀.wr) (bAddr s₀ k) 16 := by
   refine ⟨dR s₀, ?_, hp.in_blk hk⟩
   cases to with
-  | false => rw [hp.wr]; exact List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self)
+  | false => obtain ⟨_, hw⟩ := hp.wr; rw [hw]; exact List.mem_append_right _ (List.mem_cons_of_mem _ List.mem_cons_self)
   | true => rw [hp.rd]; exact List.mem_append_left _ (List.mem_cons_of_mem _ List.mem_cons_self)
 
 theorem out_blk {k : Nat} (hk : k < nb s₀) : InRegions s₀.wr (oAddr s₀ to k) 16 :=
-  ⟨ddR s₀ to, by rw [hp.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self, hp.in_out hk⟩
+  ⟨ddR s₀ to, by obtain ⟨_, hw⟩ := hp.wr; rw [hw]; exact List.mem_cons_of_mem _ List.mem_cons_self, hp.in_out hk⟩
 
 /-- Memory that the output does not overlap. -/
 theorem sch_frame {m : Mem} (hf : Frame [ddR s₀ to] s₀.mem m) :
@@ -657,7 +657,7 @@ theorem body1_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {c : Nat} (hc : c
 theorem ctrLoad_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) :
     WP isa (.block ctrLoad) s₀ fun s => Inv to s₀ 0 0 s ∧ s.cf = some (decide (nb s₀ < 8)) := by
   have hin : InRegions (s₀.rd ++ s₀.wr) (cp s₀ + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-    ⟨cR s₀, by rw [hp.wr]; exact List.mem_append_right _ List.mem_cons_self,
+    ⟨cR s₀, by obtain ⟨_, hw⟩ := hp.wr; rw [hw]; exact List.mem_append_right _ List.mem_cons_self,
       by rw [ofInt_natCast]; exact contains_offset (by omega_arith) (by omega_arith)⟩
   have e8 : BitVec.signExtend 64 (8 : BitVec 32) = 8 := by decide
   have hd := dstReg_ne to
@@ -702,7 +702,7 @@ theorem ctrStore_ok {to : Bool} {s₀ : State} (hp : Pre to s₀) {s : State}
   have hd := dstReg_ne to
   have hrdx : s.gpr .rdx = cp s₀ := hI.gpr .rdx (by decide) (by decide) (by decide) (by decide) hd.2.2.1.symm
   have hout : InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-    ⟨cR s₀, by rw [hI.wr, hp.wr]; exact List.mem_cons_self, by
+    ⟨cR s₀, by obtain ⟨_, hw⟩ := hp.wr; rw [hI.wr, hw]; exact List.mem_cons_self, by
       rw [hrdx, ofInt_natCast]; exact contains_offset (by omega_arith) (by omega_arith)⟩
   have h10 := hI.x10
   have h9 := hI.x9
@@ -797,18 +797,26 @@ theorem ctr32_correct (s : State) (hs : ctr32X86_64.pre s) :
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
+theorem ctr32F_correct (s : State) (hs : ctr32X86_64F.pre s) :
+    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ ctr32X86_64F.post s s' := by
+  obtain ⟨t, s', he, h⟩ := correct (preF_of s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+
 theorem ctr32To_correct (s : State) (hs : ctr32ToX86_64.pre s) :
     ∃ t s', Exec isa ctr32To s t s' ∧ abiPreserved s s' ∧ ctr32ToX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (preTo_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
-theorem ctr32_ct : ConstantTime isa ctr32X86_64.pre ctr32X86_64.pub ctr32 := by
+/-- Whatever the precondition: the public registers alone fix the trace. -/
+theorem ctr32_ctP {P : State → Prop} : ConstantTime isa P ctr32X86_64.pub ctr32 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) ?_
     (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem ctr32_ct : ConstantTime isa ctr32X86_64.pre ctr32X86_64.pub ctr32 := ctr32_ctP
 
 theorem ctr32To_ct : ConstantTime isa ctr32ToX86_64.pre ctr32ToX86_64.pub ctr32To := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .r11]) ?_

@@ -187,7 +187,7 @@ theorem pConstruct_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
   have hl : 2 ≤ p.len ∧ p.len ≤ 1024 ∧ p.len = 8 * (p.len / 8) ∧
       2 ≤ p.len / 8 ∧ p.len / 8 < 2 ^ 24 := by
     rcases p.width with hh | hh | hh <;> rw [hh] <;> decide
-  have hql : p.hash.len ≤ p.len := by rcases p.hash.width with hh | hh <;> rcases p.width with hp | hp | hp <;> omega
+  have hql : p.hash.len ≤ p.len := by rcases p.hash.width with hh | hh <;> rcases p.width with hp | hp | hp <;> omega_using [hh, hp]
   unfold Impl.Dsa.X86_64.Generation.pConstruct
   rw [← p.hashCount]
   refine WP.seq (WP.mono (pBuild_ok hG hHh hsize hd hs.hash hl.1 hl.2.1 p.hashRoom
@@ -204,10 +204,10 @@ theorem pConstruct_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
       exact ⟨r, List.mem_append_right _ hr, hc⟩
     · intro i hi; simp [xb, Spec.Rsa.bytesAt]
     · intro i hi; exact p.shapedOutside i (hxb ▸ hi)
-  have sq := source_of_frame hs.qSource fu p.qHash (by rw [p.qLength]; have := p.hash.size; omega) rdu wru
+  have sq := source_of_frame hs.qSource fu p.qHash (by rw [p.qLength]; have := p.hash.size; omega_using [this]) rdu wru
   refine WP.mono (reduceFromFrame_ok Lu Ru (hs.scratch.congr wru) p.base p.workspaceRoom
     hl.2.2.2.1 hl.2.2.2.2 hl.2.2.1 hql p.frameHeaders p.frameOutside sx sq hxb p.qLength
-    (by rcases p.hash.width with hh | hh <;> omega) p.qPositive p.qFits
+    (by rcases p.hash.width with hh | hh <;> omega_using [hh]) p.qPositive p.qFits
     (fun i hi => by rw [wru]; exact hs.pWrite i hi)
     (fun i hi => by rw [wru]; exact hs.exponentWrite i hi)
     p.pOutside p.exponentOutside p.pExponent) fun t ⟨tp, te, ht, hp, ft, kt⟩ => ?_

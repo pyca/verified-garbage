@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Int.ModEq
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
 import Mathlib.Algebra.Order.Ring.Int
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Recovering an absolute value from its low-word residue -/
 
@@ -15,12 +16,12 @@ namespace VG.Proof.Rsa.Divstep
     W=x+if x<0 then R else 0 := by
   by_cases neg : x<0
   · have eq : (x+R)%R=x%R := Int.add_emod_right x R
-    rw [Int.emod_eq_of_lt (by omega) (by omega)] at eq
+    rw [Int.emod_eq_of_lt (by omega_using [hx1]) (by omega_using [neg])] at eq
     rw [Int.emod_eq_of_lt hW0 hW1] at hc
     rw [ite_eq_left neg]
-    omega
+    omega_using [hc, eq]
   · rw [ite_eq_right neg,Int.add_zero]
-    rw [Int.emod_eq_of_lt hW0 hW1,Int.emod_eq_of_lt (by omega) hx2] at hc
+    rw [Int.emod_eq_of_lt hW0 hW1,Int.emod_eq_of_lt (by omega_using [neg]) hx2] at hc
     exact hc
 
 theorem abs_select {R lo neg : Nat} {x : Int} (hR : 0<R)
@@ -40,9 +41,9 @@ theorem abs_select {R lo neg : Nat} {x : Int} (hR : 0<R)
     rw [c1] at cs
     simp only [Bool.toNat_true,Nat.mul_one] at cs
     rw [abs_of_neg hx] at absx
-    omega
+    omega_using [e, cs]
   · rw [ite_eq_right hx] at e ⊢
-    rw [abs_of_nonneg (by omega)] at absx
-    omega
+    rw [abs_of_nonneg (by omega_using [e])] at absx
+    omega_using [e]
 
 end VG.Proof.Rsa.Divstep

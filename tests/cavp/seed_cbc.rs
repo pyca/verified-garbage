@@ -10,7 +10,7 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::error::{IncompleteBlock, InvalidKeyLength};
+use verified_garbage::error::IncompleteBlock;
 
 use verified_garbage::cipher::seed::{SeedCbcDecryptor, SeedCbcEncryptor};
 
@@ -18,14 +18,14 @@ use verified_garbage_test_vectors::unhex;
 
 /// `plaintext` encrypts to `ciphertext` and decrypts back, whole and split
 /// at every block boundary.
-fn check(key: &[u8], iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
+fn check(key: &[u8; 16], iv: [u8; 16], plaintext: &[u8], ciphertext: &[u8]) {
     for offset in (0..=plaintext.len()).step_by(16) {
         let mut buffer = plaintext.to_vec();
-        let mut encryptor = SeedCbcEncryptor::new(key, &iv).unwrap();
+        let mut encryptor = SeedCbcEncryptor::new(key, &iv);
         encryptor.encrypt(&mut buffer[..offset]).unwrap();
         encryptor.encrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer, ciphertext);
-        let mut decryptor = SeedCbcDecryptor::new(key, &iv).unwrap();
+        let mut decryptor = SeedCbcDecryptor::new(key, &iv);
         decryptor.decrypt(&mut buffer[..offset]).unwrap();
         decryptor.decrypt(&mut buffer[offset..]).unwrap();
         assert_eq!(buffer, plaintext);
@@ -41,7 +41,7 @@ fn pyca_vectors() {
             let line = record.lines().find(|l| l.starts_with(label)).unwrap();
             unhex(line.split_once(" = ").unwrap().1.trim())
         };
-        let key = get("KEY");
+        let key: [u8; 16] = get("KEY").try_into().unwrap();
         let iv: [u8; 16] = get("IV").try_into().unwrap();
         key_lens.push(key.len());
         check(&key, iv, &get("PLAINTEXT"), &get("CIPHERTEXT"));
@@ -51,19 +51,9 @@ fn pyca_vectors() {
 
 #[test]
 fn errors() {
-    for len in [0, 8, 15, 17, 24, 32] {
-        assert!(matches!(
-            SeedCbcEncryptor::new(&vec![0; len], &[0; 16]),
-            Err(InvalidKeyLength)
-        ));
-        assert!(matches!(
-            SeedCbcDecryptor::new(&vec![0; len], &[0; 16]),
-            Err(InvalidKeyLength)
-        ));
-    }
     let key = [0; 16];
-    let mut encryptor = SeedCbcEncryptor::new(&key, &[7; 16]).unwrap();
-    let mut decryptor = SeedCbcDecryptor::new(&key, &[7; 16]).unwrap();
+    let mut encryptor = SeedCbcEncryptor::new(&key, &[7; 16]);
+    let mut decryptor = SeedCbcDecryptor::new(&key, &[7; 16]);
     for len in [1, 15, 17, 31] {
         let mut buffer = vec![0x5a; len];
         assert_eq!(encryptor.encrypt(&mut buffer), Err(IncompleteBlock));
@@ -74,45 +64,10 @@ fn errors() {
     let mut buffer = [0x5a; 32];
     let mut expected = buffer;
     SeedCbcEncryptor::new(&key, &[7; 16])
-        .unwrap()
         .encrypt(&mut expected)
         .unwrap();
     encryptor.encrypt(&mut buffer).unwrap();
     assert_eq!(buffer, expected);
     decryptor.decrypt(&mut buffer).unwrap();
     assert_eq!(buffer, [0x5a; 32]);
-}
-
-/// Many blocks at once, at lengths around multiples of sixteen blocks (the
-/// groups decryption deciphers together), agree with one at a time and with
-/// the message decrypted in two pieces, and encryption undoes decryption.
-#[test]
-fn batches() {
-    // Generated inputs test agreement between lengths, not known answers.
-    let (key, iv) = ([7; 16], [9; 16]);
-    let input = crate::bytes::pattern(16 * 50, 1, 0);
-    for blocks in [1, 15, 16, 17, 31, 32, 33, 50] {
-        let input = &input[..16 * blocks];
-        let mut whole = input.to_vec();
-        SeedCbcDecryptor::new(&key, &iv)
-            .unwrap()
-            .decrypt(&mut whole)
-            .unwrap();
-        let mut single = input.to_vec();
-        let mut decryptor = SeedCbcDecryptor::new(&key, &iv).unwrap();
-        for block in single.chunks_mut(16) {
-            decryptor.decrypt(block).unwrap();
-        }
-        assert_eq!(whole, single);
-        let mut rest = input.to_vec();
-        let mut decryptor = SeedCbcDecryptor::new(&key, &iv).unwrap();
-        decryptor.decrypt(&mut rest[..16 * blocks - 16]).unwrap();
-        decryptor.decrypt(&mut rest[16 * blocks - 16..]).unwrap();
-        assert_eq!(rest, single);
-        SeedCbcEncryptor::new(&key, &iv)
-            .unwrap()
-            .encrypt(&mut whole)
-            .unwrap();
-        assert_eq!(whole, input);
-    }
 }

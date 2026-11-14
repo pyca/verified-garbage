@@ -36,13 +36,13 @@ theorem squeezesHM_ok {fast : Bool} {m : Nat} (hm : m ≤ 3) {σ : State} (hp : 
       fun s' => SqY true σ (hst σ m) 0 m s' := by
     by_cases h0 : m = 0
     · subst h0; rw [ite_eq_left rfl]; exact WP.block_nil h
-    · rw [ite_eq_right h0]; exact WP.mono (squeezesH'_ok (by omega) hm hp h hr) fun _ h' => h'.1
+    · rw [ite_eq_right h0]; exact WP.mono (squeezesH'_ok (by omega_using [h0]) hm hp h hr) fun _ h' => h'.1
   refine WP.seq (WP.mono h₁ fun s₁ q₁ => WP.seq (WP.mono (hsave_ok hp q₁ hm) fun s₂ ⟨q₂, e₂⟩ => ?_))
   by_cases h3 : m = 3
   · subst h3; rw [ite_eq_left rfl]; exact WP.block_nil ⟨q₂, e₂⟩
   · rw [ite_eq_right h3]
-    refine WP.mono (sqYs_ok (fast := fast) hp (n := 3 - m) (by omega) (by omega) q₂) fun s' ⟨q', f'⟩ => ?_
-    refine ⟨by rwa [show m + (3 - m) = 3 by omega] at q', HS.stab σ _ e₂ f' fun r hr => ?_⟩
+    refine WP.mono (sqYs_ok (fast := fast) hp (n := 3 - m) (by omega_using [hm, h3]) (by omega_using [hm]) q₂) fun s' ⟨q', f'⟩ => ?_
+    refine ⟨by rwa [show m + (3 - m) = 3 by omega_using [hm]] at q', HS.stab σ _ e₂ f' fun r hr => ?_⟩
     rw [List.mem_singleton.mp hr]; exact (low_hs σ).symm
 
 theorem correctHM {fast : Bool} {m : Nat} (hm : m ≤ 3) (σ : State) (hs : (sampleHMKW true m).pre σ) :
@@ -53,14 +53,14 @@ theorem correctHM {fast : Bool} {m : Nat} (hm : m ≤ 3) (σ : State) (hs : (sam
       WP.seq (WP.mono (squeezesHM_ok (fast := fast) hm hp h₂ r₂) fun s₃ ⟨h₃, e₃⟩ =>
         run3_ok (fast := fast) hp h₃ e₃)))
   refine ⟨t, s', he, abiPreserved_of_exec ?_ he hF.2, hF.1⟩
-  rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
+  rcases (by omega_using [hm] : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
 
 theorem squeezesHM_ct {fast : Bool} {m : Nat} (hm : m ≤ 3) :
     RelCT isa (S4.R4W true fun σ s => SqY true σ (hst σ 0) 0 0 s ∧ HR σ s.mem) (squeezesHM fast m)
       (S4.R4W true fun σ s => SqY true σ (iterF (3 - m) (hst σ m)) 0 3 s ∧ HS σ (hst σ m) s.mem) := by
   have hsq : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
       (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezesHM fast m) hc).isSome = true := by
-    rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast
+    rcases (by omega_using [hm] : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast
     all_goals exact ⟨_, by taint_decide⟩
   obtain ⟨_, c⟩ := hsq
   exact relInv (fun σ s hp h => squeezesHM_ok (fast := fast) hm (preW_of hp) h.1 h.2)

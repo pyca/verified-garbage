@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: byte encoding of 16-bit limbs
@@ -45,7 +46,7 @@ theorem decoded_lt (m : Mem) (p : Addr) (k : Nat) : decoded m p k < radix := by
   have h0 := (m (p + BitVec.ofNat 64 (2 * k))).isLt
   have h1 := (m (p + BitVec.ofNat 64 (2 * k + 1))).isLt
   simp only [decoded, byteN, radix]
-  omega
+  omega_using []
 
 theorem packed_bytes {m : Mem} {p : Addr} {f : Nat → Nat}
     (h : ∀ i < 28, decoded m p i = f i) : bytesAt m p 56 = leBytes 56 (valN f 28) := by

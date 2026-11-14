@@ -1,20 +1,563 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Steps
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Contracts
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Base
-public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
-import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
+public import VerifiedGarbage.Proof.Sha3.PPC64LE.Pieces
+public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Frame
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.Message.Common
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Whole
+public import VerifiedGarbage.Impl.Sha3.PPC64LE.Pieces
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Base
+public import VerifiedGarbage.Proof.Framework.PPC64LE.CallAny
+import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Message
+
+/-! ### `MlDsa.PPC64LE.Message.Steps`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA on PPC64LE, `sign_message` and `verify_message_cached`: the steps
+
+As Ed448's whole functions on this target (`Proof/Ed448/PPC64LE/Whole/`),
+whose invariant `Inv` (`Proof/Ed25519/PPC64LE/Whole/Frame.lean`) they share:
+the registers `rs` and the link register saved at `oSV(E)`, then the
+arguments moved into `rs` (`setup_ok`, by `movs_ok`); the two bytes
+`0 ‖ ctx_len` stored at `oHdr(E)` (`hdr_ok`); a hash, or any step that keeps
+the callee-saved registers and writes within the body's regions, apart from
+the slots, keeps `Inv` (`inv_kept`); the branch on `ctx_len >> 8`
+(`wp_ite`, `shr8_zero`); and the moves of a call's arguments (`args4_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.PPC64LE.Message
+
+open VG VG.PPC64LE VG.Proof.X25519.PPC64LE
+open VG.Impl.Sha3.PPC64LE.Stream (mov)
+open VG.Impl.Ed25519.PPC64LE.Whole (saveRegs restoreRegs slots)
+open VG.Proof.Ed25519.PPC64LE.Whole (Inv slotArea save_ok saveG)
+open VG.Impl.Sha3.PPC64LE.Pieces (Piece Len)
+open VG.Proof.Sha3.PPC64LE.Pieces (Kept PieceOk)
+
+/-- `mov`s from registers that none of them writes, to distinct registers. -/
+theorem movs_ok : ∀ (ms : List (Reg × Reg)) {s : State} {rest : List Instr} {Q : State → Prop},
+    (∀ p ∈ ms, p.2 ≠ .r0 ∧ p.2 ∉ ms.map Prod.fst) → (ms.map Prod.fst).Nodup →
+    (∀ u, u.mem = s.mem → u.rd = s.rd → u.wr = s.wr → u.sp = s.sp →
+      (∀ p ∈ ms, u.gpr p.1 = s.gpr p.2) → (∀ r, r ∉ ms.map Prod.fst → u.gpr r = s.gpr r) →
+      WP isa (.block rest) u Q) →
+    WP isa (.block (ms.map (fun p => mov p.1 p.2) ++ rest)) s Q := by
+  intro ms
+  induction ms with
+  | nil => exact fun _ _ k => k _ rfl rfl rfl rfl (fun _ h => absurd h List.not_mem_nil) fun _ _ => rfl
+  | cons p ms ih =>
+    intro s rest Q hs hn k
+    obtain ⟨d, n⟩ := p
+    have hn' := List.nodup_cons.mp hn
+    have h0 := hs (d, n) List.mem_cons_self
+    simp only [List.map_cons, List.cons_append]
+    refine wp_addi h0.1 (by decide) fun u hu => ih (fun q hq => ⟨(hs q (List.mem_cons_of_mem _ hq)).1,
+      fun h => (hs q (List.mem_cons_of_mem _ hq)).2 (List.mem_cons_of_mem _ h)⟩) hn'.2
+      fun u' m' rd' wr' sp' hm ho => k u' (m'.trans hu.mem) (rd'.trans hu.rd) (wr'.trans hu.wr) (sp'.trans hu.sp)
+        (fun q hq => ?_) fun r hr => ?_
+    · rcases List.mem_cons.mp hq with rfl | hq
+      · rw [ho _ hn'.1, hu.gpr, BitVec.add_zero]
+      · have hq2 : q.2 ≠ d := fun e => (hs q (List.mem_cons_of_mem _ hq)).2 (e ▸ List.mem_cons_self)
+        rw [hm q hq, hu.other _ hq2]
+    · simp only [List.map_cons, List.mem_cons, not_or] at hr
+      rw [ho r hr.2, hu.other r hr.1]
+
+/-- The saves at `o(F)` (`F` in `f`), then the moves `ms` into the registers `rs`, which hold `v`: the
+invariant holds after them. -/
+theorem setup_ok {s : State} {f : Reg} {o : Nat} {rs : List Reg} {ms : List (Reg × Reg)} {v : Reg → BitVec 64}
+    {W : List Region} {rest : List Instr} {Q : State → Prop} (hf0 : f ≠ .r0)
+    (hfits : Spill.Fits (slots o rs)) (hlo : o + 8 * (rs.length + 1) < 2 ^ 64)
+    (hin : ∀ p ∈ slots o rs, InRegions s.wr (s.gpr f + BitVec.ofNat 64 p.2) 8)
+    (hW : ∃ R ∈ W, Region.Sub (slotArea (s.gpr f) o rs) R) (hms : ms.map Prod.fst = rs)
+    (hsrc : ∀ p ∈ ms, p.2 ≠ .r0 ∧ p.2 ∉ rs) (hnd : rs.Nodup) (hv : ∀ p ∈ ms, v p.1 = s.gpr p.2)
+    (k : ∀ u, Inv s (s.gpr f) o rs v W u → WP isa (.block rest) u Q) :
+    WP isa (.block (saveRegs f o rs ++ ms.map (fun p => mov p.1 p.2) ++ rest)) s Q := by
+  rw [List.append_assoc]
+  refine save_ok hf0 hfits hlo hin fun u hu _ hsv hfr => ?_
+  refine movs_ok ms (fun p hp => ⟨(hsrc p hp).1, hms ▸ (hsrc p hp).2⟩) (hms ▸ hnd)
+    fun u' m' rd' wr' sp' hm ho => k u' ⟨rd'.trans hu.rd, wr'.trans hu.wr, sp'.trans hu.sp, fun r hr => ?_,
+      fun r hr hn => ?_, m' ▸ hsv, m' ▸ hfr.sub fun x hx => by
+        rw [List.mem_singleton.mp hx]; exact hW⟩
+  · rw [← hms] at hr
+    obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
+    rw [hm p hp, hv p hp, hu.gpr _ (by simpa using (hsrc p hp).1)]
+  · rw [ho r (hms ▸ hn), hu.gpr _ (by simpa using fun e => (by revert hr; rw [e]; decide : False))]
+
+/-- A step that keeps the callee-saved registers, writing within `W` and apart from the slots. -/
+theorem inv_kept {s t t' : State} {F : Addr} {o : Nat} {rs : List Reg} {v : Reg → BitVec 64} {W Wc : List Region}
+    (h : Inv s F o rs v W t) (hrs : ∀ r ∈ rs, r ∈ preserved) (hk : Kept Wc t t')
+    (hsub : ∀ r ∈ Wc, ∃ R ∈ W, Region.Sub r R) (hd : ∀ r ∈ Wc, Region.Disjoint (slotArea F o rs) r) :
+    Inv s F o rs v W t' :=
+  h.step hrs hk.rd hk.wr hk.sp hk.cs hk.frame hsub hd
+
+/-- `Inv` from a state that agrees with `s` on what it records. -/
+theorem inv_rebase {s u t : State} {F : Addr} {o : Nat} {rs : List Reg} {v : Reg → BitVec 64} {W : List Region}
+    (h : Inv u F o rs v W t) (hrs : ∀ r ∈ rs, r ∈ preserved) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr)
+    (hsp : u.sp = s.sp) (hlr : u.lr = s.lr) (hg : ∀ r ∈ preserved, u.gpr r = s.gpr r) (hm : u.mem = s.mem) :
+    Inv s F o rs v W t where
+  rd := h.rd.trans hrd
+  wr := h.wr.trans hwr
+  sp := h.sp.trans hsp
+  regs := h.regs
+  pres r hr hn := (h.pres r hr hn).trans (hg r hr)
+  saved p hp := by
+    rw [h.saved p hp]
+    obtain ⟨⟨r, i⟩, hm', rfl⟩ := List.mem_map.mp hp
+    obtain ⟨-, hlt, he⟩ := List.mem_zipIdx hm'
+    have hm'' : r ∈ rs ++ [.r0] := by rw [he]; exact List.getElem_mem _
+    simp only [saveG]
+    by_cases h0 : r = .r0
+    · simp only [h0, ↓reduceIte, hlr]
+    · have hr : r ∈ rs := by
+        rcases List.mem_append.mp hm'' with h' | h'
+        · exact h'
+        · exact absurd (List.mem_singleton.mp h') h0
+      simp only [h0, ↓reduceIte, hg r (hrs r hr)]
+  frame := hm ▸ h.frame
+
+/-! ## Pieces and regions -/
+
+theorem pieceOk_of {N : Nat} {t : State} {sc : Addr} {p : Piece} {R : Region} (hR : p.R t.gpr = R)
+    (hb : p.base ∈ preserved) (ho : p.off < 2 ^ 15) (hl : p.len.Ok) (hc : PPC64LE.Covers [R] (t.rd ++ t.wr))
+    (hd : R.Disjoint ⟨sc, N⟩) (hb' : (below t.sp 48).Disjoint R) : PieceOk N sc t p :=
+  ⟨hb, ho, hl, hR ▸ hc, hR ▸ hd, hR ▸ hb'⟩
+
+theorem cov_in {ws : List Region} {P : Addr} {k d n : Nat} (hw : (⟨P, k⟩ : Region) ∈ ws) (h : d + n ≤ k) :
+    PPC64LE.Covers [⟨P + BitVec.ofNat 64 d, n⟩] ws :=
+  Covers.of_sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, hw, d, rfl, h⟩
+
+theorem cov_in0 {ws : List Region} {P : Addr} {k n : Nat} (hw : (⟨P, k⟩ : Region) ∈ ws) (h : n ≤ k) :
+    PPC64LE.Covers [⟨P, n⟩] ws :=
+  Covers.of_sub fun r hr => by rw [List.mem_singleton.mp hr]; exact ⟨_, hw, 0, by simp, by simpa using h⟩
+
+theorem cov_rd {rd wr ws : List Region} (h : PPC64LE.Covers ws rd) : PPC64LE.Covers ws (rd ++ wr) :=
+  fun a n hi => let ⟨r, hr, hc⟩ := h a n hi; ⟨r, List.mem_append_left _ hr, hc⟩
+
+/-! ## The header -/
+
+/-- The memory after the two bytes `0 ‖ c` at `a`. -/
+abbrev hdrMem (m : Mem) (a : Addr) (c : BitVec 64) : Mem :=
+  (m.writeW a ((0 : BitVec 64).setWidth 8)).writeW (a + BitVec.ofNat 64 1) (c.setWidth 8)
+
+theorem hdrMem_bytes (m : Mem) (a : Addr) (c : Nat) :
+    Spec.Sha3.bytesAt (hdrMem m a (BitVec.ofNat 64 c)) a 2 = [0, BitVec.ofNat 8 c] := by
+  have hne : a ≠ a + BitVec.ofNat 64 1 := fun e => by
+    have := congrArg (fun x => (x - a).toNat) e
+    simp only [BitVec.sub_self, Offset.add_sub_cancel_left] at this
+    exact absurd this (by decide)
+  simp only [Spec.Sha3.bytesAt, List.range, List.range.loop, List.map_cons, List.map_nil,
+    show a + BitVec.ofNat 64 0 = a from BitVec.add_zero a, hdrMem]
+  rw [Proof.MlDsa.Message.byte_writeW_self, Proof.MlDsa.Message.byte_writeW_other _ hne,
+    Proof.MlDsa.Message.byte_writeW_self]
+  simp only [List.cons.injEq, and_true]
+  refine ⟨rfl, ?_⟩
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega_using []
+
+theorem hdrMem_frame (m : Mem) (a : Addr) (c : BitVec 64) : Frame [⟨a, 2⟩] m (hdrMem m a c) := by
+  refine Frame.write (Frame.write (Frame.refl _ _) List.mem_cons_self _ ?_) List.mem_cons_self _ ?_
+  · simpa using Offset.contains_base a (d := 0) (n := 1) (k := 2) (by decide) (by decide)
+  · exact Offset.contains_base a (d := 1) (n := 1) (k := 2) (by decide) (by decide)
+
+/-- `0 ‖ c` at `o(f)` (`c` in `cr`). -/
+theorem hdr_ok {s : State} {f cr : Reg} (hf0 : f ≠ .r0) (hc0 : cr ≠ .r0) {o : Nat} (ho : o + 1 < 2 ^ 15)
+    (hw : InRegions s.wr (s.gpr f + BitVec.ofNat 64 o) 1) (hw1 : InRegions s.wr (s.gpr f + BitVec.ofNat 64 (o + 1)) 1)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, t.mem = hdrMem s.mem (s.gpr f + BitVec.ofNat 64 o) (s.gpr cr) → t.rd = s.rd → t.wr = s.wr →
+      t.sp = s.sp → (∀ r, r ≠ .r0 → t.gpr r = s.gpr r) → WP isa (.block is) t Q) :
+    WP isa (.block (([.li .r0 0, .stb .r0 f o, .stb cr f (o + 1)] : List Instr) ++ is)) s Q := by
+  simp only [List.cons_append, List.nil_append]
+  refine wp_li (by decide) fun u₁ h₁ => ?_
+  have g : u₁.gpr f = s.gpr f := h₁.other _ hf0
+  refine wp_stb hf0 (by omega_using [ho]) rfl (by rw [h₁.wr, g]; exact hw) fun u₂ h₂ => ?_
+  refine wp_stb hf0 ho rfl (by rw [h₂.wr, h₁.wr, h₂.gpr, g]; exact hw1) fun u₃ h₃ => ?_
+  refine k u₃ ?_ (by rw [h₃.rd, h₂.rd, h₁.rd]) (by rw [h₃.wr, h₂.wr, h₁.wr]) (by rw [h₃.sp, h₂.sp, h₁.sp])
+    fun r hr => by rw [h₃.gpr, h₂.gpr, h₁.other _ hr]
+  rw [h₃.mem, h₂.gpr, h₂.mem, h₁.mem, g, h₁.gpr, h₁.other _ hc0, hdrMem, Proof.MlDsa.Message.add_add]
+  rfl
+
+/-! ## The branch on the length of the context -/
+
+theorem wp_ite {c : Cond} {th el : Prog isa} {s : State} {Q : State → Prop} (b : Bool)
+    (hc : isa.eval c s = some b) (ht : b = true → WP isa th s Q) (he : b = false → WP isa el s Q) :
+    WP isa (.ite c th el) s Q := by
+  cases b
+  · obtain ⟨t, s', e, q⟩ := he rfl; exact ⟨_, s', Exec.iteF hc e, q⟩
+  · obtain ⟨t, s', e, q⟩ := ht rfl; exact ⟨_, s', Exec.iteT hc e, q⟩
+
+theorem shr8_zero (x : BitVec 64) : (x >>> 8 == 0#64) = decide (x.toNat < 256) := by
+  have h : (x >>> 8).toNat = x.toNat / 256 := by rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  by_cases hx : x.toNat < 256
+  · simp only [hx, decide_true, beq_iff_eq]
+    exact BitVec.eq_of_toNat_eq (by rw [h, Nat.div_eq_of_lt hx]; rfl)
+  · simp only [hx, decide_false, beq_eq_false_iff_ne, ne_eq]
+    intro e
+    have := congrArg BitVec.toNat e
+    rw [h] at this
+    exact hx (by simp at this; omega_using [this])
+
+theorem eval_zero (s : State) (r : Reg) : isa.eval (.zero .d r) s = some (s.gpr r == 0#64) := by
+  simp [eval, State.read, Size.bits]
+
+end VG.Proof.MlDsa.PPC64LE.Message
+
+end
+
+end
+
+/-! ### `MlDsa.PPC64LE.Message.Contracts`, which only this module used -/
+
+section
+
+/-!
+# ML-DSA on PPC64LE, `sign_message` and `verify_message_cached`: the contracts, evaluated
+
+The preconditions of `signMessageContract` and `verifyMessageCachedContract`,
+and of their versions with prepared keys (`pr`: `preparedSignMessageContract`,
+`preparedVerifyMessageContract`, `msgSK`, `msgVK`), by register (`MSPre`,
+`MCPre`, which extends `MVPre`): the key is the region of `kLS p pr` or
+`kLV p pr` bytes at `r3`, a prepared key with `pr`. And the contracts of the
+functions on `μ` they call, `vg_mldsa*_sign` and `vg_mldsa*_verify`, or
+`vg_mldsa*_sign_prepared` and `vg_mldsa*_verify_prepared` (`signK`,
+`verifyK`): what their preconditions need (`sign_pre`, `verify_pre`), what
+their postconditions give (`sign_post`, `verify_post`), and their public
+parts (`sign_pub`, `verify_pub`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.PPC64LE.Message
+
+open VG VG.PPC64LE
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+
+/-! ## Ordinary and prepared keys -/
+
+/-- The length of a private key: encoded, or prepared (`pr`). -/
+abbrev kLS (p : Params) (pr : Bool) : Nat := if pr then preparedSecretKeyBytes p else p.skLen
+/-- The length of a public key: encoded, or prepared (`pr`). -/
+abbrev kLV (p : Params) (pr : Bool) : Nat := if pr then preparedPublicKeyBytes p else p.pkLen
+
+/-- The contract of `sign_message`, or of `sign_message_prepared`. -/
+def msgSK (p : Params) (pr : Bool) (A : Abi isa) (stk : Nat) : Contract isa :=
+  if pr then preparedSignMessageContract p A stk else signMessageContract p A stk
+/-- The contract of `verify_message_cached`, or of `verify_message_prepared`. -/
+def msgVK (p : Params) (pr : Bool) (A : Abi isa) (stk : Nat) : Contract isa :=
+  if pr then preparedVerifyMessageContract p A stk else verifyMessageCachedContract p A stk
+/-- The contract of the signing function on `μ` they call. -/
+def signK (p : Params) (pr : Bool) (A : Abi isa) (stk : Nat) : Contract isa :=
+  if pr then Proof.MlDsa.preparedSignContract p A stk else signContract p A stk
+/-- The contract of the verification function on `μ` they call. -/
+def verifyK (p : Params) (pr : Bool) (A : Abi isa) (stk : Nat) : Contract isa :=
+  if pr then Proof.MlDsa.preparedVerifyContract p A stk else verifyContract p A stk
+
+/-! ## `sign_message` -/
+
+section
+variable (p : Params) (pr : Bool) (s : State)
+
+/-- `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch`. -/
+abbrev skR : Region := ⟨s.gpr .r3, kLS p pr⟩
+abbrev msgR : Region := ⟨s.gpr .r4, (s.gpr .r5).toNat⟩
+abbrev ctxR : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
+abbrev rndR : Region := ⟨s.gpr .r8, 32⟩
+abbrev sigR : Region := ⟨s.gpr .r9, p.sigLen⟩
+abbrev scrR : Region := ⟨s.gpr .r10, messageScratchWords p * 8⟩
+
+end
+
+/-- `msgSK`'s precondition, by register. -/
+structure MSPre (p : Params) (pr : Bool) (STK : Nat) (s : State) : Prop where
+  stk : STK ≤ s.sp.toNat
+  rd : s.rd = [skR p pr s, msgR s, ctxR s, rndR s]
+  wr : s.wr = [sigR p s, scrR p s]
+  kg : (skR p pr s).Disjoint (sigR p s)
+  kc : (skR p pr s).Disjoint (scrR p s)
+  mg : (msgR s).Disjoint (sigR p s)
+  mc : (msgR s).Disjoint (scrR p s)
+  cg : (ctxR s).Disjoint (sigR p s)
+  cc : (ctxR s).Disjoint (scrR p s)
+  rg : (rndR s).Disjoint (sigR p s)
+  rc : (rndR s).Disjoint (scrR p s)
+  gc : (sigR p s).Disjoint (scrR p s)
+  bk : (below s.sp STK).Disjoint (skR p pr s)
+  bm : (below s.sp STK).Disjoint (msgR s)
+  bc : (below s.sp STK).Disjoint (ctxR s)
+  br : (below s.sp STK).Disjoint (rndR s)
+  bg : (below s.sp STK).Disjoint (sigR p s)
+  bx : (below s.sp STK).Disjoint (scrR p s)
+  fk : (s.gpr .r3).toNat + kLS p pr ≤ 2 ^ 64
+  fm : (s.gpr .r4).toNat + (s.gpr .r5).toNat ≤ 2 ^ 64
+  fc : (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64
+  fr : (s.gpr .r8).toNat + 32 ≤ 2 ^ 64
+  fg : (s.gpr .r9).toNat + p.sigLen ≤ 2 ^ 64
+  fx : (s.gpr .r10).toNat + messageScratchWords p * 8 ≤ 2 ^ 64
+  x : pr = true → PreparedSecretKey p s.mem (s.gpr .r3)
+
+/-- The encoded key, the first bytes of the key's region. -/
+theorem MSPre.subK {p : Params} {pr : Bool} {STK : Nat} {s : State} (h : MSPre p pr STK s) :
+    Region.Sub ⟨s.gpr .r3, p.skLen⟩ (skR p pr s) := fun a ha => by
+  have := h.fk
+  cases pr <;> simp only [kLS, Bool.false_eq_true, ↓reduceIte, Region.Contains] at ha this ⊢
+  · exact ha
+  · simp only [preparedSecretKeyBytes] at this ⊢; omega_using [ha]
+
+theorem mspre_of {p : Params} {pr : Bool} {n : Nat} {s : State}
+    (h : (msgSK p pr PPC64LE.abi (n + 1)).pre s) : MSPre p pr (n + 1) s := by
+  cases pr
+  · simp only [msgSK, Bool.false_eq_true, ↓reduceIte] at h
+    sig_pre [signMessageContract, signMessageSig, PPC64LE.abi, PPC64LE.argRegs] at h
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
+      h22, h23⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
+      h22, h23, nofun⟩
+  · simp only [msgSK, ↓reduceIte] at h
+    sig_pre [preparedSignMessageContract, preparedSignMessageSig, PPC64LE.abi, PPC64LE.argRegs] at h
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
+      h22, h23, h24⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21,
+      h22, h23, fun _ => h24⟩
+
+/-! ## `verify_message_cached` -/
+
+section
+variable (p : Params) (pr : Bool) (s : State)
+
+/-- `pk`, `sig` and `scratch` (`msg` and `ctx` as signing's). -/
+abbrev pkR : Region := ⟨s.gpr .r3, kLV p pr⟩
+abbrev vsigR : Region := ⟨s.gpr .r8, p.sigLen⟩
+abbrev vscrR : Region := ⟨s.gpr .r9, messageScratchWords p * 8⟩
+
+end
+
+/-- `msgVK`'s precondition, by register, but for `tr`. -/
+structure MVPre (p : Params) (pr : Bool) (STK : Nat) (s : State) : Prop where
+  stk : STK ≤ s.sp.toNat
+  rd : ∀ R ∈ [pkR p pr s, msgR s, ctxR s, vsigR p s], R ∈ s.rd
+  wr : s.wr = [vscrR p s]
+  kc : (pkR p pr s).Disjoint (vscrR p s)
+  mc : (msgR s).Disjoint (vscrR p s)
+  cc : (ctxR s).Disjoint (vscrR p s)
+  gc : (vsigR p s).Disjoint (vscrR p s)
+  bk : (below s.sp STK).Disjoint (pkR p pr s)
+  bm : (below s.sp STK).Disjoint (msgR s)
+  bc : (below s.sp STK).Disjoint (ctxR s)
+  bg : (below s.sp STK).Disjoint (vsigR p s)
+  bx : (below s.sp STK).Disjoint (vscrR p s)
+  fk : (s.gpr .r3).toNat + kLV p pr ≤ 2 ^ 64
+  fm : (s.gpr .r4).toNat + (s.gpr .r5).toNat ≤ 2 ^ 64
+  fc : (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64
+  fg : (s.gpr .r8).toNat + p.sigLen ≤ 2 ^ 64
+  fx : (s.gpr .r9).toNat + messageScratchWords p * 8 ≤ 2 ^ 64
+
+/-- The cached `tr`. -/
+abbrev trR (s : State) : Region := ⟨s.gpr .r10, 64⟩
+
+/-- `msgVK`'s precondition, by register: `MVPre`, and `tr`. -/
+structure MCPre (p : Params) (pr : Bool) (STK : Nat) (s : State) : Prop extends MVPre p pr STK s where
+  rdt : trR s ∈ s.rd
+  ct : (vscrR p s).Disjoint (trR s)
+  bt : (below s.sp STK).Disjoint (trR s)
+  ft : (s.gpr .r10).toNat + 64 ≤ 2 ^ 64
+  tr : bytesAt s.mem (s.gpr .r10) 64 = pkTr (bytesAt s.mem (s.gpr .r3) p.pkLen)
+  x : pr = true → PreparedPublicKey p s.mem (s.gpr .r3)
+
+/-- The encoded key, the first bytes of the key's region. -/
+theorem MVPre.subK {p : Params} {pr : Bool} {STK : Nat} {s : State} (h : MVPre p pr STK s) :
+    Region.Sub ⟨s.gpr .r3, p.pkLen⟩ (pkR p pr s) := fun a ha => by
+  have := h.fk
+  cases pr <;> simp only [kLV, Bool.false_eq_true, ↓reduceIte, Region.Contains] at ha this ⊢
+  · exact ha
+  · simp only [preparedPublicKeyBytes] at this ⊢; omega_using [ha]
+
+theorem mcpre_of {p : Params} {pr : Bool} {n : Nat} {s : State}
+    (h : (msgVK p pr PPC64LE.abi (n + 1)).pre s) : MCPre p pr (n + 1) s := by
+  cases pr
+  · simp only [msgVK, Bool.false_eq_true, ↓reduceIte] at h
+    sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, PPC64LE.abi, PPC64LE.argRegs] at h
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20⟩ := h
+    exact ⟨⟨h0, fun R hR => (by rw [h1]; exact List.mem_append_left [trR s] hR), h2, h3, h4, h5, h6, h8, h9, h10,
+      h11, h12, h14, h15, h16, h17, h18⟩,
+      (by rw [h1]; exact List.mem_append_right [pkR p false s, msgR s, ctxR s, vsigR p s] List.mem_cons_self), h7,
+      h13, h19, h20, nofun⟩
+  · simp only [msgVK, ↓reduceIte] at h
+    sig_pre [preparedVerifyMessageContract, preparedVerifyMessageSig, PPC64LE.abi, PPC64LE.argRegs] at h
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21⟩ :=
+      h
+    exact ⟨⟨h0, fun R hR => (by rw [h1]; exact List.mem_append_left [trR s] hR), h2, h3, h4, h5, h6, h8, h9, h10,
+      h11, h12, h14, h15, h16, h17, h18⟩,
+      (by rw [h1]; exact List.mem_append_right [pkR p true s, msgR s, ctxR s, vsigR p s] List.mem_cons_self), h7,
+      h13, h19, h21, fun _ => h20⟩
+
+/-! ## The functions on `μ` -/
+
+section
+variable {p : Params} {stk : Nat} {x y : State}
+
+theorem sign_pre {pr : Bool} {k m r g c : Addr} (g3 : x.gpr .r3 = k) (g4 : x.gpr .r4 = m) (g5 : x.gpr .r5 = r)
+    (g6 : x.gpr .r6 = g) (g7 : x.gpr .r7 = c)
+    (hrd : x.rd = [⟨k, kLS p pr⟩, ⟨m, 64⟩, ⟨r, 32⟩]) (hwr : x.wr = [⟨g, p.sigLen⟩, ⟨c, scratchWords p * 8⟩])
+    (hsp : stk ≤ x.sp.toNat)
+    (d1 : Region.Disjoint ⟨k, kLS p pr⟩ ⟨g, p.sigLen⟩)
+    (d2 : Region.Disjoint ⟨k, kLS p pr⟩ ⟨c, scratchWords p * 8⟩)
+    (d3 : Region.Disjoint ⟨m, 64⟩ ⟨g, p.sigLen⟩) (d4 : Region.Disjoint ⟨m, 64⟩ ⟨c, scratchWords p * 8⟩)
+    (d5 : Region.Disjoint ⟨r, 32⟩ ⟨g, p.sigLen⟩) (d6 : Region.Disjoint ⟨r, 32⟩ ⟨c, scratchWords p * 8⟩)
+    (d7 : Region.Disjoint ⟨g, p.sigLen⟩ ⟨c, scratchWords p * 8⟩)
+    (b1 : (below x.sp stk).Disjoint ⟨k, kLS p pr⟩) (b2 : (below x.sp stk).Disjoint ⟨m, 64⟩)
+    (b3 : (below x.sp stk).Disjoint ⟨r, 32⟩) (b4 : (below x.sp stk).Disjoint ⟨g, p.sigLen⟩)
+    (b5 : (below x.sp stk).Disjoint ⟨c, scratchWords p * 8⟩)
+    (f1 : k.toNat + kLS p pr ≤ 2 ^ 64) (f2 : m.toNat + 64 ≤ 2 ^ 64) (f3 : r.toNat + 32 ≤ 2 ^ 64)
+    (f4 : g.toNat + p.sigLen ≤ 2 ^ 64) (f5 : c.toNat + scratchWords p * 8 ≤ 2 ^ 64)
+    (hx : pr = true → PreparedSecretKey p x.mem k) :
+    (signK p pr PPC64LE.abi stk).pre x := by
+  cases pr
+  · simp only [signK, kLS, Bool.false_eq_true, ↓reduceIte] at *
+    sig_pre [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs]
+    simp only [g3, g4, g5, g6, g7]
+    and_intros
+    -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+    all_goals first
+      | with_reducible assumption
+      | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+          List.flatten_nil, List.append_nil] <;> and_intros <;> first
+          | with_reducible assumption | omega | skip)
+      | omega
+      | skip
+    all_goals assumption
+  · have hx' := hx rfl
+    simp only [signK, kLS, ↓reduceIte] at *
+    sig_pre [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, PPC64LE.abi, PPC64LE.argRegs]
+    simp only [g3, g4, g5, g6, g7]
+    and_intros
+    all_goals first
+      | with_reducible assumption
+      | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+          List.flatten_nil, List.append_nil] <;> and_intros <;> first
+          | with_reducible assumption | omega | skip)
+      | omega
+      | skip
+    all_goals assumption
+
+theorem sign_post {pr : Bool} (hp : (signK p pr PPC64LE.abi stk).post x y) :
+    Outcome (fun b => signMu p b (bytesAt x.mem (x.gpr .r3) p.skLen) (bytesAt x.mem (x.gpr .r4) 64)
+      (bytesAt x.mem (x.gpr .r5) 32)) ((y.gpr .r3).setWidth 32) (bytesAt y.mem (x.gpr .r6) p.sigLen) := by
+  cases pr
+  · simp only [signK, Bool.false_eq_true, ↓reduceIte] at hp
+    sig_post [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs] at hp
+    exact hp
+  · simp only [signK, ↓reduceIte] at hp
+    sig_post [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, PPC64LE.abi, PPC64LE.argRegs] at hp
+    exact hp
+
+theorem sign_pub {pr : Bool} (hsp : x.sp = y.sp) (h3 : x.gpr .r3 = y.gpr .r3) (h4 : x.gpr .r4 = y.gpr .r4)
+    (h5 : x.gpr .r5 = y.gpr .r5) (h6 : x.gpr .r6 = y.gpr .r6) (h7 : x.gpr .r7 = y.gpr .r7)
+    (hl : signLeak p (bytesAt x.mem (x.gpr .r3) p.skLen) (bytesAt x.mem (x.gpr .r4) 64)
+        (bytesAt x.mem (x.gpr .r5) 32) =
+      signLeak p (bytesAt y.mem (y.gpr .r3) p.skLen) (bytesAt y.mem (y.gpr .r4) 64)
+        (bytesAt y.mem (y.gpr .r5) 32)) :
+    (signK p pr PPC64LE.abi stk).pub x y := by
+  cases pr
+  · simp only [signK, Bool.false_eq_true, ↓reduceIte]
+    sig_pub [signContract, signSig, PPC64LE.abi, PPC64LE.argRegs]
+    exact ⟨hsp, hl, h3, h4, h5, h6, h7⟩
+  · simp only [signK, ↓reduceIte]
+    sig_pub [Proof.MlDsa.preparedSignContract, Proof.MlDsa.preparedSignSig, PPC64LE.abi, PPC64LE.argRegs]
+    exact ⟨hsp, hl, h3, h4, h5, h6, h7⟩
+
+theorem verify_pre {pr : Bool} {k m g c : Addr} (g3 : x.gpr .r3 = k) (g4 : x.gpr .r4 = m) (g5 : x.gpr .r5 = g)
+    (g6 : x.gpr .r6 = c)
+    (hrd : x.rd = [⟨k, kLV p pr⟩, ⟨m, 64⟩, ⟨g, p.sigLen⟩]) (hwr : x.wr = [⟨c, scratchWords p * 8⟩])
+    (hsp : stk ≤ x.sp.toNat)
+    (d1 : Region.Disjoint ⟨k, kLV p pr⟩ ⟨c, scratchWords p * 8⟩)
+    (d2 : Region.Disjoint ⟨m, 64⟩ ⟨c, scratchWords p * 8⟩)
+    (d3 : Region.Disjoint ⟨g, p.sigLen⟩ ⟨c, scratchWords p * 8⟩)
+    (b1 : (below x.sp stk).Disjoint ⟨k, kLV p pr⟩) (b2 : (below x.sp stk).Disjoint ⟨m, 64⟩)
+    (b3 : (below x.sp stk).Disjoint ⟨g, p.sigLen⟩) (b4 : (below x.sp stk).Disjoint ⟨c, scratchWords p * 8⟩)
+    (f1 : k.toNat + kLV p pr ≤ 2 ^ 64) (f2 : m.toNat + 64 ≤ 2 ^ 64) (f3 : g.toNat + p.sigLen ≤ 2 ^ 64)
+    (f4 : c.toNat + scratchWords p * 8 ≤ 2 ^ 64) (hx : pr = true → PreparedPublicKey p x.mem k) :
+    (verifyK p pr PPC64LE.abi stk).pre x := by
+  cases pr
+  · simp only [verifyK, kLV, Bool.false_eq_true, ↓reduceIte] at *
+    sig_pre [verifyContract, verifySig, PPC64LE.abi, PPC64LE.argRegs]
+    simp only [g3, g4, g5, g6]
+    and_intros
+    all_goals first
+      | with_reducible assumption
+      | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+          List.flatten_nil, List.append_nil] <;> and_intros <;> first
+          | with_reducible assumption | omega | skip)
+      | omega
+      | skip
+    all_goals assumption
+  · have hx' := hx rfl
+    simp only [verifyK, kLV, ↓reduceIte] at *
+    sig_pre [Proof.MlDsa.preparedVerifyContract, Proof.MlDsa.preparedVerifySig, PPC64LE.abi, PPC64LE.argRegs]
+    simp only [g3, g4, g5, g6]
+    and_intros
+    all_goals first
+      | with_reducible assumption
+      | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+          List.flatten_nil, List.append_nil] <;> and_intros <;> first
+          | with_reducible assumption | omega | skip)
+      | omega
+      | skip
+    all_goals assumption
+
+theorem verify_post {pr : Bool} (hp : (verifyK p pr PPC64LE.abi stk).post x y) :
+    let v := fun b => verifyMu p b (bytesAt x.mem (x.gpr .r3) p.pkLen) (bytesAt x.mem (x.gpr .r4) 64)
+      (bytesAt x.mem (x.gpr .r5) p.sigLen)
+    ((y.gpr .r3).setWidth 32 = 1 ∧ ∃ b, v b = some true) ∨
+      ((y.gpr .r3).setWidth 32 = 0 ∧ v minBounds ≠ some true) := by
+  cases pr
+  · simp only [verifyK, Bool.false_eq_true, ↓reduceIte] at hp
+    sig_post [verifyContract, verifySig, PPC64LE.abi, PPC64LE.argRegs] at hp
+    exact hp
+  · simp only [verifyK, ↓reduceIte] at hp
+    sig_post [Proof.MlDsa.preparedVerifyContract, Proof.MlDsa.preparedVerifySig, PPC64LE.abi, PPC64LE.argRegs] at hp
+    exact hp
+
+theorem verify_pub {pr : Bool} (hsp : x.sp = y.sp) (h3 : x.gpr .r3 = y.gpr .r3) (h4 : x.gpr .r4 = y.gpr .r4)
+    (h5 : x.gpr .r5 = y.gpr .r5) (h6 : x.gpr .r6 = y.gpr .r6)
+    (hl : bytesAt x.mem (x.gpr .r3) p.pkLen ++ bytesAt x.mem (x.gpr .r4) 64 ++ bytesAt x.mem (x.gpr .r5) p.sigLen =
+      bytesAt y.mem (y.gpr .r3) p.pkLen ++ bytesAt y.mem (y.gpr .r4) 64 ++ bytesAt y.mem (y.gpr .r5) p.sigLen) :
+    (verifyK p pr PPC64LE.abi stk).pub x y := by
+  cases pr
+  · simp only [verifyK, Bool.false_eq_true, ↓reduceIte]
+    sig_pub [verifyContract, verifySig, PPC64LE.abi, PPC64LE.argRegs]
+    exact ⟨hsp, congrArg leakBytes hl, h3, h4, h5, h6⟩
+  · simp only [verifyK, ↓reduceIte]
+    sig_pub [Proof.MlDsa.preparedVerifyContract, Proof.MlDsa.preparedVerifySig, PPC64LE.abi, PPC64LE.argRegs]
+    exact ⟨hsp, congrArg leakBytes hl, h3, h4, h5, h6⟩
+
+end
+
+end VG.Proof.MlDsa.PPC64LE.Message
+
+end
+
+end
+
 
 /-!
 # ML-DSA on PPC64LE, `sign_message`: correctness
@@ -62,11 +605,11 @@ theorem mfacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : 
 
 theorem MFacts.kls {p : Params} (hF : MFacts p) (pr : Bool) : 128 ≤ kLS p pr ∧ kLS p pr < 2 ^ 15 := by
   have := hF.sk; have := hF.skl; have := hF.psk
-  cases pr <;> simp only [kLS, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedSecretKeyBytes] at * <;> omega
+  cases pr <;> simp only [kLS, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedSecretKeyBytes] at * <;> omega_arith
 
 theorem MFacts.klv {p : Params} (hF : MFacts p) (pr : Bool) : p.pkLen ≤ kLV p pr ∧ kLV p pr < 2 ^ 15 := by
   have := hF.pk; have := hF.ppk
-  cases pr <;> simp only [kLV, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedPublicKeyBytes] at * <;> omega
+  cases pr <;> simp only [kLV, Bool.false_eq_true, ↓reduceIte] <;> simp only [preparedPublicKeyBytes] at * <;> omega_arith
 
 /-- A prepared private key, kept by a change of memory apart from it. -/
 theorem preparedSecretKey_frame {p : Params} {m m' : Mem} {key : Addr} {rs : List Region} (hf : Frame rs m m')
@@ -74,12 +617,12 @@ theorem preparedSecretKey_frame {p : Params} {m m' : Mem} {key : Addr} {rs : Lis
     (hfit : key.toNat + preparedSecretKeyBytes p ≤ 2 ^ 64) (h : PreparedSecretKey p m key) :
     PreparedSecretKey p m' key := fun i hi => by
   have hb : p.skLen + 4 * n * i + 1024 ≤ preparedSecretKeyBytes p := by
-    show p.skLen + 4 * 256 * i + 1024 ≤ p.skLen + 4 * 256 * (p.ℓ + 2 * p.k); omega
+    show p.skLen + 4 * 256 * i + 1024 ≤ p.skLen + 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi]
   have hk : bytesAt m' key p.skLen = bytesAt m key p.skLen := by
     have hs : Region.Sub ⟨key, p.skLen⟩ ⟨key, preparedSecretKeyBytes p⟩ := by
-      have := Offset.sub_base key (d := 0) (n := p.skLen) (k := preparedSecretKeyBytes p) (by omega)
+      have := Offset.sub_base key (d := 0) (n := p.skLen) (k := preparedSecretKeyBytes p) (by omega_using [hb])
       rwa [BitVec.add_zero] at this
-    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega)
+    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega_using [hfit, hb])
   rw [hk]
   have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (key + BitVec.ofNat 64 (p.skLen + 4 * n * i)))
       ⟨key, preparedSecretKeyBytes p⟩ := Offset.sub_base _ hb
@@ -92,12 +635,12 @@ theorem preparedPublicKey_frame {p : Params} {m m' : Mem} {key : Addr} {rs : Lis
     (hfit : key.toNat + preparedPublicKeyBytes p ≤ 2 ^ 64) (h : PreparedPublicKey p m key) :
     PreparedPublicKey p m' key := fun i hi => by
   have hb : p.pkLen + 4 * n * i + 1024 ≤ preparedPublicKeyBytes p := by
-    show p.pkLen + 4 * 256 * i + 1024 ≤ p.pkLen + 4 * 256 * (p.k); omega
+    show p.pkLen + 4 * 256 * i + 1024 ≤ p.pkLen + 4 * 256 * (p.k); omega_using [hi]
   have hk : bytesAt m' key p.pkLen = bytesAt m key p.pkLen := by
     have hs : Region.Sub ⟨key, p.pkLen⟩ ⟨key, preparedPublicKeyBytes p⟩ := by
-      have := Offset.sub_base key (d := 0) (n := p.pkLen) (k := preparedPublicKeyBytes p) (by omega)
+      have := Offset.sub_base key (d := 0) (n := p.pkLen) (k := preparedPublicKeyBytes p) (by omega_using [hb])
       rwa [BitVec.add_zero] at this
-    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega)
+    exact Proof.MlKem.bytesAt_frame hf (fun r hr => (hd r hr).sub_left hs) (by omega_using [hfit, hb])
   rw [hk]
   have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (key + BitVec.ofNat 64 (p.pkLen + 4 * n * i)))
       ⟨key, preparedPublicKeyBytes p⟩ := Offset.sub_base _ hb

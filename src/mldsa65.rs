@@ -38,6 +38,8 @@ crate::mldsa_common::ml_dsa! {
     pk_tr: crate::arch::dispatch::mldsa65::vg_mldsa65_pk_tr_auto,
     prepare_sign: crate::arch::dispatch::mldsa65::vg_mldsa65_prepare_signing_key_auto,
     prepare_verify: crate::arch::dispatch::mldsa65::vg_mldsa65_prepare_verifying_key_auto,
+    sign_prepared: crate::arch::dispatch::mldsa65::vg_mldsa65_sign_prepared_auto,
+    verify_prepared: crate::arch::dispatch::mldsa65::vg_mldsa65_verify_prepared_auto,
     sign_message_prepared: crate::arch::dispatch::mldsa65::vg_mldsa65_sign_message_prepared_auto,
     verify_message_prepared: crate::arch::dispatch::mldsa65::vg_mldsa65_verify_message_prepared_auto,
     pk: 1952,

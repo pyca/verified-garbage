@@ -36,7 +36,6 @@ fn every_published_answer_and_streaming_split() {
         cipher.apply_keystream(&mut []);
         cipher.apply_keystream(&mut stream);
         cipher.apply_keystream(&mut []);
-        cipher.finalize();
         let mut count = 0;
         for line in record.lines().map(str::trim) {
             if !line.starts_with("DEC") {
@@ -104,6 +103,5 @@ fn key_lengths_and_round_trips() {
             cipher.apply_keystream(chunk);
         }
         assert_eq!(data, original);
-        cipher.finalize();
     }
 }

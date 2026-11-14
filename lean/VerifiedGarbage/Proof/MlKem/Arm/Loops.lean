@@ -64,13 +64,13 @@ theorem copy_step {S D : BitVec 32} {len : Nat} {s₀ : State} (fS : S.toNat + l
     {k : Nat} (hk : k < len) {s : State} (h : CopyInv S D len s₀ k s) :
     WP isa (.block copyBody) s fun s' => CopyInv S D len s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = len) := by
   have eS : State.addr (S + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr S + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_using [fS, hk])]; simp
   have eD : State.addr (D + BitVec.ofNat 32 (1 * k) + BitVec.ofNat 32 0) = State.addr D + BitVec.ofNat 64 k := by
-    rw [addr_ptr _ _ _ (by omega)]; simp
+    rw [addr_ptr _ _ _ (by omega_using [fD, hk])]; simp
   have cS : (⟨State.addr S, len⟩ : Region).Contains (State.addr S + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_using [hk]) (by omega_using [fS, hk])
   have cD : (⟨State.addr D, len⟩ : Region).Contains (State.addr D + BitVec.ofNat 64 k) 1 :=
-    contains_off (by omega) (by omega)
+    contains_off (by omega_using [hk]) (by omega_using [fS, hk])
   refine WP.mono (copyBody_ok h.r0 h.r1 h.r2 (by rw [eS, h.rd, h.wr]; exact cr _ _ ⟨_, List.mem_singleton_self _, cS⟩)
     (by rw [eD, h.wr]; exact cw _ _ ⟨_, List.mem_singleton_self _, cD⟩))
     fun s' ⟨r0, r1, r2, z, m, rd, wr, sp, cs⟩ => ⟨⟨?_, ?_, ?_, fun r hr => (cs r hr).trans (h.cs r hr),
@@ -79,13 +79,13 @@ theorem copy_step {S D : BitVec 32} {len : Nat} {s₀ : State} (fS : S.toNat + l
   · rw [r1]; exact ptr_succ _ 1 k
   · rw [r2]; exact count_sub (k := 1) hk
   · rw [m, eD]; exact h.frame.writeW (List.mem_singleton_self _) _ cD
-  · rw [m, eD, eS, setWidth_byte, byte_writeW8 _ _ (by omega) (by omega)]
+  · rw [m, eD, eS, setWidth_byte, byte_writeW8 _ _ (by omega_using [fS, hk]) (by omega_using [fS, hk, ht])]
     have hsrc : s.mem (State.addr S + BitVec.ofNat 64 k) = s₀.mem (State.addr S + BitVec.ofNat 64 k) :=
       h.frame _ fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd _ cS
     by_cases e : t = k
     · subst e; rw [ite_eq_left rfl, hsrc]
-    · rw [ite_eq_right e]; exact h.bytes t (by omega)
-  · rw [z]; exact count_z (k := 1) hk (by decide) (by omega)
+    · rw [ite_eq_right e]; exact h.bytes t (by omega_using [ht, e])
+  · rw [z]; exact count_z (k := 1) hk (by decide) (by omega_using [hlen])
 
 /-- `len` bytes copied from `S` to `D`, with the pointers and the count set
 up in `r0`–`r2`. -/
@@ -170,7 +170,7 @@ theorem zero_step {P : BitVec 32} {s₀ : State} (fP : P.toNat + 1024 ≤ 2 ^ 32
     (cw : Covers [polyRegion (State.addr P)] s₀.wr) {k : Nat} (hk : k < 256) {s : State} (h : ZeroInv P s₀ k s) :
     WP isa (.block zeroBody) s fun s' => ZeroInv P s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = 256) := by
   have eP : State.addr (P + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 0) = coeffAddr (State.addr P) k :=
-    addr_coeff fP (by omega) hk
+    addr_coeff fP (by omega_using []) hk
   have cP : (polyRegion (State.addr P)).Contains (coeffAddr (State.addr P) k) 4 :=
     coeff_contains _ (by rw [VG.Proof.MlKem.n_eq]; exact hk)
   refine WP.mono (zeroBody_ok h.r0 h.r1 h.r2 (by rw [eP, h.wr]; exact cw _ _ ⟨_, List.mem_singleton_self _, cP⟩))
@@ -185,7 +185,7 @@ theorem zero_step {P : BitVec 32} {s₀ : State} (fP : P.toNat + 1024 ≤ 2 ^ 32
 theorem zeroPoly_ok {L : Lay} {s : State} (hc : Ctx L s) {off : Nat} (hoff : off + 1024 ≤ 32768)
     (he : encodable (BitVec.ofNat 32 off) = true) :
     WP isa (zeroPoly off) s fun s' => Kept (L.RL [(0, off, 1024)]) s s' ∧ PolyIs s'.mem (L.A 0 off) zero := by
-  have ea := hc.addr (o := off) (by omega)
+  have ea := hc.addr (o := off) (by omega_using [hoff])
   have fa := hc.fitO (o := off) (l := 1024) hoff (by decide)
   have hfin : ∀ s', ZeroInv (L.ptr 0 + BitVec.ofNat 32 off) s 256 s' →
       Kept (L.RL [(0, off, 1024)]) s s' ∧ PolyIs s'.mem (L.A 0 off) zero := fun s' h => by

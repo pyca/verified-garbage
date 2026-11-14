@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
+/-! # Blowfish on ARMv7 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Blowfish.Arm

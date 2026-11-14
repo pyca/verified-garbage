@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.AesCbc.X86_64.Vaes512Decrypt
 public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes
@@ -24,6 +26,15 @@ unchanged or zero (`*_scrubbed`, the contract of `Spec/Cbc/`,
 `*_verified`): the bytes it may write are zero
 (`Verified.callWipeTail'`), and the others it did not write
 (`Verified.cbc_tail_of_written`, from its `written` bound).
+
+Which are emitted, for each implementation `v` of the blocks functions and
+`z` of `vg_zeroize` (`encryptRegs`, `decryptRegs`). Encryption: none for
+VAES (`Caller.vaes`), whose encryption is AES-NI's loop; that loop, which
+writes no `scratch`, unwrapped, once (with the `z` of no suffix); and
+otherwise the call wiped with each `z`, named by both suffixes.
+Decryption: for VAES, the call wiped with the `z` that has a suffix (the
+one that needs AVX, as VAES's code does), named by `v`'s suffix alone;
+otherwise the call wiped with each `z`, named by both suffixes.
 -/
 
 @[expose] public section
@@ -73,7 +84,7 @@ theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (i := 5) h z.verified (by decide) rfl rfl rfl
-    (by simp only [Elem.size]; omega) (by omega) (by decide) hsp hd z.spSafe (by rw [z.xd])
+    (by simp only [Elem.size]; omega_using [hw]) (by omega_using [hw]) (by decide) hsp hd z.spSafe (by rw [z.xd])
     (Nat.zero_le _) (pre_local 64) (tailPost_local 64 w P hpost) (tailPost_out 64 w P hout hw)
     (wipedTail 64 w P) (sat _)
 
@@ -87,7 +98,7 @@ theorem decrypt_depth (v : BlocksImpl) : (Caller.decrypt v).x86_64Depth ≤ 8 :=
     · decide
     · simp only [Impl.AesCbc.X86_64.decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups,
         Impl.AesCbc.X86_64.decGroup, Impl.AesCbc.X86_64.decBody, Code.x86_64Depth, v.decNoStack, Nat.max_le]
-      omega
+      omega_using []
 
 theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 := by
   unfold Caller.encrypt
@@ -95,7 +106,7 @@ theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 :=
   · decide
   · simp only [Impl.AesCbc.X86_64.encrypt, Impl.AesCbc.X86_64.whole, Impl.AesCbc.X86_64.encBody,
       Code.x86_64Depth, v.encNoStack, Nat.max_le]
-    omega
+    omega_using []
 
 /-- The bytes of `scratch` that `Caller.decrypt v` may write: 224 for the
 loops in AES-NI or VAES registers, all of them for the others. -/
@@ -192,5 +203,86 @@ theorem decryptVaes512_verified :
 
 theorem decryptVaes512_spSafe : decryptVaes512.all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe Vaes512Decrypt.spSafe
+
+/-! ## Without secret residue -/
+
+/-- The postcondition of `vg_aes_cbc_encrypt` reads the memory on return only
+within the buffers. -/
+theorem encryptOut (stack : Nat) :
+    Scrub.PostOut (Spec.Cbc.aesEncryptContract abi stack) (Spec.Cbc.aesSig.retBits 64) := by
+  rw [encrypt_eq]
+  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+    rw [bufs_eq] at hb
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+    obtain ⟨h1, h2⟩ := h
+    have hd := AesEcb.agree_of hb.2.2.1
+    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
+      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
+    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
+    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1 key hk
+      exact ⟨hb'.trans h1a, hc.trans h1b⟩
+    · rw [← hb.2.2.2 z hz]
+      exact h2 z hz
+
+/-- The postcondition of `vg_aes_cbc_decrypt` reads the memory on return only
+within the buffers. -/
+theorem decryptOut (stack : Nat) :
+    Scrub.PostOut (Spec.Cbc.aesDecryptContract abi stack) (Spec.Cbc.aesSig.retBits 64) := by
+  rw [decrypt_eq]
+  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
+    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
+    rw [bufs_eq] at hb
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+    obtain ⟨h1, h2⟩ := h
+    have hd := AesEcb.agree_of hb.2.2.1
+    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
+      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
+    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
+    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
+    · obtain ⟨h1a, h1b⟩ := h1 key hk
+      exact ⟨hb'.trans h1a, hc.trans h1b⟩
+    · rw [← hb.2.2.2 z hz]
+      exact h2 z hz
+
+/-- The implementations of `vg_aes_cbc_encrypt` over `v` that are emitted
+with `z` (see the module's documentation). -/
+def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
+  if Caller.vaes v then []
+  else if h : Caller.hardware v then
+    if z.suffix = "" then [{
+      suffix := v.suffix
+      code := Caller.encrypt v
+      stack := 8
+      verified := encrypt_free_scrubbed v h
+      spSafe := Caller.spSafe v
+      written := Caller.written v
+      writtenOk := Caller.written_ok v }]
+    else []
+  else [Scrub.withScrubAll {
+    suffix := v.suffix ++ z.suffix
+    code := encrypt v z
+    stack := 32
+    verified := encrypt_verified v z
+    spSafe := encrypt_spSafe v z } (encryptOut _)]
+
+/-- The implementations of `vg_aes_cbc_decrypt` over `v` that are emitted
+with `z` (see the module's documentation). -/
+def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
+  if Caller.vaes v then
+    if z.suffix = "" then []
+    else [Scrub.withScrubAll {
+      suffix := v.suffix
+      code := decrypt v z
+      stack := 32
+      verified := decrypt_verified v z
+      spSafe := decrypt_spSafe v z } (decryptOut _)]
+  else [Scrub.withScrubAll {
+    suffix := v.suffix ++ z.suffix
+    code := decrypt v z
+    stack := 32
+    verified := decrypt_verified v z
+    spSafe := decrypt_spSafe v z } (decryptOut _)]
 
 end VG.Proof.AesCbc.X86_64.Wiped

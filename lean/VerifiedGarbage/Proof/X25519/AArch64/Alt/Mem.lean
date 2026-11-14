@@ -49,9 +49,9 @@ theorem ldp_sc {s : State} {base : Addr} (hs : Scr s base large) {d : Nat}
   rw [exec_ldp_x ht ⟨ha, hd⟩]
   · rw [hs.x0, word, word, off, off, eight, Offset.add_add]
   · rw [hs.x0]
-    exact ⟨_, List.mem_append_right _ hs.wr, contains_scWith (large := large) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ hs.wr, contains_scWith (large := large) (by omega_using [hw])⟩
   · rw [hs.x0, eight, Offset.add_add]
-    exact ⟨_, List.mem_append_right _ hs.wr, contains_scWith (large := large) (by omega)⟩
+    exact ⟨_, List.mem_append_right _ hs.wr, contains_scWith (large := large) (by omega_using [hw])⟩
 
 /-- `s` with the memory `m`: a definition, so that a store's state stays
 folded, as `RegUpd` keeps register writes folded. -/
@@ -84,21 +84,21 @@ theorem stp_sc {s : State} {base : Addr} (hs : Scr s base large) {d : Nat}
   rw [exec_stp_x ⟨ha, hd⟩]
   · rw [hs.x0, st2, off, off, eight, Offset.add_add]; rfl
   · rw [hs.x0]
-    exact ⟨_, hs.wr, contains_scWith (large := large) (by omega)⟩
+    exact ⟨_, hs.wr, contains_scWith (large := large) (by omega_using [hw])⟩
   · rw [hs.x0, eight, Offset.add_add]
-    exact ⟨_, hs.wr, contains_scWith (large := large) (by omega)⟩
+    exact ⟨_, hs.wr, contains_scWith (large := large) (by omega_using [hw])⟩
 
 /-- A word that two stored words do not overlap. -/
 theorem word_st2 (m : Mem) (base : Addr) {d e : Nat} (v w : BitVec 64)
     (h : e + 8 ≤ d ∨ d + 16 ≤ e) (hd : d + 16 ≤ 8192) (he : e + 8 ≤ 8192) :
     word (st2 m base d v w) base e = word m base e := by
-  rw [st2, word_writeW_sep _ _ _ (by omega) (by omega) (by omega),
-    word_writeW_sep _ _ _ (by omega) (by omega) (by omega)]
+  rw [st2, word_writeW_sep _ _ _ (by omega_using [h]) (by omega_using [hd]) (by omega_using [he]),
+    word_writeW_sep _ _ _ (by omega_using [h]) (by omega_using [hd]) (by omega_using [he])]
 
 /-- Two `stp`s of consecutive pairs of words: a field element's four words. -/
 theorem st2_st2 (m : Mem) (base : Addr) (o : Nat) (w0 w1 w2 w3 : BitVec 64) :
     st2 (st2 m base o w0 w1) base (o + 16) w2 w3 = st4 m base o w0 w1 w2 w3 := by
-  simp only [st2, st4, show o + 16 + 8 = o + 24 by omega]
+  simp only [st2, st4, show o + 16 + 8 = o + 24 by omega_using []]
 
 /-- Two `stp`s storing four registers as the field element at `o`. -/
 theorem store4_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat}
@@ -106,8 +106,8 @@ theorem store4_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat}
     WP isa (.block [.stp r0 r1 .x0 o, .stp r2 r3 .x0 (o + 16)]) s fun t =>
       t = withMem s (st4 s.mem base o (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3)) := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, stp_sc hs ha (by omega) (by omega),
-    stp_sc (hs.withMem _) (by omega : (o + 16) % 8 = 0) (by omega) (by omega),
+  simp only [runBlock_cons, runStep_some, runBlock_nil, stp_sc hs ha (by omega_using [hd]) (by omega_using [hw]),
+    stp_sc (hs.withMem _) (by omega_using [ha] : (o + 16) % 8 = 0) (by omega_using [hd]) (by omega_using [hw]),
     Option.some.injEq, exists_eq_left', gpr_withMem, mem_withMem, st2_st2]
   rfl
 
@@ -118,9 +118,9 @@ theorem fold_c (x : BitVec 64) :
   rw [Bool.toNat_false, Nat.add_zero]
   by_cases h : 2 ^ 64 ≤ x.toNat + x.toNat
   · rw [decide_eq_true h, Bool.toNat_true]
-    omega
+    omega_using [h]
   · rw [decide_eq_false h, Bool.toNat_false]
-    omega
+    omega_using [h]
 
 /-- `lsr` by one of `x + x`: `x` without its top bit. -/
 theorem fold_lo (x : BitVec 64) :
@@ -128,7 +128,7 @@ theorem fold_lo (x : BitVec 64) :
   have := x.isLt
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Bool.toNat_false,
     Nat.shiftRight_eq_div_pow]
-  omega
+  omega_using []
 
 /-- A field element the operations of `AltOps` may read or write: aligned, in
 the workspace, and in reach of `ldp` and `stp` from `x0`. -/

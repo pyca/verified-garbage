@@ -23,7 +23,7 @@ theorem small_imm (i : Nat) (hi : i < 256) :
 theorem cmpMask_ok (s : State) (i : Nat) (hi : i < 7) :
     ∃ s', runBlock isa [.subImm .x .x10 .x5 (i + 1)] s = some s' ∧
       zeroFlag s' = some (s.gpr .x5 == BitVec.ofNat 64 (i + 1)) ∧ Keep [.x10] s s' := by
-  have bound : i + 1 < 4096 := by omega
+  have bound : i + 1 < 4096 := by omega_using [hi]
   refine ⟨s.write .x .x10 (s.gpr .x5 - BitVec.ofNat 64 (i + 1)), ?_, ?_⟩
   · simp only [runBlock_cons, exec, bound, ite_true, State.read, BitVec.setWidth_eq,
       runStep_some, runBlock_nil]
@@ -123,7 +123,7 @@ theorem maskStart_ok (s : State) :
     simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
     change (s.gpr .x22).toNat % 8 % 2 ^ 64 = (s.gpr .x22).toNat &&& (2 ^ 3 - 1)
     rw [Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_using []
   · rfl
   · constructor
     · intro r hr
@@ -155,7 +155,7 @@ theorem maskCode_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits ≤ 1
   refine ⟨?_, keep₁.trans (h₂.2.weaken (by simp))⟩
   rw [h₂.1, mask₁]
   have exponent : 8 + bits - 8 * ((bits + 7) / 8) = if bits % 8 = 0 then 8 else bits % 8 := by
-    split <;> omega
+    split <;> omega_arith
   rw [exponent]
   have fact : ∀ r < 8,
       ((if r ∈ (List.range 7).map (· + 1) then BitVec.ofNat 64 (2 ^ r - 1)

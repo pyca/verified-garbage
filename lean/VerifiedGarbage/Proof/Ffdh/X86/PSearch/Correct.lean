@@ -45,7 +45,7 @@ theorem correct (s : State) (h : contract.pre s) :
   sig_post [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
   refine ⟨?_, ?_, F.used, _, F.policy, SievedGeneration.search_requests _ _ _ _⟩
-  · rw [BitVec.setWidth_append_eq_right, F.eax, toNat_ofNat_lt (by have := status_le (searchOf s); omega)]
+  · rw [BitVec.setWidth_append_eq_right, F.eax, toNat_ofNat_lt (by have := status_le (searchOf s); omega_using [this])]
     rfl
   · show Spec.Rsa.bytesAt t.mem ((arg s 0).setWidth 64) (arg s 1).toNat = (match searchOf s with
       | .accepted p _ => Spec.Rsa.i2osp p (arg s 1).toNat

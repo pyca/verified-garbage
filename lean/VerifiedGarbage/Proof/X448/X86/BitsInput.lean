@@ -36,7 +36,7 @@ theorem bits_ok {s₀ s : State} (pre : Pre s₀)
   refine WP.mono (bitsData_ok (hs.of_upd hu (by decide)) (by rw [hu.gpr])
     (by rw [hu.gpr]; exact pre.scalar_fit)
     (by intro i hi; rw [hu.rd, hu.wr, hr, hw]; exact ⟨scalarR s₀,
-      by rw [pre.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩)
+      by rw [pre.rd]; simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
     hkd) fun t ⟨tk, tm, tb⟩ => ?_
   rw [hu.mem] at tm tb
   exact ⟨(hu.rest (by decide)).trans tk, tm, tb⟩

@@ -653,8 +653,8 @@ theorem args_public_rel (x y out : Nat)
     RelCT isa Related (.block (args x y out)) CallRelated := by
   have trace := argTrace.mono (P' := Related) (fun _ _ hp => ⟨hp.bases, hp.stacks⟩) (fun _ _ h => h)
   have full := trace.wpDep (fun s t hp =>
-    ⟨args_nat_ok s hp.left x y out (by omega) (by omega) (by omega),
-      args_nat_ok t hp.right x y out (by omega) (by omega) (by omega)⟩)
+    ⟨args_nat_ok s hp.left x y out (by omega_using [bx]) (by omega_using [by_]) (by omega_using [bo]),
+      args_nat_ok t hp.right x y out (by omega_using [bx]) (by omega_using [by_]) (by omega_using [bo])⟩)
   refine full.mono (fun _ _ h => h) ?_
   intro a b h
   obtain ⟨eq, s, t, hp, ha, hb⟩ := h
@@ -756,7 +756,7 @@ theorem clearAt_rel (offset : Nat) (bound : offset + 1024 ≤ 8192)
     RelCT isa Related (clearAt offset) Related := by
   have clear := ClearBlock.code_rel.mono (P' := PointRelated)
     (fun _ _ h => ⟨h.related.stacks, h.pointer⟩) (fun _ _ h => h)
-  have blocks := (pointer_public_rel offset (by omega) trace).seq clear
+  have blocks := (pointer_public_rel offset (by omega_using [bound]) trace).seq clear
   have full := blocks.wpDep (fun s t h =>
     ⟨clearAt_ok s h.left offset bound, clearAt_ok t h.right offset bound⟩)
   refine full.mono (fun _ _ h => h) ?_
@@ -1621,8 +1621,8 @@ theorem loop_rel (p : Params) (pass lane slice index count old : Nat) (leftState
         obtain ⟨⟨nextCounter, ready⟩, matrixA, matrixB⟩ := next active
         have indices := hp.indices
         rw [Proof.Argon2.segment_succ, Proof.Argon2.segment_succ] at indices
-        exact ⟨n, by omega, j + 1, nextCounter, fillBlock p pass slice lane j ls,
-          fillBlock p pass slice lane j rs, by omega, by omega, ready, matrixA, matrixB, indices⟩
+        exact ⟨n, by omega_using [], j + 1, nextCounter, fillBlock p pass slice lane j ls,
+          fillBlock p pass slice lane j rs, by omega_using [endIndex], by omega_using [endIndex, active], ready, matrixA, matrixB, indices⟩
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨index, old, leftState, rightState, endIndex, positive, h⟩) (fun _ _ h => h)
 
@@ -1751,7 +1751,7 @@ theorem code_rel (p : Params) (pass lane slice : Nat) (leftState rightState : Fi
         ⟨⟨left, right, hp.1.1.bases, hp.1.1.stacks, hp.1.1.matrices, hp.1.1.work⟩,
           hp.1.1.leftMatrix, hp.1.1.rightMatrix, hp.1.1.indices⟩
       exact FillSegment.loop_rel p pass lane slice (start pass slice) (p.segmentLen - start pass slice) 0
-        leftState rightState (by omega) (by omega) _ _ _ _ _ _ related ea eb
+        leftState rightState (by omega_using [active]) (by omega_using [active]) _ _ _ _ _ _ related ea eb
     · intro s t ts tt a b hp ea eb
       cases ea with
       | block runA =>

@@ -89,7 +89,7 @@ theorem finA (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R 
   cw := (scCov hL hc.ctx (a := sSt) (n := 96) (by decide)).cons
     ((scCov hL hc.ctx (a := o) (n := 32) ho2).cons ((scCov hL hc.ctx (a := sWork) (n := 160) (by decide)).cons
       Covers.nil))
-  st_o := scD hL (a := sSt) (n := 96) (b := o) (m := 32) (.inl (by unfold sWork sSt at *; omega)) (by decide) ho2
+  st_o := scD hL (a := sSt) (n := 96) (b := o) (m := 32) (.inl (by unfold sWork sSt at *; omega_using [ho1])) (by decide) ho2
   st_sc := scD hL (a := sSt) (n := 96) (b := sWork) (m := 160) (.inl (by decide)) (by decide) (by decide)
   o_sc := scD hL (a := o) (n := 32) (b := sWork) (m := 160) (.inr ho1) ho2 (by decide)
   sp16 := hc.sp16 hL hP
@@ -110,16 +110,16 @@ theorem hinitA (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ 
   x3 := by rw [x3]; rfl
   x4 := x4
   klB := Nat.le_of_ble_eq_true rfl
-  cr := Covers.right (scCov hL hc.ctx (by omega))
+  cr := Covers.right (scCov hL hc.ctx (by omega_using [hk2]))
   cw := (scCov hL hc.ctx (a := sSt) (n := 96) (by decide)).cons
     ((scCov hL hc.ctx (a := sOuter) (n := 96) (by decide)).cons
       ((scCov hL hc.ctx (a := sWork) (n := 832) (by decide)).cons Covers.nil))
   i_o := scD hL (a := sSt) (n := 96) (b := sOuter) (m := 96) (.inl (by decide)) (by decide) (by decide)
   i_s := scD hL (a := sSt) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
   o_s := scD hL (a := sOuter) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
-  k_i := scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega)) hk2 (by decide)
-  k_o := scD hL (b := sOuter) (m := 96) (.inr (by unfold sOuter; omega)) hk2 (by decide)
-  k_s := scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega)) hk2 (by decide)
+  k_i := scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega_using [hk1])) hk2 (by decide)
+  k_o := scD hL (b := sOuter) (m := 96) (.inr (by unfold sOuter; omega_using [hk1])) hk2 (by decide)
+  k_s := scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega_using [hk1])) hk2 (by decide)
   sp16 := hc.sp16 hL hP
   stk_i := hc.stk hL hP (a := sSt) (m := 96) (by decide)
   stk_o := hc.stk hL hP (a := sOuter) (m := 96) (by decide)
@@ -127,7 +127,7 @@ theorem hinitA (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ 
   stk_s := hc.stk hL hP (a := sWork) (m := 832) (by decide)
   scnw := by
     show (scA L sWork).toNat + 832 ≤ 2 ^ 64
-    rw [scA_toNat hL (by decide)]; have := hL.bS; have := hL.s8192; unfold sWork; omega
+    rw [scA_toNat hL (by decide)]; have := hL.bS; have := hL.s8192; unfold sWork; omega_arith
 
 theorem hinitW (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R EM t) {key : Nat}
     (a : Proof.Pbkdf2.Md.AArch64.Pbk.InitArgs (H := HH v) t (scA L sSt) (scA L sOuter) (scA L key) (scA L sWork) 32) :
@@ -156,11 +156,11 @@ theorem hfinA (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R
     ((scCov hL hc.ctx (a := o) (n := 32) ho2).cons
       ((scCov hL hc.ctx (a := sWork) (n := 832) (by decide)).cons Covers.nil))
   i_u := scD hL (a := sSt) (n := 96) (b := sOuter) (m := 96) (.inl (by decide)) (by decide) (by decide)
-  i_o := scD hL (a := sSt) (n := 96) (b := o) (m := 32) (.inl (by unfold sSt; omega)) (by decide) ho2
+  i_o := scD hL (a := sSt) (n := 96) (b := o) (m := 32) (.inl (by unfold sSt; omega_using [ho1])) (by decide) ho2
   i_s := scD hL (a := sSt) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
-  u_o := scD hL (a := sOuter) (n := 96) (b := o) (m := 32) (.inl (by unfold sOuter; omega)) (by decide) ho2
+  u_o := scD hL (a := sOuter) (n := 96) (b := o) (m := 32) (.inl (by unfold sOuter; omega_using [ho1])) (by decide) ho2
   u_s := scD hL (a := sOuter) (n := 96) (b := sWork) (m := 832) (.inl (by decide)) (by decide) (by decide)
-  o_s := scD hL (a := o) (n := 32) (b := sWork) (m := 832) (.inr (by unfold sWork; omega)) ho2 (by decide)
+  o_s := scD hL (a := o) (n := 32) (b := sWork) (m := 832) (.inr (by unfold sWork; omega_using [ho1])) ho2 (by decide)
   sp16 := hc.sp16 hL hP
   stk_i := hc.stk hL hP (a := sSt) (m := 96) (by decide)
   stk_u := hc.stk hL hP (a := sOuter) (m := 96) (by decide)
@@ -168,7 +168,7 @@ theorem hfinA (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R
   stk_s := hc.stk hL hP (a := sWork) (m := 832) (by decide)
   scnw := by
     show (scA L sWork).toNat + 832 ≤ 2 ^ 64
-    rw [scA_toNat hL (by decide)]; have := hL.bS; have := hL.s8192; unfold sWork; omega
+    rw [scA_toNat hL (by decide)]; have := hL.bS; have := hL.s8192; unfold sWork; omega_arith
 
 theorem hfinW (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀ R EM t) {o : Nat} (ho2 : o + 32 ≤ scrBytes)
     {cnt : Addr}

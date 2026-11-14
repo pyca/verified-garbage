@@ -56,10 +56,10 @@ theorem rho_piece : VP p (fun s₀ s => VB p s₀ s ∧ accV s₀ s = 1) (SA p �
   copyW_piece (Y := YV p) 0 0 vS oSB 8 (by decide) (by decide) (by lvd) (h₁ := .block []) (by kernel_rfl)
     (by native_taint_decide) (fun _ _ _ h => h.1.ctx) fun s₀ s s' hp h h' fr cp => by
       have fr' : Frame (FR s₀ [sb oSB 32] 0) s.mem s'.mem := fr1 fr
-      refine ⟨h.1.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) fr' h', ?_,
-        fun _ _ => toRq Proof.MlDsa.KeyGen.zeroI, fun r s hb => absurd hb.2 (by omega),
-        .inl ⟨by rw [acc_keepV hp (N := 0) (by omega) (by lvd) fr']; exact h.2, minBounds,
-          fun r s hb => absurd hb.2 (by omega)⟩⟩
+      refine ⟨h.1.keep hp (N := 0) (by omega_using []) (by lvd) (fun j hj => by lvd) fr' h', ?_,
+        fun _ _ => toRq Proof.MlDsa.KeyGen.zeroI, fun r s hb => absurd hb.2 (by omega_using []),
+        .inl ⟨by rw [acc_keepV hp (N := 0) (by omega_using []) (by lvd) fr']; exact h.2, minBounds,
+          fun r s hb => absurd hb.2 (by omega_using [])⟩⟩
       rw [show (32 : Nat) = 4 * 8 from rfl, cp, ← show (32 : Nat) = 4 * 8 from rfl,
         pk_slice hF hp h.1.ctx (by lvd), List.drop_zero]
       rfl
@@ -75,10 +75,10 @@ theorem ball_call : VP p (SA p · (8 * p.k)) (SB p)
       rw [sig_slice hF hp h.vb.ctx (by lvd), sig_slice hF hp' h'.vb.ctx (by lvd), (inputs_pub hq).2.2])
     fun s₀ s s' hp h h' fr red out => by
       obtain ⟨A, hA, hG⟩ := h.ex
-      refine ⟨h.vb.keep hp (N := 80) (by omega) (by lvd) (fun j hj => by lvd) fr h',
-        ⟨A, fun r s hb => keepPolyD hp (stkV (by omega)) (by have := hb.1; have := hb.2; lv hF) fr (hA r s hb), ?_⟩,
+      refine ⟨h.vb.keep hp (N := 80) (by omega_using []) (by lvd) (fun j hj => by lvd) fr h',
+        ⟨A, fun r s hb => keepPolyD hp (stkV (by omega_using [])) (by have := hb.1; have := hb.2; lv hF) fr (hA r s hb), ?_⟩,
         red, ?_⟩
-      · rw [acc_keepV hp (N := 80) (by omega) (by lvd) fr]; exact hG
+      · rw [acc_keepV hp (N := 80) (by omega_using []) (by lvd) fr]; exact hG
       · rw [sig_slice hF hp h.vb.ctx (by lvd), List.drop_zero] at out
         exact out
 
@@ -99,9 +99,9 @@ theorem ball_mask : VP p (SB p) (SC p) (maskA oACC (oP 15)) := by
   obtain ⟨-, aiff⟩ := Proof.MlDsa.KeyGen.acc_and a01 r01
   have fr' : Frame (FR s₀ [sb oACC 4, pC] 0) s.mem s'.mem := fr2 fr
   have ea : accV s₀ s' = accV s₀ s &&& s.gpr .eax := ha
-  have bf : ∀ r < p.k, ∀ s < p.ℓ, Before p (8 * p.k) r s := fun r hr s hs => ⟨hs, by omega⟩
-  refine ⟨h.vb.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) fr' h', A,
-    polyAt s'.mem (Buf.addr s₀ pC), fun r hr s hs => keepPolyD hp (stkV (by omega)) (by lvd) fr'
+  have bf : ∀ r < p.k, ∀ s < p.ℓ, Before p (8 * p.k) r s := fun r hr s hs => ⟨hs, by omega_using [hl, hr, hs]⟩
+  refine ⟨h.vb.keep hp (N := 0) (by omega_using []) (by lvd) (fun j hj => by lvd) fr' h', A,
+    polyAt s'.mem (Buf.addr s₀ pC), fun r hr s hs => keepPolyD hp (stkV (by omega_using [])) (by lvd) fr'
       (hA r s (bf r hr s hs)), ⟨?_, rfl⟩, ?_⟩
   · rcases r01 with e0 | e1
     · exact (m0 e0).1
@@ -127,7 +127,7 @@ theorem samples_piece : VP p (fun s₀ s => VB p s₀ s ∧ accV s₀ s = 1) (SC
   unfold samples
   refine (rho_piece hF).seq ?_
   refine Piece.seq (B := (SA p · (8 * p.k))) ((seqR_piece (I := fun r => (SA p · (8 * r))) p.k 0
-    fun r _ hr => aRow_piece hP hF (by omega)).mono (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
+    fun r _ hr => aRow_piece hP hF (by omega_using [hr])).mono (fun _ _ _ h => h) fun _ _ _ h => by simpa using h) ?_
   exact (ball_call hP hF).seq (ball_mask hF)
 
 end

@@ -26,15 +26,15 @@ theorem absorbFixed_ok (v : Proof.Blake2.X86_64.Backend) (s : State)
       Repr b h0 t.mem (s.gpr .rbx) (bytesAt s.mem (s.gpr .rbx + BitVec.ofNat 64 offset) size) ∧
       Keeps s t := by
   unfold absorbFixed
-  refine WP.seq ((fixedArgs_ok s offset size (by omega) (by omega)).mono fun u hu => ?_)
+  refine WP.seq ((fixedArgs_ok s offset size (by omega_using [sizeBound]) (by omega_using [sizeBound])).mono fun u hu => ?_)
   have p : u.gpr .rbx = s.gpr .rbx := hu.other _ (by decide) (by decide) (by decide)
   have sp : u.gpr .rsp = s.gpr .rsp := hu.other _ (by decide) (by decide) (by decide)
   have len : (u.gpr .rcx).toNat = size := by
-    rw [hu.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hu.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [sizeBound])]
   have wr : (⟨u.gpr .rbx, 16384⟩ : Region) ∈ u.wr := by rw [p, hu.wr]; exact hwr
   have hr : Repr b h0 u.mem (u.gpr .rbx) [] := by rw [hu.mem, p]; exact repr
   have hc : u.gpr .rsi = BitVec.ofNat 64 ([] : List Byte).length := hu.count
-  have hb : ([] : List Byte).length + (u.gpr .rcx).toNat < 2 ^ 64 := by simp only [List.length_nil, Nat.zero_add, len]; omega
+  have hb : ([] : List Byte).length + (u.gpr .rcx).toNat < 2 ^ 64 := by simp only [List.length_nil, Nat.zero_add, len]; omega_using [sizeBound]
   have cover : Covers [⟨u.gpr .rdx, (u.gpr .rcx).toNat⟩] (u.rd ++ u.wr) := by
     apply Covers.of_sub
     intro r hr
@@ -44,10 +44,10 @@ theorem absorbFixed_ok (v : Proof.Blake2.X86_64.Backend) (s : State)
     rw [len]; exact sizeBound
   have ds : (⟨u.gpr .rdx, (u.gpr .rcx).toNat⟩ : Region).Disjoint ⟨u.gpr .rbx, 192⟩ := by
     rw [hu.data, len, p]
-    exact (Offset.base_disjoint _ (by omega) (by omega)).symm
+    exact (Offset.base_disjoint _ (by omega_using [offsetLower]) (by omega_using [sizeBound])).symm
   have dw : (⟨u.gpr .rdx, (u.gpr .rcx).toNat⟩ : Region).Disjoint ⟨u.gpr .rbx + 192, 576⟩ := by
     rw [hu.data, len, p]
-    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega) (by omega) (by decide)
+    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega_using [offsetLower]) (by omega_using [sizeBound]) (by decide)
   have sw : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rbx, 16384⟩ := by
     rw [sp, p]; exact stackWork
   have sd : (below (u.gpr .rsp) 16).Disjoint ⟨u.gpr .rdx, (u.gpr .rcx).toNat⟩ := by

@@ -33,7 +33,7 @@ theorem expPhaseRanges_arr (w : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h
   have s4 := slot_sep (w := w) h4
   have := hj
   simp only [expPhaseRanges, expRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega_arith
 
 theorem expPhaseRanges_le (w : Nat) : ∀ r ∈ expPhaseRanges w, r.1 + r.2 ≤ slot w 8 := by
   intro r hr
@@ -52,27 +52,27 @@ theorem mmN_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} 
       wv t'.mem B (slot w o) w < N ∧
       wv t'.mem B (slot w o) w * 2 ^ (64 * w) % N = wv t.mem B (slot w a) w * wv t.mem B (slot w b) w % N ∧
       Arrays B w [aAcc, aTmp, o] t.mem t'.mem ∧ Keep mmRegs t t' := by
-  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
   have hnm : aN ∉ [aAcc, aTmp, o] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨by decide, by decide, Ne.symm d5⟩
   refine WP.mono (M.mm_ok hg hZ hw hw' ho ha hb d1 d2 d3 d4 hinv (by rw [hn]; exact hB) d6 d7)
     fun t' ⟨hg', hlt', hm, hA, k⟩ => ?_
   rw [hn] at hlt' hm
   exact ⟨hg', by rw [hA.wv_of_not_mem (by decide) hnm hn']; exact hn,
-    by rw [hA.word0_of_not_mem (by decide) hnm hn' (by omega)]; exact hinv, hlt', hm, hA, k⟩
+    by rw [hA.word0_of_not_mem (by decide) hnm hn' (by omega_using [hw])]; exact hinv, hlt', hm, hA, k⟩
 
 theorem _root_.VG.Proof.Bignum.Frm.ep_wv {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (expPhaseRanges w) m m')
     (hn : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aY)
     (h4 : j ≠ aXm) : wv m' B (slot w j) w = wv m B (slot w j) w :=
-  h.wv_eq (fun r hr => by have := expPhaseRanges_arr w hj h1 h2 h3 h4 r hr; omega)
-    (by have := slot_le (w := w) hj; omega)
+  h.wv_eq (fun r hr => by have := expPhaseRanges_arr w hj h1 h2 h3 h4 r hr; omega_using [this])
+    (by have := slot_le (w := w) hj; omega_using [hn, this])
 
 theorem _root_.VG.Proof.Bignum.Frm.ep_hdr {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (expPhaseRanges w) m m') {i : Nat}
     (hi : i < 32) (h0 : i ≠ sI) (h1 : i ≠ sV) (h2 : i ≠ sBit) : word m' B (8 * i) = word m B (8 * i) :=
   h.word_eq (fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
-    · have := hdr_lt_slot w aXm hi; omega
-    · exact expRanges_hdr w hi h0 h1 h2 r hr) (by omega)
+    · have := hdr_lt_slot w aXm hi; omega_using [this]
+    · exact expRanges_hdr w hi h0 h1 h2 r hr) (by omega_using [hi])
 
 theorem _root_.VG.Proof.Bignum.Frm.ep_of_arrays {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
     (hjs : ∀ j ∈ js, j = aAcc ∨ j = aTmp ∨ j = aY ∨ j = aXm) : Frm B (expPhaseRanges w) m m' :=
@@ -92,7 +92,7 @@ theorem expPhase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X :
     WP isa (seqs expSteps) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w aY) w = X ^ Spec.Rsa.os2ip eb % N ∧
       Frm B (expPhaseRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega
+  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by have := hg.scr.nowrap; omega_using [hZ, this]
   have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
   unfold expSteps
   -- `Y := R`.
@@ -127,8 +127,8 @@ theorem expPhase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X :
     hlt₂ hX₂ rfl (by rw [hY₂]; exact hlt₁) (by rw [hY₂]; exact hY₁)
     (by rw [hs₂ sE (by decide) (by decide) (by decide) (by decide)]; exact he)
     (by rw [hs₂ sElen (by decide) (by decide) (by decide) (by decide)]; exact hlen)
-    hL hL1 hL' (fun i hi => heb₂.rd i (by omega)) (fun i hi => heb₂.val i (by omega))
-    (fun i hi => heb₂.out i (by omega))) fun t₃ ⟨hc₃, ⟨Y₃, hY₃, hYN₃, hYc₃⟩, f₃, k₃⟩ => ?_)
+    hL hL1 hL' (fun i hi => heb₂.rd i (by omega_using [hL, hi])) (fun i hi => heb₂.val i (by omega_using [hL, hi]))
+    (fun i hi => heb₂.out i (by omega_using [hL, hi]))) fun t₃ ⟨hc₃, ⟨Y₃, hY₃, hYN₃, hYc₃⟩, f₃, k₃⟩ => ?_)
   have f₃' : Frm B (expPhaseRanges w) t₂.mem t₃.mem := f₃.mono fun r hr => List.mem_cons_of_mem _ hr
   have f₁₃ := f₁₂.trans f₃'
   -- `Y R⁻¹`.

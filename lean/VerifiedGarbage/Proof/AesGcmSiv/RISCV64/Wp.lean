@@ -49,8 +49,8 @@ theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := b) (by omega_using [h, ha]), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega_using [ha])]
+  omega_using [h, ha]
 
 theorem ofNat_add (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = BitVec.ofNat 64 (a + b) :=
   (BitVec.ofNat_add a b).symm
@@ -128,12 +128,12 @@ theorem bargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
   a3 := a3
   a4 := a4
   rounds := by rcases L.rounds with h | h <;> simp [h]
-  wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega
+  wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega_using [hk, this]
   kd := hKd
   ks := hKs
-  ds := L.w_w (.inl (by omega)) (by omega) (by decide)
+  ds := L.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
   reads := Covers.append_left (Covers.cons hK Covers.nil)
-    (Covers.cons (E.perm.wCR (by omega)) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
-  writes := Covers.cons (E.perm.wC (by omega)) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
+    (Covers.cons (E.perm.wCR (by omega_using [hk])) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
+  writes := Covers.cons (E.perm.wC (by omega_using [hk])) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
 
 end VG.Proof.AesGcmSiv.RISCV64

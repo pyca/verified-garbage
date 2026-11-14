@@ -32,18 +32,18 @@ theorem verifyPrefix_ok {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
   have hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   have rpk : ∀ i n, i + n ≤ 57 → InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 i) n :=
     fun i n h => ⟨⟨s.gpr .rdi, 57⟩, by rw [hr]; simp,
-      Offset.contains_base _ (d := i) (n := n) (k := 57) h (by omega)⟩
+      Offset.contains_base _ (d := i) (n := n) (k := 57) h (by omega_using [h])⟩
   have rsg : ∀ i n, i + n ≤ 114 → InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 i) n :=
     fun i n h => ⟨⟨s.gpr .rsi, 114⟩, by rw [hr]; simp,
-      Offset.contains_base _ (d := i) (n := n) (k := 114) h (by omega)⟩
+      Offset.contains_base _ (d := i) (n := n) (k := 114) h (by omega_using [h])⟩
   have rch : ∀ i n, i + n ≤ 57 → InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 i) n :=
     fun i n h => ⟨⟨s.gpr .rdx, 57⟩, by rw [hr]; simp,
-      Offset.contains_base _ (d := i) (n := n) (k := 57) h (by omega)⟩
+      Offset.contains_base _ (d := i) (n := n) (k := 57) h (by omega_using [h])⟩
   have fpk : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rdi + BitVec.ofNat 64 i) := fun i hi => far hdk hi (by decide)
   have fsg : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rsi + BitVec.ofNat 64 i) :=
-    fun i hi => far hds (by omega) (by decide)
+    fun i hi => far hds (by omega_using [hi]) (by decide)
   have fs : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rsi + BitVec.ofNat 64 57 + BitVec.ofNat 64 i) :=
-    fun i hi => by rw [Offset.add_add]; exact far hds (by omega) (by decide)
+    fun i hi => by rw [Offset.add_add]; exact far hds (by omega_using [hi]) (by decide)
   have fch : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rdx + BitVec.ofNat 64 i) := fun i hi => far hdc hi (by decide)
   obtain ⟨S, hS⟩ : ∃ S, Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rsi + BitVec.ofNat 64 57) 57) = S :=
     ⟨_, rfl⟩
@@ -60,8 +60,8 @@ theorem verifyPrefix_ok {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
   -- The bits of `k` and `S`.
   apply WP.seq
   refine WP.mono (vbits_ok (sig := s.gpr .rsi) (ch := s.gpr .rdx) hs1 si1 r91
-    (fun q hq => by rw [rr1, Offset.add_add]; exact rsg _ _ (by omega))
-    (fun q hq => by rw [rr1]; exact rch _ _ (by omega)) fs fch)
+    (fun q hq => by rw [rr1, Offset.add_add]; exact rsg _ _ (by omega_using [hq]))
+    (fun q hq => by rw [rr1]; exact rch _ _ (by omega_using [hq])) fs fch)
     fun s2 ⟨bs2, bk2, si2, g2, rd2, wr2, o2⟩ => ?_
   rw [far_bytes O1 fs, hS] at bs2
   rw [far_bytes O1 fch, hK] at bk2
@@ -71,8 +71,8 @@ theorem verifyPrefix_ok {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
   -- The pointers saved, and the check of `S`.
   apply WP.seq
   refine WP.mono (vstart_ok (pk := s.gpr .rdi) (sig := s.gpr .rsi) hs2 (by rw [g2 _ (by decide), r81]) (by rw [g2 _ (by decide), r91]) si2
-    (fun i hi => by rw [rr2, Offset.add_add]; exact rsg _ _ (by omega))
-    (by rw [rr2, Offset.add_add]; exact rsg _ _ (by omega)) fs)
+    (fun i hi => by rw [rr2, Offset.add_add]; exact rsg _ _ (by omega_using [hi]))
+    (by rw [rr2, Offset.add_add]; exact rsg _ _ (by omega_using [])) fs)
     fun s3 ⟨pk3, sig3, ⟨c0, hc0, b3⟩, g3, rd3, wr3, o3⟩ => ?_
   rw [far_bytes O2 fs, hS] at hc0
   have hs3 : Scr s3 base := ⟨(g3 _ (by decide)).trans hs2.rdi, wr3 ▸ hs2.wr, hn⟩
@@ -81,7 +81,7 @@ theorem verifyPrefix_ok {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
   -- `R` and `A`, decoded by one loop.
   apply WP.seq
   refine WP.mono (vdecode_ok hf hR hrt hs3 pk3 sig3 (fun i n h => by rw [rr3]; exact rpk i n h)
-    (fun i n h => by rw [rr3]; exact rsg i n (by omega)) fpk fsg)
+    (fun i n h => by rw [rr3]; exact rsg i n (by omega_using [h])) fpk fsg)
     fun s4 ⟨⟨cR, cA, hcR, hcA, b4⟩, vr4, va4, g4, rd4, wr4, D4⟩ => ?_
   rw [far_bytes O3 fpk] at hcA va4
   rw [far_bytes O3 fsg, ← bytesAt_take57] at hcR vr4
@@ -92,9 +92,9 @@ theorem verifyPrefix_ok {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
   have hs4' : Scr s4' base := ⟨(g4' _ (by decide)).trans hs4.rdi, wr4' ▸ hs4.wr, hn⟩
   have bits4 : ∀ o : Nat, o + 460 ≤ 8192 → 2048 ≤ o → ∀ t < 461,
       s4'.mem (off base (o - 1 + t)) = s2.mem (off base (o - 1 + t)) := fun o ho1 ho2 t ht => by
-    have hofs := VG.Proof.X448.X86_64.ofs_off' base (d := o - 1 + t) (by omega)
-    rw [o4 _ (Or.inr (by rw [hofs]; omega)), D4.wide _ (Or.inr (by rw [hofs]; omega)),
-      o3 _ (Or.inr (by rw [hofs]; simp only [KC]; omega))]
+    have hofs := VG.Proof.X448.X86_64.ofs_off' base (d := o - 1 + t) (by omega_using [ho1, ht])
+    rw [o4 _ (Or.inr (by rw [hofs]; omega_using [ho2])), D4.wide _ (Or.inr (by rw [hofs]; omega_using [ho2])),
+      o3 _ (Or.inr (by rw [hofs]; simp only [KC]; omega_using [ho2]))]
   have bs4 : Window.Bits base BITS S s4' := by
     intro t ht
     rw [bits4 BITS (by decide) (by decide) t ht, bs2 t ht]

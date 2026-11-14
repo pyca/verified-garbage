@@ -19,7 +19,7 @@ theorem source_shrink {s : State} {B p : Addr} {Z n : Nat} {bs : List Byte}
 
 theorem scratch_prefix {s : State} {B : Addr} {Z n : Nat} (h : Scr s B Z) (hn : n ≤ Z) (hp : 0 < n) :
     Scr s B n := by
-  have hs := h.sub (o := 0) (by omega : 0 + n ≤ Z) hp
+  have hs := h.sub (o := 0) (by omega_using [hn] : 0 + n ≤ Z) hp
   simpa [off] using hs
 
 theorem stackWord_address (s : State) {j : Nat} (hj : 1 ≤ j) :
@@ -27,11 +27,11 @@ theorem stackWord_address (s : State) {j : Nat} (hj : 1 ≤ j) :
   unfold off stackArgAddr
   congr 1
   congr 1
-  omega
+  omega_using [hj]
 
 theorem stackArg_base (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
+  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega_using []]
 
 theorem stackArg_byte (s : State) (j b : Nat) :
     stackArgAddr s j + BitVec.ofNat 64 b = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j + b) := by
@@ -42,7 +42,7 @@ theorem stackWord_read {s : State} {count j : Nat}
     (hj : 1 ≤ j) (hbound : j ≤ count) (hn : 8 * count ≤ 2 ^ 64) :
     InRegions (s.rd ++ s.wr) (off (s.gpr .rsp) (8 * j)) 8 := by
   rw [stackWord_address s hj, stackArg_base s (j - 1)]
-  exact ⟨_, h, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨_, h, Offset.contains_base _ (by omega_using [hj, hbound]) (by omega_using [hbound, hn])⟩
 
 theorem stackWord_separate {s : State} {B : Addr} {Z count j : Nat}
     (h : (⟨B, Z⟩ : Region).Disjoint ⟨stackArgAddr s 0, 8 * count⟩)
@@ -50,7 +50,7 @@ theorem stackWord_separate {s : State} {B : Addr} {Z count j : Nat}
     ∀ i < 8, Z ≤ ofs B (off (s.gpr .rsp) (8 * j) + BitVec.ofNat 64 i) := by
   intro i hi
   have ho := out_scr h.symm (contains_byte (stackArgAddr s 0) (i := 8 * (j - 1) + i)
-    (len := 8 * count) (by omega) hn)
+    (len := 8 * count) (by omega_using [hj, hbound, hi]) hn)
   rw [← stackArg_byte s (j - 1) i, ← stackWord_address s hj] at ho
   exact ho
 

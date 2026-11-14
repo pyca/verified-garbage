@@ -24,7 +24,10 @@ It runs in the frame of encryption (`Impl/RsaOaep/PPC64LE.lean`, `save` and
 operation, `r20` its result `r` (1, 0 or 2), zero-extended from the 32 bits
 the calling convention gives it.
 
-`vg_rsa_private_checked` takes twelve arguments on the stack, which the
+`vg_rsa_private_checked` takes twelve arguments on the stack (and
+`vg_rsa_private_checked_precomputed`, which `vg_rsa_oaep_decrypt_precomputed`
+calls, fourteen: those, then our stack arguments 17 and 18, `pre` and
+`pre_len`), which the
 Parameter Save Area of our frame cannot hold below the saved registers: it
 is called from a frame of its own of `privBytes` bytes, whose Parameter Save
 Area holds them, and writes `EM` (or zeros) to `EM`'s place in `scratch`,
@@ -75,14 +78,22 @@ def prologue : List Instr :=
 /-! ## The private operation -/
 
 /-- The frame from which `vg_rsa_private_checked` is called: its Parameter
-Save Area, with its twelve stack arguments at `r1 + 96`. -/
-def privBytes : Nat := 192
+Save Area, with its stack arguments at `r1 + 96`, twelve or with `pc`
+fourteen. The frame is the same for both. -/
+def privBytes : Nat := 208
 
 /-- Our stack argument `j`, from that frame. -/
 def argP (j : Nat) : Nat := privBytes + arg j
 
-/-- `vg_rsa_private_checked`. -/
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+/-- `vg_rsa_private_checked`, or with `pc`
+`vg_rsa_private_checked_precomputed`. -/
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.PPC64LE.Priv.codeP
+
+/-- The private operation's stack arguments: twelve, or with `pc`
+fourteen. -/
+def nCallArgs (pc : Bool) : Nat := if pc then 14 else 12
 
 /-- Its arguments, with `r12 = r1` in its frame: on the stack `p` (`r10`)
 and our stack arguments 0 to 8 (`p_len` to `qinv_len`), then the rest of
@@ -95,10 +106,18 @@ def privArgs : List Instr :=
       .subi .r11 .r11 1024, .store .d .r11 .r12 184, .addi .r3 .r14 oEm, mov .r4 .r15, mov .r5 .r6, mov .r6 .r15,
       mov .r7 .r8, mov .r8 .r9, .load .d .r9 .r12 (argP 11), mov .r10 .r15]
 
+/-- With `pc`, our stack arguments 17 and 18 (`pre`, `pre_len`) as the
+call's 12 and 13. -/
+def preArgs : Bool → List Instr
+  | false => []
+  | true => [.load .d .r0 .r12 (argP 17), .store .d .r0 .r12 192, .load .d .r0 .r12 (argP 18),
+      .store .d .r0 .r12 200]
+
 /-- The private operation, from its frame; its result into `r20`,
 zero-extended. -/
-def priv : Prog isa :=
-  .seq (.frame (.alloc privBytes) (.seq (.block privArgs) privCall) (.free privBytes)) (.block [.lsr .w .r20 .r3 0])
+def priv (pc : Bool) : Prog isa :=
+  .seq (.frame (.alloc privBytes) (.seq (.block (privArgs ++ preArgs pc)) (privCall pc)) (.free privBytes))
+    (.block [.lsr .w .r20 .r3 0])
 
 variable (H : Hash)
 
@@ -195,13 +214,20 @@ def decTail (f : Fns) : Prog isa := .seq (.block (chkK H)) (.ite (.nonzero .d .r
 
 /-- The frame's body: the private operation, the digest length of the table
 `hash` (our stack argument 15) to `r3`, then the tail for that length. -/
-def body (f : Fns) : Prog isa :=
-  .seq (.block (save ++ prologue)) (.seq priv (.seq (.block (lenLoad 15))
+def body (pc : Bool) (f : Fns) : Prog isa :=
+  .seq (.block (save ++ prologue)) (.seq (priv pc) (.seq (.block (lenLoad 15))
     (.seq (byLen (fun d => decTail (ofLen d) f) lens) (.block restore))))
 
-/-- `vg_rsa_oaep_decrypt`, with the label's hash function the table that is
-its stack argument 15 (`hash`) and MGF1's the table that is its stack
-argument 16 (`mgf1`). -/
-def decrypt (f : Fns) : Prog isa := .frame (.alloc frameBytes) (body f) (.free frameBytes)
+/-- `vg_rsa_oaep_decrypt`, or with `pc` `vg_rsa_oaep_decrypt_precomputed`,
+with the label's hash function the table that is its stack argument 15
+(`hash`) and MGF1's the table that is its stack argument 16 (`mgf1`). -/
+def decryptG (pc : Bool) (f : Fns) : Prog isa := .frame (.alloc frameBytes) (body pc f) (.free frameBytes)
+
+/-- `vg_rsa_oaep_decrypt`. -/
+abbrev decrypt (f : Fns) : Prog isa := decryptG false f
+
+/-- `vg_rsa_oaep_decrypt_precomputed`: its arguments, then `pre` and
+`pre_len`, our stack arguments 17 and 18. -/
+abbrev decryptP (f : Fns) : Prog isa := decryptG true f
 
 end VG.Impl.RsaOaep.PPC64LE.Dec

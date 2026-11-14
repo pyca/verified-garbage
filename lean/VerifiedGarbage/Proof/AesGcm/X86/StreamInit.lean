@@ -85,7 +85,7 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     have aw : (argsR (s₀.gpr .esp) 5).Disjoint ⟨w64 (arg s₀ 4), 2560⟩ := by rw [argsR_eq]; exact d_wa.symm
     refine entry_ok siKeeps siTail (by decide) (by decide) (by decide) (by decide) rfl rfl wW rA aw
-      (by omega) fw fun s₂ e => ?_
+      (by omega_using [fa]) fw fun s₂ e => ?_
     have he : Env (arg s₀ 0) (arg s₀ 3) (arg s₀ 4) (s₀.gpr .esp) s₂ :=
       ⟨e.ebp, e.esi, e.esp, by rw [e.rd, e.wr, hrd]; exact covers_of_mem (by simp),
         by rw [e.wr, hwr]; exact covers_of_mem (by simp), by rw [e.wr]; exact wW,
@@ -97,7 +97,7 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have sl : ∀ {o}, 128 ≤ o → o + 4 ≤ 2560 → (o + 4 ≤ zO ∨ zO + 4 ≤ o) → slotv (s₂.mem.writeW
         (w64 (arg s₀ 4) + BitVec.ofNat 64 zO) (BitVec.ofNat 32 0)) (arg s₀ 4) o = slotv s₂.mem (arg s₀ 4) o :=
       fun h₁ h₂ h₃ => slot_frame hf fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w h₃ (by omega) (by decide)
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w h₃ (by omega_using [h₂]) (by decide)
     refine ⟨hpre, hpub, ?_, ?_, ?_, by mems [e.rd], by mems [e.wr]⟩
     rotate_left
     · rw [← a 4 (by decide)]
@@ -147,7 +147,7 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     clear hp
     have rA : Covers [argsR (s₀.gpr .esp) 5] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
-    exact WP.mono (arg0_ok (argIn_of rA (by omega) (by decide))) fun s' ⟨ax, sp⟩ =>
+    exact WP.mono (arg0_ok (argIn_of rA (by omega_using [fa]) (by decide))) fun s' ⟨ax, sp⟩ =>
       ⟨by rw [ax]; exact pubOf_arg hpub (by decide), by rw [sp]; exact pubOf_esp hpub⟩
 
 theorem si_ret {p : BitVec 32 × (Nat → BitVec 32)} {s₀ : State} (h : streamInitPre s₀) (hp : pubOf 5 s₀ = p) :
@@ -216,7 +216,7 @@ theorem streamInit_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   have hD : bytesAt s₁.mem (w64 (p.2 1)) (p.2 2).toNat = bytesAt s₀.mem (w64 (p.2 1)) (p.2 2).toNat :=
     bytesAt_frame (p := w64 (p.2 1)) (n := (p.2 2).toNat) fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact d_nw.sub_right (Lay.wSub (d := 128) (n := 2432) (by decide))) (by omega)
+      exact d_nw.sub_right (Lay.wSub (d := 128) (n := 2432) (by decide))) (by omega_using [])
   rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit, m', Proof.Gcm.ghashInput_nil]
   refine ⟨by rw [ho.j0, hH, hD], Proof.Gcm.absorbed_nil _ ho.y, Proof.Gcm.ctr_zero _ _ _ _ ?_⟩
   rw [ho.cb, hH, hD]

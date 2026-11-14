@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The two-row identity extended by one word of each row. -/
 
@@ -24,9 +25,9 @@ theorem value_extend {mem0 mem mem' : Mem} {base : Addr} {acc b mod j a0 q0 a1 q
         q0 * val32 mem0 base mod (j + 1 + 2) +
         2 ^ 32 * (a1 * val32 mem0 base b (j + 1 + 1) + q1 * val32 mem0 base mod (j + 1 + 1)) := by
   have p3 : 2 ^ (32 * (j + 2 + 1)) = 2 ^ 96 * 2 ^ (32 * j) := by
-    rw [show 32 * (j + 2 + 1) = 96 + 32 * j by omega]; exact Nat.pow_add 2 96 (32 * j)
+    rw [show 32 * (j + 2 + 1) = 96 + 32 * j by omega_using []]; exact Nat.pow_add 2 96 (32 * j)
   have p2 : 2 ^ (32 * (j + 2)) = 2 ^ 64 * 2 ^ (32 * j) := by
-    rw [show 32 * (j + 2) = 64 + 32 * j by omega]; exact Nat.pow_add 2 64 (32 * j)
+    rw [show 32 * (j + 2) = 64 + 32 * j by omega_using []]; exact Nat.pow_add 2 64 (32 * j)
   have p1 : 2 ^ (32 * (j + 1)) = 2 ^ 32 * 2 ^ (32 * j) := pow32_succ _
   have eT := val32_succ mem0 base acc (j + 2)
   have eB2 := val32_succ mem0 base b (j + 2)
@@ -35,10 +36,10 @@ theorem value_extend {mem0 mem mem' : Mem} {base : Addr} {acc b mod j a0 q0 a1 q
   have eM1 := val32_succ mem0 base mod (j + 1)
   rw [p2] at eT eB2 eM2 prior
   rw [p1] at eB1 eM1
-  rw [show j + 1 + 2 = j + 2 + 1 by omega, show j + 1 + 1 = j + 2 by omega, p3, stored]
-  rw [show j + 2 = j + 1 + 1 by omega] at eB1 eM1
+  rw [show j + 1 + 2 = j + 2 + 1 by omega_using [], show j + 1 + 1 = j + 2 by omega_using [], p3, stored]
+  rw [show j + 2 = j + 1 + 1 by omega_using []] at eB1 eM1
   rw [eT, eB2, eM2]
-  rw [show j + 1 + 1 = j + 2 by omega] at eB1 eM1
+  rw [show j + 1 + 1 = j + 2 by omega_using []] at eB1 eM1
   rw [eB1, eM1] at prior ⊢
   have scaled := congrArg (fun z => 2 ^ 64 * 2 ^ (32 * j) * z) step
   generalize 2 ^ (32 * j) = P at prior scaled ⊢

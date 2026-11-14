@@ -85,21 +85,21 @@ theorem xorBytes_wp (s : State) {S D : Addr} {n : Nat} (h : XorPre s S D n) :
     ⟨0, rfl, h.pos, by rw [h.r3]; exact (BitVec.add_zero _).symm, by rw [h.r9]; exact (BitVec.add_zero _).symm,
       by rw [h.r4, Nat.sub_zero], by simp [bytesAt, writeBytes_nil], Keeps.refl s⟩
   rintro w t ⟨i, rfl, hi, r3, r9, r4, mem, kp⟩
-  have hin : i + 1 ≤ n := by omega
+  have hin : i + 1 ≤ n := by omega_using [hi]
   have hlen : (xorL (bytesAt s.mem D i) (bytesAt s.mem S i)).length = i := by
     simp [length_bytesAt]
   refine wp_lbz (a := S + BitVec.ofNat 64 i) (by decide) (by decide)
-    (by rw [r3]; exact BitVec.add_zero _) (by rw [kp.rd, kp.wr]; exact in_off h.rd hin (by omega))
+    (by rw [r3]; exact BitVec.add_zero _) (by rw [kp.rd, kp.wr]; exact in_off h.rd hin (by omega_using [hL]))
     fun t₁ u₁ => ?_
   refine wp_lbz (a := D + BitVec.ofNat 64 i) (by decide) (by decide)
     (by rw [u₁.other _ (by decide), r9]; exact BitVec.add_zero _)
-    (by rw [u₁.rd, u₁.wr, kp.rd, kp.wr]; exact in_off (VG.Covers.right h.wr) hin (by omega))
+    (by rw [u₁.rd, u₁.wr, kp.rd, kp.wr]; exact in_off (VG.Covers.right h.wr) hin (by omega_using [hL]))
     fun t₂ u₂ => ?_
   refine wp_xor fun t₃ u₃ => ?_
   refine wp_stb (a := D + BitVec.ofNat 64 i) (by decide) (by decide)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), r9];
         exact BitVec.add_zero _)
-    (by rw [u₃.wr, u₂.wr, u₁.wr, kp.wr]; exact in_off h.wr hin (by omega)) fun t₄ u₄ => ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr, kp.wr]; exact in_off h.wr hin (by omega_using [hL])) fun t₄ u₄ => ?_
   refine wp_addi (by decide) (by decide) fun t₅ u₅ => wp_addi (by decide) (by decide) fun t₆ u₆ =>
     wp_subi (by decide) (by decide) fun t₇ u₇ => WP.block_nil ?_
   have kp₇ : Keeps s t₇ := kp.trans ((kU u₁).trans ((kU u₂).trans ((kU u₃).trans ((kM u₄).trans
@@ -110,22 +110,22 @@ theorem xorBytes_wp (s : State) {S D : Addr} {n : Nat} (h : XorPre s S D n) :
     refine (writeBytes_frame s.mem D _ (R := ⟨D, i⟩) (by rw [hlen]; exact Region.contains_self _ _))
       _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.disj _ (Offset.contains_base S (show i + 1 ≤ n by omega) (by omega))
-      (Region.sub_prefix (show i ≤ n by omega) _ hc)
+    exact h.disj _ (Offset.contains_base S (show i + 1 ≤ n by omega_using [hi]) (by omega_using [hL, hi]))
+      (Region.sub_prefix (show i ≤ n by omega_using [hi]) _ hc)
   have hD : t.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) := by
     rw [mem]
     refine (writeBytes_frame s.mem D _ (R := ⟨D, i⟩) (by rw [hlen]; exact Region.contains_self _ _))
       _ fun r hr hc => ?_
     simp only [List.mem_singleton] at hr; subst hr
     simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at hc
-    rw [Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)] at hc
-    omega
+    rw [Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [hL, hi])] at hc
+    omega_using [hc]
   have hmem : t₇.mem = writeBytes s.mem D (xorL (bytesAt s.mem D (i + 1)) (bytesAt s.mem S (i + 1))) := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.other .r0 (by decide),
       u₁.gpr, u₂.mem, u₁.mem, xor_byte, hS, hD, mem, Proof.Cmac.Stream.bytesAt_append,
       Proof.Cmac.Stream.bytesAt_append, xorL, xorL, List.zipWith_append (by simp [length_bytesAt]),
       bytesAt_one, bytesAt_one, List.zipWith_cons_cons, List.zipWith_nil_left,
-      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen]
+      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_using [hL, hi]), hlen]
   have hstep (P : Addr) : P + BitVec.ofNat 64 i + BitVec.ofNat 64 1 = P + BitVec.ofNat 64 (i + 1) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   have r3' : t₇.gpr .r3 = S + BitVec.ofNat 64 (i + 1) := by
@@ -136,13 +136,13 @@ theorem xorBytes_wp (s : State) {S D : Addr} {n : Nat} (h : XorPre s S D n) :
       u₂.other _ (by decide), u₁.other _ (by decide), r9, hstep]
   have r4' : t₇.gpr .r4 = BitVec.ofNat 64 (n - (i + 1)) := by
     rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), r4, ofNat_sub_one (by omega), Nat.sub_sub]
-  have ev := eval_nonzero (r := .r4) (a := n - (i + 1)) r4' (by omega)
+      u₂.other _ (by decide), u₁.other _ (by decide), r4, ofNat_sub_one (by omega_using [hi]), Nat.sub_sub]
+  have ev := eval_nonzero (r := .r4) (a := n - (i + 1)) r4' (by omega_using [hL])
   by_cases he : i + 1 = n
   · left
     exact ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [r9', he], kp₇⟩
   · right
-    exact ⟨by rw [ev]; simp; omega, n - (i + 1), by omega, i + 1, rfl, by omega, r3', r9', r4', hmem, kp₇⟩
+    exact ⟨by rw [ev]; simp; omega_using [hi, he], n - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], r3', r9', r4', hmem, kp₇⟩
 
 /-! ## `min(16 - o, n)` -/
 
@@ -151,19 +151,19 @@ theorem sub_sign {a b : Nat} (ha : a < 2 ^ 63) (hb : b < 2 ^ 63) :
     (BitVec.ofNat 64 a - BitVec.ofNat 64 b) >>> 63 = BitVec.ofNat 64 (if a < b then 1 else 0) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := a) (by omega), Nat.mod_eq_of_lt (a := b) (by omega), Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (a := a) (by omega_using [ha]), Nat.mod_eq_of_lt (a := b) (by omega_using [hb]), Nat.shiftRight_eq_div_pow,
     BitVec.toNat_ofNat]
   split <;> rename_i h
-  · rw [Nat.mod_eq_of_lt (show 2 ^ 64 - b + a < 2 ^ 64 by omega),
-      Nat.div_eq_of_lt_le (k := 1) (by omega) (by omega)]
-  · rw [show 2 ^ 64 - b + a = (a - b) + 2 ^ 64 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega),
-      Nat.div_eq_of_lt (by omega)]
+  · rw [Nat.mod_eq_of_lt (show 2 ^ 64 - b + a < 2 ^ 64 by omega_using [ha, h]),
+      Nat.div_eq_of_lt_le (k := 1) (by omega_using [hb]) (by omega_using [ha, h])]
+  · rw [show 2 ^ 64 - b + a = (a - b) + 2 ^ 64 by omega_using [ha, h], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha]),
+      Nat.div_eq_of_lt (by omega_using [ha])]
 
 theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := b) (by omega), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := b) (by omega_using [h, ha]), Nat.mod_eq_of_lt (a := a) ha, Nat.mod_eq_of_lt (a := a - b) (by omega_using [ha])]
+  omega_using [h, ha]
 
 end VG.Proof.AesCcm.PPC64LE

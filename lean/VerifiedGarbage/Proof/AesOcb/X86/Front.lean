@@ -87,11 +87,11 @@ theorem front_ciph {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (entryR p :: mu
   have hb := L.rounds_le
   refine ⟨?_, ?_, Proof.Ocb.blockAtMem_frame h fun r hr => (k_front L r hr).sub_left (Offset.sub_base _ (by decide))⟩
   · unfold ctxCiph
-    rw [Proof.AesGcm.X86.bytesAt_frame h (fun r hr => (k_front L r hr).sub_left (Region.sub_prefix (by omega)))
-      (by omega)]
+    rw [Proof.AesGcm.X86.bytesAt_frame h (fun r hr => (k_front L r hr).sub_left (Region.sub_prefix (by omega_using [hb])))
+      (by omega_using [hb])]
   · unfold ctxInv
-    rw [Proof.AesGcm.X86.bytesAt_frame h (fun r hr => (k_front L r hr).sub_left (Region.sub_prefix (by omega)))
-      (by omega)]
+    rw [Proof.AesGcm.X86.bytesAt_frame h (fun r hr => (k_front L r hr).sub_left (Region.sub_prefix (by omega_using [hb])))
+      (by omega_using [hb])]
 
 theorem mut_front {p : Prm} {m m' : Mem} (h : Frame (mutR p) m m') : Frame (entryR p :: mutR p) m m' :=
   h.mono fun _ hr => List.mem_cons_of_mem _ hr
@@ -111,11 +111,11 @@ theorem pre_ok (v : BlocksImpl) {s : State} (h : onePre s) :
   refine WP.seq (WP.mono (hp ▸ entry_ok h) fun s₁ En => ?_)
   have fr₁ := entry_front En.frame
   obtain ⟨c₁, i₁, l₁⟩ := front_ciph L fr₁
-  have hN₁ := bytes_front L.n_w L.bn L.n_d (by have := L.nl15; omega) fr₁
-  have hA₁ := bytes_front L.a_w L.ba L.a_d (by have := L.aw; omega) fr₁
+  have hN₁ := bytes_front L.n_w L.bn L.n_d (by have := L.nl15; omega_using [this]) fr₁
+  have hA₁ := bytes_front L.a_w L.ba L.a_d (by have := L.aw; omega_using [this]) fr₁
   have hD₁ := Proof.AesGcm.X86.bytesAt_frame En.frame (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.dw; omega)
-  have hT₁ := bytes_front L.t_w L.bt L.t_d (by have := L.tl16; omega) fr₁
+    simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.dw; omega_using [this])
+  have hT₁ := bytes_front L.t_w L.bt L.t_d (by have := L.tl16; omega_using [this]) fr₁
   -- `L_$`, `L_0` and the checksum
   obtain ⟨s₂, run₂, P₂⟩ := setup_ok L En.env
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
@@ -146,13 +146,13 @@ theorem pre_ok (v : BlocksImpl) {s : State} (h : onePre s) :
     fun {d} hd => Proof.Ocb.blockAtMem_frame F₄ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact Lay.w_w (by simp only [sumO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [lO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [ohO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [kO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (by simp only [hlO]; omega) (by omega) (by decide)
-      · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-      · exact (L.bw' (by omega)).symm
+      · exact Lay.w_w (by simp only [sumO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [lO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [ohO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [kO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (by simp only [hlO]; omega_using [hd]) (by omega_using [hd]) (by decide)
+      · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+      · exact (L.bw' (by omega_using [hd])).symm
   have kS : ∀ {d : Nat}, d + 16 ≤ 128 → 32 ≤ d → d + 16 ≤ 112 →
       blockAtMem s₃.mem (w64 p.W + BitVec.ofNat 64 d) = blockAtMem s₂.mem (w64 p.W + BitVec.ofNat 64 d) :=
     fun _ h₁ h₂ => P₃.keep h₁ h₂
@@ -182,13 +182,13 @@ theorem body_keep {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (bodyR p) m m') 
   Proof.Ocb.blockAtMem_frame h fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact Lay.w_w (by omega) (by omega) (by decide)
-    · exact Lay.w_w (by omega) (by omega) (by decide)
-    · exact Lay.w_w (by simp only [t2O]; omega) (by omega) (by decide)
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (L.bw' (by omega)).symm
-    · exact (L.d_w' (by omega)).symm
+    · exact Lay.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+    · exact Lay.w_w (by omega_using [hd]) (by omega_using [hd]) (by decide)
+    · exact Lay.w_w (by simp only [t2O]; omega_using [hd]) (by omega_using [hd]) (by decide)
+    · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+    · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+    · exact (L.bw' (by omega_using [hd])).symm
+    · exact (L.d_w' (by omega_using [hd])).symm
 
 /-- What `tag d` writes, within `mutR`. -/
 theorem tagR_mut {p : Prm} {d : Nat} (hd : d = tagO ∨ d = t2O) {m m' : Mem}
@@ -214,7 +214,7 @@ theorem data_tag {p : Prm} (L : Lay p) {d : Nat} (hd : d = tagO ∨ d = t2O) {m 
     · exact L.d_w' (by decide)
     · exact L.d_w' (by rcases hd with rfl | rfl <;> decide)
     · exact L.d_w' (by decide)
-    · exact L.bd.symm) (by have := L.dw; omega)
+    · exact L.bd.symm) (by have := L.dw; omega_using [this])
 
 /-- What `front` leaves: the environment, our caller's registers, the data
 and the tag at `W + d`. -/
@@ -261,9 +261,9 @@ theorem sealFront_ok (v : BlocksImpl) {s : State} (h : onePre s) :
     hck, hofs, ld₄, sum₄, cK₄]
   simp only [length_bytesAt, List.length_drop]
   by_cases hr : 0 < p.n % 16
-  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega
+  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega_using [hr]
     simp only [h', hr, ↓reduceIte]
-  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega
+  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega_using [hr]
     simp only [h', hr, ↓reduceIte]
 
 /-- `front` for `open`: the plaintext over the data and the tag at
@@ -303,9 +303,9 @@ theorem openFront_ok (v : BlocksImpl) {s : State} (h : onePre s) (tag : List Byt
     T₅.val, hck, hofs, ld₄, sum₄, cK₄]
   simp only [length_bytesAt, List.length_drop]
   by_cases hr : 0 < p.n % 16
-  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega
+  · have h' : p.n - 16 * (p.n / 16) > 0 := by omega_using [hr]
     simp only [h', hr, ↓reduceIte]
-  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega
+  · have h' : ¬ (p.n - 16 * (p.n / 16) > 0) := by omega_using [hr]
     simp only [h', hr, ↓reduceIte]
 
 end VG.Proof.AesOcb.X86

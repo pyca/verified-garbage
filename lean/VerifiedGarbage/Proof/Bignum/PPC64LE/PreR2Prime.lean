@@ -53,7 +53,7 @@ theorem r2Dbl64_ok {s : State} {B : Addr} {Z w N a M : Nat} (hs : Scr s B Z)
       Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep ([.r0, .r14, .r17, .r4, .r3, .r15, .r16, .r20] : List Reg) s t
   refine wp_countdown (cnt := .r4) (N := M) hM' hM Inv (fun j _ t ⟨tx, to, tk⟩ _ => ?_)
     ⟨by rw [Nat.add_zero]; exact hx, Mont.Outside.refl _ _ _ _, Keep.refl _ _⟩ h4
-  have n0 : val32 t.mem B (slot w 0) (2 * w) = N := by rw [to.val32 (by omega) (by omega), hN]
+  have n0 : val32 t.mem B (slot w 0) (2 * w) = N := by rw [to.val32 (by omega_using [e0, e1]) (by omega_using [hw', e0, hh]), hN]
   refine WP.seq (WP.mono (doubleMod64_ok (hs.congr tk.wr) ((tk.gpr _ (by decide)).trans h8)
     ((tk.gpr _ (by decide)).trans h9) ((tk.gpr _ (by decide)).trans h10) ((tk.gpr _ (by decide)).trans h5)
     ((tk.gpr _ (by decide)).trans h11) hw hw' hZ (by rw [tx, n0]; exact Nat.mod_lt _ hN0))
@@ -95,10 +95,10 @@ theorem sqP_step {s t : State} {B : Addr} {Z w N e : Nat} (hw2 : 2 ≤ w) (hw' :
   have uo' : Mont.Outside B (slot w 1) (24 * (w + 2)) t.mem u.mem := fun x hx => uo x fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [Mont.ofs] at hx
-    rcases hr with rfl | rfl | rfl <;> simp only [Mont.ofs] <;> omega
-  have n0 : val32 u.mem B (slot w 0) (2 * w) = N := by rw [uo'.val32 (by omega) (by omega), h.n]
+    rcases hr with rfl | rfl | rfl <;> simp only [Mont.ofs] <;> omega_arith
+  have n0 : val32 u.mem B (slot w 0) (2 * w) = N := by rw [uo'.val32 (by omega_using [e0, e1]) (by omega_using [hw', e0, hh]), h.n]
   have w0 : w32 u.mem B (slot w 0) = w32 t.mem B (slot w 0) := by
-    have := uo'.val32 (d := slot w 0) (k := 1) (by omega) (by omega)
+    have := uo'.val32 (d := slot w 0) (k := 1) (by omega_using [e0, e1]) (by omega_using [e0, hh])
     simpa [val32] using this
   have g : ∀ r ∈ [Reg.r10, .r11, .r12], u.gpr r = t.gpr r := fun r hr => k.gpr r (by revert r hr; decide)
   exact ⟨⟨h.scr.congr k.wr, (g .r10 (by decide)).trans h.r10, (g .r11 (by decide)).trans h.r11,
@@ -130,11 +130,11 @@ theorem r2Prime_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
   have hh : hdrBytes = 256 := rfl
   generalize hNd : val32 s.mem B (slot w 0) (2 * w) = N at hN hodd ⊢
-  have hN0 : 0 < N := by omega
+  have hN0 : 0 < N := by omega_using [hN]
   unfold r2Prime
   -- `x := 1`.
-  refine WP.seq (WP.mono (one_ok hs h5 h11 (by omega) hw' (by omega)) fun s₁ ⟨x1, o1, k1⟩ => ?_)
-  have O1 : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem s₁.mem := o1.mono (Nat.le_refl _) (by omega)
+  refine WP.seq (WP.mono (one_ok hs h5 h11 (by omega_using [hw]) hw' (by omega_using [hZ, e1, e8])) fun s₁ ⟨x1, o1, k1⟩ => ?_)
+  have O1 : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem s₁.mem := o1.mono (Nat.le_refl _) (by omega_using [])
   -- The count.
   refine WP.seq (WP.mono (WP.keep [.r4, .r3] (Q := fun t => t.gpr .r4 = BitVec.ofNat 64 (64 * w + w) ∧
     t.mem = s₁.mem)
@@ -143,33 +143,33 @@ theorem r2Prime_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
         Nat.shiftLeft_eq, BitVec.toNat_ofNat, Nat.reducePow]
-      rw [Nat.mod_eq_of_lt (show 2 * w < 18446744073709551616 by omega),
-        Nat.mod_eq_of_lt (show 2 * w * 32 < 18446744073709551616 by omega)]
-      omega) (by decide)) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_)
+      rw [Nat.mod_eq_of_lt (show 2 * w < 18446744073709551616 by omega_using [hw']),
+        Nat.mod_eq_of_lt (show 2 * w * 32 < 18446744073709551616 by omega_using [hw'])]
+      omega_using []) (by decide)) fun s₂ ⟨⟨a4, m2⟩, k2⟩ => ?_)
   have k12 := k1.trans k2
   -- The doublings.
   have O2 : Mont.Outside B (slot w 1) (24 * (w + 2)) s.mem s₂.mem := by rw [m2]; exact O1
   refine WP.seq (WP.mono (r2Dbl64_ok (N := N) (a := 0) (M := 64 * w + w) (hs.congr k12.wr)
     ((k12.gpr _ (by decide)).trans h8) ((k12.gpr _ (by decide)).trans h9) ((k12.gpr _ (by decide)).trans h10)
-    ((k12.gpr _ (by decide)).trans h5) ((k12.gpr _ (by decide)).trans h11) (by omega) hw' (by omega)
-    (by rw [O2.val32 (by omega) (by omega), hNd]) hN0
-    (by rw [m2, x1, Nat.pow_zero, Nat.mod_eq_of_lt (by omega)]) a4 (by omega) (by omega))
+    ((k12.gpr _ (by decide)).trans h5) ((k12.gpr _ (by decide)).trans h11) (by omega_using [hw]) hw' (by omega_using [hZ, e4, e8])
+    (by rw [O2.val32 (by omega_using [e0, e1]) (by omega_using [hw', e0, hh]), hNd]) hN0
+    (by rw [m2, x1, Nat.pow_zero, Nat.mod_eq_of_lt (by omega_using [hN])]) a4 (by omega_using [hw]) (by omega_using [hw']))
     fun s₃' ⟨x3', o3', k3'⟩ => ?_)
   have x3 : val32 s₃'.mem B (slot w 1) (2 * w) = 2 ^ (64 * w + w) % N := by rw [x3', Nat.zero_add]
   have o3 := O2.trans o3'
   have k3 : Keep [.r0, .r14, .r17, .r4, .r3, .r15, .r16, .r20] s s₃' := (k12.trans k3').mono (by decide)
   generalize s₃' = s₃ at x3 o3 k3
   -- Six squares.
-  have n3 : val32 s₃.mem B (slot w 0) (2 * w) = N := by rw [o3.val32 (by omega) (by omega), hNd]
+  have n3 : val32 s₃.mem B (slot w 0) (2 * w) = N := by rw [o3.val32 (by omega_using [e0, e1]) (by omega_using [hw', e0, hh]), hNd]
   have I0 : SqP s B Z w N w s₃ := by
     have w3 : w32 s₃.mem B (slot w 0) = w32 s.mem B (slot w 0) := by
-      have := o3.val32 (d := slot w 0) (k := 1) (by omega) (by omega)
+      have := o3.val32 (d := slot w 0) (k := 1) (by omega_using [e0, e1]) (by omega_using [e0, hh])
       simpa [val32] using this
     refine ⟨hs.congr k3.wr, (k3.gpr _ (by decide)).trans h10, (k3.gpr _ (by decide)).trans h11,
       by rw [k3.gpr .r12 (by decide)]; exact h12, by rw [k3.gpr .r12 (by decide), w3]; exact hinv, n3, ?_, ?_, o3,
       k3.mono⟩
     · rw [x3]; exact Nat.mod_lt _ hN0
-    · rw [x3, Nat.mod_mod, show 64 * w + w = w + 64 * w by omega, Nat.pow_add]
+    · rw [x3, Nat.mod_mod, show 64 * w + w = w + 64 * w by omega_using [], Nat.pow_add]
   refine WP.seq (WP.mono (WP.keep [.r24] (Q := fun u => u.gpr .r24 = BitVec.ofNat 64 6 ∧ u.mem = s₃.mem)
     (by prun) (by decide)) fun s₄ ⟨⟨a24, m4⟩, k4⟩ => ?_)
   let Inv : Nat → State → Prop := fun j u => SqP s B Z w N (w * 2 ^ j) u
@@ -186,6 +186,6 @@ theorem r2Prime_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     exact I1.of_keep (Keep.write _ _ _) (mem_write _ _ _)
   refine ⟨?_, I6.out, I6.keep⟩
   have h6 : w * 2 ^ 6 = 64 * w := by rw [show (2 : Nat) ^ 6 = 64 from rfl, Nat.mul_comm]
-  rw [← Nat.mod_eq_of_lt I6.lt, I6.x, h6, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega]
+  rw [← Nat.mod_eq_of_lt I6.lt, I6.x, h6, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
 
 end VG.Proof.Bignum.PPC64LE.Pre

@@ -35,7 +35,7 @@ theorem xRange_ok {s : State} {L : Lay} {key x : Addr} {b : Bool} (hL : L.Ok) (h
         QS t L key x ∧ QArr L s.mem t.mem) ∧ Keep xRangeRegs s t := by
   have hwq := hL.wq_ge
   have hqs := hL.qslot
-  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega
+  have hql : 20 ≤ L.ql ∧ L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]
   have e : ∀ j, slot L.wq j = 256 + j * (8 * (L.wq + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e5 := e 5; have e6 := e 6
   have e7 := e 7; have e8 := e 8; have e28 := e 28
@@ -49,26 +49,26 @@ theorem xRange_ok {s : State} {L : Lay} {key x : Addr} {b : Bool} (hL : L.Ok) (h
   have k12 := k1.trans k2
   have m21 : s₂.mem = s.mem := m2.trans m1
   refine WP.seq (WP.mono (loadQ_ok (j := 5) Q2 hL (by decide) (hx.keep k12.2.1 k12.2.2) a7 a8
-      (by omega) (by omega)) fun s₃ ⟨⟨Q3, v5, top5, o3⟩, k3⟩ => ?_)
+      (by omega_using [hql]) (by omega_using [hwq])) fun s₃ ⟨⟨Q3, v5, top5, o3⟩, k3⟩ => ?_)
   refine WP.seq (WP.mono (zeroArr_ok Q3.inq.env (j := 7) (by decide)) fun s₄ ⟨⟨z7, o4⟩, k4⟩ => ?_)
-  have Q4 := Q3.step k4 (Body.ofQ hL o4 (by omega))
+  have Q4 := Q3.step k4 (Body.ofQ hL o4 (by omega_using [hwq, e7]))
   have k14 := (k12.trans k3).trans k4
   have e5' : wordsVal s₄.mem L.Q (slot L.wq 5) L.wq = kOf s.mem L x := by
-    rw [o4.wordsVal (by omega) (by omega_arith)]
+    rw [o4.wordsVal (by omega_using [e5, e7]) (by omega_arith)]
     refine v5.trans ?_
     rw [m21]; rfl
   have e0' : wordsVal s₄.mem L.Q (slot L.wq 0) L.wq = arrQ s.mem L 0 := by
-    rw [o4.wordsVal (by omega) (by omega_arith), o3.wordsVal (by omega) (by omega_arith), m21]
+    rw [o4.wordsVal (by omega_using [e0, e7]) (by omega_arith), o3.wordsVal (by omega_using [e0, e5]) (by omega_arith), m21]
   have top5' : word s₄.mem L.Q (slot L.wq 5 + 8 * L.wq) = 0 := by
-    rw [o4.word (by omega) (by omega_arith)]; exact top5
+    rw [o4.word (by omega_using [e5, e7]) (by omega_arith)]; exact top5
   refine WP.mono (inRange_ok Q4.inq.env (a := 5) (b := b) (by decide) (by decide) (by decide)
     top5' z7 ((k14.gpr (by decide)).trans h4)) fun t ⟨⟨c4, o5⟩, k5⟩ => ?_
   rw [e5', e0'] at c4
   have qa : QArr L s.mem t.mem := by
-    have qa1 : QArr L s₂.mem s₃.mem := QArr.of o3 (by omega) (by omega)
-    have qa2 : QArr L s₃.mem s₄.mem := QArr.of o4 (by omega) (by omega)
-    have qa3 : QArr L s₄.mem t.mem := QArr.of o5 (by omega) (by omega)
+    have qa1 : QArr L s₂.mem s₃.mem := QArr.of o3 (by omega_using [e1, e5]) (by omega_using [e5, e28])
+    have qa2 : QArr L s₃.mem s₄.mem := QArr.of o4 (by omega_using [e1, e7]) (by omega_using [e7, e28])
+    have qa3 : QArr L s₄.mem t.mem := QArr.of o5 (by omega_using [e1, e3]) (by omega_using [e3, e28])
     rw [← m21]; exact (qa1.trans qa2).trans qa3
-  exact ⟨⟨c4, Q4.step k5 (Body.ofQ hL o5 (by omega)), qa⟩, (k14.trans k5).mono (by decide)⟩
+  exact ⟨⟨c4, Q4.step k5 (Body.ofQ hL o5 (by omega_using [hwq, e3])), qa⟩, (k14.trans k5).mono (by decide)⟩
 
 end VG.Proof.Dsa.RISCV64

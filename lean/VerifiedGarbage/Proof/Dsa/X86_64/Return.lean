@@ -46,8 +46,8 @@ theorem returnAfter_ok {s : State} {B out : Addr} {Z o w wx m value k : Nat}
       ResultFrame B o wx out k s.mem t.mem ∧ Keep coreRegs s t := by
   have hlo := hc.lo
   have hhi := hc.hi
-  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega
-  have hchild : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hroot : 256 ≤ slot w 8 := by unfold slot hdrBytes; omega_using []
+  have hchild : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   refine WP.seq (WP.mono run fun u ⟨hcu, hmu, huv, hfu, hku⟩ => ?_)
   refine WP.mono (finish_ok hcu ((work_parent hc hfu (by decide)).trans hpm)
     ((work_parent hc hfu (by decide)).trans hp) ((work_parent hc hfu (by decide)).trans hl)
@@ -59,16 +59,16 @@ theorem returnAfter_ok {s : State} {B out : Addr} {Z o w wx m value k : Nat}
     exact htword _ hd
   have hhdr : WsAt t.mem B o wx minv :=
     (show WsAt u.mem B o wx minv from ⟨hcu.hdr, hcu.link⟩).of_words
-      (fun i hi => hcword _ (by omega))
+      (fun i hi => hcword _ (by omega_using [hhi, hchild, hi]))
   have hn : wv t.mem (off B o) (slot wx aN) wx = m := by
-    rw [wv_congr (fun i hi => hcword _ (by have := slot_le (w := wx) (show aN < 8 by decide); omega))]
+    rw [wv_congr (fun i hi => hcword _ (by have := slot_le (w := wx) (show aN < 8 by decide); omega_using [hhi, hi, this]))]
     exact hmu.modulus
   have hinv : ((word t.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hcword _ (by have := slot_le (w := wx) (show aN < 8 by decide); omega)]
+    rw [hcword _ (by have := slot_le (w := wx) (show aN < 8 by decide); omega_using [hhi, this])]
     exact hmu.inverse
   rw [huv] at htout
   exact ⟨hgt, ⟨hhdr, hn, hinv⟩, htout,
-    fun i hi => (htword _ (by omega)).trans (work_parent hc hfu hi),
+    fun i hi => (htword _ (by omega_using [hhi, hchild, hi])).trans (work_parent hc hfu hi),
     fun x hx ho => (hft x ho).trans (hfu x hx), (hku.trans hkt).mono (by decide)⟩
 
 end VG.Proof.Dsa.X86_64

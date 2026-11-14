@@ -79,8 +79,8 @@ theorem pdApply_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb
   have fit : arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len := by
     have bound := array_end_le (w := Spec.Rsa.modulusWords k) (by decide : 3 < 8)
     have := dims.1
-    omega
-  exact pdApply_ct_of_dims (by have := h.1.buffers.minLength; omega)
+    omega_using [dims, bound]
+  exact pdApply_ct_of_dims (by have := h.1.buffers.minLength; omega_using [this])
     (by rw [h.1.buffers.exponent.length]; exact h.1.buffers.exponentPositive) fit s t tr1 tr2 u v h e1 e2
 
 end VG.Proof.Bignum.Arm

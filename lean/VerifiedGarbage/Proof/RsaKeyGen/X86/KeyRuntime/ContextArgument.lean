@@ -19,7 +19,7 @@ theorem context_argument {B : Addr} {Z i : Nat} {p : BitVec 32} {args : Nat → 
       VG.Impl.Bignum.X86.PublicFn.argument (i + 4) := by
     unfold VG.Impl.RsaKeyGen.X86.CandidateArgs.arg VG.Impl.Bignum.X86.PublicFn.argument
     congr 1
-    omega
+    omega_using []
   have R := C.read i index
   rw [operand] at R
   have read : s.load32 (stackAddress s (i + 4)) = some (args i) := R
@@ -37,6 +37,6 @@ theorem context_argument {B : Addr} {Z i : Nat} {p : BitVec 32} {args : Nat → 
     rfl
   refine ⟨⟨access, ?_⟩, value⟩
   rw [address]
-  exact C.separate.sub_left (Offset.sub_base _ (by change 4 * i + 4 ≤ 72; omega))
+  exact C.separate.sub_left (Offset.sub_base _ (by change 4 * i + 4 ≤ 72; omega_using [index]))
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

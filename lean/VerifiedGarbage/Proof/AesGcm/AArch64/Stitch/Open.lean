@@ -72,8 +72,8 @@ theorem sfr_hi {to : Bool} {W : Addr} {d k : Nat}
     ∃ r' ∈ sfr to W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' := by
   cases to
   · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-    · exact fast_hi h₁ (by omega)
-    · exact fast_hi (by omega) h₂
+    · exact fast_hi h₁ (by omega_using [h₂])
+    · exact fast_hi (by omega_using [h₁]) h₂
   · exact fastP_hi h
 
 theorem sfr_work (to : Bool) (W : Addr) : ∀ r ∈ sfr to W, Region.Sub r (workR W) := by
@@ -114,14 +114,14 @@ theorem tag_sfr {to : Bool} {W : Addr} {k : Nat} (hk : k ≤ 16) :
   · intro r hr
     simp only [sfr, Bool.cond_false, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (Offset.disjoint_base W (show k ≤ 16 by omega) (by decide)).symm
-    · exact (Offset.disjoint_base W (show k ≤ 256 by omega) (by decide)).symm
+    · exact (Offset.disjoint_base W (show k ≤ 16 by omega_using [hk]) (by decide)).symm
+    · exact (Offset.disjoint_base W (show k ≤ 256 by omega_using [hk]) (by decide)).symm
   · intro r hr
     simp only [sfr, Bool.cond_true, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (Offset.disjoint_base W (show k ≤ 16 by omega) (by decide)).symm
-    · exact (Offset.disjoint_base W (show k ≤ 256 by omega) (by decide)).symm
-    · exact (Offset.disjoint_base W (show k ≤ 512 by omega) (by decide)).symm
+    · exact (Offset.disjoint_base W (show k ≤ 16 by omega_using [hk]) (by decide)).symm
+    · exact (Offset.disjoint_base W (show k ≤ 256 by omega_using [hk]) (by decide)).symm
+    · exact (Offset.disjoint_base W (show k ≤ 512 by omega_using [hk]) (by decide)).symm
 
 /-- `decPre`: in place the first counter block kept at `W + cbO`, out of
 place `dst` (kept at `W + dstO`) loaded into `x15`. -/

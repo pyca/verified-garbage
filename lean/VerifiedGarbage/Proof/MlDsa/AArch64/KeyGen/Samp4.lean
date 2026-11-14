@@ -45,12 +45,12 @@ theorem GS.seeds {p : Params} {σ : State} {e : Nat} {s : State} (h : GS p σ e 
 
 theorem coeffAt_poly4 (m : Mem) (a : Addr) (k j : Nat) : coeffAt m (poly4 a k) j = coeffAt m a (256 * k + j) := by
   unfold coeffAt poly4
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * k + 4 * j = 4 * (256 * k + j) by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * k + 4 * j = 4 * (256 * k + j) by omega_using []]
 
 theorem pa_poly4 (s : State) (e k : Nat) : poly4 (pa s (aP e)) k = pa s (aP (e + k)) := by
   unfold poly4
   rw [show pa s (aP e) + BitVec.ofNat 64 (1024 * k) = pa s (sc (oP e + 1024 * k)) from sc_add _ _ _,
-    show oP e + 1024 * k = oP (e + k) by simp only [oP]; omega]
+    show oP e + 1024 * k = oP (e + k) by simp only [oP]; omega_using []]
 
 /-- One bound for the four polynomials. -/
 theorem bound4 {ρ : Nat → List Byte} {x : Nat → Poly} (h : ∀ k < 4, ∃ b : Spec.MlDsa.Bounds,
@@ -60,11 +60,11 @@ theorem bound4 {ρ : Nat → List Byte} {x : Nat → Poly} (h : ∀ k < 4, ∃ b
   obtain ⟨b2, h2⟩ := h 2 (by decide)
   obtain ⟨b3, h3⟩ := h 3 (by decide)
   refine ⟨max (max b0.rejNTT b1.rejNTT) (max b2.rejNTT b3.rejNTT), fun k hk => ?_⟩
-  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
-  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h0
-  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h1
-  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h2
-  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega) h3
+  rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h0
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h1
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h2
+  · exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (by omega_using []) h3
 
 
 theorem call_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p)
@@ -96,7 +96,7 @@ theorem call_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   rw [h20.get .x0,e20,e2,h20.mem] at hco
   have hco4 : ∀ k < 4, ∀ i < 256,coeffAt s3.mem (poly4 (pa s (aP (4*g))) k) i =
       if (s2.gpr .x0).setWidth 32 = 1 then coeffAt s2.mem (poly4 (pa s (aP (4*g))) k) i else 0 :=
-    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega)
+    fun k hk i hi => by rw [coeffAt_poly4,coeffAt_poly4]; exact hco _ (by omega_using [hk, hi])
   have e3 : ∀ k,pa s3 (aP (4*g+k)) = poly4 (pa s (aP (4*g))) k := fun k => by
     rw [pa_poly4,sc_pa hP13]
   obtain ⟨A,S',hA,_,hG⟩ := h.ks.ex
@@ -111,11 +111,11 @@ theorem call_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
       exact L.keepPoly hP13 (by lay) (hA e' hlt)
     · rw [ifn hlt]
       refine ⟨?_,rfl⟩
-      obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega⟩
+      obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
       rw [e3]
       by_cases h1 : (s2.gpr .x0).setWidth 32 = 1
-      · exact (masked_one h1 (hco4 k (by omega))).2 (hred h1 k (by omega))
-      · exact (masked_zero h1 (hco4 k (by omega))).1
+      · exact (masked_one h1 (hco4 k (by omega_using [he']))).2 (hred h1 k (by omega_using [he']))
+      · exact (masked_zero h1 (hco4 k (by omega_using [he']))).1
   · rw [h24']
     rcases hG with ⟨h1,b,hb,_⟩ | ⟨h0,hn⟩
     · rcases hout with ⟨ho,hb4⟩ | ⟨ho,k,hk,hn⟩
@@ -127,14 +127,14 @@ theorem call_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
         · rw [ifp hlt]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_left _ _) (hb e' hlt)
         · rw [ifn hlt]
-          obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega⟩
-          have hk : k < 4 := by omega
+          obtain ⟨k,rfl⟩ : ∃ k,e' = 4*g+k := ⟨e'-4*g,by omega_using [hlt]⟩
+          have hk : k < 4 := by omega_using [he']
           rw [e3,(masked_one ho (hco4 k hk)).1,← seed4_eq h hk]
           exact Proof.MlDsa.KeyGen.rejNTTPoly_mono (Nat.le_max_right _ _) (hn k hk)
       · rw [ifn (fun h => by rw [h.2] at ho; exact absurd ho (by decide))]
         rw [seed4_eq h hk] at hn
-        have hq : (4*g+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega)
-        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega)) hn⟩
+        have hq : (4*g+k)/p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm p.ℓ p.k]; omega_using [hg, hk])
+        exact .inr ⟨rfl,Proof.MlDsa.KeyGen.keyGenInternal_none_A hq (Nat.mod_lt _ (by omega_using [hl])) hn⟩
     · rw [ifn (fun h => by rw [h.1] at h0; exact absurd h0 (by decide))]
       exact .inr ⟨rfl,hn⟩
 
@@ -165,7 +165,7 @@ theorem call_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : P
     fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1)
     (rej4At_tr hP.rej4 (kgOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
-    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (tail4_tr (by omega))
+    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) (tail4_tr (by omega_using [hg, hkl]))
 
 theorem expA4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p)
     {g : Nat} (hg : 4*g+4 ≤ p.k*p.ℓ) :
@@ -173,7 +173,7 @@ theorem expA4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : 
   unfold expA4
   refine Piece.seq (Piece.mono
     (Piece.seqR (I := fun j σ s => GS p σ (4*g) j s) 4 0
-      (fun j _ hj => slot_piece hF hg (by omega)))
+      (fun j _ hj => slot_piece hF hg (by omega_using [hj])))
       (fun _ _ _ h => ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
       (fun _ _ _ h => by simpa using h)) (call_piece hP hF hg)
 
@@ -184,12 +184,12 @@ theorem sampAll_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF 
       (seqR (expA4 P p) 0 (p.k*p.ℓ/4)) := by
     simpa only [Nat.zero_add,Nat.mul_zero] using
       (Piece.seqR (I := fun g σ s => KSamp p σ (4*g) 0 s) (p.k*p.ℓ/4) 0
-        (fun g _ hg => expA4_piece hP hF (by omega)))
+        (fun g _ hg => expA4_piece hP hF (by omega_using [hg])))
   refine Piece.mono (Piece.seq hB
     (Piece.seqR (I := fun e σ s => KSamp p σ e 0 s) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
-      (fun e _ he => expA_piece hP hF (by omega))))
+      (fun e _ he => expA_piece hP hF (by omega_using [he]))))
     (fun _ _ _ h => KSamp.zero h.1 h.2) (fun _ _ _ h => ?_)
-  have he : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega
+  have he : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
   simpa only [he] using h
 
 end VG.Proof.MlDsa.AArch64.KeyGen

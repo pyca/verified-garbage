@@ -56,7 +56,7 @@ theorem random_drawCheck_ok {C : RandomContext} {s : State} {used draws : Nat}
   have hbs := hs.congr hbk.wr
   have hbsp := hbk.sp.trans hsp
   have hbf' : Outside B 200 32 s.mem b.mem := by
-    exact hbf.mono (by omega) (by omega)
+    exact hbf.mono (by omega_using [hnfit]) (by omega_using [hnfit, hqlen])
   have hbu : word b.mem B Random.oUsed = BitVec.ofNat 64 used := by
     rw [hbf'.word (by decide) (by decide)]; exact hu
   have hbn : word b.mem B Random.oWidth = BitVec.ofNat 64 n := by
@@ -80,10 +80,10 @@ theorem random_drawCheck_ok {C : RandomContext} {s : State} {used draws : Nat}
       (off B (200 + qBytes.length - n) + BitVec.ofNat 64 i) = copied[i] := by
     intro i hi
     rw [hcf _ (by
-      rw [random_nonce_offset B hnfit hqlen (by omega)]
+      rw [random_nonce_offset B hnfit hqlen (by omega_using [hclen, hi])]
       right
       unfold Random.oUsed
-      omega)]
+      omega_using [hnfit])]
     exact hcv i hi
   refine WP.mono (random_check_candidate_ok hcs hcsp hcl hcn hcq hcqsrc
       hqlen hpos hclen rfl hccv)

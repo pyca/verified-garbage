@@ -74,16 +74,16 @@ theorem fixedPermutation_ok {m n : Nat} (positions : Vector Nat m)
     simp only [hj, decide_true, Bool.true_and]
     rw [hout]
     by_cases hjm : j < m
-    · have hk : m - 1 - j < m := by omega
+    · have hk : m - 1 - j < m := by omega_using [hjm]
       obtain ⟨hlo, hhi⟩ := bounds _ hk
-      have hsource : n - positions.getD (m - 1 - j) 1 < n := by omega
-      have h64 : n - positions.getD (m - 1 - j) 1 < 64 := by omega
+      have hsource : n - positions.getD (m - 1 - j) 1 < n := by omega_using [hn, hlo]
+      have h64 : n - positions.getD (m - 1 - j) 1 < 64 := by omega_using [hn64, hlo]
       rw [VG.Proof.TripleDes.permute_bit positions _ hn j hjm,
         BitVec.getLsbD_setWidth]
       simp only [hsource, decide_true, Bool.true_and, permutationBits, hjm, ite_true,
         xorBits, List.foldr_cons, List.foldr_nil, Bool.xor_false, bitOf,
         Nat.mod_eq_of_lt h64, W]
-    · rw [BitVec.getLsbD_of_ge _ _ (by omega)]
+    · rw [BitVec.getLsbD_of_ge _ _ (by omega_using [hjm])]
       simp only [permutationBits, hjm, ite_false, xorBits, List.foldr_nil]
   · funext a
     apply frame a

@@ -61,19 +61,19 @@ theorem sampleLoop_ok {E : SE} {qb R : List Byte} {s₀ : State} {u₀ : Nat} {S
   refine WP.seq (WP.mono (draw_ok hE hQ h h25 hu h17 hd hd' h31) fun t₁ ⟨h1, o1, k1, hc⟩ => ?_)
   refine WP.mono (WP.keep [.r3] (Q := fun t₂ => t₂.mem = t₁.mem ∧
     t₂.gpr .r3 = t₁.gpr .r31 - BitVec.ofNat 64 4) (by prun) (by decide)) fun t₂ ⟨⟨m2, a3⟩, k2⟩ => ?_
-  have h2 : SEnv E R t₂ := h1.step hE k2 (o := 0) (n := 0) (by omega) (by rw [m2]; exact Outside.refl _ _ _ _)
+  have h2 : SEnv E R t₂ := h1.step hE k2 (o := 0) (n := 0) (by omega_using []) (by rw [m2]; exact Outside.refl _ _ _ _)
   have o2 : Outside E.F E.o E.W s₀.mem t₂.mem := by rw [m2]; exact ho.trans o1
   have k02 : Keep drawRegs s₀ t₂ := ((hk.trans k1).trans k2).mono (by decide)
   rcases hc with ⟨b31, h2d, b17, b25, hu', hrej⟩ | ⟨b31, b25, bc, -⟩
-  · refine .inr ⟨?_, n - 1, by omega, n - 1, u + E.W, rfl, by omega, by omega, h2,
+  · refine .inr ⟨?_, n - 1, by omega_using [hd], n - 1, u + E.W, rfl, by omega_using [h2d], by omega_using [hd'], h2,
       (k2.gpr .r25 (by decide)).trans b25, hu', (k2.gpr .r17 (by decide)).trans b17,
       (k2.gpr .r31 (by decide)).trans b31, o2, k02, ?_, ?_, ?_⟩
     · rw [eval_zero, a3, b31]; rfl
     · rw [← hsc, hrej]
     · rw [← hst, hrej, Dsa.Random.sampleStatus_reject]
-    · rw [← hus, hrej]; dsimp only; omega
+    · rw [← hus, hrej]; dsimp only; omega_using []
   · refine .inl ⟨?_, ⟨h2, o2, k02, ?_, ?_, ?_⟩⟩
-    · rw [eval_zero, a3, b31, status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) n (R.drop u)); omega)]
+    · rw [eval_zero, a3, b31, status_sub4 _ (by have := sampleStatus_le (sample (Spec.Dsa.decodeBE qb) n (R.drop u)); omega_using [this])]
     · rw [(k2.gpr .r31 (by decide)).trans b31, hst]
     · rw [(k2.gpr .r25 (by decide)).trans b25, hus]
     · intro k hk'
@@ -89,7 +89,7 @@ theorem sample_ok {E : SE} {qb R : List Byte} {s : State} {u : Nat} (hE : E.Ok) 
     t.gpr .r17 = BitVec.ofNat 64 128 ∧ t.gpr .r31 = BitVec.ofNat 64 4) (by prun) (by decide))
     fun t ⟨⟨tm, t17, t31⟩, k⟩ => ?_)
   exact sampleLoop_ok hE hQ 128 t u (by decide) (by decide)
-    (h.step hE k (o := 0) (n := 0) (by omega) (by rw [tm]; exact Outside.refl _ _ _ _))
+    (h.step hE k (o := 0) (n := 0) (by omega_using []) (by rw [tm]; exact Outside.refl _ _ _ _))
     ((k.gpr .r25 (by decide)).trans h25) hu t17 t31 (by rw [tm]; exact Outside.refl _ _ _ _) (k.mono (by decide))
     rfl rfl rfl
 

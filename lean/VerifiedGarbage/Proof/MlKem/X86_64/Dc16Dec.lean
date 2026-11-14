@@ -46,7 +46,7 @@ theorem dec_ok (hK : KpkeOk K.L) (W : Dc16Wf K) {σ : State} (hp : (decapsK K.L)
     ⟨h.step W.toDcWfB hp hP.b W.kdK, by rw [hP.cs .r15 (by decide)]; exact h15, ?_⟩
   rw [hP.pa rbx_cs, hm, h.c, KPke.decM, KPke.dkPke, ← h.dk]
   exact congrArg (kpkeDecrypt K.L.p · _)
-    (bytesAt_take _ _ (show 384 * K.L.p.k ≤ 768 * K.L.p.k + 96 by omega)).symm
+    (bytesAt_take _ _ (show 384 * K.L.p.k ≤ 768 * K.L.p.k + 96 by omega_using [])).symm
 
 theorem dec_tr (hK : KpkeOk K.L) (W : Dc16Wf K) :
     RelCT isa (R K.L fun σ s => DC K.L σ s ∧ s.gpr .r15 = 1)

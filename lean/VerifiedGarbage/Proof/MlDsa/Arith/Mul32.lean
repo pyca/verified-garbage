@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: products modulo `q` with 32-bit multiplications, for every target
@@ -34,12 +35,12 @@ def red23 (x : Nat) : Nat := x - x / 2 ^ 23 * q
 def redMax : Nat := 12574208
 
 theorem red23_le {x : Nat} (hx : x < 2 ^ 32) : red23 x ≤ redMax := by
-  unfold red23 redMax; rw [q_eq]; omega
+  unfold red23 redMax; rw [q_eq]; omega_using [hx]
 
 theorem red23_mod (x : Nat) : red23 x % q = x % q := by
   unfold red23
   rw [Nat.mul_comm]
-  exact Nat.sub_mul_mod (by rw [q_eq]; omega)
+  exact Nat.sub_mul_mod (by rw [q_eq]; omega_using [])
 
 /-- `(a + x · c) mod q` depends only on `x mod q`. -/
 theorem add_mul_mod_congr (a c : Nat) {x y : Nat} (h : x % q = y % q) :
@@ -60,7 +61,7 @@ theorem mulzN_mod (b z : Nat) : mulzN b z % q = b * z % q := by
   have e1 : (b * (z / 128 % 128) + red23 (b * (z / 16384)) * 128) % q =
       (b * (z / 128 % 128) + b * (z / 16384) * 128) % q := add_mul_mod_congr _ _ (red23_mod _)
   rw [red23_mod, add_mul_mod_congr _ _ ((red23_mod _).trans e1)]
-  have hz : z % 128 + (z / 128 % 128 + z / 16384 * 128) * 128 = z := by omega
+  have hz : z % 128 + (z / 128 % 128 + z / 16384 * 128) * 128 = z := by omega_using []
   conv => rhs; rw [← hz]
   simp only [Nat.add_mul, Nat.mul_add, Nat.mul_assoc]
 
@@ -71,13 +72,13 @@ theorem mulzN_bounds {b z : Nat} (hb : b < q) (hz : z < 2 ^ 23) :
       b * (z % 128) + mulz2 b z * 128 < 2 ^ 32 ∧ mulzN b z ≤ redMax := by
   rw [q_eq] at hb
   have h2 : b * (z / 16384) ≤ 8380416 * 511 :=
-    Nat.mul_le_mul (by omega) (by omega)
-  have h1 : b * (z / 128 % 128) ≤ 8380416 * 127 := Nat.mul_le_mul (by omega) (by omega)
-  have h0 : b * (z % 128) ≤ 8380416 * 127 := Nat.mul_le_mul (by omega) (by omega)
-  have r1 : mulz1 b z ≤ redMax := red23_le (by omega)
-  have r2 : mulz2 b z ≤ redMax := red23_le (by unfold redMax at r1; omega)
+    Nat.mul_le_mul (by omega_using [hb]) (by omega_using [hz])
+  have h1 : b * (z / 128 % 128) ≤ 8380416 * 127 := Nat.mul_le_mul (by omega_using [hb]) (by omega_using [])
+  have h0 : b * (z % 128) ≤ 8380416 * 127 := Nat.mul_le_mul (by omega_using [hb]) (by omega_using [])
+  have r1 : mulz1 b z ≤ redMax := red23_le (by omega_using [h2])
+  have r2 : mulz2 b z ≤ redMax := red23_le (by unfold redMax at r1; omega_using [h1, r1])
   unfold redMax at r1 r2
-  exact ⟨by omega, by omega, by omega, red23_le (by omega)⟩
+  exact ⟨by omega_using [h2], by omega_using [h1, r1], by omega_using [h0, r2], red23_le (by omega_using [h0, r2])⟩
 
 theorem redMax_lt : redMax < 2 * q := by decide
 

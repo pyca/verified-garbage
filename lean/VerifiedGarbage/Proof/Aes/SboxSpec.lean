@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The specification's S-box, on all 256 inputs at once
@@ -112,7 +113,7 @@ theorem row_xorT {A B : List Nat} (hA : A.length = 8) (hB : B.length = 8) (c : N
   rw [BitVec.getLsbD_xor, getLsbD_row _ _ hj, getLsbD_row _ _ hj, ← Nat.testBit_xor]
   congr 1
   simp only [xorT, List.getD_eq_getElem?_getD, List.getElem?_zipWith]
-  rw [List.getElem?_eq_getElem (by omega), List.getElem?_eq_getElem (by omega)]
+  rw [List.getElem?_eq_getElem (by omega_using [hA, hj]), List.getElem?_eq_getElem (by omega_using [hB, hj])]
   simp
 
 theorem row_andT (m : Nat) (A : List Nat) (c : Nat) :
@@ -136,7 +137,7 @@ theorem getLsbD_xtimes (b : Byte) {j : Nat} (hj : j < 8) :
 
 theorem row_xtT (A : List Nat) (c : Nat) : row (xtT A) c = xtimes (row A c) := by
   refine row_ext fun j hj => ?_
-  rw [getLsbD_xtimes _ hj, getLsbD_row _ _ (show 7 < 8 by omega)]
+  rw [getLsbD_xtimes _ hj, getLsbD_row _ _ (show 7 < 8 by omega_using [])]
   rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | simp [xtT, Nat.testBit_xor]
 
 theorem row_repeat_xtT (A : List Nat) (c i : Nat) :
@@ -234,23 +235,23 @@ theorem testBit_sum_pow (f : Nat → Bool) (n : Nat) :
     generalize (List.range n).foldl (fun acc i => acc + if f i then 2 ^ i else 0) 0 = S at hlt hbit
     split
     · rename_i hf
-      refine ⟨by rw [Nat.pow_succ]; omega, fun j => ?_⟩
+      refine ⟨by rw [Nat.pow_succ]; omega_using [hlt], fun j => ?_⟩
       rw [Nat.add_comm]
       by_cases hj : j < n
-      · rw [Nat.testBit_two_pow_add_gt hj, hbit]; simp [hj, show j < n + 1 by omega]
+      · rw [Nat.testBit_two_pow_add_gt hj, hbit]; simp [hj, show j < n + 1 by omega_using [hj]]
       · by_cases hj' : j = n
         · subst hj'; rw [Nat.testBit_two_pow_add_eq, hbit]; simp [hf]
         · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (show 2 ^ n + S < 2 ^ (n + 1) by
-            rw [Nat.pow_succ]; omega) (Nat.pow_le_pow_right (by omega) (by omega)))]
-          simp; omega
+            rw [Nat.pow_succ]; omega_using [hlt]) (Nat.pow_le_pow_right (by omega_using []) (by omega_using [hj, hj'])))]
+          simp; omega_using [hj, hj']
     · rename_i hf
-      refine ⟨by rw [Nat.pow_succ]; omega, fun j => ?_⟩
+      refine ⟨by rw [Nat.pow_succ]; omega_using [hlt], fun j => ?_⟩
       rw [Nat.add_zero, hbit]
       by_cases hj : j < n
-      · simp [hj, show j < n + 1 by omega]
+      · simp [hj, show j < n + 1 by omega_using [hj]]
       · by_cases hj' : j = n
         · subst hj'; simp [hf]
-        · simp [hj, show ¬ j < n + 1 by omega]
+        · simp [hj, show ¬ j < n + 1 by omega_using [hj, hj']]
 
 theorem row_affT (A : List Nat) {c : Nat} (hc : c < 256) :
     row (affT A) c = aff (row A c) := by
@@ -259,9 +260,9 @@ theorem row_affT (A : List Nat) {c : Nat} (hc : c < 256) :
   simp only [affT, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj,
     Option.map_some, Option.getD_some, Nat.testBit_xor]
   simp only [← List.getD_eq_getElem?_getD]
-  rw [getLsbD_row _ _ hj, getLsbD_row _ _ (Nat.mod_lt _ (by omega)),
-    getLsbD_row _ _ (Nat.mod_lt _ (by omega)), getLsbD_row _ _ (Nat.mod_lt _ (by omega)),
-    getLsbD_row _ _ (Nat.mod_lt _ (by omega))]
+  rw [getLsbD_row _ _ hj, getLsbD_row _ _ (Nat.mod_lt _ (by omega_using [])),
+    getLsbD_row _ _ (Nat.mod_lt _ (by omega_using [])), getLsbD_row _ _ (Nat.mod_lt _ (by omega_using [])),
+    getLsbD_row _ _ (Nat.mod_lt _ (by omega_using []))]
   congr 1
   rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega |
     (simp only [testBit_ite_ONES, hc, decide_true, Bool.and_true] <;> decide)

@@ -24,6 +24,6 @@ theorem sub64_value (c lo hi : BitVec 32) :
   by_cases h : lo.toNat ≤ c.toNat <;>
     simp only [h, ite_true, ite_false, BitVec.toNat_sub,
       show (0 : BitVec 32).toNat = 0 from rfl,
-      show (1 : BitVec 32).toNat = 1 from rfl] <;> omega
+      show (1 : BitVec 32).toNat = 1 from rfl] <;> omega_using [h]
 
 end VG.Proof.Bignum.Arm

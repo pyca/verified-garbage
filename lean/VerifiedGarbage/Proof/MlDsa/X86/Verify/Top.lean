@@ -69,7 +69,7 @@ theorem ok1_piece : VP p (fun s₀ s => (H1 p s₀ s ∧ (hOf p s₀).isSome = t
     (.seq (seqR (zOne P p) 0 p.ℓ) (ifOk (.seq (samples P p) (compute P p)))) := by
   refine Piece.seq (B := fun s₀ s => ZI p s₀ p.ℓ s ∧ T1Ok p s₀)
     (piece_pure (T1Ok p) ((seqR_piece (I := fun i => (ZI p · i)) p.ℓ 0
-    fun i _ hi => zOne_piece hP hF (by omega)).mono (fun s₀ s _ ⟨h, hs⟩ => ?_) fun _ _ _ h => by simpa using h)) ?_
+    fun i _ hi => zOne_piece hP hF (by omega_using [hi])).mono (fun s₀ s _ ⟨h, hs⟩ => ?_) fun _ _ _ h => by simpa using h)) ?_
   · rcases h.2 with ⟨e, ho⟩ | ⟨_, hn⟩
     · exact ⟨h.1, ho, fun j hj => absurd hj (Nat.not_lt_zero _), by
         rw [e, ifp (fun j hj => absurd hj (Nat.not_lt_zero _)) _ _]⟩

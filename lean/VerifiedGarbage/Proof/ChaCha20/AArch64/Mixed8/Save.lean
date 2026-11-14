@@ -69,7 +69,7 @@ theorem tenter_ok {s₀ a : State} (hp : TPre s₀) (hg : ∀ r, r ≠ .x5 → a
   have hb : a.gpr .x3 = bp s₀ := hg _ (by decide)
   have hw : a.wr = [stR s₀,tR s₀,bR s₀] := hwr.trans hp.wr
   have ho (d : Nat) (n : Nat) (hd : d + n ≤ 320) : InRegions a.wr (a.gpr .x3 + BitVec.ofNat 64 d) n := by
-    rw [hw,hb]; exact ⟨bR s₀,by simp,Offset.contains_base _ hd (by omega)⟩
+    rw [hw,hb]; exact ⟨bR s₀,by simp,Offset.contains_base _ hd (by omega_using [hd])⟩
   rw [show enterFrom = Spill.saveCode .x3 savedFrom ++
     ([.addImm .x .x20 .x3 0] ++ (saveV ++ [.addImm .x .x27 .x1 0, .addImm .x .x1 .x4 0])) from rfl]
   refine Spill.save_ok (by decide) (fun p hp' => ho p.2 8 (by revert p; decide)) ?_
@@ -95,7 +95,7 @@ theorem tenter_ok {s₀ a : State} (hp : TPre s₀) (hg : ∀ r, r ≠ .x5 → a
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hp.t_b
   have hnd : ∀ r ∈ [bR s₀], (dR s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hp.d_b
-  refine ⟨?_,?_,?_,?_,?_,?_,by omega,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  refine ⟨?_,?_,?_,?_,?_,?_,by omega_using [],?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
   · rw [ga _ (by decide) (by decide) (by decide),hg _ (by decide)]
   · rw [ue.gpr,ud.other _ (by decide),hcg,ub.other _ (by decide),hg _ (by decide)]; simp
   · rw [ga _ (by decide) (by decide) (by decide),hg _ (by decide)]
@@ -128,7 +128,7 @@ theorem tenter_ok {s₀ a : State} (hp : TPre s₀) (hg : ∀ r, r ≠ .x5 → a
       rw [savedVR,hb3]
       exact Offset.disjoint _ (by decide) (by decide) (by decide))
   · intro j
-    have hj : j = 0 ∨ j = 1 := by simp only [Fin.ext_iff]; omega
+    have hj : j = 0 ∨ j = 1 := by simp only [Fin.ext_iff]; omega_using []
     rw [hem]
     rcases hj with rfl | rfl
     · change c.mem.read (bp s₀ + BitVec.ofNat 64 128) 16 = s₀.v .v8
@@ -161,7 +161,7 @@ theorem tleave_ok {s₀ s : State} (hp : TPre s₀) {t : Nat} (h : TInv s₀ t s
     WP isa (.block leaveFrom) s (TRest s₀ t) := by
   have hw : s.wr = [stR s₀,tR s₀,bR s₀] := h.wr.trans hp.wr
   have hi (d n : Nat) (hd : d + n ≤ 320) : InRegions (s.rd ++ s.wr) (bp s₀ + BitVec.ofNat 64 d) n := by
-    rw [hw]; exact ⟨bR s₀,by simp,Offset.contains_base _ hd (by omega)⟩
+    rw [hw]; exact ⟨bR s₀,by simp,Offset.contains_base _ hd (by omega_using [hd])⟩
   rw [show leaveFrom = [VG.Impl.ChaCha20.AArch64.Xor.mov .x4 .x1, VG.Impl.ChaCha20.AArch64.Xor.mov .x1 .x27] ++
     (restoreV ++ Spill.restoreCode .x3 savedFrom) from rfl]
   refine WP.block_append_iff.mpr (wp_movS fun a ua hasp hav => wp_movS fun b ub hbsp hbv =>

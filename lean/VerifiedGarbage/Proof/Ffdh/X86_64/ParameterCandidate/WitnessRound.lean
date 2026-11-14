@@ -27,7 +27,7 @@ private theorem round_constant (w j : Nat) (hj : j = aOne ∨ j = aR2) :
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aR1, aOne, aR2,
       Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
-    and_intros <;> omega
+    and_intros <;> omega_using []
 
 theorem sharedRound_ok (K : Kernel) {s : State} {B : Addr} {Z w N a : Nat} {mi : BitVec 64}
     (h : ModulusReady s B Z w mi N) (hd : MrDims B Z w) (hZ : slot w 28 ≤ Z) (hr : Caller.Room s B Z)
@@ -63,7 +63,7 @@ theorem witnessRound_ok (M : Mont) (K : Kernel) {s : State} {B : Addr} {Z w N a 
       word t.mem B (8 * kFlag) = mask (Spec.Ffdh.mrRound N a) ∧
       WorkFrame B (witnessRoundRanges w) [below (s.gpr .rsp) 128] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold witnessRound
-  refine WP.seq (WP.mono (witnessMont_ok M h hd ho (by omega) ha) fun u ⟨hu, hxm, hf, k⟩ => ?_)
+  refine WP.seq (WP.mono (witnessMont_ok M h hd ho (by omega_using [hN]) ha) fun u ⟨hu, hxm, hf, k⟩ => ?_)
   have hsp : u.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   have hru : Caller.Room u B Z := ⟨by rw [hsp]; exact hr.size, by rw [hsp]; exact hr.disjoint⟩
   refine WP.mono (sharedRound_ok K hu hd hZ hru ho hN hxm) fun t ⟨ht, hflag, hf', k'⟩ => ?_

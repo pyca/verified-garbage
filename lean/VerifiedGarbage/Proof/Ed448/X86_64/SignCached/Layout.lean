@@ -177,11 +177,11 @@ theorem congr (hc : Ctx L g mx m₀ t) {g' : Reg → BitVec 64} {mx' : BitVec 32
 /-- A word of the frame is readable. -/
 theorem inFr (hc : Ctx L g mx m₀ t) {d : Nat} (h₂ : d + 8 ≤ 448) :
     InRegions (t.rd ++ t.wr) (L.SP + BitVec.ofNat 64 d) 8 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h₂ (by omega_using [h₂])⟩
 
 theorem inFrW (hc : Ctx L g mx m₀ t) {d n : Nat} (h₂ : d + n ≤ 448) :
     InRegions t.wr (L.SP + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h₂ (by omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains_base _ h₂ (by omega_using [h₂])⟩
 
 /-- The return address of a call from the frame. -/
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
@@ -222,13 +222,13 @@ theorem slot_disj {L : Lay} (hL : L.Ok) {d : Nat} (h₁ : 136 ≤ d) (h₂ : d +
     (hr : WOk L r ∨ r = ⟨L.B, 16⟩) : Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, 8⟩ r := by
   rw [Lay.SP, add_add]
   rcases hr with (hr | hr | hr | hr) | rfl
-  · exact (hL.stk_r hL.kScr (d := 16 + d) (n := 8) (by omega)).sub_right hr.sub
-  · exact (hL.stk_r hL.kOut (d := 16 + d) (n := 8) (by omega)).sub_right hr.sub
-  · have := Offset.disjoint L.B (d := 16 + d) (n := 8) (e := 16) (k := 136) (by omega) (by omega) (by omega)
+  · exact (hL.stk_r hL.kScr (d := 16 + d) (n := 8) (by omega_using [h₂])).sub_right hr.sub
+  · exact (hL.stk_r hL.kOut (d := 16 + d) (n := 8) (by omega_using [h₂])).sub_right hr.sub
+  · have := Offset.disjoint L.B (d := 16 + d) (n := 8) (e := 16) (k := 136) (by omega_using [h₁]) (by omega_using [h₂]) (by omega_using [])
     exact this.sub_right (by simpa [Lay.DAT₁, Lay.SP] using hr.sub)
-  · have := Offset.disjoint L.B (d := 16 + d) (n := 8) (e := 272) (k := 192) (by omega) (by omega) (by omega)
+  · have := Offset.disjoint L.B (d := 16 + d) (n := 8) (e := 272) (k := 192) (by omega_using [h₂]) (by omega_using [h₂]) (by omega_using [])
     exact this.sub_right (by simpa [Lay.DAT₂, Lay.SP, add_add] using hr.sub)
-  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [h₂])
 
 /-- A state whose memory differs from that of a `Ctx` state only where the
 code writes and in the 16 bytes below the frame. -/
@@ -245,10 +245,10 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
       · exact .inl (hrs r hr)
       · simp only [List.mem_singleton] at hr; exact .inr hr)) (by decide)
   have hd₁ : Region.Sub L.DAT₁ L.STK := by
-    have := Offset.sub_base L.B (d := 16) (n := 136) (k := 464) (by omega)
+    have := Offset.sub_base L.B (d := 16) (n := 136) (k := 464) (by omega_using [])
     simpa [Lay.DAT₁, Lay.SP] using this
   have hd₂ : Region.Sub L.DAT₂ L.STK := by
-    have := Offset.sub_base L.B (d := 272) (n := 192) (k := 464) (by omega)
+    have := Offset.sub_base L.B (d := 272) (n := 192) (k := 464) (by omega_using [])
     simpa [Lay.DAT₂, Lay.SP, add_add] using this
   refine ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hcs .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'), hmx.trans hc.mx,
@@ -265,7 +265,7 @@ theorem Ctx.of_frame {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 
     · exact ⟨L.STK, by simp, fun a ha => hd₂ a (h.sub a ha)⟩
   · simp only [List.mem_singleton] at hr; subst hr
     refine ⟨L.STK, by simp, ?_⟩
-    have := Offset.sub_base L.B (d := 0) (n := 16) (k := 464) (by omega)
+    have := Offset.sub_base L.B (d := 0) (n := 16) (k := 464) (by omega_using [])
     simpa using this
 
 /-! ## Calls -/
@@ -301,7 +301,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
   have hcovw : Covers wr t.wr := by
     rw [hc.wr]
     exact covers_of_within hwX
-  refine WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
+  refine WP.call_mx hv hsp (by omega_using [hd]) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr

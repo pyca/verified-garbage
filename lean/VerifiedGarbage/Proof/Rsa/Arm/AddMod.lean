@@ -36,32 +36,32 @@ theorem addMod_ok {s : State} {B : BitVec 32} {Z w N o a b m z t : Nat} (h : Ws 
   have hsC : sC + 4 ≤ hdr := by decide
   unfold addMod
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (sub3_ok h (o := t) (a := z) (b := b) (by omega) hz hb hN htz htb)
+  refine WP.mono (sub3_ok h (o := t) (a := z) (b := b) (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2]) hz hb hN htz htb)
     fun t1 ⟨h1, k1, v1, b1, r1⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (sub3_ok h1 (o := t + 1) (a := a) (b := t) (by omega) ha (by omega) hN (Ne.symm hat1)
-    (by omega)) fun t2 ⟨h2, k2, v2, b2, r2⟩ => ?_
+  refine WP.mono (sub3_ok h1 (o := t + 1) (a := a) (b := t) (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2]) ha (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2]) hN (Ne.symm hat1)
+    (by omega_using [])) fun t2 ⟨h2, k2, v2, b2, r2⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (sub3_ok h2 (o := t + 2) (a := t + 1) (b := m) ht (by omega) hm hN (by omega)
+  refine WP.mono (sub3_ok h2 (o := t + 2) (a := t + 1) (b := m) ht (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2]) hm hN (by omega_using [])
     (Ne.symm hmt2)) fun t3 ⟨h3, k3, v3, b3, r3⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_strSlot h3 hsC fun t4 m4 => WP.block_nil ?_
   have h4 := h3.of_mupd m4
   have k4 : Keep B w [] [sC] t3.mem t4.mem := by rw [m4.mem]; exact keep_write _ _ (by simp) (by decide)
   have s4 : slot t4.mem B sC = (t3.gpr .r11).toNat := by rw [m4.mem, slot_write_self]
-  refine WP.mono (sel_ok h4 (o := o) (a := t + 2) (b := t + 1) (sl := sC) ho ht (by omega) hN hot2 hot1 hsC
+  refine WP.mono (sel_ok h4 (o := o) (a := t + 2) (b := t + 1) (sl := sC) ho ht (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2]) hN hot2 hot1 hsC
     (by rw [s4]; exact b3)) fun u ⟨hu, k5, v5, r5⟩ => ?_
   refine ⟨hu, ((k1.mono.trans k2.mono).trans k3.mono).trans (k4.mono.trans k5.mono),
     r1.trans (r2.trans (r3.trans ((m4.rest _).trans r5))), fun hZ hA hB hM => ?_⟩
   have fa := h.fit64 ha
   have fm := h.fit64 hm
-  have ft := h.fit64 (j := t) (by omega)
-  have ft1 := h.fit64 (j := t + 1) (by omega)
-  have ft2 := h.fit64 (j := t + 2) (by omega)
+  have ft := h.fit64 (j := t) (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2])
+  have ft1 := h.fit64 (j := t + 1) (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2])
+  have ft2 := h.fit64 (j := t + 2) (by omega_using [hN, ho, ha, hb, hm, hz, ht, htz, htb, hat, hat1, hmt, hmt1, hmt2, hot1, hot2])
   -- The values the later steps read.
-  have a1 : num t1.mem B w a = num s.mem B w a := k1.num (by simp; omega) (by simp) fa
+  have a1 : num t1.mem B w a = num s.mem B w a := k1.num (by simp; omega_using [hat]) (by simp) fa
   have m2 : num t2.mem B w m = num s.mem B w m := by
-    rw [k2.num (by simp; omega) (by simp) fm, k1.num (by simp; omega) (by simp) fm]
+    rw [k2.num (by simp; omega_using [hmt1]) (by simp) fm, k1.num (by simp; omega_using [hmt]) (by simp) fm]
   have T3 : num t3.mem B w (t + 1) = num t2.mem B w (t + 1) := k3.num (by simp) (by simp) ft1
   have T4 : num t4.mem B w (t + 1) = num t2.mem B w (t + 1) := by
     rw [k4.num (by simp) (by simp; decide) ft1, T3]

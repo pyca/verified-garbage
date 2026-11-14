@@ -33,22 +33,22 @@ theorem ctr_wholeTo {m m' : Mem} {cb ks sp dp : Addr} {ciph : Block → Block} {
     (hd : blocksAt m' dp nb = ctr32 ciph (blockAt m cb) (blocksAt m sp nb))
     (hc : blockAt m' cb = Nat.repeat inc32 nb (blockAt m cb)) :
     bytesAt m' dp (16 * nb) = xorKs ciph icb n (bytesAt m sp (16 * nb)) ∧ Ctr m' cb ks ciph icb (n + 16 * nb) := by
-  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega
-  refine ⟨?_, ?_, fun h1 => absurd (by omega) h1⟩
+  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
+  refine ⟨?_, ?_, fun h1 => absurd (by omega_using [h0]) h1⟩
   · refine list_ext (by simp [length_xorKs, Cmac.bytesAt_length]) fun k hk => ?_
     simp only [Cmac.bytesAt_length] at hk
     rw [getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), getD_bytesAt' _ _ hk,
       getD_bytesAt' _ _ hk]
-    have hq : k / 16 < nb := by omega
+    have hq : k / 16 < nb := by omega_using [hk]
     have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
     rw [ctr32_getD _ _ _ (by rw [length_blocksAt]; exact hq), blocksAt_getD _ _ _ hq,
       blocksAt_getD _ _ _ hq] at e₁
     have ea : ∀ p : Addr, p + BitVec.ofNat 64 k = p + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) :=
-      fun p => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-    rw [ea dp, ea sp, bytes_toBytes_blockAt m' _ (by omega), bytes_toBytes_blockAt m _ (by omega), e₁,
-      Proof.Aes.toBytes_xor _ _ (by omega), ksByte, hcb, ← repeat_add,
-      show (n + k) / 16 = k / 16 + n / 16 by omega, show (n + k) % 16 = k % 16 by omega]
-  · rw [hc, hcb, ← repeat_add]; congr 1; omega
+      fun p => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+    rw [ea dp, ea sp, bytes_toBytes_blockAt m' _ (by omega_using []), bytes_toBytes_blockAt m _ (by omega_using []), e₁,
+      Proof.Aes.toBytes_xor _ _ (by omega_using []), ksByte, hcb, ← repeat_add,
+      show (n + k) / 16 = k / 16 + n / 16 by omega_using [h0], show (n + k) % 16 = k % 16 by omega_using [h0]]
+  · rw [hc, hcb, ← repeat_add]; congr 1; omega_using [h0]
 
 theorem length_ghashInput_mod {a c : List Byte} (hc : c ≠ [] ∨ a.length % 16 = 0) (h0 : c.length % 16 = 0) :
     (ghashInput a c).length % 16 = 0 := by
@@ -56,7 +56,7 @@ theorem length_ghashInput_mod {a c : List Byte} (hc : c ≠ [] ∨ a.length % 16
   · subst e; simp only [ghashInput, ite_true]; exact hc.resolve_left (fun h => h rfl)
   · rw [ghashInput_of_ne e]
     simp only [List.length_append, zeros, List.length_replicate, padLen]
-    omega
+    omega_using [h0]
 
 /-- The input to GHASH of `c ++ e`, for `e ≠ []`, after a nonempty `c` or
 additional data `a` of whole blocks, which need no padding. -/
@@ -87,10 +87,10 @@ theorem streamRepr_blocksTo {m m' : Mem} {St sp dp : Addr} {ciph : Block → Blo
   obtain ⟨e₁, c₁⟩ := ctr_wholeTo hctr h0 hd hC
   have hx0 := length_ghashInput_mod (a := a) hc h0
   have hne : bytesAt m' dp (16 * nb) ≠ [] := by
-    intro e; have := congrArg List.length e; rw [Cmac.bytesAt_length] at this; simp at this; omega
+    intro e; have := congrArg List.length e; rw [Cmac.bytesAt_length] at this; simp at this; omega_using [hnb, this]
   refine ⟨e₁, streamRepr_iff.mpr ⟨hJ.trans hj, ?_, ?_⟩⟩
   · rw [ghashInput_append' hc hne]
-    exact absorb_whole habs hx0 (by rw [Cmac.bytesAt_length]; omega) (by rw [hY, blocksAt_eq])
+    exact absorb_whole habs hx0 (by rw [Cmac.bytesAt_length]; omega_using []) (by rw [hY, blocksAt_eq])
   · rw [List.length_append, Cmac.bytesAt_length]; exact c₁
 
 end VG.Proof.Gcm

@@ -31,7 +31,7 @@ theorem oneScanHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     fun t ⟨⟨h12, hbx, h15, hm⟩, hk⟩ => ⟨h12, hbx, h15, hm, hk⟩
   unfold oneScanHead
   xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hl sW (by decide), hl (sArr aX) (by decide),
-    hg.hdr.hw, hg.hdr.harr aX (by decide), hg.scr.ld (show slot w aX + 8 ≤ Z by omega),
+    hg.hdr.hw, hg.hdr.harr aX (by decide), hg.scr.ld (show slot w aX + 8 ≤ Z by omega_using [hx]),
     show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero]
 
 /-- Fixed-count comparison with one, retaining the boolean in the accumulator. -/
@@ -44,9 +44,9 @@ theorem oneScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have hx := Nat.le_trans (slot_le (w := w) (show aX < 8 by decide)) hZ
   refine WP.seq (WP.mono (oneScanHead_ok hg hZ) fun u ⟨hu12, hubx, hu15, hum, hku⟩ => ?_)
   have hlow : u.gpr .r15 = 0 ↔ (word u.mem B (slot w aX) ^^^ 1) = 0 := by rw [hu15, hum]
-  refine WP.mono (orWords_ok (hg.scr.congr hku.2.2) hubx hu12 hlow hw hw' (by omega))
+  refine WP.mono (orWords_ok (hg.scr.congr hku.2.2) hubx hu12 hlow hw hw' (by omega_using [hx]))
     fun t ⟨ht, htm, hkt⟩ => ?_
-  rw [VG.Proof.Dsa.words_eq_one (by omega), hum] at ht
+  rw [VG.Proof.Dsa.words_eq_one (by omega_using [hw]), hum] at ht
   exact ⟨ht, htm.trans hum, (hku.trans hkt).mono (by decide)⟩
 
 end VG.Proof.Dsa.X86_64

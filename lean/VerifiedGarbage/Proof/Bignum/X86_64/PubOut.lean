@@ -39,8 +39,8 @@ theorem scr_ne_out {B out : Addr} {Z k : Nat} (hsep : ∀ j < k, Z ≤ ofs B (ou
     ∀ j < k, off B d + BitVec.ofNat 64 i ≠ out + BitVec.ofNat 64 j := by
   intro j hj he
   have h := hsep j hj
-  rw [← he, ofs_off B (by omega)] at h
-  omega
+  rw [← he, ofs_off B (by omega_using [hd, hZ])] at h
+  omega_using [hd, h]
 
 /-- The result: `i2osp (c ? Y : 0)` to `out`, `c` returned, and the saved
 registers restored from the header, `Y` in array `j`. -/
@@ -62,23 +62,23 @@ theorem outPhaseArr_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y 
   have hn := hs.nowrap
   have h0 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
   have h0' := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, h0, h0', hi])
   unfold outStepsArr
   refine WP.seq (WP.mono (WP.keep [.rbx, .rsi, .rcx, .r15] (Q := fun t =>
       t.gpr .rbx = off B (slot ((k + 7) / 8) j) ∧ t.gpr .rsi = out ∧ t.gpr .rcx = BitVec.ofNat 64 k ∧
       t.gpr .r15 = mask c ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sOut (by decide), hl sK (by decide),
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega_using [hj]), hl sOut (by decide), hl sK (by decide),
       hl sMask (by decide), hg.hdr.harr j hj, hO, hK, hM]) rfl)
     fun t₁ ⟨⟨hbx, hsi, hcx, h15, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   refine WP.seq (WP.mono (storeBE_ok hs₁ hbx hsi hcx h15 hk1 hk' rfl
-    (by have := slot_le (w := (k + 7) / 8) hj; omega)
+    (by have := slot_le (w := (k + 7) / 8) hj; omega_using [hZ, this])
     (fun j hj => by rw [k₁.2.2]; exact hout j hj) hsep) fun t₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
   rw [hm₁, hY] at hb₂
   have hw₂ : ∀ i < 32, word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     apply Mem.readW_congr
     intro b hb
-    rw [hf₂ _ (scr_ne_out hsep (d := 8 * i) (i := b) (by omega) (by omega)), hm₁]
+    rw [hf₂ _ (scr_ne_out hsep (d := 8 * i) (i := b) (by omega_using [hZ, h0, h0', hi, hb]) (by omega_using [hn])), hm₁]
   have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi => by
     rw [hrd₂, hwr₂, k₁.2.1, k₁.2.2]; exact hl i hi
   have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
@@ -96,7 +96,7 @@ theorem outPhaseArr_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y 
     fun t ⟨⟨hax, h0, h1, h2, h3, h4, h5, hm⟩, k₃⟩ => ⟨by rw [hm]; exact hb₂, hax, ?_,
       fun x hx => by rw [hm, hf₂ x hx, hm₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   intro i hi
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2

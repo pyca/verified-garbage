@@ -50,18 +50,18 @@ theorem zeroStores_ok {s₁ : State} (h1 : s₁.gpr .r1 = 0) (hfit : (s₁.gpr .
     ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
   have ea : State.addr (s.gpr .r0 + BitVec.ofNat 32 (4 * k)) =
       State.addr (s₁.gpr .r0) + BitVec.ofNat 64 (4 * k) := by
-    rw [h.gpr, addr_add (by omega)]
+    rw [h.gpr, addr_add (by omega_using [hfit, hk])]
   apply WP.of_runBlock
-  rw [runBlock_cons, exec_str (by omega) (by rw [ea, h.wr]; exact hwr k hk), runStep_some, runBlock_nil]
+  rw [runBlock_cons, exec_str (by omega_using [hk]) (by rw [ea, h.wr]; exact hwr k hk), runStep_some, runBlock_nil]
   refine ⟨_, rfl, h.gpr, h.rd, h.wr, h.sp, ?_, fun j hj => ?_⟩
   · rw [ea]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · show (s.mem.writeW _ _).readW _ _ = _
     rw [ea, h.gpr, h1]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.zero j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [e]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.zero j (by omega_using [hj, e])
 
 theorem stateAt_zero {m : Mem} {p : Addr} (h : ∀ j < 50, m.readW (p + BitVec.ofNat 64 (4 * j)) 32 = 0) :
     stateAt m p = Spec.Sha3.zero := by
@@ -69,8 +69,8 @@ theorem stateAt_zero {m : Mem} {p : Addr} (h : ∀ j < 50, m.readW (p + BitVec.o
   intro i hi
   simp only [stateAt, Vector.getElem_ofFn, Spec.Sha3.zero, Vector.getElem_replicate]
   rw [VG.Proof.Sha512.Arm.readW64, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, Offset.add_add,
-    show 8 * i + 4 = 4 * (2 * i + 1) by omega, show 8 * i = 4 * (2 * i) by omega,
-    h _ (by omega), h _ (by omega)]
+    show 8 * i + 4 = 4 * (2 * i + 1) by omega_using [], show 8 * i = 4 * (2 * i) by omega_using [],
+    h _ (by omega_using [hi]), h _ (by omega_using [hi])]
   rfl
 
 /-- The stores, from `scratch` in `r0` and `0` in `r1`. -/
@@ -80,8 +80,8 @@ theorem zeroStores_step (hu : Ctx L g m₀ t) (hL : L.Ok) (h0 : t.gpr .r0 = L.sc
   have hw : ∀ k < 50, InRegions t.wr (State.addr (t.gpr .r0) + BitVec.ofNat 64 (4 * k)) 4 := by
     intro k hk
     rw [hu.wr, h0]
-    exact ⟨L.SCR, by simp [Lay.outputs], Offset.contains_base _ (by omega) (by omega)⟩
-  refine WP.mono (zeroStores_ok h1 (by rw [h0]; have := hL.nc; omega) hw) fun v hv => ⟨?_, ?_⟩
+    exact ⟨L.SCR, by simp [Lay.outputs], Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
+  refine WP.mono (zeroStores_ok h1 (by rw [h0]; have := hL.nc; omega_using [this]) hw) fun v hv => ⟨?_, ?_⟩
   · refine hu.of_frame hv.rd hv.wr hv.sp (fun r _ _ => by rw [hv.gpr]) hv.frame ?_
     intro r hr
     rw [List.mem_singleton.mp hr, h0]
@@ -113,16 +113,16 @@ def kWr (L : Lay) : List Region :=
 def kArgs (L : Lay) (n : Nat) : Region := ⟨State.addr L.E, n⟩
 
 theorem scr_addr (hL : L.Ok) : State.addr (L.scr + BitVec.ofNat 32 KSCR) = State.addr L.scr + BitVec.ofNat 64 KSCR :=
-  addr_add (by have := hL.nc; simp only [KSCR]; omega)
+  addr_add (by have := hL.nc; simp only [KSCR]; omega_using [this])
 
 theorem scr_fit (hL : L.Ok) : (L.scr + BitVec.ofNat 32 KSCR).toNat + 640 ≤ 2 ^ 32 := by
   have := hL.nc
-  rw [BitVec.toNat_add_of_lt (by change L.scr.toNat + 208 < 2 ^ 32; omega)]
+  rw [BitVec.toNat_add_of_lt (by change L.scr.toNat + 208 < 2 ^ 32; omega_using [this])]
   change L.scr.toNat + 208 + 640 ≤ 2 ^ 32
-  omega
+  omega_using [this]
 
 theorem hash_addr (hL : L.Ok) : State.addr (L.E + BitVec.ofNat 32 HASH) = State.addr L.E + BitVec.ofNat 64 HASH :=
-  addr_add (by have := hL.top; simp only [HASH]; omega)
+  addr_add (by have := hL.top; simp only [HASH]; omega_using [this])
 
 theorem kWr_sub (L : Lay) : ∀ r ∈ kWr L, Whole.Within r L.SCR := by
   intro r hr
@@ -162,8 +162,8 @@ theorem abs_pre (hL : L.Ok) (he : t.sp = L.E) (h0 : t.gpr .r0 = L.scr) (h1 : t.g
   have ws := seed_scr hL
   have wa := args_scr hL (n := 8) (by decide)
   refine ⟨rfl, rfl, state_scratch L, ws _ (by simp [kWr]), ws _ (by simp [kWr]),
-    wa _ (by simp [kWr]), wa _ (by simp [kWr]), by have := hL.nc; omega, hL.ns, scr_fit hL,
-    by have := hL.top; omega, by decide, by decide⟩
+    wa _ (by simp [kWr]), wa _ (by simp [kWr]), by have := hL.nc; omega_using [this], hL.ns, scr_fit hL,
+    by have := hL.top; omega_using [this], by decide, by decide⟩
 
 theorem abs_covers (L : Lay) : Covers (absRd L ++ kWr L) (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Covers.of_sub fun r hr => ?_
@@ -256,7 +256,7 @@ theorem pad_pre (hL : L.Ok) (he : t.sp = L.E) (h0 : t.gpr .r0 = L.scr) (h1 : t.g
   rw [h0, h1, h2, a0, he, scr_addr hL]
   have wa := args_scr hL (n := 4) (by decide)
   refine ⟨rfl, rfl, state_scratch L, wa _ (by simp [kWr]), wa _ (by simp [kWr]),
-    by have := hL.nc; omega, scr_fit hL, by have := hL.top; omega, by decide, by decide⟩
+    by have := hL.nc; omega_using [this], scr_fit hL, by have := hL.top; omega_using [this], by decide, by decide⟩
 
 theorem pad_covers (L : Lay) : Covers ([kArgs L 4] ++ kWr L) (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Covers.of_sub fun r hr => ?_
@@ -319,10 +319,10 @@ theorem sqz_pre (hL : L.Ok) (he : t.sp = L.E) (h0 : t.gpr .r0 = L.scr) (h1 : t.g
   have ht := hL.top
   refine ⟨rfl, rfl, (so _ (by simp [kWr])).symm, state_scratch L, so _ (by simp [kWr]),
     wa _ (by simp [kWr]), Offset.base_disjoint _ (by decide) (by decide), wa _ (by simp [kWr]),
-    by have := hL.nc; omega, ?_, scr_fit hL, by omega, by decide, by decide⟩
-  rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega)]
+    by have := hL.nc; omega_using [this], ?_, scr_fit hL, by omega_using [ht], by decide, by decide⟩
+  rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega_using [ht])]
   change L.E.toNat + 24 + 114 ≤ 2 ^ 32
-  omega
+  omega_using [ht]
 
 theorem sqz_writes (L : Lay) : ∀ r ∈ sqzWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
   intro r hr

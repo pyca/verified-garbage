@@ -145,13 +145,13 @@ theorem wp_countdownF {body : Prog isa} (ctr : State → BitVec 32) {N : Nat} (h
     ctr s = BitVec.ofNat 32 (N - i)) ?_ N s ⟨0, rfl, hN0, h0, by rw [Nat.sub_zero]; exact hc⟩
   rintro n s ⟨i, rfl, hi, hI, hcnt⟩
   refine WP.mono (hbody i hi s hI hcnt) fun s' ⟨hI', hc', hz'⟩ => ?_
-  rw [hcnt, ofNat_pred (by omega) (by omega)] at hc' hz'
+  rw [hcnt, ofNat_pred (by omega_using [hi]) (by omega_using [hN])] at hc' hz'
   have hev : isa.eval .ne s' = some (!decide (N - i - 1 = 0)) := by
-    simp only [eval, hz', Wp.ofNat_beq_zero (show N - i - 1 < 2 ^ 32 by omega), Option.map_some]
+    simp only [eval, hz', Wp.ofNat_beq_zero (show N - i - 1 < 2 ^ 32 by omega_using [hN]), Option.map_some]
   by_cases he : i + 1 = N
   · subst he
     exact .inl ⟨by rw [hev]; simp, hQ s' hI'⟩
-  · exact .inr ⟨by rw [hev]; simp; omega, N - (i + 1), by omega, i + 1, rfl, by omega, hI',
+  · exact .inr ⟨by rw [hev]; simp; omega_using [hi, he], N - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], hI',
       by rw [hc']; congr 1⟩
 
 /-- `wp_countdownF` for a register. -/
@@ -168,11 +168,11 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 32) (
 
 theorem toNat_setWidth (a : BitVec 32) : (a.setWidth 64).toNat = a.toNat := by
   simp only [BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 /-- `[c + off]` within a buffer that does not wrap. -/
 theorem addr_off {c : BitVec 32} {n : Nat} (h : c.toNat + n ≤ 2 ^ 32) :
     ∀ off, off < n → addr c off = c.setWidth 64 + BitVec.ofNat 64 off :=
-  fun _ ho => addr_eq (by omega)
+  fun _ ho => addr_eq (by omega_using [h, ho])
 
 end VG.Proof.Cast5.X86

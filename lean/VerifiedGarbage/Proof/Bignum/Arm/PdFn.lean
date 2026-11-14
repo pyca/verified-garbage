@@ -37,7 +37,7 @@ theorem pdFn_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Na
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have read : InRegions (v.rd ++ v.wr) (State.addr v.sp) 56 := by
     refine ⟨⟨State.addr v.sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
     rw [wrV, spV]

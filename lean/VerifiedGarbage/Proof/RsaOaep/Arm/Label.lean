@@ -29,9 +29,9 @@ theorem argG (hg : Geo L scr) {σ s : State} (hs : L.St σ s) {j : Nat} (hj : j 
     State.addr (L.B + BitVec.ofNat 32 (arg j)) = L.fr (arg j) ∧ InRegions (s.rd ++ s.wr) (L.fr (arg j)) 4 ∧
     s.mem.readW (L.fr (arg j)) 32 = L.argv.getD j 0 := by
   have hn := hs.ok.nargs
-  have ha := Lay.argOff_lt (L := L) (j := j) (by omega)
+  have ha := Lay.argOff_lt (L := L) (j := j) (by omega_using [hj, hn])
   have e : arg j = Impl.RsaPkcs1Sig.Arm.argOff L.F j := by rw [hg.F]
   rw [e]
-  exact ⟨hs.ok.addrB (by omega), by rw [hs.rd, hs.wr]; exact hs.ok.arg_read hj, hs.arg hj⟩
+  exact ⟨hs.ok.addrB (by omega_using [ha]), by rw [hs.rd, hs.wr]; exact hs.ok.arg_read hj, hs.arg hj⟩
 
 end VG.Proof.RsaOaep.Arm

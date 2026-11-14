@@ -27,7 +27,7 @@ theorem belowP_ok (s : State) {base : BitVec 32} {len w a : Nat}
       t.mem.readW (off (State.addr base) 136) 32 = s.mem.readW (off (State.addr base) 136) 32 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
-  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   rw [VG.Impl.Ffdh.Arm.belowP, WP.seq_iff]
   refine WP.mono (copy_ok s h (by decide : 7 < 8) ha (by decide)) ?_
   rintro u ⟨readyU, valueU, keepsU, frameU, restU⟩

@@ -43,7 +43,7 @@ theorem body_noSp (F : SignFn) : NoSp (body F.name F.code) := by
 
 theorem code_ok (F : SignFn) {s₀ : State} (A : RandomSignABI s₀) (hval : KeyValid F.valid s₀) :
     WP isa (code F.name F.code) s₀ fun s' => ∃ u, Finished s₀ u ∧ s' = freed Random.frameBytes u :=
-  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold Random.frameBytes; omega)
+  WP.alloc ⟨by decide, by decide, by decide⟩ (by have := A.stackLow; unfold Random.frameBytes; omega_using [this])
     (body_noSp F) (WP.mono (body_ok F A hval) fun u hu => ⟨u, hu, rfl⟩)
 
 theorem freed_esp_eq {s₀ u : State} (A : RandomSignABI s₀) (h : Ready s₀ u) :
@@ -92,11 +92,11 @@ theorem randomSign_correct (F : SignFn) (s : State) (hpre : (randomSignCheckedCo
     have hul : (rResult s).used < 2 ^ 32 := by
       have := rResult_used_le (s₀ := s)
       have : (rInput s).rand.length < 2 ^ 32 := by simp only [rInput, rBytes_length]; exact BitVec.isLt _
-      omega
+      omega_arith
     refine ⟨?_, hF.out, ?_⟩
     · rw [BitVec.setWidth_append_eq_right]
       show (u.gpr .eax).toNat = (rResult s).status
-      rw [hF.eax, toNat_ofNat_lt (by omega)]
+      rw [hF.eax, toNat_ofNat_lt (by omega_using [hle])]
     · show Spec.Rsa.wordsAt u.mem (argumentPointer s 2) 1 = [BitVec.ofNat 64 (rResult s).used]
       simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero]
       refine congrArg (· :: []) (BitVec.eq_of_toNat_eq ?_)
@@ -106,7 +106,7 @@ theorem randomSign_correct (F : SignFn) (s : State) (hpre : (randomSignCheckedCo
       rw [this, show (0 + 4 : Nat) = 4 from rfl]
       have lo : (u.mem.readW (argumentPointer s 2 + BitVec.ofNat 64 0) 32) = _ := hF.usedLo
       have hi : (u.mem.readW (argumentPointer s 2 + BitVec.ofNat 64 4) 32) = _ := hF.usedHi
-      rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [lo, hi, toNat_ofNat_lt hul, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hul])]
       rfl
 
 end VG.Proof.Dsa.X86

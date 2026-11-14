@@ -43,12 +43,12 @@ theorem pairAny_mono {value a b : Nat} (bound : a≤b) (hit : pairAny value a=tr
     pairAny value b=true := by
   simp only [pairAny,List.any_eq_true,List.mem_range] at hit ⊢
   obtain ⟨i,hi,divides⟩ := hit
-  exact ⟨i,by omega,divides⟩
+  exact ⟨i,by omega_using [bound, hi],divides⟩
 
 theorem pairNext_progress {n value i : Nat} (more : i<trialCount n) :
     i<pairNext n value i ∧ pairNext n value i≤trialCount n := by
   unfold pairNext
-  split <;> omega
+  split <;> omega_using [more]
 
 theorem pairAny_eq {value count : Nat} (bound : count≤1024) (odd : value%2=1) :
     pairAny value count = (sieveAny value count || sieveAny ((value-1)/2) count) := by
@@ -58,7 +58,7 @@ theorem pairAny_eq {value count : Nat} (bound : count≤1024) (odd : value%2=1) 
       (VG.Impl.RsaKeyGen.tabEntry i-1+value)%VG.Impl.RsaKeyGen.tabEntry i=0 ↔
         ((value-1)/2)%VG.Impl.RsaKeyGen.tabEntry i=0 := by
     rw [Nat.add_comm]
-    exact offset_divides_half odd (VG.Proof.RsaKeyGen.tabEntry_facts (by omega : i<1024)).1
+    exact offset_divides_half odd (VG.Proof.RsaKeyGen.tabEntry_facts (by omega_using [bound, hi] : i<1024)).1
   constructor
   · rintro ⟨i,hi,h|h⟩
     · exact Or.inl ⟨i,hi,h⟩

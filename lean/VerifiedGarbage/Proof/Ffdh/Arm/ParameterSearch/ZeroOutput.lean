@@ -29,7 +29,7 @@ theorem zeroOutArgs_ok (s : State) {base dst : BitVec 32} {j n : Nat}
       Rest [.r0, .r2, .lr] s t := by
   refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.ldf lowWord at *
-  ffrun [(by omega : 8 * j < 4096), h.addr slot, h.read slot,
+  ffrun [(by omega_using [slot] : 8 * j < 4096), h.addr slot, h.read slot,
     h.addr (by decide : 1 < 16), h.read (by decide : 1 < 16), pointer, length]
 
 theorem zeroOut_ok (s : State) {base dst : BitVec 32} {n : Nat}

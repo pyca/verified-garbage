@@ -18,7 +18,7 @@ theorem checkingPublicArgs {s t : State} (H : (Proof.Dsa.checkParametersContract
   constructor
   · assumption
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem checkingPublicParams {s t : State} (H : (Proof.Dsa.checkParametersContract abi 108).pub s t) :

@@ -86,7 +86,7 @@ theorem ReadControl.step_bounded {g : Geometry} (widthBound : g.w ≤ 128)
     WP isa (.block (VG.Impl.RsaKeyGen.X86.Trial.wordStep 4)) s fun t =>
       ReadControl g (j + 1) t ∧ t.zf = some (decide (j + 1 = 2 * g.w)) := by
   have read : InRegions (s.rd ++ s.wr) (addr (s.gpr .edi) 0) 4 := by
-    rw [S.pointer, Trial.word_address g.candidate (by omega) index]
+    rw [S.pointer, Trial.word_address g.candidate (by omega_using [candidateFit]) index]
     exact S.candidateRead j index
   have ending : s.mem.readW (addr (s.gpr .esp) 4) 32 = g.ending := by
     change s.mem.readW (s.ea (VG.Impl.RsaKeyGen.X86.Sieve.slot 4)) 32 = _
@@ -111,7 +111,7 @@ theorem ReadControl.step_bounded {g : Geometry} (widthBound : g.w ≤ 128)
       rw [← BitVec.ofNat_add]
       congr 2 <;> omega
     rw [pointer]
-    rw [Geometry.ending, show 8 * g.w = 4 * (2 * g.w) by omega]
-    rw [Trial.pointer_zf g.candidate (by omega) index]
+    rw [Geometry.ending, show 8 * g.w = 4 * (2 * g.w) by omega_using []]
+    rw [Trial.pointer_zf g.candidate (by omega_using [widthBound]) index]
 
 end VG.Proof.RsaKeyGen.X86.Sieve

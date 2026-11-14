@@ -17,14 +17,14 @@ theorem PolicyRecordAt.after_header {B rec : Addr} {g : Policy.Group} {s t : Sta
  refine ⟨h.lenPositive,h.lenFit,h.bitsFit,?_,?_,?_,?_,?_,h.outside⟩
  · rw [rest.rd,rest.wr];exact h.readLen
  · rw [rest.rd,rest.wr];exact h.readBits
- · apply Eq.trans (Mem.readW_congr fun i hi => frame _ (Or.inr (h.outside i (by omega)))) h.length
+ · apply Eq.trans (Mem.readW_congr fun i hi => frame _ (Or.inr (h.outside i (by omega_using [hi])))) h.length
  · apply Eq.trans (Mem.readW_congr fun i hi => frame _ (Or.inr ?_)) h.bits
-   have bound := h.outside (4+i) (by omega)
+   have bound := h.outside (4+i) (by omega_using [hi])
    simpa only [off,BitVec.add_assoc,BitVec.ofNat_add] using bound
  · constructor
    · intro i hi;rw [rest.rd,rest.wr];exact h.source.readable i hi
    · intro i hi
-     have bound := h.outside (8+i) (by rw [policyDomain_length] at hi;omega)
+     have bound := h.outside (8+i) (by rw [policyDomain_length] at hi;omega_using [hi])
      have equal : t.mem (off rec 8+BitVec.ofNat 64 i)=s.mem (off rec 8+BitVec.ofNat 64 i) :=
       frame _ (Or.inr (by simpa only [off,BitVec.add_assoc,BitVec.ofNat_add] using bound))
      exact equal.trans (h.source.bytes i hi)
@@ -42,14 +42,14 @@ theorem PolicyRecordAt.after_belowBits {B rec : Addr} {g : Policy.Group} {s t : 
  refine ⟨h.lenPositive,h.lenFit,h.bitsFit,?_,?_,?_,?_,?_,h.outside⟩
  · rw [rest.rd,rest.wr];exact h.readLen
  · rw [rest.rd,rest.wr];exact h.readBits
- · apply Eq.trans (Mem.readW_congr fun i hi => frame _ (Or.inr (Nat.le_trans below (h.outside i (by omega))))) h.length
+ · apply Eq.trans (Mem.readW_congr fun i hi => frame _ (Or.inr (Nat.le_trans below (h.outside i (by omega_using [hi]))))) h.length
  · apply Eq.trans (Mem.readW_congr fun i hi => frame _ (Or.inr ?_)) h.bits
-   have bound := h.outside (4+i) (by omega)
+   have bound := h.outside (4+i) (by omega_using [hi])
    simpa only [off,BitVec.add_assoc,BitVec.ofNat_add] using (Nat.le_trans below bound)
  · constructor
    · intro i hi;rw [rest.rd,rest.wr];exact h.source.readable i hi
    · intro i hi
-     have bound := h.outside (8+i) (by rw [policyDomain_length] at hi;omega)
+     have bound := h.outside (8+i) (by rw [policyDomain_length] at hi;omega_using [hi])
      have equal : t.mem (off rec 8+BitVec.ofNat 64 i)=s.mem (off rec 8+BitVec.ofNat 64 i) :=
       frame _ (Or.inr (by simpa only [off,BitVec.add_assoc,BitVec.ofNat_add] using (Nat.le_trans below bound)))
      exact equal.trans (h.source.bytes i hi)

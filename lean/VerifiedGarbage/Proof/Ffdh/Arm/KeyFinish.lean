@@ -28,7 +28,7 @@ theorem keyFinishStatus_ok (s : State) {p : Inputs} {slots : List Nat} (accepted
     WP isa (.block [.ldrSp .r3 64, .mov .r0 (.imm 3), .dp .sub .r0 .r0 (.shifted .r3 .lsl 1)]) s fun t =>
       (t.gpr .r0 = (if accepted then 1 else 3) ∧ t.mem = s.mem) ∧ Rest [.r0, .r3] s t := by
   have addr : State.addr (s.sp + BitVec.ofNat 32 64) = off (State.addr s.sp) 64 :=
-    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega)
+    VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [this])
   refine withRest_all [.r0, .r3] ?_ (by rfl) (by rfl)
   cases accepted <;> ffrun [addr, h.locals.read (d := 64) (by decide), result]
 
@@ -66,9 +66,9 @@ theorem keyFinish_ok (s : State) {p : Inputs} {slots : List Nat} (accepted : Boo
     exact resultU
   refine WP.mono (keyFinishStatus_ok v accepted contextV resultV) ?_
   rintro t ⟨⟨status, memT⟩, restT⟩
-  have privateT := VG.Proof.Bignum.Arm.rsa_bytes_frame (k := p.k) frameV (by have := p.maxLength; omega)
+  have privateT := VG.Proof.Bignum.Arm.rsa_bytes_frame (k := p.k) frameV (by have := p.maxLength; omega_using [this])
     (by simpa using outputs.separate)
-  have publicU := VG.Proof.Bignum.Arm.rsa_bytes_frame (k := p.k) frameU (by have := p.maxLength; omega)
+  have publicU := VG.Proof.Bignum.Arm.rsa_bytes_frame (k := p.k) frameU (by have := p.maxLength; omega_using [this])
     (by simpa using outputs.separate.symm)
   change Spec.Rsa.bytesAt u.mem (State.addr p.privateValue) p.k = _ at privateU
   change Spec.Rsa.bytesAt v.mem (State.addr p.publicValue) p.k = _ at publicV

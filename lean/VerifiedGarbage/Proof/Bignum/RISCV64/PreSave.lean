@@ -47,7 +47,7 @@ theorem sav_sep (w : Addr) {i j : Nat} (hi : i < 9) (hj : j < 9) (h : i ≠ j) :
 abbrev savW (S : Addr) : Addr := S + BitVec.ofNat 64 128
 
 theorem saveOff_eq (S : Addr) (i : Nat) : S + BitVec.ofNat 64 (saveOff i) = off (savW S) (8 * i) := by
-  rw [off, Offset.add_add]; simp only [saveOff, sFn]; congr 2; omega
+  rw [off, Offset.add_add]; simp only [saveOff, sFn]; congr 2; omega_using []
 
 /-- The first `n` registers are saved. -/
 structure SI (s₀ : State) (n : Nat) (s : State) : Prop where

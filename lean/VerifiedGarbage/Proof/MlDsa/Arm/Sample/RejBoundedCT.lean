@@ -75,7 +75,7 @@ theorem try_ct {t : Nat} {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length) 
       rw [eval_eq, t₁.z] at he; simpa using he
     have r₂ : rbBound η ≤ b₂ := by
       rw [eval_eq, t₁.z, hbc] at he; simpa using he
-    rw [hbTry_eq hη, hbTry_eq hη, ifF (by omega), ifF (by omega)]
+    rw [hbTry_eq hη, hbTry_eq hη, ifF (by omega_using [r₁]), ifF (by omega_using [r₂])]
     exact ⟨WP.block_nil ⟨t₁.base, t₁.r8⟩, WP.block_nil ⟨t₂.base, t₂.r8⟩⟩
   · refine relW (taintRel [.r2, .r5] (fun a c h r hr => ?_) c2) fun a c ⟨⟨t₁, t₂⟩, he⟩ => ?_
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -104,7 +104,7 @@ theorem mid_ct {t : Nat} {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length)
   by_cases hf : L₁.length < 256
   · rw [ifT hf, ifT (show L₂.length < 256 by omega)]
     refine RelCT.ite hz (RelCT.of_false fun a c ⟨h, he⟩ => by
-      rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_true_eq] at he; omega) ?_
+      rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_true_eq] at he; omega_using [hf, he]) ?_
     have hm : (hbTry η L₁ ((zAt X₁ t).toNat % 16)).length = (hbTry η L₂ ((zAt X₂ t).toNat % 16)).length := by
       rw [hbTry_length, hbTry_length, hl, hok.1]
     refine RelCT.seq (R := fun (a c : State) =>
@@ -121,18 +121,18 @@ theorem mid_ct {t : Nat} {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length)
     by_cases hm1 : (hbTry η L₁ ((zAt X₁ t).toNat % 16)).length < 256
     · rw [ifT hm1, ifT (show (hbTry η L₂ ((zAt X₂ t).toNat % 16)).length < 256 by omega)]
       refine RelCT.ite hz2 (RelCT.of_false fun a c ⟨h, he⟩ => by
-        rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_true_eq] at he; omega) ?_
+        rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_true_eq] at he; omega_using [hm1, he]) ?_
       refine RelCT.mono (try_ct hp₁ hp₂ hη c1 c2 c3 hm hm1 (b₁ := (zAt X₁ t).toNat / 16)
-        (b₂ := (zAt X₂ t).toNat / 16) (by have := (zAt X₁ t).isLt; omega) (by have := (zAt X₂ t).isLt; omega)
+        (b₂ := (zAt X₂ t).toNat / 16) (by have := (zAt X₁ t).isLt; omega_using []) (by have := (zAt X₂ t).isLt; omega_using [])
         hok.2) (fun a c ⟨h, _⟩ => ⟨⟨h.1.base, h.1.r9, h.1.r8⟩, ⟨h.2.base, h.2.r9, h.2.r8⟩⟩)
         fun _ _ h => ⟨h.1.1, h.2.1⟩
     · rw [ifF hm1, ifF (show ¬ (hbTry η L₂ ((zAt X₂ t).toNat % 16)).length < 256 by omega)]
       refine RelCT.ite hz2 ?_ (RelCT.of_false fun a c ⟨h, he⟩ => by
-        rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_false_iff_not] at he; omega)
+        rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_false_iff_not] at he; omega_using [hm1, he])
       exact relW (taintRel [] nil_regs c3) fun a c h => ⟨WP.block_nil h.1.1.base, WP.block_nil h.1.2.base⟩
   · rw [ifF hf, ifF (show ¬ L₂.length < 256 by omega)]
     refine RelCT.ite hz ?_ (RelCT.of_false fun a c ⟨h, he⟩ => by
-      rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_false_iff_not] at he; omega)
+      rw [eval_eq, h.1.z] at he; simp only [Option.some.injEq, decide_eq_false_iff_not] at he; omega_using [hf, he])
     exact relW (taintRel [] nil_regs c3) fun a c h => ⟨WP.block_nil h.1.1.base, WP.block_nil h.1.2.base⟩
 
 variable (hX₁ : X₁.length = 544) (hX₂ : X₂.length = 544)
@@ -145,10 +145,10 @@ theorem len_eq (t : Nat) : (Lf η X₁ t).length = (Lf η X₂ t).length :=
 include hX₁ hX₂ oks in
 theorem ok_eq {t : Nat} (ht : t < 544) : hbOks η (zAt X₁ t) = hbOks η (zAt X₂ t) := by
   have h := congrArg (fun L => L[t]?) oks
-  simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < X₁.length by omega),
-    List.getElem?_eq_getElem (show t < X₂.length by omega), Option.map_some, Option.some.injEq] at h
+  simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < X₁.length by omega_using [hX₁, ht]),
+    List.getElem?_eq_getElem (show t < X₂.length by omega_using [hX₂, ht]), Option.map_some, Option.some.injEq] at h
   rw [zAt, zAt, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show t < X₁.length by omega), List.getElem?_eq_getElem (show t < X₂.length by omega)]
+    List.getElem?_eq_getElem (show t < X₁.length by omega_using [hX₁, ht]), List.getElem?_eq_getElem (show t < X₂.length by omega_using [hX₂, ht])]
   exact h
 
 include hp₁ hp₂ hη c1 c2 c3 hX₁ hX₂ oks in
@@ -188,7 +188,7 @@ theorem loop_ct :
       · have : t + 1 ≠ 544 := by
           have e' : (!a.z) = true := Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨544 - (t + 1), by omega, t + 1, by omega, rfl, i₁, i₂⟩
+        exact ⟨544 - (t + 1), by omega_using [ht, hn], t + 1, by omega_using [ht, this], rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 

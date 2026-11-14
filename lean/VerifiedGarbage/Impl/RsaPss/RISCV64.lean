@@ -12,7 +12,7 @@ digest = a4, digest_len = a5, sig = a6, sig_len = a7, salt_len,
 any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`, the last
 eight on the stack, with the hash function of the table `hash`, of the
 interface `MdHash` (`Spec/MdHashTable.lean`), and MGF1's that of the table
-`mgf1`, of the interface `Hash` (`Spec/HashTable.lean`), which it calls
+`mgf1`, of the interface `MdHash` (`Spec/MdHashTable.lean`), which it calls
 (`tcall`), with `vg_rsa_public_precomputed_checked`. The steps are those of
 PPC64LE (`Impl/RsaPss/PPC64LE.lean`).
 

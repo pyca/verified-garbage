@@ -24,10 +24,10 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
 theorem word32_at (m : Mem) (base : Addr) (d n j : Nat) (hj : j < n) :
     w32 m base (d + 4 * j) = val32 m base d n / 2 ^ (32 * j) % 2 ^ 32 := by
   have E := val32_append m base d j (n - j)
-  rw [show j + (n - j) = n by omega] at E
+  rw [show j + (n - j) = n by omega_using [hj]] at E
   rw [E, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
     Nat.div_eq_of_lt (val32_lt _ _ _ _), Nat.zero_add]
-  have hn : n - j = (n - j - 1) + 1 := by omega
+  have hn : n - j = (n - j - 1) + 1 := by omega_using [hj]
   rw [hn, ← low32]
 
 theorem setMatrix_ok {s : State} {base : Addr} {size dst : Nat}

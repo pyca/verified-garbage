@@ -136,9 +136,9 @@ theorem jointInit_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base) 
   · rw [et,ee,de,ce,be,ae]
     rfl
   · intro x hx _
-    rw [tm,eo x (by simp only [slot] at hx ⊢;omega),do' x (by simp only [slot] at hx ⊢;omega),
-      co x (by simp only [slot] at hx ⊢;omega),bo x (by simp only [slot] at hx ⊢;omega),
-      ao x (by simp only [slot] at hx ⊢;omega)]
+    rw [tm,eo x (by simp only [slot] at hx ⊢;omega_using [hx]),do' x (by simp only [slot] at hx ⊢;omega_using [hx]),
+      co x (by simp only [slot] at hx ⊢;omega_using [hx]),bo x (by simp only [slot] at hx ⊢;omega_using [hx]),
+      ao x (by simp only [slot] at hx ⊢;omega_using [hx])]
   · have k1:Keeps (.x19::pointClob) s c:=((ak.mono (by decide)).trans (bk.mono (by decide))).trans
       (ck.mono (by decide))
     have k2:Keeps (.x19::pointClob) c t:=((dk.mono (by decide)).trans (ek.mono (by decide))).trans
@@ -213,7 +213,7 @@ theorem jointDigits_ok (hA:AffineOk) {s:State} {base:Addr} {P:Spec.Ed448.Point} 
   have cs:Keeps (.x19::pointClob) s c:=
     ak.trans ((bk.mono (by decide)).trans (ck.mono (by decide)))
   have ci:JointInv c base P S K (i+1) c:=by
-    refine ⟨by omega,hc,c19,fc.oddTable ht,fc.xbounds hxb,?_,?_,?_,?_,rfl,rfl,rfl,fun _ _ _ _ => rfl⟩
+    refine ⟨by omega_using [hi],hc,c19,fc.oddTable ht,fc.xbounds hxb,?_,?_,?_,?_,rfl,rfl,rfl,fun _ _ _ _ => rfl⟩
     · rw [csy,bsy,asy]
       exact hbt.of_frame (by rw [cs.2.1,cs.2.2]) fc
     · intro j hj
@@ -225,7 +225,7 @@ theorem jointDigits_ok (hA:AffineOk) {s:State} {base:Addr} {P:Spec.Ed448.Point} 
     · intro q _
       rw [mc,ap,rs,rk]
       simpa only [Int.natCast_zero,zero_smul,add_zero] using VG.Proof.Ed448.identity_rep
-  refine WP.mono (jointLoop_ok hA (by omega) ci) fun t ht => ?_
+  refine WP.mono (jointLoop_ok hA (by omega_using []) ci) fun t ht => ?_
   refine ⟨ht.core,?_,?_,?_,?_,fun x a b c => (ht.mem x a b c).trans (fc x a b c)⟩
   · intro a ha
     exact ht.rep a ha

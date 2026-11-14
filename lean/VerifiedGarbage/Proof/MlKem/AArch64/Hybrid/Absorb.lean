@@ -45,7 +45,7 @@ theorem hstate_zero (E : List Byte) {d : Byte} : hstate E 0 d = Spec.Sha3.zero :
 
 theorem hstate_done {E : List Byte} {b : Nat} {d : Byte} (h : E.length < 136 * b) :
     hstate E b d = absorb 136 (pad 136 d E) := by
-  simp only [hstate, ite_eq_right (show ¬136 * b ≤ E.length by omega)]
+  simp only [hstate, ite_eq_right (show ¬136 * b ≤ E.length by omega_using [h])]
 
 theorem xorAt_nil (A : Spec.Sha3.State) (j : Nat) : xorAt A j [] = A := rfl
 
@@ -60,31 +60,31 @@ theorem xorAt_append (A : Spec.Sha3.State) (j : Nat) (bs : List Byte) :
 /-- A whole block. -/
 theorem hstate_full {E : List Byte} {b : Nat} {d : Byte} (h : 136 * b + 136 ≤ E.length) :
     keccakF (xorAt (hstate E b d) 0 ((E.drop (136 * b)).take 136)) = hstate E (b + 1) d := by
-  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega)
+  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega_using [h])
   have hbs : ((E.drop (136 * b)).take 136).length = 136 := by
-    rw [List.length_take, List.length_drop]; omega
+    rw [List.length_take, List.length_drop]; omega_using [h]
   have ra := Proof.Sha3.rep_append (rate := 136) (by decide) (by decide) (E.take (136 * b))
-    ((E.drop (136 * b)).take 136) (by omega) (by rw [hl, hbs]; omega)
-  rw [hl, hbs, show 136 * b % 136 = 0 by omega, ite_eq_left (by decide)] at ra
+    ((E.drop (136 * b)).take 136) (by omega_using [hbs]) (by rw [hl, hbs]; omega_using [])
+  rw [hl, hbs, show 136 * b % 136 = 0 by omega_using [], ite_eq_left (by decide)] at ra
   have ht : E.take (136 * (b + 1)) = E.take (136 * b) ++ (E.drop (136 * b)).take 136 := by
-    rw [show 136 * (b + 1) = 136 * b + 136 by omega, List.take_add]
-  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega),
-    ite_eq_left (show 136 * (b + 1) ≤ E.length by omega), ht, ra]
+    rw [show 136 * (b + 1) = 136 * b + 136 by omega_using [], List.take_add]
+  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega_using [h]),
+    ite_eq_left (show 136 * (b + 1) ≤ E.length by omega_using [h]), ht, ra]
 
 /-- The last, partial block, and the padding. -/
 theorem hstate_last {E : List Byte} {b : Nat} {d : Byte} (hlo : 136 * b < E.length)
     (hhi : E.length < 136 * b + 136) :
     keccakF (xorByte (xorByte (xorAt (hstate E b d) 0 (E.drop (136 * b))) (E.length - 136 * b)
       d) 135 128) = hstate E (b + 1) d := by
-  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega)
+  have hl : (E.take (136 * b)).length = 136 * b := List.length_take_of_le (by omega_using [hlo])
   have hbs : (E.drop (136 * b)).length = E.length - 136 * b := List.length_drop
   have ra := Proof.Sha3.rep_append (rate := 136) (by decide) (by decide) (E.take (136 * b))
-    (E.drop (136 * b)) (by omega) (by rw [hl, hbs]; omega)
-  rw [hl, hbs, show 136 * b % 136 = 0 by omega, ite_eq_right (show ¬0 + (E.length - 136 * b) = 136 by omega),
+    (E.drop (136 * b)) (by omega_using [hlo, hbs]) (by rw [hl, hbs]; omega_using [hhi])
+  rw [hl, hbs, show 136 * b % 136 = 0 by omega_using [], ite_eq_right (show ¬0 + (E.length - 136 * b) = 136 by omega_using [hhi]),
     List.take_append_drop] at ra
-  rw [hstate_done (show E.length < 136 * (b + 1) by omega),
-    Proof.Sha3.absorb_pad (by decide) (by decide), show E.length % 136 = E.length - 136 * b by omega]
-  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega), ← ra]
+  rw [hstate_done (show E.length < 136 * (b + 1) by omega_using [hhi]),
+    Proof.Sha3.absorb_pad (by decide) (by decide), show E.length % 136 = E.length - 136 * b by omega_using [hlo, hhi]]
+  simp only [hstate, ite_eq_left (show 136 * b ≤ E.length by omega_using [hlo]), ← ra]
 
 /-! ## The code -/
 
@@ -134,13 +134,13 @@ theorem absorbWords_ok {s : State} {r : Reg} {e st : Addr} {eo n : Nat} (hr9 : r
   have t25 : t.gpr r = e := (kt.gpr r hr9).trans he
   have t28 : t.gpr .x28 = st := (kt.get .x28).trans hs
   have cst : (stR st).Contains (st + BitVec.ofNat 64 (8 * w)) 8 :=
-    Offset.contains_base st (by omega) (by omega)
-  refine WP.mono (absorbWord_ok (eo := eo + 8 * w) (off := 8 * w) ⟨by omega, by omega⟩ ⟨by omega, by omega⟩
+    Offset.contains_base st (by omega_using [hn, hw']) (by omega_using [hn, hw'])
+  refine WP.mono (absorbWord_ok (eo := eo + 8 * w) (off := 8 * w) ⟨by omega_using [heo], by omega_using [hlim, hw']⟩ ⟨by omega_using [], by omega_using [hn, hw']⟩
     (by rw [kt.rd, kt.wr, t25]; exact hr w hw')
     (by rw [kt.wr, t28]; exact hw _ _ ⟨stR st, List.mem_singleton_self _, cst⟩)) fun u ⟨ku, mu⟩ => ?_
   rw [t25, t28] at mu
   have sub : Region.Sub ⟨e + BitVec.ofNat 64 eo + BitVec.ofNat 64 (8 * w), 8⟩ ⟨e + BitVec.ofNat 64 eo, 8 * n⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [hw'])
   have bw : bytesAt t.mem (e + BitVec.ofNat 64 (eo + 8 * w)) 8 =
       bytesAt s.mem (e + BitVec.ofNat 64 eo + BitVec.ofNat 64 (8 * w)) 8 := by
     rw [← ptr_add]
@@ -149,7 +149,7 @@ theorem absorbWords_ok {s : State} {r : Reg} {e st : Addr} {eo n : Nat} (hr9 : r
   refine ⟨(kt.trans ku).mono (by simp), ?_, ?_⟩
   · rw [mu]
     exact ft.writeW (List.mem_singleton_self _) _ cst
-  · rw [mu, FixedHash.absorbWord_state _ _ _ (by omega), st', bw, show 8 * (w + 1) = 8 * w + 8 by omega,
+  · rw [mu, FixedHash.absorbWord_state _ _ _ (by omega_using [hn, hw']), st', bw, show 8 * (w + 1) = 8 * w + 8 by omega_using [],
       VG.Proof.MlKem.bytesAt_add, xorAt_append, VG.Proof.MlKem.bytesAt_length, Nat.zero_add]
 
 theorem padCode_eq (pos sfx : Nat) :
@@ -191,7 +191,7 @@ theorem absorbBlock_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {e st : 
   have hlim := hS.lim
   have hlen : E.length = S.len := by rw [← hE]; exact VG.Proof.MlKem.bytesAt_length _ _ _
   have rd : ∀ {o n : Nat}, o + n ≤ S.len → InRegions (s.rd ++ s.wr) (e + BitVec.ofNat 64 o) n :=
-    fun h => covers_in hr h (by omega)
+    fun h => covers_in hr h (by omega_using [hlim])
   -- the words at `S.r + S.base + o` are those at `e + o`
   have pa : ∀ o : Nat, s.gpr S.r + BitVec.ofNat 64 (S.base + o) = e + BitVec.ofNat 64 o := fun o => by
     rw [← ptr_add, he]
@@ -199,27 +199,27 @@ theorem absorbBlock_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {e st : 
   split
   · rename_i hfull
     refine WP.mono (absorbWords_ok (e := s.gpr S.r) (eo := S.base + 136 * b) hS.not9 rfl hs (by decide)
-      (by omega) (by omega)
-      (fun w hw' => by rw [Nat.add_assoc, pa]; exact rd (by omega)) hw
-      (by rw [pa]; exact hd.sub_right (Offset.sub_base e (by omega)))) fun t ⟨kt, ft, mt⟩ => ⟨kt, ft, ?_⟩
+      (by omega_using [hb8]) (by omega_using [hlim, hfull])
+      (fun w hw' => by rw [Nat.add_assoc, pa]; exact rd (by omega_using [hfull, hw'])) hw
+      (by rw [pa]; exact hd.sub_right (Offset.sub_base e (by omega_using [hfull])))) fun t ⟨kt, ft, mt⟩ => ⟨kt, ft, ?_⟩
     rw [mt, hst, pa, show 8 * 17 = 136 from rfl, ← VG.Proof.MlKem.bytesAt_slice _ _ hfull, hE]
-    exact hstate_full (by omega)
+    exact hstate_full (by omega_using [hlen, hfull])
   · rename_i hpart
-    have hnw : 8 * ((S.len - 136 * b) / 8) = S.len - 136 * b := by omega
+    have hnw : 8 * ((S.len - 136 * b) / 8) = S.len - 136 * b := by omega_using [h8]
     rw [List.append_assoc, WP.block_append_iff, padCode_eq]
-    refine WP.mono (absorbWords_ok (e := s.gpr S.r) (eo := S.base + 136 * b) hS.not9 rfl hs (by omega)
-      (by omega) (by omega)
-      (fun w hw' => by rw [Nat.add_assoc, pa]; exact rd (by omega)) hw
-      (by rw [pa]; exact hd.sub_right (Offset.sub_base e (by omega)))) fun t ⟨kt, ft, mt⟩ => ?_
+    refine WP.mono (absorbWords_ok (e := s.gpr S.r) (eo := S.base + 136 * b) hS.not9 rfl hs (by omega_using [hpart])
+      (by omega_using [hb8]) (by omega_using [hb, hlim])
+      (fun w hw' => by rw [Nat.add_assoc, pa]; exact rd (by omega_using [hw'])) hw
+      (by rw [pa]; exact hd.sub_right (Offset.sub_base e (by omega_using [hb])))) fun t ⟨kt, ft, mt⟩ => ?_
     have t28 : t.gpr .x28 = st := (kt.get .x28).trans hs
     refine WP.mono (FixedHash.pad_ok (s := t) (sc := .x28) (st := 0) (rate := 136)
       (pos := S.len - 136 * b) (sfx := S.sfx) (by decide) (by decide) (by decide) (by decide)
-      (by omega) (by decide)
+      (by omega_using [hpart]) (by decide)
       (by rw [kt.wr, t28, ptr_zero]; exact hw)) fun u ⟨ku, fu, mu⟩ => ?_
     rw [t28, ptr_zero] at fu mu
     refine ⟨(kt.trans ku).mono (by simp), ft.trans fu, ?_⟩
-    rw [mu, mt, hst, pa, hnw, ← VG.Proof.MlKem.bytesAt_drop _ _ (by omega), hE]
-    have hh := hstate_last (E := E) (b := b) (d := dB S) (by omega) (by omega)
+    rw [mu, mt, hst, pa, hnw, ← VG.Proof.MlKem.bytesAt_drop _ _ (by omega_using [hb]), hE]
+    have hh := hstate_last (E := E) (b := b) (d := dB S) (by omega_using [hb, hlen]) (by omega_using [hlen, hpart])
     rw [hlen] at hh
     exact hh
 

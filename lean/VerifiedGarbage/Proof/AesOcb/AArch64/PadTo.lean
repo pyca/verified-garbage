@@ -40,7 +40,7 @@ theorem write1 (m : Mem) (a : Addr) (v : BitVec (8 * 1)) : m.write a 1 v = m.wri
   simp [Mem.writeW]
 
 theorem contains_pre (p : Addr) {j n : Nat} (h : j ≤ n) : (⟨p, n⟩ : Region).Contains p j := by
-  simpa using Offset.contains_base p (d := 0) (n := j) (k := n) (by omega) (by decide)
+  simpa using Offset.contains_base p (d := 0) (n := j) (k := n) (by omega_using [h]) (by decide)
 
 theorem toBytes_zero : Spec.Ocb.toBytes 0 = Spec.Ocb.zeros 16 := by decide
 
@@ -60,7 +60,7 @@ theorem padTo_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨
       blockAtMem t.mem (W + BitVec.ofNat 64 d) = pad (bytesAt s.mem S n) ∧
       (∀ r, r ∉ padRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have wW : ∀ {e k : Nat}, e + k ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 e) k := fun h => in_off hw h (by decide)
-  obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := d) ⟨hd.1, by omega⟩ h19 (wW (by omega)) (wW (by omega))
+  obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := d) ⟨hd.1, by omega_using [hd]⟩ h19 (wW (by omega_using [hd])) (wW (by omega_using [hd]))
   obtain ⟨s₂, run₂, x11₂, x12₂, x13₂, g₂, m₂, sp₂, rd₂, wr₂⟩ : ∃ s₂,
       runBlock isa [Impl.AesGcm.AArch64.ptr .x11 .x19 d, Impl.AesGcm.AArch64.mov .x12 .x23,
         Impl.AesGcm.AArch64.mov .x13 .x24] s₁ = some s₂ ∧
@@ -70,7 +70,7 @@ theorem padTo_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨
     have h19₁ : s₁.gpr .x19 = W := by rw [B₁.gpr _ (by decide), h19]
     have h23₁ : s₁.gpr .x23 = S := by rw [B₁.gpr _ (by decide), h23]
     have h24₁ : s₁.gpr .x24 = BitVec.ofNat 64 n := by rw [B₁.gpr _ (by decide), h24]
-    refine ⟨_, by orun [show d < 4096 by omega], ?_, ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨_, by orun [show d < 4096 by omega_using [hd]], ?_, ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_, ?_⟩
     · simp [gpr_write, h19₁]
     · simp [gpr_write, h23₁]
     · simp [gpr_write, h24₁]
@@ -78,35 +78,35 @@ theorem padTo_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨
     all_goals rfl
   have hS₂ : Covers [⟨S, n⟩] (s₂.rd ++ s₂.wr) := by rw [rd₂, wr₂, B₁.rd, B₁.wr]; exact hS
   have hD₂ : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s₂.wr := by
-    rw [wr₂, B₁.wr]; exact Proof.AesGcm.AArch64.covers_off hw (by omega) (by decide)
-  have hSD' : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ := hSD.sub_right (Region.sub_prefix (by omega))
+    rw [wr₂, B₁.wr]; exact Proof.AesGcm.AArch64.covers_off hw (by omega_using [hn', hd]) (by decide)
+  have hSD' : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ := hSD.sub_right (Region.sub_prefix (by omega_using [hn']))
   have eS : bytesAt s₂.mem S n = bytesAt s.mem S n := by
     rw [m₂]
     exact Proof.Cmac.bytesAt_frame B₁.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hSD) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact hSD) (by omega_using [hn'])
   have z₂ : bytesAt s₂.mem (W + BitVec.ofNat 64 d) 16 = Spec.Ocb.zeros 16 := by
     rw [m₂]; exact bytesAt_of_zero B₁.val
   unfold padTo
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], ?_⟩)
-  refine WP.seq (WP.mono (copyLoop_ok s₂ x12₂ x11₂ x13₂ hn ⟨by omega, hS₂, hD₂, hSD'⟩) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (copyLoop_ok s₂ x12₂ x11₂ x13₂ hn ⟨by omega_using [hn'], hS₂, hD₂, hSD'⟩) fun s₃ h₃ => ?_)
   obtain ⟨m₃, _, x11₃, g₃, sp₃, rd₃, wr₃⟩ := h₃
   have w₃ : InRegions s₃.wr (W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) 1 := by
-    rw [wr₃, wr₂, B₁.wr, Offset.add_add]; exact wW (by omega)
+    rw [wr₃, wr₂, B₁.wr, Offset.add_add]; exact wW (by omega_using [hn', hd])
   refine WP.of_runBlock ⟨_, by orun [x11₃, w₃, write1], ?_⟩
   have hlen : (bytesAt s.mem S n).length = n := length_bytesAt _ _ _
   have key : ∀ (m : Mem) (b : Byte), (writeBytes m (W + BitVec.ofNat 64 d) (bytesAt s.mem S n)).writeW
       (W + BitVec.ofNat 64 d + BitVec.ofNat 64 n) b = writeBytes m (W + BitVec.ofNat 64 d) (bytesAt s.mem S n ++ [b]) :=
-    fun m b => by rw [writeBytes_snoc _ _ _ _ (by omega), hlen]
+    fun m b => by rw [writeBytes_snoc _ _ _ _ (by omega_using [hn', hlen]), hlen]
   refine ⟨?_, ?_, fun r hr => ?_, by rw [sp₃, sp₂, B₁.sp], by rw [rd₃, rd₂, B₁.rd], by rw [wr₃, wr₂, B₁.wr]⟩
   · dsimp only
     rw [m₃, eS, key]
     intro x hx
-    rw [writeBytes_frame _ _ _ (by simp [hlen]; exact contains_pre _ (by omega)) x hx, m₂]
+    rw [writeBytes_frame _ _ _ (by simp [hlen]; exact contains_pre _ (by omega_using [hn'])) x hx, m₂]
     exact B₁.frame x hx
   · dsimp only
-    rw [m₃, eS, key, blockAtMem, bytesAt_writeBytes_base _ _ _ (by simp [hlen]; omega) (by decide), z₂]
+    rw [m₃, eS, key, blockAtMem, bytesAt_writeBytes_base _ _ _ (by simp [hlen]; omega_using [hn']) (by decide), z₂]
     simp only [pad, hlen, List.length_append, List.length_singleton, Spec.Ocb.zeros, List.drop_replicate,
-      List.append_assoc, List.singleton_append, show 16 - (n + 1) = 15 - n by omega]
+      List.append_assoc, List.singleton_append, show 16 - (n + 1) = 15 - n by omega_using []]
     rfl
   · simp only [padRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     dsimp only

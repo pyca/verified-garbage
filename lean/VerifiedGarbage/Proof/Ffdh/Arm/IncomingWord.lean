@@ -31,7 +31,7 @@ theorem IncomingWord.after {value : BitVec 32} {d : Nat} {s t : State} {rs : Lis
   · rw [rest.sp]
     have word := frame.readW (w := 32) (r := ⟨off (State.addr s.sp) d, 4⟩) (Region.contains_self _ _)
       (by intro r hr; rw [List.mem_singleton] at hr; subst r
-          exact Offset.disjoint_base _ large (by have := h.fits; omega)) (by decide)
+          exact Offset.disjoint_base _ large (by have := h.fits; omega_using [this])) (by decide)
     exact word.trans h.word
 
 theorem wp_load_incoming {s : State} {is : List Instr} {Q : State → Prop} {value : BitVec 32} {d : Nat}
@@ -39,7 +39,7 @@ theorem wp_load_incoming {s : State} {is : List Instr} {Q : State → Prop} {val
     (next : ∀ t, t.gpr r = value → t.mem = s.mem → Rest [r] s t → WP isa (.block is) t Q) :
     WP isa (.block (.ldrSp r d :: is)) s Q := by
   refine wp_loadStack (a := off (State.addr s.sp) d) small
-    (addr_add (by have := h.fits; omega)) h.readable fun t loaded => ?_
+    (addr_add (by have := h.fits; omega_using [this])) h.readable fun t loaded => ?_
   exact next t (loaded.gpr.trans h.word) loaded.mem (loaded.rest (by simp))
 
 theorem wp_retain_incoming {s : State} {is : List Instr} {Q : State → Prop} {p : Inputs}
@@ -69,12 +69,12 @@ theorem enteredIncoming (s : State) {i : Nat} {value : BitVec 32}
     (separate : (FrameStack.belowA s.sp 128).Disjoint ⟨stackArgAddr s i, 4⟩)
     (word : stackArg s i = value) : IncomingWord value (128 + 4 * i) (entered s) := by
   have nativeRoom : (entered s).sp.toNat + (128 + 4 * i) < 2 ^ 32 := by
-    rw [entered_nat s stackFit]; omega
+    rw [entered_nat s stackFit]; omega_using [stackFit, argFit]
   have nativeAddr : off (State.addr (entered s).sp) (128 + 4 * i) = stackArgAddr s i := by
     change State.addr (entered s).sp + BitVec.ofNat 64 (128 + 4 * i) = _
     rw [← VG.Arm.addr_add nativeRoom, entered_sp, BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
     rfl
-  refine ⟨by rw [entered_nat s stackFit]; omega, ?_, ?_⟩
+  refine ⟨by rw [entered_nat s stackFit]; omega_using [stackFit, argFit], ?_, ?_⟩
   · rw [nativeAddr]; exact entered_read read
   · rw [nativeAddr]
     have old := (entered_frame s stackFit).readW (w := 32) (r := ⟨stackArgAddr s i, 4⟩)

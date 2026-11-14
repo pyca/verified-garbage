@@ -87,10 +87,10 @@ theorem b0_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (h
       f₃.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
+        · exact Lay.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
         · rcases hy with rfl | rfl
-          · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-          · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)) (by decide)
+          · exact Lay.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
+          · exact Lay.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)) (by decide)
     exact ⟨E₃, by rw [k₃ _ (by decide) (by decide)]; exact hs.slots.ctx,
       by rw [k₃ _ (by decide) (by decide)]; exact hs.slots.rounds⟩
 

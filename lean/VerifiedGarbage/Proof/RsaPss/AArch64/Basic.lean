@@ -51,7 +51,7 @@ theorem Rep.wb {m : Mem} {S : Addr} {V : Nat → Byte} (h : Rep m S V) {o : Nat}
   rw [writeW8_apply, upd]
   by_cases e : x = o
   · subst e; simp
-  · rw [ite_eq_right fun h' => e ((off_inj S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega)).mp h'),
+  · rw [ite_eq_right fun h' => e ((off_inj S (by unfold oRsa at *; omega_using [hx]) (by unfold oRsa at *; omega_using [ho])).mp h'),
       ite_eq_right e]
     exact h x hx
 
@@ -65,21 +65,21 @@ theorem Rep.writeBytes {m : Mem} {S : Addr} {V : Nat → Byte} (h : Rep m S V) {
   simp only [VG.WriteBytes.writeBytes, updL]
   by_cases e : o ≤ x
   · rw [show off S x = off (off S o) (x - o) by
-      simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
+      simp only [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using [e]]
     simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show x - o < 2 ^ 64 by unfold oRsa at *; omega)]
+      Nat.mod_eq_of_lt (show x - o < 2 ^ 64 by unfold oRsa at *; omega_using [hx])]
     by_cases e' : x - o < xs.length
-    · rw [ite_eq_left e', ite_eq_left ⟨e, by omega⟩]
-    · rw [ite_eq_right e', ite_eq_right (by omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
-        show o + (x - o) = x by omega]
+    · rw [ite_eq_left e', ite_eq_left ⟨e, by omega_using [e']⟩]
+    · rw [ite_eq_right e', ite_eq_right (by omega_using [e']), BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+        show o + (x - o) = x by omega_using [e]]
       exact h x hx
   · have : ¬ ((off S x - off S o).toNat < xs.length) := by
       rw [show off S x - off S o = BitVec.ofNat 64 (2 ^ 64 - (o - x)) by
         apply BitVec.eq_of_toNat_eq
         simp only [off, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
-        unfold oRsa at *; omega]
-      simp only [BitVec.toNat_ofNat]; unfold oRsa at *; omega
-    rw [ite_eq_right this, ite_eq_right (by omega)]
+        unfold oRsa at *; omega_using [ho, e]]
+      simp only [BitVec.toNat_ofNat]; unfold oRsa at *; omega_using [ho, e]
+    rw [ite_eq_right this, ite_eq_right (by omega_using [e])]
     exact h x hx
 
 /-- Memory changed only apart from the working space keeps it. -/
@@ -99,7 +99,7 @@ theorem Rep.bytes {m : Mem} {S : Addr} {V : Nat → Byte} (h : Rep m S V) {o n :
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have := List.mem_range.mp hi
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; exact h _ (by omega)
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; exact h _ (by omega_using [ho, this])
 
 /-! ## Where the code runs -/
 
@@ -126,7 +126,7 @@ theorem Lay.st {t : State} {F S : Addr} (L : Lay t F S) {o n : Nat} (h : o + n �
   obtain ⟨⟨b, l⟩, hr, hb, hl⟩ := L.sw
   dsimp only at hb hl
   subst hb
-  exact ⟨_, hr, Offset.contains_base _ (by omega) (by unfold oRsa at *; omega)⟩
+  exact ⟨_, hr, Offset.contains_base _ (by omega_using [h, hl]) (by unfold oRsa at *; omega_using [h])⟩
 
 theorem Lay.ld {t : State} {F S : Addr} (L : Lay t F S) {o n : Nat} (h : o + n ≤ oRsa) :
     InRegions (t.rd ++ t.wr) (off S o) n :=
@@ -136,7 +136,7 @@ theorem Lay.ld {t : State} {F S : Addr} (L : Lay t F S) {o n : Nat} (h : o + n �
 /-- Words of the frame are writable and readable. -/
 theorem Lay.fst {t : State} {F S : Addr} (L : Lay t F S) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions t.wr (off F d) n :=
-  ⟨_, L.fw, Offset.contains_base _ h (by unfold frameBytes at *; omega)⟩
+  ⟨_, L.fw, Offset.contains_base _ h (by unfold frameBytes at *; omega_using [h])⟩
 
 theorem Lay.fld {t : State} {F S : Addr} (L : Lay t F S) {d n : Nat} (h : d + n ≤ frameBytes) :
     InRegions (t.rd ++ t.wr) (off F d) n :=
@@ -160,8 +160,8 @@ theorem eq1_val {a b : BitVec 64} (ha : a.toNat < 2 ^ 63) (hb : b.toNat < 2 ^ 63
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
     have h1 : (BitVec.ofNat 64 1).toNat = 1 := rfl
-    rw [h1, show (2 ^ 64 - 1 + x.toNat) % 2 ^ 64 = x.toNat - 1 by omega]
+    rw [h1, show (2 ^ 64 - 1 + x.toNat) % 2 ^ 64 = x.toNat - 1 by omega_using [hn]]
     show (x.toNat - 1) / 2 ^ 63 = 0
-    exact Nat.div_eq_of_lt (by omega)
+    exact Nat.div_eq_of_lt (by omega_using [hx])
 
 end VG.Proof.RsaPss.AArch64

@@ -44,9 +44,9 @@ theorem pdImport_first_ok (s : State) {base pp : BitVec 32} {len w : Nat}
   have sourceFit := h.sourceFit
   have read : InRegions (u.rd ++ u.wr) (State.addr pp) (8 * w) := by
     rw [moved.rd, moved.wr]
-    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) h.read (by omega) (by omega)
+    simpa only [BitVec.add_zero] using CallLay.inRegions_sub (off := 0) h.read (by omega_using []) (by omega_using [sourceFit])
   refine WP.mono (importArrayLayout_ok u ready (by decide : 0 < 8)
-    (by have := h.sourceFit; omega) read (h.separate.sub_right (Region.sub_prefix (by omega)))
+    (by have := h.sourceFit; omega_using [sourceFit]) read (h.separate.sub_right (Region.sub_prefix (by omega_using [])))
     moved.gpr ((moved.other .r4 (by decide)).trans h.source)) ?_
   rintro t ⟨readyT, _, _, _, rest, source⟩
   exact ⟨readyT, h.sourceFit, by rw [rest.rd, rest.wr, moved.rd, moved.wr]; exact h.read,
@@ -80,7 +80,7 @@ theorem pdImport_ct {base pp : BitVec 32} {len w : Nat} :
     exact h.1.ready.ptr.trans h.2.ready.ptr.symm
   have wpAdvance (s : State) (h : P s) : WP isa (.block precomputeOutAdvance) s R := by
     have fits := h.ready.layout.2.2.1
-    have size : 52 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+    have size : 52 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
     have header := nativeHeader_of_layout s.mem base h.ready.workspace.nowrap (Nat.le_refl _) h.ready.layout
     rw [h.ready.width] at header
     refine WP.mono (precomputeOutAdvance_ok s h.ready.workspace size h.ready.ptr header.count) ?_

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.GenerationPolicy
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native key search, step by step
 
@@ -56,7 +57,7 @@ private theorem attempt_of {a : Parameters} {len keys scalars : Nat} {rand : Ran
           (policy.search a len ⟨keys - 1, 128⟩ (rand.drop len)).consume len 3
       else ⟨.exhausted, len, [status]⟩ := by
   cases policy <;> simp only [GenerationPolicy.search, GenerationPolicy.scalar] <;> first | rw [keySearch] | rw [vettedKeySearch]
-  all_goals simp only [hk, hs, show ¬rand.length < len by omega, or_self, ite_false]
+  all_goals simp only [hk, hs, show ¬rand.length < len by omega_using [hr], or_self, ite_false]
   all_goals rfl
 
 theorem keySearch_accepted {a : Parameters} {len keys scalars : Nat} {rand : Rand}
@@ -78,7 +79,7 @@ theorem keySearch_scalar {a : Parameters} {len keys scalars : Nat} {rand : Rand}
   simp only [attemptStatus] at h
   simp only [h, show (2 : Nat) ≠ 1 by decide, ite_false, ite_true]
   by_cases h1 : scalars ≤ 1
-  · have h0 : scalars - 1 = 0 := by omega
+  · have h0 : scalars - 1 = 0 := by omega_using [h1]
     simp only [h1, ite_true, h0, keySearch_exhausted (Or.inr rfl), KeySearchResult.consume, Nat.add_zero]
   · simp only [h1, ite_false]
 
@@ -91,7 +92,7 @@ theorem keySearch_public {a : Parameters} {len keys scalars : Nat} {rand : Rand}
   simp only [attemptStatus] at h
   simp only [h, show (3 : Nat) ≠ 1 by decide, show (3 : Nat) ≠ 2 by decide, ite_false, ite_true]
   by_cases h1 : keys ≤ 1
-  · have h0 : keys - 1 = 0 := by omega
+  · have h0 : keys - 1 = 0 := by omega_using [h1]
     simp only [h1, ite_true, h0, keySearch_exhausted (Or.inl rfl), KeySearchResult.consume, Nat.add_zero]
   · simp only [h1, ite_false]
 

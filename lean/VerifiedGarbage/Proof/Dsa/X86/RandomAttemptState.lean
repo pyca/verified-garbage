@@ -63,7 +63,7 @@ theorem self_contains (x : Addr) : (⟨x, 1⟩ : Region).Contains x 1 := by
 theorem call_frame_byte {s₀ : State} (A : RandomSignABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
     {d : Nat} (h₁ : 44 ≤ d) (h₂ : d < 120) : m' (off (rBase s₀) d) = m (off (rBase s₀) d) := by
   rw [rBase_off, rLow_off]
-  have hs : (rStack s₀).Contains (off (rCall s₀) (88 + (24 + d))) 1 := Offset.contains_base _ (by omega) (by omega)
+  have hs : (rStack s₀).Contains (off (rCall s₀) (88 + (24 + d))) 1 := Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
   refine hf _ fun r hr => ?_
   simp only [callWrites, callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
     or_false] at hr
@@ -71,9 +71,9 @@ theorem call_frame_byte {s₀ : State} (A : RandomSignABI s₀) {m m' : Mem} (hf
   · exact A.stackOutWide _ hs
   · exact A.stackScratchWide _ hs
   · rw [rLow_off]
-    exact (Offset.disjoint (rCall s₀) (d := 88 + (24 + d)) (n := 1) (e := 88 + 24) (k := 44) (by omega)
-      (by omega) (by omega)) _ (self_contains _)
-  · exact (Offset.disjoint_base (rCall s₀) (d := 88 + (24 + d)) (n := 1) (k := 112) (by omega) (by omega)) _
+    exact (Offset.disjoint (rCall s₀) (d := 88 + (24 + d)) (n := 1) (e := 88 + 24) (k := 44) (by omega_using [h₁])
+      (by omega_using [h₂]) (by omega_using [])) _ (self_contains _)
+  · exact (Offset.disjoint_base (rCall s₀) (d := 88 + (24 + d)) (n := 1) (k := 112) (by omega_using []) (by omega_using [h₂])) _
       (self_contains _)
 
 theorem call_frame_slot {s₀ : State} (A : RandomSignABI s₀) {m m' : Mem} (hf : Frame (callWrites s₀) m m')
@@ -82,7 +82,7 @@ theorem call_frame_slot {s₀ : State} (A : RandomSignABI s₀) {m m' : Mem} (hf
     have : i < 4 := hi
     rw [show off (rBase s₀) d + BitVec.ofNat 64 i = off (rBase s₀) (d + i) by
       rw [off, off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]]
-    exact call_frame_byte A hf (by omega) (by omega)
+    exact call_frame_byte A hf (by omega_using [h₁]) (by omega_using [h₂, hi])
 
 /-- The call keeps the sampler's state. -/
 theorem Smp.after_call {s₀ t u : State} (A : RandomSignABI s₀) {used d : Nat} (S : Smp s₀ used d t)
@@ -95,7 +95,7 @@ theorem Smp.after_call {s₀ t u : State} (A : RandomSignABI s₀) {used d : Nat
   · rw [call_frame_slot A hf (by decide) (by decide)]; exact S.mask
   · rw [call_frame_slot A hf (by decide) (by decide)]; exact S.usedW
   · rw [call_frame_slot A hf (by decide) (by decide)]; exact S.drawsW
-  · rw [call_frame_byte A hf (by unfold oNonce; omega) (by unfold oNonce; omega)]; exact S.pad i hi
+  · rw [call_frame_byte A hf (by unfold oNonce; omega_using []) (by unfold oNonce; omega_using [hql, hi])]; exact S.pad i hi
 
 /-- The argument stores keep the sampler's state. -/
 theorem Smp.after_args {s₀ t u : State} (A : RandomSignABI s₀) {used d : Nat} (S : Smp s₀ used d t)
@@ -103,13 +103,13 @@ theorem Smp.after_args {s₀ t u : State} (A : RandomSignABI s₀) {used d : Nat
   have hql := rQBytes_le A
   have hfit : rWidth s₀ ≤ (rQBytes s₀).length := VG.Proof.Dsa.significant_fits (rQBytes s₀)
   have hs : ∀ d, 44 ≤ d → d + 4 ≤ 120 → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d h₁ h₂ =>
-    slot_outs hm (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; right; exact h₁) (by omega)
+    slot_outs hm (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; right; exact h₁) (by omega_using [h₂])
   refine ⟨hr, (hs _ (by decide) (by decide)).trans S.q, (hs _ (by decide) (by decide)).trans S.width,
     (hs _ (by decide) (by decide)).trans S.mask, (hs _ (by decide) (by decide)).trans S.usedW,
     (hs _ (by decide) (by decide)).trans S.drawsW, fun i hi => ?_, S.usedBound⟩
   rw [hm _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    rw [ofs_off0 _ (by unfold oNonce; omega)]; right; unfold oNonce; omega]
+    rw [ofs_off0 _ (by unfold oNonce; omega_using [hql, hi])]; right; unfold oNonce; omega_using []]
   exact S.pad i hi
 
 end VG.Proof.Dsa.X86

@@ -63,7 +63,7 @@ theorem zeroOut_vp {E : State → Prop} {X : State → Mem → Prop} {o : Nat} {
     have k2 := pre.k2; have k1 := pre.k1
     have hwr : (⟨State.addr dst, P.K⟩ : Region) ∈ s.wr := by
       rw [h.wr, pre.wr]; rcases hR with e | e <;> rw [← e] <;> simp
-    refine WP.mono (maskBuffer_ok s (by omega) (by omega) fit ⟨_, hwr, Region.contains_self _ _⟩ p0 plr)
+    refine WP.mono (maskBuffer_ok s (by omega_using [k1]) (by omega_using [k2]) fit ⟨_, hwr, Region.contains_self _ _⟩ p0 plr)
       fun t ⟨b, f, r⟩ => ⟨e, ⟨pre, r.sp.trans h.sp, r.rd.trans h.rd, r.wr.trans h.wr, h.frame.trans (f.mono ?_)⟩,
         hX σ _ _ x f, ?_⟩
     · rcases hR with e | e <;> rw [← e] <;> simp
@@ -85,7 +85,7 @@ theorem fail_vp {E : State → Prop} :
     (by decide) (by decide) (by decide) (fun σ h => h.wQ) (.inr rfl) fq fun σ m m' x f => ?_).mono
     (fun σ s h => ⟨h.1, h.2.1, h.2.2.2⟩) fun σ s h => h) ?_
   · rw [VG.Proof.Rsa.Arm.CrtValues.bytes_frame f (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact pq) (by omega), x]
+      simp only [List.mem_singleton] at hr; subst hr; exact pq) (by omega_using [fp]), x]
   refine VP.taint [] ret0_taint (fun _ _ _ _ _ _ r hr => absurd hr List.not_mem_nil)
     fun σ s ⟨e, h, bp, bq⟩ => wp_mov (op2_imm (by decide)) fun t u => WP.block_nil
       ⟨e, h.of_upd u, by rw [u.mem]; exact bp, by rw [u.mem]; exact bq, u.gpr⟩

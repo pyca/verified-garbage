@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 
-/-! # Blowfish-CBC artifacts on baseline PPC64LE -/
+/-! # Blowfish-CBC on PPC64LE -/
 
 @[expose] public section
 

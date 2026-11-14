@@ -158,13 +158,13 @@ theorem body_rel {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {
       (fun t h => (wholeArg_ok hd h.1.1).mono fun _ ⟨m, hsi, _, g⟩ =>
         ⟨⟨⟨m, (g _ (by decide)).trans h.1.2⟩, (g _ (by decide)).trans h.2.1, h.2.2⟩, hsi.trans h.1.2⟩)
   have hk : ∀ σ : State, (BitVec.ofNat 64 (len σ / P.B)).toNat = len σ / P.B := fun σ => by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := len_lt σ; have := Nat.div_le_self (len σ) P.B; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := len_lt σ; have := Nat.div_le_self (len σ) P.B; omega_arith)]
   have callN : ∀ σ : State, Pre P D σ → ∀ t : State, J4 P σ t →
       WP isa (compressN name code) t (J5 P σ) := fun σ hpσ t h => by
     have := hF.lt; have := st_le P; have := sc_le P; have := hd.N; have := hd.B
     have hle : P.B * (len σ / P.B) ≤ len σ := Nat.mul_div_le _ _
     exact compressWith_ok H setsN_r14 hf (k := len σ / P.B) (by rw [h.1.2.1]; exact hk _)
-      (callOk_data hF hpσ h.1.1.1 h.2 hle) (by have := len_lt σ; omega) (by omega)
+      (callOk_data hF hpσ h.1.1.1 h.2 hle) (by have := len_lt σ; omega_using [hle, this]) (by omega_arith)
       fun t' hrd hwr hcs hfr _ _ _ => ⟨⟨call_mid hF hd hpσ h.1.1.1 hrd hwr hcs hfr,
         (hcs _ (by decide)).trans h.1.1.2⟩, (hcs _ (by decide)).trans h.1.2.1⟩
   have rCallN : RelCT isa (fun s₁ s₂ => J4 P s₀ s₁ ∧ J4 P s₀' s₂) (compressN name code)
@@ -184,9 +184,9 @@ theorem body_rel {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {
       · rw [h.2, h'.2, hl]
       · exact ag h.1.1 h'.1.1 r hr
     · have := len_lt s₀; have := Nat.mul_div_le (len s₀) P.B
-      exact (wholeEnd_ok hd h.1.1 (by omega) h.2).mono fun _ ⟨m, h13, _⟩ => ⟨m, by rw [h13, h.1.2]⟩
+      exact (wholeEnd_ok hd h.1.1 (by omega_arith) h.2).mono fun _ ⟨m, h13, _⟩ => ⟨m, by rw [h13, h.1.2]⟩
     · have := len_lt s₀'; have := Nat.mul_div_le (len s₀') P.B
-      exact (wholeEnd_ok hd h.1.1 (by omega) h.2).mono fun _ ⟨m, h13, _⟩ => ⟨m, by rw [h13, h.1.2]⟩
+      exact (wholeEnd_ok hd h.1.1 (by omega_arith) h.2).mono fun _ ⟨m, h13, _⟩ => ⟨m, by rw [h13, h.1.2]⟩
   have zf_true : ∀ {σ t : State}, J3 P σ t → eval .e t = some true → len σ / P.B = 0 := fun h e => by
     simp only [eval, h.2.2, Option.some.injEq, decide_eq_true_eq] at e; exact e
   have zf_false : ∀ {σ t : State}, J3 P σ t → eval .e t = some false → len σ / P.B ≠ 0 := fun h e => by

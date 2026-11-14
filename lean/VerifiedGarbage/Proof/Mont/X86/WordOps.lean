@@ -92,7 +92,7 @@ theorem wordLoop_ok {s : State} {k : Nat} {body : List Instr} (P : Nat → State
   · exact .inl ⟨by simp only [eval, z₅, hjk, decide_true, Option.map_some, Bool.not_true],
       hQ _ (hjk ▸ p₅)⟩
   · exact .inr ⟨by simp only [eval, z₅, hjk, decide_false, Option.map_some, Bool.not_false],
-      k - (j + 1), by omega, j + 1, rfl, by omega, p₅, ebp₅⟩
+      k - (j + 1), by omega_using [hj], j + 1, rfl, by omega_using [hj, hjk], p₅, ebp₅⟩
 
 end VG.Proof.Mont.X86
 end

@@ -121,7 +121,7 @@ theorem crtExpRanges_off_nOne (w : Nat) : ∀ r ∈ CrtWindowFive.crtExpRanges w
 theorem crtExpRanges_off_x (w : Nat) : ∀ r ∈ CrtWindowFive.crtExpRanges w,
     slot w aX + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aX := fun r hr =>
   (crtExpRanges_off (j := aX) (by decide) (by decide) (by decide) (by decide) (by decide) r hr).symm.imp_left
-    fun h => Nat.le_trans (Nat.add_le_add_left (by omega) _) h
+    fun h => Nat.le_trans (Nat.add_le_add_left (by omega_using []) _) h
 
 theorem powRanges_x (w : Nat) : (slot w aX, 8 * (w + 2)) ∈ powRanges w := .head _
 theorem powRanges_r2 (w : Nat) : (slot w aR2, 8 * (w + 2)) ∈ powRanges w := .tail _ (.head _)

@@ -61,58 +61,58 @@ theorem strideW_vp {E : State → Prop} :
   have zl := pre.Z_le
   have e1 := pre.oM_arrAt 1
   have fit1 := Nat.le_trans (arr_mono (w := P.W) (show mBase + 1 ≤ nArr by decide)) pre.fits
-  have a1 : 256 ≤ arrAt P.w 1 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
+  have a1 : 256 ≤ arrAt P.w 1 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
   unfold strideW
   refine wp_mov (op2_imm (by decide)) fun u1 v1 => ?_
   have hw1 := hw.of_upd v1 (by decide) (by decide) (by decide)
   have ea : State.addr (u1.gpr .r0 + BitVec.ofNat 32 224) = off (State.addr P.B) (P.oM + 224) := by
-    rw [v1.other _ (by decide), r0, ← pre.M0_off]; exact addr_add (by have := pre.M0_toNat; omega)
+    rw [v1.other _ (by decide), r0, ← pre.M0_off]; exact addr_add (by have := pre.M0_toNat; omega_using [hf, e1, fit1, a1, this])
   have eb : State.addr (u1.gpr .r0 + BitVec.ofNat 32 (224 + 4)) =
       off (State.addr P.B) (P.oM + 224) + BitVec.ofNat 64 4 := by
-    rw [v1.other _ (by decide), r0, addr_add (by have := pre.M0_toNat; omega), pre.M0_addr, Offset.add_add,
+    rw [v1.other _ (by decide), r0, addr_add (by have := pre.M0_toNat; omega_using [hf, e1, fit1, a1, this]), pre.M0_addr, Offset.add_add,
       Offset.add_add]
   refine WP.mono (store64_ok u1 .r7 .r1 .r0 224 (off (State.addr P.B) (P.oM + 224)) (by decide) ea eb
-    (hw1.write (by omega)) (by rw [Offset.add_add]; exact hw1.write (by omega))) fun t ⟨mt, rt⟩ => ?_
+    (hw1.write (by omega_using [e1, fit1, a1])) (by rw [Offset.add_add]; exact hw1.write (by omega_using [e1, fit1, a1]))) fun t ⟨mt, rt⟩ => ?_
   have v64 : (u1.gpr .r1 ++ u1.gpr .r7) = BitVec.ofNat 64 (8 * (P.w + 2)) := by
     rw [v1.gpr, v1.other _ (by decide), hw.r7, pre.S_eq]
     apply BitVec.eq_of_toNat_eq
     have := pre.w4
-    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]),
+      Nat.mod_eq_of_lt (by omega_using [this])]
     simp
   rw [v64] at mt
   have out := writeW_outside u1.mem (State.addr P.B) (d := P.oM + 224) (BitVec.ofNat 64 (8 * (P.w + 2)))
-    (by omega)
+    (by omega_using [hf, e1, fit1])
   rw [← mt, v1.mem] at out
   -- Within the header.
   have fH : Frame [⟨State.addr P.M0, 256⟩] s.mem t.mem := by
     rw [mt, v1.mem, ← pre.M0_off]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by
-      have := pre.M0_toNat; omega))
+      have := pre.M0_toNat; omega_using []))
   have kp := keep_of_frameH pre fH
   have ht : KS P σ (AX P σ) LX (V3 P σ) [sUsed] t :=
-    h.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega) (by simp)
+    h.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega_using [hj]) (by simp)
       (by rw [rt.sp, v1.sp]) (by rw [rt.rd, v1.rd]) (by rw [rt.wr, v1.wr]) (h.arrs_keep kp (fun j hj hj' => by
         simp only [List.mem_range'_1] at hj'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
         rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp [mBase, aCm1, aTwo, aOne, aC] at hj' <;> omega)
         (by simp)) (h.sl_keep kp (by simp) (by simp)) h.live_lt h.ls_ok
   have sp : t.sp = s.sp := by rw [rt.sp, v1.sp]
-  have a0 : 256 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega
+  have a0 : 256 ≤ arrAt P.w 0 := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []
   have sv : t.mem.readW (State.addr t.sp) 32 = s.mem.readW (State.addr s.sp) 32 := by
     rw [sp, h.sp, pre.sp]
     refine fH.readW (r := P.rW0) (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide)
       (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     refine pre.rW0_rM.sub_right ?_
-    have := Offset.sub_base (State.addr P.M0) (d := 0) (n := 256) (k := 8 * P.lenM) (by simp only [CP.lenM]; omega)
+    have := Offset.sub_base (State.addr P.M0) (d := 0) (n := 256) (k := 8 * P.lenM) (by simp only [CP.lenM]; omega_using [])
     simpa only [BitVec.add_zero] using this
-  refine ⟨⟨e, ht, hw1.rest rt⟩, ⟨m.of_outside pre out (fun d k hd => ?_) (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega))
+  refine ⟨⟨e, ht, hw1.rest rt⟩, ⟨m.of_outside pre out (fun d k hd => ?_) (.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []))
     (by have := pre.oM_arrAt 5; have := Nat.le_trans (arr_mono (w := P.W) (show mBase + 5 ≤ nArr by decide)) pre.fits
-        omega) sv sp (by rw [rt.rd, v1.rd]) (by rw [rt.wr, v1.wr]), ?_⟩⟩
+        omega_arith) sv sp (by rw [rt.rd, v1.rd]) (by rw [rt.wr, v1.wr]), ?_⟩⟩
   · rcases hd with h1 | ⟨h1, _⟩
-    · left; omega
-    · right; omega
+    · left; omega_using [h1]
+    · right; omega_using [a0, h1]
   · unfold wordAt
     rw [show State.addr P.M0 + BitVec.ofNat 64 (8 * 28) = off (State.addr P.M0) 224 from rfl, pre.M0_off, mt,
       Mem.readW_writeW_self64]

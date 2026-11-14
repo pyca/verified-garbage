@@ -59,16 +59,16 @@ theorem mask_val {b : Nat} (hb1 : 1 ≤ b) (hb : b ≤ 64) :
   have h2 : 2 ^ b ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) hb
   have h3 : (2 : Nat) ^ 64 = 2 ^ b * 2 ^ (64 - b) := by rw [← Nat.pow_add]; congr 1; omega
   have e1 : (BitVec.ofNat 64 0 - BitVec.ofNat 64 1).toNat = 2 ^ 64 - 1 := by decide
-  rw [BitVec.toNat_ushiftRight, e1, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ushiftRight, e1, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_using [h2])]
   have hX1 : 1 ≤ 2 ^ b := Nat.one_le_two_pow
   have hP1 : 1 ≤ 2 ^ (64 - b) := Nat.one_le_two_pow
   rw [h3]
   generalize 2 ^ b = X at *
   generalize 2 ^ (64 - b) = P at *
-  have hXP : P ≤ X * P := Nat.le_mul_of_pos_left _ (by omega)
+  have hXP : P ≤ X * P := Nat.le_mul_of_pos_left _ (by omega_using [hX1])
   apply Nat.div_eq_of_lt_le
-  · rw [Nat.sub_mul, Nat.one_mul]; omega
-  · rw [Nat.sub_add_cancel hX1]; omega
+  · rw [Nat.sub_mul, Nat.one_mul]; omega_using [hP1]
+  · rw [Nat.sub_add_cancel hX1]; omega_using [h3]
 
 /-- The header's values into registers. -/
 theorem values_ok {bits : Nat} (hs : Shape bits) (s : State) :
@@ -105,17 +105,17 @@ theorem values_ok {bits : Nat} (hs : Shape bits) (s : State) :
       v.gpr .r11 = BitVec.ofNat 64 (2 * words bits) ∧ v.mem = s.mem) ∧ Keep valRegs s v) (WP.keep _ ?_ rfl)
     fun v ⟨⟨a31, a14, a15, a16, a29, a22, a23, a24, a25, a26, a27, a28, a30, a17, a18, a19, a20, a21, a10, a11, am⟩, kv⟩ =>
       ⟨⟨a31, a14, a15, a16, a29, fun j hj => by
-        rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
+        rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega_using [hj]) with
           rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
         exacts [a22, a23, a24, a25, a26, a27, a28, a30], a17, a18, a19, a20, a21, a10, a11⟩, am, kv⟩
-  have hdraw : draw bits < 2 ^ 15 := by rw [hs.hdraw]; have := hs.tw; omega
-  have htopo : topOff bits < 2 ^ 15 := by rw [hs.hoff]; have := hs.tw; omega
+  have hdraw : draw bits < 2 ^ 15 := by rw [hs.hdraw]; have := hs.tw; omega_using [hw48, this]
+  have htopo : topOff bits < 2 ^ 15 := by rw [hs.hoff]; have := hs.tw; omega_using [hw48, this]
   have hchk : checks bits < 2 ^ 15 := by unfold checks; split <;> decide
   have hcnt : count bits < 2 ^ 15 := by unfold count; split <;> decide
   have hj : ∀ j ≤ 7, hdrBytes + j * (8 * (words bits + 2)) < 2 ^ 15 := fun j hj => by
-    have := Nat.mul_le_mul_right (8 * (words bits + 2)) hj; simp only [hdrBytes]; omega
-  prun [hkw, hdraw, htopo, hchk, hcnt, mask_val hs.b1 hs.b64, hs.maskb, show words bits < 2 ^ 15 by omega,
-    show 2 * words bits < 2 ^ 15 by omega, show keyOff < 2 ^ 15 by decide, hst, hj 0 (by decide), hj 1 (by decide),
+    have := Nat.mul_le_mul_right (8 * (words bits + 2)) hj; simp only [hdrBytes]; omega_using [hw48, this]
+  prun [hkw, hdraw, htopo, hchk, hcnt, mask_val hs.b1 hs.b64, hs.maskb, show words bits < 2 ^ 15 by omega_using [hw48],
+    show 2 * words bits < 2 ^ 15 by omega_using [hw48], show keyOff < 2 ^ 15 by decide, hst, hj 0 (by decide), hj 1 (by decide),
     hj 2 (by decide), hj 3 (by decide), hj 4 (by decide), hj 5 (by decide), hj 6 (by decide), hj 7 (by decide),
     show hdrBytes < 2 ^ 15 by decide]
 
@@ -147,19 +147,19 @@ theorem entry_ok {bits : Nat} (hs : Shape bits) {σ : State} (h : CIn bits σ) :
   have inWs : ∀ d, d + 8 ≤ (σ.gpr .r4).toNat * 8 → InRegions σ.wr (σ.gpr .r3 + BitVec.ofNat 64 d) 8 := fun d hd =>
     ⟨_, hwsW, by
       simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega)]; omega⟩
+      rw [Nat.mod_eq_of_lt (by omega_using [hfw, hd])]; omega_using [hd]⟩
   simp only [save, setup, List.cons_append]
   refine WP.cons (exec_mflr) ?_
   have r3w : (σ.write .r0 σ.lr).gpr .r3 = σ.gpr .r3 := rfl
   refine Spill.save_ok (b := .r3) (l := savedSlots) (by decide) savedSlots_fits.1 (fun p hp => by
-    rw [r3w]; exact inWs _ (by have := savedSlots_in p hp; simp only [saveOff, keyOff] at *; omega)) ?_
+    rw [r3w]; exact inWs _ (by have := savedSlots_in p hp; simp only [saveOff, keyOff] at *; omega_using [hsz, this])) ?_
   generalize hM : Spill.saveMem (σ.write .r0 σ.lr).mem ((σ.write .r0 σ.lr).gpr .r3) (σ.write .r0 σ.lr).gpr savedSlots = M
   rw [WP.block_append_iff]
   refine WP.mono (values_ok hs _) fun v hv => ?_
   have v31 : v.gpr .r31 = σ.gpr .r3 + BitVec.ofNat 64 keyOff := hv.regs.r31
   refine Spill.save_ok (b := .r31) (l := hdrSlots) (by decide) hdrSlots_fits.1 (fun p hp => by
     rw [hv.keep.wr, v31, Offset.add_add]
-    exact inWs _ (by have := hdrSlots_in p hp; simp only [keyOff] at *; omega)) ?_
+    exact inWs _ (by have := hdrSlots_in p hp; simp only [keyOff] at *; omega_using [hsz, hkey, this])) ?_
   refine WP.block_nil ⟨hv.regs, fun r hr h0 => by rw [hv.keep.gpr r hr]; simp [State.write, h0], ?_, ?_, ?_,
     hv.keep.sp, hv.keep.rd, hv.keep.wr, hv.keep.lr⟩
   · have hvm : v.mem = M := hv.mem
@@ -170,8 +170,8 @@ theorem entry_ok {bits : Nat} (hs : Shape bits) {σ : State} (h : CIn bits σ) :
     subst hr
     rw [v31, Offset.add_add]
     have := savedSlots_in p hp
-    exact Offset.disjoint _ (by simp only [saveOff, keyOff] at *; omega) (by simp only [saveOff] at *; omega)
-      (by simp only [keyOff]; omega)
+    exact Offset.disjoint _ (by simp only [saveOff, keyOff] at *; omega_using [this]) (by simp only [saveOff] at *; omega_using [this])
+      (by simp only [keyOff]; omega_using [])
   · exact Spill.saveMem_saved hdrSlots_fits _ _ _
   · have f1 : Frame [⟨σ.gpr .r3 + BitVec.ofNat 64 saveOff, 168⟩] σ.mem M := by
       rw [← hM]; exact Spill.saveMem_frame savedSlots_in (by decide) _ _ _

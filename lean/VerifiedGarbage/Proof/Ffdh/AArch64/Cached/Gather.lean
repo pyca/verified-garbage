@@ -24,9 +24,9 @@ theorem prefixValue_lt (bs : List Byte) (N i d j : Nat) : prefixValue bs N i d j
  | succ j ih =>
   have bit := bitValue_lt bs N (i+j*d)
   have product : 2^j*bitValue bs N (i+j*d)≤2^j := by
-   simpa only [Nat.mul_one] using Nat.mul_le_mul_left (2^j) (show bitValue bs N (i+j*d)≤1 by omega)
+   simpa only [Nat.mul_one] using Nat.mul_le_mul_left (2^j) (show bitValue bs N (i+j*d)≤1 by omega_using [bit])
   simp only [prefixValue,Nat.pow_succ]
-  omega
+  omega_using [ih, product]
 
 private theorem combine : ∀ j<5, ∀ d<2^j, ∀ b<2,
  BitVec.ofNat 64 d ||| (BitVec.ofNat 64 b <<< j) = BitVec.ofNat 64 (d+2^j*b) := by
@@ -49,7 +49,7 @@ private theorem toothTail_ok (s : State) {j k d acc b : Nat} (hj : j<5)
    · exact (BitVec.ofNat_add _ _).symm
    · simpa only [BitVec.shiftLeft_zero] using combine 0 (by decide) acc ha b hb
  · simp only [ite_eq_right zero,List.cons_append,List.nil_append]
-   brun [index,stride,digit,bit,show j<64 by omega]
+   brun [index,stride,digit,bit,show j<64 by omega_using [hj]]
    constructor
    · exact (BitVec.ofNat_add _ _).symm
    · exact combine j hj acc ha b hb
@@ -92,8 +92,8 @@ theorem gather_ok (s : State) {src : Addr} {bs : List Byte} {N i d : Nat}
  t.gpr .x16=BitVec.ofNat 64 (prefixValue bs N i d 5) ∧ t.mem=s.mem ∧ Keep gatherClobbers s t := by
  have step (j : Nat) (hj : j<5) (t : State) (h : GatherInv s bs N i d j t) :
   WP isa (VG.Impl.Ffdh.AArch64.Cached.Comb.tooth j) t (GatherInv s bs N i d (j+1)) := by
-  have bound := Nat.mul_le_mul_right d (show j≤5 by omega)
-  refine WP.mono (tooth_ok t (source.of_mem h.mem h.rest) size widthBound (by omega) hj
+  have bound := Nat.mul_le_mul_right d (show j≤5 by omega_using [hj])
+  refine WP.mono (tooth_ok t (source.of_mem h.mem h.rest) size widthBound (by omega_using [positions, bound]) hj
    (prefixValue_lt bs N i d j)
    ((h.rest.gpr .x1 (by simp [gatherClobbers])).trans ptr)
    ((h.rest.gpr .x2 (by simp [gatherClobbers])).trans length)
@@ -131,10 +131,10 @@ theorem bitValue_eq_bit (bs : List Byte) (N k : Nat) (size : N≤8*bs.length)
  by_cases inside : k<N
  · rw [ite_eq_left inside]
    rw [←List.getElem_eq_getD 0]
-   exact (VG.Proof.Ffdh.CombBitBytes.os2ip_bit bs k (by omega)).symm
+   exact (VG.Proof.Ffdh.CombBitBytes.os2ip_bit bs k (by omega_using [size, inside])).symm
  · rw [ite_eq_right inside]
    have limit : Spec.Rsa.os2ip bs<2^k :=
-    Nat.lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) (by omega))
+    Nat.lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) (by omega_using [inside]))
    rw [Nat.div_eq_of_lt limit]
 
 theorem prefixValue_eq_digit (bs : List Byte) (N i : Nat) (size : N≤8*bs.length)

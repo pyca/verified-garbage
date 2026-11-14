@@ -29,7 +29,7 @@ theorem hintBase_parts {g : Nat} (hg : IsG g) (r : Zq) :
   have hv := VG.Proof.MlDsa.KeyGen.ofInt_val ((r.val:Int)-(if hbF g r.val=hbM g then (q:Int) else 0))
   have hr := r.isLt
   have hq : ((q:Nat):Int)=8380417 := rfl
-  by_cases hc : hbF g r.val=hbM g <;> simp only [hc,ite_true,ite_false] at hv ⊢ <;> omega
+  by_cases hc : hbF g r.val=hbM g <;> simp only [hc,ite_true,ite_false] at hv ⊢ <;> omega_using [hq, hv]
 
 theorem responseHintBase_parts {m : Mem} {low high : Addr} {g i : Nat} (hg : IsG g) {r : Zq}
     (hl : (coeffAt m low i).toInt=lowBits g r)
@@ -49,7 +49,7 @@ theorem small_signed_injective {a b : Int} (ha : -524288≤a ∧ a≤524288)
   have h1 := VG.Proof.MlDsa.KeyGen.ofInt_val a
   have h2 := VG.Proof.MlDsa.KeyGen.ofInt_val b
   rw [he] at h1
-  omega
+  omega_using [ha, hb, h1, h2]
 
 theorem hintLow_exact {m : Mem} {low : Addr} {g : Nat} {f : Poly} (hg : IsG g)
     (hl : SignedPolyIs m low (f.map fun r=>ofInt (lowBits g r)) (-(g:Int)) g) :
@@ -61,7 +61,7 @@ theorem hintLow_exact {m : Mem} {low : Addr} {g : Nat} {f : Poly} (hg : IsG g)
   have hg' : g≤524288 := by rcases hg with rfl|rfl <;> decide
   rw [VG.Proof.MlDsa.Arith.getElem!_eq _ hi,Vector.getElem_map,
     ←VG.Proof.MlDsa.Arith.getElem!_eq f hi] at hv
-  exact small_signed_injective (by omega) (by omega) hv
+  exact small_signed_injective (by omega_using [hb, hg']) (by omega_using [hr, hg']) hv
 
 theorem hintHigh_exact {m : Mem} {high : Addr} {g : Nat} {f : Poly}
     (hh : NatPolyIs m high (f.map fun r=>(highBits g r).toNat)) :

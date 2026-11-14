@@ -83,7 +83,7 @@ theorem load_ok {s : State} {B P : Addr} {Z w N j L : Nat} (h : Ws s B Z w N) (h
       refine tout _ (Or.inr ?_)
       have := (off P i - B).isLt
       by_contra hc
-      exact hsep i (by omega) (off P i) (by simp only [ofs] at hc ⊢; omega) rfl
+      exact hsep i (by omega_using [hi]) (off P i) (by simp only [ofs] at hc ⊢; omega) rfl
     refine ⟨⟨?_, by gsimp, ?_, ?_, ?_, ?_⟩, by gsimp⟩
     · have h160 : 160 ≤ arr w j := Nat.le_add_right _ _
       gsimp; rw [off_sub1 (a := arr w j + L - 1 - i) _ (by omega_arith),

@@ -54,12 +54,12 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
   show 256 ≤ Spec.P256.curve.n.log2 + 1
   have : 255 ≤ Spec.P256.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 /-- No bit of a hash of `32` bytes is dropped. -/
 theorem p256_sh : p256.sh = 0 := by
   have h : 64 * 4 ≤ Spec.Ecdsa.nBits p256.C := p256_nBits
-  show 8 * 32 - Spec.Ecdsa.nBits p256.C = 0; omega
+  show 8 * 32 - Spec.Ecdsa.nBits p256.C = 0; omega_using [h]
 
 theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   n0 := by decide

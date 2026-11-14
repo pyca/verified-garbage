@@ -39,7 +39,7 @@ theorem vFrontWf {s : State} {extra : List Region} (hp : VPre c s extra) : VG.X8
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl
     have := Cfg.stk_ge c
-    exact hp.stk_sc.sub_left (Offset.sub_below _ (a := 20) (n := 20) this (by omega))
+    exact hp.stk_sc.sub_left (Offset.sub_below _ (a := 20) (n := 20) this (by omega_using [this]))
 
 /-- Equal stack pointers and arguments establish the front's agreement. -/
 theorem vFrontAgree {s t : State} {extra₁ extra₂ : List Region} (hp : VPre c s extra₁)
@@ -53,10 +53,10 @@ theorem vFrontAgree {s t : State} {extra₁ extra₂ : List Region} (hp : VPre c
   · rw [hp.wr, hq.wr]; simp only [ptr, ha 3 (by decide)]
   · simp only [vFrontτ] at hk
     rw [show VG.X86.Taint.depth vFrontτ.stk = 0 from rfl, Nat.zero_add]
-    rw [VG.X86.Taint.argByte_eq (by have := hp.sp_fit; omega) h4 hk,
-      VG.X86.Taint.argByte_eq (by have := hq.sp_fit; omega) h4 hk,
+    rw [VG.X86.Taint.argByte_eq (by have := hp.sp_fit; omega_using [this]) h4 hk,
+      VG.X86.Taint.argByte_eq (by have := hq.sp_fit; omega_using [this]) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (ha ((k - 4) / 4) (by omega))
+    exact congrArg _ (ha ((k - 4) / 4) (by omega_using [hk]))
 
 /-- Scratch writes preserve the four cdecl argument words. -/
 theorem vKeep_arg {s₀ s : State} {extra : List Region}
@@ -65,13 +65,13 @@ theorem vKeep_arg {s₀ s : State} {extra : List Region}
   have he : argAddr s j = argAddr s₀ j := by simp only [argAddr, h.esp]
   change s.mem.readW (argAddr s j) 32 = _
   rw [he]
-  have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_using [this]
   refine h.whole.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   rw [hp.wr] at hr
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hp.args_sc.sub_left (arg_subN h4 hj)
-  · exact (below_disjoint_args hp.sp_lo (k := 16) (by omega) (by decide)).symm.sub_left (arg_subN h4 hj)
+  · exact (below_disjoint_args hp.sp_lo (k := 16) (by omega_using [h4]) (by decide)).symm.sub_left (arg_subN h4 hj)
 
 theorem vArgWf {s₀ s : State} {extra : List Region} (rs : List Reg)
     (hp : VPre c s₀ extra) (he : s.gpr .esp = s₀.gpr .esp) (hw : s.wr = s₀.wr) :
@@ -90,7 +90,7 @@ theorem vArgWf {s₀ s : State} {extra : List Region} (rs : List Reg)
     refine ⟨hp.sp_fit, ?_⟩
     intro r hr
     rw [List.mem_singleton.mp hr]
-    exact VG.X86.Taint.frame_disjoint (n := 16) (by have := hp.sp_fit; omega) hp.ret_sc hp.args_sc
+    exact VG.X86.Taint.frame_disjoint (n := 16) (by have := hp.sp_fit; omega_using [this]) hp.ret_sc hp.args_sc
   · intro p h; cases h
 
 theorem vKeepArgAgree {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}

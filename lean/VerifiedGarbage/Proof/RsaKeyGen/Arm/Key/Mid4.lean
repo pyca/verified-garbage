@@ -33,7 +33,7 @@ abbrev EEven (P : KP) (E : State → Prop) (σ : State) : Prop := E σ ∧ P.e �
 
 theorem mE_odd (P : KP) (σ : State) : mE P σ % 2 = 1 ∧ 1 < mE P σ := by
   unfold mE; split
-  · rename_i h; exact ⟨h.1, by omega⟩
+  · rename_i h; exact ⟨h.1, by omega_using [h]⟩
   · exact ⟨rfl, by decide⟩
 
 theorem mE_eq (P : KP) (σ : State) :

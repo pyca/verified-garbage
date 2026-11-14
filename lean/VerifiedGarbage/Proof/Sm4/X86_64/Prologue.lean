@@ -59,7 +59,7 @@ theorem restore_check :
 
 theorem saveCfg_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr)
     (hb : s.gpr sb = b) : Ok saveCfg s :=
-  Ok.of_region hw hb.symm (by simp only [saveCfg]; omega) (by simp [saveCfg, slots_eq]) rfl
+  Ok.of_region hw hb.symm (by simp only [saveCfg]; omega_using []) (by simp [saveCfg, slots_eq]) rfl
 
 /-- The saved registers are in their slots. -/
 def Saved (s₀ : State) (b : Addr) (m : Mem) : Prop :=
@@ -79,7 +79,7 @@ theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s
   refine ⟨s', hs', fun i hi => ?_, funext fun r => p.other r ?_, p.rd, p.wr, ?_⟩
   · have := List.all_eq_true.mp hpost i (List.mem_range.mpr hi)
     simp only [beq_iff_eq] at this
-    have h := p.rel.slot (savedSlot + i) i (by simp only [saveCfg, slots_eq, savedSlot_eq]; omega) this
+    have h := p.rel.slot (savedSlot + i) i (by simp only [saveCfg, slots_eq, savedSlot_eq]; omega_using [hi]) this
     rw [p.base] at h
     simp only [saveCfg, hb] at h
     exact h
@@ -101,8 +101,8 @@ theorem restore_ok {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Regio
     split at h
     · simp only [Option.some.injEq] at h; subst h
       rename_i hk'
-      have := hs (k - savedSlot) (by omega)
-      rw [show savedSlot + (k - savedSlot) = k by omega] at this
+      have := hs (k - savedSlot) (by omega_using [hk'])
+      rw [show savedSlot + (k - savedSlot) = k by omega_using [hk']] at this
       simp only [NameRel, saveCfg, hb]
       exact this
     · cases h
@@ -112,8 +112,8 @@ theorem restore_ok {s₀ s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Regio
     simp only [beq_iff_eq] at this
     exact p.rel.reg _ i this
   · have : (restoreRegs.all fun i => i.dst != some r) = true := by
-      have h0 := hr 0 (by omega); have h1 := hr 1 (by omega); have h2 := hr 2 (by omega)
-      have h3 := hr 3 (by omega); have h4 := hr 4 (by omega); have h5 := hr 5 (by omega)
+      have h0 := hr 0 (by omega_using []); have h1 := hr 1 (by omega_using []); have h2 := hr 2 (by omega_using [])
+      have h3 := hr 3 (by omega_using []); have h4 := hr 4 (by omega_using []); have h5 := hr 5 (by omega_using [])
       simp only [sreg] at h0 h1 h2 h3 h4 h5
       simp [restoreRegs, savedRegs, movS, reduceInstrDst, Ne.symm h0, Ne.symm h1, Ne.symm h2, Ne.symm h3,
         Ne.symm h4, Ne.symm h5]
@@ -148,7 +148,7 @@ theorem setMasksN_ok (N : Nat) (hN : N ≤ slots) (ms : List (Nat × BitVec 64))
   | cons kv ms ih =>
     have hk0 : kv.1 < N := hk kv List.mem_cons_self
     obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := setOne_ok (k := kv.1) kv.2 hb ⟨_, hw, by
-      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega) (by omega)⟩
+      rw [wordAddr]; exact VG.Offset.contains_base b (by rw [slots_eq]; omega_using [hN, hk0]) (by omega_using [hN, hk0])⟩
     obtain ⟨s', e', v', k', g', rd', wr', f'⟩ := ih (s := s₁) (by rw [g₁ _ sb_ne_t0, hb]) (by rw [wr₁]; exact hw)
       (fun kv h => hk kv (List.mem_cons_of_mem _ h)) (List.nodup_cons.mp hnd).2
     have hb₁ : s₁.gpr sb = b := by rw [g₁ _ sb_ne_t0, hb]
@@ -159,13 +159,13 @@ theorem setMasksN_ok (N : Nat) (hN : N ≤ slots) (ms : List (Nat × BitVec 64))
       · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
       · rename_i h
         rw [slots_eq] at hk'
-        exact Mem.readW_writeW_sep (slot_sep b (by omega) (by omega) h) (by decide)
+        exact Mem.readW_writeW_sep (slot_sep b (by omega_using [hk']) (by omega_using [hN, hk0]) h) (by decide)
     refine ⟨s', by
       rw [show setMasks (kv :: ms) = [imm t0 kv.2, st kv.1 t0] ++ setMasks ms from rfl,
         runBlock_app, e₁, Option.bind_some, e'], fun x hx => ?_, fun k hk' hn => ?_,
       fun r hr => by rw [g' r hr, g₁ r hr], by rw [rd', rd₁], by rw [wr', wr₁], ?_⟩
     · rcases List.mem_cons.mp hx with rfl | hx
-      · rw [k' _ (by rw [slots_eq]; omega) hnot, hslot _ (by rw [slots_eq]; omega), ite_eq_left rfl]
+      · rw [k' _ (by rw [slots_eq]; omega_using [hN, hk0]) hnot, hslot _ (by rw [slots_eq]; omega_using [hN, hk0]), ite_eq_left rfl]
       · exact v' x hx
     · simp only [List.map_cons, List.mem_cons, not_or] at hn
       rw [k' k hk' hn.2, hslot k hk', ite_eq_right hn.1]
@@ -173,7 +173,7 @@ theorem setMasksN_ok (N : Nat) (hN : N ≤ slots) (ms : List (Nat × BitVec 64))
       rw [m₁]
       simp only [Mem.writeW, Mem.write, wordAddr]
       exact ite_eq_right fun h => hx _ (List.mem_singleton_self _) (VG.Offset.sub_base b
-        (show 8 * kv.1 + 8 ≤ 8 * N by omega) _ (by simp only [Region.Contains]; omega))
+        (show 8 * kv.1 + 8 ≤ 8 * N by omega_using [hk0]) _ (by simp only [Region.Contains]; omega_using [h]))
 
 theorem setMasks_ok (ms : List (Nat × BitVec 64)) {s : State} {b : Addr} (hb : s.gpr sb = b)
     (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hk : ∀ kv ∈ ms, kv.1 < tableSlot)
@@ -182,6 +182,6 @@ theorem setMasks_ok (ms : List (Nat × BitVec 64)) {s : State} {b : Addr} (hb : 
       (∀ k < slots, k ∉ ms.map (·.1) → slotW s' k = slotW s k) ∧
       (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨b, 8 * tableSlot⟩] s.mem s'.mem :=
-  setMasksN_ok tableSlot (by rw [tableSlot_eq, slots_eq]; omega) ms hb hw hk hnd
+  setMasksN_ok tableSlot (by rw [tableSlot_eq, slots_eq]; omega_using []) ms hb hw hk hnd
 
 end VG.Proof.Sm4.X86_64

@@ -118,7 +118,7 @@ theorem batchAt_init {σ s : State} {b p : Addr} {η off : Nat} (ho : off≤272)
     WP isa (.block (Impl.MlDsa.AArch64.Optimized.BoundedFour.batchInit off)) s
       (BatchAt σ b p η off L X 0) := by
   unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.batchInit
-  refine wp_addImm (by omega) fun a ha ea=>wp_mov fun c hc ec=>
+  refine wp_addImm (by omega_using [ho]) fun a ha ea=>wp_mov fun c hc ec=>
     wp_addImm (by decide) fun d hd ed=>wp_addImm (by decide) fun e he ee=>
     wp_movz fun t ht et=>wp_nil ?_
   have hO : Only [.x24,.x25,.x26,.x27] s t :=
@@ -126,13 +126,13 @@ theorem batchAt_init {σ s : State} {b p : Addr} {η off : Nat} (ho : off≤272)
   refine ⟨(hs.only hO).congr fun j _=>by simp [doneBatch],?_,?_,?_,?_⟩
   · rw [ht.get .x24,he.get .x24,hd.get .x24,hc.get .x24,ea,hs.base]
     change _=b+BitVec.ofNat 64 (840+544*0+off)
-    exact congrArg (fun d=>b+BitVec.ofNat 64 d) (by omega)
+    exact congrArg (fun d=>b+BitVec.ofNat 64 d) (by omega_using [])
   · rw [ht.get .x25,he.get .x25,hd.get .x25,ec,ha.get .x21,hs.output]
     exact (BitVec.add_zero _).symm
   · rw [ht.get .x26,ee,ed,hc.get .x19,ha.get .x19,hs.base,Offset.add_add]
     change _=b+BitVec.ofNat 64 (7904+8*0)
     exact congrArg (fun d=>b+BitVec.ofNat 64 d)
-      (by unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.counts; omega)
+      (by unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.counts; omega_using [])
   · rw [et]; decide
 
 theorem batchAt_step {σ s : State} {b p : Addr} {η i off : Nat} (he : η=2∨η=4) (hi : i<4)
@@ -147,15 +147,15 @@ theorem batchAt_step {σ s : State} {b p : Addr} {η i off : Nat} (he : η=2∨�
     by_cases hj : j=i
     · subst hj; simp
     · by_cases hji : j<i
-      · simp [hj,hji,show j<i+1 by omega]
-      · simp [hj,hji,show ¬j<i+1 by omega]
+      · simp [hj,hji,show j<i+1 by omega_using [hji]]
+      · simp [hj,hji,show ¬j<i+1 by omega_using [hj, hji]]
   · rw [t24]; unfold inputAt; rw [Offset.add_add]
-    exact congrArg (fun d=>b+BitVec.ofNat 64 d) (by omega)
+    exact congrArg (fun d=>b+BitVec.ofNat 64 d) (by omega_using [])
   · rw [t25]; unfold outputAt; rw [Offset.add_add]
-    exact congrArg (fun d=>p+BitVec.ofNat 64 d) (by omega)
+    exact congrArg (fun d=>p+BitVec.ofNat 64 d) (by omega_using [])
   · rw [t26]; unfold countAt; rw [Offset.add_add]
-    exact congrArg (fun d=>b+BitVec.ofNat 64 d) (by omega)
-  · rw [t27,h.2.2.2.2,show 4-i=(4-(i+1))+1 by omega,BitVec.ofNat_add]
+    exact congrArg (fun d=>b+BitVec.ofNat 64 d) (by omega_using [])
+  · rw [t27,h.2.2.2.2,show 4-i=(4-(i+1))+1 by omega_using [hi],BitVec.ofNat_add]
     exact BitVec.add_sub_cancel _ _
 
 private theorem ofNat_bne_zero {k : Nat} (h : k<2^64) :
@@ -163,7 +163,7 @@ private theorem ofNat_bne_zero {k : Nat} (h : k<2^64) :
   by_cases hk : k=0
   · subst hk; rfl
   · have : BitVec.ofNat 64 k≠0 := by
-      intro e; have := congrArg BitVec.toNat e; simp at this; omega
+      intro e; have := congrArg BitVec.toNat e; simp at this; omega_using [h, hk, this]
     rw [show (BitVec.ofNat 64 k != 0)=true from bne_iff_ne.mpr this]
     simp [hk]
 
@@ -172,7 +172,7 @@ theorem batchAt_eval {σ s : State} {b p : Addr} {η i off : Nat}
     isa.eval (.nonzero .x .x27) s=some (decide (4-i≠0)) := by
   show some (s.read .x .x27 != 0)=_
   have hrd : s.read .x .x27=s.gpr .x27 := rfl
-  rw [hrd,h.2.2.2.2,ofNat_bne_zero (by omega)]
+  rw [hrd,h.2.2.2.2,ofNat_bne_zero (by omega_using [])]
 
 theorem BatchAt.last {σ s : State} {b p : Addr} {η off : Nat}
     {L : Nat→List Zq} {X : Nat→List Byte} (h : BatchAt σ b p η off L X 4 s) :
@@ -196,7 +196,7 @@ theorem batch_ok {σ s : State} {b p : Addr} {η off : Nat} (he : η=2∨η=4)
     rw [hl] at ht'
     exact ⟨by simp [hl],ht'.last⟩
   · right
-    exact ⟨by simp; omega,4-(i+1),by omega,i+1,by omega,rfl,ht'⟩
+    exact ⟨by simp; omega_using [hi, hl],4-(i+1),by omega_using [hi],i+1,by omega_using [hi, hl],rfl,ht'⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

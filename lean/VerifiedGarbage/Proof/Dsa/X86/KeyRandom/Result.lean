@@ -43,7 +43,7 @@ theorem checked_q {s₀ : State} (H : checked s₀ = true) : 1 < rq s₀ := by
   change 1 < Spec.Dsa.decodeBE (rQBytes s₀)
   rw [rQ_decode]
   change 255 < (Spec.Dsa.privateKeyBytes (rInput s₀).pLen (rInput s₀).qLen (rInput s₀).key).params.q at B
-  omega
+  omega_using [B]
 
 theorem draw_spl (s₀ : State) : draw s₀ = spl s₀ 128 0 := by
   simp only [draw, spl, List.drop_zero, rq]
@@ -56,7 +56,7 @@ theorem result_status_le {s₀ : State} (A : KeyABI s₀) : (rResult s₀).statu
     | some x =>
       dsimp only
       unfold Spec.Dsa.signStatus
-      split <;> omega
+      split <;> omega_using []
   · decide
 
 theorem result_key {s₀ : State} (A : KeyABI s₀) :

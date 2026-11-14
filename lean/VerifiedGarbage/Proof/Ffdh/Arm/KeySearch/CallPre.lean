@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -61,7 +62,7 @@ theorem call_pre_legacy {p : KeyPublic sampling} {used keys scalars : Nat} {s : 
     stack (rX p) (by simp), stack (rY p) (by simp), stack (rDomain p) (by simp),
     stack (rTape p used) (by simp), stack (rScratch p) (by simp), ?_, facts.xFit, facts.yFit, facts.domainFit, facts.tapeFit,
     facts.scratchFit, facts.length, facts.domainLength, trivial, trivial, trivial, facts.scratch⟩
-  · have argsFit := facts.argsFit; simp only [GenerationPolicy.argumentBytes, notcached, Bool.false_eq_true, ite_false, Nat.reduceSub] at argsFit; omega
+  · have argsFit := facts.argsFit; simp only [GenerationPolicy.argumentBytes, notcached, Bool.false_eq_true, ite_false, Nat.reduceSub] at argsFit; omega_using [argsFit]
   · simp only [rCallArgs, size, Nat.reduceSub]; rfl
   · rfl
   · simpa only [rCallArgs, size, Nat.reduceSub, State.addr] using stack (rCallArgs p) (by simp)
@@ -99,12 +100,12 @@ theorem call_pre_cached {p : KeyPublic .cached} {used keys scalars : Nat} {origi
   have domainLen : (BitVec.ofNat 32 p.dlen).toNat = p.dlen := Nat.mod_eq_of_lt facts.domainLenFits
   have capacity : (BitVec.ofNat 32 p.capacity).toNat = p.capacity := Nat.mod_eq_of_lt facts.capacityFits
   have ctxFit := live.input.context_fit rfl
-  have ctxLen : (BitVec.ofNat 32 p.contextWords).toNat = p.contextWords := Nat.mod_eq_of_lt (by omega)
+  have ctxLen : (BitVec.ofNat 32 p.contextWords).toNat = p.contextWords := Nat.mod_eq_of_lt (by omega_using [ctxFit])
   have read : rContext p ∈ original.rd := by rw [live.input.read_regions]; simp [contextRegions, GenerationPolicy.cachedContext]
   have sep := live.input.call_read read
   have frame : Frame (callChanges p) v.mem s.mem := by
     rw [mem]; exact (callMem_frame _ _ _ _).mono (by simp [callChanges, rArguments])
-  have held := live.cachedHeld.after_frame frame (by intro _; omega) (by intro _; exact sep)
+  have held := live.cachedHeld.after_frame frame (by intro _; omega_using [ctxFit]) (by intro _; exact sep)
   have canonical := held rfl
   have dom := (live.input.call_domain_frame frame).trans live.domain
   have valid := live.input.bounds.domainValid
@@ -140,7 +141,7 @@ theorem call_pre_cached {p : KeyPublic .cached} {used keys scalars : Nat} {origi
   have length := facts.length
   have domainLength := facts.domainLength
   have scratch := facts.scratch
-  sig_pre [GenerationPolicy.attemptContract, cachedGenerateKeyContract, cachedGenerateKeySig,
+  sig_pre [GenerationPolicy.attemptContract, Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig,
     generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [h.x, h.xlen, h.y, h.ylen, a0, a1, a2, a3, a4, a5, a6, a7, a8,
     nativeLen, domainLen, capacity, ctxLen, argAddr, sp]

@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Miller–Rabin in Montgomery form
@@ -44,41 +45,41 @@ theorem mont_m1 {c R : Nat} (hR : Nat.Coprime R c) (hc : 1 < c) : (c - 1) * R % 
     rcases Nat.eq_zero_or_pos (R % c) with h | h
     · exfalso
       have h1 : Nat.gcd R c = c := Nat.gcd_eq_right (Nat.dvd_of_mod_eq_zero h)
-      rw [Nat.Coprime] at hR; omega
+      rw [Nat.Coprime] at hR; omega_using [hR, hc, h1]
     · exact h
-  have hlt := Nat.mod_lt R (show 0 < c by omega)
+  have hlt := Nat.mod_lt R (show 0 < c by omega_using [hc])
   have e : (c - 1) * R + R % c = c * R - (R - R % c) := by
     rw [Nat.sub_mul, Nat.one_mul]
     have := Nat.mod_le R c
-    have : R ≤ c * R := Nat.le_mul_of_pos_left R (by omega)
-    omega
+    have : R ≤ c * R := Nat.le_mul_of_pos_left R (by omega_using [hc])
+    omega_arith
   have hd : c ∣ R - R % c := Nat.dvd_sub_mod R
   obtain ⟨q, hq⟩ := hd
   have hqR : q ≤ R := by
     have := Nat.sub_le R (R % c)
     rw [hq] at this
-    exact Nat.le_trans (Nat.le_mul_of_pos_left q (by omega)) this
+    exact Nat.le_trans (Nat.le_mul_of_pos_left q (by omega_using [hc])) this
   have e2 : (c - 1) * R + R % c = c * (R - q) := by rw [e, hq, Nat.mul_sub]
   have : ((c - 1) * R + R % c) % c = 0 := by rw [e2, Nat.mul_mod_right]
   have h3 : ((c - 1) * R % c + R % c) % c = 0 := by rw [Nat.add_mod, Nat.mod_mod] at this; exact this
-  have h4 := Nat.mod_lt ((c - 1) * R) (show 0 < c by omega)
+  have h4 := Nat.mod_lt ((c - 1) * R) (show 0 < c by omega_using [hc])
   have h5 : (c - 1) * R % c + R % c = c := by
     rcases Nat.lt_or_ge ((c - 1) * R % c + R % c) c with h | h
-    · rw [Nat.mod_eq_of_lt h] at h3; omega
-    · have : (c - 1) * R % c + R % c - c < c := by omega
+    · rw [Nat.mod_eq_of_lt h] at h3; omega_using [hr, h3]
+    · have : (c - 1) * R % c + R % c - c < c := by omega_using [hlt, h4]
       have e3 := Nat.mod_eq_sub_mod h
-      rw [Nat.mod_eq_of_lt this] at e3; omega
-  omega
+      rw [Nat.mod_eq_of_lt this] at e3; omega_arith
+  omega_using [h5]
 
 theorem mont_eq_m1 {c R y : Nat} (hR : Nat.Coprime R c) (hc : 1 < c) (hy : y < c) :
     (y * R % c = c - R % c) ↔ y = c - 1 := by
   rw [← mont_m1 hR hc]
-  exact ⟨fun h => mont_inj hR hy (by omega) h, fun h => by rw [h]⟩
+  exact ⟨fun h => mont_inj hR hy (by omega_using [hc]) h, fun h => by rw [h]⟩
 
 /-- The bits of an odd `c` and of `c − 1` agree but for bit 0. -/
 theorem odd_sub_one_div {c i : Nat} (hc : c % 2 = 1) (hi : 1 ≤ i) : (c - 1) / 2 ^ i = c / 2 ^ i := by
-  obtain ⟨i, rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
+  obtain ⟨i, rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega_using [hi]⟩
   rw [Nat.pow_succ, Nat.mul_comm, ← Nat.div_div_eq_div_mul, ← Nat.div_div_eq_div_mul,
-    show (c - 1) / 2 = c / 2 by omega]
+    show (c - 1) / 2 = c / 2 by omega_using [hc]]
 
 end VG.Proof.RsaKeyGen

@@ -85,7 +85,7 @@ theorem key_finish {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeyS
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     exact hf.bytes (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact hq)
-      (show p.len ≤ 2 ^ 64 by omega) (List.mem_range.mp hi)
+      (show p.len ≤ 2 ^ 64 by omega_using [hk]) (List.mem_range.mp hi)
   have hc (j : Nat) (hj : j < 4) : word t.mem p.control (8 * j) = word s.mem p.control (8 * j) :=
     hf.readW (r := ⟨p.control, 128⟩)
       (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
@@ -94,7 +94,7 @@ theorem key_finish {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeyS
   · rw [ha]
     have : result.status < 4 := by unfold Spec.Ffdh.KeySearchResult.status; split <;> decide
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_using [this]
   · have ho := h.output
     unfold KeyOutput at ho ⊢
     rw [hb _ hd.1, hb _ hd.2.1]

@@ -69,7 +69,7 @@ theorem crt_vp {E : State → Prop} : VP (KQ P E) crtPart (KC P E) := by
   refine VP.seq (St.pcopy qdD_taint (by decide) (by simp) (by decide)) ?_
   refine VP.seq (St.pdivBy dvT2_taint hdrQd_taint (by decide) (by simp) (by simp)
     (by intro j hj; mem_cases <;> decide) fun σ _ => ?_) ?_
-  · simp (config := {decide := true}) only [upd, ↓reduceIte]; split <;> omega
+  · simp (config := {decide := true}) only [upd, ↓reduceIte]; split <;> omega_arith
   refine VP.seq (G := St P E _ (aDP :: aQd :: aTmp2 :: LQ) _ _) ((St.pcopy dpDr_taint (by decide) (by simp)
     (by decide)).mono (fun _ _ h => h) fun σ s h => h.sub (by intro j hj; mem_sub) (fun d hd => hd)) ?_
   refine VP.seq (St.pdivisorOf zQm_taint selQm1_taint (by simp) (by simp) (by simp) (by decide) (by decide)
@@ -78,7 +78,7 @@ theorem crt_vp {E : State → Prop} : VP (KQ P E) crtPart (KC P E) := by
   refine VP.seq (St.pcopy qdD_taint (by decide) (by simp) (by decide)) ?_
   refine VP.seq (St.pdivBy dvT2_taint hdrQd_taint (by decide) (by simp) (by simp)
     (by intro j hj; mem_cases <;> decide) fun σ _ => ?_) ?_
-  · simp (config := {decide := true}) only [upd, ↓reduceIte]; split <;> omega
+  · simp (config := {decide := true}) only [upd, ↓reduceIte]; split <;> omega_arith
   refine (St.pcopy dqDr_taint (by decide) (by simp) (by decide)).mono (fun _ _ h => h) fun σ s h => h.mono
     (fun j hj => ⟨by mem_sub, ?_⟩) (fun j hj => ⟨by mem_sub, ?_⟩)
   · mem_cases <;> simp (config := {decide := true}) only [upd, ↓reduceIte, AH_zero, AH_Pm, AH_Qm]

@@ -54,9 +54,35 @@ def sha512_256 : Proof.Pbkdf2.Md.AArch64.MdHash := Proof.Pbkdf2.Md.AArch64.Sha51
 
 def sha512_256Sha3 : Proof.Pbkdf2.Md.AArch64.MdHash := Proof.Pbkdf2.Md.AArch64.Sha512.sha512_256 Proof.Sha512.AArch64.Sha3.backend
 
+/-- The implementations of MD5, best first. -/
+def md5Variants := [md5]
+
+/-- The implementations of SHA-1, best first. -/
+def sha1Variants := [sha1Sha2, sha1]
+
+/-- The implementations of SHA-224, best first. -/
+def sha224Variants := [sha224Sha2, sha224]
+
+/-- The implementations of SHA-256, best first. -/
+def sha256Variants := [sha256Sha2, sha256]
+
+/-- The implementations of SHA-384, best first. -/
+def sha384Variants := [sha384Sha3, sha384]
+
+/-- The implementations of SHA-512, best first. -/
+def sha512Variants := [sha512Sha3, sha512]
+
+/-- The implementations of SHA-512/224, best first. -/
+def sha512_224Variants := [sha512_224Sha3, sha512_224]
+
+/-- The implementations of SHA-512/256, best first. -/
+def sha512_256Variants := [sha512_256Sha3, sha512_256]
+
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
-def variants := [md5, sha1Sha2, sha1, sha224Sha2, sha224, sha256Sha2, sha256, sha384Sha3, sha384, sha512Sha3, sha512, sha512_224Sha3, sha512_224, sha512_256Sha3, sha512_256]
+def variants :=
+  md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
+    sha512Variants ++ sha512_224Variants ++ sha512_256Variants
 
 end VG.Proof.Variants.MdHash.AArch64

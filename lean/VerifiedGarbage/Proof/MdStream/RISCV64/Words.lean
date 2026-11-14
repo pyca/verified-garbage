@@ -39,7 +39,7 @@ theorem contains_add {r : Region} {a : Addr} {n d m : Nat} (h : r.Contains a n) 
   simp only [Region.Contains] at h ⊢
   rw [show a + BitVec.ofNat 64 d - r.base = (a - r.base) + BitVec.ofNat 64 d by
     rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg]; ac_rfl, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [h, hd]
 
 /-- A byte of a register, as a right shift leaves it. -/
 theorem shr_byte (x : BitVec 64) (s : Nat) : (x >>> s).setWidth 8 = x.extractLsb' s 8 := by
@@ -61,10 +61,10 @@ theorem lenBE_ok {N : Nat} (hN : N + 64 ≤ 2048) (s : State)
   unfold lenBE
   refine Steps.wp_sll (by decide) fun s₁ u₁ => ?_
   have e1 : s₁.gpr .s1 = s.gpr .s1 := u₁.other _ (by decide)
-  refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega)
+  refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega_using [hN])
     fun j hj => ⟨R, by rw [u₁.wr]; exact hR, by
       rw [e1, BitVec.ofNat_add (N + 56) j, ← BitVec.add_assoc]
-      exact contains_add hc (by omega)⟩) fun s' e => ?_
+      exact contains_add hc (by omega_using [hj])⟩) fun s' e => ?_
   subst e
   refine ⟨fun r h1 h3 => ?_, u₁.rd, u₁.wr, u₁.sp, ?_⟩
   · rw [RegUpd.gpr_write_of_ne _ _ h3]; exact u₁.other r h1
@@ -75,7 +75,7 @@ theorem beBytes_word (w : BitVec 32) : beBytes 4 (w.setWidth 64) = bytes32 true 
   simp only [beBytes, shr_byte, bytes32, ite_true]
   rw [show List.range 4 = [0, 1, 2, 3] from rfl]
   simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true]
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> ext i hi <;> simp <;> omega
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> ext i hi <;> simp <;> omega_using [hi]
 
 theorem flat_length (be : Bool) (f : Nat → BitVec 32) (k : Nat) :
     ((List.range k).flatMap fun j => bytes32 be (f j)).length = 4 * k := by
@@ -84,7 +84,7 @@ theorem flat_length (be : Bool) (f : Nat → BitVec 32) (k : Nat) :
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.length_append, ih, List.flatMap_singleton,
       bytes32_length]
-    omega
+    omega_using []
 
 /-- Bytes written right after `xs`, at `4 k`. -/
 theorem writeBytes_after (m : Mem) (q : Addr) (xs ys : List Byte) {k : Nat} (hx : xs.length = 4 * k)
@@ -112,13 +112,13 @@ theorem out_step {n : Nat} (hn : n ≤ 16) {s₀ : State} (hin : InRegions (s₀
   have h3 : s.gpr .s3 = s₀.gpr .s3 := h.keep _ (by decide) (by decide)
   have hP := flat_length true (fun j => s₀.mem.readW (s₀.gpr .s1 + BitVec.ofNat 64 (4 * j)) 32) k
   rw [WP.block_append_iff]
-  refine WP.mono (loadLE32_ok (by decide) (by decide) (by decide) (by omega)
-    ⟨Rin, by rw [h.rd, h.wr]; exact hRin, by rw [h1]; exact contains_add cin (by omega)⟩) fun s₁ e₁ => ?_
+  refine WP.mono (loadLE32_ok (by decide) (by decide) (by decide) (by omega_using [hn, hk])
+    ⟨Rin, by rw [h.rd, h.wr]; exact hRin, by rw [h1]; exact contains_add cin (by omega_using [hk])⟩) fun s₁ e₁ => ?_
   subst e₁
-  refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega)
+  refine WP.mono (storeBE_ok (by decide) (by decide) (by decide) (by decide) (by omega_using [hn, hk])
     fun j hj => ⟨Rout, by rw [RegUpd.wr_write, RegUpd.wr_write, h.wr]; exact hRout, by
       rw [RegUpd.gpr_write_of_ne _ _ (by decide), RegUpd.gpr_write_of_ne _ _ (by decide), h3]
-      exact contains_add cout (by omega)⟩) fun s₂ e₂ => ?_
+      exact contains_add cout (by omega_using [hk, hj])⟩) fun s₂ e₂ => ?_
   subst e₂
   -- The word read is the one of the initial memory: the output is elsewhere.
   have hread : s.mem.readW (s₀.gpr .s1 + BitVec.ofNat 64 (4 * k)) 32 =
@@ -126,17 +126,17 @@ theorem out_step {n : Nat} (hn : n ≤ 16) {s₀ : State} (hin : InRegions (s₀
     rw [h.mem]
     refine (writeBytes_frame (R := ⟨s₀.gpr .s3, 4 * n⟩) _ _ _ ?_).readW
       (r := ⟨s₀.gpr .s1 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) ?_ (by decide)
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hP]; omega
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hP]; omega_using [hk]
     · intro r' hr'
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       subst hr'
-      exact hd.sub_left (Offset.sub_base _ (by omega))
+      exact hd.sub_left (Offset.sub_base _ (by omega_using [hk]))
   refine ⟨fun r h1' h2' => ?_, h.rd, h.wr, h.sp, ?_⟩
   · simp only [RegUpd.gpr_write, h1', h2', ite_false]
     exact h.keep r h1' h2'
   · simp only [RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ↓reduceIte, h1, h3, hread,
       beBytes_word]
-    rw [h.mem, writeBytes_after _ _ _ _ hP (by rw [hP, bytes32_length]; omega), List.range_succ,
+    rw [h.mem, writeBytes_after _ _ _ _ hP (by rw [hP, bytes32_length]; omega_using [hn, hk]), List.range_succ,
       List.flatMap_append, List.flatMap_singleton]
 
 theorem outBE_ok {n : Nat} (hn : n ≤ 16) (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .s1) (4 * n))

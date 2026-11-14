@@ -63,17 +63,17 @@ theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat)
     have hix : ix c i = 55 := by unfold ix; rw [ite_eq_left h.2, ite_eq_left h.1]
     rw [hix, h.2]
     have := Nat.mul_le_mul_left (64 * 9 + 8) hj
-    omega
+    omega_using [hj]
   · have hix : ix c i = i := by
       by_cases ht : i = TMP
       · have h6 : c.n ≠ 6 := (hT.resolve_left fun e => e ht).2
         have h9 : c.n ≠ 9 := fun e => h ⟨ht, e⟩
         exact ix_of_ne c (.inr fun e => e.elim h9 h6)
-      · exact ix_of_ne c (.inl ⟨ht, by omega, by omega⟩)
+      · exact ix_of_ne c (.inl ⟨ht, by omega_using [hi], by omega_using [hi]⟩)
     rw [hix]
     have := Nat.mul_le_mul_left (8 * c.n) hi
     rw [Nat.mul_succ] at this
-    omega
+    omega_using [this]
 
 /-- For six words the temporary area is in slot `83`'s place. -/
 theorem sl_tmp6 (c : Cfg) (h6 : c.n = 6) : c.sl TMP = 64 + 8 * c.n * 83 := by
@@ -91,7 +91,7 @@ theorem sl_apart_hi (c : Cfg) {i : Nat} (hi : i < 45) {a L : Nat} (hlo : bitsAt 
       by_cases ht : i = TMP
       · exact .inr ⟨by decide, fun e => h ⟨ht, e⟩⟩
       · exact .inl ht)
-    omega
+    omega_using [hlo, this]
 
 /-- The temporary area is apart from the first four tables but the second (the bits of `p - 2`)
 for nine words. -/
@@ -103,15 +103,15 @@ theorem tmp_apart_bits (c : Cfg) {j : Nat} (hj : j ≠ 1 ∨ c.n ≠ 9) (hj4 : j
     rw [ix_tmp c h9]
     rw [h9] at ht ⊢
     rcases Nat.lt_or_ge j 1 with h0 | h2
-    · right; obtain rfl : j = 0 := by omega
-      omega
-    · left; have := Nat.mul_le_mul_left (64 * 9 + 8) (show 2 ≤ j by omega); omega
+    · right; obtain rfl : j = 0 := by omega_using [h0]
+      omega_using [ht]
+    · left; have := Nat.mul_le_mul_left (64 * 9 + 8) (show 2 ≤ j by omega_using [hj, h2]); omega_using [hj, h2]
   · by_cases h6 : c.n = 6
     · rw [ix_tmp6 c h6]; right; rw [h6] at ht ⊢
-      have := Nat.mul_le_mul_left (64 * 6 + 8) (show j ≤ 3 by omega); omega
+      have := Nat.mul_le_mul_left (64 * 6 + 8) (show j ≤ 3 by omega_using [hj4]); omega_using [hj4, ht]
     · rw [ix_of_ne c (.inr fun e => e.elim h9 h6)]; left; simp only [TMP]
       have := Nat.mul_le_mul_left (64 * c.n + 8) (Nat.zero_le j)
-      omega
+      omega_using []
 
 /-- A numbered slot is apart from the first `t` bytes of table `j`: the
 temporary area too, unless the table is the second, for nine words. -/
@@ -137,7 +137,7 @@ theorem ladLay (hc : BaseCfgOk c) : LadLay c.ladderCfg size := by
     ⟨fun h => by have := sl_inj c hn (i := RX) (j := RY) h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn (i := RX) (j := RZ) h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn (i := RY) (j := RZ) h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
+    ⟨show 1 ≤ 64 * c.n by omega_using [hn], show 64 * c.n < 2 ^ 16 by omega_using [h7]⟩, bitsAt_le c h7 (by decide), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, GX, GY, ONEP])
@@ -154,7 +154,7 @@ theorem ladLay (hc : BaseCfgOk c) : LadLay c.ladderCfg size := by
           TY, TZ], i < 45 ∧ i ≠ TMP := by decide
       exact Or.inr (sl_below_bits c (hl i hi).1 0 0 (.inl (hl i hi).2))
     · show bitsAt c.n 0 + 64 * c.n ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ bitsAt c.n 0
-      have := tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega); omega
+      have := tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega_using []); omega_using [this]
 
 theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red} {adx sparse fnN : Bool}
@@ -175,7 +175,7 @@ theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     · exact sl_apart c hi.2.1
     · exact sl_apart c hi.2.2
   refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
-    Nat.le_trans (Nat.add_le_add_left hnb.2 _) (bitsAt_le c h7 hj), ⟨hnb.1, show nb < 2 ^ 16 by omega⟩,
+    Nat.le_trans (Nat.add_le_add_left hnb.2 _) (bitsAt_le c h7 hj), ⟨hnb.1, show nb < 2 ^ 16 by omega_using [hnb, h7]⟩,
     sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho),
     hw base hb, ?_,
     hw jm hjm⟩
@@ -185,13 +185,13 @@ theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
   · exact Or.inr (sl_below_bits c (by decide) j 0)
   · exact Or.inr (sl_below_bits c (by decide) j 0)
   · show bitsAt c.n j + nb ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ bitsAt c.n j
-    have := tmp_apart_bits c hjT (by omega) (64 * c.n) (by omega); omega
+    have := tmp_apart_bits c hjT (by omega_using [hj]) (64 * c.n) (by omega_using []); omega_using [hnb, this]
 
 /-- The power modulo `p`, which reads the bits of `p - 2` where the
 temporary area of nine words is. -/
 theorem powLayP (hc : BaseCfgOk c) (h9 : c.n ≠ 9) : PowLay c.powP size :=
   powLay_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide) (by decide)
-    (one := ONEP) (by decide) (by decide) ⟨by have := hc.n0; omega, Nat.le_refl _⟩ (.inr h9)
+    (one := ONEP) (by decide) (by decide) ⟨by have := hc.n0; omega_using [this], Nat.le_refl _⟩ (.inr h9)
 
 /-- `e < 2^(bitLen e k)`, `bitLen e k ≤ k`, and `1 ≤ bitLen e k` for `1 ≤ e < 2^k`. -/
 theorem bitLen_ok (e : Nat) : ∀ k, e < 2 ^ k → e < 2 ^ bitLen e k ∧ bitLen e k ≤ k ∧ (1 ≤ e → 1 ≤ bitLen e k)
@@ -201,16 +201,16 @@ theorem bitLen_ok (e : Nat) : ∀ k, e < 2 ^ k → e < 2 ^ bitLen e k ∧ bitLen
     split
     · rename_i hk
       obtain ⟨a, b, c⟩ := bitLen_ok e k hk
-      exact ⟨a, by omega, c⟩
-    · exact ⟨h, Nat.le_refl _, fun _ => by omega⟩
+      exact ⟨a, by omega_using [b], c⟩
+    · exact ⟨h, Nat.le_refl _, fun _ => by omega_using []⟩
 
 /-- The power mod `n`'s bits: `n - 2 < 2^nbits`, `1 ≤ nbits ≤ 64 n`. -/
 theorem nbitsN_ok (hc : BaseCfgOk c) :
     1 ≤ bitLen (c.C.n - 2) (64 * c.n) ∧ bitLen (c.C.n - 2) (64 * c.n) ≤ 64 * c.n ∧
       c.C.n - 2 < 2 ^ bitLen (c.C.n - 2) (64 * c.n) := by
-  have hlt : c.C.n - 2 < 2 ^ (64 * c.n) := by have := hc.n_lt; omega
+  have hlt : c.C.n - 2 < 2 ^ (64 * c.n) := by have := hc.n_lt; omega_using [this]
   obtain ⟨a, b, d⟩ := bitLen_ok (c.C.n - 2) (64 * c.n) hlt
-  exact ⟨d (by have := hc.n_ge; omega), b, a⟩
+  exact ⟨d (by have := hc.n_ge; omega_using [this]), b, a⟩
 
 theorem powLayN (hc : BaseCfgOk c) : PowLay c.powN size :=
   powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)

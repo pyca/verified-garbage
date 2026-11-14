@@ -24,6 +24,9 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
  theorem privateCrt_all : (Impl.Bignum.X86.CrtRt.code).allInstrs noSp=true := by
   rsa_stack_shape
 
+ theorem privateCrtP_all : (Impl.Bignum.X86.CrtRt.code true).allInstrs noSp=true := by
+  rsa_stack_shape
+
  theorem precomputed_all : (Impl.Bignum.X86.PrecomputedRt.code).allInstrs noSp=true := by
   rsa_stack_shape
 
@@ -43,6 +46,9 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
 
  theorem privateCrt_spSafe : (Impl.Bignum.X86.CrtRt.code).all (fun i => !isa.writesSp i)=true := all_spSafe privateCrt_all
 
+ theorem privateCrtP_spSafe : (Impl.Bignum.X86.CrtRt.code true).all (fun i => !isa.writesSp i)=true :=
+  all_spSafe privateCrtP_all
+
  theorem precomputed_spSafe : (Impl.Bignum.X86.PrecomputedRt.code).all (fun i => !isa.writesSp i)=true := all_spSafe precomputed_all
 
  theorem crtValues_spSafe : (Impl.Rsa.X86.CrtValuesRt.code).all (fun i => !isa.writesSp i)=true := all_spSafe crtValues_all
@@ -50,6 +56,9 @@ open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
  theorem check_spSafe (full : Bool) : (Impl.Rsa.X86.KeyCheckRt.code full).all (fun i => !isa.writesSp i)=true := all_spSafe (check_all full)
 
  theorem privateCrt_stack : stackUse (Impl.Bignum.X86.CrtRt.code)=96 := by
+  rsa_stack_use
+
+ theorem privateCrtP_stack : stackUse (Impl.Bignum.X86.CrtRt.code true)=96 := by
   rsa_stack_use
 
  theorem precomputed_stack : stackUse (Impl.Bignum.X86.PrecomputedRt.code)=96 := by

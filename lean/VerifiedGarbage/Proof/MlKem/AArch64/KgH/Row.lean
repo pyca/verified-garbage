@@ -74,10 +74,10 @@ theorem row_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {n r h :
     have := hw.facts
     simp only [kL]; lom
   have hek' : 136 * h ≤ P.ekLen := hek
-  have hek0 : 0 + 136 * h ≤ kL P 1 := by omega
+  have hek0 : 0 + 136 * h ≤ kL P 1 := by omega_using [hek]
   have hhr := H.hr
   refine ⟨⟨kbt, tlt.c.rho, tlt.c.sig, by rw [tlt.c.x24]; exact H.b.acc, fun e he => (tlt.c.ahat e he).1,
-    fun e he => ?_⟩, tlt.sp, et, tlt.dk, ?_, hn, H.le, by omega, ?_, by omega, ?_,
+    fun e he => ?_⟩, tlt.sp, et, tlt.dk, ?_, hn, H.le, by omega_using [hrk], ?_, by omega_using [hhr], ?_,
     H.tstk.of hs (by rw [kbt.sp, kb.sp])⟩
   · have r₀ := H.b.res e he
     simp only [aAtW, cw, ite_true] at r₀ ⊢
@@ -85,18 +85,18 @@ theorem row_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {n r h :
     exact r₀
   · intro i' hi'
     have hrow : P.k * (i' + 1) ≤ n :=
-      Nat.le_trans (Nat.mul_le_mul_left P.k (show i' + 1 ≤ r + 1 by omega)) hn
+      Nat.le_trans (Nat.mul_le_mul_left P.k (show i' + 1 ≤ r + 1 by omega_using [hi'])) hn
     rw [tVW_congr (m := t.mem) (m' := s.mem) fun j hj => entries _ (lt_row hrow hj)]
     exact tlt.ek i' hi'
   · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame ft (row_st hp r hrk), H.hash]
     refine hstate_prefix hek' ?_
     have e1 : kA s₀ 1 = kA s₀ 1 + BitVec.ofNat 64 0 := (ptr_zero _).symm
-    rw [e1, bytesAt_frame ft (fun q hq => ?_) (by have := kL_le hw 1; omega)]
+    rw [e1, bytesAt_frame ft (fun q hq => ?_) (by have := kL_le hw 1; omega_using [hek, this])]
     simp only [rowWrites, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl
     · exact hp.args.rdisj (b₁ := 1) (o₁ := 0) (by decide) (by decide) hek0 (by kl) (.inl (by decide))
     · exact hp.args.rdisj (b₁ := 1) (o₁ := 0) (by decide) (by decide) hek0 (by kl)
-        (.inr (.inl (by have := H.hr; omega)))
+        (.inr (.inl (by have := H.hr; omega_using [hhr])))
     · exact hp.args.rdisj (b₁ := 1) (o₁ := 0) (by decide) (by decide) hek0 (by kl) (.inl (by decide))
   · exact H.tables.frame hs (by rw [kbt.rd, kb.rd]) (by rw [kbt.wr, kb.wr]) (by rw [kbt.sp, kb.sp])
       (ft.sub (row_wr hp kb r hrk))

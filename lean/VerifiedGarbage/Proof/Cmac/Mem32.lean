@@ -77,7 +77,7 @@ def store4 (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ : BitVec 32) : Mem :=
 theorem frame_store4 {m : Mem} (p : Addr) (w₀ w₁ w₂ w₃ : BitVec 32) :
     Frame [⟨p, 16⟩] m (store4 m p w₀ w₁ w₂ w₃) := by
   have c (d : Nat) (h : d + 4 ≤ 16) : (⟨p, 16⟩ : Region).Contains (p + BitVec.ofNat 64 d) 4 :=
-    Offset.contains_base p h (by omega)
+    Offset.contains_base p h (by omega_using [h])
   have c0 : (⟨p, 16⟩ : Region).Contains p 4 := by simpa using c 0 (by decide)
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _
     (c 4 (by decide))).writeW (List.mem_singleton_self _) _ (c 8 (by decide))).writeW
@@ -93,7 +93,7 @@ theorem bytesAt_store4 (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ : BitVec 32) :
     Spec.Aes.bytesAt (store4 m p w₀ w₁ w₂ w₃) p 16 = le4 w₀ ++ le4 w₁ ++ le4 w₂ ++ le4 w₃ := by
   have sep (d e : Nat) (h : d + 4 ≤ e ∨ e + 4 ≤ d) (he : e + 4 ≤ 16) (hd : d + 4 ≤ 16) :
       Mem.Sep (p + BitVec.ofNat 64 d) (32 / 8) (p + BitVec.ofNat 64 e) (32 / 8) :=
-    Offset.sep p h (by omega) (by omega)
+    Offset.sep p h (by omega_using [hd]) (by omega_using [he])
   rw [bytesAt_split4, ← le4_readW, ← le4_readW, ← le4_readW, ← le4_readW, store4]
   rw [Mem.readW_writeW_self32, Mem.readW_writeW_sep (sep 8 12 (by decide) (by decide) (by decide)) (by decide),
     Mem.readW_writeW_self32, Mem.readW_writeW_sep (sep 4 12 (by decide) (by decide) (by decide)) (by decide),

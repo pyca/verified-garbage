@@ -3,11 +3,50 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfT
-public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTMgf
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Mgf
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.View
 import VerifiedGarbage.Proof.Framework.RelSplit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+
+/-! ### `RsaOaep.PPC64LE.CTMgf`, which only this module used -/
+
+section
+
+/-!
+# RSA paddings on PPC64LE: MGF1, twice
+
+Untrusted: everything here is checked by Lean. `pins_mono`: what pins
+registers `rs` pins any of them.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.RsaOaep.PPC64LE
+
+open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE
+open VG.Impl.Hmac.Stream.PPC64LE (Hash)
+open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
+open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep MemTo Two Pins two_post wp_li wp_addi wp_mov wp_nil eval_nonzero)
+open VG.Proof.RsaOaep (mixV srcB)
+open VG.Proof.Mgf1 (ifp ifn)
+
+section
+variable {S : State → Addr} {vf : State → Reg → BitVec 64} {Pre : State → Prop} {Pub : State → State → Prop}
+  {Dg src srcLen dst dstLen : Nat}
+
+theorem pins_mono {α : Type} {Φ : α → State → Prop} {rs rs' : List Reg} (h : Pins Φ rs)
+    (hs : ∀ r ∈ rs', r ∈ rs := by decide) : Pins Φ rs' := fun a t₁ t₂ h₁ h₂ =>
+  ⟨(h a t₁ t₂ h₁ h₂).1, fun r hr => (h a t₁ t₂ h₁ h₂).2 r (hs r hr)⟩
+
+end
+
+end VG.Proof.RsaOaep.PPC64LE
+
+end
+
+end
+
 
 /-!
 # RSAES-OAEP on PPC64LE: MGF1 with the hash function of a table, twice
@@ -101,7 +140,7 @@ include X A in
 /-- The load of the table's word `k` into `d`, which is `v` of the anchor in
 every run. -/
 theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t → BT S vf Pre Pub ac.1 t) {d : Reg}
-    (hd : d = .r9 ∨ d = .r12 ∨ d = .r3) {k : Nat} (hk : k < 5) {v : State → BitVec 64}
+    (hd : d = .r9 ∨ d = .r12 ∨ d = .r3) {k : Nat} (hk : k < 7) {v : State → BitVec 64}
     (hv : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * k)) 64 = v a) :
     RelCT isa (Two Φ) (.block (tword d j k))
       (Two fun ac u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = v ac.1) := by
@@ -130,7 +169,7 @@ theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
       (by rw [o.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₂ o₂ e₂ => wp_nil fun sy₂ => ⟨t, h, (o.trans o₂).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, sy₂.trans sy, by
-          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) hd0 (by omega))
+          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) hd0 (by omega_using [hk]))
 
 include X A in
 /-- The call of the table's function `k`, among `ts`, which reaches `n` in
@@ -143,7 +182,7 @@ theorem tcall_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
     (hcall : RelCT isa (Two fun ac u => ∃ t, Φ ac t ∧ Only [.r12] t u ∧ u.syms = t.syms) (.call n c)
       fun _ _ => True) :
     RelCT isa (Two Φ) (tcall j k ts) fun _ _ => True := by
-  refine RelCT.seq (tword_two X A hb (d := .r12) (.inr (.inl rfl)) (k := k) (by omega) (v := fun a => a.syms n)
+  refine RelCT.seq (tword_two X A hb (d := .r12) (.inr (.inl rfl)) (k := k) (by omega_using [hk]) (v := fun a => a.syms n)
     fun P p => (hn P p).2.1.trans (hn P p).2.2) ?_
   cases ts with
   | nil =>
@@ -347,12 +386,12 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     exact WP.mono (finT_ok (X.fits P) (A.tab P) hG b y (by rw [h3, (X.S p)]) (by rw [h5, (X.S p)])
       (by rw [h6, (X.S p)])) fun t' ⟨⟨b', g', _⟩, y'⟩ => hm.keep ⟨s, P, p, b', y'⟩ (pres g')
   -- Into `dst`, and the next counter.
-  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 4)) 64 =
+  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 6)) 64 =
       BitVec.ofNat 64 G.D := fun P _ => (A.tab P).d
   have xo : RelCT isa (Two M) (xorOutT j) fun _ _ => True := by
-    show RelCT isa _ (.seq (.block (tword .r9 j 4 ++ xorRest)) (.loop (.block xorBody) (.nonzero .d .r9))) _
+    show RelCT isa _ (.seq (.block (tword .r9 j 6 ++ xorRest)) (.loop (.block xorBody) (.nonzero .d .r9))) _
     refine RelCT.seq_block_append (RelCT.seq (tword_two X A (Φ := M) (fun ac t h => h.1) (d := .r9) (.inl rfl)
-      (k := 4) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
+      (k := 6) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _, e₁⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _, e₂⟩ := hu₂
     obtain ⟨hsp, hr⟩ := (mgfRT_pins X (fun _ _ h => h)) ac t₁ t₂ h₁ h₂
@@ -363,8 +402,8 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     all_goals rw [o₁.get _ (by decide), o₂.get _ (by decide)]; exact hr _ (by decide)
   have nc : RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (.block (nextCtrT j))
       fun _ _ => True := by
-    show RelCT isa _ (.block (tword .r12 j 4 ++ nextRest)) _
-    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .r12) (.inr (.inl rfl)) (k := 4) (by decide)
+    show RelCT isa _ (.block (tword .r12 j 6 ++ nextRest)) _
+    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .r12) (.inr (.inl rfl)) (k := 6) (by decide)
       (v := fun _ => BitVec.ofNat 64 G.D) bD) (nextRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _⟩ := hu₂

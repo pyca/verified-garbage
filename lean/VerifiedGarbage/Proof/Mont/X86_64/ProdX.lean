@@ -45,7 +45,7 @@ words of `x 2ᵏ`. -/
 theorem shlShr_arith (x : BitVec 64) {k : Nat} (hk : 0 < k ∧ k < 64) :
     (x <<< k).toNat + 2 ^ 64 * (x >>> (64 - k)).toNat = x.toNat * 2 ^ k := by
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  have h64 : 2 ^ 64 = 2 ^ (64 - k) * 2 ^ k := by rw [← Nat.pow_add]; congr 1; omega
+  have h64 : 2 ^ 64 = 2 ^ (64 - k) * 2 ^ k := by rw [← Nat.pow_add]; congr 1; omega_using [hk]
   have hd : x.toNat * 2 ^ k / 2 ^ 64 = x.toNat / 2 ^ (64 - k) := by
     rw [h64, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos k)]
   rw [← hd]
@@ -68,8 +68,8 @@ theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ 
   obtain ⟨n12, n13⟩ := h1
   have hm256 := sqrBound hk hm
   apply WP.of_runBlock
-  have hs1 : 1 ≤ k ∧ k ≤ 63 := ⟨hk.1, by omega⟩
-  have hs2 : 1 ≤ 64 - k ∧ 64 - k ≤ 63 := ⟨by omega, by omega⟩
+  have hs1 : 1 ≤ k ∧ k ≤ 63 := ⟨hk.1, by omega_using [hk]⟩
+  have hs2 : 1 ≤ 64 - k ∧ 64 - k ≤ 63 := ⟨by omega_using [hk], by omega_using [hk]⟩
   simp only [redRoundX, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMulx, execShift, readSrc,
     ite_eq_left_of_eq_true _ _ (eq_true hs1), ite_eq_left_of_eq_true _ _ (eq_true hs2), td, ta,
     Option.bind_some, Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,

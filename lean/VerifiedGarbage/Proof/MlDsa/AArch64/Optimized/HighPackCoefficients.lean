@@ -21,9 +21,9 @@ theorem lowWordByte (x : BitVec 128) (j : Nat) :
   apply BitVec.eq_of_getLsbD_eq
   intro b hb
   simp only [vbyte,vword,BitVec.getLsbD_extractLsb',BitVec.getLsbD_setWidth,
-    hb,show b<32 by omega,decide_true,Bool.true_and]
+    hb,show b<32 by omega_using [hb],decide_true,Bool.true_and]
   congr 1
-  omega
+  omega_using []
 
 /-- The gather permutation preserves the original coefficient ordering. -/
 theorem gathered_word (s : State) {i : Nat} (hi : i<16) :
@@ -31,7 +31,7 @@ theorem gathered_word (s : State) {i : Nat} (hi : i<16) :
       (vword (s.v ([.v0,.v1,.v2,.v3] : List VReg)[i/4]!) (i%4)).setWidth 8 := by
   unfold gathered
   rw [gatherSixteen_byte _ _ _ _ hi]
-  rcases (by omega : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 ∨ i=11 ∨ i=12 ∨ i=13 ∨ i=14 ∨ i=15) with
+  rcases (by omega_using [hi] : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 ∨ i=11 ∨ i=12 ∨ i=13 ∨ i=14 ∨ i=15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [Nat.reduceLT,ite_true,ite_false,Nat.reduceSub,Nat.reduceDiv,Nat.reduceMod,
       List.getElem!_cons_zero,List.getElem!_cons_succ] <;> exact lowWordByte _ _
@@ -45,9 +45,9 @@ theorem gathered_highWord {g : Nat} {s : State} {m : Mem} {a : Addr}
     {i : Nat} (hi : i<16) :
     vbyte (gathered s) i =
       (highWord g (m.readW (a+BitVec.ofNat 64 (4*i)) 32)).setWidth 8 := by
-  rw [gathered_word s hi,h (i/4) (by omega) (i%4) (by omega),
-    VG.AArch64.vword_read16 _ _ (by omega),Offset.add_add]
-  rw [show 16*(i/4)+4*(i%4)=4*i by omega]
+  rw [gathered_word s hi,h (i/4) (by omega_using [hi]) (i%4) (by omega_using []),
+    VG.AArch64.vword_read16 _ _ (by omega_using []),Offset.add_add]
+  rw [show 16*(i/4)+4*(i%4)=4*i by omega_using []]
 
 
 /-- A canonical input word computes exactly the corresponding FIPS HighBits
@@ -71,12 +71,12 @@ theorem gathered_coefficients {g : Nat} (hg : IsG g) {s : State} {m : Mem} {a : 
         highWord g (vword (m.read ((a+BitVec.ofNat 64 (64*block))+BitVec.ofNat 64 (16*j)) 16) e))
     {i : Nat} (hi : i<16) :
     vbyte (gathered s) i = BitVec.ofNat 8
-      ((highCoefficients g (polyAt m a))[16*block+i]'(by change 16*block+i<256; omega)) := by
+      ((highCoefficients g (polyAt m a))[16*block+i]'(by change 16*block+i<256; omega_using [hb, hi])) := by
   rw [gathered_highWord h hi,Offset.add_add,
-    show 64*block+4*i=4*(16*block+i) by omega]
+    show 64*block+4*i=4*(16*block+i) by omega_using []]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
   change (highWord g (coeffAt m a (16*block+i))).toNat%2^8 = _
-  rw [highWord_coefficient hg hr (by change 16*block+i<256; omega)]
+  rw [highWord_coefficient hg hr (by change 16*block+i<256; omega_using [hb, hi])]
 
 end VG.Proof.MlDsa.AArch64.Optimized.HighPack

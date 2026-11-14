@@ -36,7 +36,7 @@ private theorem beforeRound_good {p : RoundPublic} {s : State} (h : BeforeRound 
 private theorem beforeRound_mont (M : Mont) (p : RoundPublic) (s : State) (h : BeforeRound p s) :
     WP isa (M.mm aXm aXm aR2) s (Caller.Before ⟨p.ws, p.sp⟩) := by
   obtain ⟨mi, hr, hd, hz, hroom, hsp, ho, h3, ha⟩ := h
-  refine WP.mono (witnessMont_ok M hr hd ho (by omega) ha) fun t ⟨ht, hxm, _, k⟩ => ?_
+  refine WP.mono (witnessMont_ok M hr hd ho (by omega_using [h3]) ha) fun t ⟨ht, hxm, _, k⟩ => ?_
   have hc : VG.Proof.RsaKeyGen.X86_64.MrCtx t p.ws.B p.ws.Z p.ws.w mi p.N
       (wv t.mem p.ws.B (slot p.ws.w aB) p.ws.w) := ⟨ht.good, ht.inv, ht.n, rfl, ht.r1, ht.rm1⟩
   have hst : t.gpr .rsp = s.gpr .rsp := k.gpr (by decide)

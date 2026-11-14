@@ -107,7 +107,7 @@ theorem load_two :
   · have hwR := S.pre.wR
     have hr : InRegions (u.rd ++ u.wr) (u.gpr .x11 + BitVec.ofNat 64 0) 1 :=
       ⟨randR s, by rw [I.fr.rd, S.pre.hrd]; simp, by
-        rw [add_zero', I.x11]; exact Offset.contains_base _ (by omega) (by omega)⟩
+        rw [add_zero', I.x11]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
     exact WP.mono (load_ok hr) fun v h => ⟨s, t₀, u, S, B, I, h, hi, hc, hN⟩
 
 theorem x14_eq {a s t₀ u : State} (S : PR P a s) {j : Nat} (hj : j ≤ N a) (I : At s t₀ j u) :
@@ -156,15 +156,15 @@ theorem loop_two :
   refine ⟨?_, fun hlt => ⟨s, t₀, S, B, I', ?_, ?_⟩, fun he => ⟨s, t₀, S, B, he ▸ I'⟩⟩
   · rw [Bytes.eval_nonzero, hz]
     by_cases h : (kept s (j + 1)).length = psLen s ∨ j + 1 = (stackArg s 2).toNat
-    · rw [decide_eq_false (not_not_intro h), decide_eq_false (by have := hst.mp h; omega)]
+    · rw [decide_eq_false (not_not_intro h), decide_eq_false (by have := hst.mp h; omega_using [hst, h])]
     · rw [decide_eq_true h, decide_eq_true (by
         have : N a ≠ j + 1 := fun e => h (hst.mpr e)
-        omega)]
+        omega_using [hj, hst, h])]
   · have := VG.Proof.RsaPkcs1Enc.scanLen_le (psLen s) (randB s)
-    rw [randB_length, hs] at this; omega
+    rw [randB_length, hs] at this; omega_using [hi, hst, hlt]
   · by_cases hn : (kept s (j + 1)).length = psLen s
-    · have := hst.mp (.inl hn); omega
-    · omega
+    · have := hst.mp (.inl hn); omega_using [hst, hk, hlt]
+    · omega_using [hk, hn]
 
 /-- Before the scan. -/
 def ScanPt (P : Nat) (a t : State) : Prop := ∃ s, PR P a s ∧ Before s t
@@ -185,11 +185,11 @@ theorem scan_two : RelCT isa (Two (ScanPt P)) scan (Two (ScanDone P)) := by
     have hN : 0 < N a := by
       rw [← S₁.scanEq]
       exact VG.Proof.RsaPkcs1Enc.lt_scanLen (i := 0)
-        (show (kept s₁ 0).length < psLen s₁ by rw [kept_zero, List.length_nil]; omega)
+        (show (kept s₁ 0).length < psLen s₁ by rw [kept_zero, List.length_nil]; omega_using [hP₁])
         (by rw [randB_length]; exact hl')
-    refine ⟨a, ⟨hN, s₁, t₁, S₁, B₁, at_zero S₁.pre B₁, hl', by rw [kept_zero, List.length_nil]; omega⟩,
+    refine ⟨a, ⟨hN, s₁, t₁, S₁, B₁, at_zero S₁.pre B₁, hl', by rw [kept_zero, List.length_nil]; omega_using [hP₁]⟩,
       ⟨hN, s₂, t₂, S₂, B₂, at_zero S₂.pre B₂, by rw [S₂.lenEq, ← S₁.lenEq]; exact hl',
-        by rw [kept_zero, List.length_nil]; omega⟩, hsp⟩
+        by rw [kept_zero, List.length_nil]; omega_using [hP₂]⟩, hsp⟩
   · refine two_piece [] (fun _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
       fun a t ⟨⟨s, S, B⟩, e⟩ => WP.block_nil ⟨s, t, S, B, ?_⟩
     have h0 : stackArg s 2 = 0 := by

@@ -190,8 +190,8 @@ theorem Bounds.window_positive {p : Spec.Argon2.Params} {pass lane slice index :
   rw [ReferenceCount.spec_count] at hp
   change 0 < ReferenceCount.windowBase p pass slice + index - 1 at hp
   constructor
-  · omega
-  · intro zero; rw [zero, Nat.add_zero] at hp; omega
+  · omega_using [hp]
+  · intro zero; rw [zero, Nat.add_zero] at hp; omega_using [hp]
 
 def windowSize (p : Spec.Argon2.Params) (pass lane slice index : Nat) (random : Addr) : Nat :=
   Spec.Argon2.referenceCount p pass slice index (chosenLane p pass lane slice random == lane)
@@ -207,7 +207,7 @@ def relativeValue (p : Spec.Argon2.Params) (pass lane slice index : Nat) (random
 theorem Bounds.segment_le_lane {p : Spec.Argon2.Params} {pass lane slice index : Nat}
     (h : Bounds p pass lane slice index) : p.segmentLen ≤ p.laneLen := by
   have segments := Proof.Argon2.laneLen_segments p h.lanesPositive
-  omega
+  omega_using [segments]
 
 theorem Bounds.index_bound64 {p : Spec.Argon2.Params} {pass lane slice index : Nat}
     (h : Bounds p pass lane slice index) : index < 2 ^ 64 :=
@@ -249,7 +249,7 @@ theorem Bounds.laneLength_positive {p : Spec.Argon2.Params} {pass lane slice ind
     (h : Bounds p pass lane slice index) : 0 < p.laneLen := by
   have seg := Proof.Argon2.segmentLen_ge_two p h.lanesPositive h.memoryMinimum
   have len := Proof.Argon2.laneLen_segments p h.lanesPositive
-  omega
+  omega_using [seg, len]
 
 theorem Bounds.windowStart_lt_lane {p : Spec.Argon2.Params} {pass lane slice index : Nat}
     (h : Bounds p pass lane slice index) : windowStart p pass slice < p.laneLen := by
@@ -266,6 +266,6 @@ theorem Bounds.sum_bound {p : Spec.Argon2.Params} {pass lane slice index : Nat}
     (h.windowSize_positive random)
   have count := h.windowSize_lt_lane random
   change relativeValue p pass lane slice index random < windowSize p pass lane slice index random at relative
-  omega
+  omega_using [start, count, relative]
 
 end VG.Proof.Argon2.AArch64.ReferenceMap

@@ -116,7 +116,7 @@ theorem probablePrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 
     (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
     WP isa (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run) s
       (PrimeEnd P s (Spec.Dsa.probablePrime P.N (P.rand.drop used))) := by
-  have hspec := VG.Proof.Dsa.Generation.probablePrime_large (by omega : 3 < P.N) P.odd (P.rand.drop used)
+  have hspec := VG.Proof.Dsa.Generation.probablePrime_large (by omega_using [hn] : 3 < P.N) P.odd (P.rand.drop used)
   unfold Impl.Dsa.X86_64.Generation.probablePrime
   refine WP.seq (WP.mono (primeTrial_ok h hw hz hn hpolicy) fun u ⟨hflag, hi, hf, hk⟩ => ?_)
   have fu : WorkFrame P.B (primeRanges P.w) (primeExtras P) s.mem u.mem :=
@@ -147,7 +147,7 @@ theorem probablePrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 
     · intro b rest hs
       obtain ⟨hb, hr⟩ := Prod.mk.inj (Option.some.inj (hres.symm.trans hs))
       subst b rest
-      exact ⟨hstat, by rw [List.length_drop]; omega⟩
+      exact ⟨hstat, by rw [List.length_drop]; omega_using [hu]⟩
     · exact fu.trans (ft.work.mono (by
         intro r hr; simp only [primeRanges, List.mem_append]; exact Or.inr hr))
 

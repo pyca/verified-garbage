@@ -1,33 +1,259 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZC.Tail
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZC
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
+import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGTo
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.Powers
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
-import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Lit
+
+/-! ### `Gcm.X86_64.Cached.PreparedTo`, which only this module used -/
+
+section
+
+/-! # Prepared tables and the cached-key loop setup -/
+
+@[expose] public section
+
+namespace VG.Proof.Gcm.X86_64.StitchZHTo
+open VG VG.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (SPreTo CtxMode kp pp hk nr sch nb)
+open VG.Proof.Gcm.X86_64.StitchZ (FinOk FinOk48)
+open VG.Proof.Gcm.X86_64.StitchZTo (ReadyTo EInvTo AInvTo.pow)
+open VG.Proof.Gcm.X86_64.StitchZR (ctx_keep powP48_ok)
+open VG.Proof.Gcm.X86_64.StitchZRTo (setupPTo_ok)
+open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
+open VG.Impl.Gcm.X86_64.StitchZ (tab)
+open VG.Impl.Gcm.X86_64.StitchZHTo (bigPTo)
+open VG.Impl.Gcm.X86_64.Pclmul (poly)
+open VG.Spec.Gcm (Block)
+
+theorem ready_frame {s₀ s t : State} {P : Nat → Nat → Block} (h : ReadyTo s₀ P s)
+    (f : ZFrame [] s t) : ReadyTo s₀ P t :=
+  ⟨h.a.zframe f (by simp) (by simp) (by simp), by rw [f.gpr]; exact h.rdx,
+    by rw [f.gpr]; exact h.rax, fun r h1 h2 h3 h4 => by rw [f.gpr]; exact h.gpr r h1 h2 h3 h4,
+    fun k hk l hl => by rw [f.mem]; exact h.pw k hk l hl,
+    fun l hl => by rw [f.zlane _ (by simp) l hl]; exact h.m1 l hl,
+    by rw [f.zlane _ (by simp) 0 (by decide)]; exact h.y,
+    fun l h1 h4 => by rw [f.zlane _ (by simp) l h4]; exact h.y1 l h1 h4⟩
+
+theorem setup_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
+    WP isa (.seq (.block Impl.Gcm.X86_64.StitchZRTo.setupP) Impl.Aes.X86_64.VaesZH.loadKeys) s₀ fun s =>
+      ∃ P : Nat → Nat → Block, ReadyTo s₀ P s ∧
+        (∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l))) ∧
+        VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s := by
+  refine WP.seq (WP.mono (setupPTo_ok hp) fun s ⟨P, hR, hpw⟩ => ?_)
+  refine WP.mono (VG.Proof.Aes.X86_64.VaesZH.loadKeys_ok s (hR.a.keys hp) hp.rounds
+    (by rw [hR.a.rsi]; simp)
+    (by rw [hR.a.r10, hR.a.rdi])) fun t ⟨hK, hf⟩ => ?_
+  exact ⟨P, ready_frame hR hf, hpw, hK⟩
+
+theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
+    (hFin : ∀ T : Nat → Nat → Nat → Block,
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
+        FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
+    (hI : EInvTo s₀ P 1 s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa bigPTo s fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+  have hP' := hp.toPrepared
+  have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide)
+  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain ⟨hpw, hH⟩ := ctx_keep hP' hI.a.frame
+  refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hP' hdi hr11 hI.a.rd hI.a.wr hpw
+    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega_using [hl])) hI.m1))
+    fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
+  rw [hH] at t
+  let T : Nat → Nat → Nat → Block := fun g k l =>
+    if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
+  have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
+      s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2
+      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+      exact (keep (64 * k + 16 * l) (by omega_using [hk, hl])).trans (hI.pw k hk l hl)
+    · simp only [T, h2, ↓reduceIte]
+  have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
+    · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
+  have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
+    hA₁ hv pm g₁
+    (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
+    (hCache.keep hh₁ (hA₁.keys hp)))
+
+/-- `StitchZH.midC`, out of place. -/
+theorem midCTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat → Nat → Block}
+    (hr : StitchZH.RemOkG (hk s₀) P)
+    (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
+    (hFin : ∀ T : Nat → Nat → Nat → Block,
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
+        FinOk48 (hk s₀) T) {s : State}
+    (hR : ReadyTo s₀ P s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (Impl.Gcm.X86_64.StitchZH.midC true) s (Stitch.EPostTo s₀) := by
+  have hP' := hp.toPrepared
+  have hdi : s.gpr .rdi = kp s₀ := hR.a.rdi
+  have hr11 : s.gpr .r11 = pp s₀ := hR.gpr .r11 (by decide) (by decide) (by decide) (by decide)
+  obtain ⟨hpw, hH⟩ := ctx_keep hP' hR.a.frame
+  refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hP' hdi hr11 hR.a.rd hR.a.wr hpw
+    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hR.a.msk l (by omega_using [hl])) hR.m1))
+    fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
+  rw [hH] at t
+  let T : Nat → Nat → Nat → Block := fun g k l =>
+    if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
+  have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
+      s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2
+      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+      exact (keep (64 * k + 16 * l) (by omega_using [hk, hl])).trans (hR.pw k hk l hl)
+    · simp only [T, h2, ↓reduceIte]
+  have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
+    · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
+  have hA₁ := (hR.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+  exact WP.mono (StitchZC.midRestM_ok hp.toM (hp.k_c.symm.sub_right (Region.sub_prefix CtxMode.prepared.ge)) hp.s_c
+    hr hT (fun k l => by simp only [T, ↓reduceIte]) hp.nb16 (hR.toM hp) (hA₁.toM hp) hv pm g₁
+    (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
+    (hCache.keep hh₁ (hA₁.keys hp))) fun _ h => h.toEPostTo
+
+/-- `StitchZH.bigS`, out of place. -/
+theorem bigSTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
+    (hFin : ∀ T : Nat → Nat → Nat → Block,
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
+        FinOk48 (hk s₀) T) {s : State}
+    (hI : EInvTo s₀ P 1 s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa (Impl.Gcm.X86_64.StitchZH.bigS true) s fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
+  have hP' := hp.toPrepared
+  have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide)
+  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain ⟨hpw, hH⟩ := ctx_keep hP' hI.a.frame
+  refine WP.seq (WP.mono (WP.hkeep (by decide +kernel) (powP48_ok hP' hdi hr11 hI.a.rd hI.a.wr hpw
+    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega_using [hl])) hI.m1))
+    fun s₁ ⟨⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩, hh₁⟩ => ?_)
+  rw [hH] at t
+  let T : Nat → Nat → Nat → Block := fun g k l =>
+    if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
+  have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
+      s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2
+      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+      exact (keep (64 * k + 16 * l) (by omega_using [hk, hl])).trans (hI.pw k hk l hl)
+    · simp only [T, h2, ↓reduceIte]
+  have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
+    · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
+  have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
+  exact WP.mono (StitchZC.bigSelM_ok hp.toM hf hT (fun k l => by simp only [T, ↓reduceIte]) (hI.toM hp)
+    (hA₁.toM hp) hv pm g₁
+    (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
+    (hCache.keep hh₁ (hA₁.keys hp))) fun _ ⟨e, h, hk⟩ => ⟨e, h.toTo, hk⟩
+
+end VG.Proof.Gcm.X86_64.StitchZHTo
+
+end
+
+end
+
+/-! ### `Gcm.X86_64.StitchZTo.LoopP`, which only this module used -/
+
+section
+
+/-!
+# The out-of-place AVX-512 loop, with the powers in the key context
+
+Untrusted: everything here is checked by Lean. `bigPTo_ok`: `StitchZTo.bigPTo`
+is `bigRestTo_ok` after `StitchZP.powP48`, which stores the tables of 48
+blocks converted from the powers of the key context (`StitchZP.powP48_ok`,
+for the in-place view `dst s₀`, whose key context the loop keeps:
+`StitchZP.ctx_keep`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Gcm.X86_64.StitchZTo
+
+open VG VG.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (SPreTo CtxMode kp pp nb hk)
+open VG.Proof.Gcm.X86_64.StitchZ (FinOk FinOk48)
+open VG.Proof.Gcm.X86_64.StitchZP (powP48_ok ctx_keep hInvF)
+open VG.Impl.Gcm.X86_64.StitchZ (tab)
+open VG.Impl.Gcm.X86_64.StitchZTo (bigPTo)
+open VG.Spec.Gcm (Block)
+
+/-- `bigPTo`: `bigTo` with the tables loaded. -/
+theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
+    (hFin : ∀ T : Nat → Nat → Nat → Block,
+      (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
+        FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
+    (hI : EInvTo s₀ P 1 s) : WP isa bigPTo s fun s' => ∃ e, EInvTo s₀ P e s' := by
+  have hP' := hp.toP
+  have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide)
+  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain ⟨hpw, hH⟩ := ctx_keep hP' hI.a.frame
+  refine WP.seq (WP.mono (powP48_ok hP' hdi hr11 hI.a.rd hI.a.wr hpw
+    (fun l hl => by rw [← State.zlane_lt2 _ _ hl]; exact hI.a.msk l (by omega_using [hl])) hI.m1)
+    fun s₁ ⟨t, pm, keep, fr, g₁, rd₁, wr₁, z₁⟩ => ?_)
+  rw [hH] at t
+  let T : Nat → Nat → Nat → Block := fun g k l =>
+    if g = 2 then P k l else s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128
+  have hv : ∀ g < 3, ∀ k < 4, ∀ l < 4,
+      s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l := fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2
+      simp only [T, ↓reduceIte, show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_using []]
+      exact (keep (64 * k + 16 * l) (by omega_using [hk, hl])).trans (hI.pw k hk l hl)
+    · simp only [T, h2, ↓reduceIte]
+  have hT : FinOk48 (hk s₀) T := hFin T fun g hg k hk l hl => by
+    by_cases h2 : g = 2
+    · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
+    · simp only [T, h2, ↓reduceIte]; exact t g (by omega_using [hg, h2]) k hk l hl
+  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
+    (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl) hv pm g₁
+    fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
+
+end VG.Proof.Gcm.X86_64.StitchZTo
+
+end
+
+end
+
 
 /-!
 # The AVX-512 loops with the powers in the key context: both meet their contracts
@@ -131,7 +357,7 @@ theorem setupGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok .xmm7 .rdi 240 s₂ (by decide)
     (by rw [o₂.xmm _ (by decide), c₁, rev_eq])
-    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hp.k_in (by omega))) fun s₃ ⟨l₃, o₃⟩ => ?_
+    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hp.k_in (by omega_using [hge]))) fun s₃ ⟨l₃, o₃⟩ => ?_
   have o₁₃ := o₁₂.trans o₃
   rw [WP.block_append_iff]
   refine WP.mono (hInv_ok s₃) fun s₄ ⟨t₄, o₄⟩ => ?_
@@ -166,8 +392,8 @@ theorem setupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
   rw [← List.append_assoc, WP.block_append_iff]
   exact WP.mono (setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (setupZTo_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 /-- The out-of-place loop meets its contract, for a key context of either
 kind. -/
@@ -222,8 +448,8 @@ theorem setupPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) :
   rw [← List.append_assoc, WP.block_append_iff]
   exact WP.mono (setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => WP.mono (setupZTo_ok hR) fun _ hR' =>
     ⟨_, hR', fun k hk l hl => by
-      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega]
-      exact pw _ (by omega) _ (by omega)⟩
+      rw [show 16 - 4 * k - l = 16 - 2 * (2 * k + l / 2) - l % 2 by omega_using []]
+      exact pw _ (by omega_using [hk, hl]) _ (by omega_using [])⟩
 
 /-- The out-of-place loop with the powers loaded meets its contract. -/
 theorem stitchToP_ok : StitchToOkM CtxMode.powers Impl.Gcm.X86_64.StitchZTo.encP := fun s₀ hp hm =>
@@ -251,7 +477,7 @@ theorem laneAccG_sum_succ (X : Nat → Block) (T : Nat → BitVec 128) (y : Bloc
         (laneAccG X T y 3 n).val + x * φ ((if n = 0 then y else 0) ^^^ X n) * φ (T n) := by
   have hl : n % 4 < 4 := Nat.mod_lt _ (by decide)
   simp only [laneAccG]
-  rcases (by omega : n % 4 = 0 ∨ n % 4 = 1 ∨ n % 4 = 2 ∨ n % 4 = 3) with h | h | h | h <;>
+  rcases (by omega_using [] : n % 4 = 0 ∨ n % 4 = 1 ∨ n % 4 = 2 ∨ n % 4 = 3) with h | h | h | h <;>
   simp only [h, ite_true, ite_false, show ¬ ((0 : Nat) = 1) by decide, show ¬ ((0 : Nat) = 2) by decide,
     show ¬ ((0 : Nat) = 3) by decide, show ¬ ((1 : Nat) = 0) by decide, show ¬ ((1 : Nat) = 2) by decide,
     show ¬ ((1 : Nat) = 3) by decide, show ¬ ((2 : Nat) = 0) by decide, show ¬ ((2 : Nat) = 1) by decide,
@@ -266,8 +492,8 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
   intro r hr1 hr15 X y
   let T : Nat → BitVec 128 := fun j => P ((16 - r + j) / 4) ((16 - r + j) % 4)
   have hT : ∀ j < r, x * φ (T j) = φ H ^ (r - j) := fun j hj => by
-    have := hP ((16 - r + j) / 4) (by omega) ((16 - r + j) % 4) (by omega)
-    rwa [show 16 - 4 * ((16 - r + j) / 4) - (16 - r + j) % 4 = r - j by omega] at this
+    have := hP ((16 - r + j) / 4) (by omega_using [hr15, hj]) ((16 - r + j) % 4) (by omega_using [])
+    rwa [show 16 - 4 * ((16 - r + j) / 4) - (16 - r + j) % 4 = r - j by omega_using [hr15]] at this
   have key : ∀ n, 1 ≤ n → n ≤ r →
       (laneAccG X T y 0 n).val + (laneAccG X T y 1 n).val + (laneAccG X T y 2 n).val +
           (laneAccG X T y 3 n).val = φ H ^ (r - n) * φ (ghashFrom H y ((List.range n).map X)) := by
@@ -278,19 +504,19 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
       intro _ hn
       rw [laneAccG_sum_succ]
       rcases Nat.eq_zero_or_pos n with rfl | hpos
-      · have h0 := hT 0 (by omega)
+      · have h0 := hT 0 (by omega_using [hr1])
         have hg : ghashFrom H y ((List.range (0 + 1)).map X) = Spec.Gcm.mul (y ^^^ X 0) H := rfl
         rw [hg, φ_mul]
         simp only [laneAccG, ↓reduceIte, Prod.val_zero]
-        rw [show r - 0 = (r - (0 + 1)) + 1 by omega, pow_succ] at h0
+        rw [show r - 0 = (r - (0 + 1)) + 1 by omega_using [hr1], pow_succ] at h0
         linear_combination φ (y ^^^ X 0) * h0
-      · have hn' := hT n (by omega)
-        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ] at hn'
-        rw [ih hpos (by omega)]
-        simp only [show n ≠ 0 by omega, ↓reduceIte, List.range_succ, List.map_append, List.map_cons,
+      · have hn' := hT n (by omega_using [hn])
+        rw [show r - n = (r - (n + 1)) + 1 by omega_using [hn], pow_succ] at hn'
+        rw [ih hpos (by omega_using [hn])]
+        simp only [show n ≠ 0 by omega_using [hpos], ↓reduceIte, List.range_succ, List.map_append, List.map_cons,
           List.map_nil, ghashFrom, List.foldl_append, List.foldl_cons, List.foldl_nil, φ_mul, φ_xor, φ_zero,
           zero_add]
-        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ]
+        rw [show r - n = (r - (n + 1)) + 1 by omega_using [hn], pow_succ]
         linear_combination φ (X n) * hn'
   apply φ_inj
   rw [φ_xor, φ_xor, φ_xor, φ_reduceB, φ_reduceB, φ_reduceB, φ_reduceB]
@@ -302,9 +528,13 @@ theorem remZG {H : Block} {P : Nat → Nat → Block}
 /-- `encR`, for any number of blocks from 16 on. -/
 theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZH.encR s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw))
-      144 (by decide) (by decide) (fun _ h hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
+  WP.seq (WP.mono (setup_ok hp) fun s ⟨_, hR, hpw, hK⟩ =>
+    StitchZC.midSel_ok s
+      (fun _ _ _ f hh => midC_ok hp (remZG (finP hpw)) hpw (fin48P (hk s₀)) (ready_frame hR f)
+        (hK.keep hh ((ready_frame hR f).a.keys hp.base)))
+      (fun _ _ f hh => encTailRG_ok hp.base (finZ (finP hpw)) (remZG (finP hpw)) 144 (by decide) (by decide)
+        (fun _ h hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC)
+        (ready_frame hR f) (hK.keep hh ((ready_frame hR f).a.keys hp.base))))
 
 /-- `decR`, for any number of blocks from 16 on. -/
 theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
@@ -329,9 +559,13 @@ open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 /-- `encR`, for any number of blocks from 16 on. -/
 theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀) :
     WP isa Impl.Gcm.X86_64.StitchZHTo.encR s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw))
-      144 (by decide) (by decide) (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
+  WP.seq (WP.mono (setup_ok hp) fun s ⟨_, hR, hpw, hK⟩ =>
+    StitchZC.midSel_ok s
+      (fun _ _ _ f hh => midCTo_ok hp (StitchZH.remZG (finP hpw)) hpw (fin48P (hk s₀)) (ready_frame hR f)
+        (hK.keep hh ((ready_frame hR f).a.keys hp)))
+      (fun _ _ f hh => encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZG (finP hpw)) 144 (by decide) (by decide)
+        (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC)
+        (ready_frame hR f) (hK.keep hh ((ready_frame hR f).a.keys hp))))
 
 /-- Prepared powers and cached AES keys, out of place, for any number of
 blocks from 16 on. -/
@@ -342,8 +576,8 @@ theorem stitchToR_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.e
 setup stores. -/
 theorem phase1_ok : PhaseOne := fun {s₀} hp hm =>
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨P, hR, hpw, hK⟩ =>
-    WP.mono (phase1G_ok hp hm (finZ (finP hpw)) 144 (by decide) (by decide)
-      (fun _ h hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) (Nat.le_trans (by decide) h) hI hC) hR hK)
+    WP.mono (phase1G_ok hp hm (finZ (finP hpw)) 48 (by decide) (by decide)
+      (fun _ _ hI hC => bigSTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) hI hC) hR hK)
       fun _ ⟨e, he, hI, hK'⟩ => ⟨P, e, he, hI, hK', finZ (finP hpw)⟩)
 
 end VG.Proof.Gcm.X86_64.StitchZHTo

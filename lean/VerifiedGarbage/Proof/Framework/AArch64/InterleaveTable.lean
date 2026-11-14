@@ -84,7 +84,7 @@ theorem scalOk_fp {xb xt : Reg} {W : Nat} {i : Instr} (h : scalOk xb xt W i = tr
 theorem mw_lt {m W o : Nat} (hm : m >>> W = 0) (h : m.testBit o = true) : o < W := by
   by_contra hc
   have := Nat.testBit_shiftRight m (i := W) (j := o - W)
-  rw [hm, Nat.zero_testBit, show W + (o - W) = o by omega, h] at this
+  rw [hm, Nat.zero_testBit, show W + (o - W) = o by omega_using [hc], h] at this
   exact Bool.noConfusion this
 
 theorem scal_keeps {xb xt : Reg} {W : Nat} {i : Instr} (h : scalOk xb xt W i = true) {s s' : State}
@@ -180,7 +180,7 @@ theorem vres_keeps {xb xt : Reg} {W T : Nat} {y : Instr} (hy : vecOk xt T y = tr
         apply read_congr
         intro k hk16
         rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-        exact hk.mem _ fun o ho e => ha o ho (off + k) (by omega) e.symm
+        exact hk.mem _ fun o ho e => ha o ho (off + k) (by omega_using [hT, hk16]) e.symm
       · rfl
     · rfl
 

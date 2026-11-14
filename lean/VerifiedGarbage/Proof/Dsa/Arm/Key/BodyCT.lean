@@ -109,7 +109,7 @@ theorem spl_trace {b : BodyPub} {s₀ : State} (A : KeyABI s₀) (F : BodyFacts 
       | none => rfl
       | some x =>
         have := sample_trace_le _ _ _ x (List.mem_of_getLast? hl)
-        simp only [Option.any_some, decide_eq_false_iff_not]; omega
+        simp only [Option.any_some, decide_eq_false_iff_not]; omega_using [this]
     rw [h4]; rfl
   | some x =>
     dsimp only
@@ -223,11 +223,11 @@ theorem prepped_ok {b : BodyPub} {s₀ t : State} (A : KeyABI s₀) (T : Tested 
   refine WP.mono (prepare_ok A K.ready K.saved.2.2.2.2) fun t₅ ⟨_, P₅, h₅, o₅, _⟩ => ?_
   have P := P₅ hq
   have lo₅ : ∀ d, d + 4 ≤ oQ → slot t₅.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd =>
-    outs_low o₅ (by decide) hd (by unfold oQ at hd; omega)
+    outs_low o₅ (by decide) hd (by unfold oQ at hd; omega_using [hd])
   have us₅ : slot t₅.mem (rBase s₀) oUsed = BitVec.ofNat 32 0 := by
     rw [lo₅ _ (by decide)]; exact K.used
   exact ⟨K.facts, hc, ⟨h₅, P.q, P.width, P.mask, us₅, by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq],
-    fun i hi => P.nonce i (by omega), Nat.zero_le _⟩, K.saved.of_outs o₅ (by decide)⟩
+    fun i hi => P.nonce i (by omega_using [hql, hi]), Nat.zero_le _⟩, K.saved.of_outs o₅ (by decide)⟩
 
 /-- After sampling. -/
 structure Sampled (b : BodyPub) (s₀ t : State) : Prop where
@@ -338,9 +338,9 @@ theorem stored_fin {b : BodyPub} {s₀ t : State} (A : KeyABI s₀) (D : Derived
   · rw [mem, slot_write_self, D.r0]
   · rw [mem, rBytes_frame (frame_store s₀ t.mem (by decide) _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact A.stackOut.symm)
-      (by have := (s₀.gpr .r1).isLt; omega), D.out]
+      (by have := (s₀.gpr .r1).isLt; omega_using []), D.out]
   · exact D.saved.of_slots fun d hd hd' => by
-      rw [mem, slot_write_ne _ _ _ (by unfold oStatus; omega) (by omega) (by decide)]
+      rw [mem, slot_write_ne _ _ _ (by unfold oStatus; omega_using [hd]) (by omega_using [hd']) (by decide)]
 
 /-! ## The pieces' constant time -/
 
@@ -389,7 +389,7 @@ theorem generate_ct (name : String) :
     fun b t ⟨s₀, A, e, S⟩ => wp_cmp (op2_imm (by decide)) fun u fu z =>
       WP.block_nil ⟨s₀, A, e, S.fupd A fu, ?_⟩) ?_
   · have hle := sampleStatus_le (spl s₀ 128 0)
-    rw [z, S.r0, one_beq (by omega), spl_ok A S.facts S.checked]
+    rw [z, S.r0, one_beq (by omega_using [hle]), spl_ok A S.facts S.checked]
   exact two_ite (fun b t₁ t₂ ⟨_, _, _, _, z₁⟩ ⟨_, _, _, _, z₂⟩ => by rw [eval_eq, eval_eq, z₁, z₂])
     (derived_ct name) rejected_ct
 

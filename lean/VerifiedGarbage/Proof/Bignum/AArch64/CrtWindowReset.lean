@@ -42,10 +42,10 @@ theorem resetWindow_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc :
   have hny : slot w aY + 8 * w ≤ 2 ^ 64 := by
     have := hc.good.scr.nowrap
     have := slot_le (w := w) (show aY < 8 by decide)
-    omega
+    omega_arith
   refine ⟨hc.of_win hf kt.wr (kt.gpr .x0 (by decide)),?_,?_,?_,hf,kt,?_⟩
-  · rw [ob.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega) hny,
-      oa.wv (by have := hdr_lt_slot w aY (show Crt.sNib < 32 by decide); omega) hny]
+  · rw [ob.wv (by have := hdr_lt_slot w aY (show Crt.sBit < 32 by decide); omega_using [this]) hny,
+      oa.wv (by have := hdr_lt_slot w aY (show Crt.sNib < 32 by decide); omega_using [this]) hny]
   · rw [hm,hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),word_writeW_self]
     rfl
   · rw [hm,word_writeW_self]

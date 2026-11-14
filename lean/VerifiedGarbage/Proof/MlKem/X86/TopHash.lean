@@ -41,8 +41,8 @@ theorem wp_count {body : List Instr} {N : Nat} (hN : 0 < N) (I : Nat → State �
   obtain ⟨k, hn, hk, hi⟩ := hi
   refine (hs k hk _ hi).mono fun s' ⟨hi', hc⟩ => ?_
   by_cases h : k + 1 < N
-  · exact .inr ⟨by rw [hc, decide_eq_true h], N - (k + 1), by omega, k + 1, rfl, h, hi'⟩
-  · exact .inl ⟨by rw [hc, decide_eq_false h], by rw [show N = k + 1 by omega]; exact hi'⟩
+  · exact .inr ⟨by rw [hc, decide_eq_true h], N - (k + 1), by omega_using [hn, hk], k + 1, rfl, h, hi'⟩
+  · exact .inl ⟨by rw [hc, decide_eq_false h], by rw [show N = k + 1 by omega_using [hk, h]]; exact hi'⟩
 
 theorem wp_subi_last {d : Reg} {v : BitVec 32} {s : State} {Q : State → Prop}
     (k : ∀ s', Only [d] s s' → s'.gpr d = s.gpr d - v → s'.zf = some (s.gpr d - v == 0) → Q s') :
@@ -75,16 +75,16 @@ theorem zeroTop_piece (st : Nat) (hc : Y.okW ⟨Y.sc, st, 200⟩ = true) {ht : T
       ∀ j < 4 * k, u.mem (Buf.addr s₀ ⟨Y.sc, st, 200⟩ + BitVec.ofNat 64 j) = 0
     have i0 : I 0 s₄ := ⟨c₄, by rw [o₄.gpr _ (by decide), o₃.gpr _ (by decide), v₂, v₁, h.esi]; simp,
       v₄, by rw [o₄.gpr _ (by decide), v₃], by rw [o.mem]; exact Frame.refl _ _,
-      fun j hj => absurd hj (by omega)⟩
+      fun j hj => absurd hj (by omega_using [])⟩
     refine (wp_count (N := 50) (by decide) I i0 fun k hk u hu => ?_).mono fun u hu => ?_
     · obtain ⟨cu, eu, ecu, eau, fu, zu⟩ := hu
       have ea : u.ea (at_ .edx 0) = Buf.addr s₀ ⟨Y.sc, st, 200⟩ + BitVec.ofNat 64 (4 * k) := by
         simp only [State.ea, at_, eu]
-        rw [ea_add (by omega)]
+        rw [ea_add (by omega_using [fit, hk])]
         rfl
       have hin : InRegions u.wr (u.ea (at_ .edx 0)) 4 := by
-        rw [ea]; exact Buf.inRegW hp hc₁ hc₂ cu.wr (by show 4 * k + 4 ≤ 200; omega)
-      obtain ⟨r, hr, hcr⟩ := Buf.contains hp hc₁ hc₂ (o := 4 * k) (n := 4) (by show 4 * k + 4 ≤ 200; omega)
+        rw [ea]; exact Buf.inRegW hp hc₁ hc₂ cu.wr (by show 4 * k + 4 ≤ 200; omega_using [hk])
+      obtain ⟨r, hr, hcr⟩ := Buf.contains hp hc₁ hc₂ (o := 4 * k) (n := 4) (by show 4 * k + 4 ≤ 200; omega_using [hk])
       have cm : Ctx Y s₀ { u with mem := u.mem.writeW (u.ea (at_ .edx 0)) (u.gpr .eax) } :=
         ⟨cu.esp, cu.rd, cu.wr, cu.esi, by rw [ea]; exact cu.frame.writeW hr _ hcr⟩
       refine wp_store hin (wp_addi fun u₁ o₁ v₁ => wp_subi_last fun u₂ o₂ v₂ z₂ => ?_)
@@ -96,18 +96,18 @@ theorem zeroTop_piece (st : Nat) (hc : Y.okW ⟨Y.sc, st, 200⟩ = true) {ht : T
       refine ⟨⟨cm₂, ?_, x₂, by rw [o₂.gpr _ (by decide), o₁.gpr _ (by decide)]; exact eau, ?_, ?_⟩, ?_⟩
       · rw [o₂.gpr _ (by decide), v₁, eu]
         show _ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 4 = _
-        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega]
+        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega_using []]
       · rw [m₂]
         exact fu.writeW (List.mem_singleton_self _) _ (by
           show (⟨Buf.addr s₀ ⟨Y.sc, st, 200⟩, 200⟩ : Region).Contains _ 4
-          simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+          simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_using [hk])]; omega_using [hk])
       · rw [m₂]; exact Sample.zero_write zu
       · show u₂.zf.map (!·) = _
         have e₁ : u₁.gpr .ecx = BitVec.ofNat 32 (50 - k) := (o₁.gpr _ (by decide)).trans ecu
         rw [z₂, e₁]; exact cnt_ne hk (by decide)
     · obtain ⟨cu, -, -, -, fu, zu⟩ := hu
       exact hQ s₀ s u hp ha cu (fu.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩)
-        (Sample.stateAt_zero fun j hj => zu j (by omega))
+        (Sample.stateAt_zero fun j hj => zu j (by omega_using [hj]))
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [(hA _ _ hp ha).esi, (hA _ _ ‹_› ha').esi, hq.sc hp]
@@ -251,7 +251,7 @@ theorem kF_zero {s₀ : State} (hp : TPre Y s₀) {st wk : Nat} (hN : 56 ≤ Y.s
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below (E1 s₀) 40, by simp, stk_sub hp (by omega) (by omega)⟩
+    · exact ⟨below (E1 s₀) 40, by simp, stk_sub hp (by omega_using []) (by omega_using [hN])⟩
 
 theorem kF_bytes {s₀ : State} (hp : TPre Y s₀) {st wk : Nat} (hN : 56 ≤ Y.stk) {b : Buf} (hb : Y.ok b = true)
     (hs : (Y.okW ⟨Y.sc, st, 200⟩ && Y.okW ⟨Y.sc, wk, 640⟩ && Y.sep b ⟨Y.sc, st, 200⟩ && Y.sep b ⟨Y.sc, wk, 640⟩) = true)
@@ -259,8 +259,8 @@ theorem kF_bytes {s₀ : State} (hp : TPre Y s₀) {st wk : Nat} (hN : 56 ≤ Y.
   simp only [Bool.and_eq_true] at hs
   obtain ⟨⟨⟨h₁, h₂⟩, d₁⟩, d₂⟩ := hs
   exact bytesAt_frame fr (Buf.frD hp hb (bs := [⟨Y.sc, st, 200⟩, ⟨Y.sc, wk, 640⟩])
-    (by simp [(Lay.okW_iff.mp h₁).1, (Lay.okW_iff.mp h₂).1, d₁, d₂]) (by omega))
-    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega)
+    (by simp [(Lay.okW_iff.mp h₁).1, (Lay.okW_iff.mp h₂).1, d₁, d₂]) (by omega_using [hN]))
+    (by show b.len ≤ 2 ^ 64; have := Buf.fit hp hb; omega_using [this])
 
 /-- The SHA-3 or SHAKE function (`rate`, suffix `sfx`) of the bytes of `b₁` and `b₂`, into `o`. -/
 theorem hash2_piece (st wk rate sfx : Nat) (b₁ b₂ o : Buf) (hr : rate ∈ rates)
@@ -296,7 +296,7 @@ theorem hash2_piece (st wk rate sfx : Nat) (b₁ b₂ o : Buf) (hr : rate ∈ ra
   simp only [Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hS, hW⟩, hb₁⟩, hb₂⟩, hO⟩, dSW⟩, d₁S⟩, d₁W⟩, d₂S⟩, d₂W⟩, dSO⟩, dOW⟩ := hc'
   have hrate := (rate_lt hr)
-  have hr0 : 0 < rate := by simp [rates] at hr; omega
+  have hr0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   -- after zeroing, absorbing `b₁`, absorbing `b₂`, padding
   let P : Nat → State → State → Prop := fun i s₀ u => ∃ s, A s₀ s ∧ Ctx Y s₀ u ∧ Frame (kF st wk Y s₀) s.mem u.mem ∧
     (i = 0 → stateAt u.mem (Buf.addr s₀ ⟨Y.sc, st, 200⟩) = Spec.Sha3.zero) ∧
@@ -363,7 +363,7 @@ theorem hash1_piece (st wk rate sfx : Nat) (b o : Buf) (hr : rate ∈ rates)
   have hc' := hc
   simp only [Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hS, hW⟩, hb⟩, hO⟩, dSW⟩, dbS⟩, dbW⟩, dSO⟩, dOW⟩ := hc'
-  have hr0 : 0 < rate := by simp [rates] at hr; omega
+  have hr0 : 0 < rate := by simp [rates] at hr; omega_using [hr]
   let P : Nat → State → State → Prop := fun i s₀ u => ∃ s, A s₀ s ∧ Ctx Y s₀ u ∧ Frame (kF st wk Y s₀) s.mem u.mem ∧
     (i = 0 → stateAt u.mem (Buf.addr s₀ ⟨Y.sc, st, 200⟩) = Spec.Sha3.zero) ∧
     (i = 1 → Repr u.mem (Buf.addr s₀ ⟨Y.sc, st, 200⟩) rate (bytesAt s.mem (b.addr s₀) b.len)) ∧

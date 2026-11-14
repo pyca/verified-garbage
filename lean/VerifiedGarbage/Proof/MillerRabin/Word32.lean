@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Prepared Miller–Rabin arithmetic with native 32-bit words
@@ -41,7 +42,7 @@ def mm (c w x y : Nat) : Nat := x * y * rinv c w % c
 
 theorem R_rinv {c w : Nat} (hc : c % 2 = 1) : 2 ^ (64 * w) * rinv c w % c = 1 % c := by
   unfold rinv
-  rw [Nat.mul_mod_mod, ← Nat.mul_pow, Nat.pow_mod, show 2 * ((c + 1) / 2) = c + 1 by omega,
+  rw [Nat.mul_mod_mod, ← Nat.mul_pow, Nat.pow_mod, show 2 * ((c + 1) / 2) = c + 1 by omega_using [hc],
     show (c + 1) % c = 1 % c by rw [Nat.add_mod_left], ← Nat.pow_mod, Nat.one_pow]
 
 /-- The value of a Montgomery product. -/
@@ -78,7 +79,7 @@ def tp (c w X O : Nat) : Nat → Nat
 theorem tp_val {c w b X O : Nat} (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hX : X = b % c * 2 ^ (64 * w) % c)
     (hO : O = 2 ^ (64 * w) % c) : ∀ k, tp c w X O k = powMod b k c * 2 ^ (64 * w) % c
   | 0 => by
-    have h1 : 1 % c = 1 := Nat.mod_eq_of_lt (by omega)
+    have h1 : 1 % c = 1 := Nat.mod_eq_of_lt (by omega_using [hc3])
     rw [tp, hO, VG.Proof.Bignum.powMod_eq, Nat.pow_zero, h1, Nat.one_mul]
   | 1 => by rw [tp, hX, VG.Proof.Bignum.powMod_eq, Nat.pow_one]
   | k + 2 => by
@@ -126,7 +127,7 @@ theorem msq_rel (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hM : M = c - 2 ^ (64 * w) % c)
   have hR := VG.Proof.Bignum.coprime_pow2 hc (64 * w)
   unfold msq wSq
   simp only
-  rw [mm_val hc, hM, decide_eq_decide.mpr (mont_eq_m1 hR (by omega) (Nat.mod_lt _ (by omega)))]
+  rw [mm_val hc, hM, decide_eq_decide.mpr (mont_eq_m1 hR (by omega_using [hc3]) (Nat.mod_lt _ (by omega_using [hc])))]
 
 /-- Four squarings of a window. -/
 theorem msqs4_rel (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hM : M = c - 2 ^ (64 * w) % c) (y : Nat) (F : Bool) :
@@ -146,12 +147,12 @@ theorem mwin_rel (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hM : M = c - 2 ^ (64 * w) % c
   unfold mwin wWin
   rw [msqs4_rel hc hc3 hM, hT d hd, mm_val hc]
   generalize wSq c true (wSq c true (wSq c true (wSq c true (y, F)))) = s
-  have lt : s.1 * powMod b d c % c < c := Nat.mod_lt _ (by omega)
-  have h1 : 1 % c = 1 := Nat.mod_eq_of_lt (by omega)
+  have lt : s.1 * powMod b d c % c < c := Nat.mod_lt _ (by omega_using [hc])
+  have h1 : 1 % c = 1 := Nat.mod_eq_of_lt (by omega_using [hc3])
   have t0 : T 0 = 2 ^ (64 * w) % c := by
     rw [hT 0 (by decide), VG.Proof.Bignum.powMod_eq, Nat.pow_zero, h1, Nat.one_mul]
   simp only [t0, hM]
-  rw [decide_eq_decide.mpr (mont_eq_one hR (by omega) lt), decide_eq_decide.mpr (mont_eq_m1 hR (by omega) lt)]
+  rw [decide_eq_decide.mpr (mont_eq_one hR (by omega_using [hc3]) lt), decide_eq_decide.mpr (mont_eq_m1 hR (by omega_using [hc3]) lt)]
 
 /-- The windows. -/
 theorem mrun_rel (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hM : M = c - 2 ^ (64 * w) % c) {T : Nat → Nat}
@@ -159,32 +160,32 @@ theorem mrun_rel (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hM : M = c - 2 ^ (64 * w) % c
     ∀ j, mrun c w M T E W j = ((wRun c b E W j).1 * 2 ^ (64 * w) % c, (wRun c b E W j).2) ∧
       (wRun c b E W j).1 < c
   | 0 => by
-    refine ⟨?_, by show 1 < c; omega⟩
-    have h1 : 1 % c = 1 := Nat.mod_eq_of_lt (by omega)
+    refine ⟨?_, by show 1 < c; omega_using [hc3]⟩
+    have h1 : 1 % c = 1 := Nat.mod_eq_of_lt (by omega_using [hc3])
     simp only [mrun, wRun, Nat.one_mul]
     rw [hT 0 (by decide), VG.Proof.Bignum.powMod_eq, Nat.pow_zero, h1, Nat.one_mul]
   | j + 1 => by
     obtain ⟨ih, lt⟩ := mrun_rel hc hc3 hM hT E W j
     rw [mrun, wRun, ih]
     refine ⟨mwin_rel hc hc3 hM hT (Nat.mod_lt _ (by decide)) _ _, ?_⟩
-    exact Nat.mod_lt _ (by omega)
+    exact Nat.mod_lt _ (by omega_using [hc])
 
 end
 
 /-! ## The round's result -/
 
 theorem mrA_le {c : Nat} (hc3 : 3 ≤ c) : mrA c ≤ bitLength c - 1 := by
-  obtain ⟨hN, _⟩ := splitTwos_spec (c - 1) (by omega)
+  obtain ⟨hN, _⟩ := splitTwos_spec (c - 1) (by omega_using [hc3])
   change c - 1 = (splitTwos (c - 1)).2 * 2 ^ mrA c at hN
   have hm : 0 < (splitTwos (c - 1)).2 := by
     rcases Nat.eq_zero_or_pos (splitTwos (c - 1)).2 with h | h
-    · rw [h, Nat.zero_mul] at hN; omega
+    · rw [h, Nat.zero_mul] at hN; omega_arith
     · exact h
   have h2a : 2 ^ mrA c ≤ c := by
-    have := Nat.le_mul_of_pos_left (2 ^ mrA c) hm; omega
+    have := Nat.le_mul_of_pos_left (2 ^ mrA c) hm; omega_using [hN, this]
   have e : bitLength c = c.log2 + 1 := by unfold bitLength; split <;> omega
   rw [e, Nat.add_sub_cancel]
-  exact (Nat.le_log2 (by omega)).mpr h2a
+  exact (Nat.le_log2 (by omega_using [hc3])).mpr h2a
 
 /-- The windows of `E` and three squarings with the threshold `4 − σ`: the round. -/
 theorem final_eq {c w b X O M : Nat} (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hcR : c < 2 ^ (64 * w))
@@ -196,19 +197,19 @@ theorem final_eq {c w b X O M : Nat} (hc : c % 2 = 1) (hc3 : 3 ≤ c) (hcR : c <
   rw [hr]
   have hs := sigOf_pos (mrA c)
   have m1 : decide (4 - sigOf (mrA c) < 3 - 0) = decide (1 < mrSig c) :=
-    decide_eq_decide.mpr (by show _ ↔ 1 < sigOf (mrA c); omega)
+    decide_eq_decide.mpr (by show _ ↔ 1 < sigOf (mrA c); omega_using [])
   have m2 : decide (4 - sigOf (mrA c) < 3 - 1) = decide (2 < mrSig c) :=
-    decide_eq_decide.mpr (by show _ ↔ 2 < sigOf (mrA c); omega)
+    decide_eq_decide.mpr (by show _ ↔ 2 < sigOf (mrA c); omega_using [])
   have m3 : decide (4 - sigOf (mrA c) < 3 - 2) = decide (3 < mrSig c) :=
-    decide_eq_decide.mpr (by show _ ↔ 3 < sigOf (mrA c); omega)
+    decide_eq_decide.mpr (by show _ ↔ 3 < sigOf (mrA c); omega_using [])
   simp only [msqs, m1, m2, m3]
   rw [msq_rel hc hc3 hM, msq_rel hc hc3 hM, msq_rel hc hc3 hM]
   show (wEnd c (wRun c b (mrE c) (16 * w) (16 * w))).2 = _
   rw [wEnd_eq b hc3 hc (mrA_le hc3) ?_]
   · rfl
   · have : mrE c ≤ c - 1 := Nat.div_le_self _ _
-    rw [sixteen_pow, show 4 * (16 * w) = 64 * w by omega]
-    omega
+    rw [sixteen_pow, show 4 * (16 * w) = 64 * w by omega_using []]
+    omega_using [hcR, this]
 
 /-! ## Words and digits -/
 
@@ -221,31 +222,31 @@ theorem shl_shr28 (x : BitVec 32) {t : Nat} (ht : t < 8) :
     Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow, Nat.testBit_mul_two_pow, Nat.testBit_mod_two_pow,
     Nat.testBit_div_two_pow]
   by_cases hi : i < 4
-  · simp only [show i + 28 < 32 by omega, hi, decide_true, Bool.true_and, show 4 * t ≤ i + 28 by omega]
-    congr 1; omega
-  · simp only [show ¬ i + 28 < 32 by omega, hi, decide_false, Bool.false_and]
+  · simp only [show i + 28 < 32 by omega_using [hi], hi, decide_true, Bool.true_and, show 4 * t ≤ i + 28 by omega_using [ht]]
+    congr 1; omega_using [ht]
+  · simp only [show ¬ i + 28 < 32 by omega_using [hi], hi, decide_false, Bool.false_and]
 
 theorem shl4_succ32 (x : BitVec 32) (t : Nat) : x <<< (4 * t) <<< 4 = x <<< (4 * (t + 1)) := by
-  rw [← BitVec.shiftLeft_add, show 4 * t + 4 = 4 * (t + 1) by omega]
+  rw [← BitVec.shiftLeft_add, show 4 * t + 4 = 4 * (t + 1) by omega_using []]
 
 /-- The digit `8 i + p` of `E` is the digit `p` of its 32-bit word `i`. -/
 theorem digit_word (E i p : Nat) (hp : p < 8) :
     E / 2 ^ (32 * i) % 2 ^ 32 / 2 ^ (4 * p) % 2 ^ 4 = E / 16 ^ (8 * i + p) % 16 := by
-  rw [mod_div_mod (by omega), Nat.div_div_eq_div_mul, ← Nat.pow_add, sixteen_pow,
-    show 32 * i + 4 * p = 4 * (8 * i + p) by omega]
+  rw [mod_div_mod (by omega_using [hp]), Nat.div_div_eq_div_mul, ← Nat.pow_add, sixteen_pow,
+    show 32 * i + 4 * p = 4 * (8 * i + p) by omega_using []]
 
 /-- `(r − q) >> 31` for small `r` and `q`: whether `r < q`. -/
 theorem mask_lt {r q : Nat} (hr : r < 2 ^ 31) (hq : q < 2 ^ 31) :
     ((BitVec.ofNat 32 r - BitVec.ofNat 32 q) >>> 31).toNat = (decide (r < q)).toNat := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (a := r) (by omega), Nat.mod_eq_of_lt (a := q) (by omega)]
+    Nat.mod_eq_of_lt (a := r) (by omega_using [hr]), Nat.mod_eq_of_lt (a := q) (by omega_using [hq])]
   by_cases h : r < q
   · simp only [h, decide_true, Bool.toNat_true]
-    rw [show 2 ^ 32 - q + r = 2 ^ 32 - (q - r) by omega, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show 2 ^ 32 - q + r = 2 ^ 32 - (q - r) by omega_using [hq, h], Nat.mod_eq_of_lt (by omega_using [h])]
+    omega_using [hq, h]
   · simp only [h, decide_false, Bool.toNat_false]
-    rw [show 2 ^ 32 - q + r = (r - q) + 2 ^ 32 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [show 2 ^ 32 - q + r = (r - q) + 2 ^ 32 by omega_using [hr, h], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hr])]
+    omega_using [hr]
 
 /-- The scan's mask: `((d ⊕ j) − 1) >> 31` is whether the digit `d` is `j`. -/
 theorem mask_eq : ∀ d < 16, ∀ j < 16,

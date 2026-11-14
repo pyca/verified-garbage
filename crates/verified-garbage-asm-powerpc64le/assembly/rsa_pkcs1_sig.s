@@ -1975,26 +1975,26 @@ vg_rsa_pkcs1_recover_precomputed:
 21:
 	blr
 
-vg_rsa_pkcs1_sign:
-	stdu %r1, -1264(%r1)
+vg_rsa_pkcs1_sign_precomputed:
+	stdu %r1, -1280(%r1)
 	addi %r12, %r1, 0
-	std %r26, 192(%r12)
-	std %r27, 200(%r12)
-	std %r28, 208(%r12)
-	std %r29, 216(%r12)
-	std %r30, 224(%r12)
+	std %r26, 208(%r12)
+	std %r27, 216(%r12)
+	std %r28, 224(%r12)
+	std %r29, 232(%r12)
+	std %r30, 240(%r12)
 	mflr %r0
-	std %r0, 232(%r12)
+	std %r0, 248(%r12)
 	or %r26, %r3, %r3
 	or %r27, %r5, %r5
 	or %r28, %r6, %r6
 	or %r29, %r7, %r7
 	or %r30, %r8, %r8
-	addi %r4, %r12, 240
+	addi %r4, %r12, 256
 	or %r5, %r28, %r28
 	rlwinm %r6, %r9, 0, 0, 31
 	or %r7, %r10, %r10
-	ld %r8, 1360(%r12)
+	ld %r8, 1376(%r12)
 	addi %r9, %r6, -0
 	cmplwi %cr0, %r9, 0
 	beq %cr0, 20f
@@ -2880,41 +2880,45 @@ vg_rsa_pkcs1_sign:
 	cmpldi %cr0, %r3, 0
 	beq %cr0, 254f
 	addi %r12, %r1, 0
-	ld %r0, 1368(%r12)
-	std %r0, 96(%r12)
-	ld %r0, 1376(%r12)
-	std %r0, 104(%r12)
 	ld %r0, 1384(%r12)
-	std %r0, 112(%r12)
+	std %r0, 96(%r12)
 	ld %r0, 1392(%r12)
-	std %r0, 120(%r12)
+	std %r0, 104(%r12)
 	ld %r0, 1400(%r12)
-	std %r0, 128(%r12)
+	std %r0, 112(%r12)
 	ld %r0, 1408(%r12)
-	std %r0, 136(%r12)
+	std %r0, 120(%r12)
 	ld %r0, 1416(%r12)
-	std %r0, 144(%r12)
+	std %r0, 128(%r12)
 	ld %r0, 1424(%r12)
-	std %r0, 152(%r12)
+	std %r0, 136(%r12)
 	ld %r0, 1432(%r12)
-	std %r0, 160(%r12)
+	std %r0, 144(%r12)
 	ld %r0, 1440(%r12)
-	std %r0, 168(%r12)
+	std %r0, 152(%r12)
 	ld %r0, 1448(%r12)
-	std %r0, 176(%r12)
+	std %r0, 160(%r12)
 	ld %r0, 1456(%r12)
+	std %r0, 168(%r12)
+	ld %r0, 1464(%r12)
+	std %r0, 176(%r12)
+	ld %r0, 1472(%r12)
 	std %r0, 184(%r12)
+	ld %r0, 1480(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 1488(%r12)
+	std %r0, 200(%r12)
 	or %r3, %r26, %r26
 	or %r4, %r28, %r28
 	or %r5, %r27, %r27
 	or %r6, %r28, %r28
 	or %r7, %r29, %r29
 	or %r8, %r30, %r30
-	addi %r9, %r12, 240
+	addi %r9, %r12, 256
 	or %r10, %r28, %r28
-	bl {vg_rsa_private_checked}
+	bl {vg_rsa_private_checked_precomputed}
 	addi %r12, %r1, 0
-	addi %r7, %r12, 240
+	addi %r7, %r12, 256
 	or %r8, %r28, %r28
 	li %r0, 0
 256:
@@ -2936,12 +2940,12 @@ vg_rsa_pkcs1_sign:
 	bne %cr0, 257b
 255:
 	addi %r12, %r1, 0
-	ld %r0, 232(%r12)
+	ld %r0, 248(%r12)
 	mtlr %r0
-	ld %r26, 192(%r12)
-	ld %r27, 200(%r12)
-	ld %r28, 208(%r12)
-	ld %r29, 216(%r12)
-	ld %r30, 224(%r12)
-	addi %r1, %r1, 1264
+	ld %r26, 208(%r12)
+	ld %r27, 216(%r12)
+	ld %r28, 224(%r12)
+	ld %r29, 232(%r12)
+	ld %r30, 240(%r12)
+	addi %r1, %r1, 1280
 	blr

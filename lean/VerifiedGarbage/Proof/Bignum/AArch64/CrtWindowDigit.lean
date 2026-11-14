@@ -20,7 +20,7 @@ theorem digitMask (V shift : Nat) (hV : V < 2 ^ 64) :
     Nat.mod_eq_of_lt hV, Nat.shiftRight_eq_div_pow,
     show (BitVec.setWidth 64 (31#16)).toNat = 2 ^ 5 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- The digit write preserves every other byte and every register outside
 `x3` and `x4`, including the packed group itself. -/

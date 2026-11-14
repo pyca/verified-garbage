@@ -47,39 +47,39 @@ theorem qword_or (x y : BitVec 128) (i : Nat) : qword (x ||| y) i = qword x i ||
 theorem qword_andn (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (~~~x &&& y) i = ~~~qword x i &&& qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp [qword, hj, show 64 * i + j < 128 by omega]
+  simp [qword, hj, show 64 * i + j < 128 by omega_using [hi, hj]]
 
 theorem qword_psllq (x : BitVec 128) {n : BitVec 8} (hn : n.toNat < 64) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psllq x n) i = qword x i <<< n.toNat := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [hn], ite_false]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp
 
 theorem qword_psrlq (x : BitVec 128) {n : BitVec 8} (hn : n.toNat < 64) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psrlq x n) i = qword x i >>> n.toNat := by
-  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega, ite_false]
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp
+  simp only [XShiftOp.eval, show ¬ 63 < n.toNat by omega_using [hn], ite_false]
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> simp
 
 theorem mod2_lt (k : Nat) : k % 2 < 2 := Nat.mod_lt _ (by decide)
 
-theorem cases4 {k : Nat} (hk : k < 4) : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega
+theorem cases4 {k : Nat} (hk : k < 4) : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_using [hk]
 
 theorem ymm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
     (s.ymm r).extractLsb' (128 * l) 128 = s.lane r l := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [State.ymm, State.lane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hj, decide_true,
     Bool.true_and]
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hj]
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hj]
 
 /-- Element `k` of a 256-bit register, as bits of the whole. -/
 theorem q4_ymm (s : State) (r : XReg) {k : Nat} (hk : k < 4) :
     (s.ymm r).extractLsb' (64 * k) 64 = q4 s r k := by
-  rw [q4, ← ymm_lane _ _ (show k / 2 < 2 by omega), qword, extract_extract _ _ _ _ _ (by omega)]
-  congr 1; omega
+  rw [q4, ← ymm_lane _ _ (show k / 2 < 2 by omega_using [hk]), qword, extract_extract _ _ _ _ _ (by omega_using [])]
+  congr 1; omega_using []
 
 /-- A ROTL by `n` as the two shifts. -/
 theorem shr_or_shl (v : BitVec 64) {n : Nat} (h₁ : 0 < n) (h₂ : n < 64) :
     v >>> (64 - n) ||| v <<< n = v.rotateRight (64 - n) := by
-  rw [BitVec.rotateRight_def, Nat.mod_eq_of_lt (by omega), show 64 - (64 - n) = n by omega]
+  rw [BitVec.rotateRight_def, Nat.mod_eq_of_lt (by omega_using [h₁]), show 64 - (64 - n) = n by omega_using [h₂]]
 
 /-! ## The machine -/
 
@@ -138,16 +138,16 @@ theorem wp_vandn {d a b : XReg}
 theorem wp_vshl {d a : XReg} {n : Nat} (hn : n < 64)
     (k : ∀ s', VUpd s s' d (fun i => q4 s a i <<< n) → WP isa (.block is) s' Q) :
     WP isa (.block (vsh .psllq d a n :: is)) s Q := by
-  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; omega
+  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; omega_using [hn]
   exact WP.cons rfl (k _ (VUpd.vshift _ _ _ _ _ fun _ _ => by
-    rw [qword_psllq _ (by omega) (mod2_lt _), e]; rfl))
+    rw [qword_psllq _ (by omega_using [hn, e]) (mod2_lt _), e]; rfl))
 
 theorem wp_vshr {d a : XReg} {n : Nat} (hn : n < 64)
     (k : ∀ s', VUpd s s' d (fun i => q4 s a i >>> n) → WP isa (.block is) s' Q) :
     WP isa (.block (vsh .psrlq d a n :: is)) s Q := by
-  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; omega
+  have e : (BitVec.ofNat 8 n).toNat = n := by rw [BitVec.toNat_ofNat]; omega_using [hn]
   exact WP.cons rfl (k _ (VUpd.vshift _ _ _ _ _ fun _ _ => by
-    rw [qword_psrlq _ (by omega) (mod2_lt _), e]; rfl))
+    rw [qword_psrlq _ (by omega_using [hn, e]) (mod2_lt _), e]; rfl))
 
 theorem wp_vmovq {d : XReg} {g : Reg}
     (k : ∀ s', VUpd s s' d (fun i => if i = 0 then s.gpr g else 0) → WP isa (.block is) s' Q) :
@@ -166,7 +166,7 @@ theorem wp_vbcast {d a : XReg}
   refine WP.cons rfl (k _ ⟨fun i hi => ?_, fun r hr i _ => ?_, VOp.exec_gpr _ _, VOp.exec_mem _ _,
     VOp.exec_rd _ _, VOp.exec_wr _ _⟩)
   · simp only [VOp.exec, q4, State.lane_setV256, ite_true]
-    have : i % 2 = 0 ∨ i % 2 = 1 := by omega
+    have : i % 2 = 0 ∨ i % 2 = 1 := by omega_using []
     rcases this with h | h <;> rw [h] <;> split <;> simp [State.lane]
   · simp only [VOp.exec, q4, State.lane_setV256, ite_eq_right hr]
 
@@ -181,9 +181,9 @@ theorem wp_vld {d : XReg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     have e : (if i / 2 = 0 then (s.mem.readW a 256).extractLsb' 0 128 else (s.mem.readW a 256).extractLsb' 128 128) =
         (s.mem.readW a 256).extractLsb' (128 * (i / 2)) 128 := by
       rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
-    rw [e, qword, extract_extract _ _ _ _ _ (by omega),
-      show 128 * (i / 2) + 64 * (i % 2) = 8 * (8 * i) by omega]
-    exact readW_extract _ _ (k := 8 * i) (n := 8) (by omega)
+    rw [e, qword, extract_extract _ _ _ _ _ (by omega_using []),
+      show 128 * (i / 2) + 64 * (i % 2) = 8 * (8 * i) by omega_using []]
+    exact readW_extract _ _ (k := 8 * i) (n := 8) (by omega_using [hi])
   · simp only [q4, State.lane_setV256, ite_eq_right hr]
 
 /-- `vpxor d, a, [m]`: the four elements of `a` with those at `p`. -/
@@ -201,9 +201,9 @@ theorem wp_vxorLd {d a : XReg} {m : MemOp} {p : Addr} (hp : s.ea m = p)
         else VBinOp.vpxor.sse.eval (s.lane a 1) ((s.mem.readW p 256).extractLsb' 128 128)) =
         s.lane a (i / 2) ^^^ (s.mem.readW p 256).extractLsb' (128 * (i / 2)) 128 := by
       rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
-    rw [e, qword_xor, qword, qword, extract_extract _ _ _ _ _ (by omega),
-      show 128 * (i / 2) + 64 * (i % 2) = 8 * (8 * i) by omega]
-    rw [readW_extract _ _ (k := 8 * i) (n := 8) (by omega)]
+    rw [e, qword_xor, qword, qword, extract_extract _ _ _ _ _ (by omega_using []),
+      show 128 * (i / 2) + 64 * (i % 2) = 8 * (8 * i) by omega_using []]
+    rw [readW_extract _ _ (k := 8 * i) (n := 8) (by omega_using [hi])]
   · simp only [q4, State.lane_setV256, ite_eq_right hr]
 
 theorem wp_vst {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 32)

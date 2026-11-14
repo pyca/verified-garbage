@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sha3
 public import VerifiedGarbage.Impl.Sha3.Tables
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # SHA-3: lemmas about the specification
@@ -34,7 +35,7 @@ theorem rhoOff_lt : ∀ j < 25, rhoOff j < 64 := by decide
 theorem rotateLeft_zero (x : Lane) : x.rotateLeft 0 = x := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft]
-  split <;> first | (exfalso; omega) | exact getElem_congr rfl (by omega) _
+  split <;> first | (exfalso; omega) | exact getElem_congr rfl (by omega_using []) _
 
 theorem rho_get (A : State) {j : Nat} (hj : j < 25) :
     (rho A)[j] = A[j].rotateLeft (rhoOff j) := by
@@ -67,13 +68,13 @@ theorem rotateLeft_eq (x : Lane) {k : Nat} (hk : 0 < k) (hk' : k < 64) :
     x.rotateLeft k = x.rotateRight (64 - k) := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_rotateRight]
-  split <;> split <;> first | (exfalso; omega) | exact getElem_congr rfl (by omega) _
+  split <;> split <;> first | (exfalso; omega) | exact getElem_congr rfl (by omega_using [hk, hk']) _
 
 theorem rotl_eq (v : Lane) {k : Nat} (hk : k < 64) : rotl v k = v.rotateLeft k := by
   unfold rotl
   split
   · subst_vars; rw [rotateLeft_zero]
-  · rw [rotateLeft_eq _ (by omega) hk]
+  · rw [rotateLeft_eq _ (by omega_arith) hk]
 
 theorem getElem!_eq (A : State) {i : Nat} (hi : i < 25) : A[i]! = A[i] := by
   simp [hi]
@@ -90,40 +91,40 @@ theorem theta_get (A : State) {j : Nat} (hj : j < 25) : (theta A)[j] = A[j] ^^^ 
       lane_mod A hx _ (by decide : 4 < 5), C]
     rfl
   simp only [theta, Vector.getElem_ofFn]
-  rw [hC _ (Nat.mod_lt _ (by omega)), hC _ (Nat.mod_lt _ (by omega)), D,
+  rw [hC _ (Nat.mod_lt _ (by omega_using [])), hC _ (Nat.mod_lt _ (by omega_using [])), D,
     rotateLeft_eq _ (by decide) (by decide), BitVec.xor_comm (C A _)]
   rfl
 
 theorem B_eq (A : State) {x y : Nat} (hx : x < 5) (_hy : y < 5) :
-    B A x y = (rho (theta A))[piSrc x y]'(by simp only [piSrc]; omega) := by
-  have hj : piSrc x y < 25 := by simp only [piSrc]; omega
+    B A x y = (rho (theta A))[piSrc x y]'(by simp only [piSrc]; omega_using [hx]) := by
+  have hj : piSrc x y < 25 := by simp only [piSrc]; omega_using [hx]
   rw [rho_get _ hj, theta_get _ hj, B, rotl_eq _ (rhoOff_lt _ hj), getElem!_eq _ hj]
   congr 3
-  simp only [piSrc]; omega
+  simp only [piSrc]; omega_using []
 
 theorem pi_get (R : State) {x y : Nat} (hx : x < 5) (hy : y < 5) :
-    (pi R)[x + 5 * y]'(by omega) = R[piSrc x y]'(by simp only [piSrc]; omega) := by
+    (pi R)[x + 5 * y]'(by omega_using [hx, hy]) = R[piSrc x y]'(by simp only [piSrc]; omega_using [hx]) := by
   simp only [pi, Vector.getElem_ofFn, lane]
-  rw [getElem!_eq _ (by omega)]
+  rw [getElem!_eq _ (by omega_using [])]
   congr 1
   simp only [piSrc]
-  rw [show (x + 5 * y) % 5 = x by omega, show (x + 5 * y) / 5 = y by omega, Nat.mod_eq_of_lt hx]
+  rw [show (x + 5 * y) % 5 = x by omega_using [hx], show (x + 5 * y) / 5 = y by omega_using [hx], Nat.mod_eq_of_lt hx]
 
 theorem chi_get (P : State) {x y : Nat} (hx : x < 5) (hy : y < 5) :
-    (chi P)[x + 5 * y]'(by omega) =
-      P[x + 5 * y]'(by omega) ^^^
-        (~~~(P[(x + 1) % 5 + 5 * y]'(by omega)) &&& P[(x + 2) % 5 + 5 * y]'(by omega)) := by
+    (chi P)[x + 5 * y]'(by omega_using [hx, hy]) =
+      P[x + 5 * y]'(by omega_using [hx, hy]) ^^^
+        (~~~(P[(x + 1) % 5 + 5 * y]'(by omega_using [hy])) &&& P[(x + 2) % 5 + 5 * y]'(by omega_using [hy])) := by
   simp only [chi, Vector.getElem_ofFn]
-  rw [show (x + 5 * y) % 5 = x by omega, show (x + 5 * y) / 5 = y by omega]
+  rw [show (x + 5 * y) % 5 = x by omega_using [hx], show (x + 5 * y) / 5 = y by omega_using [hx]]
   simp only [lane, Nat.mod_eq_of_lt hy, Nat.mod_eq_of_lt hx]
-  rw [getElem!_eq _ (by omega), getElem!_eq _ (by omega), getElem!_eq _ (by omega)]
+  rw [getElem!_eq _ (by omega_using [hx, hy]), getElem!_eq _ (by omega_using [hy]), getElem!_eq _ (by omega_using [hy])]
 
 theorem rnd_get (A : State) (ir : Nat) {x y : Nat} (hx : x < 5) (hy : y < 5) :
-    (rnd A ir)[x + 5 * y]'(by omega) = out A (RC ir) x y := by
-  have hP : ∀ x' (hx' : x' < 5), (pi (rho (theta A)))[x' + 5 * y]'(by omega) = B A x' y := fun x' hx' => by
+    (rnd A ir)[x + 5 * y]'(by omega_using [hx, hy]) = out A (RC ir) x y := by
+  have hP : ∀ x' (hx' : x' < 5), (pi (rho (theta A)))[x' + 5 * y]'(by omega_using [hy, hx']) = B A x' y := fun x' hx' => by
     rw [pi_get _ hx' hy, B_eq _ hx' hy]
   have hchi := chi_get (pi (rho (theta A))) hx hy
-  rw [hP x hx, hP _ (Nat.mod_lt _ (by omega)), hP _ (Nat.mod_lt _ (by omega))] at hchi
+  rw [hP x hx, hP _ (Nat.mod_lt _ (by omega_using [])), hP _ (Nat.mod_lt _ (by omega_using []))] at hchi
   have hnot : ∀ v : Lane, ~~~v = v ^^^ 0xffffffffffffffff := fun v => by
     rw [BitVec.xor_comm]; rfl
   simp only [rnd, iota, out]
@@ -132,7 +133,7 @@ theorem rnd_get (A : State) (ir : Nat) {x y : Nat} (hx : x < 5) (hy : y < 5) :
     simp only [Vector.getElem_set_self, and_self, ite_true]
     rw [show (chi (pi (rho (theta A))))[0] = (chi (pi (rho (theta A))))[0 + 5 * 0] from rfl, hchi,
       hnot, BitVec.xor_comm (B A 0 0)]
-  · rw [Vector.getElem_set_ne _ _ (by omega), hchi, hnot, BitVec.xor_comm (B A x y)]
+  · rw [Vector.getElem_set_ne _ _ (by omega_using [h0]), hchi, hnot, BitVec.xor_comm (B A x y)]
     simp only [h0, ite_false]
 
 end VG.Proof.Sha3

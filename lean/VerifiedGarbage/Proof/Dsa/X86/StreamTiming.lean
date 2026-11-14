@@ -50,7 +50,7 @@ theorem zeros_pair {n size len j : Nat} {base : Addr} {src : Src} (hj : j = 6 �
   have hb : slot n 9 ≤ size := hz
   have b9 := slot_le (n := n) (i := 7) (j := 9) (by decide)
   simp only [stride] at b b6 b9
-  have hsz : slot n j + 4 * (2 * n) ≤ size := by rcases hj with rfl | rfl <;> omega
+  have hsz : slot n j + 4 * (2 * n) ≤ size := by rcases hj with rfl | rfl <;> omega_arith
   have T : RelCT isa (VG.X86.Taint.Agree (workspaceTaint true)) (zerosW (slot n j) (2 * n))
       (VG.X86.Taint.Agree (workspaceTaint true)) :=
     by
@@ -61,13 +61,13 @@ theorem zeros_pair {n size len j : Nat} {base : Addr} {src : Src} (hj : j = 6 �
       (VG.X86.Taint.Agree (workspaceTaint true)) := T.mono (fun _ _ P => P.agree) (fun _ _ h => h)
   refine (T'.wpDep
     (F := fun (s s' : State) => Outside base (slot n j) (4 * (2 * n)) s.mem s'.mem ∧ Keeps [.eax, .ebp, .edx] s s')
-    fun s t (P : StreamPair n size len base src s t) => ⟨WP.mono (zerosW_ok P.scr₁ (by omega) hsz) fun _ ⟨O, _, K⟩ => ⟨O, K⟩,
-      WP.mono (zerosW_ok P.scr₂ (by omega) hsz) fun _ ⟨O, _, K⟩ => ⟨O, K⟩⟩).mono (fun _ _ h => h) ?_
+    fun s t (P : StreamPair n size len base src s t) => ⟨WP.mono (zerosW_ok P.scr₁ (by omega_using [hn]) hsz) fun _ ⟨O, _, K⟩ => ⟨O, K⟩,
+      WP.mono (zerosW_ok P.scr₂ (by omega_using [hn]) hsz) fun _ ⟨O, _, K⟩ => ⟨O, K⟩⟩).mono (fun _ _ h => h) ?_
   rintro s' t' ⟨A, σ₁, σ₂, P, ⟨O₁, K₁⟩, ⟨O₂, K₂⟩⟩
   have r : ∀ {σ σ' : State}, Outside base (slot n j) (4 * (2 * n)) σ.mem σ'.mem →
       Outs base (streamRanges n) σ.mem σ'.mem := fun O =>
     Outs.of_outside (o := slot n j) (n := 4 * (2 * n)) O (by
-      rw [show 4 * (2 * n) = 8 * n by omega]
+      rw [show 4 * (2 * n) = 8 * n by omega_using []]
       rcases hj with rfl | rfl <;> simp [streamRanges])
   exact ⟨A, P.scr₁.of_keeps K₁ (by decide), P.scr₂.of_keeps K₂ (by decide),
     P.len₁.trans K₁.2.1 K₁.2.2 (r O₁), P.len₂.trans K₂.2.1 K₂.2.2 (r O₂)⟩

@@ -32,13 +32,13 @@ theorem core_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}
   refine WP.seq (WP.mono (squares_ok hc hw hw' hmod hb) fun a ⟨ca,va,ha,fa,ka⟩ => ?_)
   have ta := ht.of_win fa hc.scrT.nowrap
   have et : wv a.mem P (slot w (8+v)) w = wv s.mem P (slot w (8+v)) w :=
-    fa.wv_eq (fun r hr => by have := crtWinRanges_ent w v r hr; omega)
-      (by have := CrtWindowFive.ent32_le w hv; have := hc.scrT.nowrap; omega)
-  refine WP.seq (WP.mono (WindowVector.blocked_ok ca (by omega) hw' hmod hv ta.tab
+    fa.wv_eq (fun r hr => by have := crtWinRanges_ent w v r hr; omega_using [this])
+      (by have := CrtWindowFive.ent32_le w hv; have := hc.scrT.nowrap; omega_arith)
+  refine WP.seq (WP.mono (WindowVector.blocked_ok ca (by omega_using [hw]) hw' hmod hv ta.tab
     (by rw [ha _ (by decide) (by decide)]; exact hnib)) fun b ⟨cb,tb,fb,kb⟩ => ?_)
   have ey := WindowFive.selection_keeps_y fb ca.good.scr.nowrap
   refine WP.mono (WindowArithmetic.product_ok (o := aY) (a := aY) (b := Crt.aT)
-    cb.good.scr cb.good.x0 cb.good.hdr (Nat.le_refl _) hw (by omega) hmod
+    cb.good.scr cb.good.x0 cb.good.hdr (Nat.le_refl _) hw (by omega_using [hw']) hmod
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) cb.inv (by rw [cb.n,tb]; exact ta.lt v hv))
     fun t ⟨yt,vt,hat,kt⟩ => ?_
@@ -55,11 +55,11 @@ theorem core_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}
   rw [hat.hslot hk, fb.word_eq (fun r hr => by
     simp only [selRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · have := hdr_lt_slot w Crt.aT hk; simp only; omega
-    · simp only; omega
-    · simp only; omega) (by
+    · have := hdr_lt_slot w Crt.aT hk; simp only; omega_using [this]
+    · simp only; omega_using [he]
+    · simp only; omega_using [hj]) (by
       have := hdr_lt_slot w 8 hk
       have := ca.good.scr.nowrap
-      omega), ha k hk hb']
+      omega_using [hk]), ha k hk hb']
 
 end VG.Proof.Bignum.AArch64.WindowShared

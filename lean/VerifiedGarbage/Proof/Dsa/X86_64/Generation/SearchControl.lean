@@ -27,7 +27,7 @@ theorem searchAdvanceHead_ok {s : State} {B : Addr} {counter stride limit : Nat}
   have hld : ∀ d, d + 8 ≤ 24 → InRegions (s.rd ++ s.wr) (off B d) 8 := fun _ hd => h.scr.ld hd
   have hst : ∀ d, d + 8 ≤ 24 → InRegions s.wr (off B d) 8 := fun _ hd => h.scr.st hd
   have hsmall : ∀ n ≤ 12288, (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n :=
-    fun n hn => sx_ofNat (by omega)
+    fun n hn => sx_ofNat (by omega_using [hn])
   let m := (s.mem.writeW (off B 0) (BitVec.ofNat 64 (counter + 1))).writeW
     (off B 8) (BitVec.ofNat 64 (1 + (counter + 1) * stride))
   have hload : word (s.mem.writeW (off B 0) (BitVec.ofNat 64 (counter + 1))) B 8 =
@@ -41,11 +41,11 @@ theorem searchAdvanceHead_ok {s : State} {B : Addr} {counter stride limit : Nat}
       t.cf = some (decide (counter + 1 < limit))) (by
     xrun [Impl.Dsa.X86_64.Generation.pSearchAdvanceHead, State.ea, hdr, hdrOff, h.rdi,
       hld 0 (by decide), hld 8 (by decide), hst 0 (by decide), hst 8 (by decide),
-      h.count, hsmall stride (by omega), hsmall limit hl, hinc, hload, ← BitVec.ofNat_add]
+      h.count, hsmall stride (by omega_using [hs]), hsmall limit hl, hinc, hload, ← BitVec.ofNat_add]
     constructor
     · simp [m, Nat.add_mul, Nat.add_assoc]
-    · simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : counter + 1 < 2 ^ 64),
-        Nat.mod_eq_of_lt (by omega : limit < 2 ^ 64)]) rfl) fun t ⟨⟨hm, hcf⟩, hk⟩ => ?_
+    · simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc, hl] : counter + 1 < 2 ^ 64),
+        Nat.mod_eq_of_lt (by omega_using [hl] : limit < 2 ^ 64)]) rfl) fun t ⟨⟨hm, hcf⟩, hk⟩ => ?_
   have ho : Outside B 0 16 s.mem t.mem := by
     rw [hm]
     exact ((writeW_outside _ B _ (d := 0) (by decide)).mono (by decide) (by decide)).trans

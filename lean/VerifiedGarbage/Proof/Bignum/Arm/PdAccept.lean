@@ -43,7 +43,7 @@ theorem pdSaveAcceptance_ok (s : State) {base dst np ep xp : BitVec 32} {len k e
     ⟨_, h.stack.frameWritable, Offset.contains_base _ (by decide) (by decide)⟩
   have sep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨off (State.addr s.sp) 48, 4⟩ :=
     h.stack.separate.symm.sub_right (Offset.sub_base _ (by decide))
-  refine WP.mono (saveAcceptance_ready s h.ready (by have := h.stack.nowrap; omega) write sep) ?_
+  refine WP.mono (saveAcceptance_ready s h.ready (by have := h.stack.nowrap; omega_using [this]) write sep) ?_
   rintro t ⟨ready, saved, eq, frame, rest, mem⟩
   have fits : arrAt (Spec.Rsa.modulusWords k) 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have arithmetic : PdArithmetic base dst np ep xp len k eLen N R eb xb t :=

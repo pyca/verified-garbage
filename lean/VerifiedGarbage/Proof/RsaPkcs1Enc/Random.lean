@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Drawing the padding string from a tape: the scan
@@ -52,8 +53,8 @@ theorem scanLen_le : ∀ (n : Nat) (rand : List Byte), scanLen n rand ≤ rand.l
   | n + 1, b :: rand => by
     unfold scanLen
     split
-    · have := scanLen_le (n + 1) rand; simp only [List.length_cons]; omega
-    · have := scanLen_le n rand; simp only [List.length_cons]; omega
+    · have := scanLen_le (n + 1) rand; simp only [List.length_cons]; omega_using [this]
+    · have := scanLen_le n rand; simp only [List.length_cons]; omega_using [this]
 
 /-- With fewer than `n` nonzero octets before it, the scan of `xs ++ ys`
 reads all of `xs` and goes on in `ys` for the rest. -/
@@ -74,17 +75,17 @@ theorem nonzeroPrefix_append : ∀ {n : Nat} (xs ys : List Byte), (nz xs).length
       congr 1
       funext r
       simp only [Function.comp, Prod.mk.injEq, true_and]
-      omega
+      omega_using []
     · have e : nz (b :: xs) = b :: nz xs := nz_cons_ne hb xs
       rw [e] at h ⊢
       simp only [List.length_cons] at h
-      rw [List.cons_append, nonzeroPrefix, ite_eq_right hb, nonzeroPrefix_append xs ys (by omega),
+      rw [List.cons_append, nonzeroPrefix, ite_eq_right hb, nonzeroPrefix_append xs ys (by omega_using [h]),
         Option.map_map]
       simp only [List.length_cons, Nat.add_sub_add_right]
       congr 1
       funext r
       simp only [Function.comp, List.cons_append, Prod.mk.injEq, true_and]
-      omega
+      omega_using []
 
 theorem scanLen_append : ∀ {n : Nat} (xs ys : List Byte), (nz xs).length < n →
     scanLen n (xs ++ ys) = xs.length + scanLen (n - (nz xs).length) ys
@@ -96,12 +97,12 @@ theorem scanLen_append : ∀ {n : Nat} (xs ys : List Byte), (nz xs).length < n �
       have e : nz ((0 : Byte) :: xs) = nz xs := nz_cons_zero xs
       rw [e] at h ⊢
       rw [List.cons_append, scanLen, ite_eq_left rfl, scanLen_append xs ys h]
-      simp only [List.length_cons]; omega
+      simp only [List.length_cons]; omega_using []
     · have e : nz (b :: xs) = b :: nz xs := nz_cons_ne hb xs
       rw [e] at h ⊢
       simp only [List.length_cons] at h
-      rw [List.cons_append, scanLen, ite_eq_right hb, scanLen_append xs ys (by omega)]
-      simp only [List.length_cons, Nat.add_sub_add_right]; omega
+      rw [List.cons_append, scanLen, ite_eq_right hb, scanLen_append xs ys (by omega_using [h])]
+      simp only [List.length_cons, Nat.add_sub_add_right]; omega_using []
 
 /-- Fewer than `n` nonzero octets: no padding string, and the scan reads
 them all. -/
@@ -110,7 +111,7 @@ theorem nonzeroPrefix_none {n : Nat} {xs : List Byte} (h : (nz xs).length < n) :
   have := nonzeroPrefix_append xs [] h
   rw [List.append_nil] at this
   rw [this]
-  obtain ⟨m, hm⟩ : ∃ m, n - (nz xs).length = m + 1 := ⟨n - (nz xs).length - 1, by omega⟩
+  obtain ⟨m, hm⟩ : ∃ m, n - (nz xs).length = m + 1 := ⟨n - (nz xs).length - 1, by omega_using [h]⟩
   rw [hm]; rfl
 
 theorem scanLen_all {n : Nat} {xs : List Byte} (h : (nz xs).length < n) :
@@ -118,7 +119,7 @@ theorem scanLen_all {n : Nat} {xs : List Byte} (h : (nz xs).length < n) :
   have := scanLen_append xs [] h
   rw [List.append_nil] at this
   rw [this]
-  obtain ⟨m, hm⟩ : ∃ m, n - (nz xs).length = m + 1 := ⟨n - (nz xs).length - 1, by omega⟩
+  obtain ⟨m, hm⟩ : ∃ m, n - (nz xs).length = m + 1 := ⟨n - (nz xs).length - 1, by omega_using [h]⟩
   rw [hm]; rfl
 
 /-- The `n`th nonzero octet `b` after `xs`: the padding string is `xs`'s
@@ -126,12 +127,12 @@ nonzero octets and `b`, and the scan stops after `b`. -/
 theorem nonzeroPrefix_last {n : Nat} {xs : List Byte} {b : Byte} (ys : List Byte) (hb : b ≠ 0)
     (h : (nz xs).length + 1 = n) :
     nonzeroPrefix n (xs ++ b :: ys) = some (nz xs ++ [b], xs.length + 1) := by
-  rw [nonzeroPrefix_append xs (b :: ys) (by omega), show n - (nz xs).length = 0 + 1 by omega]
+  rw [nonzeroPrefix_append xs (b :: ys) (by omega_using [h]), show n - (nz xs).length = 0 + 1 by omega_using [h]]
   simp only [nonzeroPrefix, ite_eq_right hb, Option.map]
 
 theorem scanLen_last {n : Nat} {xs : List Byte} {b : Byte} (ys : List Byte) (hb : b ≠ 0)
     (h : (nz xs).length + 1 = n) : scanLen n (xs ++ b :: ys) = xs.length + 1 := by
-  rw [scanLen_append xs (b :: ys) (by omega), show n - (nz xs).length = 0 + 1 by omega]
+  rw [scanLen_append xs (b :: ys) (by omega_using [h]), show n - (nz xs).length = 0 + 1 by omega_using [h]]
   simp only [scanLen, ite_eq_right hb]
 
 /-- The scan, still short of `n` nonzero octets and with octets left, reads
@@ -142,14 +143,14 @@ theorem lt_scanLen {n i : Nat} {rand : List Byte} (h : (nz (rand.take i)).length
   rw [List.take_append_drop] at e
   rw [e, List.length_take, Nat.min_eq_left (Nat.le_of_lt hi)]
   obtain ⟨m, hm⟩ : ∃ m, n - (nz (rand.take i)).length = m + 1 :=
-    ⟨n - (nz (rand.take i)).length - 1, by omega⟩
+    ⟨n - (nz (rand.take i)).length - 1, by omega_using [h]⟩
   rw [hm]
   obtain ⟨b, ys, hd⟩ : ∃ b ys, rand.drop i = b :: ys := by
     cases hc : rand.drop i with
     | nil => rw [List.drop_eq_nil_iff] at hc; omega
     | cons b ys => exact ⟨b, ys, rfl⟩
   rw [hd, scanLen]
-  split <;> omega
+  split <;> omega_using []
 
 /-! ## The trace -/
 
@@ -183,7 +184,7 @@ theorem nonzeroPrefix_isSome : ∀ {n : Nat} {rand : List Byte}, n ≤ (nz rand)
       exact ⟨_, by rw [nonzeroPrefix, ite_eq_left hb, hr]; rfl⟩
     · have e : nz (b :: rand) = b :: nz rand := nz_cons_ne hb rand
       rw [e, List.length_cons] at h
-      obtain ⟨r, hr⟩ := nonzeroPrefix_isSome (n := m) (rand := rand) (by omega)
+      obtain ⟨r, hr⟩ := nonzeroPrefix_isSome (n := m) (rand := rand) (by omega_using [h])
       exact ⟨_, by rw [nonzeroPrefix, ite_eq_right hb, hr]; rfl⟩
 
 theorem trace_eq (n : Nat) (rand : List Byte) :
@@ -196,7 +197,7 @@ theorem trace_eq (n : Nat) (rand : List Byte) :
     have : scanLen n rand = rand.length := by
       by_cases hl : (nz rand).length < n
       · exact scanLen_all hl
-      · obtain ⟨r, hr⟩ := nonzeroPrefix_isSome (n := n) (rand := rand) (by omega)
+      · obtain ⟨r, hr⟩ := nonzeroPrefix_isSome (n := n) (rand := rand) (by omega_using [hl])
         rw [hr] at hn; cases hn
     split <;> simp only [this, List.take_length]
 
@@ -223,9 +224,9 @@ theorem zero_iff {n i : Nat} {r₁ r₂ : List Byte}
   have e := congrArg (fun l => l.getD i 0) h
   simp only [zeroMask, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_take,
     ite_eq_left hi] at e
-  rw [List.getElem?_eq_getElem (by omega), List.getElem?_eq_getElem (by omega)] at e
+  rw [List.getElem?_eq_getElem (by omega_using [hi, h1]), List.getElem?_eq_getElem (by omega_using [hi, hs, h2])] at e
   rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (by omega), List.getElem?_eq_getElem (by omega), Option.getD_some,
+    List.getElem?_eq_getElem (by omega_using [hi, h1]), List.getElem?_eq_getElem (by omega_using [hi, hs, h2]), Option.getD_some,
     Option.getD_some]
   simp only [Option.map_some, Option.getD_some] at e
   constructor <;> intro hz

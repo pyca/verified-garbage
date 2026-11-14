@@ -39,7 +39,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   have writes : ∀ i < 6, InRegions s.wr (s.gpr .x4 + BitVec.ofNat 64 (8 * i)) 8 := by
     intro i hi
     rw [hwr]
-    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   rw [expandKey]
   apply WP.seq
   rw [WP.block_append_iff, keySave_eq]
@@ -61,17 +61,17 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
   have source₂ : Spec.Rc2.bytesAt s₂.mem (s₂.gpr .x19) (s.gpr .x1).toNat =
       Spec.Rc2.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat := by
     rw [key₂]
-    exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega)
+    exact bytesAt_frame scratchFrame (by simpa using keyScratch) (by omega_using [])
   have read₂ : ∀ i < (s.gpr .x1).toNat,
       InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x19 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, key₂, hrd, hwr]
     exact ⟨⟨s.gpr .x0, (s.gpr .x1).toNat⟩, by simp,
-      Offset.contains_base _ (by omega) (by omega)⟩
+      Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have write₂ : ∀ i < 128, InRegions s₂.wr (s₂.gpr .x21 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [wr₂, ptr₂, hwr]
-    exact ⟨⟨s.gpr .x3, 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x3, 128⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   apply WP.seq
   apply WP.mono (expandCopyFill_ok s₂ (s.gpr .x1).toNat ht ht'
     (by simpa using len₂) zero₂ read₂ write₂ (by rw [key₂, ptr₂]; exact keyOut))
@@ -106,13 +106,13 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     intro i hi
     rw [rd₄, wr₄, r8₄, hrd, hwr]
     have bound := List.mem_range.mp hi
-    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])⟩
   have stored : ∀ i ∈ List.range 6,
       s₄.mem.readW (s₄.gpr .x4 + BitVec.ofNat 64 (8 * i)) 64 = s.gpr (savedReg i) := by
     intro i hi
     have bound := List.mem_range.mp hi
     rw [r8₄, outFrame.readW (r := ⟨s.gpr .x4, 512⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (by simpa using outScratch.symm) (by decide),
+      (Offset.contains_base _ (by omega_using [bound]) (by omega_using [bound])) (by simpa using outScratch.symm) (by decide),
       keep₂.mem, h₁.mem]
     exact Spill.saveMem_saved (l := Spill.slots savedReg 6) (by decide) s.mem (s.gpr .x4) s.gpr
       (savedReg i, 8 * i) (Spill.mem_slots bound)

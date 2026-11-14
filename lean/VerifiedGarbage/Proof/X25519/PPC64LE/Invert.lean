@@ -54,9 +54,9 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
     (h : Cur b s0 a c qs v s) : WP isa (Impl.X25519.PPC64LE.sqn o x n) s fun s' => ∃ c', Cur b s0 a c' qs' w s' := by
   unfold Impl.X25519.PPC64LE.sqn
   refine WP.seq (WP.mono (opMul hq hal ho hx hx h) fun s1 h1 => ?_)
-  refine WP.seq (wp_li (imm := n - 1) (by omega) fun s2 u2 => WP.block_nil ?_)
+  refine WP.seq (wp_li (imm := n - 1) (by omega_using [hn']) fun s2 u2 => WP.block_nil ?_)
   have h2 : Cur b s0 a (BitVec.ofNat 64 (n - 1)) (o :: qs) (upd v o (VG.Proof.X25519.sqn (v x) (n - (n - 1)))) s2 := by
-    rw [show n - (n - 1) = 1 by omega]
+    rw [show n - (n - 1) = 1 by omega_using [hn]]
     exact ⟨h1.ctx.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide),
       h1.stp.trans (Stp.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide) u2.mem),
       by rw [u2.other _ (by decide), h1.r0], u2.gpr, by rw [u2.mem]; exact h1.slots⟩
@@ -64,7 +64,7 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
       (upd v o (VG.Proof.X25519.sqn (v x) n)) t) (WP.loop (M := isa)
     (fun m t => 1 ≤ m ∧ m ≤ n - 1 ∧
       Cur b s0 a (BitVec.ofNat 64 m) (o :: qs) (upd v o (VG.Proof.X25519.sqn (v x) (n - m))) t) ?_
-    (n - 1) s2 ⟨by omega, Nat.le_refl _, h2⟩) fun t ht => ⟨_, ht.congr hqs hw⟩
+    (n - 1) s2 ⟨by omega_using [hn], Nat.le_refl _, h2⟩) fun t ht => ⟨_, ht.congr hqs hw⟩
   rintro m t ⟨hm1, hm, ht⟩
   refine WP.seq (WP.mono (opMul (o := o) (x := o) (y := o) hq' hal' ho List.mem_cons_self List.mem_cons_self ht)
     fun t1 h1 => ?_)
@@ -74,23 +74,23 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
     by_cases hqo : q = o
     · subst hqo
       simp only [upd_self]
-      rw [show n - (m - 1) = (n - m) + 1 by omega]
+      rw [show n - (m - 1) = (n - m) + 1 by omega_using [hm1, hm]]
       rfl
     · rw [upd_of_ne _ _ hqo, upd_of_ne _ _ hqo, upd_of_ne _ _ hqo]
   refine wp_subi (by decide) (by decide) fun t2 u2 => WP.block_nil ?_
   have e1 : t2.gpr .r12 = BitVec.ofNat 64 (m - 1) := by
-    rw [u2.gpr, h1'.r12, ofNat_sub_one hm1 (by omega)]
+    rw [u2.gpr, h1'.r12, ofNat_sub_one hm1 (by omega_using [hn', hm])]
   have h2' : Cur b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs)
       (upd v o (VG.Proof.X25519.sqn (v x) (n - (m - 1)))) t2 :=
     ⟨h1'.ctx.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide),
       h1'.stp.trans (Stp.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide) u2.mem),
       by rw [u2.other _ (by decide), h1'.r0], e1, by rw [u2.mem]; exact h1'.slots⟩
-  rw [eval_nonzero, e1, ofNat_ne_zero (by omega)]
+  rw [eval_nonzero, e1, ofNat_ne_zero (by omega_using [hn', hm])]
   by_cases hm0 : m - 1 = 0
   · refine .inl ⟨by simp [hm0], ?_⟩
-    rw [show n - (m - 1) = n by omega, hm0] at h2'
+    rw [show n - (m - 1) = n by omega_using [hm0], hm0] at h2'
     exact h2'
-  · exact .inr ⟨by simp [hm0], m - 1, by omega, by omega, by omega, h2'⟩
+  · exact .inr ⟨by simp [hm0], m - 1, by omega_using [hm1], by omega_using [hm0], by omega_using [hm], h2'⟩
 
 /-- The chain's slots: `z` at `Z2`, `x2` at `X2` and `t0`–`t3` at `A`–`D`. -/
 def cv (z x2 t0 t1 t2 t3 : Fe) (q : Nat) : Fe :=

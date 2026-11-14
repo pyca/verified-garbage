@@ -89,8 +89,8 @@ theorem shapeP_ct : RelCT isa (Two SP) (seqs shapeP) fun _ _ => True := by
   · have hb1 := h.dims.b1
     have hb2 := h.dims.b2
     exact WP.mono (loadA_ok h.ws (j := aN) (sPtr := kRand) (sLen := kLen) (len := p.L) (bs := p.r.take p.L)
-      (by decide) (by decide) (by decide) h.args.rand hK (src_take h.src p.L) (by rw [List.length_take]; omega)
-      (by simp only [PP.L]; omega) (by simp only [PP.L, mW]; omega)) fun t ⟨_, o, _, _, k⟩ =>
+      (by decide) (by decide) (by decide) h.args.rand hK (src_take h.src p.L) (by rw [List.length_take]; omega_using [hr])
+      (by simp only [PP.L]; omega_using [hb1]) (by simp only [PP.L, mW]; omega_using [])) fun t ⟨_, o, _, _, k⟩ =>
         h.ws.congr' (Frm.of_outside o (List.mem_singleton_self _))
           (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.ofSlot _ _ _) k (by decide)
   · rw [seqs_one]
@@ -117,8 +117,8 @@ abbrev TD.mq (d : TD) : MQ := ⟨⟨d.p.B, d.p.Z, mW d.mb⟩, d.N⟩
 theorem tt_mp0 {d : TD} {s : State} (h : TT d.p d.mb d.N d.u d.K s) : MP0 d.mq s := by
   have hmb1 := h.mb1
   have hmb2 := h.mb2
-  exact ⟨h.st.ws, by simp only [mW]; omega, by simp only [mW]; omega, h.n, h.odd,
-    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by simp only [mW]; omega)) h.lo⟩
+  exact ⟨h.st.ws, by simp only [mW]; omega_using [hmb1], by simp only [mW]; omega_using [hmb2], h.n, h.odd,
+    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by simp only [mW]; omega_using [])) h.lo⟩
 
 /-- The Montgomery setup, the exponent and the witnesses. -/
 theorem testTail_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (d : TD) s => TT d.p d.mb d.N d.u d.K s)
@@ -131,8 +131,8 @@ theorem testTail_ct (M : Mont) (R : Kernel) : RelCT isa (Two fun (d : TD) s => T
       (two_map TD.mq (fun _ _ h => h) expSetup_ct')) fun d s h => ?_)
     (two_map TD.tq (fun _ _ h => h) (millerRabin_ct M R))
   · have hN3 := h.dims.n3
-    exact WP.mono (montPrep_ok M h.st.ws (by have := h.mb1; simp only [mW]; omega) h.n h.odd (tt_mp0 h).2.2.2.2.2)
-      fun t ⟨hw, _, hn, _⟩ => ⟨hw, hn, h.odd, show 1 < d.N by omega⟩
+    exact WP.mono (montPrep_ok M h.st.ws (by have := h.mb1; simp only [mW]; omega_using [this]) h.n h.odd (tt_mp0 h).2.2.2.2.2)
+      fun t ⟨hw, _, hn, _⟩ => ⟨hw, hn, h.odd, show 1 < d.N by omega_using [hN3]⟩
   · exact WP.mono (testPre_ok M h) fun t ⟨fix, hU, _⟩ => ⟨h.dims, fix, hU, h.ul, h.k1⟩
 
 /-! ## The results -/
@@ -167,7 +167,7 @@ theorem upLoadF_ok {s : State} {q : FQ} (h : UpF q s) {l : List Instr} (hl : l =
   obtain ⟨hw, hU⟩ := h
   have hn := hw.scr.nowrap
   have h256 := hw.h256
-  have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hw.scr.ld (by omega)
+  have hl' : ∀ i < 32, InRegions (s.rd ++ s.wr) (off q.B (8 * i)) 8 := fun i hi => hw.scr.ld (by omega_using [h256, hi])
   refine WP.mono (Q := fun (t : State) => t.gpr .x2 = q.up) ?_ fun t h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h
   rcases hl with rfl | rfl
@@ -209,8 +209,8 @@ theorem finPrimeF_ct {Φ : FQ → State → Prop} (hE : ∀ q s, Φ q s → EndF
         have hn := hw.scr.nowrap
         have h256 := hw.h256
         brun [hw.x0, hdr_enc (show kUsedP < 32 by decide), hdr_enc (show kUsed < 32 by decide),
-          hw.scr.ld (d := 8 * kUsedP) (by simp only [kUsedP, sFn]; omega),
-          hw.scr.ld (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega)]))
+          hw.scr.ld (d := 8 * kUsedP) (by simp only [kUsedP, sFn]; omega_using [h256]),
+          hw.scr.ld (d := 8 * kUsed) (by simp only [kUsed, sFn]; omega_using [h256])]))
       (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h2, hm⟩, k⟩ => ⟨?_, h2⟩
     obtain ⟨hw, hO, hK, hU, ho, hS, hst⟩ := he
     exact ⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), by rw [hm]; exact hO,
@@ -222,7 +222,7 @@ theorem finPrimeF_ct {Φ : FQ → State → Prop} (hE : ∀ q s, Φ q s → EndF
       brun [h2, hup, ho.upw]) (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
     have f : Frm q.B [(q.Z, 2 ^ 64)] s.mem t.mem := by rw [hm]; exact frm_up ho.upZ _ _
     have hw' : ∀ i < 32, word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun i hi =>
-      f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+      f.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega_using [hi])
     exact ⟨hw.congr' f (fun r hr => by rw [List.mem_singleton.mp hr]; exact KMut.past h256 _) k (by decide),
       (hw' _ (by decide)).trans hO, (hw' _ (by decide)).trans hK⟩
 
@@ -232,7 +232,7 @@ theorem endF_load {q : FQ} {s : State} (h : EndF q s) :
   have hn := hw.scr.nowrap
   have h256 := hw.h256
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 q.st ∧ t.mem = s.mem)
-    (by brun [hw.x0, hdr_enc (show kStat < 32 by decide), hw.scr.ld (d := 8 * kStat) (by simp only [kStat, sFn]; omega),
+    (by brun [hw.x0, hdr_enc (show kStat < 32 by decide), hw.scr.ld (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256]),
       hS]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ =>
     ⟨⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), by rw [hm]; exact hO,
       by rw [hm]; exact hK, by rw [hm]; exact hU, ho.congr k.wr, by rw [hm]; exact hS, hst⟩, h3⟩

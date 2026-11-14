@@ -72,7 +72,7 @@ theorem sc_ok {o : Nat} (h : o < 2 ^ 31) : argOk (.ptr (sc o)) = true := by
 
 theorem ktrue : ∀ i < 5, ∀ j < 5, i ≠ j → 2 ≤ i → 2 ≤ j → (fun _ => true) i = true → (fun _ => true) j = true →
     i ∈ kWb ∨ j ∈ kWb := fun i _ j _ hij _ _ _ _ => by
-  simp only [kWb, List.mem_cons, List.not_mem_nil, or_false]; omega
+  simp only [kWb, List.mem_cons, List.not_mem_nil, or_false]; omega_arith
 
 theorem seeds_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {s : State}
     (h : KC p STK σ s) (h24 : s.gpr .r24 = 1) : WP isa (seeds p) s fun s' => K1 p STK σ s' ∧ s'.gpr .r24 = 1 := by
@@ -84,9 +84,9 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {STK : Nat} {σ : State} {s : Stat
       KC p STK σ s₂ ∧ s₂.gpr .r24 = 1 ∧
         bytesAt s₂.mem ((lay p STK σ).A 0 oKL) 2 = [BitVec.ofNat 8 p.k, BitVec.ofNat 8 p.ℓ] := by
     refine WP.block_append (WP.mono (setB_ok hs (q := sc oKL) ⟨sc_ok (by decide), by lsep hF⟩ (by decide)
-      (by decide) (v := p.k) (by omega))
+      (by decide) (v := p.k) (by omega_using [hk]))
       fun s₁ ⟨k₁, b₁⟩ => WP.mono (setB_ok (hs.kept k₁) (q := sc (oKL + 1)) ⟨sc_ok (by decide), by lsep hF⟩
-        (by decide) (by decide) (v := p.ℓ) (by omega)) fun s₂ ⟨k₂, b₂⟩ =>
+        (by decide) (by decide) (v := p.ℓ) (by omega_using [hl])) fun s₂ ⟨k₂, b₂⟩ =>
           ⟨(h.keep k₁ (by lsep hF [kcChk])).keep k₂ (by lsep hF [kcChk]), ?_, ?_⟩)
     · rw [k₂.cs .r24 (by decide), k₁.cs .r24 (by decide), h24]
     · have b₁' := bytes_keepW hs.ok k₂.frame (i := 0) (o := oKL) (l := 1) (by lsep hF) (by decide) (by decide)

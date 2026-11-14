@@ -15,7 +15,7 @@ open VG.Proof.Mont.X86
 theorem slot_le {n i j : Nat} (h : i < j) : slot n i + stride n ≤ slot n j := by
   have := Nat.mul_le_mul_right (stride n) h
   simp only [slot, Nat.succ_mul] at *
-  omega
+  omega_using [this]
 
 theorem slot_bound {n i : Nat} (h : i < 9) : slot n i + stride n ≤ contextBytes n := slot_le h
 
@@ -25,11 +25,11 @@ theorem slot_sep {n i j : Nat} (h : i ≠ j) :
   · exact .inl (slot_le h)
   · exact .inr (slot_le h)
 
-theorem slot_header (n i : Nat) : 64 ≤ slot n i := by unfold slot; omega
+theorem slot_header (n i : Nat) : 64 ≤ slot n i := by unfold slot; omega_using []
 
 theorem context_accLen (n : Nat) : accLen (contextMod n) = 16 * n + 4 := by
   simp only [accLen, words, contextMod]
-  omega
+  omega_using []
 
 theorem context_opLay {n size o a b : Nat} (hs : contextBytes n ≤ size)
     (ho : o < 9) (ha : a < 9) (hb : b < 9) (ho2 : o ≠ 2) (ha2 : a ≠ 2) (hb2 : b ≠ 2)
@@ -46,6 +46,6 @@ theorem context_opLay {n size o a b : Nat} (hs : contextBytes n ≤ size)
   have st := slot_sep (n := n) (i := 2) (j := 1) (by decide)
   have ot := slot_sep (n := n) ho1
   simp only [stride] at *
-  constructor <;> simp only [accLen, words, contextMod] <;> omega
+  constructor <;> simp only [accLen, words, contextMod] <;> omega_arith
 
 end VG.Proof.Mont.X86.Dynamic

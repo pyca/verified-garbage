@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Blowfish.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Blowfish.RISCV64.FbFinalLit
 
-/-! # Blowfish-OFB artifacts on baseline RISC-V -/
+/-! # Blowfish-OFB on RISC-V -/
 
 @[expose] public section
 

@@ -1,18 +1,48 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86.Comb.Correct
-import VerifiedGarbage.Proof.Dsa.X86.Comb.Stack
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Dsa.X86.WorkspaceCall
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Mont.WordsCanonical
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Body
-public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Dsa.ModPowContract
 import VerifiedGarbage.Proof.Dsa.X86.Comb.BodyWide
+
+/-! ### `Dsa.X86.Comb.Stack`, which only this module used -/
+
+section
+
+/-! Both helpers use workspace scratch instead of a stack arena.
+These are structural bounds, separate from arithmetic and ABI preservation. -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86.Comb
+open VG VG.X86 VG.Impl.Dsa.X86.Comb
+
+theorem body_noSp {n e : Nat} (h : Supported n e) (prepare : Bool) :
+    NoSp (body prepare n e) := by
+  apply NoSp.of_all
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+    cases prepare <;> decide +kernel
+
+theorem body_stack {n e : Nat} (h : Supported n e) (prepare : Bool) :
+    stackUse (body prepare n e) = 0 := by
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+    cases prepare <;> decide +kernel
+
+end VG.Proof.Dsa.X86.Comb
+
+end
+
+end
+
 
 /-! Both comb calls share the ordinary power helper's cdecl frame proof. -/
 
@@ -50,13 +80,13 @@ theorem call_ok {n e m size : Nat} {base : Addr} {s : State}
     have vals : ∀ d k, d+4*k≤size → val32 mem base d k=val32 s.mem base d k :=
       fun _ _ hd => Pow.frame_val32 room hs.nowrap F hd
     refine ⟨?_,?_,?_,?_⟩
-    · rw [wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32,hv]
+    · rw [wordsVal_eq_val32,vals _ _ (by omega_using [hz, bounds]),←wordsVal_eq_val32,hv]
     · rw [wordsVal_eq_val32,wordsVal_eq_val32]
-      exact vals _ _ (by omega)
-    · exact vals _ _ (by omega)
+      exact vals _ _ (by omega_using [hz, bounds])
+    · exact vals _ _ (by omega_using [hz, bounds])
     · intro hp
       unfold canonical
-      rw [wordsAt_canonical,wordsVal_eq_val32,vals _ _ (by omega),←wordsVal_eq_val32,←wordsAt_canonical]
+      rw [wordsAt_canonical,wordsVal_eq_val32,vals _ _ (by omega_using [hz, bounds]),←wordsVal_eq_val32,←wordsAt_canonical]
       exact H hp
   · intro v E _ ⟨M,G,X,C⟩
     refine WP.mono (body_wide_ok h prepare E hz M hm odd (by rw [G]; exact C)) fun w ⟨V,Cw,O,R,Rd,Wr⟩ => ?_

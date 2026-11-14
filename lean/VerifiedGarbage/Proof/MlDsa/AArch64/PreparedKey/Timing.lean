@@ -172,7 +172,7 @@ theorem public_body_tr {p : Params}
         (Impl.MlDsa.AArch64.Call.seqR (publicPoly p) 0 p.k))
       (PrepRel 16 (input p.pkLen) (output p.pkLen p.k)) := by
   exact RelCT.seq (copy_preserves _ _ (public_copy_check hp))
-    (seqR_tr p.k 0 (fun _ _ hi => publicPoly_preserves hp (by omega)))
+    (seqR_tr p.k 0 (fun _ _ hi => publicPoly_preserves hp (by omega_using [hi])))
 
 theorem secret_body_tr {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
@@ -181,6 +181,6 @@ theorem secret_body_tr {p : Params}
         (Impl.MlDsa.AArch64.Call.seqR (secretPoly p) 0 (p.ℓ + 2 * p.k)))
       (PrepRel 16 (input p.skLen) (output p.skLen (p.ℓ + 2 * p.k))) := by
   exact RelCT.seq (copy_preserves _ _ (secret_copy_check hp))
-    (seqR_tr (p.ℓ + 2 * p.k) 0 (fun _ _ hi => secretPoly_preserves hp (by omega)))
+    (seqR_tr (p.ℓ + 2 * p.k) 0 (fun _ _ hi => secretPoly_preserves hp (by omega_using [hi])))
 
 end VG.Proof.MlDsa.AArch64.PreparedKey

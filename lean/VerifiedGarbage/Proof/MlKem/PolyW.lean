@@ -45,7 +45,7 @@ theorem coeffAtW16_congr {m m' : Mem} {p : Addr}
   rw [n_eq] at hi
   refine Mem.readW_congr fun k hk => ?_
   rw [show 16 / 8 * i = 2 * i from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, hk])
 
 theorem polyIsW16_congr {m m' : Mem} {p : Addr} {f : Poly}
     (h : ∀ k < 512, m' (p + BitVec.ofNat 64 k) = m (p + BitVec.ofNat 64 k)) (hf : PolyIsW 16 m p f) :
@@ -68,7 +68,7 @@ theorem w16_at {m m' : Mem} {p : Addr} {l : Nat}
     ∀ k < 512, m' (p + BitVec.ofNat 64 (32 * 16 * j) + BitVec.ofNat 64 k) =
       m (p + BitVec.ofNat 64 (32 * 16 * j) + BitVec.ofNat 64 k) := fun k hk => by
   rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hj, hk])
 
 /-- The vector of `u16`s from `p`, in memory that agrees on its bytes. -/
 theorem vecAtW16_congr {m m' : Mem} {p : Addr} {l : Nat}
@@ -90,9 +90,9 @@ theorem matAtW16_congr {m m' : Mem} {p : Addr} {k : Nat}
     have : k * r + k ≤ k * k := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left k hr
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     exact h _ (by
-      rw [show 32 * 16 * (k * r) + i = 512 * (k * r) + i by omega]
+      rw [show 32 * 16 * (k * r) + i = 512 * (k * r) + i by omega_using []]
       have := Nat.mul_le_mul_left 512 this
-      omega)
+      omega_arith)
 
 theorem vecAtW_length (w : Nat) (m : Mem) (p : Addr) (k : Nat) : (vecAtW w m p k).length = k := by
   simp [vecAtW]

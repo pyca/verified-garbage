@@ -29,19 +29,19 @@ theorem earlyPairedSeq_ok {one two : Nat → Prog isa} {I : Nat → State → Pr
       (∀ k, a≤k → k+1<a+n → ∀ s, I k s → WP isa (two k) s (I (k+2))) →
       ∀ s, I a s → WP isa (Impl.MlDsa.AArch64.Sign.Optimized.seqPairedOk one two a n) s
         fun u => ∃ k, a≤k ∧ k≤a+n ∧ I k u ∧ (k=a+n ∨ (u.gpr .x24).setWidth 32=0)
-  | 0,a,_,_,s,h => WP.block_nil ⟨a,Nat.le_refl _,by omega,h,.inl (by omega)⟩
-  | 1,a,h,_,s,hs => WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun u hu =>
-      ⟨a+1,by omega,by omega,hu,.inl rfl⟩
+  | 0,a,_,_,s,h => WP.block_nil ⟨a,Nat.le_refl _,by omega_using [],h,.inl (by omega_using [])⟩
+  | 1,a,h,_,s,hs => WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun u hu =>
+      ⟨a+1,by omega_using [],by omega_using [],hu,.inl rfl⟩
   | n+2,a,h1,h2,s,hs => by
     rw [Impl.MlDsa.AArch64.Sign.Optimized.seqPairedOk]
-    refine WP.seq (WP.mono (h2 a (Nat.le_refl _) (by omega) s hs) fun u hu => ?_)
+    refine WP.seq (WP.mono (h2 a (Nat.le_refl _) (by omega_using []) s hs) fun u hu => ?_)
     refine ifOkElse_ok (fun _ => ?_) (fun hz => ?_)
     · refine WP.mono (earlyPairedSeq_ok n (a+2)
-        (fun k hk hk' => h1 k (by omega) (by omega))
-        (fun k hk hk' => h2 k (by omega) (by omega)) u hu) ?_
+        (fun k hk hk' => h1 k (by omega_using [hk]) (by omega_using [hk']))
+        (fun k hk hk' => h2 k (by omega_using [hk]) (by omega_using [hk'])) u hu) ?_
       rintro v ⟨k,hk,hk',hi,hd⟩
-      exact ⟨k,by omega,by omega,hi,hd.imp (fun _ => by omega) id⟩
-    · exact WP.block_nil ⟨a+2,by omega,by omega,hu,.inr hz⟩
+      exact ⟨k,by omega_using [hk],by omega_using [hk'],hi,hd.imp (fun _ => by omega_arith) id⟩
+    · exact WP.block_nil ⟨a+2,by omega_using [],by omega_using [],hu,.inr hz⟩
 
 theorem earlyZ_step {p:Params} {S:Nat} {σ s:State} {t r:Nat}
     (hp:Ok3 p) (h16:16≤S) (hS:S<2^64) (hr:r<p.ℓ)
@@ -66,7 +66,7 @@ theorem PositiveIZ.done {p:Params} {S:Nat} {σ s:State} {t k:Nat}
   · exact h.2
   · rw [h.2] at hz ⊢
     have hn:¬∀j<k,normRq [Zv p σ (p.ℓ*t) j]<p.γ₁-p.β:=fun ha=>(bit_ne.mpr ha) hz
-    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn fun j hj=>ha j (by omega))]
+    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn fun j hj=>ha j (by omega_using [hk, hj]))]
 
 theorem PositiveIR.done {p:Params} {S:Nat} {σ s:State} {t k:Nat}
     (hk:k≤p.k) (h:PositiveIR p S σ t k s) (hd:k=p.k ∨ (s.gpr .x24).setWidth 32=0) :
@@ -75,7 +75,7 @@ theorem PositiveIR.done {p:Params} {S:Nat} {σ s:State} {t k:Nat}
   · exact h.2
   · rw [h.2] at hz ⊢
     have hn:¬(ZOk p σ (p.ℓ*t) ∧ ∀j<k,normRq [R0v p σ (p.ℓ*t) j]<p.γ₂-p.β):=fun ha=>(bit_ne.mpr ha) hz
-    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn ⟨ha.1,fun j hj=>ha.2 j (by omega)⟩)]
+    rw [bit_zero.mpr hn,bit_zero.mpr (fun ha=>hn ⟨ha.1,fun j hj=>ha.2 j (by omega_using [hk, hj])⟩)]
 
 theorem positivePairedChecks_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
     (hp : Ok3 p) (hc : ksChk p=true) (h16 : 16≤S) (hS : S<2^64)
@@ -87,16 +87,16 @@ theorem positivePairedChecks_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
   refine WP.seq (WP.seq (WP.mono (positivePairedChallenge_ok hp h16 roots h h1) fun a ha=>?_))
   refine WP.seq (WP.mono (positivePairedChecksInit_ok hp hc ha.2 ha.1) fun b hb=>?_)
   refine WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIZ p S σ t r u ∧ PairedRoots S u) p.ℓ 0
-    (fun r _ hr s h=>earlyZ_step hp h16 hS (by omega) h)
-    (fun r _ hr s h=>optimizedZ_pair_ok hp (by omega) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
+    (fun r _ hr s h=>earlyZ_step hp h16 hS (by omega_using [hr]) h)
+    (fun r _ hr s h=>optimizedZ_pair_ok hp (by omega_using [hr]) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
   rw [Nat.zero_add] at hnz hdz
   have zflag:=PositiveIZ.done hnz hz.1 hdz
   refine ifOkElse_ok (fun hzpass=>?_) fun hzfail=>?_
   · have he:nz=p.ℓ:=hdz.resolve_right hzpass
     subst he
     refine WP.seq (WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIR p S σ t r u ∧ PairedRoots S u) p.k 0
-      (fun r _ hr s h=>earlyR0_step hp h16 hS (by omega) h)
-      (fun r _ hr s h=>optimizedR0_pair_ok hp (by omega) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
+      (fun r _ hr s h=>earlyR0_step hp h16 hS (by omega_using [hr]) h)
+      (fun r _ hr s h=>optimizedR0_pair_ok hp (by omega_using [hr]) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
       fun d ⟨nr,_,hnr,hr,hdr⟩=>?_)
     rw [Nat.zero_add] at hnr hdr
     have rflag:=PositiveIR.done hnr hr.1 hdr

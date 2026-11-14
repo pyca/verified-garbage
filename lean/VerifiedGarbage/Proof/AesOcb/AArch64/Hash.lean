@@ -44,7 +44,7 @@ theorem hashRest_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {cip
   have E := H.env
   have hs := C.short
   generalize hm : a.length / 16 = m at H
-  have hrest : a.length - 16 * m = a.length % 16 := by omega
+  have hrest : a.length - 16 * m = a.length % 16 := by omega_using [hm]
   -- `Offset_m ⊕ L_*`
   obtain ⟨t₁, run₁, B₁⟩ := xor16_ok (s := t) (b := .x20) (a := 240) (d := ohO) (by decide) (by decide) E.x19 E.x20
     (by decide) (by decide) (by decide) (E.perm.kR (by decide)) (E.perm.kR (by decide)) (E.perm.wW (by decide))
@@ -56,19 +56,19 @@ theorem hashRest_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {cip
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W (by decide) (by decide)⟩)
   -- `pad(A_*)`
-  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega)
+  have hB := C.buf.slice (a := 16 * m) (k := a.length % 16) (by omega_using [hm])
   have hS : Covers [⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩] (t₁.rd ++ t₁.wr) := by
     rw [B₁.rd, B₁.wr, H.rd, H.wr]; exact hB.rd
   have hSD : (⟨A + BitVec.ofNat 64 (16 * m), a.length % 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 bufO, 16⟩ :=
     hB.w.sub_right (Lay.wSub (by decide))
   have hrestb : bytesAt t₁.mem (A + BitVec.ofNat 64 (16 * m)) (a.length % 16) = a.drop (16 * m) := by
-    have hd := Proof.Ocb.bytesAt_drop s₀.mem A (a := 16 * m) (n := a.length) (by omega)
+    have hd := Proof.Ocb.bytesAt_drop s₀.mem A (a := 16 * m) (n := a.length) (by omega_using [hm])
     rw [C.aad, hrest] at hd
     rw [Proof.Cmac.bytesAt_frame (hashR_mut (D := D) (n := n) fr₁) (fun r hr =>
-      (C.a_mut r hr).sub_left (Offset.sub_base A (by omega))) (by omega), hd]
+      (C.a_mut r hr).sub_left (Offset.sub_base A (by omega_using [hm]))) (by omega_using []), hd]
   unfold hashRest
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (padTo_ok E₁.x19 E₁.perm.w hr (by omega) (by decide)
+  refine WP.seq (WP.mono (padTo_ok E₁.x19 E₁.perm.w hr (by omega_using []) (by decide)
     (by rw [B₁.gpr _ (by decide), H.x23]) (by rw [B₁.gpr _ (by decide), h24]) hS hSD)
     fun t₂ ⟨fr₂, pad₂, g₂, sp₂, rd₂, wr₂⟩ => ?_)
   rw [hrestb] at pad₂
@@ -119,7 +119,7 @@ theorem hashRest_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {cip
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩), ?_,
     by rw [B₅.rd, P₄.rd, B₃.rd, rd₂, B₁.rd, H.rd], by rw [B₅.wr, P₄.wr, B₃.wr, wr₂, B₁.wr, H.wr]⟩
   rw [B₅.val, sum₄, buf₄, Proof.Ocb.hash_eq]
-  have hlen : (a.drop (16 * m)).length = a.length % 16 := by simp; omega
+  have hlen : (a.drop (16 * m)).length = a.length % 16 := by simp; omega_using [hm]
   simp only [hlen, show a.length % 16 > 0 from hr, ↓reduceIte, hm]
 
 /-- The first block of `hash`: the sum and the offset zeroed, the associated
@@ -143,10 +143,10 @@ theorem hashHead1_ok {K W : Addr} (L : Lay K W) {s₀ : State} (h19 : s₀.gpr .
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₀.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ => by
     rw [B₂.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (a := _) (d := 144) (k := 16) (by omega) h₂ (by decide)) (by decide),
+        exact L.w_w (a := _) (d := 144) (k := 16) (by omega_using [h₁]) h₂ (by decide)) (by decide),
       B₁.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact L.w_w (a := _) (d := 48) (k := 16) (by omega) h₂ (by decide)) (by decide)]
+        exact L.w_w (a := _) (d := 48) (k := 16) (by omega_using [h₁]) h₂ (by decide)) (by decide)]
   have haad₂ := (kA (d := aadO) (by decide) (by decide)).trans haad
   have halen₂ := (kA (d := alenO) (by decide) (by decide)).trans halen
   have r₁ : InRegions (s₂.rd ++ s₂.wr) (W + BitVec.ofNat 64 aadO) 8 := by
@@ -226,14 +226,14 @@ theorem hashLoop_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {cip
       HInv K W D R n SP ciph l A a s₀ u j) ?_ (a.length / 16 - 0) _ ⟨0, rfl, hm, H₀⟩
   rintro k u ⟨j, rfl, hj, H⟩
   refine WP.mono (hashChunk_ok v C H hj) fun u' H' => ?_
-  have ev := eval_nonzero H'.x26 (by omega)
+  have ev := eval_nonzero H'.x26 (by omega_using [hs])
   by_cases he : a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0
   · left
-    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega
+    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega_using [hj, he]
     exact ⟨ev.trans (by simp [he]), hje ▸ H'⟩
   · right
-    exact ⟨ev.trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega,
-      j + min 8 (a.length / 16 - j), rfl, by omega, H'⟩
+    exact ⟨ev.trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega_using [hj],
+      j + min 8 (a.length / 16 - j), rfl, by omega_using [he], H'⟩
 
 /-- The length of the rest of the associated data. -/
 theorem tailHead_ok {K W D : Addr} {n R : Nat} {SP : Addr} {ciph : Cipher} {l : Block} {A : Addr}
@@ -273,13 +273,13 @@ theorem hashTail_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {cip
         blockAtMem t'.mem (W + BitVec.ofNat 64 sumO) = Spec.Ocb.hash ciph l a ∧ t'.rd = s₀.rd ∧ t'.wr = s₀.wr := by
   have hs := C.short
   refine WP.seq (WP.mono (tailHead_ok C halen H) fun t₁ ⟨H₁, h24⟩ => ?_)
-  refine WP.ite (decide (a.length % 16 = 0)) (eval_zero h24 (by omega)) (fun hb => WP.block_nil ?_) (fun hb => ?_)
+  refine WP.ite (decide (a.length % 16 = 0)) (eval_zero h24 (by omega_using [])) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have h0 : a.length % 16 = 0 := of_decide_eq_true hb
     refine ⟨H₁.env, H₁.frame, ?_, H₁.rd, H₁.wr⟩
     rw [H₁.sum, Proof.Ocb.hash_eq]
-    have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega
+    have hlen : (a.drop (16 * (a.length / 16))).length = 0 := by simp; omega_using [h0]
     simp [hlen]
-  · exact hashRest_ok v C H₁ (by have := of_decide_eq_false hb; omega) h24
+  · exact hashRest_ok v C H₁ (by have := of_decide_eq_false hb; omega_using [this]) h24
 
 /-- The chunks, if any. -/
 theorem hashBody_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {ciph : Cipher} {l : Block} {A : Addr}
@@ -288,7 +288,7 @@ theorem hashBody_ok (v : BlocksImpl) {K W D : Addr} {n R : Nat} {SP : Addr} {cip
     WP isa (.ite (.zero .x .x26) (.block []) (.loop (hashChunk (callees v)) (.nonzero .x .x26))) t fun u =>
       HInv K W D R n SP ciph l A a s₀ u (a.length / 16) := by
   have hs := C.short
-  refine WP.ite (decide (a.length / 16 = 0)) (eval_zero H₀.x26 (by omega)) (fun hb => WP.block_nil ?_)
+  refine WP.ite (decide (a.length / 16 = 0)) (eval_zero H₀.x26 (by omega_using [hs])) (fun hb => WP.block_nil ?_)
     (fun hb => hashLoop_ok v C H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb)))
   exact (of_decide_eq_true hb) ▸ H₀
 

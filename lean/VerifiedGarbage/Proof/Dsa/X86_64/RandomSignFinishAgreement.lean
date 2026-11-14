@@ -29,7 +29,7 @@ theorem random_finish_public_pre {extra : Nat} {s t : State} {used : Nat} {statu
     have hl := h.lengths
     have ho := h.outLength
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl, ho]
   · intro j hj
     exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hr.wr, h.wr]; simp,
       contains_byte _ hj (Nat.le_of_lt (s.gpr .rsi).isLt)⟩

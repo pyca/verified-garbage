@@ -30,7 +30,7 @@ theorem montRounds_finishReady {base : BitVec 32} {size out tmp a b mod acc n : 
   have fits := h.round.ctx.tmpFits
   have oldOut := outs_word32 loop.outside (d := tmp + 24) (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega) (by omega)
+    rcases hr with rfl | rfl <;> simp only <;> omega_arith) (by omega_using [nowrap, fits])
   refine ⟨h.round.ctx.workspace.congr loop.rest.wr, loop.ptr, loop.hdr.count, ?_,
     loop.hdr.accPtr, loop.hdr.mPtr⟩
   apply BitVec.eq_of_toNat_eq

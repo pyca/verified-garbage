@@ -168,17 +168,17 @@ theorem loop_two : RelCT isa (Two fun a s => 0 < N a ∧ LoopPt (a, 0) s) (.loop
   refine ⟨?_, fun hlt => ⟨s, t₀, S, B, I', ?_, ?_, hlt⟩, fun he => ⟨s, t₀, S, B, he ▸ I'⟩⟩
   · rw [eval_ne hz]
     by_cases h : (kept s (j + 1)).length = psLen s ∨ j + 1 = (stackArg s 4).toNat
-    · rw [decide_eq_true h, decide_eq_false (by have := hst.mp h; omega)]; rfl
+    · rw [decide_eq_true h, decide_eq_false (by have := hst.mp h; omega_using [hst, h])]; rfl
     · rw [decide_eq_false h, decide_eq_true (by
         have : N a ≠ j + 1 := fun e => h (hst.mpr e)
-        omega)]; rfl
+        omega_using [hj, hst, h])]; rfl
   · show j + 1 < (stackArg s 4).toNat
     have := VG.Proof.RsaPkcs1Enc.scanLen_le (psLen s) (randB s)
-    rw [randB_length, hs] at this; omega
+    rw [randB_length, hs] at this; omega_using [hi, hst, hlt]
   · show (kept s (j + 1)).length < psLen s
     by_cases hn : (kept s (j + 1)).length = psLen s
-    · have := hst.mp (.inl hn); omega
-    · omega
+    · have := hst.mp (.inl hn); omega_using [hst, hk, hlt]
+    · omega_using [hk, hn]
 
 theorem at_zero {s t : State} (hp : RPre s) (hcx : t.gpr .rcx = 0) (hdx : t.gpr .rdx = 0) : At s t 0 t :=
   have hP := hp.ps
@@ -205,11 +205,11 @@ theorem scan_two : RelCT isa (Two ScanPt) scan (Two ScanDone) := by
     have hN : 0 < N a := by
       rw [← S₁.scanEq]
       exact VG.Proof.RsaPkcs1Enc.lt_scanLen (i := 0)
-        (show (kept s₁ 0).length < psLen s₁ by rw [kept_zero, List.length_nil]; omega)
+        (show (kept s₁ 0).length < psLen s₁ by rw [kept_zero, List.length_nil]; omega_using [hP₁])
         (by rw [randB_length]; exact hl')
-    refine ⟨a, ⟨hN, s₁, t₁, S₁, B₁, at_zero S₁.pre c₁ d₁, hl', by rw [kept_zero, List.length_nil]; omega, hN⟩,
+    refine ⟨a, ⟨hN, s₁, t₁, S₁, B₁, at_zero S₁.pre c₁ d₁, hl', by rw [kept_zero, List.length_nil]; omega_using [hP₁], hN⟩,
       ⟨hN, s₂, t₂, S₂, B₂, at_zero S₂.pre c₂ d₂, by rw [S₂.lenEq, ← S₁.lenEq]; exact hl',
-        by rw [kept_zero, List.length_nil]; omega, hN⟩⟩
+        by rw [kept_zero, List.length_nil]; omega_using [hP₂], hN⟩⟩
   · refine two_piece [] (fun _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
       fun a t ⟨⟨s, S, B, hcx, hdx, z⟩, e⟩ => WP.block_nil ⟨s, t, S, B, ?_⟩
     have h0 : stackArg s 4 = 0 := by

@@ -80,7 +80,7 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
   rw [← hwr₀, ← hwr₁] at w₂ w₃ w₄ w₅
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_using [ha]) (by omega_using [hd])
   have q4 := sep 184 192 (by decide) (by decide) (by decide)
   have q5 := sep 184 200 (by decide) (by decide) (by decide)
   have q6 := sep 184 208 (by decide) (by decide) (by decide)
@@ -122,7 +122,7 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
   have f₂ : Frame [⟨W + BitVec.ofNat 64 184, 32⟩] s₁.mem s₂.mem := by
     rw [hm₂]
     have c : ∀ d, 184 ≤ d → d + 8 ≤ 216 → (⟨W + BitVec.ofNat 64 184, 32⟩ : Region).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 184 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 192 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 200 (by decide) (by decide))).writeW
@@ -138,7 +138,7 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
     rd 208 _ (.inr (.inr (.inr ⟨rfl, rfl⟩))), h12, hbp, hbx, ?_, ?_, hrd', hwr'⟩
   · exact hsv₁'.frame f₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)
+      exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using [])
   · rw [hm₀] at f₁
     exact (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -170,11 +170,11 @@ theorem CryptCtx.of {s : State} (hp : Proof.Sm4Gcm.streamCryptPre s) :
   have pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩] (s.rd ++ s.wr) := by
     rw [hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine ⟨L, ⟨?_, ?_, ?_⟩, ?_, ⟨⟨⟨?_, by have := (s.gpr .r9).isLt; omega, wd, d_sd.symm, d_dw,
+  refine ⟨L, ⟨?_, ?_, ?_⟩, ?_, ⟨⟨⟨?_, by have := (s.gpr .r9).isLt; omega_using [], wd, d_sd.symm, d_dw,
     t_d.sub_left (below8_stk _)⟩, ?_, d_cd⟩, t_d⟩, r_d, r_s, r_w, d_dw⟩
   · rw [hrd]; intro a m ⟨r, hr, hc⟩
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_append_left _ (List.mem_cons_self ..), by simp only [Region.Contains] at hc ⊢; omega⟩
+    exact ⟨_, List.mem_append_left _ (List.mem_cons_self ..), by simp only [Region.Contains] at hc ⊢; omega_using [hc]⟩
   · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · simpa using in_off pm (show 0 + 8 ≤ 8 by decide) (by decide)
@@ -191,11 +191,11 @@ theorem w_stFrame {D : Addr} {n d k : Nat} (hD : (⟨D, n⟩ : Region).Disjoint 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact (L.lay.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
-  · exact L.lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact L.lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.kw.sub_right (Lay.wSub (by omega))).symm
+  · exact (L.lay.st_w (by decide) (.inr ⟨by omega_using [h₁], by omega_using [h₂]⟩)).symm
+  · exact (hD.sub_right (Lay.wSub (by omega_using [h₂]))).symm
+  · exact L.lay.w_w (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)
+  · exact L.lay.w_w (.inl (by omega_using [h₂])) (by omega_using [h₂]) (by decide)
+  · exact (L.kw.sub_right (Lay.wSub (by omega_using [h₂]))).symm
 
 /-- `J₀` is outside `stFrame`. -/
 theorem j0_stFrame {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩) :
@@ -283,7 +283,7 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.Sm4Gcm
   rw [hicb]
   have hd₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame E.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact C.dE.sub_right (Lay.wSub (by decide)))
-    (by have := C.data.dw.ok.lt; omega)
+    (by have := C.data.dw.ok.lt; omega_using [hn])
   obtain ⟨qa, qc, qo⟩ := hq hy
   simp only [hc₁, hd₁] at qa qc qo
   refine ⟨?_, by rw [hm]; exact qo⟩

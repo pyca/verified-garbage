@@ -19,7 +19,7 @@ theorem prefix_step (x : BitVec 64) (j : Nat) :
   rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ] at h
   simp only [Nat.succ_eq_add_one] at h
   simp only [← BitVec.testBit_toNat, Nat.toNat_testBit]
-  omega
+  omega_using [h]
 
 def changed : List Reg := [.rcx, .r8, .r10, .rax, .r9]
 
@@ -38,7 +38,7 @@ theorem bit_invariant (s : State) (n : Nat) (hn : n < 32) (h : Invariant (n + 1)
   have hprefix := Nat.div_le_self (s.gpr .rdi).toNat (2 ^ (n + 1))
   have he := h.equation
   have hb := h.numerator
-  have hq : (s.gpr .r9).toNat < 2 ^ 32 := by omega
+  have hq : (s.gpr .r9).toNat < 2 ^ 32 := by omega_using [hqmul, hprefix, he, hb]
   have hr : (s.gpr .r8).toNat < 2 ^ 32 := Nat.lt_trans h.remainder h.divisorBound
   refine (bit_ok s n hn hr hq).mono ?_
   rintro t ⟨ht8, ht9, ht⟩
@@ -64,9 +64,9 @@ theorem bits_ok (n : Nat) (hn : n ≤ 32) (s : State) (h : Invariant n s) :
     simp only [List.range_succ, List.reverse_append, List.reverse_cons, List.reverse_nil,
       List.nil_append, List.singleton_append, List.flatMap_cons]
     rw [WP.block_append_iff]
-    refine (bit_invariant s n (by omega) h).mono ?_
+    refine (bit_invariant s n (by omega_using [hn]) h).mono ?_
     rintro t ⟨ht, kt⟩
-    refine (ih (by omega) t ht).mono ?_
+    refine (ih (by omega_using [hn]) t ht).mono ?_
     rintro u ⟨hu, ku⟩
     exact ⟨hu, kt.trans ku⟩
 

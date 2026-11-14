@@ -29,15 +29,15 @@ theorem bitOf_ok {s : State} {B : Addr} {Z w N j sl : Nat} (h : Ws s B Z w N)
   simp only [S] at fit
   unfold bitOf
   change WP isa (.block (.mov .eax (.mem (VG.Impl.Mont.X86.sc (arr w j))) :: _)) s _
-  refine wp_movS (readSrc_sc h.workspace (by have := h.wpos; omega)) fun u U _ => ?_
+  refine wp_movS (readSrc_sc h.workspace (by have := h.wpos; omega_using [fit])) fun u U _ => ?_
   refine wp_logicS (.inl rfl) rfl fun v V => ?_
   have hv := (h.workspace.of_keeps U.keeps (by decide)).of_keeps V.keeps (by decide)
-  refine wp_storeS (hv.ea (by omega)) (hv.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (hv.ea (by omega_using [hsl, head])) (hv.write (by omega_using [hsl, head])) fun t T => WP.block_nil ?_
   have r : Keeps [.eax] s t := (U.keeps.trans V.keeps).trans (T.keeps _)
   have mem : t.mem = s.mem.writeW (off B sl) (v.gpr .eax) := by rw [T.mem, V.mem, U.mem]
   refine ⟨h.rest r, ?_, ?_, r⟩
   · rw [mem]
-    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at hsl; omega)) (by simp)
+    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold hdr at hsl; omega_using [hsl])) (by simp)
   · unfold slot
     rw [mem, w32_write_self, V.gpr, ite_eq_left rfl, U.gpr, bv_and_one, num_mod2 _ _ h.wpos]
 end VG.Proof.Rsa.X86.Keys

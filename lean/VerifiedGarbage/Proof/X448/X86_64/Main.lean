@@ -106,8 +106,8 @@ theorem BasePre.of (s₀ : State) (h : Proof.X448.x448BaseX86_64.pre s₀) : Bas
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m m')
     (hp : ∀ i < 56, 8192 ≤ ofs base (p + BitVec.ofNat 64 i)) :
@@ -120,7 +120,7 @@ theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m 
 theorem Outside.frame {base : Addr} {m m' : Mem} (h : Outside base 0 8192 m m') :
     Frame [⟨base, 8192⟩] m m' := fun x hx => h x (Or.inr (by
   have := hx _ (List.mem_singleton_self _)
-  simp only [Region.Contains] at this; show 0 + 8192 ≤ (x - base).toNat; omega))
+  simp only [Region.Contains] at this; show 0 + 8192 ≤ (x - base).toNat; omega_using [this]))
 
 /-- A word of the working space, after writes to a region disjoint from it. -/
 theorem word_frame {base : Addr} {m m' : Mem} {R : Region} (hF : Frame [R] m m')
@@ -130,7 +130,7 @@ theorem word_frame {base : Addr} {m m' : Mem} {R : Region} (hF : Frame [R] m m')
   rw [List.mem_singleton.mp hr] at hc
   refine hd _ hc ?_
   rw [Offset.add_add]
-  exact Offset.contains_base base (d := d + i) (n := 1) (by omega) (by omega)
+  exact Offset.contains_base base (d := d + i) (n := 1) (by omega_using [hd8, hi]) (by omega_using [hd8, hi])
 
 variable {fld : Field} (hf : FieldOk fld)
 
@@ -178,7 +178,7 @@ theorem tail_ok {lad inv : Prog isa}
   unfold tailOf
   have hkr : ∀ q < 56, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
     fun q hq => ⟨scalarR s₀, by rw [rd₁]; exact List.mem_append_left _ hp.scalar_rd,
-      Offset.contains_base _ (d := q) (n := 1) (k := 56) (by omega) (by omega)⟩
+      Offset.contains_base _ (d := q) (n := 1) (k := 56) (by omega_using [hq]) (by omega_using [hq])⟩
   have hkd : ∀ q < 56, 8192 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
     fun q hq => far hp.scalar_sc hq (by decide)
   refine WP.seq (WP.mono (bits_ok hs₁ (g₁ _ (by decide)) hkr hkd)
@@ -190,7 +190,7 @@ theorem tail_ok {lad inv : Prog isa}
   have hkb := bytesAt_outside o₁ hkd
   have e₃ : ∀ i : Index, E s₃.mem base i = E s₁.mem base i :=
     fun i => by
-      rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by have := slot_lt i; simp only [BITS, ACC] at *; omega))
+      rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by have := slot_lt i; simp only [BITS, ACC] at *; omega_using [this]))
   refine WP.seq (WP.mono (hlad (s := s₃)
     (k := Spec.X448.decodeScalar448 (Spec.X448.bytesAt s₀.mem (s₀.gpr .rsi) 56))
     (u := toFe (Spec.X448.decodeUCoordinate pb))
@@ -202,8 +202,8 @@ theorem tail_ok {lad inv : Prog isa}
     (by have := ladderAfter_swap_le
           (Spec.X448.decodeScalar448 (Spec.X448.bytesAt s₀.mem (s₀.gpr .rsi) 56))
           (toFe (Spec.X448.decodeUCoordinate pb))
-          (n := 0) (by omega)
-        omega) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e1₅, e2₅⟩ => ?_)
+          (n := 0) (by omega_using [])
+        omega_using [this]) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e1₅, e2₅⟩ => ?_)
   have hs₅ := K₅.scr L.scr
   refine WP.seq (WP.mono (hinv hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
   have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
@@ -220,7 +220,7 @@ theorem tail_ok {lad inv : Prog isa}
     rw [k₈.2.2.2, K₇.wr, wr₆, K₅.wr, L.wr, k₃.2.2.2, wr₂, wr₁]; exact hwo
   rw [WP.block_append_iff]
   refine WP.mono (storesR_ok s₈ 0 W rsi₈ hwo₈
-    (fun d _ hd => by rw [W_len] at hd; exact Offset.contains_base _ (by omega) (by omega))
+    (fun d _ hd => by rw [W_len] at hd; exact Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd]))
     (by decide))
     fun s₉ ⟨v₉, _, F₉, g₉, rd₉, wr₉⟩ => ?_
   have sv₈ : Saved base s₀.gpr s₈.mem := by
@@ -231,7 +231,7 @@ theorem tail_ok {lad inv : Prog isa}
   have sv₉ : Saved base s₀.gpr s₉.mem := fun rd hrd => by
     have := saved_lt rd hrd
     rw [← sv₈ rd hrd]
-    exact word_frame F₉ hp.out_sc (by omega)
+    exact word_frame F₉ hp.out_sc (by omega_using [this])
   have hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hn⟩
   refine WP.mono (restore_ok hs₉ sv₉) fun s' ⟨r', g', m', rd', wr'⟩ => ?_
   have O₃ : Outside base 0 8192 s₀.mem s₃.mem := by
@@ -285,7 +285,7 @@ theorem correct_of {lad inv : Prog isa}
   have hn : base.toNat + 8192 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
   have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
   have hr : ∀ d, d + 8 ≤ 56 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
-    ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega)⟩
+    ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   have hd : ∀ j < 56, 8192 ≤ ofs base (off (s₀.gpr .rdx) j) :=
     fun j hj => far (hbase ▸ hp.point_sc) hj (by decide)
   rw [x448_eq']

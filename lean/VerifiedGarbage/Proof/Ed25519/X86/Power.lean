@@ -29,7 +29,7 @@ theorem power250_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
     ⟨⟨hk.edi, hk.esp, hk.rd, hk.wr, frameWidenS hf hfit (by decide) (by decide) (by decide)⟩, h1, h0,
       fun i hi => ?_⟩
   apply congrArg VG.Proof.X25519.toFe
-  exact fe_frame1s hs hf (by decide) (by simp only [offset]; omega) (.inl (by simp only [offset]; omega))
+  exact fe_frame1s hs hf (by decide) (by simp only [offset]; omega_using []) (.inl (by simp only [offset]; omega_using [hi]))
 
 /-- The chain's tail for the inversion: five squarings, and `z^11`. -/
 theorem invert_tail (z : Spec.X25519.Fe) :

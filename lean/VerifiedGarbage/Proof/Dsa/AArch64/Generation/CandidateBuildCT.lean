@@ -34,8 +34,8 @@ theorem candidateArithmetic_storeState {p : CandidateBuildPublic} {s : State} (h
     apply f.word_eq
     · simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;>
-        left <;> simp only [slot, VG.Impl.Bignum.hdrBytes] <;> omega
-    · have := hw.h256; have := hw.scr.nowrap; omega
+        left <;> simp only [slot, VG.Impl.Bignum.hdrBytes] <;> omega_using [hd]
+    · have := hw.h256; have := hw.scr.nowrap; omega_using [hd]
   exact ⟨⟨ht, (header 160 (by decide)).trans h.2.1.1.pointer,
     (header 136 (by decide)).trans h.2.1.1.length,
     (header (8 * VG.Impl.Bignum.Public.sMask) (by decide)).trans h.2.1.1.mask,

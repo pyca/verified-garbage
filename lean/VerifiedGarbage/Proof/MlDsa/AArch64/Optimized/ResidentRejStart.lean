@@ -21,7 +21,7 @@ theorem pairs_disjoint (σ : State) : (pairR (stateP σ 0)).Disjoint (pairR (sta
 theorem state_word (σ : State) (p i : Nat) : wordAddr (stateP σ p) i = wordAddr (scr σ) (25*p+i) := by
   change stateP σ p + BitVec.ofNat 64 (16*i) = scr σ + BitVec.ofNat 64 (16*(25*p+i))
   change (scr σ + BitVec.ofNat 64 (400*p)) + BitVec.ofNat 64 (16*i) = _
-  rw [Offset.add_add,show 400*p+16*i = 16*(25*p+i) by omega]
+  rw [Offset.add_add,show 400*p+16*i = 16*(25*p+i) by omega_using []]
 
 /-- Absorb all four seeds as two pairs of lanes, preserving the ABI save record. -/
 theorem initFour_ok {σ : State} (hp : Pre 4 σ) : WP isa (.block init) σ fun t => Env 4 σ t ∧
@@ -34,12 +34,12 @@ theorem initFour_ok {σ : State} (hp : Pre 4 σ) : WP isa (.block init) σ fun t
   refine WP.mono (zeroAll_ok hp he1) fun s2 ⟨he2,hz2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (absorbPair_ok (p := 0) hp he2 (by decide : 2*0+1 < 4) (fun i hi => by
-    rw [state_word,Nat.mul_zero,Nat.zero_add]; exact hz2 i (by omega))) fun s3 ⟨he3,hp3,hf3⟩ => ?_
+    rw [state_word,Nat.mul_zero,Nat.zero_add]; exact hz2 i (by omega_using [hi]))) fun s3 ⟨he3,hp3,hf3⟩ => ?_
   have hz3 : ∀ i < 25,s3.mem.read (wordAddr (stateP σ 1) i) 16 = 0 := by
     intro i hi
     rw [hf3.read (pair_contains (stateP σ 1) hi) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (pairs_disjoint σ).symm) (by decide),state_word]
-    exact hz2 (25+i) (by omega)
+    exact hz2 (25+i) (by omega_using [hi])
   refine WP.mono (absorbPair_ok (p := 1) hp he3 (by decide : 2*1+1 < 4) hz3) fun t ⟨het,hpt,hft⟩ => ?_
   refine ⟨het,?_,hpt⟩
   intro i hi
@@ -57,13 +57,13 @@ theorem initTwo_ok {σ : State} (hp : Pre 2 σ) :
   rw [WP.block_append_iff]
   refine WP.mono (zeroAll_ok hp he1) fun s2 ⟨he2,hz2⟩ => ?_
   refine WP.mono (absorbPair_ok (p := 0) hp he2 (by decide) (fun i hi => by
-    rw [state_word,Nat.mul_zero,Nat.zero_add]; exact hz2 i (by omega)))
+    rw [state_word,Nat.mul_zero,Nat.zero_add]; exact hz2 i (by omega_using [hi])))
     fun _ ⟨he,hp,_⟩ => ⟨he,hp⟩
 
 theorem pair_count_disjoint (σ : State) {p : Nat} (hp : p<2) :
     (pairR (stateP σ p)).Disjoint (countR σ) :=
   Offset.disjoint (scr σ) (d := 400*p) (e := 7904) (n := 400) (k := 32)
-    (by omega) (by omega) (by decide)
+    (by omega_using [hp]) (by omega_using [hp]) (by decide)
 
 theorem initCounts_pair {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ s)
     (hpair : ∀p,2*p+1<v → PairAt s.mem (stateP σ p) (A0 σ (2*p)) (A0 σ (2*p+1))) :
@@ -74,7 +74,7 @@ theorem initCounts_pair {v : Nat} {σ s : State} (hp : Pre v σ) (he : Env v σ 
   intro p hpn i hi
   rw [hf.read (pair_contains (stateP σ p) hi) (fun r hr => by
     rw [List.mem_singleton.mp hr]
-    exact pair_count_disjoint σ (by have:=hp.streams; omega)) (by decide)]
+    exact pair_count_disjoint σ (by have:=hp.streams; omega_using [hpn, this])) (by decide)]
   exact hpair p hpn i hi
 
 theorem startFour_ok {σ : State} (hp : Pre 4 σ) :
@@ -86,7 +86,7 @@ theorem startFour_ok {σ : State} (hp : Pre 4 σ) :
   rw [WP.block_append_iff]
   refine WP.mono (initFour_ok hp) fun s ⟨he,h0,h1⟩ => ?_
   exact initCounts_pair hp he (fun p h => by
-    rcases (show p=0 ∨ p=1 by omega) with rfl | rfl
+    rcases (show p=0 ∨ p=1 by omega_using [h]) with rfl | rfl
     · exact h0
     · exact h1)
 
@@ -101,7 +101,7 @@ theorem startTwo_ok {σ : State} (hp : Pre 2 σ) :
   rw [WP.block_append_iff]
   refine WP.mono (initTwo_ok hp) fun s ⟨he,h0⟩ => ?_
   exact initCounts_pair hp he (fun p h => by
-    have : p=0 := by omega
+    have : p=0 := by omega_using [h]
     subst p; exact h0)
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

@@ -1,16 +1,51 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Constant
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Scalar
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOddFlag
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEven
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Impl.Rsa.X86.Inverse
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyDivision
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
+
+/-! ### `RsaKeyGen.X86.KeyOddFlag`, which only this module used -/
+
+section
+
+/-! # Form a secret modulus-validity bit from a borrow and parity -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.Key
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key
+
+theorem odd_mask (b x : BitVec 32) (bit : b.toNat ≤ 1) :
+    (((1 : BitVec 32) - b) &&& x &&& (1 : BitVec 32)).toNat =
+      if b.toNat = 0 then x.toNat % 2 else 0 := by
+  rcases VG.Proof.Rsa.KeyBits32.bit_cases bit with hb | hb
+  · rw [hb]
+    change (((1 : BitVec 32) &&& x) &&& (1 : BitVec 32)).toNat = x.toNat % 2
+    rw [BitVec.and_comm (1 : BitVec 32) x, BitVec.and_assoc, BitVec.and_self]
+    exact VG.Proof.Rsa.KeyBits32.bv_and_one x
+  · rw [hb]
+    change ((0#32 &&& x) &&& (1 : BitVec 32)).toNat = 0
+    simp only [BitVec.zero_and, BitVec.toNat_zero]
+
+end VG.Proof.RsaKeyGen.X86.Key
+
+end
+
+end
+
 /-! # Safe inverse moduli at the shared runtime width -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/OddFlag.lean`, which only this module imported.
@@ -90,12 +125,12 @@ theorem oddModulus_ok {s : State} {B : Addr} {Z n input out : Nat}
   refine WP.seq (WP.mono (constant_ok h (by decide) (3 : BitVec 32)) fun u ⟨hu, Ou, constant, Ku⟩ => ?_)
   change num u.mem B n aT1 = 3 at constant
   have Iu : num u.mem B n input = num s.mem B n input :=
-    Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega) (by simp) fi
+    Ou.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT1; omega_using [ip]) (by simp) fi
   refine WP.seq (WP.mono (sub_ok hu (by decide) hi (by decide)) fun v ⟨hv, Ov, subtract, bit, Kv⟩ => ?_)
   rw [Iu, constant] at subtract
   have borrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) bit
   have Iv : num v.mem B n input = num s.mem B n input := by
-    rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega) (by simp) fi, Iu]
+    rw [Ov.num (by simp only [List.mem_singleton]; intro k e; subst k; unfold aT2; omega_using [ip]) (by simp) fi, Iu]
   have Cv : num v.mem B n aT1 = 3 := by rw [Ov.num (by decide) (by simp) fc, constant]
   refine WP.seq (WP.mono (oddFlag_ok hv hi bit) fun w ⟨hw, Ow, flag, Kw⟩ => ?_)
   rw [Iv] at flag
@@ -106,20 +141,20 @@ theorem oddModulus_ok {s : State} {B : Addr} {Z n input out : Nat}
       by_cases p : num s.mem B n input % 2 = 1
       · simp only [b, ite_true, p] at flag
         simpa [p, ge] using flag
-      · have parity : num s.mem B n input % 2 = 0 := by omega
+      · have parity : num s.mem B n input % 2 = 0 := by omega_using [p]
         simp only [b, ite_true, parity] at flag
         simpa [p] using flag
     · have ng : ¬3 ≤ num s.mem B n input := fun ge => b (borrow.mpr ge)
       simp only [b, ite_false] at flag
       simpa [ng] using flag
-  have bitW : slot w.mem B kFlag ≤ 1 := by rw [valid]; split <;> omega
+  have bitW : slot w.mem B kFlag ≤ 1 := by rw [valid]; split <;> omega_using []
   have Iw : num w.mem B n input = num s.mem B n input := by
     rw [Ow.num (by simp) (by simp only [List.mem_singleton]; intro d e; subst d; exact hf) fi, Iv]
   have Cw : num w.mem B n aT1 = 3 := by
     rw [Ow.num (by simp) (by simp only [List.mem_singleton]; intro d e; subst d; exact hf) fc, Cv]
   refine WP.mono (sel_ok hw ho (by decide) hi hf bitW (by
     by_cases e : out = aT1
-    · right; rw [e]; unfold aT1; omega
+    · right; rw [e]; unfold aT1; omega_using [ip]
     · exact Or.inl e)) fun t ⟨ht, Ot, selected, Kt⟩ => ?_
   refine ⟨ht, (((Ou.join Ov (js := [aT1, aT2, out]) (ds := [])).join Ow
     (js := [aT1, aT2, out]) (ds := [kFlag])).join Ot

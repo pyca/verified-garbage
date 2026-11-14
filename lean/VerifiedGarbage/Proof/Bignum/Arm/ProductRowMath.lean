@@ -18,7 +18,7 @@ theorem product_row_fits {acc scalar B n : Nat}
   have bound := Nat.mul_le_mul (Nat.le_of_lt scalarBound) (Nat.le_of_lt bBound)
   rw [pow32_addtwo]
   have positive := Nat.two_pow_pos (32 * n)
-  omega
+  omega_using [accBound, bound]
 
 theorem product_row_value {m m' original : Mem} {base : Addr} {o a b i n k : Nat}
     (fit : i + (n + 2) ≤ k) (addressFit : o + 4 * k ≤ 2 ^ 64)

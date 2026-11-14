@@ -17,7 +17,7 @@ theorem mulRegions_sub {b : BitVec 32} {o n : Nat} (hn : o + n ≤ 8192) :
     ∀ r ∈ mulRegions b o n, r.Sub ⟨State.addr b, 8192⟩ := by
   intro r hr
   simp only [mulRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.sub_base _ (by omega)
+  rcases hr with rfl | rfl | rfl | rfl <;> exact Offset.sub_base _ (by omega_arith)
 
 structure MulInput (b p : BitVec 32) (n scalar : Nat) (s : State) : Prop where
   bound : n ≤ 32
@@ -37,8 +37,8 @@ theorem MulInput.keep {b p : BitVec 32} {n scalar o len : Nat} {s t : State}
   · have hb : ∀ i < 2 * n, t.mem (State.addr p + BitVec.ofNat 64 i) =
         s.mem (State.addr p + BitVec.ofNat 64 i) :=
       fun i hi => hk.frame.bytes (fun r hr => h.separate.sub_right (mulRegions_sub hn r hr))
-        (by have := h.bound; omega : 2 * n ≤ 2 ^ 64) hi
+        (by have := h.bound; omega_using [this] : 2 * n ≤ 2 ^ 64) hi
     refine (val16_congr fun j hj => ?_).trans h.value
-    simp only [packedLimb, byteN, hb (2 * j) (by omega), hb (2 * j + 1) (by omega)]
+    simp only [packedLimb, byteN, hb (2 * j) (by omega_using [hj]), hb (2 * j + 1) (by omega_using [hj])]
 
 end VG.Proof.Ed25519.Arm

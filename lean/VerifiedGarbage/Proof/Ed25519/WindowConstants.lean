@@ -9,6 +9,7 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The small multiples of the base point represent `[i + 1]B`
@@ -51,7 +52,7 @@ private theorem checkMultiples_ok (p : Point) (a : EPoint dZ) (h : Rep p a) (qs 
     cases i with
     | zero => simpa using hq
     | succ i =>
-      have := ih _ _ (pointAdd_rep hq basePoint_rep) hrest i (by simp only [List.length_cons] at hi; omega)
+      have := ih _ _ (pointAdd_rep hq basePoint_rep) hrest i (by simp only [List.length_cons] at hi; omega_using [hi])
       rw [List.getD_cons_succ]
       convert this using 1
       rw [succ_nsmul]; abel
@@ -73,7 +74,7 @@ theorem negBaseCached_ok (i : Nat) (hi : i < 15) :
     ∃ q, negBaseCached i = cache q ∧ Rep q ((i + 1) • (-baseAff)) := by
   refine ⟨negPoint (affPt (baseMultiples.getD i (0, 1))), ?_, ?_⟩
   · rw [negBaseCached, negTable_eq, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-      List.getElem?_map, List.getElem?_eq_getElem (by rw [multiples_length]; omega)]
+      List.getElem?_map, List.getElem?_eq_getElem (by rw [multiples_length]; omega_using [hi])]
     rfl
   · rw [smul_neg]; exact (baseMultiple_rep i hi).neg
 

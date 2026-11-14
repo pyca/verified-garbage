@@ -6,12 +6,166 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldSche
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedLanes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
-
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldPackedBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseArithmetic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `MlDsa.AArch64.Optimized.InverseBankFieldPackedBank`, which only this module used -/
+
+section
+
+/-! ## From `InverseBankFieldPacked.lean` -/
+
+@[expose] public section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64
+
+/-- The packed inverse gather/scatter computes four ordered scalar butterflies. -/
+theorem packedResult_word (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
+    (second : Bool) (z : Nat → Int) {e : Nat} (he : e<4) :
+    vword (packedResult len second a b z) e =
+      let i := (if second then 4 else 0)+e
+      let x := pairWord a b (packedLow len i)
+      let y := pairWord a b (packedLow len i+len)
+      if i%(2*len)<len then x+y else fastMulWord (x-y) (z (packedLane len i)) := by
+  have he' : e=0 ∨ e=1 ∨ e=2 ∨ e=3 := by omega_using [he]
+  rcases hl with rfl | rfl <;> cases second <;>
+    rcases he' with rfl | rfl | rfl | rfl <;>
+    simp (disch := decide) [packedResult,gather,scatter,
+      vword_trn1_d2,vword_trn2_d2,vword_zip1_s4',vword_zip2_s4,
+      VG.AArch64.vword_map2,fastVector_word,vword_uzp1_s4,vword_uzp2_s4,
+      pairWord,packedLow,packedLane]
+
+/-- Bounds are needed only for the two selected registers, not the other six
+registers whose current layer may already have completed. -/
+theorem packedResult_int (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
+    (second : Bool) (z : Nat → Int) {e : Nat} (he : e<4) {bound : Int}
+    (hq : 8380417≤bound) (hs : 2*bound<2147483648)
+    (hv : ∀ i<8,-bound≤(pairWord a b i).toInt ∧ (pairWord a b i).toInt≤bound) :
+    (vword (packedResult len second a b z) e).toInt =
+      let i := (if second then 4 else 0)+e
+      let x := (pairWord a b (packedLow len i)).toInt
+      let y := (pairWord a b (packedLow len i+len)).toInt
+      if i%(2*len)<len then x+y else fastMul (x-y) (z (packedLane len i)) := by
+  rw [packedResult_word a b hl second z he]
+  have hi : (if second then 4 else 0)+e<8 := by
+    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega_using [he]
+  have hd := packed_indices hl hi
+  have hp := pair_word (z := z (packedLane len ((if second then 4 else 0)+e)))
+    _ _ hq hs (hv _ hd.1) (hv _ hd.2.1)
+  dsimp only
+  by_cases hc : ((if second then 4 else 0)+e)%(2*len)<len
+  · rw [ite_eq_left hc,ite_eq_left hc]
+    exact hp.1
+  · rw [ite_eq_right hc,ite_eq_right hc]
+    exact hp.2
+
+theorem packedResult_bound (a b : BitVec 128) {len : Nat} (hl : len=1 ∨ len=2)
+    (second : Bool) (z : Nat → Int) {e : Nat} (he : e<4) {bound : Int}
+    (hq : 8380417≤bound) (hs : 2*bound<2147483648)
+    (hv : ∀ i<8,-bound≤(pairWord a b i).toInt ∧ (pairWord a b i).toInt≤bound) :
+    -(2*bound)≤(vword (packedResult len second a b z) e).toInt ∧
+      (vword (packedResult len second a b z) e).toInt≤2*bound := by
+  rw [packedResult_int a b hl second z he hq hs hv]
+  have hi : (if second then 4 else 0)+e<8 := by
+    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega_using [he]
+  have hd := packed_indices hl hi
+  have hp := pair_bounds (z := z (packedLane len ((if second then 4 else 0)+e)))
+    hq hs (hv _ hd.1) (hv _ hd.2.1)
+  dsimp only
+  by_cases hc : ((if second then 4 else 0)+e)%(2*len)<len
+  · rw [ite_eq_left hc]
+    simpa only [pair,Int.neg_mul] using hp.1
+  · rw [ite_eq_right hc]
+    simpa only [pair,Int.neg_mul] using hp.2
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+/-! ## From `InverseBankFieldPackedField.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+theorem packedResult_field (a b : BitVec 128) (w : Poly) {len start : Nat}
+    (hl : len=1 ∨ len=2) (hstart : start+8≤256) (second : Bool) (root : Nat → Nat)
+    {e : Nat} (he : e<4) {bound : Int} (hb : 8380417≤bound) (hs : 2*bound<2147483648)
+    (hv : ∀ i<8,-bound≤(pairWord a b i).toInt ∧ (pairWord a b i).toInt≤bound)
+    (hf : ∀ i<8,ofInt (pairWord a b i).toInt=w[start+i]!) :
+    ofInt (vword (packedResult len second a b (fun e => (negZetaNat (root e) : Int))) e).toInt=
+      (InverseTraversal.run (InverseTraversal.packedSchedule start len root) w)[start+(if second then 4 else 0)+e]! := by
+  have hi : (if second then 4 else 0)+e<8 := by
+    cases second <;> simp only [Bool.false_eq_true,ite_false,ite_true,Nat.zero_add] <;> omega_using [he]
+  have hd := packed_indices hl hi
+  rw [packedResult_int a b hl second _ he hb hs hv,Nat.add_assoc,
+    InverseTraversal.packedSchedule_get w hl hstart hi]
+  dsimp only
+  by_cases hc : ((if second then 4 else 0)+e)%(2*len)<len
+  · rw [ite_eq_left hc,ite_eq_left hc,ofInt_add,hf _ hd.1,hf _ hd.2.1,Nat.add_assoc]
+  · rw [ite_eq_right hc,ite_eq_right hc,fastMul_field,ofInt_sub,
+      InverseTraversal.ofInt_negZetaNat,hf _ hd.1,hf _ hd.2.1,Nat.add_assoc,Fin.mul_comm]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+/-! ## From `InverseBankFieldPackedBank.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+
+theorem packedValues_field (v : Vector (BitVec 128) 8) (w : Poly) {g len u : Nat}
+    (hg : g<4) (hl : len=1 ∨ len=2) (hu : u<8) (root : Nat → Nat) {bound : Int}
+    (hb : 8380417≤bound) (hs : 2*bound<2147483648)
+    (hv : ∀ j<8, -bound≤(pairWord v[2*g] v[2*g+1] j).toInt ∧
+      (pairWord v[2*g] v[2*g+1] j).toInt≤bound)
+    (hf : InnerBankField u v w) :
+    InnerBankField u (packedValues v ⟨2*g,by omega_using [hg]⟩ ⟨2*g+1,by omega_using [hg]⟩ len
+      (fun e => (negZetaNat (root e) : Int)))
+      (InverseTraversal.run (InverseTraversal.packedSchedule (32*u+8*g) len root) w) := by
+  intro i e he
+  simp only [packedValues,Vector.getElem_set]
+  by_cases hj : 2*g+1=i.val
+  · rw [ite_eq_left hj]
+    have h := packedResult_field v[2*g] v[2*g+1] w hl (show 32*u+8*g+8≤256 by omega_using [hg, hu])
+      true root he hb hs hv
+      (fun i hi => pairWord_field v w hg hf hi)
+    simpa only [ite_true,Traversal.innerLoc,← hj,show 32*u+4*(2*g+1)+e=32*u+8*g+4+e by omega_using []] using h
+  · rw [ite_eq_right hj]
+    by_cases hi : 2*g=i.val
+    · rw [ite_eq_left hi]
+      have h := packedResult_field v[2*g] v[2*g+1] w hl (show 32*u+8*g+8≤256 by omega_using [hg, hu])
+        false root he hb hs hv
+        (fun i hi => pairWord_field v w hg hf hi)
+      simpa only [Bool.false_eq_true,ite_false,Nat.add_zero,Traversal.innerLoc,← hi,
+        show 4*(2*g)=8*g by omega_using []] using h
+    · rw [ite_eq_right hi,InverseTraversal.packedSchedule_outside w hl (by omega_using [hg, hu])
+        (by unfold Traversal.innerLoc; omega_using [hu, he]) (by unfold Traversal.innerLoc; omega_using [he, hj, hi]),hf i e he]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Inverse
+
+end
+
+end
+
+end
+
 /-! ## From `InverseBankFieldPackedLayer.lean` -/
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/InverseBankFieldPackedBounds.lean`, which only this module imported.
@@ -34,26 +188,26 @@ theorem PackedProgress.pair {v : Vector (BitVec 128) 8} {g : Nat} {b : Int}
     -b≤(pairWord v[2*g] v[2*g+1] i).toInt ∧ (pairWord v[2*g] v[2*g+1] i).toInt≤b := by
   unfold pairWord
   split
-  · have hv := h ⟨2*g,by omega⟩ i ‹_›
-    simpa only [show ¬2*g<2*g by omega,ite_false] using hv
-  · have hv := h ⟨2*g+1,by omega⟩ (i-4) (by omega)
-    simpa only [show ¬2*g+1<2*g by omega,ite_false] using hv
+  · have hv := h ⟨2*g,by omega_using [hg]⟩ i ‹_›
+    simpa only [show ¬2*g<2*g by omega_using [],ite_false] using hv
+  · have hv := h ⟨2*g+1,by omega_using [hg]⟩ (i-4) (by omega_using [hi])
+    simpa only [show ¬2*g+1<2*g by omega_using [],ite_false] using hv
 
 theorem packedValues_progress (v : Vector (BitVec 128) 8) {g len : Nat} (hg : g<4)
     (hl : len=1 ∨ len=2) (z : Nat → Int) {b : Int} (hb : 8380417≤b)
     (hs : 2*b<2147483648) (hv : PackedProgress v g b) :
-    PackedProgress (packedValues v ⟨2*g,by omega⟩ ⟨2*g+1,by omega⟩ len z) (g+1) b := by
+    PackedProgress (packedValues v ⟨2*g,by omega_using [hg]⟩ ⟨2*g+1,by omega_using [hg]⟩ len z) (g+1) b := by
   intro i e he
   simp only [packedValues,Vector.getElem_set]
   by_cases hj : 2*g+1=i.val
-  · rw [ite_eq_left hj,ite_eq_left (by omega : i.val<2*(g+1))]
+  · rw [ite_eq_left hj,ite_eq_left (by omega_using [hj] : i.val<2*(g+1))]
     exact packedResult_bound _ _ hl true z he hb hs (fun j hj => hv.pair hg hj)
   · rw [ite_eq_right hj]
     by_cases hi : 2*g=i.val
-    · rw [ite_eq_left hi,ite_eq_left (by omega : i.val<2*(g+1))]
+    · rw [ite_eq_left hi,ite_eq_left (by omega_using [hi] : i.val<2*(g+1))]
       exact packedResult_bound _ _ hl false z he hb hs (fun j hj => hv.pair hg hj)
     · rw [ite_eq_right hi]
-      have heq : (i.val<2*(g+1)) ↔ (i.val<2*g) := by omega
+      have heq : (i.val<2*(g+1)) ↔ (i.val<2*g) := by omega_using [hj, hi]
       simpa only [heq] using hv i e he
 
 theorem packedProgress_zero (v : Vector (BitVec 128) 8) (b : Int) :
@@ -100,13 +254,13 @@ theorem packedLayer_values (v : Vector (BitVec 128) 8) (w : Poly) {u len g n : N
   induction n generalizing g v w with
   | zero => exact ⟨hv,hf⟩
   | succ n ih =>
-    have hg : g<4 := by omega
-    have hm0 : 2*g%8=2*g := Nat.mod_eq_of_lt (by omega)
-    have hm1 : (2*g+1)%8=2*g+1 := Nat.mod_eq_of_lt (by omega)
+    have hg : g<4 := by omega_using [hgn]
+    have hm0 : 2*g%8=2*g := Nat.mod_eq_of_lt (by omega_using [hgn])
+    have hm1 : (2*g+1)%8=2*g+1 := Nat.mod_eq_of_lt (by omega_using [hgn])
     have hp := packedValues_progress v hg hl (fun e => (negZetaNat (root g e) : Int)) hb hs hv
     have hfield := packedValues_field v w hg hl hu (root g) hb hs
       (fun j hj => hv.pair hg hj) hf
-    have hi := ih _ _ (g := g+1) (by omega) hp hfield
+    have hi := ih _ _ (g := g+1) (by omega_using [hgn]) hp hfield
     simpa only [packedLayerValues,packedLayerOps,hm0,hm1,InverseTraversal.run_append,
       Nat.add_assoc,Nat.add_comm 1 n] using hi
 
@@ -153,7 +307,7 @@ theorem packedRoot_index (u g len : Nat) (hl : len=1 ∨ len=2) :
     packedRoot u g len=(fun e => (negZetaNat (packedIndex u len g e) : Int)) := by
   funext e
   have hi : (if len=1 then 255-16*u-4*g-e else 127-8*u-2*g-e/2)=packedIndex u len g e := by
-    rcases hl with rfl | rfl <;> simp [packedIndex] <;> omega
+    rcases hl with rfl | rfl <;> simp [packedIndex] <;> omega_using []
   unfold packedRoot
   rw [hi]
   rfl

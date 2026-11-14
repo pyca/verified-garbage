@@ -75,15 +75,15 @@ theorem drawSetup_cut (d : DrawPublic) (s : State) (h : DrawBefore d s) (ha : d.
     intro j hj h12 h13 h14
     apply hf.word_eq
     · intro r hr; simp only [List.mem_singleton] at hr; subst r
-      change 8 * j + 8 ≤ 96 ∨ 120 ≤ 8 * j; omega
-    · omega
+      change 8 * j + 8 ≤ 96 ∨ 120 ≤ 8 * j; omega_using [h12, h13, h14]
+    · omega_using [hj]
   exact ⟨⟨s, h.1.ready, k.2.2, hw⟩, h.1.scr.congr k.2.2,
     (hw _ d.p.space_bounds.2.1).trans h.1.link,
     (hh _ (by decide) (by decide) (by decide) (by decide)).trans h.1.outPtr,
     (hh _ (by decide) (by decide) (by decide) (by decide)).trans h.1.len,
     hdi, hsi, hbp, hcx, hdx, source_take (h.1.rand.congrK hi k) d.p.len,
     ⟨fun i hi => by rw [k.2.2]; exact h.1.out.wr i hi, h.1.out.sep⟩,
-    fun i hi j hj => h.1.apart i hi j (by rw [List.length_take] at hj; omega), ha,
+    fun i hi j hj => h.1.apart i hi j (by rw [List.length_take] at hj; omega_using [hj]), ha,
     k.2.2.trans h.2.1, h.2.2⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

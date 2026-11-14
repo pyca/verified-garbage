@@ -49,14 +49,14 @@ theorem update_bytes (c : Context) (m m' : Mem) (d : Addr) (n : Nat)
   | succ n ih =>
     rw [bytes_cons, bytes_cons]
     simp only [update]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [BitVec.add_zero] at h0
     rw [h0, ih (step c).1 (d + 1#64) fun k hk => by
-      have := h (k + 1) (by omega)
+      have := h (k + 1) (by omega_using [hk])
       rw [ks_succ] at this
       rw [show d + 1#64 + BitVec.ofNat 64 k = d + BitVec.ofNat 64 (k + 1) by
         rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq
-        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega]
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []]
       exact this]
     rfl
 

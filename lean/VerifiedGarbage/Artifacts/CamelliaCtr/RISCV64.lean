@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 
-/-! # Camellia-CTR artifacts on baseline RISC-V -/
+/-! # Camellia-CTR on RISC-V -/
 
 @[expose] public section
 

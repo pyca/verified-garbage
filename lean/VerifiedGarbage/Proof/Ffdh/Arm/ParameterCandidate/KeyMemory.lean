@@ -29,7 +29,7 @@ theorem key_number_of_workspaceEq {s : State} {base : BitVec 32} {capacity w j :
   apply val32_congr
   intro i hi
   apply congrArg BitVec.toNat
-  exact equal.word (bits := 32) (by have := ready.arrayFit bound; omega)
+  exact equal.word (bits := 32) (by have := ready.arrayFit bound; omega_using [hi, this])
 
 theorem MontData.after_workspaceEq {base : BitVec 32} {capacity w : Nat} {m m' : Mem}
     (data : MontData base capacity w m) (equal : WorkspaceEq (State.addr base) (8 * capacity) m m') :
@@ -37,12 +37,12 @@ theorem MontData.after_workspaceEq {base : BitVec 32} {capacity w : Nat} {m m' :
   have fits : arrAt w 8 ≤ 8 * capacity := data.width ▸ data.layout.2.2.1
   have headerFits : 128 ≤ 8 * capacity := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   have num0 := equal.number fits (j := 0) (by decide)
-  refine ⟨equal.layout data.layout, (equal.width (by omega)).trans data.width, ?_, ?_⟩
+  refine ⟨equal.layout data.layout, (equal.width (by omega_using [headerFits])).trans data.width, ?_, ?_⟩
   · unfold word wordAt
-    rw [equal.word (bits := 64) (by have := array_end_le (w := w) (j := 0) (k := 8) (by decide); omega),
-      equal.word (bits := 64) (by change 64 ≤ 8 * capacity; omega)]
+    rw [equal.word (bits := 64) (by have := array_end_le (w := w) (j := 0) (k := 8) (by decide); omega_using [fits, this]),
+      equal.word (bits := 64) (by change 64 ≤ 8 * capacity; omega_using [headerFits])]
     exact data.inverse
   · rw [num0]
     exact data.modulus
@@ -56,11 +56,11 @@ theorem stackWrite_workspaceEq {s : State} {base : BitVec 32} {capacity d : Nat}
   have frame : Frame [⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩] s.mem
       (s.mem.writeW (State.addr (s.sp + BitVec.ofNat 32 d)) value) :=
     (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
-  refine WorkspaceEq.of_frame (by have := workspace.nowrap; omega) frame ?_
+  refine WorkspaceEq.of_frame (by have := workspace.nowrap; omega_using [this]) frame ?_
   intro r hr
   rw [List.mem_singleton] at hr
   subst r
-  rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]
+  rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [fit, this])]
   exact (separate.sub_left (Offset.sub_base _ fit)).symm
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

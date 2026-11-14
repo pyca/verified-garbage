@@ -5,13 +5,86 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.M
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Table
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Math
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.State
-
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.TableLayout
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Copy
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.AArch64.Joint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.PointOpsContract
+public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
+public import VerifiedGarbage.Proof.Weierstrass.InverseContract
+public import VerifiedGarbage.Proof.Weierstrass.MulContract
+
+/-! ### `Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.Copy`, which only this module used -/
+
+section
+
+/-! Copies through the joint table's public entry pointer. -/
+
+@[expose] public section
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+open VG.Proof.Weierstrass.AArch64
+open VG.Proof.Ed25519.AArch64 (Keeps)
+open VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
+
+theorem word_at_offset (m : Mem) (base : Addr) (a b : Nat) :
+    word m (off base a) b = word m base (a+b) := by
+  unfold word off
+  rw [VG.Offset.add_add]
+
+theorem source_ptr {s : State} {base : Addr} {size a : Nat} (hs : Scr s base size)
+    (ha : a ≤ size) (hr : s.gpr .x16 = off base a) :
+    Ptr s .x16 (off base a) (size-a) where
+  reg := hr
+  enc := by have := hs.enc; omega
+  ld d hd := by
+    rw [VG.Offset.add_add]
+    exact ⟨_,List.mem_append_right _ hs.wr,hs.contains (by omega_using [hd]) (by decide)⟩
+
+/-- The selected entry is above or wholly below the destination. -/
+theorem copyFrom_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {a src dst : Nat},
+    Scr s base size → s.gpr .x16 = off base a →
+    dst + 8*n ≤ size → a + src + 8*n ≤ size → dst % 8 = 0 → src % 8 = 0 →
+    (dst + 8*n ≤ a + src ∨ a + src + 8*n ≤ dst) →
+    WP isa (.block (copyFrom n dst src)) s fun t =>
+      wordsVal t.mem base dst n = wordsVal s.mem base (a+src) n ∧
+      KeepRegs [.x4] s t ∧ Outside base dst (8*n) s.mem t.mem
+  | 0, _, _, _, _, _, _, _, _, _, _, _, _ =>
+    WP.block_nil ⟨rfl,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,Outside.refl _ _ _ _⟩
+  | n+1, s, base, a, src, dst, hs, hr, hd, ha, hd8, hs8, hsep => by
+    have hn := hs.nowrap
+    have hp := source_ptr hs (by omega_using [ha] : a ≤ size) hr
+    rw [copyFrom,WP.block_append_iff,←List.singleton_append,WP.block_append_iff]
+    refine WP.mono (ldR_ok hp (d:=src) (by omega_using [ha]) hs8 .x4) fun s₀ ⟨e₀,k₀,_⟩ => ?_
+    rw [word_at_offset] at e₀
+    have hs₀ := hs.of_keeps k₀ (by decide)
+    refine WP.mono (st_out hs₀ (o:=dst) (by omega_using [hd]) hd8 .x4) fun s₁ ⟨m₁,k₁,g₁⟩ => ?_
+    rw [e₀,k₀.mem] at m₁
+    have k₀₁ : KeepRegs [.x4] s s₁ := (Keeps.regs k₀).trans (k₁.mono (by simp))
+    have hs₁ := hs.of_keepRegs k₀₁ (by decide)
+    have O₁ : Outside base dst 8 s.mem s₁.mem := by
+      rw [m₁]; exact writeW_outside _ _ _ (by omega_using [hd, hn])
+    have hr₁ : s₁.gpr .x16 = off base a := (k₀₁.gpr .x16 (by decide)).trans hr
+    have e₁ : wordsVal s₁.mem base (a+src+8) n = wordsVal s.mem base (a+src+8) n :=
+      O₁.wordsVal (by omega_using [hsep]) (by omega_using [ha, hn])
+    refine WP.mono (copyFrom_ok n hs₁ hr₁ (dst:=dst+8) (src:=src+8)
+      (by omega_using [hd]) (by omega_using [ha]) (by omega_using [hd8]) (by omega_using [hs8]) (by omega_using [hsep])) fun s₂ ⟨e₂,k₂,O₂⟩ => ?_
+    refine ⟨?_,k₀₁.trans k₂,fun x hx => by rw [O₂ x (by omega_using [hx]),O₁ x (by omega_using [hx])]⟩
+    rw [show a+(src+8)=a+src+8 by omega_using []] at e₂
+    rw [wordsVal,O₂.word (by omega_using []) (by omega_using [hd, hn]),m₁,word_writeW_self,e₂,e₁,wordsVal]
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint
+
+end
+
+end
+
 /-! A public digit addition, including the zero-pair case. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/BrainpoolP256r1/Joint/Fetch.lean`, which only this module imported.
@@ -163,7 +236,7 @@ theorem zero_test {s : State} {d : Nat} (hd : d < 16) (h2 : s.gpr .x2=BitVec.ofN
   · have hn : BitVec.ofNat 64 d ≠ 0 := by
       intro he
       have h := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega)] at h
+      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hd])] at h
       exact hz h
     rw [decide_eq_false hz,beq_eq_false_iff_ne.mpr hn]
 
@@ -185,18 +258,18 @@ theorem addDigit_ok {base : Addr} {P Q A : Point C} {u v j : Nat} {s : State}
   have R₁ := hp.of_mem k₁.mem
   let d := digitPair u v j
   have hd : d < 16 := digitPair_lt u v j
-  have hda : d%4=(u >>> (2*j))%4 := by dsimp only [d,digitPair]; omega
-  have hdb : d/4=(v >>> (2*j))%4 := by dsimp only [d,digitPair]; omega
+  have hda : d%4=(u >>> (2*j))%4 := by dsimp only [d,digitPair]; omega_using []
+  have hdb : d/4=(v >>> (2*j))%4 := by dsimp only [d,digitPair]; omega_using []
   refine WP.ite (decide (d=0)) (zero_test hd d₁) (fun hz => ?_) (fun hn => ?_)
   · have hz' : d=0 := of_decide_eq_true hz
-    have ha0 : (u >>> (2*j))%4=0 := by rw [hz'] at hda; omega
-    have hb0 : (v >>> (2*j))%4=0 := by rw [hz'] at hdb; omega
+    have ha0 : (u >>> (2*j))%4=0 := by rw [hz'] at hda; omega_using [hda]
+    have hb0 : (v >>> (2*j))%4=0 := by rw [hz'] at hdb; omega_using [hdb]
     have ep : pair P Q ((u >>> (2*j))%4) ((v >>> (2*j))%4)=.infinity := by
       rw [ha0,hb0]; exact pair_zero P Q
     rw [ep]
     exact WP.block_nil ⟨W₁,I₁,B₁,T₁,R₁,k₁.gpr _ (by decide)⟩
   · have hn' : d≠0 := of_decide_eq_false hn
-    refine WP.seq (WP.mono (fetch_ok I₁.scr (by omega) (by omega) d₁ (T₁ d (by omega) (by omega)))
+    refine WP.seq (WP.mono (fetch_ok I₁.scr (by omega) (by omega) d₁ (T₁ d (by omega_using [hn']) (by omega_using [hd])))
       fun s₂ ⟨k₂,E₂,c₂⟩ => ?_)
     have W₂ := W₁.trans (k₂.mono entryWork_sub)
     have I₂ := hi.unch (W₂.mono loopWork_sub)

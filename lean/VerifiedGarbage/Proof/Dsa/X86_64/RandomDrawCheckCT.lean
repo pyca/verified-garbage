@@ -37,13 +37,13 @@ theorem random_draw_copy_ct : RelCT isa (Two RandomDrawFullPre) Random.copy (fun
   have hn := VG.Proof.Dsa.significant_fits p.qBytes
   have hq := p.qlen
   have hp := p.positive
-  refine ⟨hr.scr, hr.sp, hr.rand, hr.usedWord, hr.qLen, hr.width, hp, by dsimp only [RandomDrawPublic.width]; omega, ?_, ?_⟩
-  · have hh := hr.randSrc.rd p.used (by dsimp only [RandomDrawPublic.context]; rw [hlen]; dsimp only [RandomDrawPublic.width] at hfull; omega)
+  refine ⟨hr.scr, hr.sp, hr.rand, hr.usedWord, hr.qLen, hr.width, hp, by dsimp only [RandomDrawPublic.width]; omega_using [hn, hq], ?_, ?_⟩
+  · have hh := hr.randSrc.rd p.used (by dsimp only [RandomDrawPublic.context]; rw [hlen]; dsimp only [RandomDrawPublic.width] at hfull; omega_using [hfull, hp])
     exact hh
   · change InRegions s.wr (off p.B Random.oNonce + BitVec.ofNat 64 p.qBytes.length - BitVec.ofNat 64 p.width) 1
     unfold RandomDrawPublic.width
     rw [random_nonce_addr p.B hn]
-    exact hr.scr.st8 (by dsimp only [Random.frameBytes, RandomDrawPublic.width]; omega)
+    exact hr.scr.st8 (by dsimp only [Random.frameBytes, RandomDrawPublic.width]; omega_using [hq])
 
 private theorem copy_mid {p : RandomDrawPublic} {s : State} (h : RandomDrawFullPre p s) :
     WP isa Random.copy s (RandomDrawCheckMid p) := by
@@ -53,9 +53,9 @@ private theorem copy_mid {p : RandomDrawPublic} {s : State} (h : RandomDrawFullP
   refine WP.mono (random_copy_draw_ok hr.scr hr.sp hr.rand hr.usedWord hr.width hr.qLen hr.mask
     hr.randSrc hq p.positive (by dsimp only [RandomDrawPublic.context]; rw [hlen]; exact hfull)) fun t ⟨_, _, _, _, hf, hk⟩ => ?_
   dsimp only [RandomDrawPublic.context] at hf
-  have hf' : Outside p.B 200 32 s.mem t.mem := hf.mono (by omega) (by omega)
+  have hf' : Outside p.B 200 32 s.mem t.mem := hf.mono (by omega_using [hn]) (by omega_using [hn, hq])
   have hw (d : Nat) (hd : d + 8 ≤ 200) : word t.mem p.B d = word s.mem p.B d :=
-    hf'.word (Or.inl hd) (by omega)
+    hf'.word (Or.inl hd) (by omega_using [hd])
   exact ⟨⟨hr.scr.congr hk.2.2, (hk.gpr (by decide)).trans hr.sp,
     (hw _ (by decide)).trans hr.qLen, (hw _ (by decide)).trans hr.width,
     (hw _ (by decide)).trans hr.q⟩, (hw _ (by decide)).trans hr.usedWord⟩

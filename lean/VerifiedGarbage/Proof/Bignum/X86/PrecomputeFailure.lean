@@ -44,15 +44,15 @@ theorem precomputeFailure_ok {s : State} {out : BitVec 32} {n : Nat}
     rw [G.other .ecx (by decide), F.gpr, E.gpr, D.gpr, B.gpr]
     rw [← BitVec.ofNat_add, ← BitVec.ofNat_add, ← BitVec.ofNat_add]
     congr 1
-    omega
-  refine WP.mono (VG.Proof.Dsa.X86.failureLoop_ok (by omega) bound fit
+    omega_using []
+  refine WP.mono (VG.Proof.Dsa.X86.failureLoop_ok (by omega_using [positive]) bound fit
     (by rw [G.other .esi (by decide), F.other .esi (by decide), E.other .esi (by decide),
       D.other .esi (by decide), B.other .esi (by decide), A.gpr]) count G.gpr ?_)
     fun t ⟨V, Z, O, T⟩ => ?_
   · intro i hi
     rw [K.2.2]
     obtain ⟨r, hr, hc⟩ := write
-    exact ⟨r, hr, hc.byte (by unfold byteAddr; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by unfold byteAddr; rw [Mem.sub_ofNat_toNat _ (by omega_using [bound, hi])]; omega_using [hi])⟩
   · refine ⟨Z, ?_, M ▸ O, K.trans (T.mono (by decide))⟩
     apply wordsAt_zero_read
     apply read_zero_bytes

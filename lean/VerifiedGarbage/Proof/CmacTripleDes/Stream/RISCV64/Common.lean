@@ -129,12 +129,12 @@ open VG.Proof.CmacTripleDes.Stream (held held_pos) in
 theorem held_bv (c : BitVec 64) (h : c ≠ 0) :
     ((c - BitVec.ofNat 64 1) &&& BitVec.ofInt 64 7) + BitVec.ofNat 64 1 = BitVec.ofNat 64 (held c.toNat) := by
   have hc : c.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
-  rw [held_pos (by omega)]
+  rw [held_pos (by omega_using [hc])]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, and7, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat]
   have := c.isLt
-  omega
+  omega_using [hc]
 
 theorem preserved_ne (r : Reg) (hr : r ∈ preserved) :
     r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 ∧ r ≠ .t3 ∧ r ≠ .t4 ∧ r ≠ .t5 ∧ r ≠ .t6 ∧ r ≠ .ra ∧ r ≠ .a0 ∧
@@ -194,12 +194,12 @@ theorem sv_add (S : Addr) (d : Nat) : sv S + BitVec.ofNat 64 d = S + BitVec.ofNa
 /-- A slot at `sv S + d`, within the scratch buffer's first 56 bytes. -/
 theorem sv_sub (S : Addr) {d n : Nat} (h : d + n ≤ 49) : Region.Sub ⟨sv S + BitVec.ofNat 64 d, n⟩ ⟨S, 56⟩ := by
   have := Align.pad_lt S
-  rw [sv_add]; exact Offset.sub_base _ (by omega)
+  rw [sv_add]; exact Offset.sub_base _ (by omega_using [h, this])
 
 theorem sv_contains (S : Addr) {d n L : Nat} (h : d + n ≤ 49) (hL : 56 ≤ L) :
     (⟨S, L⟩ : Region).Contains (sv S + BitVec.ofNat 64 d) n := by
   have := Align.pad_lt S
-  rw [sv_add]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [sv_add]; exact Offset.contains_base _ (by omega_using [h, hL, this]) (by omega_using [h, this])
 
 /-! ## Copying bytes -/
 
@@ -226,7 +226,7 @@ theorem writeBytes_of {m m' : Mem} {C : Addr} {xs : List Byte}
   · rename_i h
     exact hf a fun r hr hc' => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains] at hc'; omega
+      simp only [Region.Contains] at hc'; omega_using [h, hc']
 
 theorem copy_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst) (h3 : tmp ≠ cnt)
     (h4 : src ≠ dst) (h5 : src ≠ cnt) (h6 : dst ≠ cnt) (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64)
@@ -241,10 +241,10 @@ theorem copy_ok {tmp src dst cnt : Reg} (h1 : tmp ≠ src) (h2 : tmp ≠ dst) (h
     refine WP.ite true (by rw [ev]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     exact ⟨by simp [Spec.Aes.bytesAt, writeBytes_nil], fun _ _ _ _ _ => rfl, rfl, rfl⟩
   refine WP.ite false (by rw [ev]; simp [hL0]) (fun h => by cases h) fun _ => ?_
-  refine WP.mono (copyLoop_ok h1 h2 h3 h4 h5 h6 s (N := L) (by omega) hL hc (by rw [hs]; exact hr)
+  refine WP.mono (copyLoop_ok h1 h2 h3 h4 h5 h6 s (N := L) (by omega_using [hL0]) hL hc (by rw [hs]; exact hr)
     (by rw [hd]; exact hw) (fun x hx₁ hx₂ => ?_)) ?_
   · rw [hd] at hx₁; rw [hs] at hx₂
-    exact hdis x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+    exact hdis x (by simp only [Region.Contains]; omega_using [hx₂]) (by simp only [Region.Contains]; omega_using [hx₁])
   rintro t ⟨hcp, hf, hk⟩
   rw [hd, hs] at hcp
   rw [hd] at hf
@@ -284,37 +284,37 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.le
   apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
   intro i h1 _
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega : i < 2 ^ 64),
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
     h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
 
 /-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
 theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
     Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
       Spec.Aes.bytesAt m p r ++ xs := by
-  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega)]
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_using [h])]
   refine congrArg (· ++ xs) ?_
   simp only [Spec.Aes.bytesAt]
   apply List.map_congr_left
   intro i hi
-  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega)
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_using [h])
 
 /-- The bytes past the first `a`. -/
 theorem bytesAt_drop (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     (Spec.Aes.bytesAt m p n).drop a = Spec.Aes.bytesAt m (p + BitVec.ofNat 64 a) (n - a) := by
-  conv => lhs; rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append]
+  conv => lhs; rw [show n = a + (n - a) by omega_using [h], Proof.Cmac.Stream.bytesAt_append]
   rw [List.drop_append_of_le_length (by simp [Spec.Aes.bytesAt]), List.drop_of_length_le (by simp [Spec.Aes.bytesAt]),
     List.nil_append]
 
 /-- The first `b` bytes past the first `a`. -/
 theorem bytesAt_drop_take (m : Mem) (p : Addr) {a b n : Nat} (h : a + b ≤ n) :
     ((Spec.Aes.bytesAt m p n).drop a).take b = Spec.Aes.bytesAt m (p + BitVec.ofNat 64 a) b := by
-  rw [bytesAt_drop m p (by omega), show n - a = b + (n - a - b) by omega, Proof.Cmac.Stream.bytesAt_append,
+  rw [bytesAt_drop m p (by omega_using [h]), show n - a = b + (n - a - b) by omega_using [h], Proof.Cmac.Stream.bytesAt_append,
     List.take_append_of_le_length (by simp [Spec.Aes.bytesAt]), List.take_of_length_le (by simp [Spec.Aes.bytesAt])]
 
 /-- The first `a` bytes. -/
 theorem bytesAt_take (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     (Spec.Aes.bytesAt m p n).take a = Spec.Aes.bytesAt m p a := by
-  have := bytesAt_drop_take m p (a := 0) (b := a) (n := n) (by omega)
+  have := bytesAt_drop_take m p (a := 0) (b := a) (n := n) (by omega_using [h])
   rwa [List.drop_zero, BitVec.add_zero] at this
 
 theorem blocksAt_succ (m : Mem) (p : Addr) (k : Nat) :

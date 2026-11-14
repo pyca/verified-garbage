@@ -36,17 +36,17 @@ theorem internal_ctx {a : Nat} (ha : a < 8) (ha1 : a ≠ Public.aAcc) (ha2 : a �
   have hsize : slot (8*blocks p.1) 8 ≤ p.1.Z := he.symm ▸ hz
   have hA : slot (8*blocks p.1) a+64*blocks p.1 ≤ p.1.Z := by
     have := slot_le (w := 8*blocks p.1) ha
-    omega
+    omega_using [hsize, this]
   have hP : productBase (blocks p.1)+8*(16*blocks p.1+2) ≤ p.1.Z := by
     unfold productBase slot Public.aAcc at *
-    omega
+    omega_using [he, hz]
   have hj := hb.index
   apply WP.block_append
   have hsep := input_separation hb.fast ha1 ha2
   refine WP.mono (tile_ok (eA := slot (8*blocks p.1) a+64*p.2)
-    (eT := productBase (blocks p.1)+128*p.2) hg.scr hb.ptr h.tptr hb.zero (by omega) (by omega) (by omega))
+    (eT := productBase (blocks p.1)+128*p.2) hg.scr hb.ptr h.tptr hb.zero (by omega_using [hA, hj]) (by omega_using [hP, hj]) (by omega_using [hj, hsep]))
     fun t ⟨_, hto, kt⟩ => ?_
-  have hout := hto.mono (o' := productBase (blocks p.1)) (n' := 8*(16*blocks p.1+2)) (by omega) (by omega)
+  have hout := hto.mono (o' := productBase (blocks p.1)) (n' := 8*(16*blocks p.1+2)) (by omega_using []) (by omega_using [hj])
   have hHt : Hdr t.mem p.1.B p.1.w mi := he ▸ frame_header hout (he.symm ▸ hg.hdr)
   refine WP.mono (clearPending_ok t) fun u ⟨⟨hu10, hum⟩, ku⟩ => ?_
   have kk := kt.trans ku

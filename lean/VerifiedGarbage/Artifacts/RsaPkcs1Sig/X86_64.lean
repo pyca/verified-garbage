@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCT
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -55,55 +56,40 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 
-/-! # RSASSA-PKCS1-v1_5 signing on x86-64 -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
 @[expose] public section
 
-namespace VG.Artifacts.RsaPkcs1Sig.X86_64.RsaPrivateCrt
+namespace VG.Artifacts.RsaPkcs1Sig.X86_64
+
+open VG.Proof.Rsa.X86_64 (PublicImpl)
 
 open VG.Proof.Rsa.X86_64 (CrtImpl)
 open VG.Proof.RsaPkcs1Sig.X86_64
 
-def artifacts (v : CrtImpl) : List Artifact := [
-  Spec.RsaPkcs1Sig.signApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
-    stack := sigStack
-    verified := Sgn.code_verified v
-    spSafe := Sgn.code_spSafe v
-    features := v.features }]
-
-end VG.Artifacts.RsaPkcs1Sig.X86_64.RsaPrivateCrt
-
--- PKCS #1 v1.5 verification and recovery over precomputed RSA public variants
-namespace VG.Artifacts.RsaPkcs1Sig.X86_64.RsaPublicPrecomputed
-
-open VG.Proof.Rsa.X86_64 (PublicImpl)
-open VG.Proof.RsaPkcs1Sig.X86_64
-
-def artifacts (v : PublicImpl) : List Artifact := [
-  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Sig.X86_64.Precomputed.code v.name v.code
-    stack := verStack
-    verified := PcCT.code_verified v
-    spSafe := PcCT.code_spSafe v
-    features := v.features },
-  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed.code v.name v.code
-    stack := verStack
-    verified := RecPcCT.code_verified v
-    spSafe := RecPcCT.code_spSafe v
-    features := v.features }]
-
-end VG.Artifacts.RsaPkcs1Sig.X86_64.RsaPublicPrecomputed
-
-namespace VG.Artifacts.RsaPkcs1Sig.X86_64
-
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v => RsaPrivateCrt.artifacts v) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun v => RsaPublicPrecomputed.artifacts v)
+  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun (v : CrtImpl) => [
+    Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+      suffix := v.suffix
+      extra := v.extra
+      code := Impl.RsaPkcs1Sig.X86_64.Sign.codeP (Sgn.privNameP v) (Sgn.privCodeP v)
+      stack := sigStack
+      verified := Sgn.signPrecomputed_verified v
+      spSafe := Sgn.codeP_spSafe v } (Sgn.signPrecomputed_postOut sigStack))]) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
+    Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.X86_64.Precomputed.code v.name v.code
+      stack := verStack
+      verified := PcCT.code_verified v
+      spSafe := PcCT.code_spSafe v },
+    Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed.code v.name v.code
+      stack := verStack
+      verified := RecPcCT.code_verified v
+      spSafe := RecPcCT.code_spSafe v }])
 
 end VG.Artifacts.RsaPkcs1Sig.X86_64

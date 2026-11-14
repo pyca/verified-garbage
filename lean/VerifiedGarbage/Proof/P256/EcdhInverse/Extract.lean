@@ -1,8 +1,10 @@
 module
 public import VerifiedGarbage.Proof.Framework.PowLit
-
 import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
-import VerifiedGarbage.Proof.Divstep.Packed20Extract
+import Mathlib.Data.Int.Basic
+import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.NormNum
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Divstep.WordBasic
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Algebra.Group.Nat.Defs
@@ -14,7 +16,92 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import Mathlib.Tactic.Linarith
+
+/-! ### `Divstep.Packed20Extract`, which only this module used -/
+
+section
+
+/-! Signed coefficient extraction for the 20/19-step packed divstep rows. -/
+
+@[expose] public section
+
+namespace VG.Proof.Divstep
+
+private theorem row_small {n a b : Nat} {u v : Int}
+    (ha : a < 2^20) (hb : b < 2^20) (h : |u|+|v| ≤ (2:Int)^n) :
+    -(2:Int)^n * 2^20 ≤ u*a+v*b ∧ u*a+v*b < (2:Int)^n*2^20 := by
+  have ha0 : (0:Int) ≤ a := Nat.cast_nonneg a
+  have hb0 : (0:Int) ≤ b := Nat.cast_nonneg b
+  have ha1 : (a:Int) ≤ 2^20-1 := by norm_num at ha ⊢; omega_using [ha]
+  have hb1 : (b:Int) ≤ 2^20-1 := by norm_num at hb ⊢; omega_using [hb]
+  have hu := abs_nonneg u
+  have hv := abs_nonneg v
+  have u0 := neg_abs_le u
+  have u1 := le_abs_self u
+  have v0 := neg_abs_le v
+  have v1 := le_abs_self v
+  have a0 := mul_le_mul_of_nonneg_right u0 ha0
+  have a1 := mul_le_mul_of_nonneg_right u1 ha0
+  have b0 := mul_le_mul_of_nonneg_right v0 hb0
+  have b1 := mul_le_mul_of_nonneg_right v1 hb0
+  have ua := mul_le_mul_of_nonneg_left ha1 hu
+  have vb := mul_le_mul_of_nonneg_left hb1 hv
+  have hn : (0:Int) < 2^n := pow_pos (by norm_num) _
+  constructor <;> linarith only [a0,a1,b0,b1,ua,vb,h,hn]
+
+private theorem row_decompose {n a b : Nat} {u v : Int} (hn : n=19 ∨ n=20) :
+    (u*((a:Int)-2^41)+v*((b:Int)-2^62))/2^n =
+      (u*a+v*b)/2^n-u*2^(41-n)-v*2^(62-n) := by
+  simp only [mul_sub]
+  rcases hn with rfl | rfl <;> norm_num
+  all_goals omega_using []
+
+/-- The exact integer decomposition used by both signed extractions. -/
+theorem packed20_row {n a b : Nat} {u v : Int}
+    (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
+    (h : |u|+|v| ≤ (2:Int)^n) :
+    let l := (u*a+v*b)/2^n;
+    -(2:Int)^20 ≤ l ∧ l<2^20 ∧
+    (u*((a:Int)-2^41)+v*((b:Int)-2^62))/2^n = l-u*2^(41-n)-v*2^(62-n) := by
+  dsimp only
+  obtain ⟨hl,hh⟩ := row_small ha hb h
+  have hp : (0:Int)<2^n := pow_pos (by norm_num) _
+  refine ⟨?_,?_,row_decompose hn⟩
+  · exact (Int.le_ediv_iff_mul_le hp).2 (by nlinarith)
+  · exact (Int.ediv_lt_iff_lt_mul hp).2 (by nlinarith)
+
+/-- Recover the negated low coefficient from the packed signed row. -/
+theorem packed20_extract_low {n a b : Nat} {u v : Int}
+    (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
+    (h : |u|+|v| ≤ (2:Int)^n) (hu : -(2:Int)^(n-1) ≤ u) :
+    let z := (u*((a:Int)-2^41)+v*((b:Int)-2^62))/2^n;
+    ((z+2^20)/2^(41-n)+2^20)%2^21-2^20 = -u := by
+  obtain ⟨hl,hh,hz⟩ := packed20_row hn ha hb h
+  have hub : u ≤ (2:Int)^n := le_trans (le_abs_self u) (by linarith [abs_nonneg v])
+  dsimp only
+  rw [hz]
+  rcases hn with rfl | rfl <;> norm_num at *
+  all_goals omega_using [hub, hh, hl, hu]
+
+/-- Recover the negated high coefficient with the signed arithmetic shift. -/
+theorem packed20_extract_high {n a b : Nat} {u v : Int}
+    (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
+    (h : |u|+|v| ≤ (2:Int)^n) (hu : -(2:Int)^(n-1) ≤ u) :
+    let z := (u*((a:Int)-2^41)+v*((b:Int)-2^62))/2^n;
+    (z+2^20+2^41)/2^(62-n) = -v := by
+  obtain ⟨hl,hh,hz⟩ := packed20_row hn ha hb h
+  have hub : u ≤ (2:Int)^n := le_trans (le_abs_self u) (by linarith [abs_nonneg v])
+  dsimp only
+  rw [hz]
+  rcases hn with rfl | rfl <;> norm_num at *
+  all_goals omega_using [hub, hh, hl, hu]
+
+end VG.Proof.Divstep
+
+end
+
+end
+
 
 @[expose] public section
 
@@ -26,18 +113,18 @@ theorem signed_window (x : BitVec 64) {k : Nat} (hk : k=21 ∨ k=22) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_sshiftRight,BitVec.getLsbD_signExtend,
-    BitVec.getLsbD_extractLsb',show ¬64≤i by omega,decide_false,
+    BitVec.getLsbD_extractLsb',show ¬64≤i by omega_using [hi],decide_false,
     Bool.not_false,Bool.true_and,hi,decide_true]
   by_cases h : i<21
-  · simp only [show 43+i<64 by omega,↓reduceIte,h,
+  · simp only [show 43+i<64 by omega_using [h],↓reduceIte,h,
       BitVec.getLsbD_shiftLeft]
-    have ha : 43+i-(43-k)=k+i := by omega
-    simp only [ha,show ¬43+i<43-k by omega,decide_false,Bool.not_false,
+    have ha : 43+i-(43-k)=k+i := by omega_using [hk]
+    simp only [ha,show ¬43+i<43-k by omega_using [],decide_false,Bool.not_false,
       Bool.true_and,decide_true]
-  · simp only [show ¬43+i<64 by omega,↓reduceIte,h,BitVec.msb_eq_getLsbD_last,
+  · simp only [show ¬43+i<64 by omega_using [h],↓reduceIte,h,BitVec.msb_eq_getLsbD_last,
       BitVec.getLsbD_shiftLeft,BitVec.getLsbD_extractLsb']
-    have ha : 63-(43-k)=k+20 := by omega
-    simp only [ha,show ¬63<43-k by omega,decide_false,Bool.not_false,
+    have ha : 63-(43-k)=k+20 := by omega_using [hk]
+    simp only [ha,show ¬63<43-k by omega_using [],decide_false,Bool.not_false,
       Nat.reduceSub,show (64-1:Nat)<64 by decide,show (21-1:Nat)<21 by decide,
       decide_true,Bool.true_and]
 
@@ -47,7 +134,7 @@ theorem signed_window_int (x : Int) {k : Nat} (hk : k=21 ∨ k=22) :
   rw [signed_window _ hk,BitVec.signExtend,BitVec.toInt_extractLsb']
   apply congrArg (BitVec.ofInt 64)
   rw [Nat.shiftRight_eq_div_pow,Int.natCast_ediv,VG.Proof.Divstep.toNat_ofInt64]
-  rcases hk with rfl|rfl <;> norm_num [Int.bmod_def] <;> omega
+  rcases hk with rfl|rfl <;> norm_num [Int.bmod_def] <;> omega_using []
 
 theorem extract_low {n a b : Nat} {u v : Int}
     (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
@@ -56,7 +143,7 @@ theorem extract_low {n a b : Nat} {u v : Int}
     ((BitVec.ofInt 64 (z+2^20)) <<< (43-(41-n))).sshiftRight 43 =
       BitVec.ofInt 64 (-u) := by
   dsimp only
-  rw [signed_window_int _ (by omega),packed20_extract_low hn ha hb h hu]
+  rw [signed_window_int _ (by omega_using [hn]),packed20_extract_low hn ha hb h hu]
 
 theorem biased_row_signed {n a b : Nat} {u v : Int}
     (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
@@ -68,7 +155,7 @@ theorem biased_row_signed {n a b : Nat} {u v : Int}
   have hv := abs_le.mp (le_trans (le_add_of_nonneg_left (abs_nonneg u)) h)
   dsimp only
   rw [hz]
-  rcases hn with rfl|rfl <;> norm_num at * <;> omega
+  rcases hn with rfl|rfl <;> norm_num at * <;> omega_using [hv, hu, hh, hl]
 
 theorem extract_high {n a b : Nat} {u v : Int}
     (hn : n=19 ∨ n=20) (ha : a<2^20) (hb : b<2^20)
@@ -87,6 +174,6 @@ theorem shifted_low44 (x : Int) :
   rw [BitVec.sshiftRight_eq,VG.Proof.Divstep.toNat_ofInt64,
     Int.shiftRight_eq_div_pow,BitVec.toInt_ofInt,Int.bmod_def]
   norm_num
-  split <;> omega
+  split <;> omega_using []
 
 end VG.Proof.P256.EcdhInverse

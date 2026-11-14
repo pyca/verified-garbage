@@ -53,7 +53,7 @@ end
 theorem imm64 {v : Nat} (h : v < 65536) : (BitVec.ofNat 16 v).setWidth 64 = BitVec.ofNat 64 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- The 8 bytes `v` to `p`. -/
 theorem setQ_ok {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {p : Ptr} {v : Nat}
@@ -121,7 +121,7 @@ theorem ofNat_sub_one {n i : Nat} (h : i < n) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-- The glue of a copy: `x0 ← dst`, `x1 ← src`, `x2 ← n`. -/
 theorem copyGlue_ok {dst src : Ptr} {n : Nat} (hd : dst.1 ∈ keptRegs) (hs : src.1 ∈ keptRegs) (s : State) :
@@ -152,13 +152,13 @@ theorem copy_core {dst src : Ptr} {n : Nat} (h0 : 0 < n) (hn : n < 2 ^ 32) (hd :
       by rw [k1.mem]; exact Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero _)⟩)
     fun s' ⟨_, _, _, kk, hf, hc⟩ => ⟨?_, hf, kk⟩
   · have hsrc : s'.mem (pa s src + BitVec.ofNat 64 k) = s.mem (pa s src + BitVec.ofNat 64 k) :=
-      hf.bytes (R := ⟨pa s src, n⟩) (by simpa using hdj) (show n ≤ 2 ^ 64 by omega) hk
-    refine WP.mono (copyBody_ok s' (by rw [kk.rd, kk.wr, e1]; exact inRegions_sub hrd (by omega) (by omega))
-      (by rw [kk.wr, e0]; exact inRegions_sub hwr (by omega) (by omega))) fun s'' ⟨⟨hm, e0', e1', e2'⟩, k'⟩ =>
+      hf.bytes (R := ⟨pa s src, n⟩) (by simpa using hdj) (show n ≤ 2 ^ 64 by omega_using [hn]) hk
+    refine WP.mono (copyBody_ok s' (by rw [kk.rd, kk.wr, e1]; exact inRegions_sub hrd (by omega_using [hk]) (by omega_using [hn]))
+      (by rw [kk.wr, e0]; exact inRegions_sub hwr (by omega_using [hk]) (by omega_using [hn]))) fun s'' ⟨⟨hm, e0', e1', e2'⟩, k'⟩ =>
         ⟨⟨by rw [e0', e0, off_add1], by rw [e1', e1, off_add1], by rw [e2', e2, ofNat_sub_one hk],
           (kk.trans k').mono (by simp), ?_, fun j hj => ?_⟩, ?_⟩
     · rw [hm, e0]
-      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hn, hk]))
     · rw [hm, e0, e1, Proof.MlKem.writeW8_apply]
       by_cases e : j = k
       · subst e; rw [Proof.MlDsa.KeyGen.ifp rfl, hsrc]
@@ -167,9 +167,9 @@ theorem copy_core {dst src : Ptr} {n : Nat} (h0 : 0 < n) (hn : n < 2 ^ 32) (hd :
           simp only [Offset.add_sub_cancel_left] at h'
           have := congrArg BitVec.toNat h'
           simp only [BitVec.toNat_ofNat] at this
-          omega)), hc j (by omega)]
-    · rw [e2', e2, ofNat_sub_one hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+          omega_using [hn, hk, hj, this])), hc j (by omega_using [hj, e])]
+    · rw [e2', e2, ofNat_sub_one hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
+      omega_using [hk]
   · simp only [bytesAt]
     exact List.map_congr_left fun i hi => hc i (List.mem_range.mp hi)
 

@@ -27,7 +27,7 @@ theorem saveV_step {s : State} {p : Addr} {i : Nat} (hi : i < 8) (hp : s.gpr .x2
         t.mem = s.mem.writeW (p+BitVec.ofNat 64 (oSave+80+8*i)) (vdword (s.v (vreg (8+i))) 0) := by
   refine WP.cons (s' := s.write .x .x8 (vdword (s.v (vreg (8+i))) 0)) rfl ?_
   have h1 := Upd.write64 s .x8 (vdword (s.v (vreg (8+i))) 0)
-  refine wp_str ⟨by dsimp only [oSave]; omega,by dsimp only [oSave]; omega⟩
+  refine wp_str ⟨by dsimp only [oSave]; omega_using [],by dsimp only [oSave]; omega_using [hi]⟩
     (by rw [h1.other .x2 (by decide),hp]) (by rw [h1.wr]; exact hw)
     fun t h2 => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact (RegKeep.upd h1).trans (RegKeep.mupd h2) |>.mono (by simp)
@@ -45,20 +45,20 @@ theorem saveV_ok {σ s : State} (hp : Pre σ) (hw : s.wr = σ.wr) (hs : s.gpr .x
     (fun k t hk ⟨ht,hv,hf,hvals⟩ => ?_) 8 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
   refine WP.mono (saveV_step hk ((ht.gpr .x2 (by decide)).trans hs)
-    (in_scr hp (ht.wr.trans hw) (by dsimp only [oSave]; omega))) fun u ⟨hu,hvu,hm⟩ => ?_
+    (in_scr hp (ht.wr.trans hw) (by dsimp only [oSave]; omega_using [hk]))) fun u ⟨hu,hvu,hm⟩ => ?_
   change u.mem = t.mem.writeW (at' σ (oSave+80+8*k)) (vdword (t.v (vreg (8+k))) 0) at hm
   refine ⟨(ht.trans hu).mono (by simp),hvu.trans hv,?_,?_⟩
   · rw [hm]
     exact hf.writeW (List.mem_singleton_self _) _
       (Offset.contains (scr σ) (d := oSave+80+8*k) (e := oSave+80) (n := 8) (k := 64)
-        (by omega) (by omega) (by decide))
+        (by omega_using []) (by omega_using [hk]) (by decide))
   · intro i hi
     rw [hm,hv]
     by_cases he : i = k
     · subst i; rw [Mem.readW_writeW_self64]
     · have hs : Mem.Sep (at' σ (oSave+80+8*i)) 8 (at' σ (oSave+80+8*k)) 8 :=
         Offset.sep (scr σ) (d := oSave+80+8*i) (e := oSave+80+8*k) (n := 8) (k := 8)
-          (by omega) (by dsimp only [oSave]; omega) (by dsimp only [oSave]; omega)
+          (by omega_using [he]) (by dsimp only [oSave]; omega_using [hk, hi]) (by dsimp only [oSave]; omega_using [hk])
       rw [Mem.readW_writeW_sep hs (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

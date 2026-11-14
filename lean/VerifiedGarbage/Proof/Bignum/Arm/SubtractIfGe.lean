@@ -45,10 +45,10 @@ theorem subtractIfGe_ok (s : State) {base : BitVec 32} {size out a b tmp n : Nat
   have bit : (u.gpr .r11).toNat = if val32 s.mem (State.addr base) a n <
       val32 s.mem (State.addr base) b n then 1 else 0 := by
     have bound := inv.borrow
-    have cases : (u.gpr .r11).toNat = 0 ∨ (u.gpr .r11).toNat = 1 := by omega
-    rcases cases with h | h <;> rw [h] at diff ⊢ <;> simp only [Nat.mul_zero, Nat.mul_one, Nat.add_zero] at diff <;> split <;> omega
+    have cases : (u.gpr .r11).toNat = 0 ∨ (u.gpr .r11).toNat = 1 := by omega_using [bound]
+    rcases cases with h | h <;> rw [h] at diff ⊢ <;> simp only [Nat.mul_zero, Nat.mul_one, Nat.add_zero] at diff <;> split <;> omega_arith
   have oldA := inv.outside.val32 (d := a) (k := n)
-    (by have := ctx.sepA; omega) (by have := ctx.aFits; have := ctx.nowrap; omega)
+    (by have := ctx.sepA; omega_using [this]) (by have := ctx.aFits; have := ctx.nowrap; omega_arith)
   rw [WP.seq_iff]
   refine WP.mono (selectPrepare_ok u) ?_
   rintro v ⟨vp0, vp10, vp12, vc, keep⟩
@@ -71,7 +71,7 @@ theorem subtractIfGe_ok (s : State) {base : BitVec 32} {size out a b tmp n : Nat
   refine ⟨?_, by rw [bt]; exact bit, ?_, ?_⟩
   · rw [h.value, bv, bit, keep.mem, oldA]
     split <;> simp_all only [Nat.one_ne_zero, ↓reduceIte]
-    omega
+    omega_using [diff]
   · have f : Outs (State.addr base) [(tmp, 4 * n), (out, 4 * n)] s.mem v.mem := by
       rw [keep.mem]; exact Outs.of_outside inv.outside (by simp)
     exact f.trans (Outs.of_outside h.outside (by simp))

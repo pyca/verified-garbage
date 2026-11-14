@@ -74,10 +74,10 @@ theorem sb_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
   rw [show sb s₀ + BitVec.ofNat 64 d = scr s₀ + BitVec.ofNat 64 (pad (scr s₀) + d) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
   have := pad_lt (scr s₀)
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [h, this])
 
 theorem sb_sub0 (s₀ : State) {n : Nat} (h : n ≤ 568) : Region.Sub ⟨sb s₀, n⟩ (scR s₀) := by
-  have := sb_sub s₀ (d := 0) (n := n) (by omega)
+  have := sb_sub s₀ (d := 0) (n := n) (by omega_using [h])
   simpa using this
 
 theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
@@ -85,7 +85,7 @@ theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
   rw [show sb s₀ + BitVec.ofNat 64 d = scr s₀ + BitVec.ofNat 64 (pad (scr s₀) + d) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
   have := pad_lt (scr s₀)
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_using [h, this]) (by omega_using [h, this])
 
 /-- The data the initial state represents, from `h0`. -/
 def R₀ (P : Params w) (s₀ : State) (h0 : HashValue w) (d : List Byte) : Prop :=
@@ -94,7 +94,7 @@ def R₀ (P : Params w) (s₀ : State) (h0 : HashValue w) (d : List Byte) : Prop
 
 theorem R₀.cnt_eq {s₀ : State} {h0 : HashValue w} {d : List Byte} (h : R₀ P s₀ h0 d) :
     cnt s₀ = d.length := by
-  rw [Update.cnt, h.2.1, toNat_ofNat_lt (by have := h.2.2; omega)]
+  rw [Update.cnt, h.2.1, toNat_ofNat_lt (by have := h.2.2; omega_using [this])]
 
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n := by simp [bytesAt]
 
@@ -158,15 +158,15 @@ theorem saved_frame {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h : Saved (sb
     have hoff := saved_off p hp'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl
-    · exact hp.st_scr.symm.sub_left (sb_sub s₀ (by omega))
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact hp.st_scr.symm.sub_left (sb_sub s₀ (by omega_using [hoff]))
+    · exact Offset.disjoint_base _ (by omega_using [hoff]) (by omega_using [hoff])
 
 /-! ## Prologue -/
 
 theorem prologue_ok {s₀ : State} (hp : Pre w s₀) :
     WP isa (.block (save .a4 ++ [mov .s7 .a0, mov .s8 .t0, mov .s9 .a2, mov .s10 .a3, mov .s11 .a1])) s₀
       fun s => Common w s₀ 0 s ∧ s.mem = saveMem s₀.mem (sb s₀) s₀.gpr := by
-  refine save_ok (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hp.wr], sb_contains s₀ (by omega)⟩)
+  refine save_ok (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hp.wr], sb_contains s₀ (by omega_using [hd₂])⟩)
     fun s₁ h₀ g₁ rd₁ wr₁ sp₁ m₁ => ?_
   refine wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ =>
     wp_mv fun s₆ u₆ => WP.block_nil ⟨⟨Nat.zero_le _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_⟩, ?_⟩
@@ -211,7 +211,7 @@ theorem bufLen_ok' (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (hC 
     refine repr_congr hP (fun i hi => ?_) hd.1
     rw [hm]
     exact (saveMem_frame _ _ _).bytes (R := stR s₀ w)
-      (by simpa using hp.st_scr.sub_right (sb_sub s₀ (by decide))) (by simp only; omega) hi
+      (by simpa using hp.st_scr.sub_right (sb_sub s₀ (by decide))) (by simp only; omega_using [hN]) hi
   refine WP.mono (bufLen_ok hP) fun s' ⟨h23, g, m, rd, wr, sp⟩ => ?_
   rw [hC.s11, Nat.add_zero, toNat_ofNat_lt (cnt_lt s₀)] at h23
   exact { hC.of_gpr (fun r hr => g r (notC hr .a7)) m rd wr sp with
@@ -318,14 +318,14 @@ theorem callOk (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State
       · exact ⟨stR s₀ w, by simp, bufOff w, h', by simp⟩
       · exact ⟨dR s₀, by simp, c₀, h', hc₀⟩
     · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
-    · exact ⟨scR s₀, by simp, pad (scr s₀), rfl, by have := pad_lt (scr s₀); simp only; omega⟩
+    · exact ⟨scR s₀, by simp, pad (scr s₀), rfl, by have := pad_lt (scr s₀); simp only; omega_using [this]⟩
   · rw [h.wr, hp.wr]
     apply Covers.of_sub
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
-    · exact ⟨scR s₀, by simp, pad (scr s₀), rfl, by have := pad_lt (scr s₀); simp only; omega⟩
+    · exact ⟨scR s₀, by simp, pad (scr s₀), rfl, by have := pad_lt (scr s₀); simp only; omega_using [this]⟩
 
 theorem commonRegs_preserved : ∀ r ∈ commonRegs, r ∈ preserved := by decide
 
@@ -592,21 +592,21 @@ theorem direct_ok (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp 
   refine wp_dec fun s₁ u₁ => wp_andi (imm_B1 hP) fun s₄ u₄ =>
     wp_addi (imm := 1) (by decide) fun s₅ u₅ => wp_sub fun s₆ u₆ => wp_add fun s₇ u₇ => wp_add fun s₈ u₈ =>
     wp_mv fun s₉ u₉ => wp_li (imm := 0) (by decide) fun s₁₀ u₁₀ => WP.block_nil ?_
-  have hm : (len s₀ - c - 1) % blockBytes w + 1 = len s₀ - (c + blockBytes w * k) := by omega
+  have hm : (len s₀ - c - 1) % blockBytes w + 1 = len s₀ - (c + blockBytes w * k) := by omega_using [hc, hdm]
   have hr9 : s₅.gpr .t1 = BitVec.ofNat 64 (len s₀ - (c + blockBytes w * k)) := by
-    rw [u₅.gpr, u₄.gpr, u₁.gpr, hC'.s10, sub_ofNat (by omega), mask_mod hP,
-      toNat_ofNat_lt (by omega), ← BitVec.ofNat_add, hm]
+    rw [u₅.gpr, u₄.gpr, u₁.gpr, hC'.s10, sub_ofNat (by omega_using [hc]), mask_mod hP,
+      toNat_ofNat_lt (by omega_using [hL]), ← BitVec.ofNat_add, hm]
   have h10₆ : s₆.gpr .t2 = BitVec.ofNat 64 (blockBytes w * k) := by
     rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₁.other _ (by decide), hC'.s10, hr9,
-      sub_ofNat (by omega)]
-    exact congrArg _ (by omega)
+      sub_ofNat (by omega_using [])]
+    exact congrArg _ (by omega_using [hdm])
   have hg : ∀ x, x ≠ .t1 → x ≠ .t2 → x ≠ .s9 → x ≠ .s10 → x ≠ .s11 → x ≠ .a7 → s₁₀.gpr x = s'.gpr x :=
     fun x h1 h2 h3 h4 h5 h6 => by
       rw [u₁₀.other x h6, u₉.other x h4, u₈.other x h5, u₇.other x h3, u₆.other x h2, u₅.other x h1,
         u₄.other x h1, u₁.other x h1]
   have hm₉ : s₁₀.mem = s'.mem := by
     rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₁.mem]
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, by rw [hm₉]; exact hC'.frame,
+  refine ⟨⟨by omega_using [hc, hdm], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, by rw [hm₉]; exact hC'.frame,
     by rw [hm₉]; exact hC'.saved⟩, ?_, fun h0 d hd => ?_⟩
   · rw [u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₁.rd, hC'.rd]
   · rw [u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₁.wr, hC'.wr]
@@ -714,7 +714,7 @@ def Post (P : Params w) (s₀ s' : State) : Prop :=
 theorem epilogue_ok {s₀ : State} (hp : Pre w s₀) {s : State} (hI : Done P s₀ s) :
     WP isa (.block restore) s (Post P s₀) := by
   refine restore_ok (scr := sb s₀) hI.1.s8 (align_al _)
-    (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hI.1.rd, hI.1.wr, hp.wr], sb_contains s₀ (by omega)⟩)
+    (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hI.1.rd, hI.1.wr, hp.wr], sb_contains s₀ (by omega_using [hd₂])⟩)
     s₀.gpr hI.1.saved fun s' hs ho hmem _ _ hsp => ⟨⟨preserved_of hs fun r hr => ?_,
       by rw [hsp, hI.1.sp], hs (.ra, 512) (by decide)⟩, fun h0 d hr hc hl => ?_⟩
   · rw [ho r (by revert r; decide), hI.1.keep r hr]
@@ -728,7 +728,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hC, hm⟩ => ?_)
   refine WP.seq (WP.mono (bufLen_ok' hP hp hC hm) fun s₂ hI => ?_)
   refine WP.seq (WP.mono (Q := Done P s₀) ?_ fun s₄ h => epilogue_ok hp h)
-  refine WP.ite _ (zero_iff s₂ hI.s10 (by omega)) (fun hb => ?_) (fun hb => ?_)
+  refine WP.ite _ (zero_iff s₂ hI.s10 (by omega_using [hL])) (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq, Nat.sub_zero] at hb
     refine WP.block_nil ⟨by rw [hb]; exact hI.toCommon, fun h0 d hd => ?_⟩
     have := hI.repr h0 d hd
@@ -738,7 +738,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
     rw [repr_iff P hP.pos, ← hd.cnt_eq]; exact this
   · simp only [decide_eq_false_iff_not, Nat.sub_zero] at hb
     have hr := bufLen_le (w := w) hP.pos (cnt s₀)
-    exact WP.seq (WP.mono (head_ok hP hf hp hr (by omega) hI) fun s₄ h =>
+    exact WP.seq (WP.mono (head_ok hP hf hp hr (by omega_using [hb]) hI) fun s₄ h =>
       WP.mono (rest_ok hP hf hp h) fun s₅ h => h.done hP)
 
 theorem noFrames_updateMain (hf : CalleeOk P (compress P)) (sc : Reg) :

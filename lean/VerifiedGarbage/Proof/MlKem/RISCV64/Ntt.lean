@@ -225,7 +225,7 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁)
       (by decide), hm.tab _ hk, zetaTable_eq, zetas_getD hk, hdiv,
       setWidth64_ofNat (by have := val_lt (zeta (nb + c)); omega_arith)]
   refine WP.seq (WP.mono (bpre_ok h.a1 h.a2 h.a7 (h.env.inRS hp cS)
-    (align4_add (by have := hp.alS; omega) _))
+    (align4_add (by have := hp.alS; omega_using [this]) _))
     fun s₁ ⟨r7, r4, r6, r11, r5, r10, r3, r8, r9, r12, kp, m, rd, wr, sp⟩ => WP.seq ?_)
   have h₁ : FInv s₀ m₁ (layF fblk Q len (fun c => 128 / len + c) c) len (128 / len + c) (2 * len * c) 0 s₁ := by
     refine ⟨⟨r3.trans h.env.a0, r8.trans h.env.a5, r9.trans h.env.a6, r12.trans h.env.t5,
@@ -350,7 +350,7 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
     rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
   have a8 : (s₀.gpr .a1).toNat % 8 = 0 := hp.alS
   refine WP.mono (table_ok zetaTable (by decide) (b := .a1) (by decide) (by decide) rfl
-    (by omega) fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
+    (by omega_using [a8]) fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
   have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     refine h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     rw [List.mem_singleton] at hr; subst hr

@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5_iterate() {
     core::arch::naked_asm!(
-        r#".base64 "SYlYQEmJaEhNiWBQTYloWE2JcGBNiXhoTYnHSYn8SYnNQYnWTInDSIPDcEyJxUiBxYAAAACLBolFAItGBIlFBItGCIlFCItGDIlFDLiAAAAAiUUQuAAAAACJRRSJRRiJRRyJRSCJRSSJRSiJRSyJRTCJRTRBvFAAAABMieBIAcBIAcBIAcBIiUNISYn8TYX2"
+        r#".base64 "SYkYSYloCE2JYBBNiWgYTYlwIE2JeChNicdJifxJic1BidZMicNIg8MwTInFSIPFQIsGiUUAi0YEiUUEi0YIiUUIi0YMiUUMuIAAAACJRRC4AAAAAIlFFIlFGIlFHIlFIIlFJIlFKIlFLIlFMIlFNEG8UAAAAEyJ4EgBwEgBwEgBwEiJQ0hJifxNhfY="
 je 20f
 22:
 .base64 "QYsEJIkDQYtEJASJQwRBi0QkCIlDCEGLRCQMiUMMSInuSInfugEAAABMifk="
@@ -23,7 +23,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYtfQEmLb0hNi2dQTYtvWE2Ld2BNi39oww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyjD"
 .p2align 6"#,
         vg_md5_compress = sym crate::md5::vg_md5_compress::vg_md5_compress,
     )

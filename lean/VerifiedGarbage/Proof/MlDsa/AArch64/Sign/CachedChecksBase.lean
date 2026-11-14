@@ -30,19 +30,19 @@ theorem keep_zpair {p : Params} {r : Nat} (hp : Ok3 p) (hr : r+1<p.ℓ) :
     keepB (sgR p) (sgW p) (pairedZWrites p r) t4P 1024=true := by
   have hh : ∀r<p.ℓ, keepB (sgR p) (sgW p) (pairedZWrites p r) t4P 1024=true := by
     rcases hp with rfl|rfl|rfl <;> decide
-  exact hh r (by omega)
+  exact hh r (by omega_using [hr])
 
 theorem keep_lowpair {p : Params} {i : Nat} (hp : Ok3 p) (hi : i+1<p.k) :
     keepB (sgR p) (sgW p) (pairedLowWrites p i) t4P 1024=true := by
   have hh : ∀i<p.k, keepB (sgR p) (sgW p) (pairedLowWrites p i) t4P 1024=true := by
     rcases hp with rfl|rfl|rfl <;> decide
-  exact hh i (by omega)
+  exact hh i (by omega_using [hi])
 
 theorem keep_hintpair {p : Params} {i : Nat} (hp : Ok3 p) (hi : i+1<p.k) :
     keepB (sgR p) (sgW p) (pairedHintWrites i) t4P 1024=true := by
   have hh : ∀i<p.k, keepB (sgR p) (sgW p) (pairedHintWrites i) t4P 1024=true := by
     rcases hp with rfl|rfl|rfl <;> decide
-  exact hh i (by omega)
+  exact hh i (by omega_using [hi])
 
 theorem keep_product {p : Params} (hp : Ok3 p) :
     keepB (sgR p) (sgW p) [(t1P,1024),(sc oPS,1024)] t4P 1024=true := by

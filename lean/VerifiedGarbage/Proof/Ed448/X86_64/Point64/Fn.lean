@@ -193,6 +193,6 @@ theorem addAffineOps_keep (e : Fin 22 → Spec.X448.Fe) (i : Fin 22)
     have : ∀ op ∈ addAffineOps, (3 ≤ fopDest op ∧ fopDest op < 6) ∨ (13 ≤ fopDest op ∧ fopDest op ≤ 20) := by
       decide
     have := this op hop
-    omega
+    omega_using [hi, this]
 
 end VG.Proof.Ed448.X86_64.Point64

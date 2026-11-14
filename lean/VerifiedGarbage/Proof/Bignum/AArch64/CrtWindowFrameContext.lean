@@ -23,18 +23,18 @@ theorem subCtx_of_wide {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 
     (h0 : t.gpr .x0 = s.gpr .x0) : SubCtx t B Z o w wx minv := by
   have hn := h.scr.nowrap
   have hi := hwide
-  have hL : o + (slot wx 8 + CrtWindowFive.tabBytes32 wx) ≤ 2 ^ 64 := by omega
+  have hL : o + (slot wx 8 + CrtWindowFive.tabBytes32 wx) ≤ 2 ^ 64 := by omega_using [hwide, hn]
   have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 + CrtWindowFive.tabBytes32 wx := fun r hr' => (hr r hr').2
   have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega))
-      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-          omega)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_using [hi', this]))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
+          omega_using [hi'])
   have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
-    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega)
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega_using [hL]) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega_arith)
   exact ⟨h.scr.congr hwr, h0.trans h.x0,
     ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
-      fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
+      fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
-    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+    fun j hj => (hb _ (by unfold sArr; omega_using [hj])).trans (h.narr j hj), h.lo, h.hi⟩
 
 end VG.Proof.Bignum.AArch64.WindowFive

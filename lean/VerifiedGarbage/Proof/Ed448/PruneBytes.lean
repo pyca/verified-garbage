@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Ed448.Prune
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448: pruning a scalar, on bytes
@@ -19,9 +20,9 @@ namespace VG.Proof.Ed448
 theorem prune_bytes {b0 M b55 b56 : Nat} (h0 : b0 < 256) (hM : M < 2 ^ 432) (h55 : b55 < 256) :
     ((b0 + 256 * (M + 2 ^ 432 * (b55 + 256 * b56))) &&& (2 ^ 448 - 4)) ||| 2 ^ 447 =
       (b0 &&& 252) + 256 * (M + 2 ^ 432 * ((b55 ||| 128) + 256 * 0)) := by
-  rw [and_sub4 _ 448 (by omega), show (252 : Nat) = 2 ^ 8 - 4 from rfl, and_sub4 b0 8 (by omega),
-    or_pow_eq (k := 447) (by omega), show (128 : Nat) = 2 ^ 7 from rfl, or_pow_eq (k := 7) (by omega)]
+  rw [and_sub4 _ 448 (by omega_using []), show (252 : Nat) = 2 ^ 8 - 4 from rfl, and_sub4 b0 8 (by omega_using []),
+    or_pow_eq (k := 447) (by omega_using []), show (128 : Nat) = 2 ^ 7 from rfl, or_pow_eq (k := 7) (by omega_using [h55])]
   simp only [show 448 - 2 = 446 from rfl, show 8 - 2 = 6 from rfl]
-  omega
+  omega_using [h0, hM]
 
 end VG.Proof.Ed448

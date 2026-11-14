@@ -86,11 +86,11 @@ theorem readyJoint_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L 
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 16
     have : usedBytes < 2 ^ 16 := by decide
-    omega
+    omega_using [hend, this]
   refine WP.mono (coreJoint_ok M h.parent (h.child .p) (by decide) hlo hhi ho (by decide)
     hw2 hw48 hw48 (by decide) hm hodd a b ⟨.local d, ModulusSide.p.lengthField⟩ ha hb hdp
     has hbs ha1 haw hb1 hbw he.source hf.source (hel.trans hfl.symm).symm
-    (by rw [hel]; exact L.widths.1) (by rw [hel]; have := L.widths; omega)
+    (by rw [hel]; exact L.widths.1) (by rw [hel]; have := L.widths; omega_using [this])
     (by simpa only [hel, ModulusSide.length, ModulusSide.lengthField] using h.length .q) (h.length .p) hk1 hk31 rfl
     (h.local_write hend) (h.local_out hd hend)) ?_
   intro t ⟨hp, hc, hv, hf, hk⟩

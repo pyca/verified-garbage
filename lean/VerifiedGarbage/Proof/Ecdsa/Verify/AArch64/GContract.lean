@@ -48,7 +48,7 @@ theorem p256v_combWords_length : P256Joint.p256v.combWords.length = 2048 :=
 theorem satMemG_held : ∀ i < P256Joint.p256v.combWords.length,
     satMemG.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = P256Joint.p256v.combWords.getD i 0 := by
   unfold satMemG
-  exact constMem_held _ _ (by rw [p256v_combWords_length]; omega)
+  exact constMem_held _ _ (by rw [p256v_combWords_length]; omega_using [])
 
 /-- Whether the signature at `sig` of the hash at `digest` is valid for the
 public key at `pk`, as the specification says. -/

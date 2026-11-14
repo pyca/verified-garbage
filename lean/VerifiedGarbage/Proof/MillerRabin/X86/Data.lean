@@ -57,9 +57,9 @@ theorem Data.mono {g : Geometry} {A A' : Nat → Nat} {Js Js' : List Nat}
 
 theorem Geometry.array_ne (g : Geometry) {i j : Nat} (different : i ≠ j) : g.array i ≠ g.array j := by
   have increasing {a b : Nat} (order : a < b) : g.array a < g.array b := by
-    have step := Nat.mul_lt_mul_of_pos_right order (by omega : 0 < 8 * (g.w + 2))
+    have step := Nat.mul_lt_mul_of_pos_right order (by omega_using [] : 0 < 8 * (g.w + 2))
     unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes
-    omega
+    omega_using [step]
   rcases Nat.lt_or_gt_of_ne different with before | after
   · exact Nat.ne_of_lt (increasing before)
   · exact (Nat.ne_of_lt (increasing after)).symm
@@ -69,7 +69,7 @@ theorem Geometry.strideBefore (g : Geometry) {i j : Nat} (index : i < j) :
   have step := Nat.mul_le_mul_right (8 * (g.w + 2)) index
   unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes
   rw [Nat.succ_mul] at step
-  omega
+  omega_using [step]
 
 theorem Geometry.readApart (g : Geometry) {i j : Nat} (different : j ≠ i) :
     g.array j + 4 * g.words ≤ g.array i ∨ g.array i + 8 * (g.w + 2) ≤ g.array j := by
@@ -79,11 +79,11 @@ theorem Geometry.readApart (g : Geometry) {i j : Nat} (different : j ≠ i) :
 
 theorem scratch_fit {d : Nat} (scratch : scratchWord d) : d + 4 ≤ 256 := by
   unfold scratchWord at scratch
-  omega
+  omega_using [scratch]
 
 theorem scratch_apart {a b : Nat} (sa : scratchWord a) (sb : scratchWord b) (different : a ≠ b) :
     a + 4 ≤ b ∨ b + 4 ≤ a := by
   unfold scratchWord at sa sb
-  omega
+  omega_using [sa, sb, different]
 
 end VG.Proof.MillerRabin.X86

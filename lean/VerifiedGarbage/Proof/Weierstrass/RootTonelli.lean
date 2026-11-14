@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Weierstrass.RootPowers
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Correctness of the two-adic square-root descent
 
@@ -37,10 +38,10 @@ theorem rootTonelli_eq_descent (a z : Fe C) (q s : Nat) (hq : 0 < q) :
   split
   next ha =>
     subst a
-    have he : 0 < (q + 1) / 2 := by omega
+    have he : 0 < (q + 1) / 2 := by omega_using [hq]
     have hzero : pow (0 : Fe C) ((q + 1) / 2) = 0 := by
       rw [pow_eq_npow]
-      obtain ⟨k, hk⟩ : ∃ k, (q + 1) / 2 = k + 1 := ⟨(q + 1) / 2 - 1, by omega⟩
+      obtain ⟨k, hk⟩ : ∃ k, (q + 1) / 2 = k + 1 := ⟨(q + 1) / 2 - 1, by omega_using [hq]⟩
       rw [hk, Lean.Grind.Semiring.pow_succ]
       grind
     rw [hzero, rootDescent_zero]
@@ -107,7 +108,7 @@ theorem rootTonelli_square (hL : Law C) (hp3 : 2 < C.p) (q s : Nat) (z a : Fe C)
     · rw [pow_eq_npow, pow_mul_exponents]
       simpa only [pow_eq_npow] using hc
     · rw [pow_eq_npow, pow_eq_npow, pow_mul_exponents,
-        show (q + 1) / 2 * 2 = q + 1 by omega, Lean.Grind.Semiring.pow_succ]
+        show (q + 1) / 2 * 2 = q + 1 by omega_using [hq], Lean.Grind.Semiring.pow_succ]
       grind
 
 end VG.Proof.Weierstrass

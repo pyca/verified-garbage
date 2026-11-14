@@ -36,7 +36,7 @@ theorem checkHead_ok {side : ModulusSide} {a : Operand} {p : ReadyCheckPublic si
   rw [WP.block_append_iff]
   refine WP.mono (operand_context hr.parent (by decide) a ha (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun u ⟨hgu, hua, hul, _, hfu, hku⟩ => ?_
-  have child := call_ready (hr.child side) hfu (by decide) (by decide) (by omega) (by omega)
+  have child := call_ready (hr.child side) hfu (by decide) (by decide) (by omega_using [hlo, h256]) (by omega_using [hhi, hactive])
   refine WP.mono (enter_ok hgu child.header hlo hhi ho) fun t ⟨hct, hm, hkt⟩ => ?_
   have hf : Frm p.layout.base (callRanges arg argLen) s.mem t.mem := by rw [hm]; exact hfu
   have hk : Keep coreRegs s t := (hku.trans hkt).mono (by decide)
@@ -54,7 +54,7 @@ theorem checkHead_ok {side : ModulusSide} {a : Operand} {p : ReadyCheckPublic si
     exact call_source hf hk (by decide) (by decide) (by decide) hs.source
   · have hfit : (bs.length + 7) / 8 ≤ side.words p.layout := hlen ▸ p.fits
     change side.words p.layout ≤ 48 at hw48
-    omega
+    omega_using [hfit, hw48]
 
 theorem readyRange_ct (side : ModulusSide) (a : Operand) (aboveOne : Bool)
     (ha : pointerFits a.pointer) (hp : stablePointer a.pointer)

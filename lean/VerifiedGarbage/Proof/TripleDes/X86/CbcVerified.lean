@@ -95,7 +95,7 @@ theorem wide_implies_enc :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.TripleDes.cbcEncChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, encPost, ciph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.cbcEncChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]
@@ -115,7 +115,7 @@ theorem wide_implies_dec :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcDecChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, decPost, invCiph, ivAt, dataAt, bytesOf]
   · sig_implies_pub [Proof.TripleDes.cbcDecChainedScratchContract, Proof.TripleDes.cbcChainedScratchSig, Spec.TripleDes.cbcChainedSig, Proof.TripleDes.cbcDecChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below]

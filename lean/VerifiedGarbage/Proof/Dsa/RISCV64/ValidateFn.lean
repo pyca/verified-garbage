@@ -65,7 +65,7 @@ theorem validate_correct (s : State) (h : vkContract.pre s) :
   show WP isa Prevalidated.validate s fun t => abiPreserved s t ∧ vkContract.post s t
   have hL : (playOf s).Ok := playOf_ok_of h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2.2.1
   obtain ⟨hrd, hwr, dKS, -, nw, hv, hkl, -, alS, -⟩ := h
-  have hplq : 3 * (playOf s).pl + (playOf s).ql = (s.gpr .a1).toNat := by simp only [playOf]; omega
+  have hplq : 3 * (playOf s).pl + (playOf s).ql = (s.gpr .a1).toNat := by simp only [playOf]; omega_using [hkl]
   have hspec : Spec.Dsa.validatePublicKeyBytes (s.gpr .a2).toNat (s.gpr .a3).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) = decide (KeyOk s.mem (playOf s) (s.gpr .a0)) := by
     rw [← hplq]; exact validate_spec hv

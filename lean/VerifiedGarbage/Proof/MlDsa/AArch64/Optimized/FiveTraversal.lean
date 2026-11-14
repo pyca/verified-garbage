@@ -27,7 +27,7 @@ theorem positiveWord_field (x : BitVec 32) :
   apply Fin.ext
   apply Int.ofNat_inj.mp
   rw [val_ofNat, Int.natCast_emod, positiveWord_nat,
-    Int.toNat_of_nonneg (by omega), VG.Proof.MlDsa.KeyGen.ofInt_val]
+    Int.toNat_of_nonneg (by omega_using [hp]), VG.Proof.MlDsa.KeyGen.ofInt_val]
   exact positive_mod _
 
 end VG.Proof.MlDsa.AArch64.Optimized
@@ -58,16 +58,16 @@ theorem tailValues_field (v : Vector (BitVec 128) 8) (w : Poly) (ps : List (Fin 
   | cons p ps ih =>
     have hp := hps p (by simp)
     have hs' : b+16760834<2147483648 := by
-      simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs; omega
+      simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs; omega_using [hs]
     have hb' := packedValues_bound v p.1.isLt hp (fun e => (zetaNat (root p.1.val p.2 e) : Int)) hb hs' hv
     have hf' := packedValues_field v w p.1.isLt hp hu (root p.1.val p.2) hb hs' hv hf
     have hh := ih _ (Traversal.run (tailGroupSchedule u root p) w)
-      (fun a ha => hps a (by simp [ha])) (b := b+16760834) (by omega) (by
+      (fun a ha => hps a (by simp [ha])) (b := b+16760834) (by omega_using [hb]) (by
         simp only [List.length_cons,Int.natCast_add,Int.natCast_one] at hs
-        omega) hb' hf'
+        omega_using [hs]) hb' hf'
     simpa only [tailValues,List.length_cons,Int.natCast_add,Int.natCast_one,List.flatMap_cons,
       Traversal.run_append,show b+16760834*((ps.length : Int)+1)=
-        (b+16760834)+16760834*(ps.length : Int) by omega] using hh
+        (b+16760834)+16760834*(ps.length : Int) by omega_using []] using hh
 
 end VG.Proof.MlDsa.AArch64.Optimized
 
@@ -92,7 +92,7 @@ theorem inner_schedule (u : Nat) :
   simp [outerSteps,tailSteps,innerGroupSchedule,tailGroupSchedule,innerRootIndex,tailRootIndex,
     Traversal.innerRegGroupSchedule,Traversal.packedSchedule,Traversal.innerSlice,Traversal.innerLoc,
     show (3:Fin 4).val=3 from rfl,List.range_succ,Nat.mul_add,Nat.add_assoc,Nat.add_comm,Nat.add_left_comm]
-  omega
+  omega_using []
 
 theorem fiveValues_field (v : Vector (BitVec 128) 8) (w : Poly) {u : Nat} (hu : u<8)
     (hv : BankBound v (15*8380417)) (hf : InnerBankField u v w) :

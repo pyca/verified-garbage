@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Camellia.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Camellia.RISCV64.FbFinalLit
 
-/-! # Camellia-CFB128 artifacts on baseline RISC-V -/
+/-! # Camellia-CFB128 on RISC-V -/
 
 @[expose] public section
 

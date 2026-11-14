@@ -30,21 +30,21 @@ theorem primeR2_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
   have hZ16 : 256 + 16 * (8 * (w + 2)) ≤ Z := by simpa only [slot, hdrBytes] using hZ
   have hodd0 : (word s.mem B (slot w aN)).toNat % 2 = 1 := by
     have e := wv_add s.mem B (slot w aN) 1 (w - 1)
-    rw [show 1 + (w - 1) = w by have := h.w1; omega, hn] at e
+    rw [show 1 + (w - 1) = w by have := h.w1; omega_using [this], hn] at e
     simp only [wv, Nat.mul_zero, Nat.add_zero, Nat.zero_add] at e
     omega
   unfold Impl.Dsa.AArch64.Generation.primeR2
   refine WP.seq (WP.mono (msHead_ok h hodd0) fun u ⟨⟨hinv, hm, _, _, _⟩, ku⟩ => ?_)
   have ou : Outside B (8 * sMinv) 8 s.mem u.mem := by
-    rw [hm]; exact writeW_outside _ _ _ (by simp only [sMinv]; omega)
+    rw [hm]; exact writeW_outside _ _ _ (by simp only [sMinv]; omega_using [])
   have fu : Frm B (mpRanges w) s.mem u.mem := Frm.of_outside ou (by simp [mpRanges])
   have hu : Ws u B Z w := h.congr' fu (mpRanges_kmut w) ku (by decide)
   have hnu : wv u.mem B (slot w aN) w = N := by
-    rw [ou.wv (by simp only [slot, hdrBytes, aN, sMinv]; omega)
-      (by simp only [slot, hdrBytes, aN]; omega)]; exact hn
+    rw [ou.wv (by simp only [slot, hdrBytes, aN, sMinv]; omega_using [])
+      (by simp only [slot, hdrBytes, aN]; omega_using [hw48])]; exact hn
   have hword : word u.mem B (slot w aN) = word s.mem B (slot w aN) :=
-    ou.word (by simp only [slot, hdrBytes, aN, sMinv]; omega)
-      (by simp only [slot, hdrBytes, aN]; omega)
+    ou.word (by simp only [slot, hdrBytes, aN, sMinv]; omega_using [])
+      (by simp only [slot, hdrBytes, aN]; omega_using [])
   refine WP.mono (constants_ok M hu.good.1 hu.good.2 h.w1 hw48 hnu hN1 hodd
     (by rw [hword]; exact hinv)) fun t ⟨_, hone, hr2, ft, kt⟩ => ?_
   have ft' : Frm B (mpTail w) u.mem t.mem := ft.mono (by simp [mpTail, r2Ranges])
@@ -52,7 +52,7 @@ theorem primeR2_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat}
   refine ⟨hu.congr' ft' (mpTail_kmut w) kt (by decide), ?_, hv.trans hnu, hone, ?_,
     fu.trans (ft'.mono fun r hr => List.mem_cons_of_mem _ hr), (ku.trans kt).mono (by decide)⟩
   · rw [hw, he, hword]; exact hinv
-  · rw [← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega]
+  · rw [← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
     exact hr2
 
 end VG.Proof.Dsa.AArch64.Generation

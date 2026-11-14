@@ -153,7 +153,7 @@ theorem yconst4_ok {r : XReg} (_hr0 : r ≠ .xmm0) (_hr1 : r ≠ .xmm1) (q₀ q�
   simp only [yconst4, List.cons_append, List.nil_append]
   generalize yfind q₀ q₁ q₂ q₃ ytab = i at hq
   obtain ⟨h0, h1, h2, h3, hl⟩ := hq
-  have hlen : ytab.length = 168 := rfl
+  have hlen : ytab.length = 196 := rfl
   have u1 := GUpd.setReg s .rax (s.syms "VG_MLKEM_YCONSTS")
   refine WP.cons (s' := s.setReg .rax (s.syms "VG_MLKEM_YCONSTS")) rfl ?_
   generalize s.setReg .rax (s.syms "VG_MLKEM_YCONSTS") = s1 at u1

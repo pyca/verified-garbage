@@ -43,7 +43,7 @@ theorem keyInit_ok (s : State) {base : BitVec 32}
   rintro u ⟨⟨low, _⟩, restU⟩
   by_cases lower : (s.gpr .r1).toNat < 64
   · refine WP.ite true (by simp only [eval, low, show (64 : BitVec 16).toNat = 64 from rfl,
-      lower, decide_true]) (fun _ => clear u restU (by omega)) (by intro h; cases h)
+      lower, decide_true]) (fun _ => clear u restU (by omega_using [lower])) (by intro h; cases h)
   · refine WP.ite false (by simp only [eval, low, show (64 : BitVec 16).toNat = 64 from rfl,
       lower, decide_false]) (by intro h; cases h) (fun _ => ?_)
     rw [WP.seq_iff]
@@ -58,11 +58,11 @@ theorem keyInit_ok (s : State) {base : BitVec 32}
       refine WP.mono (keyInitializeState_ok v (h.congr rest.wr)
         ((rest.gpr .r0 (by simp)).trans ptr)) ?_
       rintro t ⟨result, mem⟩
-      have valid : 64 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 1024 := by omega
+      have valid : 64 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 1024 := by omega_using [lower, upper]
       simp only [keyInitPost, valid]
       refine ⟨result, ?_⟩
       rw [mem, keyInitValues_words, rest.gpr .r1 (by simp)]
     · refine WP.ite true (by simp only [eval, high, show (1025 : BitVec 16).toNat = 1025 from rfl,
-        upper, decide_false, Bool.not_false]) (fun _ => clear v rest (by omega)) (by intro h; cases h)
+        upper, decide_false, Bool.not_false]) (fun _ => clear v rest (by omega_using [upper])) (by intro h; cases h)
 
 end VG.Proof.Ffdh.Arm

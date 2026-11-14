@@ -125,11 +125,11 @@ theorem disjoint_total {a b : Region} (h : a.Disjoint b) {N : Nat}
     refine h b.base ?_ ?_
     · simp only [Region.Contains]
       rw [BitVec.toNat_sub_of_le (by simpa [BitVec.le_def] using hle)]
-      omega
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+      omega_using [hle, hlt]
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [pb]
   rcases Nat.le_total a.base.toNat b.base.toNat with hle | hle
-  · have := key h hle hb pb; omega
-  · have := key h.symm hle ha pa; omega
+  · have := key h hle hb pb; omega_using [hb, this]
+  · have := key h.symm hle ha pa; omega_using [ha, this]
 
 namespace DPre
 variable {s₀ : State} (hp : DPre s₀)
@@ -158,11 +158,11 @@ theorem blocks_lt : blocksN s₀ * 1024 + 16384 ≤ 2 ^ 32 := by
   have hm := hp.mem_fits
   have hs := hp.scr_fits
   rcases Nat.eq_zero_or_pos (blocksN s₀) with h0 | hpos
-  · omega
+  · omega_using [h0]
   have := disjoint_total hp.mem_scr (N := 2 ^ 32)
-    (by simp only [MdStream.Arm.addr_toNat]; omega)
-    (by simp only [MdStream.Arm.addr_toNat]; omega)
-    (by simp only; omega) (by simp only; omega)
+    (by simp only [MdStream.Arm.addr_toNat]; omega_using [hm])
+    (by simp only [MdStream.Arm.addr_toNat]; omega_using [hs])
+    (by simp only; omega_using [hpos]) (by simp only; omega_using [])
   simpa using this
 
 end DPre

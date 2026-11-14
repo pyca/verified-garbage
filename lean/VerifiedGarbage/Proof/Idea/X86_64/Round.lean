@@ -1,11 +1,99 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-
-public import VerifiedGarbage.Proof.Idea.X86_64.Mul
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Idea.Arith
+public import VerifiedGarbage.Impl.Idea.X86_64
+public import VerifiedGarbage.Spec.Idea
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+
+/-! ### `Idea.X86_64.Mul`, which only this module used -/
+
+section
+
+/-!
+# IDEA on x86-64: ⊙ without branches
+
+`mul_run`: `mulCode` leaves `rax ⊙ rdx` (of their low 16 bits) in `rdx`,
+and changes nothing but `rax`, `rdx` and the flags. The arithmetic is
+`prep_toNat` (the operands' residues) and `reduce` (the product modulo
+2¹⁶ + 1 from its halves, corrected by the sign of their difference).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Idea.X86_64
+
+open VG VG.X86_64 VG.Impl.Idea.X86_64
+
+/-- What a block keeps: every register but `written`, memory and regions. -/
+structure Keep (written : List Reg) (s s' : State) : Prop where
+  reg : ∀ r, r ∉ written → s'.gpr r = s.gpr r
+  mem : s'.mem = s.mem
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+
+theorem Keep.trans {rs : List Reg} {s s' s'' : State}
+    (h : Keep rs s s') (h' : Keep rs s' s'') : Keep rs s s'' :=
+  ⟨fun r hr => (h'.reg r hr).trans (h.reg r hr), h'.mem.trans h.mem,
+    h'.rd.trans h.rd, h'.wr.trans h.wr⟩
+
+theorem Keep.mono {rs rs' : List Reg} {s s' : State} (h : Keep rs s s')
+    (hs : ∀ r ∈ rs, r ∈ rs') : Keep rs' s s' :=
+  ⟨fun r hr => h.reg r fun hm => hr (hs r hm), h.mem, h.rd, h.wr⟩
+
+theorem runBlock_append (a b : List Instr) (s : State) :
+    runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
+  induction a generalizing s with
+  | nil => rw [List.nil_append, runBlock_nil, Option.bind_some]
+  | cons i is ih =>
+    show (isa.exec i s).bind _ = ((isa.exec i s).bind _).bind _
+    cases isa.exec i s with
+    | none => rfl
+    | some s' => exact ih s'
+
+/-- Composing two runs. -/
+theorem run_append {a b : List Instr} {s s₁ s₂ : State}
+    (h₁ : runBlock isa a s = some s₁) (h₂ : runBlock isa b s₁ = some s₂) :
+    runBlock isa (a ++ b) s = some s₂ := by
+  rw [runBlock_append, h₁, Option.bind_some, h₂]
+
+theorem signExtend_one : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
+theorem signExtend_mask : BitVec.signExtend 64 (65535 : BitVec 32) = 65535 := by decide
+
+/-- The low product is shared by signed and unsigned multiplication. -/
+theorem lowProduct (a b : BitVec 64) :
+    a * b = BitVec.ofNat 64 (a.toNat * b.toNat) := by
+  simp only [BitVec.ofNat_mul, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+/-- `mulCode` on the machine. -/
+theorem mul_run (s : State) : ∃ s', runBlock isa mulCode s = some s' ∧
+    s'.gpr .rdx = (Spec.Idea.mul ((s.gpr .rax).setWidth 16) ((s.gpr .rdx).setWidth 16)).setWidth 64 ∧
+    Keep [.rax, .rdx] s s' := by
+  simp only [mulCode, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execShift, execImul,
+    readSrc, isa, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+    ↓reduceIte, reduceCtorEq, Nat.reduceLeDiff, and_self, Option.map_some, signExtend_one,
+    signExtend_mask, BitVec.ofInt_mul, BitVec.ofInt_toInt,
+    lowProduct, Option.bind_some, Option.some.injEq, exists_eq_left']
+  have hm : (65535 : BitVec 64).toNat = 65535 := rfl
+  have hA := prep_toNat (s.gpr .rax) 65535 hm
+  have hB := prep_toNat (s.gpr .rdx) 65535 hm
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩⟩
+  · rw [hA, hB, mul_toNat]
+    exact reduce _ (Nat.le_trans (Nat.mul_le_mul (residue_le _) (residue_le _)) (by decide)) 65535 hm
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2, ite_false]
+
+end VG.Proof.Idea.X86_64
+
+end
+
+end
+
 
 /-!
 # IDEA on x86-64: a round
@@ -161,7 +249,7 @@ theorem key_at {z : Spec.Idea.Schedule} {s : State} (hk : KeyOk z s) (j i : Nat)
     InRegions (s.rd ++ s.wr) (s.ea (at_ .rdi (12 * j + 2 * i))) 8 ∧
       (s.mem.readW (s.ea (at_ .rdi (12 * j + 2 * i))) 64).setWidth 16 = z.getD (6 * j + i) 0 := by
   have := hk.low (6 * j + i) h
-  rwa [show 2 * (6 * j + i) = 12 * j + 2 * i by omega] at this
+  rwa [show 2 * (6 * j + i) = 12 * j + 2 * i by omega_using []] at this
 
 theorem round_run (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea.State)
     (s : State) (hx : Holds x s) (hk : KeyOk z s) :
@@ -169,35 +257,35 @@ theorem round_run (j : Nat) (hj : j < 8) (z : Spec.Idea.Schedule) (x : Spec.Idea
       Holds (Spec.Idea.round (z.getD (6 * j) 0) (z.getD (6 * j + 1) 0) (z.getD (6 * j + 2) 0)
         (z.getD (6 * j + 3) 0) (z.getD (6 * j + 4) 0) (z.getD (6 * j + 5) 0) x) s' ∧
       Keep roundWrites s s' := by
-  have k0 := key_at hk j 0 (by omega)
+  have k0 := key_at hk j 0 (by omega_using [hj])
   simp only [Nat.mul_zero, Nat.add_zero] at k0
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mulKey_run .r8 (12 * j) s k0.1
   rw [hx.r8, setWidth_setWidth16, k0.2] at v₁
   have hk₁ := hk.keep e₁ (by decide)
-  have k3 := key_at hk₁ j 3 (by omega)
+  have k3 := key_at hk₁ j 3 (by omega_using [hj])
   simp only [Nat.reduceMul] at k3
   obtain ⟨s₂, h₂, v₂, e₂⟩ := mulKey_run .r11 (12 * j + 6) s₁ k3.1
   rw [e₁.reg .r11 (by decide), hx.r11, setWidth_setWidth16, k3.2] at v₂
   have hk₂ := hk₁.keep e₂ (by decide)
-  have k1 := key_at hk₂ j 1 (by omega)
+  have k1 := key_at hk₂ j 1 (by omega_using [hj])
   simp only [Nat.mul_one] at k1
   obtain ⟨s₃, h₃, v₃, e₃⟩ := addKey_run (r := .r9) (by decide) (12 * j + 2) s₂ (x.getD 1 0)
     ((e₂.reg .r9 (by decide)).trans ((e₁.reg .r9 (by decide)).trans hx.r9)) k1.1
   rw [k1.2] at v₃
   have hk₃ := hk₂.keep e₃ (by decide)
-  have k2 := key_at hk₃ j 2 (by omega)
+  have k2 := key_at hk₃ j 2 (by omega_using [hj])
   simp only [Nat.reduceMul] at k2
   obtain ⟨s₄, h₄, v₄, e₄⟩ := addKey_run (r := .r10) (by decide) (12 * j + 4) s₃ (x.getD 2 0)
     ((e₃.reg .r10 (by decide)).trans ((e₂.reg .r10 (by decide)).trans
       ((e₁.reg .r10 (by decide)).trans hx.r10))) k2.1
   rw [k2.2] at v₄
   have hk₄ := hk₃.keep e₄ (by decide)
-  have k4 := key_at hk₄ j 4 (by omega)
+  have k4 := key_at hk₄ j 4 (by omega_using [hj])
   simp only [Nat.reduceMul] at k4
   obtain ⟨s₅, h₅, a₅, d₅, e₅⟩ := p5_run s₄ (12 * j + 8) k4.1
   obtain ⟨s₆, h₆, v₆, e₆⟩ := mul_run s₅
   have hk₆ := (hk₄.keep e₅ (by decide)).keep e₆ (by decide)
-  have k5 := key_at hk₆ j 5 (by omega)
+  have k5 := key_at hk₆ j 5 (by omega_using [hj])
   simp only [Nat.reduceMul] at k5
   obtain ⟨s₇, h₇, b₇, a₇, d₇, e₇⟩ := p6_run s₆ (12 * j + 10) k5.1
   obtain ⟨s₈, h₈, v₈, e₈⟩ := mul_run s₇

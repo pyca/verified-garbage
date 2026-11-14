@@ -121,7 +121,7 @@ theorem loop_ct {table src : BitVec 32} {k : Nat} {dom : List Byte} {gs : List G
       (eval .ne s = some true → ∃ m < n, I m s t) := by
     intro s t tr1 tr2 u v h e1 e2
     obtain ⟨table, g, gs, size, fit, hs, ht⟩ := h
-    have nextFit : gs.length < 2 ^ 32 := by simp only [List.length_cons] at size; omega
+    have nextFit : gs.length < 2 ^ 32 := by simp only [List.length_cons] at size; omega_using [size, fit]
     have timing := step_ct kfit s t tr1 tr2 u v ⟨hs, ht⟩ e1 e2
     obtain ⟨_, u', eu, memU, resultU, restU⟩ := step_ok s hs.1 hs.2.1.1 hs.2.2 kfit nextFit
     obtain ⟨_, v', ev, memV, resultV, restV⟩ := step_ok t ht.1 ht.2.1.1 ht.2.2 kfit nextFit
@@ -158,7 +158,7 @@ theorem loop_ct {table src : BitVec 32} {k : Nat} {dom : List Byte} {gs : List G
         refine ⟨timing.1, continueU.trans continueV.symm, fun _ => trivial, fun _ => ?_⟩
         cases gs with
         | nil => exact False.elim (last rfl)
-        | cons g' gs' => exact ⟨(g'::gs').length, by simp only [List.length_cons] at size ⊢; omega,
+        | cons g' gs' => exact ⟨(g'::gs').length, by simp only [List.length_cons] at size ⊢; omega_using [size],
             _, g', gs', rfl, nextFit, readyU, readyV⟩
   have start : ∀ s t, ScanReady table src k dom gs s ∧ ScanReady table src k dom gs t → I gs.length s t := by
     intro s t h
@@ -201,7 +201,7 @@ theorem code_ct {p : Inputs} {slots : List Nat}
     have source (a b : State) (context : Context p slots a)
         (mem : b.mem = a.mem) (rest : VG.Proof.X25519.Arm.Rest [.r4,.r6,.r7,.r8,.r9,.r10] a b) :
         Source p.domain p.k p.dom b :=
-      ⟨by rw [p.domainLength]; split <;> have := p.minLength <;> omega,
+      ⟨by rw [p.domainLength]; split <;> have := p.minLength <;> omega_using [this],
         context.domain.fits, by rw [rest.rd,rest.wr]; exact context.domain.readable,
         by rw [mem]; exact context.domain.bytes, by rw [p.domainLength]; split <;> simp⟩
     have tabU := h.1.2.1.after mu ru
@@ -213,7 +213,7 @@ theorem code_ct {p : Inputs} {slots : List Nat}
   have scanning : RelCT isa Q loop (fun _ _ => True) := by
     apply RelCT.exists_
     intro table
-    exact loop_ct (by decide) (by have := p.maxLength; omega) (by decide)
+    exact loop_ct (by decide) (by have := p.maxLength; omega_using [this]) (by decide)
   have restore : RelCT isa (fun _ _ => True) (.block [.mov .r0 (.reg .r8)]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (by taint_decide)
     intro _ _ _; exact Taint.agree_ofRegs (by simp)

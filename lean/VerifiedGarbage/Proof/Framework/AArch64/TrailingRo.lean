@@ -49,27 +49,27 @@ theorem Sig.bufs_append_ro (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x : Bi
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_ro pb nm e n x ps vs (by omega)
+    exact Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    rw [Sig.bufs_append_ro pb nm e n x ps vs (by omega)]
+    rw [Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])]
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    rw [Sig.bufs_append_ro pb nm e n x ps vs (by omega)]
+    rw [Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])]
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_ro pb nm e n x ps vs (by omega)
+    exact Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])
   | (_, .table _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_5, List.length_append, List.length_cons,
       List.length_nil] at h
     simp only [List.cons_append, Sig.bufs]
-    exact Sig.bufs_append_ro pb nm e n x ps vs (by omega)
+    exact Sig.bufs_append_ro pb nm e n x ps vs (by omega_using [h])
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
   | (_, .array ..) :: _, [], h => by simp [Param.words.eq_2] at h
@@ -184,10 +184,10 @@ theorem Verified.dropTrailingRo {c : Prog isa}
     have eD : (regionModel.withRegions s (roRd sig s) (roWr sig s)).rd = roRd sig s := rfl
     have eW : (regionModel.withRegions s (roRd sig s) (roWr sig s)).wr = roWr sig s := rfl
     rw [eR, eA, eS, eM, eD, eW]
-    refine ⟨⟨hst, by omega⟩, rfl, rfl, ?_⟩
+    refine ⟨⟨hst, by omega_using [hfit]⟩, rfl, rfl, ?_⟩
     rw [allRegions_of_stack sig hk s]
     have hsub : Region.Sub ⟨stackArgAddr s 0, 8 * nStack sig⟩
-        ⟨stackArgAddr s 0, 8 * (nStack sig + 1)⟩ := Region.sub_prefix (by omega)
+        ⟨stackArgAddr s 0, 8 * (nStack sig + 1)⟩ := Region.sub_prefix (by omega_using [])
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [List.pairwise_append] at hpw ⊢
       obtain ⟨hb, hx, hy⟩ := hpw
@@ -239,7 +239,7 @@ theorem Verified.dropTrailingRo {c : Prog isa}
         subst ha
         refine Covers.of_sub fun r hr => ⟨_, hin _ (.inr (.inr rfl)), 0, ?_, ?_⟩
         · simp only [List.mem_singleton] at hr; subst hr; simp
-        · simp only [List.mem_singleton] at hr; subst hr; simp only; omega
+        · simp only [List.mem_singleton] at hr; subst hr; simp only; omega_using []
     rcases hr with ⟨a, ⟨ha, -⟩, rfl⟩ | ⟨a, ⟨ha, -⟩, rfl⟩
     · exact hcov a (by simpa using ha)
     · exact hcov a (by simpa using ha)

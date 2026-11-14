@@ -20,11 +20,11 @@ theorem PrimeParams.slice_length (P : PrimeParams) {used : Nat} (h : used + P.dr
     (P.drawSlice used).length = P.len := by
   simp only [PrimeParams.drawSlice, PrimeParams.drawStart, List.length_take, List.length_drop]
   have := P.lenDraw
-  omega
+  omega_using [h, this]
 
 theorem PrimeState.slice_source {P : PrimeParams} {used : Nat} {s : State}
     (h : PrimeState P used s) (hroom : used + P.drawBytes ≤ P.rand.length) : Src s P.B P.Z (off P.rp (P.drawStart used)) (P.drawSlice used) :=
-  source_slice h.source (by have := P.lenDraw; dsimp only [PrimeParams.drawStart]; omega)
+  source_slice h.source (by have := P.lenDraw; dsimp only [PrimeParams.drawStart]; omega_using [hroom, this])
 
 theorem PrimeParams.slice_separate (P : PrimeParams) {used : Nat}
     (hroom : used + P.drawBytes ≤ P.rand.length) :
@@ -33,18 +33,18 @@ theorem PrimeParams.slice_separate (P : PrimeParams) {used : Nat}
   intro i hi j hj he
   rw [P.slice_length hroom] at hi hj
   have hs : P.drawStart used + i < P.rand.length := by
-    dsimp only [PrimeParams.drawStart]; have := P.lenDraw; omega
+    dsimp only [PrimeParams.drawStart]; have := P.lenDraw; omega_using [hroom, hi, this]
   have ha : off (off P.rp (P.drawStart used)) i = off P.rp (P.drawStart used + i) := by
     simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
   apply P.tapeBuffer (off P.p j)
   · rw [← he, ha]
     apply (Region.contains_self P.rp P.rand.length).byte
     simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by have := P.randMax; omega)]
+    rw [Nat.mod_eq_of_lt (by have := P.randMax; omega_using [hs, this])]
     exact hs
   · apply (Region.contains_self P.p P.len).byte
     simp only [off, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by have := P.lenDraw; have := P.drawMax; omega)]
+    rw [Nat.mod_eq_of_lt (by have := P.lenDraw; have := P.drawMax; omega_arith)]
     exact hj
 
 end VG.Proof.Dsa.AArch64.Generation

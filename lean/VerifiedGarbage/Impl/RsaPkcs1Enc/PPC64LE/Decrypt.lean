@@ -18,8 +18,11 @@ AArch64 (`Impl/RsaPkcs1Enc/AArch64/Decrypt.lean`), with
 functions taking their working space as an argument, it runs
 draft-irtf-cfrg-rsa-guidance-10 §7.2:
 
-1. The private-key operation, `EM` (or zeros) to `out` and its result `r`
-   (1, or 0 or 2 for its errors) into a slot (`setup`, the call).
+1. The private-key operation (`vg_rsa_private_checked`, or for
+   `vg_rsa_pkcs1_decrypt_precomputed` `vg_rsa_private_checked_precomputed`,
+   given the key's precomputed values `pre`, our stack arguments 15 and 16),
+   `EM` (or zeros) to `out` and its result `r` (1, or 0 or 2 for its errors)
+   into a slot (`setup`, the call).
 2. `D = I2OSP(d, k)` in `scratch`: zeros, then `d` at its end (`dBuild`);
    `DH = SHA256(D)` (`hashD`); `KDK = HMAC(DH, C)` (`kdkMac`).
 3. The candidate lengths `CL = IRPRF(KDK, "length", 256)` (`clLoop`) and the
@@ -42,7 +45,7 @@ the lengths and the counters. `out`'s and `AM`'s bytes are all read,
 whichever is returned.
 
 The frame (`stdu r1, -frameBytes(r1)`) holds the Parameter Save Area of the
-private-key operation (its twelve stack arguments, at `r1 + 96`), then the
+private-key operation (its twelve, or fourteen, stack arguments, at `r1 + 96`), then the
 slots from `oOut`, our return address among them. Only volatile registers
 are used, so the slots hold everything kept across a call. Our own stack
 arguments are at `r1 + frameBytes + 96 + 8 j` (`arg j`). In `scratch`, from
@@ -59,23 +62,23 @@ open VG VG.PPC64LE
 open VG.Impl.AesGcm.PPC64LE (mov)
 
 /-- The size of the frame. -/
-def frameBytes : Nat := 304
+def frameBytes : Nat := 320
 
 /-! The slots. -/
-def oOut : Nat := 192
-def oML : Nat := 200
-def oN : Nat := 208
-def oK : Nat := 216
-def oE : Nat := 224
-def oEl : Nat := 232
-def oD : Nat := 240
-def oDl : Nat := 248
-def oIn : Nat := 256
-def oScr : Nat := 264
-def oR : Nat := 272
-def oI : Nat := 280
-def oNB : Nat := 288
-def oLr : Nat := 296
+def oOut : Nat := 208
+def oML : Nat := 216
+def oN : Nat := 224
+def oK : Nat := 232
+def oE : Nat := 240
+def oEl : Nat := 248
+def oD : Nat := 256
+def oDl : Nat := 264
+def oIn : Nat := 272
+def oScr : Nat := 280
+def oR : Nat := 288
+def oI : Nat := 296
+def oNB : Nat := 304
+def oLr : Nat := 312
 
 /-! Where things are in `scratch`. -/
 def sSt : Nat := 0
@@ -106,7 +109,13 @@ def sha256 : Impl.Hmac.Stream.PPC64LE.Hash where
   finC := Impl.Sha256.PPC64LE.Stream.finalize
   hmacInitN := "vg_hmac_sha256_init_scratch"
 
-def privCall : Prog isa := .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+def privCall : Bool → Prog isa
+  | false => .call "vg_rsa_private_checked" Impl.Rsa.PPC64LE.Priv.code
+  | true => .call "vg_rsa_private_checked_precomputed" Impl.Rsa.PPC64LE.Priv.codeP
+
+/-- The private-key operation's stack arguments: twelve, or with `pc`
+fourteen (`pre` and `pre_len` too). -/
+def nCallArgs (pc : Bool) : Nat := if pc then 14 else 12
 def initCall : Prog isa := .call Spec.Sha256.initApi.name Impl.Sha256.PPC64LE.Stream.init
 def updCall : Prog isa := .call "vg_sha256_update_scratch" Impl.Sha256.PPC64LE.Stream.update
 def finCall : Prog isa := .call "vg_sha256_finalize_scratch" Impl.Sha256.PPC64LE.Stream.finalize
@@ -135,8 +144,8 @@ def mvArg (j d : Nat) : List Instr := [.load .d .r0 .r12 (arg j), .store .d .r0 
 /-- `d_len`, the input and `scratch` to their slots. -/
 def slotMoves : List Instr := mvArg 0 oDl ++ mvArg 1 oIn ++ mvArg 13 oScr
 
-/-- Our stack argument `3 + j` (`p` … `scratch_len`) to the private-key
-operation's stack argument `j`. -/
+/-- Our stack argument `3 + j` (`p` … `scratch_len`, then `pre` and
+`pre_len`) to the private-key operation's stack argument `j`. -/
 def copyArg (j : Nat) : List Instr := mvArg (3 + j) (96 + 8 * j)
 
 /-- Its registers: `out`, `n_len`, `n`, `n_len`, `e`, `e_len`, the input,
@@ -144,7 +153,7 @@ def copyArg (j : Nat) : List Instr := mvArg (3 + j) (96 + 8 * j)
 def privRegs : List Instr :=
   [mov .r4 .r7, mov .r5 .r6, mov .r6 .r7, mov .r7 .r8, mov .r8 .r9, .load .d .r9 .r12 oIn, mov .r10 .r4]
 
-def setup : List Instr := saves ++ slotMoves ++ (List.range 12).flatMap copyArg ++ privRegs
+def setup (pc : Bool) : List Instr := saves ++ slotMoves ++ (List.range (nCallArgs pc)).flatMap copyArg ++ privRegs
 
 /-! ## 2. The key derivation key -/
 
@@ -345,11 +354,17 @@ def selPart : Prog isa :=
 
 /-! ## The function -/
 
-def body : Prog isa :=
-  .seq (.block setup) (.seq privCall (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
+def body (pc : Bool) : Prog isa :=
+  .seq (.block (setup pc)) (.seq (privCall pc) (.seq dBuild (.seq hashD (.seq kdkMac (.seq clLoop
     (.seq amLoop (.seq maskPart (.seq alPart (.seq scanPart selPart)))))))))
 
+/-- `vg_rsa_pkcs1_decrypt`, or with `pc` `vg_rsa_pkcs1_decrypt_precomputed`. -/
+def codeG (pc : Bool) : Prog isa := .frame (.alloc frameBytes) (body pc) (.free frameBytes)
+
 /-- `vg_rsa_pkcs1_decrypt`. -/
-def code : Prog isa := .frame (.alloc frameBytes) body (.free frameBytes)
+abbrev code : Prog isa := codeG false
+
+/-- `vg_rsa_pkcs1_decrypt_precomputed`. -/
+abbrev codeP : Prog isa := codeG true
 
 end VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt

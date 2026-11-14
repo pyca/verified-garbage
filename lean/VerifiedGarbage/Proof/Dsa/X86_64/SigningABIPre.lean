@@ -21,9 +21,9 @@ theorem SigningABI.pre {s : State} (h : SigningABI s) : SigningPre h.input s := 
   refine ⟨scratch_prefix hs h.used (by decide), ?_, ?_, ?_, ?_, rfl, ?_, rfl, ?_, ?_, ?_, ?_, ?_⟩
   · exact (ofNat_toNat64 _).symm
   · intro j hj hb
-    exact stackWord_read (count := 5) hargs hj (by omega) (by decide)
+    exact stackWord_read (count := 5) hargs hj (by omega_using [hb]) (by decide)
   · intro j hj hb i hi
-    exact Nat.le_trans h.used (stackWord_separate (count := 5) h.scratchArgs hj (by omega) (by decide) i hi)
+    exact Nat.le_trans h.used (stackWord_separate (count := 5) h.scratchArgs hj (by omega_using [hb]) (by decide) i hi)
   · exact (ofNat_toNat64 _).symm
   · change stackArg s 2 = BitVec.ofNat 64 (Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat).length
     rw [bytesAt_length, ofNat_toNat64]

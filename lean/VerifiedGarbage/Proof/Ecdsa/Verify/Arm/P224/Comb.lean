@@ -121,7 +121,7 @@ theorem combVerify_ok (hC : Law Spec.P224.curve) {um : Bool} {s₀ : State} (hp 
     (by simpa only [List.mem_singleton,forall_eq] using hd)
   have bits : ∀ i<224,u₂.mem (off (ptr s₀ .r3) (bitsAt (p224With um).n 0+i))=
       if (sv (p224With um) (ptr s₀ .r3) s U).testBit i then 1 else 0 := fun i hi => by
-    rw [b₂ i (by change i < 64 * 4; omega)]
+    rw [b₂ i (by change i < 64 * 4; omega_using [hi])]
     simp only [sv] at k_eq
     rw [k_eq]
   have mul := comb_generator_ok hC hs₂ hf₂ F₂ hu₂ (by rw [sy₂,syu,syms]; rfl)

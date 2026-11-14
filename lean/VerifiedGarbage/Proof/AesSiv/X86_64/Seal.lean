@@ -51,11 +51,11 @@ theorem fin_dis (h : Env s₀ C D P W R L) {out d n : Nat} (hout : out + 16 ≤ 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
+  · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [hout])
+  · exact Offset.disjoint W (by omega_using [h2]) (by omega_using [hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h3]) (by omega_using [hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h4]) (by omega_using [hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h5]) (by omega_using [hd]) (by omega_using [])
   · exact (h.stk_w.sub_right (h.sW hd)).symm
 
 /-- A region outside the working space and the stack, outside what `finish` writes. -/
@@ -64,7 +64,7 @@ theorem fin_out {X : Region} {out : Nat} (hout : out + 16 ≤ 256) (hw : X.Disjo
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact hw.sub_right (Offset.sub_base W (by omega))
+  · exact hw.sub_right (Offset.sub_base W (by omega_using [hout]))
   · exact hw.sub_right (Offset.sub_base W (by decide))
   · exact hw.sub_right (Offset.sub_base W (by decide))
   · exact hw.sub_right (Offset.sub_base W (by decide))
@@ -77,10 +77,10 @@ theorem ctr_dis (h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) (h1 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact h.p_w.symm.sub_left (h.sW (by omega))
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact (h.stk_w.sub_right (h.sW (by omega))).symm
+  · exact h.p_w.symm.sub_left (h.sW (by omega_using [hd]))
+  · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
+  · exact (h.stk_w.sub_right (h.sW (by omega_using [hd]))).symm
 
 /-- A region outside the data, the working space and the stack, outside what CTR writes. -/
 theorem ctr_out {X : Region} (hp : X.Disjoint ⟨P, L⟩) (hw : X.Disjoint ⟨W, 2560⟩)
@@ -99,8 +99,8 @@ theorem cnt_dis {d n : Nat} (hd : d + n ≤ 2560) (h1 : d + n ≤ 64 ∨ 80 ≤ 
   intro r hr
   simp only [cntOff, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
-  · exact Offset.disjoint W (by omega) (by omega) (by omega)
+  · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
+  · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
 
 /-- A region outside the working space, outside the counter. -/
 theorem cnt_out {X : Region} (hw : X.Disjoint ⟨W, 2560⟩) : ∀ r ∈ cntRegions W, X.Disjoint r := by
@@ -133,7 +133,7 @@ theorem fin_sub (h : Env s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by omega_using [hout])⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
@@ -170,8 +170,8 @@ theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 51
         Frame (endRegions W P L (s₀.gpr .rsp)) s.mem s'.mem ∧
         Spec.Siv.sealWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
           (Spec.Aes.bytesAt s.mem P L) = (Spec.Aes.bytesAt s'.mem W 16, Spec.Aes.bytesAt s'.mem P L) := by
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
-  have hL : L ≤ 2 ^ 64 := by have := h.lt; omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_using [h]
+  have hL : L ≤ 2 ^ 64 := by have := h.lt; omega_using [this]
   refine WP.seq (WP.mono (finish_wp v h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   obtain ⟨s₃, run₃, m₃, g₃, rd₃, wr₃⟩ := counter_ok h h₂.regs.r15 h₂.regs.rd h₂.regs.wr
@@ -182,9 +182,9 @@ theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 51
   -- The data pointer and its length, kept in their slots.
   have hslot {d : Nat} (hd : 208 ≤ d) (hd' : d + 8 ≤ 224) :
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
-    rw [f₃.readW (Region.contains_self _ _) (cnt_dis (by omega) (by omega)) (by decide),
-      f₂.readW (Region.contains_self _ _) (fin_dis h (by decide) (by omega) (by omega) (by omega) (by omega)
-        (by omega) (by omega)) (by decide)]
+    rw [f₃.readW (Region.contains_self _ _) (cnt_dis (by omega_using [hd']) (by omega_using [hd])) (by decide),
+      f₂.readW (Region.contains_self _ _) (fin_dis h (by decide) (by omega_using [hd']) (by omega_using [hd]) (by omega_using [hd]) (by omega_using [hd])
+        (by omega_using [hd']) (by omega_using [hd'])) (by decide)]
   have h208 : s₃.mem.readW (W + BitVec.ofNat 64 dataOff) 64 = P := by
     rw [hslot (by decide) (by decide), hs.d208]
   have h216 : s₃.mem.readW (W + BitVec.ofNat 64 lenOff) 64 = BitVec.ofNat 64 L := by
@@ -201,11 +201,11 @@ theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 51
     have hb (p : Reg × Nat) (hp : p ∈ saved) : 160 ≤ p.2 ∧ p.2 + 8 ≤ 208 := ⟨saved_ge p hp, saved_le p hp⟩
     refine (((hsv.frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame f₄ fun p hp => ?_)
     · have := hb p hp
-      exact fin_dis h (by decide) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-    · have := hb p hp; exact cnt_dis (by omega) (by omega)
-    · have := hb p hp; exact ctr_dis h (by omega) (by omega)
+      exact fin_dis h (by decide) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this])
+    · have := hb p hp; exact cnt_dis (by omega_using [this]) (by omega_using [this])
+    · have := hb p hp; exact ctr_dis h (by omega_using [this]) (by omega_using [this])
   refine WP.mono (Spill.restore_ok .r15 saved g s₄ (by decide) (fun p hp => by
-      rw [h₄.regs.r15, h₄.regs.rd, h₄.regs.wr]; exact h.inRW rfl rfl (by have := saved_le p hp; omega))
+      rw [h₄.regs.r15, h₄.regs.rd, h₄.regs.wr]; exact h.inRW rfl rfl (by have := saved_le p hp; omega_using [this]))
     (by rw [h₄.regs.r15]; exact hsv₄)) fun s₅ ⟨h₅a, h₅b, m₅, _, _⟩ => ?_
   have c₀ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
   have d₀ := cnt_dis (W := W) (d := 0) (n := 16) (by decide) (by decide)

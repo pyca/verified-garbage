@@ -36,22 +36,22 @@ theorem load_ok (s₀ : VG.AArch64.State)
       (List.range 25).flatMap (fun i => [Instr.ldr .x (laneReg i) .x30 (8*i)]) by rfl]
     refine wp_range_flatMap (M := isa) (LoadInv s₀) (fun i s hi hs => ?_)
       25 (Nat.le_refl _) s hs
-    refine WP.cons (exec_ldr_x ⟨by omega,by omega⟩ ?_) (wp_nil ?_)
+    refine WP.cons (exec_ldr_x ⟨by omega_using [],by omega_using [hi]⟩ ?_) (wp_nil ?_)
     · rw [hs.keep.rd,hs.keep.wr,hs.base]
       exact hin i hi
     · refine ⟨⟨hs.keep.rd,hs.keep.wr,hs.keep.sp⟩,hs.mem,hs.vec,?_,fun j hj => ?_⟩
       · simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,
           Ne.symm (laneReg_ne_x30 i hi),ite_false,hs.base]
       · simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,
-          laneReg_inj j (by omega) i hi]
+          laneReg_inj j (by omega_using [hi, hj]) i hi]
         split
         · rename_i he; subst j
           rw [hs.mem,hs.base]
-        · exact hs.lanes j (by omega)
+        · exact hs.lanes j (by omega_arith)
   unfold load
   refine WP.cons (exec_addImm_x (by decide)) ?_
   refine (hrun _ ?_).mono fun s hs => ⟨hs.keep,hs.mem,hs.vec,?_⟩
-  · refine ⟨⟨rfl,rfl,rfl⟩,rfl,rfl,?_,fun _ h => absurd h (by omega)⟩
+  · refine ⟨⟨rfl,rfl,rfl⟩,rfl,rfl,?_,fun _ h => absurd h (by omega_using [])⟩
     simp only [RegUpd.gpr_write_self,State.read,Size.bits,BitVec.setWidth_eq,
       show BitVec.ofNat 64 0 = 0 by rfl]
     exact BitVec.add_zero _

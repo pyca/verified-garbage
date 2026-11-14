@@ -26,7 +26,7 @@ theorem entered_frame (s : State) (fit : 128 ≤ s.sp.toNat) :
     Frame [⟨State.addr (pcPushed s).sp, 56⟩] s.mem (entered s).mem := by
   have f := FrameStack.pushed_frameA
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (s := s) (by change 56 ≤ s.sp.toNat; omega)
+    (s := s) (by change 56 ≤ s.sp.toNat; omega_using [fit])
   exact f
 
 theorem entered_read {s : State} {a : Addr} {n : Nat} (read : InRegions (s.rd ++ s.wr) a n) :
@@ -55,7 +55,7 @@ theorem entered_locals (s : State) {base : BitVec 32} {len : Nat} (fit : 128 ≤
   refine ⟨⟨?_, List.mem_cons_self⟩, separate.sub_left (locals_sub_reserved s fit)⟩
   rw [entered_nat s fit]
   have := s.sp.isLt
-  omega
+  omega_using []
 
 theorem entered_octets {s : State} {base src : BitVec 32} {len : Nat} {bs : List Byte}
     (h : Octets base src len bs s) (fit : 128 ≤ s.sp.toNat)
@@ -63,7 +63,7 @@ theorem entered_octets {s : State} {base src : BitVec 32} {len : Nat} {bs : List
     Octets base src len bs (entered s) := by
   refine ⟨h.fits, entered_read h.readable, h.separate, ?_⟩
   have frame := entered_frame s fit
-  rw [rsa_bytes_frame frame (by have := h.fits; omega) (by
+  rw [rsa_bytes_frame frame (by have := h.fits; omega_using [this]) (by
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -72,7 +72,7 @@ theorem entered_octets {s : State} {base src : BitVec 32} {len : Nat} {bs : List
 
 theorem saved_separate_locals (s : State) (fit : 128 ≤ s.sp.toNat) :
     (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint ⟨State.addr (entered s).sp, 72⟩ := by
-  have room : (entered s).sp.toNat + 72 < 2 ^ 32 := by rw [entered_nat s fit]; have := s.sp.isLt; omega
+  have room : (entered s).sp.toNat + 72 < 2 ^ 32 := by rw [entered_nat s fit]; have := s.sp.isLt; omega_using []
   have addr : State.addr (pcPushed s).sp = off (State.addr (entered s).sp) 72 := by
     have same : (pcPushed s).sp = (entered s).sp + BitVec.ofNat 32 72 := (BitVec.sub_add_cancel _ _).symm
     rw [same]

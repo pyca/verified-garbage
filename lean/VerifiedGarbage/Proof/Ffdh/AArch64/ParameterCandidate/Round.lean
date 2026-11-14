@@ -43,9 +43,9 @@ theorem mm3_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [] [(2, 1), (3, 1)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes, aAcc]; omega, by simp only [slot, hdrBytes, aAcc]; omega⟩
-  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes, aTmp]; omega, by simp only [slot, hdrBytes, aTmp]; omega⟩
-  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes, aXm]; omega, by simp only [slot, hdrBytes, aXm]; omega⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes, aAcc]; omega_using [], by simp only [slot, hdrBytes, aAcc]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes, aTmp]; omega_using [], by simp only [slot, hdrBytes, aTmp]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes, aXm]; omega_using [], by simp only [slot, hdrBytes, aXm]; omega_using []⟩
 
 theorem rdRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w
     ([] ++ [(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] ++ [(8 * fIdx, 8), (8 * kStat, 8)])
@@ -85,7 +85,7 @@ theorem rdRanges_pmut (w : Nat) : ∀ r ∈ rdRanges w, PMut r := by
       [(8 * fIdx, 8), (8 * kStat, 8)] : List (Nat × Nat)), 8 * 26 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * 16 ∨
       (8 * 18 ≤ h.1 ∧ h.1 + h.2 ≤ 8 * 19) ∨ (8 * 22 ≤ h.1 ∧ h.1 + h.2 ≤ 8 * 24)) r h
     exact this
-  · exact Or.inl (Nat.le_trans (by unfold slot hdrBytes; omega) h1)
+  · exact Or.inl (Nat.le_trans (by unfold slot hdrBytes; omega_using []) h1)
 
 /-- The end of a round. -/
 theorem rdTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
@@ -103,14 +103,14 @@ theorem rdTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
   have h256 := h.h256
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = mask f ∧ t.mem = s.mem) (by
-    brun [h.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega),
+    brun [h.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_using [h256]),
       hF]) (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h3₁, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
   have h0₁ : s₁.gpr .x0 = B := (k₁.gpr .x0 (by decide)).trans h.x0
   refine WP.ite (!f) (by rw [eval_zero, h3₁]; cases f <;> decide) (fun hf => ?_) (fun hf => ?_)
   · simp only [Bool.not_eq_true'] at hf
     refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off B (8 * kStat)) (BitVec.ofNat 64 2)) (by
-      brun [h0₁, hdr_enc (show kStat < 32 by decide), hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega), hm₁]
+      brun [h0₁, hdr_enc (show kStat < 32 by decide), hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256]), hm₁]
       rfl) (by decide) (by decide) (by decide +kernel))
       fun t ⟨hm, k⟩ => ⟨by rw [hm, hf]; rfl, (k₁.trans k).mono (by decide)⟩
   · simp only [Bool.not_eq_false'] at hf
@@ -120,16 +120,16 @@ theorem rdTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
         (s₁.mem.writeW (off B (8 * fIdx)) (BitVec.ofNat 64 (i + 1))).writeW (off B (8 * kStat))
           (BitVec.ofNat 64 (if i + 1 < K then 4 else 1))) (by
       brun [h0₁, hdr_enc (show fIdx < 32 by decide), hdr_enc (show fChecks < 32 by decide),
-        hdr_enc (show kStat < 32 by decide), hs₁.ld (d := 8 * fIdx) (by simp only [fIdx]; omega),
-        hs₁.ld (d := 8 * fChecks) (by simp only [fChecks]; omega),
-        hs₁.st (d := 8 * fIdx) (by simp only [fIdx]; omega), hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega),
+        hdr_enc (show kStat < 32 by decide), hs₁.ld (d := 8 * fIdx) (by simp only [fIdx]; omega_using [h256]),
+        hs₁.ld (d := 8 * fChecks) (by simp only [fChecks]; omega_using [h256]),
+        hs₁.st (d := 8 * fIdx) (by simp only [fIdx]; omega_using [h256]), hs₁.st (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using [h256]),
         hI', hC', subs_carry]
       have e1 : BitVec.ofNat 64 i + 1#64 = BitVec.ofNat 64 (i + 1) := (BitVec.ofNat_add _ _).symm
-      rw [e1, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega),
-        Nat.mod_eq_of_lt (show i + 1 < 2 ^ 64 by omega)]
+      rw [e1, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show K < 2 ^ 64 by omega_using [hK]),
+        Nat.mod_eq_of_lt (show i + 1 < 2 ^ 64 by omega_using [hi])]
       by_cases hc : i + 1 < K
-      · rw [decide_eq_false (by omega)]; simp only [hc, Bool.false_eq_true, ↓reduceIte]; rfl
-      · rw [decide_eq_true (by omega)]; simp only [hc, ↓reduceIte]; rfl) (by decide) (by decide) (by decide +kernel))
+      · rw [decide_eq_false (by omega_using [hc])]; simp only [hc, Bool.false_eq_true, ↓reduceIte]; rfl
+      · rw [decide_eq_true (by omega_using [hc])]; simp only [hc, ↓reduceIte]; rfl) (by decide) (by decide) (by decide +kernel))
       fun t ⟨hm, k⟩ => ⟨by rw [hm, hm₁, hf]; rfl, (k₁.trans k).mono (by decide)⟩
 
 /-- A round of an accepted witness `a`. -/

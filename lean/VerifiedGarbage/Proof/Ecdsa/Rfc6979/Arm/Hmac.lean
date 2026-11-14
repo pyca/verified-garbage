@@ -164,7 +164,7 @@ theorem tcall_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {j : Nat} (hj : j
   refine WP.seq ?_
   refine WP.mono_syms (Q := fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧
       u'.gpr .lr = m₀.readW (tA L.tab (4 * j)) 32 ∧ ∀ q, q ≠ .lr → u'.gpr q = u.gpr q)
-    (tabLd_ok hL hc (d := .lr) (by decide) (o := 4 * j) (by omega) fun u' c' m' v' k' =>
+    (tabLd_ok hL hc (d := .lr) (by decide) (o := 4 * j) (by omega_using [hj]) fun u' c' m' v' k' =>
       WP.block_nil ⟨c', m', v', k'⟩) fun u' ⟨c', m', v', k'⟩ sy => ?_
   refine WP.frame_icalls_of_call (fun s₁ hp => ?_) (hf u' c' m' sy k')
   obtain ⟨g₁, y₁⟩ := push_some_gpr hp

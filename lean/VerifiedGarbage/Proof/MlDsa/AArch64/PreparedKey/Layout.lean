@@ -55,7 +55,7 @@ theorem public_checks {p : Params}
   have hk := (KeyGen.pfacts hp).k
   have hpk := (KeyGen.pfacts hp).pk
   constructor <;> simp only [rwChk, ipChk, sep25_26, sep26_28, in25, in26, in28, out26, out28,
-    Bool.and_eq_true, decide_eq_true_eq] <;> omega
+    Bool.and_eq_true, decide_eq_true_eq] <;> omega_arith
 
 theorem public_copy_check {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
@@ -88,7 +88,7 @@ theorem secret_checks {p : Params}
     simp only [hs44, hs65, hs87, hk44, hk65, hk87, mlDsa44, mlDsa65, mlDsa87,
       rwChk, ipChk, sep25_26, sep26_28, in25, in26, in28, out26, out28,
       Bool.and_eq_true, decide_eq_true_eq] at * <;>
-    refine ⟨by omega, by omega, ?_⟩ <;>
+    refine ⟨by omega_using [hi], by omega_using [hi], ?_⟩ <;>
     exact ⟨by decide, by decide, by decide⟩
 
 theorem public_keep_source {p : Params}
@@ -98,7 +98,7 @@ theorem public_keep_source {p : Params}
       (.x25, 0) p.pkLen = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true,
     sep25_26, sep25_28, in25, Bool.and_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hi]
 
 theorem public_keep_prefix {p : Params}
     (_hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {i : Nat} (hi : i < p.k) :
@@ -107,7 +107,7 @@ theorem public_keep_prefix {p : Params}
       (.x26, 0) p.pkLen = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sepB_same,
     sep26_28, in26, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hi]
 
 theorem public_keep_prior {p : Params}
     (_hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {i j : Nat}
@@ -117,7 +117,7 @@ theorem public_keep_prior {p : Params}
       (.x26, p.pkLen + 1024 * j) 1024 = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sepB_same,
     sep26_28, in26, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hi, hj]
 
 theorem row_keep_source (bytes count : Nat) {i : Nat} (hi : i < count) :
     keepB (input bytes) (output bytes count)
@@ -125,7 +125,7 @@ theorem row_keep_source (bytes count : Nat) {i : Nat} (hi : i < count) :
       (.x25, 0) bytes = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true,
     sep25_26, sep25_28, in25, Bool.and_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hi]
 
 theorem row_keep_prefix (bytes count : Nat) {i : Nat} (hi : i < count) :
     keepB (input bytes) (output bytes count)
@@ -133,7 +133,7 @@ theorem row_keep_prefix (bytes count : Nat) {i : Nat} (hi : i < count) :
       (.x26, 0) bytes = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sepB_same,
     sep26_28, in26, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hi]
 
 theorem row_keep_prior (bytes count : Nat) {i j : Nat}
     (hi : i < count) (hj : j < i) :
@@ -142,7 +142,7 @@ theorem row_keep_prior (bytes count : Nat) {i j : Nat}
       (.x26, bytes + 1024 * j) 1024 = true := by
   simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sepB_same,
     sep26_28, in26, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq]
-  omega
+  omega_using [hi, hj]
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 

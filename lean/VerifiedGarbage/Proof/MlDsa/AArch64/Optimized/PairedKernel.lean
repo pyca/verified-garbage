@@ -59,15 +59,15 @@ theorem checkKernel_ok (hint : Bool) (g : Nat) {s₀ s : State}
     simp only [hu.rd,hu.wr,hb.rd,hb.wr,BitVec.add_assoc,←BitVec.ofNat_add]
     apply ha.workRead
     obtain ⟨i,rfl⟩ := (extraSlots_mem _ _).mp hp
-    omega
+    omega_using []
   · simpa only [hu15] using hdd
   · simpa only [hu.rd,hu.wr,hb.rd,hb.wr] using ha.table
   · intro i hi p j
     simp only [hu.rd,hu.wr,hb.rd,hb.wr,hu2',BitVec.add_assoc,←BitVec.ofNat_add]
-    exact ha.workRead _ (by omega)
+    exact ha.workRead _ (by omega_using [hi])
   · intro i hi p j
     simp only [hu.rd,hu.wr,hb.rd,hb.wr,hu15,hu16,BitVec.add_assoc,←BitVec.ofNat_add]
-    exact ⟨ha.dataRead _ (by omega),fun h => haux h _ (by omega),ha.dataWrite _ (by omega)⟩
+    exact ⟨ha.dataRead _ (by omega_using [hi]),fun h => haux h _ (by omega_using [hi]),ha.dataWrite _ (by omega_using [hi])⟩
   · refine ⟨u,⟨hum.trans hm,hu2',hu15,hu16⟩,hac,?_,?_,?_⟩
     · refine hkeep.mono ?_
       intro r hr

@@ -47,6 +47,16 @@ def finalize224ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contra
   finalize224ScratchSig.contract A (post := fun state count out _scratch =>
     Spec.Sha256.finalize224Post A.ptrBits state count out) (stack := stack)
 
+/-- `finalize224ScratchSig` with `w` words of working space. -/
+def finalize224ScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 28), ("scratch", .array true .u64 w)]
+
+/-- `finalize224ScratchContract`, with `w` words of working space. -/
+def finalize224ScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (finalize224ScratchSigW w).contract A (post := fun state count out _scratch =>
+    Spec.Sha256.finalize224Post A.ptrBits state count out) (stack := stack)
+
 /-- `finalize224Post` reads the memory on entry only within the streaming
 state (see `finalizePost_local`). -/
 theorem finalize224Post_local (pb : Nat) :
@@ -65,7 +75,7 @@ theorem finalize224Post_local (pb : Nat) :
   simp only [Spec.Sha256.finalize224Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq] at hb
   have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm
   intro msg hr hc
   exact h msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
 

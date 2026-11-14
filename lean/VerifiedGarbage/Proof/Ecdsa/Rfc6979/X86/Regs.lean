@@ -35,7 +35,7 @@ theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b 
 
 theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 76⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
+  (h.kc.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ h₂)
 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
@@ -46,7 +46,7 @@ theorem argM_eq (i : Nat) : argM i = .mem ⟨.esp, 516 + 4 * i⟩ := by
 theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 6) :
     readSrc u (argM i) = some (L.a i) := by
   have e : addr L.F (516 + 4 * i) = L.B + BitVec.ofNat 64 (592 + 4 * i) := by
-    rw [hL.addrF (by omega), show 76 + (516 + 4 * i) = 592 + 4 * i by omega]
+    rw [hL.addrF (by omega_using [hi]), show 76 + (516 + 4 * i) = 592 + 4 * i by omega_using []]
   rw [argM_eq, readSrc_mem hc.esp (by rw [e]; exact hc.inArgs hi hL), e, hc.pArg i hi]
 
 /-! ## Code that sets one register -/
@@ -80,7 +80,7 @@ theorem Upd.trans {u u' u'' : State} {d : Reg} {v w : BitVec 32} (hL : L.Ok) (hd
 /-- `d ← scratch + a`. -/
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp) (a : Nat) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.sc + BitVec.ofNat 32 a)) := by
-  refine wp_movS (hc.readArg hL (i := 4) (by omega)) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
+  refine wp_movS (hc.readArg hL (i := 4) (by omega_using [])) fun _ v₁ _ => wp_addi fun u₂ v₂ => WP.block_nil ?_
   rw [v₁.gpr] at v₂
   exact Upd.trans hL hd v₁ v₂ hc
 

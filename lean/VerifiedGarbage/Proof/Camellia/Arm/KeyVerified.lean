@@ -55,7 +55,7 @@ theorem expandKeyTaint_wf {s : State} (h : expandKeyArm.pre s) : VG.Arm.Taint.Wf
       List.Pairwise.nil]
     exact ⟨dSB, fun _ h => h.elim, trivial⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega_arith
   · simp only [expandKeyTaint, List.mem_singleton] at hp; subst hp
     simp [VG.Arm.Taint.region, hwr]
 
@@ -90,15 +90,15 @@ theorem expandKey_correct (s : State) (hs : expandKeyArm.pre s) :
   refine ⟨t, s', he, ⟨fun r hr => ?_, VG.Arm.Exec.sp he⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
+  · exact h₁ 0 (by omega_using [])
+  · exact h₁ 1 (by omega_using [])
+  · exact h₁ 2 (by omega_using [])
+  · exact h₁ 3 (by omega_using [])
+  · exact h₁ 4 (by omega_using [])
+  · exact h₁ 5 (by omega_using [])
+  · exact h₁ 6 (by omega_using [])
+  · exact h₁ 7 (by omega_using [])
+  · exact h₁ 8 (by omega_using [])
 
 /-- A state satisfying the precondition: a key of 16 bytes at `0x1000`. -/
 def expandKeySat : State where

@@ -24,7 +24,7 @@ theorem p384_nBits : Spec.Ecdsa.nBits p384.C = 384 := by
   have h₁ : 383 ≤ Spec.P384.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-- No bit of a hash of `48` bytes is dropped. -/
 theorem p384_sh : p384.sh = 0 := by
@@ -54,5 +54,7 @@ theorem p384_ok : CfgOk p384 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ _ => Impl.Ecdsa.PPC64LE.mulP384_noFrames
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE

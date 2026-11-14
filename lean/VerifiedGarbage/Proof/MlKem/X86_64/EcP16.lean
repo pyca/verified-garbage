@@ -117,7 +117,7 @@ theorem dnL_three : ∀ N < 7, N ∈ dnL 3 := by decide
 
 theorem seed_idx {i J : Nat} (hJ : J < 4) :
     (if J = 3 then i + 1 else i) = (3 * i + J) / 3 ∧ (if J = 3 then 0 else J) = (3 * i + J) % 3 := by
-  rcases (by omega : J = 0 ∨ J = 1 ∨ J = 2 ∨ J = 3) with rfl | rfl | rfl | rfl <;> simp <;> omega
+  rcases (by omega_using [hJ] : J = 0 ∨ J = 1 ∨ J = 2 ∨ J = 3) with rfl | rfl | rfl | rfl <;> simp <;> omega_using []
 
 /-! ## Before each row -/
 
@@ -194,7 +194,7 @@ theorem seedP_ok {i : Nat} (hi : i < 3) {J : Nat} (hJ : J < 4) {s : State} (h : 
   simp only [sdChk, List.all_eq_true, List.mem_range, Bool.and_eq_true] at hsd
   obtain ⟨⟨hs, hk⟩, hB⟩ := hsd J hJ
   have L₀ := (ecC V.toEcWfB σ).lay h.fp.ei.out
-  refine WP.mono (seed_step L₀ (ecB_bases K.L) (by omega) hs h.sd) fun s' ⟨hP, hS⟩ =>
+  refine WP.mono (seed_step L₀ (ecB_bases K.L) (by omega_using [hi, hJ]) hs h.sd) fun s' ⟨hP, hS⟩ =>
     ⟨h.fp.keep hP.b (hP.cs .r15 (by decide)) hk, ?_, hS⟩
   rw [L₀.keepBytes hP.b hB]; exact h.ps
 
@@ -203,11 +203,11 @@ theorem seedP_ok' {i : Nat} (hi : i < 3) {J : Nat} (hJ : J < 4) {s : State} (h :
     WP isa (seedAt J (if J = 3 then i + 1 else i) (if J = 3 then 0 else J)) s (FS V.toEcWfB σ i (J + 1)) := by
   have := seedP_ok V hi hJ h
   rw [V.k3] at this
-  rcases (by omega : J = 0 ∨ J = 1 ∨ J = 2 ∨ J = 3) with rfl | rfl | rfl | rfl
-  · rwa [show (3 * i + 0) / 3 = i by omega, show (3 * i + 0) % 3 = 0 by omega] at this
-  · rwa [show (3 * i + 1) / 3 = i by omega, show (3 * i + 1) % 3 = 1 by omega] at this
-  · rwa [show (3 * i + 2) / 3 = i by omega, show (3 * i + 2) % 3 = 2 by omega] at this
-  · rwa [show (3 * i + 3) / 3 = i + 1 by omega, show (3 * i + 3) % 3 = 0 by omega] at this
+  rcases (by omega_using [hJ] : J = 0 ∨ J = 1 ∨ J = 2 ∨ J = 3) with rfl | rfl | rfl | rfl
+  · rwa [show (3 * i + 0) / 3 = i by omega_using [], show (3 * i + 0) % 3 = 0 by omega_using []] at this
+  · rwa [show (3 * i + 1) / 3 = i by omega_using [], show (3 * i + 1) % 3 = 1 by omega_using []] at this
+  · rwa [show (3 * i + 2) / 3 = i by omega_using [], show (3 * i + 2) % 3 = 2 by omega_using []] at this
+  · rwa [show (3 * i + 3) / 3 = i + 1 by omega_using [], show (3 * i + 3) % 3 = 0 by omega_using []] at this
 
 theorem sampP_ok (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) {i : Nat}
     (hi : i < 3) {s : State} (h : FS V.toEcWfB σ i 4 s) :
@@ -221,8 +221,8 @@ theorem sampP_ok (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.calle
   refine ⟨h.fp.ei.keep h'.b hE, by rw [L₀.keepBytes h'.b hS]; exact h.fp.sb, ?_, fun N hN => ?_, fun j hj => ?_⟩
   · refine EkF16.MatB16.three (K := K) h.fp.mat L₀ h'.b hA ?_ fun t ht f hf => ?_
     · rw [h'.r15, all3_16, range_all_congr fun k hk => congrArg (fun B => (sampleNTT minIterations B).isSome)
-        (seed4_eq h.sd (k := k) (by omega))]
-    · have := h'.res t ht f (by rw [seed4_eq h.sd (by omega)]; exact hf)
+        (seed4_eq h.sd (k := k) (by omega_using [hk]))]
+    · have := h'.res t ht f (by rw [seed4_eq h.sd (by omega_using [ht])]; exact hf)
       rwa [poly4W, pBytes_true, pa, off_add] at this
   · have hN' : N ∈ dnL i := by simpa [dl] using hN
     exact L₀.keepPoly16 h'.b (hR N hN') (h.fp.rr N hN')
@@ -241,7 +241,7 @@ theorem cbdP_ok {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < 3) {j : Nat} (h
   refine WP.mono (cbd2_16At_okL hA L₀ rbx_na hcb) fun s' ⟨hP, hp'⟩ => ?_
   refine ⟨h.ei.keep hP.b hE, by rw [L₀.keepBytes hP.b hS]; exact h.sb,
     ⟨by rw [hP.cs .r15 (by decide)]; exact h.mat.r15, fun e he f hf => L₀.keepPoly16 hP.b (hAk e he) (h.mat.mat e he f hf)⟩,
-    fun N hN => ?_, fun j' hj' => by rw [L₀.keepBytes hP.b (hkp j' (by omega))]; exact h.po j' hj'⟩
+    fun N hN => ?_, fun j' hj' => by rw [L₀.keepBytes hP.b (hkp j' (by omega_using [hp3, hj']))]; exact h.po j' hj'⟩
   rw [dl_succ, List.mem_append, List.mem_singleton] at hN
   rcases hN with hN' | rfl
   · exact L₀.keepPoly16 hP.b (hR N hN') (h.rr N hN')
@@ -259,15 +259,15 @@ theorem fragP_ok (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.calle
   refine WP.seq (WP.mono (seedP_ok' V hi (J := 3) (by decide) h₂) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (sampP_ok V v hpb hi h₂) fun s₃ h₃ => ?_)
   refine WP.mono (seqR_ok (I := FM V.toEcWfB σ i) (pn i) 0
-    (fun j _ hj s hs => cbdP_ok V v.arith hi (by omega) hs) s₃ h₃) fun s₄ h₄ => ?_
+    (fun j _ hj s hs => cbdP_ok V v.arith hi (by omega_using [hj]) hs) s₃ h₃) fun s₄ h₄ => ?_
   rw [Nat.zero_add] at h₄
-  exact ⟨h₄.ei, h₄.sb, by rw [show 3 * (i + 1) = 3 * i + 3 by omega]; exact h₄.mat,
+  exact ⟨h₄.ei, h₄.sb, by rw [show 3 * (i + 1) = 3 * i + 3 by omega_using []]; exact h₄.mat,
     fun N hN => h₄.rr N (hnN' N hN)⟩
 
 theorem rowsP_ok (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) {s : State}
     (h : FP V.toEcWfB σ 0 s) :
     WP isa (seqR (frag K v.callee.arith p) 0 K.L.k) s (FP V.toEcWfB σ 3) := by
-  have := seqR_ok (I := FP V.toEcWfB σ) K.L.k 0 (fun i _ hi s hs => fragP_ok V v hpb (by rw [V.k3] at hi; omega) hs) s h
+  have := seqR_ok (I := FP V.toEcWfB σ) K.L.k 0 (fun i _ hi s hs => fragP_ok V v hpb (by rw [V.k3] at hi; omega_using [hi]) hs) s h
   rw [Nat.zero_add] at this
   exact WP.mono this fun _ h => by rwa [V.k3] at h
 
@@ -351,7 +351,7 @@ theorem fragP_tr (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.calle
       show (3 * i + J) % 3 = (3 * i + J) % K.L.k by rw [k3]]
     refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => RQ (ecR K.L) (ecW K.L) ρ K.L.k (3 * i) J x y)
       (Q := fun _ _ => True) fun ρ => RelCT.mono (seed_tr (ecB_bases K.L) (ρ := ρ) (n := K.L.k) (e₀ := 3 * i)
-        (K := J) (by omega) hJ (by rw [k3]; omega) (by rw [k3]; omega) (hsd J hJ).1.1) (fun _ _ h => h)
+        (K := J) (by omega_using [hi, hJ]) hJ (by rw [k3]; omega_using [hi, hJ]) (by rw [k3]; omega_using []) (hsd J hJ).1.1) (fun _ _ h => h)
         fun _ _ _ => trivial) ?_ fun _ _ h => h
     · intro x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩
       refine ⟨ρE K σ₁, lrelP V (eI fun _ _ (h : FS V.toEcWfB _ i J _) => h.fp.ei) σ₁ σ₂ x y p₁ p₂ pub h₁ h₂, h₁.sd, ?_⟩
@@ -379,9 +379,9 @@ theorem fragP_tr (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.calle
   -- The polynomials of its outputs.
   · have := seqR_tr (f := cbdP K v.callee.arith i) (R := fun j => R K.L (FM V.toEcWfB · i j)) (pn i) 0
       fun j _ hj => by
-        have hc := V.cb i hi j (by omega)
+        have hc := V.cb i hi j (by omega_using [hj])
         simp only [cbChk, Bool.and_eq_true] at hc
-        exact relInv (fun σ s _ h => cbdP_ok V v.arith hi (by omega) h)
+        exact relInv (fun σ s _ h => cbdP_ok V v.arith hi (by omega_using [hj]) h)
           (rel2_of (cbd2_16At_trL v.arith rbx_na hc.1.1) (lrelP V (eI fun _ _ (h : FM V.toEcWfB _ i j _) => h.ei)))
     exact RelCT.mono this (fun _ _ h => h) fun _ _ _ => trivial
 
@@ -389,8 +389,8 @@ open Encaps (R) in
 theorem rowsP_tr (v : Sample4Impl) {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) :
     RelCT isa (R K.L (FP V.toEcWfB · 0)) (seqR (frag K v.callee.arith p) 0 K.L.k) (R K.L (FP V.toEcWfB · 3)) := by
   have := seqR_tr (R := fun i => R K.L (FP V.toEcWfB · i)) K.L.k 0 fun i _ hi =>
-    relInv (fun σ s _ h => fragP_ok V v hpb (by rw [V.k3] at hi; omega) h)
-      (fragP_tr V v hpb (by rw [V.k3] at hi; omega))
+    relInv (fun σ s _ h => fragP_ok V v hpb (by rw [V.k3] at hi; omega_using [hi]) h)
+      (fragP_tr V v hpb (by rw [V.k3] at hi; omega_using [hi]))
   rw [Nat.zero_add] at this
   exact RelCT.mono this (fun _ _ h => h) fun _ _ h => by rwa [V.k3] at h
 

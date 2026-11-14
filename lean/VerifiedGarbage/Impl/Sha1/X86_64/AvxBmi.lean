@@ -33,6 +33,10 @@ general-purpose registers.
   four times each; `xmm7` is a temporary while they are built.
 * `rdi, rsi, rdx, rcx` (the pointers and the block count) are public; no
   address and no branch depends on anything else.
+* `vzeroupper` before returning zeroes the upper halves of `ymm0 … ymm15`,
+  which the VEX-encoded instructions write, so that a caller of the
+  baseline ISA that may run this function (through a table of functions)
+  knows what they hold after it, whatever it computed.
 -/
 
 @[expose] public section
@@ -141,6 +145,6 @@ def body : Prog isa :=
 
 def compress : Prog isa :=
   .seq (.block (save ++ consts ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
-    (.seq (.ite .e (.block []) (.loop body .ne)) (.block restore))
+    (.seq (.ite .e (.block []) (.loop body .ne)) (.block (restore ++ ([.vop .vzeroupper] : List Instr))))
 
 end VG.Impl.Sha1.X86_64.AvxBmi

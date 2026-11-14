@@ -21,7 +21,7 @@ theorem hint_cancel (r c : Zq) : r+c+(-c)=r := by
   have hr := r.isLt
   have hc := c.isLt
   simp only [q] at *
-  omega
+  omega_using []
 
 theorem hint_makeHint {g : Nat} (hg : IsG g) (r : Zq) (c : Int)
     (hc : -4202495≤c ∧ c≤4210685) :
@@ -36,13 +36,13 @@ theorem hintWord_field {g : Nat} (hg : IsG g) (r : Zq) (raw lo high : BitVec 32)
     (hl : lo.toInt=lowBits g r) (hh : high.toInt=highBits g r) :
     hintWord (BitVec.ofNat 32 g) (reduceWord raw+lo) high=
       if makeHint g (-ofInt (reduce32 raw.toInt)) (r+ofInt (reduce32 raw.toInt)) then 1 else 0 := by
-  have hb := reduce32_bounds (by omega : -2*8380417<raw.toInt) (by omega : raw.toInt<3*8380417)
-  have hi := reduceWord_int raw (by omega) (by omega)
+  have hb := reduce32_bounds (by omega_using [hrl] : -2*8380417<raw.toInt) (by omega_using [hrh] : raw.toInt<3*8380417)
+  have hi := reduceWord_int raw (by omega_using [hrl]) (by omega_using [hrh])
   have hlo := lowBits_bounds hg r
   have hgb : 1≤g ∧ g≤524288 := by rcases hg with rfl | rfl <;> decide
-  have hadd := addWord_int (reduceWord raw) lo (by rw [hi,hl]; omega) (by rw [hi,hl]; omega)
-  have hsum : (reduceWord raw+lo).toInt=lowBits g r+reduce32 raw.toInt := by rw [hadd,hi,hl]; omega
-  rw [hintWord_value hgb.1 hgb.2 _ _ (by rw [hsum]; omega) (by rw [hsum]; omega),
+  have hadd := addWord_int (reduceWord raw) lo (by rw [hi,hl]; omega_using [hb, hlo, hgb]) (by rw [hi,hl]; omega_using [hb, hlo, hgb])
+  have hsum : (reduceWord raw+lo).toInt=lowBits g r+reduce32 raw.toInt := by rw [hadd,hi,hl]; omega_using []
+  rw [hintWord_value hgb.1 hgb.2 _ _ (by rw [hsum]; omega_using [hb, hlo, hgb]) (by rw [hsum]; omega_using [hb, hlo, hgb]),
     hsum,hh,hint_makeHint hg r _ hb]
   simp only [decide_eq_true_eq]
 
@@ -52,7 +52,7 @@ theorem reduce32_field (x : Int) : ofInt (reduce32 x)=ofInt x := by
   have h1 := VG.Proof.MlDsa.KeyGen.ofInt_val (reduce32 x)
   have h2 := VG.Proof.MlDsa.KeyGen.ofInt_val x
   have h3 := reduce32_mod x
-  omega
+  omega_using [h1, h2, h3]
 
 theorem hintWord_raw_field {g : Nat} (hg : IsG g) (r : Zq) (raw lo high : BitVec 32)
     (hrl : -8380417<raw.toInt) (hrh : raw.toInt<2*8380417)

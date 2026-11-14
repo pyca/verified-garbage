@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed
 public import VerifiedGarbage.Proof.EcKey.Compressed.Root
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The functional decoder meets the merged SEC 1 relation
 
@@ -81,8 +82,8 @@ theorem decode_complete {C : Curve} {root : Fe C → Fe C} (hf : RootFacts root)
   | affine x y =>
     obtain ⟨hlen, htag, hx, hcurve⟩ := h
     have hpar : (BitVec.ofNat 8 (2 + y.val % 2)).toNat % 2 = y.val % 2 := by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 + y.val % 2 < 256 by omega)]
-      omega
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 + y.val % 2 < 256 by omega_using [])]
+      omega_using []
     have hlead : (BitVec.ofNat 8 (2 + y.val % 2) : Byte) = 2 ∨
         (BitVec.ofNat 8 (2 + y.val % 2) : Byte) = 3 := by
       rcases Nat.mod_two_eq_zero_or_one y.val with he | he

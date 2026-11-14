@@ -221,7 +221,7 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
   refine WP.mono (batch_ok hL St Mt It (by
       have : (59 * (P.B - j) : Nat) ≤ 59 * 2 ^ 16 := Nat.mul_le_mul_left _ (by omega_using [hB])
       have h2 : ((59 * (P.B - j) : Nat) : Int) ≤ 59 * 2 ^ 16 := by exact_mod_cast this
-      omega_using [bd, h2]) bf1 bf bg (abs_le.mpr ⟨by omega, ba1.le⟩) (abs_le.mpr ⟨by omega, bb1.le⟩)
+      omega_using [bd, h2]) bf1 bf bg (abs_le.mpr ⟨by omega_using [ba0], ba1.le⟩) (abs_le.mpr ⟨by omega_using [bb0], bb1.le⟩)
     hj1 (by omega_using [hB, hjB]) ct) fun u ⟨⟨Iu, cu, Ku, Uu⟩, zu⟩ => ⟨⟨?_, cu, ?_, ?_, Kt.trans Ku, (Ut.trans Uu).mono ?_⟩, zu⟩
   · rw [show P.B - (j - 1) = P.B - j + 1 by omega_using [hj1, hjB]]; exact Iu
   · exact St.of_keepRegs Ku (by decide)

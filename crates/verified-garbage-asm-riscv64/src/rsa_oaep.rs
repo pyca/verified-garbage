@@ -3,9 +3,9 @@
 //! `assembly/rsa_oaep.s`.
 #![allow(dead_code)]
 
-/// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
+/// `vg_rsa_oaep_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_oaep_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+/// Contract: `VG.Spec.RsaOaep.decryptPrecomputedMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), and which tables `hash` and `mgf1` are, not on the private key, the rest of `pre`, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
 /// # Safety
 ///
@@ -21,8 +21,9 @@
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes, and aligned for `u64`.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -30,14 +31,16 @@
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the 3472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3488 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -61,9 +64,9 @@ pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize
 .insn 2, 0x84ba
 .insn 2, 0x892a
 .insn 2, 0x89b2
-.insn 2, 0x711d
+.insn 2, 0x7159
 .insn 2, 0x828a
-.insn 4, 0x0e010f93
+.insn 4, 0x0f010f93
 .insn 4, 0x0112b023
 .insn 4, 0x000fb303
 .insn 4, 0x0062b423
@@ -98,13 +101,17 @@ pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize
 .insn 2, 0x88a6
 .insn 2, 0x8522
 .insn 2, 0x85a6
-call {vg_rsa_private_checked}
-.insn 2, 0x6125
+.insn 4, 0x088fb303
+.insn 4, 0x0662b023
+.insn 4, 0x090fb303
+.insn 4, 0x0662b423
+call {vg_rsa_private_checked_precomputed}
+.insn 2, 0x6165
 .insn 4, 0x02051a13
 .insn 4, 0x020a5a13
 .insn 2, 0x19a8
 .insn 2, 0x6108
-.insn 2, 0x7108
+.insn 2, 0x7908
 .insn 4, 0xff050593
 beqz a1, 20f
 .insn 4, 0xfec50593
@@ -164,7 +171,7 @@ bnez a0, 210f
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -185,7 +192,7 @@ bnez a0, 210f
 bnez a6, 213b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -236,7 +243,7 @@ bnez t1, 212b
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -257,7 +264,7 @@ bnez t1, 212b
 bnez a6, 215b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -482,7 +489,7 @@ bnez a0, 224f
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -503,7 +510,7 @@ bnez a0, 224f
 bnez a6, 227b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -554,7 +561,7 @@ bnez t1, 226b
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -575,7 +582,7 @@ bnez t1, 226b
 bnez a6, 229b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -801,7 +808,7 @@ bnez a0, 238f
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -822,7 +829,7 @@ bnez a0, 238f
 bnez a6, 241b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -873,7 +880,7 @@ bnez t1, 240b
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -894,7 +901,7 @@ bnez t1, 240b
 bnez a6, 243b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1120,7 +1127,7 @@ bnez a0, 252f
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1141,7 +1148,7 @@ bnez a0, 252f
 bnez a6, 255b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1192,7 +1199,7 @@ bnez t1, 254b
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1213,7 +1220,7 @@ bnez t1, 254b
 bnez a6, 257b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1439,7 +1446,7 @@ bnez a0, 266f
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1460,7 +1467,7 @@ bnez a0, 266f
 bnez a6, 269b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1511,7 +1518,7 @@ bnez t1, 268b
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1532,7 +1539,7 @@ bnez t1, 268b
 bnez a6, 271b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1758,7 +1765,7 @@ bnez a0, 280f
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1779,7 +1786,7 @@ bnez a0, 280f
 bnez a6, 283b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -1830,7 +1837,7 @@ bnez t1, 282b
 .insn 4, 0x000300e7
 .insn 4, 0x10010813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -1851,7 +1858,7 @@ bnez t1, 282b
 bnez a6, 285b
 .insn 4, 0x10010313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2043,13 +2050,13 @@ bnez t5, 293b
 .insn 2, 0x6109
 .insn 2, 0x8082
 .option pop",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
     )
 }
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+/// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// # Safety
 ///
@@ -2061,8 +2068,8 @@ bnez t5, 293b
 /// * `seed` must be valid for reads of `seed_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes, and aligned for `u64`.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -2075,10 +2082,10 @@ bnez t5, 293b
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
@@ -2110,7 +2117,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, ou
 .insn 4, 0x010fbe83
 .insn 2, 0x0188
 .insn 2, 0x6108
-.insn 2, 0x7108
+.insn 2, 0x7908
 .insn 4, 0xff050593
 beqz a1, 20f
 .insn 4, 0xfec50593
@@ -2244,7 +2251,7 @@ bnez a5, 219b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2265,7 +2272,7 @@ bnez a5, 219b
 bnez a6, 221b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2316,7 +2323,7 @@ bnez t1, 220b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2337,7 +2344,7 @@ bnez t1, 220b
 bnez a6, 223b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2510,7 +2517,7 @@ bnez a5, 235b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2531,7 +2538,7 @@ bnez a5, 235b
 bnez a6, 237b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2582,7 +2589,7 @@ bnez t1, 236b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2603,7 +2610,7 @@ bnez t1, 236b
 bnez a6, 239b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2777,7 +2784,7 @@ bnez a5, 251b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2798,7 +2805,7 @@ bnez a5, 251b
 bnez a6, 253b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -2849,7 +2856,7 @@ bnez t1, 252b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -2870,7 +2877,7 @@ bnez t1, 252b
 bnez a6, 255b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3044,7 +3051,7 @@ bnez a5, 267b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3065,7 +3072,7 @@ bnez a5, 267b
 bnez a6, 269b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3116,7 +3123,7 @@ bnez t1, 268b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3137,7 +3144,7 @@ bnez t1, 268b
 bnez a6, 271b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3311,7 +3318,7 @@ bnez a5, 283b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3332,7 +3339,7 @@ bnez a5, 283b
 bnez a6, 285b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3383,7 +3390,7 @@ bnez t1, 284b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3404,7 +3411,7 @@ bnez t1, 284b
 bnez a6, 287b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3578,7 +3585,7 @@ bnez a5, 299b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3599,7 +3606,7 @@ bnez a5, 299b
 bnez a6, 2101b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333
@@ -3650,7 +3657,7 @@ bnez t1, 2100b
 .insn 4, 0x000300e7
 .insn 4, 0x0c810813
 .insn 4, 0x00083803
-.insn 4, 0x02083803
+.insn 4, 0x03083803
 .insn 4, 0x50040713
 .insn 4, 0x01bc07b3
 .insn 4, 0x41bc8333
@@ -3671,7 +3678,7 @@ bnez t1, 2100b
 bnez a6, 2103b
 .insn 4, 0x0c810313
 .insn 4, 0x00033303
-.insn 4, 0x02033303
+.insn 4, 0x03033303
 .insn 2, 0x0d05
 .insn 2, 0x9d9a
 .insn 4, 0x419d8333

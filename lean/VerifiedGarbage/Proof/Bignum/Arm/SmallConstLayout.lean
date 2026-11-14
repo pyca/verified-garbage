@@ -44,7 +44,7 @@ theorem smallConstLayout_ok (s : State) {base : BitVec 32} {len w o : Nat} (valu
   rintro t ⟨number, _, outside, frame, keep, out⟩
   rw [val] at number
   rw [mem] at outside frame
-  have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega)
+  have keeps := outside_array_keeps outside (len := len) (by have := ws.nowrap; omega_using [this])
   have kl := keeps_layout layout (by rw [width]; exact keeps)
   exact ⟨kl.2, kl.1.trans width, number, outside, frame,
     (rest.mono (by decide)).trans keep, out⟩

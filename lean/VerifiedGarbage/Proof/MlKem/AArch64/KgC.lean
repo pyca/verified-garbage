@@ -68,7 +68,7 @@ theorem cbdNtt_ok {s₀ : State} (hp : Pre P s₀) {N off : Nat} (hN : N < 256) 
         show (R (kA s₀) 3 SG 32).Disjoint (R (kA s₀) 3 (SG + 32) 1)
         rdisj) (by decide), hs]
     refine congrArg (KPke.kgSigma P.params (dB s₀) ++ ·) (bytesAt_eq rfl fun k hk' => ?_)
-    have : k = 0 := by omega
+    have : k = 0 := by omega_using [hk']
     subst this
     rw [ptr_zero, ptr_add, m₂, writeW8_apply, ite_eq_left rfl, e₁]
     exact sfx8 hN
@@ -148,9 +148,9 @@ theorem enc_ok {s₀ : State} (hp : Pre P s₀) {off b o : Nat} (ho : PolyOff P 
       bytesAt s'.mem (kA s₀ b + BitVec.ofNat 64 o) 384 = encode12 (polyAt s.mem (kA s₀ 3 + BitVec.ofNat 64 off)) ∧
       s'.gpr .x24 = s.gpr .x24 := by
   obtain ⟨ho1, ho2⟩ := ho
-  have hb4 : b < 4 := by omega
+  have hb4 : b < 4 := by omega_using [hb]
   have fo3 : off + 1024 ≤ kL P 3 := by kl
-  have hol : o < 65536 := by have := kL_le hp.wf b; omega
+  have hol : o < 65536 := by have := kL_le hp.wf b; omega_using [fo, this]
   have hx : Reg.x1 ≠ breg b := by rcases hb with rfl | rfl <;> decide
   have hx0 : breg b ≠ Reg.x0 := by rcases hb with rfl | rfl <;> decide
   refine WP.seq (wp_ptrTo (by decide) (by kl) fun s₁ h₁ e₁ => wp_ptrTo' hx hol fun s₂ h₂ e₂ => ?_)
@@ -158,12 +158,12 @@ theorem enc_ok {s₀ : State} (hp : Pre P s₀) {off b o : Nat} (ho : PolyOff P 
   have m₂ : s₂.mem = s.mem := by rw [h₂.mem, h₁.mem]
   refine encode12_call (f := kA s₀ 3 + BitVec.ofNat 64 off) (o := kA s₀ b + BitVec.ofNat 64 o)
     (by rw [h₂.get .x0, e₁, hk.x28]) (by rw [e₂, h₁.get (breg b) (by simpa using hx0), hk.breg hb4])
-    (hp.args.rdisj (b₁ := 3) (o₁ := off) (l₁ := 1024) (by decide) hb4 fo3 fo (by omega))
+    (hp.args.rdisj (b₁ := 3) (o₁ := off) (l₁ := 1024) (by decide) hb4 fo3 fo (by omega_using [hb]))
     (by rw [m₂]; exact hr)
-    (covers_cons (cov_r hp kb₂ (b := 3) (by decide) fo3) (cov_r hp kb₂ hb4 fo)) (cov_w hp kb₂ ⟨by omega, hb4⟩ fo)
+    (covers_cons (cov_r hp kb₂ (b := 3) (by decide) fo3) (cov_r hp kb₂ hb4 fo)) (cov_w hp kb₂ ⟨by omega_using [hb], hb4⟩ fo)
     fun s₃ k₃ p₃ => ?_
   refine ⟨kb₂.call k₃ fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact kb_disj hp hb4 fo (.inl (by omega)) (by omega), by rw [← m₂]; exact k₃.frame,
+      rw [List.mem_singleton.mp hr]; exact kb_disj hp hb4 fo (.inl (by omega_using [hb])) (by omega_using [hb]), by rw [← m₂]; exact k₃.frame,
     by rw [p₃, m₂], by rw [k₃.cs _ (by decide) (by decide), h₂.get .x24, h₁.get .x24]⟩
 
 /-- `h ← f ×_T g`, for polynomials in `scratch`. -/
@@ -194,8 +194,8 @@ theorem mul_ok {s₀ : State} (hp : Pre P s₀) {h f g : Nat} (hh : PolyOff P h)
     (by rw [h₄.get .x1, h₃.get .x1, e₂, h₁.get .x28, hk.x28])
     (by rw [h₄.get .x2, e₃, h₂.get .x28, h₁.get .x28, hk.x28])
     (by rw [e₄, h₃.get .x28, h₂.get .x28, h₁.get .x28, hk.x28])
-    (hp.args.rdisj (by decide) (by decide) fh ff (by omega))
-    (hp.args.rdisj (by decide) (by decide) fh fg (by omega))
+    (hp.args.rdisj (by decide) (by decide) fh ff (by omega_using [d₁]))
+    (hp.args.rdisj (by decide) (by decide) fh fg (by omega_using [d₂]))
     (hp.args.rdisj (by decide) (by decide) fh (by kl) (by kl))
     (hp.args.rdisj (by decide) (by decide) ff (by kl) (by kl))
     (hp.args.rdisj (by decide) (by decide) fg (by kl) (by kl))
@@ -231,7 +231,7 @@ theorem add_ok {s₀ : State} (hp : Pre P s₀) {f g : Nat} (hf : PolyOff P f) (
   have m₂ : s₂.mem = s.mem := by rw [h₂.mem, h₁.mem]
   refine add_call (f := kA s₀ 3 + BitVec.ofNat 64 f) (g := kA s₀ 3 + BitVec.ofNat 64 g)
     (by rw [h₂.get .x0, e₁, hk.x28]) (by rw [e₂, h₁.get .x28, hk.x28])
-    (hp.args.rdisj (by decide) (by decide) ff fg (by omega)) (by rw [m₂]; exact rf) (by rw [m₂]; exact rg)
+    (hp.args.rdisj (by decide) (by decide) ff fg (by omega_using [d])) (by rw [m₂]; exact rf) (by rw [m₂]; exact rg)
     (covers_cons (cov_r hp kb₂ (b := 3) (by decide) fg) (cov_r hp kb₂ (b := 3) (by decide) ff))
     (cov_w hp kb₂ (b := 3) (by decide) ff) fun s₃ k₃ p₃ => ?_
   refine ⟨kb₂.call k₃ fun r hr => by

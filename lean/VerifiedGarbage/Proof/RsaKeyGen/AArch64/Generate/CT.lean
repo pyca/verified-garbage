@@ -56,26 +56,26 @@ theorem clearAround_ct {α : Type} {Φ : α → State → Prop} (f : α → GenP
   · obtain ⟨o, u, st, g⟩ := hΦ a s h
     obtain ⟨hL1, hL2, -⟩ := g.len_valid
     have h4 : BitVec.ofNat 64 (f a).L <<< 2 = BitVec.ofNat 64 (4 * (f a).L) := by
-      rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+      rw [SearchInit.shl_ofNat _ _ (by omega_using [hL2])]; congr 1; omega_using []
     refine WP.mono (setLow_ok g) fun t ⟨hm, k⟩ => ?_
     obtain ⟨g', w12, w13, -⟩ := store_region g hm k (by decide)
     rw [h4] at w13
     exact ⟨o, u, st, g', w12, w13, by
-      rw [g.key_region]; exact Region.sub_prefix (by show 4 * (f a).L ≤ 9 * (f a).L; omega),
-      by show 1 ≤ 4 * (f a).L; omega, by show 4 * (f a).L < 2 ^ 63; omega⟩
+      rw [g.key_region]; exact Region.sub_prefix (by show 4 * (f a).L ≤ 9 * (f a).L; omega_using []),
+      by show 1 ≤ 4 * (f a).L; omega_using [hL1], by show 4 * (f a).L < 2 ^ 63; omega_using [hL2]⟩
   · obtain ⟨o, u, st, g⟩ := h
     obtain ⟨hL1, hL2, -⟩ := g.len_valid
     have h4 : BitVec.ofNat 64 (f a).L <<< 2 = BitVec.ofNat 64 (4 * (f a).L) := by
-      rw [SearchInit.shl_ofNat _ _ (by omega)]; congr 1; omega
+      rw [SearchInit.shl_ofNat _ _ (by omega_using [hL2])]; congr 1; omega_using []
     have h5 : (f a).kp + (BitVec.ofNat 64 (f a).L <<< 2 + BitVec.ofNat 64 (f a).L) = (f a).slot 5 := by
-      rw [h4, SearchInit.add_ofNat]; congr 2; omega
+      rw [h4, SearchInit.add_ofNat]; congr 2; omega_using []
     refine WP.mono (setHigh_ok g) fun t ⟨hm, k⟩ => ?_
     obtain ⟨g', w12, w13, -⟩ := store_region g hm k (by decide)
     rw [h4] at w13
     rw [h5] at w12
     exact ⟨o, u, st, g', w12, w13, by
-      rw [g.key_region]; exact slot_sub _ (by show 5 * (f a).L + 4 * (f a).L ≤ 9 * (f a).L; omega),
-      by show 1 ≤ 4 * (f a).L; omega, by show 4 * (f a).L < 2 ^ 63; omega⟩
+      rw [g.key_region]; exact slot_sub _ (by show 5 * (f a).L + 4 * (f a).L ≤ 9 * (f a).L; omega_using []),
+      by show 1 ≤ 4 * (f a).L; omega_using [hL1], by show 4 * (f a).L < 2 ^ 63; omega_using [hL2]⟩
 
 /-! ## An iteration -/
 
@@ -115,14 +115,14 @@ theorem next_measure {q : GenPoint} {t : State} (hc : q.continues) (h : GenCTL q
   rcases hc with ⟨h3, hl2⟩ | ⟨h1, hc0, -⟩
   · simp only [h3, ↓reduceIte] at hlt ⊢
     have hmul : (q.inputs.randLen - (q.used + q.cand)) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
-    omega
-  · have h3 : ¬q.status = 3 := by omega
+      Nat.mul_le_mul_right _ (by omega_using [])
+    omega_using [hl2]
+  · have h3 : ¬q.status = 3 := by omega_using [h1]
     simp only [h3, ↓reduceIte] at hlt ⊢
     have hmul : (q.inputs.randLen - (q.used + q.cand) + 1) * 2 ^ 64 ≤ (q.inputs.randLen - q.used) * 2 ^ 64 :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [hle, hc0])
     rw [Nat.add_mul, Nat.one_mul] at hmul
-    omega
+    omega_using [hle, hc0]
 
 private def LoopPair (n : Nat) (s t : State) : Prop :=
   ∃ q : GenPoint, n = q.measure ∧ GenCTL q s ∧ GenCTL q t ∧ s.sp = t.sp
@@ -224,10 +224,10 @@ theorem start_point (q : GenPoint) (x : State) (h : StartCT q x) : WP isa clearA
       show Region.Sub ⟨s.sp - BitVec.ofNat 64 stackUse, 256⟩ ⟨s.sp - BitVec.ofNat 64 416, 416⟩
       exact Region.sub_prefix (by decide)
   have h1 := hfw.readW (r := cS (initialPoint s).inputs) (a := (initialPoint s).inputs.stp + BitVec.ofNat 64 24)
-    (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega)) hd
+    (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega_using [])) hd
     (by decide)
   have h2 := hfr.readW (r := cS (initialPoint s).inputs) (a := (initialPoint s).inputs.stp + BitVec.ofNat 64 24)
-    (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega)) hd'
+    (w := 64) (Offset.contains_base _ (d := 24) (n := 8) (k := 56) (by decide) (by have := hf.nT; omega_using [])) hd'
     (by decide)
   exact h1.trans h2
 

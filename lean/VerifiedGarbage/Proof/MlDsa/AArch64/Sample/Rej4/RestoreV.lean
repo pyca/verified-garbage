@@ -36,7 +36,7 @@ theorem restoreV_step {s : State} {p : Addr} {i : Nat} (hi : i < 8) (hp : s.gpr 
       fun t => RegKeep [.x8] s t ∧ t.mem = s.mem ∧
         vdword (t.v (vreg (8+i))) 0 = s.mem.readW (p+BitVec.ofNat 64 (oSave+80+8*i)) 64 ∧
         ∀ r, r ≠ vreg (8+i) → t.v r = s.v r := by
-  refine wp_ldr ⟨by dsimp only [oSave]; omega,by dsimp only [oSave]; omega⟩
+  refine wp_ldr ⟨by dsimp only [oSave]; omega_using [],by dsimp only [oSave]; omega_using [hi]⟩
     (by rw [hp]) hin fun u h1 => ?_
   refine wp_vop (d := vreg (8+i)) rfl fun t h2 => WP.block_nil_iff.mpr ⟨?_,?_,?_,?_⟩
   · exact ((RegKeep.upd h1).trans (RegKeep.vupd h2)).mono (by simp)
@@ -55,7 +55,7 @@ theorem restoreV_ok {σ s : State} (hp : Pre σ) (he : Env σ s) :
     (fun k t hk ⟨ht,hm,hvals⟩ => ?_) 8 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
   refine WP.mono (restoreV_step hk ((ht.gpr .x19 (by decide)).trans he.x19)
-    (in_scr_rd hp (ht.rd.trans he.rd) (ht.wr.trans he.wr) (by dsimp only [oSave]; omega)))
+    (in_scr_rd hp (ht.rd.trans he.rd) (ht.wr.trans he.wr) (by dsimp only [oSave]; omega_using [hk])))
       fun u ⟨hu,hmu,hvu,hother⟩ => ?_
   refine ⟨(ht.trans hu).mono (by simp),hmu.trans hm,fun i hi => ?_⟩
   by_cases heq : i = k
@@ -63,7 +63,7 @@ theorem restoreV_ok {σ s : State} (hp : Pre σ) (he : Env σ s) :
     rw [hvu,hm]
     exact he.savedV k hk
   · rw [hother (vreg (8+i)) (fun h => heq (by
-      have e := (vreg_inj (8+i) (by omega) (8+k) (by omega)).mp h
-      omega))]
-    exact hvals i (by omega)
+      have e := (vreg_inj (8+i) (by omega_using [hk, hi]) (8+k) (by omega_using [hk])).mp h
+      omega_using [e]))]
+    exact hvals i (by omega_using [hi, heq])
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

@@ -40,7 +40,7 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
   show Spec.P256.curve.n.log2 + 1 = 256
   have h₁ : 255 ≤ Spec.P256.curve.n.log2 := (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   have h₂ : Spec.P256.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [h₁, h₂]
 
 /-- `coreK` at P-256's sizes is `Proof.Ecdsa.X86_64.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/

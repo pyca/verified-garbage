@@ -34,7 +34,7 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
   have hqw : (p.part q p.qLen).Disjoint (p.part witness p.qLen) :=
     p.parts_disjoint hq hw (by left; rcases p.qWidth with h | h <;> rw [h] <;> decide)
   have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
-    rw [h5]; exact Region.sub_prefix (by unfold usedBytes; omega)
+    rw [h5]; exact Region.sub_prefix (by unfold usedBytes; omega_using [])
   exact {
     prime := p.qPrime rand seed.bytes
     hash := p.hash
@@ -60,9 +60,9 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
     outputOutside := by
       change ∀ i < p.qLen, arithmeticBytes ≤ ofs (off p.B arithmetic) (off (off p.B q) i)
       intro i hi
-      exact out_scr hqa (Offset.contains_base _ (by omega) (by rcases p.qWidth with h | h <;> omega))
+      exact out_scr hqa (Offset.contains_base _ (by omega_using [hi]) (by rcases p.qWidth with h | h <;> omega_using [hi, h]))
     outputFrame := (p.frame_part hq).symm
-    outputHash := bufferSeparate_of_regions (len := p.qLen) (by rcases p.qWidth with h | h <;> omega) (p.frame_part hq).symm hqh
+    outputHash := bufferSeparate_of_regions (len := p.qLen) (by rcases p.qWidth with h | h <;> omega_using [h]) (p.frame_part hq).symm hqh
     tapeHash := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -93,7 +93,7 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
       · exact (p.stack_part hq).symm
     geometry := {
       stackSize := p.stackSize
-      arenaBound := by have := p.arenaBound; rw [h5]; unfold usedBytes at this; omega
+      arenaBound := by have := p.arenaBound; rw [h5]; unfold usedBytes at this; omega_using [this]
       tapeBound := rand.bound
       tapeArena := rand.arena.sub_right hs
       tapeFrame := rand.frame

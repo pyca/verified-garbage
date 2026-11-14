@@ -48,11 +48,11 @@ theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s�
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T))) ∧
       ∀ T ∈ ts, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 16) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 16) (FnTable.words isa s₂ T)) := by
-  have e : stackBytes = 3775 + 1 := rfl
+  have e : stackBytes = 3791 + 1 := rfl
   unfold decSpec at h
   rw [e] at h
-  sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_seventeen, List.append_eq, List.range, List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at h
@@ -68,13 +68,23 @@ theorem pubD_of {ts : List FnTable} {s₁ s₂ : State} (h : (decSpec ts).pub s�
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [h3.symm, h4.symm, h5.symm, h6.symm, h7.symm, h8.symm, h9.symm, h10.symm]
-  · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
+  · rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨
       i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [a0.symm, a1.symm, a2.symm, a3.symm, a4.symm, a5.symm, a6.symm, a7.symm, a8.symm, a9.symm, a10.symm,
       a11.symm, a12.symm, a13.symm, a14.symm, a15.symm, a16.symm]
 
 theorem pubD_refl (s : State) : PubD s s := ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
+
+/-- With `pc`, `pre`'s public data: its address, its length and what the
+call may leak of it. -/
+def PubP (a s : State) : Prop :=
+  stackArg s 17 = stackArg a 17 ∧ stackArg s 18 = stackArg a 18 ∧
+    Spec.Rsa.privatePrecomputedLeak s.mem (stackArg s 17) (s.gpr .r7).toNat =
+      Spec.Rsa.privatePrecomputedLeak a.mem (stackArg a 17) (a.gpr .r7).toNat
+
+/-- With `pc`, `pre`'s facts and public data. -/
+abbrev XP (pc : Bool) (a s : State) : Prop := pc = true → PreXD s ∧ PubP a s
 
 /-! ## The base state for the shared code -/
 
@@ -95,7 +105,7 @@ def PreX (x : State) : Prop := Fits SX x
 def PubX (a x : State) : Prop := x.sp = a.sp ∧ stackArg x 13 = stackArg a 13
 
 section
-variable {s : State} (P : PreD s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (rc : Nat)
+variable {pc : Bool} {s : State} (P : PreD pc s) {m : Mem} (hm : Frame [kD s, scR s] s.mem m) (rc : Nat)
 include P hm
 
 /-- The stack arguments, in the base state. -/
@@ -120,7 +130,7 @@ theorem toX (hrc : rc ≤ 2) {t : State} (b : Base (SD s) (VD s rc) (withMem s m
       fun r hr => ?_, by rw [eSC]; exact b.mem⟩⟩
   have e0 : ((bx s m rc).gpr .r0).toNat = rc := by
     show (BitVec.ofNat 64 rc).toNat = rc
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hrc])]
   rw [b.vs r hr]
   simp only [fx, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -135,14 +145,14 @@ end
 
 /-- `t` has the decoding's `Base` from an entry state with `a`'s public data. -/
 def DX (a t : State) : Prop :=
-  ∃ s m, PreD s ∧ PubD a s ∧ Frame [kD s, scR s] s.mem m ∧
+  ∃ pc s m, PreD pc s ∧ PubD a s ∧ Frame [kD s, scR s] s.mem m ∧
     Base (SD s) (VD s (rcOf (privO s))) (withMem s m) t
 
 /-- What `DX` fixes, from the anchor. -/
 theorem DX.pins {a t : State} (h : DX a t) :
     t.sp = fb a ∧ t.gpr .r14 = stackArg a 13 ∧ t.gpr .r15 = a.gpr .r7 ∧ t.gpr .r16 = a.gpr .r3 ∧
       t.gpr .r17 = a.gpr .r5 ∧ t.gpr .r18 = stackArg a 9 ∧ t.gpr .r19 = stackArg a 10 := by
-  obtain ⟨s, m, P, p, hm, b⟩ := h
+  obtain ⟨_, s, m, P, p, hm, b⟩ := h
   exact ⟨by rw [b.sp]; show fb s = fb a; rw [fb, fb, p.sp], b.r14.trans (p.args 13 (by decide)),
     by rw [Base.r15 b, p.g _ (by decide)], by rw [Base.r16 b, p.g _ (by decide)], by rw [Base.r17 b, p.g _ (by decide)],
     by rw [Base.r18 b, p.args 9 (by decide)], by rw [Base.r19 b, p.args 10 (by decide)]⟩

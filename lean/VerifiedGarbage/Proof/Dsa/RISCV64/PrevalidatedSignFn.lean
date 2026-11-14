@@ -74,12 +74,12 @@ theorem setMask_KPOk {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : Sc
   subst p0
   have hZ := hL.z256
   obtain ⟨_, hal0⟩ := ScrL.hdr hs hL (d := 0) (by decide) (by decide)
-  have hst : InRegions s.wr (off L.S 0) 8 := hs.st (by omega)
+  have hst : InRegions s.wr (off L.S 0) 8 := hs.st (by omega_using [hZ])
   refine WP.mono (WP.keep [.a0] (Q := fun u => u.mem = s.mem.writeW (off L.S 0) (mask true))
     (by brun [PrevalidatedSign.setMask, exec_li (show imm12 (-1) by decide), hMask, hr.s6, hst, hal0]; rfl)
     (by decide) (by rfl)) fun t ⟨mt, kt⟩ => ?_
   have wo : Outside L.S hMask 8 s.mem t.mem := by
-    rw [mt]; exact writeW_outside s.mem L.S _ (by simp only [hMask]; omega)
+    rw [mt]; exact writeW_outside s.mem L.S _ (by simp only [hMask]; omega_using [])
   refine ⟨⟨?_, ⟨hin.env.keep kt, (kt.gpr (by decide)).trans hin.s6⟩, ?_, ⟨s.mem, fun _ _ => rfl, wo⟩⟩,
     kt.mono (by decide)⟩
   · rw [mt]; refine (word_writeW_self s.mem L.S hMask _).trans ?_; rw [hv]; simp only [decide_true]
@@ -103,8 +103,8 @@ theorem spre_valid {s : State} (h : spContract.pre s) :
       (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) =
       ⟨⟨pOf s.mem (slayOf s) (s.gpr .a2), qOf s.mem (slayOf s) (s.gpr .a2), gOf s.mem (slayOf s) (s.gpr .a2)⟩,
         yOf s.mem (slayOf s) (s.gpr .a2), some (xOf s.mem (slayOf s) (s.gpr .a2))⟩ := by
-    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega),
-      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega)]
+    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega_using [hkl]),
+      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega_using [hkl])]
     rfl
   rw [validatePrivate_eq hv (by rw [VG.Proof.Bignum.bytesAt_length]; exact h3) hkey] at hval
   exact of_decide_eq_true hval
@@ -125,36 +125,36 @@ theorem signPre_correct (s : State) (h : spContract.pre s) :
       (⟨A, n⟩ : Region).Disjoint ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩ → A.toNat + n ≤ 2 ^ 64 → n < 2 ^ 64 →
       k ≤ n → ∀ t : State, t.rd = s.rd → t.wr = s.wr → Src t (slayOf s) A k :=
     fun hm hd hnw hn hk t hr hw => ⟨fun i hi => ⟨_, by rw [hr, hw]; exact hm,
-      Offset.contains_base _ (by omega) (by omega)⟩, fun i hi => Pub.ne_of_disjoint hd (by omega) i (by omega)⟩
+      Offset.contains_base _ (by omega_using [hk, hi]) (by omega_using [hnw, hk, hi])⟩, fun i hi => Pub.ne_of_disjoint hd (by omega_using [hnw]) i (by omega_using [hk, hi])⟩
   have h1 : (s.gpr .a1).toNat = 2 * (slayOf s).ql := hol
   have h3 : (s.gpr .a3).toNat = 3 * (slayOf s).pl + 2 * (slayOf s).ql := hkl
   have srcK := mkSrc (A := s.gpr .a2) (k := 3 * (slayOf s).pl + 2 * (slayOf s).ql)
-    (List.mem_append_left _ (by rw [hrd]; simp)) dKS nwK (s.gpr .a3).isLt (by omega)
+    (List.mem_append_left _ (by rw [hrd]; simp)) dKS nwK (s.gpr .a3).isLt (by omega_using [h3])
   have srcK3 : ∀ t : State, t.rd = s.rd → t.wr = s.wr →
       Src t (slayOf s) (s.gpr .a2) (3 * (slayOf s).pl + (slayOf s).ql) :=
-    fun t hr hw => (srcK t hr hw).take (by omega)
+    fun t hr hw => (srcK t hr hw).take (by omega_using [])
   have srcN := mkSrc (A := s.gpr .a5) (k := (slayOf s).ql) (List.mem_append_left _ (by rw [hrd]; simp)) dNS nwN
     (s.gpr .a6).isLt (Nat.le_refl _)
   have srcD := mkSrc (A := s.gpr .a7) (k := (stackArg s 0).toNat) (List.mem_append_left _ (by rw [hrd]; simp))
     dDS nwD (stackArg s 0).isLt (Nat.le_refl _)
   have srcO := mkSrc (A := s.gpr .a0) (k := 2 * (slayOf s).ql) (List.mem_append_right _ (by rw [hwr]; simp)) dOS nwO
-    (s.gpr .a1).isLt (by omega)
+    (s.gpr .a1).isLt (by omega_using [h1])
   have hno : (s.gpr .a0).toNat + 2 * (slayOf s).ql ≤ 2 ^ 64 := by rw [← h1]; exact nwO
   have hout : ∀ t : State, t.wr = s.wr → ∀ i < 2 * (slayOf s).ql, InRegions t.wr (off (s.gpr .a0) i) 1 :=
-    fun t ht i hi => ⟨_, by rw [ht, hwr]; exact List.mem_cons_self .., Offset.contains_base _ (by omega) (by omega)⟩
+    fun t ht i hi => ⟨_, by rw [ht, hwr]; exact List.mem_cons_self .., Offset.contains_base _ (by omega_using [h1, hi]) (by omega_using [h1, hi])⟩
   -- A change in `out` keeps `scratch`'s header.
   have outSep : ∀ {m m' : Mem}, Outside (s.gpr .a0) 0 (2 * (slayOf s).ql) m m' →
       ∀ {d : Nat}, d + 8 ≤ 256 → word m' (slayOf s).S d = word m (slayOf s).S d := fun ho d hd =>
     in_word (out_in (o := 0) (N := 2 * (slayOf s).ql)
-      (by simpa only [off, BitVec.add_zero] using ho) (by omega) (by omega) (srcO s rfl rfl).sep)
-      (by omega) (by omega)
+      (by simpa only [off, BitVec.add_zero] using ho) (by omega_using []) (by omega_using [h1]) (srcO s rfl rfl).sep)
+      (by omega_using [hZ, hd]) (by omega_using [hnwS])
   -- The specification's values.
   have hkey : Spec.Dsa.privateKeyBytes (s.gpr .a4).toNat (s.gpr .a6).toNat
       (Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat) =
       ⟨⟨pOf s.mem (slayOf s) (s.gpr .a2), qOf s.mem (slayOf s) (s.gpr .a2), gOf s.mem (slayOf s) (s.gpr .a2)⟩,
         yOf s.mem (slayOf s) (s.gpr .a2), some (xOf s.mem (slayOf s) (s.gpr .a2))⟩ := by
-    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega),
-      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega)]
+    rw [VG.Proof.Dsa.privateKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega_using [hkl]),
+      VG.Proof.Dsa.publicKeyBytes_at s.mem (s.gpr .a2) (by simp only [slayOf] at h3; omega_using [hkl])]
     rfl
   have hspec : ∀ {n : Nat}, VG.Proof.Dsa.shapeValid (pOf s.mem (slayOf s) (s.gpr .a2)) (qOf s.mem (slayOf s) (s.gpr .a2)) →
       Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) = 8 * n →
@@ -187,16 +187,16 @@ theorem signPre_correct (s : State) (h : spContract.pre s) :
       rw [← saveOff_eq]; exact hu.st (d := saveOff i) (by simp only [saveOff, slayOf] at hZ ⊢; omega_arith)
   have hal' : ∀ i < 13, (off (savW (stackArg s 1)) (8 * i)).toNat % 8 = 0 := fun i hi => by
     rw [← saveOff_eq]; exact F.scr.al8 (d := saveOff i) (by simp only [saveOff, slayOf] at hZ ⊢; omega_arith)
-      (by simp only [saveOff]; omega)
+      (by simp only [saveOff]; omega_using [])
   have hsav' : ∀ u : State, Kept (slayOf s) s₁.mem u.mem → ∀ i < 13,
       word u.mem (stackArg s 1) (saveOff i) = s.gpr (saved i) := fun u hu i hi =>
-    (hu.word (Or.inr ⟨by simp only [saveOff, hLens]; omega, by simp only [saveOff]; omega⟩)).trans (F.sav i hi)
+    (hu.word (Or.inr ⟨by simp only [saveOff, hLens]; omega_using [], by simp only [saveOff]; omega_using [hi]⟩)).trans (F.sav i hi)
   have hwo : ∀ u : State, Kept (slayOf s) s₁.mem u.mem → word u.mem (slayOf s).S Sign.hOut = s.gpr .a0 :=
-    fun u hu => (hu.word (Or.inr ⟨by simp only [Sign.hOut, hLens]; omega, by simp only [Sign.hOut]; omega⟩)).trans F.outw
+    fun u hu => (hu.word (Or.inr ⟨by simp only [Sign.hOut, hLens]; omega_using [], by simp only [Sign.hOut]; omega_using []⟩)).trans F.outw
   have hwd : ∀ u : State, Kept (slayOf s) s₁.mem u.mem → word u.mem (slayOf s).S hDigest = s.gpr .a7 :=
-    fun u hu => (hu.word (Or.inl (by simp only [hDigest, hLens]; omega))).trans F.dig
+    fun u hu => (hu.word (Or.inl (by simp only [hDigest, hLens]; omega_using []))).trans F.dig
   have Out₁ : Outside (slayOf s).S 0 (slayOf s).Z s.mem s₁.mem :=
-    F.out.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega)
+    F.out.mono (Nat.le_refl _) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
   obtain ⟨ep₁, eq₁, eg₁, ey₁⟩ := keyVals_kept (srcK3 s rfl rfl) Out₁
   -- Validation: the domain's and the public key's checks, `0 < x < q` and `g^x mod p = y`.
   have hvv := validatePrivate_eq hv (by rw [VG.Proof.Bignum.bytesAt_length]; exact h3) hkey
@@ -205,31 +205,31 @@ theorem signPre_correct (s : State) (h : spContract.pre s) :
   have hKO₁ : KeyOk s₁.mem (slayOf s) (s.gpr .a2) := by
     simp only [KeyOk, ep₁, eq₁, eg₁, ey₁]; exact ⟨hsh, hpub⟩
   have hP₁ : ParamsOk s₁.mem (slayOf s) (s.gpr .a2) := (keyOk_iff.mp hKO₁).1
-  refine WP.seq (setup_ok hL F.scr F.regs F.lens (by omega) (srcK3 s₁ k₁.2.1 k₁.2.2) hKO₁
+  refine WP.seq (setup_ok hL F.scr F.regs F.lens (by omega_using []) (srcK3 s₁ k₁.2.1 k₁.2.2) hKO₁
     (fun t _ hc Kd kc => ?_))
   have kt := k₁.trans kc
   have Ot : Outside (slayOf s).S 0 (slayOf s).Z s.mem t.mem := Out₁.trans Kd.out
   have hq8 : Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) =
       8 * (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) := by
-    have := hsh.1; unfold Spec.Dsa.supportedSizes at this; omega
+    have := hsh.1; unfold Spec.Dsa.supportedSizes at this; omega_using [this]
   have ex : xOf t.mem (slayOf s) (s.gpr .a2) = xOf s.mem (slayOf s) (s.gpr .a2) := by
     simp only [xOf]
-    rw [((srcK s rfl rfl).sub (o := 3 * (slayOf s).pl + (slayOf s).ql) (k := (slayOf s).ql) (by omega)).bytes Ot
-      (by omega)]
+    rw [((srcK s rfl rfl).sub (o := 3 * (slayOf s).pl + (slayOf s).ql) (k := (slayOf s).ql) (by omega_using [])).bytes Ot
+      (by omega_using [])]
   have ek : kOf t.mem (slayOf s) (s.gpr .a5) = kOf s.mem (slayOf s) (s.gpr .a5) := by
-    simp only [kOf]; rw [(srcN s rfl rfl).bytes Ot (by omega)]
+    simp only [kOf]; rw [(srcN s rfl rfl).bytes Ot (by omega_using [])]
   obtain ⟨ept, -, egt, eyt⟩ := keyVals_kept (srcK3 s rfl rfl) Ot
   have hvt : gOf t.mem (slayOf s) (s.gpr .a2) ^ xOf t.mem (slayOf s) (s.gpr .a2) % arrP t.mem (slayOf s) 0 =
       yOf t.mem (slayOf s) (s.gpr .a2) := by
     rw [hc.p0, ep₁, egt, ex, eyt]; exact hgx
   unfold PrevalidatedSign.body
   refine WP.mono (sbodyWith_ok hL hP₁ hc (setMask_KPOk hL hc.scr hc.regs hc.inp hc.inv hvt) Kd
-    (srcK t kt.2.1 kt.2.2) (srcN t kt.2.1 kt.2.2) (by omega)
+    (srcK t kt.2.1 kt.2.2) (srcN t kt.2.1 kt.2.2) (by omega_using [])
     ((srcD t kt.2.1 kt.2.2).take (Nat.min_le_left _ _)) (hwd t Kd) (hwo t Kd) (hout t kt.2.2) hno
     (srcO t kt.2.1 kt.2.2)) fun u ⟨⟨ob, r0u, ⟨m, Km, Om⟩, h6u, scru⟩, ku⟩ => ?_
   refine WP.mono (sfinish_ok h6u (hwr' u scru) hal'
-    (fun i hi => (outSep Om (by simp only [saveOff]; omega)).trans
-      ((Km.word (by simp only [saveOff]; omega) (by simp only [saveOff]; omega)).trans (hsav' t Kd i hi))))
+    (fun i hi => (outSep Om (by simp only [saveOff]; omega_using [hi])).trans
+      ((Km.word (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hi])).trans (hsav' t Kd i hi))))
     fun w ⟨hab, w0, wm⟩ => ⟨hab, ?_⟩
   rw [ep₁, eq₁, eg₁, ey₁, ex, ek] at ob r0u
   have ed : Spec.Rsa.bytesAt t.mem (s.gpr .a7)
@@ -238,8 +238,8 @@ theorem signPre_correct (s : State) (h : spContract.pre s) :
         (min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8)) := by
     have := hsh.1; unfold Spec.Dsa.supportedSizes at this
     rw [show min (min (stackArg s 0).toNat 64) (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) =
-      min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) by omega]
-    exact ((srcD s rfl rfl).take (Nat.min_le_left _ _)).bytes Ot (by omega)
+      min (stackArg s 0).toNat (Spec.Dsa.bitLength (qOf s.mem (slayOf s) (s.gpr .a2)) / 8) by omega_using [this]]
+    exact ((srcD s rfl rfl).take (Nat.min_le_left _ _)).bytes Ot (by omega_using [])
   rw [ed] at ob r0u
   have hres := hspec hsh hq8
   simp only [hpub, true_and] at hres

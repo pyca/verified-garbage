@@ -27,7 +27,7 @@ theorem zeroWord_ok {s : State} {E : Addr} (he : s.sp = E)
     WP isa (.block (zeroWord k)) s fun t => WipeStep s t ∧
       t.mem = s.mem.writeW (E + BitVec.ofNat 64 (8 * k)) (0 : BitVec 64) := by
   have dest : InRegions s.wr (E + BitVec.ofNat 64 (8 * k)) 8 :=
-    ⟨⟨E, 256⟩, hr, Offset.contains_base E (by omega) (by omega)⟩
+    ⟨⟨E, 256⟩, hr, Offset.contains_base E (by omega_using [hk]) (by omega_using [hk])⟩
   have ha {t : State} : exec (.addSp .x15 0) t = some (t.write .x .x15 t.sp) := by
     simp only [exec, show 0 < 4096 from by decide, ite_true, BitVec.add_zero]
   have hz {t : State} : exec (.movz .x .x14 0 0) t = some (t.write .x .x14 0) := by
@@ -35,7 +35,7 @@ theorem zeroWord_ok {s : State} {E : Addr} (he : s.sp = E)
     rfl
   apply WP.of_runBlock
   simp only [zeroWord, runBlock_cons, runStep_some, ha, hz]
-  rw [exec_str_x ⟨by omega, by omega⟩ (by
+  rw [exec_str_x ⟨by omega_using [], by omega_using [hk]⟩ (by
     simpa only [RegUpd.wr_write, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true,
       BitVec.setWidth_eq, he] using dest)]
   simp only [runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
@@ -56,24 +56,24 @@ theorem zeroWords_ok {s : State} {E : Addr} (he : s.sp = E)
   | 0, _ => WP.block_nil ⟨⟨rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩, Frame.refl _ _, fun _ h => by omega⟩
   | n + 1, hn => by
     rw [zeroWords, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (zeroWords_ok he hw start n (by omega)) fun u hu => ?_
-    refine WP.mono (zeroWord_ok (hu.step.sp.trans he) (hu.step.wr ▸ hw) (by omega : start + n < 32))
+    refine WP.mono (zeroWords_ok he hw start n (by omega_using [hn])) fun u hu => ?_
+    refine WP.mono (zeroWord_ok (hu.step.sp.trans he) (hu.step.wr ▸ hw) (by omega_using [hn] : start + n < 32))
       fun t ⟨kt, mt⟩ => ?_
     refine ⟨hu.step.trans kt, ?_, fun j hj => ?_⟩
     · rw [mt]
       have old : Frame [⟨E + BitVec.ofNat 64 (8 * start), 8 * (n + 1)⟩] s.mem u.mem :=
         Frame.sub hu.frame fun r hr => by
           rw [List.mem_singleton.mp hr]
-          exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+          exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
       exact old.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (by omega) (by omega) (by omega))
+        (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hn]))
     · rw [mt]
       by_cases hjn : j = n
       · subst j; exact Mem.readW_writeW_self64 _ _ _
       · rw [Mem.readW_writeW_sep (a := E + BitVec.ofNat 64 (8 * (start + j)))
           (b := E + BitVec.ofNat 64 (8 * (start + n))) ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjn])
+        · exact Offset.sep _ (by omega_using [hjn]) (by omega_using [hn, hj]) (by omega_using [hn])
 
 theorem Ctx.zeroWords {E : Addr} {g : Reg → BitVec 64} {v : VReg → BitVec 128}
     {m₀ : Mem} {rd wr : List Region} {s : State} (hc : Ctx E g v m₀ rd wr s)
@@ -90,6 +90,6 @@ theorem Ctx.zeroWords {E : Addr} {g : Reg → BitVec 64} {v : VReg → BitVec 12
     · rintro rfl; simp [preserved] at hr
   · intro r _; rw [ht.step.vec]
   · intro r hr; rw [List.mem_singleton.mp hr]
-    exact .inl (Offset.sub_base _ (by omega))
+    exact .inl (Offset.sub_base _ (by omega_using [hn]))
 
 end VG.Proof.Ed25519.AArch64.Whole

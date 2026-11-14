@@ -65,21 +65,21 @@ theorem clear_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List B
       Spec.Rsa.bytesAt t.mem (E.out.setWidth 64) E.length = List.replicate E.length 0 ∧
       MutableFrame E s.mem t.mem ∧ Keeps [.esi, .ecx, .eax] s t := by
   have space : 256 ≤ E.size := v.geometry.headerFit
-  have lengthPositive : 0 < E.length := by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega
+  have lengthPositive : 0 < E.length := by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega_using [this]
   have lengthBound : E.length < 2 ^ 32 := CandidateGeometry.native_length_bound v.length
-  refine WP.mono_syms (CandidateClear.code_ok I.scratch (by omega) lengthPositive lengthBound I.out_eq
+  refine WP.mono_syms (CandidateClear.code_ok I.scratch (by omega_using [space]) lengthPositive lengthBound I.out_eq
     (I.header 1 (by decide)) v.outFit I.outWrite) fun t ⟨zeros, _, O, K⟩ syms => ?_
   have F : Frame [E.outRegion] s.mem t.mem := by
     simpa only [Environment.outRegion, off, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] using
-      VG.Proof.Bignum.outside_frame O (by omega)
+      VG.Proof.Bignum.outside_frame O (by omega_using [lengthBound])
   have M : MutableFrame E s.mem t.mem :=
     F.mono (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact List.mem_append_left _ List.mem_cons_self)
   have readHeader (d : Nat) (fit : d + 4 ≤ E.size) : t.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 :=
-    F.readW (r := E.workspaceRegion) (Offset.contains_base _ fit (by have := I.scratch.nowrap; omega))
+    F.readW (r := E.workspaceRegion) (Offset.contains_base _ fit (by have := I.scratch.nowrap; omega_using [fit, this]))
       (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.outWorkspace.symm) (by decide)
   refine ⟨I.keepMutable v K (by decide) (by decide) M ?_ ?_ (by rw [syms]), zeros, M, K⟩
   · intro i index
-    exact (readHeader _ (by omega)).trans (I.header i index)
-  · exact (readHeader 44 (by omega)).trans I.usedPointer
+    exact (readHeader _ (by omega_using [space, index])).trans (I.header i index)
+  · exact (readHeader 44 (by omega_using [space])).trans I.usedPointer
 
 end VG.Proof.RsaKeyGen.X86.Candidate

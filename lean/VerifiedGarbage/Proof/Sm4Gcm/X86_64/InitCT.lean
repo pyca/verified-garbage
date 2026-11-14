@@ -76,7 +76,7 @@ theorem initA_ok {s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s) :
   refine WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩)
   have rd₂ : s₂.rd = s.rd := hrd₂.trans hrd₁
   have wr₂ : s₂.wr = s.wr := hwr₂.trans hwr₁
-  refine ⟨⟨hdi, hsi, by rw [hsp₂]; exact hsp, wk, by omega, d_kc.sub_right (Region.sub_prefix (by decide)),
+  refine ⟨⟨hdi, hsi, by rw [hsp₂]; exact hsp, wk, by omega_using [wc], d_kc.sub_right (Region.sub_prefix (by decide)),
     by rw [hsp₂]; exact k_k, by rw [hsp₂]; exact k_c.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩,
     h15, h13, hsp₂, rd₂, wr₂⟩
   · rw [rd₂, wr₂, hrd]
@@ -122,12 +122,12 @@ theorem initB_ok {s₀ s : State} (hp : Proof.Sm4Gcm.initX86_64.pre s₀) (hk : 
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ he)
   have dK0 : (⟨Ctx, 128⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
-    Offset.base_disjoint Ctx (by decide) (by omega)
+    Offset.base_disjoint Ctx (by decide) (by omega_using [])
   have pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [hwr₄]; exact pC
   have pW' : Covers [⟨W, 2560⟩] s₄.wr := by rw [hwr₄]; exact pW
-  refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, by rw [hsp₄]; exact hsp, by omega,
-    by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega,
-    by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega,
+  refine ⟨hdi₄, hsi₄, hdx₄, hcx₄, by rw [hsp₄]; exact hsp, by omega_using [wc],
+    by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [ws],
+    by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_using [wc],
     by simpa using dCW 0 128 (by decide) 96 16 (by decide), dK0,
     (dCW 240 16 (by decide) 96 16 (by decide)).symm, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hsp₄]; exact k_c.sub_right (Region.sub_prefix (by decide))

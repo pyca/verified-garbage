@@ -31,20 +31,20 @@ theorem saveG_with {σ : State}
       ∀ i < k,t.mem.readW (at' σ (oSave+8*i)) 64 = σ.gpr (saved[i]!))
     (fun k t hk ⟨ht,hf,hvals⟩ => ?_) 10 (Nat.le_refl _) σ
     ⟨⟨rfl,rfl,rfl,rfl,rfl,rfl⟩,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
-  refine wp_str (a := at' σ (oSave+8*k)) ⟨by dsimp only [oSave]; omega,by dsimp only [oSave]; omega⟩
-    (by rw [ht.gpr]; rfl) (by rw [ht.wr]; exact hwork _ _ (by dsimp only [oSave]; omega)) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
+  refine wp_str (a := at' σ (oSave+8*k)) ⟨by dsimp only [oSave]; omega_using [],by dsimp only [oSave]; omega_using [hk]⟩
+    (by rw [ht.gpr]; rfl) (by rw [ht.wr]; exact hwork _ _ (by dsimp only [oSave]; omega_using [hk])) fun u hu => WP.block_nil_iff.mpr ⟨?_,?_,?_⟩
   · exact ⟨hu.gpr.trans ht.gpr,rfl,hu.rd.trans ht.rd,hu.wr.trans ht.wr,
       hu.sp.trans ht.sp,hu.vec.trans ht.vec⟩
   · rw [hu.mem]
-    exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains (scr σ) (d := oSave+8*k) (e := oSave) (n := 8) (k := 144) (by omega) (by omega) (by decide))
+    exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains (scr σ) (d := oSave+8*k) (e := oSave) (n := 8) (k := 144) (by omega_using []) (by omega_using [hk]) (by decide))
   · intro i hi
     rw [hu.mem,ht.gpr]
     by_cases he : i = k
     · subst i; rw [Mem.readW_writeW_self64]
     · have hs : Mem.Sep (at' σ (oSave+8*i)) 8 (at' σ (oSave+8*k)) 8 :=
-        Offset.sep (scr σ) (d := oSave+8*i) (e := oSave+8*k) (n := 8) (k := 8) (by omega) (by dsimp only [oSave]; omega) (by dsimp only [oSave]; omega)
+        Offset.sep (scr σ) (d := oSave+8*i) (e := oSave+8*k) (n := 8) (k := 8) (by omega_using [he]) (by dsimp only [oSave]; omega_using [hk, hi]) (by dsimp only [oSave]; omega_using [hk])
       rw [Mem.readW_writeW_sep hs (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
 end
@@ -72,22 +72,22 @@ theorem saveV_with {σ s : State}
     (fun k t hk ⟨ht,hv,hf,hvals⟩ => ?_) 8 (Nat.le_refl _) s
     ⟨RegKeep.refl _ _,rfl,Frame.refl _ _,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩
   refine WP.mono (VG.Proof.MlDsa.AArch64.Sample.Rej4.saveV_step hk ((ht.gpr .x2 (by decide)).trans hs)
-    (by rw [ht.wr,hw]; exact hwork _ _ (by dsimp only [oSave]; omega))) fun u ⟨hu,hvu,hm⟩ => ?_
+    (by rw [ht.wr,hw]; exact hwork _ _ (by dsimp only [oSave]; omega_using [hk]))) fun u ⟨hu,hvu,hm⟩ => ?_
   change u.mem = t.mem.writeW (at' σ (oSave+80+8*k)) (vdword (t.v (vreg (8+k))) 0) at hm
   refine ⟨(ht.trans hu).mono (by simp),hvu.trans hv,?_,?_⟩
   · rw [hm]
     exact hf.writeW (List.mem_singleton_self _) _
       (Offset.contains (scr σ) (d := oSave+80+8*k) (e := oSave+80) (n := 8) (k := 64)
-        (by omega) (by omega) (by decide))
+        (by omega_using []) (by omega_using [hk]) (by decide))
   · intro i hi
     rw [hm,hv]
     by_cases he : i = k
     · subst i; rw [Mem.readW_writeW_self64]
     · have hs : Mem.Sep (at' σ (oSave+80+8*i)) 8 (at' σ (oSave+80+8*k)) 8 :=
         Offset.sep (scr σ) (d := oSave+80+8*i) (e := oSave+80+8*k) (n := 8) (k := 8)
-          (by omega) (by dsimp only [oSave]; omega) (by dsimp only [oSave]; omega)
+          (by omega_using [he]) (by dsimp only [oSave]; omega_using [hk, hi]) (by dsimp only [oSave]; omega_using [hk])
       rw [Mem.readW_writeW_sep hs (by decide)]
-      exact hvals i (by omega)
+      exact hvals i (by omega_using [hi, he])
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
 end
@@ -119,7 +119,7 @@ theorem pro_with (v : Nat) {σ : State}
     rw [h3.mem]
     have hd : (⟨at' σ (oSave+8*i),8⟩ : Region).Disjoint (vSaveR σ) :=
       Offset.disjoint (scr σ) (d := oSave+8*i) (n := 8) (e := oSave+80) (k := 64)
-        (by omega) (by dsimp only [oSave]; omega) (by decide)
+        (by omega_using [hi]) (by dsimp only [oSave]; omega_using [hi]) (by decide)
     rw [hf2.readW (Region.contains_self _ _) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide)]
     exact hg1 i hi
   · intro i hi

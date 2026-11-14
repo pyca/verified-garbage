@@ -68,14 +68,14 @@ theorem setup_ok {s : State} {base : Addr} {size offset : Nat}
       num t.mem base 2 1 = Mod64.exponentValue s.mem base offset ∧
       Outside base 160 24 s.mem t.mem ∧ Keeps [.eax, .edx] s t := by
   unfold setup
-  refine WP.block_append (WP.mono (remainderInput_ok scratch (by omega)) fun a ⟨R, Oa, Ka⟩ => ?_)
-  refine WP.mono (exponentInput_ok (scratch.of_keeps Ka (by decide)) (by omega) fit)
+  refine WP.block_append (WP.mono (remainderInput_ok scratch (by omega_using [space])) fun a ⟨R, Oa, Ka⟩ => ?_)
+  refine WP.mono (exponentInput_ok (scratch.of_keeps Ka (by decide)) (by omega_using [space]) fit)
     fun t ⟨E, Ot, Kt⟩ => ?_
   have K := Ka.trans Kt
   have exponent : Mod64.exponentValue a.mem base offset = Mod64.exponentValue s.mem base offset := by
     change w32 a.mem base offset + 2 ^ 32 * w32 a.mem base (offset + 4) = _
-    rw [Oa.w32 (d := offset) (by omega) (by have := scratch.nowrap; omega),
-      Oa.w32 (d := offset + 4) (by omega) (by have := scratch.nowrap; omega)]
+    rw [Oa.w32 (d := offset) (by omega_using [apart]) (by have := scratch.nowrap; omega_using [fit, this]),
+      Oa.w32 (d := offset + 4) (by omega_using [apart]) (by have := scratch.nowrap; omega_using [fit, this])]
     rfl
   refine ⟨⟨scratch.of_keeps K (by decide), space, by decide, by decide⟩, ?_, E.trans exponent,
     (Oa.mono (by decide) (by decide)).trans (Ot.mono (by decide) (by decide)), K⟩

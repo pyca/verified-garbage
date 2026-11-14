@@ -48,7 +48,7 @@ section
 variable {p : Params} {σ : State}
 
 theorem seedE_ij {i j : Nat} (hj : j < p.ℓ) : seedE p σ (p.ℓ * i + j) = aSeed (rhoOf p σ) i j := by
-  have hl : 0 < p.ℓ := by omega
+  have hl : 0 < p.ℓ := by omega_using [hj]
   have e1 : (p.ℓ * i + j) / p.ℓ = i := by
     rw [Nat.add_comm, Nat.add_mul_div_left _ _ hl, Nat.div_eq_of_lt hj, Nat.zero_add]
   have e2 : (p.ℓ * i + j) % p.ℓ = j := by
@@ -62,7 +62,7 @@ theorem expandA_max (hok : ∀ e < p.k * p.ℓ, (rejNTTPoly maxBounds.rejNTT (se
 theorem signMu_min_A (h : ∃ e < p.k * p.ℓ, rejNTTPoly minBounds.rejNTT (seedE p σ e) = none) :
     signMu p minBounds (skOf p σ) (muOf σ) (rndOf σ) = none := by
   obtain ⟨e, he, hn⟩ := h
-  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega
+  have hl : 0 < p.ℓ := Nat.pos_of_ne_zero fun h0 => by rw [h0, Nat.mul_zero] at he; omega_using [he]
   exact Proof.MlDsa.Sign.signMu_none_A (Proof.MlDsa.Sign.expandA_none
     ⟨e / p.ℓ, (Nat.div_lt_iff_lt_mul hl).mpr he, e % p.ℓ, Nat.mod_lt _ hl, hn⟩)
 
@@ -82,7 +82,7 @@ theorem signMu_max (hp : ParamsOk p) (hA : expandA p maxBounds (rhoOf p σ) = so
     (hpass : PassV p σ (p.ℓ * t)) :
     signMu p maxBounds (skOf p σ) (muOf σ) (rndOf σ) = some (sigV p σ (p.ℓ * t)) :=
   Proof.MlDsa.Sign.signMu_some hA (Proof.MlDsa.Sign.signLoop_pass _ _ _ _ _ _ _ hr (show t < maxBounds.sign by
-    show t < 1000; omega) (iter_pass hp hs hpass))
+    show t < 1000; omega_using [ht]) (iter_pass hp hs hpass))
 
 end
 
@@ -101,14 +101,14 @@ theorem SC1.tf {p : Params} (hF : SFacts p) {STK : Nat} {σ s : State} (h : SC1 
   have hs := h.site
   have hscr := hF.scr
   exact ⟨hs.r31, h.sav, h.pres, h.sp, fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := slay1 p STK σ) (o := o)
-    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay1_size0]; omega) _ _
+    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay1_size0]; omega_using [hscr, h₂]) _ _
     ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)⟩
 
 theorem SC2.tf {p : Params} (hF : SFacts p) {STK : Nat} {σ s : State} (h : SC2 p STK σ s) : TF p STK σ s := by
   have hs := h.site
   have hscr := hF.scr
   exact ⟨hs.r31, h.sav, h.pres, h.sp, fun o h₁ h₂ => mem_rd_wr' (Lay.covers (L := slay2 p STK σ) (o := o)
-    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay2_size0]; omega) _ _
+    (l := 8) (hs.cw 0 (by decide) (by decide)) (by rw [slay2_size0]; omega_using [hscr, h₂]) _ _
     ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩)⟩
 
 /-- Before the return: `r24`, and the signature in `sig` if it is 1. -/
@@ -177,16 +177,16 @@ omit hP hS hp in
 theorem proC_ok (h48 : 48 ≤ STK) {σ : State} (hpre : CPre p STK σ) :
     WP isa (.block pro) σ fun s => (SC1 p STK σ s ∧ s.gpr .r24 = 1) ∧ FC STK σ s :=
   WP.mono (wp_frame (spro_ok hF h48 hpre.1) (by decide)) fun _ ⟨h₁, f₁⟩ =>
-    ⟨h₁, FC.step (Frame.refl _ _) rfl rfl (Nat.zero_le _) (by have := hpre.1.stk; have := σ.sp.isLt; omega) f₁⟩
+    ⟨h₁, FC.step (Frame.refl _ _) rfl rfl (Nat.zero_le _) (by have := hpre.1.stk; have := σ.sp.isLt; omega_arith) f₁⟩
 
 omit hp in
 /-- `ExpandA`, keeping `FC`. -/
 theorem expC_ok {σ s : State} (hpre : CPre p STK σ) (h : (SC1 p STK σ s ∧ s.gpr .r24 = 1) ∧ FC STK σ s) :
     WP isa (Impl.MlDsa.PPC64LE.Sign.expandA P p) s fun s' => IA p STK σ (p.k * p.ℓ) s' ∧ FC STK σ s' :=
   WP.mono (wp_frame (expandA_ok hP hF hS h.1.1 h.1.2)
-    (by have := sdepth_expandA hP p; have := hpre.1.stk; have := σ.sp.isLt; omega))
+    (by have := sdepth_expandA hP p; have := hpre.1.stk; have := σ.sp.isLt; omega_arith))
     fun _ ⟨h₂, f₂⟩ => ⟨h₂, FC.step h.2 h.1.1.wr h.1.1.sp (Nat.le_trans (sdepth_expandA hP p) hS)
-      (by have := hpre.1.stk; have := σ.sp.isLt; omega) f₂⟩
+      (by have := hpre.1.stk; have := σ.sp.isLt; omega_arith) f₂⟩
 
 /-- Signing, with the cache of `CPre`. -/
 theorem sign_ok {σ : State} (hpre : CPre p STK σ) (h48 : 48 ≤ STK) :
@@ -353,9 +353,9 @@ section
 variable {p : Params} {STK : Nat} {σ : State} (h : KPre p (STK + 96) σ)
 include h
 
-theorem KPre.fit : STK + 96 < 2 ^ 64 := by have := h.stk; have := σ.sp.isLt; omega
+theorem KPre.fit : STK + 96 < 2 ^ 64 := by have := h.stk; have := σ.sp.isLt; omega_arith
 
-theorem KPre.b96 : Region.Sub (below σ.sp 96) (below σ.sp (STK + 96)) := below_sub (by omega) h.fit
+theorem KPre.b96 : Region.Sub (below σ.sp 96) (below σ.sp (STK + 96)) := below_sub (by omega_using []) h.fit
 
 theorem KPre.bSTK : Region.Sub (below (kSt .r8 .r9 σ).sp STK) (below σ.sp (STK + 96)) := by
   rw [kSt_sp]
@@ -375,7 +375,7 @@ theorem kSt_inputs : skOf p (kSt .r8 .r9 σ) = skOf p σ ∧ muOf (kSt .r8 .r9 �
     rndOf (kSt .r8 .r9 σ) = rndOf σ := by
   simp only [skOf, muOf, rndOf, sSk, sMu, sRnd, kSt_gpr σ (show Reg.r3 ≠ .r14 by decide) (by decide),
     kSt_gpr σ (show Reg.r4 ≠ .r14 by decide) (by decide), kSt_gpr σ (show Reg.r5 ≠ .r14 by decide) (by decide)]
-  exact ⟨h.bytes h.b_k (by have := h.f_k; omega), h.bytes h.b_m (by decide), h.bytes h.b_r (by decide)⟩
+  exact ⟨h.bytes h.b_k (by have := h.f_k; omega_using [this]), h.bytes h.b_m (by decide), h.bytes h.b_r (by decide)⟩
 
 /-- The state signing starts in satisfies `CPre`. -/
 theorem kSt_cpre : CPre p STK (kSt .r8 .r9 σ) := by
@@ -417,7 +417,7 @@ theorem kSt_cpre : CPre p STK (kSt .r8 .r9 σ) := by
       rw [kSt_inputs h |>.1]
       have hsub : Region.Sub (Proof.MlDsa.Verify.polyRegion (σ.gpr .r8 + BitVec.ofNat 64 (4 * n * i)))
           (reg (σ.gpr .r8) (σ.gpr .r9).toNat) :=
-        Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega)
+        Offset.sub_base _ (by rw [hl]; show 4 * 256 * i + 1024 ≤ 4 * 256 * (p.ℓ + 2 * p.k); omega_using [hi])
       exact Proof.MlDsa.Verify.polyIs_frame (kSt_mem σ) (fun r hr => by
         rw [List.mem_singleton] at hr; subst hr
         exact (h.b_x.sub_left h.b96).symm.sub_left hsub) (hc i hi)
@@ -477,11 +477,11 @@ theorem withCache_verified {P : Prims} {S : Nat} (hP : SPrimsOk P S) (h48 : 48 �
     rcases hX with rfl | rfl
     · exact hk.b_g.sub_left hk.b96
     · exact hk.b_c.sub_left hk.b96
-  have hn (σ : State) (hk : KPre p (S + 96) σ) : sdepth (sign P p) + 96 < 2 ^ 64 := by have := hk.fit; omega
+  have hn (σ : State) (hk : KPre p (S + 96) σ) : sdepth (sign P p) + 96 < 2 ^ 64 := by have := hk.fit; omega_using [hd, this]
   refine ⟨fun σ hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_, ⟨kSat p, hsat⟩⟩
   · have hk := kpre_of (k := S + 95) hs
     refine WP.mono (kernel_wp (a := .r8) (b := .r9) (by decide) (by decide) (by decide)
-      (by have := hk.stk; omega) (hd96 σ hk) (hn σ hk)
+      (by have := hk.stk; omega_using [this]) (hd96 σ hk) (hn σ hk)
       (R := fun m r => Spec.MlDsa.Outcome (fun b => Spec.MlDsa.signMu p b (skOf p σ) (muOf σ) (rndOf σ))
         (r.setWidth 32) (bytesAt m (sSig σ) p.sigLen))
       (WP.mono (body σ hk) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩)) fun s' ⟨ha, hq⟩ => ⟨ha, ?_⟩
@@ -509,7 +509,7 @@ theorem withCache_verified {P : Prims} {S : Nat} (hP : SPrimsOk P S) (h48 : 48 �
         sig_pub [Proof.MlDsa.signWithCacheContract, Proof.MlDsa.signWithCacheSig, Spec.MlDsa.signSig, PPC64LE.abi,
           PPC64LE.argRegs] at hp
         exact hp.1)
-      (fun x y ⟨a, b, _⟩ => ⟨by have := a.stk; omega, by have := b.stk; omega, hd96 x a, hd96 y b⟩) (hn s₁ k₁)
+      (fun x y ⟨a, b, _⟩ => ⟨by have := a.stk; omega_using [this], by have := b.stk; omega_using [this], hd96 x a, hd96 y b⟩) (hn s₁ k₁)
       (fun x y ⟨a, b, _⟩ => ⟨⟨_, body x a⟩, ⟨_, body y b⟩⟩)
       (RelCT.mono (sign_tr hP hF (Nat.le_refl S) hp h48) (fun u v ⟨x, y, ⟨a, b, hp⟩, eu, ev⟩ => by
         subst eu ev; exact ⟨_, _, kSt_cpre a, kSt_cpre b, kSt_cpub a b hp, rfl, rfl⟩) fun _ _ h => h)

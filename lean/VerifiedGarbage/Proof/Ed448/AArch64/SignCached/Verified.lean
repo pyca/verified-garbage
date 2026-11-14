@@ -319,8 +319,8 @@ theorem sat_seed : Spec.Ed448.bytesAt satMem 0x2000 57 = satSeed := by
   have hi' := List.mem_range.mp hi
   have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
     change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-    omega
-  simp only [satMem, ha, show 0x2000 + i < 0x3000 from by omega, true_or, ↓reduceIte]
+    omega_using [hi']
+  simp only [satMem, ha, show 0x2000 + i < 0x3000 from by omega_using [hi'], true_or, ↓reduceIte]
 
 theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
   apply List.ext_getElem
@@ -329,9 +329,9 @@ theorem sat_key : Spec.Ed448.bytesAt satMem 0x3000 57 = satKey := by
     have hi' : i < 57 := by simpa only [Spec.Ed448.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
       change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed448.bytesAt, List.getElem_map, List.getElem_range, satMem, ha,
-      show ¬ (0x3000 + i < 0x3000 ∨ 0x3039 ≤ 0x3000 + i) from by omega, ↓reduceIte, Nat.add_sub_cancel_left,
+      show ¬ (0x3000 + i < 0x3000 ∨ 0x3039 ≤ 0x3000 + i) from by omega_using [hi'], ↓reduceIte, Nat.add_sub_cancel_left,
       List.getElem?_eq_getElem hj, Option.getD_some]
 
 open VG.Impl.X448.AArch64.Base (combSym combWords combConsts)
@@ -343,29 +343,29 @@ definitional check would evaluate the tables). -/
   if 0x100000 ≤ a.toNat then constMem 0x100000 combWords a else satMem a
 
 theorem satMemT_low {a : Addr} (h : a.toNat < 0x100000) : satMemT a = satMem a := by
-  unfold satMemT; simp only [show ¬ 0x100000 ≤ a.toNat by omega, ↓reduceIte]
+  unfold satMemT; simp only [show ¬ 0x100000 ≤ a.toNat by omega_using [h], ↓reduceIte]
 
 theorem satMemT_held : ∀ i < combWords.length,
     satMemT.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   intro i hi
   have hl := combWords_length
-  rw [← constMem_held 0x100000 combWords (by omega) i hi]
+  rw [← constMem_held 0x100000 combWords (by omega_using [hl]) i hi]
   refine Mem.readW_congr fun b hb => ?_
   have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b).toNat = 0x100000 + 8 * i + b := by
     have h0 : (0x100000 : Addr).toNat = 0x100000 := rfl
     rw [Offset.add_add, BitVec.toNat_add, BitVec.toNat_ofNat, h0,
-      Nat.mod_eq_of_lt (a := 8 * i + b) (by omega)]
-    omega
+      Nat.mod_eq_of_lt (a := 8 * i + b) (by omega_using [hi, hl, hb])]
+    omega_using [hi, hl, hb]
   unfold satMemT
-  simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega, ↓reduceIte]
+  simp only [e, show 0x100000 ≤ 0x100000 + 8 * i + b by omega_using [], ↓reduceIte]
 
 theorem satT_bytes {p : Addr} (hp : p.toNat + 57 < 0x100000) :
     Spec.Ed448.bytesAt satMemT p 57 = Spec.Ed448.bytesAt satMem p 57 := by
   unfold Spec.Ed448.bytesAt
   refine List.map_congr_left fun i hi => satMemT_low ?_
   have := List.mem_range.mp hi
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega)]
-  omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := i) (by omega_using [this])]
+  omega_using [hp, this]
 
 def satState : State where
   gpr r := match r with

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ARMv7: the bytes of a word
@@ -18,14 +19,14 @@ theorem readW_bit (m : Mem) (a : Addr) {i t : Nat} (hi : i < 4) (ht : t < 8) :
   rw [← Mem.extractLsb'_read m a (n := 4) hi, BitVec.getLsbD_extractLsb']
   simp only [Mem.readW, ht, decide_true, Bool.true_and]
   rw [BitVec.getLsbD_setWidth]
-  simp [show 8 * i + t < 32 by omega]
+  simp [show 8 * i + t < 32 by omega_using [hi, ht]]
 
 theorem rev_bit (v : BitVec 32) {k j : Nat} (hk : k < 4) (hj : j < 8) :
     (rev v).getLsbD (8 * k + j) = v.getLsbD (8 * (3 - k) + j) := by
   unfold rev
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   repeat' split
-  all_goals first | omega | (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+  all_goals first | omega | (rw [decide_eq_true (by omega_arith), Bool.true_and]; congr 1; omega_arith)
 
 theorem out_of_disj {r₁ r₂ : Region} (hd : r₁.Disjoint r₂) {x a : Addr} {n : Nat} (hx : r₁.Contains x 1)
     (ha : r₂.Contains a n) : ¬ (x - a).toNat < n := fun h => hd x hx (ha.byte h)
@@ -55,9 +56,9 @@ theorem rev_rev (x : BitVec 32) : rev (rev x) = x := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   obtain ⟨k, j, hk, hj, rfl⟩ : ∃ k j, k < 4 ∧ j < 8 ∧ i = 8 * k + j :=
-    ⟨i / 8, i % 8, by omega, by omega, by omega⟩
-  rw [rev_bit _ hk hj, rev_bit _ (by omega) hj]
+    ⟨i / 8, i % 8, by omega_using [hi], by omega_using [], by omega_using []⟩
+  rw [rev_bit _ hk hj, rev_bit _ (by omega_using []) hj]
   congr 1
-  omega
+  omega_using [hk]
 
 end VG.Arm

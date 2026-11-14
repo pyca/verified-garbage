@@ -79,24 +79,24 @@ theorem pruned_value (m : Mem) (q : Addr) :
     Spec.Ed448.decodeLE (Spec.Ed448.bytesAt (pruned m q) q 57) =
       (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt m q 57) &&& (2 ^ 448 - 4)) ||| 2 ^ 447 := by
   have ne : ∀ i j, i < 57 → j < 57 → i ≠ j → q + BitVec.ofNat 64 i ≠ q + BitVec.ofNat 64 j :=
-    fun i j hi hj h => off_ne q (by omega) (by omega) h
+    fun i j hi hj h => off_ne q (by omega_using [hi]) (by omega_using [hj]) h
   have z : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
   have ne0 : ∀ j, 0 < j → j < 57 → q + BitVec.ofNat 64 j ≠ q := fun j h1 h2 e =>
-    ne j 0 h2 (by decide) (by omega) (e.trans z.symm)
+    ne j 0 h2 (by decide) (by omega_using [h1]) (e.trans z.symm)
   generalize hm' : pruned m q = m'
   have mid : Spec.Ed448.bytesAt m' (q + BitVec.ofNat 64 1) 54 = Spec.Ed448.bytesAt m (q + BitVec.ofNat 64 1) 54 := by
     unfold Spec.Ed448.bytesAt
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    rw [← hm', pruned, Offset.add_add, writeW8_apply, ite_eq_right (ne (1 + i) 56 (by omega) (by omega) (by omega)),
-      writeW8_apply, ite_eq_right (ne (1 + i) 55 (by omega) (by omega) (by omega)), writeW8_apply,
-      ite_eq_right (ne0 (1 + i) (by omega) (by omega))]
+    rw [← hm', pruned, Offset.add_add, writeW8_apply, ite_eq_right (ne (1 + i) 56 (by omega_using [hi]) (by omega_using []) (by omega_using [hi])),
+      writeW8_apply, ite_eq_right (ne (1 + i) 55 (by omega_using [hi]) (by omega_using []) (by omega_using [hi])), writeW8_apply,
+      ite_eq_right (ne0 (1 + i) (by omega_using []) (by omega_using [hi]))]
   have e0 : m' q = BitVec.ofNat 8 ((m q).toNat &&& 252) := by
-    rw [← hm', pruned, writeW8_apply, ite_eq_right (ne0 56 (by omega) (by omega)).symm,
-      writeW8_apply, ite_eq_right (ne0 55 (by omega) (by omega)).symm,
+    rw [← hm', pruned, writeW8_apply, ite_eq_right (ne0 56 (by omega_using []) (by omega_using [])).symm,
+      writeW8_apply, ite_eq_right (ne0 55 (by omega_using []) (by omega_using [])).symm,
       writeW8_apply, ite_eq_left rfl]
   have e55 : m' (q + BitVec.ofNat 64 55) = BitVec.ofNat 8 ((m (q + BitVec.ofNat 64 55)).toNat ||| 128) := by
-    rw [← hm', pruned, writeW8_apply, ite_eq_right (ne 55 56 (by omega) (by omega) (by omega)),
+    rw [← hm', pruned, writeW8_apply, ite_eq_right (ne 55 56 (by omega_using []) (by omega_using []) (by omega_using [])),
       writeW8_apply, ite_eq_left rfl]
   have e56 : m' (q + BitVec.ofNat 64 56) = BitVec.ofNat 8 0 := by
     rw [← hm', pruned, writeW8_apply, ite_eq_left rfl]; rfl
@@ -121,7 +121,7 @@ theorem pruned_prune (m : Mem) (q : Addr) :
 /-- Pruning writes only the 57 bytes. -/
 theorem pruned_frame (m : Mem) (q : Addr) : Frame [⟨q, 57⟩] m (pruned m q) := by
   have h : ∀ j, j < 57 → (⟨q, 57⟩ : Region).Contains (q + BitVec.ofNat 64 j) (8 / 8) := fun j hj =>
-    Offset.contains_base q (by omega) (by omega)
+    Offset.contains_base q (by omega_using [hj]) (by omega_using [hj])
   refine (((Frame.refl _ _).writeW List.mem_cons_self _ ?_).writeW List.mem_cons_self _ (h 55 (by decide))).writeW
     List.mem_cons_self _ (h 56 (by decide))
   have := h 0 (by decide)
@@ -159,22 +159,22 @@ theorem prune_ok {s : State} {f : Reg} {o : Nat} {q : Addr} (hf8 : f ≠ .a5) (h
     (e.trans e0.symm)
   unfold prune
   simp only [List.cons_append, List.nil_append]
-  refine wp_lbz (a := q) (by omega) hq (by rw [← e0]; exact hr 0 (by decide))
+  refine wp_lbz (a := q) (by omega_using [ho]) hq (by rw [← e0]; exact hr 0 (by decide))
     fun s1 v1 => ?_
   refine wp_srl (by decide) fun s2 v2 => wp_sll (by decide) fun s3 v3 => ?_
-  refine wp_sb (a := q) (by omega)
+  refine wp_sb (a := q) (by omega_using [ho])
     (by rw [v3.other _ hf8, v2.other _ hf8, v1.other _ hf8]; exact hq)
     (by rw [v3.wr, v2.wr, v1.wr, ← e0]; exact hw 0 (by decide)) fun s4 v4 => ?_
   have g4 : s4.gpr f = s.gpr f := by
     rw [v4.gpr, v3.other _ hf8, v2.other _ hf8, v1.other _ hf8]
-  refine wp_lbz (a := q + BitVec.ofNat 64 55) (by omega) (by rw [g4]; exact ea 55 (by decide))
+  refine wp_lbz (a := q + BitVec.ofNat 64 55) (by omega_using [ho]) (by rw [g4]; exact ea 55 (by decide))
     (by rw [v4.rd, v4.wr, v3.rd, v3.wr, v2.rd, v2.wr, v1.rd, v1.wr]; exact hr 55 (by decide)) fun s5 v5 => ?_
   refine wp_ori (by decide) fun s6 v6 => ?_
-  refine wp_sb (a := q + BitVec.ofNat 64 55) (by omega)
+  refine wp_sb (a := q + BitVec.ofNat 64 55) (by omega_using [ho])
     (by rw [v6.other _ hf8, v5.other _ hf8, g4]; exact ea 55 (by decide))
     (by rw [v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hw 55 (by decide)) fun s7 v7 => ?_
   refine wp_li (by decide) fun s8 v8 => ?_
-  refine wp_sb (a := q + BitVec.ofNat 64 56) (by omega)
+  refine wp_sb (a := q + BitVec.ofNat 64 56) (by omega_using [ho])
     (by rw [v8.other _ hf8, v7.gpr, v6.other _ hf8, v5.other _ hf8, g4]; exact ea 56 (by decide))
     (by rw [v8.wr, v7.wr, v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hw 56 (by decide)) fun t vt => ?_
   refine k t ?_ ?_ ?_ ?_ fun r hr => ?_

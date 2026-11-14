@@ -103,7 +103,7 @@ theorem storeAll_ok (r : Reg) {b : BitVec 32} : ∀ (ks : List Nat) {s : State},
 /-! ## `MK ⊕ FK` -/
 
 theorem tailAt_lt {c w : Nat} (hc : c < 8) (hw : w < 4) : tailAt c w < slots := by
-  simp only [tailAt, tailSlot_eq, slots_eq]; omega
+  simp only [tailAt, tailSlot_eq, slots_eq]; omega_using [hc, hw]
 
 /-- `mov eax, [ecx + 4 w]`, `ecx` holding `K`. -/
 theorem ldWord_ok (s : State) {K : BitVec 32} {w : Nat} (hK : s.gpr .ecx = K)
@@ -159,10 +159,10 @@ theorem tailBlock_bit (s : State) {b : BitVec 32} (hb : s.gpr sb = b) (hfit : b.
     {c i j : Nat} (hc : c < 8) (hi : i < 16) (hj : j < 8) :
     ((tailBlock s c).getD i 0).getLsbD j =
       (s.mem.readW (wordAddr b (tailAt c (i / 4))) 32).getLsbD (8 * (i % 4) + j) := by
-  rw [readW32_bit _ _ (by omega) hj, VG.Proof.Sm4.blockAt_getD _ _ hi, hb,
-    byte_addr b (k := tailAt c (i / 4)) rfl (by simp only [tailAt, tailSlot_eq]; rw [slots_eq] at hfit; omega),
+  rw [readW32_bit _ _ (by omega_using []) hj, VG.Proof.Sm4.blockAt_getD _ _ hi, hb,
+    byte_addr b (k := tailAt c (i / 4)) rfl (by simp only [tailAt, tailSlot_eq]; rw [slots_eq] at hfit; omega_using [hfit, hc, hi]),
     VG.Offset.add_add, tailAt]
-  rw [show 4 * tailSlot + 16 * c + i = 4 * (tailSlot + 4 * c + i / 4) + i % 4 by omega]
+  rw [show 4 * tailSlot + 16 * c + i = 4 * (tailSlot + 4 * c + i / 4) + i % 4 by omega_using []]
 
 /-- The tail buffer's blocks are `MK ⊕ FK`, from the key's words `K w`. -/
 theorem keyInit_rel {s : State} {b : BitVec 32} (hb : s.gpr sb = b) (hfit : b.toNat + 4 * slots ≤ 2 ^ 32)
@@ -173,14 +173,14 @@ theorem keyInit_rel {s : State} {b : BitVec 32} (hb : s.gpr sb = b) (hfit : b.to
   intro c hc w hw
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  have hi : 3 - k / 8 < 4 := by omega
-  rw [show k = 8 * (3 - (3 - k / 8)) + k % 8 by omega]
+  have hi : 3 - k / 8 < 4 := by omega_using []
+  rw [show k = 8 * (3 - (3 - k / 8)) + k % 8 by omega_using [hk]]
   simp only [VG.Proof.Sm4.ofBlock, keyInit]
-  rw [BitVec.getLsbD_xor, getLsbD_wordAt _ _ hi (by omega), getLsbD_wordAt _ _ hi (by omega),
-    tailBlock_bit s hb hfit hc (by omega) (by omega), show (4 * w + (3 - k / 8)) / 4 = w by omega,
-    hT c hc w hw, BitVec.getLsbD_xor, fkLE_bit (by omega), show (4 * w + (3 - k / 8)) % 4 = 3 - k / 8 by omega,
-    hK w hw _ hi _ (by omega)]
+  rw [BitVec.getLsbD_xor, getLsbD_wordAt _ _ hi (by omega_using []), getLsbD_wordAt _ _ hi (by omega_using []),
+    tailBlock_bit s hb hfit hc (by omega_using [hw]) (by omega_using []), show (4 * w + (3 - k / 8)) / 4 = w by omega_using [],
+    hT c hc w hw, BitVec.getLsbD_xor, fkLE_bit (by omega_using []), show (4 * w + (3 - k / 8)) % 4 = 3 - k / 8 by omega_using [],
+    hK w hw _ hi _ (by omega_using [])]
   congr 2
-  omega
+  omega_using []
 
 end VG.Proof.Sm4.X86

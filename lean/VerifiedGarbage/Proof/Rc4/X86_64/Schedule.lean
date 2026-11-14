@@ -26,13 +26,13 @@ theorem low_byte (b : Byte) : (b.setWidth 64).setWidth 8 = b := by
 theorem ofNat_low (r : Nat) : (BitVec.ofNat 64 r).setWidth 8 = BitVec.ofNat 8 r := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem mask255 (x : BitVec 64) : x &&& BitVec.ofNat 64 255 = (x.setWidth 8).setWidth 64 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [show (255 % 2 ^ 64 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem byte_add (a b : Byte) :
     a.setWidth 64 + b.setWidth 64 &&& BitVec.ofNat 64 255 = (a + b).setWidth 64 := by
@@ -40,7 +40,7 @@ theorem byte_add (a b : Byte) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega
+  omega_using []
 
 theorem byte_add3 (j a k : Byte) :
     j.setWidth 64 + a.setWidth 64 + k.setWidth 64 &&& BitVec.ofNat 64 255 =
@@ -49,7 +49,7 @@ theorem byte_add3 (j a k : Byte) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega
+  omega_using []
 
 /-! ## The identity permutation -/
 
@@ -64,7 +64,7 @@ theorem identity_step (s₀ s : State) {r : Nat} (hr : r < 256)
       t.zf = some (BitVec.ofNat 64 (r + 1) - BitVec.ofNat 64 256 == 0#64) := by
   obtain ⟨hm, hrd, hwr, hdi, hsi, hdx, hcx⟩ := h
   have hw : InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofNat 64 r) 1 :=
-    region_offset _ _ _ _ _ (by omega) (by omega) hp
+    region_offset _ _ _ _ _ (by omega_using [hr]) (by omega_using [hr]) hp
   have hadd : BitVec.ofNat 64 r + BitVec.ofNat 64 1 = BitVec.ofNat 64 (r + 1) := by
     rw [← BitVec.ofNat_add]
   unfold identityStep
@@ -85,7 +85,7 @@ theorem identity_loop (s₀ s : State) {r : Nat} (hr : r < 256)
     rfl
   · right
     have hnz : BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 256 ≠ 0#64 := by bv_omega
-    refine ⟨?_, 256 - (j + 1), by omega, j + 1, by omega, rfl, hu⟩
+    refine ⟨?_, 256 - (j + 1), by omega_using [hj, hrem], j + 1, by omega_using [hj, hend], rfl, hu⟩
     simp only [eval, hz, Option.map_some, beq_eq_false_iff_ne.mpr hnz, Bool.not_false]
 
 /-! ## One round -/
@@ -100,7 +100,7 @@ theorem schedule_before (s : State) (i j : Byte)
           s.mem (s.gpr .rsi + s.gpr .r8)).setWidth 64 ∧ Keep [.r9, .r10] s t ∧ t.mem = s.mem := by
   have hi : InRegions (s.rd ++ s.wr) (s.gpr .rdi + i.setWidth 64) 1 := by
     rw [byte_addr i]
-    exact region_offset _ _ _ _ _ (by have := i.isLt; omega) (by have := i.isLt; omega) hp
+    exact region_offset _ _ _ _ _ (by have := i.isLt; omega_using []) (by have := i.isLt; omega_using []) hp
   refine WP.mono (WP.keep (Q := fun t => t.gpr .r9 = (j + s.mem (s.gpr .rdi + BitVec.ofNat 64 i.toNat) +
       s.mem (s.gpr .rsi + s.gpr .r8)).setWidth 64 ∧ t.mem = s.mem) [.r9, .r10] ?_ (by decide +kernel))
     fun t ⟨h, hk⟩ => ⟨h.1, hk, h.2⟩
@@ -179,7 +179,7 @@ theorem schedule_step (s : State) (i j : Byte)
   rw [tm, tdi] at uax um
   have hw : InRegions u.wr (u.gpr .rdi + BitVec.ofNat 64 i.toNat) 1 := by
     rw [uk.2.2, tk.2.2, udi]
-    exact region_offset _ _ _ _ _ (by have := i.isLt; omega) (by have := i.isLt; omega) hp
+    exact region_offset _ _ _ _ _ (by have := i.isLt; omega_using []) (by have := i.isLt; omega_using []) hp
   refine WP.mono (schedule_after u i b ucx uax hw) fun v ⟨vm, v8, vcx, vz, vk⟩ => ?_
   refine ⟨?_, ?_, (vk.gpr (by decide)).trans u9, vcx, vz, (tk.trans uk).trans vk⟩
   · rw [vm, um, udi]
@@ -215,14 +215,14 @@ theorem schedule_inv_step (s₀ s : State) {r : Nat} (hr : r < 256)
   have hi : s.gpr .rcx = (BitVec.ofNat 8 r).setWidth 64 := by
     rw [h.i, byte_addr, hrt]
   have hpoint : InRegions s.wr (s.gpr .rdi) 256 := by rw [h.wr, h.p]; exact hp
-  have hmod := Nat.mod_lt r (show 0 < (s₀.gpr .rdx).toNat by omega)
+  have hmod := Nat.mod_lt r (show 0 < (s₀.gpr .rdx).toNat by omega_using [hlen])
   have hkeypoint : InRegions (s.rd ++ s.wr) (s.gpr .rsi + s.gpr .r8) 1 := by
     rw [h.rd, h.wr, h.key, h.off]
-    exact region_offset _ _ _ _ _ (by omega) (by omega) hk
+    exact region_offset _ _ _ _ _ (by omega_using [hmod]) (by omega_using [hmod]) hk
   have hkeybyte : s.mem (s.gpr .rsi + s.gpr .r8) = key.getD (r % key.length) 0 := by
     rw [h.key, h.off]
     have hsep := hs (s₀.gpr .rsi + BitVec.ofNat 64 (r % (s₀.gpr .rdx).toNat))
-      (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hmod)
+      (by rw [Mem.sub_ofNat_toNat _ (by omega_using [hmod])]; exact hmod)
     rw [h.frame _ hsep]
     dsimp only [key, keyAt]
     rw [bytes_length, bytes_get _ _ _ _ hmod]
@@ -247,7 +247,7 @@ theorem schedule_inv_step (s₀ s : State) {r : Nat} (hr : r < 256)
   · rw [t9, hrt, htablebyte, hkeybyte, hnext]
   · rw [tcx, hcast]
   · rw [t8, h.off, h.len]
-    exact key_next r _ (by omega) hlen.2
+    exact key_next r _ (by omega_using [hlen]) hlen.2
   · rw [tz, hcast]
 
 /-- All 256 scheduling rounds realize the complete specified permutation. -/
@@ -269,7 +269,7 @@ theorem schedule_loop (s₀ s : State) {r : Nat} (hr : r < 256)
     rfl
   · right
     have hnz : BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 256 ≠ 0#64 := by bv_omega
-    refine ⟨?_, 256 - (j + 1), by omega, j + 1, by omega, rfl, hu⟩
+    refine ⟨?_, 256 - (j + 1), by omega_using [hj, hrem], j + 1, by omega_using [hj, hend], rfl, hu⟩
     simp only [eval, hz, Option.map_some, beq_eq_false_iff_ne.mpr hnz, Bool.not_false]
 
 end VG.Proof.Rc4.X86_64

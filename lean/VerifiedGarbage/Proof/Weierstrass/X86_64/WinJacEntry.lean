@@ -39,7 +39,7 @@ theorem JFrame.bits (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : 
   intro t ht
   have hb := hL.bits
   have hn := hf.scr.nowrap
-  rw [hf.unch.byte (fun w hw => by have := hL.bits_w w hw; omega) (by omega)]
+  rw [hf.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_using [ht, this]) (by omega_using [ht, hb, hn])]
   exact hF.bits t ht
 
 /-- What `T` holds after the selection and the negation, from `s`: its powers

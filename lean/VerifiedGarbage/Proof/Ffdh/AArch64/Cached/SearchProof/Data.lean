@@ -234,7 +234,7 @@ theorem scalars_le (h : KeyInput p s) : p.scalars ≤ 128 := by
   rw [← h.2]; exact hs
 
 theorem len_lt (h : KeyInput p s) : p.len < 2 ^ 31 := by
-  have := h.len_bounds.2; omega
+  have := h.len_bounds.2; omega_using [this]
 
 end KeyInput
 

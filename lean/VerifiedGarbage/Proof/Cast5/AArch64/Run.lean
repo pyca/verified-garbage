@@ -115,7 +115,7 @@ theorem exec_cselc {sz : Size} {d n m : Reg} {cond : CondCode} :
 
 theorem exec_umov_w {d : Reg} {n : VReg} {i : Nat} (h : i < 4) :
     exec (.umov .w d n i) s = some (s.write .w d (vword (s.v n) i)) := by
-  simp only [exec, Size.bits, show i * 32 < 128 by omega, ite_true]
+  simp only [exec, Size.bits, show i * 32 < 128 by omega_using [h], ite_true]
   rfl
 
 theorem exec_sub {sz : Size} {d n m : Reg} :
@@ -200,8 +200,8 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
   · rw [hc', hc]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hk]
   · rw [hc', hc, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hN]
 
 end VG.Proof.Cast5.AArch64

@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 import VerifiedGarbage.Proof.AesCbc.X86_64.Group
 import VerifiedGarbage.Proof.AesCfb.X86_64.Group
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 meta import VerifiedGarbage.Impl.AesCfb.X86_64.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
 meta import VerifiedGarbage.Proof.AesCfb.X86_64.Verified
@@ -41,7 +41,7 @@ meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.Group
 meta import VerifiedGarbage.Proof.AesCfb.X86_64.Group
 meta import VerifiedGarbage.Impl.StackScratch.X86_64
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-CFB128 of a message's last piece on x86-64
@@ -77,7 +77,7 @@ Constant time (`final_rel`): the blocks by the taint analysis, the calls by
 their contracts' constant time (`RelCT.callEx`, `blk_rel`), every address
 and branch from the pointers and `len`, which agree in both runs.
 `encryptFinal_framed` runs the code with `save` in a frame of 64 bytes on
-the stack (`Verified.stackArgScratchWiped`), zeroed on return.
+the stack (`Verified.stackArgScratch`), which the scrub after it zeroes.
 -/
 
 @[expose] public section
@@ -318,17 +318,17 @@ include hp
 theorem FPre.blk_tail : (fBlk s₀).Disjoint (fTail s₀) := by
   have := hp.data_wrap
   have := Nat.div_add_mod (fL s₀) 16
-  exact Offset.base_disjoint _ (Nat.le_refl _) (by rw [fN_eq, fU_eq]; omega)
+  exact Offset.base_disjoint _ (Nat.le_refl _) (by rw [fN_eq, fU_eq]; omega_arith)
 
 theorem FPre.blk_wrap : (fD s₀).toNat + 16 * fN s₀ ≤ 2 ^ 64 := by
-  have := hp.data_wrap; have := Nat.mul_div_le (fL s₀) 16; rw [fN_eq]; omega
+  have := hp.data_wrap; have := Nat.mul_div_le (fL s₀) 16; rw [fN_eq]; omega_arith
 
 omit hp in
 theorem n_lt (s₀ : State) : fN s₀ < 2 ^ 64 := by
-  have := (s₀.gpr .r8).isLt; have : fL s₀ = (s₀.gpr .r8).toNat := rfl; rw [fN_eq]; omega
+  have := (s₀.gpr .r8).isLt; have : fL s₀ = (s₀.gpr .r8).toNat := rfl; rw [fN_eq]; omega_using [this]
 
 theorem FPre.sched_sub : Region.Sub ⟨fW s₀, 16 * (fR s₀ + 1)⟩ (fSch s₀) :=
-  Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega)
+  Region.sub_prefix (by rcases hp.rounds with h | h | h <;> omega_using [h])
 
 end
 
@@ -343,7 +343,7 @@ theorem blocksAt_frame' {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D 
     (hd : ∀ r ∈ rs, (⟨D, 16 * n⟩ : Region).Disjoint r) :
     Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n :=
   List.map_congr_left fun j hj => AesCbc.X86_64.bytesAt_frame hf
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have := List.mem_range.mp hj; omega))) (by decide)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by have := List.mem_range.mp hj; omega_using [this]))) (by decide)
 
 /-- The save changes only `save`. -/
 theorem svMem_frame (s₀ : State) : Frame [fSv s₀] s₀.mem (svMem s₀) :=
@@ -355,19 +355,19 @@ theorem and15 (x : BitVec 64) : x &&& 15#64 = BitVec.ofNat 64 (x.toNat % 16) := 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   rw [show (15 : Nat) % 2 ^ 64 = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_using []
 
 theorem shr4 (x : BitVec 64) : x >>> 4 = BitVec.ofNat 64 (x.toNat / 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+    Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem tail_addr (x c : BitVec 64) :
     x - BitVec.ofNat 64 (x.toNat % 16) + c = c + BitVec.ofNat 64 (16 * (x.toNat / 16)) := by
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem final_load_wp {s₀ : State} (hp : FPre s₀) :
     WP isa (.block loadSave) s₀ (· = s₀.setReg .rax (fV s₀)) :=
@@ -401,7 +401,7 @@ theorem final_setup_wp {s₀ : State} (hp : FPre s₀) :
     intro p hp'
     rw [wr_setReg, gpr_setReg_self, hp.wr]
     have := saved_slots p hp'
-    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨fSv s₀, by simp, Offset.contains_base _ (by omega_using [this]) (by omega_using [this])⟩
   show WP isa (.block (Spill.saveCode .rax finalSaved ++ finalMoves)) _ _
   refine Spill.save_then .rax finalSaved hw ?_
   refine WP.mono (WP.of_runBlock (moves_ok _))
@@ -490,7 +490,7 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.sch_sv.sub_left hp.sched_sub
-      · exact hp.stk_sch.symm.sub_left hp.sched_sub) (by rcases hp.rounds with h | h | h <;> omega)
+      · exact hp.stk_sch.symm.sub_left hp.sched_sub) (by rcases hp.rounds with h | h | h <;> omega_using [h])
   have eIv : bytesAt s.callEntry.mem (fIv s₀) 16 = fIv0 s₀ :=
     bytesAt_frame ef (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -539,7 +539,7 @@ theorem final_test_wp {M : Mode} {s₀ s : State} (h : Whole M s₀ s) :
     WP isa (.block [.alu .test .r14 (.reg .r14)]) s fun s' => Whole M s₀ s' ∧ s'.zf = some (decide (fU s₀ = 0)) :=
   WP.of_runBlock ⟨_, test_ok s, ⟨h.rbx, h.rbp, h.r12, h.r13, h.r14, h.r15, h.rsp, h.rd, h.wr, h.frame, h.blocks, h.iv⟩, by
     have eU := fU_eq s₀
-    rw [zf_arithFlags, BitVec.and_self, h.r14, beq_zero' (by have := Nat.mod_lt (fL s₀) (by decide : 16 > 0); omega)]⟩
+    rw [zf_arithFlags, BitVec.and_self, h.r14, beq_zero' (by have := Nat.mod_lt (fL s₀) (by decide : 16 > 0); omega_using [eU])]⟩
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n q : Nat} (hq : q < n) :
     (bytesAt m p n).getD q 0 = m (p + BitVec.ofNat 64 q) := by
@@ -568,7 +568,7 @@ theorem Whole.frame' {M : Mode} {s₀ s : State} (h : Whole M s₀ s) :
     · exact ⟨_, by simp, fun _ h => h⟩
 
 theorem done_of_zero {M : Mode} {s₀ s : State} (h : Whole M s₀ s) (hu : fU s₀ = 0) : Done M s₀ s :=
-  ⟨h.rsp, h.rd, h.wr, h.frame', h.blocks, fun q hq => absurd hq (by omega), by rw [ite_eq_left hu]; exact h.iv⟩
+  ⟨h.rsp, h.rd, h.wr, h.frame', h.blocks, fun q hq => absurd hq (by omega_using [hu]), by rw [ite_eq_left hu]; exact h.iv⟩
 
 /-- Everything the function writes, from entry. -/
 theorem big_frame {s₀ : State} {m : Mem} (hf : Frame [fIvR s₀, fData s₀, fScr s₀, fStk s₀] (svMem s₀) m) :
@@ -590,7 +590,7 @@ theorem FPre.sched_big {s₀ : State} (hp : FPre s₀) :
   · exact hp.stk_sch.symm.sub_left hp.sched_sub
 
 theorem FPre.sched_len {s₀ : State} (hp : FPre s₀) : 16 * (fR s₀ + 1) ≤ 2 ^ 64 := by
-  rcases hp.rounds with h | h | h <;> omega
+  rcases hp.rounds with h | h | h <;> omega_using [h]
 
 theorem final_ivArgs_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h : Whole M s₀ s) :
     WP isa (.block Impl.AesOfb.X86_64.ivArgs) s fun s' =>
@@ -680,7 +680,7 @@ theorem final_ciph_wp (v : BlocksImpl) {M : Mode} {s₀ : State} (hp : FPre s₀
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_sv.sub_left (tail_sub s₀)
   have hlen : (fTail s₀).len ≤ 2 ^ 64 := by
-    show fU s₀ ≤ 2 ^ 64; have := Nat.mod_lt (fL s₀) (by decide : 16 > 0); have := fU_eq s₀; omega
+    show fU s₀ ≤ 2 ^ 64; have := Nat.mod_lt (fL s₀) (by decide : 16 > 0); have := fU_eq s₀; omega_using [this]
   refine ⟨by rw [c.saved .r12 (by simp [calleeSaved]), hw.r12], by rw [c.saved .r13 (by simp [calleeSaved]), hw.r13],
     by rw [c.saved .r14 (by simp [calleeSaved]), hw.r14], by rw [c.saved .rsp (by simp [calleeSaved]), hw.rsp],
     by rw [c.rd, hw.rd], by rw [c.wr, hw.wr], hw.frame'.trans fc, ?_, fun q hq => ?_, ?_⟩
@@ -714,16 +714,16 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   have eN := fN_eq s₀
   have eU := fU_eq s₀
   have xp : Modes.X86_64.XPre (s.setReg .rax (s.gpr .r12)) (fIv s₀) (fT s₀) (fU s₀) .r13 .r14 := {
-    small := by omega
-    disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right (tail_sub s₀)
+    small := by omega_using [hU]
+    disj := (hp.iv_data.sub_left (Region.sub_prefix (by omega_using [hU]))).sub_right (tail_sub s₀)
     rdK := fun q hq => by
       rw [rd_setReg, wr_setReg, h.rd, h.wr, hp.rd, hp.wr]
-      exact ⟨fIvR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨fIvR s₀, by simp, Offset.contains_base _ (by omega_using [hU, hq]) (by omega_using [hU, hq])⟩
     wrR := fun q hq => by
       rw [wr_setReg, h.wr, hp.wr]
       refine ⟨fData s₀, by simp, ?_⟩
       rw [show fT s₀ + BitVec.ofNat 64 q = fD s₀ + BitVec.ofNat 64 (16 * fN s₀ + q) from Offset.add_add _ _ _]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [eN, eU, hq]) (by omega_using [hU, hT, hq])
     dl := by decide
     dRax := by decide
     dR10 := by decide
@@ -733,7 +733,7 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
     rax := by rw [gpr_setReg_self, h.r12]; exact (BitVec.add_zero _).symm
     dat := by rw [gpr_setReg_of_ne _ _ (by decide), h.r13]; exact (BitVec.add_zero _).symm
     left := by rw [gpr_setReg_of_ne _ _ (by decide), h.r14, Nat.sub_zero]
-    lt := by omega
+    lt := by omega_using [hu]
     data := fun q _ => by rw [ite_eq_right (Nat.not_lt_zero q)]
     frame := Frame.refl _ _
     rd := rfl
@@ -749,7 +749,7 @@ theorem final_xor_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
   · rw [blocksAt_frame' d.frame fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.blk_tail]
     exact h.blocks
-  · rw [d.data q hq, mem_setReg, h.tailb q hq, ← bytesAt_getD s.mem (fIv s₀) (show q < 16 by omega), h.iv]
+  · rw [d.data q hq, mem_setReg, h.tailb q hq, ← bytesAt_getD s.mem (fIv s₀) (show q < 16 by omega_using [hU, hq]), h.iv]
   · rw [ite_eq_right hu, bytesAt_frame d.frame ivT (by decide), mem_setReg, h.iv]
 
 theorem final_mid_wp (v : BlocksImpl) {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h : Whole M s₀ s)
@@ -812,7 +812,7 @@ theorem final_end_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
     fun s' ⟨g₁, g₂, mem', _, _⟩ => ?_
   · rw [rd_setReg, wr_setReg, gpr_setReg_self, h.rd, h.wr, hp.rd, hp.wr]
     have := saved_slots p hp'
-    exact ⟨fSv s₀, by simp, Offset.contains_base _ this (by omega)⟩
+    exact ⟨fSv s₀, by simp, Offset.contains_base _ this (by omega_using [this])⟩
   · have cs := Spill.calleeSaved_ok g₁ g₂ (by decide)
       (show _ = (s₀.setReg .rax (fV s₀)).gpr .rsp by
         rw [gpr_setReg_of_ne _ _ (by decide), gpr_setReg_of_ne _ _ (by decide), h.rsp])
@@ -1100,10 +1100,11 @@ theorem decryptFinal_verified (v : BlocksImpl) :
 /-! ## With `save` on the stack
 
 The final functions have six argument words, so `save` is their first stack
-argument: they run their code in a frame of 64 bytes (`withStackArgScratchWiped`):
+argument: they run their code in a frame of 64 bytes (`withStackArgScratch`):
 the quadword standing for the return address, `save`'s address, and `save`'s
-48 bytes, which it zeroes before returning. The code's calls use 16 bytes
-below it, so 80 in all. -/
+48 bytes, which the scrub after it zeroes with the rest of the stack
+(`Proof.Aes.X86_64.FinalScrub`). The code's calls use 16 bytes below it, so
+80 in all. -/
 
 /-- A state satisfying the precondition, without `save`. -/
 def finalFrameSat : State :=
@@ -1119,34 +1120,30 @@ theorem decFrameSat_pre : ∃ s, (decryptFinalRoundsContract X86_64.abi 80).pre 
 
 theorem encryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (encryptFinal v.enc v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (encryptFinal v.enc v.suffix))
       (encryptFinalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := encryptFinalPost X86_64.abi.ptrBits) (wa := false)
-    (stack := 16) (bytes := 64) (words := 6) (encryptFinal_verified v) (by decide) (by decide) (by decide)
-    (encryptFinal_spSafe v) (encryptFinal_xdepth v) (by decide) (finalPre_local _) (encryptFinalPost_local _)
-    (encryptFinalPost_localOut _) encFrameSat_pre
+    (stack := 16) (bytes := 64) (encryptFinal_verified v) (by decide) (by decide) (by decide)
+    (encryptFinal_spSafe v) (encryptFinal_xdepth v) (finalPre_local _) (encryptFinalPost_local _) encFrameSat_pre
 
 theorem decryptFinal_framed (v : BlocksImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (decryptFinal v.enc v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (decryptFinal v.enc v.suffix))
       (decryptFinalRoundsContract X86_64.abi 80) :=
-  X86_64.Verified.stackArgScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
+  X86_64.Verified.stackArgScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 6)
     (pre := finalPre X86_64.abi.ptrBits) (post := decryptFinalPost X86_64.abi.ptrBits) (wa := false)
-    (stack := 16) (bytes := 64) (words := 6) (decryptFinal_verified v) (by decide) (by decide) (by decide)
-    (decryptFinal_spSafe v) (decryptFinal_xdepth v) (by decide) (finalPre_local _) (decryptFinalPost_local _)
-    (decryptFinalPost_localOut _) decFrameSat_pre
+    (stack := 16) (bytes := 64) (decryptFinal_verified v) (by decide) (by decide) (by decide)
+    (decryptFinal_spSafe v) (decryptFinal_xdepth v) (finalPre_local _) (decryptFinalPost_local _) decFrameSat_pre
 
 theorem encryptFinal_framed_spSafe (v : BlocksImpl) :
-    (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (encryptFinal v.enc v.suffix)).all
+    (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (encryptFinal v.enc v.suffix)).all
       (fun i => !X86_64.isa.writesSp i) = true :=
-  X86_64.withStackArgScratch_spSafe (by
-    simp only [Code.all, encryptFinal_spSafe v, X86_64.wipeAt_spSafe, Bool.and_self])
+  X86_64.withStackArgScratch_spSafe (encryptFinal_spSafe v)
 
 theorem decryptFinal_framed_spSafe (v : BlocksImpl) :
-    (Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (decryptFinal v.enc v.suffix)).all
+    (Impl.StackScratch.X86_64.withStackArgScratch 64 0 (decryptFinal v.enc v.suffix)).all
       (fun i => !X86_64.isa.writesSp i) = true :=
-  X86_64.withStackArgScratch_spSafe (by
-    simp only [Code.all, decryptFinal_spSafe v, X86_64.wipeAt_spSafe, Bool.and_self])
+  X86_64.withStackArgScratch_spSafe (decryptFinal_spSafe v)
 
 end VG.Proof.AesCfb.X86_64

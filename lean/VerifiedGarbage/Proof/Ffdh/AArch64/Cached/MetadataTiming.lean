@@ -60,8 +60,8 @@ theorem metadataTail_ct : RelCT isa (Two MetadataTailReady) (.block Policy.metad
  have frame :=writeW_outside s.mem q.B (d:=8*sRows) (s.gpr .x13) (by decide : 8*sRows+8≤2^64)
  have pointer :=(frame.word (Or.inl (by decide : 8*sCtx+8≤8*sRows)) (by decide)).trans h.context
  brun [h.base,hdr_enc (show sRows<32 by decide),hdr_enc (show sCtx<32 by decide),
-  h.scratch.st (d:=8*sRows) (by have :=q.room;unfold sRows;omega),
-  h.scratch.ld (d:=8*sCtx) (by have :=q.room;unfold sCtx;omega),pointer]
+  h.scratch.st (d:=8*sRows) (by have :=q.room;unfold sRows;omega_using [this]),
+  h.scratch.ld (d:=8*sCtx) (by have :=q.room;unfold sCtx;omega_using [this]),pointer]
 
 theorem metadata_ct : RelCT isa (Two MetadataReady) Policy.metadata (fun _ _ =>True) := by
  unfold Policy.metadata

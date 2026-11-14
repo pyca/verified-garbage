@@ -38,18 +38,18 @@ theorem FixedGenerator.keep {C : Curve} {base T : Addr} {size : Nat}
       word s.mem (T+BitVec.ofNat 64 (288*(a-1))) (8*i) := by
     apply Mem.readW_congr
     intro b hb
-    have ho := h.outside a ha ha32 i hi b (by omega)
+    have ho := h.outside a ha ha32 i hi b (by omega_using [hb])
     apply hk.mem
-    · intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega)
-    · dsimp only [off]; exact Or.inr (by omega)
+    · intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega_using [ho, this])
+    · dsimp only [off]; exact Or.inr (by omega_using [htmp, ho])
   have val (a o : Nat) (ha : 1≤a) (ha32 : a≤32) (ho : o=0 ∨ o=72) :
       wordsVal t.mem (T+BitVec.ofNat 64 (288*(a-1))) o 9=
       wordsVal s.mem (T+BitVec.ofNat 64 (288*(a-1))) o 9 := by
     apply wordsVal_of_words₂
     intro i hi
     rcases ho with rfl | rfl
-    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega)
-    · have e := wordeq a (9+i) ha ha32 (by omega)
+    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega_using [hi])
+    · have e := wordeq a (9+i) ha ha32 (by omega_using [hi])
       simpa only [Nat.mul_add] using e
   refine ⟨?_,?_,h.outside,?_,?_⟩
   · rw [hsym]; exact h.symbol
@@ -72,17 +72,17 @@ theorem FixedGenerator.unch {C : Curve} {base T : Addr} {size : Nat}
    intro b hb
    apply hu
    intro w hm
-   have ho := h.outside a ha ha32 i hi b (by omega)
+   have ho := h.outside a ha ha32 i hi b (by omega_using [hb])
    have := hw w hm
-   exact Or.inr (by dsimp only [off]; omega)
+   exact Or.inr (by dsimp only [off]; omega_using [ho, this])
  have val (a o : Nat) (ha : 1≤a) (ha32 : a≤32) (ho : o=0 ∨ o=72) :
    wordsVal t.mem (T+BitVec.ofNat 64 (288*(a-1))) o 9=
    wordsVal s.mem (T+BitVec.ofNat 64 (288*(a-1))) o 9 := by
    apply wordsVal_of_words₂
    intro i hi
    rcases ho with rfl | rfl
-   · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega)
-   · simpa only [Nat.mul_add] using wordeq a (9+i) ha ha32 (by omega)
+   · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega_using [hi])
+   · simpa only [Nat.mul_add] using wordeq a (9+i) ha ha32 (by omega_using [hi])
  refine ⟨hsy ▸ h.symbol,?_,h.outside,?_,?_⟩
  · intro a ha ha32 i hi; rw [hr,hwr]; exact h.read a ha ha32 i hi
  · intro a ha ha32; rw [val a 0 ha ha32 (by simp),val a 72 ha ha32 (by simp)]

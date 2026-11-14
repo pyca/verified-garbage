@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.X448
 import Batteries.Tactic.Init
 import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X448: radix-2²⁸ arithmetic
@@ -35,13 +36,13 @@ theorem valN_congr {f g : Nat → Nat} {n : Nat}
     (h : ∀ i < n, f i = g i) : valN f n = valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, ih (fun i hi => h i (by omega)), h n (by omega)]
+  | succ n ih => rw [valN, valN, ih (fun i hi => h i (by omega_using [hi])), h n (by omega_using [])]
 
 theorem valN_add (f g : Nat → Nat) (n : Nat) :
     valN (fun i => f i + g i) n = valN f n + valN g n := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [valN, valN, valN, ih, Nat.mul_add]; omega
+  | succ n ih => rw [valN, valN, valN, ih, Nat.mul_add]; omega_using []
 
 theorem valN_split (f : Nat → Nat) (a b : Nat) :
     valN f (a + b) = valN f a + radix ^ a * valN (fun i => f (a + i)) b := by
@@ -54,12 +55,12 @@ theorem valN_lt {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < radix) :
   induction n with
   | zero => simp only [valN, Nat.pow_zero]; decide
   | succ n ih =>
-    have hn := h n (by omega)
-    have hp := ih fun i hi => h i (by omega)
+    have hn := h n (by omega_using [])
+    have hp := ih fun i hi => h i (by omega_using [hi])
     have hm := Nat.mul_le_mul_left (radix ^ n) hn
     rw [Nat.mul_succ] at hm
     rw [valN, Nat.pow_succ]
-    omega
+    omega_using [hp, hm]
 
 /-- The incoming carry at position `n`. -/
 def carry (f : Nat → Nat) : Nat → Nat
@@ -80,16 +81,16 @@ theorem pass_eq (f : Nat → Nat) (n : Nat) :
     change digit f n + radix * carry f (n + 1) = f n + carry f n at hd
     rw [valN, valN, Nat.pow_succ, Nat.mul_assoc, Nat.add_assoc, ← Nat.mul_add, hd,
       Nat.mul_add]
-    omega
+    omega_using [ih]
 
 theorem carry_bound {f : Nat → Nat} {n : Nat} (h : ∀ i < n, f i < 2 ^ 62) :
     carry f n < 2 ^ 35 := by
   induction n with
   | zero => simp only [carry]; decide
   | succ n ih =>
-    have hi := ih fun i hi => h i (by omega)
-    have hn := h n (by omega)
+    have hi := ih fun i hi => h i (by omega_using [hi])
+    have hn := h n (by omega_using [])
     simp only [carry, radix]
-    omega
+    omega_using [hi, hn]
 
 end VG.Proof.X448

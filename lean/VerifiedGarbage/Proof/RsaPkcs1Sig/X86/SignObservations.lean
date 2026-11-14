@@ -22,7 +22,7 @@ theorem arguments {s t : State} (H : (Spec.RsaPkcs1Sig.signContract abi sigStack
   constructor
   · assumption
   · intro i hi
-    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 := by omega
+    have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 := by omega_using [hi]
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem publicBytes {s t : State} (H : (Spec.RsaPkcs1Sig.signContract abi sigStack).pub s t) :
@@ -49,8 +49,8 @@ theorem publicGeometry {s t : State} (H : (Spec.RsaPkcs1Sig.signContract abi sig
     funext i
     apply args
     split
-    · omega
-    · split <;> omega
+    · omega_using []
+    · split <;> omega_using []
   simp only [signGeometry, sp, sources, args 0 (by decide), args 19 (by decide),
     args 3 (by decide), args 5 (by decide), args 10 (by decide), args 12 (by decide), args 20 (by decide), args 6 (by decide), args 8 (by decide)]
 end VG.Proof.RsaPkcs1Sig.X86.Sgn

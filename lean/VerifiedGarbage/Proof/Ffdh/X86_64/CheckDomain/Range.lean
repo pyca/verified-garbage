@@ -101,20 +101,20 @@ theorem range_frame {p : CdP} {mi : BitVec 64} {s t : State} {regs : List Reg}
   have hF := hdr_lt_slot p.w 8 (show sF < 32 by decide)
   have hr : ∀ r ∈ rangeRanges p.w, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot p.w 8 := by
     simp only [rangeRanges, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sF sFn at * <;> omega
+    rintro r (rfl | rfl) <;> simp only <;> unfold sF sFn at * <;> omega_arith
   have hsep : ∀ {j}, j < 8 → aTmp ≠ j → ∀ r ∈ rangeRanges p.w,
       r.1 + r.2 ≤ slot p.w j ∨ slot p.w j + 8 * (p.w + 2) ≤ r.1 := fun {j} hj hne r he => by
     have hTJ := slot_sep (w := p.w) hne
     have hFJ := hdr_lt_slot p.w j (show sF < 32 by decide)
     simp only [rangeRanges, List.mem_cons, List.not_mem_nil, or_false] at he
-    rcases he with rfl | rfl <;> simp only <;> omega
+    rcases he with rfl | rfl <;> simp only <;> omega_arith
   obtain ⟨hw, hi, hh⟩ := h.child hd hf hr (hsep (by decide) (by decide)) (hsep (by decide) (by decide)) k
   refine ⟨hw, hi, hh, hf.wv_eq (fun r he => ?_) ?_⟩
   · have := hsep (show aXm < 8 by decide) (by decide) r he
-    omega
+    omega_using [this]
   · have := (h.mem.ctx hd).good.scr.nowrap
     have := slot_le (w := p.w) (show aXm < 8 by decide)
-    omega
+    omega_arith
 
 theorem component_range {p : CdP} {mi : BitVec 64} {s : State} {n : Nat}
     (h : Work p mi s) (hd : s.gpr .rdi = off p.B (inner p.w))
@@ -126,8 +126,8 @@ theorem component_range {p : CdP} {mi : BitVec 64} {s : State} {n : Nat}
       wv t.mem (off p.B (inner p.w)) (slot p.w aXm) p.w = n) := by
   have hk := h.base.k1
   have hk' := h.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  refine WP.mono (range_ok (h.mem.ctx hd).good (Nat.le_refl _) (by omega) (by omega)
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  refine WP.mono (range_ok (h.mem.ctx hd).good (Nat.le_refl _) (by omega_using [hk, ew]) (by omega_using [hk', ew])
     (show aXm < 8 by decide) (by decide) h.xv.one) fun t ⟨ha, hF, hf, k⟩ => ?_
   rw [hx, h.xv.n] at ha
   obtain ⟨hw, hi, hh, hx'⟩ := range_frame h hd hf k
@@ -161,9 +161,9 @@ theorem order_range {p : CdP} {mi : BitVec 64} {s : State}
     (WP.mono (component_range hw₁ hd₁ hx₁) fun u₂ S₂ => ?_)
   obtain ⟨hw₂, hd₂, ha₂, hF₂, hx₂⟩ := S₂.1
   have hk := hw₂.base.k1
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   refine wp_seqs_append (a := isOdd aXm) (by simp [isOdd]) (by simp)
-    (WP.mono (isOdd_ok (hw₂.mem.ctx hd₂).good (Nat.le_refl _) (by omega) (show aXm < 8 by decide))
+    (WP.mono (isOdd_ok (hw₂.mem.ctx hd₂).good (Nat.le_refl _) (by omega_using [hk, ew]) (show aXm < 8 by decide))
       fun u₃ ⟨ha₃, hm₃, k₃⟩ => ?_)
   rw [hx₂] at ha₃
   have hw₃ := hw₂.keep hm₃ k₃

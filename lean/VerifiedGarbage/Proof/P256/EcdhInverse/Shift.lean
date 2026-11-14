@@ -21,7 +21,7 @@ theorem signed_extract (x : BitVec 64) {k : Nat} (hk : k<64) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb',BitVec.getLsbD_append,
-    BitVec.getLsbD_sshiftRight,show ¬64≤i by omega,decide_false,
+    BitVec.getLsbD_sshiftRight,show ¬64≤i by omega_using [hi],decide_false,
     Bool.not_false,Bool.true_and]
   by_cases hki : k+i<64
   · simp only [hki,↓reduceIte,hi,decide_true,Bool.true_and]
@@ -32,7 +32,7 @@ theorem signed_extract (x : BitVec 64) {k : Nat} (hk : k<64) :
       exact BitVec.getLsbD_zero
     · simp only [↓reduceIte,hi,decide_true,Bool.true_and,
         show -(1 : BitVec 64)=BitVec.allOnes 64 by decide,
-        BitVec.getLsbD_allOnes,show k+i-64<64 by omega,decide_true]
+        BitVec.getLsbD_allOnes,show k+i-64<64 by omega_using [hk, hi],decide_true]
 
 
 /-- Signed shifts agree with integer division on a representable input. -/
@@ -61,7 +61,7 @@ theorem msb_ofInt {d : Int} (hd : -(2^63)≤d ∧ d<2^63) :
   cases h : (BitVec.ofInt 64 d).msb
   · have hn := BitVec.toInt_nonneg_of_msb_false h
     rw [hi] at hn
-    exact (decide_eq_false (by omega)).symm
+    exact (decide_eq_false (by omega_using [hn])).symm
   · have hn := BitVec.toInt_neg_of_msb_true h
     rw [hi] at hn
     exact (decide_eq_true hn).symm
@@ -73,11 +73,11 @@ theorem ofInt_parity (g : Int) : (BitVec.ofInt 64 g &&& 1 = 0) ↔ g%2=0 := by
   rw [VG.Proof.Divstep.and_one_word]
   by_cases h : (BitVec.ofInt 64 g).toNat%2=1
   · rw [ite_eq_left h]
-    have hh : g%2=1 := by omega
+    have hh : g%2=1 := by omega_using [hc, h]
     simp only [hh]
     decide
   · rw [ite_eq_right h]
-    have hh : g%2=0 := by omega
+    have hh : g%2=0 := by omega_using [hc, h]
     simp only [hh]
 
 end VG.Proof.P256.EcdhInverse

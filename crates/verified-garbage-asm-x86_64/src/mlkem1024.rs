@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_mlkem1024_keygen_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
 
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -20,27 +22,29 @@ pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_keygen_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_keygen_body_avx512 = sym super::mlkem1024::vg_mlkem1024_keygen_body_avx512::vg_mlkem1024_keygen_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
 /// The CPU features `vg_mlkem1024_encaps_h_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
 
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -56,27 +60,29 @@ pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features 
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx512(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem1024_encaps_h_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body_avx512 = sym super::mlkem1024::vg_mlkem1024_encaps_h_body_avx512::vg_mlkem1024_encaps_h_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
 /// The CPU features `vg_mlkem1024_encaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
 
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -90,27 +96,29 @@ pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx512(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem1024_encaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_body_avx512 = sym super::mlkem1024::vg_mlkem1024_encaps_body_avx512::vg_mlkem1024_encaps_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
 /// The CPU features `vg_mlkem1024_decaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
+pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512BW);
 
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -122,18 +130,18 @@ pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = 
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f`, `avx512vl` and `avx512bw` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2`, `avx512vl` and `avx512bw` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_decaps_body_avx512}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_decaps_body_avx512 = sym super::mlkem1024::vg_mlkem1024_decaps_body_avx512::vg_mlkem1024_decaps_body_avx512,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -143,6 +151,8 @@ pub const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -161,11 +171,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx2(seed: *const [u8; 
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_keygen_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_keygen_body_avx2 = sym super::mlkem1024::vg_mlkem1024_keygen_body_avx2::vg_mlkem1024_keygen_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -175,6 +185,8 @@ pub const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = 
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -197,11 +209,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx2(ek: *const [u8; 
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem1024_encaps_h_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body_avx2 = sym super::mlkem1024::vg_mlkem1024_encaps_h_body_avx2::vg_mlkem1024_encaps_h_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -211,6 +223,8 @@ pub const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -231,11 +245,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx2(ek: *const [u8; 15
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem1024_encaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_body_avx2 = sym super::mlkem1024::vg_mlkem1024_encaps_body_avx2::vg_mlkem1024_encaps_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -245,6 +259,8 @@ pub const VG_MLKEM1024_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = ve
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -263,11 +279,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 31
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_decaps_body_avx2}
 .base64 "SIkEJEiLfCQIvgCSAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_decaps_body_avx2 = sym super::mlkem1024::vg_mlkem1024_decaps_body_avx2::vg_mlkem1024_decaps_body_avx2,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -277,6 +293,8 @@ pub const VG_MLKEM1024_KEYGEN_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -295,11 +313,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx(seed: *const [u8; 6
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_keygen_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -309,6 +327,8 @@ pub const VG_MLKEM1024_ENCAPS_H_AVX_FEATURES: verified_garbage_cpu::Features = v
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -331,11 +351,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx(ek: *const [u8; 1
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem1024_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -345,6 +365,8 @@ pub const VG_MLKEM1024_ENCAPS_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -365,11 +387,11 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx(ek: *const [u8; 156
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem1024_encaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
@@ -379,6 +401,8 @@ pub const VG_MLKEM1024_DECAPS_AVX_FEATURES: verified_garbage_cpu::Features = ver
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -397,17 +421,19 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx(dk: *const [u8; 316
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_decaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_avx_core}
+.base64 "SIsEJEiNZCQQxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJMjF/n9EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+        vg_zeroize_avx_core = sym super::zeroize::vg_zeroize_avx_core::vg_zeroize_avx_core,
     )
 }
 
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -425,17 +451,19 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen(seed: *const [u8; 64], 
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_keygen_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_core}
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -457,17 +485,19 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568]
         r#".base64 "SI1kJPBMiUwkCA=="
 call {vg_mlkem1024_encaps_h_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_core}
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -487,17 +517,19 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], 
         r#".base64 "SI1kJPBMiUQkCA=="
 call {vg_mlkem1024_encaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_core}
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -515,17 +547,19 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], 
         r#".base64 "SI1kJPBIiUwkCA=="
 call {vg_mlkem1024_decaps_body}
 .base64 "SIkEJEiLfCQIvgDAAAA="
-call {vg_zeroize}
-.base64 "SIsEJEiNZCQQww=="
+call {vg_zeroize_core}
+.base64 "SIsEJEiNZCQQZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJMjzD39EJCjzD39EJBjzD39EJAhMiRwkSI1kJDiJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
-        vg_zeroize = sym super::zeroize::vg_zeroize,
+        vg_zeroize_core = sym super::zeroize::vg_zeroize_core::vg_zeroize_core,
     )
 }
 
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -538,7 +572,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]
 20:
 .base64 "D7YHD7ZXAcHKGAHQD7ZXAsHKEAHQicIl/w8AAMHqDD0BDQAASYPQAIH6AQ0AAEmD0ABIg8cDSIPpAQ=="
 jne 20b
-.base64 "SYH4AAQAAEgZwEiDwAHD"
+.base64 "SYH4AAQAAEgZwEiDwAGJwDHJMdIx/0UxwMM="
 .p2align 6"#,
     )
 }
@@ -549,6 +583,8 @@ pub const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = 
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
 /// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -565,7 +601,7 @@ lea rax, [rip + {VG_MLKEM_YCONSTS}]
 20:
 .base64 "xOJ9WgfEwn0AwMTCfUXBxa3bwMTBffrDxe3b0EiDxwxIg+kB"
 jne 20b
-.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfD"
+.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/+JwDHJMf/D"
 .p2align 6"#,
         VG_MLKEM_YCONSTS = sym super::consts::VG_MLKEM_YCONSTS,
     )

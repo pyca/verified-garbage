@@ -168,8 +168,8 @@ theorem cachedDigit_relCT (raw : RawCorrect) {base : Addr} {u v j : Nat}
       s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j ∧
       s.gpr .x2=(FastNaf.byte 5 v j).setWidth 64 ∧ t.gpr .x2=(FastNaf.byte 5 v j).setWidth 64) := by
     intro s t ts tt s' t' ⟨hp,cs,ct,ps,pt⟩ es et
-    obtain ⟨_,_,xs,vs,ks⟩ := nafRead_ok hp.left.scr (by decide) (by change 1824+j<8192; omega) ps (cs.peer.bits j hj) .x2
-    obtain ⟨_,_,xt,vt,kt⟩ := nafRead_ok hp.right.scr (by decide) (by change 1824+j<8192; omega) pt (ct.peer.bits j hj) .x2
+    obtain ⟨_,_,xs,vs,ks⟩ := nafRead_ok hp.left.scr (by decide) (by change 1824+j<8192; omega_using [hj]) ps (cs.peer.bits j hj) .x2
+    obtain ⟨_,_,xt,vt,kt⟩ := nafRead_ok hp.right.scr (by decide) (by change 1824+j<8192; omega_using [hj]) pt (ct.peer.bits j hj) .x2
     obtain ⟨_,rfl⟩ := Exec.det es xs
     obtain ⟨_,rfl⟩ := Exec.det et xt
     have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x19]) s t := by
@@ -196,8 +196,8 @@ theorem cachedDigit_relCT (raw : RawCorrect) {base : Addr} {u v j : Nat}
       rw [read_x,s2,hb] at hn
       contradiction
     have entry := entry_relCT (base:=base) (P:=P) (E:=E) (u:=u) (v:=v)
-      hL (by omega) hm hj
-      (by rw [magnitude_byte]; omega) (by rw [magnitude_byte]; exact FastNaf.magnitude_le (Or.inl rfl) v j) hc.entry
+      hL (by omega_using []) hm hj
+      (by rw [magnitude_byte]; omega_using [anz]) (by rw [magnitude_byte]; exact FastNaf.magnitude_le (Or.inl rfl) v j) hc.entry
     have add := fun E' => cachedSum_relCT raw (base:=base) (E:=E') hm hOne hc.add hc.copy
     exact (RelCT.seq entry (RelCT.exists_ add)) _ _ _ _ _ _
       ⟨hp,cs,ct,s19,t19,s2,t2⟩ es et

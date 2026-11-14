@@ -31,14 +31,14 @@ theorem finish_meta {mem : Mem} {base : BitVec 32} {size top tmp a b mod acc n i
     apply BitVec.eq_of_toNat_eq
     change w32 (finishMem mem (State.addr base) top tmp) (State.addr base) (tmp + d) =
       w32 mem (State.addr base) (tmp + d)
-    rw [finishMem, w32_write_ne hb (by omega) (by omega) (by omega),
-      w32_write_ne hb (by omega) (by omega) (by omega),
-      w32_write_ne hb (by omega) (by omega) (by omega)]
+    rw [finishMem, w32_write_ne hb (by omega_using [fit]) (by omega_using [fit, hd]) (by omega_using [sep]),
+      w32_write_ne hb (by omega_using [fit]) (by omega_using [fit, hd]) (by omega_using [sep]),
+      w32_write_ne hb (by omega_using [fit, htmp]) (by omega_using [fit, hd]) (by omega_using [htmp])]
   have ap : (finishMem mem (State.addr base) top tmp).readW (off (State.addr base) (tmp + 16)) 32 =
       mem.readW (off (State.addr base) (tmp + 16)) 32 + 4 := by
     apply BitVec.eq_of_toNat_eq
     change w32 (finishMem mem (State.addr base) top tmp) (State.addr base) (tmp + 16) = _
-    rw [finishMem, w32_write_ne hb (by omega) (by omega) (by omega), w32_write_self]
+    rw [finishMem, w32_write_ne hb (by omega_using [fit]) (by omega_using [fit]) (by omega_using []), w32_write_self]
   have count : (finishMem mem (State.addr base) top tmp).readW (off (State.addr base) (tmp + 20)) 32 =
       mem.readW (off (State.addr base) (tmp + 20)) 32 - 1 := by
     rw [finishMem, Mem.readW_writeW_self32]
@@ -53,7 +53,7 @@ theorem finish_meta {mem : Mem} {base : BitVec 32} {size top tmp a b mod acc n i
     congr 1
   · rw [count, hdr.remaining]
     change BitVec.ofNat 32 (n - i) - BitVec.ofNat 32 1 = _
-    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)]
+    rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hi])]
     congr 1
 
 theorem finish_value {mem : Mem} {base : Addr} {size acc top tmp n : Nat}
@@ -63,21 +63,21 @@ theorem finish_value {mem : Mem} {base : Addr} {size acc top tmp n : Nat}
       Outs base [(acc, 4 * (n + 2)), (tmp + 16, 8)] mem (finishMem mem base top tmp) := by
   have k1 := writeW32_outside mem base (d := top) (0 : BitVec 32) (by omega)
   have k2 := writeW32_outside (mem.writeW (off base top) (0 : BitVec 32)) base (d := tmp + 16)
-    (mem.readW (off base (tmp + 16)) 32 + 4) (by omega)
+    (mem.readW (off base (tmp + 16)) 32 + 4) (by omega_using [nowrap, fit])
   have k3 := writeW32_outside ((mem.writeW (off base top) (0 : BitVec 32)).writeW
     (off base (tmp + 16)) (mem.readW (off base (tmp + 16)) 32 + 4)) base (d := tmp + 20)
-    (mem.readW (off base (tmp + 20)) 32 - 1) (by omega)
-  have low1 := k1.val32 (d := acc) (k := n + 1) (by omega) (by omega)
-  have low2 := k2.val32 (d := acc) (k := n + 1) (by omega) (by omega)
-  have low3 := k3.val32 (d := acc) (k := n + 1) (by omega) (by omega)
-  have hi2 := k2.w32 (d := top) (by omega) (by omega)
-  have hi3 := k3.w32 (d := top) (by omega) (by omega)
+    (mem.readW (off base (tmp + 20)) 32 - 1) (by omega_using [nowrap, fit])
+  have low1 := k1.val32 (d := acc) (k := n + 1) (by omega_using [htop]) (by omega)
+  have low2 := k2.val32 (d := acc) (k := n + 1) (by omega_using [htop, htmp]) (by omega)
+  have low3 := k3.val32 (d := acc) (k := n + 1) (by omega_using [htop, htmp]) (by omega)
+  have hi2 := k2.w32 (d := top) (by omega_using [htmp]) (by omega)
+  have hi3 := k3.w32 (d := top) (by omega_using [htmp]) (by omega)
   refine ⟨?_, ?_⟩
-  · rw [show n + 2 = (n + 1) + 1 by omega, val32_succ, finishMem, low3, low2, low1,
+  · rw [show n + 2 = (n + 1) + 1 by omega_using [], val32_succ, finishMem, low3, low2, low1,
       ← htop, hi3, hi2, w32_write_self]
     simp only [show (0 : BitVec 32).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero]
-  · exact (Outs.of_outside (k1.mono (o' := acc) (n' := 4 * (n + 2)) (by omega) (by omega)) (by simp)).trans
-      ((Outs.of_outside (k2.mono (o' := tmp + 16) (n' := 8) (by omega) (by omega)) (by simp)).trans
-        (Outs.of_outside (k3.mono (o' := tmp + 16) (n' := 8) (by omega) (by omega)) (by simp)))
+  · exact (Outs.of_outside (k1.mono (o' := acc) (n' := 4 * (n + 2)) (by omega_using [htop]) (by omega_using [htop])) (by simp)).trans
+      ((Outs.of_outside (k2.mono (o' := tmp + 16) (n' := 8) (by omega_using []) (by omega_using [])) (by simp)).trans
+        (Outs.of_outside (k3.mono (o' := tmp + 16) (n' := 8) (by omega_using []) (by omega_using [])) (by simp)))
 
 end VG.Proof.Bignum.Arm

@@ -45,7 +45,7 @@ theorem sqRow_facts : ∀ i < 5, (P384Mul.accRegs.take (2 * i + 1)).length = 2 *
     (∀ r ∈ P384Mul.accRegs.drop (7 + i), r ∉ Reg.x2 :: .x3 :: sqRowRegs i) ∧
     (∀ r ∈ Reg.x2 :: .x3 :: sqRowRegs i, r ∈ Reg.x2 :: .x3 :: P384Mul.accRegs) := by
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem sqRowOk {size i : Nat} (hi : i < 5) : RowOk size (sqX i) (sqRowRegs i) (sqWords i) := by
   obtain ⟨-, -, -, -, hnd, hregs, hrd, hx2, hx3, -⟩ := sqRow_facts i hi
@@ -84,11 +84,11 @@ theorem sqRow_ok {rm : Reg} (hrm : RmOk rm) {i : Nat} (hi : i < 5) {s : State} {
   have hv' := hv
   rw [hsplit, regsVal_append, regsVal_append, hlen, hrl] at hv'
   have hQ : 2 ^ (64 * (6 + i)) = 2 ^ (64 * (2 * i + 1)) * 2 ^ (64 * (5 - i)) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [hi]
   have hQ' : 2 ^ (64 * (6 - i)) = 2 ^ 64 * 2 ^ (64 * (5 - i)) := by
-    rw [← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add]; congr 1; omega_using [hi]
   have hQ'' : 2 ^ (64 * (7 + i)) = 2 ^ (64 * (2 * i + 1)) * (2 ^ 64 * 2 ^ (64 * (5 - i))) := by
-    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega
+    rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_using [hi]
   generalize hP : 2 ^ (64 * (2 * i + 1)) = P at hQ hQ'' hv' ⊢
   generalize hQv : 2 ^ (64 * (5 - i)) = Q at hQ hQ' hQ''
   have hPpos : 0 < P := hP ▸ Nat.two_pow_pos _
@@ -99,21 +99,21 @@ theorem sqRow_ok {rm : Reg} (hrm : RmOk rm) {i : Nat} (hi : i < 5) {s : State} {
   have hin : T + 2 ^ 64 * Q * Rst < Q := by
     refine Nat.lt_of_mul_lt_mul_left (a := P) ?_
     have : P * (T + 2 ^ 64 * Q * Rst) ≤ L + P * (T + 2 ^ 64 * Q * Rst) := Nat.le_add_left _ _
-    omega
+    omega_using [hv']
   have hRst0 : Rst = 0 := by
     rcases Nat.eq_zero_or_pos Rst with h | h
     · exact h
     · have : 2 ^ 64 * Q ≤ 2 ^ 64 * Q * Rst := Nat.le_mul_of_pos_right _ h
-      omega
+      omega_using [hin, this]
   have hW := regsVal_lt s (aRegs.drop (i + 1))
   rw [hwl, hQv] at hW
   have hx := (s.gpr (sqX i)).isLt
   have hxW : (s.gpr (sqX i)).toNat * regsVal s (aRegs.drop (i + 1)) ≤
-      (2 ^ 64 - 1) * regsVal s (aRegs.drop (i + 1)) := Nat.mul_le_mul_right _ (by omega)
+      (2 ^ 64 - 1) * regsVal s (aRegs.drop (i + 1)) := Nat.mul_le_mul_right _ (by omega_using [])
   refine WP.mono (row_ok hp hz hR (fun e => f27 (by simp [e])) (fun e => f27 (by simp [e]))
     (fun h => f27 (List.mem_cons_of_mem _
-    (List.mem_cons_of_mem _ h))) (by simp only [List.length_map, hwl, hrl]; omega)
-    (by rw [rwVal_regs, hT, hrl, hQ']; simp only [sqX] at hxW ⊢; omega)) fun t ⟨e, k⟩ => ?_
+    (List.mem_cons_of_mem _ h))) (by simp only [List.length_map, hwl, hrl]; omega_using [hi])
+    (by rw [rwVal_regs, hT, hrl, hQ']; simp only [sqX] at hxW ⊢; omega_using [hin, hW, hxW])) fun t ⟨e, k⟩ => ?_
   rw [rwVal_regs, hT] at e
   have hlo : regsVal t (P384Mul.accRegs.take (2 * i + 1)) = L :=
     hL ▸ regsVal_congr fun r hr => k.gpr r (flo r hr)
@@ -126,11 +126,11 @@ theorem sqRow_ok {rm : Reg} (hrm : RmOk rm) {i : Nat} (hi : i < 5) {s : State} {
     rw [hsplit, regsVal_append, regsVal_append, hlen, hrl, hlo, hhi, e, hRst0, hP]; simp
   have hs : regsVal s P384Mul.accRegs = L + P * T := by
     rw [hsplit, regsVal_append, regsVal_append, hlen, hrl, hL, hT, hRst, hRst0, hP]; simp
-  have hT' : T + (s.gpr (sqX i)).toNat * regsVal s (aRegs.drop (i + 1)) ≤ 2 ^ 64 * Q - 1 := by omega
+  have hT' : T + (s.gpr (sqX i)).toNat * regsVal s (aRegs.drop (i + 1)) ≤ 2 ^ 64 * Q - 1 := by omega_using [hin, hW, hxW]
   have h1 := Nat.mul_le_mul_left P hT'
   have h2 : P * (2 ^ 64 * Q - 1) + P = P * (2 ^ 64 * Q) := by
     rw [Nat.mul_sub_one, Nat.sub_add_cancel (Nat.le_mul_of_pos_right _ (by
       have : 0 < Q := hQv ▸ Nat.two_pow_pos _; exact Nat.mul_pos (by decide) this))]
-  refine ⟨by rw [hacc, hs, Nat.mul_add, Nat.add_assoc], by rw [hacc, hQ'']; omega, k⟩
+  refine ⟨by rw [hacc, hs, Nat.mul_add, Nat.add_assoc], by rw [hacc, hQ'']; omega_using [hLlt, h1, h2], k⟩
 
 end VG.Proof.Mont.AArch64.P384Sqr

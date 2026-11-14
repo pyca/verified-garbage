@@ -4,7 +4,7 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_rsa_oaep_decrypt:
+vg_rsa_oaep_decrypt_precomputed:
 	.option push
 	.option arch, +m, +c
 	addi sp, sp, -128
@@ -27,9 +27,9 @@ vg_rsa_oaep_decrypt:
 	addi s1, a4, 0
 	addi s2, a0, 0
 	addi s3, a2, 0
-	addi sp, sp, -96
+	addi sp, sp, -112
 	addi t0, sp, 0
-	addi t6, sp, 224
+	addi t6, sp, 240
 	sd a7, 0(t0)
 	ld t1, 0(t6)
 	sd t1, 8(t0)
@@ -64,13 +64,17 @@ vg_rsa_oaep_decrypt:
 	addi a7, s1, 0
 	addi a0, s0, 0
 	addi a1, s1, 0
-	call {vg_rsa_private_checked}
-	addi sp, sp, 96
+	ld t1, 136(t6)
+	sd t1, 96(t0)
+	ld t1, 144(t6)
+	sd t1, 104(t0)
+	call {vg_rsa_private_checked_precomputed}
+	addi sp, sp, 112
 	slli s4, a0, 32
 	srli s4, s4, 32
 	addi a0, sp, 248
 	ld a0, 0(a0)
-	ld a0, 32(a0)
+	ld a0, 48(a0)
 	addi a1, a0, -16
 	beqz a1, 20f
 	addi a1, a0, -20
@@ -130,7 +134,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -151,7 +155,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 213b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -202,7 +206,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -223,7 +227,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 215b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -448,7 +452,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -469,7 +473,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 227b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -520,7 +524,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -541,7 +545,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 229b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -767,7 +771,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -788,7 +792,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 241b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -839,7 +843,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -860,7 +864,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 243b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1086,7 +1090,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1107,7 +1111,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 255b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1158,7 +1162,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1179,7 +1183,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 257b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1405,7 +1409,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1426,7 +1430,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 269b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1477,7 +1481,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1498,7 +1502,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 271b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1724,7 +1728,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1745,7 +1749,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 283b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -1796,7 +1800,7 @@ vg_rsa_oaep_decrypt:
 	jalr ra, 0(t1)
 	addi a6, sp, 256
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -1817,7 +1821,7 @@ vg_rsa_oaep_decrypt:
 	bnez a6, 285b
 	addi t1, sp, 256
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2041,7 +2045,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ld t4, 16(t6)
 	addi a0, sp, 192
 	ld a0, 0(a0)
-	ld a0, 32(a0)
+	ld a0, 48(a0)
 	addi a1, a0, -16
 	beqz a1, 20f
 	addi a1, a0, -20
@@ -2175,7 +2179,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2196,7 +2200,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 221b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2247,7 +2251,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2268,7 +2272,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 223b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2441,7 +2445,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2462,7 +2466,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 237b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2513,7 +2517,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2534,7 +2538,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 239b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2708,7 +2712,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2729,7 +2733,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 253b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2780,7 +2784,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2801,7 +2805,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 255b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -2975,7 +2979,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -2996,7 +3000,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 269b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3047,7 +3051,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3068,7 +3072,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 271b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3242,7 +3246,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3263,7 +3267,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 285b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3314,7 +3318,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3335,7 +3339,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 287b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3509,7 +3513,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3530,7 +3534,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 2101b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9
@@ -3581,7 +3585,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	jalr ra, 0(t1)
 	addi a6, sp, 200
 	ld a6, 0(a6)
-	ld a6, 32(a6)
+	ld a6, 48(a6)
 	addi a4, s0, 1280
 	add a5, s8, s11
 	sub t1, s9, s11
@@ -3602,7 +3606,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	bnez a6, 2103b
 	addi t1, sp, 200
 	ld t1, 0(t1)
-	ld t1, 32(t1)
+	ld t1, 48(t1)
 	addi s10, s10, 1
 	add s11, s11, t1
 	sub t1, s11, s9

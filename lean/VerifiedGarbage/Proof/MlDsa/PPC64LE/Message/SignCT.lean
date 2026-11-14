@@ -174,10 +174,10 @@ theorem signMessage_ct {p : Params} {pr : Bool} {STK S : Nat} (hF : MFacts p) (h
     · simp only [State.withRegions_mem, State.callEntry_mem, ce_gpr _ _ _ (show Reg.r3 ∉ linkRegs by decide),
         ce_gpr _ _ _ (show Reg.r4 ∉ linkRegs by decide), ce_gpr _ _ _ (show Reg.r5 ∉ linkRegs by decide),
         hab.1.r3, hab.1.r4, hab.1.r5, hab.2.r3, hab.2.r4, hab.2.r5]
-      rw [s_keep k₁ (R := ⟨s₁.gpr .r3, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega)
+      rw [s_keep k₁ (R := ⟨s₁.gpr .r3, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega_using [this])
           (hp₁.kg.sub_left hp₁.subK) (hp₁.kc.sub_left hp₁.subK) (hp₁.bk.sub_right hp₁.subK),
         hab.1.ms.mu, s_keep k₁ (R := rndR s₁) (show (32 : Nat) < 2 ^ 64 by decide) hp₁.rg hp₁.rc hp₁.br,
-        s_keep k₂ (R := ⟨s₂.gpr .r3, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega)
+        s_keep k₂ (R := ⟨s₂.gpr .r3, p.skLen⟩) (by have := hF.skl; show p.skLen < 2 ^ 64; omega_using [this])
           (hp₂.kg.sub_left hp₂.subK) (hp₂.kc.sub_left hp₂.subK) (hp₂.bk.sub_right hp₂.subK),
         hab.2.ms.mu, s_keep k₂ (R := rndR s₂) (show (32 : Nat) < 2 ^ 64 by decide) hp₂.rg hp₂.rc hp₂.br]
       simp only [signMessageLeak] at pl

@@ -51,13 +51,13 @@ theorem jointFixedPoint_ok (c : Joint.Cfg) {s : State} {base T : Addr} {size a :
   have sy1 := hL.apart _ _ (hD c.K.E.y (by simp)) (hi.sl _ hOne) hy1
   have sz1 : c.K.E.z≤c.onep ∨ c.onep+32≤c.K.E.z := by
     by_cases e : c.K.E.z=c.onep
-    · omega
+    · omega_using [e]
     · have := hL.apart _ _ (hD c.K.E.z (by simp)) (hi.sl _ hOne) e
-      rw [hn] at this; omega
+      rw [hn] at this; omega_using [this]
   simp only [hn,hy] at bx by' bz b1 sxz syz sx1 sy1
-  refine WP.mono (jointFixedLoad_ok c hi.scr ha h2 ht hy (by omega)
+  refine WP.mono (jointFixedLoad_ok c hi.scr ha h2 ht hy (by omega_using [by'])
     (hAl.sl _ (hD c.K.E.x (by simp))) bz (hAl.sl _ (hD c.K.E.z (by simp)))
-    b1 (hAl.sl _ (hi.sl _ hOne)) (by omega) (by omega) sz1 hr hout)
+    b1 (hAl.sl _ (hi.sl _ hOne)) (by omega_using [sxz, syz]) (by omega_using [sx1, sy1]) sz1 hr hout)
     fun t ⟨vx,vy,vz,kt,ut⟩ => ?_
   have kp : ProgKeep c.K.M base [c.K.E.x,c.K.E.y,c.K.E.z] s t := by
     refine ⟨fun r hr => kt.gpr r (fun hh => hr ?_),kt.rd,kt.wr,kt.sp,fun x hx _ => ut x ?_⟩
@@ -70,7 +70,7 @@ theorem jointFixedPoint_ok (c : Joint.Cfg) {s : State} {base T : Addr} {size a :
       have hx2 := hx c.K.E.z (by simp)
       rw [hn] at hx0 hx1 hx2
       rw [hy] at hx1
-      rcases hw with rfl | rfl <;> dsimp only <;> omega
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith
   have hlt : ∀ x∈[c.K.E.x,c.K.E.y,c.K.E.z],wordsVal t.mem base x c.K.M.n<C.p := by
     intro x hx
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx

@@ -80,7 +80,7 @@ theorem pAdvance_vp {d : Cfg} {j off C : Nat} (hC : C < 256) (hCt : fCounter ∈
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => taint1 σ₁ σ₂ s₁ s₂ _ _ h₁ h₂)
     fun σ s ⟨⟨h, x⟩, r1⟩ => wp_movw fun t u => wp_cmp (op2_reg _ _) fun t' f z => WP.block_nil ?_
   have l := h.lens
-  have r2 : t.gpr .r2 = BitVec.ofNat 32 (32 * G.pLen) := by rw [u.gpr, setWidth_ofNat16 (by omega)]
+  have r2 : t.gpr .r2 = BitVec.ofNat 32 (32 * G.pLen) := by rw [u.gpr, setWidth_ofNat16 (by omega_using [l])]
   refine ⟨⟨h.of_rest ((u.rest (ws := [.r2]) (by simp)).trans (f.rest _)) (by rw [f.mem, u.mem]), x⟩, ?_⟩
   rw [eval_eq, z, u.other _ (by decide), r1, r2, beq_sub_zero]
   congr 1
@@ -88,7 +88,7 @@ theorem pAdvance_vp {d : Cfg} {j off C : Nat} (hC : C < 256) (hCt : fCounter ∈
   · simp [e]
   · simp only [e, decide_false]
     refine beq_false_of_ne fun h' => e ?_
-    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega
+    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega_using [hj, l, this]
 
 /-- The code after a candidate. -/
 abbrev pTail (C : Nat) (L : Nat) : Prog isa :=
@@ -148,7 +148,7 @@ theorem pExit_vp {d : Cfg} {v C : Nat} (hP : fP ∈ d.LS) (hPv : d.V fP = BitVec
     VP (St G d X) (pTail C G.pLen) (fun σ s => St G d X σ s ∧ isa.eval .eq s = some false) := by
   have ne : (BitVec.ofNat 32 v == BitVec.ofNat 32 4) = false := by
     refine beq_false_of_ne fun h' => ?_
-    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega
+    have := congrArg BitVec.toNat h'; simp only [BitVec.toNat_ofNat] at this; omega_using [hv, this]
   refine VP.seq (G := fun σ s => St G d X σ s ∧ isa.eval .eq s = some false)
     (cmpF_vp (c := fun _ => d) (x := BitVec.ofNat 32 v) (fun σ s h => h.1) (by decide) (by decide) (by decide)
       (fun σ s h => (h.1.slotV hP).trans hPv) fun σ s t ⟨h, x⟩ R m e => ⟨⟨h.of_rest R m, x⟩, by rw [e, ne]⟩) ?_
@@ -190,8 +190,8 @@ theorem pCount_gt (HO : HashOk Gh) (G : GP) (k u0 : Nat) : ∀ m j, j < pCount H
   | m + 1, j => by
     have := pCount_gt HO G k u0 m (j + 1)
     simp only [pCount]; split
-    · omega
-    · split <;> omega
+    · omega_using [this]
+    · split <;> omega_arith
 
 /-- The search's frame words at counter `j`, with `u` witnesses read. -/
 abbrev pBase (c : Cfg) (HO : HashOk Gh) (G : GP) (k : Nat) : Cfg :=

@@ -56,7 +56,7 @@ theorem sample_ctFor {k : Nat} (hk : k < 4) {hint : VG.Taint.Hint VG.AArch64.Tai
 
 theorem sample_ct {k : Nat} (hk : k < 4) :
     RelCT isa (Rel2 r4K.pre r4K.pub Ready) (sample k) fun _ _ => True := by
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_using [hk]) with rfl | rfl | rfl | rfl <;>
     exact sample_ctFor (by decide) (by taint_decide)
 
 theorem init_ct : RelCT isa (Rel2 r4K.pre r4K.pub (fun σ s => s = σ))

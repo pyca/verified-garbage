@@ -80,7 +80,7 @@ theorem Ws.arr_fit {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N
 
 theorem Ws.fit64 {s : State} {B : BitVec 32} {Z w N j : Nat} (h : Ws s B Z w N) (hj : j < N) :
     arr w j + S w ≤ 2 ^ 64 := by
-  have := h.arr_fit hj; have := h.nowrap; omega
+  have := h.arr_fit hj; have := h.nowrap; omega_arith
 
 theorem Ws.hdr_le {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) : hdr ≤ Z :=
   Nat.le_trans (Nat.le_add_right _ _) h.fits
@@ -88,11 +88,11 @@ theorem Ws.hdr_le {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) :
 /-- The address `B + d` within the working space. -/
 theorem Ws.addr {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N) (hd : d < Z) :
     State.addr (B + BitVec.ofNat 32 d) = off (State.addr B) d :=
-  VG.Arm.addr_add (by have := h.nowrap; omega)
+  VG.Arm.addr_add (by have := h.nowrap; omega_using [hd, this])
 
 theorem Ws.write {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N) (hd : d + 4 ≤ Z) :
     InRegions s.wr (off (State.addr B) d) 4 :=
-  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega)⟩
+  ⟨_, h.writable, Offset.contains_base _ hd (by have := h.nowrap; omega_using [hd, this])⟩
 
 theorem Ws.read {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N) (hd : d + 4 ≤ Z) :
     InRegions (s.rd ++ s.wr) (off (State.addr B) d) 4 := by
@@ -104,7 +104,7 @@ theorem Ws.read {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N) (
 theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
   List.any_eq_true.2 ⟨0, by simp, by
     have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by ext i; simp
-    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega : n % 2 ^ 32 < 256)⟩
+    simpa only [h0, decide_eq_true_eq, BitVec.toNat_ofNat] using (by omega_using [h] : n % 2 ^ 32 < 256)⟩
 
 theorem ptr_val (B : BitVec 32) (j S : Nat) :
     BitVec.ofNat 32 j * BitVec.ofNat 32 S + B + BitVec.ofNat 32 hdr = B + BitVec.ofNat 32 (hdr + j * S) := by
@@ -236,7 +236,7 @@ theorem wp_ldrSlot {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N
     (k : ∀ s', Upd s s' t (s.mem.readW (off (State.addr B) d) 32) → WP isa (.block rest) s' Q) :
     WP isa (.block (.ldr t .r8 d :: rest)) s Q := by
   have := h.hdr_le
-  exact wp_ldr (by simp only [hdr] at hd; omega) (slot_addr h (by omega)) (h.read (by omega)) k
+  exact wp_ldr (by simp only [hdr] at hd; omega_using [hd]) (slot_addr h (by omega_using [hd, this])) (h.read (by omega_using [hd, this])) k
 
 /-- `str t, [r8, #d]`. -/
 theorem wp_strSlot {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N)
@@ -244,7 +244,7 @@ theorem wp_strSlot {s : State} {B : BitVec 32} {Z w N d : Nat} (h : Ws s B Z w N
     (k : ∀ s', Mupd s s' (s.mem.writeW (off (State.addr B) d) (s.gpr t)) → WP isa (.block rest) s' Q) :
     WP isa (.block (.str t .r8 d :: rest)) s Q := by
   have := h.hdr_le
-  exact wp_str (by simp only [hdr] at hd; omega) (slot_addr h (by omega)) (h.write (by omega)) k
+  exact wp_str (by simp only [hdr] at hd; omega_using [hd]) (slot_addr h (by omega_using [hd, this])) (h.write (by omega_using [hd, this])) k
 
 theorem slot_write_self (m : Mem) (B : BitVec 32) (d : Nat) (v : BitVec 32) :
     slot (m.writeW (off (State.addr B) d) v) B d = v.toNat :=

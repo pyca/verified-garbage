@@ -116,6 +116,6 @@ theorem sha1_stack (v : Backend) : stackUse v.F.pbkdf2 ≤ 76 := by
     Impl.Pbkdf2.Stream.X86.Hash.callInit, Backend.F, Proof.Sha1.X86.Variants.pbkdf2Fns,
     Proof.Sha1.X86.Variants.fns, Proof.Sha1.X86.Variants.hmacHash, Proof.Pbkdf2.Md.X86.sha1M,
     stackUse, frameBytes, List.length_cons, List.length_nil, Nat.max_le] at *
-  omega
+  omega_arith
 
 end VG.Proof.Pbkdf2.Whole.X86

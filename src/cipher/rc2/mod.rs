@@ -1,4 +1,4 @@
-//! RC2 (RFC 2268) in CBC mode, incrementally and without padding.
+//! RC2 (RFC 2268) in CBC mode, in place and without padding.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,4 +11,4 @@
 
 mod cbc;
 
-pub use cbc::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
+pub use cbc::{Error, InvalidKeyLength, Rc2CbcDecryptor, Rc2CbcEncryptor};

@@ -66,11 +66,11 @@ theorem getLsbD_spread (k : BitVec 64) {l t : Nat} (hl : l < 8) (ht : t < 8) :
     (spread k).getLsbD (8 * l + t) =
       if t < 6 then k.getLsbD (6 * (7 - boxOf l) + t)
       else (boxTable (boxOf l)).testBit (t - 6) := by
-  rw [spread, getLsbD_ofBits, decide_eq_true (by omega), Bool.true_and,
-    show (8 * l + t) % 8 = t by omega, show (8 * l + t) / 8 = l by omega]
+  rw [spread, getLsbD_ofBits, decide_eq_true (by omega_using [hl, ht]), Bool.true_and,
+    show (8 * l + t) % 8 = t by omega_using [ht], show (8 * l + t) / 8 = l by omega_using [ht]]
   split
   · rfl
-  · rw [offsets_bits l hl t ht, decide_eq_true (by omega), Bool.true_and]
+  · rw [offsets_bits l hl t ht, decide_eq_true (by omega_arith), Bool.true_and]
 
 /-- Byte `l` of the S-boxes' index: box `boxOf l`'s input, after its table. -/
 theorem index_byte (k : BitVec 64) (r : BitVec 32) {l : Nat} (hl : l < 8) :
@@ -80,14 +80,14 @@ theorem index_byte (k : BitVec 64) (r : BitVec 32) {l : Nat} (hl : l < 8) :
   apply BitVec.eq_of_getLsbD_eq
   intro t ht
   rw [BitVec.getLsbD_extractLsb', decide_eq_true ht, Bool.true_and, BitVec.getLsbD_xor,
-    getLsbD_spread k hl ht, getLsbD_spreadW r (by omega), BitVec.getLsbD_ofNat,
+    getLsbD_spread k hl ht, getLsbD_spreadW r (by omega_using [hl, ht]), BitVec.getLsbD_ofNat,
     decide_eq_true ht, Bool.true_and,
     Nat.testBit_two_pow_mul_add _ (chunk r (k.setWidth 48) (boxOf l)).isLt]
   obtain ⟨hx, he⟩ := chunk_layout l hl t ht
   rw [hx]
   by_cases h6 : t < 6
   · rw [ite_eq_left h6, ite_eq_left h6, he h6, BitVec.testBit_toNat, getLsbD_chunk _ _ hb h6,
-      BitVec.getLsbD_setWidth, decide_eq_true (show 6 * (7 - boxOf l) + t < 48 by omega),
+      BitVec.getLsbD_setWidth, decide_eq_true (show 6 * (7 - boxOf l) + t < 48 by omega_using [h6]),
       Bool.true_and, decide_eq_true h6, Bool.true_and, Bool.xor_comm]
   · rw [ite_eq_right h6, ite_eq_right h6, decide_eq_false h6, Bool.false_and, Bool.xor_false]
 

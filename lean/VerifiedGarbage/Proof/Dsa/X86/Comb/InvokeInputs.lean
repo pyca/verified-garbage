@@ -19,12 +19,12 @@ theorem check_allocated_args {s t : State} (R : Ready s t) (C : CheckCall.CallSl
     (i : Nat) (hi : i<6) :
     arg ((allocated 4 t).withRegions (CheckCall.callRd s) (CheckCall.callWr s)) i=
       CheckCall.callVal s (t.gpr .esp) i := by
-  rw [allocated_arg R (by omega)]; exact C i hi
+  rw [allocated_arg R (by omega_using [hi])]; exact C i hi
 
 theorem derive_allocated_args {s t : State} (R : Ready s t) (C : CallSlots s t)
     (i : Nat) (hi : i<9) :
     arg ((allocated 4 t).withRegions (callRd s) (callWr s)) i=callVal s (t.gpr .esp) i := by
-  rw [allocated_arg R (by omega)]; exact C i hi
+  rw [allocated_arg R (by omega_using [hi])]; exact C i hi
 
 theorem check_allocated_params {s t : State} (A : KeyABI s) (R : Ready s t) (C : CheckCall.CallSlots s t) :
     checkingParams ((allocated 4 t).withRegions (CheckCall.callRd s) (CheckCall.callWr s))=

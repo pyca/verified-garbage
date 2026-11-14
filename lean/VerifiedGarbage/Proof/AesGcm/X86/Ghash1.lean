@@ -77,36 +77,36 @@ include L hyo
 theorem GhReady.call {P : BitVec 32} {nb : Nat} {s : State} (h : GhReady Ctx St W SP K yo P nb s) :
     GhCall s (Ctx + BitVec.ofNat 32 240) (St + BitVec.ofNat 32 yo) P (W + BitVec.ofNat 32 512) nb := by
   have eH := L.aC (o := 240) (by decide)
-  have eY := L.aS (o := yo) (by omega)
+  have eY := L.aS (o := yo) (by omega_using [hyo])
   have eS := L.aW (o := 512) (by decide)
   have k24 := L.k24
   have hsp : below (s.gpr .esp) 24 = below SP 24 := by rw [h.esp]
   have bsub : Region.Sub (below (s.gpr .esp) 24) (below SP K) := by rw [hsp]; exact L.below_sub k24
-  refine ⟨h.eax, h.edx, h.ebx, h.edi, h.ebp, by rw [h.esp]; have := L.sp; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨h.eax, h.edx, h.ebx, h.edi, h.ebp, by rw [h.esp]; have := L.sp; omega_using [k24, this], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [eH, eY]; exact L.ctx_st (by decide) (by omega)
+  · rw [eH, eY]; exact L.ctx_st (by decide) (by omega_using [hyo])
   · rw [eH, eS]; exact L.ctx_w (by decide) (by decide)
   · rw [eY]; exact h.py
-  · rw [eY, eS]; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+  · rw [eY, eS]; exact L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)
   · rw [eS]; exact h.pw
   · rw [eH]; exact (L.stk_ctx (by decide)).sub_left bsub
-  · rw [eY]; exact (L.stk_st (by omega)).sub_left bsub
+  · rw [eY]; exact (L.stk_st (by omega_using [hyo])).sub_left bsub
   · exact h.pk.sub_left bsub
   · rw [eS]; exact (L.stk_w (by decide)).sub_left bsub
-  · rw [L.nC (by decide)]; have := L.fc; omega
-  · rw [L.nS (by omega)]; have := L.fs; omega
+  · rw [L.nC (by decide)]; have := L.fc; omega_using [this]
+  · rw [L.nS (by omega_using [hyo])]; have := L.fs; omega_using [hyo, this]
   · exact h.fP
-  · rw [L.nW (by decide)]; have := L.fw; omega
+  · rw [L.nW (by decide)]; have := L.fw; omega_using [this]
   · rw [eH]
     exact covers_cons (covers_off h.ctxR (by decide) (by decide)) (covers_cons h.rP covers_nil)
   · rw [eY, eS]
-    exact covers_cons (covers_off h.stW (by omega) (by decide)) (covers_cons (covers_off h.wW (by decide)
+    exact covers_cons (covers_off h.stW (by omega_using [hyo]) (by decide)) (covers_cons (covers_off h.wW (by decide)
       (by decide)) covers_nil)
 
 theorem ghW_ok {P : BitVec 32} {nb : Nat} {s : State} (h : GhReady Ctx St W SP K yo P nb s) :
     WP isa (ghW vg) s (GhOut Ctx St W SP K yo P nb s) := by
   have eH := L.aC (o := 240) (by decide)
-  have eY := L.aS (o := yo) (by omega)
+  have eY := L.aS (o := yo) (by omega_using [hyo])
   have eS := L.aW (o := 512) (by decide)
   refine WP.seq (WP.mono (gh_call vg (h.call L hyo)) fun s₁ g => ?_)
   have gf := g.frame
@@ -135,7 +135,7 @@ theorem ghW_ok {P : BitVec 32} {nb : Nat} {s : State} (h : GhReady Ctx St W SP K
     rw [slot_frame fr (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)).symm
+      · exact (L.st_w (by omega_using [hyo]) (.inr ⟨by decide, by decide⟩)).symm
       · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.stk_w (by decide)).symm), h.ctx]
   · simp only [mem_setReg, mem_arithFlags]; exact go

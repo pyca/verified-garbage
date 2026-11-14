@@ -79,12 +79,12 @@ theorem installed_ok {full : Bool} {s : State} (a : ABI full s) :
       Spill.Saved t.mem (off (caller full s).base) s.gpr PublicFn.savedRegisters ∧
       Keeps [.eax, .edi] s t ∧ Outside (caller full s).base 0 (caller full s).size s.mem t.mem := by
   refine WP.mono (entry_ok full (base := (caller full s).base) (ptr := arg s (scratchArg full))
-    (a.stackArgument (by omega : scratchArg full < scratchArg full + 2)).readSrc
-    rfl a.scratchBound (by have := a.used; omega) (by rw [a.wr]; simp) a.stack)
+    (a.stackArgument (by omega_using [] : scratchArg full < scratchArg full + 2)).readSrc
+    rfl a.scratchBound (by have := a.used; omega_using [this]) (by rw [a.wr]; simp) a.stack)
     fun t ⟨sc, saved, k, o⟩ => ?_
   refine ⟨?_, saved, k, o⟩
   have w := a.width
-  refine ⟨⟨sc, a.space, by omega, by omega⟩, w.1, w.2.1, ?_, ?_,
+  refine ⟨⟨sc, a.space, by omega_using [w], by omega_using [w]⟩, w.1, w.2.1, ?_, ?_,
     (fun i hi => (a.inputLength hi).1), (fun i hi => (a.inputLength hi).2),
     (fun i hi => a.inputFit hi), ?_, ?_⟩
   · intro i hi

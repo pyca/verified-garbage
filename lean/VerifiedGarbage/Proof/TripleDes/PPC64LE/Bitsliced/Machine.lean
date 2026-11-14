@@ -59,7 +59,7 @@ theorem slot_in {s : State} (h : Room s) {k : Nat} (hk : k < 128) :
 def varsCfg : Cfg := { base := .r10, slots := 64, ext := .r10, exts := 0 }
 
 theorem Room.ok {s : State} (h : Room s) : Ok varsCfg s where
-  slotIn k hk := slot_in h (by simp only [varsCfg] at hk; omega)
+  slotIn k hk := slot_in h (by simp only [varsCfg] at hk; omega_using [hk])
   extIn k hk := by simp [varsCfg] at hk
   slots := by decide
   sep k _ j hj := by simp [varsCfg] at hj
@@ -82,15 +82,15 @@ theorem varEnv_rel {s : State} (regs : List Reg) :
     obtain ⟨i, hi, rfl⟩ := h
     obtain ⟨hlt, heq, -⟩ := List.idxOf?_eq_some_iff.mp hi
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
-    simp only [varVals, show ¬ 64 + i < 64 by omega, ite_false, Nat.add_sub_cancel_left]
+    rw [xorSet_two_pow _ (by omega_using [hlt])]
+    simp only [varVals, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
     simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, heq]
   slot k a hk h := by
     have hk' : k < 64 := hk
     simp only [varEnv, hk', ite_true, Option.some.injEq] at h
     subst h
     simp only [VarRel, varN]
-    rw [xorSet_two_pow _ (by omega)]
+    rw [xorSet_two_pow _ (by omega_using [hk'])]
     simp only [varVals, hk', ite_true, sl, varsCfg]
   ext _ _ hk := by simp [varsCfg] at hk
 

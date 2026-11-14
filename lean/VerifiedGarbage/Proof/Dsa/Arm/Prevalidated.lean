@@ -221,21 +221,21 @@ theorem prevBody_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S 
   have fits := Sc.fits
   have Qlt := operand_lt_of Iq
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega
+  have ho : 4960 ≤ Impl.Dsa.Layout.qMinusTwo ∧ Impl.Dsa.Layout.qMinusTwo + qLen ≤ 15712 := by omega_using [q32, L2]
   unfold Prevalidated.body Prevalidated.compute Core.sequence
   dsimp only [List.foldr]
-  refine WP.seq (WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega) Sc.wq Iq.toReady
-    Iq.value (by omega) hQo (by omega) (by decide) (by decide) (by omega) (by decide)) fun u₁ ⟨B₁, St₁⟩ => ?_))
+  refine WP.seq (WP.seq (WP.mono (minus_ok (output := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_using [big]) Sc.wq Iq.toReady
+    Iq.value (by omega_using [hQ]) hQo (by omega_using [hQ]) (by decide) (by decide) (by omega_using [q32, big, L2]) (by decide)) fun u₁ ⟨B₁, St₁⟩ => ?_))
   have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.next Sc St₁ (.inr ho)
   have Sc₁ := Sc.stage St₁
   refine WP.mono (verifyTail_ok Sc₁ (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ir) (r₁ Is) (r₁ Id)
-    ((countValue_stage St₁ (by omega)).trans hc) (localVal_of_bytes B₁ (by omega)) hP hPo hQ hQo)
+    ((countValue_stage St₁ (by omega_using [L2])).trans hc) (localVal_of_bytes B₁ (by omega_using [Qlt])) hP hPo hQ hQo)
     fun u ⟨F, Rn⟩ => ?_
   have hm' : maskW base u = mask32 (verifyChecks P Q G Y R S D) := by
-    rw [F, St₁.maskW (by omega), hm, BitVec.allOnes_and]
+    rw [F, St₁.maskW (by omega_using [L2]), hm, BitVec.allOnes_and]
     exact mask32_iff ⟨fun h => ⟨pub, h⟩, fun h => h.2⟩
-  exact WP.mono (result_ok (Rn.ws Sc₁.ws) (by omega) _ hm') fun t ⟨r0, Rt, Mt⟩ =>
+  exact WP.mono (result_ok (Rn.ws Sc₁.ws) (by omega_using [big]) _ hm') fun t ⟨r0, Rt, Mt⟩ =>
     ⟨r0, ((St₁.run (.inr ho)).trans Rn).trans ⟨Rt.mono (by decide), fun x _ => by rw [Mt]⟩⟩
 
 /-- The checks that the key's validation makes hold. -/

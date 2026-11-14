@@ -129,8 +129,8 @@ theorem keyBound_ok (s : State) {p : Inputs} {slots : List Nat}
   rintro u ⟨⟨ptr, count, memU⟩, restU⟩
   have ctxU := h.of_mem memU restU ((restU.gpr .r0 (by simp)).trans h.ptr)
   rw [WP.seq_iff]
-  refine WP.mono (keyScan_ok u ctxU.boundBytes (by rw [p.boundOctetsLength]; have := p.minLength; omega)
-    (by rw [p.boundOctetsLength]; have := p.maxLength; omega) ptr (by rw [p.boundOctetsLength]; exact count)) ?_
+  refine WP.mono (keyScan_ok u ctxU.boundBytes (by rw [p.boundOctetsLength]; have := p.minLength; omega_using [this])
+    (by rw [p.boundOctetsLength]; have := p.maxLength; omega_using [this]) ptr (by rw [p.boundOctetsLength]; exact count)) ?_
   rintro v ⟨_, countV, byteV, memV, restV⟩
   have ctxV := ctxU.of_mem memV restV ((restV.gpr .r0 (by simp)).trans ctxU.ptr)
   rw [WP.block_append_iff]

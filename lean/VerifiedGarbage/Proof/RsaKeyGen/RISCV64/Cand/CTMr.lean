@@ -94,7 +94,7 @@ theorem LCtx.hrl (C : LCtx a s0 σ) (C' : LCtx a s0' σ') : rL s0 = rL s0' := C.
 theorem candS_eq (hp : CIn s0) (hav : oL s0 ≤ rL s0) : candS s0 = candOf s0 := by
   obtain ⟨hw, -, -⟩ := cw_facts hp
   unfold candS candOf rB
-  rw [take_bytesAt _ _ hav, hw, show 8 * (8 * cw s0) = 64 * cw s0 by omega]
+  rw [take_bytesAt _ _ hav, hw, show 8 * (8 * cw s0) = 64 * cw s0 by omega_using []]
 
 theorem LCtx.hav (C : LCtx a s0 σ) : oL s0 ≤ rL s0 := by
   rw [C.t3.tc.hw]; exact C.t3.tc.h8
@@ -110,8 +110,8 @@ theorem shape_eq (C : LCtx a s0 σ) (C' : LCtx a s0' σ') :
   obtain ⟨hw, -, -⟩ := cw_facts hp
   obtain ⟨hw', -, -⟩ := cw_facts hp'
   have e := shape_agree C.krel C'.krel hav
-    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact C.ncl)
-    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega]; exact C.t3.noc)
+    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact C.ncl)
+    (by rw [candS_eq hp hav, show 8 * oL s0 = 64 * cw s0 by omega_using [hw]]; exact C.t3.noc)
     (by rw [candS_eq hp hav]; exact C.gcd)
   rwa [candS_eq hp hav, candS_eq hp' hav', hw, hw'] at e
 
@@ -125,8 +125,8 @@ theorem T3.hpt (h : T3 s0 w c σ) :
     Spec.RsaKeyGen.primalityTest c ((rB s0).drop (8 * w)) =
       Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c (VG.Proof.RsaKeyGen.checksW w) (Spec.Rsa.splitTwos (c - 1)).1
         (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) ((rB s0).drop (8 * w)) := by
-  have hpt := VG.Proof.RsaKeyGen.primalityTest_cand (by have := h.tc.hw4; omega) h.tc.shape ((rB s0).drop (8 * w))
-  rwa [VG.Proof.RsaKeyGen.checksW_eq w (by have := h.tc.hw64; omega) h.tc.hw4] at hpt
+  have hpt := VG.Proof.RsaKeyGen.primalityTest_cand (by have := h.tc.hw4; omega_using [this]) h.tc.shape ((rB s0).drop (8 * w))
+  rwa [VG.Proof.RsaKeyGen.checksW_eq w (by have := h.tc.hw64; omega_using [this]) h.tc.hw4] at hpt
 
 /-- The tape at the loop's start. -/
 theorem T3.tape (h : T3 s0 w c σ) : Spec.Rsa.bytesAt σ.mem (s0.gpr .a7) (rL s0) = rB s0 := by
@@ -163,9 +163,9 @@ theorem pass_agree {a : CD} {s0 s0' σ σ' s s' : State} {k n n' : Nat} (C : LCt
   have hw4 := h.ctx.prep.env.hw
   have hw4' := h'.ctx.prep.env.hw
   have p₁ := VG.Proof.RsaKeyGen.mr_pass (a := (Spec.Rsa.splitTwos (candOf s0 - 1)).1)
-    (m := (Spec.Rsa.splitTwos (candOf s0 - 1)).2) h.mr.go h.ctx.wb (by omega) (by rw [rB_len]; exact hav)
+    (m := (Spec.Rsa.splitTwos (candOf s0 - 1)).2) h.mr.go h.ctx.wb (by omega_using [hw4]) (by rw [rB_len]; exact hav)
   have p₂ := VG.Proof.RsaKeyGen.mr_pass (a := (Spec.Rsa.splitTwos (candOf s0' - 1)).1)
-    (m := (Spec.Rsa.splitTwos (candOf s0' - 1)).2) h'.mr.go h'.ctx.wb (by omega) (by rw [rB_len]; exact hav')
+    (m := (Spec.Rsa.splitTwos (candOf s0' - 1)).2) h'.mr.go h'.ctx.wb (by omega_using [hw4']) (by rw [rB_len]; exact hav')
   rw [Prod.eta, ← h.mr.run, ← C.t3.hpt] at p₁
   rw [Prod.eta, ← h'.mr.run, ← C'.t3.hpt] at p₂
   change Spec.RsaKeyGen.mrIteration _ _ _ _ = Spec.RsaKeyGen.mrIteration _ _ _ _
@@ -439,13 +439,13 @@ theorem loop_ct (R : RoundImpl) (n : Nat) :
     · exact .inr ⟨ev, hn, li⟩
   rintro s₁ s₂ ⟨d, ⟨s0, σ, C, sp, h₁⟩, ⟨s0', σ', C', sp', h₂⟩⟩
   rcases Nat.eq_zero_or_pos n with hn | hn
-  · obtain ⟨e₁, -⟩ := h₁.resolve_right fun ⟨_, h, _⟩ => by omega
-    obtain ⟨e₂, -⟩ := h₂.resolve_right fun ⟨_, h, _⟩ => by omega
+  · obtain ⟨e₁, -⟩ := h₁.resolve_right fun ⟨_, h, _⟩ => by omega_using [hn, h]
+    obtain ⟨e₂, -⟩ := h₂.resolve_right fun ⟨_, h, _⟩ => by omega_using [hn, h]
     refine ⟨by rw [e₁, e₂], fun _ => trivial, fun he => ?_⟩
     rw [e₁] at he; cases he
-  · obtain ⟨e₁, -, l₁⟩ := h₁.resolve_left fun ⟨_, h⟩ => by omega
-    obtain ⟨e₂, -, l₂⟩ := h₂.resolve_left fun ⟨_, h⟩ => by omega
-    exact ⟨by rw [e₁, e₂], fun _ => trivial, fun _ => ⟨n - 1, by omega, (d.1, d.2 + 1),
+  · obtain ⟨e₁, -, l₁⟩ := h₁.resolve_left fun ⟨_, h⟩ => by omega_using [hn, h]
+    obtain ⟨e₂, -, l₂⟩ := h₂.resolve_left fun ⟨_, h⟩ => by omega_using [hn, h]
+    exact ⟨by rw [e₁, e₂], fun _ => trivial, fun _ => ⟨n - 1, by omega_using [hn], (d.1, d.2 + 1),
       ⟨s0, σ, C, sp, l₁⟩, ⟨s0', σ', C', sp', l₂⟩⟩⟩
 
 /-- The loop's start: the working space prepared, for the call from `s0` with

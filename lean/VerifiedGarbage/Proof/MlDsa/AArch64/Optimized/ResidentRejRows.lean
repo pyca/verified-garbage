@@ -54,11 +54,11 @@ theorem firstFour_ok {σ s : State} (hp : Pre 4 σ) (he : Env 4 σ s)
     fun t ⟨het,hpt,ht2,ht3,hft,_⟩ => ?_
   refine ⟨het,?_,?_,?_⟩
   · intro p hpn
-    rcases (show p=0 ∨ p=1 by omega) with rfl | rfl
+    rcases (show p=0 ∨ p=1 by omega_using [hpn]) with rfl | rfl
     · exact five_pair_keep (by decide : 1<2) (by decide : 0<2) (by decide) hft hpu
     · exact hpt
   · intro k hk
-    rcases (show k=0 ∨ k=1 ∨ k=2 ∨ k=3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show k=0 ∨ k=1 ∨ k=2 ∨ k=3 by omega_using [hk]) with rfl | rfl | rfl | rfl
     · exact five_stream_keep (by decide : 1<2) (by decide : 0<4) (by decide) (by decide) hft hu0
     · exact five_stream_keep (by decide : 1<2) (by decide : 1<4) (by decide) (by decide) hft hu1
     · exact ht2
@@ -78,14 +78,14 @@ theorem firstTwo_ok {σ s : State} (hp : Pre 2 σ) (he : Env 2 σ s)
     fun t ⟨het,hpt,ht0,ht1,hft,_⟩ => ?_
   refine ⟨het,?_,?_,?_⟩
   · intro p hpn
-    have : p=0 := by omega
+    have : p=0 := by omega_using [hpn]
     subst p; exact hpt
   · intro k hk
-    rcases (show k=0 ∨ k=1 by omega) with rfl | rfl
+    rcases (show k=0 ∨ k=1 by omega_using [hk]) with rfl | rfl
     · exact ht0
     · exact ht1
   · intro k hk
-    rw [five_count_keep (by decide : 0<2) (by omega : k<4) hft]
+    rw [five_count_keep (by decide : 0<2) (by omega_using [hk] : k<4) hft]
     exact hc k hk
 
 theorem firstFour_setup_ok {σ s : State} (hp : Pre 4 σ) (he : Env 4 σ s)
@@ -106,7 +106,7 @@ theorem firstTwo_setup_ok {σ s : State} (hp : Pre 2 σ) (he : Env 2 σ s)
   apply WP.seq
   refine WP.mono (squeezeSetupZero_env he) fun t ⟨het,hm,h22,_,hbuf⟩ => ?_
   exact firstTwo_ok hp het (by simpa only [hm] using hs) (by simpa only [hm] using hc)
-    h22 (fun k hk => hbuf k (by omega))
+    h22 (fun k hk => hbuf k (by omega_using [hk]))
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 end

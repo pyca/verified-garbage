@@ -52,13 +52,13 @@ theorem gcode_lt (g : G) : g.code < 2 ^ gw := by
     have := Nat.mod_lt n (show 0 < 2 ^ 64 by decide)
     show 1 + 2 * (n % 2 ^ 64) < 2 ^ gw
     rw [show 2 ^ gw = 2 ^ 64 * 2 ^ 16 from rfl]
-    omega
+    omega_using []
   | ptr k o =>
     have := Nat.mod_lt o (show 0 < 2 ^ 32 by decide)
     have := Nat.mod_lt k (show 0 < 16 by decide)
     show 2 + 2 * (k % 16 + 16 * (o % 2 ^ 32)) < 2 ^ gw
     rw [show 2 ^ gw = 2 ^ 32 * 2 ^ 48 from rfl]
-    omega
+    omega_using []
 
 theorem greg_setG (σ : St) (d r : Reg) (g : G) :
     (σ.setG d g).greg r = if r = d then G.ofCode g.code else σ.greg r := by
@@ -114,16 +114,16 @@ theorem vhalf_setLane' (x : BitVec 128) {k e : Nat} (hk : k < 8) (he : e < 8) (h
   rw [getLsbD_vhalf _ _ hi]
   simp only [setLane, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
     BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes,
-    show 16 * e + i < 128 by omega, decide_true, Bool.true_and]
+    show 16 * e + i < 128 by omega_using [he, hi], decide_true, Bool.true_and]
   by_cases h' : e = k
   · subst h'
-    simp [hi, show ¬ 16 * e + i < 16 * e by omega, show 16 * e + i - 16 * e = i by omega,
-      show i < 128 by omega]
+    simp [hi, show ¬ 16 * e + i < 16 * e by omega_using [], show 16 * e + i - 16 * e = i by omega_using [],
+      show i < 128 by omega_using [hi]]
   · rw [ite_eq_right h', getLsbD_vhalf _ _ hi]
-    rcases (by omega : e < k ∨ k < e) with c | c
-    · simp [show 16 * e + i < 16 * k by omega]
-    · have : h.getLsbD (16 * e + i - 16 * k) = false := BitVec.getLsbD_of_ge _ _ (by omega)
-      simp [show ¬ 16 * e + i < 16 * k by omega, show ¬ 16 * e + i - 16 * k < 16 by omega, this]
+    rcases (by omega_using [h'] : e < k ∨ k < e) with c | c
+    · simp [show 16 * e + i < 16 * k by omega_using [hi, c]]
+    · have : h.getLsbD (16 * e + i - 16 * k) = false := BitVec.getLsbD_of_ge _ _ (by omega_using [c])
+      simp [show ¬ 16 * e + i < 16 * k by omega_using [c], show ¬ 16 * e + i - 16 * k < 16 by omega_using [c], this]
 
 /-- The halfword `e` of a permutation the machine follows. -/
 theorem vhalf_perm (op : VPermOp) (a : VArr) (x y : BitVec 128) {e : Nat} (he : e < 8) {b : Bool} {i : Nat}
@@ -206,15 +206,15 @@ theorem GHd.code {rs : List Rg} {s₀ : State} {g : G} {v : BitVec 64} (h : GHd 
     obtain ⟨hn, rfl⟩ := h
     have e : G.ofCode (G.num n).code = .num n := by
       simp only [G.code, G.ofCode, Nat.mod_eq_of_lt hn]
-      rw [ite_eq_right (by omega), ite_eq_left (by omega)]
-      congr 1; omega
+      rw [ite_eq_right (by omega_using []), ite_eq_left (by omega_using [])]
+      congr 1; omega_using []
     rw [e]; exact ⟨hn, rfl⟩
   | ptr k o =>
     obtain ⟨hk, hk16, ho, rfl⟩ := h
     have e : G.ofCode (G.ptr k o).code = .ptr k o := by
       simp only [G.code, G.ofCode, Nat.mod_eq_of_lt hk16, Nat.mod_eq_of_lt ho]
-      rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-      congr 1 <;> omega
+      rw [ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
+      congr 1 <;> omega_using [hk16]
     rw [e]; exact ⟨hk, hk16, ho, rfl⟩
 
 /-- What `locate` finds. -/
@@ -246,7 +246,7 @@ variable {rs : List Rg} {s₀ : State} {L : Nat → Nat → BitVec 16} {O : Nat 
 theorem ofNat_mod16 (v : Nat) : BitVec.ofNat 16 (v % 65536) = BitVec.ofNat 16 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem Hd.cT (v : Nat) : Hd L O (cT v) (BitVec.ofNat 16 v) := by
   refine (Hd.mk (by decide)).2 ?_
@@ -258,7 +258,7 @@ theorem cT_lt (v : Nat) : @LT.lt Nat instLTNat (cT v) (2 ^ tw) := mk_lt_tw ..
 theorem setWidth16 (v : Nat) : (BitVec.ofNat 64 v).setWidth 16 = BitVec.ofNat 16 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 theorem Hd.ofFn {f : Nat → T} {g : Nat → BitVec 16} (hlt : ∀ e < 8, @LT.lt Nat instLTNat (f e) (2 ^ tw))
     (h : ∀ e < 8, Hd L O (f e) (g e)) : ∀ e < 8, Hd L O ((Y.ofFn f).get e) (g e) := by
@@ -465,7 +465,7 @@ theorem vop_ok {R : Rules} (hM : Model L O R) {σ σ' : St} {s : State} (h : Rel
 
 theorem read_write16' (m : Mem) (a : Addr) (x : BitVec 128) : (m.write a 16 x).read a 16 = x := by
   refine Mem.read_eq_of_bytes fun i hi => ?_
-  simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
+  simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hi]), hi, ite_true]
 
 theorem Rel.setG {σ : St} {s : State} (h : Rel rs s₀ L O σ s) {d : Reg} {g : G} {v : BitVec 64}
     (hg : GHd rs s₀ g v) : Rel rs s₀ L O (σ.setG d g) (s.write .x d v) := by
@@ -486,10 +486,10 @@ theorem rbase_norm {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {k o : Nat} 
     obtain ⟨hk', hb, ho', hlt⟩ := locate_some hl
     have hs := hc.small k' hk'
     unfold chunks at hs
-    refine ⟨hk', by have := hc.len; omega, by omega, ?_⟩
+    refine ⟨hk', by have := hc.len; omega_using [hk', this], by omega_using [hlt, hs], ?_⟩
     unfold rbase
     rw [hb, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add, ho']
-  · exact ⟨hk, by have := hc.len; omega, ho, rfl⟩
+  · exact ⟨hk, by have := hc.len; omega_using [hk, this], ho, rfl⟩
 
 theorem GHd.addG {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {g : G} {v : BitVec 64} (h : GHd rs s₀ g v)
     (imm : Nat) : GHd rs s₀ (addG rs g imm) (v + BitVec.ofNat 64 imm) := by
@@ -500,7 +500,7 @@ theorem GHd.addG {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {g : G} {v : B
     refine ⟨Nat.mod_lt _ (by decide), ?_⟩
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   | ptr k o =>
     obtain ⟨hk, -, -, rfl⟩ := h
     simp only [NttR.addG]
@@ -519,7 +519,7 @@ theorem GHd.subG {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {g : G} {v : B
     refine ⟨Nat.mod_lt _ (by decide), ?_⟩
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_using [himm]
   | ptr k o =>
     obtain ⟨hk, -, ho, rfl⟩ := h
     simp only [NttR.subG]
@@ -528,7 +528,7 @@ theorem GHd.subG {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) {g : G} {v : B
       have e : BitVec.ofNat 64 o = BitVec.ofNat 64 (o - imm) + BitVec.ofNat 64 imm := by
         rw [← BitVec.ofNat_add, Nat.sub_add_cancel hle]
       rw [e, ← BitVec.add_assoc, BitVec.add_sub_cancel]
-      exact rbase_norm hc hk (by omega)
+      exact rbase_norm hc hk (by omega_using [ho])
     · trivial
 
 /-- An access the machine finds. -/
@@ -551,10 +551,10 @@ theorem chunkAt_some {rs : List Rg} {s₀ : State} {g : G} {v : BitVec 64} (h : 
         obtain ⟨rfl, rfl⟩ := hk
         obtain ⟨hk', hb, ho', hlt⟩ := locate_some hl
         refine ⟨hk', ?_, ?_⟩
-        · unfold chunks; omega
+        · unfold chunks; omega_using [hlt]
         · unfold caddr rbase
           rw [hb, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_assoc, ← BitVec.ofNat_add, ← BitVec.ofNat_add,
-            ← BitVec.ofNat_add, show 16 * (o' / 16) = o' by omega, ho', Nat.add_assoc]
+            ← BitVec.ofNat_add, show 16 * (o' / 16) = o' by omega_using [h16], ho', Nat.add_assoc]
       · simp [h16] at hk
 
 theorem chunk_none {σ : St} {k j : Nat} (hk : ¬ k < σ.mem.length) (e : Nat) : (σ.chunk k j).get e = 0 := by
@@ -566,13 +566,13 @@ theorem chunk_none {σ : St} {k j : Nat} (hk : ¬ k < σ.mem.length) (e : Nat) :
 theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 16) :
     exec (.ldrq t n off) s = some (s.setV t (s.mem.read (s.gpr n + BitVec.ofNat 64 off) 16)) := by
-  simp [exec, addr, State.load, hr, ho.1, show off < 4096 * 16 by omega]
+  simp [exec, addr, State.load, hr, ho.1, show off < 4096 * 16 by omega_using [ho]]
 
 theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
     (hr : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
     exec (.strq t n off) s =
       some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
-  simp [exec, addr, State.store, hr, ho.1, show off < 4096 * 16 by omega]
+  simp [exec, addr, State.store, hr, ho.1, show off < 4096 * 16 by omega_using [ho]]
 
 theorem movz_val (imm : BitVec 16) {hw : Nat} (hw4 : hw < 4) :
     imm.setWidth 64 <<< (16 * hw) = BitVec.ofNat 64 (imm.toNat * 2 ^ (16 * hw)) ∧
@@ -581,11 +581,11 @@ theorem movz_val (imm : BitVec 16) {hw : Nat} (hw4 : hw < 4) :
   have hp : imm.toNat * 2 ^ (16 * hw) < 2 ^ 64 := by
     calc imm.toNat * 2 ^ (16 * hw) < 2 ^ 16 * 2 ^ (16 * hw) := Nat.mul_lt_mul_of_pos_right hi (Nat.two_pow_pos _)
       _ = 2 ^ (16 + 16 * hw) := (Nat.pow_add ..).symm
-      _ ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+      _ ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega_using [hw4])
   refine ⟨?_, hp⟩
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
-    Nat.mod_eq_of_lt (show imm.toNat < 2 ^ 64 by omega)]
+    Nat.mod_eq_of_lt (show imm.toNat < 2 ^ 64 by omega_using [])]
 
 theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} {s : State}
     (h : Rel rs s₀ L O σ s) {i : Instr} (hs : σ.step R rs i = some σ') :
@@ -612,7 +612,7 @@ theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} 
     · rename_i hw4
       simp only [Option.some.injEq] at hs; subst hs
       obtain ⟨e, hp⟩ := movz_val imm hw4
-      refine ⟨_, by simp only [exec, show 16 * hw < Size.bits .x by simp [Size.bits]; omega, ite_true],
+      refine ⟨_, by simp only [exec, show 16 * hw < Size.bits .x by simp [Size.bits]; omega_using [hw4], ite_true],
         h.setG (g := .num _) ⟨hp, e⟩⟩
     · cases hs
   case umov sz d n i =>
@@ -620,7 +620,7 @@ theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} 
     split at hs
     · rename_i hi
       simp only [Option.some.injEq] at hs; subst hs
-      exact ⟨_, by simp only [exec, Size.bits, show i * 64 < 128 by omega, ite_true]; rfl, h.setG (g := .junk) trivial⟩
+      exact ⟨_, by simp only [exec, Size.bits, show i * 64 < 128 by omega_using [hi], ite_true]; rfl, h.setG (g := .junk) trivial⟩
     · cases hs
   case adrSym d name =>
     simp only [St.step, Option.some.injEq] at hs; subst hs
@@ -630,7 +630,7 @@ theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} 
     · rename_i k hk
       obtain ⟨hk, hp, -⟩ := List.findIdx?_eq_some_iff_getElem.1 hk
       simp only [Bool.and_eq_true, beq_iff_eq] at hp
-      refine ⟨hk, by have := hc.len; omega, by decide, ?_⟩
+      refine ⟨hk, by have := hc.len; omega_using [hk, this], by decide, ?_⟩
       unfold rbase baseOf
       simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hk, Option.getD_some, hp.1, hp.2,
         BitVec.add_zero, h.syms]
@@ -680,7 +680,7 @@ theorem step_ok {R : Rules} (hM : Model L O R) (hc : Ctx rs s₀) {σ σ' : St} 
               exact h.v t e he
             · by_cases hkj : k' = k ∧ j' = j
               · obtain ⟨rfl, rfl⟩ := hkj
-                rw [chunk_none (by omega)]
+                rw [chunk_none (by omega_arith)]
                 exact Hd.junk _
               · rw [Mem.read_write_sep (hc.sep k' j' k j hk'' hj' hk' hj hkj) (by decide)]
                 exact h.mem k' hk'' j' hj' e he

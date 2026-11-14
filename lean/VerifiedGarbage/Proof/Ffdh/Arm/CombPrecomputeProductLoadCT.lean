@@ -35,7 +35,7 @@ private theorem loadEntry_ct {p : Inputs} {sp : BitVec 32} {digit o : Nat} (ho :
         [.mov .r2 (.imm (BitVec.ofNat 32 o))])) s Ready := by
     have fit := h.1.ready.layout.2.2.1
     rw [h.1.ready.width] at fit
-    have size : 52≤8*p.len := by simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fit; omega
+    have size : 52≤8*p.len := by simp only [arrAt,Proof.Rsa.Mont.hdrBytes] at fit; omega_using [fit]
     have header := nativeHeader_of_layout s.mem p.base h.1.ready.workspace.nowrap
       (Nat.le_refl _) h.1.ready.layout
     rw [h.1.ready.width] at header
@@ -46,8 +46,8 @@ private theorem loadEntry_ct {p : Inputs} {sp : BitVec 32} {digit o : Nat} (ho :
     rw [combTableAddress] at dstU
     refine wp_mov (op2_imm (by
       apply encodable_byte
-      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : o<2^32)]
-      omega)) fun v moved => WP.block_nil ?_
+      rw [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [ho] : o<2^32)]
+      omega_using [ho])) fun v moved => WP.block_nil ?_
     have memV := moved.mem.trans memU
     exact ⟨⟨h.1.ready.workspace.congr (moved.wr.trans restU.wr),
       by rw [memV]; exact h.1.ready.layout,
@@ -65,7 +65,7 @@ private theorem loadEntry_ct {p : Inputs} {sp : BitVec 32} {digit o : Nat} (ho :
         .dp .add .r3 .r3 (.imm 2), .mul .r3 .r3 .r1,
         .dp .add .r4 .r4 (.reg .r3), .dp .add .r4 .r4 (.imm 24)] ++
         [.mov .r2 (.imm (BitVec.ofNat 32 o))])) (fun _ _ => True) := by
-    have cases : o=0 ∨ o=1 ∨ o=2 ∨ o=3 ∨ o=4 ∨ o=5 ∨ o=6 ∨ o=7 := by omega
+    have cases : o=0 ∨ o=1 ∨ o=2 ∨ o=3 ∨ o=4 ∨ o=5 ∨ o=6 ∨ o=7 := by omega_using [ho]
     rcases cases with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
       (apply RelCT.taint (A:=taint) (Taint.ofRegs [.r0]) _ (by taint_decide)
        intro s t h

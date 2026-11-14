@@ -62,8 +62,8 @@ theorem oneA_ok {s₀ : State} {off : Nat} {W : Addr} (hoff : off = 96 ∨ off =
     (hWv : s₀.mem.readW (s₀.sp + BitVec.ofNat 64 off) 64 = W) :
     WP isa (.block [.addSp .r12 0, .load .d .r12 .r12 off]) s₀ fun sA =>
       sA.gpr .r12 = W ∧ (∀ r, r ≠ .r12 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
-  have ho4 : off % 4 = 0 := by omega
-  have ho15 : off < 2 ^ 15 := by omega
+  have ho4 : off % 4 = 0 := by omega_using [hoff]
+  have ho15 : off < 2 ^ 15 := by omega_using [hoff]
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.write, Size.bytes,
     hWi, ho4, ho15, Proof.Gcm.PPC64LE.read_8, hWv, Option.bind_some, Option.map_some, Option.some.injEq,
@@ -125,7 +125,7 @@ theorem one1_wp {s₀ : State} {off : Nat} {W X : Addr} (hoff : off = 96 ∨ off
     rw [k₁.sp, bk.mem, Frame.readW hf (r := ⟨s₀.sp + BitVec.ofNat 64 (off + 8), 8⟩) (Region.contains_self _ _)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hXd) (by decide), kA.mem]
     exact hXv
-  refine WP.mono (ldSp_ok (t := .r28) (off := off + 8) (by omega) (by omega)
+  refine WP.mono (ldSp_ok (t := .r28) (off := off + 8) (by omega_using [hoff]) (by omega_using [hoff])
     (by rw [k₁.sp, k₁.rd, k₁.wr]; exact hXi) hX₁) fun s₃ ⟨c28, g₃, k₃⟩ => ?_
   have q : ∀ r, r ≠ .r12 → r ≠ .r28 → s₃.gpr r = s₁.gpr r := g₃
   refine ⟨⟨fun r hr => ?_, ⟨k₃.rd.trans k₁.rd, k₃.wr.trans k₁.wr, k₃.sp.trans k₁.sp, k₃.lr.trans k₁.lr⟩, ?_, ?_⟩,

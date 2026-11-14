@@ -149,11 +149,11 @@ theorem wordStep_ok {code : Prog isa} {name : String}
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   dsimp only
   change WP isa (.seq (.block loadWord) (.seq (.loop (window name code) .ne) (.block wordEnd))) s _
-  have readWord := read_exponentWord (S.data.arrayValues aExponent expKnown).2 (by omega : q - 1 < g.words)
+  have readWord := read_exponentWord (S.data.arrayValues aExponent expKnown).2 (by omega_using [positive, bound] : q - 1 < g.words)
   refine WP.seq (WP.mono (S.loadWord v q positive bound count _ readWord) fun a ⟨Sa, Oa, Ka⟩ => ?_)
   refine WP.seq (WP.mono (wordWindows_ok verified noSp stack v Sa length odd Ylt yKnown oneKnown minusKnown
     xUnknown tableKnown one tableLt _ F rfl flag rfl) fun b ⟨Sb, Ob, Kb⟩ => ?_)
-  have qBound : q < 2 ^ 32 := by have := v.maxWidth; unfold Geometry.words at bound; omega
+  have qBound : q < 2 ^ 32 := by have := v.maxWidth; unfold Geometry.words at bound; omega_using [bound, this]
   refine WP.mono (Sb.counterDown v sWords q (by unfold scratchWord sWords; simp) (by decide)
     positive qBound count) fun t ⟨St, Z, Ot, Kt⟩ => ?_
   refine ⟨St.mono (fun _ mem => ⟨mem, rfl⟩) ?_, Z, (Oa.trans Ob).trans Ot,

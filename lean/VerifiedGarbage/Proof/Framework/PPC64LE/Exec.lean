@@ -206,9 +206,9 @@ theorem lis_ori (x : BitVec 32) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 16
-  · simp [h, show i < 32 from hi, show i < 64 by omega]
-  · simp [h, show i < 32 from hi, show i < 64 by omega, show i - 16 < 16 by omega,
-      show 16 + (i - 16) = i by omega]
+  · simp [h, show i < 32 from hi, show i < 64 by omega_using [hi]]
+  · simp [h, show i < 32 from hi, show i < 64 by omega_using [hi], show i - 16 < 16 by omega_using [hi],
+      show 16 + (i - 16) = i by omega_using [h]]
 
 /-- `lis_ori`, with the low word taken of each half, as `simp` leaves it. -/
 theorem lis_ori' (x : BitVec 32) :
@@ -219,9 +219,9 @@ theorem lis_ori' (x : BitVec 32) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_signExtend,
     BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 16
-  · simp [h, show i < 32 from hi, show i < 64 by omega]
-  · simp [h, show i < 32 from hi, show i < 64 by omega, show i - 16 < 16 by omega,
-      show 16 + (i - 16) = i by omega]
+  · simp [h, show i < 32 from hi, show i < 64 by omega_using [hi]]
+  · simp [h, show i < 32 from hi, show i < 64 by omega_using [hi], show i - 16 < 16 by omega_using [hi],
+      show 16 + (i - 16) = i by omega_using [h]]
 
 theorem rev32_readW (m : Mem) (a : Addr) :
     rev32 (m.readW a 32) = (m a ++ m (a + 1) ++ m (a + 1 + 1) ++ m (a + 1 + 1 + 1) : BitVec 32) :=
@@ -285,7 +285,7 @@ theorem push_sp {i : Instr} {s s₁ : State} (h : push i s = some s₁) :
   · split at h <;> cases h; exact ⟨16, rfl, rfl⟩
   · split at h <;> cases h
     rename_i hc
-    exact ⟨_, by rw [Nat.sub_add_cancel (by omega)], rfl⟩
+    exact ⟨_, by rw [Nat.sub_add_cancel (by omega_using [hc])], rfl⟩
 
 /-- A frame's pop moves `sp` up by the local variable space of the frame
 its push made (the head of the regions) and the header. -/

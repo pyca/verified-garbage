@@ -21,7 +21,7 @@ theorem isZero_ok (s : State) {a : Nat} (ha : a < 2 ^ 32) (hb : s.gpr .ebx = Bit
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · have h1 : (1 : BitVec 32).toNat = 1 := rfl
     have hx : decide ((BitVec.ofNat 32 a).toNat < 1) = decide (a = 0) := by
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha]; exact decide_eq_decide.mpr (by omega)
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha]; exact decide_eq_decide.mpr (by omega_using [])
     rw [BitVec.sub_self, h1, hx]
     cases decide (a = 0) <;> decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -34,10 +34,10 @@ theorem selWords_ok {s : State} {base : Addr} {size n o a b : Nat} (hs : Scr s b
     WP isa (.block (sel (2 * n) o a b)) s fun t =>
       wordsVal t.mem base o n = (if c then wordsVal s.mem base b n else wordsVal s.mem base a n) ∧
       Keeps [.eax, .edx] s t ∧ Outside base o (8 * n) s.mem t.mem := by
-  refine WP.mono (sel_ok c (2 * n) hs hc (by omega) (by omega) (by omega) (by omega) (by omega))
+  refine WP.mono (sel_ok c (2 * n) hs hc (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [hoa]) (by omega_using [hob]))
     fun t ⟨v, k, O⟩ => ⟨?_, k, ?_⟩
   · simpa only [wordsVal_eq_val32] using v
-  · simpa only [show 4 * (2 * n) = 8 * n by omega] using O
+  · simpa only [show 4 * (2 * n) = 8 * n by omega_using []] using O
 
 /-- The neutral point's y coordinate is one and z is zero. All other
 magnitudes keep the selected y and receive z = one. -/
@@ -61,21 +61,21 @@ theorem selOne_ok (K : TCombCfg) {s : State} {base : Addr} {size a : Nat} (hs : 
   refine WP.mono (isZero_ok s₁ ha (by rw [k₁.1 _ (by decide), hb])) fun s₂ ⟨c₂, k₂⟩ => ?_
   rw [WP.block_append_iff]
   have hs₂ := (hs.of_keeps k₁ (by decide)).of_keeps k₂.keeps (by decide)
-  refine WP.mono (selWords_ok hs₂ (decide (a = 0)) c₂ hy hy hz (.inl (Nat.le_refl _)) (by omega))
+  refine WP.mono (selWords_ok hs₂ (decide (a = 0)) c₂ hy hy hz (.inl (Nat.le_refl _)) (by omega_using [hyz]))
     fun s₃ ⟨v₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   refine WP.mono (selWords_ok hs₃ (decide (a = 0)) (by rw [k₃.1 _ (by decide), c₂]) hz hz hzero
-    (.inl (Nat.le_refl _)) (by omega)) fun t ⟨v₄, k₄, O₄⟩ => ?_
+    (.inl (Nat.le_refl _)) (by omega_using [h0z])) fun t ⟨v₄, k₄, O₄⟩ => ?_
   have y₂ : wordsVal s₂.mem base K.E.y K.M.n = wordsVal s.mem base K.E.y K.M.n := by
-    rw [k₂.2.1, O₁.wordsVal hyz (by omega)]
+    rw [k₂.2.1, O₁.wordsVal hyz (by omega_using [hy, hn])]
   have z₂ : wordsVal s₂.mem base K.E.z K.M.n = K.one := by rw [k₂.2.1, v₁]
   have z₃ : wordsVal s₃.mem base K.E.z K.M.n = K.one := by
-    rw [O₃.wordsVal hyz.symm (by omega), z₂]
+    rw [O₃.wordsVal hyz.symm (by omega_using [hz, hn]), z₂]
   have zero₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by
-    rw [O₃.wordsVal h0y (by omega), k₂.2.1, O₁.wordsVal h0z (by omega), h0]
+    rw [O₃.wordsVal h0y (by omega_using [hzero, hn]), k₂.2.1, O₁.wordsVal h0z (by omega_using [hzero, hn]), h0]
   refine ⟨?_, ?_, ((k₁.mono (by decide)).trans (k₂.keeps.mono (by decide))).trans
       ((k₃.mono (by decide)).trans (k₄.mono (by decide))), ?_⟩
-  · rw [O₄.wordsVal hyz (by omega), v₃, y₂, z₂]; simp
+  · rw [O₄.wordsVal hyz (by omega_using [hy, hn]), v₃, y₂, z₂]; simp
   · rw [v₄, zero₃, z₃]; simp
   · have U₁ := O₁.unch
     have U₃ := O₃.unch

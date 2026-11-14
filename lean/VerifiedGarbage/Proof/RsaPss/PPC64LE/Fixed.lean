@@ -59,7 +59,7 @@ theorem hashFixedG_ok (hD : H.D = D) {sl : Nat} (h19 : vf s .r19 = BitVec.ofNat 
   have hD64 := hH.hD64
   have g19 : ∀ {u : State}, Base S vf s u → u.gpr .r19 + BitVec.ofNat 64 (8 + H.D) =
       BitVec.ofNat 64 (8 + D + sl) := fun b => by
-    rw [b.vs .r19 (by decide), h19, hD, BitVec.ofNat_add_ofNat]; congr 1; omega
+    rw [b.vs .r19 (by decide), h19, hD, BitVec.ofNat_add_ofNat]; congr 1; omega_using []
   refine WP.seq (WP.mono (hInit_ok F hH T h sy) fun t₁ ⟨⟨b₁, g₁, s₁, r₁⟩, y₁⟩ => ?_)
   refine WP.seq (WP.of_syms (wp_li (by decide) fun t₂ o₂ e₂ => wp_addi (h := by decide) fun t₃ o₃ e₃ =>
     wp_addi (h := by omega_arith) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_))

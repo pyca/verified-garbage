@@ -51,7 +51,7 @@ theorem decomp_spec {d : Nat} (hd : d ∈ compressWidths) (is : List Instr) (s :
     (k : ∀ s', Only [.eax, .edx] s s' → (s'.gpr .eax).toNat = dv d y → WP isa (.block is) s' P) :
     WP isa (.block (decompOp d ++ is)) s P := by
   have hd' : 1 ≤ d ∧ d ≤ 31 ∧ y < 1024 := by
-    rcases mem_compressWidths hd with rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩ <;> omega
+    rcases mem_compressWidths hd with rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩ <;> omega_using [hy]
   rw [WP.block_append_iff]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, decompOp, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
@@ -65,8 +65,8 @@ theorem decomp_spec {d : Nat} (hd : d ∈ compressWidths) (is : List Instr) (s :
       rcases mem_compressWidths hd with rfl | rfl | rfl <;> decide
     rw [toNat_shr]
     rw [BitVec.toNat_add]; simp only [BitVec.toNat_ofNat, h]
-    rw [show (3329 : BitVec 32).toNat = 3329 from rfl, Nat.mod_eq_of_lt (a := y * 3329) (by omega), Nat.mod_eq_of_lt (a := 2 ^ (d - 1)) (by omega),
-      Nat.mod_eq_of_lt (by omega), dv, q_eq, Nat.mul_comm y]
+    rw [show (3329 : BitVec 32).toNat = 3329 from rfl, Nat.mod_eq_of_lt (a := y * 3329) (by omega_using [hd']), Nat.mod_eq_of_lt (a := 2 ^ (d - 1)) (by omega_using [hp]),
+      Nat.mod_eq_of_lt (by omega_using [hd', hp]), dv, q_eq, Nat.mul_comm y]
 
 theorem shrFrom_spec (sh : Nat) (hsh : sh ≤ 31) (is : List Instr) (s : State) (P : State → Prop)
     (k : ∀ s', Only [.eax] s s' → s'.gpr .eax = s.gpr .ebx >>> sh → WP isa (.block is) s' P) :
@@ -80,7 +80,7 @@ theorem shrFrom_spec (sh : Nat) (hsh : sh ≤ 31) (is : List Instr) (s : State) 
     simp only [State.setReg]
     rw [ite_eq_right_iff.mpr fun (e : r = .eax) => absurd (e ▸ List.mem_singleton_self _) hr]
   · simp only [h0, ite_false]
-    refine wp_shr (by omega) hsh fun s' o v => k s' ⟨fun r hr => ?_, o.mem, o.rd, o.wr⟩ ?_
+    refine wp_shr (by omega_using [h0]) hsh fun s' o v => k s' ⟨fun r hr => ?_, o.mem, o.rd, o.wr⟩ ?_
     · rw [o.gpr r hr]; simp only [State.setReg]
       rw [ite_eq_right_iff.mpr fun (e : r = .eax) => absurd (e ▸ List.mem_singleton_self _) hr]
     · rw [v]; simp [State.setReg]
@@ -128,7 +128,7 @@ theorem unpackStep_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (hj : d 
     rw [ea₂, mem₂, eq_ofNat_of_toNat v₂, dfield]
 
 theorem dk_le {d k : Nat} (hd : d ∈ compressWidths) (h : d * (k + 1) ≤ 32) : d * k ≤ 31 := by
-  rcases mem_compressWidths hd with rfl | rfl | rfl <;> omega
+  rcases mem_compressWidths hd with rfl | rfl | rfl <;> omega_using [h]
 
 /-- `unpackSteps d k` writes `dfield d B j` to `[edi + 4j]` for `j < k`, from `ebx = B`, where
 `edi` is at coefficient `i₀` of the polynomial at `p`. -/
@@ -143,17 +143,17 @@ theorem unpackSteps_spec {d : Nat} (hd : d ∈ compressWidths) {p : Addr} {i₀ 
         WP isa (.block is) s' P) →
       WP isa (.block (unpackSteps d k ++ is)) s P
   | 0, is, s, P, _, _, _, _, _, k => k s ⟨fun _ _ => rfl, rfl, rfl⟩ (Frame.refl _ _) fun i _ => by
-      rw [ite_eq_right_iff.mpr fun h => absurd h.2 (by omega)]
+      rw [ite_eq_right_iff.mpr fun h => absurd h.2 (by omega_using [h])]
   | k + 1, is, s, P, hdk, hik, hB, hea, hin, kk => by
     have hdk' : d * k ≤ 31 := dk_le hd hdk
     rw [unpackSteps, List.append_assoc]
-    refine unpackSteps_spec hd k _ s P (by omega) (by omega) hB (fun j hj => hea j (by omega))
-      (fun j hj => hin j (by omega)) fun s₁ o₁ f₁ c₁ => ?_
+    refine unpackSteps_spec hd k _ s P (by omega_using [hdk']) (by omega_using [hik]) hB (fun j hj => hea j (by omega_using [hj]))
+      (fun j hj => hin j (by omega_using [hj])) fun s₁ o₁ f₁ c₁ => ?_
     have ea₁ : s₁.ea (at_ .edi (4 * k)) = coeffAddr p (i₀ + k) := by
-      rw [← hea k (by omega)]; simp only [State.ea, at_, o₁.gpr _ (show Reg.edi ∉ [Reg.eax, .edx] by decide)]
+      rw [← hea k (by omega_using [])]; simp only [State.ea, at_, o₁.gpr _ (show Reg.edi ∉ [Reg.eax, .edx] by decide)]
     refine unpackStep_spec hd k hdk' is s₁ P (by rw [o₁.gpr _ (by decide), hB])
-      (by rw [ea₁, o₁.wr]; exact hin k (by omega)) fun s₂ o₂ m₂ => ?_
-    have hk' : i₀ + k < n := by rw [n_eq]; omega
+      (by rw [ea₁, o₁.wr]; exact hin k (by omega_using [])) fun s₂ o₂ m₂ => ?_
+    have hk' : i₀ + k < n := by rw [n_eq]; omega_using [hik]
     refine kk s₂ ((o₁.trans o₂).mono fun r hr => by
         rcases List.mem_append.mp hr with h | h <;> exact h)
       (by rw [m₂, ea₁]; exact f₁.writeW (List.mem_singleton_self _) _ (coeff_contains _ hk'))
@@ -161,11 +161,11 @@ theorem unpackSteps_spec {d : Nat} (hd : d ∈ compressWidths) {p : Addr} {i₀ 
     rw [m₂, ea₁, coeffAt_writeW _ _ (show i < n by rw [n_eq]; exact hi) hk', c₁ i hi]
     by_cases e : i₀ + k = i
     · subst e
-      rw [ite_eq_left rfl, ite_eq_left ⟨by omega, by omega⟩, Nat.add_sub_cancel_left]
+      rw [ite_eq_left rfl, ite_eq_left ⟨by omega_using [], by omega_using []⟩, Nat.add_sub_cancel_left]
     · rw [ite_eq_right e]
       by_cases hr : i₀ ≤ i ∧ i < i₀ + k
-      · rw [ite_eq_left hr, ite_eq_left ⟨hr.1, by omega⟩]
-      · rw [ite_eq_right hr, ite_eq_right (fun h => hr ⟨h.1, by omega⟩)]
+      · rw [ite_eq_left hr, ite_eq_left ⟨hr.1, by omega_using [hr]⟩]
+      · rw [ite_eq_right hr, ite_eq_right (fun h => hr ⟨h.1, by omega_using [e, h]⟩)]
 
 theorem dv_eq {d : Nat} (hd : d ∈ compressWidths) {y : Nat} (hy : y < 2 ^ d) :
     dv d y = (decompress d y).val := (decompress_val hd hy).1.symm

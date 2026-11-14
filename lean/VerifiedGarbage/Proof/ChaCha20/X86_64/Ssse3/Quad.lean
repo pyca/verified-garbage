@@ -120,10 +120,10 @@ theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitVe
 
 theorem imm_eq {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]; simp; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
-  simp [Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
+  simp [Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega_using [h]), Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [h])]
 
 theorem toNat_ofNat64 {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -136,7 +136,7 @@ theorem cmpi_ok (s : State) (d : Reg) {n : Nat} (hn : n < 2 ^ 31) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
     State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', imm_eq hn,
-    toNat_ofNat64 (show n < 2 ^ 64 by omega)]
+    toNat_ofNat64 (show n < 2 ^ 64 by omega_using [hn])]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
 /-- A byte at offset `k` after a 16-byte write at offset `off`. -/
@@ -155,7 +155,7 @@ theorem byte_write16 (m : Mem) (a : Addr) (v : BitVec 128) {off k : Nat} (ho : o
 /-- Byte `t` of a 128-bit value: byte `t % 4` of doubleword `t / 4`. -/
 theorem byte_dword (v : BitVec 128) (t : Nat) :
     v.extractLsb' (8 * t) 8 = (dword v (t / 4)).extractLsb' (8 * (t % 4)) 8 := by
-  rw [dword, extract_extract _ _ _ _ _ (by omega), show 32 * (t / 4) + 8 * (t % 4) = 8 * t by omega]
+  rw [dword, extract_extract _ _ _ _ _ (by omega_using []), show 32 * (t / 4) + 8 * (t % 4) = 8 * t by omega_using []]
 
 theorem ea_gpr {s s' : State} (h : s'.gpr = s.gpr) (m : MemOp) : s'.ea m = s.ea m := by
   simp only [State.ea, h]
@@ -1152,7 +1152,7 @@ theorem finishRow_ok {r : Nat} (hr : r < 4) {s : State} (h : FI a b buf (blk vs 
     · by_cases cf : Full W k
       · rw [ite_eq_left ⟨c, by omega_arith, cf⟩, h.src (by omega_arith) hd.al has hk (by omega_arith),
           ite_eq_left ⟨by omega_arith, cf⟩]
-      · rw [ite_eq_right (by omega), h.data k hk, ite_eq_right (by omega), ite_eq_right (by omega)]
+      · rw [ite_eq_right (by omega), h.data k hk, ite_eq_right (by omega_using [c]), ite_eq_right (by omega)]
     · rw [ite_eq_right (by omega_arith), h.data k hk]
       by_cases c' : k % 64 / 16 < r ∧ Full W k
       · rw [ite_eq_left c', ite_eq_left ⟨by omega, c'.2⟩]

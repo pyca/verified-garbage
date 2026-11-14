@@ -41,7 +41,7 @@ theorem shortTest_ok {E : SE} {R : List Byte} {s : State} {u : Nat} (hE : E.Ok) 
   have hql := hE.ql
   refine WP.keep _ ?_ (by decide)
   unfold shortTest
-  prun [h.r24, h25, h.r28, VG.Offset.ofNat_sub_ofNat hu, short_eq (x := E.rl - u) (w := E.W) (by omega) (by omega)]
+  prun [h.r24, h25, h.r28, VG.Offset.ofNat_sub_ofNat hu, short_eq (x := E.rl - u) (w := E.W) (by omega_using [hrn]) (by omega_using [hW, hql])]
 
 /-- What `drawFinish` decides. -/
 theorem drawFinish_ok {s : State} {d : Nat} {a : Bool} (h17 : s.gpr .r17 = BitVec.ofNat 64 d) (hd : 1 ≤ d)
@@ -61,16 +61,16 @@ theorem drawFinish_ok {s : State} {d : Nat} {a : Bool} (h17 : s.gpr .r17 = BitVe
     refine WP.seq (WP.mono (WP.keep [.r17] (Q := fun t => t.mem = s.mem ∧
       t.gpr .r17 = BitVec.ofNat 64 (d - 1)) (by prun [h17, VG.Offset.ofNat_sub_ofNat hd]) (by decide))
       fun t₁ ⟨⟨m1, a17⟩, k1⟩ => ?_)
-    refine WP.ite (decide (d - 1 = 0)) (eval_zero_ofNat _ _ (by omega) a17) (fun hz => ?_) (fun hz => ?_)
+    refine WP.ite (decide (d - 1 = 0)) (eval_zero_ofNat _ _ (by omega_using [hd']) a17) (fun hz => ?_) (fun hz => ?_)
     · simp only [decide_eq_true_eq] at hz
       refine WP.mono (WP.keep [.r31] (Q := fun t => t.mem = t₁.mem ∧ t.gpr .r31 = BitVec.ofNat 64 0)
         (by prun) (by decide)) fun t ⟨⟨tm, t31⟩, k⟩ => ⟨tm.trans m1, (k1.trans k).mono (by decide),
           (fun h => by cases h), fun _ => ⟨(k.gpr .r17 (by decide)).trans a17, fun _ => t31,
-            fun h => absurd (by omega) h⟩⟩
+            fun h => absurd (by omega_using [hd, hz]) h⟩⟩
     · simp only [decide_eq_false_iff_not] at hz
       refine WP.mono (WP.block_nil rfl) fun t ht => ?_
       subst ht
-      exact ⟨m1, k1.mono (by decide), (fun h => by cases h), fun _ => ⟨a17, fun h => absurd (by omega) hz,
+      exact ⟨m1, k1.mono (by decide), (fun h => by cases h), fun _ => ⟨a17, fun h => absurd (by omega_using [h]) hz,
         fun _ => k1.gpr .r31 (by decide)⟩⟩
 
 end VG.Proof.Dsa.PPC64LE.Rnd
@@ -97,7 +97,7 @@ theorem copyRange_ok {E : SE} {qb R : List Byte} {s : State} {u : Nat} (hE : E.O
       Keep (copyRegs ++ rangeRegs) s t := by
   have hRl := h.R_length
   refine WP.seq (WP.mono (copy_ok hE h h25 hu) fun s₁ ⟨⟨a25, o1, cb⟩, k1⟩ => ?_)
-  have h1 : SEnv E R s₁ := h.step hE k1 (o := E.ql - E.W) (n := E.W) (by have := hE.ql; have := hE.Wq; omega) o1
+  have h1 : SEnv E R s₁ := h.step hE k1 (o := E.ql - E.W) (n := E.W) (by have := hE.ql; have := hE.Wq; omega_arith) o1
   have hc : cands E s₁.mem = cpyList (R.drop u) E.M E.W := by
     apply List.ext_getElem
     · simp [cands, VG.Proof.Bignum.bytesAt_length]
@@ -105,9 +105,9 @@ theorem copyRange_ok {E : SE} {qb R : List Byte} {s : State} {u : Nat} (hE : E.O
       simp only [cands, Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, cpyList]
       rw [← cb j (by simpa [VG.Proof.Bignum.bytesAt_length] using hj), off_add]
   have hcand : Spec.Dsa.decodeBE (cands E s₁.mem) = candidate (Spec.Dsa.decodeBE qb) ((R.drop u).take E.W) := by
-    rw [hc, hQ.cand (by rw [List.length_drop]; omega)]
+    rw [hc, hQ.cand (by rw [List.length_drop]; omega_using [hu, hRl])]
   refine WP.mono (inRange_ok hE h1) fun t ⟨⟨a6, tm⟩, k2⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_⟩, k1.trans k2⟩
-  · exact h1.step hE k2 (o := 0) (n := 0) (by omega) (by rw [tm]; exact Outside.refl _ _ _ _)
+  · exact h1.step hE k2 (o := 0) (n := 0) (by omega_using []) (by rw [tm]; exact Outside.refl _ _ _ _)
   · rw [tm]; exact o1
   · rw [k2.gpr .r25 (by decide)]; exact a25
   · rw [a6, hcand, hQ.qs_val]
@@ -137,18 +137,18 @@ theorem draw_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
   have hRl := h.R_length
   have hq := hQ.gt
   have hdw := hQ.draw
-  obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega⟩
+  obtain ⟨d', rfl⟩ : ∃ d', d = d' + 1 := ⟨d - 1, by omega_using [hd]⟩
   have hlen : (R.drop u).length = E.rl - u := by rw [List.length_drop, hRl]
   unfold draw
   refine WP.seq (WP.mono (shortTest_ok hE h h25 hu) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_)
-  have h1 : SEnv E R s₁ := h.step hE k1 (o := 0) (n := 0) (by omega) (by rw [m1]; exact Outside.refl _ _ _ _)
+  have h1 : SEnv E R s₁ := h.step hE k1 (o := 0) (n := 0) (by omega_using []) (by rw [m1]; exact Outside.refl _ _ _ _)
   refine WP.ite (decide (E.rl - u < E.W)) ?_ (fun hs => ?_) (fun hs => ?_)
   · rw [eval_nonzero_ofNat' _ _ (by split <;> decide) a3]
     congr 1
     by_cases hc : E.rl - u < E.W <;> simp [hc]
   · simp only [decide_eq_true_eq] at hs
     refine WP.mono (WP.keep [.r31] (Q := fun t => t.mem = s₁.mem ∧ t.gpr .r31 = BitVec.ofNat 64 2)
-      (by prun) (by decide)) fun t ⟨⟨tm, t31⟩, k2⟩ => ⟨h1.step hE k2 (o := 0) (n := 0) (by omega)
+      (by prun) (by decide)) fun t ⟨⟨tm, t31⟩, k2⟩ => ⟨h1.step hE k2 (o := 0) (n := 0) (by omega_using [])
         (by rw [tm]; exact Outside.refl _ _ _ _), by rw [tm, m1]; exact Outside.refl _ _ _ _,
         (k1.trans k2).mono (by decide), .inr ?_⟩
     have hS : sample (Spec.Dsa.decodeBE qb) (d' + 1) (R.drop u) = ⟨none, 0, [2]⟩ :=
@@ -157,16 +157,16 @@ theorem draw_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
     exact ⟨rfl, rfl, (fun k hk => by cases hk), by simp⟩
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hs
     have h25' : s₁.gpr .r25 = BitVec.ofNat 64 u := (k1.gpr .r25 (by decide)).trans h25
-    refine WP.seq (WP.mono (copyRange_ok hE hQ h1 h25' (by omega)) fun s₂ ⟨⟨h2, o2, a25, a6, hc⟩, k2⟩ => ?_)
+    refine WP.seq (WP.mono (copyRange_ok hE hQ h1 h25' (by omega_using [hu, hs])) fun s₂ ⟨⟨h2, o2, a25, a6, hc⟩, k2⟩ => ?_)
     have a17 : s₂.gpr .r17 = BitVec.ofNat 64 (d' + 1) := (k2.gpr .r17 (by decide)).trans ((k1.gpr .r17 (by decide)).trans h17)
     have hs' : drawBytes (Spec.Dsa.decodeBE qb) ≤ (R.drop u).length := by rw [hlen, hdw]; exact hs
-    refine WP.mono (drawFinish_ok (a := decide (acc qb R u E.W)) a17 (by omega) (by omega)
+    refine WP.mono (drawFinish_ok (a := decide (acc qb R u E.W)) a17 (by omega_using []) (by omega_using [hd'])
       (by
         rw [a6]
         by_cases ha : acc qb R u E.W
         · rw [ite_eq_left ha, ite_eq_left (show decide (acc qb R u E.W) = true from decide_eq_true ha)]
         · rw [ite_eq_right ha, ite_eq_right (show ¬ decide (acc qb R u E.W) = true by simpa using ha)]))
-      fun t ⟨tm, k3, hacc, hrej⟩ => ⟨h2.step hE k3 (o := 0) (n := 0) (by omega) (by rw [tm]; exact Outside.refl _ _ _ _),
+      fun t ⟨tm, k3, hacc, hrej⟩ => ⟨h2.step hE k3 (o := 0) (n := 0) (by omega_using []) (by rw [tm]; exact Outside.refl _ _ _ _),
         by rw [tm, ← m1]; exact o2, ((k1.trans k2).trans k3).mono (by decide), ?_⟩
     have t25 : t.gpr .r25 = BitVec.ofNat 64 (u + E.W) := (k3.gpr .r25 (by decide)).trans a25
     by_cases ha : acc qb R u E.W
@@ -189,8 +189,8 @@ theorem draw_ok {E : SE} {qb R : List Byte} {s : State} {u d : Nat} (hE : E.Ok) 
         · rw [r31z rfl, hS]; rfl
         · rw [t25, hS]; rfl
         · intro k hk; rw [hS] at hk; cases hk
-      · refine .inl ⟨?_, by omega, r17', t25, by omega, ?_⟩
-        · rw [r31k (by omega), (k2.gpr .r31 (by decide)).trans ((k1.gpr .r31 (by decide)).trans h31)]
+      · refine .inl ⟨?_, by omega_using [hd1], r17', t25, by omega_using [hu, hs], ?_⟩
+        · rw [r31k (by omega_using [hd1]), (k2.gpr .r31 (by decide)).trans ((k1.gpr .r31 (by decide)).trans h31)]
         · rw [hS, Nat.add_sub_cancel]
 
 end VG.Proof.Dsa.PPC64LE.Rnd

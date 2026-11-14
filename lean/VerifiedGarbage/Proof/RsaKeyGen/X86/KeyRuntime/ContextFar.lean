@@ -25,7 +25,7 @@ theorem Context.keepFar {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat
   have memory : t.mem.readW (s.ea (arg i)) 32 = s.mem.readW (s.ea (arg i)) 32 := by
     rw [C.address index]
     exact F.readW (r := argsRegion p)
-      (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega) (by omega : 4 * i < 2 ^ 64))
+      (Offset.contains_base _ (by change 4 * i + 4 ≤ 72; omega_using [index]) (by omega_using [index] : 4 * i < 2 ^ 64))
       far (by decide)
   have same : readSrc t (.mem (arg i)) = readSrc s (.mem (arg i)) := by
     show t.load32 (t.ea (arg i)) = s.load32 (s.ea (arg i))

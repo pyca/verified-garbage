@@ -90,7 +90,7 @@ theorem oneA32_ok {s₀ : State} {W : Addr} (hsa : s₀.sp.toNat % 16 = 0)
       sA.gpr .t1 = W ∧ (∀ r, r ≠ .t1 → sA.gpr r = s₀.gpr r) ∧ Keeps s₀ sA := by
   refine Steps.wp_addSp (imm := 0) (by decide) fun sA uA => ?_
   refine Steps.wp_ld (off := 32) (a := s₀.sp + BitVec.ofNat 64 32) (by decide) (by rw [uA.gpr, add_ofNat_zero])
-    (Spill.al8 (by omega) (by decide)) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => WP.block_nil ?_
+    (Spill.al8 (by omega_using [hsa]) (by decide)) (by rw [uA.rd, uA.wr]; exact hWi) fun sB uB => WP.block_nil ?_
   exact ⟨by rw [uB.gpr, uA.mem, hWv], fun r hr => by rw [uB.other r hr, uA.other r hr],
     ⟨by rw [uB.mem, uA.mem], by rw [uB.rd, uA.rd], by rw [uB.wr, uA.wr], by rw [uB.sp, uA.sp]⟩⟩
 

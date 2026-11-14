@@ -116,7 +116,7 @@ private theorem storeLocal {s t : State} {p : WitnessParams} {used passed nextUs
   have saved := h.saved.after_store fit (fun _ hd => witnessSlots_bound hd) (by
     intro d hd different
     simp only [witnessSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases slot with rfl | rfl <;> omega) memory rest
+    rcases slot with rfl | rfl <;> omega_using [hd, different]) memory rest
   rw [values] at saved
   have data : RoundData p.base p.capacity p.words p.modulus t.mem := by
     rw [memory]

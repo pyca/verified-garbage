@@ -26,8 +26,8 @@ theorem pointMultiply_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : Al
     rw [← hi.value]
     exact val16_lt (fun k _ => packedLimb_lt _ _ k)
   refine WP.seq (WP.mono (pointPowers_ok true hc hl 1632 count (by decide)
-    (by have := hi.bound; omega) hn hi.bound hd) fun a ⟨al, ats, _, ah, ak⟩ => ?_)
-  have kam : MulKeep b 1632 6144 s a := (MulKeep.of_powers ak).mono (by decide) (by have := hi.bound; omega)
+    (by have := hi.bound; omega_using [this]) hn hi.bound hd) fun a ⟨al, ats, _, ah, ak⟩ => ?_)
+  have kam : MulKeep b 1632 6144 s a := (MulKeep.of_powers ak).mono (by decide) (by have := hi.bound; omega_using [this])
   refine WP.seq (WP.mono (fieldCode_ok (constPointOps Spec.Ed25519.identity) (kam.ctx hc) al)
     fun u ⟨uk, ul, ue⟩ => ?_)
   have kum : MulKeep b 1632 6144 s u := kam.trans (MulKeep.of_powers (PowersKeep.of_keep uk))
@@ -38,11 +38,11 @@ theorem pointMultiply_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : Al
   have ut : ∀ j < count, tablePoint u.mem b (1632 + 128 * j) = powerPoint p (16 * j) := by
     intro j hj
     have := hi.bound
-    exact (workspace_tablePoint uk.frame (by omega) (by omega)).trans (ats j hj)
+    exact (workspace_tablePoint uk.frame (by omega_using []) (by omega_using [hj, this])).trans (ats j hj)
   refine WP.seq (wp_movw fun v hv => ?_)
   have vc : v.gpr .r11 = BitVec.ofNat 32 count := by
     apply BitVec.eq_of_toNat_eq
-    rw [hv.gpr, movw_nat (by have := hi.bound; omega), toNat_imm (by have := hi.bound; omega)]
+    rw [hv.gpr, movw_nat (by have := hi.bound; omega_using [this]), toNat_imm (by have := hi.bound; omega_using [this])]
   have kvm : MulKeep b 1632 6144 s v := kum.trans
     (MulKeep.of_rest (hv.rest (ws := [.r11]) (by decide)) (by decide) hv.mem)
   refine WP.mono (counterStore_ok (kvm.ctx hc) count vc) fun w ⟨wr, wf, wc⟩ => ?_
@@ -55,7 +55,7 @@ theorem pointMultiply_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : Al
     ((congrArg (fun e => point e 0 1 2 3) we).trans up) wc (fun j hj => ?_))
     fun t ⟨tk, tl, td, tp⟩ => ⟨kwm.trans (tk.mono (by decide) (by decide)), tl, td, tp⟩
   have := hi.bound
-  exact (smallFrame_table wf (by decide) (by omega) (by omega)).trans
+  exact (smallFrame_table wf (by decide) (by omega_using []) (by omega_using [hj, this])).trans
     ((congrArg (fun m => tablePoint m b (1632 + 128 * j)) hv.mem).trans (ut j hj))
 
 end VG.Proof.Ed25519.Arm

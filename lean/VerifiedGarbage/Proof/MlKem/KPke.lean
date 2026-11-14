@@ -73,9 +73,9 @@ theorem squeezeFrom_append {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) (S 
     rw [squeezeFrom_getElem hr hr' _ h]
   · rename_i h
     rw [length_squeezeFrom hr hr'] at h
-    rw [squeezeFrom_getElem hr hr' _ (by rw [length_squeezeFrom hr hr']; omega),
+    rw [squeezeFrom_getElem hr hr' _ (by rw [length_squeezeFrom hr hr']; omega_using [h₂, h]),
       show p + a + (i - (squeezeFrom rate S p a).length) = p + i by
-        rw [length_squeezeFrom hr hr']; omega]
+        rw [length_squeezeFrom hr hr']; omega_using [h]]
 
 /-- Output from `p + a` of two states whose outputs from `p` and `c` agree. -/
 theorem squeezeFrom_shift {rate : Nat} (hr : 0 < rate) (hr' : rate ≤ 200) {S P : State}
@@ -213,14 +213,14 @@ theorem sampleAfter_succ (a : List Zq) (out : Nat → Byte) (t : Nat) :
 theorem sampleStep_length (a : List Zq) (c₀ c₁ c₂ : Byte) (ha : a.length < n) :
     (sampleStep a c₀ c₁ c₂).length ≤ n := by
   simp only [sampleStep]
-  split <;> split <;> simp_all <;> omega
+  split <;> split <;> simp_all <;> omega_arith
 
 theorem sampleStepCap_length {a : List Zq} (ha : a.length ≤ n) (c₀ c₁ c₂ : Byte) :
     (sampleStepCap a c₀ c₁ c₂).length ≤ n := by
   unfold sampleStepCap
   split
   · exact ha
-  · exact sampleStep_length a c₀ c₁ c₂ (by omega)
+  · exact sampleStep_length a c₀ c₁ c₂ (by omega_arith)
 
 theorem sampleStepCap_full {a : List Zq} (ha : a.length = n) (c₀ c₁ c₂ : Byte) :
     sampleStepCap a c₀ c₁ c₂ = a := by
@@ -259,8 +259,8 @@ theorem sampleAfter_congr (a : List Zq) {out out' : Nat → Byte} :
     ∀ {t}, (∀ p < 3 * t, out p = out' p) → sampleAfter a out t = sampleAfter a out' t
   | 0, _ => rfl
   | t + 1, h => by
-    rw [sampleAfter_succ, sampleAfter_succ, sampleAfter_congr a fun p hp => h p (by omega),
-      h _ (by omega), h _ (by omega), h _ (by omega)]
+    rw [sampleAfter_succ, sampleAfter_succ, sampleAfter_congr a fun p hp => h p (by omega_using [hp]),
+      h _ (by omega_using []), h _ (by omega_using []), h _ (by omega_using [])]
 
 /-- The first chunk, then the others. -/
 theorem sampleAfter_succ' (a : List Zq) (out : Nat → Byte) :
@@ -284,12 +284,12 @@ private theorem sampleLoop_eq_after :
     by_cases h : a.length = n
     · rw [ite_eq_left h, sampleAfter_full (t := 0) h _ (Nat.zero_le _), sampleAfter_zero, ite_eq_left h]
     · rw [ite_eq_right h]
-      have hs : (c₀ :: c₁ :: c₂ :: L).length / 3 = L.length / 3 + 1 := by simp; omega
+      have hs : (c₀ :: c₁ :: c₂ :: L).length / 3 = L.length / 3 + 1 := by simp; omega_using []
       have hf : (fun p => (c₀ :: c₁ :: c₂ :: L).getD (p + 3) 0) = fun p => L.getD p 0 := by
         funext p; simp only [List.getD_cons_succ]
       rw [hs, sampleAfter_succ', hf]
       simp only [List.getD_cons_zero, List.getD_cons_succ, sampleStepCap, ite_eq_right h]
-      exact sampleLoop_eq_after L _ (sampleStep_length a c₀ c₁ c₂ (by omega))
+      exact sampleLoop_eq_after L _ (sampleStep_length a c₀ c₁ c₂ (by omega_using [ha, h]))
   | [], a, _ => by
     rw [show ([] : List Byte).length / 3 = 0 by simp, sampleAfter_zero]; unfold sampleLoop; rfl
   | [x], a, _ => by
@@ -304,7 +304,7 @@ theorem sampleNTT_eq (iters : Nat) (B : List Byte) :
       if (sampleAfter [] (xofByte B) iters).length = n
       then some (toPoly (sampleAfter [] (xofByte B) iters)) else none := by
   rw [sampleNTT, sampleLoop_eq_after _ [] (Nat.zero_le _), xof_length,
-    show 3 * iters / 3 = iters by omega,
+    show 3 * iters / 3 = iters by omega_using [],
     sampleAfter_congr [] (out' := xofByte B) fun p hp => xof_getD B hp]
   split <;> rfl
 
@@ -388,10 +388,10 @@ theorem mapM_range_some {β : Type} {f : Nat → Option β} {a : Nat → β} :
   | 0, _, _ => rfl
   | k + 1, s, h => by
     rw [List.range'_succ, List.mapM_cons, List.map_cons]
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     rw [Nat.add_zero] at h0
     rw [h0, mapM_range_some (k := k) (s + 1) fun i hi => by
-      rw [show s + 1 + i = s + (i + 1) by omega]; exact h (i + 1) (by omega)]
+      rw [show s + 1 + i = s + (i + 1) by omega_using []]; exact h (i + 1) (by omega_using [hi])]
     rfl
 
 theorem mapM_none {α β : Type} {f : α → Option β} : ∀ {L : List α} {x : α}, x ∈ L → f x = none →
@@ -432,7 +432,7 @@ def cbd (s : List Byte) (N : Nat) : Poly := samplePolyCBD 2 (prf 2 s (BitVec.ofN
 /-- `((L.take N).drop s).take c = (L.drop s).take c` when `s + c ≤ N`. -/
 theorem slice_take {α : Type} (L : List α) {N s c : Nat} (h : s + c ≤ N) :
     ((L.take N).drop s).take c = (L.drop s).take c := by
-  rw [List.drop_take, List.take_take, Nat.min_eq_left (by omega)]
+  rw [List.drop_take, List.take_take, Nat.min_eq_left (by omega_using [h])]
 
 /-- `t̂[i] = ByteDecode₁₂(ek[384i : 384i + 384])`. -/
 def ekT (ek : List Byte) (i : Nat) : Poly := decode12 ((ek.drop (384 * i)).take 384)
@@ -603,7 +603,7 @@ private theorem kpkeEncrypt_eq (iters : Nat) (ek m r : List Byte) :
 theorem decodeVec_take (k : Nat) (ek : List Byte) :
     decodeVec k (ek.take (384 * k)) = (List.range k).map (ekT ek) :=
   List.map_congr_left fun i hi => by
-    rw [ekT, slice_take ek (show 384 * i + 384 ≤ 384 * k by have := List.mem_range.mp hi; omega)]
+    rw [ekT, slice_take ek (show 384 * i + 384 ≤ 384 * k by have := List.mem_range.mp hi; omega_using [this])]
 
 theorem kpkeEncrypt_some (hη : p.η₁ = 2 ∧ p.η₂ = 2) {iters : Nat} {ek m r : List Byte}
     {a : Nat → Nat → Poly} (h : ∀ i < p.k, ∀ j < p.k, sampleNTT iters (matSeed (ekRho p ek) i j) = some (a i j)) :
@@ -675,7 +675,7 @@ def decM (dk c : List Byte) : List Byte := kpkeDecrypt p (dkPke p dk) c
 /-- `ρ` of the encapsulation key in `dk`. -/
 theorem ekRho_dkEk (dk : List Byte) : ekRho p (dkEk p dk) = dkRho p dk := by
   simp only [ekRho, dkRho, dkEk, List.drop_take, List.drop_drop, List.take_take]
-  rw [show 384 * p.k + 384 * p.k = 768 * p.k by omega, show 384 * p.k + 32 - 384 * p.k = 32 by omega,
+  rw [show 384 * p.k + 384 * p.k = 768 * p.k by omega_using [], show 384 * p.k + 32 - 384 * p.k = 32 by omega_using [],
     Nat.min_self]
 
 /-- `ML-KEM.Decaps_internal(dk, c)`: `(K', r') = G(m' ‖ h)`, `c'` the

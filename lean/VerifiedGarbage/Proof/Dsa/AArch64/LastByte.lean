@@ -42,7 +42,7 @@ theorem lastByte_ok {s : State} {B p : Addr} {Z n : Nat} {b : Byte}
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.zeroExtend]
     have := b.isLt
-    omega
+    omega_using []
   all_goals cases r <;> rfl
 
 end VG.Proof.Dsa.AArch64

@@ -134,8 +134,8 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
       · refine CT.ctr fun s₁ s₂ ⟨_, he₁, hd₁, hj₁, hR, a0, a1, a2, a3, a12, alr, e⟩
           ⟨_, he₂, hd₂, _, _, b0, b1, b2, b3, b12, blr, _⟩ => ?_
         subst e
-        exact ⟨_, _, _, _, _, _, ctrWhole_mk L he₁ a0 a1 a2 a3 a12 alr hR (hd₁.sub (by omega) (by omega)),
-          ctrWhole_mk L he₂ b0 b1 b2 b3 b12 blr hR (hd₂.sub (by omega) (by omega)), he₁.sp.trans he₂.sp.symm⟩
+        exact ⟨_, _, _, _, _, _, ctrWhole_mk L he₁ a0 a1 a2 a3 a12 alr hR (hd₁.sub (by omega_using [h0]) (by omega_using [h0])),
+          ctrWhole_mk L he₂ b0 b1 b2 b3 b12 blr hR (hd₂.sub (by omega_using [h0]) (by omega_using [h0])), he₁.sp.trans he₂.sp.symm⟩
     · -- Out of place: the destination and the count to the stack arguments, the call, and the
       -- destination advanced.
       let J₂ : State → Prop := fun s => ∃ k7, Env c st w sp k7 k8 s ∧ DataW c st w sp k7 k8 s T n ∧
@@ -176,16 +176,16 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
           (w + BitVec.ofNat 32 512) R nb := by
         intro s ⟨k7, he, hd, hsr, hm, hj, hR, a0, a1, a2, a3, a8, _⟩
         obtain ⟨dST, sp12, bc, bst, bw, bS, bT⟩ := hm
-        have hdj := hd.sub (j := j) (k := 16 * nb) (by omega) (by omega)
-        have hsj := hsr.sub (j := j) (k := 16 * nb) (by omega) (by omega)
+        have hdj := hd.sub (j := j) (k := 16 * nb) (by omega_using [h0]) (by omega_using [h0])
+        have hsj := hsr.sub (j := j) (k := 16 * nb) (by omega_using [h0]) (by omega_using [h0])
         have eD := hd.ok.addr (j := j) (by omega)
         have eS := hsr.addr (j := j) (by omega)
         have eC := L.stA (d := 48) (by decide)
         have eW := L.wA (d := 512) (by decide)
         have hk := he.sp
         refine ⟨he.r9, a8, by rw [he.r10], a3, a0, a1, a2, hR, by rw [hk]; exact sp12,
-          by have := L.cw; omega, by rw [L.stN (by decide)]; have := L.sw; omega, hsj.fit, hdj.ok.fit,
-          by rw [L.wN (by decide)]; have := L.ww; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+          by have := L.cw; omega_using [this], by rw [L.stN (by decide)]; have := L.sw; omega_using [this], hsj.fit, hdj.ok.fit,
+          by rw [L.wN (by decide)]; have := L.ww; omega_using [this], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
         all_goals try simp only [eC, eW]
         · exact (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.stSub (by decide))
         · exact hdj.ctx.sub_left (Region.sub_prefix (by decide))
@@ -195,12 +195,12 @@ theorem cryptWhole_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {
         · exact hdj.ok.w.sub_right (Lay.wSub (by decide))
         · exact hsj.st.sub_right (Lay.stSub (by decide))
         · rw [eS, eD]
-          exact (dST.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
+          exact (dST.sub_left (Offset.sub_base _ (by omega_using [h0]))).sub_right (Offset.sub_base _ (by omega_using [h0]))
         · exact hsj.w.sub_right (Lay.wSub (by decide))
         · rw [hk]; exact bc.sub_right (Region.sub_prefix (by decide))
         · rw [hk]; exact bst.sub_right (Lay.stSub (by decide))
-        · rw [hk, eS]; exact bS.sub_right (Offset.sub_base _ (by omega))
-        · rw [hk, eD]; exact bT.sub_right (Offset.sub_base _ (by omega))
+        · rw [hk, eS]; exact bS.sub_right (Offset.sub_base _ (by omega_using [h0]))
+        · rw [hk, eD]; exact bT.sub_right (Offset.sub_base _ (by omega_using [h0]))
         · rw [hk]; exact bw.sub_right (Lay.wSub (by decide))
         · exact covers_cons (covers_prefix he.perm.ctx (by decide)) hsj.rd
         · exact covers_cons (he.perm.stC (by decide)) (covers_cons hdj.wr (he.perm.wC (by decide)))
@@ -227,7 +227,7 @@ theorem cryptTail_ct {to : Bool} {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n
         true := ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r5, h₂.r5]) hc
-  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 hs.r5 (by have := hs.data.ok.lt32; omega)
+  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 hs.r5 (by have := hs.data.ok.lt32; omega_using [this])
     refine WP.of_runBlock ⟨s₁, run₁, ⟨k7, icb, P, m₀, hP, ?_⟩, hz⟩
     exact ⟨hs.env.keep (fun r _ => by rw [hg₁]) hsp₁ hrd₁ hwr₁, hs.le, by rw [hg₁, hs.r4], by rw [hg₁, hs.r5],
       by rw [hg₁, hs.r8], hs.rounds, hs.data.of_eq hrd₁ hwr₁, fun h => by rw [hm₁]; exact hs.ctr h,
@@ -282,7 +282,7 @@ theorem cryptTo_ct {k8 : BitVec 32} {R : Nat} {S T : BitVec 32} {n : Nat} :
         true := ⟨_, by taint_decide⟩
     exact CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r5, h₂.r5]) hc
-  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 hs.r5 (by have := hs.data.ok.lt32; omega)
+  · obtain ⟨s₁, run₁, hz, hg₁, hm₁, hrd₁, hwr₁, hsp₁⟩ := cmp0_ok s .r5 hs.r5 (by have := hs.data.ok.lt32; omega_using [this])
     refine WP.of_runBlock ⟨s₁, run₁, ⟨k7, icb, P, m₀, hP, ?_⟩, hz⟩
     exact ⟨hs.env.keep (fun r _ => by rw [hg₁]) hsp₁ hrd₁ hwr₁, hs.le, by rw [hg₁, hs.r4], by rw [hg₁, hs.r5],
       by rw [hg₁, hs.r8], hs.rounds, hs.data.of_eq hrd₁ hwr₁, fun h => by rw [hm₁]; exact hs.ctr h,

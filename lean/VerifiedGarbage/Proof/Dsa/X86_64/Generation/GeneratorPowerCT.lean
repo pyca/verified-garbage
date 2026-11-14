@@ -75,7 +75,7 @@ def GeneratorPowerBefore (p : GeneratorPlan) (s : State) : Prop := ∃ mi, Gener
 
 theorem generatorPower_inverse {p : GeneratorPlan} {s t : State} {mi mj : BitVec 64}
     (hs : GeneratorPowerReady p mi s) (ht : GeneratorPowerReady p mj t) : mi = mj := by
-  have positive : 0 < p.len / 8 := by rcases p.width with h | h | h <;> omega
+  have positive : 0 < p.len / 8 := by rcases p.width with h | h | h <;> omega_using [h]
   have ls : (word s.mem (off p.B pWorkspace) (slot (p.len / 8) Public.aN)).toNat =
       Spec.Dsa.decodeBE p.pb % 2 ^ 64 := by
     rw [← wv_mod64 (n := p.len / 8) _ _ _ positive, hs.child.modulus]

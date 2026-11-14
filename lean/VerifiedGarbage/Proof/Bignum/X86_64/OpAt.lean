@@ -47,7 +47,7 @@ theorem Ops.lt {m : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (h : Ops 
 theorem Hdr.ops {m : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (hH : Hdr m B w minv)
     {ps : List (Nat × Nat)} (hp : ∀ p ∈ ps, p.1 = p.2 ∧ p.2 < 8) : Ops m B w ps := fun p h => by
   obtain ⟨e, hx⟩ := hp p h
-  exact ⟨by omega, by unfold OpAt; rw [e]; exact hH.harr _ hx⟩
+  exact ⟨by omega_using [e, hx], by unfold OpAt; rw [e]; exact hH.harr _ hx⟩
 
 /-- The three slots of the operands of `montMul o a b`, each its own. -/
 theorem Hdr.ops3 {m : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (hH : Hdr m B w minv) {o a b : Nat}
@@ -62,11 +62,11 @@ theorem Ops.of_word {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (
 
 theorem Ops.of_outside {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (h : Ops m B w ps) {o n : Nat}
     (ho : Outside B o n m m') (hX : 8 * sFn 12 ≤ o) : Ops m' B w ps :=
-  h.of_word fun X hX' => ho.word (by unfold sArr; unfold sFn at hX; omega) (by unfold sArr; omega)
+  h.of_word fun X hX' => ho.word (by unfold sArr; unfold sFn at hX; omega_using [hX, hX']) (by unfold sArr; omega_using [hX'])
 
 theorem Ops.of_frm {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)} (h : Ops m B w ps)
     {rs : List (Nat × Nat)} (hf : Frm B rs m m') (hX : ∀ r ∈ rs, 8 * sFn 12 ≤ r.1) : Ops m' B w ps :=
-  h.of_word fun X hX' => hf.word_eq (fun r hr => by have := hX r hr; unfold sArr; unfold sFn at this; omega)
-    (by unfold sArr; omega)
+  h.of_word fun X hX' => hf.word_eq (fun r hr => by have := hX r hr; unfold sArr; unfold sFn at this; omega_using [hX', this])
+    (by unfold sArr; omega_using [hX'])
 
 end VG.Proof.Bignum

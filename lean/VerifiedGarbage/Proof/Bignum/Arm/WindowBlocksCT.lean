@@ -47,7 +47,7 @@ theorem entryNext_ct : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0) (.block entr
 
 theorem entryCopyArgs_ct (a : Nat) (ha : a < 8) :
     RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0) (.block (entryCopyArgs a)) (fun _ _ => True) := by
-  have : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 := by omega
+  have : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 := by omega_using [ha]
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     exact RelCT.taint (A := taint) (Taint.ofRegs [.r0]) (fun _ _ h => r0_agree h) (by taint_decide)
 

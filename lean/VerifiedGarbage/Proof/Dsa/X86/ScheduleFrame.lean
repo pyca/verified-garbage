@@ -29,7 +29,7 @@ structure ScheduleFrame (base : Addr) (size : Nat) (s t : State) : Prop where
 
 theorem Execution.schedule {base : Addr} {size : Nat} {s t : State}
     (E : Execution base s t) (extent : usedBytes ≤ size) : ScheduleFrame base size s t :=
-  ⟨E.keeps, fun a ha hs => execution_outside E a (by omega) hs,
+  ⟨E.keeps, fun a ha hs => execution_outside E a (by omega_using [extent, ha]) hs,
     fun _ h => runFrame_field E.mem h, fun _ h => E.saved h⟩
 
 theorem ScheduleFrame.trans {base : Addr} {size : Nat} {s t u : State}
@@ -65,17 +65,17 @@ theorem ScheduleFrame.bytes {base p : Addr} {size len : Nat} {s t : State}
   apply List.map_congr_left
   intro i hi
   have ilt := List.mem_range.mp hi
-  have inside := Offset.contains_base p (show i+1≤len by omega) (show i<2^64 by omega)
+  have inside := Offset.contains_base p (show i+1≤len by omega_using [ilt]) (show i<2^64 by omega_using [hl, ilt])
   apply F.outside _ ?_ (stack _ inside)
   have H := apart _ inside
   change ¬ (ofs base (p+BitVec.ofNat 64 i)+1≤size) at H
-  omega
+  omega_using [H]
 
 theorem ScheduleFrame.value {base : Addr} {size len : Nat} {s t : State} {p : Pointer}
     (F : ScheduleFrame base size s t) (B : CallerBuffer s base size p len) (hp : StablePointer p) :
     operandValue t base p len = operandValue s base p len := by
   unfold operandValue
-  rw [F.pointer hp, F.bytes (by have := B.fits; omega) B.apart B.stack]
+  rw [F.pointer hp, F.bytes (by have := B.fits; omega_using [this]) B.apart B.stack]
 
 theorem ScheduleFrame.moduli {base : Addr} {size pLen qLen p q : Nat} {s t : State}
     (F : ScheduleFrame base size s t) (M : Moduli base size pLen qLen p q s) :
@@ -102,11 +102,11 @@ theorem ScheduleFrame.of_ranges {base : Addr} {size : Nat} {s t : State} {rs : L
     have H := O.val32 (k := 1) (fields f hf) (by
       have H := (VG.Proof.Dsa.X86.Layout.field_bounds f).2
       change Layout.field f+4≤8256 at H
-      change _≤15712; omega)
+      change _≤15712; omega_using [H])
     simpa only [val32,Nat.mul_zero,Nat.add_zero] using H
   · intro regs S p hp
     have B := saved_bounds hp
-    have H := O.val32 (k := 1) (saved p hp) (by change _≤15712; omega)
+    have H := O.val32 (k := 1) (saved p hp) (by change _≤15712; omega_using [B])
     have W : t.mem.readW (off base p.2) 32 = s.mem.readW (off base p.2) 32 := by
       apply BitVec.eq_of_toNat_eq
       simpa only [val32,Nat.mul_zero,Nat.add_zero] using H

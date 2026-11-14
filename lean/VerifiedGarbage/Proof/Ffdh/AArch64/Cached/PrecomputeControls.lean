@@ -20,9 +20,9 @@ theorem setControlNat_ok {s : State} {B : Addr} {Z w i n : Nat} {mi : BitVec 64}
  Good t B Z w mi ∧ word t.mem B (8*i)=BitVec.ofNat 64 n ∧ Outside B (8*i) 8 s.mem t.mem ∧ Keep [.x3] s t := by
  refine WP.mono (WP.keep [.x3] (Q:=fun t =>t.mem=s.mem.writeW (off B (8*i)) (BitVec.ofNat 64 n))
   ?_ rfl rfl rfl) ?_
- · brun [good.x0,hdr_enc upper,good.scr.st (d:=8*i) (by have := hdr_lt_slot w 8 upper;omega),movi_nat small]
+ · brun [good.x0,hdr_enc upper,good.scr.st (d:=8*i) (by have := hdr_lt_slot w 8 upper;omega_using [room, this]),movi_nat small]
  · rintro t ⟨mem,rest⟩
-   have frame : Outside B (8*i) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by omega)
+   have frame : Outside B (8*i) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by omega_using [upper])
    refine ⟨good_after_header good lower upper frame rest ((rest.gpr .x0 (by decide)).trans good.x0),?_,frame,rest⟩
    rw [mem,word_writeW_self]
 
@@ -32,10 +32,10 @@ theorem setControlOne_ok {s : State} {B : Addr} {Z w i : Nat} {mi : BitVec 64}
  Good t B Z w mi ∧ word t.mem B (8*i)=1#64 ∧ Outside B (8*i) 8 s.mem t.mem ∧ Keep [.x3] s t := by
  refine WP.mono (WP.keep [.x3] (Q:=fun t =>t.mem=s.mem.writeW (off B (8*i)) 1#64)
   ?_ rfl rfl rfl) ?_
- · brun [good.x0,hdr_enc upper,good.scr.st (d:=8*i) (by have := hdr_lt_slot w 8 upper;omega)]
+ · brun [good.x0,hdr_enc upper,good.scr.st (d:=8*i) (by have := hdr_lt_slot w 8 upper;omega_using [room, this])]
    rfl
  · rintro t ⟨mem,rest⟩
-   have frame : Outside B (8*i) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by omega)
+   have frame : Outside B (8*i) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by omega_using [upper])
    refine ⟨good_after_header good lower upper frame rest ((rest.gpr .x0 (by decide)).trans good.x0),?_,frame,rest⟩
    rw [mem,word_writeW_self]
 
@@ -53,7 +53,7 @@ theorem basisNext_ok {s : State} {B : Addr} {Z w d : Nat} {mi : BitVec 64}
   t.gpr .x3=BitVec.ofNat 64 (2*d)-32#64) ?_ rfl rfl rfl) ?_
  · unfold Precompute.basisNext
    brun [good.x0,hdr_enc (show sD<32 by decide),header_read good room (show sD<32 by decide),
-    good.scr.st (d:=8*sD) (by have := hdr_lt_slot w 8 (show sD<32 by decide);omega),index,shift]
+    good.scr.st (d:=8*sD) (by have := hdr_lt_slot w 8 (show sD<32 by decide);omega_using [room, this]),index,shift]
  · rintro t ⟨⟨mem,test⟩,rest⟩
    have frame : Outside B (8*sD) 8 s.mem t.mem := by rw [mem];exact writeW_outside _ _ _ (by decide)
    refine ⟨good_after_header good (by decide) (by decide) frame rest ((rest.gpr .x0 (by decide)).trans good.x0),

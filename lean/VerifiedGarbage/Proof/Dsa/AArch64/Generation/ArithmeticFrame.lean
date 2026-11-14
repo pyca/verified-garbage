@@ -30,8 +30,8 @@ theorem doubleArray_ws {s : State} {B : Addr} {Z w dst : Nat}
     ((k₂.gpr .x11 (by decide)).trans h11)) fun s₃ ⟨⟨h16, hm₃, hc₃⟩, k₃⟩ => ?_
   have k := (k₁.trans k₂).trans k₃
   refine WP.mono (shl_ok (h.scr.congr k.wr) h16
-    ((k₃.gpr .x14 (by decide)).trans h14) (by have := h.w1; omega)
-    (by have := h.w2; omega) (by omega)) fun t ⟨_, _, ho, kt⟩ => ?_
+    ((k₃.gpr .x14 (by decide)).trans h14) (by have := h.w1; omega_using [this])
+    (by have := h.w2; omega_using [this]) (by omega_using [sd])) fun t ⟨_, _, ho, kt⟩ => ?_
   rw [hm₃, hm₂, hm₁] at ho
   exact h.congr' (Frm.of_outside ho (List.mem_singleton_self _))
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact KMut.ofSlot _ _ _)
@@ -65,7 +65,7 @@ theorem incrementEven_ws {s : State} {B : Addr} {Z w dst : Nat}
     WP isa (.block (Impl.Dsa.AArch64.Generation.incrementEven dst)) s fun t => VG.Proof.Rsa.AArch64.Ws t B Z w := by
   have hn := h.scr.nowrap
   have sd := h.sl hd
-  have hw : 1 ≤ w := by have := h.w1; omega
+  have hw : 1 ≤ w := by have := h.w1; omega_using [this]
   unfold Impl.Dsa.AArch64.Generation.incrementEven
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono h.ws_ok fun s₁ ⟨⟨_, h11, hm₁, _⟩, k₁⟩ => WP.block_append_iff.mpr ?_
@@ -74,10 +74,10 @@ theorem incrementEven_ws {s : State} {B : Addr} {Z w dst : Nat}
   have hs₂ := h.scr.congr (k₁.trans k₂).wr
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem =
     s.mem.writeW (off B (slot w dst)) (word s.mem B (slot w dst) + 1))
-    (by brun [h16, hs₂.ld (d := slot w dst) (by omega), hs₂.st (d := slot w dst) (by omega), hm₂, hm₁]; rfl)
+    (by brun [h16, hs₂.ld (d := slot w dst) (by omega_using [sd]), hs₂.st (d := slot w dst) (by omega_using [sd]), hm₂, hm₁]; rfl)
     rfl rfl rfl) fun t ⟨hm, k₃⟩ => ?_
   have ho : Outside B (slot w dst) 8 s.mem t.mem := by
-    rw [hm]; exact writeW_outside _ _ _ (by omega)
+    rw [hm]; exact writeW_outside _ _ _ (by omega_using [hn, sd])
   exact h.congr' (Frm.of_outside ho (List.mem_singleton_self _))
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact KMut.ofSlot _ _ _)
     ((k₁.trans k₂).trans k₃) (by decide)

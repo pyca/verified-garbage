@@ -46,8 +46,8 @@ structure Env (s : State) : Prop where
 theorem len_lt_of_disjoint {r₁ r₂ : Region} (h : r₁.Disjoint r₂) (h2 : 0 < r₂.len) : r₁.len < 2 ^ 64 := by
   by_contra hc
   refine h r₂.base ?_ ?_
-  · simp only [Region.Contains]; have := (r₂.base - r₁.base).isLt; omega
-  · simp only [Region.Contains, BitVec.sub_self]; simp; omega
+  · simp only [Region.Contains]; have := (r₂.base - r₁.base).isLt; omega_using [hc]
+  · simp only [Region.Contains, BitVec.sub_self]; simp; omega_using [h2]
 
 theorem Env.len {s : State} (E : Env s) : 8 * (s.gpr .x2).toNat < 2 ^ 64 :=
   len_lt_of_disjoint E.dataBuf (by simp)
@@ -56,7 +56,7 @@ theorem Env.keyIn {s : State} (E : Env s) :
     ∀ i < 48, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (8 * i)) 8 := by
   intro i hi
   rw [E.rd]
-  exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
 
 theorem blockAt_eq_of_readW {m m' : Mem} {p p' : Addr} (h : m'.readW p' 64 = m.readW p 64) :
     blockAt m' p' = blockAt m p := by
@@ -72,14 +72,14 @@ theorem lsr7 (m : Nat) (hm : 8 * m < 2 ^ 64) :
     BitVec.ofNat 64 m >>> 7 = BitVec.ofNat 64 (m / 128) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [hm]), Nat.mod_eq_of_lt (by omega_using [hm])]
 
 theorem ofNat_ne_zero {m : Nat} (h : m < 2 ^ 64) (h0 : m ≠ 0) : BitVec.ofNat 64 m ≠ 0 := by
   intro e
   have := congrArg BitVec.toNat e
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h] at this
   simp at this
-  omega
+  omega_using [h0, this]
 
 theorem eval_nonzero (s : State) (r : Reg) {m : Nat} (h : s.gpr r = BitVec.ofNat 64 m)
     (hm : m < 2 ^ 64) : isa.eval (.nonzero .x r) s = some (m != 0) := by

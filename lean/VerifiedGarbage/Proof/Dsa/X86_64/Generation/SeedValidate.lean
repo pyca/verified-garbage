@@ -109,25 +109,25 @@ theorem seedValidate_ok (M : Mont) (Sq : MontS)
         (if Spec.Dsa.checkParametersBytes p.geo.pLen p.geo.qLen params then 1 else 3))) t ∧
       Spec.Rsa.bytesAt t.mem (off p.geo.B packed) (2 * p.geo.pLen + p.geo.qLen) = params ∧
       Frame p.changed s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega
-  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
+  have pn : p.geo.pLen ≤ 384 := by rcases p.geo.width with hh | hh | hh <;> omega_using [hh]
+  have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]
   have h5 := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
   have arena : domainCheck + Impl.Dsa.Layout.usedBytes ≤ usedBytes p.geo.pLen := by
     rcases p.geo.width with hh | hh | hh <;> rw [hh] <;> decide
   have packedBound := p.geo.small_bound (d := packed) (n := 2 * p.geo.pLen + p.geo.qLen)
-    (by decide) (by unfold arithmeticBytes; omega)
+    (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  have sep := p.geo.parts_disjoint packedBound arena (Or.inl (by unfold packed domainCheck; omega))
+  have sep := p.geo.parts_disjoint packedBound arena (Or.inl (by unfold packed domainCheck; omega_using [pn, qn]))
   have source : Src s (off p.geo.B domainCheck) Impl.Dsa.Layout.usedBytes (off p.geo.B packed) params := by
     apply arena_source h.scratch
     · simpa only [hlen] using packedBound
-    · rw [hlen]; omega
+    · rw [hlen]; omega_using [pn, qn]
     · simpa only [hlen] using bytes
     · simpa only [hlen, GenerationGeometry.part] using sep
   obtain ⟨V, R⟩ := h.rep
   have call := validate_ok (checkName := checkName) M Sq (p.geo.parametersInput params hlen) h.layout R
     (by change off p.geo.B domainCheck = off (W 5) domainCheck; rw [h5])
-    (by change p.geo.pLen < 2 ^ 32; omega) (by change p.geo.qLen < 2 ^ 32; omega)
+    (by change p.geo.pLen < 2 ^ 32; omega_using [pn]) (by change p.geo.qLen < 2 ^ 32; omega_using [qn])
     (h.scratch.sub (n := Impl.Dsa.Layout.usedBytes) arena (by decide))
   rw [h5] at call
   refine WP.mono (call source (p.geo.frame_part arena) (p.geo.parts_disjoint hh arena (Or.inl (by decide)))
@@ -147,7 +147,7 @@ theorem seedValidate_ok (M : Mont) (Sq : MontS)
     · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
   refine ⟨h.frame Lt ⟨V, Rt⟩ ?_ ff kt.2.1 kt.2.2, ?_, ff, kt.2.1, kt.2.2⟩
   · intro k hk
-    have hn : k ≠ 19 := by simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
+    have hn : k ≠ 19 := by simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega_using [hk]
     simp [upd, hn]
   · rw [VG.Proof.Dsa.Generation.frame_bytesAt ft (by
       intro r hr
@@ -156,7 +156,7 @@ theorem seedValidate_ok (M : Mont) (Sq : MontS)
       rcases hr with rfl | rfl | rfl
       · exact sep
       · exact ((p.geo.stack_part packedBound).sub_left (below_sub (by decide) (by decide))).symm
-      · exact (p.geo.frame_part packedBound).symm) (by omega)]
+      · exact (p.geo.frame_part packedBound).symm) (by omega_using [pn, qn])]
     exact bytes
 
 end VG.Proof.Dsa.X86_64.Generation

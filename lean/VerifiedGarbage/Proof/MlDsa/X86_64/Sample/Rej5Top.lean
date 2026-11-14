@@ -1,11 +1,85 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Flags
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Batch
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
+
+/-! ### `MlDsa.X86_64.Sample.Rej5Flags`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.X86_64.Rej4.Segment
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Sample4
+open VG.Impl.MlDsa.X86_64.Sample.Rej4 (oJ half first second zeroJ rejNTT4Avx2)
+open VG.Proof.MlKem.X86_64 (Keep ea_at add_ofNat_zero pR WP.keep ofNat64_pred sample4K)
+open VG.Proof.MlKem.X86_64.S4
+open VG.Proof.MlDsa.Sample (rnFold Stored stored_nil stored_frame stored_polyIs toPoly G_length)
+open VG.Spec.MlDsa (Zq G)
+open VG.Proof.MlDsa (PolyIs)
+open VG.Proof.MlKem (xofByte)
+
+open VG.Impl.MlDsa.X86_64.Sample.Rej5 (segment batch)
+
+open VG.Impl.MlDsa.X86_64.Sample.Rej5 (flags)
+
+/-- A saturated rejection fold is unchanged by the sixth block. -/
+theorem full_after_five (σ : State) (k : Nat) (h : (Lt σ k 280).length = 256) :
+    Lt σ k 336 = Lt σ k 280 := by
+  have e : G (B σ k) 1008 = G (B σ k) 840 ++ (G (B σ k) 1008).drop 840 := by
+    rw [← VG.Proof.MlDsa.Sample.G_take (B σ k) (by decide : 840 ≤ 1008), List.take_append_drop]
+  have hl : Lt σ k 280 = rnFold [] (G (B σ k) 840) := by
+    simp only [Lt, show 3 * 280 = 840 by rfl]
+    rw [VG.Proof.MlDsa.Sample.G_take _ (by decide)]
+  rw [Lt_336, hl, e, VG.Proof.MlDsa.Sample.rnFold_append _ _ _ (by rw [G_length]),
+    VG.Proof.MlDsa.Sample.rnFold_full (by rwa [hl] at h)]
+
+def allFull (σ : State) (n : Nat) : Bool :=
+  (List.range 4).all fun k => (Lt σ k n).length == 256
+
+section
+variable {σ : State} (hp : Pre σ)
+include hp
+
+theorem flags_ok {n : Nat} {s : State} (env : EnvK σ s)
+    (j : ∀ k < 4, s.mem.readW (at' σ (oJ + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k n).length) :
+    WP isa (.block flags) s fun s' =>
+      (s'.gpr .r14 = (if allFull σ n then 1 else 0) ∧ s'.mem = s.mem) ∧ Keep [.rax, .r14] s s' := by
+  have hin : ∀ k < 4, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oJ + 8 * k)) 8 :=
+    fun k hk => in_scr' hp env.rd env.wr (by simp only [oJ]; omega_using [hk])
+  have h0 := hin 0 (by decide); have h1 := hin 1 (by decide)
+  have h2 := hin 2 (by decide); have h3 := hin 3 (by decide)
+  have j0 := j 0 (by decide); have j1 := j 1 (by decide)
+  have j2 := j 2 (by decide); have j3 := j 3 (by decide)
+  simp only [oJ, Nat.reduceMul, Nat.reduceAdd] at h0 h1 h2 h3 j0 j1 j2 j3
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
+  change WP isa (.block ([.mov32 .r14 (.imm 1),
+    .mov .rax (.mem (at_ .rbx 4424)), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax),
+    .mov .rax (.mem (at_ .rbx 4432)), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax),
+    .mov .rax (.mem (at_ .rbx 4440)), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax),
+    .mov .rax (.mem (at_ .rbx 4448)), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax)])) s _
+  xrun [env.rbx, h0, h1, h2, h3, j0, j1, j2, j3]
+  simp only [full_bit (Lt_length_le σ _ _)]
+  unfold allFull
+  simp only [List.range_succ, List.range_zero, List.all_append, List.all_cons, List.all_nil, Bool.and_true, Bool.true_and]
+  cases (Lt σ 0 n).length == 256 <;> cases (Lt σ 1 n).length == 256 <;>
+    cases (Lt σ 2 n).length == 256 <;> cases (Lt σ 3 n).length == 256 <;> rfl
+
+end
+end VG.Proof.MlDsa.X86_64.Rej4.Segment
+
+end
+
+end
+
 
 @[expose] public section
 
@@ -41,7 +115,7 @@ include hp
 theorem end_ok {s : State} (h : Done σ s) :
     WP isa (.block epi) s fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
-    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega_using [hi])
   rw [epi_eq]
   refine WP.mono (WP.keep [.rax, .r14, .r13, .r12, .rbp, .rbx] (Q := fun s' => s'.mem = s.mem ∧
       (s'.gpr .rax).setWidth 32 = (s.gpr .r14).setWidth 32 ∧
@@ -74,7 +148,7 @@ theorem end_ok {s : State} (h : Done σ s) :
     · rw [k.gpr (by decide)]; exact h.env.r15
   · rw [hm]
     exact h.env.frame.readW (Region.contains_self _ _) (by
-      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
+      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega_using [])⟩)
       (by decide)
 
 

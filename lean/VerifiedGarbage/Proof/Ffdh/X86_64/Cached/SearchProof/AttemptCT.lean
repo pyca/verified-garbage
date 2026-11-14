@@ -101,7 +101,7 @@ private theorem call_view {q : KeyPoint} {u : State} (h : KeyCallCT q u) :
   have hlen' : (keyRand original).length = q.inputs.randLen := by
     rw [← h.random]; simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
   have hhead := keyTail_statuses_head (policy := .cached) (a := q.inputs.a) (len := q.inputs.len) (rand := keyRand original) (used := q.used)
-    hk hs (by rw [hlen']; omega)
+    hk hs (by rw [hlen']; omega_using [hr])
   rw [hst] at hhead
   obtain ⟨h0, h1, h2, h3, h4, h5, h6⟩ := call_args hu h.rsp hm
   obtain ⟨hdi, hsi, hdx, hcx, h8, h9⟩ := ha

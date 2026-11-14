@@ -76,7 +76,7 @@ theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   simp only [Mem.read]
   ext i hi
   rw [BitVec.getElem_append]
-  simp only [show i < 8 by omega, dite_true]
+  simp only [show i < 8 by omega_using [hi], dite_true]
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -121,7 +121,7 @@ theorem wp_ldrb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
     (k : ∀ s', U s s' t ((s.mem a).setWidth 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.ldrb t n off :: is)) s Q := by
   refine WP.cons (s' := s.write .w t (((s.mem a).setWidth 32))) ?_ (k _ ?_)
-  · simp only [reduceExec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega, ite_true, ha,
+  · simp only [reduceExec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
       Option.bind_some, State.load, hin, Option.map_some, read_one]
   · have := U.write s .w t ((s.mem a).setWidth 32)
     have e : ((s.mem a).setWidth 32).setWidth 64 = (s.mem a).setWidth 64 := by
@@ -210,12 +210,12 @@ variable {n w : Nat} {s : State}
 theorem sp_eq (h : ExPre n w s) : (s.sp - 16).toNat + 16 = s.sp.toNat := by
   have := h.2.2.2.2.2
   rw [BitVec.toNat_sub, show (16 : Addr).toNat = 16 from rfl]
-  omega
+  omega_using [this]
 
 /-- The 8 bytes at `B + d`, for `d ≤ 8`, are the frame's. -/
 theorem fr_contains {d : Nat} (hd : d ≤ 8) :
     (frR s).Contains (s.sp - 16 + BitVec.ofNat 64 d) 8 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])
 
 /-- A part of the frame is apart from a region apart from the frame. -/
 theorem fr_part {r : Region} (hr : (frR s).Disjoint r) {d k : Nat} (hd : d + k ≤ 16) :
@@ -225,7 +225,7 @@ theorem fr_part {r : Region} (hr : (frR s).Disjoint r) {d k : Nat} (hd : d + k �
 theorem slot_sep (h : ExPre n w s) :
     (⟨s.sp - 16, 8⟩ : Region).Disjoint ⟨s.sp - 16 + 8, 8⟩ := by
   have e := sp_eq h
-  exact Offset.base_disjoint _ (k := 8) (e := 8) (by omega) (by omega)
+  exact Offset.base_disjoint _ (k := 8) (e := 8) (by omega_using []) (by omega_using [])
 
 end
 
@@ -274,7 +274,7 @@ theorem bytes_keep {s : State} {p : Addr} {n : Nat} (hd : (frR s).Disjoint ⟨p,
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact saved_keep hd (Offset.contains_base _ (by omega) (by omega))
+  exact saved_keep hd (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))
 
 /-- After the call: `f` of the arguments at `out`, and the frame as it was. -/
 structure Called (n w : Nat) (f : List Byte → List Byte → List Byte) (s z : State) : Prop where
@@ -328,8 +328,8 @@ theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : P
     rw [wr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact fr_part f0 (by omega)
-    · exact fr_part f3 (by omega)
+    · exact fr_part f0 (by omega_using [hd])
+    · exact fr_part f3 (by omega_using [hd])
   have em : e.mem.read (s.sp - 16) 8 = s.gpr .x30 := by
     rw [he.mem]
     simp only [eMem, Mem.writeW, Nat.reduceDiv]
@@ -391,10 +391,10 @@ theorem orBytes_wp (a : Addr) (m : Mem) : ∀ (i : Nat), i < 4096 → ∀ (u : S
   | succ i ih =>
     intro hi u is Q ht hm hin k
     rw [orBytes, List.append_assoc]
-    refine ih (by omega) u _ Q ht hm (fun j hj => hin j (by omega))
+    refine ih (by omega_using [hi]) u _ Q ht hm (fun j hj => hin j (by omega_using [hj]))
       fun u' g1 g0 gm grd gwr gsp gv go => ?_
-    refine wp_ldrb (a := a + BitVec.ofNat 64 i) (by omega) (by rw [g0])
-      (by rw [grd, gwr]; exact hin i (by omega)) fun u₁ v₁ => ?_
+    refine wp_ldrb (a := a + BitVec.ofNat 64 i) (by omega_using [hi]) (by rw [g0])
+      (by rw [grd, gwr]; exact hin i (by omega_using [])) fun u₁ v₁ => ?_
     refine wp_orr fun u₂ v₂ => ?_
     refine k u₂ ?_ ?_ ?_ ?_ ?_ ?_ ?_ fun r h1 h2 => ?_
     · rw [v₂.gpr, v₁.other _ (by decide), v₁.gpr, g1, gm, orAll, BitVec.setWidth_or, BitVec.or_assoc]
@@ -418,7 +418,7 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
   refine wp_movz fun u₁ v₁ => ?_
   refine orBytes_wp (s.gpr .x0) u.mem n hn u₁ _ _ (by rw [v₁.other _ (by decide), hu.x9]) v₁.mem
     (fun j hj => ⟨outR n s, by rw [v₁.rd, v₁.wr, hu.called.rd, hu.called.wr, wr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩) fun u' g1 _ gm grd gwr gsp gv go => ?_
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn, hj])⟩) fun u' g1 _ gm grd gwr gsp gv go => ?_
   refine wp_subImm (by decide) fun u₂ v₂ => wp_lsr (by decide) fun u₃ v₃ =>
     wp_movz fun u₄ v₄ => wp_eor fun u₅ v₅ => WP.block_nil ?_
   have hm : u₅.mem = u.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, gm]

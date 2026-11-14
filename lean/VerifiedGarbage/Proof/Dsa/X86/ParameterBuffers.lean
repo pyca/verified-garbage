@@ -22,11 +22,11 @@ theorem parameters_buffers {s : State} {base : Addr} {size full pLen qLen : Nat}
     Spec.Dsa.paramsBytes pLen qLen key =
       ⟨operandValue s base (.input .p) pLen, operandValue s base (.input .q) qLen,
         operandValue s base (.input .g) pLen⟩ := by
-  refine ⟨B.prefix (by omega), B.slice hql (by omega) qptr,
-    B.slice hpl (by omega) gptr, ?_⟩
-  have P := B.slice_bytes (dest := .input .p) (offset := 0) hpl (by omega) (by simp)
-  have Q := B.slice_bytes hql (by omega) qptr
-  have G := B.slice_bytes hpl (by omega) gptr
+  refine ⟨B.prefix (by omega_using [hlen]), B.slice hql (by omega_using [hlen]) qptr,
+    B.slice hpl (by omega_using [hlen]) gptr, ?_⟩
+  have P := B.slice_bytes (dest := .input .p) (offset := 0) hpl (by omega_using [hlen]) (by simp)
+  have Q := B.slice_bytes hql (by omega_using [hlen]) qptr
+  have G := B.slice_bytes hpl (by omega_using [hlen]) gptr
   rw [bytes, List.drop_zero] at P
   rw [bytes] at Q G
   simp only [Spec.Dsa.paramsBytes, Spec.Dsa.publicKeyBytes, operandValue, ← P, ← Q, ← G]

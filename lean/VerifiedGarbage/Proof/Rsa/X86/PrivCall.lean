@@ -29,7 +29,7 @@ theorem private_call_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State
       ∃ u : State, u.mem = t.mem ∧ (∀ r, r ≠ .esp → u.gpr r = t.gpr r) ∧
         contract.post (s.callEntry.withRegions rd wr) u := by
   refine VG.X86.WP.call verified.1 noSp
-    (by rw [h.sp]; have := h.valid.stackLow; omega) pre read write ?_
+    (by rw [h.sp]; have := h.valid.stackLow; omega_using [stack, this]) pre read write ?_
   intro t rdT wrT regs frame _ post
   have K := call_keeps rdT wrT regs
   have SP := K.1 .esp (by decide)
@@ -41,7 +41,7 @@ theorem private_call_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State
     · obtain rfl := List.mem_singleton.mp hr
       refine ⟨g.calleeRegion, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
       rw [h.sp]
-      exact VG.X86.below_sub (by omega : stackUse code + 4 ≤ 100) h.valid.stackLow
+      exact VG.X86.below_sub (by omega_using [stack] : stackUse code + 4 ≤ 100) h.valid.stackLow
   have Fbody : Frame (bodyWrites g) s.mem t.mem := F.sub (by
     intro r hr
     rcases List.mem_append.mp hr with hr | hr

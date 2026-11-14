@@ -18,7 +18,7 @@ theorem symbol_sub {s : State} (h : contract.pre s) :
     Region.Sub (below (s.gpr .esp) 4) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
   have low := stack_low h
   unfold below
-  rw [VG.X86.Taint.sub_setWidth (by omega)]
+  rw [VG.X86.Taint.sub_setWidth (by omega_using [low])]
   exact Offset.sub_below _ (by decide) (by decide)
 
 theorem args_separate {s : State} (h : contract.pre s) :
@@ -29,8 +29,8 @@ theorem args_separate {s : State} (h : contract.pre s) :
   · exact (geometry h).scratchArgs.symm
   · have g := geometry h
     have pointer : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 :=
-      addr_eq (by have := stack_bound h; omega)
-    rw [pointer, below, VG.X86.Taint.sub_setWidth (by have := stack_low h; omega)]
+      addr_eq (by have := stack_bound h; omega_using [this])
+    rw [pointer, below, VG.X86.Taint.sub_setWidth (by have := stack_low h; omega_using [this])]
     exact (Offset.disjoint_below_above _ (by decide)).symm
 
 theorem domain_separate {s : State} (h : contract.pre s) :
@@ -49,7 +49,7 @@ theorem return_separate {s : State} (h : contract.pre s) :
   simp only [writes, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (geometry h).retScratch
-  · rw [below, VG.X86.Taint.sub_setWidth (by have := stack_low h; omega)]
+  · rw [below, VG.X86.Taint.sub_setWidth (by have := stack_low h; omega_using [this])]
     simpa only [BitVec.add_zero] using
       (Offset.disjoint_below_above ((s.gpr .esp).setWidth 64) (m := 4) (a := 0) (l := 4) (by decide)).symm
 
@@ -62,16 +62,16 @@ theorem args_frame {s t : State} (h : contract.pre s) (sp : t.gpr .esp = s.gpr .
       argAddr s 0 + BitVec.ofNat 64 (4 * i) := by
     have top := stack_bound h
     change addr (s.gpr .esp) (4 + 4 * i) = _
-    rw [addr_eq (x := s.gpr .esp) (k := 4 + 4 * i) (by omega)]
+    rw [addr_eq (x := s.gpr .esp) (k := 4 + 4 * i) (by omega_using [hi, top])]
     change _ = addr (s.gpr .esp) 4 + _
-    rw [addr_eq (by omega), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  exact F.readW (r := ⟨argAddr s 0, 20⟩) (by rw [pointer]; exact Offset.contains_base _ (by omega) (by omega))
+    rw [addr_eq (by omega_using [top]), BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  exact F.readW (r := ⟨argAddr s 0, 20⟩) (by rw [pointer]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
     (args_separate h) (by decide)
 
 theorem domain_frame {s t : State} (h : contract.pre s) (args : ∀ i < 5, arg t i = arg s i)
     (F : Frame (writes s) s.mem t.mem) : domain t = domain s := by
   unfold domain
   rw [args 0 (by decide), args 1 (by decide)]
-  exact VG.Proof.Rsa.rsa_bytes_frame F (by have := (arg s 1).isLt; omega) (domain_separate h)
+  exact VG.Proof.Rsa.rsa_bytes_frame F (by have := (arg s 1).isLt; omega_using []) (domain_separate h)
 
 end VG.Proof.Ffdh.X86.VettedValidation

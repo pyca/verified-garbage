@@ -48,4 +48,27 @@ def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract 
   finalizeScratchSig.contract A (post := fun state count out _scratch => finalizePost A.ptrBits state count out)
     (stack := stack)
 
+/-- `updateScratchSig` with `w` words of working space, for an
+implementation whose compression function uses less than the tightest
+target's (x86-64's with the SHA512 extension, which uses none, needs 6). -/
+def updateScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 w)]
+
+/-- `updateScratchContract`, with `w` words of working space. -/
+def updateScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (updateScratchSigW w).contract A
+    (post := fun state count data len _scratch => updatePost A.ptrBits state count data len)
+    (stack := stack)
+
+/-- `finalizeScratchSig` with `w` words of working space. -/
+def finalizeScratchSigW (w : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 64), ("scratch", .array true .u64 w)]
+
+/-- `finalizeScratchContract`, with `w` words of working space. -/
+def finalizeScratchContractW (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (finalizeScratchSigW w).contract A
+    (post := fun state count out _scratch => finalizePost A.ptrBits state count out)
+    (stack := stack)
 end VG.Proof.Sha512

@@ -290,11 +290,11 @@ theorem copyIn_ok {t : State} {src f : Reg} {P F : Addr} {o n : Nat} {rest : Lis
       WP isa (.block rest) u Q) :
     WP isa (.block (copyIn src f o n ++ rest)) t Q := by
   unfold copyIn
-  refine WP.block_append_iff.mpr (WP.mono (Bytes.copyBytes_ok (Ne.symm hs) (Ne.symm hf) (by omega) ho
+  refine WP.block_append_iff.mpr (WP.mono (Bytes.copyBytes_ok (Ne.symm hs) (Ne.symm hf) (by omega_using [ho]) ho
     (fun i hi => by rw [hP, Nat.zero_add]; exact hr i hi) (fun i hi => by rw [hF]; exact hw i hi)
     (fun i hi hc => by
       rw [hP, hF, Nat.zero_add] at hc
-      exact hd _ (Offset.contains_base P (by omega) (by omega)) hc)) fun u h => ?_)
+      exact hd _ (Offset.contains_base P (by omega_using [hi]) (by omega_using [ho, hi])) hc)) fun u h => ?_)
   refine k u ⟨fun r hr => h.gpr r (by simpa using hr), h.rd, h.wr, h.sp⟩ (by rw [← hF]; exact h.frame) ?_
   simp only [Spec.Ed25519.bytesAt]
   refine List.map_congr_left fun i hi => ?_

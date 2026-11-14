@@ -45,7 +45,7 @@ theorem add_carry (x y : BitVec 32) :
   have hx := x.isLt
   have hy := y.isLt
   rw [BitVec.toNat_add]
-  split <;> omega
+  split <;> omega_arith
 
 /-- `adc` of zero and the carry into a small register. -/
 theorem adc_zero (r : BitVec 32) (c : Bool) (hr : r.toNat < 2 ^ 31) :
@@ -53,6 +53,6 @@ theorem adc_zero (r : BitVec 32) (c : Bool) (hr : r.toNat < 2 ^ 31) :
   have z : (0 : BitVec 32).toNat = 0 := rfl
   have o : (1 : BitVec 32).toNat = 1 := rfl
   rw [BitVec.toNat_add, BitVec.toNat_add]
-  cases c <;> simp only [Bool.false_eq_true, ↓reduceIte, z, o] <;> omega
+  cases c <;> simp only [Bool.false_eq_true, ↓reduceIte, z, o] <;> omega_arith
 
 end VG.Proof.Bignum.Arm

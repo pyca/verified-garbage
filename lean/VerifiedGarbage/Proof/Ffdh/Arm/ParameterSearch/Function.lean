@@ -27,7 +27,7 @@ theorem function_body (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.body (.call backend.candidateName backend.candidate))
       (searchPushed s) (FinishInput p s (p.tail 0 p.attempts)) := by
   obtain ⟨tr, t, run, done, rest, frame⟩ := body_run backend h.start
-  have fit : 24 ≤ s.sp.toNat := by have := h.stackFits; omega
+  have fit : 24 ≤ s.sp.toNat := by have := h.stackFits; omega_using [this]
   have saved : Spill.Saved t.mem (State.addr t.sp) s.gpr savedSlots := by
     rw [rest.sp]
     apply (push_saved s fit).frame (lo := 0) (hi := 24) (by decide) frame
@@ -59,7 +59,7 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
     WP isa (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) s
       fun t => abiPreserved s t ∧ ResultPost p (p.tail 0 p.attempts) t := by
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.code
-  refine WP.frame (by decide) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega) (by decide) ?_
+  refine WP.frame (by decide) (by change 24 ≤ s.sp.toNat; have := h.stackFits; omega_using [this]) (by decide) ?_
   rw [WP.seq_iff]
   exact WP.mono (function_body backend h) fun _ input => finish_ok input
 

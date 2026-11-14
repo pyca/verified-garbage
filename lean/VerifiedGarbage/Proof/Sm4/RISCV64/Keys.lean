@@ -63,9 +63,9 @@ theorem getLsbD_fill {x : BitVec 64} (hx : ∀ p < 64, p % 16 ≠ 0 → x.getLsb
     refine BitVec.eq_of_getLsbD_eq fun k hk => ?_
     rw [getLsbD_sparse _ _ _ _ k hk]
     by_cases h : k % 16 = 0
-    · have : k = 0 ∨ k = 16 ∨ k = 32 ∨ k = 48 := by omega
+    · have : k = 0 ∨ k = 16 ∨ k = 32 ∨ k = 48 := by omega_using [hk, h]
       rcases this with rfl | rfl | rfl | rfl <;> simp
-    · have : k ≠ 0 ∧ k ≠ 16 ∧ k ≠ 32 ∧ k ≠ 48 := by omega
+    · have : k ≠ 0 ∧ k ≠ 16 ∧ k ≠ 32 ∧ k ≠ 48 := by omega_using [h]
       simp [hx k hk h, this.1, this.2.1, this.2.2.1, this.2.2.2]
   rw [hs]
   exact getLsbD_fill_sparse _ _ _ _ p hp

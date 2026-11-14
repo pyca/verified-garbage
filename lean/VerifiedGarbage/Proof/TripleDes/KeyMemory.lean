@@ -36,16 +36,16 @@ theorem bytesAt_component (m : Mem) (p : Addr) (n offset : Nat) (hi : offset + 8
   apply Vector.ext
   intro j hj
   simp only [Vector.getElem_ofFn, blockAt]
-  rw [bytesAt_getD m p n _ (by omega), Offset.add_ofNat_add_ofNat]
+  rw [bytesAt_getD m p n _ (by omega_using [hi, hj]), Offset.add_ofNat_add_ofNat]
 
 theorem componentOffset_bound (n c : Nat) (hn : validKey n) (hc : c < 3) :
     componentOffset n c + 8 ≤ n := by
   rcases hn with rfl | rfl <;> unfold componentOffset
   · by_cases h : c = 2
     · rw [ite_eq_left (by simp only [h, and_self])]; decide
-    · rw [ite_eq_right (by simp only [h, false_and, not_false_eq_true])]; omega
+    · rw [ite_eq_right (by simp only [h, false_and, not_false_eq_true])]; omega_using [hc, h]
   · rw [ite_eq_right (by simp only [show ¬(24 : Nat) = 16 by decide, and_false, not_false_eq_true])]
-    omega
+    omega_using [hc]
 
 theorem expandKey_memory (m : Mem) (p : Addr) (n : Nat) (hn : validKey n) :
     expandKey (bytesAt m p n) = expandedMemory m p n := by

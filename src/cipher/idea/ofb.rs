@@ -12,7 +12,7 @@
 use crate::align::CacheAligned;
 use crate::arch::dispatch::idea::vg_idea_expand_key_auto;
 use crate::arch::dispatch::idea_ofb::{vg_idea_ofb_auto, vg_idea_ofb_final_auto};
-use crate::error::{IncompleteBlock, InvalidKeyLength};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An expanded IDEA key.
@@ -38,11 +38,11 @@ pub struct IdeaOfb {
 
 impl IdeaOfb {
     /// Expands a 16-byte key, to process a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
-        Ok(Self {
-            key: Key::new(key)?,
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
+        Self {
+            key: Key::new(key),
             iv: *iv,
-        })
+        }
     }
 
     /// Encrypts or decrypts (the same operation) whole 8-byte blocks in
@@ -75,14 +75,13 @@ impl Drop for IdeaOfb {
 
 impl Key {
     /// Expands a 16-byte key.
-    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
+    fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 104]);
         crate::dit::enter!(dit);
         // SAFETY: the key and the schedule are separate valid buffers of the
         // required sizes.
         unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
-        Ok(Self { schedule })
+        Self { schedule }
     }
 
     /// Encrypts or decrypts (the same operation) the whole blocks of

@@ -75,7 +75,7 @@ theorem load_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State)
     WP isa (.block AdxRotate8.loadCols) s (LoopState ps a b L 0) := by
   obtain ⟨⟨mi,hg⟩,hv,hI,hJ,hc,ca,cb,co⟩ := h
   have hwN := L.hwN; have hn := L.hn
-  exact WP.mono (rowLoad_ok (s₀ := s) hg.scr hg.rdi hg.hdr L.hZ L.hi (by omega) hI hJ (by rw [hc]; rfl)
+  exact WP.mono (rowLoad_ok (s₀ := s) hg.scr hg.rdi hg.hdr L.hZ L.hi (by omega_using [hwN, hn]) hI hJ (by rw [hc]; rfl)
     ca cb co rfl (Keep.refl _ _)) fun t ht => ⟨s,mi,0,2,hv,ht⟩
 
 theorem tile_fw {ps : List (Nat × Nat)} {a b : Nat} (ha : a < 8) (hb : b < 8)
@@ -85,13 +85,13 @@ theorem tile_fw {ps : List (Nat × Nat)} {a b : Nat} (ha : a < 8) (hb : b < 8)
   obtain ⟨hk,s₀,mi,_,_,_,h⟩ := h
   have hi := p.1.hi; have hwN := p.1.hwN; have hZ := p.1.hZ
   have nowrap := h.scr.nowrap
-  have hj : p.1.j₀+8*p.2+8 ≤ p.1.w := by omega
+  have hj : p.1.j₀+8*p.2+8 ≤ p.1.w := by omega_using [hk, hwN]
   have ar := tile_ranges hi hj ha ha1 ha2
   have br := tile_ranges hj hi hb hb1 hb2
   have po : s.gpr .rsi = off p.1.B (slot p.1.w aAcc+16+8*(p.1.i+(p.1.j₀+8*p.2))) := by
-    rw [h.po]; exact congrArg (off p.1.B) (by unfold rawBase; omega)
-  refine WP.mono (streamTile_ok h.scr h.rdi h.pa h.pb po (by omega) (by omega) (by omega)
-    ar.2.2 (by omega) (by unfold carryOffset sFn slot hdrBytes aAcc; omega))
+    rw [h.po]; exact congrArg (off p.1.B) (by unfold rawBase; omega_using [])
+  refine WP.mono (streamTile_ok h.scr h.rdi h.pa h.pb po (by omega_using [hZ, ar]) (by omega_using [hZ, br]) (by omega_using [hZ, ar])
+    ar.2.2 (by omega_using [br]) (by unfold carryOffset sFn slot hdrBytes aAcc; omega_using []))
     fun t ⟨_,_,_,_,_,_,kt⟩ => (kt.gpr (by decide)).trans h.rdi
 
 theorem loop_pins (ps : List (Nat × Nat)) (a b : Nat) :
@@ -128,14 +128,14 @@ theorem row_fw {ps : List (Nat × Nat)} {a b : Nat}
   refine ⟨?_,fun _ => post,fun he => he ▸ post⟩
   simp only [eval,zt,Option.map_some]
   by_cases he : k+1 = L.n
-  · simp only [he,decide_true,Bool.not_true,show ¬(L.n<L.n) by omega,decide_false]
-  · simp only [he,decide_false,Bool.not_false,show k+1<L.n by omega,decide_true]
+  · simp only [he,decide_true,Bool.not_true,show ¬(L.n<L.n) by omega_using [],decide_false]
+  · simp only [he,decide_false,Bool.not_false,show k+1<L.n by omega_using [hk, he],decide_true]
 
 theorem end_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State) (h : LoopState ps a b L L.n s) :
     WP isa (.block AdxRotate8.storeCols) s (RowState ps L L.n) := by
   obtain ⟨s₀,mi,_,_,hv,h⟩ := h
   refine WP.mono (rowEnd_ok L.hZ L.hi L.hwN h) fun t ht => ?_
-  exact ⟨mi,⟨ht.scr,ht.rdi,ht.hdr⟩,frame_ops hv (by unfold rawBase slot; omega) ht.frame,ht.indexI,ht.indexJ⟩
+  exact ⟨mi,⟨ht.scr,ht.rdi,ht.hdr⟩,frame_ops hv (by unfold rawBase slot; omega_using []) ht.frame,ht.indexI,ht.indexJ⟩
 
 theorem row_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (ha : a < 8) (hb : b < 8)

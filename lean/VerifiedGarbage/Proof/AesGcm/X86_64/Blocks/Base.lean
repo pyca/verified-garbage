@@ -171,7 +171,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧ (
   have a₀ := a_in hp
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by omega_using [hd])
   have s₁₂ := sep 0 8 (by decide) (by decide) (by decide)
   have s₁₃ := sep 0 16 (by decide) (by decide) (by decide)
   have s₁₄ := sep 0 24 (by decide) (by decide) (by decide)
@@ -197,7 +197,7 @@ theorem entry_ok : WP isa (.block entry) s fun s₁ => s₁.gpr .r11 = S s ∧ (
   all_goals try simp (disch := first | decide | assumption) only [gpr_setReg, ite_true, reduceCtorEq, ↓reduceIte,
     Mem.readW_writeW_self64, Mem.readW_writeW_sep, Nat.mul_zero, BitVec.add_zero, hn]
   · have c : ∀ d, 0 ≤ d → d + 8 ≤ 48 → (kR' s).Contains (S s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d _ h₂ => Offset.contains_base _ h₂ (by omega)
+      fun d _ h₂ => Offset.contains_base _ h₂ (by omega_using [h₂])
     have c0 : (kR' s).Contains (S s) (64 / 8) := by simpa using c 0 (by decide) (by decide)
     exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
       (List.mem_singleton_self _) _ (c 8 (by decide) (by decide))).writeW

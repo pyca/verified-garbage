@@ -44,8 +44,8 @@ theorem mv_add (m : Mem) (base : Addr) :
     ∀ (o a b : Nat), mv m base o (a + b) = mv m base o a + 2 ^ (64 * a) * mv m base (o + 8 * a) b
   | o, 0, b => by simp [mv]
   | o, a + 1, b => by
-    rw [show a + 1 + b = (a + b) + 1 by omega, mv, mv, mv_add m base (o + 8) a b, pow64_succ,
-      show o + 8 + 8 * a = o + 8 * (a + 1) by omega]
+    rw [show a + 1 + b = (a + b) + 1 by omega_using [], mv, mv, mv_add m base (o + 8) a b, pow64_succ,
+      show o + 8 + 8 * a = o + 8 * (a + 1) by omega_using []]
     generalize 2 ^ (64 * a) = Q
     grind
 
@@ -85,7 +85,7 @@ theorem product_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : S
     · exfalso
       have := Nat.mul_le_mul_left (2 ^ (64 * (7 + 7))) h
       generalize 2 ^ (64 * (7 + 7)) = Q at *
-      omega
+      omega_using [hcol, hl, this]
   generalize 2 ^ (64 * (7 + 7)) = Q at hcol
   rw [h0, Nat.mul_zero, Nat.add_zero, mv_add, show 64 * 7 = 448 from rfl,
     show ACC + 8 * 7 = ACC + 56 from rfl] at hcol
@@ -129,7 +129,7 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   have hb' : b + 56 ≤ 1536 := hb
   rw [mul, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (loads_ok hs b W W_nodup (by decide)
-    (by rw [show W.length = 7 from rfl]; omega)) fun s1 ⟨w1, _, k1⟩ => ?_
+    (by rw [show W.length = 7 from rfl]; omega_using [hb'])) fun s1 ⟨w1, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (zeroAcc_ok s1) fun s2 ⟨z2, k2⟩ => ?_
@@ -139,8 +139,8 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
     (fun i => word s2.mem base (a + 8 * i)) mulCol
     (fun s' g _ wr out i hi => by
       have hsS : Scr s' base := ⟨(g _ rdi_colX).trans hs2.rdi, wr ▸ hs2.wr, hs2.nowrap⟩
-      have := stable_sc hsS rdi_colX (d := a + 8 * i) (by omega)
-      rwa [out.word (by simp only [ACC]; omega) (by omega)] at this)
+      have := stable_sc hsS rdi_colX (d := a + 8 * i) (by omega_using [ha', hi])
+      rwa [out.word (by simp only [ACC]; omega_using [ha', hi]) (by omega_using [ha', hi])] at this)
     mulCol_hc mulCol_hw z2 (mv_lt s.mem base a 7) (mv_lt s.mem base b 7) ?_)
     fun s' ⟨e, g, rd, wr, out⟩ => ⟨⟨fun r hr => ?_, rd.trans (k2.2.2.1.trans k1.2.2.1),
       wr.trans (k2.2.2.2.trans k1.2.2.2), by rw [← m2]; exact out⟩, ?_⟩
@@ -162,7 +162,7 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slo
   have ha' : a + 56 ≤ 1536 := ha
   rw [sqr, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (loads_ok hs a W W_nodup (by decide)
-    (by rw [show W.length = 7 from rfl]; omega)) fun s1 ⟨w1, _, k1⟩ => ?_
+    (by rw [show W.length = 7 from rfl]; omega_using [ha'])) fun s1 ⟨w1, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (zeroAcc_ok s1) fun s2 ⟨z2, k2⟩ => ?_

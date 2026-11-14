@@ -23,7 +23,7 @@ theorem read_write_word (m : Mem) (p : Addr) (v : BitVec 128) {i j : Nat}
   · subst i; rw [read_write16,ite_eq_left rfl]
   · rw [ite_eq_right he]
     have hs : Mem.Sep (wordAddr p i) 16 (wordAddr p j) 16 :=
-      Offset.sep p (d := 16*i) (e := 16*j) (n := 16) (k := 16) (by omega) (by omega) (by omega)
+      Offset.sep p (d := 16*i) (e := 16*j) (n := 16) (k := 16) (by omega_using [he]) (by omega_using [hi]) (by omega_using [hj])
     exact Mem.read_write_sep hs (by decide)
 
 def SeedWords (m input : Mem) (p seed : Addr) : Prop :=
@@ -43,7 +43,7 @@ theorem seedWords_of_zero {z m input : Mem} {p seed : Addr}
   · rw [ite_eq_right h4]
     rw [hf.read (Region.contains_self (wordAddr p i) 16) (by
       intro r hr; rw [List.mem_singleton.mp hr]
-      exact Offset.disjoint_base p (d := 16*i) (n := 16) (k := 64) (by omega) (by omega)) (by decide)]
+      exact Offset.disjoint_base p (d := 16*i) (n := 16) (k := 64) (by omega_using [h4]) (by omega_using [hi])) (by decide)]
     exact hz i hi
 
 theorem tail_pair {m input : Mem} {p seed : Addr} {n : Nat}
@@ -56,7 +56,7 @@ theorem tail_pair {m input : Mem} {p seed : Addr} {n : Nat}
   rw [read_write_word _ _ _ hi (by decide),read_write_word _ _ _ hi (by decide),h i hi,
     seedState_get input seed n hi,seedState_get input seed (n+1) hi]
   by_cases h4 : i < 4
-  · simp only [ite_eq_left h4,ite_eq_right (by omega : ¬i=16),ite_eq_right (by omega : ¬i=4)]
+  · simp only [ite_eq_left h4,ite_eq_right (by omega_using [h4] : ¬i=16),ite_eq_right (by omega_using [h4] : ¬i=4)]
   · by_cases he4 : i = 4
     · subst i; simp
     · by_cases he16 : i = 16

@@ -24,7 +24,7 @@ theorem outside_workspace {m m' : Mem} {base : Addr} {size o n : Nat}
   intro a ha
   have h := ha ⟨base, size⟩ (by simp)
   change ¬ ((a - base).toNat + 1 ≤ size) at h
-  exact outside a (by simp only [ofs]; omega)
+  exact outside a (by simp only [ofs]; omega_using [fit, h])
 
 theorem outside_array_keeps {m m' : Mem} {base : Addr} {len w o : Nat}
     (outside : Outside base (arrAt w o) (8 * w) m m') (size : 8 * len < 2 ^ 64) :
@@ -34,8 +34,8 @@ theorem outside_array_keeps {m m' : Mem} {base : Addr} {len w o : Nat}
   apply outside
   change (base + BitVec.ofNat 64 i - base).toNat < arrAt w o ∨
     arrAt w o + 8 * w ≤ (base + BitVec.ofNat 64 i - base).toNat
-  rw [Mem.sub_ofNat_toNat _ (by omega)]
-  omega
+  rw [Mem.sub_ofNat_toNat _ (by omega_using [size, hi])]
+  omega_using [sep]
 
 theorem setSmallFnBody_ok (s : State) {base : BitVec 32} {len o : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
@@ -50,21 +50,21 @@ theorem setSmallFnBody_ok (s : State) {base : BitVec 32} {len o : Nat}
   have hw : 2 ≤ w := layout.1
   have fits : arrAt w 8 ≤ 8 * len := layout.2.2.1
   have arrayFits := Nat.le_trans (array_end_le ho) fits
-  have bound : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have bound : 128 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have header := nativeHeader_of_layout s.mem base ws.nowrap (Nat.le_refl _) layout
   rw [setSmallFnBody, WP.seq_iff]
   refine WP.mono (setSmallArgs_ok s ws bound header ho ptr index) ?_
   rintro u ⟨p0, p4, count, zero, mem, rest⟩
   have ctx : ZeroCtx u base (8 * len) (arrAt w o) (2 * w) :=
-    ⟨ws.nowrap, by omega, by rw [rest.wr]; exact ⟨_, ws.writable, Region.contains_self _ _⟩⟩
-  refine WP.mono (setSmall_ok u ctx (by omega) p0 p4 count zero) ?_
+    ⟨ws.nowrap, by omega_using [arrayFits], by rw [rest.wr]; exact ⟨_, ws.writable, Region.contains_self _ _⟩⟩
+  refine WP.mono (setSmall_ok u ctx (by omega_using [hw]) p0 p4 count zero) ?_
   rintro t ⟨value, low, outside, keep⟩
   rw [mem] at outside
   rw [rest.gpr .r5 (by decide)] at value low
-  have eq : 4 * (2 * w) = 8 * w := by omega
+  have eq : 4 * (2 * w) = 8 * w := by omega_using []
   rw [eq] at outside
   exact ⟨by simpa only [numAt_native] using value, low, outside,
-    outside_workspace outside (by omega),
+    outside_workspace outside (by omega_using [arrayFits]),
     (rest.mono (by decide)).trans (keep.mono (by decide))⟩
 
 theorem setSmallFn_ok (s : State) {base : BitVec 32} {len o : Nat}

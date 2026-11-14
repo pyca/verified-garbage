@@ -62,9 +62,9 @@ theorem RateBlock.keep {m m' : Mem} {a : Addr} {n : Nat} {A : Spec.Sha3.State}
     RateBlock m' a n A := by
   constructor
   · intro i hi
-    rw [hf.read (Offset.contains_base a (by omega) (by omega)) hd (by decide)]
+    rw [hf.read (Offset.contains_base a (by omega_using [hi]) (by omega_using [hn, hi])) hd (by decide)]
     exact h.1 i hi
-  · rw [hf.readW (Offset.contains_base a (by omega) (by omega)) hd (by decide)]
+  · rw [hf.readW (Offset.contains_base a (by omega_using []) (by omega_using [hn])) hd (by decide)]
     exact h.2
 
 def permuted (A : Spec.Sha3.State) : Nat → Spec.Sha3.State
@@ -83,10 +83,10 @@ theorem block_disjoint {a : Addr} {n i j : Nat} (hn : n ≤ 10)
     (Region.mk (a+BitVec.ofNat 64 ((16*n+8)*i)) (16*n+8)).Disjoint
       ⟨a+BitVec.ofNat 64 ((16*n+8)*j),16*n+8⟩ := by
   have hij' := Nat.mul_le_mul_left (16*n+8) hij
-  have hiBound := Nat.mul_le_mul (show 16*n+8 ≤ 168 by omega) (show i+1 ≤ 65536 by omega)
-  have hjBound := Nat.mul_le_mul (show 16*n+8 ≤ 168 by omega) (show j+1 ≤ 65536 by omega)
+  have hiBound := Nat.mul_le_mul (show 16*n+8 ≤ 168 by omega_using [hn]) (show i+1 ≤ 65536 by omega_using [hij, hj])
+  have hjBound := Nat.mul_le_mul (show 16*n+8 ≤ 168 by omega_using [hn]) (show j+1 ≤ 65536 by omega_using [hj])
   simp only [Nat.mul_add,Nat.mul_one] at hij' hiBound hjBound
-  exact Offset.disjoint a (Or.inl (by omega)) (by omega) (by omega)
+  exact Offset.disjoint a (Or.inl (by omega)) (by omega_using [hiBound]) (by omega_using [hjBound])
 
 /-- Appending a block preserves every earlier block in both streams. -/
 theorem StreamOutput.append {m m' : Mem} {a b : Addr} {n j blocks : Nat}
@@ -108,21 +108,21 @@ theorem StreamOutput.append {m m' : Mem} {a b : Addr} {n j blocks : Nat}
   · intro i hi
     by_cases he : i = j
     · simpa only [he] using hnewa
-    · refine (ha i (by omega)).keep hn hf ?_
+    · refine (ha i (by omega_using [hi, he])).keep hn hf ?_
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
-      · exact block_disjoint hn (by omega) (by omega)
-      · exact (hd.sub_left (sub a i (by omega))).sub_right (sub b j hj)
+      · exact block_disjoint hn (by omega_using [hi, he]) (by omega_using [hj, hblocks])
+      · exact (hd.sub_left (sub a i (by omega_using [hj, hi]))).sub_right (sub b j hj)
   · intro i hi
     by_cases he : i = j
     · simpa only [he] using hnewb
-    · refine (hb i (by omega)).keep hn hf ?_
+    · refine (hb i (by omega_using [hi, he])).keep hn hf ?_
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
-      · exact (hd.symm.sub_left (sub b i (by omega))).sub_right (sub a j hj)
-      · exact block_disjoint hn (by omega) (by omega)
+      · exact (hd.symm.sub_left (sub b i (by omega_using [hj, hi]))).sub_right (sub a j hj)
+      · exact block_disjoint hn (by omega_using [hi, he]) (by omega_using [hj, hblocks])
 
 end VG.Proof.MlDsa.AArch64.Optimized.Resident
 

@@ -42,7 +42,7 @@ theorem lv_p4 : lv p4 9 = 4 * p := by
 
 theorem lv_add (f g : Nat → Nat) : ∀ n, lv (fun j => f j + g j) n = lv f n + lv g n
   | 0 => rfl
-  | n + 1 => by rw [lv, lv, lv, lv_add f g n, Nat.mul_add]; omega
+  | n + 1 => by rw [lv, lv, lv, lv_add f g n, Nat.mul_add]; omega_using []
 
 /-- The limbs of the sum or the difference: `[a] + [b]`, or `[a] + 4p - [b]`. -/
 theorem lv_addT (sub : Bool) {a b : Nat → Nat} (hb : TightF b) :
@@ -56,12 +56,12 @@ theorem lv_addT (sub : Bool) {a b : Nat → Nat} (hb : TightF b) :
       have := hb.lt hj
       have h8 := hb.2
       split <;> rename_i h
-      · omega
-      · have : j = 8 := by omega
-        subst this; omega
+      · omega_using [this]
+      · have : j = 8 := by omega_using [hj, h]
+        subst this; omega_using [h8]
     rw [lv_p4] at e
     simp only [↓reduceIte]
-    omega
+    omega_using [e]
 
 /-- The constants of the difference: `4p`'s limbs. -/
 def Consts (sub : Bool) (s : State) : Prop :=
@@ -89,18 +89,18 @@ theorem mid_ok (sub : Bool) {i : Nat} (hi : i < 9) {s : State} (hc : Consts sub 
     ⟨fun r hr => u.other r (by simpa using hr), u.mem, u.rd, u.wr, u.sp⟩
   cases sub
   · refine wp_add fun s₁ u₁ => WP.block_nil ⟨?_, keep1 u₁⟩
-    rw [u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]; rfl
+    rw [u₁.gpr, BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_using [hx, hy])]; rfl
   · obtain ⟨h7, h6⟩ := hc rfl
     simp only [↓reduceIte]
     refine wp_add fun s₁ u₁ => wp_sub fun s₂ u₂ => WP.block_nil ⟨?_, ?_⟩
     · have hc : (s.gpr (if i < 8 then .a7 else .t6)).toNat = p4 i := by
         unfold p4; split <;> with_reducible assumption
       rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), BitVec.toNat_sub_of_le, BitVec.toNat_add, hc,
-        Nat.mod_eq_of_lt (by unfold p4; split <;> omega)]
-      · rw [BitVec.le_def, BitVec.toNat_add, hc, Nat.mod_eq_of_lt (by unfold p4; split <;> omega)]
+        Nat.mod_eq_of_lt (by unfold p4; split <;> omega_using [hx])]
+      · rw [BitVec.le_def, BitVec.toNat_add, hc, Nat.mod_eq_of_lt (by unfold p4; split <;> omega_using [hx])]
         unfold p4; split
-        · omega
-        · rename_i h; have := hy8 (by omega); omega
+        · omega_using [hy]
+        · rename_i h; have := hy8 (by omega_using [hi, h]); omega_using [this]
     · exact ⟨fun r hr => by rw [u₂.other r (by simpa using hr), u₁.other r (by simpa using hr)],
         by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr], by rw [u₂.sp, u₁.sp]⟩
 
@@ -108,7 +108,7 @@ theorem step_arith {L Lt K c t : Nat} (hv : L + K * c = Lt) :
     L + K * ((t + c) % 2 ^ 58) + K * 2 ^ 58 * ((t + c) / 2 ^ 58) = Lt + K * t := by
   have h : K * ((t + c) % 2 ^ 58) + K * 2 ^ 58 * ((t + c) / 2 ^ 58) = K * t + K * c := by
     rw [Nat.mul_assoc, ← Nat.mul_add, Nat.add_comm, Nat.div_add_mod, Nat.mul_add]
-  omega
+  omega_using [hv, h]
 
 /-- Limb `i`. -/
 theorem addStep_ok (sub : Bool) {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A B O s0)
@@ -118,7 +118,7 @@ theorem addStep_ok (sub : Bool) {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A
   have hb := hC.nowrap
   have hCs := h.kept.core hC
   have hfo : Frame [ownR 9 b] s0.mem s.mem := h.fz.sub fun _ hr => ⟨_, List.mem_singleton_self _, by
-    rw [List.mem_singleton.mp hr]; exact own_sub (by rw [Z_eq]) (by rw [Z_eq]; omega)⟩
+    rw [List.mem_singleton.mp hr]; exact own_sub (by rw [Z_eq]) (by rw [Z_eq]; omega_using [])⟩
   unfold addStep
   simp only [List.cons_append, List.nil_append]
   refine ldA_ok hCs hi fun s₁ u₁ => ?_
@@ -138,7 +138,7 @@ theorem addStep_ok (sub : Bool) {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A
       rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), k₃.1 _ (by decide),
         u₂.other _ (by decide), hC₁.ctx.a3],
     hC.ctx.al, by rw [u₆.wr, u₅.wr, u₄.wr, k₃.2.2.2.1, u₂.wr]; exact hC₁.ctx.wr⟩
-  refine sd_ok hc₆ (by rw [Z_eq]; omega) (by rw [Z_eq]; omega) fun s₇ u₇ => WP.block_nil ?_
+  refine sd_ok hc₆ (by rw [Z_eq]; omega_using [hi]) (by rw [Z_eq]; omega_using []) fun s₇ u₇ => WP.block_nil ?_
   -- The numbers.
   have hT : (s₃.gpr .a1).toNat = addT sub (fun j => dw s0.mem A (8 * j)) (fun j => dw s0.mem B (8 * j)) i := by
     rw [e₃, ex, ey]; rfl
@@ -147,13 +147,13 @@ theorem addStep_ok (sub : Bool) {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A
     have h2 : dw s0.mem B (8 * i) < 2 ^ 59 := hB.lt hi
     unfold addT p4
     dsimp only
-    split <;> (try split) <;> omega
+    split <;> (try split) <;> omega_arith
   have hc4 : (s₃.gpr .a4).toNat = (s.gpr .a4).toNat := by
     rw [k₃.1 _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
   have ha4 : (s₄.gpr .a1).toNat = addT sub (fun j => dw s0.mem A (8 * j)) (fun j => dw s0.mem B (8 * j)) i +
       (s.gpr .a4).toNat := by
     rw [u₄.gpr, BitVec.toNat_add, hT, hc4]
-    exact Nat.mod_eq_of_lt (by have := h.carry; omega)
+    exact Nat.mod_eq_of_lt (by have := h.carry; omega_using [hTl, this])
   generalize ht : addT sub (fun j => dw s0.mem A (8 * j)) (fun j => dw s0.mem B (8 * j)) i = t at hTl ha4
   have hm6 : s₆.gpr .a6 = M58 := by
     rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), k₃.1 _ (by decide),
@@ -165,27 +165,27 @@ theorem addStep_ok (sub : Bool) {b A B O : Addr} {s0 : State} (hC : CoreOk 9 b A
     rw [u₇.gpr, u₆.other _ (by decide), u₅.gpr, shr_toNat, ha4]
   have hK₇ : Kept b O s0 s₇ := by
     have K₃ : Kept b O s0 s₃ := ((h.kept.upd u₁).upd u₂).keeps k₃
-    exact (((K₃.upd u₄).upd u₅).upd u₆).sd (by rw [Z_eq]; omega) (by rw [Z_eq]; omega) u₇
+    exact (((K₃.upd u₄).upd u₅).upd u₆).sd (by rw [Z_eq]; omega_using []) (by rw [Z_eq]; omega_using [hi]) u₇
   have hm₇ : s₇.mem = s.mem.writeW (b + BitVec.ofNat 64 (Z + 8 * i)) (s₆.gpr .a1) := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, k₃.2.1, u₂.mem, u₁.mem]
   have hold : ∀ j < i, dw s₇.mem b (Z + 8 * j) = dw s.mem b (Z + 8 * j) := fun j hj => by
-    rw [hm₇, dw_write_other _ _ _ (by omega) (by rw [Z_eq]; omega) (by rw [Z_eq]; omega)]
+    rw [hm₇, dw_write_other _ _ _ (by omega_using [hj]) (by rw [Z_eq]; omega_using [hi, hj]) (by rw [Z_eq]; omega_using [hi])]
   refine ⟨hK₇, ?_, fun e => ?_, ?_, fun j hj => ?_, ?_, ?_⟩
   · rw [u₇.gpr, hm6]
   · rw [u₇.gpr, u₆.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₄.other _ (by decide), k₃.1 _ (by decide), k₃.1 _ (by decide)]
     exact hc₂ e
   · rw [hm₇]
-    exact h.fz.writeW (List.mem_singleton_self _) _ (Offset.contains b (by rw [Z_eq]; omega) (by rw [Z_eq]; omega)
-      (by rw [Z_eq]; omega))
+    exact h.fz.writeW (List.mem_singleton_self _) _ (Offset.contains b (by rw [Z_eq]; omega_using []) (by rw [Z_eq]; omega_using [hi])
+      (by rw [Z_eq]; omega_using []))
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · rw [hold j hj]; exact h.lt j hj
     · rw [hm₇, dw_write_self, hz]; exact Nat.mod_lt _ (by decide)
-  · rw [hcar]; have := h.carry; omega
+  · rw [hcar]; have := h.carry; omega_using [hTl, this]
   · have e₁ : lv (fun j => dw s₇.mem b (Z + 8 * j)) i = lv (fun j => dw s.mem b (Z + 8 * j)) i := lv_congr hold
     have e₂ : dw s₇.mem b (Z + 8 * i) = (t + (s.gpr .a4).toNat) % 2 ^ 58 := by rw [hm₇, dw_write_self, hz]
     simp only [lv]
-    rw [e₁, e₂, hcar, ht, show 58 * (i + 1) = 58 * i + 58 by omega, Nat.pow_add]
+    rw [e₁, e₂, hcar, ht, show 58 * (i + 1) = 58 * i + 58 by omega_using [], Nat.pow_add]
     exact step_arith h.val
 
 /-- The constants of the difference. -/
@@ -226,7 +226,7 @@ theorem addC_ok (sub : Bool) {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O
       fun _ h => absurd h (Nat.not_lt_zero _), by rw [k₃.1 _ (by decide), u₂.gpr]; decide,
       by rw [k₃.1 _ (by decide), u₂.gpr]; rfl⟩) fun s₄ h₄ => ?_)
   have hC₄ := h₄.kept.core hC
-  refine ld_ok hC₄.ctx (by rw [Z_eq]; omega) (by rw [Z_eq]) fun s₅ u₅ => wp_sll (by decide) fun s₆ u₆ =>
+  refine ld_ok hC₄.ctx (by rw [Z_eq]; omega_using []) (by rw [Z_eq]) fun s₅ u₅ => wp_sll (by decide) fun s₆ u₆ =>
     wp_add fun s₇ u₇ => ?_
   have K₇ : Kept b O s s₇ := ((h₄.kept.upd u₅).upd u₆).upd u₇
   have hC₇ := K₇.core hC
@@ -246,23 +246,23 @@ theorem addC_ok (sub : Bool) {b A B O : Addr} {s : State} (hC : CoreOk 9 b A B O
     have hZ0 : (s₄.mem.readW (b + BitVec.ofNat 64 Z) 64).toNat = dw s₄.mem b (Z + 8 * 0) := rfl
     have := hz 0 (by decide)
     rw [u₇.gpr, u₆.other _ (by decide), u₆.gpr, u₅.gpr, u₅.other _ (by decide), BitVec.toNat_add, shl_toNat, hZ0,
-      Nat.mod_eq_of_lt (by omega : (s₄.gpr .a4).toNat * 2 ^ 1 < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
-    omega
+      Nat.mod_eq_of_lt (by omega_using [hc] : (s₄.gpr .a4).toNat * 2 ^ 1 < 2 ^ 64), Nat.mod_eq_of_lt (by omega_using [hc, this])]
+    omega_using []
   have o0 : dw s'.mem O (8 * 0) = dw s₄.mem b (Z + 8 * 0) + 2 * (s₄.gpr .a4).toNat := by
     rw [hout 0 (by decide), ite_eq_right (by decide), u₈.mem, dw_write_self, e₇]
   have oj : ∀ j, 1 ≤ j → j < 9 → dw s'.mem O (8 * j) = dw s₄.mem b (Z + 8 * j) := fun j hj hj' => by
-    rw [hout j hj', ite_eq_left hj, hm8 _ (by rw [Z_eq]; omega) (by rw [Z_eq]; omega)]
+    rw [hout j hj', ite_eq_left hj, hm8 _ (by rw [Z_eq]; omega_using []) (by rw [Z_eq]; omega_using [hj'])]
   refine ⟨K₈.trans K', ⟨fun i hi => ?_, ?_⟩, mod_cancel (K := (s₄.gpr .a4).toNat) ?_⟩
   · show dw s'.mem O (8 * i) < 2 ^ 59
     rcases Nat.eq_zero_or_pos i with rfl | h1
-    · rw [o0]; have := hz 0 (by decide); simp only [Nat.mul_zero, Nat.add_zero] at this ⊢; omega
-    · rw [oj i h1 (by omega)]; exact Nat.lt_trans (hz i (by omega)) (by decide)
+    · rw [o0]; have := hz 0 (by decide); simp only [Nat.mul_zero, Nat.add_zero] at this ⊢; omega_using [hc, this]
+    · rw [oj i h1 (by omega_using [hi])]; exact Nat.lt_trans (hz i (by omega_using [hi])) (by decide)
   · show dw s'.mem O (8 * 8) < 2 ^ 58
     rw [oj 8 (by decide) (by decide)]; exact hz 8 (by decide)
   · rw [lv_fold (fun j => dw s'.mem O (8 * j)) (fun j => dw s₄.mem b (Z + 8 * j)) (C := (s₄.gpr .a4).toNat)
-      (by show dw s'.mem O (8 * 0) + 2 ^ 58 * dw s'.mem O (8 * 1) = _; rw [o0, oj 1 (by decide) (by decide)]; omega)
-      fun j hj hj' => oj j (by omega) hj', ← hv]
-    omega
+      (by show dw s'.mem O (8 * 0) + 2 ^ 58 * dw s'.mem O (8 * 1) = _; rw [o0, oj 1 (by decide) (by decide)]; omega_using [])
+      fun j hj hj' => oj j (by omega_using [hj]) hj', ← hv]
+    omega_using []
 
 /-- The sum, as a specification. -/
 theorem add_spec :

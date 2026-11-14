@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -14,8 +15,8 @@ def reduceWord (x : BitVec 32) : BitVec 32 :=
 theorem reduceWord_eq (x : BitVec 32) (hl : -2*8380417<x.toInt) (hh : x.toInt<3*8380417) :
     reduceWord x=BitVec.ofInt 32 (reduce32 x.toInt) := by
   have hadd : (x+4194304#32).toInt=x.toInt+4194304 := by
-    exact addWord_int _ _ (by change -2147483648≤x.toInt+4194304; omega)
-      (by change x.toInt+4194304<2147483648; omega)
+    exact addWord_int _ _ (by change -2147483648≤x.toInt+4194304; omega_using [hl])
+      (by change x.toInt+4194304<2147483648; omega_using [hh])
   have hshift : BitVec.ofInt 32 ((x.toInt+4194304)/8388608)=(x+4194304#32).sshiftRight 23 := by
     have h := BitVec.toInt_sshiftRight (x := x+4194304#32) (n := 23)
     rw [Int.shiftRight_eq_div_pow,hadd] at h
@@ -30,7 +31,7 @@ theorem reduceWord_int (x : BitVec 32) (hl : -2*8380417<x.toInt) (hh : x.toInt<3
     (reduceWord x).toInt=reduce32 x.toInt := by
   rw [reduceWord_eq x hl hh]
   have h := reduce32_bounds hl hh
-  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega
+  apply BitVec.toInt_ofInt_eq_self (by decide) <;> omega_using [h]
 
 /-- Four-instruction norm check: the accepted interval is exactly (-B,B).
 The generous signed bound includes every reduced z, r0 and ct0 lane. -/
@@ -40,6 +41,6 @@ theorem norm_interval (x : BitVec 32) (B : Nat)
     (x+BitVec.ofNat 32 (B-1)).toNat<2*B-1 ↔ -(B:Int)<x.toInt ∧ x.toInt<(B:Int) := by
   have hx := BitVec.toInt_eq_toNat_cond x
   rw [BitVec.toNat_add,BitVec.toNat_ofNat]
-  split at hx <;> omega
+  split at hx <;> omega_arith
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response

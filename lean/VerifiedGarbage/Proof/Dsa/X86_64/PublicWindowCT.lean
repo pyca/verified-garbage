@@ -90,7 +90,7 @@ theorem mid_post {bd : Nat → Nat → Nat} {p : XPub × Nat} {s : State} (h : W
       .store (hdr Crt.sV) .rax, .shift .shr .rdx 4, .alu .and .rdx (.imm 15),
       .store (hdr Crt.sNib) .rdx]) s (SelectPre (p.1, p.2 / 16 % 16)) := by
   obtain ⟨minv, X, Xc, hc, ht, _, hv, hv', hw, hw', _⟩ := h
-  refine WP.mono (winMid_ok hc hv (by omega)) fun t ⟨hm, hk⟩ => ?_
+  refine WP.mono (winMid_ok hc hv (by omega_using [hv'])) fun t ⟨hm, hk⟩ => ?_
   have hf : Frm (off p.1.B p.1.o) (crtWinRanges p.1.wx) s.mem t.mem := by
     rw [hm]
     exact (Frm.of_outside (writeW_outside _ _ _ (d := 8 * Crt.sV) (by decide)) (by simp [crtWinRanges])).trans
@@ -161,12 +161,12 @@ private theorem squares_ct (Sq : MontS) :
           exact (pin p.1 s hs.2.1).trans (pin p.1 t ht.2.1).symm) (by taint_decide)
     · intro p j s hj h
       refine WP.seq (WP.mono (square_count_post Sq h) fun t ht => ?_)
-      refine WP.mono (count_next_post Sq ht (by omega) (by omega)) fun u ⟨hu, hz⟩ => ?_
+      refine WP.mono (count_next_post Sq ht (by omega) (by omega_using [])) fun u ⟨hu, hz⟩ => ?_
       refine ⟨?_, ?_, fun _ => hu.1⟩
       · by_cases hn : j + 1 < 4
-        · have hn' : 4 - j - 1 ≠ 0 := by omega
+        · have hn' : 4 - j - 1 ≠ 0 := by omega_using [hn]
           simp [eval, hz, hn, hn']
-        · have hn' : 4 - j - 1 = 0 := by omega
+        · have hn' : 4 - j - 1 = 0 := by omega_using [hn]
           simp [eval, hz, hn, hn']
       · intro hj'
         simpa only [Nat.sub_sub, Nat.add_comm j 1] using hu
@@ -182,7 +182,7 @@ theorem window_ct (M : Mont) (Sq : MontS) :
       (fun _ _ ⟨_, _, _, hc, _⟩ => hc.good.rdi)) (by taint_decide) ?_) ?_
   · intro p s h
     rcases h with ⟨minv, X, Xc, hc, ht, hy, hv, hv', hrest⟩
-    refine WP.and (mid_post ⟨minv, X, Xc, hc, ht, hy, hv, hv', hrest⟩) (WP.mono (winMid_ok hc hv (by omega)) fun t ⟨hm, hk⟩ => ?_)
+    refine WP.and (mid_post ⟨minv, X, Xc, hc, ht, hy, hv, hv', hrest⟩) (WP.mono (winMid_ok hc hv (by omega_using [hv'])) fun t ⟨hm, hk⟩ => ?_)
     have hf : Frm (off p.1.B p.1.o) (crtWinRanges p.1.wx) s.mem t.mem := by
       rw [hm]
       exact (Frm.of_outside (writeW_outside _ _ _ (d := 8 * Crt.sV) (by decide)) (by simp [crtWinRanges])).trans
@@ -199,7 +199,7 @@ theorem window_ct (M : Mont) (Sq : MontS) :
       · exact WP.ite true (by simp [eval, hz, he]) (fun _ => WP.block_nil hc'.good.rdi) (by simp)
       · refine WP.ite false (by simp [eval, hz, he]) (by simp) (fun _ => ?_)
         refine WP.seq (WP.mono (select_ok hc' hw hw' hv (hm ▸ ht) (hm ▸ hn)) fun u hu => ?_)
-        exact WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hu.1.good (Nat.le_refl _) hw (by omega)
+        exact WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hu.1.good (Nat.le_refl _) hw (by omega_using [hw'])
           (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hu.1.inv
           (by rw [hu.1.n, hu.2.1, hm, ← heq]; exact htab.lt _ hv)) (fun _ h => h.1.rdi)
     · exact rdi_ct (fun p : XPub × Nat => off p.1.B p.1.o) (fun _ _ h => h) (by taint_decide)

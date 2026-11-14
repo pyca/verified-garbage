@@ -66,25 +66,25 @@ theorem mfacts {p : Params} (h : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : 
 theorem sk128 {p : Params} (hF : MFacts p) (q : Bool) : 128 ≤ PreparedKey.skBytes p q ∧ p.skLen ≤ PreparedKey.skBytes p q ∧
     PreparedKey.skBytes p q < 2 ^ 31 := by
   have := hF.sk; have := hF.skl; have := hF.psk; have := hF.psk1
-  cases q <;> simp only [PreparedKey.skBytes] <;> omega
+  cases q <;> simp only [PreparedKey.skBytes] <;> omega_arith
 
 /-- The encoded key, in the key. -/
 theorem skE_sub {p : Params} (hF : MFacts p) (q : Bool) (x : State) :
     Region.Sub ⟨x.gpr .a0, p.skLen⟩ (skR p x q) := by
   have e := Offset.sub_base (x.gpr .a0) (d := 0) (n := p.skLen) (k := PreparedKey.skBytes p q)
-    (by have := (sk128 hF q).2.1; omega)
+    (by have := (sk128 hF q).2.1; omega_using [this])
   rwa [BitVec.add_zero] at e
 
 theorem pkL {p : Params} (hF : MFacts p) (q : Bool) : p.pkLen ≤ PreparedKey.pkBytes p q ∧
     PreparedKey.pkBytes p q < 2 ^ 31 := by
   have := hF.pk; have := hF.ppk; have := hF.ppk1
-  cases q <;> simp only [PreparedKey.pkBytes] <;> omega
+  cases q <;> simp only [PreparedKey.pkBytes] <;> omega_arith
 
 /-- The encoded public key, in the key. -/
 theorem pkE_sub {p : Params} (hF : MFacts p) (q : Bool) (x : State) :
     Region.Sub ⟨x.gpr .a0, p.pkLen⟩ (pkR p x q) := by
   have e := Offset.sub_base (x.gpr .a0) (d := 0) (n := p.pkLen) (k := PreparedKey.pkBytes p q)
-    (by have := (pkL hF q).1; omega)
+    (by have := (pkL hF q).1; omega_using [this])
   rwa [BitVec.add_zero] at e
 
 theorem msw (p : Params) : messageScratchWords p * 8 = oE p + 1024 := by

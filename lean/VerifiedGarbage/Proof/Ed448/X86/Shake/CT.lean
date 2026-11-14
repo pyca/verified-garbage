@@ -120,21 +120,21 @@ theorem entry_esp {a b : State} (ea : a.gpr .esp = E) (eb : b.gpr .esp = E) (ar 
 theorem AbsSlots.eq {pos : Nat} {P N : BitVec 32} {a b : State} (ha : AbsSlots E scr pos P N a)
     (hb : AbsSlots E scr pos P N b) : ∀ i < 6, Whole.slots E a i = Whole.slots E b i := by
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm, ha.a3.trans hb.a3.symm,
     ha.a4.trans hb.a4.symm, ha.a5.trans hb.a5.symm]
 
 theorem PadSlots.eq {pos : Nat} {a b : State} (ha : PadSlots E scr pos a) (hb : PadSlots E scr pos b) :
     ∀ i < 5, Whole.slots E a i = Whole.slots E b i := by
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
   exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm, ha.a3.trans hb.a3.symm,
     ha.a4.trans hb.a4.symm]
 
 theorem SqzSlots.eq {d : Nat} {a b : State} (ha : SqzSlots E scr d a) (hb : SqzSlots E scr d b) :
     ∀ i < 6, Whole.slots E a i = Whole.slots E b i := by
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   exacts [ha.a0.trans hb.a0.symm, ha.a1.trans hb.a1.symm, ha.a2.trans hb.a2.symm, ha.a3.trans hb.a3.symm,
     ha.a4.trans hb.a4.symm, ha.a5.trans hb.a5.symm]
 
@@ -148,8 +148,8 @@ theorem args_eq {a b : State} (ea : a.gpr .esp = E) (eb : b.gpr .esp = E) {k : N
     (h : ∀ i < k, Whole.slots E a i = Whole.slots E b i) (ar aw br bw : List Region) :
     ∀ i < k, arg (a.callEntry.withRegions ar aw) i = arg (b.callEntry.withRegions br bw) i := by
   intro i hi
-  rw [arg_withRegions, arg_withRegions, VG.Proof.Ed25519.X86.Whole.call_arg ea hk.below hk.frame (by omega),
-    VG.Proof.Ed25519.X86.Whole.call_arg eb hk.below hk.frame (by omega)]
+  rw [arg_withRegions, arg_withRegions, VG.Proof.Ed25519.X86.Whole.call_arg ea hk.below hk.frame (by omega_using [hk6, hi]),
+    VG.Proof.Ed25519.X86.Whole.call_arg eb hk.below hk.frame (by omega_using [hk6, hi])]
   exact h i hi
 
 /-! ## The calls -/

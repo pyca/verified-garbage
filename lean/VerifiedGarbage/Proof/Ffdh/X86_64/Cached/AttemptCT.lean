@@ -93,7 +93,7 @@ theorem metaLoad_ct : RelCT isa (Two IVc) (.block metaLoad) (Two MSc) := by
       WP.block_append_iff] at hw
     refine WP.seq (WP.mono hw fun t ht => WP.mono ht fun u ⟨hu, hn, hmk, hf, k⟩ => ⟨⟨rb, hu, hn, hmk, hm⟩, ?_⟩)
     have hZ := hi.base.hZ
-    exact hx.keep (.of_frm hf fun r hr => Nat.le_trans (scanRanges_end r hr) (by omega)) k (by decide)
+    exact hx.keep (.of_frm hf fun r hr => Nat.le_trans (scanRanges_end r hr) (by omega_using [hZ])) k (by decide)
 
 /-- `Sliced`, with the random bytes' length. -/
 def SlicedC (q : AQ) (s : State) : Prop := (∃ rb, CheckPrivate.Base q.1.kp (q.1.xb rb) s ∧
@@ -143,7 +143,7 @@ noncomputable def canonMi (P : Nat) : BitVec 64 :=
 theorem canonMi_eq {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {P : Nat} (hc : ModCtx s B Z o w mi P) :
     mi = canonMi P := by
   have hn0 : (word s.mem (off B o) (slot w aN)).toNat = P % 2 ^ 64 := by
-    have := word_of_wv s.mem (off B o) (slot w aN) w (q := 0) (by have := hc.w2; omega)
+    have := word_of_wv s.mem (off B o) (slot w aN) w (q := 0) (by have := hc.w2; omega_using [this])
     simp only [Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.div_one] at this
     rw [this, hc.xv.n]
   have h := hc.xv.inv
@@ -162,9 +162,9 @@ theorem xb_lt {p : GkP} {rb : List Byte} (hc : Cut p) (hrl : rb.length = p.k) (h
   change Spec.Rsa.os2ip ((p.cut rb).drop p.ld) < _
   rw [VG.Proof.Ffdh.KeyScalar.os2ip_cut_drop]
   have hw : ScalarWidth.width (Spec.Ffdh.generationScalarBits p.params) =
-      (Spec.Ffdh.generationScalarBits p.params + 7) / 8 := by unfold ScalarWidth.width; omega
+      (Spec.Ffdh.generationScalarBits p.params + 7) / 8 := by unfold ScalarWidth.width; omega_using [h1]
   change Spec.Rsa.os2ip (VG.Proof.Ffdh.KeyScalar.cut rb p.ld (p.msk.setWidth 8)) < _
-  rw [hmsk, cgMask_byte h1, hld, ← hrl, ← hw, ScalarWidth.cut_value (by omega) (by omega)]
+  rw [hmsk, cgMask_byte h1, hld, ← hrl, ← hw, ScalarWidth.cut_value (by omega_using [hrl, hk]) (by omega_using [hrl, h8])]
   exact Nat.mod_lt _ (Nat.two_pow_pos _)
 
 theorem ready_q0 (q : AQ) (s : State) (h : ReadyInC q s) : Q0 (combQ q) s := by
@@ -176,17 +176,17 @@ theorem ready_q0 (q : AQ) (s : State) (h : ReadyInC q s) : Q0 (combQ q) s := by
   have h1 := hcut.1
   have h8 := hcut.2.1
   have h8' : Spec.Ffdh.generationScalarBits q.1.params ≤ 8192 := by
-    have : q.1.k = q.1.kp.k := rfl; omega
+    have : q.1.k = q.1.kp.k := rfl; omega_using [hk, h8, this]
   have hrs := Rsa.FixedBaseComb.rows_small h8'
-  have hrp := Rsa.FixedBaseComb.rows_pos (show 0 < Spec.Ffdh.generationScalarBits q.1.params by omega)
+  have hrp := Rsa.FixedBaseComb.rows_pos (show 0 < Spec.Ffdh.generationScalarBits q.1.params by omega_using [h1])
   have hxl : (q.1.xb rb).length = q.1.kp.xl := hb.xlen
   have hxk : q.1.kp.xl ≤ q.1.kp.k := hb.xl2
   refine ⟨q.1.xb rb, hxl, ⟨hcm, by rw [hsp]; exact hc.sprd, fun hm' => by rw [hsp]; exact hc.sp_inScr hm',
     by rw [hsp]; exact hc.sp, hb.hdr (sX, q.1.kp.xp) (by simp [CheckPrivate.KpP.headers]),
     by rw [hxl]; exact hb.hdr (sXl, BitVec.ofNat 64 q.1.kp.xl) (by simp [CheckPrivate.KpP.headers]),
     hc.reg, hc.hdr.2.2, hc.ent _, hb.x, hrp,
-    show 5 * Spec.Rsa.FixedBaseComb.rows (Spec.Ffdh.generationScalarBits q.1.params) < 2 ^ 31 by omega,
-    by rw [hxl]; change 8 * q.1.kp.xl < 2 ^ 32; omega, xb_lt hcut hrl (by omega)⟩, hsp⟩
+    show 5 * Spec.Rsa.FixedBaseComb.rows (Spec.Ffdh.generationScalarBits q.1.params) < 2 ^ 31 by omega_using [hrs],
+    by rw [hxl]; change 8 * q.1.kp.xl < 2 ^ 32; omega_using [hk, hxk], xb_lt hcut hrl (by omega_using [h1, h8])⟩, hsp⟩
 
 
 theorem work_readyC (Mo : Mont) (R : R2Impl Mo) (q : AQ) (s : State) (h : WorkInC q s) :
@@ -202,8 +202,8 @@ theorem ready_valueC (Mo : Mont) (q : AQ) (s : State) (h : ReadyInC q s) :
   have hk1 := hr.choose_spec.1.k1
   have h8 := hcut.2.1
   have h8' : Spec.Ffdh.generationScalarBits q.1.params ≤ 8192 := by
-    have : q.1.k = q.1.kp.k := rfl; omega
-  exact WP.mono (ready_comb Mo hr hc hsp hcut.1 h8' (xb_lt hcut hrl (by have : q.1.k = q.1.kp.k := rfl; omega))) fun _ ⟨hv, hi, _, k⟩ =>
+    have : q.1.k = q.1.kp.k := rfl; omega_using [hk, h8, this]
+  exact WP.mono (ready_comb Mo hr hc hsp hcut.1 h8' (xb_lt hcut hrl (by have : q.1.k = q.1.kp.k := rfl; omega_using [hk1, this]))) fun _ ⟨hv, hi, _, k⟩ =>
     ⟨rb, hv, hb.keep hi k⟩
 
 theorem tailC_ct (Mo : Mont) (R : R2Impl Mo) :
@@ -296,8 +296,8 @@ theorem zero_inputsC (q : AQ) (s : State) (h : ZeroPreC q s) :
   have hZ := hb.hZ
   refine WP.mono (zero_ok hb hd) fun t ⟨hb', hy, hf, hh, k⟩ => ?_
   exact ⟨⟨rb, hb', (k.gpr (by decide)).trans hd, hy,
-    (hh _ (by change 224 ≤ q.1.Z; omega)).trans hG,
-    (hh _ (by change 232 ≤ q.1.Z; omega)).trans hQ⟩, hm, hx.keep (RunFrame.of_y hf) k (by decide)⟩
+    (hh _ (by change 224 ≤ q.1.Z; omega_using [hZ])).trans hG,
+    (hh _ (by change 232 ≤ q.1.Z; omega_using [hZ])).trans hQ⟩, hm, hx.keep (RunFrame.of_y hf) k (by decide)⟩
 
 theorem zeroC_ct : RelCT isa (Two ZeroPreC) (VG.Impl.Rsa.X86_64.Keys.zeroOut sY sK) (Two IVc) :=
   pin_ct [.rdi] [.rsi, .rcx] (fun q => zeroVal q.1)
@@ -349,7 +349,7 @@ theorem entryC_ct : RelCT isa (Two CRc) (.block VG.Impl.Ffdh.X86_64.Domain.Gener
 theorem e1c_dhp (q : AQ) (s : State) (h : E1c q s) : DHP q.1.d s := by
   obtain ⟨⟨rb, hb, hd⟩, _⟩ := h
   have hZ := hb.hZ
-  exact ⟨hb.scr, hd, by change 256 ≤ q.1.Z; omega,
+  exact ⟨hb.scr, hd, by change 256 ≤ q.1.Z; omega_using [hZ],
     hb.hdr (sDom, q.1.dp) (by simp [GkP.headers]),
     hb.hdr (sK, BitVec.ofNat 64 q.1.k) (by simp [GkP.headers])⟩
 

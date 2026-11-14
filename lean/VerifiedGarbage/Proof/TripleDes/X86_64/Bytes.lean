@@ -37,7 +37,7 @@ theorem blockAt_writeW (m : Mem) (p : Addr) (x : BitVec 64) :
   apply Vector.ext
   intro i hi
   simp only [blockAt, encodeBlock, Vector.getElem_ofFn, Mem.writeW, Mem.write,
-    Mem.sub_ofNat_toNat p (by omega : i < 2 ^ 64), BitVec.setWidth_eq,
+    Mem.sub_ofNat_toNat p (by omega_using [hi] : i < 2 ^ 64), BitVec.setWidth_eq,
     hi, ite_true]
   exact bswap64_byte x i hi
 

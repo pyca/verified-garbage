@@ -87,7 +87,7 @@ theorem rej_ret (s : State) (h : (rejNTTContract X86.abi 56).pre s) (t : List Le
   show _ = if decide ((rnFold [] (G (RejNtt.L.Msg s) 1008)).length = 256) = true then 1 else 0
   by_cases e : (rnFold [] (G (RejNtt.L.Msg s) 1008)).length = 256
   · rw [e, decide_eq_true rfl]; rfl
-  · rw [Nat.div_eq_of_lt (by omega), decide_eq_false e]; rfl
+  · rw [Nat.div_eq_of_lt (by omega_using [hl, e]), decide_eq_false e]; rfl
 
 theorem ball_ret (s : State) (h : (sampleInBallContract X86.abi 56).pre s) (t : List Leak) (s' : State)
     (e : Exec isa Impl.MlDsa.X86.Sample.sampleInBall s t s') :
@@ -101,7 +101,7 @@ theorem ball_ret (s : State) (h : (sampleInBallContract X86.abi 56).pre s) (t : 
   show _ = if decide ((ballFold (Ball.τ s) (H (Ball.L.Msg s) 272)).2 = 256) = true then 1 else 0
   by_cases e : (ballFold (Ball.τ s) (H (Ball.L.Msg s) 272)).2 = 256
   · rw [e, decide_eq_true rfl]; rfl
-  · rw [Nat.div_eq_of_lt (by omega), decide_eq_false e]; rfl
+  · rw [Nat.div_eq_of_lt (by omega_using [hl, e]), decide_eq_false e]; rfl
 
 theorem rejMax (B : List Byte) (h : rejF B = true) : (rejNTTPoly maxBounds.rejNTT B).isSome := by
   simp only [rejF, decide_eq_true_eq] at h

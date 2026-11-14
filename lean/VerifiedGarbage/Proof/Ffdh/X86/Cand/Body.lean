@@ -47,7 +47,7 @@ theorem readArg_step {m : MemOp} (hm : m.base = .esp) {v : BitVec 32} (hr : read
     rcases hr' with rfl | ⟨q, hq, rfl⟩
     · exact d40
     · have := fit q hq
-      exact dws.sub_right (Offset.sub_base _ (by omega))
+      exact dws.sub_right (Offset.sub_base _ (by omega_using [this]))
   · cases hr
 
 /-- `bits`, the generator and `used` into the header, and the tape's length compared with `L`. -/
@@ -87,8 +87,8 @@ theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = 
   refine wp_cmpC (h₇.arg (i := 3) (by decide)) fun t₈ F₈ c₈ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact S₆'.trans (Step.regs S₆.inp (by rw [F₈.mem, U₇.mem]) (U₇.keeps.trans (F₈.keeps _)))
   · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, k₄.word_eq, U₃.mem, W₂, U₁.gpr, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by omega)]
-  · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, W₄, U₃.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [hb2])]
+  · rw [F₈.mem, U₇.mem, k₆.word_eq, U₅.mem, W₄, U₃.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hg25])]
   · rw [F₈.mem, U₇.mem, W₆, U₅.gpr]
   · exact (by rw [U₁.mem]; exact (Kept.refl _).mono : Kept base len [] [bitsOff, genOff, usedOff] s.mem t₁.mem).trans
       (k₂.mono.trans ((by rw [U₃.mem]; exact (Kept.refl _).mono :
@@ -96,7 +96,7 @@ theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = 
           ((by rw [U₅.mem]; exact (Kept.refl _).mono : Kept base len [] [bitsOff, genOff, usedOff] t₄.mem t₅.mem).trans
             (k₆.mono.trans (by rw [F₈.mem, U₇.mem]; exact (Kept.refl _).mono))))))
   · rw [c₈, U₇.gpr, Gl, h3, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_using [hu])]
 
 /-- The body, from the frame's state `s`, with the function's `bits`, generator and `used` read
 above the frame. -/
@@ -125,10 +125,10 @@ theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
   have U' : UsedAt base bytes up (u.gpr .esp) ⟨byteAddr (args 0), len⟩ u.wr := by
     rw [S.esp]; exact U.keep rfl S.keeps
   refine WP.ite _ c (fun e => ?_) fun e => ?_
-  · have sh : T.length < (bits + 7) / 8 := by simp at e; omega
+  · have sh : T.length < (bits + 7) / 8 := by simp at e; omega_using [hbl, e]
     rw [sieved_short sh]
     exact WP.mono (short_ok S.inp Ox' U' Us) fun t R => R.after S
-  · have hL : len ≤ T.length := by simp at e; omega
+  · have hL : len ≤ T.length := by simp at e; omega_using [e]
     exact WP.mono (main_ok S.inp (by rw [S.esp]; exact G) (by rw [tape_keep G S, hT]) Ox' U' Us h3 hL B hbl hb1 hb2
       Gn hg25 (TT.step S sy TA) TA) fun t R => R.after S
 

@@ -19,14 +19,14 @@ theorem bytes_write {m : Mem} {p : Addr} {t n : Nat} {L old : Nat → Byte}
   intro j hj
   have d : ((p+BitVec.ofNat 64 j)-(p+BitVec.ofNat 64 t)).toNat =
       if t ≤ j then j-t else 2^64+j-t := by
-    exact Offset.sub_toNat' p (by omega) (by omega)
+    exact Offset.sub_toNat' p (by omega_using [hn]) (by omega_using [hj])
   rw [Mem.write,d]
   by_cases ht : t ≤ j
   · rw [ite_eq_left ht]
     by_cases hnj : j-t<n
-    · rw [ite_eq_left hnj,ite_eq_left (by omega),hx _ hnj]
-      congr 1; omega
-    · rw [ite_eq_right hnj,h j hj,ite_eq_right (by omega),ite_eq_right (by omega)]
-  · rw [ite_eq_right ht,ite_eq_right (by omega),h j hj,ite_eq_left (by omega),ite_eq_left (by omega)]
+    · rw [ite_eq_left hnj,ite_eq_left (by omega_using [hnj]),hx _ hnj]
+      congr 1; omega_using [ht]
+    · rw [ite_eq_right hnj,h j hj,ite_eq_right (by omega_using [ht]),ite_eq_right (by omega_using [ht, hnj])]
+  · rw [ite_eq_right ht,ite_eq_right (by omega_using [hn]),h j hj,ite_eq_left (by omega_using [ht]),ite_eq_left (by omega_using [ht])]
 
 end VG.Proof.MlKem.AArch64.Codec16

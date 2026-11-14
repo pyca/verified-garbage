@@ -16,7 +16,10 @@ encoded key, and are otherwise `vg_mldsa*_sign_message` and
 leakage. A caller that keeps a key for many signatures or verifications
 prepares it once, so that each of them does not decode and transform the key
 again. Nothing here changes the encoded keys or the existing contracts; the
-expanded matrix `Â` is not cached.
+expanded matrix `Â` is not cached. The `vg_mldsa*_sign_prepared` and
+`vg_mldsa*_verify_prepared` entry points use the same cached polynomials
+with an externally computed 64-byte message representative `μ`, without
+hashing a message or applying context formatting.
 -/
 
 @[expose] public section
@@ -104,6 +107,45 @@ def prepareSecretKeyContract (p : Params) {M : ISA} (A : Abi M)
     (writeArgs := true) (stack := stack)
 
 /-! ## Signing and verifying with prepared keys -/
+
+/-- Signing an external 64-byte `μ` with a prepared private key, explicit
+32-byte randomness and `scratchWords p` words of working space. -/
+def preparedSignSig (p : Params) : Sig where
+  params := [("sk", .array false .u8 (preparedSecretKeyBytes p)), ("mu", .array false .u8 64),
+    ("rnd", .array false .u8 32), ("sig", .array true .u8 p.sigLen),
+    ("scratch", .array true .u64 (scratchWords p))]
+  ret := some .u32
+
+/-- `signContract` of the encoded key a prepared private key begins with. -/
+def preparedSignContract (p : Params) {M : ISA} (A : Abi M)
+    (stack : Nat := 0) : Contract M :=
+  (preparedSignSig p).contract A
+    (pre := fun sk _mu _rnd _sig _scratch m => PreparedSecretKey p m sk)
+    (post := fun sk mu rnd sig _scratch m m' r =>
+      Outcome (fun b => signMu p b (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32)) r
+        (bytesAt m' sig p.sigLen))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun sk mu rnd _sig _scratch m =>
+      signLeak p (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32))
+
+/-- Verifying an external 64-byte `μ` with a prepared public key and
+`scratchWords p` words of working space. -/
+def preparedVerifySig (p : Params) : Sig where
+  params := [("pk", .array false .u8 (preparedPublicKeyBytes p)), ("mu", .array false .u8 64),
+    ("sig", .array false .u8 p.sigLen), ("scratch", .array true .u64 (scratchWords p))]
+  ret := some .u32
+
+/-- `verifyContract` of the encoded key a prepared public key begins with. -/
+def preparedVerifyContract (p : Params) {M : ISA} (A : Abi M)
+    (stack : Nat := 0) : Contract M :=
+  (preparedVerifySig p).contract A
+    (pre := fun pk _mu _sig _scratch m => PreparedPublicKey p m pk)
+    (post := fun pk mu sig _scratch m _m' r =>
+      let v := fun b => verifyMu p b (bytesAt m pk p.pkLen) (bytesAt m mu 64) (bytesAt m sig p.sigLen)
+      (r = 1 ∧ ∃ b, v b = some true) ∨ (r = 0 ∧ v minBounds ≠ some true))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun pk mu sig _scratch m =>
+      leakBytes (bytesAt m pk p.pkLen ++ bytesAt m mu 64 ++ bytesAt m sig p.sigLen))
 
 /-- `vg_mldsa*_sign_message_prepared(sk: *const [u8; preparedSecretKeyBytes],
 msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize,
@@ -227,6 +269,40 @@ def preparedVerifyMessageApi (p : Params) (module name : String) : Api where
     "`pk` must have been written by `" ++ s!"vg_{module}_prepare_verifying_key" ++ "`, and not \
       changed since.",
     "`*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.",
+    keyScratchSafety]
+
+/-- `vg_<module>_sign_prepared` for the parameter set `p` named `name`. -/
+def preparedSignApi (p : Params) (module name : String) : Api where
+  module := module
+  name := s!"vg_{module}_sign_prepared"
+  sig := preparedSignSig p
+  writeArgs := true
+  contracts := some fun A stack => preparedSignContract p A stack
+  summary := s!"{name} signing of an external 64-byte message representative `*mu` with a prepared private key: `vg_{module}_sign` (with \
+    its results, timing and leakage) of the private key that `*sk` begins with.\n\n\
+    Contract: `VG.Spec.MlDsa.preparedSignContract`."
+  safety := [
+    "`sk` must have been written by `" ++ s!"vg_{module}_prepare_signing_key" ++ "` from a \
+      private key written by `" ++ s!"vg_{module}_keygen" ++ "`, and not changed since.",
+    "`*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).",
+    "`rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic \
+      signing.",
+    keyScratchSafety]
+
+/-- `vg_<module>_verify_prepared` for the parameter set `p` named `name`. -/
+def preparedVerifyApi (p : Params) (module name : String) : Api where
+  module := module
+  name := s!"vg_{module}_verify_prepared"
+  sig := preparedVerifySig p
+  writeArgs := true
+  contracts := some fun A stack => preparedVerifyContract p A stack
+  summary := s!"{name} verification of an external 64-byte message representative `*mu` with a prepared public key: \
+    `vg_{module}_verify` (with its results, timing and leakage) of the public \
+    key that `*pk` begins with.\n\n\
+    Contract: `VG.Spec.MlDsa.preparedVerifyContract`."
+  safety := [
+    "`pk` must have been written by `" ++ s!"vg_{module}_prepare_verifying_key" ++ "`, and not \
+      changed since.",
     keyScratchSafety]
 
 end VG.Spec.MlDsa

@@ -49,8 +49,8 @@ theorem prep_ok {s : State} {base : Addr} (hs : Scr s base 8192) :
      rw [List.mem_singleton.mp hw]
      have := generator_peer_apart
      change P521Joint.KG.bits+j+1≤P521Joint.K.bits ∨ _
-     omega)
-     (by have := hs.nowrap; change 3304+j<2^64; omega)]
+     omega_using [hj, this])
+     (by have := hs.nowrap; change 3304+j<2^64; omega_using [hj])]
    exact ga j hj
  · have h := ht.digits
    change ∀j<577,t.mem (off base (P521Joint.K.bits+j))=Naf5.byte (wordsVal a.mem base (p521.sl V) 9) j at h

@@ -16,9 +16,9 @@ theorem setStatus_ok (s : State) (status : Nat) (bound : status ≤ 4) :
     WP isa (.block [.mov .r3 (.imm (BitVec.ofNat 32 status)), .cmp .r3 (.imm 4)]) s fun t =>
       (t.gpr .r3 = BitVec.ofNat 32 status ∧ t.z = decide (status = 4) ∧ t.mem = s.mem) ∧ Rest [.r3] s t := by
   have enc : encodable (BitVec.ofNat 32 status) = true :=
-    encodable_byte (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : status < 2 ^ 32)]; omega)
+    encodable_byte (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound] : status < 2 ^ 32)]; omega_using [bound])
   have zero : (BitVec.ofNat 32 status - (4 : BitVec 32) == (0 : BitVec 32)) = decide (status = 4) :=
-    (sub_beq_zero _ _).trans (ofNat_beq_eq (by omega) (by decide))
+    (sub_beq_zero _ _).trans (ofNat_beq_eq (by omega_using [bound]) (by decide))
   refine withRest_all [.r3] ?_ (by rfl) (by rfl)
   ffrun [enc, zero]
 
@@ -49,11 +49,11 @@ theorem cmpStatus_ok {s : State} (value compare : Nat) (valueBound : value ≤ 4
     WP isa (.block [.cmp .r3 (.imm (BitVec.ofNat 32 compare))]) s fun t =>
       (t.z = decide (value = compare) ∧ t.mem = s.mem) ∧ Rest [] s t := by
   have enc : encodable (BitVec.ofNat 32 compare) = true := encodable_byte (by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : compare < 2 ^ 32)]
-    omega)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [compareBound] : compare < 2 ^ 32)]
+    omega_using [compareBound])
   have expected : (s.gpr .r3 - BitVec.ofNat 32 compare == (0 : BitVec 32)) = decide (value = compare) := by
     rw [word, sub_beq_zero]
-    exact ofNat_beq_eq (by omega) (by omega)
+    exact ofNat_beq_eq (by omega_using [valueBound]) (by omega_using [compareBound])
   refine wp_cmp (op2_imm enc) fun t flags zero => WP.block_nil ?_
   exact ⟨⟨zero.trans expected, flags.mem⟩, flags.rest []⟩
 

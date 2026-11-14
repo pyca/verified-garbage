@@ -35,29 +35,29 @@ abbrev idx (i : Nat) : BitVec 64 := BitVec.ofNat 64 (128 * i)
 theorem kSlot_ea (s : State) {i : Nat} (h : s.gpr .rdx = idx i) (t' : Nat) :
     s.ea (kSlot t') = s.gpr .rsi + BitVec.ofNat 64 (8 * (16 * i + t')) := by
   simp only [State.ea, kSlot, h, ofInt_natCast, BitVec.mul_one]
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 128 * i + 8 * t' = 8 * (16 * i + t') by omega]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 128 * i + 8 * t' = 8 * (16 * i + t') by omega_using []]
 
 theorem wSlotR_ea (s : State) {i : Nat} (h : s.gpr .rdx = idx i) (j t' : Nat) :
     s.ea (wSlotR j t') = s.ea (wSlot j (16 * i + t')) := by
   simp only [State.ea, wSlotR, wSlot, at_, h, ofInt_natCast]
   rw [BitVec.ofNat_mul_ofNat, BitVec.add_assoc, ← BitVec.ofNat_add,
     show 128 * i * 2 + (32 * (t' / 2) + 16 * j + 8 * (t' % 2)) =
-      32 * ((16 * i + t') / 2) + 16 * j + 8 * ((16 * i + t') % 2) by omega]
+      32 * ((16 * i + t') / 2) + 16 * j + 8 * ((16 * i + t') % 2) by omega_using []]
 
 theorem sSlot_ea (s : State) {i : Nat} (h : s.gpr .rdx = idx i) (n : Nat) :
     s.ea (sSlot n) = wAddr (s.gpr .rcx) (8 * i + n) := by
   simp only [State.ea, sSlot, h, wAddr, ofInt_natCast]
   rw [BitVec.ofNat_mul_ofNat, BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 128 * i * 2 + 32 * n = 32 * (8 * i + n) by omega]
+    show 128 * i * 2 + 32 * n = 32 * (8 * i + n) by omega_using []]
 
 /-! ## Rounds -/
 
 theorem var_add16 (i t k : Nat) :
     Impl.Sha512.X86_64.Avx2.var (16 * i + t) k = Impl.Sha512.X86_64.Avx2.var t k := by
-  simp only [Impl.Sha512.X86_64.Avx2.var]; congr 1; omega
+  simp only [Impl.Sha512.X86_64.Avx2.var]; congr 1; omega_using []
 
 theorem carry_add16 (i t : Nat) : carry (16 * i + t) = carry t := by
-  simp only [carry]; rw [show (16 * i + t) % 2 = t % 2 by omega]
+  simp only [carry]; rw [show (16 * i + t) % 2 = t % 2 by omega_using []]
 
 theorem vars_add16 (i t : Nat) (s : State) (v : HashValue) : Vars (16 * i + t) s v ↔ Vars t s v := by
   simp only [Vars, var_add16, carry_add16]
@@ -77,7 +77,7 @@ theorem exec_kSlot (s : State) (h : Reg) {i : Nat} (t : Nat) (hrdx : s.gpr .rdx 
   have e : s.ea (kSlot t) - s.syms kSym = BitVec.ofNat 64 (8 * (16 * i + t)) := by
     rw [kSlot_ea s hrdx, hb, BitVec.add_comm, BitVec.add_sub_cancel]
   have e' : (BitVec.ofNat 64 (8 * (16 * i + t))).toNat = 8 * (16 * i + t) := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   have hl : 16 * i + t < Spec.Sha512.Ks.length := by rw [show Spec.Sha512.Ks.length = 80 from rfl]; exact hn
   simp only [X86_64.exec, e, e', show (kSlot t).base = .rsi from rfl, hb, Nat.mul_mod_right,
     Nat.mul_div_right (16 * i + t) (by decide : 0 < 8), hl, and_self, ↓reduceIte]
@@ -99,10 +99,10 @@ theorem roundR_ok (j t : Nat) (s : State) (v : HashValue) (k w : Word)
   apply WP.of_runBlock
   rw [show roundR j t = .aluTbl .add (var t 7) (kSlot t) kSym Spec.Sha512.Ks :: (roundR j t).tail from rfl,
     runBlock_cons, hk]
-  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega),
-    var_succ t _ (show 1 < 7 by omega), var_succ t _ (show 2 < 7 by omega),
-    var_succ t _ (show 3 < 7 by omega), var_succ t _ (show 4 < 7 by omega),
-    var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
+  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega_using []),
+    var_succ t _ (show 1 < 7 by omega_using []), var_succ t _ (show 2 < 7 by omega_using []),
+    var_succ t _ (show 3 < 7 by omega_using []), var_succ t _ (show 4 < 7 by omega_using []),
+    var_succ t _ (show 5 < 7 by omega_using []), var_succ t _ (show 6 < 7 by omega_using [])] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hc⟩ := hv
   simp only [roundR, wSlotR, List.tail_cons]
   generalize var t 0 = a at *
@@ -174,9 +174,9 @@ theorem roundsR_ok (j i : Nat) (H : HashValue) (M : Block) {kb : Addr} {p : Prog
   | zero =>
     exact VG.X86_64.WP.mono_syms hp fun s' ⟨hP, hv, hk'⟩ hs => ⟨⟨s', hP, KeepsS.refl _⟩, hv, hk', hs⟩
   | succ n ih =>
-    refine WP.seq (WP.mono (ih (by omega)) fun s₁ ⟨hP₁, hv₁, hk₁⟩ => ?_)
-    refine WP.mono (roundR_step j i n H M s₁ (hI.keeps hk₁) hv₁ ((hk n (by omega)).keeps hk₁)
-      ((hw n (by omega)).keeps hk₁.1)) fun s₂ ⟨hv₂, hk₂⟩ => ?_
+    refine WP.seq (WP.mono (ih (by omega_using [hn])) fun s₁ ⟨hP₁, hv₁, hk₁⟩ => ?_)
+    refine WP.mono (roundR_step j i n H M s₁ (hI.keeps hk₁) hv₁ ((hk n (by omega_using [hn])).keeps hk₁)
+      ((hw n (by omega_using [hn])).keeps hk₁.1)) fun s₂ ⟨hv₂, hk₂⟩ => ?_
     obtain ⟨s₀, hP₀, hk₀⟩ := hP₁
     exact ⟨⟨s₀, hP₀, hk₀.trans hk₂⟩, hv₂, hk₁.trans hk₂⟩
 

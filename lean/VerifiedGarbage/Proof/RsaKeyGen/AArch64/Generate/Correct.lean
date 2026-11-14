@@ -76,7 +76,7 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
   have hfr : Frame [rU p] d.mem t.mem := by
     rw [hm]; exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hword (j : Nat) (hj : j < 7) : word t.mem p.stp (8 * j) = word d.mem p.stp (8 * j) :=
-    hfr.readW (r := cS p) (Offset.contains_base _ (by omega) (by have := hf.nT; omega))
+    hfr.readW (r := cS p) (Offset.contains_base _ (by omega_using [hj]) (by have := hf.nT; omega_using [hj]))
       (fun q hq => by obtain rfl := List.mem_singleton.mp hq; exact hf.uT.symm) (by decide)
   have hbytes {R : Region} (hR : Region.Sub R (cK p) ∨ Region.Sub R (cS p)) (hn : R.len ≤ 2 ^ 64) :
       Spec.Rsa.bytesAt t.mem R.base R.len = Spec.Rsa.bytesAt d.mem R.base R.len := by
@@ -88,9 +88,9 @@ theorem done_post {p : GenPublic} {s d t : State} (hp : GenInput p s)
     exacts [(hf.kU.sub_left hR), (hf.uT.symm.sub_left hR)]
   refine ⟨?_, ?_, ?_, req, ?_, ?_, ?_⟩
   · have := keyStatus_lt (genResult s)
-    rw [hx0, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [hx0, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
   · rw [hkp, hL, ← hkey]
-    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega)
+    exact hbytes (R := ⟨p.kp, 9 * p.L⟩) (.inl fun _ h => h) (by show 9 * p.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
   · rw [hup]
     show [t.mem.readW (p.up + BitVec.ofNat 64 (8 * 0)) 64] = _
     rw [Nat.mul_zero, BitVec.add_zero, hm, Mem.readW_writeW_self64]
@@ -136,11 +136,11 @@ theorem start_other {p : GenPublic} {s x : State} (h : GenInput p s) (hu : GenFr
     have hst := hf.stack
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hst
     obtain ⟨sK, -, -, -, -⟩ := hst
-    have hsub : Region.Sub ⟨p.slot 4, p.L⟩ (cK p) := slot_sub _ (by omega)
+    have hsub : Region.Sub ⟨p.slot 4, p.L⟩ (cK p) := slot_sub _ (by omega_using [])
     have hk : Spec.Rsa.bytesAt x.mem (p.slot 4) p.L = Spec.Rsa.bytesAt s.mem (p.slot 4) p.L := by
       simp only [Spec.Rsa.bytesAt]
       refine List.map_congr_left fun i hi => ?_
-      refine hfu.bytes (R := ⟨p.slot 4, p.L⟩) (fun q hq => ?_) (by show p.L ≤ 2 ^ 64; have := hf.nK; omega)
+      refine hfu.bytes (R := ⟨p.slot 4, p.L⟩) (fun q hq => ?_) (by show p.L ≤ 2 ^ 64; have := hf.nK; omega_using [this])
         (List.mem_range.mp hi)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl

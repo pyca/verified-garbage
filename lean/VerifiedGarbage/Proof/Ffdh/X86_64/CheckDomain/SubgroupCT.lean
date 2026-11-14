@@ -47,7 +47,7 @@ private theorem finish_ct : RelCT isa (Two Powered) (seqs (isOne aY ++ ([.block 
       (fun p s h => by
         obtain ⟨⟨mi, hr, _⟩, _⟩ := h
         exact WP.mono (eqArr_ok hr.ctx.sub.good (Nat.le_refl _)
-          (by have := hr.ctx.w2; omega) (by have := hr.ctx.w28; omega)
+          (by have := hr.ctx.w2; omega_using [this]) (by have := hr.ctx.w28; omega_using [this])
           (show aY < 8 by decide) (show aOne < 8 by decide)) fun _ ⟨_, hm, k⟩ =>
             GoodW.keep ⟨mi, hr.ctx.sub.good, Nat.le_refl _⟩ hm (k.gpr (by decide)) k.2.2)
   · exact two_taint [.rdi] (pins_rdiB (fun p => off p.B (inner p.w))

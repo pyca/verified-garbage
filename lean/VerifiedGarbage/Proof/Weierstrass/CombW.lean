@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The fixed-base comb with `w`-bit digits, on any target
@@ -66,10 +67,10 @@ theorem combEW_step {w k J j : Nat} (hj : j < J) :
       k % 2 ^ (w * J) / (2 ^ (w * j) * 2 ^ w) * (2 ^ (w * j) * 2 ^ w) := by
     rw [Nat.mul_assoc, Nat.mul_comm (2 ^ w) (2 ^ (w * j))]
   rw [Nat.mul_add] at *
-  omega
+  omega_using [this]
 
 theorem half_le_combEW {w k J j : Nat} : 2 ^ (w - 1) * 2 ^ (w * j) ≤ combEW w k J (j + 1) := by
-  simp only [combEW, geomW, Nat.mul_add]; omega
+  simp only [combEW, geomW, Nat.mul_add]; omega_using []
 
 /-- Entry `m` of table `j` and the start: what the comb needs of its tables
 for `G`: `J` tables of `H = 2^(w-1)` entries, entry `m` of table `j` the
@@ -103,14 +104,14 @@ theorem combW_add (hC : Law C) (hG : onCurve C (G C) = true) {w k J j : Nat} (hj
     congr 1
     rw [Nat.sub_mul]
     have : 2 ^ (w - 1) * 2 ^ (w * j) ≤ combWin w k j * 2 ^ (w * j) := Nat.mul_le_mul_right _ ‹_›
-    omega
+    omega_using [hs, this]
   · rw [combPtW, hC.add_mul_neg hG (by
-      rw [Nat.sub_mul]; omega)]
+      rw [Nat.sub_mul]; omega_using [hs])]
     congr 1
     rw [Nat.sub_mul]
     have : combWin w k j * 2 ^ (w * j) ≤ 2 ^ (w - 1) * 2 ^ (w * j) :=
-      Nat.mul_le_mul_right _ (by omega)
-    omega
+      Nat.mul_le_mul_right _ (by omega_arith)
+    omega_using [hs, this]
 
 /-- The signed entry of digit `j`: `[d_j 2^(wj)]G` as `combW_add` has it. -/
 def signedPtW (C : Curve) (w k j : Nat) : Point C :=

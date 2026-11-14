@@ -72,9 +72,9 @@ theorem decodeBody_ct {k : Nat} :
       unfold inPtr inBytes
       by_cases h0 : k = 0
       · rw [iteT h0, iteT h0]
-        exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.pkR) (by omega) (by omega), hv1.pkD, hpk⟩
+        exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.pkR) (by omega_using [hj]) (by omega_using [hj]), hv1.pkD, hpk⟩
       · rw [iteF h0, iteF h0]
-        exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.sigR) (by omega) (by omega),
+        exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.sigR) (by omega_using [hj]) (by omega_using [hj]),
           hv1.sigD.sub_left (Region.sub_prefix (by decide)), hrs⟩
     obtain ⟨hr4, hdq, hbs⟩ := hq
     refine ⟨⟨⟨hv1.ctx, by rw [u1.sp, hsp]⟩, by rw [u1.gpr, d.s7], hr4, by
@@ -108,14 +108,14 @@ theorem decodeLoop_ct :
       (A := fun s => 1 ≤ n ∧ n ≤ 2 ∧ DecCT b sp pk sig ch PK RS (2 - n) s)
       (B := fun t => DecCT b sp pk sig ch PK RS (2 - n + 1) t ∧
         t.gpr .a4 = BitVec.ofNat 64 (7776 + 128 * (2 - n + 1)) - BitVec.ofNat 64 8032)
-      fun s ⟨_, _, s0, d, hsp, hpk, hrs⟩ => WP.mono (decodeBody_ok (by omega) d) fun t ⟨dt, e7⟩ =>
+      fun s ⟨_, _, s0, d, hsp, hpk, hrs⟩ => WP.mono (decodeBody_ok (by omega_using [hn]) d) fun t ⟨dt, e7⟩ =>
         ⟨⟨s0, dt, by rw [dt.rest.sp, ← d.rest.sp, hsp], hpk, hrs⟩, e7⟩
     refine hb.mono (fun _ _ h => h) fun s₁ s₂ ⟨⟨d₁, e₁⟩, ⟨d₂, e₂⟩⟩ =>
       ⟨by rw [eval_nonzero, eval_nonzero, e₁, e₂], fun hf => ?_, fun ht => ?_⟩
-    · rcases (by omega : n = 1 ∨ n = 2) with rfl | rfl
+    · rcases (by omega_using [hn] : n = 1 ∨ n = 2) with rfl | rfl
       · exact ⟨d₁, d₂⟩
       · rw [eval_nonzero, e₁] at hf; exact absurd hf (by decide)
-    · rcases (by omega : n = 1 ∨ n = 2) with rfl | rfl
+    · rcases (by omega_using [hn] : n = 1 ∨ n = 2) with rfl | rfl
       · rw [eval_nonzero, e₁] at ht; exact absurd ht (by decide)
       · exact ⟨1, by decide, ⟨by decide, by decide, d₁⟩, ⟨by decide, by decide, d₂⟩⟩
   · exact RelCT.of_false fun _ _ h => hn ⟨h.1.1, h.1.2.1⟩
@@ -251,7 +251,7 @@ theorem verifyBody_ct (hRC : RhsCT) :
     RelCT isa (Both (VCS b sp pk sig ch T PK SG CH)) verifyBody fun _ _ => True := by
   unfold verifyBody
   have hFA : ∀ r ∈ [FA b], Region.Sub r ⟨b, 8192⟩ := fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [])
   have h1 := ctBoth (ctRegs [.a3, .s10] (A := VCS b sp pk sig ch T PK SG CH) (c := .block verifyScalar)
     (fun _ _ h₁ h₂ => ⟨h₁.1.2.1.trans h₂.1.2.1.symm, fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx

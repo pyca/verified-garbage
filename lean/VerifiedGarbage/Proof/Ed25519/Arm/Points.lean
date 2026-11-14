@@ -37,7 +37,7 @@ theorem point_ops_high (ops : List FieldOp) (hops : ∀ op ∈ ops, (fieldDest o
   intro op hop heq
   have h := hops op hop
   have := congrArg Fin.val heq
-  omega
+  omega_using [hi, h, this]
 
 theorem pointAdd_high (e : Env) (i : Slot) (hi : 16 ≤ i.val) :
     evalOps pointAddOps e i = e i :=

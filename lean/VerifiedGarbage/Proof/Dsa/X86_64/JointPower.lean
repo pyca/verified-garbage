@@ -49,13 +49,13 @@ theorem jointPower_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m
     fun s1 ⟨hc1, hm1, ht1, hy1, ho1, hf1, hk1⟩ => ?_)
   have hnow := hc.scr.nowrap
   have hhi := hc.hi
-  have hsmall : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hsmall : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_using []
   have hlen1 : word s1.mem B Field.qLen.offset = BitVec.ofNat 64 eb.length := by
     rw [hf1.word_below (fun r hr => (workRanges_ok wx r hr).2)
-      (by omega) (by omega) (show Field.qLen.offset + 8 ≤ o from hparent)]
+      (by omega_using [hnow, hhi]) (by omega_using [hnow, hhi, hsmall]) (show Field.qLen.offset + 8 ≤ o from hparent)]
     exact hl
-  refine WP.mono (jointRun_ok M Sq hc1 hm1 hw2 (by omega) hm hodd ht1 hy1 ho1
-    (work_source hc hf1 hk1 he) (work_source hc hf1 hk1 hf) hlen hL0 hL' (by omega) hlen1)
+  refine WP.mono (jointRun_ok M Sq hc1 hm1 hw2 (by omega_using [hw48]) hm hodd ht1 hy1 ho1
+    (work_source hc hf1 hk1 he) (work_source hc hf1 hk1 hf) hlen hL0 hL' (by omega_using [hparent, hhi]) hlen1)
     fun t ⟨hct, hmt, hv, hft, hkt⟩ => ⟨hct, hmt, ?_, hf1.trans hft, (hk1.trans hkt).mono (by decide)⟩
   simpa only [VG.Proof.Dsa.powMod_eq, Nat.mul_mod_mod, Nat.mod_mul_mod] using hv
 

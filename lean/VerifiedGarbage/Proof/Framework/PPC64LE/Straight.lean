@@ -165,13 +165,13 @@ theorem slot_sep (b : Addr) {j k : Nat} (hj : 8 * j < 2 ^ 64) (hk : 8 * k < 2 ^ 
   intro x h₁ h₂
   simp only [wordAddr, Offset.sub_add_eq, Offset.toNat_sub_ofNat] at h₁ h₂
   have := (x - b).isLt
-  omega
+  omega_using [hj, hk, h, h₁, h₂]
 
 theorem slot_contains (b : Addr) {n k : Nat} (hk : k < n) (hn : 8 * n < 2 ^ 64) :
     (⟨b, 8 * n⟩ : Region).Contains (wordAddr b k) (64 / 8) := by
   simp only [Region.Contains, wordAddr]
-  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk, hn])]
+  omega_using [hk]
 
 theorem loc_some_slot {c : Cfg} {b : Reg} {off k : Nat} (h : c.loc b off = some (.slot k)) :
     b = c.base ∧ b ≠ .r0 ∧ off = 8 * k ∧ off < 2 ^ 15 ∧ k < c.slots := by
@@ -266,13 +266,13 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
         obtain ⟨r, hr, hc⟩ := hok.slotIn k hlt
         have hin : InRegions (s.rd ++ s.wr) (wordAddr (s.gpr c.base) k) 8 :=
           ⟨r, List.mem_append_right _ hr, hc⟩
-        refine ⟨_, exec_load_d hb0 ⟨ho, by omega⟩ hin, ?_⟩
+        refine ⟨_, exec_load_d hb0 ⟨ho, by omega_using []⟩ hin, ?_⟩
         exact (post_write hok hrel (hrel.slot k a hlt ha) hd.1 hd.2).writes fun r h => by simp [dst, h]
       · rename_i k hk
         obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
         obtain ⟨hb, hb0, hoff, ho, hlt⟩ := loc_some_ext hk
         subst hb hoff
-        refine ⟨_, exec_load_d hb0 ⟨ho, by omega⟩ (hok.extIn k hlt), ?_⟩
+        refine ⟨_, exec_load_d hb0 ⟨ho, by omega_using []⟩ (hok.extIn k hlt), ?_⟩
         exact (post_write hok hrel (hrel.ext k a hlt ha) hd.1 hd.2).writes fun r h => by simp [dst, h]
       · cases h
   | store sz r b off =>
@@ -285,10 +285,10 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       obtain ⟨hb, hb0, hoff, ho, hlt⟩ := loc_some_slot hk
       subst hb hoff
       have hin := hok.slotIn k hlt
-      refine ⟨_, exec_store_d hb0 ⟨ho, by omega⟩ hin, ?_⟩
+      refine ⟨_, exec_store_d hb0 ⟨ho, by omega_using []⟩ hin, ?_⟩
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (64 / 8)
           (wordAddr (s.gpr c.base) k) (64 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.slots; omega) (by have := hok.slots; omega) hjk
+        slot_sep _ (by have := hok.slots; omega_using [hj, this]) (by have := hok.slots; omega_using [ho]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_⟩,
         hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
       · simp only [Env.setSlot] at hjb
@@ -336,7 +336,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       split at h
       · rename_i a ha
         obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
-        refine ⟨_, exec_rotr_d (by omega), ?_⟩
+        refine ⟨_, exec_rotr_d (by omega_using [hn]), ?_⟩
         exact (post_write hok hrel (hD.ror (hrel.reg n a ha) hr) hdb hde).writes
           fun r h => by simp [dst, h]
       · cases h
@@ -352,7 +352,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       split at h
       · rename_i a ha
         obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
-        refine ⟨_, exec_lsr_d (by omega), ?_⟩
+        refine ⟨_, exec_lsr_d (by omega_using [hn]), ?_⟩
         exact (post_write hok hrel (hD.shr (hrel.reg n a ha) hr) hdb hde).writes
           fun r h => by simp [dst, h]
       · cases h
@@ -407,7 +407,7 @@ theorem Ok.of_region {c : Cfg} {s : State} {r : Region} (hr : r ∈ s.wr)
   slotIn k hk := ⟨r, hr, by
     have := slot_contains (s.gpr c.base) hk hn
     simp only [Region.Contains] at this ⊢
-    rw [hb]; omega⟩
+    rw [hb]; omega_using [hlen, this]⟩
   extIn k hk := by omega
   slots := hn
   sep k _ j hj := by omega

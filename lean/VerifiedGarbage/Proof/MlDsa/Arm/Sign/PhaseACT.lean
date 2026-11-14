@@ -79,7 +79,7 @@ theorem expandA_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : a
   · obtain ⟨⟨σ₁, σ₂, _, _, _, ⟨_, h₁⟩, ⟨_, h₂⟩⟩, _⟩ := h
     rw [fx, fy, h₁, h₂]
   · have := seqR_tr (f := sampleE P p) (R := fun k => RA p D k) (p.k * p.ℓ) 0
-      fun k _ hk => sampleE_tr hP (he k (by omega))
+      fun k _ hk => sampleE_tr hP (he k (by omega_using [hk]))
     rwa [Nat.zero_add] at this
 
 end VG.Proof.MlDsa.Arm.Sign

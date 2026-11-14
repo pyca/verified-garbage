@@ -21,9 +21,9 @@ theorem crt_copyHeaderPointer_ok (s : State) {base value : BitVec 32} {size src 
       t.mem = s.mem.writeW (off (State.addr base) dst) value ∧ Rest [.r1] s t := by
   unfold copyHeaderPointer
   refine wp_ldr (a := off (State.addr base) src) hs
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read srcFit) fun u a => ?_
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [srcFit, this])) (ws.read srcFit) fun u a => ?_
   refine wp_str (a := off (State.addr base) dst) hd
-    (by rw [a.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega))
+    (by rw [a.other .r0 (by decide), ptr]; exact addr_add (by have := ws.nowrap; omega_using [dstFit, this]))
     (by rw [a.wr]; exact ws.write dstFit) fun t b => WP.block_nil ?_
   exact ⟨by rw [b.mem, a.mem, a.gpr, source], (a.rest (by simp)).trans (b.rest _)⟩
 

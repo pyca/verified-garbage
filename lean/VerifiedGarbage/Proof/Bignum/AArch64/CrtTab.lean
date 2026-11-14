@@ -90,7 +90,7 @@ theorem nextEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n 
   unfold nextEnt
   brun [hc.good.x0, hdr_enc (show Crt.sEnt < 32 by decide), hdr_enc (show sW < 32 by decide),
     hc.ld (i := Crt.sEnt) (by decide), hc.ld (i := sW) (by decide), hc.st (i := Crt.sEnt) (by decide), he,
-    hc.good.hdr.hw, ofNat_add_ofNat, shl3_ofNat (show 8 * (wx + 2) < 2 ^ 64 by omega)]
+    hc.good.hdr.hw, ofNat_add_ofNat, shl3_ofNat (show 8 * (wx + 2) < 2 ^ 64 by omega_using [hw])]
 
 /-- `toEnt a`: entry `j`, at `sEnt`, `:= [a]`. -/
 theorem toEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}
@@ -154,7 +154,7 @@ theorem selHeadN_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n
     hdr_enc (sArr_lt (show Crt.aT < 8 by decide)), hc.ld (i := Crt.sJ) (by decide),
     hc.ld (i := Crt.sNib) (by decide), hc.ld (i := sW) (by decide), hc.ld (i := Crt.sEnt) (by decide),
     hc.ld (i := sArr Crt.aT) (by decide), hJ, hN, hE, hc.good.hdr.hw, hc.good.hdr.harr Crt.aT (by decide),
-    subs_one_c, csel_mask', Bool.not_not, ofNat64_xor_eq (show j < 2 ^ 64 by omega) (show v < 2 ^ 64 by omega)]
+    subs_one_c, csel_mask', Bool.not_not, ofNat64_xor_eq (show j < 2 ^ 64 by omega_using [hn32, hj]) (show v < 2 ^ 64 by omega_using [hn32, hv])]
 
 
 theorem selHead_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
@@ -175,9 +175,9 @@ theorem selEndN_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n 
       ((t'.gpr .x4).toNat ≠ 0 ↔ j + 1 ≠ n)) ∧ Keep [.x3, .x4] t t' := by
   refine WP.keep _ ?_ rfl rfl rfl
   brun [hc.good.x0, hdr_enc (show Crt.sJ < 32 by decide), hc.ld (i := Crt.sJ) (by decide),
-    hc.st (i := Crt.sJ) (by decide), hJ, ofNat_add_ofNat, show n < 4096 by omega]
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show j + 1 < 2 ^ 64 by omega)]
-  omega
+    hc.st (i := Crt.sJ) (by decide), hJ, ofNat_add_ofNat, show n < 4096 by omega_using [hn32]]
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show j + 1 < 2 ^ 64 by omega_using [hn32, hj])]
+  omega_using [hn32, hj]
 
 
 /-- After `j` entries of the selection of entry `v` from `t₀`. -/
@@ -308,7 +308,7 @@ theorem tabSelN_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc v 
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hN
     · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hm₁, word_writeW_self]
-  refine WP.mono (count_loop (cr := .x4) (n := n) (by omega) (TabSelInvN t₁ P wx minv X Xc v n)
+  refine WP.mono (count_loop (cr := .x4) (n := n) (by omega_using [hv]) (TabSelInvN t₁ P wx minv X Xc v n)
     (fun j hj s hI => selStepN_ok hw hw' hn32 hv hj hI) h₁) fun t' hI => ?_
   have hEv : wv t₁.mem P (slot wx (8 + v)) wx = wv t.mem P (slot wx (8 + v)) wx :=
     f₁.wv_eq (fun r hr => by

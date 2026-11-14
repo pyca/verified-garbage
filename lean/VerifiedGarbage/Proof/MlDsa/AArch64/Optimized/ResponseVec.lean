@@ -41,12 +41,12 @@ theorem normMask_value {x : BitVec 32} {B : Nat} (hB : 1≤B) (hB' : B≤524288)
       if -(B:Int)<x.toInt ∧ x.toInt<(B:Int) then 0 else -1 := by
   have hn := norm_interval x B hB hB' hl hh
   have hw : (BitVec.ofNat 32 (2*B-1)).toNat=2*B-1 := by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_using [hB']
   unfold normMask
   rw [hw]
   by_cases h : -(B:Int)<x.toInt ∧ x.toInt<(B:Int)
-  · rw [ite_eq_left h,ite_eq_right (by have := hn.mpr h; omega)]
-  · rw [ite_eq_right h,ite_eq_left (by have := mt hn.mp h; omega)]
+  · rw [ite_eq_left h,ite_eq_right (by have := hn.mpr h; omega_using [hn, h])]
+  · rw [ite_eq_right h,ite_eq_left (by have := mt hn.mp h; omega_using [hn, h])]
 
 theorem minMask (a b : BitVec 32) :
     (if (if a.toNat≤b.toNat then a else b)=b then BitVec.allOnes 32 else 0)=
@@ -55,9 +55,9 @@ theorem minMask (a b : BitVec 32) :
   · rw [ite_eq_left h]
     by_cases he : a=b
     · subst b; simp only [ite_true,Nat.le_refl]; rfl
-    · rw [ite_eq_right he,ite_eq_right (by intro hh; exact he (BitVec.eq_of_toNat_eq (by omega)))]
+    · rw [ite_eq_right he,ite_eq_right (by intro hh; exact he (BitVec.eq_of_toNat_eq (by omega_using [h, hh])))]
   · rw [ite_eq_right h]
-    rw [ite_eq_left (show b=b from rfl),ite_eq_left (show b.toNat≤a.toNat by omega)]
+    rw [ite_eq_left (show b=b from rfl),ite_eq_left (show b.toNat≤a.toNat by omega_using [h])]
     rfl
 
 theorem norm_ok {s : State} {rest : List Instr} {Q : State → Prop}

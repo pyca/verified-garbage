@@ -189,9 +189,9 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
       (a ++ zeros (padLen a.length)) := by
     have hx := oa.abs
     rw [hH₄, a₄] at hx
-    refine hx.congr (blockAt_frame hf₆ (st₆ (by decide))) (bytesAt_frame hf₆ (st₆ ?_) (by omega))
+    refine hx.congr (blockAt_frame hf₆ (st₆ (by decide))) (bytesAt_frame hf₆ (st₆ ?_) (by omega_using []))
     have := Nat.mod_lt (a ++ zeros (padLen a.length)).length (by decide : 0 < 16)
-    omega
+    omega_using []
   have hr₆ : bytesAt s₆.mem (W + BitVec.ofNat 64 256) 16 = tg ++ zeros (16 - (stackArg s₀ 1).toNat) := by
     rw [hb₆, h4.r20]; congr 1; exact bytes_W F₅ dtW (by omega_arith)
   have sv₆ : SavedAt s₆.mem W s₀ :=
@@ -252,7 +252,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
       have hab₆' : Proof.Gcm.Absorbed s₆.mem (s₄.gpr .r30 + BitVec.ofNat 64 16) (s₄.gpr .r30 + BitVec.ofNat 64 32)
           (ctxH s₆.mem (s₄.gpr .r29)) (a ++ zeros (padLen a.length)) := by
         rw [ctxH_eq, hH₆]; exact hab₆
-      refine WP.mono (Pass.pass_ok L wi hl₂₂ (by rw [h4.r23]; omega) hab₆') fun s₇ po => ?_
+      refine WP.mono (Pass.pass_ok L wi hl₂₂ (by rw [h4.r23]; omega_using [hz]) hab₆') fun s₇ po => ?_
       have hc₆' : ctxCiph s₆.mem (s₄.gpr .r29) (s₀.gpr .r4).toNat = ciph := hc₆
       have hH' : ctxH s₆.mem (s₄.gpr .r29) = H := by rw [ctxH_eq]; exact hH₆
       have pf : ∀ r ∈ Pass.passFrame s₄.gpr Dst, (⟨W + BitVec.ofNat 64 256, 16⟩ : Region).Disjoint r ∧
@@ -288,7 +288,7 @@ theorem pass_good [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
   have dst₈ : bytesAt s₈.mem Dst (s₀.gpr .r10).toNat = openPt s₀ := by
     rw [bytesAt_frame hf₈ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact dDW.sub_right (Lay.wSub (by decide))) (by have := (s₀.gpr .r10).isLt; omega)]
+      exact dDW.sub_right (Lay.wSub (by decide))) (by have := (s₀.gpr .r10).isLt; omega_using [])]
     exact dst₇
   refine ⟨(he₈.fr .r31 (by decide)).trans h4.r31, he₈.sp, fun r hr => ?_,
     k₈.rd.trans (rd₇.trans (k₆.rd.trans (rd₅.trans hk₄.rd))),

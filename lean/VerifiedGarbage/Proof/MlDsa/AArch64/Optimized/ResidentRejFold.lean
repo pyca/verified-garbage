@@ -39,7 +39,7 @@ theorem candidateFold_length (m : Mem) (p : Addr) (n : Nat) (L : List Zq) :
   | zero => exact ⟨Nat.le_refl _,Nat.le_refl _⟩
   | succ n ih =>
     rw [candidateFold_succ,acc_length]
-    split <;> omega
+    split <;> omega_using [ih]
 
 theorem candidateBytes_length (m : Mem) (p : Addr) (n : Nat) :
     (candidateBytes m p n).length=3*n := by
@@ -50,7 +50,7 @@ theorem candidateBytes_length (m : Mem) (p : Addr) (n : Nat) :
       List.flatMap_nil,List.append_nil,List.length_append,List.length_cons,List.length_nil]
     change (candidateBytes m p n).length+3=3*(n+1)
     rw [ih]
-    omega
+    omega_using []
 
 /-- A vector-sized batch with enough output capacity is exactly the shared
 rejection-sampling fold, including every possible rejection pattern. -/
@@ -61,14 +61,14 @@ theorem candidateFold_eq_rnFold (m : Mem) (p : Addr) (n : Nat) (L : List Zq)
   | zero => rfl
   | succ n ih =>
     have hb := (candidateFold_length m p n L).2
-    have hi := ih (by omega)
+    have hi := ih (by omega_using [h])
     rw [candidateFold_succ]
     unfold candidateBytes
     rw [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil]
     change acc (candidateFold m p n L) (candidate m (p+BitVec.ofNat 64 (3*n)))=
       rnFold L (candidateBytes m p n ++ _)
-    rw [rnFold_snoc L (by rw [candidateBytes_length]; omega),←hi,
-      rnStep,ite_eq_left (by change (candidateFold m p n L).length<256; omega)]
+    rw [rnFold_snoc L (by rw [candidateBytes_length]; omega_using []),←hi,
+      rnStep,ite_eq_left (by change (candidateFold m p n L).length<256; omega_using [h, hb])]
     rfl
 
 /-- Splitting a candidate stream does not change the byte order. -/
@@ -88,6 +88,6 @@ theorem candidateFold_continue (m : Mem) (p : Addr) (a b : Nat) (L : List Zq)
     candidateFold m (p+BitVec.ofNat 64 (3*a)) b (rnFold L (candidateBytes m p a))=
       rnFold L (candidateBytes m p (a+b)) := by
   rw [candidateFold_eq_rnFold _ _ _ _ h,candidateBytes_append,
-    rnFold_append _ _ _ (by rw [candidateBytes_length]; omega)]
+    rnFold_append _ _ _ (by rw [candidateBytes_length]; omega_using [])]
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

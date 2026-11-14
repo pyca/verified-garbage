@@ -40,14 +40,14 @@ theorem other_keep : ∀ r ∈ otherRegs, r ∈ keepRegs := by decide
 theorem entry_buf {c : Cx} {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.mem) {P : Addr} {len : Nat}
     (hP : Buf c s P len) : bytesAt s₁.mem P len = bytesAt s.mem P len :=
   Proof.Cmac.bytesAt_frame hf (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hP.wd (by decide)) (by have := hP.lt; omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact hP.wd (by decide)) (by have := hP.lt; omega_using [this])
 
 theorem entry_ciph {c : Cx} (L : Lay c) {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.mem) :
     Spec.Ccm.ctxCiph s₁.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by
   unfold Spec.Ccm.ctxCiph
   rw [Proof.Cmac.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega)]
+    exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega_using [this])]
 
 theorem c0_mut (c : Cx) : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 48, 16⟩ : Region)], ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact sub_lo (by decide)
@@ -57,7 +57,7 @@ theorem ctrR_mut (c : Cx) {y : Nat} (hy : y = 0 ∨ y = 96) : ∀ r ∈ ctrR c.W
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact sub_lo (by decide)
-  · exact sub_lo (by omega)
+  · exact sub_lo (by omega_using [hy])
   · exact sub_hi (by decide) (by decide)
 
 /-- A part of `W` missing the regions `rs` the pieces write in `W`. -/
@@ -144,18 +144,18 @@ theorem seal_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) (hTw : Covers
   have bD₁ : Buf c s₁ c.D c.n := bD.of_eq En.rd En.wr
   have hd₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [c0_list] at f₂
-    rw [Proof.Cmac.bytesAt_frame f₂ (bufW_keep bD₁ (by decide)) (by omega), entry_buf En.frame bD]
+    rw [Proof.Cmac.bytesAt_frame f₂ (bufW_keep bD₁ (by decide)) (by omega_using [hn]), entry_buf En.frame bD]
   have ha₂ : bytesAt s₂.mem c.A c.al = bytesAt s.mem c.A c.al := by
     rw [aad_mut L f₂', entry_buf En.frame (L.bufA Ar.perm)]
   have hd₄ : bytesAt s₄.mem c.D c.n = bytesAt s.mem c.D c.n := by
     have fM := M.frame
     rw [macR_list] at fM
     rw [ctrR_list] at f₄
-    rw [Proof.Cmac.bytesAt_frame f₄ (bufW_keep bD₁ (by decide)) (by omega),
-      Proof.Cmac.bytesAt_frame fM (bufW_keep bD₁ (by decide)) (by omega), hd₂]
+    rw [Proof.Cmac.bytesAt_frame f₄ (bufW_keep bD₁ (by decide)) (by omega_using [hn]),
+      Proof.Cmac.bytesAt_frame fM (bufW_keep bD₁ (by decide)) (by omega_using [hn]), hd₂]
   have w₅ : bytesAt s₅.mem c.W c.tl = bytesAt s₄.mem c.W c.tl := by
     have h := Proof.Cmac.bytesAt_frame (p := c.W + BitVec.ofNat 64 0) (n := c.tl) f₅
-      (crR_disj L (.inl (by omega))) (by omega)
+      (crR_disj L (.inl (by omega_using [ht16]))) (by omega_using [ht16])
     rwa [BitVec.add_zero] at h
   have e0 : c.W + BitVec.ofNat 64 0 = c.W := BitVec.add_zero c.W
   have M' := M.out
@@ -163,12 +163,12 @@ theorem seal_wp' {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) (hTw : Covers
   have hY : (bytesAt s₃.mem c.W 16).length = 16 := length_bytesAt _ _ _
   have d₆ : bytesAt s₆.mem c.D c.n = bytesAt s₅.mem c.D c.n :=
     Proof.Cmac.bytesAt_frame f₆ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by omega_using [hn])
   simp only [Spec.Ccm.encryptWith, Prod.mk.injEq]
   refine ⟨?_, ?_⟩
   · rw [hm, d₆, h₅, k₄, hd₄, crypt_eq (hBC _)]
   · rw [hm, t₆, w₅, Proof.AesCcm.bytesAt_prefix s₄.mem c.W L.t16, h₄, k₃,
-      take_xorFrom_zero (hBC _) _ hY L.t16, M', k₂, ha₂, hd₂, mac_eq _ _ (by rw [hnl]; have := L.h13; omega)]
+      take_xorFrom_zero (hBC _) _ hY L.t16, M', k₂, ha₂, hd₂, mac_eq _ _ (by rw [hnl]; have := L.h13; omega_using [this])]
     rfl
 
 /-- `vg_aes_ccm_seal`. -/

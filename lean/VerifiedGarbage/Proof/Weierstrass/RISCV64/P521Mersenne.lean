@@ -79,7 +79,7 @@ abbrev pw (m : Mem) (b : Addr) (i n : Nat) : Nat := colsV (fun j => dw m b (P + 
 theorem colsV_split (f : Nat → Nat) (i : Nat) : ∀ n, colsV f (i + n) = colsV f i + (2 ^ 64) ^ i * colsV (fun j => f (i + j)) n
   | 0 => by simp [colsV]
   | n + 1 => by
-    rw [← Nat.add_assoc, colsV, colsV_split f i n, colsV, Nat.pow_add, Nat.mul_add, Nat.mul_assoc]; omega
+    rw [← Nat.add_assoc, colsV, colsV_split f i n, colsV, Nat.pow_add, Nat.mul_add, Nat.mul_assoc]; omega_using []
 
 /-! ## The product by columns -/
 
@@ -149,9 +149,9 @@ theorem op_eq {b A B : Addr} {s0 s : State} (h0 : PCtx b A B s0) (hI : TInv b s0
     dw s.mem A (8 * i) = dw s0.mem A (8 * i) ∧ dw s.mem B (8 * i) = dw s0.mem B (8 * i) := by
   have hP := P_eq
   exact ⟨dw_frame hI.frame fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact GenWide.disj_sub (h0.adis i hi) (own_sub (by omega) (by omega)),
+      rw [List.mem_singleton] at hr; subst hr; exact GenWide.disj_sub (h0.adis i hi) (own_sub (by omega_using []) (by omega_using [])),
     dw_frame hI.frame fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact GenWide.disj_sub (h0.bdis i hi) (own_sub (by omega) (by omega))⟩
+      rw [List.mem_singleton] at hr; subst hr; exact GenWide.disj_sub (h0.bdis i hi) (own_sub (by omega_using []) (by omega_using []))⟩
 
 /-- The pipeline at term `n`: its product in `PR n`, the next term's operands in `a1` and `a2`. -/
 structure Pipe (X Y : Nat → Nat) (ts : List (Nat × Nat × Nat)) (n : Nat) (s : State) : Prop where
@@ -189,9 +189,9 @@ theorem ldN_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Nat 
     have hB : s.gpr .t5 = B := (hI.gpr _ (by decide)).trans h0.bb
     obtain ⟨eA, -⟩ := op_eq h0 hI hi
     obtain ⟨-, eB⟩ := op_eq h0 hI hj
-    refine wp_ld (by omega) (by rw [hA]) (al8 h0.aal (by omega)) (by rw [hI.rd, hI.wr]; exact h0.ain _ hi)
+    refine wp_ld (by omega_using [hi]) (by rw [hA]) (al8 h0.aal (by omega_using [])) (by rw [hI.rd, hI.wr]; exact h0.ain _ hi)
       fun s1 u1 => ?_
-    refine wp_ld (by omega) (by rw [u1.other _ (by decide), hB]) (al8 h0.bal (by omega))
+    refine wp_ld (by omega_using [hj]) (by rw [u1.other _ (by decide), hB]) (al8 h0.bal (by omega_using []))
       (by rw [u1.rd, u1.wr, hI.rd, hI.wr]; exact h0.bin _ hj) fun s2 u2 => WP.block_nil ?_
     refine ⟨⟨fun r hr => ?_, by rw [u2.mem, u1.mem], by rw [u2.rd, u1.rd], by rw [u2.wr, u1.wr],
       by rw [u2.sp, u1.sp]⟩, fun _ => ⟨?_, ?_⟩⟩
@@ -219,7 +219,7 @@ theorem accG_ok {l h t p q : Reg} (hlh : l ≠ h) (hlt : l ≠ t) (hht : h ≠ t
     have l₀ := Wide.carry_le (s.gpr l + s.gpr p < s.gpr p)
     generalize (if s.gpr l + s.gpr p < s.gpr p then (1 : BitVec 64) else 0) = k₀ at *
     have e₁ : (s.gpr q + k₀).toNat = (s.gpr q).toNat + k₀.toNat := by
-      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega)]
+      rw [BitVec.toNat_add, Nat.mod_eq_of_lt (by omega_using [hb, c₀])]
     have c₁ := Wide.carry (s.gpr h) (s.gpr q + k₀)
     have l₁ := Wide.carry_le (s.gpr h + (s.gpr q + k₀) < s.gpr q + k₀)
     generalize (if s.gpr h + (s.gpr q + k₀) < s.gpr q + k₀ then (1 : BitVec 64) else 0) = k₁ at *
@@ -236,7 +236,7 @@ theorem PR_mod (n : Nat) : PR (n % 2) = PR n := by
   simp only [PR, Nat.mod_mod]
 
 theorem PR_mod1 (n : Nat) : PR (n % 2 + 1) = PR (n + 1) := by
-  simp only [PR]; rw [show (n % 2 + 1) % 2 = (n + 1) % 2 by omega]
+  simp only [PR]; rw [show (n % 2 + 1) % 2 = (n + 1) % 2 by omega_using []]
 
 /-- The registers of a step's products, by the parity of the term. -/
 theorem regs_pr : ∀ e < 2,
@@ -267,15 +267,15 @@ theorem pstep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Na
       val3 s' (rr k) (rr (k + 1)) (rr (k + 2)) = val3 s (rr k) (rr (k + 1)) (rr (k + 2)) +
         dw s0.mem A (8 * (tm ts n).2.1) * dw s0.mem B (8 * (tm ts n).2.2) := by
   obtain ⟨h01, h02, h12, -⟩ := rr_ne k hk
-  obtain ⟨c0, r01, r02, r07, r00, r03, r06⟩ := rr_regs k (by omega)
-  obtain ⟨c1, r11, r12, r17, r10, r13, r16⟩ := rr_regs (k + 1) (by omega)
-  obtain ⟨c2, r21, r22, r27, r20, r23, r26⟩ := rr_regs (k + 2) (by omega)
+  obtain ⟨c0, r01, r02, r07, r00, r03, r06⟩ := rr_regs k (by omega_using [hk])
+  obtain ⟨c1, r11, r12, r17, r10, r13, r16⟩ := rr_regs (k + 1) (by omega_using [hk])
+  obtain ⟨c2, r21, r22, r27, r20, r23, r26⟩ := rr_regs (k + 2) (by omega_using [hk])
   -- The registers, by the parity of `n`.
   have he : n % 2 < 2 := Nat.mod_lt _ (by decide)
   have h1 := regs_pr _ he
-  have h2 := regs_acc k (by omega) _ he
-  have h3 := regs_acc (k + 1) (by omega) _ he
-  have h4 := regs_acc (k + 2) (by omega) _ he
+  have h2 := regs_acc k (by omega_using [hk]) _ he
+  have h3 := regs_acc (k + 1) (by omega_using [hk]) _ he
+  have h4 := regs_acc (k + 2) (by omega_using [hk]) _ he
   have h5 := regs_sum k hk _ he
   rw [PR_mod, PR_mod1] at h1 h2 h3 h4 h5
   obtain ⟨p12, p1a1, p1a2, p2a1, p2a2, p1n, p2n, q1a, q2a⟩ := h1
@@ -299,10 +299,10 @@ theorem pstep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Na
   have hX := dw_lt s0.mem A (8 * (tm ts n).2.1)
   have hY := dw_lt s0.mem B (8 * (tm ts n).2.2)
   have hXY : dw s0.mem A (8 * (tm ts n).2.1) * dw s0.mem B (8 * (tm ts n).2.2) ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-    Nat.mul_le_mul (by omega) (by omega)
+    Nat.mul_le_mul (by omega_using [hX]) (by omega_using [hY])
   have hq : (s2.gpr (PR n).2).toNat < 2 ^ 64 - 1 := by
     have := (s2.gpr (PR n).1).isLt
-    omega
+    omega_using [pp, hXY]
   refine WP.mono (accG_ok h01 h02 h12 a1p a2p b1p b2p c1p c2p p12) fun s3 ⟨e3, k3⟩ => ?_
   have hI3 := hI2.keeps k3 (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -323,11 +323,11 @@ theorem pstep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Na
 theorem tsum_mul_lt {X Y : Nat → Nat} (hX : ∀ i, X i < 2 ^ 64) (hY : ∀ j, Y j < 2 ^ 64)
     {ps : List (Nat × Nat)} (hl : ps.length ≤ 9) : tsum (mulF X Y) ps < 9 * 2 ^ 128 := by
   have hle : ∀ p ∈ ps, mulF X Y p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun p _ =>
-    Nat.mul_le_mul (by have := hX p.1; omega) (by have := hY p.2; omega)
+    Nat.mul_le_mul (by have := hX p.1; omega_using [this]) (by have := hY p.2; omega_using [this])
   have := tsum_le hle
   have : ps.length * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) ≤ 9 * ((2 ^ 64 - 1) * (2 ^ 64 - 1)) :=
     Nat.mul_le_mul_right _ hl
-  omega
+  omega_arith
 
 theorem tsum_snoc (f : Nat × Nat → Nat) (ps : List (Nat × Nat)) (p : Nat × Nat) :
     tsum f (ps ++ [p]) = tsum f ps + f p := by simp [tsum]
@@ -345,17 +345,17 @@ theorem pterms_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (N
   | 0, _, s, hI, hp, _ => WP.block_nil ⟨hI, rfl, hp, by simp [tsum]⟩
   | m + 1, hm, s, hI, hp, hv => by
     rw [List.range'_concat, Nat.one_mul, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append (WP.mono (pterms_ok h0 ht hk m (by omega) s hI hp hv) fun s1 ⟨hI1, m1, hp1, hv1⟩ => ?_)
+    refine WP.block_append (WP.mono (pterms_ok h0 ht hk m (by omega_using [hm]) s hI hp hv) fun s1 ⟨hI1, m1, hp1, hv1⟩ => ?_)
     have hX : ∀ i, dw s0.mem A (8 * i) < 2 ^ 64 := fun i => dw_lt _ _ _
     have hY : ∀ j, dw s0.mem B (8 * j) < 2 ^ 64 := fun j => dw_lt _ _ _
     have hts := tsum_mul_lt hX hY (ps := (ps k).take m)
       (by rw [List.length_take]; exact Nat.le_trans (Nat.min_le_right _ _) (ht.len k hk))
     have hxy : dw s0.mem A (8 * (tm ts (pstart (fun c => (ps c).length) k + m)).2.1) * dw s0.mem B (8 * (tm ts (pstart (fun c => (ps c).length) k + m)).2.2) <
         2 ^ 128 := Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (hX _) (hY _)) (by decide)
-    refine WP.mono (pstep_ok h0 ht.lt hk (by have := ht.le k hk; omega) hI1 hp1 (by rw [hv1]; omega))
+    refine WP.mono (pstep_ok h0 ht.lt hk (by have := ht.le k hk; omega_using [hm, this]) hI1 hp1 (by rw [hv1]; omega_using [hv, hts, hxy]))
       fun s2 ⟨hI2, m2, hp2, hv2⟩ => ⟨hI2, m2.trans m1, by rw [← Nat.add_assoc]; exact hp2, ?_⟩
-    rw [hv2, hv1, ht.take k hk m (by omega), tsum_snoc]
-    simp only [mulF]; omega
+    rw [hv2, hv1, ht.take k hk m (by omega_using [hm]), tsum_snoc]
+    simp only [mulF]; omega_using []
 
 /-- After `k` columns: the words below `T + 8k` and the accumulator hold the
 first `k` columns' sum, and the pipeline is at column `k`'s first term. -/
@@ -375,8 +375,8 @@ theorem pcol_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Nat
   have hP := P_eq
   have hb := h0.nowrap
   obtain ⟨h01, h02, h12, h3⟩ := rr_ne k hk
-  obtain ⟨c0, -⟩ := rr_regs k (by omega)
-  obtain ⟨x1, x2, -, z0a⟩ := regs_acc k (by omega) _ (Nat.mod_lt (pstart (fun c => (ps c).length) (k + 1)) (by decide))
+  obtain ⟨c0, -⟩ := rr_regs k (by omega_using [hk])
+  obtain ⟨x1, x2, -, z0a⟩ := regs_acc k (by omega_using [hk]) _ (Nat.mod_lt (pstart (fun c => (ps c).length) (k + 1)) (by decide))
   rw [PR_mod] at x1 x2
   have hv0 : val3 s (rr k) (rr (k + 1)) (rr (k + 2)) =
       (s.gpr (rr k)).toNat + 2 ^ 64 * (s.gpr (rr (k + 1))).toNat := by
@@ -389,7 +389,7 @@ theorem pcol_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Nat
   rw [List.take_length] at hv1
   rw [← pstart_succ] at hp1
   have hc1 : Ctx b s1 := ctx_of h0.ctx (hI1.gpr _ (by decide)) hI1.wr
-  refine sd_ok hc1 (by omega) (by omega) fun s2 u2 => wp_li (by decide) fun s3 u3 => WP.block_nil ?_
+  refine sd_ok hc1 (by omega_using [hk, hP]) (by omega_using [hP]) fun s2 u2 => wp_li (by decide) fun s3 u3 => WP.block_nil ?_
   have hm : s3.mem = s1.mem.writeW (b + BitVec.ofNat 64 (P + 8 * k)) (s1.gpr (rr k)) := by
     rw [u3.mem, u2.mem]
   have g3 : ∀ r, r ≠ rr k → s3.gpr r = s1.gpr r := fun r hr => by rw [u3.other r hr, u2.gpr]
@@ -398,13 +398,13 @@ theorem pcol_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (Nat
       hp1.of (g3 _ (Ne.symm x1)) (g3 _ (Ne.symm x2)) (g3 _ fun e => z0a (by rw [← e]; simp))
         (g3 _ fun e => z0a (by rw [← e]; simp)), ?_, ?_⟩
   · rw [hm]
-    exact hI1.frame.writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega) (by omega) (by omega))
-  · rw [show k + 1 + 2 = k + 3 by omega, h3, u3.gpr]; rfl
+    exact hI1.frame.writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega_using []) (by omega_using [hk]) (by omega_using [hP]))
+  · rw [show k + 1 + 2 = k + 3 by omega_using [], h3, u3.gpr]; rfl
   · have e1 : s3.gpr (rr (k + 1)) = s1.gpr (rr (k + 1)) := g3 _ (Ne.symm h01)
     have e2 : s3.gpr (rr (k + 1 + 1)) = s1.gpr (rr (k + 2)) := by
-      rw [show k + 1 + 1 = k + 2 by omega]; exact g3 _ (Ne.symm h02)
+      rw [show k + 1 + 1 = k + 2 by omega_using []]; exact g3 _ (Ne.symm h02)
     have ea : colsV (fun c => dw s3.mem b (P + 8 * c)) k = colsV (fun c => dw s.mem b (P + 8 * c)) k :=
-      colsV_congr fun c hc' => by rw [hm, dw_write_other _ _ _ (by omega) (by omega) (by omega), m1]
+      colsV_congr fun c hc' => by rw [hm, dw_write_other _ _ _ (by omega_using [hc']) (by omega_using [hk, hP, hc']) (by omega_using [hk, hP]), m1]
     have ek : dw s3.mem b (P + 8 * k) = (s1.gpr (rr k)).toNat := by rw [hm, dw_write_self]
     have hval := h.val
     rw [colsV, ea, ek, e1, e2]
@@ -431,7 +431,7 @@ theorem columns_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {ts : List (
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (columns_ok h0 ht n (by omega) s h) fun s1 h1 => pcol_ok h0 ht (by omega) h1)
+    exact WP.block_append (WP.mono (columns_ok h0 ht n (by omega_using [hn]) s h) fun s1 h1 => pcol_ok h0 ht (by omega_using [hn]) h1)
 
 /-- The product's eighteen words. -/
 structure ProdOk (b A B : Addr) (s0 s : State) : Prop where
@@ -497,9 +497,9 @@ theorem CInv.final {b A B : Addr} {s0 : State} {ts : List (Nat × Nat × Nat)} {
   generalize colsV (fun c => dw s.mem b (P + 8 * c)) 18 = X at *
   generalize (s.gpr (rr 18)).toNat + 2 ^ 64 * (s.gpr (rr (18 + 1))).toNat = C at *
   rcases Nat.eq_zero_or_pos C with rfl | hC
-  · omega
+  · omega_using [hv]
   · have : K ≤ K * C := Nat.le_mul_of_pos_right _ hC
-    omega
+    omega_using [hlt, hv, this]
 
 /-- `productC`: `T = [t4] [t5]`. -/
 theorem productC_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) :
@@ -607,11 +607,11 @@ theorem dblEnd_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat → 
   have hb2 := dq_lt (X := fun i => dw s0.mem A (8 * i)) (fun i => dw_lt _ _ _) k
   have h7 : (s4.gpr .a7).toNat ≤ 1 := by
     have := (s4.gpr .a6).isLt
-    omega
+    omega_using [hv, hb1, hb2]
   refine WP.block_append (WP.mono dbl4_ok fun s5 ⟨e5, k5⟩ => ?_)
   have hI5 := hI4.keeps k5 (by decide)
   have hc5 : Ctx b s5 := ctx_of h0.ctx (hI5.gpr _ (by decide)) hI5.wr
-  refine sd_ok hc5 (by omega) (by omega) fun s6 u6 => WP.block_nil ?_
+  refine sd_ok hc5 (by omega_using [hk, hP]) (by omega_using [hP]) fun s6 u6 => WP.block_nil ?_
   have hm6 : s6.mem = s.mem.writeW (b + BitVec.ofNat 64 (P + 8 * k)) (s5.gpr .a6) := by
     rw [u6.mem, k5.2.1, hm4]
   have e5' := e5 h7
@@ -619,19 +619,19 @@ theorem dblEnd_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat → 
   have hcy := h.cy
   have hv6 : (s6.gpr .a6).toNat + 2 ^ 64 * (s6.gpr .a4).toNat =
       dbw C k + dq (fun i => dw s0.mem A (8 * i)) k + (s.gpr .a4).toNat := by
-    rw [u6.gpr]; omega
+    rw [u6.gpr]; omega_using [hv, e5']
   refine ⟨⟨fun r hr => by rw [u6.gpr]; exact hI5.gpr r hr, by rw [u6.rd, hI5.rd], by rw [u6.wr, hI5.wr],
     by rw [u6.sp, hI5.sp], ?_⟩, fun i hi hi' => ?_, ?_, ?_, ?_, ?_⟩
   · rw [hm6]
-    exact h.t.frame.writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega) (by omega) (by omega))
-  · rw [hm6, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
-    exact h.hi i (by omega) hi'
+    exact h.t.frame.writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega_using []) (by omega_using [hk]) (by omega_using [hP]))
+  · rw [hm6, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hP, hi']) (by omega_using [hk, hP])]
+    exact h.hi i (by omega_using [hi]) hi'
   · rw [u6.gpr, k5.1 _ (by decide), h5]; simp
   · intro hk1; rw [u6.gpr, k5.1 _ (by decide)]; exact ht hk1
   · have := (s6.gpr .a6).isLt
-    omega
+    omega_using [hb1, hb2, hv6]
   · have ea : colsV (fun c => dw s6.mem b (P + 8 * c)) k = colsV (fun c => dw s.mem b (P + 8 * c)) k :=
-      colsV_congr fun c hc' => by rw [hm6, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+      colsV_congr fun c hc' => by rw [hm6, dw_write_other _ _ _ (by omega_using [hc']) (by omega_using [hk, hP, hc']) (by omega_using [hk, hP])]
     have ek : dw s6.mem b (P + 8 * k) = (s5.gpr .a6).toNat := by rw [hm6, dw_write_self]
     rw [colsV, ea, ek, colsV, ← h.val, Nat.pow_succ (n := 2 ^ 64)]
     rw [u6.gpr] at hv6 ⊢
@@ -661,7 +661,7 @@ theorem dblStep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat →
   refine WP.block_append (WP.mono dbl1_ok fun s1 ⟨e1, k1⟩ => ?_)
   have hI1 := h.t.keeps k1 (by decide)
   have hc1 : Ctx b s1 := ctx_of h0.ctx (hI1.gpr _ (by decide)) hI1.wr
-  refine ld_ok hc1 (by omega) (by omega) fun s2 u2 => ?_
+  refine ld_ok hc1 (by omega_using [hk, hP]) (by omega_using [hP]) fun s2 u2 => ?_
   have hI2 := hI1.keeps (rs := [.a5]) ⟨fun r hr => u2.other r (by simpa using hr), u2.mem, u2.rd, u2.wr, u2.sp⟩
     (by decide)
   refine WP.block_append (WP.mono dbl2_ok fun s3 ⟨e3, k3⟩ => ?_)
@@ -673,7 +673,7 @@ theorem dblStep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat →
     split <;> simp
   have hp1 : (s2.gpr .a7).toNat ≤ 1 := by
     have := (s.gpr .a5).isLt
-    rw [u2.other _ (by decide), e1]; omega
+    rw [u2.other _ (by decide), e1]; omega_using []
   have ha6 : (s3.gpr .a6).toNat = dbw C k := by rw [e3 hp1, hck, hp7]; rfl
   have hm3 : s3.mem = s.mem := by rw [k3.2.1, u2.mem, k1.2.1]
   have hI3 := hI2.keeps k3 (by decide)
@@ -682,9 +682,9 @@ theorem dblStep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat →
   have h5s : (s3.gpr .a5).toNat = C k := by rw [k3.1 _ (by decide)]; exact hck
   by_cases hpar : k % 2 = 0
   · rw [ite_eq_left hpar, List.cons_append]
-    have hi : k / 2 < 9 := by omega
+    have hi : k / 2 < 9 := by omega_using [hk]
     have hA3 : s3.gpr .t4 = A := (hI3.gpr _ (by decide)).trans h0.a
-    refine wp_ld (by omega) (by rw [hA3]) (al8 h0.aal (by omega)) (by rw [hI3.rd, hI3.wr]; exact h0.ain _ hi)
+    refine wp_ld (by omega_using [hk]) (by rw [hA3]) (al8 h0.aal (by omega_using [])) (by rw [hI3.rd, hI3.wr]; exact h0.ain _ hi)
       fun s4 u4 => ?_
     have hI4 := hI3.keeps (rs := [.t3]) ⟨fun r hr => u4.other r (by simpa using hr), u4.mem, u4.rd, u4.wr, u4.sp⟩
       (by decide)
@@ -696,15 +696,15 @@ theorem dblStep_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat →
       (by rw [k5.1 _ (by decide), u4.other _ (by decide), h5s]) ?_ ?_
     · rw [e5, u4.other _ (by decide), ha6, ht4, dq, ite_eq_left hpar]
     · intro _
-      rw [f5, ht4, show (k + 1) / 2 = k / 2 by omega]
+      rw [f5, ht4, show (k + 1) / 2 = k / 2 by omega_using [hpar]]
   · rw [ite_eq_right hpar]
     refine WP.block_append (WP.mono dbl3o_ok fun s5 ⟨e5, k5⟩ => ?_)
     have ht3 : (s3.gpr .t3).toNat = dw s0.mem A (8 * (k / 2)) * dw s0.mem A (8 * (k / 2)) / 2 ^ 64 := by
       rw [k3.1 _ (by decide), u2.other _ (by decide), k1.1 _ (by decide)]
-      exact h.sqhi (by omega)
+      exact h.sqhi (by omega_using [hpar])
     refine dblEnd_ok h0 hC hk h (hI3.keeps k5 (by decide))
       (by rw [k5.2.1, hm3]) (by rw [k5.1 _ (by decide), h4s])
-      (by rw [k5.1 _ (by decide), h5s]) ?_ (fun h' => absurd h' (by omega))
+      (by rw [k5.1 _ (by decide), h5s]) ?_ (fun h' => absurd h' (by omega_using [hpar]))
     rw [e5, ha6, ht3, dq, ite_eq_right hpar]
 
 /-- The steps of the doubling, by induction. -/
@@ -714,7 +714,7 @@ theorem dbls_ok {b A B : Addr} {s0 : State} (h0 : PCtx b A B s0) {C : Nat → Na
   | 0, _, s, h => WP.block_nil h
   | n + 1, hn, s, h => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (dbls_ok h0 hC n (by omega) s h) fun s1 h1 => dblStep_ok h0 hC (by omega) h1)
+    exact WP.block_append (WP.mono (dbls_ok h0 hC n (by omega_using [hn]) s h) fun s1 h1 => dblStep_ok h0 hC (by omega_using [hn]) h1)
 
 /-- `squareC`: `T = [t4]²`, for equal operands. -/
 theorem squareC_ok {b A : Addr} {s0 : State} (h0 : PCtx b A A s0) :
@@ -729,7 +729,7 @@ theorem squareC_ok {b A : Addr} {s0 : State} (h0 : PCtx b A A s0) :
     rw [show (18 : Nat) = 9 + 9 from rfl, Nat.pow_add]
     exact Nat.mul_lt_mul_of_lt_of_lt (GenWide.colsV_lt _ (fun _ => hX _) 9) (GenWide.colsV_lt _ (fun _ => hX _) 9)
   have hfin : pw s3.mem b 0 18 = colsV (sqCs fun i => dw s0.mem A (8 * i)) 18 :=
-    h3.final (by rw [sqCs_eq]) (by omega)
+    h3.final (by rw [sqCs_eq]) (by omega_using [hsum, hlt])
   refine wp_li (by decide) fun s4 u4 => wp_li (by decide) fun s5 u5 => ?_
   have hI5 : TInv b s0 s5 := h3.t.keeps (rs := [.a5, .a4])
     ⟨fun r hr => by
@@ -746,10 +746,10 @@ theorem squareC_ok {b A : Addr} {s0 : State} (h0 : PCtx b A A s0) :
   rw [colsV_add, colsV_dq] at hv
   have hd := colsV_dbw (C := fun i => dw s3.mem b (P + 8 * i)) (fun i => dw_lt _ _ _) 17
   have hW3 : pw s3.mem b 0 18 = colsV (fun i => dw s3.mem b (P + 8 * i)) 18 :=
-    colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega]
+    colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega_using []]
   rw [← hW3, hfin] at hd
   have hW6 : pw s6.mem b 0 18 = colsV (fun i => dw s6.mem b (P + 8 * i)) 18 :=
-    colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega]
+    colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega_using []]
   rw [hW6]
   have := GenWide.colsV_lt (fun i => dw s6.mem b (P + 8 * i)) (fun _ => dw_lt _ _ _) 18
   show colsV _ 18 = colsV (fun j => dw s0.mem A (8 * j)) 9 * colsV (fun j => dw s0.mem A (8 * j)) 9
@@ -762,12 +762,12 @@ theorem squareC_ok {b A : Addr} {s0 : State} (h0 : PCtx b A A s0) :
   generalize (s6.gpr .a4).toNat = c at *
   generalize dw s3.mem b (P + 8 * 17) / 2 ^ 63 = t at *
   rcases Nat.eq_zero_or_pos (c + t) with h0 | hpos
-  · have : c = 0 := by omega
-    have : t = 0 := by omega
-    subst_vars; omega
+  · have : c = 0 := by omega_using [h0]
+    have : t = 0 := by omega_using [h0]
+    subst_vars; omega_using [hv]
   · have : K ≤ K * (c + t) := Nat.le_mul_of_pos_right _ hpos
     rw [Nat.mul_add] at this
-    omega
+    omega_using [hlt, hsum, hv, hd, this]
 
 end
 
@@ -794,7 +794,7 @@ theorem shr_or_shl (x y : BitVec 64) {s t : Nat} (hst : s + t = 64) :
     Nat.shiftLeft_eq, e64, Nat.mul_mod_mul_right]
   have hlt : x.toNat / 2 ^ s < 2 ^ t := Nat.div_lt_of_lt_mul (by rw [← e64]; exact hx)
   rw [Nat.or_comm, Nat.mul_comm (y.toNat % 2 ^ s), ← Nat.two_pow_add_eq_or_of_lt hlt]
-  omega
+  omega_using []
 
 /-- `x &&& 511` is `x mod 2^9`. -/
 theorem and511 (x : BitVec 64) : (x &&& BitVec.ofInt 64 0x1ff).toNat = x.toNat % 2 ^ 9 := by
@@ -809,7 +809,7 @@ theorem shr_cols (w : Nat → Nat) {s : Nat} (hs : s ≤ 64) : ∀ n,
   | 0 => by simp [colsV]
   | n + 1 => by
     have ih := shr_cols w hs n
-    have e : (2 : Nat) ^ s * 2 ^ (64 - s) = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega
+    have e : (2 : Nat) ^ s * 2 ^ (64 - s) = 2 ^ 64 := by rw [← Nat.pow_add]; congr 1; omega_using [hs]
     simp only [colsV]
     have h1 := Nat.div_add_mod (w n) (2 ^ s)
     rw [show (2 ^ 64) ^ (n + 1) = (2 ^ 64) ^ n * 2 ^ 64 from Nat.pow_succ ..]
@@ -823,7 +823,7 @@ theorem shr_cols (w : Nat → Nat) {s : Nat} (hs : s ≤ 64) : ∀ n,
     rw [e] at h3
     have h2 : E * (S * A) + E * (w n % S) = E * w n := by rw [← Nat.mul_add, h1]
     rw [Nat.mul_add, h3]
-    omega
+    omega_using [ih, h2]
 
 /-! ## Carries through the words -/
 
@@ -844,10 +844,10 @@ theorem carryStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
   have hcs : Ctx b s := ctx_of hc (h.gpr _ (by decide)) h.wr
   have hal := hc.al
   unfold carryStep
-  refine ld_ok hcs (by omega) (by omega) fun s1 u1 => wp_add fun s2 u2 => wp_sltu fun s3 u3 => ?_
+  refine ld_ok hcs (by omega_using [hj, hP]) (by omega_using [hP]) fun s1 u1 => wp_add fun s2 u2 => wp_sltu fun s3 u3 => ?_
   have hc3 : Ctx b s3 := ctx_of hcs (by rw [u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide)])
     (by rw [u3.wr, u2.wr, u1.wr])
-  refine sd_ok hc3 (by omega) (by omega) fun s4 u4 => WP.block_nil ?_
+  refine sd_ok hc3 (by omega_using [hj, hP]) (by omega_using [hP]) fun s4 u4 => WP.block_nil ?_
   have t0 : s3.gpr .t0 = s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64 + s.gpr .a5 := by
     rw [u3.other _ (by decide), u2.gpr, u1.gpr, u1.other _ (by decide)]
   have a5 : s3.gpr .a5 = if s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64 + s.gpr .a5 < s.gpr .a5 then 1 else 0 := by
@@ -857,7 +857,7 @@ theorem carryStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
   have e := carry (s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64) (s.gpr .a5)
   have hw0 : dw s.mem b (P + 8 * j) = dw s0.mem b (P + 8 * j) :=
     dw_frame h.frame fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint b (.inr (by omega)) (by omega) (by omega)
+      rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint b (.inr (by omega_using [])) (by omega_using [hj, hP]) (by omega_using [hj, hP])
   refine ⟨fun r hr => ?_, by rw [u4.rd, u3.rd, u2.rd, u1.rd, h.rd], by rw [u4.wr, u3.wr, u2.wr, u1.wr, h.wr],
     by rw [u4.sp, u3.sp, u2.sp, u1.sp, h.sp], ?_, fun _ => by rw [u4.gpr, a5]; exact carry_le _, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -865,14 +865,14 @@ theorem carryStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
   · rw [hm4]
     refine (h.frame.sub fun r hr => ?_).writeW (List.mem_singleton_self _) _ ?_
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Offset.sub b (Nat.le_refl _) (by omega)⟩
-    · exact Offset.contains b (by omega) (by omega) (by omega)
+      exact ⟨_, List.mem_singleton_self _, Offset.sub b (Nat.le_refl _) (by omega_using [])⟩
+    · exact Offset.contains b (by omega_using []) (by omega_using []) (by omega_using [hj, hP])
   · have hv := h.val
     have hcw : pw s4.mem b 0 j = pw s.mem b 0 j :=
-      colsV_congr fun i hi => by rw [hm4, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+      colsV_congr fun i hi => by rw [hm4, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hj, hP, hi]) (by omega_using [hj, hP])]
     show pw s4.mem b 0 j + (2 ^ 64) ^ j * dw s4.mem b (P + 8 * 0 + 8 * j) + (2 ^ 64) ^ (j + 1) * (s4.gpr .a5).toNat =
       pw s0.mem b 0 j + (2 ^ 64) ^ j * dw s0.mem b (P + 8 * 0 + 8 * j) + (s0.gpr .a5).toNat
-    rw [hcw, show P + 8 * 0 + 8 * j = P + 8 * j by omega, hm4, dw_write_self, u4.gpr, t0, a5, ← hw0,
+    rw [hcw, show P + 8 * 0 + 8 * j = P + 8 * j by omega_using [], hm4, dw_write_self, u4.gpr, t0, a5, ← hw0,
       show (2 ^ 64) ^ (j + 1) = (2 ^ 64) ^ j * 2 ^ 64 from Nat.pow_succ ..]
     generalize (2 ^ 64) ^ j = E at *
     have key : E * (s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64 + s.gpr .a5).toNat +
@@ -880,7 +880,7 @@ theorem carryStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
           then (1 : BitVec 64) else 0).toNat =
         E * dw s.mem b (P + 8 * j) + E * (s.gpr .a5).toNat := by
       rw [Nat.mul_assoc, ← Nat.mul_add, e, Nat.mul_add]; rfl
-    omega
+    omega_using [hv, key]
 
 theorem carry_ok {b : Addr} {s0 : State} (hc : Ctx b s0) :
     ∀ j ≤ 9, WP isa (.block ((List.range j).flatMap carryStep)) s0 (CarryInv b s0 j)
@@ -888,7 +888,7 @@ theorem carry_ok {b : Addr} {s0 : State} (hc : Ctx b s0) :
       by simp [colsV]⟩
   | j + 1, hj => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (carry_ok hc j (by omega)) fun s h => carryStep_ok hc (by omega) h)
+    exact WP.block_append (WP.mono (carry_ok hc j (by omega_using [hj])) fun s h => carryStep_ok hc (by omega_using [hj]) h)
 
 /-! ## The first fold -/
 
@@ -900,8 +900,8 @@ theorem hiWord_ok {b : Addr} {s : State} (hc : Ctx b s) {j : Nat} (hj : j ≤ 8)
       s'.sp = s.sp := by
   have hP := P_eq
   unfold hiWord
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 =>
-    ld_ok (ctx_of hc (u1.other _ (by decide)) u1.wr) (by omega) (by omega) fun s2 u2 =>
+  refine ld_ok hc (by omega_using [hj, hP]) (by omega_using [hP]) fun s1 u1 =>
+    ld_ok (ctx_of hc (u1.other _ (by decide)) u1.wr) (by omega_using [hj, hP]) (by omega_using [hP]) fun s2 u2 =>
     wp_srl (by decide) fun s3 u3 => wp_sll (by decide) fun s4 u4 => wp_or fun s5 u5 => WP.block_nil ?_
   refine ⟨?_, fun r hr => ?_, by rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem], by rw [u5.rd, u4.rd, u3.rd, u2.rd, u1.rd],
     by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr], by rw [u5.sp, u4.sp, u3.sp, u2.sp, u1.sp]⟩
@@ -947,7 +947,7 @@ theorem foldTail_ok {b : Addr} {s0 s : State} (hc : Ctx b s0) {j : Nat} (hj : j 
   refine WP.block_append (WP.mono (adc_ok (d := .t0) (x := .a6) (y := .a7) (c := .a5) (u := .t3))
     fun s4 ⟨e4, k4⟩ => ?_)
   have hc4 : Ctx b s4 := ctx_of hc1 (k4.1 _ (by decide)) k4.2.2.2.1
-  refine sd_ok hc4 (by omega) (by omega) fun s5 u5 => WP.block_nil ?_
+  refine sd_ok hc4 (by omega_using [hj, hP]) (by omega_using [hP]) fun s5 u5 => WP.block_nil ?_
   have a5 : s1.gpr .a5 = s.gpr .a5 := g1 _ (by decide)
   have e4v := e4 (by rw [a5]; exact h.cy)
   have hm5 : s5.mem = s.mem.writeW (b + BitVec.ofNat 64 (P + 8 * j)) (s4.gpr .t0) := by
@@ -960,32 +960,32 @@ theorem foldTail_ok {b : Addr} {s0 s : State} (hc : Ctx b s0) {j : Nat} (hj : j 
   · rw [hm5]
     refine (h.frame.sub fun r hr => ?_).writeW (List.mem_singleton_self _) _ ?_
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Offset.sub b (Nat.le_refl _) (by omega)⟩
-    · exact Offset.contains b (by omega) (by omega) (by omega)
+      exact ⟨_, List.mem_singleton_self _, Offset.sub b (Nat.le_refl _) (by omega_using [])⟩
+    · exact Offset.contains b (by omega_using []) (by omega_using []) (by omega_using [hj, hP])
   · rw [u5.gpr]
     have := (s1.gpr .a6).isLt; have := (s1.gpr .a7).isLt; have := h.cy
     rw [← a5] at this
-    omega
+    omega_using [e4, this]
   · have hv := h.val
     have hcw : pw s5.mem b 0 j = pw s.mem b 0 j :=
-      colsV_congr fun i hi => by rw [hm5, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+      colsV_congr fun i hi => by rw [hm5, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hj, hP, hi]) (by omega_using [hj, hP])]
     rw [a6, a7, a5] at e4v
     show pw s5.mem b 0 j + (2 ^ 64) ^ j * dw s5.mem b (P + 8 * 0 + 8 * j) + (2 ^ 64) ^ (j + 1) * (s5.gpr .a5).toNat =
       colsV (fun i => lw s0.mem b i + hw s0.mem b i) j + (2 ^ 64) ^ j * (lw s0.mem b j + hw s0.mem b j) +
         (s0.gpr .a5).toNat
-    rw [hcw, show P + 8 * 0 + 8 * j = P + 8 * j by omega, hm5, dw_write_self, u5.gpr,
+    rw [hcw, show P + 8 * 0 + 8 * j = P + 8 * j by omega_using [], hm5, dw_write_self, u5.gpr,
       show (2 ^ 64) ^ (j + 1) = (2 ^ 64) ^ j * 2 ^ 64 from Nat.pow_succ ..]
     generalize (2 ^ 64) ^ j = E at *
     have key : E * (s4.gpr .t0).toNat + E * 2 ^ 64 * (s4.gpr .a5).toNat =
         E * (lw s0.mem b j + hw s0.mem b j) + E * (s.gpr .a5).toNat := by
       rw [Nat.mul_assoc, ← Nat.mul_add, e4v, Nat.mul_add]
-    omega
+    omega_using [hv, key]
 
 theorem fold_word {b : Addr} {s0 s : State} {j i : Nat} (h : FoldInv b s0 j s) (hj : j ≤ i) (hi : i ≤ 17) :
     dw s.mem b (P + 8 * i) = dw s0.mem b (P + 8 * i) := by
   have hP := P_eq
   exact dw_frame h.frame fun r hr => by
-    rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint b (.inr (by omega)) (by omega) (by omega)
+    rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint b (.inr (by omega_using [hj])) (by omega_using [hi, hP]) (by omega_using [hj, hi, hP])
 
 /-- Word `j < 8` of the fold. -/
 theorem foldStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j < 8) {s : State}
@@ -994,15 +994,15 @@ theorem foldStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j < 
   have hcs : Ctx b s := ctx_of hc (h.gpr _ (by decide)) h.wr
   unfold foldStep
   rw [List.append_assoc, List.append_assoc, List.singleton_append]
-  refine WP.block_append (WP.mono (hiWord_ok hcs (j := j) (by omega)) fun s1 ⟨a7, g1, m1, rd1, wr1, sp1⟩ => ?_)
-  refine ld_ok (ctx_of hcs (g1 _ (by decide)) wr1) (by omega) (by omega) fun s2 u2 => ?_
-  refine foldTail_ok hc (by omega) h (by rw [u2.mem, m1]) (by rw [u2.rd, rd1]) (by rw [u2.wr, wr1])
+  refine WP.block_append (WP.mono (hiWord_ok hcs (j := j) (by omega_using [hj])) fun s1 ⟨a7, g1, m1, rd1, wr1, sp1⟩ => ?_)
+  refine ld_ok (ctx_of hcs (g1 _ (by decide)) wr1) (by omega_using [hj, hP]) (by omega_using [hP]) fun s2 u2 => ?_
+  refine foldTail_ok hc (by omega_using [hj]) h (by rw [u2.mem, m1]) (by rw [u2.rd, rd1]) (by rw [u2.wr, wr1])
     (by rw [u2.sp, sp1]) (fun r hr => ?_) ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u2.other _ hr.2.1, g1 r (by simp [hr.1, hr.2.2])]
-  · rw [u2.gpr, m1, show lw s0.mem b j = dw s0.mem b (P + 8 * j) from ite_eq_left hj, ← fold_word h (Nat.le_refl _) (by omega)]
+  · rw [u2.gpr, m1, show lw s0.mem b j = dw s0.mem b (P + 8 * j) from ite_eq_left hj, ← fold_word h (Nat.le_refl _) (by omega_using [hj])]
     rfl
-  · rw [u2.other _ (by decide), a7, fold_word h (by omega) (by omega), fold_word h (by omega) (by omega)]
+  · rw [u2.other _ (by decide), a7, fold_word h (by omega_using []) (by omega_using [hj]), fold_word h (by omega_using []) (by omega_using [hj])]
 
 /-- Word 8 of the fold. -/
 theorem foldTop_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {s : State}
@@ -1011,17 +1011,17 @@ theorem foldTop_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {s : State}
   have hcs : Ctx b s := ctx_of hc (h.gpr _ (by decide)) h.wr
   unfold foldTop
   rw [List.append_assoc, List.append_assoc, List.cons_append, List.singleton_append]
-  refine WP.block_append (WP.mono (hiWord_ok hcs (j := 8) (by omega)) fun s1 ⟨a7, g1, m1, rd1, wr1, sp1⟩ => ?_)
-  refine ld_ok (ctx_of hcs (g1 _ (by decide)) wr1) (by omega) (by omega) fun s2 u2 => wp_andi (by decide) fun s3 u3 => ?_
-  refine foldTail_ok hc (by omega) h (by rw [u3.mem, u2.mem, m1]) (by rw [u3.rd, u2.rd, rd1])
+  refine WP.block_append (WP.mono (hiWord_ok hcs (j := 8) (by omega_using [])) fun s1 ⟨a7, g1, m1, rd1, wr1, sp1⟩ => ?_)
+  refine ld_ok (ctx_of hcs (g1 _ (by decide)) wr1) (by omega_using [hP]) (by omega_using [hP]) fun s2 u2 => wp_andi (by decide) fun s3 u3 => ?_
+  refine foldTail_ok hc (by omega_using []) h (by rw [u3.mem, u2.mem, m1]) (by rw [u3.rd, u2.rd, rd1])
     (by rw [u3.wr, u2.wr, wr1]) (by rw [u3.sp, u2.sp, sp1]) (fun r hr => ?_) ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u3.other _ hr.2.1, u2.other _ hr.2.1, g1 r (by simp [hr.1, hr.2.2])]
-  · rw [u3.gpr, and511, u2.gpr, m1, show lw s0.mem b 8 = dw s0.mem b (P + 8 * 8) % 2 ^ 9 from ite_eq_right (by omega),
-      ← fold_word h (Nat.le_refl _) (by omega)]
+  · rw [u3.gpr, and511, u2.gpr, m1, show lw s0.mem b 8 = dw s0.mem b (P + 8 * 8) % 2 ^ 9 from ite_eq_right (by omega_using []),
+      ← fold_word h (Nat.le_refl _) (by omega_using [])]
     rfl
-  · rw [u3.other _ (by decide), u2.other _ (by decide), a7, fold_word h (by omega) (by omega),
-      fold_word h (by omega) (by omega)]
+  · rw [u3.other _ (by decide), u2.other _ (by decide), a7, fold_word h (by omega_using []) (by omega_using []),
+      fold_word h (by omega_using []) (by omega_using [])]
 
 /-- The fold: `s`'s nine words and its carry. -/
 theorem fold_ok {b : Addr} {s0 : State} (hc : Ctx b s0) :
@@ -1036,7 +1036,7 @@ theorem fold_ok {b : Addr} {s0 : State} (hc : Ctx b s0) :
     | zero => exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, by rw [u1.gpr]; decide, by simp [colsV]⟩
     | succ j ih =>
       rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-      exact WP.block_append (WP.mono (ih (by omega)) fun s h => foldStep_ok hc1 (by omega) h)
+      exact WP.block_append (WP.mono (ih (by omega_using [hj])) fun s h => foldStep_ok hc1 (by omega_using [hj]) h)
   refine WP.block_append (WP.mono (steps 8 (Nat.le_refl _)) fun s h => ?_)
   refine WP.mono (foldTop_ok hc1 h) fun s' h' => ?_
   have a50 : (s1.gpr .a5).toNat = 0 := by rw [u1.gpr]; rfl
@@ -1063,17 +1063,17 @@ theorem fold2_ok {b : Addr} {s : State} (hc : Ctx b s) (hc5 : (s.gpr .a5).toNat 
   unfold fold2
   rw [List.cons_append, List.cons_append, List.cons_append, List.cons_append, List.cons_append, List.cons_append,
     List.nil_append]
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 => wp_srl (by decide) fun s2 u2 => wp_sll (by decide) fun s3 u3 =>
+  refine ld_ok hc (by omega_using [hP]) (by omega_using [hP]) fun s1 u1 => wp_srl (by decide) fun s2 u2 => wp_sll (by decide) fun s3 u3 =>
     wp_or fun s4 u4 => wp_andi (by decide) fun s5 u5 => ?_
   have hc5' : Ctx b s5 := ctx_of hc (by rw [u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide),
     u2.other _ (by decide), u1.other _ (by decide)]) (by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr])
-  refine sd_ok hc5' (by omega) (by omega) fun s6 u6 => ?_
+  refine sd_ok hc5' (by omega_using [hP]) (by omega_using [hP]) fun s6 u6 => ?_
   have hc6 : Ctx b s6 := ctx_of hc5' (by rw [u6.gpr]) u6.wr
   have x8 : (s.mem.readW (b + BitVec.ofNat 64 (P + 64)) 64).toNat = dw s.mem b (P + 64) := rfl
   have a5v : (s6.gpr .a5).toNat = dw s.mem b (P + 64) / 2 ^ 9 + (s.gpr .a5).toNat * 2 ^ 55 := by
     rw [u6.gpr, u5.other _ (by decide), u4.gpr, u3.gpr, u3.other _ (by decide), u2.gpr, u2.other _ (by decide),
       u1.gpr, u1.other _ (by decide), BitVec.or_comm, shr_or_shl _ _ (by decide : 9 + 55 = 64), x8,
-      Nat.mod_eq_of_lt (by omega : (s.gpr .a5).toNat < 2 ^ 9)]
+      Nat.mod_eq_of_lt (by omega_using [hc5] : (s.gpr .a5).toNat < 2 ^ 9)]
   have hm6 : s6.mem = s.mem.writeW (b + BitVec.ofNat 64 (P + 64)) (s5.gpr .t0) := by
     rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
   have t05 : (s5.gpr .t0).toNat = dw s.mem b (P + 64) % 2 ^ 9 := by
@@ -1087,14 +1087,14 @@ theorem fold2_ok {b : Addr} {s : State} (hc : Ctx b s) (hc5 : (s.gpr .a5).toNat 
       u2.other _ hr.2.2, u1.other _ hr.1]
   · have f := h'.frame
     rw [hm6] at f
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega) (by omega) (by omega))).trans f
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega_using []) (by omega_using []) (by omega_using [hP]))).trans f
   · have hv := h'.val
     rw [a5v] at hv
     rw [hv]
     have hlow : pw s6.mem b 0 8 = pw s.mem b 0 8 :=
-      colsV_congr fun i hi => by rw [hm6, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+      colsV_congr fun i hi => by rw [hm6, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hP, hi]) (by omega_using [hP])]
     have htop : dw s6.mem b (P + 8 * 0 + 8 * 8) = dw s.mem b (P + 64) % 2 ^ 9 := by
-      rw [hm6, show P + 8 * 0 + 8 * 8 = P + 64 by omega, dw_write_self, t05]
+      rw [hm6, show P + 8 * 0 + 8 * 8 = P + 64 by omega_using [], dw_write_self, t05]
     show pw s6.mem b 0 8 + (2 ^ 64) ^ 8 * dw s6.mem b (P + 8 * 0 + 8 * 8) + _ = _
     rw [hlow, htop]
 
@@ -1117,7 +1117,7 @@ theorem probeStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
   have hP := P_eq
   have hcs : Ctx b s := ctx_of hc (h.gpr _ (by decide)) h.wr
   unfold probeStep
-  refine ld_ok hcs (by omega) (by omega) fun s1 u1 => wp_add fun s2 u2 => wp_sltu fun s3 u3 => WP.block_nil ?_
+  refine ld_ok hcs (by omega_using [hj, hP]) (by omega_using [hP]) fun s1 u1 => wp_add fun s2 u2 => wp_sltu fun s3 u3 => WP.block_nil ?_
   have e := carry (s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64) (s.gpr .a5)
   refine ⟨fun r hr => ?_, by rw [u3.mem, u2.mem, u1.mem, h.mem], by rw [u3.rd, u2.rd, u1.rd, h.rd],
     by rw [u3.wr, u2.wr, u1.wr, h.wr], by rw [u3.sp, u2.sp, u1.sp, h.sp], ?_⟩
@@ -1126,7 +1126,7 @@ theorem probeStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
   · rw [u3.gpr, u2.gpr, u2.other _ (by decide), u1.gpr, u1.other _ (by decide)]
     have hv := h.val
     have hw : (s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64).toNat = dw s0.mem b (P + 8 * 0 + 8 * j) := by
-      rw [h.mem, show P + 8 * 0 + 8 * j = P + 8 * j by omega]; rfl
+      rw [h.mem, show P + 8 * 0 + 8 * j = P + 8 * j by omega_using []]; rfl
     rw [hw] at e
     have hlt := (s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64 + s.gpr .a5).isLt
     generalize (if s.mem.readW (b + BitVec.ofNat 64 (P + 8 * j)) 64 + s.gpr .a5 < s.gpr .a5
@@ -1136,19 +1136,19 @@ theorem probeStep_ok {b : Addr} {s0 : State} (hc : Ctx b s0) {j : Nat} (hj : j <
       (2 ^ 64) ^ (j + 1)
     rw [show (2 ^ 64) ^ (j + 1) = (2 ^ 64) ^ j * 2 ^ 64 from Nat.pow_succ .., ← Nat.div_div_eq_div_mul,
       Nat.add_right_comm, Nat.add_mul_div_left _ _ (Nat.pow_pos (by decide)), ← hv]
-    omega
+    omega_using [e]
 
 theorem probe_ok {b : Addr} {s0 : State} (hc : Ctx b s0) :
     ∀ j ≤ 9, WP isa (.block ((List.range j).flatMap probeStep)) s0 (ProbeInv b s0 j)
   | 0, _ => WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, by simp [colsV]⟩
   | j + 1, hj => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (probe_ok hc j (by omega)) fun s h => probeStep_ok hc (by omega) h)
+    exact WP.block_append (WP.mono (probe_ok hc j (by omega_using [hj])) fun s h => probeStep_ok hc (by omega_using [hj]) h)
 
 theorem pw_succ (m : Mem) (b : Addr) (n : Nat) :
     pw m b 0 (n + 1) = pw m b 0 n + (2 ^ 64) ^ n * dw m b (P + 8 * n) := by
   show pw m b 0 n + (2 ^ 64) ^ n * dw m b (P + 8 * 0 + 8 * n) = _
-  rw [show P + 8 * 0 + 8 * n = P + 8 * n by omega]
+  rw [show P + 8 * 0 + 8 * n = P + 8 * n by omega_using []]
 
 /-- `r = (s₂ + q) mod 2⁵²¹`, `q` the bit 521 of `s₂ + 1`. -/
 theorem canon_ok {b : Addr} {s : State} (hc : Ctx b s) (hs : pw s.mem b 0 9 < 2 ^ 521 + 2 ^ 56) :
@@ -1164,16 +1164,16 @@ theorem canon_ok {b : Addr} {s : State} (hc : Ctx b s) (hs : pw s.mem b 0 9 < 2 
         .store .d .t0 .a3 (P + 64)]))))) s _
   refine wp_li (by decide) fun s1 u1 => ?_
   have hc1 : Ctx b s1 := ctx_of hc (u1.other _ (by decide)) u1.wr
-  refine WP.block_append (WP.mono (probe_ok hc1 8 (by omega)) fun s2 h2 => ?_)
+  refine WP.block_append (WP.mono (probe_ok hc1 8 (by omega_using [])) fun s2 h2 => ?_)
   have hc2 : Ctx b s2 := ctx_of hc1 (h2.gpr _ (by decide)) h2.wr
-  refine ld_ok hc2 (by omega) (by omega) fun s3 u3 => wp_add fun s4 u4 => wp_srl (by decide) fun s5 u5 => ?_
+  refine ld_ok hc2 (by omega_using [hP]) (by omega_using [hP]) fun s3 u3 => wp_add fun s4 u4 => wp_srl (by decide) fun s5 u5 => ?_
   have hc5 : Ctx b s5 := ctx_of hc2 (by rw [u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide)])
     (by rw [u5.wr, u4.wr, u3.wr])
   refine WP.block_append (WP.mono (carry_ok hc5 9 (Nat.le_refl _)) fun s6 h6 => ?_)
   have hc6 : Ctx b s6 := ctx_of hc5 (h6.gpr _ (by decide)) h6.wr
-  refine ld_ok hc6 (by omega) (by omega) fun s7 u7 => wp_andi (by decide) fun s8 u8 => ?_
+  refine ld_ok hc6 (by omega_using [hP]) (by omega_using [hP]) fun s7 u7 => wp_andi (by decide) fun s8 u8 => ?_
   have hc8 : Ctx b s8 := ctx_of hc6 (by rw [u8.other _ (by decide), u7.other _ (by decide)]) (by rw [u8.wr, u7.wr])
-  refine sd_ok hc8 (by omega) (by omega) fun s9 u9 => WP.block_nil ?_
+  refine sd_ok hc8 (by omega_using [hP]) (by omega_using [hP]) fun s9 u9 => WP.block_nil ?_
   -- Memory.
   have m1 : s1.mem = s.mem := u1.mem
   have m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, u3.mem, h2.mem, m1]
@@ -1187,30 +1187,30 @@ theorem canon_ok {b : Addr} {s : State} (hc : Ctx b s) (hs : pw s.mem b 0 9 < 2 
   have hw8 : dw s.mem b (P + 8 * 8) < 2 ^ 10 := by omega
   have c8 : (s2.gpr .a5).toNat = (pw s.mem b 0 8 + 1) / 2 ^ 512 := by
     rw [h2.val, m1, u1.gpr]; rfl
-  have c8le : (s2.gpr .a5).toNat ≤ 1 := by rw [c8]; omega
+  have c8le : (s2.gpr .a5).toNat ≤ 1 := by rw [c8]; omega_using [h8lt]
   have hq : (s5.gpr .a5).toNat = (S + 1) / 2 ^ 521 := by
     rw [u5.gpr, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, u4.gpr, u3.gpr,
       u3.other _ (by decide : Reg.a5 ≠ Reg.t0), BitVec.toNat_add, h2.mem, m1, c8]
     show ((dw s.mem b (P + 8 * 8)) + (pw s.mem b 0 8 + 1) / 2 ^ 512) % 2 ^ 64 / 2 ^ 9 = _
-    rw [Nat.mod_eq_of_lt (by omega), hS8, Nat.add_right_comm, show (2 : Nat) ^ 521 = 2 ^ 512 * 2 ^ 9 by decide,
+    rw [Nat.mod_eq_of_lt (by omega_using [h8lt, hw8]), hS8, Nat.add_right_comm, show (2 : Nat) ^ 521 = 2 ^ 512 * 2 ^ 9 by decide,
       ← Nat.div_div_eq_div_mul, show (2 ^ 64) ^ 8 = (2 : Nat) ^ 512 by decide,
       Nat.add_mul_div_left _ _ (by decide), Nat.add_comm]
   have v6 := h6.val
   rw [m5, hS, hq] at v6
   have h6lt := pw_lt s6.mem b 9
-  have hq1 : (S + 1) / 2 ^ 521 ≤ 1 := by omega
+  have hq1 : (S + 1) / 2 ^ 521 ≤ 1 := by omega_using [hs]
   have c6 : (s6.gpr .a5).toNat = 0 := by
     rcases Nat.eq_zero_or_pos (s6.gpr .a5).toNat with h | h
     · exact h
     · exfalso; have : (2 : Nat) ^ 576 = (2 ^ 64) ^ 9 := by decide
-      omega
+      omega_using [hP, hal, hS, hs, hS8, h8lt, hw8, c8, c8le, hq, v6, h6lt, hq1, h, this]
   rw [c6, Nat.mul_zero, Nat.add_zero] at v6
   have t08 : (s8.gpr .t0).toNat = dw s6.mem b (P + 64) % 2 ^ 9 := by
     rw [u8.gpr, and511, u7.gpr]; rfl
   have h68 : pw s6.mem b 0 9 = pw s6.mem b 0 8 + (2 ^ 64) ^ 8 * dw s6.mem b (P + 8 * 8) := pw_succ s6.mem b 8
   have h6lt8 := pw_lt s6.mem b 8
   have hlow : pw s9.mem b 0 8 = pw s6.mem b 0 8 :=
-    colsV_congr fun i hi => by rw [hm9, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+    colsV_congr fun i hi => by rw [hm9, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hP, hi]) (by omega_using [hP])]
   have h98 : pw s9.mem b 0 9 = pw s9.mem b 0 8 + (2 ^ 64) ^ 8 * dw s9.mem b (P + 8 * 8) := pw_succ s9.mem b 8
   have d9 : dw s9.mem b (P + 8 * 8) = dw s6.mem b (P + 64) % 2 ^ 9 := by
     rw [hm9, show P + 8 * 8 = P + 64 from rfl, dw_write_self, t08]
@@ -1225,7 +1225,7 @@ theorem canon_ok {b : Addr} {s : State} (hc : Ctx b s) (hs : pw s.mem b 0 9 < 2 
   · have f := h6.frame
     rw [m5] at f
     rw [hm9]
-    exact f.writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega) (by omega) (by omega))
+    exact f.writeW (List.mem_singleton_self _) _ (Offset.contains b (by omega_using []) (by omega_using []) (by omega_using [hP]))
   · rw [h98]
     have : (2 ^ 64) ^ 8 = (2 : Nat) ^ 512 := by decide
     rw [this] at h68 ⊢
@@ -1239,7 +1239,7 @@ theorem or_shl18 (x y : BitVec 64) (hx : x.toNat < 2 ^ 18) :
   rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq,
     show (2 : Nat) ^ 64 = 2 ^ 46 * 2 ^ 18 by decide, Nat.mul_mod_mul_right,
     Nat.mul_comm (y.toNat % 2 ^ 46), Nat.or_comm, ← Nat.two_pow_add_eq_or_of_lt hx]
-  omega
+  omega_using []
 
 /-- What the rotation needs of `[o]`. -/
 structure OCtx (b O : Addr) (s : State) : Prop where
@@ -1272,7 +1272,7 @@ theorem own_of_frame {b O : Addr} {s0 : State} (hO : OCtx b O s0) {n : Nat} (hn 
 
 theorem own_of_rot {b O : Addr} {s0 s : State} (hO : OCtx b O s0) {j : Nat} (hj : j ≤ 9) (h : RotInv b O s0 j s)
     {d : Nat} (hd : P ≤ d) (hd' : d + 8 ≤ P + 160) : dw s.mem b d = dw s0.mem b d :=
-  own_of_frame hO (by omega) h.frame hd hd'
+  own_of_frame hO (by omega_using [hj]) h.frame hd hd'
 
 /-- `(r_j >> 55) | (r_{j+1} << 9)` into `t0`. -/
 theorem rotWord_ok {b : Addr} {s : State} (hc : Ctx b s) {j : Nat} (hj : j < 8) :
@@ -1281,8 +1281,8 @@ theorem rotWord_ok {b : Addr} {s : State} (hc : Ctx b s) {j : Nat} (hj : j < 8) 
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have hP := P_eq
   unfold rotWord
-  refine ld_ok hc (by omega) (by omega) fun s1 u1 =>
-    ld_ok (ctx_of hc (u1.other _ (by decide)) u1.wr) (by omega) (by omega) fun s2 u2 =>
+  refine ld_ok hc (by omega_using [hj, hP]) (by omega_using [hP]) fun s1 u1 =>
+    ld_ok (ctx_of hc (u1.other _ (by decide)) u1.wr) (by omega_using [hj, hP]) (by omega_using [hP]) fun s2 u2 =>
     wp_srl (by decide) fun s3 u3 => wp_sll (by decide) fun s4 u4 => wp_or fun s5 u5 => WP.block_nil ?_
   refine ⟨?_, fun r hr => ?_, by rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem], by rw [u5.rd, u4.rd, u3.rd, u2.rd, u1.rd],
     by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr], by rw [u5.sp, u4.sp, u3.sp, u2.sp, u1.sp]⟩
@@ -1298,7 +1298,7 @@ theorem rot_store {b O : Addr} {s0 s : State} (hO : OCtx b O s0) {j : Nat} (h : 
     (g1 : ∀ r, r ∉ [Reg.t0, .a6] → s1.gpr r = s.gpr r) (wr1 : s1.wr = s.wr)
     (k : ∀ s', Mupd s1 s' (s1.mem.writeW (O + BitVec.ofNat 64 (8 * j)) (s1.gpr .t0)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store .d .t0 .t2 (8 * j) :: is)) s1 Q :=
-  wp_sd (by omega) (by rw [g1 _ (by decide), h.gpr _ (by decide), hO.o]) (al8 hO.oal (by omega))
+  wp_sd (by omega_using [hj]) (by rw [g1 _ (by decide), h.gpr _ (by decide), hO.o]) (al8 hO.oal (by omega_using []))
     (by rw [wr1, h.wr]; exact hO.ow j hj) k
 
 /-- The frame and the words after a store of word `j`. -/
@@ -1312,10 +1312,10 @@ theorem rot_next {b O : Addr} {s0 s : State} (hO : OCtx b O s0) {j : Nat} (hj : 
     refine (h.frame.sub fun r hr => ?_).writeW (List.mem_singleton_self _) _ ?_
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by
-        rw [show O = O + BitVec.ofNat 64 0 by simp]; exact Offset.sub O (Nat.le_refl _) (by omega)⟩
+        rw [show O = O + BitVec.ofNat 64 0 by simp]; exact Offset.sub O (Nat.le_refl _) (by omega_using [])⟩
     · rw [show (⟨O, 8 * (j + 1)⟩ : Region) = ⟨O + BitVec.ofNat 64 0, 8 * (j + 1)⟩ by simp]
-      exact Offset.contains O (by omega) (by omega) (by omega)
-  · rw [hm, dw_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.val i hi
+      exact Offset.contains O (by omega_using []) (by omega_using []) (by omega_using [hj])
+  · rw [hm, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hj, hi]) (by omega_using [hj])]; exact h.val i hi
 
 /-- Word `j < 7` of the rotation. -/
 theorem rotStep_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) {j : Nat} (hj : j < 7) {s : State}
@@ -1323,12 +1323,12 @@ theorem rotStep_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) {j : Nat} (hj : 
   have hP := P_eq
   have hcs : Ctx b s := ctx_of hO.ctx (h.gpr _ (by decide)) h.wr
   unfold rotStep
-  refine WP.block_append (WP.mono (rotWord_ok hcs (j := j) (by omega)) fun s1 ⟨t0, g1, m1, rd1, wr1, sp1⟩ => ?_)
-  refine rot_store hO h (by omega) g1 wr1 fun s2 u2 => WP.block_nil ?_
+  refine WP.block_append (WP.mono (rotWord_ok hcs (j := j) (by omega_using [hj])) fun s1 ⟨t0, g1, m1, rd1, wr1, sp1⟩ => ?_)
+  refine rot_store hO h (by omega_using [hj]) g1 wr1 fun s2 u2 => WP.block_nil ?_
   have hv : (s1.gpr .t0).toNat = rw' s0.mem b j := by
     rw [t0]; show dw s.mem b _ / _ + dw s.mem b _ % _ * _ = _
-    rw [own_of_rot hO (by omega) h (by omega) (by omega), own_of_rot hO (by omega) h (by omega) (by omega)]
-  obtain ⟨f, v1, v2⟩ := rot_next hO (by omega) h (by rw [u2.mem, m1])
+    rw [own_of_rot hO (by omega_using [hj]) h (by omega_using []) (by omega_using [hj]), own_of_rot hO (by omega_using [hj]) h (by omega_using []) (by omega_using [hj])]
+  obtain ⟨f, v1, v2⟩ := rot_next hO (by omega_using [hj]) h (by rw [u2.mem, m1])
   refine ⟨fun r hr => by rw [u2.gpr, g1 r hr, h.gpr r hr], by rw [u2.rd, rd1, h.rd], by rw [u2.wr, wr1, h.wr],
     by rw [u2.sp, sp1, h.sp], f, fun i hi => ?_⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
@@ -1341,7 +1341,7 @@ theorem rotSteps_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) :
   | 0, _ => WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | j + 1, hj => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    exact WP.block_append (WP.mono (rotSteps_ok hO j (by omega)) fun s h => rotStep_ok hO (by omega) h)
+    exact WP.block_append (WP.mono (rotSteps_ok hO j (by omega_using [hj])) fun s h => rotStep_ok hO (by omega_using [hj]) h)
 
 /-- The rotation's value from its words. -/
 theorem rot_val (r o : Nat → Nat) (hr : ∀ i, r i < 2 ^ 64) (h8 : r 8 < 2 ^ 9)
@@ -1360,7 +1360,7 @@ theorem rot_val (r o : Nat → Nat) (hr : ∀ i, r i < 2 ^ 64) (h8 : r 8 < 2 ^ 9
     rw [show (2 : Nat) ^ 55 = 2 ^ 46 * 2 ^ 9 by decide, Nat.mod_mul]
   have hm' := Nat.mod_lt (r 0) (show 0 < 2 ^ 55 by decide)
   have ho9 : colsV o 9 = colsV o 7 + (2 ^ 64) ^ 7 * o 7 + (2 ^ 64) ^ 8 * o 8 := rfl
-  rw [Nat.mod_eq_of_lt (by omega : r 8 < 2 ^ 55)] at hs
+  rw [Nat.mod_eq_of_lt (by omega_using [h8] : r 8 < 2 ^ 55)] at hs
   have h80 := hr 0
   rw [ho9, e7, h7, h8']
   rw [show (2 ^ 64) ^ 7 = (2 : Nat) ^ 448 by decide, show (2 ^ 64) ^ 8 = (2 : Nat) ^ 512 by decide] at *
@@ -1370,7 +1370,7 @@ theorem rot_val (r o : Nat → Nat) (hr : ∀ i, r i < 2 ^ 64) (h8 : r 8 < 2 ^ 9
   generalize r 0 % 2 ^ 55 = M55 at *
   generalize r 0 % 2 ^ 46 = M46 at *
   generalize r 0 / 2 ^ 46 % 2 ^ 9 = Q at *
-  omega
+  omega_using [hc8, hR, hm', hs, hm]
 
 /-- Words 7 and 8 of the rotation. -/
 theorem rotTop_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) {s : State} (h : RotInv b O s0 7 s)
@@ -1382,35 +1382,35 @@ theorem rotTop_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) {s : State} (h : 
   have hcs : Ctx b s := ctx_of hO.ctx (h.gpr _ (by decide)) h.wr
   have hon := hO.onw
   unfold rotTop
-  refine WP.block_append (WP.mono (rotWord_ok hcs (j := 7) (by omega)) fun s1 ⟨t0, g1, m1, rd1, wr1, sp1⟩ => ?_)
+  refine WP.block_append (WP.mono (rotWord_ok hcs (j := 7) (by omega_using [])) fun s1 ⟨t0, g1, m1, rd1, wr1, sp1⟩ => ?_)
   have hc1 : Ctx b s1 := ctx_of hcs (g1 _ (by decide)) wr1
-  refine ld_ok hc1 (by omega) (by omega) fun s2 u2 => wp_sll (by decide) fun s3 u3 => wp_or fun s4 u4 => ?_
+  refine ld_ok hc1 (by omega_using [hP]) (by omega_using [hP]) fun s2 u2 => wp_sll (by decide) fun s3 u3 => wp_or fun s4 u4 => ?_
   have I7 : RotInv b O s0 7 s4 := ⟨fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [u4.other _ hr.1, u3.other _ hr.2, u2.other _ hr.2, g1 r (by simp [hr.1, hr.2]), h.gpr r (by simp [hr.1, hr.2])],
     by rw [u4.rd, u3.rd, u2.rd, rd1, h.rd], by rw [u4.wr, u3.wr, u2.wr, wr1, h.wr],
     by rw [u4.sp, u3.sp, u2.sp, sp1, h.sp], by rw [u4.mem, u3.mem, u2.mem, m1]; exact h.frame,
     by rw [u4.mem, u3.mem, u2.mem, m1]; exact h.val⟩
-  refine rot_store (j := 7) hO I7 (by omega) (fun _ _ => rfl) rfl fun s5 u5 => ?_
-  obtain ⟨f5, v5, w5⟩ := rot_next hO (by omega) I7 u5.mem
+  refine rot_store (j := 7) hO I7 (by omega_using []) (fun _ _ => rfl) rfl fun s5 u5 => ?_
+  obtain ⟨f5, v5, w5⟩ := rot_next hO (by omega_using []) I7 u5.mem
   have hc5 : Ctx b s5 := ctx_of hc1 (by rw [u5.gpr, u4.other _ (by decide), u3.other _ (by decide),
     u2.other _ (by decide)]) (by rw [u5.wr, u4.wr, u3.wr, u2.wr])
-  refine ld_ok hc5 (by omega) (by omega) fun s6 u6 => wp_srl (by decide) fun s7 u7 => wp_andi (by decide) fun s8 u8 => ?_
-  refine wp_sd (by omega) (by rw [u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide), u5.gpr,
-      I7.gpr _ (by decide), hO.o]) (al8 hO.oal (by omega))
-    (by rw [u8.wr, u7.wr, u6.wr, u5.wr, I7.wr]; exact hO.ow 8 (by omega)) fun s9 u9 => WP.block_nil ?_
+  refine ld_ok hc5 (by omega_using [hP]) (by omega_using [hP]) fun s6 u6 => wp_srl (by decide) fun s7 u7 => wp_andi (by decide) fun s8 u8 => ?_
+  refine wp_sd (by omega_using []) (by rw [u8.other _ (by decide), u7.other _ (by decide), u6.other _ (by decide), u5.gpr,
+      I7.gpr _ (by decide), hO.o]) (al8 hO.oal (by omega_using []))
+    (by rw [u8.wr, u7.wr, u6.wr, u5.wr, I7.wr]; exact hO.ow 8 (by omega_using [])) fun s9 u9 => WP.block_nil ?_
   -- The words of `r`.
-  have r0 : dw s.mem b P = dw s0.mem b (P + 8 * 0) := own_of_rot hO (by omega) h (by omega) (by omega)
+  have r0 : dw s.mem b P = dw s0.mem b (P + 8 * 0) := own_of_rot hO (by omega_using []) h (by omega_using []) (by omega_using [])
   have hm8 : s8.mem = s5.mem := by rw [u8.mem, u7.mem, u6.mem]
   have hm9 : s9.mem = s5.mem.writeW (O + BitVec.ofNat 64 64) (s8.gpr .t0) := by rw [u9.mem, hm8]
   have hr7 : rw' s.mem b 7 = rw' s0.mem b 7 := by
     show dw s.mem b _ / _ + dw s.mem b _ % _ * _ = _
-    rw [own_of_rot hO (by omega) h (by omega) (by omega), own_of_rot hO (by omega) h (by omega) (by omega)]
+    rw [own_of_rot hO (by omega_using []) h (by omega_using []) (by omega_using []), own_of_rot hO (by omega_using []) h (by omega_using []) (by omega_using [])]
   have h7lt : rw' s0.mem b 7 < 2 ^ 18 := by
     have := dw_lt s0.mem b (P + 8 * 7)
     show dw s0.mem b (P + 8 * 7) / 2 ^ 55 + dw s0.mem b (P + 8 * (7 + 1)) % 2 ^ 55 * 2 ^ 9 < _
     rw [show P + 8 * (7 + 1) = P + 64 from rfl]
-    omega
+    omega_using [h8, this]
   have v7 : (s4.gpr .t0).toNat = rw' s0.mem b 7 + dw s0.mem b (P + 8 * 0) % 2 ^ 46 * 2 ^ 18 := by
     rw [u4.gpr, u3.other _ (by decide), u2.other _ (by decide), u3.gpr, u2.gpr, or_shl18 _ _ (by rw [t0, hr7]; exact h7lt),
       t0, hr7, m1]
@@ -1418,7 +1418,7 @@ theorem rotTop_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) {s : State} (h : 
     rw [r0]
   have v8 : (s8.gpr .t0).toNat = dw s0.mem b (P + 8 * 0) / 2 ^ 46 % 2 ^ 9 := by
     rw [u8.gpr, and511, u7.gpr, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, u6.gpr]
-    exact congrArg (· / 2 ^ 46 % 2 ^ 9) (own_of_frame hO (by omega) f5 (by omega) (by omega))
+    exact congrArg (· / 2 ^ 46 % 2 ^ 9) (own_of_frame hO (by omega_using []) f5 (by omega_using []) (by omega_using []))
   refine ⟨fun r hr => by rw [u9.gpr, u8.other _ (fun e => hr (by rw [e]; decide)),
       u7.other _ (fun e => hr (by rw [e]; decide)), u6.other _ (fun e => hr (by rw [e]; decide)), u5.gpr,
       I7.gpr r hr],
@@ -1428,47 +1428,47 @@ theorem rotTop_ok {b O : Addr} {s0 : State} (hO : OCtx b O s0) {s : State} (h : 
     refine (f5.sub fun r hr => ?_).writeW (List.mem_singleton_self _) _ ?_
     · rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by
-        rw [show O = O + BitVec.ofNat 64 0 by simp]; exact Offset.sub O (Nat.le_refl _) (by omega)⟩
+        rw [show O = O + BitVec.ofNat 64 0 by simp]; exact Offset.sub O (Nat.le_refl _) (by omega_using [])⟩
     · rw [show (⟨O, 72⟩ : Region) = ⟨O + BitVec.ofNat 64 0, 72⟩ by simp]
-      exact Offset.contains O (by omega) (by omega) (by omega)
+      exact Offset.contains O (by omega_using []) (by omega_using []) (by omega_using [])
   · have hp : pw s0.mem b 0 9 = colsV (fun i => dw s0.mem b (P + 8 * i)) 9 :=
-      colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega]
+      colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega_using []]
     rw [hp]
     refine rot_val (fun i => dw s0.mem b (P + 8 * i)) (fun i => dw s9.mem O (8 * i)) (fun _ => dw_lt _ _ _) h8
       (fun i hi => ?_) ?_ ?_
     · show dw s9.mem O (8 * i) = _
-      rw [hm9, dw_write_other _ _ _ (by omega) (by omega) (by omega), v5 i hi]
+      rw [hm9, dw_write_other _ _ _ (by omega_using [hi]) (by omega_using [hi]) (by omega_using []), v5 i hi]
     · show dw s9.mem O (8 * 7) = _
-      rw [hm9, dw_write_other _ _ _ (by omega) (by omega) (by omega), w5, v7]
+      rw [hm9, dw_write_other _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), w5, v7]
     · show dw s9.mem O (8 * 8) = _
       rw [hm9, dw_write_self, v8]
 
 /-! ## The arithmetic modulo `p` -/
 
 theorem mers_mod (u : Nat) : (u % 2 ^ 521 + u / 2 ^ 521) % (2 ^ 521 - 1) = u % (2 ^ 521 - 1) := by
-  omega
+  omega_using []
 
 /-- Rotating `r < p` right by 55 of its 521 bits divides it by `R = 2⁵⁷⁶` modulo `p`. -/
 theorem rot_mod {r : Nat} (hr : r < 2 ^ 521 - 1) :
     r / 2 ^ 55 + 2 ^ 466 * (r % 2 ^ 55) < 2 ^ 521 - 1 ∧
       (r / 2 ^ 55 + 2 ^ 466 * (r % 2 ^ 55)) * 2 ^ 576 % (2 ^ 521 - 1) = r := by
-  omega
+  omega_using [hr]
 
 /-- The correction: `(S + q) mod 2⁵²¹`, `q` the bit 521 of `S + 1`, is `S mod p`. -/
 theorem canon_val {S : Nat} (hS : S < 2 ^ 521 + 2 ^ 56) :
     (S + (S + 1) / 2 ^ 521) % 2 ^ 521 < 2 ^ 521 - 1 ∧
       (S + (S + 1) / 2 ^ 521) % 2 ^ 521 = S % (2 ^ 521 - 1) := by
   by_cases h : 2 ^ 521 ≤ S + 1
-  · have hq : (S + 1) / 2 ^ 521 = 1 := by omega
-    rw [hq]; omega
-  · have hq : (S + 1) / 2 ^ 521 = 0 := by omega
-    rw [hq]; omega
+  · have hq : (S + 1) / 2 ^ 521 = 1 := by omega_using [hS, h]
+    rw [hq]; omega_using [hS, h]
+  · have hq : (S + 1) / 2 ^ 521 = 0 := by omega_using [h]
+    rw [hq]; omega_using [h]
 
 theorem fold1_arith {H G X C w8 w17 : Nat} (hs : 2 ^ 9 * H + w8 % 2 ^ 9 = G + 2 ^ 576 * w17)
     (hX : X = C + 2 ^ 512 * (G + 2 ^ 576 * w17)) (hc : C < 2 ^ 512) :
     C + 2 ^ 512 * (w8 % 2 ^ 9) + H = X % 2 ^ 521 + X / 2 ^ 521 := by
   have := Nat.mod_lt w8 (show 0 < 2 ^ 9 by decide)
-  omega
+  omega_using [hs, hX, hc]
 
 /-- The first fold's value: `T mod 2⁵²¹ + T >> 521`, for `T < 2¹⁰⁹⁷`. -/
 theorem fold1_val (W : Nat → Nat) (hW : ∀ i, W i < 2 ^ 64) (hX : colsV W 18 < 2 ^ 1097) :
@@ -1482,7 +1482,7 @@ theorem fold1_val (W : Nat → Nat) (hW : ∀ i, W i < 2 ^ 64) (hX : colsV W 18 
   rw [show (64 : Nat) - 9 = 55 from rfl] at hs
   have hh : colsV (fun i => W (8 + i) / 2 ^ 9 + W (8 + (i + 1)) % 2 ^ 9 * 2 ^ 55) 9 =
       colsV (fun i => W (8 + i) / 2 ^ 9 + W (9 + i) % 2 ^ 9 * 2 ^ 55) 9 :=
-    colsV_congr fun i _ => by rw [show 8 + (i + 1) = 9 + i by omega]
+    colsV_congr fun i _ => by rw [show 8 + (i + 1) = 9 + i by omega_using []]
   rw [hh] at hs
   have hsp := colsV_split W 8 10
   have h10 : colsV (fun j => W (8 + j)) 10 = colsV (fun j => W (8 + j)) 9 + (2 ^ 64) ^ 9 * W (8 + 9) := rfl
@@ -1500,7 +1500,7 @@ theorem fold1_val (W : Nat → Nat) (hW : ∀ i, W i < 2 ^ 64) (hX : colsV W 18 
     · exact h
     · exfalso
       have : 2 ^ 1088 * 2 ^ 9 ≤ 2 ^ 1088 * W 17 := Nat.mul_le_mul_left _ h
-      omega
+      omega_using [hX, hl, hs, hh, hsp, h10, h17, hc8, e8, e9, e17, h, this]
   rw [show 8 + 9 = 17 from rfl] at h10 hs
   rw [Nat.mod_eq_of_lt hw17] at hs
   rw [show 8 + 0 = 8 from rfl] at hs
@@ -1554,7 +1554,7 @@ theorem tail_ok {b A B O : Addr} {s s3 : State} (hC : CoreOk 9 b A B O s) (hB : 
   refine WP.block_append (WP.mono (fold_ok hc3) fun s4 ⟨g4, rd4, wr4, sp4, f4, c4, v4⟩ => ?_)
   have hc4 : Ctx b s4 := ctx_of hc3 (g4 _ (by decide)) wr4
   have hW : pw s3.mem b 0 18 = colsV (fun i => dw s3.mem b (P + 8 * i)) 18 :=
-    colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega]
+    colsV_congr fun i _ => by rw [show P + 8 * 0 + 8 * i = P + 8 * i by omega_using []]
   rw [hW] at v3
   have e4 := fold1_val (fun i => dw s3.mem b (P + 8 * i)) (fun _ => dw_lt _ _ _) (by rw [v3]; exact hXlt)
   rw [v3] at e4
@@ -1571,7 +1571,7 @@ theorem tail_ok {b A B O : Addr} {s s3 : State} (hC : CoreOk 9 b A B O s) (hB : 
   have l59 := pw_lt s5.mem b 9
   rw [show ((2 : Nat) ^ 64) ^ 9 = 2 ^ 576 by rw [← Nat.pow_mul]] at l59
   generalize hS : X % 2 ^ 521 + X / 2 ^ 521 = S at v4
-  have hSlt : S < 2 ^ 521 + 2 ^ 576 := by omega
+  have hSlt : S < 2 ^ 521 + 2 ^ 576 := by omega_using [hXlt, hS]
   have hS2 : pw s5.mem b 0 9 = S % 2 ^ 521 + S / 2 ^ 521 ∧ pw s5.mem b 0 9 < 2 ^ 521 + 2 ^ 56 :=
     fold2_arith (by rw [← v4, h48]) l48 hSlt l59 v5
   -- The correction.
@@ -1595,13 +1595,13 @@ theorem tail_ok {b A B O : Addr} {s s3 : State} (hC : CoreOk 9 b A B O s) (hB : 
   have hO6 : ∀ x ∈ [Region.mk (b + BitVec.ofNat 64 P) 72], ∃ r' ∈ [ownR 9 b, ⟨O, 8 * 9⟩], Region.Sub x r' :=
     fun x hx => by
       rw [List.mem_singleton] at hx; subst hx
-      exact ⟨_, List.mem_cons_self .., own_sub (Nat.le_refl _) (by omega)⟩
+      exact ⟨_, List.mem_cons_self .., own_sub (Nat.le_refl _) (by omega_using [])⟩
   refine ⟨fun r hr => ?_, by rw [rd8, rd6, rd5, rd4, h3.rd], by rw [wr8, wr6, wr5, wr4, h3.wr],
     by rw [sp8, sp6, sp5, sp4, h3.sp], ?_, olt, ?_⟩
   · rw [g8 r (notin hr), g6 r (notin hr), g5 r (notin hr), g4 r (notin hr), h3.gpr r hr]
   · have F2 : Frame [ownR 9 b, ⟨O, 8 * 9⟩] s.mem s3.mem := h3.frame.sub fun x hx => by
       rw [List.mem_singleton] at hx; subst hx
-      exact ⟨_, List.mem_cons_self .., own_sub (Nat.le_refl _) (by omega)⟩
+      exact ⟨_, List.mem_cons_self .., own_sub (Nat.le_refl _) (by omega_using [])⟩
     have F8 : Frame [ownR 9 b, ⟨O, 8 * 9⟩] s6.mem s8.mem := f8.sub fun x hx => by
       rw [List.mem_singleton] at hx; subst hx
       exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩

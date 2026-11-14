@@ -72,6 +72,7 @@ FEATURES = {
     "avx512ifma": "AVX-512 IFMA",
     "avx512vl": "AVX-512VL",
     "avx512bw": "AVX-512BW",
+    "avx512fp16": "AVX-512 FP16",
     "avx2": "AVX2",
     "avx": "AVX",
     "bmi1": "BMI1",
@@ -88,7 +89,7 @@ IMPLIES = {"avx2": {"avx"}, "avx": {"ssse3"}, "aes": {"ssse3"}, "pclmulqdq": {"s
 # The variants that need no CPU feature beyond the architecture's baseline,
 # so have no `_FEATURES` constant, by architecture: the suffix of the
 # function's name and how the table names it.
-SUFFIXES = {"aarch64": {"neon": "NEON"}}
+SUFFIXES = {"aarch64": {"neon": "NEON"}, "x86_64": {"sse2": "SSE2"}}
 
 # The keys of a row.
 KEYS = {"name", "family", "specs", "modules", "asm"}

@@ -33,7 +33,7 @@ def TableSafe (p : BitVec 32) : List Group → List Region → Prop
   · rw [frame.readW (r := ⟨State.addr (p + 4), 4⟩) (Region.contains_self _ _)
       (fun r hr => (safe r hr).2.1) (by decide)]; exact h.bits
   · rw [rest.rd, rest.wr]; exact h.read
-  · rw [VG.Proof.Rsa.rsa_bytes_frame frame (by have := h.fit; omega)
+  · rw [VG.Proof.Rsa.rsa_bytes_frame frame (by have := h.fit; omega_using [this])
       (fun r hr => (safe r hr).2.2)]; exact h.bytes
 
  theorem TableAt.after_frame {p : BitVec 32} {gs : List Group} {s t : State} {rs : List Reg}

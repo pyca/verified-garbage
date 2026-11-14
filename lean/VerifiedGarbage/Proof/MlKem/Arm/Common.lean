@@ -46,7 +46,7 @@ theorem wp_loop_ne {body : Prog isa} {Q : State → Prop} (Inv : Nat → State �
   · refine .inl ⟨?_, hQ s' (h ▸ hs')⟩
     show some (!s'.z) = some false
     rw [hz, decide_eq_true h]; rfl
-  · refine .inr ⟨?_, N - (i + 1), by omega, i + 1, by omega, rfl, hs'⟩
+  · refine .inr ⟨?_, N - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, h], rfl, hs'⟩
     show some (!s'.z) = some true
     rw [hz, decide_eq_false h]; rfl
 
@@ -62,18 +62,18 @@ theorem count_z {N i k : Nat} (hi : i < N) (hk0 : 0 < k) (hk : k * N < 2 ^ 32) :
     intro e
     have := congrArg BitVec.toNat e
     have h1 : k * (N - i) < 2 ^ 32 := Nat.lt_of_le_of_lt (Nat.mul_le_mul_left _ (Nat.sub_le _ _)) hk
-    have h2 : k * 1 ≤ k * (N - i) := Nat.mul_le_mul_left _ (by omega)
-    have h3 : k * 2 ≤ k * (N - i) := Nat.mul_le_mul_left _ (by omega)
+    have h2 : k * 1 ≤ k * (N - i) := Nat.mul_le_mul_left _ (by omega_using [hi])
+    have h3 : k * 2 ≤ k * (N - i) := Nat.mul_le_mul_left _ (by omega_using [hi, h])
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h1,
-      Nat.mod_eq_of_lt (a := k) (by omega)] at this
+      Nat.mod_eq_of_lt (a := k) (by omega_using [h1, h2])] at this
     have h0 : (0 : BitVec 32).toNat = 0 := rfl
-    omega
+    omega_using [hk0, this, h1, h3, h0]
 
 /-- The count after `subs r, r, #k`. -/
 theorem count_sub {N i k : Nat} (hi : i < N) :
     BitVec.ofNat 32 (k * (N - i)) - BitVec.ofNat 32 k = BitVec.ofNat 32 (k * (N - (i + 1))) := by
   have : k * (N - i) = k * (N - (i + 1)) + k := by
-    rw [show N - i = (N - (i + 1)) + 1 by omega, Nat.mul_succ]
+    rw [show N - i = (N - (i + 1)) + 1 by omega_using [hi], Nat.mul_succ]
   rw [this, BitVec.ofNat_add, BitVec.add_sub_cancel]
 
 /-! ## Symbolic execution -/
@@ -103,7 +103,7 @@ macro "resolve_ifs" : tactic => `(tactic| plain_simp_names (
 
 theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 /-- A pointer `p + i`, plus the offset `o` of an instruction, without
 wrapping around. -/
@@ -146,13 +146,13 @@ of the polynomial at `p`. -/
 theorem addr_coeff {p : BitVec 32} {i o j : Nat} (h : p.toNat + 1024 ≤ 2 ^ 32) (hj : i + o = 4 * j)
     (hjn : j < 256) :
     State.addr (p + BitVec.ofNat 32 i + BitVec.ofNat 32 o) = coeffAddr (State.addr p) j := by
-  rw [addr_ptr _ _ _ (by omega), hj]
+  rw [addr_ptr _ _ _ (by omega_using [h, hj, hjn]), hj]
 
 /-- A pointer `p + i` plus an instruction's offset `o`, at byte `k` of the
 `len` bytes at `p`. -/
 theorem addr_byte {p : BitVec 32} {i o k len : Nat} (h : p.toNat + len ≤ 2 ^ 32) (hk : i + o = k)
     (hkl : k < len) : State.addr (p + BitVec.ofNat 32 i + BitVec.ofNat 32 o) = State.addr p + BitVec.ofNat 64 k := by
-  rw [addr_ptr _ _ _ (by omega), hk]
+  rw [addr_ptr _ _ _ (by omega_using [h, hk, hkl]), hk]
 
 /-- The low byte of a word, as `strb` stores it. -/
 theorem setWidth8 (v : BitVec 32) : v.setWidth 8 = BitVec.ofNat 8 v.toNat := by
@@ -162,7 +162,7 @@ theorem setWidth8 (v : BitVec 32) : v.setWidth 8 = BitVec.ofNat 8 v.toNat := by
 /-- A byte zero-extended, as `ldrb` loads it. -/
 theorem setWidth32_toNat (b : Byte) : (b.setWidth 32).toNat = b.toNat := by
   simp only [BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := b.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])
 
 /-- Byte `k` after writing byte `a`, of the bytes at `O`. -/
 theorem byte_writeW8 (m : Mem) (O : Addr) {a k : Nat} (ha : a < 2 ^ 64) (hk : k < 2 ^ 64) (v : Byte) :
@@ -199,7 +199,7 @@ theorem setWidth_append32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, Nat.shiftLeft_eq, Nat.mul_comm,
     ← Nat.two_pow_add_eq_or_of_lt b.isLt]
-  omega
+  omega_using []
 
 /-- The next coefficient written, from an invariant saying which are. -/
 theorem coeff_one {m m₀ : Mem} {F : Addr} {out : Nat → BitVec 32} {a : Nat} (ha : a < 256)
@@ -208,7 +208,7 @@ theorem coeff_one {m m₀ : Mem} {F : Addr} {out : Nat → BitVec 32} {a : Nat} 
     ∀ j < 256, coeffAt (m.writeW (coeffAddr F a) v) F j = if j < a + 1 then out j else coeffAt m₀ F j := by
   intro j hj
   rw [coeffAt_writeW _ _ (by rw [n_eq]; exact hj) (by rw [n_eq]; exact ha), h j hj]
-  rcases (by omega : j < a ∨ j = a ∨ a < j) with h' | rfl | h'
+  rcases (by omega_using [] : j < a ∨ j = a ∨ a < j) with h' | rfl | h'
   · resolve_ifs
   · rw [hv]; resolve_ifs
   · resolve_ifs
@@ -220,8 +220,8 @@ theorem byte_one {m m₀ : Mem} {O : Addr} {out : Nat → Byte} {a L : Nat} (ha 
     ∀ k < L, (m.writeW (O + BitVec.ofNat 64 a) v) (O + BitVec.ofNat 64 k) =
       if k < a + 1 then out k else m₀ (O + BitVec.ofNat 64 k) := by
   intro k hk
-  rw [byte_writeW8 _ _ (by omega) (by omega), h k hk]
-  rcases (by omega : k < a ∨ k = a ∨ a < k) with h' | rfl | h'
+  rw [byte_writeW8 _ _ (by omega_using [ha, hL]) (by omega_using [hL, hk]), h k hk]
+  rcases (by omega_using [] : k < a ∨ k = a ∨ a < k) with h' | rfl | h'
   · resolve_ifs
   · rw [hv]; resolve_ifs
   · resolve_ifs
@@ -277,6 +277,6 @@ theorem fixq_subq {x : BitVec 32} (hx : x.toNat < 2 * q) : (fixq (x - 3328 - 1))
 /-- A word is the element of `ℤ_q` it represents, once reduced. -/
 theorem ofNat_val_eq {v : BitVec 32} {x : Zq} (h : v.toNat = x.val) : v = BitVec.ofNat 32 x.val := by
   apply BitVec.eq_of_toNat_eq
-  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [h])]
 
 end VG.Proof.MlKem.Arm

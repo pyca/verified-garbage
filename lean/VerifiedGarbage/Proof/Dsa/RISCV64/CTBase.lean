@@ -281,7 +281,7 @@ theorem Base.step {v : VD} {s t : State} (h : Base v s) (hr : Regs t v.L v.key v
     (h8 : word t.mem v.L.S hDigest = word s.mem v.L.S hDigest)
     (h24 : word t.mem v.L.S Sign.hOut = word s.mem v.L.S Sign.hOut) : Base v t :=
   ⟨h.ok, hr, h.scr.congr hwr, h.hk.keep hrd hwr, h.hsg.keep hrd hwr, h.hdg.keep hrd hwr,
-    (h.hk.bytes ho (by omega)).trans h.kb, h.kn, fun hf => h8.trans (h.dig8 hf),
+    (h.hk.bytes ho (by omega_using [])).trans h.kb, h.kn, fun hf => h8.trans (h.dig8 hf),
     fun o ho => h24.trans (h.hout o ho)⟩
 
 /-- `Base` through code that keeps its registers and changes memory only in
@@ -289,7 +289,7 @@ theorem Base.step {v : VD} {s t : State} (h : Base v s) (hr : Regs t v.L v.key v
 theorem Base.kept {v : VD} {s t : State} {rs : List Reg} (h : Base v s) (k : Keep rs s t)
     (hk : Kept v.L s.mem t.mem) (hr : Regs t v.L v.key v.sig) : Base v t :=
   h.step hr k.2.1 k.2.2 hk.out (hk.word (Or.inl (by decide)))
-    (hk.word (Or.inr ⟨by simp only [hLens, Sign.hOut]; omega, by simp only [Sign.hOut]; omega⟩))
+    (hk.word (Or.inr ⟨by simp only [hLens, Sign.hOut]; omega_using [], by simp only [Sign.hOut]; omega_using []⟩))
 
 /-- `Base` through code that keeps its registers and changes memory only in
 the body. -/
@@ -307,12 +307,12 @@ theorem Base.bytes {v : VD} {s : State} (h : Base v s) {o k : Nat} (hk : o + k �
   rw [VD.sl, ← h.kb, VG.Proof.Dsa.bytesAt_slice s.mem v.key hk]
 
 theorem Base.bytesP {v : VD} {s : State} (h : Base v s) : Spec.Rsa.bytesAt s.mem v.key v.L.pl = v.pB := by
-  have := h.bytes (o := 0) (k := v.L.pl) (by have := h.kn; omega)
+  have := h.bytes (o := 0) (k := v.L.pl) (by have := h.kn; omega_using [this])
   rwa [off, BitVec.add_zero] at this
 
 theorem Base.bytesQ {v : VD} {s : State} (h : Base v s) :
     Spec.Rsa.bytesAt s.mem (off v.key v.L.pl) v.L.ql = v.qB :=
-  h.bytes (by have := h.kn; omega)
+  h.bytes (by have := h.kn; omega_using [this])
 
 theorem Base.p {v : VD} {s : State} (h : Base v s) : pOf s.mem v.L v.key = v.p := by
   rw [pOf, h.bytesP]; rfl
@@ -333,10 +333,10 @@ theorem Base.fixB {v : VD} {s : State} (h : Base v s) : Fix (fixB v) s :=
   ⟨h.regs.s6, h.regs.s11, h.regs.ra, trivial⟩
 
 theorem Base.pl {v : VD} {s : State} (h : Base v s) : 128 ≤ v.L.pl ∧ v.L.pl ≤ 384 := by
-  rcases h.ok.pl with e | e | e <;> omega
+  rcases h.ok.pl with e | e | e <;> omega_using [e]
 
 theorem Base.ql {v : VD} {s : State} (h : Base v s) : 20 ≤ v.L.ql ∧ v.L.ql ≤ 32 := by
-  rcases h.ok.ql with e | e | e <;> omega
+  rcases h.ok.ql with e | e | e <;> omega_using [e]
 
 /-- The P space's registers. -/
 abbrev envP (v : VD) : List (Reg × BitVec 64) :=
@@ -390,7 +390,7 @@ theorem front_P0 {v : VD} {s : State} (h : C0 v s) : WP isa (.block Verify.entry
     pre_src (A := s.gpr .a4) (by rw [hrd]; simp) dGS nwG (s.gpr .a5).isLt (by simp only [vdOf, layOf]; omega_arith)
       k.2.1 k.2.2,
     pre_src (A := s.gpr .a6) (by rw [hrd]; simp) dDS nwD (s.gpr .a7).isLt (Nat.min_le_left _ _) k.2.1 k.2.2,
-    ((hK rfl rfl).bytes F.out (by simp only [layOf] at hZ ⊢; omega)), by simp only [vdOf, layOf]; omega,
+    ((hK rfl rfl).bytes F.out (by simp only [layOf] at hZ ⊢; omega_using [hZ])), by simp only [vdOf, layOf]; omega_using [],
     fun _ => F.dig, fun _ h => nomatch h⟩, F.lens⟩
 
 /-- After loading `scratch`'s address. -/
@@ -404,7 +404,7 @@ theorem loadS_L1 {v : VD} {s : State} (h : C0 v s) :
     have : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8 :=
       ⟨stackArgs s, List.mem_append_left _ (by rw [hrd]; simp), by simp [Region.Contains]⟩
     simpa only [stackArgAddr] using this
-  have hsa : (s.sp + BitVec.ofNat 64 0).toNat % 8 = 0 := by rw [add_ofNat_zero]; omega
+  have hsa : (s.sp + BitVec.ofNat 64 0).toNat % 8 = 0 := by rw [add_ofNat_zero]; omega_using [sp16]
   have hv : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := by simp [stackArg, stackArgAddr]
   have first : WP isa (.block [.addSp .t2 0, .load .d .t2 .t2 0]) s fun s₁ => s₁ = s.write .t2 (stackArg s 0) := by
     brun [exec_addSp (show 0 < 2048 by decide), hst', hsa, hv, write_write]

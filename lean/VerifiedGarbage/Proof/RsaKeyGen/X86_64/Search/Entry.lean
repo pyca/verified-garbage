@@ -48,8 +48,8 @@ theorem arg_contains (s : State) {j : Nat} (hj : j < 6) :
   rw [show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
     simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]
     congr 2
-    omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+    omega_using []]
+  exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 theorem input_args {p : SearchPublic} {s : State} (h : SearchInput p s) :
     ∀ j < 6, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8 := by
@@ -61,7 +61,7 @@ theorem input_args {p : SearchPublic} {s : State} (h : SearchInput p s) :
 /-- The caller's stack argument `k`, from inside the frame. -/
 theorem callerArg_addr (sp : Addr) (k : Nat) :
     sp - BitVec.ofNat 64 160 + BitVec.ofNat 64 (160 + 8 + 8 * k) = sp + BitVec.ofNat 64 (8 * (k + 1)) := by
-  rw [show 160 + 8 + 8 * k = 160 + 8 * (k + 1) by omega, BitVec.ofNat_add, ← BitVec.add_assoc,
+  rw [show 160 + 8 + 8 * k = 160 + 8 * (k + 1) by omega_using [], BitVec.ofNat_add, ← BitVec.add_assoc,
     BitVec.sub_add_cancel]
 
 /-- The frame's stores keep what is outside it. -/
@@ -105,7 +105,7 @@ theorem entry_head_ok {p : SearchPublic} {s : State} (h : SearchInput p s) :
 
 theorem arg_addr {p : SearchPublic} {s : State} (h : SearchInput p s) (k : Nat) :
     p.F + BitVec.ofNat 64 (168 + 8 * k) = stackArgAddr s k := by
-  rw [show 168 + 8 * k = 160 + 8 + 8 * k by omega, callerArg_addr, h.sp_eq]
+  rw [show 168 + 8 * k = 160 + 8 + 8 * k by omega_using [], callerArg_addr, h.sp_eq]
   rfl
 
 /-- The caller's stack arguments, after stores to the frame. -/
@@ -229,8 +229,8 @@ theorem search_start {p : SearchPublic} {s : State} (h : SearchInput p s) :
   have hL : p.len ≤ 512 := by rw [← h.2]; exact h.1.2.2.2.2.2.2.2.2.1.2.1
   have hsi : s.gpr .rsi = BitVec.ofNat 64 p.len := by rw [← h.2]; exact (ofNat_toNat64 _).symm
   have hcap : (s.gpr .rsi <<< 15) + s.gpr .rsi = BitVec.ofNat 64 (primeEntropy p.len) := by
-    rw [hsi, SearchInit.shl_ofNat _ _ (by omega), SearchInit.add_ofNat]
-    unfold primeEntropy; congr 1; omega
+    rw [hsi, SearchInit.shl_ofNat _ _ (by omega_using [hL]), SearchInit.add_ofNat]
+    unfold primeEntropy; congr 1; omega_using []
   refine ⟨h, Nat.zero_le _, Nat.le_refl _, k.2.1, k.2.2.trans (alloc_wr h),
     (k.gpr (by decide)).trans (alloc_rsp h), hr, fun r hr hn hs => ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k.gpr (by revert r; decide), allocated_reg _ _ _ hs]

@@ -43,7 +43,7 @@ theorem call_ok {s : State} {st : Addr} (h0 : s.gpr .a0 = st) (h1 : s.gpr .a1 = 
   · simp only [Proof.Sha3.permuteRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, State.withRegions_sp, State.callEntry_sp, c0, c1]
     exact ⟨trivial, trivial, d₁, hal, hsp, d₂,
-      Offset.base_disjoint_below s.sp (n := 608) (k := 512) (by omega) |>.symm⟩
+      Offset.base_disjoint_below s.sp (n := 608) (k := 512) (by omega_using []) |>.symm⟩
   · intro a n h
     obtain ⟨r, hr, hc⟩ := hw a n (by simpa using h)
     exact ⟨r, List.mem_append_right _ hr, hc⟩

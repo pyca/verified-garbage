@@ -44,7 +44,7 @@ theorem scanSelect_ok (s : State) {base : BitVec 32} {len w j : Nat} (h : ScanSe
     WP isa (.seq selectRow (.block [.ldrSp .r0 0])) s fun t => t.gpr .r0 = base := by
   obtain ⟨⟨p0, p10, p12, count⟩, bit, s0, ready, mem, rest⟩ := h
   exact WP.mono (selectAt_ok s ready mem rest fits (o := 1) (a := 1) (b := 8 + j) (by decide) (by decide)
-    (by decide) (by omega) p0 p10 p12 count bit) fun _ k => k.1.ptr
+    (by decide) (by omega_using [hj]) p0 p10 p12 count bit) fun _ k => k.1.ptr
 
 theorem scanBody_ct {base : BitVec 32} {len w M1 M2 x1 x2 A1 A2 d1 d2 j : Nat} (hj : j < 8)
     (fits : arrAt w 16 ≤ 8 * len) :
@@ -71,10 +71,10 @@ theorem scanLoop_ct {base : BitVec 32} {len w M1 M2 x1 x2 A1 A2 d1 d2 : Nat} (fi
     intro k s t tr1 tr2 u z h e1 e2
     obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
     have ct := relCT_keep_sp (scanBody_ct (base := base) (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2)
-      (A1 := A1) (A2 := A2) (d1 := d1) (d2 := d2) (j := j) (by omega) fits) (fun _ _ h => h.2.2)
+      (A1 := A1) (A2 := A2) (d1 := d1) (d2 := d2) (j := j) (by omega_using [jk, hk]) fits) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨hs, ht, sp⟩ e1 e2
-    obtain ⟨_, _, run1, next1, zero1, _, _, _⟩ := scanBody_ok s hs (by omega)
-    obtain ⟨_, _, run2, next2, zero2, _, _, _⟩ := scanBody_ok t ht (by omega)
+    obtain ⟨_, _, run1, next1, zero1, _, _, _⟩ := scanBody_ok s hs (by omega_using [jk, hk])
+    obtain ⟨_, _, run2, next2, zero2, _, _, _⟩ := scanBody_ok t ht (by omega_using [jk, hk])
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩
@@ -85,7 +85,7 @@ theorem scanLoop_ct {base : BitVec 32} {len w M1 M2 x1 x2 A1 A2 d1 d2 : Nat} (fi
         intro last
         change some (!_) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, next1, next2, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], next1, next2, sp'⟩
   exact (RelCT.loop I step 8).mono (fun _ _ h => ⟨0, rfl, by decide, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 
 /-- The exponentiation's state, the table and a digit. -/

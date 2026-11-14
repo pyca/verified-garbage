@@ -155,7 +155,7 @@ theorem body_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') (hc : G
         (Spec.Ed448.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat)
         (Spec.Ed448.bytesAt m ((arg s 5).setWidth 64) (arg s 6).toNat) := by
   have hk := kit h
-  have hcl : (arg s 4).toNat < 256 := by have := h.ctxlen; omega
+  have hcl : (arg s 4).toNat < 256 := by have := h.ctxlen; omega_using [this]
   -- Disjointness of the values carried.
   have lS := lo_fr (base s) (d := S) (l := 57) (by decide) (by decide)
   have lK := lo_fr (base s) (d := K) (l := 57) (by decide) (by decide)
@@ -278,7 +278,7 @@ theorem signCached_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') {
     WP isa (code base') s fun t => abiPreserved s t ∧ scLocal.post s t := by
   have h := facts hp
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
-    (by simp only [List.length_replicate]; have := h.below; omega) (body_nosp hB)
+    (by simp only [List.length_replicate]; have := h.below; omega_using [this]) (body_nosp hB)
     (WP.mono (body_ok h hB (push_ctx hp.1 hp.2.1 h.below) (args_val s 8) h.key) fun u ⟨hu, ho⟩ =>
       ⟨pop_abi (by decide) h.below hu (ret_out h), ?_⟩)
   change Spec.Ed448.bytesAt (popped .eax (List.replicate 64 .eax).length u).mem ((arg s 0).setWidth 64) 114 = _

@@ -44,7 +44,7 @@ theorem recvTag_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
       Frame [⟨w64 p.W, 16⟩] t.mem t'.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   obtain ⟨t₁, run₁, di₁, m₁, g₁, rd₁, wr₁⟩ := tagPtr_ok L E
   have aT : ∀ {k}, k < 16 → w64 (p.T + BitVec.ofNat 32 k) = w64 p.T + BitVec.ofNat 64 k := fun hk =>
-    w64_add (by have := L.tw; omega)
+    w64_add (by have := L.tw; omega_using [hk, this])
   have tIn : ∀ {k}, k + 4 ≤ 16 → InRegions (t₁.rd ++ t₁.wr) (w64 p.T + BitVec.ofNat 64 k) 4 := fun hk => by
     rw [rd₁, wr₁]; exact in_off E.perm.t hk (by decide)
   have bp₁ : t₁.gpr .ebp = p.W := by rw [g₁ _ (by decide), E.ebp]
@@ -86,7 +86,7 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (tW : Covers [
   have hT := E.slots.tp
   simp only [slotv_eq, tpO] at hT
   have aT : ∀ {k}, k < 16 → w64 (p.T + BitVec.ofNat 32 k) = w64 p.T + BitVec.ofNat 64 k := fun hk =>
-    w64_add (by have := L.tw; omega)
+    w64_add (by have := L.tw; omega_using [hk, this])
   have tIn : ∀ {k}, k + 4 ≤ 16 → InRegions t.wr (w64 p.T + BitVec.ofNat 64 k) 4 := fun hk => in_off tW hk (by decide)
   have hs := Proof.AesGcm.X86.store4_eq t.mem p.T 0
   simp only [Nat.reduceAdd] at hs

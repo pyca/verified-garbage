@@ -7,7 +7,7 @@ import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # IDEA-CBC artifacts on baseline ARMv7 -/
+/-! # IDEA-CBC on ARMv7 -/
 
 @[expose] public section
 

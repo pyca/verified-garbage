@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Modes.CtrFinal
 import VerifiedGarbage.Proof.AesOfb.Spec
 import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: shared by the final functions' proofs of every target.
 
@@ -57,7 +58,7 @@ theorem outputs_flatten_length (iv : List Byte) (n : Nat) : (Spec.Ofb.outputs ci
   | zero => rfl
   | succ n ih =>
     simp only [Spec.Ofb.outputs, List.flatten_cons, List.length_append, hc, ih]
-    omega
+    omega_using []
 
 /-- OFB of the `len` bytes at `D` from the block at `P`, from what a final
 function leaves: its `n = len / 16` whole blocks as OFB's, its last
@@ -76,8 +77,8 @@ theorem cryptFinal_of {m₀ m' : Mem} {P D : Addr} {len : Nat}
     Spec.Ofb.CryptFinal ciph 16 m₀ m' P D len := by
   have hu : len % 16 < 16 := Nat.mod_lt _ (by decide)
   have ecount : Spec.Ofb.blockCount 16 len = if len % 16 = 0 then len / 16 else len / 16 + 1 := by
-    unfold Spec.Ofb.blockCount; split <;> omega
-  have ht := bytesAt_xor (o := ciph (Spec.Ofb.next ciph (bytesAt m₀ P 16) (len / 16))) (by rw [hc]; omega) htail
+    unfold Spec.Ofb.blockCount; split <;> omega_arith
+  have ht := bytesAt_xor (o := ciph (Spec.Ofb.next ciph (bytesAt m₀ P 16) (len / 16))) (by rw [hc]; omega_using []) htail
   have hx : Spec.Cbc.xor (Spec.Cbc.blocksAt m₀ D (len / 16)).flatten
       (Spec.Ofb.outputs ciph (bytesAt m₀ P 16) (len / 16)).flatten =
         (Spec.Ofb.crypt ciph (bytesAt m₀ P 16) (Spec.Cbc.blocksAt m₀ D (len / 16))).flatten := by
@@ -161,10 +162,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 /-- Memories that agree within the final function's buffers agree on the
 schedule, the block and the data. -/
@@ -182,8 +183,8 @@ private theorem final_bufs {pb : Nat} {vs : List (BitVec 64)} (hlen : vs.length 
     have hv := agree_of hb.2.1
     have hd := agree_of hb.2.2.1
     have := Nat.mod_le len.toNat (2 ^ pb)
-    exact ⟨k, rounds, iv, data, len, scr, rfl, fun n hn => bytesAt_congr fun i hi => hk i (by omega),
-      bytesAt_congr hv, bytesAt_congr fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)⟩
+    exact ⟨k, rounds, iv, data, len, scr, rfl, fun n hn => bytesAt_congr fun i hi => hk i (by omega_using [hn, hi]),
+      bytesAt_congr hv, bytesAt_congr fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])⟩
 
 end
 
@@ -210,7 +211,7 @@ theorem finalPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesFinalSig.words 
   dsimp only [Curry.apply, finalPost, ArgWord.ofRaw, Spec.Ofb.CryptFinal, ciphAt] at h ⊢
   intro hr
   obtain ⟨h1, h2⟩ := h hr
-  rw [hk _ (by rcases hr with h | h | h <;> omega), hv, hd]
+  rw [hk _ (by rcases hr with h | h | h <;> omega_using [h]), hv, hd]
   exact ⟨h1, h2⟩
 
 /-- `finalPost` reads the memory on return only within the buffers. -/

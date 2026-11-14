@@ -1,9 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.PrivContractGeometry
 public import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
-
-import VerifiedGarbage.Proof.Rsa.X86.PrivABI
-import VerifiedGarbage.Proof.Rsa.X86.PrivEntryReady
+public import VerifiedGarbage.Proof.Rsa.X86.PrivABI
+public import VerifiedGarbage.Proof.Rsa.X86.PrivEntryReady
 import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
 import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,20 +17,22 @@ namespace VG.Proof.Rsa.X86.PrivChecked
 open VG VG.X86 VG.Proof.Bignum.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract abi stackBytes).pre s) :
-    PrivFnInput (privateGeometry s) (privateBytes s) s := by
-  obtain ⟨stackFit, argFit, rd, wr, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,
+/-- The wrapper's inputs from the facts of `PrivABI`, which the contracts of both
+`vg_rsa_private_checked` and `vg_rsa_private_checked_precomputed` give. -/
+theorem private_abi_entry (s : State) (A : PrivABI s) :
+    PrivEntryInput (privateGeometry s) (privateBytes s) s := by
+  obtain ⟨stackFit, argFit, rd, outW, wsW, argsW, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,
     nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs, wsArgs,
     stackOut, stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI, stackWs, stackArgs,
     retOut, retWs, outFit, nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit, wsFit,
-    valid, outLen, inputLen, ePositive, eFits, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space⟩ := privateABI_of h
-  rw [outLen] at wr outN outE outI outP outQ outDP outDQ outQI outWs outArgs stackOut outFit retOut
+    valid, outLen, inputLen, ePositive, eFits, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space⟩ := A
+  rw [outLen] at outW outN outE outI outP outQ outDP outDQ outQI outWs outArgs stackOut outFit retOut
   rw [inputLen] at rd outI iWs stackI iFit
   rw [dpLen] at rd outDP dpWs stackDP dpFit
   rw [dqLen] at rd outDQ dqWs stackDQ dqFit
   rw [qiLen] at rd outQI qiWs stackQI qiFit
   rw [show (arg s 19).toNat * 8 = 8 * (arg s 19).toNat from Nat.mul_comm _ _]
-    at wr outWs nWs eWs iWs pWs qWs dpWs dqWs qiWs wsArgs stackWs wsFit retWs
+    at wsW outWs nWs eWs iWs pWs qWs dpWs dqWs qiWs wsArgs stackWs wsFit retWs
   have sourceFit : ∀ i, ((privateGeometry s).sources i).toNat + (privateGeometry s).sourceLength i ≤ 2 ^ 32 := by
     intro i
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
@@ -62,12 +63,10 @@ theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract 
       exacts [stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI]
     · rw [privateGeometry_wholeStack s stackFit]; exact stackWs
     · rw [privateGeometry_wholeStack s stackFit, privateGeometry_arguments s stackFit argFit]; exact stackArgs
-  apply PrivEntryInput.ready
   refine ⟨geometry, stackFit, rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro i
     refine ⟨sourceFit i, ?_, rfl⟩
-    refine ⟨(privateGeometry s).sourceRegion i, List.mem_append_left _ ?_, Region.contains_self _ _⟩
-    rw [rd]
+    refine ⟨(privateGeometry s).sourceRegion i, List.mem_append_left _ (rd _ ?_), Region.contains_self _ _⟩
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact List.mem_cons_self
@@ -78,12 +77,11 @@ theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract 
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self)))))
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self))))))
     · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self)))))))
-  · rw [wr]
-    exact ⟨_, by simp [privateGeometry, byteAddr, argumentPointer], Region.contains_self _ _⟩
-  · rw [wr]
-    exact ⟨_, by simp [privateGeometry, byteAddr, argumentPointer], Region.contains_self _ _⟩
+  · exact ⟨_, outW, Region.contains_self _ _⟩
+  · exact ⟨_, wsW, Region.contains_self _ _⟩
   · rw [privateGeometry_arguments s stackFit argFit]
-    exact ⟨_, List.mem_append_right _ (by rw [wr]; simp), Region.contains_self _ _⟩
+    obtain ⟨r, hr, hc⟩ := argsW
+    exact ⟨r, List.mem_append_right _ hr, hc⟩
   · intro j hj
     have address : byteAddr (privateGeometry s).stack + BitVec.ofNat 64 (VG.Impl.Rsa.X86.PrivChecked.frameBytes + 20 + 4 * j) = argAddr s j := by
       rw [← Offset.add_add]
@@ -120,4 +118,8 @@ theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract 
     · exact belowRet.sub_right geometry.calleeSub
     · exact retOut
     · exact retWs
+
+theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract abi stackBytes).pre s) :
+    PrivFnInput (privateGeometry s) (privateBytes s) s :=
+  (private_abi_entry s (privateABI_of h)).ready
 end VG.Proof.Rsa.X86.PrivChecked

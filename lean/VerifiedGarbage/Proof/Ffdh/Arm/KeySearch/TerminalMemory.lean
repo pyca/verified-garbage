@@ -17,7 +17,7 @@ open VG VG.Arm VG.Proof.Mont
 theorem highStore_low (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}
     (hi : i < 16) (hj : j < 16) :
     lowWord (m.writeW (off (State.addr base) (8 * i + 4)) v) base j = lowWord m base j :=
-  Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ (by omega_using []) (by omega_using [hj]) (by omega_using [hi])) (by decide)
 
 theorem highStore_high (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}
     (hi : i < 16) (hj : j < 16) :
@@ -28,7 +28,7 @@ theorem highStore_high (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}
     rw [ite_eq_left rfl]
     exact Mem.readW_writeW_self32 _ _ _
   · rw [ite_eq_right eq]
-    exact Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+    exact Mem.readW_writeW_sep (Offset.sep _ (by omega_using [eq]) (by omega_using [hj]) (by omega_using [hi])) (by decide)
 
 theorem terminalMem_low (m : Mem) (base : BitVec 32) (status : BitVec 32) (j : Nat) (hj : j < 16) :
     lowWord (terminalMem m base status) base j =
@@ -50,9 +50,9 @@ theorem terminalMem_high (m : Mem) (base : BitVec 32) (status : BitVec 32) (j : 
     (terminalMem m base status).readW (off (State.addr base) (8 * j + 4)) 32 =
       if j = 3 then 0 else m.readW (off (State.addr base) (8 * j + 4)) 32 := by
   unfold terminalMem
-  rw [highWord_store (i := 14) _ _ _ (by decide) (by omega),
-    highStore_high (i := 3) _ _ _ (by decide) (by omega),
-    highWord_writeLow _ _ _ (by simp) j (by omega)]
+  rw [highWord_store (i := 14) _ _ _ (by decide) (by omega_using [hj]),
+    highStore_high (i := 3) _ _ _ (by decide) (by omega_using [hj]),
+    highWord_writeLow _ _ _ (by simp) j (by omega_using [hj])]
   rfl
 
 theorem terminalMem_frame (m : Mem) (base : BitVec 32) (status : BitVec 32) :
@@ -75,9 +75,9 @@ theorem requestMem_high (m : Mem) (base : BitVec 32) (j : Nat) (hj : j < 16) :
     (requestMem m base).readW (off (State.addr base) (8 * j + 4)) 32 =
       if j = 3 then 0 else m.readW (off (State.addr base) (8 * j + 4)) 32 := by
   unfold requestMem
-  rw [highWord_store (i := 14) _ _ _ (by decide) (by omega),
-    highStore_high (i := 3) _ _ _ (by decide) (by omega),
-    highWord_writeLow _ _ _ (by simp) j (by omega)]
+  rw [highWord_store (i := 14) _ _ _ (by decide) (by omega_using [hj]),
+    highStore_high (i := 3) _ _ _ (by decide) (by omega_using [hj]),
+    highWord_writeLow _ _ _ (by simp) j (by omega_using [hj])]
   rfl
 
 theorem requestMem_frame (m : Mem) (base : BitVec 32) :

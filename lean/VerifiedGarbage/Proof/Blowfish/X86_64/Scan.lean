@@ -54,7 +54,7 @@ theorem word_low (a : BitVec 128) {i : Nat} (hi : i < 8) :
   simp only [getLsbD_word, BitVec.getLsbD_and, decide_eq_true hj, Bool.true_and, byte,
     BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ofNat]
   by_cases h : j < 8
-  · simp [h, show 8 * (2 * i) + j = 16 * i + j by omega]
+  · simp [h, show 8 * (2 * i) + j = 16 * i + j by omega_using []]
     rw [show (255 : Nat) = 2 ^ 8 - 1 by rfl, Nat.testBit_two_pow_sub_one]; simp [h]
   · simp only [h, decide_false, Bool.false_and]
     rw [show (255 : Nat) = 2 ^ 8 - 1 by rfl, Nat.testBit_two_pow_sub_one]; simp [h]
@@ -64,12 +64,12 @@ theorem word_mask (x : Byte) (k : Nat) (hk : k < 256) :
     ((BitVec.ofNat 16 k ^^^ x.setWidth 16) - 1).sshiftRight 15 =
       if x.toNat = k then BitVec.allOnes 16 else 0 := by
   have e : BitVec.ofNat 16 k = (BitVec.ofNat 8 k).setWidth 16 := by
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_using [hk]
   rw [e, BitVec.xor_comm, mask_eq]
   congr 1
   apply propext; constructor
-  · intro h; rw [h, BitVec.toNat_ofNat]; omega
-  · intro h; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega
+  · intro h; rw [h, BitVec.toNat_ofNat]; omega_using [hk]
+  · intro h; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega_using [h]
 
 /-- The byte mask of a row's word. -/
 def byteMask (x k : Nat) : BitVec 16 :=
@@ -85,31 +85,31 @@ theorem row_acc (p : Nat → Byte) (x : Byte) {r : Nat} (data mE : BitVec 128)
   rw [word_por, word_pand, hE w hw, scanAcc, scanAcc, word_ofWords _ hw, word_ofWords _ hw]
   have lo : word data w &&& 255#16 = (p (16 * r + 2 * w)).setWidth 16 := by
     have h := word_low data hw
-    rw [word_pand, wordsOf, word_ofWords _ hw, hd _ (by omega)] at h
+    rw [word_pand, wordsOf, word_ofWords _ hw, hd _ (by omega_using [hw])] at h
     exact h
   have hi : word data w &&& 65280#16 = (p (16 * r + (2 * w + 1))).setWidth 16 <<< 8 := by
-    rw [← hd _ (by omega)]
+    rw [← hd _ (by omega_using [hw])]
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_and, getLsbD_word, byte, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> exact congrArg _ (by omega)
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> exact congrArg _ (by omega_using [])
   by_cases h1 : x.toNat = 16 * r + 2 * w
-  · rw [byteMask, ite_eq_left h1, ite_eq_right (show ¬ x.toNat = 16 * r + 2 * w + 1 by omega),
+  · rw [byteMask, ite_eq_left h1, ite_eq_right (show ¬ x.toNat = 16 * r + 2 * w + 1 by omega_using [h1]),
       BitVec.or_zero, lo,
-      ite_eq_right (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega),
-      ite_eq_left (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega)]
-    rw [show x.toNat % 2 = 0 by omega, h1]
+      ite_eq_right (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega_using [h1]),
+      ite_eq_left (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega_using [hw, h1])]
+    rw [show x.toNat % 2 = 0 by omega_using [h1], h1]
     simp
   · by_cases h2 : x.toNat = 16 * r + 2 * w + 1
     · rw [byteMask, ite_eq_right h1, ite_eq_left h2, BitVec.zero_or, hi,
-        ite_eq_right (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega),
-        ite_eq_left (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega)]
-      rw [show x.toNat % 2 = 1 by omega, h2]
+        ite_eq_right (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega_using [h2]),
+        ite_eq_left (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega_using [hw, h2])]
+      rw [show x.toNat % 2 = 1 by omega_using [h2], h2]
       simp [Nat.add_assoc]
     · rw [byteMask, ite_eq_right h1, ite_eq_right h2, BitVec.or_zero, BitVec.and_zero, BitVec.or_zero]
       by_cases h3 : x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w
-      · rw [itT _ _ h3, itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega)]
-      · rw [itF _ _ h3, itF _ _ (show ¬ (x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w) by omega)]
+      · rw [itT _ _ h3, itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega_using [h3])]
+      · rw [itF _ _ h3, itF _ _ (show ¬ (x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w) by omega_using [h1, h2, h3])]
 
 end VG.Proof.Blowfish.X86_64

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Disjoint regions of the address space, as bounds on their addresses -/
 
@@ -18,20 +19,20 @@ theorem disjoint_bounds {a b : Addr} {n k : Nat}
       rw [BitVec.toNat_sub]
       have := a.isLt
       have := b.isLt
-      omega
+      omega_using [bad, order]
     · change (b - b).toNat + 1 ≤ k
       rw [BitVec.sub_self]
       change 0 + 1 ≤ k
-      omega
+      omega_using [otherPositive]
   · apply D a
     · change (a - a).toNat + 1 ≤ n
       rw [BitVec.sub_self]
       change 0 + 1 ≤ n
-      omega
+      omega_using [positive]
     · change (a - b).toNat + 1 ≤ k
       rw [BitVec.toNat_sub]
       have := a.isLt
       have := b.isLt
-      omega
+      omega_using [bad, order]
 
 end VG.Proof.RsaKeyGen.X86.Key

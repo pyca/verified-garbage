@@ -58,8 +58,8 @@ theorem loadMoves_ok {s : State} (hok : Ok loadCfg s) :
   refine ⟨s', hs', fun w hw => ?_, p.rd, p.wr, fun r hr => p.other r ?_, p.frame⟩
   · have := List.all_eq_true.mp hpost w (List.mem_range.mpr hw)
     simp only [Bool.and_eq_true, beq_iff_eq] at this
-    have h1 := p.rel.slot _ _ (by simp [loadCfg]; omega) this.1
-    have h2 := p.rel.slot _ _ (by simp [loadCfg]; omega) this.2
+    have h1 := p.rel.slot _ _ (by simp [loadCfg]; omega_using [hw]) this.1
+    have h2 := p.rel.slot _ _ (by simp [loadCfg]; omega_using [hw]) this.2
     simp only [NameRel, loadCfg, hb] at h1 h2
     exact ⟨by simp only [Q, hb]; exact h1, by simp only [Q, hb]; exact h2⟩
   · have : (loadMoves.all fun i => i.dst != some r) = true := by
@@ -99,7 +99,7 @@ theorem storeMoves_ok {s : State} (hok : Ok storeCfg s) :
   refine ⟨s', hs', fun k hk => ?_, p.rd, p.wr, fun r hr => p.other r ?_, p.frame⟩
   · have := List.all_eq_true.mp hpost k (List.mem_range.mpr hk)
     simp only [beq_iff_eq] at this
-    have h := p.rel.slot k k (by simp [storeCfg]; omega) this
+    have h := p.rel.slot k k (by simp [storeCfg]; omega_using [hk]) this
     simp only [NameRel, storeCfg, hb] at h
     exact h
   · have : (storeMoves.all fun i => i.dst != some r) = true := by
@@ -167,15 +167,15 @@ section
 variable {s₀ : State} {B S : BitVec 32} {R : Nat} {w : List Byte} (hk : KSetup s₀ B S R w)
 include hk
 
-theorem KSetup.hR : R ≤ 14 := by rcases hk.rounds with h | h | h <;> omega
+theorem KSetup.hR : R ≤ 14 := by rcases hk.rounds with h | h | h <;> omega_using [h]
 
 /-- The key frame is within the scratch buffer, and so apart from the schedule and the arguments. -/
 theorem KSetup.frame_sub : ∀ r ∈ keyFrame B, Region.Sub r (reg32 B 2048) := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact Region.sub_prefix (by omega)
-  · exact part_sub_reg hk.fitB (by omega)
+  · exact Region.sub_prefix (by omega_using [])
+  · exact part_sub_reg hk.fitB (by omega_using [])
 
 theorem KSetup.arg {s : State} (hf : Frame (keyFrame B) s₀.mem s.mem) {i : Nat} (hi : i < 2) :
     s.mem.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 = s₀.mem.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 :=
@@ -184,7 +184,7 @@ theorem KSetup.arg {s : State} (hf : Frame (keyFrame B) s₀.mem s.mem) {i : Nat
 
 theorem KSetup.sched {s : State} (hf : Frame (keyFrame B) s₀.mem s.mem) {i : Nat} (hi : i < 240) :
     s.mem (addr S i) = s₀.mem (addr S i) :=
-  hf _ fun r hr hc => hk.sep _ (reg_contains hk.fitS (by omega) (by decide))
+  hf _ fun r hr hc => hk.sep _ (reg_contains hk.fitS (by omega_using [hi]) (by decide))
     (hk.frame_sub r hr _ hc)
 
 theorem KSetup.linOk {s : State} (hb : s.gpr sb = B) (hwr : s.wr = s₀.wr) (hrd : s.rd = s₀.rd) :
@@ -390,7 +390,7 @@ theorem keyLoop_ok {s : State} (hi : KInv s₀ B R w R s) :
   refine WP.mono (keyBody_ok hk hs) fun s' h => ?_
   rcases h with ⟨_, hcf, hd⟩ | ⟨hn, hcf, hi'⟩
   · exact .inl ⟨by simp [X86.eval, hcf], hd⟩
-  · exact .inr ⟨by simp [X86.eval, hcf], n - 1, by omega, hi'⟩
+  · exact .inr ⟨by simp [X86.eval, hcf], n - 1, by omega_using [hn], hi'⟩
 
 end
 

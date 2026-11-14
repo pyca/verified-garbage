@@ -31,7 +31,7 @@ theorem vBits_ok (hc : CfgOk c) {s₀ s : State} {base : Addr} (h : Mid c s₀ b
       (VCombInput c s₀ base) := by
   have h7 := hc.n10
   refine WP.mono (bits_ok h.scr hc.n0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)
-    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega))) fun t ⟨b, k, o⟩ => ?_
+    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_using [this]))) fun t ⟨b, k, o⟩ => ?_
   have unch : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem t.mem := o.unch
   have v : ∀ {i}, i < 45 → sv c base t i = sv c base s i := fun hi =>
     sv_unch unch h7 h.scr.nowrap hi (apart_tbl hi 0)

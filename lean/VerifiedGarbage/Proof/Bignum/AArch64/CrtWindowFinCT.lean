@@ -42,23 +42,23 @@ theorem stage5_fa {p : CrtPub} {t : State} (h : Stage R5 p t) :
   have hpl2 := h.pl2
   have hql2 := h.ql2
   have hZq := h.wide
-  have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
-  have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega_using []
+  have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega_using []
   have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
   have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
-  have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega
-  have hwq := wsWords_le (len := p.ql) (w := (p.k + 7) / 8) (by omega) (by omega)
-  have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ32 at hZq; omega
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_using []
+  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega_using []
+  have hwq2 : 2 ≤ wsWords p.ql := by unfold wsWords; omega_using []
+  have hwq := wsWords_le (len := p.ql) (w := (p.k + 7) / 8) (by omega_using [hql2]) (by omega_using [hk1])
+  have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ32 at hZq; omega_using [hZq]
   unfold FA RowsPre
   dsimp only
   exact ⟨⟨minv, hr.good, hZ⟩, ⟨hr.good.scr, hr.good.x0, hr.good.hdr.harr aAcc (by decide), hr.wsP, hr.wsQ,
       by rw [← word_off]; exact hr.pws.hdr.hw, by rw [← word_off]; exact hr.qws.hdr.hw,
       by rw [← word_off, hr.pws.hdr.harr _ (by decide), off_off],
       by rw [← word_off, hr.qws.hdr.harr _ (by decide), off_off], by decide, Nat.le_refl _,
-      by unfold offQ32 offP; omega, by omega⟩,
-    by rw [← word_off, hr.qws.hdr.harr _ (by decide), off_off], by omega, hwq, by omega⟩
+      by unfold offQ32 offP; omega_using [], by omega_using [hZq]⟩,
+    by rw [← word_off, hr.qws.hdr.harr _ (by decide), off_off], by omega_using [hwq2], hwq, by omega_using [hk2]⟩
 
 /-- `finishSum` leaves what the store needs. -/
 theorem finSum_out {p : CrtPub} {t₂ : State} (h : Stage R5 p t₂) :
@@ -71,22 +71,22 @@ theorem finSum_out {p : CrtPub} {t₂ : State} (h : Stage R5 p t₂) :
   have hpl2 := h.pl2
   have hpl1 := h.pl1
   have hZq := h.wide
-  have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega
-  have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega
+  have htp : tabBytes (wsWords p.pl) ≤ tabBytes32 (wsWords p.pl) := by unfold tabBytes tabBytes32; omega_using []
+  have htq : tabBytes (wsWords p.ql) ≤ tabBytes32 (wsWords p.ql) := by unfold tabBytes tabBytes32; omega_using []
   have ewp : wsTab (wsWords p.pl) = tabBytes32 (wsWords p.pl) := rfl
   have ewq : wsTab (wsWords p.ql) = tabBytes32 (wsWords p.ql) := rfl
   have hn := hr.good.scr.nowrap
-  have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega
-  have hwp := wsWords_le (len := p.pl) (w := (p.k + 7) / 8) (by omega) (by omega)
-  have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ32 at hZq; omega
+  have hwp2 : 2 ≤ wsWords p.pl := by unfold wsWords; omega_using []
+  have hwp := wsWords_le (len := p.pl) (w := (p.k + 7) / 8) (by omega_using [hpl2]) (by omega_using [hk1])
+  have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ32 at hZq; omega_using [hZq]
   refine WP.mono (finishSum_ok hr.good (by unfold CrtPub.w at hw; omega) hr.wsP hr.wsQ
     (by rw [← word_off]; exact hr.pws.hdr.hw) (by rw [← word_off]; exact hr.qws.hdr.hw)
     (by rw [← word_off, hr.pws.hdr.harr _ (by decide), off_off]) (by rw [← word_off, hr.qws.hdr.harr _ (by decide), off_off])
-    (by rw [← word_off, hr.qws.hdr.harr _ (by decide), off_off]) (Nat.le_refl _) (by unfold offQ32 offP; omega) (by dsimp only [CrtPub.w]; omega)
-    (by omega) hwp (by omega) hwq') fun t₃ ⟨_, ho₃, k₃⟩ => ?_
+    (by rw [← word_off, hr.qws.hdr.harr _ (by decide), off_off]) (Nat.le_refl _) (by unfold offQ32 offP; omega_using [ewp]) (by dsimp only [CrtPub.w]; omega_using [hZq, ewq])
+    (by omega_using [hwp2]) hwp (by omega_using [hwq]) hwq') fun t₃ ⟨_, ho₃, k₃⟩ => ?_
   have hacc := accs_le ((p.k + 7) / 8)
   have hb₃ : ∀ i < 32, word t₃.mem p.B (8 * i) = word t₂.mem p.B (8 * i) := fun i hi =>
-    ho₃.word (Or.inl (by have := hdr_lt_slot ((p.k + 7) / 8) Public.aAcc hi; omega)) (by omega)
+    ho₃.word (Or.inl (by have := hdr_lt_slot ((p.k + 7) / 8) Public.aAcc hi; omega)) (by omega_using [hi])
   have hfx : ∀ i < 32, hFixed i = true → word t₃.mem p.B (8 * i) = word σ.mem p.B (8 * i) := fun i hi hf => by
     rw [hb₃ i hi]; exact hr.hfix i hi hf
   have k03 := hr.keep.trans k₃
@@ -94,8 +94,8 @@ theorem finSum_out {p : CrtPub} {t₂ : State} (h : Stage R5 p t₂) :
   dsimp only
   exact ⟨minv, p.mask xb pb qb qib, ⟨hr.good.scr.congr k₃.wr, (k₃.gpr .x0 (by decide)).trans hr.good.x0,
       ⟨(hb₃ _ (by decide)).trans hr.good.hdr.hw, (hb₃ _ (by decide)).trans hr.good.hdr.hminv,
-        fun j hj => (hb₃ _ (by unfold sArr; omega)).trans (hr.good.hdr.harr j hj)⟩⟩, rfl, hZ, by omega,
-    by omega, by rw [hfx _ (by decide) (by decide)]; exact h.hO, by rw [hfx _ (by decide) (by decide)]; exact h.hK,
+        fun j hj => (hb₃ _ (by unfold sArr; omega_using [hj])).trans (hr.good.hdr.harr j hj)⟩⟩, rfl, hZ, by omega_using [hk1],
+    by omega_using [hk2], by rw [hfx _ (by decide) (by decide)]; exact h.hO, by rw [hfx _ (by decide) (by decide)]; exact h.hK,
     by rw [hb₃ _ (by decide)]; exact hr.msk, fun j hj => by rw [k03.wr]; exact h.out j hj, h.outSep⟩
 
 /-- `finish` leaks the same in runs that agree on the public data. -/

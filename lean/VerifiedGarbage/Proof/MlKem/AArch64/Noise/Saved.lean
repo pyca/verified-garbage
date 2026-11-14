@@ -24,7 +24,7 @@ theorem Saved.frame {p : Addr} {s : State} {m m' : Mem} (h : Saved p s m)
   rw [hf.readW (r := savedR p) (by
     change (Region.mk (p + BitVec.ofNat 64 1800) 48).Contains _ 8
     rw [BitVec.ofNat_add, ← BitVec.add_assoc]
-    exact Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+    exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)]
   exact h i hi
 
 theorem saves_ok {s : State} {p : Addr} (hp : s.gpr .x2 = p)

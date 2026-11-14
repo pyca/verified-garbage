@@ -67,7 +67,7 @@ include L
 theorem Lay.sp16 : 16 ≤ (s.gpr .rsp - 8).toNat := by
   have := L.sp32
   rw [BitVec.toNat_sub, show (8 : BitVec 64).toNat = 8 from rfl]
-  omega
+  omega_using [this]
 
 theorem Lay.ret8 {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
     Region.Disjoint ⟨s.gpr .rsp - 8, 8⟩ ⟨pa s p, l⟩ := by
@@ -90,7 +90,7 @@ theorem Lay.stk16 {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
 theorem Lay.sp24 : 24 ≤ (s.gpr .rsp - 8).toNat := by
   have := L.sp32
   rw [BitVec.toNat_sub, show (8 : BitVec 64).toNat = 8 from rfl]
-  omega
+  omega_using [this]
 
 theorem Lay.stk24 {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
     Region.Disjoint ⟨s.gpr .rsp - 8 - 24, 24⟩ ⟨pa s p, l⟩ := by
@@ -98,16 +98,16 @@ theorem Lay.stk24 {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) :
   intro x hx
   simp only [Region.Contains] at hx ⊢
   rw [show x - (s.gpr .rsp - BitVec.ofNat 64 32) = x - (s.gpr .rsp - 8 - 24) by bv_omega]
-  omega
+  omega_using [hx]
 
 theorem Lay.wbytes {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (v : BitVec 64) :
     ∀ i < l, (s.mem.writeW (s.gpr .rsp - 8) v) (pa s p + BitVec.ofNat 64 i) = s.mem (pa s p + BitVec.ofNat 64 i) :=
   fun i hi => Frame.bytes (rs := [below (s.gpr .rsp) 8])
-    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega)))
+    (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega_using []) (by omega_using [])))
     (R := ⟨pa s p, l⟩) (by
       simp only [List.mem_singleton, forall_eq]
-      exact ((L.stkD h).sub_left (below_sub (by omega) (by omega))).symm)
-    (by have := L.nwp h; simp; omega) hi
+      exact ((L.stkD h).sub_left (below_sub (by omega_using []) (by omega_using []))).symm)
+    (by have := L.nwp h; simp; omega_using [this]) hi
 
 theorem Lay.wbytesAt {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (v : BitVec 64) :
     bytesAt (s.mem.writeW (s.gpr .rsp - 8) v) (pa s p) l = bytesAt s.mem (pa s p) l :=
@@ -129,7 +129,7 @@ theorem Lay.whintAt {p : Ptr} (h : inB (rbs ++ wbs) p 1024 = true) (v : BitVec 6
     hintAt (s.mem.writeW (s.gpr .rsp - 8) v) (pa s p) 1 = hintAt s.mem (pa s p) 1 := by
   unfold hintAt
   refine List.map_congr_left fun i hi => ?_
-  have : i = 0 := by rw [List.mem_range] at hi; omega
+  have : i = 0 := by rw [List.mem_range] at hi; omega_using [hi]
   subst this
   apply Vector.ext
   intro j hj
@@ -170,10 +170,10 @@ theorem Args.rsp {as : List (Reg × Arg)} {s s1 : State} (h : Args as s s1) : s1
   h.2.gpr (by decide)
 
 theorem imm32 {v : Nat} (h : v < 2 ^ 32) : (BitVec.setWidth 32 (BitVec.ofNat 64 v)).toNat = v := by
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
 
 theorem imm64 {v : Nat} (h : v < 2 ^ 64) : (BitVec.ofNat 64 v).toNat = v := by
-  simp only [BitVec.toNat_ofNat]; omega
+  simp only [BitVec.toNat_ofNat]; omega_using [h]
 
 /-- Two states whose layout registers and stack pointer agree. -/
 def SameB (x y : State) : Prop := (∀ r ∈ bases, x.gpr r = y.gpr r) ∧ x.gpr .rsp = y.gpr .rsp
@@ -190,7 +190,7 @@ theorem Lay.ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) : L
 theorem ptr_ok {bs : List (Reg × Nat)} (L : LayOk bs) {p : Ptr} {l : Nat}
     (h : inB bs p l = true) : (Arg.ptr p).Ok := by
   obtain ⟨n, hn, hl⟩ := inB_spec h
-  refine ⟨by have := (L _ hn).1; simp only at this; omega, fun h' => ?_⟩
+  refine ⟨by have := (L _ hn).1; simp only at this; omega_using [hl, this], fun h' => ?_⟩
   have := (L _ hn).2
   simp only at this
   revert h' this

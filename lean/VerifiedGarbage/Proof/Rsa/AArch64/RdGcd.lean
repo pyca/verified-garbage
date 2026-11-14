@@ -1,18 +1,24 @@
 module
--- separate module: the GCD's proof, which alone needs `InvLaw`'s inverse, builds beside the products'
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RdHead
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.AArch64.Div
 public import VerifiedGarbage.Proof.Rsa.AArch64.InvLaw
+public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Rsa.AArch64.RdPieces
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 
 /-!
 # `vg_rsa_recover_primes_det` on AArch64: the GCD
 
-`gcd_ok`: `gcd(u, x)` for the odd `u`, by the inverse modulo `u` (`InvLaw`),
-or 1 for `u = 1`, into `u`'s array and its copy (narrow array 7).
+`gcd_ok`, from `GcdLaw` (`InvLaw.lean`; `InvBatch.lean` proves it with gcd-only batches of
+divsteps): `gcd(u, x)` for the odd `u`, or 1 for `u = 1`, into `u`'s array and its copy
+(narrow array 7).
 -/
 
 @[expose] public section
@@ -35,12 +41,12 @@ theorem gcd_keep {B : Addr} {v : Nat} {m m' : Mem} (hb : slot v 32 ≤ 2 ^ 64)
   have s13 := slot_lt (w := v) (show 13 < 32 by decide)
   have e : slot (2 * v + 2) wX = slot v 12 := slot_wide _ _
   have e13 : slot v 13 = slot v 12 + 8 * (v + 2) := slot_succ v 12
-  refine ⟨F.wv_eq ?_ (by omega), F.wv_eq ?_ (by omega), F.wv_eq ?_ (by omega)⟩ <;>
+  refine ⟨F.wv_eq ?_ (by omega_using [hb, s0]), F.wv_eq ?_ (by omega_using [hb, s1]), F.wv_eq ?_ (by omega_using [hb, s13, e, e13])⟩ <;>
   · simp only [ar, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
     all_goals first
-      | exact rd_sep (by decide) (by omega) (by omega)
-      | exact wn_sep (by decide) (by decide) (by omega) (by omega)
+      | exact rd_sep (by decide) (by omega_using []) (by omega_using [])
+      | exact wn_sep (by decide) (by decide) (by omega_using []) (by omega_using [])
 
 theorem gcd_one_or {U X g : Nat} (h : U = 1 ∨ g = Nat.gcd X U) :
     (if decide (U = 1) then 1 else g) = Nat.gcd U X := by
@@ -49,7 +55,7 @@ theorem gcd_one_or {U X g : Nat} (h : U = 1 ∨ g = Nat.gcd X U) :
   · simp only [e, decide_false, Bool.false_eq_true, ↓reduceIte]; rw [h.resolve_left e, Nat.gcd_comm]
 
 /-- `gcd`: `gcd(u, x)` into narrow arrays 2 and 7, for an odd `u`. -/
-theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I)
+theorem gcd_ok [GcdLaw gcdB] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I)
     {U X : Nat} (hU : wv s.mem I.B (slot (vk I.k) nU) (vk I.k) = U) (hodd : U % 2 = 1)
     (hX : wv s.mem I.B (slot (vk I.k) nXn) (vk I.k) = X)
     (hz : word s.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0)
@@ -57,10 +63,10 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
     WP isa gcd s fun t => G I m₀ (vk I.k) c t ∧ wv t.mem I.B (slot (vk I.k) gT) (vk I.k) = Nat.gcd U X ∧
       word t.mem I.B (slot (vk I.k) gT + 8 * vk I.k) = 0 ∧
       Frm I.B [ar (vk I.k) 2, ar (vk I.k) 3, ar (vk I.k) 4, ar (vk I.k) 5, ar (vk I.k) 6, ar (vk I.k) 7] s.mem t.mem := by
-  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega
+  have hv1 : 1 ≤ vk I.k := by have := L.k1; simp only [vk]; omega_using []
   have hb32 : slot (vk I.k) 32 ≤ 2 ^ 64 := by
     have := h.bndv L (j := 31) (k := vk I.k + 2) (by decide) (Nat.le_refl _)
-    have : slot (vk I.k) 32 = _ := slot_succ (vk I.k) 31; omega
+    have : slot (vk I.k) 32 = _ := slot_succ (vk I.k) 31; omega_arith
   have s1 := slot_lt (w := vk I.k) (show nOne < 32 by decide)
   have s2 := slot_lt (w := vk I.k) (show nU < 32 by decide)
   have s3 := slot_lt (w := vk I.k) (show nXn < 32 by decide)
@@ -69,8 +75,9 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
   have s6 := slot_lt (w := vk I.k) (show gX₂ < 32 by decide)
   have s7 := slot_lt (w := vk I.k) (show gT < 32 by decide)
   have one' : wv s.mem I.B (slot (vk I.k) nOne) (vk I.k) = 1 := by
-    rw [wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [one]; exact Nat.one_lt_two_pow (by omega)), one]
-  have e : gcd = seqs ([zeroA gM, copyA gM nU] ++ (oneA gX₁ ++ ([zeroA gX₂, inverse nXn nU gX₁ gX₂ gM gT] ++
+    rw [wv_low_of_lt (w := vk I.k + 2) (by omega_using []) (by rw [one]; exact Nat.one_lt_two_pow (by omega_using [hv1])), one]
+  have e : gcd = seqs ([zeroA gM, copyA gM nU] ++ (oneA gX₁ ++ ([zeroA gX₂, .seq (.block (ws ++ [.lsr .x .x3 .x12 21]))
+      (.ite (.zero .x .x3) (gcdB nU nXn gM) (inverseBits nXn nU gX₁ gX₂ gM gT))] ++
       (eqA gM nOne ++ [.block zeroMask, selA nU nOne, zeroA gT, copyA gT nU])))) := by
     simp only [gcd, List.append_assoc]
   rw [e]
@@ -81,8 +88,8 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
   have g₁ := h.out (by decide) (Nat.le_refl _) o₁ k₁ (by decide)
   refine WP.mono (copyA_ok g₁.ws (o := gM) (a := nU) (by decide) (by decide) (by decide))
     fun s₂ ⟨v₂, o₂, _, _, k₂⟩ => ?_
-  have g₂ := g₁.out (by decide) (by omega) o₂ k₂ (by decide)
-  rw [o₁.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), hU] at v₂
+  have g₂ := g₁.out (by decide) (by omega_using []) o₂ k₂ (by decide)
+  rw [o₁.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]), hU] at v₂
   -- `x₁ := 1`, `x₂ := 0`.
   refine wp_seqs_append (by simp [oneA]) (by simp) (WP.mono (oneA_ok g₂ (j := gX₁) (by decide))
     fun s₃ ⟨g₃, v₃, o₃, k₃⟩ => ?_)
@@ -92,34 +99,34 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
   have g₄ := g₃.out (by decide) (Nat.le_refl _) o₄ k₄ (by decide)
   -- The inverse's inputs.
   have uM : wv s₄.mem I.B (slot (vk I.k) gM) (vk I.k) = U := by
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), v₂]
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s4]), v₂]
   have uU : wv s₄.mem I.B (slot (vk I.k) nU) (vk I.k) = U := by
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₁.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), hU]
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
+      o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
+      o₁.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]), hU]
   have xX : wv s₄.mem I.B (slot (vk I.k) nXn) (vk I.k) = X := by
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₁.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), hX]
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₁.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]), hX]
   have zX : word s₄.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0 := by
-    rw [o₄.word (wd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.word (wd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.word (wd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₁.word (wd_sep (by decide) (by omega) (by omega)) (by omega), hz]
+    rw [o₄.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₃.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₂.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]),
+      o₁.word (wd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s3]), hz]
   have x1 : wv s₄.mem I.B (slot (vk I.k) gX₁) (vk I.k) = 1 := by
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [v₃]; exact Nat.one_lt_two_pow (by omega)), v₃]
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s5]),
+      wv_low_of_lt (w := vk I.k + 2) (by omega_using []) (by rw [v₃]; exact Nat.one_lt_two_pow (by omega_using [hv1])), v₃]
   have x2 : wv s₄.mem I.B (slot (vk I.k) gX₂) (vk I.k) = 0 := by
-    rw [wv_low_of_lt (w := vk I.k + 2) (by omega) (by rw [z₄]; exact Nat.two_pow_pos _), z₄]
+    rw [wv_low_of_lt (w := vk I.k + 2) (by omega_using []) (by rw [z₄]; exact Nat.two_pow_pos _), z₄]
   have one₄ : wv s₄.mem I.B (slot (vk I.k) nOne) (vk I.k) = 1 := by
-    rw [o₄.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₃.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₂.wv (rd_sep (by decide) (by omega) (by omega)) (by omega),
-      o₁.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), one']
-  refine (WP.mono (InvLaw.inverse_ok g₄.ws (iU := nXn) (iV := nU) (iX₁ := gX₁) (iX₂ := gX₂) (iM := gM) (iT := gT)
+    rw [o₄.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s1]),
+      o₃.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s1]),
+      o₂.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s1]),
+      o₁.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s1]), one']
+  refine (WP.mono (GcdLaw.gcdW_ok g₄.ws (iU := nXn) (iV := nU) (iX₁ := gX₁) (iX₂ := gX₂) (iM := gM) (iT := gT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) zX (by rw [uU, uM]) x1 x2) fun s₅ ⟨_, f₅, k₅, hinv⟩ => ?_)
@@ -138,15 +145,15 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
       · exact rd_sep b hk (Nat.le_refl _)
       · exact rd_sep c' hk (Nat.le_refl _)
       · exact rd_sep d hk (Nat.le_refl _)
-      · exact rd_sep e hk (Nat.le_refl _)) (by have := slot_lt (w := vk I.k) hj; omega)
+      · exact rd_sep e hk (Nat.le_refl _)) (by have := slot_lt (w := vk I.k) hj; omega_using [hb32, hk, this])
   have uM₅ : wv s₅.mem I.B (slot (vk I.k) gM) (vk I.k) = U := by
-    rw [f5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega), uM]
+    rw [f5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega_using []), uM]
   have one₅ : wv s₅.mem I.B (slot (vk I.k) nOne) (vk I.k) = 1 := by
-    rw [f5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega), one₄]
+    rw [f5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega_using []), one₄]
   have hg : U = 1 ∨ wv s₅.mem I.B (slot (vk I.k) nU) (vk I.k) = Nat.gcd X U := by
     by_cases e1 : U = 1
     · exact .inl e1
-    · right; rw [uM, xX] at hinv; exact (hinv hodd (by omega)).1
+    · right; rw [uM, xX] at hinv; exact hinv hodd (by omega_using [hodd, e1])
   -- `u = 1`.
   refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok g₅.ws (a := gM) (b := nOne) (by decide) (by decide))
     fun s₆ ⟨h9, m₆, _, _, k₆⟩ => ?_)
@@ -159,15 +166,15 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
   rw [e15] at h15
   refine WP.seq (WP.mono (selA_ok g₇.ws (o := nU) (a := nOne) (by decide) (by decide) (by decide) h15)
     fun s₈ ⟨v₈, o₈, k₈⟩ => ?_)
-  have g₈ := g₇.out (by decide) (by omega) o₈ k₈ (by decide)
+  have g₈ := g₇.out (by decide) (by omega_using []) o₈ k₈ (by decide)
   rw [m₇, m₆, one₅, gcd_one_or hg] at v₈
   refine WP.seq (WP.mono (zeroA_ok g₈.ws (j := gT) (by decide)) fun s₉ ⟨z₉, o₉, _, _, _, k₉⟩ => ?_)
   have g₉ := g₈.out (by decide) (Nat.le_refl _) o₉ k₉ (by decide)
   refine WP.mono (copyA_ok g₉.ws (o := gT) (a := nU) (by decide) (by decide) (by decide))
-    fun t ⟨v₁₀, o₁₀, _, _, k₁₀⟩ => ⟨g₉.out (by decide) (by omega) o₁₀ k₁₀ (by decide), ?_, ?_, ?_⟩
-  · rw [v₁₀, o₉.wv (rd_sep (by decide) (by omega) (by omega)) (by omega), v₈]
-  · rw [o₁₀.word (.inr (by omega)) (by omega)]
-    exact (wv_eq_zero_iff _ _ _ _).mp z₉ (vk I.k) (by omega)
+    fun t ⟨v₁₀, o₁₀, _, _, k₁₀⟩ => ⟨g₉.out (by decide) (by omega_using []) o₁₀ k₁₀ (by decide), ?_, ?_, ?_⟩
+  · rw [v₁₀, o₉.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]), v₈]
+  · rw [o₁₀.word (.inr (by omega_using [])) (by omega_using [hb32, s7])]
+    exact (wv_eq_zero_iff _ _ _ _).mp z₉ (vk I.k) (by omega_using [])
   · intro x hx
     have a2 := hx (ar (vk I.k) nU) (.head _)
     have a4 := hx (ar (vk I.k) gM) (.tail _ (.tail _ (.head _)))
@@ -175,7 +182,7 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
     have a6 := hx (ar (vk I.k) gX₂) (.tail _ (.tail _ (.tail _ (.tail _ (.head _)))))
     have a7 := hx (ar (vk I.k) gT) (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))))
     simp only at a2 a4 a5 a6 a7
-    rw [o₁₀ x (a7.imp id fun h => by omega), o₉ x a7, o₈ x (a2.imp id fun h => by omega), m₇, m₆,
+    rw [o₁₀ x (a7.imp id fun h => by omega_using [hv1, s1, s2, s3, s4, s5, s6, s7, a2, a4, a5, a6, a7, h]), o₉ x a7, o₈ x (a2.imp id fun h => by omega_using [hv1, s1, s2, s3, s4, s5, s6, s7, a2, a4, a5, a6, a7, h]), m₇, m₆,
       f₅ x (fun r hr => hx r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -184,8 +191,6 @@ theorem gcd_ok [InvLaw] {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I 
         · exact .tail _ (.tail _ (.tail _ (.head _)))
         · exact .tail _ (.tail _ (.tail _ (.tail _ (.head _))))
         · exact .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))))),
-      o₄ x a6, o₃ x a5, o₂ x (a4.imp id fun h => by omega), o₁ x a4]
-
-
+      o₄ x a6, o₃ x a5, o₂ x (a4.imp id fun h => by omega_using [hv1, s1, s2, s3, s4, s5, s6, s7, a2, a4, a5, a6, a7, h]), o₁ x a4]
 
 end VG.Proof.Rsa.AArch64.Rd

@@ -39,11 +39,11 @@ theorem precomputeProduct_ct (M : Mont) : RelCT isa (Two ProductReady) (Precompu
  refine RelCT.seq (two_post (Ψ:=ProductLoaded)
   (two_map productIO (fun _ _ h =>h.io) productLoad_ct) ?_) ?_
  · intro q s h
-   refine WP.mono (productLoad_ok h.2.basis.good h.2.space h.2.context h.2.index (by have := h.2.limit;have := Nat.two_pow_pos q.b;omega)) ?_
+   refine WP.mono (productLoad_ok h.2.basis.good h.2.space h.2.context h.2.index (by have := h.2.limit;have := Nat.two_pow_pos q.b;omega_arith)) ?_
    rintro t ⟨good,selected,frame,rest⟩
    have basis := h.2.basis.after_arrays good frame (by decide) (by decide) (by decide) (by decide)
    have state := h.2.after_arrays basis frame rest (by simp)
-   exact ⟨⟨h.1,state⟩,selected.trans (h.2.table q.j (by have := h.2.position;have := Nat.two_pow_pos q.b;omega))⟩
+   exact ⟨⟨h.1,state⟩,selected.trans (h.2.table q.j (by have := h.2.position;have := Nat.two_pow_pos q.b;omega_arith))⟩
  · refine RelCT.seq (two_post (Ψ:=ProductReady)
     (two_map productWs (fun q s h =>⟨q.p.mi,h.1.2.basis.good,q.p.room⟩)
      (M.ct (by simp [MmUse,Public.aY,Public.aX,Public.aXm]))) ?_) ?_
@@ -56,9 +56,9 @@ theorem precomputeProduct_ct (M : Mont) : RelCT isa (Two ProductReady) (Precompu
       (two_taint [.x0] ?_ (by taint_decide))
      · intro q s h
        have destination : q.j+2^q.b<32 := by
-        have bound : 2^q.b≤16 := Nat.pow_le_pow_right (by decide) (by have := h.2.tooth;omega : q.b≤4)
+        have bound : 2^q.b≤16 := Nat.pow_le_pow_right (by decide) (by have := h.2.tooth;omega_using [this] : q.b≤4)
         have := h.1
-        omega
+        omega_using [bound, this]
        refine WP.mono (productStore_ok h.2.basis.good h.2.space h.2.context h.2.index h.2.basisIndex destination) ?_
        rintro t ⟨good,_,_,_,_⟩
        exact good.x0

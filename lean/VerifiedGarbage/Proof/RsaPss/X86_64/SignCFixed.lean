@@ -38,6 +38,10 @@ theorem scFixed : SCFixed :=
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩⟩
 
+/-- The arguments of `vg_rsa_private_checked_precomputed`. -/
+theorem privArgsP_fixed : ∃ hc, (taint.check (pT 2 [] []) (.block privArgsP) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
 /-- Verification's. -/
 structure VCFixed : Prop where
   pro : ∃ hc, (taint.check (pT 1 [] [.rdi, .rsi, .rdx, .rcx, .r8, .r9])

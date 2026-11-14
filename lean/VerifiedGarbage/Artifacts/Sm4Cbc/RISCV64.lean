@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 
-/-! # SM4-CBC artifacts on baseline RISC-V -/
+/-! # SM4-CBC on RISC-V -/
 
 @[expose] public section
 

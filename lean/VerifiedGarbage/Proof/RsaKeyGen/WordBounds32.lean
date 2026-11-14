@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Narrowing a bounded integer represented by native 32-bit words -/
 
@@ -17,9 +18,9 @@ theorem low_eq {m : Mem} {B : Addr} {out small big : Nat} (width : small ≤ big
     by_cases h : val32 m B (out + 4 * small) (big - small) = 0
     · exact h
     · have ge := Nat.mul_le_mul_left (2 ^ (32 * small))
-        (show 1 ≤ val32 m B (out + 4 * small) (big - small) by omega)
+        (show 1 ≤ val32 m B (out + 4 * small) (big - small) by omega_using [h])
       rw [Nat.mul_one] at ge
-      omega
+      omega_using [bound, split, ge]
   rw [high, Nat.mul_zero, Nat.add_zero] at split
   exact split.symm
 

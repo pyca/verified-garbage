@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 `mgfXor H g` XORs `MGF1(H, dbLen)` into `DB`, the `dbLen` bytes at
 `scratch + e`, where `H` is the `hLen` bytes after them (`mgfXor_ok`), with
-the streaming functions of the hash function `G` of the table of `Hash`
+the streaming functions of the hash function `G` of the table of `MdHash`
 whose words are in the frame's slots (`GT`): `mgfSeed` puts the seed's
 address and length in the slots `sB` and `sFb`, and for each counter `c`
 (`round_ok`) the state at `scratch + oSt` is set by `init`, `update` absorbs
@@ -525,7 +525,7 @@ theorem mgfHead_ok (H : Hash) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat 
 
 include hG in
 /-- `DB ⊕= MGF1(H, dbLen)`, where `H` is the `hLen` bytes after `DB`, with
-the hash function `G` of the table of `Hash` whose words are in the slots. -/
+the hash function `G` of the table of `MdHash` whose words are in the slots. -/
 theorem mgfXor_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = G.D)
     (hGv : Proof.Mgf1.Valid Gs) (H : Hash) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
     {W : Nat → BitVec 64} (R : Rep u.mem F S V W) (T : GT G g W u.syms) {e db : Nat} (hd : DbAt H.D e db)

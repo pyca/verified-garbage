@@ -47,8 +47,8 @@ structure ECtx (m : Mem) (B : Addr) (w c : Nat) : Prop where
 theorem ECtx.of_frm {m m' : Mem} {B : Addr} {w c : Nat} {rs : List (Nat × Nat)} (h : ECtx m B w c)
     (hf : Frm B rs m m') (hd : ∀ r ∈ rs, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE)
     (hn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64) : ECtx m' B w c :=
-  ⟨by rw [hf.wv_eq (fun r hr => by have := hd r hr; omega) (by omega)]; exact h.e,
-    by rw [hf.word_eq (fun r hr => by have := hd r hr; omega) (by omega)]; exact h.l⟩
+  ⟨by rw [hf.wv_eq (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hn])]; exact h.e,
+    by rw [hf.word_eq (fun r hr => by have := hd r hr; omega_using [this]) (by omega_using [hn])]; exact h.l⟩
 
 /-- Disjointness of a range from each of a list of literal ranges of
 Miller–Rabin. -/
@@ -128,8 +128,8 @@ theorem flagOr_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {P b : Boo
   have hn := hs.nowrap
   have h256 := h.h256
   refine WP.mono (WP.keep [.x4] (Q := fun t => t.mem = s.mem.writeW (off B (8 * kFlag)) (mask (P || b))) (by
-    brun [h.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega),
-      hs.st (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega), hP, h15, mask_or2])
+    brun [h.x0, hdr_enc (show kFlag < 32 by decide), hs.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_using [h256]),
+      hs.st (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_using [h256]), hP, h15, mask_or2])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ⟨hm, k⟩
 
 /-- `mrSq`: `y := y²` and the flag or'ed with `y = c − 1`. -/
@@ -159,7 +159,7 @@ theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w c bm y : Nat} {P : Bool} 
 
 theorem sigK_and (j : Nat) (hj : 1 ≤ j ∧ j ≤ 3) {k : Nat} (hk : k < 64) :
     (BitVec.twoPow 64 k &&& BitVec.ofNat 64 (sigK j) = 0) = ¬ (j < sigOf k) := by
-  rcases (by omega : j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl
+  rcases (by omega_using [hj] : j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl
   · exact sig_mask1 k hk
   · exact sig_mask2 k hk
   · exact sig_mask3 k hk
@@ -234,7 +234,7 @@ theorem lastTail_ok {s : State} {B : Addr} {Z w c : Nat} (h : Ws s B Z w) (hEZ :
   refine WP.mono (WP.keep [.x3, .x4, .x6, .x7, .x8, .x15] (Q := fun t => t.mem = s₄.mem.writeW (off B (8 * kFlag))
       (mask (P || (b && decide (j < mrSig c))))) (by
     brun [h0₄, h3₄, h4, h15₄, hdr_enc (show kFlag < 32 by decide),
-      hs₄.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega), hs₄.st (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega),
+      hs₄.ld (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_using [h256]), hs₄.st (d := 8 * kFlag) (by simp only [kFlag, kPlen, sFn]; omega_using [h256]),
       hP₄, subs_one_c, hσ, csel_mask_pos, mask_and3, mask_or2])
     (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k⟩ => ?_
   exact ⟨by rw [hm, m₄, m₃, m₂, m₁], (k14.trans k).mono (by decide)⟩

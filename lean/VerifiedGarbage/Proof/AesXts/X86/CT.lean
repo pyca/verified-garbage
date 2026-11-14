@@ -100,7 +100,7 @@ theorem pass_rel (hp : UPre s₀) (hp' : UPre s₀') (hN : 0 < N s₀) {ys ys' :
     exact ⟨h0 ▸ l₁, by rw [← hN', ← h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : k + 1 ≠ N s₀ := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, h0], l₁, l₂⟩
 
 /-- All the blocks, in two runs. -/
 theorem batch_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86.Blocks}

@@ -63,9 +63,9 @@ theorem copyN_wp {k : Nat} {s : State} {t u rd rs : Reg} {od os : Nat} {P Q : Ad
     rw [hi.regs _ (Ne.symm h.td) (Ne.symm h.ud), ← addr_add, h.hP]
   have hQ' : s'.gpr rs + BitVec.ofNat 64 (os + 8 * w) = Q + BitVec.ofNat 64 (8 * w) := by
     rw [hi.regs _ (Ne.symm h.ts) (Ne.symm h.us), ← addr_add, h.hQ]
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldr_ok s' t rs (off := os + 8 * w) ⟨by omega, by omega⟩
+  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldr_ok s' t rs (off := os + 8 * w) ⟨by omega_arith, by omega_using [this, hw]⟩
     (by rw [hi.rd, hi.wr, hQ']; exact h.rQ w hw)
-  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := str_ok s₁ t rd (off := od + 8 * w) ⟨by omega, by omega⟩
+  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := str_ok s₁ t rd (off := od + 8 * w) ⟨by omega_arith, by omega_arith⟩
     (by rw [wr₁, hi.wr, o₁ _ (Ne.symm h.td), hP']; exact h.wP w hw)
   refine WP.of_runBlock ⟨s₂, by
     rw [copyW, show ([.ldr .x t rs (os + 8 * w), .str .x t rd (od + 8 * w)] : List Instr) =
@@ -73,10 +73,10 @@ theorem copyN_wp {k : Nat} {s : State} {t u rd rs : Reg} {od os : Nat} {P Q : Ad
       Option.bind_some, e₂],
     fun x hx hx' => by rw [g₂, o₁ x hx, hi.regs x hx hx'], by rw [rd₂, rd₁, hi.rd], by rw [wr₂, wr₁, hi.wr], ?_⟩
   rw [m₂, v₁, m₁, o₁ _ (Ne.symm h.td), hP', hQ', hi.mem]
-  refine over_step (by omega) fun x => ?_
+  refine over_step (by omega_using [hfit, hw]) fun x => ?_
   rw [writeW_readW_apply]
   split
-  · rw [addr_add, over_sep (h.sep.sub_left (Region.sub_prefix (by omega))) (by omega) (by omega)]
+  · rw [addr_add, over_sep (h.sep.sub_left (Region.sub_prefix (by omega_using [hw]))) (by omega_arith) (by omega_using [hfit])]
   · rfl
 
 theorem xorN_wp {k : Nat} {s : State} {t u rd rs : Reg} {od os : Nat} {P Q : Addr}
@@ -92,12 +92,12 @@ theorem xorN_wp {k : Nat} {s : State} {t u rd rs : Reg} {od os : Nat} {P Q : Add
     rw [hi.regs _ (Ne.symm h.td) (Ne.symm h.ud), ← addr_add, h.hP]
   have hQ' : s'.gpr rs + BitVec.ofNat 64 (os + 8 * w) = Q + BitVec.ofNat 64 (8 * w) := by
     rw [hi.regs _ (Ne.symm h.ts) (Ne.symm h.us), ← addr_add, h.hQ]
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldr_ok s' t rd (off := od + 8 * w) ⟨by omega, by omega⟩
+  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldr_ok s' t rd (off := od + 8 * w) ⟨by omega_arith, by omega_arith⟩
     (by rw [hi.rd, hi.wr, hP']; exact inRd (h.wP w hw))
-  obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := ldr_ok s₁ u rs (off := os + 8 * w) ⟨by omega, by omega⟩
+  obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := ldr_ok s₁ u rs (off := os + 8 * w) ⟨by omega_arith, by omega_using [this, hw]⟩
     (by rw [rd₁, wr₁, hi.rd, hi.wr, o₁ _ (Ne.symm h.ts), hQ']; exact h.rQ w hw)
   obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := eor_ok s₂ t t u
-  obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄⟩ := str_ok s₃ t rd (off := od + 8 * w) ⟨by omega, by omega⟩
+  obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄⟩ := str_ok s₃ t rd (off := od + 8 * w) ⟨by omega_arith, by omega_arith⟩
     (by rw [wr₃, wr₂, wr₁, hi.wr, o₃ _ (Ne.symm h.td), o₂ _ (Ne.symm h.ud), o₁ _ (Ne.symm h.td), hP']
         exact h.wP w hw)
   refine WP.of_runBlock ⟨s₄, by
@@ -109,11 +109,11 @@ theorem xorN_wp {k : Nat} {s : State} {t u rd rs : Reg} {od os : Nat} {P Q : Add
     by rw [wr₄, wr₃, wr₂, wr₁, hi.wr], ?_⟩
   rw [m₄, v₃, v₂, o₂ _ htu, v₁, m₃, m₂, m₁, o₃ _ (Ne.symm h.td), o₂ _ (Ne.symm h.ud), o₁ _ (Ne.symm h.td),
     o₁ _ (Ne.symm h.ts), hP', hQ', hi.mem]
-  refine over_step (by omega) fun x => ?_
+  refine over_step (by omega_using [hfit, hw]) fun x => ?_
   rw [writeW_xor_apply]
   split
-  · rw [addr_add, addr_add, over_out (by rw [off_self P (by omega)]; omega),
-      over_sep (h.sep.sub_left (Region.sub_prefix (by omega))) (by omega) (by omega)]
+  · rw [addr_add, addr_add, over_out (by rw [off_self P (by omega_arith)]; omega_using []),
+      over_sep (h.sep.sub_left (Region.sub_prefix (by omega_using [hw]))) (by omega_arith) (by omega_using [hfit])]
   · rfl
 
 end VG.Proof.Modes.AArch64

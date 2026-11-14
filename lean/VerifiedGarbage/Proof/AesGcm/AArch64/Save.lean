@@ -81,8 +81,8 @@ theorem savedAt_save (m : Mem) (W : Addr) (s₀ : State) : SavedAt (savedMem m W
 theorem slot_contains (W : Addr) {d : Nat} (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 216) :
     (savedR W).Contains (W + BitVec.ofNat 64 d) 8 := by
   rw [show W + BitVec.ofNat 64 d = (W + BitVec.ofNat 64 128) + BitVec.ofNat 64 (d - 128) from
-    (Offset.add_add_eq W (by omega)).symm]
-  exact Offset.contains_base _ (by omega) (by omega)
+    (Offset.add_add_eq W (by omega_using [h₁])).symm]
+  exact Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂])
 
 /-- Saving the registers changes only their slots. -/
 theorem savedMem_frame (m : Mem) (W : Addr) (g : Reg → BitVec 64) : Frame [savedR W] m (savedMem m W g) := by

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: the steps of an implementation
@@ -49,12 +50,12 @@ theorem firstZero_some {EM : List Byte} : ∀ {j i : Nat}, firstZero EM j = some
     · rename_i i₀ h₀
       cases h
       obtain ⟨a, b, c, d⟩ := firstZero_some h₀
-      exact ⟨a, by omega, c, d⟩
+      exact ⟨a, by omega_using [b], c, d⟩
     · rename_i h₀
       split at h
       · rename_i hj
         cases h
-        refine ⟨hj.1, by omega, hj.2, fun i' h₁ h₂ hz => ?_⟩
+        refine ⟨hj.1, by omega_using [], hj.2, fun i' h₁ h₂ hz => ?_⟩
         exact absurd (firstZero_none h₀ i' h₁ h₂) (fun h => h hz)
       · cases h
 where
@@ -83,18 +84,18 @@ theorem separator_eq (EM : List Byte) : separator EM = firstZero EM EM.length :=
   cases hf : firstZero EM EM.length with
   | some i =>
     obtain ⟨h2, hi, hz, hmin⟩ := firstZero_some hf
-    have hlt : i - 2 < (EM.drop 2).length := by simp; omega
+    have hlt : i - 2 < (EM.drop 2).length := by simp; omega_using [h2, hi]
     have : (EM.drop 2).findIdx? (· == 0) = some (i - 2) := by
       rw [List.findIdx?_eq_some_iff_getElem]
       refine ⟨hlt, ?_, fun j hj => ?_⟩
       · simp only [List.getElem_drop]
-        have := hz; rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega)] at this
-        simpa [show 2 + (i - 2) = i by omega] using this
+        have := hz; rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hi])] at this
+        simpa [show 2 + (i - 2) = i by omega_using [h2]] using this
       · simp only [List.getElem_drop]
-        have := hmin (j + 2) (by omega) (by omega)
-        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp at hlt; omega)] at this
+        have := hmin (j + 2) (by omega_using []) (by omega_using [hj])
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp at hlt; omega_using [hi, hj])] at this
         simpa [Nat.add_comm] using this
-    rw [this]; simp; omega
+    rw [this]; simp; omega_using [h2]
   | none =>
     have hn := firstZero_none hf
     have : (EM.drop 2).findIdx? (· == 0) = none := by
@@ -102,8 +103,8 @@ theorem separator_eq (EM : List Byte) : separator EM = firstZero EM EM.length :=
       intro x hx
       obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hx
       simp only [List.getElem_drop]
-      have := hn (2 + j) (by omega) (by simp at hj; omega)
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp at hj; omega)] at this
+      have := hn (2 + j) (by omega_using []) (by simp at hj; omega_using [hj])
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp at hj; omega_using [hj])] at this
       simpa using this
     rw [this]; rfl
 
@@ -130,12 +131,12 @@ def bitMask (x : Nat) : Nat := 2 ^ bitLength x - 1
 theorem bitMask_step {x j : Nat} (hx : 1 ≤ x) (hj : 2 ^ j - 1 < x) :
     (2 * (2 ^ j - 1) + 1 = 2 ^ (j + 1) - 1) ∧ (x ≤ 2 ^ (j + 1) - 1 → bitMask x = 2 ^ (j + 1) - 1) := by
   have hp := Nat.one_le_two_pow (n := j)
-  refine ⟨by rw [Nat.pow_succ]; omega, fun hle => ?_⟩
+  refine ⟨by rw [Nat.pow_succ]; omega_using [hp], fun hle => ?_⟩
   have hb : bitLength x = j + 1 := by
-    have hne : x ≠ 0 := by omega
+    have hne : x ≠ 0 := by omega_using [hx]
     simp only [bitLength, hne, ↓reduceIte, Nat.add_right_cancel_iff]
-    have h1 : x < 2 ^ (j + 1) := by omega
-    have h2 : 2 ^ j ≤ x := by omega
+    have h1 : x < 2 ^ (j + 1) := by omega_using [hx, hle]
+    have h2 : 2 ^ j ≤ x := by omega_using [hj]
     exact (Nat.log2_eq_iff hne).mpr ⟨h2, h1⟩
   rw [bitMask, hb]
 
@@ -181,11 +182,11 @@ theorem i2osp_add {x : Nat} (n l : Nat) (hx : x < 256 ^ l) :
   · rw [List.getElem_append_left (by simpa using hi)]
     simp only [List.getElem_replicate]
     have : x / 256 ^ (n + l - 1 - i) = 0 :=
-      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by omega) (by omega)))
+      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by omega_using []) (by omega_using [hi])))
     rw [this]; rfl
-  · rw [List.getElem_append_right (by simp; omega)]
+  · rw [List.getElem_append_right (by simp; omega_using [hi])]
     simp only [List.length_replicate, List.getElem_map, List.getElem_range]
-    rw [show n + l - 1 - i = l - 1 - (i - n) by omega]
+    rw [show n + l - 1 - i = l - 1 - (i - n) by omega_using [hi]]
 
 /-- `I2OSP(OS2IP(d), k)` for `d` of at most `k` octets: `d` after zeros. -/
 theorem i2osp_os2ip_pad (dB : List Byte) {k : Nat} (h : dB.length ≤ k) :
@@ -206,11 +207,11 @@ theorem out_eq {X : List Byte} {l : Nat} (hl : l ≤ X.length) :
   · simp only [hi, ↓reduceIte]
     rw [List.getElem_append_right (by simp; omega)]
     simp only [lastN, List.length_replicate, List.getElem_drop]
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp at h₂; omega)]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by simp at h₂; omega_using [h₂])]
     simp only [Option.getD_some]
-    congr 1; omega
+    congr 1; omega_using [hi]
   · simp only [hi, ↓reduceIte]
-    rw [List.getElem_append_left (by simp; omega)]
+    rw [List.getElem_append_left (by simp; omega_using [hi])]
     simp
 
 end VG.Proof.RsaPkcs1Enc

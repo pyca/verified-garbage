@@ -225,7 +225,7 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
   have rdOf : ∀ {s0 v : State}, F.Pre s0 → KBase (F.B s0) (F.Z s0) s0 v → ∀ {P : Addr} {M : Nat},
       (⟨P, M⟩ : Region) ∈ s0.rd → P.toNat + M ≤ 2 ^ 64 → ∀ i < M, InRegions (v.rd ++ v.wr) (off P i) 1 :=
     fun _ bv _ _ hP wP i hi =>
-      ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hP), Offset.contains_base _ (by omega) (by omega)⟩
+      ⟨_, List.mem_append_left _ (by rw [bv.rd]; exact hP), Offset.contains_base _ (by omega_using [hi]) (by omega_using [wP, hi])⟩
   unfold fn
   rw [entry_eq, save_eq]
   refine RelCT.seq (R := Two F.S7) (RelCT.seq (R := Two F.S2) (RelCT.block_append
@@ -243,7 +243,7 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
       · rw [tx, ty, hs.1]
       · rw [kx.gpr (argRegs_ne_t0 r hr), ky.gpr (argRegs_ne_t0 r hr), hs.2.2.2.2.2.2.2 r hr]
     have hp := H.hk s0 c0.1
-    have hZ : 96 ≤ F.Z s0 := by have := hp.zk; omega
+    have hZ : 96 ≤ F.Z s0 := by have := hp.zk; omega_using [this]
     rw [WP.block_append_iff]
     refine WP.mono (save2_ok s0 (Scr.of_mem hp.wr hp.nowrap hp.al) hZ ht) fun u hu => ?_
     have bu := KBase.of_saved hu hZ
@@ -266,7 +266,7 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
         · rw [mx.2.2.2.1, my.2.2.2.1, hs.2.2.2.1]
       have hL := H.hL s0 c0.1
       have hE := H.hE s0 c0.1
-      refine WP.mono (Pub.readE_ok m.2.2.1 m.2.2.2.1 hL.1 (by omega) (rdOf c0.1 m.2.1 hE.1 hE.2.2))
+      refine WP.mono (Pub.readE_ok m.2.2.1 m.2.2.2.1 hL.1 (by omega_using [hL]) (rdOf c0.1 m.2.1 hE.1 hE.2.2))
         fun u ⟨⟨u7, um⟩, ku⟩ => ⟨s0, v, c0, m, ⟨by rw [u7, m.bytesE H c0.1], um⟩, ku.mono (by decide)⟩
     · -- `e` checked, and the moves to `check`.
       refine two_post (two_taint [.s1, .s2] ?_ (by taint_decide)) fun a u ⟨s0, v, c0, m, ⟨u7, um⟩, ku⟩ => ?_
@@ -276,7 +276,7 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
         rcases hr with rfl | rfl
         · rw [kx.gpr (by decide), ky.gpr (by decide), mx.2.2.2.2.1, my.2.2.2.2.1, hs.2.2.1]
         · rw [kx.gpr (by decide), ky.gpr (by decide), mx.2.2.2.2.2, my.2.2.2.2.2, hs.2.2.2.2.1]
-      have hsat : sat (F.eN s0) ≤ 2 ^ 33 := by unfold sat; omega
+      have hsat : sat (F.eN s0) ≤ 2 ^ 33 := by unfold sat; omega_using []
       refine WP.mono (tB_ok u7 hsat ((ku.gpr (by decide)).trans m.2.2.2.2.1) ((ku.gpr (by decide)).trans m.2.2.2.2.2))
         fun y ⟨⟨y5, y4, y7, y8, ym⟩, ky⟩ => ⟨s0, v, c0, m, ⟨y5, y4, y7, y8, ym.trans um⟩, (ku.trans ky).mono (by decide)⟩
     · -- `check`'s first part.
@@ -295,10 +295,10 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
         rw [ky.2.1, ky.2.2]; exact rdOf c0.1 m.2.1 hN.1 hN.2.2 i hi
       have eb := m.bytesN H c0.1
       refine WP.mono (check1_ok (nb := F.nB s0) y7 y8 hk hlen hrd fun i hi => by
-          rw [← Pre.getD_of_lt (by omega), ym, ← eb]
+          rw [← Pre.getD_of_lt (by omega_using [hlen, hi]), ym, ← eb]
           simp [Spec.Rsa.bytesAt, List.getD_eq_getElem?_getD, hi])
-        fun z ⟨⟨z0, z4, zm⟩, kz⟩ => ⟨s0, v, c0, m, ⟨by rw [z0, Pre.getD_of_lt (by omega)],
-          by rw [z4, Pre.getD_of_lt (by omega)], by rw [kz.gpr (by decide), y5], by rw [kz.gpr (by decide), y4],
+        fun z ⟨⟨z0, z4, zm⟩, kz⟩ => ⟨s0, v, c0, m, ⟨by rw [z0, Pre.getD_of_lt (by omega_using [hk, hlen])],
+          by rw [z4, Pre.getD_of_lt (by omega_using [hk, hlen])], by rw [kz.gpr (by decide), y5], by rw [kz.gpr (by decide), y4],
           by rw [kz.gpr (by decide), y8], zm.trans ym⟩, (ky.trans kz).mono (by decide)⟩
     · -- `check`'s second part.
       refine two_post (two_taint [.t4, .s8] ?_ (by taint_decide))
@@ -313,8 +313,8 @@ theorem fn_rel {oS na : Nat} {moves : List Instr} {loads body : List (Prog isa)}
       have hk := hp.k64
       have hk' := hp.k1024
       have hlen : (F.nB s0).length = F.K s0 := by simp [KC.nB, Spec.Rsa.bytesAt]
-      refine WP.mono (check2_ok (nb := F.nB s0) z8 hk hk' hlen (by rw [z0, Pre.getD_of_lt (by omega)])
-        (by rw [z4, Pre.getD_of_lt (by omega)])) fun x ⟨x0, xm, kx⟩ =>
+      refine WP.mono (check2_ok (nb := F.nB s0) z8 hk hk' hlen (by rw [z0, Pre.getD_of_lt (by omega_using [hk, hlen])])
+        (by rw [z4, Pre.getD_of_lt (by omega_using [hk, hlen])])) fun x ⟨x0, xm, kx⟩ =>
           ⟨s0, v, c0, m, ⟨x0, by rw [kx.gpr (by decide), z5], by rw [kx.gpr (by decide), z4'], xm.trans zm⟩,
             (kz.trans kx).mono (by decide)⟩
     · -- The tail's last block.

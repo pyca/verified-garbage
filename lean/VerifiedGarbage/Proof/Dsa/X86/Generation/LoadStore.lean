@@ -39,14 +39,14 @@ theorem loadS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (by rw [u₂.other _ (by decide), g₁ _ (by decide)]) (by rw [u₂.wr, wr₁])
   have esi₂ : s₂.gpr .esi = s.gpr .edi + BitVec.ofNat 32 src := by rw [u₂.other _ (by decide), e₁]
   have m₂ : s₂.mem = s.mem := by rw [u₂.mem, m₁]
-  have srcW := Scr.wide hs (d := src) (by omega)
+  have srcW := Scr.wide hs (d := src) (by omega_using [hl, hsrc])
   have K₂ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s s₂ :=
     ⟨fun r hr => by rw [u₂.other r (by simp_all), g₁ r (by simp_all)], by rw [u₂.rd, rd₁], by rw [u₂.wr, wr₁]⟩
   refine WP.mono (VG.Proof.Bignum.X86.loadBE_ok hs₂ hk ho hl hlen
-    (by rw [esi₂, Scr.toNat_add hs (by omega)]; omega) u₂.gpr
+    (by rw [esi₂, Scr.toNat_add hs (by omega_using [hl, hsrc])]; omega_using [hsrc, nw]) u₂.gpr
     (by rw [esi₂, VG.Proof.Bignum.X86.byteAddr, srcW, u₂.rd, u₂.wr, rd₁, wr₁]; exact hs.read hsrc)
     (by rw [esi₂, VG.Proof.Bignum.X86.byteAddr, srcW]
-        exact Offset.disjoint base (by omega) (by omega) (by omega))) fun t ⟨V, O, K⟩ => ?_
+        exact Offset.disjoint base (by omega_using [hsep]) (by omega_using [hsrc, nw]) (by omega_using [ho, nw]))) fun t ⟨V, O, K⟩ => ?_
   rw [esi₂, VG.Proof.Bignum.X86.byteAddr, srcW, m₂, wordsVal_eq_val32] at V
   rw [m₂] at O
   exact ⟨by rw [V, decodeBE_os2ip], O, K₂.trans K⟩
@@ -67,15 +67,15 @@ theorem storeS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     (by rw [u₂.other _ (by decide), g₁ _ (by decide)]) (by rw [u₂.wr, wr₁])
   have ebx₂ : s₂.gpr .ebx = s.gpr .edi + BitVec.ofNat 32 dst := by rw [u₂.other _ (by decide), e₁]
   have m₂ : s₂.mem = s.mem := by rw [u₂.mem, m₁]
-  have dstW := Scr.wide hs (d := dst) (by omega)
+  have dstW := Scr.wide hs (d := dst) (by omega_using [hl, hd])
   have K₂ : Keeps [.eax, .ebx, .esi, .ecx] s s₂ :=
     ⟨fun r hr => by rw [u₂.other r (by simp_all), g₁ r (by simp_all)], by rw [u₂.rd, rd₁], by rw [u₂.wr, wr₁]⟩
   refine WP.mono (VG.Proof.Bignum.X86.storeBE_ok hs₂ (n := n) hl hlen ho u₂.gpr
     (by rw [m₂, wordsVal_eq_val32]; exact fit)
-    (by rw [ebx₂, Scr.toNat_add hs (by omega)]; omega)
+    (by rw [ebx₂, Scr.toNat_add hs (by omega_using [hl, hd])]; omega_using [hd, nw])
     (by rw [ebx₂, VG.Proof.Bignum.X86.byteAddr, dstW, u₂.wr, wr₁]; exact hs.write hd)
     (by rw [ebx₂, VG.Proof.Bignum.X86.byteAddr, dstW]
-        exact Offset.disjoint base (by omega) (by omega) (by omega))) fun t ⟨V, F, K⟩ => ?_
+        exact Offset.disjoint base (by omega_using [hsep]) (by omega_using [hlen, ho, nw]) (by omega_using [hd, nw]))) fun t ⟨V, F, K⟩ => ?_
   rw [ebx₂, VG.Proof.Bignum.X86.byteAddr, dstW, m₂, wordsVal_eq_val32] at V
   rw [ebx₂, VG.Proof.Bignum.X86.byteAddr, dstW, m₂] at F
   exact ⟨by rw [V, encodeBE_i2osp], F, K₂.trans K⟩

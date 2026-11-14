@@ -28,16 +28,16 @@ private theorem byte_rt : ∀ b : BitVec 8,
     BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 b))) = b := by decide +kernel
 
 theorem ofs_off0' (base : Addr) {d : Nat} (h : d < 2 ^ 64) : ofs base (off base d) = d := by
-  have := VG.Proof.X448.AArch64.ofs_off base (d := d) (i := 0) (by omega)
+  have := VG.Proof.X448.AArch64.ofs_off base (d := d) (i := 0) (by omega_using [h])
   simpa only [BitVec.add_zero, Nat.add_zero] using this
 
 theorem copyByte_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .x2 = p) {i : Nat} (hi : i < 57)
     (hr : InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 i) 1) :
     WP isa (.block [.ldrb .x4 .x2 i, .strb .x4 .x3 (KB + i)]) s fun t =>
       t.mem = s.mem.writeW (off base (KB + i)) (s.mem (p + BitVec.ofNat 64 i)) ∧ Keeps [.x4] s t := by
-  have w := hs.write (d := KB + i) (n := 1) (by simp only [KB]; omega)
-  have e1 : i % 1 = 0 ∧ i < 4096 := ⟨Nat.mod_one _, by omega⟩
-  have e2 : (KB + i) % 1 = 0 ∧ KB + i < 4096 := ⟨Nat.mod_one _, by simp only [KB]; omega⟩
+  have w := hs.write (d := KB + i) (n := 1) (by simp only [KB]; omega_using [hi])
+  have e1 : i % 1 = 0 ∧ i < 4096 := ⟨Nat.mod_one _, by omega_using [hi]⟩
+  have e2 : (KB + i) % 1 = 0 ∧ KB + i < 4096 := ⟨Nat.mod_one _, by simp only [KB]; omega_using [hi]⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits, addr, e1, e2, and_self,
     hp, hs.x3, State.load, hr, read1_eq, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
@@ -64,28 +64,28 @@ theorem copyK_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .x2 =
   | succ k ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨t1, t2, kt⟩ => ?_
+    refine WP.mono (ih (by omega_using [hk])) fun t ⟨t1, t2, kt⟩ => ?_
     have ht : Scr t base := hs.of_keeps kt (by decide)
     have hn := hs.nowrap
-    refine WP.mono (copyByte_ok ht ((kt.1 _ (by decide)).trans hp) (i := k) (by omega)
-      (by rw [kt.2.1, kt.2.2]; exact hr k (by omega))) fun u ⟨mu, ku⟩ => ⟨fun i hi => ?_, ?_, kt.trans ku⟩
+    refine WP.mono (copyByte_ok ht ((kt.1 _ (by decide)).trans hp) (i := k) (by omega_using [hk])
+      (by rw [kt.2.1, kt.2.2]; exact hr k (by omega_using [hk]))) fun u ⟨mu, ku⟩ => ⟨fun i hi => ?_, ?_, kt.trans ku⟩
     · have hsrc : t.mem (p + BitVec.ofNat 64 k) = s.mem (p + BitVec.ofNat 64 k) :=
-        t2 _ (Or.inr (by have := hfar k (by omega); simp only [KB]; omega))
+        t2 _ (Or.inr (by have := hfar k (by omega_using [hk]); simp only [KB]; omega_using [this]))
       rw [mu, writeW8_apply]
       by_cases hik : i = k
       · subst hik; rw [ite_eq_left rfl, hsrc]
       · rw [ite_eq_right ?_]
-        · exact t1 i (by omega)
+        · exact t1 i (by omega_using [hi, hik])
         · intro h
           have := congrArg (ofs base) h
-          rw [ofs_off0' base (by simp only [KB]; omega),
-            ofs_off0' base (by simp only [KB]; omega)] at this
-          omega
+          rw [ofs_off0' base (by simp only [KB]; omega_using [hk, hi]),
+            ofs_off0' base (by simp only [KB]; omega_using [hk])] at this
+          omega_using [hik, this]
     · rw [mu]
       refine t2.trans fun x hx => ?_
       rw [writeW8_apply, ite_eq_right_iff.mpr]
       intro h; subst h
-      rw [ofs_off0' base (by simp only [KB]; omega)] at hx
+      rw [ofs_off0' base (by simp only [KB]; omega_using [hk])] at hx
       omega
 
 end VG.Proof.Ed448.AArch64.Window

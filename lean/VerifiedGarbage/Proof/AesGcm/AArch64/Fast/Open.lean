@@ -73,17 +73,17 @@ theorem slots_fastFrame (W : Addr) : ∀ r ∈ fastFrame W, (⟨W + BitVec.ofNat
 /-- A region at `W + d` below `W + 128` and above the received tag. -/
 theorem fast_lo {W : Addr} {d k : Nat} (h₁ : 16 ≤ d) (h₂ : d + k ≤ 128) :
     ∃ r' ∈ fastFrame W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨_, List.mem_cons_self .., Offset.sub W h₁ (by omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.sub W h₁ (by omega_using [h₂])⟩
 
 /-- A region at `W + 16 + d` below `W + 128`. -/
 theorem fast_lo' {W : Addr} {d k : Nat} (h₂ : 16 + d + k ≤ 128) :
     ∃ r' ∈ fastFrame W, Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ r' := by
-  rw [add_ofNat_assoc]; exact fast_lo (by omega) (by omega)
+  rw [add_ofNat_assoc]; exact fast_lo (by omega_using []) (by omega_using [h₂])
 
 /-- A region at `W + d` above `W + 256`. -/
 theorem fast_hi {W : Addr} {d k : Nat} (h₁ : 256 ≤ d) (h₂ : d + k ≤ 2560) :
     ∃ r' ∈ fastFrame W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub W h₁ (by omega)⟩
+  ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub W h₁ (by omega_using [h₂])⟩
 
 /-- What the path writes, more precisely: `fastFrame` without the bytes from
 `W + 320` to `W + 512`, where `open_to` keeps `dst`. -/
@@ -130,20 +130,20 @@ theorem fastFrameP_sub {W : Addr} {ex : List Region} :
 /-- `fast_lo` in `fastFrameP`. -/
 theorem fastP_lo {W : Addr} {d k : Nat} (h₁ : 16 ≤ d) (h₂ : d + k ≤ 128) :
     ∃ r' ∈ fastFrameP W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
-  ⟨_, List.mem_cons_self .., Offset.sub W h₁ (by omega)⟩
+  ⟨_, List.mem_cons_self .., Offset.sub W h₁ (by omega_using [h₂])⟩
 
 /-- `fast_lo'` in `fastFrameP`. -/
 theorem fastP_lo' {W : Addr} {d k : Nat} (h₂ : 16 + d + k ≤ 128) :
     ∃ r' ∈ fastFrameP W, Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ r' := by
-  rw [add_ofNat_assoc]; exact fastP_lo (by omega) (by omega)
+  rw [add_ofNat_assoc]; exact fastP_lo (by omega_using []) (by omega_using [h₂])
 
 /-- A region at `W + d` from `W + 256` to `W + 320`, or above `W + 512`. -/
 theorem fastP_hi {W : Addr} {d k : Nat} (h : (256 ≤ d ∧ d + k ≤ 320) ∨ (512 ≤ d ∧ d + k ≤ 2560)) :
     ∃ r' ∈ fastFrameP W, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' := by
   rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W h₁ (by omega)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W h₁ (by omega_using [h₂])⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
-      Offset.sub W h₁ (by omega)⟩
+      Offset.sub W h₁ (by omega_using [h₂])⟩
 
 /-! ## The path up to the branch on the tag -/
 
@@ -820,7 +820,7 @@ theorem openToWithE_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 4 ∨ w 
     WP isa (Impl.AesGcm.AArch64.Fast.openWithEG v.callees true w cl) s fun s' =>
       GprAbi s s' ∧ openToPostOf s s' := by
   unfold Impl.AesGcm.AArch64.Fast.openWithEG
-  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega) hs)
+  refine WP.seq (WP.mono (WP.gprs (rs := [.x4, .x5, .x6, .x7]) (openEntryTo_ok (by omega_using [hw]) hs)
     (by rcases hw with rfl | rfl <;> decide) (by rcases hw with rfl | rfl <;> decide))
     fun s₁ ⟨⟨o₁, x12₁⟩, hx₁⟩ => ?_)
   refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)

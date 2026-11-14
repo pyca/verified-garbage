@@ -31,7 +31,7 @@ theorem entry_rep (i : Nat) (hi : i < 17) :
   by_cases he : i = 16
   · subst i
     exact VG.Proof.X448.basePt_rep (pointMul_rep _ basePoint_rep) entry16_check.1 entry16_check.2
-  · simpa only [Impl.Ed448.SignedWindow.entry, ite_eq_right he] using Window.entry_rep i (by omega)
+  · simpa only [Impl.Ed448.SignedWindow.entry, ite_eq_right he] using Window.entry_rep i (by omega_using [hi, he])
 
 def carry (k t : Nat) : Nat := if t = 0 then 0 else k / 2 ^ (t - 1) % 2
 

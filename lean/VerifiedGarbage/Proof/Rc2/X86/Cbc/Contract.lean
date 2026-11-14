@@ -27,10 +27,10 @@ theorem save_ok (s : State)
     (w2 : InRegions s.wr (addr32 (s.gpr .eax) + BitVec.ofNat 64 272) 4)
     (w3 : InRegions s.wr (addr32 (s.gpr .eax) + BitVec.ofNat 64 276) 4)
     : ∃ s', runBlock isa Impl.Rc2.X86.Cbc.save s = some s' ∧ Keep [] {s with mem := savedMem s} s' := by
-  have a264 : addr32 (s.gpr .eax + BitVec.ofNat 32 264) = addr32 (s.gpr .eax) + BitVec.ofNat 64 264 := addr_add (by omega)
-  have a268 : addr32 (s.gpr .eax + BitVec.ofNat 32 268) = addr32 (s.gpr .eax) + BitVec.ofNat 64 268 := addr_add (by omega)
-  have a272 : addr32 (s.gpr .eax + BitVec.ofNat 32 272) = addr32 (s.gpr .eax) + BitVec.ofNat 64 272 := addr_add (by omega)
-  have a276 : addr32 (s.gpr .eax + BitVec.ofNat 32 276) = addr32 (s.gpr .eax) + BitVec.ofNat 64 276 := addr_add (by omega)
+  have a264 : addr32 (s.gpr .eax + BitVec.ofNat 32 264) = addr32 (s.gpr .eax) + BitVec.ofNat 64 264 := addr_add (by omega_using [fit])
+  have a268 : addr32 (s.gpr .eax + BitVec.ofNat 32 268) = addr32 (s.gpr .eax) + BitVec.ofNat 64 268 := addr_add (by omega_using [fit])
+  have a272 : addr32 (s.gpr .eax + BitVec.ofNat 32 272) = addr32 (s.gpr .eax) + BitVec.ofNat 64 272 := addr_add (by omega_using [fit])
+  have a276 : addr32 (s.gpr .eax + BitVec.ofNat 32 276) = addr32 (s.gpr .eax) + BitVec.ofNat 64 276 := addr_add (by omega_using [fit])
   refine ⟨_, by
     simp only [Impl.Rc2.X86.Cbc.save, runBlock_cons, runStep_some, runBlock_nil,
       exec, memOp, State.ea, State.store32, ← addr_eq_def,
@@ -99,10 +99,10 @@ theorem restore_ok (s : State) (values : Reg → BitVec 32)
     (v3 : s.mem.readW (addr32 (s.gpr .ebp) + BitVec.ofNat 64 276) 32 = values .edi)
     : ∃ s', runBlock isa Impl.Rc2.X86.Cbc.restore s = some s' ∧
       (∀ r ∈ callerSaved, s'.gpr r = values r) ∧ Keep (.eax :: callerSaved) s s' := by
-  have a264 : addr32 (s.gpr .ebp + BitVec.ofNat 32 264) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 264 := addr_add (by omega)
-  have a268 : addr32 (s.gpr .ebp + BitVec.ofNat 32 268) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 268 := addr_add (by omega)
-  have a272 : addr32 (s.gpr .ebp + BitVec.ofNat 32 272) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 272 := addr_add (by omega)
-  have a276 : addr32 (s.gpr .ebp + BitVec.ofNat 32 276) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 276 := addr_add (by omega)
+  have a264 : addr32 (s.gpr .ebp + BitVec.ofNat 32 264) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 264 := addr_add (by omega_using [fit])
+  have a268 : addr32 (s.gpr .ebp + BitVec.ofNat 32 268) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 268 := addr_add (by omega_using [fit])
+  have a272 : addr32 (s.gpr .ebp + BitVec.ofNat 32 272) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 272 := addr_add (by omega_using [fit])
+  have a276 : addr32 (s.gpr .ebp + BitVec.ofNat 32 276) = addr32 (s.gpr .ebp) + BitVec.ofNat 64 276 := addr_add (by omega_using [fit])
   refine ⟨_, by
     simp only [Impl.Rc2.X86.Cbc.restore, rr, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc, memOp, State.ea, State.load32, gpr_setReg, reduceCtorEq, ite_false, ite_true,

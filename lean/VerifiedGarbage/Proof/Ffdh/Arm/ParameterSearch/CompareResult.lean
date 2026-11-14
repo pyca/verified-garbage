@@ -20,7 +20,7 @@ theorem compareResult_ok (s : State) {status test : Nat} (small : status < 3)
     simp only [instrs, List.mem_singleton] at hi
     subst i
     rfl) (by rfl)
-  have choices : status = 0 ∨ status = 1 ∨ status = 2 := by omega
+  have choices : status = 0 ∨ status = 1 ∨ status = 2 := by omega_using [small]
   rcases which with rfl | rfl
   all_goals ffrun [value]
   all_goals rcases choices with rfl | rfl | rfl <;> rfl

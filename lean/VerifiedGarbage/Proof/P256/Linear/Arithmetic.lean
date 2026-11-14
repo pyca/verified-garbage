@@ -29,7 +29,7 @@ theorem quotient_bounds (n : Int) (hlo : -(p:Int)≤n) (hhi : n<21*(p:Int)) :
     n-(n/(radix:Int)+1)*(p:Int)<(p:Int) := by
   rw [p_value] at hlo hhi ⊢
   rw [radix_value]
-  omega
+  omega_using [hlo, hhi]
 
 /-- The final sign-mask add-back is the unique canonical residue. -/
 theorem corrected_mod (n : Int) (hlo : -(p:Int)≤n) (hhi : n<21*(p:Int)) :
@@ -40,9 +40,9 @@ theorem corrected_mod (n : Int) (hlo : -(p:Int)≤n) (hhi : n<21*(p:Int)) :
   by_cases hz : n-(n/(radix:Int)+1)*(p:Int)<0
   · rw [ite_eq_left hz]
     simp only [p_value,radix_value] at hlo hhi hd0 hd1 hz ⊢
-    omega
+    omega_using [hlo, hz]
   · rw [ite_eq_right hz]
     simp only [p_value,radix_value] at hlo hhi hd0 hd1 hz ⊢
-    omega
+    omega_using [hhi, hz]
 
 end VG.Proof.P256.Linear

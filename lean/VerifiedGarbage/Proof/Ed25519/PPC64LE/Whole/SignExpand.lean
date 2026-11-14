@@ -113,8 +113,8 @@ theorem signCopy_ok {s t : State} (hp : SignPre 64 s) (h : SignInv s t) :
   rw [← List.append_nil (copyIn64 .r21 .r25 128)]
   refine copy64_ok (A := s.gpr .r4) (B := s.gpr .r9) (o := 128) (by decide) (by decide) (by decide) (by decide)
     (h.regs _ (by decide)) (h.regs _ (by decide)) (by decide) (by decide)
-    (fun k hk => by rw [h.rd, h.wr]; exact in_base (List.mem_append_left _ hS) (by omega) (by omega))
-    (fun k hk => sign_inF hp h (by omega)) (hp.sF.sub_right F128) fun u hu hfu hb => WP.block_nil
+    (fun k hk => by rw [h.rd, h.wr]; exact in_base (List.mem_append_left _ hS) (by omega_using [hk]) (by omega_using [hk]))
+    (fun k hk => sign_inF hp h (by omega_using [hk])) (hp.sF.sub_right F128) fun u hu hfu hb => WP.block_nil
       ⟨signStep hp h hu.rd hu.wr hu.sp (fun r hr => hu.gpr r (by revert hr; cases r <;> decide)) hfu
         (fun r hr => by
           rw [List.mem_singleton.mp hr]; exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩))))),

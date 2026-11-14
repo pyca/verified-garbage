@@ -86,7 +86,7 @@ theorem crt_recombineProduct_ready (s : State) {base : BitVec 32} {size len w o 
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   refine WP.mono (crt_factorProduct_ok s h.multiplication) ?_
   rintro t ⟨value, outside, ptr, frame, rest⟩
-  rw [show 2 * w + 2 * w + 2 = 4 * w + 2 by omega] at value outside
+  rw [show 2 * w + 2 * w + 2 = 4 * w + 2 by omega_using []] at value outside
   obtain ⟨pad, residue⟩ := h.padding.after_product h.mainBeforeProduct (by decide : 1 < 8) outside frame ptr rest
   have small := h.padding.layout.size
   have sep := h.mainBeforeProduct
@@ -94,11 +94,11 @@ theorem crt_recombineProduct_ready (s : State) {base : BitVec 32} {size len w o 
     apply outs_readW outside
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> omega
-    · omega
+      rcases hr with rfl | rfl <;> simp only <;> omega_arith
+    · omega_using []
   refine ⟨⟨pad, ⟨h.row.nowrap, h.row.outFits, h.row.inFits, h.row.separate,
     by rw [rest.wr]; exact h.row.writable⟩,
-    by have := h.multiplication.outFits; omega, h.productBeforePad, output.trans h.multiplication.product, ?_⟩,
+    by have := h.multiplication.outFits; omega_using [this], h.productBeforePad, output.trans h.multiplication.product, ?_⟩,
     value, residue, outside, frame, rest⟩
   rw [value, residue]
   exact h.sumFits

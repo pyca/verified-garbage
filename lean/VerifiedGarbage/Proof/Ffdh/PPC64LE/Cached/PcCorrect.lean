@@ -49,7 +49,7 @@ theorem bytes_out {m m' : Mem} {S : Addr} {Z : Nat} (hf : ∀ x, Z ≤ ofs S x �
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => hf _ ?_
   by_contra hc
-  exact hsep i (List.mem_range.mp hi) _ (by simp only [off]; omega) rfl
+  exact hsep i (List.mem_range.mp hi) _ (by simp only [off]; omega_using [hc]) rfl
 
 /-- What code ends in, with `sp` too. -/
 theorem wp_sp {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
@@ -80,25 +80,25 @@ theorem pc_front {s : State} {S : Addr} {Z : Nat} (h8 : s.gpr .r8 = S) (hZ : 256
   refine WP.block_append (WP.mono (save_ok (ws := .r8) (by decide) s (by rw [h8]; exact hin)) fun s₁ hS => ?_)
   have h23 : s₁.gpr .r23 = S := hS.r23.trans h8
   refine WP.mono (pcHdr_ok h23 (by rw [hS.keep.wr]; exact hin0)) fun t ⟨⟨t3, t4, t5, tm⟩, kt⟩ => ?_
-  have o := writeW_outside s₁.mem S (d := 0) (s₁.gpr .r3) (by omega)
+  have o := writeW_outside s₁.mem S (d := 0) (s₁.gpr .r3) (by omega_using [])
   rw [← tm] at o
   refine ⟨(kt.gpr .r23 (by decide)).trans h23, ?_, ?_, ?_, ?_, fun i hi => ?_, fun x hx => ?_, hS.keep.trans kt⟩
   · rw [t3, hS.keep.gpr .r5 (by decide)]
   · rw [t4, hS.keep.gpr .r6 (by decide)]
   · rw [t5, hS.keep.gpr .r7 (by decide)]
   · rw [tm, word_writeW_self, hS.keep.gpr .r3 (by decide)]
-  · rw [o.word (by omega) (by omega)]
+  · rw [o.word (by omega_using []) (by omega_using [hi])]
     have ea : off (savW S) (8 * i) = off S (112 + 8 * i) := by rw [off, off, Offset.add_add]
     rw [← hS.saved i hi, h8, ea]
-  · rw [o x (.inr (by omega))]
+  · rw [o x (.inr (by omega_using [hZ, hx]))]
     refine hS.frame x fun r hr hcx => ?_
     rw [List.mem_singleton] at hr
     subst hr
     rw [h8] at hcx
-    have hc' := (Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega)) _ hcx
+    have hc' := (Offset.sub_base (n := 144) (k := Z) S (d := 112) (by omega_using [hZ])) _ hcx
     simp only [Region.Contains] at hc'
     simp only [ofs] at hx
-    omega
+    omega_using [hx, hc']
 
 /-- The width into the header. -/
 theorem pcCap_ok {s : State} {S : Addr} (h23 : s.gpr .r23 = S) (hin : InRegions s.wr (off S 96) 8) :
@@ -216,49 +216,49 @@ theorem geo_of_pre {s : State} (h : pcContract.pre s) : Geo (pqOf s) s := by
     rw [hcl]
     simp only [Spec.Ffdh.generationPrecomputedWords, Spec.Rsa.FixedBaseComb.precomputedWords,
       Spec.Rsa.precomputedWords, Spec.Rsa.FixedBaseComb.entries, Spec.Rsa.FixedBaseComb.teeth, Spec.Rsa.modulusWords]
-    omega
+    omega_using []
   rw [hcl'] at hwr dCD dCS nwC
   refine ⟨rfl, hcl', rfl, rfl, rfl, rfl, hwr, memD, dCD, dCS, dDS, nwC, nwD, nwS, hk, hk',
     by show (s.gpr .r6).toNat = 2 * (s.gpr .r7).toNat ∨ (s.gpr .r6).toNat = 3 * (s.gpr .r7).toNat
-       simp only [Spec.Ffdh.domainLenValid] at hL; omega, ?_, rfl, hdv,
+       simp only [Spec.Ffdh.domainLenValid] at hL; omega_using [hL], ?_, rfl, hdv,
     fun t => table_after (t := t) hc (by rw [hwr]; simp [pqOf]), rfl, rfl⟩
   show slot (((s.gpr .r7).toNat + 7) / 8) 28 ≤ (s.gpr .r9).toNat * 8
   rw [Domain.slot_eq]; omega_using [hsl, hk', hk]
 
-theorem slot0 (w : Nat) : slot w 0 = 256 := by rw [Domain.slot_eq]; omega
+theorem slot0 (w : Nat) : slot w 0 = 256 := by rw [Domain.slot_eq]; omega_using []
 
 section Geo
 variable {q : PQ} {s : State} (g : Geo q s)
 include g
 
-theorem Geo.hw4 : 4 ≤ q.w := by have := g.hk; simp only [PQ.w]; omega
-theorem Geo.hw' : q.w ≤ 128 := by have := g.hk'; simp only [PQ.w]; omega
-theorem Geo.hZ : 256 + 28 * (8 * (q.w + 2)) ≤ q.Z := by have := g.hZw; rw [Domain.slot_eq] at this; omega
+theorem Geo.hw4 : 4 ≤ q.w := by have := g.hk; simp only [PQ.w]; omega_using [this]
+theorem Geo.hw' : q.w ≤ 128 := by have := g.hk'; simp only [PQ.w]; omega_using [this]
+theorem Geo.hZ : 256 + 28 * (8 * (q.w + 2)) ≤ q.Z := by have := g.hZw; rw [Domain.slot_eq] at this; omega_using [this]
 theorem Geo.hs : Scr s q.S q.Z := Scr.of_mem (by rw [g.wr]; simp) g.nwS
 theorem Geo.hinS : ∀ d, d + 8 ≤ 256 → InRegions s.wr (off q.S d) 8 := fun d hd => by
   have := g.hZ; have := g.nwS
-  exact ⟨⟨q.S, q.Z⟩, by rw [g.wr]; simp, Offset.contains_base q.S (by omega) (by omega)⟩
+  exact ⟨⟨q.S, q.Z⟩, by rw [g.wr]; simp, Offset.contains_base q.S (by omega_arith) (by omega_using [hd])⟩
 theorem Geo.hin : ∀ i < 18, InRegions s.wr (off (savW q.S) (8 * i)) 8 := fun i hi => by
   have := g.hZ; have := g.nwS
   exact ⟨⟨q.S, q.Z⟩, by rw [g.wr]; simp, by
-    rw [off, Offset.add_add]; exact Offset.contains_base q.S (by omega) (by omega)⟩
+    rw [off, Offset.add_add]; exact Offset.contains_base q.S (by omega_arith) (by omega_using [hi])⟩
 theorem Geo.sepD : ∀ i < q.L, ∀ x, ofs q.S x < q.Z → off q.D i ≠ x :=
-  sep_of_disjoint (L := q.L) g.dDS (by have := g.nwD; omega)
+  sep_of_disjoint (L := q.L) g.dDS (by have := g.nwD; omega_using [this])
 theorem Geo.sepDC : ∀ i < q.L, ∀ x, ofs q.C x < (3 + 34 * q.w) * 8 → off q.D i ≠ x :=
-  sep_of_disjoint (L := q.L) g.dCD.symm (by have := g.nwD; omega)
+  sep_of_disjoint (L := q.L) g.dCD.symm (by have := g.nwD; omega_using [this])
 theorem Geo.rdD : ∀ i < q.L, InRegions (s.rd ++ s.wr) (off q.D i) 1 :=
-  rd_of_mem (s := s) (D := q.D) (L := q.L) g.memD (by have := g.nwD; omega)
+  rd_of_mem (s := s) (D := q.D) (L := q.L) g.memD (by have := g.nwD; omega_using [this])
 theorem Geo.sepCB : ∀ x, ofs q.C x < 8 * (3 + 34 * q.w) → q.Z ≤ ofs q.S x := fun x hx => by
-  have := Pub.sep_of_disjoint g.dCS x (by simp only [VG.Proof.Bignum.ofs, ofs] at hx ⊢; omega)
-  simp only [VG.Proof.Bignum.ofs, ofs] at this ⊢; omega
+  have := Pub.sep_of_disjoint g.dCS x (by simp only [VG.Proof.Bignum.ofs, ofs] at hx ⊢; omega_using [hx])
+  simp only [VG.Proof.Bignum.ofs, ofs] at this ⊢; omega_using [this]
 theorem Geo.sepBC : ∀ x, ofs q.S x < q.Z → 8 * (3 + 34 * q.w) ≤ ofs q.C x := fun x hx => by
-  have := Pub.sep_of_disjoint g.dCS.symm x (by simp only [VG.Proof.Bignum.ofs, ofs] at hx ⊢; omega)
-  simp only [VG.Proof.Bignum.ofs, ofs] at this ⊢; omega
+  have := Pub.sep_of_disjoint g.dCS.symm x (by simp only [VG.Proof.Bignum.ofs, ofs] at hx ⊢; omega_using [hx])
+  simp only [VG.Proof.Bignum.ofs, ofs] at this ⊢; omega_using [this]
 theorem Geo.hlen : q.db.length = q.L := by rw [← g.dom]; exact VG.Proof.Bignum.bytesAt_length _ _ _
 theorem Geo.hmod : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (q.db.take q.k)) q.k = true :=
   VG.Proof.Ffdh.domainValid_mod g.dv
 theorem Geo.hgen : Spec.Ffdh.generationPrecompute q.k q.db = some (VG.Proof.Ffdh.generationValues q.k q.db) :=
-  VG.Proof.Ffdh.generationPrecompute_eq (by rw [g.hlen]; rcases g.hL with h | h <;> omega) g.hmod
+  VG.Proof.Ffdh.generationPrecompute_eq (by rw [g.hlen]; rcases g.hL with h | h <;> omega_using [h]) g.hmod
 
 end Geo
 
@@ -331,26 +331,26 @@ theorem pc_s3 {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St2 q s₀ s) :
     (by rw [kc.gpr .r5 (by decide), k2.gpr .r5 (by decide), h1.r5])
     ((kc.gpr .r23 (by decide)).trans g23) g.hk') fun s₃ ⟨⟨a21, a27, a28, a11, a29, a10, a31, m3⟩, k3⟩ => ?_
   have k13 := (k12.trans kc).trans k3
-  have oc := writeW_outside s.mem q.S (d := 96) (s.gpr .r8) (by omega)
+  have oc := writeW_outside s.mem q.S (d := 96) (s.gpr .r8) (by omega_using [])
   rw [← m2'] at oc
   have fr3 : ∀ x, q.Z ≤ ofs q.S x → s₃.mem x = s₀.mem x := fun x hx => by
-    rw [m3, oc x (.inr (by omega)), m2]; exact h1.fr x hx
+    rw [m3, oc x (.inr (by omega_using [hZ, hx])), m2]; exact h1.fr x hx
   have w3 : ∀ d, d + 8 ≤ 96 ∨ 104 ≤ d → d + 8 ≤ 256 → word s₃.mem q.S d = word s₁.mem q.S d := fun d hd hd' => by
-    rw [m3, oc.word (by omega) (by omega), m2]
+    rw [m3, oc.word (by omega_using [hd]) (by omega_using [hd']), m2]
   have hk := g.hk
   have hL := g.hL
   refine ⟨⟨⟨g.hs.congr k13.wr, a10, a29, a11, a31, g.hw4, g.hw', g.hZw⟩, a21,
     (k3.gpr .r23 (by decide)).trans ((kc.gpr .r23 (by decide)).trans g23), a27, a28, g.hk, g.hk', g.hL,
     fun i hi => by rw [k13.rd, k13.wr]; exact g.rdD i hi, g.sepD,
-    fun i hi => by rw [k13.rd, k13.wr]; exact g.rdD i (by show i < q.L; change i < q.k at hi; omega),
-    fun i hi => g.sepD i (by change i < q.k at hi; omega), ?_, ?_⟩,
-    ⟨by rw [w3 0 (by omega) (by omega)]; exact h1.w0, ?_, fun i hi => by rw [w3 _ (by omega) (by omega)]; exact h1.sav i hi,
+    fun i hi => by rw [k13.rd, k13.wr]; exact g.rdD i (by show i < q.L; change i < q.k at hi; omega_using [hL, hi]),
+    fun i hi => g.sepD i (by change i < q.k at hi; omega_using [hL, hi]), ?_, ?_⟩,
+    ⟨by rw [w3 0 (by omega_using []) (by omega_using [])]; exact h1.w0, ?_, fun i hi => by rw [w3 _ (by omega_using []) (by omega_using [hi])]; exact h1.sav i hi,
       fr3, k13⟩⟩
   · show Spec.Rsa.bytesAt s₃.mem q.D q.L = q.db
     rw [bytes_out fr3 g.sepD, g.dom]
   · show Spec.Rsa.bytesAt s₃.mem q.D q.k = q.db.take q.k
-    rw [bytes_out fr3 (fun i hi => g.sepD i (by omega)), ← g.dom,
-      VG.Proof.Ffdh.take_bytesAt s₀.mem q.D (by omega : q.k ≤ q.L)]
+    rw [bytes_out fr3 (fun i hi => g.sepD i (by omega_using [hL, hi])), ← g.dom,
+      VG.Proof.Ffdh.take_bytesAt s₀.mem q.D (by omega_using [hL] : q.k ≤ q.L)]
   · rw [m3, m2', word_writeW_self, r8v]
 
 /-- After p's check. -/
@@ -366,10 +366,10 @@ theorem pc_s4 {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St3 q s₀ s) : WP
   rw [hy] at p4 c4
   refine ⟨⟨hb.keep k4 b4, p4, c4⟩, ⟨?_, ?_, fun i hi => ?_, fun x hx => ?_, hX.keep.trans k4⟩⟩
   all_goals change Body q.S q.w s.mem s₄.mem at b4
-  · rw [Outside.word b4 (by omega) (by omega)]; exact hX.w0
-  · rw [Outside.word b4 (by omega) (by omega)]; exact hX.wcap
-  · rw [Outside.word b4 (by omega) (by omega)]; exact hX.sav i hi
-  · rw [b4 x (.inr (by rw [e0]; omega))]; exact hX.fr x hx
+  · rw [Outside.word b4 (by omega_using [e0]) (by omega_using [])]; exact hX.w0
+  · rw [Outside.word b4 (by omega_using [e0]) (by omega_using [])]; exact hX.wcap
+  · rw [Outside.word b4 (by omega_using [e0, hi]) (by omega_using [hi])]; exact hX.sav i hi
+  · rw [b4 x (.inr (by rw [e0]; omega_using [hZ, hx]))]; exact hX.fr x hx
 
 /-- `main`'s precondition, after p's check. -/
 theorem St4.mp {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) : MP q.S q.D q.C q.Z q.k q.L s := by
@@ -378,11 +378,11 @@ theorem St4.mp {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) : M
   have nwC := g.nwC
   have hw : q.w = (q.k + 7) / 8 := rfl
   refine ⟨hb.env, hb.r23, hb.r21, hb.r27, hb.r28, g.hk, g.hk', g.hL, hb.rdD, g.sepD,
-    fun i hi x hx => g.sepDC i hi x (by rw [ctxWords] at hx; omega), ?_,
-    fun x hx => g.sepCB x (by rw [ctxWords] at hx; omega),
-    fun x hx => by have := g.sepBC x hx; rw [ctxWords]; omega, hx.w0, by rw [hb']; exact hx.wcap, ?_,
+    fun i hi x hx => g.sepDC i hi x (by rw [ctxWords] at hx; omega_using [hw, hx]), ?_,
+    fun x hx => g.sepCB x (by rw [ctxWords] at hx; omega_using [hw, hx]),
+    fun x hx => by have := g.sepBC x hx; rw [ctxWords]; omega_using [hw, this], hx.w0, by rw [hb']; exact hx.wcap, ?_,
     by rw [hb']; exact g.dv⟩
-  · exact Scr.of_mem (by rw [hx.keep.wr, g.wr]; simp [ctxWords]; omega) (by rw [ctxWords]; omega)
+  · exact Scr.of_mem (by rw [hx.keep.wr, g.wr]; simp [ctxWords]; omega_using [hw]) (by rw [ctxWords]; omega_using [nwC, hw])
   · rw [hb']; exact p4
 
 /-- After the branch. -/
@@ -403,8 +403,8 @@ theorem pc_main {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) : 
   have hm : Outside q.S (slot q.w 1) (2 ^ 64) s.mem t.mem := fun x hx => by
     rcases hx with hx | hx
     · exact tm x hx
-    · exact absurd hx (by have := (x - q.S).isLt; simp only [ofs]; omega)
-  rw [Outside.word hm (by rw [Domain.slot_eq]; omega) (by omega)]
+    · exact absurd hx (by have := (x - q.S).isLt; simp only [ofs]; omega_using [])
+  rw [Outside.word hm (by rw [Domain.slot_eq]; omega_using [hi]) (by omega_using [hi])]
   exact h.2.sav i hi
 
 theorem pc_s5 {q : PQ} {s₀ s : State} (g : Geo q s₀) (h : St4 q s₀ s) :

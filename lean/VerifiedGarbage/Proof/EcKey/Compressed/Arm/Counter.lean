@@ -31,15 +31,15 @@ theorem descentCounter_ok {c : Cfg} {base : Addr} {s : State} {j : Nat}
       t.z = decide (j - 1 = 0) ∧ Rest [.r11] s t ∧
       Outside base (c.sl T2) 4 s.mem t.mem := by
   unfold Impl.EcKey.Compressed.Arm.descentCounter
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read hd) fun s₁ u₁ => ?_
+  refine wp_ldr (hs.off_lt (by omega_using [hd])) (hs.ea (by omega_using [hd])) (hs.read hd) fun s₁ u₁ => ?_
   refine wp_decCounter hj (by rw [u₁.gpr, hw]) fun s₂ u₂ => ?_
   have K : Rest [.r11] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
   have hs₂ := hs.of_rest K (by decide)
-  refine wp_str (hs₂.off_lt (by omega)) (hs₂.ea (by omega)) (hs₂.write hd) fun s₃ m₃ => ?_
-  refine wp_testCounter (j := j - 1) (by omega) (by rw [m₃.gpr, u₂.gpr]) fun t f hz => WP.block_nil ?_
+  refine wp_str (hs₂.off_lt (by omega_using [hd])) (hs₂.ea (by omega_using [hd])) (hs₂.write hd) fun s₃ m₃ => ?_
+  refine wp_testCounter (j := j - 1) (by omega_using [hj']) (by rw [m₃.gpr, u₂.gpr]) fun t f hz => WP.block_nil ?_
   refine ⟨?_, hz, K.trans ((m₃.rest _).trans (f.rest _)), ?_⟩
   · rw [f.mem, m₃.mem, Mem.readW_writeW_self32, u₂.gpr]
   · rw [f.mem, m₃.mem, u₂.mem, u₁.mem]
-    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := hs.nowrap; omega_using [hd, this])
 
 end VG.Proof.EcKey.Compressed.Arm

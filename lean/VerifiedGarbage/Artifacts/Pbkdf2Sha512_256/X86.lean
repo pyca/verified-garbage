@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.TCB.X86.Print
 
-/-! # PBKDF2-HMAC-SHA-512/256 (RFC 8018) on x86: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-512/256 (RFC 8018) on x86 -/
 
 @[expose] public section
 

@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.TCB.Arm.Print
 
+/-! # Triple DES on ARMv7 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.TripleDes.Arm

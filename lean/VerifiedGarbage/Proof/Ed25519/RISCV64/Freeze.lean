@@ -41,7 +41,7 @@ theorem freezeCopy_ok {s : State} (hc : Ctx b s) (a : Slot) :
   have hF := FR_eq
   refine WP.mono (fill_ok (o := FR) (src := fun k => [.load .w .a4 .a3 (offset a + 4 * k)])
     (f := limb s.mem b (offset a)) hc (by omega_arith) (by decide) fun k hk t h => ?_) fun t h => ⟨h.rest, h.frame, h.outs⟩
-  refine lw0_ok (hc.of_rest h.rest (by decide)) (d := offset a + 4 * k) (by omega_arith) (by simp only [offset]; omega) fun u v =>
+  refine lw0_ok (hc.of_rest h.rest (by decide)) (d := offset a + 4 * k) (by omega_arith) (by simp only [offset]; omega_using []) fun u v =>
     WP.block_nil ⟨?_, v.rest (by decide), v.mem⟩
   rw [v.gpr, toNat_ext32, Nat.mod_eq_of_lt (BitVec.isLt _)]
   show wd t.mem b (offset a + 4 * k) = _

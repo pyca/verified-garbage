@@ -44,7 +44,7 @@ theorem wideProductBody_ct {s01 s02 : State} {base : BitVec 32} {size o a b m n 
   have wp (s0 s : State) (ctx : WideProductCtx s0 base size o a b m n)
       (h : WideProductInv s0 base o a b m n i s) : WP isa (.block wideProductArgs) s Q := by
     exact WP.mono (wideProductArgs_ok s (ctx.workspace.congr h.rest.wr) ctx.headerFit
-      (by have := ctx.aFits; omega) h.ptr h.aPtr h.bPtr h.oPtr h.width) (fun _ j => ⟨j.1, j.2.1, j.2.2.1⟩)
+      (by have := ctx.aFits; omega_using [hi, this]) h.ptr h.aPtr h.bPtr h.oPtr h.width) (fun _ j => ⟨j.1, j.2.1, j.2.2.1⟩)
   have args := ((wideProductArgs_ct ctx1.headerFit).mono (P' := P)
     (fun _ _ h => ⟨⟨ctx1.workspace.congr h.1.rest.wr, h.1.ptr, h.1.aPtr⟩,
       ⟨ctx2.workspace.congr h.2.1.rest.wr, h.2.1.ptr, h.2.1.aPtr⟩⟩) (fun _ _ h => h)).wp

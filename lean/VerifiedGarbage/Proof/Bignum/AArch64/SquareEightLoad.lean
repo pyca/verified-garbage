@@ -20,16 +20,16 @@ theorem loadInputs_ok {s : State} {B : Addr} {Z e : Nat}
       ((∀ i < 8, t.gpr inputs[i]! = word s.mem B (e + 8*i)) ∧
         t.mem = s.mem) ∧ Keep inputs s t := by
   have hl : ∀ i < 8, InRegions (s.rd ++ s.wr) (off B (e + 8*i)) 8 :=
-    fun i hi => hs.ld (by omega)
+    fun i hi => hs.ld (by omega_using [he, hi])
   refine WP.keep inputs ?_ (by decide) (by decide) (by decide)
   have hc : loadInputs =
     [ld .x2 .x8 0, ld .x3 .x8 8, ld .x4 .x8 16, ld .x5 .x8 24,
       ld .x6 .x8 32, ld .x9 .x8 40, ld .x11 .x8 48, ld .x27 .x8 56] := rfl
-  brun [hc, h8, hs.ld (show e + 8 ≤ Z by omega), hl 0 (by decide), hl 1 (by decide),
+  brun [hc, h8, hs.ld (show e + 8 ≤ Z by omega_using [he]), hl 0 (by decide), hl 1 (by decide),
     hl 2 (by decide), hl 3 (by decide), hl 4 (by decide), hl 5 (by decide),
     hl 6 (by decide), hl 7 (by decide)]
   intro i hi
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals rfl
 
@@ -39,7 +39,7 @@ theorem inputs_value {s : State} {m : Mem} {B : Addr} {e n : Nat}
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [Square.value, wv, ih (fun i h => hi i (by omega)), hi n (by omega),
+    rw [Square.value, wv, ih (fun i h => hi i (by omega_using [h])), hi n (by omega_using []),
       ← Nat.pow_mul, Nat.mul_comm (word m B (e + 8*n)).toNat]
 
 end VG.Proof.Bignum.AArch64.SquareEight

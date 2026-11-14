@@ -103,9 +103,9 @@ theorem slot_mem (L : Lay) {j : Nat} (hj : Slot 12 j) :
     ∃ R ∈ L.inputs, R.Contains (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 4 := by
   obtain ⟨hj12, hj | hj⟩ := hj
   · exact ⟨L.ARGS, by simp [Lay.inputs],
-      Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)⟩
+      Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)⟩
   · exact ⟨L.ORIG, by simp [Lay.inputs],
-      Offset.contains _ (e := 280) (k := 16) (by omega) (by omega) (by decide)⟩
+      Offset.contains _ (e := 280) (k := 16) (by omega_using [hj]) (by omega_using [hj12]) (by decide)⟩
 
 namespace Lay.Ok
 
@@ -148,19 +148,19 @@ theorem inputs_out {r : Region} (hr : r ∈ L.inputs) : ∀ R ∈ L.outputs ++ [
 
 /-- What the calls need of the layout. -/
 theorem kit : Kit L.E L.scr 12 L.inputs L.outputs :=
-  ⟨⟨by decide, by decide, by have := hL.top; omega⟩, hL.nc, by simp [Lay.outputs], hL.kc,
+  ⟨⟨by decide, by decide, by have := hL.top; omega_using [this]⟩, hL.nc, by simp [Lay.outputs], hL.kc,
     fun _ hr R hR => hL.inputs_out hr R hR, fun _ hj => slot_mem L hj⟩
 
 /-- `out` at `o`. -/
 theorem ob_addr {o : Nat} (ho : o < 114) :
     State.addr (L.out + BitVec.ofNat 32 o) = State.addr L.out + BitVec.ofNat 64 o :=
-  addr_add (by have := hL.no; omega)
+  addr_add (by have := hL.no; omega_using [ho, this])
 
 theorem ob_fit {o l : Nat} (ho' : o < 114) (ho : o + l ≤ 114) : (L.out + BitVec.ofNat 32 o).toNat + l ≤ 2 ^ 32 := by
   have := hL.no
-  rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add_of_lt (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho'])]; omega_using [ho', this]),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ho'])]
+  omega_using [ho, this]
 
 /-- `out` is outside the stack, the state and the working space. -/
 theorem ob_stk {o l d k : Nat} (ho : o + l ≤ 114) (hd : d + k ≤ 280) : (L.ob o l).Disjoint (L.fr d k) :=
@@ -185,7 +185,7 @@ theorem scr_in (L : Lay) : L.SCR ∈ L.outputs := by simp [Lay.outputs]
 
 /-- Two regions of the frame. -/
 theorem fr_fr {d l e k : Nat} (h : d + l ≤ e ∨ e + k ≤ d) (hd : d + l ≤ 280) (he : e + k ≤ 280) :
-    (L.fr d l).Disjoint (L.fr e k) := Offset.disjoint _ h (by omega) (by omega)
+    (L.fr d l).Disjoint (L.fr e k) := Offset.disjoint _ h (by omega_using [hd]) (by omega_using [he])
 
 /-- Outside what a call of a sponge function writes but its squeezed output:
 the outgoing stack arguments, the state and the working space. -/
@@ -194,7 +194,7 @@ structure Away (L : Lay) (D : Region) : Prop where
   kwr : ∀ r ∈ kWr L.scr, D.Disjoint r
 
 theorem Lay.Ok.away_fr (hL : L.Ok) {d l : Nat} (h8 : 8 ≤ d) (hd : d + l ≤ 248) : Away L (L.fr d l) :=
-  ⟨Offset.base_disjoint _ h8 (by omega), hL.kit.frame_kWr (by omega)⟩
+  ⟨Offset.base_disjoint _ h8 (by omega_using [hd]), hL.kit.frame_kWr (by omega_using [hd])⟩
 
 theorem Lay.Ok.away_ob (hL : L.Ok) {o l : Nat} (ho : o + l ≤ 114) : Away L (L.ob o l) :=
   ⟨(hL.ko.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.Ok.ob_sub ho), hL.ob_kWr ho⟩

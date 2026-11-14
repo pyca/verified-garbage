@@ -39,7 +39,7 @@ theorem copy_src (hL : L.Ok) (h64 : L.seedLen = 64) :
   have hs : (⟨State.addr L.seed, 64⟩ : Region) = L.SEED := by rw [Lay.SEED, h64]
   have hi : L.SEED ∈ L.inputs := by simp [Lay.inputs]
   refine ⟨by rw [hs]; exact hi, fun r hr => ?_, by have := hL.ns; rw [h64] at this; exact this,
-    by have := hL.top; omega⟩
+    by have := hL.top; omega_using [this]⟩
   rw [hs]
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hr
@@ -147,7 +147,7 @@ theorem signE_ok {s : State} (h : signLocalE.pre s) :
           exact hu, ho⟩)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, fun seed' _ hs' => ?_⟩
   have hm := entry_input h hf (r := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩) (by rw [h.1]; simp)
-    (by have := (stackArg s 0).isLt; change (stackArg s 0).toNat ≤ 2 ^ 64; omega)
+    (by have := (stackArg s 0).isLt; change (stackArg s 0).toNat ≤ 2 ^ 64; omega_using [])
   change Spec.Ed25519.bytesAt u.mem (State.addr (s.gpr .r0)) 64 = _
   rw [hp, hm]
   exact sign_of_sha512_eq (hE.symm.trans hs') _
@@ -267,9 +267,9 @@ theorem satE_digest : Spec.Ed25519.bytesAt satMemE 0x2000 64 = satDigest := by
     have hi' : i < 64 := by simpa only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] using hi
     have ha : ((0x2000 : Addr) + BitVec.ofNat 64 i).toNat = 0x2000 + i := by
       change (0x2000 + i % 2 ^ 64) % 2 ^ 64 = 0x2000 + i
-      omega
+      omega_using [hi']
     simp only [Spec.Ed25519.bytesAt, List.getElem_map, List.getElem_range, satMemE, ha,
-      show ¬ 0x2000 + i < 0x2000 from by omega, show 0x2000 + i < 0x2040 from by omega, ite_false,
+      show ¬ 0x2000 + i < 0x2000 from by omega_using [], show 0x2000 + i < 0x2040 from by omega_using [hi'], ite_false,
       ite_true, Nat.add_sub_cancel_left, List.getElem?_eq_getElem hj, Option.getD_some]
 
 theorem satE_key : Spec.Ed25519.bytesAt satMemE 0x3000 32 = satKey := by
@@ -279,17 +279,17 @@ theorem satE_key : Spec.Ed25519.bytesAt satMemE 0x3000 32 = satKey := by
   have hi := List.mem_range.mp hi
   have e : ((0x3000 : Addr) + BitVec.ofNat 64 i).toNat = 0x3000 + i := by
     change (0x3000 + i % 2 ^ 64) % 2 ^ 64 = 0x3000 + i
-    omega
-  simp only [satMemE, e, show ¬ 0x3000 + i < 0x2000 by omega, show ¬ 0x3000 + i < 0x2040 by omega,
-    show 0x3000 + i < 0x100000 by omega, ↓reduceIte]
+    omega_using [hi]
+  simp only [satMemE, e, show ¬ 0x3000 + i < 0x2000 by omega_using [], show ¬ 0x3000 + i < 0x2040 by omega_using [],
+    show 0x3000 + i < 0x100000 by omega_using [hi], ↓reduceIte]
 
 theorem satMemE_frame : Frame [⟨0, 0x100000⟩] baseSatMem satMemE := by
   intro x hx
   have hn := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hn
   rw [show (x - 0 : Addr) = x from by simp] at hn
-  simp only [satMemE, show ¬ x.toNat < 0x2000 by omega, show ¬ x.toNat < 0x2040 by omega,
-    show ¬ x.toNat < 0x100000 by omega, ↓reduceIte]
+  simp only [satMemE, show ¬ x.toNat < 0x2000 by omega_using [hn], show ¬ x.toNat < 0x2040 by omega_using [hn],
+    show ¬ x.toNat < 0x100000 by omega_using [hn], ↓reduceIte]
 
 def satStateE : State where
   gpr r := match r with
@@ -315,12 +315,12 @@ theorem satE_held : ∀ i < 64 * 192,
   have e : (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat = 0x100000 + 8 * i := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]
     change (0x100000 + 8 * i % 2 ^ 64) % 2 ^ 64 = _
-    omega
+    omega_using [hi]
   refine (Offset.disjoint_of_le (r₁ := ⟨0, 0x100000⟩) ?_ ?_).symm
   · change 0 + 0x100000 ≤ (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat
-    omega
+    omega_using [e]
   · change (0x100000 + BitVec.ofNat 64 (8 * i) : Addr).toNat + 8 ≤ 2 ^ 64
-    omega
+    omega_using [e]
 
 theorem signE_sat : signSpecE.pre satStateE := by
   have held := satE_held

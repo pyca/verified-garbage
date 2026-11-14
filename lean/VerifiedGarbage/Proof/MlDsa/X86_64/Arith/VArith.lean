@@ -48,14 +48,14 @@ theorem qword_app1 (a b : BitVec 64) : qword (a ++ b) 1 = a := by
 theorem dword_lo (x : BitVec 128) (i : Nat) : dword x (2 * i) = (qword x i).extractLsb' 0 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [dword, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 0 + j < 64 by omega)]
-  exact congrArg _ (by omega)
+    decide_eq_true (show 0 + j < 64 by omega_using [hj])]
+  exact congrArg _ (by omega_using [])
 
 theorem dword_hi (x : BitVec 128) (i : Nat) : dword x (2 * i + 1) = (qword x i).extractLsb' 32 32 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [dword, qword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
-    decide_eq_true (show 32 + j < 64 by omega)]
-  exact congrArg _ (by omega)
+    decide_eq_true (show 32 + j < 64 by omega_using [hj])]
+  exact congrArg _ (by omega_using [])
 
 /-- The low doubleword of a quadword, zero-extended. -/
 def lo32 (x : BitVec 64) : BitVec 64 := (x.extractLsb' 0 32).setWidth 64
@@ -66,19 +66,19 @@ theorem lo32_toNat (x : BitVec 64) : (lo32 x).toNat = x.toNat % 2 ^ 32 := by
 
 theorem qword_paddq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .paddq x y) i = qword x i + qword y i := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · simp only [reduceXBinOpEval, qword_app0]
   · simp only [reduceXBinOpEval, qword_app1]
 
 theorem qword_pmuludq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .pmuludq x y) i = lo32 (qword x i) * lo32 (qword y i) := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · simp only [reduceXBinOpEval, qword_app0, lo32, ← dword_lo]
   · simp only [reduceXBinOpEval, qword_app1, lo32, ← dword_lo]
 
 theorem qword_psrlq32 (x : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psrlq x 32) i = qword x i >>> 32 := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl
   · simp only [XShiftOp.eval, show ¬ 63 < (32 : BitVec 8).toNat by decide, ite_false, qword_app0]; rfl
   · simp only [XShiftOp.eval, show ¬ 63 < (32 : BitVec 8).toNat by decide, ite_false, qword_app1]; rfl
 
@@ -97,10 +97,10 @@ def qV : BitVec 128 := 0x007FE001007FE001007FE001007FE001#128
 def qinvV : BitVec 128 := 0xFC7FDFFFFC7FDFFFFC7FDFFFFC7FDFFF#128
 
 theorem lo32_qword_qV {i : Nat} (hi : i < 2) : (lo32 (qword qV i)).toNat = q := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> decide
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> decide
 
 theorem lo32_qword_qinvV {i : Nat} (hi : i < 2) : (lo32 (qword qinvV i)).toNat = montQInv := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> decide
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1) with rfl | rfl <;> decide
 
 /-- `vredc` on a quadword `x`: `x + m · q`. -/
 def redc (x qi qq : BitVec 64) : BitVec 64 := x + lo32 (lo32 x * lo32 qi) * lo32 qq
@@ -116,7 +116,7 @@ theorem redc_toNat {x qi qq : BitVec 64} (hqi : (lo32 qi).toNat = montQInv) (hqq
   rw [redc, BitVec.toNat_add, hmq, ← mont_mul]
   have := mont_lt hx
   rw [q_eq] at this
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [this])
 
 theorem redc_hi {x qi qq : BitVec 64} (hqi : (lo32 qi).toNat = montQInv) (hqq : (lo32 qq).toNat = q)
     (hx : x.toNat < q * 2 ^ 32) : ((redc x qi qq).extractLsb' 32 32).toNat = mont x.toNat := by
@@ -124,7 +124,7 @@ theorem redc_hi {x qi qq : BitVec 64} (hqi : (lo32 qi).toNat = montQInv) (hqq : 
     Nat.mul_div_cancel _ (by decide)]
   have := mont_lt hx
   rw [q_eq] at this
-  exact Nat.mod_eq_of_lt (by omega)
+  exact Nat.mod_eq_of_lt (by omega_using [this])
 
 theorem redc_lo {x qi qq : BitVec 64} (hqi : (lo32 qi).toNat = montQInv) (hqq : (lo32 qq).toNat = q)
     (hx : x.toNat < q * 2 ^ 32) : (redc x qi qq).extractLsb' 0 32 = 0 := by
@@ -146,7 +146,7 @@ theorem hi_shr32 (x : BitVec 64) : (x >>> 32).extractLsb' 32 32 = 0 := by
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
     Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul]
   have := x.isLt
-  rw [Nat.div_eq_of_lt (by omega)]; rfl
+  rw [Nat.div_eq_of_lt (by omega_using [])]; rfl
 
 /-! ## `vmont` -/
 
@@ -177,21 +177,21 @@ theorem dword_montV {d z zo : BitVec 128} (hzo : ∀ j < 2, dword zo (2 * j) = d
   have hqi : ∀ j < 2, (lo32 (qword qinvV j)).toNat = montQInv := fun j hj => lo32_qword_qinvV hj
   have hqq : ∀ j < 2, (lo32 (qword qV j)).toNat = q := fun j hj => lo32_qword_qV hj
   rw [montV, dword_por]
-  obtain ⟨j, hj, rfl | rfl⟩ : ∃ j < 2, i = 2 * j ∨ i = 2 * j + 1 := ⟨i / 2, by omega, by omega⟩
+  obtain ⟨j, hj, rfl | rfl⟩ : ∃ j < 2, i = 2 * j ∨ i = 2 * j + 1 := ⟨i / 2, by omega_using [hi], by omega_using []⟩
   all_goals
     have hx : (qword (XBinOp.eval .pmuludq d z) j).toNat = (dword d (2 * j)).toNat * (dword z (2 * j)).toNat :=
       toNat_qword_pmuludq d z hj
     have hy : (qword (XBinOp.eval .pmuludq (shufDwords d 0xF5) zo) j).toNat =
         (dword d (2 * j + 1)).toNat * (dword z (2 * j + 1)).toNat := by
-      rw [toNat_qword_pmuludq _ _ hj, hzo j hj, dword_shufDwords _ _ (by omega)]
-      rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
+      rw [toNat_qword_pmuludq _ _ hj, hzo j hj, dword_shufDwords _ _ (by omega_using [hj])]
+      rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl <;> rfl
   · -- an even doubleword: the quotient of the even product, moved down
     rw [dword_lo, dword_lo, qword_psrlq32 _ hj, qword_vredc _ hj, qword_vredc _ hj,
-      redc_lo (hqi j hj) (hqq j hj) (by rw [hy]; exact hb _ (by omega)), or_zero_toNat, lo_shr32,
-      redc_hi (hqi j hj) (hqq j hj) (by rw [hx]; exact hb _ (by omega)), hx]
+      redc_lo (hqi j hj) (hqq j hj) (by rw [hy]; exact hb _ (by omega_using [hj])), or_zero_toNat, lo_shr32,
+      redc_hi (hqi j hj) (hqq j hj) (by rw [hx]; exact hb _ (by omega_using [hj])), hx]
   · -- an odd doubleword: the quotient of the odd product, in place
     rw [dword_hi, dword_hi, qword_psrlq32 _ hj, hi_shr32, zero_or_toNat, qword_vredc _ hj,
-      redc_hi (hqi j hj) (hqq j hj) (by rw [hy]; exact hb _ (by omega)), hy]
+      redc_hi (hqi j hj) (hqq j hj) (by rw [hy]; exact hb _ (by omega_using [hj])), hy]
 
 /-! ## Conditional additions and subtractions of `q` -/
 
@@ -214,8 +214,8 @@ theorem sshiftRight31 (d : BitVec 32) :
   rw [BitVec.toInt_sshiftRight, MlKem.X86_64.W.toInt32]
   have := d.isLt
   split
-  · rw [show (0 : BitVec 32).toInt = 0 by decide, Int.shiftRight_eq_div_pow]; omega
-  · rw [show (-1 : BitVec 32).toInt = -1 by decide, Int.shiftRight_eq_div_pow]; omega
+  · rw [show (0 : BitVec 32).toInt = 0 by decide, Int.shiftRight_eq_div_pow]; omega_arith
+  · rw [show (-1 : BitVec 32).toInt = -1 by decide, Int.shiftRight_eq_div_pow]; omega_arith
 
 theorem caddL_toNat (d : BitVec 32) :
     (caddL d).toNat = if d.toNat < 2 ^ 31 then d.toNat else (d.toNat + q) % 2 ^ 32 := by
@@ -227,29 +227,29 @@ theorem caddL_toNat (d : BitVec 32) :
 /-- `vcsub` reduces a doubleword less than `2q`. -/
 theorem csubL_toNat {d : BitVec 32} (h : d.toNat < 2 * q) : (csubL d).toNat = condSub d.toNat := by
   have e : (d - qB).toNat = (d.toNat + 2 ^ 32 - q) % 2 ^ 32 := by
-    rw [BitVec.toNat_sub]; rw [q_eq] at *; simp only [qB, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_sub]; rw [q_eq] at *; simp only [qB, BitVec.toNat_ofNat]; omega_using []
   rw [csubL, caddL_toNat, e, condSub]; rw [q_eq] at *
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-- The sum of two reduced doublewords, reduced by `vcsub`. -/
 theorem addD_toNat {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (csubL (a + b)).toNat = condSub (a.toNat + b.toNat) := by
   have e : (a + b).toNat = a.toNat + b.toNat := by
-    rw [BitVec.toNat_add]; rw [q_eq] at *; omega
-  rw [csubL_toNat (by rw [e]; omega), e]
+    rw [BitVec.toNat_add]; rw [q_eq] at *; omega_using [ha, hb]
+  rw [csubL_toNat (by rw [e]; omega_using [ha, hb]), e]
 
 /-- The difference of two reduced doublewords, reduced by `vcadd`. -/
 theorem subD_toNat {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (caddL (a - b)).toNat = condSub (a.toNat + q - b.toNat) := by
   have e : (a - b).toNat = (a.toNat + 2 ^ 32 - b.toNat) % 2 ^ 32 := by
-    rw [BitVec.toNat_sub]; have := b.isLt; omega
+    rw [BitVec.toNat_sub]; have := b.isLt; omega_using []
   rw [caddL_toNat, e, condSub]; rw [q_eq] at *
-  split <;> split <;> omega
+  split <;> split <;> omega_arith
 
 /-- `b - a + q` of two reduced doublewords, which `vibfly` multiplies by the zeta. -/
 theorem subq_toNat {a b : BitVec 32} (ha : a.toNat < q) (hb : b.toNat < q) :
     (b - a + qB).toNat = b.toNat + q - a.toNat := by
-  rw [BitVec.toNat_add, BitVec.toNat_sub]; rw [q_eq] at *; simp only [qB, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_sub]; rw [q_eq] at *; simp only [qB, BitVec.toNat_ofNat]; omega_using [ha, hb]
 
 /-! ## Butterflies, lane by lane -/
 
@@ -280,12 +280,12 @@ theorem ibflyD {a b z m : BitVec 32} {x y ζ : Spec.MlDsa.Zq} (ha : a.toNat = x.
   have hy := val_lt y
   have e := subq_toNat (a := a) (b := b) (by rw [ha]; exact hx) (by rw [hb]; exact hy)
   refine ⟨by rw [addD_toNat (by rw [ha]; exact hx) (by rw [hb]; exact hy), ha, hb, val_add], ?_⟩
-  have hb' : (b - a + qB).toNat < q * 2 ^ 32 := by rw [e, ha, hb]; rw [q_eq] at *; omega
+  have hb' : (b - a + qB).toNat < q * 2 ^ 32 := by rw [e, ha, hb]; rw [q_eq] at *; omega_using []
   have hx' : (b - a + qB).toNat * z.toNat < q * 2 ^ 32 := by
     rw [hz]; rw [e, ha, hb] at hb' ⊢
     have := Nat.mod_lt (ζ.val * 2 ^ 32) (show 0 < q by decide)
     rw [q_eq] at *
-    exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (show y.val + 8380417 - x.val < 2 * 8380417 by omega)
+    exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (show y.val + 8380417 - x.val < 2 * 8380417 by omega_using [hy])
       (Nat.le_of_lt this) (by decide)) (by decide)
   rw [csubL_toNat (by rw [hm]; exact mont_lt hx'), hm, condSub_mont hx', hz, mont_mulR, e, ha, hb,
     val_mul, val_sub', Nat.mul_mod_mod, Nat.mul_comm ζ.val,

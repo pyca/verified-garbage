@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -12,10 +13,10 @@ theorem scalar_lifts {p n x r : Nat} (hpn : p ≤ 2 * n) (hx : x < p) (hr : r < 
     x % n = r ↔ x = r ∨ x = r + n := by
   by_cases hxn : x < n
   · rw [Nat.mod_eq_of_lt hxn]
-    omega
-  · have hn : n ≤ x := by omega
-    rw [Nat.mod_eq_sub_mod hn, Nat.mod_eq_of_lt (show x - n < n by omega)]
-    omega
+    omega_using [hxn]
+  · have hn : n ≤ x := by omega_using [hxn]
+    rw [Nat.mod_eq_sub_mod hn, Nat.mod_eq_of_lt (show x - n < n by omega_using [hpn, hx])]
+    omega_using [hr, hxn]
 
 /-- Multiplication by nonzero projective `Z` replaces affine division. -/
 theorem projective_x_eq {C : Curve} (hC : Law C) {X Z a : Fe C} (hZ : Z ≠ 0) :
@@ -55,13 +56,13 @@ theorem projective_matches {C : Curve} (hC : Law C) (hnp : C.n < C.p)
   · rintro (h | h)
     · exact Or.inl (hfirst.mp h)
     · have hlt : r + C.n < C.p := h ▸ (X * Z ^ (C.p - 2)).isLt
-      refine Or.inr ⟨by omega, ?_⟩
+      refine Or.inr ⟨by omega_using [hlt], ?_⟩
       rw [← hadd]
       exact (projective_lift_eq hC hZ hlt).mp h
   · rintro (h | ⟨hlt, h⟩)
     · exact Or.inl (hfirst.mpr h)
     · apply Or.inr
-      apply (projective_lift_eq hC hZ (show r + C.n < C.p by omega)).mpr
+      apply (projective_lift_eq hC hZ (show r + C.n < C.p by omega_using [hlt])).mpr
       rw [hadd]
       exact h
 

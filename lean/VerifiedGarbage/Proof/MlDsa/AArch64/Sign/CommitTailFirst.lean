@@ -84,31 +84,31 @@ theorem lowWord_step {s : State} {A B : Spec.Sha3.State} {m : Mem} {p : Addr} {j
       RegKeep [.x7] s t ∧ t.mem=m ∧ Pairs t (xorWords A m p (j+1)) B := by
   have h25 : vreg j≠.v25 := by
     change vreg j≠vreg 25
-    rw [ne_eq,vreg_inj j (by omega) 25 (by decide)]
-    omega
-  refine WP.mono (lowWord_ok h25 ⟨by omega,by omega⟩ (by rw [h5]; exact hin))
+    rw [ne_eq,vreg_inj j (by omega_using [hj]) 25 (by decide)]
+    omega_using [hj]
+  refine WP.mono (lowWord_ok h25 ⟨by omega_using [],by omega_using [hj]⟩ (by rw [h5]; exact hin))
     fun t ⟨hk,hmt,hv,ht⟩ => ⟨hk,hmt.trans hm,?_⟩
   intro i hi
   by_cases he : i=j
   · subst i
-    rw [ht,hp j (by omega),hm,h5,pair_xor]
-    simp only [getElem!_pos (xorWords A m p j) j (by omega),
-      getElem!_pos (xorWords A m p (j+1)) j (by omega), getElem!_pos B j (by omega)]
-    rw [xorWords_get _ _ _ _ _ (by omega),xorWords_get _ _ _ _ _ (by omega)]
-    simp only [Nat.lt_irrefl,ite_false,show j<j+1 by omega,ite_true]
+    rw [ht,hp j (by omega_using [hj]),hm,h5,pair_xor]
+    simp only [getElem!_pos (xorWords A m p j) j (by omega_using [hj]),
+      getElem!_pos (xorWords A m p (j+1)) j (by omega_using [hj]), getElem!_pos B j (by omega_using [hj])]
+    rw [xorWords_get _ _ _ _ _ (by omega_using [hj]),xorWords_get _ _ _ _ _ (by omega_using [hj])]
+    simp only [Nat.lt_irrefl,ite_false,show j<j+1 by omega_using [],ite_true]
     rw [show A[j] ^^^ (0:BitVec 64)=A[j] from BitVec.xor_zero,
       show B[j] ^^^ (0:BitVec 64)=B[j] from BitVec.xor_zero]
-  · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega) j (by omega)]; exact he
+  · have hij : vreg i≠vreg j := by rw [ne_eq,vreg_inj i (by omega_using [hi]) j (by omega_using [hj])]; exact he
     have hi25 : vreg i≠.v25 := by
       change vreg i≠vreg 25
-      rw [ne_eq,vreg_inj i (by omega) 25 (by decide)]
-      omega
+      rw [ne_eq,vreg_inj i (by omega_using [hi]) 25 (by decide)]
+      omega_using [hi]
     rw [hv _ hij hi25,hp i hi]
     have hh : (xorWords A m p j)[i]! = (xorWords A m p (j+1))[i]! := by
       simp only [getElem!_pos (xorWords A m p j) i hi,
         getElem!_pos (xorWords A m p (j+1)) i hi]
       rw [xorWords_get _ _ _ _ _ hi,xorWords_get _ _ _ _ _ hi]
-      have hc : (i<j)=(i<j+1) := propext (by omega)
+      have hc : (i<j)=(i<j+1) := propext (by omega_using [he])
       simp only [hc]
     rw [hh]
 
@@ -128,7 +128,7 @@ theorem lowWords_ok {s : State} {A B : Spec.Sha3.State}
     exact BitVec.xor_zero
   refine wp_range_flatMap (M:=isa) I (fun j t hj ht => ?_) n (Nat.le_refl _) s ?_
   · rcases ht with ⟨hk,hm,hp⟩
-    refine WP.mono (lowWord_step (by omega) hm (hk.gpr .x5 (by decide)) hp ?_)
+    refine WP.mono (lowWord_step (by omega_using [hn, hj]) hm (hk.gpr .x5 (by decide)) hp ?_)
       fun u ⟨hk',hm',hp'⟩ => ⟨(hk.trans hk').mono (by simp),hm',hp'⟩
     rw [hk.rd,hk.wr]
     exact hin j hj
@@ -188,14 +188,14 @@ theorem loadPair_ok {s : State} {j off : Nat} {r : Reg}
     simp only [ite_true,low,ht.v,ha.v]
     exact low_ext8 _
   · have he' : vreg i≠vreg (j+1) := by
-      rw [ne_eq,vreg_inj i (by omega) (j+1) (by omega)]; exact he
+      rw [ne_eq,vreg_inj i (by omega_using [hi]) (j+1) (by omega_using [hj])]; exact he
     simp only [he,ite_false,low,ht.get _ he']
     by_cases he0 : i=j
     · subst i
       simp only [ite_true,ha.v]
       rfl
     · have he0' : vreg i≠vreg j := by
-        rw [ne_eq,vreg_inj i (by omega) j (by omega)]; exact he0
+        rw [ne_eq,vreg_inj i (by omega_using [hi]) j (by omega_using [hj])]; exact he0
       rw [ite_eq_right he0,ha.get _ he0']
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
@@ -231,7 +231,7 @@ theorem loadWords_ok {s : State} {r : Reg} (start n : Nat) (hn : start+2*n≤25)
   · have hin' : InRegions (t.rd++t.wr) (t.gpr r+BitVec.ofNat 64 (16*j)) 16 := by
       rw [ht.keep.rd,ht.keep.wr,ht.keep.gpr r (by simp)]
       exact hin j hj
-    refine WP.mono (loadPair_ok (j:=start+2*j) (by omega) ⟨by omega,by omega⟩ hin')
+    refine WP.mono (loadPair_ok (j:=start+2*j) (by omega_using [hn, hj]) ⟨by omega_using [],by omega_using [hn, hj]⟩ hin')
       fun u ⟨hu,hmu,hlu⟩ => ⟨(ht.keep.trans hu).mono (by simp),hmu.trans ht.mem,?_⟩
     intro i hi
     rw [hlu i hi,ht.mem,ht.keep.gpr r (by simp)]
@@ -242,16 +242,16 @@ theorem loadWords_ok {s : State} {r : Reg} (start n : Nat) (hn : start+2*n≤25)
     rw [hlow,hhigh]
     by_cases he1 : i=start+2*j+1
     · subst i
-      rw [ite_eq_left rfl,ite_eq_left (by omega),show start+2*j+1-start=2*j+1 by omega]
+      rw [ite_eq_left rfl,ite_eq_left (by omega_using []),show start+2*j+1-start=2*j+1 by omega_using []]
     · rw [ite_eq_right he1]
       by_cases he0 : i=start+2*j
       · subst i
-        rw [ite_eq_left rfl,ite_eq_left (by omega),show start+2*j-start=2*j by omega]
+        rw [ite_eq_left rfl,ite_eq_left (by omega_using []),show start+2*j-start=2*j by omega_using []]
       · rw [ite_eq_right he0,ht.lanes i hi]
-        have he : (start≤i ∧ i<start+2*j)↔(start≤i ∧ i<start+2*(j+1)) := by omega
+        have he : (start≤i ∧ i<start+2*j)↔(start≤i ∧ i<start+2*(j+1)) := by omega_using [he1, he0]
         simp only [he]
   · intro i hi
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using [])]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -287,7 +287,7 @@ theorem loadLast_ok {s : State}
     exact vdword_ofVDwords_0 _ _
   · have he' : vreg i≠.v16 := by
       change vreg i≠vreg 16
-      rw [ne_eq,vreg_inj i (by omega) 16 (by decide)]
+      rw [ne_eq,vreg_inj i (by omega_using [hi]) 16 (by decide)]
       exact he
     simp only [he,ite_false,low,ht.get _ he',ha.vec]
 
@@ -307,20 +307,20 @@ theorem zeroCapacity_ok (s : State) :
     intro i hi
     by_cases he : i=17+j
     · subst i
-      rw [ite_eq_left (by omega)]
+      rw [ite_eq_left (by omega_using [])]
       change vdword (u.v (vreg (17+j))) 0=0
       rw [hu.v]
       rfl
     · have he' : vreg i≠vreg (17+j) := by
-        rw [ne_eq,vreg_inj i (by omega) (17+j) (by omega)]; exact he
+        rw [ne_eq,vreg_inj i (by omega_using [hi]) (17+j) (by omega_using [hj])]; exact he
       change vdword (u.v (vreg i)) 0=_
       rw [hu.get _ he']
       change low t (vreg i)=_
       rw [ht.lanes i hi]
-      have hh : (17≤i ∧ i<17+j)↔(17≤i ∧ i<17+(j+1)) := by omega
+      have hh : (17≤i ∧ i<17+j)↔(17≤i ∧ i<17+(j+1)) := by omega_using [he]
       simp only [hh]
   · intro i hi
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using [])]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 
@@ -370,22 +370,22 @@ theorem first_ok {s : State}
         hb.keep.gpr .x1 (by simp),ha.keep.gpr .x1 (by simp)]
       simp only [firstState,Vector.getElem_ofFn,Nat.zero_add,Nat.sub_zero]
       by_cases h8 : i<8
-      · rw [ite_eq_right (by omega : ¬ (17≤i ∧ i<17+8)),
-          ite_eq_right (by omega : ¬ i=16),
-          ite_eq_right (by omega : ¬ (8≤i ∧ i<8+2*4)),
-          ite_eq_left (by omega : 0≤i ∧ i<2*4),ite_eq_left h8]
+      · rw [ite_eq_right (by omega_using [h8] : ¬ (17≤i ∧ i<17+8)),
+          ite_eq_right (by omega_using [h8] : ¬ i=16),
+          ite_eq_right (by omega_using [h8] : ¬ (8≤i ∧ i<8+2*4)),
+          ite_eq_left (by omega_using [h8] : 0≤i ∧ i<2*4),ite_eq_left h8]
       · by_cases h16 : i<16
-        · rw [ite_eq_right (by omega : ¬ (17≤i ∧ i<17+8)),
-            ite_eq_right (by omega : ¬ i=16),
-            ite_eq_left (by omega : 8≤i ∧ i<8+2*4),ite_eq_right h8,
-            ite_eq_left (by omega : i<17)]
+        · rw [ite_eq_right (by omega_using [h16] : ¬ (17≤i ∧ i<17+8)),
+            ite_eq_right (by omega_using [h16] : ¬ i=16),
+            ite_eq_left (by omega_using [h8, h16] : 8≤i ∧ i<8+2*4),ite_eq_right h8,
+            ite_eq_left (by omega_using [h16] : i<17)]
         · by_cases he : i=16
           · subst i
             rw [ite_eq_right (by decide : ¬ (17≤16 ∧ 16<17+8)),ite_eq_left rfl,
               ite_eq_right (by decide : ¬ (16:Nat)<8),ite_eq_left (by decide : (16:Nat)<17)]
             rfl
-          · rw [ite_eq_left (by omega : 17≤i ∧ i<17+8),ite_eq_right h8,
-              ite_eq_right (by omega : ¬ i<17)]
+          · rw [ite_eq_left (by omega_using [hi, h16, he] : 17≤i ∧ i<17+8),ite_eq_right h8,
+              ite_eq_right (by omega_using [h16, he] : ¬ i<17)]
 
 end VG.Proof.MlDsa.AArch64.Sign.CommitTail
 

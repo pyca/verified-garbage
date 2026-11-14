@@ -51,8 +51,8 @@ theorem xor2Mem_block (m : Mem) (P Q D : Addr) :
 theorem sub1_32 {n : Nat} (h : 1 ≤ n) (hn : n < 2 ^ 32) :
     BitVec.ofNat 32 n - BitVec.ofNat 32 1 = BitVec.ofNat 32 (n - 1) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub, toNat_ofNat32 hn, toNat_ofNat32 (by decide), toNat_ofNat32 (by omega)]
-  omega
+  rw [BitVec.toNat_sub, toNat_ofNat32 hn, toNat_ofNat32 (by decide), toNat_ofNat32 (by omega_using [hn])]
+  omega_using [h, hn]
 
 theorem beq_zero32 {n : Nat} (hn : n < 2 ^ 32) : (BitVec.ofNat 32 n == 0) = decide (n = 0) := by
   by_cases h : n = 0

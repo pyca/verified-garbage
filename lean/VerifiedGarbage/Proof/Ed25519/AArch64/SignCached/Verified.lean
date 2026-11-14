@@ -130,7 +130,7 @@ theorem finalize_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (finalize backend.code backend.suffix n b)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have hv : Whole.valid (if b then .caller 4 n else .const n) := by
-    cases b <;> simp [Whole.valid] <;> omega
+    cases b <;> simp [Whole.valid] <;> omega_using [hn]
   have hvall : ∀ p : Reg × Value, p ∈ [(.x0, .caller 5 0),
       (.x1, if b then .caller 4 n else .const n), (.x2, .frame 192), (.x3, .caller 5 192)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -289,7 +289,7 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (ht : (taint.check (Taint.ofRegs []) (.block (reduceArgs d)) hint).isSome = true) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (reduce d)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
-  have hv : Whole.valid (.frame d) := by change d < 4096; omega
+  have hv : Whole.valid (.frame d) := by change d < 4096; omega_using [hd]
   have hvall : ∀ p : Reg × Value, p ∈ [(.x0, .frame d), (.x1, .frame 192), (.x2, .caller 5 0)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl)

@@ -57,11 +57,11 @@ theorem undo1_ok {D : Addr} {n : Nat} (hn : n < 2 ^ 64) {s : State} (he : Env Ct
   have e15 := and15 (BitVec.ofNat 64 n)
   rw [toNat_ofNat_of_lt hn, imm_eq (by decide)] at e15
   have esub : BitVec.ofNat 64 n - BitVec.ofNat 64 (n % 16) = BitVec.ofNat 64 (16 * (n / 16)) := by
-    rw [ofNat_sub (Nat.mod_le _ _) hn]; congr 1; omega
+    rw [ofNat_sub (Nat.mod_le _ _) hn]; congr 1; omega_using []
   have ed : D + BitVec.ofNat 64 (16 * (n / 16)) - BitVec.ofNat 64 (16 * (n / 16)) = D := BitVec.add_sub_cancel _ _
-  have h4 := shr4 (16 * (n / 16)) (by omega)
-  rw [show 16 * (n / 16) / 16 = n / 16 by omega] at h4
-  have hz := and_self_beq (show n / 16 < 2 ^ 64 by omega)
+  have h4 := shr4 (16 * (n / 16)) (by omega_using [hn])
+  rw [show 16 * (n / 16) / 16 = n / 16 by omega_using []] at h4
+  have hz := and_self_beq (show n / 16 < 2 ^ 64 by omega_using [hn])
   apply WP.of_runBlock
   refine ⟨_, by xrun [he.r15, q₁, q₂, htl, hdat, e15, esub, ed, h4], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, ed]
@@ -100,7 +100,7 @@ theorem undo2_ok {R : Nat} {D : Addr} {n : Nat} {s : State} (he : Env Ctx (W + B
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide) (by decide)) hrd₂ hwr₂
   have hk := he₂.rsp
-  have hq : 16 * (n / 16) ≤ n := by omega
+  have hq : 16 * (n / 16) ≤ n := by omega_using []
   have hdq := (hd.of_eq hrd₂ hwr₂).take hq
   have hS : (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 512, 2048⟩ := by
     simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 2048) (by decide) (.inr ⟨by decide, by decide⟩)
@@ -112,7 +112,7 @@ theorem undo2_ok {R : Nat} {D : Addr} {n : Nat} {s : State} (he : Env Ctx (W + B
   have hcall : CtrCall s₂ Ctx (W + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 512) R (n / 16) := by
     refine ⟨hdi, hsi, hdx, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hcx,
       by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide)]; exact h8, h9, hR.2,
-      by have := hd.ok.wrap; omega, kc, hdq.ctx.sub_left (Region.sub_prefix (show 240 ≤ 256 by decide)),
+      by have := hd.ok.wrap; omega_using [this], kc, hdq.ctx.sub_left (Region.sub_prefix (show 240 ≤ 256 by decide)),
       (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide)),
       cd, hS, hdq.ok.w.sub_right (Lay.wSub (by decide)), ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [hk]; exact L.kc.sub_right (Region.sub_prefix (by decide))
@@ -122,7 +122,7 @@ theorem undo2_ok {R : Nat} {D : Addr} {n : Nat} {s : State} (he : Env Ctx (W + B
     · refine covers_cons ?_ (covers_cons ?_ (covers_cons hdq.ok.rd (covers_left (he₂.perm.wC (by decide)))))
       · exact fun a m' ⟨r, hr, hc'⟩ => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact he₂.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega⟩
+          exact he₂.perm.ctx a m' ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc' ⊢; omega_using [hc']⟩
       · simpa using covers_left (he₂.perm.stC (d := 0) (n := 16) (by decide))
     · exact covers_cons (by simpa using he₂.perm.stC (d := 0) (n := 16) (by decide))
         (covers_cons hdq.wr (he₂.perm.wC (by decide)))
@@ -171,7 +171,7 @@ theorem undo_B {W D SP : Addr} {n : Nat} {m m' : Mem} (h : Frame (undoFrame W SP
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨⟨W, 128⟩, by simp, Offset.sub_base W (by decide)⟩
-    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega)⟩
+    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega_using [])⟩
     · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨below SP 24, by simp, below_sub (by decide) (by decide)⟩
 

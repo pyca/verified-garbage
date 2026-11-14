@@ -60,16 +60,16 @@ theorem primeHeader_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitVe
     obtain ⟨e, he, rfl⟩ := hsl
     have := hS e he
     simp only [primeHeaderT, List.getD_cons_succ, List.getD_cons_zero, Function.comp]
-    omega
+    omega_using [this]
   · simp only [primeHeaderT, List.map_map, List.mem_map] at hsl
     obtain ⟨e, he, rfl⟩ := hsl
     simp only [Function.comp] at hk₁ hk₂ ⊢
     have ea : B + BitVec.ofNat 64 k = off (off B 28672) (8 * e.1) + BitVec.ofNat 64 (k - (28672 + 8 * e.1)) := by
       rw [off_off, off, VG.Offset.add_ofNat_add_ofNat]
       congr 2
-      omega
+      omega_using [hk₁]
     rw [hb h₁, hb h₂, ea]
-    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega)
+    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega_using [hk₂])
 
 theorem refillHeader_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {rs : List Reg}
     {s₁ s₂ : State} (hk : PrimeHeaderLayout7 B wr) (hS : ∀ e ∈ vs, e.1 < 32)
@@ -98,16 +98,16 @@ theorem refillHeader_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitV
     obtain ⟨e, he, rfl⟩ := hsl
     have := hS e he
     simp only [refillHeaderT, List.getD_cons_succ, List.getD_cons_zero, Function.comp]
-    omega
+    omega_using [this]
   · simp only [refillHeaderT, List.map_map, List.mem_map] at hsl
     obtain ⟨e, he, rfl⟩ := hsl
     simp only [Function.comp] at hk₁ hk₂ ⊢
     have ea : B + BitVec.ofNat 64 k = off (off B 28672) (8 * e.1) + BitVec.ofNat 64 (k - (28672 + 8 * e.1)) := by
       rw [off_off, off, VG.Offset.add_ofNat_add_ofNat]
       congr 2
-      omega
+      omega_using [hk₁]
     rw [hb h₁, hb h₂, ea]
-    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega)
+    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega_using [hk₂])
 
 theorem primeHeader_ct {α : Type} {Φ : α → State → Prop} {c : Prog isa} (B : α → Addr) (wr : α → List Region)
     (S : List Nat) (vs : α → List (Nat × BitVec 64)) (rs : List Reg) (hS : ∀ j ∈ S, j < 32)
@@ -164,16 +164,16 @@ theorem calleeHeader_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitV
     obtain ⟨e, he, rfl⟩ := hsl
     have := hS e he
     simp only [calleeHeaderT, List.getD_cons_succ, List.getD_cons_zero, Function.comp]
-    omega
+    omega_using [this]
   · simp only [calleeHeaderT, List.map_map, List.mem_map] at hsl
     obtain ⟨e, he, rfl⟩ := hsl
     simp only [Function.comp] at hk₁ hk₂ ⊢
     have ea : B + BitVec.ofNat 64 k = off (off B 28672) (8 * e.1) + BitVec.ofNat 64 (k - (28672 + 8 * e.1)) := by
       rw [off_off, off, VG.Offset.add_ofNat_add_ofNat]
       congr 2
-      omega
+      omega_using [hk₁]
     rw [hb h₁, hb h₂, ea]
-    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega)
+    exact word_bytes ((h₁.hdr e he).trans (h₂.hdr e he).symm) (by omega_using [hk₂])
 
 theorem calleeHeader_ct {α : Type} {Φ : α → State → Prop} {c : Prog isa} (B : α → Addr) (wr : α → List Region)
     (S : List Nat) (vs : α → List (Nat × BitVec 64)) (rs : List Reg) (hS : ∀ j ∈ S, j < 32)

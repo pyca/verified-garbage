@@ -49,8 +49,8 @@ theorem bv16_bytes (x : BitVec 16) :
   by_cases h8 : i < 8
   · simp [h8]
   · simp only [h8, decide_false, Bool.false_and, Bool.false_or, Bool.not_false, Bool.true_and,
-      decide_true, show i - 8 < 8 by omega, show i - 8 < 16 by omega]
-    rw [show 8 + (i - 8) = i by omega]
+      decide_true, show i - 8 < 8 by omega_using [hi], show i - 8 < 16 by omega_using [hi]]
+    rw [show 8 + (i - 8) = i by omega_using [h8]]
 
 theorem readW16_byte (m : Mem) (a : Addr) {i : Nat} (hi : i < 2) :
     (m.readW a 16).extractLsb' (8 * i) 8 = m (a + BitVec.ofNat 64 i) := by
@@ -74,7 +74,7 @@ theorem lo16_sub (x y : BitVec 64) : (x - y).setWidth 16 = x.setWidth 16 - y.set
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub]
   rw [Nat.mod_mod_of_dvd _ (by decide)]
-  omega
+  omega_using []
 
 theorem lo16_ext (x : BitVec 16) : (x.setWidth 64).setWidth 16 = x :=
   BitVec.setWidth_setWidth_of_le _ (by decide) |>.trans (BitVec.setWidth_eq x)
@@ -94,7 +94,7 @@ theorem mask16 (x : BitVec 64) : (x <<< 48) >>> 48 = (x.setWidth 16).setWidth 64
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
   by_cases h : i < 16
-  · simp [h, hi]; intro _; omega
+  · simp [h, hi]; intro _; omega_using [h]
   · simp [h]; intro _; omega
 
 /-- `rotateSum`: the low 16 bits of `x` rotated left by `s`, zero-extended. -/
@@ -106,13 +106,13 @@ theorem rotSum16 (x : BitVec 64) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
   · rw [BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt h2]
     by_cases h : i < s
     · rw [ite_eq_left h]
-      simp [hi, show 64 - s + i < 64 by omega, show ¬ 64 - s + i < 48 by omega,
-        show 64 - s + i - 48 = 16 - s + i by omega, show 16 - s + i < 16 by omega, show 48 + i < 48 + s by omega]
+      simp [hi, show 64 - s + i < 64 by omega, show ¬ 64 - s + i < 48 by omega_using [h2],
+        show 64 - s + i - 48 = 16 - s + i by omega_using [h2], show 16 - s + i < 16 by omega_using [h2, h], show 48 + i < 48 + s by omega_using [h]]
     · rw [ite_eq_right h]
-      simp [h16, hi, show ¬ 64 - s + i < 64 by omega, show 48 + i < 64 by omega,
-        show ¬ 48 + i < 48 + s by omega, show 48 + i - (48 + s) = i - s by omega, show i - s < 16 by omega]
-  · simp [h16, Nat.mod_eq_of_lt h2, show ¬ i < s by omega, show ¬ 64 - s + i < 64 by omega,
-      show ¬ 48 + i < 64 by omega]
+      simp [h16, hi, show ¬ 64 - s + i < 64 by omega_using [h], show 48 + i < 64 by omega_using [h16],
+        show ¬ 48 + i < 48 + s by omega_using [h], show 48 + i - (48 + s) = i - s by omega_using [], show i - s < 16 by omega_using [h16]]
+  · simp [h16, Nat.mod_eq_of_lt h2, show ¬ i < s by omega_using [h2, h16], show ¬ 64 - s + i < 64 by omega_using [h2, h16],
+      show ¬ 48 + i < 64 by omega_using [h16]]
 
 /-- `rotate16`: the zero-extended `y` rotated left by `s`. -/
 theorem rot16 (y : BitVec 16) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
@@ -121,14 +121,14 @@ theorem rot16 (y : BitVec 16) {s : Nat} (h1 : 1 ≤ s) (h2 : s < 16) :
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
     by_cases h : i < s
-    · simp [show 16 - s + i < 64 by omega, show 64 - s + i < 64 by omega, show ¬ 64 - s + i < 48 by omega,
-        show 64 - s + i - 48 = 16 - s + i by omega]
-    · simp [show ¬ 64 - s + i < 64 by omega, BitVec.getLsbD_of_ge y (16 - s + i) (by omega)]
+    · simp [show 16 - s + i < 64 by omega_using [h2, h], show 64 - s + i < 64 by omega_using [h2, h], show ¬ 64 - s + i < 48 by omega_using [h2],
+        show 64 - s + i - 48 = 16 - s + i by omega_using [h2]]
+    · simp [show ¬ 64 - s + i < 64 by omega_using [h], BitVec.getLsbD_of_ge y (16 - s + i) (by omega_using [h])]
   rw [e, rotSum16 _ h1 h2, lo16_ext]
 
 theorem al2 {T : Addr} (hT : T.toNat % 8 = 0) (j : Nat) : (T + BitVec.ofNat 64 (2 * j)).toNat % 2 = 0 := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_using [hT]
 
 theorem loadKey_run (u : State) {T : Addr} (E : KeyEnv T u) {j : Nat} (hj : j < 64) :
     WP isa (.block (loadKey j)) u fun t =>
@@ -138,7 +138,7 @@ theorem loadKey_run (u : State) {T : Addr} (E : KeyEnv T u) {j : Nat} (hj : j < 
       (t.gpr .t2).setWidth 16 = (Spec.Rc2.scheduleAt u.mem T).getD j 0 ∧ t.mem = u.mem) ?_
     (by rfl) rfl) fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   unfold loadKey
-  rrun [E.a2, E.rd (2 * j) 2 (by omega), al2 E.al j, show 2 * j < 2048 by omega]
+  rrun [E.a2, E.rd (2 * j) 2 (by omega_using [hj]), al2 E.al j, show 2 * j < 2048 by omega_using [hj]]
   rw [lo16_ext, key_word _ _ hj]
 
 end VG.Proof.Rc2.RISCV64

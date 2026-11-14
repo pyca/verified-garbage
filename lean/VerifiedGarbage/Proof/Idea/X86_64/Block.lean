@@ -88,8 +88,8 @@ theorem rounds_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
         Holds (roundsSpec z n x) s' ∧ Keep roundWrites s s'
   | 0, _, s, hx, _ => ⟨s, by simp [runBlock_nil], hx, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
   | n + 1, hn, s, hx, hk => by
-    obtain ⟨s₁, h₁, x₁, e₁⟩ := rounds_run z x n (by omega) s hx hk
-    obtain ⟨s₂, h₂, x₂, e₂⟩ := round_run n (by omega) z _ s₁ x₁ (hk.keep e₁ (by decide))
+    obtain ⟨s₁, h₁, x₁, e₁⟩ := rounds_run z x n (by omega_using [hn]) s hx hk
+    obtain ⟨s₂, h₂, x₂, e₂⟩ := round_run n (by omega_using [hn]) z _ s₁ x₁ (hk.keep e₁ (by decide))
     refine ⟨s₂, ?_, ?_, e₁.trans e₂⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
       exact run_append h₁ h₂
@@ -199,7 +199,7 @@ def BlockWrite (s : State) (a : Addr) : Prop :=
 
 theorem frame_write8 {a : Addr} {m m' : Mem} {j : Nat} (v : BitVec 8) (hj : j < 8)
     (h : Frame [⟨a, 8⟩] m m') : Frame [⟨a, 8⟩] m (m'.writeW (a + BitVec.ofNat 64 j) v) :=
-  h.writeW (List.mem_singleton_self _) v (Offset.contains_base a (by omega) (by omega))
+  h.writeW (List.mem_singleton_self _) v (Offset.contains_base a (by omega_using [hj]) (by omega_using [hj]))
 
 theorem store_run (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .rsi = a)
     (hw : BlockWrite s a) (hy : OutHolds y s) :
@@ -234,7 +234,7 @@ theorem store_run (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .rsi 
     intro i hi
     simp only [Spec.Idea.blockAt, Vector.getElem_ofFn, m₄, encodeBlock_get _ hi]
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨
-        i = 5 ∨ i = 6 ∨ i = 7 := by omega
+        i = 5 ∨ i = 6 ∨ i = 7 := by omega_using [hi]
     all_goals simp (disch := decide) only [write8_apply, Nat.reduceMul, Nat.reduceAdd, Nat.reduceDiv,
       Nat.reduceMod, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte, lo8, hi8, BitVec.ushiftRight_zero]
   · rw [m₄]

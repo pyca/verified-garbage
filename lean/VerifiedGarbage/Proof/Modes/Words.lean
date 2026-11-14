@@ -29,8 +29,8 @@ theorem off_self (p : Addr) {i : Nat} (hi : i < 2 ^ 64) : (p + BitVec.ofNat 64 i
 region's address `q`. -/
 theorem not_near {p q : Addr} {np nq i n : Nat} (hd : Region.Disjoint ⟨p, np⟩ ⟨q, nq⟩) (hi : i < np)
     (hn : n ≤ nq) (hnp : np ≤ 2 ^ 64) : ¬ (p + BitVec.ofNat 64 i - q).toNat < n := fun h =>
-  hd (p + BitVec.ofNat 64 i) (by simp only [Region.Contains]; rw [off_self p (by omega)]; omega)
-    (by simp only [Region.Contains]; omega)
+  hd (p + BitVec.ofNat 64 i) (by simp only [Region.Contains]; rw [off_self p (by omega_using [hi, hnp])]; omega_using [hi])
+    (by simp only [Region.Contains]; omega_using [hn, h])
 
 /-- The memory `m` with the `n` bytes at `P` given by `f`. -/
 def over (m : Mem) (P : Addr) (n : Nat) (f : Nat → Byte) : Mem :=
@@ -41,7 +41,7 @@ theorem over_zero (m : Mem) (P : Addr) (f : Nat → Byte) : over m P 0 f = m := 
 
 theorem over_at {m : Mem} {P : Addr} {n : Nat} {f : Nat → Byte} {i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
     over m P n f (P + BitVec.ofNat 64 i) = f i := by
-  simp only [over]; rw [off_self P (by omega), ite_eq_left hi]
+  simp only [over]; rw [off_self P (by omega_using [hi, hn]), ite_eq_left hi]
 
 theorem over_out {m : Mem} {P : Addr} {n : Nat} {f : Nat → Byte} {x : Addr} (hx : ¬ (x - P).toNat < n) :
     over m P n f x = m x := by
@@ -67,14 +67,14 @@ theorem over_step {m m' : Mem} {P : Addr} {w : Nat} {f : Nat → Byte} (hw : 8 *
   rw [h x]
   by_cases hx : (x - (P + BitVec.ofNat 64 (8 * w))).toNat < 8
   · have := (sub_add_lt x P hw).mp hx
-    rw [ite_eq_left hx, sub_add_eq x P hw this.1, show 8 * w + ((x - P).toNat - 8 * w) = (x - P).toNat by omega]
-    simp only [over]; rw [ite_eq_left (by omega)]
+    rw [ite_eq_left hx, sub_add_eq x P hw this.1, show 8 * w + ((x - P).toNat - 8 * w) = (x - P).toNat by omega_using [this]]
+    simp only [over]; rw [ite_eq_left (by omega_using [this])]
   · rw [ite_eq_right hx]
     have := mt (sub_add_lt x P hw).mpr hx
     simp only [over]
     by_cases h1 : (x - P).toNat < 8 * w
-    · rw [ite_eq_left h1, ite_eq_left (by omega)]
-    · rw [ite_eq_right h1, ite_eq_right (by omega)]
+    · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1])]
+    · rw [ite_eq_right h1, ite_eq_right (by omega_using [this, h1])]
 
 /-- A byte at an offset from the same base as `over`'s block. -/
 theorem over_off (m : Mem) (X : Addr) {d n t : Nat} (f : Nat → Byte) (ht : t < 2 ^ 64) (hd : d + n ≤ 2 ^ 64)
@@ -84,8 +84,8 @@ theorem over_off (m : Mem) (X : Addr) {d n t : Nat} (f : Nat → Byte) (ht : t <
   split
   · rename_i h
     rw [show X + BitVec.ofNat 64 t = X + BitVec.ofNat 64 d + BitVec.ofNat 64 (t - d) by
-      rw [VG.Offset.add_add, Nat.add_sub_cancel' h.1], over_at (by omega) (by omega)]
-  · exact over_out (off_sub_not X (by omega) ht hn hd)
+      rw [VG.Offset.add_add, Nat.add_sub_cancel' h.1], over_at (by omega_using [h]) (by omega_using [hd])]
+  · exact over_out (off_sub_not X (by omega_arith) ht hn hd)
 
 /-- Bytes of a block other than `P`'s stay through `over`. -/
 theorem over_sep {m : Mem} {P Q : Addr} {n k : Nat} {f : Nat → Byte} (hd : Region.Disjoint ⟨P, n⟩ ⟨Q, k⟩)
@@ -94,7 +94,7 @@ theorem over_sep {m : Mem} {P Q : Addr} {n k : Nat} {f : Nat → Byte} (hd : Reg
 
 /-- `over` changes only its block. -/
 theorem over_frame (m : Mem) (P : Addr) (n : Nat) (f : Nat → Byte) : Frame [⟨P, n⟩] m (over m P n f) :=
-  fun _ hx => over_out fun h => hx _ List.mem_cons_self (by simp only [Region.Contains]; omega)
+  fun _ hx => over_out fun h => hx _ List.mem_cons_self (by simp only [Region.Contains]; omega_using [h])
 
 /-- Byte `r` of block `q` of the blocks of `L` bytes at `D`, through `over`
 of block `p`. -/
@@ -105,11 +105,11 @@ theorem over_blk (m : Mem) (D : Addr) {L n p q r : Nat} (f : Nat → Byte) (hp :
   have := idx_lt (L := L) hq
   have := idx_lt (L := L) hp
   split
-  · rename_i h; subst h; rw [← VG.Offset.add_add, over_at hr (by omega)]
+  · rename_i h; subst h; rw [← VG.Offset.add_add, over_at hr (by omega_arith)]
   · rename_i h
-    refine over_out (off_sub_not D ?_ (by omega) (by omega) (by omega))
+    refine over_out (off_sub_not D ?_ (by omega_arith) (by omega_using [hr]) (by omega_using [hn, this]))
     rcases Nat.lt_or_gt_of_ne h with h | h
-    · have := idx_lt (L := L) h; omega
-    · have := idx_lt (L := L) h; omega
+    · have := idx_lt (L := L) h; omega_using [hr, this]
+    · have := idx_lt (L := L) h; omega_using [this]
 
 end VG.Proof.Modes

@@ -58,13 +58,13 @@ theorem dataLoop_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4.
     {s : State} (hi : GInv s₀ b D n E 0 s) :
     WP isa (.loop Impl.Sm4.AArch64.group (.nonzero .x .x2)) s (GDone s₀ b D n E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 16 * k ∧ GInv s₀ b D n E k s) (fun m s hs => ?_) n s
-    ⟨0, by omega, hi⟩
+    ⟨0, by omega_using [], hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
   refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨(eval_nonzero s' .x2).trans (by rw [z]; rfl), d⟩
   · exact .inr ⟨(eval_nonzero s' .x2).trans (by rw [beq_false_of_ne z]; rfl), n - 16 * (k + 1),
-      by have := d.lt; have := hk.lt; omega, k + 1, rfl, d⟩
+      by have := d.lt; have := hk.lt; omega_arith, k + 1, rfl, d⟩
 
 theorem sreg_ne (i : Nat) (hi : i < 10) : sreg i ≠ sb := by
   revert i; decide
@@ -78,7 +78,7 @@ theorem prologue_ok {sr : Reg} {s₀ : State} {b : Addr} (hb : s₀.gpr sr = b)
   have hb₁ : s₁.gpr sb = b := by rw [r₁, hb]
   obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂, -⟩ := save_ok (b := b) (by rw [wr₁]; exact hw) hb₁
   obtain ⟨s₃, e₃, v₃, -, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (b := b) keyMasks (by rw [g₂, hb₁])
-    (by rw [wr₂, wr₁]; exact hw) (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega)
+    (by rw [wr₂, wr₁]; exact hw) (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega_using [this])
     (by decide)
   refine ⟨s₃, by
     rw [runBlock_app, runBlock_app, e₁, Option.bind_some, e₂, Option.bind_some, e₃],
@@ -88,12 +88,12 @@ theorem prologue_ok {sr : Reg} {s₀ : State} {b : Addr} (hb : s₀.gpr sr = b)
   · rw [← o₁ _ (sreg_ne i hi), ← sv₂ i hi]
     refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableSlot_eq, savedSlot_eq]; omega)
-      (by rw [savedSlot_eq]; omega)
+    exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableSlot_eq, savedSlot_eq]; omega_using [])
+      (by rw [savedSlot_eq]; omega_using [hi])
   · rw [← m₁]
     refine f₂.trans (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
     simp only [List.mem_singleton] at hr; subst hr
-    exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega)
+    exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using [])
 
 theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j : Nat) :
     outF m D (dirKeys dir sch) j = blockFn sch (specDirA dir) (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
@@ -140,7 +140,7 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
   have f₀₂ : Frame [⟨b, 8 * slots⟩] s₀.mem s₂.mem :=
     f₁.trans (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega)⟩)
+      exact Region.sub_prefix (by rw [tableEnd_eq, slots_eq]; omega_using [])⟩)
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have sc₂ : ScrOk s₀ b E s₂.mem := by
     refine ⟨k₂.masks.at base₂, fun e he => ?_, fun i hi => ?_⟩
@@ -150,8 +150,8 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
     · rw [← sv₁ i hi]
       refine k₂.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega)
-        (by rw [savedSlot_eq]; omega)
+      exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by rw [tableEnd_eq, savedSlot_eq]; omega_using [])
+        (by rw [savedSlot_eq]; omega_using [hi])
   have data₂ : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s₀.mem (D + BitVec.ofNat 64 i) := fun i hi =>
     f₀₂.bytes (R := ⟨D, 16 * n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS)
       (by simp only; omega) hi
@@ -168,7 +168,7 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
     rw [x2₂, show s₀.gpr .x2 = BitVec.ofNat 64 n by simp only [n, BitVec.ofNat_toNat, BitVec.setWidth_eq]]
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     constructor
-    · intro h; have := congrArg BitVec.toNat h; rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+    · intro h; have := congrArg BitVec.toNat h; rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])] at this
     · intro h; rw [h]; rfl
   refine WP.seq (WP.mono (M := isa) (Q := GDone s₀ b D n E)
     (WP.ite (decide (n = 0)) ((eval_zero s₂ .x2).trans (by rw [hz₃])) (fun h0 => ?_) (fun h0 => ?_))
@@ -177,8 +177,8 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
     exact WP.block_nil ⟨base₂, sc₂, fun i hi => by omega, fr₂, rd₂, wr₂⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitB, fitD⟩ ⟨base₂, by rw [x1₂]; simp,
-      by rw [x2₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega, k₂.rdi, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂⟩
-    rw [data₂ i hi, ite_eq_right (by omega)]
+      by rw [x2₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega_using [hn0], k₂.rdi, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂⟩
+    rw [data₂ i hi, ite_eq_right (by omega_using [])]
   -- The epilogue.
   obtain ⟨s₅, e₅, rg₅, -, m₅, -, -⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base d₄.scr.saved
   refine WP.of_runBlock ⟨s₅, e₅, rg₅, ?_⟩

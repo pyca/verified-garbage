@@ -26,10 +26,10 @@ theorem clear_ok {s : State} {B out : Addr} {Z k i : Nat}
  refine WP.mono (WP.keep [.x1,.x2,.x3] (Q:=fun a =>a.gpr .x1=out ∧ a.gpr .x2=BitVec.ofNat 64 k ∧ a.gpr .x3=0#64 ∧ a.mem=s.mem)
   ?_ rfl rfl rfl) ?_
  · brun [base,hdr_enc index,hdr_enc (show sLen<32 by decide),pointer,length,
-    scratch.ld (d:=8*i) (by omega),scratch.ld (d:=8*sLen) (by unfold sLen;omega)]
+    scratch.ld (d:=8*i) (by omega_using [room, index]),scratch.ld (d:=8*sLen) (by unfold sLen;omega_using [room])]
  · rintro a ⟨⟨ptrA,countA,zeroA,memA⟩,restA⟩
-   refine WP.mono (wp_countdown (N:=k) (by omega) (by omega) (BInv a out)
-    (fun j hj t inv _ =>bStep_ok (by omega) zeroA (fun i hi =>by rw [restA.wr];exact writable i hi) hj inv)
+   refine WP.mono (wp_countdown (N:=k) (by omega_using [size]) (by omega_using [positive]) (BInv a out)
+    (fun j hj t inv _ =>bStep_ok (by omega_using [size]) zeroA (fun i hi =>by rw [restA.wr];exact writable i hi) hj inv)
     ⟨Keep.refl _ _,by simpa only [show BitVec.ofNat 64 0=0#64 from rfl,BitVec.add_zero] using ptrA,fun _ h =>by omega,fun _ _ =>rfl⟩ countA) ?_
    intro t inv
    refine ⟨?_,?_,(restA.trans inv.keep).mono (by simp)⟩
@@ -43,7 +43,7 @@ theorem clear_ok {s : State} {B out : Addr} {Z k i : Nat}
      rw [inv.frame x ?_,memA]
      intro j hj eq
      subst x
-     rw [show ofs out (out+BitVec.ofNat 64 j)=j from Mem.sub_ofNat_toNat _ (by omega)] at hx
-     omega
+     rw [show ofs out (out+BitVec.ofNat 64 j)=j from Mem.sub_ofNat_toNat _ (by omega_using [size, hj])] at hx
+     omega_using [hj, hx]
 
 end VG.Proof.Ffdh.AArch64.Cached

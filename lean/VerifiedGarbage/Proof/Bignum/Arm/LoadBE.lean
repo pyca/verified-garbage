@@ -36,7 +36,7 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
       Frame [⟨State.addr dst, 4 * n⟩] s.mem t.mem ∧ Rest [.r0, .r1, .r2, .lr] s t := by
   rw [loadBE, WP.seq_iff]
   refine WP.mono (zero_ok s (base := dst) (o := 0) (n := n)
-    ⟨dstFit, by omega, write⟩ (by omega) (by simpa using p0) count zero) ?_
+    ⟨dstFit, by omega_using [], write⟩ (by omega_using [hk, fit]) (by simpa using p0) count zero) ?_
   intro u zi
   rw [WP.seq_iff]
   refine WP.mono (loadBEreverseArgs_ok u hk ((zi.rest.gpr .r6 (by decide)).trans p6)) ?_
@@ -48,8 +48,8 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
   have vw : InRegions v.wr (State.addr dst) k := by
     rw [keep.wr]
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
-      CallLay.inRegions_sub (off := 0) write (by omega : 0 + k ≤ 4 * n) (by omega)
-  have ctx := reverseCtx_of_regions v src dst countFits srcFit (by omega) vr vw
+      CallLay.inRegions_sub (off := 0) write (by omega_using [fit] : 0 + k ≤ 4 * n) (by omega_using [dstFit])
+  have ctx := reverseCtx_of_regions v src dst countFits srcFit (by omega_using [fit, dstFit]) vr vw
     (sep.sub_right (Region.sub_prefix fit))
   refine WP.mono (reverseBytes_ok v ctx hk
     (sptr.trans (congrArg (fun x => x + BitVec.ofNat 32 (k - 1))
@@ -65,22 +65,22 @@ theorem loadBE_ok (s : State) {src dst : BitVec 32} {n k : Nat}
     intro r hr hc
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst r
-    exact sep _ (Offset.contains_base _ (by omega) (by omega)) hc
+    exact sep _ (Offset.contains_base _ (by omega_using [hj']) (by omega_using [countFits, hj'])) hc
   have padding : ∀ j, k ≤ j → j < 4 * n → t.mem (State.addr dst + BitVec.ofNat 64 j) = 0 := by
     intro j hj hjn
     rw [ri.outside _ ?_, memV]
     · have z := byte_zero_of_val32 zi.value hjn
       simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using z
     · intro l hl he
-      rw [addr_add (by omega)] at he
+      rw [addr_add (by omega_using [fit, dstFit, hl])] at he
       have e := congrArg (fun a => (a - State.addr dst).toNat) he
-      rw [Mem.sub_ofNat_toNat _ (by omega : j < 2 ^ 64),
-        Mem.sub_ofNat_toNat _ (by omega : l < 2 ^ 64)] at e
-      omega
+      rw [Mem.sub_ofNat_toNat _ (by omega_using [dstFit, hjn] : j < 2 ^ 64),
+        Mem.sub_ofNat_toNat _ (by omega_using [countFits, hl] : l < 2 ^ 64)] at e
+      omega_using [hk, fit, countFits, srcFit, dstFit, p0, p4, p5, p6, count, zero, dptr, sptr, len, hj, hjn, hl, e]
   refine ⟨?_, ?_, keep.trans ri.rest⟩
-  · rw [val32_zero_extension _ _ fit padding, ri.os2ip srcFit (by omega), input]
+  · rw [val32_zero_extension _ _ fit padding, ri.os2ip srcFit (by omega_using [fit, dstFit]), input]
   · apply frameV.trans
-    exact (ri.frame (by omega)).sub fun r hr => by
+    exact (ri.frame (by omega_using [fit, dstFit])).sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst r
       exact ⟨_, by simp, Region.sub_prefix fit⟩

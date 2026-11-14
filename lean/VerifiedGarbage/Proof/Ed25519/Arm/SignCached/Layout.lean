@@ -64,22 +64,22 @@ theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 32 :=
   have ap : (State.addr L.msg).toNat = L.msg.toNat := BitVec.toNat_setWidth_of_le (by decide)
   have ac : (State.addr L.scr).toNat = L.scr.toNat := BitVec.toNat_setWidth_of_le (by decide)
   by_cases hz : L.len.toNat = 0
-  · omega
+  · omega_using [hz]
   by_cases hp : State.addr L.msg ≤ State.addr L.scr
   · have hn : ¬ L.MSG.Contains (State.addr L.scr) 1 := fun hx => hd _ hx (by simp [Region.Contains])
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp] at hn
     have hp' : (State.addr L.msg).toNat ≤ (State.addr L.scr).toNat := hp
     rw [ap, ac] at hn hp'
-    omega
+    omega_using [nc, hn]
   · have hp' : State.addr L.scr ≤ State.addr L.msg := by
       change (State.addr L.scr).toNat ≤ (State.addr L.msg).toNat
       change ¬ (State.addr L.msg).toNat ≤ (State.addr L.scr).toNat at hp
-      omega
-    have hn : ¬ L.SCR.Contains (State.addr L.msg) 1 := fun hx => hd _ (by simp [Region.Contains]; omega) hx
+      omega_using [hp]
+    have hn : ¬ L.SCR.Contains (State.addr L.msg) 1 := fun hx => hd _ (by simp [Region.Contains]; omega_using [hz]) hx
     simp only [Region.Contains, BitVec.toNat_sub_of_le hp'] at hn
     have hp'' : (State.addr L.scr).toNat ≤ (State.addr L.msg).toNat := hp'
     rw [ap, ac] at hn hp''
-    omega
+    omega_using [nm, hn]
 
 
 abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=
@@ -106,7 +106,7 @@ theorem arg_word (hc : Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
     t.mem.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 =
       m₀.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 := by
   refine hc.frame.readW (r := L.ARGS) ?_ ?_ (by decide)
-  · exact Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)
+  · exact Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)
   · intro R hR
     simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hR

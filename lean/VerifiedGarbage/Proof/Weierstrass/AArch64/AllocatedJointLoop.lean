@@ -61,7 +61,7 @@ theorem allocatedJointStep_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base 
       Core (jointPoint P Q u v j c.gw) t ∧ t.gpr .x19=BitVec.ofNat 64 j := by
   rw [Joint.step]
   apply WP.seq
-  refine WP.mono_syms (decCounter_ok s (by omega) (by omega) h19) fun a ⟨a19,ka⟩ hsym => ?_
+  refine WP.mono_syms (decCounter_ok s (by omega_using []) (by omega_using [hj]) h19) fun a ⟨a19,ka⟩ hsym => ?_
   have ca := hops.keep _ s a ka hsym hs
   apply WP.seq
   refine WP.mono (hops.double _ a (jointPoint_curve hC hP hQ u v (j+1) c.gw) ca) fun b ⟨kb,cb⟩ => ?_
@@ -69,7 +69,7 @@ theorem allocatedJointStep_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base 
     rw [kb.regs.gpr _ hops.counter,a19,Nat.add_sub_cancel]
   refine WP.mono (allocatedJointDigits_ok hC hQ hops
     (hC.onCurve_add (jointPoint_curve hC hP hQ u v (j+1) c.gw) (jointPoint_curve hC hP hQ u v (j+1) c.gw))
-    cb (by omega) b19) fun t ⟨kt,ct⟩ => ?_
+    cb (by omega_using [hj]) b19) fun t ⟨kt,ct⟩ => ?_
   rw [jointPoint_step hC hP hQ (gw:=c.gw)] at ct
   have kp := kb.trans kt
   refine ⟨⟨(Keeps.regs ka).mono (by simp) |>.trans
@@ -89,8 +89,8 @@ theorem allocatedJointLoop_ok {c : Joint.Cfg} {o : Joint.Ops} {C : Curve} {base 
   apply countLoop_ok (Inv:=I) (n:=256) (by decide)
   · intro j a hj1 hj256 hi
     obtain ⟨ka,ca,a19⟩ := hi
-    have he : j-1+1=j := by omega
-    refine WP.mono (allocatedJointStep_ok hC hP hQ hops (by omega) (he.symm ▸ ca) (he.symm ▸ a19))
+    have he : j-1+1=j := by omega_using [hj1]
+    refine WP.mono (allocatedJointStep_ok hC hP hQ hops (by omega_using [hj256]) (he.symm ▸ ca) (he.symm ▸ a19))
       fun t ⟨kt,ct,t19⟩ => ⟨⟨ka.trans kt,ct,t19⟩,t19⟩
   · intro t ht
     obtain ⟨kt,ct,t19⟩ := ht

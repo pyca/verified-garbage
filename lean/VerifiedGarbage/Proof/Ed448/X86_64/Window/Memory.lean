@@ -43,9 +43,9 @@ theorem KeepW.scr {base : Addr} {s u : State} (h : KeepW base s u) (hs : Scr s b
 theorem Bits.keepW {base : Addr} {o k : Nat} (ho : 2048 ≤ o) (hb : o + 460 ≤ TAB)
     {s u : State} (h : Bits base o k s) (f : KeepW base s u) : Bits base o k u := by
   intro t ht
-  have hn : o - 1 + t < 2 ^ 64 := by simp only [TAB] at hb; omega
-  rw [f.mem _ (Or.inr (by rw [VG.Proof.X448.X86_64.ofs_off' base hn]; omega))
-    (Or.inl (by rw [VG.Proof.X448.X86_64.ofs_off' base hn]; omega))]
+  have hn : o - 1 + t < 2 ^ 64 := by simp only [TAB] at hb; omega_using [hb, ht]
+  rw [f.mem _ (Or.inr (by rw [VG.Proof.X448.X86_64.ofs_off' base hn]; omega_using [ho]))
+    (Or.inl (by rw [VG.Proof.X448.X86_64.ofs_off' base hn]; omega_using [ho, hb, ht]))]
   exact h t ht
 
 def pointAt (m : Mem) (base : Addr) (o : Nat) : Spec.Ed448.Point :=
@@ -57,11 +57,11 @@ def tablePoint (m : Mem) (base : Addr) (i : Nat) : Spec.Ed448.Point :=
 theorem pointAt_outside {base : Addr} {a n o : Nat} {m u : Mem} (h : Outside base a n m u)
     (ho : o + 184 ≤ 8192) (hs : o + 184 ≤ a ∨ a + n ≤ o) : pointAt u base o = pointAt m base o := by
   unfold pointAt F
-  rw [h.fe (by omega) (by omega), h.fe (by omega) (by omega), h.fe (by omega) (by omega)]
+  rw [h.fe (by omega_using [hs]) (by omega_using [ho]), h.fe (by omega_using [hs]) (by omega_using [ho]), h.fe (by omega_using [hs]) (by omega_using [ho])]
 
 theorem tablePoint_keep {base : Addr} {s u : State} (h : Keep base s u) (i : Nat) (hi : i < 17) :
     tablePoint u.mem base i = tablePoint s.mem base i := by
-  apply pointAt_outside h.mem <;> simp only [tabOffset, TAB] <;> omega
+  apply pointAt_outside h.mem <;> simp only [tabOffset, TAB] <;> omega_arith
 
 /-- Store one field slot in the table, preserving all working slots. -/
 theorem store_coord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
@@ -71,7 +71,7 @@ theorem store_coord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
       F u.mem base o = E s.mem base j := by
   have hj := VG.Proof.X448.X86_64.slot_lt j
   simp only [Impl.X448.X86_64.ACC] at hj
-  refine WP.mono (copyOut_ok hs (by simp only [TAB] at *; omega) (by omega))
+  refine WP.mono (copyOut_ok hs (by simp only [TAB] at *; omega_using [he]) (by omega_using [hj]))
     fun u ⟨fu, ou, gu, ru, wu⟩ => ⟨?_, ou, ?_, ?_⟩
   · refine ⟨fun r hr => gu r (fun h => hr (?_)), ru, wu, (ou.mono ho he).right _ _⟩
     exact (show ∀ r ∈ W, r ∈ clob from by decide) r h
@@ -79,7 +79,7 @@ theorem store_coord_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
     apply E_outside ou i
     have hi := VG.Proof.X448.X86_64.slot_lt i
     simp only [Impl.X448.X86_64.ACC] at hi
-    left; simp only [TAB] at ho; omega
+    left; simp only [TAB] at ho; omega_using [ho, hi]
   · unfold F E; rw [fu]
 
 /-- Store the accumulator at a public, fixed table index. -/
@@ -88,25 +88,25 @@ theorem store_ok {s : State} {base : Addr} (hs : Scr s base) (i : Nat) (hi : i <
       Outside base (tabOffset i 0) 184 s.mem u.mem ∧ E u.mem base = E s.mem base ∧
       tablePoint u.mem base i = Proof.Ed448.pt (E s.mem base) 0 1 2 := by
   rw [store, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (store_coord_ok hs (o := tabOffset i 0) (by simp only [tabOffset]; omega)
-    (by simp only [tabOffset]; omega) 0) fun s1 ⟨k1, o1, e1, v1⟩ => ?_
+  refine WP.mono (store_coord_ok hs (o := tabOffset i 0) (by simp only [tabOffset]; omega_using [])
+    (by simp only [tabOffset]; omega_using [hi]) 0) fun s1 ⟨k1, o1, e1, v1⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (store_coord_ok (k1.scr hs) (o := tabOffset i 1) (by simp only [tabOffset]; omega)
-    (by simp only [tabOffset]; omega) 1) fun s2 ⟨k2, o2, e2, v2⟩ => ?_
-  refine WP.mono (store_coord_ok (k2.scr (k1.scr hs)) (o := tabOffset i 2) (by simp only [tabOffset]; omega)
-    (by simp only [tabOffset]; omega) 2) fun u ⟨ku, ou, eu, vu⟩ => ?_
+  refine WP.mono (store_coord_ok (k1.scr hs) (o := tabOffset i 1) (by simp only [tabOffset]; omega_using [])
+    (by simp only [tabOffset]; omega_using [hi]) 1) fun s2 ⟨k2, o2, e2, v2⟩ => ?_
+  refine WP.mono (store_coord_ok (k2.scr (k1.scr hs)) (o := tabOffset i 2) (by simp only [tabOffset]; omega_using [])
+    (by simp only [tabOffset]; omega_using [hi]) 2) fun u ⟨ku, ou, eu, vu⟩ => ?_
   refine ⟨(k1.trans k2).trans ku,
-    ((o1.mono (by omega) (by omega)).trans (o2.mono (by simp only [tabOffset]; omega)
-      (by simp only [tabOffset]; omega))).trans
-      (ou.mono (by simp only [tabOffset]; omega) (by simp only [tabOffset]; omega)),
+    ((o1.mono (by omega_using []) (by omega_using [])).trans (o2.mono (by simp only [tabOffset]; omega_using [])
+      (by simp only [tabOffset]; omega_using []))).trans
+      (ou.mono (by simp only [tabOffset]; omega_using []) (by simp only [tabOffset]; omega_using [])),
     eu.trans (e2.trans e1), ?_⟩
   have hx : F u.mem base (tabOffset i 0) = F s1.mem base (tabOffset i 0) := by
     unfold F
-    rw [ou.fe (by simp only [tabOffset]; omega) (by simp only [tabOffset, TAB]; omega),
-      o2.fe (by simp only [tabOffset]; omega) (by simp only [tabOffset, TAB]; omega)]
+    rw [ou.fe (by simp only [tabOffset]; omega_using []) (by simp only [tabOffset, TAB]; omega_using [hi]),
+      o2.fe (by simp only [tabOffset]; omega_using []) (by simp only [tabOffset, TAB]; omega_using [hi])]
   have hy : F u.mem base (tabOffset i 1) = F s2.mem base (tabOffset i 1) := by
     unfold F
-    rw [ou.fe (by simp only [tabOffset]; omega) (by simp only [tabOffset, TAB]; omega)]
+    rw [ou.fe (by simp only [tabOffset]; omega_using []) (by simp only [tabOffset, TAB]; omega_using [hi])]
   change (⟨F u.mem base (tabOffset i 0), F u.mem base (tabOffset i 1),
     F u.mem base (tabOffset i 2)⟩ : Spec.Ed448.Point) = _
   rw [hx, hy, v1, v2, vu, e2, e1]; rfl

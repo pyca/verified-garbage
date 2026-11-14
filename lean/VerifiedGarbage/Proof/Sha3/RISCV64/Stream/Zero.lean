@@ -46,16 +46,16 @@ theorem zeroLanes_ok (b : Reg) {s₁ : State} (h0 : s₁.gpr .t0 = 0) (hal : (s�
     WP isa (.block ((List.range 25).flatMap fun k => [.store .d .t0 b (8 * k)])) s₁ (ZInv b s₁ 25) := by
   refine wp_range_flatMap (M := isa) (ZInv b s₁) (fun k s hk h => ?_) 25 (Nat.le_refl _) s₁
     ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero j)⟩
-  refine wp_sd (a := s₁.gpr b + BitVec.ofNat 64 (8 * k)) (by omega) (by rw [h.gpr])
-    (Spill.al8 hal (by omega)) (by rw [h.wr]; exact hwr k hk) fun t u => WP.block_nil ?_
+  refine wp_sd (a := s₁.gpr b + BitVec.ofNat 64 (8 * k)) (by omega_using [hk]) (by rw [h.gpr])
+    (Spill.al8 hal (by omega_using [])) (by rw [h.wr]; exact hwr k hk) fun t u => WP.block_nil ?_
   refine ⟨by rw [u.gpr, h.gpr], by rw [u.rd, h.rd], by rw [u.wr, h.wr], by rw [u.sp, h.sp], ?_, fun j hj => ?_⟩
   · rw [u.mem]
-    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+    exact h.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk]))
   · rw [u.mem, h.gpr, h0]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-      exact h.zero j (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega_using [e]) (by omega_using [hk, hj]) (by omega_using [hk])) (by decide)]
+      exact h.zero j (by omega_using [hj, e])
 
 /-- `zeroState b`: the state at `b` zeroed, nothing else written but `t0`. -/
 theorem zeroState_ok {b : Reg} (hb : b ≠ .t0) {s : State} (hal : (s.gpr b).toNat % 8 = 0)

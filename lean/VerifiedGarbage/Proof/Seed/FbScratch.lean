@@ -68,7 +68,7 @@ private theorem cbcBlocksAt_congr {n : Nat}
   have := List.mem_range.mp hi
   have := List.mem_range.mp hj
   rw [Offset.add_add]
-  exact h _ (by omega)
+  exact h _ (by omega_arith)
 
 private theorem bytesAt_congr {n : Nat} (h : ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     bytesAt m₂ p n = bytesAt m₁ p n :=
@@ -79,10 +79,10 @@ private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 �
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 end
 
@@ -111,7 +111,7 @@ theorem ofbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).len
   dsimp only [Curry.apply, ofbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi =>
-    hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem cfbEncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).length →
@@ -137,7 +137,7 @@ theorem cfbEncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).
   dsimp only [Curry.apply, cfbEncPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi =>
-    hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem cfbDecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).length →
@@ -163,7 +163,7 @@ theorem cfbDecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).
   dsimp only [Curry.apply, cfbDecPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi =>
-    hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    hd i (by rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h
 
 theorem ofbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).length →
@@ -188,7 +188,7 @@ theorem ofbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).l
   dsimp only [Curry.apply, ofbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr hv]
   exact h
 
 theorem cfbEncPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).length →
@@ -213,7 +213,7 @@ theorem cfbEncPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb
   dsimp only [Curry.apply, cfbEncPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr hv]
   exact h
 
 theorem cfbDecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).length →
@@ -238,7 +238,7 @@ theorem cfbDecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb
   dsimp only [Curry.apply, cfbDecPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr hv]
+    rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi]), bytesAt_congr hv]
   exact h
 
 end VG.Proof.Seed

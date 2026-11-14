@@ -105,7 +105,7 @@ include X A in
 /-- The load of the table's word `k` into `d`, which is `v` of the anchor in
 every run. -/
 theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t → BT S vf Pre Pub ac.1 t) {d : Reg}
-    (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) {k : Nat} (hk : k < 5) {v : State → BitVec 64}
+    (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) {k : Nat} (hk : k < 7) {v : State → BitVec 64}
     (hv : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * k)) 64 = v a) :
     RelCT isa (Two Φ) (.block (tword d j k))
       (Two fun ac u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = v ac.1) := by
@@ -132,7 +132,7 @@ theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
       (by rw [o.rd, b.rd]; exact let ⟨R, hR, hc⟩ := T.tR k hk; ⟨R, List.mem_append_left _ hR, hc⟩)
       (fun u₂ o₂ e₂ => wp_nil fun sy₂ => ⟨t, h, (o.trans o₂).mono fun r hr => by
         simp only [List.mem_append, List.mem_singleton, or_self] at hr ⊢; exact hr, sy₂.trans sy, by
-          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) (by omega))
+          rw [e₂, o.mem, b.readW_apart (T.tK k hk) (T.tS k hk), hv P p]⟩) (by omega_using [hk]))
 
 include X A in
 /-- The call of the table's function `k`, among `ts`, which reaches `n` in
@@ -145,7 +145,7 @@ theorem tcall_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t
     (hcall : RelCT isa (Two fun ac u => ∃ t, Φ ac t ∧ Only [.t1] t u ∧ u.syms = t.syms) (.call n c)
       fun _ _ => True) :
     RelCT isa (Two Φ) (tcall j k ts) fun _ _ => True := by
-  refine RelCT.seq (tword_two X A hb (d := .t1) (.inr (.inl rfl)) (k := k) (by omega) (v := fun a => a.syms n)
+  refine RelCT.seq (tword_two X A hb (d := .t1) (.inr (.inl rfl)) (k := k) (by omega_using [hk]) (v := fun a => a.syms n)
     fun P p => (hn P p).2.1.trans (hn P p).2.2) ?_
   cases ts with
   | nil =>
@@ -179,20 +179,20 @@ theorem xorOutT_base {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) {ac : State 
   have hfd := hf.fd
   obtain ⟨⟨s, P, p, b, sy⟩, -, -, h8, h9, -, h11, hc⟩ := h
   have hdc := Nat.min_le_left G.D (dstLen - ac.2 * G.D)
-  have hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega
+  have hn0 : 0 < min G.D (dstLen - ac.2 * G.D) := by omega_using [hD0, hc]
   refine WP.of_syms (WP.seq (WP.mono (xorHeadT_ok (A.tab P) b (G := G) (S := S s) (dst := dst) (dstLen := dstLen)
-    (done := ac.2 * G.D) (by omega) b.s0 (by rw [h8, (X.S p)]) h9 h11 hc (by omega))
+    (done := ac.2 * G.D) (by omega_using [F]) b.s0 (by rw [h8, (X.S p)]) h9 h11 hc (by omega_using [hfd]))
     fun t₁ ⟨k₁, x4, x5, x6⟩ => ?_))
   have b₁ := b.only (X.fits P) k₁
-  refine WP.mono (xorLoop_ok (p := off (S s) (dst + ac.2 * G.D)) (q := off (S s) oDig) hn0 (by omega) x4 x5 x6
+  refine WP.mono (xorLoop_ok (p := off (S s) (dst + ac.2 * G.D)) (q := off (S s) oDig) hn0 (by omega_using [F]) x4 x5 x6
     (fun j hj => by
-      rw [off_add, k₁.rd, k₁.wr, b.wr, b.rd]; exact sc_inR (X.fits P) (by omega) _)
-    (sc_w (X.fits P) (by rw [k₁.wr, b.wr]) (by omega))
+      rw [off_add, k₁.rd, k₁.wr, b.wr, b.rd]; exact sc_inR (X.fits P) (by omega_arith) _)
+    (sc_w (X.fits P) (by rw [k₁.wr, b.wr]) (by omega_arith))
     (fun j hj i hi => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega))
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hfd, hi]) (by omega_arith))
     (fun i hi j hj hij => by
-      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega) (by omega) (by omega)))
-    fun t₂ ⟨k₂, x₂⟩ sy₂ => ⟨s, P, p, b₁.wb (X.fits P) k₂ (by rw [xorAt_length]; omega) x₂, sy₂.trans sy⟩
+      rw [off_add, off_add]; exact Offset.add_ofNat_ne _ (by omega_using [hfd, hi]) (by omega_using [hfd, hj]) (by omega_using [hij])))
+    fun t₂ ⟨k₂, x₂⟩ sy₂ => ⟨s, P, p, b₁.wb (X.fits P) k₂ (by rw [xorAt_length]; omega_arith) x₂, sy₂.trans sy⟩
 
 include X cG hF hf in
 theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
@@ -249,9 +249,9 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     obtain ⟨hm, h0, -, h2, h3⟩ := h
     obtain ⟨s, P, p, b, y⟩ := hm.1
     exact ⟨s, P, ⟨X.fits P, b, by rw [h0, (X.S p)], by rw [h2, (X.S p)],
-      by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)],
-      Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega)),
-      sdis (.inl (by omega)) (by omega) (by omega), cR_dis (X.fits P) (by omega)⟩, p, y⟩
+      by rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hfs])],
+      Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega_arith)),
+      sdis (.inl (by omega_arith)) (by omega_arith) (by omega_arith), cR_dis (X.fits P) (by omega_arith)⟩, p, y⟩
   have uargsT : ∀ {U : State × Nat → State → Prop}, (∀ {ac t}, U ac t → ∃ s d l, Pre s ∧ UpdArgs S vf G s t d l ∧
       Pub ac.1 s ∧ t.syms = s.syms) → ∀ {ac : State × Nat} {t u : State}, U ac t → Only [.t1] t u →
       ∃ s d l, UpdArgs S vf G s u d l ∧ Pub ac.1 s := fun {U} hU {ac t u} h o => by
@@ -282,7 +282,7 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
   refine two_seq (Ψ := U₂) (ctr_taint (pins_monoT (mgfRT_pins X fun _ _ h => h))) (fun ac t h => ?_) ?_
   · obtain ⟨s, P, p, b, y⟩ := h.1
     have hc : ac.2 < 2 ^ 32 := by
-      have := h.2.2.2.2.2.2.2; have := Nat.le_mul_of_pos_right ac.2 hD0; omega
+      have := h.2.2.2.2.2.2.2; have := Nat.le_mul_of_pos_right ac.2 hD0; omega_arith
     exact WP.mono_syms (ctr_ok (X.fits P) b h.2.2.2.2.2.1 hc) fun t' ⟨b', g', _, x0, x1, x2, x3⟩ y' =>
       ⟨h.keep ⟨s, P, p, b', y'.trans y⟩ (pres g'), by rw [x0, (X.S p)], by rw [x1, h.2.2.1], by rw [x2, (X.S p)],
         x3⟩
@@ -291,8 +291,8 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     obtain ⟨hm, h0, -, h2, h3⟩ := h
     obtain ⟨s, P, p, b, y⟩ := hm.1
     exact ⟨s, P, ⟨X.fits P, b, by rw [h0, (X.S p)], by rw [h2, (X.S p)], by rw [h3]; rfl,
-      Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega)),
-      sdis (.inr (by omega)) (by omega) (by omega), cR_dis (X.fits P) (by omega)⟩, p, y⟩
+      Covers.right (by rw [b.wr]; exact sc_cov (X.fits P) (by omega_arith)),
+      sdis (.inr (by omega_arith)) (by omega_arith) (by omega_arith), cR_dis (X.fits P) (by omega_arith)⟩, p, y⟩
   refine two_seq (Ψ := M) (tcall_two X A (fun ac t h => h.1.1) (k := 1) (by decide)
     (fun P p => ⟨(A.tab P).ok.u, by rw [Nat.mul_one]; exact (A.tab P).mem.2.1, A.au p⟩)
     (upd_ct (S := S) (vf := vf) cG hF fun u₁ u₂ ⟨ac, ⟨t₁, h₁, o₁, _⟩, ⟨t₂, h₂, o₂, _⟩⟩ => ?_)) (fun ac t h => ?_) ?_
@@ -346,12 +346,12 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     exact WP.mono (finT_ok (X.fits P) (A.tab P) hG hF b y (by rw [h0, (X.S p)]) (by rw [h2, (X.S p)]))
       fun t' ⟨⟨b', g', _⟩, y'⟩ => hm.keep ⟨s, P, p, b', y'⟩ (pres g')
   -- Into `dst`, and the next counter.
-  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 4)) 64 =
+  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 6)) 64 =
       BitVec.ofNat 64 G.D := fun P _ => (A.tab P).d
   have xo : RelCT isa (Two M) (xorOutT j) fun _ _ => True := by
-    show RelCT isa _ (.seq (.block (tword .a6 j 4 ++ xorRest)) (Impl.Bignum.RISCV64.countLoop .a6 xorBody)) _
+    show RelCT isa _ (.seq (.block (tword .a6 j 6 ++ xorRest)) (Impl.Bignum.RISCV64.countLoop .a6 xorBody)) _
     refine RelCT.seq_block_append (RelCT.seq (tword_two X A (Φ := M) (fun ac t h => h.1) (d := .a6) (.inl rfl)
-      (k := 4) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
+      (k := 6) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _, e₁⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _, e₂⟩ := hu₂
     obtain ⟨hsp, hr⟩ := (mgfRT_pins X (fun _ _ h => h)) ac t₁ t₂ h₁ h₂
@@ -362,8 +362,8 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     all_goals rw [o₁.get _ (by decide), o₂.get _ (by decide)]; exact hr _ (by decide)
   have nc : RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (.block (nextCtrT j))
       fun _ _ => True := by
-    show RelCT isa _ (.block (tword .t1 j 4 ++ nextRest)) _
-    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .t1) (.inr (.inl rfl)) (k := 4) (by decide)
+    show RelCT isa _ (.block (tword .t1 j 6 ++ nextRest)) _
+    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .t1) (.inr (.inl rfl)) (k := 6) (by decide)
       (v := fun _ => BitVec.ofNat 64 G.D) bD) (nextRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _⟩ := hu₂
@@ -421,7 +421,7 @@ theorem mgfXorT_ctS {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     have hs1 : (ac.2 + 1) * G.D = ac.2 * G.D + G.D := Nat.succ_mul _ _
     obtain ⟨s, V, P, p, I, hn⟩ := h₁
     obtain ⟨s', V', P', p', I', -⟩ := h₂
-    exact ⟨dstLen - (ac.2 + 1) * G.D, by omega, (ac.1, ac.2 + 1), ⟨⟨s, V, P, p, I, hlt⟩, rfl⟩,
+    exact ⟨dstLen - (ac.2 + 1) * G.D, by omega_using [hD0, hlt, hs1, hn], (ac.1, ac.2 + 1), ⟨⟨s, V, P, p, I, hlt⟩, rfl⟩,
       ⟨⟨s', V', P', p', I', hlt⟩, rfl⟩⟩
   refine RelCT.seq (two_post (Ψ := fun a t => L (a, 0) t) (mgfHead_taint fun a t₁ t₂ h₁ h₂ => ?_)
     (fun a t h => ?_)) ((RelCT.loop (fun n => Two (Ln n)) step (dstLen - 0 * G.D)).mono
@@ -436,7 +436,7 @@ theorem mgfXorT_ctS {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     exact ⟨s, view t.mem (S s), P, p, ⟨b.only (X.fits P) k₂, by rw [k₂.get .s6, h6, (X.S p)],
       by rw [k₂.get .s7, h7], by rw [k₂.get .s8, h8, (X.S p)], by rw [k₂.get .s9, h9],
       by rw [o₂.get .s10, e₁], by rw [e₂, Nat.zero_mul],
-      fun o _ => by rw [mixV, ifn (by omega), k₂.mem], sy₂.trans sy⟩, by omega⟩
+      fun o _ => by rw [mixV, ifn (by omega_using []), k₂.mem], sy₂.trans sy⟩, by omega_using [hpos]⟩
 
 end
 

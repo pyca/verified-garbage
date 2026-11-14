@@ -31,8 +31,8 @@ theorem tableStep_ok {code : Prog isa} {name : String}
     (by change 5 < 8 ∧ 5 ≠ 2 ∧ 5 ≠ 3; decide) odd (by rw [tableValues_x]; exact Xlt)
     (by simp [tableArrays, initialArrays]) (by exact List.mem_cons_self ..))
     fun a ⟨Sa, Oa, Ka⟩ => ?_)
-  refine WP.mono (Sa.copy v (aTable + k + 2) aY (by unfold aTable; omega)
-    (by unfold aTable; omega) (by unfold aTable; omega) (by exact List.mem_cons_self ..))
+  refine WP.mono (Sa.copy v (aTable + k + 2) aY (by unfold aTable; omega_using [index])
+    (by unfold aTable; omega_using []) (by unfold aTable; omega_using []) (by exact List.mem_cons_self ..))
     fun t ⟨St, Ot, Kt⟩ => ?_
   have values : setAt (setAt (tableValues A c g.w k) aY
       (Word32.mm c g.w (tableValues A c g.w k aY) (tableValues A c g.w k aX)))
@@ -44,7 +44,7 @@ theorem tableStep_ok {code : Prog isa} {name : String}
   rw [values] at St
   refine ⟨St.mono ?_ (fun _ mem => ⟨mem, rfl⟩),
     (mont_roundFrame Oa).trans (array_roundFrame Sa.data.context.ws.nowrap
-      (by unfold roundArray aTable; omega) Ot), (Ka.mono (by decide)).trans (Kt.mono (by decide))⟩
+      (by unfold roundArray aTable; omega_using [index]) Ot), (Ka.mono (by decide)).trans (Kt.mono (by decide))⟩
   intro j known
   exact ⟨List.mem_cons.mpr ((tableArrays_next k j).mp known), rfl⟩
 

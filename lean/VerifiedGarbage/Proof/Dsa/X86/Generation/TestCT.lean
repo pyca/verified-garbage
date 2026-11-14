@@ -36,7 +36,7 @@ theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
     {E : Env} (v : E.Valid) (lay : (VG.Impl.Dsa.X86.ProbablePrime.layout bits).size ≤ 8 * ppWords) :
     RelCT isa (Both (TPre E bits)) (test name callee) fun _ _ => True := by
   have sz := v.size_ge
-  have psz : sPP ≤ E.size := by simp only [sPP]; omega
+  have psz : sPP ≤ E.size := by simp only [sPP]; omega_using [sz]
   unfold test
   simp only [seqs]
   -- The cursor and the octets left.
@@ -113,7 +113,7 @@ theorem test_ct {bits : Nat} {name : String} {callee : Prog isa}
     (both_agree [.esp, .edi] (fun _ => baseVal E) pins₃ (tcheck _ _ (by decide +kernel))) fun p u hp => ?_) ?_
   · obtain ⟨s, h, R⟩ := hp
     have hsU : Scr u E.base E.size := Scr.of_eq h.1.scr R.edi (R.esp.trans h.1.sp.symm) R.wr
-    refine st_ok hsU (by simp only [fRes, hdr]; omega) fun x₁ M₁ => wp_cmpi fun x₂ F₂ _ z₂ => WP.block_nil ⟨?_, ?_⟩
+    refine st_ok hsU (by simp only [fRes, hdr]; omega_using [sz]) fun x₁ M₁ => wp_cmpi fun x₂ F₂ _ z₂ => WP.block_nil ⟨?_, ?_⟩
     · rw [z₂, M₁.gpr, R.eax]
     · intro r hr; rw [F₂.gpr, M₁.gpr]; exact pins₃ p u ⟨s, h, R⟩ r hr
   · refine both_ite (fun p => BitVec.ofNat 32 (Proof.Dsa.ProbablePrime.status

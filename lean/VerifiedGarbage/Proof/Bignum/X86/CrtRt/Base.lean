@@ -47,22 +47,22 @@ multiplicand, and 28 wide slots. -/
 abbrev need (len : Nat) : Nat := numBase + 28 * st len .wide
 
 theorem bc_le {len : Nat} (hl : len ≤ 1024) (c : Ctx) : bc len c ≤ 1024 := by
-  cases c <;> simp only [bc, mw, Spec.Rsa.modulusWords] <;> omega
+  cases c <;> simp only [bc, mw, Spec.Rsa.modulusWords] <;> omega_using [hl]
 
 theorem bc_ge {len : Nat} (hl : 64 ≤ len) (c : Ctx) : 32 ≤ bc len c := by
   have h := hl
   cases c
-  · simp only [bc, mw, Spec.Rsa.modulusWords]; omega
-  · simp only [bc, mw, Spec.Rsa.modulusWords]; omega
+  · simp only [bc, mw, Spec.Rsa.modulusWords]; omega_using [hl]
+  · simp only [bc, mw, Spec.Rsa.modulusWords]; omega_using [hl]
 
 theorem bc_half_le' (len : Nat) : 2 * bc len .half ≤ bc len .wide + 8 := by
-  simp only [bc]; omega
+  simp only [bc]; omega_using []
 
 theorem bc_dvd (len : Nat) (c : Ctx) : bc len c % 8 = 0 := by
-  cases c <;> simp only [bc] <;> omega
+  cases c <;> simp only [bc] <;> omega_using []
 
 theorem len_le_bc (len : Nat) : len ≤ bc len .wide := by
-  simp only [bc, mw, Spec.Rsa.modulusWords]; omega
+  simp only [bc, mw, Spec.Rsa.modulusWords]; omega_using []
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -88,9 +88,9 @@ theorem widthC_ok {k len : Nat} {c : Ctx} {r : Reg}
     have e1 : (1 : BitVec 32).toNat = 1 := rfl
     simp only [BitVec.toNat_add, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, e1]
     simp only [wb, bc, mw] at *
-    have : Spec.Rsa.modulusWords len ≤ 128 := by simp only [Spec.Rsa.modulusWords]; omega
-    rw [Nat.mod_eq_of_lt (a := 8 * Spec.Rsa.modulusWords len) (by omega)]
-    omega
+    have : Spec.Rsa.modulusWords len ≤ 128 := by simp only [Spec.Rsa.modulusWords]; omega_using [hl]
+    rw [Nat.mod_eq_of_lt (a := 8 * Spec.Rsa.modulusWords len) (by omega_using [hw])]
+    omega_using []
 
 /-- `strideC c t`: `t = st len c`. -/
 theorem strideC_ok {len : Nat} {c : Ctx} {t : Reg}
@@ -105,8 +105,8 @@ theorem strideC_ok {len : Nat} {c : Ctx} {t : Reg}
   have := bc_le hl c
   have e32 : (32 : BitVec 32).toNat = 32 := rfl
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, e32, st]
-  rw [Nat.mod_eq_of_lt (a := bc len c) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := bc len c) (by omega_using [this])]
+  omega_using []
 
 /-- `ptrTo x r t`: `r` points to the number at `lo len x`; only `r` and `t` change. -/
 theorem ptrTo_ok {base : Addr} {len : Nat} {x : Loc} {r t : Reg} (hrt : r ≠ t) (hte : t ≠ .edi)
@@ -122,7 +122,7 @@ theorem ptrTo_ok {base : Addr} {len : Nat} {x : Loc} {r t : Reg} (hrt : r ≠ t)
     refine kk s₂ ((u₁.keeps.trans u₂.keeps).mono (by simp)) (by rw [u₂.mem, u₁.mem]) ?_
     rw [PtrAt, u₂.gpr, u₁.gpr, BitVec.toNat_add, hedi, BitVec.toNat_ofNat]
     simp only [lo] at hx ⊢
-    rw [Nat.mod_eq_of_lt (a := o) (by omega)]
+    rw [Nat.mod_eq_of_lt (a := o) (by omega_using [hx])]
   | slot c j =>
     simp only [ptrTo, List.append_assoc, List.cons_append, List.nil_append]
     refine strideC_ok hr hl fun s₁ K₁ m₁ e₁ => wp_movS rfl fun s₂ u₂ _ => wp_addS rfl fun s₃ u₃ _ => ?_
@@ -135,11 +135,11 @@ theorem ptrTo_ok {base : Addr} {len : Nat} {x : Loc} {r t : Reg} (hrt : r ≠ t)
     rw [PtrAt, e, u₃.gpr, u₂.gpr, et, edi₁]
     have := bc_le hl c
     have hS : (BitVec.ofNat 32 (st len c)).toNat = st len c := by
-      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [st]; omega)
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by simp only [st]; omega_using [this])
     simp only [lo] at hx ⊢
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, hS, hedi]
-    rw [Nat.mod_eq_of_lt (a := numBase) (by simp only [numBase]; omega),
-      Nat.mod_eq_of_lt (a := j * st len c) (by omega), Nat.mod_add_mod, Nat.add_assoc]
+    rw [Nat.mod_eq_of_lt (a := numBase) (by simp only [numBase]; omega_using []),
+      Nat.mod_eq_of_lt (a := j * st len c) (by omega_using [hx]), Nat.mod_add_mod, Nat.add_assoc]
 
 /-- `cntTo n r`: `r = cb len n`. -/
 theorem cntTo_ok {len : Nat} {n : Cnt} {r : Reg}
@@ -163,8 +163,8 @@ theorem cntTo_ok {len : Nat} {n : Cnt} {r : Reg}
       rw [uv.gpr, e, cb]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-      have : (if two then 2 else 1) * bc len c ≤ 2048 := by split <;> omega
-      rw [Nat.mod_eq_of_lt (a := extra) (by omega), Nat.mod_eq_of_lt (a := _ * bc len c) (by omega)]
+      have : (if two then 2 else 1) * bc len c ≤ 2048 := by split <;> omega_using [hb]
+      rw [Nat.mod_eq_of_lt (a := extra) (by omega_using [he]), Nat.mod_eq_of_lt (a := _ * bc len c) (by omega_using [this])]
   cases two with
   | false => exact step2 K₁ m₁ (by rw [e₁]; simp)
   | true =>
@@ -173,8 +173,8 @@ theorem cntTo_ok {len : Nat} {n : Cnt} {r : Reg}
     rw [uv.gpr, e₁]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, ite_true]
-    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (a := bc len c) (by omega_using [hb])]
+    omega_using []
 
 end
 

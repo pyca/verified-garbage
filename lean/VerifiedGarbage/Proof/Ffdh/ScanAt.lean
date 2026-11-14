@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Lead
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # FFDH: the first nonzero octet, by a scan of every octet
@@ -36,7 +37,7 @@ theorem lead_last {bs : List Byte} (h : bs ≠ []) (b : bs.getD (lead bs) 0 = 0)
   have hL := lead_lt h
   rcases Nat.lt_or_ge (lead bs + 1) bs.length with lt | ge
   · exact absurd (by rw [← getD_of hL]; exact b) (lead_nonzero h lt)
-  · omega
+  · omega_using [hL, ge]
 
 /-- Before `lead bs`, nothing is found; after it, the scan holds it. -/
 theorem scanAt_inv {bs : List Byte} (h : bs ≠ []) (j : Nat) (hj : j ≤ bs.length) :
@@ -45,13 +46,13 @@ theorem scanAt_inv {bs : List Byte} (h : bs ≠ []) (j : Nat) (hj : j ≤ bs.len
   induction j with
   | zero => exact ⟨fun _ => rfl, fun h' => absurd h' (Nat.not_lt_zero _)⟩
   | succ j ih =>
-    obtain ⟨ih₁, ih₂⟩ := ih (by omega)
+    obtain ⟨ih₁, ih₂⟩ := ih (by omega_using [hj])
     rw [scanAt_succ]
     have z : ∀ k < lead bs, bs.getD k 0 = 0 := fun k hk => by
       obtain ⟨hk', e⟩ := lead_zero k hk
       rw [getD_of hk', e]
     refine ⟨fun hl => ?_, fun hl => ?_⟩
-    · rw [ih₁ (by omega), z j (by omega)]; rfl
+    · rw [ih₁ (by omega_using [hl]), z j (by omega_using [hl])]; rfl
     · by_cases e : j = lead bs
       · subst e
         rw [ih₁ (Nat.le_refl _)]
@@ -62,7 +63,7 @@ theorem scanAt_inv {bs : List Byte} (h : bs ≠ []) (j : Nat) (hj : j ≤ bs.len
         · generalize bs.getD (lead bs) 0 = v at b ⊢
           have b8 : ¬ v = 0#8 := b
           simp [b8]
-      · rw [ih₂ (by omega)]
+      · rw [ih₂ (by omega_using [hl, e])]
         by_cases b : bs.getD (lead bs) 0 = 0
         · have := lead_last h b
           omega

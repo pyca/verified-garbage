@@ -40,41 +40,41 @@ theorem tonelliSetup_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   have hT1 := sl_le c h7 (i := T1) (by decide)
   have hT2 := sl_le c h7 (i := T2) (by decide)
   rw [Impl.EcKey.Compressed.X86.tonelliSetup, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by omega)
-    (by have := sl_apart c (i := T0) (j := ACC) (by decide); omega)) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
+  refine WP.mono (copy_ok (2 * c.n) hs (by omega_using [hT0]) (by omega_using [hACC])
+    (by have := sl_apart c (i := T0) (j := ACC) (by decide); omega_using [this])) fun s₁ ⟨v₁, k₁, O₁⟩ => ?_
   simp only [← wordsVal_eq_val32] at v₁
-  rw [show 4 * (2 * c.n) = 8 * c.n by omega] at O₁
+  rw [show 4 * (2 * c.n) = 8 * c.n by omega_using []] at O₁
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok (2 * c.n) hs₁ (by omega) (by omega)
-    (by have := sl_apart c (i := ACC) (j := T5) (by decide); omega)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
+  refine WP.mono (copy_ok (2 * c.n) hs₁ (by omega_using [hACC]) (by omega_using [hT5])
+    (by have := sl_apart c (i := ACC) (j := T5) (by decide); omega_using [this])) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
   simp only [← wordsVal_eq_val32] at v₂
-  rw [show 4 * (2 * c.n) = 8 * c.n by omega] at O₂
+  rw [show 4 * (2 * c.n) = 8 * c.n by omega_using []] at O₂
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have r₂ : sv c base s₂ ACC = sv c base s T5 := by
-    rw [sv, v₂, O₁.wordsVal (sl_apart c (i := T5) (j := T0) (by decide)) (by omega)]
+    rw [sv, v₂, O₁.wordsVal (sl_apart c (i := T5) (j := T0) (by decide)) (by omega_using [hn, hT5])]
   have t₂ : sv c base s₂ T0 = sv c base s ACC := by
-    rw [sv, O₂.wordsVal (sl_apart c (i := T0) (j := ACC) (by decide)) (by omega), v₁]
+    rw [sv, O₂.wordsVal (sl_apart c (i := T0) (j := ACC) (by decide)) (by omega_using [hn, hT0]), v₁]
   let z := Spec.Weierstrass.pow (Fin.ofNat c.C.p 11) (rootQ c)
   have zR : c.mont z.val < 2 ^ (64 * c.n) := Nat.lt_trans
-    (Nat.mod_lt _ (by have := hc.p_ge; omega)) hc.p_lt
+    (Nat.mod_lt _ (by have := hc.p_ge; omega_using [hr])) hc.p_lt
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok hs₂ hT1 zR) fun s₃ ⟨v₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   refine wp_movi fun s₄ u₄ => ?_
   have hs₄ := hs₃.of_keeps u₄.keeps (by decide)
-  refine wp_storeS (hs₄.ea (by omega)) (hs₄.write (by omega : c.sl T2 + 4 ≤ size))
+  refine wp_storeS (hs₄.ea (by omega_using [h0, hT2])) (hs₄.write (by omega_using [h0, hT2] : c.sl T2 + 4 ≤ size))
     fun t m₄ => WP.block_nil ?_
   have O₄ : Outside base (c.sl T2) 4 s₃.mem t.mem := by
     rw [m₄.mem, u₄.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [hn, hT2])
   have v₄ : t.mem.readW (off base (c.sl T2)) 32 = BitVec.ofNat 32 95 := by
     rw [m₄.mem, Mem.readW_writeW_self32, u₄.gpr]; rfl
   have k₄ : Keeps [.eax] s₃ t := u₄.keeps.trans (m₄.keeps _)
   have e₃ {i : Nat} (hi : i < 45) (hw : i ≠ T1) : sv c base s₃ i = sv c base s₂ i :=
-    O₃.wordsVal (sl_apart c hw) (by have := sl_le c h7 hi; omega)
+    O₃.wordsVal (sl_apart c hw) (by have := sl_le c h7 hi; omega_using [hn, this])
   have e₄ {i : Nat} (hi : i < 45) (hw : i ≠ T2) : sv c base t i = sv c base s₃ i :=
-    O₄.wordsVal (by have := sl_apart c hw; omega) (by have := sl_le c h7 hi; omega)
+    O₄.wordsVal (by have := sl_apart c hw; omega_using [h0, this]) (by have := sl_le c h7 hi; omega_using [hn, this])
   have r₄ : sv c base t ACC = sv c base s T5 := by
     rw [e₄ (by decide) (by decide), e₃ (by decide) (by decide), r₂]
   have t₄ : sv c base t T0 = sv c base s ACC := by
@@ -84,13 +84,13 @@ theorem tonelliSetup_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   refine ⟨((k₁.trans k₂).trans k₃).trans k₄, ?_, ?_, ?_, by rw [r₄], by rw [t₄], ?_⟩
   · exact unch_same (unch_same (unch_same (slot_frame (by simp) (Nat.le_refl _) O₁)
       (slot_frame (by simp) (Nat.le_refl _) O₂)) (slot_frame (by simp) (Nat.le_refl _) O₃))
-      (slot_frame (by simp) (by omega) O₄)
+      (slot_frame (by simp) (by omega_using [h0]) O₄)
   · intro i hi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl
     · rw [r₄]; exact hr
     · rw [t₄]; exact ht
-    · rw [c₄]; exact Nat.mod_lt _ (by have := hc.p_ge; omega)
+    · rw [c₄]; exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [hr])
   · exact v₄
   · rw [c₄, toM_cmont hc]
     exact Fin.ext (Nat.mod_eq_of_lt z.isLt)

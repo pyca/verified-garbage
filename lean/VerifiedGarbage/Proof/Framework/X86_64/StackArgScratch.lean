@@ -73,7 +73,7 @@ theorem args_some (sig : Sig) (hk : 6 ≤ (sig.words abi.ptrBits).length) :
   · have h6 : (sig.words 64).length = 6 := by
       have : (sig.words 64).length ≤ 6 := by assumption
       have : 6 ≤ (sig.words 64).length := hk
-      omega
+      omega_arith
     congr 1
     funext s
     simp only [allArgs, show abi.ptrBits = 64 from rfl, h6, Nat.sub_self, List.range_zero,

@@ -80,11 +80,11 @@ theorem copyN_wp {k : Nat} {s : State} {t rd rs : Reg} {od os : Nat} {P Q : Addr
       Option.bind_some, e₂],
     fun x hx => by rw [g₂, o₁ x hx, hi.regs x hx], by rw [rd₂, rd₁, hi.rd], by rw [wr₂, wr₁, hi.wr], ?_⟩
   rw [m₂, v₁, m₁, o₁ _ (Ne.symm h.td), hP', hQ', hi.mem]
-  refine over_step (by omega) fun x => ?_
+  refine over_step (by omega_using [hfit, hw]) fun x => ?_
   rw [writeW_readW_apply]
   split
   · rename_i hx
-    rw [addr_add, over_sep (h.sep.sub_left (Region.sub_prefix (by omega))) (by omega) (by omega)]
+    rw [addr_add, over_sep (h.sep.sub_left (Region.sub_prefix (by omega_using [hw]))) (by omega_using [hw, hx]) (by omega_using [hfit])]
   · rfl
 
 theorem xorN_wp {k : Nat} {s : State} {t rd rs : Reg} {od os : Nat} {P Q : Addr} (h : NPre k s t rd rs od os P Q) :
@@ -112,12 +112,12 @@ theorem xorN_wp {k : Nat} {s : State} {t rd rs : Reg} {od os : Nat} {P Q : Addr}
     fun x hx => by rw [g₃, o₂ x hx, o₁ x hx, hi.regs x hx], by rw [rd₃, rd₂, rd₁, hi.rd],
     by rw [wr₃, wr₂, wr₁, hi.wr], ?_⟩
   rw [m₃, v₂, v₁, m₂, m₁, o₂ _ (Ne.symm h.td), o₁ _ (Ne.symm h.td), o₁ _ (Ne.symm h.ts), hP', hQ', hi.mem]
-  refine over_step (by omega) fun x => ?_
+  refine over_step (by omega_using [hfit, hw]) fun x => ?_
   rw [writeW_xor_apply]
   split
   · rename_i hx
-    rw [addr_add, addr_add, over_out (by rw [off_self P (by omega)]; omega),
-      over_sep (h.sep.sub_left (Region.sub_prefix (by omega))) (by omega) (by omega)]
+    rw [addr_add, addr_add, over_out (by rw [off_self P (by omega_using [hfit, hw, hx])]; omega_using []),
+      over_sep (h.sep.sub_left (Region.sub_prefix (by omega_using [hw]))) (by omega_using [hw, hx]) (by omega_using [hfit])]
   · rfl
 
 end VG.Proof.Modes.X86_64

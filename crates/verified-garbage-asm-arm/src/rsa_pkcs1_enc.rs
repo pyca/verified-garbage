@@ -3,13 +3,13 @@
 //! `assembly/rsa_pkcs1_enc.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_rsa_pkcs1_decrypt_umaal` requires (`Artifact.features`).
+/// The CPU features `vg_rsa_pkcs1_decrypt_precomputed_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_PKCS1_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
+pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+/// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// # Safety
 ///
@@ -25,6 +25,7 @@ pub const VG_RSA_PKCS1_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = 
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -32,58 +33,64 @@ pub const VG_RSA_PKCS1_DECRYPT_UMAAL_FEATURES: verified_garbage_cpu::Features = 
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_umaal(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed_umaal(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-sub sp, sp, #88
+sub sp, sp, #96
 add r12, sp, #0
-ldr r0, [sp, #148]
+ldr r0, [sp, #156]
 str r0, [r12, #0]
-ldr r0, [sp, #152]
+ldr r0, [sp, #160]
 str r0, [r12, #4]
-ldr r0, [sp, #164]
-str r0, [r12, #8]
-ldr r0, [sp, #144]
-str r0, [r12, #12]
 ldr r0, [sp, #172]
-str r0, [r12, #16]
-ldr r0, [sp, #176]
-str r0, [r12, #20]
+str r0, [r12, #8]
+ldr r0, [sp, #152]
+str r0, [r12, #12]
 ldr r0, [sp, #180]
-str r0, [r12, #24]
+str r0, [r12, #16]
 ldr r0, [sp, #184]
-str r0, [r12, #28]
+str r0, [r12, #20]
 ldr r0, [sp, #188]
-str r0, [r12, #32]
+str r0, [r12, #24]
 ldr r0, [sp, #192]
-str r0, [r12, #36]
+str r0, [r12, #28]
 ldr r0, [sp, #196]
-str r0, [r12, #40]
+str r0, [r12, #32]
 ldr r0, [sp, #200]
-str r0, [r12, #44]
+str r0, [r12, #36]
 ldr r0, [sp, #204]
-str r0, [r12, #48]
+str r0, [r12, #40]
 ldr r0, [sp, #208]
-str r0, [r12, #52]
+str r0, [r12, #44]
 ldr r0, [sp, #212]
-str r0, [r12, #56]
+str r0, [r12, #48]
 ldr r0, [sp, #216]
+str r0, [r12, #52]
+ldr r0, [sp, #220]
+str r0, [r12, #56]
+ldr r0, [sp, #224]
 str r0, [r12, #60]
-ldr r0, [sp, #88]
-ldr r1, [sp, #144]
-ldr r2, [sp, #100]
-ldr r3, [sp, #144]
-bl {vg_rsa_private_checked_umaal}
-add r12, sp, #0
+ldr r0, [sp, #228]
 str r0, [r12, #64]
-ldr r0, [sp, #212]
+ldr r0, [sp, #232]
+str r0, [r12, #68]
+ldr r0, [sp, #96]
+ldr r1, [sp, #152]
+ldr r2, [sp, #108]
+ldr r3, [sp, #152]
+bl {vg_rsa_private_checked_precomputed_umaal}
+add r12, sp, #0
+str r0, [r12, #72]
+ldr r0, [sp, #220]
 add r0, r0, #1552
-ldr lr, [sp, #144]
+ldr lr, [sp, #152]
 mov r2, #0
 20:
 ldrb r1, [r0, #0]
@@ -93,13 +100,13 @@ add r0, r0, #1
 subs lr, lr, #1
 bne 20b
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r0, r0, #1552
-ldr r2, [sp, #144]
+ldr r2, [sp, #152]
 add r0, r0, r2
-ldr lr, [sp, #160]
+ldr lr, [sp, #168]
 sub r0, r0, lr
-ldr r1, [sp, #156]
+ldr r1, [sp, #164]
 21:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
@@ -108,59 +115,59 @@ add r1, r1, #1
 subs lr, lr, #1
 bne 21b
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 bl {vg_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #1552
 str r1, [r12, #0]
-ldr r1, [sp, #144]
+ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #0
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #208
 str r1, [r12, #0]
-ldr r2, [sp, #144]
+ldr r2, [sp, #152]
 mov r3, #0
 bl {vg_sha256_finalize}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #208
 mov r3, #32
 bl {vg_hmac_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
-ldr r1, [sp, #164]
+ldr r0, [sp, #220]
+ldr r1, [sp, #172]
 str r1, [r12, #0]
-ldr r1, [sp, #144]
+ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #240
 str r1, [r12, #0]
 add r1, r0, #96
-ldr r2, [sp, #144]
+ldr r2, [sp, #152]
 add r2, r2, #64
 mov r3, #0
 bl {vg_hmac_sha256_finalize}
 add r12, sp, #0
 mov r0, #0
-str r0, [r12, #68]
+str r0, [r12, #76]
 mov r0, #8
-str r0, [r12, #72]
+str r0, [r12, #80]
 22:
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r0, r0, #192
-ldr r1, [sp, #68]
-ldr r3, [sp, #144]
+ldr r1, [sp, #76]
+ldr r3, [sp, #152]
 mov r2, #0
 strb r2, [r0, #0]
 strb r1, [r0, #1]
@@ -181,13 +188,13 @@ strb r2, [r0, #8]
 mov r2, #0
 strb r2, [r0, #9]
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
 bl {vg_hmac_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #192
 str r1, [r12, #0]
 mov r1, #10
@@ -196,8 +203,8 @@ mov r2, #64
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
-ldr r2, [sp, #68]
+ldr r0, [sp, #220]
+ldr r2, [sp, #76]
 add r1, r0, #272
 add r1, r1, r2, lsl #5
 str r1, [r12, #0]
@@ -206,25 +213,25 @@ mov r2, #74
 mov r3, #0
 bl {vg_hmac_sha256_finalize}
 add r12, sp, #0
-ldr r1, [sp, #68]
+ldr r1, [sp, #76]
 add r1, r1, #1
-str r1, [r12, #68]
-ldr r2, [sp, #72]
+str r1, [r12, #76]
+ldr r2, [sp, #80]
 cmp r1, r2
 bne 22b
 add r12, sp, #0
 mov r0, #0
-str r0, [r12, #68]
-ldr r0, [sp, #144]
+str r0, [r12, #76]
+ldr r0, [sp, #152]
 add r0, r0, #31
 lsr r0, r0, #5
-str r0, [r12, #72]
+str r0, [r12, #80]
 23:
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r0, r0, #192
-ldr r1, [sp, #68]
-ldr r3, [sp, #144]
+ldr r1, [sp, #76]
+ldr r3, [sp, #152]
 mov r2, #0
 strb r2, [r0, #0]
 strb r1, [r0, #1]
@@ -248,13 +255,13 @@ strb r2, [r0, #9]
 lsl r2, r3, #3
 strb r2, [r0, #10]
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
 bl {vg_hmac_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #192
 str r1, [r12, #0]
 mov r1, #11
@@ -263,8 +270,8 @@ mov r2, #64
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
-ldr r2, [sp, #68]
+ldr r0, [sp, #220]
+ldr r2, [sp, #76]
 add r1, r0, #528
 add r1, r1, r2, lsl #5
 str r1, [r12, #0]
@@ -273,14 +280,14 @@ mov r2, #75
 mov r3, #0
 bl {vg_hmac_sha256_finalize}
 add r12, sp, #0
-ldr r1, [sp, #68]
+ldr r1, [sp, #76]
 add r1, r1, #1
-str r1, [r12, #68]
-ldr r2, [sp, #72]
+str r1, [r12, #76]
+ldr r2, [sp, #80]
 cmp r1, r2
 bne 23b
 add r12, sp, #0
-ldr r1, [sp, #144]
+ldr r1, [sp, #152]
 sub r1, r1, #11
 mov r0, #0
 24:
@@ -291,11 +298,11 @@ lsr r2, r2, #31
 cmp r2, #0
 bne 24b
 add r12, sp, #0
-str r0, [r12, #80]
-ldr r0, [sp, #212]
+str r0, [r12, #88]
+ldr r0, [sp, #220]
 add r0, r0, #272
-ldr r4, [sp, #80]
-ldr r5, [sp, #144]
+ldr r4, [sp, #88]
+ldr r5, [sp, #152]
 sub r5, r5, #11
 mov r6, #0
 mov lr, #128
@@ -314,11 +321,11 @@ add r0, r0, #2
 subs lr, lr, #1
 bne 25b
 add r12, sp, #0
-str r6, [r12, #76]
+str r6, [r12, #84]
 add r12, sp, #0
-ldr r0, [sp, #88]
+ldr r0, [sp, #96]
 add r0, r0, #2
-ldr lr, [sp, #144]
+ldr lr, [sp, #152]
 sub lr, lr, #2
 mov r1, #2
 mov r4, #0
@@ -339,10 +346,10 @@ add r0, r0, #1
 subs lr, lr, #1
 bne 26b
 add r12, sp, #0
-ldr r0, [sp, #88]
-ldr r7, [sp, #144]
-ldr r8, [sp, #76]
-ldr r9, [sp, #64]
+ldr r0, [sp, #96]
+ldr r7, [sp, #152]
+ldr r8, [sp, #84]
+ldr r9, [sp, #72]
 ldrb r2, [r0, #0]
 sub r2, r2, #1
 lsr r2, r2, #31
@@ -369,15 +376,15 @@ sub r11, r6, r11
 sub r9, r7, r3
 and r3, r3, r11
 add r12, sp, #0
-ldr r1, [sp, #96]
+ldr r1, [sp, #104]
 str r3, [r1, #0]
 str r6, [r1, #4]
 add r12, sp, #0
-ldr r0, [sp, #88]
-ldr r1, [sp, #212]
+ldr r0, [sp, #96]
+ldr r1, [sp, #220]
 add r1, r1, #528
 mov r4, #0
-ldr lr, [sp, #144]
+ldr lr, [sp, #152]
 27:
 ldrb r2, [r0, #0]
 ldrb r3, [r1, #0]
@@ -396,8 +403,8 @@ add r4, r4, #1
 subs lr, lr, #1
 bne 27b
 add r12, sp, #0
-ldr r0, [sp, #64]
-add sp, sp, #88
+ldr r0, [sp, #72]
+add sp, sp, #96
 ldr r4, [sp, #16]
 ldr r5, [sp, #20]
 ldr r6, [sp, #24]
@@ -409,7 +416,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_private_checked_umaal = sym super::rsa::vg_rsa_private_checked_umaal::vg_rsa_private_checked_umaal,
+        vg_rsa_private_checked_precomputed_umaal = sym super::rsa::vg_rsa_private_checked_precomputed_umaal::vg_rsa_private_checked_precomputed_umaal,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
@@ -612,9 +619,9 @@ bx lr",
     )
 }
 
-/// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
+/// `vg_rsa_pkcs1_decrypt`, given the key's precomputed values `pre`: computes and returns what `vg_rsa_pkcs1_decrypt` does with the same arguments. `pre` (`pre_len` words) must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), as `n`, `p` and `q` must be valid.
 ///
-/// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
+/// Contract: `VG.Spec.RsaPkcs1Enc.decryptPrecomputedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e` and the first `2 * ⌈n_len / 8⌉` words of `pre` (the modulus' values), not on the ciphertext, the private key, the rest of `pre`, the validity of the padding, the length of the message or which message is returned.
 ///
 /// # Safety
 ///
@@ -630,6 +637,7 @@ bx lr",
 /// * `dq` must be valid for reads of `dq_len` bytes.
 /// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `input_len` must be `n_len`.
 /// * `e_len` and `d_len` must be in 1..=`n_len`.
@@ -637,56 +645,62 @@ bx lr",
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
+/// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
+/// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-sub sp, sp, #88
+sub sp, sp, #96
 add r12, sp, #0
-ldr r0, [sp, #148]
+ldr r0, [sp, #156]
 str r0, [r12, #0]
-ldr r0, [sp, #152]
+ldr r0, [sp, #160]
 str r0, [r12, #4]
-ldr r0, [sp, #164]
-str r0, [r12, #8]
-ldr r0, [sp, #144]
-str r0, [r12, #12]
 ldr r0, [sp, #172]
-str r0, [r12, #16]
-ldr r0, [sp, #176]
-str r0, [r12, #20]
+str r0, [r12, #8]
+ldr r0, [sp, #152]
+str r0, [r12, #12]
 ldr r0, [sp, #180]
-str r0, [r12, #24]
+str r0, [r12, #16]
 ldr r0, [sp, #184]
-str r0, [r12, #28]
+str r0, [r12, #20]
 ldr r0, [sp, #188]
-str r0, [r12, #32]
+str r0, [r12, #24]
 ldr r0, [sp, #192]
-str r0, [r12, #36]
+str r0, [r12, #28]
 ldr r0, [sp, #196]
-str r0, [r12, #40]
+str r0, [r12, #32]
 ldr r0, [sp, #200]
-str r0, [r12, #44]
+str r0, [r12, #36]
 ldr r0, [sp, #204]
-str r0, [r12, #48]
+str r0, [r12, #40]
 ldr r0, [sp, #208]
-str r0, [r12, #52]
+str r0, [r12, #44]
 ldr r0, [sp, #212]
-str r0, [r12, #56]
+str r0, [r12, #48]
 ldr r0, [sp, #216]
+str r0, [r12, #52]
+ldr r0, [sp, #220]
+str r0, [r12, #56]
+ldr r0, [sp, #224]
 str r0, [r12, #60]
-ldr r0, [sp, #88]
-ldr r1, [sp, #144]
-ldr r2, [sp, #100]
-ldr r3, [sp, #144]
-bl {vg_rsa_private_checked}
-add r12, sp, #0
+ldr r0, [sp, #228]
 str r0, [r12, #64]
-ldr r0, [sp, #212]
+ldr r0, [sp, #232]
+str r0, [r12, #68]
+ldr r0, [sp, #96]
+ldr r1, [sp, #152]
+ldr r2, [sp, #108]
+ldr r3, [sp, #152]
+bl {vg_rsa_private_checked_precomputed}
+add r12, sp, #0
+str r0, [r12, #72]
+ldr r0, [sp, #220]
 add r0, r0, #1552
-ldr lr, [sp, #144]
+ldr lr, [sp, #152]
 mov r2, #0
 20:
 ldrb r1, [r0, #0]
@@ -696,13 +710,13 @@ add r0, r0, #1
 subs lr, lr, #1
 bne 20b
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r0, r0, #1552
-ldr r2, [sp, #144]
+ldr r2, [sp, #152]
 add r0, r0, r2
-ldr lr, [sp, #160]
+ldr lr, [sp, #168]
 sub r0, r0, lr
-ldr r1, [sp, #156]
+ldr r1, [sp, #164]
 21:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
@@ -711,59 +725,59 @@ add r1, r1, #1
 subs lr, lr, #1
 bne 21b
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 bl {vg_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #1552
 str r1, [r12, #0]
-ldr r1, [sp, #144]
+ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #0
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #208
 str r1, [r12, #0]
-ldr r2, [sp, #144]
+ldr r2, [sp, #152]
 mov r3, #0
 bl {vg_sha256_finalize}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #208
 mov r3, #32
 bl {vg_hmac_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
-ldr r1, [sp, #164]
+ldr r0, [sp, #220]
+ldr r1, [sp, #172]
 str r1, [r12, #0]
-ldr r1, [sp, #144]
+ldr r1, [sp, #152]
 str r1, [r12, #4]
 mov r2, #64
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #240
 str r1, [r12, #0]
 add r1, r0, #96
-ldr r2, [sp, #144]
+ldr r2, [sp, #152]
 add r2, r2, #64
 mov r3, #0
 bl {vg_hmac_sha256_finalize}
 add r12, sp, #0
 mov r0, #0
-str r0, [r12, #68]
+str r0, [r12, #76]
 mov r0, #8
-str r0, [r12, #72]
+str r0, [r12, #80]
 22:
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r0, r0, #192
-ldr r1, [sp, #68]
-ldr r3, [sp, #144]
+ldr r1, [sp, #76]
+ldr r3, [sp, #152]
 mov r2, #0
 strb r2, [r0, #0]
 strb r1, [r0, #1]
@@ -784,13 +798,13 @@ strb r2, [r0, #8]
 mov r2, #0
 strb r2, [r0, #9]
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
 bl {vg_hmac_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #192
 str r1, [r12, #0]
 mov r1, #10
@@ -799,8 +813,8 @@ mov r2, #64
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
-ldr r2, [sp, #68]
+ldr r0, [sp, #220]
+ldr r2, [sp, #76]
 add r1, r0, #272
 add r1, r1, r2, lsl #5
 str r1, [r12, #0]
@@ -809,25 +823,25 @@ mov r2, #74
 mov r3, #0
 bl {vg_hmac_sha256_finalize}
 add r12, sp, #0
-ldr r1, [sp, #68]
+ldr r1, [sp, #76]
 add r1, r1, #1
-str r1, [r12, #68]
-ldr r2, [sp, #72]
+str r1, [r12, #76]
+ldr r2, [sp, #80]
 cmp r1, r2
 bne 22b
 add r12, sp, #0
 mov r0, #0
-str r0, [r12, #68]
-ldr r0, [sp, #144]
+str r0, [r12, #76]
+ldr r0, [sp, #152]
 add r0, r0, #31
 lsr r0, r0, #5
-str r0, [r12, #72]
+str r0, [r12, #80]
 23:
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r0, r0, #192
-ldr r1, [sp, #68]
-ldr r3, [sp, #144]
+ldr r1, [sp, #76]
+ldr r3, [sp, #152]
 mov r2, #0
 strb r2, [r0, #0]
 strb r1, [r0, #1]
@@ -851,13 +865,13 @@ strb r2, [r0, #9]
 lsl r2, r3, #3
 strb r2, [r0, #10]
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #96
 add r2, r0, #240
 mov r3, #32
 bl {vg_hmac_sha256_init}
 add r12, sp, #0
-ldr r0, [sp, #212]
+ldr r0, [sp, #220]
 add r1, r0, #192
 str r1, [r12, #0]
 mov r1, #11
@@ -866,8 +880,8 @@ mov r2, #64
 mov r3, #0
 bl {vg_sha256_update}
 add r12, sp, #0
-ldr r0, [sp, #212]
-ldr r2, [sp, #68]
+ldr r0, [sp, #220]
+ldr r2, [sp, #76]
 add r1, r0, #528
 add r1, r1, r2, lsl #5
 str r1, [r12, #0]
@@ -876,14 +890,14 @@ mov r2, #75
 mov r3, #0
 bl {vg_hmac_sha256_finalize}
 add r12, sp, #0
-ldr r1, [sp, #68]
+ldr r1, [sp, #76]
 add r1, r1, #1
-str r1, [r12, #68]
-ldr r2, [sp, #72]
+str r1, [r12, #76]
+ldr r2, [sp, #80]
 cmp r1, r2
 bne 23b
 add r12, sp, #0
-ldr r1, [sp, #144]
+ldr r1, [sp, #152]
 sub r1, r1, #11
 mov r0, #0
 24:
@@ -894,11 +908,11 @@ lsr r2, r2, #31
 cmp r2, #0
 bne 24b
 add r12, sp, #0
-str r0, [r12, #80]
-ldr r0, [sp, #212]
+str r0, [r12, #88]
+ldr r0, [sp, #220]
 add r0, r0, #272
-ldr r4, [sp, #80]
-ldr r5, [sp, #144]
+ldr r4, [sp, #88]
+ldr r5, [sp, #152]
 sub r5, r5, #11
 mov r6, #0
 mov lr, #128
@@ -917,11 +931,11 @@ add r0, r0, #2
 subs lr, lr, #1
 bne 25b
 add r12, sp, #0
-str r6, [r12, #76]
+str r6, [r12, #84]
 add r12, sp, #0
-ldr r0, [sp, #88]
+ldr r0, [sp, #96]
 add r0, r0, #2
-ldr lr, [sp, #144]
+ldr lr, [sp, #152]
 sub lr, lr, #2
 mov r1, #2
 mov r4, #0
@@ -942,10 +956,10 @@ add r0, r0, #1
 subs lr, lr, #1
 bne 26b
 add r12, sp, #0
-ldr r0, [sp, #88]
-ldr r7, [sp, #144]
-ldr r8, [sp, #76]
-ldr r9, [sp, #64]
+ldr r0, [sp, #96]
+ldr r7, [sp, #152]
+ldr r8, [sp, #84]
+ldr r9, [sp, #72]
 ldrb r2, [r0, #0]
 sub r2, r2, #1
 lsr r2, r2, #31
@@ -972,15 +986,15 @@ sub r11, r6, r11
 sub r9, r7, r3
 and r3, r3, r11
 add r12, sp, #0
-ldr r1, [sp, #96]
+ldr r1, [sp, #104]
 str r3, [r1, #0]
 str r6, [r1, #4]
 add r12, sp, #0
-ldr r0, [sp, #88]
-ldr r1, [sp, #212]
+ldr r0, [sp, #96]
+ldr r1, [sp, #220]
 add r1, r1, #528
 mov r4, #0
-ldr lr, [sp, #144]
+ldr lr, [sp, #152]
 27:
 ldrb r2, [r0, #0]
 ldrb r3, [r1, #0]
@@ -999,8 +1013,8 @@ add r4, r4, #1
 subs lr, lr, #1
 bne 27b
 add r12, sp, #0
-ldr r0, [sp, #64]
-add sp, sp, #88
+ldr r0, [sp, #72]
+add sp, sp, #96
 ldr r4, [sp, #16]
 ldr r5, [sp, #20]
 ldr r6, [sp, #24]
@@ -1012,7 +1026,7 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked::vg_rsa_private_checked,
+        vg_rsa_private_checked_precomputed = sym super::rsa::vg_rsa_private_checked_precomputed::vg_rsa_private_checked_precomputed,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,

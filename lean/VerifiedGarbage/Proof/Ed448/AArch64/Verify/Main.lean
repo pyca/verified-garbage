@@ -77,10 +77,10 @@ theorem lsr_zero {s t : State} (ht : LsrPost s t) : t.gpr .x9 = 0 ↔ (s.gpr .x2
     have := congrArg BitVec.toNat h0
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at this
     change _ = 0 at this
-    omega
+    omega_using [this]
   · intro hc
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; show _ = 0; omega
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; show _ = 0; omega_using [hc]
 
 theorem lsr_x2 {s t : State} (ht : LsrPost s t) : t.gpr .x2 = s.gpr .x2 := ht.2.1 _ (by decide)
 
@@ -102,7 +102,7 @@ theorem body_depth (v : Proof.Sha3.AArch64.Permutation) : (body v.callee).aarch6
   simp only [body, Impl.Ed448.AArch64.Verify.hash, Impl.Ed448.AArch64.Whole.zeroSt,
     Impl.Ed448.AArch64.Whole.kabs, Impl.Ed448.AArch64.Whole.kpad, Impl.Ed448.AArch64.Whole.ksqz,
     Impl.Ed448.AArch64.Whole.callS, Code.aarch64Depth, Nat.max_le, ha, hp, hs, hr, he]
-  omega
+  omega_using []
 
 /-- The hash of the specification, as the body computes it. -/
 theorem verify_eq (pk ctx msg sig : List Byte) (hc : ctx.length < 256) :
@@ -110,14 +110,14 @@ theorem verify_eq (pk ctx msg sig : List Byte) (hc : ctx.length < 256) :
       (Spec.Sha3.shake256 ("SigEd448".toList.map (fun ch => BitVec.ofNat 8 ch.toNat) ++
         [BitVec.ofNat 8 0, BitVec.ofNat 8 ctx.length] ++ ctx ++ sig.take 57 ++ pk ++ msg) 114)) := by
   simp only [Spec.Ed448.verify, Spec.Ed448.hash, Spec.Ed448.dom4, List.append_assoc,
-    show ctx.length ≤ 255 from by omega, decide_true, Bool.true_and]
+    show ctx.length ≤ 255 from by omega_using [hc], decide_true, Bool.true_and]
 
 /-- An input's bytes after the frame's writes, as on entry. -/
 theorem frame_bytes {m m' : Mem} {S R : Region} (hf : Frame [S] m m') (hd : S.Disjoint R) {n : Nat}
     (hn : n ≤ R.len) (hl : R.len ≤ 2 ^ 64) :
     Spec.Sha3.bytesAt m' R.base n = Spec.Sha3.bytesAt m R.base n := by
   unfold Spec.Sha3.bytesAt
-  refine List.map_congr_left fun i hi => hf.bytes (R := R) ?_ hl (by have := List.mem_range.mp hi; omega)
+  refine List.map_congr_left fun i hi => hf.bytes (R := R) ?_ hl (by have := List.mem_range.mp hi; omega_using [hn, this])
   intro r hr
   rw [List.mem_singleton.mp hr]
   exact hd.symm
@@ -139,13 +139,13 @@ theorem entry_args {s p : State} (h : vLocal.pre s)
     (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) : Args (lay s) p.mem := by
   refine ⟨fun j hj => ?_, fun i hi => ?_⟩
   · have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
-    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
+    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
       rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
   · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
     have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
     rw [← held i hi]
     refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms Impl.Ed448.AArch64.Sparse.baseSym) Impl.Ed448.AArch64.Sparse.baseWords)
-      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+      (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, fit])) (fun r hr => ?_) (by decide)
     rw [List.mem_singleton.mp hr]
     exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
 
@@ -218,7 +218,7 @@ theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64
       rintro rfl; simp [preserved] at hr), usp, fun r _ => by rw [uv]⟩, hpost u ?_⟩
     show u.gpr .x0 = _
     rw [u0, Spec.Ed448.verify, ed448_bytesAt, sha3_bytesAt_length]
-    simp only [show ¬ (t.gpr .x2).toNat ≤ 255 by omega, decide_false, Bool.false_and]
+    simp only [show ¬ (t.gpr .x2).toNat ≤ 255 by omega_using [hc2, hc], decide_false, Bool.false_and]
     rfl
 
 end VG.Proof.Ed448.AArch64.Verify

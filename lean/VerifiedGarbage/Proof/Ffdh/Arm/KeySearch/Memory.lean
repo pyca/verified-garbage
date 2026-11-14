@@ -63,9 +63,9 @@ theorem KeyLive.after_control {p : KeyPublic sampling} {original s t : State} {u
   · apply h.saved.frame (lo := 0) (hi := 24) (by decide) frame
     simpa using h.input.saved_control
   · exact (bytesAt_frame frame (by simpa using h.input.random_control)
-      (by change p.randLen ≤ 2 ^ 64; have := h.input.bounds.randomFits; omega)).trans h.random
+      (by change p.randLen ≤ 2 ^ 64; have := h.input.bounds.randomFits; omega_using [this])).trans h.random
   · exact (bytesAt_frame frame (by simpa using h.input.domain_control)
-      (by change p.dlen ≤ 2 ^ 64; have := h.input.bounds.domainFit; omega)).trans h.domain
+      (by change p.dlen ≤ 2 ^ 64; have := h.input.bounds.domainFit; omega_using [this])).trans h.domain
   · cases sampling <;> simpa only [KeyConstants.tablePtr, syms] using h.tablePtr
   · exact KeyConstants.held_after_frame h.held frame (by
       intro table ht r hr
@@ -76,7 +76,7 @@ theorem KeyLive.after_control {p : KeyPublic sampling} {original s t : State} {u
   · apply h.cachedHeld.after_frame frame
     · intro cached
       have fit := h.input.context_fit cached
-      omega
+      omega_using [fit]
     · intro cached r member
       have same := List.mem_singleton.mp member
       subst r
@@ -95,7 +95,7 @@ theorem KeyLive.update {p : KeyPublic sampling} {original s t : State} {used key
   apply h.after_control rest syms kept (by rw [mem]; exact writeLow_frame _ _ _ bounds)
     usedBound keysBound scalarsBound headers
   · intro j hj
-    rw [mem, highWord_writeLow _ _ _ bounds j (by omega)]
+    rw [mem, highWord_writeLow _ _ _ bounds j (by omega_using [hj])]
     exact h.high j hj
   · intro cached
     obtain ⟨ptr, words⟩ := h.cachedSlots cached

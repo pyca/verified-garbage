@@ -34,7 +34,7 @@ theorem MulKeep.of_powers {x : BitVec 32} {s t : State} {o n : Nat} (hc : Ctx x 
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit (by decide) (by decide) (by decide)⟩
   · exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit (by decide) (by decide) (by decide)⟩
-  · exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit ho (by omega) (by omega)⟩
+  · exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit ho (by omega_using [hn]) (by omega_using [hn])⟩
   · exact ⟨callStk s, by simp, fun _ ha => ha⟩
 
 theorem MulKeep.of_ikeep {x : BitVec 32} {s t : State} (hc : Ctx x s) (h : IKeep x s t) :
@@ -47,7 +47,7 @@ theorem MulKeep.bit {x : BitVec 32} {s t : State} (h : MulKeep x s t) (hc : Ctx 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
-      (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 24 7144)) _ (Region.contains_self _ _)
-  · exact stk_apart hc (d := 7168 + i) (n := 1) (by omega) (by decide) _ (Region.contains_self _ _)
+      (Or.inr (by omega_using [])) : (sub x (7168 + i) 1).Disjoint (sub x 24 7144)) _ (Region.contains_self _ _)
+  · exact stk_apart hc (d := 7168 + i) (n := 1) (by omega_using [hi]) (by decide) _ (Region.contains_self _ _)
 
 end VG.Proof.Ed25519.X86

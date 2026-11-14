@@ -36,7 +36,7 @@ theorem finalPass_step (hint : Bool) (work out aux : Addr) (c : CheckConstants)
       checkRun hint (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*u)) 128 p))
         (out+BitVec.ofNat 64 (16*u)) (aux+BitVec.ofNat 64 (16*u)) c
         (finalPassData hint work out aux c d u) allChecks := by
-  rw [finalPassData,finalPass_readPair hint work out aux c d (by omega) hu hd]
+  rw [finalPassData,finalPass_readPair hint work out aux c d (by omega_using [hu]) hu hd]
 
 theorem lowPass_step (g : Nat) (work out aux : Addr) (c : LowConstants)
     (d : CheckData) {u : Nat} (hu : u<8)
@@ -46,6 +46,6 @@ theorem lowPass_step (g : Nat) (work out aux : Addr) (c : LowConstants)
       lowRun g (fun p => Inverse.rawFinalValues (readPair d.mem (work+BitVec.ofNat 64 (16*u)) 128 p))
         (out+BitVec.ofNat 64 (16*u)) (aux+BitVec.ofNat 64 (16*u)) c
         (lowPassData g work out aux c d u) allLow := by
-  rw [lowPassData,lowPass_readPair g work out aux c d (by omega) hu ho ha]
+  rw [lowPassData,lowPass_readPair g work out aux c d (by omega_using [hu]) hu ho ha]
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired

@@ -37,7 +37,7 @@ theorem word_ok (s : State) {k : Nat} {hi prev col : Reg} {v : BitVec 64} {c o :
   rw [colA,prevA] at eq
   refine ⟨ct,ot,hct,hot,?_,(ka.trans kt).mono (by simp)⟩
   rw [hiT]
-  omega
+  omega_using [ea, eq]
 
 theorem close_ok (s : State) {hi col : Reg} {c o : Bool}
     (hc : s.cf=some c) (ho : s.of=some o) (hz : s.gpr col=0) (hne : hi≠col) :

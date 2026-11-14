@@ -59,9 +59,9 @@ private theorem tail_ok (p : CdP) (s : State) (h : ML p s) :
   have hZ := hp.good.2
   have hs := hp.base.dom.take p.k
   refine WP.seq (WP.mono (loadBE_ok (w := p.w) hp.outer.scr hsi hcx hbx hp.base.plen
-    (by omega) (by omega) rfl (by omega)
+    (by omega_using [hk]) (by omega_using [hk']) rfl (by omega_using [hX, hZ])
     (fun i hi => hs.rd i (by rw [hp.base.plen]; exact hi)) (fun i hi => hs.val i _)
-    (fun i hi => Or.inr (by have := hs.out i (by rw [hp.base.plen]; exact hi); omega)))
+    (fun i hi => Or.inr (by have := hs.out i (by rw [hp.base.plen]; exact hi); omega_using [hX, hZ, this])))
     fun u ⟨_, _, k⟩ => ?_)
   have hbx' : u.gpr .rbx = off p.B (slot p.w aX) := (k.gpr (by decide)).trans hbx
   have scr := hp.outer.scr.congr k.2.2
@@ -69,20 +69,20 @@ private theorem tail_ok (p : CdP) (s : State) (h : ML p s) :
     (Q := fun t => t.mem = u.mem.writeW (off p.B (slot p.w aX)) (word u.mem p.B (slot p.w aX) - 1))
     (by unfold decLow; xrun [State.ea, at0, hbx',
       show off p.B (slot p.w aX) + BitVec.ofInt 64 0 = off p.B (slot p.w aX) from by simp,
-      scr.ld (show slot p.w aX + 8 ≤ p.Z by omega), scr.st (show slot p.w aX + 8 ≤ p.Z by omega)]) rfl)
+      scr.ld (show slot p.w aX + 8 ≤ p.Z by omega_using [hX, hZ]), scr.st (show slot p.w aX + 8 ≤ p.Z by omega_using [hX, hZ])]) rfl)
     (fun _ _ => True.intro)
 
 private theorem zero_parent (p : CdP) (s : State) (h : Parent p s) : WP isa (zeroArr aX) s (Parent p) := by
   have hk := h.base.k1
   have hk' := h.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
   have hX := slot_le (w := p.w) (show aX < 8 by decide)
   have hX0 := hdr_lt_slot p.w aX (show 31 < 32 by decide)
   have hZ := h.good.2
-  refine WP.mono (zeroArr_ok h.good.1 hZ (by omega) (by omega) (show aX < 8 by decide))
+  refine WP.mono (zeroArr_ok h.good.1 hZ (by omega_using [hk, ew]) (by omega_using [hk', ew]) (show aX < 8 by decide))
     fun _ ⟨_, ho, k⟩ => ?_
   have hf : Frm p.B [(slot p.w aX, 8 * (p.w + 2))] _ _ := Frm.of_outside ho (by simp)
-  exact (h.array hf (fun r he => by rw [List.mem_singleton.mp he]; exact ⟨by omega, by omega⟩)
+  exact (h.array hf (fun r he => by rw [List.mem_singleton.mp he]; exact ⟨by omega, by omega_using [hX, hZ]⟩)
     k (k.gpr (by decide))).1
 
 private def regs (p : CdP) (r : Reg) : BitVec 64 :=

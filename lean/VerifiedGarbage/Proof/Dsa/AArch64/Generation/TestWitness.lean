@@ -97,10 +97,10 @@ theorem testWitness_ok {B p : Addr} {Z w N : Nat} {bs : List Byte} {s : State}
   have hst := hsu.of_frm ht ft kt
     (by intro r hr; rw [List.mem_singleton.mp hr]; right; decide)
     (by intro r hr; rw [List.mem_singleton.mp hr]; right; decide)
-    (by intro r hr; rw [List.mem_singleton.mp hr]; simp only [kU]; omega)
+    (by intro r hr; rw [List.mem_singleton.mp hr]; simp only [kU]; omega_using [hEZ])
   refine ⟨hst, ?_, ?_, ht9, ?_, (ku.trans kt).mono (by decide)⟩
   · rw [ft.wv_eq (by intro r hr; rw [List.mem_singleton.mp hr]; right; simp only [slot, hdrBytes, aX, kU]; omega_arith)
-      (by omega)]
+      (by omega_using [hz, hX])]
     exact hxu
   · rw [htm, word_writeW_self]
   · exact (fu.mono (by simp [testRanges])).trans (ft.mono (by simp [testRanges]))

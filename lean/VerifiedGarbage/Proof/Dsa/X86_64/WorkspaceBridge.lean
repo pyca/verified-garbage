@@ -36,8 +36,8 @@ theorem readyInverses_eq {L : ExecutionLayout} {s₁ s₂ : State} {pi₁ qi₁ 
     (h₁ : Ready (L.withInverses pi₁ qi₁) s₁) (h₂ : Ready (L.withInverses pi₂ qi₂) s₂)
     (hp : L.modulus % 2 = 1) (hq : L.subgroup % 2 = 1) : pi₁ = pi₂ ∧ qi₁ = qi₂ := by
   obtain ⟨hp2, _, hq2, _⟩ := VG.Proof.Dsa.workspace_bounds L.lengths
-  exact ⟨h₁.pChild.inverse_unique h₂.pChild (by change 1 ≤ (L.pLen + 7) / 8; omega) hp,
-    h₁.qChild.inverse_unique h₂.qChild (by change 1 ≤ (L.qLen + 7) / 8; omega) hq⟩
+  exact ⟨h₁.pChild.inverse_unique h₂.pChild (by change 1 ≤ (L.pLen + 7) / 8; omega_using [hp2]) hp,
+    h₁.qChild.inverse_unique h₂.qChild (by change 1 ≤ (L.qLen + 7) / 8; omega_using [hq2]) hq⟩
 
 structure InitializationPublic where
   layout : ExecutionLayout
@@ -66,10 +66,10 @@ def InitializationPublic.workspace (p : InitializationPublic) : WorkspacePublic 
   qBytes := p.qBytes
   digestLen := (p.layout.fields .digestLen).toNat
   extentBound := by decide
-  pPositive := by rw [p.pLength]; have := p.layout.widths; omega
+  pPositive := by rw [p.pLength]; have := p.layout.widths; omega_using [this]
   qPositive := by rw [p.qLength]; exact p.layout.widths.1
-  pBound := by rw [p.pLength]; have := p.layout.widths; omega
-  qBound := by rw [p.qLength]; have := p.layout.widths; omega
+  pBound := by rw [p.pLength]; have := p.layout.widths; omega_using [this]
+  qBound := by rw [p.qLength]; have := p.layout.widths; omega_using [this]
   digestBound := (p.layout.fields .digestLen).isLt
   active := by decide
   lengths := by rw [p.pLength, p.qLength]; exact p.layout.lengths

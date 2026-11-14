@@ -60,7 +60,7 @@ theorem saved_otFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ otFrame st 
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using L.saved_st (d := 0) (k := 48) (by decide)
   · exact saved_w (by decide) (.inl (by decide))
-  · exact saved_w (by omega) (.inl (by omega))
+  · exact saved_w (by omega_using [ho]) (.inl (by omega_using [ho]))
   · exact saved_w (by decide) (.inr (by decide))
   · exact X.wx.sub_left (Lay.wSub (by decide))
 
@@ -122,7 +122,7 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
   have hb := Nat.mod_lt (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat ++
     zeros (padLen (bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat).length)).length (show 16 > 0 by decide)
   have hab₃ := oa.abs.congr (blockAt_frame oc.frame (stp_crFrame X hd₂ (by decide)))
-    (bytesAt_frame oc.frame (stp_crFrame X hd₂ (by omega)) (by omega))
+    (bytesAt_frame oc.frame (stp_crFrame X hd₂ (by omega_using [])) (by omega_using []))
   refine WP.seq (WP.mono (WP.with_rdwr (oneTag_ok L X (o := 0) (.inl rfl) oc.env (by rw [wr₃]; exact hxw₂) hH₃
     (length_bytesAt _ _ _).symm hab₃ (hd₂.ok.of_eq rd₃ wr₃))) fun s₄ ⟨ot, rd₄, wr₄, _⟩ => ?_)
   -- the tag copied out
@@ -173,16 +173,16 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
   have hc₃ : ciphOf s₃.mem (s₀.gpr .r3) = ctxCiph s₀.mem (s₀.gpr .r3) := by
     rw [ciph_frame cf₃ (ctx_crFrame' L₀ X₀ hd₂₀), hc₂]
   have hD₂ : bytesAt s₂.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
-    bytesAt_frame f₂ dD (by have := (s₀.gpr .r9).isLt; omega)
+    bytesAt_frame f₂ dD (by have := (s₀.gpr .r9).isLt; omega_using [])
   have hiv : bytesAt s₁.mem (s₀.gpr .r4) (s₀.gpr .r5).toNat = bytesAt s₀.mem (s₀.gpr .r4) (s₀.gpr .r5).toNat :=
     bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dnW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .r5).isLt; omega)
+      (by have := (s₀.gpr .r5).isLt; omega_using [])
   have haad : bytesAt s₁.mem (s₁.gpr .r21) (s₁.gpr .r22).toNat = bytesAt s₀.mem (s₀.gpr .r6) (s₀.gpr .r7).toNat := by
     rw [h1.r21, h1.r22]
     exact bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact daW.sub_right (Lay.wSub (by decide)))
-      (by have := (s₀.gpr .r7).isLt; omega)
+      (by have := (s₀.gpr .r7).isLt; omega_using [])
   have hj₃ : blockAt s₃.mem (stackArg s₀ 0 + BitVec.ofNat 64 16) =
       j0 (ctxH s₀.mem (s₀.gpr .r3)) (bytesAt s₀.mem (s₀.gpr .r4) (s₀.gpr .r5).toNat) := by
     rw [blockAt_frame cf₃ (by simpa using stp_crFrame X₀ hd₂₀ (d := 0) (k := 16) (by decide)), ← hiv, ← h1.r30]
@@ -195,7 +195,7 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
     rw [h1.r27, h1.r23, h1.r29, hc₂, hD₂, hiv] at this
     exact this
   have hD₄ : bytesAt s₄.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₃.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat := by
-    refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .r9).isLt; omega)
+    refine bytesAt_frame of₄ (fun r hr => ?_) (by have := (s₀.gpr .r9).isLt; omega_using [])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ddW.sub_right (Lay.wSub (by decide))
@@ -205,7 +205,7 @@ theorem seal_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : sealPPC64LE.
     · exact ddx
   have hD₅ : bytesAt s₅.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat = bytesAt s₄.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat :=
     bytesAt_frame hf₅ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h1.r20]; exact ddt)
-      (by have := (s₀.gpr .r9).isLt; omega)
+      (by have := (s₀.gpr .r9).isLt; omega_using [])
   have ho := ot.out
   rw [h1.r29, h1.r30, h1.r27, h1.r23, h1.r31, hc₃, hj₃, haad, BitVec.add_zero, ← Proof.Gcm.fullTag_eq] at ho
   rw [h1.r31, h1.r20] at hb₅

@@ -50,42 +50,42 @@ tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
 
 /-- A buffer of `n` bytes at `D` that the code may read, apart from the
 context, the state, `W` and the stack below `SP`. -/
-structure DataOk (St W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
+structure DataOk (St W SP : Addr) (s : State) (D : Addr) (n : Nat) (N : Nat := 2560) : Prop where
   rd : Covers [⟨D, n⟩] (s.rd ++ s.wr)
   lt : n < 2 ^ 64
   wrap : D.toNat + n ≤ 2 ^ 64
   st : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩
-  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
+  w : (⟨D, n⟩ : Region).Disjoint ⟨W, N⟩
   stk : (below SP 8).Disjoint ⟨D, n⟩
 
 namespace DataOk
 
-variable {St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataOk St W SP s D n)
+variable {St W SP : Addr} {s : State} {D : Addr} {n N : Nat} (h : DataOk St W SP s D n N)
 include h
 
-theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataOk St W SP s' D n :=
+theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataOk St W SP s' D n N :=
   { h with rd := by rw [hrd, hwr]; exact h.rd }
 
 /-- The bytes from `k` on. -/
-theorem drop {k : Nat} (hk : k ≤ n) : DataOk St W SP s (D + BitVec.ofNat 64 k) (n - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
+theorem drop {k : Nat} (hk : k ≤ n) : DataOk St W SP s (D + BitVec.ofNat 64 k) (n - k) N where
+  rd := covers_off h.rd (by omega_using [hk]) h.lt
+  lt := by have := h.lt; omega_using [this]
   wrap := by
     have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega_using [hk, this])]
     have := Nat.mod_le (D.toNat + k) (2 ^ 64)
-    omega
-  st := h.st.sub_left (Offset.sub_base D (by omega))
-  w := h.w.sub_left (Offset.sub_base D (by omega))
-  stk := h.stk.sub_right (Offset.sub_base D (by omega))
+    omega_arith
+  st := h.st.sub_left (Offset.sub_base D (by omega_using [hk]))
+  w := h.w.sub_left (Offset.sub_base D (by omega_using [hk]))
+  stk := h.stk.sub_right (Offset.sub_base D (by omega_using [hk]))
 
 /-- The first `k` bytes. -/
-theorem take {k : Nat} (hk : k ≤ n) : DataOk St W SP s D k where
+theorem take {k : Nat} (hk : k ≤ n) : DataOk St W SP s D k N where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩
+  lt := by have := h.lt; omega_using [hk, this]
+  wrap := by have := h.wrap; omega_using [hk, this]
   st := h.st.sub_left (Region.sub_prefix hk)
   w := h.w.sub_left (Region.sub_prefix hk)
   stk := h.stk.sub_right (Region.sub_prefix hk)
@@ -111,17 +111,17 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (o : Nat) (xs : List Byte) (h : 
   · simp only [bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
-    exact writeBytes_before m p xs hi (by omega)
+    exact writeBytes_before m p xs hi (by omega_using [h])
   · apply List.ext_getElem (by simp [bytesAt])
     intro i h₁ h₂
     simp only [bytesAt, List.length_map, List.length_range] at h₁
     simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₁, ite_true,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_using [h, h₂]), h₁, ite_true,
       List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h₁, Option.getD_some]
 
 theorem bytesAt_writeBytes_self (m : Mem) (p : Addr) (xs : List Byte) (h : xs.length < 2 ^ 64) :
     bytesAt (writeBytes m p xs) p xs.length = xs := by
-  have := bytesAt_writeBytes m p 0 xs (by omega)
+  have := bytesAt_writeBytes m p 0 xs (by omega_using [h])
   simp only [Nat.zero_add, BitVec.add_zero] at this
   rw [this]; rfl
 

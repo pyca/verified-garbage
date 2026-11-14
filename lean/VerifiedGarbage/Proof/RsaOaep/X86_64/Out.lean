@@ -37,13 +37,13 @@ theorem Rep.apart {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
     rw [← R.scr o ho]
     refine hf _ fun r' hr' hc => ?_
     rw [List.mem_singleton.mp hr'] at hc
-    exact ha.dS _ ((cS S (o := o) (n := 1) (by omega)).byte (by rw [BitVec.sub_self]; decide)) hc
+    exact ha.dS _ ((cS S (o := o) (n := 1) (by omega_using [ho])).byte (by rw [BitVec.sub_self]; decide)) hc
   fr k hk := by
     rw [Bignum.word, hf.readW (r := ⟨off F (8 * k), 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_)
       (by decide)]
     · exact R.fr k hk
     · rw [List.mem_singleton.mp hr']
-      exact ha.dF.sub_left (Offset.sub_base F (by unfold nW frameBytes at *; omega))
+      exact ha.dF.sub_left (Offset.sub_base F (by unfold nW frameBytes at *; omega_using [hk]))
 
 structure ZeroI (u₀ : State) (o : Addr) (k j : Nat) (v : State) : Prop where
   keep : Keep [.r8] u₀ v
@@ -62,14 +62,14 @@ theorem zeroOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   · xrun [zeroOut, ea_sp, L.rsp, L.ld (d := sOut) (by decide), L.ld (d := sK) (by decide),
       R.slot (d := sOut) (k := 21) rfl (by decide) ho, R.slot (d := sK) (k := 23) rfl (by decide) hk]
   have hsc : Scr v o k := Scr.of_mem (by rw [hk'.2.2]; exact hw) hnw
-  refine WP.mono (byteLoop_ok hk0 (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.r8] by decide) (by decide) h₂)
+  refine WP.mono (byteLoop_ok hk0 (stepR_ok (by omega_using [hk1]) v (show Reg.r10 ∉ [Reg.r8] by decide) (by decide) h₂)
     (ZeroI v o k) ?_ ⟨Keep.refl _ _, h₄, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun w I => ?_
   · intro j hj w I
     have hdw : w.gpr .rdi = o := (I.keep.gpr (by decide)).trans h₁
     have haw : w.gpr .rax = 0 := (I.keep.gpr (by decide)).trans h₃
     have hst : InRegions w.wr (o + BitVec.ofNat 64 j) 1 := by
-      have := hsc.st8 (d := j) (by omega); rw [I.keep.2.2]; exact this
+      have := hsc.st8 (d := j) (by omega_using [hj]); rw [I.keep.2.2]; exact this
     refine WP.mono (WP.keep [] (Q := fun w' => w'.gpr .r8 = BitVec.ofNat 64 j ∧
         w'.mem = w.mem.writeW (o + BitVec.ofNat 64 j) (0 : Byte)) ?_ rfl)
       fun w' ⟨⟨h8', hm'⟩, k'⟩ => ⟨(I.keep.trans k').mono (by decide), h8', fun w'' k'' hm'' h8'' => ?_⟩
@@ -78,11 +78,11 @@ theorem zeroOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       rfl
     · refine ⟨(I.keep.trans (k'.trans k'')).mono (by decide), h8'', ?_, fun i hi => ?_⟩
       · rw [hm'', hm']
-        exact I.fr.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+        exact I.fr.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hk1, hj]))
       · rw [hm'', hm', VG.WriteBytes.writeW8_apply]
         by_cases h : i = j
         · subst h; simp
-        · rw [ifn (Offset.add_ofNat_ne o (by omega) (by omega) h), I.zero i (by omega)]
+        · rw [ifn (Offset.add_ofNat_ne o (by omega_using [hk1, hj, hi]) (by omega_using [hk1, hj]) h), I.zero i (by omega_using [hi, h])]
   · have fr : Frame [⟨o, k⟩] u.mem w.mem := by rw [← hm]; exact I.fr
     have Rw : Rep w.mem F S V W := Rep.apart R ha fr
     refine ⟨L.congr ((I.keep.gpr (by decide)).trans (hk'.gpr (by decide))) (I.keep.2.2.trans hk'.2.2) ?_,

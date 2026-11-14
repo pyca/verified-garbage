@@ -99,7 +99,7 @@ private theorem value_mask (p : GkP) (s : State) (h : ValueIn p s) :
   have hk : p.k ≤ 1024 := hv.1.choose_spec.1.k2
   refine WP.mono (publicOutput_ok hv hb.x hb.oy hb.xy hb.len) fun t ht => ?_
   obtain ⟨_, hax, hd, _, hs, hx, hn, hK, _, _, k⟩ := ht
-  refine ⟨hs, hd, by omega, by omega, hb.ld, hx, hn, hK,
+  refine ⟨hs, hd, by omega_using [hZ], by omega_using [hk], hb.ld, hx, hn, hK,
     ⟨fun i hi => by rw [k.2.2]; exact hb.ox.wr i hi, hb.ox.sep⟩, decide (p.fl rb), ?_⟩
   exact hax.trans (bit_eq_bool (p.fl rb))
 

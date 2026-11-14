@@ -86,7 +86,7 @@ theorem rv_lt (s : State) : ∀ rs : List Reg, rv s rs < 2 ^ (64 * rs.length)
     generalize 2 ^ (64 * rs.length) = P at *
     generalize rv s rs = y at *
     have : 2 ^ 64 * (y + 1) ≤ 2 ^ 64 * P := Nat.mul_le_mul_left _ h2
-    omega
+    omega_using [h2]
 
 theorem mv_lt (m : Mem) (base : Addr) : ∀ o n, mv m base o n < 2 ^ (64 * n)
   | _, 0 => by simp [mv]
@@ -97,7 +97,7 @@ theorem mv_lt (m : Mem) (base : Addr) : ∀ o n, mv m base o n < 2 ^ (64 * n)
     generalize 2 ^ (64 * n) = P at *
     generalize mv m base (o + 8) n = y at *
     have : 2 ^ 64 * (y + 1) ≤ 2 ^ 64 * P := Nat.mul_le_mul_left _ h2
-    omega
+    omega_using [h2]
 
 theorem fe_lt (m : Mem) (base : Addr) (o : Nat) : fe m base o < 2 ^ 448 := by
   have := mv_lt m base o 7
@@ -114,7 +114,7 @@ theorem ea_sc (s : State) (d : Nat) : s.ea (sc d) = off (s.gpr .rdi) d := by
 
 theorem contains_sc {base : Addr} {d n : Nat} (h : d + n ≤ 8192) :
     (⟨base, 8192⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by omega)
+  Offset.contains_base base h (by omega_using [h])
 
 theorem Scr.read {s : State} {base : Addr} (hs : Scr s base) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions (s.rd ++ s.wr) (off base d) n :=
@@ -154,7 +154,7 @@ theorem readW32 (m : Mem) (p : Addr) : (m.readW p 32).toNat = (m.readW p 64).toN
     X25519.bytesAt_add, X25519.leNum_append, X25519.length_bytesAt]
   have := X25519.leNum_lt (Spec.X25519.bytesAt m p 4)
   rw [X25519.length_bytesAt] at this
-  omega
+  omega_using [this]
 
 /-! ## Stable sources -/
 
@@ -215,12 +215,12 @@ theorem Outside.trans {base : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : O
 
 theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside base o n m m')
     (h₁ : o' ≤ o) (h₂ : o + n ≤ o' + n') : Outside base o' n' m m' :=
-  fun x hx => h x (by omega)
+  fun x hx => h x (by omega_using [h₁, h₂, hx])
 
 /-- A word at an offset outside the bytes that changed. -/
 theorem Outside.word {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 8 ≤ o ∨ o + n ≤ d) (hd' : d + 8 < 2 ^ 64) : word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hd', hi])]; omega_using [hd, hi])).symm).symm
 
 theorem Outside.mv {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') :
     ∀ {d k : Nat}, (d + 8 * k ≤ o ∨ o + n ≤ d) → d + 8 * k < 2 ^ 64 →
@@ -228,20 +228,20 @@ theorem Outside.mv {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n 
   | _, 0, _, _ => rfl
   | d, k + 1, hd, hd' => by
     simp only [X86_64.mv]
-    rw [h.word (by omega) (by omega), h.mv (d := d + 8) (k := k) (by omega) (by omega)]
+    rw [h.word (by omega_using [hd]) (by omega_using [hd']), h.mv (d := d + 8) (k := k) (by omega_using [hd]) (by omega_using [hd'])]
 
 theorem Outside.fe {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
     (hd : d + 56 ≤ o ∨ o + n ≤ d) (hd' : d + 56 < 2 ^ 64) : fe m' base d = fe m base d :=
-  h.mv (by omega) (by omega)
+  h.mv (by omega_using [hd]) (by omega_using [hd'])
 
 theorem writeW_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 64) (h : d + 8 < 2 ^ 64) :
     Outside base d 8 m (m.writeW (off base d) v) := by
   intro x hx
   simp only [Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_using [h])]
   simp only [ofs] at hx
-  omega
+  omega_using [hx]
 
 theorem word_writeW_self (m : Mem) (base : Addr) (d : Nat) (v : BitVec 64) :
     word (m.writeW (off base d) v) base d = v := Mem.readW_writeW_self64 _ _ _
@@ -267,8 +267,8 @@ theorem Outside.right {base : Addr} {y ny : Nat} {m m' : Mem} (h : Outside base 
 theorem Outside2.word {base : Addr} {x nx y ny : Nat} {m m' : Mem} (h : Outside2 base x nx y ny m m')
     {d : Nat} (hx : d + 8 ≤ x ∨ x + nx ≤ d) (hy : d + 8 ≤ y ∨ y + ny ≤ d) (hd : d + 8 < 2 ^ 64) :
     word m' base d = word m base d :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)
-    (by rw [ofs_off base (by omega)]; omega)).symm).symm
+  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega_using [hd, hi])]; omega_using [hx, hi])
+    (by rw [ofs_off base (by omega_using [hd, hi])]; omega_using [hy, hi])).symm).symm
 
 theorem Outside2.mv {base : Addr} {x nx y ny : Nat} {m m' : Mem} (h : Outside2 base x nx y ny m m') :
     ∀ {d k : Nat}, (d + 8 * k ≤ x ∨ x + nx ≤ d) → (d + 8 * k ≤ y ∨ y + ny ≤ d) →
@@ -276,12 +276,12 @@ theorem Outside2.mv {base : Addr} {x nx y ny : Nat} {m m' : Mem} (h : Outside2 b
   | _, 0, _, _, _ => rfl
   | d, k + 1, hx, hy, hd' => by
     simp only [X86_64.mv]
-    rw [h.word (by omega) (by omega) (by omega),
-      h.mv (d := d + 8) (k := k) (by omega) (by omega) (by omega)]
+    rw [h.word (by omega_using [hx]) (by omega_using [hy]) (by omega_using [hd']),
+      h.mv (d := d + 8) (k := k) (by omega_using [hx]) (by omega_using [hy]) (by omega_using [hd'])]
 
 theorem Outside2.outside {base : Addr} {x nx y ny : Nat} {m m' : Mem}
     (h : Outside2 base x nx y ny m m') {o n : Nat} (hx : o ≤ x) (hx' : x + nx ≤ o + n) (hy : o ≤ y)
     (hy' : y + ny ≤ o + n) : Outside base o n m m' :=
-  fun p hp => h p (by omega) (by omega)
+  fun p hp => h p (by omega_using [hx, hx', hp]) (by omega_using [hy, hy', hp])
 
 end VG.Proof.X448.X86_64

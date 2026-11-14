@@ -62,7 +62,7 @@ theorem mrS_snd_le (c L : Nat) (r : Spec.RsaKeyGen.Rand) : ∀ k, (mrS c L r k).
   | k + 1 => by
     simp only [mrS]
     have := mrS_snd_le c L r k
-    split <;> omega
+    split <;> omega_using [this]
 
 section
 variable {P : CP} {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}
@@ -92,7 +92,7 @@ theorem St.pisOneM {d : Nat} (cert : Cert (.block (isOne d))) (hd : d ∈ LS) (b
       hw1.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩, m1.of_rest (f.rest []) f.mem⟩, ?_⟩
     rw [z, u1.gpr]
     have := bit σ e
-    rcases (by omega : V σ d = 0 ∨ V σ d = 1) with h0 | h0 <;> rw [h0] <;> decide
+    rcases (by omega_using [this] : V σ d = 0 ∨ V σ d = 1) with h0 | h0 <;> rw [h0] <;> decide
 
 /-- `avFlag`: Z iff `rand` is too short for the witness of iteration `k`. -/
 theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.L * (k + 1) ≤ P.rl) :
@@ -120,7 +120,7 @@ theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.L * (k + 1) ≤ P.rl) :
     rw [u2.gpr, dpVal, u.other _ (by decide), p1, u.gpr, vU]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hk']
   · refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by
       rw [h₁.1.1.2.1.sp, h₁.1.1.2.1.pre.sp, h₂.1.1.2.1.sp, h₂.1.1.2.1.pre.sp])
       fun σ s ⟨⟨⟨e, h, hw⟩, m⟩, p1⟩ => ?_
@@ -135,17 +135,17 @@ theorem avFlag_vp {k : Nat} (hk : ∀ σ, E σ → P.L * (k + 1) ≤ P.rl) :
       · rw [h₁.2.2, h₂.2.2]
     have pre := h.pre
     have hr : P.rl < 2 ^ 32 := pre.rlt
-    have hl : P.L < 2 ^ 32 := by have := pre.k2; omega
+    have hl : P.L < 2 ^ 32 := by have := pre.k2; omega_using [this]
     have hk' := hk σ e
     refine carry_ok fun s1 r1' m1 v1 => wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil
       ⟨⟨⟨e, (h.of_rest r1' m1).of_rest (f.rest []) f.mem,
         (hw.rest r1').of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩,
         (m.of_rest r1' m1).of_rest (f.rest []) f.mem⟩, ?_⟩
-    rw [z, v1, p1, p2, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show P.rl - P.L * (k + 1) < 2 ^ 32 by omega),
+    rw [z, v1, p1, p2, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show P.rl - P.L * (k + 1) < 2 ^ 32 by omega_using [hr]),
       Nat.mod_eq_of_lt hl]
     by_cases hc : P.L ≤ P.rl - P.L * (k + 1)
-    · simp [hc]; omega
-    · simp [hc]; omega
+    · simp [hc]; omega_using [hk', hc]
+    · simp [hc]; omega_using [hc]
 
 end
 

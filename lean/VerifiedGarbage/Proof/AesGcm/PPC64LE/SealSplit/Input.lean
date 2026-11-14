@@ -28,18 +28,18 @@ theorem bytes_blocksAt (m : Mem) (D : Addr) (n : Nat) :
   intro k hk
   have hk : k<16*n := by simpa only [VG.Proof.Gcm.length_flatMap_toBytes,VG.Proof.Gcm.length_blocksAt] using hk
   rw [VG.Proof.Gcm.getD_flatMap_toBytes _ _ (by rw [VG.Proof.Gcm.length_blocksAt]; exact hk),
-    VG.Proof.Gcm.blocksAt_getD _ _ _ (by omega),VG.Proof.Gcm.getD_bytesAt' _ _ hk]
+    VG.Proof.Gcm.blocksAt_getD _ _ _ (by omega_using [hk]),VG.Proof.Gcm.getD_bytesAt' _ _ hk]
   have he : D+BitVec.ofNat 64 k=D+BitVec.ofNat 64 (16*(k/16))+BitVec.ofNat 64 (k%16) := by
     rw [Offset.add_add]
     congr 2
-    omega
-  rw [he,VG.Proof.Gcm.bytes_toBytes_blockAt m (D+BitVec.ofNat 64 (16*(k/16))) (k := k%16) (by omega)]
+    omega_using []
+  rw [he,VG.Proof.Gcm.bytes_toBytes_blockAt m (D+BitVec.ofNat 64 (16*(k/16))) (k := k%16) (by omega_using [])]
 
 
 theorem blocks_drop (m : Mem) (D : Addr) (n k : Nat) (hk : k≤n) :
     (blocksAt m D n).drop k=blocksAt m (D+BitVec.ofNat 64 (16*k)) (n-k) := by
   have he := VG.Proof.Gcm.blocksAt_add m D k (n-k)
-  rw [show k+(n-k)=n by omega] at he
+  rw [show k+(n-k)=n by omega_using [hk]] at he
   rw [he]
   exact List.drop_left' (VG.Proof.Gcm.length_blocksAt _ _ _)
 
@@ -48,24 +48,24 @@ theorem flat_blocks (m : Mem) (S D : Addr) (total count : Nat) (hc : count≤tot
     (blocks m S D total count).flatMap toBytes=
       bytesAt m S (16*(count/16)) ++
         bytesAt m (D+BitVec.ofNat 64 (16*(count/16))) (16*(total/16-count/16)) := by
-  rw [blocks,List.flatMap_append,blocks_drop _ _ _ _ (by omega),bytes_blocksAt,bytes_blocksAt]
+  rw [blocks,List.flatMap_append,blocks_drop _ _ _ _ (by omega_using [hc]),bytes_blocksAt,bytes_blocksAt]
 
 
 theorem complete (m : Mem) (S D : Addr) (total count : Nat) (hc : count≤total) :
     (blocks m S D total count).flatMap toBytes ++
       bytesAt m (D+BitVec.ofNat 64 (16*(total/16))) (total%16)=
     bytesAt m S (count-count%16) ++ (bytesAt m D total).drop (count-count%16) := by
-  rw [flat_blocks _ _ _ _ _ hc,List.append_assoc,PartialCopy.bytes_drop _ _ _ _ (by omega)]
-  have hcount : 16*(count/16)=count-count%16 := by omega
+  rw [flat_blocks _ _ _ _ _ hc,List.append_assoc,PartialCopy.bytes_drop _ _ _ _ (by omega_using [hc])]
+  have hcount : 16*(count/16)=count-count%16 := by omega_using []
   rw [← hcount]
   have hp : D+BitVec.ofNat 64 (16*(total/16))=
       D+BitVec.ofNat 64 (16*(count/16))+BitVec.ofNat 64 (16*(total/16-count/16)) := by
     rw [Offset.add_add]
     congr 2
-    omega
+    omega_using [hc]
   rw [hp,← bytesAt_add]
   congr 2
-  omega
+  omega_using [hc]
 
 
 theorem copied {base s : State} {total count : Nat} (cfg : PartialCopy.Config base total count)
@@ -85,7 +85,7 @@ theorem blocksAt_frame {rs : List Region} {m m' : Mem} {D : Addr} {n : Nat}
   intro i hi
   have hi : i<n := List.mem_range.mp hi
   exact blockAt_frame hf (fun r hr => (hd r hr).sub_left
-    (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega)))
+    (Offset.sub_base _ (d := 16*i) (n := 16) (k := 16*n) (by omega_using [hi])))
 
 
 end VG.Proof.AesGcm.PPC64LE.SealSplit.Input

@@ -24,10 +24,10 @@ theorem umaal_ok (s : State) (lo hi a b : Reg) (hne : lo ≠ hi) :
   · simp only [t,gpr_setReg,hne,↓reduceIte]
     change v%2^32+2^32*((v/2^32)%2^32)=_
     have bound := mac_bound (s.gpr a) (s.gpr b) (s.gpr hi) (s.gpr lo)
-    have vb : v<2^64 := by dsimp [v];omega
-    rw [Nat.mod_eq_of_lt (show v/2^32<2^32 by omega)]
+    have vb : v<2^64 := by dsimp [v];omega_using [bound]
+    rw [Nat.mod_eq_of_lt (show v/2^32<2^32 by omega_using [vb])]
     dsimp [v]
-    omega
+    omega_using []
   · refine ⟨?_,rfl,rfl,rfl,rfl,rfl,rfl⟩
     intro r hr
     have nl : r≠lo := by intro e;subst r;exact hr (by simp)
@@ -38,6 +38,6 @@ theorem umaal_ok (s : State) (lo hi a b : Reg) (hne : lo ≠ hi) :
 theorem two_products {x a q m z cp cr p cp' out cr' : Nat}
     (hp : p+2^32*cp'=a*x+z+cp)
     (hr : out+2^32*cr'=m*q+p+cr) :
-    out+2^32*(cp'+cr')=a*x+m*q+z+cp+cr := by omega
+    out+2^32*(cp'+cr')=a*x+m*q+z+cp+cr := by omega_using [hp, hr]
 
 end VG.Proof.Bignum.Arm.Fios

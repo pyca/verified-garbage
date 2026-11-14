@@ -29,7 +29,7 @@ theorem sharedMod_ok {M : Mod} {m : Nat} {mem : Mem} {base : Addr}
   · change M.mo + 8 * M.n ≤ (if c.n = 8 then c.sl 62 else M.tmp) ∨
       (if c.n = 8 then c.sl 62 else M.tmp) + 8 * M.n ≤ M.mo
     split
-    · rw [hMn, hMo]; exact sl_apart c (by omega)
+    · rw [hMn, hMo]; exact sl_apart c (by omega_using [hj])
     · exact hM.sep
   · have h := hM.red
     simp only [Mod.ok, Bool.and_eq_true] at h
@@ -43,14 +43,14 @@ theorem sv_shared_keep {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl
     {i : Nat} (hi : i < 45) (hio : i ≠ o) (hit : i ≠ TMP) :
     sv c base s' i = sv c base s i := by
   have hl := sl_le c h7 hi
-  refine h.unch.wordsVal (fun w hw => ?_) (by omega)
+  refine h.unch.wordsVal (fun w hw => ?_) (by omega_using [hn, hl])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
   · change c.sl i + 8 * c.n ≤ c.sl o ∨ c.sl o + 8 * M.n ≤ c.sl i
     rw [hMn]; exact sl_apart c hio
   · simp only [Cfg.sharedMod, hMn, hMt]
     split
-    · exact sl_apart c (by omega)
+    · exact sl_apart c (by omega_using [hi])
     · exact sl_apart c hit
 
 theorem _root_.VG.Proof.Mont.ModOkW.keepShared {M M' : Mod} {m m' : Nat}
@@ -95,7 +95,7 @@ theorem slMulShared_inline_ok {M : Mod} {m : Nat} (hMn : M.n = c.n)
     intro i hi hit
     simp only [Cfg.sharedMod, hMn, hMt]
     split
-    · exact sl_apart c (by omega)
+    · exact sl_apart c (by omega_using [hi])
     · exact sl_apart c hit
   have h := mul_ok hs (sharedMod_ok hM hMn hMo hj)
     (o := c.sl o) (a := c.sl a) (b := c.sl b)

@@ -13,8 +13,6 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::error::InvalidKeyLength;
-
 use verified_garbage::cipher::seed::{SeedCfb128Decryptor, SeedCfb128Encryptor};
 
 use verified_garbage_test_vectors::unhex;
@@ -28,7 +26,7 @@ fn pyca_vectors() {
             let line = record.lines().find(|l| l.starts_with(label)).unwrap();
             unhex(line.split_once(" = ").unwrap().1.trim())
         };
-        let key = get("KEY");
+        let key: [u8; 16] = get("KEY").try_into().unwrap();
         let iv: [u8; 16] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
@@ -36,14 +34,14 @@ fn pyca_vectors() {
         crate::modes::check(
             iv,
             vector,
-            &|iv| SeedCfb128Encryptor::new(&key, iv).unwrap(),
+            &|iv| SeedCfb128Encryptor::new(&key, iv),
             SeedCfb128Encryptor::encrypt,
             SeedCfb128Encryptor::encrypt_final,
         );
         crate::modes::check(
             iv,
             (&ciphertext, &plaintext),
-            &|iv| SeedCfb128Decryptor::new(&key, iv).unwrap(),
+            &|iv| SeedCfb128Decryptor::new(&key, iv),
             SeedCfb128Decryptor::decrypt,
             SeedCfb128Decryptor::decrypt_final,
         );
@@ -62,40 +60,24 @@ fn long_message() {
         unhex(line.split_once(" = ").unwrap().1.trim())
     };
     let records: Vec<&str> = text.split("COUNT = ").skip(1).collect();
-    let key = get(records[0], "KEY");
+    let key: [u8; 16] = get(records[0], "KEY").try_into().unwrap();
     let iv: [u8; 16] = get(records[0], "IV").try_into().unwrap();
     let message: Vec<u8> = records.iter().flat_map(|r| get(r, "CIPHERTEXT")).collect();
     assert_eq!(message.len(), 16 * 110);
     let mut whole = message.clone();
     SeedCfb128Decryptor::new(&key, &iv)
-        .unwrap()
         .decrypt(&mut whole)
         .unwrap();
     for blocks in 1..=33 {
         let mut pieces = message.clone();
-        let mut d = SeedCfb128Decryptor::new(&key, &iv).unwrap();
+        let mut d = SeedCfb128Decryptor::new(&key, &iv);
         for piece in pieces.chunks_mut(16 * blocks) {
             d.decrypt(piece).unwrap();
         }
         assert_eq!(pieces, whole, "pieces of {blocks} blocks");
     }
     SeedCfb128Encryptor::new(&key, &iv)
-        .unwrap()
         .encrypt(&mut whole)
         .unwrap();
     assert_eq!(whole, message);
-}
-
-#[test]
-fn errors() {
-    for len in [0, 8, 15, 17, 24, 32] {
-        assert_eq!(
-            SeedCfb128Encryptor::new(&vec![0; len], &[0; 16]).err(),
-            Some(InvalidKeyLength)
-        );
-        assert_eq!(
-            SeedCfb128Decryptor::new(&vec![0; len], &[0; 16]).err(),
-            Some(InvalidKeyLength)
-        );
-    }
 }

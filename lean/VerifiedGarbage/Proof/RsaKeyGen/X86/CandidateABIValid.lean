@@ -25,11 +25,11 @@ theorem call_valid {s : State} (h : contract.pre s) : (callEnvironment s).Valid 
     exact fit
   · rw [A.privateNat]
     have := A.low
-    omega
+    omega_using [this]
   · rw [A.privateNat]
     have := A.low
     have := A.argsFit
-    omega
+    omega_using [this]
   · intro r mem
     exact (D.stackAll A r mem).sub_right A.savedSub
   · rw [call_args_address]

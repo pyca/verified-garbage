@@ -42,9 +42,9 @@ theorem ea_ptr {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {r : Reg} {x d :
   apply BitVec.eq_of_toNat_eq
   simp only [off, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have hW : W.toNat < 2 ^ 64 := W.isLt
-  rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega), hp]
-  repeat rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega_using []), hp]
+  repeat rw [Nat.mod_eq_of_lt (by omega_using [hd, this])]
+  omega_using []
 
 theorem ws_read {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {y n : Nat} (hy : y + n ≤ L) :
     InRegions (s.rd ++ s.wr) (off W y) n :=
@@ -57,17 +57,17 @@ theorem ws_write {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {y n : Nat} (h
 theorem readSrc_ptr {s : State} {W : Addr} {L : Nat} (hw : Ws s W L) {r : Reg} {x d : Nat} (hp : PtrAt s W r x)
     (hd : x + d + 4 ≤ L) : readSrc s (.mem (at_ r d)) = some (s.mem.readW (off W (x + d)) 32) := by
   show s.load32 (s.ea (at_ r d)) = _
-  rw [ea_ptr hw hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (ws_read hw hd) h]
+  rw [ea_ptr hw hp (by omega_using [hd]), State.load32, ite_eq_left_iff.mpr fun h => absurd (ws_read hw hd) h]
 
 /-- A pointer moved up by a register or an immediate. -/
 theorem ptr_add {s : State} {W : Addr} {r : Reg} {x : Nat} (hp : PtrAt s W r x) (v : BitVec 32) :
     (s.gpr r + v).toNat = (W.toNat + (x + v.toNat)) % 2 ^ 32 := by
-  rw [BitVec.toNat_add, hp]; omega
+  rw [BitVec.toNat_add, hp]; omega_using []
 
 /-- A pointer moved down. -/
 theorem ptr_sub {s : State} {W : Addr} {r : Reg} {x : Nat} (hp : PtrAt s W r x) (v : BitVec 32)
     (h : v.toNat ≤ x) : (s.gpr r - v).toNat = (W.toNat + (x - v.toNat)) % 2 ^ 32 := by
   have := v.isLt
-  rw [BitVec.toNat_sub, hp]; omega
+  rw [BitVec.toNat_sub, hp]; omega_using [h]
 
 end VG.Proof.Mont.X86.Rt

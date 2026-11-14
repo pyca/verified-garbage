@@ -72,9 +72,9 @@ theorem ctrBlock_drop12 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : non
   simp only [Spec.Ccm.ctrBlock, List.cons_append, List.drop_succ_cons]
   by_cases h11 : 11 ≤ nonce.length
   · rw [List.drop_append_of_le_length h11, Nat.min_eq_left (by omega)]
-  · rw [List.drop_append, List.drop_eq_nil_of_le (show nonce.length ≤ 11 by omega), List.nil_append,
-      show 11 - nonce.length = (15 - nonce.length) - min (15 - nonce.length) 4 by omega,
-      be_drop (by omega) hi, List.nil_append]
+  · rw [List.drop_append, List.drop_eq_nil_of_le (show nonce.length ≤ 11 by omega_using [h11]), List.nil_append,
+      show 11 - nonce.length = (15 - nonce.length) - min (15 - nonce.length) 4 by omega_using [],
+      be_drop (by omega_using []) hi, List.nil_append]
 
 /-- `Ctrᵢ`, for `i < 2³²` (and `i < 2^(8q)`), from `Ctr₀`: its first 12 bytes, and
 its last 4 ORed with `[i]₃₂`. -/
@@ -82,7 +82,7 @@ theorem ctrBlock_split {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonc
     (hi : i < 256 ^ min (15 - nonce.length) 4) :
     Spec.Ccm.ctrBlock nonce i = (Spec.Ccm.ctrBlock nonce 0).take 12 ++
       List.zipWith (· ||| ·) ((Spec.Ccm.ctrBlock nonce 0).drop 12) (Spec.Ccm.be 4 i) := by
-  have hi4 : i < 256 ^ 4 := Nat.lt_of_lt_of_le hi (Nat.pow_le_pow_right (by decide) (by omega))
+  have hi4 : i < 256 ^ 4 := Nat.lt_of_lt_of_le hi (Nat.pow_le_pow_right (by decide) (by omega_using []))
   have k0 : (0 : Nat) < 256 ^ min (15 - nonce.length) 4 := Nat.pow_pos (by decide)
   conv => lhs; rw [← List.take_append_drop 12 (Spec.Ccm.ctrBlock nonce i)]
   congr 1
@@ -90,13 +90,13 @@ theorem ctrBlock_split {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonc
     congr 1
     by_cases h11 : 11 ≤ nonce.length
     · rw [List.take_append_of_le_length h11, List.take_append_of_le_length h11]
-    · rw [List.take_append, List.take_append, be_split (q := 4) (by omega) hi4,
-        be_split (q := 4) (by omega) (show 0 < 256 ^ 4 by decide)]
+    · rw [List.take_append, List.take_append, be_split (q := 4) (by omega_using [h11]) hi4,
+        be_split (q := 4) (by omega_using [h11]) (show 0 < 256 ^ 4 by decide)]
       congr 1
-      rw [List.take_left' (by simp [Spec.Ccm.zeros]; omega), List.take_left' (by simp [Spec.Ccm.zeros]; omega)]
+      rw [List.take_left' (by simp [Spec.Ccm.zeros]; omega_using []), List.take_left' (by simp [Spec.Ccm.zeros]; omega_using [])]
   · rw [ctrBlock_drop12 h7 h13 hi, ctrBlock_drop12 h7 h13 k0, be_zero,
-      be_split (k := 4) (q := min (15 - nonce.length) 4) (by omega) hi,
-      List.zipWith_append (by simp [Spec.Ccm.zeros]; omega), zipWith_or_zeros_right _ (by simp; omega),
+      be_split (k := 4) (q := min (15 - nonce.length) 4) (by omega_using []) hi,
+      List.zipWith_append (by simp [Spec.Ccm.zeros]; omega_using [h13]), zipWith_or_zeros_right _ (by simp; omega_using [h13]),
       zipWith_or_zeros_left _ (length_be _ _)]
 
 /-- The cipher of a key schedule that a write misses. -/
@@ -104,6 +104,6 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : 
     (hd : ∀ r ∈ rs, (⟨K, 240⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.Ccm.ctxCiph m' K R = Spec.Ccm.ctxCiph m K R := by
   unfold Spec.Ccm.ctxCiph
-  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega)]
+  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega_using [hR])]
 
 end VG.Proof.AesCcm

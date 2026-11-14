@@ -45,21 +45,21 @@ theorem index_val (x : BitVec 32) {j : Nat} (hj : j < 4) :
     change Nat.testBit 255 i = decide (i < 8)
     exact Nat.testBit_two_pow_sub_one 8 i
   simp only [quarter, BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb']
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
   simp only [ite_true, ite_false, reduceCtorEq, Nat.reduceEqDiff, BitVec.getLsbD_ushiftRight,
     BitVec.getLsbD_and, BitVec.getLsbD_shiftLeft, h255, Nat.reduceMul, Nat.reduceSub, hi,
     decide_true, Bool.true_and] <;>
   by_cases h8 : i < 8 <;> simp (disch := omega) [h8, BitVec.getLsbD_of_ge] <;>
   first
-  | (intro h; omega)
-  | (simp (disch := omega) [show 24 + i - 8 = 16 + i by omega, show 24 + i - 16 = 8 + i by omega]
-     omega)
+  | (intro h; omega_using [h8, h])
+  | (simp (disch := omega) [show 24 + i - 8 = 16 + i by omega_using [], show 24 + i - 16 = 8 + i by omega_using []]
+     omega_using [h8])
 
 theorem index_run (s : State) {j : Nat} (hj : j < 4) :
     WP isa (.block (index j)) s fun t =>
       t.gpr .r4 = (quarter (s.gpr .r1) j).setWidth 32 ∧ t.mem = s.mem := by
   rw [← index_val _ hj]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
     brun [index] <;> rfl
 
 /-! ## Rotations selected by a bit of the index -/
@@ -90,7 +90,7 @@ theorem bitSet_lane (q : BitVec 32) {L : Nat} (hL : q.toNat % 4 = L) :
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
       rw [show (3 % 2 ^ 32 : Nat) = 2 ^ 2 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-      omega
+      omega_using [hL]
     have e' : ∀ d : BitVec 32, d = BitVec.ofNat 32 3 &&& d → q &&& d = BitVec.ofNat 32 L &&& d := by
       intro d hd
       conv => lhs; rw [hd]
@@ -98,10 +98,10 @@ theorem bitSet_lane (q : BitVec 32) {L : Nat} (hL : q.toNat % 4 = L) :
     rcases hc with rfl | rfl
     · exact e' _ (by decide)
     · exact e' _ (by decide)
-  have hl : L < 4 := by omega
+  have hl : L < 4 := by omega_using [hL]
   unfold bitSet
   rw [h3 1 (.inl rfl), h3 2 (.inr rfl)]
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_using [hL] : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-! ## The rows -/
 
@@ -127,7 +127,7 @@ theorem row_run (u : State) {j : Nat} (hj : j < 4) {q rp acc lm cnt : BitVec 32}
         (w 3).rotateRight 8 ∧
       t.gpr .r4 = q - BitVec.ofNat 32 4 ∧ t.gpr .r10 = rp + BitVec.ofNat 32 4 ∧
       t.gpr .r11 = cnt - BitVec.ofNat 32 1 ∧ t.z = (cnt - BitVec.ofNat 32 1 == 0#32) ∧ t.mem = u.mem := by
-  have o : ∀ b < 4, planeOff j b < 4096 := fun b hb => by unfold planeOff; omega
+  have o : ∀ b < 4, planeOff j b < 4096 := fun b hb => by unfold planeOff; omega_using [hj, hb]
   have r0 := hr 0 (by decide)
   have r1 := hr 1 (by decide)
   have r2 := hr 2 (by decide)
@@ -144,8 +144,8 @@ theorem addr_row {S : BitVec 32} (fit : S.toNat + 4168 ≤ 2 ^ 32) {j b k : Nat}
     (hk : k < 64) :
     State.addr (S + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 (planeOff j b)) =
       State.addr S + BitVec.ofNat 64 (1024 * j + 256 * b + 4 * k) := by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by unfold planeOff; omega)]
-  congr 2; unfold planeOff; omega
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_add (by unfold planeOff; omega_using [fit, hj, hb, hk])]
+  congr 2; unfold planeOff; omega_using []
 
 /-- The lane mask, the accumulator, the row pointer and the rows left. -/
 theorem start_run (s : State) (h8 : s.gpr .r8 = BitVec.allOnes 32) {L : Nat}
@@ -153,7 +153,7 @@ theorem start_run (s : State) (h8 : s.gpr .r8 = BitVec.allOnes 32) {L : Nat}
     WP isa (.block lookupStart) s fun t =>
       t.gpr .r7 = laneMask L ∧ t.gpr .r5 = 0 ∧ t.gpr .r10 = s.gpr .r0 ∧ t.gpr .r11 = BitVec.ofNat 32 64 ∧
         t.mem = s.mem := by
-  have hl : L < 4 := by omega
+  have hl : L < 4 := by omega_using [hL]
   obtain ⟨b1, b2⟩ := bitSet_lane _ hL
   unfold lookupStart
   simp only [List.append_assoc]
@@ -197,7 +197,7 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
   have hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2.1]
   have hr : ∀ b < 4, InRegions (u.rd ++ u.wr)
       (State.addr (s₀.gpr .r0 + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 (planeOff j b))) 4 :=
-    fun b hb => by rw [addr_row fit hj hb hk, hrd]; exact E.rd _ (by omega)
+    fun b hb => by rw [addr_row fit hj hb hk, hrd]; exact E.rd _ (by omega_using [hj, hk, hb])
   have h8 : u.gpr .r8 = BitVec.allOnes 32 := by rw [I.keep.gpr (by decide)]; exact E.ones
   refine WP.mono (WP.keep [.r4, .r5, .r6, .r9, .r10, .r11]
     (row_run u hj I.q I.acc I.lane h8 I.rp I.cnt hr) (by rfl)) fun u' ⟨⟨a5, a4, a10, a11, az, am⟩, ak⟩ => ?_
@@ -210,8 +210,8 @@ theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
     exact scanAcc_succ _ _ _ _ _ _ rfl
   · rw [ak.gpr (by decide), I.lane]
   · rw [a10, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2
-  · rw [a11]; apply BitVec.eq_of_toNat_eq; simp; omega
-  · rw [az]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega
+  · rw [a11]; apply BitVec.eq_of_toNat_eq; simp; omega_using [hk]
+  · rw [az]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega_using [hk]
 
 
 theorem rows_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx : Byte) {u : State}
@@ -225,9 +225,9 @@ theorem rows_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
   · left
     refine ⟨by rw [e]; rfl, e ▸ J'⟩
   · right
-    refine ⟨?_, n - 1, by omega, k + 1, by omega, by omega, J'⟩
+    refine ⟨?_, n - 1, by omega_using [hk, hn], k + 1, by omega_using [hk, e], by omega_using [hn], J'⟩
     have : BitVec.ofNat 32 (64 - (k + 1)) ≠ 0#32 := by
-      intro h; have := congrArg BitVec.toNat h; simp at this; omega
+      intro h; have := congrArg BitVec.toNat h; simp at this; omega_using [hk, e, this]
     rw [show (BitVec.ofNat 32 (64 - (k + 1)) == 0#32) = false from beq_eq_false_iff_ne.mpr this]; rfl
 
 /-- The lookup of S-box `j` for xL's byte `3 - j`. -/

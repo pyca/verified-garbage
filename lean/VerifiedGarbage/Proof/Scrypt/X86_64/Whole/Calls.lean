@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
+public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
@@ -332,13 +333,64 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
     by rw [tb]; have := blk_le hL hi; have := hL.nb; omega_arith, hL.nv,
     by have := hL.nc; have := hL.slen; omega_arith, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
 
-theorem roMix_nosp : NoSp Impl.Scrypt.X86_64.roMixDirect := by
-  have : ((instrs Impl.Scrypt.X86_64.roMixDirect).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi
-  simpa using List.all_eq_true.mp this i hi
+/-- An implementation of scryptROMix, emitted as `name`: ROMix with the
+BlockMix `bm` (`roMixDirectWith`), as the constant `code`, which the kernel
+evaluates as a literal, and what the proofs of `vg_scrypt` use of it. -/
+structure RMImpl where
+  name : String
+  /-- The suffix of `vg_scrypt` over it. -/
+  suffix : String
+  /-- The microarchitectures `vg_scrypt` over it is never chosen on
+  (`Artifact.notWith`): the cores it is measured slower on than the next. -/
+  notWith : List String := []
+  bm : RoMix.BMImpl
+  code : Prog isa
+  eq : code = Impl.Scrypt.X86_64.roMixDirectWith bm.name bm.code
+  mx : code.allInstrs (fun i => !loadsMxcsr i) = true
+  sp : code.all (fun i => !isa.writesSp i) = true
+  noclob : ((instrs code).all fun i => !Taint.clobbers i .rsp) = true
+  depth : code.depth ≤ 3
 
-theorem roMix_depth : Impl.Scrypt.X86_64.roMixDirect.depth ≤ 3 := by lit_decide
+theorem RMImpl.nosp (R : RMImpl) : NoSp R.code := by
+  intro i hi
+  simpa using List.all_eq_true.mp R.noclob i hi
+
+theorem RMImpl.correct (R : RMImpl) (s : State) (hs : Proof.Scrypt.roMixX86_64.pre s) :
+    ∃ t s', Exec isa R.code s t s' ∧ abiPreserved s s' ∧ Proof.Scrypt.roMixX86_64.post s s' := by
+  have := RoMix.DirectFill.roMix_correct R.bm (R.eq ▸ R.mx) s hs
+  rwa [← R.eq] at this
+
+theorem RMImpl.ct (R : RMImpl) :
+    ConstantTime isa Proof.Scrypt.roMixX86_64.pre Proof.Scrypt.roMixX86_64.pub R.code := by
+  rw [R.eq]; exact RoMix.DirectFill.roMix_ct R.bm
+
+/-- ROMix with the SSE2 BlockMix, never chosen on Zen 5: Salsa20/8's SSE2
+code is one chain of vector integer instructions, which have twice the
+latency of scalar ones there (at N = 1024, r = 8 on a Ryzen 9 9950X, 1.68 ms
+against the scalar BlockMix's 0.75 ms). -/
+def RMImpl.sse2 : RMImpl where
+  name := "vg_scrypt_romix_sse2"
+  suffix := "_sse2"
+  notWith := ["zen5"]
+  bm := RoMix.BMImpl.packed
+  code := Impl.Scrypt.X86_64.roMixDirectSse2
+  eq := rfl
+  mx := by lit_decide
+  sp := Code.all_of_allInstrs (by lit_decide)
+  noclob := by rw [← Code.allInstrs_eq]; lit_decide
+  depth := by lit_decide
+
+/-- ROMix with the scalar BlockMix. -/
+def RMImpl.scalar : RMImpl where
+  name := "vg_scrypt_romix"
+  suffix := ""
+  bm := RoMix.BMImpl.fused
+  code := Impl.Scrypt.X86_64.roMixDirect
+  eq := rfl
+  mx := by lit_decide
+  sp := Code.all_of_allInstrs (by lit_decide)
+  noclob := by rw [← Code.allInstrs_eq]; lit_decide
+  depth := by lit_decide
 
 theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
     ∀ r ∈ ([] : List Region) ++ romixWr L i, ∃ R ∈ L.regions, Within r R := by
@@ -355,14 +407,17 @@ theorem romix_wsub (hL : L.Ok) {i : Nat} (hi : i < L.pp) : ∀ r ∈ romixWr L i
   · exact .inr (.inl (within_base _ (Nat.le_refl _)))
   · exact .inr (.inr (.inl (within_base _ (by have := hL.slen; omega_arith))))
 
+-- The ROMix `vg_scrypt` calls.
+variable {R : RMImpl}
+
 theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.pp)
     (ha : RomixArgs L (blkAt L i) t) :
-    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect) t fun t' => Ctx L g m₀ t' ∧
+    WP isa (.call R.name R.code) t fun t' => Ctx L g m₀ t' ∧
       Frame (romixWr L i ++ [⟨L.B, 32⟩]) t.mem t'.mem ∧
       bytesAt t'.mem (blkAt L i) (128 * L.r.toNat) =
         Spec.Scrypt.roMix L.r.toNat L.NN (bytesAt t.mem (blkAt L i) (128 * L.r.toNat)) := by
   have hb := blk_in hL hi
-  refine call_ok hL RoMix.DirectFill.roMix_correct roMix_nosp roMix_depth hc (romix_pre hL hc hi ha)
+  refine call_ok hL R.correct R.nosp R.depth hc (romix_pre hL hc hi ha)
     (romix_sub hL hi) (romix_wsub hL hi) fun s' hc' hf _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', hf, ?_⟩
   · have h := hpost
     simp only [Proof.Scrypt.roMixX86_64, State.withRegions_mem, hm,

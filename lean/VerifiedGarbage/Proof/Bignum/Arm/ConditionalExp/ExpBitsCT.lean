@@ -26,9 +26,9 @@ theorem expBits_ct {base : BitVec 32} {len w M1 M2 x1 x2 E v : Nat}
       (isa.eval .ne s = some true → ∃ m, m < k ∧ I m s t) := by
     intro k s t tr1 tr2 u z h e1 e2
     obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
-    have hj : j < 8 := by omega
-    have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega : j ≤ 7)
-    have valueFit : v * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v hp; omega
+    have hj : j < 8 := by omega_using [jk, hk]
+    have hp : 2 ^ j ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega_using [hj] : j ≤ 7)
+    have valueFit : v * 2 ^ j < 2 ^ 32 := by have := Nat.mul_le_mul_left v hp; omega_using [hv, this]
     have ct := relCT_keep_sp (expRound_ct (ok := ok) (base := base) (len := len) (w := w)
       (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2)
       (E := E * 2 ^ j + v / 2 ^ (8 - j)) fit valueFit) (fun _ _ h => h.2.2)
@@ -45,7 +45,7 @@ theorem expBits_ct {base : BitVec 32} {len w M1 M2 x1 x2 E v : Nat}
         intro last
         change some (!_ ) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, next1, next2, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], next1, next2, sp'⟩
   exact (RelCT.loop I step 8).mono
     (fun _ _ h => ⟨0, by decide, by decide, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 

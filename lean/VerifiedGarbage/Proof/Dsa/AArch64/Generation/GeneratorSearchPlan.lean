@@ -87,7 +87,7 @@ def GeneratorSearchPlan.chunk (p : GeneratorSearchPlan) (used : Nat)
   { p.core with
     hp := VG.Proof.Bignum.off p.tapePtr used
     hb := (p.tape.drop used).take p.core.len
-    hLength := by simp only [List.length_take, List.length_drop]; omega
+    hLength := by simp only [List.length_take, List.length_drop]; omega_using [room]
     hSeparate := by
       intro r hr
       exact fun a ha hb => p.tapeSeparate r hr a (Offset.sub_base p.tapePtr room a ha) hb }
@@ -106,9 +106,9 @@ theorem GeneratorSearchPlan.remaining_step (p : GeneratorSearchPlan) {used : Nat
     (room : used + p.core.len ≤ p.tape.length) :
     p.remaining used = if (p.chunk used room).accepts then some (p.chunk used room).value
       else p.remaining (used + p.core.len) := by
-  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega
+  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   rw [remaining, VG.Proof.Dsa.Generation.generator_chunks_step hw (by
-    simp only [List.length_drop]; omega)]
+    simp only [List.length_drop]; omega_using [room])]
   simp only [GeneratorPlan.accepts, GeneratorPlan.value, chunk, p.exponentValue,
     remaining, List.drop_drop]
 
@@ -124,9 +124,9 @@ theorem GeneratorSearchPlan.count_done (p : GeneratorSearchPlan) {used : Nat}
 theorem GeneratorSearchPlan.count_step (p : GeneratorSearchPlan) {used : Nat}
     (room : used + p.core.len ≤ p.tape.length) :
     p.count used = if (p.chunk used room).accepts then 1 else p.count (used + p.core.len) + 1 := by
-  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega
+  have hw : 0 < p.core.len := by rcases p.core.width with hh | hh | hh <;> omega_using [hh]
   rw [count, VG.Proof.Dsa.Generation.generatorCount_chunks_step hw (by
-    simp only [List.length_drop]; omega)]
+    simp only [List.length_drop]; omega_using [room])]
   simp only [GeneratorPlan.accepts, GeneratorPlan.value, chunk, p.exponentValue,
     count, List.drop_drop]
 

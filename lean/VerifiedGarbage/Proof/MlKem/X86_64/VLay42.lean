@@ -93,8 +93,8 @@ theorem blkV_congr {G H : Vector α n} {len st t : Nat} {z : Zq} (h : ∀ x, st 
     (ht : t < 2 * len) : blkV op H len z st t = blkV op G len z st t := by
   unfold blkV
   split
-  · rw [h _ (by omega) (by omega), h _ (by omega) (by omega)]
-  · rw [h _ (by omega) (by omega), h _ (by omega) (by omega)]
+  · rw [h _ (by omega_using []) (by omega_using [ht]), h _ (by omega_using []) (by omega_arith)]
+  · rw [h _ (by omega_using []) (by omega_using [ht]), h _ (by omega_using []) (by omega_using [ht])]
 
 omit hbf in
 /-- Two consecutive blocks `c` and `c + 1` of a layer, from `st = 2 len c`:
@@ -111,30 +111,30 @@ theorem layF_two (F : Vector α n) {len c st st' en : Nat} (hl : 0 < len) (zi : 
   generalize layF blk F len zi c = G
   clear hst h1
   subst hst' hen
-  rw [hblk.get _ _ _ _ _ hl (Nat.le_refl _) (by rw [n_eq]; omega) j (hn j hj)]
+  rw [hblk.get _ _ _ _ _ hl (Nat.le_refl _) (by rw [n_eq]; omega_using [hb]) j (hn j hj)]
   have hG : ∀ x, x < 256 → (blk G len (zi c) st len)[x]! = if st ≤ x ∧ x < st + len then (op G[x]! G[x + len]! (zeta (zi c))).1
       else if st + len ≤ x ∧ x < st + len + len then (op G[x - len]! G[x]! (zeta (zi c))).2 else G[x]! :=
-    fun x hx => hblk.get _ _ _ _ _ hl (Nat.le_refl _) (by rw [n_eq]; omega) x (hn x hx)
+    fun x hx => hblk.get _ _ _ _ _ hl (Nat.le_refl _) (by rw [n_eq]; omega_using [hb]) x (hn x hx)
   unfold blkV
   by_cases a1 : st ≤ j ∧ j < st + 2 * len
-  · rw [ite_eq_left a1, ite_eq_right (by omega), ite_eq_right (by omega), hG j hj]
+  · rw [ite_eq_left a1, ite_eq_right (by omega_using [a1]), ite_eq_right (by omega_using [a1]), hG j hj]
     by_cases a2 : j - st < len
-    · rw [ite_eq_left a2, ite_eq_left (by omega), show st + (j - st) = j by omega]
-    · rw [ite_eq_right a2, ite_eq_right (by omega), ite_eq_left (by omega), show st + (j - st) = j by omega,
-        show st + (j - st - len) = j - len by omega]
+    · rw [ite_eq_left a2, ite_eq_left (by omega_using [a1, a2]), show st + (j - st) = j by omega_using [a1]]
+    · rw [ite_eq_right a2, ite_eq_right (by omega_using [a2]), ite_eq_left (by omega_using [a1, a2]), show st + (j - st) = j by omega_using [a1],
+        show st + (j - st - len) = j - len by omega_using [hl, a2]]
   · rw [ite_eq_right a1]
     by_cases a3 : st + 2 * len ≤ j ∧ j < st + 2 * len + 2 * len
     · rw [ite_eq_left a3]
       by_cases a2 : j - (st + 2 * len) < len
-      · rw [ite_eq_left (by omega), ite_eq_left a2, hG j hj, hG (j + len) (by omega), ite_eq_right (by omega),
-          ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega),
-          show st + 2 * len + (j - (st + 2 * len)) = j by omega]
-      · rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_right a2, hG j hj, hG (j - len) (by omega),
-          ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega),
-          show st + 2 * len + (j - (st + 2 * len) - len) = j - len by omega,
-          show st + 2 * len + (j - (st + 2 * len)) = j by omega]
-    · rw [ite_eq_right a3, ite_eq_right (by omega), ite_eq_right (by omega), hG j hj, ite_eq_right (by omega),
-        ite_eq_right (by omega)]
+      · rw [ite_eq_left (by omega_using [a3, a2]), ite_eq_left a2, hG j hj, hG (j + len) (by omega_using [hb, a2]), ite_eq_right (by omega_using [a1]),
+          ite_eq_right (by omega_using [a1]), ite_eq_right (by omega_using [a3]), ite_eq_right (by omega_using [a1]),
+          show st + 2 * len + (j - (st + 2 * len)) = j by omega_using [a3]]
+      · rw [ite_eq_right (by omega_using [a2]), ite_eq_left (by omega_using [a3, a2]), ite_eq_right a2, hG j hj, hG (j - len) (by omega_using [hj]),
+          ite_eq_right (by omega_using [a1]), ite_eq_right (by omega_using [a2]), ite_eq_right (by omega_using [a1]), ite_eq_right (by omega_using [a1]),
+          show st + 2 * len + (j - (st + 2 * len) - len) = j - len by omega_using [hl, a2],
+          show st + 2 * len + (j - (st + 2 * len)) = j by omega_using [a3]]
+    · rw [ite_eq_right a3, ite_eq_right (by omega_using [a3]), ite_eq_right (by omega_using [a3]), hG j hj, ite_eq_right (by omega_using [a1]),
+        ite_eq_right (by omega_using [a1])]
 
 omit hbf in
 /-- Four consecutive blocks `c`, …, `c + 3` of the layer with `len = 2`, from `st = 4 c`. -/
@@ -151,30 +151,30 @@ theorem layF_four2 (F : Vector α n) {c st : Nat} (zi : Nat → Nat) (hst : st =
   have two := fun (c' st' : Nat) (h : st' = 2 * 2 * c') (h' : st' + 8 ≤ 256) (x : Nat) (hx : x < 256) =>
     layF_two hblk F (len := 2) (c := c') (st := st') (st' := st' + 4) (en := st' + 8) (by decide) zi h rfl rfl h' hx
   have hH : ∀ x, st + 8 ≤ x → x < 256 → (layF blk F 2 zi (c + 2))[x]! = (layF blk F 2 zi c)[x]! := fun x h hx => by
-    rw [two c st (by omega) (by omega) x hx, ite_eq_right (show ¬(st ≤ x ∧ x < st + 4) by omega),
-      ite_eq_right (show ¬(st + 4 ≤ x ∧ x < st + 8) by omega)]
-  rw [show c + 4 = c + 2 + 2 by omega, two (c + 2) (st + 8) (by omega) hb j hj, two c st (by omega) (by omega) j hj,
-    show c + 2 + 1 = c + 3 by omega, show st + 8 + 4 = st + 12 by omega]
+    rw [two c st (by omega_using [hst]) (by omega_using [hb]) x hx, ite_eq_right (show ¬(st ≤ x ∧ x < st + 4) by omega_using [h]),
+      ite_eq_right (show ¬(st + 4 ≤ x ∧ x < st + 8) by omega_using [h])]
+  rw [show c + 4 = c + 2 + 2 by omega_using [], two (c + 2) (st + 8) (by omega_using [hst]) hb j hj, two c st (by omega_using [hst]) (by omega_using [hb]) j hj,
+    show c + 2 + 1 = c + 3 by omega_using [], show st + 8 + 4 = st + 12 by omega_using []]
   by_cases a1 : st ≤ j ∧ j < st + 8
-  · rw [ite_eq_right (show ¬(st + 8 ≤ j ∧ j < st + 12) by omega),
-      ite_eq_right (show ¬(st + 12 ≤ j ∧ j < st + 8 + 8) by omega), ite_eq_left a1]
+  · rw [ite_eq_right (show ¬(st + 8 ≤ j ∧ j < st + 12) by omega_using [a1]),
+      ite_eq_right (show ¬(st + 12 ≤ j ∧ j < st + 8 + 8) by omega_using [a1]), ite_eq_left a1]
     by_cases a2 : j - st < 4
-    · rw [ite_eq_left (show st ≤ j ∧ j < st + 4 by omega), ite_eq_left a2]
-    · rw [ite_eq_right (show ¬(st ≤ j ∧ j < st + 4) by omega), ite_eq_left (show st + 4 ≤ j ∧ j < st + 8 by omega),
-        ite_eq_right a2, show j - (st + 4) = j - st - 4 by omega]
+    · rw [ite_eq_left (show st ≤ j ∧ j < st + 4 by omega_using [a1, a2]), ite_eq_left a2]
+    · rw [ite_eq_right (show ¬(st ≤ j ∧ j < st + 4) by omega_using [a2]), ite_eq_left (show st + 4 ≤ j ∧ j < st + 8 by omega_using [a1, a2]),
+        ite_eq_right a2, show j - (st + 4) = j - st - 4 by omega_using []]
   · rw [ite_eq_right a1]
     by_cases a3 : st + 8 ≤ j ∧ j < st + 8 + 8
     · rw [ite_eq_left a3]
       by_cases a2 : j - (st + 8) < 4
-      · rw [ite_eq_left (show st + 8 ≤ j ∧ j < st + 12 by omega), ite_eq_left a2]
-        exact blkV_congr (fun x h1 h2 => hH x h1 (by omega)) (by omega)
-      · rw [ite_eq_right (show ¬(st + 8 ≤ j ∧ j < st + 12) by omega),
-          ite_eq_left (show st + 12 ≤ j ∧ j < st + 8 + 8 by omega), ite_eq_right a2,
-          show j - (st + 12) = j - (st + 8) - 4 by omega]
-        exact blkV_congr (fun x h1 h2 => hH x (by omega) (by omega)) (by omega)
-    · rw [ite_eq_right a3, ite_eq_right (show ¬(st + 8 ≤ j ∧ j < st + 12) by omega),
-        ite_eq_right (show ¬(st + 12 ≤ j ∧ j < st + 8 + 8) by omega),
-        ite_eq_right (show ¬(st ≤ j ∧ j < st + 4) by omega), ite_eq_right (show ¬(st + 4 ≤ j ∧ j < st + 8) by omega)]
+      · rw [ite_eq_left (show st + 8 ≤ j ∧ j < st + 12 by omega_using [a3, a2]), ite_eq_left a2]
+        exact blkV_congr (fun x h1 h2 => hH x h1 (by omega_using [hb, h2])) (by omega_using [a2])
+      · rw [ite_eq_right (show ¬(st + 8 ≤ j ∧ j < st + 12) by omega_using [a2]),
+          ite_eq_left (show st + 12 ≤ j ∧ j < st + 8 + 8 by omega_using [a3, a2]), ite_eq_right a2,
+          show j - (st + 12) = j - (st + 8) - 4 by omega_using []]
+        exact blkV_congr (fun x h1 h2 => hH x (by omega_using [h1]) (by omega_using [hb, h2])) (by omega_using [a3])
+    · rw [ite_eq_right a3, ite_eq_right (show ¬(st + 8 ≤ j ∧ j < st + 12) by omega_using [a3]),
+        ite_eq_right (show ¬(st + 12 ≤ j ∧ j < st + 8 + 8) by omega_using [a3]),
+        ite_eq_right (show ¬(st ≤ j ∧ j < st + 4) by omega_using [a1]), ite_eq_right (show ¬(st + 4 ≤ j ∧ j < st + 8) by omega_using [a1])]
 
 theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVec 32) (zi : Nat → Nat)
     (hk : ∀ j < 4, kz + sel o j < 128) (hsel : ∀ e < 8, kz + sel o (e / 2) = zi (2 * i + e / 4))
@@ -190,7 +190,7 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   have a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
   have r0 := sp_in (List.mem_append_right s.rd hw) j0
   have r1 := sp_in (List.mem_append_right s.rd hw) j1
-  have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega)
+  have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega_using [this])
   generalize hG : layF blk F 4 zi (2 * i) = G at hS
   have lx := lanes_loadR hS j0
   have ly := lanes_loadR hS j1
@@ -254,9 +254,9 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       simp only [word_punpckhqdq _ _ he, word_movdqa, blkV, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, ite_true, ite_false, Nat.add_zero, Nat.add_assoc] <;>
       first | exact a0 _ (by decide) | exact a3 _ (by decide)
     · -- the specification: two blocks
-      rw [show 2 * (i + 1) = 2 * i + 2 by omega,
-        layF_two hblk F (by decide) zi (st := 16 * i) (st' := 16 * i + 8) (en := 16 * i + 8 + 8) (by omega) (by omega)
-          (by omega) (by omega) hj, hG]
+      rw [show 2 * (i + 1) = 2 * i + 2 by omega_using [],
+        layF_two hblk F (by decide) zi (st := 16 * i) (st' := 16 * i + 8) (en := 16 * i + 8 + 8) (by omega_using []) (by omega_using [])
+          (by omega_using []) (by omega_using [hi]) hj, hG]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,
@@ -337,7 +337,7 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   have a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
   have r0 := sp_in (List.mem_append_right s.rd hw) j0
   have r1 := sp_in (List.mem_append_right s.rd hw) j1
-  have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega)
+  have rz := tab_in (List.mem_append_right s.rd hw) (k := kz) (by have := hk 0 (by decide); omega_using [this])
   generalize hG : layF blk F 2 zi (4 * i) = G at hS
   have lx := lanes_loadR hS j0
   have ly := lanes_loadR hS j1
@@ -415,8 +415,8 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
         ite_false, Nat.add_zero, Nat.add_assoc] <;>
       first | exact a0 _ (by decide) | exact a3 _ (by decide)
     · -- the specification: four blocks
-      rw [show 4 * (i + 1) = 4 * i + 4 by omega,
-        layF_four2 hblk F (st := 16 * i) zi (by omega) (by omega) hj, hG]
+      rw [show 4 * (i + 1) = 4 * i + 4 by omega_using [],
+        layF_four2 hblk F (st := 16 * i) zi (by omega_using []) (by omega_using [hi]) hj, hG]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,

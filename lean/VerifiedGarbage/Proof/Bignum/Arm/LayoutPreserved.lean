@@ -21,7 +21,7 @@ theorem WorkspaceEq.of_frame {base : Addr} {size : Nat} {mem mem' : Mem} {region
     (fit : size < 2 ^ 64) (frame : Frame regions mem mem')
     (sep : ∀ r ∈ regions, (⟨base, size⟩ : Region).Disjoint r) : WorkspaceEq base size mem mem' := by
   refine ⟨fun d n hn => frame.read (r := ⟨base, size⟩)
-    (Offset.contains_base _ hn (by omega)) sep (by omega)⟩
+    (Offset.contains_base _ hn (by omega_using [fit, hn])) sep (by omega_using [fit, hn])⟩
 
 theorem WorkspaceEq.word {base : Addr} {size : Nat} {mem mem' : Mem}
     (h : WorkspaceEq base size mem mem') {d bits : Nat} (fit : d + bits / 8 ≤ size) :
@@ -37,14 +37,14 @@ theorem WorkspaceEq.layout {base : Addr} {len : Nat} {mem mem' : Mem}
   have fit := layout.2.2.1
   have small : 128 ≤ 8 * len := by
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fit
-    omega
-  have width := h.width (by omega)
+    omega_using [fit]
+  have width := h.width (by omega_using [small])
   unfold Layout
   rw [width]
   refine ⟨layout.1, layout.2.1, layout.2.2.1, ?_⟩
   intro j hj
   unfold wordAt
-  rw [h.word (bits := 64) (by simp only [Proof.Rsa.Mont.arrWord]; omega)]
+  rw [h.word (bits := 64) (by simp only [Proof.Rsa.Mont.arrWord]; omega_using [small, hj])]
   exact layout.2.2.2 j hj
 
 theorem WorkspaceEq.number {base : Addr} {len w j : Nat} {mem mem' : Mem}
@@ -52,6 +52,6 @@ theorem WorkspaceEq.number {base : Addr} {len w j : Nat} {mem mem' : Mem}
     numAt mem' base w j = numAt mem base w j := by
   have bound := array_end_le (w := w) hj
   unfold numAt
-  rw [h.read (arrAt w j) (8 * w) (by omega)]
+  rw [h.read (arrAt w j) (8 * w) (by omega_using [fit, bound])]
 
 end VG.Proof.Bignum.Arm

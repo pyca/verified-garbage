@@ -31,7 +31,7 @@ theorem satMem_key {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x1000 : Addr) + BitVec.ofNat 64 i).toNat = 0x1000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hp, hi]
   simp only [satMem, he]
   split
   · rename_i h; omega
@@ -45,10 +45,10 @@ theorem satMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [satMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, true_and, ite_true,
+    omega_using [hi]
+  simp only [satMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], true_and, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 def verifySat (p : Params) : State where
   gpr r := match r with

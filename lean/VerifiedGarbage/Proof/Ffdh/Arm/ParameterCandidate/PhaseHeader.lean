@@ -26,8 +26,8 @@ theorem phaseStore_word (m : Mem) (sp : BitVec 32) {d offset : Nat}
     rw [Mem.readW_writeW_self32, ite_eq_left rfl]
   · have disjoint : (⟨State.addr (sp + BitVec.ofNat 32 d), 4⟩ : Region).Disjoint
         ⟨State.addr (sp + BitVec.ofNat 32 offset), 4⟩ := by
-      rw [VG.Arm.addr_add (by omega), VG.Arm.addr_add (by omega)]
-      exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      rw [VG.Arm.addr_add (by omega_using [nowrap, fit]), VG.Arm.addr_add (by omega_using [nowrap, offsetFit])]
+      exact Offset.disjoint _ (by omega_using [separate, same]) (by omega_using [fit]) (by omega_using [offsetFit])
     rw [Mem.readW_writeW_sep (disjoint.sep (Region.contains_self _ 4) (Region.contains_self _ 4))
       (by decide), ite_eq_right same]
 
@@ -39,17 +39,17 @@ theorem phaseMemory_word {s : State} {q : Bool} {bits d : Nat}
       else if d = 44 then BitVec.ofNat 32 (phaseBits q bits)
       else s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 d)) 32 := by
   unfold phaseMemory
-  rw [phaseStore_word _ _ nowrap fit (by decide : 56 + 4 ≤ 72) (by omega)]
-  rw [phaseStore_word _ _ nowrap fit (by decide : 52 + 4 ≤ 72) (by omega)]
-  rw [phaseStore_word _ _ nowrap fit (by decide : 48 + 4 ≤ 72) (by omega)]
-  rw [phaseStore_word _ _ nowrap fit (by decide : 44 + 4 ≤ 72) (by omega)]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 56 + 4 ≤ 72) (by omega_using [aligned])]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 52 + 4 ≤ 72) (by omega_using [aligned])]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 48 + 4 ≤ 72) (by omega_using [aligned])]
+  rw [phaseStore_word _ _ nowrap fit (by decide : 44 + 4 ≤ 72) (by omega_using [aligned])]
 
 theorem phaseMemory_frame {s : State} (q : Bool) (bits : Nat) (nowrap : s.sp.toNat + 72 ≤ 2 ^ 32) :
     Frame [⟨State.addr (s.sp + 44#32), 16⟩] s.mem (phaseMemory s q bits) := by
   have contained (d : Nat) (lower : 44 ≤ d) (upper : d + 4 ≤ 60) :
       (⟨State.addr (s.sp + 44#32), 16⟩ : Region).Contains (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
-    rw [VG.Arm.addr_add (by omega), VG.Arm.addr_add (by omega)]
-    exact Offset.contains _ (by omega) (by omega) (by omega)
+    rw [VG.Arm.addr_add (by omega_using [nowrap]), VG.Arm.addr_add (by omega_using [nowrap, upper])]
+    exact Offset.contains _ (by omega_using [lower]) (by omega_using [upper]) (by omega_using [])
   unfold phaseMemory
   exact ((((Frame.refl _ _).writeW (by simp) _ (contained 44 (by decide) (by decide))).writeW
     (by simp) _ (contained 48 (by decide) (by decide))).writeW

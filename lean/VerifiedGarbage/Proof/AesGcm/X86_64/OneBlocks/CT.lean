@@ -70,7 +70,7 @@ theorem ob12_ok {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) rd₂ wr₂
-  exact ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁), by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4,
+  exact ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁), by omega_using [], h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4,
     a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide)),
     h.ext.keep (rd₂.trans rd₁) (wr₂.trans wr₁) (by rw [m₂, m₁]; exact f192) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.ext.cw.sub_right (Lay.wSub (by decide)))⟩
@@ -134,7 +134,7 @@ theorem CtxExt.oneB {D : Addr} {n k : Nat} (hk : k ≤ n) {s s' : State}
     · exact h.cw.sub_right (Lay.wSub (by decide))
     · exact h.cw.sub_right (Lay.wSub (by decide))
     · exact h.cd
-    · exact h.ct.symm).sub (Offset.sub_base D (by omega))
+    · exact h.ct.symm).sub (Offset.sub_base D (by omega_using [hk]))
 
 omit L in
 /-- The key context after `oneBlocks`, for the data left. -/
@@ -147,9 +147,9 @@ theorem CtxExt.obPost {D : Addr} {n : Nat} {s s' : State} (h : CtxExt M Ctx (W +
     · exact h.cw.sub_right (Lay.wSub (by decide))
     · exact h.cs.sub_right (Lay.stSub (by decide))
     · exact h.cs.sub_right (Lay.stSub (by decide))
-    · exact h.cd.sub_right (Region.sub_prefix (by omega))
+    · exact h.cd.sub_right (Region.sub_prefix (by omega_using []))
     · exact h.cw.sub_right (Lay.wSub (by decide))
-    · exact h.ct.symm).sub (Offset.sub_base D (by omega))
+    · exact h.ct.symm).sub (Offset.sub_base D (by omega_using []))
 
 /-- What stays in `W` after `oneBlocks`. -/
 theorem ObPost.oneS {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Option Nat}
@@ -163,7 +163,7 @@ theorem ObPost.oneS {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Op
       (kept_oneFrameB L h.dD.ok.w t_w hd) (by decide)
   exact ⟨P.env, ⟨by rw [kp 176 (.inl ⟨by decide, by decide⟩)]; exact h.rounds.1, h.rounds.2⟩,
     by rw [kp 232 (.inr ⟨by decide, by decide⟩)]; exact h.aad, by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact h.alen,
-    P.dat, by rw [P.len]; congr 1; omega, h.dA.of_eq P.rd P.wr, (h.dD.of_eq P.rd P.wr).drop (by omega),
+    P.dat, by rw [P.len]; congr 1; omega_using [], h.dA.of_eq P.rd P.wr, (h.dD.of_eq P.rd P.wr).drop (by omega_using []),
     fun N hN => by cases hN; exact P.tlen, h.ext.obPost P⟩
 
 /-- After `oneBlocks`, what stays in `W`: the data left, its length and the

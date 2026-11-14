@@ -9,20 +9,19 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
-# RC2-CBC's streaming functions with their working space as an argument
+# RC2-CBC's `init` with its working space as an argument
 
-`vg_rc2_cbc_init`, `vg_rc2_cbc_encrypt_update` and `_decrypt_update` keep
-their working space in a frame of their own, which they zero before
-returning (`Verified.stackScratchWiped` and its counterparts), around code
-proved with the working space as an argument: `cbcInitScratchContract` and
-`cbcUpdateScratchContract` are the shared contracts with a 576-byte
-`scratch` buffer appended, whatever it holds.
+`vg_rc2_cbc_init` keeps its working space in a frame of its own, which it
+zeroes before returning (`Verified.stackScratchWiped` and its counterparts),
+around code proved with the working space as an argument:
+`cbcInitScratchContract` is the shared contract with a 576-byte `scratch`
+buffer appended, whatever it holds.
 
 The frames copy the arguments passed on the stack, and wipe the buffer after
 the code, which needs the pre- and postconditions to read the memory on
 entry (`*_local`) and on return (`*PostOut_local`) only within the
-function's buffers: the key, the IV, the data, the output and the context,
-through `contextAt`, which reads only its 144 bytes (`contextAt_congr`).
+function's buffers: the key, the IV and the context, through `contextAt`,
+which reads only its 144 bytes (`contextAt_congr`).
 -/
 
 @[expose] public section
@@ -44,28 +43,6 @@ def cbcInitScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
     (post := fun key keyLen effectiveBits iv ivLen ctx _scratch =>
       cbcInitPost A.ptrBits key keyLen effectiveBits iv ivLen ctx)
     (writeArgs := true) (stack := stack)
-
-/-- The update functions with `scratch: *mut [u64; 72]`. -/
-def cbcUpdateScratchSig : Sig where
-  params := [("ctx", .array true .u8 144), ("pending_len", .int .usize true),
-    ("data", .slice false .u8 "len"), ("out", .slice true .u8 "out_len"),
-    ("scratch", .array true .u64 72)]
-
-/-- `cbcUpdateContract`, whatever `scratch` is. -/
-def cbcUpdateScratchContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) :
-    Contract M :=
-  cbcUpdateScratchSig.contract A
-    (pre := fun ctx pendingLen data len out outLen _scratch =>
-      cbcUpdatePre A.ptrBits ctx pendingLen data len out outLen)
-    (post := fun ctx pendingLen data len out outLen _scratch =>
-      cbcUpdatePost direction A.ptrBits ctx pendingLen data len out outLen)
-    (writeArgs := true) (stack := stack)
-
-def cbcEncryptUpdateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcUpdateScratchContract A .encrypt stack
-
-def cbcDecryptUpdateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcUpdateScratchContract A .decrypt stack
 
 /-! ## Locality -/
 
@@ -169,86 +146,5 @@ theorem cbcInitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcInitSig.wor
   split
   · rintro ⟨h1, h2⟩; exact ⟨h1, by rw [contextAt_congr (by omega_arith) hc]; exact h2⟩
   · exact id
-
-theorem cbcUpdatePre_local : ∀ vs m₁ m₂, vs.length = (cbcUpdateSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcUpdateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcUpdateSig.words pb) (cbcUpdatePre pb) vs m₁ →
-      Curry.apply (cbcUpdateSig.words pb) (cbcUpdatePre pb) vs m₂ := by
-  intro vs _ _ hlen _ h
-  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 5) hlen
-  replace hlen := Nat.succ.inj hlen
-  iterate 5
-    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-  obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  exact h
-
-theorem cbcUpdatePost_local (d : Direction) : ∀ vs m₁ m₂ m' r,
-    vs.length = (cbcUpdateSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcUpdateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcUpdateSig.words pb) (cbcUpdatePost d pb) vs m₁ m' r →
-      Curry.apply (cbcUpdateSig.words pb) (cbcUpdatePost d pb) vs m₂ m' r := by
-  intro vs m₁ m₂ m' r hlen hb h
-  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 5) hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨pl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  iterate 2
-    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-  obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcUpdateSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice,
-    List.mem_cons, List.not_mem_nil, or_false,
-    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  have hc := agree_of hb.1
-  have hd := agree_of hb.2.1
-  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb] (cbcUpdatePost d pb) _ m₁ m' r at h
-  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb] (cbcUpdatePost d pb) _ m₂ m' r
-  dsimp only [Curry.apply, cbcUpdatePost, ArgWord.ofRaw] at h ⊢
-  intro hp
-  have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [contextAt_congr (by omega_arith) hc, bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi =>
-    hd i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
-  exact h hp
-
-theorem cbcUpdatePostOut_local (d : Direction) : ∀ vs m m₁ m₂ r,
-    vs.length = (cbcUpdateSig.words pb).length →
-    (∀ b ∈ Sig.bufs cbcUpdateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (cbcUpdateSig.words pb) (cbcUpdatePost d pb) vs m m₁ r →
-      Curry.apply (cbcUpdateSig.words pb) (cbcUpdatePost d pb) vs m m₂ r := by
-  intro vs m m₁ m₂ r hlen hb h
-  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 5) hlen
-  replace hlen := Nat.succ.inj hlen
-  iterate 3
-    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-    replace hlen := Nat.succ.inj hlen
-  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
-  replace hlen := Nat.succ.inj hlen
-  obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcUpdateSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice,
-    List.mem_cons, List.not_mem_nil, or_false,
-    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  have hc := agree_of hb.1
-  have ho := agree_of hb.2.2
-  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb] (cbcUpdatePost d pb) _ m m₁ r at h
-  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb] (cbcUpdatePost d pb) _ m m₂ r
-  dsimp only [Curry.apply, cbcUpdatePost, ArgWord.ofRaw] at h ⊢
-  intro hp
-  obtain ⟨h1, h2⟩ := h hp
-  have := Nat.mod_le ol.toNat (2 ^ pb)
-  refine ⟨by rw [contextAt_congr (by omega_arith) hc]; exact h1, ?_⟩
-  rw [bytesAt_congr (n := (ol.setWidth pb).toNat) fun i hi =>
-    ho i (by rw [BitVec.toNat_setWidth] at hi; omega_arith)]
-  exact h2
 
 end VG.Proof.Rc2

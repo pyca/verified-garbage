@@ -48,7 +48,7 @@ theorem windowW_apart (h4 : c.n = 4) {i : Nat} (hi : i < 45) (hw : i ∉ windowS
   left
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rw [sl_eq, h4]
-  rcases hw with rfl | rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits, Mont.outW] <;> omega
+  rcases hw with rfl | rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits, Mont.outW] <;> omega_using [hi]
 
 theorem windowW_table (h4 : c.n = 4) {t : Nat} (ht : t < 64 * c.n) :
     ∀ w ∈ windowW c, bitsAt c.n 1 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n 1 + t := by
@@ -57,6 +57,6 @@ theorem windowW_table (h4 : c.n = 4) {t : Nat} (ht : t < 64 * c.n) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rw [bitsAt_eq, h4]
   rw [h4] at ht
-  rcases hw with rfl | rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits, Mont.outW] <;> omega
+  rcases hw with rfl | rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits, Mont.outW] <;> omega_arith
 
 end VG.Proof.Ecdsa.Verify.X86

@@ -16,7 +16,7 @@ open VG VG.AArch64
 
 theorem seed_sub {σ : State} {k : Nat} (hk : k < 4) :
     Region.Sub (seedR (seedP σ+BitVec.ofNat 64 (34*k))) (seedsR σ) :=
-  Offset.sub_base (seedP σ) (by omega)
+  Offset.sub_base (seedP σ) (by omega_using [hk])
 
 theorem seed_eq {σ s : State} (hp : Pre σ) (he : Env σ s) {k : Nat} (hk : k < 4) :
     Spec.Sha3.bytesAt s.mem (seedP σ+BitVec.ofNat 64 (34*k)) 34 = B σ k := by

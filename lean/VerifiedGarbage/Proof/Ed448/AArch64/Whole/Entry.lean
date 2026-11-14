@@ -94,8 +94,8 @@ theorem hdr_ok {s : State} {d j : Nat} (hd : d + 16 ≤ 256) (hj : j < 6)
   rw [WP.block_append_iff]
   refine WP.mono (sig_ok s) fun a ⟨ka, a9, am⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (keep_ok (r := .x9) (d := d) (by omega)
-    (by rw [ka.wr, ka.sp]; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩))
+  refine WP.mono (keep_ok (r := .x9) (d := d) (by omega_using [hd])
+    (by rw [ka.wr, ka.sp]; exact ⟨_, hw, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩))
     fun b ⟨kb, b15, bm⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.Ed25519.AArch64.Whole.setArg_ok (r := .x9) (v := .caller j 0) rfl
@@ -105,7 +105,7 @@ theorem hdr_ok {s : State} {d j : Nat} (hd : d + 16 ≤ 256) (hj : j < 6)
     rw [kc.regs _ (by decide), b15, ka.sp]
   refine WP.mono (shiftStore_ok (by
     rw [c15, kc.wr, kb.wr, ka.wr, Offset.add_add]
-    exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩)) fun t ⟨kt, tm⟩ => ⟨?_, ?_⟩
+    exact ⟨_, hw, Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])⟩)) fun t ⟨kt, tm⟩ => ⟨?_, ?_⟩
   · exact ((ka.trans kb).trans ⟨kc.rd, kc.wr, kc.sp, kc.vec, fun r h9 _ => kc.regs r (by simpa using h9)⟩).trans kt
   · have ebm : b.mem = s.mem.writeW (s.sp + BitVec.ofNat 64 d) sigWord := by
       rw [bm, RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x9 ≠ .x15), a9, am, ka.sp]
@@ -114,7 +114,7 @@ theorem hdr_ok {s : State} {d j : Nat} (hd : d + 16 ≤ 256) (hj : j < 6)
         s.mem.read (s.sp + BitVec.ofNat 64 (256 + 8 * j)) 8 := by
       rw [ebm]
       simp only [Mem.writeW]
-      exact Mem.read_write_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
+      exact Mem.read_write_sep (Offset.sep _ (by omega_using [hd]) (by omega_using [hj]) (by omega_using [hd])) (by decide)
     rw [tm, c15, c9, kc.mem]
     simp only [VG.Proof.Ed25519.AArch64.Whole.value, BitVec.add_zero]
     rw [ebsp, hread, ebm, Offset.add_add]
@@ -128,7 +128,7 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c : BitVec 64) (hc : c.toNat < 256) (h0 
     Spec.Sha3.bytesAt m p 10 =
       "SigEd448".toList.map (fun ch => BitVec.ofNat 8 ch.toNat) ++ [BitVec.ofNat 8 0, BitVec.ofNat 8 c.toNat] := by
   have hw : (c <<< 8).toNat = c.toNat * 256 := by
-    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega
+    rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; omega_using [hc]
   have e10 : Spec.Sha3.bytesAt m p 10 =
       Spec.Sha3.bytesAt m p 8 ++ (Spec.Sha3.bytesAt m (p + BitVec.ofNat 64 8) 8).take 2 := by
     have a := Proof.X25519.bytesAt_add m p 8 2
@@ -145,8 +145,8 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c : BitVec 64) (hc : c.toNat < 256) (h0 
   simp only [Proof.X25519.leBytes_succ, List.take_succ_cons, List.take_zero]
   have e1 : BitVec.ofNat 8 (c.toNat * 256) = 0 := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, show (0 : BitVec 8).toNat = 0 from rfl]; omega
-  have e2 : c.toNat * 256 / 256 = c.toNat := by omega
+    rw [BitVec.toNat_ofNat, show (0 : BitVec 8).toNat = 0 from rfl]; omega_using []
+  have e2 : c.toNat * 256 / 256 = c.toNat := by omega_using []
   rw [e1, e2]
   rfl
 

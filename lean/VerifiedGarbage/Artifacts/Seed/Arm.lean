@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Seed.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # SEED artifacts on baseline ARMv7 -/
+/-! # SEED on ARMv7 -/
 
 @[expose] public section
 

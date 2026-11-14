@@ -79,8 +79,18 @@ def save (b : Reg) : List Instr := (saved P).map fun (r, d) => .store (at_ b d) 
 /-- Restore them (`r15`, the base, last). -/
 def restore : List Instr := (saved P).map fun (r, d) => .mov r (.mem (at_ .r15 d))
 
-/-- `[rbx + r13 + N]`: byte `r13` of the buffer. -/
-def bufByte : MemOp := { base := .rbx, index := some .r13, scale := 1, disp := P.N }
+/-- `[rbx + r10 + N]`: byte `r10` of the buffer, after `clamp`. -/
+def bufByte : MemOp := { base := .rbx, index := some .r10, scale := 1, disp := P.N }
+
+/-- `dst = min(idx, lim)` (`cmp`, then `cmovb`). -/
+def clampWith (lim : Nat) (idx dst : Reg) : List Instr :=
+  [.mov32 dst (.imm (BitVec.ofNat 32 lim)), .alu .cmp idx (.reg dst), .cmov .b dst (.reg idx)]
+
+/-- `r10 = min(r13, B - w)`, before a store of `w` bytes at byte `r13` of the
+buffer, which `r13 ≤ B - w` makes `r13`: the store's address is then within
+the buffer by its code alone, so the residue analysis
+(`Proof/Framework/X86_64/ResidueTaint.lean`) knows it touches nothing else. -/
+def clamp (w : Nat) : List Instr := clampWith (P.B - w) .r13 .r10
 
 /-- Compress the blocks at `rsi` into the hash value at `rbx`, with scratch
 space `r15`, by calling the compression function `name` (whose code is
@@ -113,13 +123,13 @@ def direct : List Instr :=
 /-- The loop copying eight bytes of `data` at a time into the buffer, while
 at least eight of the `rax` left remain. -/
 def copyWords : Prog isa :=
-  .loop (.block [.mov .r9 (.mem { base := .rbp }), .store (bufByte P) .r9,
-    .alu .add .rbp (.imm 8), .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8), .alu .cmp .rax (.imm 8)]) .ae
+  .loop (.block ([.mov .r9 (.mem { base := .rbp })] ++ clamp P 8 ++ [.store (bufByte P) .r9,
+    .alu .add .rbp (.imm 8), .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8), .alu .cmp .rax (.imm 8)])) .ae
 
 /-- The loop copying bytes of `data` into the buffer. -/
 def copyLoop : Prog isa :=
-  .loop (.block [.movzx8 .r9 { base := .rbp }, .store8 (bufByte P) .r9,
-    .alu .add .rbp (.imm 1), .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
+  .loop (.block ([.movzx8 .r9 { base := .rbp }] ++ clamp P 1 ++ [.store8 (bufByte P) .r9,
+    .alu .add .rbp (.imm 1), .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)])) .ne
 
 /-- Copy `rax` bytes of `data` into the buffer: eight at a time, then one at
 a time. -/
@@ -175,8 +185,8 @@ Registers: `rbp` = `out`, `r12` = `count`, `r13` = bytes in the buffer, `r9`
 def chunks : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - 16)))])
     (.ite .ae (.block [])
-      (.loop (.block [.movdquStore (bufByte P) .xmm0, .xop (.bin .pxor .xmm0 .xmm0),
-        .alu .add .r13 (.imm 16), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - 16)))]) .b))
+      (.loop (.block (clamp P 16 ++ [.movdquStore (bufByte P) .xmm0, .xop (.bin .pxor .xmm0 .xmm0),
+        .alu .add .r13 (.imm 16), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (P.B - 16)))])) .b))
 
 /-- The padding when the buffered bytes end at a multiple of 16 (`r13`): 16
 bytes at a time, `r9` then zeros, and in the last block (`r14 = 0`) the length
@@ -192,12 +202,12 @@ def vecPad : Prog isa :=
 
 /-- Eight bytes of zeros at a time, while at least eight of the `rax` are left. -/
 def zeroWords : Prog isa :=
-  .loop (.block [.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
-    .alu .cmp .rax (.imm 8)]) .ae
+  .loop (.block (clamp P 8 ++ [.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
+    .alu .cmp .rax (.imm 8)])) .ae
 
 /-- The loop zeroing the buffer from `r13` on, `rax` bytes. -/
 def zeroLoop : Prog isa :=
-  .loop (.block [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
+  .loop (.block (clamp P 1 ++ [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)])) .ne
 
 /-- Zero `rax` bytes of the buffer from `r13` on (with `r9 = 0`): eight at a
 time, then one at a time. -/
@@ -213,8 +223,8 @@ stored a byte at a time, to pad them 16 bytes at a time would make that load
 wait for those stores instead (and on some CPUs, at some addresses, the load is
 speculated past them and replayed). -/
 def bytePad : Prog isa :=
-  .seq (.block [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1),
-    .mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .alu .test .r14 (.reg .r14)])
+  .seq (.block (clamp P 1 ++ [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1),
+    .mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .alu .test .r14 (.reg .r14)]))
   (.seq (.ite .e (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (P.B - P.L)))]) (.block []))
   (.seq (.block [.mov32 .r9 (.imm 0), .alu .sub .rax (.reg .r13)])
   (.seq (zero P)

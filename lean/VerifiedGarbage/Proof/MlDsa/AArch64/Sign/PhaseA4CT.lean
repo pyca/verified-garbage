@@ -45,7 +45,7 @@ theorem postDepQ {Q R T : State → State → Prop} {c : Prog isa} {F : State �
 theorem slot4_taint (p : Params) (e : Nat) {j : Nat} (hj : j < 4) :
     (taint.check (Taint.ofRegs bases) (seedSlot4 p e j) (.seq (Taint.ofRegs (.x10::bases)) (.block []) (.block []))).isSome = true := by
   unfold seedSlot4 lea
-  rw [ifp (by dsimp only [oRS4]; omega : oRS4+34*j < 4096)]
+  rw [ifp (by dsimp only [oRS4]; omega_using [hj] : oRS4+34*j < 4096)]
   with_unfolding_all rfl
 
 theorem slot4_tr {p : Params} {D e j : Nat} (hj : j < 4) (hc : slotChk p e j = true) :
@@ -110,7 +110,7 @@ theorem sample4_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {g : Na
     RelCT isa (RA p D (4*g)) (sample4 P p g) (RA p D (4*g+4)) := by
   unfold sample4
   refine RelCT.seq (RelCT.mono (seqR_tr (Q := fun j => RR p D (AS p D · (4*g) j) fun x y => x.gpr .x24 = y.gpr .x24) 4 0
-    (fun j _ hj => slot4_tr (by omega) (hs j (by omega)))) ?_ (fun _ _ h => by simpa using h)) (batch_tr hP hb)
+    (fun j _ hj => slot4_tr (by omega_using [hj]) (hs j (by omega_using [hj])))) ?_ (fun _ _ h => by simpa using h)) (batch_tr hP hb)
   exact fun x y h => h.mono (fun _ _ h => ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩) (fun h => h)
 
 theorem expandA_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) (hc : aChk p = true) :
@@ -136,10 +136,10 @@ theorem expandA_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : O
     have hB : RelCT isa (RA p D 0) (seqR (sample4 P p) 0 (p.k*p.ℓ/4)) (RA p D (4*(p.k*p.ℓ/4))) := by
       simpa only [Nat.zero_add,Nat.mul_zero] using
         (seqR_tr (Q := fun g => RA p D (4*g)) (p.k*p.ℓ/4) 0 (fun g _ hg =>
-          sample4_tr hP (batchChk_ok p hp g (by omega)) (fun j hj => slotChk_ok p hp (4*g) (by omega) j hj)))
+          sample4_tr hP (batchChk_ok p hp g (by omega_using [hg])) (fun j hj => slotChk_ok p hp (4*g) (by omega_using [hg]) j hj)))
     have htail := seqR_tr (Q := fun e => RA p D e) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
-      (fun e _ he' => sampleE_tr hP (he e (by omega)))
-    have eqn : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega
+      (fun e _ he' => sampleE_tr hP (he e (by omega_using [he'])))
+    have eqn : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
     simpa only [eqn] using RelCT.seq hB htail
 
 end VG.Proof.MlDsa.AArch64.Sign

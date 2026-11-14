@@ -88,11 +88,11 @@ theorem sxQ : BitVec.signExtend 64 qImm = 3329 := by decide
 /-- An immediate less than `2³¹`, sign-extended. -/
 theorem sx_ofNat {n : Nat} (h : n < 2 ^ 31) : BitVec.signExtend 64 (BitVec.ofNat 32 n) = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_using [h]
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [h]
 
 /-! ## Memory accesses -/
 
@@ -219,13 +219,13 @@ theorem csub_val {v : BitVec 32} (hv : v.toNat < 2 * 3329) (m : BitVec 32) :
   split
   · rename_i h
     have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (v.toNat < 3329))) &&& qImm) = 0 := by
-      rw [decide_eq_false (by omega)]; decide
+      rw [decide_eq_false (by omega_using [h])]; decide
     rw [e]
     unfold qImm
     bv_omega
   · rename_i h
     have e : (0#32 - BitVec.setWidth 32 (BitVec.ofBool (decide (v.toNat < 3329))) &&& qImm) = qImm := by
-      rw [decide_eq_true (by omega)]; decide
+      rw [decide_eq_true (by omega_using [h])]; decide
     rw [e]
     unfold qImm
     bv_omega
@@ -273,13 +273,13 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
     s.gpr cnt = BitVec.ofNat 64 (N - i)) ?_ N s ⟨0, rfl, hN0, h0, by rw [Nat.sub_zero]; exact hc⟩
   rintro n s ⟨i, rfl, hi, hI, hcnt⟩
   refine WP.mono (hbody i hi s hI hcnt) fun s' ⟨hI', hc', hz'⟩ => ?_
-  rw [hcnt, ofNat64_pred (by omega) (by omega)] at hc' hz'
+  rw [hcnt, ofNat64_pred (by omega_using [hi]) (by omega_using [hN])] at hc' hz'
   have hev : isa.eval .ne s' = some (!decide (N - i - 1 = 0)) := by
-    simp only [eval, hz', ofNat64_beq_zero (show N - i - 1 < 2 ^ 64 by omega), Option.map_some]
+    simp only [eval, hz', ofNat64_beq_zero (show N - i - 1 < 2 ^ 64 by omega_using [hN]), Option.map_some]
   by_cases he : i + 1 = N
   · subst he
     exact .inl ⟨by rw [hev]; simp, hQ s' hI'⟩
-  · exact .inr ⟨by rw [hev]; simp; omega, N - (i + 1), by omega, i + 1, rfl, by omega, hI',
+  · exact .inr ⟨by rw [hev]; simp; omega_using [hi, he], N - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], hI',
       by rw [hc']; congr 1⟩
 
 /-- `mov ecx, N` and a loop whose body counts `rcx` down: the body runs `N`
@@ -294,6 +294,6 @@ theorem wp_counted {body : Prog isa} {v : BitVec 32} {N : Nat} (hv : v.toNat = N
     (by xrun; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, hv])
     rfl) fun s ⟨⟨hm, hc⟩, hk⟩ => ?_)
   have := v.isLt
-  exact wp_countdown (by omega) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s hm hk) hc
+  exact wp_countdown (by omega_using [hv]) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s hm hk) hc
 
 end VG.Proof.MlKem.X86_64

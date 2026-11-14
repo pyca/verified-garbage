@@ -21,7 +21,7 @@ theorem CandidatePost.consumed_low {p : SearchParams} {used : Nat} {s : State}
     [BitVec.ofNat 64 (candidateUsed p used)] at result
   rw [BitVec.add_zero, List.singleton_inj, p.used_addr] at result
   exact packedLow s.mem p.control 14 (candidateUsed p used)
-    (by have := candidateUsed_bound p used; have := p.c.tapeCount; omega) result
+    (by have := candidateUsed_bound p used; have := p.c.tapeCount; omega_arith) result
 
 theorem CandidatePost.after_read {p : SearchParams} {used : Nat} {s t : State} {rs : List Reg}
     (post : CandidatePost p used s) (mem : t.mem = s.mem) (rest : Rest rs s t) (kept : .r0 ∉ rs) :

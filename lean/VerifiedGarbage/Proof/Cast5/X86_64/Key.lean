@@ -1,14 +1,409 @@
 module
 public import VerifiedGarbage.Impl.Cast5.X86_64
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-
-import VerifiedGarbage.Proof.Cast5.X86_64.KeyHalf
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
-import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Cast5.KeyMem
+public import VerifiedGarbage.Proof.Cast5.X86_64.Scan
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
+import VerifiedGarbage.Proof.Cast5.X86_64.Block
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+
+/-! ### `Cast5.X86_64.KeyHalf`, which only this module used -/
+
+section
+
+/-! ### `Cast5.X86_64.KeyGroup`, which only this module used -/
+
+section
+
+/-! ### `Cast5.X86_64.KeyMem`, which only this module used -/
+
+section
+
+/-!
+# CAST5 key expansion on x86-64: the working space and the subkeys
+
+The working space at `c` holds `x` and `z` (`HoldsXZ`) and the group's extra
+lookups (`Extras`); the subkeys so far are at `K` (`Keys`). Each write of key
+expansion keeps what it does not overwrite.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Cast5.X86_64
+
+open VG VG.X86_64 VG.Impl.Cast5 VG.Impl.Cast5.X86_64
+
+/-- The group's extra lookups, lanes `0 … 3` at `c + 48`. -/
+def Extras (m : Mem) (c : Addr) (f : Nat → Spec.Cast5.Word) : Prop :=
+  ∀ j < 4, m.readW (c + BitVec.ofNat 64 (extraOff + 4 * j)) 32 = f j
+
+/-- `Extras` after a write of `w / 8` bytes at `c + d`, below them. -/
+theorem Extras.write {m : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {d w : Nat}
+    (v : BitVec w) (hd : d + w / 8 ≤ extraOff) :
+    Extras (m.writeW (c + BitVec.ofNat 64 d) v) c f := fun j hj => by
+  rw [Mem.readW_writeW_sep (Offset.sep c (by unfold extraOff at *; omega_using [hd]) (by unfold extraOff; omega_using [hj])
+    (by unfold extraOff at *; omega_using [hd])) (by decide)]
+  exact h j hj
+
+/-- `Extras` after a write elsewhere. -/
+theorem Extras.write_disj {m : Mem} {c : Addr} {f : Nat → Spec.Cast5.Word} (h : Extras m c f) {a : Addr}
+    {w : Nat} (v : BitVec w) (hd : Region.Disjoint ⟨c, 64⟩ ⟨a, w / 8⟩) :
+    Extras (m.writeW a v) c f := fun j hj => by
+  rw [Mem.readW_writeW_sep (hd.sep (Offset.contains_base c (by unfold extraOff; omega_using [hj])
+    (by unfold extraOff; omega_using [hj])) (Region.contains_self _ _)) (by decide)]
+  exact h j hj
+
+end VG.Proof.Cast5.X86_64
+
+end
+
+end
+
+
+/-!
+# CAST5 key expansion on x86-64: groups of four lines
+
+A group (`lines4`) makes its four extra lookups (`extras_ok`), then runs its
+lines, each storing its value into `x` or `z` (`groupQ_ok`) or as the next
+subkey (`groupK_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Cast5.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Cast5 VG.Impl.Cast5.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly)
+
+/-- The state of key expansion from the memory `m0`: the working space `c` in
+`rcx`, writable, as is the schedule `K`; the table; and the memory (`KMem`). -/
+structure KS (m0 : Mem) (c K : Addr) (s : State) (st : XZ) (ws : List Spec.Cast5.Word) : Prop where
+  rc : s.gpr .rcx = c
+  mem : KMem m0 s.mem c K st ws
+  len : ws.length ≤ 32
+  wS : InRegions s.wr c 64
+  wK : InRegions s.wr K 128
+  dKS : Region.Disjoint ⟨K, 128⟩ ⟨c, 64⟩
+  tab : Readable s (s.syms s5678Sym)
+  held : Held m0 (s.syms s5678Sym) s5678
+  dT : ∀ r ∈ ([⟨c, 64⟩, ⟨K, 128⟩] : List Region), Region.Disjoint ⟨s.syms s5678Sym, 4096⟩ r
+
+theorem KS.heldNow {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) : Held s.mem (s.syms s5678Sym) s5678 := by
+  intro i hi
+  have hl : s5678.length = 512 := table_length _ _ _ _
+  rw [hl] at hi
+  rw [h.mem.fr.readW (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) h.dT (by decide)]
+  exact h.held i (by rw [hl]; exact hi)
+
+/-- The same state, later: other registers, memory and flags. -/
+theorem KS.update {m0 : Mem} {c K : Addr} {s u : State} {st st' : XZ} {ws ws' : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) (hc : u.gpr .rcx = s.gpr .rcx) (hm : KMem m0 u.mem c K st' ws')
+    (hl : ws'.length ≤ 32) (hrd : u.rd = s.rd) (hwr : u.wr = s.wr) (hsy : u.syms = s.syms) :
+    KS m0 c K u st' ws' where
+  rc := hc.trans h.rc
+  mem := hm
+  len := hl
+  wS := by rw [hwr]; exact h.wS
+  wK := by rw [hwr]; exact h.wK
+  dKS := h.dKS
+  tab := by unfold Readable; rw [hsy, hrd, hwr]; exact h.tab
+  held := by rw [hsy]; exact h.held
+  dT := by rw [hsy]; exact h.dT
+
+/-- A store of `xmm1` to the working space. -/
+theorem store16_ok (v : State) (d : Nat) (h : InRegions v.wr (v.gpr .rcx + BitVec.ofNat 64 d) 16) :
+    WP isa (.block [.movdquStore (at_ .rcx d) .xmm1]) v fun w =>
+      w.mem = v.mem.writeW (v.gpr .rcx + BitVec.ofNat 64 d) (v.xmm .xmm1) ∧ w.gpr = v.gpr ∧
+        w.rd = v.rd ∧ w.wr = v.wr ∧ w.syms = v.syms := by
+  xrun [VG.Proof.Cast5.X86_64.ea_at, State.store128, h]
+
+theorem extras_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) {a b c' d : Pos} (ha : a.2 < 16) (hb : b.2 < 16) (hc : c'.2 < 16)
+    (hd : d.2 < 16) :
+    WP isa (extras a b c' d) s fun u => KS m0 c K u st ws ∧ Extras u.mem c (exVal st a b c' d) ∧
+      u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u := by
+  have hw : InRegions s.wr (s.gpr .rcx) 64 := by rw [h.rc]; exact h.wS
+  have hin (q : Pos) (hq : q.2 < 16) : InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 (srcOff q)) 1 :=
+    scr_rw hw (by obtain ⟨a', i'⟩ := q; have := off_lt a'; simp only [srcOff] at hq ⊢; omega_using [hq, this])
+  unfold extras
+  refine WP.seq (WP.mono_syms (WP.keep [.rax, .r9, .r10] (gather_ok s (hin _ ha) (hin _ hb) (hin _ hc)
+    (hin _ hd)) (by rfl)) fun u ⟨⟨u0, um, urd, uwr⟩, uk⟩ usy => ?_)
+  have hT' : Readable u (u.syms s5678Sym) := by unfold Readable; rw [usy, urd, uwr]; exact h.tab
+  refine WP.seq (WP.mono_syms (scan_ok u s5678Sym u0 (fun k hk => gIdx_lt _ _ _ _ _ _ hk) hT')
+    fun v ⟨v1, vk⟩ vsy => ?_)
+  have g (r : Reg) (hr : r ∉ [Reg.rax, .r9, .r10]) (h10 : r ≠ .r10) (h11 : r ≠ .r11) : v.gpr r = s.gpr r :=
+    (vk.gpr r h10 h11).trans (uk.1 r hr)
+  have hrc : v.gpr .rcx = s.gpr .rcx := g .rcx (by decide) (by decide) (by decide)
+  have h48 : InRegions v.wr (v.gpr .rcx + BitVec.ofNat 64 extraOff) 16 := by
+    rw [vk.wr, uwr, hrc]; exact scr_w hw (by decide)
+  have hvm : v.mem = s.mem := vk.mem.trans um
+  refine WP.mono (store16_ok v extraOff h48) fun w ⟨wm, wg, wrd, wwr, wsy⟩ => ?_
+  rw [v1, hvm, hrc, h.rc] at wm
+  refine ⟨h.update (by rw [wg, hrc]) ?_ h.len (by rw [wrd, vk.rd, urd])
+    (by rw [wwr, vk.wr, uwr]) (by rw [wsy, vsy, usy]), fun j hj => ?_, by rw [wsy, vsy, usy],
+    ⟨fun r hr => ?_, by rw [wrd, vk.rd, urd], by rw [wwr, vk.wr, uwr]⟩⟩
+  · rw [wm]
+    exact h.mem.write h.dKS h.len _ (by decide) (.inr (by decide))
+  · have hum : u.mem = s.mem := um
+    have hl (k : Nat) (hk : k < 4) :
+        ent u.mem (u.syms s5678Sym) (gIdx s.mem c a b c' d k).toNat k =
+        tableEnt Spec.Cast5.S8 Spec.Cast5.S7 Spec.Cast5.S6 Spec.Cast5.S5 (gIdx s.mem c a b c' d k).toNat k :=
+      ent_table (by rw [hum, usy]; exact h.heldNow) (gIdx_lt _ _ _ _ _ _ hk) hk
+    rw [wm, ← Proof.Cast5.add_ofNat_add, rd_lane _ _ _ hj, dword_L _ hj, hl j hj]
+    rcases cases4 hj with rfl | rfl | rfl | rfl <;>
+      simp only [tableEnt, gIdx, exVal, ofNat_setWidth8, h.mem.xz.pos ha, h.mem.xz.pos hb, h.mem.xz.pos hc,
+        h.mem.xz.pos hd]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [wg, g r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hr.1, hr.2.1,
+      hr.2.2.1⟩) hr.2.2.1 hr.2.2.2]
+
+theorem storeQuad_ok (u : State) (a : Arr) (q : Nat) {v : Spec.Cast5.Word} (hax : u.gpr .rax = v.setWidth 64)
+    (hw : InRegions u.wr (u.gpr .rcx + BitVec.ofNat 64 (off a + 4 * q)) 4) :
+    WP isa (.block (storeQuad a q)) u fun w =>
+      w.mem = u.mem.writeW (u.gpr .rcx + BitVec.ofNat 64 (off a + 4 * q)) (byteRev32 v) ∧
+      (∀ r, r ≠ .rax → w.gpr r = u.gpr r) ∧ w.rd = u.rd ∧ w.wr = u.wr ∧ w.syms = u.syms := by
+  unfold storeQuad
+  xrun [VG.Proof.Cast5.X86_64.ea_at, hax, hw, bswap32_eq]
+  exact ⟨fun r hr => ite_eq_right hr, rfl⟩
+
+theorem storeKey_ok (u : State) (k : Nat) {v : Spec.Cast5.Word} (hax : u.gpr .rax = v.setWidth 64)
+    (hw : InRegions u.wr (u.gpr .rdx + BitVec.ofNat 64 (4 * k)) 4) :
+    WP isa (.block (storeKey k)) u fun w =>
+      w.mem = u.mem.writeW (u.gpr .rdx + BitVec.ofNat 64 (4 * k)) v ∧ w.gpr = u.gpr ∧ w.rd = u.rd ∧
+        w.wr = u.wr ∧ w.syms = u.syms := by
+  unfold storeKey
+  xrun [VG.Proof.Cast5.X86_64.ea_at, hax, hw]
+
+theorem lineOk_extra {l : Impl.Cast5.Line} (hl : lineOk l = true) : 5 ≤ l.extra.1 ∧ l.extra.1 ≤ 8 := by
+  simp only [lineOk, Bool.and_eq_true, decide_eq_true_eq] at hl
+  exact ⟨hl.1.1.2, hl.1.2⟩
+
+/-- The line, from a state of key expansion. -/
+theorem lineS_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) {f : Nat → Spec.Cast5.Word} (hE : Extras s.mem c f) {l : Impl.Cast5.Line}
+    (hl : lineOk l = true) (hx : f (8 - l.extra.1) = sbox l.extra.1 (st.get l.extra.2)) :
+    WP isa (line l) s fun u => u.gpr .rax = (lineVal st l).setWidth 64 ∧ KS m0 c K u st ws ∧
+      Extras u.mem c f ∧ u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u := by
+  have he := lineOk_extra hl
+  have hw : InRegions s.wr (s.gpr .rcx) 64 := by rw [h.rc]; exact h.wS
+  have hm : HoldsXZ s.mem (s.gpr .rcx) st := by rw [h.rc]; exact h.mem.xz
+  have hx' : s.mem.readW (s.gpr .rcx + BitVec.ofNat 64 (extraOff + 4 * (8 - l.extra.1))) 32 =
+      sbox l.extra.1 (st.get l.extra.2) := by rw [h.rc, hE _ (by omega_using [he]), hx]
+  refine WP.mono (line_ok s st l hl hw hm h.tab h.heldNow hx') fun u ⟨uax, ⟨w, um⟩, urd, uwr, usy, uk⟩ => ?_
+  rw [h.rc] at um
+  have hm0 := h.mem.write h.dKS h.len (d := 0) w (by decide) (.inl (by decide))
+  have hE0 := hE.write (d := 0) w (by decide)
+  rw [BitVec.add_zero] at hm0 hE0
+  rw [← um] at hm0 hE0
+  exact ⟨uax, h.update (uk.1 _ (by decide)) hm0 h.len urd uwr usy, hE0, usy, uk⟩
+
+/-- A line storing into quadruple `q` of `a`. -/
+theorem lineQ_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) {f : Nat → Spec.Cast5.Word} (hE : Extras s.mem c f) {l : Impl.Cast5.Line}
+    (hl : lineOk l = true) (hx : f (8 - l.extra.1) = sbox l.extra.1 (st.get l.extra.2)) (a : Arr) {q : Nat}
+    (hq : q < 4) :
+    WP isa (line l) s fun u => WP isa (.block (storeQuad a q)) u fun v =>
+      KS m0 c K v (st.put a q (lineVal st l)) ws ∧ Extras v.mem c f ∧ v.syms = s.syms ∧
+        Keep [.rax, .r9, .r10, .r11] s v := by
+  refine WP.mono (lineS_ok h hE hl hx) fun u ⟨uax, hu, uE, usy, uk⟩ => ?_
+  have := off_lt a
+  have hw : InRegions u.wr (u.gpr .rcx + BitVec.ofNat 64 (off a + 4 * q)) 4 := by
+    rw [hu.rc]; exact scr_w hu.wS (by omega_using [hq, this])
+  refine WP.mono (storeQuad_ok u a q uax hw) fun v ⟨vm, vg, vrd, vwr, vsy⟩ => ?_
+  rw [hu.rc] at vm
+  refine ⟨hu.update (vg _ (by decide)) (by rw [vm]; exact hu.mem.quad hu.dKS hu.len a hq _) hu.len vrd vwr vsy,
+    by rw [vm]; exact uE.write _ (by unfold extraOff; omega_using [hq, this]), by rw [vsy, usy],
+    ⟨fun r hr => by rw [vg r (fun e => hr (e ▸ List.mem_cons_self)), uk.1 r hr], by rw [vrd, uk.2.1],
+      by rw [vwr, uk.2.2]⟩⟩
+
+/-- A line storing the next subkey, `k` of those from `rdx`. -/
+theorem lineK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) {f : Nat → Spec.Cast5.Word} (hE : Extras s.mem c f) {l : Impl.Cast5.Line}
+    (hl : lineOk l = true) (hx : f (8 - l.extra.1) = sbox l.extra.1 (st.get l.extra.2)) {k b : Nat}
+    (hdx : s.gpr .rdx = K + BitVec.ofNat 64 b) (hb : b + 4 * k = 4 * ws.length) (hlen : ws.length < 32) :
+    WP isa (line l) s fun u => WP isa (.block (storeKey k)) u fun v =>
+      KS m0 c K v st (ws ++ [lineVal st l]) ∧ Extras v.mem c f ∧ v.syms = s.syms ∧
+        Keep [.rax, .r9, .r10, .r11] s v := by
+  refine WP.mono (lineS_ok h hE hl hx) fun u ⟨uax, hu, uE, usy, uk⟩ => ?_
+  have hadr : u.gpr .rdx + BitVec.ofNat 64 (4 * k) = K + BitVec.ofNat 64 (4 * ws.length) := by
+    rw [uk.1 _ (by decide), hdx, Proof.Cast5.add_ofNat_add, hb]
+  have hw : InRegions u.wr (u.gpr .rdx + BitVec.ofNat 64 (4 * k)) 4 := by
+    rw [hadr]; exact CallLay.inRegions_sub hu.wK (by omega_using [hlen]) (by decide)
+  refine WP.mono (storeKey_ok u k uax hw) fun v ⟨vm, vg, vrd, vwr, vsy⟩ => ?_
+  rw [hadr] at vm
+  have hd : Region.Disjoint ⟨c, 64⟩ ⟨K + BitVec.ofNat 64 (4 * ws.length), 32 / 8⟩ :=
+    (hu.dKS.sub_left (Offset.sub_base K (by omega_using [hlen]))).symm
+  refine ⟨hu.update (by rw [vg]) (by rw [vm]; exact hu.mem.key hu.dKS hlen _)
+      (by rw [List.length_append, List.length_singleton]; omega_using [hlen]) vrd vwr vsy,
+    by rw [vm]; exact uE.write_disj _ hd, by rw [vsy, usy],
+    ⟨fun r hr => by rw [vg, uk.1 r hr], by rw [vrd, uk.2.1], by rw [vwr, uk.2.2]⟩⟩
+
+theorem keep_same {rs : List Reg} {s t u : State} (h₁ : Keep rs s t) (h₂ : Keep rs t u) : Keep rs s u :=
+  ⟨fun r hr => (h₂.1 r hr).trans (h₁.1 r hr), h₂.2.1.trans h₁.2.1, h₂.2.2.trans h₁.2.2⟩
+
+/-- A group of lines: its extra lookups, then each line and its store. -/
+theorem lines4_ok {ls : List Impl.Cast5.Line} {stk : Nat → List Instr} {s : State} (I : Nat → State → Prop)
+    (h0 : WP isa (extras (extraOf ls 5) (extraOf ls 6) (extraOf ls 7) (extraOf ls 8)) s (I 0))
+    (hk : ∀ k < 4, ∀ u, I k u →
+      WP isa (line (ls.getD k default)) u fun v => WP isa (.block (stk k)) v (I (k + 1))) :
+    WP isa (lines4 ls stk) s (I 4) := by
+  unfold lines4
+  rw [show List.range 4 = [0, 1, 2, 3] from rfl]
+  simp only [List.foldr_cons, List.foldr_nil]
+  refine WP.seq (WP.mono h0 fun u0 hu0 => ?_)
+  refine WP.seq (WP.mono (hk 0 (by decide) u0 hu0) fun u1 hu1 => WP.seq (WP.mono hu1 fun v1 hv1 => ?_))
+  refine WP.seq (WP.mono (hk 1 (by decide) v1 hv1) fun u2 hu2 => WP.seq (WP.mono hu2 fun v2 hv2 => ?_))
+  refine WP.seq (WP.mono (hk 2 (by decide) v2 hv2) fun u3 hu3 => WP.seq (WP.mono hu3 fun v3 hv3 => ?_))
+  refine WP.seq (WP.mono (hk 3 (by decide) v3 hv3) fun u4 hu4 => WP.seq (WP.mono hu4 fun v4 hv4 => ?_))
+  exact WP.block_nil hv4
+
+/-- A group of lines storing into `a`. -/
+theorem groupQ_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) (a : Arr) {ls : List Impl.Cast5.Line} (hg : GroupOk (some a) ls) :
+    WP isa (lines4 ls (storeQuad a)) s fun u =>
+      KS m0 c K u (runQ a ls 4 st) ws ∧ u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u := by
+  refine WP.mono (lines4_ok (fun k u => KS m0 c K u (runQ a ls k st) ws ∧
+      Extras u.mem c (exVal st (extraOf ls 5) (extraOf ls 6) (extraOf ls 7) (extraOf ls 8)) ∧
+      u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u)
+    (extras_ok h (hg.2 0 (by decide)) (hg.2 1 (by decide)) (hg.2 2 (by decide)) (hg.2 3 (by decide)))
+    fun k hk u ⟨hu, uE, usy, uk⟩ => ?_) fun u ⟨hu, _, usy, uk⟩ => ⟨hu, usy, uk⟩
+  obtain ⟨hok, hex, hna⟩ := hg.1 k hk
+  have he := lineOk_extra hok
+  refine WP.mono (lineQ_ok hu uE hok ?_ a hk) fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
+  · rw [exVal_sbox _ _ he.1 he.2, hex, get_runQ _ _ _ _ fun e => hna (by rw [e])]
+  · rw [runQ_succ]
+    exact ⟨hw, wE, by rw [wsy, usy], keep_same uk wk⟩
+
+/-- A group of lines storing subkeys `b … b + 3` from `rdx`, `K + 64 h`. -/
+theorem groupK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) {ls : List Impl.Cast5.Line} (hg : GroupOk none ls) {b hh : Nat}
+    (hdx : s.gpr .rdx = K + BitVec.ofNat 64 (64 * hh)) (hlen : ws.length = 16 * hh + b)
+    (hle : ws.length + 4 ≤ 32) :
+    WP isa (lines4 ls fun k => storeKey (b + k)) s fun u =>
+      KS m0 c K u st (ws ++ keys4 ls st) ∧ u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u := by
+  refine WP.mono (lines4_ok (fun k u => KS m0 c K u st (ws ++ (keys4 ls st).take k) ∧
+      Extras u.mem c (exVal st (extraOf ls 5) (extraOf ls 6) (extraOf ls 7) (extraOf ls 8)) ∧
+      u.syms = s.syms ∧ Keep [.rax, .r9, .r10, .r11] s u)
+    (WP.mono (extras_ok h (hg.2 0 (by decide)) (hg.2 1 (by decide)) (hg.2 2 (by decide))
+      (hg.2 3 (by decide))) fun u ⟨hu, uE, usy, uk⟩ => ⟨by rw [List.take_zero, List.append_nil]; exact hu,
+        uE, usy, uk⟩)
+    fun k hk u ⟨hu, uE, usy, uk⟩ => ?_) fun u ⟨hu, _, usy, uk⟩ => ⟨hu, usy, uk⟩
+  obtain ⟨hok, hex, _⟩ := hg.1 k hk
+  have he := lineOk_extra hok
+  have hl : (ws ++ (keys4 ls st).take k).length = ws.length + k := by
+    rw [List.length_append, List.length_take, show (keys4 ls st).length = 4 from rfl, Nat.min_eq_left (by omega_using [hk])]
+  refine WP.mono (lineK_ok hu uE hok ?_ (k := b + k) (b := 64 * hh) (by rw [uk.1 _ (by decide), hdx])
+      (by rw [hl, hlen]; omega_using []) (by rw [hl]; omega_using [hle, hk])) fun v hv => WP.mono hv fun w ⟨hw, wE, wsy, wk⟩ => ?_
+  · rw [exVal_sbox _ _ he.1 he.2, hex]
+  · rw [take_keys4 _ _ hk, ← List.append_assoc]
+    exact ⟨hw, wE, by rw [wsy, usy], keep_same uk wk⟩
+
+end VG.Proof.Cast5.X86_64
+
+end
+
+end
+
+
+/-!
+# CAST5 key expansion on x86-64: a half
+
+`half` runs the eight groups of lines of §2.4 (`halfImpl`), writing sixteen
+subkeys from `rdx`, then moves `rdx` on and counts the half (`half_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Cast5.X86_64
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Cast5 VG.Impl.Cast5.X86_64
+open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly sx_ofNat)
+
+theorem gZ : GroupOk (some .z) zLines := by unfold GroupOk; decide
+theorem gX : GroupOk (some .x) xLines := by unfold GroupOk; decide
+theorem gA : GroupOk none aLines := by unfold GroupOk; decide
+theorem gB : GroupOk none bLines := by unfold GroupOk; decide
+theorem gC : GroupOk none cLines := by unfold GroupOk; decide
+theorem gD : GroupOk none dLines := by unfold GroupOk; decide
+
+theorem storeKey_zero : (fun k => storeKey (0 + k)) = storeKey := funext fun k => by rw [Nat.zero_add]
+
+/-- The registers key expansion writes. -/
+def keyRegs : List Reg := [.rax, .r9, .r10, .r11, .rdx, .rsi]
+
+theorem half_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
+    (h : KS m0 c K s st ws) {hh : Nat} (hdx : s.gpr .rdx = K + BitVec.ofNat 64 (64 * hh))
+    (hlen : ws.length = 16 * hh) (hle : hh < 2) :
+    WP isa half s fun u =>
+      KS m0 c K u (halfImpl st).2 (ws ++ (halfImpl st).1) ∧
+      u.gpr .rdx = K + BitVec.ofNat 64 (64 * (hh + 1)) ∧ u.gpr .rsi = s.gpr .rsi - 1 ∧
+      u.zf = some (s.gpr .rsi - 1 == 0) ∧ u.syms = s.syms ∧ Keep keyRegs s u := by
+  have kd {u v : State} (k : Keep [.rax, .r9, .r10, .r11] u v) : v.gpr .rdx = u.gpr .rdx := k.1 _ (by decide)
+  have l4 (ls : List Impl.Cast5.Line) (t : XZ) : (keys4 ls t).length = 4 := rfl
+  unfold half
+  refine WP.seq (WP.mono (groupQ_ok h .z gZ) fun u1 ⟨h1, s1, k1⟩ => ?_)
+  rw [runQ_z] at h1
+  have g2 := groupK_ok h1 gA (b := 0) (hh := hh) (by rw [kd k1, hdx]) (by rw [hlen]; rfl) (by omega_using [hlen, hle])
+  rw [storeKey_zero] at g2
+  refine WP.seq (WP.mono g2 fun u2 ⟨h2, s2, k2⟩ => ?_)
+  refine WP.seq (WP.mono (groupQ_ok h2 .x gX) fun u3 ⟨h3, s3, k3⟩ => ?_)
+  rw [runQ_x] at h3
+  have g4 := groupK_ok h3 gB (b := 4) (hh := hh) (by rw [kd k3, kd k2, kd k1, hdx])
+    (by rw [List.length_append, hlen, l4]) (by rw [List.length_append, hlen, l4]; omega_using [hle])
+  refine WP.seq (WP.mono g4 fun u4 ⟨h4, s4, k4⟩ => ?_)
+  refine WP.seq (WP.mono (groupQ_ok h4 .z gZ) fun u5 ⟨h5, s5, k5⟩ => ?_)
+  rw [runQ_z] at h5
+  have g6 := groupK_ok h5 gC (b := 8) (hh := hh) (by rw [kd k5, kd k4, kd k3, kd k2, kd k1, hdx])
+    (by rw [List.length_append, List.length_append, hlen, l4, l4])
+    (by rw [List.length_append, List.length_append, hlen, l4, l4]; omega_using [hle])
+  refine WP.seq (WP.mono g6 fun u6 ⟨h6, s6, k6⟩ => ?_)
+  refine WP.seq (WP.mono (groupQ_ok h6 .x gX) fun u7 ⟨h7, s7, k7⟩ => ?_)
+  rw [runQ_x] at h7
+  have g8 := groupK_ok h7 gD (b := 12) (hh := hh)
+    (by rw [kd k7, kd k6, kd k5, kd k4, kd k3, kd k2, kd k1, hdx])
+    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4])
+    (by rw [List.length_append, List.length_append, List.length_append, hlen, l4, l4, l4]; omega_using [hle])
+  refine WP.seq (WP.mono g8 fun u8 ⟨h8, s8, k8⟩ => ?_)
+  have k18 := keep_same (keep_same (keep_same (keep_same (keep_same (keep_same (keep_same k1 k2) k3) k4) k5)
+    k6) k7) k8
+  have hdx8 : u8.gpr .rdx = K + BitVec.ofNat 64 (64 * hh) := by rw [k18.1 _ (by decide), hdx]
+  have hsi8 : u8.gpr .rsi = s.gpr .rsi := k18.1 _ (by decide)
+  xrun [imm, sx_ofNat (show 64 < 2 ^ 31 by decide), sx_ofNat (show 1 < 2 ^ 31 by decide), hdx8, hsi8]
+  have e64 : K + BitVec.ofNat 64 (64 * hh) + 64#64 = K + BitVec.ofNat 64 (64 * (hh + 1)) := by
+    rw [show (64#64 : BitVec 64) = BitVec.ofNat 64 64 from rfl, Proof.Cast5.add_ofNat_add, Nat.mul_succ]
+  have hst : (halfImpl st).2 = runX xLines (runZ zLines (runX xLines (runZ zLines st))) := rfl
+  have hks : ws ++ (halfImpl st).1 = ws ++ keys4 aLines (runZ zLines st) ++
+      keys4 bLines (runX xLines (runZ zLines st)) ++ keys4 cLines (runZ zLines (runX xLines (runZ zLines st))) ++
+      keys4 dLines (runX xLines (runZ zLines (runX xLines (runZ zLines st)))) := by
+    simp only [halfImpl, List.append_assoc]
+  rw [hst, hks]
+  refine ⟨h8.update (by simp only [gpr_setReg_of_ne _ _ (show Reg.rcx ≠ .rsi by decide), gpr_setFlags,
+      gpr_setReg_of_ne _ _ (show Reg.rcx ≠ .rdx by decide)]) h8.mem h8.len rfl rfl rfl, e64,
+    rfl, rfl, by
+      show u8.syms = s.syms
+      rw [s8, s7, s6, s5, s4, s3, s2, s1], fun r hr => ?_, k18.2.1, k18.2.2⟩
+  simp only [keyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [gpr_setReg_of_ne _ _ hr.2.2.2.2.2, gpr_setFlags, gpr_setReg_of_ne _ _ hr.2.2.2.2.1]
+  exact k18.1 r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨hr.1, hr.2.1,
+    hr.2.2.1, hr.2.2.2.1⟩)
+
+end VG.Proof.Cast5.X86_64
+
+end
+
+end
+
 
 /-!
 # CAST5 key expansion on x86-64
@@ -51,11 +446,11 @@ theorem zero_ok (s : State) (key : Addr) (hw : InRegions s.wr (s.gpr .rcx) 64) :
   xrun [VG.Proof.Cast5.X86_64.ea_at, imm, sx_ofNat (show 16 < 2 ^ 31 by decide), h16, h24,
     Nat.reduceAdd]
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, fun r hr => ?_, rfl⟩
-  · rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, zero_byte _ _ (by decide) (by omega),
-      zero_byte _ _ (by decide) (by omega)]
+  · rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, zero_byte _ _ (by decide) (by omega_using [hi]),
+      zero_byte _ _ (by decide) (by omega_using [hi])]
     split <;> split <;> first | rfl | omega
-  · rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, zero_byte _ _ (by decide) (by omega),
-      zero_byte _ _ (by decide) (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+  · rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, zero_byte _ _ (by decide) (by omega_using [hi]),
+      zero_byte _ _ (by decide) (by omega_using [hi]), ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
   · exact ((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))
   · simp only [hr, ite_false]
@@ -75,20 +470,20 @@ theorem copyStep_ok (u : State) {m0 : Mem} {key c : Addr} {j : Nat} (hj : j < 16
     Proof.Cast5.add_ofNat_add]
   refine ⟨⟨fun i hi => ?_, fun i hi => ?_, ?_⟩, by rw [Nat.add_assoc], rfl, rfl, fun r h1 h2 h3 h4 => ?_, rfl⟩
   · simp only [Mem.writeW]
-    rw [byte_write _ _ _ (by omega) (by omega)]
+    rw [byte_write _ _ _ (by omega_using [hj]) (by omega_using [hi])]
     by_cases hij : i = j
     · subst hij
-      rw [ite_eq_left ⟨Nat.le_refl _, by omega⟩, ite_eq_left (by omega), Nat.sub_self]
+      rw [ite_eq_left ⟨Nat.le_refl _, by omega_using []⟩, ite_eq_left (by omega_using []), Nat.sub_self]
       apply BitVec.eq_of_getLsbD_eq; intro k hk
       simp [hk]
-    · rw [ite_eq_right (by omega), hI.x i hi]
+    · rw [ite_eq_right (by omega_using [hij]), hI.x i hi]
       by_cases hl : i < j
-      · rw [ite_eq_left hl, ite_eq_left (by omega)]
-      · rw [ite_eq_right hl, ite_eq_right (by omega)]
+      · rw [ite_eq_left hl, ite_eq_left (by omega_using [hl])]
+      · rw [ite_eq_right hl, ite_eq_right (by omega_using [hij, hl])]
   · simp only [Mem.writeW]
-    rw [byte_write _ _ _ (by omega) (by omega), ite_eq_right (by omega)]
+    rw [byte_write _ _ _ (by omega_using [hj]) (by omega_using [hi]), ite_eq_right (by omega_using [hj])]
     exact hI.z i hi
-  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+  · exact hI.fr.writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
   · simp only [h1, h2, h3, h4, ite_false]
 
 /-- The facts of key expansion's precondition on this target (the shared
@@ -141,18 +536,18 @@ theorem expandKey_ok (s : State) (h : KPre s) :
   rw [hc] at c0 ax0
   have hkb (j : Nat) (hj : j < n) (m : Mem) (hf : Frame [⟨c, 64⟩] s.mem m) :
       m (key + BitVec.ofNat 64 j) = s.mem (key + BitVec.ofNat 64 j) := by
-    refine hf.bytes (R := ⟨key, n⟩) (fun r hr => ?_) (by show n ≤ 2 ^ 64; omega) hj
+    refine hf.bytes (R := ⟨key, n⟩) (fun r hr => ?_) (by show n ≤ 2 ^ 64; omega_using [hn]) hj
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hr]; exact dkc
   have hsi0 : u0.gpr .rsi = BitVec.ofNat 64 n := by
     rw [g0 _ (by decide), ← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (wp_countdown (cnt := .rsi) (N := n) (by omega) (by omega)
+  refine WP.seq (wp_countdown (cnt := .rsi) (N := n) (by omega_using [hn]) (by omega_using [hl])
     (fun j u => CInv s.mem key c j u.mem ∧ u.gpr .rdi = key + BitVec.ofNat 64 j ∧
       u.gpr .rax = c + BitVec.ofNat 64 (16 + j) ∧ (∀ r, r ∉ [Reg.rax, .rdi, .rsi, .r9] → u.gpr r = s.gpr r) ∧
       u.rd = s.rd ∧ u.wr = s.wr ∧ u.syms = s.syms)
-    (fun j hj u ⟨cu, du, au, gu, rdu, wru, syu⟩ _ => WP.mono (copyStep_ok u (by omega) cu du au
-      (by rw [rdu, wru]; exact CallLay.inRegions_sub hrK (by omega) (by omega))
-      (by rw [wru]; exact scr_w hw64 (by omega))
+    (fun j hj u ⟨cu, du, au, gu, rdu, wru, syu⟩ _ => WP.mono (copyStep_ok u (by omega_using [hl, hj]) cu du au
+      (by rw [rdu, wru]; exact CallLay.inRegions_sub hrK (by omega_using [hj]) (by omega_using [hn]))
+      (by rw [wru]; exact scr_w hw64 (by omega_using [hl, hj]))
       (hkb j hj u.mem cu.fr))
       fun v ⟨cv, dv, av, sv, zv, gv, rdv, wrv, syv⟩ => ⟨⟨cv, dv, av, fun r hr => ?keepStep, rdv.trans rdu,
         wrv.trans wru, syv.trans syu⟩, sv, zv⟩)

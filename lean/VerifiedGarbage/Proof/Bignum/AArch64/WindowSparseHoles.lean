@@ -23,14 +23,14 @@ theorem holes_ok {s : State} {B : Addr} {Z e : Nat}
     t.mem = (s.mem.writeW (off B e) (0 : BitVec 64)).writeW (off B (e+120)) (0 : BitVec 64))
     ?_ rfl rfl rfl) fun t ⟨hm,kt⟩ => ?_
   · unfold VG.Impl.Bignum.AArch64.WindowSparse.holes
-    brun [h16,h7,hs.st (show e+8 ≤ Z by omega),hs.st (show e+120+8 ≤ Z by omega)]
+    brun [h16,h7,hs.st (show e+8 ≤ Z by omega_using [he]),hs.st (show e+120+8 ≤ Z by omega_using [he])]
   · refine ⟨?_,?_,?_,kt⟩
     · rw [hm,(writeW_outside (s.mem.writeW (off B e) (0 : BitVec 64)) B
-        (d := e+120) (0 : BitVec 64) (by omega)).word (by omega) (by omega),word_writeW_self]
+        (d := e+120) (0 : BitVec 64) (by omega_using [he, hn])).word (by omega_using []) (by omega_using [he, hn]),word_writeW_self]
     · rw [hm,word_writeW_self]
     · rw [hm]
-      exact (writeW_outside s.mem B (0 : BitVec 64) (by omega)).mono (by omega) (by omega) |>.trans
+      exact (writeW_outside s.mem B (0 : BitVec 64) (by omega_using [he, hn])).mono (by omega_using []) (by omega_using []) |>.trans
         ((writeW_outside (s.mem.writeW (off B e) (0 : BitVec 64)) B (d := e+120)
-          (0 : BitVec 64) (by omega)).mono (by omega) (by omega))
+          (0 : BitVec 64) (by omega_using [he, hn])).mono (by omega_using []) (by omega_using []))
 
 end VG.Proof.Bignum.AArch64.WindowSparse

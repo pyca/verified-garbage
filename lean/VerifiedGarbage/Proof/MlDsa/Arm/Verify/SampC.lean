@@ -82,7 +82,7 @@ theorem ball_m {σ : State} :
   have hk := hF.k
   exact ⟨⟨rfl, by vsep hF⟩, ⟨rfl, by vsep hF⟩, ⟨rfl, by vsep hF⟩, show ix Reg.r7 ∈ vWb by decide,
     show ix Reg.r7 ∈ vWb by decide, by vsep hF, by vsep hF, by vsep hF, hF.ball.1,
-    ⟨by rcases hF.ct with e | e | e <;> omega, by rcases hF.ct with e | e | e <;> omega, hF.ball.2⟩⟩
+    ⟨by rcases hF.ct with e | e | e <;> omega_using [e], by rcases hF.ct with e | e | e <;> omega_using [e], hF.ball.2⟩⟩
 
 theorem ball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
     WP isa (sampled (ballAt P (.r6, 0) p.ctildeLen p.τ pC) pC) s (VS4 p STK σ) := by
@@ -90,9 +90,9 @@ theorem ball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
   have hs := h.vb.vc.site
   have hL := hs.ok
   unfold sampled ballAt
-  refine WP.seq (ball_okS hP.ball hs (by omega) (ball_m hF) fun s₃ k₃ hred hout => ?_)
+  refine WP.seq (ball_okS hP.ball hs (by omega_using [hS]) (ball_m hF) fun s₃ k₃ hred hout => ?_)
   have eb : bytesAt s.mem (lpa (vlay p STK σ) (.r6, 0)) p.ctildeLen = vCt p (sgOf p σ) := by
-    have := sig_slice h.vb.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega)
+    have := sig_slice h.vb.vc (o := 0) (l := p.ctildeLen) (by have := hF.sig; have := hF.hint; omega_arith)
     rw [List.drop_zero] at this
     exact this
   rw [eb] at hout
@@ -110,7 +110,7 @@ theorem ball_ok {σ s : State} (h : VS p STK p.k 0 σ s) :
   have kA4 : ∀ r < p.k, ∀ s' < p.ℓ, polyAt s₄.mem (aA p STK σ r s') = polyAt s₃.mem (aA p STK σ r s') ∧
       (Reduced s₃.mem (aA p STK σ r s') → Reduced s₄.mem (aA p STK σ r s')) := fun r hr s' hs' =>
     ⟨polyAt_keepW hL k₄.frame (by vsep hF) (by decide) rfl, reduced_keepW hL k₄.frame (by vsep hF) (by decide) rfl⟩
-  have dn : ∀ r s', s' < p.ℓ → (Dn p.k 0 r s' ↔ r < p.k) := fun r s' _ => by simp only [Dn]; omega
+  have dn : ∀ r s', s' < p.ℓ → (Dn p.k 0 r s' ↔ r < p.k) := fun r s' _ => by simp only [Dn]; omega_using []
   obtain ⟨q, hq, hok, hbad⟩ := h.ok
   refine ⟨kv₄, fun r hr s' hs' => (kA4 r hr s' hs').2 ((kA3 r hr s' hs').2 (h.red r s' hs' ((dn r s' hs').mpr hr))),
     pi.1, ⟨q && decide (s₃.gpr .r0 = 1), ?_, fun hq' => ⟨fun r hr s' hs' => ?_, ?_⟩, fun hq' => ?_⟩⟩
@@ -145,15 +145,15 @@ theorem ball_piece : VPiece p STK (VS p STK p.k 0) (VS4 p STK) (sampled (ballAt 
   refine RelCT.mono (M := isa) (P := fun (x y : State) => ∃ σ, Two (vlay p STK σ) vWb STK x y ∧
     bytesAt x.mem (lpa (vlay p STK σ) (.r6, 0)) p.ctildeLen = bytesAt y.mem (lpa (vlay p STK σ) (.r6, 0)) p.ctildeLen)
     (RelCT.exists_ fun σ => ?_) (fun _ _ ⟨σ₁, _, _, _, pub, h₁, h₂⟩ => ?_) fun _ _ h => h
-  · have ok := fun x (hs : Site (vlay p STK σ) vWb STK x) => ball_okS hP.ball hs (by omega)
+  · have ok := fun x (hs : Site (vlay p STK σ) vWb STK x) => ball_okS hP.ball hs (by omega_using [hS])
       (name := "vg_mldsa_sample_in_ball") (ball_m hF (σ := σ)) (Q := fun x' => ∃ rs, Kept rs x x') fun _ k _ _ => ⟨_, k⟩
     exact (VG.Proof.MlDsa.Arm.KeyGen.RelCT.two (fun _ _ h => h.1)
-      (ball_tr hP.ball (by omega) (ball_m hF) fun x y h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩)
+      (ball_tr hP.ball (by omega_using [hS]) (ball_m hF) fun x y h => ⟨h.1.1, h.1.2.1, h.1.2.2, h.2⟩)
       fun x hs => ok x hs).mono (fun _ _ h => h) fun x y h => ⟨σ, h⟩
   · refine ⟨σ₁, vc_twoL pub h₁.vb.vc h₂.vb.vc, ?_⟩
     show bytesAt _ ((vlay p STK σ₁).A 4 0) _ = bytesAt _ ((vlay p STK σ₁).A 4 0) _
-    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega), pub.2.2.2.2.2.2.2.1, vlay_pub pub,
-      sig_slice h₂.vb.vc (by have := hF.sig; have := hF.hint; omega)]
+    rw [sig_slice h₁.vb.vc (by have := hF.sig; have := hF.hint; omega_arith), pub.2.2.2.2.2.2.2.1, vlay_pub pub,
+      sig_slice h₂.vb.vc (by have := hF.sig; have := hF.hint; omega_arith)]
 
 /-! ## The samplers -/
 

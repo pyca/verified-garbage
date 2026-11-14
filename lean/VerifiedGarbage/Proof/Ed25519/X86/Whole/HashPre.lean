@@ -28,12 +28,12 @@ include h
 
 theorem work_addr : (scr + 192).setWidth 64 = scr.setWidth 64 + BitVec.ofNat 64 192 := by
   have hs := h.scratchFit
-  exact addr_eq (x := scr) (k := 192) (by omega)
+  exact addr_eq (x := scr) (k := 192) (by omega_using [hs])
 
 theorem work_fit : (scr + 192).toNat + 272 ≤ 2 ^ 32 := by
   have hs := h.scratchFit
-  rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl, Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl, Nat.mod_eq_of_lt (by omega_using [hs])]
+  omega_using [hs]
 
 omit h in
 theorem sha_sub : Region.Sub (SHA scr) ⟨scr.setWidth 64, 8192⟩ := Region.sub_prefix (by decide)
@@ -64,7 +64,7 @@ theorem below_work {n : Nat} (hn : n ≤ 24) : (VG.X86.below E n).Disjoint (WORK
 
 theorem inner_base : (E - 4).setWidth 64 - 20 = E.setWidth 64 - 24 := by
   have he := h.below
-  have e : (E - 4).setWidth 64 = E.setWidth 64 - 4 := Taint.sub_setWidth (m := 4) (by omega)
+  have e : (E - 4).setWidth 64 = E.setWidth 64 - 4 := Taint.sub_setWidth (m := 4) (by omega_using [he])
   rw [e, BitVec.sub_sub]
   rfl
 
@@ -105,9 +105,9 @@ theorem init_pre (he : t.gpr .esp = E) (h : HashSpace E scr) (ha : slots E t 0 =
   have hb := h.below
   have hf := h.frameFit
   have hs := h.scratchFit
-  refine ⟨trivial, trivial, h.args_sha (by decide), h.below_sha (by decide), by omega, ?_⟩
-  have he4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega)
-  omega
+  refine ⟨trivial, trivial, h.args_sha (by decide), h.below_sha (by decide), by omega_using [hs], ?_⟩
+  have he4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega_using [hb])
+  omega_using [hf, he4]
 
 theorem update_pre (he : t.gpr .esp = E) (h : HashSpace E scr) {p len : BitVec 32}
     (ha0 : slots E t 0 = scr) (ha3 : slots E t 3 = p) (ha4 : slots E t 4 = len)
@@ -126,12 +126,12 @@ theorem update_pre (he : t.gpr .esp = E) (h : HashSpace E scr) {p len : BitVec 3
   have he0 := h.below
   have he1 := h.frameFit
   have hs := h.scratchFit
-  have he4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega)
+  have he4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega_using [he0])
   refine ⟨trivial, trivial, h.sha_work, hd.sub_right (HashSpace.sha_sub (scr := scr)), hd.sub_right h.work_sub,
     h.args_sha (by decide), h.args_work (by decide), h.below_sha (by decide), h.below_work (by decide),
     (h.below_sha (n := 24) (by decide)).sub_left h.inner_sub,
     (h.below_work (n := 24) (by decide)).sub_left h.inner_sub,
-    hb.sub_left h.inner_sub, by omega, hfit, h.work_fit, ?_, ?_⟩ <;> omega
+    hb.sub_left h.inner_sub, by omega_using [hs], hfit, h.work_fit, ?_, ?_⟩ <;> omega_arith
 
 theorem finalize_pre (he : t.gpr .esp = E) (h : HashSpace E scr) {out : BitVec 32}
     (ha0 : slots E t 0 = scr) (ha3 : slots E t 3 = out) (ha4 : slots E t 4 = scr + 192)
@@ -149,12 +149,12 @@ theorem finalize_pre (he : t.gpr .esp = E) (h : HashSpace E scr) {out : BitVec 3
   have he0 := h.below
   have he1 := h.frameFit
   have hs := h.scratchFit
-  have he4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega)
+  have he4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega_using [he0])
   refine ⟨trivial, trivial, (hd.sub_right (HashSpace.sha_sub (scr := scr))).symm, h.sha_work, hd.sub_right h.work_sub,
     h.args_sha (by decide), ha, h.args_work (by decide), h.below_sha (by decide),
     hb.sub_left (below_sub (by decide) h.below), h.below_work (by decide),
     (h.below_sha (n := 24) (by decide)).sub_left h.inner_sub, hb.sub_left h.inner_sub,
     (h.below_work (n := 24) (by decide)).sub_left h.inner_sub,
-    by omega, hfit, h.work_fit, ?_, ?_⟩ <;> omega
+    by omega_using [hs], hfit, h.work_fit, ?_, ?_⟩ <;> omega_arith
 
 end VG.Proof.Ed25519.X86.Whole

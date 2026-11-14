@@ -52,7 +52,7 @@ theorem loadTail_ok (s : State) (component : Nat) (hc : component < 3) (x : BitV
       s'.gpr .r6 = s.gpr .r5 + BitVec.ofNat 64 (128 * component) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ∉ [Reg.r0, .r7, .r12, .r6] → s'.gpr r = s.gpr r) := by
-  have hb : 128 * component < 2 ^ 15 := by omega
+  have hb : 128 * component < 2 ^ 15 := by omega_using [hc]
   let s₁ := s.write .r0 (s.gpr .r9 >>> 28)
   let s₂ := s₁.write .r7 (s₁.gpr .r9 ||| s₁.gpr .r9)
   let s₃ := s₂.write .r7 (s₂.gpr .r7 <<< (64 - 28))

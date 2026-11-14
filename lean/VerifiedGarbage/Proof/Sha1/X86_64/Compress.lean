@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -24,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 /-!
 # SHA-1 compression function on x86-64: the message schedule and the rounds
 -/
@@ -49,7 +51,7 @@ theorem var_succ (t k : Nat) (hk : k < 4) : var (t + 1) (k + 1) = var t k := by
   simp only [var]; congr 1; omega
 
 theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 4 := by
-  simp only [var]; congr 1; omega
+  simp only [var]; congr 1; omega_using []
 
 /-- The registers of the working variables are all different. -/
 theorem round_nodup (t : Nat) : [var t 0, var t 1, var t 2, var t 3, var t 4].Nodup := by
@@ -329,6 +331,28 @@ def compressX86_64 : Contract X86_64.isa where
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
 
 open VG.X86_64 in
+/-- `compressX86_64` with `n` bytes of scratch space: the contract of an
+implementation that uses no more (`compressX86_64` is `compressX86_64S 112`, for the
+implementation that uses the most). -/
+def compressX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 20⟩
+    let blocks : Region := ⟨s.gpr .rsi, 64 * (s.gpr .rdx).toNat⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
+    state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint scratch
+  post s s' :=
+    stateAt s'.mem (s.gpr .rdi) =
+      compressBlocks (stateAt s.mem (s.gpr .rdi)) s.mem (s.gpr .rsi) (s.gpr .rdx).toNat
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+
+theorem compressX86_64_eq : compressX86_64 = compressX86_64S 112 := rfl
+
+open VG.X86_64 in
 /-- x86-64 contract for `vg_sha1_init(state: *mut [u8; 84])`: makes the
 streaming state at `state` represent the empty message.
 
@@ -390,6 +414,47 @@ def finalizeX86_64 : Contract X86_64.isa where
     let state : Region := ⟨s.gpr .rdi, 84⟩
     let out : Region := ⟨s.gpr .rdx, 20⟩
     let scratch : Region := ⟨s.gpr .rcx, 160⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ m, Repr s.mem (s.gpr .rdi) m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+    bytesAt s'.mem (s.gpr .rdx) 20 = Spec.Sha1.hash m
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+open VG.X86_64 in
+/-- `updateX86_64` with `n` bytes of scratch space, for an implementation of
+the compression function that uses `n - 48` (`updateX86_64` is
+`updateX86_64S 160`). -/
+def updateX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 84⟩
+    let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
+    let scratch : Region := ⟨s.gpr .r8, n⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [data] ∧ s.wr = [state, scratch] ∧
+    state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint data ∧ stack.Disjoint scratch
+  post s s' := ∀ m, Repr s.mem (s.gpr .rdi) m → s.gpr .rsi = BitVec.ofNat 64 m.length →
+    Repr s'.mem (s.gpr .rdi) (m ++ bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+open VG.X86_64 in
+/-- `finalizeX86_64` with `n` bytes of scratch space (`finalizeX86_64` is
+`finalizeX86_64S 160`). -/
+def finalizeX86_64S (n : Nat) : Contract X86_64.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 84⟩
+    let out : Region := ⟨s.gpr .rdx, 20⟩
+    let scratch : Region := ⟨s.gpr .rcx, n⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧
@@ -492,7 +557,7 @@ theorem nb_lt : 64 * nb s₀ < 2 ^ 64 := by
   refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
   have := (st s₀ - bp s₀).isLt
-  omega
+  omega_using [hn]
 
 theorem in_state {k : Nat} (hk : k < 5) :
     InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
@@ -770,7 +835,7 @@ theorem saveMem_saved {s₀ : State} : Saved s₀ (saveMem s₀) :=
   Spill.saveMem_saved _ _ _ _ (by decide)
 
 theorem saveMem_frame {s₀ : State} : Frame [scrR s₀] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega) (by decide)
+  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega_using [this]) (by decide)
 
 theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hg : s₁.gpr = s₀.gpr)
     (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) (hm : s₁.mem = saveMem s₀) : Common s₀ 0 s₁ := by
@@ -849,5 +914,22 @@ theorem compress_verified :
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
   · refine ⟨satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
     exact Region.disjoint_of_sep (by decide)
+
+/-- A compression function verified with `a` bytes of scratch space is with
+any `b ≥ a` (`Verified.widen`: it runs as it does with `a`). -/
+theorem compressS_widen {c : Prog isa} {a b : Nat}
+    (h : Verified X86_64.target c (Proof.Sha1.compressX86_64S a)) (hab : a ≤ b)
+    (hsat : ∃ s, (Proof.Sha1.compressX86_64S b).pre s) : Verified X86_64.target c (Proof.Sha1.compressX86_64S b) :=
+  Verified.widen h (fun s => [⟨s.gpr .rdi, 20⟩, ⟨s.gpr .rcx, a⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇⟩ => ⟨h₁, rfl, h₃.sub_right (Region.sub_prefix hab), h₄,
+      h₅.sub_right (Region.sub_prefix hab), h₆, h₇.sub_right (Region.sub_prefix hab)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hab⟩ .nil))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+/-- A state satisfying the precondition with no scratch space. -/
+theorem compressS_sat0 : ∃ s, (Proof.Sha1.compressX86_64S 0).pre s :=
+  ⟨{ satState with wr := [⟨0x1000, 20⟩, ⟨0x3000, 0⟩] }, rfl, rfl, Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide)⟩
 
 end VG.Proof.Sha1.X86_64

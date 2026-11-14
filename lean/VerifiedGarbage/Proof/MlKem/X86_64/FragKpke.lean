@@ -83,9 +83,9 @@ theorem kpPre {L : Kem} {ek dk a se z : Ptr} {st s1 : State} (H : KpkeKgH L ek d
     ret_disj s1 (by rw [hsp]; exact H.kE), ret_disj s1 (by rw [hsp]; exact H.kD),
     ret_disj s1 (by rw [hsp]; exact H.kA), ret_disj s1 (by rw [hsp]; exact H.kS),
     ret_disj s1 (by rw [hsp]; exact H.kZ), H.nE, H.nD, H.nA, H.nS, H.nZ, ?_, ?_⟩
-  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (by have := H.nA; omega) (by rw [hsp]; exact H.kA) i hi).trans (by rw [hm]))]
+  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (by have := H.nA; omega_using [this]) (by rw [hsp]; exact H.kA) i hi).trans (by rw [hm]))]
     exact H.redA
-  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (n := 1024 * L.k) (by have := H.nS; omega) (by rw [hsp]; exact H.kS) i (by omega)).trans
+  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (n := 1024 * L.k) (by have := H.nS; omega_using [this]) (by rw [hsp]; exact H.kS) i (by omega_using [hi])).trans
       (by rw [hm]))]
     exact H.redSE
 
@@ -106,15 +106,15 @@ theorem kpkeKgAt_ok {L : Kem} (hK : KpkeOk L) {ek dk a se z : Ptr} (hd : NA dk) 
   have hS := H.nS
   have eA : matAtW 16 s1.callEntry.mem (pa st a) L.k = matAtW 16 st.mem (pa st a) L.k :=
     matAtW16_congr fun i hi =>
-      (ce_mem s1 (by have := H.nA; omega) (by rw [hsp]; exact H.kA) i hi).trans (by rw [hm])
+      (ce_mem s1 (by have := H.nA; omega_using [this]) (by rw [hsp]; exact H.kA) i hi).trans (by rw [hm])
   have eS : vecAtW 16 s1.callEntry.mem (pa st se) L.k = vecAtW 16 st.mem (pa st se) L.k :=
     vecAtW16_congr fun i hi =>
-      (ce_mem s1 (n := 1024 * L.k) (by omega) (by rw [hsp]; exact H.kS) i (by omega)).trans (by rw [hm])
+      (ce_mem s1 (n := 1024 * L.k) (by omega_using [hS]) (by rw [hsp]; exact H.kS) i (by omega_using [hi])).trans (by rw [hm])
   have eE : vecAtW 16 s1.callEntry.mem (pa st se + BitVec.ofNat 64 (512 * L.k)) L.k =
       vecAtW 16 st.mem (pa st se + BitVec.ofNat 64 (512 * L.k)) L.k :=
     vecAtW16_congr fun i hi => by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-      exact (ce_mem s1 (n := 1024 * L.k) (by omega) (by rw [hsp]; exact H.kS) _ (by omega)).trans (by rw [hm])
+      exact (ce_mem s1 (n := 1024 * L.k) (by omega_using [hS]) (by rw [hsp]; exact H.kS) _ (by omega_using [hi])).trans (by rw [hm])
   simp only [kpkeKgK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rcx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hV.2.2.2.1, hm₂, eA, eS, eE] at hq
@@ -148,7 +148,7 @@ theorem kpkeKgAt_tr {L : Kem} (hK : KpkeOk L) {ek dk a se z : Ptr} (hd : NA dk) 
 theorem agree_off {m m' : Mem} {p : Addr} {n o l : Nat}
     (h : ∀ i < n, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) (hl : o + l ≤ n) :
     ∀ i < l, m' (p + BitVec.ofNat 64 o + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 o + BitVec.ofNat 64 i) :=
-  fun i hi => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega)
+  fun i hi => by rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact h _ (by omega_using [hl, hi])
 
 /-- The ciphertext of `K-PKE.Encrypt`, from memory that agrees on its inputs. -/
 theorem encCt_congr (L : Kem) {m m' : Mem} {a t r msg : Addr}
@@ -157,10 +157,10 @@ theorem encCt_congr (L : Kem) {m m' : Mem} {a t r msg : Addr}
     (hR : ∀ i < 512 * (2 * L.k + 1), m' (r + BitVec.ofNat 64 i) = m (r + BitVec.ofNat 64 i))
     (hM : ∀ i < 32, m' (msg + BitVec.ofNat 64 i) = m (msg + BitVec.ofNat 64 i)) :
     encCt L m' a t r msg = encCt L m a t r msg := by
-  have h0 : ∀ i < 512 * L.k, m' (r + BitVec.ofNat 64 i) = m (r + BitVec.ofNat 64 i) := fun i hi => hR i (by omega)
+  have h0 : ∀ i < 512 * L.k, m' (r + BitVec.ofNat 64 i) = m (r + BitVec.ofNat 64 i) := fun i hi => hR i (by omega_using [hi])
   simp only [encCt, matAtW16_congr hA, bytesAt_congr hT, bytesAt_congr hM, vecAtW16_congr h0,
-    vecAtW16_congr (agree_off hR (o := 512 * L.k) (l := 512 * L.k) (by omega)),
-    polyAtW16_congr (agree_off hR (o := 1024 * L.k) (l := 512) (by omega))]
+    vecAtW16_congr (agree_off hR (o := 512 * L.k) (l := 512 * L.k) (by omega_using [])),
+    polyAtW16_congr (agree_off hR (o := 1024 * L.k) (l := 512) (by omega_using []))]
 
 theorem kpEncGlue_ok (ct a t r m z : Ptr)
     (ho : ct.2 < 2 ^ 31 ∧ a.2 < 2 ^ 31 ∧ t.2 < 2 ^ 31 ∧ r.2 < 2 ^ 31 ∧ m.2 < 2 ^ 31 ∧ z.2 < 2 ^ 31)
@@ -247,7 +247,7 @@ theorem kePre {L : Kem} {ct a t r m z : Ptr} {st s1 : State} (H : KpkeEncH L ct 
     ret_disj s1 (by rw [hsp]; exact H.kT), ret_disj s1 (by rw [hsp]; exact H.kR),
     ret_disj s1 (by rw [hsp]; exact H.kM), ret_disj s1 (by rw [hsp]; exact H.kZ),
     H.nC, H.nA, H.nT, H.nR, H.nM, H.nZ, ?_, ?_⟩
-  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (by have := H.nA; omega) (by rw [hsp]; exact H.kA) i hi).trans
+  · rw [vecReducedW16_congr (fun i hi => (ce_mem s1 (by have := H.nA; omega_using [this]) (by rw [hsp]; exact H.kA) i hi).trans
       (by rw [hm]))]
     exact H.redA
   · refine (vecReducedW16_congr (l := 2 * L.k + 1) fun i hi => ?_).mpr H.redR
@@ -266,7 +266,7 @@ theorem kpkeEncAt_ok {L : Kem} (hK : KpkeOk L) {ct a t r m z : Ptr} (ha : NA a) 
   have hsp : s1.gpr .rsp = st.gpr .rsp := k.gpr (by decide)
   have ag : ∀ {p : Ptr} {n : Nat}, (pa st p).toNat + n ≤ 2 ^ 64 → (below (st.gpr .rsp) 32).Disjoint ⟨pa st p, n⟩ →
       ∀ i < n, s1.callEntry.mem (pa st p + BitVec.ofNat 64 i) = st.mem (pa st p + BitVec.ofNat 64 i) :=
-    fun hn hk i hi => (ce_mem s1 (by omega) (by rw [hsp]; exact hk) i hi).trans (by rw [hm])
+    fun hn hk i hi => (ce_mem s1 (by omega_using [hn]) (by rw [hsp]; exact hk) i hi).trans (by rw [hm])
   obtain ⟨h1, h2, h3, h4, h5, _⟩ := hV
   simp only [kpkeEncK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp),
@@ -347,8 +347,8 @@ theorem kpkeDecAt_ok {L : Kem} (hK : KpkeOk L) {m s ct z : Ptr} (hs : NA s) (hc 
   have hC := H.nC
   simp only [kpkeDecK, State.withRegions_gpr, State.withRegions_mem, ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp),
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), hV.1, hV.2.1, hV.2.2.1, hm₂,
-    bytesAt_congr (ce_mem s1 (n := 384 * L.k) (by omega) (by rw [hsp]; exact H.kS)),
-    bytesAt_congr (ce_mem s1 (n := L.ctLen) (by omega) (by rw [hsp]; exact H.kC)), hm] at hq
+    bytesAt_congr (ce_mem s1 (n := 384 * L.k) (by omega_using [hS]) (by rw [hsp]; exact H.kS)),
+    bytesAt_congr (ce_mem s1 (n := L.ctLen) (by omega_using [hC]) (by rw [hsp]; exact H.kC)), hm] at hq
   exact hq
 
 theorem kpkeDecAt_tr {L : Kem} (hK : KpkeOk L) {m s ct z : Ptr} (hs : NA s) (hc : NA ct) (hz : NA z) :

@@ -44,7 +44,7 @@ theorem jointFixedEntry_fields_ok {K : WinCfg} {s : State} {base T : Addr} {size
   have ha' : nafMagnitude b≤2^31 := by
     have := b.isLt
     unfold nafMagnitude
-    split <;> omega
+    split <;> omega_using []
   rw [Joint.fixedEntry]
   apply WP.seq
   refine WP.mono_syms (nafSign_ok s h8) fun u ⟨hu,ku⟩ su => ?_
@@ -105,8 +105,8 @@ theorem fixedEntryEnv_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {x y : N
       (fixedEntryEnv K C.p E b x y K.E.z) (if b.toNat<128 then P else negPt P) ∧
       fixedEntryEnv K C.p E b x y K.E.z=1 := by
   have h := fixedLoadEnv_point (E:=E) hn hy hz hOne hp
-  have hxy : K.E.x≠K.E.y := by omega
-  have hzy : K.E.z≠K.E.y := by omega
+  have hxy : K.E.x≠K.E.y := by omega_using [hn, hy]
+  have hzy : K.E.z≠K.E.y := by omega_using [hy, hz, hxy]
   unfold fixedEntryEnv
   split
   · exact h

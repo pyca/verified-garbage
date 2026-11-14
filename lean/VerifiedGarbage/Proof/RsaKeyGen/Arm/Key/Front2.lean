@@ -36,8 +36,8 @@ variable {P : KP}
 theorem sub32_one' {W x : Nat} (hx : x < 2 ^ (32 * W)) :
     (if x < 1 then 0 else sub32 W x 1) = x - 1 := by
   split
-  · omega
-  · exact sub32_le (by omega) hx
+  · omega_arith
+  · exact sub32_le (by omega_arith) hx
 
 theorem primes_vp {E : State → Prop} : VP (S0 P E) primes (S1 P E) := by
   simp only [primes, List.cons_append, List.nil_append, List.append_assoc]
@@ -54,12 +54,12 @@ theorem primes_vp {E : State → Prop} : VP (S0 P E) primes (S1 P E) := by
     fun _ _ => by simp only [upd_self]; exact b2n_le' _).mono (fun _ _ h => h) fun σ s h =>
       h.mono (fun j hj => ⟨by mem_sub, ?_⟩) (fun d _ => absurd ‹d ∈ []› (by simp))
   have pv' := pv_lt P σ; have qv' := qv_lt P σ
-  have p8 : 2 ^ (8 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega)
+  have p8 : 2 ^ (8 * P.K) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [KP.W]; omega_using [])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp (config := {decide := true}) only [A1, A0, Aload, upd, ↓reduceIte, ite_b2n]
-  · exact sub32_one' (show qv P σ < _ by omega)
-  · exact sub32_one' (show pv P σ < _ by omega)
+  · exact sub32_one' (show qv P σ < _ by omega_using [qv', p8])
+  · exact sub32_one' (show pv P σ < _ by omega_using [pv', p8])
   · rfl
   · rfl
 

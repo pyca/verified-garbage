@@ -30,16 +30,16 @@ theorem lowerTwo_ok {s : State} {base : Addr} {size n : Nat}
   have sep := slot_le (n := n) (i := 5) (j := 7) (by decide)
   simp only [stride] at b5 b7 sep
   have fit : 2 < 2 ^ (64 * n) := Nat.lt_of_lt_of_le (by decide : 2 < 2 ^ 64)
-    (Nat.pow_le_pow_right (by decide) (by omega))
+    (Nat.pow_le_pow_right (by decide) (by omega_using [hn]))
   unfold Validate.lowerTwo Validate.accumulate
-  refine WP.seq (WP.mono (lessThanConstant_ok hs hn (by omega) (by omega) fit (.inl (by omega)))
+  refine WP.seq (WP.mono (lessThanConstant_ok hs hn (by omega_using [cb, hsize, b5]) (by omega_using [cb, hsize, b7]) fit (.inl (by omega_using [sep])))
     fun u ⟨Vu, Ku, Ou⟩ => ?_)
   simp only [List.cons_append, List.nil_append]
   refine wp_logicS (.inr rfl) rfl fun v uv => ?_
   refine wp_movS rfl fun w uw _ => ?_
   have Kw := (Ku.widen uv.keeps).widen uw.keeps
   refine WP.mono (andFlag_ok (Layout.field .mask) (hs.of_keeps Kw (by decide))
-    (by change 8248 ≤ size; omega)) fun t ⟨Vt, Kt, Ot⟩ => ?_
+    (by change 8248 ≤ size; omega_using [hsize])) fun t ⟨Vt, Kt, Ot⟩ => ?_
   refine ⟨?_, Kw.widen Kt, ?_⟩
   · rw [Vt, uw.gpr, uv.gpr, Vu]
     simp only [reduceCtorEq, ite_false, mask_not, Nat.not_lt]
@@ -47,7 +47,7 @@ theorem lowerTwo_ok {s : State} {base : Addr} {size n : Nat}
       unfold flagW
       rw [uw.mem, uv.mem]
       apply BitVec.eq_of_toNat_eq
-      exact Ou.w32 (.inr (by change slot n 7 + 8 * n ≤ 8244; omega)) (by decide)
+      exact Ou.w32 (.inr (by change slot n 7 + 8 * n ≤ 8244; omega_using [cb, b7])) (by decide)
     rw [F]
   · have Ow : Outside base (slot n 7) (8 * n) s.mem w.mem := by rw [uw.mem, uv.mem]; exact Ou
     exact (Outs.of_outside Ow (by simp)).trans (Outs.of_outside Ot (by simp))

@@ -19,7 +19,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SItZQEiLaUhMi2FQTItpWEyLcWBMi3loww=="
+.base64 "SItZQEiLaUhMi2FQTItpWEyLcWBMi3loxfh3ww=="
 .p2align 6"#,
     )
 }

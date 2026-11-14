@@ -44,14 +44,14 @@ theorem less8 (n : Nat) (hn : n < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt hn, Nat.shiftRight_eq_div_pow]
-  have hd : n / 2 ^ 6 < 2 ^ 58 := by omega
+  have hd : n / 2 ^ 6 < 2 ^ 58 := by omega_using [hn]
   by_cases h : n < 512
   · rw [ite_eq_left h]
-    have hb : n / 2 ^ 6 < 8 := by omega
-    omega
+    have hb : n / 2 ^ 6 < 8 := by omega_using [h]
+    omega_using [h]
   · rw [ite_eq_right h]
-    have hb : 8 ≤ n / 2 ^ 6 := by omega
-    omega
+    have hb : 8 ≤ n / 2 ^ 6 := by omega_using [h]
+    omega_using [hn, h]
 
 theorem check_ok (s : State) :
     WP isa (.block check) s fun u =>

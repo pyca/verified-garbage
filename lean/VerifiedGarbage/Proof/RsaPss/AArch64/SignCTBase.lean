@@ -52,8 +52,8 @@ theorem n0 : s.mem (s.gpr .x2) = a.mem (a.gpr .x2) := by
   have hk := h.1.k1
   have e3 := h.gpr (r := .x3) (by decide)
   have := h.2.bn
-  rw [bytesAt_cons s.mem (s.gpr .x2) (k := (s.gpr .x3).toNat) (by omega),
-    bytesAt_cons a.mem (a.gpr .x2) (k := (a.gpr .x3).toNat) (by rw [← e3]; omega)] at this
+  rw [bytesAt_cons s.mem (s.gpr .x2) (k := (s.gpr .x3).toNat) (by omega_using [hk]),
+    bytesAt_cons a.mem (a.gpr .x2) (k := (a.gpr .x3).toNat) (by rw [← e3]; omega_using [hk])] at this
   exact (List.cons.inj this).1
 
 theorem scr : scr s = scr a := h.2.args 12 (by decide)

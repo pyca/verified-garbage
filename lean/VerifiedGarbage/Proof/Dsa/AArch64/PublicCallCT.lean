@@ -64,7 +64,7 @@ theorem powerCall_load {p : PowerCallPublic × List Byte} {s : State} (h : Power
   have hbw : (bb.length + 7) / 8 ≤ p.1.x.wx := hbl ▸ p.1.baseFits
   have hb31 : bb.length < 2 ^ 31 := by
     have hw48 : p.1.x.wx ≤ 48 := p.1.width48
-    omega
+    omega_using [hbw, hw48]
   refine WP.mono (load_ok hc p.1.lower p.1.fits p.1.upper (by decide) (by decide) (by decide) hp hl hb hb1 hb31 hbw)
     fun t ⟨hct, _, hf, hk⟩ => ?_
   have hfa : Arrays (off p.1.x.B p.1.x.o) p.1.x.wx [aX] s.mem t.mem :=
@@ -73,7 +73,7 @@ theorem powerCall_load {p : PowerCallPublic × List Byte} {s : State} (h : Power
   have hz := hc.good.scr.nowrap
   have hmt : ModCtx t (off p.1.x.B p.1.x.o) (slot p.1.x.wx 8) p.1.x.wx p.1.minv p.1.modulus := by
     refine ⟨hct.good, (hfa.wv_of_not_mem (by decide) (by decide) hz).trans hm.modulus, ?_⟩
-    rw [hfa.word0_of_not_mem (by decide) (by decide) hz (by have := p.1.lower; omega)]
+    rw [hfa.word0_of_not_mem (by decide) (by decide) hz (by have := p.1.lower; omega_using [hb1, hbw])]
     exact hm.inverse
   refine ⟨⟨hct, hmt, (hfa.wv_of_not_mem (by decide) (by decide) hz).trans hone,
     (work_parent hc hfw (by decide)).trans hep, (work_parent hc hfw (by decide)).trans hel,
@@ -95,7 +95,7 @@ theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
       hp, hl, hbl, hb, hbl ▸ p.1.basePositive, ?_, hbl ▸ p.1.baseFits⟩
     have hbw : (bb.length + 7) / 8 ≤ p.1.x.wx := hbl ▸ p.1.baseFits
     have hw48 : p.1.x.wx ≤ 48 := p.1.width48
-    omega
+    omega_using [hbw, hw48]
   · exact two_map (fun p : PowerCallPublic × List Byte => (p.1.toPowerPublic, p.2)) (fun _ _ h => h) (powerCore_ct M)
 
 end VG.Proof.Dsa.AArch64.PublicPower

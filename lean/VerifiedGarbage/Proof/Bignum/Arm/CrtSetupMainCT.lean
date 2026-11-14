@@ -37,7 +37,7 @@ theorem crt_setupMain_ct {base : BitVec 32} {len w : Nat} (hw : 2 ≤ w) (hw' : 
     rintro t ⟨layout, width, ptr, _, rest⟩
     have shape : CrtLayoutState base len w t.mem := ⟨layout, width⟩
     exact ⟨h.workspace.congr rest.wr, ptr, shape.nativeCount (h.workspace.congr rest.wr)⟩
-  have size : 52 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 52 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   exact (pair_posts first wp).seq (crt_links_ct size)
 
 end VG.Proof.Bignum.Arm

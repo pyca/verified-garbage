@@ -157,8 +157,8 @@ theorem kept_wsR (w : Nat) :
   · decide
   · intro i hi
     have := kept_lt i hi
-    have : 256 ≤ inner w := by simp only [inner, slot, hdrBytes]; omega
-    exact Or.inl (by simp only; omega)
+    have : 256 ≤ inner w := by simp only [inner, slot, hdrBytes]; omega_using []
+    exact Or.inl (by simp only; omega_arith)
 
 /-- The setup's ranges miss the slots the pieces keep. -/
 theorem kept_setupR (w : Nat) : ∀ r ∈ setupR w, ∀ i ∈ keptSlots, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
@@ -170,8 +170,8 @@ theorem kept_setupR (w : Nat) : ∀ r ∈ setupR w, ∀ i ∈ keptSlots, 8 * i +
   · decide
   · intro i hi
     have := kept_lt i hi
-    have : 256 ≤ inner w := by simp only [inner, slot, hdrBytes]; omega
-    exact Or.inl (by simp only; omega)
+    have : 256 ≤ inner w := by simp only [inner, slot, hdrBytes]; omega_using []
+    exact Or.inl (by simp only; omega_arith)
 
 theorem hdr_in (D : FD) (hs : ∀ q ∈ D.hs, q.1 ∈ argSlots) : ∀ q ∈ D.hdr, q.1 ∈ [sDom, sDomLen, sK] ++ argSlots := by
   intro q hq

@@ -217,7 +217,7 @@ theorem ckCtx_of {s : State} (h : ckA.pre s) : CkCtx s := by
       bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _,
       bytesAt_length _ _ _, by simp only [ckIn]; omega_arith, by simp only [ckIn]; omega_arith, by rfl,
       by simp only [ckIn]; omega_arith, by simp only [ckIn]; omega_arith, by simp only [ckIn]; omega_arith,
-      by simp only [ckIn, wW, wk]; omega_arith⟩, hs,
+      by simp only [ckIn, wW, wk]; omega_arith, rfl⟩, hs,
     fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
       have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega_arith) (by omega_arith))

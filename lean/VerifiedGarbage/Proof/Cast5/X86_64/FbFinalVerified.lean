@@ -42,7 +42,8 @@ core, with the specification's results (`Proof.Modes.cfbEncFinal_of_bytes`, …,
 `Proof.Modes.ofbFinal_of_bytes`). `cfbEncryptFinal_verified`, …: each is
 correct and constant time, by the taint analysis, as the whole-block functions
 are (`FbVerified.lean`); `cfbEncryptFinal_framed`, … run them with their
-working space on the stack, zeroed on return.
+working space on the stack, which the scrub after them zeroes
+(`Proof.Cast5.X86_64.Scrub`).
 -/
 
 @[expose] public section
@@ -231,7 +232,7 @@ theorem finalFrame_sat (post : Spec.Cast5.cfbFinalSig.Post X86_64.abi.ptrBits) :
 
 /-- The final CFB64 encryption with its working space on the stack. -/
 theorem cfbEncryptFinal_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cfbEncryptFinal)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cfbEncryptFinal)
       (Proof.Cast5.cfbEncryptFinalRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbFinalPre X86_64.abi.ptrBits)
@@ -241,7 +242,7 @@ theorem cfbEncryptFinal_framed :
 
 /-- The final CFB64 decryption with its working space on the stack. -/
 theorem cfbDecryptFinal_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 cfbDecryptFinal)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 cfbDecryptFinal)
       (Proof.Cast5.cfbDecryptFinalRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbFinalPre X86_64.abi.ptrBits)
@@ -279,7 +280,7 @@ theorem ofbFinal_verified :
 
 /-- The final OFB function with its working space on the stack. -/
 theorem ofbFinal_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 29 ofbFinal)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 ofbFinal)
       (Proof.Cast5.ofbFinalRoundsContract (X86_64.abi.withConsts ecbConsts) 240) :=
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.ofbFinalPre X86_64.abi.ptrBits)

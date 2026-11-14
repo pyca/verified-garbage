@@ -36,9 +36,9 @@ theorem bytesAt_of_words32 {m m' : Mem} {p p' : Addr}
   have ha : ∀ q : Addr, q + BitVec.ofNat 64 i = q + BitVec.ofNat 64 (4 * (i / 4)) + BitVec.ofNat 64 (i % 4) := by
     intro q
     have e : BitVec.ofNat 64 i = BitVec.ofNat 64 (4 * (i / 4)) + BitVec.ofNat 64 (i % 4) := by
-      rw [BitVec.ofNat_add_ofNat]; congr 1; omega
+      rw [BitVec.ofNat_add_ofNat]; congr 1; omega_using []
     rw [e, BitVec.add_assoc]
-  have hk : i / 4 < 16 := by omega
+  have hk : i / 4 < 16 := by omega_using [hi']
   have hj : i % 4 < 4 := Nat.mod_lt _ (by decide)
   rw [ha p', ha p, readW_byte32 m' _ hj, readW_byte32 m _ hj, h _ hk]
 
@@ -71,22 +71,22 @@ theorem copyWords_prefix {t : State} {p : BitVec 32} (he : t.gpr .esp = E) (hp :
   | 0, _ => WP.block_nil ⟨rfl, rfl, fun _ _ => rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | k + 1, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (copyWords_prefix he hp hf hw hpf hsrc hd k (by omega)) fun u hu => ?_
+    refine WP.mono (copyWords_prefix he hp hf hw hpf hsrc hd k (by omega_using [hk])) fun u hu => ?_
     have ue : u.gpr .esp = E := (hu.regs _ (by decide)).trans he
     have up : u.gpr .ecx = p := (hu.regs _ (by decide)).trans hp
-    have ap : addr p (4 * k) = p.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega)
-    have aE : addr E (192 + 4 * k) = E.setWidth 64 + BitVec.ofNat 64 (192 + 4 * k) := addr_eq (by omega)
+    have ap : addr p (4 * k) = p.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_using [hpf, hk])
+    have aE : addr E (192 + 4 * k) = E.setWidth 64 + BitVec.ofNat 64 (192 + 4 * k) := addr_eq (by omega_using [hf, hk])
     have ur : InRegions (u.rd ++ u.wr) (addr p (4 * k)) 4 := by
       refine ⟨_, by rw [hu.rd, hu.wr]; exact hsrc, ?_⟩
       rw [ap]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
     have uw : InRegions u.wr (addr E (192 + 4 * k)) 4 := by
       refine ⟨_, by rw [hu.wr]; exact hw, ?_⟩
       rw [aE]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
     have same : u.mem.readW (addr p (4 * k)) 32 = t.mem.readW (addr p (4 * k)) 32 := by
       rw [ap]
-      refine hu.frame.readW (r := ⟨p.setWidth 64, 64⟩) (Offset.contains_base _ (by omega) (by omega)) ?_
+      refine hu.frame.readW (r := ⟨p.setWidth 64, 64⟩) (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])) ?_
         (by decide)
       simp only [List.mem_singleton]
       rintro r rfl
@@ -100,14 +100,14 @@ theorem copyWords_prefix {t : State} {p : BitVec 32} (he : t.gpr .esp = E) (hp :
       fun r h => by rw [hw'.gpr, hv.other r h, hu.regs r h], ?_, fun j hj => ?_⟩
     · rw [mw, aE]
       exact hu.frame.writeW (List.mem_singleton_self _) _
-        (Offset.contains _ (by omega) (by omega) (by decide))
+        (Offset.contains _ (by omega_using []) (by omega_using [hk]) (by decide))
     · rw [mw]
       by_cases hjk : j = k
       · subst j; exact Mem.readW_writeW_self32 _ _ _
       · rw [Mem.readW_writeW_sep (a := addr E (192 + 4 * j)) (b := addr E (192 + 4 * k)) ?_ (by decide)]
-        · exact hu.words j (by omega)
-        · rw [aE, addr_eq (by omega)]
-          exact Offset.sep _ (by omega) (by omega) (by omega)
+        · exact hu.words j (by omega_using [hj, hjk])
+        · rw [aE, addr_eq (by omega_using [hf, hk, hj])]
+          exact Offset.sep _ (by omega_using [hjk]) (by omega_using [hk, hj]) (by omega_using [hk])
 
 /-- `copyDigestWords` copies the 64 bytes at ECX to frame offset 192. -/
 theorem copyWords_ok {t : State} (hc : Ctx E g m₀ R W t) (hf : E.toNat + 256 ≤ 2 ^ 32)
@@ -126,7 +126,7 @@ theorem copyWords_ok {t : State} (hc : Ctx E g m₀ R W t) (hf : E.toNat + 256 �
       exact .inl (Offset.sub_base _ (by decide))
   · refine bytesAt_of_words32 fun k hk => ?_
     have h := hu.words k hk
-    rw [addr_eq (by omega), addr_eq (by omega), BitVec.ofNat_add] at h
+    rw [addr_eq (by omega_using [hf, hk]), addr_eq (by omega_using [hpf, hk]), BitVec.ofNat_add] at h
     rw [BitVec.add_assoc]
     exact h
 

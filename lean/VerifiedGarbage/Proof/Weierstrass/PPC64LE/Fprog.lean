@@ -59,7 +59,7 @@ theorem Inv.update {M : Mod} {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Pr
     have hxS := hI.sl x hx
     have h1 := hL.le x hxS
     have h2 := hL.apart x o hxS ho hxo
-    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega)
+    refine outs_wordsVal hk.mem (fun r hr => ?_) (by omega_using [hown, h1])
     simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -107,11 +107,11 @@ theorem fop_ok {M : Mod} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus} [NeZe
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (addCall_ok hM hI.ws (hle o hS.1) (hle a hS.2.1) (hle b hS.2.2)
-        (by rw [hk]; omega))
+        (by rw [hk]; omega_using [hA, hB]))
       fun s' ⟨K, heq⟩ => ?_
     rw [hk] at K heq
     refine ⟨.of_call K, hI.update hL hS.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -123,8 +123,8 @@ theorem fop_ok {M : Mod} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus} [NeZe
       fun s' ⟨K, heq⟩ => ?_
     rw [hk] at K heq
     refine ⟨.of_call K, hI.update hL hS.1 (.of_call K) ?_ ?_⟩
-    · rw [heq]; exact Nat.mod_lt _ (by omega)
-    · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
 
 /-- A field program. -/
 theorem fprog_ok {M : Mod} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m]

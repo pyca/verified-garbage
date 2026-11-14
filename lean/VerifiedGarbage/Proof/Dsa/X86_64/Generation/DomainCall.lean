@@ -25,7 +25,7 @@ theorem parameters_callEntry {p : ParametersInput} {s : State} (h : ParametersPr
     rw [p.paramsLength]
     have hl := p.lengths
     unfold Spec.Dsa.lengthsValid at hl
-    omega
+    omega_using [hl]
   refine ⟨h.scratch.congr rfl, ?_, ?_, ?_, ?_⟩
   · exact (State.callEntry_gpr s (by decide)).trans h.base
   · exact (State.callEntry_gpr s (by decide)).trans h.pLength
@@ -36,7 +36,7 @@ theorem parameters_callEntry {p : ParametersInput} {s : State} (h : ParametersPr
     rw [domainEntry_frame s _ (by
       intro r hr hrx
       obtain rfl := List.mem_singleton.mp hr
-      exact hp _ hrx (Offset.contains_base _ (by omega) (by omega))) ]
+      exact hp _ hrx (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hlen, hi]))) ]
     exact h.paramsSource.val i hi
 
 theorem domainCall_ok (M : Mont) (Sq : MontS) {name : String} {p : ParametersInput} {s : State}
@@ -55,7 +55,7 @@ theorem domainCall_ok (M : Mont) (Sq : MontS) {name : String} {p : ParametersInp
     apply frame a
     have hn := ha ⟨p.base, usedBytes⟩ (by simp)
     change ¬ ofs p.base a < usedBytes at hn
-    omega
+    omega_using [hn]
   have hr : u.mem.readW (s.gpr .rsp - 8) 64 = s.unknowns 0 := by
     rw [fr.readW (r := domainReturn s) (below_call _ (by decide) (by decide))
       (by intro r h; obtain rfl := List.mem_singleton.mp h; exact hs) (by decide),

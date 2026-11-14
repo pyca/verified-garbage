@@ -18,7 +18,7 @@ theorem combine {a0 a1 a2 a3 a4 a5 a6 a7 p0 p1 p2 p3 p4 p5 p6 p7 h0 h1 h2 h3 h4 
     (e8 : l8 + 2 ^ 64 * ct + 2 ^ 64 * ot = h7 + c7 + o6) :
     l0 + 2 ^ 64 * l1 + 2 ^ 128 * l2 + 2 ^ 192 * l3 + 2 ^ 256 * l4 + 2 ^ 320 * l5 + 2 ^ 384 * l6 + 2 ^ 448 * l7 + 2 ^ 512 * l8 + 2 ^ 576 * (ct + ot) =
       a0 + p0 + 2 ^ 64 * (a1 + p1) + 2 ^ 128 * (a2 + p2) + 2 ^ 192 * (a3 + p3) + 2 ^ 256 * (a4 + p4) + 2 ^ 320 * (a5 + p5) + 2 ^ 384 * (a6 + p6) + 2 ^ 448 * (a7 + p7) := by
-  omega
+  omega_using [e0, e1, e2, e3, e4, e5, e6, e7, e8]
 theorem extend_blocks {P R L C X T U N O C' A B : Nat}
     (h : L + P * C = X + T + U * N) (h' : O + R * C' = C + A + U * B) :
     L + P * O + P * R * C' = X + (T + P * A) + U * (N + P * B) := by
@@ -34,9 +34,9 @@ theorem extend_high {R P X Y C D U N H : Nat}
     R * (X + P * H + P * C) = Y + (P * R) * H + P * D + U * N := by
   grind
 theorem radix_bound {q P u R : Nat} (hq : q < P) (hu : u < R) : q + P * u < P * R := by
-  have h := Nat.mul_le_mul_left P (show u + 1 ≤ R by omega)
+  have h := Nat.mul_le_mul_left P (show u + 1 ≤ R by omega_using [hu])
   rw [Nat.mul_add, Nat.mul_one] at h
-  omega
+  omega_using [hq, h]
 
 theorem extend_tiles {P R X Y T q u N : Nat}
     (h : P * X = T + q * N) (h' : R * Y = X + u * N) :

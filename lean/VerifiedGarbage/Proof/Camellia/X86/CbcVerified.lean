@@ -80,11 +80,11 @@ theorem keyArgs_of {post : State → State → Prop} (d : Dir) {s : State} (h : 
   obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn, sD, sV, sS, sA, sE⟩ := h
   have inA : ∀ i < 6, InRegions (s.rd ++ s.wr) (s.ea (VG.Impl.Aes.X86.argOp i)) 4 := fun i hi =>
     ⟨⟨argAddr s 0, 24⟩, by rw [hrd]; simp, by
-      rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega) hi]
-      exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+      rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega_using [fE]) hi]
+      exact VG.Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have subA : ∀ i < 6, Region.Sub ⟨s.ea (VG.Impl.Aes.X86.argOp i), 4⟩ ⟨argAddr s 0, 24⟩ := fun i hi => by
-    rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega) hi]
-    exact VG.Offset.sub_base _ (by omega)
+    rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega_using [fE]) hi]
+    exact VG.Offset.sub_base _ (by omega_using [hi])
   refine ⟨arg s 0, inA 0 (by decide), rfl, inA 1 (by decide), ?_, hRn, rfl, by rw [hrd]; simp, fK,
     fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, ?_⟩
   · show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat

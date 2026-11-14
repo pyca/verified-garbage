@@ -35,17 +35,17 @@ theorem flagsRows_ok {v blocks : Nat} {σ s : State} {L : Nat → List Zq}
     (hp : Pre v σ) (h : Rows v blocks σ L s) :
     WP isa (.block (flagsCode (v-1))) s fun t => Rows v blocks σ L t ∧
       t.gpr .x27=foldedFlags (fun k => s.mem.readW (countP σ k) 64) (v-1) := by
-  have hv : 0<v ∧ v≤4 := by have:=hp.streams; omega
+  have hv : 0<v ∧ v≤4 := by have:=hp.streams; omega_using [this]
   have hr (i : Nat) (hi : i<v) : InRegions (s.rd++s.wr) (countP σ i) 8 :=
-    in_scr_rd hp h.env.wr (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega)
+    in_scr_rd hp h.env.wr (by unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.counts; omega_using [hv, hi])
   unfold flagsCode
   refine wp_ldrx (a := countP σ 0) (by decide) (by rw [h.env.x19]; rfl)
     (hr 0 hv.1) fun a ha h27 => ?_
-  refine WP.mono (flagsTailN_ok (n := v-1) (by omega) (s := a) (b := scr σ)
+  refine WP.mono (flagsTailN_ok (n := v-1) (by omega_using [hv]) (s := a) (b := scr σ)
     (by rw [ha.get .x19]; exact h.env.x19)
     (C := fun k => s.mem.readW (countP σ k) 64)
     (fun i _ => by rw [ha.mem]; rfl) h27
-    (fun i hi => by rw [ha.rd,ha.wr]; exact hr i (by omega))) fun t ⟨ht,he⟩ => ?_
+    (fun i hi => by rw [ha.rd,ha.wr]; exact hr i (by omega_using [hv, hi]))) fun t ⟨ht,he⟩ => ?_
   refine ⟨h.of_control ((ha.trans ht).mono (by decide :
     [Reg.x27]++[.x6,.x27] ⊆ [.x6,.x27])) ?_,he⟩
   intro r hrmem
@@ -76,19 +76,19 @@ theorem flagsSemantic_ok {v blocks : Nat} {σ s : State} {L : Nat → List Zq}
   · rw [hf]
     apply foldedFlags_bound
     intro k hk
-    have hkv : k<v := by have:=hp.streams; omega
+    have hkv : k<v := by have:=hp.streams; omega_using [hk, this]
     rw [h.counts k hkv]
-    omega
+    omega_using []
   · rw [hf,foldedFlags_zero]
     constructor
     · intro hz k hk
-      have he := congrArg BitVec.toNat (hz k (by have:=hp.streams; omega))
+      have he := congrArg BitVec.toNat (hz k (by have:=hp.streams; omega_using [hk]))
       rw [h.counts k hk] at he
       have := h.length k hk
       change 256-(L k).length=0 at he
-      omega
+      omega_using [this, he]
     · intro hz k hk
-      have hkv : k<v := by have:=hp.streams; omega
+      have hkv : k<v := by have:=hp.streams; omega_using [hk, this]
       apply BitVec.eq_of_toNat_eq
       rw [h.counts k hkv,hz k hkv]
       rfl

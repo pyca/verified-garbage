@@ -20,11 +20,11 @@ theorem entrySave_ok {s : State} {base : Addr} {size : Nat}
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Saved t.mem (off base) s.gpr Crt.savedRegisters ∧ Frame [⟨base, size⟩] s.mem t.mem := by
   change WP isa (.block (saveCode .eax Crt.savedRegisters ++ [])) s _
-  apply save_ofNat_ok Crt.savedRegisters saved_fits (by omega)
+  apply save_ofNat_ok Crt.savedRegisters saved_fits (by omega_using [hf, hs])
   · intro p hp
     rw [hb]
-    exact ⟨_, hw, Offset.contains_base base (by have := saved_fits.1 p hp; omega)
-      (by have := saved_fits.1 p hp; omega)⟩
+    exact ⟨_, hw, Offset.contains_base base (by have := saved_fits.1 p hp; omega_using [hs, this])
+      (by have := saved_fits.1 p hp; omega_using [this])⟩
   · intro t U
     refine WP.block_nil ⟨U.gpr, U.rd, U.wr, ?_, ?_⟩
     · rw [U.mem, hb]
@@ -32,8 +32,8 @@ theorem entrySave_ok {s : State} {base : Addr} {size : Nat}
     · rw [U.mem, hb]
       apply saveMem_frame (by simp : (⟨base, size⟩ : Region) ∈ [⟨base, size⟩])
       intro p hp
-      exact Offset.contains_base base (by have := saved_fits.1 p hp; omega)
-        (by have := saved_fits.1 p hp; omega)
+      exact Offset.contains_base base (by have := saved_fits.1 p hp; omega_using [hs, this])
+        (by have := saved_fits.1 p hp; omega_using [this])
 
 theorem entryRestore_ok {s : State} {base : Addr} {size : Nat} {g : Reg → BitVec 32}
     (hs : Scr s base size) (hz : 48 ≤ size)
@@ -44,11 +44,11 @@ theorem entryRestore_ok {s : State} {base : Addr} {size : Nat} {g : Reg → BitV
   apply restoreBase_ok _ (by decide)
   · intro p hp
     have hb := saved_fits.1 p hp
-    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega), hs.edi]
-    exact hs.read (by omega)
+    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega_using [hz, hb, this]), hs.edi]
+    exact hs.read (by omega_using [hz, hb])
   · intro p hp
     have hb := saved_fits.1 p hp
-    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega), hs.edi]
+    rw [addr_eq (by rw [hs.edi_toNat]; have := hs.nowrap; omega_using [hz, hb, this]), hs.edi]
     exact saved p hp
   · intro t H
     exact WP.block_nil H

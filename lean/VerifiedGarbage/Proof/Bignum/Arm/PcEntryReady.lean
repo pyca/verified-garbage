@@ -28,7 +28,7 @@ theorem pc_entry_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
   have spNat : (pcPushed s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' h.stackFit
   have argAddr : off (State.addr (pcPushed s).sp) 56 = State.addr s.sp := by
     change State.addr (pcPushed s).sp + BitVec.ofNat 64 56 = State.addr s.sp
-    rw [← addr_add (a := (pcPushed s).sp) (k := 56) (by rw [spNat]; have := s.sp.isLt; omega)]
+    rw [← addr_add (a := (pcPushed s).sp) (k := 56) (by rw [spNat]; have := s.sp.isLt; omega_using [])]
     change State.addr (s.sp - BitVec.ofNat 32 56 + BitVec.ofNat 32 56) = _
     rw [BitVec.sub_add_cancel]
   have stackWrite : (⟨State.addr (pcPushed s).sp, 56⟩ : Region) ∈ (pcPushed s).wr := List.mem_cons_self
@@ -42,7 +42,7 @@ theorem pc_entry_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
     rw [argAddr, pushFrame.readW (r := ⟨State.addr s.sp, 8⟩) (by simp [Region.Contains])
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackArgs.symm) (by decide)]
     exact h.workspaceArg
-  refine WP.mono (pcEntry_ok (pcPushed s) (by rw [spNat]; have := h.argFit; omega) stackWrite argRead arg) ?_
+  refine WP.mono (pcEntry_ok (pcPushed s) (by rw [spNat]; have := h.argFit; omega_using [this]) stackWrite argRead arg) ?_
   rintro t ⟨ptr, source, count, mem, rest⟩
   obtain ⟨savedBase, savedOutput, outside, frameEntry⟩ := pcEntry_memory mem
   have savedAll := pc_push_saved s h.stackFit
@@ -60,7 +60,7 @@ theorem pc_entry_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
       obtain ⟨r, hr, hc⟩ := h.writable
       exact ⟨r, List.mem_cons_of_mem _ hr, hc⟩
     · refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · rw [rest.sp, spNat]; have := s.sp.isLt; have := h.stackFit; omega
+      · rw [rest.sp, spNat]; have := s.sp.isLt; have := h.stackFit; omega_using []
       · rw [rest.rd, rest.wr, rest.sp]
         exact ⟨_, List.mem_append_right _ stackWrite, by simp [Region.Contains]⟩
       · rw [rest.sp]

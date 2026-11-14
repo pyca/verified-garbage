@@ -25,7 +25,7 @@ theorem modulusRead_ok (s : State) {k : Nat} (hk : 0 < k)
   have readable (i : Nat) (hi : i < k) :
       InRegions (s.rd ++ s.wr) (byteAddr (s.gpr .esi) + BitVec.ofNat 64 i) 1 := by
     obtain ⟨r, hr, hc⟩ := read
-    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)⟩
+    exact ⟨r, hr, hc.byte (by rw [Mem.sub_ofNat_toNat _ (by omega_using [fit, hi])]; omega_using [hi])⟩
   have first : InRegions (s.rd ++ s.wr) (byteAddr (s.gpr .esi)) 1 := by
     simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using readable 0 hk
   unfold modulusRead
@@ -41,12 +41,12 @@ theorem modulusRead_ok (s : State) {k : Nat} (hk : 0 < k)
       u₂.other .ecx (by decide), u₁.other .ecx (by decide), count]
     change s.gpr .esi + BitVec.ofNat 32 k - BitVec.ofNat 32 1 = _
     rw [BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg,
-      Offset.ofNat_sub_ofNat (by omega)]
+      Offset.ofNat_sub_ofNat (by omega_using [hk])]
   have addr : s₄.ea ⟨.ebx, 0⟩ = byteAddr (s.gpr .esi) + BitVec.ofNat 64 (k - 1) := by
     simp only [State.ea, BitVec.add_zero]
     rw [ptr]
-    exact byteAddr_add (by omega)
-  refine wp_loadByte addr (by rw [K.2.1, K.2.2]; exact readable (k - 1) (by omega))
+    exact byteAddr_add (by omega_using [fit])
+  refine wp_loadByte addr (by rw [K.2.1, K.2.2]; exact readable (k - 1) (by omega_using [hk]))
     fun t u₅ => WP.block_nil ?_
   refine ⟨?_, ?_, ?_, K.widen u₅.keeps⟩
   · rw [u₅.other .eax (by decide), u₄.other .eax (by decide), u₃.other .eax (by decide),

@@ -60,13 +60,13 @@ theorem doubles_trace (v : g.Valid) :
       subst eq
       have sp := S.caller.sp
       have St : VG.Proof.RsaKeyGen.X86.Sieve.StackContext (p - 20#32) (allocFrame 20 s) := by
-        rw [← sp]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; have := S.caller.low; omega)
+        rw [← sp]; exact VG.Proof.RsaKeyGen.X86.FilterStack.allocated_context (by rw [sp]; have := S.caller.low; omega_using [this])
       have C := S.context
       have Ci : Context g (allocFrame 20 s) :=
         ⟨⟨List.mem_cons_of_mem _ C.ws.wr, C.ws.nowrap⟩, by rw [PtrAt, allocFrame_gpr _ _ (by decide)]; exact C.base,
           C.width, C.stride, C.pointers⟩
       exact WP.mono (doublesArgs_ok v Ci St apart) fun b ⟨Cb, _, _, Sb, saved, count, _⟩ =>
-        ⟨Cb, Sb, saved, count, by have := v.maxWidth; omega⟩)
+        ⟨Cb, Sb, saved, count, by have := v.maxWidth; omega_using [this]⟩)
   exact ⟨(RelCT.seq setup (doublings_trace v apart g.w) _ _ _ _ _ _ ⟨⟨s₁, S₁, e₁⟩, ⟨s₂, S₂, e₂⟩⟩ E G).1, trivial⟩
 
 
@@ -81,7 +81,7 @@ theorem r2_trace {mont : Prog isa} {name : String}
     RelCT isa (fun s t => PreparedR2.Input g capacity p s ∧ PreparedR2.Input g capacity p t) (r2 name mont)
       (fun u z => Constants.Input g capacity p u ∧ Constants.Input g capacity p z) := by
   refine withRuns (R := fun _ _ => True) ?_ fun s ⟨c, S, odd, top⟩ =>
-    WP.mono (r2_ok verified noSp stack v length S odd top) fun _ ⟨T, value, _⟩ => ⟨c, T, odd, by omega, value⟩
+    WP.mono (r2_ok verified noSp stack v length S odd top) fun _ ⟨T, value, _⟩ => ⟨c, T, odd, by omega_using [odd], value⟩
   unfold r2
   have seedT : RelCT isa (fun s t => PreparedR2.Input g capacity p s ∧ PreparedR2.Input g capacity p t) seed
       (fun u z => Seeded g capacity p u ∧ Seeded g capacity p z) :=
@@ -91,7 +91,7 @@ theorem r2_trace {mont : Prog isa} {name : String}
       (fun u z => PreparedR2.SquareInput g capacity p u ∧ PreparedR2.SquareInput g capacity p z) :=
     withRuns ((doubles_trace v).mono (fun _ _ ⟨⟨c, S, _⟩, ⟨d, T, _⟩⟩ => ⟨⟨c, S⟩, ⟨d, T⟩⟩) (fun _ _ H => H))
       fun s ⟨c, S, odd, top, value⟩ => WP.mono (doubles_ok v S odd top value) fun _ ⟨T, V, _⟩ =>
-        ⟨c, T, odd, by rw [V]; exact Nat.mod_lt _ (by omega)⟩
+        ⟨c, T, odd, by rw [V]; exact Nat.mod_lt _ (by omega_using [odd])⟩
   refine RelCT.seq (RelCT.seq seedT (RelCT.seq doublesT ((PreparedR2.squares_pair verified noSp stack v length 5).mono
     (fun s t ⟨S, T⟩ => ⟨held_pair (let ⟨c, S, _⟩ := S; ⟨c, S⟩) (let ⟨c, T, _⟩ := T; ⟨c, T⟩), S, T⟩)
     (fun _ _ H => H.1)))) ?_

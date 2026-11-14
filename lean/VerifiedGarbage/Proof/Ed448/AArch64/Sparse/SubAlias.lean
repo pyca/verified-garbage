@@ -22,8 +22,8 @@ private theorem futureWord {base:Addr} {m m':Mem} {o a i:Nat}
     (h:Outside base o (8*i) m m') (hi:i<8) (ha:a+64≤8192)
     (hsep:o=a ∨ o+64≤a ∨ a+64≤o) : word m' base (a+8*i)=word m base (a+8*i) := by
   apply h.word
-  · rcases hsep with rfl | hsep | hsep <;> omega
-  · omega
+  · rcases hsep with rfl | hsep | hsep <;> omega_arith
+  · omega_using [hi, ha]
 
 theorem subAlias_ok {s:State} {base:Addr} (hs:Scr s base) {o a b:Nat}
     (ho:o+64≤8192) (ha:a+64≤8192) (hb:b+64≤8192)
@@ -49,15 +49,15 @@ theorem subAlias_ok {s:State} {base:Addr} (hs:Scr s base) {o a b:Nat}
     have u2:u.gpr .x2=K4:=(ku.1 _ (by decide)).trans t2
     refine WP.mono (subStep_ok hu hi ho ha hb ho8 ha8 hb8 u0 u2) fun v ⟨vm,kv⟩ => ?_
     refine ⟨fun j hj => ?_,?_,ku.trans kv⟩
-    · rw [vm,VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega) (by omega) (by omega) (by omega)]
+    · rw [vm,VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega_using [ho, hi]) (by omega_using [ho, hi, hj]) (by omega_using [ho8]) (by omega_using [ho8])]
       by_cases he:j=i
       · subst j
         rw [ite_eq_left rfl,futureWord fo hi ha hoa,futureWord fo hi hb hob]
-      · rw [ite_eq_right (by omega)]
-        exact uv j (by omega)
+      · rw [ite_eq_right (by omega_using [he])]
+        exact uv j (by omega_using [hj, he])
     · intro x hx
-      rw [vm,VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega) x (by omega)]
-      exact fo x (by omega)
+      rw [vm,VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega_using [ho, hi]) x (by omega_using [hx])]
+      exact fo x (by omega_using [hx])
   refine WP.mono hloop fun u ⟨uv,fo,ku⟩ => ?_
   refine ⟨fun j hj => ?_,?_,(tk.mono (by decide)).trans (ku.mono (by decide))⟩
   · rw [uv j hj,tm]
@@ -87,9 +87,9 @@ theorem subAliasE {s:State} {base:Addr} (hs:Scr s base)
     · exact Or.inl (congrArg (fun x => VG.Impl.X448.AArch64.slot x.val) h)
     · exact Or.inr (VG.Proof.X448.AArch64.Fast.slot_sep64 h)
   refine WP.mono (subAlias_ok hs
-    (by have := VG.Proof.X448.AArch64.Fast.slot_mem o;omega)
-    (by have := VG.Proof.X448.AArch64.Fast.slot_mem a;omega)
-    (by have := VG.Proof.X448.AArch64.Fast.slot_mem b;omega)
+    (by have := VG.Proof.X448.AArch64.Fast.slot_mem o;omega_using [this])
+    (by have := VG.Proof.X448.AArch64.Fast.slot_mem a;omega_using [this])
+    (by have := VG.Proof.X448.AArch64.Fast.slot_mem b;omega_using [this])
     (VG.Proof.X448.AArch64.Weak.slot_aligned o) (VG.Proof.X448.AArch64.Weak.slot_aligned a)
     (VG.Proof.X448.AArch64.Weak.slot_aligned b) (sep o a) (sep o b)) fun t ⟨tv,fo,tk⟩ => ?_
   have tl:∀ i<8,limbs t.mem base (VG.Impl.X448.AArch64.slot o.val) i=
@@ -100,7 +100,7 @@ theorem subAliasE {s:State} {base:Addr} (hs:Scr s base)
     rw [tv i hi,VG.Proof.Curve448.AArch64.Fast.diff_word _ _ i (ha i hi) (hb' i hi)]
     rfl
   have fm:VG.Proof.X448.AArch64.FieldMem base (VG.Impl.X448.AArch64.slot o.val) s.mem t.mem:=
-    VG.Proof.X448.AArch64.FieldMem.output (fo.mono (Nat.le_refl _) (by omega))
+    VG.Proof.X448.AArch64.FieldMem.output (fo.mono (Nat.le_refl _) (by omega_using []))
   refine ⟨⟨tk.mono (by decide),VG.Proof.X448.AArch64.Fast.fieldMem_outside2 fm⟩,
     VG.Proof.X448.AArch64.Fast.env_update hb fm (fun i hi => ?_),
     VG.Proof.X448.AArch64.Fast.fieldMem_same fm,?_⟩

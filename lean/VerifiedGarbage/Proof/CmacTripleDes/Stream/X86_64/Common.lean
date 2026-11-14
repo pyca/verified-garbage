@@ -45,12 +45,12 @@ theorem and7 (x : BitVec 64) : (x &&& 7).toNat = x.toNat % 8 := by
 theorem held_bv (c : BitVec 64) (h : c ≠ 0) :
     ((c - 1) &&& 7) + 1 = BitVec.ofNat 64 (held c.toNat) := by
   have hc : c.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
-  rw [held_pos (by omega)]
+  rw [held_pos (by omega_using [hc])]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, and7, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
   have := c.isLt
-  omega
+  omega_using [hc]
 
 theorem beq_zero_iff (c : BitVec 64) : (c == 0) = decide (c.toNat = 0) := by
   by_cases h : c = 0
@@ -60,8 +60,8 @@ theorem beq_zero_iff (c : BitVec 64) : (c == 0) = decide (c.toNat = 0) := by
 
 theorem toNat_add_lt (p : Addr) {d k : Nat} (h : p.toNat + k ≤ 2 ^ 64) (hd : d < k) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64)]
-  exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h, hd] : d < 2 ^ 64)]
+  exact Nat.mod_eq_of_lt (by omega_using [h, hd])
 
 /-! ## Bytes written -/
 
@@ -78,19 +78,19 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.le
   apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
   intro i h1 _
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega : i < 2 ^ 64),
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
     h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
 
 /-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
 theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
     Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
       Spec.Aes.bytesAt m p r ++ xs := by
-  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega)]
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_using [h])]
   congr 1
   simp only [Spec.Aes.bytesAt]
   apply List.map_congr_left
   intro i hi
-  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega)
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_using [h])
 
 end
 
@@ -162,7 +162,7 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64) (hc : s.gpr
     (fun (n : Nat) (t : State) => ∃ i, n = L - i ∧ i < L ∧ t.gpr .r10 = BitVec.ofNat 64 i ∧
       t.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P i) ∧
       (∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (L - 0) _
-    ⟨0, rfl, by omega, r10₁, by rw [m₁]; simp [Spec.Aes.bytesAt, writeBytes_nil],
+    ⟨0, rfl, by omega_using [hL0], r10₁, by rw [m₁]; simp [Spec.Aes.bytesAt, writeBytes_nil],
       fun r _ h₂ => g₁ r h₂, rd₁, wr₁⟩
   rintro n t ⟨i, rfl, hi, r10, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', r10', zf', g', rd', wr'⟩ := copyStep_ok t
@@ -175,18 +175,18 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64) (hc : s.gpr
     (writeBytes_frame s.mem C _ (R := ⟨C, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
       fun r hr hcon => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hdis _ (Offset.contains_base P (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+        exact hdis _ (Offset.contains_base P (by omega_using [hi]) (by omega_using [hL, hi])) (Region.sub_prefix (by omega_using [hi]) _ hcon)
   have hmem : t'.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P (i + 1)) := by
     rw [mem', mem, hx, bytesAt_succ, writeBytes_snoc s.mem C (Spec.Aes.bytesAt s.mem P i)
-      (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega), hlen]
+      (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega_using [hL, hi]), hlen]
   have hz : t'.zf = some (decide (i + 1 = L)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_using [hL, hi]) (by omega_using [hL])]
   have gg : ∀ r, r ≠ .rax → r ≠ .r10 → t'.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g' r h₁ h₂, g r h₁ h₂]
   by_cases he : i + 1 = L
   · left
     exact ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], L - (i + 1), by omega, i + 1, rfl, by omega, by rw [r10', succ_ofNat], hmem, gg,
+    refine ⟨by simp [eval, hz, he], L - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, he], by rw [r10', succ_ofNat], hmem, gg,
       by rw [rd', rd], by rw [wr', wr]⟩
 
 end

@@ -38,12 +38,12 @@ theorem Post.compose {s u t : State} {base : Addr} {bytes len : Nat} {args : Nat
   have nw := h.scratch.nowrap
   have sz := h.space
   have size := size_eq (Spec.Rsa.modulusWords len)
-  have Os : Outside base 0 bytes s.mem u.mem := O.mono (by omega) (by omega)
-  have W := scratch_words Os (by omega) (n := 2 * Spec.Rsa.modulusWords len) (by omega)
-    (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega] using h.preApart)
-  have E := scratch_bytes Os (by have := h.eBound; have := h.upper; omega) h.eApart
-  have X := scratch_bytes Os (by have := h.upper; omega) h.inApart
-  refine ⟨?_, ((outside_frame O (by omega)).mono (by simp)).trans P.2⟩
+  have Os : Outside base 0 bytes s.mem u.mem := O.mono (by omega_using []) (by omega_using [sz, size])
+  have W := scratch_words Os (by omega_using [nw]) (n := 2 * Spec.Rsa.modulusWords len) (by omega)
+    (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega_using []] using h.preApart)
+  have E := scratch_bytes Os (by have := h.eBound; have := h.upper; omega_using []) h.eApart
+  have X := scratch_bytes Os (by have := h.upper; omega_using [this]) h.inApart
+  refine ⟨?_, ((outside_frame O (by omega_using [nw])).mono (by simp)).trans P.2⟩
   intro nB length key
   have R := P.1 nB length (by rw [W]; exact key)
   rw [E, X] at R
@@ -61,15 +61,15 @@ theorem valid_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat → B
   have space := h.space
   have nw := h.scratch.nowrap
   unfold PrecomputedRt.valid
-  refine WP.seq (WP.mono (saveExponent_ok h.scratch (by omega) he lo hi) fun v ⟨E, O, K⟩ => ?_)
-  have O' : Outside base 0 bytes s.mem v.mem := O.mono (by omega) (by omega)
+  refine WP.seq (WP.mono (saveExponent_ok h.scratch (by omega_using [sz, space]) he lo hi) fun v ⟨E, O, K⟩ => ?_)
+  have O' : Outside base 0 bytes s.mem v.mem := O.mono (by omega_using []) (by omega_using [sz, space])
   have hv := h.keep K (by decide) (by decide) O'
-  have EB := scratch_bytes O' (by have := h.eBound; have := h.upper; omega) h.eApart
+  have EB := scratch_bytes O' (by have := h.eBound; have := h.upper; omega_using []) h.eApart
   have sp : v.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   refine WP.mono (sized_ok hv (X.keep K (by decide)) (by rw [E, EB, ← exponent])
     (by rw [EB, ← exponent]; exact validE)) fun t ⟨P, Kt⟩ => ?_
   rw [sp] at P
-  exact ⟨Post.compose h (O.mono (by omega) (by omega)) P, (K.mono (by decide)).trans Kt⟩
+  exact ⟨Post.compose h (O.mono (by omega_using []) (by omega_using [sz, space])) P, (K.mono (by decide)).trans Kt⟩
 
 theorem body_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : PrecomputedInputs base bytes len args s) (X : Room base bytes args s) :
@@ -134,8 +134,8 @@ theorem operation_ok {s : State} (A : TopABI s) :
             (Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat)
             (Spec.Rsa.bytesAt s.mem (argumentPointer s 6) (arg s 1).toNat))) ∧ abiPreserved s t := by
   have B := A.abi
-  have low : 16 ≤ (arg s 9).toNat * 8 := by have := B.used; omega
-  have high : (arg s 9).toNat * 8 ≤ 2 ^ 64 := by have := B.scratchBound; omega
+  have low : 16 ≤ (arg s 9).toNat * 8 := by have := B.used; omega_using [this]
+  have high : (arg s 9).toNat * 8 ≤ 2 ^ 64 := by have := B.scratchBound; omega_using []
   unfold PrecomputedRt.code
   refine WP.seq (WP.mono (precomputedInstalled_ok B) fun u ⟨I, S, K, O⟩ => ?_)
   have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
@@ -146,7 +146,7 @@ theorem operation_ok {s : State} (A : TopABI s) :
   have Saved := frame_saved F I.outApart low high A.room.apart S
   have Whole : Frame [⟨argumentPointer s 8, (arg s 9).toNat * 8⟩,
       ⟨argumentPointer s 0, (arg s 1).toNat⟩, below (s.gpr .esp) 96] s.mem v.mem := by
-    have Start := outside_frame O (by omega)
+    have Start := outside_frame O (by omega_using [])
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
       (frame_full F low)
@@ -164,9 +164,9 @@ theorem operation_ok {s : State} (A : TopABI s) :
   intro nB length key
   rw [R.mem, R.other .eax (by decide)]
   have W := scratch_words O high (n := (arg s 3).toNat)
-    (by have := B.preBound; omega) (by simpa only [Nat.mul_comm] using B.preScratch)
-  have EB := scratch_bytes O (by have := (arg s 5).isLt; omega) B.eScratch
-  have XB := scratch_bytes (p := argumentPointer s 6) (len := (arg s 1).toNat) O (by have := B.lengths.2; omega)
+    (by have := B.preBound; omega_using []) (by simpa only [Nat.mul_comm] using B.preScratch)
+  have EB := scratch_bytes O (by have := (arg s 5).isLt; omega_using []) B.eScratch
+  have XB := scratch_bytes (p := argumentPointer s 6) (len := (arg s 1).toNat) O (by have := B.lengths.2; omega_using [])
     (by rw [← B.inLength]; exact B.inScratch)
   have keyU : Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt u.mem (byteAddr (arg s 2))
       (2 * Spec.Rsa.modulusWords (arg s 1).toNat)) := by

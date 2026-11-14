@@ -107,6 +107,6 @@ theorem gTabY_lt (p : Nat) : gTabY p < 65536 := gTab_lt _
 abbrev pairY (i l e : Nat) : Nat := 16 * i + 4 * (e / 2) + e % 2 + 2 * l
 
 theorem gIdxY_eq {i l e : Nat} (hl : l < 2) (he : e < 8) : gIdxY (16 * i + 8 * l + e) = pairY i l e := by
-  unfold gIdxY pairY; omega
+  unfold gIdxY pairY; omega_using [hl, he]
 
 end VG.Proof.MlKem.X86_64

@@ -94,7 +94,7 @@ theorem Args.rdisj {A : Nat → Addr} {ln : Nat → Nat} {nb : Nat} {sp : Addr} 
     have hs' : o₁ + l₁ ≤ o₂ ∨ o₂ + l₂ ≤ o₁ := hs.resolve_left (fun h => h rfl)
     intro x h₁ h₂
     simp only [Region.Contains] at h₁ h₂
-    exact sep_off (A b₁) hs' (by omega) (by omega) x (Nat.lt_of_succ_le h₁) (Nat.lt_of_succ_le h₂)
+    exact sep_off (A b₁) hs' (by omega_using [f₁, hl]) (by omega_using [f₂, hl]) x (Nat.lt_of_succ_le h₁) (Nat.lt_of_succ_le h₂)
   · exact ((h.disj b₁ hb₁ b₂ hb₂ hb).sub_left (R.sub f₁)).sub_right (R.sub f₂)
 
 theorem Args.rstk {A : Nat → Addr} {ln : Nat → Nat} {nb : Nat} {sp : Addr} (h : Args A ln nb sp)
@@ -122,11 +122,11 @@ theorem pre_of (hP : P.Wf) {s₀ : State} (h : (keyGenAArch64 P).pre s₀) : Pre
   obtain ⟨rd, wr, d01, d02, d03, d12, d13, d23, sp16, k0, k1, k2, k3⟩ := h
   refine ⟨by rw [rd]; exact List.mem_singleton_self _, wr, ⟨fun b hb c hc hbc => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hc] : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
     first | exact absurd rfl hbc | assumption | exact e ‹_›
   · exact kL_le hP b
-  · rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+  · rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
     exacts [k0, k1, k2, k3]
 
 /-! ## What holds throughout -/
@@ -168,7 +168,7 @@ theorem Saved.frame {s₀ : State} {m m' : Mem} (h : Saved P s₀ m) {rs : List 
   refine hf.readW (r := svR P s₀) ?_ hd (by decide)
   rw [show kA s₀ 3 + BitVec.ofNat 64 (SV P + 8 * k) = kA s₀ 3 + BitVec.ofNat 64 (SV P) + BitVec.ofNat 64 (8 * k)
     by rw [ptr_add]]
-  exact contains_off (by omega) (by decide)
+  exact contains_off (by omega_using [hk]) (by decide)
 
 /-- The callee-saved registers but `x24` and `x30`. -/
 abbrev kept : List Reg := [.x19, .x20, .x21, .x22, .x23, .x25, .x26, .x27, .x28]
@@ -211,7 +211,7 @@ tactic_template "kl" : tactic => `(tactic| first | decide |
 
 theorem sv_disj {s₀ : State} (hp : Pre P s₀) {b o l : Nat} (hb : b < 4) (f : o + l ≤ kL P b)
     (hs : b ≠ 3 ∨ SV P + 48 ≤ o ∨ o + l ≤ SV P) : (svR P s₀).Disjoint (R (kA s₀) b o l) :=
-  hp.args.rdisj (by decide) hb hp.sv f (by omega)
+  hp.args.rdisj (by decide) hb hp.sv f (by omega_using [hs])
 
 theorem seed_disj {s₀ : State} (hp : Pre P s₀) {b o l : Nat} (hb : b < 4) (f : o + l ≤ kL P b)
     (hs : b ≠ 0) : (R (kA s₀) 0 0 64).Disjoint (R (kA s₀) b o l) :=
@@ -241,13 +241,13 @@ theorem cov_w {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) {b o l : Nat}
     (f : o + l ≤ kL P b) : Covers [R (kA s₀) b o l] s.wr := by
   rw [h.wr, hp.wr]
   refine R.cov ?_ f
-  rcases (by omega : b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl <;> simp
+  rcases (by omega_using [hb] : b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl <;> simp
 
 theorem cov_r {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) {b o l : Nat} (hb : b < 4)
     (f : o + l ≤ kL P b) : Covers [R (kA s₀) b o l] (s.rd ++ s.wr) := by
   rw [h.rd, h.wr, hp.wr]
   refine R.cov ?_ f
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
   · exact List.mem_append_left _ hp.rd
   all_goals simp
 
@@ -272,14 +272,14 @@ theorem pieceOk {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) {w : Bool} 
     rw [h.x28]
   have ho : o < 65536 := by
     have := hp.wf
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> simp only [kL] at f <;> lom
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> simp only [kL] at f <;> lom
   refine ⟨?_, ho, hl, ?_, ?_, ?_, ?_⟩
   · dsimp only
-    rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> decide
+    rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> decide
   · rw [eb, VG.Proof.MlKem.AArch64.STr, e]
-    exact hp.args.rdisj hb (by decide) f (by have := hp.wf; simp only [kL]; lom) (by simp only [KG.ST]; omega)
+    exact hp.args.rdisj hb (by decide) f (by have := hp.wf; simp only [kL]; lom) (by simp only [KG.ST]; omega_using [hs])
   · rw [eb, VG.Proof.MlKem.AArch64.WKr, e]
-    exact hp.args.rdisj hb (by decide) f (by have := hp.wf; simp only [kL]; lom) (by simp only [KG.WK]; omega)
+    exact hp.args.rdisj hb (by decide) f (by have := hp.wf; simp only [kL]; lom) (by simp only [KG.WK]; omega_using [hs])
   · rw [eb]; exact stk_R hp h hb f
   · rw [eb]
     cases w

@@ -54,6 +54,6 @@ theorem generatorIteration_ct (M : Mont) (len : Nat)
       (tapeIteration generatorTape len (generatorStep M.mm len))
       (Two (GeneratorSearchIterationAfter len)) := by
   rcases hl with rfl | rfl | rfl
-  all_goals exact generatorIteration_ct_of M _ (by omega) (by taint_decide) (by taint_decide)
+  all_goals exact generatorIteration_ct_of M _ (by omega_using []) (by taint_decide) (by taint_decide)
 
 end VG.Proof.Dsa.AArch64.Generation

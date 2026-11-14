@@ -19,7 +19,7 @@ theorem Data.afterScalar {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : Li
     obtain ⟨index, read⟩ := D.arrayValues j known
     have header := v.arrayHeader j
     refine ⟨index, ?_⟩
-    rw [O.val32 (by omega) (by have := v.arrayFit index; have := C.ws.nowrap; omega), read]
+    rw [O.val32 (by omega_using [fit, header]) (by have := v.arrayFit index; have := C.ws.nowrap; omega_arith), read]
   · intro e known
     by_cases same : e = d
     · subst e
@@ -32,7 +32,7 @@ theorem Data.afterScalar {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : Li
       have apart := scratch_apart es scratch same
       have bound := scratch_fit es
       refine ⟨es, ?_⟩
-      have unchanged := BitVec.eq_of_toNat_eq (O.w32 (d := e) (by omega) (by omega))
+      have unchanged := BitVec.eq_of_toNat_eq (O.w32 (d := e) (by omega_using [apart]) (by omega_using [bound]))
       rw [unchanged, read, setAt_other V value same]
 
 end VG.Proof.MillerRabin.X86

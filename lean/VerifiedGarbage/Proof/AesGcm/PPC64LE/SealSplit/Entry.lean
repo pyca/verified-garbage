@@ -64,7 +64,7 @@ theorem prepared_bytes (s : State) (hs : scratchContract.pre s) (r : Region)
     · exact (lay.stackApart r (List.mem_append_left _ hr)).symm
     · exact lay.workApart r hr
   · have hf := lay.fits r (List.mem_append_left _ hr)
-    omega
+    omega_using [hf]
 
 
 theorem entry_access (s : State) (hs : scratchContract.pre s) : SealAccess (prepared s) := by
@@ -88,7 +88,7 @@ theorem entry_access (s : State) (hs : scratchContract.pre s) : SealAccess (prep
     change (s.sp-112#64).toNat+112≤2^64
     rw [toNat_sub_ofNat' lay.spFit.1]
     have := s.sp.isLt
-    omega
+    omega_using []
   refine ⟨?_,?_,?_⟩
   · change sealPre ((prepared s).withRegions (sealReads (prepared s)) (sealWrites (prepared s)))
     simp only [sealPre,State.withRegions_gpr,State.withRegions_rd,State.withRegions_wr,

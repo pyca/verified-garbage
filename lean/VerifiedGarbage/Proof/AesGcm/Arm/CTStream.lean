@@ -85,7 +85,7 @@ theorem streamInit_rel {s₀ s₀' : State} (h0 : streamInitArm.pre s₀) (h0' :
     (fun s s' e e' => by
       subst e e'
       refine (ArgsKeep.refl 1 s).agree (ArgsKeep.refl 1 s') q₀ spf (fun i hi => by
-        obtain rfl : i = 0 := by omega
+        obtain rfl : i = 0 := by omega_using [hi]
         exact q₅) (hw h0) (hw h0') fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, hA⟩
@@ -130,7 +130,7 @@ theorem streamAad_rel {s₀ s₀' : State} (h0 : streamAadArm.pre s₀) (h0' : s
     (fun s s' e e' => by
       subst e e'
       refine (ArgsKeep.refl 3 s).agree (ArgsKeep.refl 3 s') q₀ spf (fun i hi => by
-        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
         · exact q₅
         · exact q₆
         · exact q₇) (hw h0) (hw h0') fun r hr => ?_

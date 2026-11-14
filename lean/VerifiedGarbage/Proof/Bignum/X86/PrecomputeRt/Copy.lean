@@ -34,9 +34,9 @@ theorem ea_at {s : State} {P : Addr} {L : Nat} (hn : P.toNat + L ≤ 2 ^ 32) {r 
   apply BitVec.eq_of_toNat_eq
   simp only [off, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   have hP : P.toNat < 2 ^ 64 := P.isLt
-  rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega), hp]
-  repeat rw [Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := (s.gpr r).toNat) (by have := (s.gpr r).isLt; omega_using []), hp]
+  repeat rw [Nat.mod_eq_of_lt (by omega_using [hn, hd])]
+  omega_using []
 
 theorem copyOutLoop_ok {t₀ : State} {W P : Addr} {L L' : Nat} (hw : Ws t₀ W L)
     (hpw : InRegions t₀.wr P L') (hn : P.toNat + L' ≤ 2 ^ 32)
@@ -59,7 +59,7 @@ theorem copyOutLoop_ok {t₀ : State} {W P : Addr} {L L' : Nat} (hw : Ws t₀ W 
   have ebp₁ : PtrAt s₁ P .ebp (y + 4 * j) := by rw [PtrAt, u₁.other _ (by decide)]; exact ebp
   have hw₁ : InRegions s₁.wr (off P (y + 4 * j + 0)) 4 := by
     rw [u₁.keeps.2.2, Kt.2.2]
-    exact VG.CallLay.inRegions_sub hpw (by omega_using [hy, hj]) (by omega)
+    exact VG.CallLay.inRegions_sub hpw (by omega_using [hy, hj]) (by omega_using [hn])
   refine wp_storeS (ea_at hn ebp₁ (d := 0) (by omega_using [hy, hj])) hw₁ fun s₂ m₂ => ?_
   refine wp_addS rfl fun s₃ u₃ _ => wp_addS rfl fun s₄ u₄ _ => wp_subZ rfl fun s₅ u₅ z₅ => WP.block_nil ?_
   obtain ⟨c₁, c₂⟩ := count_zf ecx hj
@@ -93,10 +93,10 @@ theorem PcIn.keepOut {s t : State} {base : Addr} {bytes len : Nat} {args : Nat �
     PcIn base bytes len args t ∧ Frame [⟨off (byteAddr (args 0)) o, n⟩] s.mem t.mem := by
   have esp : t.gpr .esp = s.gpr .esp := K.1 _ sp
   have := wb_le h.upper
-  have F := outside_frame O (by omega)
+  have F := outside_frame O (by omega_using [hon, this])
   have sub : Region.Sub ⟨off (byteAddr (args 0)) o, n⟩ ⟨byteAddr (args 0), 2 * wb len⟩ := by
     have := sub_off (base := byteAddr (args 0)) (d := o) (n := n) (e := 0) (k := 2 * wb len) (Nat.zero_le _)
-      (by omega)
+      (by omega_using [hon])
     simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   refine ⟨⟨h.scratch.of_keeps K di sp, h.lower, h.upper, h.space, fun i hi => ?_, h.wLen, h.nLen,
     h.hbase, h.hbytes, h.outFit, h.nFit, by rw [K.2.2]; exact h.outWrite, by rw [K.2.1, K.2.2]; exact h.nRead,
@@ -111,10 +111,10 @@ theorem PcIn.keepOut {s t : State} {base : Addr} {bytes len : Nat} {args : Nat �
     (by decide)
   rw [List.mem_singleton.mp hr]
   have P : VG.Proof.Dsa.X86.stackAddress s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) :=
-    addr_eq (by omega)
-  have Z : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+    addr_eq (by omega_using [top, hi])
+  have Z : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_using [top])
   have sa : Region.Sub ⟨VG.Proof.Dsa.X86.stackAddress s i, 4⟩ ⟨argAddr s 0, 24⟩ := by
-    rw [P, Z]; exact Offset.sub _ (by omega) (by omega)
+    rw [P, Z]; exact Offset.sub _ (by omega_using []) (by omega_using [hi])
   exact ((h.outArgs.sub_left sub).sub_right sa).symm
 
 theorem copyOut_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
@@ -139,33 +139,33 @@ theorem copyOut_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     intro v y K mv esi ebp ecx hy
     have hv := h.ws.of_keeps K
     refine WP.mono (copyOutLoop_ok hv (by rw [K.2.2]; exact h.outWrite) (by rw [pn]; exact pf) h.outApart
-      (N := nw len) (by simp only [nw]; omega) (by rw [← wbe]; exact fit) (by rw [← wbe]; exact hy) esi ebp
+      (N := nw len) (by simp only [nw]; omega_using [dims]) (by rw [← wbe]; exact fit) (by rw [← wbe]; exact hy) esi ebp
       (by rw [ecx, wbe])) fun u ⟨O, V, Ku⟩ => ⟨by rw [V, mv], by rw [mv] at O; rw [wbe]; exact O, K.trans Ku⟩
   have rp : ∀ (v : State) (rs : List Reg), Keeps rs s v → .esp ∉ rs → v.mem = s.mem →
       readSrc v (.mem (argAt 0 0)) = some (args 0) := fun v rs K sp mv =>
     ((h.stack 0 (by decide)).keep K sp (by rw [mv]; exact Outside.refl _ _ _ _)).readSrc
   have ptrP : ∀ (v : State) (y : Nat), y ≤ wb len → (v.gpr .ebp).toNat = (args 0).toNat + y →
       PtrAt v (byteAddr (args 0)) .ebp y := fun v y hy e => by
-    rw [PtrAt, e, pn, Nat.mod_eq_of_lt (by omega)]
+    rw [PtrAt, e, pn, Nat.mod_eq_of_lt (by omega_using [pf, hy])]
   unfold PrecomputeFn.copyOut
   cases hi
   · simp only [Bool.false_eq_true, ite_false]
     refine WP.seq (slotPtr_ok (r := .esi) (t := .ecx) (j := j) (by decide) (by decide) h.edi h.width h.upper
-      (by omega) fun u K m p c => wp_movS (rp u _ K (by decide) m) fun u₁ e₁ _ => WP.block_nil ?_)
+      (by omega_using [hj]) fun u K m p c => wp_movS (rp u _ K (by decide) m) fun u₁ e₁ _ => WP.block_nil ?_)
     refine fin u₁ 0 ((K.mono (by decide)).trans (e₁.keeps.mono (by decide))) (by rw [e₁.mem, m])
       (by rw [PtrAt, e₁.other _ (by decide)]; exact p) (ptrP _ 0 (Nat.zero_le _) (by rw [e₁.gpr]; rfl))
-      (by rw [e₁.other _ (by decide), c, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) (by omega)
+      (by rw [e₁.other _ (by decide), c, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]) (by omega_using [])
   · simp only [ite_true]
     refine WP.seq (slotPtr_ok (r := .esi) (t := .ecx) (j := j) (by decide) (by decide) h.edi h.width h.upper
-      (by omega) fun u K m p c => wp_movS (rp u _ K (by decide) m) fun u₁ e₁ _ =>
+      (by omega_using [hj]) fun u K m p c => wp_movS (rp u _ K (by decide) m) fun u₁ e₁ _ =>
         wp_addS rfl fun u₂ e₂ _ => WP.block_nil ?_)
     have ecx₂ : u₂.gpr .ecx = BitVec.ofNat 32 (wb len) := by
       rw [e₂.other _ (by decide), e₁.other _ (by decide), c]
     refine fin u₂ (wb len) (((K.mono (by decide)).trans (e₁.keeps.mono (by decide))).trans
         (e₂.keeps.mono (by decide))) (by rw [e₂.mem, e₁.mem, m])
       (by rw [PtrAt, e₂.other _ (by decide), e₁.other _ (by decide)]; exact p)
-      (ptrP _ _ (Nat.le_refl _) ?_) (by rw [ecx₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]) (by omega)
+      (ptrP _ _ (Nat.le_refl _) ?_) (by rw [ecx₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hw])]) (by omega_using [])
     rw [e₂.gpr, e₁.gpr, show u₁.gpr .ecx = BitVec.ofNat 32 (wb len) by rw [e₁.other _ (by decide), c],
-      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := wb len) (by omega), Nat.mod_eq_of_lt (by omega)]
+      BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := wb len) (by omega_using [hw]), Nat.mod_eq_of_lt (by omega_using [pf])]
 
 end VG.Proof.Bignum.X86.PrecomputeRt

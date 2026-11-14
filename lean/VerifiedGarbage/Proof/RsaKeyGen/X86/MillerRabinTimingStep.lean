@@ -35,7 +35,7 @@ theorem branch_raw {mont round : Prog isa} {montName roundName : String}
     by_contra short
     have bound := H.1.1.2.1.atLoop.used
     rw [v.entropyLength] at bound
-    have small : P.randLen - (P.start + P.bytes * k) < P.bytes := by omega
+    have small : P.randLen - (P.start + P.bytes * k) < P.bytes := by omega_using [short, bound]
     have condition := H.1.2.1
     rw [H.2, decide_eq_true small] at condition
     cases condition

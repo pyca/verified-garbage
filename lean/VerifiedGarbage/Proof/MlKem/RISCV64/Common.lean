@@ -42,12 +42,12 @@ theorem wp_loop_nz {body : Prog isa} {r : Reg} {Q : State → Prop} (Inv : Nat �
     rw [← hz]; rfl
   by_cases h : i + 1 = N
   · refine .inl ⟨by rw [ev]; simp [h], hQ s' (h ▸ hs')⟩
-  · exact .inr ⟨by rw [ev]; simp [h], N - (i + 1), by omega, i + 1, by omega, rfl, hs'⟩
+  · exact .inr ⟨by rw [ev]; simp [h], N - (i + 1), by omega_using [hi], i + 1, by omega_using [hi, h], rfl, hs'⟩
 
 /-- The count after `addi r, r, -1` from `N - i`. -/
 theorem count_sub {N i : Nat} (hi : i < N) :
     BitVec.ofNat 64 (N - i) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (N - (i + 1)) := by
-  rw [show N - i = (N - (i + 1)) + 1 by omega, BitVec.ofNat_add, BitVec.add_sub_cancel]
+  rw [show N - i = (N - (i + 1)) + 1 by omega_using [hi], BitVec.ofNat_add, BitVec.add_sub_cancel]
 
 /-- The count is nonzero exactly when it is not the last iteration. -/
 theorem count_nz {N i : Nat} (hi : i < N) (hN : N < 2 ^ 64) :
@@ -55,9 +55,9 @@ theorem count_nz {N i : Nat} (hi : i < N) (hN : N < 2 ^ 64) :
   by_cases h : i + 1 = N
   · subst h; simp
   · have h1 : (BitVec.ofNat 64 (N - (i + 1))).toNat = N - (i + 1) := by
-      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hN])
     have : BitVec.ofNat 64 (N - (i + 1)) ≠ 0 := fun e => by
-      have := congrArg BitVec.toNat e; rw [h1] at this; simp at this; omega
+      have := congrArg BitVec.toNat e; rw [h1] at this; simp at this; omega_using [hi, h, this]
     rw [bne_iff_ne.mpr this]; simp [h]
 
 /-- A pointer `p` advanced by `k i`, then by `k`. -/
@@ -73,7 +73,7 @@ theorem ptr_add (p : BitVec 64) (a b : Nat) :
 /-- A pointer advanced by a multiple of `4` keeps its 4-alignment. -/
 theorem align4_add {p : BitVec 64} (hp : p.toNat % 4 = 0) (k : Nat) :
     (p + BitVec.ofNat 64 (4 * k)).toNat % 4 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [hp]
 
 /-- Two pointers from `p` differ exactly when their offsets do. -/
 theorem ptr_ne (p : BitVec 64) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
@@ -91,8 +91,8 @@ theorem lsr2 {len : Nat} (h : 4 * len < 2 ^ 64) :
     BitVec.ofNat 64 (4 * len) >>> 2 = BitVec.ofNat 64 (len - 0) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_using [h])]
+  omega_using []
 
 /-- One more coefficient of an invariant saying which are `out`. -/
 theorem coeff_one {m m₀ : Mem} {F : Addr} {out : Nat → BitVec 32} {a : Nat} (ha : a < 256)
@@ -105,19 +105,19 @@ theorem coeff_one {m m₀ : Mem} {F : Addr} {out : Nat → BitVec 32} {a : Nat} 
   · subst e; rw [ite_eq_left rfl, ite_eq_left (Nat.lt_succ_self a), hv]
   · rw [ite_eq_right e]
     by_cases hj' : j < a
-    · rw [ite_eq_left hj', ite_eq_left (by omega)]
-    · rw [ite_eq_right hj', ite_eq_right (by omega)]
+    · rw [ite_eq_left hj', ite_eq_left (by omega_using [hj'])]
+    · rw [ite_eq_right hj', ite_eq_right (by omega_using [e, hj'])]
 
 /-! ## Words -/
 
 /-- A word, zero-extended, as `lwu` loads it. -/
 theorem toNat_setWidth64 (v : BitVec 32) : (v.setWidth 64).toNat = v.toNat := by
-  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := v.isLt; omega)
+  rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := v.isLt; omega_using [])
 
 /-- A word, zero-extended. -/
 theorem setWidth64_ofNat {v : Nat} (hv : v < 2 ^ 32) : (BitVec.ofNat 32 v).setWidth 64 = BitVec.ofNat 64 v := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_setWidth64, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (by omega)]
+  rw [toNat_setWidth64, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (by omega_using [hv])]
 
 /-- A doubleword below `2³²`, as `sw` stores it. -/
 theorem setWidth32_ofNat {x : BitVec 64} {v : Nat} (h : x.toNat = v) (hv : v < 2 ^ 32) :
@@ -135,12 +135,12 @@ theorem fixq_toNat {u : BitVec 64} (h : u.toNat < 3329 ∨ 2 ^ 64 - 3329 ≤ u.t
   unfold fixq
   cases hm : u.msb
   · have hu : u.toNat < 2 ^ 63 := by
-      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega
+      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega_using [this]
     have h0 : u >>> 63 = 0#64 := by bv_omega
     rw [BitVec.sshiftRight_eq_of_msb_false hm, h0, BitVec.zero_and]
     split <;> bv_omega
   · have hu : 2 ^ 63 ≤ u.toNat := by
-      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega
+      have := BitVec.msb_eq_decide u; rw [hm] at this; simp at this; omega_using [this]
     have h0 : (~~~u) >>> 63 = 0#64 := by bv_omega
     rw [BitVec.sshiftRight_eq_of_msb_true hm, h0, BitVec.not_zero, BitVec.allOnes_and]
     split <;> bv_omega
@@ -168,6 +168,6 @@ theorem fixq_subq {x : BitVec 64} (hx : x.toNat < 2 * q) : (fixq (x - 3329)).toN
 /-- A word is the element of `ℤ_q` it represents, once reduced. -/
 theorem ofNat_val_eq {v : BitVec 32} {x : Zq} (h : v.toNat = x.val) : v = BitVec.ofNat 32 x.val := by
   apply BitVec.eq_of_toNat_eq
-  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega)]
+  rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := val_lt x; omega_using [h])]
 
 end VG.Proof.MlKem.RISCV64

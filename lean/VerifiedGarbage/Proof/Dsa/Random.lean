@@ -46,11 +46,11 @@ theorem sample_used_le (q fuel : Nat) (rand : List VG.Byte) :
       next h =>
         split
         · simp only
-          omega
+          omega_using [h]
         · have hi := ih (rand.drop (drawBytes q))
           simp only [List.length_drop] at hi
           simp only
-          omega
+          omega_using [h, hi]
 
 /-- At most one fixed-width chunk is consumed per draw. -/
 theorem sample_used_budget (q fuel : Nat) (rand : List VG.Byte) :
@@ -66,11 +66,11 @@ theorem sample_used_budget (q fuel : Nat) (rand : List VG.Byte) :
       · split
         · simp only
           rw [Nat.succ_mul]
-          omega
+          omega_using []
         · have hi := ih (rand.drop (drawBytes q))
           simp only
           rw [Nat.succ_mul]
-          omega
+          omega_using [hi]
 
 /-- Consumption is always a whole number of draws, even on failure. -/
 theorem sample_used_multiple (q fuel : Nat) (rand : List VG.Byte) :

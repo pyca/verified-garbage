@@ -169,11 +169,11 @@ theorem loop_ct {enc : Bool} {post : List Instr} (hb : BodyOk enc (body post))
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_using [hk, this]
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [h0], l₁, l₂⟩
 
 /-! ## The whole function -/
 
@@ -222,7 +222,7 @@ theorem whole_rel {enc : Bool} {post : List Instr} (hb : BodyOk enc (body post))
       refine (RelCT.exists_ lp).mono (fun a b h => ⟨?_, h.1.1, h.1.2⟩) fun _ _ h => h
       have := h.2; rw [ev h.1.1] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_using [this]
   have epi := taintRegs (P := fun a b => LS enc s₀ (N s₀) a ∧ LS enc s₀' (N s₀') b) [.r19]
     (fun a b h => ⟨by rw [h.1.2, h.2.2, pub_sp hq], fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

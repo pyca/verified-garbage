@@ -32,7 +32,7 @@ theorem doubleAt_keep062 (e : Env) (i : Index) (hi : 8 ≤ i.val ∧ i.val < 11)
     have : ∀ op ∈ doubleAt 0 6 2, fopDest op = 0 ∨ fopDest op = 2 ∨ fopDest op = 6 ∨
         (12 ≤ fopDest op ∧ fopDest op < 20) := by decide
     have := this op hop
-    omega
+    omega_using [hi, this]
 
 theorem doubleAt_eval062 (e : Env) :
     pt (evalOps (doubleAt 0 6 2) e) 0 6 2 = double (pt e 0 6 2) := rfl
@@ -82,8 +82,8 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s b
     ⟨by decide, by decide, e₁, k₁, by rw [m₁]; exact WsOut2.refl _ _ _ _ _ _, m₁ ▸ hb, by rw [m₁]; rfl,
       by rw [m₁]; rfl⟩
   intro m t ⟨h1, h2, et, kt, ot, bt, qt, rt⟩
-  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (vdoubleStep_ok (hs.of_keeps kt (by decide)) (hc.keep (kt.1 _ (by decide))) bt (by omega) et)
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega_using [h1]⟩
+  refine WP.mono (vdoubleStep_ok (hs.of_keeps kt (by decide)) (hc.keep (kt.1 _ (by decide))) bt (by omega_using [h2]) et)
     fun u ⟨eu, zu, ku, ou, bu, qu, ru⟩ => ?_
   have ku' : Keeps (.esi :: workRegs) s u := kt.trans ku
   have ou' := ot.trans ou
@@ -92,9 +92,9 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s b
   · refine .inl ⟨rfl, ku', ou', bu, ?_, ?_⟩
     · rw [qu, qt]; rfl
     · rw [ru, rt]; rfl
-  · have k1 : k = 1 := by omega
+  · have k1 : k = 1 := by omega_using [h2, hk]
     subst k1
-    refine .inr ⟨rfl, 1, by omega, by omega, by omega, eu, ku', ou', bu, by rw [qu, qt]; rfl,
+    refine .inr ⟨rfl, 1, by omega_using [], by omega_using [], by omega_using [], eu, ku', ou', bu, by rw [qu, qt]; rfl,
       by rw [ru, rt]; rfl⟩
 
 /-- `ecx = (BAD == 0)`. -/
@@ -130,7 +130,7 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base
     rw [e1]
     exact evalOps_keep _ _ _ fun op hop => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hop
-      rcases hop with rfl | rfl <;> simp only [fopDest] <;> omega
+      rcases hop with rfl | rfl <;> simp only [fopDest] <;> omega_using [hi]
   have x12 : E s1.mem base 12 = E s.mem base 0 * E s.mem base 10 := by rw [e1]; rfl
   have x13 : E s1.mem base 13 = E s.mem base 8 * E s.mem base 2 := by rw [e1]; rfl
   refine WP.seq (WP.mono (eqSlots_ok hs1 b1 12 13 (by decide) (by decide) (by decide))
@@ -142,7 +142,7 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base
   refine WP.seq (WP.mono (ops_ok hs2 hc2 b2 [.copy 0 6, .copy 8 9]) fun s3 ⟨k3, b3, e3⟩ => ?_)
   have esi3 : s3.gpr .esi = BitVec.ofNat 32 (k + 1) := by
     rw [k3.regs.1 _ (by decide), kw2.1 _ (by decide), k1.regs.1 _ (by decide), he]
-  refine WP.mono (decCounter_ok (by omega) esi3) fun t ⟨et, gt, mt, rt, wt, zt⟩ => ?_
+  refine WP.mono (decCounter_ok (by omega_using [hk]) esi3) fun t ⟨et, gt, mt, rt, wt, zt⟩ => ?_
   have e30 : E s3.mem base 0 = E s2.mem base 6 := by
     rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_of_ne (by decide : (0 : Index) ≠ 8),
       Function.update_self]
@@ -164,7 +164,7 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base
   · have h0 : i ≠ 0 := fun h => by subst h; revert hi; decide
     have h8 : i ≠ 8 := fun h => by subst h; revert hi; decide
     have h1 : i ≠ 1 := fun h => by subst h; revert hi; decide
-    rw [mt, e3k i h0 h8, e2 i h1, hk1 i (by omega)]
+    rw [mt, e3k i h0 h8, e2 i h1, hk1 i (by omega_using [hi])]
   · rw [hcz, x12, x13]
   · rw [mt, Keep.bad k3, hcb, Keep.bad k1]
 

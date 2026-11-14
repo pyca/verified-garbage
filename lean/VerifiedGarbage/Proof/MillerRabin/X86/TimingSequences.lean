@@ -41,6 +41,6 @@ theorem seqs_range_relCT (n : Nat) (code : Nat → Prog isa) (P : Nat → State 
   | zero => exact RelCT.block_nil (fun _ _ H => H)
   | succ n ih =>
     rw [List.range_succ, List.map_append]
-    exact seqs_append_relCT _ _ (ih (fun j hj => step j (by omega))) (step n (by omega))
+    exact seqs_append_relCT _ _ (ih (fun j hj => step j (by omega_using [hj]))) (step n (by omega_using []))
 
 end VG.Proof.MillerRabin.X86

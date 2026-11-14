@@ -40,7 +40,7 @@ theorem portFrame_other {g : OutputGeometry} {s : State} {m m' : Mem} {i j : Nat
     (F : Frame (portWrites g i) m m') :
     Spec.Rsa.bytesAt m' (g.region j).base (g.region j).len =
       Spec.Rsa.bytesAt m (g.region j).base (g.region j).len := by
-  apply VG.Proof.Rsa.rsa_bytes_frame F (by change g.length j < 2 ^ 64; have H := h.valid.fit j hj; omega)
+  apply VG.Proof.Rsa.rsa_bytes_frame F (by change g.length j < 2 ^ 64; have H := h.valid.fit j hj; omega_using [H])
   intro r hr
   simp only [portWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

@@ -17,7 +17,7 @@ theorem primeLoopInit_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : St
     WP isa (.block Impl.Dsa.X86_64.Generation.primeLoopInit) s
       (PrimeLoopState P mi s (primeRest P 1 0 used) 1 0 used) := by
   have hs : ∀ i < 32, InRegions s.wr (off P.B (8 * i)) 8 := fun i hi =>
-    h.ready.good.scr.st (by have := hdr_lt_slot P.w 8 hi; have := P.dims.z; omega)
+    h.ready.good.scr.st (by have := hdr_lt_slot P.w 8 hi; have := P.dims.z; omega_arith)
   refine WP.mono (WP.keep [.rax] (Q := fun t =>
     t.mem = (s.mem.writeW (off P.B (8 * kI)) (BitVec.ofNat 64 1)).writeW
       (off P.B (8 * kUni)) (BitVec.ofNat 64 0)) (by
@@ -35,7 +35,7 @@ theorem primeLoopInit_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : St
   have hpt := h.advance ht hus hf.work k (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> dsimp only [kI, kElen, kUni, kP, sFn] <;> have := P.z256 <;> omega) (by
+    rcases hr with rfl | rfl <;> dsimp only [kI, kElen, kUni, kP, sFn] <;> have := P.z256 <;> omega_using [this]) (by
     intro j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj)

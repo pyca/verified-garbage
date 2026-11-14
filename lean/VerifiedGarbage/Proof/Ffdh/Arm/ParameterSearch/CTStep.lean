@@ -2,7 +2,26 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTCall
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTCallState
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTArguments
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallLayout
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallFacts
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.ArgumentWords
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallBytes
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallPre
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallRegions
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Tape
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.TCB.Code
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTClassify
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLeaf
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTRequest
@@ -13,6 +32,123 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
 meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTState
+
+/-! ### `Ffdh.Arm.ParameterSearch.CTCall`, which only this module used -/
+
+section
+
+/-! ### `Ffdh.Arm.ParameterSearch.CallPublic`, which only this module used -/
+
+section
+
+/-! Equal public search positions supply equal public candidate arguments and entropy suffixes. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+
+theorem call_public {q : SearchPoint} {s t : State} (hs : CallCT q s) (ht : CallCT q t) (sp : s.sp = t.sp) :
+    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pub (callState q.inputs q.used s) (callState q.inputs q.used t) := by
+  obtain ⟨originalS, liveS, roomS, argsS, memS, restS⟩ := hs
+  obtain ⟨originalT, liveT, roomT, argsT, memT, restT⟩ := ht
+  have spS : s.sp = originalS.sp - 24#32 := restS.sp
+  have spT : t.sp = originalT.sp - 24#32 := restT.sp
+  have memoryS : s.mem = callMem q.inputs q.used originalS.mem s.sp := by rw [spS]; exact memS
+  have memoryT : t.mem = callMem q.inputs q.used originalT.mem t.sp := by rw [spT]; exact memT
+  have factsS := liveS.buffers.callFacts q.used roomS
+  have factsT := liveT.buffers.callFacts q.used roomT
+  rw [← spS] at factsS
+  rw [← spT] at factsT
+  have a0S := call_stackArg (j := 0) factsS.argsFits memoryS (by decide)
+  have a1S := call_stackArg (j := 1) factsS.argsFits memoryS (by decide)
+  have a2S := call_stackArg (j := 2) factsS.argsFits memoryS (by decide)
+  have a3S := call_stackArg (j := 3) factsS.argsFits memoryS (by decide)
+  have a4S := call_stackArg (j := 4) factsS.argsFits memoryS (by decide)
+  have a0T := call_stackArg (j := 0) factsT.argsFits memoryT (by decide)
+  have a1T := call_stackArg (j := 1) factsT.argsFits memoryT (by decide)
+  have a2T := call_stackArg (j := 2) factsT.argsFits memoryT (by decide)
+  have a3T := call_stackArg (j := 3) factsT.argsFits memoryT (by decide)
+  have a4T := call_stackArg (j := 4) factsT.argsFits memoryT (by decide)
+  simp only [callValue] at a0S a1S a2S a3S a4S a0T a1T a2T a3T a4T
+  have bytesS := liveS.call_bytes roomS memS
+  have bytesT := liveT.call_bytes roomT memT
+  have tapeNat : (BitVec.ofNat 32 (q.inputs.c.bytes.length - q.used)).toNat = q.inputs.c.bytes.length - q.used := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := q.inputs.c.tapeCount; omega_using [this])]
+  simp only [State.addr] at bytesS bytesT
+  sig_pub [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
+    abi, argRegs, reduceClassify, Loc.val, State.addr]
+  simp only [argsS.out, argsS.width, argsS.usedPtr, argsS.bits,
+    argsT.out, argsT.width, argsT.usedPtr, argsT.bits,
+    a0S, a1S, a2S, a3S, a4S, a0T, a1T, a2T, a3T, a4T, tapeNat]
+  rw [bytesS, bytesT]
+  simp only [sp, true_and]
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
+
+/-! The selected shared Miller–Rabin candidate is called under its complete public timing contract. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.ParameterSearch
+open VG VG.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post)
+
+private theorem call_ready {q : SearchPoint} {s : State} (h : CallCT q s) :
+    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre (callState q.inputs q.used s) ∧
+      Covers (callRd q.inputs q.used s.sp ++ callWr q.inputs) (s.rd ++ s.wr) ∧ Covers (callWr q.inputs) s.wr := by
+  obtain ⟨original, live, room, args, mem, rest⟩ := h
+  have sp : s.sp = original.sp - 24#32 := rest.sp
+  have memory : s.mem = callMem q.inputs q.used original.mem s.sp := by rw [sp]; exact mem
+  have facts := live.buffers.callFacts q.used room
+  rw [← sp] at facts
+  have writes : Covers (callWr q.inputs) s.wr := call_writes
+    ⟨q.inputs.c.outputFits, by rw [rest.wr]; exact List.mem_cons_of_mem _ live.buffers.output.2⟩
+    args.controller.space
+    ⟨q.inputs.c.scratchFits, by rw [rest.wr]; exact List.mem_cons_of_mem _ live.buffers.scratch.2⟩
+  have source : InRegions (s.rd ++ s.wr) (State.addr (q.inputs.c.tape + BitVec.ofNat 32 q.used))
+      (q.inputs.c.bytes.length - q.used) := by
+    rw [rest.rd, rest.wr]
+    exact InRegions_append_cons.mpr (.inr (live.source_read room))
+  exact ⟨call_pre facts args memory room, call_reads writes source args.stack, writes⟩
+
+theorem candidate_call_ct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
+    RelCT isa (Two CallCT) (.call backend.candidateName backend.candidate) (fun _ _ => True) := by
+  intro s t traceS traceT u v ⟨q, hs, ht, sp⟩ runS runT
+  have ct : RelCT isa (fun a b => CallCT q a ∧ CallCT q b ∧ a.sp = s.sp ∧ b.sp = s.sp)
+      (.call backend.candidateName backend.candidate) (fun _ _ => True) := by
+    refine VG.Arm.RelCT.call backend.candidate_verified.1 backend.candidate_verified.2.1
+      (callRd q.inputs q.used s.sp) (callWr q.inputs) ?_
+    intro a b ⟨ha, hb, spA, spB⟩
+    obtain ⟨preA, readsA, writesA⟩ := call_ready ha
+    obtain ⟨preB, readsB, writesB⟩ := call_ready hb
+    have pubCall := call_public ha hb (spA.trans spB.symm)
+    exact ⟨by simpa only [callState, spA] using preA,
+      by simpa only [callState, spB] using preB,
+      by simpa only [callState, spA, spB] using pubCall,
+      by simpa only [spA] using readsA, writesA, by simpa only [spB] using readsB, writesB⟩
+  exact ct _ _ _ _ _ _ ⟨hs, ht, rfl, sp.symm⟩ runS runT
+
+theorem candidate_run_ct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
+    RelCT isa (Two ReadyCT)
+      (VG.Impl.Ffdh.Arm.ParameterSearch.candidateRun (.call backend.candidateName backend.candidate)) (fun _ _ => True) := by
+  unfold VG.Impl.Ffdh.Arm.ParameterSearch.candidateRun
+  apply VG.Proof.Ffdh.Arm.KeySearch.alloc_ct
+  refine (RelCT.seq (two_post arguments_ct arguments_ready) (candidate_call_ct backend)).mono ?_ (fun _ _ h => h)
+  rintro _ _ ⟨s, t, ⟨q, hs, ht, sp⟩, rfl, rfl⟩
+  refine ⟨q, ⟨s, hs, rfl⟩, ⟨t, ht, rfl⟩, ?_⟩
+  change s.sp - 24#32 = t.sp - 24#32
+  rw [sp]
+
+end VG.Proof.Ffdh.Arm.ParameterSearch
+
+end
+
+end
+
 
 /-! The native search step selects its public entropy-length path and calls the proved candidate. -/
 
@@ -52,7 +188,7 @@ theorem step_ct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) : RelCT isa (Two 
       (fun _ _ ⟨q, hs, ht, sp⟩ => ⟨q, hs.1.1, ht.1.1, sp⟩) (fun _ _ h => h)
   · have ready (q : SearchPoint) (s : State) (h : LengthCT q s ∧ isa.eval .eq s = some false) : ReadyCT q s := by
       have enough := of_decide_eq_false (Option.some.inj (h.1.2.symm.trans h.2))
-      exact ⟨h.1.1, by have := h.1.1.usedBound; omega⟩
+      exact ⟨h.1.1, by have := h.1.1.usedBound; omega_using [enough, this]⟩
     exact (RelCT.seq (two_post (candidate_run_ct backend) (run_ready backend)) classify_ct).mono
       (fun _ _ ⟨q, hs, ht, sp⟩ => ⟨q, ready q _ hs, ready q _ ht, sp⟩) (fun _ _ h => h)
 

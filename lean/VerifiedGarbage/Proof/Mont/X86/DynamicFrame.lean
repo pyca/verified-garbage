@@ -24,8 +24,8 @@ theorem OpKeep.val {M : Mod} {base : Addr} {acc o d n : Nat} {s t : State}
   apply h.mem.val32
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> omega
-  · omega
+    rcases hr with rfl | rfl | rfl <;> omega_arith
+  · omega_using [hd]
 
 /-- The modulus remains available for the next arithmetic operation. -/
 theorem Modulus.keep {M : Mod} {base : Addr} {size m acc o a b : Nat} {s t : State}
@@ -34,7 +34,7 @@ theorem Modulus.keep {M : Mod} {base : Addr} {size m acc o a b : Nat} {s t : Sta
     (ho : o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ o)
     (hk : VG.Proof.Mont.X86.OpKeep M base acc o s t) : Modulus M size m t.mem base := by
   refine ⟨hm.n0, hm.mo, hm.tmp, hm.sep, ?_⟩
-  rw [OpKeep.val hk (by omega) hm.sep (by have := hl.acc_mo; omega)
-    (by have := hs.nowrap; have := hm.mo; omega), hm.val]
+  rw [OpKeep.val hk (by omega_using [ho]) hm.sep (by have := hl.acc_mo; omega_using [this])
+    (by have := hs.nowrap; have := hm.mo; omega_arith), hm.val]
 
 end VG.Proof.Mont.X86.Dynamic

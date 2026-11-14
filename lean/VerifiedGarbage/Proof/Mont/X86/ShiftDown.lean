@@ -25,22 +25,22 @@ theorem val32_halve (m m' : Mem) (base : Addr) : ∀ (k out : Nat),
   | 0, _, _ => by simp only [val32, Nat.zero_div]
   | k + 1, out, h => by
     have ih := val32_halve m m' base k (out + 4) fun i hi => by
-      have e := h (i + 1) (by omega)
-      rw [show out + 4 * (i + 1) = out + 4 + 4 * i by omega,
-        show out + 4 * (i + 1 + 1) = out + 4 + 4 * (i + 1) by omega] at e
+      have e := h (i + 1) (by omega_using [hi])
+      rw [show out + 4 * (i + 1) = out + 4 + 4 * i by omega_using [],
+        show out + 4 * (i + 1 + 1) = out + 4 + 4 * (i + 1) by omega_using []] at e
       rw [e]
       simp only [Nat.add_right_cancel_iff]
-    have e := h 0 (by omega)
-    rw [Nat.mul_zero, Nat.add_zero, show out + 4 * (0 + 1) = out + 4 by omega] at e
+    have e := h 0 (by omega_using [])
+    rw [Nat.mul_zero, Nat.add_zero, show out + 4 * (0 + 1) = out + 4 by omega_using []] at e
     rw [val32, val32, e, ih]
     cases k with
     | zero =>
       rw [ite_eq_left rfl]
       simp only [val32]
-      omega
+      omega_using []
     | succ k =>
-      rw [ite_eq_right (by omega), ← val32_parity m base (out + 4) k]
-      omega
+      rw [ite_eq_right (by omega_using []), ← val32_parity m base (out + 4) k]
+      omega_using []
 
 /-- The `k` words at `out` (`2 ≤ k`) halved. -/
 theorem shiftDown_ok {s : State} {base : Addr} {size k out : Nat} (hs : Scr s base size)
@@ -55,21 +55,21 @@ theorem shiftDown_ok {s : State} {base : Addr} {size k out : Nat} (hs : Scr s ba
       Outside base out (4 * j) s.mem t.mem ∧
       ∀ i < j, w32 t.mem base (out + 4 * i) =
         w32 s.mem base (out + 4 * i) / 2 + 2 ^ 31 * (w32 s.mem base (out + 4 * (i + 1)) % 2))
-    (by omega) (by have := hs.size_lt; omega)
+    (by omega_using [hk]) (by have := hs.size_lt; omega_using [ho, hn])
     (fun j u u' ⟨K, O, W⟩ ⟨hm, hr, hw, hg⟩ =>
       ⟨⟨fun r h => (hg r (by simp_all) (by simp_all)).trans (K.1 r h), hr.trans K.2.1, hw.trans K.2.2⟩,
         hm ▸ O, hm ▸ W⟩)
     ⟨Keeps.refl _ _, VG.Proof.Mont.Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
     (fun j hj t ⟨K, O, W⟩ ej => ?_) (fun u ⟨K, O, W⟩ => ?_))
   · have ht := hs.of_keeps K (by decide)
-    refine wp_movS (readSrc_at' ht ej (d := out + 4) (by omega)) fun s₁ u₁ _ => ?_
+    refine wp_movS (readSrc_at' ht ej (d := out + 4) (by omega_using [ho, hj])) fun s₁ u₁ _ => ?_
     refine wp_logicS (.inl rfl) rfl fun s₂ u₂ => ?_
     refine wp_ror (by decide) fun s₃ u₃ => ?_
     have k₃ : Keeps [.eax, .edx] t s₃ := ((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps
     have hs₃ := ht.of_keeps k₃ (by decide)
     have ej₃ : s₃.gpr .ebp = s₃.gpr .edi + BitVec.ofNat 32 (4 * j) := by
       rw [k₃.1 _ (by decide), k₃.1 _ (by decide)]; exact ej
-    refine wp_movS (readSrc_at' hs₃ ej₃ (d := out) (by omega)) fun s₄ u₄ _ => ?_
+    refine wp_movS (readSrc_at' hs₃ ej₃ (d := out) (by omega_using [ho, hj])) fun s₄ u₄ _ => ?_
     refine wp_shr (by decide) fun s₅ u₅ _ => ?_
     refine wp_addS rfl fun s₆ u₆ _ => ?_
     have k₆ : Keeps [.eax, .edx] t s₆ := ((k₃.widen u₄.keeps).widen u₅.keeps).widen u₆.keeps
@@ -77,34 +77,34 @@ theorem shiftDown_ok {s : State} {base : Addr} {size k out : Nat} (hs : Scr s ba
     have ej₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * j) := by
       rw [k₆.1 _ (by decide), k₆.1 _ (by decide)]; exact ej
     have mem₆ : s₆.mem = t.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-    refine wp_storeS (hs₆.ea_at' ej₆ (d := out) (by omega)) (hs₆.write (d := out + 4 * j) (n := 4) (by omega))
+    refine wp_storeS (hs₆.ea_at' ej₆ (d := out) (by omega_using [ho, hj])) (hs₆.write (d := out + 4 * j) (n := 4) (by omega_using [ho, hj]))
       fun s₇ m₇ => WP.block_nil ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩
     · exact K.trans ((k₆.mono (by decide)).trans (m₇.keeps _))
     · rw [m₇.mem, mem₆]
-      exact (O.mono (Nat.le_refl _) (by omega)).trans
-        ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+      exact (O.mono (Nat.le_refl _) (by omega_using [])).trans
+        ((writeW32_outside _ _ _ (by omega_using [ho, hn, hj])).mono (by omega_using []) (by omega_using []))
     · intro i hi
       rw [m₇.mem, mem₆]
       by_cases hij : i < j
-      · rw [(writeW32_outside t.mem base (d := out + 4 * j) _ (by omega)).w32 (by omega) (by omega)]
+      · rw [(writeW32_outside t.mem base (d := out + 4 * j) _ (by omega_using [ho, hn, hj])).w32 (by omega_using [hij]) (by omega_using [ho, hn, hj, hi])]
         exact W i hij
-      · obtain rfl : i = j := by omega
+      · obtain rfl : i = j := by omega_using [hi, hij]
         rw [w32_write_self, u₆.gpr, u₅.gpr, u₄.gpr, u₅.other .eax (by decide), u₄.other .eax (by decide),
           u₃.gpr, u₂.gpr, u₁.gpr, u₃.mem, u₂.mem, u₁.mem, ite_eq_left rfl, shifted_word,
-          show out + 4 + 4 * i = out + 4 * (i + 1) by omega]
+          show out + 4 + 4 * i = out + 4 * (i + 1) by omega_using []]
         change w32 t.mem base _ / 2 + 2 ^ 31 * (w32 t.mem base _ % 2) = _
-        rw [O.w32 (d := out + 4 * i) (by omega) (by omega), O.w32 (d := out + 4 * (i + 1)) (by omega) (by omega)]
+        rw [O.w32 (d := out + 4 * i) (by omega_using []) (by omega_using [ho, hn, hj]), O.w32 (d := out + 4 * (i + 1)) (by omega_using []) (by omega_using [ho, hn, hj])]
     · rw [m₇.gpr, k₆.1 _ (by decide)]
     · rw [m₇.gpr, k₆.1 _ (by decide)]
   · have hu := hs.of_keeps K (by decide)
-    refine WP.mono (shiftWord_ok hu true (out := out + 4 * (k - 1)) (by omega) (fun h => nomatch h))
+    refine WP.mono (shiftWord_ok hu true (out := out + 4 * (k - 1)) (by omega_using [hk, ho]) (fun h => nomatch h))
       fun t ⟨O₁, V₁, K₁⟩ => ⟨?_, ?_, K.trans (K₁.mono (by decide))⟩
-    · exact (O.mono (Nat.le_refl _) (by omega)).trans (O₁.mono (by omega) (by omega))
+    · exact (O.mono (Nat.le_refl _) (by omega_using [])).trans (O₁.mono (by omega_using []) (by omega_using [hk]))
     · refine val32_halve s.mem t.mem base k out fun i hi => ?_
       by_cases hik : i + 1 = k
-      · obtain rfl : i = k - 1 := by omega
-        rw [ite_eq_left hik, V₁, ite_eq_left rfl, O.w32 (d := out + 4 * (k - 1)) (by omega) (by omega)]
-      · rw [ite_eq_right hik, O₁.w32 (d := out + 4 * i) (by omega) (by omega)]
-        exact W i (by omega)
+      · obtain rfl : i = k - 1 := by omega_using [hik]
+        rw [ite_eq_left hik, V₁, ite_eq_left rfl, O.w32 (d := out + 4 * (k - 1)) (by omega_using []) (by omega_using [ho, hn])]
+      · rw [ite_eq_right hik, O₁.w32 (d := out + 4 * i) (by omega_using [hk, hik]) (by omega_using [ho, hn, hi])]
+        exact W i (by omega_using [hi, hik])
 
 end VG.Proof.Mont.X86.Dynamic

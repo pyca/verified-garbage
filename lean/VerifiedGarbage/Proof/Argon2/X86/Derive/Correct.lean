@@ -88,10 +88,10 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   have L8 := laneLen_ge hp
   have hlt := hp.lanes_lt
   have hb : blocksN s₀ = (prm s₀).blocks := hp.blocks
-  obtain ⟨cl, _⟩ := cell_fits hp hl (col := (prm s₀).laneLen - 1) (by omega)
+  obtain ⟨cl, _⟩ := cell_fits hp hl (col := (prm s₀).laneLen - 1) (by omega_using [L8])
   have last : Proof.Argon2.lastIndex (prm s₀) l = l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) := by
-    unfold Proof.Argon2.lastIndex; rw [Nat.succ_mul]; omega
-  have ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega
+    unfold Proof.Argon2.lastIndex; rw [Nat.succ_mul]; omega_using [L8]
+  have ne0 : l * (prm s₀).laneLen + ((prm s₀).laneLen - 1) ≠ 0 := by omega_using [L8]
   unfold Impl.Argon2.X86.Derive.reduceLane Impl.Argon2.X86.Derive.reduceXor
   simp only [List.cons_append, List.nil_append]
   refine WP.seq ?_
@@ -100,9 +100,9 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   refine wp_ldloc hp i₁ (d := laneLenOff) (by decide) fun s₂ u₂ => wp_subi fun s₃ u₃ _ _ => ?_
   have i₃ := (i₁.upd u₂ (by decide) (by decide)).upd u₃ (by decide) (by decide)
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega)
+  refine blockAddr_ok hp i₃ (h.pr.of_mem m₃) hl (col := (prm s₀).laneLen - 1) (by omega_using [L8])
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.lane])
-    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, Wp.ofNat_pred (by omega)]) fun s₄ a₄ _ k₄ => WP.block_nil ?_
+    (by rw [u₃.gpr, u₂.gpr, lw_mem u₁.mem, h.pr.laneLen, Wp.ofNat_pred (by omega_using [L8])]) fun s₄ a₄ _ k₄ => WP.block_nil ?_
   have i₄ := i₃.keep k₄
   refine WP.seq (wp_mov fun s₅ u₅ => ?_)
   have i₅ := i₄.upd u₅ (by decide) (by decide)
@@ -129,7 +129,7 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
       simp only [List.mem_singleton] at hr; subst hr
       exact (loc_disj hp hd (memR s₀) (by simp)).sub_right (cell_in_mem b1)) (by decide)
   refine (advance_ok hp i₇ (d := laneOff) (n := l) (by decide) (by rw [lt₇ _ (by decide)]; exact h.lane)
-    (by omega) (B := lanesN s₀) (by omega) fun v iv _ => ?_).mono fun t ⟨it, mt, ct, _⟩ => ⟨?_, ct⟩
+    (by omega_using [hl, hlt]) (B := lanesN s₀) (by omega_using [hlt]) fun v iv _ => ?_).mono fun t ⟨it, mt, ct, _⟩ => ⟨?_, ct⟩
   · rw [show Impl.Argon2.X86.Derive.fr (argOff Impl.Argon2.X86.Derive.lanesArg) = .mem ⟨.ebp, argOff 7⟩ from rfl,
       Wp.readSrc_mem iv.ebp (iv.arg_in hp (by decide)), iv.arg hp (by decide)]
     simp
@@ -146,7 +146,7 @@ theorem reduceLane_ok {s : State} {M : Array Block} {l : Nat} (h : RI s₀ M l s
   refine ⟨it, Prm.of_lw h.pr fun d hd => ?_, ?_, ?_, fun k hk k0 => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     have hd4 : d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
-    rw [lt d (by omega) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lt₇ d hd4]
+    rw [lt d (by omega_using [hd4]) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lt₇ d hd4]
   · show t.mem.readW _ 32 = _
     rw [mt, Mem.readW_writeW_self32]
   · rw [ct _ (by rw [← hb]; exact b1), new, h.first, h.rest _ (by rw [← hb]; exact cl) ne0, reduction_snoc,
@@ -191,8 +191,8 @@ theorem reduceStart_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm 
   refine ⟨i₅, Prm.of_lw pr fun d hd => ?_, by rw [v₅, u₄.gpr]; rfl, ?_, fun k hk k0 => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     have hd4 : d + 4 ≤ 144 := by rcases hd with rfl | rfl | rfl | rfl <;> decide
-    rw [l₅ d (by omega) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lw_mem u₄.mem, lt₃ d hd4]
-  · rw [c₅ _ (by rw [← hb]; exact b1), u₄.mem, cell0, blockAt_zero fun i hi => z₃ i (by omega)]
+    rw [l₅ d (by omega_using [hd4]) (by rcases hd with rfl | rfl | rfl | rfl <;> decide), lw_mem u₄.mem, lt₃ d hd4]
+  · rw [c₅ _ (by rw [← hb]; exact b1), u₄.mem, cell0, blockAt_zero fun i hi => z₃ i (by omega_using [hi])]
     rfl
   · rw [c₅ _ hk, u₄.mem, blockAt_keep f₃ (fun r hr => ?_), m₂, hm.block k hk]
     simp only [List.mem_singleton] at hr; subst hr
@@ -207,13 +207,13 @@ theorem reduce_ok {s : State} {M : Array Block} (h : Inv s₀ s) (pr : Prm s₀ 
   unfold Impl.Argon2.X86.Derive.reduce
   refine WP.seq ((reduceStart_ok hp h pr hm).mono fun s₅ start => ?_)
   refine WP.loop (M := isa) (fun n t => ∃ l, n = lanesN s₀ - l ∧ l < lanesN s₀ ∧ RI s₀ M l t) ?_ (lanesN s₀) s₅
-    ⟨0, by omega, hl1, start⟩
+    ⟨0, by omega_using [], hl1, start⟩
   rintro n t ⟨l, rfl, hl, ht⟩
   refine (reduceLane_ok hp ht hl).mono fun u ⟨hu, cu⟩ => ?_
   by_cases e : l + 1 < lanesN s₀
-  · exact .inr ⟨by rw [show isa.eval .b u = u.cf from rfl, cu]; simp [e], _, by omega, l + 1, rfl, e, hu⟩
+  · exact .inr ⟨by rw [show isa.eval .b u = u.cf from rfl, cu]; simp [e], _, by omega_using [hl], l + 1, rfl, e, hu⟩
   · refine .inl ⟨by rw [show isa.eval .b u = u.cf from rfl, cu]; simp [e], hu.inv, hu.pr, ?_⟩
-    rw [hu.first, show l + 1 = lanesN s₀ by omega]
+    rw [hu.first, show l + 1 = lanesN s₀ by omega_using [hl, e]]
 
 end
 
@@ -251,9 +251,9 @@ theorem finalOutput_ok {s : State} (h : Inv s₀ s) :
   have cx : (s₅.gpr .ecx).toNat = outL s₀ := by
     rw [u₅.other _ (by decide), u₄.gpr]
   refine hcall_ok hp i₅ (r := .esi) (by decide) u₅.gpr
-    ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega⟩
-    (by rw [si, ax]; omega) ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega⟩
-    (by rw [di, cx]; exact ho) (by rw [cx]; omega) fun t it _ _ post => ⟨it, ?_⟩
+    ⟨memR s₀, by simp, 0, by rw [si]; simp, by rw [ax]; show 0 + 1024 ≤ blocksN s₀ * 1024; omega_using [b1]⟩
+    (by rw [si, ax]; omega_using [b1, hm]) ⟨outR s₀, by simp, 0, by rw [di]; simp, by rw [cx]; show 0 + outL s₀ ≤ outL s₀; omega_using []⟩
+    (by rw [di, cx]; exact ho) (by rw [cx]; omega_using [tg]) fun t it _ _ post => ⟨it, ?_⟩
   rw [← di, ← cx, post, cx, ax, si, m₅, cell0, Proof.Argon2.serialize_blockAt]
 
 end
@@ -300,7 +300,7 @@ theorem body_ok : WP isa Impl.Argon2.X86.Derive.body (entry s₀) fun t => BodyD
   rfl
 
 theorem correct : WP isa Impl.Argon2.X86.Derive.derive s₀ fun t => abiPreserved s₀ t ∧ deriveX86.post s₀ t :=
-  frames_ok (by have := hp.esp_lo; omega) body_nosp (body_ok hp) fun t u q m => by
+  frames_ok (by have := hp.esp_lo; omega_using [this]) body_nosp (body_ok hp) fun t u q m => by
     show bytesAt u.mem _ _ = _
     rw [m]; exact q
 

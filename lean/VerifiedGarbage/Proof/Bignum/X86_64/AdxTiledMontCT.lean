@@ -52,7 +52,7 @@ theorem redc_ct : RelCT isa (Two GoodL) AdxRotate8.redc (Two GoodL) := by
     rintro L s ⟨mi,hg⟩; exact ⟨mi,hg,L.hZ⟩
   · rintro L s ⟨mi,hg⟩
     exact WP.mono (AdxRotate8.redc_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn) fun _ ⟨_,o,k⟩ =>
-      ⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩
+      ⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega_using [])⟩
 
 /-- The reduction is constant time, for slots and layouts given by any public data `x`. -/
 theorem redcV_ct' {α : Type} {P : α → List (Nat × Nat)} {L : α → Layout} :
@@ -76,7 +76,7 @@ theorem redcFinish_ct {α : Type} {P : α → List (Nat × Nat)} {L : α → Lay
     have hZ := (L x).hZ
     have hsrc : readSrc s (.mem (hdr (sArr aN)))=some (off (L x).B (slot (L x).w aN)) := by
       rw [readSrc_word (d := 8*sArr aN) hg.scr (by simp only [State.ea,hdr,hg.rdi,hdrOff])
-        (by have := hdr_lt_slot (L x).w 8 (show sArr aN<32 by decide); omega),hg.hdr.harr aN (by decide)]
+        (by have := hdr_lt_slot (L x).w 8 (show sArr aN<32 by decide); omega_using [hZ, this]),hg.hdr.harr aN (by decide)]
     exact WP.mono (movMem_ok s (dst := .r10) hsrc) fun _ ⟨p,_,_,k⟩ =>
       ⟨⟨⟨mi,hg.scr.congr k.keep.2.2,(k.keep.gpr (by decide)).trans hg.rdi,k.2.1 ▸ hg.hdr⟩,k.2.1 ▸ hv⟩,p⟩
   unfold Adx.finish8

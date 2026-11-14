@@ -3,7 +3,17 @@ module
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombAdd
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
+public import VerifiedGarbage.Proof.Ed25519.Point64Contract
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
+public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Env
+import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
@@ -13,6 +23,237 @@ import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+
+/-! ### `Ed25519.AArch64.CombAdd`, which only this module used -/
+
+section
+
+/-! ### `Ed25519.AArch64.Point64.Fn`, which only this module used -/
+
+section
+
+/-!
+# Ed25519's point functions on AArch64: the affine addition's value
+
+Untrusted: everything here is checked by Lean. The affine addition's program
+computes `pointAdd` of an entry with `Z = 1` (`mixedResult_eq`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.AArch64.Point64
+
+open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64
+
+/-! ## The programs' values -/
+
+/-- What `addAffineOps` computes, from the point's coordinates and the cached entry's. -/
+def mixedResult (x y z t q₀ q₁ q₂ : Spec.X25519.Fe) : Spec.Ed25519.Point :=
+  let a := (y - x) * q₀
+  let b := (y + x) * q₁
+  let c := t * q₂
+  let dd := z + z
+  ⟨(b - a) * (dd - c), (dd + c) * (b + a), (dd - c) * (dd + c), (b - a) * (b + a)⟩
+
+theorem mixedResult_eq (p q : Spec.Ed25519.Point) (hz : q.Z = 1) :
+    mixedResult p.X p.Y p.Z p.T (q.Y - q.X) (q.Y + q.X) (q.T * 2 * Spec.Ed25519.d) =
+      Spec.Ed25519.pointAdd p q := by
+  simp only [mixedResult, Spec.Ed25519.pointAdd, hz]
+  congr 1 <;> grind
+
+end VG.Proof.Ed25519.AArch64.Point64
+
+end
+
+end
+
+
+/-!
+# The comb's addition, on the `_alt` operations
+
+`combAdd` adds the affine entry in slots 4–6 to the accumulator in slots 0–3
+with `addAffineOps`' formula (`mixedResult`), on the operations of `AltOps`
+(`combAdd_ok`). Its sums and differences need inputs below `2·p`, which the
+accumulator's coordinates are, as products of `mul_4`, between additions
+(`AccBel`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed25519.AArch64
+
+open VG VG.AArch64 VG.Impl.Ed25519.AArch64
+open VG.Proof.X25519.AArch64.Alt (AltOp)
+open VG.Proof.X25519.AArch64.AltLadder (P2 mulE addE addE1 subE fr x17_ok altClob_sub)
+
+variable {large : Bool}
+
+/-- The accumulator's coordinates (slots 0–3) are below `2·p`. -/
+def AccBel (m : Mem) (base : Addr) : Prop := ∀ i : Slot, i.val < 4 → fe m base (offset i) < P2
+
+theorem _root_.VG.Proof.X25519.AArch64.Alt.AltOp.keep {base : Addr} {o : Slot} {s t : State} (h : AltOp base (offset o) s t)
+    (ho : o.val ≤ 13) : Keep base s t :=
+  ⟨fun r hr => h.gpr r (fun hm => hr (altClob_sub r hm)), h.rd, h.wr, h.sp,
+    h.mem.mono (by simp only [offset]; omega) (by simp only [offset]; omega_using [])⟩
+
+theorem _root_.VG.Proof.X25519.AArch64.Alt.AltOp.x17 {base : Addr} {o : Nat} {s t : State} (h : AltOp base o s t)
+    (hz : s.gpr .x17 = 0) : t.gpr .x17 = 0 :=
+  (h.gpr _ (by decide)).trans hz
+
+/-- **The addition**: slots 0–3 hold `mixedResult` of the accumulator and the entry, below
+`2·p`; only slots 0–3 and 7–12 change. -/
+theorem combAdd_ok {s : State} {base : Addr} (hs : Scr s base large) (hb : AccBel s.mem base) :
+    WP isa (.block combAdd) s fun t => Keep base s t ∧ AccBel t.mem base ∧
+      point (env t.mem base) 0 1 2 3 = Point64.mixedResult (env s.mem base 0) (env s.mem base 1)
+        (env s.mem base 2) (env s.mem base 3) (env s.mem base 4) (env s.mem base 5)
+        (env s.mem base 6) ∧
+      ∀ i : Slot, (4 ≤ i.val ∧ i.val < 7) ∨ 13 ≤ i.val → fe t.mem base (offset i) = fe s.mem base (offset i) := by
+  simp only [combAdd, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (x17_ok s) fun a ⟨za, ka⟩ => ?_
+  have k0 : Keep base s a := Keep.of_keeps ka (by decide)
+  have ha := k0.scr hs
+  have ea : env a.mem base = env s.mem base := by rw [ka.mem]
+  have fa : ∀ i, fe a.mem base (offset i) = fe s.mem base (offset i) := fun i => by rw [ka.mem]
+  -- t0 = 2z₁, t1 = y₁ - x₁, t2 = y₁ + x₁
+  rw [WP.block_append_iff]
+  refine WP.mono (addE ha 7 2 2 (by decide) (by decide) (by decide) za
+    (by rw [fa]; exact hb 2 (by decide)) (by rw [fa]; exact hb 2 (by decide))) fun b1 ⟨h1, e1⟩ => ?_
+  rw [ea] at e1
+  have s1 := (h1.keep (by decide)).scr ha
+  have z1 := h1.x17 za
+  rw [WP.block_append_iff]
+  refine WP.mono (subE s1 8 1 0 (by decide) (by decide) (by decide) z1
+    (by rw [fr h1 0 (by decide), fa]; exact hb 0 (by decide))) fun b2 ⟨h2, e2⟩ => ?_
+  rw [e1] at e2
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e2
+  have s2 := (h2.keep (by decide)).scr s1
+  have z2 := h2.x17 z1
+  rw [WP.block_append_iff]
+  refine WP.mono (addE s2 9 1 0 (by decide) (by decide) (by decide) z2
+    (by rw [fr h2 1 (by decide), fr h1 1 (by decide), fa]; exact hb 1 (by decide))
+    (by rw [fr h2 0 (by decide), fr h1 0 (by decide), fa]; exact hb 0 (by decide)))
+    fun b3 ⟨h3, e3⟩ => ?_
+  rw [e2] at e3
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e3
+  have s3 := (h3.keep (by decide)).scr s2
+  have z3 := h3.x17 z2
+  -- t3 = w₁ · kxy, t1 = t1 · ymx, t2 = t2 · xpy
+  rw [WP.block_append_iff]
+  refine WP.mono (mulE s3 10 3 6 (by decide) (by decide) (by decide) z3) fun b4 ⟨h4, l4, e4⟩ => ?_
+  rw [e3] at e4
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e4
+  have s4 := (h4.keep (by decide)).scr s3
+  have z4 := h4.x17 z3
+  rw [WP.block_append_iff]
+  refine WP.mono (mulE s4 8 8 4 (by decide) (by decide) (by decide) z4) fun b5 ⟨h5, l5, e5⟩ => ?_
+  rw [e4] at e5
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e5
+  have s5 := (h5.keep (by decide)).scr s4
+  have z5 := h5.x17 z4
+  rw [WP.block_append_iff]
+  refine WP.mono (mulE s5 9 9 5 (by decide) (by decide) (by decide) z5) fun b6 ⟨h6, l6, e6⟩ => ?_
+  rw [e5] at e6
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e6
+  have s6 := (h6.keep (by decide)).scr s5
+  have z6 := h6.x17 z5
+  -- t4 = t0 - t3, t0 = t0 + t3, t5 = t2 - t1, t1 = t2 + t1
+  have l10 : fe b6.mem base (offset 10) < P2 := by
+    rw [fr h6 10 (by decide), fr h5 10 (by decide)]; exact l4
+  rw [WP.block_append_iff]
+  refine WP.mono (subE s6 11 7 10 (by decide) (by decide) (by decide) z6 l10) fun b7 ⟨h7, e7⟩ => ?_
+  rw [e6] at e7
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e7
+  have s7 := (h7.keep (by decide)).scr s6
+  have z7 := h7.x17 z6
+  rw [WP.block_append_iff]
+  refine WP.mono (addE1 s7 7 7 10 (by decide) (by decide) (by decide) z7
+    (by rw [fr h7 10 (by decide)]; exact l10)) fun b8 ⟨h8, e8⟩ => ?_
+  rw [e7] at e8
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e8
+  have s8 := (h8.keep (by decide)).scr s7
+  have z8 := h8.x17 z7
+  have l8 : fe b8.mem base (offset 8) < P2 := by
+    rw [fr h8 8 (by decide), fr h7 8 (by decide), fr h6 8 (by decide)]; exact l5
+  have l9 : fe b8.mem base (offset 9) < P2 := by
+    rw [fr h8 9 (by decide), fr h7 9 (by decide)]; exact l6
+  rw [WP.block_append_iff]
+  refine WP.mono (subE s8 12 9 8 (by decide) (by decide) (by decide) z8 l8) fun b9 ⟨h9, e9⟩ => ?_
+  rw [e8] at e9
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e9
+  have s9 := (h9.keep (by decide)).scr s8
+  have z9 := h9.x17 z8
+  rw [WP.block_append_iff]
+  refine WP.mono (addE s9 8 9 8 (by decide) (by decide) (by decide) z9
+    (by rw [fr h9 9 (by decide)]; exact l9) (by rw [fr h9 8 (by decide)]; exact l8))
+    fun b10 ⟨h10, e10⟩ => ?_
+  rw [e9] at e10
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e10
+  have s10 := (h10.keep (by decide)).scr s9
+  have z10 := h10.x17 z9
+  -- z₃ = t4 · t0, x₃ = t5 · t4, y₃ = t0 · t1, w₃ = t5 · t1
+  rw [WP.block_append_iff]
+  refine WP.mono (mulE s10 2 11 7 (by decide) (by decide) (by decide) z10) fun b11 ⟨h11, l11, e11⟩ => ?_
+  rw [e10] at e11
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e11
+  have s11 := (h11.keep (by decide)).scr s10
+  have z11 := h11.x17 z10
+  rw [WP.block_append_iff]
+  refine WP.mono (mulE s11 0 12 11 (by decide) (by decide) (by decide) z11) fun b12 ⟨h12, l12, e12⟩ => ?_
+  rw [e11] at e12
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e12
+  have s12 := (h12.keep (by decide)).scr s11
+  have z12 := h12.x17 z11
+  rw [WP.block_append_iff]
+  refine WP.mono (mulE s12 1 7 8 (by decide) (by decide) (by decide) z12) fun b13 ⟨h13, l13, e13⟩ => ?_
+  rw [e12] at e13
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e13
+  have s13 := (h13.keep (by decide)).scr s12
+  have z13 := h13.x17 z12
+  refine WP.mono (mulE s13 3 12 8 (by decide) (by decide) (by decide) z13) fun t ⟨h14, l14, e14⟩ => ?_
+  rw [e13] at e14
+  simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e14
+  have kt : Keep base s t := k0.trans (h1.keep (by decide))
+    |>.trans (h2.keep (by decide))
+    |>.trans (h3.keep (by decide))
+    |>.trans (h4.keep (by decide))
+    |>.trans (h5.keep (by decide))
+    |>.trans (h6.keep (by decide))
+    |>.trans (h7.keep (by decide))
+    |>.trans (h8.keep (by decide))
+    |>.trans (h9.keep (by decide))
+    |>.trans (h10.keep (by decide))
+    |>.trans (h11.keep (by decide))
+    |>.trans (h12.keep (by decide))
+    |>.trans (h13.keep (by decide))
+    |>.trans (h14.keep (by decide))
+  refine ⟨kt, ?_, ?_, ?_⟩
+  · intro i hi
+    have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 :=
+      (by decide : ∀ i : Slot, i.val < 4 → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) i hi
+    rcases hc with rfl | rfl | rfl | rfl
+    · rw [fr h14 0 (by decide), fr h13 0 (by decide)]; exact l12
+    · rw [fr h14 1 (by decide)]; exact l13
+    · rw [fr h14 2 (by decide), fr h13 2 (by decide), fr h12 2 (by decide)]; exact l11
+    · exact l14
+  · rw [e14]
+    simp only [point, Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte]
+    rfl
+  · intro i hi
+    have n : ∀ o : Slot, (o.val < 4 ∨ (7 ≤ o.val ∧ o.val ≤ 12)) → i ≠ o :=
+      fun o ho e => by have := congrArg Fin.val e; omega_using [za, z1, z2, z3, l4, z4, l5, z5, l6, z6, l10, z7, z8, l8, l9, z9, z10, l11, z11, l12, z12, l13, z13, l14, hi, ho, this]
+    rw [fr h14 i (n 3 (by decide)), fr h13 i (n 1 (by decide)), fr h12 i (n 0 (by decide)),
+      fr h11 i (n 2 (by decide)), fr h10 i (n 8 (by decide)), fr h9 i (n 12 (by decide)),
+      fr h8 i (n 7 (by decide)), fr h7 i (n 11 (by decide)), fr h6 i (n 9 (by decide)),
+      fr h5 i (n 8 (by decide)), fr h4 i (n 10 (by decide)), fr h3 i (n 9 (by decide)),
+      fr h2 i (n 8 (by decide)), fr h1 i (n 7 (by decide)), fa]
+
+end VG.Proof.Ed25519.AArch64
+
+end
+
+end
+
 
 /-!
 # The comb's loop
@@ -64,7 +305,7 @@ theorem CombKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps
 
 theorem CombKeep.bit {base : Addr} {s t : State} (h : CombKeep base s t) {q : Nat} (hq : q < 256) :
     t.mem (off base (768 + q)) = s.mem (off base (768 + q)) :=
-  h.mem _ (by rw [ofs_off' base (by omega)]; omega)
+  h.mem _ (by rw [ofs_off' base (by omega_using [hq])]; omega_using [])
 
 theorem CombKeep.powers {base : Addr} {s t : State} (h : CombKeep base s t) :
     PowersKeep base 56 968 s t :=
@@ -136,12 +377,12 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     · exact Or.inr (Or.inl hr))
   -- The entry, negated for a negative digit.
   have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr, h.keep.rd, h.keep.wr])
-    (fun x hx => by rw [ka.mem]; exact h.keep.mem x (Or.inr (by omega)))
+    (fun x hx => by rw [ka.mem]; exact h.keep.mem x (Or.inr (by omega_using [hx])))
   refine WP.seq (WP.mono (combEntry_ok hsa hta (by rw [sya]; exact hT) hj a19 (mag_lt hn) a2 a1)
     fun c ⟨c4, c5, c6, cf, kc⟩ => ?_)
   have fc : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → fe c.mem base (offset i) = fe s.mem base (offset i) :=
     fun i hi => by
-      rw [cf.fe (by simp only [offset]; omega) (by simp only [offset]; omega), ka.mem]
+      rw [cf.fe (by simp only [offset]; omega_using [hi]) (by simp only [offset]; omega_using []), ka.mem]
   have ec : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → env c.mem base i = env s.mem base i := fun i hi => by
     simp only [env, F]
     rw [fc i hi]
@@ -172,7 +413,7 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     simp only [point, ec 0 (by decide), ec 1 (by decide), ec 2 (by decide), ec 3 (by decide)]
   have d21 : env d.mem base 21 = env c.mem base 21 := by
     simp only [env, F]; rw [md 21 (.inr (by decide))]
-  refine ⟨by omega, kbt.scr hsa, t19, ?_, fun q hq => ?_, ?_, fun i hi => by rw [kt.mem]; exact beld i hi,
+  refine ⟨by omega_using [hj], kbt.scr hsa, t19, ?_, fun q hq => ?_, ?_, fun i hi => by rw [kt.mem]; exact beld i hi,
     h.keep.trans kst⟩
   · rw [kt.mem, d21]
     exact c21
@@ -195,16 +436,16 @@ theorem combSteps_ok {s₀ b : State} {base T : Addr} (htb : TblAt s₀ base T) 
   apply WP.loop (fun n (t : State) => (CombInv s₀ base S v (64 - n) t ∧ t.syms combSym = T) ∧
     0 < n ∧ n ≤ 64) (n := 64 - j₀)
   · intro n t ⟨⟨ht, hty⟩, hn0, hn⟩
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono_syms (combStep_ok ht htb hty (by omega)) fun u ⟨u8, hu⟩ suy => ?_
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_using [hn0]⟩
+    refine WP.mono_syms (combStep_ok ht htb hty (by omega_using [])) fun u ⟨u8, hu⟩ suy => ?_
     by_cases hk : k = 0
     · subst hk
       exact Or.inl ⟨by simp only [eval, read_x, u8, show 64 - (0 + 1) + 1 = 64 from rfl, ne_eq,
         not_true_eq_false, decide_false], hu⟩
-    · refine Or.inr ⟨by simp only [eval, read_x, u8, show 64 - (k + 1) + 1 ≠ 64 by omega, ne_eq,
-        not_false_eq_true, decide_true], k, by omega, ⟨?_, by rw [suy]; exact hty⟩, by omega, by omega⟩
-      rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
-  · exact ⟨⟨by rw [show 64 - (64 - j₀) = j₀ by omega]; exact init, hT⟩, by omega, by omega⟩
+    · refine Or.inr ⟨by simp only [eval, read_x, u8, show 64 - (k + 1) + 1 ≠ 64 by omega_using [hk], ne_eq,
+        not_false_eq_true, decide_true], k, by omega_using [], ⟨?_, by rw [suy]; exact hty⟩, by omega_using [hk], by omega_using [hn]⟩
+      rw [show 64 - k = 64 - (k + 1) + 1 by omega_using [hn]]; exact hu
+  · exact ⟨⟨by rw [show 64 - (64 - j₀) = j₀ by omega_using [hj₀]]; exact init, hT⟩, by omega_using [hj₀], by omega_using []⟩
 
 /-- The counter `x19` set to `j < 2^16`. -/
 theorem counterInit_ok (s : State) (j : Nat) (hj : j < 2 ^ 16) :
@@ -218,7 +459,7 @@ theorem counterInit_ok (s : State) (j : Nat) (hj : j < 2 ^ 16) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Size.bits]
     simp only [Nat.mul_zero, Nat.shiftLeft_zero, BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat]
-    omega
+    omega_using [hj]
   · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
 
 /-- The loop from digit `j₀ < 64`, from `[v + Σ_{i < j₀} d_i 16^i]B`. -/
@@ -230,10 +471,10 @@ theorem combLoopFrom_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
     (hB : AccBel s.mem base) :
     WP isa (combLoopFrom j₀) s fun t => CombInv s base S v 64 t := by
   rw [combLoopFrom]
-  refine WP.seq (WP.mono_syms (counterInit_ok s j₀ (by omega)) fun b ⟨b19, kb⟩ syb => ?_)
+  refine WP.seq (WP.mono_syms (counterInit_ok s j₀ (by omega_using [hj₀])) fun b ⟨b19, kb⟩ syb => ?_)
   have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
   exact combSteps_ok htb hj₀
-    ⟨by omega, hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
+    ⟨by omega_using [hj₀], hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
       fun q hq => by rw [kb.mem]; exact hb q hq, by rw [kb.mem]; exact hv,
       fun i hi => by rw [kb.mem]; exact hB i hi, ksb⟩
     (by rw [syb]; exact hT)
@@ -258,7 +499,7 @@ theorem combInit_ok {s : State} {base : Addr} (hs : Scr s base) :
   · rw [vt]; rfl
   · have := st i ((by decide : ∀ i : Slot, i.val < 4 →
       smallAfterOps ([.const 21 0] ++ constPointOps combStart) (fun _ => false) i = true) i hi)
-    simp only [VG.Proof.X25519.AArch64.AltLadder.P2]; omega
+    simp only [VG.Proof.X25519.AArch64.AltLadder.P2]; omega_using [this]
 
 theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
     (hT : s.syms combSym = T) {S : Nat} (hS : S < 2 ^ 256)
@@ -269,7 +510,7 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
   refine WP.seq (WP.mono_syms (combInit_ok hs) fun a ⟨ka, az, ap, ab⟩ sya => ?_)
   have hsa := ka.scr hs
   have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr])
-    (fun x hx => ka.mem x (Or.inr (by omega)))
+    (fun x hx => ka.mem x (Or.inr (by omega_using [hx])))
   have hv : Rep (point (env a.mem base) 0 1 2 3) (((17 * combGVal : Nat) : ℤ) • baseAff) := by
     rw [ap, natCast_zsmul]; exact combStart_ok
   refine WP.mono (combLoop_ok hsa hta (by rw [sya]; exact hT) az

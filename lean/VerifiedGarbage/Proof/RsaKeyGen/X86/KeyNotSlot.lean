@@ -27,13 +27,13 @@ theorem notSlot_ok {s : State} {B : Addr} {Z n N out input : Nat} (h : Ws s B Z 
   unfold notSlot
   refine wp_movS rfl fun u U _ => ?_
   have hu := h.rest U.keeps
-  refine wp_subS (readSrc_sc hu.workspace (by omega)) fun v V _ => ?_
+  refine wp_subS (readSrc_sc hu.workspace (by omega_using [hi, head])) fun v V _ => ?_
   have hv := hu.rest V.keeps
-  refine wp_storeS (hv.workspace.ea (by omega)) (hv.workspace.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (hv.workspace.ea (by omega_using [ho, head])) (hv.workspace.write (by omega_using [ho, head])) fun t T => WP.block_nil ?_
   have K : Keeps [.eax] s t := (U.keeps.trans V.keeps).trans (T.keeps _)
   refine ⟨h.rest K, ?_, ?_, K⟩
   · rw [T.mem, V.mem, U.mem]
-    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold VG.Impl.Rsa.X86.Keys.hdr at ho; omega)) (by simp)
+    exact Keep.of_slot (writeW32_outside _ _ _ (by unfold VG.Impl.Rsa.X86.Keys.hdr at ho; omega_using [ho])) (by simp)
   · unfold slot
     rw [T.mem, V.mem, U.mem, w32_write_self, V.gpr, U.gpr, U.mem, not_bit _ bit]
 

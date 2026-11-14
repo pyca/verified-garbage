@@ -45,7 +45,7 @@ theorem covers_of_mem {r : Region} {ts : List Region} (h : r ∈ ts) : Covers [r
 theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
     Covers [⟨p, n⟩] rs := fun a m ⟨r, hr, hc⟩ => by
   simp only [List.mem_singleton] at hr; subst hr
-  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hn, hc]⟩
 
 /-! ## The public arguments and their regions -/
 
@@ -148,21 +148,21 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2816) : Region.Sub ⟨W + Bit
 /-- Parts of `W` are disjoint. -/
 theorem w_w {W : BitVec 32} {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2816) (hd : d + k ≤ 2816) :
     (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_using [ha]) (by omega_using [hd])
 
 variable {p : Prm} (L : Lay p)
 include L
 
 /-- An offset into `W`, as a 64-bit address. -/
 theorem aW {o : Nat} (ho : o < 2816) : w64 (p.W + BitVec.ofNat 32 o) = w64 p.W + BitVec.ofNat 64 o :=
-  w64_add (by have := L.ww; omega)
+  w64_add (by have := L.ww; omega_using [ho, this])
 
 theorem nW {o : Nat} (ho : o < 2816) : (p.W + BitVec.ofNat 32 o).toNat = p.W.toNat + o :=
-  toNat_add32 (by have := L.ww; omega)
+  toNat_add32 (by have := L.ww; omega_using [ho, this])
 
 /-- An offset into the nonce. -/
 theorem aN {o : Nat} (ho : o < 12) : w64 (p.N + BitVec.ofNat 32 o) = w64 p.N + BitVec.ofNat 64 o :=
-  w64_add (by have := L.nw; omega)
+  w64_add (by have := L.nw; omega_using [ho, this])
 
 theorem k_w' {d k : Nat} (hd : d + k ≤ 2816) : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
@@ -235,9 +235,9 @@ theorem inMut_w (p : Prm) {d k : Nat}
     ∃ r' ∈ mutR p, Region.Sub ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ r' := by
   rcases h with h | h | h | h
   · exact ⟨wA p.W, by simp, Offset.sub_base _ h⟩
-  · exact ⟨wV p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
-  · exact ⟨wB p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
-  · exact ⟨wC p.W, by simp, Offset.sub _ (by omega) (by omega)⟩
+  · exact ⟨wV p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
+  · exact ⟨wB p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
+  · exact ⟨wC p.W, by simp, Offset.sub _ (by omega_using [h]) (by omega_using [h])⟩
 
 theorem inMut_stk (p : Prm) : ∃ r' ∈ mutR p, Region.Sub (stk p) r' := ⟨stk p, by simp, fun _ h => h⟩
 
@@ -249,12 +249,12 @@ theorem kept_mut {p : Prm} (L : Lay p) {d k : Nat} (hd : 128 ≤ d ∧ d + k ≤
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · simpa using Lay.w_w (W := p.W) (a := d) (n := k) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.bw' (by omega)).symm
-  · exact (L.d_w' (by omega)).symm
+  · simpa using Lay.w_w (W := p.W) (a := d) (n := k) (d := 0) (k := 128) (.inr (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact Lay.w_w (.inl (by omega_using [hd])) (by omega_using [hd]) (by decide)
+  · exact (L.bw' (by omega_using [hd])).symm
+  · exact (L.d_w' (by omega_using [hd])).symm
 
 /-- The slots, after code that changes only `mutR`. -/
 theorem Slots.mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') (S : Slots p m) : Slots p m' := by
@@ -318,27 +318,27 @@ theorem ciph_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     Spec.GcmSiv.ctxCiph m' (w64 p.K) p.R = Spec.GcmSiv.ctxCiph m (w64 p.K) p.R := by
   unfold Spec.GcmSiv.ctxCiph
   rw [bytes_mut (L.k_w.sub_left (Region.sub_prefix L.rounds_le)) (L.bk.sub_right (Region.sub_prefix L.rounds_le))
-    (L.k_d.sub_left (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega) hf]
+    (L.k_d.sub_left (Region.sub_prefix L.rounds_le)) (by have := L.rounds_le; omega_using [this]) hf]
 
 theorem nonce_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     bytesAt m' (w64 p.N) 12 = bytesAt m (w64 p.N) 12 := bytes_mut L.n_w L.bn L.n_d (by decide) hf
 
 theorem aad_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
     bytesAt m' (w64 p.A) p.al = bytesAt m (w64 p.A) p.al :=
-  bytes_mut L.a_w L.ba L.a_d (by have := L.aw; omega) hf
+  bytes_mut L.a_w L.ba L.a_d (by have := L.aw; omega_using [this]) hf
 
 /-! ## Arithmetic -/
 
 theorem ofNat_lsr32 {a : Nat} (ha : a < 2 ^ 32) (k : Nat) : BitVec.ofNat 32 a >>> k = BitVec.ofNat 32 (a / 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by have := Nat.div_le_self a (2 ^ k); omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by have := Nat.div_le_self a (2 ^ k); omega_using [ha, this])]
 
 /-- `x + x` is `x << 1`. -/
 theorem add_self32 (x : BitVec 32) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- Three doublings are a shift by 3. -/
 theorem add_self32_3 (x : BitVec 32) : (x + x + (x + x)) + (x + x + (x + x)) = x <<< 3 := by
@@ -350,10 +350,10 @@ theorem ror_and1 (x : BitVec 32) : (x &&& 1#32).rotateRight 1 = x <<< 31 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rw [BitVec.getLsbD_rotateRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_and]
   by_cases h : i < 31
-  · simp only [show i < 32 - 1 % 32 from by omega, ↓reduceIte, h1 _ (show 1 % 32 + i < 32 by omega),
-      show ¬ (1 % 32 + i = 0) by omega, decide_false, Bool.and_false, show i < 31 from h, decide_true,
+  · simp only [show i < 32 - 1 % 32 from by omega_using [h], ↓reduceIte, h1 _ (show 1 % 32 + i < 32 by omega_using [h]),
+      show ¬ (1 % 32 + i = 0) by omega_using [], decide_false, Bool.and_false, show i < 31 from h, decide_true,
       Bool.not_true, Bool.and_false, Bool.false_and]
-  · have hi31 : i = 31 := by omega
+  · have hi31 : i = 31 := by omega_using [hi, h]
     subst hi31
     simp only [show ¬ (31 < 32 - 1 % 32) from by decide, ↓reduceIte, h1 _ (by decide : (31 - (32 - 1 % 32)) < 32)]
     simp

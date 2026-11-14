@@ -70,7 +70,7 @@ def sha1Ok (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa} (hc : CompOk Proof
     apply Vector.ext
     intro j hj
     simp only [Proof.Sha1.md, Spec.Sha1.stateAt, Vector.getElem_ofFn]
-    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega)
+    exact Hmac.Generic.Common.readW_reloc (n := 20) h (by omega_using [hj])
   tail := sha1_tail
   out := outOk_of_shape Proof.Sha1.X86.Stream.shape
   comp := hc

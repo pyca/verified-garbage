@@ -90,7 +90,7 @@ theorem checkPublicMain_ct {p : Inputs} {slots : List Nat} {yb : List Byte}
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have pStack (s : State) (h : PublicMainInput p slots yb s) :
       Region.Disjoint ⟨State.addr p.domain, p.k⟩ ⟨State.addr s.sp, 72⟩ :=
-    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega))
+    h.context.domainStack.sub_left (Region.sub_prefix (by rw [p.domainLength]; split <;> omega_using []))
   have prep := (prepareAt_ct (p := p) (slot := 24) stable h24 h32 h0 p.pLength large odd).mono
     (P' := fun (s t : State) => PublicMainInput p slots yb s ∧ PublicMainInput p slots yb t ∧ s.sp = t.sp)
     (fun s t h => ⟨⟨h.1.context, h.1.context.pBytes, pStack s h.1⟩,
@@ -113,7 +113,7 @@ theorem checkPublicMain_ct {p : Inputs} {slots : List Nat} {yb : List Byte}
   have wpImport (s : State) (h : SubgroupInput p slots 36 yb s) :
       WP isa (VG.Impl.Ffdh.Arm.Domain.importAt 1 36 32) s (PublicImported p slots yb) := by
     refine WP.mono (importAt_ok s 1 36 32 h.context stable h36 h32 h.ready (by decide) (by decide) h.source
-      (by rw [length]; have := p.minLength; omega) (by rw [length]; exact p.width.2.2.2.1)
+      (by rw [length]; have := p.minLength; omega_using [this]) (by rw [length]; exact p.width.2.2.2.1)
       (by change BitVec.ofNat 32 p.k = _; rw [length])) ?_
     rintro u ⟨context, ready, value, keeps, frame, rest⟩
     have fits : arrAt p.w 8 ≤ 8 * p.len := ready.width ▸ ready.layout.2.2.1

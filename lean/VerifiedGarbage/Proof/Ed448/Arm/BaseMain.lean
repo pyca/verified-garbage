@@ -44,9 +44,9 @@ structure BasePre (s : State) : Prop where
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far_ws {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega)
-    (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi])
+    (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem baseEntry_eq : baseEntry =
     ([.mov .r3 (.reg .r2)] : List Instr) ++ setupHead ++ initSlots := rfl
@@ -60,7 +60,7 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
   have kd : ∀ j < 57, 8192 ≤ ofs base (State.addr (s.gpr .r1) + BitVec.ofNat 64 j) :=
     fun j hj => far_ws (hbase ▸ h.scalar_ws) hj (by decide)
   have kr : ∀ j < 57, InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r1) + BitVec.ofNat 64 j) 1 :=
-    fun j hj => ⟨⟨State.addr (s.gpr .r1), 57⟩, by rw [h.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    fun j hj => ⟨⟨State.addr (s.gpr .r1), 57⟩, by rw [h.rd]; simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   unfold scalarBase
   rw [baseEntry_eq, List.append_assoc, List.singleton_append]
   -- The entry.
@@ -77,13 +77,13 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
   have r10w : w.gpr .r10 = s.gpr .lr := by
     rw [kw.1 _ (by decide), rl, hu.other _ (by decide)]
   have mw : ∀ x, 8192 ≤ ofs base x → w.mem x = s.mem x := fun x hx => by
-    rw [ow x (Or.inr (by omega)), ov x (Or.inr (by omega)), hu.mem]
+    rw [ow x (Or.inr (by omega_using [hx])), ov x (Or.inr (by omega_using [hx])), hu.mem]
   have bw : bytesAt w.mem (State.addr (s.gpr .r1)) 57 = bytesAt s.mem (State.addr (s.gpr .r1)) 57 := by
     unfold bytesAt; exact List.map_congr_left fun j hj => mw _ (kd j (List.mem_range.mp hj))
   have sn : ∀ i < 8, saved[i]! ≠ .r3 := by decide
   have svw : Saved base s.gpr w.mem := by
     intro i hi
-    rw [ow.word (by omega) (by omega), svv i hi]
+    rw [ow.word (by omega_using [hi]) (by omega_using [hi]), svv i hi]
     exact hu.other _ (sn i hi)
   -- The scalar's bits.
   refine WP.seq (WP.mono (baseBits_ok (k := State.addr (s.gpr .r1)) hsw (by rw [r1w])
@@ -95,12 +95,12 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
     intro i
     rw [← initSlots_E lw i]
     simp only [E, F]
-    rw [ox.fe (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
-      (by have := i.isLt; simp only [slot]; omega)]
+    rw [ox.fe (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
+      (by have := i.isLt; simp only [slot]; omega_using [])]
   have bx : BoundedEnv x.mem base := by
     intro i j hj
-    rw [ox.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
-      (by have := i.isLt; simp only [slot]; omega) hj]
+    rw [ox.limbs (d := slot i.val) (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
+      (by have := i.isLt; simp only [slot]; omega_using []) hj]
     exact initSlots_bounded lw i j hj
   rw [bw] at bitsx
   -- The loop.

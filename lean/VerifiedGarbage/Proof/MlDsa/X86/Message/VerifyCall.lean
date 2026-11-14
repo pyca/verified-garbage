@@ -94,7 +94,7 @@ theorem verifyArgs_val {s₀ s s₁ : State} (h₀ : VPre p K na T s₀) (hc : C
     (hs : SetPost verifyArgs s s₁) :
     s₁.gpr .eax = arg s₀ 0 ∧ s₁.gpr .ecx = (vlay p K na s₀).X32 + BitVec.ofNat 32 840 ∧ s₁.gpr .edx = arg s₀ 5 ∧
       s₁.gpr .ebx = arg s₀ 6 := by
-  have h7 : ∀ {i}, i < 7 → i < (vlay p K na s₀).nA := fun h => by have := h₀.hn; show _ < na; omega
+  have h7 : ∀ {i}, i < 7 → i < (vlay p K na s₀).nA := fun h => by have := h₀.hn; show _ < na; omega_using [h, this]
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [hs.1 (.eax, .arg 0) (by simp), hc.ctx.argV (h7 (by decide))]; rfl
   · rw [hs.1 (.ecx, .off oMU) (by simp), hc.ctx.off]; rfl
@@ -165,7 +165,7 @@ theorem verify_bPk {s₀ s s₁ : State} (hK : K.Ok p.pkLen) (h₀ : VPre p K na
       bytesAt s₀.mem ((arg s₀ 0).setWidth 64) l := by
   have w : Region.Sub ⟨(arg s₀ 0).setWidth 64, l⟩ ⟨(arg s₀ 0).setWidth 64, K.len⟩ := (within_base _ hl).sub
   have := hK.lt
-  exact verify_bytes (R := ⟨_, l⟩) h₀ hc hs (h₀.kPk.sub_right w) (hc.ok.xKey.sub_right w) (by show l ≤ 2 ^ 64; omega)
+  exact verify_bytes (R := ⟨_, l⟩) h₀ hc hs (h₀.kPk.sub_right w) (hc.ok.xKey.sub_right w) (by show l ≤ 2 ^ 64; omega_using [hl, this])
 
 /-- The callee's precondition. -/
 theorem verify_callPre {s₀ s s₁ : State} (hK : K.Ok p.pkLen) (h₀ : VPre p K na T s₀) (hc : CtxO (vlay p K na) s₀ s)
@@ -267,11 +267,11 @@ theorem vInputs_pub {s₀ s₀' : State} (h₀ : VPre p K na T s₀) (hq : VPub 
       vMu p K na s₀ = vMu p K na s₀' ∧
       bytesAt s₀.mem ((arg s₀ 5).setWidth 64) p.sigLen = bytesAt s₀'.mem ((arg s₀' 5).setWidth 64) p.sigLen := by
   obtain ⟨e₁, e₂, e₃, e₄⟩ := leak4 (by simp only [Proof.MlKem.bytesAt_length])
-    (by simp only [Proof.MlKem.bytesAt_length, hq.args 2 (by have := h₀.hn; omega)])
-    (by simp only [Proof.MlKem.bytesAt_length, hq.args 4 (by have := h₀.hn; omega)]) hq.leak
+    (by simp only [Proof.MlKem.bytesAt_length, hq.args 2 (by have := h₀.hn; omega_using [this])])
+    (by simp only [Proof.MlKem.bytesAt_length, hq.args 4 (by have := h₀.hn; omega_using [this])]) hq.leak
   refine ⟨e₁, ?_, e₄⟩
   simp only [vMu, hdrBytes, vlay, e₁, e₂, e₃]
-  rw [hq.args 4 (by have := h₀.hn; omega)]
+  rw [hq.args 4 (by have := h₀.hn; omega_using [this])]
 
 /-- The call of the verification function on `μ`. -/
 theorem verifyCall_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : VerifyFn p K f) :
@@ -283,8 +283,8 @@ theorem verifyCall_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : V
     (fun s₀ s₀' h₀ h₀' hq => ?_) (fun s₀ s h₀ ha => ?_) (fun s₀ s s₁ h₀ ha hs => verify_callPre hK h₀ ha.1 hs)
     (fun s₀ s₀' s s' s₁ s₁' h₀ h₀' hq ha ha' hs hs' => ?_) (fun s₀ s s₁ s' h₀ ha hs e₁ e₂ e₃ fr post => ?_)
   · refine ⟨?_, ?_⟩
-    · simp only [vRd, Lay.X32, vlay, hq.args 0 (by have := h₀.hn; omega), hq.args 5 (by have := h₀.hn; omega), hq.args 6 (by have := h₀.hn; omega)]
-    · simp only [vWr, Lay.E1, vlay, hq.esp, hq.args 6 (by have := h₀.hn; omega)]
+    · simp only [vRd, Lay.X32, vlay, hq.args 0 (by have := h₀.hn; omega_using [this]), hq.args 5 (by have := h₀.hn; omega_using [this]), hq.args 6 (by have := h₀.hn; omega_using [this])]
+    · simp only [vWr, Lay.E1, vlay, hq.esp, hq.args 6 (by have := h₀.hn; omega_using [this])]
   · have := hf.su
     have := h₀.sp
     show _ ≤ (s₀.gpr .esp - BitVec.ofNat 32 16).toNat
@@ -302,8 +302,8 @@ theorem verifyCall_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : V
     sig_pub [verifyKContract, verifyKSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, a0, a1, a2, a3, a0', a1', a2', a3', eS, eS']
     rw [bPk, bMu, bSig, bPk', bMu', bSig', i₁, i₂, i₃]
-    exact ⟨by simp only [Lay.E1, hp'.sp], rfl, hq.args 0 (by have := h₀.hn; omega), by rw [hp'.x], hq.args 5 (by have := h₀.hn; omega),
-      hq.args 6 (by have := h₀.hn; omega)⟩
+    exact ⟨by simp only [Lay.E1, hp'.sp], rfl, hq.args 0 (by have := h₀.hn; omega_using [this]), by rw [hp'.x], hq.args 5 (by have := h₀.hn; omega_using [this]),
+      hq.args 6 (by have := h₀.hn; omega_using [this])⟩
   · obtain ⟨hc, hμ⟩ := ha
     have hL := hc.ok
     have R := vregs h₀ hL

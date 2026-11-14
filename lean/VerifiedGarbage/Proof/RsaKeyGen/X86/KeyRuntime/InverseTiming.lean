@@ -49,8 +49,8 @@ theorem CallAt.pub {B : Addr} {Z n N : Nat} {w : Width} {p : BitVec 32} {a : Nat
     (C₁ : CallAt B Z n N w p a u₁) (C₂ : CallAt B Z n N w p a u₂) :
     VG.Proof.RsaKeyGen.X86.Inverse.contract.pub (invEntry B (8 * invWords a) u₁)
       (invEntry B (8 * invWords a) u₂) := by
-  have fit₁ : 16 ≤ (u₁.gpr .esp).toNat := by have := C₁.ready.ws.deep.1; omega
-  have fit₂ : 16 ≤ (u₂.gpr .esp).toNat := by have := C₂.ready.ws.deep.1; omega
+  have fit₁ : 16 ≤ (u₁.gpr .esp).toNat := by have := C₁.ready.ws.deep.1; omega_using [this]
+  have fit₂ : 16 ≤ (u₂.gpr .esp).toNat := by have := C₂.ready.ws.deep.1; omega_using [this]
   have sa := fun {i} (hi : i < 3) => invEntry_arg (L := 8 * invWords a) C₁.args fit₁ hi
   have ta := fun {i} (hi : i < 3) => invEntry_arg (L := 8 * invWords a) C₂.args fit₂ hi
   have sp : (invEntry B (8 * invWords a) u₁).gpr .esp = (invEntry B (8 * invWords a) u₂).gpr .esp := by
@@ -118,14 +118,14 @@ theorem agree_after_call {B : Addr} {Z : Nat} {u₁ u₂ t₁ t₂ : State}
       rw [show (u.gpr .esp).setWidth 64 + BitVec.ofNat 64 (16 + k) =
         ((u.gpr .esp).setWidth 64 + BitVec.ofNat 64 16) + BitVec.ofNat 64 k by
           rw [BitVec.add_assoc, BitVec.ofNat_add]]
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
     · intro c
       have hb : below (u.gpr .esp) 52 = ⟨(u.gpr .esp).setWidth 64 - BitVec.ofNat 64 52, 52⟩ := by
         unfold below
         rw [Taint.sub_setWidth low]
       rw [hb] at c
       exact Offset.base_disjoint_below ((u.gpr .esp).setWidth 64) (n := 52) (k := 92) (by decide) _
-        (Offset.contains_base _ (by omega) (by omega)) c
+        (Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])) c
   refine ⟨⟨?_, fun h => by cases h⟩, fun h => absurd rfl h, wf_keep A.wf₁ sp₁ K₁.2.2, wf_keep A.wf₂ sp₂ K₂.2.2,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => by rw [sp₁, sp₂]; exact A.sp (by decide), ?_⟩
   · intro r hr
@@ -155,7 +155,7 @@ theorem callInverse_trace (B : Addr) (Z n N : Nat) (w : Width) (hw : w ≠ .corr
       have same : a₁ = a₂ := by
         have := congrArg BitVec.toNat eax
         simp only [BitVec.toNat_ofNat] at this
-        rw [Nat.mod_eq_of_lt (by have := C₁.len; omega), Nat.mod_eq_of_lt (by have := C₂.len; omega)] at this
+        rw [Nat.mod_eq_of_lt (by have := C₁.len; omega_using [this]), Nat.mod_eq_of_lt (by have := C₂.len; omega_using [this])] at this
         exact this
       subst same
       have sp : s₁.gpr .esp = s₂.gpr .esp := A.sp (by decide)
@@ -183,7 +183,7 @@ theorem oddAt_of {B : Addr} {n j x : Nat} {s : State}
   unfold OddAt
   rw [h]
   split
-  · next H => exact ⟨H.1, by omega⟩
+  · next H => exact ⟨H.1, by omega_using [H]⟩
   · decide
 
 /-- What an inversion needs of the state it starts from. -/

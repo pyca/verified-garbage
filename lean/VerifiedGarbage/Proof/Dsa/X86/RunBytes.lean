@@ -21,13 +21,13 @@ theorem outs_bytes {m m' : Mem} {base p : Addr} {len : Nat} {ranges : List (Nat 
   apply O _
   intro r hr
   have inside : (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base p (by omega) (by omega)
+    Offset.contains_base p (by omega_using [hilt]) (by omega_using [hl, hilt])
   have outside := apart r hr _ inside
   have H := Offset.lt_iff (p + BitVec.ofNat 64 i) base (hb r hr)
   change ¬ ((p + BitVec.ofNat 64 i - off base r.1).toNat + 1 ≤ r.2) at outside
   change (p + BitVec.ofNat 64 i - off base r.1).toNat < r.2 ↔
     r.1 ≤ ofs base (p + BitVec.ofNat 64 i) ∧ ofs base (p + BitVec.ofNat 64 i) < r.1 + r.2 at H
-  omega
+  omega_using [outside, H]
 
 theorem stackOuts_bytes {m m' : Mem} {base p : Addr} {len : Nat} {ranges : List (Nat × Nat)} {sp : BitVec 32}
     (O : StackOuts base sp ranges m m') (hl : len ≤ 2 ^ 64)
@@ -39,16 +39,16 @@ theorem stackOuts_bytes {m m' : Mem} {base p : Addr} {len : Nat} {ranges : List 
   apply List.map_congr_left
   intro i hi
   have hilt := List.mem_range.mp hi
-  apply O _ ?_ (safe _ (Offset.contains_base p (by omega) (by omega)))
+  apply O _ ?_ (safe _ (Offset.contains_base p (by omega_using [hilt]) (by omega_using [hl, hilt])))
   intro r hr
   have inside : (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 :=
-    Offset.contains_base p (by omega) (by omega)
+    Offset.contains_base p (by omega_using [hilt]) (by omega_using [hl, hilt])
   have outside := apart r hr _ inside
   have H := Offset.lt_iff (p + BitVec.ofNat 64 i) base (hb r hr)
   change ¬ ((p + BitVec.ofNat 64 i - off base r.1).toNat + 1 ≤ r.2) at outside
   change (p + BitVec.ofNat 64 i - off base r.1).toNat < r.2 ↔
     r.1 ≤ ofs base (p + BitVec.ofNat 64 i) ∧ ofs base (p + BitVec.ofNat 64 i) < r.1 + r.2 at H
-  omega
+  omega_using [outside, H]
 
 theorem runFrame_bytes {s t : State} {base p : Addr} {size len : Nat}
     (O : StackOuts base (s.gpr .esp) runRanges s.mem t.mem) (hs : usedBytes ≤ size) (hl : len ≤ 2 ^ 64)
@@ -66,6 +66,6 @@ theorem runFrame_bytes {s t : State} {base p : Addr} {size len : Nat}
     rcases hr with rfl | rfl | rfl <;>
       change _ ≤ size <;> change 15712 ≤ size at hs <;>
       simp only [VG.Impl.Mont.X86.Dynamic.contextBytes, VG.Impl.Mont.X86.Dynamic.slot,
-        VG.Impl.Mont.X86.Dynamic.stride, Layout.field, VG.Impl.Dsa.Layout.r, usedBytes] <;> omega
+        VG.Impl.Mont.X86.Dynamic.stride, Layout.field, VG.Impl.Dsa.Layout.r, usedBytes] <;> omega_using [hs]
 
 end VG.Proof.Dsa.X86

@@ -45,12 +45,12 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
       Keeps [.eax, .ecx, .edx] s t := by
   have hx' : x + 112 ≤ 3584 := hx
   have hy' : y + 112 ≤ 3584 := hy
-  have lx := hs.read (d := x + 4 * i) (n := 4) (by omega)
-  have ly := hs.read (d := y + 4 * i) (n := 4) (by omega)
-  have wx := hs.write (d := x + 4 * i) (n := 4) (by omega)
-  have wy := hs.write (d := y + 4 * i) (n := 4) (by omega)
-  have xe := hs.ea (d := x + 4 * i) (by omega)
-  have ye := hs.ea (d := y + 4 * i) (by omega)
+  have lx := hs.read (d := x + 4 * i) (n := 4) (by omega_using [hi, hx'])
+  have ly := hs.read (d := y + 4 * i) (n := 4) (by omega_using [hi, hy'])
+  have wx := hs.write (d := x + 4 * i) (n := 4) (by omega_using [hi, hx'])
+  have wy := hs.write (d := y + 4 * i) (n := 4) (by omega_using [hi, hy'])
+  have xe := hs.ea (d := x + 4 * i) (by omega_using [hi, hx'])
+  have ye := hs.ea (d := y + 4 * i) (by omega_using [hi, hy'])
   simp only [State.ea, sc, at_] at xe ye
   apply WP.of_runBlock
   simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, State.ea, sc, at_,
@@ -73,19 +73,19 @@ theorem pair_write {m : Mem} {base : Addr} {x y n j : Nat} (hx : Slot x) (hy : S
   dsimp only
   constructor
   · simp only [limbs, word]
-    rw [Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)]
+    rw [Mem.readW_writeW_sep (Offset.sep base (by omega_using [hxy, hn, hj]) (by omega_using [hj, xb]) (by omega_using [hn, yb])) (by decide)]
     rw [show m.readW (off base (x + 4 * j)) 32 = word m base (x + 4 * j) from rfl]
     change (word (m.writeW (off base (x + 4 * n)) vx) base (x + 4 * j)).toNat = _
-    rw [word_write m base (by omega) (by omega)]
+    rw [word_write m base (by omega_using [hn, xb]) (by omega_using [hj, xb])]
     split <;> rfl
   · change (word ((m.writeW (off base (x + 4 * n)) vx).writeW (off base (y + 4 * n)) vy)
       base (y + 4 * j)).toNat = _
-    rw [word_write (m.writeW (off base (x + 4 * n)) vx) base (by omega) (by omega)]
+    rw [word_write (m.writeW (off base (x + 4 * n)) vx) base (by omega_using [hn, yb]) (by omega_using [hj, yb])]
     by_cases h : j = n
     · rw [ite_eq_left h, ite_eq_left h]
     · rw [ite_eq_right h, ite_eq_right h]
       apply congrArg BitVec.toNat
-      exact Mem.readW_writeW_sep (Offset.sep base (by omega) (by omega) (by omega)) (by decide)
+      exact Mem.readW_writeW_sep (Offset.sep base (by omega_using [hxy, hn, hj]) (by omega_using [hj, yb]) (by omega_using [hn, xb])) (by decide)
 
 /-- Swap all twenty-eight limbs under the mask, preserving all other bytes. -/
 theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : Slot x) (hy : Slot y)
@@ -108,29 +108,29 @@ theorem cswap_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : S
     have tc := (tk.1 .ebx (by decide)).trans hc
     refine WP.mono (swapStep_ok (hs.of_keeps tk (by decide)) hx hy hn tc) fun u ⟨um, uk⟩ => ?_
     have ex : limbs t.mem base x n = limbs s.mem base x n :=
-      congrArg BitVec.toNat (tm.word (by omega) (by omega) (by omega))
+      congrArg BitVec.toNat (tm.word (by omega_using []) (by omega_using [hxy, hn]) (by omega_using [xb, hn]))
     have ey : limbs t.mem base y n = limbs s.mem base y n :=
-      congrArg BitVec.toNat (tm.word (by omega) (by omega) (by omega))
+      congrArg BitVec.toNat (tm.word (by omega_using [hxy, hn]) (by omega_using []) (by omega_using [yb, hn]))
     have pair := fun (j : Nat) (hj : j < 28) => pair_write (m := t.mem) (base := base) hx hy hxy hn hj
       (if sw then word t.mem base (y + 4 * n) else word t.mem base (x + 4 * n))
       (if sw then word t.mem base (x + 4 * n) else word t.mem base (y + 4 * n))
     refine ⟨?_, ?_, ?_, tk.trans uk⟩
     · intro j hj
-      rw [um, (pair j (by omega)).1]
+      rw [um, (pair j (by omega_using [hn, hj])).1]
       by_cases h : j = n
       · rw [ite_eq_left h, h]
         cases sw <;> simp only [ite_true, Bool.false_eq_true, ite_false] <;> with_reducible assumption
-      · rw [ite_eq_right h]; exact tx j (by omega)
+      · rw [ite_eq_right h]; exact tx j (by omega_using [hj, h])
     · intro j hj
-      rw [um, (pair j (by omega)).2]
+      rw [um, (pair j (by omega_using [hn, hj])).2]
       by_cases h : j = n
       · rw [ite_eq_left h, h]
         cases sw <;> simp only [ite_true, Bool.false_eq_true, ite_false] <;> with_reducible assumption
-      · rw [ite_eq_right h]; exact ty j (by omega)
-    · refine (tm.mono (by omega) (by omega)).trans ?_
+      · rw [ite_eq_right h]; exact ty j (by omega_using [hj, h])
+    · refine (tm.mono (by omega_using []) (by omega_using [])).trans ?_
       intro p hp hq
-      rw [um, writeW_outside _ _ _ (by omega : y + 4 * n + 4 ≤ 8192) p (by omega),
-        writeW_outside _ _ _ (by omega : x + 4 * n + 4 ≤ 8192) p (by omega)]
+      rw [um, writeW_outside _ _ _ (by omega_using [yb, hn] : y + 4 * n + 4 ≤ 8192) p (by omega_using [hq]),
+        writeW_outside _ _ _ (by omega_using [xb, hn] : x + 4 * n + 4 ≤ 8192) p (by omega_using [hp])]
   exact wp_range_flatMap (M := isa) (N := 28) inv step 28 (by decide) s
     ⟨fun _ hi => by omega, fun _ hi => by omega, Outside2.refl _ _ _ _ _ _, Keeps.refl _ _⟩
 

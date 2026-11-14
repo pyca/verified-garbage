@@ -28,7 +28,7 @@ theorem r2Init_ok (s : State) {base : BitVec 32} {len w : Nat}
   refine WP.mono (r2Constants_ok s h) ?_
   rintro u ⟨ready, one, two, modulus, frame, rest⟩
   have fits := ready.layout.2.2.1
-  have size : 212 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega
+  have size : 212 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
   have header := nativeHeader_of_layout u.mem base ready.workspace.nowrap (Nat.le_refl _) ready.layout
   rw [ready.width] at header
   let c := (u.mem.readW (off (State.addr base) 208) 32).toNat

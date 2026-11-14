@@ -68,6 +68,22 @@ def blocksX86_64 (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) :
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+open VG.X86_64 in
+/-- `blocksX86_64` without the scratch buffer, for the implementations of
+encryption that never touch it (`vg_aes_encrypt_blocks_aesni`,
+`vg_aes_encrypt_blocks_vaes`): their callers need not set aside its 2048
+bytes. `r8` is still public. -/
+def blocksX86_64F (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) : Contract X86_64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .rdi, 240⟩
+    let data : Region := ⟨s.gpr .rdx, 16 * (s.gpr .rcx).toNat⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [sched] ∧ s.wr = [data] ∧ sched.Disjoint data ∧ ret.Disjoint data ∧
+    (s.gpr .rdx).toNat + 16 * (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
+    ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
+  post := (blocksX86_64 f).post
+  pub := (blocksX86_64 f).pub
+
 end VG.Proof.Aes
 
 namespace VG.Proof.Aes.X86_64

@@ -1,5 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.P256
+meta import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Spec.Ecdh.P256
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -30,6 +38,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacOdd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MxcsrInline
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
 /-!
 # ECDH over P-256 on x86-64: `Verified`
@@ -74,14 +84,14 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := b
 /-- The exchange `code` of a curve `c` (P-256, with either multiplication)
 that the proof supports, with a scalar multiplication `mq` that computes
 `[d]P` (`MulOk`, writing only `W`: `MulW`), whose precondition the
-contract's gives (`hpre`), never writing `rsp` or loading MXCSR, its calls inlined
-(which its literal decides). -/
-theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc : CfgOk c)
+contract's gives (`hpre`), never writing `rsp`, restoring MXCSR around every load of it
+(`ctlOk`), its calls inlined (which its literal decides). -/
+theorem ecdh_x86_of_ctl {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc : CfgOk c)
     (hL : Weierstrass.Law c.C) (hmq : MulOk c mq W) (hW : MulW c W)
     (hpre : ∀ s, ecdhX86_64.pre s → EPre c s) (hpost : ∀ s s', EPost c s s' → ecdhX86_64.post s s')
     (hcode : Impl.Ecdh.X86_64.Cfg.exchangeWith c mq = code)
     (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
-    (hnc : code.InlineOk = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hnc : code.InlineOk = true) (hctl : ctlOk code = true) (s : State)
     (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa code.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   subst hcode
@@ -92,7 +102,8 @@ theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc :
     simpa using hsp i hi
   have F := (Exec.regions he (Code.noCalls_inline hnc)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; exact hmx) he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
+  refine ⟨t, s', he, abiPreserved_of_ctl (ctlOk_inline hctl) he ⟨fun r hr => ?_, ?_⟩,
+    hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -108,6 +119,17 @@ theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc :
       rintro r (rfl | rfl)
       · exact hro
       · exact hrs) (by decide)
+
+/-- `ecdh_x86_of_ctl` for code that never loads MXCSR. -/
+theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc : CfgOk c)
+    (hL : Weierstrass.Law c.C) (hmq : MulOk c mq W) (hW : MulW c W)
+    (hpre : ∀ s, ecdhX86_64.pre s → EPre c s) (hpost : ∀ s s', EPost c s s' → ecdhX86_64.post s s')
+    (hcode : Impl.Ecdh.X86_64.Cfg.exchangeWith c mq = code)
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (hnc : code.InlineOk = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hs : ecdhX86_64.pre s) :
+    ∃ t s', Exec isa code.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
+  ecdh_x86_of_ctl hc hL hmq hW hpre hpost hcode hsp hnc (ctlOk_of_noLoad hmx) s hs
 
 /-- The Jacobian window method with the doubling by halving computes `[d]P`
 on P-256, which has prime order. -/
@@ -167,5 +189,28 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X
     Verified X86_64.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8) :=
   Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI hO hK) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
+
+/-! ## Without secret residue -/
+
+/-- The granules of its stack that `vg_ecdh_p256` must wipe on return, from the
+residue analysis (`X86_64.RScrub.keepFor`). -/
+def scrubKs : List Nat := keep_for% Spec.Ecdh.P256.exchangeApi.sig 8 exchangeP256 []
+
+theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P256.exchangeApi.sig 8 []) exchangeP256 h).any
+      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
+  RScrub.Analysed.ok_of _ (by taint_decide)
+
+/-- `vg_ecdh_p256`, followed by `Impl.Scrub.X86_64.scrubTail`
+(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
+def scrubReg (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
+    Registration Spec.Ecdh.P256.exchangeApi X86_64.target :=
+  RScrub.withScrub {
+    code := exchangeP256
+    stack := 8
+    verified := ecdh_verified hL hI hO hK }
+    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
+    (some ⟨scrubKs, scrubOk⟩)
 
 end VG.Proof.Ecdh.X86_64

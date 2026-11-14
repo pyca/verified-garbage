@@ -72,14 +72,14 @@ theorem updArgs1_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy
         Kept c s s' := by
   unfold updArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_addi (by decide) (by omega) fun s₃ u₃ =>
+  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_addi (by decide) (by omega_using [hy]) fun s₃ u₃ =>
     wp_addi (by decide) (by decide) fun s₄ u₄ => wp_addi (by decide) (by decide) fun s₅ u₅ =>
     wp_li (by decide) fun s₆ u₆ => WP.block_nil ?_
   have pk₆ : PK s s₆ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
     ((PK.ofUpd u₅).trans (PK.ofUpd u₆)))))
   have E₆ := E.of_pk pk₆
-  refine ⟨uargs L E₆ (y := y) (by omega) (Q := c.W + BitVec.ofNat 64 32) (k := 1)
-    (L.srcW E₆.perm (by decide)) (L.w_w (by omega) (by decide) (by omega)) (by decide)
+  refine ⟨uargs L E₆ (y := y) (by omega_using [hy]) (Q := c.W + BitVec.ofNat 64 32) (k := 1)
+    (L.srcW E₆.perm (by decide)) (L.w_w (by omega_using [hy]) (by decide) (by omega_using [hy])) (by decide)
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.gpr, E.r16])
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
@@ -105,15 +105,15 @@ theorem absArgs_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy 
   have hw : 16 * (len / 16) ≤ len := Nat.mul_div_le len 16
   unfold updArgs
   simp only [List.cons_append, List.nil_append]
-  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_addi (by decide) (by omega) fun s₃ u₃ =>
+  refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_addi (by decide) (by omega_using [hy]) fun s₃ u₃ =>
     wp_addi (by decide) (by decide) fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_lsr (by decide) fun s₆ u₆ =>
     WP.block_nil ?_
   have pk₆ : PK s s₆ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
     ((PK.ofUpd u₅).trans (PK.ofUpd u₆)))))
   have E₆ := E.of_pk pk₆
   have hq := hP.take hw
-  refine ⟨uargs L E₆ (y := y) (by omega) (Q := P) (k := len / 16) (hq.of_eq pk₆.rd pk₆.wr).src
-    (hq.wd (by omega)) (by omega)
+  refine ⟨uargs L E₆ (y := y) (by omega_using [hy]) (Q := P) (k := len / 16) (hq.of_eq pk₆.rd pk₆.wr).src
+    (hq.wd (by omega_using [hy])) (by omega_using [hl])
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.gpr, E.r16])
     (by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
@@ -141,12 +141,12 @@ theorem ctrArgsW_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {d : Nat} (hd
   unfold ctrArgs
   simp only [List.cons_append, List.nil_append]
   refine wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_addi (by decide) (by decide) fun s₅ u₅ =>
-    wp_addi (by decide) (by decide) fun s₆ u₆ => wp_addi (by decide) (by omega) fun s₇ u₇ =>
+    wp_addi (by decide) (by decide) fun s₆ u₆ => wp_addi (by decide) (by omega_using [hd]) fun s₇ u₇ =>
     wp_li (by decide) fun s₈ u₈ => WP.block_nil ?_
   have pk₈ : PK s s₈ := (PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans ((PK.ofUpd u₅).trans ((PK.ofUpd u₆).trans
     ((PK.ofUpd u₇).trans (PK.ofUpd u₈)))))
   have E₈ := E.of_pk pk₈
-  refine ⟨cargsW L E₈ (o := 64) (d := d) (by decide) hd (by omega)
+  refine ⟨cargsW L E₈ (o := 64) (d := d) (by decide) hd (by omega_using [hod])
     (by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₃.gpr, E.r16])
     (by rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
@@ -179,10 +179,10 @@ theorem ctrArgsD_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {b k : Nat} (
     ((PK.ofUpd u₉).trans (PK.ofUpd u₁₀)))))
   have E₁₀ := E.of_pk pk₁₀
   have hB := (L.bufD E₁₀.perm).drop (k := 16 * b) (by omega)
-  have hQ := hB.take (k := 16 * k) (by omega)
+  have hQ := hB.take (k := 16 * k) (by omega_using [hkb])
   refine ⟨cargs L E₁₀ (o := 64) (by decide) (Q := c.D + BitVec.ofNat 64 (16 * b)) (k := k) hQ.src
-    (hQ.wd (by decide)) (L.k_d.sub_right (Offset.sub_base c.D (by omega)))
-    (VG.Proof.Gather.PPC64LE.covers_off E₁₀.perm.d (by omega) hn64)
+    (hQ.wd (by decide)) (L.k_d.sub_right (Offset.sub_base c.D (by omega_using [hkb])))
+    (VG.Proof.Gather.PPC64LE.covers_off E₁₀.perm.d (by omega_using [hkb]) hn64)
     (by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), u₅.gpr, E.r16])
     (by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),

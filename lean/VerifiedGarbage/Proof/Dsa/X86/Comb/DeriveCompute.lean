@@ -42,12 +42,12 @@ theorem deriveCompute_ok {base : Addr} {size pLen qLen p q g x : Nat} {s0 : Stat
       Execution base s0 sf := by
   have L := M.lengths
   have A := M.aligned
-  have np : (pLen + 7) / 8 ≤ 48 := by omega
-  have nq : (qLen + 7) / 8 ≤ 48 := by omega
-  have pp : 0 < p := by have := M.pLarge; omega
+  have np : (pLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have nq : (qLen + 7) / 8 ≤ 48 := by omega_using [L]
+  have pp : 0 < p := by have := M.pLarge; omega_using [domain]
   unfold deriveCompute Core.sequence
   dsimp only [List.foldr]
-  refine WP.seq (WP.mono (validateRange_ok M.scr M.saved rfl (by omega) (by omega) A.2
+  refine WP.seq (WP.mono (validateRange_ok M.scr M.saved rfl (by omega_using [L]) (by omega_using [L]) A.2
     M.qReady (X.ready (M.context nq)) false) fun s2 ⟨F2,K2,O2⟩ => ?_)
   have R2 := StageFrame.of_frame K2 (by decide) O2 nq
   have E12 := R2.execution (.inr ⟨rfl,rfl⟩)
@@ -62,7 +62,7 @@ theorem deriveCompute_ok {base : Addr} {size pLen qLen p q g x : Nat} {s0 : Stat
     have V := R3.wide_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
     rw [E12.value G (by decide) M.extent, E12.value X (by decide) M.extent, hg, hx] at V
     exact V
-  refine WP.seq (WP.mono (stageRange_ok M3 (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (stageRange_ok M3 (by omega_using [L]) (by omega_using [L]) (by omega_using [A])
     M3.pReady (M3.wideReady (by decide) np) true) fun sf ⟨Mf, F4, R4⟩ => ?_)
   refine WP.block_nil ⟨Mf, ?_, (stageWide_keep_mask R4 M3 (by decide)).trans Y3,
     (E12.trans E3).trans (R4.execution (.inr ⟨rfl, rfl⟩))⟩

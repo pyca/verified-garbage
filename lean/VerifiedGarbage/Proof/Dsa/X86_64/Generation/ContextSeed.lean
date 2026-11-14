@@ -25,7 +25,7 @@ theorem prepareSeed_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Stat
     WP isa (.block (Impl.Dsa.X86_64.Generation.seedArguments p.geo.qLen)) s fun t =>
       GenerationMemory p (seedWords W p.geo.qLen) t ∧ Frame p.changed s.mem t.mem ∧ Keep [.rax] s t := by
   obtain ⟨V, R⟩ := h.rep
-  refine WP.mono (seedArguments_ok h.layout R (by rcases p.geo.qWidth with hh | hh <;> omega))
+  refine WP.mono (seedArguments_ok h.layout R (by rcases p.geo.qWidth with hh | hh <;> omega_using [hh]))
     fun t ⟨Lt, Rt, ft, kt⟩ => ?_
   have ff := GenerationContext.frame_single (p := p) ft
   refine ⟨h.frame Lt ⟨V, Rt⟩ ?_ ff kt.2.1 kt.2.2, ff, kt⟩

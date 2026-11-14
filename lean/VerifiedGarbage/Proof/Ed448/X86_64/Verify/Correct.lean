@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Pre
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 import VerifiedGarbage.Proof.MlKem.Mem
@@ -13,7 +15,6 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import Init.Data.String.Basic
 public import VerifiedGarbage.Spec.Ed448
@@ -26,15 +27,115 @@ public import Init.Data.BitVec.Basic
 public import Init.Data.Char.Basic
 public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Impl.Mont.Mod
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Gpr
 public import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Spec.X448
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
-import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
+
+/-! ### `Ed448.X86_64.Verify.Pre`, which only this module used -/
+
+section
+
+/-!
+# Ed448 verification on x86-64: the precondition and the layout
+
+The precondition of `verifyContract X86_64.abi 272`, spelled out (`VPre`),
+and the layout of a run from a state satisfying it (`vlay`), which is `Ok`
+if the context is shorter than 256 bytes (`vlay_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.X86_64.Verify
+
+open VG VG.X86_64
+
+section
+variable (s : State)
+
+abbrev vPk : Region := ⟨s.gpr .rdi, 57⟩
+abbrev vCtx : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
+abbrev vMsg : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
+abbrev vSig : Region := ⟨s.gpr .r9, 114⟩
+abbrev vArgs : Region := ⟨stackArgAddr s 0, 8⟩
+abbrev vScr : Region := ⟨stackArg s 0, 8192⟩
+abbrev vRet : Region := ⟨s.gpr .rsp, 8⟩
+abbrev vStk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 272, 272⟩
+
+end
+
+/-- The precondition of `verifyContract X86_64.abi 272`. -/
+structure VPre (s : State) : Prop where
+  sp : 272 ≤ (s.gpr .rsp).toNat
+  sp2 : (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64
+  rd : s.rd = [vPk s, vCtx s, vMsg s, vSig s, vArgs s]
+  wr : s.wr = [vScr s]
+  pkScr : (vPk s).Disjoint (vScr s)
+  ctxScr : (vCtx s).Disjoint (vScr s)
+  msgScr : (vMsg s).Disjoint (vScr s)
+  sigScr : (vSig s).Disjoint (vScr s)
+  scrArgs : (vScr s).Disjoint (vArgs s)
+  retPk : (vRet s).Disjoint (vPk s)
+  retCtx : (vRet s).Disjoint (vCtx s)
+  retMsg : (vRet s).Disjoint (vMsg s)
+  retSig : (vRet s).Disjoint (vSig s)
+  retScr : (vRet s).Disjoint (vScr s)
+  retArgs : (vRet s).Disjoint (vArgs s)
+  stkPk : (vStk s).Disjoint (vPk s)
+  stkCtx : (vStk s).Disjoint (vCtx s)
+  stkMsg : (vStk s).Disjoint (vMsg s)
+  stkSig : (vStk s).Disjoint (vSig s)
+  stkScr : (vStk s).Disjoint (vScr s)
+  stkArgs : (vStk s).Disjoint (vArgs s)
+  nPk : (s.gpr .rdi).toNat + 57 ≤ 2 ^ 64
+  nCtx : (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64
+  nMsg : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
+  nSig : (s.gpr .r9).toNat + 114 ≤ 2 ^ 64
+  nScr : (stackArg s 0).toNat + 8192 ≤ 2 ^ 64
+
+theorem vPre_of {s : State} (h : (Spec.Ed448.verifyContract X86_64.abi 272).pre s) : VPre s := by
+  sig_pre [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs,
+    List.range, List.range.loop] at h
+  obtain ⟨sp, sp2, rd, wr, pkScr, ctxScr, msgScr, sigScr, scrArgs, retPk, retCtx, retMsg, retSig, retScr,
+    retArgs, stkPk, stkCtx, stkMsg, stkSig, stkScr, stkArgs, nPk, nCtx, nMsg, nSig, nScr⟩ := h
+  exact ⟨sp, sp2, rd, wr, pkScr, ctxScr, msgScr, sigScr, scrArgs, retPk, retCtx, retMsg, retSig, retScr,
+    retArgs, stkPk, stkCtx, stkMsg, stkSig, stkScr, stkArgs, nPk, nCtx, nMsg, nSig, nScr⟩
+
+/-- The layout of a run of `verify` from `s`. -/
+def vlay (s : State) : Lay where
+  B := s.gpr .rsp - BitVec.ofNat 64 272
+  pk := s.gpr .rdi
+  ctx := s.gpr .rsi
+  ctxLen := s.gpr .rdx
+  msg := s.gpr .rcx
+  len := s.gpr .r8
+  sig := s.gpr .r9
+  scr := stackArg s 0
+  rd := s.rd
+  wr := s.wr
+
+theorem vlay_B (s : State) : (vlay s).B + BitVec.ofNat 64 272 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+
+theorem vlay_ok {s : State} (h : VPre s) (h8 : (s.gpr .rdx).toNat < 256) : (vlay s).Ok := by
+  have eR : (vlay s).RET = vRet s := by
+    show (⟨(vlay s).B + BitVec.ofNat 64 272, 8⟩ : Region) = _
+    rw [vlay_B]
+  refine ⟨h8, ?_, h.wr, by simp [vlay, h.rd], by simp [vlay, h.rd], by simp [vlay, h.rd], by simp [vlay, h.rd],
+    h.pkScr.symm, h.sigScr.symm, h.msgScr.symm, h.ctxScr.symm, h.stkScr, h.stkPk, h.stkSig, h.stkMsg, h.stkCtx,
+    by rw [eR]; exact h.retScr, h.nPk, h.nSig, h.nMsg, h.nCtx, h.nScr⟩
+  have := h.sp; have := h.sp2
+  simp only [vlay, BitVec.toNat_sub, BitVec.toNat_ofNat]
+  omega_arith
+
+end VG.Proof.Ed448.X86_64.Verify
+
+end
+
+end
+
 
 /-!
 # Ed448 verification on x86-64: correctness
@@ -101,11 +202,11 @@ end
 theorem push_slot (B : Addr) (j : Nat) (hj : j < 32) :
     B + BitVec.ofNat 64 272 - BitVec.ofNat 64 (8 * (j + 1)) =
       B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (248 - 8 * j) := by
-  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 272) (by omega), BitVec.add_sub_cancel]
-  congr 2; omega
+  rw [add_add, Offset.sub_ofNat_eq _ (a := 8 * (j + 1)) (b := 272) (by omega_using [hj]), BitVec.add_sub_cancel]
+  congr 2; omega_using [hj]
 
 theorem push_base (B : Addr) : B + BitVec.ofNat 64 272 - BitVec.ofNat 64 (8 * 32) = B + BitVec.ofNat 64 16 := by
-  have := push_slot B 31 (by omega); simpa using this
+  have := push_slot B 31 (by omega_using []); simpa using this
 
 theorem regs_length : regs.length = 32 := rfl
 
@@ -119,23 +220,23 @@ theorem entry_ctx {L : Lay} (hL : L.Ok) {s : State} (hsp : s.gpr .rsp = L.B + Bi
   have hn : 8 * regs.length ≤ (s.gpr .rsp).toNat := by
     rw [hsp, regs_length, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := hL.nB
-    rw [Nat.mod_eq_of_lt (a := 272) (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+    rw [Nat.mod_eq_of_lt (a := 272) (by omega_using []), Nat.mod_eq_of_lt (by omega_using [this])]; omega_using []
   obtain ⟨hf, hw⟩ := pushRegs_mem s regs (by decide) hn
   have slot : ∀ j (hj : j < 32), (pushed regs s).mem.readW (L.SP + BitVec.ofNat 64 (248 - 8 * j)) 64 =
-      s.gpr (regs[j]'(by rw [regs_length]; omega)) := fun j hj => by
-    rw [← hw j (by rw [regs_length]; omega), hsp, push_slot _ j hj]; rfl
+      s.gpr (regs[j]'(by rw [regs_length]; omega_using [hj])) := fun j hj => by
+    rw [← hw j (by rw [regs_length]; omega_using [hj]), hsp, push_slot _ j hj]; rfl
   have base : s.gpr .rsp - BitVec.ofNat 64 (8 * regs.length) = L.SP := by
     rw [hsp, regs_length]; exact push_base L.B
   refine ⟨by simp [hrd], by rw [pushed_wr, base, hwr]; rfl, by rw [pushed_rsp, base], fun r _ hr' => pushed_gpr _ _ hr',
-    by simp, (slot 6 (by omega)).trans hdi, (slot 5 (by omega)).trans hsi, (slot 4 (by omega)).trans hdx,
-    (slot 3 (by omega)).trans hcx, (slot 2 (by omega)).trans h8, (slot 1 (by omega)).trans h9,
-    (slot 0 (by omega)).trans h11, ?_⟩
+    by simp, (slot 6 (by omega_using [])).trans hdi, (slot 5 (by omega_using [])).trans hsi, (slot 4 (by omega_using [])).trans hdx,
+    (slot 3 (by omega_using [])).trans hcx, (slot 2 (by omega_using [])).trans h8, (slot 1 (by omega_using [])).trans h9,
+    (slot 0 (by omega_using [])).trans h11, ?_⟩
   show Frame [L.SCR, L.STK] s.mem (pushRegs s regs).mem
   refine Frame.sub hf fun r hr => ?_
   simp only [List.mem_singleton] at hr; subst hr
   refine ⟨L.STK, by simp, ?_⟩
   rw [base, regs_length]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [])
 
 /-! ## Before the frame -/
 
@@ -194,7 +295,7 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
     have hsp2 : s2.gpr .rsp = (vlay s).B + BitVec.ofNat 64 272 := by
       rw [hg2 _ (by decide), vlay_B]
     have hn : 8 * regs.length ≤ (s2.gpr .rsp).toNat := by
-      rw [hg2 _ (by decide), regs_length]; have := h.sp; omega
+      rw [hg2 _ (by decide), regs_length]; have := h.sp; omega_using [this]
     refine WP.frame (by decide) (by decide) (by decide) hn ?_
     have hc := entry_ctx hL hsp2 (k2.2.1.trans hrd1) (k2.2.2.trans hwr1) h11 (hg2 _ (by decide))
       (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide))
@@ -210,13 +311,13 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr
-            · rw [eR]; exact Offset.disjoint_base _ (by omega) (by have := hL.nB; omega)) (by decide), hm2]
+            · rw [eR]; exact Offset.disjoint_base _ (by omega_using []) (by have := hL.nB; omega_using [])) (by decide), hm2]
       · rw [popped_mxcsr, hc'.mx, hx2, hx1]
     · sig_post [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86_64.abi,
         X86_64.argRegs, List.range, List.range.loop]
       rw [hr]
       simp only [ed_bytesAt, Spec.Ed448.verify, bytesAt_length, take_bytesAt, vlay, chal, ← hm2,
-        decide_eq_true (show (s.gpr .rdx).toNat ≤ 255 by omega), Bool.true_and]
+        decide_eq_true (show (s.gpr .rdx).toNat ≤ 255 by omega_using [h8]), Bool.true_and]
       exact sw_ite _
   · rw [decide_eq_false h8] at hc1
     refine wp_ite_f hc1 ?_
@@ -226,7 +327,7 @@ theorem verify_wp (hv : EqOk v) {s : State} (hpre : (Spec.Ed448.verifyContract X
     · sig_post [Spec.Ed448.verifyContract, Spec.Ed448.verifySig, Spec.Ed448.scratchWords, X86_64.abi,
         X86_64.argRegs, List.range, List.range.loop]
       simp only [ed_bytesAt, Spec.Ed448.verify, bytesAt_length,
-        decide_eq_false (show ¬ (s.gpr .rdx).toNat ≤ 255 by omega), Bool.false_and]
+        decide_eq_false (show ¬ (s.gpr .rdx).toNat ≤ 255 by omega_using [h8]), Bool.false_and]
       rfl
 
 end VG.Proof.Ed448.X86_64.Verify

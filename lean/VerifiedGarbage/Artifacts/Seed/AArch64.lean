@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Seed.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # SEED artifacts on baseline AArch64 -/
+/-! # SEED on AArch64 -/
 
 @[expose] public section
 

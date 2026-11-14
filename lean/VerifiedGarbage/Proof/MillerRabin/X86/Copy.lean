@@ -18,14 +18,14 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
 theorem words_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
     WP isa (.block words) s fun t => (t.gpr .esi).toNat = g.words ∧ t.mem = s.mem ∧ Keeps [.esi] s t := by
   unfold words
-  refine wp_movS (readSrc_ptr C.ws C.base (d := 48) (by have := v.headerFit; omega)) fun a A _ => ?_
+  refine wp_movS (readSrc_ptr C.ws C.base (d := 48) (by have := v.headerFit; omega_using [this])) fun a A _ => ?_
   refine wp_addS rfl fun t T _ => WP.block_nil ⟨?_, T.mem.trans A.mem, A.keeps.trans T.keeps⟩
   rw [T.gpr, A.gpr, BitVec.toNat_add, Nat.zero_add]
   change (w32 s.mem g.W 48 + w32 s.mem g.W 48) % 2 ^ 32 = g.words
   rw [C.width]
   have bound := v.maxWidth
   unfold Geometry.words
-  omega
+  omega_using [bound]
 
 /-- `copy_ok`, with `ebp` and `ebx` past the destination and the source. -/
 theorem copy_ends {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
@@ -51,7 +51,7 @@ theorem copy_ends {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     rw [PtrAt, Kc.1 .ebp (by decide), Kb.1 .ebp (by decide)]; exact P
   have bx : PtrAt c g.W .ebx (g.array src) := by
     rw [PtrAt, Kc.1 .ebx (by decide)]; exact Pb
-  refine WP.mono (copyLoop_ends (C.ws.of_keeps keep) (by have := v.minWidth; unfold Geometry.words; omega)
+  refine WP.mono (copyLoop_ends (C.ws.of_keeps keep) (by have := v.minWidth; unfold Geometry.words; omega_using [this])
     (v.arrayFit dstIndex) (v.arrayFit srcIndex) (g.arraysApart dst src) bp bx Count) ?_
   rintro t ⟨O, V, Kt, bp', bx'⟩
   have Kall : Keeps [.eax, .ebx, .edx, .ebp, .esi] s t := (keep.mono (by decide)).trans (Kt.mono (by decide))

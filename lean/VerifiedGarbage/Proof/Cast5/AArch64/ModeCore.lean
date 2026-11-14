@@ -44,14 +44,14 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
   intro i hi
   simp only [Spec.Cast5.scheduleAt, Vector.getElem_ofFn]
   have hb := fun j (hj : j < 128) => hf.bytes (R := ⟨p, 128⟩) hd (by show (128 : Nat) ≤ 2 ^ 64; decide) hj
-  rw [hb _ (by omega), hb _ (by omega), hb _ (by omega), hb _ (by omega)]
+  rw [hb _ (by omega_using [hi]), hb _ (by omega_using [hi]), hb _ (by omega_using [hi]), hb _ (by omega_using [hi])]
 
 theorem held_frame {rs : List Region} {m m' : Mem} {T : Addr} (h : Held m T s1234) (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨T, 4096⟩ r) : Held m' T s1234 := by
   intro i hi
   rw [s1234_length] at hi
   rw [← h i (by rw [s1234_length]; exact hi)]
-  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨T, 4096⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])) hd (by decide)
 
 /-! ## The key -/
 
@@ -199,7 +199,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
       exact ⟨_, List.mem_append_left _ hT.rd, Region.contains_self _ _⟩
     · rw [um, usy]; exact hT.held
     · rw [u2, hB, uwr]
-      exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
+      exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩
   show WP isa (cryptCode up) s _
   refine WP.seq (WP.of_runBlock ⟨u, eu, ?_⟩)
   refine WP.seq (WP.mono (block_ok up hpre) fun v ⟨vout, vf, _, _, vrd, vwr, vsy, vg⟩ => ?_)
@@ -222,7 +222,7 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
     · exact hK
     simp only [List.mem_singleton] at hr; subst hr; exact dKB
   · simp only [List.mem_singleton] at hr; subst hr; exact dTB
-  · have hj0 : j = 0 := by simp only [dirCore, Impl.Modes.AArch64.Core.G] at hj; omega
+  · have hj0 : j = 0 := by simp only [dirCore, Impl.Modes.AArch64.Core.G] at hj; omega_using [hj]
     subst hj0
     have ea : blkAddr (dirCore up) B 0 = B := by simp [dirCore]
     rw [dirCore_bw, ea, Nat.mul_one, dirCipher_bytes, bytesAt_eq, m', vout, um]

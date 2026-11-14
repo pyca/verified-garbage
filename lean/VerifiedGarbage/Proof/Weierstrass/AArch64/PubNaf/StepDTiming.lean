@@ -37,7 +37,7 @@ theorem ro_unch {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr} {m 
     rcases hx with hx | hx
     · exact Or.inl (Or.inl hx)
     · exact Or.inr hx
-  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hs; omega)
+  refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hs; omega_using [hn, this])
   simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with ⟨y, hy, rfl⟩ | rfl
   · refine hL.lay.apart x y hs (winOther_mem hy) fun e => ?_
@@ -48,9 +48,9 @@ theorem ro_unch {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr} {m 
       have ht := hL.tbl _ (List.mem_append_right _ hy)
       have hn0 := hL.n0
       have hi' : 8 * K.M.n * i < 8 * K.M.n * 24 :=
-        Nat.mul_lt_mul_of_pos_left (List.mem_range.mp hi) (by omega)
+        Nat.mul_lt_mul_of_pos_left (List.mem_range.mp hi) (by omega_using [hn0])
       have h24 : 24 * (8 * K.M.n) = 8 * K.M.n * 24 := Nat.mul_comm _ _
-      omega
+      omega_using [ht, hi']
   · exact hL.lay.tmp x hs
 
 /-- An iteration with the doubling `d`, for the values it computes. -/
@@ -77,8 +77,8 @@ theorem stepDRaw_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
         CacheOk K C base s ∧ CacheOk K C base t ∧
         s.gpr .x19 = BitVec.ofNat 64 j ∧ t.gpr .x19 = BitVec.ofNat 64 j) := by
     intro s t ts tt s' t' ⟨⟨E, hp⟩, ss, st, cs, ct, s19, t19⟩ es et
-    obtain ⟨_, _, xs, vs, ks⟩ := decCounter_ok s (j := j + 1) (by omega) (by have := hL.n6; omega) s19
-    obtain ⟨_, _, xt, vt, kt⟩ := decCounter_ok t (j := j + 1) (by omega) (by have := hL.n6; omega) t19
+    obtain ⟨_, _, xs, vs, ks⟩ := decCounter_ok s (j := j + 1) (by omega_using []) (by have := hL.n6; omega_using [hj, this]) s19
+    obtain ⟨_, _, xt, vt, kt⟩ := decCounter_ok t (j := j + 1) (by omega_using []) (by have := hL.n6; omega_using [hj, this]) t19
     obtain ⟨_, rfl⟩ := Exec.det es xs
     obtain ⟨_, rfl⟩ := Exec.det et xt
     have kc : ∀ r ∈ [Reg.x19], r ∈ nafClob K.M.n := fun r hr => nafClob_mem (by

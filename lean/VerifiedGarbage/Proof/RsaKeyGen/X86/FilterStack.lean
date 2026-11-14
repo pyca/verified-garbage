@@ -20,15 +20,15 @@ theorem allocated_scratch {base : Addr} {size bytes : Nat} {s : State} (S : Scr 
   · change 20 ≤ (s.gpr .esp - BitVec.ofNat 32 bytes).toNat ∧
       ((s.gpr .esp - BitVec.ofNat 32 bytes).toNat ≤ base.toNat ∨
         base.toNat + size + 20 ≤ (s.gpr .esp - BitVec.ofNat 32 bytes).toNat)
-    rw [sub_toNat (by omega)]
-    rcases separate with h | h <;> constructor <;> omega
+    rw [sub_toNat (by omega_using [fit])]
+    rcases separate with h | h <;> constructor <;> omega_arith
 
 theorem allocated_workspace {s : State} {bytes : Nat} (fit : bytes ≤ (s.gpr .esp).toNat) :
     Ws (allocFrame bytes s) ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64) bytes := by
   refine ⟨List.mem_cons_self, ?_⟩
-  rw [BitVec.toNat_setWidth, sub_toNat fit, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+  rw [BitVec.toNat_setWidth, sub_toNat fit, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
   have := (s.gpr .esp).isLt
-  omega
+  omega_using [fit]
 
 theorem allocated_context {s : State} (fit : 20 ≤ (s.gpr .esp).toNat) :
     Sieve.StackContext (s.gpr .esp - 20#32) (allocFrame 20 s) :=
@@ -39,18 +39,18 @@ theorem allocated_apart {base : Addr} {size bytes : Nat} {s : State}
     (separate : (s.gpr .esp).toNat ≤ base.toNat ∨ base.toNat + size + bytes ≤ (s.gpr .esp).toNat) :
     (⟨base, size⟩ : Region).Disjoint ⟨(s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64, bytes⟩ := by
   have natEq : ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64).toNat = (s.gpr .esp).toNat - bytes := by
-    rw [BitVec.toNat_setWidth, sub_toNat fit, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)]
+    rw [BitVec.toNat_setWidth, sub_toNat fit, Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega_using [])]
   rcases separate with h | h
   · apply Region.Disjoint.symm
     apply Offset.disjoint_of_le
     · change ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64).toNat + bytes ≤ base.toNat
-      rw [natEq]; omega
+      rw [natEq]; omega_using [fit, h]
     · exact Nat.le_trans nowrap (by decide)
   · apply Offset.disjoint_of_le
     · change base.toNat + size ≤ ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64).toNat
-      rw [natEq]; omega
+      rw [natEq]; omega_using [h]
     · change ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64).toNat + bytes ≤ 2 ^ 64
-      rw [natEq]; have := (s.gpr .esp).isLt; omega
+      rw [natEq]; have := (s.gpr .esp).isLt; omega_using [fit]
 
 theorem freed_keeps {s t : State} {bytes : Nat} {rs : List Reg}
     (K : Keeps rs (allocFrame bytes s) t) (sp : .esp ∉ rs) : Keeps rs s (freed bytes t) := by

@@ -43,11 +43,11 @@ theorem stackArg_eq (h : ArgDone p o a used u) (R W : List Region) {j : Nat} (hj
   have fits := h.1.S2_fits
   have e : stackArgAddr (u.callEntry.withRegions R W) j = off (State.addr p.S2) (4 * j) := by
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, h.1.sp]
-    exact VG.Arm.addr_add (by omega)
+    exact VG.Arm.addr_add (by omega_using [hj, fits])
   unfold stackArg
   rw [e, State.withRegions_mem, State.callEntry_mem, h.1.mem]
   exact slot_writeSlots _ _ (N := 8) (by decide) _ (fun e he => callArgs_bound p used e (List.mem_of_mem_take he))
-    j (by omega)
+    j (by omega_using [hj])
 
 theorem sa0 (h : ArgDone p o a used u) (R W : List Region) :
     stackArg (u.callEntry.withRegions R W) 0 = BitVec.ofNat 32 p.elen := h.stackArg_eq R W (by decide)
@@ -76,7 +76,7 @@ theorem toNat_small {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n :
 
 theorem toNat_diff {a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ 32) :
     (BitVec.ofNat 32 a - BitVec.ofNat 32 b).toNat = a - b := by
-  rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) hb, toNat_small (by omega)]
+  rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_using [hb, ha]) hb, toNat_small (by omega_using [ha])]
 
 theorem call_pre {p : SearchPublic} {o a u : State} {used : Nat} (h : ArgDone p o a used u)
     (hu : used ≤ p.randLen) :
@@ -90,9 +90,9 @@ theorem call_pre {p : SearchPublic} {o a u : State} {used : Nat} (h : ArgDone p 
   unfold Spec.RsaKeyGen.primeEntropy at rl
   sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val]
   simp only [h.sa0, h.sa1, h.sa2, h.sa3, h.sa4, h.sa5, h.sa6, h.argAddr, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2,
-    h.1.sp, toNat_small (n := p.len) (by omega), toNat_small (n := p.elen) (by have := f.e8; omega),
-    toNat_small (n := p.plen) (by rcases f.plen with e | e <;> omega),
-    toNat_small (n := p.words) (by have := f.nS; omega), toNat_diff hu (by omega)]
+    h.1.sp, toNat_small (n := p.len) (by omega_using [hl]), toNat_small (n := p.elen) (by have := f.e8; omega_using [this]),
+    toNat_small (n := p.plen) (by rcases f.plen with e | e <;> omega_arith),
+    toNat_small (n := p.words) (by have := f.nS; omega_using [this]), toNat_diff hu (by omega_using [hl, rl])]
   exact ⟨cf.spLo, cf.spHi, rfl, rfl, cf.oU, cf.oE, cf.oP, cf.oR, cf.oS, cf.oA, cf.uE, cf.uP, cf.uR, cf.uS, cf.uA,
     cf.eS, cf.pS, cf.rS', cf.sA, cf.fO, cf.fU, cf.fE, cf.fP, cf.fR, cf.fS, cf.fA, cf.no, cf.nu, cf.ne, cf.np,
     cf.nr, cf.ns, f.valid, f.e1, f.e8, f.plen, f.scr⟩
@@ -141,11 +141,11 @@ theorem call_covers {p : SearchPublic} {o s a u : State} {used remaining : Nat}
   · exact ⟨rE p, by rw [hrd, ← eE]; simp [inReads], 0, by rw [BitVec.add_zero], by simp⟩
   · exact ⟨rP p, by rw [hrd, ← eP]; simp [inReads], 0, by rw [BitVec.add_zero], by simp⟩
   · refine ⟨⟨State.addr p.rp, p.randLen⟩, by rw [hrd, ← eR]; simp [inReads], used,
-      VG.Arm.addr_add (by have := f.nR; omega), by simp only; omega⟩
+      VG.Arm.addr_add (by have := f.nR; omega_using [hroom, this]), by simp only; omega_using [hroom]⟩
   · exact ⟨⟨State.addr p.S2, 32⟩, by rw [hwr]; simp, 0, by rw [BitVec.add_zero], by simp⟩
 
 theorem addr_toNat (x : BitVec 32) : (State.addr x).toNat = x.toNat := by
-  simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
 
 /-- The push's frame, the candidate's, and the candidate's stack, in terms
 of the stack pointer. -/
@@ -158,22 +158,22 @@ theorem S2_toNat {p : SearchPublic} {o : State} (h : SearchInput p o) : (State.a
 theorem below_toNat {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
     (FrameStack.belowA p.S2 k).base.toNat = p.sp.toNat - 72 - k := by
   have room := h.facts.room
-  have e := FrameStack.sub_toNat' (sp := p.S2) (k := k) (by rw [← addr_toNat, S2_toNat h]; omega)
+  have e := FrameStack.sub_toNat' (sp := p.S2) (k := k) (by rw [← addr_toNat, S2_toNat h]; omega_using [hk, room])
   change (State.addr (p.S2 - BitVec.ofNat 32 k)).toNat = _
   rw [addr_toNat, e, ← addr_toNat, S2_toNat h]
 
 theorem S2_sub {p : SearchPublic} {o : State} (h : SearchInput p o) :
     Region.Sub ⟨State.addr p.S2, 32⟩ (inStack o) := by
   have room := h.facts.room
-  rw [SearchPublic.S2, FrameStack.addr_sub' (by omega), h.sp_eq]
+  rw [SearchPublic.S2, FrameStack.addr_sub' (by omega_using [room]), h.sp_eq]
   exact h.stack_sub (by decide) (by decide)
 
 theorem below_sub {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
     Region.Sub (FrameStack.belowA p.S2 k) (inStack o) := by
   have room := h.facts.room
   change Region.Sub ⟨State.addr (p.sp - BitVec.ofNat 32 72 - BitVec.ofNat 32 k), k⟩ _
-  rw [BitVec.sub_sub, ← BitVec.ofNat_add, FrameStack.addr_sub' (by omega), h.sp_eq]
-  exact h.stack_sub (by show 72 + k ≤ 184; omega) (by show 184 - (72 + k) + k ≤ 184; omega)
+  rw [BitVec.sub_sub, ← BitVec.ofNat_add, FrameStack.addr_sub' (by omega_using [hk, room]), h.sp_eq]
+  exact h.stack_sub (by show 72 + k ≤ 184; omega_using [hk]) (by show 184 - (72 + k) + k ≤ 184; omega_using [hk])
 
 /-- What a call may change, among what the search may. -/
 theorem call_changes {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
@@ -198,7 +198,7 @@ theorem saved_apart {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Na
   have e1 := S1_toNat h
   have e2 := S2_toNat h
   have push : Region.Sub ⟨State.addr p.S1 + BitVec.ofNat 64 0, 40 - 0⟩ (inStack o) := by
-    rw [BitVec.add_zero, SearchPublic.S1, FrameStack.addr_sub' (by omega), h.sp_eq]
+    rw [BitVec.add_zero, SearchPublic.S1, FrameStack.addr_sub' (by omega_using [room]), h.sp_eq]
     exact h.stack_sub (by decide) (by decide)
   obtain ⟨eO, eU, -, -, -, eS, -⟩ := h.regions
   have w (q : Region) (hq : q ∈ inWrites o) : Region.Disjoint ⟨State.addr p.S1 + BitVec.ofNat 64 0, 40 - 0⟩ q :=
@@ -206,13 +206,13 @@ theorem saved_apart {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Na
   intro r hr
   simp only [callWr, List.cons_append, List.mem_cons, List.nil_append, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · refine (Offset.disjoint_of_le (by simp only; rw [e2, BitVec.add_zero, e1]; omega) ?_).symm
-    simp only; rw [BitVec.add_zero, e1]; omega
+  · refine (Offset.disjoint_of_le (by simp only; rw [e2, BitVec.add_zero, e1]; omega_using [room]) ?_).symm
+    simp only; rw [BitVec.add_zero, e1]; omega_using []
   · rw [← eO]; exact w _ (by simp [inWrites])
   · rw [← eU]; exact w _ (by simp [inWrites])
   · rw [← eS]; exact w _ (by simp [inWrites])
-  · refine (Offset.disjoint_of_le (by rw [below_toNat h hk]; simp only; rw [BitVec.add_zero, e1]; omega) ?_).symm
-    simp only; rw [BitVec.add_zero, e1]; omega
+  · refine (Offset.disjoint_of_le (by rw [below_toNat h hk]; simp only; rw [BitVec.add_zero, e1]; omega_using [hk, room]) ?_).symm
+    simp only; rw [BitVec.add_zero, e1]; omega_using []
 
 theorem S2_add (x : BitVec 32) : x - BitVec.ofNat 32 72 + BitVec.ofNat 32 32 = x - BitVec.ofNat 32 40 := by
   rw [show (72 : Nat) = 40 + 32 from rfl, BitVec.ofNat_add, ← BitVec.sub_sub, BitVec.sub_add_cancel]
@@ -226,13 +226,13 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   have hl := f.valid
   unfold Spec.RsaKeyGen.primeLenValid at hl
   have room := f.room
-  have hsp : s.sp.toNat = p.sp.toNat - 40 := by rw [h.sp]; exact FrameStack.sub_toNat' (by omega)
+  have hsp : s.sp.toNat = p.sp.toNat - 40 := by rw [h.sp]; exact FrameStack.sub_toNat' (by omega_using [room])
   unfold candidateRun
-  refine WP.alloc (by decide) (by omega) ?_
+  refine WP.alloc (by decide) (by omega_using [room, hsp]) ?_
   refine WP.seq (WP.mono (arguments_ok h) fun u ⟨hd, ku⟩ => ?_)
-  have hu : used ≤ p.randLen := by omega
-  obtain ⟨cov, covW⟩ := call_covers h rfl hd (by omega)
-  have hS2 : 112 ≤ u.sp.toNat := by rw [hd.1.sp, ← addr_toNat, S2_toNat hi]; omega
+  have hu : used ≤ p.randLen := by omega_using [hroom]
+  obtain ⟨cov, covW⟩ := call_covers h rfl hd (by omega_using [hroom, hl])
+  have hS2 : 112 ≤ u.sp.toNat := by rw [hd.1.sp, ← addr_toNat, S2_toNat hi]; omega_using [room]
   refine FrameStack.WP.callF c.verified.1 (call_pre hd hu) cov covW (Nat.le_trans c.stack hS2)
     fun t hrd hwr hspt hfr hpres hpost => ?_
   rw [hd.1.sp] at hfr
@@ -270,14 +270,14 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
     have rB : Spec.Rsa.bytesAt u.mem (BitVec.setWidth 64 (p.rp + BitVec.ofNat 32 used)) (p.randLen - used) =
         (searchRand o).drop used := by
       change Spec.Rsa.bytesAt u.mem (State.addr (p.rp + BitVec.ofNat 32 used)) (p.randLen - used) = _
-      rw [VG.Arm.addr_add (by have := f.nR; omega), bytesAt_drop, hi.random_frame hfu, ← hi.2]; rfl
+      rw [VG.Arm.addr_add (by have := f.nR; omega_using [hroom, hl, this]), bytesAt_drop, hi.random_frame hfu, ← hi.2]; rfl
     change CandPost p (searchP o) (searchRand o) used t
     sig_post [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify,
       Loc.val] at hpost
     simp only [hd.sa0, hd.sa1, hd.sa2, hd.sa3, hd.sa4, hd.2.1, hd.2.2.1, hd.2.2.2.1, hd.2.2.2.2,
-      toNat_small (n := p.len) (by omega), toNat_small (n := p.elen) (by have := f.e8; omega),
-      toNat_small (n := p.plen) (by rcases f.plen with e | e <;> omega),
-      toNat_diff hu (by have := f.randLen; unfold Spec.RsaKeyGen.primeEntropy at this; omega),
+      toNat_small (n := p.len) (by omega_using [hl]), toNat_small (n := p.elen) (by have := f.e8; omega_using [this]),
+      toNat_small (n := p.plen) (by rcases f.plen with e | e <;> omega_arith),
+      toNat_diff hu (by have := f.randLen; unfold Spec.RsaKeyGen.primeEntropy at this; omega_using [hl, this]),
       eB, pB, rB] at hpost
     obtain ⟨h0, h1, h2⟩ := hpost
     refine ⟨?_, h1, h2⟩

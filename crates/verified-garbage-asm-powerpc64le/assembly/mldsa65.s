@@ -2759,6 +2759,18 @@ vg_mldsa65_sign:
 	mtlr %r0
 	blr
 
+vg_mldsa65_sign_prepared:
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	addi %r8, %r3, 4032
+	li %r9, 17408
+	bl {vg_mldsa65_sign_with_cache}
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	blr
+
 vg_mldsa65_sign_message:
 	rldicl %r11, %r7, 56, 8
 	cmpldi %cr0, %r11, 0
@@ -3005,6 +3017,18 @@ vg_mldsa65_verify:
 	std %r0, 32(%r1)
 	addi %r7, %r3, 0
 	li %r8, 0
+	bl {vg_mldsa65_verify_with_cache}
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	blr
+
+vg_mldsa65_verify_prepared:
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	addi %r7, %r3, 1952
+	li %r8, 6144
 	bl {vg_mldsa65_verify_with_cache}
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48

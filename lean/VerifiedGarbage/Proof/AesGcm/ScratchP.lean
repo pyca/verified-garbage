@@ -1,8 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Spec.Gcm.Precomputed
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-GCM's `_precomputed` functions with their working space as an argument
@@ -26,11 +28,11 @@ def initPrecomputedScratchSig : Sig where
   params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 128),
     ("scratch", .array true .u64 320)]
 
-/-- `initPrecomputedContract`, whatever `scratch` is. -/
+/-- `Proof.Gcm.initPrecomputedContract`, whatever `scratch` is. -/
 def initPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   initPrecomputedScratchSig.contract A
     (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
-    (post := fun key keyLen ctx _scratch => initPrecomputedPost A.ptrBits key keyLen ctx)
+    (post := fun key keyLen ctx _scratch => Proof.Gcm.initPrecomputedPost A.ptrBits key keyLen ctx)
     (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_seal_precomputed` with `work: *mut [u64; 320]`. -/
@@ -43,7 +45,7 @@ def sealPrecomputedScratchSig : Sig where
 def sealPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealPrecomputedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
-      sealPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
+      Proof.Gcm.sealPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag _work =>
       sealRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag)
     (writeArgs := true) (stack := stack)
@@ -60,7 +62,7 @@ def openPrecomputedScratchSig : Sig where
 def openPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openPrecomputedScratchSig.contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
-      openPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+      Proof.Gcm.openPrecomputedPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openRoundsPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (writeArgs := true) (stack := stack)
@@ -78,7 +80,7 @@ def streamCryptPrecomputedScratchSig : Sig where
 def streamEncryptPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptPrecomputedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamTextPrecomputedPre A.ptrBits ctx rounds state aadLen textLen data len)
+      Proof.Gcm.streamTextPrecomputedPre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
       streamEncryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
@@ -87,7 +89,7 @@ def streamEncryptPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat :
 def streamDecryptPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamCryptPrecomputedScratchSig.contract A
     (pre := fun ctx rounds state aadLen textLen data len _scratch =>
-      streamTextPrecomputedPre A.ptrBits ctx rounds state aadLen textLen data len)
+      Proof.Gcm.streamTextPrecomputedPre A.ptrBits ctx rounds state aadLen textLen data len)
     (post := fun ctx rounds state aadLen textLen data len _scratch =>
       streamDecryptRoundsPost A.ptrBits ctx rounds state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
@@ -99,16 +101,16 @@ theorem powersRepr_congr {m₁ m₂ : Mem} {p : Addr}
     (h : ∀ i < 128 * 8, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) (hr : PowersRepr m₁ p) :
     PowersRepr m₂ p := by
   intro k hk
-  rw [blockAt_congr_off (d := 256 + 16 * k) (N := 128 * 8) (by omega) h,
-    ctxH_congr fun i hi => h i (by omega)]
+  rw [blockAt_congr_off (d := 256 + 16 * k) (N := 128 * 8) (by omega_using [hk]) h,
+    ctxH_congr fun i hi => h i (by omega_using [hi])]
   exact hr k hk
 
 variable (pb : Nat)
 
-theorem sealPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (sealPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealPrecomputedSig.words pb) (sealPrecomputedPre pb) vs m₁ →
-      Curry.apply (sealPrecomputedSig.words pb) (sealPrecomputedPre pb) vs m₂ := by
+theorem sealPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.sealPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (Proof.Gcm.sealPrecomputedPre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (Proof.Gcm.sealPrecomputedPre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
   replace hlen := Nat.succ.inj hlen
@@ -116,20 +118,20 @@ theorem sealPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (sealPrecompute
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPrecomputedPre pb) _ m₁ at h
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Proof.Gcm.sealPrecomputedPre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPrecomputedPre pb) _ m₂
-  dsimp only [Curry.apply, sealPrecomputedPre, ArgWord.ofRaw] at h ⊢
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (Proof.Gcm.sealPrecomputedPre pb) _ m₂
+  dsimp only [Curry.apply, Proof.Gcm.sealPrecomputedPre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, powersRepr_congr hc h.2⟩
 
-theorem openPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (openPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openPrecomputedSig.words pb) (openPrecomputedPre pb) vs m₁ →
-      Curry.apply (openPrecomputedSig.words pb) (openPrecomputedPre pb) vs m₂ := by
+theorem openPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (Proof.Gcm.openPrecomputedPre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (Proof.Gcm.openPrecomputedPre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -137,22 +139,22 @@ theorem openPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (openPrecompute
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPrecomputedPre pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (Proof.Gcm.openPrecomputedPre pb) _
     m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPrecomputedPre pb) _
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (Proof.Gcm.openPrecomputedPre pb) _
     m₂
-  dsimp only [Curry.apply, openPrecomputedPre, ArgWord.ofRaw] at h ⊢
+  dsimp only [Curry.apply, Proof.Gcm.openPrecomputedPre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, powersRepr_congr hc h.2⟩
 
-theorem streamTextPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (streamCryptPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamCryptPrecomputedSig.words pb) (streamTextPrecomputedPre pb) vs m₁ →
-      Curry.apply (streamCryptPrecomputedSig.words pb) (streamTextPrecomputedPre pb) vs m₂ := by
+theorem streamTextPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (Proof.Gcm.streamTextPrecomputedPre pb) vs m₁ →
+      Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (Proof.Gcm.streamTextPrecomputedPre pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -160,20 +162,20 @@ theorem streamTextPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (streamCr
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamTextPrecomputedPre pb) _ m₁ at h
+    ArgWord.addr, ArgWord.int pb] (Proof.Gcm.streamTextPrecomputedPre pb) _ m₁ at h
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-    ArgWord.addr, ArgWord.int pb] (streamTextPrecomputedPre pb) _ m₂
-  dsimp only [Curry.apply, streamTextPrecomputedPre, ArgWord.ofRaw] at h ⊢
+    ArgWord.addr, ArgWord.int pb] (Proof.Gcm.streamTextPrecomputedPre pb) _ m₂
+  dsimp only [Curry.apply, Proof.Gcm.streamTextPrecomputedPre, ArgWord.ofRaw] at h ⊢
   exact ⟨h.1, powersRepr_congr hc h.2⟩
 
-theorem sealPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (sealPrecomputedSig.words pb) (sealRoundsPost pb) vs m₁ m' r →
-      Curry.apply (sealPrecomputedSig.words pb) (sealRoundsPost pb) vs m₂ m' r := by
+theorem sealPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.sealPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.sealPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (sealRoundsPost pb) vs m₁ m' r →
+      Curry.apply (Proof.Gcm.sealPrecomputedSig.words pb) (sealRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
   replace hlen := Nat.succ.inj hlen
@@ -194,7 +196,7 @@ theorem sealPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealPrec
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hn := agree_of hb.2.1
@@ -210,19 +212,19 @@ theorem sealPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealPrec
   have := Nat.mod_le nl.toNat (2 ^ pb)
   have := Nat.mod_le al.toNat (2 ^ pb)
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [ctxCiph_congr hr' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hr' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (nl.setWidth pb).toNat) fun i hi => hn i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (n := (al.setWidth pb).toNat) fun i hi => ha i (by
-      rw [BitVec.toNat_setWidth] at hi; omega),
+      rw [BitVec.toNat_setWidth] at hi; omega_arith),
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
-theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openPrecomputedSig.words pb) (openRoundsPost pb) vs m₁ m' r →
-      Curry.apply (openPrecomputedSig.words pb) (openRoundsPost pb) vs m₂ m' r := by
+theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openRoundsPost pb) vs m₁ m' r →
+      Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -245,7 +247,7 @@ theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openPrec
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hN := agree_of hb.2.1
@@ -261,15 +263,15 @@ theorem openPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openPrec
   dsimp only [Curry.apply, openRoundsPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
   intro hr
   have := Nat.mod_le len.toNat (2 ^ pb)
-  rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega)) hN hA hD hT,
+  rw [openResult_local (pb := pb) (le15 hr) (fun i hi => hc i (by omega_using [hi])) hN hA hD hT,
     bytesAt_congr (p := data) (n := (len.setWidth pb).toNat) fun i hi => hD i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
   exact h hr
 
-theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (openPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (openPrecomputedSig.words pb) (openLeak pb) vs m₁ =
-      Curry.apply (openPrecomputedSig.words pb) (openLeak pb) vs m₂ := by
+theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (Proof.Gcm.openPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.openPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openLeak pb) vs m₁ =
+      Curry.apply (Proof.Gcm.openPrecomputedSig.words pb) (openLeak pb) vs m₂ := by
   intro vs m₁ m₂ hlen hb
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
   replace hlen := Nat.succ.inj hlen
@@ -292,7 +294,7 @@ theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (openPrecomput
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openLeak pb) _
@@ -303,15 +305,15 @@ theorem openPrecomputedLeak_local : ∀ vs m₁ m₂, vs.length = (openPrecomput
   by_cases hr : (rd.setWidth pb).toNat = 10 ∨ (rd.setWidth pb).toNat = 12 ∨
     (rd.setWidth pb).toNat = 14
   · simp only [hr, not_true_eq_false, ↓reduceIte]
-    simp only [openResult_local (pb := pb) (le15 hr) (fun i hi => agree_of hb.1 i (by omega)) (agree_of hb.2.1)
+    simp only [openResult_local (pb := pb) (le15 hr) (fun i hi => agree_of hb.1 i (by omega_using [hi])) (agree_of hb.2.1)
       (agree_of hb.2.2.1) (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2)]
     rfl
   · simp only [hr, not_false_eq_true, ↓reduceIte]
 
-theorem streamEncryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamCryptPrecomputedSig.words pb) (streamEncryptRoundsPost pb) vs m₁ m' r →
-      Curry.apply (streamCryptPrecomputedSig.words pb) (streamEncryptRoundsPost pb) vs m₂ m' r := by
+theorem streamEncryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamEncryptRoundsPost pb) vs m₁ m' r →
+      Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamEncryptRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -327,7 +329,7 @@ theorem streamEncryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -340,16 +342,16 @@ theorem streamEncryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   intro hn iv a p hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
-theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptPrecomputedSig.words pb).length →
-    (∀ b ∈ Sig.bufs streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m₁ m' r →
-      Curry.apply (streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m₂ m' r := by
+theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = (Proof.Gcm.streamCryptPrecomputedSig.words pb).length →
+    (∀ b ∈ Sig.bufs Proof.Gcm.streamCryptPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m₁ m' r →
+      Curry.apply (Proof.Gcm.streamCryptPrecomputedSig.words pb) (streamDecryptRoundsPost pb) vs m₂ m' r := by
   intro vs m₁ m₂ m' r hlen hb h
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
   replace hlen := Nat.succ.inj hlen
@@ -365,7 +367,7 @@ theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Proof.Gcm.streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -378,10 +380,10 @@ theorem streamDecryptPrecomputedPost_local : ∀ vs m₁ m₂ m' r, vs.length = 
   intro hn iv a c hr hl ht
   have := Nat.mod_le len.toNat (2 ^ pb)
   have hn' := le15 hn
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi]),
     bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-  rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
-  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+      rw [BitVec.toNat_setWidth] at hi; omega_using [this, hi])]
+  rw [ctxCiph_congr hn' fun i hi => hc i (by omega_using [hi]), ctxH_congr fun i hi => hc i (by omega_using [hi])] at hr
+  exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega_using [hi])).symm) hr) hl ht
 
 end VG.Proof.AesGcm

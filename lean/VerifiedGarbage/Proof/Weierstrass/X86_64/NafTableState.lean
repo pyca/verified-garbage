@@ -63,7 +63,7 @@ theorem nafTableLive_next (K : WinCfg) (m : Nat) :
   · have hn' : K.tbl+8*K.M.n*i∈jacCoords (K.tblPt (m+1)) := by
       simp only [jacCoords,tblPt_x,tblPt_y,tblPt_z,Nat.add_sub_cancel,List.mem_cons,
         List.not_mem_nil,or_false]
-      obtain rfl|rfl|rfl : i=3*m ∨ i=3*m+1 ∨ i=3*m+2 := by omega
+      obtain rfl|rfl|rfl : i=3*m ∨ i=3*m+1 ∨ i=3*m+2 := by omega_using [hi', h]
       · exact Or.inl rfl
       · exact Or.inr (Or.inl rfl)
       · exact Or.inr (Or.inr rfl)
@@ -93,7 +93,7 @@ theorem nafTable_advance_ok {s : State} {m : Nat} (hm : m<8)
   refine ⟨trivial,?_,fun r hr => ?_,rfl,rfl,rfl⟩
   · congr 1
     simp only [BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (show m+1<2^64 from by omega)]
+    rw [Nat.mod_eq_of_lt (show m+1<2^64 from by omega_using [hm])]
     rfl
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_arithFlags,RegUpd.gpr_setReg,hr,ite_false]

@@ -23,7 +23,7 @@ theorem frameStart_sp (s : State) (rs : List Reg) :
     rw [frameStart, ih, pushed_rsp]
     simp only [List.length_cons, List.length_nil, Nat.zero_add, Nat.mul_one]
     rw [BitVec.sub_sub, ← BitVec.ofNat_add]
-    exact congrArg (fun n => s.gpr .rsp - BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => s.gpr .rsp - BitVec.ofNat 64 n) (by omega_using [])
 
 theorem frameStart_reg (s : State) (rs : List Reg) (r : Reg) (notSp : r ≠ .rsp) :
     (frameStart s rs).gpr r = s.gpr r := by
@@ -44,12 +44,12 @@ theorem frameStart_frame (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
     exact (pushRegs_mem s (List.replicate 34 .rax) (by decide) (by simpa using space)).1
   | cons r rs ih =>
     simp only [List.mem_cons, not_or] at notSp
-    have enough : 8 ≤ (s.gpr .rsp).toNat := by simp only [List.length_cons] at space; omega
+    have enough : 8 ≤ (s.gpr .rsp).toNat := by simp only [List.length_cons] at space; omega_using [space]
     have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
       rw [pushed_rsp]
       simp only [List.length_singleton, Nat.mul_one]
       rw [toNat_sub_ofNat enough]
-      simp only [List.length_cons] at space; omega
+      simp only [List.length_cons] at space; omega_using [space]
     have outer := (pushRegs_mem s [r] (by simpa using notSp.1)
       (by simpa using enough)).1
     have inner := ih (pushed [r] s) notSp.2 innerSpace
@@ -57,16 +57,16 @@ theorem frameStart_frame (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
     · intro region hr
       simp only [List.mem_singleton] at hr; subst region
       refine ⟨_, List.mem_singleton_self _, ?_⟩
-      exact Offset.sub_below (s.gpr .rsp) (by simp only [List.length_cons, List.length_nil]; omega)
-        (by simp only [List.length_singleton, Nat.mul_one]; omega)
+      exact Offset.sub_below (s.gpr .rsp) (by simp only [List.length_cons, List.length_nil]; omega_using [])
+        (by simp only [List.length_singleton, Nat.mul_one]; omega_using [])
     · intro region hr
       simp only [List.mem_singleton] at hr; subst region
       refine ⟨_, List.mem_singleton_self _, ?_⟩
       rw [pushed_rsp]
       simp only [List.length_cons, List.length_nil, Nat.zero_add, Nat.mul_one, below]
       rw [BitVec.sub_sub, ← BitVec.ofNat_add,
-        show 8 + (272 + 8 * rs.length) = 272 + 8 * (rs.length + 1) by omega]
-      exact Region.sub_prefix (by omega)
+        show 8 + (272 + 8 * rs.length) = 272 + 8 * (rs.length + 1) by omega_using []]
+      exact Region.sub_prefix (by omega_using [])
 
 theorem frameEnd_mem (s : State) (rs : List Reg) : (frameEnd s rs).mem = s.mem := by
   induction rs with
@@ -89,12 +89,12 @@ theorem frameStart_word (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
   | nil => exact absurd bound (Nat.not_lt_zero _)
   | cons r rs ih =>
     simp only [List.mem_cons, not_or] at notSp
-    have enough : 8 ≤ (s.gpr .rsp).toNat := by simp only [List.length_cons] at space; omega
+    have enough : 8 ≤ (s.gpr .rsp).toNat := by simp only [List.length_cons] at space; omega_using [space]
     have innerSpace : 272 + 8 * rs.length ≤ ((pushed [r] s).gpr .rsp).toNat := by
       rw [pushed_rsp]
       simp only [List.length_singleton, Nat.mul_one]
       rw [toNat_sub_ofNat enough]
-      simp only [List.length_cons] at space; omega
+      simp only [List.length_cons] at space; omega_using [space]
     cases j with
     | zero =>
       have stored := (pushRegs_mem s [r] (by simpa using notSp.1)
@@ -107,7 +107,7 @@ theorem frameStart_word (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
           simp only [List.mem_singleton] at hr; subst region
           apply Offset.base_disjoint_below
           have limit := (s.gpr .rsp).isLt
-          simp only [List.length_cons] at space; omega) (by decide)
+          simp only [List.length_cons] at space; omega_using [space]) (by decide)
       rw [pushed_rsp] at unchanged
       simp only [List.length_singleton, Nat.mul_one] at unchanged
       exact unchanged.trans stored
@@ -116,7 +116,7 @@ theorem frameStart_word (s : State) (rs : List Reg) (notSp : .rsp ∉ rs)
       rw [pushed_rsp, pushed_gpr _ _ (fun h => notSp.2 (h ▸ List.getElem_mem _))] at word
       simp only [List.length_singleton, Nat.mul_one] at word
       rw [BitVec.sub_sub, ← BitVec.ofNat_add,
-        show 8 + 8 * (j + 1) = 8 * (j + 1 + 1) by omega] at word
+        show 8 + 8 * (j + 1) = 8 * (j + 1 + 1) by omega_using []] at word
       exact word
 
 end VG.Proof.Argon2.X86_64.Derive

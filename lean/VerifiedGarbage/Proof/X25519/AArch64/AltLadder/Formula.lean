@@ -72,8 +72,8 @@ theorem altEnv_ok (e : Env) (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (hg : Go
   have hb := bit_le k t
   unfold Good
   rw [v0, v18, v1, v2, v3, v4, ladderStep_eq, h0, h1, h2, h3, h4, hc, toFe_121666]
-  rcases (by omega : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
-    rcases (by omega : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
+  rcases (by omega_using [hsw] : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
+    rcases (by omega_using [hb] : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
     simp only [hs, hk, Spec.X25519.cswap] <;>
     refine ⟨trivial, ?_, ?_, ?_, ?_, trivial⟩ <;> grind
 

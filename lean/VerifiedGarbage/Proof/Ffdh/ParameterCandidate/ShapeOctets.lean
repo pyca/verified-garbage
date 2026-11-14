@@ -36,13 +36,13 @@ theorem topByte_value {j : Nat} (hj : j < 8) (b : Byte) :
     (topByte j b).toNat = b.toNat % 2 ^ j + 2 ^ j := by
   have hpow : 2 ^ j < 256 := Nat.pow_lt_pow_right (by decide) hj
   simp only [topByte, BitVec.toNat_or, BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (show 2 ^ j - 1 < 2 ^ 8 by omega), Nat.mod_eq_of_lt hpow,
+  rw [Nat.mod_eq_of_lt (show 2 ^ j - 1 < 2 ^ 8 by omega_using [hpow]), Nat.mod_eq_of_lt hpow,
     Nat.and_two_pow_sub_one_eq_mod, Nat.or_two_pow_eq_add_of_lt (Nat.mod_lt _ (Nat.two_pow_pos _))]
 
 theorem topCut_length {bs : List Byte} (hne : bs ≠ []) (j : Nat) : (topCut bs j).length = bs.length := by
   simp only [topCut, List.length_cons, List.length_drop]
   have := List.length_pos_iff.mpr hne
-  omega
+  omega_using [this]
 
 /-- The first-byte operation is reduction modulo the lower bits, plus the high bit. -/
 theorem topCut_value {bs : List Byte} (hne : bs ≠ []) {j : Nat} (hj : j < 8) :
@@ -51,14 +51,14 @@ theorem topCut_value {bs : List Byte} (hne : bs ≠ []) {j : Nat} (hj : j < 8) :
   have hl : 1 ≤ bs.length := List.length_pos_iff.mpr hne
   have hm : (BitVec.ofNat 8 (2 ^ j - 1)).toNat = 2 ^ j - 1 := by
     have hp : 2 ^ j < 256 := Nat.pow_lt_pow_right (by decide) hj
-    exact Nat.mod_eq_of_lt (by omega)
-  have hc := KeyScalar.cut_value (r := bs) (n := 0) (e := bs.length) (j := j) (by omega) hl (by omega) hm
+    exact Nat.mod_eq_of_lt (by omega_using [hp])
+  have hc := KeyScalar.cut_value (r := bs) (n := 0) (e := bs.length) (j := j) (by omega_using []) hl (by omega_using [hj]) hm
   simp only [KeyScalar.cut, List.replicate_zero, List.nil_append, os2ip_cons,
     BitVec.toNat_and, hm, Nat.and_two_pow_sub_one_eq_mod, List.length_drop, Nat.zero_add] at hc
   have hp : 2 ^ j * 256 ^ (bs.length - 1) = 2 ^ (8 * (bs.length - 1) + j) := by
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, ← Nat.pow_add, Nat.add_comm]
   rw [topCut, os2ip_cons, topByte_value hj, List.length_drop, Nat.add_mul, hp]
-  omega
+  omega_using [hc]
 
 /-- The equivalent arithmetic form used by byte-based shaping. -/
 theorem candidate_low_high {bits : Nat} (hb : 1 ≤ bits) (x : Nat) :
@@ -84,16 +84,16 @@ theorem lastOne_append (bs : List Byte) (b : Byte) : lastOne (bs ++ [b]) = bs ++
 theorem lastOne_length {bs : List Byte} (hne : bs ≠ []) : (lastOne bs).length = bs.length := by
   simp only [lastOne, List.length_append, List.length_take, List.length_singleton]
   have := List.length_pos_iff.mpr hne
-  omega
+  omega_using [this]
 
 theorem lastOne_getD {bs : List Byte} {i : Nat} (hi : i < bs.length) :
     (lastOne bs).getD i 0 = if i + 1 = bs.length then bs.getD i 0 ||| 1 else bs.getD i 0 := by
   by_cases he : i + 1 = bs.length
-  · have hi' : i = bs.length - 1 := by omega
+  · have hi' : i = bs.length - 1 := by omega_using [he]
     subst hi'
     simp [lastOne, List.getD_eq_getElem?_getD, List.getElem?_append,
       Nat.min_eq_left (Nat.sub_le bs.length 1), he]
-  · have hi' : i < bs.length - 1 := by omega
+  · have hi' : i < bs.length - 1 := by omega_using [hi, he]
     simp [lastOne, List.getD_eq_getElem?_getD, List.getElem?_append,
       Nat.min_eq_left (Nat.sub_le bs.length 1), hi', hi, he]
 
@@ -120,7 +120,7 @@ def shapedOctets (bs : List Byte) (j : Nat) : List Byte := lastOne (topCut bs j)
 theorem shapedOctets_value {bs : List Byte} (hne : bs ≠ []) {j bits : Nat} (hj : j < 8)
     (hbits : bits = 8 * (bs.length - 1) + j + 1) :
     Spec.Rsa.os2ip (shapedOctets bs j) = VG.Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip bs) := by
-  have hb : 1 ≤ bits := by omega
+  have hb : 1 ≤ bits := by omega_using [hbits]
   rw [shapedOctets, lastOne_value (by simp [topCut]), topCut_value hne hj, candidate_low_high hb]
   rw [hbits, Nat.add_sub_cancel]
 
@@ -131,6 +131,6 @@ theorem shapedOctets_half_value {bs : List Byte} (hne : bs ≠ []) {j bits : Nat
       (VG.Spec.Ffdh.candidateOf bits (Spec.Rsa.os2ip bs) - 1) / 2 := by
   rw [halfOctets_zero, shapedOctets_value hne hj hbits]
   have ho := (candidate_shape hb (Spec.Rsa.os2ip bs)).1
-  omega
+  omega_using [ho]
 
 end VG.Proof.Ffdh.ParameterCandidate

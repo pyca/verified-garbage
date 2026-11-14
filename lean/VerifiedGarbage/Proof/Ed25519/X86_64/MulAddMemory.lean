@@ -67,7 +67,7 @@ theorem wideAccumulate8192_ok {s : State} {base : Addr}
       wideValue t = val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) +
         fe s.mem base a * fe s.mem base b ∧ Keeps clob s t := by
   let narrow := s.withRegions s.rd [⟨base, 4096⟩]
-  have hs : Scr narrow base := ⟨hp, List.mem_singleton_self _, by omega⟩
+  have hs : Scr narrow base := ⟨hp, List.mem_singleton_self _, by omega_using [hn]⟩
   obtain ⟨tr, t, he, hv, hk⟩ := wideAccumulate_ok hs ha hb
   have cw : Covers [⟨base, 4096⟩] s.wr := by
     apply Covers.of_sub
@@ -111,10 +111,10 @@ theorem stores8192_ok {s : State} {base : Addr} (hp : s.gpr .rdi = base)
       t.mem = st4 s.mem base o (s.gpr a) (s.gpr b) (s.gpr c) (s.gpr d) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have w : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base _ hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [stores, runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc, hp, State.store64,
-    w o (by omega), w (o + 8) (by omega), w (o + 16) (by omega), w (o + 24) (by omega),
+    w o (by omega_using [ho]), w (o + 8) (by omega_using [ho]), w (o + 16) (by omega_using [ho]), w (o + 24) (by omega_using [ho]),
     ite_true, Option.some.injEq, exists_eq_left']
   exact ⟨rfl, trivial, trivial, trivial⟩
 
@@ -132,8 +132,8 @@ theorem copyScalar_ok {s : State} {base : Addr} (hp : s.gpr .rdi = base)
     ho .r8 .r9 .r10 .r11) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   refine ⟨?_, fun r h => (congrFun hg r).trans (hk.1 r h), hrd.trans hk.2.2.1,
     hwr.trans hk.2.2.2, ?_⟩
-  · rw [hm, fe_st4 _ _ (by omega)]; exact hv
-  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · rw [hm, fe_st4 _ _ (by omega_using [ho])]; exact hv
+  · rw [hm, hk.2.1]; exact st4_outside _ _ (by omega_using [ho]) _ _ _ _
 
 theorem mulAddSave_ok {s : State} {base : Addr} (hc : s.gpr .r8 = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) :
@@ -141,17 +141,17 @@ theorem mulAddSave_ok {s : State} {base : Addr} (hc : s.gpr .r8 = base)
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Outside base 0 48 s.mem s'.mem ∧
       Saved base s.gpr s'.mem := by
   have w : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hw, Offset.contains_base base hd (by omega)⟩
+    fun d hd => ⟨_, hw, Offset.contains_base base hd (by omega_using [hd])⟩
   apply WP.of_runBlock
   simp only [mulAddSave, saved, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
-    exec, ea_at, hc, State.store64, w 0 (by omega), w 8 (by omega), w 16 (by omega),
-    w 24 (by omega), w 32 (by omega), w 40 (by omega), ite_true, Option.some.injEq,
+    exec, ea_at, hc, State.store64, w 0 (by omega_using []), w 8 (by omega_using []), w 16 (by omega_using []),
+    w 24 (by omega_using []), w 32 (by omega_using []), w 40 (by omega_using []), ite_true, Option.some.injEq,
     exists_eq_left']
   refine ⟨trivial, trivial, trivial, ?_, fun rd hrd => ?_⟩
-  · exact ((((((Outside.refl base 0 48 s.mem).writeW (by omega) (by omega) (by omega) _).writeW
-      (by omega) (by omega) (by omega) _).writeW (by omega) (by omega) (by omega) _).writeW
-      (by omega) (by omega) (by omega) _).writeW (by omega) (by omega) (by omega) _).writeW
-      (by omega) (by omega) (by omega) _
+  · exact ((((((Outside.refl base 0 48 s.mem).writeW (by omega_using []) (by omega_using []) (by omega_using []) _).writeW
+      (by omega_using []) (by omega_using []) (by omega_using []) _).writeW (by omega_using []) (by omega_using []) (by omega_using []) _).writeW
+      (by omega_using []) (by omega_using []) (by omega_using []) _).writeW (by omega_using []) (by omega_using []) (by omega_using []) _).writeW
+      (by omega_using []) (by omega_using []) (by omega_using []) _
   · simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hrd
     rcases hrd with rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [word_writeW_sep, word_writeW_self]

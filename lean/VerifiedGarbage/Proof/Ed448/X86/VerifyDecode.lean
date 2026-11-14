@@ -104,7 +104,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   have hs6 := k6.scr hs5
   -- the sign
   have hb128 : (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 < 2 := by
-    have := (s.mem (q + BitVec.ofNat 64 56)).isLt; omega
+    have := (s.mem (q + BitVec.ofNat 64 56)).isLt; omega_using []
   have K16 : CKeep base s1 s6 :=
     (Keep.toC k2).trans ((IKeep.toC k3).trans ((Keep.toC k4).trans (k5.trans (Keep.toC k6))))
   have sg : word s6.mem base SIGN = BitVec.ofNat 32 ((s.mem (q + BitVec.ofNat 64 56)).toNat / 128) := by
@@ -177,13 +177,13 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
       exact ⟨xt, kY, rfl⟩
     · rw [ite_eq_right hall] at ha
       cases ha
-  · have h1 : i ≠ 1 := fun h => by subst h; omega
-    have h12 : i ≠ 12 := fun h => by subst h; omega
-    have h3 : i ≠ 3 := fun h => by subst h; omega
-    have h4 : i ≠ 4 := fun h => by subst h; omega
-    have h5 : i ≠ 5 := fun h => by subst h; omega
-    have h13 : i ≠ 13 := fun h => by subst h; omega
-    rw [et i h1 h12 hix, k6e i h12, e5 i h1, k4e i hix h12, r3k i (by omega),
+  · have h1 : i ≠ 1 := fun h => by subst h; omega_using [hi]
+    have h12 : i ≠ 12 := fun h => by subst h; omega_using [hi]
+    have h3 : i ≠ 3 := fun h => by subst h; omega_using [hi]
+    have h4 : i ≠ 4 := fun h => by subst h; omega_using [hi]
+    have h5 : i ≠ 5 := fun h => by subst h; omega_using [hi]
+    have h13 : i ≠ 13 := fun h => by subst h; omega_using [hi]
+    rw [et i h1 h12 hix, k6e i h12, e5 i h1, k4e i hix h12, r3k i (by omega_using [hi]),
       k2e i h3 h4 h5 h12 h13 hix, e1 i h1 hiy]
 
 end VG.Proof.Ed448.X86

@@ -74,7 +74,7 @@ theorem tableBody_ct {base : BitVec 32} {len w M1 M2 x1 x2 j : Nat} (hj : j < 8)
       tableBody (fun _ _ => True) := by
   have entryOf (s : State) {M x : Nat} (h : BuildInv base len w M x j s) :
       WP isa (montOp 1 1 5) s (EntryReady base len w j) := by
-    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega) h.fits
+    have size : 256 ≤ 8 * len := Nat.le_trans (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using []) h.fits
     refine WP.mono (montOp_ok s h.power.ready (o := 1) (a := 1) (b := 5)
       (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
       (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp])
@@ -105,10 +105,10 @@ theorem tableLoop_ct {base : BitVec 32} {len w M1 M2 x1 x2 : Nat}
     intro k s t tr1 tr2 u z h e1 e2
     obtain ⟨j, jk, hk, hj, hs, ht, sp⟩ := h
     have ct := relCT_keep_sp (tableBody_ct (base := base) (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2) (j := j)
-      (by omega) fit fits) (fun _ _ h => h.2.2)
+      (by omega_using [jk, hk]) fit fits) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨hs, ht, sp⟩ e1 e2
-    obtain ⟨_, _, run1, next1, zero1, _, _⟩ := tableBody_ok s hs hj (by omega)
-    obtain ⟨_, _, run2, next2, zero2, _, _⟩ := tableBody_ok t ht hj (by omega)
+    obtain ⟨_, _, run1, next1, zero1, _, _⟩ := tableBody_ok s hs hj (by omega_using [jk, hk])
+    obtain ⟨_, _, run2, next2, zero2, _, _⟩ := tableBody_ok t ht hj (by omega_using [jk, hk])
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩
@@ -119,7 +119,7 @@ theorem tableLoop_ct {base : BitVec 32} {len w M1 M2 x1 x2 : Nat}
         intro last
         change some (!_) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
-      exact ⟨k - 1, by omega, j + 1, by omega, by omega, by omega, next1, next2, sp'⟩
+      exact ⟨k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, notLast], by omega_using [hj], next1, next2, sp'⟩
   exact (RelCT.loop I step 6).mono
     (fun _ _ h => ⟨2, rfl, by decide, Nat.le_refl _, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
 

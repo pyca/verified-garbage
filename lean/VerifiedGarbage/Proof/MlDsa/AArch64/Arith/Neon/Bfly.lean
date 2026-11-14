@@ -39,7 +39,7 @@ theorem bfly_spec : VBflyOk Impl.MlDsa.AArch64.Arith.Neon.bfly
       rw [mont_mulR, val_sub, val_mul, Nat.mul_comm (z e).val, condSub_eq]
       have := (a e).isLt
       have := Nat.mod_lt ((b e).val*(z e).val) (show 0 < q by decide)
-      omega
+      omega_using []
 
 theorem bflyInv_spec : VBflyOk Impl.MlDsa.AArch64.Arith.Neon.bflyInv
     (fun a b z => (a+b,z*(b-a))) (fun z => -z) := by
@@ -52,5 +52,5 @@ theorem bflyInv_spec : VBflyOk Impl.MlDsa.AArch64.Arith.Neon.bflyInv
       change mont (((a e).val+q-(b e).val)*((-z e).val*2^32%q))%q = (z e*(b e-a e)).val
       rw [← neg_mul_sub, val_mul, val_sub, condSub_eq]
       · rw [mont_mulR, Nat.mul_mod_mod, Nat.mul_comm]
-      · have := (a e).isLt; have := (b e).isLt; omega
+      · have := (a e).isLt; have := (b e).isLt; omega_using []
 end VG.Proof.MlDsa.AArch64.Arith.Neon

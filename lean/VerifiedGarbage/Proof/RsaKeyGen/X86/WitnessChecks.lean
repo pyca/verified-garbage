@@ -28,13 +28,13 @@ theorem codeOf_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p
   unfold codeOf
   refine wp_movS rfl fun a A _ => ?_
   have Sa := S.ready.scratch.of_keeps A.keeps (by decide)
-  refine wp_storeS (Sa.ea (by omega)) (Sa.write (by omega)) fun b B => ?_
+  refine wp_storeS (Sa.ea (by omega_using [head])) (Sa.write (by omega_using [head])) fun b B => ?_
   have Kb := A.keeps.widen (B.keeps [])
   have Sb := S.ready.scratch.of_keeps Kb (by decide)
-  refine wp_storeS (Sb.ea (by omega)) (Sb.write (by omega)) fun d D => wp_movS rfl fun e E _ => ?_
+  refine wp_storeS (Sb.ea (by omega_using [head])) (Sb.write (by omega_using [head])) fun d D => wp_movS rfl fun e E _ => ?_
   have Ke := ((Kb.widen (D.keeps [])).trans E.keeps)
   have Se := S.ready.scratch.of_keeps Ke (by decide)
-  refine wp_storeS (Se.ea (by omega)) (Se.write (by omega)) fun t T => WP.block_nil ?_
+  refine wp_storeS (Se.ea (by omega_using [head])) (Se.write (by omega_using [head])) fun t T => WP.block_nil ?_
   have Ob : Outside g.W 176 4 s.mem b.mem := by
     rw [B.mem, A.mem]
     exact writeW32_outside _ _ _ (by decide)

@@ -140,7 +140,7 @@ theorem call_pre_with {valid : Nat → Nat → List Byte → Bool} {s₀ t : Sta
     simp only [argumentPointer, ce_arg A h C (callRd s₀) (callWr s₀) (show 2 < 11 by decide), callVal]
   have hk : Spec.Rsa.bytesAt (t.callEntry.withRegions (callRd s₀) (callWr s₀)).mem (argumentPointer s₀ 3)
       (X86.arg s₀ 4).toNat = (rInput s₀).key :=
-    (callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega) _).trans (callKey A h)
+    (callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega_using []) _).trans (callKey A h)
   rw [ce_arg A h C (callRd s₀) (callWr s₀) (show 3 < 11 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 4 < 11 by decide),
     ce_arg A h C (callRd s₀) (callWr s₀) (show 6 < 11 by decide), hp]
@@ -161,14 +161,14 @@ theorem call_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) (h : Read
   have hd := F.depth
   have hlo := A.stackLow
   have hrl := rLow_toNat A
-  refine WP.call F.verified.1 F.noSp (by omega) (call_pre_with A h C hv) hc hcw
+  refine WP.call F.verified.1 F.noSp (by omega_using [he, hd, hlo, hrl]) (call_pre_with A h C hv) hc hcw
     fun u hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_
   have hesp : u.gpr .esp = t.gpr .esp := hcs .esp (by simp [calleeSaved])
   -- Where the call wrote.
   have hbelow : Region.Sub (below (t.gpr .esp) (stackUse F.code + 4)) ⟨rCall s₀, 112⟩ := by
     show Region.Sub ⟨(t.gpr .esp - BitVec.ofNat 32 (stackUse F.code + 4)).setWidth 64, _⟩ _
-    rw [Taint.sub_setWidth (by omega), h.rf.esp, rBase, rLow_off, Offset.add_ofNat_sub _ (by omega)]
-    exact Offset.sub_base _ (by omega)
+    rw [Taint.sub_setWidth (by omega_using [he, hd, hlo, hrl]), h.rf.esp, rBase, rLow_off, Offset.add_ofNat_sub _ (by omega_using [hd])]
+    exact Offset.sub_base _ (by omega_using [hd])
   have hf' : Frame (callWrites s₀) t.mem u.mem := hf.sub fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
@@ -202,10 +202,10 @@ theorem call_ok (F : SignFn) {s₀ t : State} (A : RandomSignABI s₀) (h : Read
     callVal, esp_ptr h (d := oNonce) (by decide), show 24 + oNonce = 112 from rfl] at hp
   have hql := rQBytes_le A
   have hqn := rQBytes_length A
-  rw [callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega),
-    callEntry_bytes A h ((Offset.disjoint _ (by omega) (by omega) (by omega) :
-      Region.Disjoint ⟨off (rLow s₀) 20, 4⟩ ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩).symm) (by omega),
-    callEntry_bytes A h (A.stackDigestWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega)] at hp
+  rw [callEntry_bytes A h (A.stackKeyWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega_using []),
+    callEntry_bytes A h ((Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using []) :
+      Region.Disjoint ⟨off (rLow s₀) 20, 4⟩ ⟨off (rLow s₀) 112, (X86.arg s₀ 6).toNat⟩).symm) (by omega_using []),
+    callEntry_bytes A h (A.stackDigestWide.symm.sub_right (stk_sub s₀ (by decide))) (by omega_using [])] at hp
   obtain ⟨hr, hb⟩ := hp
   refine ⟨?_, by rw [← hm₂]; exact hb⟩
   rw [BitVec.setWidth_append_eq_right, hg₂ .eax (by decide)] at hr

@@ -50,7 +50,7 @@ theorem mont_step_ct (M : Mont) {o a b : Nat} (huse : MmUse o a b)
   have hnZ : p.layout.B.toNat + slot p.layout.w 8 ≤ 2 ^ 64 := by
     have := hc.good.scr.nowrap
     have := p.fits
-    omega
+    omega_arith
   rw [hf.wv_of_not_mem hj8 (by simp [hjacc, hjtmp, heq]) hnZ]
   exact hred j hj
 

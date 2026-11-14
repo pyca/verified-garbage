@@ -45,7 +45,7 @@ theorem crt_importModulus_ok (s : State) {base np : BitVec 32} {size w k : Nat} 
   exact ⟨⟨h.workspace.congr rest.wr, h.context.congr rest.wr, ready, main,
     h.p.congr (h.context.p.eq_of_frame h.context.sepMP.symm frame),
     h.q.congr (h.context.q.eq_of_frame h.context.sepMQ.symm frame),
-    by rw [rest.sp]; have := h.source.nowrap; omega,
+    by rw [rest.sp]; have := h.source.nowrap; omega_using [this],
     by rw [rest.wr, rest.sp]; exact h.stackWrite,
     by rw [rest.sp]; exact h.stackSeparate, h.storageFits⟩, value, frame, rest⟩
 

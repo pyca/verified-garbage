@@ -110,12 +110,12 @@ theorem cswap_ok {x y : Nat} (hx : x + 32 ≤ 2048) (hy : y + 32 ≤ 2048) (hxy 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega_using [])⟩
   · rw [limb, hm8, wd_write_other _ _ _ (by omega_using [hxy, hk, hj]) (by omega_using [hx, hk, hj]) (by omega_using [hy, hk])]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hx, hk])]; exact h.lx j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hx, hk])]; exact h.lx j hj
     · rw [wd_write_self, vx]
   · rw [limb, hm8]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hy, hk]),
-        wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hx, hk])]; exact h.ly j hj
+    · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hy, hk]),
+        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_using [hx, hk])]; exact h.ly j hj
     · rw [wd_write_self, vy]
 
 end

@@ -45,7 +45,7 @@ theorem rootPower_ok {s : State} (hc : Ctx8 b s) :
   have hc2 : Ctx8 b t2 := hc1.of_rest r2 (by decide)
   refine WP.mono (mulCall_ok hc2.ctx hc2.ws 15 15 2) fun t3 ⟨k3, e3⟩ => ⟨?_, ?_, fun i hi => ?_⟩
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
-    rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using []) (by omega_using [])
   · have hz : env t1.mem b 2 = env s.mem b 2 := ek 2 (by decide)
     rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, hz,
       Proof.X25519.sqn_pw]

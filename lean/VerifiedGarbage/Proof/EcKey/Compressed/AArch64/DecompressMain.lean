@@ -87,9 +87,9 @@ theorem decompress_correct (c : Cfg) (hc : BaseCfgOk c)
     intro g t F
     refine WP.seq (WP.mono (decompressMiddle_ok hc hroot F) fun u U => ?_)
     refine WP.mono (decompressFinish_ok hc U.scr U.out
-      (by rw [U.wr, hwr, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega]; simp)
+      (by rw [U.wr, hwr, show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_using []]; simp)
       (by simpa only [Nat.add_comm] using how)
-      (by omega) U.saved
+      (by omega_using [hfit]) U.saved
       (decide (CompressedAccept c root s)) (by simp only [U.flag, mask, decide_eq_true_eq]))
       fun s' ⟨hout, hret, hsave⟩ => ?_
     refine ⟨?_, fun r hr => (hsave r hr).trans (U.original r hr)⟩

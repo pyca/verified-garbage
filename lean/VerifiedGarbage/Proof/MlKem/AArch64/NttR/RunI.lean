@@ -9,6 +9,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunU
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.RunW
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttR.LitI
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on AArch64: the runs of the 16-bit inverse NTTs
@@ -35,6 +36,6 @@ theorem itabT_get {j e : Nat} (hj : j < 32) (he : e < 8) :
   have hl : Impl.MlKem.AArch64.Ntt16.invTableHalves.length = 256 := by
     rw [Impl.MlKem.AArch64.Ntt16.invTableHalves.lit_eq]; decide +kernel
   show slot tw (slot (tw * 8) itabT j) e = _
-  rw [slot_slot _ _ _ _ _ he, itabT, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _ (by omega)]
+  rw [slot_slot _ _ _ _ _ he, itabT, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _ (by omega_using [hj, he, hl])]
 
 end VG.Proof.MlKem.AArch64.NttR

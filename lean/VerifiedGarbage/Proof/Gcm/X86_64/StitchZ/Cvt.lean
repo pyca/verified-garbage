@@ -134,7 +134,7 @@ theorem cvtLoad_ok (j : Nat) (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMa
     m0, m1]
   refine ⟨(VG.Proof.Gcm.X86_64.blockAt_eq ..).symm, (VG.Proof.Gcm.X86_64.blockAt_eq ..).symm, rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [State.lane, hr.1, hr.2]
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;> simp [State.lane, hr.1, hr.2]
 
 /-- `cvtPair j d`: in each lane of `d` the block at `rdi + 256 + 16 j`
 (lane 0) or `rdi + 240 + 16 j` (lane 1), times `x⁻¹`. -/

@@ -41,18 +41,28 @@ def privOut (s : State) : Option (List Byte) → Spec.Rsa.Outcome
     (Spec.Rsa.bytesAt s.mem (stackArg s 11) (stackArg s 4).toNat)
   | none => .invalid
 
-/-- After the encoding, whose result is `o`. -/
-theorem afterEnc_ok (v : CrtImpl) {s t₁ t₂ : State} (hp : PreS s) (he₁ : Env s t₁)
-    (h8₁ : t₁.gpr .r8 = off (fb s) oEM) (hK₂ : Keep clob t₁ t₂) {o : Option (List Byte)}
-    (hlen : ∀ em, o = some em → em.length = (s.gpr .rcx).toNat) (hpost : EOut t₁ t₂ o) :
-    WP isa (afterEnc (privName v) (privCode v)) t₂ fun u => Env s u ∧
+/-- What the call of the private operation on `EM` (`em`, in `t`) gives:
+`out` holds its result. -/
+def CallOut (s t : State) (em : List Byte) (u : State) : Prop :=
+  EnvC s u ∧
+    Spec.Rsa.writtenOutcome u.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((u.gpr .rax).setWidth 32) (privOut s (some em)) ∧
+    (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧ u.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10
+
+/-- After the encoding, whose result is `o`, with the arguments `args` of
+the call `call` (`hcall`). -/
+theorem afterEncWith_ok {args : List Instr} {privName : String} {priv : Prog isa} {s t₁ t₂ : State} (hp : PreS s)
+    (he₁ : Env s t₁) (h8₁ : t₁.gpr .r8 = off (fb s) oEM) (hK₂ : Keep clob t₁ t₂) {o : Option (List Byte)}
+    (hlen : ∀ em, o = some em → em.length = (s.gpr .rcx).toNat) (hpost : EOut t₁ t₂ o)
+    (hcall : ∀ t em, Env s t → Spec.Rsa.bytesAt t.mem (off (fb s) oEM) (s.gpr .rcx).toNat = em →
+      WP isa (.block args) t fun u => WP isa (.call privName priv) u (CallOut s t em)) :
+    WP isa (afterEncWith args privName priv) t₂ fun u => EnvC s u ∧
       Spec.Rsa.writtenOutcome u.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((u.gpr .rax).setWidth 32)
         (privOut s o) ∧
       (∀ r ∈ calleeSaved, u.gpr r = t₂.gpr r) ∧ u.mxcsr.extractLsb' 6 10 = t₂.mxcsr.extractLsb' 6 10 := by
   have hk1 := hp.k1
   have hk2 := hp.k2
   have hF := fb_toNat hp
-  unfold afterEnc
+  unfold afterEncWith
   refine WP.seq (WP.mono_mx (by decide) (test0_ok t₂) fun t₃ ⟨hs₃, hz₃⟩ hmx₃ => ?_)
   cases o with
   | none =>
@@ -61,7 +71,7 @@ theorem afterEnc_ok (v : CrtImpl) {s t₁ t₂ : State} (hp : PreS s) (he₁ : E
       (hs₃.2.2.1.trans hK₂.2.1) (hs₃.2.2.2.trans hK₂.2.2)
     refine WP.ite true (by simp [eval, hz₃, hax]) (fun _ => ?_) (by simp)
     refine WP.mono_mx (by decide) (WP.keep [.rdi, .rsi, .r8, .r10, .rax] (zeroSlots_ok hp he₃) (by decide))
-      fun u ⟨⟨heu, hax', hout⟩, ku⟩ hmx => ⟨heu, ⟨hax', hout⟩, fun r hr => ?_, by rw [hmx, hmx₃]⟩
+      fun u ⟨⟨heu, hax', hout⟩, ku⟩ hmx => ⟨heu.core, ⟨hax', hout⟩, fun r hr => ?_, by rw [hmx, hmx₃]⟩
     rw [ku.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp),
       hs₃.1]
   | some em =>
@@ -69,34 +79,21 @@ theorem afterEnc_ok (v : CrtImpl) {s t₁ t₂ : State} (hp : PreS s) (he₁ : E
     have hl : em.length = (s.gpr .rcx).toNat := hlen em rfl
     have he₂ : Env s t₂ := Env.of he₁ hp (hK₂.gpr (by decide)) hK₂.2.1 hK₂.2.2 (hm₂ ▸ frame_writeBytes _ _ _)
       fun r hr => .inl ⟨oEM, (s.gpr .rcx).toNat, by rw [List.mem_singleton.mp hr, h8₁, hl], .inr (Nat.le_refl _),
-        by unfold oEM frameBytes; omega⟩
+        by unfold oEM frameBytes; omega_using [hk2]⟩
     have he₃ : Env s t₃ := he₂.regs (by rw [hs₃.1]) hs₃.2.1 hs₃.2.2.1 hs₃.2.2.2
-    refine WP.ite false (by simp [eval, hz₃, hax]) (by simp) (fun _ => ?_)
-    refine WP.seq (WP.mono_mx (by decide) (callArgs_ok hp he₃)
-      fun t₄ ⟨he₄, hw₄, hdi, hsi, hdx, hcx, h8, h9, hf₄, k₄⟩ hmx₄ => ?_)
-    have hEM : Spec.Rsa.bytesAt t₄.mem (off (fb s) oEM) (s.gpr .rcx).toNat = em := by
-      have h₁ : Spec.Rsa.bytesAt t₄.mem (off (fb s) oEM) (s.gpr .rcx).toNat =
-          Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM) (s.gpr .rcx).toNat := by
-        simp only [Spec.Rsa.bytesAt]
-        refine List.map_congr_left fun i hi => hf₄.bytes (R := ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩)
-          (fun r hr => ?_) (by dsimp only; omega) (List.mem_range.mp hi)
-        rw [List.mem_singleton.mp hr]
-        exact (Offset.base_disjoint (fb s) (e := oEM) (n := (s.gpr .rcx).toNat) (k := 112) (by decide)
-          (by unfold oEM frameBytes at *; omega)).symm
-      have h₂ := bytesAt_writeBytes t₁.mem (off (fb s) oEM) em (by omega)
+    have hEM : Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM) (s.gpr .rcx).toNat = em := by
+      have h₂ := bytesAt_writeBytes t₁.mem (off (fb s) oEM) em (by omega_using [hl])
       rw [hl] at h₂
-      rw [h₁, hs₃.2.1, hm₂, h8₁, h₂]
-    refine WP.seq (WP.mono (priv_call v hp he₄ hw₄ hdi hsi hdx hcx h8 h9)
-      fun t₅ ⟨he₅, hout₅, _, hcs₅, hmx₅⟩ => ?_)
-    rw [hEM] at hout₅
+      rw [hs₃.2.1, hm₂, h8₁, h₂]
+    refine WP.ite false (by simp [eval, hz₃, hax]) (by simp) (fun _ => ?_)
+    refine WP.seq (WP.mono (hcall t₃ em he₃ hEM) fun t₄ h₄ => WP.seq (WP.mono h₄
+      fun t₅ ⟨he₅, hout₅, hcs₅, hmx₅⟩ => ?_))
     refine WP.mono_mx (by decide) (WP.keep [.r11, .rdx, .r10] (wipe_ok hp he₅) (by decide))
       fun u ⟨⟨heu, haxu, hbytes⟩, ku⟩ hmxu => ⟨heu, ?_, fun r hr => ?_, ?_⟩
     · rw [haxu]; exact writtenOutcome_of hbytes hout₅
-    · have hr' : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] := by
-        simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
-      rw [ku.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp),
-        hcs₅ r hr, k₄.gpr hr', hs₃.1]
-    · rw [hmxu, hmx₅, hmx₄, hmx₃]
+    · rw [ku.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp),
+        hcs₅ r hr, hs₃.1]
+    · rw [hmxu, hmx₅, hmx₃]
 
 /-- The frame: its body runs from `allocState frameBytes s` and ends with
 `rsp` and the writable regions as the push left them. -/
@@ -121,7 +118,7 @@ theorem ret_frame {s : State} (hp : PreS s) {m : Mem} (h : Frame [stkR s, outR s
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · have := Offset.disjoint_below (s.gpr .rsp) (n := sigStack) (d := 0) (k := 8)
-      (by unfold sigStack; omega)
+      (by unfold sigStack; omega_using [])
     simpa only [stkR, kb, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRs
@@ -141,19 +138,22 @@ theorem encodeId_length {x : BitVec 32} {H : List Byte} {k : Nat} {em : List Byt
   · exact VG.Proof.RsaPkcs1Sig.encode_length h
   · cases h
 
-theorem code_correct (v : CrtImpl) (s : State) (h : sigContract.pre s) :
-    ∃ t s', Exec isa (code (privName v) (privCode v)) s t s' ∧ abiPreserved s s' ∧ sigContract.post s s' := by
-  have hp := preS_of h
+/-- The function, with the code `ae` after the encoding, which does what
+`afterEnc_ok` says (`hae`). -/
+theorem codeWith_ok {ae : Prog isa} {s : State} (hp : PreS s)
+    (hae : ∀ {t₁ t₂ : State}, Env s t₁ → t₁.gpr .r8 = off (fb s) oEM → Keep clob t₁ t₂ → ∀ {o : Option (List Byte)},
+      (∀ em, o = some em → em.length = (s.gpr .rcx).toNat) → EOut t₁ t₂ o →
+      WP isa ae t₂ fun u => EnvC s u ∧
+        Spec.Rsa.writtenOutcome u.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((u.gpr .rax).setWidth 32) (privOut s o) ∧
+        (∀ r ∈ calleeSaved, u.gpr r = t₂.gpr r) ∧ u.mxcsr.extractLsb' 6 10 = t₂.mxcsr.extractLsb' 6 10) :
+    WP isa (.frame (.alloc frameBytes) (.seq (.block (slotStores ++ encArgs)) (.seq encode ae)) (.free frameBytes)) s
+      fun s' => abiPreserved s s' ∧ sigContract.post s s' := by
   have hk2 := hp.k2
-  suffices hw : WP isa (code (privName v) (privCode v)) s fun s' => abiPreserved s s' ∧ sigContract.post s s' by
-    obtain ⟨t, s', he, hq⟩ := hw
-    exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by have := hp.sp1; unfold sigStack at this; unfold frameBytes; omega) ?_
-  unfold body
+  refine wp_alloc (by have := hp.sp1; unfold sigStack at this; unfold frameBytes; omega_using [this]) ?_
   refine WP.seq (WP.mono_mx (by decide) (head_ok hp) fun t₁ ⟨he₁, h8₁, hcx₁, hdx₁, hsi₁, h9₁, hcs₁⟩ hmx₁ => ?_)
   refine WP.seq (WP.mono_mx (by decide +kernel) (encode_ok (encPre hp he₁ h8₁ hcx₁ hdx₁ hsi₁ h9₁))
     fun t₂ ⟨hK₂, hout₂⟩ hmx₂ => ?_)
-  refine WP.mono (afterEnc_ok v hp he₁ h8₁ hK₂ (fun em h' => encodeId_length h') hout₂)
+  refine WP.mono (hae he₁ h8₁ hK₂ (fun em h' => encodeId_length h') hout₂)
     fun u ⟨heu, hwu, hcsu, hmxu⟩ => ⟨heu.rsp, by rw [heu.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp heu.mem, ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'
@@ -169,7 +169,7 @@ theorem code_correct (v : CrtImpl) (s : State) (h : sigContract.pre s) :
     have hH : Spec.Rsa.bytesAt t₁.mem (t₁.gpr .rsi) (t₁.gpr .r9).toNat =
         Spec.Rsa.bytesAt s.mem (stackArg s 1) (stackArg s 2).toNat := by
       rw [hsi₁, h9₁]
-      exact bytes_of_frame he₁.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega)
+      exact bytes_of_frame he₁.mem hp.dKd hp.dOd hp.dds.symm (by have := hp.wD; omega_using [])
     rw [signId_eq, bytesAt_length, ← hH]
     exact hwu
 

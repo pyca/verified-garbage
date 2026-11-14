@@ -98,7 +98,7 @@ theorem normalizedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
   have pu := K.stable frameU restU hp
   have countFit := (pc_dimensions h.minLength h.maxLength h.space).2.2.2.2
   have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frameU
-    (by have := h.maxLength; omega) (by simpa using h.separate)
+    (by have := h.maxLength; omega_using [this]) (by simpa using h.separate)
   refine WP.mono (normalizedPrecompute_ok K u pu ready.workspace ready.layout ready.width ready.positive ready.fits
     ready.sourceFits ready.readable ready.separate ready.ptr ready.source ready.count ready.stackRead
     ready.stackSep ready.saved ready.large ready.odd countFit (by rw [bytes]; exact normalized)) ?_

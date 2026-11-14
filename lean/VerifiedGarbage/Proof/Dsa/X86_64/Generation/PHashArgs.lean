@@ -43,7 +43,7 @@ theorem hashCopyArgs_ok {s : State} {F S op : Addr} {len count j : Nat}
       t.gpr .rsi = off S oDig ∧ t.gpr .rdi = off op ((count - j) * len) ∧
       t.gpr .rcx = BitVec.ofNat 64 len ∧ t.gpr .rdx = BitVec.ofNat 64 (8 * len) ∧
       t.mem = s.mem ∧ Keep [.rsi, .rdi, .rcx, .rdx] s t := by
-  have hoff : (count - j) * len < 2 ^ 31 := by rcases hlen with rfl | rfl <;> omega
+  have hoff : (count - j) * len < 2 ^ 31 := by rcases hlen with rfl | rfl <;> omega_using [hcount]
   have hs := L.slot
   simp only [VG.Proof.Bignum.word] at hs
   refine WP.mono (WP.keep [.rsi, .rdi, .rcx, .rdx] (Q := fun t =>

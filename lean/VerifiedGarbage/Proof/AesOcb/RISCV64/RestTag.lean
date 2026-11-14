@@ -83,8 +83,8 @@ theorem xorPad_ok {K W : Addr} {s : State} (hs0 : s.gpr .s0 = W) (hw : Covers [�
   unfold xorPad
   refine WP.seq (WP.mono hA fun s₁ ⟨a0₁, a1₁, a2₁, g₁, k₁⟩ => ?_)
   have pre : LoopPre s₁ (W + BitVec.ofNat 64 112) P r :=
-    ⟨a0₁, a1₁, a2₁, hr, by omega, by rw [k₁.rd, k₁.wr]; exact covers_left (covers_off hw (by omega) (by decide)),
-      by rw [k₁.wr]; exact hP.wr, (hP.w.sub_right (Lay.wSub (W := W) (d := 112) (n := r) (by omega))).symm⟩
+    ⟨a0₁, a1₁, a2₁, hr, by omega_using [hr'], by rw [k₁.rd, k₁.wr]; exact covers_left (covers_off hw (by omega_using [hr']) (by decide)),
+      by rw [k₁.wr]; exact hP.wr, (hP.w.sub_right (Lay.wSub (W := W) (d := 112) (n := r) (by omega_using [hr']))).symm⟩
   refine WP.mono (xorLoop_ok s₁ pre) fun t ⟨mt, ot⟩ => ?_
   obtain ⟨rdt, wrt, spt⟩ := ot.keeps
   refine ⟨by rw [mt, k₁.mem]; rfl, fun q hq => ?_, by rw [spt, k₁.sp], by rw [rdt, k₁.rd], by rw [wrt, k₁.wr]⟩

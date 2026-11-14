@@ -69,7 +69,7 @@ theorem StageABI.spill_in (hb : Supported pLen) (A : StageABI pLen s) :
   have := spill_used hb
   have := A.size
   have := A.wsBound
-  exact ⟨wsRegion s, by rw [A.wr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨wsRegion s, by rw [A.wr]; exact List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- The saves, from the frame's allocation. -/
 theorem save_saved (hb : Supported pLen) (A : StageABI pLen s) :
@@ -83,7 +83,7 @@ theorem entry_entered (s : State) :
     WP isa (.block entry) (savedState (allocState 272 s)) fun u => Entered pLen s u ∧
       Frame [⟨frameBase s, 272⟩] (savedState (allocState 272 s)).mem u.mem := by
   have hF : ∀ {d n : Nat}, d + n ≤ 272 → Region.Contains ⟨frameBase s, 272⟩ (off (frameBase s) d) n :=
-    fun h => Offset.contains_base _ h (by omega)
+    fun h => Offset.contains_base _ h (by omega_using [h])
   refine WP.mono (entry_ok (s := savedState (allocState 272 s)) (F := frameBase s) rfl
     (fun d hd => ⟨_, List.mem_cons_self, hF hd⟩)) fun u ⟨hmu, ku⟩ => ?_
   have g0 : (savedState (allocState 272 s)).gpr .x0 = s.gpr .x0 := savedState_gpr _ (by decide)
@@ -127,10 +127,10 @@ theorem body_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) :
     · exact ((A.stackWs.sub_left (frame_sub0 s (Nat.le_refl _))).sub_right (A.part_sub hs)).symm
     · exact sp (used_small hb (by decide) (by rfl)) (Or.inr (by decide))
     · have := sp (used_parent hb) (Or.inl (by decide)); simpa [off] using this
-    · exact sp (used_small hb (by decide) (by unfold arithmeticBytes; omega)) (Or.inl (by omega))
-    · exact sp (used_small hb (by decide) (by unfold arithmeticBytes; omega)) (Or.inl (by omega))
+    · exact sp (used_small hb (by decide) (by unfold arithmeticBytes; omega_using [pn])) (Or.inl (by omega_using [pn, c, c2]))
+    · exact sp (used_small hb (by decide) (by unfold arithmeticBytes; omega_using [pn, qn])) (Or.inl (by omega_using [pn, qn, c, c1]))
     · exact sp (StageABI.domainCheck_room hb) (Or.inr (by decide))
-    · exact ((A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega))).sub_right (A.part_sub hs)).symm
+    · exact ((A.stackWs.sub_left (frame_sub0 s (by unfold frameBytes; omega_using []))).sub_right (A.part_sub hs)).symm
   have fmid : Frame ([⟨frameBase s, 272⟩] ++ stageChanged pLen s) (savedState (allocState 272 s)).mem t'.mem := by
     rw [hm']
     exact (fe.mono (by simp)).trans (T.frame.mono (by intro r hr; simp [hr]))
@@ -152,7 +152,7 @@ theorem body_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) :
   · rw [Rs.result, hx, h19, h20]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat]
-    omega
+    omega_using []
   · rw [Rs.memory, hm']; exact T.packed a ha
   · rw [Rs.memory, hm']
     exact (E.frame.mono (by simp)).trans (T.frame.mono (by intro r hr; simp [hr]))

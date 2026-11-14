@@ -69,7 +69,7 @@ theorem blockAt_frame {m m' : Mem} {rs : List Region} {x : Addr} (hf : Frame rs 
   intro i hi
   show (blockAt m' x)[(⟨i, hi⟩ : Fin 128)] = (blockAt m x)[(⟨i, hi⟩ : Fin 128)]
   rw [blockAt_get, blockAt_get]
-  exact hf.readW (r := ⟨x, 1024⟩) (Offset.contains_base x (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨x, 1024⟩) (Offset.contains_base x (by omega_using []) (by omega_using [])) hd (by decide)
 
 /-- The base of the saves. -/
 abbrev saveB (p : Addr) : Addr := p + BitVec.ofNat 64 2040
@@ -113,7 +113,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   refine Spill.save_ok (by rw [b0]; exact Spill.al8 ap (by decide)) saved_fits
     (fun q hq => by
       rw [b0, u₀.wr, saveB_off]
-      exact scr.write (by have := saved_in q hq; omega)) ?_
+      exact scr.write (by have := saved_in q hq; omega_using [this])) ?_
   generalize e₀ : ({ s₀' with
     mem := Spill.saveMem s₀'.mem (s₀'.gpr .t0) s₀'.gpr Impl.Argon2.RISCV64.saved } : State) = s₀
   have m₀ : s₀.mem = Spill.saveMem s₀'.mem (s₀'.gpr .t0) s₀'.gpr Impl.Argon2.RISCV64.saved := by
@@ -133,8 +133,8 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
     rw [b0] at this
     have hne : ∀ q ∈ Impl.Argon2.RISCV64.saved, q.1 ≠ .t0 := by decide
     rw [m₀, b0, this, g₀ _ (hne q hq)]
-  have xs : (⟨s.gpr .a0, 1024⟩ : Region).Disjoint (saveR p) := hx.sub_right (Offset.sub_base _ (by omega))
-  have ys : (⟨s.gpr .a1, 1024⟩ : Region).Disjoint (saveR p) := hy.sub_right (Offset.sub_base _ (by omega))
+  have xs : (⟨s.gpr .a0, 1024⟩ : Region).Disjoint (saveR p) := hx.sub_right (Offset.sub_base _ (by omega_using []))
+  have ys : (⟨s.gpr .a1, 1024⟩ : Region).Disjoint (saveR p) := hy.sub_right (Offset.sub_base _ (by omega_using []))
   have bx : blockAt s₀.mem (s.gpr .a0) = blockAt s.mem (s.gpr .a0) := blockAt_frame f₀ (by simpa using xs)
   have by' : blockAt s₀.mem (s.gpr .a1) = blockAt s.mem (s.gpr .a1) := blockAt_frame f₀ (by simpa using ys)
   have scr₀ : Scratch s₀ p := ⟨by rw [gr₀, g₀ .a3 (by decide), hp], by simp [wr₀, hwr], ap⟩
@@ -146,7 +146,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   obtain ⟨horig, hwork⟩ := initialized_blocks hinit
   have scr1 := scr₀.of_copy hk1
   have sv₁ : Spill.Saved (saveB p) s.gpr Impl.Argon2.RISCV64.saved s₁.mem :=
-    sv₀.frame_in saved_in hf1 (by rw [saveR_eq]; simpa using Offset.disjoint_base p (by omega) (by omega))
+    sv₀.frame_in saved_in hf1 (by rw [saveR_eq]; simpa using Offset.disjoint_base p (by omega_using []) (by omega_using []))
   apply WP.seq
   refine (rounds_ok rowIndex (List.finRange 8) s₁ scr1).mono ?_
   rintro s₂ ⟨hrow, hf2, hk2⟩
@@ -156,7 +156,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   have scr3 := (scr1.of_keeps hk2).of_keeps hk3
   have d1024 : ∀ r ∈ [(⟨off p 1024, 1024⟩ : Region)],
       Region.Disjoint ⟨saveB p + BitVec.ofNat 64 8, 48⟩ r := by
-    rw [saveR_eq]; simpa using Offset.disjoint p (by omega) (by omega) (by omega)
+    rw [saveR_eq]; simpa using Offset.disjoint p (by omega_using []) (by omega_using []) (by omega_using [])
   have sv₃ : Spill.Saved (saveB p) s.gpr Impl.Argon2.RISCV64.saved s₃.mem :=
     (sv₁.frame_in saved_in hf2 d1024).frame_in saved_in hf3 d1024
   have hout3 : s₃.gpr .a2 = s.gpr .a2 := by
@@ -169,7 +169,7 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   have sv₄ : Spill.Saved (saveB p) s.gpr Impl.Argon2.RISCV64.saved s₄.mem :=
     sv₃.frame_in saved_in hf4 (by
       rw [saveR_eq]
-      simpa using (hout.sub_right (Offset.sub_base p (d := 2048) (n := 48) (by omega))).symm)
+      simpa using (hout.sub_right (Offset.sub_base p (d := 2048) (n := 48) (by omega_using []))).symm)
   have scr4 := scr3.of_copy hk4
   rw [show Impl.Argon2.RISCV64.restore = .addi .t0 .a3 2040 ::
     Spill.restoreCode .t0 Impl.Argon2.RISCV64.saved from rfl]
@@ -178,9 +178,9 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   refine WP.mono (Spill.restore_wp (b := .t0) (B := saveB p) (Spill.al8 ap (by decide)) b5 saved_fits
     (by decide) (fun q hq => by
       rw [u₅.rd, u₅.wr, saveB_off]
-      exact scr4.read (by have := saved_in q hq; omega)) (by rw [u₅.mem]; exact sv₄)) fun t ht => ⟨?_, ?_⟩
+      exact scr4.read (by have := saved_in q hq; omega_using [this])) (by rw [u₅.mem]; exact sv₄)) fun t ht => ⟨?_, ?_⟩
   · have ho : blockAt s₃.mem p = blockAt s₁.mem p :=
-      blockAt_frame (hf2.trans hf3) (by simpa using Offset.base_disjoint p (by omega) (by omega))
+      blockAt_frame (hf2.trans hf3) (by simpa using Offset.base_disjoint p (by omega_using []) (by omega_using []))
     rw [horig] at ho
     have he := written_block hfinish
     rw [hcol, hrow, hwork, ho, bx, by'] at he

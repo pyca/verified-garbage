@@ -78,7 +78,7 @@ theorem sbp_wp {s₀ : State} (hp : SbpPre s₀) :
     have e : (s₀.gpr .r1).toNat = 1023 := by
       have hb := hp.b
       simp only [simpleBitPackBounds, t1Max_eq, List.mem_cons, List.not_mem_nil, or_false] at hb
-      omega
+      omega_using [n15, n43, hb]
     exact go (d := 10) (c := 4) (nb := 5) (by constructor <;> decide) (by rw [e]; decide) s₂
       ⟨by rw [h₂.1, h₁.1], by rw [h₂.2.1, h₁.2.1], by rw [h₂.2.2.1, h₁.2.2.1], by rw [h₂.2.2.2.1, h₁.2.2.2.1],
         by rw [h₂.2.2.2.2, h₁.2.2.2.2]⟩

@@ -23,10 +23,10 @@ theorem primeConstants_exponent (M : Mont) {p : PrimeParams} {s : State} (h : Pr
   have hnw := h.good.scr.nowrap
   have hNfit := Nat.le_trans (slot_le (w := p.w) (show aN < 8 by decide)) p.dims.z
   refine WP.mono (prepareConstants_ok M h.good p.dims.z p.dims.x
-    (by have := p.dims.w4; omega) (by have := p.dims.w128; omega) h.modulus h.inverse
-    hone p.odd (by have := p.n3; omega) hr2) fun t ⟨ht, _, _, hf, _⟩ => ?_
+    (by have := p.dims.w4; omega_using [this]) (by have := p.dims.w128; omega_using [this]) h.modulus h.inverse
+    hone p.odd (by have := p.n3; omega_using [this]) hr2) fun t ⟨ht, _, _, hf, _⟩ => ?_
   refine ⟨⟨mi, ht⟩, ?_⟩
-  rw [hf.wv_eq (by simp only [constantRanges]; rng_disj) (by omega)]
+  rw [hf.wv_eq (by simp only [constantRanges]; rng_disj) (by omega_using [hnw, hNfit])]
   exact h.modulus
 
 theorem primeSetup_ct (M : Mont) : RelCT isa (Two PrimeSetupBefore)

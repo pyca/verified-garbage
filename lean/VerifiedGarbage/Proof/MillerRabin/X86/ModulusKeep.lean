@@ -18,7 +18,7 @@ theorem Modulus.keepScalar {g : Geometry} (v : g.Valid) {c d : Nat} {m m' : Mem}
     obtain rfl := List.mem_singleton.mp mem
     unfold scratchWord at scratch
     dsimp only
-    omega
+    omega_using [scratch]
   · intro r mem
     obtain rfl := List.mem_singleton.mp mem
     right

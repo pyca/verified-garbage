@@ -41,7 +41,7 @@ theorem jointFixedAddress_ok {s : State} {n a : Nat} {T : Addr} {tsym : String}
       simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
       rw [Nat.mul_mod,Nat.mod_mod,←Nat.mul_mod]
       congr 1
-      omega
+      omega_using []
     · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
       simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,
         hr.1,hr.2.2,ite_false]
@@ -52,8 +52,8 @@ theorem jointFixedAddress_ok {s : State} {n a : Nat} {T : Addr} {tsym : String}
       congr 1
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat,BitVec.toNat_setWidth,
-        Nat.mod_eq_of_lt (show 16*n<2^32 by omega),Nat.mod_eq_of_lt (show a-1<2^64 by omega)]
-      rw [Nat.mod_eq_of_lt (show 16*n<2^64 by omega),Nat.mul_comm]
+        Nat.mod_eq_of_lt (show 16*n<2^32 by omega_using [hn]),Nat.mod_eq_of_lt (show a-1<2^64 by omega_using [ha'])]
+      rw [Nat.mod_eq_of_lt (show 16*n<2^64 by omega_using [hn]),Nat.mul_comm]
     · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
       simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,RegUpd.gpr_setFlags,
         hr.1,hr.2.1,hr.2.2,ite_false]
@@ -84,12 +84,12 @@ theorem jointFixedLoad_ok {K : WinCfg} {s : State} {base T : Addr} {size a : Nat
   have sv : Scr v base size := ⟨by rw [gv]; exact su.rdi,wv ▸ su.wr,su.nowrap⟩
   refine WP.mono (setConst_ok sv hz hone) fun t ⟨zt,kt,ot⟩ => ?_
   refine ⟨?_,?_,zt,?_,?_⟩
-  · rw [ot.wordsVal (by omega) (by have:=hs.nowrap; omega)]
+  · rw [ot.wordsVal (by omega_using [hsep]) (by have:=hs.nowrap; omega_using [hd, this])]
     simpa only [Nat.add_zero,ku.2.1] using
-      nafExternalCopy_fieldAt (o:=K.E.x) (d:=0) (w:=K.M.n) ev (by decide) (by omega)
-  · rw [ot.wordsVal (by omega) (by have:=hs.nowrap; omega)]
+      nafExternalCopy_fieldAt (o:=K.E.x) (d:=0) (w:=K.M.n) ev (by decide) (by omega_using [])
+  · rw [ot.wordsVal (by omega_using [hy, hsep]) (by have:=hs.nowrap; omega_using [hy, hd, this])]
     simpa only [hy,ku.2.1] using
-      nafExternalCopy_fieldAt (o:=K.E.x) (d:=8*K.M.n) (w:=K.M.n) ev (by omega) (by omega)
+      nafExternalCopy_fieldAt (o:=K.E.x) (d:=8*K.M.n) (w:=K.M.n) ev (by omega_using []) (by omega_using [])
   · exact (KeepRegs.mk (fun r h => (congrFun gv r).trans (ku.1 r h))
       (rv.trans ku.2.2.1) (wv.trans ku.2.2.2)).trans (kt.mono (by regions_sub))
   · intro x hx

@@ -87,6 +87,24 @@ structure AtCall (K : Nat) (s : State) (em : List Byte) (t : State) : Prop where
   fr : Fr s t.mem
   em : Spec.Rsa.bytesAt t.mem (off (scr s) oEm) (s.gpr .x3).toNat = em
 
+/-- The call's registers and its first twelve stack arguments. -/
+structure CallArgs (s t : State) : Prop where
+  sp : t.sp = fb s
+  rd : t.rd = s.rd
+  wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
+  x0 : t.gpr .x0 = s.gpr .x0
+  x1 : t.gpr .x1 = s.gpr .x3
+  x2 : t.gpr .x2 = s.gpr .x2
+  x3 : t.gpr .x3 = s.gpr .x3
+  x4 : t.gpr .x4 = s.gpr .x4
+  x5 : t.gpr .x5 = s.gpr .x5
+  x6 : t.gpr .x6 = off (scr s) oEm
+  x7 : t.gpr .x7 = s.gpr .x3
+  args : ∀ i < 12, stackArg t i = (argv s).getD i 0
+
+theorem AtCall.toArgs {K : Nat} {s : State} {em : List Byte} {t : State} (h : AtCall K s em t) : CallArgs s t :=
+  ⟨h.sp, h.rd, h.wr, h.x0, h.x1, h.x2, h.x3, h.x4, h.x5, h.x6, h.x7, h.args⟩
+
 /-! ## The stack arguments -/
 
 /-- After copying `n` of the function's stack arguments from `v₀`. -/
@@ -319,8 +337,8 @@ theorem sc_sub {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreS tsH tsG
 theorem a96_sub (K : Nat) (s : State) : Region.Sub ⟨fb s, 96⟩ (kR K s) := by
   have := frame_sub K s (d := 0) (n := 96) (by decide); rwa [BitVec.add_zero] at this
 
-theorem privOk_of (c : PrivChecked) {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s) (hcK : c.stack ≤ K)
-    {em : List Byte} (ha : AtCall K s em t) : PrivOk c.stack t := by
+theorem privOk_of {k : Nat → Contract isa} (c : VG.Proof.RsaPkcs1Sig.AArch64.Callee k) {tsH tsG : List FnTable} {K : Nat} {s t : State} (hp : PreS tsH tsG K s) (hcK : c.stack ≤ K)
+    (ha : CallArgs s t) : PrivOk c.stack t := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hfb := fb_toNat hp
   have hkb := kb_toNat hp
@@ -496,7 +514,7 @@ theorem call_ok (c : PrivChecked) {tsH tsG : List FnTable} {K : Nat} {s t : Stat
   have a8 : stackArg t 8 = stackArg s 6 := ha.args 8 (by decide)
   have a10 : stackArg t 10 = off (scr s) oRsa := ha.args 10 (by decide)
   have a11 : stackArg t 11 = stackArg s 13 - BitVec.ofNat 64 1024 := ha.args 11 (by decide)
-  refine privCall c (privOk_of c hp hcK ha) fun s' hrd' hwr' hsp' hf hpres hvs hpost => ?_
+  refine privCall c (privOk_of c hp hcK ha.toArgs) fun s' hrd' hwr' hsp' hf hpres hvs hpost => ?_
   simp only [privWr] at hf
   rw [ha.x0, ha.x1, a10, a11, ha.sp] at hf
   have hl : ∀ {p : Addr} {len : Nat}, p.toNat + len ≤ 2 ^ 64 → len ≤ 2 ^ 64 := fun h => by omega_using [h]

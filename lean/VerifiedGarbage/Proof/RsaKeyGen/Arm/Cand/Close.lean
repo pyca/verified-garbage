@@ -92,7 +92,7 @@ theorem St.pload {j : Nat} {src : CP → BitVec 32} {k : CP → Nat} (cert : LCe
       have lt : Spec.Rsa.os2ip (Spec.Rsa.bytesAt σ.mem (State.addr (src P)) (k P)) < 2 ^ (32 * P.W) := by
         have := VG.Proof.Rsa.lt_of_os2ip (Spec.Rsa.bytesAt σ.mem (State.addr (src P)) (k P))
         rw [bytesAt_length, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
-        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega))
+        exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega_using [hkL]))
       rw [← v] at lt ⊢
       exact VG.Proof.Rsa.Arm.CrtValues.val32_low2 lt
     exact h.write1 kp hj (by simp) r.sp r.rd r.wr hv (by simp)
@@ -126,17 +126,17 @@ theorem sub32_val {W a b : Nat} (ha : a < 2 ^ (32 * W)) (hb : b < 2 ^ (32 * W)) 
     sub32 W a b = if a < b then a + 2 ^ (32 * W) - b else a - b := by
   unfold sub32
   split
-  · exact Nat.mod_eq_of_lt (by omega)
-  · rw [show a + 2 ^ (32 * W) - b = a - b + 2 ^ (32 * W) by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+  · exact Nat.mod_eq_of_lt (by omega_arith)
+  · rw [show a + 2 ^ (32 * W) - b = a - b + 2 ^ (32 * W) by omega_arith, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ha])]
 
 /-- The selected difference is `|c − p|`. -/
 theorem abs_val {W c p : Nat} (hc : c < 2 ^ (32 * W)) (hp : p < 2 ^ (32 * W)) :
     (if b2n (decide (c < p)) = 0 then sub32 W c p else sub32 W p c) = Spec.RsaKeyGen.absDiff c p := by
   unfold Spec.RsaKeyGen.absDiff
   by_cases h : c < p
-  · rw [ite_eq_right (by simp [h, b2n]), sub32_val hp hc, ite_eq_right (by omega), ite_eq_left (by omega)]
+  · rw [ite_eq_right (by simp [h, b2n]), sub32_val hp hc, ite_eq_right (by omega_using [h]), ite_eq_left (by omega_using [h])]
   · rw [ite_eq_left (by simp [h, b2n]), sub32_val hc hp, ite_eq_right h]
-    split <;> omega
+    split <;> omega_arith
 
 theorem clv_none {σ : State} (h : P.pl = 0) : clv P σ = false := by
   unfold clv Spec.RsaKeyGen.otherPrime
@@ -147,7 +147,7 @@ theorem clv_some {σ : State} (h : P.pl = P.L) (hL : 0 < P.L) :
     clv P σ = decide (Spec.RsaKeyGen.absDiff (cv P σ) (pv P σ) ≤ 2 ^ (8 * P.L - 100)) := by
   unfold clv Spec.RsaKeyGen.otherPrime
   have : pB P σ ≠ [] := by
-    intro e; have := congrArg List.length e; rw [bytesAt_length] at this; simp at this; omega
+    intro e; have := congrArg List.length e; rw [bytesAt_length] at this; simp at this; omega_using [h, hL, this]
   rw [ite_eq_right this]
   rfl
 
@@ -167,7 +167,7 @@ theorem cmp0_vp {E : State → Prop} {A : State → Nat → Nat} {L : List Nat} 
     · refine wp_cmp (op2_imm (by decide)) fun t f z => WP.block_nil ⟨⟨e, h.of_rest (f.rest []) f.mem,
         hw.of (by rw [f.gpr]) (by rw [f.gpr]) (by rw [f.gpr]) f.wr⟩, ?_⟩
       have pre := h.pre
-      have hl : P.pl < 2 ^ 32 := by have := pre.plv; have := pre.k2; omega
+      have hl : P.pl < 2 ^ 32 := by have := pre.plv; have := pre.k2; omega_arith
       rw [z, r1]
       by_cases h0 : P.pl = 0
       · simp [h0]
@@ -185,7 +185,7 @@ theorem closeCalc_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.p
     ) ?_
   · have hp := (hE σ e).2
     have := h.k1
-    refine ⟨?_, ?_, h.fP, by omega, by omega⟩
+    refine ⟨?_, ?_, h.fP, by omega_using [hp, this], by omega_using [hp]⟩
     · rw [hp]; exact h.rdP |> fun r => by rwa [hp] at r
     · intro r hr
       simp only [CP.chg, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -202,20 +202,20 @@ theorem closeCalc_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.p
   refine VP.seq (St.psel selAbs_taint (by decide) (by simp) (by simp) (by decide) (by decide) (by simp)
     fun σ _ => by simp only [upd_self]; exact VG.Proof.Rsa.b2n_le _) ?_
   refine VP.seq (St.psetHi (i := fun P => P.W - 6) bnd_taint (by simp) (by decide) (by decide) (by decide)
-    (fun σ _ pre => by have := pre.wge; omega) fun σ _ _ => by
+    (fun σ _ pre => by have := pre.wge; omega_using [this]) fun σ _ _ => by
       simp (config := {decide := true}) only [upd, ↓reduceIte, A0]; exact Nat.two_pow_pos _) ?_
   refine VP.assoc (VP.seq (St.pltS ltCl_taint (by simp) (by simp) (by decide) (by decide) (by decide)) ?_)
   have vals : ∀ σ, E σ → In P σ → sub32 P.W (cv P σ) (pv P σ) = sub32 P.W (cv P σ) (pv P σ) ∧
       cv P σ < 2 ^ (32 * P.W) ∧ pv P σ < 2 ^ (32 * P.W) ∧ 2 ^ (32 * (P.W - 6)) * (0x10000000 % 2 ^ 32) =
         2 ^ (8 * P.L - 100) := fun σ e pre => by
     have wE := pre.W_eq; have lE := pre.L_eq; have w4 := pre.w4
-    have p8 : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by omega)
+    have p8 : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by omega_using [wE, lE])
     refine ⟨rfl, ?_, ?_, ?_⟩
-    · have := (cv_shape pre).2.2; omega
+    · have := (cv_shape pre).2.2; omega_using [p8, this]
     · have := VG.Proof.Rsa.lt_of_os2ip (pB P σ)
       rw [bytesAt_length, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul, (hE σ e).2] at this
-      unfold pv; omega
-    · rw [show (0x10000000 : Nat) % 2 ^ 32 = 2 ^ 28 from rfl, ← Nat.pow_add]; congr 1; omega
+      unfold pv; omega_using [p8, this]
+    · rw [show (0x10000000 : Nat) % 2 ^ 32 = 2 ^ 28 from rfl, ← Nat.pow_add]; congr 1; omega_using [wE, lE, w4]
   refine (St.pnotS (X := fun σ => decide (2 ^ (8 * P.L - 100) < Spec.RsaKeyGen.absDiff (cv P σ) (pv P σ)))
     notCl_taint (by simp) (by decide) fun σ e => ?_).mono (fun _ _ h => h) fun σ s h => h.mono
       (fun j hj => ⟨by mem_sub, ?_⟩) fun j hj => ⟨by mem_sub, ?_⟩
@@ -229,7 +229,7 @@ theorem closeCalc_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.p
   · have pre := h.2.1.pre
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl <;> simp (config := {decide := true}) only [upd, ↓reduceIte, V1, V0]
-    rw [clv_some (hE σ h.1).2 (by have := pre.k1; omega), ← decide_not]
+    rw [clv_some (hE σ h.1).2 (by have := pre.k1; omega_using [this]), ← decide_not]
     exact congrArg b2n (decide_eq_decide.mpr Nat.not_lt)
 
 theorem St.weaken {E E' : State → Prop} {A : State → Nat → Nat} {L : List Nat} {V : State → Nat → Nat}

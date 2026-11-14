@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInit
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInitScrub
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -94,30 +95,16 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
 namespace VG.Artifacts.RsaKeyGen.X86_64
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact X86_64.target {
-    code := Impl.RsaKeyGen.X86_64.KeyInit.init
-    verified := Proof.RsaKeyGen.X86_64.KeyInit.init_verified }]
-
-end VG.Artifacts.RsaKeyGen.X86_64
-
--- RSA key generation on x86-64, its prime searches' candidates calling each shared Miller–Rabin implementation
-namespace VG.Artifacts.RsaKeyGen.X86_64.MillerRabin
-
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.keySearchApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Proof.RsaKeyGen.X86_64.Generate.genCode v
-    stack := 552
-    verified := Proof.RsaKeyGen.X86_64.Generate.gen_verified v
-    spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v
-    features := v.features }]
-
-end VG.Artifacts.RsaKeyGen.X86_64.MillerRabin
-
-namespace VG.Artifacts.RsaKeyGen.X86_64
+  Spec.RsaKeyGen.keyInitApi.artifact X86_64.target Proof.RsaKeyGen.X86_64.KeyInit.initReg]
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
+    Spec.RsaKeyGen.keySearchApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Proof.RsaKeyGen.X86_64.Generate.genCode v
+      stack := 552
+      verified := Proof.RsaKeyGen.X86_64.Generate.gen_verified v
+      spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v }])
 
 end VG.Artifacts.RsaKeyGen.X86_64

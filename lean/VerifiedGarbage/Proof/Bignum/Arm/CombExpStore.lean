@@ -24,10 +24,10 @@ theorem saveDigit_ok {base source table : BitVec 32} {len w bytes N M g E i : Na
   have size : 256≤8*len := by
     have fits := h.ready.width ▸ h.ready.layout.2.2.1
     simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes] at fits
-    omega
+    omega_using [fits]
   refine wp_str (a:=off (State.addr base) 196) (by decide)
-    (by rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega))
-    (h.ready.workspace.write (by omega)) fun t update => WP.block_nil ?_
+    (by rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega_using [size, this]))
+    (h.ready.workspace.write (by omega_using [size])) fun t update => WP.block_nil ?_
   have rest : Rest roundClobbers s t := (update.rest []).mono (by decide)
   obtain ⟨powerT,frame⟩ := h.after_header (d:=196) (by decide) (by decide) update.mem (update.rest [])
     ((update.rest []).gpr .r0 (by decide) |>.trans h.ready.ptr)

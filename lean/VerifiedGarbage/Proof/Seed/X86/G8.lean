@@ -99,8 +99,8 @@ theorem g8_ok {s : State} (hok : Ok gCfg s) :
     split at h
     · rename_i hk'
       simp only [Option.some.injEq] at h; subst h
-      have := inWordW_rel In (w := 32) (i := k - 72) (k := 8) (by omega)
-      simpa [In, slotW, tSlot, show 72 + (k - 72) = k by omega, gCfg] using this
+      have := inWordW_rel In (w := 32) (i := k - 72) (k := 8) (by omega_using [hk'])
+      simpa [In, slotW, tSlot, show 72 + (k - 72) = k by omega_using [hk'], gCfg] using this
     · cases h
   obtain ⟨e1, he1, hp1⟩ := of_check _ _ _ g8In_check
   obtain ⟨s1, hs1, p1⟩ := run lanes_sound hok hrel1 he1
@@ -110,11 +110,11 @@ theorem g8_ok {s : State} (hok : Ok gCfg s) :
     intro j hj
     have hj' := hp1 j hj
     simp only [decide_eq_true_eq] at hj'
-    exact outWordW_rel (fun p hp a ha => hj'.2 p hp a ha) (p1.rel.slot _ _ (by simp [gCfg]; omega) hj'.1)
+    exact outWordW_rel (fun p hp a ha => hj'.2 p hp a ha) (p1.rel.slot _ _ (by simp [gCfg]; omega_using [hj]) hj'.1)
   -- The S-box.
   have hokS : Ok Proof.Aes.X86.linCfg s1 :=
-    ⟨fun k hk => p1.ok.slotIn k (by simp [Proof.Aes.X86.linCfg, gCfg] at hk ⊢; omega),
-      fun _ hk => (by cases hk), by have := p1.ok.fit; simp [Proof.Aes.X86.linCfg, gCfg] at this ⊢; omega,
+    ⟨fun k hk => p1.ok.slotIn k (by simp [Proof.Aes.X86.linCfg, gCfg] at hk ⊢; omega_using [hk]),
+      fun _ hk => (by cases hk), by have := p1.ok.fit; simp [Proof.Aes.X86.linCfg, gCfg] at this ⊢; omega_using [this],
       fun _ _ _ hj => (by cases hj)⟩
   obtain ⟨s2, hs2, hS, rd2, wr2, oth2, fr2⟩ := Proof.Aes.X86.sbox_ok hokS
   let S : Nat → BitVec 32 := fun j => Proof.Aes.X86.Q s2 j
@@ -127,7 +127,7 @@ theorem g8_ok {s : State} (hok : Ok gCfg s) :
     split at h
     · rename_i hk8
       simp only [Option.some.injEq] at h; subst h
-      have := inWordW_rel S (w := 32) (i := k) (k := 8) (by omega)
+      have := inWordW_rel S (w := 32) (i := k) (k := 8) (by omega_using [hk8])
       simpa [S, Proof.Aes.X86.Q, gCfg] using this
     · cases h
   obtain ⟨e2, he2, hp2⟩ := of_check _ _ _ g8Out_check
@@ -141,7 +141,7 @@ theorem g8_ok {s : State} (hok : Ok gCfg s) :
     have hi' := hp2 i hi
     simp only [decide_eq_true_eq] at hi'
     have hl : LaneRel 8 (assign S (2 ^ 8)) (gConst32.toNat, mk 32 (l2w i) 32) (Out i) := by
-      have := p2.rel.slot _ _ (by simp [tSlot, gCfg]; omega) hi'.1
+      have := p2.rel.slot _ _ (by simp [tSlot, gCfg]; omega_using [hi]) hi'.1
       simpa [Out, slotW, gCfg, p2.base, hb2] using this
     intro t ht
     rw [outWordC_rel (fun p hp a ha => hi'.2 p hp a ha) hl t ht, BitVec.testBit_toNat]
@@ -160,7 +160,7 @@ theorem g8_ok {s : State} (hok : Ok gCfg s) :
       refine ⟨slotRegion gCfg s, List.mem_singleton_self _, ?_⟩
       show Region.Sub ⟨(s1.gpr sb).setWidth 64, 4 * 64⟩ ⟨(s.gpr sb).setWidth 64, 4 * 80⟩
       rw [hb1]
-      exact Region.sub_prefix (by omega)
+      exact Region.sub_prefix (by omega_using [])
     · have := p2.frame
       simp only [slotRegion] at this ⊢
       rw [show s2.gpr gCfg.base = s.gpr gCfg.base from hb2] at this

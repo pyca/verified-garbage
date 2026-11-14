@@ -63,7 +63,7 @@ private theorem zero_ready (p : KeyPublic sampling) (s : State) (h : KeyAny p s)
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.zeroOutput 5) s (KeyAny p) := by
   obtain ⟨original, used, keys, scalars, live⟩ := h
   refine WP.mono_syms (zeroOutput_ok s (n := p.len) (dst := p.xp) live.controller (by decide : 5 < 16)
-    (by have := live.input.bounds.minLength; omega) (by have := live.input.bounds.maxLength; omega)
+    (by have := live.input.bounds.minLength; omega_using [this]) (by have := live.input.bounds.maxLength; omega_using [this])
     (live.header (by simp [KeyPublic.headers])) (live.header (by simp [KeyPublic.headers])) live.x_buffer) ?_
   rintro t ⟨_, frame, rest⟩ syms
   exact ⟨original, _, _, _, live.restore rest.rd rest.wr rest.sp

@@ -40,7 +40,7 @@ theorem RoundRoom.after_draw {p : WitnessParams} {rp : Addr} {bs : List Byte} {s
   rw [hs]
   change ¬(below (s.gpr .rsp) 128).Contains (off (off rp n) i) 1
   rw [off_off]
-  exact h.rand (n + i) (by rw [List.length_drop] at hi; omega)
+  exact h.rand (n + i) (by rw [List.length_drop] at hi; omega_using [hi])
 
 def RoundFrame (p : WitnessParams) (sp : Addr) (m m' : Mem) : Prop :=
   ∀ a, p.Z ≤ ofs p.O a → (∀ i < p.len, a ≠ off p.op i) →
@@ -100,11 +100,11 @@ theorem round_outer_header {p : WitnessParams} {rp : Addr} {bs : List Byte} {s t
     subst hmem
     apply hr.root
     have hc := Offset.contains_base p.O (d := 8 * j + i) (n := 1) (k := p.Z)
-      (by omega_using [hj, hi, p.space_bounds.1]) (by omega)
+      (by omega_using [hj, hi, p.space_bounds.1]) (by omega_using [hj, hi])
     simpa only [off, BitVec.add_assoc, BitVec.ofNat_add] using hc
   · intro r hmem
     have hfit := hrs r hmem
-    have ho := ofs_off p.O (d := 8 * j) (i := i) (by omega)
+    have ho := ofs_off p.O (d := 8 * j) (i := i) (by omega_using [hj, hi])
     rcases ofs_rebase p.O (off p.O (8 * j) + BitVec.ofNat 64 i) (o := 256) (by decide) with ⟨hl, _⟩ | ⟨_, he⟩
     · omega_using [ho, hl, hj, hi]
     · right

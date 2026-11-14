@@ -59,19 +59,19 @@ theorem storeWordsStep_ok {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Boo
     intro b hb
     apply h.frame
     intro z hz he
-    have hsep' := hsep (k - 1 - z) (by omega)
-    rw [← he, ofs_off B (by omega)] at hsep'
-    omega
+    have hsep' := hsep (k - 1 - z) (by omega_using [hk, hj])
+    rw [← he, ofs_off B (by omega_using [hed, hj, hn, hb])] at hsep'
+    omega_using [hed, hj, hb, hsep']
   have hread : InRegions (t.rd ++ t.wr) (off B (ed + 8 * j)) 8 := by
-    rw [h.rd, h.wr]; exact hs.ld (by omega)
+    rw [h.rd, h.wr]; exact hs.ld (by omega_using [hed, hj])
   have hwrite : InRegions t.wr (out + BitVec.ofNat 64 (k - 8 * (j + 1))) 8 := by
-    rw [h.wr]; exact VG.CallLay.inRegions_sub hout (by omega) (by omega)
+    rw [h.wr]; exact VG.CallLay.inRegions_sub hout (by omega_using [hk, hj]) (by omega_using [hk'])
   have hx1 : out + BitVec.ofNat 64 (k - 8 * j) - BitVec.ofNat 64 8 = out + BitVec.ofNat 64 (k - 8 * (j + 1)) := by
-    rw [VG.Offset.add_ofNat_sub out (by omega)]; congr 2
+    rw [VG.Offset.add_ofNat_sub out (by omega_using [hk, hj])]; congr 2
   have hx5 : off B (ed + 8 * j) + BitVec.ofNat 64 8 = off B (ed + 8 * (j + 1)) := by
-    rw [off_add, show ed + 8 * j + 8 = ed + 8 * (j + 1) by omega]
+    rw [off_add, show ed + 8 * j + 8 = ed + 8 * (j + 1) by omega_using []]
   have hx9 : BitVec.ofNat 64 (k - 8 * j) - BitVec.ofNat 64 8 = BitVec.ofNat 64 (k - 8 * (j + 1)) := by
-    rw [VG.Offset.ofNat_sub_ofNat (by omega)]; congr 1
+    rw [VG.Offset.ofNat_sub_ofNat (by omega_using [hk, hj])]; congr 1
   have h15' : t.gpr .x15 = mask c := (h.keep.gpr .x15 (by decide)).trans h15
   refine WP.mono (WP.keep [.x1, .x3, .x5, .x9] (Q := fun u =>
     u.mem = t.mem.writeW (out + BitVec.ofNat 64 (k - 8 * (j + 1)))
@@ -84,19 +84,19 @@ theorem storeWordsStep_ok {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Boo
       fun x hx => ?_⟩, ?_⟩
     · rw [hm]
       have hd : ((out + BitVec.ofNat 64 (k - 1 - z)) - (out + BitVec.ofNat 64 (k - 8 * (j + 1)))).toNat =
-          k - 1 - z - (k - 8 * (j + 1)) := VG.Offset.sub_toNat out (by omega) (by omega)
+          k - 1 - z - (k - 8 * (j + 1)) := VG.Offset.sub_toNat out (by omega_using [hz]) (by omega_using [hk'])
       change (if ((out + BitVec.ofNat 64 (k - 1 - z)) - (out + BitVec.ofNat 64 (k - 8 * (j + 1)))).toNat < 8 then
         (rev64 (BitVec.ofNat 64 ((if c then wv s.mem B ed w else 0) / 256 ^ (8 * j)))).extractLsb'
           (8 * ((out + BitVec.ofNat 64 (k - 1 - z)) - (out + BitVec.ofNat 64 (k - 8 * (j + 1)))).toNat) 8
         else t.mem (out + BitVec.ofNat 64 (k - 1 - z))) = _
       rw [hd]
       by_cases hzold : z < 8 * j
-      · rw [ite_eq_right (by omega)]; exact h.bytes z hzold
-      · rw [ite_eq_left (by omega), rev64_byte _ (by omega), extract_nat _ (by omega), Nat.div_div_eq_div_mul,
+      · rw [ite_eq_right (by omega_using [hk, hj, hzold])]; exact h.bytes z hzold
+      · rw [ite_eq_left (by omega_using [hzold]), rev64_byte _ (by omega_using [hzold]), extract_nat _ (by omega_using []), Nat.div_div_eq_div_mul,
           ← Nat.pow_add]
-        congr 3; omega
+        congr 3; omega_using [hk, hj, hz, hzold]
     · rw [hm]
-      apply Eq.trans (Mem.write_apply ?_) (h.frame x (fun z hz => hx z (by omega)))
+      apply Eq.trans (Mem.write_apply ?_) (h.frame x (fun z hz => hx z (by omega_using [hz])))
       intro hin
       let b := (x - (out + BitVec.ofNat 64 (k - 8 * (j + 1)))).toNat
       have hb : b < 8 := hin
@@ -105,11 +105,11 @@ theorem storeWordsStep_ok {s t : State} {B out : Addr} {Z ed k w : Nat} {c : Boo
         change x = (out + BitVec.ofNat 64 (k - 8 * (j + 1))) + BitVec.ofNat 64 b
         simp only [b, BitVec.ofNat_toNat, BitVec.setWidth_eq]
         rw [BitVec.add_comm (out + BitVec.ofNat 64 (k - 8 * (j + 1))) _, BitVec.sub_add_cancel]
-      apply hx (8 * (j + 1) - 1 - b) (by omega)
+      apply hx (8 * (j + 1) - 1 - b) (by omega_using [])
       rw [he]
-      congr 2; omega
-    · rw [h9, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-      omega
+      congr 2; omega_using [hk, hj, hin]
+    · rw [h9, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk'])]
+      omega_using [hk, hj]
 
 theorem storeWords_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     (hs : Scr s B Z) (h8 : s.gpr .x8 = off B ed) (h1 : s.gpr .x1 = out + BitVec.ofNat 64 k)
@@ -129,7 +129,7 @@ theorem storeWords_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
   have h0 : SWInv a B out ed k (if c then wv s.mem B ed w else 0) 0 a :=
     ⟨rfl, rfl, Keep.refl _ _, by rw [(ka.gpr .x1 (by decide)).trans h1, Nat.mul_zero, Nat.sub_zero],
       by rw [h5, Nat.mul_zero, Nat.add_zero], by rw [(ka.gpr .x9 (by decide)).trans h9, Nat.mul_zero, Nat.sub_zero],
-      fun z hz => absurd hz (by omega), fun _ _ => rfl⟩
+      fun z hz => absurd hz (by omega_using []), fun _ _ => rfl⟩
   have hr : InRegions a.wr out k := by rw [ka.wr]; exact hout
   refine WP.mono (count_loop (cr := .x9) (n := w) (by omega)
     (SWInv a B out ed k (if c then wv s.mem B ed w else 0))
@@ -141,10 +141,10 @@ theorem storeWords_ok {s : State} {B out : Addr} {Z ed k w : Nat} {c : Bool}
     intro i hi _
     have hik : i < k := by simpa using hi
     simp only [List.getElem_map, List.getElem_range, Spec.Rsa.i2osp]
-    have hb := h.bytes (k - 1 - i) (by omega)
-    rwa [show k - 1 - (k - 1 - i) = i by omega] at hb
+    have hb := h.bytes (k - 1 - i) (by omega_using [hk, hk1])
+    rwa [show k - 1 - (k - 1 - i) = i by omega_using [hik]] at hb
   · intro x hx
-    rw [h.frame x (fun i hi => hx _ (by omega)), hm]
+    rw [h.frame x (fun i hi => hx _ (by omega_using [hk1])), hm]
 
 /-- `storeW`: `storeBE` (`storeBE_ok`), for bytes in one region. -/
 theorem storeW_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : Bool}
@@ -167,15 +167,15 @@ theorem storeW_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : Bool
   have a8 := (ka.gpr .x8 (by decide)).trans h8
   have a9 := (ka.gpr .x9 (by decide)).trans h9
   have a15 := (ka.gpr .x15 (by decide)).trans h15
-  refine WP.ite (decide (k % 8 = 0)) (by rw [eval_zero, h2, and7_zero (by omega)]) ?_ ?_
+  refine WP.ite (decide (k % 8 = 0)) (by rw [eval_zero, h2, and7_zero (by omega_using [hk'])]) ?_ ?_
   · intro h8'
     have h8' := of_decide_eq_true h8'
-    refine WP.mono (storeWords_ok hs' a8 a1 a9 a15 (w := w) (by omega) (by omega) hk' hed hr hsep)
+    refine WP.mono (storeWords_ok hs' a8 a1 a9 a15 (w := w) (by omega_using [hw, h8']) (by omega_using [hk1]) hk' hed hr hsep)
       fun t ⟨hv, ho, hw', hr', kt⟩ => ⟨by simpa only [hm] using hv, fun x hx => (ho x hx).trans (congrFun hm x),
         hw'.trans ka.wr, hr'.trans ka.rd, (ka.trans kt).mono (by decide)⟩
   · intro _
     refine WP.mono (storeBE_ok hs' a8 a1 a9 a15 hk1 hk' hw hed
-      (fun i hi => VG.CallLay.inRegions_sub hr (by omega) (by omega)) hsep)
+      (fun i hi => VG.CallLay.inRegions_sub hr (by omega_using [hi]) (by omega_using [hk'])) hsep)
       fun t ⟨hv, ho, hw', hr', kt⟩ => ⟨by simpa only [hm] using hv, fun x hx => (ho x hx).trans (congrFun hm x),
         hw'.trans ka.wr, hr'.trans ka.rd, (ka.trans kt).mono (by decide)⟩
 

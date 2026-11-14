@@ -21,9 +21,9 @@ theorem crossValue_add (m : Mem) (B : Addr) (e p q : Nat) :
   have shift : (fun i => (word m B (e + 8 * (p + i))).toNat) =
       (fun i => (word m B (e + 8 * p + 8 * i)).toNat) := by
     funext i
-    rw [show e + 8 * (p + i) = e + 8 * p + 8 * i by omega]
+    rw [show e + 8 * (p + i) = e + 8 * p + 8 * i by omega_using []]
   unfold crossValue
   rw [Triangular.cross_add, shift, value_words, value_words,
-    ← Nat.pow_mul, ← Nat.pow_mul, show 64 * (2 * p) = 128 * p by omega]
+    ← Nat.pow_mul, ← Nat.pow_mul, show 64 * (2 * p) = 128 * p by omega_using []]
 
 end VG.Proof.Bignum.AArch64.SquareEight

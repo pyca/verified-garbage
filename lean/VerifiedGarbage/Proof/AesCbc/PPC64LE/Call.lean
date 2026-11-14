@@ -69,7 +69,7 @@ theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   Proof.Cmac.bytesAt_frame hf hd hn
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hR])
 
 theorem one_toNat : (BitVec.ofNat 64 1).toNat = 1 := rfl
 

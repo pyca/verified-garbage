@@ -53,9 +53,9 @@ theorem ors_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 
       Kp.refl _ _, rfl⟩
   | k + 1, hk => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine wp_append (WP.mono (ors_ok hs h3 ha4 k (by omega)) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_)
+    refine wp_append (WP.mono (ors_ok hs h3 ha4 k (by omega_using [hk])) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_)
     simp only [orStep]
-    refine wp_step (ld0_ok (k₁.ws hs) (k₁.at h3) (by decide) (by omega) (by omega)) ?_
+    refine wp_step (ld0_ok (k₁.ws hs) (k₁.at h3) (by decide) (by omega_using [ha4]) (by omega_using [hk])) ?_
     refine wp_step exec_logic (WP.block_nil ⟨?_, (k₁.trans (Kp.write _ _ (by decide))).trans
       (Kp.write _ _ (by decide)), by simp only [write_mem]; exact m₁⟩)
     simp only [write_gpr, ite_true, reduceCtorEq, ite_false, or_eq_zero, e₁, m₁]
@@ -66,7 +66,7 @@ theorem ors_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 
         · exact h2 j hj
         · exact h3⟩
     · rintro ⟨h1, h2⟩
-      exact ⟨⟨h1, fun j hj => h2 j (by omega)⟩, h2 k (by omega)⟩
+      exact ⟨⟨h1, fun j hj => h2 j (by omega_using [hj])⟩, h2 k (by omega_using [])⟩
 
 /-- The top bit of `-x | x` is whether `x ≠ 0`. -/
 theorem negOr_shr (x : BitVec 64) : ((BitVec.ofNat 64 0 - x) ||| x) >>> 63 = if x = 0 then 0 else 1 := by
@@ -80,10 +80,10 @@ theorem negOr_shr (x : BitVec 64) : ((BitVec.ofNat 64 0 - x) ||| x) >>> 63 = if 
       rw [BitVec.toNat_or]; exact Nat.left_le_or
     have h2 : x.toNat ≤ ((BitVec.ofNat 64 0 - x) ||| x).toNat := by rw [BitVec.toNat_or]; exact Nat.right_le_or
     have h3 : (BitVec.ofNat 64 0 - x).toNat = 2 ^ 64 - x.toNat := by
-      rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; have := x.isLt; omega
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat]; have := x.isLt; omega_using [h0]
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     show _ = 1
-    omega
+    omega_using [h1, h2, h3]
 
 /-- `r5` is all ones iff `[a] ≠ 0`; `r4` changes too. -/
 theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 : At s base .r3 0)
@@ -91,8 +91,8 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s b
     WP isa (.block (c.nonzero a)) s fun s' =>
       s'.gpr .r5 = mask64 (wordsVal s.mem base a c.n ≠ 0) ∧ Kp [.r4, .r5] s s' ∧ s'.mem = s.mem := by
   rw [nonzero_eq, List.singleton_append]
-  refine wp_step (ld0_ok hs h3 (by decide) ha4 (by omega)) ?_
-  refine wp_append (WP.mono (ors_ok (hs.write _ _) (h3.write _) ha4 (c.n - 1) (by omega)) fun s₂ ⟨e₂, k₂, m₂⟩ => ?_)
+  refine wp_step (ld0_ok hs h3 (by decide) ha4 (by omega_using [hn, ha])) ?_
+  refine wp_append (WP.mono (ors_ok (hs.write _ _) (h3.write _) ha4 (c.n - 1) (by omega_using [hn, ha])) fun s₂ ⟨e₂, k₂, m₂⟩ => ?_)
   simp only [write_gpr, ite_true, write_mem] at e₂ m₂
   have hz : s₂.gpr .r5 = 0 ↔ wordsVal s.mem base a c.n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -100,9 +100,9 @@ theorem nonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s b
     · rintro ⟨h0, h⟩ j hj
       rcases j with _ | j
       · simpa using h0
-      · exact h j (by omega)
+      · exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega_using [hj])⟩
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_sub ?_
   refine wp_step exec_logic ?_
@@ -146,9 +146,9 @@ theorem ltDigit_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
     have e : (BitVec.ofNat 64 (w32 s.mem base (a + 4 * j)) + M32 - BitVec.ofNat 64 (w32 s.mem base (m + 4 * j)) +
         s.gpr .r6).toNat = w32 s.mem base (a + 4 * j) + (2 ^ 32 - 1 - w32 s.mem base (m + 4 * j)) +
           (s.gpr .r6).toNat := by
-      rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_add, toNat_ofNat_lt (by omega),
-        toNat_ofNat_lt (by omega), show M32.toNat = 2 ^ 32 - 1 from rfl]
-      omega
+      rw [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_add, toNat_ofNat_lt (by omega_using [t1]),
+        toNat_ofNat_lt (by omega_using [t0]), show M32.toNat = 2 ^ 32 - 1 from rfl]
+      omega_using [hc, t0, t1]
     rw [BitVec.toNat_ushiftRight, e, Nat.shiftRight_eq_div_pow]
   · exact ((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
       (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide)) |>.trans (Kp.write _ _ (by decide))
@@ -160,11 +160,11 @@ theorem lt_top {P M A x y : Nat} (hM : M < P) (hA : A < P) :
   rcases Nat.lt_trichotomy x y with h | rfl | h
   · have := Nat.mul_le_mul_left P (show x + 1 ≤ y from h)
     rw [Nat.mul_succ] at this
-    omega
-  · omega
+    omega_using [hM, h, this]
+  · omega_using []
   · have := Nat.mul_le_mul_left P (show y + 1 ≤ x from h)
     rw [Nat.mul_succ] at this
-    omega
+    omega_using [hA, h, this]
 
 /-- The digits of `ltM`. -/
 def ltDigits (m a k : Nat) : List Instr := (List.range k).flatMap (Cfg.ltDigit m a)
@@ -183,9 +183,9 @@ theorem ltDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
   | 0, _ => WP.block_nil ⟨by rw [hc]; rfl, Kp.refl _ _, rfl⟩
   | k + 1, hk => by
     rw [ltDigits_succ]
-    refine wp_append (WP.mono (ltDigits_ok hs h3 h0 hc ha hm (k := k) (by omega)) fun s₁ ⟨c₁, K₁, m₁⟩ => ?_)
+    refine wp_append (WP.mono (ltDigits_ok hs h3 h0 hc ha hm (k := k) (by omega_using [hk])) fun s₁ ⟨c₁, K₁, m₁⟩ => ?_)
     refine WP.mono (ltDigit_ok (K₁.ws hs) (K₁.at h3) (by rw [K₁.g]; exact h0)
-      (by rw [c₁]; split <;> decide) (j := k) (by omega) (by omega)) fun u ⟨c₂, K₂, m₂⟩ =>
+      (by rw [c₁]; split <;> decide) (j := k) (by omega_using [ha, hk]) (by omega_using [hm, hk])) fun u ⟨c₂, K₂, m₂⟩ =>
         ⟨?_, K₁.trans K₂, m₂.trans m₁⟩
     rw [c₂, c₁, m₁]
     have t0 := w32_lt s.mem base (a + 4 * k)
@@ -198,7 +198,7 @@ theorem ltDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
     by_cases h1 : val32 s.mem base m k ≤ val32 s.mem base a k <;>
       by_cases h2 : val32 s.mem base m k + 2 ^ (32 * k) * w32 s.mem base (m + 4 * k) ≤
         val32 s.mem base a k + 2 ^ (32 * k) * w32 s.mem base (a + 4 * k) <;>
-      simp only [h1, h2, ite_true, ite_false] <;> omega
+      simp only [h1, h2, ite_true, ite_false] <;> omega_arith
 
 /-- `r5` is all ones iff `[a] < [m]` (`n` words each). -/
 theorem ltM_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 : At s base .r3 0)
@@ -212,7 +212,7 @@ theorem ltM_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s base 
   refine wp_step (exec_li (by decide)) ?_
   refine wp_append (WP.mono (ltDigits_ok ((hs.write _ _).write _ _) ((h3.write _).write _)
     (by simp only [write_gpr, reduceCtorEq, ite_false, ite_true]) (by simp only [write_gpr, ite_true])
-    (m := m) (a := a) (W := 2 * c.n) (by omega) (by omega) (k := 2 * c.n) (Nat.le_refl _))
+    (m := m) (a := a) (W := 2 * c.n) (by omega_using [ha]) (by omega_using [hm]) (k := 2 * c.n) (Nat.le_refl _))
     fun s₁ ⟨c₁, K₁, m₁⟩ => ?_)
   simp only [write_mem, ← wordsVal_eq_val32] at c₁ m₁
   refine wp_step (exec_subi (by decide) (by decide)) (WP.block_nil ⟨?_, ?_, by simp only [write_mem]; exact m₁⟩)
@@ -221,9 +221,9 @@ theorem ltM_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s base 
       apply BitVec.eq_of_toNat_eq; rw [c₁]; split <;> rfl
     rw [e]
     by_cases h : wordsVal s.mem base m c.n ≤ wordsVal s.mem base a c.n
-    · have h' : ¬ wordsVal s.mem base a c.n < wordsVal s.mem base m c.n := by omega
+    · have h' : ¬ wordsVal s.mem base a c.n < wordsVal s.mem base m c.n := by omega_using [h]
       simp only [h, h', ite_true, ite_false, mask64]; decide
-    · have h' : wordsVal s.mem base a c.n < wordsVal s.mem base m c.n := by omega
+    · have h' : wordsVal s.mem base a c.n < wordsVal s.mem base m c.n := by omega_using [h]
       simp only [h, h', ite_true, ite_false, mask64]; decide
   · exact ((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans (K₁.mono (by decide))).trans
       (Kp.write _ _ (by decide)))
@@ -273,10 +273,10 @@ theorem checkRange_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws 
     simp only [write_gpr, ite_true, g₁, mask64_and]
     congr 1
     by_cases h1 : 0 < wordsVal s.mem base a c.n <;> by_cases h2 : wordsVal s.mem base a c.n < wordsVal s.mem base (c.sl MN) c.n <;>
-      simp [mask64, h1, h2, Nat.pos_iff_ne_zero.mp] <;> omega
+      simp [mask64, h1, h2, Nat.pos_iff_ne_zero.mp] <;> omega_using [h1]
   · rw [m']
     simp only [write_mem, m₂]
-    exact writeW_outside _ _ _ (by omega)
+    exact writeW_outside _ _ _ (by omega_using [hF, hnw])
 
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 theorem checkNonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Ws s base size)
@@ -291,6 +291,6 @@ theorem checkNonzero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : W
   refine WP.mono (andFlag_ok c (K₁.ws hs) (K₁.at h3) hF) fun s' ⟨f', k', m'⟩ =>
     ⟨?_, K₁.trans (k'.mono (by decide)), ?_⟩
   · rw [f', g₁]; simp only [flagW, m₁]
-  · rw [m', m₁]; exact writeW_outside _ _ _ (by omega)
+  · rw [m', m₁]; exact writeW_outside _ _ _ (by omega_using [hF, hnw])
 
 end VG.Proof.Ecdsa.PPC64LE

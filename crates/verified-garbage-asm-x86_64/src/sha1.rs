@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
@@ -14,29 +16,31 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDLjw4dLDiUcQww=="
+        r#".base64 "uAEjRWeJB7iJq83viUcEuP7cupiJRwi4dlQyEIlHDLjw4dLDiUcQMcBFMdvD"
 .p2align 6"#,
     )
 }
 
 /// The CPU features `vg_sha1_update_shani` requires (`Artifact.features`).
-pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJFj///9JieBJg8AISYlYcEmJaHhNiaCAAAAATYmoiAAAAE2JsJAAAABNibiYAAAASIn7TYnHSInVSYnMSYn1SYPlPw=="
+        r#".base64 "SI1kJMhJieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChIiftNicdIidVJicxJifVJg+U/"
 20:
 .base64 "TYXt"
 je 21f
@@ -49,7 +53,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -57,7 +61,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -81,7 +85,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -89,7 +93,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -115,18 +119,20 @@ call {vg_sha1_compress_shani}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADD"
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCTASI1kJEAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 
 /// The CPU features `vg_sha1_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -134,12 +140,12 @@ pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 64 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJFj///9IieFIg8EISIlZcEiJaXhMiaGAAAAATImpiAAAAEyJsZAAAABMibmYAAAASIn7SYnPSInVSYn0SYn1SYPlP0G5gAAAAEG+AAAAAEmD/Tg="
+        r#".base64 "SI1kJMhIieFIg8EISIkZSIlpCEyJYRBMiWkYTIlxIEyJeShIiftJic9IidVJifRJifVJg+U/QbmAAAAAQb4AAAAASYP9OA=="
 jae 20f
 jmp 21f
 20:
@@ -148,7 +154,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxRJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -157,7 +163,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxRJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMUSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -165,7 +171,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxRJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -181,7 +187,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrFGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExRmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -198,30 +204,32 @@ jmp 219f
 call {vg_sha1_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjWQkOGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCTASI1kJEAxwDHJMdIx9jH/RTHJRTHSww=="
 .p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
 }
 
 /// The CPU features `vg_sha1_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
 /// * `data` must be valid for reads of `len` bytes.
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJOj+//9IieFIg8EISIPBYEiJWXBIiWl4TImhgAAAAEyJqYgAAABMibGQAAAATIm5mAAAAEmJz0iJy0iD62BJif1JifRIidVIid+4ASNFZ4kHuImrze+JRwS4/ty6mIlHCLh2VDIQiUcMuPDh0sOJRxBNieZJwe4GTYX2"
+        r#".base64 "SI2kJFj///9IieFIg8EISIPBYEiJGUiJaQhMiWEQTIlpGEyJcSBMiXkoSYnPSInLSIPrYEmJ/UmJ9EiJ1UiJ37gBI0VniQe4iavN74lHBLj+3LqYiUcIuHZUMhCJRwy48OHSw4lHEE2J5knB7gZNhfY="
 je 20f
 .base64 "TInuSInfTInyTIn5"
 call {vg_sha1_compress_shani}
@@ -232,7 +240,7 @@ jmp 21f
 .base64 "Zg/vwPMPf0MU8w9/QyTzD39DNPMPf0NETYniSYPiP0G7AAAAAE2J0UnB6QQ="
 je 22f
 24:
-.base64 "80EPb00A80IPf0wbFEmDxRBJg8MQSYPpAQ=="
+.base64 "80EPb00AuTAAAABJOctJD0LL8w9/TAsUSYPFEEmDwxBJg+kB"
 jne 24b
 jmp 23f
 22:
@@ -243,26 +251,26 @@ je 25f
 jb 27f
 .base64 "SIP4CA=="
 jb 29f
-.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syvNCD39MGxQ="
+.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syrkwAAAASTnLSQ9Cy/MPf0wLFA=="
 jmp 210f
 29:
-.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsjzQg9/TBsU"
+.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 210:
 jmp 28f
 27:
 .base64 "SIXA"
 je 211f
 213:
-.base64 "RQ+2RQBGiEQbFEmDxQFJg8MBSIPoAQ=="
+.base64 "RQ+2RQC5PwAAAEk5y0kPQstEiEQLFEmDxQFJg8MBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "QbiAAAAARohEGxQ="
+.base64 "QbiAAAAAuT8AAABJOctJD0LLRIhECxQ="
 28:
 jmp 26f
 25:
-.base64 "QbiAAAAAZkkPbsjzQg9/TBsU"
+.base64 "QbiAAAAAZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 26:
 .base64 "SYP6OA=="
 jae 214f
@@ -274,7 +282,7 @@ call {vg_sha1_compress_shani}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NEZg/rx/MPf0NESIneSIPGFEiJ37oBAAAATIn5"
 call {vg_sha1_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJBgBAADD"
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkqAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCRQ////8w9/BCRIjaQksAAAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani::vg_sha1_compress_shani,
     )
@@ -286,6 +294,8 @@ pub const VG_SHA1_UPDATE_AVX_BMI_FEATURES: verified_garbage_cpu::Features = veri
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -310,7 +320,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -318,7 +328,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -342,7 +352,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -350,7 +360,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -376,7 +386,7 @@ call {vg_sha1_compress_avx_bmi}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADD"
+.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkUP///8X+f0QkQMX+f0QkIMX+fwQkSI2kJLAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
     )
@@ -388,6 +398,8 @@ pub const VG_SHA1_FINALIZE_AVX_BMI_FEATURES: verified_garbage_cpu::Features = ve
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -409,7 +421,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxRJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -418,7 +430,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxRJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMUSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -426,7 +438,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxRJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -442,7 +454,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrFGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExRmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -459,7 +471,7 @@ jmp 219f
 call {vg_sha1_compress_avx_bmi}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkUP///8X+f0QkMMX+f0QkEPMPfwQkSI2kJLAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
     )
@@ -471,6 +483,8 @@ pub const VG_SHA1_DIGEST_AVX_BMI_FEATURES: verified_garbage_cpu::Features = veri
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -493,7 +507,7 @@ jmp 21f
 .base64 "Zg/vwPMPf0MU8w9/QyTzD39DNPMPf0NETYniSYPiP0G7AAAAAE2J0UnB6QQ="
 je 22f
 24:
-.base64 "80EPb00A80IPf0wbFEmDxRBJg8MQSYPpAQ=="
+.base64 "80EPb00AuTAAAABJOctJD0LL8w9/TAsUSYPFEEmDwxBJg+kB"
 jne 24b
 jmp 23f
 22:
@@ -504,26 +518,26 @@ je 25f
 jb 27f
 .base64 "SIP4CA=="
 jb 29f
-.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syvNCD39MGxQ="
+.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syrkwAAAASTnLSQ9Cy/MPf0wLFA=="
 jmp 210f
 29:
-.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsjzQg9/TBsU"
+.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 210:
 jmp 28f
 27:
 .base64 "SIXA"
 je 211f
 213:
-.base64 "RQ+2RQBGiEQbFEmDxQFJg8MBSIPoAQ=="
+.base64 "RQ+2RQC5PwAAAEk5y0kPQstEiEQLFEmDxQFJg8MBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "QbiAAAAARohEGxQ="
+.base64 "QbiAAAAAuT8AAABJOctJD0LLRIhECxQ="
 28:
 jmp 26f
 25:
-.base64 "QbiAAAAAZkkPbsjzQg9/TBsU"
+.base64 "QbiAAAAAZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 26:
 .base64 "SYP6OA=="
 jae 214f
@@ -535,7 +549,7 @@ call {vg_sha1_compress_avx_bmi}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NEZg/rx/MPf0NESIneSIPGFEiJ37oBAAAATIn5"
 call {vg_sha1_compress_avx_bmi}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJBgBAADD"
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJBgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk4P7//8X+f4QkkAAAAMX+f0QkcPMPfwQkSI2kJCABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha1_compress_avx_bmi = sym super::sha1::vg_sha1_compress_avx_bmi::vg_sha1_compress_avx_bmi,
     )
@@ -544,6 +558,8 @@ call {vg_sha1_compress_avx_bmi}
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -567,7 +583,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -575,7 +591,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -599,7 +615,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -607,7 +623,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -633,7 +649,7 @@ call {vg_sha1_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADD"
+.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/ARTHbSI2kJFD////zD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCSwAAAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -642,6 +658,8 @@ jne 20b
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -662,7 +680,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxRJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -671,7 +689,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxRJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMUSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -679,7 +697,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxRJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -695,7 +713,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrFGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExRmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -712,7 +730,7 @@ jmp 219f
 call {vg_sha1_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAADD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkUP////MPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJLAAAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -721,6 +739,8 @@ je 22b
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -742,7 +762,7 @@ jmp 21f
 .base64 "Zg/vwPMPf0MU8w9/QyTzD39DNPMPf0NETYniSYPiP0G7AAAAAE2J0UnB6QQ="
 je 22f
 24:
-.base64 "80EPb00A80IPf0wbFEmDxRBJg8MQSYPpAQ=="
+.base64 "80EPb00AuTAAAABJOctJD0LL8w9/TAsUSYPFEEmDwxBJg+kB"
 jne 24b
 jmp 23f
 22:
@@ -753,26 +773,26 @@ je 25f
 jb 27f
 .base64 "SIP4CA=="
 jb 29f
-.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syvNCD39MGxQ="
+.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syrkwAAAASTnLSQ9Cy/MPf0wLFA=="
 jmp 210f
 29:
-.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsjzQg9/TBsU"
+.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 210:
 jmp 28f
 27:
 .base64 "SIXA"
 je 211f
 213:
-.base64 "RQ+2RQBGiEQbFEmDxQFJg8MBSIPoAQ=="
+.base64 "RQ+2RQC5PwAAAEk5y0kPQstEiEQLFEmDxQFJg8MBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "QbiAAAAARohEGxQ="
+.base64 "QbiAAAAAuT8AAABJOctJD0LLRIhECxQ="
 28:
 jmp 26f
 25:
-.base64 "QbiAAAAAZkkPbsjzQg9/TBsU"
+.base64 "QbiAAAAAZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 26:
 .base64 "SYP6OA=="
 jae 214f
@@ -784,7 +804,7 @@ call {vg_sha1_compress}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NEZg/rx/MPf0NESIneSIPGFEiJ37oBAAAATIn5"
 call {vg_sha1_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJBgBAADD"
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJBgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk4P7///MPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPfwQkSI2kJCABAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
     )
@@ -813,6 +833,10 @@ pub(crate) mod vg_sha1_finalize_scratch_avx_bmi;
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_finalize_scratch_shani.rs"]
 pub(crate) mod vg_sha1_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha1_init_core.rs"]
+pub(crate) mod vg_sha1_init_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sha1_state_digest.rs"]

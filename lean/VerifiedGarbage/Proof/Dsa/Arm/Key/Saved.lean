@@ -24,14 +24,14 @@ def Saved (s₀ : State) (m : Mem) : Prop :=
 
 theorem Saved.of_slots {s₀ : State} {m m' : Mem} (h : Saved s₀ m)
     (he : ∀ d, d + 4 ≤ 36 ∨ 96 ≤ d → d + 4 ≤ 112 → slot m' (rBase s₀) d = slot m (rBase s₀) d) : Saved s₀ m' :=
-  ⟨fun i hi => (he _ (.inl (by omega)) (by omega)).trans (h.1 i hi), (he _ (by decide) (by decide)).trans h.2.1,
+  ⟨fun i hi => (he _ (.inl (by omega_using [hi])) (by omega_using [hi])).trans (h.1 i hi), (he _ (by decide) (by decide)).trans h.2.1,
     (he _ (by decide) (by decide)).trans h.2.2.1, (he _ (by decide) (by decide)).trans h.2.2.2.1,
     (he _ (by decide) (by decide)).trans h.2.2.2.2⟩
 
 /-- Memory changed only in ranges of `[36, 96)` keeps the saved words. -/
 theorem Saved.of_outs {s₀ : State} {m m' : Mem} {rs : List (Nat × Nat)} (h : Saved s₀ m)
     (ho : Outs (rBase s₀) rs m m') (hrs : ∀ r ∈ rs, 36 ≤ r.1 ∧ r.1 + r.2 ≤ 96) : Saved s₀ m' :=
-  h.of_slots fun d hd hd' => slot_outs ho (fun r hr => by have := hrs r hr; omega) (by omega)
+  h.of_slots fun d hd hd' => slot_outs ho (fun r hr => by have := hrs r hr; omega_using [hd, this]) (by omega_using [hd'])
 
 /-- Slots below the ranges that changed. -/
 theorem outs_low {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs B rs m m') {e : Nat}
@@ -46,7 +46,7 @@ theorem one_beq {k : Nat} (hk : k < 2 ^ 32) : (BitVec.ofNat 32 k - 1 == 0) = dec
     have := congrArg BitVec.toNat e
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl,
       show (0 : BitVec 32).toNat = 0 from rfl] at this
-    omega
+    omega_using [hk, h, this]
 
 theorem rBytes_frame {m m' : Mem} {p : Addr} {n : Nat} {rs : List Region}
     (frame : Frame rs m m') (sep : ∀ r ∈ rs, (Region.mk p n).Disjoint r) (bound : n ≤ 2 ^ 64) :

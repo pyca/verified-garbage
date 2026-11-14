@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Seed.X86.FbLit
 import VerifiedGarbage.Proof.Seed.X86.FbFinalLit
 
-/-! # SEED-OFB artifacts on baseline x86 (32-bit) -/
+/-! # SEED-OFB on x86 -/
 
 @[expose] public section
 

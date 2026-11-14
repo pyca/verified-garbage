@@ -58,7 +58,7 @@ theorem code_ok {s : State} {base : Addr} {size count : Nat}
       num t.mem base 2 1 = Nat.gcd (num s.mem base 2 0) (num s.mem base 2 1) := by
   have aBound : num s.mem base 2 0 < 2 ^ 64 := val32_lt ..
   have bBound : num s.mem base 2 1 < 2 ^ 64 := val32_lt ..
-  have bPositive : 0 < num s.mem base 2 1 := by omega
+  have bPositive : 0 < num s.mem base 2 1 := by omega_using [odd]
   have product : num s.mem base 2 0 * num s.mem base 2 1 < 2 ^ 128 := by
     have first := Nat.mul_lt_mul_of_pos_right aBound bPositive
     have second := Nat.mul_lt_mul_of_pos_left bBound (Nat.two_pow_pos 64)

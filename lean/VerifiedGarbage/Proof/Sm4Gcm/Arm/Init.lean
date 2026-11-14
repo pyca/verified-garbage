@@ -40,12 +40,12 @@ theorem initLay {c w sp : BitVec 32} (cw : c.toNat + 256 ≤ 2 ^ 32) (ww : w.toN
     (sp8 : 1520 ≤ sp.toNat) (cW : (⟨State.addr c, 256⟩ : Region).Disjoint ⟨State.addr w, 768⟩)
     (kc : (below sp).Disjoint ⟨State.addr c, 256⟩) (kw : (below sp).Disjoint ⟨State.addr w, 768⟩) :
     Lay c (w + BitVec.ofNat 32 16) w sp := by
-  have e : State.addr (w + BitVec.ofNat 32 16) = State.addr w + BitVec.ofNat 64 16 := addr_add (by omega)
+  have e : State.addr (w + BitVec.ofNat 32 16) = State.addr w + BitVec.ofNat 64 16 := addr_add (by omega_using [ww])
   have hs : Region.Sub ⟨State.addr w + BitVec.ofNat 64 16, 80⟩ ⟨State.addr w, 768⟩ := Lay.wSub (by decide)
   refine ⟨cw, ?_, ww, sp8, ?_, cW, ?_, ?_, kc, ?_, kw⟩
   · rw [show (w + BitVec.ofNat 32 16).toNat = w.toNat + 16 by
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega)]]
-    omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega_using [ww])]]
+    omega_using [ww]
   · rw [e]; exact cW.sub_right hs
   · rw [e]; simpa using Lay.w_w (w := w) (a := 16) (n := 80) (d := 0) (k := 16) (.inr (by decide)) (by decide)
       (by decide)
@@ -120,7 +120,7 @@ theorem init_kc {s₀ s₁ : State} (h : initArm.pre s₀) (h1 : IS1 s₀ s₁) 
     KeyCall s₁ (s₀.gpr .r0) (s₀.gpr .r1) := by
   obtain ⟨hrd, hwr, dkc, -, dcs, bk, bc, bs, fk, fc, fs, sp8⟩ := h
   have hC : Covers [⟨State.addr (s₀.gpr .r1), 256⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  refine ⟨h1.r0, h1.r1, by rw [h1.sp]; exact sp8, fk, by omega, dkc.sub_right (Region.sub_prefix (by decide)),
+  refine ⟨h1.r0, h1.r1, by rw [h1.sp]; exact sp8, fk, by omega_using [fc], dkc.sub_right (Region.sub_prefix (by decide)),
     by rw [h1.sp]; exact bk, by rw [h1.sp]; exact bc.sub_right (Region.sub_prefix (show 128 ≤ 256 by decide)), ?_, ?_⟩
   · rw [h1.rd, h1.wr, hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_singleton_self _))
   · rw [h1.wr]; exact covers_prefix hC (by decide)
@@ -166,7 +166,7 @@ theorem init_cc {s₀ s₃ : State} (h : initArm.pre s₀) (h3 : IS3 s₀ s₃) 
   have eT := L.wA (d := 96) (by decide)
   have eH := L.cA (d := 240) (by decide)
   refine ⟨g0, g2, g3, g12, by rw [hk3]; exact sp8,
-    by omega, by rw [L.wN (by decide)]; omega, by rw [L.cN (by decide)]; omega,
+    by omega_using [fc], by rw [L.wN (by decide)]; omega_using [fs], by rw [L.cN (by decide)]; omega_using [fc],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals try simp only [eT, eH, hk3, Nat.mul_one]
   · exact (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub (by decide))
@@ -196,7 +196,7 @@ theorem init_fin {s₀ s₄ : State} (h : initArm.pre s₀) (h4 : IS4 s₀ s₄)
   have eH := L.cA (d := 240) (by decide)
   have dSv : ∀ {d k : Nat}, d + k ≤ 768 → (128 + 36 ≤ d ∨ d + k ≤ 128) →
       (savedR (s₀.gpr .r2)).Disjoint ⟨State.addr (s₀.gpr .r2) + BitVec.ofNat 64 d, k⟩ :=
-    fun h₁ h₂ => Lay.w_w (by omega) (by decide) h₁
+    fun h₁ h₂ => Lay.w_w (by omega_using [h₂]) (by decide) h₁
   have dSc : ∀ {d k : Nat}, d + k ≤ 256 →
       (savedR (s₀.gpr .r2)).Disjoint ⟨State.addr (s₀.gpr .r1) + BitVec.ofNat 64 d, k⟩ :=
     fun h₁ => (L.ctx_w h₁ (show 128 + 36 ≤ 768 by decide)).symm
@@ -232,7 +232,7 @@ theorem init_fin {s₀ s₄ : State} (h : initArm.pre s₀) (h4 : IS4 s₀ s₄)
   have dP : ∀ {d k : Nat}, 128 ≤ d → d + k ≤ 256 →
       (⟨State.addr (s₀.gpr .r1), 128⟩ : Region).Disjoint ⟨State.addr (s₀.gpr .r1) + BitVec.ofNat 64 d, k⟩ :=
     fun {d k} h₁ h₂ => by
-      simpa using Lay.ctx_ctx (c := s₀.gpr .r1) (a := 0) (n := 128) (d := d) (k := k) (.inl (by omega)) (by decide) h₂
+      simpa using Lay.ctx_ctx (c := s₀.gpr .r1) (a := 0) (n := 128) (d := d) (k := k) (.inl (by omega_using [h₁])) (by decide) h₂
   have dPw : ∀ {d k : Nat}, d + k ≤ 768 →
       (⟨State.addr (s₀.gpr .r1), 128⟩ : Region).Disjoint ⟨State.addr (s₀.gpr .r2) + BitVec.ofNat 64 d, k⟩ := fun h₁ =>
     (L.cw'.sub_left (Region.sub_prefix (by decide))).sub_right (Lay.wSub h₁)

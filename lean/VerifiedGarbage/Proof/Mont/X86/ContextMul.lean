@@ -28,12 +28,12 @@ theorem context_mul_ok {n size m o a b : Nat} {base : Addr} {s : State}
   have hdr := slot_header n 9
   have hdr2 := slot_header n 2
   have sz := h.size_le
-  refine WP.mono (mul_ok h.scr h.modulus (by change 4 ≤ size; change slot n 9 ≤ size at sz; omega)
-    (.inl (by omega)) h.inverse
+  refine WP.mono (mul_ok h.scr h.modulus (by change 4 ≤ size; change slot n 9 ≤ size at sz; omega_using [hdr, sz])
+    (.inl (by omega_using [hdr2])) h.inverse
     (context_opLay h.size_le ho ha hb ho2 ha2 hb2 ho1) hB
-    (by have := slot_sep (n := n) ha1; simp only [contextMod, stride] at *; omega)
-    (by have := slot_sep (n := n) hb1; simp only [contextMod, stride] at *; omega)
-    (by have := slot_header n 1; simp only [contextMod]; omega)) fun t ⟨K, lt, V⟩ => ?_
+    (by have := slot_sep (n := n) ha1; simp only [contextMod, stride] at *; omega_using [this])
+    (by have := slot_sep (n := n) hb1; simp only [contextMod, stride] at *; omega_using [this])
+    (by have := slot_header n 1; simp only [contextMod]; omega_using [this])) fun t ⟨K, lt, V⟩ => ?_
   exact ⟨h.keep ho0 K, K, lt, V⟩
 
 end VG.Proof.Mont.X86.Dynamic

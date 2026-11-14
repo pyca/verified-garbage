@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA: bit packing as numbers, for every target
@@ -65,7 +66,7 @@ theorem fieldBits_getD {d : Nat} (hd : 0 < d) (L : List Nat) (p : Nat) :
 theorem pack_length (d : Nat) (L : List Nat) (hL : L.length = 256) :
     (bitsToBytes (fieldBits d L)).length = 32 * d := by
   simp only [bitsToBytes, List.length_map, List.length_range, fieldBits_size, hL]
-  omega
+  omega_using []
 
 /-- Byte `k` of the packing of `L` is byte `k` of the number whose
 base-`2ᵈ` digits are `L`. -/
@@ -92,7 +93,7 @@ theorem pack_group {d c nb : Nat} (hd : 0 < d) (hdc : d * c = 8 * nb) {L : List 
     rw [Nat.mul_add, ← Nat.mul_assoc, ← Nat.mul_assoc, hdc]
   rw [pack_getElem hd hL hF hk, hx, Nat.pow_add, ← Nat.div_div_eq_div_mul,
     ← ofNat8_mod (_ / 2 ^ (8 * t)), ← ofNat8_mod (digits d _ / 2 ^ (8 * t)), ← digits_chunk hF,
-    show (256 : Nat) = 2 ^ 8 from rfl, mod_pow_div_mod _ (show 8 * t + 8 ≤ d * c by omega)]
+    show (256 : Nat) = 2 ^ 8 from rfl, mod_pow_div_mod _ (show 8 * t + 8 ≤ d * c by omega_using [hdc, ht])]
 
 theorem simpleBitPack_eq (w : Vector Nat n) (b : Nat) :
     simpleBitPack w b = bitsToBytes (fieldBits (bitlen b) w.toList) := rfl
@@ -106,7 +107,7 @@ theorem bitPack_eq (w : IPoly) (a b : Nat) :
 private theorem sum_map_two_mul (g : Nat → Nat) :
     ∀ l : List Nat, (l.map fun x => 2 * g x).sum = 2 * (l.map g).sum
   | [] => rfl
-  | a :: l => by rw [List.map_cons, List.map_cons, List.sum_cons, List.sum_cons, sum_map_two_mul g l]; omega
+  | a :: l => by rw [List.map_cons, List.map_cons, List.sum_cons, List.sum_cons, sum_map_two_mul g l]; omega_using []
 
 /-- `BitsToInteger` of `c` bits. -/
 theorem bitsToInteger_range (f : Nat → Bool) :

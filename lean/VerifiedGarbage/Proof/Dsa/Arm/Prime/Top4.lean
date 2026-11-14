@@ -25,7 +25,7 @@ theorem rS_eq (h : CIn bits s) :
   have := h.fw; have := h.size
   have : 0 < keyWords bits := by simp [keyWords, Spec.Rsa.scratchWords]
   show (⟨State.addr (s.gpr .r0 + BitVec.ofNat 32 keyOff), keyWords bits * 8⟩ : Region) = _
-  rw [addr_add (by simp only [keyOff] at *; omega)]
+  rw [addr_add (by simp only [keyOff] at *; omega_arith)]
 
 theorem rC_eq (h : CIn bits s) : (mkP bits s).rC = ⟨fB s + BitVec.ofNat 64 0, 56⟩ := by
   show (⟨State.addr (s.sp - BitVec.ofNat 32 88 - BitVec.ofNat 32 56), 56⟩ : Region) = _

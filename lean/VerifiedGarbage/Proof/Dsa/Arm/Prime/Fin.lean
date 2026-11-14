@@ -82,7 +82,7 @@ theorem finish_vp {r : Nat} {u : State → Nat}
     refine wp_str (a := State.addr P.uP) (by decide) (by rw [p2, BitVec.add_zero]) wa fun s1 m1 => ?_
     refine wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
     refine wp_str (a := State.addr P.uP + BitVec.ofNat 64 4) (by decide)
-      (by rw [u2.other _ (by decide), m1.gpr, p2]; exact addr_add (by omega)) (by rw [u2.wr, m1.wr]; exact wb)
+      (by rw [u2.other _ (by decide), m1.gpr, p2]; exact addr_add (by omega_using [fU])) (by rw [u2.wr, m1.wr]; exact wb)
       fun s3 m3 => ?_
     refine wp_mov (op2_imm henc) fun t u4 => WP.block_nil ?_
     have mt : t.mem = s.mem.writeW (State.addr P.uP) (0#32 ++ BitVec.ofNat 32 (u σ)) := by
@@ -101,7 +101,7 @@ theorem finish_vp {r : Nat} {u : State → Nat}
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hu]
       simp
-      omega
+      omega_using [hu]
 
 /-- The status from Miller–Rabin's result. -/
 def statS : Option (Bool × Spec.RsaKeyGen.Rand) → Nat
@@ -194,7 +194,7 @@ theorem mrResult_vp (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
     obtain ⟨b, rest, hq⟩ : ∃ b rest, resQ P = some (b, rest) := by
       revert hs0; rcases resQ P with _ | ⟨b, rest⟩ <;> simp [statS]
     have hul : ∀ σ, E σ → usedQ P σ < 2 ^ 32 := fun σ e => by
-      rw [usedQ_some (hE σ e).1 hq]; have := (hE σ e).1.rlt; omega
+      rw [usedQ_some (hE σ e).1 hq]; have := (hE σ e).1.rlt; omega_using [this]
     have hus : ∀ σ, E σ → usedD P σ = usedQ P σ := fun σ e => by
       rw [hu σ e, hq, usedQ_some (hE σ e).1 hq]
     refine VP.seq (usedCmp_vp.mono (fun σ s h => h.1.1) fun _ _ h => h) ?_
@@ -230,7 +230,7 @@ theorem composite_vp (hE : ∀ σ, E σ → In P σ ∧ compv P σ = true) :
     have sz := pre.sizes
     obtain ⟨hodd, hlo, -⟩ := cv_shape (σ := σ) pre
     have h3 : 3 < cv P σ := by
-      have : 2 ^ 2 ≤ 2 ^ (P.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+      have : 2 ^ 2 ≤ 2 ^ (P.bits - 1) := Nat.pow_le_pow_right (by decide) (by omega_using [sz])
       omega
     unfold res
     rw [VG.Proof.Dsa.Generation.probablePrime_large h3 hodd, pre.bl]

@@ -14,7 +14,7 @@ open VG VG.Proof.Dsa
 theorem encodeParams_length (pLen qLen : Nat) (a : Spec.Dsa.Params) :
     (Spec.Dsa.encodeParams pLen qLen a).length = 2 * pLen + qLen := by
   simp only [Spec.Dsa.encodeParams, List.length_append, encodeBE_length]
-  omega
+  omega_using []
 
 theorem paramsBytes_encodeParams {pLen qLen : Nat} {a : Spec.Dsa.Params}
     (hp : a.p < 256 ^ pLen) (hq : a.q < 256 ^ qLen) (hg : a.g < 256 ^ pLen) :

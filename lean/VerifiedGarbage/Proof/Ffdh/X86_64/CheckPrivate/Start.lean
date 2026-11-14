@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import Aesop.BuiltinRules
-
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Entry
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -18,6 +18,92 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+
+/-! ### `Ffdh.X86_64.CheckPrivate.Entry`, which only this module used -/
+
+section
+
+/-! # FFDH public-key validation on x86-64: save the arguments and ABI registers -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.CheckPrivate
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Rsa.X86_64.Crt (ws)
+open VG.Impl.Ffdh.X86_64.Domain
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+private def entryMem (s : State) (B : Addr) : Mem :=
+  ((((((((((((s.mem.writeW (off B (8 * 0)) (s.gpr .rbx)).writeW (off B (8 * 1)) (s.gpr .rbp)).writeW (off B (8 * 2)) (s.gpr .r12)).writeW (off B (8 * 3)) (s.gpr .r13)).writeW (off B (8 * 4)) (s.gpr .r14)).writeW (off B (8 * 5)) (s.gpr .r15)).writeW (off B (8 * sDom)) (s.gpr .rdi)).writeW (off B (8 * sDomLen)) (s.gpr .rsi)).writeW (off B (8 * sK)) (s.gpr .rdx)).writeW (off B (8 * sY)) (s.gpr .rcx)).writeW (off B (8 * sX)) (s.gpr .r9)).writeW (off B (8 * sXl)) (stackArg s 0))
+
+private theorem entryMem_facts (s : State) (B : Addr) :
+    let m := entryMem s B
+    word m B (8 * 0) = s.gpr .rbx ∧
+    word m B (8 * 1) = s.gpr .rbp ∧
+    word m B (8 * 2) = s.gpr .r12 ∧
+    word m B (8 * 3) = s.gpr .r13 ∧
+    word m B (8 * 4) = s.gpr .r14 ∧
+    word m B (8 * 5) = s.gpr .r15 ∧
+    word m B (8 * sDom) = s.gpr .rdi ∧
+    word m B (8 * sDomLen) = s.gpr .rsi ∧
+    word m B (8 * sK) = s.gpr .rdx ∧
+    word m B (8 * sY) = s.gpr .rcx ∧
+    word m B (8 * sX) = s.gpr .r9 ∧
+    word m B (8 * sXl) = stackArg s 0 ∧ Outside B 0 (8 * 22) s.mem m := by
+  intro m
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> unfold m entryMem
+  all_goals first
+    | (repeat (first | refine word_skip ?_ (by decide) (by decide) (by decide) |
+        exact word_writeW_self _ _ _ _)); done
+    | (repeat (first | exact Outside.refl _ _ _ _ | refine Outside.store_hdr ?_ (by decide) (by decide) _))
+
+theorem kpEntry_ok {s : State} {B : Addr} (hB : stackArg s 1 = B)
+    (hw : ∀ i < 22, InRegions s.wr (off B (8 * i)) 8)
+    (ha : ∀ i < 3, InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8) :
+    WP isa (.block VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.entry) s fun t => t.gpr .rdi = B ∧
+      (∀ i < 6, word t.mem B (8 * i) = s.gpr (saved.getD i .rax)) ∧
+      Slots t.mem B [(sDom, s.gpr .rdi), (sDomLen, s.gpr .rsi), (sK, s.gpr .rdx),
+        (sY, s.gpr .rcx), (sX, s.gpr .r9), (sXl, stackArg s 0)] ∧
+      Outside B 0 (8 * 22) s.mem t.mem ∧ Keep [.rax, .r10, .rdi] s t := by
+  have hB' : s.mem.readW (off (s.gpr .rsp) (8 * 2)) 64 = B := hB
+  refine WP.mono (WP.keep [.rax, .r10, .rdi] (Q := fun t => t.gpr .rdi = B ∧ t.mem = entryMem s B)
+    (by
+      unfold VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.entry save
+      simp only [saved, List.zipIdx_cons, List.zipIdx_nil, List.map_cons, List.map_nil,
+        List.cons_append, List.nil_append]
+      dsimp only [VG.Impl.Rsa.X86_64.Crt.stk, stackArgAddr] at ha ⊢
+      xrun [State.ea, ws, hdrOff, stackArg, stackArgAddr, hB',
+        hw 0 (by decide),
+        hw 1 (by decide),
+        hw 2 (by decide),
+        hw 3 (by decide),
+        hw 4 (by decide),
+        hw 5 (by decide),
+        hw sDom (by decide),
+        hw sDomLen (by decide),
+        hw sK (by decide),
+        hw sY (by decide),
+        hw sX (by decide),
+        hw sXl (by decide), ha 1 (by decide), ha 0 (by decide)]; rfl) rfl)
+    fun t ⟨⟨hdi, hm⟩, k⟩ => ?_
+  obtain ⟨h0, h1, h2, h3, h4, h5, hD, hL, hK, hY, hX, hXl, ho⟩ := entryMem_facts s B
+  rw [← hm] at h0 h1 h2 h3 h4 h5 hD hL hK hY hX hXl ho
+  refine ⟨hdi, ?_, ?_, ho, k⟩
+  · intro i hi
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [h0, h1, h2, h3, h4, h5]
+  · intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [hD, hL, hK, hY, hX, hXl]
+
+end VG.Proof.Ffdh.X86_64.CheckPrivate
+
+end
+
+end
+
 /-! # FFDH private-key validation on x86-64: entry and modulus validation -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/CheckPrivate/Context.lean`, which only this module imported.
@@ -50,17 +136,17 @@ theorem kpCtx_of {s : State} (h : kpPre s) : KpCtx s := by
   obtain ⟨hsp, hrd, hwr, dds, dys, dxs, _, wD, wY, wX, wS,
     _, _, _, _, _, ⟨hk1, hk2⟩, hdl, hyl, hxl1, hxl2, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
-  refine ⟨hk1, hk2, hdl, hyl, by omega, Scr.of_mem (by rw [hwr]; simp) wS,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    src_of_region (by rw [hrd]; simp) (by omega) dys, hxl1, hxl2,
-    src_of_region (by rw [hrd]; simp) (by omega) dxs, ?_⟩
+  refine ⟨hk1, hk2, hdl, hyl, by omega_using [hsl], Scr.of_mem (by rw [hwr]; simp) wS,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dds,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dys, hxl1, hxl2,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dxs, ?_⟩
   intro i hi
   refine ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp, ?_⟩
   rw [show stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) by
     simp only [stackArgAddr, Nat.zero_add, Nat.mul_one, Offset.add_add]
     congr 2
-    omega]
-  exact Offset.contains_base _ (by omega) (by omega)
+    omega_using []]
+  exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])
 
 end VG.Proof.Ffdh.X86_64.CheckPrivate
 end
@@ -88,9 +174,9 @@ theorem entry_base {s : State} (c : KpCtx s) :
       Keep (.rdi :: mmRegs) s t := by
   have hZ := c.hZ
   have hk := c.k1
-  refine WP.mono (kpEntry_ok rfl (fun i hi => c.hs.st (by omega)) c.ha)
+  refine WP.mono (kpEntry_ok rfl (fun i hi => c.hs.st (by omega_using [hZ, hi])) c.ha)
     fun t ⟨hd, hs, hh, hf, k⟩ => ?_
-  have hi : InScr (kpOf s).B (kpOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [kpOf]; omega)
+  have hi : InScr (kpOf s).B (kpOf s).Z s.mem t.mem := InScr.of_outside hf (by dsimp only [kpOf]; omega_using [hZ])
   refine ⟨⟨c.k1, c.k2, c.dl, bytesAt_length _ _ _, ?_, bytesAt_length _ _ _,
     c.xl1, c.xl2, c.hZ, c.hs.congr k.2.2, c.dom.congrK hi k, c.x.congrK hi k, c.y.congrK hi k,
     ?_, rfl⟩, hd, hi, hs, k.mono (by decide)⟩
@@ -108,24 +194,24 @@ theorem dom_base {p : KpP} {xb : List Byte} {s : State} (h : Base p xb s) (hdi :
       (∀ i < 6, word t.mem p.B (8 * i) = word s.mem p.B (8 * i)) ∧ Keep (.rdi :: mmRegs) s t := by
   have hZ := h.hZ
   have hk := h.k1
-  refine WP.mono (domHead_ok h.scr hdi (by omega) h.k1 h.k2
+  refine WP.mono (domHead_ok h.scr hdi (by omega_using [hZ]) h.k1 h.k2
     (h.hdr (sDom, p.dp) (by simp [KpP.headers]))
     (h.hdr (sK, BitVec.ofNat 64 p.k) (by simp [KpP.headers])) (h.dom.take p.k) h.plen)
     fun t ⟨hz, hG, hQ, hf, hd, k⟩ => ?_
   have hi : InScr p.B p.Z s.mem t.mem := InScr.of_frm hf (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega)
+    rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_using [hZ])
   have hh : ∀ i < 32, i ≠ sG → i ≠ sQ → word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
     fun i hi hg hq => hf.word_eq (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega) (by omega)
+      rintro r (rfl | rfl) <;> simp only <;> unfold sG sQ sFn at * <;> omega_arith) (by omega_using [hi])
   refine ⟨h.keep hi k ?_, hz, hd, hG, hQ, hi, ?_, k.mono (by decide)⟩
   · intro e he
     simp only [KpP.headers, List.mem_cons, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact hh _ (by dsimp only; decide) (by dsimp only; decide) (by dsimp only; decide)
   · intro i hi
-    exact hh i (by omega) (by unfold sG sFn; omega) (by unfold sQ sFn; omega)
+    exact hh i (by omega_using [hi]) (by unfold sG sFn; omega_using [hi]) (by unfold sQ sFn; omega_using [hi])
 
 /-- Setup and load the private scalar, preserving the domain's pointers. -/
 theorem setup_work {p : KpP} {xb : List Byte} {s : State} (h : Base p xb s) (hd : s.gpr .rdi = p.B)
@@ -136,7 +222,7 @@ theorem setup_work {p : KpP} {xb : List Byte} {s : State} (h : Base p xb s) (hd 
       (StepPost p s fun t => ∃ mi, Work p xb mi t ∧ t.gpr .rdi = off p.B (inner p.w)) := by
   have hk := h.k1
   have hk' := h.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
   obtain ⟨hodd, _⟩ := valid_facts hm hk
   refine wp_seqs_append (by simp [pSetup]) (by simp [VG.Impl.Rsa.X86_64.Crt.loadArr])
     (WP.mono (setup_ok (B := p.B) (Z := p.Z) (k := p.k) (dp := p.dp) (pb := p.pb) h.scr hd hk hk' h.hZ
@@ -149,22 +235,22 @@ theorem setup_work {p : KpP} {xb : List Byte} {s : State} (h : Base p xb s) (hd 
   have hQu : word u.mem p.B (8 * sQ) = off p.dp (2 * p.k) := by
     rw [hhead _ (by decide) (by decide) (by decide) (by decide)]; exact hQ
   have hxl := hb.xl2
-  refine WP.mono (primeLoad_ok hc (by omega) (Nat.le_refl _) (by omega) (show aXm < 8 by decide)
+  refine WP.mono (primeLoad_ok hc (by omega_using [hk]) (Nat.le_refl _) (by omega_using [hk']) (show aXm < 8 by decide)
     (show sX < 32 by decide) (show sXl < 32 by decide)
     (hb.hdr (sX, p.xp) (by simp [KpP.headers]))
     (by rw [hb.xlen]; exact hb.hdr (sXl, BitVec.ofNat 64 p.xl) (by simp [KpP.headers])) hb.x
-    (by rw [hb.xlen]; exact hb.xl1) (by rw [hb.xlen]; omega)
-    (by rw [hb.xlen]; omega)) fun t ⟨hc', hx, ho, kk⟩ => ?_
+    (by rw [hb.xlen]; exact hb.xl1) (by rw [hb.xlen]; omega_using [hk', hxl])
+    (by rw [hb.xlen]; omega_using [hxl])) fun t ⟨hc', hx, ho, kk⟩ => ?_
   have ff : Frm (off p.B (inner p.w)) [(slot p.w aXm, 8 * (p.w + 2))] u.mem t.mem := Frm.of_outside ho (by simp)
   have hXmle := slot_le (w := p.w) (show aXm < 8 by decide)
   have hr : ∀ r ∈ [(slot p.w aXm, 8 * (p.w + 2))], r.1 + r.2 ≤ slot p.w 8 + tabBytes p.w 32 := by
-    simp only [List.mem_singleton]; rintro r rfl; omega
+    simp only [List.mem_singleton]; rintro r rfl; omega_using [hXmle]
   obtain ⟨hb', hi', hs'⟩ := hb.child hc ff hr kk
   have hroom := room_k hk h.hZ
   change inner p.w + slot p.w 8 + tabBytes p.w 32 ≤ p.Z at hroom
   obtain ⟨hh', _⟩ := child_frm hc hroom ff hr
   have hn := hc.good.scr.nowrap
-  have hv' := hv.of_frmA hn (show 1 ≤ p.w by omega) ff (fun r hr => by
+  have hv' := hv.of_frmA hn (show 1 ≤ p.w by omega_using [hk, ew]) ff (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact arr_off p.w (by decide) (by decide))
   exact ⟨⟨mi, ⟨hb', hc'.toMem, hv', (hh' _ (by decide)).trans hWs,
     (hh' _ (by decide)).trans hGu, (hh' _ (by decide)).trans hQu, hx⟩, hc'.rdi⟩,

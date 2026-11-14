@@ -60,7 +60,7 @@ theorem gRho_trL : RelCT isa (LRel kgR (kgW L)) (gRho L) fun _ _ => True := by
   unfold gRho
   refine RelCT.seq (LRel.step (kgB_bases L) (taintRel [.rbx] (fun x y h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.eq (p := sc 0) (l := 1) W.inBs.1) W.nbT)
-    fun x Lx => WP.mono (setB_okL Lx (by decide) (by have := W.k; omega) (p := sc oNB) (v := L.k) W.nb)
+    fun x Lx => WP.mono (setB_okL Lx (by decide) (by have := W.k; omega_using [this]) (p := sc oNB) (v := L.k) W.nb)
       fun _ h => ⟨_, h.1⟩) (RelCT.seq (LRel.step (kgB_bases L) (hash_tr (kgB_bases L)
         (ps := [((.rbp, 0), 32), (sc oNB, 1)]) (rate := 72) (out := sc oG) (len := 64) W.gH (show 6 < 256 by decide))
     fun x Lx => WP.mono (hash_ok (kgB_bases L) (ps := [((.rbp, 0), 32), (sc oNB, 1)]) (rate := 72) (out := sc oG)
@@ -113,7 +113,7 @@ theorem sample_tr {e : Nat} (he : e < L.k * L.k) (he' : 4 * (L.k * L.k / 4) ≤ 
   have hc := W.kb e he he'
   simp only [kbChk, Bool.and_eq_true] at hc
   have hk := W.k
-  exact rel2_of (sampleIJ_tr (kgB_bases L) rbx_na (by have := div_lt_k he; omega) (by have := mod_lt_k he; omega)
+  exact rel2_of (sampleIJ_tr (kgB_bases L) rbx_na (by have := div_lt_k he; omega_using [hk, this]) (by have := mod_lt_k he; omega_using [hk, this])
       hc.1.1.1.1.1 (W.ijT e he))
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.a.kc h₂.a.kc, by rw [h₁.a.sb, h₂.a.sb]; exact rho_pub pub⟩
 
@@ -124,9 +124,9 @@ theorem quad_trK (v : Sample4Impl) {q : Nat} (hq : q < L.k * L.k / 4) :
   simp only [kqChk, Bool.and_eq_true] at hc
   have hk := W.k
   have h16 : L.k * L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2
-  exact rel2_of (RelCT.exists_ fun ρ => quad_tr (ρ := ρ) v (kgB_bases L) (by omega)
-      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < L.k * L.k by omega); omega,
-        by have := mod_lt_k (show 4 * q + t < L.k * L.k by omega); omega⟩) hc.1.1.1.1.1)
+  exact rel2_of (RelCT.exists_ fun ρ => quad_tr (ρ := ρ) v (kgB_bases L) (by omega_using [hq, h16])
+      (fun t ht => ⟨by have := div_lt_k (show 4 * q + t < L.k * L.k by omega_using [hq, ht]); omega_using [hk, this],
+        by have := mod_lt_k (show 4 * q + t < L.k * L.k by omega_using [hq, ht]); omega_using [hk, this]⟩) hc.1.1.1.1.1)
     fun σ₁ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨KPke.kgRho L.p (kgD σ₁), kc_lrel W p₁ p₂ pub h₁.a.kc h₂.a.kc,
       ⟨h₁.a.sb, fun _ h => absurd h (Nat.not_lt_zero _)⟩,
       ⟨h₂.a.sb.trans (rho_pub pub).symm, fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
@@ -144,7 +144,7 @@ theorem prfs_trK (v : Sample4Impl) :
       fun _ _ => True := by
   have hc := W.prfs
   simp only [prfsKChk, Bool.and_eq_true] at hc
-  exact rel2_of (v.prfs_tr (kgB_bases L) (by have := W.k; omega) hc.1.1.1.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+  exact rel2_of (v.prfs_tr (kgB_bases L) (by have := W.k; omega_using [this]) hc.1.1.1.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
     kc_lrel W p₁ p₂ pub h₁.kc h₂.kc
 
 theorem se_tr {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2 * L.k) :
@@ -161,9 +161,9 @@ theorem kgm_tr {A : Arith} (hA : ArithOk A) :
       (L.kgMulAt A (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ)) fun _ _ => True := by
   have red : ∀ {σ s : State}, KRest L (2 * L.k) 0 0 σ s → VecReduced s.mem (pa s (pS 0)) L.k ∧
       VecReduced s.mem (pa s (pS L.pA)) (L.k * L.k) ∧ VecReduced s.mem (pa s (pS L.k)) L.k := fun h =>
-    ⟨fun j hj => by rw [pS_add, Nat.zero_add]; exact (h.se j (by omega)).1,
+    ⟨fun j hj => by rw [pS_add, Nat.zero_add]; exact (h.se j (by omega_using [hj])).1,
       fun e he => by rw [pS_add]; exact (h.mat e he).1,
-      fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega)).1⟩
+      fun i hi => by rw [pS_add]; exact (h.se (L.k + i) (by omega_using [hi])).1⟩
   exact rel2_of (kgMulAt_trL hA W.k34 rbx_na rbx_na rbx_na rbx_na W.km) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
     ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, red h₁, red h₂⟩
 

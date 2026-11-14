@@ -44,10 +44,10 @@ theorem St.pnotAdd (cert : Cert (.block (notS sBit sBit ++ ([.ldr .r2 .r8 sTc, .
     have v2 : s2.gpr .r1 = BitVec.ofNat 32 (1 - V σ sBit) := by
       rw [u2.gpr, dpVal, u1.gpr]
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_xor, ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)]
-      rcases (by omega : V σ sBit = 0 ∨ V σ sBit = 1) with h0 | h0 <;> rw [h0] <;> decide
+      rw [BitVec.toNat_xor, ofNat_toNat_lt (by omega_using [b]), ofNat_toNat_lt (by omega_using [])]
+      rcases (by omega_using [b] : V σ sBit = 0 ∨ V σ sBit = 1) with h0 | h0 <;> rw [h0] <;> decide
     refine h2.str hw2 (d := sBit) (by decide) fun s3 h3 hw3 m3 => ?_
-    rw [v2, ofNat_toNat_lt (by omega)] at h3
+    rw [v2, ofNat_toNat_lt (by omega_using [])] at h3
     refine h3.ldr hw3 (List.mem_cons_of_mem _ ht) (r := .r2) (by decide) fun s4 h4 hw4 u4 => ?_
     refine wp_dp (op2_reg _ _) fun s5 u5 => ?_
     have h5 := h4.of_rest (u5.rest (ws := [.r2]) (by simp)) u5.mem
@@ -55,8 +55,8 @@ theorem St.pnotAdd (cert : Cert (.block (notS sBit sBit ++ ([.ldr .r2 .r8 sTc, .
     refine h5.str hw5 (d := sTc) (by decide) fun t ht' hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
     have v5 : (s5.gpr .r2).toNat = V σ sTc + (1 - V σ sBit) := by
       rw [u5.gpr, dpVal, u4.gpr, u4.other _ (by decide), m3.gpr, v2, upd_ne _ _ (by decide),
-        BitVec.toNat_add, ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)]
-      omega
+        BitVec.toNat_add, ofNat_toNat_lt (by omega_using [l]), ofNat_toNat_lt (by omega_using [])]
+      omega_using [l]
     rw [v5] at ht'
     exact ht'
 
@@ -76,16 +76,16 @@ theorem St.pcntNext (cert : Cert (.block cntNext)) (hc : sCnt ∈ LS)
     have v2 : s2.gpr .r1 = BitVec.ofNat 32 (V σ sCnt - 1) := by
       rw [u2.gpr, u1.gpr]
       apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_sub, ofNat_toNat_lt (by omega), ofNat_toNat_lt (by omega)]
+      rw [BitVec.toNat_sub, ofNat_toNat_lt (by omega_using [p]), ofNat_toNat_lt (by omega_using [p])]
       simp only [show (1 : BitVec 32).toNat = 1 from rfl]
-      omega
+      omega_using [p]
     refine h2.strz hw2 (d := sCnt) (by decide) fun t ht hwt zt => WP.block_nil ⟨⟨e, ?_, hwt⟩, ?_⟩
-    · rwa [v2, ofNat_toNat_lt (by omega)] at ht
+    · rwa [v2, ofNat_toNat_lt (by omega_using [p])] at ht
     · rw [zt, z2, ← u2.gpr, v2]
       by_cases h0 : V σ sCnt - 1 = 0
       · simp [h0]
       · have : BitVec.ofNat 32 (V σ sCnt - 1) ≠ 0 := fun e' => h0 (by
-          have := congrArg BitVec.toNat e'; rw [ofNat_toNat_lt (by omega)] at this; simpa using this)
+          have := congrArg BitVec.toNat e'; rw [ofNat_toNat_lt (by omega_using [p])] at this; simpa using this)
         simpa [h0] using this
 
 end

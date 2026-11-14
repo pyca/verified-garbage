@@ -26,9 +26,9 @@ theorem outside_return {s t : State} {base : Addr} {size : Nat}
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
   apply Mem.readW_congr
   intro i hi
-  have H := apart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega) (by omega))
+  have H := apart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   change ¬ (ofs base ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ size) at H
-  exact O _ (by omega) (return_stack_disjoint hsp _ (Offset.contains_base _ (by omega) (by omega)))
+  exact O _ (by omega_using [H]) (return_stack_disjoint hsp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])))
 
 theorem outputFrame_return {s t : State} {base out : Addr} {size len : Nat}
     (O : StackOutputFrame (s.gpr .esp) base out size len s.mem t.mem)
@@ -37,11 +37,11 @@ theorem outputFrame_return {s t : State} {base out : Addr} {size len : Nat}
     t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
   apply Mem.readW_congr
   intro i hi
-  have W := scratchApart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega) (by omega))
-  have B := outApart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega) (by omega))
+  have W := scratchApart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
+  have B := outApart ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
   change ¬ (ofs base ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ size) at W
   change ¬ (ofs out ((s.gpr .esp).setWidth 64 + BitVec.ofNat 64 i) + 1 ≤ len) at B
-  exact O _ (by omega) (by omega) (return_stack_disjoint hsp _ (Offset.contains_base _ (by omega) (by omega)))
+  exact O _ (by omega_using [W]) (by omega_using [B]) (return_stack_disjoint hsp _ (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])))
 
 theorem restored_abi {s t u : State} (R : Restored t u s.gpr Entry.savedRegisters)
     (sp : t.gpr .esp = s.gpr .esp)

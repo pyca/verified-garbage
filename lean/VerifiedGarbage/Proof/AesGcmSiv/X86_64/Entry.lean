@@ -68,7 +68,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
   have w₁₁ := P.wW (show 232 + 8 ≤ 3816 by decide)
   have w₁₂ := P.wW (show 240 + 8 ≤ 3816 by decide)
   have cE : ∀ d, 144 ≤ d → d + 8 ≤ 248 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun d h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+    fun d h₁ h₂ => Offset.contains W h₁ (by omega_using [h₂]) (by decide)
   refine ⟨_, by srun [entry, save, saved, List.map_cons, List.map_nil, hW, hsp, hn, a₈, a₂₄, w₁, w₂, w₃, w₄,
       w₅, w₆, w₇, w₈, w₉, w₁₀, w₁₁, w₁₂], ⟨?_, ?_, ?_, ?_⟩, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, hdi]
@@ -237,7 +237,7 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : 
     (hd : ∀ r ∈ rs, (⟨K, 240⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.GcmSiv.ctxCiph m' K R = Spec.GcmSiv.ctxCiph m K R := by
   unfold Spec.GcmSiv.ctxCiph
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega_using [hR])]
 
 section
 variable {K W SP N A D : Addr} {R al n : Nat} {m m' : Mem}
@@ -324,7 +324,7 @@ open VG.Proof.AesGcm.X86_64 (CtrCall GhCall KeyCall covers_left covers_cons cove
 
 theorem toNat_W {W : Addr} (hw : W.toNat + 3816 ≤ 2 ^ 64) {d : Nat} (hd : d < 3816) :
     (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hw, hd])]
 
 /-- Data for a call: `k` bytes at `Q`, which the code may read, apart from
 the working spaces at `W + 1512` and the stack below `SP`. -/
@@ -337,10 +337,10 @@ structure Src (W SP : Addr) (s : State) (Q : Addr) (k : Nat) : Prop where
 /-- Bytes of `W` below 1512 as data. -/
 theorem srcW {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) {t k : Nat} (hk : t + k ≤ 1512) :
     Src W SP s (W + BitVec.ofNat 64 t) k where
-  rd := P.wCR (by omega)
-  wrap := by rw [toNat_W L.ww (by omega)]; have := L.ww; omega
-  qs := L.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := L.stk_w' (by omega)
+  rd := P.wCR (by omega_using [hk])
+  wrap := by rw [toNat_W L.ww (by omega_using [hk])]; have := L.ww; omega_using [hk, this]
+  qs := L.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
+  stk := L.stk_w' (by omega_using [hk])
 
 /-- A key schedule for `vg_aes_ctr32`, apart from the blocks of `W` below
 248 and the working space at `W + 1768`. -/
@@ -372,21 +372,21 @@ theorem cargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R
   rcx := rcx
   r8 := r8
   r9 := r9
-  rounds := by omega
+  rounds := by omega_using [hR]
   wrap := hq.wrap
   kc := hk.lo.sub_right (Offset.sub_base W hc)
   kd := hqk
   ks := hk.hi
   cd := hqc.symm
-  cs := L.w_w (.inl (by omega)) (by omega) (by decide)
+  cs := L.w_w (.inl (by omega_using [hc])) (by omega_using [hc]) (by decide)
   ds := hq.qs.sub_right (Offset.sub W (by decide) (by decide))
   stkK := by rw [E.rsp]; exact hk.stk
-  stkC := by rw [E.rsp]; exact L.stk_w' (by omega)
+  stkC := by rw [E.rsp]; exact L.stk_w' (by omega_using [hc])
   stkD := by rw [E.rsp]; exact hq.stk
   stkS := by rw [E.rsp]; exact L.stk_w' (by decide)
   reads := covers_append (covers_cons hk.rd covers_nil)
-    (covers_cons (E.perm.wCR (by omega)) (covers_cons hq.rd (covers_cons (E.perm.wCR (by decide)) covers_nil)))
-  writes := covers_cons (E.perm.wC (by omega)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
+    (covers_cons (E.perm.wCR (by omega_using [hc])) (covers_cons hq.rd (covers_cons (E.perm.wCR (by decide)) covers_nil)))
+  writes := covers_cons (E.perm.wC (by omega_using [hc])) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
 
 /-- The arguments of `vg_ghash`: GHASH's key at `W + 64`, its accumulator at
 `W + 80`, `n` blocks at `W + d` and the working space at `W + 1512`. -/
@@ -400,17 +400,17 @@ theorem gargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {d
   rdx := rdx
   rcx := rcx
   r8 := r8
-  n_lt := by omega
+  n_lt := by omega_using [hdn]
   hy := L.w_w (.inl (by decide)) (by decide) (by decide)
   hs := L.w_w (.inl (by decide)) (by decide) (by decide)
-  yd := L.w_w (.inl (by omega)) (by decide) (by omega)
+  yd := L.w_w (.inl (by omega_using [hd])) (by decide) (by omega_using [hdn])
   ys := L.w_w (.inl (by decide)) (by decide) (by decide)
-  ds := L.w_w (.inl (by omega)) (by omega) (by decide)
+  ds := L.w_w (.inl (by omega_using [hdn])) (by omega_using [hdn]) (by decide)
   stkH := by rw [E.rsp]; exact L.stk_w' (by decide)
   stkY := by rw [E.rsp]; exact L.stk_w' (by decide)
-  stkD := by rw [E.rsp]; exact L.stk_w' (by omega)
+  stkD := by rw [E.rsp]; exact L.stk_w' (by omega_using [hdn])
   stkS := by rw [E.rsp]; exact L.stk_w' (by decide)
-  reads := covers_append (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by omega)) covers_nil))
+  reads := covers_append (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by omega_using [hdn])) covers_nil))
     (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by decide)) covers_nil))
   writes := covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 
@@ -424,14 +424,14 @@ theorem kargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {l
   rsi := rsi
   rdx := rdx
   rcx := rcx
-  len := by omega
-  kc := L.w_w (.inl (by omega)) (by omega) (by decide)
-  ks := L.w_w (.inl (by omega)) (by omega) (by decide)
+  len := by omega_using [hl]
+  kc := L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
+  ks := L.w_w (.inl (by omega_using [hl])) (by omega_using [hl]) (by decide)
   cs := L.w_w (.inl (by decide)) (by decide) (by decide)
-  stkK := by rw [E.rsp]; exact L.stk_w' (by omega)
+  stkK := by rw [E.rsp]; exact L.stk_w' (by omega_using [hl])
   stkC := by rw [E.rsp]; exact L.stk_w' (by decide)
   stkS := by rw [E.rsp]; exact L.stk_w' (by decide)
-  reads := covers_append (covers_cons (E.perm.wCR (by omega)) covers_nil)
+  reads := covers_append (covers_cons (E.perm.wCR (by omega_using [hl])) covers_nil)
     (covers_cons (E.perm.wCR (by decide)) (covers_cons (E.perm.wCR (by decide)) covers_nil))
   writes := covers_cons (E.perm.wC (by decide)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 

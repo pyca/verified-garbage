@@ -23,11 +23,11 @@ theorem framed_ok (body : Prog isa) (s : State) (stackFit : 128 ≤ s.sp.toNat)
       Spill.Saved u.mem (State.addr (pcPushed s).sp) s.gpr pcCalleeSaved)
     (body_ok : WP isa body (entered s) fun u => Frame written (entered s).mem u.mem ∧ Q u.mem (u.gpr .r0)) :
     WP isa (VG.Impl.Ffdh.Arm.framed body) s fun t => abiPreserved s t ∧ Q t.mem (t.gpr .r0) := by
-  have pushFit : 56 ≤ s.sp.toNat := by omega
+  have pushFit : 56 ≤ s.sp.toNat := by omega_using [stackFit]
   have allocFit : 72 ≤ (pcPushed s).sp.toNat := by
     change 72 ≤ (s.sp - BitVec.ofNat 32 56).toNat
     rw [FrameStack.sub_toNat' pushFit]
-    omega
+    omega_using [stackFit]
   obtain ⟨tr, u, run, frame, result⟩ := body_ok
   have perms := VG.Arm.Exec.rdwr run
   unfold VG.Impl.Ffdh.Arm.framed
@@ -48,7 +48,7 @@ theorem framed_ok (body : Prog isa) (s : State) (stackFit : 128 ≤ s.sp.toNat)
     change (s.sp - BitVec.ofNat 32 56).toNat + 56 ≤ 2 ^ 32
     rw [FrameStack.sub_toNat' pushFit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have read : InRegions ((freed 72 u).rd ++ (freed 72 u).wr) (State.addr (freed 72 u).sp) 56 := by
     refine ⟨⟨State.addr (freed 72 u).sp, 56⟩, List.mem_append_right _ ?_, Region.contains_self _ _⟩
     rw [wrU, spU]
@@ -86,7 +86,7 @@ theorem framed_of_separate (body : Prog isa) (s : State) (stackFit : 128 ≤ s.s
     WP isa (VG.Impl.Ffdh.Arm.framed body) s fun t => abiPreserved s t ∧ Q t.mem (t.gpr .r0) := by
   refine framed_ok body s stackFit written Q ?_ body_ok
   intro u frame
-  have initial := pc_push_callee_saved s (by omega)
+  have initial := pc_push_callee_saved s (by omega_using [stackFit])
   apply initial.frame (lo := 0) (hi := 56) (by decide) frame
   intro r hr
   change (⟨State.addr (pcPushed s).sp + BitVec.ofNat 64 0, 56 - 0⟩ : Region).Disjoint r

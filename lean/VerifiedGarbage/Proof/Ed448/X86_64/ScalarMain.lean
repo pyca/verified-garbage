@@ -50,13 +50,13 @@ def scalarReduceLocal : Contract isa where
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 8192 ≤ ofs base (p + BitVec.ofNat 64 i) := by
   refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n)
-    (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+    (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem Outside.frame {base : Addr} {m m' : Mem} (h : Outside base 0 8192 m m') :
     Frame [⟨base, 8192⟩] m m' := fun x hx => h x (Or.inr (by
   have := hx _ (List.mem_singleton_self _)
-  simp only [Region.Contains] at this; show 0 + 8192 ≤ (x - base).toNat; omega))
+  simp only [Region.Contains] at this; show 0 + 8192 ≤ (x - base).toNat; omega_using [this]))
 
 /-- The output's address at `OUT` of the working space `[b]`, and `b` into `rdi`. -/
 theorem stash_ok {s : State} {base : Addr} (b : Reg) (hb : s.gpr b = base)
@@ -84,7 +84,7 @@ theorem scalarReduce_correct {s : State} (hp : scalarReduceLocal.pre s) :
   rw [WP.block_append_iff]
   refine WP.mono (stash_ok (base := base) .rdx (by rw [g₁]; exact hbase)
     (by rw [wr₁]; exact hws)) fun s₂ ⟨m₂, di₂, g₂, rd₂, wr₂⟩ => ?_
-  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega⟩
+  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega_using [hn]⟩
   refine WP.mono (storeK_ok hs₂) fun s₃ ⟨k₃, o₃, g₃, rd₃, wr₃⟩ => ?_
   have hs₃ : Scr s₃ base := ⟨(g₃ _ (by decide)).trans di₂, wr₃ ▸ hs₂.wr, hs₂.nowrap⟩
   have rsi₃ : s₃.gpr .rsi = s.gpr .rsi := by
@@ -94,7 +94,7 @@ theorem scalarReduce_correct {s : State} (hp : scalarReduceLocal.pre s) :
   -- The input, readable and outside the working space.
   have hin : ∀ i < 114, InRegions (s₃.rd ++ s₃.wr) (s.gpr .rsi + BitVec.ofNat 64 i) 1 :=
     fun i hi => ⟨⟨s.gpr .rsi, 114⟩, by rw [rw₃.1, hr]; simp,
-      Offset.contains_base _ (d := i) (n := 1) (k := 114) (by omega) (by omega)⟩
+      Offset.contains_base _ (d := i) (n := 1) (k := 114) (by omega_using [hi]) (by omega_using [hi])⟩
   have hfar : ∀ i < 114, 8192 ≤ ofs base (s.gpr .rsi + BitVec.ofNat 64 i) :=
     fun i hi => far hd hi (by decide)
   have O₃ : Outside base 0 8192 s.mem s₃.mem :=
@@ -119,14 +119,14 @@ theorem scalarReduce_correct {s : State} (hp : scalarReduceLocal.pre s) :
     have := (s₃.mem (s.gpr .rsi + BitVec.ofNat 64 112)).isLt
     have := (s₃.mem (s.gpr .rsi + BitVec.ofNat 64 112 + 1)).isLt
     have : 65536 < L := by decide +kernel
-    omega
+    omega_using [this]
   refine WP.mono (scalarLoop_ok hs₄ hK₄ (len := 114) (n₀ := 14) (by decide) (by decide)
     ⟨by decide, b₄, v₄', fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
     (fun k hk => by
       rw [rsi₄, k₄.2.2.1, k₄.2.2.2]
       exact ⟨⟨s.gpr .rsi, 114⟩, by rw [rw₃.1, hr]; simp,
-        Offset.contains_base _ (d := 8 * k) (n := 8) (k := 114) (by omega) (by omega)⟩)
-    (fun i hi => Or.inr (by rw [rsi₄]; have := hfar i hi; simp only [TMP]; omega)))
+        Offset.contains_base _ (d := 8 * k) (n := 8) (k := 114) (by omega_using [hk]) (by omega_using [hk])⟩)
+    (fun i hi => Or.inr (by rw [rsi₄]; have := hfar i hi; simp only [TMP]; omega_using [this])))
     fun s₅ ⟨v₅, g₅, rd₅, wr₅, o₅⟩ => ?_
   have hs₅ : Scr s₅ base := ⟨(g₅ _ (by decide)).trans hs₄.rdi, wr₅ ▸ hs₄.wr, hs₄.nowrap⟩
   have hout₅ : word s₅.mem base OUT = s.gpr .rdi := by

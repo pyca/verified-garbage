@@ -229,7 +229,7 @@ theorem loop_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M
     exact ⟨h0 ▸ l₁, by rw [← hN, ← h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : k + 1 ≠ N s₀ := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁⟩, ⟨by omega, l₂⟩⟩
+    exact ⟨N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, ⟨by omega_using [hk, h0], l₁⟩, ⟨by omega_using [hN, hk, h0], l₂⟩⟩
 
 /-! ## The whole function -/
 
@@ -283,7 +283,7 @@ theorem ends_rel' {M : Mode} {mid : Prog isa} {epi : List Instr} {he : Taint.Hin
         (fun a b h => ⟨?_, h.1.1.1, h.1.2.1⟩) fun _ _ h => h
       have := h.2; rw [ev h.1.1.2] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_using [this]
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b)
     (argTaint [] (4 + 4 * 6)) (fun _ _ h => Pt.agree hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr)
     hepi

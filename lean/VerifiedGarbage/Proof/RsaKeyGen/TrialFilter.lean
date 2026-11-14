@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Prefixes of the shared small-prime sieve -/
 
@@ -21,7 +22,7 @@ theorem trialPrefix_spec {c w : Nat} (large : 8161 < c) :
     trialPrefix c (if w ≤ 16 then 512 else 1024) = Spec.RsaKeyGen.obviouslyComposite (64 * w) c := by
   have equal : trialPrefix c (if w ≤ 16 then 512 else 1024) = trialAny (if 17 ≤ w then 256 else 128) c := by
     unfold trialPrefix trialAny entryDivides
-    have length : (if w ≤ 16 then 512 else 1024) = 4 * (if 17 ≤ w then 256 else 128) := by split <;> split <;> omega
+    have length : (if w ≤ 16 then 512 else 1024) = 4 * (if 17 ≤ w then 256 else 128) := by split <;> split <;> omega_arith
     rw [length]
     apply List.any_congr rfl
     intro i

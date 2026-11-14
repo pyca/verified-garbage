@@ -43,13 +43,13 @@ theorem Initial.header {workspace p e : BitVec 32} {size w candidate len exponen
   have space := S.space
   have width := S.width
   unfold slot stride VG.Impl.Bignum.hdrBytes at space
-  omega
+  omega_using [space]
 
 theorem Initial.savedLo {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
     (S : Initial workspace p e size w candidate len exponent s) : 400 ≤ slot w 5 := by
   have width := S.width
   unfold slot stride VG.Impl.Bignum.hdrBytes
-  omega
+  omega_using [width]
 
 theorem Initial.spaceRt {workspace p e : BitVec 32} {size w candidate len exponent : Nat} {s : State}
     (S : Initial workspace p e size w candidate len exponent s) : ExponentRt.Space workspace p size w s :=

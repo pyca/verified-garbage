@@ -19,8 +19,8 @@ def Pub (v : Nat) (s t : State) : Prop :=
 theorem Pub.seed {v k : Nat} {σ τ : State} (h : Pub v σ τ) (hk : k<v) : B σ k=B τ k := by
   change Proof.MlDsa.seed4 σ.mem (seedP σ) k=Proof.MlDsa.seed4 τ.mem (seedP τ) k
   unfold Proof.MlDsa.seed4
-  rw [← VG.Proof.MlKem.bytesAt_slice σ.mem (seedP σ) (show 34*k+34≤34*v by omega),
-    ← VG.Proof.MlKem.bytesAt_slice τ.mem (seedP τ) (show 34*k+34≤34*v by omega),h.2.2.2.2]
+  rw [← VG.Proof.MlKem.bytesAt_slice σ.mem (seedP σ) (show 34*k+34≤34*v by omega_using [hk]),
+    ← VG.Proof.MlKem.bytesAt_slice τ.mem (seedP τ) (show 34*k+34≤34*v by omega_using [hk]),h.2.2.2.2]
 
 theorem Pub.byte {v k : Nat} {σ τ : State} (h : Pub v σ τ) (hk : k<v) (i : Nat) : F σ k i=F τ k i := by
   unfold F
@@ -49,7 +49,7 @@ theorem rows_input_eq {v blocks k off n : Nat} {σ τ s t : State}
     (hk : k<v) (hn : off+3*n≤168*blocks) :
     InputEq s t (bufP σ k+BitVec.ofNat 64 off) n := by
   intro i hi
-  rw [Offset.add_add,hs.bytes k hk _ (by omega),hp.buf k,ht.bytes k hk _ (by omega)]
+  rw [Offset.add_add,hs.bytes k hk _ (by omega_using [hn, hi]),hp.buf k,ht.bytes k hk _ (by omega_using [hn, hi])]
   exact hp.byte hk _
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

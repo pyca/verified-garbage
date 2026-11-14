@@ -92,7 +92,7 @@ theorem blockAt_copy (m : Mem) (a b : Addr) : blockAt (m.write a 16 (m.read b 16
   congr 1
   refine List.map_congr_left fun i hi => ?_
   have hi' := List.mem_range.mp hi
-  simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi', ite_true]
+  simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hi']), hi', ite_true]
   exact Mem.extractLsb'_read m b hi'
 
 /-- Before the branch on the tag, from `s` (after `open`'s entry): `MidOG`,
@@ -161,9 +161,9 @@ theorem failArgs_ok {fr : List Region} {s s₇ : State}
       (s₇.mem.write (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) 16 v).read (W + BitVec.ofNat 64 d) 8 =
         s₇.mem.read (W + BitVec.ofNat 64 d) 8 := fun d h₁ h₂ => by
     rw [add_ofNat_assoc]
-    exact Mem.read_write_sep (Offset.sep W (.inr (by omega)) (by omega) (by decide)) (by decide)
+    exact Mem.read_write_sep (Offset.sep W (.inr (by omega_using [h₁])) (by omega_using [h₂]) (by decide)) (by decide)
   have e₉ : (BitVec.ofNat 64 n >>> 7) <<< 7 = BitVec.ofNat 64 P := by
-    rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega), ← mo.hP]
+    rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega_using [hn]), ← mo.hP]
   refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, Impl.AesGcm.AArch64.Stitch.cbO, he.x19, he.x20, q₀, q₁,
     q₂, w₀, gpr_setV, wr_setV, rd_setV, mem_setV, sp_setV, v_setV_self], ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, by others_tac, rfl, rfl, rfl⟩
@@ -199,7 +199,7 @@ theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
   have e₂ : s₇.mem.read (W + 240#64) 8 = BitVec.ofNat 64 n := by
     rw [show s₇.mem.read (W + 240#64) 8 = s₇.mem.readW (W + BitVec.ofNat 64 240) 64 from rfl, mo.sN]
   have e₉ : (BitVec.ofNat 64 n >>> 7) <<< 7 = BitVec.ofNat 64 P := by
-    rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega), ← mo.hP]
+    rw [Gcm.AArch64.Stitch.ushr7 hn, Stitch.shl7 (by have := Nat.mul_div_le n 128; omega_using [hn]), ← mo.hP]
   cases to with
   | false =>
     refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.whole, he.x19, q₁, q₂, Bool.cond_false, List.append_nil], ?_⟩
@@ -208,7 +208,7 @@ theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
     · simp [gpr_write, e₂, e₉]
       rw [Offset.ofNat_sub_ofNat hPn]
     · simp [gpr_write]
-      rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega]
+      rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega_using []]
     · show _ = _
       simp [gpr_write, e₂]
   | true =>
@@ -221,7 +221,7 @@ theorem okArgsG_ok (to : Bool) {fr : List Region} {s s₇ : State}
     · simp [gpr_write, e₂, e₉]
       rw [Offset.ofNat_sub_ofNat hPn]
     · simp [gpr_write]
-      rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega]
+      rw [mo.hP, show 128 * (n / 128) % 16 = 0 by omega_using []]
     · show _ = _
       simp [gpr_write, e₂, e₃, e₉]
 
@@ -243,12 +243,12 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
   have hwrap := hdk.wrap
   have ow := mo.outW
   have hPn : P ≤ n := mo.hP ▸ Nat.mul_div_le n 128
-  have hP16 : P % 16 = 0 := by rw [mo.hP]; omega
+  have hP16 : P % 16 = 0 := by rw [mo.hP]; omega_using []
   have x27₇ := mo.x27
   have dPr : ∀ E : Addr, (⟨E, P⟩ : Region).Disjoint ⟨E + BitVec.ofNat 64 P, n - P⟩ :=
-    fun E => Offset.base_disjoint E (Nat.le_refl _) (by omega)
+    fun E => Offset.base_disjoint E (Nat.le_refl _) (by omega_using [hn, hPn])
   have subP : ∀ E : Addr, Region.Sub ⟨E, P⟩ ⟨E, n⟩ := fun _ => Region.sub_prefix hPn
-  have subR : ∀ E : Addr, Region.Sub ⟨E + BitVec.ofNat 64 P, n - P⟩ ⟨E, n⟩ := fun E => Offset.sub_base E (by omega)
+  have subR : ∀ E : Addr, Region.Sub ⟨E + BitVec.ofNat 64 P, n - P⟩ ⟨E, n⟩ := fun E => Offset.sub_base E (by omega_using [hPn])
   have hsplit : ∀ (m : Mem) (E : Addr), bytesAt m E n = bytesAt m E P ++ bytesAt m (E + BitVec.ofNat 64 P) (n - P) :=
     fun m E => by rw [← bytesAt_add, Nat.add_sub_cancel' hPn]
   have crSub : ∀ {E : Addr} {k : Nat}, Region.Sub ⟨E, k⟩ ⟨O, n⟩ →
@@ -318,14 +318,14 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
           rw [ciph_frame f₈ (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact L.cs.sub_right (Lay.stSub (by decide))) hR, mo.ciph]
-        refine WP.mono (cryptAlT_ok L v (icb := J) hCr rfl x26₈ hn fun _ h => absurd (by omega) h)
+        refine WP.mono (cryptAlT_ok L v (icb := J) hCr rfl x26₈ hn fun _ h => absurd (by omega_using [hP16]) h)
           fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
         · rw [h₉.kept .x27 (by decide), og₈ _ (by decide)]
         · refine (f₈.sub fun r hr => ?_).trans (h₉.frame.sub (crSub (subP O)))
           simp only [List.mem_singleton] at hr; subst hr
           exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by decide)⟩
         · have e₁ : bytesAt s₉.mem O P = C₁ := by
-            rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, bytesAt_frame f₈ (dS (subP O)) (by omega), pre₇,
+            rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, bytesAt_frame f₈ (dS (subP O)) (by omega_using [hn, hPn]), pre₇,
               xorKs_xorKs]
           have e₂ : bytesAt s₉.mem (O + BitVec.ofNat 64 P) (n - P) = C₂ := by
             rw [bytesAt_frame h₉.frame (fun r hr => by
@@ -333,8 +333,8 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
                 rcases hr with rfl | rfl | rfl
                 · exact (dPr O).symm
                 · exact (hdw.ok.st.sub_left (subR O)).sub_right (Lay.stSub (by decide))
-                · exact (hdw.ok.w.sub_left (subR O)).sub_right (Lay.wSub (by decide))) (by omega),
-              bytesAt_frame f₈ (dS (subR O)) (by omega), mo.rest]
+                · exact (hdw.ok.w.sub_left (subR O)).sub_right (Lay.wSub (by decide))) (by omega_using [hn]),
+              bytesAt_frame f₈ (dS (subR O)) (by omega_using [hn]), mo.rest]
           rw [hsplit, e₁, e₂]; rfl
     · have hB : B = true := by revert hf; cases B <;> simp
       subst hB
@@ -344,7 +344,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
       have he₈ := mo.env.of_regs r₈
       have hctr : Ctr s₈.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
           (ciphOf s₈.mem Ctx R) J P :=
-        ⟨by rw [r₈.mem, cb₇]; congr 1; omega, fun h => absurd hP16 h⟩
+        ⟨by rw [r₈.mem, cb₇]; congr 1; omega_using [hP16], fun h => absurd hP16 h⟩
       have hfin : ∀ {s₉ : State}, Frame (crFrame (W + BitVec.ofNat 64 16) W (O + BitVec.ofNat 64 P) (n - P)) s₈.mem s₉.mem →
           bytesAt s₉.mem (O + BitVec.ofNat 64 P) (n - P) =
             xorKs (ciphOf s₈.mem Ctx R) J P (bytesAt s₈.mem (D + BitVec.ofNat 64 P) (n - P)) →
@@ -355,7 +355,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
               rcases hr with rfl | rfl | rfl
               · exact dPr O
               · exact (ow.ok.st.sub_left (subP O)).sub_right (Lay.stSub (by decide))
-              · exact (ow.ok.w.sub_left (subP O)).sub_right (Lay.wSub (by decide))) (by omega), r₈.mem]
+              · exact (ow.ok.w.sub_left (subP O)).sub_right (Lay.wSub (by decide))) (by omega_using [hn, hPn]), r₈.mem]
         rw [hsplit, e₁, pre₇, o₉, r₈.mem, mo.ciph, mo.rest, Proof.Gcm.gctr_eq, Proof.Gcm.xorKs_append, mo.len₁,
           Nat.zero_add]
       cases to with
@@ -369,7 +369,7 @@ theorem omBS_ok (v : GcmImpl) (to : Bool) {fr : List Region} {s s₇ : State} (h
             (hdw.drop hPn).of_eq r₈.rd r₈.wr, rfl⟩
         simp only [Bool.cond_false]
         refine WP.mono (cryptAlT_ok L v (icb := J) hCr hP16 x26f hn
-            (tail_big (by rw [r₈.wr]; exact hdw.wr) hn rfl (by omega)))
+            (tail_big (by rw [r₈.wr]; exact hdw.wr) hn rfl (by omega_using [hPn])))
           fun s₉ h₉ => ⟨h₉.env, ?_, ?_, ?_⟩
         · rw [h₉.kept .x27 (by decide), r₈.others _ (by decide)]
         · rw [← r₈.mem]; exact h₉.frame.sub (crSub (subR O))

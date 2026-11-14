@@ -461,14 +461,14 @@ theorem toZ_pow (a : Fe) (e : Nat) : toZ (Spec.X448.pow a e) = toZ a ^ e := by
     by_cases h0 : e = 0
     · subst h0; rw [ite_eq_left_of_eq_true _ _ (eq_true rfl), toZ_one, pow_zero]
     · simp only [h0, ↓reduceIte]
-      have hlt : e / 2 < e := Nat.div_lt_self (by omega) (by decide)
+      have hlt : e / 2 < e := Nat.div_lt_self (by omega_using [h0]) (by decide)
       have hsplit : toZ a ^ e = (toZ a * toZ a) ^ (e / 2) * toZ a ^ (e % 2) := by
-        rw [← sq, ← pow_mul, ← pow_add]; congr 1; omega
+        rw [← sq, ← pow_mul, ← pow_add]; congr 1; omega_using []
       by_cases h2 : e % 2 = 0
       · simp only [h2, ↓reduceIte]
         rw [ih _ hlt, toZ_mul, hsplit, h2, pow_zero, mul_one]
       · simp only [h2, ↓reduceIte]
-        rw [toZ_mul, ih _ hlt, toZ_mul, hsplit, show e % 2 = 1 by omega, pow_one, mul_comm]
+        rw [toZ_mul, ih _ hlt, toZ_mul, hsplit, show e % 2 = 1 by omega_using [h2], pow_one, mul_comm]
 
 /-- `z^(P-1) = 1` for `z ≠ 0` (Fermat). -/
 theorem pow_P_sub_one {z : ZMod PZ} (hz : z ≠ 0) : z ^ (P - 1) = 1 := by
@@ -667,13 +667,13 @@ theorem pointMul_rep (s : Nat) : ∀ {p : Point} {a : EPoint dZ}, Rep p a →
     by_cases h0 : s = 0
     · subst h0; simp only [↓reduceIte, zero_smul]; exact identity_rep
     · simp only [h0, ↓reduceIte]
-      have hq := ih (s / 2) (Nat.div_lt_self (by omega) (by decide)) (pointAdd_rep hp hp)
+      have hq := ih (s / 2) (Nat.div_lt_self (by omega_using [h0]) (by decide)) (pointAdd_rep hp hp)
       have hs : s • a = (s / 2) • (a + a) + (s % 2) • a := by
-        rw [← two_nsmul, ← mul_nsmul', ← add_nsmul]; congr 1; omega
+        rw [← two_nsmul, ← mul_nsmul', ← add_nsmul]; congr 1; omega_using []
       by_cases h2 : s % 2 = 0
       · simp only [h2, ↓reduceIte]; rw [hs, h2, zero_smul, add_zero]; exact hq
       · simp only [h2, ↓reduceIte]
-        rw [hs, show s % 2 = 1 by omega, one_smul]; exact pointAdd_rep hq hp
+        rw [hs, show s % 2 = 1 by omega_using [h2], one_smul]; exact pointAdd_rep hq hp
 
 /-! ## Doubling (RFC 8032 §5.2.4) -/
 

@@ -62,19 +62,19 @@ theorem clamp_bit {kb : List Byte} (hl : kb.length = 32) {k : Nat} (hk : k < 256
     have := Proof.X25519.Edwards.decodeScalar25519_shift hl
     rw [Nat.shiftRight_eq_div_pow] at this
     rw [this]; rfl
-  · have e := VG.Proof.X25519.scalar_bit hl (t := k) (by omega)
+  · have e := VG.Proof.X25519.scalar_bit hl (t := k) (by omega_using [hk, h255])
     simp only [Proof.X25519.bit, Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod] at e
     rw [e, VG.Proof.Ed25519.decodeLE_eq]
     have hb := VG.Proof.X25519.leNum_bit kb k
     simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod] at hb
     rw [hb]
     by_cases h3 : k < 3
-    · rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> rfl
+    · rcases (by omega_using [h3] : k = 0 ∨ k = 1 ∨ k = 2) with rfl | rfl | rfl <;> rfl
     · by_cases h254 : k = 254
       · subst h254; rfl
-      · have h2 : k ≠ 2 := by omega
-        have h1 : k ≠ 1 := by omega
-        have h0 : k ≠ 0 := by omega
+      · have h2 : k ≠ 2 := by omega_using [h3]
+        have h1 : k ≠ 1 := by omega_using [h3]
+        have h0 : k ≠ 0 := by omega_using [h3]
         simp only [h3, h254, h255, h2, h1, h0, ite_false]
 
 
@@ -91,7 +91,7 @@ theorem storeBit_ok {x : BitVec 32} {s : State} (hc : Ed25519.X86.Ctx x s) {q v 
   rw [ht.mem, h₁.mem]
   change s.mem.writeW _ ((u₁.gpr .eax).setWidth 8) = _
   rw [h₁.gpr]
-  rcases (by omega : v = 0 ∨ v = 1) with rfl | rfl <;> rfl
+  rcases (by omega_using [hv] : v = 0 ∨ v = 1) with rfl | rfl <;> rfl
 
 theorem storeBit_saved {s₀ s : State} {x : BitVec 32} (hs : Saved s₀ x s)
     (hx : x.toNat + 8192 ≤ 2 ^ 32) (hw : scR 8192 x ∈ s₀.wr) {q v : Nat} (hq : q < 256)

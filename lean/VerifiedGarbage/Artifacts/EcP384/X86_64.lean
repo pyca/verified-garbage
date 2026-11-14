@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.EcKey.P384.X86_64
@@ -62,34 +64,61 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P384.X86_64.Law
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.P384
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P384
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P384Decompress
 
 /-! # P-384 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
 
+-- Standalone P384 public-point compression on x86-64
+namespace VG.Artifacts.EcP384.X86_64.Compressed
+
+open VG.Proof.P384.X86_64 (hasLaw)
+
+def artifacts : List Artifact := [
+  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384.scrubReg hasLaw.inv false),
+  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384Decompress.scrubReg hasLaw.law hasLaw.inv false),
+  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384.scrubReg hasLaw.inv true),
+  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Compressed.X86_64.P384Decompress.scrubReg hasLaw.law hasLaw.inv true)]
+
+end VG.Artifacts.EcP384.X86_64.Compressed
+
+-- Standalone P384 public-key validation on x86-64
+namespace VG.Artifacts.EcP384.X86_64.Validate
+
+open VG.Proof.P384.X86_64 (hasLaw)
+
+def artifacts : List Artifact := [
+  Spec.EcKey.P384.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P384.scrubReg hasLaw.inv false),
+  Spec.EcKey.P384.inst.validatePublicKeyApi.artifact X86_64.target
+    (Proof.EcKey.Validate.X86_64.P384.scrubReg hasLaw.inv true)]
+
+end VG.Artifacts.EcP384.X86_64.Validate
+
 namespace VG.Artifacts.EcP384.X86_64
 
 open VG.Proof.P384.X86_64 (hasLaw)
 
-/-- The function of `Spec.EcKey.P384.publicKeyApi`, multiplying with BMI2 and
-ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its
-`code`, proven (`hv`), with no instruction writing `rsp` (`hsp`). -/
-def publicKey (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.EcKey.P384.publicKeyApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
+def artifacts : List Artifact :=
+  Compressed.artifacts ++ [
+  Spec.EcKey.P384.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    code := Impl.EcKey.X86_64.publicKeyP384
     stack := 8
-    verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
-
-def artifacts : List Artifact := [
-  publicKey false Impl.EcKey.X86_64.publicKeyP384
-    (Proof.EcKey.X86_64.P384.pk_verified hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv),
-  publicKey true Impl.EcKey.X86_64.publicKeyP384Adx
-    (Proof.EcKey.X86_64.P384.pk_verified_adx hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv)]
+    verified := Proof.EcKey.X86_64.P384.pk_verified hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P384.inst 8 Impl.Ecdsa.X86_64.p384.combConsts)),
+  Spec.EcKey.P384.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+    suffix := "_adx"
+    code := Impl.EcKey.X86_64.publicKeyP384Adx
+    stack := 8
+    verified := Proof.EcKey.X86_64.P384.pk_verified_adx hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv }
+    (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P384.inst 8 Impl.Ecdsa.X86_64.p384.combConsts))] ++
+  Validate.artifacts
 
 end VG.Artifacts.EcP384.X86_64

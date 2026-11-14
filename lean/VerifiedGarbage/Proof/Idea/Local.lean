@@ -31,10 +31,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_using [hi]) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_using [hi, hw]
 
 private theorem blocksAt_congr {m m' : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < 8 * n, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
@@ -43,7 +43,7 @@ private theorem blocksAt_congr {m m' : Mem} {p : Addr} {n : Nat}
   refine List.map_congr_left fun j hj => blockAt_congr fun i hi => ?_
   have := List.mem_range.mp hj
   rw [Offset.add_add]
-  exact h _ (by omega)
+  exact h _ (by omega_using [hi, this])
 
 variable (pb : Nat)
 
@@ -89,7 +89,7 @@ theorem ecbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ecbSig.words pb).len
   dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [scheduleAt_congr hs, blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega_arith)]
   exact h
 
 /-- `ecbPost` reads the memory on return only within the data. -/
@@ -113,7 +113,7 @@ theorem ecbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ecbSig.words pb).l
   dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
   have := Nat.mod_le n.toNat (2 ^ pb)
   rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega_arith)]
   exact h
 
 end VG.Proof.Idea

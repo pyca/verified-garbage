@@ -75,7 +75,7 @@ theorem candidateRun_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
       ⟨State.addr (allocated 24 s).sp, 24⟩ :=
     ((h.buffers.stackSeparate _ (by simp)).2.sub_left (callArguments_sub h.buffers.below)).symm
   unfold VG.Impl.Ffdh.Arm.ParameterSearch.candidateRun
-  refine WP.alloc (by decide) (by have := h.buffers.below; omega) ?_
+  refine WP.alloc (by decide) (by have := h.buffers.below; omega_using [this]) ?_
   rw [WP.seq_iff]
   refine WP.mono (arguments_ok (allocated 24 s) control stack separate h.saved) ?_
   rintro u ⟨⟨args, mem⟩, rest⟩

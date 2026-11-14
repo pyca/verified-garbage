@@ -54,7 +54,7 @@ theorem drawRt_ok {mont round : Prog isa} {montName roundName : String}
   have counts := S.countFit v
   refine WP.mono (body_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v.geometry
     v.length S.prepared S.randPtr S.used v.randFit v.randLenFit (by rw [← Fx.bytes]; exact enough) S.readable
-    v.randSeparate v.odd (by have := v.large; omega) (by rw [v.shape, Fx.words]; omega) counts.1 counts.2 v.low
+    v.randSeparate v.odd (by have := v.large; omega_using [this]) (by rw [v.shape, Fx.words]; omega_using []) counts.1 counts.2 v.low
     v.stackFar v.lengthFar) fun t ⟨T, used, rounds, uniform, status, W, F, K⟩ => ?_
   rw [← Fx.bytes] at used uniform status
   rw [S.rounds] at rounds
@@ -95,11 +95,11 @@ theorem drawRt_again_ok {mont round : Prog isa} {montName roundName : String}
       rw [usedA, List.length_drop]
       have bound := enough
       rw [← v.entropyLength] at bound
-      omega
+      omega_using [bound]
   | true =>
     by_cases more : goS P.checks (mrSB P.candidate P.bytes P.start P.entropy (k + 1))
     · have next := mrLoopAt_next S.atLoop v.witnessBytes
-        (by have := v.narrow; have := v.two; omega)
+        (by have := v.narrow; have := v.two; omega_arith)
         (by rw [v.entropyLength]; exact enough) passed more
       simp only [passed, ↓reduceIte, more] at statusA
       have nextState := StateAt.next v S A usedA roundsA uniformA next.2 Wa Fa Ka
@@ -115,7 +115,7 @@ theorem drawRt_again_ok {mont round : Prog isa} {montName roundName : String}
         rw [usedA, List.length_drop]
         have bound := enough
         rw [← v.entropyLength] at bound
-        omega
+        omega_using [bound]
 
 theorem stepRt_ok {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))
@@ -141,7 +141,7 @@ theorem stepRt_ok {mont round : Prog isa} {montName roundName : String}
     congr 1
     apply decide_eq_decide.mpr
     rw [← Fx.bytes]
-    omega
+    omega_using [usedBound]
   refine WP.seq ?_
   by_cases enough : P.start + P.bytes * k + P.bytes ≤ P.randLen
   · refine WP.ite false (by rw [condition]; simp only [enough, not_true_eq_false, decide_false])
@@ -175,24 +175,24 @@ theorem initRt_ok {P : Parameters} (v : P.Valid) (Fx : Fixed P) {s : State}
   have rangesFit : ∀ r ∈ WitnessChecks.ranges, r.1 + r.2 ≤ P.g.L := by
     intro r mem
     simp only [WitnessChecks.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
-    rcases mem with rfl | rfl | rfl <;> have := v.geometry.headerFit <;> omega
+    rcases mem with rfl | rfl | rfl <;> have := v.geometry.headerFit <;> omega_using [this]
   have W := WorkspaceFrame.of_outs S.ready.scratch.nowrap O
   have F := workspaceGlobalFrame O rangesFit
   have hdr {d : Nat} (bound : d + 4 ≤ 176) : w32 t.mem P.g.W d = w32 s.mem P.g.W d := by
     apply congrArg BitVec.toNat
-    apply W.read32 (by have := v.geometry.headerFit; omega)
+    apply W.read32 (by have := v.geometry.headerFit; omega_using [bound, this])
     intro r mem
     simp only [WitnessChecks.ranges, List.mem_cons, List.not_mem_nil, or_false] at mem
-    rcases mem with rfl | rfl | rfl <;> left <;> omega
+    rcases mem with rfl | rfl | rfl <;> left <;> omega_using [bound]
   have primeAt := mrLoopAt_zero (ch := P.checks) (a := P.twos.1) (m := P.twos.2) (s := P.start) v.witnessBytes
-    (by have := v.narrow; have := v.two; omega)
+    (by have := v.narrow; have := v.two; omega_arith)
     (by rw [v.entropyLength]; exact enough)
   refine ⟨⟨T, ?_, ?_, ?_, (hdr (by decide)).trans randLength,
     by simpa only [Nat.mul_zero, Nat.add_zero] using (hdr (d := 152) (by decide)).trans used,
     roundsT, uniformT, checksT, primeAt⟩, W, F, K⟩
   · rw [K.2.1, K.2.2]; exact readable
   · exact (frame_bytesAt F (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact v.randSeparate)
-      (by have := v.randLenFit; omega)).trans entropy
+      (by have := v.randLenFit; omega_using [this])).trans entropy
   · exact (BitVec.eq_of_toNat_eq (hdr (d := 28) (by decide))).trans randPtr
 
 theorem loopRt_ok {mont round : Prog isa} {montName roundName : String}
@@ -215,7 +215,7 @@ theorem loopRt_ok {mont round : Prog isa} {montName roundName : String}
     fun t ⟨T, outcome, Wt, Ft, Kt⟩ => ?_
   rcases outcome with ⟨done, _, result⟩ | ⟨again, positive, next⟩
   · exact Or.inl ⟨done, T, result, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
-  · exact Or.inr ⟨again, j, by omega, i + 1, j - 1, by omega, next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
+  · exact Or.inr ⟨again, j, by omega_using [], i + 1, j - 1, by omega_using [positive], next, Wa.trans Wt, Fa.trans Ft, Ka.trans Kt⟩
 
 theorem codeRt_ok {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Proof.Rsa.Mont.mulContract abi 56))

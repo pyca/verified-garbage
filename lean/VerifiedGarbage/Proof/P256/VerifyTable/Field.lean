@@ -78,10 +78,10 @@ theorem program_ok {Sl : Nat → Prop} (layout : Lay M 8192 Sl) (aligned : Align
   refine (hu.sub hout).of_observed ht hm fun x hx i him => ?_
   apply ho (x+8*i) (hobs x hx i him)
   · have ha := aligned.sl x (hu.sl x (hout x hx))
-    omega
+    omega_using [ha]
   · have hb := layout.le x (hu.sl x (hout x hx))
     change i<4 at him
     change x+32≤8192 at hb
-    omega
+    omega_using [him, hb]
 
 end VG.Proof.P256.VerifyTable

@@ -34,13 +34,13 @@ structure Ren (K : WinCfg) (σ : Nat → Nat) : Prop where
 theorem winCode_slot (K : WinCfg) {c : Nat} (hc : c < 22) : winCode K c ∈ winRo K ++ winOther K := by
   unfold winCode
   split
-  · exact List.mem_append_right _ (winCode_getD_mem (by rw [show (winOther K).length = 16 from rfl]; omega))
-  · exact List.mem_append_left _ (winCode_getD_mem (by rw [show (winRo K).length = 6 from rfl]; omega))
+  · exact List.mem_append_right _ (winCode_getD_mem (by rw [show (winOther K).length = 16 from rfl]; omega_arith))
+  · exact List.mem_append_left _ (winCode_getD_mem (by rw [show (winRo K).length = 6 from rfl]; omega_using [hc]))
 
 theorem winCode_other (K : WinCfg) {c : Nat} (hc : c < 16) : winCode K c ∈ winOther K := by
   unfold winCode
   simp only [hc, ↓reduceIte]
-  exact winCode_getD_mem (by rw [show (winOther K).length = 16 from rfl]; omega)
+  exact winCode_getD_mem (by rw [show (winOther K).length = 16 from rfl]; omega_using [hc])
 
 /-- The codes (`winCode`) of a renaming's first sixteen slots, the others `P.x`. -/
 def CodesOk (cs : List Nat) : Prop :=
@@ -55,29 +55,29 @@ theorem Ren.of_codes {K : WinCfg} {size : Nat} (hL : WinLay K size) {σ : Nat �
   obtain ⟨c22, c16, cne⟩ := hc
   have hPx : K.P.x ∈ winRo K := by simp [winRo]
   have oth : ∀ i < 11, σ i ∈ winOther K := fun i hi => by
-    rw [h i (by omega)]; exact winCode_other K (c16 i hi)
+    rw [h i (by omega_using [hi])]; exact winCode_other K (c16 i hi)
   refine ⟨fun i => ?_, oth, fun o ho y hy => ?_⟩
   · by_cases hi : i < 16
     · rw [h i hi]; exact winCode_slot K (c22 i hi)
-    · rw [hb i (by omega)]; exact List.mem_append_left _ hPx
+    · rw [hb i (by omega_using [hi])]; exact List.mem_append_left _ hPx
   · by_cases hy16 : y < 16
-    · rw [h y hy16, h o (by omega)] at hy
+    · rw [h y hy16, h o (by omega_using [ho])] at hy
       by_contra hne
       exact hL.code_ne (c16 o ho) (c22 y hy16) (cne o ho y hy16 (Ne.symm hne)) hy.symm
-    · rw [hb y (by omega)] at hy
+    · rw [hb y (by omega_using [hy16])] at hy
       exact absurd (hy ▸ oth o ho) (hL.ro _ hPx)
 
 theorem getD16 {α : Type _} {l : List α} {d : α} (hl : l.length = 16) {i : Nat} (hi : 16 ≤ i) :
     l.getD i d = d := by
   simp only [List.getD_eq_getElem?_getD]
-  rw [List.getElem?_eq_none (by omega)]
+  rw [List.getElem?_eq_none (by omega_using [hl, hi])]
   rfl
 
 theorem coZσ_ren {K : WinCfg} {size : Nat} (hL : WinLay K size) : Ren K (coZσ K) :=
   Ren.of_codes hL (cs := [3, 4, 7, 8, 9, 10, 11, 12, 0, 1, 2, 13, 14, 19, 20, 21]) (by decide)
     (fun i hi => by
       have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
-          i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by omega
+          i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by omega_using [hi]
       rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl | rfl <;> rfl)
     (fun _ hi => getD16 rfl hi)
@@ -86,7 +86,7 @@ theorem dbluσ_ren {K : WinCfg} {size : Nat} (hL : WinLay K size) : Ren K (dblu�
   Ren.of_codes hL (cs := [11, 12, 7, 8, 1, 0, 9, 10, 3, 4, 2, 13, 14, 19, 20, 21]) (by decide)
     (fun i hi => by
       have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
-          i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by omega
+          i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by omega_using [hi]
       rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl | rfl <;> rfl)
     (fun _ hi => getD16 rfl hi)

@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtx
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
@@ -17,8 +17,8 @@ import Mathlib.Tactic.ToDual
 /-!
 # RSASSA-PSS verification on x86-64: the contract on the registers
 
-`verifyK tsH tsG` states `Spec.RsaPss.verifyPrecomputedTableContract` with
-the tables `tsH` of `MdHash` and `tsG` of `Hash` (`Abi.withTables`, with the
+`verifyK tsH tsG` states `Spec.RsaPss.verifyPrecomputedMdTableContract` with
+the tables `tsH` of `MdHash` and `tsG` of `MdHash` (`Abi.withTables`, with the
 stack the frame and the calls use, `verifyStack`) on the registers and the
 stack (`verify_implies`).
 -/
@@ -52,7 +52,7 @@ def verifyK : Contract isa where
     let scr : Region := ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
     let pre : Region := ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
     let tH : Region := ⟨stackArg s 8, 88⟩
-    let tG : Region := ⟨stackArg s 9, 40⟩
+    let tG : Region := ⟨stackArg s 9, 88⟩
     let args : Region := ⟨stackArgAddr s 0, 80⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩
@@ -71,14 +71,14 @@ def verifyK : Contract isa where
       (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
       (stackArg s 4).toNat + (stackArg s 5).toNat * 8 ≤ 2 ^ 64 ∧
       (stackArg s 6).toNat + (stackArg s 7).toNat * 8 ≤ 2 ^ 64 ∧ (stackArg s 8).toNat + 88 ≤ 2 ^ 64 ∧
-      (stackArg s 9).toNat + 40 ≤ 2 ^ 64 ∧
+      (stackArg s 9).toNat + 88 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rsi).toNat ∧ 1 ≤ (s.gpr .rcx).toNat ∧ (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat ∧
       (stackArg s 1).toNat = (s.gpr .rsi).toNat ∧
       Spec.RsaPss.publicScratchWords (s.gpr .rsi).toNat ≤ (stackArg s 5).toNat ∧
       (stackArg s 7).toNat = Spec.Rsa.precomputedWords (s.gpr .rsi).toNat ∧
       Spec.RsaPss.digestLenOk 64 s.mem (stackArg s 8) (s.gpr .r9)
   post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some G →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G →
     Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) =
       some (Spec.Rsa.wordsAt s.mem (stackArg s 6) (stackArg s 7).toNat) →
     (s'.gpr .rax).setWidth 32 = if Spec.RsaPss.verify H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
@@ -105,42 +105,42 @@ def verifyK : Contract isa where
 
 /-- The contract, with the tables `tsH` and `tsG`. -/
 abbrev verifyC : Contract isa :=
-  Spec.RsaPss.verifyPrecomputedTableContract
-    (abi.withTables Spec.RsaPss.verifyPrecomputedTableSig [("hash", tsH), ("mgf1", tsG)]) verifyStack
+  Spec.RsaPss.verifyPrecomputedMdTableContract
+    (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) verifyStack
 
 theorem verify_implies (hsat : ∃ s, (verifyC tsH tsG).pre s) : (verifyK tsH tsG).Implies (verifyC tsH tsG) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
-      chkStack, stackArgs_ten, List.append_eq, tabFns] at h
-    sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
-      chkStack, stackArgs_ten, List.append_eq, tabFns, Sig.tableRegion] at h
+    sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+      Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack, chkStack, stackArgs_ten, List.append_eq,
+      tabFns] at h
+    sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+      Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack, chkStack, stackArgs_ten, List.append_eq,
+      tabFns, Sig.tableRegion] at h
     simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
-    sig_reduce [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
-      chkStack, stackArgs_ten, List.append_eq, tabFns, Sig.tableRegion]
+    sig_reduce [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+      Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack, chkStack, stackArgs_ten, List.append_eq,
+      tabFns, Sig.tableRegion]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
+  post := by sig_implies_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
       chkStack, stackArgs_ten, List.append_eq, tabFns]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
+    sig_pub [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
       chkStack, stackArgs_ten, List.append_eq, tabFns] at h
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq] at h
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
+      Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, -⟩ := h
     obtain ⟨hb, hp⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hsi, hcx])
     have hp' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hp

@@ -110,7 +110,7 @@ theorem blocks_scratch (inverse : Bool) {f : Nat → List Byte → Spec.Aes.Stat
   refine hf _ fun r hr hc => ?_
   rw [List.mem_singleton] at hr
   subst hr
-  exact hs.2.2.2.2.1 _ hc (Offset.contains_base _ (by omega) (by omega))
+  exact hs.2.2.2.2.1 _ hc (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi]))
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.encryptBlocksRoundsContract PPC64LE.abi).pre s) (he : Exec isa encryptBlocks s t s') :

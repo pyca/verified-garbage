@@ -25,7 +25,7 @@ theorem inlineAt_ok {S : Nat} (hS : S<2^64) {c : Prog isa} {k : Contract isa}
   have k1:=h1.2
   refine WP.narrowF (C.correct _ (hpre s1 h1))
     (by rw [k1.rd,k1.wr];exact hc) (by rw [k1.wr];exact hw)
-    (fun t hrd hwr hsp hf hp=>?_) (by have := C.fd;omega)
+    (fun t hrd hwr hsp hf hp=>?_) (by have := C.fd;omega_using [hS, this])
   refine ⟨⟨hrd.trans k1.rd,hwr.trans k1.wr,hsp.trans k1.sp,
     fun r hr _=>?_,?_,fun r hr=>(hp.1.2.2 r hr).trans (k1.vcs r hr)⟩,s1,h1,hp.2⟩
   · exact (hp.1.1 r hr).trans (k1.gpr r (argRegs_pres r hr))

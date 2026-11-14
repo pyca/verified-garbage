@@ -82,7 +82,7 @@ theorem refillHs_sub (p : GenerationContext) (seed rest : List Byte)
   split
   · split
     · rw [GenerationTape.window_length]
-      exact Offset.sub_base p.rand.ptr (by omega)
+      exact Offset.sub_base p.rand.ptr (by omega_using [])
     · exact hin
   · exact hin
 
@@ -163,7 +163,7 @@ def LoopPublic.next (P : LoopPublic) : LoopPublic where
     unfold LoopPublic.after; split
     · exact Nat.sub_le _ _
     · exact P.startBound
-  leftBound := by have := P.leftBound; omega
+  leftBound := by have := P.leftBound; omega_using [this]
   hsIn := refillHs_sub P.context _ _ P.hsIn
   ok := P.ok
   ends := P.ends

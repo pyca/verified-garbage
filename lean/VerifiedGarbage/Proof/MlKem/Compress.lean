@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.MlKem.PolyContract
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM: Compress and Decompress without division, for every target
@@ -85,9 +86,9 @@ theorem compress_arg_lt {d : Nat} (hd : d ∈ compressWidths) (x : Zq) :
     x.val * compressMul d + compressAdd < 2 ^ 30 := by
   have := val_lt x
   rcases mem_compressWidths hd with rfl | rfl | rfl
-  · show x.val * 315 + 262080 < 2 ^ 30; omega
-  · show x.val * 2520 + 262080 < 2 ^ 30; omega
-  · show x.val * 161271 + 262080 < 2 ^ 30; omega
+  · show x.val * 315 + 262080 < 2 ^ 30; omega_using [this]
+  · show x.val * 2520 + 262080 < 2 ^ 30; omega_using [this]
+  · show x.val * 161271 + 262080 < 2 ^ 30; omega_using [this]
 
 theorem compress_lt (d : Nat) (x : Zq) : compress d x < 2 ^ d := Nat.mod_lt _ (Nat.two_pow_pos d)
 
@@ -95,15 +96,15 @@ theorem compress_lt (d : Nat) (x : Zq) : compress d x < 2 ^ d := Nat.mod_lt _ (N
 `1 ≤ d ≤ 11` and `y < 2ᵈ`: the result is less than `q`. -/
 theorem decompress_val_of_le {d : Nat} (hd : 0 < d) (hd' : d ≤ 11) {y : Nat} (hy : y < 2 ^ d) :
     (decompress d y).val = (q * y + 2 ^ (d - 1)) / 2 ^ d ∧ (q * y + 2 ^ (d - 1)) / 2 ^ d < q := by
-  obtain ⟨e, rfl⟩ : ∃ e, d = e + 1 := ⟨d - 1, by omega⟩
-  have hP : 2 ^ e ≤ 2 ^ 10 := Nat.pow_le_pow_right (by decide) (by omega)
+  obtain ⟨e, rfl⟩ : ∃ e, d = e + 1 := ⟨d - 1, by omega_using [hd]⟩
+  have hP : 2 ^ e ≤ 2 ^ 10 := Nat.pow_le_pow_right (by decide) (by omega_using [hd'])
   have h : roundDiv (q * y) (2 ^ (e + 1)) = (q * y + 2 ^ e) / 2 ^ (e + 1) ∧
       (q * y + 2 ^ e) / 2 ^ (e + 1) < q := by
     rw [Nat.pow_succ] at hy ⊢
     simp only [roundDiv, q_eq]
     generalize 2 ^ e = P at *
-    refine ⟨?_, (Nat.div_lt_iff_lt_mul (by omega)).mpr (by omega)⟩
-    rw [show 2 * (3329 * y) + P * 2 = 2 * (3329 * y + P) by omega, Nat.mul_div_mul_left _ _ (by decide)]
+    refine ⟨?_, (Nat.div_lt_iff_lt_mul (by omega_using [hy])).mpr (by omega_using [hy, hP])⟩
+    rw [show 2 * (3329 * y) + P * 2 = 2 * (3329 * y + P) by omega_using [], Nat.mul_div_mul_left _ _ (by decide)]
   rw [Nat.add_sub_cancel, decompress, ofNat_of_lt (h.1 ▸ h.2), h.1]
   exact ⟨rfl, h.2⟩
 

@@ -239,7 +239,7 @@ theorem hdr_two : RelCT isa (Two I fun _ _ _ => True) (kabs (.sp fHdr) (.imm 10)
   kabs_two (src := .sp fHdr) (len := .imm 10) (pos := .imm 0)
     (by decide) (fun L => L.SP + BitVec.ofNat 64 0) (fun _ => 10) (fun _ => 0)
     (fun L g mx m t _ hc _ => ⟨by rw [hc.sp]; rfl, rfl, rfl⟩)
-    fun L hL => side hL (by decide) (show (10 : Nat) < 2 ^ 64 by decide) (frSide hL (d := 0) (n := 10) (by omega))
+    fun L hL => side hL (by decide) (show (10 : Nat) < 2 ^ 64 by decide) (frSide hL (d := 0) (n := 10) (by omega_using []))
 
 theorem ctx_two : RelCT isa (Two I (Pos q1)) (kabs (.slot fCtx) (.slot fCtxLen) .ret) (Two I (Pos q2)) :=
   kabs_two (src := .slot fCtx) (len := .slot fCtxLen) (pos := .ret)
@@ -285,7 +285,7 @@ theorem nonceHash_tr {Φ : Lay → Mem → State → Prop} : RelCT isa (Two I Φ
     (by decide) (fun L => L.SP + BitVec.ofNat 64 73) (fun _ => 57) q2
     (fun L g mx m t _ hc hφ => ⟨by rw [hc.sp]; rfl, rfl, ofNat_toNat_eq hφ⟩)
     fun L hL => side hL (Nat.mod_lt _ (by decide)) (show (57 : Nat) < 2 ^ 64 by decide)
-      (frSide hL (d := 73) (n := 57) (by omega))
+      (frSide hL (d := 73) (n := 57) (by omega_using []))
   exact zero_two.seq (hdr_two.seq (ctx_two.seq (a3.seq (msgTail_tr (q := q3) fun _ => Nat.mod_lt _ (by decide)))))
 
 theorem chalHash_tr {Φ : Lay → Mem → State → Prop} : RelCT isa (Two I Φ) chalHash fun _ _ => True := by
@@ -293,7 +293,7 @@ theorem chalHash_tr {Φ : Lay → Mem → State → Prop} : RelCT isa (Two I Φ)
     (by decide) (fun L => L.out) (fun _ => 57) q2
     (fun L g mx m t _ hc hφ => ⟨by rw [hc.slot]; exact hc.pOut, rfl, ofNat_toNat_eq hφ⟩)
     fun L hL => side hL (Nat.mod_lt _ (by decide)) (show (57 : Nat) < 2 ^ 64 by decide)
-      (bufSide hL (r := ⟨L.out, 57⟩) ⟨L.OUT, by simp [hL.wr], within_base _ (by omega)⟩
+      (bufSide hL (r := ⟨L.out, 57⟩) ⟨L.OUT, by simp [hL.wr], within_base _ (by omega_using [])⟩
       (hL.xOut.sub_right o57_sub) (hL.kOut.sub_right o57_sub))
   have a4 := kabs_two (I := I) (Φ := Pos q3) (src := .slot fPk) (len := .imm 57) (pos := .ret)
     (by decide) (fun L => L.pk) (fun _ => 57) q3

@@ -31,7 +31,7 @@ theorem unpack_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   refine ⟨hs.keep hF hp hb (by scchks hF (Nat.le_of_lt hr)) hy
     (fun w hm=>by obtain rfl:=List.mem_singleton.mp hm;vlay) h24,
     L.keepPoly hb (by vlayd) hw,?_⟩
-  rw [hs.vc.pkSlice (by rw [hF.pk];omega)] at hv
+  rw [hs.vc.pkSlice (by rw [hF.pk];omega_using [hr])] at hv
   rw [hb.pa (show Reg.x28∈keptRegs by decide)]
   exact hv
 

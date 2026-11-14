@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Compose verified scratch writes under containing ranges -/
 
@@ -17,7 +18,7 @@ theorem Outs.cover {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem}
   intro r mem
   obtain ⟨R, member, lo, hi⟩ := covered r mem
   have := outside R member
-  omega
+  omega_using [lo, hi, this]
 
 theorem Outs.word {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m')
     {d : Nat} (apart : ∀ r ∈ rs, d + 8 ≤ r.1 ∨ r.1 + r.2 ≤ d) (fit : d + 8 ≤ 2 ^ 64) :
@@ -27,7 +28,7 @@ theorem Outs.word {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs 
   apply h
   intro r mem
   have := apart r mem
-  rw [ofs_off base (by omega)]
-  omega
+  rw [ofs_off base (by omega_using [fit, hi])]
+  omega_using [hi, this]
 
 end VG.Proof.Mont

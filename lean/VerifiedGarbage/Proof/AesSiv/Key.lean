@@ -36,9 +36,9 @@ theorem keyRepr_of {m m₀ : Mem} {Ct Kp : Addr} {KL : Nat} (hl : KL = 32 ∨ KL
     (h2 : Spec.Aes.bytesAt m (Ct + BitVec.ofNat 64 272) (16 * (Spec.Aes.rounds (KL / 2 / 4) + 1)) =
       Spec.Aes.expandKey (Spec.Aes.bytesAt m₀ (Kp + BitVec.ofNat 64 (KL / 2)) (KL / 2))) :
     Spec.Siv.KeyRepr m Ct (Spec.Aes.bytesAt m₀ Kp KL) := by
-  have hKL : KL = KL / 2 + KL / 2 := by omega
+  have hKL : KL = KL / 2 + KL / 2 := by omega_using [hl]
   have hlen := Proof.Cmac.bytesAt_length m₀ Kp KL
-  have e8 : KL / 8 = KL / 2 / 4 := by omega
+  have e8 : KL / 8 = KL / 2 / 4 := by omega_using []
   have k1 : (Spec.Aes.bytesAt m₀ Kp KL).take (KL / 2) = Spec.Aes.bytesAt m₀ Kp (KL / 2) := by
     have := take_bytesAt m₀ Kp (a := KL / 2) (b := KL / 2)
     rwa [← hKL] at this

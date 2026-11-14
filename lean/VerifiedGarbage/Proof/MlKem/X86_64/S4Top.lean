@@ -35,13 +35,13 @@ theorem start_ok : WP isa (.block (pro ++ Impl.Sha3.X86_64.X4.rcTable .rbx (oRc 
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (pro_ok hp) fun s₁ h₁ => WP.mono (rc_ok hp h₁.env) fun s₂ h₂ => ?_
   have he₂ : EnvW w16 σ s₂ := EnvW.low h₁.env (rs := [⟨at' σ oRc, 768⟩]) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega))
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by simp only [oRc, oSave]; omega_using []))
     h₂.frame h₂.keep.2.1 h₂.keep.2.2 fun r hr => h₂.keep.gpr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
   refine WP.mono (absorb_ok hp (m₁ := s₂.mem) ⟨he₂, by rw [h₂.keep.gpr (by decide), h₁.r14], Frame.refl _ _⟩)
-    fun s₃ ⟨a₃, b₃⟩ => ⟨a₃.env, a₃.r14, fun r hr k hk => ?_, lanes_A0 b₃, fun _ _ p hp' => absurd hp' (by omega)⟩
+    fun s₃ ⟨a₃, b₃⟩ => ⟨a₃.env, a₃.r14, fun r hr k hk => ?_, lanes_A0 b₃, fun _ _ p hp' => absurd hp' (by omega_using [])⟩
   rw [a₃.frame.readW (Region.contains_self _ _) (by
-    simpa using Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega) (by omega))
+    simpa using Offset.disjoint_base (scr σ) (k := 800) (d := 32 * (50 + r) + 8 * k) (n := 8) (by omega_using []) (by omega_using [hr, hk]))
     (by decide)]
   exact h₂.rc r hr k hk
 
@@ -53,7 +53,7 @@ theorem epi_eq : epi = [.mov32 .rax (.reg .r14), .mov .r14 (.mem (at_ .rbx 4416)
 theorem end_ok {X : Mem → Prop} {s : State} (h : PCW w16 X σ 4 s) :
     WP isa (.block epi) s fun s' => (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
   have hin : ∀ i < 5, InRegions (s.rd ++ s.wr) (scr σ + BitVec.ofNat 64 (oSave + 8 * i)) 8 := fun i hi =>
-    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega)
+    in_scr' hp h.env.rd h.env.wr (by simp only [oSave]; omega_using [hi])
   rw [epi_eq]
   refine WP.mono (WP.keep [.rax, .r14, .r13, .r12, .rbp, .rbx] (Q := fun s' => s'.mem = s.mem ∧
       (s'.gpr .rax).setWidth 32 = (s.gpr .r14).setWidth 32 ∧
@@ -82,7 +82,7 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PCW w16 X σ 4 s) :
     · rw [k.gpr (by decide)]; exact h.env.r15
   · rw [hm]
     exact h.env.frame.readW (Region.contains_self _ _) (by
-      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega)⟩)
+      simpa using ⟨hp.ret_a, hp.ret_scr, Offset.base_disjoint_below (σ.gpr .rsp) (n := 24) (k := 8) (by omega_using [])⟩)
       (by decide)
 
 /-- Everything after the prologue, the round constants and the padded seeds. -/

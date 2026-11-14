@@ -82,7 +82,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hm : Masks
   refine WP.seq (WP.of_runBlock ⟨s1, e1, ?_⟩)
   refine WP.seq (WP.loop (M := isa) (fun m t => RoundsInv d s m t) ?_ 16 s1 ?_)
   · intro m t inv
-    have hi : 16 - m < 16 := by have := inv.le; omega
+    have hi : 16 - m < 16 := by have := inv.le; omega_using [this]
     obtain ⟨hk0, hk1, hdis⟩ := hk (16 - m) hi
     have hk0' : InRegions (t.rd ++ t.wr) (t.gpr .rdi) 4 := by rw [inv.rd, inv.wr, inv.rdi]; exact hk0
     have hk1' : InRegions (t.rd ++ t.wr) (t.gpr .rdi + 4) 4 := by rw [inv.rd, inv.wr, inv.rdi]; exact hk1
@@ -94,16 +94,16 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hm : Masks
       simp only [keysAt, inv.rdi]
       have hd : ∀ r ∈ [workR s], Region.Disjoint ⟨kp d (s.gpr .rdi) (16 - m), 8⟩ r := by
         intro r hr; simp only [List.mem_singleton] at hr; subst hr
-        exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega))
+        exact hdis.sub_right (Region.sub_prefix (by unfold scratchSlots; omega_using []))
       congr 1
       · exact inv.frame.readW (contains_prefix (by decide)) hd (by decide)
       · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
-        exact inv.frame.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega) (by omega))
+        exact inv.frame.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega_using []) (by omega_using []))
           hd (by decide)
     refine WP.of_runBlock ⟨t', ht', ?_⟩
     have hquads : ∀ b < 16, quad t' b = roundsN (keysAt d s.mem (s.gpr .rdi)) (16 - (m - 1)) (quad s b) := by
       intro b hb
-      rw [hq b hb, hkey, inv.quads b hb, show 16 - (m - 1) = 16 - m + 1 by have := inv.le; omega,
+      rw [hq b hb, hkey, inv.quads b hb, show 16 - (m - 1) = 16 - m + 1 by have := inv.le; omega_using [this],
         roundsN_succ]
     have hr8' : t'.gpr .r8 = BitVec.ofNat 64 (m - 1) := by
       rw [hr8, inv.r8, r8_sub m inv.le.1 inv.le.2]
@@ -123,7 +123,7 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hm : Masks
       left
       refine ⟨?_, ?_⟩
       · show t'.zf.map (!·) = some false
-        rw [hzf, inv.r8, r8_sub 1 (by omega) (by omega)]; rfl
+        rw [hzf, inv.r8, r8_sub 1 (by omega_using []) (by omega_using [])]; rfl
       · obtain ⟨u, eu, hu, -, hreg, hmem, hrd', hwr'⟩ := exec_sub_imm t' .rdi (BitVec.ofInt 32 (16 * keyStep d))
         refine WP.of_runBlock ⟨u, by rw [runBlock_cons, eu, runStep_some, runBlock_nil], ?_⟩
         have hu9 : u.gpr .r9 = t'.gpr .r9 := hreg _ (by decide)
@@ -141,22 +141,22 @@ theorem rounds_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hm : Masks
           · rw [hreg _ (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
             exact hregs _ (by simpa using hr)
     · right
-      refine ⟨?_, m - 1, by omega, ⟨by have := inv.le; omega, hquads, hm', hroom, by rw [hrd, inv.rd],
+      refine ⟨?_, m - 1, by omega_using [hi], ⟨by have := inv.le; omega_using [hm1, this], hquads, hm', hroom, by rw [hrd, inv.rd],
         by rw [hwr, inv.wr], ?_, hr8', hregs, hframe⟩⟩
       · show t'.zf.map (!·) = some true
         rw [hzf, inv.r8, r8_sub m inv.le.1 inv.le.2]
         have : (BitVec.ofNat 64 (m - 1) == 0) = false := by
           simp only [beq_eq_false_iff_ne, ne_eq]
           intro h0
-          have hm2 : 2 ≤ m := by have := inv.le; omega
+          have hm2 : 2 ≤ m := by have := inv.le; omega_using [hi, hm1]
           have hm16 := inv.le.2
           have := congrArg BitVec.toNat h0
-          rw [BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mod_eq_of_lt (by omega)] at this
-          omega
+          rw [BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mod_eq_of_lt (by omega_using [hm16])] at this
+          omega_using [hi, hrdi, hr8, hrsi, hrdx, hr9, hrsp, hr8', hm1, h0, hm2, hm16, this]
         rw [this]; rfl
       · rw [hrdi, inv.rdi, show (BitVec.ofInt 32 (keyStep d)).signExtend 64 = stepW d from rfl,
-          kp_succ, show 16 - m + 1 = 16 - (m - 1) by have := inv.le; omega]
-  · refine ⟨by omega, fun b _ => by rw [q1]; rfl, fun kv hkv => hm kv hkv, room_congr h rfl rfl,
+          kp_succ, show 16 - m + 1 = 16 - (m - 1) by have := inv.le; omega_using [this]]
+  · refine ⟨by omega_using [], fun b _ => by rw [q1]; rfl, fun kv hkv => hm kv hkv, room_congr h rfl rfl,
       rfl, rfl, by simp [s1, kp, gpr_setReg], rfl, fun r hr => ?_, Frame.refl _ _⟩
     simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> rfl

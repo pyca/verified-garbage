@@ -137,10 +137,10 @@ theorem sub_off {r : Addr} {k off w : Nat} (hk : k < window) (ho : off + w < win
   constructor
   · intro h
     refine Decidable.byContradiction fun c => ?_
-    exact Offset.not_lt_sub_ofNat (n := w) (by omega) (by omega) (by omega) (by omega) h
+    exact Offset.not_lt_sub_ofNat (n := w) (by omega_using [c]) (by omega_using [hk]) (by omega_using [h]) (by omega_using [ho]) h
   · rintro ⟨c, d⟩
-    rw [Offset.ofNat_sub_ofNat c, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Offset.ofNat_sub_ofNat c, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk])]
+    omega_using [c, d]
 
 theorem read_eq {τ : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) {n : Reg} {off w : Nat}
     (hn : pub τ.regs n = true) (hp : loadPub τ n off w = true) :
@@ -150,7 +150,7 @@ theorem read_eq {τ : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) {n : Reg} 
   rw [h.1.reg hn]
   refine Mem.read_congr fun i hi => ?_
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have := h.2 (off + i) (by omega) (covers_testBit hc hi)
+  have := h.2 (off + i) (by omega_using [hw, hi]) (covers_testBit hc hi)
   rwa [h.1.reg hn] at this
 
 /-- A store keeps `Agree` with the slots `store` gives. -/

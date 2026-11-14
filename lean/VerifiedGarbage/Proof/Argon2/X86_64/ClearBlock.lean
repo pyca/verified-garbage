@@ -39,12 +39,12 @@ theorem prefix_ok (n : Nat) (hn : n ≤ 128) (s : State) (zero : s.gpr .rax = 0)
     simp only [words, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_using [hn])).mono ?_
     rintro a ⟨mem, regs, rd, wr, mx⟩
     have hw : InRegions a.wr (off (a.gpr .rdi) (8 * n)) 8 := by
       rw [regs, wr]
       exact write _ _ ⟨⟨s.gpr .rdi, 1024⟩, by simp,
-        Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega) (by omega)⟩
+        Offset.contains_base _ (d := 8 * n) (n := 8) (k := 1024) (by omega_using [hn]) (by omega_using [hn])⟩
     refine (word_ok a n hw).mono ?_
     rintro t ⟨mem', regs', rd', wr', mx'⟩
     refine ⟨?_, regs'.trans regs, rd'.trans rd, wr'.trans wr, mx'.trans mx⟩

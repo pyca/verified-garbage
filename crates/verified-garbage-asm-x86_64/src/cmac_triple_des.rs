@@ -7,17 +7,19 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `key_len` must be 16 or 24.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `key` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJHj9//9IieFIg8EIuAAAAABIiYeQAQAASIn4SIn3SInWSInCSIlZMEiJaThMiWFATIlpSEyJcVBMiXlYSYnPSInVSIsHSA/ISYlHYEiLRwhID8hJiUdoSIP+EA=="
+        r#".base64 "SI1kJIBIieFIg8EIuAAAAABIiYeQAQAASIn4SIn3SInWSInCSIlZMEiJaThMiWFATIlpSEyJcVBMiXlYSYnPSInVSIsHSA/ISYlHYEiLRwhID8hJiUdoSIP+EA=="
 je 20f
 .base64 "SItHEA=="
 jmp 21f
@@ -36,7 +38,7 @@ jne 22b
 jne 24b
 .base64 "uIAAAABIKdhJAca4AAAAAEgp2EiJw0yJ4E2J7EmJxUmD6gE="
 jne 23b
-.base64 "SYHu+AEAAEyJ4EjRyEm5AAAQAAAAAABMIchMieFIwckESbkABAAAAAAAAEwhyUgxyEyJ4UjByQdJuQEAQAAAAAAATCHJSDHITInhSMHJCEm5AAAAAAAAAAFMIclIMchMieFIwckKSbkAEAAAAAAAAEwhyUgxyEyJ4UjByQ1JuQQAAAAAAAAATCHJSDHITInhSMHJDkm5AAAAAAAAAARMIclIMchMieFIwckQSbkAQAAAAAAAAEwhyUgxyEyJ4UjByRFJuQAAAAAAAAEATCHJSDHITInhSMHJE0m5EAAAAAAAAABMIclIMchMieFIwckUSbkAAAAAAAAAEEwhyUgxyEyJ4UjByRdJuQAAAAAAAAQATCHJSDHITInhSMHJGUm5QAAAAAAAAABMIclIMchMieFIwckaSbkAAAAAAAEAQEwhyUgxyEyJ4UjByR1JuQAAAAAAABAATCHJSDHITInhSMHJIEm5AAAAAAAEAABMIclIMchMieFIwckjSbkAAAAAAQBAAEwhyUgxyEyJ4UjBySZJuQAAAAAAEAAATCHJSDHITInhSMHJKUm5AAAAAAQAAABMIclIMchMieFIwcksSbkAAAABAEAAAEwhyUgxyEyJ4UjByS9JuQAAAAAQAAAATCHJSDHITInhSMHJMkm5AAAABAAAAABMIclIMchMieFIwck1SbkAAAEAQAAAAEwhyUgxyEyJ4UjByThJuQAAABAAAAAATCHJSDHITInhSMHJO0m5AAAEAAAAAABMIclIMchMieFIwck+SbkAAQBAAAAAAEwhyUgxyEyJ6Um5AAAgAAAAAABMIclIMchMielIwckDSbkACAAAAAAAAEwhyUgxyEyJ6UjByQZJuQIAgAAAAAAATCHJSDHITInpSMHJB0m5AAAAAAAAAAJMIclIMchMielIwckJSbkAIAAAAAAAAEwhyUgxyEyJ6UjByQxJuQgAAAAAAAAATCHJSDHITInpSMHJDUm5AAAAAAAAAAhMIclIMchMielIwckPSbkAgAAAAAAAAEwhyUgxyEyJ6UjByRBJuQAAAAAAAAIATCHJSDHITInpSMHJEkm5IAAAAAAAAABMIclIMchMielIwckTSbkAAAAAAAAAIEwhyUgxyEyJ6UjByRZJuQAAAAAAAAgATCHJSDHITInpSMHJGEm5gAAAAAAAAABMIclIMchMielIwckZSbkAAAAAAAIAgEwhyUgxyEyJ6UjByRxJuQAAAAAAACAATCHJSDHITInpSMHJH0m5AAAAAAAIAABMIclIMchMielIwckiSbkAAAAAAgCAAEwhyUgxyEyJ6UjBySVJuQAAAAAAIAAATCHJSDHITInpSMHJKEm5AAAAAAgAAABMIclIMchMielIwckrSbkAAAACAIAAAEwhyUgxyEyJ6UjByS5JuQAAAAAgAAAATCHJSDHITInpSMHJMUm5AAAACAAAAABMIclIMchMielIwck0SbkAAAIAgAAAAEwhyUgxyEyJ6UjByTdJuQAAACAAAAAATCHJSDHITInpSMHJOkm5AAAIAAAAAABMIclIMchMielIwck9SbkAAgCAAAAAAEwhyUgxyEiJwUjB6T+6AAAAAEgpykiD4htIAcBIMdBIicFID8lIiU0ASInBSMHpP7oAAAAASCnKSIPiG0gBwEgx0EiJwUgPyUiJTQhJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkiAIAAMM="
+.base64 "SYHu+AEAAEyJ4EjRyEm5AAAQAAAAAABMIchMieFIwckESbkABAAAAAAAAEwhyUgxyEyJ4UjByQdJuQEAQAAAAAAATCHJSDHITInhSMHJCEm5AAAAAAAAAAFMIclIMchMieFIwckKSbkAEAAAAAAAAEwhyUgxyEyJ4UjByQ1JuQQAAAAAAAAATCHJSDHITInhSMHJDkm5AAAAAAAAAARMIclIMchMieFIwckQSbkAQAAAAAAAAEwhyUgxyEyJ4UjByRFJuQAAAAAAAAEATCHJSDHITInhSMHJE0m5EAAAAAAAAABMIclIMchMieFIwckUSbkAAAAAAAAAEEwhyUgxyEyJ4UjByRdJuQAAAAAAAAQATCHJSDHITInhSMHJGUm5QAAAAAAAAABMIclIMchMieFIwckaSbkAAAAAAAEAQEwhyUgxyEyJ4UjByR1JuQAAAAAAABAATCHJSDHITInhSMHJIEm5AAAAAAAEAABMIclIMchMieFIwckjSbkAAAAAAQBAAEwhyUgxyEyJ4UjBySZJuQAAAAAAEAAATCHJSDHITInhSMHJKUm5AAAAAAQAAABMIclIMchMieFIwcksSbkAAAABAEAAAEwhyUgxyEyJ4UjByS9JuQAAAAAQAAAATCHJSDHITInhSMHJMkm5AAAABAAAAABMIclIMchMieFIwck1SbkAAAEAQAAAAEwhyUgxyEyJ4UjByThJuQAAABAAAAAATCHJSDHITInhSMHJO0m5AAAEAAAAAABMIclIMchMieFIwck+SbkAAQBAAAAAAEwhyUgxyEyJ6Um5AAAgAAAAAABMIclIMchMielIwckDSbkACAAAAAAAAEwhyUgxyEyJ6UjByQZJuQIAgAAAAAAATCHJSDHITInpSMHJB0m5AAAAAAAAAAJMIclIMchMielIwckJSbkAIAAAAAAAAEwhyUgxyEyJ6UjByQxJuQgAAAAAAAAATCHJSDHITInpSMHJDUm5AAAAAAAAAAhMIclIMchMielIwckPSbkAgAAAAAAAAEwhyUgxyEyJ6UjByRBJuQAAAAAAAAIATCHJSDHITInpSMHJEkm5IAAAAAAAAABMIclIMchMielIwckTSbkAAAAAAAAAIEwhyUgxyEyJ6UjByRZJuQAAAAAAAAgATCHJSDHITInpSMHJGEm5gAAAAAAAAABMIclIMchMielIwckZSbkAAAAAAAIAgEwhyUgxyEyJ6UjByRxJuQAAAAAAACAATCHJSDHITInpSMHJH0m5AAAAAAAIAABMIclIMchMielIwckiSbkAAAAAAgCAAEwhyUgxyEyJ6UjBySVJuQAAAAAAIAAATCHJSDHITInpSMHJKEm5AAAAAAgAAABMIclIMchMielIwckrSbkAAAACAIAAAEwhyUgxyEyJ6UjByS5JuQAAAAAgAAAATCHJSDHITInpSMHJMUm5AAAACAAAAABMIclIMchMielIwck0SbkAAAIAgAAAAEwhyUgxyEyJ6UjByTdJuQAAACAAAAAATCHJSDHITInpSMHJOkm5AAAIAAAAAABMIclIMchMielIwck9SbkAAgCAAAAAAEwhyUgxyEiJwUjB6T+6AAAAAEgpykiD4htIAcBIMdBIicFID8lIiU0ASInBSMHpP7oAAAAASCnKSIPiG0gBwEgx0EiJwUgPyUiJTQhJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkgAAAAGYP78BFMdtIjWQkgPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJIAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }
@@ -45,16 +47,18 @@ jne 23b
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 696 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 168 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJEj9//9JieBJg8AISYmYgAIAAE2JoIgCAABNiaiQAgAATYmwmAIAAE2JuKACAABIiftJidVJic5NicdIhfY="
+        r#".base64 "SI2kJFj///9JieBJg8AISYlYeE2JoIAAAABNiaiIAAAATYmwkAAAAE2JuJgAAABIiftJidVJic5NicdIhfY="
 je 20f
 .base64 "SInwSIPoAUiD4AdIg8AB"
 jmp 21f
@@ -127,7 +131,7 @@ jne 223b
 jmp 222f
 221:
 222:
-.base64 "SYufgAIAAE2Lp4gCAABNi6+QAgAATYu3mAIAAE2Lv6ACAABIjaQkuAIAAMM="
+.base64 "SYtfeE2Lp4AAAABNi6+IAAAATYu3kAAAAE2Lv5gAAABIjaQkqAAAAGYP78BFMdtIjaQkWP////MPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkqAAAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }
@@ -136,17 +140,19 @@ jmp 222f
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
 /// * `out` must be valid for reads and writes of 8 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJHj9//9IieFIg8EISIuHkAEAAEiJAkmJyEiJ8UiJ1kiJ+kiBwpgBAABIhck="
+        r#".base64 "SI1kJIBIieFIg8EISIuHkAEAAEiJAkmJyEiJ8UiJ1kiJ+kiBwpgBAABIhck="
 je 20f
 .base64 "SIPpAUiD4QdIg8EB"
 jmp 21f
@@ -176,7 +182,7 @@ jmp 23f
 jne 28b
 .base64 "uIAAAABIKdhJAca4AAAAAEgp2EiJw0yJ4E2J7EmJxUmD6gE="
 jne 27b
-.base64 "SYHu+AEAAEyJ4EjRyEm5AAAQAAAAAABMIchMieFIwckESbkABAAAAAAAAEwhyUgxyEyJ4UjByQdJuQEAQAAAAAAATCHJSDHITInhSMHJCEm5AAAAAAAAAAFMIclIMchMieFIwckKSbkAEAAAAAAAAEwhyUgxyEyJ4UjByQ1JuQQAAAAAAAAATCHJSDHITInhSMHJDkm5AAAAAAAAAARMIclIMchMieFIwckQSbkAQAAAAAAAAEwhyUgxyEyJ4UjByRFJuQAAAAAAAAEATCHJSDHITInhSMHJE0m5EAAAAAAAAABMIclIMchMieFIwckUSbkAAAAAAAAAEEwhyUgxyEyJ4UjByRdJuQAAAAAAAAQATCHJSDHITInhSMHJGUm5QAAAAAAAAABMIclIMchMieFIwckaSbkAAAAAAAEAQEwhyUgxyEyJ4UjByR1JuQAAAAAAABAATCHJSDHITInhSMHJIEm5AAAAAAAEAABMIclIMchMieFIwckjSbkAAAAAAQBAAEwhyUgxyEyJ4UjBySZJuQAAAAAAEAAATCHJSDHITInhSMHJKUm5AAAAAAQAAABMIclIMchMieFIwcksSbkAAAABAEAAAEwhyUgxyEyJ4UjByS9JuQAAAAAQAAAATCHJSDHITInhSMHJMkm5AAAABAAAAABMIclIMchMieFIwck1SbkAAAEAQAAAAEwhyUgxyEyJ4UjByThJuQAAABAAAAAATCHJSDHITInhSMHJO0m5AAAEAAAAAABMIclIMchMieFIwck+SbkAAQBAAAAAAEwhyUgxyEyJ6Um5AAAgAAAAAABMIclIMchMielIwckDSbkACAAAAAAAAEwhyUgxyEyJ6UjByQZJuQIAgAAAAAAATCHJSDHITInpSMHJB0m5AAAAAAAAAAJMIclIMchMielIwckJSbkAIAAAAAAAAEwhyUgxyEyJ6UjByQxJuQgAAAAAAAAATCHJSDHITInpSMHJDUm5AAAAAAAAAAhMIclIMchMielIwckPSbkAgAAAAAAAAEwhyUgxyEyJ6UjByRBJuQAAAAAAAAIATCHJSDHITInpSMHJEkm5IAAAAAAAAABMIclIMchMielIwckTSbkAAAAAAAAAIEwhyUgxyEyJ6UjByRZJuQAAAAAAAAgATCHJSDHITInpSMHJGEm5gAAAAAAAAABMIclIMchMielIwckZSbkAAAAAAAIAgEwhyUgxyEyJ6UjByRxJuQAAAAAAACAATCHJSDHITInpSMHJH0m5AAAAAAAIAABMIclIMchMielIwckiSbkAAAAAAgCAAEwhyUgxyEyJ6UjBySVJuQAAAAAAIAAATCHJSDHITInpSMHJKEm5AAAAAAgAAABMIclIMchMielIwckrSbkAAAACAIAAAEwhyUgxyEyJ6UjByS5JuQAAAAAgAAAATCHJSDHITInpSMHJMUm5AAAACAAAAABMIclIMchMielIwck0SbkAAAIAgAAAAEwhyUgxyEyJ6UjByTdJuQAAACAAAAAATCHJSDHITInpSMHJOkm5AAAIAAAAAABMIclIMchMielIwck9SbkAAgCAAAAAAEwhyUgxyEgPyEiJRQBJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkiAIAAMM="
+.base64 "SYHu+AEAAEyJ4EjRyEm5AAAQAAAAAABMIchMieFIwckESbkABAAAAAAAAEwhyUgxyEyJ4UjByQdJuQEAQAAAAAAATCHJSDHITInhSMHJCEm5AAAAAAAAAAFMIclIMchMieFIwckKSbkAEAAAAAAAAEwhyUgxyEyJ4UjByQ1JuQQAAAAAAAAATCHJSDHITInhSMHJDkm5AAAAAAAAAARMIclIMchMieFIwckQSbkAQAAAAAAAAEwhyUgxyEyJ4UjByRFJuQAAAAAAAAEATCHJSDHITInhSMHJE0m5EAAAAAAAAABMIclIMchMieFIwckUSbkAAAAAAAAAEEwhyUgxyEyJ4UjByRdJuQAAAAAAAAQATCHJSDHITInhSMHJGUm5QAAAAAAAAABMIclIMchMieFIwckaSbkAAAAAAAEAQEwhyUgxyEyJ4UjByR1JuQAAAAAAABAATCHJSDHITInhSMHJIEm5AAAAAAAEAABMIclIMchMieFIwckjSbkAAAAAAQBAAEwhyUgxyEyJ4UjBySZJuQAAAAAAEAAATCHJSDHITInhSMHJKUm5AAAAAAQAAABMIclIMchMieFIwcksSbkAAAABAEAAAEwhyUgxyEyJ4UjByS9JuQAAAAAQAAAATCHJSDHITInhSMHJMkm5AAAABAAAAABMIclIMchMieFIwck1SbkAAAEAQAAAAEwhyUgxyEyJ4UjByThJuQAAABAAAAAATCHJSDHITInhSMHJO0m5AAAEAAAAAABMIclIMchMieFIwck+SbkAAQBAAAAAAEwhyUgxyEyJ6Um5AAAgAAAAAABMIclIMchMielIwckDSbkACAAAAAAAAEwhyUgxyEyJ6UjByQZJuQIAgAAAAAAATCHJSDHITInpSMHJB0m5AAAAAAAAAAJMIclIMchMielIwckJSbkAIAAAAAAAAEwhyUgxyEyJ6UjByQxJuQgAAAAAAAAATCHJSDHITInpSMHJDUm5AAAAAAAAAAhMIclIMchMielIwckPSbkAgAAAAAAAAEwhyUgxyEyJ6UjByRBJuQAAAAAAAAIATCHJSDHITInpSMHJEkm5IAAAAAAAAABMIclIMchMielIwckTSbkAAAAAAAAAIEwhyUgxyEyJ6UjByRZJuQAAAAAAAAgATCHJSDHITInpSMHJGEm5gAAAAAAAAABMIclIMchMielIwckZSbkAAAAAAAIAgEwhyUgxyEyJ6UjByRxJuQAAAAAAACAATCHJSDHITInpSMHJH0m5AAAAAAAIAABMIclIMchMielIwckiSbkAAAAAAgCAAEwhyUgxyEyJ6UjBySVJuQAAAAAAIAAATCHJSDHITInpSMHJKEm5AAAAAAgAAABMIclIMchMielIwckrSbkAAAACAIAAAEwhyUgxyEyJ6UjByS5JuQAAAAAgAAAATCHJSDHITInpSMHJMUm5AAAACAAAAABMIclIMchMielIwck0SbkAAAIAgAAAAEwhyUgxyEyJ6UjByTdJuQAAACAAAAAATCHJSDHITInpSMHJOkm5AAAIAAAAAABMIclIMchMielIwck9SbkAAgCAAAAAAEwhyUgxyEgPyEiJRQBJi18wSYtvOE2LZ0BNi29ITYt3UE2Lf1hIjaQkgAAAAGYP78BFMdtIjWQkgPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJIAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }

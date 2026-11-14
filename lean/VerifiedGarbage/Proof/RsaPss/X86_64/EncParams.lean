@@ -28,7 +28,7 @@ theorem shr_ff_table : ∀ z < 8, (BitVec.setWidth 64 (0xFF#32) >>> z : BitVec 6
 
 /-- The mask's shift count: `8 emLen - emBits`, at most 7. -/
 theorem emLength_z {b : Nat} : 8 * Spec.RsaPss.emLength b - b < 8 ∧ b ≤ 8 * Spec.RsaPss.emLength b := by
-  unfold Spec.RsaPss.emLength; omega
+  unfold Spec.RsaPss.emLength; omega_using []
 
 theorem maskBits_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {r : Reg} (hra : r ≠ .rax) {b : Nat}
@@ -41,7 +41,7 @@ theorem maskBits_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
         (off F sLo) (0 : BitVec 64) := by
   have G := L.geo
   obtain ⟨hz, hle⟩ := emLength_z (b := b)
-  have hE : Spec.RsaPss.emLength b ≤ 1024 := by unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega
+  have hE : Spec.RsaPss.emLength b ≤ 1024 := by unfold Spec.RsaPss.emLength Proof.RsaPss.maxEmBits at *; omega_using [hb2]
   have R1 := R.wf G (k := 25) (by decide) (BitVec.setWidth 64 ((0xFF : Byte) >>> (8 * Spec.RsaPss.emLength b - b)))
   have R2 := R1.wf G (k := 26) (by decide) 0
   rw [show off F (8 * 25) = off F sC from rfl] at R1 R2
@@ -51,11 +51,11 @@ theorem maskBits_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_twoPow]
-    have : b < 2 ^ 64 := by unfold Proof.RsaPss.maxEmBits at hb2; omega
-    rw [Nat.mod_eq_of_lt (show Spec.RsaPss.emLength b < 2 ^ 64 by omega), Nat.mod_eq_of_lt this]
-    omega
+    have : b < 2 ^ 64 := by unfold Proof.RsaPss.maxEmBits at hb2; omega_using [hb2]
+    rw [Nat.mod_eq_of_lt (show Spec.RsaPss.emLength b < 2 ^ 64 by omega_using [hE]), Nat.mod_eq_of_lt this]
+    omega_using [hle, hE]
   have hzt : (BitVec.ofNat 64 (8 * Spec.RsaPss.emLength b - b)).toNat % 64 = 8 * Spec.RsaPss.emLength b - b := by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_using [hz]
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun u' => u'.mem = (u.mem.writeW (off F sC)
       (BitVec.setWidth 64 ((0xFF : Byte) >>> (8 * Spec.RsaPss.emLength b - b)))).writeW (off F sLo) (0 : BitVec 64))
       ?_ rfl) fun u' ⟨hm, k⟩ => ?_
@@ -78,6 +78,6 @@ theorem fitH_ok {H : Impl.Pbkdf2.Md.X86_64.Hash} (hD : H.D + 2 < 2 ^ 31) {u : St
     u'.cf = some (decide (k < H.D + 2))) ?_ rfl) fun u' ⟨h, k⟩ => ⟨k, h⟩
   xrun [fitH, ea_sp, L.rsp, L.ld (d := sK) (by decide), R.rd (d := sK) 17 rfl (by decide), hk,
     VG.Proof.MlKem.X86_64.sx_ofNat hD]
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hk2]), Nat.mod_eq_of_lt (by omega_using [hD])]
 
 end VG.Proof.RsaPss.X86_64

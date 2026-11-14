@@ -27,7 +27,7 @@ theorem pdCheckFirst_ok (s : State) {base : BitVec 32} {len w N R : Nat}
   refine WP.mono (smallConstLayout_ok s 1 h.ready.workspace h.ready.layout h.ready.width h.ready.ptr
     (by decide : 7 < 8) (by decide) (by decide) h.ready.stackRead h.ready.stackSep h.ready.saved) ?_
   rintro u ⟨_, _, one, outside, frameU, restU, ptr⟩
-  have keeps := outside_array_keeps outside (len := len) (by have := h.ready.workspace.nowrap; omega)
+  have keeps := outside_array_keeps outside (len := len) (by have := h.ready.workspace.nowrap; omega_using [this])
   have readyU := h.ready.after_array keeps frameU restU ptr
   have hu := h.after_array readyU restU keeps (by decide) (by decide)
   refine WP.mono (arrayCompare_ok u hu.ready (by decide : 7 < 8) (by decide : 0 < 8)

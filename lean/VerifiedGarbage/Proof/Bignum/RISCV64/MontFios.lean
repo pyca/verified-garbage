@@ -31,10 +31,10 @@ theorem carry_toNat (x y : BitVec 64) :
   have hy := y.isLt
   by_cases h : 2 ^ 64 ≤ x.toNat + y.toNat
   · have : x + y < y := by
-      rw [BitVec.lt_def, BitVec.toNat_add]; omega
+      rw [BitVec.lt_def, BitVec.toNat_add]; omega_using [h]
     simp [this, h]
   · have : ¬ x + y < y := by
-      rw [BitVec.lt_def, BitVec.toNat_add]; omega
+      rw [BitVec.lt_def, BitVec.toNat_add]; omega_using [h]
     simp only [this, h, ite_false, decide_false, Bool.toNat_false]; rfl
 
 /-- The arithmetic of one of a step's two sums: with `c₁ = c + x` and its

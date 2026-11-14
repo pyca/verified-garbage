@@ -22,8 +22,8 @@ theorem transferArrayArgs_ok (s : State) {base src dst : BitVec 32} {size o a : 
       t.mem = s.mem ∧ Rest [.r0, .r2, .r4] s t := by
   have enc : ∀ i : Fin 8, encodable (BitVec.ofNat 32 i.val) = true := by decide
   unfold transferArrayArgs
-  refine wp_ldr (a := off (State.addr base) (64 + 8 * o)) (by omega)
-    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega)) (ws.read (by omega)) fun u h => ?_
+  refine wp_ldr (a := off (State.addr base) (64 + 8 * o)) (by omega_using [ho])
+    (by rw [ptr]; exact addr_add (by have := ws.nowrap; omega_using [fit, ho, this])) (ws.read (by omega_using [fit, ho])) fun u h => ?_
   refine wp_mov (op2_reg _ _) fun v j => ?_
   refine wp_mov (op2_imm (enc ⟨a, ha⟩)) fun t k => WP.block_nil ?_
   exact ⟨(k.other .r0 (by decide)).trans (j.gpr.trans ((h.other .r1 (by decide)).trans source)),

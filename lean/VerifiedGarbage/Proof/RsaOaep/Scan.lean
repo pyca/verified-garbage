@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Mgf1.Bytes
 import Batteries.Tactic.Init
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-OAEP decryption: the masks and the scan, whatever the target
@@ -36,7 +37,7 @@ theorem zx_eq_zero (b : Byte) : BitVec.setWidth 64 b = 0 ↔ b = 0 := by
     apply BitVec.eq_of_toNat_eq
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_setWidth] at this
-    rw [Nat.mod_eq_of_lt (by have := b.isLt; omega)] at this
+    rw [Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])] at this
     simpa using this
   · intro h; subst h; rfl
 
@@ -46,7 +47,7 @@ theorem zx_inj {a b : Byte} : BitVec.setWidth 64 a = BitVec.setWidth 64 b ↔ a 
     apply BitVec.eq_of_toNat_eq
     have := congrArg BitVec.toNat h
     simp only [BitVec.toNat_setWidth] at this
-    rwa [Nat.mod_eq_of_lt (by have := a.isLt; omega), Nat.mod_eq_of_lt (by have := b.isLt; omega)] at this
+    rwa [Nat.mod_eq_of_lt (by have := a.isLt; omega_using []), Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])] at this
   · intro h; rw [h]
 
 theorem or_eq_zero (a b : BitVec 64) : a ||| b = 0 ↔ a = 0 ∧ b = 0 := by
@@ -128,15 +129,15 @@ theorem scanS_inv (f : Nat → Byte) (c₀ : BitVec 64) : ∀ n,
     refine ⟨by simp [scanS, mk, hl], fun _ => rfl, fun h => absurd hl h, by simp [scanS, mk, this]⟩
   | n + 1 => by
     obtain ⟨hd, hs0, hs1, hc⟩ := scanS_inv f c₀ n
-    have hlk : lk f (n + 1) ↔ lk f n ∧ ¬ f n = 1 := ⟨fun h => ⟨fun j hj => h j (by omega), h n (by omega)⟩,
-      fun ⟨h, h'⟩ j hj => if hjn : j < n then h j hjn else by rw [show j = n by omega]; exact h'⟩
+    have hlk : lk f (n + 1) ↔ lk f n ∧ ¬ f n = 1 := ⟨fun h => ⟨fun j hj => h j (by omega_using [hj]), h n (by omega_using [])⟩,
+      fun ⟨h, h'⟩ j hj => if hjn : j < n then h j hjn else by rw [show j = n by omega_using [hj, hjn]]; exact h'⟩
     have hbad : bad f (n + 1) ↔ bad f n ∨ ¬ (f n = 0 ∨ f n = 1) ∧ lk f n :=
       ⟨fun ⟨j, hj, h1, h2, h3⟩ => if hjn : j < n then .inl ⟨j, hjn, h1, h2, h3⟩ else by
-          have e : j = n := by omega
+          have e : j = n := by omega_using [hj, hjn]
           subst e
           exact .inr ⟨fun h' => h'.elim h2 h3, h1⟩,
-       fun h => h.elim (fun ⟨j, hj, h1, h2, h3⟩ => ⟨j, by omega, h1, h2, h3⟩)
-        fun ⟨h1, h2⟩ => ⟨n, by omega, h2, fun e => h1 (.inl e), fun e => h1 (.inr e)⟩⟩
+       fun h => h.elim (fun ⟨j, hj, h1, h2, h3⟩ => ⟨j, by omega_using [hj], h1, h2, h3⟩)
+        fun ⟨h1, h2⟩ => ⟨n, by omega_using [], h2, fun e => h1 (.inl e), fun e => h1 (.inr e)⟩⟩
     simp only [scanS, zM_zx, zM_zx1, hd, hc]
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [mk_not, mk_and]; exact mk_congr hlk.symm
@@ -147,10 +148,10 @@ theorem scanS_inv (f : Nat → Byte) (c₀ : BitVec 64) : ∀ n,
       by_cases hl : lk f n
       · have h1 : f n = 1 := by
           by_contra h1; exact h (hlk.mpr ⟨hl, h1⟩)
-        refine ⟨n, by omega, h1, hl, ?_⟩
+        refine ⟨n, by omega_using [], h1, hl, ?_⟩
         rw [hs0 hl, BitVec.and_assoc, mk_and, and_mk, ifp ⟨hl, h1⟩]; exact BitVec.zero_or
       · obtain ⟨j₀, hj₀, h1, h2, h3⟩ := hs1 hl
-        refine ⟨j₀, by omega, h1, h2, ?_⟩
+        refine ⟨j₀, by omega_using [hj₀], h1, h2, ?_⟩
         rw [h3, BitVec.and_assoc, mk_and, and_mk, ifn (fun h' => hl h'.1)]; exact BitVec.or_zero
     · rw [mk_or, mk_not, mk_and, BitVec.or_assoc, mk_or]
       exact congrArg (c₀ ||| ·) (mk_congr hbad.symm)
@@ -163,8 +164,8 @@ theorem exists_first {P : Nat → Prop} [DecidablePred P] :
   | n + 1, j, hj, pj => by
     by_cases hq : ∃ i < j, P i
     · obtain ⟨i, hi, pi⟩ := hq
-      obtain ⟨i', hi', pi', m⟩ := exists_first n i (by omega) pi
-      exact ⟨i', by omega, pi', m⟩
+      obtain ⟨i', hi', pi', m⟩ := exists_first n i (by omega_using [hj, hi]) pi
+      exact ⟨i', by omega_using [hi, hi'], pi', m⟩
     · exact ⟨j, Nat.le_refl _, pj, fun i' hi' pi' => hq ⟨i', hi', pi'⟩⟩
 
 theorem dropWhile_zeros : ∀ (T : List Byte) (j : Nat), (∀ i < j, T.getD i 0 = 0) → j ≤ T.length →
@@ -172,9 +173,9 @@ theorem dropWhile_zeros : ∀ (T : List Byte) (j : Nat), (∀ i < j, T.getD i 0 
   | [], _, _, _ => by simp
   | a :: T, 0, _, _ => rfl
   | a :: T, j + 1, h, hl => by
-    have ha : a = 0 := h 0 (by omega)
+    have ha : a = 0 := h 0 (by omega_using [])
     subst ha
-    rw [List.drop_succ_cons, ← dropWhile_zeros T j (fun i hi => h (i + 1) (by omega)) (by simp at hl; omega)]
+    rw [List.drop_succ_cons, ← dropWhile_zeros T j (fun i hi => h (i + 1) (by omega_using [hi])) (by simp at hl; omega_using [hl])]
     rfl
 
 theorem drop_getD (T : List Byte) {j : Nat} (hj : j < T.length) : T.drop j = T.getD j 0 :: T.drop (j + 1) := by
@@ -184,7 +185,7 @@ theorem drop_getD (T : List Byte) {j : Nat} (hj : j < T.length) : T.drop j = T.g
 theorem dropWhile_at (T : List Byte) {j : Nat} (hj : j < T.length) (h0 : ∀ i < j, T.getD i 0 = 0)
     (hn : T.getD j 0 ≠ 0) : T.dropWhile (· == 0) = T.getD j 0 :: T.drop (j + 1) := by
   have hb : (T.getD j 0 == 0) = false := by rw [beq_eq_false_iff_ne]; exact hn
-  rw [dropWhile_zeros T j h0 (by omega), drop_getD T hj, List.dropWhile_cons, hb]
+  rw [dropWhile_zeros T j h0 (by omega_using [hj]), drop_getD T hj, List.dropWhile_cons, hb]
   rfl
 
 /-- The decoding finds `0x01` after zeros. -/
@@ -195,7 +196,7 @@ theorem scan_found (T : List Byte) (c₀ : BitVec 64) (hl : ¬ lk (fun i => T.ge
   obtain ⟨-, -, hs1, -⟩ := scanS_inv (fun i => T.getD i 0) c₀ T.length
   obtain ⟨j₀, hj₀, h1, h2, h3⟩ := hs1 hl
   have h0 : ∀ i < j₀, T.getD i 0 = 0 := fun i hi => by
-    by_contra hn; exact hb ⟨i, by omega, fun i' hi' => h2 i' (by omega), hn, h2 i hi⟩
+    by_contra hn; exact hb ⟨i, by omega_using [hj₀, hi], fun i' hi' => h2 i' (by omega_using [hi, hi']), hn, h2 i hi⟩
   refine ⟨j₀, hj₀, h3, ?_⟩
   rw [dropWhile_at T hj₀ h0 (by rw [h1]; decide), h1]
 
@@ -209,15 +210,15 @@ theorem scan_fail (T : List Byte)
     obtain ⟨i, hi, hni, hfirst⟩ := exists_first (P := fun i => T.getD i 0 ≠ 0) T.length j hj hnz
     have h0 : ∀ i' < i, T.getD i' 0 = 0 := fun i' hi' => by
       have := hfirst i' hi'; simp only [ne_eq, Decidable.not_not] at this; exact this
-    rw [dropWhile_at T (by omega) h0 hni] at hm
+    rw [dropWhile_at T (by omega_using [hj, hi]) h0 hni] at hm
     have h1 : T.getD i 0 = 1 := (List.cons.inj hm).1
     rcases h with hl | ⟨j', hj', hp, hn0, hn1⟩
-    · exact hl i (by omega) h1
+    · exact hl i (by omega_using [hj, hi]) h1
     · by_cases hij : i < j'
       · exact hp i hij h1
       · have : i = j' := by
           by_contra hne
-          exact hn0 (h0 j' (by omega))
+          exact hn0 (h0 j' (by omega_using [hij, hne]))
         subst this; exact hn1 h1
   · have hall : ∀ i < T.length, T.getD i 0 = 0 := fun i hi => by
       by_contra hn; exact hz ⟨i, hi, hn⟩
@@ -248,8 +249,8 @@ theorem accG_eq_zero (b₀ : Byte) (f g : Nat → Byte) :
     rw [accG, or_eq_zero, accG_eq_zero b₀ f g j, xor_eq_zero, zx_inj]
     constructor
     · rintro ⟨⟨h0, h⟩, h'⟩
-      exact ⟨h0, fun i hi => if hij : i < j then h i hij else by rw [show i = j by omega]; exact h'⟩
+      exact ⟨h0, fun i hi => if hij : i < j then h i hij else by rw [show i = j by omega_using [hi, hij]]; exact h'⟩
     · rintro ⟨h0, h⟩
-      exact ⟨⟨h0, fun i hi => h i (by omega)⟩, h j (by omega)⟩
+      exact ⟨⟨h0, fun i hi => h i (by omega_using [hi])⟩, h j (by omega_using [])⟩
 
 end VG.Proof.RsaOaep

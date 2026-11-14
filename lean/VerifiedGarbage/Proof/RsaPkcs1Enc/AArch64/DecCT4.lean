@@ -77,8 +77,8 @@ abbrev SCΦ : Inv := fun L g vv m₀ t => ∃ R EM kd, SC L g vv m₀ R EM kd t
 theorem k_sub {k : BitVec 64} {n : Nat} (h : n ≤ k.toNat) : k - BitVec.ofNat 64 n = BitVec.ofNat 64 (k.toNat - n) := by
   have := k.isLt
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
-    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h])]; omega_using [h]),
+    BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h]), Nat.mod_eq_of_lt (by omega_using [])]
 
 /-- The mask's loop after `j` iterations. -/
 def MG (L : Lay) (j : Nat) (u : State) : Prop :=
@@ -91,20 +91,20 @@ theorem maskPart_ct {S : Nat} : RelCT isa (Two S AMΦ) maskPart (Two S MKΦ) := 
   have hk64 := hp.1.k64
   have hw : ∀ g vv m₀ (t : State), AMΦ e.L g vv m₀ t → WP isa (.block maskInit) t (MG e.L 0) :=
     fun _ _ _ t ⟨_, _, _, h⟩ => WP.mono (maskInit_ok h.post.ctx.sp h.post.slots) fun _ ⟨hs, x9, x8⟩ =>
-      ⟨hs.sp.trans h.post.ctx.sp, x8, by rw [x9, slot, h.post.ctx.kept.k, k_sub (by omega)]⟩
+      ⟨hs.sp.trans h.post.ctx.sp, x8, by rw [x9, slot, h.post.ctx.kept.k, k_sub (by omega_using [hk64])]⟩
   refine RelCT.seq (Q := fun _ _ => True) (taint_wp (F := MG e.L 0) [] (by taint_decide)
     (fun _ _ ⟨_, _, _, ⟨_, _, _, f₁⟩, ⟨_, _, _, f₂⟩⟩ =>
       ⟨f₁.post.ctx.sp.trans f₂.post.ctx.sp.symm, fun _ h => absurd h List.not_mem_nil⟩)
     fun _ _ ⟨_, _, _, f₁, f₂⟩ => ⟨hw _ _ _ _ f₁, hw _ _ _ _ f₂⟩) ?_ _ _ _ _ _ _ hp e₁ e₂
-  refine (count_ct (bitLength_pos (x := e.L.k.toNat - 11) (by omega)) (fun j a b => MG e.L j a ∧ MG e.L j b)
+  refine (count_ct (bitLength_pos (x := e.L.k.toNat - 11) (by omega_using [hk64])) (fun j a b => MG e.L j a ∧ MG e.L j b)
     fun j hj => ?_).mono (fun _ _ h => h) fun _ _ _ => trivial
   refine (taint_wp (F := fun w => MG e.L (j + 1) w ∧
       (w.gpr .x10 != 0) = decide (j + 1 ≠ Spec.RsaPkcs1Enc.bitLength (e.L.k.toNat - 11))) [.x8, .x9]
     (by taint_decide) (fun _ _ ⟨⟨a, a8, a9⟩, ⟨b, b8, b9⟩⟩ => ⟨a.trans b.symm, fun _ => pair_eq ⟨a8, a9⟩ ⟨b8, b9⟩⟩)
     fun a b ⟨ga, gb⟩ => ⟨?_, ?_⟩).mono (fun _ _ h => h) fun _ _ ⟨⟨ga, ca⟩, ⟨gb, cb⟩⟩ => ⟨⟨ga, gb⟩, ca, cb⟩
-  · exact WP.mono (maskStep_ok (by omega) (by omega) hj ga.2.1 ga.2.2) fun _ ⟨hw, w8, w9, w10⟩ =>
+  · exact WP.mono (maskStep_ok (by omega_using [hk64]) (by omega_using [hk]) hj ga.2.1 ga.2.2) fun _ ⟨hw, w8, w9, w10⟩ =>
       ⟨⟨hw.sp.trans ga.1, w8, w9⟩, w10⟩
-  · exact WP.mono (maskStep_ok (by omega) (by omega) hj gb.2.1 gb.2.2) fun _ ⟨hw, w8, w9, w10⟩ =>
+  · exact WP.mono (maskStep_ok (by omega_using [hk64]) (by omega_using [hk]) hj gb.2.1 gb.2.2) fun _ ⟨hw, w8, w9, w10⟩ =>
       ⟨⟨hw.sp.trans gb.1, w8, w9⟩, w10⟩
 
 /-- After `alInit`. -/
@@ -157,9 +157,9 @@ theorem validSame_ok {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128
   have hK : slot t L.Q oK = BitVec.ofNat 64 L.k.toNat := by
     rw [slot, hc.ctx.kept.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have hO : slot t L.Q oOut = L.out := hc.ctx.kept.out
-  exact WP.mono (validBlock_ok hc.ctx.sp hc.slots (by rw [hO]; exact hc.ctx.outR (by omega))
-    (by rw [hO]; exact hc.ctx.outR (by omega)) h.x17 h.x15 h.x16 h.al hK
-    (by have := sep_lt EM (k := L.k.toNat) (by omega); omega)) fun _ h => h.1
+  exact WP.mono (validBlock_ok hc.ctx.sp hc.slots (by rw [hO]; exact hc.ctx.outR (by omega_using [hk64]))
+    (by rw [hO]; exact hc.ctx.outR (by omega_using [hk64])) h.x17 h.x15 h.x16 h.al hK
+    (by have := sep_lt EM (k := L.k.toNat) (by omega_using [hk64]); omega_using [this])) fun _ h => h.1
 
 /-- Before `outInit`: where `*msg_len`'s pointer is. -/
 def OH (L : Lay) (u : State) : Prop :=

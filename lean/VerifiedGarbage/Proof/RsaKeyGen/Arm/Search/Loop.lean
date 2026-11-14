@@ -29,8 +29,8 @@ theorem cmp_ok {u : State} {r : Reg} {n c : Nat} (hr : u.gpr r = BitVec.ofNat 32
     WP isa (.block [.cmp r (.imm (BitVec.ofNat 32 c))]) u fun t =>
       (isa.eval .eq t = some (decide (n = c)) ∧ t.mem = u.mem) ∧ Rest [] u t := by
   refine withRest_all [] ?_ (by cases r <;> rfl) (by rfl)
-  ffrun [hr, VG.Proof.Ffdh.Arm.encodable_byte (v := BitVec.ofNat 32 c) (by rw [BitVec.toNat_ofNat]; omega)]
-  exact congrArg some (sub_eq_beq hn (by omega))
+  ffrun [hr, VG.Proof.Ffdh.Arm.encodable_byte (v := BitVec.ofNat 32 c) (by rw [BitVec.toNat_ofNat]; omega_using [hc])]
+  exact congrArg some (sub_eq_beq hn (by omega_using [hc]))
 
 theorem SearchLive.step {p : SearchPublic} {o s t : State} {used k : Nat} (h : SearchLive p o used k s)
     {ws : List Reg} (kt : Rest ws s t) (hws : ∀ r ∈ [Reg.r4, .r5, .r6, .r7, .r8, .r9, .r11], r ∉ ws := by decide)
@@ -63,8 +63,8 @@ theorem candidateStep_ok (c : Cand) {p : SearchPublic} {o s : State} {final : Pr
   · unfold arg
     have c4 : pushBytes + 0 + 4 * 4 < 4096 := by decide
     ffrun [hl.arg_addr 4, hl.arg_read (j := 4) (by decide), hl.arg_value (j := 4) (by decide), randLen_arg hi,
-      hl.r8, hl.r5, BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega) hu, c4,
-      toNat_small (n := p.len) (by omega), toNat_small (n := p.randLen - used) (by omega)]
+      hl.r8, hl.r5, BitVec.ofNat_sub_ofNat_of_le _ _ (show used < 2 ^ 32 by omega_using [hv, rl, hu]) hu, c4,
+      toNat_small (n := p.len) (by omega_using [hv]), toNat_small (n := p.randLen - used) (by omega_using [hv, rl])]
     exact carry_eval (P := p.randLen - used < p.len) (not_decide_le _ _)
   have hu' := hl.keep ku hm
   refine WP.ite _ he (fun z => ?_) (fun z => ?_)
@@ -79,9 +79,9 @@ theorem candidateStep_ok (c : Cand) {p : SearchPublic} {o s : State} {final : Pr
       split <;> rfl
     rw [e]
     exact WP.mono (short_ok ht.toSearchBase ht.r8 ht.r9 hu ht.remaining_le hz _) fun t ht =>
-      done_post (fun hc => by have := hc.2.1; omega) ht
+      done_post (fun hc => by have := hc.2.1; omega_using [z, this]) ht
   · have z := of_decide_eq_false z
-    exact WP.seq (WP.mono (candidateRun_ok c hu' (by omega)) fun t ⟨ht, hp⟩ => classify_ok ht hp hk hfin (by omega))
+    exact WP.seq (WP.mono (candidateRun_ok c hu' (by omega_using [hv, z])) fun t ⟨ht, hp⟩ => classify_ok ht hp hk hfin (by omega_using [hv, z]))
 
 theorem status_lt (r : PrimeSearchResult) : r.status < 4 ∧ r.status ≠ 2 := by
   unfold Spec.Entropy.Result.status Spec.Entropy.Outcome.status; split <;> decide
@@ -101,7 +101,7 @@ theorem iteration_ok (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeS
     {tr : List Nat} (hl : SearchLive p o used k s) (hfin : final = (tailOf p o used k).consume used tr) :
     WP isa (iteration c.call) s (IterPost p o final used k tr) := by
   have rem := hl.input.remaining_le
-  have hk32 : k < 2 ^ 32 := by have := hl.remaining_le; omega
+  have hk32 : k < 2 ^ 32 := by have := hl.remaining_le; omega_using [rem, this]
   unfold iteration
   refine WP.seq (WP.mono (cmp0_ok hl.r9 hk32) fun u ⟨⟨he, hm⟩, ku⟩ => ?_)
   have hu := hl.keep ku hm
@@ -123,9 +123,9 @@ theorem iteration_ok (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeS
   · rename_i hc
     simp only [hc, ↓reduceIte]
     have st := status_lt final
-    refine WP.mono (cmp_ok (c := 4) ht.r11 (by omega) (by decide)) fun t ⟨⟨et, hmt⟩, kt⟩ => ⟨?_, ?_⟩
+    refine WP.mono (cmp_ok (c := 4) ht.r11 (by omega_using [st]) (by decide)) fun t ⟨⟨et, hmt⟩, kt⟩ => ⟨?_, ?_⟩
     · change isa.eval .eq t = some false
-      rw [et, decide_eq_false (by omega)]
+      rw [et, decide_eq_false (by omega_using [st])]
     · exact ⟨ht.toSearchBase.keep kt hmt, (kt.gpr .r8 (by decide)).trans ht.r8,
         (kt.gpr .r9 (by decide)).trans ht.r9, (kt.gpr .r10 (by decide)).trans ht.r10,
         (kt.gpr .r11 (by decide)).trans ht.r11, by rw [hmt]; exact ht.output, ht.bounds⟩
@@ -136,8 +136,8 @@ theorem candUsed_le {p : SearchPublic} {o : State} {used : Nat} (h : SearchInput
   split
   · rename_i x rest hop
     obtain ⟨m, hm, -, hum, -⟩ := used_bound h hu hop
-    omega
-  · omega
+    omega_using [hu]
+  · omega_using [hu]
 
 theorem search_loop (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeSearchResult} {used k : Nat}
     {tr : List Nat} (hl : SearchLive p o used k s) (hfin : final = (tailOf p o used k).consume used tr) :
@@ -150,7 +150,7 @@ theorem search_loop (c : Cand) {p : SearchPublic} {o s : State} {final : PrimeSe
   split at ht'
   · rename_i hc
     have hb := candUsed_le hl.input hle
-    exact .inr ⟨ht'.1, _, by have := hc.2.2.2; omega, _, _, _, rfl, hb, ht'.2.1, ht'.2.2⟩
+    exact .inr ⟨ht'.1, _, by have := hc.2.2.2; omega_using [hm, hb, this], _, _, _, rfl, hb, ht'.2.1, ht'.2.2⟩
   · exact .inl ht'
 
 end VG.Proof.RsaKeyGen.Arm.Search

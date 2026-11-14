@@ -105,12 +105,12 @@ theorem subkey_ok (s : State) {i v r : Nat} {hi : Bool} (hv : v < 4)
     · intro r' h1 h2; rw [g₃, o₂ _ h1, o₁ _ h1]
     · rw [rd₃, rd₂, rd₁]
     · rw [wr₃, wr₂, wr₁]
-  · have hr1 : 1 ≤ r % 64 := by omega
-    have hr2 : r % 64 ≤ 63 := by omega
+  · have hr1 : 1 ≤ r % 64 := by omega_using [h0]
+    have hr2 : r % 64 ≤ 63 := by omega_using []
     obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := shiftImm_ok s₁ .shl (Or.inl rfl) t0 hr1 hr2
     obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ t1 b
     obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := shiftImm_ok s₃ .shr (Or.inr rfl) t1
-      (n := 64 - r % 64) (by omega) (by omega)
+      (n := 64 - r % 64) (by omega_using []) (by omega_using [h0])
     obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := orReg_ok s₄ t0 t1
     obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆⟩ := bswap_ok s₅ t0
     have g₆ : ∀ r', r' ≠ t0 → r' ≠ t1 → s₆.gpr r' = s.gpr r' := fun r' h1 h2 => by
@@ -139,14 +139,14 @@ theorem regs_ne_t (x : Nat) : hiReg x ≠ t0 ∧ hiReg x ≠ t1 ∧ loReg x ≠ 
 /-- Byte `j` of a byte-swapped word stored little-endian is byte `j` of the word, the most significant first. -/
 theorem writeW_bswap_byte (m : Mem) (a : Addr) (w : BitVec 64) {j : Nat} (hj : j < 8) :
     m.writeW a (bswap64 w) (a + BitVec.ofNat 64 j) = Camellia.byteOf w j := by
-  simp only [Mem.writeW, Mem.write, Mem.sub_ofNat_toNat a (show j < 2 ^ 64 by omega),
-    show j < 64 / 8 by omega, ite_true, BitVec.setWidth_eq]
+  simp only [Mem.writeW, Mem.write, Mem.sub_ofNat_toNat a (show j < 2 ^ 64 by omega_using [hj]),
+    show j < 64 / 8 by omega_using [hj], ite_true, BitVec.setWidth_eq]
   apply BitVec.eq_of_getLsbD_eq; intro k hk
   rw [BitVec.getLsbD_extractLsb', Camellia.getLsbD_byteOf _ hj hk, show 8 * j + k = 8 * j + k from rfl]
-  have := bswap64_bit w (i := 7 - j) (j := k) (by omega) hk
-  rw [show 56 - 8 * (7 - j) + k = 8 * j + k by omega] at this
+  have := bswap64_bit w (i := 7 - j) (j := k) (by omega_using []) hk
+  rw [show 56 - 8 * (7 - j) + k = 8 * j + k by omega_using [hj]] at this
   simp only [hk, decide_true, Bool.true_and, this]
-  congr 1; omega
+  congr 1; omega_using []
 
 /-- The subkey words `ks` from word `n` of `rdx` on. -/
 theorem storeSubkeys_ok (ks : List (Nat × Nat × Bool)) (hv : ∀ k ∈ ks, k.1 < 4) :
@@ -171,8 +171,8 @@ theorem storeSubkeys_ok (ks : List (Nat × Nat × Bool)) (hv : ∀ k ∈ ks, k.1
     have hrdx : s₁.gpr .rdx = s.gpr .rdx := g₁ _ (by decide) (by decide)
     obtain ⟨s', e', b', f', g', rd', wr'⟩ := ih (fun k hk => hv k (List.mem_cons_of_mem _ hk)) (n + 1) s₁
       (fun i hi => by
-        rw [wr₁, hrdx, show n + 1 + i = n + (i + 1) by omega]
-        exact hw (i + 1) (by simp; omega)) (by simp at hfit; omega)
+        rw [wr₁, hrdx, show n + 1 + i = n + (i + 1) by omega_using []]
+        exact hw (i + 1) (by simp; omega_using [hi])) (by simp at hfit; omega_using [hfit])
     refine ⟨s', by
       rw [List.zipIdx_cons, List.flatMap_cons, runBlock_append', e₁, Option.bind_some]; exact e',
       fun i hi j hj => ?_, ?_, fun r' h1 h2 => by rw [g' r' h1 h2, g₁ r' h1 h2], by rw [rd', rd₁],
@@ -184,20 +184,20 @@ theorem storeSubkeys_ok (ks : List (Nat × Nat × Bool)) (hv : ∀ k ∈ ks, k.1
             ¬ R.Contains (s.gpr .rdx + BitVec.ofNat 64 (8 * (n + 0) + j)) 1 := fun R hR => by
           simp only [List.mem_singleton] at hR; subst hR; rw [hrdx]
           by_cases h0 : ks.length = 0
-          · simp only [Region.Contains, h0]; omega
-          · exact not_contains_off _ (Or.inl (by omega)) (by omega) (by omega) (by omega)
+          · simp only [Region.Contains, h0]; omega_using []
+          · exact not_contains_off _ (Or.inl (by omega_using [hj])) (by omega_using [hfit, hj]) (by omega_using [h0]) (by omega_using [hfit'])
         rw [f' _ hout, m₁, Nat.add_zero, ← addr_add, writeW_bswap_byte _ _ _ hj]
         simp only [List.getD_cons_zero]
       | succ i =>
-        have := b' i (by simp at hi; omega) j hj
+        have := b' i (by simp at hi; omega_using [hi]) j hj
         simp only [hrdx, g₁ _ (regs_ne_t _).1 (regs_ne_t _).2.1, g₁ _ (regs_ne_t _).2.2.1 (regs_ne_t _).2.2.2] at this
-        rw [show n + (i + 1) = n + 1 + i by omega, this, List.getD_cons_succ]
+        rw [show n + (i + 1) = n + 1 + i by omega_using [], this, List.getD_cons_succ]
     · have hfit' : 8 * (n + (ks.length + 1)) < 2 ^ 64 := by simpa using hfit
       have f₁ : Frame [⟨s.gpr .rdx + BitVec.ofNat 64 (8 * n), 8 * ((v, r, hi) :: ks).length⟩] s.mem s₁.mem := by
-        rw [m₁]; exact frame_writeW _ (Region.sub_prefix (by simp; omega))
+        rw [m₁]; exact frame_writeW _ (Region.sub_prefix (by simp; omega_using []))
       refine f₁.trans (f'.sub fun R hR => ⟨_, List.mem_singleton_self _, ?_⟩)
       simp only [List.mem_singleton] at hR; subst hR
       rw [hrdx]
-      exact VG.Offset.sub _ (by omega) (by simp; omega)
+      exact VG.Offset.sub _ (by omega_using []) (by simp; omega_using [])
 
 end VG.Proof.Camellia.X86_64

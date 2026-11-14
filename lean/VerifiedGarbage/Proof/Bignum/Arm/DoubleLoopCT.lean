@@ -90,7 +90,7 @@ theorem doubleLoop_ct {base : BitVec 32} {len w c : Nat} (hc : 0 < c) (hc' : c <
     have hw : 2 ≤ w := hs.width ▸ hs.layout.1
     have fits : arrAt w 8 ≤ 8 * len := hs.width ▸ hs.layout.2.2.1
     have tmp := Nat.le_trans (array_end_le (w := w) (j := 3) (k := 8) (by decide)) fits
-    have ct := doubleLoopBody_ct (base := base) (len := len) (w := w) (c := k) (by omega) (by omega)
+    have ct := doubleLoopBody_ct (base := base) (len := len) (w := w) (c := k) (by omega_using [hw, tmp]) (by omega_using [hw])
     obtain ⟨trace, _⟩ := ct s t tr1 tr2 u v ⟨hs, ht, sp⟩ e1 e2
     obtain ⟨_, u', eu, hu, _, _, zu, _, ru⟩ := doubleLoopBody_ok s hs hk hk'
     obtain ⟨_, v', ev, hv, _, _, zv, _, rv⟩ := doubleLoopBody_ok t ht hk hk'
@@ -105,7 +105,7 @@ theorem doubleLoop_ct {base : BitVec 32} {len w c : Nat} (hc : 0 < c) (hc' : c <
         change some (!u.z) = some true at branch
         simp only [zu, eq, decide_true, Bool.not_true] at branch
         cases branch
-      exact ⟨k - 1, by omega, by omega, by omega, hu, hv, ru.sp.trans (sp.trans rv.sp.symm)⟩
+      exact ⟨k - 1, by omega_using [hk], by omega_using [hk, ne], by omega_using [hk'], hu, hv, ru.sp.trans (sp.trans rv.sp.symm)⟩
   exact (RelCT.loop I step c).mono (fun _ _ h => ⟨hc, hc', h⟩) (fun _ _ h => h)
 
 end VG.Proof.Bignum.Arm

@@ -53,7 +53,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_addi {d n : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_addi (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_addi (by unfold imm12; omega_using [h])) ?_
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
 theorem wp_mv {d n : Reg} (k : ∀ s', Upd s s' d (s.gpr n) → WP isa (.block is) s' Q) :
@@ -87,13 +87,13 @@ theorem wp_ld {t n : Reg} {off : Nat} {a : Addr} (ho : off < 2048)
 theorem wp_li {d : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.li d (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_li (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_li (by unfold imm12; omega_using [h])) ?_
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
 theorem wp_subi {d n : Reg} {imm : Nat} (h : imm ≤ 2048)
     (k : ∀ s', Upd s s' d (s.gpr n - BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addi d n (-(imm : Int)) :: is)) s Q := by
-  refine WP.cons (exec_addi (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_addi (by unfold imm12; omega_using [h])) ?_
   rw [BitVec.ofInt_neg, ofInt_ofNat, ← BitVec.sub_eq_add_neg]; exact k _ (Upd.write _ _ _)
 
 theorem wp_add {d n m : Reg}
@@ -114,7 +114,7 @@ theorem wp_xor {d n m : Reg}
 theorem wp_xori {d n : Reg} {imm : Nat} (h : imm < 2048)
     (k : ∀ s', Upd s s' d (s.gpr n ^^^ BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.logicImm .xor d n (imm : Int) :: is)) s Q := by
-  refine WP.cons (exec_logicImm (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_logicImm (by unfold imm12; omega_using [h])) ?_
   simp only
   rw [ofInt_ofNat]; exact k _ (Upd.write _ _ _)
 
@@ -144,8 +144,8 @@ theorem eval_nonzero (s : State) (r : Reg) : eval (.nonzero r) s = some (s.gpr r
 /-- An 8-byte aligned offset of a 16-byte aligned address. -/
 theorem al8 {b : Addr} (hb : b.toNat % 16 = 0) {d : Nat} (hd : d % 8 = 0) (hd' : d < 2 ^ 32) :
     (b + BitVec.ofNat 64 d).toNat % 8 = 0 := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd'])]
   have := b.isLt
-  omega
+  omega_using [hb, hd]
 
 end VG.RISCV64.Wp

@@ -57,11 +57,11 @@ theorem bar_spec (x : Nat) (hx : x < 2 ^ 64) :
         rw [Nat.add_mul, Nat.add_assoc, Nat.mul_comm (2 ^ 64) T, Nat.mul_right_comm T (2 ^ 64) q]
   have hq : 2988 < q := by rw [q_eq]; decide
   generalize q = Q at *
-  have e1 : R * Q < 2 ^ 64 * Q := Nat.mul_lt_mul_of_pos_right hr (by omega)
-  have e2 : 2988 * x < Q * 2 ^ 64 := Nat.mul_lt_mul_of_le_of_lt (by omega) hx (by omega)
+  have e1 : R * Q < 2 ^ 64 * Q := Nat.mul_lt_mul_of_pos_right hr (by omega_using [hq])
+  have e2 : 2988 * x < Q * 2 ^ 64 := Nat.mul_lt_mul_of_le_of_lt (by omega_using [hq]) hx (by omega_using [hq])
   have hle : T * Q ≤ x :=
-    Nat.le_of_mul_le_mul_right (show T * Q * 2 ^ 64 ≤ x * 2 ^ 64 by omega) (Nat.two_pow_pos 64)
-  have h2 : x * 2 ^ 64 < T * Q * 2 ^ 64 + 2 * Q * 2 ^ 64 := by omega
+    Nat.le_of_mul_le_mul_right (show T * Q * 2 ^ 64 ≤ x * 2 ^ 64 by omega_using [key]) (Nat.two_pow_pos 64)
+  have h2 : x * 2 ^ 64 < T * Q * 2 ^ 64 + 2 * Q * 2 ^ 64 := by omega_using [hx, key, hq, e1]
   rw [← Nat.add_mul] at h2
   exact ⟨hle, Nat.lt_of_mul_lt_mul_right h2⟩
 
@@ -74,7 +74,7 @@ theorem barM_toNat (x : BitVec 64) :
   have hx := x.isLt
   have hT : (barQ x).toNat = x.toNat * 5541226816974932 / 2 ^ 64 := by
     unfold barQ; rw [BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega)
+    exact Nat.mod_eq_of_lt (by rw [q_eq] at hle; omega_using [])
   unfold barM
   generalize barQ x = B at hT ⊢
   generalize x.toNat * 5541226816974932 / 2 ^ 64 = T at hle hT ⊢
@@ -82,18 +82,18 @@ theorem barM_toNat (x : BitVec 64) :
   rw [q_eq] at hle ⊢
   have hm : (B * 3329).toNat = B.toNat * 3329 := by
     rw [BitVec.toNat_mul, show (3329 : BitVec 64).toNat = 3329 from rfl]
-    exact Nat.mod_eq_of_lt (by omega)
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hm]; omega), hm]
+    exact Nat.mod_eq_of_lt (by omega_using [hle])
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hm]; omega_using [hle]), hm]
 
 theorem barM_lt (x : BitVec 64) : (barM x).toNat < 2 * q := by
   obtain ⟨hle, hlt⟩ := bar_spec x.toNat x.isLt
-  rw [barM_toNat]; omega
+  rw [barM_toNat]; omega_using [hle, hlt]
 
 theorem barM_mod (x : BitVec 64) : (barM x).toNat % q = x.toNat % q := by
   obtain ⟨hle, -⟩ := bar_spec x.toNat x.isLt
   rw [barM_toNat]
   generalize x.toNat * 5541226816974932 / 2 ^ 64 = T at hle ⊢
-  have e : x.toNat = (x.toNat - T * q) + q * T := by rw [Nat.mul_comm q T]; omega
+  have e : x.toNat = (x.toNat - T * q) + q * T := by rw [Nat.mul_comm q T]; omega_using [hle]
   conv => rhs; rw [e]
   rw [Nat.add_mul_mod_self_left]
 
@@ -125,7 +125,7 @@ abbrev z64 (z : Zq) : BitVec 64 := BitVec.ofNat 64 z.val
 abbrev residue (x : Word) : Zq := Fin.ofNat q x.val
 
 theorem w64_toNat (x : Word) : (w64 x).toNat = x.val := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])
 
 /-! ## The forward butterfly -/
 
@@ -135,10 +135,10 @@ def prod (y : Word) (z : Zq) : Nat := (barM (z64 z * w64 y)).toNat
 theorem z64_mul (y : Word) (z : Zq) : (z64 z * w64 y).toNat = z.val * y.val := by
   have hz : z.val < 3329 := z.isLt
   have hy : y.val < 4294967296 := y.isLt
-  have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega)
+  have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega_using [hz])
   rw [BitVec.toNat_mul, w64_toNat, BitVec.toNat_ofNat, e1]
-  have := Nat.mul_lt_mul_of_lt_of_le hz (Nat.le_of_lt hy) (by omega)
-  exact Nat.mod_eq_of_lt (by omega)
+  have := Nat.mul_lt_mul_of_lt_of_le hz (Nat.le_of_lt hy) (by omega_using [])
+  exact Nat.mod_eq_of_lt (by omega_using [this])
 
 theorem prod_lt (y : Word) (z : Zq) : prod y z < 2 * q := barM_lt _
 
@@ -159,18 +159,18 @@ theorem opB_values (x y : Word) (z : Zq) (hx : x.val < 13 * q) :
   generalize barM (z64 z * w64 y) = T at ht ⊢
   rw [q_eq] at hx ht ⊢
   constructor
-  · rw [BitVec.toNat_add, hx', Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  · rw [BitVec.toNat_add, hx', Nat.mod_eq_of_lt (by omega_using [hx, ht]), Nat.mod_eq_of_lt (by omega_using [ht])]
   · have e : (w64 x - T + 6658).toNat = x.val + 6658 - T.toNat := by
       generalize w64 x = X at hx' ⊢
       bv_omega
-    rw [e, Nat.mod_eq_of_lt (by omega)]
+    rw [e, Nat.mod_eq_of_lt (by omega_using [hx])]
 
 theorem opB_bound (x y : Word) (z : Zq) {b : Nat} (hb : b ≤ 13) (hx : x.val < b * q) :
     (opB x y z).1.val < (b + 2) * q ∧ (opB x y z).2.val < (b + 2) * q := by
   have hv := opB_values x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb))
   have ht := prod_lt y z
   rw [hv.1, hv.2, Nat.add_mul]
-  omega
+  omega_using [hx, ht]
 
 theorem opB_residue (x y : Word) (z : Zq) (hx : x.val < 13 * q) :
     residue (opB x y z).1 = residue x + z * residue y ∧
@@ -190,7 +190,7 @@ theorem opB_residue (x y : Word) (z : Zq) (hx : x.val < 13 * q) :
     rw [hv.2]
     have ht' : prod y z < 2 * 3329 := ht
     change (x.val + 2 * 3329 - prod y z) % 3329 = (3329 - prod y z % 3329 + x.val % 3329) % 3329
-    omega
+    omega_using [ht']
 
 /-! ## The inverse butterfly -/
 
@@ -214,17 +214,17 @@ theorem opIB_values (x y : Word) (z : Zq) (hx : x.val < 64 * q) (hy : y.val < 64
     generalize w64 y = Y at hy' ⊢
     bv_omega
   have hp : (z64 z * (w64 y - w64 x + 213056)).toNat = z.val * (y.val + 213056 - x.val) := by
-    have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega)
+    have e1 : z.val % 2 ^ 64 = z.val := Nat.mod_eq_of_lt (by omega_using [hz])
     rw [BitVec.toNat_mul, hd, BitVec.toNat_ofNat, e1]
-    have := Nat.mul_lt_mul_of_lt_of_le hz (show y.val + 213056 - x.val ≤ 2 ^ 19 by omega) (by omega)
-    exact Nat.mod_eq_of_lt (by omega)
+    have := Nat.mul_lt_mul_of_lt_of_le hz (show y.val + 213056 - x.val ≤ 2 ^ 19 by omega_using [hy]) (by omega_using [])
+    exact Nat.mod_eq_of_lt (by omega_using [this])
   have hl := barM_lt (z64 z * (w64 y - w64 x + 213056))
   rw [q_eq] at hl
   refine ⟨?_, ?_, by rw [q_eq]; exact hl, ?_⟩
   · simp only [opIB, toW, Fin.val_ofNat]
-    rw [BitVec.toNat_add, hx', hy', Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, hx', hy', Nat.mod_eq_of_lt (by omega_using [hx, hy]), Nat.mod_eq_of_lt (by omega_using [])]
   · simp only [opIB, toW, Fin.val_ofNat, prodI]
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by omega_using [hl])
   · have := barM_mod (z64 z * (w64 y - w64 x + 213056))
     rw [hp] at this
     exact this
@@ -235,7 +235,7 @@ theorem opIB_bound (x y : Word) (z : Zq) {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 6
     (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right q hb'))
   rw [hv.1, hv.2.1, Nat.mul_assoc]
   constructor
-  · omega
+  · omega_using [hx, hy]
   · exact Nat.lt_of_lt_of_le hv.2.2.1 (Nat.mul_le_mul_left 2 (Nat.le_mul_of_pos_left q hb))
 
 theorem opIB_residue (x y : Word) (z : Zq) (hx : x.val < 64 * q) (hy : y.val < 64 * q) :
@@ -251,7 +251,7 @@ theorem opIB_residue (x y : Word) (z : Zq) (hx : x.val < 64 * q) (hy : y.val < 6
     change (opIB x y z).2.val % q = (z * (residue y - residue x)).val
     rw [hv.2.1, hv.2.2.2, Fin.val_mul, Fin.val_sub, residue, residue, Fin.val_ofNat, Fin.val_ofNat]
     have hl : (y.val + 64 * q - x.val) % q = (q - x.val % q + y.val % q) % q := by
-      rw [q_eq] at hx hy ⊢; omega
+      rw [q_eq] at hx hy ⊢; omega_using [hx]
     rw [Nat.mul_mod, hl, Nat.mul_mod z.val ((q - x.val % q + y.val % q) % q), Nat.mod_mod]
 
 /-! ## Layers -/
@@ -284,7 +284,7 @@ theorem len_facts {len : Nat} (hlen : len ∈ [2, 4, 8, 16, 32, 64, 128]) :
       ∀ i < 256, (i % (2 * len) < len → i + len < 256) ∧ (¬ i % (2 * len) < len → len ≤ i) := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
   rcases hlen with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩
-  all_goals intro i hi; omega
+  all_goals intro i hi; omega_using [hi]
 
 theorem layerB_rel {b : Nat} (hb : b ≤ 13) {F : WPoly} {f : Poly} (hF : Rel b F f)
     {len : Nat} (hlen : len ∈ [2, 4, 8, 16, 32, 64, 128]) :
@@ -300,7 +300,7 @@ theorem layerB_rel {b : Nat} (hb : b ≤ 13) {F : WPoly} {f : Poly} (hF : Rel b 
     exact ⟨(opB_bound _ _ _ hb h0.1).1, by
       rw [(opB_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
-    have h0 := hF (i - len) (by omega)
+    have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
     exact ⟨(opB_bound _ _ _ hb h0.1).2, by
       rw [(opB_residue _ _ _ (Nat.lt_of_lt_of_le h0.1 (Nat.mul_le_mul_right q hb))).2, h0.2, h1.2]⟩
@@ -321,7 +321,7 @@ theorem layerIB_rel {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 64) {F : WPoly} {f : P
     exact ⟨(opIB_bound _ _ _ hb hb' h0.1 h1.1).1, by
       rw [(opIB_residue _ _ _ (lt h0.1) (lt h1.1)).1, h0.2, h1.2]⟩
   · simp only [ite_eq_right h]
-    have h0 := hF (i - len) (by omega)
+    have h0 := hF (i - len) (by omega_using [hi])
     have h1 := hF i hi
     exact ⟨(opIB_bound _ _ _ hb hb' h0.1 h1.1).2, by
       rw [(opIB_residue _ _ _ (lt h0.1) (lt h1.1)).2, h0.2, h1.2]⟩
@@ -344,7 +344,7 @@ theorem lp_lift {m : Mem} {p : Addr} {f : Poly} (h : PolyIs m p f) : LP m p (lif
 
 theorem w64_load {v : BitVec 32} {x : Word} (h : v.toNat = x.val) : v.setWidth 64 = w64 x := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := x.isLt; omega)]
+  rw [BitVec.toNat_setWidth, h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])]
 
 theorem toW_store (v : BitVec 64) : (v.setWidth 32).toNat = (toW v).val := by
   rw [BitVec.toNat_setWidth, Fin.val_ofNat]

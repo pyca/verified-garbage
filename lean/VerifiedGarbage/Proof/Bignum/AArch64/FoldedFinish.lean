@@ -17,7 +17,7 @@ theorem finishTest_ok {s : State} {B : Addr} {Z w : Nat} {mi v : BitVec 64}
     (hv : word s.mem B (8*sStarted) = v) :
     WP isa (.block [ldh .x3 sStarted, .subImm .x .x3 .x3 2]) s fun t =>
       isa.eval (.zero .x .x3) t = some (decide (v = 2#64)) ∧ t.mem = s.mem ∧ Keep [.x3] s t := by
-  have bound : 8*sStarted+8 ≤ Z := by have := hdr_lt_slot w 8 (show sStarted < 32 by decide); omega
+  have bound : 8*sStarted+8 ≤ Z := by have := hdr_lt_slot w 8 (show sStarted < 32 by decide); omega_using [hZ, this]
   refine WP.mono (WP.keep [.x3] (Q := fun t =>
     t.gpr .x3 = v - 2#64 ∧ t.mem = s.mem)
     (by brun [hg.x0, hdr_enc (show sStarted < 32 by decide), hg.scr.ld bound, hv]) rfl rfl rfl)

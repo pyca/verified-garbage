@@ -251,7 +251,7 @@ def arguments : List Instr := KeySearch.arguments ++ pass ctxOff 11 ++ pass ctxL
 def argsBytes : Nat := 52
 
 def attempt : Prog isa :=
-  .frame (.alloc argsBytes) (.seq (.block arguments) (.call Spec.Ffdh.cachedGenerateKeyApi.name Generate.code))
+  .frame (.alloc argsBytes) (.seq (.block arguments) (.call "vg_ffdh_generate_key_cached" Generate.code))
     (.free argsBytes)
 
 def attemptOrRequest : Prog isa := .seq (.block room) (.ite .b request (.seq attempt classify))

@@ -91,7 +91,7 @@ theorem positiveDecodeT0_ok {i : Nat} (hi : i<p.k) (hs : PositiveID p S σ p.ℓ
   refine WP.mono (positiveDecode_ok hP (by decide) (by decide) c hs)
     fun t ⟨I,hq⟩ => ⟨I.im,I.roots,I.s1,I.s2,I.t0.snoc ?_⟩
   have e : skT0 p i = 128 + VG.Proof.MlDsa.Sign.lenS p * p.ℓ + VG.Proof.MlDsa.Sign.lenS p * p.k + 32 * 13 * i := by
-    unfold skT0 VG.Proof.MlDsa.Sign.lenS sLen; rw [Nat.mul_add]; omega
+    unfold skT0 VG.Proof.MlDsa.Sign.lenS sLen; rw [Nat.mul_add]; omega_using []
   rw [sk_slice hs.im.st ck,e] at hq
   exact hq
 
@@ -105,12 +105,12 @@ theorem positiveDecodeSecrets_ok (hs : PositiveID p S σ 0 0 0 s) :
         (VG.Impl.MlDsa.AArch64.Call.seqR (fun i => positiveDecode P (.x25,skT0 p i)
           416 4095 4096 (t0Base p+i)) 0 p.k))) s (PositiveID p S σ p.ℓ p.k p.k) := by
   refine WP.seq (WP.mono (seqR_ok (I := fun r s => PositiveID p S σ r 0 0 s) p.ℓ 0
-    (fun r _ hr s h => positiveDecodeS1_ok hP hc (by omega) h) s hs) fun s1 h1 => ?_)
+    (fun r _ hr s h => positiveDecodeS1_ok hP hc (by omega_using [hr]) h) s hs) fun s1 h1 => ?_)
   simp only [Nat.zero_add] at h1
   refine WP.seq (WP.mono (seqR_ok (I := fun i s => PositiveID p S σ p.ℓ i 0 s) p.k 0
-    (fun i _ hi s h => positiveDecodeS2_ok hP hc (by omega) h) s1 h1) fun s2 h2 => ?_)
+    (fun i _ hi s h => positiveDecodeS2_ok hP hc (by omega_using [hi]) h) s1 h1) fun s2 h2 => ?_)
   simp only [Nat.zero_add] at h2
-  simpa only [Nat.zero_add] using seqR_ok (I := fun i s => PositiveID p S σ p.ℓ p.k i s) p.k 0 (fun i _ hi s h => positiveDecodeT0_ok hP hc (by omega) h) s2 h2
+  simpa only [Nat.zero_add] using seqR_ok (I := fun i s => PositiveID p S σ p.ℓ p.k i s) p.k 0 (fun i _ hi s h => positiveDecodeT0_ok hP hc (by omega_using [hi]) h) s2 h2
 
 end
 

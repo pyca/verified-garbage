@@ -56,10 +56,10 @@ theorem words_ok {B : BitVec 32} {s : State} (h : Space B s) {L : Nat} (hL : s.g
     h.space.write (off := 8) (by decide), h.space.write (off := 12) (by decide),
     h.space.write (off := 16) (by decide), h.space.write (off := 20) (by decide),
     h.space.write (off := 24) (by decide), h.space.write (off := 28) (by decide), hL,
-    shl32 L 15 (by omega), shl32 L 9 (by omega), ← BitVec.ofNat_add,
+    shl32 L 15 (by omega_using [hb]), shl32 L 9 (by omega_using [hb]), ← BitVec.ofNat_add,
     show ((4096 : BitVec 16).setWidth 32) = (4096 : BitVec 32) from rfl]
-  simp only [List.foldl_cons, List.foldl_nil, show L * 2 ^ 15 + L = 32769 * L by omega,
-    show L * 2 ^ 9 = 512 * L by omega]
+  simp only [List.foldl_cons, List.foldl_nil, show L * 2 ^ 15 + L = 32769 * L by omega_using [],
+    show L * 2 ^ 9 = 512 * L by omega_using []]
 
 /-- `cmp r1, #c`: whether `p_len` is `c`. -/
 theorem cmpW_ok (s : State) (c : BitVec 32) (enc : encodable c = true) :
@@ -99,14 +99,14 @@ theorem init_ok {s : State} {B : BitVec 32} (h : Space B s) :
   refine WP.seq (WP.mono (cmpW_ok s 128 (by decide)) fun t₁ ⟨⟨z₁, m₁⟩, k₁⟩ => ?_)
   by_cases e₁ : (s.gpr .r1).toNat = 128
   · refine WP.ite true (by show some t₁.z = _; rw [z₁, decide_eq_true (BitVec.eq_of_toNat_eq (by rw [e₁]; rfl))]) (fun _ =>
-      valid t₁ m₁ k₁ (by simp [Spec.Dsa.generationPLenValid, e₁]) (by omega)) (by intro h; cases h)
+      valid t₁ m₁ k₁ (by simp [Spec.Dsa.generationPLenValid, e₁]) (by omega_using [e₁])) (by intro h; cases h)
   refine WP.ite false (by show some t₁.z = _; rw [z₁, decide_eq_false (fun h => e₁ (by rw [h]; rfl))])
     (by intro h; cases h) fun _ => ?_
   refine WP.seq (WP.mono (cmpW_ok t₁ 0x100 (by decide)) fun t₂ ⟨⟨z₂, m₂⟩, k₂⟩ => ?_)
   rw [k₁.gpr .r1 (by decide)] at z₂
   by_cases e₂ : (s.gpr .r1).toNat = 256
   · refine WP.ite true (by show some t₂.z = _; rw [z₂, decide_eq_true (BitVec.eq_of_toNat_eq (by rw [e₂]; rfl))]) (fun _ =>
-      valid t₂ (m₂.trans m₁) (k₁.trans k₂) (by simp [Spec.Dsa.generationPLenValid, e₂]) (by omega))
+      valid t₂ (m₂.trans m₁) (k₁.trans k₂) (by simp [Spec.Dsa.generationPLenValid, e₂]) (by omega_using [e₂]))
       (by intro h; cases h)
   refine WP.ite false (by show some t₂.z = _; rw [z₂, decide_eq_false (fun h => e₂ (by rw [h]; rfl))])
     (by intro h; cases h) fun _ => ?_
@@ -116,7 +116,7 @@ theorem init_ok {s : State} {B : BitVec 32} (h : Space B s) :
   have m₁₃ := m₃.trans (m₂.trans m₁)
   by_cases e₃ : (s.gpr .r1).toNat = 384
   · refine WP.ite true (by show some t₃.z = _; rw [z₃, decide_eq_true (BitVec.eq_of_toNat_eq (by rw [e₃]; rfl))]) (fun _ =>
-      valid t₃ m₁₃ k₁₃ (by simp [Spec.Dsa.generationPLenValid, e₃]) (by omega)) (by intro h; cases h)
+      valid t₃ m₁₃ k₁₃ (by simp [Spec.Dsa.generationPLenValid, e₃]) (by omega_using [e₃])) (by intro h; cases h)
   refine WP.ite false (by show some t₃.z = _; rw [z₃, decide_eq_false (fun h => e₃ (by rw [h]; rfl))])
     (by intro h; cases h) fun _ => ?_
   refine WP.mono (clear_ok (h.congr k₁₃.wr (k₁₃.gpr .r0 (by decide)))) fun u ⟨h0, hmu⟩ => ?_
@@ -151,7 +151,7 @@ theorem words_words (m : Mem) (B : Addr) (L : Nat) (hL : L ≤ 384) :
   have hi := slot_writeSlots m B (N := 8) (by decide) (words L) (by
     simp only [words, List.mem_cons, List.not_mem_nil, or_false]
     rintro e (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide)
-  refine wordsAt_slots _ _ (by decide) (by omega) (by omega) (by omega) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
+  refine wordsAt_slots _ _ (by decide) (by omega_using [hL]) (by omega_using [hL]) (by omega_using [hL]) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ <;>
     rw [hi _ (by decide)] <;> rfl
 
 private theorem result_post {s t : State} (h : InitPost (s.gpr .r1).toNat s.mem (s.gpr .r0) t) :
@@ -161,13 +161,13 @@ private theorem result_post {s t : State} (h : InitPost (s.gpr .r1).toNat s.mem 
   split at h
   · rename_i hv
     have hb : (s.gpr .r1).toNat ≤ 384 := by
-      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv; omega
+      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv; omega_using [hv]
     have hp : 0 < (s.gpr .r1).toNat := by
-      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv; omega
+      simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv; omega_using [hv]
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
     refine ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, 512 * (s.gpr .r1).toNat, ?_, ?_⟩
     · rw [h.2, words_words _ _ _ hb]; rfl
-    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy; omega
+    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy; omega_using [hp]
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, by rw [h.2, zeros_words]⟩

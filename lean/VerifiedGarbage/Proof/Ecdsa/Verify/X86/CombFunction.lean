@@ -48,12 +48,12 @@ structure VCombPre (c : Cfg) (s : State) : Prop extends
 variable {c : Cfg}
 
 theorem VCombPre.sp4 {s : State} (hp : VCombPre c s) : 4 ≤ (s.gpr .esp).toNat := by
-  have := Cfg.stk_ge c; have := hp.toVPre.sp_lo; omega
+  have := Cfg.stk_ge c; have := hp.toVPre.sp_lo; omega_arith
 
 theorem VPre.symAddr {s t : State} {extra : List Region} {name : String}
     (hp : VPre c s extra) (h : SymAddrPost name s t) (hsp : 4 ≤ (s.gpr .esp).toNat) : VPre c t extra := by
   have he := h.gpr .esp (by decide)
-  have ha : ∀ j < 4, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega)
+  have ha : ∀ j < 4, arg t j = arg s j := fun j hj => h.arg hsp (by have := hp.sp_fit; omega_using [hj, this])
   have haa : argAddr t 0 = argAddr s 0 := by simp only [argAddr, he]
   exact {
     rd := by simpa only [ptr, ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), haa, h.rd] using hp.rd
@@ -118,8 +118,8 @@ theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)), ?_⟩, ?_⟩
   · have ht := ha.2
     rw [he] at ht
-    exact ht.trans (P.ret hp.sp4 (by have := hp.sp_fit; omega))
-  · have harg : ∀ j < 4, arg s₁ j = arg s₀ j := fun j hj => P.arg hp.sp4 (by have := hp.sp_fit; omega)
+    exact ht.trans (P.ret hp.sp4 (by have := hp.sp_fit; omega_using [this]))
+  · have harg : ∀ j < 4, arg s₁ j = arg s₀ j := fun j hj => P.arg hp.sp4 (by have := hp.sp_fit; omega_using [hj, this])
     have hpk := prefix_bytesAt P hp.pk_stack (by change 65 ≤ 2 ^ 64; decide)
     have hdg := prefix_bytesAt P hp.dg_stack (by change 32 ≤ 2 ^ 64; decide)
     have hsig := prefix_bytesAt P hp.sig_stack (by change 64 ≤ 2 ^ 64; decide)
@@ -148,17 +148,17 @@ theorem vComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
   have he' : s.gpr .esp = t.gpr .esp := by rw [P.gpr .esp (by decide), Q.gpr .esp (by decide), he]
   have ha' : ∀ j < 4, arg s j = arg t j := by
     intro j hj
-    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega), Q.arg hq.sp4 (by have := hq.sp_fit; omega), ha j hj]
+    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega_using [hj, this]), Q.arg hq.sp4 (by have := hq.sp_fit; omega_using [hj, this]), ha j hj]
   have hpub : VInputEq p256Comb s t := by
     apply VInputEq.of_bytes
     · have ps := prefix_bytesAt P hp.pk_stack (by change 65≤2^64; decide)
       have pt := prefix_bytesAt Q hq.pk_stack (by change 65≤2^64; decide)
-      simpa only [ptr,P.arg (j:=0) hp.sp4 (by have:=hp.sp_fit; omega),
-        Q.arg (j:=0) hq.sp4 (by have:=hq.sp_fit; omega),ps,pt] using pk
+      simpa only [ptr,P.arg (j:=0) hp.sp4 (by have:=hp.sp_fit; omega_using [this]),
+        Q.arg (j:=0) hq.sp4 (by have:=hq.sp_fit; omega_using [this]),ps,pt] using pk
     · have ps := prefix_bytesAt P hp.sig_stack (by change 64≤2^64; decide)
       have pt := prefix_bytesAt Q hq.sig_stack (by change 64≤2^64; decide)
-      simpa only [ptr,P.arg (j:=2) hp.sp4 (by have:=hp.sp_fit; omega),
-        Q.arg (j:=2) hq.sp4 (by have:=hq.sp_fit; omega),ps,pt] using sig
+      simpa only [ptr,P.arg (j:=2) hp.sp4 (by have:=hp.sp_fit; omega_using [this]),
+        Q.arg (j:=2) hq.sp4 (by have:=hq.sp_fit; omega_using [this]),ps,pt] using sig
   exact vCombBody_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3
     (hp.toVPre.symAddr P hp.sp4) (hq.toVPre.symAddr Q hq.sp4)
     (vPrefixTables hp P) (vPrefixTables hq Q) he' ha' hpub (by rw [P.addr, Q.addr, hg]) signComb_spG vCombBody_sp

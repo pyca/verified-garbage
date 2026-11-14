@@ -20,7 +20,7 @@ theorem limbs_nat (x : Nat) (hx : x < 2 ^ 256) :
     val4 (BitVec.ofNat 64 x) (BitVec.ofNat 64 (x / 2 ^ 64))
       (BitVec.ofNat 64 (x / 2 ^ 128)) (BitVec.ofNat 64 (x / 2 ^ 192)) = x := by
   simp only [val4, BitVec.toNat_ofNat]
-  omega
+  omega_using [hx]
 
 theorem constWords_ok (s : State) (v : Spec.X25519.Fe) :
     WP isa (.block (constWords v)) s fun t =>
@@ -40,12 +40,12 @@ theorem constField_op {s : State} {base : Addr} (hs : Scr s base) (o : Slot) (v 
   rw [constField, WP.block_append_iff]
   refine WP.mono (constWords_ok s v) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (o := offset o)
-    (by simp only [offset]; omega)) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
+    (by simp only [offset]; omega_using [])) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   have op : Op base (offset o) s u :=
     ⟨fun r hr => (hg r).trans ((hk.mono (by decide)).1 r hr), hrd.trans hk.2.2.1,
-      hwr.trans hk.2.2.2, by rw [hm, hk.2.1]; exact st4_outside _ _ (by simp only [offset]; omega) _ _ _ _⟩
-  refine ⟨op, ?_, by rw [hm, fe_st4 _ _ (by simp only [offset]; omega), hv]⟩
-  rw [F, hm, fe_st4 _ _ (by simp only [offset]; omega), hv, Proof.X25519.toFe_self]
+      hwr.trans hk.2.2.2, by rw [hm, hk.2.1]; exact st4_outside _ _ (by simp only [offset]; omega_using []) _ _ _ _⟩
+  refine ⟨op, ?_, by rw [hm, fe_st4 _ _ (by simp only [offset]; omega_using []), hv]⟩
+  rw [F, hm, fe_st4 _ _ (by simp only [offset]; omega_using []), hv, Proof.X25519.toFe_self]
 
 theorem loadsField_ok {s : State} {base : Addr} (hs : Scr s base) (a : Slot) :
     WP isa (.block (loads (offset a) .r8 .r9 .r10 .r11)) s fun t =>
@@ -56,10 +56,10 @@ theorem loadsField_ok {s : State} {base : Addr} (hs : Scr s base) (a : Slot) :
   apply WP.of_runBlock
   simp only [loads, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64,
     ea_sc, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    hs.rdi, hr (offset a) (by simp only [offset]; omega),
-    hr (offset a + 8) (by simp only [offset]; omega),
-    hr (offset a + 16) (by simp only [offset]; omega),
-    hr (offset a + 24) (by simp only [offset]; omega),
+    hs.rdi, hr (offset a) (by simp only [offset]; omega_using []),
+    hr (offset a + 8) (by simp only [offset]; omega_using []),
+    hr (offset a + 16) (by simp only [offset]; omega_using []),
+    hr (offset a + 24) (by simp only [offset]; omega_using []),
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun r h => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h
@@ -71,12 +71,12 @@ theorem copyField_op {s : State} {base : Addr} (hs : Scr s base) (o a : Slot) :
   rw [copyField, WP.block_append_iff]
   refine WP.mono (loadsField_ok hs a) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (o := offset o)
-    (by simp only [offset]; omega)) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
+    (by simp only [offset]; omega_using [])) fun u ⟨hm, hg, hrd, hwr⟩ => ?_
   have op : Op base (offset o) s u :=
     ⟨fun r hr => (hg r).trans ((hk.mono (by decide)).1 r hr), hrd.trans hk.2.2.1,
-      hwr.trans hk.2.2.2, by rw [hm, hk.2.1]; exact st4_outside _ _ (by simp only [offset]; omega) _ _ _ _⟩
+      hwr.trans hk.2.2.2, by rw [hm, hk.2.1]; exact st4_outside _ _ (by simp only [offset]; omega_using []) _ _ _ _⟩
   refine ⟨op, ?_⟩
-  rw [F, hm, fe_st4 _ _ (by simp only [offset]; omega), hv]
+  rw [F, hm, fe_st4 _ _ (by simp only [offset]; omega_using []), hv]
 
 theorem Outside_F {base : Addr} {o n : Nat} {m m' : Mem}
     (h : Outside base o n m m') {d : Nat} (hd : d + 32 < 2 ^ 64)

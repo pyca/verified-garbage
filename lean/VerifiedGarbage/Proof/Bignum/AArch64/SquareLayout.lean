@@ -18,8 +18,8 @@ theorem scratch_arrays {s t : State} {B : Addr} {w : Nat}
   have h1 := hx aAcc (by simp)
   have h2 := hx aTmp (by simp)
   exact ho x (by
-    have hAT : slot w aAcc+8*(w+2) = slot w aTmp := by unfold slot aAcc aTmp; omega
-    omega)
+    have hAT : slot w aAcc+8*(w+2) = slot w aTmp := by unfold slot aAcc aTmp; omega_using []
+    omega_using [h1, h2, hAT])
 
 theorem goodW_width {L : Ws} {s : State} (h : GoodW L s) : L.w < 2 ^ 60 := by
   obtain ⟨_, hg, hz⟩ := h

@@ -79,14 +79,14 @@ theorem ready_frame {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : 
 
 /-- The frame's bytes, of the core on `g` blocks. -/
 theorem inline_total_eq (d : Direction) (g : Nat) : 8 * (inlineCore d g).total = 1088 + 16 * g := by
-  simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
+  simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega_using []
 
-theorem raOff_eq (g : Nat) : raOff g = 1032 + 16 * g := by simp only [raOff, scratchSlots]; omega
+theorem raOff_eq (g : Nat) : raOff g = 1032 + 16 * g := by simp only [raOff, scratchSlots]; omega_using []
 
 theorem inlineLayout (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) : Layout (inlineCore d g) := by
   have e := inline_total_eq d g
   refine ⟨hg1, .inr rfl, Nat.le_add_right _ _, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots] at e ⊢ <;> omega
+    simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots] at e ⊢ <;> omega_arith
 
 theorem prepare_wp (d : Direction) (g : Nat) {s : State} {B : Addr} {rs : List Region} {k : Spec.Seed.Schedule}
     (hB : s.gpr Impl.Modes.RISCV64.sb = B) (_hS : ScrIn s B (inlineCore d g).total)
@@ -142,15 +142,15 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
   let E := ecbA B
   let P := bufA B
   have e8 : 8 * (bufSlot + 1 + 2 * g) = 1088 + 16 * g := by
-    simp only [bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
+    simp only [bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega_using []
   have hfit : B.toNat + (1088 + 16 * g) ≤ 2 ^ 64 := by have := hS.fit; rw [e8] at this; exact this
   have hal : B.toNat % 16 = 0 := hS.al
   have hW : (⟨B, 1088 + 16 * g⟩ : Region) ∈ s.wr := by
-    have := hS.whole (by rw [e8]; omega); rw [e8] at this; exact this
+    have := hS.whole (by rw [e8]; omega_using [hg]); rw [e8] at this; exact this
   have hEk : ∀ k, E + BitVec.ofNat 64 k = B + BitVec.ofNat 64 (48 + k) := fun k => Offset.add_add _ _ _
   have hin : ∀ k n, k + n ≤ 1040 + 16 * g → InRegions s.wr (E + BitVec.ofNat 64 k) n := fun k n h =>
     ⟨_, hW, by rw [hEk]; exact Offset.contains_base B (by omega_arith) (by omega_arith)⟩
-  have hEal : E.toNat % 8 = 0 := frame_al hal hfit (by decide) (by omega)
+  have hEal : E.toNat % 8 = 0 := frame_al hal hfit (by decide) (by omega_using [])
   have hEsub : ∀ k n, k + n ≤ 1040 + 16 * g → Region.Sub ⟨E + BitVec.ofNat 64 k, n⟩ ⟨B, 1088 + 16 * g⟩ :=
     fun k n h => by rw [hEk]; exact Offset.sub_base B (by omega_arith)
   have hP : P = E + BitVec.ofNat 64 1032 := rfl
@@ -170,7 +170,7 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
   have t0₀ : s₀.gpr .t0 = E := u₀.gpr.trans (by show s.gpr .s4 + _ = _; rw [hB]; rfl)
   refine WP.mono (prologue_ok (r := t0) (by rw [show t0 = Reg.t0 from rfl, t0₀]; exact hEal)
     (by rw [show t0 = Reg.t0 from rfl, t0₀, u₀.wr]
-        exact ⟨_, hW, Offset.contains_base B (d := 48) (by simp only [scratchSlots]; omega) (by decide)⟩))
+        exact ⟨_, hW, Offset.contains_base B (d := 48) (by simp only [scratchSlots]; omega_using []) (by decide)⟩))
     fun s₁ P₁ => ?_
   have G₁ : ∀ r, r ≠ .a5 → r ≠ .a3 → r ≠ .t0 → r ≠ .t1 → s₁.gpr r = s.gpr r := fun r a b c e => by
     rw [P₁.regs r a b c e, u₀.other r c]
@@ -182,9 +182,9 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
     have := P₁.frame; rw [show s₀.gpr t0 = E from t0₀, u₀.mem] at this; exact this
   -- The modes' state parked, and `ra` in its slot.
   rw [park]
-  refine wp_sd (a := raA B g) (by rw [raOff_eq]; omega) (by rw [sb₁, raOff_eq])
-    (by rw [hRA, hEk]; exact frame_al hal hfit (by omega) (by omega))
-    (by rw [wr₁, hRA]; exact hin _ _ (by omega)) fun s₂ m₂ => ?_
+  refine wp_sd (a := raA B g) (by rw [raOff_eq]; omega_using [hg]) (by rw [sb₁, raOff_eq])
+    (by rw [hRA, hEk]; exact frame_al hal hfit (by omega_using []) (by omega_using []))
+    (by rw [wr₁, hRA]; exact hin _ _ (by omega_using [])) fun s₂ m₂ => ?_
   simp only [movR]
   refine wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => WP.block_nil ?_
   have G₅ : ∀ r, r ≠ .a1 → r ≠ .a2 → r ≠ .ra → s₅.gpr r = s₂.gpr r := fun r a b c => by
@@ -213,7 +213,7 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
   rw [copyFrom]
   simp only [movR]
   refine wp_addi (keyStart_lt d) fun s₆ u₆ => ?_
-  refine WP.cons (exec_li (d := t2) (imm := (g : Int)) (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_li (d := t2) (imm := (g : Int)) (by unfold imm12; omega_using [hg])) ?_
   rw [BitVec.ofInt_natCast]
   have u₇ := Upd.write s₆ t2 (BitVec.ofNat 64 g)
   generalize s₆.write t2 (BitVec.ofNat 64 g) = s₇ at u₇ ⊢
@@ -275,7 +275,7 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
   have hkB : ∀ j < 16, Region.Disjoint ⟨s.gpr .a0 + BitVec.ofNat 64 (keyOff d j), 8⟩ ⟨B, 1088 + 16 * g⟩ :=
     fun j hj => hk.sub_left (Offset.sub_base _ (keyOff_le d hj))
   have hEB : Region.Sub ⟨E, 8 * scratchSlots⟩ ⟨B, 1088 + 16 * g⟩ :=
-    Offset.sub_base B (by simp only [scratchSlots]; omega)
+    Offset.sub_base B (by simp only [scratchSlots]; omega_using [])
   have keys₁₀ : KeysOk d s₁₀ (s₁₀.gpr .a0) := by
     intro j hj
     have hle := keyOff_le d hj
@@ -290,7 +290,7 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, hEB⟩
-      · exact ⟨_, List.mem_singleton_self _, hEsub (1032 + 16 * g) 8 (by omega)⟩
+      · exact ⟨_, List.mem_singleton_self _, hEsub (1032 + 16 * g) 8 (by omega_using [])⟩
   have hkeys : ∀ j < 16, keysAt d s₁₀.mem (s₁₀.gpr .a0) j =
       keysAt d s.mem (s.gpr .a0 + BitVec.ofNat 64 (keyStart d)) j := by
     intro j hj
@@ -299,7 +299,7 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
       (FB FA).trans (f₁₀.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         refine ⟨_, List.mem_singleton_self _, ?_⟩
-        rw [harr s₉ sb₉]; exact hEsub 320 512 (by omega))
+        rw [harr s₉ sb₉]; exact hEsub 320 512 (by omega_using []))
     refine keysAt_frame f fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     rw [kp_start _ _ hj]; exact hkB j hj
@@ -307,13 +307,13 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
   refine WP.seq (WP.mono (rounds_ok d room₁₀ masks₁₀ keys₁₀) fun s₁₁ ⟨q₁₁, room₁₁, _masks₁₁, rd₁₁, wr₁₁, sp₁₁, g₁₁, f₁₁⟩ => ?_)
   have hq₁₁ : ∀ j < g, quad s₁₁ j = roundsN (keysAt d s.mem (s.gpr .a0 + BitVec.ofNat 64 (keyStart d))) 16
       (decodeQ (Spec.Seed.blockAt s.mem (P + BitVec.ofNat 64 (16 * j)))) := fun j hj => by
-    rw [q₁₁ j (by omega), roundsN_congr 16 _ hkeys, hq₁₀ j hj]
+    rw [q₁₁ j (by omega_using [hg, hj]), roundsN_congr 16 _ hkeys, hq₁₀ j hj]
   have sb₁₁ : s₁₁.gpr sb = E := (g₁₁ _ (by simp [sb])).trans sb₁₀
   -- `g` blocks to copy out.
   apply WP.seq
   rw [copyTo]
   simp only [movR]
-  refine WP.cons (exec_li (d := t2) (imm := (g : Int)) (by unfold imm12; omega)) ?_
+  refine WP.cons (exec_li (d := t2) (imm := (g : Int)) (by unfold imm12; omega_using [hg])) ?_
   rw [BitVec.ofInt_natCast]
   have u₁₂ := Upd.write s₁₁ t2 (BitVec.ofNat 64 g)
   generalize s₁₁.write t2 (BitVec.ofNat 64 g) = s₁₂ at u₁₂ ⊢
@@ -388,10 +388,10 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
   have wr₂₀ : s₂₀.wr = s.wr := by rw [u₂₀.wr, u₁₉.wr, u₁₈.wr, R.wr, wr₁₆]
   have rd₂₀ : s₂₀.rd = s.rd := by rw [u₂₀.rd, u₁₉.rd, u₁₈.rd, R.rd, rd₁₆]
   have mem₂₀ : s₂₀.mem = s₁₅.mem := by rw [u₂₀.mem, u₁₉.mem, u₁₈.mem, R.mem, u₁₆.mem]
-  refine wp_ld (a := raA B g) (by rw [raOff_eq]; omega)
+  refine wp_ld (a := raA B g) (by rw [raOff_eq]; omega_using [hg])
     (by rw [T₂₀ _ (by decide) (by decide) (by decide), R.other _ (by decide), sb₁₆, raOff_eq])
-    (by rw [hRA, hEk]; exact frame_al hal hfit (by omega) (by omega))
-    (by rw [rd₂₀, wr₂₀, hRA]; obtain ⟨r, hr, hc⟩ := hin (1032 + 16 * g) 8 (by omega)
+    (by rw [hRA, hEk]; exact frame_al hal hfit (by omega_using []) (by omega_using []))
+    (by rw [rd₂₀, wr₂₀, hRA]; obtain ⟨r, hr, hc⟩ := hin (1032 + 16 * g) 8 (by omega_using [])
         exact ⟨r, List.mem_append_right _ hr, hc⟩) fun s₂₁ u₂₁ => ?_
   refine wp_subi (by decide) fun s' u' => WP.block_nil ?_
   have T : ∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .ra → r ≠ .s4 → s'.gpr r = s₁₇.gpr r :=
@@ -439,12 +439,12 @@ theorem crypt_ok (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) {s : 
     refine (FA.sub fun r hr => ?_).trans (FW.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by simp only [scratchSlots]; omega)⟩
-      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base E (by omega)⟩
+      · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by simp only [scratchSlots]; omega_using [])⟩
+      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base E (by omega_using [])⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
-      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base E (by omega)⟩
+      · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
+      · exact ⟨_, List.mem_singleton_self _, Offset.sub_base E (by omega_using [])⟩
   · -- The blocks.
     intro j hj
     rw [mem', dirCipher_bytes, Proof.Seed.bytesAt_eq]
@@ -464,7 +464,7 @@ theorem ready_core {g : Nat} {s s' : State} {B : Addr} {ws : List Region} {k : S
   obtain ⟨⟨hk, hin, hd⟩, hB⟩ := h
   refine ⟨⟨?_, by rw [hrd, hwr, keyR, e]; exact hin, by rw [keyR, e]; exact hd⟩, by rw [keyR, e]; exact hB⟩
   rw [e, Proof.Seed.scheduleAt_frame hf fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hB.sub_right (Offset.sub_base B (by omega)), hk]
+    simp only [List.mem_singleton] at hr; subst hr; exact hB.sub_right (Offset.sub_base B (by omega_using [])), hk]
 
 /-- The core's `j`th block. -/
 theorem blkAddr_eq (d : Direction) (g : Nat) (B : Addr) (j : Nat) :
@@ -476,7 +476,7 @@ theorem blkAddr_eq (d : Direction) (g : Nat) (B : Addr) (j : Nat) :
 theorem core_eq (d : Direction) (g : Nat) (B : Addr) :
     coreRegion (inlineCore d g) B = ⟨ecbA B, 1040 + 16 * g⟩ := by
   have e : 8 * ((inlineCore d g).total - Impl.Modes.RISCV64.coreSlot) = 1040 + 16 * g := by
-    simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega
+    simp only [inlineCore, bufSlot, Impl.Modes.RISCV64.coreSlot, scratchSlots]; omega_using []
   rw [coreRegion, e]; rfl
 
 /-- SEED's core on `g` blocks meets what the modes need. -/
@@ -511,16 +511,16 @@ theorem shared_ready (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) :
 
 def dirCoreSpec (d : Direction) (g : Nat) (hg1 : 1 ≤ g) (hg : g ≤ 16) : CoreSpec (dirCore d g) :=
   (inlineCoreSpec d g hg1 hg).shared
-    (by simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega)
-    (by left; simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega)
+    (by simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega_using [hg])
+    (by left; simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega_using [hg])
     (shared_key d g hg1 hg) (shared_ready d g hg1 hg) rfl rfl _ _
 
 theorem layout (d : Direction) {g : Nat} (hg1 : 1 ≤ g) (hg : g ≤ 16) : Layout (dirCore d g) :=
   VG.Proof.Modes.RISCV64.shared_layout (inlineLayout d hg1 hg)
-    (by simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega) _ _
+    (by simp only [inlineCore, bufSlot, scratchSlots, Impl.Modes.RISCV64.coreSlot]; omega_using [hg]) _ _
 
 theorem total_eq (d : Direction) (g : Nat) : 8 * (dirCore d g).total = 1104 + 16 * g := by
   simp only [dirCore, Impl.Modes.RISCV64.Core.shared, inlineCore, bufSlot, scratchSlots,
-    Impl.Modes.RISCV64.coreSlot]; omega
+    Impl.Modes.RISCV64.coreSlot]; omega_using []
 
 end VG.Proof.Seed.RISCV64.Mode

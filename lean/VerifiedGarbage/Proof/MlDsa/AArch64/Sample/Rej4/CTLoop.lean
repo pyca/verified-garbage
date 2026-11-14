@@ -49,15 +49,15 @@ theorem loop_ct {k : Nat} (hk : k < 4) :
     · simp only [lrd,lwr,List.mem_append,List.mem_singleton] at hr
       rcases hr with rfl | rfl
       · exact ⟨scrR σ,by simp,VG.Impl.MlDsa.AArch64.Sample.Rej4.oBuf+1008*k,rfl,
-          by dsimp only [oBuf,scrR]; omega⟩
-      · exact ⟨aR σ,by simp,1024*k,rfl,by dsimp only [aR,polyR]; omega⟩
+          by dsimp only [oBuf,scrR]; omega_using [hk]⟩
+      · exact ⟨aR σ,by simp,1024*k,rfl,by dsimp only [aR,polyR]; omega_using [hk]⟩
     · rw [List.mem_singleton.mp hr]
-      exact ⟨aR σ,by simp,1024*k,rfl,by dsimp only [aR,polyR]; omega⟩
+      exact ⟨aR σ,by simp,1024*k,rfl,by dsimp only [aR,polyR]; omega_using [hk]⟩
   · have h := zero_lpre hp hk h
     obtain ⟨tr,u,he,_⟩ := VG.Proof.MlDsa.AArch64.Sample.RejNtt.loop_ok (G_length _ _)
       (s₀ := s.withRegions (lrd σ k) (lwr σ k))
       ⟨h.buf,fun j hj => VG.Proof.MlKem.AArch64.in_rd (VG.Proof.MlKem.AArch64.in_regions
-        (List.mem_singleton_self _) (Offset.contains_base _ (by omega) (by omega))),
+        (List.mem_singleton_self _) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))),
         fun i hi => VG.Proof.MlKem.AArch64.in_regions (List.mem_singleton_self _) (coeff_contains _ hi),
         h.disj,h.x25,h.x26⟩
     exact ⟨tr,u,he⟩

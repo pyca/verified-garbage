@@ -47,8 +47,8 @@ theorem precomputeOperation_trace {s t : State} (A : PrecomputeABI s) (B : Preco
         simpa only [argumentPointer, ← A4, ← A5] using Ot
       have Pair : PrecomputePair (argumentPointer s 4) ((arg s 5).toNat * 8) (arg s 3).toNat (arg s) u v :=
         ⟨Is, Iv, (Ks.1 _ (by decide)).trans (SP.trans (Kt.1 _ (by decide)).symm)⟩
-      have Ns := scratch_bytes Os (by have := A.lengths.2; omega) Is.nApart
-      have Nt := scratch_bytes Ov (by have := A.lengths.2; omega) Iv.nApart
+      have Ns := scratch_bytes Os (by have := A.lengths.2; omega_using []) Is.nApart
+      have Nt := scratch_bytes Ov (by have := A.lengths.2; omega_using []) Iv.nApart
       have NN : Spec.Rsa.bytesAt u.mem (byteAddr (arg s 2)) (arg s 3).toNat =
           Spec.Rsa.bytesAt v.mem (byteAddr (arg s 2)) (arg s 3).toNat := by
         rw [Ns, Nt]

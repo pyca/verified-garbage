@@ -44,7 +44,7 @@ set, a prepared key (`PreparedSecretKey`), which begins with it. -/
 abbrev skL (p : Params) (s : State) : Nat := if s.gpr .r9 = 0 then p.skLen else preparedSecretKeyBytes p
 
 theorem skLen_le_skL (p : Params) (s : State) : p.skLen ≤ skL p s := by
-  unfold skL preparedSecretKeyBytes; split <;> omega
+  unfold skL preparedSecretKeyBytes; split <;> omega_using []
 
 /-- `vg_mldsa*_sign_with_cache(sk = rdi, mu = rsi, rnd = rdx, sig = rcx, scratch = r8,
 prepared = r9) -> eax`, with `D` bytes of stack, and the leakage `signLeak`: signing
@@ -126,7 +126,7 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   replace d2 := d2.sub_left hsub
   replace r1 := r1.sub_right hsub
   replace k1 := k1.sub_right hsub
-  replace n1 : (σ.gpr .rdi).toNat + L ≤ 2 ^ 64 := by omega
+  replace n1 : (σ.gpr .rdi).toNat + L ≤ 2 ^ 64 := by omega_using [hL, n1]
   have e1 : s.gpr .rbx = σ.gpr .r8 := h.regs (.rbx, .r8) (by decide)
   have e2 : s.gpr .rbp = σ.gpr .rdi := h.regs (.rbp, .rdi) (by decide)
   have e3 : s.gpr .r12 = σ.gpr .rsi := h.regs (.r12, .rsi) (by decide)
@@ -378,15 +378,15 @@ theorem seqOk_ok {D : Nat} {f : Nat → Prog isa} {I : Nat → State → Prop} :
       (∀ k, a ≤ k → k < a + n → ∀ s, I k s → WP isa (f k) s (I (k + 1))) →
       ∀ s, I a s → WP isa (seqOk f a n) s fun s' => ∃ k, a ≤ k ∧ k ≤ a + n ∧ I k s' ∧
         (k = a + n ∨ (s'.gpr .r15).setWidth 32 = 0)
-  | 0, a, _, _, s, hs => WP.block_nil ⟨a, Nat.le_refl _, by omega, hs, .inl rfl⟩
+  | 0, a, _, _, s, hs => WP.block_nil ⟨a, Nat.le_refl _, by omega_using [], hs, .inl rfl⟩
   | n + 1, a, hst, h, s, hs => by
     rw [seqOk]
-    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_using []) s hs) fun s₁ h₁ => ?_)
     refine ifOkElse_ok (D := D) (fun s₂ hP hcs hm _ => ?_) fun s₂ hP hcs hm he => ?_
-    · refine WP.mono (seqOk_ok n (a + 1) (fun k hk hk' => hst k (by omega) (by omega))
-        (fun k hk hk' => h k (by omega) (by omega)) s₂ (hst _ (by omega) (by omega) _ _ h₁ hP hcs hm))
-        fun s' ⟨k, hk, hk', hI, hk''⟩ => ⟨k, by omega, by omega, hI, hk''.imp (fun _ => by omega) id⟩
-    · exact WP.block_nil ⟨a + 1, by omega, by omega, hst _ (by omega) (by omega) _ _ h₁ hP hcs hm,
+    · refine WP.mono (seqOk_ok n (a + 1) (fun k hk hk' => hst k (by omega_using [hk]) (by omega_using [hk']))
+        (fun k hk hk' => h k (by omega_using [hk]) (by omega_using [hk'])) s₂ (hst _ (by omega_using []) (by omega_using []) _ _ h₁ hP hcs hm))
+        fun s' ⟨k, hk, hk', hI, hk''⟩ => ⟨k, by omega_using [hk], by omega_using [hk'], hI, hk''.imp (fun _ => by omega_arith) id⟩
+    · exact WP.block_nil ⟨a + 1, by omega_using [], by omega_using [], hst _ (by omega_using []) (by omega_using []) _ _ h₁ hP hcs hm,
         .inr (by rw [hcs _ (by decide)]; exact he)⟩
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :

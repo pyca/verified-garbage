@@ -1,4 +1,7 @@
 module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Verified
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
@@ -84,11 +87,11 @@ theorem cachedSatMem_key {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x1000 : Addr) + BitVec.ofNat 64 i).toNat = 0x1000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hp, hi]
   have ne : ∀ b : Addr, 0x8000 ≤ b.toNat → (0x1000 : Addr) + BitVec.ofNat 64 i ≠ b := fun b hb e => by
-    have := congrArg BitVec.toNat e; rw [he] at this; omega
+    have := congrArg BitVec.toNat e; rw [he] at this; omega_using [hp, hi, hb, this]
   simp only [cachedSatMem, he]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide))),
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [hp, hi])), ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide))),
     ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide))), ite_eq_right_of_eq_false _ _ (eq_false (ne _ (by decide)))]
 
 theorem cachedSatMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
@@ -99,10 +102,10 @@ theorem cachedSatMem_digest {p : Params} (hp : p.pkLen < 0x7000) :
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [cachedSatMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, true_and, ite_true,
+    omega_using [hi]
+  simp only [cachedSatMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], true_and, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 /-- A state satisfying the precondition of verification with a cached `tr`. -/
 def cachedSat (p : Params) : State where
@@ -203,9 +206,9 @@ theorem key_bytes {m : Mem} {f : Addr → BitVec 8} {len : Nat} (hl : len < 0x10
   intro i hi
   have he : ((0x200000 : Addr) + BitVec.ofNat 64 i).toNat = 0x200000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hl, hi]
   simp only [he]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))]
 
 /-- The arguments on the stack at `0x80000` depend only on the 16 bytes there. -/
 theorem stackArg_eq_of {s s' : State} (hsp : s.sp = 0x80000) (hsp' : s'.sp = 0x80000) {i : Nat} (hi : i < 4)
@@ -217,8 +220,8 @@ theorem stackArg_eq_of {s s' : State} (hsp : s.sp = 0x80000) (hsp' : s'.sp = 0x8
   have e : (State.addr ((0x80000 : BitVec 32) + BitVec.ofNat 32 (4 * i)) + BitVec.ofNat 64 j).toNat =
       0x80000 + 4 * i + j := by
     simp only [State.addr, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  exact h _ (by rw [e]; omega) (by rw [e]; omega)
+    omega_using [hi, hj]
+  exact h _ (by rw [e]; omega_using []) (by rw [e]; omega_using [hi, hj])
 
 theorem preparedSignSat_arg {p : Params} {m : Mem} {i : Nat} (hi : i < 4) :
     stackArg (preparedSignSat p m) i = stackArg (preparedSignSat p (fun _ => 0)) i :=
@@ -296,23 +299,23 @@ theorem preparedCachedMem_key {p : Params} {m : Mem} {len : Nat} (hl : len < 0x1
   intro i hi
   have he : ((0x200000 : Addr) + BitVec.ofNat 64 i).toNat = 0x200000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
+    omega_using [hl, hi]
   simp only [preparedCachedMem, he]
-  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+  rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [])), ite_eq_right_of_eq_false _ _ (eq_false (by omega_using []))]
 
 theorem preparedCachedMem_digest {p : Params} (hp : p.pkLen < 0x7000) {m : Mem}
     (hm : bytesAt m 0x200000 p.pkLen = bytesAt (fun _ => 0) 0x1000 p.pkLen) :
     bytesAt (preparedCachedMem p m) 0x8000 64 = pkTr (bytesAt (preparedCachedMem p m) 0x200000 p.pkLen) := by
-  rw [preparedCachedMem_key (by omega), hm]
+  rw [preparedCachedMem_key (by omega_using [hp]), hm]
   have hl : (pkTr (bytesAt (fun _ => 0) 0x1000 p.pkLen)).length = 64 := Proof.MlDsa.Verify.H_length _ _
   apply Proof.MlKem.bytesAt_eq hl
   intro i hi
   have he : ((0x8000 : Addr) + BitVec.ofNat 64 i).toNat = 0x8000 + i := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.reduceToNat]
-    omega
-  simp only [preparedCachedMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega, true_and, ite_true,
+    omega_using [hi]
+  simp only [preparedCachedMem, he, show 0x8000 ≤ 0x8000 + i ∧ 0x8000 + i < 0x8040 by omega_using [hi], true_and, ite_true,
     Nat.add_sub_cancel_left]
-  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hl, hi]), Option.getD_some]
 
 theorem preparedCachedSat_arg {p : Params} {m : Mem} {i : Nat} (hi : i < 4) :
     stackArg (preparedCachedSat p m) i = stackArg (preparedCachedSat p (fun _ => 0)) i :=
@@ -377,5 +380,94 @@ theorem signPreparedFn {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = ml
 theorem verifyPreparedFn {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifyFn p true (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p) :=
   ⟨Verify.entry_correct h3 true, Verify.entry_ct h3 true, by rcases h3 with rfl | rfl | rfl <;> decide +kernel⟩
+
+/-! ## Public external-μ contracts -/
+
+def externalSignSat (p : Params) (m : Mem) : State :=
+  { Sign.signSat p with
+    gpr := fun r => if r = .r0 then 0x200000 else (Sign.signSat p).gpr r
+    mem := fun a => if 0x80000 ≤ a.toNat ∧ a.toNat < 0x80010 then (Sign.signSat p).mem a else m a
+    rd := [⟨0x200000, preparedSecretKeyBytes p⟩, ⟨0x3000, 64⟩, ⟨0x3100, 32⟩, ⟨0x80000, 4⟩] }
+
+theorem externalSign_sat {p : Params} (hp : p ∈ params) :
+    ∃ s, (preparedSignContract p Arm.abi 44).pre s := by
+  have h3 : PreparedKey.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  obtain ⟨m, hk⟩ := PreparedKey.prepared_secret_mem h3
+  have hb : bytesAt (externalSignSat p m).mem 0x200000 (preparedSecretKeyBytes p) =
+      bytesAt m 0x200000 (preparedSecretKeyBytes p) :=
+    key_bytes (by rcases h3 with rfl | rfl | rfl <;> decide)
+  have hk' := PreparedKey.preparedSecretKey_of_bytes hb hk
+  have ha : stackArg (externalSignSat p m) 0 = 0x10000 := by
+    have e := stackArg_eq_of (s := externalSignSat p m) (s' := Sign.signSat p) rfl rfl (by decide : 0 < 4)
+      (fun a h₁ h₂ => by simp only [externalSignSat, h₁, h₂, and_self, ite_true])
+    exact e.trans (show stackArg (Sign.signSat mlDsa44) 0 = 0x10000 by decide)
+  refine ⟨externalSignSat p m, ?_⟩
+  rcases h3 with rfl | rfl | rfl <;>
+    sig_pre [preparedSignContract, preparedSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] <;>
+    simp only [ha] <;> sig_and_intros <;> (try dsimp only [externalSignSat, Sign.signSat, stackArgAddr])
+  all_goals first | exact hk' | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+theorem externalSign_verified {p : Params} (hp : p ∈ params) :
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p)
+      (preparedSignContract p Arm.abi 44) := by
+  have h3 : Sign.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  refine Verified.of_correct (Sign.entry_correct h3 true) (Sign.entry_ct h3 true) ?_
+  refine { pre := ?_, post := ?_, pub := ?_, sat := externalSign_sat hp }
+  · intro s h
+    sig_pre [preparedSignContract, preparedSignSig, Sign.signE, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨hsp, hsp4, hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, k1, k2, k3, k4, k5, -, n1, n2, n3, n4, n5, hk⟩ := h
+    simp only [Nat.mul_comm (scratchWords p) 8] at hwr d2 d4 d6 d7 d9 k5 n5
+    exact ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, hsp4,
+      fun _ => hk⟩
+  · intro s s' _ h
+    sig_post [preparedSignContract, preparedSignSig, Sign.signE, Sign.signK, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    rw [VG.Proof.MlKem.Arm.setWidth_append32]
+    exact h
+  · intro s₁ s₂ _ _ h
+    sig_pub [preparedSignContract, preparedSignSig, Sign.signE, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨hsp, hb, h0, h1, h2, h3, h4⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, hsp, hb⟩
+
+def externalVerifySat (p : Params) (m : Mem) : State :=
+  { Verify.verifySat p with
+    gpr := fun r => if r = .r0 then 0x200000 else (Verify.verifySat p).gpr r
+    mem := m
+    rd := [⟨0x200000, preparedPublicKeyBytes p⟩, ⟨0x2000, 64⟩, ⟨0x3000, p.sigLen⟩] }
+
+theorem externalVerify_sat {p : Params} (hp : p ∈ params) :
+    ∃ s, (preparedVerifyContract p Arm.abi 52).pre s := by
+  have h3 : PreparedKey.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  obtain ⟨m, _, hk⟩ := PreparedKey.prepared_public_mem h3
+  refine ⟨externalVerifySat p m, ?_⟩
+  rcases h3 with rfl | rfl | rfl <;>
+    sig_pre [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] <;>
+    sig_and_intros
+  all_goals first | exact hk | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+theorem externalVerify_verified {p : Params} (hp : p ∈ params) :
+    Verified Arm.target (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p)
+      (preparedVerifyContract p Arm.abi 52) := by
+  have h3 : Verify.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  refine Verified.of_correct (Verify.entry_correct h3 true) (Verify.entry_ct h3 true) ?_
+  refine { pre := ?_, post := ?_, pub := ?_, sat := externalVerify_sat hp }
+  · intro s h
+    sig_pre [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨h0, -, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, hk⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, fun _ => hk⟩
+  · intro s s' _ h
+    sig_post [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    rw [VG.Proof.MlKem.Arm.setWidth_append32]
+    exact h
+  · intro s₁ s₂ _ _ hpub
+    sig_pub [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpub
+    obtain ⟨hsp, hl, h0, h1, h2, h3⟩ := hpub
+    obtain ⟨e12, e3⟩ := List.append_inj (Proof.MlDsa.KeyGen.leakBytes_inj hl)
+      (by simp only [List.length_append, Proof.MlKem.bytesAt_length])
+    obtain ⟨e1, e2⟩ := List.append_inj e12 (by simp only [Proof.MlKem.bytesAt_length])
+    exact ⟨hsp, h0, h1, h2, h3, e1, e2, e3⟩
 
 end VG.Proof.MlDsa.Arm.Message

@@ -85,7 +85,7 @@ theorem rn_ok {c : Prog isa} (hc : Callee c (fun stk => rejNTTContract Arm.abi s
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := rn_cov hs m
   refine callV hver.1 m.hg (rn_preS hs (Nat.le_trans hstk hS) m) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri a 1024, tri w 2048] (Nat.le_trans hc.stack hS) hk) ?_ ?_
   all_goals
     obtain ⟨g0, g1, -⟩ := rnG hs m (rnRd L sd) (rnWr L a w)
@@ -163,7 +163,7 @@ theorem rb_preS {s : State} (hs : Site L Wb STK s) {stk : Nat} (hstk : stk ≤ S
     (by rw [State.withRegions_wr, hs.regE m.pa (by decide), hs.regE m.pw (by decide)])
     (by rw [hsp]; exact Nat.le_trans hstk hs.spk) ?_ ?_ ?_ ?_ ?_ ?_
     (hs.fitE m.ps (by decide)) (hs.fitE m.pa (by decide)) (hs.fitE m.pw (by decide))
-    (by rw [imm_toNat (by omega)]; exact hη)
+    (by rw [imm_toNat (by omega_arith)]; exact hη)
   · rw [hs.regE m.ps (by decide), hs.regE m.pa (by decide)]; exact hs.dE m.d1 (.inr m.wa)
   · rw [hs.regE m.ps (by decide), hs.regE m.pw (by decide)]; exact hs.dE m.d2 (.inr m.ww)
   · rw [hs.regE m.pa (by decide), hs.regE m.pw (by decide)]; exact hs.dE m.d3 (.inl m.wa)
@@ -182,13 +182,13 @@ theorem rb_ok {c : Prog isa} (hc : Callee c (fun stk => rejBoundedContract Arm.a
   obtain ⟨stk, hstk, hver⟩ := hc.verified
   obtain ⟨c1, c2⟩ := rb_cov hs m
   refine callV hver.1 m.hg (rb_preS hs (Nat.le_trans hstk hS) m hη) c1 c2
-    (by have := hs.spk; have := hc.stack; omega) fun s' hk hp =>
+    (by have := hs.spk; have := hc.stack; omega_arith) fun s' hk hp =>
       hQ s' (hs.keptW [tri a 1024, tri w 2048] (Nat.le_trans hc.stack hS) hk) ?_ ?_
   all_goals
     obtain ⟨g0, g1, g2, -⟩ := rbG (η := η) hs m (rbRd L sd) (rnWr L a w)
     have := rejBounded_post hp
     rw [State.withRegions_mem, State.withRegions_gpr, g0, g1, g2, hs.addrE m.ps (by decide),
-      hs.addrE m.pa (by decide), view_glue_mem, imm_toNat (by omega)] at this
+      hs.addrE m.pa (by decide), view_glue_mem, imm_toNat (by omega_arith)] at this
   exacts [this.1, this.2]
 
 theorem rb_tr {c : Prog isa} (hc : Callee c (fun stk => rejBoundedContract Arm.abi stk) S) (hS : S ≤ STK)
@@ -204,7 +204,7 @@ theorem rb_tr {c : Prog isa} (hc : Callee c (fun stk => rejBoundedContract Arm.a
   refine ⟨rbRd L sd, rnWr L a w, rb_preS hx (Nat.le_trans hstk hS) m hη, rb_preS hy (Nat.le_trans hstk hS) m hη,
     rejBounded_pub (by rw [view_glue_sp, view_glue_sp, hsp]) (by rw [gx0, gy0]) (by rw [gx1, gy1])
       (by rw [gx2, gy2]) (by rw [gx3, gy3]) ?_, (rb_cov hx m).1, (rb_cov hx m).2, (rb_cov hy m).1, (rb_cov hy m).2⟩
-  rw [gx0, gy0, gx1, gy1, view_glue_mem, view_glue_mem, hx.addrE m.ps (by decide), imm_toNat (by omega)]
+  rw [gx0, gy0, gx1, gy1, view_glue_mem, view_glue_mem, hx.addrE m.ps (by decide), imm_toNat (by omega_arith)]
   exact hl
 
 end

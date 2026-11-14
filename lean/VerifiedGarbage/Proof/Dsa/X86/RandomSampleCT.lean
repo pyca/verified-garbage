@@ -63,15 +63,15 @@ theorem LoopAt.drawPre {a : LoopPub} {s₀ t : State} (L : LoopAt a s₀ t) :
     DrawPre ⟨a.pub, a.used, a.draws, a.tr.head? == some 1⟩ s₀ t := by
   refine ⟨L.smp, L.pos, L.le, L.q, fun hfull => ?_⟩
   dsimp only at hfull
-  obtain ⟨d', hd'⟩ : ∃ d', a.draws = d' + 1 := ⟨a.draws - 1, by have := L.pos; omega⟩
+  obtain ⟨d', hd'⟩ : ∃ d', a.draws = d' + 1 := ⟨a.draws - 1, by have := L.pos; omega_using [this]⟩
   have hdw : Spec.Dsa.Random.drawBytes (rq s₀) = rWidth s₀ := rWidth_eq s₀
   have hdl : (drawBytes s₀ a.used).length = rWidth s₀ := by
-    simp only [drawBytes, List.length_take, List.length_drop]; omega
+    simp only [drawBytes, List.length_take, List.length_drop]; omega_using [hfull]
   have htr := L.tr
   rw [hd'] at htr
   show accepts s₀ (drawCand s₀ a.used) = (a.tr.head? == some 1)
   rw [accepts_candidate s₀ hdl (width_pos L.q), ← htr, spl,
-    VG.Proof.Dsa.Random.sample_trace_head _ _ _ L.q (by rw [hdw, List.length_drop]; omega), hdw]
+    VG.Proof.Dsa.Random.sample_trace_head _ _ _ L.q (by rw [hdw, List.length_drop]; omega_using [hfull]), hdw]
 
 def sampleBody : Prog isa := .seq draw (.block [.mov .eax (.mem (sp oStatus)), .alu .cmp .eax (.imm 4)])
 
@@ -101,7 +101,7 @@ theorem step_ok {a : LoopPub} {s₀ t : State} (A : RandomSignABI s₀) (e : pub
         decide_eq_true_eq]
       exact h2
     refine ⟨hv₂, by rw [zv₂, uv₁.gpr, stv, hc]; rfl, fun _ => ⟨?_, by rw [mv₂]; exact stv,
-      by show 1 ≤ a.draws - 1; omega, by show a.draws - 1 ≤ 128; have := L.le; omega, L.q, ?_⟩⟩
+      by show 1 ≤ a.draws - 1; omega_using [h2], by show a.draws - 1 ≤ 128; have := L.le; omega_using [this], L.q, ?_⟩⟩
     · show Smp s₀ (a.used + a.pub.width) (a.draws - 1) v₂
       rw [pub_width e]; exact Sv.mem A hv₂ mv₂
     · show (spl s₀ (a.draws - 1) (a.used + a.pub.width)).trace = a.tr.tail
@@ -110,7 +110,7 @@ theorem step_ok {a : LoopPub} {s₀ t : State} (A : RandomSignABI s₀) (e : pub
       simp only [LoopPub.cont, ← htr, Bool.and_eq_false_iff, beq_eq_false_iff_ne, decide_eq_false_iff_not]
       rcases hh with hh | hh
       · exact .inl hh
-      · exact .inr (by omega)
+      · exact .inr (by omega_using [hh])
     refine ⟨hv₂, by rw [zv₂, uv₁.gpr, sub_four_ne stv, hc], fun h => by rw [hc] at h; cases h⟩
 
 theorem sampleLoop_ct (n : Nat) :
@@ -134,8 +134,8 @@ theorem sampleLoop_ct (n : Nat) :
   have hc' : a.cont = true := by simpa only [eval, z₁, Option.some.injEq] using hc
   have h2 : 2 ≤ a.draws := by
     simp only [LoopPub.cont, Bool.and_eq_true, decide_eq_true_eq] at hc'; exact hc'.2
-  exact ⟨n - 1, by omega, a.next, ⟨by show a.draws - 1 = n - 1; omega, s₁, A₁, e₁, c₁ hc'⟩,
-    ⟨by show a.draws - 1 = n - 1; omega, s₂, A₂, e₂, c₂ hc'⟩⟩
+  exact ⟨n - 1, by omega, a.next, ⟨by show a.draws - 1 = n - 1; omega_using [hn], s₁, A₁, e₁, c₁ hc'⟩,
+    ⟨by show a.draws - 1 = n - 1; omega_using [hn], s₂, A₂, e₂, c₂ hc'⟩⟩
 
 /-- What two runs of the sampler share. -/
 structure SmpPub where

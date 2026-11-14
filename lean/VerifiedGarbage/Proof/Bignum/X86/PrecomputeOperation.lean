@@ -19,15 +19,15 @@ theorem precomputeFailure_post {s : State} {base : Addr} {bytes len : Nat} {args
     WP isa PrecomputeFn.failure s fun t => PrecomputePost base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have dims := h.dimensions
-  have twice : 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len := by omega
-  refine WP.mono (precomputeFailure_ok (n := 2 * Spec.Rsa.modulusWords len) (by omega) (by omega)
+  have twice : 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len := by omega_using []
+  refine WP.mono (precomputeFailure_ok (n := 2 * Spec.Rsa.modulusWords len) (by omega_using [dims]) (by omega_using [dims])
     (by simpa only [twice] using h.outFit) ((h.stack 0 (by decide)).readSrc)
     (by rw [← h.preLen]; exact (h.stack 1 (by decide)).readSrc)
     (by simpa only [twice] using h.outWrite)) fun t ⟨B, Y, O, K⟩ => ?_
   refine ⟨⟨?_, ?_⟩, K.mono (by decide)⟩
   · simp only [Spec.Rsa.publicPrecompute, bytesAt_length, invalid, Bool.false_eq_true, ite_false]
     exact ⟨B, Y⟩
-  · have F := outside_frame O (by omega)
+  · have F := outside_frame O (by omega_using [dims])
     simp only [BitVec.add_zero] at F
     exact F.mono (by simp [twice])
 

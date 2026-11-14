@@ -57,16 +57,16 @@ theorem absorbFixed_ok (s : State)
       Repr b h0 t.mem (s.gpr .r31) (bytesAt s.mem (s.gpr .r31 + BitVec.ofNat 64 offset) size) ∧
       Keeps s t := by
   unfold absorbFixed
-  refine WP.seq ((fixedArgs_ok s offset size offsetUpper (by omega)).mono fun u hu => ?_)
+  refine WP.seq ((fixedArgs_ok s offset size offsetUpper (by omega_using [sizeBound])).mono fun u hu => ?_)
   have p : u.gpr .r31 = s.gpr .r31 := hu.other _ (by decide) (by decide) (by decide)
   have sp := hu.sp
   have len : (u.gpr .r6).toNat = size := by
-    rw [hu.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [hu.size, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [sizeBound])]
   have wr : (⟨u.gpr .r31, 16384⟩ : Region) ∈ u.wr := by rw [p, hu.wr]; exact hwr
   have hr : Repr b h0 u.mem (u.gpr .r31) [] := by rw [hu.mem, p]; exact repr
   have hc : u.gpr .r4 = BitVec.ofNat 64 ([] : List Byte).length := hu.count
   have hb : ([] : List Byte).length + (u.gpr .r6).toNat < 2 ^ 64 := by
-    simp only [List.length_nil, Nat.zero_add, len]; omega
+    simp only [List.length_nil, Nat.zero_add, len]; omega_using [sizeBound]
   have cover : Covers [⟨u.gpr .r5, (u.gpr .r6).toNat⟩] (u.rd ++ u.wr) := by
     apply Covers.of_sub
     intro r hr
@@ -76,10 +76,10 @@ theorem absorbFixed_ok (s : State)
     rw [len]; exact sizeBound
   have ds : (⟨u.gpr .r5, (u.gpr .r6).toNat⟩ : Region).Disjoint ⟨u.gpr .r31, 192⟩ := by
     rw [hu.data, len, p]
-    exact (Offset.base_disjoint _ (by omega) (by omega)).symm
+    exact (Offset.base_disjoint _ (by omega_using [offsetLower]) (by omega_using [sizeBound])).symm
   have dw : (⟨u.gpr .r5, (u.gpr .r6).toNat⟩ : Region).Disjoint ⟨u.gpr .r31 + 192, 576⟩ := by
     rw [hu.data, len, p]
-    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega) (by omega) (by decide)
+    exact Offset.disjoint _ (d := offset) (n := size) (e := 192) (k := 576) (by omega_using [offsetLower]) (by omega_using [sizeBound]) (by decide)
   have sw : (below u.sp 48).Disjoint ⟨u.gpr .r31, 16384⟩ := by
     rw [sp, p]; exact stackWork
   have sd : (below u.sp 48).Disjoint ⟨u.gpr .r5, (u.gpr .r6).toNat⟩ := by
@@ -136,7 +136,7 @@ theorem absorbInput_ok (s : State)
   have ku := hu.keeps
   have repr' : Repr b h0 u.mem (u.gpr .r31) headBytes := by rw [hu.mem, ku.r31]; exact repr
   have count : u.gpr .r4 = BitVec.ofNat 64 headBytes.length := by rw [prefixLen]; exact hu.count
-  have bound : headBytes.length + (u.gpr .r6).toNat < 2 ^ 64 := by rw [prefixLen, hu.size]; omega
+  have bound : headBytes.length + (u.gpr .r6).toNat < 2 ^ 64 := by rw [prefixLen, hu.size]; omega_using [len]
   have wr : (⟨u.gpr .r31, 16384⟩ : Region) ∈ u.wr := by rw [ku.r31, ku.wr]; exact hwr
   have cover : Covers [⟨u.gpr .r5, (u.gpr .r6).toNat⟩] (u.rd ++ u.wr) := by
     rw [hu.data, hu.size, hu.rd, hu.wr]; exact hdata

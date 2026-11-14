@@ -27,16 +27,16 @@ theorem expByteNext_ok (s : State) {base ep : BitVec 32} {len w M x E c : Nat}
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
-    omega
+    omega_using [this]
   have addr (d : Nat) (hd : d ≤ 252) : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = off (State.addr base) d := by
-    rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega)
+    rw [h.ready.ptr]; exact addr_add (by have := h.ready.workspace.nowrap; omega_using [size, hd, this])
   unfold expByteNext
   refine wp_ldr (a := off (State.addr base) 128) (by decide) (addr 128 (by decide))
-    (h.ready.workspace.read (by omega)) fun u a => ?_
+    (h.ready.workspace.read (by omega_using [size])) fun u a => ?_
   refine wp_dp (op2_imm (by decide)) fun v b => ?_
   refine wp_str (a := off (State.addr base) 128) (by decide)
     (by rw [b.other .r0 (by decide), a.other .r0 (by decide)]; exact addr 128 (by decide))
-    (by rw [b.wr, a.wr]; exact h.ready.workspace.write (by omega)) fun z d => ?_
+    (by rw [b.wr, a.wr]; exact h.ready.workspace.write (by omega_using [size])) fun z d => ?_
   have memZ : z.mem = s.mem.writeW (off (State.addr base) 128) (ep + 1) := by
     rw [d.mem, b.mem, a.mem, b.gpr, dpVal, a.gpr, pointer]
   have restZ : Rest [.r1] s z := (a.rest (by simp)).trans ((b.rest (by simp)).trans (d.rest _))
@@ -49,15 +49,15 @@ theorem expByteNext_ok (s : State) {base ep : BitVec 32} {len w M x E c : Nat}
     exact count
   refine wp_ldr (a := off (State.addr base) 132) (by decide)
     (by rw [restZ.gpr .r0 (by simp)]; exact addr 132 (by decide))
-    (by rw [restZ.rd, restZ.wr]; exact h.ready.workspace.read (by omega)) fun q e => ?_
+    (by rw [restZ.rd, restZ.wr]; exact h.ready.workspace.read (by omega_using [size])) fun q e => ?_
   refine wp_subs (op2_imm (by decide)) fun r f zero => ?_
   refine wp_str_z (a := off (State.addr base) 132) (by decide)
     (by rw [f.other .r0 (by decide), e.other .r0 (by decide), restZ.gpr .r0 (by simp)]; exact addr 132 (by decide))
-    (by rw [f.wr, e.wr, restZ.wr]; exact h.ready.workspace.write (by omega)) fun t g zeroT => WP.block_nil ?_
+    (by rw [f.wr, e.wr, restZ.wr]; exact h.ready.workspace.write (by omega_using [size])) fun t g zeroT => WP.block_nil ?_
   have value : r.gpr .r1 = BitVec.ofNat 32 (c - 1) := by
     rw [f.gpr, e.gpr, countZ]
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
-    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega)
+    exact BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [hc])
   have memT : t.mem = z.mem.writeW (off (State.addr base) 132) (BitVec.ofNat 32 (c - 1)) := by
     rw [g.mem, f.mem, e.mem, value]
   have restT : Rest [.r1] z t := (e.rest (by simp)).trans ((f.rest (by simp)).trans (g.rest _))
@@ -68,7 +68,7 @@ theorem expByteNext_ok (s : State) {base ep : BitVec 32} {len w M x E c : Nat}
     rw [← memT] at outsideT
     rw [outside_read32 outsideT (d := 128) (by decide) (by decide), memZ, Mem.readW_writeW_self32]
   · rw [memT, Mem.readW_writeW_self32]
-  · rw [zeroT, zero, ← f.gpr, value, ofNat_beq_zero (by omega)]
-    exact decide_eq_decide.mpr (by omega)
+  · rw [zeroT, zero, ← f.gpr, value, ofNat_beq_zero (by omega_using [hc'])]
+    exact decide_eq_decide.mpr (by omega_using [hc])
 
 end VG.Proof.Bignum.Arm.ConditionalExp

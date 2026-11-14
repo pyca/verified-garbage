@@ -26,10 +26,10 @@ theorem sharedWindowByteStep_ok {base ep : BitVec 32} {len w M x j : Nat} {eb : 
       P z ∧ Frame regions t.mem z.mem ∧ Rest roundClobbers t z := by
   obtain ⟨⟨A, p, state, sum⟩, ptr, counter, countFit, sourceFit, read, separate, bytes⟩ := h
   have address : State.addr (ep + BitVec.ofNat 32 j) = State.addr ep + BitVec.ofNat 64 j :=
-    addr_add (by omega)
+    addr_add (by omega_using [hj, sourceFit])
   have currentRead : InRegions (t.rd ++ t.wr) (State.addr (ep + BitVec.ofNat 32 j)) 1 := by
     rw [address]
-    exact CallLay.inRegions_sub read (by omega) (by omega)
+    exact CallLay.inRegions_sub read (by omega_using [hj]) (by omega_using [countFit])
   have currentByte : t.mem (State.addr (ep + BitVec.ofNat 32 j)) = eb[j] := by
     rw [address]; exact bytes j hj
   rw [WP.seq_iff]
@@ -43,10 +43,10 @@ theorem sharedWindowByteStep_ok {base ep : BitVec 32} {len w M x j : Nat} {eb : 
     ⟨⟨A, p, stateU, by rw [sum, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, show 2 ^ 8 = 256 from rfl,
       Nat.div_eq_of_lt v256, Nat.add_zero]⟩, by rw [Nat.pow_zero, Nat.mul_one]; exact byteU, countU⟩ pu v256) ?_
   rintro y ⟨⟨A', p', stateY, sumY⟩, keepsY, py, frameY, restY⟩
-  rw [show 8 * j + 8 = 8 * (j + 1) by omega] at stateY
+  rw [show 8 * j + 8 = 8 * (j + 1) by omega_using []] at stateY
   have ptrY := (keepsY 128 (by simp)).trans ((keepsU 128 (by simp)).trans ptr)
   have countY := (keepsY 132 (by simp)).trans ((keepsU 132 (by simp)).trans counter)
-  refine WP.mono (expByteNext_mem y stateY.power.ready (c := eb.length - j) (by omega) (by omega) ptrY countY) ?_
+  refine WP.mono (expByteNext_mem y stateY.power.ready (c := eb.length - j) (by omega_using [hj]) (by omega_using [countFit]) ptrY countY) ?_
   rintro z ⟨memZ, zero, restZ⟩
   have ctl : CtlOnly base y.mem z.mem := by
     rw [memZ]; exact ctl_write2 _ _ _ _ (by decide) (by decide) (by decide) (by decide)
@@ -59,7 +59,7 @@ theorem sharedWindowByteStep_ok {base ep : BitVec 32} {len w M x j : Nat} {eb : 
   rw [← memZ] at ptrZ counterZ
   have keep (a : Nat) (ha : 136 ≤ a) (ha' : a + 4 ≤ 256) :
       z.mem.readW (off (State.addr base) a) 32 = y.mem.readW (off (State.addr base) a) 32 := by
-    rw [memZ]; exact read_after_writes _ _ _ _ (by omega) (by omega) (by decide) (by decide) ha'
+    rw [memZ]; exact read_after_writes _ _ _ _ (by omega_using [ha]) (by omega_using [ha]) (by decide) (by decide) ha'
   have stateZ : WinState base len w M x A' p' (8 * (j + 1) % 3) z :=
     ⟨powerZ, stateY.table.after_ctl ctl fits nowrap (by decide), fits,
       by rw [keep 196 (by decide) (by decide)]; exact stateY.digit,
@@ -80,9 +80,9 @@ theorem sharedWindowByteStep_ok {base ep : BitVec 32} {len w M x j : Nat} {eb : 
   · intro i hi
     rw [frameAll.bytes (R := ⟨State.addr ep, eb.length⟩)
       separateAll
-      (by change eb.length ≤ 2 ^ 64; omega) hi]
+      (by change eb.length ≤ 2 ^ 64; omega_using [countFit]) hi]
     exact bytes i hi
-  · rw [zero]; exact decide_eq_decide.mpr (by omega)
+  · rw [zero]; exact decide_eq_decide.mpr (by omega_using [])
 
 theorem sharedWindowBytes_ok {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
     {P : State → Prop} {regions : List Region} (K : TwoExp.Montgomery base len w P regions) (s : State)
@@ -97,7 +97,7 @@ theorem sharedWindowBytes_ok {base ep : BitVec 32} {len w M x : Nat} {eb : List 
   refine WP.loop (M := isa) I ?_ eb.length s ?_
   · intro k t inv
     obtain ⟨j, jk, hk, state, pt, frame, rest⟩ := inv
-    refine WP.mono (sharedWindowByteStep_ok K t state pt (by omega) separateAll) ?_
+    refine WP.mono (sharedWindowByteStep_ok K t state pt (by omega_using [jk, hk]) separateAll) ?_
     rintro z ⟨stateZ, zero, pz, frameZ, restZ⟩
     by_cases last : j + 1 = eb.length
     · left
@@ -107,10 +107,10 @@ theorem sharedWindowBytes_ok {base ep : BitVec 32} {len w M x : Nat} {eb : List 
       change some (!z.z) = some false
       simp only [zero, last, decide_true, Bool.not_true]
     · right
-      refine ⟨?_, k - 1, by omega, j + 1, by omega, by omega, stateZ, pz, frame.trans frameZ, rest.trans restZ⟩
+      refine ⟨?_, k - 1, by omega_using [hk], j + 1, by omega_using [jk, hk], by omega_using [jk, hk, last], stateZ, pz, frame.trans frameZ, rest.trans restZ⟩
       change some (!z.z) = some true
       simp only [zero, last, decide_false, Bool.not_false]
-  · exact ⟨0, by omega, positive, h, hp, Frame.refl _ _, Rest.refl _ _⟩
+  · exact ⟨0, by omega_using [], positive, h, hp, Frame.refl _ _, Rest.refl _ _⟩
 
 
 end VG.Proof.Bignum.Arm

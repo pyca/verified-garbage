@@ -27,7 +27,7 @@ theorem nafTableFields_ok {FM : Impl.Weierstrass.Mont.Modulus} {wk : Nat} {K : W
         (pointTransferEnv E (K.tblPt (j+1)) K.R) t := by
   have hrz := hL.le K.R.z (hI.sl _ (hQ _ (by simp [jacCoords])))
   rw [hz,hn] at hrz
-  refine WP.mono (nafTableStore_ok hI.scr hj hc hT (by omega) hSep)
+  refine WP.mono (nafTableStore_ok hI.scr hj hc hT (by omega_using [hrz]) hSep)
     fun t ⟨hv,hk,ho⟩ => hI.transferPointFields hL hW ?_ ?_ hD hQ ?_ ?_ ?_ hk ?_
   · simp only [WinCfg.tblPt]
   · simp only [WinCfg.tblPt]

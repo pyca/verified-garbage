@@ -22,7 +22,7 @@ theorem brainpoolp512r1_nBits : 64 * brainpoolp512r1.n ≤ Spec.Ecdsa.nBits brai
   show 512 ≤ Spec.BrainpoolP512r1.curve.n.log2 + 1
   have : 511 ≤ Spec.BrainpoolP512r1.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 /-- No bit of a hash of `64` bytes is dropped. -/
 theorem brainpoolp512r1_sh : brainpoolp512r1.sh = 0 := by

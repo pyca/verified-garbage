@@ -87,8 +87,8 @@ theorem sqAnchor_ct {P : State → Prop} (hold : ∀ s, P s → SqHold base size
   · obtain ⟨_, m0, inv, env⟩ := hold s hs.1
     have nowrap := env.nowrap
     have := env.header; have := env.fits
-    refine wp_ldr (a := off (State.addr base) 80) (by decide) (sq_ea0 nowrap hs.2 (by omega))
-      (env.read (by omega)) fun t ut => WP.block_nil ?_
+    refine wp_ldr (a := off (State.addr base) 80) (by decide) (sq_ea0 nowrap hs.2 (by omega_arith))
+      (env.read (by omega_arith)) fun t ut => WP.block_nil ?_
     exact ⟨stable s t hs.1 ut.mem (ut.rest (by simp)), ut.gpr.trans env.metaNow⟩
 
 end

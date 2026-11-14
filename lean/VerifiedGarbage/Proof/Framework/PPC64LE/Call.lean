@@ -142,7 +142,7 @@ theorem WP.narrow {c : Prog isa} {s : State} {rd wr : List Region} {P : State �
 
 theorem read_write_self (m : Mem) (a : Addr) (v : BitVec (8 * 8)) : (m.write a 8 v).read a 8 = v :=
   Mem.read_eq_of_bytes fun i hi => by
-    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
+    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hi]), hi, ite_true]
 
 /-! ## Callees with frames -/
 
@@ -151,7 +151,7 @@ abbrev below (sp : Addr) (n : Nat) : Region := ⟨sp - BitVec.ofNat 64 n, n⟩
 
 theorem ofNat_split {a b : Nat} (hab : a ≤ b) :
     BitVec.ofNat 64 b = BitVec.ofNat 64 a + BitVec.ofNat 64 (b - a) := by
-  rw [← BitVec.ofNat_add]; congr 1; omega
+  rw [← BitVec.ofNat_add]; congr 1; omega_using [hab]
 
 theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
     Region.Sub (below sp a) (below sp b) := by
@@ -159,9 +159,9 @@ theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
   simp only [Region.Contains] at hx ⊢
   have e : x - (sp - BitVec.ofNat 64 b) = (x - (sp - BitVec.ofNat 64 a)) + BitVec.ofNat 64 (b - a) := by
     rw [ofNat_split hab]; bv_omega
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b - a) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b - a) (by omega_using [hb]),
+    Nat.mod_eq_of_lt (by omega_using [hb, hx])]
+  omega_using [hab, hx]
 
 /-- A frame's 48 bytes are in the `n + 48` bytes below the stack pointer. -/
 theorem below_frame (sp : Addr) (n : Nat) (hn : n + 48 < 2 ^ 64) :
@@ -170,15 +170,15 @@ theorem below_frame (sp : Addr) (n : Nat) (hn : n + 48 < 2 ^ 64) :
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + 48)) = (x - (sp - 48 + 32)) + BitVec.ofNat 64 (n + 32) by
     rw [BitVec.ofNat_add, BitVec.ofNat_add]; bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := n + 32) (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+    Nat.mod_eq_of_lt (a := n + 32) (by omega_using [hn]), Nat.mod_eq_of_lt (by omega_using [hn, hx])]
+  omega_using [hx]
 
 theorem below_contains (sp : Addr) (n off : Nat) (hn : n + 48 < 2 ^ 64) (ho : off + 8 ≤ 48) :
     (below sp (n + 48)).Contains (sp - 48 + BitVec.ofNat 64 off) 8 := by
   simp only [Region.Contains]
   rw [show sp - 48 + BitVec.ofNat 64 off - (sp - BitVec.ofNat 64 (n + 48)) = BitVec.ofNat 64 (n + off) by
-    rw [BitVec.ofNat_add, BitVec.ofNat_add]; bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+    rw [BitVec.ofNat_add, BitVec.ofNat_add]; bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn, ho])]
+  omega_using [ho]
 
 /-- The stack a frame's body uses is below the frame. -/
 theorem below_body (sp : Addr) (n : Nat) : Region.Sub (below (sp - 48) n) (below sp (n + 48)) := by
@@ -186,7 +186,7 @@ theorem below_body (sp : Addr) (n : Nat) : Region.Sub (below (sp - 48) n) (below
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + 48)) = x - (sp - 48 - BitVec.ofNat 64 n) by
     rw [BitVec.ofNat_add]; bv_omega]
-  omega
+  omega_using [hx]
 
 theorem Frame.below_mono {wr : List Region} {sp : Addr} {a b : Nat} {m m' : Mem}
     (h : Frame (wr ++ [below sp a]) m m') (hab : a ≤ b) (hb : b < 2 ^ 64) :
@@ -237,20 +237,20 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     simp only [pushFrames, Bool.and_eq_true] at hpf
     have := ih (by omega) hpf.1
     rw [w₁, p₁, m₁] at this
-    exact Frame.below_mono this (by omega) (by omega)
+    exact Frame.below_mono this (by omega_using []) (by omega_using [hd])
   | icallNext _ _ _ ih =>
     simp only [Code.fdepth] at hd ⊢
     simp only [pushFrames, Bool.and_eq_true] at hpf
-    exact Frame.below_mono (ih (by simp only [Code.fdepth]; omega)
-      (by simp only [pushFrames, Bool.and_eq_true]; exact hpf.2)) (by simp only [Code.fdepth]; omega)
-      (by omega)
+    exact Frame.below_mono (ih (by simp only [Code.fdepth]; omega_using [hd])
+      (by simp only [pushFrames, Bool.and_eq_true]; exact hpf.2)) (by simp only [Code.fdepth]; omega_using [])
+      (by omega_using [hd])
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [Code.fdepth] at hd ⊢
     simp only [pushFrames, Bool.and_eq_true] at hpf
-    have f₁ := Frame.below_mono (ih₁ (by omega) hpf.1) (b := 48 * max c₁.fdepth c₂.fdepth) (by omega)
+    have f₁ := Frame.below_mono (ih₁ (by omega) hpf.1) (b := 48 * max c₁.fdepth c₂.fdepth) (by omega_using [])
       (by omega)
-    have f₂ := Frame.below_mono (ih₂ (by omega) hpf.2) (b := 48 * max c₁.fdepth c₂.fdepth) (by omega)
+    have f₂ := Frame.below_mono (ih₂ (by omega) hpf.2) (b := 48 * max c₁.fdepth c₂.fdepth) (by omega_using [])
       (by omega)
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
     rw [w₁, p₁] at f₂
@@ -258,11 +258,11 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
   | iteT _ _ ih =>
     simp only [Code.fdepth] at hd ⊢
     simp only [pushFrames, Bool.and_eq_true] at hpf
-    exact Frame.below_mono (ih (by omega) hpf.1) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega) hpf.1) (by omega_using []) (by omega_using [hd])
   | iteF _ _ ih =>
     simp only [Code.fdepth] at hd ⊢
     simp only [pushFrames, Bool.and_eq_true] at hpf
-    exact Frame.below_mono (ih (by omega) hpf.2) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega) hpf.2) (by omega_using []) (by omega_using [hd])
   | loopExit _ _ ih => exact ih hd hpf
   | loopNext h₁ _ _ ih₁ ih₂ =>
     have f₂ := ih₂ hd hpf
@@ -277,11 +277,11 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     rwa [w₁, p₁, m₁] at this
   | @frame _ _ b s₀ s₁ s₂ _ _ hp _ hq ih =>
     simp only [Code.fdepth] at hd ⊢
-    rw [show 48 * (b.fdepth + 1) = 48 * b.fdepth + 48 by omega] at hd ⊢
+    rw [show 48 * (b.fdepth + 1) = 48 * b.fdepth + 48 by omega_using []] at hd ⊢
     simp only [pushFrames, Bool.and_eq_true] at hpf
     obtain ⟨v, m₁, w₁, p₁⟩ := push_mem hp hpf.1
     rw [pop_mem hq]
-    have f₁ := ih (by omega) hpf.2
+    have f₁ := ih (by omega_using [hd]) hpf.2
     rw [w₁, p₁, m₁] at f₁
     have hbl : ∀ off, off + 8 ≤ 48 →
         (below s₀.sp (48 * b.fdepth + 48)).Contains (s₀.sp - 48 + BitVec.ofNat 64 off) 8 :=
@@ -291,8 +291,8 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       refine Frame.write (Frame.write (Frame.refl _ _)
         (List.mem_append_right _ (List.mem_singleton_self _)) _ ?_)
         (List.mem_append_right _ (List.mem_singleton_self _)) _ ?_
-      · simpa using hbl 0 (by omega)
-      · exact hbl 32 (by omega)
+      · simpa using hbl 0 (by omega_using [])
+      · exact hbl 32 (by omega_using [])
     refine Frame.trans f₀ (Frame.sub f₁ fun r hr => ?_)
     simp only [List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | hr | rfl
@@ -366,9 +366,9 @@ theorem frame_not_below (sp : Addr) {n : Nat} (hn : n + 48 < 2 ^ 64) :
   simp only [Region.Contains] at h₁ h₂
   have e : x - (sp - 48 - BitVec.ofNat 64 n) = (x - (sp - 48 + 32)) + BitVec.ofNat 64 (n + 32) := by
     rw [BitVec.ofNat_add]; bv_omega
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n + 32) (by omega),
-    Nat.mod_eq_of_lt (by omega)] at h₂
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n + 32) (by omega_using [hn]),
+    Nat.mod_eq_of_lt (by omega_using [hn, h₁])] at h₂
+  omega_using [h₂]
 
 /-- The state a frame's body starts in, in the permissions of `s` (without
 the frame's region). -/
@@ -386,7 +386,7 @@ theorem WP.frameReg {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Pr
     (hn : 48 * main.fdepth + 48 < 2 ^ 64 := by decide +kernel)
     (hpf : pushFrames main = true := by decide +kernel) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega) hpf)
+  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]) hpf)
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi

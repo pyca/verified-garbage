@@ -27,7 +27,7 @@ private theorem fe_lt (m : Mem) (base : Addr) (a : Nat) : fe m base a < 2 ^ 256 
   simp only [X86_64.fe, val4]
   have := (word m base a).isLt; have := (word m base (a + 8)).isLt
   have := (word m base (a + 16)).isLt; have := (word m base (a + 24)).isLt
-  omega
+  omega_using []
 
 /-- A number times four words, word by word. -/
 theorem mul_val4 (v x y z w : Nat) : v * (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192 * w) =
@@ -61,19 +61,19 @@ theorem rowX0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   refine WP.mono (clear_ok s1) fun s2 ⟨z2, c2, _, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) (by decide))
+  refine WP.mono (mulx_ok s2 (readSrc_sc hs2 (by omega_using [ha])) (noImm_mem _) (by decide))
     fun s3 ⟨e3, c3, _, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulAcc_ok s3 (readSrc_sc hs3 (by omega)) (noImm_mem _) (c3.trans c2)
+  refine WP.mono (mulAcc_ok s3 (readSrc_sc hs3 (by omega_using [ha])) (noImm_mem _) (c3.trans c2)
     (by decide) (by decide) (by decide)) fun s4 ⟨c4, hc4, _, e4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulAcc_ok s4 (readSrc_sc hs4 (by omega)) (noImm_mem _) hc4
+  refine WP.mono (mulAcc_ok s4 (readSrc_sc hs4 (by omega_using [ha])) (noImm_mem _) hc4
     (by decide) (by decide) (by decide)) fun s5 ⟨c5, hc5, _, e5, k5⟩ => ?_
   have hs5 := hs4.of_keeps k5 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulAcc_ok s5 (readSrc_sc hs5 (by omega)) (noImm_mem _) hc5
+  refine WP.mono (mulAcc_ok s5 (readSrc_sc hs5 (by omega_using [ha])) (noImm_mem _) hc5
     (by decide) (by decide) (by decide)) fun s6 ⟨c6, hc6, _, e6, k6⟩ => ?_
   have z6 : s6.gpr .rbp = 0 := by
     rw [k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), z2]
@@ -144,20 +144,20 @@ theorem maddRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   refine WP.mono (clear_ok s) fun s2 ⟨z2, c2, o2, k2⟩ => ?_
   have hs2 := hs.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) c2 o2
+  refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega_using [ha])) (noImm_mem _) c2 o2
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by nm)
   rw [WP.block_append_iff]
-  refine WP.mono (madd_ok s3 (readSrc_sc hs3 (by omega)) (noImm_mem _) hc3 ho3
+  refine WP.mono (madd_ok s3 (readSrc_sc hs3 (by omega_using [ha])) (noImm_mem _) hc3 ho3
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s4 ⟨c4, o4, hc4, ho4, e4, k4⟩ => ?_
   have hs4 := hs3.of_keeps k4 (by nm)
   rw [WP.block_append_iff]
-  refine WP.mono (madd_ok s4 (readSrc_sc hs4 (by omega)) (noImm_mem _) hc4 ho4
+  refine WP.mono (madd_ok s4 (readSrc_sc hs4 (by omega_using [ha])) (noImm_mem _) hc4 ho4
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s5 ⟨c5, o5, hc5, ho5, e5, k5⟩ => ?_
   have hs5 := hs4.of_keeps k5 (by nm)
   have z5 : s5.gpr .rbp = 0 := by
     rw [k5.1 _ (by nm), k4.1 _ (by nm), k3.1 _ (by nm), z2]
-  refine WP.mono (maddLast_ok s5 (readSrc_sc hs5 (by omega)) (noImm_mem _) hc5 ho5 z5
+  refine WP.mono (maddLast_ok s5 (readSrc_sc hs5 (by omega_using [ha])) (noImm_mem _) hc5 ho5 z5
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s6 ⟨c6, o6, _, _, e6, k6⟩ => ?_
   have K : Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rbp] s s6 :=
     ((((k2.mono (by simp)).trans (k3.mono (by simp))).trans
@@ -221,15 +221,15 @@ theorem mul4_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
         fe s.mem base a * fe s.mem base b ∧
       Keeps [.r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15, .rax, .rcx, .rdx, .rbp] s s' := by
   rw [WP.block_append_iff]
-  refine WP.mono (rowX0_ok hs ha (by omega)) fun s₁ ⟨e1, _, _, k1⟩ => ?_
+  refine WP.mono (rowX0_ok hs ha (by omega_using [hb])) fun s₁ ⟨e1, _, _, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (rowR'_ok hs₁ ha (by omega) (by decide)) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (rowR'_ok hs₁ ha (by omega_using [hb]) (by decide)) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (rowR'_ok hs₂ ha (by omega) (by decide)) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (rowR'_ok hs₂ ha (by omega_using [hb]) (by decide)) fun s₃ ⟨e3, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)
-  refine WP.mono (rowR'_ok hs₃ ha (by omega) (by decide)) fun s₄ ⟨e4, k4⟩ =>
+  refine WP.mono (rowR'_ok hs₃ ha (by omega_using [hb]) (by decide)) fun s₄ ⟨e4, k4⟩ =>
     ⟨?_, (((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))).trans
       (k4.mono (by decide))⟩
   -- Every row read the same memory.

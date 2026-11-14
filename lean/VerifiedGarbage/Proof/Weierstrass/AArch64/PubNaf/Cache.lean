@@ -89,22 +89,22 @@ theorem CacheUpTo.unch {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat} (hL
   obtain ⟨l2, l3, e2, e3⟩ := h a h1 h8
   have hc : ∀ c ≤ 8 * K.M.n, wordsVal s'.mem base (cacheAt K a + c) K.M.n =
       wordsVal s.mem base (cacheAt K a + c) K.M.n := fun c hc => by
-    have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ 8 by omega)
-    have hma := Nat.mul_le_mul_left (16 * K.M.n) (show a ≤ m by omega)
+    have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ 8 by omega_using [hm, h8])
+    have hma := Nat.mul_le_mul_left (16 * K.M.n) (show a ≤ m by omega_using [h8])
     rw [Nat.mul_add, Nat.mul_one] at hm8
     have ht := hC.top
-    refine hU.wordsVal (fun w hw => ?_) (by rw [cacheAt_eq K a]; omega)
+    refine hU.wordsVal (fun w hw => ?_) (by rw [cacheAt_eq K a]; omega_using [hn, hc, hm8, ht])
     rcases hW w hw with ⟨hw1, -⟩ | hw1
-    · right; rw [cacheAt_eq K a]; omega
+    · right; rw [cacheAt_eq K a]; omega_using [hw1]
     · left; rw [cacheAt_eq K (m + 1)] at hw1; rw [cacheAt_eq K a]
       have : 16 * K.M.n * (a - 1) + 16 * K.M.n ≤ 16 * K.M.n * (m + 1 - 1) := by
-        rw [Nat.add_sub_cancel]; have := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ m by omega)
+        rw [Nat.add_sub_cancel]; have := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ m by omega_using [h1, h8])
         rw [Nat.mul_add, Nat.mul_one] at this; exact this
-      omega
+      omega_using [hc, hw1, this]
   have c0 := hc 0 (Nat.zero_le _)
   have c8 := hc (8 * K.M.n) (Nat.le_refl _)
   rw [Nat.add_zero] at c0
-  obtain ⟨i, hi, ez, -, -⟩ := tblPt_mem K h1 (by omega) (K.tblPt a).z (by simp)
+  obtain ⟨i, hi, ez, -, -⟩ := tblPt_mem K h1 (by omega_using [hm, h8]) (K.tblPt a).z (by simp)
   have hs : (K.tblPt a).z ∈ winSlots K := by
     rw [ez]; simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi)
   have ez' : wordsVal s'.mem base (K.tblPt a).z K.M.n = wordsVal s.mem base (K.tblPt a).z K.M.n := by
@@ -117,8 +117,8 @@ theorem CacheUpTo.unch {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat} (hL
     · left
       have := hC.slots _ hs
       rw [ez] at this
-      have : cacheAt K 1 ≤ cacheAt K (m + 1) := by rw [cacheAt_eq K (m + 1)]; omega
-      omega
+      have : cacheAt K 1 ≤ cacheAt K (m + 1) := by rw [cacheAt_eq K (m + 1)]; omega_using []
+      omega_arith
   have tz : tmv C K.M.n base s' (K.tblPt a).z = tmv C K.M.n base s (K.tblPt a).z := by
     show toM _ _ _ = toM _ _ _; rw [ez']
   have t0 : tmv C K.M.n base s' (cacheAt K a) = tmv C K.M.n base s (cacheAt K a) := by
@@ -174,10 +174,10 @@ theorem NafFixed.rebase {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (h
   have hd := hL.digits
   rw [hU.byte (fun w hw => by
     rcases List.mem_append.mp hw with hw | hw
-    · have := hW.bits_w w hw; omega
+    · have := hW.bits_w w hw; omega_using [ht, hd, this]
     · simp only [cacheW, List.mem_singleton] at hw
       subst hw
-      have := hC.bits; exact Or.inl (by simp only; omega)) (by omega)]
+      have := hC.bits; exact Or.inl (by simp only; omega_using [ht, hd, this])) (by omega_using [hn, ht, hb, hd])]
   exact hF.digits t ht
 
 end VG.Proof.Weierstrass.AArch64.PubNaf

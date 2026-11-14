@@ -43,7 +43,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
   · exact apart_rootWrites hc hi (fun h => hw
       ((by decide : ∀ i ∈ rootSlots, i ∈ ACC :: candidateSlots) i h))
   · exact apart_slW (fun h => hw (List.mem_cons_of_mem _ h))
-      (by omega) (by decide)
+      (by omega_using [hi]) (by decide)
 
  theorem candidateThree_correct {c : Cfg} (hc : BaseCfgOk c) (hp : c.C.p % 4 = 3)
     (hchain : ChainOk (rootChain c ((c.C.p + 1) / 4)) ((c.C.p + 1) / 4)) :

@@ -77,7 +77,7 @@ theorem primeCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks
       have hz := (h.base.phase_dims q).z
       change 136 ≤ p.Z - 256
       unfold slot hdrBytes at hz
-      omega))
+      omega_using [hz]))
     (h.base.scr.ld (by unfold oBits; omega_using [h.base.header_room]))
     (h.base.hdr (oBits, BitVec.ofNat 64 p.bits) (by simp [CandidateP.headers]))) fun t ⟨hz, hgt, hf, k⟩ => ?_
   have hrs : ∀ r ∈ [(slot (p.phaseWords q) aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)],
@@ -91,18 +91,18 @@ theorem primeCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks
       change _ ≤ p.Z - 256
       unfold slot hdrBytes at hd
       simp only [kT0, kT1, kT2, sFn]
-      omega
+      omega_using [hd]
   have hl : ∀ r ∈ [(slot (p.phaseWords q) aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)],
       136 ≤ r.1 ∨ r.1 + r.2 ≤ 128 := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · left; unfold slot hdrBytes; omega
+    · left; unfold slot hdrBytes; omega_using []
     all_goals dsimp only; decide
   have kk : Keep mmRegs s t := k.mono (by decide)
   refine ⟨h.keep_inner hf hrs kk (by decide), hgt, hp.of_inner h.base hf hrs hl,
     ?_, by simpa only [hn] using hz,
-    fun j hj => h.base.inner_header hf hrs j (by omega),
+    fun j hj => h.base.inner_header hf hrs j (by omega_using [hj]),
     CandidateFrame.of_scr (h.base.inner_changes hf hrs), kk,
     h.base.output_eq (h.base.inner_changes hf hrs)⟩
   rw [hf.wv_eq (by rng_disj) (by
@@ -124,7 +124,7 @@ theorem earlyOk_of_sieved {p : CandidateP} {v : Nat} (hv : 8161 < v) (h : p.siev
   rw [← sieve_shape hv ho] at h
   unfold earlyOk
   have hN : 4 * firstWords ≤ 4 * sieveCount p.bits := by
-    unfold firstWords sieveCount; split <;> omega
+    unfold firstWords sieveCount; split <;> omega_using []
   cases ha : anyPre v (4 * firstWords)
   · simp [ho]
   · rw [anyPre_mono hN ha] at h; simp at h
@@ -177,18 +177,18 @@ theorem earlyCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks
       change _ ≤ p.Z - 256
       unfold slot hdrBytes at hd
       simp only [kT0, kT1, kT2, sFn]
-      omega
+      omega_using [hd]
   have hl : ∀ r ∈ [(slot (p.phaseWords q) aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)],
       136 ≤ r.1 ∨ r.1 + r.2 ≤ 128 := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · left; unfold slot hdrBytes; omega
+    · left; unfold slot hdrBytes; omega_using []
     all_goals dsimp only; decide
   have kk : Keep mmRegs s t := k.mono (by decide)
   refine ⟨h.keep_inner hf hrs kk (by decide), hgt, hp.of_inner h.base hf hrs hl,
     ?_, by simpa only [hn] using hz,
-    fun j hj => h.base.inner_header hf hrs j (by omega),
+    fun j hj => h.base.inner_header hf hrs j (by omega_using [hj]),
     CandidateFrame.of_scr (h.base.inner_changes hf hrs), kk,
     h.base.output_eq (h.base.inner_changes hf hrs)⟩
   rw [hf.wv_eq (by rng_disj) (by

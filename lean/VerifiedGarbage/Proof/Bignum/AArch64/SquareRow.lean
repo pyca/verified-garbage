@@ -26,18 +26,18 @@ theorem rowStep4_ok {s₀ : State} {B : Addr} {Z w eA eb j : Nat}
   have t7 := (hI.keep.gpr .x7 (by decide)).trans h7
   have t1 := hI.keep.gpr .x1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mac4_ok hI.scr hI.x16 hI.x17 t7 (by omega) (by omega)
-    (by omega) hI.carry_lt) fun u ⟨hv, ho, hc, h16, h17, k⟩ => ?_
+  refine WP.mono (mac4_ok hI.scr hI.x16 hI.x17 t7 (by omega_using [hA, hj]) (by omega_using [hb, hj])
+    (by omega_using [hsep, hj]) hI.carry_lt) fun u ⟨hv, ho, hc, h16, h17, k⟩ => ?_
   refine WP.mono (dec_ok u .x14) fun t' ⟨⟨h14, hm, hcf⟩, kd⟩ => ?_
   have hcarry : carry t' = carry u := by
     unfold carry
     rw [kd.gpr .x2 (by decide), hcf]
   have hl : wv u.mem B eA j = wv t.mem B eA j :=
-    ho.wv (by omega) (by omega)
+    ho.wv (by omega_using []) (by omega_using [hA, hj, hn])
   have hx : wv t.mem B (eA + 8*j) 4 = wv s₀.mem B (eA + 8*j) 4 :=
-    hI.out.wv (by omega) (by omega)
+    hI.out.wv (by omega_using []) (by omega_using [hA, hj, hn])
   have hy : wv t.mem B (eb + 8*j) 4 = wv s₀.mem B (eb + 8*j) 4 :=
-    hI.out.wv (by omega) (by omega)
+    hI.out.wv (by omega_using [hsep, hj]) (by omega_using [hb, hj, hn])
   refine ⟨⟨hI.scr.congr (kd.wr.trans k.wr),
     (hI.keep.trans (k.trans kd)).mono (by decide), ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [kd.gpr .x16 (by decide), h16]
@@ -46,7 +46,7 @@ theorem rowStep4_ok {s₀ : State} {B : Addr} {Z w eA eb j : Nat}
     congr 1
   · rw [hm]
     intro x hx'
-    exact (ho x (by omega)).trans (hI.out x (by omega))
+    exact (ho x (by omega_using [hx'])).trans (hI.out x (by omega_using [hx']))
   · rw [hm, wv_add, hl, wv_add s₀.mem B eA, wv_add s₀.mem B eb]
     rw [hx, hy, t1] at hv
     rw [hcarry, Nat.mul_add, Nat.pow_add]
@@ -67,7 +67,7 @@ theorem blocks4_ok {s₀ t : State} {B : Addr} {Z w eA eb q : Nat}
     (fun i => RowInv s₀ B Z eA eb (4*i)) ?_ h0 h14
   intro i hi u hI _
   simpa only [Nat.mul_succ] using (rowStep4_ok h7 hA hb hsep
-    (show 4*i + 4 ≤ w by omega) hI)
+    (show 4*i + 4 ≤ w by omega_using [hqn, hi]) hI)
 
 /-- The scalar remainder may start after any completed four-word prefix. -/
 theorem remainder_ok {s₀ t : State} {B : Addr} {Z w eA eb j r : Nat}
@@ -81,7 +81,7 @@ theorem remainder_ok {s₀ t : State} {B : Addr} {Z w eA eb j r : Nat}
     (fun i => RowInv s₀ B Z eA eb (j+i)) ?_ ?_ h14
   · intro i hi u hI _
     simpa only [Nat.add_assoc] using (rowStep_ok h7 hA hb hsep
-      (show j+i < w by omega) hI)
+      (show j+i < w by omega_using [hjr, hi]) hI)
   · simpa only [Nat.add_zero] using h0
 
 /-- Counter setup preserves the numerical invariant and its carry flag. -/

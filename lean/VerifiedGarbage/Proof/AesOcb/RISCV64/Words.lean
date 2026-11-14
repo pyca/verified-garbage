@@ -81,10 +81,10 @@ theorem zero16_ok {W : Addr} {d : Nat} (hW : W.toNat % 8 = 0) (hd : d % 8 = 0 �
     WP isa (.block (zero16 d)) s (BlkStep W d 0 [.t0] s) := by
   unfold zero16
   refine wp_li (imm := 0) (by decide) fun s₁ u₁ => ?_
-  refine wp_sd (a := W + BitVec.ofNat 64 d) (by omega) (by rw [u₁.other _ (by decide), hs0])
+  refine wp_sd (a := W + BitVec.ofNat 64 d) (by omega_using [hd]) (by rw [u₁.other _ (by decide), hs0])
     (Spill.al8 hW hd.1) (by rw [u₁.wr]; exact w₀) fun s₂ u₂ => ?_
-  refine wp_sd (a := W + BitVec.ofNat 64 (d + 8)) (by omega)
-    (by rw [u₂.gpr, u₁.other _ (by decide), hs0]) (Spill.al8 hW (by omega)) (by rw [u₂.wr, u₁.wr]; exact w₁)
+  refine wp_sd (a := W + BitVec.ofNat 64 (d + 8)) (by omega_using [hd])
+    (by rw [u₂.gpr, u₁.other _ (by decide), hs0]) (Spill.al8 hW (by omega_using [hd])) (by rw [u₂.wr, u₁.wr]; exact w₁)
     fun s₃ u₃ => WP.block_nil ?_
   have m₃ : s₃.mem = (s.mem.writeW (W + BitVec.ofNat 64 d) (0 : BitVec 64)).writeW
       (W + BitVec.ofNat 64 d + BitVec.ofNat 64 8) (0 : BitVec 64) := by
@@ -102,15 +102,15 @@ theorem copy16_ok {W : Addr} {a d : Nat} (hW : W.toNat % 8 = 0) (ha : a % 8 = 0 
     (w₀ : InRegions s.wr (W + BitVec.ofNat 64 d) 8) (w₁ : InRegions s.wr (W + BitVec.ofNat 64 (d + 8)) 8) :
     WP isa (.block (copy16 a d)) s (BlkStep W d (blockAtMem s.mem (W + BitVec.ofNat 64 a)) [.t1, .t2] s) := by
   unfold copy16
-  refine wp_ld (a := W + BitVec.ofNat 64 a) (by omega) (by rw [hs0]) (Spill.al8 hW ha.1) r₀ fun s₁ u₁ => ?_
-  refine wp_ld (a := W + BitVec.ofNat 64 (a + 8)) (by omega)
-    (by rw [u₁.other _ (by decide), hs0]) (Spill.al8 hW (by omega)) (by rw [u₁.rd, u₁.wr]; exact r₁)
+  refine wp_ld (a := W + BitVec.ofNat 64 a) (by omega_using [ha]) (by rw [hs0]) (Spill.al8 hW ha.1) r₀ fun s₁ u₁ => ?_
+  refine wp_ld (a := W + BitVec.ofNat 64 (a + 8)) (by omega_using [ha])
+    (by rw [u₁.other _ (by decide), hs0]) (Spill.al8 hW (by omega_using [ha])) (by rw [u₁.rd, u₁.wr]; exact r₁)
     fun s₂ u₂ => ?_
-  refine wp_sd (a := W + BitVec.ofNat 64 d) (by omega)
+  refine wp_sd (a := W + BitVec.ofNat 64 d) (by omega_using [hd])
     (by rw [u₂.other _ (by decide), u₁.other _ (by decide), hs0]) (Spill.al8 hW hd.1)
     (by rw [u₂.wr, u₁.wr]; exact w₀) fun s₃ u₃ => ?_
-  refine wp_sd (a := W + BitVec.ofNat 64 (d + 8)) (by omega)
-    (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hs0]) (Spill.al8 hW (by omega))
+  refine wp_sd (a := W + BitVec.ofNat 64 (d + 8)) (by omega_using [hd])
+    (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hs0]) (Spill.al8 hW (by omega_using [hd]))
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact w₁) fun s₄ u₄ => WP.block_nil ?_
   have m₄ : s₄.mem = (s.mem.writeW (W + BitVec.ofNat 64 d) (s.mem.readW (W + BitVec.ofNat 64 a) 64)).writeW
       (W + BitVec.ofNat 64 d + BitVec.ofNat 64 8) (s.mem.readW (W + BitVec.ofNat 64 a + BitVec.ofNat 64 8) 64) := by
@@ -140,11 +140,11 @@ theorem xorB_ok {P Q C : Addr} {pb qb cb : Reg} {pd qd cd : Nat} (hP : P.toNat %
       (BlkStep C cd (blockAtMem s.mem (P + BitVec.ofNat 64 pd) ^^^ blockAtMem s.mem (Q + BitVec.ofNat 64 qd))
         [.t1, .t2] s) := by
   unfold xorB
-  refine wp_ld (a := P + BitVec.ofNat 64 pd) (by omega) (by rw [hp]) (Spill.al8 hP hpd.1) rp₀ fun s₁ u₁ => ?_
-  refine wp_ld (a := Q + BitVec.ofNat 64 qd) (by omega) (by rw [u₁.other _ nq.1, hq]) (Spill.al8 hQ hqd.1)
+  refine wp_ld (a := P + BitVec.ofNat 64 pd) (by omega_using [hpd]) (by rw [hp]) (Spill.al8 hP hpd.1) rp₀ fun s₁ u₁ => ?_
+  refine wp_ld (a := Q + BitVec.ofNat 64 qd) (by omega_using [hqd]) (by rw [u₁.other _ nq.1, hq]) (Spill.al8 hQ hqd.1)
     (by rw [u₁.rd, u₁.wr]; exact rq₀) fun s₂ u₂ => ?_
   refine wp_xor fun s₃ u₃ => ?_
-  refine wp_sd (a := C + BitVec.ofNat 64 cd) (by omega)
+  refine wp_sd (a := C + BitVec.ofNat 64 cd) (by omega_using [hcd])
     (by rw [u₃.other _ nc.1, u₂.other _ nc.2, u₁.other _ nc.1, hc]) (Spill.al8 hC hcd.1)
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact w₀) fun s₄ u₄ => ?_
   have g₄ : ∀ r, r ≠ .t1 → r ≠ .t2 → s₄.gpr r = s.gpr r := fun r h3 h4 => by
@@ -154,14 +154,14 @@ theorem xorB_ok {P Q C : Addr} {pb qb cb : Reg} {pd qd cd : Nat} (hP : P.toNat %
   have m₄ : s₄.mem = s.mem.writeW (C + BitVec.ofNat 64 cd)
       (s.mem.readW (P + BitVec.ofNat 64 pd) 64 ^^^ s.mem.readW (Q + BitVec.ofNat 64 qd) 64) := by
     rw [u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.mem, u₂.other _ (by decide), u₁.gpr, u₁.mem]
-  refine wp_ld (a := P + BitVec.ofNat 64 (pd + 8)) (by omega)
-    (by rw [g₄ _ np.1 np.2, hp]) (Spill.al8 hP (by omega)) (by rw [rd₄, wr₄]; exact rp₁) fun s₅ u₅ => ?_
-  refine wp_ld (a := Q + BitVec.ofNat 64 (qd + 8)) (by omega)
-    (by rw [u₅.other _ nq.1, g₄ _ nq.1 nq.2, hq]) (Spill.al8 hQ (by omega))
+  refine wp_ld (a := P + BitVec.ofNat 64 (pd + 8)) (by omega_using [hpd])
+    (by rw [g₄ _ np.1 np.2, hp]) (Spill.al8 hP (by omega_using [hpd])) (by rw [rd₄, wr₄]; exact rp₁) fun s₅ u₅ => ?_
+  refine wp_ld (a := Q + BitVec.ofNat 64 (qd + 8)) (by omega_using [hqd])
+    (by rw [u₅.other _ nq.1, g₄ _ nq.1 nq.2, hq]) (Spill.al8 hQ (by omega_using [hqd]))
     (by rw [u₅.rd, u₅.wr, rd₄, wr₄]; exact rq₁) fun s₆ u₆ => ?_
   refine wp_xor fun s₇ u₇ => ?_
-  refine wp_sd (a := C + BitVec.ofNat 64 (cd + 8)) (by omega)
-    (by rw [u₇.other _ nc.1, u₆.other _ nc.2, u₅.other _ nc.1, g₄ _ nc.1 nc.2, hc]) (Spill.al8 hC (by omega))
+  refine wp_sd (a := C + BitVec.ofNat 64 (cd + 8)) (by omega_using [hcd])
+    (by rw [u₇.other _ nc.1, u₆.other _ nc.2, u₅.other _ nc.1, g₄ _ nc.1 nc.2, hc]) (Spill.al8 hC (by omega_using [hcd]))
     (by rw [u₇.wr, u₆.wr, u₅.wr, wr₄]; exact w₁) fun s₈ u₈ => WP.block_nil ?_
   have v₅ : s₆.gpr .t1 = s.mem.readW (P + BitVec.ofNat 64 (pd + 8)) 64 := by
     rw [u₆.other _ (by decide), u₅.gpr, m₄, Mem.readW_writeW_sep sp₁ (by decide)]
@@ -206,9 +206,9 @@ theorem dbl_ok {W B : Addr} {b : Reg} {a d : Nat} (ha : a + 15 < 2048) (hd : d +
       (BlkStep W d (double (blockAtMem s.mem (B + BitVec.ofNat 64 a))) [.t0, .t1, .t2, .t3, .t4] s) := by
   unfold dbl
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  refine wp_loadBE64 (a := B + BitVec.ofNat 64 a) (Ne.symm nb.2.1) (Ne.symm nb.1) (by decide) (by omega)
+  refine wp_loadBE64 (a := B + BitVec.ofNat 64 a) (Ne.symm nb.2.1) (Ne.symm nb.1) (by decide) (by omega_using [ha])
     (by rw [hb]) r₀ fun s₁ s₂ u₁ u₂ => ?_
-  refine wp_loadBE64 (a := B + BitVec.ofNat 64 (a + 8)) (Ne.symm nb.2.2.1) (Ne.symm nb.1) (by decide) (by omega)
+  refine wp_loadBE64 (a := B + BitVec.ofNat 64 (a + 8)) (Ne.symm nb.2.2.1) (Ne.symm nb.1) (by decide) (by omega_using [ha])
     (by rw [u₂.other _ nb.2.1, u₁.other _ nb.1, hb]) (by rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact r₁)
     fun s₃ s₄ u₃ u₄ => ?_
   refine wp_srl (by decide) fun s₅ u₅ => wp_li (imm := 0) (by decide) fun s₆ u₆ => wp_sub fun s₇ u₇ => ?_
@@ -247,9 +247,9 @@ theorem dbl_ok {W B : Addr} {b : Reg} {a d : Nat} (ha : a + 15 < 2048) (hd : d +
   have sp₁₄ : s₁₄.sp = s.sp := by
     rw [u₁₄.sp, u₁₃.sp, u₁₂.sp, u₁₁.sp, u₁₀.sp, u₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
   have w0 : s₁₄.gpr .s0 = W := by rw [g₁₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), hs0]
-  refine wp_storeBE8 (a := W + BitVec.ofNat 64 d) (by decide) (by decide) (by omega) (by rw [w0])
+  refine wp_storeBE8 (a := W + BitVec.ofNat 64 d) (by decide) (by decide) (by omega_using [hd]) (by rw [w0])
     (by rw [wr₁₄]; exact w₀) fun s₁₅ s₁₆ u₁₅ u₁₆ => ?_
-  refine wp_storeBE8 (a := W + BitVec.ofNat 64 (d + 8)) (by decide) (by decide) (by omega)
+  refine wp_storeBE8 (a := W + BitVec.ofNat 64 (d + 8)) (by decide) (by decide) (by omega_using [hd])
     (by rw [u₁₆.other _ (by decide), u₁₅.gpr, w0])
     (by rw [u₁₆.wr, u₁₅.wr, wr₁₄]; exact w₁) fun s₁₇ s₁₈ u₁₇ u₁₈ => WP.block_nil ?_
   have m₁₈ : s₁₈.mem = (s.mem.writeW (W + BitVec.ofNat 64 d)

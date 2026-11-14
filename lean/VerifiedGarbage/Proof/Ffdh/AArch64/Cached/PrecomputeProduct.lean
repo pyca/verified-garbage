@@ -42,7 +42,7 @@ theorem productCounter_ok {s : State} {B : Addr} {Z w j d : Nat} {mi : BitVec 64
  · unfold Precompute.productNext
    brun [good.x0,hdr_enc (show sJ<32 by decide),hdr_enc (show sD<32 by decide),
     header_read good room (show sJ<32 by decide),header_read good room (show sD<32 by decide),
-    good.scr.st (d:=8*sJ) (by have := hdr_lt_slot w 8 (show sJ<32 by decide);omega),index,basisAfter,increment]
+    good.scr.st (d:=8*sJ) (by have := hdr_lt_slot w 8 (show sJ<32 by decide);omega_using [room, this]),index,basisAfter,increment]
  · rintro t ⟨⟨value,mem⟩,rest⟩
    have totalFrame : Outside B (8*sJ) 8 s.mem t.mem := by rw [mem];exact frame
    refine ⟨good_after_header good (by decide) (by decide) totalFrame rest ((rest.gpr .x0 (by decide)).trans good.x0),
@@ -66,11 +66,11 @@ theorem precomputeProduct_ok (M : Mont) {s : State} {p : Parameters} {b j : Nat}
  WP isa (Precompute.product M.mm) s fun t =>
  ProductState p b (j+1) t ∧ t.gpr .x3=BitVec.ofNat 64 (j+1)-BitVec.ofNat 64 (2^b) ∧
  BuildFrame p s.mem t.mem ∧ Keep mmRegs s t := by
- have inside : j<32 := by have := h.limit;omega
+ have inside : j<32 := by have := h.limit;omega_using [more, this]
  have destination : j+2^b<32 := by
   have tooth := h.tooth
-  have bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by omega : b≤4)
-  omega
+  have bound : 2^b≤16 := Nat.pow_le_pow_right (by decide) (by omega_using [tooth] : b≤4)
+  omega_using [more, bound]
  unfold Precompute.product
  rw [WP.seq_iff]
  refine WP.mono (productLoad_ok h.basis.good h.space h.context h.index inside) ?_
@@ -78,7 +78,7 @@ theorem precomputeProduct_ok (M : Mont) {s : State} {p : Parameters} {b j : Nat}
  have basisA := h.basis.after_arrays goodA frameA (by decide) (by decide) (by decide) (by decide)
  have hA := h.after_arrays basisA frameA restA (by simp)
  have selected : wv a.mem p.B (slot p.w 1) p.w=entryValue p j :=
-  selectedA.trans (h.table j (by have := h.position;have := Nat.two_pow_pos b;omega))
+  selectedA.trans (h.table j (by have := h.position;have := Nat.two_pow_pos b;omega_using [more]))
  rw [WP.seq_iff]
  refine WP.mono (basis_product M basisA selected) ?_
  rintro c ⟨powerC,basisC,frameC,restC⟩
@@ -100,15 +100,15 @@ theorem precomputeProduct_ok (M : Mont) {s : State} {p : Parameters} {b j : Nat}
    rw [valueD,powerC.value,exponent]
    rfl
   simpa only [Nat.add_comm j (2^b)] using value
- have tableD : TablePrefix p (2^b+j+1) d := hC.table.extend (by omega) (by
+ have tableD : TablePrefix p (2^b+j+1) d := hC.table.extend (by omega_using [destination]) (by
   simpa only [Nat.add_comm j (2^b)] using frameD) entry
  refine WP.mono (productCounter_ok goodD p.room indexD toothD) ?_
  rintro t ⟨goodT,indexT,testT,frameT,restT⟩
  have basisT := basisD.after_header goodT frameT (by decide : sJ<32)
- have tableT := tableD.after_inscr (hC.space.after restD) (by omega)
-  (InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega))
+ have tableT := tableD.after_inscr (hC.space.after restD) (by omega_using [destination])
+  (InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega_arith))
  have stateT : ProductState p b (j+1) t := by
-  refine ⟨h.tooth,⟨by omega,by omega⟩,basisT,((hC.space.after restD).after restT),
+  refine ⟨h.tooth,⟨by omega_using [],by omega_using [more]⟩,basisT,((hC.space.after restD).after restT),
    (header_other frameT (by decide) (by decide) (by decide)).trans contextD,
    (header_other frameT (by decide) (by decide) (by decide)).trans toothD,indexT,?_,
    (header_other frameT (by decide) (by decide) (by decide)).trans rowsD⟩
@@ -117,7 +117,7 @@ theorem precomputeProduct_ok (M : Mont) {s : State} {p : Parameters} {b j : Nat}
   (((BuildFrame.of_inscr (InScr.of_arrays frameA p.room (by simp))).trans
     (BuildFrame.of_inscr (InScr.of_arrays frameC p.room (by simp)))).trans
     (BuildFrame.of_entry destination frameD)).trans
-    (BuildFrame.of_inscr (InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega)))
+    (BuildFrame.of_inscr (InScr.of_outside frameT (by have := hdr_lt_slot p.w 8 (show sJ<32 by decide);have := p.room;omega_arith)))
  exact ⟨stateT,testT,frames,(((restA.trans restC).trans restD).trans restT).mono (by simp [mmRegs])⟩
 
 end VG.Proof.Ffdh.AArch64.Cached

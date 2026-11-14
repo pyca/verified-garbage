@@ -24,26 +24,26 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
   | .seq a b, h => by
     have ha := xdepth_le (c := a) (fun i hi => h i (List.mem_append_left _ hi))
     have hb := xdepth_le (c := b) (fun i hi => h i (List.mem_append_right _ hi))
-    simp only [Code.x86_64Depth, Code.depth, Nat.max_le]; omega
+    simp only [Code.x86_64Depth, Code.depth, Nat.max_le]; omega_using [ha, hb]
   | .ite _ a b, h => by
     have ha := xdepth_le (c := a) (fun i hi => h i (List.mem_append_left _ hi))
     have hb := xdepth_le (c := b) (fun i hi => h i (List.mem_append_right _ hi))
-    simp only [Code.x86_64Depth, Code.depth, Nat.max_le]; omega
+    simp only [Code.x86_64Depth, Code.depth, Nat.max_le]; omega_using [ha, hb]
   | .loop b _, h => by
     have := xdepth_le (c := b) h
-    simp only [Code.x86_64Depth, Code.depth]; omega
+    simp only [Code.x86_64Depth, Code.depth]; omega_using [this]
   | .call _ b, h => by
     have := xdepth_le (c := b) h
-    simp only [Code.x86_64Depth, Code.depth]; omega
+    simp only [Code.x86_64Depth, Code.depth]; omega_using [this]
   | .frame i b j, h => by
     have hi := h i (List.mem_cons_self ..)
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_cons_of_mem _ (List.mem_append_left _ hx)))
     have h0 : i.frameBytes = 0 := by cases i <;> simp_all [Taint.clobbers, Taint.dstOf, Instr.frameBytes]
-    simp only [Code.x86_64Depth, Code.depth, h0]; omega
+    simp only [Code.x86_64Depth, Code.depth, h0]; omega_using [hb]
   | .icall _ _ b n, h => by
     have hb := xdepth_le (c := b) (fun x hx => h x (List.mem_append_left _ (List.mem_cons_of_mem _ hx)))
     have hn := xdepth_le (c := n) (fun x hx => h x (List.mem_append_right _ hx))
-    simp only [Code.x86_64Depth, Code.depth]; omega
+    simp only [Code.x86_64Depth, Code.depth]; omega_using [hb, hn]
 
 /-- Code that never writes `rsp` writes it only in its (no) frames. -/
 theorem SpSafe.of_noSp {c : Prog isa} (h : NoSp c) : SpSafe c := fun i hi => by
@@ -71,7 +71,7 @@ theorem Good.mx {c : Prog isa} (h : Good c) : ∀ i ∈ instrs c, loadsMxcsr i =
   exact this.2
 
 theorem Good.xdepth {c : Prog isa} (h : Good c) : c.x86_64Depth ≤ 16 := by
-  have := xdepth_le h.noSp; have := h.2; omega
+  have := xdepth_le h.noSp; have := h.2; omega_arith
 
 /-- A callee whose instructions never write `rsp` or load MXCSR, with calls
 nested at most one deep. -/
@@ -91,6 +91,6 @@ theorem wp_good {c : Prog isa} (hc : Good c) {s : State} {Q : State → Prop} (h
   obtain ⟨t, s', he, hq⟩ := h
   have hsp := SpSafe.of_noSp hc.noSp
   refine ⟨t, s', he, hq, Exec.rsp hsp he, Exec.mxcsr hc.mx he, ?_⟩
-  exact Frame.below_mono (Exec.stackFrame hsp he (by have := hc.xdepth; omega)) hc.xdepth (by omega)
+  exact Frame.below_mono (Exec.stackFrame hsp he (by have := hc.xdepth; omega_using [this])) hc.xdepth (by omega_using [])
 
 end VG.Proof.RsaOaep.X86_64

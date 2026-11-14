@@ -55,7 +55,7 @@ theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b 
 /-- `p + d` does not wrap. -/
 theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt h]
+  rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [h]), Nat.mod_eq_of_lt h]
 
 theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
@@ -107,7 +107,7 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {a : Nat}
     (ha : a < 4096) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h200 := hc.inFr (d := 200) (by omega) (by omega)
+  have h200 := hc.inFr (d := 200) (by omega_using []) (by omega_using [])
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
     Size.bits, BitVec.setWidth_eq, hc.sp, Offset.add_add, Nat.reduceAdd, Nat.reduceMod, Nat.reduceLT, and_self,
@@ -134,7 +134,7 @@ theorem movz_val {n : Nat} (hn : n < 2 ^ 16) :
   apply BitVec.eq_of_toNat_eq
   simp only [Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   show n % 2 ^ 16 % 2 ^ 64 = n % 2 ^ 64
-  omega
+  omega_using [hn]
 
 /-- `d ← n`. -/
 theorem movz_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {n : Nat}

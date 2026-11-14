@@ -24,17 +24,17 @@ theorem crtArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     stackArg (s.callEntry.withRegions (crtRd g) (crtWr g)) j = g.argument (j + 2) := by
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.callEntry_mem,
     State.withRegions_sp, State.callEntry_sp, h.sp]
-  rw [addr_add (by have := h.valid.stackHigh; simp only [frameBytes] at this; omega)]
+  rw [addr_add (by have := h.valid.stackHigh; simp only [frameBytes] at this; omega_using [hj, this])]
   exact a.arguments j hj
 
 theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : CrtArgs g s) :
     (Proof.Rsa.privateCrtContract abi 56).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
   have sa := fun {j} (hj : j < 14) => crtArgs_stack h a hj
-  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega
-  have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega
-  have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega
-  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega
+  have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
+  have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega_using [kfit, this]
+  have qfit : g.qLength < 2 ^ 32 := by have := h.valid.qFits; omega_using [kfit, this]
+  have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_using [this]
   sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [
     h.sp, a.output, a.outputLength, a.modulus, a.length,
@@ -50,14 +50,14 @@ theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   rw [argAddr]
   have temporarySub : (⟨State.addr g.temporary, g.length⟩ : Region).Sub g.innerRegion := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
-    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [oM, frameBytes]; omega)
+    exact Offset.sub_base _ (by have := h.valid.maxLength; simp only [oM, frameBytes]; omega_using [this])
   have outgoingSub : (⟨State.addr g.stack, 56⟩ : Region).Sub g.innerRegion :=
     Region.sub_prefix (by decide : 56 ≤ frameBytes)
   have tempSources := fun i => (h.valid.stackSources i).sub_left (fun x hx => h.valid.innerSub x (temporarySub x hx))
   have tempWorkspace := h.valid.stackWorkspace.sub_left (fun x hx => h.valid.innerSub x (temporarySub x hx))
   have tempArgs : (⟨State.addr g.temporary, g.length⟩ : Region).Disjoint ⟨State.addr g.stack, 56⟩ := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
-    exact Offset.disjoint_base _ (by decide : 56 ≤ oM) (by have := h.valid.maxLength; simp only [oM]; omega)
+    exact Offset.disjoint_base _ (by decide : 56 ≤ oM) (by have := h.valid.maxLength; simp only [oM]; omega_using [kfit])
   have callee : (⟨State.addr g.stack - BitVec.ofNat 64 56, 56⟩ : Region) = g.calleeRegion := by
     unfold PrivGeometry.calleeRegion FrameStack.belowA
     rw [FrameStack.addr_sub' h.valid.stackLow]
@@ -65,7 +65,7 @@ theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have calleeSources := fun i => (h.valid.stackSources i).sub_left h.valid.calleeSub
   have calleeWorkspace := h.valid.stackWorkspace.sub_left h.valid.calleeSub
   have argsWorkspace := (h.valid.stackWorkspace.sub_left (fun x hx => h.valid.innerSub x (outgoingSub x hx))).symm
-  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega, rfl, ?_,
+  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, ?_,
     tempSources 0, tempSources 2, tempSources 3, tempSources 4, tempSources 5, tempSources 6, tempSources 7,
     ?_, tempArgs, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     h.valid.temporaryFit, h.valid.sourceFits 0, h.valid.sourceFits 2, h.valid.sourceFits 3,

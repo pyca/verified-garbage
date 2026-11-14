@@ -34,7 +34,7 @@ theorem publicFailArgs_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLe
   change WP isa (.block ([.ldrSp .r0 4, .ldrSp .lr 12] ++ [.mov .r2 (.imm 0)])) s _
   rw [WP.block_append_iff]
   refine WP.mono (stackPair_ok s .r0 .lr 4 12 (by decide) (by decide) (by decide)
-    (by have := h.nowrap; omega) (by have := h.nowrap; omega)
+    (by have := h.nowrap; omega_using [this]) (by have := h.nowrap; omega_using [this])
     (h.read (by decide) (by decide)) (h.read (by decide) (by decide))) ?_
   rintro u ⟨output, count, mem, rest⟩
   refine wp_mov (op2_imm (by decide)) fun t a => WP.block_nil ?_

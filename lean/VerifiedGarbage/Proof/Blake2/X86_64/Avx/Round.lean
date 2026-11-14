@@ -4,13 +4,137 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Blake2.Cols
+public import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+
+/-! ### `Blake2.Cols`, which only this module used -/
+
+section
+
+/-!
+# A BLAKE2 round on four columns at once, for any word size
+
+As `Lanes.lean` for BLAKE2b: the work vector as four rows of four words
+(`4k…4k+3` for `k < 4`); the four column `G`s of a round are `G` on each
+column of the rows at once (`mixColsP`), with the message words of column
+`q` (`x q`, `y q`); the four diagonal `G`s are the same after rows 0, 2 and
+3 are rotated left by three, one and two places (`rotInP`; row 1 stays), so
+that column `q` holds diagonal `(q + 3) mod 4`, rotated back after it
+(`rotOutP`). This is how code keeping each row in one vector register
+computes a round (`round_colsP`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Blake2
+
+open VG.Spec.Blake2
+
+variable {w : Nat} (P : Params w)
+
+/-- Component `k` of the result of `mix`: `a`, `b`, `c` or `d`. -/
+def pick4 (k : Nat) (x : BitVec w × BitVec w × BitVec w × BitVec w) : BitVec w :=
+  match k with
+  | 0 => x.1
+  | 1 => x.2.1
+  | 2 => x.2.2.1
+  | _ => x.2.2.2
+
+/-- `G` on each column `q` (words `q`, `4 + q`, `8 + q`, `12 + q`) at once,
+with the message words `x q` and `y q`. -/
+def mixColsP (x y : Nat → BitVec w) (v : Work w) : Work w :=
+  Vector.ofFn fun j => pick4 (j.val / 4)
+    (mix P (v[j.val % 4]'(by omega_using [])) (v[4 + j.val % 4]'(by omega_using [])) (v[8 + j.val % 4]'(by omega_using []))
+      (v[12 + j.val % 4]'(by omega_using [])) (x (j.val % 4)) (y (j.val % 4)))
+
+/-- Rows 0, 2 and 3 rotated left by three, one and two places. -/
+def rotInP (v : Work w) : Work w :=
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + j.val / 4 + 3) % 4]'(by omega_using [])
+
+/-- Rows 0, 2 and 3 rotated left by one, three and two places (back). -/
+def rotOutP (v : Work w) : Work w :=
+  Vector.ofFn fun j => v[4 * (j.val / 4) + (j.val % 4 + 3 * (j.val / 4) + 1) % 4]'(by omega_using [])
+
+theorem mixColsP_get (x y : Nat → BitVec w) (v : Work w) (j : Nat) (hj : j < 16) :
+    (mixColsP P x y v)[j] = pick4 (j / 4) (mix P (v[j % 4]'(by omega_using [])) (v[4 + j % 4]'(by omega_using []))
+      (v[8 + j % 4]'(by omega_using [])) (v[12 + j % 4]'(by omega_using [])) (x (j % 4)) (y (j % 4))) := by
+  simp only [mixColsP, Vector.getElem_ofFn]
+
+theorem rotInP_get (v : Work w) (j : Nat) (hj : j < 16) :
+    (rotInP v)[j] = v[4 * (j / 4) + (j % 4 + j / 4 + 3) % 4]'(by omega_using [hj]) := by
+  simp only [rotInP, Vector.getElem_ofFn]
+
+theorem rotOutP_get (v : Work w) (j : Nat) (hj : j < 16) :
+    (rotOutP v)[j] = v[4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4]'(by omega_using [hj]) := by
+  simp only [rotOutP, Vector.getElem_ofFn]
+
+theorem cases16' {j : Nat} (hj : j < 16) : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨
+    j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 := by
+  omega_using [hj]
+
+/-- The value of a literal index. -/
+theorem val_lit16 (k : Nat) : (no_index (OfNat.ofNat k : Fin 16)).val = k % 16 := rfl
+
+theorem G_getP (v : Work w) {a c d e : Fin 16} (hab : a.1 ≠ c.1) (hac : a.1 ≠ d.1)
+    (had : a.1 ≠ e.1) (hcd : c.1 ≠ d.1) (hce : c.1 ≠ e.1) (hde : d.1 ≠ e.1) (x y : BitVec w)
+    (k : Nat) (hk : k < 16) :
+    (G P v a c d e x y)[k]'hk =
+      if c.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).2.1
+      else if d.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).2.2.1
+      else if e.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).2.2.2
+      else if a.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).1 else (v[k]'hk) :=
+  G_get P v hab hac had hcd hce hde x y k hk
+
+/-- The four column `G`s of a round. -/
+theorem columns_eqP (x y : Nat → BitVec w) (v : Work w) :
+    G P (G P (G P (G P v 0 4 8 12 (x 0) (y 0)) 1 5 9 13 (x 1) (y 1)) 2 6 10 14 (x 2) (y 2))
+      3 7 11 15 (x 3) (y 3) = mixColsP P x y v := by
+  apply Vector.ext
+  intro j hj
+  simp only [mixColsP_get]
+  obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl := cases16' hj
+  all_goals
+    simp (disch := decide) only [G_getP, val_lit16, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+      Nat.reduceEqDiff, ↓reduceIte, pick4]
+
+/-- The four diagonal `G`s of a round, with the message words `x i` and `y i`
+of diagonal `i`. -/
+theorem diagonals_eqP (x y : Nat → BitVec w) (v : Work w) :
+    G P (G P (G P (G P v 0 5 10 15 (x 0) (y 0)) 1 6 11 12 (x 1) (y 1)) 2 7 8 13 (x 2) (y 2))
+      3 4 9 14 (x 3) (y 3) =
+      rotOutP (mixColsP P (fun q => x ((q + 3) % 4)) (fun q => y ((q + 3) % 4)) (rotInP v)) := by
+  apply Vector.ext
+  intro j hj
+  simp only [rotOutP_get, rotInP_get, mixColsP_get]
+  obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl := cases16' hj
+  all_goals
+    simp (disch := decide) only [G_getP, val_lit16, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd,
+      Nat.reduceMul, Nat.reduceEqDiff, ↓reduceIte, pick4]
+
+/-- Round `r` on four columns: the column `G`s, then the diagonal ones. -/
+theorem round_colsP (m : Block w) (v : Work w) (r : Nat) :
+    round P m v r =
+      rotOutP (mixColsP P (fun q => m (sigmaAt r (8 + 2 * ((q + 3) % 4))))
+        (fun q => m (sigmaAt r (9 + 2 * ((q + 3) % 4))))
+        (rotInP (mixColsP P (fun q => m (sigmaAt r (2 * q))) (fun q => m (sigmaAt r (2 * q + 1))) v))) := by
+  rw [← diagonals_eqP P (fun i => m (sigmaAt r (8 + 2 * i))) (fun i => m (sigmaAt r (9 + 2 * i))),
+    ← columns_eqP]
+  rfl
+
+end VG.Proof.Blake2
+
+end
+
+end
+
 
 /-!
 # BLAKE2s on x86-64 with AVX: a round
@@ -166,16 +290,16 @@ theorem dword_pshufb_rotr8 (a : BitVec 128) {i : Nat} (hi : i < 4) :
   rw [pshufb_rotr8_bytes]
   apply BitVec.eq_of_getLsbD_eq; intro m hm
   rw [getLsbD_dword_ofBytes _ hi hm, BitVec.getLsbD_rotateRight]
-  have h8 : m % 8 < 8 := Nat.mod_lt _ (by omega)
+  have h8 : m % 8 < 8 := Nat.mod_lt _ (by omega_using [])
   simp only [byte, BitVec.getLsbD_extractLsb', getLsbD_dword, h8, decide_true, Bool.true_and,
     show 8 % 32 = 8 from rfl]
   by_cases h : m < 32 - 8
-  · have h' : 8 + m < 32 := by omega
+  · have h' : 8 + m < 32 := by omega_using [h]
     simp only [h, h', ite_true, decide_true, Bool.true_and]
-    exact congrArg _ (by omega)
-  · have h' : m - (32 - 8) < 32 := by omega
+    exact congrArg _ (by omega_using [h])
+  · have h' : m - (32 - 8) < 32 := by omega_using [hm]
     simp only [h, h', hm, ite_false, decide_true, Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [hm, h])
 
 theorem dword_pshufb_rotr16 (a : BitVec 128) {i : Nat} (hi : i < 4) :
     dword (XBinOp.eval .pshufb a rot16Mask) i = (dword a i).rotateRight 16 := by
@@ -184,7 +308,7 @@ theorem dword_pshufb_rotr16 (a : BitVec 128) {i : Nat} (hi : i < 4) :
 /-- A 16-byte load, doubleword by doubleword. -/
 theorem dword_readW (m : Mem) (a : Addr) {q : Nat} (hq : q < 4) :
     dword (m.readW a 128) q = m.readW (a + BitVec.ofNat 64 (4 * q)) 32 := by
-  have h := readW_extract m a (w := 128) (k := 4 * q) (n := 4) (by omega)
+  have h := readW_extract m a (w := 128) (k := 4 * q) (n := 4) (by omega_using [hq])
   simp only [← Nat.mul_assoc, Nat.reduceMul] at h
   rw [dword_eq]; exact h
 
@@ -193,15 +317,15 @@ theorem punpcklqdq_dwords (a b : BitVec 128) :
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [XBinOp.eval, ofDwords, dword, qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h1 : i < 32
-  · simp [h1, show i < 64 by omega]
+  · simp [h1, show i < 64 by omega_using [h1]]
   by_cases h2 : i < 64
-  · simp [h1, h2, show i - 32 < 32 by omega, show 32 + (i - 32) = i by omega]
+  · simp [h1, h2, show i - 32 < 32 by omega_using [h2], show 32 + (i - 32) = i by omega_using [h1]]
   by_cases h3 : i < 96
-  · simp [h1, h2, show ¬ i - 32 < 32 by omega, show i - 32 - 32 = i - 64 by omega,
-      show i - 64 < 64 by omega, show i - 64 < 32 by omega]
-  · simp [h1, h2, show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega,
-      show i - 32 - 32 - 32 < 32 by omega, show 32 + (i - 32 - 32 - 32) = i - 64 by omega,
-      show i - 64 < 64 by omega]
+  · simp [h1, h2, show ¬ i - 32 < 32 by omega_using [h2], show i - 32 - 32 = i - 64 by omega_using [],
+      show i - 64 < 64 by omega_using [hi], show i - 64 < 32 by omega_using [h3]]
+  · simp [h1, h2, show ¬ i - 32 < 32 by omega_using [h2], show ¬ i - 32 - 32 < 32 by omega_using [h3],
+      show i - 32 - 32 - 32 < 32 by omega_using [hi], show 32 + (i - 32 - 32 - 32) = i - 64 by omega_using [h3],
+      show i - 64 < 64 by omega_using [hi]]
 
 theorem dword_punpcklqdq (a b : BitVec 128) {q : Nat} (hq : q < 4) :
     dword (XBinOp.eval .punpcklqdq a b) q = if q < 2 then dword a q else dword b (q - 2) := by
@@ -249,14 +373,14 @@ theorem half_cols {mask : XReg} {R n : Nat} (hn : 0 < n) (hn' : n < 32) {s : Sta
     {q : Nat} (hq : q < 4) :
     cols (run (halfOps mask n) s) q = H R n (cols s q) (dw s .xmm5 q) := by
   have e1 : (BitVec.ofNat 8 n).toNat = n := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn'])]
   have e2 : (BitVec.ofNat 8 (32 - n)).toNat = 32 - n := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [])]
   simp only [halfOps, run, cols, dw, xmm_vbin, xmm_vshift, ↓reduceIte, reduceCtorEq, h0, h3,
     reduceVBinOpSse]
   simp only [dword_paddd _ _ hq, dword_pxor, dword_por, hm _ q hq,
-    dword_psrld _ (BitVec.ofNat 8 n) (by rw [e1]; omega) hq,
-    dword_pslld _ (BitVec.ofNat 8 (32 - n)) (by rw [e2]; omega) hq, e1, e2, rotr_shifts _ hn', H]
+    dword_psrld _ (BitVec.ofNat 8 n) (by rw [e1]; omega_using [hn']) hq,
+    dword_pslld _ (BitVec.ofNat 8 (32 - n)) (by rw [e2]; omega_using [hn]) hq, e1, e2, rotr_shifts _ hn', H]
 
 theorem half_keeps {mask : XReg} {n : Nat} (s : State) : XF halfRegs s (run (halfOps mask n) s) := by
   refine XF.run fun r hr => ?_
@@ -282,7 +406,7 @@ theorem words_get (s : State) (j : Nat) (hj : j < 16) : (words s)[j] = dw s (row
   simp only [words, Vector.getElem_ofFn]
 
 theorem cases_div4 {j : Nat} (hj : j < 16) : j / 4 = 0 ∨ j / 4 = 1 ∨ j / 4 = 2 ∨ j / 4 = 3 := by
-  omega
+  omega_using [hj]
 
 theorem sel_93 {k : Nat} (hk : k < 4) : ((0x93 : BitVec 8).extractLsb' (2 * k) 2).toNat = (k + 3) % 4 := by
   rcases cases4 hk with rfl | rfl | rfl | rfl <;> rfl
@@ -295,25 +419,25 @@ theorem diag_words (s : State) : words (run diagOps s) = rotInP (words s) := by
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ hj, rotInP_get _ _ hj, words_get _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) % 4 = (j % 4 + j / 4 + 3) % 4 by omega]
+  rw [words_get _ _ hj, rotInP_get _ _ hj, words_get _ _ (by omega_using [hj]),
+    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) / 4 = j / 4 by omega_using [],
+    show (4 * (j / 4) + (j % 4 + j / 4 + 3) % 4) % 4 = (j % 4 + j / 4 + 3) % 4 by omega_using []]
   simp only [diagOps, run, dw]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
     simp only [row, xmm_vpshufd, ↓reduceIte, reduceCtorEq, dword_shufDwords _ _ hk, sel_93 hk,
-      sel_39 hk, sel_4e hk] <;> congr 1 <;> omega
+      sel_39 hk, sel_4e hk] <;> congr 1 <;> omega_using []
 
 theorem undiag_words (s : State) : words (run undiagOps s) = rotOutP (words s) := by
   apply Vector.ext
   intro j hj
   have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-  rw [words_get _ _ hj, rotOutP_get _ _ hj, words_get _ _ (by omega),
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) / 4 = j / 4 by omega,
-    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) % 4 = (j % 4 + 3 * (j / 4) + 1) % 4 by omega]
+  rw [words_get _ _ hj, rotOutP_get _ _ hj, words_get _ _ (by omega_using [hj]),
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) / 4 = j / 4 by omega_using [],
+    show (4 * (j / 4) + (j % 4 + 3 * (j / 4) + 1) % 4) % 4 = (j % 4 + 3 * (j / 4) + 1) % 4 by omega_using []]
   simp only [undiagOps, run, dw]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
     simp only [row, xmm_vpshufd, ↓reduceIte, reduceCtorEq, dword_shufDwords _ _ hk, sel_93 hk,
-      sel_39 hk, sel_4e hk] <;> congr 1 <;> omega
+      sel_39 hk, sel_4e hk] <;> congr 1 <;> omega_using []
 
 theorem diag_keeps (s : State) : XF halfRegs s (run diagOps s) := by
   refine XF.run fun r hr => ?_
@@ -334,11 +458,11 @@ theorem words_of_cols {s t : State} {x y : Nat → W}
   have g := h (j % 4) (Nat.mod_lt _ (by decide))
   rw [← mix_eq] at g
   simp only [cols] at g
-  rw [words_get _ _ hj, mixColsP_get _ _ _ _ _ hj, words_get _ _ (by omega),
-    words_get _ _ (by omega), words_get _ _ (by omega), words_get _ _ (by omega),
-    show j % 4 / 4 = 0 by omega, show (4 + j % 4) / 4 = 1 by omega, show (8 + j % 4) / 4 = 2 by omega,
-    show (12 + j % 4) / 4 = 3 by omega, Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega,
-    show (8 + j % 4) % 4 = j % 4 by omega, show (12 + j % 4) % 4 = j % 4 by omega]
+  rw [words_get _ _ hj, mixColsP_get _ _ _ _ _ hj, words_get _ _ (by omega_using []),
+    words_get _ _ (by omega_using []), words_get _ _ (by omega_using []), words_get _ _ (by omega_using []),
+    show j % 4 / 4 = 0 by omega_using [], show (4 + j % 4) / 4 = 1 by omega_using [], show (8 + j % 4) / 4 = 2 by omega_using [],
+    show (12 + j % 4) / 4 = 3 by omega_using [], Nat.mod_mod, show (4 + j % 4) % 4 = j % 4 by omega_using [],
+    show (8 + j % 4) % 4 = j % 4 by omega_using [], show (12 + j % 4) % 4 = j % 4 by omega_using []]
   rcases cases_div4 hj with e | e | e | e <;> rw [e] <;> simp only [row, pick4] <;> rw [← g]
 
 /-! ## Gathering the message words -/
@@ -392,7 +516,7 @@ theorem ldw_ok {d : XReg} {j p : Nat} (hj : j < 16) (hp : p < 4) {s : State} {pa
   · refine ⟨?_, ⟨by simp, by simp, by simp, by simp, fun r hr => ?_⟩⟩
     · simp only [dw, xmm_vpshufd, RegUpd.xmm_setV, ↓reduceIte]
       rw [dword_shufDwords_bcast _ hj4 hp, mw_load hj4, he]
-      exact congrArg (mw s.mem pa) (by omega)
+      exact congrArg (mw s.mem pa) (by omega_using [])
     · simp only [List.mem_singleton] at hr
       simp only [xmm_vpshufd, RegUpd.xmm_setV, hr, ite_false]
 
@@ -554,24 +678,24 @@ theorem msg_word (m : Mem) (pa : Addr) (r k q : Nat) :
 theorem msg_lo (m : Mem) (pa : Addr) (r q : Nat) :
     mw m pa (msgWord r 0 q) = Spec.Blake2.blockAt 32 m pa (Spec.Blake2.sigmaAt r (2 * q)) := by
   rw [msg_word, lane_lo (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem msg_lo1 (m : Mem) (pa : Addr) (r q : Nat) :
     mw m pa (msgWord r (0 + 1) q) = Spec.Blake2.blockAt 32 m pa (Spec.Blake2.sigmaAt r (2 * q + 1)) := by
   rw [msg_word, lane_lo (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem msg_hi (m : Mem) (pa : Addr) (r q : Nat) :
     mw m pa (msgWord r 2 q) =
       Spec.Blake2.blockAt 32 m pa (Spec.Blake2.sigmaAt r (8 + 2 * ((q + 3) % 4))) := by
   rw [msg_word, lane_hi (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem msg_hi1 (m : Mem) (pa : Addr) (r q : Nat) :
     mw m pa (msgWord r (2 + 1) q) =
       Spec.Blake2.blockAt 32 m pa (Spec.Blake2.sigmaAt r (9 + 2 * ((q + 3) % 4))) := by
   rw [msg_word, lane_hi (by decide)]
-  exact congrArg _ (congrArg _ (by omega))
+  exact congrArg _ (congrArg _ (by omega_using []))
 
 theorem diag_vf (s : State) : XF roundRegs s (run diagOps s) := (diag_keeps s).mono (by decide)
 theorem undiag_vf (s : State) : XF roundRegs s (run undiagOps s) := (undiag_keeps s).mono (by decide)

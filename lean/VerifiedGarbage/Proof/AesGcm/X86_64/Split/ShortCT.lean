@@ -51,7 +51,7 @@ theorem runShort_rel (hF : ShortFacts) (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
       ⟨z, E, by rw [K.mem]; exact h.src, by rw [K.mem]; exact h.slen⟩
   have c := rel_next (cond_rel (F₁ := SEntry s₀ Ctx W SP A D S n sl) (F₂ := SEntry s₀' Ctx W SP A D S n sl)
       (fun _ h => condS_of h.toOneEntry hnl hal) (fun _ h => condS_of h.toOneEntry hnl' hal')
-      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega))
+      (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega_using [hlt]))
     (hw C hnl hal) (hw C' hnl' hal')
   refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
     ((splitRun_rel v B T hfr C C' X X' kM hNp hnl hal hR hNp' hnl' hal' hR').mono

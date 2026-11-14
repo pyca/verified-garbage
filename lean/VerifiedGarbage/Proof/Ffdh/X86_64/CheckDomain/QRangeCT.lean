@@ -41,12 +41,12 @@ theorem qinner_load (p : CdP) (s : State) (h : QInner p s) : LPre aXm sQ sK p.ql
   have hk := hb.k1
   have hk' := hb.k2
   have hl := hb.qlen hq
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  exact ⟨mi, p.qb, hw.mem.ctx hd, show 2 ≤ p.w by omega, Nat.le_refl _, show p.w < 2 ^ 30 by omega,
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  exact ⟨mi, p.qb, hw.mem.ctx hd, show 2 ≤ p.w by omega_using [hk, ew], Nat.le_refl _, show p.w < 2 ^ 30 by omega_using [hk', ew],
     by decide, by decide, by decide, hw.q,
     by rw [hl]; exact hb.hdr (sK, BitVec.ofNat 64 p.k) (by simp [CdP.headers]),
-    hl, (hb.dom.drop (2 * p.k)).take p.k, by rw [hl]; omega,
-    by rw [hl]; omega, by rw [hl]⟩
+    hl, (hb.dom.drop (2 * p.k)).take p.k, by rw [hl]; omega_using [hk],
+    by rw [hl]; omega_using [hk'], by rw [hl]⟩
 
 private theorem qinner_loaded (p : CdP) (s : State) (h : QInner p s) :
     WP isa (seqs (VG.Impl.Rsa.X86_64.Crt.loadArr aXm sQ sK)) s (QInner p) := by
@@ -62,8 +62,8 @@ private theorem qinner_odd (p : CdP) (s : State) (h : QInner p s) :
     WP isa (seqs (isOdd aXm)) s (QInner p) := by
   obtain ⟨⟨mi, hw, hd, hm⟩, hq⟩ := h
   have hk := hw.base.k1
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega
-  exact WP.mono (isOdd_ok (hw.mem.ctx hd).good (Nat.le_refl _) (by omega) (show aXm < 8 by decide))
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold CdP.w; omega_using []
+  exact WP.mono (isOdd_ok (hw.mem.ctx hd).good (Nat.le_refl _) (by omega_using [hk, ew]) (show aXm < 8 by decide))
     fun _ ⟨_, hmem, k⟩ => ⟨⟨mi, hw.keep hmem k, (k.gpr (by decide)).trans hd, hm⟩, hq⟩
 
 private theorem qinner_checked (p : CdP) (s : State) (h : QInner p s) :

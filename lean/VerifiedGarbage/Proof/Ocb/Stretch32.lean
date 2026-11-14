@@ -31,13 +31,13 @@ private theorem shl_app {n : Nat} (X : BitVec n) (y : BitVec 32) {a : Nat} (ha' 
   by_cases h : i < 32
   · by_cases h2 : i < a
     · simp [h, h2]
-    · simp [h, h2, show i - a < 32 by omega]
-  · simp only [h, ↓reduceIte, show ¬ i < a by omega, decide_false, Bool.not_false, Bool.true_and,
-      show i - 32 < n by omega]
+    · simp [h, h2, show i - a < 32 by omega_using [h]]
+  · simp only [h, ↓reduceIte, show ¬ i < a by omega_using [ha', h], decide_false, Bool.not_false, Bool.true_and,
+      show i - 32 < n by omega_using [hi, h]]
     by_cases h2 : i - 32 < a
-    · simp [h2, show i - a < 32 by omega, show 32 - a + (i - 32) = i - a by omega]
-    · simp [h2, show ¬ i - a < 32 by omega, BitVec.getLsbD_of_ge y (32 - a + (i - 32)) (by omega),
-        show i - a - 32 = i - 32 - a by omega]
+    · simp [h2, show i - a < 32 by omega_using [h2], show 32 - a + (i - 32) = i - a by omega_using [ha', h]]
+    · simp [h2, show ¬ i - a < 32 by omega_using [h, h2], BitVec.getLsbD_of_ge y (32 - a + (i - 32)) (by omega_using [h2]),
+        show i - a - 32 = i - 32 - a by omega_using []]
 
 /-- Or-ing a word into the low word of `P ++ q`. -/
 private theorem or_setWidth_append {n : Nat} (P : BitVec n) (q r : BitVec 32) :
@@ -48,7 +48,7 @@ private theorem or_setWidth_append {n : Nat} (P : BitVec n) (q r : BitVec 32) :
     Bool.true_and]
   by_cases h : i < 32
   · simp [h]
-  · simp [h, BitVec.getLsbD_of_ge r i (by omega)]
+  · simp [h, BitVec.getLsbD_of_ge r i (by omega_using [h])]
 
 private theorem ite_pos {α : Sort _} {c : Prop} [Decidable c] {t e : α} (h : c) : ite c t e = t := by
   simp [h]
@@ -93,13 +93,13 @@ theorem sel_mask32 (x x' : BitVec 32) (b : Bool) :
 theorem bit32 {v : Nat} (hv : v < 64) (k : Nat) :
     (BitVec.ofNat 32 v >>> k) &&& BitVec.ofNat 32 1 = if v.testBit k then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv]),
     show (BitVec.ofNat 32 1).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.testBit_eq_decide_div_mod_eq,
     Nat.shiftRight_eq_div_pow]
   have h2 : v / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
   by_cases h : v / 2 ^ k % 2 = 1
   · simp [h]
-  · simp [h]; omega
+  · simp [h]; omega_using [h]
 
 /-- Bit 0 of `bottom`, as 0 or 1. -/
 theorem bit32_0 {v : Nat} (hv : v < 64) :
@@ -142,7 +142,7 @@ theorem top4 (x₀ x₁ x₂ x₃ x₄ x₅ : BitVec 32) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬ 64 + i < 32 by omega, show ¬ 64 + i - 32 < 32 by omega, show 64 + i - 32 - 32 = i by omega,
+    show ¬ 64 + i < 32 by omega_using [], show ¬ 64 + i - 32 < 32 by omega_using [], show 64 + i - 32 - 32 = i by omega_using [],
     ↓reduceIte]
 
 /-! ## Words as six-word values, for x86 -/
@@ -164,21 +164,21 @@ theorem ror_mask32 (x : BitVec 32) {a : Nat} (ha : 0 < a) (ha' : a < 32) :
   by_cases hia : i < a
   · simp [hia]
   · simp only [hia, decide_false, Bool.not_false, Bool.true_and]
-    simp only [BitVec.getLsbD, show i < 32 - (32 - a) ↔ i < a by omega, hia, ↓reduceIte,
-      Nat.mod_eq_of_lt (show 32 - a < 32 by omega)]
-    rw [show i - (32 - (32 - a)) = i - a by omega]
-    simp [show i - a < 32 by omega]
+    simp only [BitVec.getLsbD, show i < 32 - (32 - a) ↔ i < a by omega_using [ha'], hia, ↓reduceIte,
+      Nat.mod_eq_of_lt (show 32 - a < 32 by omega_using [ha])]
+    rw [show i - (32 - (32 - a)) = i - a by omega_using [ha']]
+    simp [show i - a < 32 by omega_using [hi]]
 
 /-- Bit `k` of `bottom` (less than 64), as 0 or 1. -/
 theorem bit_bottom32 {v : Nat} (hv : v < 64) (k : Nat) :
     (BitVec.ofNat 32 v >>> k) &&& 1 = if v.testBit k then 1 else 0 := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hv]),
     show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.testBit_eq_decide_div_mod_eq,
     Nat.shiftRight_eq_div_pow]
   have h2 : v / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
   by_cases h : v / 2 ^ k % 2 = 1
   · simp [h]
-  · simp [h]; omega
+  · simp [h]; omega_using [h]
 
 end VG.Proof.Ocb

@@ -37,13 +37,13 @@ theorem countLoop_ok {body : Prog isa} {Inv : Nat → State → Prop} {Q : State
   · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hj]; rfl,
       hQ s' (by rw [hj] at hi'; exact hi')⟩
   · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hj]; rfl,
-      j - 1, by omega, by omega, by omega, hi'⟩
+      j - 1, by omega_using [h1], by omega_using [hj], by omega_using [h2], hi'⟩
 
 theorem ofNat_pred32 {j : Nat} (hj : 1 ≤ j) : BitVec.ofNat 32 j - 1 = BitVec.ofNat 32 (j - 1) := by
   apply BitVec.eq_of_toNat_eq
   have h1 : (1 : BitVec 32).toNat = 1 := rfl
   rw [BitVec.toNat_sub, h1, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using [hj]
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}

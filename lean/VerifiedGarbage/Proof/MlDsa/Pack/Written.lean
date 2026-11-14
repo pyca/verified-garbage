@@ -42,7 +42,7 @@ theorem Written.snoc {m m' : Mem} {o : Addr} {c : Nat} {v : Nat → Byte} (h : W
   rw [writeW8_apply, h x]
   by_cases hx : x = o + BitVec.ofNat 64 c
   · subst hx
-    rw [ifp rfl, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc, ifp (by omega)]
+    rw [ifp rfl, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc, ifp (by omega_using [])]
     dsimp only
     rw [ifp rfl]
   · have : (x - o).toNat ≠ c := fun e => hx (by
@@ -50,10 +50,10 @@ theorem Written.snoc {m m' : Mem} {o : Addr} {c : Nat} {v : Nat → Byte} (h : W
       exact congrArg (o + ·) (BitVec.eq_of_toNat_eq (by rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc])))
     rw [ifn hx]
     by_cases hl : (x - o).toNat < c
-    · rw [ifp hl, ifp (by omega)]
+    · rw [ifp hl, ifp (by omega_using [hl])]
       dsimp only
       rw [ifn this]
-    · rw [ifn hl, ifn (by omega)]
+    · rw [ifn hl, ifn (by omega_using [this, hl])]
 
 /-- Writing `c` bytes within the region `R`. -/
 theorem Written.frame {m m' : Mem} {o : Addr} {c : Nat} {v : Nat → Byte} (h : Written m m' o c v)
@@ -82,14 +82,14 @@ theorem Written.extend {m m' : Mem} {out : Addr} {a c : Nat} {val : Nat → Byte
   intro k hk
   rw [hw]
   by_cases h : k < a
-  · have hc : 0 < c ∨ c = 0 := by omega
+  · have hc : 0 < c ∨ c = 0 := by omega_using []
     rcases hc with hc | hc
     · rw [ifn (by
         rw [Offset.add_sub_add_left]
-        exact Offset.not_lt_sub_ofNat (.inl h) (by omega) hc (by omega)), hd k h]
-    · rw [ifn (by omega), hd k h]
-  · rw [Offset.sub_toNat out (by omega) (by omega), ifp (by omega)]
-    exact congrArg val (by omega)
+        exact Offset.not_lt_sub_ofNat (.inl h) (by omega_using [hlen, hk]) hc (by omega_using [hlen])), hd k h]
+    · rw [ifn (by omega_using [hc]), hd k h]
+  · rw [Offset.sub_toNat out (by omega_using [h]) (by omega_using [hlen, hk]), ifp (by omega_using [hk, h])]
+    exact congrArg val (by omega_using [h])
 
 /-- The loop's output so far, and the frame, one step further. -/
 theorem Written.step {m₀ m m' : Mem} {out : Addr} {a c len : Nat} {val : Nat → Byte}
@@ -97,6 +97,6 @@ theorem Written.step {m₀ m m' : Mem} {out : Addr} {a c len : Nat} {val : Nat �
     (hw : Written m m' (out + BitVec.ofNat 64 a) c fun j => val (a + j)) (hac : a + c ≤ len)
     (hlen : len < 2 ^ 64) :
     Frame [⟨out, len⟩] m₀ m' ∧ ∀ k < a + c, m' (out + BitVec.ofNat 64 k) = val k :=
-  ⟨hf.trans (hw.frame (Offset.contains_base out hac (by omega))), Written.extend hd hw (by omega)⟩
+  ⟨hf.trans (hw.frame (Offset.contains_base out hac (by omega_using [hac, hlen]))), Written.extend hd hw (by omega_using [hac, hlen])⟩
 
 end VG.Proof.MlDsa.Pack

@@ -25,8 +25,8 @@ theorem subs_ok {s : State} {sw kt : Nat} (hsw : sw ≤ 1) (hkt : kt ≤ 1)
     exists_eq_left']
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · rw [zf_addWithCarry, h3, h2]
-    rcases (by omega : sw = 0 ∨ sw = 1) with rfl | rfl <;>
-      rcases (by omega : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hsw] : sw = 0 ∨ sw = 1) with rfl | rfl <;>
+      rcases (by omega_using [hkt] : kt = 0 ∨ kt = 1) with rfl | rfl <;> rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_addWithCarry, hr, ite_false]
 

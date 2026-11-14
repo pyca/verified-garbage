@@ -3,9 +3,57 @@ module
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.InitPairs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+
+/-! ### `Sha256.AArch64.Stream.InitPairs`, which only this module used -/
+
+section
+
+/-!
+# Streaming SHA-256 on AArch64: `initQ` in the one-shot digests
+
+What the one-shot digests need of the code storing the initial hash value
+(`initQ`, `Init.lean`): its contract, that it writes no general register but
+`x9` (and `x10`), and none of `v8`–`v15`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Sha256.AArch64.Stream
+
+open VG VG.AArch64 VG.Impl.Sha256.AArch64.Stream
+open VG.Spec.Sha256 (HashValue)
+
+theorem initQ_ok (iv : HashValue) :
+    ∀ s, (Proof.Sha256.initAArch64 iv).pre s → ∃ t s', Exec isa (initQ iv) s t s' ∧
+      abiPreserved s s' ∧ (Proof.Sha256.initAArch64 iv).post s s' := fun s h => by
+  obtain ⟨t, s', he, h⟩ := initQ_correct iv h
+  exact ⟨t, s', he, h⟩
+
+theorem initQ_writes (iv : HashValue) :
+    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (initQ iv), clobbers i r = false := by
+  intro r h9 _ i hi
+  simp only [initQ, instrs, List.mem_cons, List.not_mem_nil, or_false] at hi
+  rcases hi with rfl | rfl | rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm h9]
+
+theorem initQ_keepsV (iv : HashValue) :
+    (initQ iv).allInstrs VG.AArch64.keepsV = true := by
+  rw [Code.allInstrs_eq]
+  rfl
+
+end VG.Proof.Sha256.AArch64.Stream
+
+end
+
+end
+
 
 /-!
 # SHA-256 compression backends on AArch64
@@ -108,7 +156,7 @@ theorem sat_pre₀ {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stre
   rd := rfl
   wr := rfl
   d_o := show Region.Disjoint ⟨0x1000, 0⟩ ⟨0x2000, D⟩ from
-    Offset.disjoint_of_le (show 4096 + 0 ≤ 8192 by decide) (show 8192 + D ≤ 2 ^ 64 by omega)
+    Offset.disjoint_of_le (show 4096 + 0 ≤ 8192 by decide) (show 8192 + D ≤ 2 ^ 64 by omega_using [hD])
   sp := show Impl.MdStream.AArch64.OneShot.frameBytes Stream.params ≤ (0x10000 : BitVec 64).toNat by decide
   f_d := show Region.Disjoint ⟨0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params),
       Impl.MdStream.AArch64.OneShot.frameBytes Stream.params⟩ ⟨0x1000, 0⟩ from
@@ -118,7 +166,7 @@ theorem sat_pre₀ {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stre
     (Offset.disjoint_of_le (show 8192 + D ≤ _ by
       have : 8256 ≤ (0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params) :
         BitVec 64).toNat := by decide
-      dsimp only; omega) (by decide)).symm
+      dsimp only; omega_using [hD, this]) (by decide)).symm
 
 /-- The precondition does not depend on the digest code. -/
 theorem pre_out {o : List Instr} {D : Nat} {s : State} (h : MdStream.AArch64.OneShot.Pre Stream.params D s) :

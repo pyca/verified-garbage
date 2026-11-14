@@ -44,8 +44,8 @@ theorem byte_below {m m' : Mem} {E B : BitVec 32} {n o : Nat} {rs : List Region}
   rcases List.mem_append.mp hr with hr | hr
   · exact hrs r hr _ (Region.contains_self _ _) hc
   · simp only [List.mem_singleton] at hr; subst hr
-    exact hst _ hc (VG.Offset.contains_base _ (by omega) (by
-      have := setWidth_toNat B; omega))
+    exact hst _ hc (VG.Offset.contains_base _ (by omega_using [ho]) (by
+      have := setWidth_toNat B; omega_using [hfit, ho]))
 
 /-- A word of the scratch buffer from the table to the group's end, which
 `vg_camellia_crypt_prepared` keeps. -/
@@ -55,14 +55,14 @@ theorem keeps_word {m m' : Mem} {B : BitVec 32} (hfit : B.toNat + 4 * slots ≤ 
   rw [keySlot_eq] at h1
   rw [grpSlot_eq] at h2
   rw [slots_eq] at hfit
-  rw [slot_addr (by omega)]
+  rw [slot_addr (by omega_using [hfit, h2])]
   refine Mem.readW_congr fun i hi => ?_
   rw [VG.Offset.add_add]
-  refine hk (4 * k + i) (by simp only [wsWords, slots_eq]; omega) fun r hr => ?_
+  refine hk (4 * k + i) (by simp only [wsWords, slots_eq]; omega_using [h2, hi]) fun r hr => ?_
   simp only [layout, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · simp only [keySlot_eq]; omega
-  · simp only [grpSlot_eq]; omega
+  · simp only [keySlot_eq]; omega_using [h1]
+  · simp only [grpSlot_eq]; omega_using [h2, hi]
 
 theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List (BitVec 64)}
     (hB : s.gpr sb = B) (hw : ScrIn s.wr B) (hR : R = 18 ∨ R = 24)
@@ -101,7 +101,7 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
   -- The call.
   have hrs : Reg.esp ∉ [Reg.edx, .ecx, .eax] := by decide
   have hfit₃ : 4 * [Reg.edx, .ecx, .eax].length + 4 ≤ (s₃.gpr .esp).toNat := by
-    rw [esp₃]; show 16 ≤ _; omega
+    rw [esp₃]; show 16 ≤ _; omega_using [hesp]
   have a0 : arg (pushed [.edx, .ecx, .eax] s₃).callEntry 0 = BitVec.ofNat 32 R := by
     rw [callEntry_arg hfit₃ hrs (i := 0) (by decide)]; exact eax₃
   have a1 : arg (pushed [.edx, .ecx, .eax] s₃).callEntry 1 = B := by
@@ -113,12 +113,12 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
   have cE' : Frame ([] ++ [below (s.gpr .esp) 16]) s.mem (pushed [.edx, .ecx, .eax] s₃).callEntry.mem := cE
   have hHC : Proof.Camellia.Prepared.Holds layout (pushed [.edx, .ecx, .eax] s₃).callEntry.mem (B.setWidth 64) R ws
       (specDir d) := fun r hr i hi => by
-    have hg : R / 6 ≤ 4 := by omega
+    have hg : R / 6 ≤ 4 := by omega_using [hR]
     have hr' := hr
     rw [layout_table] at hr'
     simp only [List.mem_singleton] at hr'; subst hr'
     dsimp only at hi ⊢
-    rw [byte_below cE' (fun _ h => (List.not_mem_nil h).elim) hst hfit' (by rw [slots_eq]; omega)]
+    rw [byte_below cE' (fun _ h => (List.not_mem_nil h).elim) hst hfit' (by rw [slots_eq]; omega_using [hR, hi])]
     exact hH _ hr i hi
   have wsN : (BitVec.ofNat 32 wsWords).toNat = 336 := rfl
   have argsC : argAddr (pushed [.edx, .ecx, .eax] s₃).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 12).setWidth 64 := by
@@ -129,13 +129,13 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
       (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := by
     rw [callEntry_esp', esp₃]; rfl
   have argsSub : Region.Sub ⟨argAddr (pushed [.edx, .ecx, .eax] s₃).callEntry 0, 12⟩ (below (s.gpr .esp) 16) := by
-    rw [argsC]; exact below_sub (by omega) hesp
+    rw [argsC]; exact below_sub (by omega_using []) hesp
   have hst2 : Region.Disjoint (below (s.gpr .esp) 16) ⟨B.setWidth 64, 336 * 8⟩ := by
     have := hst; rw [slots_eq] at this; exact this
-  have hR32 : R < 2 ^ 32 := by omega
+  have hR32 : R < 2 ^ 32 := by omega_using [hR]
   have scrIn : (⟨B.setWidth 64, 4 * N⟩ : Region) ∈ s₃.wr := by rw [wr₃']; exact hNw
   refine WP.callWith (k := cryptX86) crypt_correct crypt_noSp (by decide) hrs
-    (by rw [crypt_stackUse, esp₃]; show 16 ≤ _; omega)
+    (by rw [crypt_stackUse, esp₃]; show 16 ≤ _; omega_using [hesp])
     (rd := [⟨argAddr (pushed [.edx, .ecx, .eax] s₃).callEntry 0, 12⟩]) (wr := [⟨B.setWidth 64, 336 * 8⟩])
     ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ fun s' rd' wr' cs f ⟨s₂, m₂, post⟩ => ?_
   · rw [State.withRegions_rd, argAddr_withRegions]
@@ -144,8 +144,8 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
     exact (hst2.sub_left argsSub)
   · rw [State.withRegions_gpr, arg_withRegions, arg_withRegions, a1, a2, espC']
     exact (hst2.sub_left (Region.sub_prefix (by decide)))
-  · rw [arg_withRegions, arg_withRegions, a1, a2, wsN]; rw [slots_eq] at hfit'; omega
-  · rw [State.withRegions_gpr, espC]; have := (s.gpr .esp).isLt; omega
+  · rw [arg_withRegions, arg_withRegions, a1, a2, wsN]; rw [slots_eq] at hfit'; omega_using [hfit']
+  · rw [State.withRegions_gpr, espC]; have := (s.gpr .esp).isLt; omega_using []
   · rw [arg_withRegions, a0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hR32]; exact hR
   · rw [arg_withRegions, a2, wsN, size_eq, slots_eq]
   · refine ⟨ws, specDir d, ?_⟩
@@ -157,11 +157,11 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
     · exact Covers.of_sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_cons_of_mem _ scrIn, 0, by rw [BitVec.add_zero],
-          by show 0 + 336 * 8 ≤ 4 * N; rw [slots_eq] at hN; omega⟩
+          by show 0 + 336 * 8 ≤ 4 * N; rw [slots_eq] at hN; omega_using [hN]⟩
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_of_mem _ scrIn, 0, by rw [BitVec.add_zero],
-      by show 0 + 336 * 8 ≤ 4 * N; rw [slots_eq] at hN; omega⟩
+      by show 0 + 336 * 8 ≤ 4 * N; rw [slots_eq] at hN; omega_using [hN]⟩
   -- After the call.
   have hHC' : Proof.Camellia.Prepared.Holds layout
       ((pushed [.edx, .ecx, .eax] s₃).callEntry.withRegions [⟨argAddr (pushed [.edx, .ecx, .eax] s₃).callEntry 0, 12⟩]
@@ -189,8 +189,8 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
   have hK' : Proof.Camellia.Prepared.Keeps (B.setWidth 64) wsWords layout.cryptScratch s.mem s'.mem :=
     fun i hi hout => by
       rw [hK i hi hout]
-      exact byte_below cE' (fun _ h => (List.not_mem_nil h).elim) hst2 (by rw [slots_eq] at hfit'; omega)
-        (by simp only [wsWords, slots_eq] at hi; omega)
+      exact byte_below cE' (fun _ h => (List.not_mem_nil h).elim) hst2 (by rw [slots_eq] at hfit'; omega_using [hfit'])
+        (by simp only [wsWords, slots_eq] at hi; omega_using [hi])
   refine ⟨by rw [show sb = .edi from rfl, cs .edi (by decide), g₃ _ (by decide) (by decide) (by decide)]; exact hB,
     fun r hr => by rw [cs r hr, g₃ r (fun h => by subst h; simp [calleeSaved] at hr)
       (fun h => by subst h; simp [calleeSaved] at hr) (fun h => by subst h; simp [calleeSaved] at hr)],
@@ -206,7 +206,7 @@ theorem cryptCall_wp {d : Dir} {s : State} {B : BitVec 32} {R : Nat} {ws : List 
       apply Vector.ext; intro i hi
       simp only [Spec.Camellia.blockAt, Vector.getElem_ofFn, VG.Offset.add_add]
       exact byte_below hm (fun _ h => (List.not_mem_nil h).elim) hst hfit'
-        (by rw [slots_eq, tailSlot_eq]; omega)
+        (by rw [slots_eq, tailSlot_eq]; omega_using [hj, hi])
   rw [← VG.Offset.add_add, hb, hblk _ cE']
 
 end VG.Proof.Camellia.X86

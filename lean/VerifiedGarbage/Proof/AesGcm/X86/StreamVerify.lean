@@ -50,7 +50,7 @@ theorem FinIn.frameR {Ctx St W SP : BitVec 32} {R : Nat} {al ah xl xh : BitVec 3
     have ho' : o + 4 ≤ 196 := ho
     rw [slotv_eq, slotv_eq]
     exact slot_frame hf fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl ho') (by omega) (by decide)
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl ho') (by omega_using [ho']) (by decide)
   have hc := sl ctxO (by decide)
   rw [slotv_eq, slotv_eq] at hc
   exact ⟨h.env.keep hbp hsi hsp hrd hwr hc, by rw [sl _ (by decide)]; exact h.al, by rw [sl _ (by decide)]; exact h.ah,
@@ -135,7 +135,7 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     rw [hT] at ht
     have ht' : 1 ≤ (p.2 8).toNat ∧ (p.2 8).toNat ≤ 16 := by
       simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at ht
-      omega
+      omega_using [ht]
     obtain ⟨t1, t16⟩ := ht'
     -- The received tag copied.
     refine Pc.seq (Pc.of (I := fun s => WEnv (p.2 7) s ∧ slotv s.mem (p.2 7) tglO = BitVec.ofNat 32 (p.2 8).toNat ∧
@@ -177,7 +177,7 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
         (fo.frame.mono (fun r hr => List.mem_cons_of_mem _ hr) |>.trans
         (f₃.sub (fun r hr => ⟨wsR (p.2 7), by simp, by
           simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by decide) (by decide)⟩)))
-    · have hA : ∀ i, i < 7 → arg s₀ i = p.2 i := fun i hi => pubSw_arg h.ent.pub (by omega) (by omega) (by omega)
+    · have hA : ∀ i, i < 7 → arg s₀ i = p.2 i := fun i hi => pubSw_arg h.ent.pub (by omega_using [hi]) (by omega_using [hi]) (by omega_using [hi])
       simp only [streamVerifyX86, ret32_eq]
       intro iv a c hr hl hc
       rw [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide)] at hr
@@ -205,7 +205,7 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
           bytesAt s₀.mem (w64 (p.2 9)) (p.2 8).toNat ++ zeros (16 - (p.2 8).toNat) := by
         rw [bytesAt_frame fo.frame (rR_tagFrame L) (by decide), b, h.mem,
           bytesAt_frame h.ent.frame (fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr; exact tw.sub_right (Lay.wSub (by decide))) (by omega)]
+            simp only [List.mem_singleton] at hr; subst hr; exact tw.sub_right (Lay.wSub (by decide))) (by omega_using [])]
       simp only [bW, bR, List.append_left_inj] at a₃
       simp only [hok, hT, true_and]
       by_cases hX : T.take (p.2 8).toNat = bytesAt s₀.mem (w64 (p.2 9)) (p.2 8).toNat

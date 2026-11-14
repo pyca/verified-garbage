@@ -58,7 +58,7 @@ theorem off2 (a : Addr) (k l : Nat) :
     a + BitVec.ofInt 64 ((32 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l) =
       a + BitVec.ofNat 64 (16 * (2 * k + l)) := by
   rw [BitVec.ofInt_natCast, BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 32 * k + 16 * l = 16 * (2 * k + l) by omega]
+    show 32 * k + 16 * l = 16 * (2 * k + l) by omega_using []]
 
 theorem offp (a : Addr) (k l : Nat) :
     a + BitVec.ofInt 64 ((32 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l) =
@@ -75,7 +75,7 @@ theorem ghStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat
       YFrame [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] s s' := by
   refine WP.mono (ghLoad_ok hk s hE.m0 (by rw [hE.rdx]; exact hE.ina _ hk) (by rw [hE.r11]; exact hE.inp _ hk))
     fun s' ⟨p', f'⟩ => ⟨hE.yframe f' (by decide), fun l hl => ?_, fun l hl => ?_, f'⟩
-  · rw [p' l hl, hp l hl, accN_succ, hE.rdx, hE.r11, off2, offp, hE.xs _ (by omega) (by omega),
+  · rw [p' l hl, hp l hl, accN_succ, hE.rdx, hE.r11, off2, offp, hE.xs _ (by omega_using [hlo]) (by omega_using [hk, hl]),
       hE.pv _ hk l hl, hy l hl]
     rfl
   · rw [f'.lane _ (by decide) l hl, hy l hl]
@@ -155,41 +155,41 @@ theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {
   by_cases hl4 : j ≤ 4
   · -- A load.
     obtain ⟨hk, hlo⟩ := hrd j hj1 hl4
-    rw [ite_f (by omega)] at h2
+    rw [ite_f (by omega_using [hl4])] at h2
     simp only [gq, show 1 ≤ j ∧ j ≤ 4 from ⟨hj1, hl4⟩, and_self, ite_true]
-    rw [show min (j - 1) 4 = j - 1 by omega] at h2
-    have hn : base + (j - 1) = base + j - 1 := by omega
+    rw [show min (j - 1) 4 = j - 1 by omega_using [hl4]] at h2
+    have hn : base + (j - 1) = base + j - 1 := by omega_using [hj1]
     rw [hn] at h2
     refine WP.mono (ghStep hk hlo hE h2.1 h2.2) fun s' ⟨hE', p', y', f'⟩ =>
       ⟨⟨hE'.mono (hmono j), fun l hl => by rw [f'.lane _ (by decide) l hl]; exact h1 l hl, ?_⟩,
         f'.mono (by decide)⟩
-    rw [ite_f (by omega), show min (j + 1 - 1) 4 = j by omega, show base + j = base + j - 1 + 1 by omega]
+    rw [ite_f (by omega_using [hl4]), show min (j + 1 - 1) 4 = j by omega_using [hl4], show base + j = base + j - 1 + 1 by omega_using [hj1]]
     exact ⟨p', y'⟩
   · by_cases h5 : fin = true ∧ j = 5
     · -- The reduction.
       obtain ⟨hf, rfl⟩ := h5
-      rw [ite_f (by omega)] at h2
-      simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega, ite_false, hf, and_self, ite_true]
+      rw [ite_f (by omega_using [])] at h2
+      simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega_using [], ite_false, hf, and_self, ite_true]
       have hb := hfin hf
       subst hb
       refine WP.mono (ghFin hE h1) fun s' ⟨hE', y0, y1, f'⟩ =>
         ⟨⟨hE'.mono (hmono 5), fun l hl => by rw [f'.lane _ (by decide) l hl]; exact h1 l hl, ?_⟩,
           f'.mono (by decide)⟩
-      rw [ite_t ⟨rfl, by omega⟩]
+      rw [ite_t ⟨rfl, by omega_using []⟩]
       refine ⟨by rw [y0, h2.1 0 (by decide), h2.1 1 (by decide)]; rfl, y1⟩
     · -- Nothing.
       have hg : gq ord base fin j = [] := by
-        simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega, ite_false]
+        simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega_using [hl4], ite_false]
         rw [ite_f h5]
       rw [hg]
       refine WP.block_nil ⟨⟨hE.mono (hmono j), h1, ?_⟩, YFrame.refl _ _⟩
       by_cases hf : fin = true ∧ 5 < j
-      · rw [ite_t hf] at h2; rw [ite_t ⟨hf.1, by omega⟩]; exact h2
+      · rw [ite_t hf] at h2; rw [ite_t ⟨hf.1, by omega_using [hl4]⟩]; exact h2
       · rw [ite_f hf] at h2
         by_cases hf' : fin = true ∧ 5 < j + 1
         · -- `j = 5` with `fin` is the reduction.
           have : ¬ 5 < j := fun h => hf ⟨hf'.1, h⟩
-          exact absurd ⟨hf'.1, by omega⟩ h5
-        · rw [ite_f hf', show min (j + 1 - 1) 4 = min (j - 1) 4 by omega]; exact h2
+          exact absurd ⟨hf'.1, by omega_using [hl4, this]⟩ h5
+        · rw [ite_f hf', show min (j + 1 - 1) 4 = min (j - 1) 4 by omega_using [hl4]]; exact h2
 
 end VG.Proof.Gcm.X86_64.Stitch

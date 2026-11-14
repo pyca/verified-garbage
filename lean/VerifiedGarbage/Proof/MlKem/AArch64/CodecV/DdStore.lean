@@ -46,14 +46,14 @@ theorem wp_strq2 {s : State} {p : Addr} {m₀ : Mem} {a b : VReg} {o t : Nat} {G
     (k : ∀ s', StFr s s' → CoeffsUpTo s'.mem p (t + 8) Gf old → Frame [polyRegion p] m₀ s'.mem →
       WP isa (.block is) s' Q) :
     WP isa (.block (.strq a .x3 o :: .strq b .x3 (o + 16) :: is)) s Q := by
-  refine wp_strq (a := coeffAddr p t) ⟨ho.1, by omega⟩ h3 (hw t (by omega)) fun s1 h1 => ?_
-  refine wp_strq (a := coeffAddr p (t + 4)) ⟨by omega, ho.2⟩
-    (by rw [h1.gpr, ← ptr_add, h3]; exact coeffAddr_step _ _) (by rw [h1.wr]; exact hw _ (by omega))
+  refine wp_strq (a := coeffAddr p t) ⟨ho.1, by omega_using [ho]⟩ h3 (hw t (by omega_using [ht])) fun s1 h1 => ?_
+  refine wp_strq (a := coeffAddr p (t + 4)) ⟨by omega_using [ho], ho.2⟩
+    (by rw [h1.gpr, ← ptr_add, h3]; exact coeffAddr_step _ _) (by rw [h1.wr]; exact hw _ (by omega_using [ht]))
     fun s2 h2 => k s2 ⟨by rw [h2.gpr, h1.gpr], by rw [h2.v, h1.v], by rw [h2.rd, h1.rd],
       by rw [h2.wr, h1.wr], by rw [h2.sp, h1.sp]⟩ ?_ ?_
-  · rw [h2.mem, h1.v, h1.mem, show t + 8 = t + 4 + 4 by omega]
-    exact (hc.write16 (by omega) ha).write16 (by omega) hb
+  · rw [h2.mem, h1.v, h1.mem, show t + 8 = t + 4 + 4 by omega_using []]
+    exact (hc.write16 (by omega_using [ht]) ha).write16 (by omega_using [ht]) hb
   · rw [h2.mem, h1.mem]
-    exact frame16 (frame16 hf (by omega) _) (by omega) _
+    exact frame16 (frame16 hf (by omega_using [ht]) _) (by omega_using [ht]) _
 
 end VG.Proof.MlKem.AArch64.DD

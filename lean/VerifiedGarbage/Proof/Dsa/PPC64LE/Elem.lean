@@ -135,16 +135,16 @@ theorem val32_top (m : Mem) (B : Addr) (d w : Nat) (hw : 1 ≤ w) :
     val32 m B d (2 * w) =
       val32 m B d (2 * (w - 1)) + 2 ^ (64 * (w - 1)) * (word m B (d + 8 * (w - 1))).toNat := by
   have h := val32_append m B d (2 * (w - 1)) 2
-  rw [show 2 * (w - 1) + 2 = 2 * w by omega] at h
-  rw [h, word_eq_w32, show 32 * (2 * (w - 1)) = 64 * (w - 1) by omega,
-    show d + 4 * (2 * (w - 1)) = d + 8 * (w - 1) by omega]
+  rw [show 2 * (w - 1) + 2 = 2 * w by omega_using [hw]] at h
+  rw [h, word_eq_w32, show 32 * (2 * (w - 1)) = 64 * (w - 1) by omega_using [],
+    show d + 4 * (2 * (w - 1)) = d + 8 * (w - 1) by omega_using []]
   simp only [val32, Nat.mul_zero, Nat.add_zero]
 
 /-- An odd number of `2 w` digits whose top 64-bit word is not zero is above
 `2^(64 (w − 1))`. -/
 theorem top_gt {m : Mem} {B : Addr} {d w N : Nat} (hw : 2 ≤ w) (hN : val32 m B d (2 * w) = N) (hodd : N % 2 = 1)
     (ht : word m B (d + 8 * (w - 1)) ≠ 0) : 2 ^ (64 * (w - 1)) < N := by
-  have e := val32_top m B d w (by omega)
+  have e := val32_top m B d w (by omega_using [hw])
   have h1 : 1 ≤ (word m B (d + 8 * (w - 1))).toNat := by
     rcases Nat.eq_zero_or_pos (word m B (d + 8 * (w - 1))).toNat with h | h
     · exact absurd (BitVec.eq_of_toNat_eq (by rw [h]; rfl)) ht
@@ -154,8 +154,8 @@ theorem top_gt {m : Mem} {B : Addr} {d w N : Nat} (hw : 2 ≤ w) (hN : val32 m B
   rcases Nat.lt_or_eq_of_le h2 with h | h
   · exact h
   · exfalso
-    rw [← h, show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega, Nat.pow_succ] at hodd
-    omega
+    rw [← h, show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega_using [hw], Nat.pow_succ] at hodd
+    omega_using [hodd]
 
 /-- `topWord`: `r3 :=` the top 64-bit word of a number of `2 w` digits at
 array 0 (`r10`), `r11 = 2 w`. -/

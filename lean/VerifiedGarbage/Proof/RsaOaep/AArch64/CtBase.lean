@@ -114,7 +114,7 @@ theorem count_ct {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (P : Nat �
     exact this ▸ hq
   · rw [eval_nonzero, c₁] at h
     have : k + 1 ≠ n := by simpa using h
-    exact ⟨n - (k + 1), by omega, k + 1, by omega, rfl, hq⟩
+    exact ⟨n - (k + 1), by omega_using [hk, hm], k + 1, by omega_using [hk, this], rfl, hq⟩
 
 /-- A block followed by code, as the block's two parts and the code: it runs
 the same and leaks the same trace. -/
@@ -163,7 +163,7 @@ theorem lr_init {F S : Addr} {X : (Nat → BitVec 64) → State → Prop}
     (hx : ∀ W (t : State), X W t → t.gpr .x0 = off S oSt) :
     RelCT isa (LR F S X) (.call G.initN G.initC) fun _ _ => True := by
   have hz := sizes hG
-  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega_using [hz]
   exact init_rel hG (st := off S oSt) fun a b h => by
     have hs := h.sp
     obtain ⟨⟨_, Wa, La, _, xa⟩, ⟨_, Wb, Lb, _, xb⟩⟩ := h

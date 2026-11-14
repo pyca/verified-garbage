@@ -25,9 +25,9 @@ theorem save_ok (s₀ : VG.AArch64.State) (hp : Pre s₀) :
       Ptrs s₀ s' ∧ s'.v = s₀.v ∧ Frame [⟨s₀.gpr .x1,512⟩] s₀.mem s'.mem ∧ Saved s₀ s'.mem := by
   have hh : WP isa (.block save) s₀ (SaveInv s₀ 8) := by
     refine wp_range_flatMap (M := isa) (SaveInv s₀) (fun i s hi hs => ?_)
-      8 (Nat.le_refl _) s₀ ⟨Ptrs.refl _,rfl,Frame.refl _ _,fun _ h => absurd h (by omega)⟩
+      8 (Nat.le_refl _) s₀ ⟨Ptrs.refl _,rfl,Frame.refl _ _,fun _ h => absurd h (by omega_using [])⟩
     unfold saveReg
-    refine WP.cons (exec_strq ⟨by omega,by omega⟩ ?_) (wp_nil ?_)
+    refine WP.cons (exec_strq ⟨by omega_using [],by omega_using [hi]⟩ ?_) (wp_nil ?_)
     · rw [hs.ptr.wr,hs.ptr.x1]
       exact hp.in_wr (.inr rfl) (scratch_contains s₀ hi)
     · refine ⟨⟨hs.ptr.x0,hs.ptr.x1,hs.ptr.rd,hs.ptr.wr,hs.ptr.sp⟩,hs.vec,?_,fun j hj => ?_⟩
@@ -39,8 +39,8 @@ theorem save_ok (s₀ : VG.AArch64.State) (hp : Pre s₀) :
         by_cases he : j = i
         · subst j
           exact read_write16 _ _ _
-        · rw [Mem.read_write_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
-          exact hs.vals j (by omega)
+        · rw [Mem.read_write_sep (Offset.sep _ (by omega_using [he]) (by omega_using [hi, hj]) (by omega_using [hi])) (by decide)]
+          exact hs.vals j (by omega_using [hj, he])
   exact hh.mono fun s' h => ⟨h.ptr,h.vec,h.frame,h.vals⟩
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector

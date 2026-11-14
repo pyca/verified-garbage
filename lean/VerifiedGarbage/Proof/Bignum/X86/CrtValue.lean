@@ -21,7 +21,7 @@ def componentValue (m : Mem) (args : Nat → BitVec 32) (i : Nat) : Nat :=
 
 theorem Inputs.modulus_length {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s : State}
     (h : Inputs base bytes len args s) : (args 3).toNat = len := by
-  rw [h.nLen, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.upper; omega)]
+  rw [h.nLen, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.upper; omega_using [this])]
 
 theorem Inputs.modulus_bound {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s : State}
     (h : Inputs base bytes len args s) : componentValue s.mem args 2 < 2 ^ (8 * len) := by

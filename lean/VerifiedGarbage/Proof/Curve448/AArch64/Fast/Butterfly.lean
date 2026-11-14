@@ -58,7 +58,7 @@ theorem bflyStep_ok {t : State} {base : Addr} (ht : Scr t base) {x2 z2 x3 z3 a b
       InRegions (t.rd ++ t.wr) (base + BitVec.ofNat 64 (e + 8 * i)) 8 ∧
       InRegions t.wr (base + BitVec.ofNat 64 (e + 8 * i)) 8 := fun e he => by
     have := h e he
-    exact ⟨by omega, by omega, ht.read (by omega), ht.write (by omega)⟩
+    exact ⟨by omega_using [this], by omega_using [hi, this], ht.read (by omega_using [hi, this]), ht.write (by omega_using [hi, this])⟩
   obtain ⟨ax2, bx2, rx2, -⟩ := g x2 (by simp)
   obtain ⟨az2, bz2, rz2, -⟩ := g z2 (by simp)
   obtain ⟨ax3, bx3, rx3, -⟩ := g x3 (by simp)

@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -31,8 +33,11 @@ theorem loads_taint : ∃ hc, (VG.Taint.check taint (argTaint [] 48) loads hc).i
 theorem divN_taint : ∃ hc, (VG.Taint.check taint (argTaint [.r7, .r8, .r9] 48) (seqs divN) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem checks_taint : ∃ hc, (VG.Taint.check taint (argTaint [] 48) checks hc).isSome = true :=
-  ⟨_, by taint_decide⟩
+/-- `checks`, either variant of its inverse: by `taintU`, which also follows `umaal`. -/
+theorem checks_taint (um : Bool) : ∃ hc, (VG.Taint.check taintU (argTaint [] 48) (checks um) hc).isSome = true := by
+  cases um
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
 
 theorem divQ_taint : ∃ hc, (VG.Taint.check taint (argTaint [] 48) divQ hc).isSome = true :=
   ⟨_, by taint_decide⟩

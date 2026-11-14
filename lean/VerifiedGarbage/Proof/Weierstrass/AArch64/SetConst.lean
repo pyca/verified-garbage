@@ -50,20 +50,20 @@ theorem constSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (constSteps_ok hs ho8 k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (constSteps_ok hs ho8 k (by omega_using [hk])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     rw [constStep, WP.block_append_iff]
     refine WP.mono (const64_ok s₁ .x1 _) fun s₂ ⟨v₂, k₂⟩ => ?_
     have hs₂ := hs₁.of_keeps k₂ (by decide)
-    refine WP.mono (st_out hs₂ (o := o + 8 * k) (by omega) (by omega) .x1) fun s₃ ⟨m₃, k₃, _⟩ => ?_
+    refine WP.mono (st_out hs₂ (o := o + 8 * k) (by omega_using [hk]) (by omega_using [ho8]) .x1) fun s₃ ⟨m₃, k₃, _⟩ => ?_
     rw [v₂, k₂.mem] at m₃
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₃.mem := by
-      rw [m₃]; exact writeW_outside _ _ _ (by omega)
+      rw [m₃]; exact writeW_outside _ _ _ (by omega_using [hk, hn])
     refine ⟨fun j hj => ?_, (k₁.trans ((Keeps.regs k₂).trans (k₃.mono (by simp)))),
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_using [h]) (by omega_using [hk, hn, hj]), e₁ j h]
+    · obtain rfl : j = k := by omega_using [hj, h]
       rw [m₃, word_writeW_self]
 
 /-- `[o] = x`. -/

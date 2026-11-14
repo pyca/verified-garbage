@@ -24,21 +24,21 @@ theorem encode4_byte {L : List Nat} (hlen : L.length=256) (hbound : ∀ a∈L,a<
     {s : State} {block i : Nat} (hb : block<16) (hi : i<8)
     (hv : ∀ j<16, vbyte (gathered s) j=BitVec.ofNat 8 (L.getD (16*block+j) 0)) :
     vbyte (packed4 s) i=(bitsToBytes (fieldBits 4 L))[8*block+i]! := by
-  have h0 : L.getD (16*block+2*i) 0<16 := getD_bound (d := 4) (i := 16*block+2*i) hbound (by rw [hlen]; omega)
-  have h1 : L.getD (16*block+(2*i+1)) 0<16 := getD_bound (d := 4) (i := 16*block+(2*i+1)) hbound (by rw [hlen]; omega)
+  have h0 : L.getD (16*block+2*i) 0<16 := getD_bound (d := 4) (i := 16*block+2*i) hbound (by rw [hlen]; omega_using [hb, hi])
+  have h1 : L.getD (16*block+(2*i+1)) 0<16 := getD_bound (d := 4) (i := 16*block+(2*i+1)) hbound (by rw [hlen]; omega_using [hb, hi])
   have n0 : (BitVec.ofNat 8 (L.getD (16*block+2*i) 0)).toNat=L.getD (16*block+2*i) 0 := by
-    rw [BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_ofNat]; omega_using [h0]
   have n1 : (BitVec.ofNat 8 (L.getD (16*block+(2*i+1)) 0)).toNat=L.getD (16*block+(2*i+1)) 0 := by
-    rw [BitVec.toNat_ofNat]; omega
-  rw [packed4_byte s hi,hv (2*i) (by omega),hv (2*i+1) (by omega),
+    rw [BitVec.toNat_ofNat]; omega_using [h1]
+  rw [packed4_byte s hi,hv (2*i) (by omega_using [hi]),hv (2*i+1) (by omega_using [hi]),
     nibble_digits _ _ (by rw [n0]; exact h0) (by rw [n1]; exact h1),n0,n1]
   have hpack := pack_group (d := 4) (c := 2) (nb := 1) (by decide) (by decide)
-    hlen hbound (g := 8*block+i) (t := 0) (by decide) (by omega)
+    hlen hbound (g := 8*block+i) (t := 0) (by decide) (by omega_using [hb, hi])
   simp only [Nat.one_mul,Nat.add_zero,Nat.mul_zero,Nat.pow_zero,Nat.div_one] at hpack
-  rw [hpack,take_drop_eq _ 0 (by rw [hlen]; omega)]
+  rw [hpack,take_drop_eq _ 0 (by rw [hlen]; omega_using [hb, hi])]
   simp only [show List.range 2=[0,1] from rfl,List.map_cons,List.map_nil,Nat.add_zero]
-  rw [show 2*(8*block+i)=16*block+2*i by omega,
-    show 16*block+2*i+1=16*block+(2*i+1) by omega]
+  rw [show 2*(8*block+i)=16*block+2*i by omega_using [],
+    show 16*block+2*i+1=16*block+(2*i+1) by omega_using []]
 
 
 /-- A six-bit packing byte agrees with the corresponding four-field group
@@ -49,15 +49,15 @@ theorem encode6_byte {L : List Nat} (hlen : L.length=256) (hbound : ∀ a∈L,a<
     (hv : ∀ j<16, vbyte (gathered s) j=BitVec.ofNat 8 (L.getD (16*block+j) 0)) :
     vbyte (packed6 s) i=(bitsToBytes (fieldBits 6 L))[12*block+i]! := by
   have bound (k : Nat) (hk : k<4) : L.getD (16*block+(4*(i/3)+k)) 0<64 :=
-    getD_bound (d := 6) (i := 16*block+(4*(i/3)+k)) hbound (by rw [hlen]; omega)
+    getD_bound (d := 6) (i := 16*block+(4*(i/3)+k)) hbound (by rw [hlen]; omega_using [hb, hi, hk])
   have natv (k : Nat) (hk : k<4) :
       (BitVec.ofNat 8 (L.getD (16*block+(4*(i/3)+k)) 0)).toNat=L.getD (16*block+(4*(i/3)+k)) 0 := by
     rw [BitVec.toNat_ofNat]
     have := bound k hk
-    omega
+    omega_using [this]
   rw [packed6_byte s hc.zero hc.idx24 hc.idx25 hc.idx29 hi,
-    hv (4*(i/3)) (by omega),hv (4*(i/3)+1) (by omega),
-    hv (4*(i/3)+2) (by omega),hv (4*(i/3)+3) (by omega)]
+    hv (4*(i/3)) (by omega_using [hi]),hv (4*(i/3)+1) (by omega_using [hi]),
+    hv (4*(i/3)+2) (by omega_using [hi]),hv (4*(i/3)+3) (by omega_using [hi])]
   have b0 := bound 0 (by decide)
   have n0 := natv 0 (by decide)
   simp only [Nat.add_zero] at b0 n0
@@ -67,14 +67,14 @@ theorem encode6_byte {L : List Nat} (hlen : L.length=256) (hbound : ∀ a∈L,a<
     (by rw [natv 3 (by decide)]; exact bound 3 (by decide)),
     n0,natv 1 (by decide),natv 2 (by decide),natv 3 (by decide)]
   have hpack := pack_group (d := 6) (c := 4) (nb := 3) (by decide) (by decide)
-    hlen hbound (g := 4*block+i/3) (t := i%3) (by omega) (by omega)
-  rw [show 3*(4*block+i/3)+i%3=12*block+i by omega] at hpack
-  rw [hpack,take_drop_eq _ 0 (by rw [hlen]; omega)]
+    hlen hbound (g := 4*block+i/3) (t := i%3) (by omega_using []) (by omega_using [hb, hi])
+  rw [show 3*(4*block+i/3)+i%3=12*block+i by omega_using []] at hpack
+  rw [hpack,take_drop_eq _ 0 (by rw [hlen]; omega_using [hb, hi])]
   simp only [show List.range 4=[0,1,2,3] from rfl,List.map_cons,List.map_nil,Nat.add_zero]
-  rw [show 4*(4*block+i/3)=16*block+4*(i/3) by omega,
-    show 16*block+4*(i/3)+1=16*block+(4*(i/3)+1) by omega,
-    show 16*block+4*(i/3)+2=16*block+(4*(i/3)+2) by omega,
-    show 16*block+4*(i/3)+3=16*block+(4*(i/3)+3) by omega]
+  rw [show 4*(4*block+i/3)=16*block+4*(i/3) by omega_using [],
+    show 16*block+4*(i/3)+1=16*block+(4*(i/3)+1) by omega_using [],
+    show 16*block+4*(i/3)+2=16*block+(4*(i/3)+2) by omega_using [],
+    show 16*block+4*(i/3)+3=16*block+(4*(i/3)+3) by omega_using []]
 
 
 /-- The selected vector tail encodes exactly the original polynomial's
@@ -89,7 +89,7 @@ theorem packedVector_spec {g : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g)
   have hv : ∀ j<16, vbyte (gathered s) j=BitVec.ofNat 8
       ((highCoefficients g (polyAt m a)).toList.getD (16*block+j) 0) := by
     intro j hj
-    have hjn : 16*block+j<n := by change 16*block+j<256; omega
+    have hjn : 16*block+j<n := by change 16*block+j<256; omega_using [hb, hj]
     rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by simpa using hjn),Option.getD_some]
     exact gathered_coefficients hg hr hb h hj
   have hlen : (highCoefficients g (polyAt m a)).toList.length=256 := by simp [n]

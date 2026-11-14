@@ -51,9 +51,9 @@ theorem or_byte (b c : Byte) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
   by_cases h0 : i < 1
-  · simp [h0]; omega
-  · simp [h0, show i < 64 by omega, show i - 1 < 64 by omega, show i - 1 < 8 by omega,
-      BitVec.getLsbD_of_ge c (7 + i) (by omega)]
+  · simp [h0]; omega_using [hi]
+  · simp [h0, show i < 64 by omega_using [hi], show i - 1 < 64 by omega_using [hi], show i - 1 < 8 by omega_using [hi],
+      BitVec.getLsbD_of_ge c (7 + i) (by omega_using [h0])]
 
 theorem xor_byte (b m : Byte) :
     ((b.setWidth 64 <<< 1) ^^^ m.setWidth 64).setWidth 8 = (b <<< 1) ^^^ m := by
@@ -61,7 +61,7 @@ theorem xor_byte (b m : Byte) :
   intro i hi
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft, hi, decide_true,
     Bool.true_and]
-  by_cases h0 : i < 1 <;> simp [h0, show i < 64 by omega, show i - 1 < 8 by omega, show i - 1 < 64 by omega]
+  by_cases h0 : i < 1 <;> simp [h0, show i < 64 by omega_using [hi], show i - 1 < 8 by omega_using [hi], show i - 1 < 64 by omega_using [hi]]
 
 theorem mask_all : ∀ c ∈ ([0x87, 0x1b] : List Nat), ∀ n < 256, ((((BitVec.ofNat 8 n).setWidth 64 >>> 7) -
     BitVec.ofNat 64 1) &&& BitVec.ofInt 64 c) ^^^ BitVec.ofInt 64 c =

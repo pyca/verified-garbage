@@ -123,8 +123,8 @@ include h
 
 theorem k64 : 64 ≤ P.K := h.kv.1
 theorem k1024 : P.K ≤ 1024 := h.kv.2
-theorem pl8 : 8 ≤ P.pl := by have := h.mlK; show 8 ≤ P.K - P.ml - 3; omega
-theorem pl_le : P.pl ≤ 1021 := by have := h.k1024; show P.K - P.ml - 3 ≤ 1021; omega
+theorem pl8 : 8 ≤ P.pl := by have := h.mlK; show 8 ≤ P.K - P.ml - 3; omega_using [this]
+theorem pl_le : P.pl ≤ 1021 := by have := h.k1024; show P.K - P.ml - 3 ≤ 1021; omega_using [this]
 theorem rl_le : P.rl ≤ P.pl + 128 := h.rlK
 
 end In
@@ -277,7 +277,7 @@ theorem nonzeroPrefix_fst : ∀ {n : Nat} {R : List Byte} {r : List Byte × Nat}
 theorem scanLen_pos : ∀ {n : Nat} {R : List Byte}, 0 < n → R ≠ [] → 0 < scanLen n R
   | 0, _, h, _ => absurd h (Nat.lt_irrefl 0)
   | _ + 1, [], _, h => absurd rfl h
-  | _ + 1, b :: _, _, _ => by simp only [scanLen]; split <;> omega
+  | _ + 1, b :: _, _, _ => by simp only [scanLen]; split <;> omega_using []
 
 section
 
@@ -308,7 +308,7 @@ theorem accept_of (h : In P σ) (hc : cnt P σ (N P) = P.pl) :
     Spec.RsaPkcs1Enc.nonzeroPrefix P.pl (randB P σ) = some (kept P σ (N P), N P) := by
   have hle : P.pl ≤ (nz (randB P σ)).length := by
     have : (nz ((randB P σ).take (N P))).length = P.pl := hc
-    rw [nz_length_split _ (N P)]; omega
+    rw [nz_length_split _ (N P)]; omega_using [this]
   obtain ⟨r, hr⟩ := VG.Proof.RsaPkcs1Enc.nonzeroPrefix_isSome hle
   have h2 := VG.Proof.RsaPkcs1Enc.used_eq hr
   rw [h.scan] at h2
@@ -690,14 +690,14 @@ theorem body_vp (n : Nat) : VP (I P (n + 1)) step fun σ s =>
     isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → Done P σ s) ∧ (0 < n → I P n σ s) := by
   refine VP.of_imp (p := n + 1 ≤ N P) (fun _ _ h => h.1) fun hn1 => ?_
   refine (step_vp (P := P) (N P - (n + 1))).mono
-    (fun σ s h => ⟨h.2.1, by omega, h.2.2 (by omega)⟩) fun σ s h => ?_
+    (fun σ s h => ⟨h.2.1, by omega_using [hn1], h.2.2 (by omega_using [])⟩) fun σ s h => ?_
   obtain ⟨⟨a, hN, hc⟩, hz⟩ := h
   have hin := a.st.1
   have hstop := VG.Proof.RsaPkcs1Enc.stop_iff (n := P.pl) (r := randB P σ) (j := N P - (n + 1))
     (by rw [hin.scan]; exact hN) hc
   rw [randB_length, hin.scan] at hstop
   have hst : (cnt P σ (N P - (n + 1) + 1) = P.pl ∨ N P - (n + 1) + 1 = P.rl) ↔ n = 0 :=
-    hstop.trans (⟨fun h => by omega, fun h => by omega⟩ : N P = N P - (n + 1) + 1 ↔ n = 0)
+    hstop.trans (⟨fun h => by omega_using [hn1, h], fun h => by omega_using [hn1, h]⟩ : N P = N P - (n + 1) + 1 ↔ n = 0)
   have hle := a.hc
   refine ⟨?_, fun h0 => ?_, fun hp => ?_⟩
   · rw [eval_ne, hz]
@@ -712,7 +712,7 @@ theorem body_vp (n : Nat) : VP (I P (n + 1)) step fun σ s =>
     exact a
   · have hn := mt hst.mp (by omega_arith)
     have e : N P - (n + 1) + 1 = N P - n := by omega_arith
-    refine ⟨by omega, by rw [← e]; exact a, fun _ => ?_⟩
+    refine ⟨by omega_using [hn1], by rw [← e]; exact a, fun _ => ?_⟩
     rw [← e]
     rcases Nat.lt_or_eq_of_le hle with h | h
     · exact h
@@ -793,13 +793,13 @@ theorem readW64_split (m : Mem) (a : Addr) :
   rw [BitVec.getLsbD_append]
   split
   · simp [*]
-  · simp [show i - 32 < 32 by omega]; congr 1; omega
+  · simp [show i - 32 < 32 by omega_using [hi]]; congr 1; omega_arith
 
 theorem zero_append_ofNat {u : Nat} (hu : u < 2 ^ 32) :
     (0 : BitVec 32) ++ BitVec.ofNat 32 u = BitVec.ofNat 64 u := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hu,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [hu])]
   simp
 
 /-- The four words of `tape`, as halves of its two. -/
@@ -823,7 +823,7 @@ theorem tape4 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
       m'.readW (a + BitVec.ofNat 64 8) 32 = w2 ∧ m'.readW (a + BitVec.ofNat 64 12) 32 = w3 := by
   have w : ∀ (m : Mem) (d e : Nat) (v : BitVec 32), d + 4 ≤ e ∨ e + 4 ≤ d → d + 4 ≤ 16 → e + 4 ≤ 16 →
       (m.writeW (a + BitVec.ofNat 64 e) v).readW (a + BitVec.ofNat 64 d) 32 = m.readW (a + BitVec.ofNat 64 d) 32 :=
-    fun m d e v h hd he => Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+    fun m d e v h hd he => Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hd]) (by omega_using [he])) (by decide)
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [w _ 0 12 _ (by decide) (by decide) (by decide), w _ 0 8 _ (by decide) (by decide) (by decide),
       w _ 0 4 _ (by decide) (by decide) (by decide)]
@@ -849,7 +849,7 @@ theorem TapeW.frame {m m' : Mem} {w0 w2 : BitVec 32} {rs : List Region} (h : Tap
 
 theorem BufL.frame {s t : State} {l : List Byte} {rs : List Region} (h : BufL P s l) (hf : Frame rs s.mem t.mem)
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨P.lay.fr oBuf, l.length⟩ r) : BufL P t l := fun j hj => by
-  rw [hf.byte1 (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega) (by omega)))]
+  rw [hf.byte1 (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using [hj])))]
   exact h j hj
 
 /-! ## Where the buffers are -/
@@ -941,8 +941,8 @@ theorem wp_strT (hs : S P σ s) (h7 : s.gpr .r7 = P.tape) {d : Nat} (hd : d + 4 
       WP isa (.block is) t Q) :
     WP isa (.block (.str r .r7 d :: is)) s Q := by
   have hf := hs.1.fitT
-  refine wp_str (by omega) (a := State.addr P.tape + BitVec.ofNat 64 d) (by rw [h7]; exact addr_add (by omega))
-    ⟨P.TAPE, by rw [hs.2.wr, hs.2.ok.wr]; simp, Offset.contains_base _ hd (by omega)⟩ fun t u => k t ⟨hs.1, ?_⟩ u
+  refine wp_str (by omega_using [hd]) (a := State.addr P.tape + BitVec.ofNat 64 d) (by rw [h7]; exact addr_add (by omega_using [hd, hf]))
+    ⟨P.TAPE, by rw [hs.2.wr, hs.2.ok.wr]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩ fun t u => k t ⟨hs.1, ?_⟩ u
   refine hs.2.write (rs := [⟨State.addr P.tape + BitVec.ofNat 64 d, 4⟩]) ?_ (fun r hr => ?_) u.rd u.wr u.sp
   · rw [u.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   · simp only [List.mem_singleton] at hr; subst hr
@@ -970,7 +970,7 @@ theorem tapeStore_wp (h : C0 P σ s) : WP isa (.block tapeStore) s (C1 P σ) := 
         (Offset.contains_base _ (by decide) (by decide))
     exact buf.frame fr fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hs.1.tapeFr (by show oBuf + cnt P σ (N P) ≤ frameBytes + 56; simp only [oBuf, frameBytes]; omega)).symm
+      exact (hs.1.tapeFr (by show oBuf + cnt P σ (N P) ≤ frameBytes + 56; simp only [oBuf, frameBytes]; omega_using [hf, hpl])).symm
   · have e := tape4 s.mem (State.addr P.tape) (s.gpr .r4) 0 0 0
     have v6 : t1.gpr .r6 = 0 := u1.gpr
     rw [m5.mem, m4.mem, m3.mem, m2.mem, u1.mem, m4.gpr, m3.gpr, m2.gpr, v6, g1 _ (by decide)]
@@ -986,10 +986,10 @@ theorem K1.frameFr (h : K1 P σ s) {t : State} (ht : P.lay.St σ t) {d : Nat} (h
   refine ⟨⟨hs.1, ht⟩, hf, fun j hj => ?_, tw.frame (rs := [⟨P.lay.fr d, 4⟩]) (by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hs.1.tapeFr (by simp only [oBuf, frameBytes] at hd ⊢; omega)⟩
+      exact hs.1.tapeFr (by simp only [oBuf, frameBytes] at hd ⊢; omega_using [hd])⟩
   have hj' : j < P.pl := by rw [← hf]; exact hj
-  rw [hm, Lay.byte_fr_other _ _ _ (by simp only [oBuf] at hd ⊢; omega) (by simp only [oBuf]; omega)
-    (by simp only [oBuf] at hd; omega)]
+  rw [hm, Lay.byte_fr_other _ _ _ (by simp only [oBuf] at hd ⊢; omega_using [hd]) (by simp only [oBuf]; omega_using [hpl, hj'])
+    (by simp only [oBuf] at hd; omega_using [hd])]
   exact buf j hj
 
 theorem callArgs_wp (h : C1 P σ s) : WP isa (.block callArgs) s (C2 P σ) := by
@@ -1047,10 +1047,10 @@ theorem callArgs_wp (h : C1 P σ s) : WP isa (.block callArgs) s (C2 P σ) := by
     rw [mm, m11]
     have w : ∀ (m : Mem) (d e : Nat) (v : BitVec 32), d + 4 ≤ e ∨ e + 4 ≤ d → d + 4 ≤ 40 → e + 4 ≤ 40 →
         (m.writeW (P.lay.fr e) v).readW (P.lay.fr d) 32 = m.readW (P.lay.fr d) 32 :=
-      fun m d e v h hd he => Lay.readW_fr_other _ _ _ h (by omega) (by omega)
+      fun m d e v h hd he => Lay.readW_fr_other _ _ _ h (by omega_using [hd]) (by omega_using [he])
     have wr : ∀ (m : Mem) (d : Nat) (v : BitVec 32), (m.writeW (P.lay.fr d) v).readW (P.lay.fr d) 32 = v :=
       fun m d v => Mem.readW_writeW_self32 _ _ _
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9) with
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [w _ _ _ _ (by decide) (by decide) (by decide), m10, w _ _ _ _ (by decide) (by decide) (by decide), m9,
         w _ _ _ _ (by decide) (by decide) (by decide), m8, w _ _ _ _ (by decide) (by decide) (by decide), m7.mem,

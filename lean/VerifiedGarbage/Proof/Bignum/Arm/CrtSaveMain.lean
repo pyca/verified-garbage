@@ -35,10 +35,10 @@ theorem crt_saveMain_ready (s : State) {base : BitVec 32} {size w : Nat}
         exact (Offset.disjoint_base (State.addr s.sp) (d := 8) (n := 4) (k := 4) (by decide) (by decide)).symm)
     rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr)
   have eqP : WorkspaceEq (State.addr (crtP base w)) (8 * workspaceWords w) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := h.context.p.nowrap; omega) frame
+    WorkspaceEq.of_frame (by have := h.context.p.nowrap; omega_using [this]) frame
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep _ (by simp [crtRegions]))
   have eqQ : WorkspaceEq (State.addr (crtQ base w)) (8 * workspaceWords w) s.mem t.mem :=
-    WorkspaceEq.of_frame (by have := h.context.q.nowrap; omega) frame
+    WorkspaceEq.of_frame (by have := h.context.q.nowrap; omega_using [this]) frame
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact sep _ (by simp [crtRegions]))
   refine ⟨⟨h.workspace.congr rest.wr, h.context.congr rest.wr, ready, h.main.congr eq,
     h.p.congr eqP, h.q.congr eqQ, by rw [rest.sp]; exact h.stackFits,

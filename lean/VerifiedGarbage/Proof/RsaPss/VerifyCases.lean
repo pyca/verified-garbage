@@ -46,7 +46,7 @@ theorem lz_le : ∀ l : List Byte, lz l ≤ l.length
   | [] => Nat.le_refl _
   | b :: bs => by
     have := lz_le bs
-    simp only [lz, List.length_cons]; split <;> omega
+    simp only [lz, List.length_cons]; split <;> omega_arith
 
 theorem getD_lt_lz : ∀ {l : List Byte} {j : Nat}, j < lz l → l.getD j 0 = 0
   | [], _, h => by simp [lz] at h
@@ -55,7 +55,7 @@ theorem getD_lt_lz : ∀ {l : List Byte} {j : Nat}, j < lz l → l.getD j 0 = 0
     · simp only [lz, hb, ite_true] at h
       cases j with
       | zero => simp [hb]
-      | succ j => simpa using getD_lt_lz (l := bs) (by omega)
+      | succ j => simpa using getD_lt_lz (l := bs) (by omega_using [h])
     · simp only [lz, ifn hb] at h; omega
 
 theorem getD_lz_ne : ∀ {l : List Byte}, lz l < l.length → l.getD (lz l) 0 ≠ 0
@@ -63,13 +63,13 @@ theorem getD_lz_ne : ∀ {l : List Byte}, lz l < l.length → l.getD (lz l) 0 �
   | b :: bs, h => by
     by_cases hb : b = 0
     · simp only [lz, hb, ite_true, List.length_cons] at h ⊢
-      simpa using getD_lz_ne (l := bs) (by omega)
+      simpa using getD_lz_ne (l := bs) (by omega_using [h])
     · simp only [lz, ifn hb]; simpa using hb
 
 theorem getLast?_eq {l : List Byte} (hl : l ≠ []) (b : Byte) :
     (l.getLast? ≠ some b) ↔ l.getD (l.length - 1) 0 ≠ b := by
   rw [List.getLast?_eq_some_getLast hl, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (by have := List.length_pos_iff.mpr hl; omega), List.getLast_eq_getElem]
+    List.getElem?_eq_getElem (by have := List.length_pos_iff.mpr hl; omega_using [this]), List.getLast_eq_getElem]
   simp
 
 theorem clearTop_eq_iff (z : Nat) {l : List Byte} (hl : l ≠ []) :
@@ -130,17 +130,17 @@ theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte}
   generalize hh : (em.drop L).take H.len = h
   generalize hdb : clearTop z (xorBytes (em.take L) (mgf1 G h L)) = db
   have hdbl : db.length = L := by
-    rw [← hdb, clearTop_length, xorBytes_length, mgf1_length hG]; simp; omega
-  have hL0 : 0 < L := by omega
-  have hne : em ≠ [] := fun h => by rw [h] at hl; simp at hl; omega
+    rw [← hdb, clearTop_length, xorBytes_length, mgf1_length hG]; simp; omega_using [hl, hL]
+  have hL0 : 0 < L := by omega_using [hfit, hL]
+  have hne : em ≠ [] := fun h => by rw [h] at hl; simp at hl; omega_using [hl, hfit]
   have h0 : (em.take L).getD 0 0 = em.getD 0 0 := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_take, ifp hL0]
   have hte : em.take L ≠ [] := fun h => by
-    have := congrArg List.length h; rw [List.length_take, hl] at this; simp at this; omega
+    have := congrArg List.length h; rw [List.length_take, hl] at this; simp at this; omega_using [hfit, hL, this]
   have hlz := lz_le db
   unfold verifyEncoding
   simp only [hE, hz, hL, hh, hdb]
-  rw [ifn (by rw [hm, hl]; omega)]
+  rw [ifn (by rw [hm, hl]; omega_using [hfit])]
   by_cases h1 : em.getD (E - 1) 0 = 0xbc
   · rw [ifn (by rw [getLast?_eq hne, hl]; simpa using h1)]
     by_cases h2 : em.getD 0 0 &&& ~~~((0xFF : Byte) >>> z) = 0
@@ -149,7 +149,7 @@ theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte}
       split
       · rename_i salt heq
         have hlt : lz db < L := by
-          have := congrArg List.length heq; simp at this; omega
+          have := congrArg List.length heq; simp at this; omega_using [hdbl, this]
         have h4 : db.getD (lz db) 0 = 1 := by
           have := congrArg (·.getD 0 0) heq
           simpa [List.getD_eq_getElem?_getD, List.getElem?_drop] using this
@@ -157,7 +157,7 @@ theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte}
           have := congrArg List.tail heq; simpa [List.tail_drop] using this.symm
         subst hs
         have hsl : (db.drop (lz db + 1)).length = L - 1 - lz db := by
-          rw [List.length_drop, hdbl]; omega
+          rw [List.length_drop, hdbl]; omega_using []
         simp only [Bool.and_eq_true, beq_iff_eq, hsl, h1, h2, hlt, h4, true_and]
         cases sLen <;> simp only [Option.all_none, Option.all_some, beq_iff_eq, true_and, true_or,
           reduceCtorEq, false_or, Option.some.injEq]
@@ -165,7 +165,7 @@ theorem verifyEncoding_bytes₂ (H : Hash) (hG : Valid G) {mHash em : List Byte}
         simp only [Bool.false_eq_true, false_iff, not_and]
         intro _ _ hlt h4
         exfalso
-        have hlt' : lz db < db.length := by omega
+        have hlt' : lz db < db.length := by omega_using [hdbl, hlt]
         refine hno (db.drop (lz db + 1)) ?_
         rw [List.drop_eq_getElem_cons hlt']
         congr 1
@@ -182,7 +182,7 @@ theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :
   split
   · rw [ifn]
     simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq]
-    intro ⟨⟨_, h⟩, _⟩; omega
+    intro ⟨⟨_, h⟩, _⟩; omega_arith
   · rfl
 
 /-- A modulus whose first octet is zero verifies nothing. -/
@@ -228,7 +228,7 @@ theorem verify_bytes₂ (H : Hash) (hG : Valid G) {n₀ : Byte} {rest eB mHash s
       EncOk₂ G H mHash (((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
         emLen (8 * emLen - emBits) sLen := by
   unfold verify
-  simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, show (n₀ :: rest).length - emLen = lo by omega]
+  simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, show (n₀ :: rest).length - emLen = lo by omega_using [hk]]
   cases hp : Rsa.publicOpChecked (n₀ :: rest) eB sB with
   | none =>
     simp only [Option.getD_none, Bool.false_eq_true, false_iff, not_and]
@@ -239,9 +239,9 @@ theorem verify_bytes₂ (H : Hash) (hG : Valid G) {n₀ : Byte} {rest eB mHash s
   | some x =>
     have hx := publicOpChecked_length' hp
     simp only [Option.getD_some, Bool.and_eq_true, beq_iff_eq]
-    rw [← he, verifyEncoding_bytes₂ G H hG hm (by rw [List.length_drop, hx]; omega) (by omega), he]
+    rw [← he, verifyEncoding_bytes₂ G H hG hm (by rw [List.length_drop, hx]; omega_using [he, hk]) (by omega_using [he, hfit]), he]
     refine and_congr_left fun _ => ?_
-    rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+    rcases (show lo = 0 ∨ lo = 1 by omega_using [hlo]) with rfl | rfl
     · simp [zeros]
     · obtain ⟨b, xs, rfl⟩ := List.exists_cons_of_ne_nil (show x ≠ [] from fun h => by simp [h] at hx)
       simp [zeros]

@@ -27,10 +27,10 @@ theorem and_m2_eq_zero (x : BitVec 64) : x &&& (BitVec.allOnes 64 - 1) = 0 ↔ x
       · have := congrArg (fun y : BitVec 64 => y.getLsbD i) h
         simp only [BitVec.getLsbD_and, hmb i hi64 hi, Bool.and_true] at this
         rw [BitVec.testBit_toNat]; simpa using this
-      · exact Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega)))
-    omega
+      · exact Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega_using [hi64])))
+    omega_using [this]
   · intro h
-    rcases (by omega : x.toNat = 0 ∨ x.toNat = 1) with h | h
+    rcases (by omega_using [h] : x.toNat = 0 ∨ x.toNat = 1) with h | h
     · rw [show x = 0#64 from BitVec.eq_of_toNat_eq h]; decide
     · rw [show x = 1#64 from BitVec.eq_of_toNat_eq h]; decide
 
@@ -39,7 +39,7 @@ are zero. -/
 theorem wv_le_one {m : Mem} {p : Addr} {d w : Nat} (hw : 1 ≤ w) :
     wv m p d w ≤ 1 ↔ (word m p d &&& (BitVec.allOnes 64 - 1) = 0 ∧ ∀ i, 1 ≤ i → i < w → word m p (d + 8 * i) = 0) := by
   have e := wv_add m p d 1 (w - 1)
-  rw [show 1 + (w - 1) = w by omega] at e
+  rw [show 1 + (w - 1) = w by omega_using [hw]] at e
   have h1 : wv m p d 1 = (word m p d).toNat := by simp [wv]
   rw [e, h1, and_m2_eq_zero]
   have hz := wv_eq_zero_iff m p (d + 8 * 1) (w - 1)
@@ -48,13 +48,13 @@ theorem wv_le_one {m : Mem} {p : Addr} {d w : Nat} (hw : 1 ≤ w) :
     have h2 : wv m p (d + 8 * 1) (w - 1) = 0 := by
       rcases Nat.eq_zero_or_pos (wv m p (d + 8 * 1) (w - 1)) with h0 | h0
       · exact h0
-      · have := Nat.mul_le_mul_left (2 ^ (64 * 1)) h0; simp at this; omega
-    refine ⟨by omega, fun i hi hiw => ?_⟩
-    have := hz.mp h2 (i - 1) (by omega)
-    rwa [show d + 8 * 1 + 8 * (i - 1) = d + 8 * i by omega] at this
+      · have := Nat.mul_le_mul_left (2 ^ (64 * 1)) h0; simp at this; omega_using [h]
+    refine ⟨by omega_using [h], fun i hi hiw => ?_⟩
+    have := hz.mp h2 (i - 1) (by omega_using [hi, hiw])
+    rwa [show d + 8 * 1 + 8 * (i - 1) = d + 8 * i by omega_using [hi]] at this
   · rintro ⟨h0, h⟩
-    rw [hz.mpr fun q hq => by rw [show d + 8 * 1 + 8 * q = d + 8 * (q + 1) by omega]; exact h (q + 1) (by omega) (by omega)]
-    omega
+    rw [hz.mpr fun q hq => by rw [show d + 8 * 1 + 8 * q = d + 8 * (q + 1) by omega_using []]; exact h (q + 1) (by omega_using []) (by omega_using [hq])]
+    omega_using [h0]
 
 /-- The witness from `x < 2^(64 w)` for the odd `c` with `c − 1` of
 `64 w` bits. -/
@@ -64,7 +64,7 @@ theorem witness_eq {c x w : Nat} (hc : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength
       (if decide (2 ≤ x) && decide (x + (1 - x % 2) < c) then x else (x ||| 2) % 2 ^ (64 * w - 1),
         decide (2 ≤ x) && decide (x + (1 - x % 2) < c)) := by
   have e : (decide (2 ≤ x) && decide (x + (1 - x % 2) < c)) = decide (2 ≤ x ∧ x < c - 1) := by
-    rw [← Bool.decide_and]; exact decide_eq_decide.mpr (by omega)
+    rw [← Bool.decide_and]; exact decide_eq_decide.mpr (by omega_using [hc])
   rw [e]
   unfold Spec.RsaKeyGen.witness
   simp only [hb, Nat.mod_eq_of_lt hx]
@@ -75,7 +75,7 @@ theorem absDiff_of {D p c P : Nat} {b : Bool} (h : D + p = c + P * b.toNat) (hD 
     (if b then P - D else D) = Spec.RsaKeyGen.absDiff c p := by
   unfold Spec.RsaKeyGen.absDiff
   cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero,
-    Bool.false_eq_true, ↓reduceIte] at h ⊢ <;> split <;> omega
+    Bool.false_eq_true, ↓reduceIte] at h ⊢ <;> split <;> omega_arith
 
 /-- A word shifted left `i` bits, `y = (x mod 2^(k + 1)) 2^i` for `k + i = 63`,
 and its next bit: what `add rdx, rdx` shifts out and leaves. -/
@@ -98,9 +98,9 @@ theorem shift_step (x k i : Nat) (hki : k + i = 63) :
   have hd := Nat.div_add_mod (x / 2 ^ k) 2
   generalize x % 2 ^ k * 2 ^ i = M at hlow ⊢
   generalize x / 2 ^ k % 2 = b at hb hd ⊢
-  refine ⟨by omega, ?_, by omega, by omega⟩
-  rcases (show b = 0 ∨ b = 1 by omega) with rfl | rfl
-  · rw [decide_eq_false (by omega)]; rfl
-  · rw [decide_eq_true (by omega)]; rfl
+  refine ⟨by omega_using [hlow, hb], ?_, by omega_using [hlow], by omega_using [hd]⟩
+  rcases (show b = 0 ∨ b = 1 by omega_using [hb]) with rfl | rfl
+  · rw [decide_eq_false (by omega_using [hlow])]; rfl
+  · rw [decide_eq_true (by omega_using [])]; rfl
 
 end VG.Proof.RsaKeyGen

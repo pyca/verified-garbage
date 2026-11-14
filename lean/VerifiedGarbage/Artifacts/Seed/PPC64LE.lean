@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
 
-/-! # SEED artifacts on PPC64LE -/
+/-! # SEED on PPC64LE -/
 
 @[expose] public section
 

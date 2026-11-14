@@ -78,7 +78,7 @@ theorem pIn_lt (s0 : State) : pIn s0 < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
 theorem qIn_lt (s0 : State) : qIn s0 < 2 ^ (8 * pLen s0) := os2ip_bytes_lt _ _ _
 
 theorem eIn_lt {s0 : State} (h : PreC s0) : eIn s0 < 2 ^ 64 :=
-  Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega))
+  Nat.lt_of_lt_of_le (os2ip_bytes_lt _ _ _) (Nat.pow_le_pow_right (by decide) (by have := h.e2; omega_using [this]))
 
 theorem kP_lt (s0 : State) : kP s0 < 2 ^ (8 * pLen s0) := by
   have := pIn_lt s0; have := qIn_lt s0; simp only [kP]; split <;> with_reducible assumption
@@ -120,11 +120,11 @@ theorem front_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c :
     ((o4 _ (by decide) (by decide)).trans k3.two) ((o4 _ (by decide) (by decide)).trans k3.three)
     ((o4 _ (by decide) (by decide)).trans zero3) (by simp only [nm]; rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
     (by simp only [nm]; rw [vQm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQ)
-    (c4.word_zero (by decide) (by decide) (by omega))) fun t ⟨c5, o5, vL, dv⟩ => ?_
+    (c4.word_zero (by decide) (by decide) (by omega_using []))) fun t ⟨c5, o5, vL, dv⟩ => ?_
   simp only [nm] at o5 vL
   have k : ∀ j < nArr, j ∉ VG.Proof.RsaKeyGen.RISCV64.Key.lcmArrs → j ∉ primesArrs →
       num t.mem (bOf s0) (wOf s0) j = num t3.mem (bOf s0) (wOf s0) j := fun j hj h5 h4 => by rw [o5 j hj h5, o4 j hj h4]
-  have h64 : 64 * wOf s0 = 16 * pLen s0 := by omega
+  have h64 : 64 * wOf s0 = 16 * pLen s0 := by omega_using [w4]
   refine ⟨c5.all, dv, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k _ (by decide) (by decide) (by decide)]; exact k3.one
   · rw [k _ (by decide) (by decide) (by decide)]; exact k3.two
@@ -192,7 +192,7 @@ theorem body_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : 
       then 1 else 0 := by
     vsimp [p9, p8, x7]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (maskPart_ok k10 (by rw [g0]; omega) (flag_le g1) (by rw [g3]; omega) (flag_le g5)
+  refine WP.mono (maskPart_ok k10 (by rw [g0]; omega_using []) (flag_le g1) (by rw [g3]; omega_using []) (flag_le g5)
     (flag_le g6) (flag_le g7)) fun t11 ⟨V11, F11, k11, o11, p11, x8⟩ => ?_
   have vD9 : V9 aD = V6 aD := by vsimp [o9, o8, o7]
   have vTop : V10 aTop = 2 ^ (16 * pLen s0 - 1) := by vsimp [o10, o9, o8, o7, o6, top5]
@@ -221,5 +221,48 @@ theorem body_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : 
   · rw [k11.arrs _ (by decide)]; vsimp [o11, o10, vDP, o8, o7, o6, pm5]
   · rw [k11.arrs _ (by decide)]; vsimp [o11, o10, vDQ, o8, o7, o6, qm5]
   · rw [k11.arrs _ (by decide)]; vsimp [o11, o10, o9]
+
+/-- The body through `dPart`: `KE` (for the constant-time proof's cut after
+the inverse of `dPart`'s branch). -/
+theorem dFront_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ha7 : s.gpr .a7 = stackArg s0 7) :
+    WP isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart, dPart]))) s fun t => ∃ V F, KE s0 V F t := by
+  have hel := eIn_lt h
+  rw [show setup :: loads :: (consts ++ [primes, lcmPart, dPart]) =
+      (setup :: loads :: (consts ++ [primes, lcmPart])) ++ [dPart] by simp,
+    wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
+  refine WP.mono (front_ok h c ha7) fun t5 ⟨c5, dv, one5, two5, three5, zero5, _, _, _, e5, _⟩ => ?_
+  exact WP.mono (dPart_ok h (KE.of_st c5 dv) (by rw [e5]; exact hel) one5 two5 three5 zero5)
+    fun t ⟨V, F, k, _⟩ => ⟨V, F, k⟩
+
+/-- The body through `crtPart`: `KE` (for the constant-time proof's cut after
+the last inverse). -/
+theorem crtFront_ok [VG.Proof.Rsa.RISCV64.InvLaw] {s0 s : State} (h : PreC s0) (c : CB s0 s0.mem s)
+    (ha7 : s.gpr .a7 = stackArg s0 7) :
+    WP isa (seqs (setup :: loads :: (consts ++ [primes, lcmPart, dPart, smallPart, qinvPart, crtPart]))) s
+      fun t => ∃ V F, KE s0 V F t := by
+  have hpl := kP_lt s0
+  have hql := kQ_lt s0
+  have hel := eIn_lt h
+  rw [show setup :: loads :: (consts ++ [primes, lcmPart, dPart, smallPart, qinvPart, crtPart]) =
+      (setup :: loads :: (consts ++ [primes, lcmPart])) ++ [dPart, smallPart, qinvPart, crtPart] by simp,
+    wp_seqs_append (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)]
+  refine WP.mono (front_ok h c ha7) fun t5 ⟨c5, dv, one5, two5, three5, zero5, c5', c335, top5, e5, p5, q5, pm5,
+    qm5, l5⟩ => ?_
+  have k5 := KE.of_st c5 dv
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (dPart_ok h k5 (by rw [e5]; exact hel) one5 two5 three5 zero5)
+    fun t6 ⟨V6, F6, k6, o6, p6, x3, x5, x6, vD⟩ => ?_
+  simp only [e5, l5] at x3 x5 x6 vD
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (smallPart_ok k6 (flag_le x6)) fun t7 ⟨V7, F7, k7, o7, p7, x7⟩ => ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  have vP7 : V7 aP = kP s0 := by vsimp [o7, o6, p5]
+  have vQ7 : V7 aQ = kQ s0 := by vsimp [o7, o6, q5]
+  refine WP.mono (qinvPart_ok h k7 (by vsimp [o7, o6, one5]) (by vsimp [o7, o6, three5])
+    (by vsimp [o7, o6, zero5]) (by rw [vP7]; exact hpl) (by rw [vQ7]; exact hql))
+    fun t8 ⟨V8, F8, k8, o8, p8, y0, y1, xl, xd⟩ => ?_
+  exact WP.mono (crtPart_ok k8 (by vsimp [o8, o7, o6, one5]) (by vsimp [o8, o7, o6, zero5]))
+    fun t9 ⟨V9, F9, k9, _⟩ => ⟨V9, F9, k9⟩
 
 end VG.Proof.RsaKeyGen.RISCV64.Key

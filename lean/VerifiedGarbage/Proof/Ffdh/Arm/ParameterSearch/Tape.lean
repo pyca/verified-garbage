@@ -19,37 +19,37 @@ theorem SearchParams.source_addr (p : SearchParams) (used : Nat)
     State.addr (p.c.tape + BitVec.ofNat 32 used) = off (State.addr p.c.tape) used := by
   have := p.c.tapeFits
   have := p.width_bounds.1
-  exact VG.Arm.addr_add (by omega)
+  exact VG.Arm.addr_add (by omega_arith)
 
 theorem SearchParams.source_fits (p : SearchParams) (used : Nat)
     (room : used + p.c.length ≤ p.c.bytes.length) :
     (p.c.tape + BitVec.ofNat 32 used).toNat + (p.c.bytes.length - used) ≤ 2 ^ 32 := by
   have width := p.width_bounds.1
   have tape := p.c.tapeFits
-  have usedFit : used < 2 ^ 32 := by have := p.c.tapeCount; omega
-  have startFit : p.c.tape.toNat + used < 2 ^ 32 := by omega
+  have usedFit : used < 2 ^ 32 := by have := p.c.tapeCount; omega_using [room, width, tape]
+  have startFit : p.c.tape.toNat + used < 2 ^ 32 := by omega_using [room, width, tape]
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt usedFit, Nat.mod_eq_of_lt startFit]
-  omega
+  omega_using [room, tape]
 
 theorem SearchParams.source_sub (p : SearchParams) (used : Nat)
     (room : used + p.c.length ≤ p.c.bytes.length) :
     (⟨State.addr (p.c.tape + BitVec.ofNat 32 used), p.c.bytes.length - used⟩ : Region).Sub
       ⟨State.addr p.c.tape, p.c.bytes.length⟩ := by
   rw [p.source_addr used room]
-  exact Offset.sub_base _ (by omega)
+  exact Offset.sub_base _ (by omega_using [room])
 
 theorem SearchLive.source_read {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) (room : used + p.c.length ≤ p.c.bytes.length) :
     InRegions (s.rd ++ s.wr) (State.addr (p.c.tape + BitVec.ofNat 32 used)) (p.c.bytes.length - used) := by
   rw [p.source_addr used room]
-  exact VG.CallLay.inRegions_sub h.buffers.tapeRead (by omega) (by have := p.c.tapeCount; omega)
+  exact VG.CallLay.inRegions_sub h.buffers.tapeRead (by omega_using [room]) (by have := p.c.tapeCount; omega_using [this])
 
 theorem SearchLive.source_bytes {p : SearchParams} {used remaining : Nat} {s : State}
     (h : SearchLive p used remaining s) (room : used + p.c.length ≤ p.c.bytes.length) :
     Spec.Rsa.bytesAt s.mem (State.addr (p.c.tape + BitVec.ofNat 32 used)) (p.c.bytes.length - used) = p.c.bytes.drop used := by
   rw [p.source_addr used room]
   have slice := VG.Proof.Dsa.bytesAt_slice s.mem (State.addr p.c.tape)
-    (offset := used) (len := p.c.bytes.length - used) (by omega : used + (p.c.bytes.length - used) ≤ p.c.bytes.length)
+    (offset := used) (len := p.c.bytes.length - used) (by omega_using [room] : used + (p.c.bytes.length - used) ≤ p.c.bytes.length)
   rw [h.buffers.tapeBytes] at slice
   have taken : (p.c.bytes.drop used).take (p.c.bytes.length - used) = p.c.bytes.drop used := by
     rw [← (List.length_drop (i := used) (l := p.c.bytes)), List.take_length]

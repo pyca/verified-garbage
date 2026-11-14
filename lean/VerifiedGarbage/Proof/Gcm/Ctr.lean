@@ -78,16 +78,16 @@ theorem getD_flatMap_toBytes (L : List Block) :
     · rw [List.getElem?_append_left (by rw [Cmac.toBytes_length]; exact h), ← List.getD_eq_getElem?_getD,
         Nat.div_eq_of_lt h, Nat.mod_eq_of_lt h]
       rfl
-    · rw [List.getElem?_append_right (by rw [Cmac.toBytes_length]; omega), Cmac.toBytes_length,
-        ← List.getD_eq_getElem?_getD, ih (i - 16) (by simp at hi; omega)]
-      obtain ⟨j, rfl⟩ : ∃ j, i = j + 16 := ⟨i - 16, by omega⟩
+    · rw [List.getElem?_append_right (by rw [Cmac.toBytes_length]; omega_using [h]), Cmac.toBytes_length,
+        ← List.getD_eq_getElem?_getD, ih (i - 16) (by simp at hi; omega_using [hi, h])]
+      obtain ⟨j, rfl⟩ : ∃ j, i = j + 16 := ⟨i - 16, by omega_using [h]⟩
       rw [Nat.add_sub_cancel, Nat.add_div_right _ (by decide), Nat.add_mod_right]
       rfl
 
 theorem length_flatMap_toBytes (L : List Block) : (L.flatMap toBytes).length = 16 * L.length := by
   induction L with
   | nil => rfl
-  | cons a L ih => rw [List.flatMap_cons, List.length_append, ih, Cmac.toBytes_length]; simp; omega
+  | cons a L ih => rw [List.flatMap_cons, List.length_append, ih, Cmac.toBytes_length]; simp; omega_using []
 
 theorem getD_bytesAt' (m : Mem) (p : Addr) {n k : Nat} (hk : k < n) :
     (bytesAt m p n).getD k 0 = m (p + BitVec.ofNat 64 k) := by
@@ -108,20 +108,20 @@ theorem gctr_eq (ciph : Block → Block) (icb : Block) (x : List Byte) :
   have hlen : ((keystream ciph icb ((x.length + 15) / 16)).flatMap toBytes).length =
       16 * ((x.length + 15) / 16) := by
     rw [length_flatMap_toBytes]; simp [keystream]
-  refine list_ext (by simp [gctr, length_xorKs, hlen]; omega) fun i hi => ?_
+  refine list_ext (by simp [gctr, length_xorKs, hlen]; omega_using []) fun i hi => ?_
   simp only [gctr, List.length_zipWith] at hi
-  have hix : i < x.length := by omega
+  have hix : i < x.length := by omega_using [hi]
   rw [getD_xorKs _ _ _ _ hix, Nat.zero_add, gctr, List.getD_eq_getElem?_getD, List.getElem?_zipWith,
-    List.getElem?_eq_getElem hix, List.getElem?_eq_getElem (by omega)]
+    List.getElem?_eq_getElem hix, List.getElem?_eq_getElem (by omega_using [hi])]
   simp only [Option.getD_some]
   congr 1
   · simp [List.getD_eq_getElem?_getD, hix]
   · have := getD_flatMap_toBytes (keystream ciph icb ((x.length + 15) / 16)) i
-      (by simp [keystream]; omega)
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some] at this
+      (by simp [keystream]; omega_using [hi])
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_using [hi]), Option.getD_some] at this
     rw [this, ksByte]
     congr 2
-    simp [keystream, List.getD_eq_getElem?_getD, show i / 16 < (x.length + 15) / 16 by omega]
+    simp [keystream, List.getD_eq_getElem?_getD, show i / 16 < (x.length + 15) / 16 by omega_using [hi]]
 
 /-- `GCTR` of a text given in two pieces. -/
 theorem gctr_append (ciph : Block → Block) (icb : Block) (p d : List Byte) :
@@ -176,15 +176,15 @@ theorem ctr_head {m : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Block}
     List.zipWith (· ^^^ ·) d (bytesAt m (ks + BitVec.ofNat 64 (n % 16)) d.length) = xorKs ciph icb n d := by
   refine zipWith_eq_xorKs (Cmac.bytesAt_length _ _ _) fun k hk' => ?_
   rw [getD_bytesAt' _ _ hk', BitVec.add_assoc, ← BitVec.ofNat_add,
-    bytes_toBytes_blockAt m ks (k := n % 16 + k) (by omega), h.2 h0, ksByte,
-    show (n + k) / 16 = n / 16 by omega, show (n + k) % 16 = n % 16 + k by omega]
+    bytes_toBytes_blockAt m ks (k := n % 16 + k) (by omega_using [hk, hk']), h.2 h0, ksByte,
+    show (n + k) / 16 = n / 16 by omega_using [hk, hk'], show (n + k) % 16 = n % 16 + k by omega_using [hk, hk']]
 
 /-- Within a keystream block, the state is that for `n + k` bytes. -/
 theorem Ctr.head {m : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : Block} {n k : Nat}
     (h : Ctr m cb ks ciph icb n) (h0 : n % 16 ≠ 0) (hk : n % 16 + k ≤ 16) : Ctr m cb ks ciph icb (n + k) := by
   refine ⟨?_, fun h1 => ?_⟩
-  · rw [h.1]; congr 1; omega
-  · rw [h.2 h0]; congr 2; omega
+  · rw [h.1]; congr 1; omega_using [h0, hk]
+  · rw [h.2 h0]; congr 2; omega_using [hk, h1]
 
 theorem length_blocksAt (m : Mem) (p : Addr) (n : Nat) : (blocksAt m p n).length = n := by
   simp [blocksAt]
@@ -205,20 +205,20 @@ theorem ctr_blocks {m : Mem} {cb ks dp : Addr} {ciph : Block → Block} {icb : B
     (hc : blockAt m cb=Nat.repeat inc32 nb icb) :
     bytesAt m dp (16*nb)=gctr ciph icb (bs.flatMap toBytes) ∧ Ctr m cb ks ciph icb (16*nb) := by
   rw [gctr_eq]
-  refine ⟨?_,?_,fun h => absurd (by omega) h⟩
+  refine ⟨?_,?_,fun h => absurd (by omega_using []) h⟩
   · refine list_ext (by simp only [Cmac.bytesAt_length,length_xorKs,length_flatMap_toBytes,hl]) fun k hk => ?_
     simp only [Cmac.bytesAt_length] at hk
     rw [getD_xorKs _ _ _ _ (by rw [length_flatMap_toBytes,hl]; exact hk),
       getD_bytesAt' _ _ hk,getD_flatMap_toBytes bs k (by rw [hl]; exact hk)]
-    have hq : k/16<nb := by omega
+    have hq : k/16<nb := by omega_using [hk]
     have he := congrArg (fun L => L.getD (k/16) 0) hd
     rw [blocksAt_getD _ _ _ hq,ctr32_getD _ _ _ (by rw [hl]; exact hq)] at he
     have ea : dp+BitVec.ofNat 64 k=dp+BitVec.ofNat 64 (16*(k/16))+BitVec.ofNat 64 (k%16) := by
-      rw [BitVec.add_assoc,← BitVec.ofNat_add]; congr 2; omega
-    rw [ea,bytes_toBytes_blockAt m _ (by omega),he,Proof.Aes.toBytes_xor _ _ (by omega),ksByte,Nat.zero_add]
+      rw [BitVec.add_assoc,← BitVec.ofNat_add]; congr 2; omega_using []
+    rw [ea,bytes_toBytes_blockAt m _ (by omega_using []),he,Proof.Aes.toBytes_xor _ _ (by omega_using []),ksByte,Nat.zero_add]
   · rw [hc]
     congr 1
-    omega
+    omega_using []
 
 /-- Whole blocks, from a whole number of blocks: `vg_aes_ctr32`. -/
 theorem ctr_whole {m m' : Mem} {cb ks dp : Addr} {ciph : Block → Block} {icb : Block} {n nb : Nat}
@@ -226,22 +226,22 @@ theorem ctr_whole {m m' : Mem} {cb ks dp : Addr} {ciph : Block → Block} {icb :
     (hd : blocksAt m' dp nb = ctr32 ciph (blockAt m cb) (blocksAt m dp nb))
     (hc : blockAt m' cb = Nat.repeat inc32 nb (blockAt m cb)) :
     bytesAt m' dp (16 * nb) = xorKs ciph icb n (bytesAt m dp (16 * nb)) ∧ Ctr m' cb ks ciph icb (n + 16 * nb) := by
-  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega
-  refine ⟨?_, ?_, fun h1 => absurd (by omega) h1⟩
+  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
+  refine ⟨?_, ?_, fun h1 => absurd (by omega_using [h0]) h1⟩
   · refine list_ext (by simp [length_xorKs, Cmac.bytesAt_length]) fun k hk => ?_
     simp only [Cmac.bytesAt_length] at hk
     rw [getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), getD_bytesAt' _ _ hk,
       getD_bytesAt' _ _ hk]
-    have hq : k / 16 < nb := by omega
+    have hq : k / 16 < nb := by omega_using [hk]
     have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
     rw [ctr32_getD _ _ _ (by rw [length_blocksAt]; exact hq), blocksAt_getD _ _ _ hq,
       blocksAt_getD _ _ _ hq] at e₁
     have ea : dp + BitVec.ofNat 64 k = dp + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) := by
-      rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-    rw [ea, bytes_toBytes_blockAt m' _ (by omega), bytes_toBytes_blockAt m _ (by omega), e₁,
-      Proof.Aes.toBytes_xor _ _ (by omega), ksByte, hcb, ← repeat_add,
-      show (n + k) / 16 = k / 16 + n / 16 by omega, show (n + k) % 16 = k % 16 by omega]
-  · rw [hc, hcb, ← repeat_add]; congr 1; omega
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
+    rw [ea, bytes_toBytes_blockAt m' _ (by omega_using []), bytes_toBytes_blockAt m _ (by omega_using []), e₁,
+      Proof.Aes.toBytes_xor _ _ (by omega_using []), ksByte, hcb, ← repeat_add,
+      show (n + k) / 16 = k / 16 + n / 16 by omega_using [h0], show (n + k) % 16 = k % 16 by omega_using [h0]]
+  · rw [hc, hcb, ← repeat_add]; congr 1; omega_using [h0]
 
 /-- The last bytes, from a whole number of blocks: a keystream block from
 `vg_aes_ctr32` (of the counter block on a zero block), XORed in. -/
@@ -250,12 +250,12 @@ theorem ctr_tail {m m₁ : Mem} {cb ks : Addr} {ciph : Block → Block} {icb : B
     (hk : blockAt m₁ ks = ciph (blockAt m cb)) (hc : blockAt m₁ cb = inc32 (blockAt m cb))
     {d : List Byte} (hd : d.length < 16) (hd0 : d.length ≠ 0) :
     List.zipWith (· ^^^ ·) d (bytesAt m₁ ks d.length) = xorKs ciph icb n d ∧ Ctr m₁ cb ks ciph icb (n + d.length) := by
-  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega
+  have hcb : blockAt m cb = Nat.repeat inc32 (n / 16) icb := by rw [h.1]; congr 1; omega_using [h0]
   refine ⟨?_, ?_, fun _ => ?_⟩
   · refine zipWith_eq_xorKs (Cmac.bytesAt_length _ _ _) fun k hk' => ?_
-    rw [getD_bytesAt' _ _ hk', bytes_toBytes_blockAt m₁ ks (k := k) (by omega), hk, hcb, ksByte,
-      show (n + k) / 16 = n / 16 by omega, show (n + k) % 16 = k by omega]
-  · rw [hc, hcb, show (n + d.length + 15) / 16 = n / 16 + 1 by omega]; rfl
-  · rw [hk, hcb, show (n + d.length) / 16 = n / 16 by omega]
+    rw [getD_bytesAt' _ _ hk', bytes_toBytes_blockAt m₁ ks (k := k) (by omega_using [hd, hk']), hk, hcb, ksByte,
+      show (n + k) / 16 = n / 16 by omega_using [h0, hd, hk'], show (n + k) % 16 = k by omega_using [h0, hd, hk']]
+  · rw [hc, hcb, show (n + d.length + 15) / 16 = n / 16 + 1 by omega_using [h0, hd, hd0]]; rfl
+  · rw [hk, hcb, show (n + d.length) / 16 = n / 16 by omega_using [h0, hd]]
 
 end VG.Proof.Gcm

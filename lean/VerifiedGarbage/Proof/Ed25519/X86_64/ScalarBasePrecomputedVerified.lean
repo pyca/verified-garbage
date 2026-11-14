@@ -67,7 +67,7 @@ theorem combSatMem_held : ∀ i < combWordCount,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   unfold combSatMem
   intro i hi
-  exact constMem_held _ _ (by rw [combWords_length]; simp only [combWordCount]; omega) i
+  exact constMem_held _ _ (by rw [combWords_length]; simp only [combWordCount]; omega_using []) i
     (by rw [combWords_length]; exact hi)
 
 /-- A state satisfying the precondition. -/

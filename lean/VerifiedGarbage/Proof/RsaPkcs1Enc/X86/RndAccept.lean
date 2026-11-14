@@ -44,7 +44,7 @@ theorem S.pw' {σ s : State} (hs : S P σ s) : Spec.Rsa.wordsAt s.mem (P.pre.set
   have ok := hs.1.ok
   have hR : P.PRE ∈ P.lay.ro := by simp
   have hf : (P.pre.setWidth 64).toNat + P.rl * 8 ≤ 2 ^ 32 := ok.fits P.PRE (List.mem_append_left _ hR)
-  refine (Proof.RsaPkcs1Sig.wordsAt_frame' hs.2.frame (fun r hr => ?_) (by omega)).trans hs.1.pw
+  refine (Proof.RsaPkcs1Sig.wordsAt_frame' hs.2.frame (fun r hr => ?_) (by omega_using [hf])).trans hs.1.pw
   simp only [Lay.W, List.cons_append, List.mem_cons, List.mem_append, List.not_mem_nil, or_false,
     false_or] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -58,7 +58,7 @@ theorem S.pw' {σ s : State} (hs : S P σ s) : Spec.Rsa.wordsAt s.mem (P.pre.set
 theorem TapeW.frame {σ s : State} (hs : S P σ s) {m m' : Mem} {u v : Nat} (h : TapeW P m u v) {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint P.TAPE r) : TapeW P m' u v := by
   have := hs.1.tape_fit
-  rw [TapeW, Proof.RsaPkcs1Sig.wordsAt_frame' hf (by simpa using hd) (by omega)]; exact h
+  rw [TapeW, Proof.RsaPkcs1Sig.wordsAt_frame' hf (by simpa using hd) (by omega_using [])]; exact h
 
 /-- `PS` drawn, as bytes. -/
 theorem Kept.bytes {σ s : State} (hs : S P σ s) (h : Kept P σ s P.mask.length)
@@ -108,7 +108,7 @@ theorem tapeAcc_wp {σ s : State} (h : AC1 P σ s) : WP isa (.block tapeAcc) s (
   have bx2 : t2.gpr .ebx = BitVec.ofNat 32 P.mask.length := by
     rw [u2.gpr, u1.gpr, u1.other _ (by decide), h.cx]
     show BitVec.ofNat 32 P.len - _ = _
-    rw [sub_ofNat (by omega)]; congr 1; omega
+    rw [sub_ofNat (by omega_using [])]; congr 1; omega_using [hN]
   refine wp_stTape s2 (o := 0) (by decide) ax2 fun t3 s3 g3 m3 f3 => ?_
   refine wp_movi fun t4 u4 => ?_
   have s4 : S P σ t4 := ⟨hs.1, s3.2.upd u4 (by decide)⟩
@@ -126,7 +126,7 @@ theorem tapeAcc_wp {σ s : State} (h : AC1 P σ s) : WP isa (.block tapeAcc) s (
     exact Kept.frame k2 (by rw [h.full]) hpl (f3.trans (f4.trans (f5.trans (f6.trans f7)))) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hs.1.buf_tape)
   refine ⟨s7, hk, h.full, ?_⟩
-  rw [TapeW, mm, words4, zero_append_ofNat (by omega), show (0 : BitVec 32) ++ (0 : BitVec 32) = BitVec.ofNat 64 0
+  rw [TapeW, mm, words4, zero_append_ofNat (by omega_using [hN, hl]), show (0 : BitVec 32) ++ (0 : BitVec 32) = BitVec.ofNat 64 0
     by decide]
 
 theorem tapeAcc_vp : VP (AC1 P) (.block tapeAcc) (AC2 P) :=
@@ -160,21 +160,21 @@ theorem slotStore {σ s : State} {i : Nat} (h : AC2 P σ s) (hsl : Slots P s.mem
     (kk : ∀ t, AC2 P σ t → Slots P t.mem (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (.store (Impl.RsaPkcs1Sig.X86.stk (4 * i)) .eax :: is)) s Q := by
   have hpl := h.hs.1.pl1021
-  refine h.hs.2.wp_strFr (d := 4 * i) (by show 4 * i + 4 ≤ frameBytes; simp only [frameBytes]; omega)
+  refine h.hs.2.wp_strFr (d := 4 * i) (by show 4 * i + 4 ≤ frameBytes; simp only [frameBytes]; omega_using [hi])
     fun t s2 m2 => kk t ⟨⟨h.hs.1, s2⟩, ?_, h.full, ?_⟩ ?_
   · refine Kept.frame h.kept (by rw [h.full]) hpl (rs := [⟨P.lay.fr (4 * i), 4⟩]) ?_ fun r hr => ?_
     · rw [m2.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Lay.fr_sep (by simp only [oBuf]; omega) (by simp only [oBuf]; omega) (by omega)
+      exact Lay.fr_sep (by simp only [oBuf]; omega_using [hi]) (by simp only [oBuf]; omega_using [hpl]) (by omega_using [hi])
   · refine TapeW.frame h.hs h.tape (rs := [⟨P.lay.fr (4 * i), 4⟩]) ?_ fun r hr => ?_
     · rw [m2.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact (h.hs.1.ok.stk_fr (R := P.TAPE) (.inr (by simp)) (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega)).symm
+      exact (h.hs.1.ok.stk_fr (R := P.TAPE) (.inr (by simp)) (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega_using [hi])).symm
   · intro k hk
     rw [m2.mem]
-    rcases (by omega : k = i ∨ k < i) with rfl | hki
+    rcases (by omega_using [hk] : k = i ∨ k < i) with rfl | hki
     · rw [Mem.readW_writeW_self32, hv]
-    · rw [Lay.readW_fr_other _ _ _ (by omega) (by omega) (by omega)]
+    · rw [Lay.readW_fr_other _ _ _ (by omega_using [hki]) (by omega_using [hi, hk]) (by omega_using [hi])]
       exact hsl k hki
 
 /-- Argument `j` to the call's argument `i`. -/
@@ -182,7 +182,7 @@ theorem copySlot {σ s : State} {i j : Nat} (h : AC2 P σ s) (hsl : Slots P s.me
     (hj : j < 15) (hv : P.argv.getD j 0 = (cargs P).getD i 0) {is : List Instr} {Q : State → Prop}
     (kk : ∀ t, AC2 P σ t → Slots P t.mem (i + 1) → WP isa (.block is) t Q) :
     WP isa (.block (copyArg j i ++ is)) s Q :=
-  h.hs.2.wp_arg (j := j) (by simp only [RP.argv, List.length_cons, List.length_nil]; omega) (by decide)
+  h.hs.2.wp_arg (j := j) (by simp only [RP.argv, List.length_cons, List.length_nil]; omega_using [hj]) (by decide)
     fun t1 _ u1 => slotStore (h.upd u1 (by decide)) (fun k hk => by rw [u1.mem]; exact hsl k hk) hi
       (by rw [u1.gpr, hv]) kk
 
@@ -242,7 +242,7 @@ theorem pcStack (c : Ver.PublicImpl) :
   rw [pcStack_eq]
   have := c.stack
   simp only [encStack]
-  omega
+  omega_using [this]
 
 theorem AC3.encArgs {σ s : State} (h : AC3 P σ s) :
     EncArgs s P.out P.n P.e P.msg (P.B + BitVec.ofNat 32 oBuf) P.scr P.pre P.K P.el P.ml P.pl P.sl P.rl := by
@@ -251,11 +251,11 @@ theorem AC3.encArgs {σ s : State} (h : AC3 P σ s) :
   have hsp : s.gpr .esp = P.B := hs.2.sp
   refine ⟨fun i hi => ?_, ?_, ?_, hs.1.kv, hs.1.el1, hs.1.elK, hs.1.mlK, rfl, hs.1.slK, hs.1.sl32, hs.1.rlK⟩
   · have hd : 4 * i < P.lay.F + 20 + P.lay.A := by
-      simp only [Lay.A, RP.argv, List.length_cons, List.length_nil, frameBytes] at fit ⊢; omega
+      simp only [Lay.A, RP.argv, List.length_cons, List.length_nil, frameBytes] at fit ⊢; omega_using [hi]
     rw [hsp, hs.1.ok.addrB hd]
     exact sl i hi
   · rw [hsp]; exact hs.1.ok.BC
-  · rw [hsp]; simp only [frameBytes] at fit; omega
+  · rw [hsp]; simp only [frameBytes] at fit; omega_using [fit]
 
 /-- The call's arguments, at the frame's base. -/
 theorem argsA (P : RP) : (⟨P.B.setWidth 64, 56⟩ : Region) = ⟨P.lay.fr 0, 56⟩ := by simp
@@ -284,8 +284,8 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
     have hb := hs.1.bufA
     have ar := argsA P
     have hfr : ∀ d, d ≤ frameBytes → (P.lay.fr d).toNat = P.B.toNat + d := fun d hd =>
-      Lay.fr_toNat (by simp only [Lay.A, RP.argv, List.length_cons, List.length_nil] at fit ⊢; omega)
-        (by simp only [Lay.A, RP.argv, List.length_cons, List.length_nil]; omega)
+      Lay.fr_toNat (by simp only [Lay.A, RP.argv, List.length_cons, List.length_nil] at fit ⊢; omega_using [fit])
+        (by simp only [Lay.A, RP.argv, List.length_cons, List.length_nil]; omega_using [hd])
     have := enc_pre h.encArgs ?_ ?_ ?_ ?_
     · rw [hsp] at this; exact this
     all_goals rw [hsp]
@@ -295,18 +295,18 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
       · exact ok.rw_ro (w := P.OUT) (by simp) (r := P.N) (by simp)
       · exact ok.rw_ro (w := P.OUT) (by simp) (r := P.E) (by simp)
       · exact ok.rw_ro (w := P.OUT) (by simp) (r := P.MSG) (by simp)
-      · rw [hb]; exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [oBuf, frameBytes]; omega)).symm
+      · rw [hb]; exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [oBuf, frameBytes]; omega_using [hpl])).symm
       · exact ok.rw_ro (w := P.OUT) (by simp) (r := P.PRE) (by simp)
       · exact ok.rw_ro (w := P.SCR) (by simp) (r := P.N) (by simp)
       · exact ok.rw_ro (w := P.SCR) (by simp) (r := P.E) (by simp)
       · exact ok.rw_ro (w := P.SCR) (by simp) (r := P.MSG) (by simp)
-      · rw [hb]; exact (ok.stk_fr (R := P.SCR) (.inr (by simp)) (by simp only [oBuf, frameBytes]; omega)).symm
+      · rw [hb]; exact (ok.stk_fr (R := P.SCR) (.inr (by simp)) (by simp only [oBuf, frameBytes]; omega_using [hpl])).symm
       · exact ok.rw_ro (w := P.SCR) (by simp) (r := P.PRE) (by simp)
-      · rw [ar]; exact ok.stk_fr (R := P.N) (.inl (by simp)) (by simp only [frameBytes]; omega)
-      · rw [ar]; exact ok.stk_fr (R := P.E) (.inl (by simp)) (by simp only [frameBytes]; omega)
-      · rw [ar]; exact ok.stk_fr (R := P.MSG) (.inl (by simp)) (by simp only [frameBytes]; omega)
-      · rw [ar, hb]; exact Lay.fr_sep (by simp only [oBuf]; omega) (by omega) (by simp only [oBuf]; omega)
-      · rw [ar]; exact ok.stk_fr (R := P.PRE) (.inl (by simp)) (by simp only [frameBytes]; omega)
+      · rw [ar]; exact ok.stk_fr (R := P.N) (.inl (by simp)) (by simp only [frameBytes]; omega_using [])
+      · rw [ar]; exact ok.stk_fr (R := P.E) (.inl (by simp)) (by simp only [frameBytes]; omega_using [])
+      · rw [ar]; exact ok.stk_fr (R := P.MSG) (.inl (by simp)) (by simp only [frameBytes]; omega_using [])
+      · rw [ar, hb]; exact Lay.fr_sep (by simp only [oBuf]; omega_using []) (by omega_using []) (by simp only [oBuf]; omega_using [hpl])
+      · rw [ar]; exact ok.stk_fr (R := P.PRE) (.inl (by simp)) (by simp only [frameBytes]; omega_using [])
     · simp only [encWr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
         forall_eq, List.Pairwise.nil, and_true]
       have ww := ok.wrw
@@ -314,9 +314,9 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
         forall_eq] at ww
       refine ⟨⟨ww.1.2, ?_⟩, ?_⟩
       · rw [ar]; exact (ok.stk_fr (R := P.OUT) (d := 0) (n := 56) (.inr (by simp))
-          (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega)).symm
+          (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega_using [])).symm
       · rw [ar]; exact ⟨(ok.stk_fr (R := P.SCR) (d := 0) (n := 56) (.inr (by simp))
-          (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega)).symm, fun _ h => h.elim⟩
+          (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega_using [])).symm, fun _ h => h.elim⟩
     · intro r hr
       rw [show below P.B (encStack + 4) = P.lay.LOW from ok.low_eq]
       simp only [encWr, encRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -324,11 +324,11 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.low_buf (R := P.OUT) (.inr (by simp))
       · exact ok.low_buf (R := P.SCR) (.inr (by simp))
-      · rw [ar]; exact (Lay.fr_low (by omega) (by show (1192 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [ar]; exact (Lay.fr_low (by omega_using []) (by show (1192 : Nat) ≤ 2 ^ 32; decide)).symm
       · exact ok.low_buf (R := P.N) (.inl (by simp))
       · exact ok.low_buf (R := P.E) (.inl (by simp))
       · exact ok.low_buf (R := P.MSG) (.inl (by simp))
-      · rw [hb]; exact (Lay.fr_low (by simp only [oBuf]; omega) (by show (1192 : Nat) ≤ 2 ^ 32; decide)).symm
+      · rw [hb]; exact (Lay.fr_low (by simp only [oBuf]; omega_using [hpl]) (by show (1192 : Nat) ≤ 2 ^ 32; decide)).symm
       · exact ok.low_buf (R := P.PRE) (.inl (by simp))
     · intro r hr
       simp only [encWr, encRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -336,12 +336,12 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
       · exact ok.fits P.OUT (by simp)
       · exact ok.fits P.SCR (by simp)
-      · rw [ar]; show (P.lay.fr 0).toNat + 56 ≤ _; rw [hfr 0 (by decide)]; simp only [frameBytes] at fit; omega
+      · rw [ar]; show (P.lay.fr 0).toNat + 56 ≤ _; rw [hfr 0 (by decide)]; simp only [frameBytes] at fit; omega_using [fit]
       · exact ok.fits P.N (by simp)
       · exact ok.fits P.E (by simp)
       · exact ok.fits P.MSG (by simp)
       · rw [hb]; show (P.lay.fr oBuf).toNat + P.pl ≤ _
-        rw [hfr oBuf (by decide)]; simp only [oBuf, frameBytes] at fit ⊢; omega
+        rw [hfr oBuf (by decide)]; simp only [oBuf, frameBytes] at fit ⊢; omega_using [hpl, fit]
       · exact ok.fits P.PRE (by simp)
   · -- What the callee is given is ours.
     have hs := h.1.hs
@@ -353,9 +353,9 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
     have hrw : ∀ R ∈ P.lay.rw, Covers [R] s.wr := fun R hR =>
       Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hs.2.inRw hR
     have hA : Covers [⟨P.B.setWidth 64, 56⟩] s.wr := by
-      rw [ar]; exact Covers.one (hs.2.inFr (by simp only [frameBytes]; omega))
+      rw [ar]; exact Covers.one (hs.2.inFr (by simp only [frameBytes]; omega_using []))
     have hE : Covers [⟨(P.B + BitVec.ofNat 32 oBuf).setWidth 64, P.pl⟩] (s.rd ++ s.wr) := by
-      rw [hb]; exact Covers.one (hs.2.inFrR (by simp only [oBuf, frameBytes]; omega))
+      rw [hb]; exact Covers.one (hs.2.inFrR (by simp only [oBuf, frameBytes]; omega_using [hpl]))
     have wr : Covers (encWr P.B P.out P.scr P.K P.sl) s.wr :=
       (hrw P.OUT (by simp)).cons ((hrw P.SCR (by simp)).cons (hA.cons Covers.nil))
     exact ⟨Covers.append_left ((hro P.N (by simp)).cons ((hro P.E (by simp)).cons ((hro P.MSG (by simp)).cons
@@ -365,7 +365,7 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
     have := pcStack c
     simp only [encStack] at this
     simp only [roomC] at *
-    omega
+    omega_arith
   · have ok := h₁.1.hs.1.ok
     have lw : below (s₁.gpr .esp) (encStack + 4) = P.lay.LOW := by
       rw [h₁.1.hs.2.sp]; exact ok.low_eq
@@ -385,7 +385,7 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
     have low : Region.Sub (below (s.gpr .esp) (stackUse (Impl.RsaPkcs1Enc.X86.Precomputed.code c.name c.code) + 4))
         P.lay.LOW := by
       rw [hsp, ← ok.low_eq]
-      exact below_sub (by have := pcStack c; simp only [encStack] at this; show _ ≤ 1192; omega) ok.BC
+      exact below_sub (by have := pcStack c; simp only [encStack] at this; show _ ≤ 1192; omega_using [this]) ok.BC
     have hw : ∀ r ∈ encWr P.B P.out P.scr P.K P.sl ++
         [below (s.gpr .esp) (stackUse (Impl.RsaPkcs1Enc.X86.Precomputed.code c.name c.code) + 4)],
         ∃ R ∈ P.lay.W, Region.Sub r R := fun r hr => by
@@ -394,7 +394,7 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
       · exact ⟨P.OUT, by simp, fun _ h => h⟩
       · exact ⟨P.SCR, by simp, fun _ h => h⟩
       · refine ⟨P.lay.FR, by simp, ?_⟩
-        rw [ar]; exact Offset.sub_base _ (by simp only [frameBytes]; omega)
+        rw [ar]; exact Offset.sub_base _ (by simp only [frameBytes]; omega_using [])
       · exact ⟨P.lay.LOW, by simp, low⟩
     have st : P.lay.St σ s' := hs.2.write fr hw rd wr (cs .esp (by simp [calleeSaved]))
     have ww := ok.wrw
@@ -406,7 +406,7 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
       · exact ww.1.1.symm
       · exact ww.2.1
       · rw [ar]; exact (ok.stk_fr (R := P.TAPE) (d := 0) (n := 56) (.inr (by simp))
-          (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega)).symm
+          (by show _ ≤ frameBytes + 16; simp only [frameBytes]; omega_using [])).symm
       · exact (ok.low_buf (R := P.TAPE) (.inr (by simp))).symm.sub_right low
     refine ⟨⟨hs.1, st⟩, full, tp, fun hp => ?_⟩
     obtain ⟨s₂, m₂, g₂, po⟩ := po
@@ -423,15 +423,15 @@ theorem call_vp (encName : String) (c : Ver.PublicImpl) :
       have hR : P.PRE ∈ P.lay.ro := by simp
       have hf : (P.pre.setWidth 64).toNat + P.rl * 8 ≤ 2 ^ 32 := ok.fits P.PRE (List.mem_append_left _ hR)
       refine (Proof.RsaPkcs1Sig.wordsAt_frame' (hs.2.callEntry_frame hC) (fun r hr => ?_)
-        (by omega)).trans hs.pw'
+        (by omega_using [hf])).trans hs.pw'
       simp only [List.mem_singleton] at hr; subst hr
       exact ((ok.stk P.PRE (List.mem_append_left _ hR)).sub_left Lay.low_stk).symm
     have eP : Spec.Rsa.bytesAt s.callEntry.mem ((P.B + BitVec.ofNat 32 oBuf).setWidth 64) P.pl = psv P σ := by
       rw [hb]
       refine (Proof.RsaPkcs1Sig.bytesAt_frame (hs.2.callEntry_frame hC) (fun r hr => ?_)
-        (by omega)).trans (Kept.bytes hs kept full)
+        (by omega_using [hpl])).trans (Kept.bytes hs kept full)
       simp only [List.mem_singleton] at hr; subst hr
-      exact Lay.fr_low (by simp only [oBuf]; omega) (by show (1192 : Nat) ≤ 2 ^ 32; decide)
+      exact Lay.fr_low (by simp only [oBuf]; omega_using [hpl]) (by show (1192 : Nat) ≤ 2 ^ 32; decide)
     rw [eN, eE, eM, eP, eW] at this
     exact this hp
 
@@ -480,24 +480,24 @@ theorem wipe_wp {σ s : State} (h : AC5 P σ s) : WP isa zeroLoop s (AC6 P σ) :
   have hp8 := hs.1.pl8
   have fit := hs.1.fit
   have hb := hs.1.bufA
-  have hF : oBuf + P.pl ≤ P.lay.F := by show _ ≤ frameBytes; simp only [oBuf, frameBytes]; omega
+  have hF : oBuf + P.pl ≤ P.lay.F := by show _ ≤ frameBytes; simp only [oBuf, frameBytes]; omega_using [hpl]
   have hpt : (P.B + BitVec.ofNat 32 oBuf).toNat + P.pl ≤ 2 ^ 32 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := oBuf) (by decide)]
     simp only [oBuf, frameBytes] at fit ⊢
-    rw [Nat.mod_eq_of_lt (by omega)]; omega
-  refine WP.mono (zero_ok (p := P.B + BitVec.ofNat 32 oBuf) (n := P.pl) (by omega) (by omega)
+    rw [Nat.mod_eq_of_lt (by omega_using [fit])]; omega_using [hpl, fit]
+  refine WP.mono (zero_ok (p := P.B + BitVec.ofNat 32 oBuf) (n := P.pl) (by omega_using [hp8]) (by omega_using [hpl])
     hpt h.si h.cx h.ax (by rw [hb]; exact hs.2.inFr hF)) fun t ht => ?_
   have fr : Frame [⟨P.lay.fr oBuf, P.pl⟩] s.mem t.mem := by
     rw [ht.mem, hb]
     have := Proof.RsaPkcs1Sig.frame_writeBytes s.mem (P.lay.fr oBuf) (List.replicate P.pl 0)
     simpa using this
   have st : P.lay.St σ t := hs.2.frameW hF fr ht.rd ht.wr (ht.other _ (by decide) (by decide))
-  have hd : oBuf + P.pl ≤ P.lay.F + 16 := by show _ ≤ frameBytes + 16; simp only [oBuf, frameBytes]; omega
+  have hd : oBuf + P.pl ≤ P.lay.F + 16 := by show _ ≤ frameBytes + 16; simp only [oBuf, frameBytes]; omega_using [hpl]
   obtain ⟨r₀, cr, bx⟩ := h.cr
   have hbo : Spec.Rsa.bytesAt t.mem (P.out.setWidth 64) P.K = Spec.Rsa.bytesAt s.mem (P.out.setWidth 64) P.K :=
     Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) hd).symm) (by have := hs.1.k1024; omega)
+      exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) hd).symm) (by have := hs.1.k1024; omega_using [this])
   refine ⟨⟨hs.1, st⟩, h.full, TapeW.frame hs h.tape fr fun r hr => ?_,
     ⟨r₀, fun hp => written_congr hbo (cr hp), by rw [ht.other _ (by decide) (by decide), bx]⟩⟩
   simp only [List.mem_singleton] at hr; subst hr

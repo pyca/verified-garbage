@@ -29,7 +29,7 @@ private theorem byte_zext (b : Byte) : (b.setWidth 32).setWidth 64=BitVec.ofNat 
  apply BitVec.eq_of_toNat_eq
  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
  have := b.isLt
- omega
+ omega_using []
 
 theorem byte_cast_eq (b c : Byte) : BitVec.ofNat 64 b.toNat=BitVec.ofNat 64 c.toNat ↔ b=c := by
  constructor
@@ -39,7 +39,7 @@ theorem byte_cast_eq (b c : Byte) : BitVec.ofNat 64 b.toNat=BitVec.ofNat 64 c.to
    have := c.isLt
    apply BitVec.eq_of_toNat_eq
    simp only [BitVec.toNat_ofNat] at *
-   omega
+   omega_using [this]
  · rintro rfl;rfl
 
 theorem policyCompareStep {s : State} {src dst : Addr} {bs cs : List Byte} {i : Nat}
@@ -86,7 +86,7 @@ theorem policyCompareLoopStep {s0 t : State} {src dst : Addr} {bs cs : List Byte
  CompareInv s0 src dst bs cs (i+1) u ∧ u.gpr .x5=t.gpr .x5-1#64 := by
  rw [WP.block_append_iff]
  refine WP.mono (policyCompareStep (first.of_mem h.mem h.keep) (second.of_mem h.mem h.keep)
-  inside (by omega) h.first h.second) ?_
+  inside (by omega_using [same, inside]) h.first h.second) ?_
  rintro v ⟨⟨ptr1,ptr2,value,mem⟩,rest⟩
  have equal : v.gpr .x11=0#64 ↔ ∀ j<i+1,bs.getD j 0=cs.getD j 0 := by
   rw [value,BitVec.or_eq_zero_iff,BitVec.xor_eq_zero_iff,byte_cast_eq,h.equal]
@@ -94,10 +94,10 @@ theorem policyCompareLoopStep {s0 t : State} {src dst : Addr} {bs cs : List Byte
   · rintro ⟨prev,current⟩ j hj
     by_cases lt : j<i
     · exact prev j lt
-    · have eq : j=i := by omega
+    · have eq : j=i := by omega_using [hj, lt]
       simpa only [eq] using current
   · intro all
-    exact ⟨fun j hj => all j (by omega),all i (by omega)⟩
+    exact ⟨fun j hj => all j (by omega_using [hj]),all i (by omega_using [])⟩
  refine WP.mono (dec_ok v .x5) ?_
  rintro u ⟨⟨count,memU,_⟩,restU⟩
  refine ⟨⟨(restU.gpr .x1 (by decide)).trans ptr1,(restU.gpr .x2 (by decide)).trans ptr2,?_,
@@ -116,7 +116,7 @@ theorem policyCompareLoop_ok (s : State) {src dst : Addr} {bs cs : List Byte}
  have init : CompareInv s src dst bs cs 0 s :=
   ⟨by simpa [off] using ptr1,by simpa [off] using ptr2,by simp [zero],rfl,Keep.refl _ _⟩
  unfold countLoop
- refine WP.mono (wp_countdown (by omega) positive (CompareInv s src dst bs cs)
+ refine WP.mono (wp_countdown (by omega_using [size]) positive (CompareInv s src dst bs cs)
   (fun i hi t h _ => policyCompareLoopStep first second same hi h) init count) ?_
  rintro t h
  refine ⟨?_,h.mem,h.keep⟩
@@ -154,7 +154,7 @@ theorem policyCompare_ok {s : State} {B src dst : Addr} {Z : Nat} {bs cs : List 
   u.gpr .x1=src ∧ u.gpr .x2=dst ∧ u.gpr .x5=BitVec.ofNat 64 bs.length ∧ u.gpr .x11=0#64 ∧ u.mem=s.mem)
   ?_ rfl rfl rfl) ?_
  · brun [base,hdr_enc (show sDom<32 by decide),hdr_enc (show sDL<32 by decide),
-   scratch.ld (d:=8*sDom) (by unfold sDom;omega),scratch.ld (d:=8*sDL) (by unfold sDL;omega),pointer,length,record]
+   scratch.ld (d:=8*sDom) (by unfold sDom;omega_using [room]),scratch.ld (d:=8*sDL) (by unfold sDL;omega_using [room]),pointer,length,record]
  · rintro u ⟨⟨ptr1,ptr2,count,zero,mem⟩,rest⟩
    refine WP.mono (policyCompareLoop_ok u (first.of_mem mem rest) (second.of_mem mem rest)
     same positive size ptr1 ptr2 count zero) ?_

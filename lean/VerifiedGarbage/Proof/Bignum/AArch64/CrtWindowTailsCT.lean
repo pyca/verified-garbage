@@ -40,11 +40,11 @@ theorem tails_loop_ct (W : Window) :
     have hL : p.1.len < 2 ^ 64 := by
       obtain ⟨_,_,_,_,_,_,_,_,_,_,hL,_⟩ := hs
       exact hL
-    refine WP.mono (hs.tailStep W (by omega)) fun t ⟨ht,h3⟩ => ?_
+    refine WP.mono (hs.tailStep W (by omega_using [hj])) fun t ⟨ht,h3⟩ => ?_
     refine ⟨?_,?_,fun _ => trivial⟩
-    · exact eval_nz_count hj (by rw [h3,cnt_ne (by omega)]; omega)
+    · exact eval_nz_count hj (by rw [h3,cnt_ne (by omega_using [hL])]; omega_using [hj])
     · intro _
-      have hb : ((8*j)%5+8)%5 = (8*(j+1))%5 := by omega
+      have hb : ((8*j)%5+8)%5 = (8*(j+1))%5 := by omega_using []
       simpa only [hb,Nat.add_assoc] using ht
 
 def TailsReady (p : RunPub × Nat) (s : State) : Prop :=
@@ -64,7 +64,7 @@ theorem expTail_ct (W : Window) :
   · exact two_map id (fun p s ⟨hs,he⟩ => ⟨by
       change 0 < p.1.len-p.2
       by_contra hz
-      have hn : p.1.len-p.2 = 0 := by omega
+      have hn : p.1.len-p.2 = 0 := by omega_using [hz]
       change some (!(s.gpr .x3 == 0)) = some true at he
       rw [hs.2.2,hn] at he
       contradiction,hs.2.1⟩) (tails_loop_ct W)

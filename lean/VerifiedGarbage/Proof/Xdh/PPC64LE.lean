@@ -72,7 +72,7 @@ theorem read_one (m : Mem) (a : Addr) : (m.read a 1 : BitVec 8) = m a := by
   simp only [Mem.read]
   ext i hi
   rw [BitVec.getElem_append]
-  simp only [show i < 8 by omega, dite_true]
+  simp only [show i < 8 by omega_using [hi], dite_true]
 
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
@@ -196,12 +196,12 @@ variable {n w : Nat} {s : State}
 theorem sp_eq (h : ExPre n w s) : (s.sp - 48).toNat + 48 = s.sp.toNat := by
   have := h.2.2.2.2.2
   rw [BitVec.toNat_sub, show (48 : Addr).toNat = 48 from rfl]
-  omega
+  omega_using [this]
 
 /-- The 8 bytes at `B + d`, for `d ≤ 40`, are the frame's. -/
 theorem fr_contains {d : Nat} (hd : d ≤ 40) :
     (frR s).Contains (s.sp - 48 + BitVec.ofNat 64 d) 8 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_using [hd]) (by omega_using [hd])
 
 /-- A part of the frame is apart from a region apart from the frame. -/
 theorem fr_part {r : Region} (hr : (frR s).Disjoint r) {d k : Nat} (hd : d + k ≤ 48) :
@@ -217,8 +217,8 @@ theorem slot_in : (⟨s.sp - 48 + 32, 16⟩ : Region).Contains (s.sp - 48 + 40) 
 theorem slot_sep (h : ExPre n w s) :
     (⟨s.sp - 48 + 40, 8⟩ : Region).Disjoint ⟨s.sp - 48 + 32, 8⟩ := by
   have e := sp_eq h
-  have := Offset.disjoint (s.sp - 48) (d := 40) (n := 8) (e := 32) (k := 8) (.inr (by omega)) (by omega)
-    (by omega)
+  have := Offset.disjoint (s.sp - 48) (d := 40) (n := 8) (e := 32) (k := 8) (.inr (by omega_using [])) (by omega_using [])
+    (by omega_using [])
   simpa using this
 
 end
@@ -305,7 +305,7 @@ theorem bytes_keep {s : State} {p : Addr} {n : Nat} (hd : (frR s).Disjoint ⟨p,
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact saved_keep hd (Offset.contains_base _ (by omega) (by omega))
+  exact saved_keep hd (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi]))
 
 theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Prog isa} {k : Contract isa}
     (hk : Callee n w f c k) {name : String} {s e : State} (h : ExPre n w s) (he : Saved n w s e) :
@@ -328,8 +328,8 @@ theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : P
     rw [wr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact fr_part f0 (by omega)
-    · exact fr_part f3 (by omega)
+    · exact fr_part f0 (by omega_using [hd])
+    · exact fr_part f3 (by omega_using [hd])
   have em : e.mem.read (s.sp - 48 + 32) 8 = s.lr := by
     rw [he.mem]
     simp only [eMem, Mem.writeW, Nat.reduceDiv]
@@ -387,9 +387,9 @@ theorem orBytes_wp (a : Addr) (m : Mem) : ∀ (i : Nat), i < 2 ^ 15 → ∀ (u :
   | succ i ih =>
     intro hi u is Q ht hm hin k
     rw [orBytes, List.append_assoc]
-    refine ih (by omega) u _ Q ht hm (fun j hj => hin j (by omega)) fun u' g1 g0 gm grd gwr gsp go => ?_
-    refine wp_lbz (a := a + BitVec.ofNat 64 i) (by decide) (by omega) (by rw [g0])
-      (by rw [grd, gwr]; exact hin i (by omega)) fun u₁ v₁ => ?_
+    refine ih (by omega_using [hi]) u _ Q ht hm (fun j hj => hin j (by omega_using [hj])) fun u' g1 g0 gm grd gwr gsp go => ?_
+    refine wp_lbz (a := a + BitVec.ofNat 64 i) (by decide) (by omega_using [hi]) (by rw [g0])
+      (by rw [grd, gwr]; exact hin i (by omega_using [])) fun u₁ v₁ => ?_
     refine wp_or fun u₂ v₂ => ?_
     refine k u₂ ?_ ?_ ?_ ?_ ?_ ?_ fun r h1 h2 => ?_
     · rw [v₂.gpr, v₁.other _ (by decide), v₁.gpr, g1, gm, orAll, BitVec.setWidth_or, BitVec.or_assoc]
@@ -412,7 +412,7 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
   refine wp_li (imm := 0) (by decide) fun u₁ v₁ => ?_
   refine orBytes_wp (s.gpr .r3) u.mem n hn u₁ _ _ (by rw [v₁.other _ (by decide), hu.r12]) v₁.mem
     (fun j hj => ⟨outR n s, by rw [v₁.rd, v₁.wr, hu.called.rd, hu.called.wr, wr]; simp,
-      Offset.contains_base _ (by omega) (by omega)⟩) fun u' g1 _ gm grd gwr gsp go => ?_
+      Offset.contains_base _ (by omega_using [hj]) (by omega_using [hn, hj])⟩) fun u' g1 _ gm grd gwr gsp go => ?_
   refine wp_subi (by decide) (by decide) fun u₂ v₂ => wp_lsr (by decide) fun u₃ v₃ =>
     wp_li (imm := 1) (by decide) fun u₄ v₄ => wp_xor fun u₅ v₅ => WP.block_nil ?_
   have hm : u₅.mem = u.mem := by rw [v₅.mem, v₄.mem, v₃.mem, v₂.mem, gm]

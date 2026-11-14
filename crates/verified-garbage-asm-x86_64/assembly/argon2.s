@@ -488,7 +488,7 @@ vg_argon2_blake2b_avx512_g_avx512:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -2824,6 +2824,46 @@ vg_argon2_blake2b_avx512_g_avx512:
 	pop r12
 	pop rbp
 	pop rbx
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-344]
+	vmovdqu YMMWORD PTR [rsp+312], ymm0
+	vmovdqu YMMWORD PTR [rsp+280], ymm0
+	vmovdqu YMMWORD PTR [rsp+248], ymm0
+	vmovdqu YMMWORD PTR [rsp+216], ymm0
+	vmovdqu YMMWORD PTR [rsp+184], ymm0
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	vmovdqu YMMWORD PTR [rsp+88], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+344]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -3311,7 +3351,7 @@ vg_argon2_blake2b_avx2_g_avx512:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -5647,6 +5687,46 @@ vg_argon2_blake2b_avx2_g_avx512:
 	pop r12
 	pop rbp
 	pop rbx
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-344]
+	vmovdqu YMMWORD PTR [rsp+312], ymm0
+	vmovdqu YMMWORD PTR [rsp+280], ymm0
+	vmovdqu YMMWORD PTR [rsp+248], ymm0
+	vmovdqu YMMWORD PTR [rsp+216], ymm0
+	vmovdqu YMMWORD PTR [rsp+184], ymm0
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	vmovdqu YMMWORD PTR [rsp+88], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+344]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -6134,7 +6214,7 @@ vg_argon2_blake2b_avx2_g_avx2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -8470,6 +8550,46 @@ vg_argon2_blake2b_avx2_g_avx2:
 	pop r12
 	pop rbp
 	pop rbx
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-344]
+	vmovdqu YMMWORD PTR [rsp+312], ymm0
+	vmovdqu YMMWORD PTR [rsp+280], ymm0
+	vmovdqu YMMWORD PTR [rsp+248], ymm0
+	vmovdqu YMMWORD PTR [rsp+216], ymm0
+	vmovdqu YMMWORD PTR [rsp+184], ymm0
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	vmovdqu YMMWORD PTR [rsp+88], ymm0
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+344]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -8957,7 +9077,7 @@ vg_argon2:
 	mov rdx, rbx
 	add rdx, 832
 	mov ecx, 0
-	call {vg_blake2b_init}
+	call {vg_blake2b_init_core}
 	mov rax, QWORD PTR [rbp+184]
 	mov DWORD PTR [rbx+768], eax
 	mov rax, QWORD PTR [rbp+264]
@@ -11293,5 +11413,40 @@ vg_argon2:
 	pop r12
 	pop rbp
 	pop rbx
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-344]
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+344]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

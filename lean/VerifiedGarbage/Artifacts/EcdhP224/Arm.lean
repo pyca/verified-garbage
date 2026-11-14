@@ -39,7 +39,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P224.Arm.Law
 
-/-! # ECDH over P-224 (SP 800-56A) on 32-bit ARM -/
+/-! # ECDH over P-224 (SP 800-56A) on ARMv7 -/
 
 @[expose] public section
 
@@ -54,7 +54,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.P224.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeP224U
-    verified := Proof.Ecdh.Arm.P224.ecdhU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdh.Arm.P224.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhP224.Arm

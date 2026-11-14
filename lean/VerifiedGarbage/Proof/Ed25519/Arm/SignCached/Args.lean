@@ -40,7 +40,7 @@ theorem args_regs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     WP isa (.block (setup args [])) s fun t => Ctx L g m₀ t ∧ t.mem = s.mem ∧ OutArgs L args t := by
   have rd : ∀ j < 6, InRegions (s.rd ++ s.wr) (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 4 := by
     intro j hj
-    refine ⟨L.ARGS, ?_, Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)⟩
+    refine ⟨L.ARGS, ?_, Offset.contains _ (e := 248) (k := 24) (by omega_using []) (by omega_using [hj]) (by decide)⟩
     rw [hc.rd]
     exact List.mem_append_left _ (by simp [Lay.inputs])
   refine WP.mono (Whole.setupRegs_ok hc.sp hL.top hn hv rd) fun t ⟨ht, hargs⟩ => ?_

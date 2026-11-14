@@ -59,7 +59,7 @@ theorem S2_toNat (h : ArgCtx p o a used k u) : p.S2.toNat = p.sp.toNat - 72 :=
   FrameStack.sub_toNat' (Nat.le_trans (by decide) h.input.room)
 
 theorem S2_fits (h : ArgCtx p o a used k u) : p.S2.toNat + 32 ≤ 2 ^ 32 := by
-  have := h.S2_toNat; have := h.input.top; omega
+  have := h.S2_toNat; have := h.input.top; omega_arith
 
 /-- The search's stack argument `j`, from below both frames. -/
 theorem arg_addr (h : ArgCtx p o a used k u) (j : Nat) :
@@ -73,8 +73,8 @@ theorem arg_read (h : ArgCtx p o a used k u) {j : Nat} (hj : j < 8) :
   refine ⟨inArgs o, List.mem_append_left _ (by rw [h.rd, h.input.rd]; simp [inReads]), ?_⟩
   have e : stackArgAddr o j = stackArgAddr o 0 + BitVec.ofNat 64 (4 * j) := by
     simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
-    exact VG.Arm.addr_add (by rw [← h.input.sp_eq]; omega)
-  rw [e]; exact Offset.contains_base _ (by omega) (by omega)
+    exact VG.Arm.addr_add (by rw [← h.input.sp_eq]; omega_using [hj, top])
+  rw [e]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
 
 /-- The search's stack argument `j`, from the candidate's frame. -/
 theorem arg_off (h : ArgCtx p o a used k u) {j : Nat} (hj : j < 8) :
@@ -85,27 +85,27 @@ theorem arg_off (h : ArgCtx p o a used k u) {j : Nat} (hj : j < 8) :
     rw [SearchPublic.S2, sub_add_ofNat, h.input.sp_eq]
   unfold stackArgAddr
   rw [e]
-  exact VG.Arm.addr_add (by have := h.S2_toNat; omega)
+  exact VG.Arm.addr_add (by have := h.S2_toNat; omega_using [hj, top, this])
 
 /-- The candidate's frame is apart from the search's stack arguments. -/
 theorem frame_sep (h : ArgCtx p o a used k u) {j d : Nat} (hj : j < 8) (hd : d + 4 ≤ 32) :
     Mem.Sep (stackArgAddr o j) (32 / 8) (off (State.addr p.S2) d) (32 / 8) := by
   rw [h.arg_off hj]
-  exact Offset.sep _ (Or.inr (by omega)) (by omega) (by omega)
+  exact Offset.sep _ (Or.inr (by omega_using [hd])) (by omega_using [hj]) (by omega_using [hd])
 
 theorem arg_value (h : ArgCtx p o a used k u) {j : Nat} (hj : j < 8) :
     u.mem.readW (stackArgAddr o j) 32 = stackArg o j := by
   rw [h.mem, readW_writeSlots_sep _ _ _ _ fun e he => h.frame_sep hj (by
-    have := callArgs_bound p used e (List.mem_of_mem_take he); omega)]
+    have := callArgs_bound p used e (List.mem_of_mem_take he); omega_using [this])]
   exact h.args j hj
 
 theorem store_addr (h : ArgCtx p o a used k u) {d : Nat} (hd : d < 32) :
     State.addr (u.gpr .lr + BitVec.ofNat 32 d) = off (State.addr p.S2) d := by
-  rw [h.lr]; exact VG.Arm.addr_add (by have := h.S2_fits; omega)
+  rw [h.lr]; exact VG.Arm.addr_add (by have := h.S2_fits; omega_using [hd, this])
 
 theorem store_write (h : ArgCtx p o a used k u) {d : Nat} (hd : d + 4 ≤ 32) :
     InRegions u.wr (off (State.addr p.S2) d) 4 :=
-  ⟨_, by rw [h.wr]; exact List.mem_cons_self .., Offset.contains_base _ hd (by omega)⟩
+  ⟨_, by rw [h.wr]; exact List.mem_cons_self .., Offset.contains_base _ hd (by omega_using [hd])⟩
 
 theorem keep (h : ArgCtx p o a used k u) {t : State} (hr : Rest [.r12] u t) (hm : t.mem = u.mem) :
     ArgCtx p o a used k t :=
@@ -121,20 +121,20 @@ theorem argWord_ok {p : SearchPublic} {o a u : State} {used : Nat} {j : Nat} (hj
       WP isa (.block adjust) t fun t' => (t'.gpr .r12 = f (t.gpr .r12) ∧ t'.mem = t.mem) ∧ Rest [.r12] t t')
     (hv : (callArgs p used)[j]? = some (j, f (stackArg o j))) (h : ArgCtx p o a used j u) :
     WP isa (.block (argWord j adjust)) u fun t => ArgCtx p o a used (j + 1) t ∧ Rest [.r12] u t := by
-  have c1 : pushBytes + 32 + 4 * j < 4096 := by unfold pushBytes; omega
-  have c2 : 4 * j < 4096 := by omega
+  have c1 : pushBytes + 32 + 4 * j < 4096 := by unfold pushBytes; omega_using [hj]
+  have c2 : 4 * j < 4096 := by omega_using [hj]
   rw [show argWord j adjust = [arg .r12 32 j] ++ (adjust ++ [.str .r12 .lr (4 * j)]) from rfl]
   refine WP.block_append (WP.mono (withRest_all (c := .block [arg .r12 32 j]) [.r12]
     (Q := fun t => t.gpr .r12 = stackArg o j ∧ t.mem = u.mem) ?_ (by rfl) (by rfl)) fun u1 ⟨⟨h12, hm1⟩, k1⟩ => ?_)
   · unfold arg
-    ffrun [h.arg_addr j, h.arg_read (j := j) (by omega), h.arg_value (j := j) (by omega), c1]
+    ffrun [h.arg_addr j, h.arg_read (j := j) (by omega_using [hj]), h.arg_value (j := j) (by omega_using [hj]), c1]
   have h1 := h.keep k1 hm1
   refine WP.block_append (WP.mono (hadj u1 h1.r8) fun u2 ⟨⟨h12', hm2⟩, k2⟩ => ?_)
   have h2 := h1.keep k2 hm2
   refine WP.mono (withRest_all (c := .block [.str .r12 .lr (4 * j)]) [.r12]
     (Q := fun t => t.mem = u2.mem.writeW (off (State.addr p.S2) (4 * j)) (f (stackArg o j))) ?_ (by rfl) (by rfl))
     fun t ⟨hmt, kt⟩ => ⟨⟨h.input, ?_, ?_, ?_, ?_, ?_, h.wrA, h.args, ?_⟩, k1.trans (k2.trans kt)⟩
-  · ffrun [h2.store_addr (d := 4 * j) (by omega), h2.store_write (d := 4 * j) (by omega), h12', h12, c2]
+  · ffrun [h2.store_addr (d := 4 * j) (by omega_using [hj]), h2.store_write (d := 4 * j) (by omega_using [hj]), h12', h12, c2]
   · exact (kt.gpr .lr (by decide)).trans h2.lr
   · exact (kt.gpr .r8 (by decide)).trans h2.r8
   · exact kt.sp.trans h2.sp

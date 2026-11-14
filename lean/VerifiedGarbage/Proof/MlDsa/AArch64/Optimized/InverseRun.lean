@@ -54,17 +54,17 @@ theorem run_ok (plan : RootPlan) (i n : Nat) (hin : i+n≤7)
   induction n generalizing i s v with
   | zero => exact k s (VChg.refl _ _) hplan hbank
   | succ n ih =>
-    have hi : i<7 := by omega
+    have hi : i<7 := by omega_using [hin]
     simp only [runCode,List.append_assoc]
     refine plan.load_ok ⟨i,hi⟩ hplan fun a ha hpa hz hb hq => ?_
     have hba : Bank a (regs i) v := by
       intro j
-      rw [ha.get _ (roots_apart ⟨i,by omega⟩ j)]
+      rw [ha.get _ (roots_apart ⟨i,by omega_using [hin]⟩ j)]
       exact hbank j
     have hstage := stage_ok ⟨i,hi⟩ (rest := runCode plan.load (i+1) n ++ rest) (Q := Q)
       hba (plan.range ⟨i,hi⟩) hz hb hq
     refine hstage fun b hc hbb => ?_
-    refine ih (i+1) (by omega) hbb (plan.stable ⟨i,hi⟩ hc hpa) fun t ht hpt hbt => ?_
+    refine ih (i+1) (by omega_using [hin]) hbb (plan.stable ⟨i,hi⟩ hc hpa) fun t ht hpt hbt => ?_
     refine k t (VChg.mono ((ha.trans hc).trans ht) ?_) hpt ?_
     · intro r hr
       simp only [List.mem_append] at hr

@@ -3,14 +3,780 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.Point0Contract
+public import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Spec.X25519
+
+/-! ### `Weierstrass.Arm.LadderPCall`, which only this module used -/
+
+section
+
+/-! ### `Weierstrass.Arm.PointFn`, which only this module used -/
+
+section
+
+/-! ### `Weierstrass.Arm.PointFprog`, which only this module used -/
+
+section
+
+/-! ### `Weierstrass.Arm.PointCall`, which only this module used -/
+
+section
+
+/-!
+# Calls of the Montgomery functions with operands in registers, on 32-bit ARM
+
+`callR enc f body o a b` (`Impl/Weierstrass/Arm/Point.lean`) calls the
+function `f`, whose code is `body`, on the working space at `r12` and the
+offsets that `enc` gives the slots `o`, `a` and `b`. As `callOp_ok`
+(`MontCall.lean`), but `lr` is not kept in `r10`: the point functions save
+it in memory, and write no register but `r0`–`r3`, `r12` and `lr`.
+`mulCallR_ok`, `addCallR_ok` and `subCallR_ok` are the calls of `mulFn`,
+`addFn` and `subFn`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Point
+
+open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass.Arm.Mont
+open VG.Impl.Weierstrass.Arm.Point
+open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.Mont
+open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_movw op2_reg)
+
+/-- A 16-bit immediate, as `movw` loads it. -/
+theorem movw_toNat {c : Nat} (h : c < 2 ^ 16) : ((BitVec.ofNat 16 c).setWidth 32).toNat = c := by
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [h]
+
+/-- What a call writing `[o]` keeps: the registers but `r0`–`r3`, `r12` and
+`lr`, the regions, the stack pointer, `r12` as the working space, and the
+memory but `[o]` and the functions' own working space. -/
+structure CallKeepR (n : Nat) (base : Addr) (o : Nat) (s s' : State) : Prop where
+  rest : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s s'
+  r12 : s'.gpr .r12 = s.gpr .r12
+  mem : Outs base [(o, 8 * n), (own n, 64 * n)] s.mem s'.mem
+
+/-- A call of `body` on the offsets `enc` gives, which from the working space
+at `r12` changes only `[enc o]` and its own working space, preserves the
+callee-saved registers, leaves `r12` as the working space, and relates the
+memory before and after by `V`. -/
+theorem callR_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hn : body.noCalls = true) {n : Nat}
+    {s : State} {base : Addr} (hf : Far s base 8192) {o a b : Nat}
+    (ho : enc o < 2 ^ 16) (ha : enc a < 2 ^ 16) (hb : enc b < 2 ^ 16) {V : Mem → Mem → Prop}
+    (hbody : ∀ t, t.rd = [] → t.wr = [⟨base, 8192⟩] → t.gpr .r0 = s.gpr .r12 →
+      (t.gpr .r1).toNat = enc o → (t.gpr .r2).toNat = enc a → (t.gpr .r3).toNat = enc b → t.mem = s.mem →
+      WP isa body t fun t' => abiPreserved t t' ∧ Kept n base (enc o) t.mem t'.mem ∧ V t.mem t'.mem ∧
+        t'.gpr .r12 = t.gpr .r0) :
+    WP isa (callR enc f body o a b) s fun s' => CallKeepR n base (enc o) s s' ∧ V s.mem s'.mem := by
+  rw [callR]
+  refine WP.seq (wp_mov (op2_reg _ _) fun s₁ u₁ => wp_movw fun s₂ u₂ => wp_movw fun s₃ u₃ =>
+    wp_movw fun s₄ u₄ => WP.block_nil ?_)
+  have k₄ : Rest [.r0, .r1, .r2, .r3] s s₄ :=
+    (u₁.rest (by simp)).trans <| (u₂.rest (by simp)).trans <| (u₃.rest (by simp)).trans (u₄.rest (by simp))
+  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have g0 : s₄.gpr .r0 = s.gpr .r12 := by
+    rw [u₄.other .r0 (by decide), u₃.other .r0 (by decide), u₂.other .r0 (by decide), u₁.gpr]
+  have g1 : (s₄.gpr .r1).toNat = enc o := by
+    rw [u₄.other .r1 (by decide), u₃.other .r1 (by decide), u₂.gpr, movw_toNat ho]
+  have g2 : (s₄.gpr .r2).toNat = enc a := by rw [u₄.other .r2 (by decide), u₃.gpr, movw_toNat ha]
+  have g3 : (s₄.gpr .r3).toNat = enc b := by rw [u₄.gpr, movw_toNat hb]
+  have hf₄ : Far s₄ base 8192 := hf.of_rest k₄
+  have hcov : Covers [⟨base, 8192⟩] s₄.wr := by
+    have h := hf₄.write (d := 0) (n := 8192) (by omega_using [])
+    simp only [off, BitVec.add_zero] at h
+    exact Covers.one h
+  refine WP.call (k := ⟨fun t => t.rd = [] ∧ t.wr = [⟨base, 8192⟩] ∧ t.gpr .r0 = s.gpr .r12 ∧
+      (t.gpr .r1).toNat = enc o ∧ (t.gpr .r2).toNat = enc a ∧ (t.gpr .r3).toNat = enc b ∧ t.mem = s.mem,
+      fun t t' => Kept n base (enc o) t.mem t'.mem ∧ V t.mem t'.mem ∧ t'.gpr .r12 = t.gpr .r0, fun _ _ => True⟩)
+    (fun t ⟨h1, h2, h3, h4, h5, h6, h7⟩ => by
+      obtain ⟨tr, t', he, A, K, W, R⟩ := hbody t h1 h2 h3 h4 h5 h6 h7
+      exact ⟨tr, t', he, A, K, W, R⟩)
+    (rd := []) (wr := [⟨base, 8192⟩])
+    ⟨rfl, rfl, by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g0],
+      by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g1],
+      by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g2],
+      by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g3],
+      by rw [State.withRegions_mem, State.callEntry_mem, m₄]⟩
+    (Covers.right hcov) hcov ?_ hn
+  intro s₇ r₇ w₇ p₇ _ hp₇ _ ⟨K, W, R⟩
+  simp only [State.withRegions_mem, State.callEntry_mem, m₄, State.withRegions_gpr] at K W R
+  rw [State.callEntry_gpr _ (by decide), g0] at R
+  refine ⟨⟨⟨fun r hr => ?_, by rw [r₇, k₄.rd], by rw [w₇, k₄.wr], by rw [p₇, k₄.sp]⟩, R, K⟩, W⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  obtain ⟨h0, h1, h2, h3, h12, hlr⟩ := hr
+  have hpres : r ∈ preserved := by revert h0 h1 h2 h3 h12 hlr; cases r <;> decide
+  rw [hp₇ r hpres hlr, k₄.gpr r (by simp [h0, h1, h2, h3])]
+
+/-- The arguments of a call, as the functions' precondition has them. -/
+theorem pre_of_callR {n m : Nat} {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hf : Far s base 8192) {o a b : Nat} (ho : o + 8 * n ≤ own n) (ha : a + 8 * n ≤ own n)
+    (hb : b + 8 * n ≤ own n) {t : State} (h1 : t.rd = []) (h2 : t.wr = [⟨base, 8192⟩])
+    (h3 : t.gpr .r0 = s.gpr .r12) (h4 : (t.gpr .r1).toNat = o) (h5 : (t.gpr .r2).toNat = a)
+    (h6 : (t.gpr .r3).toNat = b) : Pre n m t ∧ State.addr (t.gpr .r0) = base := by
+  have hr0 : State.addr (t.gpr .r0) = base := by rw [h3]; exact hs.wb
+  refine ⟨⟨h1, by rw [h2, hr0], ?_, by rw [h4]; exact ho, by rw [h5]; exact ha, by rw [h6]; exact hb⟩, hr0⟩
+  rw [h3, hs.wb_toNat]; exact hf.nowrap
+
+section
+variable {enc : Nat → Nat} {S : Impl.Weierstrass.Mont.Modulus} (hM : ModOk S.k S.m) {s : State} {base : Addr}
+  {size : Nat} (hs : Scr s base size) (hf : Far s base 8192) {o a b : Nat}
+  (lo : enc o + 8 * S.k ≤ own S.k) (la : enc a + 8 * S.k ≤ own S.k) (lb : enc b + 8 * S.k ≤ own S.k)
+include hM hs hf lo la lb
+
+/-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
+theorem mulCallR_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) {u : Bool} :
+    WP isa (callR enc (mulName u S) (mulFnWith u S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
+      wordsVal s'.mem base (enc o) S.k < S.m ∧
+      wordsVal s'.mem base (enc o) S.k * 2 ^ (64 * S.k) % S.m =
+        wordsVal s.mem base (enc a) S.k * wordsVal s.mem base (enc b) S.k % S.m :=
+  callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k < S.m ∧
+      wordsVal m' base (enc o) S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base (enc a) S.k * wordsVal m base (enc b) S.k % S.m)
+    (by unfold mulFnWith mulFnU mulFn; cases u <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> (try split) <;> rfl)
+    hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
+      obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
+      refine WP.mono (mulFnWith_ok u hM hp (by rw [e0, h6, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
+      rw [e0, h4, h5, h6] at *
+      exact ⟨A, K, ⟨V, C⟩, R⟩
+
+/-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
+theorem addCallR_ok (hAB : wordsVal s.mem base (enc a) S.k + wordsVal s.mem base (enc b) S.k < 2 * S.m) :
+    WP isa (callR enc (S.fn "add") (addFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
+      wordsVal s'.mem base (enc o) S.k = (wordsVal s.mem base (enc a) S.k + wordsVal s.mem base (enc b) S.k) % S.m :=
+  callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k = (wordsVal m base (enc a) S.k + wordsVal m base (enc b) S.k) % S.m)
+    rfl hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
+      obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
+      refine WP.mono (addFn_ok hM hp (by rw [e0, h5, h6, h7]; exact hAB)) fun t' ⟨A, K, V, R⟩ => ?_
+      rw [e0, h4, h5, h6] at *
+      exact ⟨A, K, V, R⟩
+
+/-- `[o] = [a] - [b] mod m` by a call of `vg_<curve>_sub_mod_<p|n>`. -/
+theorem subCallR_ok (hA : wordsVal s.mem base (enc a) S.k < S.m) (hB : wordsVal s.mem base (enc b) S.k < S.m) :
+    WP isa (callR enc (S.fn "sub") (subFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
+      wordsVal s'.mem base (enc o) S.k = (wordsVal s.mem base (enc a) S.k + S.m - wordsVal s.mem base (enc b) S.k) % S.m :=
+  callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k = (wordsVal m base (enc a) S.k + S.m - wordsVal m base (enc b) S.k) % S.m)
+    rfl hf (by have := own_le S.k hM.n9; omega_using [lo, this]) (by have := own_le S.k hM.n9; omega_using [la, this])
+    (by have := own_le S.k hM.n9; omega_using [lb, this]) fun t h1 h2 h3 h4 h5 h6 h7 => by
+      obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
+      refine WP.mono (subFn_ok hM hp (by rw [e0, h5, h7]; exact hA) (by rw [e0, h6, h7]; exact hB))
+        fun t' ⟨A, K, V, R⟩ => ?_
+      rw [e0, h4, h5, h6] at *
+      exact ⟨A, K, V, R⟩
+
+end
+
+end VG.Proof.Weierstrass.Arm.Point
+
+end
+
+end
+
+
+/-!
+# Field programs on slots at offsets known at run time, on 32-bit ARM
+
+`fprogR σ S ops` (`Impl/Weierstrass/Arm/Point.lean`) runs the field
+operations `ops`, on slots named by number, each slot `x` at the offset
+`σ x`, by calls of the functions of the modulus `S`. As `fprog_ok`
+(`Fprog.lean`), what the slots stand for (`toM`) follows `runOps ops`
+(`fprogR_ok`), but the offsets may coincide: only the slots the program
+writes (`W`) must be apart from every other (`LayR`), so that two slots it
+only reads may be one (a point doubled). `opsR_ok` runs a formula on the
+function's slots (`OpsOk`), such as the complete addition (`rcbIds_opsOk`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Point
+
+open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass.Arm.Mont
+open VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm.Point
+open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm
+  VG.Proof.Weierstrass.Arm.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+/-- The slots `x < N` at offsets `σ x` of numbers of `k` words: below the
+functions' own working space, and each of `W` apart from every other. -/
+structure LayR (k N : Nat) (W : List Nat) (σ : Nat → Nat) : Prop where
+  le : ∀ x < N, σ x + 8 * k ≤ own k
+  apart : ∀ w ∈ W, ∀ x < N, x ≠ w → σ x + 8 * k ≤ σ w ∨ σ w + 8 * k ≤ σ x
+
+/-- The state holds the environment `E` in Montgomery's form in the slots `V`
+(below `N`), below `m`, and the working space at `r12` has its `8192` bytes
+writable. -/
+structure InvR (k N : Nat) (σ : Nat → Nat) (base : Addr) (m : Nat) [NeZero m]
+    (V : List Nat) (E : Nat → Fin m) (s : State) : Prop where
+  scr : Scr s base 4096
+  far : Far s base 8192
+  ids : ∀ x ∈ V, x < N
+  lt : ∀ x ∈ V, wordsVal s.mem base (σ x) k < m
+  val : ∀ x ∈ V, toM m (2 ^ (64 * k)) (wordsVal s.mem base (σ x) k) = E x
+
+/-- What a program writing the slots `W` keeps: the registers but `r0`–`r3`,
+`r12` and `lr`, `r12` itself, the regions, and the memory but the slots `W`
+and the functions' own working space. -/
+structure KeepR (k : Nat) (σ : Nat → Nat) (base : Addr) (W : List Nat) (s s' : State) : Prop where
+  rest : Rest [.r0, .r1, .r2, .r3, .r12, .lr] s s'
+  r12 : s'.gpr .r12 = s.gpr .r12
+  mem : Outs base (W.map (fun w => (σ w, 8 * k)) ++ [(own k, 64 * k)]) s.mem s'.mem
+
+theorem KeepR.refl (k : Nat) (σ : Nat → Nat) (base : Addr) (W : List Nat) (s : State) : KeepR k σ base W s s :=
+  ⟨Rest.refl _ _, rfl, Outs.refl _ _ _⟩
+
+theorem KeepR.trans {k : Nat} {σ : Nat → Nat} {base : Addr} {W : List Nat} {s₁ s₂ s₃ : State}
+    (h₁ : KeepR k σ base W s₁ s₂) (h₂ : KeepR k σ base W s₂ s₃) : KeepR k σ base W s₁ s₃ :=
+  ⟨h₁.rest.trans h₂.rest, h₂.r12.trans h₁.r12, h₁.mem.trans h₂.mem⟩
+
+theorem KeepR.mono {k : Nat} {σ : Nat → Nat} {base : Addr} {W W' : List Nat} {s s' : State}
+    (h : KeepR k σ base W s s') (hW : ∀ w ∈ W, w ∈ W') : KeepR k σ base W' s s' :=
+  ⟨h.rest, h.r12, h.mem.mono fun r hr => by
+    simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr ⊢
+    rcases hr with ⟨w, hw, rfl⟩ | rfl
+    · exact .inl ⟨w, hW w hw, rfl⟩
+    · exact .inr rfl⟩
+
+/-- A call's frame, as a program's. -/
+theorem KeepR.of_call {k : Nat} {σ : Nat → Nat} {base : Addr} {o : Nat} {s s' : State}
+    (h : CallKeepR k base (σ o) s s') : KeepR k σ base [o] s s' :=
+  ⟨h.rest, h.r12, h.mem.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false]
+    rcases hr with rfl | rfl <;> simp)⟩
+
+/-- An operation writing `o`, which then holds `v`, keeps the invariant. -/
+theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZero m]
+    {W : List Nat} (hL : LayR k N W σ) {V : List Nat} {E : Nat → Fin m} {s s' : State}
+    (hI : InvR k N σ base m V E s) {o : Nat} (hoW : o ∈ W) (hoN : o < N) (hk : KeepR k σ base [o] s s')
+    (hr : wordsVal s'.mem base (σ o) k < m) {v : Fin m}
+    (hv : toM m (2 ^ (64 * k)) (wordsVal s'.mem base (σ o) k) = v) :
+    InvR k N σ base m (o :: V) (Function.update E o v) s' := by
+  have hn := hI.scr.nowrap
+  have hown : own k ≤ 4096 := Nat.sub_le _ _
+  have heq : ∀ x ∈ V, x ≠ o → wordsVal s'.mem base (σ x) k = wordsVal s.mem base (σ x) k := by
+    intro x hx hxo
+    have hxN := hI.ids x hx
+    have h1 := hL.le x hxN
+    have h2 := hL.apart o hoW x hxN hxo
+    refine Outs.wordsVal hk.mem (fun r hr => ?_) (by have := hI.far.nowrap; omega_using [hown, h1])
+    simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h2
+    · exact .inl h1
+  refine ⟨⟨by rw [hk.r12]; exact hI.scr.wb, hk.rest.wr ▸ hI.scr.wr, hI.scr.nowrap, hI.scr.small⟩,
+    hI.far.of_rest hk.rest, ?_, ?_, ?_⟩
+  · intro x hx
+    rcases List.mem_cons.mp hx with rfl | hx
+    · exact hoN
+    · exact hI.ids x hx
+  · intro x hx
+    by_cases hxo : x = o
+    · subst hxo; exact hr
+    · have hx' := List.mem_of_ne_of_mem hxo hx
+      rw [heq x hx' hxo]; exact hI.lt x hx'
+  · intro x hx
+    by_cases hxo : x = o
+    · subst hxo; rw [Function.update_self]; exact hv
+    · have hx' := List.mem_of_ne_of_mem hxo hx
+      rw [heq x hx' hxo, Function.update_of_ne hxo]
+      exact hI.val x hx'
+
+/-- One operation. -/
+theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
+    [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) {W : List Nat} (hL : LayR k N W σ)
+    (hm : UnitMod S.m (2 ^ (64 * k))) {V : List Nat} {E : Nat → Fin S.m} {s : State}
+    (hI : InvR k N σ base S.m V E s) {op : FOp} (hW : op.out ∈ W) (hN : ∀ x ∈ op.out :: op.ins, x < N)
+    (hR : ∀ x ∈ op.ins, x ∈ V) {u : Bool} :
+    WP isa (opCodeR σ S u op) s fun s' =>
+      KeepR k σ base [op.out] s s' ∧ InvR k N σ base S.m (op.out :: V) (op.run E) s' := by
+  subst hk
+  cases op with
+  | mul o a b =>
+    simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hW hN hR
+    refine WP.mono (mulCallR_ok (enc := σ) hM hI.scr hI.far (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2)
+        (hI.lt b hR.2))
+      fun s' ⟨K, hlt, heq⟩ => ?_
+    refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) hlt ?_⟩
+    rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+  | add o a b =>
+    simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hW hN hR
+    have hA := hI.lt a hR.1
+    have hB := hI.lt b hR.2
+    refine WP.mono (addCallR_ok (enc := σ) hM hI.scr hI.far (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2)
+        (by omega_using [hA, hB]))
+      fun s' ⟨K, heq⟩ => ?_
+    refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
+  | sub o a b =>
+    simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq] at hW hN hR
+    have hA := hI.lt a hR.1
+    have hB := hI.lt b hR.2
+    refine WP.mono (subCallR_ok (enc := σ) hM hI.scr hI.far (hL.le o hN.1) (hL.le a hN.2.1) (hL.le b hN.2.2)
+        hA hB)
+      fun s' ⟨K, heq⟩ => ?_
+    refine ⟨.of_call K, hI.update hL hW hN.1 (.of_call K) ?_ ?_⟩
+    · rw [heq]; exact Nat.mod_lt _ (by omega_using [hA])
+    · rw [heq, toM_sub (by omega_using [hB]), hI.val a hR.1, hI.val b hR.2]
+
+/-- A field program. -/
+theorem fprogR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
+    [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) {W : List Nat} (hL : LayR k N W σ)
+    (hm : UnitMod S.m (2 ^ (64 * k))) {u : Bool} :
+    ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin S.m} {s : State},
+      InvR k N σ base S.m V E s → (∀ op ∈ ops, op.out ∈ W ∧ ∀ x ∈ op.out :: op.ins, x < N) →
+      readsOk ops V = true →
+      WP isa (fprogR σ S ops u) s fun s' => KeepR k σ base (ops.map FOp.out) s s' ∧
+        InvR k N σ base S.m (validAfter ops V) (runOps ops E) s'
+  | [], _, _, s, hI, _, _ => WP.block_nil ⟨KeepR.refl _ _ _ _ s, hI⟩
+  | op :: ops, V, E, s, hI, hS, hR => by
+    simp only [readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at hR
+    have hop := hS op (List.mem_cons_self ..)
+    refine progs_wp _ _ (WP.mono (fopR_ok hM hk hL hm hI hop.1 hop.2 hR.1) fun s₁ ⟨k₁, I₁⟩ => ?_)
+    refine WP.mono (fprogR_ok hM hk hL hm ops I₁ (fun op' h => hS op' (List.mem_cons_of_mem _ h)) hR.2)
+      fun s₂ ⟨k₂, I₂⟩ => ⟨(k₁.mono fun w hw => ?_).trans (k₂.mono fun w hw => ?_), I₂⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      simp [hw]
+    · simp [hw]
+
+/-! ## The complete addition -/
+
+/-- The slots the function's addition writes: the result's and the
+temporaries. -/
+def wIds : List Nat := [0, 1, 2, 11, 12, 13, 14, 15, 16]
+
+/-- The slots it reads first: `p`, `q`, `a` and `3b`. -/
+def rIds : List Nat := [3, 4, 5, 6, 7, 8, 9, 10]
+
+/-- A formula on the function's slots: it writes only `wIds`, names only
+slots below 17, reads only `rIds` or what it wrote, and writes the
+result's three slots. -/
+structure OpsOk (ops : List FOp) : Prop where
+  slots : ∀ op ∈ ops, op.out ∈ wIds ∧ ∀ x ∈ op.out :: op.ins, x < 17
+  reads : readsOk ops rIds = true
+  outs : ∀ j < 3, j ∈ validAfter ops rIds
+
+/-- A formula on the slots numbered as the function numbers them, from a
+state holding `E` in the slots it reads. -/
+theorem opsR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Impl.Weierstrass.Mont.Modulus}
+    [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
+    (hm : UnitMod S.m (2 ^ (64 * k))) {ops : List FOp} (hO : OpsOk ops)
+    {E : Nat → Fin S.m} {s : State} (hI : InvR k 17 σ base S.m rIds E s) {u : Bool} :
+    WP isa (fprogR σ S ops u) s fun s' => KeepR k σ base wIds s s' ∧
+      InvR k 17 σ base S.m (validAfter ops rIds) (runOps ops E) s' := by
+  refine WP.mono (fprogR_ok hM hk hL hm _ hI hO.slots hO.reads) fun s' ⟨hk', hI'⟩ =>
+    ⟨hk'.mono fun w hw => ?_, hI'⟩
+  obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
+  exact (hO.slots op hop).1
+
+theorem rcbIds_ok : ∀ op ∈ rcb sId pId qId oId, op.out ∈ wIds ∧ ∀ x ∈ op.out :: op.ins, x < 17 := by
+  decide
+
+theorem rcbIds_reads : readsOk (rcb sId pId qId oId) rIds = true := by decide
+
+theorem rcbIds_apart : RcbApart sId pId qId oId := ⟨by decide, by decide⟩
+
+/-! ## The formulas for `a = 0` -/
+
+theorem dbl0_opsOk : OpsOk (dbl0 sId pId oId) := ⟨by decide, by decide, by decide⟩
+
+theorem rcb0m_opsOk : OpsOk (rcb0m sId pId qId oId) := ⟨by decide, by decide, by decide⟩
+
+theorem rcbIds_opsOk : OpsOk (rcb sId pId qId oId) := ⟨rcbIds_ok, rcbIds_reads, by decide⟩
+
+theorem ops0_opsOk (dbl : Bool) : OpsOk (ops0 dbl) := by
+  cases dbl
+  · exact rcb0m_opsOk
+  · exact dbl0_opsOk
+
+/-- What the formulas compute on the slots. -/
+theorem ops0_run {m : Nat} [NeZero m] (E : Nat → Fin m) (dbl : Bool) :
+    (runOps (ops0 dbl) E 0, runOps (ops0 dbl) E 1, runOps (ops0 dbl) E 2) =
+      if dbl then Impl.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+      else Impl.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) := by
+  cases dbl <;> rfl
+
+end VG.Proof.Weierstrass.Arm.Point
+
+end
+
+end
+
+
+/-!
+# Complete point addition and doubling as functions, on 32-bit ARM: correctness
+
+`fnOps S dbl ops` (`Impl/Weierstrass/Arm/Point.lean`), for field operations
+`ops` that write only the result and the temporaries (`OpsOk`), from a state
+that its precondition describes (`PrePt`: the working space at `r0`, writable, and
+every coordinate it reads below the prime), returns with the callee-saved
+registers and `sp` kept, `r12 = ws`, the memory changed only at `O` and in
+the own working space, and `O`'s coordinates below the prime, standing for
+what `ops` computes from what the constants and the operands stand for
+(`fnOps_ok`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Point
+
+open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass.Arm.Mont
+open VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm.Point
+open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm
+  VG.Proof.Weierstrass.Arm.Mont
+open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov op2_reg wp_str wp_ldr)
+
+/-- The numbers of the layout, for `omega_arith`. -/
+theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
+    Impl.Weierstrass.Point.ownAt k + 64 + 6 * Impl.Weierstrass.Point.elemBytes k = own k ∧ own k + 64 * k = 4096 ∧ Impl.Weierstrass.Point.elemBytes k = 8 * k ∧
+    Impl.Weierstrass.Point.b3At k + Impl.Weierstrass.Point.elemBytes k = Impl.Weierstrass.Point.ownAt k ∧ Impl.Weierstrass.Point.aAt k + Impl.Weierstrass.Point.elemBytes k = Impl.Weierstrass.Point.b3At k ∧
+    Impl.Weierstrass.Point.qAt k + 3 * Impl.Weierstrass.Point.elemBytes k = Impl.Weierstrass.Point.aAt k ∧ Impl.Weierstrass.Point.pAt k + 3 * Impl.Weierstrass.Point.elemBytes k = Impl.Weierstrass.Point.qAt k ∧
+    Impl.Weierstrass.Point.oAt k + 3 * Impl.Weierstrass.Point.elemBytes k = Impl.Weierstrass.Point.pAt k ∧ 1000 ≤ Impl.Weierstrass.Point.oAt k := by
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
+  all_goals decide +kernel
+
+/-- The slots the function reads first lie below its own working space. -/
+theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
+    ∀ x ∈ rIds, enc k dbl x + 8 * k ≤ Impl.Weierstrass.Point.ownAt k := by
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
+  all_goals cases dbl <;> decide +kernel
+
+/-- The slots `enc` gives are laid out as the program needs, and those it
+writes lie apart from the saved `lr` and within `O` or the own working
+space. -/
+theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
+  all_goals cases dbl <;> exact ⟨by decide +kernel, by decide +kernel⟩
+
+theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
+    ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ Impl.Weierstrass.Point.ownAt k ∨ Impl.Weierstrass.Point.ownAt k + 4 ≤ enc k dbl w) ∧
+      ((Impl.Weierstrass.Point.oAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ Impl.Weierstrass.Point.pAt k) ∨
+        (Impl.Weierstrass.Point.ownAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ 4096)) := by
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
+  all_goals cases dbl <;> decide +kernel
+
+/-- The precondition of the function, on the state: the working space at
+`r0`, its `8192` bytes writable, and the numbers it reads below `m`. -/
+structure PrePt (k m : Nat) (dbl : Bool) (s : State) : Prop where
+  rd : s.rd = []
+  wr : s.wr = [⟨State.addr (s.gpr .r0), 8192⟩]
+  fit : (s.gpr .r0).toNat + 8192 ≤ 2 ^ 32
+  k3 : 3 ≤ k
+  k6 : k ≤ 6
+  lt : ∀ x ∈ rIds, wordsVal s.mem (State.addr (s.gpr .r0)) (enc k dbl x) k < m
+
+/-- What the entry leaves: `r12 = ws`, the other registers, `lr` saved, and
+the memory but those 4 bytes. -/
+structure EnteredPt (k : Nat) (s s₁ : State) : Prop where
+  scr : Scr s₁ (State.addr (s.gpr .r0)) 4096
+  far : Far s₁ (State.addr (s.gpr .r0)) 8192
+  r12 : s₁.gpr .r12 = s.gpr .r0
+  keep : ∀ r, r ≠ .r12 → s₁.gpr r = s.gpr r
+  rd : s₁.rd = s.rd
+  wr : s₁.wr = s.wr
+  sp : s₁.sp = s.sp
+  mem : Outs (State.addr (s.gpr .r0)) [(Impl.Weierstrass.Point.ownAt k, 4)] s.mem s₁.mem
+  saved : s₁.mem.readW (off (State.addr (s.gpr .r0)) (Impl.Weierstrass.Point.ownAt k)) 32 = s.gpr .lr
+
+theorem entry_ok {k m : Nat} {dbl : Bool} {s : State} (hp : PrePt k m dbl s) :
+    WP isa (.block (Impl.Weierstrass.Arm.Point.entry k)) s (EnteredPt k s) := by
+  have hl := lay_nums hp.k3 hp.k6
+  have hfit := hp.fit
+  have hown : own k ≤ 4096 := Nat.sub_le _ _
+  refine wp_mov (op2_reg _ _) fun s₁ u₁ => ?_
+  have hs₁ : Scr s₁ (State.addr (s.gpr .r0)) 4096 := ⟨by rw [u₁.gpr], ⟨8192, by decide, by decide,
+    by rw [u₁.wr, hp.wr]; simp⟩, by rw [VG.Proof.X25519.Arm.addr_toNat]; omega_arith, by decide⟩
+  refine VG.Proof.X25519.Arm.WP.append (strs_ok hs₁ [(.lr, Impl.Weierstrass.Point.ownAt k)] (by simp; omega_arith) (by simp))
+    fun s₂ ⟨K₂, O₂, V₂⟩ => WP.block_nil ?_
+  refine ⟨hs₁.of_rest K₂ (by simp), ⟨by rw [K₂.wr, u₁.wr, hp.wr]; simp,
+    by rw [VG.Proof.X25519.Arm.addr_toNat]; exact hp.fit⟩, by rw [K₂.gpr _ (by simp), u₁.gpr],
+    fun r hr => by rw [K₂.gpr _ (by simp), u₁.other _ hr], by rw [K₂.rd, u₁.rd], by rw [K₂.wr, u₁.wr],
+    by rw [K₂.sp, u₁.sp], by rw [← u₁.mem]; simpa using O₂, ?_⟩
+  rw [V₂ (.lr, Impl.Weierstrass.Point.ownAt k) (by simp), u₁.other .lr (by decide)]
+
+/-- The environment of the entry: what the numbers of the slots stand for. -/
+def E₀ (k m : Nat) [NeZero m] (dbl : Bool) (s : State) (x : Nat) : Fin m :=
+  toM m (2 ^ (64 * k)) (wordsVal s.mem (State.addr (s.gpr .r0)) (enc k dbl x) k)
+
+theorem rIds_lt : ∀ x ∈ rIds, x < 17 := by decide
+
+/-- A function of field operations `ops` that write only the result and the
+temporaries (`OpsOk`): the callee-saved registers and `sp` kept, `r12 = ws`,
+the memory changed only at `O` and in the own working space, and `O`'s
+coordinates below the prime, standing for what `ops` computes from what the
+slots stand for. -/
+theorem fnOps_ok {S : Impl.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
+    {dbl : Bool} {ops : List FOp} (hO : OpsOk ops) {s : State} (hp : PrePt S.k S.m dbl s) {u : Bool} :
+    WP isa (Impl.Weierstrass.Arm.Point.fnOps S dbl ops u) s fun s' => abiPreserved s s' ∧
+      Outs (State.addr (s.gpr .r0)) [(Impl.Weierstrass.Point.oAt S.k, 3 * Impl.Weierstrass.Point.elemBytes S.k),
+        (Impl.Weierstrass.Point.ownAt S.k, 4096 - Impl.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
+      s'.gpr .r12 = s.gpr .r0 ∧
+      (∀ j < 3, wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl j) S.k < S.m) ∧
+      (toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 0) S.k),
+        toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 1) S.k),
+        toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 2) S.k)) =
+        (runOps ops (E₀ S.k S.m dbl s) 0, runOps ops (E₀ S.k S.m dbl s) 1,
+          runOps ops (E₀ S.k S.m dbl s) 2) := by
+  have hl := lay_nums hp.k3 hp.k6
+  have hR := enc_rIds hp.k3 hp.k6 dbl
+  have hW := enc_wIds hp.k3 hp.k6 dbl
+  rw [Impl.Weierstrass.Arm.Point.fnOps]
+  refine WP.seq (WP.mono (entry_ok hp) fun s₁ E => ?_)
+  have hI : InvR S.k 17 (enc S.k dbl) (State.addr (s.gpr .r0)) S.m rIds (E₀ S.k S.m dbl s) s₁ := by
+    have heq : ∀ x ∈ rIds, wordsVal s₁.mem (State.addr (s.gpr .r0)) (enc S.k dbl x) S.k =
+        wordsVal s.mem (State.addr (s.gpr .r0)) (enc S.k dbl x) S.k := fun x hx =>
+      Outs.wordsVal E.mem (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; exact .inl (hR x hx)) (by have := hR x hx; omega_arith)
+    exact ⟨E.scr, E.far, rIds_lt, fun x hx => by rw [heq x hx]; exact hp.lt x hx,
+      fun x hx => by rw [heq x hx]; rfl⟩
+  refine WP.seq (WP.mono (opsR_ok hM rfl (enc_lay hp.k3 hp.k6 dbl) (unitMod_pow_two hodd _) hO hI)
+    fun s₂ ⟨K, I₂⟩ => ?_)
+  refine WP.mono (ldrs_ok I₂.scr [(.lr, Impl.Weierstrass.Point.ownAt S.k)] (by simp; omega_arith) (by simp) (by simp))
+    fun s₃ ⟨M₃, K₃, V₃⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, fun j hj => ?_, ?_⟩
+  · -- The callee-saved registers.
+    by_cases hlr : r = .lr
+    · subst hlr
+      rw [V₃ (.lr, Impl.Weierstrass.Point.ownAt S.k) (by simp), ← E.saved]
+      refine Unch.readW32 (Outs.unch K.mem) (fun w hw => ?_) (by omega_arith)
+      simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
+      rcases hw with ⟨x, hx, rfl⟩ | rfl
+      · rcases (hW x hx).1 with h | h <;> [exact .inr (by dsimp only; omega_arith); exact .inl (by dsimp only; omega_arith)]
+      · exact .inl (by dsimp only; omega_arith)
+    · have hr' : r ∉ [Reg.r0, .r1, .r2, .r3, .r12, .lr] := by
+        simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+      rw [K₃.gpr r (by simp [hlr]), K.rest.gpr r hr', E.keep r (by intro h; simp [h] at hr')]
+  · rw [K₃.sp, K.rest.sp, E.sp]
+  · -- The memory.
+    rw [M₃]
+    refine (Outs.sub (rs := [(Impl.Weierstrass.Point.ownAt S.k, 4)]) E.mem fun r hr => ?_).trans
+      (Outs.sub K.mem fun r hr => ?_)
+    · rw [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Nat.le_refl _, by dsimp only; omega_arith⟩
+    · simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
+      rcases hr with ⟨x, hx, rfl⟩ | rfl
+      · rcases (hW x hx).2 with h | h
+        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
+        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
+  · rw [K₃.gpr _ (by simp), K.r12, E.r12]
+  · rw [M₃]; exact I₂.lt j (hO.outs j hj)
+  · rw [M₃, I₂.val 0 (hO.outs 0 (by decide)), I₂.val 1 (hO.outs 1 (by decide)),
+      I₂.val 2 (hO.outs 2 (by decide))]
+
+end VG.Proof.Weierstrass.Arm.Point
+
+end
+
+end
+
+
+/-!
+# The ladder by calls of the point functions, on 32-bit ARM: copies and calls
+
+`copyPt n o a` copies the point at `a` to `o` (`copyPt_ok`), and
+`ptCall S dbl` calls `vg_<curve>_point_double` or `vg_<curve>_point_add` on
+the working space at `r12` (`ptCall_ok`): it changes only `r0`–`r3` and
+`r10`, `O` and the point functions' own working space, and `O` then holds
+`rcbAdd` of what `a`, `3b`, `P` and `Q` (or `P`) stood for (`ptVal`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Weierstrass.Arm.Point
+
+open VG VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass.Arm.Mont
+open VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm.Point
+open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm
+  VG.Proof.Weierstrass.Arm.Mont
+open VG.Proof.X25519.Arm (Rest Upd wp_mov op2_reg)
+
+/-- `o = a`, for points whose slots (`n` 64-bit words) are in the working
+space, with `o`'s apart from each other and from `a`'s. -/
+theorem copyPt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n : Nat} {o a : Pt}
+    (hin : ∀ d ∈ [o.x, o.y, o.z, a.x, a.y, a.z], d + 8 * n ≤ size)
+    (hoo : (o.x + 8 * n ≤ o.y ∨ o.y + 8 * n ≤ o.x) ∧ (o.x + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.x) ∧
+      (o.y + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.y))
+    (hoa : ∀ d ∈ [o.x, o.y, o.z], ∀ e ∈ [a.x, a.y, a.z], d + 8 * n ≤ e ∨ e + 8 * n ≤ d) :
+    WP isa (.block (copyPt n o a)) s fun s' =>
+      wordsVal s'.mem base o.x n = wordsVal s.mem base a.x n ∧
+      wordsVal s'.mem base o.y n = wordsVal s.mem base a.y n ∧
+      wordsVal s'.mem base o.z n = wordsVal s.mem base a.z n ∧
+      Rest [.r4] s s' ∧ Outs base [(o.x, 8 * n), (o.y, 8 * n), (o.z, 8 * n)] s.mem s'.mem := by
+  have hn := hs.nowrap
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hin hoa
+  obtain ⟨iox, ioy, ioz, iax, iay, iaz⟩ := hin
+  obtain ⟨⟨xax, xay, xaz⟩, ⟨yax, yay, yaz⟩, ⟨zax, zay, zaz⟩⟩ := hoa
+  obtain ⟨xy, xz, yz⟩ := hoo
+  simp only [wordsVal_eq_val32]
+  rw [copyPt, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (copy_ok (2 * n) hs (by omega_using [iox]) (by omega_using [iax]) (by omega_using [xax]))
+    fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  have hs₁ := hs.of_rest k₁ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (copy_ok (2 * n) hs₁ (by omega_using [ioy]) (by omega_using [iay]) (by omega_using [yay]))
+    fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_rest k₂ (by decide)
+  refine WP.mono (copy_ok (2 * n) hs₂ (by omega_using [ioz]) (by omega_using [iaz]) (by omega_using [zaz]))
+    fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  refine ⟨?_, ?_, ?_, (k₁.trans k₂).trans k₃, ?_⟩
+  · rw [O₃.val32 (d := o.x) (by omega_using [xz]) (by omega_using [iox, hn]),
+      O₂.val32 (d := o.x) (by omega_using [xy]) (by omega_using [iox, hn]), e₁]
+  · rw [O₃.val32 (d := o.y) (by omega_using [yz]) (by omega_using [ioy, hn]), e₂,
+      O₁.val32 (d := a.y) (by omega_using [xay]) (by omega_using [iay, hn])]
+  · rw [e₃, O₂.val32 (d := a.z) (by omega_using [yaz]) (by omega_using [iaz, hn]),
+      O₁.val32 (d := a.z) (by omega_using [xaz]) (by omega_using [iaz, hn])]
+  · rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₁ O₂ O₃
+    exact ((Outs.of_outside O₁ (by simp)).trans (Outs.of_outside O₂ (by simp))).trans
+      (Outs.of_outside O₃ (by simp))
+
+/-- What the slot of number `x` stands for, in the working space at `base`. -/
+def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) : Fin m :=
+  toM m (2 ^ (64 * k)) (wordsVal mem base (enc k dbl x) k)
+
+/-- What the point function `ptName S a0 dbl` computes from the values of
+the slots: Algorithm 9 or 8 for `a0`, else Algorithm 1. -/
+def ptVal {m : Nat} [NeZero m] (a0 dbl : Bool) (E : Nat → Fin m) : Fin m × Fin m × Fin m :=
+  if a0 then
+    (if dbl then Impl.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+    else Impl.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
+  else VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8)
+
+theorem ptOps_opsOk (a0 dbl : Bool) : OpsOk (ptOps a0 dbl) := by
+  cases a0
+  · exact rcbIds_opsOk
+  · exact ops0_opsOk dbl
+
+theorem ptOps_run {m : Nat} [NeZero m] (E : Nat → Fin m) (a0 dbl : Bool) :
+    (runOps (ptOps a0 dbl) E 0, runOps (ptOps a0 dbl) E 1, runOps (ptOps a0 dbl) E 2) =
+      ptVal a0 dbl E := by
+  cases a0
+  · exact rcb_run rcbIds_apart E
+  · exact ops0_run E dbl
+
+theorem fnOps_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) (u : Bool := false) :
+    (fnOps S dbl ops u).noFrames = true := by
+  have mul : (Mont.mulFnWith u S.k S.m).noFrames = true := by
+    unfold Mont.mulFnWith Mont.mulFnU Mont.mulFn
+    cases u <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> (try split) <;> rfl
+  have fields (op : FOp) : (opCodeR (enc S.k dbl) S u op).noFrames = true := by
+    cases op <;> simp only [opCodeR, callR, Code.noFrames, Bool.true_and, mul] <;> rfl
+  have seqs : ∀ ps : List (Prog isa), (∀ p ∈ ps, p.noFrames = true) → (progs ps).noFrames = true := by
+    intro ps
+    induction ps with
+    | nil => intro _; rfl
+    | cons p ps ih =>
+      intro hp
+      cases ps with
+      | nil => exact hp p (by simp)
+      | cons q qs =>
+        change p.noFrames && (progs (q :: qs)).noFrames = true
+        rw [hp p (by simp), ih (fun r hr => hp r (by simp [hr]))]
+        rfl
+  have prog : (fprogR (enc S.k dbl) S ops u).noFrames = true := by
+    apply seqs
+    intro p hp
+    obtain ⟨op, _, rfl⟩ := List.mem_map.mp hp
+    exact fields op
+  simpa only [Impl.Weierstrass.Arm.Point.fnOps, Code.noFrames, Bool.true_and, Bool.and_true] using prog
+
+/-- A call of a point function, from the working space at `r12`: only
+`r0`–`r3`, `r10`, `O` and the own working space change, and `O` holds
+`ptVal` of what the constants and the operands stood for. -/
+theorem ptCall_ok {S : Impl.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm : S.m = m) (hk : S.k = k)
+    (hM : ModOk k m) (hodd : m % 2 = 1) (hk6 : k ≤ 6) (dbl : Bool) {a0 : Bool} {s : State} {base : Addr} {size : Nat}
+    (hs : Scr s base size) (hf : Far s base 8192)
+    (hlt : ∀ x ∈ rIds, wordsVal s.mem base (enc k dbl x) k < m) {u : Bool} :
+    WP isa (ptCall S dbl a0 u) s fun s' => Rest [.r10, .r0, .r1, .r2, .r3] s s' ∧
+      Outs base [(Impl.Weierstrass.Point.oAt k, 3 * Impl.Weierstrass.Point.elemBytes k),
+        (Impl.Weierstrass.Point.ownAt k, 4096 - Impl.Weierstrass.Point.ownAt k)] s.mem s'.mem ∧
+      (∀ j < 3, wordsVal s'.mem base (enc k dbl j) k < m) ∧
+      (Eb k m dbl s'.mem base 0, Eb k m dbl s'.mem base 1, Eb k m dbl s'.mem base 2) =
+        ptVal a0 dbl (Eb k m dbl s.mem base) := by
+  obtain ⟨c, w, m', k', d⟩ := S
+  dsimp only at hm hk
+  subst hm hk
+  rw [ptCall]
+  refine WP.seq (wp_mov (op2_reg _ _) fun s₁ u₁ => wp_mov (op2_reg _ _) fun s₂ u₂ => WP.block_nil ?_)
+  have k₂ : Rest [.r10, .r0] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  have m₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
+  have g10 : s₂.gpr .r10 = s.gpr .lr := by rw [u₂.other _ (by decide), u₁.gpr]
+  have g0 : s₂.gpr .r0 = s.gpr .r12 := by rw [u₂.gpr, u₁.other _ (by decide)]
+  have hf₂ : Far s₂ base 8192 := hf.of_rest k₂
+  have hcov : Covers [⟨base, 8192⟩] s₂.wr := by
+    have h := hf₂.write (d := 0) (n := 8192) (by omega_using [])
+    simp only [off, BitVec.add_zero] at h
+    exact Covers.one h
+  have e0 : ∀ t : State, t.gpr .r0 = s.gpr .r12 → State.addr (t.gpr .r0) = base := fun t h => by
+    rw [h]; exact hs.wb
+  refine WP.seq (WP.callCalls (k := ⟨fun t => PrePt k' m' dbl t ∧ t.gpr .r0 = s.gpr .r12 ∧ t.mem = s.mem,
+      fun t t' => Outs (State.addr (t.gpr .r0)) [(Impl.Weierstrass.Point.oAt k', 3 * Impl.Weierstrass.Point.elemBytes k'),
+          (Impl.Weierstrass.Point.ownAt k', 4096 - Impl.Weierstrass.Point.ownAt k')] t.mem t'.mem ∧
+        t'.gpr .r12 = t.gpr .r0 ∧
+        (∀ j < 3, wordsVal t'.mem (State.addr (t.gpr .r0)) (enc k' dbl j) k' < m') ∧
+        (Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 0, Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 1,
+          Eb k' m' dbl t'.mem (State.addr (t.gpr .r0)) 2) =
+        ptVal a0 dbl (Eb k' m' dbl t.mem (State.addr (t.gpr .r0))),
+      fun _ _ => True⟩)
+    (fun t ⟨hp, _, _⟩ => by
+      obtain ⟨tr, t', he, A, O, R, L, E⟩ := fnOps_ok (S := ⟨c, w, m', k', d⟩) hM hodd (ptOps_opsOk a0 dbl) hp
+      exact ⟨tr, t', he, A, O, R, L, E.trans (ptOps_run _ a0 dbl)⟩)
+    (rd := []) (wr := [⟨base, 8192⟩])
+    ⟨⟨rfl, by rw [State.withRegions_wr, State.withRegions_gpr, State.callEntry_gpr _ (by decide),
+        e0 _ g0],
+      by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g0, hs.wb_toNat]; exact hf.nowrap,
+      hM.n3, hk6,
+      fun x hx => by
+        rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), e0 _ g0, State.withRegions_mem,
+          State.callEntry_mem, m₂]
+        exact hlt x hx⟩,
+      by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g0],
+      by rw [State.withRegions_mem, State.callEntry_mem, m₂]⟩
+    (Covers.right hcov) hcov ?_ (fnOps_noFrames _ _ _ u))
+  intro s₇ r₇ w₇ p₇ _ hp₇ _ ⟨O, R, L, E⟩
+  simp only [State.withRegions_mem, State.callEntry_mem, m₂, State.withRegions_gpr] at O R L E
+  rw [State.callEntry_gpr _ (by decide), g0] at R
+  rw [State.callEntry_gpr _ (by decide), e0 _ g0] at O L E
+  refine wp_mov (op2_reg _ _) fun s₈ u₈ => WP.block_nil ?_
+  have hm : s₈.mem = s₇.mem := u₈.mem
+  refine ⟨⟨fun r hr => ?_, by rw [u₈.rd, r₇, k₂.rd], by rw [u₈.wr, w₇, k₂.wr],
+    by rw [u₈.sp, p₇, k₂.sp]⟩, by rw [hm]; exact O, by rw [hm]; exact L, by rw [hm]; exact E⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  obtain ⟨h10, h0, h1, h2, h3⟩ := hr
+  by_cases hlr : r = .lr
+  · subst hlr
+    rw [u₈.gpr, hp₇ _ (by decide) (by decide), g10]
+  by_cases h12 : r = .r12
+  · subst h12
+    rw [u₈.other _ (by decide), R]
+  have hpres : r ∈ preserved := by revert h10 h0 h1 h2 h3 h12 hlr; cases r <;> decide
+  rw [u₈.other _ hlr, hp₇ r hpres hlr, k₂.gpr r (by simp [h10, h0])]
+
+end VG.Proof.Weierstrass.Arm.Point
+
+end
+
+end
+
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM
@@ -103,7 +869,7 @@ for any `k`. -/
 @[elab_as_elim]
 theorem lay_cases {P : Nat → Prop} (k : Nat) (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (h3 : P 3) (h4 : P 4)
     (h5 : P 5) (h6 : P 6) : P k := by
-  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega_using [hk3, hk6]
   exacts [h3, h4, h5, h6]
 
 /-- The copies survive changes apart from them. -/

@@ -122,7 +122,7 @@ theorem main_ct (W : Window) (M : Mont) (S : Selector) :
       have ew := hb.ew
       have := hb.k1
       obtain ⟨hodd, -⟩ := valid_facts hI₁.2.2.2.2.2 hb.k1
-      obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega) hodd hI₁.2.2.1 hI₂.2.2.1
+      obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega_using [ew, this]) hodd hI₁.2.2.1 hI₂.2.2.1
       exact ⟨_, hI₁.r2pre, hI₂.r2pre⟩) h) fun _ _ h => h) (x1_x2 M)) ?_)
   refine RelCT.seqs_append (by simp [pow]) (by simp) (RelCT.seq (R := Two (Ex X3))
     (ex_post (two_map ExP.pw (fun p s ⟨xb, h⟩ => x2_ps0 p xb s h)

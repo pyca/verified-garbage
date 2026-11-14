@@ -70,17 +70,17 @@ theorem compM_ok (hc : CalleeOk md cc) (hN : P.N ≤ 64) (hso : P.so ≤ 1024) {
   have e5 : t'.gpr .r5 = BitVec.ofNat 64 1 := by rw [o.get .r5, h5]
   have e6 : t'.gpr .r6 = off (S s) oW := by rw [o.get .r6, h6]
   have hcw : Covers [⟨off (S s) oSt, P.N⟩, ⟨off (S s) oW, P.so⟩] t'.wr := by
-    rw [b'.wr]; exact Covers.pair (sc_cov F (by omega)) (sc_cov F (by omega))
+    rw [b'.wr]; exact Covers.pair (sc_cov F (by omega_using [hN, hR, hSt])) (sc_cov F (by omega_using [hso, hR, hW]))
   refine WP.call (k := compressK md) hc.verified (rd := [⟨off (S s) (oY + b), P.B⟩])
     (wr := [⟨off (S s) oSt, P.N⟩, ⟨off (S s) oW, P.so⟩]) ?_
-    (Covers.append_left (Covers.right (by rw [b'.wr]; exact sc_cov F (by omega))) (Covers.right hcw)) hcw
+    (Covers.append_left (Covers.right (by rw [b'.wr]; exact sc_cov F (by omega_using [hb, hR, hY]))) (Covers.right hcw)) hcw
     (fun t'' hrd hwr hsp hf hg _ hpost => ?_) hc.noFrames
   · simp only [compressK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r6 ∉ linkRegs by decide),
       e3, e4, e5, e6, hB1]
-    exact ⟨trivial, trivial, sdis (.inl (by omega)) (by omega) (by omega), sdis (.inr (by omega)) (by omega) (by omega),
-      sdis (.inr (by omega)) (by omega) (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inl (by omega_using [hN, hSt, hW])) (by omega_using [hN, hR, hSt]) (by omega_using [hso, hR, hW]), sdis (.inr (by omega_using [hN, hY, hSt])) (by omega_using [hb, hR, hY]) (by omega_using [hN, hR, hSt]),
+      sdis (.inr (by omega_using [hso, hY, hW])) (by omega_using [hb, hR, hY]) (by omega_using [hso, hR, hW])⟩
   · simp only [compressK, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), State.callEntry_mem, e3, e4, e5] at hpost
@@ -89,11 +89,11 @@ theorem compM_ok (hc : CalleeOk md cc) (hN : P.N ≤ 64) (hso : P.so ≤ 1024) {
     refine ⟨h.call F (R := [⟨off (S s) oSt, P.N⟩, ⟨off (S s) oW, P.so⟩]) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact sc_in (by omega)
-        · exact sc_in (by omega)) (hrd.trans o.rd) (hwr.trans o.wr) (hsp.trans o.sp)
+        · exact sc_in (by omega_using [hN, hR, hSt])
+        · exact sc_in (by omega_using [hso, hR, hW])) (hrd.trans o.rd) (hwr.trans o.wr) (hsp.trans o.sp)
         (by rw [← o.sp, ← o.mem]; exact hf') (fun r hr => (hg r hr).trans (o.gpr r (not_r12 hr))),
       fun r hr => (hg r hr).trans (o.gpr r (not_r12 hr)),
-      (Same.of_mem o.mem _).trans (same_of_frame F (b'.sp) (rgs := [(oSt, P.N), (oW, P.so)]) (by simp; omega) hf'),
+      (Same.of_mem o.mem _).trans (same_of_frame F (b'.sp) (rgs := [(oSt, P.N), (oW, P.so)]) (by simp; omega_using [hN, hso, hR, hSt, hW]) hf'),
       ?_⟩
     rw [hpost, BitVec.toNat_ofNat, Md.compressBlocks_one, o.mem]
 
@@ -116,24 +116,24 @@ theorem digM_ok (hd : ∀ u, (digestK md).pre u → ∃ t u', Exec isa dc u t u'
   have b' := h.only F o
   have e3 : t'.gpr .r3 = off (S s) oSel := by rw [o.get .r3, h3]
   have e4 : t'.gpr .r4 = off (S s) oDig := by rw [o.get .r4, h4]
-  have hcw : Covers [⟨off (S s) oDig, P.N⟩] t'.wr := by rw [b'.wr]; exact sc_cov F (by omega)
+  have hcw : Covers [⟨off (S s) oDig, P.N⟩] t'.wr := by rw [b'.wr]; exact sc_cov F (by omega_using [hN, hR, hDg])
   refine WP.call (k := digestK md) hd (rd := [⟨off (S s) oSel, P.N⟩]) (wr := [⟨off (S s) oDig, P.N⟩]) ?_
-    (Covers.append_left (Covers.right (by rw [b'.wr]; exact sc_cov F (by omega))) (Covers.right hcw)) hcw
+    (Covers.append_left (Covers.right (by rw [b'.wr]; exact sc_cov F (by omega_using [hN, hR, hSl]))) (Covers.right hcw)) hcw
     (fun t'' hrd hwr hsp hf hg _ hpost => ?_) hdn
   · simp only [digestK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
       e3, e4]
-    exact ⟨trivial, trivial, sdis (.inr (by omega)) (by omega) (by omega)⟩
+    exact ⟨trivial, trivial, sdis (.inr (by omega_using [hN, hDg, hSl])) (by omega_using [hN, hR, hSl]) (by omega_using [hN, hR, hDg])⟩
   · simp only [digestK, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
       State.callEntry_mem, e3, e4] at hpost
     have hf' : Frame ([⟨off (S s) oDig, P.N⟩] ++ [below t'.sp 48]) t'.mem t''.mem :=
       hf.mono fun r hr => List.mem_append_left _ hr
     refine ⟨h.call F (R := [⟨off (S s) oDig, P.N⟩]) (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact sc_in (by omega)) (hrd.trans o.rd) (hwr.trans o.wr) (hsp.trans o.sp)
+        rw [List.mem_singleton.mp hr]; exact sc_in (by omega_using [hN, hR, hDg])) (hrd.trans o.rd) (hwr.trans o.wr) (hsp.trans o.sp)
         (by rw [← o.sp, ← o.mem]; exact hf') (fun r hr => (hg r hr).trans (o.gpr r (not_r12 hr))),
       fun r hr => (hg r hr).trans (o.gpr r (not_r12 hr)),
-      (Same.of_mem o.mem _).trans (same_of_frame F (b'.sp) (rgs := [(oDig, P.N)]) (by simp; omega) hf'), ?_⟩
+      (Same.of_mem o.mem _).trans (same_of_frame F (b'.sp) (rgs := [(oDig, P.N)]) (by simp; omega_using [hN, hR, hDg]) hf'), ?_⟩
     rw [hpost, o.mem]
 
 end

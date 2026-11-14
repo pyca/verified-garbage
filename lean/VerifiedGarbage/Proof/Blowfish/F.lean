@@ -36,7 +36,7 @@ def fAcc (K : Schedule) (x : Word) : Nat → Word
 theorem fAcc_step (K : Schedule) (x : Word) {j : Nat} (hj : j < 4) (prev : Word)
     (hp : 0 < j → prev = fAcc K x (j - 1)) :
     (if j = 0 then sq K x j else if j = 2 then prev ^^^ sq K x j else prev + sq K x j) = fAcc K x j := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
   · rfl
   · rw [hp (by decide)]; rfl
   · rw [hp (by decide)]; rfl

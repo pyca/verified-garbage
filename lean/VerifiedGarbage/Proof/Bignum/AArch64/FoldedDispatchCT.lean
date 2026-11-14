@@ -63,7 +63,7 @@ theorem bytesTest_ct : RelCT isa (Two PExpPre) (.block Folded.bytesTest) (fun _ 
       simp only [List.mem_singleton] at hr; subst r; exact hs.trans ht.symm) (by taint_decide))
   rintro a s ⟨_,_,hc,hf,he,_⟩
   have bound : 8*sE+8 ≤ a.L.Z := by
-    have := hdr_lt_slot a.L.w 8 (show sE < 32 by decide); have := hf.1; omega
+    have := hdr_lt_slot a.L.w 8 (show sE < 32 by decide); have := hf.1; omega_arith
   brun [hc.good.x0,hdr_enc (show sE < 32 by decide),hc.good.scr.ld bound,he]
 
 theorem bytesTest_fw (a : EPub) (s : State) (h : PExpPre a s) (h3 : a.len=3) :
@@ -73,9 +73,9 @@ theorem bytesTest_fw (a : EPub) (s : State) (h : PExpPre a s) (h3 : a.len=3) :
   obtain ⟨X,x,hc,hf,he,hl,hL,hs⟩ := h
   have hel : a.eb.length=3 := hs.1.trans h3
   have heb := List.eq_getElem_of_length_eq_three a.eb hel
-  refine WP.mono (bytesTest_ok hc.good hf.1 he (a.eb[0]'(by omega)) (a.eb[1]'(by omega)) (a.eb[2]'(by omega)) (by rw [← h3]; exact hs.2.2.1)
-    (by simpa only [BitVec.add_zero] using hs.bytes 0 (by omega))
-    (hs.bytes 1 (by omega)) (hs.bytes 2 (by omega))) fun t ⟨ht,hm,hk⟩ => ?_
+  refine WP.mono (bytesTest_ok hc.good hf.1 he (a.eb[0]'(by omega_using [hel])) (a.eb[1]'(by omega_using [hel])) (a.eb[2]'(by omega_using [hel])) (by rw [← h3]; exact hs.2.2.1)
+    (by simpa only [BitVec.add_zero] using hs.bytes 0 (by omega_using [h3]))
+    (hs.bytes 1 (by omega_using [h3])) (hs.bytes 2 (by omega_using [h3]))) fun t ⟨ht,hm,hk⟩ => ?_
   refine ⟨pExpPre_mem orig hm hk (by decide),?_⟩
   simpa only [← heb] using ht
 

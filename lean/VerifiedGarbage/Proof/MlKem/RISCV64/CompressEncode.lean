@@ -541,7 +541,7 @@ theorem zext_eq (x : BitVec 64) : x <<< 32 >>> 32 = (x.setWidth 32).setWidth 64 
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
     Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
   have := x.isLt
-  omega
+  omega_using []
 
 /-- The branch on `d`, zero-extended: `d - k` is zero exactly when `d = k`. -/
 theorem dsel (y : BitVec 32) {k : Nat} (hk : k < 2048) :
@@ -553,11 +553,11 @@ theorem dsel (y : BitVec 32) {k : Nat} (hk : k < 2048) :
     · intro e
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, h0] at this
-      omega
+      omega_using [hk, this]
     · intro e
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, h0]
-      omega
+      omega_using [e]
   rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
   exact e
 

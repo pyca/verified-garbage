@@ -72,7 +72,7 @@ namespace Ball
 
 theorem ballParams_le {len τ : Nat} (h : (len, τ) ∈ ballParams) : len ≤ 64 ∧ 39 ≤ τ ∧ τ ≤ 60 := by
   simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at h
-  omega
+  omega_using [h]
 
 /-- The call. -/
 abbrev spOf (σ : State) : Sp :=
@@ -114,16 +114,16 @@ theorem zero_ok {s : State} (h : J6 136 272 (spOf σ) σ s) : WP isa zeroPoly s 
   WP.mono (zeroPoly_ok (fun i hi => inA (spOk hp) h.env.wr hi) h.env.x26) fun u ⟨k, z, f⟩ =>
     ⟨h.env.keepA (spOk hp) k f, by
       rw [MlKem.bytesAt_frame f (fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact (a_scr' (spOk hp) (by omega)).symm) (by omega), h.out,
+        rw [List.mem_singleton.mp hr]; exact (a_scr' (spOk hp) (by omega_using [])).symm) (by omega_using []), h.out,
         (H_eq _ _).symm], z⟩
 
 theorem lpre {s : State} (h : Z σ s) : Ball.LPre (X σ) ((spOf σ).at' 840) (σ.gpr .x3) (tauOf σ) s :=
   ⟨fun p hp' => by rw [← h.out, MlKem.bytesAt_getD _ _ hp'],
-    fun p hp' => by rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by omega),
-    inScrRd (spOk hp) h.env.rd h.env.wr (by omega),
-    fun i hi => inA (spOk hp) h.env.wr hi, (a_scr' (spOk hp) (by omega)).symm,
-    by rw [h.env.x25], h.env.x26, by rw [h.env.x27]; simp; omega,
-    by have := (params hp).2.2; omega, h.zero⟩
+    fun p hp' => by rw [at_add]; exact inScrRd (spOk hp) h.env.rd h.env.wr (by omega_using [hp']),
+    inScrRd (spOk hp) h.env.rd h.env.wr (by omega_using []),
+    fun i hi => inA (spOk hp) h.env.wr hi, (a_scr' (spOk hp) (by omega_using [])).symm,
+    by rw [h.env.x25], h.env.x26, by rw [h.env.x27]; simp; omega_using [],
+    by have := (params hp).2.2; omega_using [this], h.zero⟩
 
 /-- After the loop. -/
 structure LP (σ s : State) : Prop where
@@ -136,7 +136,7 @@ theorem St_264 : Ball.St (X σ) (tauOf σ) 264 = ballFold (tauOf σ) (X σ) := b
   simp only [Ball.St, ballFold]; rw [List.take_of_length_le (by rw [List.length_drop, X_length])]
 
 theorem loopP_ok {s : State} (h : Z σ s) : WP isa bLoop s (LP σ) :=
-  WP.mono (Ball.loop_ok (X_length σ) (by have := (params hp).2.2; omega) (lpre hp h)) fun u hu => by
+  WP.mono (Ball.loop_ok (X_length σ) (by have := (params hp).2.2; omega_using [this]) (lpre hp h)) fun u hu => by
     have x10 := hu.x10
     have st := hu.st
     rw [St_264] at x10 st
@@ -146,10 +146,10 @@ theorem loopP_ok {s : State} (h : Z σ s) : WP isa bLoop s (LP σ) :=
 theorem end_ok {s : State} (h : LP σ s) :
     WP isa (.block (.lsr .x .x0 .x10 8 :: epi)) s fun s' => abiPreserved σ s' ∧ sbK.post σ s' := by
   refine wp_lsr (by decide) fun s₁ h₁ e₁ => ?_
-  have hl : (ballFold (tauOf σ) (X σ)).2 ≤ 256 := bFold_le (by simp only [n]; omega) _
+  have hl : (ballFold (tauOf σ) (X σ)).2 ≤ 256 := bFold_le (by simp only [n]; omega_using []) _
   have v0 : (s₁.gpr .x0).toNat = if (ballFold (tauOf σ) (X σ)).2 = 256 then 1 else 0 := by
     rw [e₁, toNat_lsr, h.x10]
-    split <;> simp only [Nat.reducePow] <;> omega
+    split <;> simp only [Nat.reducePow] <;> omega_arith
   refine WP.mono (epi_ok (spOk hp) (h.env.keep h₁.keep h₁.mem)) fun s' ⟨abi, m, k⟩ => ⟨abi, ?_, fun hf => ?_⟩
   · rw [k.get .x0]
     apply BitVec.eq_of_toNat_eq
@@ -206,10 +206,10 @@ theorem loop_ct : RelCT isa (Rel2 sbK.pre sbK.pub Z) bLoop fun _ _ => True := by
     · rw [List.mem_singleton.mp hr, h.env.wr, (spOk hp).wr]
       exact ⟨polyR (σ.gpr .x3), by simp, 0, (Proof.MlKem.AArch64.ptr_zero _).symm, by simp⟩
   · have l := lpre hp h
-    obtain ⟨t, u, e, -⟩ := Ball.loop_ok (X_length σ) (by have := (params hp).2.2; omega)
+    obtain ⟨t, u, e, -⟩ := Ball.loop_ok (X_length σ) (by have := (params hp).2.2; omega_using [this])
       (s₀ := s.withRegions (lrd σ) (lwr σ))
       ⟨l.buf, fun p hp' => Proof.MlKem.AArch64.in_rd (Proof.MlKem.AArch64.in_regions
-        (List.mem_singleton_self _) (Offset.contains_base _ (by omega) (by omega))),
+        (List.mem_singleton_self _) (Offset.contains_base _ (by omega_using [hp']) (by omega_using [hp']))),
         ⟨⟨(spOf σ).at' 840, 272⟩, by simp, by simp [Region.Contains]⟩,
         fun i hi => Proof.MlKem.AArch64.in_regions (List.mem_singleton_self _) (coeff_contains _ hi),
         l.disj, l.x25, l.x26, l.x27, l.tau, l.zero⟩

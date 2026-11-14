@@ -22,9 +22,9 @@ theorem inlineInvoke_ok {body : Prog isa} {s : State} {rd wr : List Region} {Q :
     reads.trans (Covers.append (Covers.refl _) (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr))
   have writeWide : Covers wr (allocated 4 s).wr :=
     writes.trans (Covers.of_mem fun _ hr => List.mem_cons_of_mem _ hr)
-  refine WP.alloc (by decide) (by omega) safe ?_
+  refine WP.alloc (by decide) (by omega_using [low]) safe ?_
   refine WP.narrowSp correct readWide writeWide safe
-    (by rw [allocated_esp,sub_toNat (by omega)]; omega) ?_
+    (by rw [allocated_esp,sub_toNat (by omega_using [low])]; omega_using [depth, low]) ?_
   intro v rdv wrv F ⟨ABI,V⟩
   have saved : ∀ r∈calleeSaved, v.gpr r=(allocated 4 s).gpr r := ABI.1
   refine ⟨rdv,?_,?_,?_,?_⟩
@@ -44,7 +44,7 @@ theorem inlineInvoke_ok {body : Prog isa} {s : State} {rd wr : List Region} {Q :
     · exact ⟨r,List.mem_append_left _ hr,fun _ h => h⟩
     · obtain rfl := List.mem_singleton.mp hr
       exact ⟨_,List.mem_append_right _ (List.mem_singleton_self _),
-        below_inner (by omega) low⟩
+        below_inner (by omega_using [depth]) low⟩
   · rw [freed_gpr _ _ (by decide)]
     exact V
 

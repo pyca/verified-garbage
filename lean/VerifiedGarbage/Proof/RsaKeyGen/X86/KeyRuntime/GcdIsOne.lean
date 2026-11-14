@@ -27,8 +27,8 @@ theorem gcdIsOne_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
       VG.Proof.Rsa.X86.Keys.slot t.mem B kFlag = (if num s.mem B (w.words n) 1 = 1 then 1 else 0) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
   have H := h.runtime hw
-  have fit := H.ws.arr_fit (j := aT2) (by unfold aT2; omega)
-  have f1 := H.ws.fit64 (j := 1) (by omega)
+  have fit := H.ws.arr_fit (j := aT2) (by unfold aT2; omega_using [space])
+  have f1 := H.ws.fit64 (j := 1) (by omega_using [space])
   have positive := H.ws.wpos
   rw [kw_words h.width] at fit f1 positive
   unfold gcdIsOne
@@ -38,15 +38,15 @@ theorem gcdIsOne_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
   change val32 u.mem B (VG.Proof.Rsa.X86.Keys.arr (w.words n) aT2) (w.words n + 2) = 1 at V
   have ou : Keep B (w.words n) [aT2] [] s.mem u.mem :=
     VG.Proof.Rsa.X86.Keys.Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ou)
-      (by simp only [S]; omega) (by simp)
+      (by simp only [S]; omega_using []) (by simp)
   have constant : num u.mem B (w.words n) aT2 = 1 := by
     have bound : 1 < 2 ^ (32 * w.words n) := by
-      have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (by omega : 1 ≤ 32 * w.words n)
-      omega
-    exact (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega : w.words n ≤ w.words n + 2)
+      have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (by omega_using [positive] : 1 ≤ 32 * w.words n)
+      omega_using [this]
+    exact (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_using [] : w.words n ≤ w.words n + 2)
       (by rw [V]; exact bound)).trans V
   have core := VG.Proof.Rsa.X86.KeyRt.eqS_ok (d := kFlag) (a := 1) (b := aT2) (t := aT1) (hu.runtime hw)
-    (by unfold aT1; omega) (by omega) (by unfold aT2; omega)
+    (by unfold aT1; omega_using [space]) (by omega_using [space]) (by unfold aT2; omega_using [space])
     (by decide) (by decide) (by decide)
   rw [kw_words h.width] at core
   refine WP.mono core fun t ⟨_, Ot, result, Kt⟩ => ?_
@@ -54,7 +54,7 @@ theorem gcdIsOne_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width}
     ou.num (by decide) (by simp) f1
   rw [original, constant] at result
   refine ⟨hu.afterBank hw Kt Ot (by intro j hj; have hsmall :=
-      (by decide : ∀ j ∈ ([aT1] : List Nat), j < 15) j hj; omega) (by decide),
+      (by decide : ∀ j ∈ ([aT1] : List Nat), j < 15) j hj; omega_using [space, hsmall]) (by decide),
     ou.join Ot (js := [aT2, aT1]) (ds := [sT, kFlag]), result, (Ku.mono (by decide)).trans Kt⟩
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Convert a single written region to its workspace-relative footprint -/
 
@@ -21,7 +22,7 @@ theorem frame_outside {base : Addr} {d len : Nat} {m m' : Mem}
   have I := Offset.lt_iff a base fit
   change (a - off base d).toNat + 1 ≤ len at H
   change (a - off base d).toNat < len ↔ d ≤ ofs base a ∧ ofs base a < d + len at I
-  have := I.mp (by omega)
-  omega
+  have := I.mp (by omega_using [H])
+  omega_using [outside, H, I]
 
 end VG.Proof.Mont

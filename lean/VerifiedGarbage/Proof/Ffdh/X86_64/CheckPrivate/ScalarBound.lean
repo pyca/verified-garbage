@@ -34,8 +34,8 @@ private theorem ltQ_work {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State}
   have hc := hw.mem.ctx hdi
   have hk := hw.base.k1
   have hk' := hw.base.k2
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
-  exact WP.mono (ltArr_ok hc.good (Nat.le_refl _) (by omega) (by omega)
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
+  exact WP.mono (ltArr_ok hc.good (Nat.le_refl _) (by omega_using [hk, ew]) (by omega_using [hk', ew])
     (show aXm < 8 by decide) (show aY < 8 by decide)) fun t ⟨ha, hm, kk⟩ =>
       ⟨⟨hw.keep hm kk, (kk.gpr (by decide)).trans hdi, by rwa [hw.x, hy] at ha,
         by rw [hm]; exact hF⟩, by rw [hm]; exact hi,
@@ -71,7 +71,7 @@ theorem bound_ok {p : KpP} {xb : List Byte} {mi : BitVec 64} {s : State} (h : Wo
   · exact noQ_enter h hd ho (of_decide_eq_true hq)
   · have he : p.dl = 3 * p.k := by
       have hn := of_decide_eq_false hq
-      rcases h.base.dl with h | h <;> omega
+      rcases h.base.dl with h | h <;> omega_arith
     exact withQ_enter h hd he
 
 end VG.Proof.Ffdh.X86_64.CheckPrivate

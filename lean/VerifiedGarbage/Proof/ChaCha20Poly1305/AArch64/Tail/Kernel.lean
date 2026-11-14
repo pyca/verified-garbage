@@ -55,31 +55,31 @@ theorem zeroStores_ok {c : Addr} {j : Nat} (hj : j ≤ 16) {s : State} (hx3 : s.
   induction j with
   | zero =>
     refine WP.block_nil (M := isa) ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, fun x => ?_⟩
-    rw [ite_eq_right_iff.mpr fun h => absurd h (by omega)]
+    rw [ite_eq_right_iff.mpr fun h => absurd h (by omega_using [])]
   | succ j ih =>
     rw [zeroStores_step]
-    refine WP.block_append (WP.mono (ih (by omega)) fun s₁ ⟨g₁, z₁⟩ => ?_)
+    refine WP.block_append (WP.mono (ih (by omega_using [hj])) fun s₁ ⟨g₁, z₁⟩ => ?_)
     have ho : InRegions s₁.wr (s₁.gpr .x3 + BitVec.ofNat 64 (16 * j)) 16 := by
-      rw [g₁.wr, g₁.gpr, hx3]; exact hw (16 * j) (by omega)
-    refine WP.block_cons_iff.mpr ⟨_, Short.exec_strq (by omega) ho,
+      rw [g₁.wr, g₁.gpr, hx3]; exact hw (16 * j) (by omega_using [hj])
+    refine WP.block_cons_iff.mpr ⟨_, Short.exec_strq (by omega_using [hj]) ho,
       WP.block_nil ⟨⟨g₁.gpr, g₁.v, g₁.rd, g₁.wr, g₁.sp⟩, fun x => ?_⟩⟩
     show (if (x - (s₁.gpr .x3 + BitVec.ofNat 64 (16 * j))).toNat < 16 then
       (s₁.v .v28).extractLsb' (8 * (x - (s₁.gpr .x3 + BitVec.ofNat 64 (16 * j))).toNat) 8
       else s₁.mem x) = _
     rw [g₁.gpr, hx3, g₁.v, hv]
     by_cases h : (x - (c + BitVec.ofNat 64 (16 * j))).toNat < 16
-    · have h' := (Offset.lt_iff x c (by omega)).mp h
-      have h2 : (x - c).toNat < 16 * (j + 1) := by omega
+    · have h' := (Offset.lt_iff x c (by omega_using [hj])).mp h
+      have h2 : (x - c).toNat < 16 * (j + 1) := by omega_using [h']
       simp only [h, h2, ite_true]
       ext i hi
       simp
-    · have h' := mt (Offset.lt_iff x c (d := 16 * j) (n := 16) (by omega)).mpr h
+    · have h' := mt (Offset.lt_iff x c (d := 16 * j) (n := 16) (by omega_using [hj])).mpr h
       simp only [h, ite_false]
       rw [z₁ x]
       by_cases h'' : (x - c).toNat < 16 * j
-      · have h2 : (x - c).toNat < 16 * (j + 1) := by omega
+      · have h2 : (x - c).toNat < 16 * (j + 1) := by omega_using [h'']
         simp only [h'', h2, ite_true]
-      · have h2 : ¬ (x - c).toNat < 16 * (j + 1) := by omega
+      · have h2 : ¬ (x - c).toNat < 16 * (j + 1) := by omega_using [h', h'']
         simp only [h'', h2, ite_false]
 
 /-- The buffer zeroed. -/
@@ -99,15 +99,15 @@ theorem zero_ok {c : Addr} {s : State} (hx3 : s.gpr .x3 = c)
 
 theorem Zeroed.byte {c : Addr} {m₀ m : Mem} (h : Zeroed c 16 m₀ m) {k : Nat} (hk : k < 256) :
     m (c + BitVec.ofNat 64 k) = 0 := by
-  rw [h, Mem.sub_ofNat_toNat c (by omega)]
-  simp only [show k < 16 * 16 by omega, ite_true]
+  rw [h, Mem.sub_ofNat_toNat c (by omega_using [hk])]
+  simp only [show k < 16 * 16 by omega_using [hk], ite_true]
 
 theorem Zeroed.frame {c : Addr} {m₀ m : Mem} (h : Zeroed c 16 m₀ m) :
     Frame [⟨c, 256⟩] m₀ m := by
   intro x hx
   have hx' := hx _ (List.mem_singleton_self _)
   simp only [Region.Contains] at hx'
-  rw [h x, ite_eq_right_iff.mpr fun h' => absurd (by omega) hx']
+  rw [h x, ite_eq_right_iff.mpr fun h' => absurd (by omega_using [h']) hx']
 
 /-! ## The kernel -/
 
@@ -222,7 +222,7 @@ theorem kernel_ok (sve : Bool) {R a : Nat} {W : Addr} {s : State}
       (s₈.gpr .x1 + BitVec.ofNat 64 (64 * j + 16 * r)) 16 := by
     intro r j
     rw [l₈.wr, l₈.gpr _ (by decide), u₇.wr, wr₆, wr₅, x1₇]
-    exact hw _ (by omega)
+    exact hw _ (by omega_using [])
   refine (VG.Proof.ChaCha20.AArch64.Neon4.finishBlocks_ok hc₈ ho).mono
     fun s₉ ⟨d₉, f₉, k₉⟩ => ?_
   have x1₈ : s₈.gpr .x1 = s.gpr .x3 := by rw [l₈.gpr _ (by decide), x1₇]

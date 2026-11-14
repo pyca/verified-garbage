@@ -104,7 +104,7 @@ theorem ret_frame {s : State} (hp : EPre s) {m : Mem} (h : Frame [stkR s, outR s
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · have := Offset.disjoint_below (s.gpr .rsp) (n := encStack) (d := 0) (k := 8)
-      (by unfold encStack frameBytes; omega)
+      (by unfold encStack frameBytes; omega_using [])
     simpa only [stkR, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRs

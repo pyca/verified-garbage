@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 # RSASSA-PSS verification on AArch64: constant time, the public data
 
 The pointers, the lengths, the bytes of `n` and `e` and the precomputed
-values are public (`PubV`, from `verifyPrecomputedTableContract.pub`); the
+values are public (`PubV`, from `verifyPrecomputedMdTableContract.pub`); the
 digest and the signature are secret. Two runs with the same public data as an
 anchor `a` (`E`) are related at each point of the code by what correctness
 says there; a failed check of the modulus' first byte returns 0
@@ -74,8 +74,8 @@ theorem n0 : s.mem (s.gpr .x0) = a.mem (a.gpr .x0) := by
   have hk := h.1.k1
   have e1 := h.gpr (r := .x1) (by decide)
   have := h.2.bn
-  rw [bytesAt_cons s.mem (s.gpr .x0) (k := (s.gpr .x1).toNat) (by omega),
-    bytesAt_cons a.mem (a.gpr .x0) (k := (a.gpr .x1).toNat) (by rw [← e1]; omega)] at this
+  rw [bytesAt_cons s.mem (s.gpr .x0) (k := (s.gpr .x1).toNat) (by omega_using [hk]),
+    bytesAt_cons a.mem (a.gpr .x0) (k := (a.gpr .x1).toNat) (by rw [← e1]; omega_using [hk])] at this
   exact (List.cons.inj this).1
 
 theorem any : anyV s = anyV a := by rw [anyV, anyV, h.2.a1]

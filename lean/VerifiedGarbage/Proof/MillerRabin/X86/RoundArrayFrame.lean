@@ -20,21 +20,21 @@ theorem array_roundRange (g : Geometry) {j n : Nat} (allowed : roundArray j)
   rcases allowed with rfl | rfl | rfl | rfl | rfl | table
   · refine ⟨(g.array 2, 16 * (g.w + 2)), by simp [roundWrites], Nat.le_refl _, ?_⟩
     dsimp only
-    omega
+    omega_using [size]
   · refine ⟨(g.array 2, 16 * (g.w + 2)), by simp [roundWrites], ?_, ?_⟩ <;>
-      unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes <;> omega
+      unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes <;> omega_arith
   · refine ⟨(g.array 5, 16 * (g.w + 2)), by simp [roundWrites], Nat.le_refl _, ?_⟩
     dsimp only
-    omega
+    omega_using [size]
   · refine ⟨(g.array 5, 16 * (g.w + 2)), by simp [roundWrites], ?_, ?_⟩ <;>
-      unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes <;> omega
+      unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes <;> omega_arith
   · refine ⟨(g.array 8, 8 * (g.w + 2)), by simp [roundWrites], Nat.le_refl _, ?_⟩
     dsimp only
-    omega
+    omega_using [size]
   · have lower := Nat.mul_le_mul_right (8 * (g.w + 2)) table.1
     have upper := g.strideBefore table.2
     refine ⟨(g.array 11, 128 * (g.w + 2)), by simp [roundWrites], ?_, ?_⟩ <;>
-      unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at * <;> omega
+      unfold Geometry.array Proof.Rsa.Mont.arrAt Proof.Rsa.Mont.hdrBytes at * <;> omega_arith
 
 theorem array_roundFrame {g : Geometry} {j : Nat} {m m' : Mem}
     (nowrap : g.W.toNat + g.L ≤ 2 ^ 32) (allowed : roundArray j)
@@ -43,7 +43,7 @@ theorem array_roundFrame {g : Geometry} {j : Nat} {m m' : Mem}
   apply (WorkspaceFrame.of_outs nowrap (Outs.of_outside O (List.mem_singleton_self _))).cover
   intro r mem
   obtain rfl := List.mem_singleton.mp mem
-  exact array_roundRange g allowed (by unfold Geometry.words; omega)
+  exact array_roundRange g allowed (by unfold Geometry.words; omega_using [])
 
 theorem mont_roundFrame {g : Geometry} {m m' : Mem}
     (O : WorkspaceFrame g (montWrites g 6) m m') : WorkspaceFrame g (roundWrites g) m m' := by

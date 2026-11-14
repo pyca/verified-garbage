@@ -22,7 +22,7 @@ private theorem byte_zext (b : Byte) : (b.setWidth 32).setWidth 64=BitVec.ofNat 
  apply BitVec.eq_of_toNat_eq
  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
  have := b.isLt
- omega
+ omega_using []
 
 private theorem byte_zero : ∀ b : Byte,
  (BitVec.ofNat 64 b.toNat == 0#64)=decide (b=0#8) := by decide +kernel
@@ -36,7 +36,7 @@ theorem policyScanStep {s : State} {src : Addr} {bs : List Byte} {i : Nat}
  refine WP.keep [.x1,.x2,.x3] ?_ rfl rfl rfl
  unfold Policy.scanStep
  brun [pointer,remaining,source.readable i inside,source.bytes i inside,read1_eq,byte_zext]
- rw [BitVec.ofNat_sub_ofNat_of_le (bs.length-i) 1 (by decide) (by omega)]
+ rw [BitVec.ofNat_sub_ofNat_of_le (bs.length-i) 1 (by decide) (by omega_using [inside])]
  congr 1
 
 theorem policyScan_ok (s : State) {src : Addr} {bs : List Byte} {L : Nat}
@@ -52,7 +52,7 @@ theorem policyScan_ok (s : State) {src : Addr} {bs : List Byte} {L : Nat}
  refine WP.loop (M:=isa) I ?_ (L+1) s ?_
  · intro n t h
    obtain ⟨j,rem,hj,pointerT,leftT,memT,restT⟩ := h
-   refine WP.mono (policyScanStep (source.of_mem memT restT) size (by omega) pointerT leftT) ?_
+   refine WP.mono (policyScanStep (source.of_mem memT restT) size (by omega_using [inside, hj]) pointerT leftT) ?_
    rintro u ⟨⟨pointerU,leftU,byteU,memU⟩,restU⟩
    by_cases last : j=L
    · left
@@ -62,13 +62,13 @@ theorem policyScan_ok (s : State) {src : Addr} {bs : List Byte} {L : Nat}
      change some (BitVec.ofNat 64 (bs.getD L 0).toNat == 0#64)=some false
      rw [byte_zero,decide_eq_false nonzero]
    · right
-     refine ⟨?_,L+1-(j+1),by omega,j+1,rfl,by omega,pointerU,leftU,
+     refine ⟨?_,L+1-(j+1),by omega_using [rem, hj],j+1,rfl,by omega_using [hj, last],pointerU,leftU,
       memU.trans memT,(restT.trans restU).mono (by decide)⟩
      rw [eval_zero,byteU]
      change some (BitVec.ofNat 64 (bs.getD j 0).toNat == 0#64)=some true
-     rw [byte_zero,zeros j (by omega)]
+     rw [byte_zero,zeros j (by omega_using [hj, last])]
      decide
- · refine ⟨0,by omega,by omega,?_,?_,rfl,Keep.refl _ _⟩
+ · refine ⟨0,by omega_using [],by omega_using [],?_,?_,rfl,Keep.refl _ _⟩
    · simpa [off] using pointer
    · simpa using remaining
 

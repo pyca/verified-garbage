@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.CbcLit
 
-/-! # SM4-CBC artifacts on baseline x86 (32-bit) -/
+/-! # SM4-CBC on x86 -/
 
 @[expose] public section
 

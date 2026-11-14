@@ -79,8 +79,8 @@ theorem Pre.of (s₀ : State) (h : Proof.X25519.x25519X86_64.pre s₀) : Pre s�
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 4096⟩) {i : Nat}
     (hi : i < n) (hn : n ≤ 2 ^ 64) : 4096 ≤ ofs base (p + BitVec.ofNat 64 i) := by
-  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega) (by omega)) ?_
-  simp only [Region.Contains]; simp only [ofs] at h; omega
+  refine Nat.le_of_not_lt fun h => hd _ (Offset.contains_base p (d := i) (n := 1) (k := n) (by omega_using [hi]) (by omega_using [hi, hn])) ?_
+  simp only [Region.Contains]; simp only [ofs] at h; omega_using [h]
 
 theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 4096 m m')
     (hp : ∀ i < 32, 4096 ≤ ofs base (p + BitVec.ofNat 64 i)) :
@@ -92,12 +92,12 @@ theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 4096 m 
 
 theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Fin 128)
     (hi : 32 * i.val + 32 ≤ o ∨ o + n ≤ 32 * i.val) : E m' base i = E m base i := by
-  simp only [E, F]; rw [h.fe hi (by omega)]
+  simp only [E, F]; rw [h.fe hi (by omega_using [])]
 
 theorem Outside.frame {base : Addr} {m m' : Mem} (h : Outside base 0 4096 m m') :
     Frame [⟨base, 4096⟩] m m' := fun x hx => h x (Or.inr (by
   have := hx _ (List.mem_singleton_self _)
-  simp only [Region.Contains] at this; show 0 + 4096 ≤ (x - base).toNat; omega))
+  simp only [Region.Contains] at this; show 0 + 4096 ≤ (x - base).toNat; omega_using [this]))
 
 variable {fld : Field} (hf : FieldOk fld)
 
@@ -131,13 +131,13 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
   have hw₀ : (⟨base, 4096⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
   have hwo : outR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   have hr : ∀ d, d + 8 ≤ 32 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
-    ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega)⟩
+    ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega_using [hd])⟩
   rw [x25519_eq' hli]
   refine WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr)
     fun s₁ ⟨hs₁, r12₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁, zb2₁, zb3₁⟩ => ?_)
   have hkr : ∀ q < 32, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
     fun q hq => ⟨scalarR s₀, by rw [rd₁, hp.rd]; simp,
-      Offset.contains_base _ (d := q) (n := 1) (k := 32) (by omega) (by omega)⟩
+      Offset.contains_base _ (d := q) (n := 1) (k := 32) (by omega_using [hq]) (by omega_using [hq])⟩
   have hkd : ∀ q < 32, 4096 ≤ ofs base (s₀.gpr .rsi + BitVec.ofNat 64 q) :=
     fun q hq => far (hbase ▸ hp.scalar_sc) hq (by decide)
   refine WP.seq (WP.mono (bits_ok hs₁ (g₁ _ (by decide)) hkr hkd)
@@ -148,7 +148,7 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
       by rw [k₃.2.2.2, wr₂]; exact hs₁.wr, hn⟩
   have hkb := bytesAt_outside o₁ hkd
   have e₃ : ∀ i : Fin 128, i.val < 24 → E s₃.mem base i = E s₁.mem base i :=
-    fun i h₂ => by rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by simp only [BITS]; omega))
+    fun i h₂ => by rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by simp only [BITS]; omega_using [h₂]))
   refine WP.seq (WP.mono (hlad (s := s₃)
     (k := Spec.X25519.decodeScalar25519 (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rsi) 32))
     (u := toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rdx) 32)))
@@ -212,10 +212,10 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
   · have F₁ : Frame [scR s₀, outR s₀] s₀.mem s'.mem := by
       rw [m']
       have c : ∀ d, d + 8 ≤ 32 → (outR s₀).Contains (off (s₀.gpr .rdi) d) (64 / 8) :=
-        fun d hd => Offset.contains_base _ hd (by omega)
+        fun d hd => Offset.contains_base _ hd (by omega_using [hd])
       have hmem : outR s₀ ∈ [scR s₀, outR s₀] := by simp
-      exact ((((hbase ▸ O.frame).mono (by simp)).writeW hmem _ (c 0 (by omega))).writeW hmem _
-        (c 8 (by omega))).writeW hmem _ (c 16 (by omega)) |>.writeW hmem _ (c 24 (by omega))
+      exact ((((hbase ▸ O.frame).mono (by simp)).writeW hmem _ (c 0 (by omega_using []))).writeW hmem _
+        (c 8 (by omega_using []))).writeW hmem _ (c 16 (by omega_using [])) |>.writeW hmem _ (c 24 (by omega_using []))
     exact F₁.readW (r := retR s₀) (Region.contains_self _ _) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)

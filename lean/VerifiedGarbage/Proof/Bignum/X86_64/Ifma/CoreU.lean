@@ -379,9 +379,10 @@ theorem ammCoreU_ok (hu : UOk l) {s : State} {B : Addr} {a m : Nat → Nat → N
 
 theorem ammCoreU_core (hu : UOk l) : CoreOk l (ammCoreU l) := fun e hB hs => ammCoreU_ok hu e hB hs
 
-/-- The multiplication of each layout. -/
-theorem ammMul_core (hl : AmmOk l) : CoreOk l (ammMul l) := by
+/-- The multiplication of each layout but `ammCoreZ`'s. -/
+theorem ammMul_core (hl : AmmOk l) (hz : l.z = false) : CoreOk l (ammMul l) := by
   unfold ammMul
+  rw [hz, ite_eq_right (by decide)]
   split
   · rename_i h; exact ammCoreU_core (UOk.of_amm hl h)
   · exact ammCore_core hl

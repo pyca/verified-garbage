@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -83,10 +84,10 @@ def cgContract : Contract isa where
 theorem stackArgs_seven (s : State) : List.map (stackArg s) (List.range 7) =
     [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6] := rfl
 
-theorem cg_pre0 {s : State} (h : (cachedGenerateKeyContract abi).pre s) : cgPre s := by
-  sig_pre [cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
+theorem cg_pre0 {s : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pre s) : cgPre s := by
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
     List.append_eq, pLenValid, domainLenValid] at h
-  sig_pre [cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
     List.append_eq, pLenValid, domainLenValid] at h
   sig_split h
   sig_reduce [cgPre, pLenValid, domainLenValid, generationContextAt]
@@ -94,19 +95,19 @@ theorem cg_pre0 {s : State} (h : (cachedGenerateKeyContract abi).pre s) : cgPre 
   sig_close
   all_goals first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›
 
-theorem cg_post0 {s t : State} (h : cgPost s t) : (cachedGenerateKeyContract abi).post s t := by
-  sig_post [cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
+theorem cg_post0 {s t : State} (h : cgPost s t) : (Proof.Ffdh.cachedGenerateKeyContract abi).post s t := by
+  sig_post [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
     List.append_eq]
   sig_reduce [cgPost, cgDom, cgA, cgRand, cgS] at h
   exact h
 
-theorem cg_pub0 {s₁ s₂ : State} (h : (cachedGenerateKeyContract abi).pub s₁ s₂) : cgPub s₁ s₂ := by
-  sig_pub [cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
+theorem cg_pub0 {s₁ s₂ : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pub s₁ s₂) : cgPub s₁ s₂ := by
+  sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
     List.append_eq, pLenValid, domainLenValid] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   exact h
 
-theorem cg_implies : cgContract.Implies (cachedGenerateKeyContract abi) where
+theorem cg_implies : cgContract.Implies (Proof.Ffdh.cachedGenerateKeyContract abi) where
   pre _ h := cg_pre0 h
   post _ _ _ h := cg_post0 h
   pub _ _ _ _ h := cg_pub0 h

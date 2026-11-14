@@ -14,7 +14,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 
 theorem inverse_end_le {k n j : Nat} (width : k ≤ n) (persistent : 15 ≤ j) :
     arr k 15 ≤ arr n j := by
-  have small : arr k 15 ≤ arr n 15 := by unfold arr S; omega
+  have small : arr k 15 ≤ arr n 15 := by unfold arr S; omega_using [width]
   exact Nat.le_trans small (arr_mono persistent)
 
 theorem inverse_workspace {s : State} {B : Addr} {Z n k : Nat} (h : Ws s B Z n 32)
@@ -29,8 +29,8 @@ theorem inverse_array_layout {s : State} {B : Addr} {Z n k a b : Nat}
   have fb := h.arr_fit hb
   refine ⟨?_, ?_, Or.inr (inverse_end_le width pa), Or.inr (inverse_end_le width pb)⟩
   · unfold S at fa
-    omega
+    omega_using [width, fa]
   · unfold S at fb
-    omega
+    omega_using [width, fb]
 
 end VG.Proof.RsaKeyGen.X86.Key

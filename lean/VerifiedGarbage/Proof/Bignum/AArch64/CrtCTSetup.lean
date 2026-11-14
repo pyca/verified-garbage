@@ -19,7 +19,8 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 The claims of `CrtCTDefs.lean` for the primes' setup: the loads
 (`loadArr_ct_pN`, `loadArr_ct_pI`, `loadArr_ct_qN`, in `CrtCTSetupLoad.lean`),
 `primesSetup` (`setup_ct`, in `CrtCTSetupWs.lean`), and `checks`
-(`checks_ct`), from its pieces (`CrtCTSetupChk.lean`).
+(`checks_ct`) and `checksGiven` (`checksGiven_ct`), from their pieces
+(`CrtCTSetupChk.lean`).
 -/
 
 @[expose] public section
@@ -36,12 +37,10 @@ theorem leaveEnterQ_ck : RelCT isa (Two (CKr ckP)) (.block [leave, enterQ]) (Two
     (RelCT.seq (two_piece (Ψ := CKr (·.B)) [.x0] (pins_ckr _) (by taint_decide) fun p s h => leaveP_ck h)
       (two_piece [.x0] (pins_ckr _) (by taint_decide) fun p s h => enterQ_ck h))
 
-theorem checks_ct : ChecksCT := by
-  unfold ChecksCT checks
+/-- `checksGiven`, from the checks' state. -/
+theorem checksGiven_ck : RelCT isa (Two (CKr (·.B))) (seqs checksGiven) fun _ _ => True := by
+  unfold checksGiven
   simp only [List.append_assoc]
-  refine two_map id (fun _ _ h => h.ck) ?_
-  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq pq_ct ?_)
-  refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq eq_ct ?_)
   refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq (two_piece [.x0] (pins_ckr _)
     (by taint_decide) fun p s h => enterP_ck h) ?_)
   refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq qinv_ct ?_)
@@ -49,5 +48,14 @@ theorem checks_ct : ChecksCT := by
   refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq leaveEnterQ_ck ?_)
   refine RelCT.seqs_append (by decide) (by decide) (RelCT.seq fixQ_ct ?_)
   exact two_taint [.x0] (pins_ckr _) (by taint_decide)
+
+theorem checksGiven_ct : ChecksCTOf checksGiven := two_map id (fun _ _ h => h.ck) checksGiven_ck
+
+theorem checks_ct : ChecksCT := by
+  unfold ChecksCT ChecksCTOf checks
+  simp only [List.append_assoc]
+  refine two_map id (fun _ _ h => h.ck) ?_
+  refine RelCT.seqs_append (by decide) (by simp [checksGiven]) (RelCT.seq pq_ct ?_)
+  exact RelCT.seqs_append (by decide) (by simp [checksGiven]) (RelCT.seq eq_ct checksGiven_ck)
 
 end VG.Proof.Bignum.AArch64

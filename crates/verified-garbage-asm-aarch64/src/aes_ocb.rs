@@ -31,7 +31,7 @@ bl {vg_aes_encrypt_blocks_aes}
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
-        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
+        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes::vg_aes_encrypt_blocks_aes,
     )
 }
 
@@ -308,7 +308,7 @@ cbnz x13, 248b
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
+        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes::vg_aes_encrypt_blocks_aes,
     )
 }
 
@@ -612,8 +612,8 @@ b 251f
 .inst 0xf9400260,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a
 .inst 0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
-        vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
+        vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes::vg_aes_encrypt_blocks_aes,
+        vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes::vg_aes_decrypt_blocks_aes,
     )
 }
 
@@ -641,7 +641,7 @@ bl {vg_aes_encrypt_blocks}
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912803ff,0xd65f03c0
 .p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -914,7 +914,7 @@ cbnz x13, 248b
 .inst 0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a,0xf940727b
 .inst 0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -1214,7 +1214,7 @@ b 251f
 .inst 0xf9400260,0xf9405674,0xf9405a75,0xf9405e76,0xf9406277,0xf9406678,0xf9406a79,0xf9406e7a
 .inst 0xf940727b,0xf940767c,0xf9407a7e,0xf9405273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
     )
 }

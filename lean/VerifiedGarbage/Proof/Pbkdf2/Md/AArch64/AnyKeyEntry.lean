@@ -48,10 +48,10 @@ theorem entry_run {B : Nat} (hB : B < 2 ^ 16) (s : State) :
     simp only [eval, State.write, State.addWithCarry, State.read, Size.bits, reduceCtorEq, ↓reduceIte,
       BitVec.setWidth_eq, BitVec.shiftLeft_zero, Nat.mul_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
       BitVec.toNat_not, Bool.toNat_true, decide_eq_true_eq, Option.some.injEq]
-    rw [Nat.mod_eq_of_lt hB, Nat.mod_eq_of_lt (by omega)]
+    rw [Nat.mod_eq_of_lt hB, Nat.mod_eq_of_lt (by omega_using [hB])]
     split <;> rename_i h
-    · rw [decide_eq_false (by omega)]; rfl
-    · have h1 : B + 1 ≤ (s.gpr .x3).toNat := by omega
+    · rw [decide_eq_false (by omega_using [h])]; rfl
+    · have h1 : B + 1 ≤ (s.gpr .x3).toNat := by omega_using [h]
       have hne : s.gpr .x3 ≠ 0 := fun e => by rw [e] at h1; simp at h1
       rw [decide_eq_true h1]; simp only [bne_iff_ne, ne_eq]; exact hne
 
@@ -81,20 +81,20 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
     · sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, AArch64.abi, AArch64.argRegs] at q ⊢
       rw [g0, g1, g2, g3, r.mem] at q; exact q
-    · have hk : (s.gpr .x3).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega
+    · have hk : (s.gpr .x3).toNat ≤ I.S.H.blockSize := by have := of_decide_eq_false hp; omega_using [this]
       sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, AArch64.abi, AArch64.argRegs] at hs
       sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
         Spec.Hmac.initPost, AArch64.abi, AArch64.argRegs]
       rw [g0, g1, g2, g3, r.sp, r.rd, r.wr]
-      obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega⟩
-      obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega⟩
+      obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega_using [h₁]⟩
+      obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega_using [hn]⟩
       simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
         List.append_nil] at hs ⊢
       obtain ⟨h0, h1, h2, h3, h4, h5, ⟨c1, c2, c3⟩, n1, n2, n3⟩ := hs
       have sb := Offset.sub_below s.sp (a := m₁ + 1) (n := m₁ + 1) (b := m₂ + 1) (m := m₂ + 1)
-        (by omega) (by omega)
-      exact ⟨by omega, h1, h2, h3, h4, h5, ⟨c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2, n3, hk⟩
+        (by omega_using [hn]) (by omega_using [hn])
+      exact ⟨by omega_using [hn, h0], h1, h2, h3, h4, h5, ⟨c1.sub_left sb, c2.sub_left sb, c3.sub_left sb⟩, n1, n2, n3, hk⟩
     · sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, AArch64.abi, AArch64.argRegs]
       sig_post [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,

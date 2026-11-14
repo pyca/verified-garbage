@@ -29,11 +29,11 @@ theorem bitLength_cons {b : Byte} (bs : List Byte) (hb : b ≠ 0) :
   have hb' : b.toNat ≠ 0 := fun h => hb (BitVec.eq_of_toNat_eq h)
   have hpos : 0 < Spec.Dsa.decodeBE (b :: bs) := by
     rw [decodeBE_os2ip, VG.Proof.RsaPss.os2ip_cons']
-    have : 0 < b.toNat * 256 ^ bs.length := Nat.mul_pos (by omega) (Nat.pow_pos (by decide))
-    omega
+    have : 0 < b.toNat * 256 ^ bs.length := Nat.mul_pos (by omega_using [hb']) (Nat.pow_pos (by decide))
+    omega_using [this]
   have h := VG.Proof.RsaPss.emBits_eq bs hb
   simp only [Spec.RsaPss.bitLength, Nat.add_sub_cancel] at h
-  rw [Spec.Dsa.bitLength, ite_eq_right (by omega), decodeBE_os2ip, h]
+  rw [Spec.Dsa.bitLength, ite_eq_right (by omega_using [hpos]), decodeBE_os2ip, h]
 
 /-- The scan is a bit-length calculation that also handles all-zero buffers. -/
 theorem significant_bits (bs : List Byte) :
@@ -81,8 +81,8 @@ theorem significant_width (bs : List Byte) {n : Nat} (hn : 0 < n) :
   by_cases hz : (significant bs).1 = 0
   · rw [ite_eq_left hz]
     constructor
-    · intro h; omega
-    · intro h; omega
+    · intro h; omega_using [hn, h]
+    · intro h; omega_using [hz, h]
   · rw [ite_eq_right hz]
     have hb : (significant bs).2.toNat ≠ 0 := by
       intro hb
@@ -92,6 +92,6 @@ theorem significant_width (bs : List Byte) {n : Nat} (hn : 0 < n) :
       change 2 ^ (7 : Nat) ≤ (significant bs).2.toNat ↔ 7 ≤ (significant bs).2.toNat.log2
       exact (Nat.le_log2 hb).symm
     rw [he]
-    omega
+    omega_using [ht, hz]
 
 end VG.Proof.Dsa

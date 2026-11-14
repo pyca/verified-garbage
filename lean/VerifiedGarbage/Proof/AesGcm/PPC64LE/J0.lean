@@ -38,7 +38,7 @@ theorem inc32_words (a b c d : BitVec 32) : inc32 (a ++ b ++ c ++ d) = a ++ b ++
   have h₁ : (a ++ b ++ c ++ d).extractLsb' 32 96 = a ++ b ++ c := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-    simp only [show ¬ (32 + i < 32) by omega, ite_false, show 32 + i - 32 = i by omega]
+    simp only [show ¬ (32 + i < 32) by omega_using [], ite_false, show 32 + i - 32 = i by omega_using []]
   have h₂ : (a ++ b ++ c ++ d).extractLsb' 0 32 = d := by
     apply BitVec.eq_of_getLsbD_eq; intro i hi
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]; simp [hi]
@@ -66,13 +66,13 @@ theorem ww32 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega), Nat.mod_eq_of_lt this]
+  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega_using []), Nat.mod_eq_of_lt this]
 
 theorem ww32_add1 (x : BitVec 32) : (x.setWidth 64 + 1).setWidth 32 = x + 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega), Nat.mod_mod_of_dvd _ (by decide)]
+  rw [Nat.mod_eq_of_lt (show x.toNat < 2 ^ 64 by omega_using []), Nat.mod_mod_of_dvd _ (by decide)]
   rfl
 
 theorem ww32_add1' (x : BitVec 32) : (x.setWidth 64 + BitVec.ofNat 64 1).setWidth 32 = x + 1 :=
@@ -284,7 +284,7 @@ theorem j0zero_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In V sp H
     exact hd.st.sub_right (Lay.stSub (by decide))
   refine ⟨⟨he.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr,
     by rw [hg₁ _ (by decide) (by decide), h.r24], by rw [hg₁ _ (by decide) (by decide), h.r25],
-    by rw [h26]; rfl, hd.of_eq hk₁.rd hk₁.wr, ?_⟩, ?_, bytesAt_frame f₁ dD (by have := hd.lt; omega), f₁⟩
+    by rw [h26]; rfl, hd.of_eq hk₁.rd hk₁.wr, ?_⟩, ?_, bytesAt_frame f₁ dD (by have := hd.lt; omega_using [this]), f₁⟩
   · rw [blockAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_st (by decide) (by decide)), h.hH]
   · rw [blockAt, hm₁, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; decide
@@ -354,7 +354,7 @@ theorem eval_subk {s : State} {r : Reg} {a k : Nat}
       intro e
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_sub, toNat64 ha, toNat64 hk] at this
-      simp at this; omega
+      simp at this; omega_using [ha, hk, hak, this]
     simp only [hak, decide_false, beq_eq_false_iff_ne.mpr this]
 
 /-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/

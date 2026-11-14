@@ -1,9 +1,111 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
-public import VerifiedGarbage.Proof.Camellia.AArch64.Sbox
+public import VerifiedGarbage.Impl.Camellia.AArch64.Sbox
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.AArch64.Straight
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Camellia.AArch64.Fl
+
+/-! ### `Camellia.AArch64.Sbox`, which only this module used -/
+
+section
+
+/-!
+# The bitsliced Camellia S-box on AArch64
+
+As on x86-64: `sboxCode` only combines words bitwise (and builds all ones
+with `movz` and `sub`), so the kernel evaluates it once on truth tables of
+the 256 inputs (`Bitslice.table`) and compares the result with the
+specification's `SBOX1`. `sbox_ok` then gives, at every bit position `p`,
+`SBOX1` of the byte formed by bit `p` of the eight words.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.AArch64
+
+open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Aes.AArch64 VG.Impl.Camellia.AArch64
+open VG.Proof.Camellia
+open VG.Proof.Aes (bsByte getLsbD_bsByte)
+
+/-- The S-box's memory: its spill slots, at `x5`. -/
+def sboxCfg : Cfg := { base := sb, slots := 48, ext := sb, exts := 0 }
+
+def sboxEnv : Env Nat :=
+  { reg := fun r => ((List.range 8).find? (fun k => q k == r)).map inT, slot := fun _ => none }
+
+def sboxPost (e : Env Nat) : Bool :=
+  (List.range 8).all fun j => e.reg (q j) == some (sbox1T j)
+
+theorem sbox_check :
+    check (table 64 256) sboxCfg (fun _ => none) Impl.Camellia.AArch64.sboxCode sboxEnv sboxPost = true := by
+  lit_decide
+
+/-- The registers the layers may write: the state, the S-box's temporaries
+and all ones, and the linear layers' masks and temporaries. -/
+def layerWrites : List Reg :=
+  [.x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17,
+   .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
+
+/-- The registers outside `layerWrites`. -/
+def layerKeep : List Reg := [.x0, .x1, .x2, .x3, .x4, .x5, .x30]
+
+theorem not_layerWrites (r : Reg) (hr : r ∉ layerWrites) : r ∈ layerKeep := by
+  revert hr; cases r <;> decide
+
+/-- A block that writes none of `layerKeep` writes only `layerWrites`. -/
+theorem writes_rest {is : List Instr}
+    (h : layerKeep.all (fun r => is.all fun i => !clobbers i r) = true)
+    (r : Reg) (hr : r ∉ layerWrites) : (is.all fun i => !clobbers i r) = true :=
+  List.all_eq_true.mp h r (not_layerWrites r hr)
+
+/-- `SBOX1`, at every bit position of the words in `q 0 … q 7`. -/
+theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa Impl.Camellia.AArch64.sboxCode s = some s' ∧
+      (∀ j < 8, ∀ p < 64,
+        (s'.gpr (q j)).getLsbD p = (Spec.Camellia.sbox1 (bsByte (fun k => s.gpr (q k)) p)).getLsbD j) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion sboxCfg s] s.mem s'.mem := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
+  have hout : ∀ j < 8, e'.reg (q j) = some (sbox1T j) := by
+    intro j hj
+    have := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
+    simpa using this
+  have key : ∀ p < 64, ∃ s', runBlock isa Impl.Camellia.AArch64.sboxCode s = some s' ∧
+      Post (TableRel p (bsByte (fun k => s.gpr (q k)) p).toNat) sboxCfg (fun _ => none) e' s s'
+        (fun r => (Impl.Camellia.AArch64.sboxCode.all fun i => !clobbers i r) = false) := by
+    intro p hp
+    have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
+    refine run (table_sound hp hc) hok ⟨fun r a h => ?_, (fun _ _ _ h => by cases h),
+      (fun _ _ _ h => by cases h), (fun _ _ h => by cases h)⟩ he
+    simp only [sboxEnv, Option.map_eq_some_iff] at h
+    obtain ⟨k, hk, rfl⟩ := h
+    obtain ⟨hqk, hkr⟩ := List.find?_some hk, List.mem_of_find?_eq_some hk
+    have hk8 := List.mem_range.mp hkr
+    simp only [beq_iff_eq] at hqk
+    subst hqk
+    simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
+      BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_using [])
+  refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, p₀.sp, fun r hr => p₀.other r ?_, p₀.frame⟩
+  · obtain ⟨s'', hs'', p₁⟩ := key p hp
+    obtain rfl := run_unique hs'' hs'
+    have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
+    have := p₁.rel.reg (q j) _ (hout j hj)
+    simp only [TableRel] at this
+    rw [← this, testBit_sbox1T hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · simp [writes_rest (is := Impl.Camellia.AArch64.sboxCode) (by decide +kernel) r hr]
+
+end VG.Proof.Camellia.AArch64
+
+end
+
+end
+
 
 /-!
 # A round of bitsliced Camellia on AArch64
@@ -38,7 +140,7 @@ abbrev keyW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr kp
 def MasksOk (s : State) : Prop := ∀ kv ∈ layerMasks, slotW s kv.1 = kv.2
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, keySlot] at hk ⊢; omega)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, keySlot] at hk ⊢; omega_using [hk])
   extIn k hk := by simp [sboxCfg] at hk
   slots := by simp [sboxCfg]
   sep k _ j hj := by simp [sboxCfg] at hj
@@ -51,16 +153,16 @@ theorem xorBits_map_rows (W : Nat → BitVec 64) (S : Nat → BitVec 64) (hS : �
   | cons i l ih =>
     have hi := hl i List.mem_cons_self
     have hc : cpos i < 8 := Camellia.cpos_lt hi
-    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega
+    have ho : outSrc (cpos i) j < 8 := by simp only [outSrc]; split <;> (try split) <;> omega_arith
     simp only [List.map_cons, xorBits_cons, rowBits, List.foldr_cons] at ih ⊢
-    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
+    rw [Nat.add_assoc, bitOf_word _ _ _ (by omega_using [hb, hc]), hS _ ho, ih fun i' hi' => hl i' (List.mem_cons_of_mem _ hi')]
 
 /-- The frame of the S-box (its spills) keeps the slots from 48 on. -/
 theorem slot_above {m m' : Mem} {b : Addr} {n k : Nat} (hf : Frame [⟨b, 8 * n⟩] m m') (hk : n ≤ k)
     (hk' : k < 2 ^ 58) : m'.readW (wordAddr b k) 64 = m.readW (wordAddr b k) 64 :=
   hf.readW (r := ⟨wordAddr b k, 8⟩) (by simp only [Region.Contains]; simp) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base b (by omega) (by omega)) (by decide)
+      exact VG.Offset.disjoint_base b (by omega_using [hk]) (by omega_using [hk'])) (by decide)
 
 /-- A round, with the subkey at word `off` of `kp` and the other half at slot `d`. -/
 theorem round_ok {off d : Nat}

@@ -159,7 +159,7 @@ theorem out_ok {s₀ s : State} (hp : APre e s₀) (hx0 : s.gpr .x0 = off (cx s�
 theorem shr8_ofNat {r : Nat} (h : r < 2 ^ 64) : BitVec.ofNat 64 r >>> 8 = BitVec.ofNat 64 (r / 256) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, VG.Proof.ChaCha20.AArch64.toNat_ofNat_lt h,
-    VG.Proof.ChaCha20.AArch64.toNat_ofNat_lt (by omega), Nat.shiftRight_eq_div_pow]
+    VG.Proof.ChaCha20.AArch64.toNat_ofNat_lt (by omega_using [h]), Nat.shiftRight_eq_div_pow]
 
 /-- `take`: `x23 = min(x2, 256)`. -/
 theorem take_ok {s : State} {r : Nat} (hr : r < 2 ^ 64) (hx2 : s.gpr .x2 = BitVec.ofNat 64 r) :
@@ -172,12 +172,12 @@ theorem take_ok {s : State} {r : Nat} (hr : r < 2 ^ 64) (hx2 : s.gpr .x2 = BitVe
   refine WP.ite (decide (r / 256 = 0)) (by
       rw [show isa.eval (.zero .x .x9) s₁ = some (s₁.gpr .x9 == 0) from
         VG.Proof.ChaCha20.AArch64.Xor.eval_zero s₁ .x9, x9₁,
-        VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)]) (fun h => ?_) (fun h => ?_)
-  · have h' : r < 256 := by have := of_decide_eq_true h; omega
+        VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega_using [hr])]) (fun h => ?_) (fun h => ?_)
+  · have h' : r < 256 := by have := of_decide_eq_true h; omega_using [this]
     refine wp_mov fun s₂ u₂ => WP.block_nil ⟨by rw [u₂.gpr, u₁.other _ (by decide), hx2,
-      Nat.min_eq_left (by omega)], fun q h9 h23 => by rw [u₂.other _ h23, u₁.other _ h9],
+      Nat.min_eq_left (by omega_using [h'])], fun q h9 h23 => by rw [u₂.other _ h23, u₁.other _ h9],
       by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
-  · have h' : 256 ≤ r := by have := of_decide_eq_false h; omega
+  · have h' : 256 ≤ r := by have := of_decide_eq_false h; omega_using [this]
     refine wp_movz fun s₂ u₂ => WP.block_nil ⟨by rw [u₂.gpr, Nat.min_eq_right h']; rfl,
       fun q h9 h23 => by rw [u₂.other _ h23, u₁.other _ h9],
       by rw [u₂.mem, u₁.mem], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩
@@ -226,9 +226,9 @@ theorem not_in {D : Addr} {a n k : Nat} (h : k < a ∨ a + n ≤ k) (hk : k < 2 
     ¬ (⟨D + BitVec.ofNat 64 a, n⟩ : Region).Contains (D + BitVec.ofNat 64 k) 1 := by
   simp only [Region.Contains]
   intro hc
-  have := (Offset.lt_iff (D + BitVec.ofNat 64 k) D han).mp (by omega)
+  have := (Offset.lt_iff (D + BitVec.ofNat 64 k) D han).mp (by omega_using [hc])
   rw [Mem.sub_ofNat_toNat D hk] at this
-  omega
+  omega_using [h, this]
 
 /-- `Tail.rest`, after `T ≥ 1` chunks with a rest. -/
 theorem rest_ok (sve : Bool) {s₀ s w₀ u : State} (hp : APre true s₀) {key msg : List Byte} {o T : Nat}
@@ -507,7 +507,7 @@ theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {
   unfold cryptStitched afterBulk
   simp only [ite_true]
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-  have hLo : L s₀ - o < 2 ^ 64 := by omega
+  have hLo : L s₀ - o < 2 ^ 64 := by omega_using [hL]
   refine WP.seq ((setup_ok E.inv.x21).mono fun s₂ ⟨x0₂, x1₂, x2₂, x3₂, x5₂, k₂, m₂, v₂⟩ => ?_)
   rw [E.x23, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hLo] at x5₂
   apply WP.ite (decide (L s₀ - o < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
@@ -516,14 +516,14 @@ theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {
       (of_decide_eq_true hs)).sealed E.o64⟩
   · intro hs
     refine wp_seq3 (long_crypted (sve := sve) true hp E x0₂ x1₂ x2₂ x3₂ k₂ m₂ v₂
-      (by have := of_decide_eq_false hs; omega)) fun u ⟨T, hT, hc⟩ => ?_
+      (by have := of_decide_eq_false hs; omega_using [this])) fun u ⟨T, hT, hc⟩ => ?_
     refine WP.ite (decide (L s₀ - (o + 512 * T) = 0)) (by
         rw [show isa.eval (.zero .x .x2) u = some (u.gpr .x2 == 0) from
           VG.Proof.ChaCha20.AArch64.Xor.eval_zero u .x2, hc.x2,
-          VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)]) (fun _ => ?_) (fun hz => ?_)
+          VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega_using [hL])]) (fun _ => ?_) (fun hz => ?_)
     · exact WP.block_nil ⟨_, _, hc.sealed E.o64⟩
     · have h₁ := of_decide_eq_false hz
       have hle := hc.le
-      exact (rest_ok sve hp hc E.o64 hT (by omega)).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
+      exact (rest_ok sve hp hc E.o64 hT (by omega_using [h₁])).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Tail

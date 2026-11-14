@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Modes.Wide
 public import VerifiedGarbage.Proof.Modes.CtrStep
 public import VerifiedGarbage.Proof.Modes.Ctr32Step
 import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Counter mode, a group of blocks at a time, for any target
@@ -64,13 +65,13 @@ theorem incOp_ctr32 : IncOp Mode.ctr32Inc inc32B := by
     simp only [true_and]
     by_cases h12 : 12 ≤ i
     · by_cases h16 : i < 16
-      · rw [ite_eq_left ⟨h12, by omega⟩, ite_eq_left h16, List.getD_eq_getElem?_getD,
-          List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp; omega)]
+      · rw [ite_eq_left ⟨h12, by omega_using [h16]⟩, ite_eq_left h16, List.getD_eq_getElem?_getD,
+          List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp; omega_using [h12])]
         simp only [List.length_take, ht, show min 12 16 = 12 from rfl]
-      · rw [ite_eq_right (fun h => h16 (by omega)), ite_eq_right h16]
-    · rw [ite_eq_right (fun h => h12 h.1), ite_eq_left (by omega), List.getD_eq_getElem?_getD,
-        List.getElem?_append_left (by simp [ht]; omega), List.getElem?_take_of_lt (by omega),
-        ← List.getD_eq_getElem?_getD, getD_rd (by omega)]
+      · rw [ite_eq_right (fun h => h16 (by omega_using [h])), ite_eq_right h16]
+    · rw [ite_eq_right (fun h => h12 h.1), ite_eq_left (by omega_using [h12]), List.getD_eq_getElem?_getD,
+        List.getElem?_append_left (by simp [ht]; omega_using [h12]), List.getElem?_take_of_lt (by omega_using [h12]),
+        ← List.getD_eq_getElem?_getD, getD_rd (by omega_using [h12])]
   · simp only [hl, false_and, ite_false]
 
 theorem repeat_succ {α : Type} (f : α → α) (k : Nat) (x : α) : Nat.repeat f (k + 1) x = f (Nat.repeat f k x) := rfl
@@ -131,12 +132,12 @@ theorem ctrWide_pre (a : Areas) : ∀ G l i,
       · simp only [hi, ite_false]
     · simp only [ctrPre, reduceCtorEq, false_and, ite_false, true_and]
       by_cases h1 : 16 * G ≤ i ∧ i < 16 * G + 16
-      · rw [ite_eq_left h1, ite_eq_left (by omega), ite_eq_left (by omega),
-          show i / 16 = G by omega, show i % 16 = i - 16 * G + 0 by omega]
+      · rw [ite_eq_left h1, ite_eq_left (by omega_using [h1]), ite_eq_left (by omega_using [h1]),
+          show i / 16 = G by omega_using [h1], show i % 16 = i - 16 * G + 0 by omega_using [h1]]
       · rw [ite_eq_right h1]
         by_cases h2 : i < 16 * G
-        · rw [ite_eq_left h2, ite_eq_left (by omega)]
-        · rw [ite_eq_right h2, ite_eq_right (by omega)]
+        · rw [ite_eq_left h2, ite_eq_left (by omega_using [h2])]
+        · rw [ite_eq_right h2, ite_eq_right (by omega_using [h1, h2])]
 
 end
 
@@ -220,9 +221,9 @@ theorem ctrWide_computes (G : Nat) :
     apply List.ext_getElem (by rw [hl1, iterate_length hgl hcl])
     intro t h1 _
     have ht : t < 16 := by rw [hl1] at h1; exact h1
-    have hkt : 16 * k + t < 16 * G := by omega
+    have hkt : 16 * k + t < 16 * G := by omega_using [hk, ht]
     rw [List.getElem_eq_getD 0, List.getElem_eq_getD 0, split_getD hk ht, getD_rd hkt, hpre, ctrPre,
-      ite_eq_left hkt, show (16 * k + t) / 16 = k by omega, show (16 * k + t) % 16 = t by omega, hcv]
+      ite_eq_left hkt, show (16 * k + t) / 16 = k by omega_using [ht], show (16 * k + t) % 16 = t by omega_using [ht], hcv]
   let b := cryptBuf (16 * G) (blocksCipher 16 G ciph) (applyOps (Mode.widen G 16 (Mode.ctrEarlyWith o)).pre a)
   have bdat : ∀ i, b .dat i = a .dat i := fun i => by
     simp only [b, cryptBuf, reduceCtorEq, ite_false, hpre, ctrPre]
@@ -242,7 +243,7 @@ theorem ctrWide_computes (G : Nat) :
   refine ⟨rd_eq ?_ fun i hi => ?_, rd_eq (iterate_length hgl hcl G) fun i hi => ?_⟩
   · rw [length_flatten_of hout, List.length_map, List.length_range]
   · have hi' : i < 16 * G := by rw [← hLG]; exact hi
-    have hk : i / 16 < G := by omega
+    have hk : i / 16 < G := by omega_using [hi]
     have ht : i % 16 < 16 := Nat.mod_lt _ (by decide)
     have hdm := div_mod_eq (i := i) (L := 16)
     rw [getD_flatten hout (by rw [List.length_map, List.length_range]; exact hi'), getD_map_range _ _ hk,
@@ -276,7 +277,7 @@ theorem ctrWide_inBounds {len : Loc → Nat} {o : Op} (hsh : ∀ L st j, Op.shif
   intro o' h
   simp only [List.mem_append, List.mem_singleton] at h
   rcases h with h | rfl
-  · exact copyAt_inBounds (by omega) (by omega) o' h
+  · exact copyAt_inBounds (by omega_using [hb, hj]) (by omega_using [hc]) o' h
   · exact ho
 
 theorem ctrStep_blockwise {ciph : Cipher} (hc : ∀ b, (ciph b).length = 16) {g : List Byte → List Byte}

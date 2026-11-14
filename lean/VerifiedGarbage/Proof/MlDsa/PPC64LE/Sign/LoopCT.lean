@@ -130,7 +130,7 @@ theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
       ((List.range p.k).map (T0v p σ₁)) (muOf σ₁) (rppOf p σ₁) ((999 - t) + 1) (p.ℓ * t) =
     signLeakLoop p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1v p σ₂)) ((List.range p.k).map (S2v p σ₂))
       ((List.range p.k).map (T0v p σ₂)) (muOf σ₂) (rppOf p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
-  rw [show 999 - t + 1 = 1000 - t by omega]; exact h
+  rw [show 999 - t + 1 = 1000 - t by omega_using [ht]]; exact h
 
 theorem leq_ct (h : LeakEq p t σ₁ σ₂) (ht : t < 814) : CTv p σ₁ (p.ℓ * t) = CTv p σ₂ (p.ℓ * t) := by
   have := (leakF_step (leq_step h ht)).1
@@ -140,7 +140,7 @@ theorem leq_succ (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hr : ∃ ct, iterF p σ₁ maxBounds (p.ℓ * t) = some (ct, none)) : LeakEq p (t + 1) σ₁ σ₂ := by
   have := ((leakF_step (leq_step h ht)).2.1 hr).2
   unfold LeakEq
-  rw [show 1000 - (t + 1) = 999 - t by omega, Nat.mul_succ]
+  rw [show 1000 - (t + 1) = 999 - t by omega_using [], Nat.mul_succ]
   exact this
 
 theorem outTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat}
@@ -175,7 +175,7 @@ theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable 
   unfold tagFn at h
   by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
     by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
-      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega)
+      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega_using [h])
 
 /-- The first polynomial of `z` that fails its check, or `ℓ`. -/
 abbrev zFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
@@ -208,21 +208,21 @@ theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   have hpass := leq_pass hp h ht hs₁ hs₂
   by_cases h1 : PassV p σ₁ (p.ℓ * t)
   · have h2 := hpass.mp h1
-    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega)) (fun j hj => h2.1 j (by omega)),
-      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega)⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega)⟩, hpass⟩
+    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega_using [hr, hj])) (fun j hj => h2.1 j (by omega_using [hr, hj])),
+      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega_using [hi, hj])⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega_using [hi, hj])⟩, hpass⟩
   · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
     have e := leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
     rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
     obtain ⟨ea, ex, eab, ey⟩ := tagFn_eq e
     refine ⟨fun r hr => ?_, fun i hi => ?_, hpass⟩
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
-      · exact iff_of_true (fun j hj => hz j (by omega)) (fun j hj => ea.mp hz j (by omega))
+      · exact iff_of_true (fun j hj => hz j (by omega_using [hr, hj])) (fun j hj => ea.mp hz j (by omega_using [hr, hj]))
       · rw [prefix_ok _ hr, prefix_ok _ hr]; exact iff_of_eq (congrArg (r ≤ ·) (ex hz))
     · by_cases hz : ZOk p σ₁ (p.ℓ * t)
       · have hz' := ea.mp hz
         by_cases hr0 : R0Ok p σ₁ (p.ℓ * t)
         · have hr0' := (eab.mp ⟨hz, hr0⟩).2
-          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega)⟩ ⟨hz', fun j hj => hr0' j (by omega)⟩
+          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega_using [hi, hj])⟩ ⟨hz', fun j hj => hr0' j (by omega_using [hi, hj])⟩
         · rw [and_iff_right hz, and_iff_right hz', prefix_ok _ hi, prefix_ok _ hi]
           exact iff_of_eq (congrArg (i ≤ ·) (ey hz hr0))
       · exact iff_of_false (fun h => hz h.1) (fun h => hz (ea.mpr h.1))
@@ -300,16 +300,16 @@ theorem seqOk_RS {E : State→State→Prop} {I : Nat→State→State→Prop} {f 
       RelCT isa (RS p STK E (I a)) (seqOk f a n)
         (RS p STK E fun σ s=>∃k,a≤k ∧ k≤a+n ∧ I k σ s ∧ (k=a+n ∨ s.gpr .r24=0))
   | 0,a,_,_=>RelCT.mono (nil_tr (fun _ _ h=>h)) (fun _ _ h=>h) fun _ _ h=>
-      h.mono (fun _ _ hi=>⟨a,Nat.le_refl _,by omega,hi,.inl (by omega)⟩)
+      h.mono (fun _ _ hi=>⟨a,Nat.le_refl _,by omega_using [],hi,.inl (by omega_using [])⟩)
   | n+1,a,hq,h=>by
     rw [seqOk]
-    refine RelCT.seq (h a (Nat.le_refl _) (by omega)) ?_
-    refine ifOkElse_RS (hq (a+1) (by omega) (by omega)) ?_ ?_
-    · refine RelCT.mono (seqOk_RS n (a+1) (fun k hk hk'=>hq k (by omega) (by omega))
-        (fun k hk hk'=>h k (by omega) (by omega))) (fun _ _ hi=>hi.mono fun _ _ hi=>hi.1) ?_
+    refine RelCT.seq (h a (Nat.le_refl _) (by omega_using [])) ?_
+    refine ifOkElse_RS (hq (a+1) (by omega_using []) (by omega_using [])) ?_ ?_
+    · refine RelCT.mono (seqOk_RS n (a+1) (fun k hk hk'=>hq k (by omega_using [hk]) (by omega_using [hk']))
+        (fun k hk hk'=>h k (by omega_using [hk]) (by omega_using [hk']))) (fun _ _ hi=>hi.mono fun _ _ hi=>hi.1) ?_
       intro _ _ hi
-      exact hi.mono fun _ _ ⟨k,hk,hk',hi,hd⟩=>⟨k,by omega,by omega,hi,hd.imp (fun _=>by omega) id⟩
-    · exact nil_tr fun _ _ hi=>hi.mono fun _ _ ⟨hi,hz⟩=>⟨a+1,by omega,by omega,hi,.inr hz⟩
+      exact hi.mono fun _ _ ⟨k,hk,hk',hi,hd⟩=>⟨k,by omega_using [hk],by omega_using [hk'],hi,hd.imp (fun _=>by omega_arith) id⟩
+    · exact nil_tr fun _ _ hi=>hi.mono fun _ _ ⟨hi,hz⟩=>⟨a+1,by omega_using [],by omega_using [],hi,.inr hz⟩
 
 end
 
@@ -371,7 +371,7 @@ theorem kthen_piece {t : Nat} :
 omit hP hS hp in
 theorem kelse_piece {t : Nat} :
     SPiece p STK (fun σ s => KO p STK σ t s ∧ s.gpr .r24 = 0) (EF p STK · t) (.block [.addi .r27 .r27 p.ℓ]) :=
-  ⟨fun σ s _ h => kelse_ok (by have := hF.l; omega) h.1 h.2, srel2 (fun σ s h => h.1.b.l.k.sc) (kapAdd_taint p.ℓ)⟩
+  ⟨fun σ s _ h => kelse_ok (by have := hF.l; omega_using [this]) h.1 h.2, srel2 (fun σ s h => h.1.b.l.k.sc) (kapAdd_taint p.ℓ)⟩
 
 omit hP hF hS hp in
 theorem eb_piece {t : Nat} :
@@ -432,8 +432,8 @@ theorem checksR0_tr {t:Nat} (ht:t<814) :
   unfold checksR0
   refine RelCT.seq (seqOk_RS (I:=fun i σ s=>IQ p STK σ t i i s) p.k 0
     (fun i _ hi x y ⟨σ,τ,_,_,_,he,h₁,h₂⟩=>by
-      rw [h₁.r24,h₂.r24];exact bit_congr ((leq_agree hp he ht h₁.b.some h₂.b.some).2.1 i (by omega)))
-    (fun i _ hi=>pieceRS (r0R_piece hP hF hS (by omega)))) ?_
+      rw [h₁.r24,h₂.r24];exact bit_congr ((leq_agree hp he ht h₁.b.some h₂.b.some).2.1 i (by omega_using [hi])))
+    (fun i _ hi=>pieceRS (r0R_piece hP hF hS (by omega_using [hi])))) ?_
   refine ifOkElse_RS (fun x y ⟨σ,τ,_,_,_,he,⟨i,_,hi,h₁,hd₁⟩,⟨j,_,hj,h₂,hd₂⟩⟩=>by
     rw [Nat.zero_add] at hi hd₁ hj hd₂
     rw [IQ.done hi h₁ hd₁,IQ.done hj h₂ hd₂]
@@ -454,8 +454,8 @@ theorem zchecks_tr {t:Nat} (ht:t<814) :
       (.seq (seqOk (zR P p) 0 p.ℓ) (ifOk (checksR0 P p))) (RS p STK (LeakEq p t) (KO p STK · t)) := by
   refine RelCT.seq (seqOk_RS (I:=fun i σ s=>IZ p STK σ t i i s) p.ℓ 0
     (fun i _ hi x y ⟨σ,τ,_,_,_,he,h₁,h₂⟩=>by
-      rw [h₁.r24,h₂.r24];exact bit_congr ((leq_agree hp he ht h₁.b.some h₂.b.some).1 i (by omega)))
-    (fun i _ hi=>pieceRS (zR_piece hP hF hS (by omega)))) ?_
+      rw [h₁.r24,h₂.r24];exact bit_congr ((leq_agree hp he ht h₁.b.some h₂.b.some).1 i (by omega_using [hi])))
+    (fun i _ hi=>pieceRS (zR_piece hP hF hS (by omega_using [hi])))) ?_
   refine ifOkElse_RS (fun x y ⟨σ,τ,_,_,_,he,⟨i,_,hi,h₁,hd₁⟩,⟨j,_,hj,h₂,hd₂⟩⟩=>by
     rw [Nat.zero_add] at hi hd₁ hj hd₂
     rw [IZ.done hi h₁ hd₁,IZ.done hj h₂ hd₂]
@@ -510,7 +510,7 @@ theorem signLoop_tr :
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨t, hn, hr⟩ e₁ e₂
   have ht : t < 814 := by obtain ⟨_, _, _, _, _, _, i₁, _⟩ := hr; exact i₁.t_lt
   obtain ⟨htr, hz, hc, ho⟩ := iter_tr hP hF hS hp ht _ _ _ _ _ _ hr e₁ e₂
-  refine ⟨htr, by rw [eval_nonzero, eval_nonzero, hz], fun h => ho ?_, fun h => ⟨814 - (t + 1), by omega, t + 1, rfl,
+  refine ⟨htr, by rw [eval_nonzero, eval_nonzero, hz], fun h => ho ?_, fun h => ⟨814 - (t + 1), by omega_using [hn, ht], t + 1, rfl,
     hc ?_⟩⟩
   · rw [eval_nonzero] at h; simpa using h
   · rw [eval_nonzero] at h; simpa using h

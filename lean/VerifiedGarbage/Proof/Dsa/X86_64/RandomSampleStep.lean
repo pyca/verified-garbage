@@ -34,7 +34,7 @@ theorem random_sample_step {p : RandomSamplePublic} {s : State} (h : RandomSampl
         (rand.drop p.draw.used) p.valid (by
           rw [VG.Proof.Dsa.random_drawBytes_scan, List.length_drop, hlen]
           exact Nat.le_sub_of_add_le' hfull)
-      rw [show p.draw.draws - 1 + 1 = p.draw.draws by have := p.draw.drawsPos; omega, ht,
+      rw [show p.draw.draws - 1 + 1 = p.draw.draws by have := p.draw.drawsPos; omega_using [this], ht,
         VG.Proof.Dsa.random_drawBytes_scan] at hh
       exact hh.symm
     refine WP.mono (random_draw_full_result hr hs
@@ -54,7 +54,7 @@ theorem random_sample_step {p : RandomSamplePublic} {s : State} (h : RandomSampl
       simp only [ha, Bool.false_eq_true, ite_false] at htr
       refine ⟨rand, hlen, m, htr, ?_, ?_⟩
       · change word t.mem p.draw.B Random.oStatus = 4
-        rw [ha, ite_eq_right (by decide), ite_eq_right (by omega : p.draw.draws ≠ 1)] at hstatus
+        rw [ha, ite_eq_right (by decide), ite_eq_right (by omega_using [hn] : p.draw.draws ≠ 1)] at hstatus
         exact hstatus
       · exact random_sample_trace_next hlen ht hf hn ha
   · have hshort : (p.draw.context rand hlen m).rand.length - p.draw.used <
@@ -63,9 +63,9 @@ theorem random_sample_step {p : RandomSamplePublic} {s : State} (h : RandomSampl
       rw [hlen]
       have := p.draw.usedBound
       unfold RandomDrawPublic.width at hfull
-      omega
+      omega_using [hfull, this]
     refine WP.mono (random_draw_short_ok hr.scr hr.sp hr.randLen hr.usedWord hr.width hr.usedBound
-      (p.draw.context rand hlen m).randBound (by dsimp only [RandomDrawPublic.context]; omega) hshort)
+      (p.draw.context rand hlen m).randBound (by dsimp only [RandomDrawPublic.context]; omega_using [hwidth, hqlen]) hshort)
       fun t ⟨_, hm, hk⟩ => ?_
     have htr := hr.after_status hm hk
     refine ⟨htr.scr, htr.sp, ?_, fun hf _ _ => False.elim (hfull hf)⟩
@@ -89,7 +89,7 @@ theorem random_sample_status_four {p : RandomSamplePublic} (h : randomSampleStep
     · have hp := p.draw.drawsPos
       by_cases hn : p.draw.draws = 1
       · rw [ite_eq_left hn] at h; contradiction
-      · exact ⟨hf, by omega, rfl⟩
+      · exact ⟨hf, by omega_using [hp, hn], rfl⟩
     · contradiction
   next => contradiction
 

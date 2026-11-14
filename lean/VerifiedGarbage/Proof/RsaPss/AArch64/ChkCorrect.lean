@@ -6,15 +6,265 @@ public import VerifiedGarbage.Proof.Mgf1.Basic
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
-import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltSelect
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
+import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCopy
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPss.CtPad
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.Framework.Offset
+
+/-! ### `RsaPss.AArch64.FixedSaltSelect`, which only this module used -/
+
+section
+
+/-! ### `RsaPss.AArch64.FixedSaltHash`, which only this module used -/
+
+section
+
+/-! Hashing the fixed-length salt after all encoding checks. -/
+
+@[expose] public section
+namespace VG.Proof.RsaPss.AArch64.FixedSalt
+open VG VG.AArch64 VG.Impl.RsaPss.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
+
+theorem fixed_msg_y {H : Hash} (hH : HashOK H) {u : State} {S : Addr}
+    {W : Nat → Byte} {mH : List Byte} {e db pos i : Nat}
+    (hm : mH.length = H.D) (hpos : pos < db) (hdb : db < 1024)
+    (he : oEm ≤ e) (hfit : e + db + H.D ≤ oY)
+    (hEm : ∀ o, oEm ≤ o → o < oY → u.mem (off S o) = W o) (hi : i < 2048) :
+    updL (updL (clr (fun o => u.mem (off S o)) oY 2048) (oY + 8) mH)
+      (oY + 8 + H.D)
+      ((List.range (db - pos - 1)).map fun j =>
+        updL (clr (fun o => u.mem (off S o)) oY 2048) (oY + 8) mH (e + db - (db - pos - 1) + j))
+      (oY + i) = (msgV mH (fun j => W (e + j)) db pos).getD i 0 := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have hD := hH.sizes.D0
+  unfold msgV
+  rw [getD_app, getD_app]
+  simp only [List.length_append, RsaPss.zeros_length, hm]
+  by_cases h1 : i < 8
+  · simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right]
+    exact (RsaPss.zeros_getD _ _).symm
+  by_cases h2 : i < 8 + H.D
+  · simp (disch := omega) only [updL, ↓ite_eq_left, ↓ite_eq_right]
+    rw [show oY + i - (oY + 8) = i - 8 by omega]
+  by_cases h3 : i - (8 + H.D) < db - pos - 1
+  · simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hm, List.length_map, List.length_range]
+    rw [show oY + i - (oY + 8 + H.D) = i - (8 + H.D) by omega]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range h3, Option.map_some, Option.getD_some]
+    simp (disch := omega) only [↓ite_eq_right]
+    rw [hEm _ (by omega) (by omega)]
+    congr 1
+    omega
+  · simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hm, List.length_map, List.length_range]
+    rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_none (by rw [List.length_range]; omega)]
+    rfl
+
+variable {H : Hash} (hH : HashOK H)
+include hH in
+theorem finish_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db pos : Nat} {acc : BitVec 64}
+    {dig : Addr} (hEm : ∀ o, oEm ≤ o → o < oY → u.mem (off S o) = W o) (he : oEm ≤ e)
+    (hfit : e + db + H.D ≤ oY) (hpos : pos < db) (hdb : db < 1024)
+    (h19 : u.gpr .x19 = off S oSt) (h21 : u.gpr .x21 = off S oDig) (h24 : u.gpr .x24 = off S e)
+    (h25 : u.gpr .x25 = BitVec.ofNat 64 db) (h26 : u.gpr .x26 = acc)
+    (hS : u.mem.readW (off F sSaltLen) 64 = BitVec.ofNat 64 (db - pos - 1)) (hdg : u.mem.readW (off F sDig) 64 = dig)
+    (hr : ∀ j < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 j) 1)
+    (hd : Region.Disjoint ⟨dig, H.D⟩ ⟨S, oRsa⟩) {f : MdFns} {dn : String} (hT : HT H dn f F u.mem u.syms)
+    (hdo : DigOK H.P) :
+    WP isa (Impl.RsaPss.AArch64.FixedSalt.finish f H) u
+      fun u' => u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+        (∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25], u'.gpr r = u.gpr r) ∧
+        (∀ r ∈ preservedV, (u'.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) ∧
+        Frame (mgfWr F S) u.mem u'.mem ∧
+        u'.gpr .x0 = resV acc (hH.SH.H.hash (msgV (Spec.Rsa.bytesAt u.mem dig H.D) (fun i => W (e + i)) db pos))
+          W e db H.D := by
+  have hD := hH.sizes.D0
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have hL := hH.L
+  have hB0 := hH.B_pos
+  have hBl := hH.B_le
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  have c3 : oDig = 2304 := rfl
+  have c6 : oRsa = 8192 := rfl
+  unfold Impl.RsaPss.AArch64.FixedSalt.finish seqs seqs seqs seqs seqs
+  -- `Y` cleared.
+  refine WP.seq (WP.mono_syms (clearY_ok L (V := fun o => u.mem (off S o)) (fun _ _ => rfl)) fun u1 ⟨k1, f1, R1⟩ sy1 => ?_)
+  have L1 := L.congr k1.sp k1.wr (k1.get .x20)
+  have hm1 : Spec.Rsa.bytesAt u1.mem dig H.D = Spec.Rsa.bytesAt u.mem dig H.D :=
+    bytes_apartL f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by omega_using [hDN, hN])
+  -- `mHash`.
+  refine WP.seq (WP.mono_syms (copyDigest_ok hH L1 R1 (dig := dig) (by rw [slot_keep f1 (L.slotSd (by decide)), hdg])
+    (by rw [k1.rd, k1.wr]; exact hr) hd) fun u2 ⟨k2, f2, R2⟩ sy2 => ?_)
+  rw [hm1] at R2
+  generalize hmH : Spec.Rsa.bytesAt u.mem dig H.D = mH at R2
+  have hml : mH.length = H.D := by rw [← hmH, VG.Proof.RsaPkcs1Sig.bytesAt_length]
+  have L2 := L1.congr k2.sp k2.wr (k2.get .x20)
+  have F3 : Frame [⟨S, oRsa⟩] u.mem u2.mem := f1.trans f2
+  refine WP.seq (WP.mono_syms (copySalt_ok hH L2 R2 (e := e) (db := db) (sl := db - pos - 1)
+    he (by omega_using [hfit]) (by omega_using []) hdb
+    (by rw [k2.get .x24, k1.get .x24, h24])
+    (by rw [k2.get .x25, k1.get .x25, h25])
+    (by rw [slot_keep F3 (L.slotSd (by decide)), hS])) fun u4 ⟨k4, f4, R4⟩ sy4 => ?_)
+  have L4 := L2.congr k4.sp k4.wr (k4.get .x20)
+  -- `nbm`.
+  refine WP.seq (WP.mono_syms (signLen_ok hH L4 (sl := db - pos - 1)
+    (by rw [slot_keep (F3.trans f4) (L.slotSd (by decide)), hS]) (by omega_using [hdb]))
+    fun u5 ⟨k5, x22₅, m5⟩ sy5 => ?_)
+  have L5 := L4.congr k5.sp k5.wr (k5.get .x20)
+  have R5 := R4.frame (m' := u5.mem) (rs := [slotR F sNb]) (by rw [m5]; exact frame_slot _ F sNb _)
+    (L.slotS (by decide))
+  -- `Hash(M')`.
+  generalize hmsg : msgV mH (fun i => W (e + i)) db pos = msg
+  have hmsgl : msg.length = 8 + H.D + (db - pos - 1) := by rw [← hmsg, msgV_length, hml]
+  have hnb1 := Nat.lt_div_mul_add (a := 8 + H.D + (db - pos - 1) + H.P.L) (b := H.P.B) hB0
+  have hnb2 := Nat.div_mul_le_self (8 + H.D + (db - pos - 1) + H.P.L) H.P.B
+  have hnbB : ((8 + H.D + (db - pos - 1) + H.P.L) / H.P.B + 1) * H.P.B =
+      (8 + H.D + (db - pos - 1) + H.P.L) / H.P.B * H.P.B + H.P.B := Nat.succ_mul _ _
+  have g5 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u5.gpr r = u.gpr r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rw [k5.get _ (by decide), k4.get _ (by decide), k2.get _ (by decide),
+        k1.get _ (by decide)]
+  have F5 : Frame (mgfWr F S) u.mem u5.mem :=
+    (F3.trans f4).mono (by simp) |>.trans (by rw [m5]; exact (frame_slot _ F sNb _).mono (by simp))
+  have hT5 : HT H dn f F u5.mem u5.syms := by rw [sy5, sy4, sy2, sy1]; exact hT.stepW L F5
+  refine WP.seq (WP.mono (ctHash_ok hH L5 R5 (msg := msg) (nbm := (8 + H.D + (db - pos - 1) + H.P.L) / H.P.B + 1)
+    (by rw [g5 .x19 (by decide), h19]) (by rw [g5 .x21 (by decide), h21])
+    (by rw [x22₅, hmsgl]) (by rw [m5, Mem.readW_writeW_self64]) (by rw [hmsgl, hnbB]; omega_using [hnb1])
+    (by rw [hnbB]; omega_using [he, hfit, hpos, hdb, hD, hDN, hN, hL, hB0, hBl, c2, hnb1, hnb2, hnbB]) (fun i hi => ?_) hT5 hdo) fun u6 ⟨O6, d6⟩ => ?_)
+  · rw [← hmsg]
+    exact fixed_msg_y hH hml hpos hdb he hfit hEm (by rw [hnbB] at hi; omega_using [he, hfit, hpos, hdb, hD, hDN, hN, hL, hB0, hBl, c1, c2, hnb1, hnb2, hnbB, hi])
+  have L6 := L5.congr O6.sp O6.wr (O6.cs .x20 (by decide))
+  -- The comparison.
+  refine WP.mono (cmpH_ok hH L6 (V := fun o => u6.mem (off S o)) (fun _ _ => rfl) (e := e) (db := db) (acc := acc)
+    hfit (by rw [O6.cs .x21 (by decide), g5 .x21 (by decide), h21])
+    (by rw [O6.cs .x24 (by decide), g5 .x24 (by decide), h24])
+    (by rw [O6.cs .x25 (by decide), g5 .x25 (by decide), h25])
+    (by rw [O6.cs .x26 (by decide), g5 .x26 (by decide), h26])) fun u7 ⟨O7, x0₇⟩ => ?_
+  refine ⟨by rw [O7.sp, O6.sp, k5.sp, k4.sp, k2.sp, k1.sp], by rw [O7.rd, O6.rd, k5.rd, k4.rd, k2.rd, k1.rd],
+    by rw [O7.wr, O6.wr, k5.wr, k4.wr, k2.wr, k1.wr], fun r hr => ?_,
+    fun r hr => by rw [O7.vcs r hr, O6.vec r hr, k5.vcs r hr, k4.vcs r hr, k2.vcs r hr, k1.vcs r hr],
+    by rw [O7.mem]; exact F5.trans (O6.fr.mono (by simp)), ?_⟩
+  · have hr' := hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rw [O7.get r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
+      O6.cs r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
+      g5 r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
+  · rw [x0₇, resV]
+    congr 2
+    refine congrArg (acc ||| ·) (orF_congr fun i hi => ?_)
+    rw [← off_add, byte_of_bytesAt d6 hi, O6.em _ (by omega_using [he]) (by omega_using [hfit, hi])]
+    simp (disch := omega_using [hfit, hi]) only [updL, clr, ↓ite_eq_right]
+    rw [hEm _ (by omega_using [he]) (by omega_using [hfit, hi])]
+
+
+end VG.Proof.RsaPss.AArch64.FixedSalt
+
+end
+
+end
+
+
+/-! A known salt length changes only the hash of already rejected encodings. -/
+
+@[expose] public section
+namespace VG.Proof.RsaPss.AArch64.FixedSalt
+open VG VG.AArch64 VG.Impl.RsaPss.AArch64
+open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
+open VG.Proof.MlKem.AArch64 (Only wp_nil eval_zero)
+open VG.Proof.RsaPkcs1Sig.AArch64 (wp_ldrSp)
+
+theorem resV_nonzero {acc : BitVec 64} (ha : acc.toNat < 2^63) (hn : acc ≠ 0)
+    (h : List Byte) (W : Nat → Byte) (e db D : Nat) : resV acc h W e db D = 0 := by
+  unfold resV
+  rw [top_sub _ (lt_or ha (orF_lt _ (fun i => lt_xor (lt_byte _ (by decide)) (lt_byte _ (by decide))) D))]
+  rw [ite_eq_right (fun he => hn (or_eq_zero64 _ _ |>.mp he).1)]
+  rfl
+
+variable {H : Hash} (hH : HashOK H)
+include hH in
+theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db pos : Nat} {acc : BitVec 64}
+    {dig : Addr} (hEm : ∀ o, oEm ≤ o → o < oY → u.mem (off S o) = W o) (he : oEm ≤ e)
+    (hfit : e + db + H.D ≤ oY) (hpos : pos < db) (hdb : db < 1024)
+    (h19 : u.gpr .x19 = off S oSt) (h21 : u.gpr .x21 = off S oDig) (h24 : u.gpr .x24 = off S e)
+    (h25 : u.gpr .x25 = BitVec.ofNat 64 db) (h26 : u.gpr .x26 = acc)
+    (hP : u.mem.readW (off F sPos) 64 = BitVec.ofNat 64 pos) (hdg : u.mem.readW (off F sDig) 64 = dig)
+    (hr : ∀ j < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 j) 1)
+    (hd : Region.Disjoint ⟨dig, H.D⟩ ⟨S, oRsa⟩)
+    {any : BitVec 64} {sl : Nat}
+    (hAny : u.mem.readW (off F sAny) 64 = any)
+    (hSl : u.mem.readW (off F sSaltLen) 64 = BitVec.ofNat 64 sl)
+    (hFits : any = 0 → sl < db)
+    (hMatch : any = 0 → acc = 0 → sl = db - pos - 1)
+    (hAcc : acc.toNat < 2^63) {f : MdFns} {dn : String} (hT : HT H dn f F u.mem u.syms) (hdo : DigOK H.P) :
+    WP isa (Impl.RsaPss.AArch64.FixedSalt.select f H) u
+      fun u' => u'.sp = u.sp ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
+        (∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25], u'.gpr r = u.gpr r) ∧
+        (∀ r ∈ preservedV, (u'.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) ∧
+        Frame (mgfWr F S) u.mem u'.mem ∧
+        u'.gpr .x0 = resV acc (hH.SH.H.hash (msgV (Spec.Rsa.bytesAt u.mem dig H.D) (fun i => W (e + i)) db pos))
+          W e db H.D := by
+  unfold Impl.RsaPss.AArch64.FixedSalt.select
+  refine WP.seq (WP.of_syms (wp_ldrSp (by decide) (ld_slot L (by decide)) fun v O e9 => wp_nil fun sy => ?_))
+  have hTv : HT H dn f F v.mem v.syms := by rw [sy, O.mem]; exact hT
+  have Lv := L.congr O.sp O.wr (O.get .x20)
+  have h9 : v.gpr .x9 = any := by rw [e9, L.sp, hAny]
+  have hEmv : ∀ o, oEm ≤ o → o < oY → v.mem (off S o) = W o := by rw [O.mem]; exact hEm
+  have h19v : v.gpr .x19 = off S oSt := by rw [O.get .x19, h19]
+  have h21v : v.gpr .x21 = off S oDig := by rw [O.get .x21, h21]
+  have h24v : v.gpr .x24 = off S e := by rw [O.get .x24, h24]
+  have h25v : v.gpr .x25 = BitVec.ofNat 64 db := by rw [O.get .x25, h25]
+  have h26v : v.gpr .x26 = acc := by rw [O.get .x26, h26]
+  have hdgv : v.mem.readW (off F sDig) 64 = dig := by rw [O.mem, hdg]
+  have hrv : ∀ j < H.D, InRegions (v.rd ++ v.wr) (dig + BitVec.ofNat 64 j) 1 := by
+    rw [O.rd, O.wr]; exact hr
+  refine WP.ite _ (eval_zero _ _) (fun ht => ?_) (fun hf => ?_)
+  · have ha : any = 0 := by rw [h9] at ht; exact beq_iff_eq.mp ht
+    have hslt := hFits ha
+    have hp' : db - sl - 1 < db := by omega_using [hpos]
+    have hrev : db - (db - sl - 1) - 1 = sl := by omega_using [hslt]
+    refine WP.mono (finish_ok hH Lv hEmv he hfit hp' hdb h19v h21v h24v h25v h26v
+      (by rw [O.mem, hrev, hSl]) hdgv hrv hd hTv hdo) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
+    refine ⟨sp.trans O.sp, rd.trans O.rd, wr.trans O.wr, ?_, ?_, O.mem ▸ fr, ?_⟩
+    · intro r hr
+      rw [cs r hr, O.get r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
+    · intro r hr; rw [vs r hr, O.vcs r hr]
+    · rw [result, O.mem]
+      by_cases hz : acc = 0
+      · have heq : db - sl - 1 = pos := by have := hMatch ha hz; omega_using [hpos, this]
+        rw [heq]
+      · rw [resV_nonzero hAcc hz, resV_nonzero hAcc hz]
+  · refine WP.mono (b2_ok hH Lv hEmv he hfit hpos hdb h19v h21v h24v h25v h26v
+      (by rw [O.mem, hP]) hdgv hrv hd hTv hdo) fun t ⟨sp, rd, wr, cs, vs, fr, result⟩ => ?_
+    refine ⟨sp.trans O.sp, rd.trans O.rd, wr.trans O.wr, ?_, ?_, O.mem ▸ fr, ?_⟩
+    · intro r hr
+      rw [cs r hr, O.get r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
+    · intro r hr; rw [vs r hr, O.vcs r hr]
+    · simpa only [O.mem] using result
+
+end VG.Proof.RsaPss.AArch64.FixedSalt
+
+end
+
+end
+
 
 /-!
 # EMSA-PSS's check of an encoding on AArch64: correctness after the prologue
@@ -100,9 +350,9 @@ theorem lay_of {D : Nat} {tsH tsG : List FnTable} {s w : State} (hp : PreC D tsH
     sp := hsp
     x20 := h20
     fw := by rw [hwr]; exact List.mem_cons_self
-    sw := ⟨sR s, by rw [hwr, hp.hwr]; simp, ⟨rfl, show oRsa ≤ (s.gpr .x7).toNat * 8 by unfold oRsa Proof.RsaPss.encScratch at *; omega⟩⟩
-    Fw := by omega
-    Sw := by unfold oRsa Proof.RsaPss.encScratch at *; omega
+    sw := ⟨sR s, by rw [hwr, hp.hwr]; simp, ⟨rfl, show oRsa ≤ (s.gpr .x7).toNat * 8 by unfold oRsa Proof.RsaPss.encScratch at *; omega_using [hhs]⟩⟩
+    Fw := by omega_using [hfb]
+    Sw := by unfold oRsa Proof.RsaPss.encScratch at *; omega_using [hws, hhs]
     dFS := (hp.ks.sub_left (frame_sub0 288 s)).sub_right (rsa_sub hp)
     dB := (hp.ks.sub_left (below16_sub s)).sub_right (rsa_sub hp) }
 
@@ -113,10 +363,10 @@ theorem fr_mgf {D : Nat} {tsH tsG : List FnTable} {s : State} (hp : PreC D tsH t
   · simp only [mgfWr, slotR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact (hp.ks.sub_left (frame_sub 288 s (by decide))).sub_right (rsa_sub hp)
-    · exact Offset.disjoint_below _ (by omega)
+    · exact Offset.disjoint_below _ (by omega_using [])
     · exact Offset.disjoint _ (by decide) (by decide) (by decide)
     · exact Offset.disjoint _ (by decide) (by decide) (by decide)
-    · exact Offset.disjoint_below _ (by rw [mgfFrame_eq]; omega)
+    · exact Offset.disjoint_below _ (by rw [mgfFrame_eq]; omega_using [])
     · exact Offset.disjoint _ (by decide) (by decide) (by decide)
 
 /-- `AtC` after code that writes registers other than ours, and memory only
@@ -157,23 +407,23 @@ theorem copyIn_okC {D : Nat} {tsH tsG : List FnTable} {s u : State} (hp : PreC D
   have L₃ := L.congr O.sp O.wr (O.get .x20)
   have hu₃ := hu.only O
   refine WP.mono (copyIn_ok L₃ (V := fun o => u₃.mem (off (s.gpr .x6) o)) (fun _ _ => rfl)
-    (q := s.gpr .x1) (o := oEm) (n := (s.gpr .x2).toNat) (by omega) (by unfold oEm oRsa; omega)
+    (q := s.gpr .x1) (o := oEm) (n := (s.gpr .x2).toNat) (by omega_using [hk1]) (by unfold oEm oRsa; omega_using [hk2])
     (by rw [o₃.get .x14, e₂, o₁.get .x20, hu.x20])
     (by rw [o₃.get .x11, o₂.get .x11, e₁, hu.x1])
     (by rw [e₃, o₂.get .x23, o₁.get .x23, hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq])
     (fun j hj => by
       rw [O.rd, O.wr, hu.rd, hp.hrd]
-      exact ⟨emR s, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨emR s, by simp, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩)
     (hp.es.sub_right (rsa_sub hp))) fun t ⟨K, F, R⟩ => ⟨hu₃.keep hp K F, fun i hi => ?_, by rw [← O.mem]; exact F⟩
   have hb : Spec.Rsa.bytesAt u₃.mem (s.gpr .x1) (s.gpr .x2).toNat = emB s :=
     bytes_apartL hu₃.mem (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hp.ke.sub_left (frame_sub0 288 s)).symm
-      · exact hp.es.sub_right (rsa_sub hp)) (by omega)
-  rw [R (oEm + i) (by unfold oEm oRsa; omega)]
+      · exact hp.es.sub_right (rsa_sub hp)) (by omega_using [])
+  rw [R (oEm + i) (by unfold oEm oRsa; omega_using [hk2, hi])]
   simp only [updL]
-  rw [ite_eq_left ⟨by omega, by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; omega⟩, Nat.add_sub_cancel_left, hb]
+  rw [ite_eq_left ⟨by omega_using [], by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; omega_using [hi]⟩, Nat.add_sub_cancel_left, hb]
 
 /-- The slots of the table of `MdHash`, from the table at the entry. -/
 theorem ht_of {H : Hash} {dn : String} {f : MdFns} {G : Impl.Pbkdf2.Md.AArch64.Stream}
@@ -189,9 +439,9 @@ theorem ht_of {H : Hash} {dn : String} {f : MdFns} {G : Impl.Pbkdf2.Md.AArch64.S
 /-- MGF1's working space, in ours. -/
 theorem mgfScr_sub {D : Nat} {tsH tsG : List FnTable} {s : State} (hp : PreC D tsH tsG s) :
     Region.Sub ⟨off (s.gpr .x6) mgfOff, 8192⟩ (sR s) :=
-  Offset.sub_base _ (by have := hp.hs; unfold mgfOff Proof.RsaPss.encScratch at *; omega)
+  Offset.sub_base _ (by have := hp.hs; unfold mgfOff Proof.RsaPss.encScratch at *; omega_using [this])
 
-/-- Where MGF1 works, and the table of `Hash`, from the table at the entry. -/
+/-- Where MGF1 works, and the table of `MdHash`, from the table at the entry. -/
 theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : MdFns}
     {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {s w : State}
     (hp : PreC D tsH tsG s) (ht : TabsAt H dn f G g (stackArg s 0) (stackArg s 1) s) (hw : AtCT s w) :
@@ -202,12 +452,12 @@ theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : 
   have hws := hp.ws
   have hhs := hp.hs
   have hS := mgfScr_sub hp
-  have kG : ∀ {R : Region}, R.Sub (kR 288 s) → Region.Disjoint ⟨stackArg s 1, 40⟩ R := fun hR =>
+  have kG : ∀ {R : Region}, R.Sub (kR 288 s) → Region.Disjoint ⟨stackArg s 1, 88⟩ R := fun hR =>
     (hp.ktG.sub_left hR).symm
-  have sG : ∀ {R : Region}, R.Sub (sR s) → Region.Disjoint ⟨stackArg s 1, 40⟩ R := fun hR =>
+  have sG : ∀ {R : Region}, R.Sub (sR s) → Region.Disjoint ⟨stackArg s 1, 88⟩ R := fun hR =>
     (hp.stG.sub_left hR).symm
   have hd : ∀ r ∈ mgfWr (fb s) (s.gpr .x6) ++ [⟨off (s.gpr .x6) mgfOff, 8192⟩, slotR (fb s) sPos],
-      Region.Disjoint ⟨stackArg s 1, 40⟩ r := by
+      Region.Disjoint ⟨stackArg s 1, 88⟩ r := by
     intro r hr
     simp only [mgfWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -218,31 +468,31 @@ theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : 
     · rw [mgfFrame_eq]; exact (hp.ktG.sub_left (below_sub 288 s)).symm
     · exact sG hS
     · exact kG (frame_sub 288 s (by decide))
-  have hd0 : ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region), ⟨s.gpr .x6, oRsa⟩], Region.Disjoint ⟨stackArg s 1, 40⟩ r :=
+  have hd0 : ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region), ⟨s.gpr .x6, oRsa⟩], Region.Disjoint ⟨stackArg s 1, 88⟩ r :=
     fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact kG (frame_sub0 288 s)
       · exact sG (rsa_sub hp)
-  have hin : ∀ d, d + 8 ≤ 40 → InRegions (w.rd ++ w.wr) (off (stackArg s 1) d) 8 := fun d hd' => by
+  have hin : ∀ d, d + 8 ≤ 88 → InRegions (w.rd ++ w.wr) (off (stackArg s 1) d) 8 := fun d hd' => by
     rw [hw.e.rd, hp.hrd]
-    exact ⟨tGR s, by simp, Offset.contains_base _ (k := 40) (by omega) (by omega)⟩
+    exact ⟨tGR s, by simp, Offset.contains_base _ (k := 88) (by omega_using [hd']) (by omega_using [hd'])⟩
   exact {
     slot := hw.wm
     ok := by rw [hw.sy]; exact ht.gok
-    rd := fun j hj => hin (8 * j) (by omega)
-    rdD := hin 32 (by decide)
+    rd := fun j hj => hin (8 * j) (by omega_using [hj])
+    rdD := hin 48 (by decide)
     mem := fun m hm => by
       rw [hw.sy]
       exact ⟨TabMem.keep (TabMem.keep ht.gm hw.e.mem hd0) hm hd,
         ((tabG_keep hm hd (by decide)).trans (tabG_keep hw.e.mem hd0 (by decide))).trans ht.gD⟩
     sc := Covers.one (by
       rw [hw.e.wr, hp.hwr]
-      exact ⟨sR s, by simp, Offset.contains_base _ (by unfold mgfOff Proof.RsaPss.encScratch at *; omega)
-        (by unfold mgfOff; omega)⟩)
-    F288 := by rw [mgfFrame_eq]; unfold chkStack Sgn.stk at hsp1; omega
+      exact ⟨sR s, by simp, Offset.contains_base _ (by unfold mgfOff Proof.RsaPss.encScratch at *; omega_using [hhs])
+        (by unfold mgfOff; omega_using [])⟩)
+    F288 := by rw [mgfFrame_eq]; unfold chkStack Sgn.stk at hsp1; omega_using [hfb, hsp1]
     dStk := by rw [mgfFrame_eq]; exact (hp.ks.sub_left (below_sub 288 s)).sub_right hS
-    Sw := by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold mgfOff Proof.RsaPss.encScratch at *; omega
+    Sw := by simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold mgfOff Proof.RsaPss.encScratch at *; omega_using [hws, hhs]
     dFw := (hp.ks.sub_left (frame_sub0 288 s)).sub_right hS }
 
 section
@@ -278,11 +528,11 @@ theorem chkMain_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG
   have ht := hu.only O
   have L := lay_of hp ht.sp ht.x20 ht.wr
   generalize hk : (s.gpr .x2).toNat = k at hfit hs x25 hk1 hk2 hem
-  have hkd : 0 + (k - H.D - 1) + H.D + 1 = k := by omega
-  have h25 : t.gpr .x25 = BitVec.ofNat 64 (k - H.D - 1) := by rw [x25]; congr 1; omega
+  have hkd : 0 + (k - H.D - 1) + H.D + 1 = k := by omega_using [hfit]
+  have h25 : t.gpr .x25 = BitVec.ofNat 64 (k - H.D - 1) := by rw [x25]; congr 1; omega_using [hfit]
   have h23 : t.gpr .x23 = BitVec.ofNat 64 k := by rw [ht.x23, ← hk, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine (b1_ok hGm hGh hGl hGv (H := H) L (V := fun o => t.mem (off (s.gpr .x6) o)) (fun _ _ => rfl) (k := k)
-    (lo := 0) (db := k - H.D - 1) (c := cC s) (any := anyC s) (sv := s.gpr .x4) hkd (by omega) hk2 (Nat.zero_le 1)
+    (lo := 0) (db := k - H.D - 1) (c := cC s) (any := anyC s) (sv := s.gpr .x4) hkd (by omega_using [hfit]) hk2 (Nat.zero_le 1)
     h23 x24 h25 ht.lo ht.c ht.fr.any ht.fr.sl E1
     (rest := Impl.RsaPss.AArch64.FixedSalt.select f H)
     fun u B => ?_ : WP isa (seqs [.block acc0, mgfXor H g, .block clearTop, posScan, posCheck,
@@ -298,7 +548,7 @@ theorem chkMain_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG
     rcases List.mem_append.mp hr with h | h
     · exact L.slotW hd hn hf r h
     · rw [List.mem_singleton.mp h]
-      exact Offset.disjoint _ hpos (by unfold frameBytes at hd; omega) (by decide)
+      exact Offset.disjoint _ hpos (by unfold frameBytes at hd; omega_using [hd]) (by decide)
   have hTu : HT H dn f (fb s) u.mem u.syms := by
     rw [B.sy]
     exact ⟨(hslot sIniH (by decide) (by decide) (by decide) (by decide)).trans hT1.wi,
@@ -306,12 +556,12 @@ theorem chkMain_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG
       (hslot sDigH (by decide) (by decide) (by decide) (by decide)).trans hT1.wd, hT1.fi, hT1.fc, hT1.fd⟩
   have hrd : ∀ j < H.D, InRegions (u.rd ++ u.wr) (s.gpr .x0 + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [B.rd, B.wr, ht.rd, hp.hrd]
-    exact ⟨dgR H.D s, by simp, Offset.contains_base _ (by omega) (by have := hp.wd; omega)⟩
+    exact ⟨dgR H.D s, by simp, Offset.contains_base _ (by omega_using [hj]) (by have := hp.wd; omega_using [hj, this])⟩
   refine WP.mono (VG.Proof.RsaPss.AArch64.FixedSalt.select_ok hH (L.congr B.sp B.wr (gu .x20 (by decide)))
     (W := wct (fun o => t.mem (off (s.gpr .x6) o)) (mkB Gs H.D (fun o => t.mem (off (s.gpr .x6) o)) (oEm + 0)
       (k - H.D - 1)) (oEm + 0) (k - H.D - 1) (cC s)) (e := oEm + 0) (db := k - H.D - 1)
-    B.em (by omega) (by unfold oEm oY; omega)
-    (nz_lt (by omega)) (by omega) (by rw [gu .x19 (by decide), ht.x19]) (by rw [gu .x21 (by decide), ht.x21])
+    B.em (by omega_using []) (by unfold oEm oY; omega_using [hfit, hk2])
+    (nz_lt (by omega_using [hfit])) (by omega_using [hk2]) (by rw [gu .x19 (by decide), ht.x19]) (by rw [gu .x21 (by decide), ht.x21])
     (by rw [gu .x24 (by decide), x24]) (by rw [gu .x25 (by decide), h25]) B.acc B.pos
     (by rw [hslot sDig (by decide) (by decide) (by decide) (by decide)]; exact ht.fr.dig) hrd
     (hp.ds.sub_right (rsa_sub hp))
@@ -323,20 +573,20 @@ theorem chkMain_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG
     (by
       intro hany hacc
       have heq := (VG.Proof.RsaPss.AArch64.acc1V_eq_zero _ _ _ _ _).mp hacc
-      exact (VG.Proof.RsaPss.AArch64.eq_ofNat_iff (by omega) _).mp (heq.2.2.2 hany))
+      exact (VG.Proof.RsaPss.AArch64.eq_ofNat_iff (by omega_using [hk]) _).mp (heq.2.2.2 hany))
     (by
       have hb := VG.Proof.RsaPss.AArch64.acc_lt (fun o => t.mem (off (s.gpr .x6) o)) k 0 (cC s)
         (fun i => wct (fun o => t.mem (off (s.gpr .x6) o))
           (mkB Gs H.D (fun o => t.mem (off (s.gpr .x6) o)) (oEm + 0) (k - H.D - 1))
           (oEm + 0) (k - H.D - 1) (cC s) (oEm + 0 + i))
-        (k - H.D - 1) (anyC s) (s.gpr .x4) (fun _ => 0) 0 (by omega)
-        (fun h => by have := hs h; omega) (fun _ => by decide)
+        (k - H.D - 1) (anyC s) (s.gpr .x4) (fun _ => 0) 0 (by omega_using [hk2])
+        (fun h => by have := hs h; omega_using [hk2, this]) (fun _ => by decide)
       simpa [VG.Proof.RsaPss.AArch64.orF] using hb) hTu hdo) fun u' ⟨sp', rd', wr', cs', v', fr', x0'⟩ =>
     ⟨?_, fun b hb => ?_⟩
   · exact ⟨by rw [sp', B.sp, ht.sp], by rw [rd', B.rd, ht.rd], by rw [wr', B.wr, ht.wr],
       fun r hr => by rw [v' r hr, B.v r hr, ht.v r hr],
       fr_mgf hp (fr_mgf hp ht.fr B.fr) (fr'.mono fun r hr => List.mem_append_left _ hr)⟩
-  have hl : H.D ≤ 2 ^ 64 := by have := hp.wd; omega
+  have hl : H.D ≤ 2 ^ 64 := by have := hp.wd; omega_using [this]
   have hd : ∀ r ∈ mgfWr (fb s) (s.gpr .x6) ++ [slotR (fb s) sPos], Region.Disjoint (dgR H.D s) r := fun r hr => by
     simp only [mgfWr, slotR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -355,7 +605,7 @@ theorem chkMain_ok {tsH tsG : List FnTable} {s u : State} (hp : PreC H.D tsH tsG
       · exact hp.ds.sub_right (rsa_sub hp)) hl
   rw [x0', hdig, ← funext hHs]
   refine vlogic hHv hGv hHl (x := emB s) (k := k) (lo := 0) (db := k - H.D - 1) (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length, hk]) (fun i hi => ?_) hkd
-    (by omega) (Nat.zero_le 1) hk2 (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) rfl (fun h => hs h) ?_
+    (by omega_using [hfit]) (Nat.zero_le 1) hk2 (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) rfl (fun h => hs h) ?_
   · show t.mem (off (s.gpr .x6) (oEm + i)) = _
     rw [O.mem]; exact hem i hi
   exact hb

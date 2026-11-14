@@ -30,7 +30,7 @@ theorem op_ok_for (sve : Bool) (op : Op) {vs : Nat → CState} {s : State} (h : 
       by_cases hda : d = a ∧ 0 < n.val
       · obtain ⟨rfl, h0⟩ := hda
         have hn : n.val < 32 := n.isLt
-        have hr : 1 ≤ 32 - n.val ∧ 32 - n.val ≤ 32 := ⟨by omega, by omega⟩
+        have hr : 1 ≤ 32 - n.val ∧ 32 - n.val ≤ 32 := ⟨by omega_using [], by omega_using []⟩
         rw [show Op.codeFor true (.xorRol d d b n) = [.vop (.xarS (vreg d) (vreg b) (32 - n.val))]
           from ite_eq_left ⟨rfl, h0⟩]
         apply WP.of_runBlock

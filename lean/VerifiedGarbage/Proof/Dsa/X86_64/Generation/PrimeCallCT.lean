@@ -110,9 +110,9 @@ theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppor
   sig_pub [ProbablePrime.contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig,
     abi, argRegs]
   have hl : (BitVec.ofNat 64 (a.rand.length - a.used)).toNat = a.rand.length - a.used := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega_using [this])]
   have hbits : (BitVec.ofNat 64 bits).toNat = bits := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega_using [this])]
   rw [hsp₁, hsp₂, hdi₁, hdi₂, hdx₁, hdx₂, hcx₁, hcx₂, hsi₁, hsi₂, h8₁, h8₂, h9₁, h9₂, hl, hbits,
     E₁.candidate, E₂.candidate, E₁.tape, E₂.tape]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
@@ -125,7 +125,7 @@ theorem primeCallResult_ct (bits : Nat) :
     exact h₁.1.trans h₂.1.symm) (by taint_decide)) fun a t ⟨hsp, hrax⟩ => ?_) ?_
   · have hk := a.status_lt
     have hz : ((t.gpr .rax).setWidth 32).setWidth 64 = BitVec.ofNat 64 a.status := by
-      rw [hrax]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+      rw [hrax]; apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hk]
     exact WP.mono (WP.keep [.rax] (Q := fun x => x.gpr .rax = BitVec.ofNat 64 a.status) (by xrun [hz]) rfl)
       fun x ⟨hx, kx⟩ => ⟨(kx.gpr (by decide)).trans hsp, hx⟩
   · unfold Impl.Dsa.X86_64.Generation.primeCallStatus

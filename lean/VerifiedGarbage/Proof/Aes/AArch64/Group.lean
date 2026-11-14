@@ -1111,7 +1111,7 @@ theorem dataInvM_frame {m₀ m m' : Mem} {D O : Addr} {n k : Nat} {ks : Nat → 
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨O, 16 * n⟩ r) (hn : 16 * n < 2 ^ 64)
     (h : DataInvM m₀ m D O n k ks) : DataInvM m₀ m' D O n k ks := fun i hi => by
   rw [← h i hi]
-  exact hf.bytes (R := ⟨O, 16 * n⟩) hd (by simp only; omega) hi
+  exact hf.bytes (R := ⟨O, 16 * n⟩) hd (by simp only; omega_using [hn]) hi
 
 theorem GSetup.dat_disj {s₂ : State} {b D O : Addr} {n R : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
     (hs : GSetup s₂ b D O n R w icb) {x lx : Nat} (h : x + lx ≤ 2048) :

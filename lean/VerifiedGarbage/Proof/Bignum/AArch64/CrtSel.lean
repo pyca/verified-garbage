@@ -48,19 +48,19 @@ theorem selLoop_ok {s : State} {B : Addr} {Z w eA eo : Nat} (hs : Scr s B Z)
       Outside B eo (8 * w) s.mem t.mem ∧ Keep [.x3, .x4, .x14, .x16, .x17] s t := by
   have hn := hs.nowrap
   unfold selLoop
-  refine WP.mono (wp_countdown (N := w) (by omega) (by omega) (SelLInv s B Z eA eo lt) ?_
+  refine WP.mono (wp_countdown (N := w) (by omega_using [hw']) (by omega_using [hw]) (SelLInv s B Z eA eo lt) ?_
     ⟨hs, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, Outside.refl _ _ _ _, by cases lt <;> rfl⟩ h14)
     fun t hI => ⟨hI.val, hI.out, hI.keep⟩
   intro j hj t hI _
   have t15 : t.gpr .x15 = mask lt := (hI.keep.gpr .x15 (by decide)).trans h15
-  have hx : word t.mem B (eA + 8 * j) = word s.mem B (eA + 8 * j) := hI.out.word (by omega) (by omega)
-  have hy : word t.mem B (eo + 8 * j) = word s.mem B (eo + 8 * j) := hI.out.word (by omega) (by omega)
+  have hx : word t.mem B (eA + 8 * j) = word s.mem B (eA + 8 * j) := hI.out.word (by omega_using [sA, hj]) (by omega_using [hA, hn, hj])
+  have hy : word t.mem B (eo + 8 * j) = word s.mem B (eo + 8 * j) := hI.out.word (by omega_using []) (by omega_using [ho, hn, hj])
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x3, .x4, .x16, .x17] (Q := fun t₁ => t₁.mem = t.mem.writeW (off B (eo + 8 * j))
       (word t.mem B (eo + 8 * j) ^^^ ((word t.mem B (eA + 8 * j) ^^^ word t.mem B (eo + 8 * j)) &&& mask lt)) ∧
       t₁.gpr .x16 = off B (eA + 8 * j + 8) ∧ t₁.gpr .x17 = off B (eo + 8 * j + 8)) (by
-      brun [hI.x16, hI.x17, t15, hI.scr.ld (show eA + 8 * j + 8 ≤ Z by omega),
-        hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega), hI.scr.st (show eo + 8 * j + 8 ≤ Z by omega)])
+      brun [hI.x16, hI.x17, t15, hI.scr.ld (show eA + 8 * j + 8 ≤ Z by omega_using [hA, hj]),
+        hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega_using [ho, hj]), hI.scr.st (show eo + 8 * j + 8 ≤ Z by omega_using [ho, hj])])
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hm, h16', h17'⟩, k₁⟩ => ?_
   refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14', hm', _⟩, k'⟩ => ⟨?_, by rw [h14', k₁.gpr .x14 (by decide)]⟩
   refine ⟨hI.scr.congr (k'.wr.trans k₁.wr), (hI.keep.trans (k₁.trans k')).mono (by decide),
@@ -68,9 +68,9 @@ theorem selLoop_ok {s : State} {B : Addr} {Z w eA eo : Nat} (hs : Scr s B Z)
     by rw [k'.gpr .x17 (by decide), h17', Nat.mul_succ, Nat.add_assoc], ?_, ?_⟩
   · rw [hm', hm]
     intro x hx'
-    rw [writeW_outside t.mem B _ (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega), hI.val, sel_mask, hx, hy]
+    rw [writeW_outside t.mem B _ (by omega_using [ho, hn, hj]) x (by omega_using [hx'])]
+    exact hI.out x (by omega_using [hx'])
+  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega_using [ho, hn, hj]), hI.val, sel_mask, hx, hy]
     cases lt <;> simp [wv]
 
 end VG.Proof.Bignum.AArch64

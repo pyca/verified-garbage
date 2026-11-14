@@ -64,12 +64,12 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c : BitVec 32) (hc : c.toNat < 256) :
       "SigEd448".toList.map (fun ch => BitVec.ofNat 8 ch.toNat) ++ [BitVec.ofNat 8 0, BitVec.ofNat 8 c.toNat] := by
   generalize hM : ((m.writeW (p + BitVec.ofNat 64 8) (c <<< 8)).writeW p 0x45676953#32).writeW
       (p + BitVec.ofNat 64 4) 0x38343464#32 = M
-  have s84 : Mem.Sep (p + BitVec.ofNat 64 8) 4 (p + BitVec.ofNat 64 4) 4 := Offset.sep p (by omega) (by omega) (by omega)
+  have s84 : Mem.Sep (p + BitVec.ofNat 64 8) 4 (p + BitVec.ofNat 64 4) 4 := Offset.sep p (by omega_using []) (by omega_using []) (by omega_using [])
   have s80 : Mem.Sep (p + BitVec.ofNat 64 8) 4 p 4 := by
-    have := Offset.sep p (d := 8) (n := 4) (e := 0) (k := 4) (by omega) (by omega) (by omega)
+    have := Offset.sep p (d := 8) (n := 4) (e := 0) (k := 4) (by omega_using []) (by omega_using []) (by omega_using [])
     rwa [BitVec.add_zero] at this
   have s04 : Mem.Sep p 4 (p + BitVec.ofNat 64 4) 4 := by
-    have := Offset.sep p (d := 0) (n := 4) (e := 4) (k := 4) (by omega) (by omega) (by omega)
+    have := Offset.sep p (d := 0) (n := 4) (e := 4) (k := 4) (by omega_using []) (by omega_using []) (by omega_using [])
     rwa [BitVec.add_zero] at this
   have h0 : M.readW p 32 = 0x45676953#32 := by
     rw [← hM, Mem.readW_writeW_sep s04 (by decide), Mem.readW_writeW_self32]
@@ -79,7 +79,7 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c : BitVec 32) (hc : c.toNat < 256) :
     rw [← hM, Mem.readW_writeW_sep s84 (by decide), Mem.readW_writeW_sep s80 (by decide),
       Mem.readW_writeW_self32]
   have hw : (c <<< 8).toNat = c.toNat * 256 := by
-    rw [VG.Proof.X25519.Arm.toNat_shl]; omega
+    rw [VG.Proof.X25519.Arm.toNat_shl]; omega_using [hc]
   have e10 : Spec.Ed448.bytesAt M p 10 = Spec.Ed448.bytesAt M p 4 ++
       (Spec.Ed448.bytesAt M (p + BitVec.ofNat 64 4) 4 ++ (Spec.Ed448.bytesAt M (p + BitVec.ofNat 64 8) 4).take 2) := by
     have a := Proof.X25519.bytesAt_add M p 4 6
@@ -97,8 +97,8 @@ theorem hdr_bytes (m : Mem) (p : Addr) (c : BitVec 32) (hc : c.toNat < 256) :
   simp only [Proof.X25519.leBytes_succ, List.take_succ_cons, List.take_zero]
   have e2 : BitVec.ofNat 8 (c.toNat * 256) = 0 := by
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, show (0 : BitVec 8).toNat = 0 from rfl]; omega
-  have e3 : c.toNat * 256 / 256 = c.toNat := by omega
+    rw [BitVec.toNat_ofNat, show (0 : BitVec 8).toNat = 0 from rfl]; omega_using []
+  have e3 : c.toNat * 256 / 256 = c.toNat := by omega_using []
   rw [e2, e3]
   rfl
 
@@ -121,16 +121,16 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
   have ht := hk.top
   have hf := hk.fits
   have hjn := hj.1
-  have hoff : (BitVec.ofNat 32 off).toNat = off := by rw [BitVec.toNat_ofNat]; omega
+  have hoff : (BitVec.ofNat 32 off).toNat = off := by rw [BitVec.toNat_ofNat]; omega_using [ho]
   have hEo : (E + BitVec.ofNat 32 off).toNat = E.toNat + off := by
-    rw [BitVec.toNat_add_of_lt (by rw [hoff]; omega), hoff]
+    rw [BitVec.toNat_add_of_lt (by rw [hoff]; omega_using [ho, ht]), hoff]
   have ea : ∀ k ≤ 8, State.addr (E + BitVec.ofNat 32 off + BitVec.ofNat 32 k) =
       State.addr E + BitVec.ofNat 64 off + BitVec.ofNat 64 k := fun k hk => by
-    rw [addr_add (by rw [hEo]; omega), addr_add (by omega)]
+    rw [addr_add (by rw [hEo]; omega_using [ho, ht, hk]), addr_add (by omega_using [ho, ht])]
   have hw : ∀ k ≤ 8, InRegions t.wr (State.addr E + BitVec.ofNat 64 off + BitVec.ofNat 64 k) 4 :=
     fun k hk => by
       rw [Offset.add_add]
-      exact hc.writable_frame (Offset.contains_base _ (by omega) (by omega))
+      exact hc.writable_frame (Offset.contains_base _ (by omega_using [ho, hk]) (by omega_using [ho, hk]))
   have h256 : State.addr (t.sp + BitVec.ofNat 32 (248 + 4 * j)) = State.addr E + BitVec.ofNat 64 (248 + 4 * j) := by
     rw [hsp, addr_add (by omega)]
   obtain ⟨R, hR, hcon⟩ := hk.slot j hj
@@ -143,21 +143,21 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
   unfold hdrAt
   refine wp_ldrSp (by omega) h256 hin fun s1 v1 => ?_
   refine wp_mov (op2_lsl (by decide)) fun s2 v2 => ?_
-  refine wp_addSp (by omega) fun s3 v3 => ?_
+  refine wp_addSp (by omega_using [ho]) fun s3 v3 => ?_
   have r12 : ∀ s' : State, s'.gpr .r12 = s3.gpr .r12 → s'.gpr .r12 = E + BitVec.ofNat 32 off := fun s' h => by
     rw [h, v3.gpr, v2.sp, v1.sp, hsp]
-  refine wp_str (a := State.addr E + BitVec.ofNat 64 off + BitVec.ofNat 64 8) (by decide) (by rw [r12 s3 rfl]; exact ea 8 (by omega)) (by rw [v3.wr, v2.wr, v1.wr]; exact hw 8 (by omega))
+  refine wp_str (a := State.addr E + BitVec.ofNat 64 off + BitVec.ofNat 64 8) (by decide) (by rw [r12 s3 rfl]; exact ea 8 (by omega_using [])) (by rw [v3.wr, v2.wr, v1.wr]; exact hw 8 (by omega_using []))
     fun s4 v4 => ?_
   refine wp_movw fun s5 v5 => ?_
   refine wp_movt fun s6 v6 => ?_
-  refine wp_str (a := State.addr E + BitVec.ofNat 64 off) (by decide) (by rw [r12 s6 (by rw [v6.other _ (by decide), v5.other _ (by decide), v4.gpr])]; exact (ea 0 (by omega)).trans e0)
-    (by rw [v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr, ← e0]; exact hw 0 (by omega)) fun s7 v7 => ?_
+  refine wp_str (a := State.addr E + BitVec.ofNat 64 off) (by decide) (by rw [r12 s6 (by rw [v6.other _ (by decide), v5.other _ (by decide), v4.gpr])]; exact (ea 0 (by omega_using [])).trans e0)
+    (by rw [v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr, ← e0]; exact hw 0 (by omega_using [])) fun s7 v7 => ?_
   refine wp_movw fun s8 v8 => ?_
   refine wp_movt fun s9 v9 => ?_
   refine wp_str (a := State.addr E + BitVec.ofNat 64 off + BitVec.ofNat 64 4) (by decide) (by
       rw [r12 s9 (by rw [v9.other _ (by decide), v8.other _ (by decide), v7.gpr, v6.other _ (by decide),
-        v5.other _ (by decide), v4.gpr])]; exact ea 4 (by omega))
-    (by rw [v9.wr, v8.wr, v7.wr, v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hw 4 (by omega)) fun u vu => ?_
+        v5.other _ (by decide), v4.gpr])]; exact ea 4 (by omega_using []))
+    (by rw [v9.wr, v8.wr, v7.wr, v6.wr, v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hw 4 (by omega_using [])) fun u vu => ?_
   apply WP.block_nil
   have w0 : s2.gpr .r0 = val j <<< 8 := by rw [v2.gpr, v1.gpr, hv]
   have w1 : s6.gpr .r0 = 0x45676953#32 := by rw [v6.gpr, v5.gpr]; decide
@@ -171,10 +171,10 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
     rw [hm]
     have c : ∀ k ≤ 8, (⟨State.addr E + BitVec.ofNat 64 off, 12⟩ : Region).Contains
         (State.addr E + BitVec.ofNat 64 off + BitVec.ofNat 64 k) 4 := fun k hk =>
-      Offset.contains_base _ (by omega) (by omega)
-    refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 8 (by omega))).writeW
-      (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ (c 4 (by omega))
-    have h := c 0 (by omega)
+      Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+    refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 8 (by omega_using []))).writeW
+      (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ (c 4 (by omega_using []))
+    have h := c 0 (by omega_using [])
     rw [e0] at h
     exact h
   refine ⟨?_, hfr, by rw [hm]; exact hdr_bytes _ _ _ hcl⟩
@@ -188,5 +188,5 @@ theorem Kit.hdr_ok (hk : Kit E scr n ins outs) (hc : Whole.Ctx E g m₀ ins outs
       v3.other r h12, v2.other r h0, v1.other r h0]
   · intro r hr
     rw [List.mem_singleton.mp hr]
-    exact .inl (Offset.sub_base _ (by omega))
+    exact .inl (Offset.sub_base _ (by omega_using [ho]))
 end VG.Proof.Ed448.Arm.Shake

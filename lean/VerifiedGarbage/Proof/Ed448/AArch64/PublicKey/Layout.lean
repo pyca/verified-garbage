@@ -93,7 +93,7 @@ theorem Ctx.tbl (hc : Ctx L g vec m₀ t) (hL : L.Ok) (hm : VG.Proof.Ed448.AArch
     VG.Proof.Ed448.AArch64.Whole.TblWords L.T t.mem := fun i hi => by
   have := hL.tbfit
   rw [← hm i hi]
-  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, this])) ?_ (by decide)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
   · exact hL.tbo
@@ -118,7 +118,7 @@ theorem Ctx.arg_word (hc : Ctx L g vec m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 3
     t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 =
       m₀.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 := by
   refine hc.frame.readW (r := L.ARGS)
-    (Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide)) ?_ (by decide)
+    (Offset.contains _ (e := 256) (k := 48) (by omega_using []) (by omega_using [hj]) (by decide)) ?_ (by decide)
   simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
   · exact hL.ko.sub_left (args_sub L)

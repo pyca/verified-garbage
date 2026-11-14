@@ -41,10 +41,10 @@ def InitializationPublic.workspace (p : InitializationPublic) : WorkspacePublic 
   qBytes := p.qBytes
   digestLen := (p.layout.fields .digestLen).toNat
   extentBound := by decide
-  pPositive := by rw [p.pLength]; have := p.layout.widths; omega
+  pPositive := by rw [p.pLength]; have := p.layout.widths; omega_using [this]
   qPositive := by rw [p.qLength]; exact p.layout.widths.1
-  pBound := by rw [p.pLength]; have := p.layout.widths; omega
-  qBound := by rw [p.qLength]; have := p.layout.widths; omega
+  pBound := by rw [p.pLength]; have := p.layout.widths; omega_using [this]
+  qBound := by rw [p.qLength]; have := p.layout.widths; omega_using [this]
   digestBound := (p.layout.fields .digestLen).isLt
   active := by decide
   lengths := by rw [p.pLength, p.qLength]; exact p.layout.lengths

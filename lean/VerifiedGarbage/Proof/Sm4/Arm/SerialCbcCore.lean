@@ -45,7 +45,7 @@ theorem core_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule}
     rw [f.wr]
     simpa only [BitVec.add_zero] using workspace_part h.hw 0 (4 * slots) (by decide)
   refine WP.mono (BatchCalls.crypt_wp hb (by
-    have := h.fitB; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega)
+    have := h.fitB; change B.toNat + 1456 ≤ 2 ^ 32; change B.toNat + 1512 ≤ 2 ^ 32 at this; omega_using [this])
     hw₁ ht₁) fun s₂ ⟨c, ht₂, ecb⟩ => ?_
   have ff : Frame [⟨State.addr B, 4 * slots⟩] s.mem s₁.mem := f.frame.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr

@@ -14,7 +14,7 @@ namespace VG.Proof.Mont.X86.Dynamic
 theorem radix_squared (n : Nat) : 2 ^ (128 * n) = 2 ^ (64 * n) * 2 ^ (64 * n) := by
   rw [← Nat.pow_add]
   congr 1
-  omega
+  omega_using []
 
 theorem mont_one {v n m : Nat} (hc : Nat.Coprime (2 ^ (64 * n)) m) (hv : v < m)
     (h : v * 2 ^ (64 * n) % m = 2 ^ (128 * n) % m) : v = 2 ^ (64 * n) % m := by

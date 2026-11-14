@@ -27,5 +27,5 @@ theorem squeeze_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (h : Phase σ 0 0 
   refine count_loop (by decide : 0 < 6) (fun n t => Phase σ n 0 t) (fun n hn t ht => ?_) h
   refine WP.mono (squeezeStep_ok sha3 hp hn ht) fun u hu => ⟨hu,?_⟩
   rw [hu.count]
-  omega
+  omega_using [hn]
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

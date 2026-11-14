@@ -42,18 +42,18 @@ theorem JointGenerator.keep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : 
       word s.mem (T+BitVec.ofNat 64 (128*(a-1))) (8*i) := by
     apply Mem.readW_congr
     intro b hb
-    have ho := h.outside a ha ha32 i hi b (by omega)
+    have ho := h.outside a ha ha32 i hi b (by omega_using [hb])
     apply hk.mem
-    · intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega)
-    · dsimp only [off]; exact Or.inr (by omega)
+    · intro w hm; have := hw w hm; dsimp only [off]; exact Or.inr (by omega_using [ho, this])
+    · dsimp only [off]; exact Or.inr (by omega_using [htmp, ho])
   have val (a o : Nat) (ha : 1≤a) (ha32 : a≤jointGRows c) (ho : o=0 ∨ o=32) :
       wordsVal t.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4=
       wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) o 4 := by
     apply wordsVal_of_words₂
     intro i hi
     rcases ho with rfl | rfl
-    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega)
-    · have e := wordeq a (4+i) ha ha32 (by omega)
+    · simpa only [Nat.zero_add] using wordeq a i ha ha32 (by omega_using [hi])
+    · have e := wordeq a (4+i) ha ha32 (by omega_using [hi])
       simpa only [Nat.mul_add] using e
   refine ⟨?_,?_,h.outside,?_,?_⟩
   · rw [hsym]; exact h.symbol

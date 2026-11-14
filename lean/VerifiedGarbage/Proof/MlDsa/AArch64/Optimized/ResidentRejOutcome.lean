@@ -61,7 +61,7 @@ theorem two_of_finish {σ : State} {Q : State → Prop} (hp : Pre 2 σ)
   refine WP.mono (squeezeSetupZero_env ha) fun b ⟨hb,hm,h22,_,hbuf⟩ => ?_
   apply WP.seq
   refine WP.mono (firstTwo_ok hp hb (by simpa only [hm] using hpairs)
-    (by simpa only [hm] using hcounts) h22 (fun k hk => hbuf k (by omega))) fun c hc => ?_
+    (by simpa only [hm] using hcounts) h22 (fun k hk => hbuf k (by omega_using [hk]))) fun c hc => ?_
   apply WP.assoc
   apply WP.seq
   refine WP.mono (parseFiveTwo_ok hp hc) fun d hd => ?_

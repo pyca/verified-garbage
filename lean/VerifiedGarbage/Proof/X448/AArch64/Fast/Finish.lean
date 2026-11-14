@@ -70,20 +70,20 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
   have sxv : SavedX base g v.mem := by
     intro k hk
     have hS : SAVE = 2880 := rfl
-    rw [vm.word (Or.inr (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega)) (by simp only [ACC]; omega),
-      ck.2.word (Or.inr (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega)) (by simp only [ACC]; omega),
-      uk.mem.word (Or.inr (by omega)) (Or.inl (by simp only [ACC]; omega)) (by omega)]
+    rw [vm.word (Or.inr (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega_using [hS])) (by simp only [ACC]; omega_using [hk, hS]),
+      ck.2.word (Or.inr (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega_using [hS])) (by simp only [ACC]; omega_using [hk, hS]),
+      uk.mem.word (Or.inr (by omega_using [hS])) (Or.inl (by simp only [ACC]; omega_using [hk, hS])) (by omega_using [hk, hS])]
     exact svx k hk
   have sxw : SavedX base g w.mem := fun k hk =>
-    (output_word wm (by decide) (by simp only [SAVE]; omega) hfar).trans (sxv k hk)
+    (output_word wm (by decide) (by simp only [SAVE]; omega_using [hk]) hfar).trans (sxv k hk)
   rw [WP.block_append_iff]
   refine WP.mono (restore_ok ws svw) fun t ⟨tb, tr, tm, tk⟩ => ?_
   have tsx : SavedX base g t.mem := by rw [tm]; exact sxw
   have ts := ws.of_keeps tk (by decide)
   have hV : VSAVE = 4736 := rfl
   have vsw : SavedV base gv w.mem :=
-    ((((svV.outside2 uk.mem (by decide) (by decide)).field ck.2 (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega)).field
-      vm (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega)).output wm (by decide) hfar)
+    ((((svV.outside2 uk.mem (by decide) (by decide)).field ck.2 (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega_using [hV])).field
+      vm (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega_using [hV])).output wm (by decide) hfar)
   rw [WP.block_append_iff]
   refine WP.mono (restoreX_ok ts tsx) fun z ⟨zv, zm, zk⟩ => ?_
   have zs := ts.of_keeps zk (by decide)

@@ -305,7 +305,7 @@ theorem commit_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     · exact Or.inr (Or.inr h)
   unfold Impl.MlDsa.AArch64.Sign.Cached.commit
   exact RelCT.seq (masks_tr hP hp) (RelCT.seq (positiveRows_tr hp3)
-    (RelCT.seq (positivePackRows_tr hP hp3) (hash_root_tr hp (by have := hP.sl; omega))))
+    (RelCT.seq (positivePackRows_tr hP hp3) (hash_root_tr hp (by have := hP.sl; omega_using [this]))))
 
 end VG.Proof.MlDsa.AArch64.Sign.Cached
 
@@ -420,7 +420,7 @@ theorem signLoop_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
   refine ⟨htr,by rw [eval_x9,eval_x9,hi.1.1],fun h=>hi.1.2.2 (x9_zero h),fun h=>?_⟩
   have hnxt := hi.next (x9_ne h)
   obtain ⟨⟨⟨σ,τ,ps,pt,pub,he,hx,hy⟩,rs⟩,rp⟩ := hnxt
-  exact ⟨814-(t+1),by omega,t+1,rfl,
+  exact ⟨814-(t+1),by omega_using [hn, ht],t+1,rfl,
     ⟨⟨⟨σ,τ,ps,pt,pub,he,⟨⟨hx.1,.inr (cx σ hx.1.k)⟩,hx.2⟩,
       ⟨⟨hy.1,.inr (cy τ hy.1.k)⟩,hy.2⟩⟩,rs⟩,rp⟩⟩
 

@@ -70,7 +70,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
     fun s hw k => by
       simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
   have hw : ∀ {k : Nat} (d : Nat), d ≤ k → W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d) :=
-    fun {k} d e => by rw [add_ofNat_assoc, show d + (k - d) = k by omega]
+    fun {k} d e => by rw [add_ofNat_assoc, show d + (k - d) = k by omega_using [e]]
   refine ⟨⟨fun r hr => ?_, fun hf => by cases hf⟩, fun _ => by rw [h.wr₁, h.wr₂], wf h.e₁ h.wr₁, wf h.e₂ h.wr₂,
     fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr) with hr | hr
@@ -95,21 +95,21 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
         rw [hw d h₁]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl | rfl
-        · exact word_byte S₁.data S₂.data (by omega)
-        · exact word_byte S₁.len S₂.len (by omega)
-        · exact word_byte S₁.tl S₂.tl (by omega)
-        · exact word_byte S₁.rounds S₂.rounds (by omega)
-        · exact word_byte S₁.aad S₂.aad (by omega)
+        · exact word_byte S₁.data S₂.data (by omega_using [h₂])
+        · exact word_byte S₁.len S₂.len (by omega_using [h₂])
+        · exact word_byte S₁.tl S₂.tl (by omega_using [h₂])
+        · exact word_byte S₁.rounds S₂.rounds (by omega_using [h₂])
+        · exact word_byte S₁.aad S₂.aad (by omega_using [hk₂])
       have hq : (k - 208) / 8 = 0 ∨ (k - 208) / 8 = 1 ∨ (k - 208) / 8 = 2 ∨ (k - 208) / 8 = 3 ∨
-          (k - 208) / 8 = 4 := by omega
+          (k - 208) / 8 = 4 := by omega_using [hk₂]
       exact key (208 + 8 * ((k - 208) / 8)) (by
-        rcases hq with h | h | h | h | h <;> rw [h] <;> decide) (by omega) (by omega)
+        rcases hq with h | h | h | h | h <;> rw [h] <;> decide) (by omega_using [hk₁]) (by omega_using [])
     · simp only at hk₁ hk₂
       by_cases hk : k < 296
-      · rw [hw 288 (by omega)]; exact word_byte S₁.nonce S₂.nonce (by omega)
-      · rw [hw 296 (by omega)]; exact word_byte S₁.nlen S₂.nlen (by omega)
+      · rw [hw 288 (by omega_using [hk₁])]; exact word_byte S₁.nonce S₂.nonce (by omega_using [hk])
+      · rw [hw 296 (by omega_using [hk])]; exact word_byte S₁.nlen S₂.nlen (by omega_using [hk₂])
     · simp only at hk₁ hk₂
-      rw [hw d hk₁]; exact word_byte (h.ex d hd).2 rfl (by omega)
+      rw [hw d hk₁]; exact word_byte (h.ex d hd).2 rfl (by omega_using [hk₂])
 
 /-- Code the taint analysis checks from `ocbT rs ex`. -/
 theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : State → State → Prop}

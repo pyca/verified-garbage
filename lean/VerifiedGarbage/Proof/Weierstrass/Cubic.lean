@@ -6,6 +6,7 @@ import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Weierstrass.Complete
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Certificates that a cubic has no root modulo a prime
@@ -69,14 +70,14 @@ theorem evalT_powT (n : Nat) (u : Tri) (e : Nat) (he : e < 2 ^ n) :
   | succ n ih =>
     by_cases h0 : e = 0
     · subst h0; rw [powT, ite_eq_left rfl, h1, _root_.pow_zero]
-    have he2 : e / 2 < 2 ^ n := by rw [Nat.pow_succ] at he; omega
+    have he2 : e / 2 < 2 ^ n := by rw [Nat.pow_succ] at he; omega_using [he]
     have hsplit : evalT r u ^ e = (evalT r u * evalT r u) ^ (e / 2) * evalT r u ^ (e % 2) := by
-      rw [← sq, ← pow_mul, ← pow_add]; congr 1; omega
+      rw [← sq, ← pow_mul, ← pow_add]; congr 1; omega_using []
     rw [powT, ite_eq_right h0]
     by_cases h2 : e % 2 = 0
     · rw [ite_eq_left h2, ih _ _ he2, evalT_mulT hr, hsplit, h2, _root_.pow_zero, mul_one]
     · rw [ite_eq_right h2, evalT_mulT hr, ih _ _ he2, evalT_mulT hr, hsplit,
-        show e % 2 = 1 by omega, pow_one, mul_comm]
+        show e % 2 = 1 by omega_using [h2], pow_one, mul_comm]
 
 end
 
@@ -92,7 +93,7 @@ theorem noRoot_of_cert (p A B n : Nat) [Fact p.Prime] (hn : p < 2 ^ n) (g v : Tr
   have hgr : evalT r g = r := by
     rw [← hg, evalT_powT hr _ _ _ hn, hx, ZMod.pow_card]
   have hh : evalT r ((g.1, (g.2.1 + p - 1) % p, g.2.2) : Tri) = 0 := by
-    have hp1 : 1 ≤ g.2.1 + p := by have := (Fact.out : p.Prime).one_lt; omega
+    have hp1 : 1 ≤ g.2.1 + p := by have := (Fact.out : p.Prime).one_lt; omega_using [this]
     have : evalT r ((g.1, (g.2.1 + p - 1) % p, g.2.2) : Tri) = evalT r g - r := by
       simp only [evalT, ZMod.natCast_mod, Nat.cast_sub hp1, Nat.cast_add, ZMod.natCast_self,
         Nat.cast_one]

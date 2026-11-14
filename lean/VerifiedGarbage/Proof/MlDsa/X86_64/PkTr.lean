@@ -139,7 +139,7 @@ theorem pro_ok {p : Params} (hp' : PS p) {σ : State} (hp : (ptK p).pre σ) :
   obtain ⟨_, hrd, hwr, d1, d2, d3, r1, r2, r3, k1, k2, k3, n1, n2, n3⟩ := hp''
   have hS : ⟨σ.gpr .rdx, scrLen p⟩ ∈ σ.wr := by rw [hwr]; simp
   have hs : 888 ≤ scrLen p := (scr_lt hp').1
-  have hs2 : scrLen p < 2 ^ 64 := by have := (scr_lt hp').2; omega
+  have hs2 : scrLen p < 2 ^ 64 := by have := (scr_lt hp').2; omega_using [this]
   have c : ∀ o, o + 8 ≤ 888 → (⟨σ.gpr .rdx, scrLen p⟩ : Region).Contains (σ.gpr .rdx + BitVec.ofNat 64 o) 8 :=
     fun o ho => contains_offset' (by omega_arith) (by omega_arith)
   have w : ∀ o, o + 8 ≤ 888 → InRegions σ.wr (σ.gpr .rdx + BitVec.ofNat 64 o) 8 := fun o ho => ⟨_, hS, c o ho⟩
@@ -213,7 +213,7 @@ theorem epi_ok {p : Params} (hp' : PS p) {σ s : State} (hp : (ptK p).pre σ) (h
   have L := ptLay hp' hp h.top
   have hin : ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
     L.cR (p := sc (oSV + 8 * k)) (l := 8) (by
-      rcases hp' with rfl | rfl | rfl <;> rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with
+      rcases hp' with rfl | rfl | rfl <;> rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5) with
         rfl | rfl | rfl | rfl | rfl | rfl <;> decide) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   refine WP.mono (VG.Proof.MlDsa.X86_64.KeyGen.WP.mx (noLd_spec (by rfl)) (topEpi_ok h.top hin))
     fun s' ⟨⟨_, hg, hm⟩, hx⟩ => ⟨⟨hg.1, hg.2, by rw [← MX, ← MX, hx, h.mx]⟩, ?_⟩

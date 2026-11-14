@@ -12,16 +12,16 @@ theorem source_slice {s : State} {B ptr : Addr} {Z used width : Nat} {bytes : Li
     (h : Src s B Z ptr bytes) (hroom : used + width ≤ bytes.length) :
     Src s B Z (off ptr used) ((bytes.drop used).take width) := by
   have hl : ((bytes.drop used).take width).length = width := by
-    simp only [List.length_take, List.length_drop]; omega
+    simp only [List.length_take, List.length_drop]; omega_using [hroom]
   refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩
   · change InRegions (s.rd ++ s.wr) (off (off ptr used) i) 1
     rw [off_off]
-    exact h.rd (used + i) (by omega)
+    exact h.rd (used + i) (by omega_using [hroom, hl, hi])
   · change s.mem (off (off ptr used) i) = _
-    rw [off_off, h.val (used + i) (by omega)]
+    rw [off_off, h.val (used + i) (by omega_using [hroom, hl, hi])]
     simp only [List.getElem_take, List.getElem_drop]
   · change Z ≤ ofs B (off (off ptr used) i)
     rw [off_off]
-    exact h.out (used + i) (by omega)
+    exact h.out (used + i) (by omega_using [hroom, hl, hi])
 
 end VG.Proof.Dsa.X86_64.Generation

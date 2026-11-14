@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivRelease
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivFrame
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivPub
 import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -41,11 +41,16 @@ theorem frame_wordsAt {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  exact hf.readW (r := ⟨p, 8 * n⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
+  exact hf.readW (r := ⟨p, 8 * n⟩) (Offset.contains_base _ (by omega_using [hi]) (by omega_using [hn, hi])) hd (by decide)
 
 theorem check_eq (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) :
     seqs (check pcName pc pdName pd) =
       .seq (.block pcArgs) (.seq (.call pcName pc) (.seq (.block pdArgs) (.seq (.call pdName pd)
+        (seqs tail)))) := rfl
+
+theorem checkWith_eq (stage : Prog isa) (pdName : String) (pd : Prog isa) :
+    seqs (checkWith stage pdName pd) =
+      .seq (.block pcArgs) (.seq stage (.seq (.block pdArgs) (.seq (.call pdName pd)
         (seqs tail)))) := rfl
 
 section
@@ -59,19 +64,19 @@ theorem n_bytes : Spec.Rsa.bytesAt t.mem L.n L.k.toNat = Spec.Rsa.bytesAt m₀ L
   frame_bytesAt hc.frame (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    exacts [hL.on.symm, hL.nsc, hL.kn.symm]) (by have := hL.bn; omega)
+    exacts [hL.on.symm, hL.nsc, hL.kn.symm]) (by have := hL.bn; omega_using [])
 
 theorem e_bytes : Spec.Rsa.bytesAt t.mem L.e L.el.toNat = Spec.Rsa.bytesAt m₀ L.e L.el.toNat :=
   frame_bytesAt hc.frame (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    exacts [hL.oe.symm, hL.esc, hL.ke.symm]) (by have := hL.be; omega)
+    exacts [hL.oe.symm, hL.esc, hL.ke.symm]) (by have := hL.be; omega_using [])
 
 theorem inp_bytes : Spec.Rsa.bytesAt t.mem L.inp L.k.toNat = Spec.Rsa.bytesAt m₀ L.inp L.k.toNat := by
   have h := frame_bytesAt hc.frame (p := L.inp) (n := L.il.toNat) (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
-    exacts [hL.oi.symm, hL.isc, hL.ki.symm]) (by have := hL.bi; omega)
+    exacts [hL.oi.symm, hL.isc, hL.ki.symm]) (by have := hL.bi; omega_using [])
   rwa [hL.ilk] at h
 
 end Ctx
@@ -84,19 +89,22 @@ theorem slot_disj (hL : L.Ok) {d : Nat} (hd : 80 ≤ d ∧ d + 8 ≤ oM) :
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, 8⟩ ⟨L.B, 16⟩ := by
   have hnB := hL.nB
   have hk := hL.khi
-  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, 8⟩ L.STK := Offset.sub_base _ (by simp only [oM, stackBytes] at hd ⊢; omega)
-  refine ⟨Offset.disjoint _ (.inl (by simp only [oM, oPre] at hd ⊢; omega)) (by simp only [oM] at hd; omega)
-      (by simp only [oPre, Lay.pw]; omega), (hL.ksc.sub_left hs),
-    Offset.disjoint _ (.inl hd.2) (by simp only [oM] at hd; omega) (by simp only [oM]; omega), ?_,
-    Offset.disjoint_base _ (by omega) (by simp only [oM] at hd; omega)⟩
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 d, 8⟩ L.STK := Offset.sub_base _ (by simp only [oM, stackBytes] at hd ⊢; omega_using [hd])
+  refine ⟨Offset.disjoint _ (.inl (by simp only [oM, oPre] at hd ⊢; omega_using [hd])) (by simp only [oM] at hd; omega_using [hd])
+      (by simp only [oPre, Lay.pw]; omega_using [hk]), (hL.ksc.sub_left hs),
+    Offset.disjoint _ (.inl hd.2) (by simp only [oM] at hd; omega_using [hd]) (by simp only [oM]; omega_using [hk]), ?_,
+    Offset.disjoint_base _ (by omega_using [hd]) (by simp only [oM] at hd; omega_using [hd])⟩
   rw [show (⟨L.out, L.k.toNat⟩ : Region) = L.OUT by rw [Lay.OUT, hL.olk]]
   exact hL.ko.sub_left hs
 
 /-- Everything after the CRT, from any state the frames allow: whatever `M`
 holds and the CRT returned. -/
-theorem check_ok (v : CrtImpl) (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc : Ctx L g vv m₀ t)
-    (hs : Slots L t.mem) :
-    WP isa (seqs (check v.pcName v.pc v.pdName v.pd)) t fun t' => Ctx L g vv m₀ t' ∧
+theorem checkWith_ok (v : CrtImpl) (stage : Prog isa) (hL : L.Ok) (ha : ArgsAt L m₀)
+    (hst : ∀ t, Ctx L g vv m₀ t → Slots L t.mem → PcArgs L t →
+      WP isa stage t fun t' => Ctx L g vv m₀ t' ∧ Slots L t'.mem ∧ Frame (pcWr L) t.mem t'.mem ∧
+        PcOut L t.mem t'.mem (t'.gpr .x0))
+    {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L t.mem) :
+    WP isa (seqs (checkWith stage v.pdName v.pd)) t fun t' => Ctx L g vv m₀ t' ∧
       t'.gpr .x0 = checkResult (t.gpr .x0) (Spec.Rsa.bytesAt m₀ L.n L.k.toNat)
         (Spec.Rsa.bytesAt m₀ L.e L.el.toNat) (Spec.Rsa.bytesAt m₀ L.inp L.k.toNat)
         (Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat) ∧
@@ -111,16 +119,16 @@ theorem check_ok (v : CrtImpl) (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc 
   have hMs : Region.Sub L.M L.STK := hL.M_sub
   have hM := hL.stk_sub hMs
   have hOk : (⟨L.out, L.k.toNat⟩ : Region) = L.OUT := by rw [Lay.OUT, hL.olk]
-  rw [check_eq]
+  rw [checkWith_eq]
   refine WP.seq (WP.mono (pcArgs_ok hL ha hc hs) fun t₁ ⟨hc₁, hs₁, pa, hR1, f₁⟩ => ?_)
-  refine WP.seq (WP.mono (pc_call v hL hc₁ hs₁ pa) fun t₂ ⟨hc₂, hs₂, f₂, hpc⟩ => ?_)
+  refine WP.seq (WP.mono (hst t₁ hc₁ hs₁ pa) fun t₂ ⟨hc₂, hs₂, f₂, hpc⟩ => ?_)
   refine WP.seq (WP.mono (pdArgs_ok hL ha hc₂ hs₂) fun t₃ ⟨hc₃, hs₃, pda, hR3, f₃⟩ => ?_)
   refine WP.seq (WP.mono (pd_call v hL hc₃ hs₃ pda) fun t₄ ⟨hc₄, hs₄, f₄, hpd⟩ => ?_)
   -- The slots `r₁` and `r₃`.
   have d1 := slot_disj hL (d := oR1) (by decide)
   have d3 := slot_disj hL (d := oR3) (by decide)
   have d13 : Region.Disjoint ⟨L.B + BitVec.ofNat 64 oR1, 8⟩ ⟨L.B + BitVec.ofNat 64 oR3, 8⟩ :=
-    Offset.disjoint _ (.inl (by decide)) (by simp only [oR1]; omega) (by simp only [oR3]; omega)
+    Offset.disjoint _ (.inl (by decide)) (by simp only [oR1]; omega_using []) (by simp only [oR3]; omega_using [])
   have r1₄ : t₄.mem.readW (L.B + BitVec.ofNat 64 oR1) 64 = t.gpr .x0 := by
     rw [f₄.readW (Region.contains_self _ _) (by
         simp only [pdWr, List.mem_cons, List.not_mem_nil, or_false]
@@ -138,13 +146,13 @@ theorem check_ok (v : CrtImpl) (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc 
         rintro r (rfl | rfl); exacts [d3.2.2.2.1, d3.2.1]) (by decide)]
     exact hR3
   -- `M`, `n`'s values, and the inputs.
-  have hMk : L.k.toNat ≤ 2 ^ 64 := by omega
+  have hMk : L.k.toNat ≤ 2 ^ 64 := by omega_using []
   have hMR1 : L.M.Disjoint ⟨L.B + BitVec.ofNat 64 oR1, 8⟩ := d1.2.2.1.symm
   have hMR3 : L.M.Disjoint ⟨L.B + BitVec.ofNat 64 oR3, 8⟩ := d3.2.2.1.symm
   have hMP : L.M.Disjoint L.PRE :=
-    Offset.disjoint _ (.inl (by simp only [oM, oPre]; omega)) (by simp only [oM]; omega)
-      (by simp only [oPre, Lay.pw]; omega)
-  have hMB : L.M.Disjoint ⟨L.B, 16⟩ := Offset.disjoint_base _ (by decide) (by simp only [oM]; omega)
+    Offset.disjoint _ (.inl (by simp only [oM, oPre]; omega_using [hk])) (by simp only [oM]; omega_using [hk])
+      (by simp only [oPre, Lay.pw]; omega_using [hk])
+  have hMB : L.M.Disjoint ⟨L.B, 16⟩ := Offset.disjoint_base _ (by decide) (by simp only [oM]; omega_using [hk])
   have m₃ : Spec.Rsa.bytesAt t₃.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat =
       Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat := by
     rw [frame_bytesAt f₃ (p := L.B + BitVec.ofNat 64 oM) (by
@@ -166,8 +174,8 @@ theorem check_ok (v : CrtImpl) (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc 
   have hpre : Spec.Rsa.wordsAt t₃.mem (L.B + BitVec.ofNat 64 oPre) L.pw =
       Spec.Rsa.wordsAt t₂.mem (L.B + BitVec.ofNat 64 oPre) L.pw := by
     have hP16 : L.PRE.Disjoint ⟨L.B, 16⟩ :=
-      Offset.disjoint_base _ (by decide) (by simp only [oPre, Lay.pw]; omega)
-    refine frame_wordsAt f₃ (fun r hr => ?_) (by unfold Lay.pw; omega)
+      Offset.disjoint_base _ (by decide) (by simp only [oPre, Lay.pw]; omega_using [hk])
+    refine frame_wordsAt f₃ (fun r hr => ?_) (by unfold Lay.pw; omega_using [hk])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (by rw [Nat.mul_comm]; exact d3.1.symm)
@@ -204,6 +212,22 @@ theorem check_ok (v : CrtImpl) (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc 
   · rw [hax]; exact hl.1
   · rw [hout]; simp only [hl.2]
   · exact hM'
+
+
+/-- `checkWith_ok`, calling `vg_rsa_public_precompute`. -/
+theorem check_ok (v : CrtImpl) (hL : L.Ok) (ha : ArgsAt L m₀) {t : State} (hc : Ctx L g vv m₀ t)
+    (hs : Slots L t.mem) :
+    WP isa (seqs (check v.pcName v.pc v.pdName v.pd)) t fun t' => Ctx L g vv m₀ t' ∧
+      t'.gpr .x0 = checkResult (t.gpr .x0) (Spec.Rsa.bytesAt m₀ L.n L.k.toNat)
+        (Spec.Rsa.bytesAt m₀ L.e L.el.toNat) (Spec.Rsa.bytesAt m₀ L.inp L.k.toNat)
+        (Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat) ∧
+      Spec.Rsa.bytesAt t'.mem L.out L.k.toNat =
+        (if released (t.gpr .x0) (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) (Spec.Rsa.bytesAt m₀ L.e L.el.toNat)
+            (Spec.Rsa.bytesAt m₀ L.inp L.k.toNat) (Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat)
+          then Spec.Rsa.bytesAt t.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat
+          else List.replicate L.k.toNat 0) ∧
+      Spec.Rsa.bytesAt t'.mem (L.B + BitVec.ofNat 64 oM) L.k.toNat = List.replicate L.k.toNat 0 :=
+  checkWith_ok v _ hL ha (fun _ hc hs pa => pc_call v hL hc hs pa) hc hs
 
 end
 

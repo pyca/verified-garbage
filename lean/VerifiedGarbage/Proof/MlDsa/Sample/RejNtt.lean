@@ -41,7 +41,7 @@ theorem coeffFromThreeBytes_eq (b₀ b₁ b₂ : Byte) :
   have e : (2 ^ 16 * (if b₂.toNat > 127 then b₂.toNat - 128 else b₂.toNat) + 2 ^ 8 * b₁.toNat + b₀.toNat) =
       rnZ b₀ b₁ b₂ := by
     have := b₂.isLt
-    unfold rnZ; split <;> omega
+    unfold rnZ; split <;> omega_arith
   simp only [coeffFromThreeBytes, e]
   split
   · rename_i h; exact congrArg some (Fin.ext (Nat.mod_eq_of_lt h).symm)
@@ -49,11 +49,11 @@ theorem coeffFromThreeBytes_eq (b₀ b₁ b₂ : Byte) :
 
 theorem rnStep_length_le {a : List Zq} (ha : a.length ≤ n) (b₀ b₁ b₂ : Byte) : (rnStep a b₀ b₁ b₂).length ≤ n := by
   unfold rnStep; split
-  · split <;> (try simp only [List.length_append, List.length_singleton]) <;> omega
+  · split <;> (try simp only [List.length_append, List.length_singleton]) <;> omega_arith
   · exact ha
 
 theorem rnStep_full {a : List Zq} (ha : a.length = n) (b₀ b₁ b₂ : Byte) : rnStep a b₀ b₁ b₂ = a := by
-  unfold rnStep; rw [ifF (by omega)]
+  unfold rnStep; rw [ifF (by omega_using [ha])]
 
 theorem rnFold_full {a : List Zq} (ha : a.length = n) : ∀ L, rnFold a L = a
   | _ :: _ :: _ :: L => by rw [rnFold, rnStep_full ha, rnFold_full ha L]
@@ -69,15 +69,15 @@ theorem rejNTTLoop_eq {a : List Zq} (ha : a.length ≤ n) :
   | b₀ :: b₁ :: b₂ :: L => by
     rw [rejNTTLoop, rnFold]
     by_cases h : a.length ≥ n
-    · rw [ifT h, rnStep_full (by omega), rnFold_full (by omega), ifT (by omega)]
-    · rw [ifF h, ← rejNTTLoop_eq (rnStep_length_le ha _ _ _) L, rnStep, ifT (by omega),
+    · rw [ifT h, rnStep_full (by omega_using [ha, h]), rnFold_full (by omega_using [ha, h]), ifT (by omega_using [ha, h])]
+    · rw [ifF h, ← rejNTTLoop_eq (rnStep_length_le ha _ _ _) L, rnStep, ifT (by omega_using [h]),
         coeffFromThreeBytes_eq]
       by_cases hz : rnZ b₀ b₁ b₂ < q <;> simp only [hz, ↓reduceIte]
   | [] | [_] | [_, _] => by
     show (if a.length ≥ n then some a else none) = if a.length = n then some a else none
     by_cases h : a.length = n
-    · rw [ifT (by omega), ifT h]
-    · rw [ifF (by omega), ifF h]
+    · rw [ifT (by omega_using [h]), ifT h]
+    · rw [ifF (by omega_using [ha, h]), ifF h]
 
 /-- The loop over `L₁` then `L₂`, for `L₁` a whole number of 3-byte arrays. -/
 theorem rnFold_append (a : List Zq) : ∀ (L₁ L₂ : List Byte), L₁.length % 3 = 0 →
@@ -85,7 +85,7 @@ theorem rnFold_append (a : List Zq) : ∀ (L₁ L₂ : List Byte), L₁.length %
   | [], _, _ => rfl
   | b₀ :: b₁ :: b₂ :: L₁, L₂, h => by
     simp only [List.cons_append, rnFold]
-    exact rnFold_append _ L₁ L₂ (by simp only [List.length_cons] at h; omega)
+    exact rnFold_append _ L₁ L₂ (by simp only [List.length_cons] at h; omega_using [h])
   | [_], _, h | [_, _], _, h => by simp at h
 
 /-- One more iteration, on the 3 bytes after `L`. -/

@@ -34,8 +34,10 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.Proof.RsaPkcs1Enc (bitMask)
 
+variable {pc : Bool}
+
 section
-variable {e : Env}
+variable {e : Env pc}
 
 /-- A block split where a pointer it loads is used: the first part's taint
 from `rs₁`, the second's from `rs₂`, which `X` fixes. -/
@@ -43,8 +45,8 @@ theorem rel_split {P Q X : State → State → Prop} {l₁ l₂ : List Instr} (r
     {hc₁ : VG.Taint.Hint T} (ht₁ : (taint.check (ofRegs rs₁) (.block l₁) hc₁).isSome = true)
     {hc₂ : VG.Taint.Hint T} (ht₂ : (taint.check (ofRegs rs₂) (.block l₂) hc₂).isSome = true)
     (hpin₁ : ∀ a b, P e.s₁ a → P e.s₂ b → AgreeOn rs₁ a b) (hpin₂ : ∀ a b, X e.s₁ a → X e.s₂ b → AgreeOn rs₂ a b)
-    (hw₁ : ∀ s u, DPre s → P s u → WP isa (.block l₁) u (X s))
-    (hw : ∀ s u, DPre s → P s u → WP isa (.block (l₁ ++ l₂)) u (Q s)) :
+    (hw₁ : ∀ s u, DPre pc s → P s u → WP isa (.block l₁) u (X s))
+    (hw : ∀ s u, DPre pc s → P s u → WP isa (.block (l₁ ++ l₂)) u (Q s)) :
     RelCT isa (Rel e P) (.block (l₁ ++ l₂)) (Rel e Q) :=
   RelCT.block_append (RelCT.seq
     (rel_step (P' := fun s u => X s u ∧ WP isa (.block l₂) u (Q s)) rs₁ ht₁ hpin₁
@@ -62,11 +64,11 @@ def PA (s u : State) : Prop := PMK s u ∧ u.gpr .r11 = scA s sCL ∧ u.gpr .r7 
 def PAL (s u : State) : Prop := PP s u ∧ ∃ al, u.gpr .r6 = BitVec.ofNat 64 al
 
 omit e in
-theorem k11 {s : State} (h : DPre s) : s.gpr .r7 - BitVec.ofNat 64 11 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 11) := by
+theorem k11 {s : State} (h : DPre pc s) : s.gpr .r7 - BitVec.ofNat 64 11 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 11) := by
   have := h.k1; have := h.k2
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
 
 theorem maskPart_ct : RelCT isa (Rel e PP) maskPart (Rel e PMK) := by
   unfold maskPart
@@ -85,7 +87,7 @@ theorem maskPart_ct : RelCT isa (Rel e PP) maskPart (Rel e PMK) := by
     · rw [a8, b8]
     · rw [a9, b9, e.r]⟩) fun s u h ⟨⟨R, EM, hu⟩, u9, u8⟩ => ?_
   have hk := h.k1; have hk' := h.k2
-  exact WP.mono (maskLoop_ok (x := (s.gpr .r7).toNat - 11) (by omega) (by omega) u8 u9) fun v ⟨vm, kv, v8⟩ =>
+  exact WP.mono (maskLoop_ok (x := (s.gpr .r7).toNat - 11) (by omega_using [hk]) (by omega_using [hk']) u8 u9) fun v ⟨vm, kv, v8⟩ =>
     ⟨⟨R, EM, hu.regs kv.rd kv.wr kv.sp vm fun r hr => kv.gpr r (by revert r; decide)⟩, v8,
       (kv.gpr _ (by decide)).trans u9⟩
 
@@ -109,10 +111,10 @@ theorem alPart_ct : RelCT isa (Rel e PMK) alPart (Rel e PAL) := by
       · rw [a11, b11, e.scA_eq]
       · rw [a7, b7]⟩) fun s u h ⟨⟨⟨R, EM, hu⟩, u8, u9⟩, u11, u7, u6⟩ => ?_
   have hk := h.k1; have hk' := h.k2
-  have hM := Proof.RsaPkcs1Enc.bitMask_le (x := (s.gpr .r7).toNat - 11) (by omega)
+  have hM := Proof.RsaPkcs1Enc.bitMask_le (x := (s.gpr .r7).toNat - 11) (by omega_using [hk])
   exact WP.mono (alLoop_ok (x := (s.gpr .r7).toNat - 11) (CL := Spec.Rsa.bytesAt u.mem (scA s sCL) 256)
-    (by omega) rfl (by omega) (fun i hi => (bytes_getD _ _ hi).symm)
-    (fun i hi => by rw [Offset.add_add]; exact scInR h hu.wr (a := sCL + i) (n := 1) (by unfold sCL scrBytes; omega))
+    (by omega_using [hk']) rfl (by omega_using [hk', hM]) (fun i hi => (bytes_getD _ _ hi).symm)
+    (fun i hi => by rw [Offset.add_add]; exact scInR h hu.wr (a := sCL + i) (n := 1) (by unfold sCL scrBytes; omega_using [hi]))
     u8 u9 u11 u7 u6) fun v ⟨vm, kv, v6⟩ =>
     ⟨⟨R, EM, hu.regs kv.rd kv.wr kv.sp vm fun r hr => kv.gpr r (by revert r; decide)⟩, _, v6⟩
 
@@ -125,11 +127,11 @@ def PSC (s u : State) : Prop := PP s u ∧ (∃ al, u.gpr .r6 = BitVec.ofNat 64 
   (∃ sep, u.gpr .r3 = BitVec.ofNat 64 sep ∧ sep < 2 ^ 63) ∧ u.gpr .r0 = 0 ∧ u.gpr .r8 = BitVec.allOnes 64
 
 omit e in
-theorem k2' {s : State} (h : DPre s) : s.gpr .r7 - BitVec.ofNat 64 2 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 2) := by
+theorem k2' {s : State} (h : DPre pc s) : s.gpr .r7 - BitVec.ofNat 64 2 = BitVec.ofNat 64 ((s.gpr .r7).toNat - 2) := by
   have := h.k1; have := h.k2
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega), BitVec.toNat_ofNat,
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_arith), BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
 
 theorem scanPart_ct : RelCT isa (Rel e PAL) scanPart (Rel e PSC) := by
   unfold scanPart
@@ -158,13 +160,13 @@ theorem scanPart_ct : RelCT isa (Rel e PAL) scanPart (Rel e PSC) := by
       · rw [a11, b11, e.r]
       · rw [a7, b7, e.r]⟩) fun s u h ⟨⟨⟨R, EM, hu⟩, al, u6⟩, u11, u7, u4, u5, u3, u0, u8⟩ => ?_
   have hk := h.k1; have hk' := h.k2
-  have hs := sep_lt (Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r7).toNat) (k := (s.gpr .r7).toNat) (by omega)
+  have hs := sep_lt (Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r7).toNat) (k := (s.gpr .r7).toNat) (by omega_using [hk])
   exact WP.mono (scanLoop_ok (O := s.gpr .r3) (EM := Spec.Rsa.bytesAt u.mem (s.gpr .r3) (s.gpr .r7).toNat)
-    (k := (s.gpr .r7).toNat) (by omega) (by omega) (fun i hi => (bytes_getD' _ _ hi _).symm)
+    (k := (s.gpr .r7).toNat) (by omega_using [hk]) (by omega_using [hk']) (fun i hi => (bytes_getD' _ _ hi _).symm)
     (fun i hi => outIn h hu hi) u11 u7 u4 u5 u3 u0 u8) fun v ⟨vm, kv, v5, v3⟩ =>
     ⟨⟨R, EM, hu.regs kv.rd kv.wr kv.sp vm fun r hr => kv.gpr r (by revert r; decide)⟩,
       ⟨al, by rw [kv.gpr _ (by decide), u6]⟩, ⟨_, v5⟩,
-      ⟨_, v3, by omega⟩,
+      ⟨_, v3, by omega_using [hk', hs]⟩,
       by rw [kv.gpr _ (by decide), u0], by rw [kv.gpr _ (by decide), u8]⟩
 
 /-! ## The output -/
@@ -175,13 +177,13 @@ def PO (s u : State) : Prop := (∃ R, Fr3 s R u) ∧ u.gpr .r11 = s.gpr .r3 + B
   u.gpr .r10 = scA s sAM + BitVec.ofNat 64 0 ∧ u.gpr .r7 = s.gpr .r7 ∧ u.gpr .r0 = 0
 
 omit e in
-theorem selLoop_run {s : State} (h : DPre s) {R : BitVec 64} {t : State} (hc : Fr3 s R t)
+theorem selLoop_run {s : State} (h : DPre pc s) {R : BitVec 64} {t : State} (hc : Fr3 s R t)
     (h11 : t.gpr .r11 = s.gpr .r3 + BitVec.ofNat 64 0) (h10 : t.gpr .r10 = scA s sAM + BitVec.ofNat 64 0)
     (h7 : t.gpr .r7 = s.gpr .r7) (h0 : t.gpr .r0 = 0) : WP isa selLoop t fun u => Fr3 s R u := by
   have hk := h.k2
   have hk64 := h.k1
   have := h.ws; have := scr_le h
-  refine WP.mono (VG.Proof.Bignum.PPC64LE.wp_countdown (cnt := .r7) (N := (s.gpr .r7).toNat) (by omega) (by omega)
+  refine WP.mono (VG.Proof.Bignum.PPC64LE.wp_countdown (cnt := .r7) (N := (s.gpr .r7).toNat) (by omega_using []) (by omega_using [hk64])
     (fun j u => Fr3 s R u ∧ u.gpr .r11 = s.gpr .r3 + BitVec.ofNat 64 j ∧ u.gpr .r10 = scA s sAM + BitVec.ofNat 64 j ∧
       u.gpr .r0 = 0) (fun i hi u ⟨hu, u11, u10, u0⟩ _ => ?_) ⟨hc, h11, h10, h0⟩
     (by rw [h7, BitVec.ofNat_toNat, BitVec.setWidth_eq])) fun u hu => hu.1
@@ -191,7 +193,7 @@ theorem selLoop_run {s : State} (h : DPre s) {R : BitVec 64} {t : State} (hc : F
     exact ⟨r, List.mem_append_right _ hr, hcr⟩
   have ha : InRegions (u.rd ++ u.wr) (u.gpr .r10 + BitVec.ofNat 64 0) 1 := by
     rw [u10, BitVec.add_zero, Offset.add_add]
-    exact scInR h hu.wr (a := sAM + i) (n := 1) (by unfold sAM scrBytes; omega)
+    exact scInR h hu.wr (a := sAM + i) (n := 1) (by unfold sAM scrBytes; omega_using [hk, hi])
   rw [selBody_eq, WP.block_append_iff]
   refine WP.mono (selA_ok he ha u0) fun w ⟨⟨wm, _⟩, kw⟩ => ?_
   have hw : InRegions w.wr (w.gpr .r11 + BitVec.ofNat 64 0) 1 := by
@@ -202,7 +204,7 @@ theorem selLoop_run {s : State} (h : DPre s) {R : BitVec 64} {t : State} (hc : F
       rw [xm]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
     have hwo := h.wo; rw [h.h4] at hwo
     have hsub : Region.Sub ⟨s.gpr .r3 + BitVec.ofNat 64 i, 1⟩ (oR s) := by
-      rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]; exact Offset.sub_base _ (by omega)
+      rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]; exact Offset.sub_base _ (by omega_using [hi])
     have kk : Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] u x :=
       (kw.mono (by decide)).trans' (kx.mono (by decide))
     exact hu.store h kk.rd kk.wr kk.sp (fun r hr => kk.gpr r (by revert r; decide)) (.inl rfl) hsub hf
@@ -229,7 +231,7 @@ theorem selPart_ct : RelCT isa (Rel e PSC) selPart (Rel e fun _ _ => True) := by
       prun [fp, exec_addSp0, hu.sp, c1, c2, i1, i2, hu.sl.out, hu.sl.k])
     fun s u h ⟨⟨R, EM, hu⟩, ⟨al, u6⟩, ⟨f, u5⟩, ⟨sep, u3, hsep⟩, u0, u8⟩ => by
       have hk := h.k1
-      exact WP.mono (validBlock_ok hu (outIn h hu (by omega)) (outIn h hu (by omega)) u5 u3 u6 u0 u8 hsep hu.rb)
+      exact WP.mono (validBlock_ok hu (outIn h hu (by omega_using [hk])) (outIn h hu (by omega_using [hk])) u5 u3 u6 u0 u8 hsep hu.rb)
         fun v ⟨⟨vm, v11, v7, _, _, _, _, v12⟩, kv⟩ =>
           ⟨⟨R, EM, hu.regs kv.rd kv.wr kv.sp vm fun r hr => kv.gpr r (by revert r; decide)⟩, v11, v7, v12,
             by rw [kv.gpr _ (by decide), u0]⟩) ?_
@@ -266,7 +268,7 @@ theorem selPart_ct : RelCT isa (Rel e PSC) selPart (Rel e fun _ _ => True) := by
   exact rel_step [] (by taint_decide) (fun a b ⟨_, ha⟩ ⟨_, hb⟩ => ⟨by rw [ha.sp, hb.sp, e.fb_eq], fun _ h => nomatch h⟩)
     fun s u h ⟨R, hu⟩ => WP.mono (finish_ok hu) fun _ _ => trivial
 
-theorem body_ct : RelCT isa (Rel e PEnt) body fun _ _ => True := by
+theorem body_ct : RelCT isa (Rel e PEnt) (body pc) fun _ _ => True := by
   unfold body
   refine RelCT.seq setup_ct ?_
   refine RelCT.seq priv_ct ?_
@@ -286,8 +288,9 @@ end
 theorem code_ct : ConstantTime isa (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pre
     (Spec.RsaPkcs1Enc.decryptContract abi stackBytes).pub code :=
   RelCT.constantTime (RelCT.alloc (fun _ _ ⟨_, _, hp⟩ => (same_of (pub_data hp)).sp)
-    ((RelCT.exists_ fun e : Env => body_ct (e := e)).mono
-      (fun _ _ ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ => ⟨⟨s, t, dPre_of hs, dPre_of ht, same_of (pub_data hp)⟩, ea, eb⟩)
+    ((RelCT.exists_ fun e : Env false => body_ct (e := e)).mono
+      (fun _ _ ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ =>
+        ⟨⟨s, t, dPre_of hs, dPre_of ht, nofun, nofun, same_of (pub_data hp)⟩, ea, eb⟩)
       fun _ _ h => h))
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Dec

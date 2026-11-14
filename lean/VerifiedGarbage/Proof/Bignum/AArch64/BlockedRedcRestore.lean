@@ -31,20 +31,20 @@ theorem restoreStep_ok {g : Reg → Word} {s t : State} {B : Addr} {Z eT k : Nat
       (RestoreInv g s (k + 1)) := by
   have hptr := (hI.keep.gpr .x16 (by decide)).trans h16
   have hv := (congrArg (fun m : Mem => word m B (eT + 8 * k)) hI.mem).trans (hSaved k hk)
-  have enc : (8 * k) % 8 = 0 ∧ 8 * k < 32768 := ⟨by omega, by omega⟩
+  have enc : (8 * k) % 8 = 0 ∧ 8 * k < 32768 := ⟨by omega_using [], by omega_using [hk]⟩
   have hw : ∀ j < 11, writesOnly [VG.Impl.Bignum.AArch64.BlockedRedc.saved[j]!]
       (.block [ld VG.Impl.Bignum.AArch64.BlockedRedc.saved[j]! .x16 (8 * j)]) = true := by decide
   refine WP.mono (WP.keep [VG.Impl.Bignum.AArch64.BlockedRedc.saved[k]!] (Q := fun u =>
       u.gpr VG.Impl.Bignum.AArch64.BlockedRedc.saved[k]! = g VG.Impl.Bignum.AArch64.BlockedRedc.saved[k]! ∧
         u.mem = t.mem)
-    (by brun [hptr, enc, (hs.congr hI.keep.wr).ld (show eT + 8 * k + 8 ≤ Z by omega), hv])
+    (by brun [hptr, enc, (hs.congr hI.keep.wr).ld (show eT + 8 * k + 8 ≤ Z by omega_using [hT, hk]), hv])
     (hw k hk) rfl rfl) fun u ⟨⟨hu, hm⟩, ku⟩ => ?_
   refine ⟨?_, hm.trans hI.mem, (hI.keep.trans ku).mono ?_⟩
   · intro i hi
     rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
     · have hne : VG.Impl.Bignum.AArch64.BlockedRedc.saved[i]! ≠
           VG.Impl.Bignum.AArch64.BlockedRedc.saved[k]! :=
-        fun h => Nat.ne_of_lt hi (saved_injective i (by omega) k hk h)
+        fun h => Nat.ne_of_lt hi (saved_injective i (by omega_arith) k hk h)
       exact (ku.gpr _ (by simpa only [List.mem_singleton] using hne)).trans (hI.done i hi)
     · exact hu
   · intro r hr
@@ -66,7 +66,7 @@ theorem restorePrefix_ok {g : Reg → Word} {s : State} {B : Addr} {Z eT k : Nat
     rewrite [restorePrefix, List.range_succ, List.flatMap_append, List.flatMap_cons,
       List.flatMap_nil, List.append_nil]
     apply WP.block_append
-    exact WP.mono (ih (by omega)) fun t hI => restoreStep_ok hs h16 hT hSaved (by omega) hI
+    exact WP.mono (ih (by omega_using [hk])) fun t hI => restoreStep_ok hs h16 hT hSaved (by omega_using [hk]) hI
 
 theorem restores_ok {g : Reg → Word} {s : State} {B : Addr} {Z w o : Nat} {minv : Word}
     (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hH : Hdr s.mem B w minv)
@@ -82,7 +82,7 @@ theorem restores_ok {g : Reg → Word} {s : State} {B : Addr} {Z w o : Nat} {min
   have hS : ∀ i < 11, word u.mem B (slot w o + 8 * i) = g VG.Impl.Bignum.AArch64.BlockedRedc.saved[i]! :=
     fun i hi => (congrArg (fun m : Mem => word m B (slot w o + 8 * i)) hum).trans (hSaved i hi)
   refine WP.mono (restorePrefix_ok (hs.congr ku.wr) hu16
-    (by have := slot_le (w := w) ho; omega) hS (Nat.le_refl 11)) fun t hI => ?_
+    (by have := slot_le (w := w) ho; omega_using [hZ, hw, this]) hS (Nat.le_refl 11)) fun t hI => ?_
   refine ⟨?_, hI.mem.trans hum, (ku.trans hI.keep).mono (by decide)⟩
   intro r hr
   have hm : ∀ r ∈ VG.Impl.Bignum.AArch64.BlockedRedc.saved,

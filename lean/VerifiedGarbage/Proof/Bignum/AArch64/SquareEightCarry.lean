@@ -30,34 +30,34 @@ theorem carryPrefix_ok {s : State} {B : Addr} {Z e n : Nat}
   induction n with
   | zero =>
     change WP isa (.block (SquareEightRaw.carryWord 0)) s _
-    refine WP.mono (firstCarry_ok hs h16 (by omega)) fun t ⟨⟨v, hm, hv⟩, kt⟩ => ?_
+    refine WP.mono (firstCarry_ok hs h16 (by omega_using [he])) fun t ⟨⟨v, hm, hv⟩, kt⟩ => ?_
     refine ⟨?_, ?_, kt⟩
     · rw [hm]
       simpa only [wv, Nat.mul_zero, Nat.add_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add,
         word_writeW_self] using hv
     · rw [hm]
-      exact writeW_outside s.mem B v (by omega)
+      exact writeW_outside s.mem B v (by omega_using [hwrap, he])
   | succ n ih =>
     rw [carryPrefix, List.range_succ, List.flatMap_append]
     apply WP.block_append
-    refine WP.mono (ih (by omega) (by omega)) fun t ⟨htv, hto, kt⟩ => ?_
+    refine WP.mono (ih (by omega_using [he]) (by omega_using [hn])) fun t ⟨htv, hto, kt⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     refine WP.mono (nextCarry_ok (hs.congr kt.wr) ((kt.gpr _ (by decide)).trans h16)
-      ((kt.gpr _ (by decide)).trans h7) (by omega) (by omega) (by omega))
+      ((kt.gpr _ (by decide)).trans h7) (by omega_using [he]) (by omega_using []) (by omega_using [hn]))
       fun u ⟨⟨v, hm, hv⟩, ku⟩ => ?_
-    have offeq : e + 8*(n+1+8) = e+64+8*(n+1) := by omega
+    have offeq : e + 8*(n+1+8) = e+64+8*(n+1) := by omega_using []
     rw [offeq] at hm hv
     have ho : Outside B (e+64+8*(n+1)) 8 t.mem u.mem := by
       rw [hm]
-      exact writeW_outside t.mem B v (by omega)
-    have hold := hto.word (d := e+64+8*(n+1)) (by omega) (by omega)
+      exact writeW_outside t.mem B v (by omega_using [hwrap, he])
+    have hold := hto.word (d := e+64+8*(n+1)) (by omega_using []) (by omega_using [hwrap, he])
     rw [hold] at hv
-    refine ⟨?_, (hto.mono (by omega) (by omega)).trans (ho.mono (by omega) (by omega)),
+    refine ⟨?_, (hto.mono (by omega_using []) (by omega_using [])).trans (ho.mono (by omega_using []) (by omega_using [])),
       (kt.trans ku).mono (by simp)⟩
     have hrec : wv s.mem B (e+64) (n+1+1) =
         wv s.mem B (e+64) (n+1) + 2 ^ (64*(n+1)) * (word s.mem B (e+64+8*(n+1))).toNat := rfl
     rw [hrec]
-    rw [hm, wv_writeW_top _ _ _ _ _ (by omega), pow64_succ (n+1)]
+    rw [hm, wv_writeW_top _ _ _ _ _ (by omega_using [hwrap, he]), pow64_succ (n+1)]
     exact carry_join htv hv
 
 theorem finishCarry_ok {s : State} {B : Addr} {Z e : Nat}
@@ -68,6 +68,6 @@ theorem finishCarry_ok {s : State} {B : Addr} {Z e : Nat}
         wv s.mem B (e+64) 7 + (s.gpr .x10).toNat ∧
       Outside B (e+64) 56 s.mem t.mem ∧ Keep [.x13] s t := by
   simpa only [show 6+1 = 7 from rfl, show 8*7 = 56 from rfl, carryPrefix, finishCarry] using
-    carryPrefix_ok (n := 6) hs h16 h7 (by omega) (by decide)
+    carryPrefix_ok (n := 6) hs h16 h7 (by omega_using [he]) (by decide)
 
 end VG.Proof.Bignum.AArch64.SquareEight

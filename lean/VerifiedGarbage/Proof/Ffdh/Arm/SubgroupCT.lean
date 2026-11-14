@@ -100,9 +100,9 @@ theorem subgroup_ct {p : Inputs} {slots : List Nat} {slot : Nat} {bb : List Byte
     RelCT isa (fun s t => SubgroupInput p slots slot bb s ∧ SubgroupInput p slots slot bb t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.Domain.subgroup slot) (fun _ _ => True) := by
   have positive : 0 < ((p.dom.drop (2 * p.k)).take p.k).length := by
-    rw [p.qLength hasQ]; have := p.minLength; omega
+    rw [p.qLength hasQ]; have := p.minLength; omega_using [this]
   have fits : ((p.dom.drop (2 * p.k)).take p.k).length < 2 ^ 32 := by
-    rw [p.qLength hasQ]; have := p.maxLength; omega
+    rw [p.qLength hasQ]; have := p.maxLength; omega_using [this]
   have count : p.slotValue 32 = BitVec.ofNat 32 ((p.dom.drop (2 * p.k)).take p.k).length := by
     change BitVec.ofNat 32 p.k = _; rw [p.qLength hasQ]
   have powers := (publicPowerAt_ct (p := p) (bs := slot) (es := 60) (ec := 32)

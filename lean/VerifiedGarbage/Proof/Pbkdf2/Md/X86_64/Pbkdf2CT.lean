@@ -192,8 +192,8 @@ theorem hashKey_rel : RelCT isa (fun s s' => KE (H := H) s₀ s ∧ KE (H := H) 
   have ini : ∀ {σ₀ s : State}, Pre (H := H) σ₀ → KE (H := H) σ₀ s →
       Covers [⟨A σ₀ H.stWO, H.S⟩] s.wr ∧ (below (s.gpr .rsp) 16).Disjoint ⟨A σ₀ H.stWO, H.S⟩ :=
     fun hp h => ⟨Covers.of_sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega),
-      stk_sc hp h.kr (by omega) (part_sub (by omega))⟩
+        simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp h.kr (by omega_using [hl, he]),
+      stk_sc hp h.kr (by omega_using []) (part_sub (by omega_using [hl, he]))⟩
   have c₂ := rel_wp (VG.Proof.Pbkdf2.Md.X86_64.Calls.init_rel hH.stream (st := A s₀ H.stWO)
       (P := fun s s' => (KE (H := H) s₀ s ∧ s.gpr .rdi = A s₀ H.stWO) ∧
         (KE (H := H) s₀' s' ∧ s'.gpr .rdi = A s₀' H.stWO))
@@ -298,7 +298,7 @@ end
 theorem inv_mid {hH : HashOK H} {s₀ : State} (hz : PSizes H) {k : Nat} (hk : k < nb H s₀) {s : State}
     (h : Inv hH s₀ k s) : Mid hH s₀ k s := by
   have hkD : k * H.D < ol s₀ := (lt_nb hz.z.D.1).1 hk
-  have hd : done H s₀ k = k * H.D := by show min _ _ = _; omega
+  have hd : done H s₀ k = k * H.D := by show min _ _ = _; omega_using [hkD]
   have hb := h.outB
   rw [hd, List.take_of_length_le (Nat.le_of_eq h.glen)] at hb
   exact ⟨h.kr, h.st, h.rbx, h.rbp, by rw [h.r12, hd], by rw [h.r13, hd], hb⟩
@@ -380,7 +380,7 @@ theorem step_rel (n : Nat) :
       (isa.eval .ne s = some false → Inv hH s₀ (nb H s₀) s ∧ Inv hH s₀' (nb H s₀') s') ∧
       (isa.eval .ne s = some true → ∃ m < n, LI hH s₀ s₀' m s s') := by
   by_cases hn : n ≤ nb H s₀ ∧ 0 < n
-  · have hk : nb H s₀ - n < nb H s₀ := by omega
+  · have hk : nb H s₀ - n < nb H s₀ := by omega_using [hn]
     refine ((block_rel hH hp hp' hz hq hc hF hFsp hFd hI hIsp hId hk).mono (P' := LI hH s₀ s₀' n)
       (fun _ _ h => ⟨h.2.2.1, h.2.2.2⟩) fun _ _ h => h).mono (fun _ _ h => h) fun t t' h => ?_
     obtain ⟨⟨i, z⟩, ⟨i', z'⟩⟩ := h
@@ -392,8 +392,8 @@ theorem step_rel (n : Nat) :
       rw [hl] at i i'
       exact ⟨i, i'⟩
     · have hl : nb H s₀ - n + 1 ≠ nb H s₀ := by simpa using ht
-      have e' : nb H s₀ - (n - 1) = nb H s₀ - n + 1 := by omega
-      exact ⟨n - 1, by omega, by omega, by omega, e' ▸ i, e' ▸ i'⟩
+      have e' : nb H s₀ - (n - 1) = nb H s₀ - n + 1 := by omega_using [hn]
+      exact ⟨n - 1, by omega_using [hn], by omega_using [hn], by omega_using [hn, hl], e' ▸ i, e' ▸ i'⟩
   · intro _ _ _ _ _ _ h
     exact absurd ⟨h.1, h.2.1⟩ hn
 

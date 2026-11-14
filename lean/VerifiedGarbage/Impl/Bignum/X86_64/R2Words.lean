@@ -19,9 +19,12 @@ word, as a step of long division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D):
   Granlund, "Improved division by invariant integers", IEEE Trans. Computers
   60(2), 2011, Algorithm 4), with its two corrections by masks (`quot`); `v`
   is computed once, by restoring division, a bit at a time (`recip`);
+* `q̂` refined to the 3-by-2 estimate `min(⌊U / D⌋, 2^64 - 1)` from `x`'s top
+  three words `U` and `m`'s top two `D`, which gives `q ≤ q̂ ≤ q + 1`, by
+  `U - q̂ D` over three words and two corrections by masks (`refine3`);
 * `t = x 2^64 - q̂ m` into the accumulator, over `w + 1` words in two's
   complement (`mulSub`);
-* `m` added to `t` while it is negative, twice, by a mask (`addBack`);
+* `m` added to `t` if it is negative, once, by a mask (`addBack`);
 * `t` back into `x`.
 
 Every branch and address depends only on `w`; the arithmetic on `m`'s words
@@ -66,6 +69,29 @@ def quotMG : List Instr :=
 
 /-- `q̂` into `rcx`: the quotient, all ones if `u₂ = d`. -/
 def quot : List Instr := quotHead ++ quotMG ++ ([.alu .or .rcx (.reg .r9)] : List Instr)
+
+/-- `t = U - q̂ D` over three words, into `r15`, `r14`, `r13`, for `q̂` in
+`rcx`, the top three words `U = (u₂, u₁, u₀)` of `x` and the top two
+`D = (d, d₁)` of `m`: `q̂ D` into `rdx`, `rax`, `r9`, and its subtraction. -/
+def quot3 : List Instr :=
+  [.mov .rax (.mem (ix .r10 .r12 (-16))), .mul .rcx, .mov .r9 (.reg .rax), .mov .r11 (.reg .rdx),
+    .mov .rax (.mem (ix .r10 .r12 (-8))), .mul .rcx, .alu .add .rax (.reg .r11), .alu .adc .rdx (.imm 0),
+    .mov .r13 (.mem (ix .rbx .r12 (-24))), .alu .sub .r13 (.reg .r9),
+    .mov .r14 (.mem (ix .rbx .r12 (-16))), .alu .sbb .r14 (.reg .rax),
+    .mov .r15 (.mem (ix .rbx .r12 (-8))), .alu .sbb .r15 (.reg .rdx)]
+
+/-- If `t` is negative (the top bit of `r15`): `q̂ := q̂ - 1` and `t := t + D`,
+by a mask. -/
+def fix3 : List Instr :=
+  [.mov .r11 (.reg .r15), .alu .add .r11 (.reg .r11), .alu .sbb .r11 (.reg .r11), .alu .add .rcx (.reg .r11),
+    .mov .rax (.mem (ix .r10 .r12 (-16))), .alu .and .rax (.reg .r11),
+    .mov .rdx (.mem (ix .r10 .r12 (-8))), .alu .and .rdx (.reg .r11),
+    .alu .add .r13 (.reg .rax), .alu .adc .r14 (.reg .rdx), .alu .adc .r15 (.imm 0)]
+
+/-- `q̂` refined to `min(⌊U / D⌋, 2^64 - 1)` by the 3-by-2 estimate's two
+corrections (`q̂` is at most two more), which is at least the quotient `q`
+and at most `q + 1`. -/
+def refine3 : List Instr := quot3 ++ fix3 ++ fix3
 
 /-- A bit of restoring division by `d` (`rsi`) of the remainder `r < d`
 (`rdx`) and the next bit of `u₁` (the top of `rax`): `r := 2 r + bit`, with
@@ -130,7 +156,7 @@ def copyBack : Prog isa :=
   .seq (.block [.mov .rsi (.reg .r8)]) (wordLoop 0 [.mov .rax (.mem (ix .rsi .r14)), .store (ix .rbx .r14) .rax])
 
 /-- `x := x 2^64 mod m`. -/
-def step : Prog isa := seqs [.block bases, .block quot, mulSub, addBack, addBack, copyBack]
+def step : Prog isa := seqs [.block bases, .block quot, .block refine3, mulSub, addBack, copyBack]
 
 /-- `step` `rcx` times (a public count, at least 1), counted in `sCnt`. -/
 def steps : Prog isa :=

@@ -48,12 +48,12 @@ theorem paddedZero_state {a ptr len : Nat} (ha : a < 8) (hp : ptr < 32) (hl : le
     WP isa (Impl.Rsa.X86_64.Crt.zeroArr a) s (PaddedState ptr len p) := by
   obtain ⟨mi, hg⟩ := h.good
   have hn := hg.scr.nowrap
-  have hhdr : 256 ≤ slot p.w a := by simp only [slot, hdrBytes]; omega
+  have hhdr : 256 ≤ slot p.w a := by simp only [slot, hdrBytes]; omega_using []
   refine WP.mono (zeroArr_ok hg h.room h.positive h.bound ha) fun t ⟨_, ho, hk⟩ => ?_
   have ht : Good t p.B p.Z p.w mi :=
     ⟨hg.scr.congr hk.2.2, (hk.gpr (by decide)).trans hg.rdi, hg.hdr.outside ho hhdr⟩
   have header (i : Nat) (hi : i < 32) : word t.mem p.B (8 * i) = word s.mem p.B (8 * i) :=
-    ho.word (Or.inl (by omega)) (by omega)
+    ho.word (Or.inl (by omega_using [hhdr, hi])) (by omega_using [hi])
   exact ⟨⟨mi, ht⟩, h.room, h.positive, h.bound,
     (header ptr hp).trans h.pointer, (header len hl).trans h.length⟩
 
@@ -69,7 +69,7 @@ theorem paddedArgs_state {a ptr len : Nat} (ha : a < 8) (hp : ptr < 32) (hl : le
   have hld : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot p.w 8 hi; omega_using [h.room, this])
   xrun [PaddedRegs, State.ea, hdr, hg.rdi, hdrOff, hld ptr hp, hld len hl,
-    hld (sArr a) (by unfold sArr; omega), h.pointer, h.length, hg.hdr.harr a ha]
+    hld (sArr a) (by unfold sArr; omega_using [ha]), h.pointer, h.length, hg.hdr.harr a ha]
 
 theorem loadPadded_ct {a ptr len : Nat} (ha : a < 8) (hp : ptr < 32) (hl : len < 32)
     {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}

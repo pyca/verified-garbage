@@ -48,15 +48,15 @@ theorem generatorSearch_check {len : Nat} {p : GeneratorSearchPublic} {s : State
     by
       simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hc, GeneratorSearchPublic.exhausted, he]
       by_cases room : len ≤ p.plan.tape.length - p.used
-      · simp only [ite_eq_left room, decide_eq_false (show ¬ p.plan.tape.length - p.used < len by omega)]; rfl
-      · simp only [ite_eq_right room, decide_eq_true (show p.plan.tape.length - p.used < len by omega)]; rfl⟩
+      · simp only [ite_eq_left room, decide_eq_false (show ¬ p.plan.tape.length - p.used < len by omega_using [room])]; rfl
+      · simp only [ite_eq_right room, decide_eq_true (show p.plan.tape.length - p.used < len by omega_using [room])]; rfl⟩
 
 theorem generatorSearch_available {len : Nat} {p : GeneratorSearchPublic} {s : State}
     (h : GeneratorSearchChecked len p s) (hb : isa.eval (.nonzero .x .x0) s = some false) :
     GeneratorSearchAvailable len p s := by
   have he : p.exhausted = false := Option.some.inj (h.2.symm.trans hb)
   have hn := of_decide_eq_false he
-  exact ⟨h.1, by have hb := p.bound; omega⟩
+  exact ⟨h.1, by have hb := p.bound; omega_using [hn, hb]⟩
 
 theorem generatorSearch_take {len : Nat} {p : GeneratorSearchPublic} {s : State}
     (h : GeneratorSearchAvailable len p s) :

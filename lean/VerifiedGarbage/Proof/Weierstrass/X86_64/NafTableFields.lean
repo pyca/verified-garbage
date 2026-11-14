@@ -30,13 +30,13 @@ theorem nafTableFields_ok {K : WinCfg} {base : Addr} {size j m : Nat} [NeZero m]
         (pointTransferEnv E (K.tblPt (j+1)) K.R) t := by
   have hrz := hL.le K.R.z (hI.sl _ (hQ _ (by simp [jacCoords])))
   rw [hz] at hrz
-  refine WP.mono (nafTableStore_ok hI.scr hj hc hn ht hT (by omega) hSep)
+  refine WP.mono (nafTableStore_ok hI.scr hj hc hn ht hT (by omega_using [hrz]) hSep)
     fun t ⟨hv,hk,ho⟩ => hI.transferPointFields hL ?_ ?_ hD hQ ?_ ?_ ?_ hk ?_
   · simp only [WinCfg.tblPt]
   · simp only [WinCfg.tblPt]
   · simpa only [WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_zero,Nat.add_zero] using hv 0 (by decide)
   · simpa only [hy,WinCfg.tblPt,Nat.add_sub_cancel,Nat.mul_one] using hv 1 (by decide)
-  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega]
+  · simpa only [hz,WinCfg.tblPt,Nat.add_sub_cancel,show 8*K.M.n*2=16*K.M.n by omega_using []]
       using hv 2 (by decide)
   · simpa only [WinCfg.tblPt,Nat.add_sub_cancel] using ho
 

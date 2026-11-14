@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.Arm.Step
 import all Init.Data.Nat.Bitwise.Basic
@@ -74,8 +74,8 @@ abbrev MSG : Region := ⟨State.addr P.msg, P.ml⟩
 abbrev SEED : Region := ⟨State.addr P.seed, D⟩
 abbrev SCR : Region := ⟨State.addr P.scr, P.scl * 8⟩
 abbrev PRE : Region := ⟨State.addr P.pre, P.rl * 8⟩
-abbrev TAB : Region := Sig.tableRegion 32 (State.addr P.tab) 5
-abbrev TABL : Region := Sig.tableRegion 32 (State.addr P.tabL) 5
+abbrev TAB : Region := Sig.tableRegion 32 (State.addr P.tab) 11
+abbrev TABL : Region := Sig.tableRegion 32 (State.addr P.tabL) 11
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
@@ -123,14 +123,14 @@ theorem pubScr : Spec.Rsa.publicScratchWords P.K ≤ P.scl - 1024 ∧ 1025 ≤ P
   have := h.scrK
   unfold Spec.RsaPss.publicScratchWords Spec.Rsa.publicScratchWords at this
   unfold Spec.Rsa.publicScratchWords
-  omega
+  omega_using [this]
 
 /-- Our part of `scratch`. -/
 theorem geo : Geo (P.lay D) P.scr := by
   have hs := h.pubScr.2
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
-  exact ⟨rfl, by unfold oRsa; omega, ⟨P.scl * 8, by unfold oRsa; omega, by simp⟩, ⟨σ, h.ok⟩,
+  exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩,
     by show 16 ≤ 56; decide⟩
 
 end In
@@ -143,16 +143,16 @@ abbrev stackBytes : Nat := 56 + frameBytes + 56
 /-- The shared contract, with both hash functions each one of the tables
 `ts`, and that stack. -/
 abbrev spec (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.encryptTablesContract (abi.withTables Spec.RsaOaep.encryptTablesSig [("hash", ts), ("mgf1", ts)])
+  Spec.RsaOaep.encryptMdTablesContract (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)])
     stackBytes
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "enc_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at $h:ident
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
@@ -208,7 +208,7 @@ theorem spec_tab {ts : List FnTable} {s : State} (h : (spec ts).pre s) :
       (∃ T ∈ ts, Abi.tableHeld 32 s.mem (State.addr (stackArg s 13)) (FnTable.words isa s T)) ∧
       ((ts.map (fun T : FnTable => T.fns)).flatten ++ ((ts.map (fun T : FnTable => T.fns)).flatten ++ [])).Pairwise
         (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
-      (stackArg s 12).toNat + 20 ≤ 2 ^ 32 ∧ (stackArg s 13).toNat + 20 ≤ 2 ^ 32 := by
+      (stackArg s 12).toNat + 44 ≤ 2 ^ 32 ∧ (stackArg s 13).toNat + 44 ≤ 2 ^ 32 := by
   enc_pre at h
   sig_split h
   rename_i hsp hsa hheld hheld2 hpw hrd hwr oN oE oL oM oS oC oP oTL oT oA nC eC lC mC sC cP cTL cT cA kO kN kE kL
@@ -216,7 +216,7 @@ theorem spec_tab {ts : List FnTable} {s : State} (h : (spec ts).pre s) :
   exact ⟨hheld, hheld2, hpw, fTL, fT⟩
 
 theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spec ts).pre s)
-    (hH : Spec.HashTable.hashAt 32 s.mem (State.addr (stackArg s 12)) = some H)
+    (hH : Spec.MdHashTable.hashAt 32 s.mem (State.addr (stackArg s 12)) = some H)
     (hT : T (entered frameBytes s)) (hTL : TL (entered frameBytes s)) :
     In H.len (ep s ai au af T aiL auL afL TL) (entered frameBytes s) := by
   enc_pre at h

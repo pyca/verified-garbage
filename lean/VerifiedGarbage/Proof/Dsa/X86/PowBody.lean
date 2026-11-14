@@ -24,7 +24,7 @@ theorem core_saved {s t : State} {base : Addr} {sp : BitVec 32} {size n : Nat} {
     rcases hp with rfl | rfl | rfl | rfl <;> decide
   rw [O.readW32 R nw (fun r hr => by
       simp only [coreRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [slot_lin] <;> omega) (by omega)]
+      rcases hr with rfl | rfl <;> simp only [slot_lin] <;> omega_using [hp']) (by omega_using [hz, hp'])]
   exact H p hp
 
 theorem body_ok {s : State} {base : Addr} {size n e m : Nat}
@@ -37,31 +37,31 @@ theorem body_ok {s : State} {base : Addr} {size n e m : Nat}
       OutsS base (s.gpr .esp) (scratch n) s.mem t.mem ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have nw := E.nowrap
-  have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega
+  have hz24 : 24 ≤ size := by simp only [contextBytes, slot, stride] at hz; omega_using [hz]
   unfold body
   refine WP.seq (WP.mono (save_ok E hz24) fun u ⟨Su, Saved, Ou, Ku⟩ => ?_)
   have uesp : u.gpr .esp = s.gpr .esp := Ku.1 _ (by decide)
   have vals : ∀ {d k : Nat}, 24 ≤ d → d + 4 * k ≤ 2 ^ 64 →
       val32 u.mem base d k = val32 s.mem base d k :=
-    fun hd hk => Ou.val32 (by omega) hk
+    fun hd hk => Ou.val32 (by omega_using [hd]) hk
   have V : wordsVal u.mem base (slot n 0) n = m := by
-    rw [wordsVal_eq_val32, vals (by simp only [slot]; omega) (by simp only [slot, stride]; omega),
+    rw [wordsVal_eq_val32, vals (by simp only [slot]; omega_using []) (by simp only [slot, stride]; omega_using [hn48]),
       ← wordsVal_eq_val32, hv]
   refine WP.seq (WP.mono (core_ok Su (by rw [uesp]; exact R) hz hn hn48 he hen V hm1 hodd)
     fun v ⟨Vv, Ov, Kv⟩ => ?_)
   rw [uesp] at Ov
   refine WP.mono (restore_ok (Su.of_keeps Kv (by decide)) hz24 (core_saved Ov R nw hz24 Saved))
     fun t R' => ⟨?_, ?_, R'.abi (by decide) (by decide) ?_, ?_, ?_⟩
-  · rw [R'.mem, Vv, wordsVal_eq_val32, vals (by simp only [slot]; omega)
-      (by simp only [slot, stride]; omega), vals (by simp only [slot]; omega)
-      (by simp only [slot, stride]; omega), ← wordsVal_eq_val32]
+  · rw [R'.mem, Vv, wordsVal_eq_val32, vals (by simp only [slot]; omega_using [])
+      (by simp only [slot, stride]; omega_using [hn48]), vals (by simp only [slot]; omega_using [])
+      (by simp only [slot, stride]; omega_using [hn48, hen]), ← wordsVal_eq_val32]
   · rw [R'.mem]
     refine (OutsS.of_outs (Outs.of_outside (Ou.mono (by decide) (by decide)) (List.mem_cons_self ..))).trans ?_
     refine Ov.widen fun y hy r hr => ?_
     simp only [coreRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     have h0 := hy (0, 64) (List.mem_cons_self ..)
     have h1 := hy _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    rcases hr with rfl | rfl <;> dsimp only at * <;> omega
+    rcases hr with rfl | rfl <;> dsimp only at * <;> omega_arith
   · exact (Kv.1 _ (by decide)).trans (Ku.1 _ (by decide))
   · rw [R'.rd, Kv.2.1, Ku.2.1]
   · rw [R'.wr, Kv.2.2, Ku.2.2]

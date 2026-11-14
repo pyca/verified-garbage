@@ -36,7 +36,7 @@ theorem clearOutputLoop_taint : CandidateCert [.r0, .lr] VG.Impl.Ffdh.Arm.Domain
 
 theorem finishTail_taint (status : Nat) (bound : status ≤ 2) : CandidateCert [.r2]
     (.block ((VG.Impl.Ffdh.Arm.ParameterCandidate.finish status).drop 1)) := by
-  rcases (by omega : status = 0 ∨ status = 1 ∨ status = 2) with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases (by omega_using [bound] : status = 0 ∨ status = 1 ∨ status = 2) with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 theorem halveLoop_taint : CandidateCert [.r0, .lr]
     (.loop (.block VG.Impl.Ffdh.Arm.ParameterCandidate.halfByte) .ne) := ⟨_, by taint_decide⟩

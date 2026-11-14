@@ -28,7 +28,7 @@ theorem stageRange_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {
       flagW base (Layout.field .mask) t = flagW base (Layout.field .mask) s &&& mask32
         ((if aboveOne then 1 else 0) < operandValue s base input len ∧ operandValue s base input len < operandValue s base (.input modulus) len) ∧ StageFrame base s t (Layout.field .mask) 4 := by
   refine WP.mono (validateRange_ok M.scr M.saved rfl h4 hmax hw4 Rm Ri aboveOne) fun t ⟨V, K, O⟩ => ?_
-  have F := StageFrame.of_frame K (by decide) O (by omega)
+  have F := StageFrame.of_frame K (by decide) O (by omega_using [hmax])
   exact ⟨M.keep (F.run (.inr ⟨rfl, rfl⟩)) F.keeps (by decide) (by decide), V, F⟩
 
 theorem stageEqual_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {a b : Pointer}
@@ -40,7 +40,7 @@ theorem stageEqual_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {
       flagW base (Layout.field .mask) t = flagW base (Layout.field .mask) s &&& mask32
         (operandValue s base a len = operandValue s base b len) ∧ StageFrame base s t (Layout.field .mask) 4 := by
   refine WP.mono (validateEqual_ok M.scr M.saved rfl h4 hmax hw4 Ra Rb) fun t ⟨V, K, O⟩ => ?_
-  have F := StageFrame.of_frame K (by decide) O (by omega)
+  have F := StageFrame.of_frame K (by decide) O (by omega_using [hmax])
   exact ⟨M.keep (F.run (.inr ⟨rfl, rfl⟩)) F.keeps (by decide) (by decide), V, F⟩
 
 theorem stageOne_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {input : Pointer}
@@ -51,7 +51,7 @@ theorem stageOne_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {in
       flagW base (Layout.field .mask) t = flagW base (Layout.field .mask) s &&& mask32
         (operandValue s base input len = 1) ∧ StageFrame base s t (Layout.field .mask) 4 := by
   refine WP.mono (validateOne_ok M.scr M.saved rfl h4 hmax hw4 R) fun t ⟨V, K, O⟩ => ?_
-  have F := StageFrame.of_frame K (by decide) O (by omega)
+  have F := StageFrame.of_frame K (by decide) O (by omega_using [hmax])
   exact ⟨M.keep (F.run (.inr ⟨rfl, rfl⟩)) F.keeps (by decide) (by decide), V, F⟩
 
 theorem stageZero_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {input : Pointer}
@@ -62,7 +62,7 @@ theorem stageZero_ok {base : Addr} {size pLen qLen p q len : Nat} {s : State} {i
       flagW base (Layout.field .mask) t = flagW base (Layout.field .mask) s &&& mask32
         (if wantNonzero then operandValue s base input len ≠ 0 else operandValue s base input len = 0) ∧ StageFrame base s t (Layout.field .mask) 4 := by
   refine WP.mono (validateZero_ok M.scr M.saved rfl h4 hmax hw4 R wantNonzero) fun t ⟨V, K, O⟩ => ?_
-  have F := StageFrame.of_frame K (by decide) O (by omega)
+  have F := StageFrame.of_frame K (by decide) O (by omega_using [hmax])
   exact ⟨M.keep (F.run (.inr ⟨rfl, rfl⟩)) F.keeps (by decide) (by decide), V, F⟩
 
 theorem StageFrame.scalar_keep_mask {base : Addr} {size pLen qLen p q d : Nat} {s t : State}
@@ -70,10 +70,10 @@ theorem StageFrame.scalar_keep_mask {base : Addr} {size pLen qLen p q d : Nat} {
     (hd : d ∈ Layout.scalars) :
     operandValue t base (.local d) qLen = operandValue s base (.local d) qLen := by
   have H := VG.Proof.Dsa.X86.Layout.scalar_bounds hd
-  exact F.local_value_keep M.scr (by have := M.lengths; omega)
-    (by change 7048 ≤ d; omega) (Nat.le_trans (M.scalarFit hd) M.extent)
-    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega) (M.scalarFit hd)
-    (.inr (by change 8248 ≤ d; omega))
+  exact F.local_value_keep M.scr (by have := M.lengths; omega_using [this])
+    (by change 7048 ≤ d; omega_using [H]) (Nat.le_trans (M.scalarFit hd) M.extent)
+    (by have Hs : 8256 ≤ size := M.saved; change 8248 ≤ size; omega_using [Hs]) (M.scalarFit hd)
+    (.inr (by change 8248 ≤ d; omega_using [H]))
 
 theorem StageFrame.mask_keep {base : Addr} {s t : State} {output len : Nat}
     (F : StageFrame base s t output len) (ho : r ≤ output) :
@@ -86,9 +86,9 @@ theorem StageFrame.mask_keep {base : Addr} {s t : State} {output len : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · change 8248 ≤ 0 ∨ 7048 ≤ 8244
-        omega
+        omega_using []
       · change 8248 ≤ output ∨ output + len ≤ 8244
-        omega
+        omega_using [lo]
     · decide
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 

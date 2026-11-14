@@ -47,12 +47,12 @@ theorem OpKeepF.scr {base : Addr} {o : Nat} {s s' : State} (h : OpKeepF base o s
 
 theorem se32 {a : Nat} (ha : a < 2 ^ 31) : (BitVec.ofNat 32 a).signExtend 64 = BitVec.ofNat 64 a := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.signExtend_eq_setWidth_of_msb_false (by rw [BitVec.msb_eq_decide]; simp; omega)]
-  simp [BitVec.toNat_setWidth]; omega
+  rw [BitVec.signExtend_eq_setWidth_of_msb_false (by rw [BitVec.msb_eq_decide]; simp; omega_using [ha])]
+  simp [BitVec.toNat_setWidth]; omega_using [ha]
 
 theorem sw32 {a : Nat} (ha : a < 2 ^ 32) : (BitVec.ofNat 32 a).setWidth 64 = BitVec.ofNat 64 a := by
   apply BitVec.eq_of_toNat_eq
-  simp [BitVec.toNat_setWidth]; omega
+  simp [BitVec.toNat_setWidth]; omega_using [ha]
 
 /-- The arguments: `rbx = ws + a`, `rcx = ws + b`, `rsi = o`. -/
 theorem args_ok {s : State} {base : Addr} (hs : Scr s base Z) {o a b : Nat} (ho : o < 2 ^ 31) (ha : a < 2 ^ 31)
@@ -64,7 +64,7 @@ theorem args_ok {s : State} {base : Addr} (hs : Scr s base Z) {o a b : Nat} (ho 
   simp only [args, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, Option.bind_some,
     Option.map_some, State.setReg32, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, reduceCtorEq,
     ite_true, ite_false, RegUpd.gpr_arithFlags, hs.rdi]
-  refine ⟨by rw [se32 ha], by rw [se32 hb], sw32 (by omega), fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨by rw [se32 ha], by rw [se32 hb], sw32 (by omega_using [ho]), fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.1,
     RegUpd.gpr_setReg_of_ne _ _ hr.2.2]
@@ -79,7 +79,7 @@ theorem fnPost_keep {m : Nat} {weak : Bool} {base : Addr} {o P : Nat} {s s₁ s'
       refine ⟨fun e => h1 (e ▸ by decide), fun e => h1 (e ▸ by decide), fun e => hr (e ▸ by decide)⟩
     rw [h.2.2.1.gpr r h1, k₁.1 r h2],
    by rw [h.2.2.1.rd, k₁.2.2.1], by rw [h.2.2.1.wr, k₁.2.2.2],
-   fun x hx ht => by rw [h.2.2.2 x hx (by simp only [fnTmp] at ht ⊢; omega), k₁.2.1]⟩
+   fun x hx ht => by rw [h.2.2.2 x hx (by simp only [fnTmp] at ht ⊢; omega_using [ht]), k₁.2.1]⟩
 
 /-- A product by a call: `[o] = [a] [b] 2⁻⁵⁷⁶ mod p`, below `p` (or `2p` if `weak`). -/
 theorem pmul_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) {weak : Bool} {o a b m : Nat}
@@ -89,7 +89,7 @@ theorem pmul_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) 
       wordsVal s'.mem base o 9 < (if weak then 2 * m else m) ∧
       wordsVal s'.mem base o 9 * (2 ^ 64) ^ 9 % m = wordsVal s.mem base a 9 * wordsVal s.mem base b 9 % m := by
   simp only [pmul, Code.inline]
-  refine WP.seq (WP.mono (args_ok hs (o := o) (a := a) (b := b) (by omega) (by omega) (by omega))
+  refine WP.seq (WP.mono (args_ok hs (o := o) (a := a) (b := b) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]))
     fun s₁ ⟨hbx, hcx, hsi, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
@@ -100,7 +100,7 @@ theorem pmul_ok (hZ : 4096 ≤ Z) {s : State} {base : Addr} (hs : Scr s base Z) 
     refine WP.mono (sqrFn_ok hZ hs₁ hbx hsi ha ho hm hA) fun s' h => ⟨fnPost_keep k₁ h, ?_, ?_⟩
     · have h1 := h.1
       simp only [Bool.false_eq_true, ite_false] at h1
-      split <;> omega
+      split <;> omega_using [h1]
     · rw [h.2.1, hm₁]
   · split
     · refine WP.mono (mulFnW_ok hZ hs₁ hbx hcx hsi ha hb ho hm hA hB) fun s' h =>
@@ -142,7 +142,7 @@ theorem keepF_slot {M : Mod} {size : Nat} {Sl : Nat → Prop} (hL : Lay M size S
   have := hL.tmp x hx
   have := hL.le x hx
   rw [hn, ht] at *
-  exact opKeepF_wordsVal hk (by omega) (by omega) (by omega)
+  exact opKeepF_wordsVal hk (by omega_arith) (by omega_arith) (by omega_using [hn', this])
 
 /-- `ModOkW` through a step writing a slot. -/
 theorem keepF_mod {M : Mod} {size m : Nat} {Sl : Nat → Prop} (hL : Lay M size Sl) (hn : M.n = 9)
@@ -156,7 +156,7 @@ theorem keepF_mod {M : Mod} {size m : Nat} {Sl : Nat → Prop} (hL : Lay M size 
   refine ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
   rw [hn] at hmo h1 h2 hv ⊢
   rw [ht] at h2
-  rw [opKeepF_wordsVal hk (by omega) (by omega) (by omega)]
+  rw [opKeepF_wordsVal hk (by omega_using [hmo]) (by omega_using [h2]) (by omega_using [hn', h1])]
   exact hv
 
 /-- A step writing `o`, below `m`. -/
@@ -278,10 +278,10 @@ theorem addStep_ok (H : StepCtx M size m Sl) {V W : List Nat} {E : Nat → Fin m
   have hA := hI.inv.lt a ha
   have hB := hI.inv.lt b hb
   rw [H.n9] at hA hB
-  refine WP.mono (sAdd_ok H.z hI.inv.scr (o := o) (by omega) (by omega) (by omega) H.pm (by omega))
+  refine WP.mono (sAdd_ok H.z hI.inv.scr (o := o) (by omega_using [hlo]) (by omega_using [hla]) (by omega_using [hlb]) H.pm (by omega_using [hA, hB]))
     fun s' ⟨heq, hk, O⟩ => ?_
   have hk' := keepF_of hk (by decide) O
-  refine ⟨hk', hI.update H.lay H.n9 H.tmp hS hk' (by rw [H.n9, heq]; exact Nat.mod_lt _ (by omega)) ?_⟩
+  refine ⟨hk', hI.update H.lay H.n9 H.tmp hS hk' (by rw [H.n9, heq]; exact Nat.mod_lt _ (by omega_using [hA])) ?_⟩
   rw [H.n9, heq, toM_add, ← hI.inv.val a ha, ← hI.inv.val b hb, H.n9]
 
 /-- `[o] = [a] - [b]`. -/
@@ -293,12 +293,12 @@ theorem subStep_ok (H : StepCtx M size m Sl) {V W : List Nat} {E : Nat → Fin m
   have hA := hI.inv.lt a ha
   have hB := hI.inv.lt b hb
   rw [H.n9] at hA hB
-  refine WP.mono (sSub_ok H.z hI.inv.scr (o := o) (by omega) (by omega) (by omega) H.pm hA hB)
+  refine WP.mono (sSub_ok H.z hI.inv.scr (o := o) (by omega_using [hlo]) (by omega_using [hla]) (by omega_using [hlb]) H.pm hA hB)
     fun s' ⟨heq, hk, O⟩ => ?_
   have hk' := keepF_of hk (by decide) O
-  refine ⟨hk', hI.update H.lay H.n9 H.tmp hS hk' (by rw [H.n9, heq]; exact Nat.mod_lt _ (by omega)) ?_⟩
+  refine ⟨hk', hI.update H.lay H.n9 H.tmp hS hk' (by rw [H.n9, heq]; exact Nat.mod_lt _ (by omega_using [hA])) ?_⟩
   rw [H.n9, heq, show wordsVal s.mem base a 9 + (m - wordsVal s.mem base b 9) =
-    wordsVal s.mem base a 9 + m - wordsVal s.mem base b 9 by omega, toM_sub (by omega),
+    wordsVal s.mem base a 9 + m - wordsVal s.mem base b 9 by omega_using [hB], toM_sub (by omega_using [hB]),
     ← hI.inv.val a ha, ← hI.inv.val b hb, H.n9]
 
 /-- `[o] = C [a] - D [b]`, `[a]` below `2m`. -/
@@ -311,7 +311,7 @@ theorem cmsStep_ok (H : StepCtx M size m Sl) {V W : List Nat} {E : Nat → Fin m
         (Function.update E o (smulN C (E a) - smulN D (E b))) s' := by
   have hA : wordsVal s.mem base a M.n < 2 * m := by
     rcases ha with ha | ha
-    · have := hI.inv.lt a ha; omega
+    · have := hI.inv.lt a ha; omega_using [this]
     · exact hI.lt a ha
   have hva : toM m (2 ^ (64 * M.n)) (wordsVal s.mem base a M.n) = E a := by
     rcases ha with ha | ha
@@ -319,10 +319,10 @@ theorem cmsStep_ok (H : StepCtx M size m Sl) {V W : List Nat} {E : Nat → Fin m
     · exact hI.val a ha
   have hB := hI.inv.lt b hb
   rw [H.n9] at hA hB hva
-  refine WP.mono (cmsF_ok H.z hI.inv.scr (o := o) (by omega) (by omega) (by omega) H.pm hCD hA hB)
+  refine WP.mono (cmsF_ok H.z hI.inv.scr (o := o) (by omega_using [hlo]) (by omega_using [hla]) (by omega_using [hlb]) H.pm hCD hA hB)
     fun s' ⟨heq, hk, O⟩ => ?_
   have hk' := keepF_of hk (by decide) O
-  refine ⟨hk', hI.update H.lay H.n9 H.tmp hS hk' (by rw [H.n9, heq]; exact Nat.mod_lt _ (by omega)) ?_⟩
+  refine ⟨hk', hI.update H.lay H.n9 H.tmp hS hk' (by rw [H.n9, heq]; exact Nat.mod_lt _ (by omega_using [hA])) ?_⟩
   rw [H.n9, heq, toM_cms _ _ _ _ _ (Nat.le_of_lt hB), hva, ← hI.inv.val b hb, H.n9]
 
 end

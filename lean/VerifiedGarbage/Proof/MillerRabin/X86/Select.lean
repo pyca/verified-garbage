@@ -24,7 +24,7 @@ theorem selectEntry_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ Context g t := by
   unfold selectEntry
   simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (WP.mono (C.ptr v (aTable + j) (by unfold aTable; omega)
+  refine WP.seq (WP.block_append (WP.mono (C.ptr v (aTable + j) (by unfold aTable; omega_using [index])
     .ebp (by decide) (by decide)) fun a ⟨P, M, K⟩ => ?_))
   have Ca := C.keepMem K (by decide) M
   refine WP.block_append (WP.mono (Ca.ptr v aX (by decide) .ebx (by decide) (by decide))
@@ -32,7 +32,7 @@ theorem selectEntry_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
   have Cb := Ca.keepMem Kb (by decide) Mb
   refine WP.block_append (WP.mono (words_ok v Cb) fun c ⟨Count, Mc, Kc⟩ => ?_)
   have Cc := Cb.keepMem Kc (by decide) Mc
-  refine wp_movS (readSrc_ptr Cc.ws Cc.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega))
+  refine wp_movS (readSrc_ptr Cc.ws Cc.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega_using [this]))
     fun d D _ => WP.block_nil ?_
   have keep : Keeps [.ebx, .ecx, .edx, .ebp, .esi] s d :=
     (((K.mono (by decide)).trans (Kb.mono (by decide))).trans (Kc.mono (by decide))).widen D.keeps
@@ -45,13 +45,13 @@ theorem selectEntry_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
       g.array (aTable + j) + 4 * g.words ≤ g.array aX := by
     have sep := g.arraysApart aX (aTable + j)
     have neq : g.array aX ≠ g.array (aTable + j) := by
-      have step := Nat.mul_le_mul_right (8 * (g.w + 2)) (show 6 ≤ 11 + j by omega)
+      have step := Nat.mul_le_mul_right (8 * (g.w + 2)) (show 6 ≤ 11 + j by omega_using [])
       unfold Geometry.array VG.Proof.Rsa.Mont.arrAt VG.Proof.Rsa.Mont.hdrBytes aX aTable
-      omega
+      omega_using [step]
     exact sep.resolve_left neq
   refine WP.mono (selectLoop_ok (C.ws.of_keeps keep)
-    (by have := v.minWidth; unfold Geometry.words; omega) (v.arrayFit (by decide))
-    (v.arrayFit (by unfold aTable; omega)) apart bx bp
+    (by have := v.minWidth; unfold Geometry.words; omega_using [this]) (v.arrayFit (by decide))
+    (v.arrayFit (by unfold aTable; omega_using [index])) apart bx bp
     (by rw [D.other .esi (by decide)]; exact Count) k
     (by rw [D.gpr, Mc, Mb, M, Nat.zero_add]; exact mask)) ?_
   rintro t ⟨O, V, Kt⟩

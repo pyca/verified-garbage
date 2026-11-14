@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.Proof.X448.Ladder
 public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # X448: byte encodings
 
@@ -46,7 +47,7 @@ theorem encodeUCoordinate_eq (x : Fe) : encodeUCoordinate x = leBytes 56 x.val :
   simp only [encodeUCoordinate, leBytes, Nat.shiftRight_eq_div_pow, Nat.pow_mul]
 
 theorem take_56 {l : List Byte} (h : l.length = 56) : l.take 56 = l :=
-  List.take_of_length_le (by omega)
+  List.take_of_length_le (by omega_using [h])
 
 /-- X448 uses all 448 bits of the coordinate. -/
 theorem decodeUCoordinate_eq {l : List Byte} (h : l.length = 56) :
@@ -70,16 +71,16 @@ theorem scalar_bit {kb : List Byte} (h : kb.length = 56) {t : Nat} (ht : t < 448
   rw [List.take_of_length_le (by simp [h]), VG.Proof.X25519.leNum_bit,
     VG.Proof.X25519.getD_set _ _ _ (by simp [h]), VG.Proof.X25519.getD_set _ _ _ (by simp [h]), VG.Proof.X25519.getD_set _ _ _ (by simp [h])]
   rcases Nat.lt_or_ge t 8 with h8 | h8
-  · rw [show t / 8 = 0 by omega, show t % 8 = t by omega]
+  · rw [show t / 8 = 0 by omega_using [h8], show t % 8 = t by omega_using [h8]]
     simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
     rw [BitVec.toNat_and, show (252 : BitVec 8).toNat = 252 from rfl,
       bit_and_252 _ (kb.getD 0 0).isLt _ h8]
   · by_cases h55 : t / 8 = 55
     · rw [h55]
       simp (disch := omega) only [ite_true, ↓ite_eq_right]
-      rw [BitVec.toNat_or, show (128 : BitVec 8).toNat = 128 from rfl, bit_or_128 _ (kb.getD 55 0).isLt _ (by omega)]
+      rw [BitVec.toNat_or, show (128 : BitVec 8).toNat = 128 from rfl, bit_or_128 _ (kb.getD 55 0).isLt _ (by omega_using [])]
       (repeat' split) <;> omega
-    · simp (disch := omega) only [↓ite_eq_right]
+    · simp (disch := omega_arith) only [↓ite_eq_right]
 
 
 end VG.Proof.X448

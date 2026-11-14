@@ -12,16 +12,20 @@ public import VerifiedGarbage.Proof.MillerRabin.X86.TimingMultiply
 public import VerifiedGarbage.Proof.MillerRabin.X86.StageLoadWord
 public import VerifiedGarbage.Impl.MillerRabin.X86.Round
 public import VerifiedGarbage.Proof.MillerRabin.X86.Context
-
 import VerifiedGarbage.Proof.MillerRabin.X86.PrepareRun
 import VerifiedGarbage.Proof.MillerRabin.X86.WordLoop
 import VerifiedGarbage.Proof.MillerRabin.X86.RoundMarker
 import VerifiedGarbage.Proof.MillerRabin.X86.StageLastSquares
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingStage
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingSelect
-import VerifiedGarbage.Proof.MillerRabin.X86.Mask
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingCopy
+public import VerifiedGarbage.Proof.MillerRabin.X86.SelectLoop
+import VerifiedGarbage.Proof.MillerRabin.X86.Select
+import VerifiedGarbage.Proof.MillerRabin.X86.TimingReadonly
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MillerRabin.X86.Mask
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingSquareLoop
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingAttach
 import VerifiedGarbage.Proof.MillerRabin.X86.FourSquares
@@ -34,10 +38,65 @@ import VerifiedGarbage.Proof.MillerRabin.X86.Scalar
 import VerifiedGarbage.Proof.MillerRabin.X86.Pointer
 import VerifiedGarbage.Impl.MillerRabin.X86.Layout
 import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.MillerRabin.X86.TimingPointers
 import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
-import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MillerRabin.X86.WordStep
+
+/-! ### `MillerRabin.X86.TimingSelect`, which only this module used -/
+
+section
+
+/-! # Masked selection reads every word at the same public addresses -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt
+open VG.Impl.MillerRabin.X86 VG.Proof.Dsa.X86
+
+theorem loadMask_relCT {g : Geometry} (v : g.Valid) :
+    RelCT isa (Pair g copyRegisters) (.block [.mov .ecx (.mem (slot sEq1))]) (Pair g copyRegisters) := by
+  refine readonly_relCT (checkedBlockInvariant rfl rfl) ?_
+  intro s C
+  exact wp_movS (readSrc_ptr C.ws C.base (d := sEq1) (by have := v.headerFit; unfold sEq1; omega_using [this]))
+    fun t T _ => WP.block_nil ⟨T.mem, T.keeps.mono (by decide)⟩
+
+theorem selectLoop_raw : RelCT isa (VG.X86.Taint.Agree (roundTaint copyRegisters))
+    (.loop (.block selectBody) .ne) (VG.X86.Taint.Agree (roundTaint copyRegisters)) :=
+  checkedProgramChange (τ' := roundTaint copyRegisters true)
+    (hint := VG.Taint.hintOf taint (roundTaint copyRegisters) (.loop (.block selectBody) .ne)) (by kernel_rfl) (by kernel_rfl)
+
+theorem selectEntry_trace {g : Geometry} (v : g.Valid) (j : Nat) (digit : j < 16) :
+    RelCT isa (Pair g [.edi]) (selectEntry j) (VG.X86.Taint.Agree (roundTaint copyRegisters)) := by
+  unfold selectEntry
+  simp only [List.append_assoc]
+  refine RelCT.seq (RelCT.block_append (RelCT.seq
+    (pointer_pair_relCT v .ebp (aTable + j) (by decide) (by unfold aTable; omega_using [digit]) [.edi] (by decide))
+    (RelCT.block_append (RelCT.seq
+      (pointer_pair_relCT v .ebx aX (by decide) (by decide) [.ebp, .edi] (by decide))
+      (RelCT.block_append (RelCT.seq
+        (words_pair_relCT v [.ebx, .ebp, .edi] (by decide)) (loadMask_relCT v))))))) ?_
+  exact selectLoop_raw.mono (P' := Pair g copyRegisters) (fun _ _ H => H.2.2) (fun _ _ H => H)
+
+def masked (g : Geometry) (s : State) : Prop :=
+  ∃ bit : Bool, s.mem.readW (off g.W sEq1) 32 = if bit then BitVec.allOnes 32 else 0#32
+
+theorem selectEntry_relCT {g : Geometry} (v : g.Valid) (j : Nat) (digit : j < 16) :
+    RelCT isa (fun s t => Pair g [.edi] s t ∧ masked g s ∧ masked g t)
+      (selectEntry j) (Pair g [.edi]) := by
+  intro s t tr ur u z ⟨H, ⟨bs, Ms⟩, ⟨bt, Mt⟩⟩ E G
+  obtain ⟨trace, A⟩ := selectEntry_trace v j digit _ _ _ _ _ _ H E G
+  obtain ⟨_, _, _, Cu⟩ := wp_result (selectEntry_ok v H.1 j digit bs Ms) E
+  obtain ⟨_, _, _, Cz⟩ := wp_result (selectEntry_ok v H.2.1 j digit bt Mt) G
+  refine ⟨trace, Cu, Cz, round_add_regs (round_forget A) ?_⟩
+  intro r mem
+  obtain rfl := List.mem_singleton.mp mem
+  exact round_regs A (by decide : .edi ∈ copyRegisters)
+
+end VG.Proof.MillerRabin.X86
+
+end
+
+end
+
 /-! # Private arithmetic state through the complete round's timing composition -/
 
 -- Formerly `VerifiedGarbage/Proof/MillerRabin/X86/TimingScan.lean`, which only this module imported.
@@ -165,7 +224,7 @@ theorem WindowScanned.mulInput {g : Geometry} {capacity : Nat} {p : BitVec 32}
     {σ : WindowSecret} {s : State} (H : WindowScanned g capacity p σ s) : MulInput g capacity aX p s := by
   refine H.1.mulInput H.2.1 (List.mem_cons_self ..) ?_
   rw [windowScanA, setAt_self, squareValues,
-    setAt_other _ _ (by unfold aTable aY; omega : aTable + windowDigit σ.V ≠ aY)]
+    setAt_other _ _ (by unfold aTable aY; omega_using [] : aTable + windowDigit σ.V ≠ aY)]
   exact H.2.2.2.2.1 (windowDigit σ.V) (digit_lt _)
 
 theorem window_trace {code : Prog isa} {name : String}
@@ -205,13 +264,13 @@ theorem WindowInput.step {code : Prog isa} {name : String}
   let A := setAt σ.A aY (windowResult σ.V σ.A σ.c g.w σ.flag).1
   let V := windowCounters σ.V σ.A σ.c g.w q σ.flag
   let F := (windowResult σ.V σ.A σ.c g.w σ.flag).2
-  refine ⟨⟨⟨σ.c, A, V, F⟩, ⟨St, odd, ?_, ?_, ?_, rfl⟩, rfl, by omega⟩, Z⟩
+  refine ⟨⟨⟨σ.c, A, V, F⟩, ⟨St, odd, ?_, ?_, ?_, rfl⟩, rfl, by omega_using [bound]⟩, Z⟩
   · change (windowResult σ.V σ.A σ.c g.w σ.flag).1 < σ.c
-    exact Word32.mm_lt (by omega : 0 < σ.c)
+    exact Word32.mm_lt (by omega_using [odd] : 0 < σ.c)
   · exact one
   · intro j digit
     change setAt σ.A aY _ (aTable + j) < σ.c
-    rw [setAt_other _ _ (by unfold aTable aY; omega)]
+    rw [setAt_other _ _ (by unfold aTable aY; omega_using [])]
     exact tableLt j digit
 
 theorem windowLoop_relCT {code : Prog isa} {name : String}
@@ -257,12 +316,12 @@ theorem wordPointer_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
       Keeps [.eax, .edx, .ebp] s t := by
   have header := v.headerFit
   have expFit := v.arrayFit (j := aExponent) (by decide)
-  have small : q ≤ 256 := by have := v.maxWidth; unfold Geometry.words at bound; omega
+  have small : q ≤ 256 := by have := v.maxWidth; unfold Geometry.words at bound; omega_using [bound, this]
   unfold wordPointer
   refine WP.block_append (WP.mono (C.ptr v aExponent (by decide) .ebp (by decide) (by decide))
     fun u ⟨P, Mu, Ku⟩ => ?_)
   have Cu := C.keepMem Ku (by decide) Mu
-  refine wp_movS (Cu.readScalar sWords (by unfold sWords; omega)) fun a A _ => ?_
+  refine wp_movS (Cu.readScalar sWords (by unfold sWords; omega_using [header])) fun a A _ => ?_
   refine wp_subS rfl fun b B _ => wp_addS rfl fun c D _ => wp_addS rfl fun d H _ => ?_
   have Kd : Keeps [.eax, .edx, .ebp] s d :=
     ((((Ku.mono (by decide)).widen A.keeps).widen B.keeps).widen D.keeps).widen H.keeps
@@ -275,7 +334,7 @@ theorem wordPointer_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s
     simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
     change (((2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32 + (2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32) % 2 ^ 32 +
       ((2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32 + (2 ^ 32 - 1 + q % 2 ^ 32) % 2 ^ 32) % 2 ^ 32) % 2 ^ 32 = _
-    omega
+    omega_using [positive, small]
   refine wp_addS rfl fun e I _ => ?_
   have Ke : Keeps [.eax, .edx, .ebp] s e := Kd.widen I.keeps
   have Me : e.mem = s.mem := I.mem.trans Md
@@ -405,13 +464,13 @@ theorem WordInput.step {code : Prog isa} {name : String}
   let A := wordValues σ.A σ.c g.w x σ.flag 8
   let V := wordEndSlots σ.V σ.A σ.c g.w x σ.flag q
   let F := (wordState σ.A σ.c g.w x σ.flag 8).2
-  refine ⟨⟨⟨σ.c, A, V, F⟩, St, ⟨odd, ?_, ?_, ?_, rfl⟩, rfl, by omega⟩, Z⟩
+  refine ⟨⟨⟨σ.c, A, V, F⟩, St, ⟨odd, ?_, ?_, ?_, rfl⟩, rfl, by omega_using [bound]⟩, Z⟩
   · change (wordState σ.A σ.c g.w x σ.flag 8).1 < σ.c
-    exact wordState_lt σ.A (by omega : 0 < σ.c) g.w x σ.flag lt 8
+    exact wordState_lt σ.A (by omega_using [odd] : 0 < σ.c) g.w x σ.flag lt 8
   · exact one
   · intro j digit
     change setAt σ.A aY _ (aTable + j) < σ.c
-    rw [setAt_other _ _ (by unfold aTable aY; omega)]
+    rw [setAt_other _ _ (by unfold aTable aY; omega_using [])]
     exact tableLt j digit
 
 theorem wordLoop_relCT {code : Prog isa} {name : String}
@@ -498,7 +557,7 @@ theorem CoreMath.run_window {g : Geometry} {σ : CoreSecret} (H : CoreMath g σ)
   · intro j digit
     change runValues σ.A σ.c g.w (aTable + j) < σ.c
     rw [runValues_power σ.A σ.c g.w digit]
-    exact Word32.tp_lt (by have := H.2.1; omega : 0 < σ.c) H.2.1 H.2.2.1 j
+    exact Word32.tp_lt (by have := H.2.1; omega_using [this] : 0 < σ.c) H.2.1 H.2.2.1 j
 
 theorem CoreRun.wordInput {g : Geometry} {capacity : Nat} {p : BitVec 32} {σ : CoreSecret} {s : State}
     (H : CoreRun g capacity p σ s) : WordInput g capacity p g.words s :=
@@ -530,10 +589,10 @@ theorem CoreFinal.squareInput {g : Geometry} {capacity : Nat} {p : BitVec 32} {�
     (H : CoreFinal g capacity p σ s) : SquareInput g capacity p 3 s := by
   have lt : endA g σ aY < σ.c := by
     rw [endA, exponentValues, setAt_self]
-    exact exponentState_lt _ (by have := H.2.2.1; omega : 0 < σ.c) g.w g.words false
+    exact exponentState_lt _ (by have := H.2.2.1; omega_using [this] : 0 < σ.c) g.w g.words false
       (by rw [runValues_y]; exact H.2.2.2.1) g.words
   refine H.1.squareInput H.2.1 lt runArrays_y runArrays_minus
-    (by omega : 4 - sigOf σ.k < 2 ^ 31) (by decide : 3 < 2 ^ 31) (endFlag g σ) ?_ rfl rfl rfl
+    (by omega_using [] : 4 - sigOf σ.k < 2 ^ 31) (by decide : 3 < 2 ^ 31) (endFlag g σ) ?_ rfl rfl rfl
   intro d mem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
   rcases mem with rfl | rfl | rfl <;> decide

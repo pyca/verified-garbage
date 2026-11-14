@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Round
-public import VerifiedGarbage.Proof.Camellia.RISCV64.Moves
+public import VerifiedGarbage.Proof.Camellia.RISCV64.Linear
+public import VerifiedGarbage.Impl.Camellia.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Fl
 public import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Camellia.Common
@@ -11,6 +12,90 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+
+/-! ### `Camellia.RISCV64.Moves`, which only this module used -/
+
+section
+
+/-!
+# Moving the halves of bitsliced Camellia on RISC-V, by evaluation
+
+As on PPC64LE and x86-64: the loads and stores of the halves (`loadHalf`,
+`storeHalf`), and the subkey XORs outside the rounds (the whitening in
+`head` and `tail`), checked over the lane domain as the layers are
+(`Linear.lean`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Camellia.RISCV64
+
+open VG VG.RISCV64 VG.RISCV64.Straight VG.Bitslice VG.Impl.Camellia.RISCV64
+open VG.Impl.Aes.RISCV64 (q sb t0 t1 kp)
+
+/-- Each state register `q b` holds input word `b`. -/
+def idG (b p : Nat) : List Nat := [64 * b + p]
+
+/-! ## The halves -/
+
+/-- `loadHalf d`: `q j` is the half's plane `j`, input word `8 + (d - d1Slot) + j`. -/
+def loadHalfG (d j p : Nat) : List Nat := [64 * (8 + (d - d1Slot) + j) + p]
+
+theorem loadHalf1_check :
+    check (lanes 64 12) layerCfg (linExt 24) (loadHalf d1Slot) bothEnv
+      (linPostG 12 (qOuts (loadHalfG d1Slot)) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true := by
+  decide +kernel
+
+theorem loadHalf2_check :
+    check (lanes 64 12) layerCfg (linExt 24) (loadHalf d2Slot) bothEnv
+      (linPostG 12 (qOuts (loadHalfG d2Slot)) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true := by
+  decide +kernel
+
+/-- `storeHalf d`: the half's plane `j` is `q j`. -/
+def storeHalfOuts (d : Nat) : List (Nat × (Nat → List Nat)) := (List.range 8).map fun j => (d + j, idG j)
+
+theorem storeHalf1_check :
+    check (lanes 64 12) layerCfg (linExt 24) (storeHalf d1Slot) bothEnv
+      (linPostG 12 (qOuts idG) (storeHalfOuts d1Slot) (feistelKeep d1Slot) bothEnv) = true := by
+  decide +kernel
+
+theorem storeHalf2_check :
+    check (lanes 64 12) layerCfg (linExt 24) (storeHalf d2Slot) bothEnv
+      (linPostG 12 (qOuts idG) (storeHalfOuts d2Slot) (feistelKeep d2Slot) bothEnv) = true := by
+  decide +kernel
+
+/-! ## The whitening -/
+
+/-- `keyXor off`: `q j` XOR the subkey's plane `j`, at word `off + j` of `kp`
+(input word `24 + off + j`). -/
+def keyXorG (off j p : Nat) : List Nat := [64 * j + p, 64 * (24 + off + j) + p]
+
+theorem keyXor8_check :
+    check (lanes 64 12) layerCfg (linExt 24) (keyXor 8) bothEnv
+      (linPostG 12 (qOuts (keyXorG 8)) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true := by
+  decide +kernel
+
+theorem keyXor0_check :
+    check (lanes 64 12) layerCfg (linExt 24) (keyXor 0) bothEnv
+      (linPostG 12 (qOuts (keyXorG 0)) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true := by
+  decide +kernel
+
+/-- `D2`'s plane `j` XOR the second subkey's. -/
+def whiten2G (j p : Nat) : List Nat := [64 * (16 + j) + p, 64 * (32 + j) + p]
+
+theorem whiten_check :
+    check (lanes 64 12) layerCfg (linExt 24) whiten bothEnv
+      (linPostG 12 (qOuts (keyXorG 0))
+        ((List.range 8).map (fun j => (d1Slot + j, keyXorG 0 j)) ++
+          (List.range 8).map (fun j => (d2Slot + j, whiten2G j))) maskSlots bothEnv) = true := by
+  decide +kernel
+
+end VG.Proof.Camellia.RISCV64
+
+end
+
+end
+
 
 /-!
 # Eight blocks of bitsliced Camellia on RISC-V
@@ -109,7 +194,7 @@ theorem ok_layer {s : State} {b : Addr} {m : Nat} (hscr : (⟨b, 8 * slots⟩ : 
     (hal : b.toNat % 8 = 0) (hb : s.gpr sb = b) (hk : AtEntry s b m) (hm : m + 2 ≤ 34) :
     Ok layerCfg s where
   baseAl _ := by simp only [layerCfg]; rw [hb]; exact hal
-  extAl _ := by simp only [layerCfg]; rw [show s.gpr kp = _ from hk]; exact Spill.al8 hal (by omega)
+  extAl _ := by simp only [layerCfg]; rw [show s.gpr kp = _ from hk]; exact Spill.al8 hal (by omega_using [])
   slotIn k hk' := ⟨_, hscr, by
     simp only [layerCfg, savedSlot_eq] at hk'
     simp only [wordAddr, layerCfg, hb]
@@ -199,7 +284,7 @@ theorem addKp_ok (s : State) (n : Nat) (hn : n < 2048) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
   ⟨s.write kp (s.gpr kp + BitVec.ofNat 64 n), by
     simp only [runBlock_cons, exec_addi (show imm12 (OfNat.ofNat n : Int) by
-        show imm12 ((n : Nat) : Int); unfold imm12; omega), runStep_some, runBlock_nil]
+        show imm12 ((n : Nat) : Int); unfold imm12; omega_using [hn]), runStep_some, runBlock_nil]
     rw [show (OfNat.ofNat n : Int) = ((n : Nat) : Int) from rfl, Steps.ofInt_ofNat],
     RegUpd.gpr_write_self _ _ _,
     fun r hr => RegUpd.gpr_write_of_ne _ _ hr, rfl, rfl, rfl⟩
@@ -288,7 +373,7 @@ theorem both_ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
       obtain ⟨j, hj, rfl, rfl⟩ := hji
       refine ⟨by simp [layerCfg, d1Slot, savedSlot]; omega_arith, by omega_arith, ?_⟩
       simp [bothW, show ¬ 8 + j < 8 by omega_arith, show 8 + j < 24 by omega_arith]; rfl)
-    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega,
+    (fun kv hkv => ⟨by have := allMasks_slots kv hkv; simp only [layerCfg, savedSlot, d1Slot] at this ⊢; omega_using [this],
         hc.masks kv hkv⟩)
     (fun j hj => by
       simp only [layerCfg] at hj
@@ -335,7 +420,7 @@ theorem loadHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : 
     (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hh, fun k hk hk' => by
       simp only [slotW, hkeep sb (by decide), hc.base]; exact slot_above f' hk hk'⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
-      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega)]
+      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega_using [this])]
   exact hc.masks kv hkv
 
 /-- `storeHalf d`, under `Ctx`. -/
@@ -371,7 +456,7 @@ theorem storeHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp :
     (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hs, hh, fun k hk hk' => by
       simp only [slotW, hkeep sb (by decide), hc.base]; exact slot_above f' hk hk'⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
-      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega)]
+      have := allMasks_slots kv hkv; simp only [savedSlot, d1Slot] at this ⊢; omega_using [this])]
   exact hc.masks kv hkv
 
 /-- What FL reads, under `Ctx`. -/

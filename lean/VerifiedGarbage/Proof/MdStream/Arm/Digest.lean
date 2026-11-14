@@ -127,7 +127,7 @@ structure Lay (H : Hash) : Prop where
 theorem lay {H : Hash} (hH : HashOK H) : Lay H := by
   have := hH.hW; have := hH.hSB; have := hH.hDF; have := hH.hF
   refine ⟨hH.hW, ⟨hH.hS0, hH.hSB⟩, ⟨hH.hD0, hH.hDF, hH.hF⟩, rfl, ?_, ?_⟩ <;>
-    simp only [nw, dbytes, Hash.buf] <;> omega
+    simp only [nw, dbytes, Hash.buf] <;> omega_arith
 
 variable {H : Hash}
 
@@ -753,7 +753,7 @@ theorem framed (hH : HashOK H) (h : Verified Arm.target (digestMain H) (digestSc
     Verified Arm.target (digest H) (Spec.Sha256.digestContract Arm.abi H.D hH.SH.H.hash (16 + dbytes H)) :=
   Arm.Verified.regScratchWiped (sig := digestSig H.D) (nm := "scratch") (e := .u64) (n := nw H)
     (post := digestPost H.D hH.SH.H.hash Arm.abi.ptrBits) (wa := false) (stack := 16) (words := dbytes H / 4)
-    h ⟨by decide, rfl, rfl⟩ rfl hb (by simp only [nw, dbytes, Elem.size]; omega)
+    h ⟨by decide, rfl, rfl⟩ rfl hb (by simp only [nw, dbytes, Elem.size]; omega_using [])
     (MdStream.Digest.digestPostOut_local _ _ _) hsat rfl
 
 /-- A state satisfying `digestMain`'s precondition, with a digest of `D`

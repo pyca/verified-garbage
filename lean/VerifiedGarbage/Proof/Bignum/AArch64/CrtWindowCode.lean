@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDispatch
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChk
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
@@ -28,17 +29,23 @@ open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 open VG.Proof.Rsa.AArch64 (crtA)
 
-/-- `vg_rsa_private_crt` with Montgomery multiplication `M`. -/
-theorem crtCode_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : crtA.pre s) :
-    ∃ t s', Exec isa (VG.Impl.Rsa.AArch64.WindowFive.code W.code S.code M.mm) s t s' ∧ abiPreserved s s' ∧ crtA.post s s' := by
+/-- `vg_rsa_private_crt` with Montgomery multiplication `M` and the key
+checks `C`, for a key with `G n p q`. -/
+theorem crtCodeWith_correct (W : Window) (M : Mont) (S : Selector) {C : List (Prog isa)}
+    {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G) (s : State) (h : crtA.pre s)
+    (hG : G (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat))
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))) :
+    ∃ t s', Exec isa (VG.Impl.Rsa.AArch64.WindowFive.codeWith C W.code S.code M.mm) s t s' ∧ abiPreserved s s' ∧
+      crtA.post s s' := by
   have c := crtCtx_of h
   clear h
   have hk1 := c.hk1
   have hk2 := c.hk2
-  suffices hwp : WP isa (VG.Impl.Rsa.AArch64.WindowFive.code W.code S.code M.mm) s fun s' => abiPreserved s s' ∧ crtA.post s s' by
+  suffices hwp : WP isa (VG.Impl.Rsa.AArch64.WindowFive.codeWith C W.code S.code M.mm) s fun s' => abiPreserved s s' ∧ crtA.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, hg, hp⟩
-  unfold VG.Impl.Rsa.AArch64.WindowFive.code
+  unfold VG.Impl.Rsa.AArch64.WindowFive.codeWith
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (crtHead_ok c) fun t₁ h₁ => ?_
@@ -56,7 +63,13 @@ theorem crtCode_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : 
       fun t hp => crtCode_fin h₁ k₂ hp (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat))
         (s.gpr .x3).toNat = true := by simpa using hb
-    exact WP.mono (dispatch_ok W M S hpre hv) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin h₁ k₂ hp
+    exact WP.mono (dispatch_ok W M S hpre hv hC hG) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin h₁ k₂ hp
       (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
+
+/-- `vg_rsa_private_crt` with Montgomery multiplication `M`. -/
+theorem crtCode_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : crtA.pre s) :
+    ∃ t s', Exec isa (VG.Impl.Rsa.AArch64.WindowFive.code W.code S.code M.mm) s t s' ∧ abiPreserved s s' ∧
+      crtA.post s s' :=
+  crtCodeWith_correct W M S checks_okG s h trivial
 
 end VG.Proof.Bignum.AArch64.WindowFive

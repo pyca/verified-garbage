@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `xfer_ok`: a prime's array 4 into `X`'s array `j`, zero-extended.
 `blkP_ok`, `blkQ_ok`: the registers for it, for `p` and for `q`.
+`exportM2_ok`: `m₂` into `X`'s array 6, for its reduction modulo `p`.
 -/
 
 @[expose] public section
@@ -146,5 +147,27 @@ theorem blk_ok {s : State} {BX : Addr} {Z oA len oB oLen wX j : Nat} (mid : List
       (k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans a22),
       (k5.gpr _ (by decide)).trans ((k4.gpr _ (by decide)).trans ((k3.gpr _ (by decide)).trans a15)),
       by rw [tm, m4, m3, m2, m1]⟩, (k14.trans k5).mono⟩
+
+/-- `exportM2`: `m₂`, `q`'s array 4 (at the header's `oBQ`, `q_len` in the
+header), into `X`'s array 6, zero-extended to `X`'s words. -/
+theorem exportM2_ok {s : State} {BX : Addr} {Z oQ qL wX : Nat}
+    (hs : Scr s BX Z) (hQZ : oQ + slot (wsWords qL) 24 ≤ Z) (hXQ : slot wX 8 ≤ oQ)
+    (hwQ : wsWords qL ≤ wX) (hwX : wX < 2 ^ 31)
+    (h23 : s.gpr .r23 = BX) (h27 : s.gpr .r27 = off BX (slot wX 0))
+    (h28 : s.gpr .r28 = BitVec.ofNat 64 (8 * (wX + 2)))
+    (hBQ : word s.mem BX oBQ = off BX oQ) (hQL : word s.mem BX oQLen = BitVec.ofNat 64 qL)
+    (hq1 : 1 ≤ qL) (hq' : qL < 2 ^ 60) :
+    WP isa exportM2 s fun t =>
+      (val32 t.mem BX (slot wX 6) (2 * wX) = val32 s.mem (off BX oQ) (slot (wsWords qL) 4) (2 * wsWords qL) ∧
+        Outside BX (slot wX 6) (8 * wX) s.mem t.mem) ∧
+      Keep [.r0, .r3, .r4, .r10, .r11, .r14, .r15, .r17, .r21, .r22, .r29] s t := by
+  have hn := hs.nowrap
+  have hZ : 256 ≤ Z := by have := slot_le (w := wX) (j := 0) (by decide); unfold slot at *; omega_arith
+  unfold exportM2
+  refine WP.seq (WP.mono (blk_ok (j := 6) (oA := oQ) _ (fun t h11 _ => midQ_ok h11) hs h23
+    (by decide) (by decide) hZ hBQ hQL hq1 hq' hwX h27 h28) fun s₁ ⟨⟨b14, b11, b22, b15, m1⟩, k1⟩ => ?_)
+  refine WP.mono (xfer_ok (hs.congr k1.wr) hQZ hXQ (by decide) (by unfold wsWords; omega_arith) hwQ hwX b14 b11
+    b22 b15 ((k1.gpr _ (by decide)).trans h27) ((k1.gpr _ (by decide)).trans h28))
+    fun t ⟨⟨v6, out⟩, k2⟩ => ⟨⟨by rw [v6, m1], by rw [← m1]; exact out⟩, (k1.trans k2).mono⟩
 
 end VG.Proof.Bignum.PPC64LE.Crt

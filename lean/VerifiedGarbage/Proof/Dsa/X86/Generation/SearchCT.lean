@@ -58,7 +58,7 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   let J : State → Prop := fun t => (∃ σ, SLoop E g σ j c t) ∧ j = n
   have hbJ : ∀ (_ : Unit) t, J t → Base E t := fun _ t h => by
     obtain ⟨⟨σ, L⟩, _⟩ := h; exact L.keep.base
-  have jl : j < 2 ^ 32 := by simp only [Spec.Dsa.parameterSeeds] at hjs; omega
+  have jl : j < 2 ^ 32 := by simp only [Spec.Dsa.parameterSeeds] at hjs; omega_using [hjs]
   have pins : ∀ {Φ : Unit → State → Prop}, (∀ u t, Φ u t → Base E t) →
       ∀ s t, Both Φ s t → VG.X86.Taint.Agree (τr [.esp, .edi]) s t := fun hb s t ⟨u, h₁, h₂⟩ =>
     agree_regs fun r hr => (base_pins (hb u s h₁) r hr).trans (base_pins (hb u t h₂) r hr).symm
@@ -73,7 +73,7 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     refine (show RelCT isa (Both fun (_ : Unit) t => J t) _ _ from ?_).mono (fun s t h => ⟨(), h.1, h.2⟩)
       fun _ _ h => h
     simp only [seqs]
-    refine RelCT.assoc (RelCT.seq (cmpF_ct (o := fSeedLeft) (v := 0) (by simp only [fSeedLeft, hdr]; omega)
+    refine RelCT.assoc (RelCT.seq (cmpF_ct (o := fSeedLeft) (v := 0) (by simp only [fSeedLeft, hdr]; omega_using [sz])
       (by decide) (fun _ => j) hbJ (fun _ t h => by obtain ⟨⟨σ, L⟩, _⟩ := h; exact L.left)
       (fun _ => jl) (Q := VG.X86.Taint.Agree (τr [.esp, .edi])) ?_ ?_)
       (tcheckE _ _ (.block (cmpF 0 0)) (cmpF_erase _ _) (by decide +kernel) (by decide +kernel)))
@@ -90,7 +90,7 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
       (fun u t h => base_pins (b₁ u t h)) ?_) fun u t h => ?_) ?_
     · rcases G.lengths with ⟨_, h₂⟩ | ⟨_, h₂⟩ | ⟨_, h₂⟩ <;> rw [h₂] <;> exact tcheck _ _ (by decide +kernel)
     · rw [← List.append_nil (Geo.avail ++ _), List.append_assoc]
-      exact availCmp_ok v (b₁ u t h) (c₁ u t h) hcw (w := g.qLen) (by omega)
+      exact availCmp_ok v (b₁ u t h) (c₁ u t h) hcw (w := g.qLen) (by omega_using [bd])
         fun t' g' m' rd' wr' sy' _ cf' => WP.block_nil ⟨t, h, (b₁ u t h).regs m' (g' _ (by decide) (by decide))
           (g' _ (by decide) (by decide)) rd' wr' sy', m', cf'⟩
     have b₂ : ∀ u t, Ψ₁ u t → Base E t := fun _ t h => by obtain ⟨_, _, B, _⟩ := h; exact B
@@ -99,7 +99,7 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     -- A seed.
     by_cases short : E.witLen - c < g.qLen
     · exact relct_of_fact (P := False) (fun s t ⟨_, h, _⟩ => by simp [short] at h) fun f => f.elim
-    have hcq : c + E.qLen ≤ E.witLen := by omega
+    have hcq : c + E.qLen ≤ E.witLen := by omega_arith
     let Φ₂ : Unit → State → Prop := fun u t => Ψ₁ u t ∧ decide (E.witLen - c < g.qLen) = false
     have hS₂ : ∀ u t, Φ₂ u t → t.mem.readW (off E.base fC) 32 = BitVec.ofNat 32 c ∧
         t.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := fun _ t h => by
@@ -109,8 +109,8 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     let Ψ₂ : Unit → State → Prop := fun _ t => AIn (E.atSeed c) (0, c + E.qLen) t
     have ws : ∀ (m : Mem) {d e : Nat}, d + 4 ≤ sState → e + 4 ≤ sState → (d + 4 ≤ e ∨ e + 4 ≤ d) → ∀ y,
         (m.writeW (off E.base e) y).readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
-      fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega)
-        (by simp only [sState] at h₂; omega) h y
+      fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega_using [sz, h₁])
+        (by simp only [sState] at h₂; omega_using [sz, h₂]) h y
     refine RelCT.seq (both_post (Ψ := Ψ₂) (both_agree [.esp, .edi] (fun _ => baseVal E)
       (fun u t h => base_pins (b₂ u t h.1)) ?_) fun u t h => ?_) ?_
     · unfold Geo.seedStart
@@ -124,20 +124,20 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
           (n := 4) (by simp) (by decide) _
       have B₃ := B.keep v C₃ (fun o ho => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
-        rcases ho with rfl | rfl <;> simp only [fSeed, fUsed, fOut, fUsedP, fWitLen, hdr] <;> omega)
+        rcases ho with rfl | rfl <;> simp only [fSeed, fUsed, fOut, fUsedP, fWitLen, hdr] <;> omega_using [sz])
         (g₃ _ (by decide) (by decide)) (g₃ _ (by decide) (by decide)) rd₃ wr₃ sy₃
-      refine ⟨⟨B₃.toSeed c, by simp only [Env.atSeed]; omega, ?_, ?_, hcq⟩, ?_⟩
+      refine ⟨⟨B₃.toSeed c, by simp only [Env.atSeed]; omega_using [], ?_, ?_, hcq⟩, ?_⟩
       · show t₃.mem.readW (off E.base fSeed) 32 =
           ((E.atSeed c).seeds + BitVec.ofNat 64 (0 * (E.atSeed c).qLen)).setWidth 32
-        rw [m₃, ws _ (by simp only [fSeed, sState, hdr]; omega) (by simp only [fUsed, sState, hdr]; omega)
-          (by simp only [fSeed, fUsed, hdr]; omega), Mem.readW_writeW_self32, Nat.zero_mul, BitVec.add_zero]
+        rw [m₃, ws _ (by simp only [fSeed, sState, hdr]; omega_using []) (by simp only [fUsed, sState, hdr]; omega_using [])
+          (by simp only [fSeed, fUsed, hdr]; omega_using []), Mem.readW_writeW_self32, Nat.zero_mul, BitVec.add_zero]
         rfl
       · show t₃.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 (c + E.qLen)
         rw [m₃, Mem.readW_writeW_self32]
       · show t₃.mem.readW (off E.base fStatus) 32 = _
-        rw [m₃, ws _ (by simp only [fStatus, sState, hdr]; omega) (by simp only [fUsed, sState, hdr]; omega)
-          (by simp only [fStatus, fUsed, hdr]; omega), ws _ (by simp only [fStatus, sState, hdr]; omega)
-          (by simp only [fSeed, sState, hdr]; omega) (by simp only [fStatus, fSeed, hdr]; omega), hst]
+        rw [m₃, ws _ (by simp only [fStatus, sState, hdr]; omega_using []) (by simp only [fUsed, sState, hdr]; omega_using [])
+          (by simp only [fStatus, fUsed, hdr]; omega_using []), ws _ (by simp only [fStatus, sState, hdr]; omega_using [])
+          (by simp only [fSeed, sState, hdr]; omega_using []) (by simp only [fStatus, fSeed, hdr]; omega_using []), hst]
     -- The attempt.
     have v' := v.atSeed hcq
     let Ψ₃ : Unit → State → Prop := fun _ t => ∃ s, Ψ₂ () s ∧ AKeep (E.atSeed c) g s t ∧
@@ -149,7 +149,7 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
       (attempt_ct G v' hp hq)) fun u t h => ?_) ?_
     · exact WP.mono (attempt_ok G v' hp hq h.1.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.1.2.2.2.2 h.2)
         fun t' ⟨K, R⟩ => ⟨t, h, K, by rw [← eR]; exact R⟩
-    refine cmpF_ct (o := fStatus) (v := 0) (by simp only [fStatus, hdr]; omega) (by decide)
+    refine cmpF_ct (o := fStatus) (v := 0) (by simp only [fStatus, hdr]; omega_using [sz]) (by decide)
       (fun _ => statusOf (sR E c)) b₃ (fun _ t h => by obtain ⟨_, _, _, R⟩ := h; exact R.status)
       (fun _ => by rcases sR E c with _ | ⟨_ | _, _⟩ <;> simp [statusOf]) ?_ ?_
     · exact (tkeep [.esp, .edi] _ (by decide +kernel)).mono (pins fun u t h => h.1.base b₃) fun _ _ h => h
@@ -168,6 +168,6 @@ theorem search_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
   · rw [hs] at ht; simp at ht
   obtain ⟨hj, L₁⟩ := c₁ j' c' hs
   obtain ⟨_, L₂⟩ := c₂ j' c' hs
-  exact ⟨j', by omega, (j', c'), ⟨⟨σ₁, L₁⟩, rfl⟩, ⟨σ₂, L₂⟩, rfl⟩
+  exact ⟨j', by omega_arith, (j', c'), ⟨⟨σ₁, L₁⟩, rfl⟩, ⟨σ₂, L₂⟩, rfl⟩
 
 end VG.Proof.Dsa.X86.Generation

@@ -4,11 +4,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_pbkdf2_hmac_sha224_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions.
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -17,48 +19,48 @@ pub const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 960 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJKj5//9Ii4QkYAYAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJFj8//9Ii4QksAMAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZiQAAAASYmomAAAAE2JoKAAAABNiaioAAAATYmwsAAAAE2JuLgAAABNicdNiY/AAAAARInQSIPoAUmJh8gAAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHHoAQAAA=="
-call {vg_sha224_init}
-.base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHH8AEAAA=="
+call {vg_sha224_init_core}
+.base64 "TIn/SIHH8AEAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch_shani}
-.base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwjgFAABMifk="
+.base64 "TIn/SIHH8AEAAEiJ7kyJ+kiBwogCAABMifk="
 call {vg_sha256_finalize_scratch_shani}
-.base64 "TIn6SIHCOAUAALkcAAAA"
+.base64 "TIn6SIHCiAIAALkcAAAA"
 21:
-.base64 "TIn/SIHHgAMAAEyJ/kiBxuADAABNifg="
+.base64 "TIn/SIHH0AAAAEyJ/kiBxjABAABNifg="
 call {vg_hmac_sha224_init_scratch_shani}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDeAAwAAQ4iEN0AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDfQAAAAQ4iEN5ABAABJg8YBSYP+YA=="
 jne 22b
-.base64 "TIn/SIHHQAQAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHHkAEAAL5AAAAATIniTInpTYn4"
 call {vg_sha256_update_scratch_shani}
-.base64 "TIntTYuvcAMAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvwAAAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDdABAAAQ4iEN6AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDeQAQAAQ4iEN/ABAABJg8YBSYP+YA=="
 jne 26b
-.base64 "idgPyEGJh1gFAABMif9IgcegBAAASInuSIPGQEyJ+kiBwlgFAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJh6gCAABMif9IgcfwAQAASInuSIPGQEyJ+kiBwqgCAAC5BAAAAE2J+A=="
 call {vg_sha256_update_scratch_shani}
-.base64 "TIn/SIHHoAQAAEyJ/kiBxuADAABIiepIg8JETIn5SIHBAAUAAE2J+A=="
+.base64 "TIn/SIHH8AEAAEyJ/kiBxjABAABIiepIg8JETIn5SIHBUAIAAE2J+A=="
 call {vg_hmac_sha224_finalize_scratch_shani}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDcABQAAQ4iENxwFAABJg8YBSYP+HA=="
+.base64 "Qw+2hDdQAgAAQ4iEN2wCAABJg8YBSYP+HA=="
 jne 27b
-.base64 "TIn/SIHHgAMAAEyJ/kiBxgAFAABJi5d4AwAATIn5SIHBHAUAAE2J+A=="
+.base64 "TIn/SIHH0AAAAEyJ/kiBxlACAABJi5fIAAAATIn5SIHBbAIAAE2J+A=="
 call {vg_pbkdf2_hmac_sha224_iterate_shani}
 .base64 "uRwAAABJOcw="
 jb 28f
@@ -68,16 +70,16 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDccBQAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDdsAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAASI2kJFgGAADD"
+.base64 "SYufkAAAAEmLr5gAAABNi6egAAAATYuvqAAAAE2Lt7AAAABNi7+4AAAASI2kJKgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkQPz///MPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJMADAAAxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani::vg_hmac_sha224_init_scratch_shani,
@@ -93,6 +95,8 @@ pub const VG_PBKDF2_HMAC_SHA224_AVX2_FEATURES: verified_garbage_cpu::Features = 
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -100,48 +104,48 @@ pub const VG_PBKDF2_HMAC_SHA224_AVX2_FEATURES: verified_garbage_cpu::Features = 
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJKj5//9Ii4QkYAYAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJCj6//9Ii4Qk4AUAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZjAAgAASYmoyAIAAE2JoNACAABNiajYAgAATYmw4AIAAE2JuOgCAABNicdNiY/wAgAARInQSIPoAUmJh/gCAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHHoAQAAA=="
-call {vg_sha224_init}
-.base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHIAQAAA=="
+call {vg_sha224_init_core}
+.base64 "TIn/SIHHIAQAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch_avx2}
-.base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwjgFAABMifk="
+.base64 "TIn/SIHHIAQAAEiJ7kyJ+kiBwrgEAABMifk="
 call {vg_sha256_finalize_scratch_avx2}
-.base64 "TIn6SIHCOAUAALkcAAAA"
+.base64 "TIn6SIHCuAQAALkcAAAA"
 21:
-.base64 "TIn/SIHHgAMAAEyJ/kiBxuADAABNifg="
+.base64 "TIn/SIHHAAMAAEyJ/kiBxmADAABNifg="
 call {vg_hmac_sha224_init_scratch_avx2}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDeAAwAAQ4iEN0AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDcAAwAAQ4iEN8ADAABJg8YBSYP+YA=="
 jne 22b
-.base64 "TIn/SIHHQAQAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHHwAMAAL5AAAAATIniTInpTYn4"
 call {vg_sha256_update_scratch_avx2}
-.base64 "TIntTYuvcAMAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuv8AIAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDdABAAAQ4iEN6AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDfAAwAAQ4iENyAEAABJg8YBSYP+YA=="
 jne 26b
-.base64 "idgPyEGJh1gFAABMif9IgcegBAAASInuSIPGQEyJ+kiBwlgFAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJh9gEAABMif9IgccgBAAASInuSIPGQEyJ+kiBwtgEAAC5BAAAAE2J+A=="
 call {vg_sha256_update_scratch_avx2}
-.base64 "TIn/SIHHoAQAAEyJ/kiBxuADAABIiepIg8JETIn5SIHBAAUAAE2J+A=="
+.base64 "TIn/SIHHIAQAAEyJ/kiBxmADAABIiepIg8JETIn5SIHBgAQAAE2J+A=="
 call {vg_hmac_sha224_finalize_scratch_avx2}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDcABQAAQ4iENxwFAABJg8YBSYP+HA=="
+.base64 "Qw+2hDeABAAAQ4iEN5wEAABJg8YBSYP+HA=="
 jne 27b
-.base64 "TIn/SIHHgAMAAEyJ/kiBxgAFAABJi5d4AwAATIn5SIHBHAUAAE2J+A=="
+.base64 "TIn/SIHHAAMAAEyJ/kiBxoAEAABJi5f4AgAATIn5SIHBnAQAAE2J+A=="
 call {vg_pbkdf2_hmac_sha224_iterate_avx2}
 .base64 "uRwAAABJOcw="
 jb 28f
@@ -151,16 +155,16 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDccBQAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDecBAAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAASI2kJFgGAADD"
+.base64 "SYufwAIAAEmLr8gCAABNi6fQAgAATYuv2AIAAE2Lt+ACAABNi7/oAgAASI2kJNgFAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkEPr//8X+f4Qk0AUAAMX+f4QksAUAAMX+f4QkkAUAAMX+f4QkcAUAAMX+f4QkUAUAAMX+f4QkMAUAAMX+f4QkEAUAAMX+f4Qk8AQAAMX+f4Qk0AQAAMX+f4QksAQAAMX+f4QkkAQAAMX+f4QkcAQAAMX+f4QkUAQAAMX+f4QkMAQAAMX+f4QkEAQAAMX+f4Qk8AMAAMX+f4Qk0AMAAMX+f4QksAMAAMX+f4QkkAMAAMX+f4QkcAMAAMX+f4QkUAMAAMX+f4QkMAMAAMX+f4QkEAMAAMX+f4Qk8AIAAMX+f4Qk0AIAAMX+f4QksAIAAMX+f4QkkAIAAMX+f4QkcAIAAMX+f4QkUAIAAMX+f4QkMAIAAMX+f4QkEAIAAMX+f4Qk8AEAAMX+f4Qk0AEAAMX+f4QksAEAAMX+f4QkkAEAAMX+f4QkcAEAAMX+f4QkUAEAAMX+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJPAFAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
         vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
         vg_hmac_sha224_init_scratch_avx2 = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_avx2::vg_hmac_sha224_init_scratch_avx2,
@@ -173,6 +177,8 @@ jmp 24f
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `password` must be valid for reads of `password_len` bytes.
@@ -180,47 +186,47 @@ jmp 24f
 /// * `out` must be valid for reads and writes of `out_len` bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1072 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJKj5//9Ii4QkYAYAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZhAAwAASYmoSAMAAE2JoFADAABNiahYAwAATYmwYAMAAE2JuGgDAABNicdNiY9wAwAARInQSIPoAUmJh3gDAABIiftIifVJidRJic1Ig/1B"
+        r#".base64 "SI2kJOj7//9Ii4QkIAQAAEiJRCQISIngSIPAGEiJRCQQTYnCTItEJBBJiZgAAQAASYmoCAEAAE2JoBABAABNiagYAQAATYmwIAEAAE2JuCgBAABNicdNiY8wAQAARInQSIPoAUmJhzgBAABIiftIifVJidRJic1Ig/1B"
 jae 20f
 .base64 "SInaSInp"
 jmp 21f
 20:
-.base64 "TIn/SIHHoAQAAA=="
-call {vg_sha224_init}
-.base64 "TIn/SIHHoAQAAL4AAAAASInaSInpTYn4"
+.base64 "TIn/SIHHYAIAAA=="
+call {vg_sha224_init_core}
+.base64 "TIn/SIHHYAIAAL4AAAAASInaSInpTYn4"
 call {vg_sha256_update_scratch}
-.base64 "TIn/SIHHoAQAAEiJ7kyJ+kiBwjgFAABMifk="
+.base64 "TIn/SIHHYAIAAEiJ7kyJ+kiBwvgCAABMifk="
 call {vg_sha256_finalize_scratch}
-.base64 "TIn6SIHCOAUAALkcAAAA"
+.base64 "TIn6SIHC+AIAALkcAAAA"
 21:
-.base64 "TIn/SIHHgAMAAEyJ/kiBxuADAABNifg="
+.base64 "TIn/SIHHQAEAAEyJ/kiBxqABAABNifg="
 call {vg_hmac_sha224_init_scratch}
 .base64 "Qb4AAAAA"
 22:
-.base64 "Qw+2hDeAAwAAQ4iEN0AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDdAAQAAQ4iENwACAABJg8YBSYP+YA=="
 jne 22b
-.base64 "TIn/SIHHQAQAAL5AAAAATIniTInpTYn4"
+.base64 "TIn/SIHHAAIAAL5AAAAATIniTInpTYn4"
 call {vg_sha256_update_scratch}
-.base64 "TIntTYuvcAMAAEyLZCQIuwEAAABNheQ="
+.base64 "TIntTYuvMAEAAEyLZCQIuwEAAABNheQ="
 je 23f
 25:
 .base64 "Qb4AAAAA"
 26:
-.base64 "Qw+2hDdABAAAQ4iEN6AEAABJg8YBSYP+YA=="
+.base64 "Qw+2hDcAAgAAQ4iEN2ACAABJg8YBSYP+YA=="
 jne 26b
-.base64 "idgPyEGJh1gFAABMif9IgcegBAAASInuSIPGQEyJ+kiBwlgFAAC5BAAAAE2J+A=="
+.base64 "idgPyEGJhxgDAABMif9IgcdgAgAASInuSIPGQEyJ+kiBwhgDAAC5BAAAAE2J+A=="
 call {vg_sha256_update_scratch}
-.base64 "TIn/SIHHoAQAAEyJ/kiBxuADAABIiepIg8JETIn5SIHBAAUAAE2J+A=="
+.base64 "TIn/SIHHYAIAAEyJ/kiBxqABAABIiepIg8JETIn5SIHBwAIAAE2J+A=="
 call {vg_hmac_sha224_finalize_scratch}
 .base64 "Qb4AAAAA"
 27:
-.base64 "Qw+2hDcABQAAQ4iENxwFAABJg8YBSYP+HA=="
+.base64 "Qw+2hDfAAgAAQ4iEN9wCAABJg8YBSYP+HA=="
 jne 27b
-.base64 "TIn/SIHHgAMAAEyJ/kiBxgAFAABJi5d4AwAATIn5SIHBHAUAAE2J+A=="
+.base64 "TIn/SIHHQAEAAEyJ/kiBxsACAABJi5c4AQAATIn5SIHB3AIAAE2J+A=="
 call {vg_pbkdf2_hmac_sha224_iterate}
 .base64 "uRwAAABJOcw="
 jb 28f
@@ -230,16 +236,16 @@ jmp 29f
 29:
 .base64 "Qb4AAAAA"
 210:
-.base64 "Qw+2hDccBQAAQ4hENQBJg8YBSTnO"
+.base64 "Qw+2hDfcAgAAQ4hENQBJg8YBSTnO"
 jne 210b
 .base64 "SQHNSIPDAUkpzA=="
 jne 25b
 jmp 24f
 23:
 24:
-.base64 "SYufQAMAAEmLr0gDAABNi6dQAwAATYuvWAMAAE2Lt2ADAABNi79oAwAASI2kJFgGAADD"
+.base64 "SYufAAEAAEmLrwgBAABNi6cQAQAATYuvGAEAAE2LtyABAABNi78oAQAASI2kJBgEAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk0Pv///MPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJDAEAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha224_init_core = sym super::ecdsa_brainpoolp256r1::vg_sha224_init_core::vg_sha224_init_core,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
         vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,

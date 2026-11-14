@@ -50,7 +50,7 @@ theorem subtract_ok (s : State) (j : Nat) (hj : j < 32) :
   simp only [subtract, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     execShift, execAlu, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
     RegUpd.gpr_arithFlags, RegUpd.cf_setReg, RegUpd.cf_setFlags,
-    RegUpd.cf_arithFlags, show 1 ≤ j + 1 ∧ j + 1 ≤ 63 by omega,
+    RegUpd.cf_arithFlags, show 1 ≤ j + 1 ∧ j + 1 ≤ 63 by omega_using [hj],
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', Nat.add_sub_cancel, and_self, sbb_mask]
   refine ⟨rfl, rfl, rfl, ?_⟩
@@ -94,10 +94,10 @@ theorem select_ok (s : State) (b : Bool) (hm : s.gpr .rax = mask b) :
 
 theorem double_bit (x : BitVec 64) (b : Bool) (hx : x.toNat < 2 ^ 32) :
     (x + x + (BitVec.ofBool b).setWidth 64).toNat = 2 * x.toNat + b.toNat := by
-  have hsum : x.toNat + x.toNat < 2 ^ 64 := by omega
+  have hsum : x.toNat + x.toNat < 2 ^ 64 := by omega_using [hx]
   cases b <;> simp only [BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool,
     Bool.toNat_false, Bool.toNat_true, Nat.zero_mod, Nat.one_mod,
-    Nat.mod_eq_of_lt hsum, Nat.add_zero] <;> omega
+    Nat.mod_eq_of_lt hsum, Nat.add_zero] <;> omega_arith
 
 theorem reduced_value (v d : BitVec 64) :
     (if v.toNat < d.toNat then v else v - d).toNat =
@@ -108,7 +108,7 @@ theorem reduced_value (v d : BitVec 64) :
     rw [BitVec.toNat_sub]
     have hv := v.isLt
     have hd := d.isLt
-    omega
+    omega_using [h]
 
 theorem bit_ok (s : State) (j : Nat) (hj : j < 32)
     (hr : (s.gpr .r8).toNat < 2 ^ 32) (hq : (s.gpr .r9).toNat < 2 ^ 32) :

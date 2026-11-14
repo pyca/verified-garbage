@@ -21,6 +21,6 @@ theorem outs_frame {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem}
   have I := Offset.lt_iff a base (fit r hr)
   change ¬ ((a - off base r.1).toNat + 1 ≤ r.2) at H
   change (a - off base r.1).toNat < r.2 ↔ r.1 ≤ ofs base a ∧ ofs base a < r.1 + r.2 at I
-  omega
+  omega_using [H, I]
 
 end VG.Proof.Bignum

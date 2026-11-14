@@ -105,11 +105,11 @@ theorem derivingOperationWith_spec (sized : Nat → Nat → Prog isa) {s : State
       StackOutputFrame (s.gpr .esp) (argumentPointer s 7) (argumentPointer s 0) ((arg s 8).toNat * 8) (arg s 1).toNat s.mem sf.mem ∧
       sf.rd = s.rd ∧ sf.wr = s.wr := by
   dsimp only
-  have sz : 8272 ≤ (arg s 8).toNat * 8 := by have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega
+  have sz : 8272 ≤ (arg s 8).toNat * 8 := by have H : 15712 ≤ (arg s 8).toNat * 8 := A.used; omega_using [H]
   unfold Generate.deriveKeyWith Core.sequence
   dsimp only [List.foldr, ite_true]
   refine WP.seq (WP.mono (derivingEntry_precise A) fun t ⟨I,Oentry⟩ => ?_)
-  refine WP.seq (generationDispatch_ok sized _ I.scr (by change 8256 ≤ _; omega)
+  refine WP.seq (generationDispatch_ok sized _ I.scr (by change 8256 ≤ _; omega_using [sz])
     (supportedWidths_member A.lengths) (by decide)
     (congrArg BitVec.toNat (I.arguments (4, .pLen) (by decide)))
     (congrArg BitVec.toNat (I.arguments (6, .qLen) (by decide))) ?_)
@@ -120,7 +120,7 @@ theorem derivingOperationWith_spec (sized : Nat → Nat → Prog isa) {s : State
       ((arg s 8).toNat * 8) (arg s 1).toNat s.mem v.mem := by
     intro a hb ho hstack
     have H := A.used
-    exact (O a (by omega) ho (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans (J.outside a (.inr (by omega)))
+    exact (O a (by omega_using [hb, H]) ho (by rw [J.keeps.1 .esp (by decide)]; exact hstack)).trans (J.outside a (.inr (by omega_using [hb])))
   have Esp : v.gpr .esp = s.gpr .esp := (K.1 _ (by decide)).trans (J.keeps.1 _ (by decide))
   refine WP.seq (WP.mono (entryRestore_ok (J.scr.of_keeps K (by decide)) sz (Saved s.gpr J.saved))
     fun sf R => WP.block_nil ?_)

@@ -44,7 +44,7 @@ theorem layout_pre {s : State} (h : contract.pre s) : Layout s := by
       fun r hr => ⟨(dl r hr).symm,(tl r hr).symm⟩,dt,da,ta,
       bc.sub_left hb,bn.sub_left hb,ba.sub_left hb,bds.sub_left hb,
       fun r hr => (bl r hr).sub_left hb,barg.sub_left hb,bd.sub_left hb,bt.sub_left hb,
-      oc,on,oa,ods,ol,od,ot,by omega,by omega,hR,hg⟩
+      oc,on,oa,ods,ol,od,ot,by omega_using [w₁],by omega_using [w₂],hR,hg⟩
   refine ⟨Gather.lay hp,?_,w₁⟩
   intro r hr
   simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr

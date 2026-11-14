@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.NegInput
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Packed
 import Mathlib.Data.Finset.Attr
@@ -8,6 +9,51 @@ import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+
+/-! ### `Divstep.NegInput`, which only this module used -/
+
+section
+
+@[expose] public section
+
+namespace VG.Proof.Divstep
+
+/-- Change the simultaneous sign of the input pair, keeping its transition matrix. -/
+def MSt.negInput (t : MSt) : MSt := {t with f := -t.f, g := -t.g}
+
+theorem mstep_negInput {t : MSt} (hf : t.f%2=1) :
+    mstep t.negInput=(mstep t).negInput := by
+  have hg : (-t.g)%2=t.g%2 := by omega_using []
+  unfold mstep MSt.negInput
+  simp only [hg]
+  split
+  · rename_i h
+    congr 1
+    dsimp only
+    omega_using [hf, h]
+  · rename_i h
+    congr 1
+    rcases Int.emod_two_eq_zero_or_one t.g with hg|hg <;> simp only [hg]
+    all_goals omega_arith
+
+theorem msteps_negInput {t : MSt} (hf : t.f%2=1) (n : Nat) :
+    msteps n t.negInput=(msteps n t).negInput := by
+  induction n generalizing t with
+  | zero => rfl
+  | succ n ih =>
+    rw [msteps,mstep_negInput hf,ih (mstep_f_odd hf)]
+    rfl
+
+theorem msteps_init_negInput (d f g : Int) (hf : f%2=1) (n : Nat) :
+    msteps n (MSt.init d (-f) (-g))=(msteps n (MSt.init d f g)).negInput :=
+  msteps_negInput (t:=MSt.init d f g) hf n
+
+end VG.Proof.Divstep
+
+end
+
+end
+
 
 @[expose] public section
 
@@ -18,7 +64,7 @@ theorem second_input_cong {d f g a b : Int} (hf : f%2=1)
     (ha : a%2^44=(-f)%2^44) (hb : b%2^44=(-g)%2^44) :
     (msteps 20 (MSt.init d a b)).cong
       (msteps 20 (MSt.init d f g)).negInput 24 := by
-  have hodd : a%2=1 := by norm_num at ha; omega
+  have hodd : a%2=1 := by norm_num at ha; omega_using [hf, ha]
   have hinit : (MSt.init d a b).cong (MSt.init d (-f) (-g)) 44 :=
     ⟨rfl,rfl,rfl,rfl,rfl,ha,hb⟩
   have h := msteps_cong hodd hinit 20 (by decide)
@@ -29,12 +75,12 @@ theorem second_output_cong {a b c : Int}
     (ha : a%2^44=(-b)%2^44) (hb : b%2^24=(-c)%2^24) :
     a%2^24=c%2^24 := by
   norm_num at *
-  omega
+  omega_using [hb, ha]
 
 theorem third_input_cong {d f g a b : Int} (hf : f%2=1)
     (ha : a%2^24=f%2^24) (hb : b%2^24=g%2^24) :
     (msteps 19 (MSt.init d a b)).cong (msteps 19 (MSt.init d f g)) 5 := by
-  have hodd : a%2=1 := by norm_num at ha; omega
+  have hodd : a%2=1 := by norm_num at ha; omega_using [hf, ha]
   exact msteps_cong (t:=MSt.init d a b) (t':=MSt.init d f g) (N:=24) hodd
     ⟨rfl,rfl,rfl,rfl,rfl,ha,hb⟩ 19 (by decide)
 

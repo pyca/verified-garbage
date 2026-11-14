@@ -25,27 +25,27 @@ namespace VG.Proof.Ed448.Wnaf
 open VG.Impl.Ed448.Wnaf
 
 theorem step (k : Nat) : (k : Int) = 2 * (next k : Int) + digit k := by
-  have h32 : k = 32 * (k / 32) + k % 32 := by omega
-  have h2 : k = 2 * (k / 2) + k % 2 := by omega
+  have h32 : k = 32 * (k / 32) + k % 32 := by omega_using []
+  have h2 : k = 2 * (k / 2) + k % 2 := by omega_using []
   unfold next digit
   split
-  · omega
+  · omega_arith
   · split
-    · have : (k + 16) / 32 = k / 32 := by omega
+    · have : (k + 16) / 32 = k / 32 := by omega_arith
       rw [this]
-      omega
-    · have : (k + 16) / 32 = k / 32 + 1 := by omega
+      omega_using []
+    · have : (k + 16) / 32 = k / 32 + 1 := by omega_arith
       rw [this]
-      omega
+      omega_using []
 
 theorem digit_bounds (k : Nat) : -15 ≤ digit k ∧ digit k ≤ 15 := by
-  have h : k % 32 % 2 = k % 2 := by omega
+  have h : k % 32 % 2 = k % 2 := by omega_using []
   unfold digit
-  split_ifs <;> omega
+  split_ifs <;> omega_arith
 
 theorem next_bound (k : Nat) : next k ≤ k / 2 + 8 := by
   unfold next
-  split <;> omega
+  split <;> omega_using []
 
 theorem next_small : ∀ k ≤ 16, residual k 5 = 0 := by decide +kernel
 
@@ -59,11 +59,11 @@ theorem residual_add (k a b : Nat) : residual k (a + b) = residual (residual k a
 /-- The rounding error stays bounded, independent of the input size. -/
 theorem residual_bound (k n : Nat) : residual k n ≤ k / 2 ^ n + 16 := by
   induction n with
-  | zero => simp only [residual, pow_zero, Nat.div_one]; omega
+  | zero => simp only [residual, pow_zero, Nat.div_one]; omega_using []
   | succ n ih =>
     have hn := next_bound (residual k n)
     rw [residual, Nat.pow_succ, ← Nat.div_div_eq_div_mul]
-    omega
+    omega_using [ih, hn]
 
 /-- Five carry positions suffice for every unreduced 456-bit input. -/
 theorem residual_end {k : Nat} (hk : k < 2 ^ 456) : residual k 461 = 0 := by
@@ -77,12 +77,12 @@ theorem residual_step (k n : Nat) :
     (residual k n : Int) = 2 * (residual k (n + 1) : Int) + digitAt k n := step _
 
 theorem digit_mod (k : Nat) : digit (k % 32) = digit k := by
-  have h : k % 32 % 2 = k % 2 := by omega
+  have h : k % 32 % 2 = k % 2 := by omega_using []
   simp only [digit, h, Nat.mod_mod]
 
 theorem local_digit {q h c : Nat} (hc : q + 16 = h + c) :
     localDigit (h % 32) c = digit q := by
-  have he : (h % 32 + c + 16) % 32 = q % 32 := by omega
+  have he : (h % 32 + c + 16) % 32 = q % 32 := by omega_using [hc]
   rw [localDigit, he, digit_mod]
 
 theorem carry_bounds : ∀ bits < 32, ∀ c ≤ 32, carryNext bits c ≤ 32 := by decide +kernel

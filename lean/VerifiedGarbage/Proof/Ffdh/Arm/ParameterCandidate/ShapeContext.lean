@@ -46,19 +46,19 @@ theorem ShapeContext.size {dst src : BitVec 32} {bs : List Byte} {bits : Nat} {s
   have := h.length
   have := h.minBits
   have := h.maxBits
-  omega
+  omega_arith
 
 theorem ShapeContext.byte {dst src : BitVec 32} {bs : List Byte} {bits : Nat} {s : State}
     (h : ShapeContext dst src bs bits s) {i : Nat} (bound : i < bs.length) :
     s.mem (State.addr (src + BitVec.ofNat 32 i)) = bs[i]?.getD 0 := by
   have value := congrArg (fun l : List Byte => l[i]?) h.bytes
-  rw [VG.Arm.addr_add (by have := h.sourceFits; omega)]
+  rw [VG.Arm.addr_add (by have := h.sourceFits; omega_using [bound, this])]
   simpa only [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range bound,
     Option.map_some, List.getElem?_eq_getElem bound, Option.getD_some, Option.some.injEq] using value
 
 theorem ShapeContext.copyCtx {dst src : BitVec 32} {bs : List Byte} {bits : Nat} {s : State}
     (h : ShapeContext dst src bs bits s) : VG.Proof.Bignum.Arm.CopyCtx s src dst bs.length := by
-  exact VG.Proof.Bignum.Arm.copyCtx_of_regions s src dst (by have := h.size; omega)
+  exact VG.Proof.Bignum.Arm.copyCtx_of_regions s src dst (by have := h.size; omega_using [this])
     h.sourceFits h.destFits h.read h.write h.buffers
 
 theorem ShapeContext.writeByte {dst src : BitVec 32} {bs : List Byte} {bits : Nat} {s : State}
@@ -74,8 +74,8 @@ theorem ShapeContext.readByte {dst src : BitVec 32} {bs : List Byte} {bits : Nat
 theorem ShapeContext.containsByte {dst src : BitVec 32} {bs : List Byte} {bits : Nat} {s : State}
     (h : ShapeContext dst src bs bits s) {i : Nat} (bound : i < bs.length) :
     (⟨State.addr dst, bs.length⟩ : Region).Contains (State.addr (dst + BitVec.ofNat 32 i)) 1 := by
-  rw [VG.Arm.addr_add (by have := h.destFits; omega)]
-  exact Offset.contains_base _ (by omega) (by have := h.size; omega)
+  rw [VG.Arm.addr_add (by have := h.destFits; omega_using [bound, this])]
+  exact Offset.contains_base _ (by omega_using [bound]) (by have := h.size; omega_using [bound, this])
 
 theorem ShapeContext.after_output {dst src : BitVec 32} {bs : List Byte} {bits : Nat} {s t : State}
     {rs : List Reg} (h : ShapeContext dst src bs bits s)
@@ -89,7 +89,7 @@ theorem ShapeContext.after_output {dst src : BitVec 32} {bs : List Byte} {bits :
     exact h.write
   · rw [rest.sp]
     exact h.stack
-  · rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := h.size; omega)
+  · rw [VG.Proof.Bignum.Arm.rsa_bytes_frame frame (by have := h.size; omega_using [this])
       (by intro r hr; rw [List.mem_singleton] at hr; subst r; exact h.buffers)]
     exact h.bytes
 

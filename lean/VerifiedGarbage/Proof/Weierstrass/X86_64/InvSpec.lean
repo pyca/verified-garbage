@@ -98,6 +98,6 @@ theorem ofMod_Cn (M : Mod) (acc base tbl m : Nat) :
 theorem InvOk.ofMod {M : Mod} {acc base tbl m : Nat} (hC : 0 < (InvCfg.ofMod M acc base tbl m).C)
     (hn : M.n ≤ 9) : InvOk (InvCfg.ofMod M acc base tbl m) m := by
   refine ⟨?_, ?_, ofMod_C _ _ _ _ _, hC, ofMod_Cn _ _ _ _ _, ?_⟩ <;>
-    simp only [InvCfg.ofMod] <;> split <;> (try split) <;> omega
+    simp only [InvCfg.ofMod] <;> split <;> (try split) <;> omega_arith
 
 end VG.Proof.Weierstrass.X86_64

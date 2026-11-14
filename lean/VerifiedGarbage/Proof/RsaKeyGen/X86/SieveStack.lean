@@ -21,7 +21,7 @@ theorem StackContext.base {p : BitVec 32} {s : State} (C : StackContext p s) :
     PtrAt s (p.setWidth 64) .esp 0 := by
   rw [PtrAt, C.sp, BitVec.toNat_setWidth, Nat.add_zero]
   have := p.isLt
-  omega
+  omega_using []
 
 theorem StackContext.keep {p : BitVec 32} {s t : State} (C : StackContext p s)
     {rs : List Reg} (K : Keeps rs s t) (sp : .esp ∉ rs) : StackContext p t :=
@@ -29,31 +29,31 @@ theorem StackContext.keep {p : BitVec 32} {s t : State} (C : StackContext p s)
 
 theorem StackContext.address {p : BitVec 32} {s : State} (C : StackContext p s) (d : Nat) (fit : d < 20) :
     s.ea (slot d) = off (p.setWidth 64) d := by
-  simpa only [slot, VG.Impl.Mont.X86.at_, Nat.zero_add] using ea_ptr C.ws C.base (d := d) (by omega)
+  simpa only [slot, VG.Impl.Mont.X86.at_, Nat.zero_add] using ea_ptr C.ws C.base (d := d) (by omega_using [fit])
 
 theorem StackContext.access {p : BitVec 32} {s : State} (C : StackContext p s) (d : Nat) (fit : d + 4 ≤ 20) :
     InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) d) 4 := by
   change InRegions (s.rd ++ s.wr) (s.ea (slot d)) 4
-  rw [C.address d (by omega)]
+  rw [C.address d (by omega_using [fit])]
   exact ws_read C.ws fit
 
 
 theorem StackContext.read {p : BitVec 32} {s : State} (C : StackContext p s) (d : Nat) (fit : d + 4 ≤ 20) :
     readSrc s (.mem (slot d)) = some (s.mem.readW (off (p.setWidth 64) d) 32) := by
-  simpa only [slot, VG.Impl.Mont.X86.at_, Nat.zero_add] using readSrc_ptr C.ws C.base (d := d) (by omega)
+  simpa only [slot, VG.Impl.Mont.X86.at_, Nat.zero_add] using readSrc_ptr C.ws C.base (d := d) (by omega_using [fit])
 
 theorem StackContext.store {p : BitVec 32} {s : State} (C : StackContext p s)
     (d : Nat) (fit : d + 4 ≤ 20) (r : Reg) :
     WP isa (.block [.store (slot d) r]) s fun t =>
       t.mem = s.mem.writeW (off (p.setWidth 64) d) (s.gpr r) ∧
       Outside (p.setWidth 64) d 4 s.mem t.mem ∧ Keeps [] s t ∧ StackContext p t := by
-  refine wp_storeS (ea_ptr C.ws C.base (d := d) (by omega)) (ws_write C.ws (y := 0 + d) (n := 4) (by omega))
+  refine wp_storeS (ea_ptr C.ws C.base (d := d) (by omega_using [fit])) (ws_write C.ws (y := 0 + d) (n := 4) (by omega_using [fit]))
     fun t T => WP.block_nil ?_
   have K := T.keeps []
   refine ⟨?_, ?_, K, C.keep K (by decide)⟩
   · simpa only [Nat.zero_add] using T.mem
   · rw [T.mem, Nat.zero_add]
-    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega)
+    exact writeW32_outside _ _ _ (by have := C.ws.nowrap; omega_using [fit])
 
 theorem StackContext.literal {p : BitVec 32} {s : State} (C : StackContext p s)
     (d : Nat) (fit : d + 4 ≤ 20) (value : BitVec 32) :

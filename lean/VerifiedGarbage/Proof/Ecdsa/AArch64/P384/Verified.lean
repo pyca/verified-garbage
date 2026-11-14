@@ -56,7 +56,7 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
   show 384 ≤ Spec.P384.curve.n.log2 + 1
   have : 383 ≤ Spec.P384.curve.n.log2 :=
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
-  omega
+  omega_using [this]
 
 theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   window_tmp := by decide +kernel
@@ -78,7 +78,7 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
-  sh := by have := p384_nBits; have : p384.n = 6 := rfl; have : p384.C.len = 48 := rfl; unfold Cfg.sh; omega
+  sh := by have := p384_nBits; have : p384.n = 6 := rfl; have : p384.C.len = 48 := rfl; unfold Cfg.sh; omega_arith
   n4 := by decide
   sound_p := hI (by
     show Nat.Prime Spec.P384.curve.p

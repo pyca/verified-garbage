@@ -29,7 +29,7 @@ theorem readW32 (m : Mem) (a : Addr) :
   have e1 : a + 1 + 1 = a + 2 := by rw [BitVec.add_assoc]; rfl
   have e3 : a + 2 + 1 = a + 3 := by rw [BitVec.add_assoc]; rfl
   simp only [Mem.readW, Mem.read, BitVec.getLsbD_setWidth, BitVec.getLsbD_append, e1, e3]
-  have : i - 8 - 8 - 8 < 8 := by omega
+  have : i - 8 - 8 - 8 < 8 := by omega_using [hi]
   simp [this, hi]
 
 theorem add_ofNat_add (p : Addr) (a b : Nat) :
@@ -72,9 +72,9 @@ theorem byteRev32_byte (x : BitVec 32) {j : Nat} (hj : j < 4) :
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     decide_eq_true hi, Bool.true_and, byteRev32, getLsbD_cat4]
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega_using [hj]) with rfl | rfl | rfl | rfl <;>
     simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and] <;>
-    exact congrArg _ (by omega)
+    exact congrArg _ (by omega_using [])
 
 /-- Storing the byte-reversed halves `x`, `y` writes the block `(x, y)`. -/
 theorem blockAt_write (m : Mem) (p : Addr) (x y : Word) :
@@ -86,18 +86,18 @@ theorem blockAt_write (m : Mem) (p : Addr) (x y : Word) :
   simp only [encodeBlock, Vector.getElem_ofFn, Mem.writeW, Mem.write]
   have h1 : (p + BitVec.ofNat 64 j - (p + BitVec.ofNat 64 4)).toNat = (j + (2 ^ 64 - 4)) % 2 ^ 64 := by
     rw [Offset.add_sub_add_left, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega)]
-    omega
+      Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_using [hj])]
+    omega_using []
   have h0 : (p + BitVec.ofNat 64 j - p).toNat = j := by
-    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
   rw [h1, h0]
   by_cases h4 : j < 4
-  · rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_left h4, Nat.mod_eq_of_lt h4]
+  · rw [ite_eq_right (by omega_using [h4]), ite_eq_left (by omega_using [h4]), ite_eq_left h4, Nat.mod_eq_of_lt h4]
     simp only [BitVec.setWidth_eq]
     exact byteRev32_byte x h4
-  · rw [ite_eq_left (by omega), ite_eq_right h4, show (j + (2 ^ 64 - 4)) % 2 ^ 64 = j - 4 by omega,
-      show j % 4 = j - 4 by omega]
+  · rw [ite_eq_left (by omega_using [hj, h4]), ite_eq_right h4, show (j + (2 ^ 64 - 4)) % 2 ^ 64 = j - 4 by omega_using [hj, h4],
+      show j % 4 = j - 4 by omega_using [hj, h4]]
     simp only [BitVec.setWidth_eq]
-    exact byteRev32_byte y (by omega)
+    exact byteRev32_byte y (by omega_using [hj])
 
 end VG.Proof.Cast5

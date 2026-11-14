@@ -36,7 +36,7 @@ theorem ctx_frame_finish (m m' : Mem) (p : Addr) (h : TableFrame p m m') (a b : 
   have h2 : x ≠ p + 257#64 := by
     intro he; apply hx; rw [he, Mem.sub_ofNat_toNat p (by decide)]; decide
   rw [write_byte, ite_eq_right h2, write_byte, ite_eq_right h1]
-  exact h x (by omega)
+  exact h x (by omega_using [hx])
 
 theorem init_valid (s : State)
     (hlen : 1 ≤ (s.gpr .r4).toNat ∧ (s.gpr .r4).toNat ≤ 256)
@@ -106,7 +106,7 @@ theorem valid_length (len : BitVec 64) :
   rw [← BitVec.toNat_inj, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
   rw [show BitVec.toNat (0 : BitVec 64) = 0 from rfl]
-  omega
+  omega_using []
 
 /-- The full checked initializer, including both key-length boundaries. -/
 theorem init_ok (s : State)

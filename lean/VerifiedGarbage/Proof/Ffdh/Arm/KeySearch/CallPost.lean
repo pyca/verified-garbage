@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -50,7 +51,7 @@ theorem call_post {p : KeyPublic sampling} {original s u t : State} {used keys s
   have bytes := h.call_inputs room mem
   cases sampling <;>
     sig_post [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract,
-      cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs,
+      Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs,
       reduceClassify, Loc.val, State.addr] at post
   all_goals
     rw [BitVec.setWidth_append_eq_right] at post

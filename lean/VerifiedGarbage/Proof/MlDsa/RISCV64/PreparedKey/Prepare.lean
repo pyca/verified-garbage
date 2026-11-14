@@ -116,7 +116,7 @@ theorem sub_zero (b : Addr) (R : Region) : Region.Sub ⟨b, 0⟩ R := fun x hx =
   simp only [Region.Contains] at hx; omega
 
 theorem disj_zero (b : Addr) (R : Region) : Region.Disjoint R ⟨b, 0⟩ := fun x _ hx => by
-  simp only [Region.Contains] at hx; omega
+  simp only [Region.Contains] at hx; omega_using [hx]
 
 section
 variable {kl ol n : Nat} (hz : PSizes kl ol n) {σ t : State} (hp : PPre kl ol σ)
@@ -133,7 +133,7 @@ theorem key_keep (h : PS ol σ t) {o l : Nat} (hl : o + l ≤ kl) :
     bytesAt t.mem (pK σ + BitVec.ofNat 64 o) l = bytesAt σ.mem (pK σ + BitVec.ofNat 64 o) l := by
   have := hp.f0
   have hsub : Region.Sub ⟨pK σ + BitVec.ofNat 64 o, l⟩ ⟨pK σ, kl⟩ := Offset.sub_base _ hl
-  refine Proof.MlKem.bytesAt_frame h.frame (fun r hr => ?_) (by omega)
+  refine Proof.MlKem.bytesAt_frame h.frame (fun r hr => ?_) (by omega_using [hl, this])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.d01.sub_left hsub
@@ -144,7 +144,7 @@ omit hz in
 /-- The buffer's polynomial is apart from the slots. -/
 theorem buf_slots : Region.Disjoint (slotArea (pB σ) oSV keptRegs) ⟨pB σ, 1024⟩ := by
   have := hp.f3
-  exact (Offset.base_disjoint (pB σ) (e := 1024) (n := 40) (k := 1024) (by omega) (by omega)).symm
+  exact (Offset.base_disjoint (pB σ) (e := 1024) (n := 40) (k := 1024) (by omega_using []) (by omega_using [])).symm
 
 omit hz in
 theorem out_slots {o l : Nat} (h : o + l ≤ ol) :
@@ -176,7 +176,7 @@ theorem setup_wp {σ : State} (hp : PPre kl ol σ) : WP isa (.block prepEnter) �
       have := (Proof.Ed25519.RISCV64.Whole.slots_in oSV keptRegs q hq).2
       simpa [oSV, keptRegs] using this
     have := hp.f3
-    exact ⟨⟨pB σ, 1072⟩, by rw [hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨pB σ, 1072⟩, by rw [hp.wr]; simp, Offset.contains_base _ (by omega_using [h1]) (by omega_using [h1])⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl <;> rfl
 
@@ -184,7 +184,7 @@ omit hz in
 theorem copy_glue (hl : kl < 2 ^ 31 - 2048) :
     glueOk [(.a0, .ptr (.s10, 0)), (.a1, .ptr (.s9, 0)), (.a2, .imm kl)] = true := by
   simp [glueOk, KeyGen.argReg, KeyGen.argOk]
-  omega
+  omega_using [hl]
 
 omit hz in
 /-- A step that keeps the callee-saved registers, writes within `Wc` and keeps the slots. -/
@@ -205,7 +205,7 @@ theorem keyCopy_wp {σ t : State} (hp : PPre kl ol σ) (hk : 0 < kl) (h : PS ol 
   have hd : t.gpr (Reg.s9, 0).1 + BitVec.ofNat 64 (Reg.s9, 0).2 = pO σ := by
     show t.gpr .s9 + _ = _; rw [g9, BitVec.add_zero]
   have osub : Region.Sub ⟨pO σ, kl⟩ ⟨pO σ, ol⟩ := by
-    have e := Offset.sub_base (pO σ) (d := 0) (n := kl) (k := ol) (by omega)
+    have e := Offset.sub_base (pO σ) (d := 0) (n := kl) (k := ol) (by omega_arith)
     rwa [BitVec.add_zero] at e
   refine WP.mono (CacheCopy.copyN_ok (src := (.s10, 0)) (dst := (.s9, 0)) (len := kl) (copy_glue (by omega)) hk (s := t)
     (by rw [hs, hd]; exact hp.d01.sub_right osub)
@@ -214,17 +214,17 @@ theorem keyCopy_wp {σ t : State} (hp : PPre kl ol σ) (hk : 0 < kl) (h : PS ol 
       rw [hs, hrd, hp.rd]; exact ⟨⟨pK σ, kl⟩, by simp, 0, by simp, by simp⟩)
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      rw [hd, hwr, hp.wr]; exact ⟨⟨pO σ, ol⟩, by simp, 0, by simp, by simp; omega⟩))
+      rw [hd, hwr, hp.wr]; exact ⟨⟨pO σ, ol⟩, by simp, 0, by simp, by simp; omega_arith⟩))
     fun s' ⟨cs, rd, wr, sp, fr, hb⟩ => ⟨?_, ?_, fun j hj => absurd hj (Nat.not_lt_zero _)⟩
   · rw [hd] at fr
     refine ps_step h rd wr sp cs fr (fun r hr => ?_) fun r hr => ?_ <;>
       rw [List.mem_singleton] at hr <;> subst hr
     · exact ⟨_, by simp, osub⟩
-    · have := out_slots hp (o := 0) (l := kl) (by omega)
+    · have := out_slots hp (o := 0) (l := kl) (by omega_arith)
       rwa [BitVec.add_zero] at this
   · rw [hs, hd] at hb
     rw [hb]
-    have := key_keep hp h (o := 0) (l := kl) (by omega)
+    have := key_keep hp h (o := 0) (l := kl) (by omega_using [])
     rwa [BitVec.add_zero] at this
 
 end
@@ -237,14 +237,14 @@ theorem bu_sd : sdepth Impl.MlDsa.RISCV64.Pack.bitUnpack = 0 := by decide +kerne
 
 /-- A region's prefix. -/
 theorem pre_sub (b : Addr) {a c : Nat} (h : a ≤ c) : Region.Sub ⟨b, a⟩ ⟨b, c⟩ := by
-  have e := Offset.sub_base b (d := 0) (n := a) (k := c) (by omega)
+  have e := Offset.sub_base b (d := 0) (n := a) (k := c) (by omega_using [h])
   rwa [BitVec.add_zero] at e
 
 theorem zero_disj (b : Addr) (R : Region) : Region.Disjoint ⟨b, 0⟩ R := fun x hx _ => by
-  simp only [Region.Contains] at hx; omega
+  simp only [Region.Contains] at hx; omega_using [hx]
 
 theorem cov_mem {rs rs' : List Region} (h : ∀ r ∈ rs, r ∈ rs') : Covers rs rs' :=
-  Covers.of_sub fun r hr => ⟨r, h r hr, 0, (BitVec.add_zero _).symm, by omega⟩
+  Covers.of_sub fun r hr => ⟨r, h r hr, 0, (BitVec.add_zero _).symm, by omega_using []⟩
 
 theorem garg {t : State} {as : List (Reg × Arg)} (hg : glueOk as = true) (hn : (as.map Prod.fst).Nodup)
     {d : Reg} {a : Arg} (hm : (d, a) ∈ as) (hl : d ∉ VG.RISCV64.linkRegs) (rd wr : List Region) :
@@ -263,11 +263,11 @@ abbrev keyR (σ : State) (o l : Nat) : List Region := [⟨pK σ + BitVec.ofNat 6
 theorem ntt_hg : glueOk nttArgs = true := by decide
 theorem ntt_hn : (nttArgs.map Prod.fst).Nodup := by simp
 theorem t1_hg {o : Nat} (ho : o < 2 ^ 31 - 2048) : glueOk (t1Args o) = true := by
-  simp [glueOk, KeyGen.argReg, KeyGen.argOk]; omega
+  simp [glueOk, KeyGen.argReg, KeyGen.argOk]; omega_using [ho]
 theorem t1_hn (o : Nat) : ((t1Args o).map Prod.fst).Nodup := by simp
 theorem bu_hg {o len a b : Nat} (ho : o < 2 ^ 31 - 2048) (hl : len < 2 ^ 31 - 2048) (ha : a < 2 ^ 31 - 2048)
     (hb : b < 2 ^ 31 - 2048) : glueOk (buArgs o len a b) = true := by
-  simp [glueOk, KeyGen.argReg, KeyGen.argOk]; omega
+  simp [glueOk, KeyGen.argReg, KeyGen.argOk]; omega_using [ho, hl, ha, hb]
 theorem bu_hn (o len a b : Nat) : ((buArgs o len a b).map Prod.fst).Nodup := by simp
 
 section
@@ -283,11 +283,11 @@ theorem pi_keep {i : Nat} (hi : i ≤ n) {t t' : State} (h : PI kl ol F i σ t) 
     (ho : ∀ r ∈ Wc, Region.Disjoint ⟨pO σ, kl + 1024 * i⟩ r) : PI kl ol F i σ t' := by
   have := hz.eq; have := hz.lt
   refine ⟨ps_step h.inv hrd hwr hsp hg hf hsub hd, ?_, fun j hj => ?_⟩
-  · have hs : Region.Sub ⟨pO σ, kl⟩ ⟨pO σ, kl + 1024 * i⟩ := pre_sub _ (by omega)
+  · have hs : Region.Sub ⟨pO σ, kl⟩ ⟨pO σ, kl + 1024 * i⟩ := pre_sub _ (by omega_using [])
     rw [Proof.MlKem.bytesAt_frame hf (fun r hr => (ho r hr).sub_left hs) (by omega)]
     exact h.out
   · exact Arith.polyIs_frame hf (fun r hr => (ho r hr).sub_left
-      (Offset.sub_base (pO σ) (d := kl + 1024 * j) (n := 1024) (k := kl + 1024 * i) (by omega))) (h.polys j hj)
+      (Offset.sub_base (pO σ) (d := kl + 1024 * j) (n := 1024) (k := kl + 1024 * i) (by omega_using [hj]))) (h.polys j hj)
 
 omit hp in
 /-- What a callee may write: within `pW`, apart from the slots, the key's copy and the polynomials. -/
@@ -308,7 +308,7 @@ theorem callee_keep {i : Nat} (hi : i ≤ n) {t t' : State} (h : PI kl ol F i σ
 /-- The buffer's polynomial, apart from the key's copy and the polynomials. -/
 theorem buf_out {i : Nat} (hi : i ≤ n) : Region.Disjoint ⟨pO σ, kl + 1024 * i⟩ ⟨pB σ, 1024⟩ := by
   have := hz.eq
-  exact (hp.d13.sub_left (pre_sub (pO σ) (by omega))).sub_right
+  exact (hp.d13.sub_left (pre_sub (pO σ) (by omega_using [hi, this]))).sub_right
     (pre_sub (pB σ) (by decide))
 
 omit hz in
@@ -338,15 +338,15 @@ theorem ntt_call {t : State} (h : PS ol σ t) (hr : Reduced t.mem (pB σ)) :
       Covers ([] ++ nttW σ) (t.rd ++ t.wr) ∧ Covers (nttW σ) t.wr := by
   have := hp.f2; have := hp.f3; have := hp.al3
   obtain ⟨e0, e1⟩ := ntt_regs h [] (nttW σ)
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   obtain ⟨c1, c2⟩ := cov_w hp (rs := nttW σ) h fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨⟨pB σ, 1072⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
     · exact ⟨⟨pC σ, 1024⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   exact ⟨KeyGen.ip_pre (stk := 0) e0 e1 rfl rfl (Nat.zero_le _)
-    (by rw [KeyGen.view_glue_sp, h.sp]; exact hp.al) (by omega) hp.al2
-    (hp.d23.symm.sub_left bsub) (zero_disj _ _) (zero_disj _ _) (by omega) (by omega)
+    (by rw [KeyGen.view_glue_sp, h.sp]; exact hp.al) (by omega_using [this]) hp.al2
+    (hp.d23.symm.sub_left bsub) (zero_disj _ _) (zero_disj _ _) (by omega_arith) (by omega_arith)
     (by rw [KeyGen.view_glue_mem]; exact hr), by simpa using c2, c1⟩
 
 /-- The buffer's polynomial transformed. -/
@@ -355,7 +355,7 @@ theorem ntt_wp {i : Nat} (hi : i < n) {t : State} (h : PI kl ol F i σ t) {g : P
     (hQ : ∀ t', PI kl ol F i σ t' → PolyIs t'.mem (pB σ) (ntt g) → Q t') :
     WP isa (callAt "vg_mldsa_ntt" Impl.MlDsa.RISCV64.Arith.ntt nttArgs) t Q := by
   have := hz.eq; have := hp.f3
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   obtain ⟨cp, c2, c1⟩ := ntt_call hp h.inv hb.1
   refine callV Arith.Ntt.verified.1 (by rw [ntt_sd]; decide) ntt_hg cp c2 c1
     fun t' k hpost => hQ t' (callee_keep hz (Nat.le_of_lt hi) h ntt_sd k (fun r hr => ?_) (fun r hr => ?_)
@@ -371,7 +371,7 @@ theorem ntt_wp {i : Nat} (hi : i < n) {t : State} (h : PI kl ol F i σ t) {g : P
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact buf_out hz hp (Nat.le_of_lt hi)
-    · exact hp.d12.sub_left (pre_sub _ (by omega))
+    · exact hp.d12.sub_left (pre_sub _ (by omega_arith))
   · have := KeyGen.ip_post hpost
     rw [(ntt_regs h.inv _ _).1, KeyGen.view_glue_mem, State.withRegions_mem, hb.2] at this
     exact this
@@ -381,7 +381,7 @@ theorem copyOut_wp {i : Nat} (hi : i < n) {u : State} (hu : PI kl ol F i σ u) {
     (hbu : PolyIs u.mem (pB σ) g) (hF : F σ i = g) :
     WP isa (copyN (.s11, 0) (.s9, kl + 1024 * i) 1024) u (PI kl ol F (i + 1) σ) := by
   have := hz.eq; have := hz.lt; have := hp.f1; have := hp.f2; have := hp.f3
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   obtain ⟨u8, u9, u10, u11⟩ := regs_of hu.inv
   have hs : u.gpr (Reg.s11, 0).1 + BitVec.ofNat 64 (Reg.s11, 0).2 = pB σ := by
     show u.gpr .s11 + _ = _; rw [u11, BitVec.add_zero]
@@ -389,15 +389,15 @@ theorem copyOut_wp {i : Nat} (hi : i < n) {u : State} (hu : PI kl ol F i σ u) {
       pO σ + BitVec.ofNat 64 (kl + 1024 * i) := by
     show u.gpr .s9 + _ = _; rw [u9]
   have osub : Region.Sub ⟨pO σ + BitVec.ofNat 64 (kl + 1024 * i), 1024⟩ ⟨pO σ, ol⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   obtain ⟨-, cr⟩ := cov_w hp (rs := [⟨pB σ, 1024⟩]) hu.inv fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨⟨pB σ, 1072⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   obtain ⟨cw, -⟩ := cov_w hp (rs := [⟨pO σ + BitVec.ofNat 64 (kl + 1024 * i), 1024⟩]) hu.inv fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨pO σ, ol⟩, by simp, kl + 1024 * i, rfl, by simp; omega⟩
+    exact ⟨⟨pO σ, ol⟩, by simp, kl + 1024 * i, rfl, by simp; omega_arith⟩
   refine WP.mono (CacheCopy.copyN_ok (src := (.s11, 0)) (dst := (.s9, kl + 1024 * i)) (len := 1024)
-    (by simp [glueOk, KeyGen.argReg, KeyGen.argOk]; omega) (by decide) (s := u)
+    (by simp [glueOk, KeyGen.argReg, KeyGen.argOk]; omega_arith) (by decide) (s := u)
     (by rw [hs, hd]; exact (hp.d13.sub_left osub).symm.sub_left bsub)
     (by rw [hs]; exact cr) (by rw [hd]; exact cw))
     fun u' ⟨cs, rd, wr, sp, fr, hbt⟩ => ?_
@@ -405,15 +405,15 @@ theorem copyOut_wp {i : Nat} (hi : i < n) {u : State} (hu : PI kl ol F i σ u) {
   rw [hs] at hbt
   refine ⟨ps_step hu.inv rd wr sp cs fr (fun r hr => ?_) (fun r hr => ?_), ?_, fun j hj => ?_⟩
   · rw [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, osub⟩
-  · rw [List.mem_singleton] at hr; subst hr; exact out_slots hp (by omega)
-  · rw [Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) (by omega)]
+  · rw [List.mem_singleton] at hr; subst hr; exact out_slots hp (by omega_arith)
+  · rw [Proof.MlKem.bytesAt_frame fr (fun r hr => ?_) (by omega_arith)]
     · exact hu.out
     · rw [List.mem_singleton] at hr; subst hr
-      exact (Offset.disjoint_base (pO σ) (d := kl + 1024 * i) (n := 1024) (k := kl) (by omega) (by omega)).symm
+      exact (Offset.disjoint_base (pO σ) (d := kl + 1024 * i) (n := 1024) (k := kl) (by omega_using []) (by omega_arith)).symm
   · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
     · refine Arith.polyIs_frame fr (fun r hr => ?_) (hu.polys j hj)
       rw [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint (pO σ) (by omega) (by omega) (by omega)
+      exact Offset.disjoint (pO σ) (by omega_using [hj]) (by omega_arith) (by omega_arith)
     · rw [hF]
       exact Proof.MlDsa.PreparedKey.polyIs_of_copy hbt hbu
 
@@ -433,13 +433,13 @@ theorem cov_r {t : State} (h : PS ol σ t) {o l : Nat} (hl : o + l ≤ kl) (ws :
   · rw [List.mem_singleton] at hr; subst hr
     refine Covers.of_sub (rs := [⟨pK σ + BitVec.ofNat 64 o, l⟩]) (fun r hr => ?_) a m ⟨_, List.mem_singleton_self _, hc⟩
     rw [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨pK σ, kl⟩, by rw [h.rd, hp.rd]; simp, o, rfl, by simp; omega⟩
+    exact ⟨⟨pK σ, kl⟩, by rw [h.rd, hp.rd]; simp, o, rfl, by simp; omega_using [hl]⟩
   · exact hw a m ⟨r, hr, hc⟩
 
 omit hz in
 theorem key_toNat {o : Nat} (ho : o < kl) : (pK σ + BitVec.ofNat 64 o).toNat = (pK σ).toNat + o := by
   have := hp.f0
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho, this]), Nat.mod_eq_of_lt (by omega_using [ho, this])]
 
 omit hz hp in
 theorem t1_regs {o : Nat} (ho : o < 2 ^ 31 - 2048) {t : State} (h : PS ol σ t) (rd wr : List Region) :
@@ -457,15 +457,15 @@ theorem t1_call {o : Nat} (ho : o + 320 ≤ kl) {t : State} (h : PS ol σ t) :
       Covers (keyR σ o 320 ++ bufW σ) (t.rd ++ t.wr) ∧ Covers (bufW σ) t.wr := by
   have := hz.eq; have := hz.lt; have := hp.f0; have := hp.f3; have := hp.al3
   obtain ⟨e0, e1⟩ := t1_regs (o := o) (by omega) h (keyR σ o 320) (bufW σ)
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   have ksub : Region.Sub ⟨pK σ + BitVec.ofNat 64 o, 320⟩ ⟨pK σ, kl⟩ := Offset.sub_base _ ho
   obtain ⟨c1, c2⟩ := cov_w hp (rs := bufW σ) h fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨⟨pB σ, 1072⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   exact ⟨KeyGen.t1_pre (stk := 0) e0 e1 rfl rfl (Nat.zero_le _)
-    (by rw [KeyGen.view_glue_sp, h.sp]; exact hp.al) (by omega)
+    (by rw [KeyGen.view_glue_sp, h.sp]; exact hp.al) (by omega_using [this])
     ((hp.d03.sub_left ksub).sub_right bsub) (zero_disj _ _) (zero_disj _ _)
-    (by rw [key_toNat hp (by omega)]; omega) (by omega), cov_r hp h ho _ c2, c1⟩
+    (by rw [key_toNat hp (by omega_using [ho])]; omega_arith) (by omega_arith), cov_r hp h ho _ c2, c1⟩
 
 /-- `t₁[i] · 2ᵈ` of the 320 bytes at `o` of the key, decoded into the buffer. -/
 theorem t1_wp {i o : Nat} (hi : i ≤ n) (ho : o + 320 ≤ kl) {t : State} (h : PI kl ol F i σ t) {Q : State → Prop}
@@ -474,7 +474,7 @@ theorem t1_wp {i o : Nat} (hi : i ≤ n) (ho : o + 320 ≤ kl) {t : State} (h : 
         fun c => ofInt (c * 2 ^ d : Nat)) → Q t') :
     WP isa (callAt "vg_mldsa_unpack_t1" Impl.MlDsa.RISCV64.Pack.unpackT1 (t1Args o)) t Q := by
   have := hz.eq; have := hz.lt; have := hp.f3
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   obtain ⟨cp, c2, c1⟩ := t1_call hz hp ho h.inv
   refine callV Pack.unpackT1_verified.1 (by rw [t1_sd]; decide) (t1_hg (by omega)) cp c2 c1
     fun t' k hpost => hQ t' (callee_keep hz hi h t1_sd k (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_)) ?_
@@ -511,20 +511,20 @@ theorem bu_call {o len a b : Nat} (ho : o + len ≤ kl) (hl0 : 0 < len)
       Covers (keyR σ o len ++ bufW σ) (t.rd ++ t.wr) ∧ Covers (bufW σ) t.wr := by
   have := hz.eq; have := hz.lt; have := hp.f0; have := hp.f3; have := hp.al3
   obtain ⟨e0, e1, e2, e3, e4⟩ := bu_regs (bu_hg (o := o) (len := len) (by omega) (by omega) ha hb) h (keyR σ o len) (bufW σ)
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   have ksub : Region.Sub ⟨pK σ + BitVec.ofNat 64 o, len⟩ ⟨pK σ, kl⟩ := Offset.sub_base _ ho
   have el : (BitVec.ofNat 64 len).toNat = len := by rw [BitVec.toNat_ofNat]; omega
   have ea : (BitVec.setWidth 32 (BitVec.ofNat 64 a)).toNat = a := by
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [ha]
   have eb : (BitVec.setWidth 32 (BitVec.ofNat 64 b)).toNat = b := by
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hb]
   obtain ⟨c1, c2⟩ := cov_w hp (rs := bufW σ) h fun r hr => by
     rw [List.mem_singleton] at hr; subst hr
     exact ⟨⟨pB σ, 1072⟩, by simp, 0, (BitVec.add_zero _).symm, by simp⟩
   refine ⟨KeyGen.bu_pre (stk := 0) e0 e1 (by rw [e2]) (by rw [e3]) e4 (by rw [el]; rfl) rfl (Nat.zero_le _)
-    (by rw [KeyGen.view_glue_sp, h.sp]; exact hp.al) (by omega)
+    (by rw [KeyGen.view_glue_sp, h.sp]; exact hp.al) (by omega_using [this])
     (by rw [el]; exact (hp.d03.sub_left ksub).sub_right bsub) (zero_disj _ _) (zero_disj _ _)
-    (by rw [el, key_toNat hp (by omega)]; omega) (by omega) (by rw [ea, eb]; exact hab)
+    (by rw [el, key_toNat hp (by omega_using [ho, hl0])]; omega_arith) (by omega_arith) (by rw [ea, eb]; exact hab)
     (by rw [el, ea, eb]; exact hl), cov_r hp h ho _ c2, c1⟩
 
 /-- `BitUnpack` of the `len` bytes at `o` of the key, with the bounds `a` and `b`, into the buffer. -/
@@ -535,13 +535,13 @@ theorem bu_wp {i o len a b : Nat} (hi : i ≤ n) (ho : o + len ≤ kl) (hl0 : 0 
       (toRq (bitUnpack (bytesAt σ.mem (pK σ + BitVec.ofNat 64 o) len) a b)) → Q t') :
     WP isa (callAt "vg_mldsa_bit_unpack" Impl.MlDsa.RISCV64.Pack.bitUnpack (buArgs o len a b)) t Q := by
   have := hz.eq; have := hz.lt; have := hp.f3
-  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega)
+  have bsub : Region.Sub ⟨pB σ, 1024⟩ ⟨pB σ, 1072⟩ := pre_sub _ (by omega_using [])
   have hg := bu_hg (o := o) (len := len) (by omega) (by omega) ha hb
   have el : (BitVec.ofNat 64 len).toNat = len := by rw [BitVec.toNat_ofNat]; omega
   have ea : (BitVec.setWidth 32 (BitVec.ofNat 64 a)).toNat = a := by
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [ha]
   have eb : (BitVec.setWidth 32 (BitVec.ofNat 64 b)).toNat = b := by
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hb]
   obtain ⟨cp, c2, c1⟩ := bu_call hz hp ho hl0 hab hl ha hb h.inv
   refine callV Pack.bitUnpack_verified.1 (by rw [bu_sd]; decide) hg cp c2 c1
     fun t' k hpost => hQ t' (callee_keep hz hi h bu_sd k (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_)) ?_
@@ -687,7 +687,7 @@ theorem restore_piece :
       have := (Proof.Ed25519.RISCV64.Whole.slots_in oSV keptRegs q (by
         revert q; decide))
       simpa [oSV, keptRegs] using this.2
-    exact ⟨⟨pB σ, 1072⟩, by rw [h.inv.rd, h.inv.wr, hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩,
+    exact ⟨⟨pB σ, 1072⟩, by rw [h.inv.rd, h.inv.wr, hp.wr]; simp, Offset.contains_base _ (by omega_using [h1]) (by omega_using [h1])⟩,
     Proof.MlKem.RISCV64.Sample.taint_block [.s11] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ => by
         rw [h₁.inv.sp, h₂.inv.sp]; exact pub.1)
       (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ r hr => by
@@ -699,7 +699,7 @@ theorem body_piece (hk : 0 < kl) {poly : Nat → Prog isa}
     (hs : ∀ i < n, Piece (PPre kl ol) PPub (PI kl ol F i) (PI kl ol F (i + 1)) (poly i)) :
     Piece (PPre kl ol) PPub (fun σ s => s = σ) (PDone kl n F) (prepBody kl n poly) := by
   have h := KeyGen.Piece.seqR (Pre := PPre kl ol) (Pub := PPub) (I := fun i => PI kl ol F i) (f := poly) n 0
-    fun i _ hi => hs i (by omega)
+    fun i _ hi => hs i (by omega_using [hi])
   rw [Nat.zero_add] at h
   exact setup_piece.seq ((keyCopy_piece hz hk).seq (h.seq restore_piece))
 
@@ -744,7 +744,7 @@ theorem public_piece {i : Nat} (hi : i < p.k) :
     Piece (PPre p.pkLen (preparedPublicKeyBytes p)) PPub (PI p.pkLen (preparedPublicKeyBytes p) (FPub p) i)
       (PI p.pkLen (preparedPublicKeyBytes p) (FPub p) (i + 1)) (publicPoly p i) := by
   have hz := public_sizes hF
-  have ho : 32 + 320 * i + 320 ≤ p.pkLen := by rw [hF.pk]; omega
+  have ho : 32 + 320 * i + 320 ≤ p.pkLen := by rw [hF.pk]; omega_using [hi]
   unfold publicPoly nttOut
   refine (t1_piece hz (Nat.le_of_lt hi) ho (fun _ _ => rfl)).seq ((ntt_piece hz hi).seq
     (copyOut_piece hz hi fun σ _ => ?_))
@@ -761,20 +761,20 @@ theorem secret_value (key : List Byte) {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
   have hlen : secretLen p = Proof.MlDsa.Sign.lenS p := rfl
   by_cases h1 : i < p.ℓ
   · rw [Proof.MlDsa.PreparedKey.secret_s1 p key h1]
-    simp only [secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega), hlen]
+    simp only [secretPiece, ite_eq_left (show i < p.ℓ + p.k by omega_using [h1]), hlen]
     rfl
   · by_cases h2 : i < p.ℓ + p.k
-    · have hj : i - p.ℓ < p.k := by omega
-      have he : p.ℓ + (i - p.ℓ) = i := by omega
+    · have hj : i - p.ℓ < p.k := by omega_using [h1, h2]
+      have he : p.ℓ + (i - p.ℓ) = i := by omega_using [h1]
       rw [← he, Proof.MlDsa.PreparedKey.secret_s2 p key hj]
-      simp only [secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega), hlen]
+      simp only [secretPiece, ite_eq_left (show p.ℓ + (i - p.ℓ) < p.ℓ + p.k by omega_using [h1, h2]), hlen]
       unfold Proof.MlDsa.Sign.s2F
       rw [Nat.mul_add]
-      congr 5 <;> omega
-    · have hj : i - (p.ℓ + p.k) < p.k := by omega
-      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega
+      congr 5 <;> omega_using []
+    · have hj : i - (p.ℓ + p.k) < p.k := by omega_using [hi, h1]
+      have he : p.ℓ + p.k + (i - (p.ℓ + p.k)) = i := by omega_using [h2]
       rw [← he, Proof.MlDsa.PreparedKey.secret_t0 p key hj]
-      simp only [secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega), hlen]
+      simp only [secretPiece, ite_eq_right (show ¬ p.ℓ + p.k + (i - (p.ℓ + p.k)) < p.ℓ + p.k by omega_using []), hlen]
       unfold Proof.MlDsa.Sign.t0F
       have hoff : 128 + Proof.MlDsa.Sign.lenS p * (p.ℓ + p.k) +
           416 * (p.ℓ + p.k + (i - (p.ℓ + p.k)) - p.ℓ - p.k) =
@@ -782,7 +782,7 @@ theorem secret_value (key : List Byte) {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
             32 * d * (i - (p.ℓ + p.k)) := by
         rw [Nat.mul_add]
         simp only [d]
-        omega
+        omega_using []
       rw [hoff]
       rfl
 
@@ -795,11 +795,11 @@ theorem secretPiece_ok {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
   unfold secretPiece
   split
   · dsimp only
-    have := Nat.mul_le_mul_left (secretLen p) (show i + 1 ≤ p.ℓ + p.k by omega)
+    have := Nat.mul_le_mul_left (secretLen p) (show i + 1 ≤ p.ℓ + p.k by omega_arith)
     rw [Nat.mul_succ] at this
-    exact ⟨by rw [hF.sk]; omega, hF.sl0, hF.eta, hF.sl, hF.eta_lt, hF.eta_lt⟩
+    exact ⟨by rw [hF.sk]; omega_using [this], hF.sl0, hF.eta, hF.sl, hF.eta_lt, hF.eta_lt⟩
   · dsimp only
-    exact ⟨by rw [hF.sk]; omega, by decide, by decide, by decide, by decide, by decide⟩
+    exact ⟨by rw [hF.sk]; omega_arith, by decide, by decide, by decide, by decide, by decide⟩
 
 theorem secret_piece {i : Nat} (hi : i < p.ℓ + 2 * p.k) :
     Piece (PPre p.skLen (preparedSecretKeyBytes p)) PPub (PI p.skLen (preparedSecretKeyBytes p) (FSec p) i)
@@ -890,14 +890,14 @@ theorem publicPost_out {p : Params} (hF : PFacts p) : ∀ vs m m₁ m₂ r,
     forall_eq] at hb
   have hlt := hF.ppk_lt
   have hs : ∀ k < p.pkLen + 1024 * p.k, m₂ (pr + BitVec.ofNat 64 k) = m₁ (pr + BitVec.ofNat 64 k) :=
-    fun k hk => (hb.2.1 _ (Offset.contains_base _ (by simp only [Elem.size]; rw [hF.ppk] at hlt ⊢; omega)
-      (by rw [hF.ppk] at hlt; omega))).symm
+    fun k hk => (hb.2.1 _ (Offset.contains_base _ (by simp only [Elem.size]; rw [hF.ppk] at hlt ⊢; omega_using [hk])
+      (by rw [hF.ppk] at hlt; omega_using [hlt, hk]))).symm
   obtain ⟨h1, h2⟩ := h
   have e : ArgWord.addr.ofRaw pr = pr := rfl
   rw [e] at h1 h2
   show bytesAt m₂ pr p.pkLen = bytesAt m (ArgWord.addr.ofRaw pk) p.pkLen ∧ PreparedPublicKey p m₂ pr
   have hk : bytesAt m₂ pr p.pkLen = bytesAt m₁ pr p.pkLen :=
-    Proof.MlKem.bytesAt_congr fun i hi => hs i (by omega)
+    Proof.MlKem.bytesAt_congr fun i hi => hs i (by omega_using [hi])
   refine ⟨hk.trans h1, ?_⟩
   rw [Proof.MlDsa.preparedPublicKey_iff] at h2 ⊢
   rw [hk]
@@ -920,14 +920,14 @@ theorem secretPost_out {p : Params} (hF : PFacts p) : ∀ vs m m₁ m₂ r,
     forall_eq] at hb
   have hlt := hF.psk_lt
   have hs : ∀ k < p.skLen + 1024 * (p.ℓ + 2 * p.k), m₂ (pr + BitVec.ofNat 64 k) = m₁ (pr + BitVec.ofNat 64 k) :=
-    fun k hk => (hb.2.1 _ (Offset.contains_base _ (by simp only [Elem.size]; rw [hF.psk] at hlt ⊢; omega)
-      (by rw [hF.psk] at hlt; omega))).symm
+    fun k hk => (hb.2.1 _ (Offset.contains_base _ (by simp only [Elem.size]; rw [hF.psk] at hlt ⊢; omega_using [hk])
+      (by rw [hF.psk] at hlt; omega_using [hlt, hk]))).symm
   obtain ⟨h1, h2⟩ := h
   have e : ArgWord.addr.ofRaw pr = pr := rfl
   rw [e] at h1 h2
   show bytesAt m₂ pr p.skLen = bytesAt m (ArgWord.addr.ofRaw pk) p.skLen ∧ PreparedSecretKey p m₂ pr
   have hk : bytesAt m₂ pr p.skLen = bytesAt m₁ pr p.skLen :=
-    Proof.MlKem.bytesAt_congr fun i hi => hs i (by omega)
+    Proof.MlKem.bytesAt_congr fun i hi => hs i (by omega_using [hi])
   refine ⟨hk.trans h1, ?_⟩
   rw [Proof.MlDsa.preparedSecretKey_iff] at h2 ⊢
   rw [hk]
@@ -948,7 +948,7 @@ include hp3
 theorem publicBody_verified (hsat : ∃ s, (publicScratchContract p).pre s) :
     Verified RISCV64.target (prepBody p.pkLen p.k (publicPoly p)) (publicScratchContract p) := by
   have hF := pfacts hp3
-  have hb := body_piece (public_sizes hF) (by rw [hF.pk]; omega) fun i hi => public_piece hF hi
+  have hb := body_piece (public_sizes hF) (by rw [hF.pk]; omega_using []) fun i hi => public_piece hF hi
   refine ⟨fun s hs => WP.mono (hb.ok s s (public_pre hs) rfl) fun t ⟨ha, hout, hpolys⟩ => ⟨ha, ?_⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ =>
       KeyGen.relStart hb.tr s₁ s₂ t₁ t₂ s₁' s₂' (public_pre h₁) (public_pre h₂) (public_pub hpub) e₁ e₂, hsat⟩
@@ -961,7 +961,7 @@ theorem publicBody_verified (hsat : ∃ s, (publicScratchContract p).pre s) :
 theorem secretBody_verified (hsat : ∃ s, (secretScratchContract p).pre s) :
     Verified RISCV64.target (prepBody p.skLen (p.ℓ + 2 * p.k) (secretPoly p)) (secretScratchContract p) := by
   have hF := pfacts hp3
-  have hb := body_piece (secret_sizes hF) (by rw [hF.sk]; omega) fun i hi => secret_piece hF hi
+  have hb := body_piece (secret_sizes hF) (by rw [hF.sk]; omega_using []) fun i hi => secret_piece hF hi
   refine ⟨fun s hs => WP.mono (hb.ok s s (secret_pre hs) rfl) fun t ⟨ha, hout, hpolys⟩ => ⟨ha, ?_⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ =>
       KeyGen.relStart hb.tr s₁ s₂ t₁ t₂ s₁' s₂' (secret_pre h₁) (secret_pre h₂) (secret_pub hpub) e₁ e₂, hsat⟩

@@ -768,8 +768,8 @@ theorem IZ.stable {p : Params} {D : Nat} (hc : ksChk p = true) {σ : State} {t k
     (hk : k ≤ p.ℓ) {s s₁ : State} (h : IZ p D σ t k s) (hP : PPostB D s s₁ [])
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) : IZ p D σ t k s₁ := by
   refine ksChk_spec hc fun _ _ _ _ _ _ _ hz _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
-  have hc' := hz (k - 1) (by omega)
-  simp only [zChk, Bool.and_eq_true, decide_eq_true_eq, show k - 1 + 1 = k by omega] at hc'
+  have hc' := hz (k - 1) (by omega_using [hk0, hk])
+  simp only [zChk, Bool.and_eq_true, decide_eq_true_eq, show k - 1 + 1 = k by omega_using [hk0]] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, z4⟩, _⟩, _⟩, _⟩, y4⟩, _⟩, _⟩, _⟩, _⟩ := hc'
   exact ⟨h.1.step hP z4 y4, by rw [hcs _ (by decide), h.2]⟩
 
@@ -778,8 +778,8 @@ theorem IR.stable {p : Params} {D : Nat} (hc : ksChk p = true) {σ : State} {t i
     (hi : i ≤ p.k) {s s₁ : State} (h : IR p D σ t i s) (hP : PPostB D s s₁ [])
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) : IR p D σ t i s₁ := by
   refine ksChk_spec hc fun _ _ _ _ _ _ _ _ hr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
-  have hc' := hr (i - 1) (by omega)
-  simp only [rChk, Bool.and_eq_true, decide_eq_true_eq, show i - 1 + 1 = i by omega] at hc'
+  have hc' := hr (i - 1) (by omega_using [hi0, hi])
+  simp only [rChk, Bool.and_eq_true, decide_eq_true_eq, show i - 1 + 1 = i by omega_using [hi0]] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, z5⟩, _⟩, _⟩, _⟩, _⟩, y5⟩, _⟩, _⟩, _⟩, _⟩ := hc'
   exact ⟨h.1.step hP z5 y5, by rw [hcs _ (by decide), h.2]⟩
 
@@ -791,7 +791,7 @@ theorem IZ.done {p : Params} {D : Nat} {σ : State} {t k : Nat} {s : State} (hk 
   · exact h.2
   · rw [h.2] at h0 ⊢
     have ha : ¬ ∀ j < k, normRq [Zv p σ (p.ℓ * t) j] < p.γ₁ - p.β := fun ha => (bit_ne.mpr ha) h0
-    rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha fun j hj => hz j (by omega)]
+    rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha fun j hj => hz j (by omega_using [hk, hj])]
 
 /-- The checks of `r₀` stopped after `r₀[i - 1]`, the last or the first that
 failed: `r15` says whether `z` and `r₀` passed. -/
@@ -803,7 +803,7 @@ theorem IR.done {p : Params} {D : Nat} {σ : State} {t i : Nat} {s : State} (hi 
   · rw [h.2] at h0 ⊢
     have ha : ¬ (ZOk p σ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ (p.ℓ * t) j] < p.γ₂ - p.β) :=
       fun ha => (bit_ne.mpr ha) h0
-    rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha ⟨hz.1, fun j hj => hz.2 j (by omega)⟩]
+    rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha ⟨hz.1, fun j hj => hz.2 j (by omega_using [hi, hj])⟩]
 
 /-- A group of checks rejected the iteration: nothing more is computed. -/
 theorem kFail_ko {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t : Nat} {s s₁ : State} {a : Prop}
@@ -826,7 +826,7 @@ theorem checksR0_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : 
   obtain ⟨⟨⟨_, _⟩, d3⟩, d4⟩ := hc2
   unfold checksR0
   refine WP.seq (WP.mono (seqOk_ok (D := D) (I := fun i => IR p D σ t i) p.k 0
-    (fun i hi hi' s s₁ h hP hcs _ => IR.stable hc (by omega) (by omega) h hP hcs)
+    (fun i hi hi' s s₁ h hP hcs _ => IR.stable hc (by omega_using [hi]) (by omega_using [hi']) h hP hcs)
     (fun i _ hi s hs => r0R_ok hP (hr i (by omega_arith)) hs) s h) fun s6 ⟨i, _, hi, hs6, hd⟩ => ?_)
   rw [Nat.zero_add] at hi hd
   have h15 := IR.done hi hs6 hd
@@ -852,7 +852,7 @@ theorem checks_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ks
   refine WP.seq (WP.mono (cntt_ok hP hc h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (kInit_ok hc h1) fun s3 I3 => ?_)
   refine WP.seq (WP.mono (seqOk_ok (D := D) (I := fun r => IZ p D σ t r) p.ℓ 0
-    (fun k hk hk' s s₁ h hP hcs _ => IZ.stable hc (by omega) (by omega) h hP hcs)
+    (fun k hk hk' s s₁ h hP hcs _ => IZ.stable hc (by omega_using [hk]) (by omega_using [hk']) h hP hcs)
     (fun r _ hr s hs => zR_ok hP (hz r (by omega_arith)) hs) s3 I3) fun s4 ⟨k, _, hk, hs4, hd⟩ => ?_)
   rw [Nat.zero_add] at hk hd
   have h15 := IZ.done hk hs4 hd

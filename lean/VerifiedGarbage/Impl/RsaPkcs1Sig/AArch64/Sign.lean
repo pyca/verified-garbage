@@ -21,10 +21,15 @@ Only the public key, the lengths and `hash` decide a branch or an address:
 the hash value is only copied into `EM`, which only the private operation
 reads.
 
-The frame of `frameBytes` bytes holds, at `sp`, the 12 stack arguments of
-the call; at `96`, our caller's `x19` and our return address (`saved`); at
-`oEM`, `EM`, up to 1024 bytes. `out` is kept in `x17` across `encode`, and
-`k` in `x19` across the call.
+`vg_rsa_pkcs1_sign_precomputed` takes the key's precomputed values `pre`
+and `pre_len` after `scratch_len`, and passes them on to
+`vg_rsa_private_checked_precomputed`: the same code, copying 14 stack
+arguments rather than 12 (`codeN`).
+
+The frame of `frameBytes` bytes holds, at `sp`, the 12 or 14 stack arguments
+of the call; at `112`, our caller's `x19` and our return address (`saved`);
+at `oEM`, `EM`, up to 1024 bytes. `out` is kept in `x17` across `encode`,
+and `k` in `x19` across the call.
 -/
 
 @[expose] public section
@@ -36,12 +41,12 @@ open VG.Impl.RsaPkcs1Sig.AArch64.Verify (mov movw)
 open VG.Impl.RsaPkcs1Sig.AArch64.Recover (zeroOut)
 
 /-- The size of the frame. -/
-def frameBytes : Nat := 1136
+def frameBytes : Nat := 1152
 
 /-- `EM`. -/
-def oEM : Nat := 112
+def oEM : Nat := 128
 
-def saved : List (Reg × Nat) := [(.x19, 96), (.x30, 104)]
+def saved : List (Reg × Nat) := [(.x19, 112), (.x30, 120)]
 
 def save : List Instr := .addSp .x16 0 :: saved.map fun (r, d) => .str .x r .x16 d
 
@@ -57,10 +62,13 @@ def encArgs : List Instr :=
 call's stack argument `j`. -/
 def copyArg (j : Nat) : List Instr := [.ldrSp .x15 (frameBytes + 8 * (j + 1)), .str .x .x15 .x16 (8 * j)]
 
-/-- The arguments of `vg_rsa_private_checked`: those of the function, with
-`EM` (still in `x8`) as the input. -/
-def callArgs : List Instr :=
-  (List.range 12).flatMap copyArg ++ [mov .x0 .x17, mov .x6 .x8, mov .x7 .x19]
+/-- The arguments of the private operation, of which `n` on the stack:
+those of the function, with `EM` (still in `x8`) as the input. -/
+def callArgsN (n : Nat) : List Instr :=
+  (List.range n).flatMap copyArg ++ [mov .x0 .x17, mov .x6 .x8, mov .x7 .x19]
+
+/-- The arguments of `vg_rsa_private_checked`. -/
+abbrev callArgs : List Instr := callArgsN 12
 
 /-- Zeros to `out`, kept in `x17` and `x19`. -/
 def zeroSlots : Prog isa := .seq (.block [mov .x14 .x17, mov .x13 .x19]) zeroOut
@@ -68,16 +76,24 @@ def zeroSlots : Prog isa := .seq (.block [mov .x14 .x17, mov .x13 .x19]) zeroOut
 /-- `EM` overwritten with zeros, keeping the result in `x0`. -/
 def wipe : Prog isa := .seq (.block [.addSp .x14 oEM, mov .x13 .x19, .movz .x .x15 0 0]) psLoop
 
-/-- After the encoding. -/
-def afterEnc (privName : String) (priv : Prog isa) : Prog isa :=
-  .ite (.zero .x .x0) zeroSlots (.seq (.block callArgs) (.seq (.call privName priv) wipe))
+/-- After the encoding, passing on `n` stack arguments. -/
+def afterEncN (n : Nat) (privName : String) (priv : Prog isa) : Prog isa :=
+  .ite (.zero .x .x0) zeroSlots (.seq (.block (callArgsN n)) (.seq (.call privName priv) wipe))
 
-def body (privName : String) (priv : Prog isa) : Prog isa :=
-  .seq (.block encArgs) (.seq encode (.seq (afterEnc privName priv) (.block restore)))
+def bodyN (n : Nat) (privName : String) (priv : Prog isa) : Prog isa :=
+  .seq (.block encArgs) (.seq encode (.seq (afterEncN n privName priv) (.block restore)))
+
+/-- The function, calling the private operation `priv` by its name with `n`
+stack arguments. -/
+def codeN (n : Nat) (privName : String) (priv : Prog isa) : Prog isa :=
+  .frame (.alloc frameBytes) (bodyN n privName priv) (.free frameBytes)
 
 /-- `vg_rsa_pkcs1_sign`, calling `vg_rsa_private_checked` (`priv`) by its
 name. -/
-def code (privName : String) (priv : Prog isa) : Prog isa :=
-  .frame (.alloc frameBytes) (body privName priv) (.free frameBytes)
+abbrev code (privName : String) (priv : Prog isa) : Prog isa := codeN 12 privName priv
+
+/-- `vg_rsa_pkcs1_sign_precomputed`, calling
+`vg_rsa_private_checked_precomputed` (`priv`) by its name. -/
+abbrev codeP (privName : String) (priv : Prog isa) : Prog isa := codeN 14 privName priv
 
 end VG.Impl.RsaPkcs1Sig.AArch64.Sign

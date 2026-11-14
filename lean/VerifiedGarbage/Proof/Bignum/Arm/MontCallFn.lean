@@ -61,7 +61,7 @@ theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
   have stackFit : v.sp.toNat + 40 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
-    omega
+    omega_using []
   have writable : (⟨State.addr v.sp, 40⟩ : Region) ∈ v.wr := by
     rw [wrV, spV]
     exact List.mem_cons_self
@@ -90,6 +90,6 @@ theorem montCallFn_ok (s : State) {base : BitVec 32} {len w o a b : Nat}
     rw [popped_mem, memT, keeps i hi separate]
     exact framePush.bytes (R := ⟨State.addr base, 8 * len⟩)
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackWorkspace.symm)
-      (by change 8 * len ≤ 2 ^ 64; omega) hi
+      (by change 8 * len ≤ 2 ^ 64; omega_using [nowrap]) hi
 
 end VG.Proof.Bignum.Arm

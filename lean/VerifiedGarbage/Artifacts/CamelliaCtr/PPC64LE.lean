@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 
-/-! # Camellia-CTR artifacts on baseline PPC64LE -/
+/-! # Camellia-CTR on PPC64LE -/
 
 @[expose] public section
 

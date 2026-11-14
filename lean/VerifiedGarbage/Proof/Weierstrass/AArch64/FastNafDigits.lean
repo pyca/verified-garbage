@@ -40,7 +40,7 @@ theorem fastSetup_ok (K : WinCfg) {w : Nat} (hw : FastNaf.Width w)
   · simp only [kt.gpr _ List.not_mem_nil,ia.value]
   · exact (kt.gpr _ List.not_mem_nil).trans ia.ptr
   · intro i hi
-    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega)
+    simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega_using [hi])
   · rw [←ma]; exact ot
 
 theorem fastOddState_ok {s : State} {base : Addr} {size bits w k j : Nat}
@@ -51,26 +51,26 @@ theorem fastOddState_ok {s : State} {base : Addr} {size bits w k j : Nat}
       FastPrepState base size bits w k (j+w) t ∧ KeepRegs fastStepClob s t ∧
       Outside base bits 264 s.mem t.mem := by
   refine WP.mono (fastOdd_ok hI.toFastPrepCore hw hb hj hv ho) fun t ⟨it,kt,mt⟩ => ?_
-  have O := writeW8_outside s.mem base (FastNaf.byte w k j) (d:=bits+j) (by have:=hI.scr.nowrap; omega)
+  have O := writeW8_outside s.mem base (FastNaf.byte w k j) (d:=bits+j) (by have:=hI.scr.nowrap; omega_using [hb, hj, this])
   refine ⟨⟨it,?_⟩,kt,?_⟩
   · intro i hi
     rw [mt]
     by_cases hij : i=j
     · subst i
-      rw [writeW8_self,ite_eq_left (by rcases hw with rfl | rfl <;> omega)]
+      rw [writeW8_self,ite_eq_left (by rcases hw with rfl | rfl <;> omega_using [])]
     · rw [O _ (by
         have hoff : ofs base (off base (bits+i))=bits+i := by
-          simpa only [BitVec.add_zero,Nat.add_zero] using (ofs_off base (d:=bits+i) (i:=0) (by have:=hI.scr.nowrap; omega))
-        rw [hoff]; omega),hI.digits i hi]
+          simpa only [BitVec.add_zero,Nat.add_zero] using (ofs_off base (d:=bits+i) (i:=0) (by have:=hI.scr.nowrap; omega_using [hb, hi, this]))
+        rw [hoff]; omega_using [hij]),hI.digits i hi]
       by_cases hlt : i<j
-      · simp only [hlt,ite_true,show i<j+w from by omega]
+      · simp only [hlt,ite_true,show i<j+w from by omega_using [hlt]]
       · simp only [hlt,ite_false]
         split
-        · have hz := FastNaf.byte_skip_zero hw k j (i-j) ho (by omega) (by omega)
-          rw [show j+(i-j)=i from by omega] at hz
+        · have hz := FastNaf.byte_skip_zero hw k j (i-j) ho (by omega_using [hij, hlt]) (by omega_arith)
+          rw [show j+(i-j)=i from by omega_using [hlt]] at hz
           exact hz.symm
         · rfl
-  · rw [mt]; exact O.mono (by omega) (by omega)
+  · rw [mt]; exact O.mono (by omega_using []) (by omega_using [hj])
 
 theorem fastEvenState_ok {s : State} {base : Addr} {size bits w k j : Nat}
     (hI : FastPrepState base size bits w k j s) (he : FastNaf.residual w k j%2=0) :
@@ -86,8 +86,8 @@ theorem fastEvenState_ok {s : State} {base : Addr} {size bits w k j : Nat}
       have hz : FastNaf.byte w k j=0 := by rw [FastNaf.byte_zero_iff,FastNaf.magnitude_zero_iff]; exact he
       simp only [Nat.lt_irrefl,ite_false,Nat.lt_succ_self,ite_true,hz]
     · by_cases hlt : i<j
-      · simp only [hlt,ite_true,show i<j+1 from by omega]
-      · simp only [hlt,ite_false,show ¬i<j+1 from by omega]
+      · simp only [hlt,ite_true,show i<j+1 from by omega_using [hlt]]
+      · simp only [hlt,ite_false,show ¬i<j+1 from by omega_using [hij, hlt]]
   · rw [mt]; exact Outside.refl _ _ _ _
 
 end VG.Proof.Weierstrass.AArch64

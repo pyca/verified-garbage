@@ -74,7 +74,7 @@ omit hp in
 theorem Kept.frame {k : Nat} {m m' : Mem} (h : Kept s k m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (kR' s).Disjoint r) : Kept s k m' := by
   have e : ∀ d, d + 8 ≤ 48 → m'.readW (S s + BitVec.ofNat 64 d) 64 = m.readW (S s + BitVec.ofNat 64 d) 64 :=
-    fun d h₁ => hf.readW (Offset.contains_base _ h₁ (by omega)) hd (by decide)
+    fun d h₁ => hf.readW (Offset.contains_base _ h₁ (by omega_using [h₁])) hd (by decide)
   have e0 : m'.readW (S s) 64 = m.readW (S s) 64 := by simpa using e 0 (by decide)
   exact ⟨by rw [e0]; exact h.ctx, by rw [e 8 (by decide)]; exact h.rounds,
     by rw [e 16 (by decide)]; exact h.ctr, by rw [e 24 (by decide)]; exact h.y,
@@ -97,7 +97,7 @@ theorem mid_entry {s₁ : State} (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr 
     have hd : (⟨D s, 16 * n s⟩ : Region).Disjoint (kR' s) := by
       rw [Nat.mul_comm]; exact (kR'_disj hp (dR s) (by simp)).symm
     exact blocksAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) (by
-      have := hp.w_d; omega)
+      have := hp.w_d; omega_using [this])
   · exact block_kR' hf (kR'_disj hp _ (by simp)).symm
   · exact block_kR' hf (kR'_disj hp _ (by simp)).symm
 
@@ -115,13 +115,13 @@ theorem Mid.slots {q k k' : Nat} {ys : List Block} {st st' : State} (h : Mid s q
   · rw [← h.data]
     exact blocksAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (kR'_disj hp (dR s) (by simp)).symm.sub_left (Region.sub_prefix (by have := h.q_le; omega)))
-      (by have := hp.w_d; have := h.q_le; omega)
+      exact (kR'_disj hp (dR s) (by simp)).symm.sub_left (Region.sub_prefix (by have := h.q_le; omega_using [this])))
+      (by have := hp.w_d; have := h.q_le; omega_arith)
   · rw [← h.rest]
     exact blocksAt_frame hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (kR'_disj hp (dR s) (by simp)).symm.sub_left (Offset.sub_base (D s) (by have := h.q_le; omega)))
-      (by have := hp.w_d; have := h.q_le; omega)
+      exact (kR'_disj hp (dR s) (by simp)).symm.sub_left (Offset.sub_base (D s) (by have := h.q_le; omega_using [this])))
+      (by have := hp.w_d; have := h.q_le; omega_arith)
   · rw [← h.ctr]; exact block_kR' hf (kR'_disj hp _ (by simp)).symm
   · rw [← h.y]; exact block_kR' hf (kR'_disj hp _ (by simp)).symm
 
@@ -147,12 +147,12 @@ theorem rest_ok {q : Nat} (hq : q = n s - n s % 16) {ys : List Block} {st : Stat
     rw [hq]; exact ofNat_sub (Nat.mod_le _ _) hn
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2112 → d + 8 ≤ 2112 →
       Mem.Sep (S s + BitVec.ofNat 64 a) (64 / 8) (S s + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep _ h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep _ h (by omega_using [ha]) (by omega_using [hd])
   have kp : ∀ d, d + 8 ≤ 32 → ∀ v w : BitVec 64,
       ((st.mem.writeW (S s + BitVec.ofNat 64 32) v).writeW (S s + BitVec.ofNat 64 40) w).readW
         (S s + BitVec.ofNat 64 d) 64 = st.mem.readW (S s + BitVec.ofNat 64 d) 64 := fun d h₁ v w => by
-    rw [Mem.readW_writeW_sep (sep d 40 (.inl (by omega)) (by omega) (by decide)) (by decide),
-      Mem.readW_writeW_sep (sep d 32 (.inl (by omega)) (by omega) (by decide)) (by decide)]
+    rw [Mem.readW_writeW_sep (sep d 40 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide),
+      Mem.readW_writeW_sep (sep d 32 (.inl (by omega_using [h₁])) (by omega_using [h₁]) (by decide)) (by decide)]
   apply WP.of_runBlock
   refine ⟨_, by simp only [rest, argData, argN]; xrun [a₀, hS, r₅, r₆, w₅, w₆, kn, e15, esub, times16_val, kd], ?_⟩
   refine h.slots hp (fun r h1 h2 h3 => by simp [gpr_setReg, gpr_arithFlags, h1, h2, h3]) ?_ ?_ rfl rfl
@@ -163,9 +163,9 @@ theorem rest_ok {q : Nat} (hq : q = n s - n s % 16) {ys : List Block} {st : Stat
     · rw [kp 24 (by decide)]; exact h.kept.y
     · rw [Mem.readW_writeW_sep (sep 32 40 (.inl (by decide)) (by decide) (by decide)) (by decide),
         Mem.readW_writeW_self64, BitVec.add_comm]
-    · rw [Mem.readW_writeW_self64, hq]; congr 1; omega
+    · rw [Mem.readW_writeW_self64, hq]; congr 1; omega_using []
   · have c : ∀ d, d + 8 ≤ 48 → (kR' s).Contains (S s + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ => Offset.contains_base _ h₁ (by omega)
+      fun d h₁ => Offset.contains_base _ h₁ (by omega_using [h₁])
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 32 (by decide))).writeW
       (List.mem_singleton_self _) _ (c 40 (by decide))
 

@@ -11,8 +11,53 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.ScratchTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+
+/-! ### `AesGcm.X86_64.StreamTo.Fn`, which only this module used -/
+
+section
+
+/-!
+# AES-GCM streaming encryption out of place, x86-64: correctness
+
+Untrusted: everything here is checked by Lean. The entry, the bytes that end
+the block the text so far ends inside (if any), the whole blocks (if any),
+and the bytes left (`encrypt_wp`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesGcm.X86_64.StreamTo
+
+open VG VG.X86_64 VG.Impl.AesGcm.X86_64.StreamTo
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+
+theorem encrypt_wp {M : CtxMode} (T : BlkToFn M) (E : EncFn M) {s : State}
+    (hpre : Proof.AesGcm.streamToPreM M s) : WP isa (encrypt T.fn E.fn) s (Done s) := by
+  have hp := SP'.ofM hpre
+  refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
+  have M₁ := mid_entry hp (hg _ (by decide) (by decide) (by decide))
+    (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
+      (by rintro rfl; simp [calleeSaved] at hr)) hk hf hrd hwr
+  exact WP.seq (WP.mono (head_ok hp E ⟨M₁, h11, hg _ (by decide) (by decide) (by decide)⟩)
+    fun _ ⟨_, M₂⟩ => WP.seq (WP.mono (blocks_ok hp T M₂) fun _ ⟨_, M⟩ => rest_ok hp E M))
+
+end VG.Proof.AesGcm.X86_64.StreamTo
+
+end
+
+end
+
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: `Verified`
@@ -66,7 +111,7 @@ theorem framed_mx {bytes m : Nat} {c : Prog isa} (h : c.allInstrs (fun i => !loa
 theorem framed_xdepth {bytes m d : Nat} {c : Prog isa} (h : c.x86_64Depth ≤ d) :
     (Impl.StackScratch.X86_64.withStackArgScratch bytes m c).x86_64Depth ≤ d + bytes := by
   simp only [Impl.StackScratch.X86_64.withStackArgScratch, Code.x86_64Depth, X86_64.Instr.frameBytes]
-  omega
+  omega_using [h]
 
 /-! ## The code -/
 
@@ -86,7 +131,7 @@ theorem encrypt_xdepth : (encrypt T.fn E.fn).x86_64Depth ≤ 2624 := by
   have e := E.xd
   simp only [encrypt, head, blocks, rest, copyLoop, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
     List.length_nil, Nat.max_le]
-  omega
+  omega_using [t, e]
 
 theorem encrypt_correct (s : State) (hs : (Proof.AesGcm.streamEncryptToX86_64M M).pre s) :
     ∃ t s', Exec isa (encrypt T.fn E.fn) s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.streamToPost s s' := by

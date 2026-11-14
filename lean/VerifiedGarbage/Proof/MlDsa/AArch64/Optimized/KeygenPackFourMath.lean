@@ -66,7 +66,7 @@ theorem fourGather_byte (v : VReg → BitVec 128) {i : Nat} (hi : i<16) :
     vbyte (fourGather v fourGatherIndex) i=tableByte v .v0 (4*i) := by
   rw [fourGather,vbyte_ofVBytes _ hi]
   simp only [fourGatherIndex,vbyte_ofVBytes _ hi,BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : 4*i<2^8),ite_eq_left (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_using [hi] : 4*i<2^8),ite_eq_left (by omega_using [hi])]
 
 /-- Four separate byte-sized nibbles become two packed bytes in the low half. -/
 theorem four_word (a b c d : BitVec 4) :
@@ -77,7 +77,7 @@ theorem four_word (a b c d : BitVec 4) :
       a.setWidth 16 ||| (b.setWidth 16 <<< 4) ||| (c.setWidth 16 <<< 8) ||| (d.setWidth 16 <<< 12) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 ∨ i=11 ∨ i=12 ∨ i=13 ∨ i=14 ∨ i=15 by omega) with
+  rcases (show i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 ∨ i=8 ∨ i=9 ∨ i=10 ∨ i=11 ∨ i=12 ∨ i=13 ∨ i=14 ∨ i=15 by omega_using [hi]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 theorem fourCompress_byte (x mask : BitVec 128) {i : Nat} (hi : i<16) :
@@ -87,8 +87,8 @@ theorem fourCompress_byte (x mask : BitVec 128) {i : Nat} (hi : i<16) :
   rw [fourCompress,vbyte_ofVBytes _ hi]
   simp only [fourPackIndex,vbyte_ofVBytes _ hi]
   by_cases h : i<8
-  · rw [ite_eq_left h,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : 4*(i/2)+i%2<2^8),
-      ite_eq_left (by omega),ite_eq_left h]
+  · rw [ite_eq_left h,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [hi] : 4*(i/2)+i%2<2^8),
+      ite_eq_left (by omega_using [h]),ite_eq_left h]
   · rw [ite_eq_right h,ite_eq_right h]
     rfl
 

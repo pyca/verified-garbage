@@ -24,10 +24,10 @@ theorem invW_pwW {M : Mod} {F : Impl.Weierstrass.Mont.Modulus} (h4 : c.n = 4) (h
   simp only [invW, InvCfg.ofMod, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl
   · exact ⟨(c.sl 45, 320), by simp, Nat.le_refl _, Nat.le_refl _⟩
-  · exact ⟨(c.sl ACC, 8 * c.n), by simp, Nat.le_refl _, by simp only [h4]; omega⟩
-  · exact ⟨(c.sl TMP, 8 * c.n), by simp, by simp only [htmp]; exact Nat.le_refl _, by simp only [htmp, h4]; omega⟩
+  · exact ⟨(c.sl ACC, 8 * c.n), by simp, Nat.le_refl _, by simp only [h4]; omega_using []⟩
+  · exact ⟨(c.sl TMP, 8 * c.n), by simp, by simp only [htmp]; exact Nat.le_refl _, by simp only [htmp, h4]; omega_using []⟩
   · exact ⟨(c.wk, 64 * c.n), by simp [wkW], by simp only [Cfg.wk, h4]; exact Nat.le_refl _,
-      by simp only [Cfg.wk, h4]; omega⟩
+      by simp only [Cfg.wk, h4]; omega_using []⟩
   · exact ⟨Mont.outW, by simp [wkW], Nat.le_refl _, Nat.le_refl _⟩
 
 theorem powW_pwW {P : PowCfg} (h : powWx P c.wk = slW c [ACC, PT, TMP] ++ wkW c) :
@@ -54,7 +54,7 @@ theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     have h4 := hfast.1
     obtain ⟨sound, ok⟩ := hc.inv_p hfast
     have H := sound (invLay_of hc h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl
-      (base := RZ) (Or.inl rfl) c.C.p) (by have := hc.p_ge; omega)
+      (base := RZ) (Or.inl rfl) c.C.p) (by have := hc.p_ge; omega_using [this])
       (by simpa only [h4] using hR) hs hM (by simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using hB) ok
     refine WP.mono H fun z ⟨K, U, lt, v⟩ => ⟨K.mono (by decide), Unch.cover U (invW_pwW h4 rfl), ?_, ?_⟩
     · simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using lt
@@ -78,7 +78,7 @@ theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     have h4 := hfast.1
     obtain ⟨sound, ok⟩ := hc.inv_n hfast
     have H := sound (invLay_of hc h4 (M := c.MN') rfl (jm := MN) rfl (Or.inr rfl) rfl
-      (base := KM) (Or.inr rfl) c.C.n) (by have := hc.n_ge; omega)
+      (base := KM) (Or.inr rfl) c.C.n) (by have := hc.n_ge; omega_using [this])
       (by simpa only [h4] using hR) hs hM (by simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using hB) ok
     refine WP.mono H fun z ⟨K, U, lt, v⟩ => ⟨K.mono (by decide), Unch.cover U (invW_pwW h4 rfl), ?_, ?_⟩
     · simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using lt

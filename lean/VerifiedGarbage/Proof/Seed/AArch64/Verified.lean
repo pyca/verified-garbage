@@ -38,16 +38,16 @@ theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} {n : Nat} (hn : 976 ≤ 
   obtain ⟨rd, wr, kd, kb, db, fit⟩ := hs
   have sub : Region.Sub ⟨s.gpr .x3, 8 * Impl.Seed.AArch64.scratchSlots⟩ ⟨s.gpr .x3, n⟩ := by
     have h := Offset.sub_base (s.gpr .x3) (d := 0) (n := 8 * Impl.Seed.AArch64.scratchSlots) (k := n)
-      (by unfold Impl.Seed.AArch64.scratchSlots; omega)
+      (by unfold Impl.Seed.AArch64.scratchSlots; omega_using [hn])
     simpa using h
-  exact { scratch := ⟨n, by unfold Impl.Seed.AArch64.scratchSlots; omega, by
+  exact { scratch := ⟨n, by unfold Impl.Seed.AArch64.scratchSlots; omega_using [hn], by
             rw [wr]; exact List.mem_cons_of_mem _ List.mem_cons_self⟩
           dataIn := by rw [wr]; exact List.mem_cons_self
           keyIn := by rw [rd]; exact List.mem_cons_self
           keyData := kd
           keyBuf := kb.sub_right sub
           dataBuf := db.sub_right sub
-          fit := by omega }
+          fit := by omega_using [fit] }
 
 def satState : State where
   gpr r := match r with

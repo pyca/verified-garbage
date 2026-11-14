@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The order of `G`, by the kernel
@@ -41,8 +42,8 @@ theorem ladRep_rep (hC : Law C) {P : Point C} (hP : onCurve C P = true) {Px Py P
       show mul 0 P = .infinity by rw [Spec.Weierstrass.mul]; simp]
     exact ⟨rfl, hC.one_ne_zero, rfl⟩
   | i + 1, hi => by
-    have ih := ladRep_rep hC hP hPr hk i (by omega)
-    have e : nb - i = nb - (i + 1) + 1 := by omega
+    have ih := ladRep_rep hC hP hPr hk i (by omega_using [hi])
+    have e : nb - i = nb - (i + 1) + 1 := by omega_using [hi]
     rw [e] at ih
     have h := hC.step hP hPr ih rfl rfl
     by_cases hb : k.testBit (nb - (i + 1))

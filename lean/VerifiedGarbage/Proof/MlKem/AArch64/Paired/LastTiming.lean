@@ -171,7 +171,7 @@ theorem lastCode_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb 
     LastStartPostW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v ∧ t.syms=s.syms ∧ v.syms=u.syms
   have start : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16) R := by
     intro t v tr ur t' v' h et ev
-    have hh := lastStart_relCT (by omega) hsb h8 hoff hk hk256 ps pu sp base seedEq
+    have hh := lastStart_relCT (by omega_using [hss]) hsb h8 hoff hk hk256 ps pu sp base seedEq
       t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
     exact ⟨hh.1,hh.2.1,hh.2.2,Exec.syms et,Exec.syms ev⟩

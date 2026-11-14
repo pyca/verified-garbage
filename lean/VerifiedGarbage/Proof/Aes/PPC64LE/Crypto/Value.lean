@@ -69,9 +69,9 @@ theorem perm_flip (v : BitVec 128) :
   unfold permSelf
   apply VG.PPC64LE.ext_vbyte
   intro i hi
-  rw [vbyte_packed _ hi, flip, vbyte_rev128 _ hi, vbyte_swapDwords _ (by omega), mask_control hi]
-  rw [ite_eq_left (show (if i < 8 then 7-i else 23-i) < 16 by split <;> omega)]
-  exact congrArg (vbyte v) (by split <;> split <;> omega)
+  rw [vbyte_packed _ hi, flip, vbyte_rev128 _ hi, vbyte_swapDwords _ (by omega_using []), mask_control hi]
+  rw [ite_eq_left (show (if i < 8 then 7-i else 23-i) < 16 by split <;> omega_arith)]
+  exact congrArg (vbyte v) (by split <;> split <;> omega_arith)
 
 theorem flip_load (v : BitVec 128) : flip (swapDwords v) = rev128 v := by
   rw [flip, swapDwords_involutive]
@@ -104,46 +104,68 @@ theorem key_read (m : Mem) (p : Addr) {L j : Nat} (hj : 16*j+16 ≤ L) :
   simpa only [Mem.readW, BitVec.setWidth_eq] using VG.Proof.Aes.Vector.keyIs_readW m p hj
 
 
-theorem counter_control {i : Nat} (hi : i < 16) :
-    (vbyte Impl.Aes.PPC64LE.Crypto.counterControl i).toNat % 32 = if i < 12 then i else i+8 := by
-  have h : ∀ i : Fin 16,
-      (vbyte Impl.Aes.PPC64LE.Crypto.counterControl i).toNat % 32 = if i.val < 12 then i.val else i.val+8 := by decide
-  exact h ⟨i, hi⟩
+/-- The counter block `v` with `i` added to its last 32 bits, modulo 2³²
+(`Spec.Gcm.inc32`, `i` times). -/
+def ctrAdd (v : BitVec 128) (i : Nat) : BitVec 128 := v.extractLsb' 32 96 ++ (v.extractLsb' 0 32 + BitVec.ofNat 32 i)
 
-theorem counter_value (base : BitVec 128) (word undef : BitVec 64) :
-    (ofVBytes fun i =>
-      let j := (vbyte Impl.Aes.PPC64LE.Crypto.counterControl i).toNat % 32
-      if j < 16 then vbyte base j else vbyte (word ++ undef) (j-16)) =
-      base.extractLsb' 32 96 ++ word.extractLsb' 0 32 := by
-  apply VG.PPC64LE.ext_vbyte
-  intro i hi
-  rw [vbyte_packed _ hi, counter_control hi]
-  by_cases h : i < 12
-  · rw [ite_eq_left h, ite_eq_left hi]
-    apply BitVec.eq_of_getLsbD_eq
-    intro r hr
-    simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
-      hr, decide_true, Bool.true_and]
-    rw [ite_eq_right (show ¬8*(15-i)+r < 32 by omega)]
-    simp only [show 8*(15-i)+r-32 < 96 by omega, decide_true, Bool.true_and]
-    exact congrArg base.getLsbD (by omega)
-  · rw [ite_eq_right h, ite_eq_right (show ¬i+8 < 16 by omega)]
-    apply BitVec.eq_of_getLsbD_eq
-    intro r hr
-    simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
-      hr, decide_true, Bool.true_and]
-    rw [ite_eq_right (show ¬8*(15-(i+8-16))+r < 64 by omega),
-      ite_eq_left (show 8*(15-i)+r < 32 by omega)]
-    simp only [show 8*(15-i)+r < 32 by omega, decide_true, Bool.true_and, Nat.zero_add]
-    exact congrArg word.getLsbD (by omega)
+theorem ctrAdd_hi (v : BitVec 128) (i : Nat) : (ctrAdd v i).extractLsb' 32 96 = v.extractLsb' 32 96 := by
+  rw [ctrAdd, BitVec.extractLsb'_append_eq_left]
 
+theorem ctrAdd_lo (v : BitVec 128) (i : Nat) :
+    (ctrAdd v i).extractLsb' 0 32 = v.extractLsb' 0 32 + BitVec.ofNat 32 i := by
+  rw [ctrAdd, BitVec.extractLsb'_append_eq_right]
+
+theorem ctrAdd_add (v : BitVec 128) (i j : Nat) : ctrAdd (ctrAdd v i) j = ctrAdd v (i + j) := by
+  rw [ctrAdd, ctrAdd_hi, ctrAdd_lo, BitVec.add_assoc, ← BitVec.ofNat_add, ctrAdd]
+
+theorem ctrAdd_zero (v : BitVec 128) : ctrAdd v 0 = v := by
+  rw [ctrAdd, BitVec.add_zero, BitVec.extractLsb'_append_extractLsb'_eq_extractLsb' (by decide),
+    BitVec.extractLsb'_eq_self]
+
+/-- Four words packed most significant first, as the word-wise vector
+operations do. -/
+theorem pack4 (f : Nat → BitVec 32) :
+    (List.range 4).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (32 * (3 - i)))) 0 =
+      ((f 0 ++ f 1) ++ f 2) ++ f 3 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro b hb
+  simp only [List.range_succ, List.range_zero, List.nil_append, List.foldl_append,
+    List.foldl_cons, List.foldl_nil, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
+    BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero, Bool.false_or, BitVec.getLsbD_append]
+  rcases (by omega_using [] : b < 32 ∨ (32 ≤ b ∧ b < 64) ∨ (64 ≤ b ∧ b < 96) ∨ 96 ≤ b) with h | h | h | h
+  all_goals simp (disch := omega) only [decide_eq_true, decide_eq_false, BitVec.getLsbD_of_ge,
+    Bool.true_and, Bool.false_and, Bool.and_false, Bool.and_true, Bool.not_false, Bool.not_true,
+    Bool.false_or, Bool.or_false, hb]
+  all_goals simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_true, Bool.true_and]
+  all_goals exact congrArg _ (by omega_using [])
+
+theorem hi96 (v : BitVec 128) : v.extractLsb' 32 96 = (vword v 0 ++ vword v 1) ++ vword v 2 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro b hb
+  simp only [vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hb, decide_true, Bool.true_and]
+  rcases (by omega_using [] : b < 32 ∨ (32 ≤ b ∧ b < 64) ∨ 64 ≤ b) with h | h | h
+  all_goals simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and]
+  all_goals exact congrArg v.getLsbD (by omega_using [h])
+
+/-- `vadduwm` by `counterOne` adds one to the last word. -/
+theorem counter_step (v : BitVec 128) :
+    (List.range 4).foldl (fun x i => x |||
+      ((vword v i + vword Impl.Aes.PPC64LE.Crypto.counterOne i).setWidth 128 <<< (32 * (3 - i)))) 0 =
+      ctrAdd v 1 := by
+  have h0 : vword Impl.Aes.PPC64LE.Crypto.counterOne 0 = 0#32 := by decide
+  have h1 : vword Impl.Aes.PPC64LE.Crypto.counterOne 1 = 0#32 := by decide
+  have h2 : vword Impl.Aes.PPC64LE.Crypto.counterOne 2 = 0#32 := by decide
+  have h3 : vword Impl.Aes.PPC64LE.Crypto.counterOne 3 = BitVec.ofNat 32 1 := by decide
+  have e3 : vword v 3 = v.extractLsb' 0 32 := rfl
+  rw [pack4 (fun i => vword v i + vword Impl.Aes.PPC64LE.Crypto.counterOne i), ctrAdd, hi96, h0, h1, h2, h3,
+    BitVec.add_zero, BitVec.add_zero, BitVec.add_zero, e3]
 
 theorem sbox_word (word undef : BitVec 64) :
     (((ofVBytes fun i => VG.VectorCrypto.aesSbox (vbyte (word ++ undef) i)).extractLsb' 64 64).setWidth 32) =
       VG.Proof.Aes.KeyWords.sub32 (word.setWidth 32) := by
   apply VG.Proof.Aes.KeyWords.ext32
   intro q hq
-  rw [extract_high_word_byte _ hq, vbyte_packed _ (by omega),
+  rw [extract_high_word_byte _ hq, vbyte_packed _ (by omega_using []),
     ← extract_high_word_byte (word ++ undef) hq, BitVec.extractLsb'_append_eq_left,
     VG.Proof.Aes.KeyWords.sub32_byte _ hq]
 
@@ -154,8 +176,8 @@ theorem aesState_byte (v : BitVec 128) {i : Nat} (hi : i < 16) :
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   simp only [VG.VectorCrypto.vbyte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
-  rw [getLsbD_rev128 _ (by omega)]
-  exact congrArg v.getLsbD (by omega)
+  rw [getLsbD_rev128 _ (by omega_using [hi, hj])]
+  exact congrArg v.getLsbD (by omega_using [hj])
 
 theorem aesState_blockAt (m : Mem) (p : Addr) :
     aesState (Spec.Gcm.blockAt m p) = Spec.Aes.stateAt m p := by
@@ -182,22 +204,22 @@ theorem aesState_aesWith (nr : Nat) (w : List Byte) (v : BitVec 128) :
 
 theorem rev32_bit (v : BitVec 32) {k j : Nat} (hk : k < 4) (hj : j < 8) :
     (rev32 v).getLsbD (8 * k + j) = v.getLsbD (8 * (3 - k) + j) := by
-  rw [show rev32 = byteRev32 from rfl, byteRev32_getLsbD _ (by omega),
-    show (8 * k + j) / 8 = k by omega, show (8 * k + j) % 8 = j by omega]
+  rw [show rev32 = byteRev32 from rfl, byteRev32_getLsbD _ (by omega_using [hk, hj]),
+    show (8 * k + j) / 8 = k by omega_using [hj], show (8 * k + j) % 8 = j by omega_using [hj]]
 
 /-- The counter, as the slot holds it. -/
 theorem icb_lo (m : Mem) (ctr : Addr) :
     rev32 (m.readW (ctr + BitVec.ofNat 64 12) 32) = (Spec.Gcm.blockAt m ctr).extractLsb' 0 32 := by
   apply BitVec.eq_of_getLsbD_eq
   intro t ht
-  have e : t = 8 * (t / 8) + t % 8 := by omega
-  rw [e, rev32_bit _ (by omega) (by omega), BitVec.getLsbD_extractLsb', Nat.zero_add,
-    decide_eq_true (by omega : 8 * (t / 8) + t % 8 < 32), Bool.true_and,
-    show 8 * (t / 8) + t % 8 = 8 * (15 - (15 - t / 8)) + t % 8 by omega,
-    VG.Proof.Aes.blockAt_bit _ _ (by omega) (by omega)]
-  have hb := Mem.readW_byte m (ctr + BitVec.ofNat 64 12) (i := 3 - t / 8) (by omega)
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 12 + (3 - t / 8) = 15 - t / 8 by omega] at hb
+  have e : t = 8 * (t / 8) + t % 8 := by omega_using []
+  rw [e, rev32_bit _ (by omega_using [ht]) (by omega_using []), BitVec.getLsbD_extractLsb', Nat.zero_add,
+    decide_eq_true (by omega_using [ht] : 8 * (t / 8) + t % 8 < 32), Bool.true_and,
+    show 8 * (t / 8) + t % 8 = 8 * (15 - (15 - t / 8)) + t % 8 by omega_using [ht],
+    VG.Proof.Aes.blockAt_bit _ _ (by omega_using []) (by omega_using [])]
+  have hb := Mem.readW_byte m (ctr + BitVec.ofNat 64 12) (i := 3 - t / 8) (by omega_using [])
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, show 12 + (3 - t / 8) = 15 - t / 8 by omega_using [ht]] at hb
   rw [hb, BitVec.getLsbD_extractLsb']
-  simp [show t % 8 < 8 by omega]
+  simp [show t % 8 < 8 by omega_using []]
 
 end VG.Proof.Aes.PPC64LE.Crypto

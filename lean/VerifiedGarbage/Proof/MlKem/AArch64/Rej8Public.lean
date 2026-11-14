@@ -23,7 +23,7 @@ theorem candidates_eq {s u : State} (h2 : s.gpr .x2=u.gpr .x2)
     apply Mem.read_congr
     intro i hi
     simp only [ptr_add]
-    have hh := h (3*(e/2)+i) (by omega)
+    have hh := h (3*(e/2)+i) (by omega_using [he, hi])
     rwa [←h2] at hh
   rw [hr]
 
@@ -51,9 +51,9 @@ theorem inv_candidates {w16 : Bool} {initial : List Zq} {N t : Nat} {B : Nat →
   rw [hs.x2,hu.x2,ptr_add]
   rw [byte_frame hs.acc.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst r; exact ps.disj)
-      (by have := ps.bound; omega) (by omega),ps.buf _ (by omega)]
+      (by have := ps.bound; omega_using [this]) (by omega_using [ht, hi]),ps.buf _ (by omega_using [ht, hi])]
   rw [byte_frame hu.acc.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst r; exact pu.disj)
-      (by have := pu.bound; omega) (by omega),pu.buf _ (by omega)]
+      (by have := pu.bound; omega_using [this]) (by omega_using [ht, hi]),pu.buf _ (by omega_using [ht, hi])]
 
 end VG.Proof.MlKem.AArch64.Rej8

@@ -235,7 +235,7 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     · exact haad.w.sub_right (Lay.wSub (by decide))
     · exact haad.w.sub_right (Lay.wSub (by decide))
     · exact haad.w.sub_right (Lay.wSub (by decide))
-  have hA₆ : bytesAt s₆.mem A al = bytesAt s₀.mem A al := bytesAt_frame F₆ dA (by have := haad.lt; omega)
+  have hA₆ : bytesAt s₆.mem A al = bytesAt s₀.mem A al := bytesAt_frame F₆ dA (by have := haad.lt; omega_using [hal])
   refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK he₆ hk₆ hy₆ x12₆ x13₆ hal
       (by rw [r₆.rd, r₆.wr, rd₅, wr₅, rd₄, wr₄, r₃.rd, r₃.wr, rd₂, wr₂, r₁'.rd, r₁'.wr, rd₁, wr₁]; exact haad.rd)
       (haad.w.sub_right (Lay.wSub (by decide)))))
@@ -266,9 +266,9 @@ theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Ad
     intro e he r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
-    · exact L.st_st (by omega) (by omega) (by decide)
+    · exact L.st_w (by omega_using [he]) (.inr ⟨by decide, by decide⟩)
+    · exact L.st_w (by omega_using [he]) (.inr ⟨by decide, by decide⟩)
+    · exact L.st_st (by omega_using [he]) (by omega_using [he]) (by decide)
   have gg : ∀ r, r ∉ [Reg.x0, .x5, .x6, .x7, .x9, .x11, .x12, .x13, .x14, .x15] → s₈.gpr r = s₂.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

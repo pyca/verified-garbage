@@ -38,8 +38,8 @@ theorem finish_ok {B o : Addr} {s : State} (hc : Ctx B s) (h0 : s.gpr .a0 = o)
     {x : Nat} (hv : V s.mem B SR = x) :
     WP isa (.block scalarFinish) s fun t => bytesAt t.mem o 32 = Spec.Ed25519.encodeLE 32 x := by
   have hS := SR_eq
-  refine WP.mono (packField_ok hc (p := .a0) (by decide) h0 (a := SR) (dst := 0) (by omega) (by omega)
-    (by decide) (fun k hk => in_base hout (by omega) (by omega)) (by rw [BitVec.add_zero]; exact hd))
+  refine WP.mono (packField_ok hc (p := .a0) (by decide) h0 (a := SR) (dst := 0) (by omega_using [hS]) (by omega_using [hS])
+    (by decide) (fun k hk => in_base hout (by omega_using [hk]) (by omega_using [hk])) (by rw [BitVec.add_zero]; exact hd))
     fun t ht => out_bytes (b := B) (a := SR) (fun j hj => by rw [← Nat.zero_add (4 * j)]; exact ht.outs j hj) hv
 
 theorem reduce_ok {s : State} (hp : ReducePre s) :
@@ -59,10 +59,10 @@ theorem reduce_ok {s : State} (hp : ReducePre s) :
   have e14 : s3.gpr .t3 = s.gpr .a1 := by
     rw [u3.gpr, hr2.gpr _ (by decide), u1.other _ (by decide)]
   refine WP.seq (WP.mono (engine_ok hc3 e14
-    (fun k hk => by rw [hr3.rd, hr3.wr]; exact in_base (List.mem_append_left _ hwide) (by omega) (by omega)))
+    (fun k hk => by rw [hr3.rd, hr3.wr]; exact in_base (List.mem_append_left _ hwide) (by omega_using [hk]) (by omega_using [hk])))
     fun s4 ⟨hr4, _, hv4⟩ => ?_)
   rw [hm3] at hv4
   exact finish_ok (hc3.of_rest hr4 (by decide)) (by rw [hr4.gpr _ (by decide), hr3.gpr _ (by decide)])
-    (by rw [hr4.wr, hr3.wr]; exact hout) (hp.out_ws.sub_right (base_sub _ (by omega))) hv4
+    (by rw [hr4.wr, hr3.wr]; exact hout) (hp.out_ws.sub_right (base_sub _ (by omega_using [hS]))) hv4
 
 end VG.Proof.Ed25519.RISCV64

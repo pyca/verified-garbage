@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # PPC64LE: register reads through carrying writes
@@ -41,10 +42,10 @@ theorem toNat_add_ca {r : Reg} {v : Nat} (h : v < 2 ^ 65) :
   rw [gpr_writeCarry_self, ca_writeCarry, BitVec.toNat_ofNat]
   by_cases hv : 2 ^ 64 ≤ v
   · simp only [hv, decide_true, Bool.toNat_true]
-    rw [Nat.mod_eq_sub_mod hv, Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_sub_mod hv, Nat.mod_eq_of_lt (by omega_using [h])]
+    omega_using [hv]
   · simp only [hv, decide_false, Bool.toNat_false]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [Nat.mod_eq_of_lt (by omega_using [hv])]
+    omega_using []
 
 end VG.PPC64LE.RegUpd

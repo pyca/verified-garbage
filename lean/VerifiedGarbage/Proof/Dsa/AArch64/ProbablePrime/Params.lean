@@ -1,13 +1,62 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.ABI
+public import VerifiedGarbage.Impl.Dsa.AArch64.ProbablePrime
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
 import VerifiedGarbage.Proof.Dsa.Generation.Primality
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
+
+/-! ### `Dsa.AArch64.ProbablePrime.ABI`, which only this module used -/
+
+section
+
+/-! # The probable-prime test's arguments, from its contract's precondition -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.ProbablePrime
+open VG VG.AArch64
+
+/-- The stack the test uses: its frame (the round is a leaf). -/
+abbrev stack : Nat := 272
+
+/-- The test's contract on AArch64. -/
+abbrev contract (bits : Nat) : Contract isa :=
+  Proof.Dsa.ProbablePrime.contract (Impl.Dsa.AArch64.ProbablePrime.layout bits) abi stack
+
+structure PrimeABI (bits : Nat) (s : State) : Prop where
+  stackLower : stack ≤ s.sp.toNat
+  rd : s.rd = [⟨s.gpr .x2, (s.gpr .x3).toNat⟩]
+  wr : s.wr = [⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩, ⟨s.gpr .x4, 8⟩]
+  wsRand : (⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩ : Region).Disjoint ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  wsUsed : (⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩ : Region).Disjoint ⟨s.gpr .x4, 8⟩
+  randUsed : (⟨s.gpr .x2, (s.gpr .x3).toNat⟩ : Region).Disjoint ⟨s.gpr .x4, 8⟩
+  stackWs : (below s.sp stack : Region).Disjoint ⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩
+  stackRand : (below s.sp stack : Region).Disjoint ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  stackUsed : (below s.sp stack : Region).Disjoint ⟨s.gpr .x4, 8⟩
+  wsBound : (s.gpr .x0).toNat + (s.gpr .x1).toNat * 8 ≤ 2 ^ 64
+  randBound : (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64
+  usedBound : (s.gpr .x4).toNat + 8 ≤ 2 ^ 64
+  size : Impl.Dsa.Generation.Layout.domainCheck ≤ 8 * (s.gpr .x1).toNat
+  odd : Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) s.mem (s.gpr .x0) % 2 = 1
+  bits : Spec.Dsa.bitLength
+    (Proof.Dsa.ProbablePrime.candidateAt (Impl.Dsa.AArch64.ProbablePrime.layout bits) s.mem (s.gpr .x0)) = bits
+
+theorem primeABI_of {bits : Nat} {s : State} (h : (contract bits).pre s) : PrimeABI bits s := by
+  sig_pre [contract, Proof.Dsa.ProbablePrime.contract, Proof.Dsa.ProbablePrime.sig, abi, argRegs] at h
+  sig_split h
+  constructor <;> with_reducible assumption
+
+end VG.Proof.Dsa.AArch64.ProbablePrime
+
+end
+
+end
+
 
 /-! # The generation's prime-test parameters, from the function's arguments
 
@@ -38,7 +87,7 @@ abbrev wsRegion (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat * 8⟩
 
 theorem ws_sub {bits : Nat} {s : State} (A : PrimeABI bits s) {d n : Nat} (h : d + n ≤ domainCheck) :
     Region.Sub ⟨off (s.gpr .x0) d, n⟩ (wsRegion s) :=
-  Offset.sub_base _ (by have := A.size; omega)
+  Offset.sub_base _ (by have := A.size; omega_using [h, this])
 
 def params {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) : PrimeParams where
   B := off (s.gpr .x0) arithmetic
@@ -60,15 +109,15 @@ def params {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) 
   drawMin := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   lenWords := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   predBits := by
-    rw [VG.Proof.Dsa.Generation.predecessor_bits (by have := hb.le; omega) A.odd A.bits]
+    rw [VG.Proof.Dsa.Generation.predecessor_bits (by have := hb.le; omega_using [this]) A.odd A.bits]
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   drawWidth := by
-    rw [VG.Proof.Dsa.Generation.witness_width (by have := hb.le; omega) A.odd A.bits]
+    rw [VG.Proof.Dsa.Generation.witness_width (by have := hb.le; omega_using [this]) A.odd A.bits]
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   odd := A.odd
   n3 := by
-    have h := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
-    have h4 : 2 ^ 2 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega)
+    have h := ((bitLength_iff_bounds (by have := hb.le; omega_using [this])).mp A.bits).1
+    have h4 : 2 ^ 2 ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by have := hb.le; omega_using [this])
     exact Nat.le_trans (by decide) (Nat.le_trans h4 h)
   checksMax := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
   randMax := by rw [bytesAt_length]; exact (s.gpr .x3).isLt

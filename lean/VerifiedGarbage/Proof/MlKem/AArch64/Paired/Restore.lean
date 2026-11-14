@@ -35,6 +35,6 @@ theorem restore_ok {initial s : State} {p : Addr}
       Keep pairRegs initial t ∧ t.mem=s.mem ∧ t.gpr .x24=s.gpr .x24 := by
   refine WP.mono (Noise.restores_ok hp sv (fun i hi=>?_)) fun t ⟨ht,hr⟩ =>
     ⟨restored_keep h ht hr,ht.mem,ht.get .x24 (by decide)⟩
-  exact in_rd_wr (rd:=s.rd) (Noise.inScratch hc (by omega) (by decide))
+  exact in_rd_wr (rd:=s.rd) (Noise.inScratch hc (by omega_using [hi]) (by decide))
 
 end VG.Proof.MlKem.AArch64.Paired

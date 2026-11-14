@@ -82,7 +82,7 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     intro x hx
     simp only [nafTableLive,jacCoords,nafTableSlots,Naf.twice,WinCfg.tblPt,List.range_succ,List.range_zero,
       List.map_append,List.map_cons,List.map_nil,List.nil_append,Nat.mul_one,Nat.sub_self,Nat.mul_zero,Nat.add_zero,
-      List.mem_append,List.mem_cons,List.not_mem_nil,or_false,show 8*K.M.n*2=16*K.M.n by omega] at hx ⊢
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false,show 8*K.M.n*2=16*K.M.n by omega_using []] at hx ⊢
     grind),hs,ht⟩)
 
 end VG.Proof.Weierstrass.X86_64

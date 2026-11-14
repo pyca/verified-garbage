@@ -36,7 +36,7 @@ theorem sdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : sdepth c = 0
 
 /-- The candidate uses the stack its round does. -/
 theorem candidate_stack (v : RoundImpl) : sdepth (code v.name v.code) ≤ 176 := by
-  simp only [code, main, mainQ, tests, testQ, testRest, test, millerRabin, draw, round, roundCall, pResult, qResult,
+  simp only [code, main, mainQ, mainP, tests, testQ, testRest, test, millerRabin, draw, round, roundCall, pResult, qResult,
     ite_true, ite_false, Bool.false_eq_true, sdepth]
   simp (disch := decide) only [sdepth_of_noFrames, Nat.max_zero, Nat.zero_max, Nat.max_self]
   exact v.stack

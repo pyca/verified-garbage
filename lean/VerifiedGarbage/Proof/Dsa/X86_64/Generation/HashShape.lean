@@ -76,7 +76,7 @@ theorem hash_shaped_candidate {p : HashPlan} {H : Spec.Mgf1.Hash} {s : X86_64.St
     funext j
     simp only [HashPlan.digest, pDigest, p.seed_len, hhash, Nat.add_assoc]
   dsimp only
-  rw [← hsuf, candidateOf_mod_width (by omega) (Nat.le_refl _), hdig,
+  rw [← hsuf, candidateOf_mod_width (by omega_using [hl]) (Nat.le_refl _), hdig,
     pCandidate_shaped hl hsize, hcount]
 
 end VG.Proof.Dsa.X86_64.Generation

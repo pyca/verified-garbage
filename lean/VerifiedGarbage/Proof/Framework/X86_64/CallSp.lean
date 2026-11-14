@@ -32,7 +32,7 @@ theorem WP.call_sp_mx {n : String} {c : Prog isa} {k : Contract isa}
   obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
   obtain ⟨hr, hwr⟩ := Exec.rdwr he
   simp only [State.withRegions_rd, State.withRegions_wr] at hr hwr
-  have hf := Exec.stackFrame hsp he (by omega)
+  have hf := Exec.stackFrame hsp he (by omega_using [hd])
   simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_rsp] at hf
   have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
@@ -61,7 +61,7 @@ theorem WP.call_sp_mx {n : String} {c : Prog isa} {k : Contract isa}
   · -- The return address, then the callee.
     have f₀ : Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.mem s.callEntry.mem :=
       Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
-        (below_call _ (by omega) (by omega))
+        (below_call _ (by omega_using []) (by omega_using [hd]))
     have f₁ : Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.callEntry.mem s₁.mem :=
       Frame.sub hf fun r hr => by
         rcases List.mem_append.mp hr with hr | hr

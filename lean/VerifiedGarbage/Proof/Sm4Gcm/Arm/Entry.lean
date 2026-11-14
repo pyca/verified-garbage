@@ -37,16 +37,16 @@ theorem stackArg_zero (s : State) : stackArg s 0 = s.mem.readW (State.addr s.sp)
 theorem arg_in {s : State} {n i : Nat} (hi : i < n) (hf : s.sp.toNat + 4 * n ≤ 2 ^ 32) (h : args s n ∈ s.rd) :
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 (4 * i))) 4 := by
   have e : State.addr (s.sp + BitVec.ofNat 32 (4 * i)) = stackArgAddr s 0 + BitVec.ofNat 64 (4 * i) := by
-    simp only [stackArgAddr, Nat.mul_zero, add_ofNat_zero]; exact addr_add (by omega)
-  rw [e]; exact in_off (covers_of_mem (List.mem_append_left _ h)) (by omega) (by omega)
+    simp only [stackArgAddr, Nat.mul_zero, add_ofNat_zero]; exact addr_add (by omega_using [hi, hf])
+  rw [e]; exact in_off (covers_of_mem (List.mem_append_left _ h)) (by omega_using [hi]) (by omega_using [hf])
 
 /-- The stack arguments stay where they are, outside a frame. -/
 theorem arg_frame {s s' : State} {n : Nat} {rs : List Region} (hsp : s'.sp = s.sp)
     (hf : s.sp.toNat + 4 * n ≤ 2 ^ 32) (hfr : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (args s n).Disjoint r)
     {i : Nat} (hi : i < n) : stackArg s' i = stackArg s i := by
   have e : stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (4 * i) := by
-    simp only [stackArgAddr, Nat.mul_zero, add_ofNat_zero]; exact addr_add (by omega)
-  have hs : Region.Sub ⟨stackArgAddr s i, 4⟩ (args s n) := by rw [e]; exact Offset.sub_base _ (by omega)
+    simp only [stackArgAddr, Nat.mul_zero, add_ofNat_zero]; exact addr_add (by omega_using [hf, hi])
+  have hs : Region.Sub ⟨stackArgAddr s i, 4⟩ (args s n) := by rw [e]; exact Offset.sub_base _ (by omega_using [hi])
   simp only [stackArg, show stackArgAddr s' i = stackArgAddr s i by simp only [stackArgAddr, hsp]]
   exact hfr.readW (Region.contains_self _ _) (fun r hr => (hd r hr).sub_left hs) (by decide)
 

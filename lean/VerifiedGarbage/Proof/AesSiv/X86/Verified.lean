@@ -85,7 +85,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract X86.abi 
     ⟨cov_mem (inRd mC), cov_mem mW⟩, rfl, rfl, (ofNat_toNat32 _).symm, rfl, (ofNat_toNat32 _).symm, rfl,
     (ofNat_toNat32 _).symm, rfl, rfl, by rw [Proof.AesGcm.X86.argsR_eq]; exact cov_mem (inWr mR),
     by rw [Proof.AesGcm.X86.argsR_eq]; exact wA.symm, by rw [Proof.AesGcm.X86.argsR_eq]; exact dA.symm,
-    by rw [bE, Proof.AesGcm.X86.argsR_eq]; exact sA, by omega, rw, rd, rT, BitVec.isLt _, fT, cov_mem (inWr mT),
+    by rw [bE, Proof.AesGcm.X86.argsR_eq]; exact sA, by omega_using [fa], rw, rd, rT, BitVec.isLt _, fT, cov_mem (inWr mT),
     tW, by rw [bE]; exact sT⟩, fun j hj => ⟨rfl, rfl⟩⟩, cov_mem mT, dT.symm⟩
   have hm := comp_mem s.mem (arg s 2) hi
   exact ⟨cov_mem (inRd (by rw [hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hm))),
@@ -127,7 +127,7 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract X86.abi 
     ⟨cov_mem (inRd mC), cov_mem mW⟩, rfl, rfl, (ofNat_toNat32 _).symm, rfl, (ofNat_toNat32 _).symm, rfl,
     (ofNat_toNat32 _).symm, rfl, rfl, by rw [Proof.AesGcm.X86.argsR_eq]; exact cov_mem (inWr mR),
     by rw [Proof.AesGcm.X86.argsR_eq]; exact wA.symm, by rw [Proof.AesGcm.X86.argsR_eq]; exact dA.symm,
-    by rw [bE, Proof.AesGcm.X86.argsR_eq]; exact sA, by omega, rw, rd, rT, BitVec.isLt _, fT, cov_mem (inRd mT),
+    by rw [bE, Proof.AesGcm.X86.argsR_eq]; exact sA, by omega_using [fa], rw, rd, rT, BitVec.isLt _, fT, cov_mem (inRd mT),
     tW, by rw [bE]; exact sT⟩, fun j hj => ⟨rfl, rfl⟩⟩
   have hm := comp_mem s.mem (arg s 2) hi
   exact ⟨cov_mem (inRd (by rw [hrd]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _
@@ -142,9 +142,9 @@ theorem comp_eq {m₁ m₂ : Mem} {A : BitVec 32} {N : Nat}
   have r {d : Nat} (hd : d + 4 ≤ N * 8) : m₂.readW (w64 A + BitVec.ofNat 64 d) 32 =
       m₁.readW (w64 A + BitVec.ofNat 64 d) 32 := by
     have e := Mem.read_congr (m := m₂) (m' := m₁) (a := w64 A + BitVec.ofNat 64 d) (n := 32 / 8)
-      fun k hk => by rw [Offset.add_add]; exact (h _ (by omega)).symm
+      fun k hk => by rw [Offset.add_add]; exact (h _ (by omega_using [hd, hk])).symm
     simp only [Mem.readW, e]
-  exact ⟨r (by omega), by simp only [compL]; rw [r (by omega)]⟩
+  exact ⟨r (by omega_using [hj]), by simp only [compL]; rw [r (by omega_using [hj])]⟩
 
 /-- What two runs of `encrypt` or `decrypt` agree on: the stack pointer, the
 arguments and the descriptors. -/
@@ -326,7 +326,7 @@ theorem initPre_of {s : State} (h : (Proof.AesSiv.initScratchContract X86.abi 52
     X86.argVal, X86.argBytes] at h
   sig_split h
   rename_i sp48 fa hrd hwr kc ks ka cs ca sa rk rc rs ra stk stc sts sta fk fc fs
-  exact ⟨⟨rfl, rfl, kc, ks, ka, cs, ca, sa, rk, rc, rs, ra, stk, stc, sts, sta, fk, fc, fs, sp48, (by omega : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32), h⟩,
+  exact ⟨⟨rfl, rfl, kc, ks, ka, cs, ca, sa, rk, rc, rs, ra, stk, stc, sts, sta, fk, fc, fs, sp48, (by omega_using [fa] : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32), h⟩,
     hrd, hwr⟩
 
 /-- A state satisfying `vg_aes_siv_init`'s precondition: a key of 32 bytes
@@ -377,7 +377,7 @@ theorem init_verified :
     sig_split hp
     rename_i q0 q1 q2 q3
     refine ⟨q0, fun i hi => ?_⟩
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     · exact q1
     · exact q2
     · exact q3

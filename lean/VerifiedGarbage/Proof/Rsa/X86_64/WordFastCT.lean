@@ -14,10 +14,12 @@ namespace VG.Proof.Rsa.X86_64.WordDivide
 open VG VG.X86_64 VG.Impl.Rsa.X86_64.WordDivide
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-def FastPre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 4 ≤ p.W
+def FastPre (p : Pub) (s : State) : Prop := Ws s p.B p.Z p.W ∧ slot p.W 17 ≤ p.Z ∧ 6 ≤ p.W
 
-theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _ => True := by
-  refine RelCT.seq (R := Two Pre) ?_ code_ct
+theorem fastAtWith_ct {st : List Instr} (ck : SeedCkW st) (J : Nat → Nat)
+    (hst : ∀ W, 6 ≤ W → W < 2 ^ 24 → StartOk st W (J W)) :
+    RelCT isa (Two FastPre) (.seq (.block normalize) (codeWith st)) fun _ _ => True := by
+  refine RelCT.seq (R := Two Pre) ?_ (codeWith_ct ck J hst)
   unfold normalize
   rw [List.append_assoc]
   refine ws_block_ct Pub.B Pub.Z Pub.W (fun _ _ h => h.1) (by taint_decide) ?_
@@ -35,5 +37,13 @@ theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _
   refine ⟨h.1.congr ft (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact Mut.ofSlot _ _ _)
     kt (by decide), h.2.1, h.2.2, ?_⟩
   rw [mt, word_writeW_self]; exact high_or _
+
+theorem fastAt_ct {top : Option Nat} (ck : SeedCk top) (hk : ∀ (p : Pub) k, 6 ≤ p.W → top = some k → k ≤ p.W / 2) :
+    RelCT isa (Two FastPre) (.seq (.block normalize) (code top)) fun _ _ => True :=
+  fastAtWith_ct ck (fun W => j0 W top) fun W hW hW' =>
+    start_startOk hW (by omega_using [hW']) fun k e => hk ⟨0, 0, W, 0⟩ k hW e
+
+theorem fast_ct : RelCT isa (Two FastPre) (.seq (.block normalize) code) fun _ _ => True :=
+  fastAt_ct seedCk_none fun _ _ _ e => nomatch e
 
 end VG.Proof.Rsa.X86_64.WordDivide

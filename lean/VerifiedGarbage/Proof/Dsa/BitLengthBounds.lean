@@ -14,14 +14,14 @@ theorem bitLength_iff_bounds {v bits : Nat} (hb : 0 < bits) :
   · subst v
     have hp : 0 < 2 ^ (bits - 1) := Nat.pow_pos (by decide)
     simp only [VG.Spec.Dsa.bitLength, ite_true]
-    omega
+    omega_using [hb, hp]
   · rw [VG.Spec.Dsa.bitLength, ite_eq_right hv]
     constructor
     · intro h
-      exact ⟨(Nat.le_log2 hv).mp (by omega), (Nat.log2_lt hv).mp (by omega)⟩
+      exact ⟨(Nat.le_log2 hv).mp (by omega_using [h]), (Nat.log2_lt hv).mp (by omega_using [h])⟩
     · intro ⟨lo, hi⟩
       have h1 := (Nat.le_log2 hv).mpr lo
       have h2 := (Nat.log2_lt hv).mpr hi
-      omega
+      omega_using [h1, h2]
 
 end VG.Proof.Dsa

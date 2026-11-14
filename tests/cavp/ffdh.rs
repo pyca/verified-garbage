@@ -41,9 +41,9 @@ fn cases(text: &str) -> Vec<BTreeMap<String, String>> {
         }
         current.insert(key.to_string(), value.to_string());
     }
-    if current.contains_key("Z") {
-        out.push(current);
-    }
+    // Every file ends with a whole case.
+    assert!(current.contains_key("Z"));
+    out.push(current);
     out
 }
 fn hex(s: &str) -> Vec<u8> {

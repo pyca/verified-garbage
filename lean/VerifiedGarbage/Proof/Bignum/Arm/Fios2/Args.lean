@@ -26,34 +26,34 @@ theorem args_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} 
   have ht := ctx.tmpFits
   have ha := ctx.aFits
   unfold VG.Impl.Bignum.Arm.Fios2.args
-  refine wp_ldr (by decide) (ws.ea ptr (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (by decide) (ws.ea ptr (by omega_using [ht])) (ws.read (by omega_using [ht])) fun s1 u1 => ?_
   have w1 := ws.congr u1.wr
   have a1 : s1.gpr .r3 = base + BitVec.ofNat 32 (a + 4 * i) := u1.gpr.trans hdr.aPtr
   refine wp_ldr (a := off (State.addr base) (a + 4 * i)) (by decide)
-    (by simpa only [Nat.add_zero] using w1.ea a1 (imm := 0) (by omega)) (w1.read (by omega)) fun s2 u2 => ?_
+    (by simpa only [Nat.add_zero] using w1.ea a1 (imm := 0) (by omega_using [hi, ha])) (w1.read (by omega_using [hi, ha])) fun s2 u2 => ?_
   refine wp_ldr (a := off (State.addr base) (a + 4 * i + 4)) (by decide)
-    (by rw [u2.other .r3 (by decide)]; exact w1.ea a1 (by omega))
-    (by rw [u2.rd, u2.wr]; exact w1.read (by omega)) fun s3 u3 => ?_
+    (by rw [u2.other .r3 (by decide)]; exact w1.ea a1 (by omega_using [hi, ha]))
+    (by rw [u2.rd, u2.wr]; exact w1.read (by omega_using [hi, ha])) fun s3 u3 => ?_
   have k3 : Rest [.r1, .r3, .r9] s s3 :=
     (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
   have m3 : s3.mem = s.mem := u3.mem.trans (u2.mem.trans u1.mem)
   have p3 : s3.gpr .r0 = base + BitVec.ofNat 32 tmp := (k3.gpr .r0 (by decide)).trans ptr
   have w3 := ws.congr k3.wr
-  refine wp_ldr (by decide) (w3.ea p3 (by omega)) (w3.read (by omega)) fun s4 u4 => ?_
+  refine wp_ldr (by decide) (w3.ea p3 (by omega_using [ht])) (w3.read (by omega_using [ht])) fun s4 u4 => ?_
   have p4 : s4.gpr .r0 = base + BitVec.ofNat 32 tmp := (u4.other .r0 (by decide)).trans p3
-  refine wp_ldr (by decide) ((w3.congr u4.wr).ea p4 (by omega)) ((w3.congr u4.wr).read (by omega))
+  refine wp_ldr (by decide) ((w3.congr u4.wr).ea p4 (by omega_using [ht])) ((w3.congr u4.wr).read (by omega_using [ht]))
     fun s5 u5 => ?_
   have p5 : s5.gpr .r0 = base + BitVec.ofNat 32 tmp := (u5.other .r0 (by decide)).trans p4
   have w5 := (w3.congr u4.wr).congr u5.wr
-  refine wp_ldr (by decide) (w5.ea p5 (by omega)) (w5.read (by omega)) fun s6 u6 => ?_
+  refine wp_ldr (by decide) (w5.ea p5 (by omega_using [ht])) (w5.read (by omega_using [ht])) fun s6 u6 => ?_
   have p6 : s6.gpr .r0 = base + BitVec.ofNat 32 tmp := (u6.other .r0 (by decide)).trans p5
   have w6 := w5.congr u6.wr
-  refine wp_ldr (by decide) (w6.ea p6 (by omega)) (w6.read (by omega)) fun s7 u7 => ?_
+  refine wp_ldr (by decide) (w6.ea p6 (by omega_using [ht])) (w6.read (by omega_using [ht])) fun s7 u7 => ?_
   refine wp_mov (op2_reg _ .r2) fun s8 u8 => ?_
   have p8 : s8.gpr .r0 = base + BitVec.ofNat 32 tmp :=
     (u8.other .r0 (by decide)).trans ((u7.other .r0 (by decide)).trans p6)
   have w8 := (w6.congr u7.wr).congr u8.wr
-  refine wp_ldr (by decide) (w8.ea p8 (by omega)) (w8.read (by omega)) fun s9 u9 => ?_
+  refine wp_ldr (by decide) (w8.ea p8 (by omega_using [ht])) (w8.read (by omega_using [ht])) fun s9 u9 => ?_
   refine wp_mov (op2_imm (by decide)) fun s10 u10 => ?_
   refine wp_mov (op2_imm (by decide)) fun s11 u11 => ?_
   refine wp_mov (op2_imm (by decide)) fun s12 u12 => ?_

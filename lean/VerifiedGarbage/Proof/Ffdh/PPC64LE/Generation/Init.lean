@@ -43,7 +43,7 @@ theorem zext {g : Nat} (hg : g < 2 ^ 32) :
     (BitVec.ofNat 32 g >>> 0).setWidth 64 = BitVec.ofNat 64 g := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.ushiftRight_zero, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_using [hg]
 
 /-- `validate`: with `bits < 2^14`, `r12` is 1 exactly for valid parameters. -/
 theorem validate_ok (s : State) {n g : Nat} (hx : s.gpr .r4 = BitVec.ofNat 64 n) (hn : n < 2 ^ 14)
@@ -52,11 +52,11 @@ theorem validate_ok (s : State) {n g : Nat} (hx : s.gpr .r4 = BitVec.ofNat 64 n)
       t.gpr .r12 = BitVec.ofNat 64 (if initValid n g then 1 else 0) ∧ t.mem = s.mem := by
   unfold validate lt
   crunr [hx, hg, List.cons_append, List.nil_append]
-  rw [zext hgl, lt_bit (by omega) (by decide), lt_bit (by omega) (by decide),
-    lt_bit (by omega) (by decide), lt_bit (by omega) (by decide), lt_bit (by omega) (by decide),
-    lt_bit (by omega) (by decide)]
+  rw [zext hgl, lt_bit (by omega_using [hn]) (by decide), lt_bit (by omega_using [hn]) (by decide),
+    lt_bit (by omega_using [hgl]) (by decide), lt_bit (by omega_using [hgl]) (by decide), lt_bit (by omega_using [hgl]) (by decide),
+    lt_bit (by omega_using [hgl]) (by decide)]
   unfold initValid
-  split_ifs <;> first | rfl | (exfalso; omega)
+  split_ifs <;> first | rfl | (exfalso; omega_arith)
 
 theorem clear_ok {s : State} (h : StateWr s) :
     WP isa (.block clear) s fun t => t.gpr .r3 = 0 ∧ t.mem = initWritten s.mem (s.gpr .r3) 0 0 0 0 := by
@@ -77,7 +77,7 @@ theorem initialize_ok {s : State} {bits : Nat} (h : StateWr s) (hx : s.gpr .r4 =
   have hw : (BitVec.ofNat 64 bits + 7#64) >>> 3 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_using [hhi]
   have hm : (BitVec.ofNat 64 bits * BitVec.ofNat 64 bits) <<< 6 =
       BitVec.ofNat 64 (Spec.Ffdh.parameterAttempts bits) := by
     rw [← BitVec.ofNat_mul, shift_ofNat]
@@ -87,12 +87,12 @@ theorem initialize_ok {s : State} {bits : Nat} (h : StateWr s) (hx : s.gpr .r4 =
     rw [shift_ofNat, ← BitVec.ofNat_add]
     congr 1
     simp only [Spec.Ffdh.parameterEntropy, Nat.reducePow]
-    omega
+    omega_using []
   have hr : BitVec.ofNat 64 ((bits + 7) / 8) <<< 9 = BitVec.ofNat 64 (512 * ((bits + 7) / 8)) := by
     rw [shift_ofNat]
     congr 1
     simp only [Nat.reducePow]
-    omega
+    omega_using []
   unfold initializeState initWritten
   crunr [hx, hw, hm, hc, hr, st0 h, st h 8 (by decide), st h 16 (by decide), st h 24 (by decide)]
   rfl
@@ -173,7 +173,7 @@ theorem init_ok {s : State} (h : StateWr s) : WP isa init s (initPost s) := by
       exact clear_post h kv (by decide) (by rw [hxn, hgn]; exact hv) (hm'.trans hm)
   · refine WP.ite false (by simp only [VG.PPC64LE.eval, State.read, BitVec.setWidth_eq, h12, hx,
         shr_zero hl, decide_eq_false hb]) (by simp) (fun _ => ?_)
-    exact clear_post h k (by decide) (by rw [hxn, hgn]; unfold initValid; omega) hm
+    exact clear_post h k (by decide) (by rw [hxn, hgn]; unfold initValid; omega_using [hb]) hm
 
 theorem init_correct (s : State) (h : initPre s) :
     ∃ tr t, Exec isa init s tr t ∧ abiPreserved s t ∧ initPost s t := by

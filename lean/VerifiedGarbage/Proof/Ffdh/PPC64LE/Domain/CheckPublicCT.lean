@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
+import VerifiedGarbage.Proof.Dsa.PackedBytes
 
 /-!
 # `vg_ffdh_check_public` on PPC64LE: constant time
@@ -38,6 +40,7 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Pro
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain
 open VG.Proof.Bignum (slot bytesAt_length)
 open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
+open VG.Proof.Ffdh (lead lead_lt)
 
 /-- The public data of a run: the domain, y and the working space, `p_len`,
 `domain_len`, the working space's size in bytes, and the bytes of the domain
@@ -245,11 +248,11 @@ theorem T01 {d : CD} {s : State} (h : C0 d s) :
   generalize hYd : s.gpr .r6 = Y at hrd dYS nwY ⊢
   generalize hSd : s.gpr .r8 = S at hwr dDS dYS nwS ⊢
   generalize hZd : (s.gpr .r9).toNat * 8 = Z at hwr dDS dYS nwS ⊢
-  have hZ256 : 256 ≤ Z := by omega
+  have hZ256 : 256 ≤ Z := by omega_using [hsl, hZd]
   have hZw : slot ((k + 7) / 8) 28 ≤ Z := by rw [slot_eq]; omega_using [hsl, hZd, hk', hk]
   have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS
   have hin : ∀ i < 18, InRegions s.wr (off (savW S) (8 * i)) 8 := fun i hi => ⟨⟨S, Z⟩, by rw [hwr]; simp, by
-    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega) (by omega)⟩
+    rw [off, Offset.add_add]; exact Offset.contains_base S (by omega_using [hZ256, hi]) (by omega_using [hi])⟩
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (save_ok (ws := .r8) (by decide) s (by rw [hSd]; exact hin)) fun s₁ hS => ?_
   have k1 := hS.keep
@@ -260,16 +263,16 @@ theorem T01 {d : CD} {s : State} (h : C0 d s) :
     ((k1.gpr .r6 (by decide)).trans hYd) (hS.r23.trans hSd) hk')
     fun s₂ ⟨⟨a21, a27, a28, a11, a29, a10, a31, a26, m2⟩, k2⟩ => ?_
   have k12 := k1.trans k2
-  refine ⟨⟨⟨hs.congr k12.wr, a10, a29, a11, a31, show 4 ≤ (k + 7) / 8 by omega, show (k + 7) / 8 ≤ 128 by omega,
+  refine ⟨⟨⟨hs.congr k12.wr, a10, a29, a11, a31, show 4 ≤ (k + 7) / 8 by omega_using [hk], show (k + 7) / 8 ≤ 128 by omega_using [hk'],
     hZw⟩, a21,
     (k2.gpr .r23 (by decide)).trans (hS.r23.trans hSd), a27, a28, hk, hk',
     by simp only [Spec.Ffdh.domainLenValid] at hL; omega,
-    fun i hi => by rw [k12.rd, k12.wr]; exact rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega) i hi,
-    sep_of_disjoint (L := L) dDS (by omega),
-    fun i hi => by rw [k12.rd, k12.wr]; exact rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega) i hi,
-    sep_of_disjoint (L := k) dYS (by omega), ?_, ?_⟩, a26⟩
-  · rw [m2]; exact bytes_frame (L := L) hfr₁ dDS (by omega) hZ256
-  · rw [m2]; exact bytes_frame (L := k) hfr₁ dYS (by omega) hZ256
+    fun i hi => by rw [k12.rd, k12.wr]; exact rd_of_mem (s := s) (D := D) (L := L) (by rw [hrd]; simp) (by omega_using [hLd]) i hi,
+    sep_of_disjoint (L := L) dDS (by omega_using [hLd]),
+    fun i hi => by rw [k12.rd, k12.wr]; exact rd_of_mem (s := s) (D := Y) (L := k) (by rw [hrd]; simp) (by omega_using [hkd]) i hi,
+    sep_of_disjoint (L := k) dYS (by omega_using [hkd]), ?_, ?_⟩, a26⟩
+  · rw [m2]; exact bytes_frame (L := L) hfr₁ dDS (by omega_using [hLd]) hZ256
+  · rw [m2]; exact bytes_frame (L := k) hfr₁ dYS (by omega_using [hkd]) hZ256
 
 theorem TA {d : CD} {s : State} (h : C1 d s) : WP isa (.block [.addi .r12 .r21 0, .addi .r6 .r28 0]) s (C1a d) := by
   refine WP.mono (WP.keep [.r6, .r12] (Q := fun t => t.gpr .r12 = off d.D 0 ∧ t.gpr .r6 = BitVec.ofNat 64 d.k ∧
@@ -284,51 +287,51 @@ theorem TL {d : CD} {s : State} (h : C1a d s) : WP isa Precompute.loadN s (C2 d)
   have hk' := hb.k1024
   have hnw := hb.env.hs.nowrap
   have e28 := slot_eq d.w 28
-  refine WP.mono (loadN_ok (dA := slot d.w 0) hb.env.hs hb.env.h10 h12 h6 hb.env.h11 (by omega) (by omega)
-    (by omega) (by rw [slot_eq]; omega) (by rw [slot_eq] at hZ ⊢; omega)
-    (fun i hi => hb.rdD i (by rcases hb.hL with h | h <;> omega))
-    (fun i hi => hb.sepD i (by rcases hb.hL with h | h <;> omega))) fun t ⟨hv, out, k⟩ => ?_
-  have hm : Body d.S d.w s.mem t.mem := Body.of out (Nat.le_refl _) (by rw [slot_eq] at hZ ⊢; omega)
+  refine WP.mono (loadN_ok (dA := slot d.w 0) hb.env.hs hb.env.h10 h12 h6 hb.env.h11 (by omega_using [hk]) (by omega_using [hwd])
+    (by omega_using [hwd, hk']) (by rw [slot_eq]; omega_using []) (by rw [slot_eq] at hZ ⊢; omega_using [hZ])
+    (fun i hi => hb.rdD i (by rcases hb.hL with h | h <;> omega_using [hi, h]))
+    (fun i hi => hb.sepD i (by rcases hb.hL with h | h <;> omega_using [hi, h]))) fun t ⟨hv, out, k⟩ => ?_
+  have hm : Body d.S d.w s.mem t.mem := Body.of out (Nat.le_refl _) (by rw [slot_eq] at hZ ⊢; omega_using [e28])
   refine ⟨⟨⟨hb.keep k hm, (k.gpr .r26 (by decide)).trans h26⟩, (k.gpr .r12 (by decide)).trans h12,
     (k.gpr .r6 (by decide)).trans h6⟩, ?_⟩
-  rw [arr, hv, ← Proof.Ffdh.take_bytesAt _ _ (show d.k ≤ d.L by rcases hb.hL with h | h <;> omega), hb.bD]
+  rw [arr, hv, ← Proof.Ffdh.take_bytesAt _ _ (show d.k ≤ d.L by rcases hb.hL with h | h <;> omega_using [h]), hb.bD]
 
 theorem getD_of_lt' {l : List Byte} {i : Nat} (h : i < l.length) : l.getD i 0 = l[i] := by
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some]
 
-theorem Base.kL {d : CD} {s : State} (h : Base d s) : d.k ≤ d.L := by rcases h.hL with h | h <;> omega
+theorem Base.kL {d : CD} {s : State} (h : Base d s) : d.k ≤ d.L := by rcases h.hL with h | h <;> omega_using [h]
 
 theorem Base.take_len {d : CD} {s : State} (h : Base d s) : (d.db.take d.k).length = d.k := by
   have := h.kL
-  rw [List.length_take, ← h.bD, bytesAt_length]; omega
+  rw [List.length_take, ← h.bD, bytesAt_length]; omega_using [this]
 
 theorem Base.take_byte {d : CD} {s : State} (h : Base d s) {i : Nat} (hi : i < d.k) :
     s.mem (off d.D i) = (d.db.take d.k)[i]'(by rw [h.take_len]; exact hi) := by
   have := h.kL
   rw [List.getElem_take]
-  exact byte_of_bytesAt h.bD (by omega)
+  exact byte_of_bytesAt h.bD (by omega_using [hi, this])
 
 theorem TC1 {d : CD} {s : State} (h : C2 d s) : WP isa (.block Precompute.check1) s (C3 d) := by
   obtain ⟨⟨⟨hb, h26⟩, h12, h6⟩, hp⟩ := h
   have hl := hb.take_len
   have hk := hb.k64
   refine WP.mono (check1_ok (N := d.D) (nb := d.db.take d.k) h12 h6 hk hl
-    (fun i hi => hb.rdD i (by have := hb.kL; omega)) fun i hi => hb.take_byte hi)
+    (fun i hi => hb.rdD i (by have := hb.kL; omega_using [hi, this])) fun i hi => hb.take_byte hi)
     fun t ⟨⟨i0, i15, i18, im⟩, k⟩ => ⟨⟨hb.same k im, (k.gpr .r26 (by decide)).trans h26⟩, by rw [arr, im]; exact hp,
-      (k.gpr .r6 (by decide)).trans h6, by rw [i15, getD_of_lt' (by omega)], i18,
-      by rw [i0, getD_of_lt' (by omega)]⟩
+      (k.gpr .r6 (by decide)).trans h6, by rw [i15, getD_of_lt' (by omega_using [hl, hk])], i18,
+      by rw [i0, getD_of_lt' (by omega_using [hl, hk])]⟩
 
 theorem TC2 {d : CD} {s : State} (h : C3 d s) : WP isa Precompute.check2 s (C4 d) := by
   obtain ⟨⟨hb, h26⟩, hp, h6, h15, h18, h0⟩ := h
   have hl := hb.take_len
   have hk := hb.k64
-  refine WP.mono (check2_ok (nb := d.db.take d.k) h6 hk hb.k1024 hl (by rw [h0, getD_of_lt' (by omega)])
-    (by rw [h15, getD_of_lt' (by omega)]) h18) fun t ⟨a, m, k⟩ =>
+  refine WP.mono (check2_ok (nb := d.db.take d.k) h6 hk hb.k1024 hl (by rw [h0, getD_of_lt' (by omega_using [hl, hk])])
+    (by rw [h15, getD_of_lt' (by omega_using [hl, hk])]) h18) fun t ⟨a, m, k⟩ =>
     ⟨⟨hb.same k m, (k.gpr .r26 (by decide)).trans h26⟩, by rw [arr, m]; exact hp, a⟩
 
 theorem modulus_facts {p k : Nat} (h : Spec.Rsa.modulusValid p k = true) : 2 ≤ p ∧ p % 2 = 1 := by
   simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-  omega
+  omega_using [h]
 
 theorem TR {d : CD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) : WP isa range s (C5 d) := by
   obtain ⟨⟨⟨hb, h26⟩, hp, h0⟩, hz⟩ := h
@@ -336,7 +339,7 @@ theorem TR {d : CD} {s : State} (h : C4 d s ∧ s.gpr .r0 = 0) : WP isa range s 
   have hf := modulus_facts hv
   have hwd : d.w = (d.k + 7) / 8 := rfl
   have hk := hb.k64
-  refine WP.mono (range_ok hb.env hb.r23 h26 hb.r28 (by omega) (by omega) hb.rdY hb.sepY (by rw [hp]; omega))
+  refine WP.mono (range_ok hb.env hb.r23 h26 hb.r28 (by omega_using [hk]) (by omega_using [hwd]) hb.rdY hb.sepY (by rw [hp]; omega_using [hf]))
     fun t ⟨⟨_, p4, _, a26, bt, a10⟩, k⟩ => ⟨hb.of (fun r hr => ?_) k.rd k.wr bt, by rw [p4, hp], hv, ?_⟩
   · simp only [baseRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -363,7 +366,7 @@ theorem TQ {d : CD} {s : State} (h : C5 d s ∧ s.gpr .r26 ≠ 0) : WP isa (.blo
   refine WP.mono (WP.keep [.r0] (Q := fun t => (t.gpr .r0 == 0) = decide (d.L = 3 * d.k) ∧ t.mem = s.mem) (by
       unfold hasQ
       prun [hb.r27, hb.r28]
-      exact sub_3k_zero (by rcases hb.hL with h | h <;> have := hb.k1024 <;> omega) (by have := hb.k1024; omega))
+      exact sub_3k_zero (by rcases hb.hL with h | h <;> have := hb.k1024 <;> omega_using [h, this]) (by have := hb.k1024; omega_using [this]))
     (by decide)) fun t ⟨⟨a0, m⟩, k⟩ => ⟨hb.same k m, by rw [arr, m]; exact hp, hv, ?_⟩
   rw [← beq_iff_eq, a0, decide_eq_true_iff]
 
@@ -372,12 +375,146 @@ theorem TS {d : CD} {s : State} (h : C6 d s ∧ s.gpr .r0 = 0) : WP isa subgroup
   have h3k := h0.mp hz
   have hf := modulus_facts hv
   have hk := hb.k64
-  refine WP.mono (subgroup_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) hb.k1024 (by rw [hp]; omega)
-    (by rw [hp]; exact hf.2) (by rw [hp]; exact top_of_valid hv (by simp only [CD.w]; omega) (by simp only [CD.w]; omega))
-    (fun i hi => by rw [off_off']; exact hb.rdD _ (by omega))
-    (fun i hi => by rw [off_off']; exact hb.sepD _ (by omega))) fun t ⟨_, k⟩ => ?_
+  refine WP.mono (subgroup_ok hb.env hb.r23 hb.r21 hb.r28 (by omega_using [hk]) hb.k1024 (by rw [hp]; omega_using [hf])
+    (by rw [hp]; exact hf.2) (by rw [hp]; exact top_of_valid hv (by simp only [CD.w]; omega_using []) (by simp only [CD.w]; omega_using [hk]))
+    (fun i hi => by rw [off_off']; exact hb.rdD _ (by omega_using [h3k, hi]))
+    (fun i hi => by rw [off_off']; exact hb.sepD _ (by omega_using [h3k, hi]))) fun t ⟨_, k⟩ => ?_
   show t.gpr .r23 = d.S
   rw [k.gpr .r23 (by decide), hb.r23]
+
+/-! ## `subgroup`
+
+The scan for q's first nonzero octet branches on q's octets, which the
+taint analysis takes as secret: two runs on the same domain take the same
+number of iterations (`two_loopD`), the octets being the domain's, and
+`subFront` and `subBack` are checked by the taint analysis, the latter from
+the pointer and the count the scan leaves. -/
+
+/-- q's octets. -/
+abbrev CD.qb (d : CD) : List Byte := (d.db.drop (2 * d.k)).take d.k
+
+/-- What `subgroup` needs. -/
+structure SubPre (d : CD) (s : State) : Prop where
+  base : Base d s
+  hL : d.L = 3 * d.k
+  hp : arr s.mem d.S d.w 0 = d.p
+  valid : Spec.Rsa.modulusValid d.p d.k = true
+
+/-- The registers the scan and `subBack` start from. -/
+def subScanRegs : List Reg := [.r10, .r11, .r23, .r29, .r30, .r31]
+
+/-- Their values before iteration `j` of the scan. -/
+def scanVal (d : CD) (j : Nat) : Reg → BitVec 64
+  | .r10 => off d.S (slot d.w 0)
+  | .r11 => BitVec.ofNat 64 (2 * d.w)
+  | .r23 => d.S
+  | .r29 => BitVec.ofNat 64 (8 * (d.w + 2))
+  | .r30 => off (off d.D (2 * d.k)) j
+  | .r31 => BitVec.ofNat 64 (d.k - j)
+  | _ => 0
+
+/-- Before iteration `j` of the scan. -/
+structure ScanJ (d : CD) (j : Nat) (s : State) : Prop where
+  regs : ∀ r ∈ subScanRegs, s.gpr r = scanVal d j r
+  le : j ≤ lead d.qb
+  len : d.qb.length = d.k
+  k1024 : d.k ≤ 1024
+  ne : d.qb ≠ []
+  rd : ∀ i < d.qb.length, InRegions (s.rd ++ s.wr) (off (off d.D (2 * d.k)) i) 1
+  val : ∀ i (h : i < d.qb.length), s.mem (off (off d.D (2 * d.k)) i) = d.qb[i]
+
+theorem ScanJ.pins {d : CD} {j : Nat} {s₁ s₂ : State} (h₁ : ScanJ d j s₁) (h₂ : ScanJ d j s₂) :
+    ∀ r ∈ subScanRegs, s₁.gpr r = s₂.gpr r := fun r hr => (h₁.regs r hr).trans (h₂.regs r hr).symm
+
+/-- `subFront`, to the scan's start. -/
+theorem SF {d : CD} {s : State} (h : SubPre d s) : WP isa subFront s (ScanJ d 0) := by
+  have hb := h.base
+  have hf := modulus_facts h.valid
+  have hk := hb.k64
+  have hk' := hb.k1024
+  refine WP.mono (subFront_ok hb.env hb.r23 hb.r21 hb.r28 (by rw [h.hp]; exact hf.2)
+    (by rw [h.hp]; exact top_of_valid h.valid (by simp only [CD.w]; omega_using []) (by simp only [CD.w]; omega_using [hk])))
+    fun t hm => ?_
+  have hL3 := h.hL
+  have hql : d.qb.length = d.k := by
+    have hdl : d.db.length = 3 * d.k := by rw [← hb.bD, bytesAt_length, hL3]
+    simp only [CD.qb, List.length_take, List.length_drop]; omega_using [hdl]
+  have hq : Spec.Rsa.bytesAt t.mem (off d.D (2 * d.k)) d.k = d.qb := by
+    rw [hm.body.bytesAt hb.env.hZ (fun i hi x hx => by rw [off_off']; exact hb.sepD _ (by omega_using [hL3, hi]) x hx),
+      show off d.D (2 * d.k) = d.D + BitVec.ofNat 64 (2 * d.k) from rfl,
+      ← VG.Proof.Dsa.bytesAt_slice _ _ (show 2 * d.k + d.k ≤ d.L by omega_using [hL3]), hb.bD]
+  refine ⟨fun r hr => ?_, Nat.zero_le _, hql, hk', fun he => by rw [he] at hql; simp at hql; omega_using [hk, hql],
+    fun i hi => ?_, fun i hi => ?_⟩
+  · simp only [subScanRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hm.h10
+    · exact hm.h11
+    · exact hm.r23
+    · exact hm.h29
+    · exact hm.r30
+    · rw [hm.r31]; rfl
+  · rw [hm.keep.rd, hm.keep.wr, off_off']; exact hb.rdD _ (by omega_using [hL3, hql, hi])
+  · have e := List.getElem_of_eq hq (i := i) (by rw [bytesAt_length]; omega_using [hql, hi])
+    simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range] at e
+    exact e
+
+/-- One iteration of the scan. -/
+theorem SL (a : CD × Nat) (s : State) (h : ScanJ a.1 a.2 s) :
+    WP isa (.block leadBody) s fun s' => isa.eval (.nonzero .d .r17) s' = some (decide (a.2 < lead a.1.qb)) ∧
+      (decide (a.2 < lead a.1.qb) = false → ScanJ a.1 (lead a.1.qb) s') ∧
+      (decide (a.2 < lead a.1.qb) = true →
+        lead a.1.qb + 1 - (a.2 + 1) < lead a.1.qb + 1 - a.2 ∧ ScanJ a.1 (a.2 + 1) s') := by
+  rcases a with ⟨d, j⟩
+  dsimp only at h
+  have h30 := h.regs .r30 (by decide)
+  have h31 := h.regs .r31 (by decide)
+  refine WP.mono (leadStep_ok (s₀ := s) (by rw [h.len]; exact h.k1024) h.ne h.rd h.val h.le
+    ⟨h30, by rw [h31, h.len]; rfl, rfl, Keep.refl _ _⟩) fun t ⟨⟨t30, t31, tm, tk⟩, t17⟩ => ?_
+  have hL := lead_lt h.ne
+  have hreg : ∀ r ∈ [Reg.r10, .r11, .r23, .r29], t.gpr r = s.gpr r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact tk.gpr _ (by decide)
+  have mk : ∀ j', j' ≤ lead d.qb → t.gpr .r30 = off (off d.D (2 * d.k)) j' →
+      t.gpr .r31 = BitVec.ofNat 64 (d.k - j') → ScanJ d j' t := fun j' hj' a30 a31 =>
+    ⟨fun r hr => by
+      simp only [subScanRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · exact a30
+      · exact a31,
+     hj', h.len, h.k1024, h.ne, fun i hi => by rw [tk.rd, tk.wr]; exact h.rd i hi,
+     fun i hi => by rw [tm]; exact h.val i hi⟩
+  refine ⟨?_, fun hg => ?_, fun hg => ?_⟩
+  · rw [VG.PPC64LE.eval_nonzero_ofNat' t .r17 (by cases decide (j < lead d.qb) <;> decide) t17]
+    cases decide (j < lead d.qb) <;> rfl
+  · have hj : j = lead d.qb := by have := h.le; simp at hg; omega_using [this, hg]
+    rw [Nat.min_eq_right (by omega_using [hj])] at t30 t31
+    exact mk _ (Nat.le_refl _) t30 (by rw [t31, h.len])
+  · have hj : j < lead d.qb := by simpa using hg
+    rw [Nat.min_eq_left (by omega_using [hj])] at t30 t31
+    exact ⟨show lead d.qb + 1 - (j + 1) < lead d.qb + 1 - j by omega_using [hj], mk _ (by omega_using [hj]) t30 (by rw [t31, h.len])⟩
+
+/-- `subgroup` takes the same time in runs on the same public data. -/
+theorem subgroup_rel {Φ : CD → State → Prop} (hΦ : ∀ d s, Φ d s → SubPre d s) :
+    RelCT isa (Two Φ) subgroup fun _ _ => True := by
+  unfold subgroup
+  refine RelCT.seq (R := Two fun d s => ScanJ d 0 s)
+    (two_post (two_taint _ (pins_base (Φ := Φ) fun d s h => (hΦ d s h).base) (by taint_decide))
+      fun d s h => SF (hΦ d s h))
+    (RelCT.seq (R := Two fun (a : CD × Nat) s => ScanJ a.1 (lead a.1.qb) s)
+      (RelCT.mono (P := Two fun (a : CD × Nat) s => ScanJ a.1 a.2 s)
+        (VG.Proof.Ffdh.PPC64LE.ParameterCandidate.two_loopD (fun a => lead a.1.qb + 1 - a.2)
+          (fun a => (a.1, a.2 + 1)) (fun a => decide (a.2 < lead a.1.qb))
+          (two_taint [.r30, .r31] (fun a s₁ s₂ h₁ h₂ r hr => ScanJ.pins h₁ h₂ r (by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+            rcases hr with rfl | rfl <;> decide)) (by taint_decide))
+          SL)
+        (fun s₁ s₂ ⟨d, h₁, h₂, hsp⟩ => ⟨(d, 0), h₁, h₂, hsp⟩) fun _ _ h => h)
+      (two_taintR subScanRegs (fun _ _ _ h₁ h₂ => ScanJ.pins h₁ h₂) (by taint_decide_rel)))
 
 /-! ## Constant time -/
 
@@ -402,8 +539,8 @@ theorem cp_rel : RelCT isa (Two C0) checkPublic fun _ _ => True := by
         (RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => C5 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h => h.1.1)
           (by taint_decide)) fun _ _ h => TQ h)
           (two_ite (Φ := C6) (fun d s₁ s₂ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm)
-            (two_post (two_taint _ (pins_base (Φ := fun d s => C6 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1)
-              (by taint_decide)) fun _ _ h => TS h)
+            (two_post (subgroup_rel (Φ := fun d s => C6 d s ∧ s.gpr .r0 = 0) fun _ _ h =>
+              ⟨h.1.1, h.1.2.2.2.mp h.2, h.1.2.1, h.1.2.2.1⟩) fun _ _ h => TS h)
             (two_post (two_taint _ (pins_base (Φ := fun d s => C6 d s ∧ s.gpr .r0 ≠ 0) fun _ _ h => h.1.1)
               (by taint_decide)) fun _ _ h => TK1 (Φ := fun d s => C6 d s ∧ s.gpr .r0 ≠ 0) (fun _ _ h => h.1.1) h))))
 

@@ -37,21 +37,21 @@ private theorem work_r2 {p : KpP} {s : State} {xb : List Byte} {mi : BitVec 64}
     (hw : Work p xb mi s) (hd : s.gpr .rdi = off p.B (inner p.w)) (hm : p.mv = true)
     (h12 : s.gpr .r12 = BitVec.ofNat 64 p.w) (h10 : s.gpr .r10 = off (off p.B (inner p.w)) (slot p.w aN)) :
     R2Pre ⟨⟨off p.B (inner p.w), slot p.w 8, p.w, mi⟩, p.P⟩ s := by
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
   have hk := hw.base.k1
   have hk' := hw.base.k2
   obtain ⟨ho, _, hlo⟩ := valid_facts hm hk
-  exact ⟨⟨(hw.mem.ctx hd).good, Nat.le_refl _⟩, show 2 ≤ p.w by omega, show p.w < 2 ^ 30 by omega,
+  exact ⟨⟨(hw.mem.ctx hd).good, Nat.le_refl _⟩, show 2 ≤ p.w by omega_using [ew, hk], show p.w < 2 ^ 30 by omega_using [ew, hk'],
     hw.xv.n, hw.xv.inv, h12, h10, ho, hlo⟩
 
 private theorem ch_r2 {s₁ s₂ : State} (h : Two CH s₁ s₂) : Two R2Pre s₁ s₂ := by
   refine two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h
   obtain ⟨⟨xb₁, mi₁, hw₁, hd₁, hm⟩, h12₁, h10₁⟩ := h₁
   obtain ⟨⟨xb₂, mi₂, hw₂, hd₂, _⟩, h12₂, h10₂⟩ := h₂
-  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega
+  have ew : 8 * p.w ≤ p.k + 7 ∧ p.k ≤ 8 * p.w := by unfold KpP.w; omega_using []
   have hk := hw₁.base.k1
   have ho := (valid_facts hm hk).1
-  obtain rfl := xvals_minv (show 1 ≤ p.w by omega) ho hw₁.xv hw₂.xv
+  obtain rfl := xvals_minv (show 1 ≤ p.w by omega_using [ew, hk]) ho hw₁.xv hw₂.xv
   exact ⟨_, work_r2 hw₁ hd₁ hm h12₁ h10₁, work_r2 hw₂ hd₂ hm h12₂ h10₂⟩
 
 theorem r2_ct (M : Mont) (R : R2Impl M) : RelCT isa (Two Inner) (.seq (.block r2Head) R.code) (Two C2) := by

@@ -71,7 +71,7 @@ theorem wide_implies_ctr32 :
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-      | (rw [VG.X86.Taint.sub_setWidth (by omega)]; try simp only [Nat.mul_comm] at *
+      | (rw [VG.X86.Taint.sub_setWidth (by omega_arith)]; try simp only [Nat.mul_comm] at *
          first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
   · sig_implies_post [Proof.Sm4.ctr32ScratchContract, Proof.Sm4.ctr32ScratchSig, Proof.Sm4.ctr32Sig, Proof.Sm4.ctr32Post, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ctr32Post]

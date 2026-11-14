@@ -33,7 +33,7 @@ theorem update_xdepth (v : BlocksImpl) :
   have := v.stack_le
   simp only [Impl.Poly1305.X86_64.update, Impl.Poly1305.X86_64.updatePre,
     Impl.Poly1305.X86_64.updatePost, Code.x86_64Depth, fill_xdepth, rest_xdepth, Nat.max_le]
-  omega
+  omega_arith
 
 /-- A state satisfying `vg_poly1305_update`'s precondition, without the
 working space. -/

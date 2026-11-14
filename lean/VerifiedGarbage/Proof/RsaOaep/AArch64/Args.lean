@@ -38,7 +38,7 @@ theorem mW_args (W : Nat → BitVec 64) (S : Addr) (src srcLen dst dstLen : Nat)
 theorem mW_eq (W : Nat → BitVec 64) (S : Addr) (src srcLen dst dstLen : Nat) {k : Nat} (hk : k < 13 ∨ 16 < k) :
     mW W S src srcLen dst dstLen k = W k := by
   simp only [mW, upd]
-  rw [ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
+  rw [ifn (by omega_using [hk]), ifn (by omega_using [hk]), ifn (by omega_using [hk]), ifn (by omega_using [hk])]
 
 theorem seedArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 * H.D + 2 ≤ k)

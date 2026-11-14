@@ -22,21 +22,21 @@ theorem lowBits_centered {g : Nat} (hg : IsG g) (r : Zq) :
   rw [lowBits_eq (mem_of_isG hg)]
   have hr := r.isLt
   rcases hg with rfl | rfl <;>
-    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88] at * <;> omega
+    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88] at * <;> omega_using []
 
 theorem lowBits_bounds {g : Nat} (hg : IsG g) (r : Zq) :
     -(g:Int)≤lowBits g r ∧ lowBits g r≤(g:Int) := by
   rw [lowBits_eq (mem_of_isG hg)]
   have hr := r.isLt
   rcases hg with rfl | rfl <;>
-    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88] at * <;> omega
+    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88] at * <;> omega_using []
 
 /-- The first conditional addition canonicalizes a reduced signed difference. -/
 theorem reduce_signCorrected {x : BitVec 32} (hl : -2*8380417<x.toInt) (hh : x.toInt<3*8380417) :
     (Inverse.signCorrected (reduceWord x)).toNat=(ofInt x.toInt).val := by
   have h := reduce32_bounds hl hh
   have hi := reduceWord_int x hl hh
-  have he := Inverse.signCorrected_int (reduceWord x) (by omega) (by omega)
+  have he := Inverse.signCorrected_int (reduceWord x) (by omega_using [h, hi]) (by omega_using [h, hi])
   have ht := BitVec.toInt_eq_toNat_cond (Inverse.signCorrected (reduceWord x))
   have hm := reduce32_mod x.toInt
   have hv := VG.Proof.MlDsa.KeyGen.ofInt_val x.toInt

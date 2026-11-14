@@ -39,11 +39,11 @@ theorem TrSide.parts {L : VG.Proof.MlDsa.AArch64.Message.Lay} (h : TrSide L) :
     Region.Disjoint ⟨L.rnd, 64⟩ ⟨L.ST, 200⟩ ∧
     Region.Disjoint ⟨L.rnd, 64⟩ ⟨L.KS, 640⟩ ∧ L.STK.Disjoint ⟨L.rnd, 64⟩ :=
   ⟨h.read, h.x.symm.sub_right (Region.sub_prefix (by decide)),
-    h.x.symm.sub_right (within_off L.X (d := 200) (n := 640) (k := 1024) (by omega)).sub, h.stack⟩
+    h.x.symm.sub_right (within_off L.X (d := 200) (n := 640) (k := 1024) (by omega_using [])).sub, h.stack⟩
 
 theorem cachedTr_val {L : VG.Proof.MlDsa.AArch64.Message.Lay} {g vv m} {t : State} (h : Ctx L g vv m t) :
     (VG.Impl.MlDsa.AArch64.Message.Arg.slot fRnd).val t = L.rnd := by
-  rw [h.slotV (f := fRnd) (j := 5) rfl (by omega)]
+  rw [h.slotV (f := fRnd) (j := 5) rfl (by omega_using [])]
   rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.RootedCachedVerify

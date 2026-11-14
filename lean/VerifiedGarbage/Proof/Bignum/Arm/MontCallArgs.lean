@@ -24,7 +24,7 @@ theorem montCallArgs_ok (s : State) {base : BitVec 32} {size o a b : Nat}
       Frame [⟨State.addr s.sp, 4⟩] s.mem t.mem ∧ Rest [.r1, .r2, .r3, .r12, .lr] s t := by
   have immediate : ∀ j < 8, encodable (BitVec.ofNat 32 j) = true := by decide
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 48)) 4 := by
-    rw [ptr, addr_add (by have := ws.nowrap; omega)]
+    rw [ptr, addr_add (by have := ws.nowrap; omega_using [fit, this])]
     exact ws.read fit
   let m := s.mem.writeW (State.addr s.sp) (BitVec.ofNat 32 b)
   let u := { (((s.setReg .r2 (BitVec.ofNat 32 o)).setReg .r3 (BitVec.ofNat 32 a)).setReg

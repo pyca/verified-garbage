@@ -69,13 +69,13 @@ theorem policyLoop_ok {s : State} {B src table : Addr} {Z k N : Nat} {dom : List
            exact Outside.refl _ _ _ _
        | cons a tail =>
          right
-         refine ⟨?_,(a::tail).length,by simp only [List.length_cons] at remaining ⊢;omega,
-          a::tail,off cursor (8+3*g.len),rfl,by simp,by simp only [List.length_cons] at atMost ⊢;omega,
+         refine ⟨?_,(a::tail).length,by simp only [List.length_cons] at remaining ⊢;omega_using [remaining],
+          a::tail,off cursor (8+3*g.len),rfl,by simp,by simp only [List.length_cons] at atMost ⊢;omega_using [atMost],
           nextTable.after_mem (by rw [memU,ite_eq_right matched]) keepU,ptrU,?_,nextRule,mem,totalKeep⟩
          · rw [eval_nonzero,countU,ite_eq_right matched]
            simp only [List.length_cons,Nat.add_sub_cancel]
            change some (BitVec.ofNat 64 (tail.length+1) != 0#64)=some true
-           rw [ofNat_nonzero (by simp only [List.length_cons] at atMost;omega),decide_eq_true (by omega : 0<tail.length+1)]
+           rw [ofNat_nonzero (by simp only [List.length_cons] at atMost;omega_using [small, atMost]),decide_eq_true (by omega_using [] : 0<tail.length+1)]
          · simpa only [ite_eq_right matched,List.length_cons,Nat.add_sub_cancel] using countU
  · exact ⟨gs,table,rfl,nonempty,Nat.le_refl _,records,pointer,count,rfl,rfl,Keep.refl _ _⟩
 

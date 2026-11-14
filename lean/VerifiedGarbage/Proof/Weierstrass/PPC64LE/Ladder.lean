@@ -74,7 +74,7 @@ structure LadLayI (L : LadderCfg) : Prop where
   nbits : L.nbits < 2 ^ 15
 
 theorem own_add (n : Nat) (h : 8 * n ≤ own n) : own n + 64 * n = 4096 := by
-  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at h ⊢; omega
+  simp only [own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes] at h ⊢; omega_using [h]
 
 /-- A slot the ladder does not write is apart from what it writes. -/
 theorem LadLayI.apart_wx {L : LadderCfg} (hL : LadLayI L) {x : Nat} (hx : x ∈ ladSlots L)
@@ -89,13 +89,13 @@ theorem LadLayI.apart_wx {L : LadderCfg} (hL : LadLayI L) {x : Nat} (hx : x ∈ 
 theorem LadLayI.bits_wx {L : LadderCfg} (hL : LadLayI L) {t : Nat} (ht : t < L.nbits) :
     ∀ w ∈ ladWx L, L.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ L.bits + t := by
   have hR := hL.lay.lay.le _ (ladPts_slots L L.R.x (by simp))
-  have ho := own_add L.M.n (by omega)
+  have ho := own_add L.M.n (by omega_using [hR])
   have hb := hL.bits
   intro w hw
   simp only [ladWx, List.mem_append, List.mem_singleton] at hw
   rcases hw with hw | rfl
-  · have := hL.lay.bits_w w hw; omega
-  · simp only; omega
+  · have := hL.lay.bits_w w hw; omega_using [ht, this]
+  · simp only; omega_using [ho, hb]
 
 /-- The loop's invariant at `r31 = j`: `Q j` accepts what `R` holds. -/
 structure LadInv (L : LadderCfg) (C : Curve) (base : Addr) (Q : Nat → Fe C → Fe C → Fe C → Prop)
@@ -191,8 +191,8 @@ theorem ladSel_ok {L : LadderCfg} {base : Addr} (hL : LadLayI L) {s : State} (hw
           (if c then wordsVal s.mem base L.T.z L.M.n else wordsVal s.mem base L.D.z L.M.n) := by
   have hlb := hL.lay.bits
   have hx := hL.lay.lay.le _ (ladPts_slots L L.R.x (by simp))
-  have ho := own_add L.M.n (by omega)
-  refine wp_append (WP.mono (bitMask_bool_ok hw.ws hw.at3 h31 (by omega) (c := c) hc)
+  have ho := own_add L.M.n (by omega_using [hx])
+  refine wp_append (WP.mono (bitMask_bool_ok hw.ws hw.at3 h31 (by omega_using [ht, hlb]) (c := c) hc)
     fun s₄ ⟨c₄, k₄, hm₄⟩ => ?_)
   have hap : ∀ x ∈ [L.R.x, L.R.y, L.R.z, L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z],
       ∀ y ∈ [L.R.x, L.R.y, L.R.z, L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z], x ≠ y →
@@ -201,7 +201,7 @@ theorem ladSel_ok {L : LadderCfg} {base : Addr} (hL : LadLayI L) {s : State} (hw
   obtain ⟨rxy, rxz, ryz⟩ := hL.lay.rne
   refine WP.mono (selPt_ok (k₄.ws hw.ws) (k₄.at hw.at3) c c₄ (n := L.M.n) (o := L.R) (a := L.D) (b := L.T)
     (fun d hd => hL.al d (ladPts_slots L d hd))
-    (fun d hd => by have := hL.lay.lay.le d (ladPts_slots L d hd); omega)
+    (fun d hd => by have := hL.lay.lay.le d (ladPts_slots L d hd); omega_using [ho, this])
     ⟨hap L.R.x (by simp) L.R.y (by simp) rxy, hap L.R.x (by simp) L.R.z (by simp) rxz,
       hap L.R.y (by simp) L.R.z (by simp) ryz⟩
     (fun d hd e he => hap d (List.mem_append_left [L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z] hd) e
@@ -228,7 +228,7 @@ theorem ladderBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S
   have hro : ∀ x ∈ ladRo L, wordsVal s.mem base x L.M.n = wordsVal s₀.mem base x L.M.n :=
     fun x hx => hI.unch.wordsVal
       (hL.apart_wx (ladR_slots L x (mem_ladRo_ladR hx)) (hL.lay.ro x hx))
-      (by have := hL.lay.lay.le x (ladR_slots L x (mem_ladRo_ladR hx)); have := own_lt L.M.n; omega)
+      (by have := hL.lay.lay.le x (ladR_slots L x (mem_ladRo_ladR hx)); have := own_lt L.M.n; omega_arith)
   have hE : ∀ x ∈ ladRo L, tmv C L.M.n base s x = tmv C L.M.n base s₀ x := fun x hx => by
     rw [tmv, hro x hx]
   -- `r31 -= 1`.
@@ -252,16 +252,16 @@ theorem ladderBody_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S
     (hI.unch.trans (by rw [← m₁]; exact A.unch)).mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw <;> exact hw
   have hbyte : s₃.mem (off base (L.bits + (j - 1))) = if k.testBit (j - 1) then 1 else 0 := by
-    rw [hU₃.byte (hL.bits_wx (by omega)) (by omega), hbits _ (by omega)]
+    rw [hU₃.byte (hL.bits_wx (by omega_using [hj, hjn])) (by omega_using [hjn, hlb]), hbits _ (by omega_using [hj, hjn])]
   have c₃ : s₃.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [A.keep.g, c₁]
-  have hstep := hstep (j - 1) (by omega) (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y)
+  have hstep := hstep (j - 1) (by omega_using [hj, hjn]) (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y)
     (tmv C L.M.n base s L.R.z) X2 Y2 Z2 X3 Y3 Z3 (by rw [Nat.sub_add_cancel hj]; exact hI.q)
     (by rw [← hE L.S.a (by simp [ladRo]), ← hE L.S.b3 (by simp [ladRo])]; exact h2)
     (by rw [← hE L.S.a (by simp [ladRo]), ← hE L.S.b3 (by simp [ladRo]), ← hE L.G.x (by simp [ladRo]),
         ← hE L.G.y (by simp [ladRo]), ← hE L.G.z (by simp [ladRo])]; exact h3)
   have K₃ : Rk powClob s₀ s₃ :=
     (hI.keep.trans (K₁.rk (rs' := powClob))).trans (A.keep.mono (rs' := powClob))
-  refine WP.mono (ladSel_ok hL A.ws (by omega) c₃ hbyte) fun s' ⟨k', U', ex, ey, ez⟩ => ?_
+  refine WP.mono (ladSel_ok hL A.ws (by omega_using [hj, hjn]) c₃ hbyte) fun s' ⟨k', U', ex, ey, ez⟩ => ?_
   refine ⟨A.ws.of_kp k', by rw [k'.g, c₃], K₃.trans (k'.rk (rs' := powClob)), ?_, ?_, ?_⟩
   · exact (hU₃.trans U').mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
@@ -318,7 +318,7 @@ theorem ladder_ok {k : Nat} {Q : Nat → Fe C → Fe C → Fe C → Prop} {S : I
     (fun j s' hi => hi.r31)
     (fun j s' h1 h2 hi => ladderBody_ok hM hkS hmS hp hL (fun x hx => hlt x (mem_ladRo_ladR hx))
       hstep hbits h1 h2 hi)
-    (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, hi.q⟩) hnb.1 (by omega)
+    (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, hi.q⟩) hnb.1 (by omega_using [hnb])
     ⟨hs.of_kp K₁, by simp only [write_gpr, ite_true], K₁.rk, Unch.refl _ _ _,
       fun x hx => hlt x (List.mem_append_right _ hx), hR⟩
 

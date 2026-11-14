@@ -51,7 +51,7 @@ theorem advance_pairAt {g : Geometry} (v : g.Valid) {capacity used randLen draw 
     have readB : InRegions (b.rd ++ b.wr) (rand.setWidth 64) randLen := by
       rw [K.2.1, K.2.2]; exact readable
     exact ⟨⟨c, B, odd, large, shape, WitnessInput.context_okAt (used := used) (count := draw / 4) v B.ready.scratch
-      randFit (by omega) (by unfold Geometry.words; omega) (by omega) readB separate,
+      randFit (by omega_using [two, narrow]) (by unfold Geometry.words; omega_using [wide]) (by omega_using [enough]) readB separate,
       ptr, (WitnessInput.destination_pointer v B.ready.scratch).symm⟩, ptr⟩
   obtain ⟨U, sourceU⟩ := wp_result (post H.2.1) E
   obtain ⟨Z, sourceZ⟩ := wp_result (post H.2.2) G
@@ -86,8 +86,8 @@ theorem codeAt_trace {mont round : Prog isa} {montName roundName : String}
     unfold codeAt
     refine RelCT.seq (advance_pairAt v two narrow wide four randFit randLenFit enough separate) (RelCT.seq
       (WitnessRound.codeAt_trace (input := WitnessInput.geometryAt g rand used (draw / 4)) montVerified montNoSp
-        montStack roundVerified roundNoSp roundStack v (by change 4 * (draw / 4) = draw; omega) two
-        (by change k ≤ draw / 4; omega) (by change draw / 4 ≤ g.words; unfold Geometry.words; omega)
+        montStack roundVerified roundNoSp roundStack v (by change 4 * (draw / 4) = draw; omega_using [four]) two
+        (by change k ≤ draw / 4; omega_using [narrow]) (by change draw / 4 ≤ g.words; unfold Geometry.words; omega_using [wide])
         length fit far lengthFar) ?_)
     exact WitnessCount.code_trace.mono (fun _ _ H => H.2.2) (fun _ _ H => H)
   intro s t tr ur u z H E G

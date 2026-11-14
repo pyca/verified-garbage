@@ -31,7 +31,7 @@ theorem fetchByte_ok {n size i : Nat} {base : Addr} {s : State} {p : BitVec 32}
       Outside base (slot n 7) 4 s.mem t.mem ∧ Keeps [.eax] s t := by
   have hd := slot_bound (n := n) (i := 7) (by decide)
   have hd0 := slot_header n 9
-  have hsize : 64 ≤ size := by change slot n 9 ≤ size at hz; omega
+  have hsize : 64 ≤ size := by change slot n 9 ≤ size at hz; omega_using [hd0, hz]
   have nw := hs.nowrap
   unfold fetchByte
   have ha : s.ea (at_ .esi 0) = p.setWidth 64 + BitVec.ofNat 64 i := by
@@ -41,17 +41,17 @@ theorem fetchByte_ok {n size i : Nat} {base : Addr} {s : State} {p : BitVec 32}
   refine wp_byte ha hr fun s₃ u₃ => ?_
   have K₃ := u₃.keeps
   have hs₃ := hs.of_keeps K₃ (by decide)
-  have ho : slot n 7 + 4 ≤ size := by unfold stride at hd; omega
-  have W := writeW32_outside s₃.mem base (d := slot n 7) (s₃.gpr .eax) (by omega)
-  refine wp_storeS (hs₃.ea (by omega)) (hs₃.write ho) fun t mt => WP.block_nil ⟨?_, ?_, K₃.trans (mt.keeps _)⟩
-  · obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega⟩
+  have ho : slot n 7 + 4 ≤ size := by unfold stride at hd; omega_using [hz, hd]
+  have W := writeW32_outside s₃.mem base (d := slot n 7) (s₃.gpr .eax) (by omega_using [hz, hd, nw])
+  refine wp_storeS (hs₃.ea (by omega_using [ho])) (hs₃.write ho) fun t mt => WP.block_nil ⟨?_, ?_, K₃.trans (mt.keeps _)⟩
+  · obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega_using [hn]⟩
     rw [wordsVal_eq_val32, hk, val32] at hpad
-    have tail : val32 s.mem base (slot n 7 + 4) k = 0 := by omega
+    have tail : val32 s.mem base (slot n 7 + 4) k = 0 := by omega_using [hpad]
     rw [wordsVal_eq_val32, hk, val32, mt.mem, w32_write_self,
-      W.val32 (by omega) (by unfold stride at hd; omega), u₃.mem, tail,
+      W.val32 (by omega_using []) (by unfold stride at hd; omega_using [hz, hd, nw, hk]), u₃.mem, tail,
       Nat.mul_zero, Nat.add_zero, u₃.gpr, BitVec.toNat_setWidth]
     exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (s.mem (p.setWidth 64 + BitVec.ofNat 64 i)).isLt (by decide))
   · rw [mt.mem, u₃.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_using [hz, hd, nw])
 
 end VG.Proof.Dsa.X86

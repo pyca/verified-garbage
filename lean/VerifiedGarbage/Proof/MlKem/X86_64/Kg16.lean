@@ -56,8 +56,8 @@ theorem sample_step {e : Nat} (he : e < K.L.k * K.L.k) (he' : 4 * (K.L.k * K.L.k
   simp only [kbChk, Bool.and_eq_true] at hc
   have hk := W.k
   have L₀ := h.a.kc.lay W hp
-  refine WP.mono (sampleIJ16_ok L₀ (kgB_bases K.L) rbx_na rbx_na (by have := div_lt_k he; omega)
-    (by have := mod_lt_k he; omega) hc.1) fun s' ⟨hP, h15, hres⟩ => ?_
+  refine WP.mono (sampleIJ16_ok L₀ (kgB_bases K.L) rbx_na rbx_na (by have := div_lt_k he; omega_using [hk, this])
+    (by have := mod_lt_k he; omega_using [hk, this]) hc.1) fun s' ⟨hP, h15, hres⟩ => ?_
   have ⟨ka, kA⟩ := matKeep_ok W hp h.a hP hc.2
   exact ⟨ka, h.m.single h.a.sb L₀ hP kA h15 hres⟩
 
@@ -68,7 +68,7 @@ theorem quad_step {n : String} {c : Prog isa} (v : S16Ok c) {q : Nat} (hq : q < 
   simp only [kqChk, Bool.and_eq_true] at hc
   have hk := W.k
   have L₀ := h.a.kc.lay W hp
-  refine WP.mono (quad16_ok v L₀ (kgB_bases K.L) (by have : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2; omega)
+  refine WP.mono (quad16_ok v L₀ (kgB_bases K.L) (by have : K.L.k * K.L.k ≤ 16 := Nat.mul_le_mul hk.2 hk.2; omega_using [hq, this])
     hc.1) fun s' ⟨hP, h15, hres⟩ => ?_
   have ⟨ka, kA⟩ := matKeep_ok W hp h.a hP hc.2
   exact ⟨ka, h.m.four h.a.sb L₀ hP kA h15 hres⟩
@@ -82,7 +82,7 @@ theorem KB16.flag {e : Nat} (he : e ≤ K.L.k * K.L.k) {s s' : State} (h : KB16 
     KB16 K e σ s' := by
   have L₀ := h.a.kc.lay W hp
   exact ⟨h.a.keep W hp hP.b W.flag W.flagG W.flagS W.flagB, by rw [hP.cs .r15 (by decide)]; exact h.m.r15,
-    fun e' he' f hf => L₀.keepPoly16 hP.b (W.flagA e' (by omega)) (h.m.mat e' he' f hf)⟩
+    fun e' he' f hf => L₀.keepPoly16 hP.b (W.flagA e' (by omega_using [he, he'])) (h.m.mat e' he' f hf)⟩
 
 end
 
@@ -112,7 +112,7 @@ theorem prfs_ok (v : Sample4Impl) {s : State} (h : KR0 K σ s) :
   simp only [prChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   obtain ⟨⟨⟨⟨hpc, hkc⟩, kG⟩, kS⟩, kA⟩ := hc
   have L₀ := h.kc.lay W hp
-  refine WP.mono (v.prfs_ok L₀ (kgB_bases K.L) (by have := W.k; omega) hpc) fun s' ⟨hP, hb⟩ => ?_
+  refine WP.mono (v.prfs_ok L₀ (kgB_bases K.L) (by have := W.k; omega_using [this]) hpc) fun s' ⟨hP, hb⟩ => ?_
   have hσ : bytesAt s'.mem (pa s' sigP) 32 = bytesAt s.mem (pa s sigP) 32 := L₀.keepBytes hP.b kS
   refine ⟨h.kc.step W hp hP.b hkc, by rw [L₀.keepBytes hP.b kG]; exact h.rho, hσ.trans h.sig,
     by rw [hP.cs .r15 (by decide)]; exact h.r15, fun e he => L₀.keepPoly16 hP.b (kA e he) (h.mat e he),
@@ -128,7 +128,7 @@ theorem se_ok {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2 * K.L.k) {s : S
   rw [h.prf N hN, ← hP₁.pa rbx_cs] at hp₁
   have hk := h.keep W hp hP₁ hc.2
   refine ⟨hk.kc, hk.rho, hk.sig, hk.r15, hk.mat, hk.prf, fun k hk' => ?_⟩
-  rcases (by omega : k < N ∨ k = N) with hk' | rfl
+  rcases (by omega_using [hk'] : k < N ∨ k = N) with hk' | rfl
   · exact hk.se k hk'
   · exact hp₁
 
@@ -137,7 +137,7 @@ theorem rest_ok (hK : KpkeOk K.L) (v : Sample4Impl) {s : State} (h : KR0 K σ s)
     WP isa (kgRest K v.callee) s (KFin K.L σ) := by
   unfold kgRest noise
   refine WP.seq (WP.seq (WP.mono (prfs_ok W hp v h) fun s₀ h₀ => WP.mono (seqR_ok (I := fun k => KRest16 K k σ)
-    (2 * K.L.k) 0 (fun k _ hk s hs => se_ok W hp v.arith (by omega) hs) s₀ h₀) fun s₁ h₁ => ?_))
+    (2 * K.L.k) 0 (fun k _ hk s hs => se_ok W hp v.arith (by omega_using [hk]) hs) s₀ h₀) fun s₁ h₁ => ?_))
   rw [Nat.zero_add] at h₁
   exact tail_ok W hp hK h₁
 

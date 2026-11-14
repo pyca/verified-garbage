@@ -46,10 +46,10 @@ theorem bit_bottom (q : BitVec 64) {c : Nat} (hc : c < 64) :
   rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
   rcases Nat.eq_zero_or_pos i with rfl | hpos
   · simp only [show (63 + 0 : Nat) < 64 by decide, decide_true, Bool.true_and,
-      show ¬ (63 + 0 < 63 - c) by omega, decide_false, Bool.not_false, show 63 + 0 - (63 - c) = c by omega]
+      show ¬ (63 + 0 < 63 - c) by omega_using [], decide_false, Bool.not_false, show 63 + 0 - (63 - c) = c by omega_using [hc]]
     cases q.getLsbD c <;> rfl
-  · simp only [show ¬ (63 + i < 64) by omega, decide_false, Bool.false_and]
-    cases q.getLsbD c <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega]
+  · simp only [show ¬ (63 + i < 64) by omega_using [hpos], decide_false, Bool.false_and]
+    cases q.getLsbD c <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega_using [hpos]]
 
 /-- The complemented key's bit `c`, at the bottom, minus one: key bit `c` as a mask. -/
 theorem bit_mask (k : BitVec 64) {c : Nat} (hc : c < 64) :
@@ -72,7 +72,7 @@ theorem inReg_inj : ∀ a < 6, ∀ b < 6, inReg a = inReg b → a = b := by deci
 
 theorem slot_rd {s : State} (h : Room s) {w : Nat} (hw : w < 64) :
     InRegions (s.rd ++ s.wr) (s.gpr .r10 + BitVec.ofNat 64 (stOff w)) 8 :=
-  let ⟨r, hr, hc⟩ := slot_in h (k := w) (by omega); ⟨r, List.mem_append_right _ hr, hc⟩
+  let ⟨r, hr, hc⟩ := slot_in h (k := w) (by omega_using [hw]); ⟨r, List.mem_append_right _ hr, hc⟩
 
 /-- One input into `q`: key bit `b` of `~~~r9` as a mask, XORed with state word `w`. -/
 theorem inputStep_run' {s : State} (h : Room s) {q : Reg} (h0 : q ≠ .r0) (h10 : q ≠ .r10)
@@ -83,7 +83,7 @@ theorem inputStep_run' {s : State} (h : Room s) {q : Reg} (h0 : q ≠ .r0) (h10 
       (∀ r, r ≠ q → r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr := by
   let s₁ := s.write q (s.gpr .r9 <<< (63 - b))
-  have e₁ : exec (.lsl q .r9 (63 - b)) s = some s₁ := exec_lsl (by omega)
+  have e₁ : exec (.lsl q .r9 (63 - b)) s = some s₁ := exec_lsl (by omega_using [])
   let s₂ := s₁.write q (s₁.gpr q >>> 63)
   have e₂ : exec (.lsr .d q q 63) s₁ = some s₂ := exec_lsr_d (by decide)
   let s₃ := s₂.write q (s₂.gpr q - BitVec.ofNat 64 1)
@@ -92,7 +92,7 @@ theorem inputStep_run' {s : State} (h : Room s) {q : Reg} (h0 : q ≠ .r0) (h10 
     simp only [s₃, s₂, s₁, gpr_write, Ne.symm h10, ite_false]
   let s₄ := s₃.write .r0 (s₃.mem.readW (s₃.gpr .r10 + BitVec.ofNat 64 (stOff w)) 64)
   have e₄ : exec (.load .d .r0 .r10 (stOff w)) s₃ = some s₄ :=
-    exec_load_d (by decide) ⟨by unfold stOff; omega, by unfold stOff; omega⟩
+    exec_load_d (by decide) ⟨by unfold stOff; omega_using [hw], by unfold stOff; omega_using []⟩
       (by rw [g10]; exact slot_rd h hw)
   let s₅ := s₄.write q (s₄.gpr q ^^^ s₄.gpr .r0)
   have e₅ : exec (.logic .xor q q .r0) s₄ = some s₅ := exec_logic
@@ -103,7 +103,7 @@ theorem inputStep_run' {s : State} (h : Room s) {q : Reg} (h0 : q ≠ .r0) (h10 
   · have g' : s₃.mem = s.mem := rfl
     simp only [s₅, s₄, gpr_write, ite_true, h0, ite_false, g10, g']
     simp only [s₃, s₂, s₁, gpr_write, ite_true]
-    rw [← bit_mask (~~~(s.gpr .r9)) (by omega : b < 64), BitVec.not_not]
+    rw [← bit_mask (~~~(s.gpr .r9)) (by omega_using [hb] : b < 64), BitVec.not_not]
     rfl
   · simp only [s₅, s₄, s₃, s₂, s₁, gpr_write, h1, h2, ite_false]
 
@@ -140,14 +140,14 @@ theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {
   induction n with
   | zero => exact ⟨s, runBlock_nil, fun m hm => by omega, fun _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, in₁, o₁, m₁, rd₁, wr₁, sp₁, lr₁⟩ := ih (by omega)
+    obtain ⟨s₁, run₁, in₁, o₁, m₁, rd₁, wr₁, sp₁, lr₁⟩ := ih (by omega_using [hn])
     have g0 : s₁.gpr .r10 = s.gpr .r10 :=
-      o₁ _ (fun m hm => (inReg_ne m (by omega)).2.2.1.symm) (by decide)
-    have g9 : s₁.gpr .r9 = s.gpr .r9 := o₁ _ (fun m hm => (inReg_ne m (by omega)).1.symm) (by decide)
+      o₁ _ (fun m hm => (inReg_ne m (by omega_using [hn, hm])).2.2.1.symm) (by decide)
+    have g9 : s₁.gpr .r9 = s.gpr .r9 := o₁ _ (fun m hm => (inReg_ne m (by omega_using [hn, hm])).1.symm) (by decide)
     have h₁ : Room s₁ := h.congr g0 wr₁
     obtain ⟨s₂, run₂, q₂, o₂, m₂, rd₂, wr₂, sp₂, lr₂⟩ :=
-      inputStep_run h₁ (i := n) (by omega) (b := inBit j n) (w := readWord ρ (eBit (inBit j n)))
-        (by unfold inBit; omega) (readWord_lt ρ j hj n (by omega))
+      inputStep_run h₁ (i := n) (by omega_using [hn]) (b := inBit j n) (w := readWord ρ (eBit (inBit j n)))
+        (by unfold inBit; omega_using [hn]) (readWord_lt ρ j hj n (by omega_using [hn]))
     refine ⟨s₂, ?_, fun m hm => ?_, fun r hr h6 => ?_, m₂.trans m₁, rd₂.trans rd₁, wr₂.trans wr₁,
       sp₂.trans sp₁, lr₂.trans lr₁⟩
     · rw [inputsN_succ]; exact runBlock_cat_some run₁ run₂
@@ -156,9 +156,9 @@ theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {
         rw [q₂, g9]
         simp only [sl, m₁, g0]
       · have hne : inReg m ≠ inReg n := by
-          intro e; exact he (inReg_inj _ (by omega) _ (by omega) e)
-        rw [o₂ _ hne (inReg_ne m (by omega)).2.1, in₁ m (by omega)]
-    · rw [o₂ _ (hr n (by omega)) h6, o₁ _ (fun m hm => hr m (by omega)) h6]
+          intro e; exact he (inReg_inj _ (by omega_using [hn, hm]) _ (by omega_using [hn]) e)
+        rw [o₂ _ hne (inReg_ne m (by omega_using [hn, hm])).2.1, in₁ m (by omega_using [hm, he])]
+    · rw [o₂ _ (hr n (by omega_using [])) h6, o₁ _ (fun m hm => hr m (by omega_using [hm])) h6]
 
 /-! ## Outputs -/
 
@@ -198,11 +198,11 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
     split
     · rename_i i hi
       have hi4 := outIdx_lt ρ j k i hi
-      rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega) (by simp [varN, outRegs]; omega)]
-      have e1 : ¬ 64 + i < 64 := by omega
+      rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega_using [hk]) (by simp [varN, outRegs]; omega_using [hi4])]
+      have e1 : ¬ 64 + i < 64 := by omega_using []
       simp only [varVals, hk, ite_true, e1, ite_false, Nat.add_sub_cancel_left, outRegs]
       simp [List.getD_eq_getElem?_getD, hi4]
-    · rw [xorSet_two_pow _ (by simp [varN]; omega)]
+    · rw [xorSet_two_pow _ (by simp [varN]; omega_using [hk])]
       simp only [varVals, hk, ite_true]
   · have hd := List.all_eq_true.mp (outputCode_dst ρ j hj)
     have : (outputCode ρ j).all (fun i => dst i != some r) = true := List.all_eq_true.mpr fun i hi => by
@@ -227,7 +227,7 @@ theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) 
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.lr = s.lr ∧ Frame [stR s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, in₁, o₁, m₁, rd₁, wr₁, sp₁, lr₁⟩ := inputsN_ok ρ hj (Nat.le_refl 6) h
   have o11 : s₁.gpr .r11 = BitVec.allOnes 64 := by
-    rw [o₁ _ (fun m hm => (inReg_ne m (by omega)).2.2.2.2.2.2.2.2.symm) (by decide), hones]
+    rw [o₁ _ (fun m hm => (inReg_ne m (by omega_using [hm])).2.2.2.2.2.2.2.2.symm) (by decide), hones]
   obtain ⟨s₂, run₂, out₂, rd₂, wr₂, sp₂, lr₂, m₂, o₂⟩ := sbox_ok j hj s₁ o11
   have k₂ : ∀ r ∈ stepKept, s₂.gpr r = s.gpr r := fun r hr => by
     obtain ⟨hs, h6, hm⟩ := stepKept_in r hr
@@ -239,7 +239,7 @@ theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) 
   have hin : ∀ i < 6, s₁.gpr (inReg i) =
       maskVal (k.getLsbD (inBit j i)) ^^^ sl s (readWord ρ (eBit (inBit j i))) := by
     intro i hi
-    rw [in₁ i hi, hkey _ (by unfold inBit; omega)]
+    rw [in₁ i hi, hkey _ (by unfold inBit; omega_using [hi])]
   refine ⟨s₃, ?_, fun x hx => ?_, fun r hr => ?_, rd₃.trans (rd₂.trans rd₁),
     wr₃.trans (wr₂.trans wr₁), sp₃.trans (sp₂.trans sp₁), lr₃.trans (lr₂.trans lr₁), ?_⟩
   · rw [sboxStep, inputCode_eq]; exact runBlock_cat_some (runBlock_cat_some run₁ run₂) run₃
